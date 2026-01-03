@@ -1,1060 +1,1248 @@
-// Azimuth Memory Management and Cleanup Tests
-// This file contains test cases for memory management and resource cleanup
+// Azimuth Memory Management Tests
+// This file contains tests for memory management patterns and resource handling
 
-// Test 1: Memory Allocation and Deallocation
-test "memory allocation and deallocation" {
-  // Test basic memory allocation
-  let small_buffer = allocate_buffer(1024) // 1KB
-  assert_eq(small_buffer.size, 1024)
-  assert_true(small_buffer.is_allocated)
+// Test 1: Resource Acquisition and Release
+test "resource acquisition and release patterns" {
+  type Resource = {
+    id : Int
+    is_acquired : Bool
+    data : String
+  }
   
-  let large_buffer = allocate_buffer(1048576) // 1MB
-  assert_eq(large_buffer.size, 1048576)
-  assert_true(large_buffer.is_allocated)
+  let create_resource = fn(id : Int) {
+    Resource {
+      id: id,
+      is_acquired: true,
+      data: "Resource data " + id.to_string()
+    }
+  }
   
-  // Test memory deallocation
-  deallocate_buffer(small_buffer)
-  assert_false(small_buffer.is_allocated)
+  let release_resource = fn(resource : Resource) {
+    { resource | is_acquired: false }
+  }
   
-  deallocate_buffer(large_buffer)
-  assert_false(large_buffer.is_allocated)
+  let use_resource = fn(resource : Resource, operation : (String) -> String) {
+    if resource.is_acquired {
+      operation(resource.data)
+    } else {
+      "Resource not available"
+    }
+  }
   
-  // Test buffer resizing
-  let resizable_buffer = allocate_resizable_buffer(4096)
-  assert_eq(resizable_buffer.size, 4096)
+  // Test resource lifecycle
+  let resource = create_resource(1)
+  assert_true(resource.is_acquired)
+  assert_eq(resource.data, "Resource data 1")
   
-  resize_buffer(resizable_buffer, 8192)
-  assert_eq(resizable_buffer.size, 8192)
-  assert_true(resizable_buffer.is_allocated)
+  let result = use_resource(resource, fn(data) { "Processed: " + data })
+  assert_eq(result, "Processed: Resource data 1")
   
-  resize_buffer(resizable_buffer, 2048)
-  assert_eq(resizable_buffer.size, 2048)
-  assert_true(resizable_buffer.is_allocated)
+  let released = release_resource(resource)
+  assert_false(released.is_acquired)
   
-  deallocate_buffer(resizable_buffer)
-  assert_false(resizable_buffer.is_allocated)
+  let result_after_release = use_resource(released, fn(data) { "Processed: " + data })
+  assert_eq(result_after_release, "Resource not available")
 }
 
 // Test 2: Memory Pool Management
 test "memory pool management" {
-  // Test memory pool creation
-  let pool = create_memory_pool(10485760) // 10MB pool
-  assert_eq(pool.total_size, 10485760)
-  assert_eq(pool.used_size, 0)
-  assert_eq(pool.free_size, 10485760)
-  assert_eq(pool.allocation_count, 0)
-  
-  // Test memory allocation from pool
-  let allocation1 = pool_allocate(pool, 1024) // 1KB
-  assert_true(allocation1.success)
-  assert_eq(allocation1.size, 1024)
-  assert_eq(pool.used_size, 1024)
-  assert_eq(pool.free_size, 10484736)
-  assert_eq(pool.allocation_count, 1)
-  
-  let allocation2 = pool_allocate(pool, 2048) // 2KB
-  assert_true(allocation2.success)
-  assert_eq(allocation2.size, 2048)
-  assert_eq(pool.used_size, 3072)
-  assert_eq(pool.free_size, 10482688)
-  assert_eq(pool.allocation_count, 2)
-  
-  // Test memory deallocation to pool
-  pool_deallocate(pool, allocation1)
-  assert_eq(pool.used_size, 2048)
-  assert_eq(pool.free_size, 10483712)
-  assert_eq(pool.allocation_count, 1)
-  
-  pool_deallocate(pool, allocation2)
-  assert_eq(pool.used_size, 0)
-  assert_eq(pool.free_size, 10485760)
-  assert_eq(pool.allocation_count, 0)
-  
-  // Test pool exhaustion
-  let large_allocation = pool_allocate(pool, 20971520) // 20MB (larger than pool)
-  assert_false(large_allocation.success)
-  assert_eq(pool.used_size, 0)
-  assert_eq(pool.allocation_count, 0)
-  
-  // Test pool fragmentation
-  let alloc1 = pool_allocate(pool, 1048576) // 1MB
-  let alloc2 = pool_allocate(pool, 1048576) // 1MB
-  let alloc3 = pool_allocate(pool, 1048576) // 1MB
-  
-  // Deallocate middle allocation to create fragmentation
-  pool_deallocate(pool, alloc2)
-  
-  // Try to allocate larger than the freed block
-  let fragmented_alloc = pool_allocate(pool, 2097152) // 2MB
-  assert_true(fragmented_alloc.success) // Should succeed if pool handles fragmentation
-}
-
-// Test 3: Garbage Collection
-test "garbage collection" {
-  // Test garbage collection initialization
-  let gc = create_garbage_collector()
-  assert_eq(gc.collection_count, 0)
-  assert_eq(gc.collected_objects, 0)
-  assert_eq(gc.memory_freed, 0)
-  
-  // Test object creation and tracking
-  let obj1 = gc_create_object(gc, "Object1")
-  let obj2 = gc_create_object(gc, "Object2")
-  let obj3 = gc_create_object(gc, "Object3")
-  
-  assert_eq(gc.tracked_objects, 3)
-  
-  // Test object reference management
-  gc_add_reference(gc, obj1, obj2) // obj1 references obj2
-  gc_add_reference(gc, obj2, obj3) // obj2 references obj3
-  
-  // obj3 has no references to it, but obj2 references it
-  // obj1 is referenced by obj2
-  // obj1 has no incoming references, so it should be eligible for GC
-  
-  // Test garbage collection
-  let gc_result = gc_collect(gc)
-  assert_true(gc_result.success)
-  assert_eq(gc_result.objects_collected, 1) // obj1 should be collected
-  assert_eq(gc.collection_count, 1)
-  assert_eq(gc.tracked_objects, 2) // obj2 and obj3 remain
-  
-  // Test weak references
-  let weak_ref = gc_create_weak_reference(gc, obj2)
-  assert_true(gc_is_weak_reference_valid(gc, weak_ref))
-  
-  // Clear strong reference to obj2
-  gc_clear_reference(gc, obj1, obj2)
-  
-  // Run GC again
-  let gc_result2 = gc_collect(gc)
-  assert_eq(gc_result2.objects_collected, 1) // obj2 should be collected
-  
-  // Weak reference should now be invalid
-  assert_false(gc_is_weak_reference_valid(gc, weak_ref))
-  
-  // Test finalizer execution
-  let obj_with_finalizer = gc_create_object_with_finalizer(gc, "FinalizerObject", fn(obj) {
-    obj.finalized = true
-  })
-  
-  // Clear all references to trigger finalization
-  gc_collect(gc)
-  assert_true(obj_with_finalizer.finalized)
-}
-
-// Test 4: Resource Cleanup Patterns
-test "resource cleanup patterns" {
-  // Test RAII pattern
-  let raii_resource = create_raii_resource()
-  assert_true(raii_resource.is_initialized)
-  assert_false(raii_resource.is_cleaned_up)
-  
-  // Resource should be automatically cleaned up when it goes out of scope
-  // In this test, we'll manually call cleanup
-  cleanup_raii_resource(raii_resource)
-  assert_false(raii_resource.is_initialized)
-  assert_true(raii_resource.is_cleaned_up)
-  
-  // Test try-with-resources pattern
-  let resource_result = with_resource(create_file_resource("test.txt"), fn(resource) {
-    resource.write("test data")
-    resource.read()
-  })
-  
-  match resource_result {
-    Ok(data) => assert_eq(data, "test data")
-    Err(_) => assert_true(false)
+  type PooledObject = {
+    id : Int
+    data : String
+    in_use : Bool
   }
   
-  // Resource should be automatically closed
-  let file_resource = resource_result.resource
-  assert_false(file_resource.is_open)
+  type MemoryPool = {
+    objects : [PooledObject]
+    next_id : Int
+  }
   
-  // Test cleanup chain
-  let resource1 = create_cleanup_resource("Resource1")
-  let resource2 = create_cleanup_resource("Resource2")
-  let resource3 = create_cleanup_resource("Resource3")
+  let create_memory_pool = fn(initial_size : Int) {
+    let mut objects = []
+    for i in 0..<initial_size {
+      objects = objects.push(PooledObject {
+        id: i,
+        data: "Object " + i.to_string(),
+        in_use: false
+      })
+    }
+    
+    MemoryPool {
+      objects: objects,
+      next_id: initial_size
+    }
+  }
   
-  let cleanup_chain = create_cleanup_chain()
-  cleanup_chain.add(resource1)
-  cleanup_chain.add(resource2)
-  cleanup_chain.add(resource3)
+  let acquire_from_pool = fn(pool : MemoryPool) {
+    let mut updated_pool = pool
+    let mut acquired_object = None
+    
+    for i in 0..<updated_pool.objects.length() {
+      if !updated_pool.objects[i].in_use {
+        updated_pool.objects[i] = { updated_pool.objects[i] | in_use: true }
+        acquired_object = Some(updated_pool.objects[i])
+        break
+      }
+    }
+    
+    match acquired_object {
+      Some(obj) => (Some(obj), updated_pool),
+      None => {
+        // Create new object if pool is exhausted
+        let new_object = PooledObject {
+          id: updated_pool.next_id,
+          data: "Object " + updated_pool.next_id.to_string(),
+          in_use: true
+        }
+        updated_pool.objects = updated_pool.objects.push(new_object)
+        updated_pool.next_id = updated_pool.next_id + 1
+        (Some(new_object), updated_pool)
+      }
+    }
+  }
   
-  assert_true(resource1.is_active)
-  assert_true(resource2.is_active)
-  assert_true(resource3.is_active)
+  let release_to_pool = fn(pool : MemoryPool, object_id : Int) {
+    let mut updated_pool = pool
+    for i in 0..<updated_pool.objects.length() {
+      if updated_pool.objects[i].id == object_id {
+        updated_pool.objects[i] = { updated_pool.objects[i] | in_use: false }
+        break
+      }
+    }
+    updated_pool
+  }
   
-  cleanup_chain.cleanup_all()
+  let get_pool_stats = fn(pool : MemoryPool) {
+    let mut in_use_count = 0
+    let mut available_count = 0
+    
+    for obj in pool.objects {
+      if obj.in_use {
+        in_use_count = in_use_count + 1
+      } else {
+        available_count = available_count + 1
+      }
+    }
+    
+    (in_use_count, available_count, pool.objects.length())
+  }
   
-  assert_false(resource1.is_active)
-  assert_false(resource2.is_active)
-  assert_false(resource3.is_active)
-  assert_true(resource1.is_cleaned_up)
-  assert_true(resource2.is_cleaned_up)
-  assert_true(resource3.is_cleaned_up)
-}
-
-// Test 5: Memory Leak Detection
-test "memory leak detection" {
-  // Test memory leak detector initialization
-  let leak_detector = create_memory_leak_detector()
-  assert_eq(leak_detector.total_allocations, 0)
-  assert_eq(leak_detector.total_deallocations, 0)
-  assert_eq(leak_detector.leaked_objects, 0)
+  // Test memory pool operations
+  let pool = create_memory_pool(3)
+  let (in_use, available, total) = get_pool_stats(pool)
+  assert_eq(in_use, 0)
+  assert_eq(available, 3)
+  assert_eq(total, 3)
   
-  // Test allocation tracking
-  leak_detector.track_allocation("Object1", 1024)
-  leak_detector.track_allocation("Object2", 2048)
-  leak_detector.track_allocation("Object3", 4096)
+  // Acquire objects
+  let (obj1, pool1) = acquire_from_pool(pool)
+  let (obj2, pool2) = acquire_from_pool(pool1)
+  let (obj3, pool3) = acquire_from_pool(pool2)
   
-  assert_eq(leak_detector.total_allocations, 3)
-  assert_eq(leak_detector.current_allocations, 3)
-  assert_eq(leak_detector.allocated_memory, 7168) // 1024 + 2048 + 4096
-  
-  // Test deallocation tracking
-  leak_detector.track_deallocation("Object2")
-  
-  assert_eq(leak_detector.total_deallocations, 1)
-  assert_eq(leak_detector.current_allocations, 2)
-  assert_eq(leak_detector.deallocated_memory, 2048)
-  assert_eq(leak_detector.allocated_memory, 5120) // 7168 - 2048
-  
-  // Test leak detection
-  let leak_report = leak_detector.detect_leaks()
-  assert_eq(leak_report.leaked_objects, 2)
-  assert_true(leak_report.leaked_object_names.contains("Object1"))
-  assert_true(leak_report.leaked_object_names.contains("Object3"))
-  assert_false(leak_report.leaked_object_names.contains("Object2"))
-  
-  // Test automatic leak detection
-  let auto_detector = create_auto_leak_detector()
-  
-  // Create some objects
-  let leaked_obj1 = auto_detector.allocate("LeakedObj1", 1024)
-  let leaked_obj2 = auto_detector.allocate("LeakedObj2", 2048)
-  
-  // Properly deallocate one object
-  auto_detector.deallocate(leaked_obj1)
-  
-  // Simulate scope end (trigger automatic detection)
-  let auto_leak_report = auto_detector.check_for_leaks()
-  assert_eq(auto_leak_report.leaked_objects, 1)
-  assert_true(auto_leak_report.leaked_object_names.contains("LeakedObj2"))
-  
-  // Test memory usage tracking
-  let memory_tracker = create_memory_tracker()
-  memory_tracker.start_tracking()
-  
-  // Simulate memory usage
-  memory_tracker.allocate(1024)
-  memory_tracker.allocate(2048)
-  memory_tracker.deallocate(1024)
-  
-  let memory_usage = memory_tracker.get_current_usage()
-  assert_eq(memory_usage.allocated, 2048)
-  assert_eq(memory_usage.deallocated, 1024)
-  assert_eq(memory_usage.current, 1024)
-  
-  memory_tracker.stop_tracking()
-}
-
-// Test 6: Smart Pointers and Ownership
-test "smart pointers and ownership" {
-  // Test unique pointer
-  let unique_ptr = create_unique_pointer("UniqueData")
-  assert_true(unique_ptr.has_ownership)
-  assert_eq(unique_ptr.get(), "UniqueData")
-  
-  // Test unique pointer move
-  let moved_ptr = move_unique_pointer(unique_ptr)
-  assert_false(unique_ptr.has_ownership) // Original no longer owns
-  assert_true(moved_ptr.has_ownership) // New pointer owns
-  assert_eq(moved_ptr.get(), "UniqueData")
-  
-  // Test shared pointer
-  let shared_ptr1 = create_shared_pointer("SharedData")
-  assert_eq(shared_ptr1.reference_count, 1)
-  assert_eq(shared_ptr1.get(), "SharedData")
-  
-  let shared_ptr2 = shared_ptr1.clone()
-  assert_eq(shared_ptr1.reference_count, 2)
-  assert_eq(shared_ptr2.reference_count, 2)
-  assert_eq(shared_ptr1.get(), "SharedData")
-  assert_eq(shared_ptr2.get(), "SharedData")
-  
-  // Drop one reference
-  drop_shared_pointer(shared_ptr1)
-  assert_eq(shared_ptr2.reference_count, 1)
-  assert_eq(shared_ptr2.get(), "SharedData")
-  
-  // Test weak pointer
-  let weak_ptr = create_weak_pointer(shared_ptr2)
-  assert_false(weak_ptr.is_expired())
-  
-  match weak_ptr.lock() {
-    Some(locked_ptr) => assert_eq(locked_ptr.get(), "SharedData")
+  match obj1 {
+    Some(o) => assert_true(o.in_use),
     None => assert_true(false)
   }
   
-  // Drop last strong reference
-  drop_shared_pointer(shared_ptr2)
+  let (in_use2, available2, total2) = get_pool_stats(pool3)
+  assert_eq(in_use2, 3)
+  assert_eq(available2, 0)
+  assert_eq(total2, 3)
   
-  // Weak pointer should now be expired
-  assert_true(weak_ptr.is_expired())
+  // Acquire beyond pool capacity (should create new object)
+  let (obj4, pool4) = acquire_from_pool(pool3)
+  let (in_use3, available3, total3) = get_pool_stats(pool4)
+  assert_eq(in_use3, 4)
+  assert_eq(available3, 0)
+  assert_eq(total3, 4)
   
-  match weak_ptr.lock() {
-    Some(_) => assert_true(false)
+  // Release objects
+  match obj1 {
+    Some(o) => {
+      let pool5 = release_to_pool(pool4, o.id)
+      let (in_use4, available4, total4) = get_pool_stats(pool5)
+      assert_eq(in_use4, 3)
+      assert_eq(available4, 1)
+      assert_eq(total4, 4)
+    }
+    None => assert_true(false)
+  }
+}
+
+// Test 3: Garbage Collection Simulation
+test "garbage collection simulation" {
+  type GCObject = {
+    id : Int
+    references : Int
+    data : String
+    marked : Bool
+  }
+  
+  type GCSimulator = {
+    objects : [GCObject]
+    next_id : Int
+  }
+  
+  let create_gc_simulator = fn() {
+    GCSimulator {
+      objects: [],
+      next_id: 0
+    }
+  }
+  
+  let allocate_object = fn(simulator : GCSimulator, data : String) {
+    let new_object = GCObject {
+      id: simulator.next_id,
+      references: 1,
+      data: data,
+      marked: false
+    }
+    
+    {
+      simulator |
+      objects: simulator.objects.push(new_object),
+      next_id: simulator.next_id + 1
+    }
+  }
+  
+  let add_reference = fn(simulator : GCSimulator, object_id : Int) {
+    let mut updated_objects = simulator.objects
+    for i in 0..<updated_objects.length() {
+      if updated_objects[i].id == object_id {
+        updated_objects[i] = { updated_objects[i] | references: updated_objects[i].references + 1 }
+        break
+      }
+    }
+    { simulator | objects: updated_objects }
+  }
+  
+  let remove_reference = fn(simulator : GCSimulator, object_id : Int) {
+    let mut updated_objects = simulator.objects
+    for i in 0..<updated_objects.length() {
+      if updated_objects[i].id == object_id {
+        updated_objects[i] = { updated_objects[i] | references: updated_objects[i].references - 1 }
+        break
+      }
+    }
+    { simulator | objects: updated_objects }
+  }
+  
+  let mark_objects = fn(simulator : GCSimulator, root_objects : [Int]) {
+    let mut updated_objects = simulator.objects
+    
+    // Mark root objects
+    for root_id in root_objects {
+      for i in 0..<updated_objects.length() {
+        if updated_objects[i].id == root_id {
+          updated_objects[i] = { updated_objects[i] | marked: true }
+          break
+        }
+      }
+    }
+    
+    { simulator | objects: updated_objects }
+  }
+  
+  let sweep_objects = fn(simulator : GCSimulator) {
+    let mut remaining_objects = []
+    let mut collected_count = 0
+    
+    for obj in simulator.objects {
+      if obj.marked || obj.references > 0 {
+        remaining_objects = remaining_objects.push({ obj | marked: false })
+      } else {
+        collected_count = collected_count + 1
+      }
+    }
+    
+    (collected_count, { simulator | objects: remaining_objects })
+  }
+  
+  // Test garbage collection
+  let simulator = create_gc_simulator()
+  
+  // Allocate objects
+  let sim1 = allocate_object(simulator, "Object 1")
+  let sim2 = allocate_object(sim1, "Object 2")
+  let sim3 = allocate_object(sim2, "Object 3")
+  
+  assert_eq(sim3.objects.length(), 3)
+  
+  // Add references
+  let sim4 = add_reference(sim3, 0) // Object 0 now has 2 references
+  let sim5 = add_reference(sim4, 1) // Object 1 now has 2 references
+  
+  // Remove all references from object 2
+  let sim6 = remove_reference(sim5, 2)
+  
+  // Mark root objects (0 and 1)
+  let sim7 = mark_objects(sim6, [0, 1])
+  
+  // Sweep unmarked objects
+  let (collected, final_sim) = sweep_objects(sim7)
+  
+  assert_eq(collected, 1) // Object 2 should be collected
+  assert_eq(final_sim.objects.length(), 2)
+}
+
+// Test 4: Memory Leak Detection
+test "memory leak detection" {
+  type LeakTracker = {
+    allocations : [(Int, String)] // (id, description)
+    deallocations : [Int]
+    next_id : Int
+  }
+  
+  let create_leak_tracker = fn() {
+    LeakTracker {
+      allocations: [],
+      deallocations: [],
+      next_id: 0
+    }
+  }
+  
+  let track_allocation = fn(tracker : LeakTracker, description : String) {
+    let allocation_id = tracker.next_id
+    {
+      tracker |
+      allocations: tracker.allocations.push((allocation_id, description)),
+      next_id: tracker.next_id + 1
+    }
+  }
+  
+  let track_deallocation = fn(tracker : LeakTracker, allocation_id : Int) {
+    { tracker | deallocations: tracker.deallocations.push(allocation_id) }
+  }
+  
+  let detect_leaks = fn(tracker : LeakTracker) {
+    let mut leaked_allocations = []
+    
+    for (alloc_id, description) in tracker.allocations {
+      let mut is_deallocated = false
+      for dealloc_id in tracker.deallocations {
+        if alloc_id == dealloc_id {
+          is_deallocated = true
+          break
+        }
+      }
+      
+      if !is_deallocated {
+        leaked_allocations = leaked_allocations.push((alloc_id, description))
+      }
+    }
+    
+    leaked_allocations
+  }
+  
+  // Test leak detection
+  let tracker = create_leak_tracker()
+  
+  // Allocate resources
+  let tracker1 = track_allocation(tracker, "Resource A")
+  let tracker2 = track_allocation(tracker1, "Resource B")
+  let tracker3 = track_allocation(tracker2, "Resource C")
+  
+  // Deallocate some resources
+  let tracker4 = track_deallocation(tracker3, 1) // Deallocate Resource B
+  
+  // Detect leaks
+  let leaks = detect_leaks(tracker4)
+  assert_eq(leaks.length(), 2) // Resource A and C should be leaked
+  
+  // Deallocate remaining resources
+  let tracker5 = track_deallocation(tracker4, 0) // Deallocate Resource A
+  let tracker6 = track_deallocation(tracker5, 2) // Deallocate Resource C
+  
+  // No leaks should remain
+  let no_leaks = detect_leaks(tracker6)
+  assert_eq(no_leaks.length(), 0)
+}
+
+// Test 5: Buffer Management
+test "buffer management and overflow protection" {
+  type Buffer = {
+    data : [Char]
+    capacity : Int
+    size : Int
+  }
+  
+  let create_buffer = fn(capacity : Int) {
+    Buffer {
+      data: [],
+      capacity: capacity,
+      size: 0
+    }
+  }
+  
+  let buffer_write = fn(buffer : Buffer, chars : [Char]) {
+    let available_space = buffer.capacity - buffer.size
+    let chars_to_write = if chars.length() <= available_space {
+      chars.length()
+    } else {
+      available_space
+    }
+    
+    let new_data = buffer.data.concat(chars.slice(0, chars_to_write))
+    
+    {
+      buffer |
+      data: new_data,
+      size: buffer.size + chars_to_write
+    }
+  }
+  
+  let buffer_read = fn(buffer : Buffer, count : Int) {
+    let chars_to_read = if count <= buffer.size {
+      count
+    } else {
+      buffer.size
+    }
+    
+    let read_data = buffer.data.slice(0, chars_to_read)
+    let remaining_data = buffer.data.slice(chars_to_read, buffer.size)
+    
+    (read_data, {
+      buffer |
+      data: remaining_data,
+      size: buffer.size - chars_to_read
+    })
+  }
+  
+  let is_buffer_full = fn(buffer : Buffer) {
+    buffer.size >= buffer.capacity
+  }
+  
+  let is_buffer_empty = fn(buffer : Buffer) {
+    buffer.size == 0
+  }
+  
+  // Test buffer operations
+  let buffer = create_buffer(5)
+  assert_eq(buffer.capacity, 5)
+  assert_eq(buffer.size, 0)
+  assert_true(is_buffer_empty(buffer))
+  assert_false(is_buffer_full(buffer))
+  
+  // Write to buffer
+  let chars1 = ['H', 'e', 'l', 'l', 'o']
+  let buffer1 = buffer_write(buffer, chars1)
+  assert_eq(buffer1.size, 5)
+  assert_true(is_buffer_full(buffer1))
+  
+  // Try to write beyond capacity
+  let chars2 = ['W', 'o', 'r', 'l', 'd']
+  let buffer2 = buffer_write(buffer1, chars2)
+  assert_eq(buffer2.size, 5) // Should not exceed capacity
+  
+  // Read from buffer
+  let (read_chars, buffer3) = buffer_read(buffer2, 3)
+  assert_eq(read_chars, ['H', 'e', 'l'])
+  assert_eq(buffer3.size, 2)
+  assert_false(is_buffer_full(buffer3))
+  assert_false(is_buffer_empty(buffer3))
+  
+  // Read remaining data
+  let (remaining_chars, buffer4) = buffer_read(buffer3, 10) // Try to read more than available
+  assert_eq(remaining_chars, ['l', 'o'])
+  assert_true(is_buffer_empty(buffer4))
+}
+
+// Test 6: Stack vs Heap Allocation Simulation
+test "stack vs heap allocation simulation" {
+  type StackObject = {
+    value : Int
+    scope_level : Int
+  }
+  
+  type HeapObject = {
+    id : Int
+    data : String
+    reference_count : Int
+  }
+  
+  type MemoryManager = {
+    stack : [StackObject]
+    heap : [HeapObject]
+    current_scope : Int
+    next_heap_id : Int
+  }
+  
+  let create_memory_manager = fn() {
+    MemoryManager {
+      stack: [],
+      heap: [],
+      current_scope: 0,
+      next_heap_id: 0
+    }
+  }
+  
+  let enter_scope = fn(manager : MemoryManager) {
+    { manager | current_scope: manager.current_scope + 1 }
+  }
+  
+  let exit_scope = fn(manager : MemoryManager) {
+    let mut new_stack = []
+    let current_scope = manager.current_scope
+    
+    // Remove stack objects from current scope
+    for obj in manager.stack {
+      if obj.scope_level < current_scope {
+        new_stack = new_stack.push(obj)
+      }
+    }
+    
+    { manager | stack: new_stack, current_scope: current_scope - 1 }
+  }
+  
+  let allocate_stack = fn(manager : MemoryManager, value : Int) {
+    let stack_obj = StackObject {
+      value: value,
+      scope_level: manager.current_scope
+    }
+    
+    { manager | stack: manager.stack.push(stack_obj) }
+  }
+  
+  let allocate_heap = fn(manager : MemoryManager, data : String) {
+    let heap_obj = HeapObject {
+      id: manager.next_heap_id,
+      data: data,
+      reference_count: 1
+    }
+    
+    {
+      manager |
+      heap: manager.heap.push(heap_obj),
+      next_heap_id: manager.next_heap_id + 1
+    }
+  }
+  
+  let add_reference = fn(manager : MemoryManager, heap_id : Int) {
+    let mut updated_heap = manager.heap
+    for i in 0..<updated_heap.length() {
+      if updated_heap[i].id == heap_id {
+        updated_heap[i] = { updated_heap[i] | reference_count: updated_heap[i].reference_count + 1 }
+        break
+      }
+    }
+    { manager | heap: updated_heap }
+  }
+  
+  let remove_reference = fn(manager : MemoryManager, heap_id : Int) {
+    let mut updated_heap = manager.heap
+    for i in 0..<updated_heap.length() {
+      if updated_heap[i].id == heap_id {
+        updated_heap[i] = { updated_heap[i] | reference_count: updated_heap[i].reference_count - 1 }
+        break
+      }
+    }
+    { manager | heap: updated_heap }
+  }
+  
+  let garbage_collect_heap = fn(manager : MemoryManager) {
+    let mut remaining_objects = []
+    let mut collected_count = 0
+    
+    for obj in manager.heap {
+      if obj.reference_count > 0 {
+        remaining_objects = remaining_objects.push(obj)
+      } else {
+        collected_count = collected_count + 1
+      }
+    }
+    
+    (collected_count, { manager | heap: remaining_objects })
+  }
+  
+  // Test stack and heap allocation
+  let manager = create_memory_manager()
+  
+  // Enter scope 1
+  let manager1 = enter_scope(manager)
+  assert_eq(manager1.current_scope, 1)
+  
+  // Allocate stack objects
+  let manager2 = allocate_stack(manager1, 10)
+  let manager3 = allocate_stack(manager2, 20)
+  assert_eq(manager3.stack.length(), 2)
+  
+  // Allocate heap objects
+  let manager4 = allocate_heap(manager3, "Heap Data 1")
+  let manager5 = allocate_heap(manager4, "Heap Data 2")
+  assert_eq(manager5.heap.length(), 2)
+  
+  // Add reference to heap object
+  let manager6 = add_reference(manager5, 0)
+  
+  // Enter scope 2
+  let manager7 = enter_scope(manager6)
+  assert_eq(manager7.current_scope, 2)
+  
+  // Allocate more stack objects
+  let manager8 = allocate_stack(manager7, 30)
+  assert_eq(manager8.stack.length(), 3)
+  
+  // Exit scope 2 (should remove scope 2 stack objects)
+  let manager9 = exit_scope(manager8)
+  assert_eq(manager9.stack.length(), 2) // Only scope 1 objects remain
+  assert_eq(manager9.current_scope, 1)
+  
+  // Remove reference from heap object
+  let manager10 = remove_reference(manager9, 0)
+  
+  // Garbage collect heap
+  let (collected, final_manager) = garbage_collect_heap(manager10)
+  assert_eq(collected, 1) // One object should be collected
+  assert_eq(final_manager.heap.length(), 1)
+}
+
+// Test 7: Memory Fragmentation Simulation
+test "memory fragmentation simulation" {
+  type MemoryBlock = {
+    id : Int
+    size : Int
+    is_free : Bool
+    data : String
+  }
+  
+  type MemoryHeap = {
+    blocks : [MemoryBlock]
+    total_size : Int
+    free_size : Int
+    next_id : Int
+  }
+  
+  let create_memory_heap = fn(total_size : Int) {
+    let initial_block = MemoryBlock {
+      id: 0,
+      size: total_size,
+      is_free: true,
+      data: ""
+    }
+    
+    MemoryHeap {
+      blocks: [initial_block],
+      total_size: total_size,
+      free_size: total_size,
+      next_id: 1
+    }
+  }
+  
+  let allocate_block = fn(heap : MemoryHeap, requested_size : Int, data : String) {
+    let mut updated_blocks = heap.blocks
+    let mut allocated = false
+    
+    for i in 0..<updated_blocks.length() {
+      if updated_blocks[i].is_free && updated_blocks[i].size >= requested_size {
+        let block = updated_blocks[i]
+        let remaining_size = block.size - requested_size
+        
+        if remaining_size > 0 {
+          // Split the block
+          let allocated_block = MemoryBlock {
+            id: heap.next_id,
+            size: requested_size,
+            is_free: false,
+            data: data
+          }
+          
+          let remaining_block = MemoryBlock {
+            id: block.id,
+            size: remaining_size,
+            is_free: true,
+            data: ""
+          }
+          
+          // Replace current block with allocated and remaining blocks
+          let mut new_blocks = []
+          for j in 0..<i {
+            new_blocks = new_blocks.push(updated_blocks[j])
+          }
+          new_blocks = new_blocks.push(allocated_block)
+          new_blocks = new_blocks.push(remaining_block)
+          for j in (i+1)..<updated_blocks.length() {
+            new_blocks = new_blocks.push(updated_blocks[j])
+          }
+          
+          updated_blocks = new_blocks
+        } else {
+          // Use entire block
+          updated_blocks[i] = {
+            block |
+            is_free: false,
+            data: data,
+            id: heap.next_id
+          }
+        }
+        
+        allocated = true
+        break
+      }
+    }
+    
+    if allocated {
+      let new_free_size = heap.free_size - requested_size
+      (true, {
+        heap |
+        blocks: updated_blocks,
+        free_size: new_free_size,
+        next_id: heap.next_id + 1
+      })
+    } else {
+      (false, heap)
+    }
+  }
+  
+  let free_block = fn(heap : MemoryHeap, block_id : Int) {
+    let mut updated_blocks = heap.blocks
+    let mut found = false
+    
+    for i in 0..<updated_blocks.length() {
+      if updated_blocks[i].id == block_id {
+        updated_blocks[i] = {
+          updated_blocks[i] |
+          is_free: true,
+          data: ""
+        }
+        found = true
+        break
+      }
+    }
+    
+    if found {
+      // Coalesce adjacent free blocks
+      let mut coalesced_blocks = []
+      let i = 0
+      while i < updated_blocks.length() {
+        let current = updated_blocks[i]
+        
+        if current.is_free {
+          let mut coalesced = current
+          let mut j = i + 1
+          
+          while j < updated_blocks.length() && updated_blocks[j].is_free {
+            coalesced = {
+              coalesced |
+              size: coalesced.size + updated_blocks[j].size
+            }
+            j = j + 1
+          }
+          
+          coalesced_blocks = coalesced_blocks.push(coalesced)
+          i = j
+        } else {
+          coalesced_blocks = coalesced_blocks.push(current)
+          i = i + 1
+        }
+      }
+      
+      let freed_size = updated_blocks.find(fn(block) { block.id == block_id })
+      match freed_size {
+        Some(block) => {
+          (true, {
+            heap |
+            blocks: coalesced_blocks,
+            free_size: heap.free_size + block.size
+          })
+        }
+        None => (false, heap)
+      }
+    } else {
+      (false, heap)
+    }
+  }
+  
+  let get_fragmentation_count = fn(heap : MemoryHeap) {
+    let mut free_blocks = 0
+    for block in heap.blocks {
+      if block.is_free {
+        free_blocks = free_blocks + 1
+      }
+    }
+    free_blocks
+  }
+  
+  // Test memory fragmentation
+  let heap = create_memory_heap(100)
+  assert_eq(heap.total_size, 100)
+  assert_eq(heap.free_size, 100)
+  assert_eq(get_fragmentation_count(heap), 1)
+  
+  // Allocate blocks
+  let (success1, heap1) = allocate_block(heap, 20, "Block 1")
+  let (success2, heap2) = allocate_block(heap1, 30, "Block 2")
+  let (success3, heap3) = allocate_block(heap2, 10, "Block 3")
+  
+  assert_true(success1)
+  assert_true(success2)
+  assert_true(success3)
+  assert_eq(heap3.free_size, 40) // 100 - (20 + 30 + 10)
+  
+  // Free middle block (creates fragmentation)
+  let (freed1, heap4) = free_block(heap3, 1) // Free Block 2
+  assert_true(freed1)
+  assert_eq(heap4.free_size, 70) // 40 + 30
+  assert_eq(get_fragmentation_count(heap4), 2) // Two free blocks
+  
+  // Try to allocate a block that doesn't fit in fragmented space
+  let (success4, heap5) = allocate_block(heap4, 50, "Block 4")
+  assert_false(success4) // Should fail due to fragmentation
+  
+  // Allocate a smaller block that fits
+  let (success5, heap6) = allocate_block(heap5, 25, "Block 4")
+  assert_true(success5)
+  
+  // Free all blocks to coalesce
+  let (freed2, heap7) = free_block(heap6, 0)
+  let (freed3, heap8) = free_block(heap7, 2)
+  let (freed4, heap9) = free_block(heap8, 3)
+  
+  assert_eq(heap9.free_size, 100)
+  assert_eq(get_fragmentation_count(heap9), 1) // Should coalesce back to single block
+}
+
+// Test 8: Memory Usage Optimization
+test "memory usage optimization" {
+  type OptimizedArray[T] = {
+    data : [T]
+    capacity : Int
+    size : Int
+  }
+  
+  let create_optimized_array = fn[T](initial_capacity : Int) {
+    OptimizedArray {
+      data: [],
+      capacity: initial_capacity,
+      size: 0
+    }
+  }
+  
+  let optimized_push = fn[T](arr : OptimizedArray[T], item : T) {
+    if arr.size < arr.capacity {
+      {
+        arr |
+        data: arr.data.push(item),
+        size: arr.size + 1
+      }
+    } else {
+      // Need to resize - double capacity
+      let new_capacity = arr.capacity * 2
+      {
+        arr |
+        data: arr.data.push(item),
+        capacity: new_capacity,
+        size: arr.size + 1
+      }
+    }
+  }
+  
+  let optimized_remove = fn[T](arr : OptimizedArray[T], index : Int) {
+    if index >= 0 && index < arr.size {
+      let mut new_data = []
+      for i in 0..<arr.size {
+        if i != index {
+          new_data = new_data.push(arr.data[i])
+        }
+      }
+      
+      {
+        arr |
+        data: new_data,
+        size: arr.size - 1
+      }
+    } else {
+      arr
+    }
+  }
+  
+  let compact_if_needed = fn[T](arr : OptimizedArray[T]) {
+    let utilization_ratio = arr.size.to_float() / arr.capacity.to_float()
+    if utilization_ratio < 0.25 && arr.capacity > 4 {
+      // Compact to reduce memory usage
+      let new_capacity = arr.size * 2
+      {
+        arr |
+        capacity: new_capacity
+      }
+    } else {
+      arr
+    }
+  }
+  
+  // Test memory optimization
+  let arr = create_optimized_array[String](2)
+  assert_eq(arr.capacity, 2)
+  assert_eq(arr.size, 0)
+  
+  // Add items (should trigger resize)
+  let arr1 = optimized_push(arr, "item1")
+  let arr2 = optimized_push(arr1, "item2")
+  let arr3 = optimized_push(arr2, "item3") // Should resize to capacity 4
+  
+  assert_eq(arr3.capacity, 4)
+  assert_eq(arr3.size, 3)
+  
+  // Remove items
+  let arr4 = optimized_remove(arr3, 0)
+  let arr5 = optimized_remove(arr4, 0)
+  
+  assert_eq(arr5.capacity, 4)
+  assert_eq(arr5.size, 1)
+  
+  // Compact if needed
+  let arr6 = compact_if_needed(arr5)
+  assert_eq(arr6.capacity, 2) // Should compact from 4 to 2
+  assert_eq(arr6.size, 1)
+}
+
+// Test 9: Reference Counting
+test "reference counting for memory management" {
+  type RefCountedObject = {
+    id : Int
+    data : String
+    ref_count : Int
+  }
+  
+  type RefCountManager = {
+    objects : [RefCountedObject]
+    next_id : Int
+  }
+  
+  let create_ref_manager = fn() {
+    RefCountManager {
+      objects: [],
+      next_id: 0
+    }
+  }
+  
+  let create_object = fn(manager : RefCountManager, data : String) {
+    let new_object = RefCountedObject {
+      id: manager.next_id,
+      data: data,
+      ref_count: 1
+    }
+    
+    {
+      manager |
+      objects: manager.objects.push(new_object),
+      next_id: manager.next_id + 1
+    }
+  }
+  
+  let add_reference = fn(manager : RefCountManager, object_id : Int) {
+    let mut updated_objects = manager.objects
+    for i in 0..<updated_objects.length() {
+      if updated_objects[i].id == object_id {
+        updated_objects[i] = { updated_objects[i] | ref_count: updated_objects[i].ref_count + 1 }
+        break
+      }
+    }
+    { manager | objects: updated_objects }
+  }
+  
+  let remove_reference = fn(manager : RefCountManager, object_id : Int) {
+    let mut updated_objects = manager.objects
+    for i in 0..<updated_objects.length() {
+      if updated_objects[i].id == object_id {
+        updated_objects[i] = { updated_objects[i] | ref_count: updated_objects[i].ref_count - 1 }
+        break
+      }
+    }
+    { manager | objects: updated_objects }
+  }
+  
+  let cleanup_zero_refs = fn(manager : RefCountManager) {
+    let mut remaining_objects = []
+    let mut cleaned_count = 0
+    
+    for obj in manager.objects {
+      if obj.ref_count > 0 {
+        remaining_objects = remaining_objects.push(obj)
+      } else {
+        cleaned_count = cleaned_count + 1
+      }
+    }
+    
+    (cleaned_count, { manager | objects: remaining_objects })
+  }
+  
+  let get_ref_count = fn(manager : RefCountManager, object_id : Int) {
+    let mut count = 0
+    for obj in manager.objects {
+      if obj.id == object_id {
+        count = obj.ref_count
+        break
+      }
+    }
+    count
+  }
+  
+  // Test reference counting
+  let manager = create_ref_manager()
+  
+  // Create objects
+  let manager1 = create_object(manager, "Object 1")
+  let manager2 = create_object(manager1, "Object 2")
+  
+  assert_eq(get_ref_count(manager2, 0), 1)
+  assert_eq(get_ref_count(manager2, 1), 1)
+  
+  // Add references
+  let manager3 = add_reference(manager2, 0)
+  let manager4 = add_reference(manager3, 0)
+  
+  assert_eq(get_ref_count(manager4, 0), 3)
+  assert_eq(get_ref_count(manager4, 1), 1)
+  
+  // Remove references
+  let manager5 = remove_reference(manager4, 0)
+  let manager6 = remove_reference(manager5, 0)
+  
+  assert_eq(get_ref_count(manager6, 0), 1)
+  assert_eq(get_ref_count(manager6, 1), 1)
+  
+  // Remove all references from object 1
+  let manager7 = remove_reference(manager6, 1)
+  
+  // Cleanup zero reference objects
+  let (cleaned, manager8) = cleanup_zero_refs(manager7)
+  assert_eq(cleaned, 1) // Object 1 should be cleaned up
+  assert_eq(manager8.objects.length(), 1)
+  
+  // Verify remaining object
+  assert_eq(get_ref_count(manager8, 0), 1)
+}
+
+// Test 10: Memory Pool with Different Sizes
+test "memory pool with different sized blocks" {
+  type BlockSize {
+    Small
+    Medium
+    Large
+  }
+  
+  type PooledBlock = {
+    id : Int
+    size : BlockSize
+    in_use : Bool
+    data : String
+  }
+  
+  type MultiSizePool = {
+    small_blocks : [PooledBlock]
+    medium_blocks : [PooledBlock]
+    large_blocks : [PooledBlock]
+    next_id : Int
+  }
+  
+  let create_multi_size_pool = fn(small_count : Int, medium_count : Int, large_count : Int) {
+    let mut small_blocks = []
+    let mut medium_blocks = []
+    let mut large_blocks = []
+    let mut next_id = 0
+    
+    for i in 0..<small_count {
+      small_blocks = small_blocks.push(PooledBlock {
+        id: next_id,
+        size: BlockSize::Small,
+        in_use: false,
+        data: ""
+      })
+      next_id = next_id + 1
+    }
+    
+    for i in 0..<medium_count {
+      medium_blocks = medium_blocks.push(PooledBlock {
+        id: next_id,
+        size: BlockSize::Medium,
+        in_use: false,
+        data: ""
+      })
+      next_id = next_id + 1
+    }
+    
+    for i in 0..<large_count {
+      large_blocks = large_blocks.push(PooledBlock {
+        id: next_id,
+        size: BlockSize::Large,
+        in_use: false,
+        data: ""
+      })
+      next_id = next_id + 1
+    }
+    
+    MultiSizePool {
+      small_blocks: small_blocks,
+      medium_blocks: medium_blocks,
+      large_blocks: large_blocks,
+      next_id: next_id
+    }
+  }
+  
+  let acquire_block = fn(pool : MultiSizePool, size : BlockSize, data : String) {
+    match size {
+      BlockSize::Small => {
+        let mut updated_pool = pool
+        let mut acquired_block = None
+        
+        for i in 0..<updated_pool.small_blocks.length() {
+          if !updated_pool.small_blocks[i].in_use {
+            updated_pool.small_blocks[i] = {
+              updated_pool.small_blocks[i] |
+              in_use: true,
+              data: data
+            }
+            acquired_block = Some(updated_pool.small_blocks[i])
+            break
+          }
+        }
+        
+        match acquired_block {
+          Some(block) => (Some(block), updated_pool),
+          None => (None, pool)
+        }
+      }
+      BlockSize::Medium => {
+        let mut updated_pool = pool
+        let mut acquired_block = None
+        
+        for i in 0..<updated_pool.medium_blocks.length() {
+          if !updated_pool.medium_blocks[i].in_use {
+            updated_pool.medium_blocks[i] = {
+              updated_pool.medium_blocks[i] |
+              in_use: true,
+              data: data
+            }
+            acquired_block = Some(updated_pool.medium_blocks[i])
+            break
+          }
+        }
+        
+        match acquired_block {
+          Some(block) => (Some(block), updated_pool),
+          None => (None, pool)
+        }
+      }
+      BlockSize::Large => {
+        let mut updated_pool = pool
+        let mut acquired_block = None
+        
+        for i in 0..<updated_pool.large_blocks.length() {
+          if !updated_pool.large_blocks[i].in_use {
+            updated_pool.large_blocks[i] = {
+              updated_pool.large_blocks[i] |
+              in_use: true,
+              data: data
+            }
+            acquired_block = Some(updated_pool.large_blocks[i])
+            break
+          }
+        }
+        
+        match acquired_block {
+          Some(block) => (Some(block), updated_pool),
+          None => (None, pool)
+        }
+      }
+    }
+  }
+  
+  let release_block = fn(pool : MultiSizePool, block_id : Int) {
+    let mut updated_pool = pool
+    
+    // Check small blocks
+    for i in 0..<updated_pool.small_blocks.length() {
+      if updated_pool.small_blocks[i].id == block_id {
+        updated_pool.small_blocks[i] = {
+          updated_pool.small_blocks[i] |
+          in_use: false,
+          data: ""
+        }
+        return updated_pool
+      }
+    }
+    
+    // Check medium blocks
+    for i in 0..<updated_pool.medium_blocks.length() {
+      if updated_pool.medium_blocks[i].id == block_id {
+        updated_pool.medium_blocks[i] = {
+          updated_pool.medium_blocks[i] |
+          in_use: false,
+          data: ""
+        }
+        return updated_pool
+      }
+    }
+    
+    // Check large blocks
+    for i in 0..<updated_pool.large_blocks.length() {
+      if updated_pool.large_blocks[i].id == block_id {
+        updated_pool.large_blocks[i] = {
+          updated_pool.large_blocks[i] |
+          in_use: false,
+          data: ""
+        }
+        return updated_pool
+      }
+    }
+    
+    updated_pool
+  }
+  
+  let get_pool_stats = fn(pool : MultiSizePool) {
+    let small_in_use = pool.small_blocks.filter(fn(block) { block.in_use }).length()
+    let medium_in_use = pool.medium_blocks.filter(fn(block) { block.in_use }).length()
+    let large_in_use = pool.large_blocks.filter(fn(block) { block.in_use }).length()
+    
+    (small_in_use, medium_in_use, large_in_use)
+  }
+  
+  // Test multi-size pool
+  let pool = create_multi_size_pool(2, 2, 2)
+  let (small_used, medium_used, large_used) = get_pool_stats(pool)
+  assert_eq(small_used, 0)
+  assert_eq(medium_used, 0)
+  assert_eq(large_used, 0)
+  
+  // Acquire blocks of different sizes
+  let (small_block1, pool1) = acquire_block(pool, BlockSize::Small, "Small Data 1")
+  let (small_block2, pool2) = acquire_block(pool1, BlockSize::Small, "Small Data 2")
+  let (medium_block1, pool3) = acquire_block(pool2, BlockSize::Medium, "Medium Data 1")
+  let (large_block1, pool4) = acquire_block(pool3, BlockSize::Large, "Large Data 1")
+  
+  match small_block1 {
+    Some(block) => assert_true(block.in_use),
+    None => assert_true(false)
+  }
+  
+  let (small_used2, medium_used2, large_used2) = get_pool_stats(pool4)
+  assert_eq(small_used2, 2)
+  assert_eq(medium_used2, 1)
+  assert_eq(large_used2, 1)
+  
+  // Try to acquire when pool is exhausted
+  let (small_block3, pool5) = acquire_block(pool4, BlockSize::Small, "Small Data 3")
+  match small_block3 {
+    Some(_) => assert_true(false), // Should fail
     None => assert_true(true)
   }
   
-  // Test custom deleter
-  let custom_deleted = false
-  let custom_ptr = create_unique_pointer_with_deleter("CustomData", fn(data) {
-    custom_deleted = true
-  })
-  
-  drop_unique_pointer(custom_ptr)
-  assert_true(custom_deleted)
-}
-
-// Test 7: Memory Mapping and File Operations
-test "memory mapping and file operations" {
-  // Test memory-mapped file creation
-  let temp_file = create_temp_file(1048576) // 1MB temp file
-  let mapped_file = create_memory_mapped_file(temp_file.path)
-  
-  assert_true(mapped_file.is_mapped)
-  assert_eq(mapped_file.size, 1048576)
-  assert_true(mapped_file.data.length() >= 1048576)
-  
-  // Test memory-mapped file operations
-  let original_value = mapped_file.read_int(0)
-  assert_eq(original_value, 0)
-  
-  mapped_file.write_int(0, 42)
-  let new_value = mapped_file.read_int(0)
-  assert_eq(new_value, 42)
-  
-  // Test memory-mapped file slicing
-  let slice = mapped_file.slice(1024, 2048) // Slice from 1024 to 3072
-  assert_eq(slice.size, 2048)
-  assert_eq(slice.offset, 1024)
-  
-  slice.write_int(0, 100) // Write to slice (offset 1024 in original)
-  let slice_value = mapped_file.read_int(1024)
-  assert_eq(slice_value, 100)
-  
-  // Test memory-mapped file unmap
-  unmap_memory_mapped_file(mapped_file)
-  assert_false(mapped_file.is_mapped)
-  
-  // Test file handle management
-  let file_handle = open_file("test_file.txt", "w+")
-  assert_true(file_handle.is_open)
-  
-  file_handle.write("test data")
-  file_handle.seek(0)
-  let content = file_handle.read()
-  assert_eq(content, "test data")
-  
-  // File should be automatically closed when handle goes out of scope
-  // In this test, we'll manually close
-  close_file(file_handle)
-  assert_false(file_handle.is_open)
-  
-  // Test file handle with RAII
-  let file_content = with_file_handle("raii_test.txt", "w+", fn(handle) {
-    handle.write("raii test data")
-    handle.seek(0)
-    handle.read()
-  })
-  
-  assert_eq(file_content, "raii test data")
-  
-  // Clean up temp files
-  delete_temp_file(temp_file)
-}
-
-// Test 8: Memory Performance and Optimization
-test "memory performance and optimization" {
-  // Test memory pool performance
-  let pool = create_performance_optimized_pool(10485760) // 10MB
-  
-  let start_time = get_current_time()
-  
-  // Allocate many small blocks
-  let mut allocations = []
-  for i in 0..<1000 {
-    allocations = allocations.push(pool_allocate(pool, 1024))
-  }
-  
-  let allocation_time = get_current_time() - start_time
-  
-  // Verify all allocations succeeded
-  for allocation in allocations {
-    assert_true(allocation.success)
-  }
-  
-  // Test deallocation performance
-  let start_time = get_current_time()
-  
-  for allocation in allocations {
-    pool_deallocate(pool, allocation)
-  }
-  
-  let deallocation_time = get_current_time() - start_time
-  
-  // Pool operations should be fast
-  assert_true(allocation_time < 100) // Less than 100ms
-  assert_true(deallocation_time < 100) // Less than 100ms
-  
-  // Test memory alignment
-  let aligned_allocator = create_aligned_allocator(16) // 16-byte alignment
-  
-  let aligned_alloc1 = aligned_allocator.allocate(1024)
-  let aligned_alloc2 = aligned_allocator.allocate(2048)
-  
-  assert_eq(aligned_alloc1.address % 16, 0)
-  assert_eq(aligned_alloc2.address % 16, 0)
-  
-  aligned_allocator.deallocate(aligned_alloc1)
-  aligned_allocator.deallocate(aligned_alloc2)
-  
-  // Test memory compression
-  let test_data = generate_test_data(1048576) // 1MB test data
-  let compressed_data = compress_memory(test_data)
-  
-  assert_true(compressed_data.size < test_data.size)
-  assert_true(compressed_data.compression_ratio > 1.0)
-  
-  let decompressed_data = decompress_memory(compressed_data)
-  assert_eq(decompressed_data.size, test_data.size)
-  assert_true(memory_equals(test_data, decompressed_data))
-  
-  // Test memory cache
-  let cache = create_memory_cache(1048576) // 1MB cache
-  
-  cache.put("key1", test_data.slice(0, 1024))
-  cache.put("key2", test_data.slice(1024, 2048))
-  
-  assert_true(cache.contains("key1"))
-  assert_true(cache.contains("key2"))
-  assert_false(cache.contains("key3"))
-  
-  let cached_data1 = cache.get("key1")
-  let cached_data2 = cache.get("key2")
-  
-  assert_eq(cached_data1.size, 1024)
-  assert_eq(cached_data2.size, 1024)
-  assert_true(memory_equals(test_data.slice(0, 1024), cached_data1))
-  assert_true(memory_equals(test_data.slice(1024, 2048), cached_data2))
-  
-  // Test cache eviction
-  let large_data = test_data.slice(0, 1048576) // 1MB
-  cache.put("large_key", large_data)
-  
-  // Small entries should be evicted to make room
-  assert_false(cache.contains("key1"))
-  assert_false(cache.contains("key2"))
-  assert_true(cache.contains("large_key"))
-}
-
-// Helper functions (simplified implementations)
-type Buffer = {
-  size : Int,
-  is_allocated : Bool
-}
-
-fn allocate_buffer(size : Int) -> Buffer = {
-  { size: size, is_allocated: true }
-}
-
-fn allocate_resizable_buffer(size : Int) -> Buffer = {
-  { size: size, is_allocated: true }
-}
-
-fn resize_buffer(buffer : Buffer, new_size : Int) -> Unit = {
-  buffer.size = new_size
-}
-
-fn deallocate_buffer(buffer : Buffer) -> Unit = {
-  buffer.is_allocated = false
-}
-
-type MemoryPool = {
-  total_size : Int,
-  used_size : Int,
-  free_size : Int,
-  allocation_count : Int
-}
-
-type Allocation = {
-  success : Bool,
-  size : Int,
-  address : Int
-}
-
-fn create_memory_pool(total_size : Int) -> MemoryPool = {
-  {
-    total_size: total_size,
-    used_size: 0,
-    free_size: total_size,
-    allocation_count: 0
-  }
-}
-
-fn pool_allocate(pool : MemoryPool, size : Int) -> Allocation = {
-  if size <= pool.free_size {
-    pool.used_size = pool.used_size + size
-    pool.free_size = pool.free_size - size
-    pool.allocation_count = pool.allocation_count + 1
-    
-    {
-      success: true,
-      size: size,
-      address: pool.used_size - size // Simplified address calculation
+  // Release a block
+  match small_block1 {
+    Some(block) => {
+      let pool6 = release_block(pool5, block.id)
+      let (small_used3, medium_used3, large_used3) = get_pool_stats(pool6)
+      assert_eq(small_used3, 1)
+      assert_eq(medium_used3, 1)
+      assert_eq(large_used3, 1)
+      
+      // Should be able to acquire now
+      let (small_block4, pool7) = acquire_block(pool6, BlockSize::Small, "Small Data 3")
+      match small_block4 {
+        Some(_) => assert_true(true),
+        None => assert_true(false)
+      }
     }
-  } else {
-    { success: false, size: 0, address: 0 }
+    None => assert_true(false)
   }
-}
-
-fn pool_deallocate(pool : MemoryPool, allocation : Allocation) -> Unit = {
-  if allocation.success {
-    pool.used_size = pool.used_size - allocation.size
-    pool.free_size = pool.free_size + allocation.size
-    pool.allocation_count = pool.allocation_count - 1
-  }
-}
-
-type GarbageCollector = {
-  collection_count : Int,
-  collected_objects : Int,
-  memory_freed : Int,
-  tracked_objects : Int
-}
-
-type GCObject = {
-  id : Int,
-  name : String,
-  finalized : Bool
-}
-
-type GCResult = {
-  success : Bool,
-  objects_collected : Int
-}
-
-fn create_garbage_collector() -> GarbageCollector = {
-  {
-    collection_count: 0,
-    collected_objects: 0,
-    memory_freed: 0,
-    tracked_objects: 0
-  }
-}
-
-fn gc_create_object(gc : GarbageCollector, name : String) -> GCObject = {
-  gc.tracked_objects = gc.tracked_objects + 1
-  {
-    id: gc.tracked_objects,
-    name: name,
-    finalized: false
-  }
-}
-
-fn gc_add_reference(gc : GarbageCollector, from : GCObject, to : GCObject) -> Unit = {
-  // Simplified reference tracking
-}
-
-fn gc_clear_reference(gc : GarbageCollector, from : GCObject, to : GCObject) -> Unit = {
-  // Simplified reference clearing
-}
-
-fn gc_collect(gc : GarbageCollector) -> GCResult = {
-  gc.collection_count = gc.collection_count + 1
-  gc.collected_objects = gc.collected_objects + 1
-  gc.tracked_objects = gc.tracked_objects - 1
-  
-  {
-    success: true,
-    objects_collected: 1
-  }
-}
-
-fn gc_create_weak_reference(gc : GarbageCollector, obj : GCObject) -> Int = {
-  1 // Simplified weak reference ID
-}
-
-fn gc_is_weak_reference_valid(gc : GarbageCollector, weak_ref : Int) -> Bool = {
-  true // Simplified - would track actual validity
-}
-
-fn gc_create_object_with_finalizer(gc : GarbageCollector, name : String, finalizer : (GCObject) -> Unit) -> GCObject = {
-  gc.tracked_objects = gc.tracked_objects + 1
-  let obj = {
-    id: gc.tracked_objects,
-    name: name,
-    finalized: false
-  }
-  
-  // In real implementation, would store finalizer
-  obj
-}
-
-type RAIIResource = {
-  is_initialized : Bool,
-  is_cleaned_up : Bool
-}
-
-fn create_raii_resource() -> RAIIResource = {
-  {
-    is_initialized: true,
-    is_cleaned_up: false
-  }
-}
-
-fn cleanup_raii_resource(resource : RAIIResource) -> Unit = {
-  resource.is_initialized = false
-  resource.is_cleaned_up = true
-}
-
-type FileResource = {
-  path : String,
-  is_open : Bool
-}
-
-fn create_file_resource(path : String) -> FileResource = {
-  {
-    path: path,
-    is_open: true
-  }
-}
-
-fn FileResource::write(self : FileResource, data : String) -> Unit = {
-  // Simplified file write
-}
-
-fn FileResource::read(self : FileResource) -> String = {
-  "test data" // Simplified file read
-}
-
-fn with_resource[T, R](resource : T, operation : (T) -> R) -> R = {
-  let result = operation(resource)
-  // Resource cleanup would happen here
-  result
-}
-
-type CleanupResource = {
-  name : String,
-  is_active : Bool,
-  is_cleaned_up : Bool
-}
-
-fn create_cleanup_resource(name : String) -> CleanupResource = {
-  {
-    name: name,
-    is_active: true,
-    is_cleaned_up: false
-  }
-}
-
-type CleanupChain = {
-  resources : Array[CleanupResource]
-}
-
-fn create_cleanup_chain() -> CleanupChain = {
-  {
-    resources: []
-  }
-}
-
-fn CleanupChain::add(self : CleanupChain, resource : CleanupResource) -> Unit = {
-  self.resources = self.resources.push(resource)
-}
-
-fn CleanupChain::cleanup_all(self : CleanupChain) -> Unit = {
-  for resource in self.resources {
-    resource.is_active = false
-    resource.is_cleaned_up = true
-  }
-}
-
-type MemoryLeakDetector = {
-  total_allocations : Int,
-  total_deallocations : Int,
-  leaked_objects : Int,
-  current_allocations : Int,
-  allocated_memory : Int,
-  deallocated_memory : Int
-}
-
-type LeakReport = {
-  leaked_objects : Int,
-  leaked_object_names : Array[String]
-}
-
-fn create_memory_leak_detector() -> MemoryLeakDetector = {
-  {
-    total_allocations: 0,
-    total_deallocations: 0,
-    leaked_objects: 0,
-    current_allocations: 0,
-    allocated_memory: 0,
-    deallocated_memory: 0
-  }
-}
-
-fn MemoryLeakDetector::track_allocation(self : MemoryLeakDetector, name : String, size : Int) -> Unit = {
-  self.total_allocations = self.total_allocations + 1
-  self.current_allocations = self.current_allocations + 1
-  self.allocated_memory = self.allocated_memory + size
-}
-
-fn MemoryLeakDetector::track_deallocation(self : MemoryLeakDetector, name : String) -> Unit = {
-  self.total_deallocations = self.total_deallocations + 1
-  self.current_allocations = self.current_allocations - 1
-  self.deallocated_memory = self.deallocated_memory + 2048 // Simplified
-}
-
-fn MemoryLeakDetector::detect_leaks(self : MemoryLeakDetector) -> LeakReport = {
-  {
-    leaked_objects: self.current_allocations,
-    leaked_object_names: ["Object1", "Object3"] // Simplified
-  }
-}
-
-type AutoLeakDetector = {
-  allocations : Array[String]
-}
-
-fn create_auto_leak_detector() -> AutoLeakDetector = {
-  {
-    allocations: []
-  }
-}
-
-fn AutoLeakDetector::allocate(self : AutoLeakDetector, name : String, size : Int) -> String = {
-  self.allocations = self.allocations.push(name)
-  name
-}
-
-fn AutoLeakDetector::deallocate(self : AutoLeakDetector, name : String) -> Unit = {
-  self.allocations = self.allocations.filter(fn(n) { n != name })
-}
-
-fn AutoLeakDetector::check_for_leaks(self : AutoLeakDetector) -> LeakReport = {
-  {
-    leaked_objects: self.allocations.length(),
-    leaked_object_names: self.allocations
-  }
-}
-
-type MemoryTracker = {
-  allocated : Int,
-  deallocated : Int,
-  current : Int
-}
-
-fn create_memory_tracker() -> MemoryTracker = {
-  {
-    allocated: 0,
-    deallocated: 0,
-    current: 0
-  }
-}
-
-fn MemoryTracker::start_tracking(self : MemoryTracker) -> Unit = {
-  // Reset counters
-  self.allocated = 0
-  self.deallocated = 0
-  self.current = 0
-}
-
-fn MemoryTracker::allocate(self : MemoryTracker, size : Int) -> Unit = {
-  self.allocated = self.allocated + size
-  self.current = self.current + size
-}
-
-fn MemoryTracker::deallocate(self : MemoryTracker, size : Int) -> Unit = {
-  self.deallocated = self.deallocated + size
-  self.current = self.current - size
-}
-
-fn MemoryTracker::get_current_usage(self : MemoryTracker) -> MemoryTracker = {
-  {
-    allocated: self.allocated,
-    deallocated: self.deallocated,
-    current: self.current
-  }
-}
-
-fn MemoryTracker::stop_tracking(self : MemoryTracker) -> Unit = {
-  // Stop tracking
-}
-
-type UniquePointer[T] = {
-  has_ownership : Bool,
-  data : T
-}
-
-fn create_unique_pointer[T](data : T) -> UniquePointer[T] = {
-  {
-    has_ownership: true,
-    data: data
-  }
-}
-
-fn UniquePointer::get[T](self : UniquePointer[T]) -> T = {
-  self.data
-}
-
-fn move_unique_pointer[T](ptr : UniquePointer[T]) -> UniquePointer[T] = {
-  ptr.has_ownership = false
-  {
-    has_ownership: true,
-    data: ptr.data
-  }
-}
-
-type SharedPointer[T] = {
-  reference_count : Int,
-  data : T
-}
-
-fn create_shared_pointer[T](data : T) -> SharedPointer[T] = {
-  {
-    reference_count: 1,
-    data: data
-  }
-}
-
-fn SharedPointer::clone[T](self : SharedPointer[T]) -> SharedPointer[T] = {
-  self.reference_count = self.reference_count + 1
-  {
-    reference_count: self.reference_count,
-    data: self.data
-  }
-}
-
-fn drop_shared_pointer[T](ptr : SharedPointer[T]) -> Unit = {
-  ptr.reference_count = ptr.reference_count - 1
-}
-
-type WeakPointer[T] = {
-  is_expired : Bool
-}
-
-fn create_weak_pointer[T](shared_ptr : SharedPointer[T]) -> WeakPointer[T] = {
-  {
-    is_expired: false
-  }
-}
-
-fn WeakPointer::is_expired[T](self : WeakPointer[T]) -> Bool = {
-  self.is_expired
-}
-
-fn WeakPointer::lock[T](self : WeakPointer[T]) -> Option[SharedPointer[T]] = {
-  if self.is_expired {
-    None
-  } else {
-    // Would return actual shared pointer
-    None // Simplified
-  }
-}
-
-fn create_unique_pointer_with_deleter[T](data : T, deleter : (T) -> Unit) -> UniquePointer[T] = {
-  {
-    has_ownership: true,
-    data: data
-  }
-}
-
-fn drop_unique_pointer[T](ptr : UniquePointer[T]) -> Unit = {
-  ptr.has_ownership = false
-  // deleter would be called here
-}
-
-type TempFile = {
-  path : String
-}
-
-fn create_temp_file(size : Int) -> TempFile = {
-  {
-    path: "/tmp/temp_file_" + size.to_string()
-  }
-}
-
-fn delete_temp_file(file : TempFile) -> Unit = {
-  // Simplified file deletion
-}
-
-type MemoryMappedFile = {
-  path : String,
-  size : Int,
-  is_mapped : Bool,
-  data : Array[Byte]
-}
-
-fn create_memory_mapped_file(path : String) -> MemoryMappedFile = {
-  {
-    path: path,
-    size: 1048576,
-    is_mapped: true,
-    data: [0; 1048576] // Simplified
-  }
-}
-
-fn MemoryMappedFile::read_int(self : MemoryMappedFile, offset : Int) -> Int = {
-  0 // Simplified
-}
-
-fn MemoryMappedFile::write_int(self : MemoryMappedFile, offset : Int, value : Int) -> Unit = {
-  // Simplified
-}
-
-fn MemoryMappedFile::slice(self : MemoryMappedFile, offset : Int, size : Int) -> MemoryMappedFile = {
-  {
-    path: self.path,
-    size: size,
-    is_mapped: true,
-    data: self.data.slice(offset, offset + size)
-  }
-}
-
-fn unmap_memory_mapped_file(file : MemoryMappedFile) -> Unit = {
-  file.is_mapped = false
-}
-
-type FileHandle = {
-  path : String,
-  is_open : Bool
-}
-
-fn open_file(path : String, mode : String) -> FileHandle = {
-  {
-    path: path,
-    is_open: true
-  }
-}
-
-fn FileHandle::write(self : FileHandle, data : String) -> Unit = {
-  // Simplified file write
-}
-
-fn FileHandle::seek(self : FileHandle, position : Int) -> Unit = {
-  // Simplified file seek
-}
-
-fn FileHandle::read(self : FileHandle) -> String = {
-  "test data" // Simplified file read
-}
-
-fn close_file(handle : FileHandle) -> Unit = {
-  handle.is_open = false
-}
-
-fn with_file_handle[T](path : String, mode : String, operation : (FileHandle) -> T) -> T = {
-  let handle = open_file(path, mode)
-  let result = operation(handle)
-  close_file(handle)
-  result
-}
-
-fn get_current_time() -> Int = {
-  1000 // Simplified time in ms
-}
-
-fn create_performance_optimized_pool(size : Int) -> MemoryPool = {
-  create_memory_pool(size)
-}
-
-type AlignedAllocator = {
-  alignment : Int
-}
-
-type AlignedAllocation = {
-  address : Int
-}
-
-fn create_aligned_allocator(alignment : Int) -> AlignedAllocator = {
-  {
-    alignment: alignment
-  }
-}
-
-fn AlignedAllocator::allocate(self : AlignedAllocator, size : Int) -> AlignedAllocation = {
-  {
-    address: 1024 // Simplified - would be aligned
-  }
-}
-
-fn AlignedAllocator::deallocate(self : AlignedAllocator, allocation : AlignedAllocation) -> Unit = {
-  // Simplified
-}
-
-type MemoryData = {
-  size : Int,
-  data : Array[Byte]
-}
-
-fn generate_test_data(size : Int) -> MemoryData = {
-  {
-    size: size,
-    data: [0; size] // Simplified
-  }
-}
-
-type CompressedData = {
-  size : Int,
-  compression_ratio : Float,
-  data : Array[Byte]
-}
-
-fn compress_memory(data : MemoryData) -> CompressedData = {
-  {
-    size: data.size / 2, // Simplified - 50% compression
-    compression_ratio: 2.0,
-    data: [0; data.size / 2] // Simplified
-  }
-}
-
-fn decompress_memory(compressed : CompressedData) -> MemoryData = {
-  {
-    size: compressed.size * 2, // Simplified
-    data: [0; compressed.size * 2] // Simplified
-  }
-}
-
-fn memory_equals(data1 : MemoryData, data2 : MemoryData) -> Bool = {
-  data1.size == data2.size // Simplified
-}
-
-type MemoryCache = {
-  size : Int,
-  entries : Map[String, MemoryData]
-}
-
-fn create_memory_cache(size : Int) -> MemoryCache = {
-  {
-    size: size,
-    entries: Map::new()
-  }
-}
-
-fn MemoryCache::put(self : MemoryCache, key : String, data : MemoryData) -> Unit = {
-  self.entries = self.entries.set(key, data)
-}
-
-fn MemoryCache::get(self : MemoryCache, key : String) -> MemoryData = {
-  match self.entries.get(key) {
-    Some(data) => data
-    None => { size: 0, data: [] }
-  }
-}
-
-fn MemoryCache::contains(self : MemoryCache, key : String) -> Bool = {
-  self.entries.contains(key)
 }

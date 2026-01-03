@@ -57,6 +57,14 @@
         "../azimuth_cross_service_consistency_tests.mbt", 
         "azimuth_simple_additional_tests.mbt", 
         "azimuth_basic_language_tests.mbt", 
-        "azimuth_advanced_telemetry_integration_tests.mbt", "azimuth_simple_integration_tests.mbt", "../azimuth_simple_enhanced_system_tests.mbt", "azimuth_focused_telemetry_tests.mbt", "azimuth_new_comprehensive_tests.mbt", "../azimuth_new_comprehensive_tests.mbt", "../azimuth_enhanced_integration_tests.mbt", "azimuth_simple_integration_tests.mbt", "azimuth_enhanced_security_privacy_tests.mbt", "../azimuth_supplementary_comprehensive_tests.mbt", "../azimuth_simple_additional_tests.mbt", "../azimuth_comprehensive_new_tests.mbt"]
+        "azimuth_advanced_telemetry_integration_tests.mbt", "azimuth_simple_integration_tests.mbt", "../azimuth_simple_enhanced_system_tests.mbt", "azimuth_focused_telemetry_tests.mbt", "azimuth_new_comprehensive_tests.mbt", "../azimuth_new_comprehensive_tests.mbt", "../azimuth_enhanced_integration_tests.mbt", "azimuth_simple_integration_tests.mbt", "azimuth_enhanced_security_privacy_tests.mbt", "../azimuth_supplementary_comprehensive_tests.mbt", "../azimuth_simple_additional_tests.mbt", "../azimuth_comprehensive_new_tests.mbt",
+        "../azimuth_data_structure_tests.mbt",
+        "../azimuth_functional_programming_tests.mbt",
+        "../azimuth_error_handling_advanced_tests.mbt",
+        "../azimuth_performance_optimization_tests.mbt",
+        "../azimuth_type_system_tests.mbt",
+        "../azimuth_async_concurrent_tests.mbt",
+        "../azimuth_pattern_matching_tests.mbt",
+        "../azimuth_memory_management_tests.mbt"]
   }
 }
