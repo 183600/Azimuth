@@ -66,6 +66,13 @@
         "../azimuth_async_concurrent_tests.mbt",
         "../azimuth_pattern_matching_tests.mbt",
         "../azimuth_memory_management_tests.mbt",
-        "../azimuth_premium_data_integrity_tests.mbt"]
+        "../azimuth_premium_data_integrity_tests.mbt",
+        "../azimuth_utility_functions_tests.mbt",
+        "../azimuth_time_series_processing_tests.mbt",
+        "../azimuth_configuration_management_tests.mbt",
+        "../azimuth_data_validation_conversion_tests.mbt",
+        "../azimuth_network_communication_tests.mbt",
+        "../azimuth_caching_mechanism_tests.mbt",
+        "../azimuth_internationalization_support_tests.mbt"]
   }
 }
