@@ -2478,3 +2478,1734 @@ test "遥测数据可视化和图表生成" {
   assert_true(latency_chart_svg.contains("延迟百分位数"))
   assert_true(latency_chart_svg.contains("#9b59b6"))
 }
+
+// 测试14: 遥测系统配置管理
+test "遥测系统配置管理和动态更新" {
+  // 定义配置值类型
+  enum ConfigValue {
+    String(String)
+    Int(Int)
+    Float(Float)
+    Bool(Bool)
+    Array(Array[ConfigValue])
+    Object(Map[String, ConfigValue])
+  }
+  
+  // 定义配置项
+  type ConfigItem = {
+    key: String,
+    value: ConfigValue,
+    description: String,
+    required: Bool,
+    category: String,
+    metadata: Map[String, String]
+  }
+  
+  // 定义配置变更事件
+  type ConfigChangeEvent = {
+    key: String,
+    old_value: Option[ConfigValue],
+    new_value: ConfigValue,
+    timestamp: Int,
+    source: String
+  }
+  
+  // 创建配置管理器
+  let create_config_manager = fn() {
+    let mut configs = Map::empty()
+    let mut change_listeners = []
+    let mut change_history = []
+    
+    // 注册配置项
+    let register_config = fn(item: ConfigItem) {
+      let _ = Map::insert(configs, item.key, item)
+    }
+    
+    // 获取配置值
+    let get_config = fn(key: String) {
+      match Map::get(configs, key) {
+        Some(item) => Some(item.value)
+        None => None
+      }
+    }
+    
+    // 设置配置值
+    let set_config = fn(key: String, new_value: ConfigValue, source: String) {
+      let old_value = match Map::get(configs, key) {
+        Some(item) => Some(item.value)
+        None => None
+      }
+      
+      // 更新配置
+      match Map::get(configs, key) {
+        Some(item) => {
+          let updated_item = { item with value: new_value }
+          let _ = Map::insert(configs, key, updated_item)
+        }
+        None => {
+          let new_item = {
+            key: key,
+            value: new_value,
+            description: "动态添加的配置",
+            required: false,
+            category: "dynamic",
+            metadata: Map::empty()
+          }
+          let _ = Map::insert(configs, key, new_item)
+        }
+      }
+      
+      // 记录变更事件
+      let change_event = {
+        key: key,
+        old_value: old_value,
+        new_value: new_value,
+        timestamp: Time::now(),
+        source: source
+      }
+      change_history = change_history.push(change_event)
+      
+      // 通知监听器
+      for listener in change_listeners {
+        listener(change_event)
+      }
+    }
+    
+    // 添加变更监听器
+    let add_change_listener = fn(listener: ConfigChangeEvent -> Unit) {
+      change_listeners = change_listeners.push(listener)
+    }
+    
+    // 批量更新配置
+    let batch_update = fn(updates: Array[(String, ConfigValue)], source: String) {
+      for (key, value) in updates {
+        set_config(key, value, source)
+      }
+    }
+    
+    // 验证配置
+    let validate_config = fn(key: String) {
+      match Map::get(configs, key) {
+        Some(item) => {
+          if item.required && (match item.value { ConfigValue::String(s) => s == "" | _ => false }) {
+            false  // 必需项为空
+          } else {
+            true
+          }
+        }
+        None => false  // 配置项不存在
+      }
+    }
+    
+    // 获取配置变更历史
+    let get_change_history = fn(key: Option[String]) {
+      match key {
+        Some(k) => change_history.filter(fn(event) { event.key == k })
+        None => change_history
+      }
+    }
+    
+    // 导出配置
+    let export_configs = fn() {
+      let exported = Map::empty()
+      for (k, item) in configs {
+        let _ = Map::insert(exported, k, item.value)
+      }
+      exported
+    }
+    
+    // 导入配置
+    let import_configs = fn(imported: Map[String, ConfigValue], source: String) {
+      for (k, value) in imported {
+        set_config(k, value, source)
+      }
+    }
+    
+    {
+      register_config,
+      get_config,
+      set_config,
+      add_change_listener,
+      batch_update,
+      validate_config,
+      get_change_history,
+      export_configs,
+      import_configs
+    }
+  }
+  
+  // 测试基本配置管理
+  let config_manager = create_config_manager()
+  
+  // 注册配置项
+  config_manager.register_config({
+    key: "telemetry.enabled",
+    value: ConfigValue::Bool(true),
+    description: "是否启用遥测",
+    required: true,
+    category: "core",
+    metadata: Map::from_array([("type", "boolean"), ("default", "true")])
+  })
+  
+  config_manager.register_config({
+    key: "telemetry.sampling_rate",
+    value: ConfigValue::Float(0.1),
+    description: "遥测采样率",
+    required: true,
+    category: "sampling",
+    metadata: Map::from_array([("type", "float"), ("min", "0.0"), ("max", "1.0")])
+  })
+  
+  config_manager.register_config({
+    key: "telemetry.export_interval",
+    value: ConfigValue::Int(60),
+    description: "遥测导出间隔（秒）",
+    required: false,
+    category: "export",
+    metadata: Map::from_array([("type", "integer"), ("min", "1"), ("default", "60")])
+  })
+  
+  // 测试获取配置
+  let enabled = config_manager.get_config("telemetry.enabled")
+  assert_true(enabled.is_some())
+  assert_eq(enabled.unwrap(), ConfigValue::Bool(true))
+  
+  let sampling_rate = config_manager.get_config("telemetry.sampling_rate")
+  assert_true(sampling_rate.is_some())
+  assert_eq(sampling_rate.unwrap(), ConfigValue::Float(0.1))
+  
+  // 测试设置配置
+  config_manager.set_config("telemetry.sampling_rate", ConfigValue::Float(0.2), "test")
+  let updated_rate = config_manager.get_config("telemetry.sampling_rate")
+  assert_eq(updated_rate.unwrap(), ConfigValue::Float(0.2))
+  
+  // 测试配置验证
+  assert_true(config_manager.validate_config("telemetry.enabled"))
+  assert_true(config_manager.validate_config("telemetry.sampling_rate"))
+  assert_false(config_manager.validate_config("nonexistent.config"))
+  
+  // 测试变更监听器
+  let mut received_events = []
+  let test_listener = fn(event: ConfigChangeEvent) {
+    received_events = received_events.push(event)
+  }
+  
+  config_manager.add_change_listener(test_listener)
+  config_manager.set_config("telemetry.export_interval", ConfigValue::Int(30), "manual")
+  
+  assert_eq(received_events.length(), 1)
+  assert_eq(received_events[0].key, "telemetry.export_interval")
+  assert_eq(received_events[0].new_value, ConfigValue::Int(30))
+  assert_eq(received_events[0].source, "manual")
+  
+  // 测试批量更新
+  let batch_updates = [
+    ("telemetry.enabled", ConfigValue::Bool(false)),
+    ("telemetry.batch_size", ConfigValue::Int(100))
+  ]
+  
+  config_manager.batch_update(batch_updates, "batch_test")
+  
+  let enabled_after_batch = config_manager.get_config("telemetry.enabled")
+  assert_eq(enabled_after_batch.unwrap(), ConfigValue::Bool(false))
+  
+  let batch_size = config_manager.get_config("telemetry.batch_size")
+  assert_eq(batch_size.unwrap(), ConfigValue::Int(100))
+  
+  // 验证批量更新触发了多个变更事件
+  assert_eq(received_events.length(), 3)  // 1个之前的事件 + 2个批量更新事件
+  
+  // 测试配置变更历史
+  let all_history = config_manager.get_change_history(None)
+  assert_true(all_history.length() >= 3)
+  
+  let sampling_history = config_manager.get_change_history(Some("telemetry.sampling_rate"))
+  assert_eq(sampling_history.length(), 1)
+  assert_eq(sampling_history[0].old_value, Some(ConfigValue::Float(0.1)))
+  assert_eq(sampling_history[0].new_value, ConfigValue::Float(0.2))
+  
+  // 测试配置导出和导入
+  let exported_configs = config_manager.export_configs()
+  assert_true(Map::contains(exported_configs, "telemetry.enabled"))
+  assert_true(Map::contains(exported_configs, "telemetry.sampling_rate"))
+  assert_true(Map::contains(exported_configs, "telemetry.export_interval"))
+  
+  // 创建新的配置管理器并导入配置
+  let new_config_manager = create_config_manager()
+  new_config_manager.import_configs(exported_configs, "import")
+  
+  let imported_enabled = new_config_manager.get_config("telemetry.enabled")
+  assert_eq(imported_enabled.unwrap(), ConfigValue::Bool(false))
+  
+  let imported_sampling_rate = new_config_manager.get_config("telemetry.sampling_rate")
+  assert_eq(imported_sampling_rate.unwrap(), ConfigValue::Float(0.2))
+  
+  // 测试复杂配置类型
+  config_manager.set_config("telemetry.exporters", ConfigValue::Array([
+    ConfigValue::Object(Map::from_array([
+      ("type", ConfigValue::String("http")),
+      ("endpoint", ConfigValue::String("https://api.example.com/telemetry")),
+      ("enabled", ConfigValue::Bool(true))
+    ])),
+    ConfigValue::Object(Map::from_array([
+      ("type", ConfigValue::String("file")),
+      ("path", ConfigValue::String("/var/log/telemetry.log")),
+      ("enabled", ConfigValue::Bool(false))
+    ]))
+  ]), "complex_config")
+  
+  let exporters = config_manager.get_config("telemetry.exporters")
+  assert_true(exporters.is_some())
+  
+  match exporters.unwrap() {
+    ConfigValue::Array(arr) => {
+      assert_eq(arr.length(), 2)
+      
+      match arr[0] {
+        ConfigValue::Object(obj) => {
+          assert_eq(Map::get(obj, "type"), Some(ConfigValue::String("http")))
+          assert_eq(Map::get(obj, "enabled"), Some(ConfigValue::Bool(true)))
+        }
+        _ => assert_false(true)
+      }
+    }
+    _ => assert_false(true)
+  }
+  
+  // 测试配置验证规则
+  let validate_config_value = fn(key: String, value: ConfigValue, metadata: Map[String, String]) {
+    match Map::get(metadata, "type") {
+      Some(ConfigValue::String("boolean")) => {
+        match value {
+          ConfigValue::Bool(_) => true
+          _ => false
+        }
+      }
+      Some(ConfigValue::String("integer")) => {
+        match value {
+          ConfigValue::Int(i) => {
+            let min = match Map::get(metadata, "min") {
+              Some(ConfigValue::String(s)) => s.parse_int().unwrap_or(0)
+              _ => 0
+            }
+            let max = match Map::get(metadata, "max") {
+              Some(ConfigValue::String(s)) => s.parse_int().unwrap_or(999999)
+              _ => 999999
+            }
+            i >= min && i <= max
+          }
+          _ => false
+        }
+      }
+      Some(ConfigValue::String("float")) => {
+        match value {
+          ConfigValue::Float(f) => {
+            let min = match Map::get(metadata, "min") {
+              Some(ConfigValue::String(s)) => s.parse_float().unwrap_or(0.0)
+              _ => 0.0
+            }
+            let max = match Map::get(metadata, "max") {
+              Some(ConfigValue::String(s)) => s.parse_float().unwrap_or(999999.0)
+              _ => 999999.0
+            }
+            f >= min && f <= max
+          }
+          _ => false
+        }
+      }
+      _ => true  // 其他类型默认通过验证
+    }
+  }
+  
+  // 测试配置值验证
+  let int_metadata = Map::from_array([
+    ("type", ConfigValue::String("integer")),
+    ("min", ConfigValue::String("1")),
+    ("max", ConfigValue::String("100"))
+  ])
+  
+  assert_true(validate_config_value("test.int", ConfigValue::Int(50), int_metadata))
+  assert_false(validate_config_value("test.int", ConfigValue::Int(0), int_metadata))
+  assert_false(validate_config_value("test.int", ConfigValue::Int(101), int_metadata))
+  assert_false(validate_config_value("test.int", ConfigValue::String("50"), int_metadata))
+  
+  let float_metadata = Map::from_array([
+    ("type", ConfigValue::String("float")),
+    ("min", ConfigValue::String("0.0")),
+    ("max", ConfigValue::String("1.0"))
+  ])
+  
+  assert_true(validate_config_value("test.float", ConfigValue::Float(0.5), float_metadata))
+  assert_false(validate_config_value("test.float", ConfigValue::Float(-0.1), float_metadata))
+  assert_false(validate_config_value("test.float", ConfigValue::Float(1.1), float_metadata))
+}
+
+// 测试15: 遥测数据多租户支持
+test "遥测数据多租户支持和隔离" {
+  // 定义租户信息
+  type Tenant = {
+    id: String,
+    name: String,
+    domain: String,
+    plan: String,  // "basic", "premium", "enterprise"
+    settings: Map[String, String],
+    created_at: Int
+  }
+  
+  // 定义租户上下文
+  type TenantContext = {
+    tenant_id: String,
+    user_id: String,
+    permissions: Array[String],
+    metadata: Map[String, String]
+  }
+  
+  // 定义租户隔离策略
+  enum IsolationStrategy {
+    Database  // 数据库级别隔离
+    Schema    // 模式级别隔离
+    Table     // 表级别隔离
+    Row       // 行级别隔离
+    Tag       // 标签级别隔离
+  }
+  
+  // 定义多租户遥测事件
+  type MultiTenantTelemetryEvent = {
+    id: String,
+    tenant_id: String,
+    name: String,
+    timestamp: Int,
+    attributes: Array[(String, String)],
+    tags: Array[(String, String)],
+    data: Map[String, String]
+  }
+  
+  // 创建租户管理器
+  let create_tenant_manager = fn(isolation_strategy: IsolationStrategy) {
+    let mut tenants = Map::empty()
+    let mut tenant_events = Map::empty()
+    
+    // 注册租户
+    let register_tenant = fn(tenant: Tenant) {
+      let _ = Map::insert(tenants, tenant.id, tenant)
+      let _ = Map::insert(tenant_events, tenant.id, [])
+    }
+    
+    // 获取租户
+    let get_tenant = fn(tenant_id: String) {
+      Map::get(tenants, tenant_id)
+    }
+    
+    // 存储遥测事件
+    let store_event = fn(event: MultiTenantTelemetryEvent) {
+      match Map::get(tenant_events, event.tenant_id) {
+        Some(events) => {
+          let updated_events = events.push(event)
+          let _ = Map::insert(tenant_events, event.tenant_id, updated_events)
+        }
+        None => {
+          // 租户不存在，创建新的事件列表
+          let _ = Map::insert(tenant_events, event.tenant_id, [event])
+        }
+      }
+    }
+    
+    // 查询租户事件
+    let query_events = fn(tenant_id: String, filter: Option[MultiTenantTelemetryEvent -> Bool]) {
+      match Map::get(tenant_events, tenant_id) {
+        Some(events) => {
+          match filter {
+            Some(f) => events.filter(f)
+            None => events
+          }
+        }
+        None => []
+      }
+    }
+    
+    // 删除租户数据
+    let delete_tenant_data = fn(tenant_id: String) {
+      let _ = Map::remove(tenants, tenant_id)
+      let _ = Map::remove(tenant_events, tenant_id)
+    }
+    
+    // 获取租户统计信息
+    let get_tenant_stats = fn(tenant_id: String) {
+      match Map::get(tenant_events, tenant_id) {
+        Some(events) => {
+          let event_count = events.length()
+          let event_types = events.reduce(Map::empty(), fn(acc, event) {
+            let count = match Map::get(acc, event.name) { Some(c) => c + 1 | None => 1 }
+            let _ = Map::insert(acc, event.name, count)
+            acc
+          })
+          
+          Some({
+            event_count: event_count,
+            event_types: event_types,
+            storage_size: event_count * 1024  // 简化计算
+          })
+        }
+        None => None
+      }
+    }
+    
+    // 应用资源限制
+    let apply_resource_limits = fn(tenant_id: String, operation: String) {
+      match Map::get(tenants, tenant_id) {
+        Some(tenant) => {
+          match tenant.plan {
+            "basic" => {
+              // 基础计划限制
+              match operation {
+                "store" => {
+                  // 限制每天存储的事件数
+                  match Map::get(tenant_events, tenant_id) {
+                    Some(events) => events.length() < 1000
+                    None => true
+                  }
+                }
+                "query" => {
+                  // 限制查询结果数量
+                  true
+                }
+                _ => false
+              }
+            }
+            "premium" => {
+              // 高级计划限制
+              match operation {
+                "store" => {
+                  match Map::get(tenant_events, tenant_id) {
+                    Some(events) => events.length() < 10000
+                    None => true
+                  }
+                }
+                "query" => true
+                _ => false
+              }
+            }
+            "enterprise" => {
+              // 企业计划无限制
+              true
+            }
+            _ => false
+          }
+        }
+        None => false
+      }
+    }
+    
+    {
+      register_tenant,
+      get_tenant,
+      store_event,
+      query_events,
+      delete_tenant_data,
+      get_tenant_stats,
+      apply_resource_limits
+    }
+  }
+  
+  // 创建访问控制管理器
+  let create_access_control_manager = fn() {
+    let mut permissions = Map::empty()
+    
+    // 分配权限
+    let grant_permission = fn(tenant_id: String, user_id: String, permission: String) {
+      let key = tenant_id + ":" + user_id
+      match Map::get(permissions, key) {
+        Some(user_permissions) => {
+          let updated_permissions = user_permissions.push(permission)
+          let _ = Map::insert(permissions, key, updated_permissions)
+        }
+        None => {
+          let _ = Map::insert(permissions, key, [permission])
+        }
+      }
+    }
+    
+    // 检查权限
+    let check_permission = fn(tenant_id: String, user_id: String, permission: String) {
+      let key = tenant_id + ":" + user_id
+      match Map::get(permissions, key) {
+        Some(user_permissions) => {
+          user_permissions.contains(permission)
+        }
+        None => false
+      }
+    }
+    
+    // 撤销权限
+    let revoke_permission = fn(tenant_id: String, user_id: String, permission: String) {
+      let key = tenant_id + ":" + user_id
+      match Map::get(permissions, key) {
+        Some(user_permissions) => {
+          let updated_permissions = user_permissions.filter(fn(p) { p != permission })
+          let _ = Map::insert(permissions, key, updated_permissions)
+        }
+        None => {}
+      }
+    }
+    
+    { grant_permission, check_permission, revoke_permission }
+  }
+  
+  // 测试租户管理
+  let tenant_manager = create_tenant_manager(IsolationStrategy::Table)
+  
+  // 注册租户
+  let tenant1 = {
+    id: "tenant-1",
+    name: "Acme Corp",
+    domain: "acme.com",
+    plan: "basic",
+    settings: Map::from_array([
+      ("retention_days", "30"),
+      ("sampling_rate", "0.1")
+    ]),
+    created_at: 1609459200
+  }
+  
+  let tenant2 = {
+    id: "tenant-2",
+    name: "Tech Solutions",
+    domain: "techsolutions.io",
+    plan: "premium",
+    settings: Map::from_array([
+      ("retention_days", "90"),
+      ("sampling_rate", "0.5")
+    ]),
+    created_at: 1609459300
+  }
+  
+  tenant_manager.register_tenant(tenant1)
+  tenant_manager.register_tenant(tenant2)
+  
+  // 验证租户注册
+  let retrieved_tenant1 = tenant_manager.get_tenant("tenant-1")
+  assert_true(retrieved_tenant1.is_some())
+  assert_eq(retrieved_tenant1.unwrap().name, "Acme Corp")
+  assert_eq(retrieved_tenant1.unwrap().plan, "basic")
+  
+  // 测试事件存储和隔离
+  let event1 = {
+    id: "event-1",
+    tenant_id: "tenant-1",
+    name: "user.login",
+    timestamp: 1609459200,
+    attributes: [("user_id", "user1"), ("ip", "192.168.1.1")],
+    tags: [("environment", "production")],
+    data: Map::from_array([("success", "true")])
+  }
+  
+  let event2 = {
+    id: "event-2",
+    tenant_id: "tenant-2",
+    name: "user.login",
+    timestamp: 1609459210,
+    attributes: [("user_id", "user2"), ("ip", "10.0.0.1")],
+    tags: [("environment", "staging")],
+    data: Map::from_array([("success", "false")])
+  }
+  
+  let event3 = {
+    id: "event-3",
+    tenant_id: "tenant-1",
+    name: "api.request",
+    timestamp: 1609459220,
+    attributes: [("endpoint", "/api/users"), ("method", "GET")],
+    tags: [("environment", "production")],
+    data: Map::from_array([("duration", "120")])
+  }
+  
+  // 存储事件
+  assert_true(tenant_manager.apply_resource_limits("tenant-1", "store"))
+  tenant_manager.store_event(event1)
+  
+  assert_true(tenant_manager.apply_resource_limits("tenant-2", "store"))
+  tenant_manager.store_event(event2)
+  
+  assert_true(tenant_manager.apply_resource_limits("tenant-1", "store"))
+  tenant_manager.store_event(event3)
+  
+  // 测试事件查询和隔离
+  let tenant1_events = tenant_manager.query_events("tenant-1", None)
+  assert_eq(tenant1_events.length(), 2)
+  assert_true(tenant1_events.all(fn(e) { e.tenant_id == "tenant-1" }))
+  
+  let tenant2_events = tenant_manager.query_events("tenant-2", None)
+  assert_eq(tenant2_events.length(), 1)
+  assert_eq(tenant2_events[0].tenant_id, "tenant-2")
+  
+  // 测试过滤查询
+  let login_events = tenant_manager.query_events("tenant-1", Some(fn(e) { e.name == "user.login" }))
+  assert_eq(login_events.length(), 1)
+  assert_eq(login_events[0].id, "event-1")
+  
+  // 测试租户统计
+  let tenant1_stats = tenant_manager.get_tenant_stats("tenant-1")
+  assert_true(tenant1_stats.is_some())
+  assert_eq(tenant1_stats.unwrap().event_count, 2)
+  assert_eq(Map::get(tenant1_stats.unwrap().event_types, "user.login"), Some(1))
+  assert_eq(Map::get(tenant1_stats.unwrap().event_types, "api.request"), Some(1))
+  
+  // 测试资源限制
+  assert_true(tenant_manager.apply_resource_limits("tenant-1", "store"))
+  assert_true(tenant_manager.apply_resource_limits("tenant-2", "store"))
+  assert_true(tenant_manager.apply_resource_limits("tenant-1", "query"))
+  assert_true(tenant_manager.apply_resource_limits("tenant-2", "query"))
+  
+  // 测试访问控制
+  let access_manager = create_access_control_manager()
+  
+  // 分配权限
+  access_manager.grant_permission("tenant-1", "user1", "read")
+  access_manager.grant_permission("tenant-1", "user1", "write")
+  access_manager.grant_permission("tenant-1", "user2", "read")
+  access_manager.grant_permission("tenant-2", "user1", "read")
+  
+  // 检查权限
+  assert_true(access_manager.check_permission("tenant-1", "user1", "read"))
+  assert_true(access_manager.check_permission("tenant-1", "user1", "write"))
+  assert_true(access_manager.check_permission("tenant-1", "user2", "read"))
+  assert_false(access_manager.check_permission("tenant-1", "user2", "write"))
+  assert_true(access_manager.check_permission("tenant-2", "user1", "read"))
+  assert_false(access_manager.check_permission("tenant-2", "user1", "write"))
+  
+  // 撤销权限
+  access_manager.revoke_permission("tenant-1", "user1", "write")
+  assert_false(access_manager.check_permission("tenant-1", "user1", "write"))
+  assert_true(access_manager.check_permission("tenant-1", "user1", "read"))
+  
+  // 测试多租户数据导出
+  let export_tenant_data = fn(tenant_id: String, format: String) {
+    let events = tenant_manager.query_events(tenant_id, None)
+    
+    match format {
+      "json" => {
+        let json_array = events.map(fn(event) {
+          "{" +
+            "\"id\":\"" + event.id + "\"," +
+            "\"name\":\"" + event.name + "\"," +
+            "\"timestamp\":" + event.timestamp.to_string() + "," +
+            "\"attributes\":[" + event.attributes.map(fn(attr) { "\"" + attr.0 + "\":\"" + attr.1 + "\"" }).join(",") + "]," +
+            "\"data\":{" + event.data.to_array().map(fn(entry) { "\"" + entry.0 + "\":\"" + entry.1 + "\"" }).join(",") + "}" +
+          "}"
+        }).join(",")
+        
+        "[" + json_array + "]"
+      }
+      "csv" => {
+        let header = "id,name,timestamp,tenant_id\n"
+        let rows = events.map(fn(event) {
+          event.id + "," + event.name + "," + event.timestamp.to_string() + "," + event.tenant_id
+        }).join("\n")
+        
+        header + rows
+      }
+      _ => "Unsupported format"
+    }
+  }
+  
+  // 测试数据导出
+  let tenant1_json = export_tenant_data("tenant-1", "json")
+  assert_true(tenant1_json.contains("["))
+  assert_true(tenant1_json.contains("event-1"))
+  assert_true(tenant1_json.contains("event-3"))
+  
+  let tenant1_csv = export_tenant_data("tenant-1", "csv")
+  assert_true(tenant1_csv.contains("id,name,timestamp,tenant_id"))
+  assert_true(tenant1_csv.contains("event-1,user.login,1609459200,tenant-1"))
+  
+  // 测试租户数据删除
+  tenant_manager.delete_tenant_data("tenant-1")
+  
+  let deleted_tenant = tenant_manager.get_tenant("tenant-1")
+  assert_true(deleted_tenant.is_none())
+  
+  let deleted_events = tenant_manager.query_events("tenant-1", None)
+  assert_eq(deleted_events.length(), 0)
+  
+  // 验证其他租户数据不受影响
+  let remaining_tenant = tenant_manager.get_tenant("tenant-2")
+  assert_true(remaining_tenant.is_some())
+  
+  let remaining_events = tenant_manager.query_events("tenant-2", None)
+  assert_eq(remaining_events.length(), 1)
+}
+
+// 测试16: 遥测系统监控和告警
+test "遥测系统监控和告警机制" {
+  // 定义告警级别
+  enum AlertSeverity {
+    Info
+    Warning
+    Error
+    Critical
+  }
+  
+  // 定义告警状态
+  enum AlertStatus {
+    Active
+    Resolved
+    Suppressed
+  }
+  
+  // 定义告警条件
+  type AlertCondition = {
+    name: String,
+    metric: String,
+    operator: String,  // ">", "<", ">=", "<=", "==", "!="
+    threshold: Float,
+    duration: Int,  // 持续时间（秒）
+    severity: AlertSeverity
+  }
+  
+  // 定义告警
+  type Alert = {
+    id: String,
+    condition_name: String,
+    severity: AlertSeverity,
+    status: AlertStatus,
+    message: String,
+    triggered_at: Int,
+    resolved_at: Option[Int],
+    labels: Map[String, String],
+    annotations: Map[String, String]
+  }
+  
+  // 定义告警规则
+  type AlertRule = {
+    name: String,
+    conditions: Array[AlertCondition],
+    evaluation_interval: Int,  // 评估间隔（秒）
+    for_duration: Int,  // 触发前持续时间（秒）
+    labels: Map[String, String],
+    annotations: Map[String, String],
+    notification_channels: Array[String]
+  }
+  
+  // 定义通知渠道
+  enum NotificationChannel {
+    Email(String)  // 邮箱地址
+    Webhook(String)  // Webhook URL
+    Slack(String)  // Slack频道
+    PagerDuty(String)  // PagerDuty服务键
+  }
+  
+  // 创建告警管理器
+  let create_alert_manager = fn() {
+    let mut rules = Map::empty()
+    let mut active_alerts = Map::empty()
+    let mut alert_history = []
+    let mut notification_channels = Map::empty()
+    
+    // 添加告警规则
+    let add_rule = fn(rule: AlertRule) {
+      let _ = Map::insert(rules, rule.name, rule)
+    }
+    
+    // 添加通知渠道
+    let add_notification_channel = fn(name: String, channel: NotificationChannel) {
+      let _ = Map::insert(notification_channels, name, channel)
+    }
+    
+    // 评估告警条件
+    let evaluate_condition = fn(condition: AlertCondition, metric_value: Float) {
+      match condition.operator {
+        ">" => metric_value > condition.threshold
+        "<" => metric_value < condition.threshold
+        ">=" => metric_value >= condition.threshold
+        "<=" => metric_value <= condition.threshold
+        "==" => metric_value == condition.threshold
+        "!=" => metric_value != condition.threshold
+        _ => false
+      }
+    }
+    
+    // 评估告警规则
+    let evaluate_rule = fn(rule_name: String, metrics: Map[String, Float]) {
+      match Map::get(rules, rule_name) {
+        Some(rule) => {
+          let mut triggered_conditions = []
+          
+          for condition in rule.conditions {
+            match Map::get(metrics, condition.metric) {
+              Some(value) => {
+                if evaluate_condition(condition, value) {
+                  triggered_conditions = triggered_conditions.push(condition)
+                }
+              }
+              None => {}  // 指标不存在，跳过
+            }
+          }
+          
+          // 如果所有条件都满足，触发告警
+          if triggered_conditions.length() == rule.conditions.length() && rule.conditions.length() > 0 {
+            let alert_id = "alert-" + rule_name + "-" + Time::now().to_string()
+            let alert = {
+              id: alert_id,
+              condition_name: rule_name,
+              severity: triggered_conditions[0].severity,  // 使用第一个条件的严重级别
+              status: AlertStatus::Active,
+              message: "告警规则 '" + rule_name + "' 已触发",
+              triggered_at: Time::now(),
+              resolved_at: None,
+              labels: rule.labels,
+              annotations: rule.annotations
+            }
+            
+            // 存储活动告警
+            let _ = Map::insert(active_alerts, alert_id, alert)
+            alert_history = alert_history.push(alert)
+            
+            // 发送通知
+            for channel_name in rule.notification_channels {
+              match Map::get(notification_channels, channel_name) {
+                Some(channel) => {
+                  // 模拟发送通知
+                  println("发送告警通知到 " + channel_name + ": " + alert.message)
+                }
+                None => {}
+              }
+            }
+            
+            Some(alert)
+          } else {
+            None
+          }
+        }
+        None => None
+      }
+    }
+    
+    // 解决告警
+    let resolve_alert = fn(alert_id: String) {
+      match Map::get(active_alerts, alert_id) {
+        Some(alert) => {
+          let resolved_alert = { 
+            alert with 
+            status: AlertStatus::Resolved, 
+            resolved_at: Some(Time::now()) 
+          }
+          
+          // 更新活动告警
+          let _ = Map::insert(active_alerts, alert_id, resolved_alert)
+          
+          // 更新历史记录
+          alert_history = alert_history.map(fn(a) { 
+            if a.id == alert_id { resolved_alert } else { a } 
+          })
+          
+          true
+        }
+        None => false
+      }
+    }
+    
+    // 获取活动告警
+    let get_active_alerts = fn() {
+      active_alerts.to_array().filter(fn(entry) { 
+        let (_, alert) = entry
+        alert.status == AlertStatus::Active
+      }).map(fn(entry) { let (_, alert) = entry; alert })
+    }
+    
+    // 获取告警历史
+    let get_alert_history = fn(filter: Option[Alert -> Bool]) {
+      match filter {
+        Some(f) => alert_history.filter(f)
+        None => alert_history
+      }
+    }
+    
+    {
+      add_rule,
+      add_notification_channel,
+      evaluate_rule,
+      resolve_alert,
+      get_active_alerts,
+      get_alert_history
+    }
+  }
+  
+  // 创建指标收集器
+  let create_metrics_collector = fn() {
+    let mut metrics = Map::empty()
+    
+    // 记录指标
+    let record_metric = fn(name: String, value: Float) {
+      let _ = Map::insert(metrics, name, value)
+    }
+    
+    // 获取指标
+    let get_metric = fn(name: String) {
+      Map::get(metrics, name)
+    }
+    
+    // 获取所有指标
+    let get_all_metrics = fn() {
+      metrics
+    }
+    
+    // 模拟指标更新
+    let simulate_metrics_update = fn() {
+      // 模拟一些系统指标
+      let _ = Map::insert(metrics, "cpu_usage", 65.5 + (Time::now() % 100) as Float / 10.0)
+      let _ = Map::insert(metrics, "memory_usage", 78.2 + (Time::now() % 50) as Float / 10.0)
+      let _ = Map::insert(metrics, "error_rate", 2.5 + (Time::now() % 20) as Float / 10.0)
+      let _ = Map::insert(metrics, "response_time_p95", 250.0 + (Time::now() % 200) as Float)
+      let _ = Map::insert(metrics, "disk_usage", 45.8 + (Time::now() % 30) as Float / 10.0)
+    }
+    
+    {
+      record_metric,
+      get_metric,
+      get_all_metrics,
+      simulate_metrics_update
+    }
+  }
+  
+  // 测试告警管理
+  let alert_manager = create_alert_manager()
+  let metrics_collector = create_metrics_collector()
+  
+  // 添加通知渠道
+  alert_manager.add_notification_channel("email", NotificationChannel::Email("admin@example.com"))
+  alert_manager.add_notification_channel("webhook", NotificationChannel::Webhook("https://api.example.com/alerts"))
+  alert_manager.add_notification_channel("slack", NotificationChannel::Slack("#alerts"))
+  
+  // 添加告警规则
+  let cpu_rule = {
+    name: "high_cpu_usage",
+    conditions: [{
+      name: "cpu_high",
+      metric: "cpu_usage",
+      operator: ">",
+      threshold: 80.0,
+      duration: 300,  // 5分钟
+      severity: AlertSeverity::Warning
+    }],
+    evaluation_interval: 60,  // 每分钟评估一次
+    for_duration: 300,  // 持续5分钟
+    labels: Map::from_array([("team", "ops"), ("service", "web")]),
+    annotations: Map::from_array([("description", "CPU使用率过高")]),
+    notification_channels: ["email", "slack"]
+  }
+  
+  let memory_rule = {
+    name: "high_memory_usage",
+    conditions: [{
+      name: "memory_high",
+      metric: "memory_usage",
+      operator: ">",
+      threshold: 90.0,
+      duration: 300,
+      severity: AlertSeverity::Critical
+    }],
+    evaluation_interval: 60,
+    for_duration: 300,
+    labels: Map::from_array([("team", "ops"), ("service", "web")]),
+    annotations: Map::from_array([("description", "内存使用率过高")]),
+    notification_channels: ["email", "webhook", "slack"]
+  }
+  
+  let error_rate_rule = {
+    name: "high_error_rate",
+    conditions: [{
+      name: "error_rate_high",
+      metric: "error_rate",
+      operator: ">",
+      threshold: 5.0,
+      duration: 180,  // 3分钟
+      severity: AlertSeverity::Error
+    }],
+    evaluation_interval: 30,  // 每30秒评估一次
+    for_duration: 180,
+    labels: Map::from_array([("team", "dev"), ("service", "api")]),
+    annotations: Map::from_array([("description", "错误率过高")]),
+    notification_channels: ["email", "webhook"]
+  }
+  
+  alert_manager.add_rule(cpu_rule)
+  alert_manager.add_rule(memory_rule)
+  alert_manager.add_rule(error_rate_rule)
+  
+  // 模拟正常指标
+  metrics_collector.record_metric("cpu_usage", 65.5)
+  metrics_collector.record_metric("memory_usage", 78.2)
+  metrics_collector.record_metric("error_rate", 2.5)
+  metrics_collector.record_metric("response_time_p95", 250.0)
+  metrics_collector.record_metric("disk_usage", 45.8)
+  
+  // 评估告警规则（正常情况下不应触发）
+  let cpu_alert1 = alert_manager.evaluate_rule("high_cpu_usage", metrics_collector.get_all_metrics())
+  assert_true(cpu_alert1.is_none())
+  
+  let memory_alert1 = alert_manager.evaluate_rule("high_memory_usage", metrics_collector.get_all_metrics())
+  assert_true(memory_alert1.is_none())
+  
+  let error_alert1 = alert_manager.evaluate_rule("high_error_rate", metrics_collector.get_all_metrics())
+  assert_true(error_alert1.is_none())
+  
+  // 验证没有活动告警
+  let active_alerts1 = alert_manager.get_active_alerts()
+  assert_eq(active_alerts1.length(), 0)
+  
+  // 模拟高CPU使用率
+  metrics_collector.record_metric("cpu_usage", 85.0)
+  
+  // 评估CPU告警规则（应该触发）
+  let cpu_alert2 = alert_manager.evaluate_rule("high_cpu_usage", metrics_collector.get_all_metrics())
+  assert_true(cpu_alert2.is_some())
+  
+  let cpu_alert = cpu_alert2.unwrap()
+  assert_eq(cpu_alert.condition_name, "high_cpu_usage")
+  assert_eq(cpu_alert.severity, AlertSeverity::Warning)
+  assert_eq(cpu_alert.status, AlertStatus::Active)
+  
+  // 验证有一个活动告警
+  let active_alerts2 = alert_manager.get_active_alerts()
+  assert_eq(active_alerts2.length(), 1)
+  assert_eq(active_alerts2[0].id, cpu_alert.id)
+  
+  // 模拟高内存使用率
+  metrics_collector.record_metric("memory_usage", 95.0)
+  
+  // 评估内存告警规则（应该触发）
+  let memory_alert2 = alert_manager.evaluate_rule("high_memory_usage", metrics_collector.get_all_metrics())
+  assert_true(memory_alert2.is_some())
+  
+  let memory_alert = memory_alert2.unwrap()
+  assert_eq(memory_alert.condition_name, "high_memory_usage")
+  assert_eq(memory_alert.severity, AlertSeverity::Critical)
+  assert_eq(memory_alert.status, AlertStatus::Active)
+  
+  // 验证有两个活动告警
+  let active_alerts3 = alert_manager.get_active_alerts()
+  assert_eq(active_alerts3.length(), 2)
+  
+  // 解决CPU告警
+  let resolve_result = alert_manager.resolve_alert(cpu_alert.id)
+  assert_true(resolve_result)
+  
+  // 验证告警已解决
+  let active_alerts4 = alert_manager.get_active_alerts()
+  assert_eq(active_alerts4.length(), 1)
+  assert_eq(active_alerts4[0].id, memory_alert.id)
+  
+  // 验证告警历史
+  let all_history = alert_manager.get_alert_history(None)
+  assert_true(all_history.length() >= 2)
+  
+  let cpu_history = alert_manager.get_alert_history(Some(fn(alert) { alert.condition_name == "high_cpu_usage" }))
+  assert_eq(cpu_history.length(), 1)
+  assert_eq(cpu_history[0].status, AlertStatus::Resolved)
+  assert_true(cpu_history[0].resolved_at.is_some())
+  
+  // 测试告警聚合
+  let aggregate_alerts = fn(alerts: Array[Alert]) {
+    let grouped = alerts.reduce(Map::empty(), fn(acc, alert) {
+      let key = alert.condition_name
+      let group = match Map::get(acc, key) {
+        Some(g) => g
+        None => []
+      }
+      let _ = Map::insert(acc, key, group.push(alert))
+      acc
+    })
+    
+    grouped.to_array().map(fn(entry) {
+      let (condition_name, alerts) = entry
+      let count = alerts.length()
+      let severities = alerts.map(fn(a) { a.severity })
+      let max_severity = if severities.contains(AlertSeverity::Critical) {
+        AlertSeverity::Critical
+      } else if severities.contains(AlertSeverity::Error) {
+        AlertSeverity::Error
+      } else if severities.contains(AlertSeverity::Warning) {
+        AlertSeverity::Warning
+      } else {
+        AlertSeverity::Info
+      }
+      
+      {
+        condition_name: condition_name,
+        count: count,
+        max_severity: max_severity,
+        alerts: alerts
+      }
+    })
+  }
+  
+  // 创建更多告警用于测试聚合
+  metrics_collector.record_metric("error_rate", 6.0)
+  let error_alert2 = alert_manager.evaluate_rule("high_error_rate", metrics_collector.get_all_metrics())
+  assert_true(error_alert2.is_some())
+  
+  metrics_collector.record_metric("error_rate", 7.0)
+  let error_alert3 = alert_manager.evaluate_rule("high_error_rate", metrics_collector.get_all_metrics())
+  assert_true(error_alert3.is_some())
+  
+  // 获取所有活动告警
+  let all_active_alerts = alert_manager.get_active_alerts()
+  
+  // 测试告警聚合
+  let aggregated_alerts = aggregate_alerts(all_active_alerts)
+  assert_true(aggregated_alerts.length() >= 2)
+  
+  // 验证错误率告警聚合
+  let error_aggregation = aggregated_alerts.find(fn(aggr) { aggr.condition_name == "high_error_rate" })
+  assert_true(error_aggregation.is_some())
+  assert_eq(error_aggregation.unwrap().count, 2)
+  assert_eq(error_aggregation.unwrap().max_severity, AlertSeverity::Error)
+  
+  // 测试告警抑制
+  let suppress_alerts = fn(alerts: Array[Alert], suppression_rules: Array[Alert -> Bool]) {
+    alerts.filter(fn(alert) {
+      not suppression_rules.any(fn(rule) { rule(alert) })
+    })
+  }
+  
+  // 定义抑制规则：抑制低严重级别的告警
+  let suppress_low_severity = fn(alert: Alert) {
+    alert.severity == AlertSeverity::Info || alert.severity == AlertSeverity::Warning
+  }
+  
+  // 应用抑制规则
+  let suppressed_alerts = suppress_alerts(all_active_alerts, [suppress_low_severity])
+  
+  // 验证只有高严重级别的告警保留
+  assert_true(suppressed_alerts.all(fn(alert) { 
+    alert.severity == AlertSeverity::Error || alert.severity == AlertSeverity::Critical 
+  }))
+}
+
+// 测试17: 遥测数据版本兼容性
+test "遥测数据版本兼容性和迁移" {
+  // 定义数据版本
+  type DataVersion = {
+    major: Int,
+    minor: Int,
+    patch: Int
+  }
+  
+  // 定义版本兼容性策略
+  enum CompatibilityStrategy {
+    BackwardCompatible  // 向后兼容
+    ForwardCompatible   // 向前兼容
+    BreakingChange      // 破坏性变更
+  }
+  
+  // 定义字段变更类型
+  enum FieldChangeType {
+    Added
+    Removed
+    Renamed
+    TypeChanged
+    DefaultChanged
+  }
+  
+  // 定义字段变更
+  type FieldChange = {
+    field_name: String,
+    change_type: FieldChangeType,
+    old_type: Option[String],
+    new_type: Option[String],
+    old_value: Option[String],
+    new_value: Option[String]
+  }
+  
+  // 定义模式变更
+  type SchemaChange = {
+    version_from: DataVersion,
+    version_to: DataVersion,
+    compatibility: CompatibilityStrategy,
+    changes: Array[FieldChange],
+    migration_script: Option[String]
+  }
+  
+  // 定义遥测事件模式
+  type TelemetryEventSchema = {
+    name: String,
+    version: DataVersion,
+    fields: Array[(String, String)],  // 字段名和类型
+    required_fields: Array[String],
+    default_values: Map[String, String]
+  }
+  
+  // 创建版本管理器
+  let create_version_manager = fn() {
+    let mut schemas = Map::empty()
+    let mut schema_changes = []
+    let mut migration_scripts = Map::empty()
+    
+    // 注册模式
+    let register_schema = fn(schema: TelemetryEventSchema) {
+      let key = schema.name + ":" + schema.version.major.to_string() + "." + schema.version.minor.to_string()
+      let _ = Map::insert(schemas, key, schema)
+    }
+    
+    // 获取模式
+    let get_schema = fn(name: String, version: DataVersion) {
+      let key = name + ":" + version.major.to_string() + "." + version.minor.to_string()
+      Map::get(schemas, key)
+    }
+    
+    // 获取最新模式
+    let get_latest_schema = fn(name: String) {
+      let name_schemas = schemas.to_array().filter(fn(entry) {
+        let (key, _) = entry
+        key.starts_with(name + ":")
+      }).map(fn(entry) { let (_, schema) = entry; schema })
+      
+      if name_schemas.length() > 0 {
+        // 按版本排序，返回最新的
+        let sorted = name_schemas.sort(fn(a, b) {
+          if a.version.major != b.version.major {
+            a.version.major > b.version.major
+          } else if a.version.minor != b.version.minor {
+            a.version.minor > b.version.minor
+          } else {
+            a.version.patch >= b.version.patch
+          }
+        })
+        Some(sorted[0])
+      } else {
+        None
+      }
+    }
+    
+    // 添加模式变更
+    let add_schema_change = fn(change: SchemaChange) {
+      schema_changes = schema_changes.push(change)
+    }
+    
+    // 添加迁移脚本
+    let add_migration_script = fn(from_version: String, to_version: String, script: String) {
+      let key = from_version + "->" + to_version
+      let _ = Map::insert(migration_scripts, key, script)
+    }
+    
+    // 检查兼容性
+    let check_compatibility = fn(from_version: DataVersion, to_version: DataVersion) {
+      if from_version.major == to_version.major {
+        if from_version.minor == to_version.minor {
+          // 补丁版本更新，总是兼容
+          CompatibilityStrategy::BackwardCompatible
+        } else if from_version.minor < to_version.minor {
+          // 次版本更新，向后兼容
+          CompatibilityStrategy::BackwardCompatible
+        } else {
+          // 次版本降级，向前兼容
+          CompatibilityStrategy::ForwardCompatible
+        }
+      } else if from_version.major < to_version.major {
+        // 主版本更新，可能是破坏性变更
+        CompatibilityStrategy::BreakingChange
+      } else {
+        // 主版本降级，向前兼容
+        CompatibilityStrategy::ForwardCompatible
+      }
+    }
+    
+    // 迁移数据
+    let migrate_data = fn(data: Map[String, String], from_version: DataVersion, to_version: DataVersion) {
+      let compatibility = check_compatibility(from_version, to_version)
+      
+      match compatibility {
+        CompatibilityStrategy::BackwardCompatible => {
+          // 向后兼容，可能需要添加新字段
+          match get_schema("telemetry_event", to_version) {
+            Some(schema) => {
+              let migrated_data = data
+              
+              // 添加新字段及其默认值
+              for (field_name, field_type) in schema.fields {
+                if not Map::contains(data, field_name) {
+                  let default_value = match Map::get(schema.default_values, field_name) {
+                    Some(v) => v
+                    None => ""
+                  }
+                  let _ = Map::insert(migrated_data, field_name, default_value)
+                }
+              }
+              
+              migrated_data
+            }
+            None => data
+          }
+        }
+        CompatibilityStrategy::ForwardCompatible => {
+          // 向前兼容，可能需要移除不存在的字段
+          match get_schema("telemetry_event", to_version) {
+            Some(schema) => {
+              let valid_fields = schema.fields.map(fn(field) { field.0 })
+              let migrated_data = Map::empty()
+              
+              for (key, value) in data {
+                if valid_fields.contains(key) {
+                  let _ = Map::insert(migrated_data, key, value)
+                }
+              }
+              
+              migrated_data
+            }
+            None => data
+          }
+        }
+        CompatibilityStrategy::BreakingChange => {
+          // 破坏性变更，需要迁移脚本
+          let from_key = from_version.major.to_string() + "." + from_version.minor.to_string()
+          let to_key = to_version.major.to_string() + "." + to_version.minor.to_string()
+          let script_key = from_key + "->" + to_key
+          
+          match Map::get(migration_scripts, script_key) {
+            Some(_) => {
+              // 简化的迁移逻辑，实际应执行脚本
+              let migrated_data = Map::empty()
+              
+              // 保留共同字段
+              for (key, value) in data {
+                if key != "deprecated_field" {  // 简化：移除已知已弃用的字段
+                  let _ = Map::insert(migrated_data, key, value)
+                }
+              }
+              
+              // 添加新字段
+              let _ = Map::insert(migrated_data, "new_field", "default_value")
+              
+              migrated_data
+            }
+            None => {
+              // 没有迁移脚本，无法迁移
+              Map::empty()
+            }
+          }
+        }
+      }
+    }
+    
+    {
+      register_schema,
+      get_schema,
+      get_latest_schema,
+      add_schema_change,
+      add_migration_script,
+      check_compatibility,
+      migrate_data
+    }
+  }
+  
+  // 创建数据转换器
+  let create_data_converter = fn() {
+    // 转换为JSON格式
+    let to_json = fn(data: Map[String, String]) {
+      let pairs = data.to_array().map(fn(entry) {
+        let (key, value) = entry
+        "\"" + key + "\":\"" + value + "\""
+      })
+      "{" + pairs.join(",") + "}"
+    }
+    
+    // 从JSON格式转换
+    let from_json = fn(json_str: String) {
+      // 简化的JSON解析
+      let mut data = Map::empty()
+      
+      if json_str.starts_with("{") && json_str.ends_with("}") {
+        let content = json_str.slice(1, json_str.length() - 1)
+        let pairs = content.split(",")
+        
+        for pair in pairs {
+          let parts = pair.split(":")
+          if parts.length() == 2 {
+            let key = parts[0].slice(1, parts[0].length() - 1)  // 移除引号
+            let value = parts[1].slice(1, parts[1].length() - 1)  // 移除引号
+            let _ = Map::insert(data, key, value)
+          }
+        }
+      }
+      
+      data
+    }
+    
+    // 转换为XML格式
+    let to_xml = fn(data: Map[String, String]) {
+      let mut xml = "<event>\n"
+      
+      for (key, value) in data {
+        xml = xml + "  <" + key + ">" + value + "</" + key + ">\n"
+      }
+      
+      xml = xml + "</event>"
+      xml
+    }
+    
+    // 从XML格式转换
+    let from_xml = fn(xml_str: String) {
+      let mut data = Map::empty()
+      
+      // 简化的XML解析
+      let lines = xml_str.split("\n")
+      for line in lines {
+        if line.starts_with("  <") && line.contains(">") && line.contains("</") {
+          let start_tag_end = line.index_of(">").unwrap_or(0)
+          let end_tag_start = line.index_of("</").unwrap_or(0)
+          
+          if start_tag_end > 0 && end_tag_start > start_tag_end {
+            let tag = line.slice(3, start_tag_end)  // 移除"  <"
+            let value = line.slice(start_tag_end + 1, end_tag_start)
+            let _ = Map::insert(data, tag, value)
+          }
+        }
+      }
+      
+      data
+    }
+    
+    { to_json, from_json, to_xml, from_xml }
+  }
+  
+  // 测试版本管理
+  let version_manager = create_version_manager()
+  
+  // 定义版本
+  let v1_0_0 = { major: 1, minor: 0, patch: 0 }
+  let v1_1_0 = { major: 1, minor: 1, patch: 0 }
+  let v1_2_0 = { major: 1, minor: 2, patch: 0 }
+  let v2_0_0 = { major: 2, minor: 0, patch: 0 }
+  
+  // 注册模式
+  let schema_v1_0_0 = {
+    name: "telemetry_event",
+    version: v1_0_0,
+    fields: [
+      ("event_id", "string"),
+      ("timestamp", "integer"),
+      ("event_name", "string"),
+      ("user_id", "string")
+    ],
+    required_fields: ["event_id", "timestamp", "event_name"],
+    default_values: Map::from_array([
+      ("user_id", "anonymous")
+    ])
+  }
+  
+  let schema_v1_1_0 = {
+    name: "telemetry_event",
+    version: v1_1_0,
+    fields: [
+      ("event_id", "string"),
+      ("timestamp", "integer"),
+      ("event_name", "string"),
+      ("user_id", "string"),
+      ("session_id", "string")
+    ],
+    required_fields: ["event_id", "timestamp", "event_name"],
+    default_values: Map::from_array([
+      ("user_id", "anonymous"),
+      ("session_id", "default_session")
+    ])
+  }
+  
+  let schema_v1_2_0 = {
+    name: "telemetry_event",
+    version: v1_2_0,
+    fields: [
+      ("event_id", "string"),
+      ("timestamp", "integer"),
+      ("event_name", "string"),
+      ("user_id", "string"),
+      ("session_id", "string"),
+      ("attributes", "json")
+    ],
+    required_fields: ["event_id", "timestamp", "event_name"],
+    default_values: Map::from_array([
+      ("user_id", "anonymous"),
+      ("session_id", "default_session"),
+      ("attributes", "{}")
+    ])
+  }
+  
+  let schema_v2_0_0 = {
+    name: "telemetry_event",
+    version: v2_0_0,
+    fields: [
+      ("id", "string"),  // 重命名字段
+      ("timestamp", "integer"),
+      ("name", "string"),  // 重命名字段
+      ("user_id", "string"),
+      ("session_id", "string"),
+      ("attributes", "json"),
+      ("metadata", "json")  // 新字段
+    ],
+    required_fields: ["id", "timestamp", "name"],
+    default_values: Map::from_array([
+      ("user_id", "anonymous"),
+      ("session_id", "default_session"),
+      ("attributes", "{}"),
+      ("metadata", "{}")
+    ])
+  }
+  
+  version_manager.register_schema(schema_v1_0_0)
+  version_manager.register_schema(schema_v1_1_0)
+  version_manager.register_schema(schema_v1_2_0)
+  version_manager.register_schema(schema_v2_0_0)
+  
+  // 测试获取模式
+  let retrieved_schema_v1_0_0 = version_manager.get_schema("telemetry_event", v1_0_0)
+  assert_true(retrieved_schema_v1_0_0.is_some())
+  assert_eq(retrieved_schema_v1_0_0.unwrap().version.major, 1)
+  assert_eq(retrieved_schema_v1_0_0.unwrap().version.minor, 0)
+  assert_eq(retrieved_schema_v1_0_0.unwrap().fields.length(), 4)
+  
+  // 测试获取最新模式
+  let latest_schema = version_manager.get_latest_schema("telemetry_event")
+  assert_true(latest_schema.is_some())
+  assert_eq(latest_schema.unwrap().version.major, 2)
+  assert_eq(latest_schema.unwrap().version.minor, 0)
+  
+  // 测试兼容性检查
+  let compat_1_0_to_1_1 = version_manager.check_compatibility(v1_0_0, v1_1_0)
+  assert_eq(compat_1_0_to_1_1, CompatibilityStrategy::BackwardCompatible)
+  
+  let compat_1_1_to_1_0 = version_manager.check_compatibility(v1_1_0, v1_0_0)
+  assert_eq(compat_1_1_to_1_0, CompatibilityStrategy::ForwardCompatible)
+  
+  let compat_1_2_to_2_0 = version_manager.check_compatibility(v1_2_0, v2_0_0)
+  assert_eq(compat_1_2_to_2_0, CompatibilityStrategy::BreakingChange)
+  
+  // 添加迁移脚本
+  version_manager.add_migration_script("1.2->2.0", "function migrate(data) { data['id'] = data['event_id']; data['name'] = data['event_name']; delete data['event_id']; delete data['event_name']; return data; }")
+  
+  // 测试数据迁移
+  let old_data = Map::from_array([
+    ("event_id", "event-123"),
+    ("timestamp", "1609459200"),
+    ("event_name", "user.login"),
+    ("user_id", "user-456")
+  ])
+  
+  // 测试向后兼容迁移（1.0 -> 1.1）
+  let migrated_1_0_to_1_1 = version_manager.migrate_data(old_data, v1_0_0, v1_1_0)
+  assert_eq(Map::get(migrated_1_0_to_1_1, "event_id"), Some("event-123"))
+  assert_eq(Map::get(migrated_1_0_to_1_1, "session_id"), Some("default_session"))  // 新字段添加默认值
+  
+  // 测试向前兼容迁移（1.2 -> 1.1）
+  let new_data = Map::from_array([
+    ("event_id", "event-123"),
+    ("timestamp", "1609459200"),
+    ("event_name", "user.login"),
+    ("user_id", "user-456"),
+    ("session_id", "session-789"),
+    ("attributes", "{\"key\":\"value\"}")
+  ])
+  
+  let migrated_1_2_to_1_1 = version_manager.migrate_data(new_data, v1_2_0, v1_1_0)
+  assert_eq(Map::get(migrated_1_2_to_1_1, "event_id"), Some("event-123"))
+  assert_eq(Map::get(migrated_1_2_to_1_1, "session_id"), Some("session-789"))
+  assert_false(Map::contains(migrated_1_2_to_1_1, "attributes"))  // 移除不存在的字段
+  
+  // 测试破坏性变更迁移（1.2 -> 2.0）
+  let migrated_1_2_to_2_0 = version_manager.migrate_data(new_data, v1_2_0, v2_0_0)
+  assert_eq(Map::get(migrated_1_2_to_2_0, "id"), Some("event-123"))  // 重命名的字段
+  assert_eq(Map::get(migrated_1_2_to_2_0, "name"), Some("user.login"))  // 重命名的字段
+  assert_eq(Map::get(migrated_1_2_to_2_0, "new_field"), Some("default_value"))  // 新字段
+  
+  // 测试数据转换
+  let converter = create_data_converter()
+  
+  let test_data = Map::from_array([
+    ("event_id", "event-123"),
+    ("timestamp", "1609459200"),
+    ("event_name", "user.login")
+  ])
+  
+  // 测试JSON转换
+  let json_data = converter.to_json(test_data)
+  assert_true(json_data.contains("\"event_id\":\"event-123\""))
+  assert_true(json_data.contains("\"event_name\":\"user.login\""))
+  
+  let parsed_json = converter.from_json(json_data)
+  assert_eq(Map::get(parsed_json, "event_id"), Some("event-123"))
+  assert_eq(Map::get(parsed_json, "event_name"), Some("user.login"))
+  
+  // 测试XML转换
+  let xml_data = converter.to_xml(test_data)
+  assert_true(xml_data.contains("<event_id>event-123</event_id>"))
+  assert_true(xml_data.contains("<event_name>user.login</event_name>"))
+  
+  let parsed_xml = converter.from_xml(xml_data)
+  assert_eq(Map::get(parsed_xml, "event_id"), Some("event-123"))
+  assert_eq(Map::get(parsed_xml, "event_name"), Some("user.login"))
+  
+  // 测试版本兼容性验证
+  let validate_data_against_schema = fn(data: Map[String, String], schema: TelemetryEventSchema) {
+    let mut valid = true
+    let mut missing_fields = []
+    
+    // 检查必需字段
+    for required_field in schema.required_fields {
+      if not Map::contains(data, required_field) {
+        valid = false
+        missing_fields = missing_fields.push(required_field)
+      }
+    }
+    
+    // 检查字段类型（简化）
+    for (field_name, field_type) in schema.fields {
+      match Map::get(data, field_name) {
+        Some(value) => {
+          match field_type {
+            "integer" => {
+              if value.parse_int().is_none() {
+                valid = false
+              }
+            }
+            "float" => {
+              if value.parse_float().is_none() {
+                valid = false
+              }
+            }
+            "boolean" => {
+              if value != "true" && value != "false" {
+                valid = false
+              }
+            }
+            _ => {}  // 字符串类型总是有效
+          }
+        }
+        None => {}  // 可选字段
+      }
+    }
+    
+    { valid: valid, missing_fields: missing_fields }
+  }
+  
+  // 测试数据验证
+  let valid_data = Map::from_array([
+    ("event_id", "event-123"),
+    ("timestamp", "1609459200"),
+    ("event_name", "user.login"),
+    ("user_id", "user-456")
+  ])
+  
+  let validation_result = validate_data_against_schema(valid_data, schema_v1_0_0)
+  assert_true(validation_result.valid)
+  assert_eq(validation_result.missing_fields.length(), 0)
+  
+  let invalid_data = Map::from_array([
+    ("event_id", "event-123"),
+    ("user_id", "user-456")
+    // 缺少timestamp和event_name
+  ])
+  
+  let invalid_validation_result = validate_data_against_schema(invalid_data, schema_v1_0_0)
+  assert_false(invalid_validation_result.valid)
+  assert_eq(invalid_validation_result.missing_fields.length(), 2)
+  assert_true(invalid_validation_result.missing_fields.contains("timestamp"))
+  assert_true(invalid_validation_result.missing_fields.contains("event_name"))
+}

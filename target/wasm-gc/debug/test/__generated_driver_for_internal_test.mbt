@@ -1966,6 +1966,18 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_617a696d7574685f6e65775f666f63757365645f6d6f6f6e6269745f74657374732e6d6274_8, ["错误边界测试"]),
     9: (__test_617a696d7574685f6e65775f666f63757365645f6d6f6f6e6269745f74657374732e6d6274_9, ["性能优化测试"]),
   },
+  "azimuth_new_feature_tests.mbt": {
+    0: (__test_617a696d7574685f6e65775f666561747572655f74657374732e6d6274_0, ["basic data types operations"]),
+    1: (__test_617a696d7574685f6e65775f666561747572655f74657374732e6d6274_1, ["error handling and boundary conditions"]),
+    2: (__test_617a696d7574685f6e65775f666561747572655f74657374732e6d6274_2, ["performance benchmark tests"]),
+    3: (__test_617a696d7574685f6e65775f666561747572655f74657374732e6d6274_3, ["concurrent safety tests"]),
+    4: (__test_617a696d7574685f6e65775f666561747572655f74657374732e6d6274_4, ["data serialization and deserialization tests"]),
+    5: (__test_617a696d7574685f6e65775f666561747572655f74657374732e6d6274_5, ["time series data processing tests"]),
+    6: (__test_617a696d7574685f6e65775f666561747572655f74657374732e6d6274_6, ["resource management and cleanup tests"]),
+    7: (__test_617a696d7574685f6e65775f666561747572655f74657374732e6d6274_7, ["configuration management and dynamic updates tests"]),
+    8: (__test_617a696d7574685f6e65775f666561747572655f74657374732e6d6274_8, ["cross-service communication tests"]),
+    9: (__test_617a696d7574685f6e65775f666561747572655f74657374732e6d6274_9, ["comprehensive integration tests"]),
+  },
   "azimuth_new_data_compression_tests.mbt": {
     0: (__test_617a696d7574685f6e65775f646174615f636f6d7072657373696f6e5f74657374732e6d6274_0, ["basic data compression functionality"]),
     1: (__test_617a696d7574685f6e65775f646174615f636f6d7072657373696f6e5f74657374732e6d6274_1, ["large data compression performance"]),
