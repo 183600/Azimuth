@@ -800,6 +800,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_data_quality_telemetry_tests.mbt": {
   },
+  "azimuth_data_quality_comprehensive_tests.mbt": {
+  },
   "azimuth_data_processing_transformation_tests.mbt": {
   },
   "azimuth_data_integrity_validation_tests.mbt": {

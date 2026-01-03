@@ -1,884 +1,598 @@
-// Azimuth Adaptive Sampling Strategy Tests
-// 自适应采样策略测试套件
+// Azimuth 遥测数据自适应采样策略测试用例
+// 专注于遥测系统中的自适应采样策略和动态调整机制
 
-// Test 1: 基于负载的自适应采样
-test "load-based adaptive sampling" {
-  // 模拟系统负载数据
-  let system_load = [
-    {"timestamp": 1640995200, "cpu_usage": 45.2, "memory_usage": 60.5, "request_rate": 1000},
-    {"timestamp": 1640995260, "cpu_usage": 68.7, "memory_usage": 72.3, "request_rate": 2500},
-    {"timestamp": 1640995320, "cpu_usage": 85.1, "memory_usage": 83.9, "request_rate": 5000},
-    {"timestamp": 1640995380, "cpu_usage": 92.4, "memory_usage": 89.2, "request_rate": 7500},
-    {"timestamp": 1640995440, "cpu_usage": 78.6, "memory_usage": 76.4, "request_rate": 4000},
-    {"timestamp": 1640995500, "cpu_usage": 52.3, "memory_usage": 65.1, "request_rate": 1500}
+// 测试1: 基于负载的自适应采样
+test "基于负载的自适应采样" {
+  // 模拟不同负载情况下的遥测数据流
+  let telemetry_stream = [
+    { timestamp: 1640995200, service: "auth", load_level: "low", request_count: 50, error_rate: 0.1 },
+    { timestamp: 1640995260, service: "auth", load_level: "low", request_count: 55, error_rate: 0.1 },
+    { timestamp: 1640995320, service: "auth", load_level: "medium", request_count: 200, error_rate: 0.2 },
+    { timestamp: 1640995380, service: "auth", load_level: "medium", request_count: 250, error_rate: 0.3 },
+    { timestamp: 1640995440, service: "auth", load_level: "high", request_count: 800, error_rate: 0.5 },
+    { timestamp: 1640995500, service: "auth", load_level: "high", request_count: 900, error_rate: 0.8 },
+    { timestamp: 1640995560, service: "auth", load_level: "critical", request_count: 1500, error_rate: 2.0 },
+    { timestamp: 1640995620, service: "auth", load_level: "critical", request_count: 1800, error_rate: 3.5 },
+    { timestamp: 1640995680, service: "auth", load_level: "high", request_count: 750, error_rate: 0.6 },
+    { timestamp: 1640995740, service: "auth", load_level: "medium", request_count: 180, error_rate: 0.2 }
   ]
   
-  // 基于负载的采样策略
-  let calculate_sampling_rate = fn(load) {
-    let cpu_usage = load["cpu_usage"]
-    let memory_usage = load["memory_usage"]
-    let request_rate = load["request_rate"]
+  // 定义负载-采样率映射策略
+  let load_sampling_strategy = {
+    "low": { base_rate: 1.0, error_multiplier: 1.0 },
+    "medium": { base_rate: 0.5, error_multiplier: 1.5 },
+    "high": { base_rate: 0.2, error_multiplier: 2.0 },
+    "critical": { base_rate: 0.1, error_multiplier: 3.0 }
+  }
+  
+  // 自适应采样算法
+  let adaptive_sampling = fn(load_level, request_count, error_rate) {
+    let strategy = load_sampling_strategy.get(load_level).unwrap()
+    let base_rate = strategy.base_rate
     
-    // 根据CPU使用率调整采样率
-    let cpu_factor = if cpu_usage < 50 {
-      1.0
-    } else if cpu_usage < 75 {
-      0.7
-    } else if cpu_usage < 90 {
-      0.4
+    // 基于错误率调整采样率
+    let error_adjustment = if error_rate > 1.0 {
+      strategy.error_multiplier * (1.0 + error_rate / 10.0)
+    } else if error_rate > 0.5 {
+      strategy.error_multiplier * (1.0 + error_rate / 5.0)
     } else {
-      0.1
+      1.0
     }
     
-    // 根据内存使用率调整采样率
-    let memory_factor = if memory_usage < 60 {
-      1.0
-    } else if memory_usage < 80 {
-      0.8
+    // 基于请求量微调
+    let volume_adjustment = if request_count > 1000 {
+      0.8 // 高流量时降低采样率
+    } else if request_count < 100 {
+      1.2 // 低流量时提高采样率
     } else {
-      0.5
+      1.0
     }
     
-    // 根据请求率调整采样率
-    let request_factor = if request_rate < 2000 {
-      1.0
-    } else if request_rate < 5000 {
-      0.6
-    } else if request_rate < 8000 {
-      0.3
-    } else {
-      0.1
-    }
-    
-    // 综合采样率
-    let base_rate = 0.5
-    let adaptive_rate = base_rate * cpu_factor * memory_factor * request_factor
+    // 计算最终采样率
+    let final_rate = base_rate * error_adjustment * volume_adjustment
     
     // 确保采样率在合理范围内
-    if adaptive_rate > 1.0 {
-      1.0
-    } else if adaptive_rate < 0.01 {
-      0.01
-    } else {
-      adaptive_rate
-    }
+    if final_rate > 1.0 { 1.0 }
+    else if final_rate < 0.01 { 0.01 }
+    else { final_rate }
   }
   
-  // 计算每个时间点的采样率
-  let sampling_rates = system_load.map(calculate_sampling_rate)
-  
-  // 验证采样率调整
-  assert_true(sampling_rates[0] > 0.4 && sampling_rates[0] <= 1.0)  // 低负载
-  assert_true(sampling_rates[1] > 0.2 && sampling_rates[1] < 0.4)  // 中等负载
-  assert_true(sampling_rates[2] > 0.05 && sampling_rates[2] < 0.2) // 高负载
-  assert_true(sampling_rates[3] < 0.05)  // 极高负载
-  assert_true(sampling_rates[4] > 0.1 && sampling_rates[4] < 0.3) // 负载下降
-  assert_true(sampling_rates[5] > 0.3 && sampling_rates[5] <= 1.0) // 低负载恢复
-}
-
-// Test 2: 基于重要性的智能采样
-test "importance-based intelligent sampling" {
-  // 模拟不同重要性的遥测数据
-  let telemetry_events = [
-    {"event_type": "error", "service": "payment", "severity": "critical", "user_impact": "high"},
-    {"event_type": "request", "service": "auth", "severity": "normal", "user_impact": "medium"},
-    {"event_type": "metric", "service": "cache", "severity": "normal", "user_impact": "low"},
-    {"event_type": "error", "service": "database", "severity": "warning", "user_impact": "high"},
-    {"event_type": "request", "service": "api", "severity": "normal", "user_impact": "medium"},
-    {"event_type": "error", "service": "notification", "severity": "critical", "user_impact": "low"},
-    {"event_type": "metric", "service": "queue", "severity": "normal", "user_impact": "low"}
-  ]
-  
-  // 重要性评分规则
-  let calculate_importance_score = fn(event) {
-    let event_type_score = match event["event_type"] {
-      "error" => 0.9
-      "request" => 0.5
-      "metric" => 0.3
-      _ => 0.1
-    }
+  // 应用自适应采样策略
+  let mut sampling_results = []
+  for data_point in telemetry_stream {
+    let sampling_rate = adaptive_sampling(
+      data_point.load_level, 
+      data_point.request_count, 
+      data_point.error_rate
+    )
     
-    let severity_score = match event["severity"] {
-      "critical" => 1.0
-      "warning" => 0.7
-      "normal" => 0.4
-      _ => 0.1
-    }
+    // 模拟采样决策
+    let random_value = 0.5 // 固定值用于测试
+    let is_sampled = random_value <= sampling_rate
     
-    let user_impact_score = match event["user_impact"] {
-      "high" => 1.0
-      "medium" => 0.6
-      "low" => 0.2
-      _ => 0.1
-    }
-    
-    // 综合重要性评分
-    event_type_score * 0.3 + severity_score * 0.4 + user_impact_score * 0.3
-  }
-  
-  // 基于重要性确定采样率
-  let calculate_sampling_rate_by_importance = fn(importance_score) {
-    if importance_score >= 0.8 {
-      1.0  // 高重要性：100%采样
-    } else if importance_score >= 0.6 {
-      0.8  // 中高重要性：80%采样
-    } else if importance_score >= 0.4 {
-      0.5  // 中等重要性：50%采样
-    } else if importance_score >= 0.2 {
-      0.2  // 低重要性：20%采样
-    } else {
-      0.05 // 极低重要性：5%采样
-    }
-  }
-  
-  // 计算每个事件的采样率
-  let event_sampling_decisions = telemetry_events.map(fn(event) {
-    let importance = calculate_importance_score(event)
-    let sampling_rate = calculate_sampling_rate_by_importance(importance)
-    (event, importance, sampling_rate)
-  })
-  
-  // 验证重要性采样逻辑
-  let critical_error_events = event_sampling_decisions.filter(fn(decision) {
-    decision.0["event_type"] == "error" && decision.0["severity"] == "critical"
-  })
-  
-  let normal_request_events = event_sampling_decisions.filter(fn(decision) {
-    decision.0["event_type"] == "request" && decision.0["severity"] == "normal"
-  })
-  
-  let normal_metric_events = event_sampling_decisions.filter(fn(decision) {
-    decision.0["event_type"] == "metric" && decision.0["severity"] == "normal"
-  })
-  
-  // 验证关键错误事件有高采样率
-  for event in critical_error_events {
-    assert_true(event.2 >= 0.8, "关键错误事件应该有高采样率")
-  }
-  
-  // 验证普通请求事件有中等采样率
-  for event in normal_request_events {
-    assert_true(event.2 >= 0.4 && event.2 <= 0.6, "普通请求事件应该有中等采样率")
-  }
-  
-  // 验证普通指标事件有低采样率
-  for event in normal_metric_events {
-    assert_true(event.2 <= 0.3, "普通指标事件应该有低采样率")
-  }
-}
-
-// Test 3: 基于服务重要性的分层采样
-test "service-importance-based tiered sampling" {
-  // 服务重要性配置
-  let service_importance = {
-    "payment": {"tier": "critical", "base_rate": 0.8, "priority": 1},
-    "auth": {"tier": "critical", "base_rate": 0.7, "priority": 2},
-    "user_profile": {"tier": "high", "base_rate": 0.5, "priority": 3},
-    "search": {"tier": "medium", "base_rate": 0.3, "priority": 4},
-    "analytics": {"tier": "low", "base_rate": 0.1, "priority": 5},
-    "logging": {"tier": "low", "base_rate": 0.05, "priority": 6}
-  }
-  
-  // 服务当前负载
-  let service_load = {
-    "payment": {"requests_per_second": 500, "error_rate": 0.01, "latency_p95": 150},
-    "auth": {"requests_per_second": 1200, "error_rate": 0.005, "latency_p95": 80},
-    "user_profile": {"requests_per_second": 800, "error_rate": 0.02, "latency_p95": 120},
-    "search": {"requests_per_second": 3000, "error_rate": 0.001, "latency_p95": 200},
-    "analytics": {"requests_per_second": 200, "error_rate": 0.1, "latency_p95": 500},
-    "logging": {"requests_per_second": 5000, "error_rate": 0.05, "latency_p95": 50}
-  }
-  
-  // 计算服务特定采样率
-  let calculate_service_sampling_rate = fn(service_name) {
-    let importance = service_importance[service_name]
-    let load = service_load[service_name]
-    
-    let base_rate = importance["base_rate"]
-    
-    // 基于错误率调整
-    let error_factor = if load["error_rate"] > 0.05 {
-      1.5  // 高错误率，增加采样
-    } else if load["error_rate"] > 0.01 {
-      1.2  // 中等错误率，适度增加采样
-    } else {
-      1.0  // 低错误率，保持基础采样率
-    }
-    
-    // 基于延迟调整
-    let latency_factor = if load["latency_p95"] > 300 {
-      1.3  // 高延迟，增加采样
-    } else if load["latency_p95"] > 150 {
-      1.1  // 中等延迟，适度增加采样
-    } else {
-      1.0  // 低延迟，保持基础采样率
-    }
-    
-    // 基于请求量调整（反向关系：高请求量降低采样率）
-    let request_factor = if load["requests_per_second"] > 4000 {
-      0.5  // 高请求量，降低采样率
-    } else if load["requests_per_second"] > 1000 {
-      0.7  // 中等请求量，适度降低采样率
-    } else {
-      1.0  // 低请求量，保持基础采样率
-    }
-    
-    let adjusted_rate = base_rate * error_factor * latency_factor * request_factor
-    
-    // 确保采样率在合理范围内
-    if adjusted_rate > 1.0 {
-      1.0
-    } else if adjusted_rate < 0.01 {
-      0.01
-    } else {
-      adjusted_rate
-    }
-  }
-  
-  // 计算所有服务的采样率
-  let service_sampling_rates = {}
-  for service in service_importance.keys() {
-    service_sampling_rates[service] = calculate_service_sampling_rate(service)
-  }
-  
-  // 验证分层采样策略
-  assert_true(service_sampling_rates["payment"] > 0.6, "关键服务payment应该有高采样率")
-  assert_true(service_sampling_rates["auth"] > 0.5, "关键服务auth应该有高采样率")
-  assert_true(service_sampling_rates["user_profile"] > 0.3, "高重要性服务user_profile应该有中等以上采样率")
-  assert_true(service_sampling_rates["search"] < 0.4, "中等重要性服务search应该有中等以下采样率")
-  assert_true(service_sampling_rates["analytics"] < 0.2, "低重要性服务analytics应该有低采样率")
-  assert_true(service_sampling_rates["logging"] < 0.1, "低重要性服务logging应该有很低采样率")
-}
-
-// Test 4: 基于用户会话的采样策略
-test "user-session-based sampling strategy" {
-  // 用户会话数据
-  let user_sessions = [
-    {"user_id": "user_001", "session_id": "session_001", "is_premium": true, "account_value": "high", "error_count": 0},
-    {"user_id": "user_002", "session_id": "session_002", "is_premium": false, "account_value": "medium", "error_count": 1},
-    {"user_id": "user_003", "session_id": "session_003", "is_premium": true, "account_value": "high", "error_count": 3},
-    {"user_id": "user_004", "session_id": "session_004", "is_premium": false, "account_value": "low", "error_count": 0},
-    {"user_id": "user_005", "session_id": "session_005", "is_premium": false, "account_value": "medium", "error_count": 2}
-  ]
-  
-  // 基于用户会话计算采样率
-  let calculate_session_sampling_rate = fn(session) {
-    let base_rate = 0.1
-    
-    // 基于用户类型调整
-    let user_factor = if session["is_premium"] {
-      2.0  // 高级用户双倍采样率
-    } else {
-      1.0
-    }
-    
-    // 基于账户价值调整
-    let value_factor = match session["account_value"] {
-      "high" => 1.5
-      "medium" => 1.0
-      "low" => 0.5
-      _ => 1.0
-    }
-    
-    // 基于错误数量调整
-    let error_factor = if session["error_count"] > 2 {
-      3.0  // 高错误数，大幅增加采样
-    } else if session["error_count"] > 0 {
-      1.5  // 有错误，适度增加采样
-    } else {
-      1.0  // 无错误，保持基础采样
-    }
-    
-    let adjusted_rate = base_rate * user_factor * value_factor * error_factor
-    
-    // 确保采样率在合理范围内
-    if adjusted_rate > 1.0 {
-      1.0
-    } else if adjusted_rate < 0.01 {
-      0.01
-    } else {
-      adjusted_rate
-    }
-  }
-  
-  // 计算每个会话的采样率
-  let session_sampling_rates = user_sessions.map(fn(session) {
-    let rate = calculate_session_sampling_rate(session)
-    (session["user_id"], session["session_id"], rate)
-  })
-  
-  // 验证会话采样策略
-  let premium_user_sessions = session_sampling_rates.filter(fn(session) {
-    let user_id = session.0
-    let original_session = user_sessions.filter(fn(s) { s["user_id"] == user_id })[0]
-    original_session["is_premium"]
-  })
-  
-  let high_error_sessions = session_sampling_rates.filter(fn(session) {
-    let user_id = session.0
-    let original_session = user_sessions.filter(fn(s) { s["user_id"] == user_id })[0]
-    original_session["error_count"] > 2
-  })
-  
-  let regular_user_sessions = session_sampling_rates.filter(fn(session) {
-    let user_id = session.0
-    let original_session = user_sessions.filter(fn(s) { s["user_id"] == user_id })[0]
-    not(original_session["is_premium"]) && original_session["error_count"] == 0
-  })
-  
-  // 验证高级用户会话有更高采样率
-  for session in premium_user_sessions {
-    assert_true(session.2 > 0.15, "高级用户会话应该有更高采样率")
-  }
-  
-  // 验证高错误会话有更高采样率
-  for session in high_error_sessions {
-    assert_true(session.2 > 0.3, "高错误会话应该有更高采样率")
-  }
-  
-  // 验证普通用户无错误会话有基础采样率
-  for session in regular_user_sessions {
-    assert_true(session.2 >= 0.05 && session.2 <= 0.15, "普通用户无错误会话应该有基础采样率")
-  }
-}
-
-// Test 5: 时间窗口自适应采样
-test "time-window-adaptive sampling" {
-  // 模拟一天内不同时间段的流量模式
-  let hourly_traffic = [
-    {"hour": 0, "request_count": 500, "error_rate": 0.02, "avg_latency": 120},
-    {"hour": 6, "request_count": 1200, "error_rate": 0.015, "avg_latency": 100},
-    {"hour": 9, "request_count": 5000, "error_rate": 0.01, "avg_latency": 150},
-    {"hour": 12, "request_count": 4500, "error_rate": 0.012, "avg_latency": 180},
-    {"hour": 15, "request_count": 4800, "error_rate": 0.008, "avg_latency": 160},
-    {"hour": 18, "request_count": 3500, "error_rate": 0.018, "avg_latency": 200},
-    {"hour": 21, "request_count": 2000, "error_rate": 0.025, "avg_latency": 140}
-  ]
-  
-  // 基于时间窗口的采样策略
-  let calculate_time_based_sampling_rate = fn(traffic_data) {
-    let base_rate = 0.2
-    
-    // 基于请求量调整（反向关系）
-    let volume_factor = if traffic_data["request_count"] > 4000 {
-      0.4  // 高峰期，降低采样率
-    } else if traffic_data["request_count"] > 2000 {
-      0.7  // 中等流量，适度降低采样率
-    } else {
-      1.2  // 低流量期，提高采样率
-    }
-    
-    // 基于错误率调整
-    let error_factor = if traffic_data["error_rate"] > 0.02 {
-      1.5  // 高错误率，增加采样
-    } else if traffic_data["error_rate"] > 0.01 {
-      1.2  // 中等错误率，适度增加采样
-    } else {
-      1.0  // 低错误率，保持基础采样
-    }
-    
-    // 基于延迟调整
-    let latency_factor = if traffic_data["avg_latency"] > 180 {
-      1.3  // 高延迟，增加采样
-    } else if traffic_data["avg_latency"] > 120 {
-      1.1  // 中等延迟，适度增加采样
-    } else {
-      1.0  // 低延迟，保持基础采样
-    }
-    
-    let adjusted_rate = base_rate * volume_factor * error_factor * latency_factor
-    
-    // 确保采样率在合理范围内
-    if adjusted_rate > 1.0 {
-      1.0
-    } else if adjusted_rate < 0.01 {
-      0.01
-    } else {
-      adjusted_rate
-    }
-  }
-  
-  // 计算每个时间段的采样率
-  let hourly_sampling_rates = hourly_traffic.map(fn(traffic) {
-    let rate = calculate_time_based_sampling_rate(traffic)
-    (traffic["hour"], rate)
-  })
-  
-  // 验证时间窗口采样策略
-  let low_traffic_rates = hourly_sampling_rates.filter(fn(hourly) {
-    let hour = hourly.0
-    let traffic = hourly_traffic.filter(fn(t) { t["hour"] == hour })[0]
-    traffic["request_count"] < 2000
-  })
-  
-  let high_traffic_rates = hourly_sampling_rates.filter(fn(hourly) {
-    let hour = hourly.0
-    let traffic = hourly_traffic.filter(fn(t) { t["hour"] == hour })[0]
-    traffic["request_count"] > 4000
-  })
-  
-  // 验证低流量时段有更高采样率
-  for hourly in low_traffic_rates {
-    assert_true(hourly.1 > 0.2, "低流量时段应该有更高采样率")
-  }
-  
-  // 验证高流量时段有更低采样率
-  for hourly in high_traffic_rates {
-    assert_true(hourly.1 < 0.2, "高流量时段应该有更低采样率")
-  }
-}
-
-// Test 6: 异常检测驱动的动态采样
-test "anomaly-driven dynamic sampling" {
-  // 模拟异常检测结果
-  let anomaly_detections = [
-    {"timestamp": 1640995200, "metric": "cpu_usage", "value": 45.2, "baseline": 40.0, "anomaly_score": 0.3},
-    {"timestamp": 1640995260, "metric": "memory_usage", "value": 85.7, "baseline": 60.0, "anomaly_score": 0.8},
-    {"timestamp": 1640995320, "metric": "response_time", "value": 500.0, "baseline": 200.0, "anomaly_score": 0.9},
-    {"timestamp": 1640995380, "metric": "error_rate", "value": 0.05, "baseline": 0.01, "anomaly_score": 0.7},
-    {"timestamp": 1640995440, "metric": "cpu_usage", "value": 42.1, "baseline": 40.0, "anomaly_score": 0.2},
-    {"timestamp": 1640995500, "metric": "throughput", "value": 1500.0, "baseline": 2000.0, "anomaly_score": 0.6}
-  ]
-  
-  // 基于异常分数的采样策略
-  let calculate_anomaly_driven_sampling_rate = fn(anomaly_detection) {
-    let base_rate = 0.1
-    let anomaly_score = anomaly_detection["anomaly_score"]
-    
-    // 基于异常分数调整采样率
-    let anomaly_factor = if anomaly_score > 0.8 {
-      5.0  // 高异常，大幅增加采样
-    } else if anomaly_score > 0.6 {
-      3.0  // 中等异常，显著增加采样
-    } else if anomaly_score > 0.4 {
-      2.0  // 低异常，适度增加采样
-    } else {
-      1.0  // 无异常，保持基础采样
-    }
-    
-    let adjusted_rate = base_rate * anomaly_factor
-    
-    // 确保采样率在合理范围内
-    if adjusted_rate > 1.0 {
-      1.0
-    } else if adjusted_rate < 0.01 {
-      0.01
-    } else {
-      adjusted_rate
-    }
-  }
-  
-  // 计算每个异常检测的采样率
-  let anomaly_sampling_rates = anomaly_detections.map(fn(detection) {
-    let rate = calculate_anomaly_driven_sampling_rate(detection)
-    (detection["metric"], detection["anomaly_score"], rate)
-  })
-  
-  // 验证异常驱动采样策略
-  let high_anomaly_rates = anomaly_sampling_rates.filter(fn(anomaly) {
-    anomaly.1 > 0.8
-  })
-  
-  let medium_anomaly_rates = anomaly_sampling_rates.filter(fn(anomaly) {
-    anomaly.1 > 0.6 && anomaly.1 <= 0.8
-  })
-  
-  let low_anomaly_rates = anomaly_sampling_rates.filter(fn(anomaly) {
-    anomaly.1 <= 0.4
-  })
-  
-  // 验证高异常分数有高采样率
-  for anomaly in high_anomaly_rates {
-    assert_true(anomaly.2 > 0.4, "高异常分数应该有高采样率")
-  }
-  
-  // 验证中等异常分数有中等采样率
-  for anomaly in medium_anomaly_rates {
-    assert_true(anomaly.2 > 0.2 && anomaly.2 <= 0.4, "中等异常分数应该有中等采样率")
-  }
-  
-  // 验证低异常分数有基础采样率
-  for anomaly in low_anomaly_rates {
-    assert_true(anomaly.2 <= 0.2, "低异常分数应该有基础采样率")
-  }
-}
-
-// Test 7: 多维度综合采样策略
-test "multi-dimensional comprehensive sampling strategy" {
-  // 综合考虑多个维度的数据
-  let comprehensive_data = [
-    {
-      "service": "payment",
-      "user_tier": "premium",
-      "error_count": 0,
-      "latency_p95": 120,
-      "request_rate": 800,
-      "business_impact": "high",
-      "time_of_day": "peak"
-    },
-    {
-      "service": "logging",
-      "user_tier": "regular",
-      "error_count": 0,
-      "latency_p95": 50,
-      "request_rate": 5000,
-      "business_impact": "low",
-      "time_of_day": "off_peak"
-    },
-    {
-      "service": "auth",
-      "user_tier": "premium",
-      "error_count": 2,
-      "latency_p95": 200,
-      "request_rate": 1500,
-      "business_impact": "high",
-      "time_of_day": "peak"
-    },
-    {
-      "service": "analytics",
-      "user_tier": "regular",
-      "error_count": 1,
-      "latency_p95": 300,
-      "request_rate": 300,
-      "business_impact": "medium",
-      "time_of_day": "normal"
-    }
-  ]
-  
-  // 多维度综合采样率计算
-  let calculate_comprehensive_sampling_rate = fn(data) {
-    let base_rate = 0.2
-    
-    // 服务重要性维度
-    let service_factor = match data["service"] {
-      "payment" => 1.5
-      "auth" => 1.3
-      "analytics" => 0.8
-      "logging" => 0.3
-      _ => 1.0
-    }
-    
-    // 用户层级维度
-    let user_tier_factor = match data["user_tier"] {
-      "premium" => 1.5
-      "regular" => 1.0
-      _ => 1.0
-    }
-    
-    // 错误情况维度
-    let error_factor = if data["error_count"] > 1 {
-      2.0
-    } else if data["error_count"] > 0 {
-      1.3
-    } else {
-      1.0
-    }
-    
-    // 性能维度
-    let performance_factor = if data["latency_p95"] > 250 {
-      1.5
-    } else if data["latency_p95"] > 150 {
-      1.2
-    } else {
-      1.0
-    }
-    
-    // 流量维度（反向关系）
-    let traffic_factor = if data["request_rate"] > 3000 {
-      0.5
-    } else if data["request_rate"] > 1000 {
-      0.7
-    } else {
-      1.0
-    }
-    
-    // 业务影响维度
-    let business_factor = match data["business_impact"] {
-      "high" => 1.5
-      "medium" => 1.2
-      "low" => 0.8
-      _ => 1.0
-    }
-    
-    // 时间维度
-    let time_factor = match data["time_of_day"] {
-      "peak" => 0.8
-      "normal" => 1.0
-      "off_peak" => 1.2
-      _ => 1.0
-    }
-    
-    let adjusted_rate = base_rate * service_factor * user_tier_factor * error_factor * 
-                      performance_factor * traffic_factor * business_factor * time_factor
-    
-    // 确保采样率在合理范围内
-    if adjusted_rate > 1.0 {
-      1.0
-    } else if adjusted_rate < 0.01 {
-      0.01
-    } else {
-      adjusted_rate
-    }
-  }
-  
-  // 计算每个数据点的采样率
-  let comprehensive_sampling_rates = comprehensive_data.map(fn(data) {
-    let rate = calculate_comprehensive_sampling_rate(data)
-    (data["service"], data["user_tier"], rate)
-  })
-  
-  // 验证综合采样策略
-  let payment_premium_rate = comprehensive_sampling_rates.filter(fn(item) {
-    item.0 == "payment" && item.1 == "premium"
-  })[0].2
-  
-  let logging_regular_rate = comprehensive_sampling_rates.filter(fn(item) {
-    item.0 == "logging" && item.1 == "regular"
-  })[0].2
-  
-  let auth_premium_rate = comprehensive_sampling_rates.filter(fn(item) {
-    item.0 == "auth" && item.1 == "premium"
-  })[0].2
-  
-  // 验证高重要性组合有高采样率
-  assert_true(payment_premium_rate > 0.3, "高级用户支付服务应该有高采样率")
-  assert_true(auth_premium_rate > 0.4, "有错误的高级用户认证服务应该有更高采样率")
-  
-  // 验证低重要性组合有低采样率
-  assert_true(logging_regular_rate < 0.1, "普通用户日志服务应该有低采样率")
-}
-
-// Test 8: 采样策略性能影响评估
-test "sampling strategy performance impact assessment" {
-  // 不同采样策略的性能影响数据
-  let sampling_performance = [
-    {"strategy": "fixed_10_percent", "sampling_rate": 0.1, "storage_reduction": 0.9, "accuracy_loss": 0.05, "cpu_overhead": 0.02},
-    {"strategy": "fixed_50_percent", "sampling_rate": 0.5, "storage_reduction": 0.5, "accuracy_loss": 0.02, "cpu_overhead": 0.05},
-    {"strategy": "adaptive_load", "sampling_rate": 0.35, "storage_reduction": 0.65, "accuracy_loss": 0.03, "cpu_overhead": 0.08},
-    {"strategy": "adaptive_importance", "sampling_rate": 0.25, "storage_reduction": 0.75, "accuracy_loss": 0.02, "cpu_overhead": 0.12},
-    {"strategy": "comprehensive", "sampling_rate": 0.3, "storage_reduction": 0.7, "accuracy_loss": 0.025, "cpu_overhead": 0.15}
-  ]
-  
-  // 计算综合性能分数
-  let calculate_performance_score = fn(performance_data) {
-    // 权重配置
-    let storage_weight = 0.4  // 存储节省权重
-    let accuracy_weight = 0.4 // 精度保持权重
-    let cpu_weight = 0.2      // CPU开销权重
-    
-    // 归一化指标（越高越好）
-    let storage_score = performance_data["storage_reduction"]
-    let accuracy_score = 1.0 - performance_data["accuracy_loss"]  // 精度损失转换为精度保持
-    let cpu_score = 1.0 - performance_data["cpu_overhead"]        // CPU开销转换为CPU效率
-    
-    // 综合分数
-    storage_score * storage_weight + accuracy_score * accuracy_weight + cpu_score * cpu_weight
-  }
-  
-  // 计算每个策略的性能分数
-  let strategy_scores = sampling_performance.map(fn(performance) {
-    let score = calculate_performance_score(performance)
-    (performance["strategy"], score)
-  })
-  
-  // 找出最佳策略
-  let best_strategy = strategy_scores.reduce(fn(best, current) {
-    if current.1 > best.1 {
-      current
-    } else {
-      best
-    }
-  }, strategy_scores[0])
-  
-  // 验证性能评估
-  assert_eq(strategy_scores.length(), 5)
-  
-  // 验证综合策略有较高的性能分数
-  let comprehensive_score = strategy_scores.filter(fn(strategy) {
-    strategy.0 == "comprehensive"
-  })[0].1
-  
-  // 验证固定10%策略的精度损失最小但存储节省也较小
-  let fixed_10_score = strategy_scores.filter(fn(strategy) {
-    strategy.0 == "fixed_10_percent"
-  })[0].1
-  
-  // 验证分数在合理范围内
-  for strategy in strategy_scores {
-    assert_true(strategy.1 > 0.5 && strategy.1 < 1.0, "策略性能分数应该在合理范围内")
-  }
-  
-  // 验证最佳策略确实是综合策略或适应性策略之一
-  assert_true(best_strategy.0 == "comprehensive" || 
-              best_strategy.0 == "adaptive_importance" || 
-              best_strategy.0 == "adaptive_load", 
-              "最佳策略应该是适应性或综合策略")
-}
-
-// Test 9: 采样策略配置验证
-test "sampling strategy configuration validation" {
-  // 采样策略配置
-  let sampling_configs = [
-    {
-      "name": "production_config",
-      "base_rate": 0.2,
-      "min_rate": 0.01,
-      "max_rate": 0.8,
-      "adaptive_enabled": true,
-      "load_threshold": 0.8,
-      "importance_enabled": true,
-      "time_window_enabled": true
-    },
-    {
-      "name": "development_config",
-      "base_rate": 0.5,
-      "min_rate": 0.1,
-      "max_rate": 1.0,
-      "adaptive_enabled": false,
-      "load_threshold": 0.9,
-      "importance_enabled": false,
-      "time_window_enabled": false
-    },
-    {
-      "name": "test_config",
-      "base_rate": 1.0,
-      "min_rate": 0.5,
-      "max_rate": 1.0,
-      "adaptive_enabled": false,
-      "load_threshold": 0.95,
-      "importance_enabled": false,
-      "time_window_enabled": false
-    }
-  ]
-  
-  // 配置验证规则
-  let validate_config = fn(config) {
-    let validation_errors = []
-    
-    // 验证基础采样率
-    if config["base_rate"] < config["min_rate"] {
-      validation_errors = validation_errors.push("基础采样率不能小于最小采样率")
-    }
-    
-    if config["base_rate"] > config["max_rate"] {
-      validation_errors = validation_errors.push("基础采样率不能大于最大采样率")
-    }
-    
-    // 验证采样率范围
-    if config["min_rate"] < 0 || config["min_rate"] > 1 {
-      validation_errors = validation_errors.push("最小采样率必须在0-1之间")
-    }
-    
-    if config["max_rate"] < 0 || config["max_rate"] > 1 {
-      validation_errors = validation_errors.push("最大采样率必须在0-1之间")
-    }
-    
-    // 验证负载阈值
-    if config["load_threshold"] < 0 || config["load_threshold"] > 1 {
-      validation_errors = validation_errors.push("负载阈值必须在0-1之间")
-    }
-    
-    // 验证自适应配置一致性
-    if config["adaptive_enabled"] && (config["load_threshold"] == 0) {
-      validation_errors = validation_errors.push("启用自适应时负载阈值不能为0")
-    }
-    
-    {
-      "valid": validation_errors.length() == 0,
-      "errors": validation_errors
-    }
-  }
-  
-  // 验证所有配置
-  let config_validations = sampling_configs.map(fn(config) {
-    let validation = validate_config(config)
-    (config["name"], validation["valid"], validation["errors"])
-  })
-  
-  // 验证配置验证结果
-  for validation in config_validations {
-    if validation.0 == "production_config" {
-      assert_true(validation.1, "生产配置应该是有效的")
-      assert_eq(validation.2.length(), 0, "生产配置不应该有验证错误")
-    }
-    
-    if validation.0 == "development_config" {
-      assert_true(validation.1, "开发配置应该是有效的")
-      assert_eq(validation.2.length(), 0, "开发配置不应该有验证错误")
-    }
-    
-    if validation.0 == "test_config" {
-      assert_true(validation.1, "测试配置应该是有效的")
-      assert_eq(validation.2.length(), 0, "测试配置不应该有验证错误")
-    }
-  }
-}
-
-// Test 10: 采样策略切换和回滚
-test "sampling strategy switching and rollback" {
-  // 采样策略版本管理
-  let strategy_versions = [
-    {"version": "v1.0", "name": "fixed_sampling", "config": {"rate": 0.1}, "active": false},
-    {"version": "v1.1", "name": "adaptive_load", "config": {"base_rate": 0.2, "load_threshold": 0.8}, "active": false},
-    {"version": "v1.2", "name": "adaptive_importance", "config": {"base_rate": 0.15, "importance_weights": {"error": 0.8, "request": 0.5}}, "active": true},
-    {"version": "v2.0", "name": "comprehensive", "config": {"base_rate": 0.25, "multi_dimensional": true}, "active": false}
-  ]
-  
-  // 模拟策略切换过程
-  let switch_strategy = fn(versions, target_version) {
-    // 查找目标策略
-    let target_strategy = versions.filter(fn(v) { v["version"] == target_version })[0]
-    
-    // 检查目标策略是否存在
-    if target_strategy.length() == 0 {
-      return {"success": false, "message": "目标策略版本不存在"}
-    }
-    
-    // 停用所有当前策略
-    let updated_versions = versions.map(fn(v) {
-      let updated_v = v
-      updated_v["active"] = false
-      updated_v
+    sampling_results = sampling_results.push({
+      timestamp: data_point.timestamp,
+      load_level: data_point.load_level,
+      request_count: data_point.request_count,
+      error_rate: data_point.error_rate,
+      sampling_rate: sampling_rate,
+      is_sampled: is_sampled
     })
+  }
+  
+  // 验证自适应采样结果
+  assert_eq(sampling_results.length(), 10)
+  
+  // 验证低负载时的采样率
+  let low_load_samples = sampling_results.filter(fn(r) { r.load_level == "low" })
+  assert_eq(low_load_samples.length(), 2)
+  assert_true(low_load_samples.all(fn(r) { r.sampling_rate >= 0.9 })) // 低负载时高采样率
+  
+  // 验证中等负载时的采样率
+  let medium_load_samples = sampling_results.filter(fn(r) { r.load_level == "medium" })
+  assert_eq(medium_load_samples.length(), 3)
+  assert_true(medium_load_samples.all(fn(r) { r.sampling_rate >= 0.4 && r.sampling_rate <= 0.8 }))
+  
+  // 验证高负载时的采样率
+  let high_load_samples = sampling_results.filter(fn(r) { r.load_level == "high" })
+  assert_eq(high_load_samples.length(), 3)
+  assert_true(high_load_samples.all(fn(r) { r.sampling_rate <= 0.5 })) // 高负载时低采样率
+  
+  // 验证临界负载时的采样率
+  let critical_load_samples = sampling_results.filter(fn(r) { r.load_level == "critical" })
+  assert_eq(critical_load_samples.length(), 2)
+  assert_true(critical_load_samples.all(fn(r) { r.sampling_rate <= 0.3 })) // 临界负载时最低采样率
+  
+  // 验证错误率对采样率的影响
+  let high_error_samples = sampling_results.filter(fn(r) { r.error_rate > 1.0 })
+  assert_eq(high_error_samples.length(), 2)
+  assert_true(high_error_samples.all(fn(r) { r.sampling_rate > 0.2 })) // 高错误率时提高采样率
+}
+
+// 测试2: 基于服务重要性的分层采样
+test "基于服务重要性的分层采样" {
+  // 模拟不同重要性的服务遥测数据
+  let service_telemetry = [
+    { service: "auth-service", tier: "critical", request_count: 100, latency: 50.0 },
+    { service: "payment-service", tier: "critical", request_count: 80, latency: 120.0 },
+    { service: "user-service", tier: "high", request_count: 200, latency: 30.0 },
+    { service: "order-service", tier: "high", request_count: 150, latency: 45.0 },
+    { service: "notification-service", tier: "medium", request_count: 300, latency: 25.0 },
+    { service: "analytics-service", tier: "medium", request_count: 50, latency: 200.0 },
+    { service: "logging-service", tier: "low", request_count: 500, latency: 15.0 },
+    { service: "cache-service", tier: "low", request_count: 1000, latency: 5.0 }
+  ]
+  
+  // 定义服务分层采样策略
+  let tier_sampling_strategy = {
+    "critical": { base_rate: 1.0, latency_threshold: 100.0, latency_multiplier: 1.5 },
+    "high": { base_rate: 0.8, latency_threshold: 50.0, latency_multiplier: 1.3 },
+    "medium": { base_rate: 0.5, latency_threshold: 30.0, latency_multiplier: 1.2 },
+    "low": { base_rate: 0.2, latency_threshold: 20.0, latency_multiplier: 1.1 }
+  }
+  
+  // 分层采样算法
+  let tier_based_sampling = fn(service_tier, request_count, latency) {
+    let strategy = tier_sampling_strategy.get(service_tier).unwrap()
+    let base_rate = strategy.base_rate
     
-    // 激活目标策略
-    let final_versions = updated_versions.map(fn(v) {
-      if v["version"] == target_version {
-        let activated_v = v
-        activated_v["active"] = true
-        activated_v
+    // 基于延迟调整采样率
+    let latency_adjustment = if latency > strategy.latency_threshold {
+      strategy.latency_multiplier * (1.0 + (latency - strategy.latency_threshold) / 100.0)
+    } else {
+      1.0
+    }
+    
+    // 基于请求量调整
+    let volume_adjustment = if request_count > 500 {
+      0.7 // 高流量服务降低采样率
+    } else if request_count < 100 {
+      1.3 // 低流量服务提高采样率
+    } else {
+      1.0
+    }
+    
+    // 计算最终采样率
+    let final_rate = base_rate * latency_adjustment * volume_adjustment
+    
+    // 确保采样率在合理范围内
+    if final_rate > 1.0 { 1.0 }
+    else if final_rate < 0.01 { 0.01 }
+    else { final_rate }
+  }
+  
+  // 应用分层采样策略
+  let mut tier_sampling_results = []
+  for service_data in service_telemetry {
+    let sampling_rate = tier_based_sampling(
+      service_data.tier,
+      service_data.request_count,
+      service_data.latency
+    )
+    
+    tier_sampling_results = tier_sampling_results.push({
+      service: service_data.service,
+      tier: service_data.tier,
+      request_count: service_data.request_count,
+      latency: service_data.latency,
+      sampling_rate: sampling_rate
+    })
+  }
+  
+  // 验证分层采样结果
+  assert_eq(tier_sampling_results.length(), 8)
+  
+  // 验证关键服务采样率
+  let critical_services = tier_sampling_results.filter(fn(r) { r.tier == "critical" })
+  assert_eq(critical_services.length(), 2)
+  assert_true(critical_services.all(fn(r) { r.sampling_rate >= 0.9 }))
+  
+  // 验证高优先级服务采样率
+  let high_services = tier_sampling_results.filter(fn(r) { r.tier == "high" })
+  assert_eq(high_services.length(), 2)
+  assert_true(high_services.all(fn(r) { r.sampling_rate >= 0.6 }))
+  
+  // 验证中等优先级服务采样率
+  let medium_services = tier_sampling_results.filter(fn(r) { r.tier == "medium" })
+  assert_eq(medium_services.length(), 2)
+  assert_true(medium_services.all(fn(r) { r.sampling_rate >= 0.4 && r.sampling_rate <= 0.8 }))
+  
+  // 验证低优先级服务采样率
+  let low_services = tier_sampling_results.filter(fn(r) { r.tier == "low" })
+  assert_eq(low_services.length(), 2)
+  assert_true(low_services.all(fn(r) { r.sampling_rate <= 0.3 }))
+  
+  // 验证延迟对采样率的影响
+  let payment_service = tier_sampling_results.filter(fn(r) { r.service == "payment-service" })[0]
+  let auth_service = tier_sampling_results.filter(fn(r) { r.service == "auth-service" })[0]
+  
+  // payment-service延迟更高，采样率应该也更高
+  assert_true(payment_service.sampling_rate > auth_service.sampling_rate)
+}
+
+// 测试3: 基于异常检测的动态采样
+test "基于异常检测的动态采样" {
+  // 模拟包含异常的遥测数据流
+  let anomaly_telemetry = [
+    { timestamp: 1640995200, metric: "cpu", value: 30.0, is_anomaly: false },
+    { timestamp: 1640995260, metric: "memory", value: 60.0, is_anomaly: false },
+    { timestamp: 1640995320, metric: "cpu", value: 95.0, is_anomaly: true },
+    { timestamp: 1640995380, metric: "disk_io", value: 150.0, is_anomaly: true },
+    { timestamp: 1640995440, metric: "network", value: 45.0, is_anomaly: false },
+    { timestamp: 1640995500, metric: "cpu", value: 35.0, is_anomaly: false },
+    { timestamp: 1640995560, metric: "memory", value: 98.0, is_anomaly: true },
+    { timestamp: 1640995620, metric: "response_time", value: 500.0, is_anomaly: true },
+    { timestamp: 1640995680, metric: "cpu", value: 32.0, is_anomaly: false },
+    { timestamp: 1640995740, metric: "network", value: 50.0, is_anomaly: false }
+  ]
+  
+  // 异常检测采样策略
+  let anomaly_sampling_strategy = {
+    normal_rate: 0.3,           // 正常数据采样率
+    anomaly_rate: 1.0,          // 异常数据采样率
+    post_anomaly_window: 300,   // 异常后时间窗口（秒）
+    post_anomaly_rate: 0.8      // 异常后窗口内采样率
+  }
+  
+  // 动态采样算法
+  let anomaly_based_sampling = fn(is_anomaly, timestamp, last_anomaly_time) {
+    if is_anomaly {
+      // 异常数据全采样
+      { sampling_rate: anomaly_sampling_strategy.anomaly_rate, is_anomaly: true }
+    } else {
+      // 检查是否在异常后时间窗口内
+      let time_since_last_anomaly = timestamp - last_anomaly_time
+      if time_since_last_anomaly <= anomaly_sampling_strategy.post_anomaly_window {
+        // 异常后窗口内提高采样率
+        { sampling_rate: anomaly_sampling_strategy.post_anomaly_rate, is_anomaly: false }
       } else {
-        v
+        // 正常采样率
+        { sampling_rate: anomaly_sampling_strategy.normal_rate, is_anomaly: false }
       }
-    })
-    
-    {
-      "success": true,
-      "message": "策略切换成功",
-      "active_version": target_version,
-      "versions": final_versions
     }
   }
   
-  // 执行策略切换
-  let switch_to_v2 = switch_strategy(strategy_versions, "v2.0")
-  let switch_to_invalid = switch_strategy(strategy_versions, "v3.0")
+  // 应用异常检测采样策略
+  let mut anomaly_sampling_results = []
+  let mut last_anomaly_time = 0
   
-  // 验证策略切换结果
-  assert_true(switch_to_v2["success"], "切换到有效版本应该成功")
-  assert_eq(switch_to_v2["active_version"], "v2.0")
+  for data_point in anomaly_telemetry {
+    let sampling_decision = anomaly_based_sampling(
+      data_point.is_anomaly,
+      data_point.timestamp,
+      last_anomaly_time
+    )
+    
+    // 更新最后异常时间
+    if data_point.is_anomaly {
+      last_anomaly_time = data_point.timestamp
+    }
+    
+    // 模拟采样决策
+    let random_value = 0.5 // 固定值用于测试
+    let is_sampled = random_value <= sampling_decision.sampling_rate
+    
+    anomaly_sampling_results = anomaly_sampling_results.push({
+      timestamp: data_point.timestamp,
+      metric: data_point.metric,
+      value: data_point.value,
+      is_anomaly: data_point.is_anomaly,
+      sampling_rate: sampling_decision.sampling_rate,
+      is_sampled: is_sampled
+    })
+  }
   
-  assert_false(switch_to_invalid["success"], "切换到无效版本应该失败")
-  assert_true(switch_to_invalid["message"].contains("不存在"))
+  // 验证异常检测采样结果
+  assert_eq(anomaly_sampling_results.length(), 10)
   
-  // 验证切换后的策略状态
-  let updated_versions = switch_to_v2["versions"]
-  let active_strategies = updated_versions.filter(fn(v) { v["active"] })
+  // 验证异常数据采样率
+  let anomaly_data = anomaly_sampling_results.filter(fn(r) { r.is_anomaly })
+  assert_eq(anomaly_data.length(), 4)
+  assert_true(anomaly_data.all(fn(r) { r.sampling_rate == 1.0 })) // 异常数据全采样
+  assert_true(anomaly_data.all(fn(r) { r.is_sampled })) // 异常数据全部被采样
   
-  assert_eq(active_strategies.length(), 1, "应该只有一个活跃策略")
-  assert_eq(active_strategies[0]["version"], "v2.0", "活跃策略应该是v2.0")
+  // 验证正常数据采样率
+  let normal_data = anomaly_sampling_results.filter(fn(r) { not r.is_anomaly })
+  assert_eq(normal_data.length(), 6)
   
-  // 验证其他策略已被停用
-  let inactive_strategies = updated_versions.filter(fn(v) { not(v["active"]) })
-  assert_eq(inactive_strategies.length(), 3, "应该有三个非活跃策略")
+  // 验证异常后窗口内的采样率
+  let post_anomaly_data = normal_data.filter(fn(r) { r.sampling_rate > 0.5 })
+  assert_true(post_anomaly_data.length() >= 2) // 至少有一些正常数据在异常后窗口内
+  
+  // 验证采样率分布
+  let high_rate_samples = anomaly_sampling_results.filter(fn(r) { r.sampling_rate >= 0.8 })
+  let low_rate_samples = anomaly_sampling_results.filter(fn(r) { r.sampling_rate <= 0.5 })
+  
+  assert_true(high_rate_samples.length() >= 4) // 异常数据+异常后窗口数据
+  assert_true(low_rate_samples.length() >= 2) // 远离异常的正常数据
+}
+
+// 测试4: 多因子组合采样策略
+test "多因子组合采样策略" {
+  // 模拟多因子遥测数据
+  let multi_factor_data = [
+    { 
+      timestamp: 1640995200, 
+      service: "auth", 
+      tier: "critical", 
+      load: "low", 
+      error_rate: 0.1, 
+      latency: 50.0,
+      business_value: 100.0
+    },
+    { 
+      timestamp: 1640995260, 
+      service: "cache", 
+      tier: "low", 
+      load: "high", 
+      error_rate: 0.5, 
+      latency: 5.0,
+      business_value: 20.0
+    },
+    { 
+      timestamp: 1640995320, 
+      service: "payment", 
+      tier: "critical", 
+      load: "medium", 
+      error_rate: 2.0, 
+      latency: 200.0,
+      business_value: 200.0
+    },
+    { 
+      timestamp: 1640995380, 
+      service: "analytics", 
+      tier: "medium", 
+      load: "low", 
+      error_rate: 0.2, 
+      latency: 100.0,
+      business_value: 50.0
+    },
+    { 
+      timestamp: 1640995440, 
+      service: "logging", 
+      tier: "low", 
+      load: "high", 
+      error_rate: 0.1, 
+      latency: 15.0,
+      business_value: 10.0
+    }
+  ]
+  
+  // 多因子权重配置
+  let factor_weights = {
+    tier: 0.3,         // 服务层级权重
+    load: 0.2,         // 负载权重
+    error_rate: 0.2,   // 错误率权重
+    latency: 0.15,     // 延迟权重
+    business_value: 0.15 // 业务价值权重
+  }
+  
+  // 因子评分函数
+  let score_tier = fn(tier) {
+    match tier {
+      "critical" => 1.0,
+      "high" => 0.8,
+      "medium" => 0.6,
+      "low" => 0.4,
+      _ => 0.2
+    }
+  }
+  
+  let score_load = fn(load) {
+    match load {
+      "critical" => 1.0,
+      "high" => 0.8,
+      "medium" => 0.6,
+      "low" => 0.4,
+      _ => 0.2
+    }
+  }
+  
+  let score_error_rate = fn(error_rate) {
+    if error_rate > 2.0 { 1.0 }
+    else if error_rate > 1.0 { 0.8 }
+    else if error_rate > 0.5 { 0.6 }
+    else if error_rate > 0.1 { 0.4 }
+    else { 0.2 }
+  }
+  
+  let score_latency = fn(latency) {
+    if latency > 200.0 { 1.0 }
+    else if latency > 100.0 { 0.8 }
+    else if latency > 50.0 { 0.6 }
+    else if latency > 20.0 { 0.4 }
+    else { 0.2 }
+  }
+  
+  let score_business_value = fn(business_value) {
+    if business_value > 150.0 { 1.0 }
+    else if business_value > 100.0 { 0.8 }
+    else if business_value > 50.0 { 0.6 }
+    else if business_value > 20.0 { 0.4 }
+    else { 0.2 }
+  }
+  
+  // 多因子组合采样算法
+  let multi_factor_sampling = fn(service_data) {
+    // 计算各因子得分
+    let tier_score = score_tier(service_data.tier)
+    let load_score = score_load(service_data.load)
+    let error_rate_score = score_error_rate(service_data.error_rate)
+    let latency_score = score_latency(service_data.latency)
+    let business_value_score = score_business_value(service_data.business_value)
+    
+    // 计算加权总分
+    let total_score = 
+      tier_score * factor_weights.tier +
+      load_score * factor_weights.load +
+      error_rate_score * factor_weights.error_rate +
+      latency_score * factor_weights.latency +
+      business_value_score * factor_weights.business_value
+    
+    // 将分数映射到采样率（0.1-1.0）
+    let sampling_rate = 0.1 + total_score * 0.9
+    
+    // 确保采样率在合理范围内
+    if sampling_rate > 1.0 { 1.0 }
+    else if sampling_rate < 0.1 { 0.1 }
+    else { sampling_rate }
+  }
+  
+  // 应用多因子采样策略
+  let mut multi_factor_results = []
+  for data_point in multi_factor_data {
+    let sampling_rate = multi_factor_sampling(data_point)
+    
+    multi_factor_results = multi_factor_results.push({
+      service: data_point.service,
+      tier: data_point.tier,
+      load: data_point.load,
+      error_rate: data_point.error_rate,
+      latency: data_point.latency,
+      business_value: data_point.business_value,
+      sampling_rate: sampling_rate
+    })
+  }
+  
+  // 验证多因子采样结果
+  assert_eq(multi_factor_results.length(), 5)
+  
+  // 按采样率排序
+  let sorted_results = multi_factor_results.sort_by(fn(a, b) {
+    if a.sampling_rate > b.sampling_rate { -1 }
+    else if a.sampling_rate < b.sampling_rate { 1 }
+    else { 0 }
+  })
+  
+  // 验证采样率排序
+  assert_true(sorted_results[0].sampling_rate >= sorted_results[1].sampling_rate)
+  assert_true(sorted_results[1].sampling_rate >= sorted_results[2].sampling_rate)
+  
+  // 验证最高采样率服务（应该是payment服务）
+  let highest_sampled = sorted_results[0]
+  assert_eq(highest_sampled.service, "payment")
+  assert_eq(highest_sampled.tier, "critical")
+  assert_eq(highest_sampled.error_rate, 2.0)
+  assert_true(highest_sampled.sampling_rate > 0.8)
+  
+  // 验证最低采样率服务（应该是logging或cache服务）
+  let lowest_sampled = sorted_results[sorted_results.length() - 1]
+  assert_true(lowest_sampled.service == "logging" || lowest_sampled.service == "cache")
+  assert_eq(lowest_sampled.tier, "low")
+  assert_true(lowest_sampled.sampling_rate < 0.5)
+  
+  // 验证采样率分布
+  let high_rate_services = sorted_results.filter(fn(r) { r.sampling_rate > 0.7 })
+  let medium_rate_services = sorted_results.filter(fn(r) { r.sampling_rate >= 0.4 && r.sampling_rate <= 0.7 })
+  let low_rate_services = sorted_results.filter(fn(r) { r.sampling_rate < 0.4 })
+  
+  assert_eq(high_rate_services.length(), 2) // payment和auth
+  assert_eq(medium_rate_services.length(), 2) // analytics和其中一个低优先级服务
+  assert_eq(low_rate_services.length(), 1) // 一个低优先级服务
+}
+
+// 测试5: 采样策略效果评估
+test "采样策略效果评估" {
+  // 模拟原始遥测数据和采样后数据
+  let original_data = [
+    { service: "auth", tier: "critical", error_count: 10, total_requests: 1000 },
+    { service: "payment", tier: "critical", error_count: 20, total_requests: 500 },
+    { service: "user", tier: "high", error_count: 15, total_requests: 2000 },
+    { service: "order", tier: "high", error_count: 5, total_requests: 1500 },
+    { service: "notification", tier: "medium", error_count: 8, total_requests: 3000 },
+    { service: "analytics", tier: "medium", error_count: 2, total_requests: 800 },
+    { service: "logging", tier: "low", error_count: 50, total_requests: 5000 },
+    { service: "cache", tier: "low", error_count: 1, total_requests: 10000 }
+  ]
+  
+  // 模拟采样后的数据
+  let sampled_data = [
+    { service: "auth", sampled_error_count: 10, sampled_requests: 900, sampling_rate: 0.9 },
+    { service: "payment", sampled_error_count: 20, sampled_requests: 480, sampling_rate: 0.96 },
+    { service: "user", sampled_error_count: 12, sampled_requests: 1000, sampling_rate: 0.5 },
+    { service: "order", sampled_error_count: 4, sampled_requests: 750, sampling_rate: 0.5 },
+    { service: "notification", sampled_error_count: 4, sampled_requests: 900, sampling_rate: 0.3 },
+    { service: "analytics", sampled_error_count: 2, sampled_requests: 320, sampling_rate: 0.4 },
+    { service: "logging", sampled_error_count: 8, sampled_requests: 750, sampling_rate: 0.15 },
+    { service: "cache", sampled_error_count: 1, sampled_requests: 1200, sampling_rate: 0.12 }
+  ]
+  
+  // 计算采样效果指标
+  let mut sampling_effectiveness = []
+  
+  for service_sampled in sampled_data {
+    // 找到对应的原始数据
+    let service_original = original_data.filter(fn(s) { s.service == service_sampled.service })[0]
+    
+    // 计算误差率
+    let original_error_rate = service_original.error_count.to_float() / service_original.total_requests.to_float()
+    let sampled_error_rate = service_sampled.sampled_error_count.to_float() / service_sampled.sampled_requests.to_float()
+    let error_rate_deviation = (sampled_error_rate - original_error_rate).abs() / original_error_rate * 100.0
+    
+    // 计算数据压缩比
+    let compression_ratio = 1.0 - service_sampled.sampling_rate
+    
+    // 计算信息保留率（基于错误检测能力）
+    let information_retention = if service_original.error_count > 0 {
+      service_sampled.sampled_error_count.to_float() / service_original.error_count.to_float()
+    } else {
+      1.0
+    }
+    
+    // 计算综合效果得分
+    let effectiveness_score = 
+      (information_retention * 0.5) + 
+      ((1.0 - error_rate_deviation / 100.0) * 0.3) + 
+      (compression_ratio * 0.2)
+    
+    sampling_effectiveness = sampling_effectiveness.push({
+      service: service_sampled.service,
+      tier: service_original.tier,
+      sampling_rate: service_sampled.sampling_rate,
+      compression_ratio: compression_ratio,
+      error_rate_deviation: error_rate_deviation,
+      information_retention: information_retention,
+      effectiveness_score: effectiveness_score
+    })
+  }
+  
+  // 验证采样效果评估结果
+  assert_eq(sampling_effectiveness.length(), 8)
+  
+  // 按效果得分排序
+  let sorted_effectiveness = sampling_effectiveness.sort_by(fn(a, b) {
+    if a.effectiveness_score > b.effectiveness_score { -1 }
+    else if a.effectiveness_score < b.effectiveness_score { 1 }
+    else { 0 }
+  })
+  
+  // 验证关键服务采样效果
+  let critical_services = sorted_effectiveness.filter(fn(e) { e.tier == "critical" })
+  assert_eq(critical_services.length(), 2)
+  assert_true(critical_services.all(fn(e) { e.effectiveness_score > 0.7 })) // 关键服务效果应该更好
+  
+  // 验证采样率与信息保留率的关系
+  let high_sampling_rate = sorted_effectiveness.filter(fn(e) { e.sampling_rate > 0.8 })
+  let low_sampling_rate = sorted_effectiveness.filter(fn(e) { e.sampling_rate < 0.3 })
+  
+  assert_true(high_sampling_rate.length() >= 2)
+  assert_true(low_sampling_rate.length() >= 2)
+  
+  // 高采样率服务的信息保留率应该更高
+  let high_rate_retention = high_sampling_rate.reduce(fn(acc, e) { acc + e.information_retention }, 0.0) / high_sampling_rate.length().to_float()
+  let low_rate_retention = low_sampling_rate.reduce(fn(acc, e) { acc + e.information_retention }, 0.0) / low_sampling_rate.length().to_float()
+  
+  assert_true(high_rate_retention > low_rate_retention)
+  
+  // 验证整体采样效果
+  let overall_effectiveness = sorted_effectiveness.reduce(fn(acc, e) { acc + e.effectiveness_score }, 0.0) / sorted_effectiveness.length().to_float()
+  assert_true(overall_effectiveness > 0.5) // 整体效果应该超过50%
+  
+  // 验证数据压缩效果
+  let overall_compression = sorted_effectiveness.reduce(fn(acc, e) { acc + e.compression_ratio }, 0.0) / sorted_effectiveness.length().to_float()
+  assert_true(overall_compression > 0.3) // 整体压缩率应该超过30%
+  
+  // 验证错误率偏差
+  let overall_error_deviation = sorted_effectiveness.reduce(fn(acc, e) { acc + e.error_rate_deviation }, 0.0) / sorted_effectiveness.length().to_float()
+  assert_true(overall_error_deviation < 50.0) // 整体错误率偏差应该小于50%
 }
