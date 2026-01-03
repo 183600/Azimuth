@@ -1,943 +1,541 @@
-// Azimuth Real-time Stream Processing Tests
-// This file contains test cases for real-time stream processing
+// Azimuth 高级实时流处理测试
+// 专注于遥测系统的实时数据处理和流分析功能
 
-// Test 1: Stream Data Processing
-test "实时流数据处理" {
-  // 定义流事件
-  type StreamEvent = {
-    id: String,
-    timestamp: Int,
-    data: Map[String, String],
-    metadata: Map[String, String]
-  }
-  
-  // 定义流处理器
-  type StreamProcessor = {
-    name: String,
-    process_fn: (StreamEvent) -> StreamEvent
-  }
-  
-  // 定义流窗口
-  enum WindowType {
-    Tumbling(Int)  // 滚动窗口，参数为窗口大小（毫秒）
-    Sliding(Int, Int)  // 滑动窗口，参数为窗口大小和滑动间隔（毫秒）
-    Session(Int)  // 会话窗口，参数为超时时间（毫秒）
-  }
-  
-  // 创建流事件
-  let create_stream_event = fn(id: String, data: Map[String, String], metadata: Map[String, String]) {
-    {
-      id,
-      timestamp: Time::now(),
-      data,
-      metadata
-    }
-  }
-  
-  // 过滤流事件
-  let filter_stream = fn(events: Array[StreamEvent], predicate: (StreamEvent) -> Bool) {
-    events.filter(predicate)
-  }
-  
-  // 映射流事件
-  let map_stream = fn(events: Array[StreamEvent], mapper: (StreamEvent) -> StreamEvent) {
-    events.map(mapper)
-  }
-  
-  // 扁平映射流事件
-  let flat_map_stream = fn(events: Array[StreamEvent], mapper: (StreamEvent) -> Array[StreamEvent]) {
-    let mut result = []
-    
-    for event in events {
-      let mapped_events = mapper(event)
-      result = result + mapped_events
-    }
-    
-    result
-  }
-  
-  // 聚合流事件
-  let aggregate_stream = fn(events: Array[StreamEvent], aggregator: (Array[StreamEvent]) -> StreamEvent) {
-    if events.length() > 0 {
-      Some(aggregator(events))
-    } else {
-      None
-    }
-  }
-  
-  // 按时间窗口分组
-  let window_by_time = fn(events: Array[StreamEvent], window_type: WindowType) {
-    match window_type {
-      WindowType::Tumbling(window_size) => {
-        if events.length() == 0 {
-          return []
-        }
-        
-        // 按时间排序
-        let sorted_events = events.sort(fn(a, b) {
-          if a.timestamp < b.timestamp { -1 }
-          else if a.timestamp > b.timestamp { 1 }
-          else { 0 }
-        })
-        
-        let mut windows = []
-        let mut current_window = []
-        let mut window_start = sorted_events[0].timestamp
-        
-        for event in sorted_events {
-          if event.timestamp < window_start + window_size {
-            current_window = current_window.push(event)
-          } else {
-            if current_window.length() > 0 {
-              windows = windows.push(current_window)
-            }
-            current_window = [event]
-            window_start = event.timestamp
-          }
-        }
-        
-        // 添加最后一个窗口
-        if current_window.length() > 0 {
-          windows = windows.push(current_window)
-        }
-        
-        windows
-      }
-      WindowType::Sliding(window_size, slide_interval) => {
-        // 简化实现，实际会更复杂
-        if events.length() == 0 {
-          return []
-        }
-        
-        let sorted_events = events.sort(fn(a, b) {
-          if a.timestamp < b.timestamp { -1 }
-          else if a.timestamp > b.timestamp { 1 }
-          else { 0 }
-        })
-        
-        let mut windows = []
-        let start_time = sorted_events[0].timestamp
-        let end_time = sorted_events[sorted_events.length() - 1].timestamp
-        
-        let mut window_start = start_time
-        while window_start <= end_time {
-          let window_end = window_start + window_size
-          let window_events = sorted_events.filter(fn(event) {
-            event.timestamp >= window_start && event.timestamp < window_end
-          })
-          
-          if window_events.length() > 0 {
-            windows = windows.push(window_events)
-          }
-          
-          window_start = window_start + slide_interval
-        }
-        
-        windows
-      }
-      WindowType::Session(timeout) => {
-        // 简化实现，实际会更复杂
-        if events.length() == 0 {
-          return []
-        }
-        
-        let sorted_events = events.sort(fn(a, b) {
-          if a.timestamp < b.timestamp { -1 }
-          else if a.timestamp > b.timestamp { 1 }
-          else { 0 }
-        })
-        
-        let mut windows = []
-        let mut current_session = []
-        let mut last_event_time = 0
-        
-        for event in sorted_events {
-          if current_session.length() == 0 {
-            current_session = [event]
-            last_event_time = event.timestamp
-          } else if event.timestamp - last_event_time <= timeout {
-            current_session = current_session.push(event)
-            last_event_time = event.timestamp
-          } else {
-            windows = windows.push(current_session)
-            current_session = [event]
-            last_event_time = event.timestamp
-          }
-        }
-        
-        // 添加最后一个会话
-        if current_session.length() > 0 {
-          windows = windows.push(current_session)
-        }
-        
-        windows
-      }
-    }
-  }
-  
-  // 创建测试事件
-  let base_time = Time::now()
-  let test_events = [
-    {
-      id: "event1",
-      timestamp: base_time,
-      data: Map::from_array([("type", "click"), ("user", "user1")]),
-      metadata: Map::from_array([("source", "web")])
-    },
-    {
-      id: "event2",
-      timestamp: base_time + 500,
-      data: Map::from_array([("type", "view"), ("user", "user2")]),
-      metadata: Map::from_array([("source", "mobile")])
-    },
-    {
-      id: "event3",
-      timestamp: base_time + 1200,
-      data: Map::from_array([("type", "click"), ("user", "user1")]),
-      metadata: Map::from_array([("source", "web")])
-    },
-    {
-      id: "event4",
-      timestamp: base_time + 1800,
-      data: Map::from_array([("type", "purchase"), ("user", "user3")]),
-      metadata: Map::from_array([("source", "web")])
-    },
-    {
-      id: "event5",
-      timestamp: base_time + 2500,
-      data: Map::from_array([("type", "view"), ("user", "user2")]),
-      metadata: Map::from_array([("source", "mobile")])
-    }
+// 测试1: 实时数据流过滤与转换
+test "实时数据流过滤与转换" {
+  // 1. 创建输入数据流
+  let input_stream = [
+    (1, "metric1", 100.5),
+    (2, "metric2", 200.3),
+    (3, "metric1", 150.7),
+    (4, "metric3", 75.2),
+    (5, "metric2", 180.9),
+    (6, "metric1", 120.1)
   ]
   
-  // 测试过滤
-  let click_events = filter_stream(test_events, fn(event) {
-    match Map::get(event.data, "type") {
-      Some(event_type) => event_type == "click"
-      None => false
-    }
-  })
+  // 2. 验证输入流
+  assert_eq(input_stream.length(), 6)
   
-  assert_eq(click_events.length(), 2)
-  assert_eq(click_events[0].id, "event1")
-  assert_eq(click_events[1].id, "event3")
+  // 3. 过滤metric1数据
+  let metric1_data = input_stream.filter(fn(item) { item.1 == "metric1" })
+  assert_eq(metric1_data.length(), 3)
   
-  // 测试映射
-  let enriched_events = map_stream(test_events, fn(event) {
-    let enriched_data = Map::insert(event.data, "processed", "true")
-    {
-      ...event,
-      data: enriched_data
-    }
-  })
+  // 4. 验证过滤结果
+  assert_eq(metric1_data[0].0, 1)
+  assert_eq(metric1_data[0].1, "metric1")
+  assert_eq(metric1_data[0].2, 100.5)
   
-  for event in enriched_events {
-    match Map::get(event.data, "processed") {
-      Some(value) => assert_eq(value, "true")
-      None => assert_true(false)
-    }
-  }
+  assert_eq(metric1_data[1].0, 3)
+  assert_eq(metric1_data[1].1, "metric1")
+  assert_eq(metric1_data[1].2, 150.7)
   
-  // 测试扁平映射
-  let split_events = flat_map_stream(test_events, fn(event) {
-    match Map::get(event.data, "type") {
-      Some("click") => [
-        {
-          ...event,
-          id: event.id + "_start",
-          data: Map::insert(event.data, "phase", "start")
-        },
-        {
-          ...event,
-          id: event.id + "_end",
-          data: Map::insert(event.data, "phase", "end")
-        }
-      ]
-      _ => [event]
-    }
-  })
+  assert_eq(metric1_data[2].0, 6)
+  assert_eq(metric1_data[2].1, "metric1")
+  assert_eq(metric1_data[2].2, 120.1)
   
-  assert_eq(split_events.length(), 7)  // 5个原始事件 + 2个点击事件的拆分
+  // 5. 转换数据 - 只保留值
+  let metric1_values = metric1_data.map(fn(item) { item.2 })
+  assert_eq(metric1_values, [100.5, 150.7, 120.1])
   
-  // 测试时间窗口
-  let tumbling_windows = window_by_time(test_events, WindowType::Tumbling(1000))
-  assert_eq(tumbling_windows.length(), 2)  // 两个1秒窗口
+  // 6. 计算平均值
+  let sum = metric1_values.reduce(fn(acc, val) { acc + val }, 0.0)
+  let avg = sum / metric1_values.length()
+  assert_true(avg > 120.0 && avg < 125.0)
   
-  assert_eq(tumbling_windows[0].length(), 2)  // event1, event2
-  assert_eq(tumbling_windows[1].length(), 3)  // event3, event4, event5
-  
-  // 测试滑动窗口
-  let sliding_windows = window_by_time(test_events, WindowType::Sliding(1500, 500))
-  assert_true(sliding_windows.length() >= 3)  // 至少3个窗口
-  
-  // 测试会话窗口
-  let session_windows = window_by_time(test_events, WindowType::Session(1000))
-  assert_eq(session_windows.length(), 1)  // 所有事件在一个会话中（间隔不超过1秒）
+  // 7. 过滤大于120的值
+  let high_values = metric1_values.filter(fn(val) { val > 120.0 })
+  assert_eq(high_values.length(), 2)
+  assert_eq(high_values, [150.7, 120.1])
 }
 
-// Test 2: Stream Aggregation and Analytics
-test "流聚合和分析" {
-  // 定义流事件
-  type StreamEvent = {
-    id: String,
-    timestamp: Int,
-    data: Map[String, String],
-    metadata: Map[String, String]
-  }
-  
-  // 定义聚合结果
-  type AggregationResult = {
-    window_start: Int,
-    window_end: Int,
-    count: Int,
-    metrics: Map[String, Float],
-    dimensions: Map[String, String]
-  }
-  
-  // 计数聚合
-  let count_aggregator = fn(events: Array[StreamEvent]) {
-    let count = events.length()
-    let window_start = if events.length() > 0 { events[0].timestamp } else { 0 }
-    let window_end = if events.length() > 0 { events[events.length() - 1].timestamp } else { 0 }
-    
-    {
-      window_start,
-      window_end,
-      count,
-      metrics: Map::from_array([("count", count as Float)]),
-      dimensions: Map::empty()
-    }
-  }
-  
-  // 按维度分组聚合
-  let group_by_aggregator = fn(events: Array[StreamEvent], dimension_key: String) {
-    let mut groups = Map::empty()
-    
-    for event in events {
-      let dimension_value = match Map::get(event.data, dimension_key) {
-        Some(value) => value
-        None => "unknown"
-      }
-      
-      let group_events = match Map::get(groups, dimension_value) {
-        Some(existing_events) => existing_events
-        None => []
-      }
-      
-      let updated_events = group_events.push(event)
-      let _ = Map::insert(groups, dimension_value, updated_events)
-    }
-    
-    // 对每个组进行聚合
-    let mut results = []
-    for (dimension_value, group_events) in groups {
-      let window_start = if group_events.length() > 0 { group_events[0].timestamp } else { 0 }
-      let window_end = if group_events.length() > 0 { group_events[group_events.length() - 1].timestamp } else { 0 }
-      
-      let result = {
-        window_start,
-        window_end,
-        count: group_events.length(),
-        metrics: Map::from_array([
-          ("count", group_events.length() as Float)
-        ]),
-        dimensions: Map::from_array([(dimension_key, dimension_value)])
-      }
-      
-      results = results.push(result)
-    }
-    
-    results
-  }
-  
-  // 数值聚合
-  let numeric_aggregator = fn(events: Array[StreamEvent], value_key: String) {
-    let mut values = []
-    
-    for event in events {
-      match Map::get(event.data, value_key) {
-        Some(value_str) => {
-          match value_str.parse_float() {
-            Some(value) => values = values.push(value)
-            None => ()
-          }
-        }
-        None => ()
-      }
-    }
-    
-    let window_start = if events.length() > 0 { events[0].timestamp } else { 0 }
-    let window_end = if events.length() > 0 { events[events.length() - 1].timestamp } else { 0 }
-    
-    if values.length() > 0 {
-      let sum = values.reduce(fn(acc, v) { acc + v }, 0.0)
-      let avg = sum / (values.length() as Float)
-      let sorted_values = values.sort(fn(a, b) { if a < b { -1 } else if a > b { 1 } else { 0 } })
-      let min = sorted_values[0]
-      let max = sorted_values[values.length() - 1]
-      
-      {
-        window_start,
-        window_end,
-        count: events.length(),
-        metrics: Map::from_array([
-          ("sum", sum),
-          ("avg", avg),
-          ("min", min),
-          ("max", max),
-          ("count", values.length() as Float)
-        ]),
-        dimensions: Map::empty()
-      }
-    } else {
-      {
-        window_start,
-        window_end,
-        count: events.length(),
-        metrics: Map::empty(),
-        dimensions: Map::empty()
-      }
-    }
-  }
-  
-  // 复合聚合
-  let composite_aggregator = fn(events: Array[StreamEvent]) {
-    let mut click_count = 0
-    let mut view_count = 0
-    let mut purchase_count = 0
-    let mut users = []
-    let mut revenue = 0.0
-    
-    for event in events {
-      match Map::get(event.data, "type") {
-        Some("click") => click_count = click_count + 1
-        Some("view") => view_count = view_count + 1
-        Some("purchase") => {
-          purchase_count = purchase_count + 1
-          match Map::get(event.data, "amount") {
-            Some(amount_str) => {
-              match amount_str.parse_float() {
-                Some(amount) => revenue = revenue + amount
-                None => ()
-              }
-            }
-            None => ()
-          }
-        }
-        _ => ()
-      }
-      
-      match Map::get(event.data, "user") {
-        Some(user) => {
-          if not users.contains(user) {
-            users = users.push(user)
-          }
-        }
-        None => ()
-      }
-    }
-    
-    let window_start = if events.length() > 0 { events[0].timestamp } else { 0 }
-    let window_end = if events.length() > 0 { events[events.length() - 1].timestamp } else { 0 }
-    
-    {
-      window_start,
-      window_end,
-      count: events.length(),
-      metrics: Map::from_array([
-        ("click_count", click_count as Float),
-        ("view_count", view_count as Float),
-        ("purchase_count", purchase_count as Float),
-        ("unique_users", users.length() as Float),
-        ("revenue", revenue),
-        ("conversion_rate", if view_count > 0 { (purchase_count as Float) / (view_count as Float) } else { 0.0 })
-      ]),
-      dimensions: Map::empty()
-    }
-  }
-  
-  // 创建测试事件
-  let test_events = [
-    {
-      id: "event1",
-      timestamp: 1000,
-      data: Map::from_array([("type", "view"), ("user", "user1")]),
-      metadata: Map::empty()
-    },
-    {
-      id: "event2",
-      timestamp: 1100,
-      data: Map::from_array([("type", "click"), ("user", "user1")]),
-      metadata: Map::empty()
-    },
-    {
-      id: "event3",
-      timestamp: 1200,
-      data: Map::from_array([("type", "view"), ("user", "user2")]),
-      metadata: Map::empty()
-    },
-    {
-      id: "event4",
-      timestamp: 1300,
-      data: Map::from_array([("type", "purchase"), ("user", "user1"), ("amount", "100.0")]),
-      metadata: Map::empty()
-    },
-    {
-      id: "event5",
-      timestamp: 1400,
-      data: Map::from_array([("type", "click"), ("user", "user3")]),
-      metadata: Map::empty()
-    }
+// 测试2: 时间窗口聚合分析
+test "时间窗口聚合分析" {
+  // 1. 创建时间序列数据
+  let time_series = [
+    (1000L, "cpu", 45.5),
+    (2000L, "cpu", 50.2),
+    (3000L, "memory", 78.3),
+    (4000L, "cpu", 48.7),
+    (5000L, "memory", 82.1),
+    (6000L, "cpu", 52.3),
+    (7000L, "memory", 79.8),
+    (8000L, "cpu", 46.9)
   ]
   
-  // 测试计数聚合
-  let count_result = count_aggregator(test_events)
-  assert_eq(count_result.count, 5)
-  assert_eq(count_result.window_start, 1000)
-  assert_eq(count_result.window_end, 1400)
+  // 2. 验证时间序列
+  assert_eq(time_series.length(), 8)
   
-  match Map::get(count_result.metrics, "count") {
-    Some(count) => assert_eq(count, 5.0)
-    None => assert_true(false)
-  }
+  // 3. 按指标类型分组
+  let cpu_data = time_series.filter(fn(item) { item.1 == "cpu" })
+  let memory_data = time_series.filter(fn(item) { item.1 == "memory" })
   
-  // 测试按维度分组聚合
-  let type_grouped = group_by_aggregator(test_events, "type")
-  assert_eq(type_grouped.length(), 3)  // view, click, purchase
+  assert_eq(cpu_data.length(), 4)
+  assert_eq(memory_data.length(), 4)
   
-  let view_group = type_grouped.find(fn(result) {
-    match Map::get(result.dimensions, "type") {
-      Some(value) => value == "view"
-      None => false
-    }
-  })
+  // 4. 计算CPU指标统计
+  let cpu_sum = cpu_data.reduce(fn(acc, item) { acc + item.2 }, 0.0)
+  let cpu_avg = cpu_sum / cpu_data.length()
+  let cpu_max = cpu_data.reduce(fn(acc, item) { 
+    if item.2 > acc { item.2 } else { acc } 
+  }, 0.0)
+  let cpu_min = cpu_data.reduce(fn(acc, item) { 
+    if item.2 < acc { item.2 } else { acc } 
+  }, 100.0)
   
-  match view_group {
-    Some(group) => assert_eq(group.count, 2)
-    None => assert_true(false)
-  }
+  assert_true(cpu_avg > 48.0 && cpu_avg < 50.0)
+  assert_eq(cpu_max, 52.3)
+  assert_eq(cpu_min, 45.5)
   
-  let click_group = type_grouped.find(fn(result) {
-    match Map::get(result.dimensions, "type") {
-      Some(value) => value == "click"
-      None => false
-    }
-  })
+  // 5. 计算内存指标统计
+  let memory_sum = memory_data.reduce(fn(acc, item) { acc + item.2 }, 0.0)
+  let memory_avg = memory_sum / memory_data.length()
   
-  match click_group {
-    Some(group) => assert_eq(group.count, 2)
-    None => assert_true(false)
-  }
+  assert_true(memory_avg > 79.0 && memory_avg < 81.0)
   
-  let purchase_group = type_grouped.find(fn(result) {
-    match Map::get(result.dimensions, "type") {
-      Some(value) => value == "purchase"
-      None => false
-    }
-  })
+  // 6. 时间窗口分析 - 前4秒
+  let early_window = time_series.filter(fn(item) { item.0 <= 4000L })
+  let late_window = time_series.filter(fn(item) { item.0 > 4000L })
   
-  match purchase_group {
-    Some(group) => assert_eq(group.count, 1)
-    None => assert_true(false)
-  }
+  assert_eq(early_window.length(), 4)
+  assert_eq(late_window.length(), 4)
   
-  // 测试数值聚合
-  let events_with_values = [
-    {
-      id: "event1",
-      timestamp: 1000,
-      data: Map::from_array([("value", "10.5")]),
-      metadata: Map::empty()
-    },
-    {
-      id: "event2",
-      timestamp: 1100,
-      data: Map::from_array([("value", "15.2")]),
-      metadata: Map::empty()
-    },
-    {
-      id: "event3",
-      timestamp: 1200,
-      data: Map::from_array([("value", "8.7")]),
-      metadata: Map::empty()
-    }
-  ]
+  // 7. 计算窗口平均值
+  let early_sum = early_window.reduce(fn(acc, item) { acc + item.2 }, 0.0)
+  let early_avg = early_sum / early_window.length()
   
-  let numeric_result = numeric_aggregator(events_with_values, "value")
-  assert_eq(numeric_result.count, 3)
+  let late_sum = late_window.reduce(fn(acc, item) { acc + item.2 }, 0.0)
+  let late_avg = late_sum / late_window.length()
   
-  match Map::get(numeric_result.metrics, "sum") {
-    Some(sum) => assert_eq(sum, 34.4)  // 10.5 + 15.2 + 8.7
-    None => assert_true(false)
-  }
-  
-  match Map::get(numeric_result.metrics, "avg") {
-    Some(avg) => assert_eq(avg, 11.466666666666666)  // 34.4 / 3
-    None => assert_true(false)
-  }
-  
-  match Map::get(numeric_result.metrics, "min") {
-    Some(min) => assert_eq(min, 8.7)
-    None => assert_true(false)
-  }
-  
-  match Map::get(numeric_result.metrics, "max") {
-    Some(max) => assert_eq(max, 15.2)
-    None => assert_true(false)
-  }
-  
-  // 测试复合聚合
-  let composite_result = composite_aggregator(test_events)
-  assert_eq(composite_result.count, 5)
-  
-  match Map::get(composite_result.metrics, "click_count") {
-    Some(count) => assert_eq(count, 2.0)
-    None => assert_true(false)
-  }
-  
-  match Map::get(composite_result.metrics, "view_count") {
-    Some(count) => assert_eq(count, 2.0)
-    None => assert_true(false)
-  }
-  
-  match Map::get(composite_result.metrics, "purchase_count") {
-    Some(count) => assert_eq(count, 1.0)
-    None => assert_true(false)
-  }
-  
-  match Map::get(composite_result.metrics, "unique_users") {
-    Some(count) => assert_eq(count, 3.0)  // user1, user2, user3
-    None => assert_true(false)
-  }
-  
-  match Map::get(composite_result.metrics, "revenue") {
-    Some(revenue) => assert_eq(revenue, 100.0)
-    None => assert_true(false)
-  }
-  
-  match Map::get(composite_result.metrics, "conversion_rate") {
-    Some(rate) => assert_eq(rate, 0.5)  // 1 purchase / 2 views
-    None => assert_true(false)
-  }
+  assert_true(early_avg > 50.0 && early_avg < 60.0)
+  assert_true(late_avg > 60.0 && late_avg < 70.0)
 }
 
-// Test 3: Stream Pattern Detection
-test "流模式检测" {
-  // 定义流事件
-  type StreamEvent = {
-    id: String,
-    timestamp: Int,
-    data: Map[String, String],
-    metadata: Map[String, String]
-  }
-  
-  // 定义模式匹配结果
-  type PatternMatch = {
-    pattern_name: String,
-    matched_events: Array[StreamEvent],
-    confidence: Float,
-    metadata: Map[String, String]
-  }
-  
-  // 序列模式检测
-  let detect_sequence_pattern = fn(events: Array[StreamEvent], pattern: Array[String], time_window: Int) {
-    if events.length() < pattern.length() {
-      return []
-    }
-    
-    let mut matches = []
-    
-    for i in 0..(events.length() - pattern.length() + 1) {
-      let mut is_match = true
-      let matched_events = []
-      
-      for j in 0..pattern.length() {
-        let event = events[i + j]
-        match Map::get(event.data, "type") {
-          Some(event_type) => {
-            if event_type != pattern[j] {
-              is_match = false
-              break
-            }
-          }
-          None => {
-            is_match = false
-            break
-          }
-        }
-      }
-      
-      if is_match {
-        let start_time = events[i].timestamp
-        let end_time = events[i + pattern.length() - 1].timestamp
-        
-        if end_time - start_time <= time_window {
-          let sequence_events = []
-          for j in 0..pattern.length() {
-            sequence_events = sequence_events.push(events[i + j])
-          }
-          
-          matches = matches.push({
-            pattern_name: "sequence",
-            matched_events: sequence_events,
-            confidence: 1.0,
-            metadata: Map::from_array([
-              ("sequence_length", pattern.length().to_string()),
-              ("time_window", (end_time - start_time).to_string())
-            ])
-          })
-        }
-      }
-    }
-    
-    matches
-  }
-  
-  // 频率模式检测
-  let detect_frequency_pattern = fn(events: Array[StreamEvent], threshold: Int, time_window: Int) {
-    let mut matches = []
-    
-    // 按事件类型分组
-    let mut type_groups = Map::empty()
-    
-    for event in events {
-      match Map::get(event.data, "type") {
-        Some(event_type) => {
-          let type_events = match Map::get(type_groups, event_type) {
-            Some(existing_events) => existing_events
-            None => []
-          }
-          let updated_events = type_events.push(event)
-          let _ = Map::insert(type_groups, event_type, updated_events)
-        }
-        None => ()
-      }
-    }
-    
-    // 检查每种类型是否超过阈值
-    for (event_type, type_events) in type_groups {
-      if type_events.length() >= threshold {
-        let start_time = type_events[0].timestamp
-        let end_time = type_events[type_events.length() - 1].timestamp
-        
-        if end_time - start_time <= time_window {
-          matches = matches.push({
-            pattern_name: "frequency",
-            matched_events: type_events,
-            confidence: (type_events.length() as Float) / (threshold as Float),
-            metadata: Map::from_array([
-              ("event_type", event_type),
-              ("count", type_events.length().to_string()),
-              ("threshold", threshold.to_string())
-            ])
-          })
-        }
-      }
-    }
-    
-    matches
-  }
-  
-  // 异常模式检测
-  let detect_anomaly_pattern = fn(events: Array[StreamEvent], baseline_fn: (Array[StreamEvent]) -> Float) {
-    let mut matches = []
-    
-    if events.length() < 2 {
-      return matches
-    }
-    
-    // 计算基线
-    let baseline = baseline_fn(events)
-    
-    // 检查每个事件是否异常
-    for event in events {
-      match Map::get(event.data, "value") {
-        Some(value_str) => {
-          match value_str.parse_float() {
-            Some(value) => {
-              let deviation = (value - baseline).abs()
-              let relative_deviation = deviation / baseline.abs()
-              
-              if relative_deviation > 2.0 {  // 超过基线200%
-                matches = matches.push({
-                  pattern_name: "anomaly",
-                  matched_events: [event],
-                  confidence: relative_deviation,
-                  metadata: Map::from_array([
-                    ("baseline", baseline.to_string()),
-                    ("value", value.to_string()),
-                    ("deviation", deviation.to_string())
-                  ])
-                })
-              }
-            }
-            None => ()
-          }
-        }
-        None => ()
-      }
-    }
-    
-    matches
-  }
-  
-  // 创建测试事件
-  let test_events = [
-    {
-      id: "event1",
-      timestamp: 1000,
-      data: Map::from_array([("type", "view"), ("user", "user1")]),
-      metadata: Map::empty()
-    },
-    {
-      id: "event2",
-      timestamp: 1100,
-      data: Map::from_array([("type", "click"), ("user", "user1")]),
-      metadata: Map::empty()
-    },
-    {
-      id: "event3",
-      timestamp: 1200,
-      data: Map::from_array([("type", "purchase"), ("user", "user1")]),
-      metadata: Map::empty()
-    },
-    {
-      id: "event4",
-      timestamp: 2000,
-      data: Map::from_array([("type", "view"), ("user", "user2")]),
-      metadata: Map::empty()
-    },
-    {
-      id: "event5",
-      timestamp: 2100,
-      data: Map::from_array([("type", "click"), ("user", "user2")]),
-      metadata: Map::empty()
-    },
-    {
-      id: "event6",
-      timestamp: 2200,
-      data: Map::from_array([("type", "purchase"), ("user", "user2")]),
-      metadata: Map::empty()
-    },
-    {
-      id: "event7",
-      timestamp: 3000,
-      data: Map::from_array([("type", "view"), ("user", "user3")]),
-      metadata: Map::empty()
-    },
-    {
-      id: "event8",
-      timestamp: 3100,
-      data: Map::from_array([("type", "view"), ("user", "user4")]),
-      metadata: Map::empty()
-    },
-    {
-      id: "event9",
-      timestamp: 3200,
-      data: Map::from_array([("type", "view"), ("user", "user5")]),
-      metadata: Map::empty()
-    }
+// 测试3: 异常检测算法
+test "异常检测算法" {
+  // 1. 创建正常和异常数据点
+  let data_points = [
+    (1, 45.2),   // 正常
+    (2, 47.8),   // 正常
+    (3, 46.5),   // 正常
+    (4, 48.1),   // 正常
+    (5, 95.3),   // 异常
+    (6, 47.3),   // 正常
+    (7, 46.9),   // 正常
+    (8, 12.5),   // 异常
+    (9, 48.7),   // 正常
+    (10, 47.1)   // 正常
   ]
   
-  // 测试序列模式检测
-  let sequence_pattern = ["view", "click", "purchase"]
-  let sequence_matches = detect_sequence_pattern(test_events, sequence_pattern, 500)
+  // 2. 验证数据点
+  assert_eq(data_points.length(), 10)
   
-  assert_eq(sequence_matches.length(), 2)  // 两个匹配序列
+  // 3. 计算基准统计（使用前4个正常点）
+  let baseline_points = data_points.slice(0, 4)
+  let baseline_sum = baseline_points.reduce(fn(acc, point) { acc + point.1 }, 0.0)
+  let baseline_avg = baseline_sum / baseline_points.length()
   
-  let first_match = sequence_matches[0]
-  assert_eq(first_match.matched_events.length(), 3)
-  assert_eq(first_match.matched_events[0].id, "event1")
-  assert_eq(first_match.matched_events[1].id, "event2")
-  assert_eq(first_match.matched_events[2].id, "event3")
+  // 4. 计算标准差
+  let variance = baseline_points.reduce(fn(acc, point) { 
+    let diff = point.1 - baseline_avg
+    acc + diff * diff 
+  }, 0.0) / baseline_points.length()
   
-  let second_match = sequence_matches[1]
-  assert_eq(second_match.matched_events.length(), 3)
-  assert_eq(second_match.matched_events[0].id, "event4")
-  assert_eq(second_match.matched_events[1].id, "event5")
-  assert_eq(second_match.matched_events[2].id, "event6")
+  let std_dev = variance.sqrt()
   
-  // 测试频率模式检测
-  let frequency_matches = detect_frequency_pattern(test_events, 3, 1000)
+  assert_true(baseline_avg > 46.0 && baseline_avg < 48.0)
+  assert_true(std_dev > 0.5 && std_dev < 2.0)
   
-  assert_eq(frequency_matches.length(), 1)  // 一个类型超过阈值
+  // 5. 定义异常阈值（3倍标准差）
+  let upper_threshold = baseline_avg + 3.0 * std_dev
+  let lower_threshold = baseline_avg - 3.0 * std_dev
   
-  let view_frequency = frequency_matches[0]
-  assert_eq(view_frequency.matched_events.length(), 4)  // 4个view事件
-  assert_eq(view_frequency.confidence, 4.0 / 3.0)  // 4/3
+  // 6. 检测异常点
+  let anomalies = data_points.filter(fn(point) { 
+    point.1 > upper_threshold || point.1 < lower_threshold 
+  })
   
-  match Map::get(view_frequency.metadata, "event_type") {
-    Some(event_type) => assert_eq(event_type, "view")
-    None => assert_true(false)
-  }
+  assert_eq(anomalies.length(), 2)
   
-  // 测试异常模式检测
-  let events_with_values = [
-    {
-      id: "event1",
-      timestamp: 1000,
-      data: Map::from_array([("value", "10.0")]),
-      metadata: Map::empty()
-    },
-    {
-      id: "event2",
-      timestamp: 1100,
-      data: Map::from_array([("value", "12.0")]),
-      metadata: Map::empty()
-    },
-    {
-      id: "event3",
-      timestamp: 1200,
-      data: Map::from_array([("value", "11.0")]),
-      metadata: Map::empty()
-    },
-    {
-      id: "event4",
-      timestamp: 1300,
-      data: Map::from_array([("value", "50.0")]),  // 异常值
-      metadata: Map::empty()
-    },
-    {
-      id: "event5",
-      timestamp: 1400,
-      data: Map::from_array([("value", "9.0")]),
-      metadata: Map::empty()
-    }
+  // 7. 验证异常点
+  assert_eq(anomalies[0].0, 5)
+  assert_eq(anomalies[0].1, 95.3)
+  
+  assert_eq(anomalies[1].0, 8)
+  assert_eq(anomalies[1].1, 12.5)
+  
+  // 8. 计算异常率
+  let anomaly_rate = anomalies.length().to_float() / data_points.length().to_float()
+  assert_eq(anomaly_rate, 0.2)
+}
+
+// 测试4: 流式数据聚合
+test "流式数据聚合" {
+  // 1. 创建流式数据批次
+  let batch1 = [
+    ("server1", "cpu", 45.2),
+    ("server2", "cpu", 50.1),
+    ("server1", "memory", 78.5)
   ]
   
-  let baseline_fn = fn(events: Array[StreamEvent]) {
-    let mut values = []
+  let batch2 = [
+    ("server2", "memory", 82.3),
+    ("server1", "cpu", 48.7),
+    ("server3", "cpu", 35.9)
+  ]
+  
+  let batch3 = [
+    ("server3", "memory", 65.2),
+    ("server2", "cpu", 52.4),
+    ("server1", "memory", 80.1)
+  ]
+  
+  // 2. 验证批次
+  assert_eq(batch1.length(), 3)
+  assert_eq(batch2.length(), 3)
+  assert_eq(batch3.length(), 3)
+  
+  // 3. 合并所有批次
+  let all_batches = []
+  let all_data = all_batches.concat(batch1).concat(batch2).concat(batch3)
+  
+  assert_eq(all_data.length(), 9)
+  
+  // 4. 按服务器分组
+  let server1_data = all_data.filter(fn(item) { item.0 == "server1" })
+  let server2_data = all_data.filter(fn(item) { item.0 == "server2" })
+  let server3_data = all_data.filter(fn(item) { item.0 == "server3" })
+  
+  assert_eq(server1_data.length(), 3)
+  assert_eq(server2_data.length(), 3)
+  assert_eq(server3_data.length(), 3)
+  
+  // 5. 按指标类型分组
+  let cpu_data = all_data.filter(fn(item) { item.1 == "cpu" })
+  let memory_data = all_data.filter(fn(item) { item.1 == "memory" })
+  
+  assert_eq(cpu_data.length(), 5)
+  assert_eq(memory_data.length(), 4)
+  
+  // 6. 计算每个服务器的CPU平均值
+  let server1_cpu = server1_data.filter(fn(item) { item.1 == "cpu" })
+  let server1_cpu_avg = server1_cpu.reduce(fn(acc, item) { acc + item.2 }, 0.0) / server1_cpu.length()
+  
+  let server2_cpu = server2_data.filter(fn(item) { item.1 == "cpu" })
+  let server2_cpu_avg = server2_cpu.reduce(fn(acc, item) { acc + item.2 }, 0.0) / server2_cpu.length()
+  
+  let server3_cpu = server3_data.filter(fn(item) { item.1 == "cpu" })
+  let server3_cpu_avg = server3_cpu.reduce(fn(acc, item) { acc + item.2 }, 0.0) / server3_cpu.length()
+  
+  assert_true(server1_cpu_avg > 46.0 && server1_cpu_avg < 48.0)
+  assert_true(server2_cpu_avg > 50.0 && server2_cpu_avg < 52.0)
+  assert_eq(server3_cpu_avg, 35.9)
+  
+  // 7. 计算全局CPU平均值
+  let global_cpu_avg = cpu_data.reduce(fn(acc, item) { acc + item.2 }, 0.0) / cpu_data.length()
+  assert_true(global_cpu_avg > 45.0 && global_cpu_avg < 48.0)
+}
+
+// 测试5: 实时趋势分析
+test "实时趋势分析" {
+  // 1. 创建趋势数据
+  let trend_data = [
+    (1, 100.0),
+    (2, 105.0),
+    (3, 102.0),
+    (4, 108.0),
+    (5, 110.0),
+    (6, 107.0),
+    (7, 112.0),
+    (8, 115.0),
+    (9, 113.0),
+    (10, 118.0)
+  ]
+  
+  // 2. 验证趋势数据
+  assert_eq(trend_data.length(), 10)
+  
+  // 3. 计算移动平均（窗口大小为3）
+  let moving_averages = []
+  for i in 2..trend_data.length() {
+    let window_sum = trend_data[i-2].1 + trend_data[i-1].1 + trend_data[i].1
+    let window_avg = window_sum / 3.0
+    moving_averages = moving_averages.push(window_avg)
+  }
+  
+  assert_eq(moving_averages.length(), 8)
+  
+  // 4. 验证移动平均计算
+  assert_eq(moving_averages[0], (100.0 + 105.0 + 102.0) / 3.0)
+  assert_eq(moving_averages[1], (105.0 + 102.0 + 108.0) / 3.0)
+  assert_eq(moving_averages[7], (112.0 + 115.0 + 113.0) / 3.0)
+  
+  // 5. 计算趋势斜率（简单线性回归）
+  let n = trend_data.length().to_float()
+  let sum_x = trend_data.reduce(fn(acc, point) { acc + point.0.to_float() }, 0.0)
+  let sum_y = trend_data.reduce(fn(acc, point) { acc + point.1 }, 0.0)
+  let sum_xy = trend_data.reduce(fn(acc, point) { 
+    acc + point.0.to_float() * point.1 
+  }, 0.0)
+  let sum_x2 = trend_data.reduce(fn(acc, point) { 
+    acc + point.0.to_float() * point.0.to_float() 
+  }, 0.0)
+  
+  let slope = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x * sum_x)
+  
+  // 6. 验证趋势为正增长
+  assert_true(slope > 1.5 && slope < 2.5)
+  
+  // 7. 检测趋势变化点
+  let trend_changes = []
+  for i in 1..trend_data.length() - 1 {
+    let prev_diff = trend_data[i].1 - trend_data[i-1].1
+    let next_diff = trend_data[i+1].1 - trend_data[i].1
     
-    for event in events {
-      match Map::get(event.data, "value") {
-        Some(value_str) => {
-          match value_str.parse_float() {
-            Some(value) => values = values.push(value)
-            None => ()
-          }
-        }
-        None => ()
-      }
+    // 如果趋势方向改变
+    if (prev_diff > 0.0 && next_diff < 0.0) || (prev_diff < 0.0 && next_diff > 0.0) {
+      trend_changes = trend_changes.push(i)
     }
-    
-    if values.length() > 0 {
-      let sum = values.reduce(fn(acc, v) { acc + v }, 0.0)
-      sum / (values.length() as Float)
+  }
+  
+  // 8. 验证趋势变化
+  assert_eq(trend_changes.length(), 2)  // 在点5和点9有趋势变化
+}
+
+// 测试6: 数据质量监控
+test "数据质量监控" {
+  // 1. 创建包含质量问题的数据
+  let quality_data = [
+    (1, "metric1", 45.2, 0.95),   // 高质量
+    (2, "metric2", 0.0, 0.88),    // 零值
+    (3, "metric3", -1.5, 0.92),   // 负值
+    (4, "metric1", 999.9, 0.75),  // 异常高值
+    (5, "metric2", 52.3, 0.98),   // 高质量
+    (6, "metric3", 0.0, 0.85),    // 零值
+    (7, "metric1", 48.7, 0.94),   // 高质量
+    (8, "metric2", -5.2, 0.82),   // 负值
+    (9, "metric3", 75.1, 0.97)    // 高质量
+  ]
+  
+  // 2. 验证数据
+  assert_eq(quality_data.length(), 9)
+  
+  // 3. 计算整体质量分数
+  let total_quality = quality_data.reduce(fn(acc, item) { acc + item.3 }, 0.0)
+  let avg_quality = total_quality / quality_data.length()
+  
+  assert_true(avg_quality > 0.85 && avg_quality < 0.95)
+  
+  // 4. 识别低质量数据（质量分数 < 0.9）
+  let low_quality_data = quality_data.filter(fn(item) { item.3 < 0.9 })
+  assert_eq(low_quality_data.length(), 4)
+  
+  // 5. 识别零值数据
+  let zero_values = quality_data.filter(fn(item) { item.2 == 0.0 })
+  assert_eq(zero_values.length(), 2)
+  
+  // 6. 识别负值数据
+  let negative_values = quality_data.filter(fn(item) { item.2 < 0.0 })
+  assert_eq(negative_values.length(), 2)
+  
+  // 7. 按指标类型分组质量分析
+  let metric1_data = quality_data.filter(fn(item) { item.1 == "metric1" })
+  let metric2_data = quality_data.filter(fn(item) { item.1 == "metric2" })
+  let metric3_data = quality_data.filter(fn(item) { item.1 == "metric3" })
+  
+  assert_eq(metric1_data.length(), 3)
+  assert_eq(metric2_data.length(), 3)
+  assert_eq(metric3_data.length(), 3)
+  
+  // 8. 计算各指标的平均质量
+  let metric1_quality = metric1_data.reduce(fn(acc, item) { acc + item.3 }, 0.0) / metric1_data.length()
+  let metric2_quality = metric2_data.reduce(fn(acc, item) { acc + item.3 }, 0.0) / metric2_data.length()
+  let metric3_quality = metric3_data.reduce(fn(acc, item) { acc + item.3 }, 0.0) / metric3_data.length()
+  
+  assert_true(metric1_quality > 0.85 && metric1_quality < 0.95)
+  assert_true(metric2_quality > 0.80 && metric2_quality < 0.90)
+  assert_true(metric3_quality > 0.85 && metric3_quality < 0.95)
+  
+  // 9. 生成质量报告
+  let quality_issues = []
+  if zero_values.length() > 0 {
+    quality_issues = quality_issues.push("Zero values detected: " + zero_values.length().to_string())
+  }
+  if negative_values.length() > 0 {
+    quality_issues = quality_issues.push("Negative values detected: " + negative_values.length().to_string())
+  }
+  if low_quality_data.length() > 0 {
+    quality_issues = quality_issues.push("Low quality data points: " + low_quality_data.length().to_string())
+  }
+  
+  assert_eq(quality_issues.length(), 3)
+}
+
+// 测试7: 实时性能监控
+test "实时性能监控" {
+  // 1. 创建性能指标数据
+  let performance_metrics = [
+    (1000L, "response_time", 120.5),
+    (2000L, "throughput", 1500.0),
+    (3000L, "response_time", 95.3),
+    (4000L, "error_rate", 0.02),
+    (5000L, "response_time", 180.7),
+    (6000L, "throughput", 1650.0),
+    (7000L, "response_time", 110.2),
+    (8000L, "error_rate", 0.01),
+    (9000L, "response_time", 85.9),
+    (10000L, "throughput", 1750.0)
+  ]
+  
+  // 2. 验证性能数据
+  assert_eq(performance_metrics.length(), 10)
+  
+  // 3. 按指标类型分组
+  let response_times = performance_metrics.filter(fn(item) { item.1 == "response_time" })
+  let throughput = performance_metrics.filter(fn(item) { item.1 == "throughput" })
+  let error_rates = performance_metrics.filter(fn(item) { item.1 == "error_rate" })
+  
+  assert_eq(response_times.length(), 5)
+  assert_eq(throughput.length(), 3)
+  assert_eq(error_rates.length(), 2)
+  
+  // 4. 计算响应时间统计
+  let rt_sum = response_times.reduce(fn(acc, item) { acc + item.2 }, 0.0)
+  let rt_avg = rt_sum / response_times.length()
+  let rt_max = response_times.reduce(fn(acc, item) { 
+    if item.2 > acc { item.2 } else { acc } 
+  }, 0.0)
+  let rt_min = response_times.reduce(fn(acc, item) { 
+    if item.2 < acc { item.2 } else { acc } 
+  }, 1000.0)
+  
+  assert_true(rt_avg > 110.0 && rt_avg < 130.0)
+  assert_eq(rt_max, 180.7)
+  assert_eq(rt_min, 85.9)
+  
+  // 5. 计算吞吐量趋势
+  let throughput_values = throughput.map(fn(item) { item.2 })
+  assert_true(throughput_values[0] < throughput_values[1])
+  assert_true(throughput_values[1] < throughput_values[2])
+  
+  // 6. 计算错误率平均值
+  let er_avg = error_rates.reduce(fn(acc, item) { acc + item.2 }, 0.0) / error_rates.length()
+  assert_eq(er_avg, 0.015)
+  
+  // 7. 检测性能异常（响应时间超过150ms）
+  let slow_responses = response_times.filter(fn(item) { item.2 > 150.0 })
+  assert_eq(slow_responses.length(), 1)
+  assert_eq(slow_responses[0].2, 180.7)
+  
+  // 8. 计算性能分数（综合指标）
+  let performance_score = 100.0 - (rt_avg / 10.0) - (er_avg * 1000.0) + (throughput_values[2] / 50.0)
+  assert_true(performance_score > 80.0 && performance_score < 100.0)
+}
+
+// 测试8: 流式数据关联分析
+test "流式数据关联分析" {
+  // 1. 创建关联数据流
+  let stream_a = [
+    (1, "event_a", 100.0),
+    (3, "event_a", 120.0),
+    (5, "event_a", 110.0),
+    (7, "event_a", 130.0),
+    (9, "event_a", 115.0)
+  ]
+  
+  let stream_b = [
+    (2, "event_b", 200.0),
+    (4, "event_b", 180.0),
+    (6, "event_b", 220.0),
+    (8, "event_b", 190.0),
+    (10, "event_b", 210.0)
+  ]
+  
+  // 2. 验证数据流
+  assert_eq(stream_a.length(), 5)
+  assert_eq(stream_b.length(), 5)
+  
+  // 3. 合并数据流
+  let merged_stream = []
+  let i = 0
+  let j = 0
+  
+  while i < stream_a.length() && j < stream_b.length() {
+    if stream_a[i].0 < stream_b[j].0 {
+      merged_stream = merged_stream.push(stream_a[i])
+      i = i + 1
     } else {
-      0.0
+      merged_stream = merged_stream.push(stream_b[j])
+      j = j + 1
     }
   }
   
-  let anomaly_matches = detect_anomaly_pattern(events_with_values, baseline_fn)
-  
-  assert_eq(anomaly_matches.length(), 1)  // 一个异常值
-  
-  let anomaly_match = anomaly_matches[0]
-  assert_eq(anomaly_match.matched_events.length(), 1)
-  assert_eq(anomaly_match.matched_events[0].id, "event4")
-  
-  match Map::get(anomaly_match.metadata, "value") {
-    Some(value) => assert_eq(value, "50.0")
-    None => assert_true(false)
+  // 添加剩余元素
+  while i < stream_a.length() {
+    merged_stream = merged_stream.push(stream_a[i])
+    i = i + 1
   }
+  
+  while j < stream_b.length() {
+    merged_stream = merged_stream.push(stream_b[j])
+    j = j + 1
+  }
+  
+  assert_eq(merged_stream.length(), 10)
+  
+  // 4. 验证时间顺序
+  for k in 1..merged_stream.length() {
+    assert_true(merged_stream[k].0 > merged_stream[k-1].0)
+  }
+  
+  // 5. 计算相关性（简化版本：检查相反趋势）
+  let a_values = stream_a.map(fn(item) { item.2 })
+  let b_values = stream_b.map(fn(item) { item.2 })
+  
+  // 6. 计算趋势变化
+  let a_trends = []
+  for k in 1..a_values.length() {
+    let diff = a_values[k] - a_values[k-1]
+    a_trends = a_trends.push(diff)
+  }
+  
+  let b_trends = []
+  for k in 1..b_values.length() {
+    let diff = b_values[k] - b_values[k-1]
+    b_trends = b_trends.push(diff)
+  }
+  
+  // 7. 检测负相关性（趋势相反）
+  let opposite_trends = 0
+  for k in 0..a_trends.length() {
+    if (a_trends[k] > 0.0 && b_trends[k] < 0.0) || (a_trends[k] < 0.0 && b_trends[k] > 0.0) {
+      opposite_trends = opposite_trends + 1
+    }
+  }
+  
+  assert_true(opposite_trends >= 2)
+  
+  // 8. 计算时间窗口内的相关性
+  let window_size = 3
+  let correlations = []
+  
+  for start in 0..(stream_a.length() - window_size + 1) {
+    let a_window = stream_a.slice(start, start + window_size)
+    let b_window = stream_b.slice(start, start + window_size)
+    
+    let a_avg = a_window.reduce(fn(acc, item) { acc + item.2 }, 0.0) / a_window.length()
+    let b_avg = b_window.reduce(fn(acc, item) { acc + item.2 }, 0.0) / b_window.length()
+    
+    // 简化的相关性计算
+    let a_diff = a_window[window_size - 1].2 - a_window[0].2
+    let b_diff = b_window[window_size - 1].2 - b_window[0].2
+    
+    let correlation = if a_diff * b_diff < 0.0 { -1.0 } else { 1.0 }
+    correlations = correlations.push(correlation)
+  }
+  
+  assert_eq(correlations.length(), 3)
+  
+  // 9. 验证负相关性
+  let negative_correlations = correlations.filter(fn(c) { c < 0.0 })
+  assert_true(negative_correlations.length() >= 1)
 }
