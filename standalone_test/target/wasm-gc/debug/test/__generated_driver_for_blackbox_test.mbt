@@ -59,6 +59,12 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
   "simple_tests.mbt": {
   },
+  "azimuth_simple_new_tests.mbt": {
+  },
+  "azimuth_fixed_new_tests.mbt": {
+  },
+  "azimuth_final_new_tests.mbt": {
+  },
   "additional_tests.mbt": {
   },
 }

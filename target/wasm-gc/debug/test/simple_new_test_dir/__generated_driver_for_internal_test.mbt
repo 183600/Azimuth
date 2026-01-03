@@ -57,13 +57,6 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
-  "simple_tests.mbt": {
-    0: (__test_73696d706c655f74657374732e6d6274_0, ["basic arithmetic operations"]),
-    1: (__test_73696d706c655f74657374732e6d6274_1, ["boolean logic operations"]),
-    2: (__test_73696d706c655f74657374732e6d6274_2, ["string operations"]),
-    3: (__test_73696d706c655f74657374732e6d6274_3, ["array operations"]),
-    4: (__test_73696d706c655f74657374732e6d6274_4, ["option type handling"]),
-  },
   "azimuth_simple_new_tests.mbt": {
     0: (__test_617a696d7574685f73696d706c655f6e65775f74657374732e6d6274_0, ["telemetry data point processing"]),
     1: (__test_617a696d7574685f73696d706c655f6e65775f74657374732e6d6274_1, ["time series data aggregation"]),
@@ -75,37 +68,6 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     7: (__test_617a696d7574685f73696d706c655f6e65775f74657374732e6d6274_7, ["data serialization"]),
     8: (__test_617a696d7574685f73696d706c655f6e65775f74657374732e6d6274_8, ["multi-tenant data isolation"]),
     9: (__test_617a696d7574685f73696d706c655f6e65775f74657374732e6d6274_9, ["real-time stream processing"]),
-  },
-  "azimuth_fixed_new_tests.mbt": {
-    0: (__test_617a696d7574685f66697865645f6e65775f74657374732e6d6274_0, ["telemetry data point processing"]),
-    1: (__test_617a696d7574685f66697865645f6e65775f74657374732e6d6274_1, ["time series data aggregation"]),
-    2: (__test_617a696d7574685f66697865645f6e65775f74657374732e6d6274_2, ["distributed tracing context"]),
-    3: (__test_617a696d7574685f66697865645f6e65775f74657374732e6d6274_3, ["metric statistics calculation"]),
-    4: (__test_617a696d7574685f66697865645f6e65775f74657374732e6d6274_4, ["anomaly detection"]),
-    5: (__test_617a696d7574685f66697865645f6e65775f74657374732e6d6274_5, ["data sampling"]),
-    6: (__test_617a696d7574685f66697865645f6e65775f74657374732e6d6274_6, ["resource usage monitoring"]),
-    7: (__test_617a696d7574685f66697865645f6e65775f74657374732e6d6274_7, ["data serialization"]),
-    8: (__test_617a696d7574685f66697865645f6e65775f74657374732e6d6274_8, ["multi-tenant data isolation"]),
-    9: (__test_617a696d7574685f66697865645f6e65775f74657374732e6d6274_9, ["real-time stream processing"]),
-  },
-  "azimuth_final_new_tests.mbt": {
-    0: (__test_617a696d7574685f66696e616c5f6e65775f74657374732e6d6274_0, ["telemetry data point processing"]),
-    1: (__test_617a696d7574685f66696e616c5f6e65775f74657374732e6d6274_1, ["time series data aggregation"]),
-    2: (__test_617a696d7574685f66696e616c5f6e65775f74657374732e6d6274_2, ["distributed tracing context"]),
-    3: (__test_617a696d7574685f66696e616c5f6e65775f74657374732e6d6274_3, ["metric statistics calculation"]),
-    4: (__test_617a696d7574685f66696e616c5f6e65775f74657374732e6d6274_4, ["anomaly detection"]),
-    5: (__test_617a696d7574685f66696e616c5f6e65775f74657374732e6d6274_5, ["data sampling"]),
-    6: (__test_617a696d7574685f66696e616c5f6e65775f74657374732e6d6274_6, ["resource usage monitoring"]),
-    7: (__test_617a696d7574685f66696e616c5f6e65775f74657374732e6d6274_7, ["data serialization"]),
-    8: (__test_617a696d7574685f66696e616c5f6e65775f74657374732e6d6274_8, ["multi-tenant data isolation"]),
-    9: (__test_617a696d7574685f66696e616c5f6e65775f74657374732e6d6274_9, ["real-time stream processing"]),
-  },
-  "additional_tests.mbt": {
-    0: (__test_6164646974696f6e616c5f74657374732e6d6274_0, ["numeric boundary conditions"]),
-    1: (__test_6164646974696f6e616c5f74657374732e6d6274_1, ["string comparisons"]),
-    2: (__test_6164646974696f6e616c5f74657374732e6d6274_2, ["array advanced operations"]),
-    3: (__test_6164646974696f6e616c5f74657374732e6d6274_3, ["tuple operations"]),
-    4: (__test_6164646974696f6e616c5f74657374732e6d6274_4, ["conditional expressions"]),
   },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
@@ -183,7 +145,7 @@ pub fn moonbit_test_driver_internal_do_execute(
     let message = message.escape()
     @moonbitlang/core/builtin.println("----- BEGIN MOON TEST RESULT -----")
     @moonbitlang/core/builtin.println(
-      "{\"package\": \"azimuth_standalone\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
+      "{\"package\": \"azimuth/telemetry/simple_new_test_dir\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
     )
     @moonbitlang/core/builtin.println("----- END MOON TEST RESULT -----")
   }
