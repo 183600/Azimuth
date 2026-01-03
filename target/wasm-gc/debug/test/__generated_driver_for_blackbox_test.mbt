@@ -502,6 +502,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_multidimensional_analysis_tests.mbt": {
   },
+  "azimuth_multidimensional_analysis_enhanced_tests.mbt": {
+  },
   "azimuth_multi_tenant_isolation_tests.mbt": {
   },
   "azimuth_multi_tenant_isolation_security_tests.mbt": {
