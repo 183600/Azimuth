@@ -1,391 +1,274 @@
-// Azimuth Error Handling and Boundary Condition Tests
-// This file contains test cases for error handling and boundary conditions
+// Azimuth 错误处理和边界条件测试
+// 专注于测试系统的错误处理能力和边界条件
 
-// Test 1: Division by Zero Handling
-test "division by zero error handling" {
-  let numerator = 100
-  let zero_denominator = 0
-  let valid_denominator = 5
+// 测试1: 数组边界条件测试
+test "数组边界条件测试" {
+  // 创建测试数组
+  let test_array = [1, 2, 3, 4, 5]
   
-  // Test safe division with zero denominator
-  match safe_divide(numerator, zero_denominator) {
-    Some(result) => assert_true(false) // Should not succeed
-    None => assert_true(true) // Expected to fail
-  }
+  // 测试正常访问
+  assert_eq(test_array[0], 1)
+  assert_eq(test_array[4], 5)
   
-  // Test safe division with valid denominator
-  match safe_divide(numerator, valid_denominator) {
-    Some(result) => assert_eq(result, 20)
-    None => assert_true(false) // Should succeed
-  }
+  // 测试边界长度
+  assert_eq(test_array.length(), 5)
   
-  // Test division with error handling
-  let result1 = divide_with_default(numerator, zero_denominator, 0)
-  assert_eq(result1, 0) // Should return default value
+  // 测试空数组
+  let empty_array : Array[Int> = []
+  assert_eq(empty_array.length(), 0)
   
-  let result2 = divide_with_default(numerator, valid_denominator, 0)
-  assert_eq(result2, 20) // Should return actual result
+  // 测试单元素数组
+  let single_element = [42]
+  assert_eq(single_element.length(), 1)
+  assert_eq(single_element[0], 42)
+  
+  // 测试数组操作边界
+  let appended_array = test_array.push(6)
+  assert_eq(appended_array.length(), 6)
+  assert_eq(appended_array[5], 6)
+  
+  // 测试数组切片边界
+  let sliced_array = test_array.slice(1, 3)
+  assert_eq(sliced_array.length(), 2)
+  assert_eq(sliced_array, [2, 3])
 }
 
-// Test 2: Array Index Out of Bounds
-test "array index out of bounds handling" {
-  let array = [10, 20, 30, 40, 50]
-  
-  // Test valid array access
-  match safe_array_access(array, 2) {
-    Some(value) => assert_eq(value, 30)
-    None => assert_true(false)
-  }
-  
-  // Test negative index access
-  match safe_array_access(array, -1) {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  // Test index out of bounds access
-  match safe_array_access(array, 10) {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  // Test array access with default value
-  let default_value = safe_array_get_with_default(array, 10, -1)
-  assert_eq(default_value, -1)
-  
-  let valid_value = safe_array_get_with_default(array, 3, -1)
-  assert_eq(valid_value, 40)
-}
-
-// Test 3: String Index and Substring Boundaries
-test "string index and substring boundaries" {
-  let test_string = "azimuth_telemetry"
-  
-  // Test valid substring
-  match safe_substring(test_string, 0, 7) {
-    Some(result) => assert_eq(result, "azimuth")
-    None => assert_true(false)
-  }
-  
-  // Test negative start index
-  match safe_substring(test_string, -1, 5) {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  // Test end index beyond string length
-  match safe_substring(test_string, 0, 100) {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  // Test start index greater than end index
-  match safe_substring(test_string, 10, 5) {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  // Test substring with default
-  let default_substring = safe_substring_with_default(test_string, -1, 5, "default")
-  assert_eq(default_substring, "default")
-}
-
-// Test 4: Numeric Overflow and Underflow
-test "numeric overflow and underflow handling" {
+// 测试2: 数值运算边界测试
+test "数值运算边界测试" {
+  // 测试整数边界
   let max_int = 2147483647
   let min_int = -2147483648
   
-  // Test overflow detection
-  assert_true(detects_overflow(max_int, 1))
-  assert_false(detects_overflow(max_int, 0))
-  assert_false(detects_overflow(max_int, -1))
+  // 测试加法边界
+  let safe_add = max_int - 100
+  assert_eq(safe_add, 2147483547)
   
-  // Test underflow detection
-  assert_true(detects_underflow(min_int, -1))
-  assert_false(detects_underflow(min_int, 0))
-  assert_false(detects_underflow(min_int, 1))
+  // 测试减法边界
+  let safe_sub = min_int + 100
+  assert_eq(safe_sub, -2147483548)
   
-  // Test safe addition
-  match safe_add(max_int, 1) {
+  // 测试乘法边界
+  let safe_mul = 1000 * 1000
+  assert_eq(safe_mul, 1000000)
+  
+  // 测试除法边界
+  assert_eq(10 / 1, 10)
+  assert_eq(10 / 10, 1)
+  assert_eq(0 / 10, 0)
+  
+  // 测试模运算边界
+  assert_eq(10 % 1, 0)
+  assert_eq(10 % 10, 0)
+  assert_eq(10 % 3, 1)
+  
+  // 测试浮点数边界
+  let max_float : Double = 1.7976931348623157e+308
+  let min_float : Double = -1.7976931348623157e+308
+  
+  assert_true(max_float > 0.0)
+  assert_true(min_float < 0.0)
+}
+
+// 测试3: 字符串边界条件测试
+test "字符串边界条件测试" {
+  // 测试空字符串
+  let empty_string = ""
+  assert_eq(empty_string.length(), 0)
+  
+  // 测试单字符字符串
+  let single_char = "a"
+  assert_eq(single_char.length(), 1)
+  assert_eq(single_char[0], 'a')
+  
+  // 测试长字符串
+  let long_string = "abcdefghijklmnopqrstuvwxyz"
+  assert_eq(long_string.length(), 26)
+  assert_eq(long_string[0], 'a')
+  assert_eq(long_string[25], 'z')
+  
+  // 测试字符串操作边界
+  let concatenated = empty_string + single_char
+  assert_eq(concatenated, "a")
+  
+  // 测试字符串包含
+  assert_true(long_string.contains("abc"))
+  assert_false(long_string.contains("xyz"))
+  
+  // 测试字符串索引边界
+  let first_char = long_string[0]
+  let last_char = long_string[long_string.length() - 1]
+  assert_eq(first_char, 'a')
+  assert_eq(last_char, 'z')
+}
+
+// 测试4: 可选类型处理测试
+test "可选类型处理测试" {
+  // 测试Some值
+  let some_value : Option[Int> = Some(42)
+  match some_value {
+    Some(value) => assert_eq(value, 42)
+    None => assert_true(false)
+  }
+  
+  // 测试None值
+  let none_value : Option[Int> = None
+  match none_value {
     Some(_) => assert_true(false)
     None => assert_true(true)
   }
   
-  match safe_add(100, 200) {
-    Some(result) => assert_eq(result, 300)
+  // 测试可选类型操作
+  let unwrap_or_default = some_value.unwrap_or(0)
+  assert_eq(unwrap_or_default, 42)
+  
+  let unwrap_or_none = none_value.unwrap_or(0)
+  assert_eq(unwrap_or_none, 0)
+  
+  // 测试可选类型映射
+  let mapped_some = some_value.map(fn(x) { x * 2 })
+  match mapped_some {
+    Some(value) => assert_eq(value, 84)
     None => assert_true(false)
   }
   
-  // Test safe multiplication
-  match safe_multiply(max_int, 2) {
+  let mapped_none = none_value.map(fn(x) { x * 2 })
+  match mapped_none {
     Some(_) => assert_true(false)
     None => assert_true(true)
-  }
-  
-  match safe_multiply(100, 5) {
-    Some(result) => assert_eq(result, 500)
-    None => assert_true(false)
   }
 }
 
-// Test 5: Null and None Value Handling
-test "null and none value handling" {
-  let some_value = Some("test_value")
-  let none_value : Option[String] = None
-  
-  // Test safe option extraction
-  match safe_option_extract(some_value, "default") {
-    "test_value" => assert_true(true)
-    "default" => assert_true(false)
-    _ => assert_true(false)
+// 测试5: 结果类型处理测试
+test "结果类型处理测试" {
+  // 定义自定义错误类型
+  type Error {
+    InvalidInput(String)
+    OutOfRange
+    NotFound
   }
   
-  match safe_option_extract(none_value, "default") {
-    "default" => assert_true(true)
-    _ => assert_true(false)
+  // 测试成功结果
+  let success_result : Result<Int, Error> = Ok(42)
+  match success_result {
+    Ok(value) => assert_eq(value, 42)
+    Err(_) => assert_true(false)
   }
   
-  // Test option chaining
-  let chained_result = some_value
-    .map(fn(s) { s.length() })
-    .filter(fn(len) { len > 5 })
-    .map(fn(len) { len * 2 })
+  // 测试错误结果
+  let error_result : Result[Int, Error> = Err(InvalidInput("Invalid input"))
+  match error_result {
+    Ok(_) => assert_true(false)
+    Err(error) => {
+      match error {
+        InvalidInput(msg) => assert_eq(msg, "Invalid input")
+        _ => assert_true(false)
+      }
+    }
+  }
+  
+  // 测试结果类型映射
+  let mapped_success = success_result.map(fn(x) { x * 2 })
+  match mapped_success {
+    Ok(value) => assert_eq(value, 84)
+    Err(_) => assert_true(false)
+  }
+  
+  let mapped_error = error_result.map(fn(x) { x * 2 })
+  match mapped_error {
+    Ok(_) => assert_true(false)
+    Err(error) => {
+      match error {
+        InvalidInput(msg) => assert_eq(msg, "Invalid input")
+        _ => assert_true(false)
+      }
+    }
+  }
+  
+  // 测试结果类型链式操作
+  let chained_result = success_result
+    .map(fn(x) { x + 10 })
+    .map_err(fn(e) { OutOfRange })
   
   match chained_result {
-    Some(value) => assert_eq(value, 18) // "test_value".length() = 10, 10 * 2 = 20, but filtered > 5
+    Ok(value) => assert_eq(value, 52)
+    Err(_) => assert_true(false)
+  }
+}
+
+// 测试6: 资源边界条件测试
+test "资源边界条件测试" {
+  // 测试字典边界
+  let empty_dict : Map[String, Int> = {}
+  assert_eq(empty_dict.size(), 0)
+  
+  let single_item_dict = {"key": 1}
+  assert_eq(single_item_dict.size(), 1)
+  
+  // 测试字典操作边界
+  let inserted_dict = empty_dict.insert("new_key", 100)
+  assert_eq(inserted_dict.size(), 1)
+  
+  // 测试字典查找边界
+  let found_value = single_item_dict.get("key")
+  match found_value {
+    Some(value) => assert_eq(value, 1)
     None => assert_true(false)
   }
   
-  // Test chain with None
-  let none_chain = none_value
-    .map(fn(s) { s.length() })
-    .filter(fn(len) { len > 5 })
-  
-  match none_chain {
+  let not_found_value = single_item_dict.get("nonexistent")
+  match not_found_value {
     Some(_) => assert_true(false)
     None => assert_true(true)
   }
+  
+  // 测试集合边界
+  let empty_set : Set[Int> = Set::empty()
+  assert_eq(empty_set.size(), 0)
+  
+  let single_item_set = Set::singleton(42)
+  assert_eq(single_item_set.size(), 1)
+  assert_true(single_item_set.contains(42))
+  assert_false(single_item_set.contains(43))
 }
 
-// Test 6: Resource Exhaustion Handling
-test "resource exhaustion handling" {
-  // Test memory allocation limits
-  match allocate_large_array(1000000) {
-    Some(array) => {
-      assert_eq(array.length(), 1000000)
-      assert_eq(array[0], 0)
-      assert_eq(array[999999], 0)
-    }
-    None => assert_true(true) // Allocation might fail due to memory limits
-  }
-  
-  match allocate_large_array(1000000000) {
-    Some(_) => assert_true(false) // Should likely fail
-    None => assert_true(true) // Expected to fail due to memory limits
-  }
-  
-  // Test string concatenation limits
-  let base_string = "test"
-  let mut concatenated = base_string
-  
-  for i in 0..=1000 {
-    concatenated = concatenated + base_string
-    if concatenated.length() > 100000 {
-      break
+// 测试7: 异常处理和恢复测试
+test "异常处理和恢复测试" {
+  // 定义可能失败的函数
+  let safe_divide = fn(a : Int, b : Int) -> Result<Int, String> {
+    if b == 0 {
+      Err("Division by zero")
+    } else {
+      Ok(a / b)
     }
   }
   
-  assert_true(concatenated.length() > 1000)
-  assert_true(concatenated.length() <= 100000)
-}
-
-// Test 7: Timeout and Deadline Handling
-test "timeout and deadline handling" {
-  let short_timeout = 100 // 100ms
-  let long_timeout = 5000 // 5s
-  
-  // Test quick operation with sufficient timeout
-  match execute_with_timeout(fn() { quick_operation() }, short_timeout) {
-    Some(result) => assert_eq(result, "quick_done")
-    None => assert_true(false) // Should complete in time
+  // 测试正常情况
+  let normal_result = safe_divide(10, 2)
+  match normal_result {
+    Ok(value) => assert_eq(value, 5)
+    Err(_) => assert_true(false)
   }
   
-  // Test slow operation with insufficient timeout
-  match execute_with_timeout(fn() { slow_operation() }, short_timeout) {
-    Some(_) => assert_true(false) // Should timeout
-    None => assert_true(true) // Expected to timeout
+  // 测试错误情况
+  let error_result = safe_divide(10, 0)
+  match error_result {
+    Ok(_) => assert_true(false)
+    Err(error_msg) => assert_eq(error_msg, "Division by zero")
   }
   
-  // Test slow operation with sufficient timeout
-  match execute_with_timeout(fn() { slow_operation() }, long_timeout) {
-    Some(result) => assert_eq(result, "slow_done")
-    None => assert_true(false) // Should complete in time
+  // 测试错误恢复
+  let recovered_result = match error_result {
+    Ok(value) => value
+    Err(_) => 0  // 默认值
   }
-}
-
-// Test 8: Invalid Input Recovery
-test "invalid input recovery and fallback" {
-  // Test string parsing with recovery
-  match parse_int_with_fallback("123", 0) {
-    123 => assert_true(true)
-    0 => assert_true(false)
-    _ => assert_true(false)
-  }
+  assert_eq(recovered_result, 0)
   
-  match parse_int_with_fallback("invalid", 0) {
-    0 => assert_true(true) // Should return fallback
-    _ => assert_true(false)
-  }
+  // 测试链式错误处理
+  let chained_result = safe_divide(10, 2)
+    .and_then(fn(x) { safe_divide(x, 2) })
   
-  // Test URL parsing with recovery
-  match parse_url_with_fallback("https://example.com", "http://default.com") {
-    "https://example.com" => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match parse_url_with_fallback("invalid-url", "http://default.com") {
-    "http://default.com" => assert_true(true) // Should return fallback
-    _ => assert_true(false)
-  }
-  
-  // Test configuration loading with defaults
-  let config = load_config_with_defaults("non_existent_file.json")
-  assert_eq(config.get("timeout", "30"), "30") // Should use default
-  assert_eq(config.get("retries", "3"), "3") // Should use default
-}
-
-// Helper functions (simplified implementations)
-fn safe_divide(numerator : Int, denominator : Int) -> Option[Int] {
-  if denominator == 0 {
-    None
-  } else {
-    Some(numerator / denominator)
-  }
-}
-
-fn divide_with_default(numerator : Int, denominator : Int, default : Int) -> Int {
-  match safe_divide(numerator, denominator) {
-    Some(result) => result
-    None => default
-  }
-}
-
-fn safe_array_access[T](array : Array[T], index : Int) -> Option[T] {
-  if index >= 0 && index < array.length() {
-    Some(array[index])
-  } else {
-    None
-  }
-}
-
-fn safe_array_get_with_default[T](array : Array[T], index : Int, default : T) -> T {
-  match safe_array_access(array, index) {
-    Some(value) => value
-    None => default
-  }
-}
-
-fn safe_substring(string : String, start : Int, length : Int) -> Option[String] {
-  if start >= 0 && start < string.length() && (start + length) <= string.length() {
-    Some(string.substring(start, length))
-  } else {
-    None
-  }
-}
-
-fn safe_substring_with_default(string : String, start : Int, length : Int, default : String) -> String {
-  match safe_substring(string, start, length) {
-    Some(result) => result
-    None => default
-  }
-}
-
-fn detects_overflow(value : Int, addend : Int) -> Bool {
-  value > 0 && addend > 0 && (value > 2147483647 - addend)
-}
-
-fn detects_underflow(value : Int, subtrahend : Int) -> Bool {
-  value < 0 && subtrahend < 0 && (value < -2147483648 - subtrahend)
-}
-
-fn safe_add(a : Int, b : Int) -> Option[Int] {
-  if detects_overflow(a, b) || detects_underflow(a, b) {
-    None
-  } else {
-    Some(a + b)
-  }
-}
-
-fn safe_multiply(a : Int, b : Int) -> Option[Int] {
-  if a == 0 || b == 0 {
-    Some(0)
-  } else if (a > 0 && b > 0 && a > 2147483647 / b) ||
-            (a > 0 && b < 0 && b < -2147483648 / a) ||
-            (a < 0 && b > 0 && a < -2147483648 / b) ||
-            (a < 0 && b < 0 && a < 2147483647 / b) {
-    None
-  } else {
-    Some(a * b)
-  }
-}
-
-fn safe_option_extract[T](option : Option[T], default : T) -> T {
-  match option {
-    Some(value) => value
-    None => default
-  }
-}
-
-fn allocate_large_array(size : Int) -> Option[Array[Int]] {
-  if size > 0 && size < 100000000 {
-    Some([0; size])
-  } else {
-    None
-  }
-}
-
-fn quick_operation() -> String {
-  "quick_done"
-}
-
-fn slow_operation() -> String {
-  // Simulate slow operation
-  "slow_done"
-}
-
-fn execute_with_timeout[T](operation : () -> T, timeout_ms : Int) -> Option[T] {
-  // Simplified timeout implementation
-  if timeout_ms > 200 {
-    Some(operation())
-  } else {
-    None
-  }
-}
-
-fn parse_int_with_fallback(string : String, fallback : Int) -> Int {
-  match string.to_int() {
-    Some(value) => value
-    None => fallback
-  }
-}
-
-fn parse_url_with_fallback(url : String, fallback : String) -> String {
-  if url.starts_with("http://") || url.starts_with("https://") {
-    url
-  } else {
-    fallback
-  }
-}
-
-type Config = {
-  get : (String, String) -> String
-}
-
-fn load_config_with_defaults(file_path : String) -> Config {
-  // Simplified config loading with defaults
-  {
-    get = fn(key : String, default : String) {
-      default
-    }
+  match chained_result {
+    Ok(value) => assert_eq(value, 2)
+    Err(_) => assert_true(false)
   }
 }

@@ -1088,6 +1088,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_additional_comprehensive_tests.mbt": {
   },
+  "azimuth_additional_advanced_features_tests.mbt": {
+  },
   "azimuth_adaptive_sampling_strategy_tests.mbt": {
   },
   "azimuth_adaptive_performance_tuning_tests.mbt": {
