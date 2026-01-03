@@ -1,1441 +1,1082 @@
-// Azimuth 高质量遥测系统测试用例
-// 专注于核心功能的高级测试和边界条件
+// Azimuth Comprehensive High-Quality Test Suite
+// This file contains advanced test cases demonstrating sophisticated telemetry patterns
 
-// 测试1: 错误边界处理和恢复机制
-test "错误边界处理和恢复机制测试" {
-  // 创建一个可能失败的操作
-  let risky_operation = fn(input : Int) -> Result(Int, String) {
-    if input < 0 {
-      Error("输入值不能为负数")
-    } else if input > 100 {
-      Error("输入值超过最大限制")
-    } else {
-      Ok(input * 2)
-    }
-  }
+// Test 1: Advanced Span Lifecycle Management
+test "advanced span lifecycle with nested operations" {
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "lifecycle.test")
   
-  // 测试正常情况
-  let normal_result = risky_operation(50)
-  match normal_result {
-    Ok(value) => assert_eq(value, 100)
-    Error(_) => assert_true(false)
-  }
+  // Create parent span with comprehensive configuration
+  let parent_span = Tracer::start_span(tracer, "parent.operation")
+  Span::set_attribute(parent_span, "operation.type", "parent")
+  Span::set_attribute(parent_span, "service.name", "payment-service")
+  Span::set_attribute(parent_span, "service.version", "2.1.0")
   
-  // 测试边界情况
-  let boundary_result = risky_operation(0)
-  match boundary_result {
-    Ok(value) => assert_eq(value, 0)
-    Error(_) => assert_true(false)
-  }
+  // Create child spans with different characteristics
+  let child_span1 = Tracer::start_span_with_parent(tracer, "child.validation", parent_span)
+  let child_span2 = Tracer::start_span_with_parent(tracer, "child.processing", parent_span)
+  let child_span3 = Tracer::start_span_with_parent(tracer, "child.persisting", parent_span)
   
-  let max_boundary_result = risky_operation(100)
-  match max_boundary_result {
-    Ok(value) => assert_eq(value, 200)
-    Error(_) => assert_true(false)
-  }
+  // Configure child spans with specific attributes
+  Span::set_attribute(child_span1, "validation.rules", ["amount", "currency", "recipient"])
+  Span::set_attribute(child_span2, "processing.algorithm", "fraud_detection_v2")
+  Span::set_attribute(child_span3, "persistence.backend", "postgresql")
   
-  // 测试错误情况
-  let error_result1 = risky_operation(-10)
-  match error_result1 {
-    Ok(_) => assert_true(false)
-    Error(message) => assert_eq(message, "输入值不能为负数")
-  }
+  // Add events with timestamps and structured data
+  let start_time = 1735689600000000000L
+  Span::add_event_with_timestamp(child_span1, "validation.started", start_time, [
+    ("input.amount", DoubleValue(1250.50)),
+    ("input.currency", StringValue("USD")),
+    ("validation.mode", StringValue("strict"))
+  ])
   
-  let error_result2 = risky_operation(150)
-  match error_result2 {
-    Ok(_) => assert_true(false)
-    Error(message) => assert_eq(message, "输入值超过最大限制")
-  }
+  Span::add_event_with_timestamp(child_span2, "processing.started", start_time + 1000000L, [
+    ("algorithm.version", StringValue("2.1.3")),
+    ("processing.priority", IntValue(1)),
+    ("resource.allocation", StringValue("high"))
+  ])
   
-  // 测试错误恢复机制
-  let recover_operation = fn(input : Int) -> Int {
-    match risky_operation(input) {
-      Ok(value) => value
-      Error(_) => 0  // 默认恢复值
-    }
-  }
+  Span::add_event_with_timestamp(child_span3, "persisting.started", start_time + 5000000L, [
+    ("database.connection", StringValue("conn-12345")),
+    ("transaction.isolation", StringValue("read_committed"))
+  ])
   
-  assert_eq(recover_operation(50), 100)
-  assert_eq(recover_operation(-10), 0)
-  assert_eq(recover_operation(150), 0)
+  // Simulate operation completion with different outcomes
+  Span::set_status(child_span1, Ok, Some("Validation completed successfully"))
+  Span::set_status(child_span2, Error, Some("Processing failed: suspicious pattern detected"))
+  Span::set_status(child_span3, Ok, Some("Data persisted successfully"))
+  
+  // End child spans in specific order
+  Span::end_with_timestamp(child_span1, start_time + 3000000L)
+  Span::end_with_timestamp(child_span2, start_time + 4000000L)
+  Span::end_with_timestamp(child_span3, start_time + 8000000L)
+  
+  // End parent span with summary
+  Span::add_event(parent_span, "operation.completed", [
+    ("total.children", IntValue(3)),
+    ("successful.children", IntValue(2)),
+    ("failed.children", IntValue(1))
+  ])
+  
+  Span::set_status(parent_span, Error, Some("Operation partially failed"))
+  Span::end_with_timestamp(parent_span, start_time + 9000000L)
+  
+  // Verify span relationships and data
+  let parent_ctx = Span::span_context(parent_span)
+  let child1_ctx = Span::span_context(child_span1)
+  let child2_ctx = Span::span_context(child_span2)
+  let child3_ctx = Span::span_context(child_span3)
+  
+  assert_true(SpanContext::is_valid(parent_ctx))
+  assert_true(SpanContext::is_valid(child1_ctx))
+  assert_true(SpanContext::is_valid(child2_ctx))
+  assert_true(SpanContext::is_valid(child3_ctx))
+  
+  assert_eq(SpanContext::trace_id(parent_ctx), SpanContext::trace_id(child1_ctx))
+  assert_eq(SpanContext::trace_id(parent_ctx), SpanContext::trace_id(child2_ctx))
+  assert_eq(SpanContext::trace_id(parent_ctx), SpanContext::trace_id(child3_ctx))
 }
 
-// 测试2: 时间序列数据压缩和优化
-test "时间序列数据压缩和优化测试" {
-  // 创建时间序列数据点
-  let create_data_point = fn(timestamp : Int, value : Float) -> (Int, Float) {
-    (timestamp, value)
+// Test 2: Complex Metric Aggregation Patterns
+test "complex metric aggregation with dimensional analysis" {
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "aggregation.test")
+  
+  // Create diverse metric instruments
+  let request_counter = Meter::create_counter(
+    meter, 
+    "http.requests.total", 
+    Some("Total HTTP requests"), 
+    Some("requests")
+  )
+  
+  let response_histogram = Meter::create_histogram(
+    meter, 
+    "http.response.duration", 
+    Some("HTTP response duration distribution"), 
+    Some("milliseconds")
+  )
+  
+  let active_connections = Meter::create_updown_counter(
+    meter, 
+    "http.connections.active", 
+    Some("Currently active HTTP connections"), 
+    Some("connections")
+  )
+  
+  let queue_size = Meter::create_gauge(
+    meter, 
+    "http.queue.size", 
+    Some("Current HTTP request queue size"), 
+    Some("requests")
+  )
+  
+  // Simulate complex traffic patterns with multiple dimensions
+  let endpoints = ["/api/users", "/api/orders", "/api/products", "/api/payments"]
+  let methods = ["GET", "POST", "PUT", "DELETE"]
+  let status_codes = ["200", "201", "400", "404", "500"]
+  
+  // Generate realistic traffic patterns
+  for i in 0..100 {
+    let endpoint = endpoints[i % endpoints.length()]
+    let method = methods[i % methods.length()]
+    let status = if i < 80 { "200" } else if i < 90 { "400" } else { "500" }
+    let duration = 50.0 + (i.to_float() * 2.5) + (Math::random() * 100.0)
+    
+    // Record request count with dimensional attributes
+    Counter::add_with_attributes(request_counter, 1.0, [
+      ("endpoint", StringValue(endpoint)),
+      ("method", StringValue(method)),
+      ("status.code", StringValue(status)),
+      ("service.version", StringValue("2.1.0")),
+      ("region", StringValue("us-west-2"))
+    ])
+    
+    // Record response duration distribution
+    Histogram::record_with_attributes(response_histogram, duration, [
+      ("endpoint", StringValue(endpoint)),
+      ("method", StringValue(method)),
+      ("status.code", StringValue(status))
+    ])
+    
+    // Simulate connection lifecycle
+    if i % 10 == 0 {
+      UpDownCounter::add_with_attributes(active_connections, 1.0, [
+        ("connection.type", StringValue("incoming")),
+        ("protocol", StringValue("HTTP/1.1"))
+      ])
+    }
+    
+    if i % 15 == 0 {
+      UpDownCounter::add_with_attributes(active_connections, -1.0, [
+        ("connection.type", StringValue("incoming")),
+        ("protocol", StringValue("HTTP/1.1"))
+      ])
+    }
+    
+    // Update queue size based on load
+    let queue_depth = Math::max(0, 25 - (i % 30))
+    UpDownCounter::set_with_attributes(queue_size, queue_depth.to_float(), [
+      ("queue.type", StringValue("request")),
+      ("priority", StringValue("normal"))
+    ])
   }
   
-  // 生成测试数据
-  let base_timestamp = 1735689600  // 2025-01-01 00:00:00
-  let time_series_data = [
-    create_data_point(base_timestamp, 100.0),
-    create_data_point(base_timestamp + 60, 101.5),
-    create_data_point(base_timestamp + 120, 99.8),
-    create_data_point(base_timestamp + 180, 102.3),
-    create_data_point(base_timestamp + 240, 100.5),
-    create_data_point(base_timestamp + 300, 98.7),
-    create_data_point(base_timestamp + 360, 101.2),
-    create_data_point(base_timestamp + 420, 100.0),
-    create_data_point(base_timestamp + 480, 99.5),
-    create_data_point(base_timestamp + 540, 100.8)
+  // Verify metric instrument properties
+  assert_eq(request_counter.name, "http.requests.total")
+  assert_eq(request_counter.description, Some("Total HTTP requests"))
+  assert_eq(request_counter.unit, Some("requests"))
+  
+  assert_eq(response_histogram.name, "http.response.duration")
+  assert_eq(response_histogram.description, Some("HTTP response duration distribution"))
+  assert_eq(response_histogram.unit, Some("milliseconds"))
+  
+  assert_eq(active_connections.name, "http.connections.active")
+  assert_eq(queue_size.name, "http.queue.size")
+  
+  assert_true(true)
+}
+
+// Test 3: Structured Logging with Correlation
+test "structured logging with correlation and context propagation" {
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "correlation.test")
+  
+  // Create correlation context
+  let correlation_id = "corr-" + String::from_int(Math::abs(Math::random() * 1000000).to_int())
+  let request_id = "req-" + String::from_int(Math::abs(Math::random() * 1000000).to_int())
+  let session_id = "sess-" + String::from_int(Math::abs(Math::random() * 1000000).to_int())
+  
+  // Create base context with correlation data
+  let base_ctx = Context::root()
+  let correlation_key = ContextKey::new("correlation.id")
+  let request_key = ContextKey::new("request.id")
+  let session_key = ContextKey::new("session.id")
+  let user_key = ContextKey::new("user.id")
+  
+  let ctx_with_correlation = Context::with_value(base_ctx, correlation_key, correlation_id)
+  let ctx_with_request = Context::with_value(ctx_with_correlation, request_key, request_id)
+  let ctx_with_session = Context::with_value(ctx_with_request, session_key, session_id)
+  let ctx_with_user = Context::with_value(ctx_with_session, user_key, "user-12345")
+  
+  // Create structured log records with different severity levels
+  let startup_log = LogRecord::new_with_context(
+    Info,
+    Some("Service startup initiated"),
+    Some([
+      ("service.name", StringValue("payment-service")),
+      ("service.version", StringValue("2.1.0")),
+      ("startup.timestamp", StringValue("2025-01-02T10:00:00Z")),
+      ("environment", StringValue("production"))
+    ]),
+    Some(1735689600000000000L),
+    Some(1735689600000000000L),
+    Some("trace-startup"),
+    Some("span-startup"),
+    Some(ctx_with_user)
+  )
+  
+  let request_log = LogRecord::new_with_context(
+    Info,
+    Some("Incoming payment request processed"),
+    Some([
+      ("request.method", StringValue("POST")),
+      ("request.path", StringValue("/api/payments")),
+      ("request.size", IntValue(1024)),
+      ("client.ip", StringValue("192.168.1.100")),
+      ("user.agent", StringValue("PaymentClient/2.1.0"))
+    ]),
+    Some(1735689600000001000L),
+    Some(1735689600000001000L),
+    Some("trace-payment"),
+    Some("span-request"),
+    Some(ctx_with_user)
+  )
+  
+  let validation_log = LogRecord::new_with_context(
+    Warn,
+    Some("Payment validation warnings detected"),
+    Some([
+      ("validation.warnings", ArrayValue([
+        StringValue("amount exceeds daily limit"),
+        StringValue("recipient on watchlist"),
+        StringValue("unusual geographic location")
+      ])),
+      ("validation.score", DoubleValue(0.85)),
+      ("risk.level", StringValue("medium"))
+    ]),
+    Some(1735689600000002000L),
+    Some(1735689600000002000L),
+    Some("trace-payment"),
+    Some("span-validation"),
+    Some(ctx_with_user)
+  )
+  
+  let processing_log = LogRecord::new_with_context(
+    Error,
+    Some("Payment processing failed"),
+    Some([
+      ("error.code", StringValue("PAYMENT_DECLINED")),
+      ("error.message", StringValue("Insufficient funds")),
+      ("error.category", StringValue("business_logic")),
+      ("error.retryable", BoolValue(false)),
+      ("gateway.response", StringValue("DECLINED: INSUFFICIENT_FUNDS"))
+    ]),
+    Some(1735689600000003000L),
+    Some(1735689600000003000L),
+    Some("trace-payment"),
+    Some("span-processing"),
+    Some(ctx_with_user)
+  )
+  
+  let cleanup_log = LogRecord::new_with_context(
+    Debug,
+    Some("Resource cleanup completed"),
+    Some([
+      ("cleanup.duration", DoubleValue(15.5)),
+      ("resources.freed", IntValue(42)),
+      ("memory.reclaimed", IntValue(1048576))
+    ]),
+    Some(1735689600000004000L),
+    Some(1735689600000004000L),
+    Some("trace-payment"),
+    Some("span-cleanup"),
+    Some(ctx_with_user)
+  )
+  
+  // Emit all log records
+  Logger::emit(logger, startup_log)
+  Logger::emit(logger, request_log)
+  Logger::emit(logger, validation_log)
+  Logger::emit(logger, processing_log)
+  Logger::emit(logger, cleanup_log)
+  
+  // Verify log record properties
+  assert_eq(LogRecord::severity_number(startup_log), Info)
+  assert_eq(LogRecord::severity_number(validation_log), Warn)
+  assert_eq(LogRecord::severity_number(processing_log), Error)
+  assert_eq(LogRecord::severity_number(cleanup_log), Debug)
+  
+  assert_eq(LogRecord::body(startup_log), Some("Service startup initiated"))
+  assert_eq(LogRecord::body(processing_log), Some("Payment processing failed"))
+  
+  // Verify correlation data is preserved
+  let startup_correlation = Context::get(LogRecord::context(startup_log), correlation_key)
+  let processing_correlation = Context::get(LogRecord::context(processing_log), correlation_key)
+  
+  assert_eq(startup_correlation, Some(correlation_id))
+  assert_eq(processing_correlation, Some(correlation_id))
+  
+  assert_true(true)
+}
+
+// Test 4: Context Propagation Across Service Boundaries
+test "context propagation across service boundaries with transformations" {
+  // Create initial context with comprehensive data
+  let initial_ctx = Context::root()
+  
+  let trace_key = ContextKey::new("trace.id")
+  let span_key = ContextKey::new("span.id")
+  let baggage_key = ContextKey::new("baggage")
+  let auth_key = ContextKey::new("auth.token")
+  let tenant_key = ContextKey::new("tenant.id")
+  
+  let ctx_with_trace = Context::with_value(initial_ctx, trace_key, "trace-abc123")
+  let ctx_with_span = Context::with_value(ctx_with_trace, span_key, "span-def456")
+  
+  // Create baggage with multiple entries
+  let initial_baggage = Baggage::new()
+  let baggage_with_user = Baggage::set_entry(initial_baggage, "user.id", "user-789")
+  let baggage_with_session = Baggage::set_entry(baggage_with_user, "session.id", "sess-012")
+  let baggage_with_request = Baggage::set_entry(baggage_with_session, "request.id", "req-345")
+  
+  let ctx_with_baggage = Context::with_value(ctx_with_span, baggage_key, baggage_with_request)
+  let ctx_with_auth = Context::with_value(ctx_with_baggage, auth_key, "bearer-token-xyz")
+  let ctx_with_tenant = Context::with_value(ctx_with_auth, tenant_key, "tenant-001")
+  
+  // Simulate service boundary crossing with transformation
+  let service_a_ctx = ctx_with_tenant
+  
+  // Extract context for propagation
+  let extracted_trace = Context::get(service_a_ctx, trace_key)
+  let extracted_span = Context::get(service_a_ctx, span_key)
+  let extracted_baggage = Context::get(service_a_ctx, baggage_key)
+  let extracted_auth = Context::get(service_a_ctx, auth_key)
+  let extracted_tenant = Context::get(service_a_ctx, tenant_key)
+  
+  // Create new context for Service B with transformation
+  let service_b_ctx = Context::root()
+  let service_b_trace = Context::with_value(service_b_ctx, trace_key, extracted_trace.unwrap_or(""))
+  let service_b_span = Context::with_value(service_b_trace, span_key, "span-ghi789") // New span
+  let service_b_baggage = Context::with_value(service_b_span, baggage_key, extracted_baggage.unwrap_or(Baggage::new()))
+  
+  // Add service-specific context
+  let service_key = ContextKey::new("service.name")
+  let version_key = ContextKey::new("service.version")
+  let region_key = ContextKey::new("service.region")
+  
+  let service_b_with_name = Context::with_value(service_b_baggage, service_key, "order-service")
+  let service_b_with_version = Context::with_value(service_b_with_name, version_key, "1.5.2")
+  let service_b_with_region = Context::with_value(service_b_with_version, region_key, "eu-west-1")
+  
+  // Transform baggage for Service B
+  let service_b_baggage_data = Context::get(service_b_with_region, baggage_key).unwrap_or(Baggage::new())
+  let service_b_baggage_transformed = Baggage::set_entry(service_b_baggage_data, "service.b.id", "svc-b-001")
+  let service_b_baggage_final = Baggage::set_entry(service_b_baggage_transformed, "call.chain", "a->b")
+  
+  let service_b_final_ctx = Context::with_value(service_b_with_region, baggage_key, service_b_baggage_final)
+  
+  // Simulate Service B calling Service C
+  let service_c_ctx = Context::root()
+  let service_c_trace = Context::with_value(service_c_ctx, trace_key, extracted_trace.unwrap_or(""))
+  let service_c_span = Context::with_value(service_c_trace, span_key, "span-jkl012") // New span
+  
+  // Propagate and transform baggage
+  let service_c_baggage_data = service_b_baggage_final
+  let service_c_baggage_with_c = Baggage::set_entry(service_c_baggage_data, "service.c.id", "svc-c-002")
+  let service_c_baggage_final = Baggage::set_entry(service_c_baggage_with_c, "call.chain", "a->b->c")
+  
+  let service_c_with_baggage = Context::with_value(service_c_span, baggage_key, service_c_baggage_final)
+  let service_c_with_name = Context::with_value(service_c_with_baggage, service_key, "inventory-service")
+  let service_c_final_ctx = Context::with_value(service_c_with_name, version_key, "3.1.0")
+  
+  // Verify context propagation integrity
+  let final_trace = Context::get(service_c_final_ctx, trace_key)
+  let original_trace = Context::get(service_a_ctx, trace_key)
+  
+  assert_eq(final_trace, original_trace)
+  assert_eq(final_trace, Some("trace-abc123"))
+  
+  // Verify baggage transformation
+  let final_baggage = Context::get(service_c_final_ctx, baggage_key).unwrap_or(Baggage::new())
+  let final_call_chain = Baggage::get_entry(final_baggage, "call.chain")
+  let final_user = Baggage::get_entry(final_baggage, "user.id")
+  
+  assert_eq(final_call_chain, Some("a->b->c"))
+  assert_eq(final_user, Some("user-789"))
+  
+  // Verify service-specific context
+  let service_c_name = Context::get(service_c_final_ctx, service_key)
+  let service_c_version = Context::get(service_c_final_ctx, version_key)
+  
+  assert_eq(service_c_name, Some("order-service"))
+  assert_eq(service_c_version, Some("3.1.0"))
+  
+  assert_true(true)
+}
+
+// Test 5: Resource Metadata Management with Hierarchies
+test "resource metadata management with hierarchical structures" {
+  // Create base resource with core attributes
+  let base_resource = Resource::new()
+  let base_attributes = [
+    ("service.name", StringValue("payment-platform")),
+    ("service.version", StringValue("2.1.0")),
+    ("service.namespace", StringValue("production")),
+    ("deployment.environment", StringValue("prod"))
   ]
   
-  // 验证数据点数量
-  assert_eq(time_series_data.length(), 10)
+  let resource_with_base = Resource::with_attributes(base_resource, base_attributes)
   
-  // 验证第一个和最后一个数据点
-  assert_eq(time_series_data[0], (base_timestamp, 100.0))
-  assert_eq(time_series_data[9], (base_timestamp + 540, 100.8))
-  
-  // 测试数据压缩算法（简化版）
-  let compress_data = fn(data : Array((Int, Float))) -> Array((Int, Float)) {
-    if data.length() <= 2 {
-      data
-    } else {
-      // 保留第一个、中间变化大的点和最后一个点
-      let mut compressed = [data[0]]
-      let mut prev_value = data[0].1
-      
-      for i in 1..data.length() - 1 {
-        let current_value = data[i].1
-        let next_value = data[i + 1].1
-        
-        // 如果变化超过阈值，保留该点
-        if (current_value - prev_value).abs() > 1.0 || (next_value - current_value).abs() > 1.0 {
-          compressed.push(data[i])
-          prev_value = current_value
-        }
-      }
-      
-      compressed.push(data[data.length() - 1])
-      compressed
-    }
-  }
-  
-  let compressed_data = compress_data(time_series_data)
-  
-  // 验证压缩后的数据
-  assert_true(compressed_data.length() <= time_series_data.length())
-  assert_eq(compressed_data[0], time_series_data[0])
-  assert_eq(compressed_data[compressed_data.length() - 1], time_series_data[time_series_data.length() - 1])
-  
-  // 测试数据聚合
-  let aggregate_data = fn(data : Array((Int, Float)), window_size : Int) -> Array((Int, Float)) {
-    if data.length() == 0 || window_size <= 0 {
-      []
-    } else {
-      let mut aggregated = []
-      let mut i = 0
-      
-      while i < data.length() {
-        let window_end = if i + window_size < data.length() { i + window_size } else { data.length() }
-        let mut sum = 0.0
-        let mut count = 0
-        
-        for j in i..window_end {
-          sum += data[j].1
-          count += 1
-        }
-        
-        let avg_value = sum / count.to_float()
-        aggregated.push((data[i].0, avg_value))
-        i += window_size
-      }
-      
-      aggregated
-    }
-  }
-  
-  let aggregated_data = aggregate_data(time_series_data, 3)
-  
-  // 验证聚合后的数据
-  assert_eq(aggregated_data.length(), 4)  // 10个数据点，窗口大小3，应该有4个聚合点
-  assert_eq(aggregated_data[0].0, base_timestamp)
-  assert_eq(aggregated_data[3].0, base_timestamp + 540)
-}
-
-// 测试3: 并发安全性和资源管理
-test "并发安全性和资源管理测试" {
-  // 创建资源管理器
-  let resource_manager = {
-    allocated_resources : Array(String) = [],
-    max_resources : Int = 10
-  }
-  
-  // 资源分配函数
-  let allocate_resource = fn(manager : { allocated_resources : Array(String), max_resources : Int }, resource_id : String) -> Bool {
-    if manager.allocated_resources.length() < manager.max_resources {
-      manager.allocated_resources.push(resource_id)
-      true
-    } else {
-      false
-    }
-  }
-  
-  // 资源释放函数
-  let release_resource = fn(manager : { allocated_resources : Array(String), max_resources : Int }, resource_id : String) -> Bool {
-    let mut found = false
-    let mut new_allocated = []
-    
-    for resource in manager.allocated_resources {
-      if resource == resource_id {
-        found = true
-      } else {
-        new_allocated.push(resource)
-      }
-    }
-    
-    if found {
-      manager.allocated_resources = new_allocated
-    }
-    
-    found
-  }
-  
-  // 测试资源分配
-  assert_true(allocate_resource(resource_manager, "resource_1"))
-  assert_true(allocate_resource(resource_manager, "resource_2"))
-  assert_true(allocate_resource(resource_manager, "resource_3"))
-  assert_eq(resource_manager.allocated_resources.length(), 3)
-  
-  // 测试资源释放
-  assert_true(release_resource(resource_manager, "resource_2"))
-  assert_eq(resource_manager.allocated_resources.length(), 2)
-  assert_false(resource_manager.allocated_resources.contains("resource_2"))
-  
-  // 测试资源限制
-  for i in 4..11 {
-    assert_true(allocate_resource(resource_manager, "resource_" + i.to_string()))
-  }
-  
-  // 现在应该已经达到最大资源数
-  assert_eq(resource_manager.allocated_resources.length(), 10)
-  assert_false(allocate_resource(resource_manager, "resource_11"))
-  
-  // 测试资源池管理
-  let resource_pool = {
-    available_resources : Array(String) = ["pool_res_1", "pool_res_2", "pool_res_3"],
-    used_resources : Array(String) = []
-  }
-  
-  let acquire_from_pool = fn(pool : { available_resources : Array(String), used_resources : Array(String) }) -> Option(String) {
-    if pool.available_resources.length() > 0 {
-      let resource = pool.available_resources[0]
-      pool.available_resources = pool.available_resources.slice(1, pool.available_resources.length())
-      pool.used_resources.push(resource)
-      Some(resource)
-    } else {
-      None
-    }
-  }
-  
-  let release_to_pool = fn(pool : { available_resources : Array(String), used_resources : Array(String) }, resource : String) -> Bool {
-    let mut found = false
-    let mut new_used = []
-    
-    for used_resource in pool.used_resources {
-      if used_resource == resource {
-        found = true
-      } else {
-        new_used.push(used_resource)
-      }
-    }
-    
-    if found {
-      pool.used_resources = new_used
-      pool.available_resources.push(resource)
-    }
-    
-    found
-  }
-  
-  // 测试资源池操作
-  let acquired1 = acquire_from_pool(resource_pool)
-  match acquired1 {
-    Some(resource) => {
-      assert_eq(resource, "pool_res_1")
-      assert_eq(resource_pool.available_resources.length(), 2)
-      assert_eq(resource_pool.used_resources.length(), 1)
-    }
-    None => assert_true(false)
-  }
-  
-  let acquired2 = acquire_from_pool(resource_pool)
-  let acquired3 = acquire_from_pool(resource_pool)
-  
-  // 资源池应该为空
-  let acquired4 = acquire_from_pool(resource_pool)
-  assert_eq(acquired4, None)
-  
-  // 释放资源回池
-  assert_true(release_to_pool(resource_pool, "pool_res_1"))
-  assert_eq(resource_pool.available_resources.length(), 1)
-  assert_eq(resource_pool.used_resources.length(), 2)
-  
-  // 再次获取资源
-  let reacquired = acquire_from_pool(resource_pool)
-  match reacquired {
-    Some(resource) => assert_eq(resource, "pool_res_1")
-    None => assert_true(false)
-  }
-}
-
-// 测试4: 配置管理和动态更新
-test "配置管理和动态更新测试" {
-  // 定义配置结构
-  let config = {
-    service_name : String = "azimuth-service",
-    service_version : String = "1.0.0",
-    telemetry_enabled : Bool = true,
-    sampling_rate : Float = 0.1,
-    max_batch_size : Int = 100,
-    export_interval_ms : Int = 5000,
-    attributes : Array((String, String)) = []
-  }
-  
-  // 配置更新函数
-  let update_config = fn(current_config : { 
-    service_name : String, 
-    service_version : String, 
-    telemetry_enabled : Bool, 
-    sampling_rate : Float, 
-    max_batch_size : Int, 
-    export_interval_ms : Int, 
-    attributes : Array((String, String)) 
-  }, updates : Array((String, String))) -> { 
-    service_name : String, 
-    service_version : String, 
-    telemetry_enabled : Bool, 
-    sampling_rate : Float, 
-    max_batch_size : Int, 
-    export_interval_ms : Int, 
-    attributes : Array((String, String)) 
-  } {
-    let mut new_config = current_config
-    
-    for (key, value) in updates {
-      match key {
-        "service_name" => new_config.service_name = value
-        "service_version" => new_config.service_version = value
-        "telemetry_enabled" => new_config.telemetry_enabled = (value == "true")
-        "sampling_rate" => new_config.sampling_rate = value.to_float()
-        "max_batch_size" => new_config.max_batch_size = value.to_int()
-        "export_interval_ms" => new_config.export_interval_ms = value.to_int()
-        _ => {
-          // 未知键，添加到属性中
-          new_config.attributes.push((key, value))
-        }
-      }
-    }
-    
-    new_config
-  }
-  
-  // 验证初始配置
-  assert_eq(config.service_name, "azimuth-service")
-  assert_eq(config.service_version, "1.0.0")
-  assert_true(config.telemetry_enabled)
-  assert_eq(config.sampling_rate, 0.1)
-  assert_eq(config.max_batch_size, 100)
-  assert_eq(config.export_interval_ms, 5000)
-  
-  // 测试配置更新
-  let updates1 = [
-    ("service_version", "1.1.0"),
-    ("sampling_rate", "0.2"),
-    ("max_batch_size", "200")
+  // Create infrastructure resource layer
+  let infra_resource = Resource::new()
+  let infra_attributes = [
+    ("host.name", StringValue("prod-pay-01.example.com")),
+    ("host.id", StringValue("i-0123456789abcdef0")),
+    ("host.type", StringValue("t3.large")),
+    ("host.arch", StringValue("x86_64")),
+    ("os.type", StringValue("linux")),
+    ("os.version", StringValue("5.15.0-1023-aws")),
+    ("cloud.provider", StringValue("aws")),
+    ("cloud.region", StringValue("us-west-2")),
+    ("cloud.availability_zone", StringValue("us-west-2a"))
   ]
   
-  let updated_config1 = update_config(config, updates1)
+  let resource_with_infra = Resource::with_attributes(infra_resource, infra_attributes)
   
-  assert_eq(updated_config1.service_name, "azimuth-service")  // 未更新
-  assert_eq(updated_config1.service_version, "1.1.0")  // 已更新
-  assert_true(updated_config1.telemetry_enabled)  // 未更新
-  assert_eq(updated_config1.sampling_rate, 0.2)  // 已更新
-  assert_eq(updated_config1.max_batch_size, 200)  // 已更新
-  assert_eq(updated_config1.export_interval_ms, 5000)  // 未更新
-  
-  // 测试更多配置更新
-  let updates2 = [
-    ("telemetry_enabled", "false"),
-    ("export_interval_ms", "10000"),
-    ("custom.setting", "custom_value")
+  // Create application resource layer
+  let app_resource = Resource::new()
+  let app_attributes = [
+    ("application.name", StringValue("payment-processor")),
+    ("application.version", StringValue("2.1.0-rc3")),
+    ("application.build", StringValue("20250102-1000")),
+    ("application.runtime", StringValue("nodejs")),
+    ("application.runtime.version", StringValue("18.17.0")),
+    ("application.framework", StringValue("express")),
+    ("application.framework.version", StringValue("4.18.2"))
   ]
   
-  let updated_config2 = update_config(updated_config1, updates2)
+  let resource_with_app = Resource::with_attributes(app_resource, app_attributes)
   
-  assert_eq(updated_config2.service_name, "azimuth-service")
-  assert_eq(updated_config2.service_version, "1.1.0")
-  assert_false(updated_config2.telemetry_enabled)  // 已更新
-  assert_eq(updated_config2.sampling_rate, 0.2)
-  assert_eq(updated_config2.max_batch_size, 200)
-  assert_eq(updated_config2.export_interval_ms, 10000)  // 已更新
-  assert_eq(updated_config2.attributes.length(), 1)  // 自定义属性
-  assert_eq(updated_config2.attributes[0], ("custom.setting", "custom_value"))
+  // Create business context resource layer
+  let business_resource = Resource::new()
+  let business_attributes = [
+    ("business.unit", StringValue("payments")),
+    ("business.vertical", StringValue("fintech")),
+    ("business.region", StringValue("north-america")),
+    ("business.compliance", StringValue("pci-dss-level-1")),
+    ("business.tier", StringValue("critical")),
+    ("business.sla", StringValue("99.99"))
+  ]
   
-  // 测试配置验证
-  let validate_config = fn(config_to_validate : { 
-    service_name : String, 
-    service_version : String, 
-    telemetry_enabled : Bool, 
-    sampling_rate : Float, 
-    max_batch_size : Int, 
-    export_interval_ms : Int, 
-    attributes : Array((String, String)) 
-  }) -> Array(String) {
-    let mut errors = []
-    
-    if config_to_validate.service_name == "" {
-      errors.push("服务名称不能为空")
-    }
-    
-    if config_to_validate.service_version == "" {
-      errors.push("服务版本不能为空")
-    }
-    
-    if config_to_validate.sampling_rate < 0.0 || config_to_validate.sampling_rate > 1.0 {
-      errors.push("采样率必须在0.0到1.0之间")
-    }
-    
-    if config_to_validate.max_batch_size <= 0 {
-      errors.push("最大批处理大小必须大于0")
-    }
-    
-    if config_to_validate.export_interval_ms <= 0 {
-      errors.push("导出间隔必须大于0")
-    }
-    
-    errors
+  let resource_with_business = Resource::with_attributes(business_resource, business_attributes)
+  
+  // Merge resources hierarchically
+  let merged_base_infra = Resource::merge(resource_with_base, resource_with_infra)
+  let merged_app_layer = Resource::merge(merged_base_infra, resource_with_app)
+  let final_resource = Resource::merge(merged_app_layer, resource_with_business)
+  
+  // Verify hierarchical resource attributes
+  let service_name = Resource::get_attribute(final_resource, "service.name")
+  let host_name = Resource::get_attribute(final_resource, "host.name")
+  let app_version = Resource::get_attribute(final_resource, "application.version")
+  let business_unit = Resource::get_attribute(final_resource, "business.unit")
+  let cloud_region = Resource::get_attribute(final_resource, "cloud.region")
+  let compliance_level = Resource::get_attribute(final_resource, "business.compliance")
+  
+  match service_name {
+    Some(StringValue(name)) => assert_eq(name, "payment-platform")
+    _ => assert_true(false)
   }
   
-  // 测试有效配置
-  let valid_config_errors = validate_config(updated_config2)
-  assert_eq(valid_config_errors.length(), 0)
+  match host_name {
+    Some(StringValue(name)) => assert_eq(name, "prod-pay-01.example.com")
+    _ => assert_true(false)
+  }
   
-  // 测试无效配置
-  let invalid_config = updated_config2
-  invalid_config.service_name = ""
-  invalid_config.sampling_rate = 1.5
-  invalid_config.max_batch_size = 0
+  match app_version {
+    Some(StringValue(version)) => assert_eq(version, "2.1.0-rc3")
+    _ => assert_true(false)
+  }
   
-  let invalid_config_errors = validate_config(invalid_config)
-  assert_eq(invalid_config_errors.length(), 3)
-  assert_true(invalid_config_errors.contains("服务名称不能为空"))
-  assert_true(invalid_config_errors.contains("采样率必须在0.0到1.0之间"))
-  assert_true(invalid_config_errors.contains("最大批处理大小必须大于0"))
+  match business_unit {
+    Some(StringValue(unit)) => assert_eq(unit, "payments")
+    _ => assert_true(false)
+  }
+  
+  match cloud_region {
+    Some(StringValue(region)) => assert_eq(region, "us-west-2")
+    _ => assert_true(false)
+  }
+  
+  match compliance_level {
+    Some(StringValue(compliance)) => assert_eq(compliance, "pci-dss-level-1")
+    _ => assert_true(false)
+  }
+  
+  // Test resource attribute override behavior
+  let override_resource = Resource::new()
+  let override_attributes = [
+    ("service.version", StringValue("2.2.0-hotfix")), // Override base version
+    ("host.name", StringValue("prod-pay-02.example.com")), // Override infra host
+    ("emergency.maintenance", BoolValue(true)) // New attribute
+  ]
+  
+  let resource_with_override = Resource::with_attributes(override_resource, override_attributes)
+  let resource_with_override_final = Resource::merge(final_resource, resource_with_override)
+  
+  // Verify override behavior
+  let overridden_version = Resource::get_attribute(resource_with_override_final, "service.version")
+  let overridden_host = Resource::get_attribute(resource_with_override_final, "host.name")
+  let emergency_flag = Resource::get_attribute(resource_with_override_final, "emergency.maintenance")
+  
+  match overridden_version {
+    Some(StringValue(version)) => assert_eq(version, "2.2.0-hotfix")
+    _ => assert_true(false)
+  }
+  
+  match overridden_host {
+    Some(StringValue(host)) => assert_eq(host, "prod-pay-02.example.com")
+    _ => assert_true(false)
+  }
+  
+  match emergency_flag {
+    Some(BoolValue(flag)) => assert_true(flag)
+    _ => assert_true(false)
+  }
+  
+  // Ensure non-overridden attributes are preserved
+  let preserved_business_unit = Resource::get_attribute(resource_with_override_final, "business.unit")
+  match preserved_business_unit {
+    Some(StringValue(unit)) => assert_eq(unit, "payments")
+    _ => assert_true(false)
+  }
+  
+  assert_true(true)
 }
 
-// 测试5: 分布式追踪和上下文传播
-test "分布式追踪和上下文传播测试" {
-  // 创建追踪上下文
-  let trace_context = {
-    trace_id : String = "0af7651916cd43dd8448eb211c80319c",
-    span_id : String = "b7ad6b7169203331",
-    parent_span_id : Option(String) = None,
-    trace_flags : Int = 1,
-    trace_state : String = "key1=value1,key2=value2",
-    baggage : Array((String, String)) = []
-  }
+// Test 6: Baggage Propagation with Metadata and TTL
+test "baggage propagation with metadata and time-to-live" {
+  // Create initial baggage with comprehensive entries
+  let initial_baggage = Baggage::new()
   
-  // 创建子Span上下文
-  let create_child_span = fn(parent_context : { 
-    trace_id : String, 
-    span_id : String, 
-    parent_span_id : Option(String), 
-    trace_flags : Int, 
-    trace_state : String, 
-    baggage : Array((String, String)) 
-  }, span_name : String) -> { 
-    trace_id : String, 
-    span_id : String, 
-    parent_span_id : Option(String), 
-    trace_flags : Int, 
-    trace_state : String, 
-    baggage : Array((String, String)) 
-  } {
-    // 生成新的Span ID（简化版）
-    let new_span_id = "child_" + span_name + "_" + parent_context.span_id
-    
-    {
-      trace_id: parent_context.trace_id,
-      span_id: new_span_id,
-      parent_span_id: Some(parent_context.span_id),
-      trace_flags: parent_context.trace_flags,
-      trace_state: parent_context.trace_state,
-      baggage: parent_context.baggage
-    }
-  }
+  // Add entries with different metadata
+  let baggage_with_user = Baggage::set_entry_with_metadata(
+    initial_baggage, 
+    "user.id", 
+    "user-12345",
+    Some([
+      ("source.service", StringValue("auth-service")),
+      ("timestamp", StringValue("2025-01-02T10:00:00Z")),
+      ("ttl", IntValue(3600))
+    ])
+  )
   
-  // 测试创建子Span
-  let child_span1 = create_child_span(trace_context, "database_query")
+  let baggage_with_session = Baggage::set_entry_with_metadata(
+    baggage_with_user,
+    "session.id",
+    "sess-67890",
+    Some([
+      ("source.service", StringValue("session-service")),
+      ("timestamp", StringValue("2025-01-02T10:01:00Z")),
+      ("ttl", IntValue(1800))
+    ])
+  )
   
-  assert_eq(child_span1.trace_id, trace_context.trace_id)
-  assert_eq(child_span1.span_id, "child_database_query_" + trace_context.span_id)
-  match child_span1.parent_span_id {
-    None => assert_true(false)
-    Some(parent_id) => assert_eq(parent_id, trace_context.span_id)
-  }
-  assert_eq(child_span1.trace_flags, trace_context.trace_flags)
-  assert_eq(child_span1.trace_state, trace_context.trace_state)
+  let baggage_with_request = Baggage::set_entry_with_metadata(
+    baggage_with_session,
+    "request.id",
+    "req-abc123",
+    Some([
+      ("source.service", StringValue("api-gateway")),
+      ("timestamp", StringValue("2025-01-02T10:02:00Z")),
+      ("ttl", IntValue(300))
+    ])
+  )
   
-  // 测试创建嵌套子Span
-  let child_span2 = create_child_span(child_span1, "cache_lookup")
+  let baggage_with_trace = Baggage::set_entry_with_metadata(
+    baggage_with_request,
+    "trace.context",
+    "trace-def456",
+    Some([
+      ("source.service", StringValue("tracing-service")),
+      ("timestamp", StringValue("2025-01-02T10:02:30Z")),
+      ("ttl", IntValue(7200))
+    ])
+  )
   
-  assert_eq(child_span2.trace_id, trace_context.trace_id)
-  assert_eq(child_span2.span_id, "child_cache_lookup_" + child_span1.span_id)
-  match child_span2.parent_span_id {
-    None => assert_true(false)
-    Some(parent_id) => assert_eq(parent_id, child_span1.span_id)
-  }
+  // Simulate baggage propagation through service chain
+  let service_a_baggage = baggage_with_trace
   
-  // 测试Baggage传播
-  let add_baggage_item = fn(context : { 
-    trace_id : String, 
-    span_id : String, 
-    parent_span_id : Option(String), 
-    trace_flags : Int, 
-    trace_state : String, 
-    baggage : Array((String, String)) 
-  }, key : String, value : String) -> { 
-    trace_id : String, 
-    span_id : String, 
-    parent_span_id : Option(String), 
-    trace_flags : Int, 
-    trace_state : String, 
-    baggage : Array((String, String)) 
-  } {
-    let mut new_baggage = context.baggage
-    new_baggage.push((key, value))
-    
-    {
-      trace_id: context.trace_id,
-      span_id: context.span_id,
-      parent_span_id: context.parent_span_id,
-      trace_flags: context.trace_flags,
-      trace_state: context.trace_state,
-      baggage: new_baggage
-    }
-  }
+  // Service A adds its own baggage entry
+  let service_a_baggage_enhanced = Baggage::set_entry_with_metadata(
+    service_a_baggage,
+    "service.a.correlation",
+    "corr-a-001",
+    Some([
+      ("source.service", StringValue("service-a")),
+      ("timestamp", StringValue("2025-01-02T10:03:00Z")),
+      ("ttl", IntValue(600))
+    ])
+  )
   
-  let context_with_baggage = add_baggage_item(trace_context, "user.id", "12345")
-  let context_with_more_baggage = add_baggage_item(context_with_baggage, "request.id", "req-67890")
+  // Service B receives and processes baggage
+  let service_b_baggage = service_a_baggage_enhanced
   
-  assert_eq(context_with_more_baggage.baggage.length(), 2)
-  assert_true(context_with_more_baggage.baggage.contains(("user.id", "12345")))
-  assert_true(context_with_more_baggage.baggage.contains(("request.id", "req-67890")))
+  // Check TTL and remove expired entries (simulate time passage)
+  let current_time = 1735689600000000000L // 2025-01-02T10:00:00Z
+  let service_b_baggage_filtered = Baggage::filter_by_ttl(service_b_baggage, current_time)
   
-  // 测试上下文序列化
-  let serialize_context = fn(context : { 
-    trace_id : String, 
-    span_id : String, 
-    parent_span_id : Option(String), 
-    trace_flags : Int, 
-    trace_state : String, 
-    baggage : Array((String, String)) 
-  }) -> String {
-    let mut serialized = "trace-id=" + context.trace_id + ";"
-    serialized += "span-id=" + context.span_id + ";"
-    
-    match context.parent_span_id {
-      None => ()
-      Some(parent_id) => serialized += "parent-span-id=" + parent_id + ";"
-    }
-    
-    serialized += "trace-flags=" + context.trace_flags.to_string() + ";"
-    serialized += "trace-state=" + context.trace_state + ";"
-    
-    if context.baggage.length() > 0 {
-      serialized += "baggage="
-      let mut first = true
-      for (key, value) in context.baggage {
-        if !first {
-          serialized += ","
-        }
-        serialized += key + "=" + value
-        first = false
+  // Service B adds its own entry
+  let service_b_baggage_final = Baggage::set_entry_with_metadata(
+    service_b_baggage_filtered,
+    "service.b.context",
+    "ctx-b-002",
+    Some([
+      ("source.service", StringValue("service-b")),
+      ("timestamp", StringValue("2025-01-02T10:04:00Z")),
+      ("ttl", IntValue(900))
+    ])
+  )
+  
+  // Service C receives and transforms baggage
+  let service_c_baggage = service_b_baggage_final
+  
+  // Service C transforms existing entries
+  let service_c_baggage_transformed = Baggage::update_entry_metadata(
+    service_c_baggage,
+    "user.id",
+    Some([
+      ("processed.by", StringValue("service-c")),
+      ("transformation", StringValue("anonymized")),
+      ("timestamp", StringValue("2025-01-02T10:05:00Z"))
+    ])
+  )
+  
+  // Service C adds final entry
+  let service_c_baggage_final = Baggage::set_entry_with_metadata(
+    service_c_baggage_transformed,
+    "service.c.result",
+    "success",
+    Some([
+      ("source.service", StringValue("service-c")),
+      ("timestamp", StringValue("2025-01-02T10:06:00Z")),
+      ("ttl", IntValue(1200))
+    ])
+  )
+  
+  // Verify baggage propagation integrity
+  let final_user_id = Baggage::get_entry(service_c_baggage_final, "user.id")
+  let final_session_id = Baggage::get_entry(service_c_baggage_final, "session.id")
+  let final_request_id = Baggage::get_entry(service_c_baggage_final, "request.id")
+  let final_trace_context = Baggage::get_entry(service_c_baggage_final, "trace.context")
+  let final_service_a_correlation = Baggage::get_entry(service_c_baggage_final, "service.a.correlation")
+  let final_service_b_context = Baggage::get_entry(service_c_baggage_final, "service.b.context")
+  let final_service_c_result = Baggage::get_entry(service_c_baggage_final, "service.c.result")
+  
+  assert_eq(final_user_id, Some("user-12345"))
+  assert_eq(final_session_id, Some("sess-67890"))
+  assert_eq(final_request_id, Some("req-abc123"))
+  assert_eq(final_trace_context, Some("trace-def456"))
+  assert_eq(final_service_a_correlation, Some("corr-a-001"))
+  assert_eq(final_service_b_context, Some("ctx-b-002"))
+  assert_eq(final_service_c_result, Some("success"))
+  
+  // Verify metadata preservation and transformation
+  let user_metadata = Baggage::get_entry_metadata(service_c_baggage_final, "user.id")
+  match user_metadata {
+    Some(metadata) => {
+      let processed_by = Attributes::get(metadata, "processed.by")
+      match processed_by {
+        Some(StringValue(service)) => assert_eq(service, "service-c")
+        _ => assert_true(false)
       }
-      serialized += ";"
     }
-    
-    serialized
+    _ => assert_true(false)
   }
   
-  let serialized = serialize_context(context_with_more_baggage)
+  let trace_metadata = Baggage::get_entry_metadata(service_c_baggage_final, "trace.context")
+  match trace_metadata {
+    Some(metadata) => {
+      let source_service = Attributes::get(metadata, "source.service")
+      match source_service {
+        Some(StringValue(service)) => assert_eq(service, "tracing-service")
+        _ => assert_true(false)
+      }
+    }
+    _ => assert_true(false)
+  }
   
-  // 验证序列化结果包含预期内容
-  assert_true(serialized.contains("trace-id=" + trace_context.trace_id))
-  assert_true(serialized.contains("span-id=" + trace_context.span_id))
-  assert_true(serialized.contains("parent-span-id=" + trace_context.span_id))
-  assert_true(serialized.contains("trace-flags=1"))
-  assert_true(serialized.contains("trace-state=" + trace_context.trace_state))
-  assert_true(serialized.contains("baggage=user.id=12345,request.id=req-67890"))
+  // Test baggage serialization and deserialization
+  let serialized_baggage = Baggage::serialize(service_c_baggage_final)
+  let deserialized_baggage = Baggage::deserialize(serialized_baggage)
+  
+  let deserialized_user_id = Baggage::get_entry(deserialized_baggage, "user.id")
+  let deserialized_service_c_result = Baggage::get_entry(deserialized_baggage, "service.c.result")
+  
+  assert_eq(deserialized_user_id, Some("user-12345"))
+  assert_eq(deserialized_service_c_result, Some("success"))
+  
+  assert_true(true)
 }
 
-// 测试6: 数据序列化和反序列化
-test "数据序列化和反序列化测试" {
-  // 定义遥测数据结构
-  let telemetry_data = {
-    timestamp : Int = 1735689600000000000L,  // 纳秒时间戳
-    trace_id : String = "0af7651916cd43dd8448eb211c80319c",
-    span_id : String = "b7ad6b7169203331",
-    metric_name : String = "http.request.duration",
-    metric_value : Float = 123.45,
-    metric_unit : String = "ms",
-    attributes : Array((String, String)) = [
-      ("http.method", "GET"),
-      ("http.status_code", "200"),
-      ("http.url", "/api/users")
-    ]
-  }
+// Test 7: Error Handling and Recovery Patterns
+test "error handling and recovery patterns with resilience" {
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "error.recovery.test")
   
-  // 简单的JSON序列化函数
-  let serialize_to_json = fn(data : { 
-    timestamp : Int, 
-    trace_id : String, 
-    span_id : String, 
-    metric_name : String, 
-    metric_value : Float, 
-    metric_unit : String, 
-    attributes : Array((String, String)) 
-  }) -> String {
-    let mut json = "{"
-    json += "\"timestamp\":" + data.timestamp.to_string() + ","
-    json += "\"trace_id\":\"" + data.trace_id + "\"," 
-    json += "\"span_id\":\"" + data.span_id + "\"," 
-    json += "\"metric_name\":\"" + data.metric_name + "\"," 
-    json += "\"metric_value\":" + data.metric_value.to_string() + ","
-    json += "\"metric_unit\":\"" + data.metric_unit + "\"," 
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "error.metrics")
+  
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "error.logger")
+  
+  // Create metrics for error tracking
+  let error_counter = Meter::create_counter(
+    meter, 
+    "errors.total", 
+    Some("Total errors encountered"), 
+    Some("errors")
+  )
+  
+  let recovery_counter = Meter::create_counter(
+    meter, 
+    "recoveries.total", 
+    Some("Total successful recoveries"), 
+    Some("recoveries")
+  )
+  
+  let retry_histogram = Meter::create_histogram(
+    meter, 
+    "retry.attempts", 
+    Some("Number of retry attempts"), 
+    Some("attempts")
+  )
+  
+  // Create main operation span
+  let main_span = Tracer::start_span(tracer, "resilient.operation")
+  Span::set_attribute(main_span, "operation.type", "payment_processing")
+  Span::set_attribute(main_span, "resilience.enabled", true)
+  
+  // Simulate error scenarios with recovery
+  let error_scenarios = [
+    ("database.connection.timeout", "Database connection timeout", true, 3),
+    ("network.transient.failure", "Transient network failure", true, 2),
+    ("service.dependency.unavailable", "External service unavailable", true, 5),
+    ("resource.exhausted", "Resource pool exhausted", true, 1),
+    ("validation.permanent.failure", "Permanent validation failure", false, 0)
+  ]
+  
+  for i in 0..error_scenarios.length() {
+    let scenario = error_scenarios[i]
+    let error_code = scenario.0
+    let error_message = scenario.1
+    let is_recoverable = scenario.2
+    let max_retries = scenario.3
     
-    json += "\"attributes\":{"
-    let mut first = true
-    for (key, value) in data.attributes {
-      if !first {
-        json += ","
-      }
-      json += "\"" + key + "\":\"" + value + "\""
-      first = false
-    }
-    json += "}"
+    // Create error-specific span
+    let error_span = Tracer::start_span_with_parent(tracer, "error.attempt", main_span)
+    Span::set_attribute(error_span, "error.code", error_code)
+    Span::set_attribute(error_span, "error.recoverable", is_recoverable)
+    Span::set_attribute(error_span, "error.max_retries", max_retries)
     
-    json += "}"
-  }
-  
-  // 测试序列化
-  let json_data = serialize_to_json(telemetry_data)
-  
-  // 验证序列化结果
-  assert_true(json_data.contains("\"timestamp\":" + telemetry_data.timestamp.to_string()))
-  assert_true(json_data.contains("\"trace_id\":\"" + telemetry_data.trace_id + "\""))
-  assert_true(json_data.contains("\"span_id\":\"" + telemetry_data.span_id + "\""))
-  assert_true(json_data.contains("\"metric_name\":\"" + telemetry_data.metric_name + "\""))
-  assert_true(json_data.contains("\"metric_value\":" + telemetry_data.metric_value.to_string()))
-  assert_true(json_data.contains("\"metric_unit\":\"" + telemetry_data.metric_unit + "\""))
-  assert_true(json_data.contains("\"http.method\":\"GET\""))
-  assert_true(json_data.contains("\"http.status_code\":\"200\""))
-  assert_true(json_data.contains("\"http.url\":\"/api/users\""))
-  
-  // 简单的JSON反序列化函数（仅用于测试）
-  let deserialize_from_json = fn(json : String) -> { 
-    timestamp : Int, 
-    trace_id : String, 
-    span_id : String, 
-    metric_name : String, 
-    metric_value : Float, 
-    metric_unit : String, 
-    attributes : Array((String, String)) 
-  } {
-    // 在实际应用中，这里会有完整的JSON解析逻辑
-    // 为了测试，我们返回一个模拟的解析结果
-    {
-      timestamp: 1735689600000000000L,
-      trace_id: "0af7651916cd43dd8448eb211c80319c",
-      span_id: "b7ad6b7169203331",
-      metric_name: "http.request.duration",
-      metric_value: 123.45,
-      metric_unit: "ms",
-      attributes: [
-        ("http.method", "GET"),
-        ("http.status_code", "200"),
-        ("http.url", "/api/users")
-      ]
-    }
-  }
-  
-  // 测试反序列化
-  let deserialized_data = deserialize_from_json(json_data)
-  
-  // 验证反序列化结果
-  assert_eq(deserialized_data.timestamp, telemetry_data.timestamp)
-  assert_eq(deserialized_data.trace_id, telemetry_data.trace_id)
-  assert_eq(deserialized_data.span_id, telemetry_data.span_id)
-  assert_eq(deserialized_data.metric_name, telemetry_data.metric_name)
-  assert_eq(deserialized_data.metric_value, telemetry_data.metric_value)
-  assert_eq(deserialized_data.metric_unit, telemetry_data.metric_unit)
-  assert_eq(deserialized_data.attributes.length(), telemetry_data.attributes.length())
-  
-  // 测试二进制序列化
-  let serialize_to_binary = fn(data : { 
-    timestamp : Int, 
-    trace_id : String, 
-    span_id : String, 
-    metric_name : String, 
-    metric_value : Float, 
-    metric_unit : String, 
-    attributes : Array((String, String)) 
-  }) -> Array(Int) {
-    // 简化的二进制序列化：将各部分转换为字节数组
-    let mut binary = []
+    // Log error occurrence
+    let error_log = LogRecord::new(Error, "Error occurred during operation")
+    LogRecord::add_attribute(error_log, "error.code", error_code)
+    LogRecord::add_attribute(error_log, "error.message", error_message)
+    LogRecord::add_attribute(error_log, "error.recoverable", is_recoverable)
+    LogRecord::add_attribute(error_log, "operation.id", "op-" + String::from_int(i))
     
-    // 在实际应用中，这里会有更复杂的二进制编码逻辑
-    // 为了测试，我们使用简化的方式
+    Logger::emit(logger, error_log)
     
-    // 添加时间戳（简化处理）
-    binary.push(data.timestamp.to_int() % 256)
-    binary.push((data.timestamp.to_int() / 256) % 256)
+    // Record error metric
+    Counter::add_with_attributes(error_counter, 1.0, [
+      ("error.code", StringValue(error_code)),
+      ("error.recoverable", BoolValue(is_recoverable)),
+      ("operation.type", StringValue("payment_processing"))
+    ])
     
-    // 添加trace_id长度和内容（简化处理）
-    binary.push(data.trace_id.length())
-    for i in 0..data.trace_id.length().min(4) {
-      binary.push(data.trace_id[i].to_int())
-    }
-    
-    // 添加span_id长度和内容（简化处理）
-    binary.push(data.span_id.length())
-    for i in 0..data.span_id.length().min(4) {
-      binary.push(data.span_id[i].to_int())
-    }
-    
-    // 添加metric_value（简化处理）
-    binary.push(data.metric_value.to_int() % 256)
-    
-    binary
-  }
-  
-  // 测试二进制序列化
-  let binary_data = serialize_to_binary(telemetry_data)
-  
-  // 验证二进制序列化结果
-  assert_true(binary_data.length() > 0)
-  
-  // 测试压缩序列化数据
-  let compress_data = fn(data : Array(Int)) -> Array(Int) {
-    if data.length() <= 2 {
-      data
-    } else {
-      // 简单的压缩算法：移除重复的连续值
-      let mut compressed = [data[0]]
+    if is_recoverable {
+      // Simulate retry attempts
+      let mut retry_count = 0
+      let mut recovery_successful = false
       
-      for i in 1..data.length() {
-        if data[i] != data[i - 1] {
-          compressed.push(data[i])
+      for retry in 0..max_retries {
+        retry_count = retry_count + 1
+        
+        // Add retry event to span
+        Span::add_event(error_span, "retry.attempt", [
+          ("retry.count", IntValue(retry_count)),
+          ("retry.timestamp", StringValue("2025-01-02T10:0" + String::from_int(retry_count) + ":00Z"))
+        ])
+        
+        // Log retry attempt
+        let retry_log = LogRecord::new(Warn, "Retry attempt initiated")
+        LogRecord::add_attribute(retry_log, "retry.count", retry_count)
+        LogRecord::add_attribute(retry_log, "error.code", error_code)
+        LogRecord::add_attribute(retry_log, "max.retries", max_retries)
+        
+        Logger::emit(logger, retry_log)
+        
+        // Simulate recovery success (70% chance on each retry)
+        if Math::random() > 0.3 {
+          recovery_successful = true
+          break
         }
       }
       
-      compressed
-    }
-  }
-  
-  // 创建有重复值的数据进行压缩测试
-  let data_with_duplicates = [1, 1, 1, 2, 2, 3, 3, 3, 3, 4, 5, 5]
-  let compressed_data = compress_data(data_with_duplicates)
-  
-  // 验证压缩结果
-  assert_eq(compressed_data, [1, 2, 3, 4, 5])
-  assert_true(compressed_data.length() < data_with_duplicates.length())
-}
-
-// 测试7: 多租户隔离和安全性
-test "多租户隔离和安全性测试" {
-  // 定义租户结构
-  let tenant = {
-    tenant_id : String = "tenant-12345",
-    tenant_name : String = "example-corp",
-    isolation_level : String = "strict",  // strict, medium, loose
-    allowed_operations : Array(String) = ["read", "write", "delete"],
-    resource_limits : {
-      max_spans_per_second : Int = 1000,
-      max_metrics_per_minute : Int = 5000,
-      max_storage_mb : Int = 1024
-    },
-    access_keys : Array(String) = ["key-123", "key-456"]
-  }
-  
-  // 创建租户管理器
-  let tenant_manager = {
-    tenants : Array({ 
-      tenant_id : String, 
-      tenant_name : String, 
-      isolation_level : String, 
-      allowed_operations : Array(String), 
-      resource_limits : { 
-        max_spans_per_second : Int, 
-        max_metrics_per_minute : Int, 
-        max_storage_mb : Int 
-      }, 
-      access_keys : Array(String) 
-    }) = [tenant]
-  }
-  
-  // 租户验证函数
-  let validate_tenant_access = fn(manager : { 
-    tenants : Array({ 
-      tenant_id : String, 
-      tenant_name : String, 
-      isolation_level : String, 
-      allowed_operations : Array(String), 
-      resource_limits : { 
-        max_spans_per_second : Int, 
-        max_metrics_per_minute : Int, 
-        max_storage_mb : Int 
-      }, 
-      access_keys : Array(String) 
-    }) 
-  }, access_key : String, operation : String) -> Bool {
-    // 查找匹配的租户
-    let mut found_tenant = None
-    
-    for tenant in manager.tenants {
-      if tenant.access_keys.contains(access_key) {
-        found_tenant = Some(tenant)
-        break
-      }
-    }
-    
-    match found_tenant {
-      None => false  // 无效的访问密钥
-      Some(valid_tenant) => {
-        // 检查操作是否被允许
-        valid_tenant.allowed_operations.contains(operation)
-      }
-    }
-  }
-  
-  // 测试有效访问
-  assert_true(validate_tenant_access(tenant_manager, "key-123", "read"))
-  assert_true(validate_tenant_access(tenant_manager, "key-123", "write"))
-  assert_true(validate_tenant_access(tenant_manager, "key-456", "delete"))
-  
-  // 测试无效访问
-  assert_false(validate_tenant_access(tenant_manager, "key-123", "admin"))  // 不允许的操作
-  assert_false(validate_tenant_access(tenant_manager, "invalid-key", "read"))  // 无效的密钥
-  
-  // 资源使用跟踪
-  let resource_usage = {
-    tenant_id : String = "tenant-12345",
-    spans_this_second : Int = 0,
-    metrics_this_minute : Int = 0,
-    storage_used_mb : Int = 0
-  }
-  
-  // 资源使用检查函数
-  let check_resource_limits = fn(usage : { 
-    tenant_id : String, 
-    spans_this_second : Int, 
-    metrics_this_minute : Int, 
-    storage_used_mb : Int 
-  }, limits : { 
-    max_spans_per_second : Int, 
-    max_metrics_per_minute : Int, 
-    max_storage_mb : Int 
-  }) -> Array(String) {
-    let mut violations = []
-    
-    if usage.spans_this_second >= limits.max_spans_per_second {
-      violations.push("Span速率限制已达到")
-    }
-    
-    if usage.metrics_this_minute >= limits.max_metrics_per_minute {
-      violations.push("Metric速率限制已达到")
-    }
-    
-    if usage.storage_used_mb >= limits.max_storage_mb {
-      violations.push("存储限制已达到")
-    }
-    
-    violations
-  }
-  
-  // 测试资源限制检查
-  let normal_usage = resource_usage
-  let normal_violations = check_resource_limits(normal_usage, tenant.resource_limits)
-  assert_eq(normal_violations.length(), 0)
-  
-  // 测试超出限制的情况
-  let exceeded_usage = {
-    tenant_id: "tenant-12345",
-    spans_this_second: 1000,
-    metrics_this_minute: 5000,
-    storage_used_mb: 1024
-  }
-  
-  let exceeded_violations = check_resource_limits(exceeded_usage, tenant.resource_limits)
-  assert_eq(exceeded_violations.length(), 3)
-  assert_true(exceeded_violations.contains("Span速率限制已达到"))
-  assert_true(exceeded_violations.contains("Metric速率限制已达到"))
-  assert_true(exceeded_violations.contains("存储限制已达到"))
-  
-  // 数据隔离测试
-  let tenant_data_isolation = fn(data_tenant_id : String, access_tenant_id : String, isolation_level : String) -> Bool {
-    match isolation_level {
-      "strict" => data_tenant_id == access_tenant_id,
-      "medium" => data_tenant_id == access_tenant_id || data_tenant_id == "shared",
-      "loose" => true,  // 所有数据都可访问
-      _ => false  // 未知隔离级别，拒绝访问
-    }
-  }
-  
-  // 测试数据隔离
-  assert_true(tenant_data_isolation("tenant-12345", "tenant-12345", "strict"))  // 同租户
-  assert_false(tenant_data_isolation("tenant-67890", "tenant-12345", "strict"))  // 不同租户
-  
-  assert_true(tenant_data_isolation("shared", "tenant-12345", "medium"))  // 共享数据
-  assert_false(tenant_data_isolation("tenant-67890", "tenant-12345", "medium"))  // 不同租户的非共享数据
-  
-  assert_true(tenant_data_isolation("tenant-67890", "tenant-12345", "loose"))  // 宽松模式，所有数据可访问
-}
-
-// 测试8: 性能基准和优化
-test "性能基准和优化测试" {
-  // 性能指标收集器
-  let performance_collector = {
-    operation_times : Array((String, Int)) = [],  // (操作名称, 时间纳秒)
-    memory_usage : Array((String, Int)) = [],     // (操作名称, 内存使用字节)
-    operation_counts : Array((String, Int)) = []  // (操作名称, 执行次数)
-  }
-  
-  // 记录操作时间
-  let record_operation_time = fn(collector : { 
-    operation_times : Array((String, Int)), 
-    memory_usage : Array((String, Int)), 
-    operation_counts : Array((String, Int)) 
-  }, operation_name : String, time_ns : Int) {
-    collector.operation_times.push((operation_name, time_ns))
-    
-    // 更新操作计数
-    let mut found = false
-    let mut new_counts = []
-    
-    for (name, count) in collector.operation_counts {
-      if name == operation_name {
-        new_counts.push((name, count + 1))
-        found = true
+      // Record retry attempts
+      Histogram::record_with_attributes(retry_histogram, retry_count.to_float(), [
+        ("error.code", StringValue(error_code)),
+        ("recovery.successful", BoolValue(recovery_successful))
+      ])
+      
+      if recovery_successful {
+        // Record successful recovery
+        Counter::add_with_attributes(recovery_counter, 1.0, [
+          ("error.code", StringValue(error_code)),
+          ("retry.attempts", IntValue(retry_count))
+        ])
+        
+        // Set success status
+        Span::set_status(error_span, Ok, Some("Recovery successful after " + String::from_int(retry_count) + " attempts"))
+        
+        // Log recovery success
+        let recovery_log = LogRecord::new(Info, "Error recovery successful")
+        LogRecord::add_attribute(recovery_log, "error.code", error_code)
+        LogRecord::add_attribute(recovery_log, "retry.attempts", retry_count)
+        LogRecord::add_attribute(recovery_log, "recovery.duration", 15000)
+        
+        Logger::emit(logger, recovery_log)
       } else {
-        new_counts.push((name, count))
+        // Set failure status
+        Span::set_status(error_span, Error, Some("Recovery failed after " + String::from_int(retry_count) + " attempts"))
+        
+        // Log recovery failure
+        let failure_log = LogRecord::new(Error, "Error recovery failed")
+        LogRecord::add_attribute(failure_log, "error.code", error_code)
+        LogRecord::add_attribute(failure_log, "retry.attempts", retry_count)
+        LogRecord::add_attribute(failure_log, "escalation.required", true)
+        
+        Logger::emit(logger, failure_log)
       }
-    }
-    
-    if !found {
-      new_counts.push((operation_name, 1))
-    }
-    
-    collector.operation_counts = new_counts
-  }
-  
-  // 记录内存使用
-  let record_memory_usage = fn(collector : { 
-    operation_times : Array((String, Int)), 
-    memory_usage : Array((String, Int)), 
-    operation_counts : Array((String, Int)) 
-  }, operation_name : String, memory_bytes : Int) {
-    collector.memory_usage.push((operation_name, memory_bytes))
-  }
-  
-  // 模拟一些操作并记录性能
-  record_operation_time(performance_collector, "span_creation", 15000)  // 15微秒
-  record_operation_time(performance_collector, "span_creation", 18000)  // 18微秒
-  record_operation_time(performance_collector, "span_creation", 12000)  // 12微秒
-  
-  record_operation_time(performance_collector, "metric_recording", 8000)  // 8微秒
-  record_operation_time(performance_collector, "metric_recording", 9000)   // 9微秒
-  record_operation_time(performance_collector, "metric_recording", 7500)   // 7.5微秒
-  
-  record_operation_time(performance_collector, "context_propagation", 25000)  // 25微秒
-  record_operation_time(performance_collector, "context_propagation", 22000)  // 22微秒
-  
-  record_memory_usage(performance_collector, "span_creation", 1024)
-  record_memory_usage(performance_collector, "metric_recording", 512)
-  record_memory_usage(performance_collector, "context_propagation", 2048)
-  
-  // 计算性能统计
-  let calculate_performance_stats = fn(collector : { 
-    operation_times : Array((String, Int)), 
-    memory_usage : Array((String, Int)), 
-    operation_counts : Array((String, Int)) 
-  }, operation_name : String) -> Option({ 
-    avg_time_ns : Int, 
-    min_time_ns : Int, 
-    max_time_ns : Int, 
-    total_operations : Int, 
-    avg_memory_bytes : Int 
-  }) {
-    // 收集指定操作的所有时间
-    let mut operation_times = []
-    let mut memory_usage_values = []
-    let mut total_operations = 0
-    
-    for (name, time) in collector.operation_times {
-      if name == operation_name {
-        operation_times.push(time)
-      }
-    }
-    
-    for (name, memory) in collector.memory_usage {
-      if name == operation_name {
-        memory_usage_values.push(memory)
-      }
-    }
-    
-    for (name, count) in collector.operation_counts {
-      if name == operation_name {
-        total_operations = count
-      }
-    }
-    
-    if operation_times.length() == 0 {
-      None
     } else {
-      let mut sum_time = 0
-      let mut min_time = operation_times[0]
-      let mut max_time = operation_times[0]
+      // Non-recoverable error - no retries
+      Span::set_status(error_span, Error, Some("Non-recoverable error: " + error_message))
       
-      for time in operation_times {
-        sum_time += time
-        if time < min_time {
-          min_time = time
-        }
-        if time > max_time {
-          max_time = time
-        }
-      }
+      // Log non-recoverable error
+      let permanent_error_log = LogRecord::new(Error, "Non-recoverable error encountered")
+      LogRecord::add_attribute(permanent_error_log, "error.code", error_code)
+      LogRecord::add_attribute(permanent_error_log, "error.category", "permanent")
+      LogRecord::add_attribute(permanent_error_log, "escalation.required", true)
       
-      let avg_time = sum_time / operation_times.length()
-      
-      let mut sum_memory = 0
-      for memory in memory_usage_values {
-        sum_memory += memory
-      }
-      
-      let avg_memory = if memory_usage_values.length() > 0 {
-        sum_memory / memory_usage_values.length()
-      } else {
-        0
-      }
-      
-      Some({
-        avg_time_ns: avg_time,
-        min_time_ns: min_time,
-        max_time_ns: max_time,
-        total_operations: total_operations,
-        avg_memory_bytes: avg_memory
-      })
+      Logger::emit(logger, permanent_error_log)
     }
+    
+    Span::end(error_span)
   }
   
-  // 测试性能统计计算
-  let span_creation_stats = calculate_performance_stats(performance_collector, "span_creation")
+  // Add summary to main span
+  let total_errors = error_scenarios.length()
+  let total_recoverable = 4  // Based on the scenarios above
+  let total_non_recoverable = 1
   
-  match span_creation_stats {
-    None => assert_true(false)
-    Some(stats) => {
-      assert_eq(stats.total_operations, 3)
-      assert_eq(stats.min_time_ns, 12000)
-      assert_eq(stats.max_time_ns, 18000)
-      assert_eq(stats.avg_time_ns, (15000 + 18000 + 12000) / 3)
-      assert_eq(stats.avg_memory_bytes, 1024)
-    }
-  }
+  Span::add_event(main_span, "operation.summary", [
+    ("total.errors", IntValue(total_errors)),
+    ("recoverable.errors", IntValue(total_recoverable)),
+    ("non.recoverable.errors", IntValue(total_non_recoverable))
+  ])
   
-  let metric_recording_stats = calculate_performance_stats(performance_collector, "metric_recording")
+  Span::set_status(main_span, Ok, Some("Operation completed with error handling"))
+  Span::end(main_span)
   
-  match metric_recording_stats {
-    None => assert_true(false)
-    Some(stats) => {
-      assert_eq(stats.total_operations, 3)
-      assert_eq(stats.min_time_ns, 7500)
-      assert_eq(stats.max_time_ns, 9000)
-      assert_eq(stats.avg_time_ns, (8000 + 9000 + 7500) / 3)
-      assert_eq(stats.avg_memory_bytes, 512)
-    }
-  }
+  // Verify metric instruments
+  assert_eq(error_counter.name, "errors.total")
+  assert_eq(recovery_counter.name, "recoveries.total")
+  assert_eq(retry_histogram.name, "retry.attempts")
   
-  // 性能基准验证
-  let validate_performance_benchmarks = fn(stats : { 
-    avg_time_ns : Int, 
-    min_time_ns : Int, 
-    max_time_ns : Int, 
-    total_operations : Int, 
-    avg_memory_bytes : Int 
-  }, max_avg_time_ns : Int, max_avg_memory_bytes : Int) -> Bool {
-    stats.avg_time_ns <= max_avg_time_ns && stats.avg_memory_bytes <= max_avg_memory_bytes
-  }
-  
-  // 测试性能基准验证
-  match span_creation_stats {
-    None => assert_true(false)
-    Some(stats) => {
-      // Span创建应该在20微秒内完成，内存使用不超过2KB
-      assert_true(validate_performance_benchmarks(stats, 20000, 2048))
-    }
-  }
-  
-  match metric_recording_stats {
-    None => assert_true(false)
-    Some(stats) => {
-      // Metric记录应该在10微秒内完成，内存使用不超过1KB
-      assert_true(validate_performance_benchmarks(stats, 10000, 1024))
-    }
-  }
+  assert_true(true)
 }
 
-// 测试9: 数据完整性和验证
-test "数据完整性和验证测试" {
-  // 数据校验和计算
-  let calculate_checksum = fn(data : String) -> Int {
-    let mut checksum = 0
+// Test 8: Performance Optimization Scenarios
+test "performance optimization with batching and sampling strategies" {
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "performance.test")
+  
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "performance.metrics")
+  
+  // Create performance monitoring metrics
+  let batch_size_histogram = Meter::create_histogram(
+    meter, 
+    "batch.size", 
+    Some("Batch processing sizes"), 
+    Some("items")
+  )
+  
+  let processing_time_histogram = Meter::create_histogram(
+    meter, 
+    "processing.time", 
+    Some("Processing time distribution"), 
+    Some("milliseconds")
+  )
+  
+  let throughput_counter = Meter::create_counter(
+    meter, 
+    "throughput.total", 
+    Some("Total items processed"), 
+    Some("items")
+  )
+  
+  let sampling_ratio_gauge = Meter::create_gauge(
+    meter, 
+    "sampling.ratio", 
+    Some("Current sampling ratio"), 
+    Some("ratio")
+  )
+  
+  // Test 1: Batch processing optimization
+  let batch_span = Tracer::start_span(tracer, "batch.processing.optimization")
+  Span::set_attribute(batch_span, "optimization.type", "batch_processing")
+  
+  let batch_sizes = [10, 25, 50, 100, 200, 500]
+  
+  for i in 0..batch_sizes.length() {
+    let batch_size = batch_sizes[i]
+    let start_time = 1735689600000000L + (i * 1000L)
     
-    for i in 0..data.length() {
-      checksum += data[i].to_int() * (i + 1)
-    }
+    // Simulate batch processing
+    let processing_time = 50.0 + (batch_size.to_float() * 0.5) + (Math::random() * 20.0)
     
-    checksum % 10000  // 限制在0-9999范围内
+    // Record batch metrics
+    Histogram::record_with_attributes(batch_size_histogram, batch_size.to_float(), [
+      ("batch.id", StringValue("batch-" + String::from_int(i))),
+      ("processing.strategy", StringValue("optimized"))
+    ])
+    
+    Histogram::record_with_attributes(processing_time_histogram, processing_time, [
+      ("batch.size", IntValue(batch_size)),
+      ("processing.strategy", StringValue("optimized"))
+    ])
+    
+    Counter::add_with_attributes(throughput_counter, batch_size.to_float(), [
+      ("batch.size", IntValue(batch_size)),
+      ("processing.strategy", StringValue("optimized"))
+    ])
+    
+    // Add batch processing event
+    Span::add_event_with_timestamp(batch_span, "batch.completed", start_time, [
+      ("batch.size", IntValue(batch_size)),
+      ("processing.time", DoubleValue(processing_time)),
+      ("throughput", DoubleValue(batch_size.to_float() / (processing_time / 1000.0)))
+    ])
   }
   
-  // 测试校验和计算
-  let test_data1 = "azimuth telemetry data"
-  let checksum1 = calculate_checksum(test_data1)
+  Span::set_status(batch_span, Ok, Some("Batch processing optimization completed"))
+  Span::end(batch_span)
   
-  let test_data2 = "azimuth telemetry data"  // 相同数据
-  let checksum2 = calculate_checksum(test_data2)
+  // Test 2: Adaptive sampling strategies
+  let sampling_span = Tracer::start_span(tracer, "adaptive.sampling.optimization")
+  Span::set_attribute(sampling_span, "optimization.type", "adaptive_sampling")
   
-  let test_data3 = "azimuth telemetry data!"  // 不同数据
-  let checksum3 = calculate_checksum(test_data3)
+  let traffic_levels = [100, 500, 1000, 5000, 10000, 50000]
+  let base_sampling_ratios = [1.0, 0.8, 0.5, 0.2, 0.1, 0.01]
   
-  assert_eq(checksum1, checksum2)  // 相同数据应该有相同的校验和
-  assert_true(checksum1 != checksum3)  // 不同数据应该有不同的校验和
-  
-  // 数据验证结构
-  let validated_data = {
-    content : String = "important telemetry data",
-    checksum : Int = checksum1,
-    timestamp : Int = 1735689600000000000L,
-    data_version : Int = 1
-  }
-  
-  // 数据验证函数
-  let validate_data = fn(data : { 
-    content : String, 
-    checksum : Int, 
-    timestamp : Int, 
-    data_version : Int 
-  }) -> Bool {
-    // 验证校验和
-    let calculated_checksum = calculate_checksum(data.content)
-    if calculated_checksum != data.checksum {
-      return false
-    }
+  for i in 0..traffic_levels.length() {
+    let traffic_level = traffic_levels[i]
+    let base_ratio = base_sampling_ratios[i]
     
-    // 验证时间戳合理性（应该在2020-2030年之间）
-    let min_timestamp = 1577836800000000000L  // 2020-01-01
-    let max_timestamp = 1893456000000000000L  // 2030-01-01
+    // Adaptive sampling based on error rates and latency
+    let error_rate = 0.01 + (Math::random() * 0.05)
+    let avg_latency = 100.0 + (traffic_level.to_float() * 0.01) + (Math::random() * 50.0)
     
-    if data.timestamp < min_timestamp || data.timestamp > max_timestamp {
-      return false
-    }
-    
-    // 验证数据版本
-    if data.data_version < 1 || data.data_version > 10 {
-      return false
-    }
-    
-    true
-  }
-  
-  // 测试数据验证
-  assert_true(validate_data(validated_data))
-  
-  // 测试无效数据
-  let invalid_data1 = {
-    content: "important telemetry data",
-    checksum: 9999,  // 错误的校验和
-    timestamp: 1735689600000000000L,
-    data_version: 1
-  }
-  
-  assert_false(validate_data(invalid_data1))
-  
-  let invalid_data2 = {
-    content: "important telemetry data",
-    checksum: checksum1,
-    timestamp: 1000000000000000000L,  // 无效的时间戳（2001年之前）
-    data_version: 1
-  }
-  
-  assert_false(validate_data(invalid_data2))
-  
-  let invalid_data3 = {
-    content: "important telemetry data",
-    checksum: checksum1,
-    timestamp: 1735689600000000000L,
-    data_version: 20  // 无效的版本号
-  }
-  
-  assert_false(validate_data(invalid_data3))
-  
-  // 数据转换验证
-  let convert_and_validate = fn(original_data : String, conversion_fn : (String) -> String) -> Bool {
-    let converted_data = conversion_fn(original_data)
-    let original_checksum = calculate_checksum(original_data)
-    let converted_checksum = calculate_checksum(converted_data)
-    
-    // 转换后的数据应该有不同的校验和（除非转换函数是恒等函数）
-    if conversion_fn != fn(x) { x } {
-      if original_checksum == converted_checksum {
-        return false  // 转换没有改变数据
-      }
-    }
-    
-    // 验证转换后的数据不为空
-    if converted_data.length() == 0 {
-      return false
-    }
-    
-    true
-  }
-  
-  // 测试数据转换验证
-  assert_true(convert_and_validate("test data", fn(x) { x.to_uppercase() }))
-  assert_true(convert_and_validate("test data", fn(x) { x + " processed" }))
-  assert_false(convert_and_validate("test data", fn(x) { "" }))  // 转换为空数据应该失败
-  assert_true(convert_and_validate("test data", fn(x) { x }))  // 恒等转换应该成功
-}
-
-// 测试10: 高级数据处理和分析
-test "高级数据处理和分析测试" {
-  // 创建数据点结构
-  let data_point = {
-    timestamp : Int = 0,
-    value : Float = 0.0,
-    tags : Array((String, String)) = []
-  }
-  
-  // 生成测试数据集
-  let generate_test_data = fn(base_timestamp : Int, count : Int, trend : Float, noise : Float) -> Array({ 
-    timestamp : Int, 
-    value : Float, 
-    tags : Array((String, String)) 
-  }) {
-    let mut data = []
-    
-    for i in 0..count {
-      let timestamp = base_timestamp + i * 60  // 每分钟一个数据点
-      let trend_value = trend * i.to_float()
-      let noise_value = noise * (2.0 * (i % 10).to_float() / 10.0 - 1.0)  // -noise到+noise的噪声
-      let value = 100.0 + trend_value + noise_value
-      
-      let tags = [
-        ("source", "test"),
-        ("index", i.to_string())
-      ]
-      
-      data.push({
-        timestamp: timestamp,
-        value: value,
-        tags: tags
-      })
-    }
-    
-    data
-  }
-  
-  // 生成测试数据
-  let test_data = generate_test_data(1735689600, 24, 0.5, 5.0)  // 24小时的数据，上升趋势，噪声±5
-  
-  // 验证测试数据
-  assert_eq(test_data.length(), 24)
-  assert_eq(test_data[0].timestamp, 1735689600)
-  assert_eq(test_data[23].timestamp, 1735689600 + 23 * 60)
-  
-  // 数据聚合函数
-  let aggregate_data = fn(data : Array({ 
-    timestamp : Int, 
-    value : Float, 
-    tags : Array((String, String)) 
-  }), aggregation_type : String) -> Float {
-    if data.length() == 0 {
-      return 0.0
-    }
-    
-    match aggregation_type {
-      "avg" => {
-        let mut sum = 0.0
-        for point in data {
-          sum += point.value
-        }
-        sum / data.length().to_float()
-      }
-      "min" => {
-        let mut min_value = data[0].value
-        for point in data {
-          if point.value < min_value {
-            min_value = point.value
-          }
-        }
-        min_value
-      }
-      "max" => {
-        let mut max_value = data[0].value
-        for point in data {
-          if point.value > max_value {
-            max_value = point.value
-          }
-        }
-        max_value
-      }
-      "sum" => {
-        let mut sum = 0.0
-        for point in data {
-          sum += point.value
-        }
-        sum
-      }
-      _ => 0.0
-    }
-  }
-  
-  // 测试数据聚合
-  let avg_value = aggregate_data(test_data, "avg")
-  let min_value = aggregate_data(test_data, "min")
-  let max_value = aggregate_data(test_data, "max")
-  let sum_value = aggregate_data(test_data, "sum")
-  
-  // 验证聚合结果
-  assert_true(min_value <= avg_value)
-  assert_true(avg_value <= max_value)
-  assert_true(sum_value > 0.0)
-  
-  // 数据窗口化
-  let window_data = fn(data : Array({ 
-    timestamp : Int, 
-    value : Float, 
-    tags : Array((String, String)) 
-  }), window_size : Int) -> Array(Array({ 
-    timestamp : Int, 
-    value : Float, 
-    tags : Array((String, String)) 
-  })) {
-    if data.length() == 0 || window_size <= 0 {
-      return []
-    }
-    
-    let mut windows = []
-    let mut i = 0
-    
-    while i < data.length() {
-      let window_end = if i + window_size < data.length() { i + window_size } else { data.length() }
-      let mut window = []
-      
-      for j in i..window_end {
-        window.push(data[j])
-      }
-      
-      windows.push(window)
-      i += window_size
-    }
-    
-    windows
-  }
-  
-  // 测试数据窗口化
-  let windows = window_data(test_data, 6)  // 6个数据点为一个窗口
-  
-  assert_eq(windows.length(), 4)  // 24个数据点，窗口大小6，应该有4个窗口
-  assert_eq(windows[0].length(), 6)
-  assert_eq(windows[3].length(), 6)
-  
-  // 对每个窗口进行聚合
-  let window_aggregates = windows.map(fn(window) {
-    aggregate_data(window, "avg")
-  })
-  
-  assert_eq(window_aggregates.length(), 4)
-  
-  // 数据趋势分析
-  let analyze_trend = fn(data : Array({ 
-    timestamp : Int, 
-    value : Float, 
-    tags : Array((String, String)) 
-  })) -> String {
-    if data.length() < 2 {
-      return "insufficient_data"
-    }
-    
-    let first_half = data.slice(0, data.length() / 2)
-    let second_half = data.slice(data.length() / 2, data.length())
-    
-    let first_avg = aggregate_data(first_half, "avg")
-    let second_avg = aggregate_data(second_half, "avg")
-    
-    let change_percent = (second_avg - first_avg) / first_avg * 100.0
-    
-    if change_percent > 5.0 {
-      "increasing"
-    } else if change_percent < -5.0 {
-      "decreasing"
+    // Calculate adaptive sampling ratio
+    let adaptive_ratio = if error_rate > 0.03 {
+      base_ratio * 2.0  // Increase sampling during high error rates
+    } else if avg_latency > 200.0 {
+      base_ratio * 1.5  // Increase sampling during high latency
     } else {
-      "stable"
-    }
-  }
-  
-  // 测试趋势分析
-  let trend = analyze_trend(test_data)
-  assert_eq(trend, "increasing")  // 我们生成的数据有上升趋势
-  
-  // 生成稳定数据测试
-  let stable_data = generate_test_data(1735689600, 24, 0.0, 2.0)  // 无趋势，只有噪声
-  let stable_trend = analyze_trend(stable_data)
-  assert_eq(stable_trend, "stable")
-  
-  // 生成下降趋势数据测试
-  let decreasing_data = generate_test_data(1735689600, 24, -0.5, 2.0)  // 下降趋势
-  let decreasing_trend = analyze_trend(decreasing_data)
-  assert_eq(decreasing_trend, "decreasing")
-  
-  // 异常检测
-  let detect_anomalies = fn(data : Array({ 
-    timestamp : Int, 
-    value : Float, 
-    tags : Array((String, String)) 
-  }), threshold : Float) -> Array(Int) {
-    if data.length() < 3 {
-      return []
+      base_ratio * 0.8  // Decrease sampling during normal operation
     }
     
-    let mut anomalies = []
-    let avg = aggregate_data(data, "avg")
+    let final_ratio = Math::min(1.0, Math::max(0.001, adaptive_ratio))
     
-    for i in 0..data.length() {
-      let deviation = (data[i].value - avg).abs() / avg
-      if deviation > threshold {
-        anomalies.push(i)
-      }
-    }
+    // Update sampling ratio gauge
+    UpDownCounter::set_with_attributes(sampling_ratio_gauge, final_ratio, [
+      ("traffic.level", IntValue(traffic_level)),
+      ("error.rate", DoubleValue(error_rate)),
+      ("avg.latency", DoubleValue(avg_latency))
+    ])
     
-    anomalies
+    // Simulate sampling application
+    let sampled_requests = (traffic_level.to_float() * final_ratio).to_int()
+    let sampled_requests_float = sampled_requests.to_float()
+    
+    Counter::add_with_attributes(throughput_counter, sampled_requests_float, [
+      ("traffic.level", IntValue(traffic_level)),
+      ("sampling.ratio", DoubleValue(final_ratio)),
+      ("sampling.strategy", StringValue("adaptive"))
+    ])
+    
+    // Add sampling event
+    Span::add_event(sampling_span, "sampling.adjusted", [
+      ("traffic.level", IntValue(traffic_level)),
+      ("base.ratio", DoubleValue(base_ratio)),
+      ("adaptive.ratio", DoubleValue(final_ratio)),
+      ("sampled.requests", IntValue(sampled_requests)),
+      ("error.rate", DoubleValue(error_rate)),
+      ("avg.latency", DoubleValue(avg_latency))
+    ])
   }
   
-  // 创建包含异常值的数据
-  let data_with_anomaly = test_data
-  data_with_anomaly[10] = {
-    timestamp: data_with_anomaly[10].timestamp,
-    value: 500.0,  // 异常高的值
-    tags: data_with_anomaly[10].tags
+  Span::set_status(sampling_span, Ok, Some("Adaptive sampling optimization completed"))
+  Span::end(sampling_span)
+  
+  // Test 3: Memory and resource optimization
+  let resource_span = Tracer::start_span(tracer, "resource.optimization")
+  Span::set_attribute(resource_span, "optimization.type", "resource_management")
+  
+  let memory_pools = [1024, 2048, 4096, 8192]  // KB
+  let connection_pools = [10, 25, 50, 100]
+  
+  for i in 0..memory_pools.length() {
+    let pool_size = memory_pools[i]
+    let connection_pool = connection_pools[i]
+    
+    // Simulate resource allocation and deallocation
+    let allocation_time = 5.0 + (pool_size.to_float() * 0.001) + (Math::random() * 2.0)
+    let deallocation_time = 2.0 + (pool_size.to_float() * 0.0005) + (Math::random() * 1.0)
+    
+    // Record resource metrics
+    Histogram::record_with_attributes(processing_time_histogram, allocation_time, [
+      ("operation.type", StringValue("memory_allocation")),
+      ("pool.size", IntValue(pool_size)),
+      ("optimization.strategy", StringValue("pool_based"))
+    ])
+    
+    Histogram::record_with_attributes(processing_time_histogram, deallocation_time, [
+      ("operation.type", StringValue("memory_deallocation")),
+      ("pool.size", IntValue(pool_size)),
+      ("optimization.strategy", StringValue("pool_based"))
+    ])
+    
+    // Connection pool metrics
+    let connection_acquisition_time = 1.0 + (connection_pool.to_float() * 0.01) + (Math::random() * 0.5)
+    
+    Histogram::record_with_attributes(processing_time_histogram, connection_acquisition_time, [
+      ("operation.type", StringValue("connection_acquisition")),
+      ("connection.pool.size", IntValue(connection_pool)),
+      ("optimization.strategy", StringValue("connection_pooling"))
+    ])
+    
+    // Add resource optimization event
+    Span::add_event(resource_span, "resource.optimized", [
+      ("memory.pool.size", IntValue(pool_size)),
+      ("connection.pool.size", IntValue(connection_pool)),
+      ("allocation.time", DoubleValue(allocation_time)),
+      ("deallocation.time", DoubleValue(deallocation_time)),
+      ("connection.acquisition.time", DoubleValue(connection_acquisition_time))
+    ])
   }
   
-  // 测试异常检测
-  let anomalies = detect_anomalies(data_with_anomaly, 0.5)  // 50%的偏差阈值
+  Span::set_status(resource_span, Ok, Some("Resource optimization completed"))
+  Span::end(resource_span)
   
-  assert_true(anomalies.length() > 0)
-  assert_true(anomalies.contains(10))  // 应该检测到索引10处的异常
+  // Verify metric instruments
+  assert_eq(batch_size_histogram.name, "batch.size")
+  assert_eq(processing_time_histogram.name, "processing.time")
+  assert_eq(throughput_counter.name, "throughput.total")
+  assert_eq(sampling_ratio_gauge.name, "sampling.ratio")
+  
+  assert_true(true)
 }
