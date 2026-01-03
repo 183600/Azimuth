@@ -1,279 +1,773 @@
-// Azimuth 遥测数据处理测试用例
-// 专注于遥测数据的收集、处理和分析功能
+// Azimuth Telemetry Data Processing Tests
+// This file contains comprehensive test cases for telemetry data processing
 
-// 测试1: 遥测数据点创建和验证
-test "遥测数据点创建和验证" {
-  // 创建CPU使用率数据点
-  let cpu_metric = {
-    "name": "cpu.usage",
-    "value": 75.5,
-    "timestamp": 1640995200,
-    "tags": ["service:api", "env:production"],
-    "type": "gauge"
+// Test 1: Telemetry Data Collection
+test "telemetry data collection and aggregation" {
+  type MetricType {
+    Counter
+    Gauge
+    Histogram
+    Summary
   }
   
-  // 验证数据点字段
-  assert_eq(cpu_metric["name"], "cpu.usage")
-  assert_eq(cpu_metric["value"], 75.5)
-  assert_eq(cpu_metric["timestamp"], 1640995200)
-  assert_eq(cpu_metric["type"], "gauge")
-  assert_true(cpu_metric["tags"].length() > 0)
-  
-  // 创建内存使用率数据点
-  let memory_metric = {
-    "name": "memory.usage",
-    "value": 60.2,
-    "timestamp": 1640995200,
-    "tags": ["service:api", "env:production"],
-    "type": "gauge"
+  type MetricValue {
+    IntValue(Int)
+    FloatValue(Float)
+    StringValue(String)
   }
   
-  // 验证不同指标的数据点
-  assert_eq(memory_metric["name"], "memory.usage")
-  assert_eq(memory_metric["value"], 60.2)
-  assert_eq(memory_metric["timestamp"], cpu_metric["timestamp"])
-  assert_eq(memory_metric["type"], cpu_metric["type"])
-}
-
-// 测试2: 遥测数据聚合
-test "遥测数据聚合计算" {
-  // 创建多个CPU使用率数据点
-  let cpu_metrics = [
-    {"name": "cpu.usage", "value": 70.5, "timestamp": 1640995200},
-    {"name": "cpu.usage", "value": 75.5, "timestamp": 1640995260},
-    {"name": "cpu.usage", "value": 80.2, "timestamp": 1640995320},
-    {"name": "cpu.usage", "value": 65.8, "timestamp": 1640995380},
-    {"name": "cpu.usage", "value": 72.1, "timestamp": 1640995440}
-  ]
+  type TelemetryMetric {
+    name : String
+    metric_type : MetricType
+    value : MetricValue
+    timestamp : Int
+    tags : Array[(String, String)]
+  }
   
-  // 计算平均值
-  let total = cpu_metrics.reduce(fn(acc, metric) { acc + metric["value"] }, 0.0)
-  let average = total / (cpu_metrics.length() as Float)
-  assert_eq(average.round(), 73.0)
+  type TelemetryData {
+    mut metrics : Array[TelemetryMetric]
+    mut start_time : Int
+    mut end_time : Int
+  }
   
-  // 计算最大值
-  let max_value = cpu_metrics.reduce(fn(acc, metric) { 
-    if metric["value"] > acc { metric["value"] } else { acc } 
-  }, 0.0)
-  assert_eq(max_value, 80.2)
-  
-  // 计算最小值
-  let min_value = cpu_metrics.reduce(fn(acc, metric) { 
-    if metric["value"] < acc { metric["value"] } else { acc } 
-  }, 999.0)
-  assert_eq(min_value, 65.8)
-  
-  // 计算范围
-  let range = max_value - min_value
-  assert_eq(range.round(), 14.0)
-}
-
-// 测试3: 遥测数据过滤和选择
-test "遥测数据过滤和选择" {
-  // 创建混合类型的遥测数据
-  let metrics = [
-    {"name": "cpu.usage", "value": 75.5, "service": "api", "env": "prod"},
-    {"name": "memory.usage", "value": 60.2, "service": "api", "env": "prod"},
-    {"name": "response.time", "value": 120.0, "service": "web", "env": "prod"},
-    {"name": "error.rate", "value": 0.5, "service": "api", "env": "staging"},
-    {"name": "throughput", "value": 1500.0, "service": "web", "env": "prod"}
-  ]
-  
-  // 按服务过滤
-  let api_metrics = metrics.filter(fn(metric) { metric["service"] == "api" })
-  assert_eq(api_metrics.length(), 3)
-  
-  // 按环境过滤
-  let prod_metrics = metrics.filter(fn(metric) { metric["env"] == "prod" })
-  assert_eq(prod_metrics.length(), 4)
-  
-  // 按值范围过滤
-  let high_usage = metrics.filter(fn(metric) { 
-    metric["name"] == "cpu.usage" && metric["value"] > 70.0 
-  })
-  assert_eq(high_usage.length(), 1)
-  
-  // 复合条件过滤
-  let api_prod_metrics = metrics.filter(fn(metric) { 
-    metric["service"] == "api" && metric["env"] == "prod" 
-  })
-  assert_eq(api_prod_metrics.length(), 2)
-}
-
-// 测试4: 遥测数据转换和映射
-test "遥测数据转换和映射" {
-  // 创建原始遥测数据
-  let raw_metrics = [
-    {"name": "cpu.usage", "value": 75.5, "unit": "percent"},
-    {"name": "memory.total", "value": 8589934592, "unit": "bytes"},
-    {"name": "disk.free", "value": 107374182400, "unit": "bytes"},
-    {"name": "network.in", "value": 1048576, "unit": "bytes"}
-  ]
-  
-  // 转换字节数据为GB
-  let converted_metrics = raw_metrics.map(fn(metric) {
-    if metric["unit"] == "bytes" {
-      {
-        "name": metric["name"],
-        "value": metric["value"] / (1024.0 * 1024.0 * 1024.0),
-        "unit": "GB"
-      }
-    } else {
-      metric
+  let create_telemetry_data = fn(start_time : Int) : TelemetryData {
+    {
+      metrics: [],
+      start_time: start_time,
+      end_time: start_time
     }
-  })
-  
-  // 验证转换结果
-  let memory_gb = converted_metrics.filter(fn(m) { m["name"] == "memory.total" })[0]
-  assert_eq(memory_gb["unit"], "GB")
-  assert_eq(memory_gb["value"].round(), 8.0)
-  
-  let disk_gb = converted_metrics.filter(fn(m) { m["name"] == "disk.free" })[0]
-  assert_eq(disk_gb["unit"], "GB")
-  assert_eq(disk_gb["value"].round(), 100.0)
-  
-  // CPU指标应该保持不变
-  let cpu_metric = converted_metrics.filter(fn(m) { m["name"] == "cpu.usage" })[0]
-  assert_eq(cpu_metric["unit"], "percent")
-  assert_eq(cpu_metric["value"], 75.5)
-}
-
-// 测试5: 遥测数据时间窗口处理
-test "遥测数据时间窗口处理" {
-  // 创建时间序列数据
-  let time_series = [
-    {"timestamp": 1640995200, "value": 70.5},
-    {"timestamp": 1640995260, "value": 75.5},
-    {"timestamp": 1640995320, "value": 80.2},
-    {"timestamp": 1640995380, "value": 65.8},
-    {"timestamp": 1640995440, "value": 72.1},
-    {"timestamp": 1640995500, "value": 78.9},
-    {"timestamp": 1640995560, "value": 82.3},
-    {"timestamp": 1640995620, "value": 68.7}
-  ]
-  
-  // 定义时间窗口 (开始时间到结束时间)
-  let window_start = 1640995260
-  let window_end = 1640995500
-  
-  // 过滤时间窗口内的数据
-  let window_data = time_series.filter(fn(point) { 
-    point["timestamp"] >= window_start && point["timestamp"] <= window_end 
-  })
-  
-  // 验证时间窗口数据
-  assert_eq(window_data.length(), 4)
-  assert_eq(window_data[0]["timestamp"], 1640995260)
-  assert_eq(window_data[3]["timestamp"], 1640995500)
-  
-  // 计算窗口内的平均值
-  let window_avg = window_data.reduce(fn(acc, point) { 
-    acc + point["value"] 
-  }, 0.0) / (window_data.length() as Float)
-  
-  assert_eq(window_avg.round(), 74.0)
-  
-  // 计算窗口内的趋势 (简单线性趋势)
-  let first_value = window_data[0]["value"]
-  let last_value = window_data[window_data.length() - 1]["value"]
-  let trend = last_value - first_value
-  
-  assert_eq(trend.round(), -3.0)
-}
-
-// 测试6: 遥测数据异常检测
-test "遥测数据异常检测" {
-  // 创建包含异常值的数据集
-  let metrics = [
-    {"name": "response.time", "value": 120.0},
-    {"name": "response.time", "value": 125.0},
-    {"name": "response.time", "value": 118.0},
-    {"name": "response.time", "value": 500.0}, // 异常值
-    {"name": "response.time", "value": 122.0},
-    {"name": "response.time", "value": 119.0},
-    {"name": "response.time", "value": 800.0}, // 异常值
-    {"name": "response.time", "value": 121.0}
-  ]
-  
-  // 计算平均值和标准差 (简化版)
-  let values = metrics.map(fn(m) { m["value"] })
-  let mean = values.reduce(fn(acc, v) { acc + v }, 0.0) / (values.length() as Float)
-  
-  // 计算方差
-  let variance = values.reduce(fn(acc, v) { 
-    let diff = v - mean
-    acc + diff * diff
-  }, 0.0) / (values.length() as Float)
-  
-  // 标准差
-  let std_dev = variance.sqrt()
-  
-  // 定义异常阈值 (平均值 ± 2倍标准差)
-  let anomaly_threshold = 2.0 * std_dev
-  let upper_bound = mean + anomaly_threshold
-  let lower_bound = mean - anomaly_threshold
-  
-  // 检测异常值
-  let anomalies = metrics.filter(fn(m) { 
-    m["value"] > upper_bound || m["value"] < lower_bound 
-  })
-  
-  // 验证异常检测
-  assert_eq(anomalies.length(), 2)
-  assert_true(anomalies[0]["value"] > upper_bound)
-  assert_true(anomalies[1]["value"] > upper_bound)
-  
-  // 验证正常值
-  let normal_values = metrics.filter(fn(m) { 
-    m["value"] <= upper_bound && m["value"] >= lower_bound 
-  })
-  assert_eq(normal_values.length(), 6)
-}
-
-// 测试7: 遥测数据采样策略
-test "遥测数据采样策略" {
-  // 创建高频遥测数据
-  let high_frequency_data = []
-  for i in 0..=100 {
-    high_frequency_data = high_frequency_data.push({
-      "timestamp": 1640995200 + i * 10,
-      "value": 70.0 + (i % 20) as Float * 0.5
-    })
   }
   
-  assert_eq(high_frequency_data.length(), 101)
+  let add_metric = fn(data : TelemetryData, name : String, metric_type : MetricType, value : MetricValue, timestamp : Int, tags : Array[(String, String)]) {
+    let metric = {
+      name: name,
+      metric_type: metric_type,
+      value: value,
+      timestamp: timestamp,
+      tags: tags
+    }
+    
+    data.metrics = data.metrics.push(metric)
+    
+    if timestamp > data.end_time {
+      data.end_time = timestamp
+    }
+  }
   
-  // 实现简单随机采样 (采样率10%)
-  let sample_rate = 0.1
-  let sampled_data = high_frequency_data.filter(fn(_) { 
-    // 简化的伪随机采样，实际应用中应使用真正的随机数
-    true 
-  }).filter_with_index(fn(i, _) { i % 10 == 0 })
+  let add_counter_metric = fn(data : TelemetryData, name : String, value : Int, timestamp : Int, tags : Array[(String, String)]) {
+    add_metric(data, name, MetricType::Counter, MetricValue::IntValue(value), timestamp, tags)
+  }
   
-  assert_eq(sampled_data.length(), 11)
+  let add_gauge_metric = fn(data : TelemetryData, name : String, value : Float, timestamp : Int, tags : Array[(String, String)]) {
+    add_metric(data, name, MetricType::Gauge, MetricValue::FloatValue(value), timestamp, tags)
+  }
   
-  // 实现系统采样
-  let systematic_interval = 10
-  let systematic_sampled = high_frequency_data.filter_with_index(fn(i, _) { 
-    i % systematic_interval == 0 
-  })
+  let add_histogram_metric = fn(data : TelemetryData, name : String, value : Float, timestamp : Int, tags : Array[(String, String)]) {
+    add_metric(data, name, MetricType::Histogram, MetricValue::FloatValue(value), timestamp, tags)
+  }
   
-  assert_eq(systematic_sampled.length(), 11)
-  assert_eq(systematic_sampled[0]["timestamp"], 1640995200)
-  assert_eq(systematic_sampled[10]["timestamp"], 1640995200 + 100 * 10)
+  let get_metrics_by_name = fn(data : TelemetryData, name : String) : Array[TelemetryMetric] {
+    let mut result = []
+    for metric in data.metrics {
+      if metric.name == name {
+        result = result.push(metric)
+      }
+    }
+    result
+  }
   
-  // 实现基于值的采样 (只保留高值)
-  let value_threshold = 75.0
-  let value_sampled = high_frequency_data.filter(fn(point) { 
-    point["value"] >= value_threshold 
-  })
+  let get_metrics_by_type = fn(data : TelemetryData, metric_type : MetricType) : Array[TelemetryMetric] {
+    let mut result = []
+    for metric in data.metrics {
+      match metric.metric_type {
+        MetricType::Counter => {
+          match metric_type {
+            MetricType::Counter => result = result.push(metric)
+            _ => ()
+          }
+        }
+        MetricType::Gauge => {
+          match metric_type {
+            MetricType::Gauge => result = result.push(metric)
+            _ => ()
+          }
+        }
+        MetricType::Histogram => {
+          match metric_type {
+            MetricType::Histogram => result = result.push(metric)
+            _ => ()
+          }
+        }
+        MetricType::Summary => {
+          match metric_type {
+            MetricType::Summary => result = result.push(metric)
+            _ => ()
+          }
+        }
+      }
+    }
+    result
+  }
   
-  assert_true(value_sampled.length() > 0)
-  assert_true(value_sampled.length() < high_frequency_data.length())
+  let get_metrics_by_tag = fn(data : TelemetryData, tag_key : String, tag_value : String) : Array[TelemetryMetric] {
+    let mut result = []
+    for metric in data.metrics {
+      for (key, value) in metric.tags {
+        if key == tag_key && value == tag_value {
+          result = result.push(metric)
+          break
+        }
+      }
+    }
+    result
+  }
   
-  // 验证所有采样值都超过阈值
-  let all_above_threshold = value_sampled.all(fn(point) { 
-    point["value"] >= value_threshold 
-  })
-  assert_true(all_above_threshold)
+  let aggregate_counter_metrics = fn(metrics : Array[TelemetryMetric]) : Int {
+    let mut sum = 0
+    for metric in metrics {
+      match metric.value {
+        MetricValue::IntValue(value) => sum = sum + value
+        _ => ()
+      }
+    }
+    sum
+  }
+  
+  let average_gauge_metrics = fn(metrics : Array[TelemetryMetric]) : Float {
+    if metrics.length() == 0 {
+      return 0.0
+    }
+    
+    let mut sum = 0.0
+    for metric in metrics {
+      match metric.value {
+        MetricValue::FloatValue(value) => sum = sum + value
+        _ => ()
+      }
+    }
+    
+    sum / metrics.length().to_float()
+  }
+  
+  // Test telemetry data collection
+  let telemetry_data = create_telemetry_data(1000)
+  
+  // Add counter metrics
+  add_counter_metric(telemetry_data, "requests_total", 10, 1005, [("method", "GET"), ("status", "200")])
+  add_counter_metric(telemetry_data, "requests_total", 5, 1010, [("method", "POST"), ("status", "200")])
+  add_counter_metric(telemetry_data, "requests_total", 2, 1015, [("method", "GET"), ("status", "404")])
+  
+  // Add gauge metrics
+  add_gauge_metric(telemetry_data, "memory_usage", 512.5, 1008, [("instance", "server1")])
+  add_gauge_metric(telemetry_data, "memory_usage", 620.3, 1013, [("instance", "server1")])
+  add_gauge_metric(telemetry_data, "memory_usage", 445.7, 1018, [("instance", "server2")])
+  
+  // Add histogram metrics
+  add_histogram_metric(telemetry_data, "request_duration", 0.1, 1006, [("endpoint", "/api/users")])
+  add_histogram_metric(telemetry_data, "request_duration", 0.3, 1011, [("endpoint", "/api/users")])
+  add_histogram_metric(telemetry_data, "request_duration", 0.2, 1016, [("endpoint", "/api/posts")])
+  
+  // Verify data collection
+  assert_eq(telemetry_data.metrics.length(), 8)
+  assert_eq(telemetry_data.start_time, 1000)
+  assert_eq(telemetry_data.end_time, 1018)
+  
+  // Test filtering by name
+  let request_metrics = get_metrics_by_name(telemetry_data, "requests_total")
+  assert_eq(request_metrics.length(), 3)
+  
+  let memory_metrics = get_metrics_by_name(telemetry_data, "memory_usage")
+  assert_eq(memory_metrics.length(), 3)
+  
+  // Test filtering by type
+  let counter_metrics = get_metrics_by_type(telemetry_data, MetricType::Counter)
+  assert_eq(counter_metrics.length(), 3)
+  
+  let gauge_metrics = get_metrics_by_type(telemetry_data, MetricType::Gauge)
+  assert_eq(gauge_metrics.length(), 3)
+  
+  let histogram_metrics = get_metrics_by_type(telemetry_data, MetricType::Histogram)
+  assert_eq(histogram_metrics.length(), 2)
+  
+  // Test filtering by tags
+  let get_metrics = get_metrics_by_tag(telemetry_data, "method", "GET")
+  assert_eq(get_metrics.length(), 2)
+  
+  let post_metrics = get_metrics_by_tag(telemetry_data, "method", "POST")
+  assert_eq(post_metrics.length(), 1)
+  
+  let server1_metrics = get_metrics_by_tag(telemetry_data, "instance", "server1")
+  assert_eq(server1_metrics.length(), 2)
+  
+  // Test aggregation
+  let total_requests = aggregate_counter_metrics(request_metrics)
+  assert_eq(total_requests, 17)
+  
+  let avg_memory = average_gauge_metrics(memory_metrics)
+  assert_true(avg_memory > 500.0 && avg_memory < 600.0)
+}
+
+// Test 2: Time Series Data Processing
+test "time series data processing and analysis" {
+  type DataPoint {
+    timestamp : Int
+    value : Float
+  }
+  
+  type TimeSeries {
+    name : String
+    mut points : Array[DataPoint]
+  }
+  
+  let create_time_series = fn(name : String) : TimeSeries {
+    { name: name, points: [] }
+  }
+  
+  let add_point = fn(series : TimeSeries, timestamp : Int, value : Float) {
+    let point = { timestamp: timestamp, value: value }
+    series.points = series.points.push(point)
+  }
+  
+  let sort_by_timestamp = fn(series : TimeSeries) {
+    // Simple bubble sort for testing
+    let n = series.points.length()
+    for i in 0..<n {
+      for j in 0..<n - i - 1 {
+        if series.points[j].timestamp > series.points[j + 1].timestamp {
+          let temp = series.points[j]
+          series.points[j] = series.points[j + 1]
+          series.points[j + 1] = temp
+        }
+      }
+    }
+  }
+  
+  let calculate_average = fn(points : Array[DataPoint]) : Float {
+    if points.length() == 0 {
+      return 0.0
+    }
+    
+    let mut sum = 0.0
+    for point in points {
+      sum = sum + point.value
+    }
+    
+    sum / points.length().to_float()
+  }
+  
+  let calculate_min = fn(points : Array[DataPoint]) : Float {
+    if points.length() == 0 {
+      return 0.0
+    }
+    
+    let mut min_value = points[0].value
+    for point in points {
+      if point.value < min_value {
+        min_value = point.value
+      }
+    }
+    
+    min_value
+  }
+  
+  let calculate_max = fn(points : Array[DataPoint]) : Float {
+    if points.length() == 0 {
+      return 0.0
+    }
+    
+    let mut max_value = points[0].value
+    for point in points {
+      if point.value > max_value {
+        max_value = point.value
+      }
+    }
+    
+    max_value
+  }
+  
+  let resample = fn(series : TimeSeries, interval : Int) : TimeSeries {
+    if series.points.length() == 0 {
+      return create_time_series(series.name + "_resampled")
+    }
+    
+    sort_by_timestamp(series)
+    
+    let resampled = create_time_series(series.name + "_resampled")
+    let start_time = series.points[0].timestamp
+    
+    let mut current_interval_start = start_time
+    let mut current_interval_points = []
+    
+    for point in series.points {
+      if point.timestamp < current_interval_start + interval {
+        current_interval_points = current_interval_points.push(point)
+      } else {
+        if current_interval_points.length() > 0 {
+          let avg_value = calculate_average(current_interval_points)
+          add_point(resampled, current_interval_start, avg_value)
+        }
+        
+        current_interval_start = current_interval_start + interval
+        current_interval_points = [point]
+      }
+    }
+    
+    // Add the last interval
+    if current_interval_points.length() > 0 {
+      let avg_value = calculate_average(current_interval_points)
+      add_point(resampled, current_interval_start, avg_value)
+    }
+    
+    resampled
+  }
+  
+  let detect_anomalies = fn(points : Array[DataPoint], threshold : Float) : Array[DataPoint] {
+    let mut anomalies = []
+    let avg = calculate_average(points)
+    
+    for point in points {
+      if (point.value - avg).abs() > threshold {
+        anomalies = anomalies.push(point)
+      }
+    }
+    
+    anomalies
+  }
+  
+  // Test time series data processing
+  let cpu_usage = create_time_series("cpu_usage")
+  
+  // Add data points (not in chronological order to test sorting)
+  add_point(cpu_usage, 1005, 65.2)
+  add_point(cpu_usage, 1000, 45.8)
+  add_point(cpu_usage, 1015, 78.3)
+  add_point(cpu_usage, 1010, 55.1)
+  add_point(cpu_usage, 1020, 82.7)
+  add_point(cpu_usage, 1003, 50.4)
+  add_point(cpu_usage, 1018, 75.9)
+  
+  // Test sorting
+  sort_by_timestamp(cpu_usage)
+  assert_eq(cpu_usage.points[0].timestamp, 1000)
+  assert_eq(cpu_usage.points[1].timestamp, 1003)
+  assert_eq(cpu_usage.points[2].timestamp, 1005)
+  assert_eq(cpu_usage.points[6].timestamp, 1020)
+  
+  // Test statistical calculations
+  let avg_cpu = calculate_average(cpu_usage.points)
+  assert_true(avg_cpu > 60.0 && avg_cpu < 70.0)
+  
+  let min_cpu = calculate_min(cpu_usage.points)
+  assert_eq(min_cpu, 45.8)
+  
+  let max_cpu = calculate_max(cpu_usage.points)
+  assert_eq(max_cpu, 82.7)
+  
+  // Test resampling
+  let resampled_cpu = resample(cpu_usage, 10)  // 10-second intervals
+  
+  assert_eq(resampled_cpu.name, "cpu_usage_resampled")
+  assert_true(resampled_cpu.points.length() > 0)
+  
+  // Verify resampled points are at correct intervals
+  assert_eq(resampled_cpu.points[0].timestamp, 1000)
+  assert_eq(resampled_cpu.points[1].timestamp, 1010)
+  
+  // Test anomaly detection
+  let anomalies = detect_anomalies(cpu_usage.points, 15.0)
+  assert_eq(anomalies.length(), 2)  // 45.8 and 82.7 should be anomalies
+}
+
+// Test 3: Telemetry Data Export
+test "telemetry data export in different formats" {
+  type ExportFormat {
+    JSON
+    CSV
+    Prometheus
+  }
+  
+  type ExportResult {
+    Success(String)
+    Failure(String)
+  }
+  
+  let export_to_json = fn(data : TelemetryData) : ExportResult {
+    let mut json = "{\n"
+    json = json + "  \"start_time\": " + data.start_time.to_string() + ",\n"
+    json = json + "  \"end_time\": " + data.end_time.to_string() + ",\n"
+    json = json + "  \"metrics\": [\n"
+    
+    for i in 0..<data.metrics.length() {
+      let metric = data.metrics[i]
+      json = json + "    {\n"
+      json = json + "      \"name\": \"" + metric.name + "\",\n"
+      
+      match metric.metric_type {
+        MetricType::Counter => json = json + "      \"type\": \"counter\",\n"
+        MetricType::Gauge => json = json + "      \"type\": \"gauge\",\n"
+        MetricType::Histogram => json = json + "      \"type\": \"histogram\",\n"
+        MetricType::Summary => json = json + "      \"type\": \"summary\",\n"
+      }
+      
+      match metric.value {
+        MetricValue::IntValue(value) => json = json + "      \"value\": " + value.to_string() + ",\n"
+        MetricValue::FloatValue(value) => json = json + "      \"value\": " + value.to_string() + ",\n"
+        MetricValue::StringValue(value) => json = json + "      \"value\": \"" + value + "\",\n"
+      }
+      
+      json = json + "      \"timestamp\": " + metric.timestamp.to_string() + ",\n"
+      json = json + "      \"tags\": {"
+      
+      for j in 0..<metric.tags.length() {
+        let (key, value) = metric.tags[j]
+        json = json + "\"" + key + "\": \"" + value + "\""
+        if j < metric.tags.length() - 1 {
+          json = json + ", "
+        }
+      }
+      
+      json = json + "}\n"
+      json = json + "    }"
+      
+      if i < data.metrics.length() - 1 {
+        json = json + ","
+      }
+      
+      json = json + "\n"
+    }
+    
+    json = json + "  ]\n"
+    json = json + "}"
+    
+    ExportResult::Success(json)
+  }
+  
+  let export_to_csv = fn(data : TelemetryData) : ExportResult {
+    let mut csv = "name,type,value,timestamp,tags\n"
+    
+    for metric in data.metrics {
+      csv = csv + metric.name + ","
+      
+      match metric.metric_type {
+        MetricType::Counter => csv = csv + "counter,"
+        MetricType::Gauge => csv = csv + "gauge,"
+        MetricType::Histogram => csv = csv + "histogram,"
+        MetricType::Summary => csv = csv + "summary,"
+      }
+      
+      match metric.value {
+        MetricValue::IntValue(value) => csv = csv + value.to_string() + ","
+        MetricValue::FloatValue(value) => csv = csv + value.to_string() + ","
+        MetricValue::StringValue(value) => csv = csv + value + ","
+      }
+      
+      csv = csv + metric.timestamp.to_string() + ","
+      
+      for j in 0..<metric.tags.length() {
+        let (key, value) = metric.tags[j]
+        csv = csv + key + "=" + value
+        if j < metric.tags.length() - 1 {
+          csv = csv + " "
+        }
+      }
+      
+      csv = csv + "\n"
+    }
+    
+    ExportResult::Success(csv)
+  }
+  
+  let export_to_prometheus = fn(data : TelemetryData) : ExportResult {
+    let mut prometheus = ""
+    
+    for metric in data.metrics {
+      let mut metric_name = metric.name
+      
+      // Add tags to the metric name
+      for j in 0..<metric.tags.length() {
+        let (key, value) = metric.tags[j]
+        metric_name = metric_name + "{" + key + "=\"" + value + "\""
+        if j == metric.tags.length() - 1 {
+          metric_name = metric_name + "}"
+        } else {
+          metric_name = metric_name + ","
+        }
+      }
+      
+      match metric.metric_type {
+        MetricType::Counter => {
+          match metric.value {
+            MetricValue::IntValue(value) => {
+              prometheus = prometheus + "# TYPE " + metric.name + " counter\n"
+              prometheus = prometheus + metric_name + " " + value.to_string() + " " + metric.timestamp.to_string() + "\n"
+            }
+            _ => ()
+          }
+        }
+        MetricType::Gauge => {
+          match metric.value {
+            MetricValue::FloatValue(value) => {
+              prometheus = prometheus + "# TYPE " + metric.name + " gauge\n"
+              prometheus = prometheus + metric_name + " " + value.to_string() + " " + metric.timestamp.to_string() + "\n"
+            }
+            _ => ()
+          }
+        }
+        MetricType::Histogram => {
+          match metric.value {
+            MetricValue::FloatValue(value) => {
+              prometheus = prometheus + "# TYPE " + metric.name + " histogram\n"
+              prometheus = prometheus + metric_name + "_bucket{le=\"+Inf\"} " + value.to_string() + " " + metric.timestamp.to_string() + "\n"
+              prometheus = prometheus + metric_name + "_count " + "1" + " " + metric.timestamp.to_string() + "\n"
+              prometheus = prometheus + metric_name + "_sum " + value.to_string() + " " + metric.timestamp.to_string() + "\n"
+            }
+            _ => ()
+          }
+        }
+        MetricType::Summary => {
+          // Simplified summary export
+          match metric.value {
+            MetricValue::FloatValue(value) => {
+              prometheus = prometheus + "# TYPE " + metric.name + " summary\n"
+              prometheus = prometheus + metric_name + "{quantile=\"0.5\"} " + value.to_string() + " " + metric.timestamp.to_string() + "\n"
+            }
+            _ => ()
+          }
+        }
+      }
+    }
+    
+    ExportResult::Success(prometheus)
+  }
+  
+  // Create test telemetry data
+  let telemetry_data = create_telemetry_data(1000)
+  add_counter_metric(telemetry_data, "requests_total", 100, 1005, [("method", "GET"), ("status", "200")])
+  add_gauge_metric(telemetry_data, "memory_usage", 512.5, 1010, [("instance", "server1")])
+  
+  // Test JSON export
+  match export_to_json(telemetry_data) {
+    ExportResult::Success(json) => {
+      assert_true(json.contains("\"name\": \"requests_total\""))
+      assert_true(json.contains("\"type\": \"counter\""))
+      assert_true(json.contains("\"value\": 100"))
+      assert_true(json.contains("\"name\": \"memory_usage\""))
+      assert_true(json.contains("\"type\": \"gauge\""))
+      assert_true(json.contains("\"value\": 512.5"))
+    }
+    ExportResult::Failure(_) => assert_true(false)
+  }
+  
+  // Test CSV export
+  match export_to_csv(telemetry_data) {
+    ExportResult::Success(csv) => {
+      assert_true(csv.contains("name,type,value,timestamp,tags"))
+      assert_true(csv.contains("requests_total,counter,100,1005,method=GET status=200"))
+      assert_true(csv.contains("memory_usage,gauge,512.5,1010,instance=server1"))
+    }
+    ExportResult::Failure(_) => assert_true(false)
+  }
+  
+  // Test Prometheus export
+  match export_to_prometheus(telemetry_data) {
+    ExportResult::Success(prometheus) => {
+      assert_true(prometheus.contains("# TYPE requests_total counter"))
+      assert_true(prometheus.contains("requests_total{method=\"GET\",status=\"200\"} 100"))
+      assert_true(prometheus.contains("# TYPE memory_usage gauge"))
+      assert_true(prometheus.contains("memory_usage{instance=\"server1\"} 512.5"))
+    }
+    ExportResult::Failure(_) => assert_true(false)
+  }
+}
+
+// Test 4: Telemetry Data Filtering and Querying
+test "telemetry data filtering and querying" {
+  type QueryFilter {
+    NameEquals(String)
+    NameContains(String)
+    TypeEquals(MetricType)
+    TagEquals(String, String)
+    TimeRange(Int, Int)
+    ValueGreaterThan(Float)
+    ValueLessThan(Float)
+    And(Array[QueryFilter])
+    Or(Array[QueryFilter])
+  }
+  
+  let apply_filter = fn(data : TelemetryData, filter : QueryFilter) : Array[TelemetryMetric] {
+    let mut result = []
+    
+    for metric in data.metrics {
+      if matches_filter(metric, filter) {
+        result = result.push(metric)
+      }
+    }
+    
+    result
+  }
+  
+  let matches_filter = fn(metric : TelemetryMetric, filter : QueryFilter) : Bool {
+    match filter {
+      QueryFilter::NameEquals(name) => metric.name == name
+      QueryFilter::NameContains(substring) => metric.name.contains(substring)
+      QueryFilter::TypeEquals(metric_type) => {
+        match metric.metric_type {
+          MetricType::Counter => match metric_type {
+            MetricType::Counter => true
+            _ => false
+          }
+          MetricType::Gauge => match metric_type {
+            MetricType::Gauge => true
+            _ => false
+          }
+          MetricType::Histogram => match metric_type {
+            MetricType::Histogram => true
+            _ => false
+          }
+          MetricType::Summary => match metric_type {
+            MetricType::Summary => true
+            _ => false
+          }
+        }
+      }
+      QueryFilter::TagEquals(key, value) => {
+        for (k, v) in metric.tags {
+          if k == key && v == value {
+            return true
+          }
+        }
+        false
+      }
+      QueryFilter::TimeRange(start, end) => metric.timestamp >= start && metric.timestamp <= end
+      QueryFilter::ValueGreaterThan(threshold) => {
+        match metric.value {
+          MetricValue::IntValue(value) => value.to_float() > threshold
+          MetricValue::FloatValue(value) => value > threshold
+          MetricValue::StringValue(_) => false
+        }
+      }
+      QueryFilter::ValueLessThan(threshold) => {
+        match metric.value {
+          MetricValue::IntValue(value) => value.to_float() < threshold
+          MetricValue::FloatValue(value) => value < threshold
+          MetricValue::StringValue(_) => false
+        }
+      }
+      QueryFilter::And(filters) => {
+        for filter in filters {
+          if !matches_filter(metric, filter) {
+            return false
+          }
+        }
+        true
+      }
+      QueryFilter::Or(filters) => {
+        for filter in filters {
+          if matches_filter(metric, filter) {
+            return true
+          }
+        }
+        false
+      }
+    }
+  }
+  
+  let group_by_tag = fn(metrics : Array[TelemetryMetric], tag_key : String) -> Array[(String, Array[TelemetryMetric])] {
+    let mut groups = []
+    let mut processed_tags = []
+    
+    for metric in metrics {
+      let mut tag_value = ""
+      
+      for (key, value) in metric.tags {
+        if key == tag_key {
+          tag_value = value
+          break
+        }
+      }
+      
+      if !processed_tags.contains(tag_value) {
+        processed_tags = processed_tags.push(tag_value)
+        
+        let mut group_metrics = []
+        for m in metrics {
+          for (key, value) in m.tags {
+            if key == tag_key && value == tag_value {
+              group_metrics = group_metrics.push(m)
+              break
+            }
+          }
+        }
+        
+        groups = groups.push((tag_value, group_metrics))
+      }
+    }
+    
+    groups
+  }
+  
+  // Create test telemetry data
+  let telemetry_data = create_telemetry_data(1000)
+  
+  add_counter_metric(telemetry_data, "http_requests_total", 10, 1005, [("method", "GET"), ("status", "200")])
+  add_counter_metric(telemetry_data, "http_requests_total", 5, 1010, [("method", "POST"), ("status", "200")])
+  add_counter_metric(telemetry_data, "http_requests_total", 2, 1015, [("method", "GET"), ("status", "404")])
+  add_gauge_metric(telemetry_data, "memory_usage", 512.5, 1008, [("instance", "server1")])
+  add_gauge_metric(telemetry_data, "memory_usage", 620.3, 1013, [("instance", "server2")])
+  add_histogram_metric(telemetry_data, "response_time", 0.1, 1006, [("endpoint", "/api/users")])
+  add_histogram_metric(telemetry_data, "response_time", 0.3, 1011, [("endpoint", "/api/posts")])
+  
+  // Test name filtering
+  let http_metrics = apply_filter(telemetry_data, QueryFilter::NameEquals("http_requests_total"))
+  assert_eq(http_metrics.length(), 3)
+  
+  let request_metrics = apply_filter(telemetry_data, QueryFilter::NameContains("request"))
+  assert_eq(request_metrics.length(), 3)
+  
+  // Test type filtering
+  let counter_metrics = apply_filter(telemetry_data, QueryFilter::TypeEquals(MetricType::Counter))
+  assert_eq(counter_metrics.length(), 3)
+  
+  let gauge_metrics = apply_filter(telemetry_data, QueryFilter::TypeEquals(MetricType::Gauge))
+  assert_eq(gauge_metrics.length(), 2)
+  
+  // Test tag filtering
+  let get_metrics = apply_filter(telemetry_data, QueryFilter::TagEquals("method", "GET"))
+  assert_eq(get_metrics.length(), 2)
+  
+  let server1_metrics = apply_filter(telemetry_data, QueryFilter::TagEquals("instance", "server1"))
+  assert_eq(server1_metrics.length(), 1)
+  
+  // Test time range filtering
+  let time_filtered = apply_filter(telemetry_data, QueryFilter::TimeRange(1005, 1010))
+  assert_eq(time_filtered.length(), 4)
+  
+  // Test value filtering
+  let high_memory = apply_filter(telemetry_data, QueryFilter::ValueGreaterThan(600.0))
+  assert_eq(high_memory.length(), 1)
+  
+  // Test compound filters
+  let get_200 = apply_filter(telemetry_data, QueryFilter::And([
+    QueryFilter::TagEquals("method", "GET"),
+    QueryFilter::TagEquals("status", "200")
+  ]))
+  assert_eq(get_200.length(), 1)
+  
+  let get_or_post = apply_filter(telemetry_data, QueryFilter::Or([
+    QueryFilter::TagEquals("method", "GET"),
+    QueryFilter::TagEquals("method", "POST")
+  ]))
+  assert_eq(get_or_post.length(), 3)
+  
+  // Test grouping
+  let grouped_by_status = group_by_tag(http_metrics, "status")
+  assert_eq(grouped_by_status.length(), 2)
+  
+  for (status, metrics) in grouped_by_status {
+    if status == "200" {
+      assert_eq(metrics.length(), 2)
+    } else if status == "404" {
+      assert_eq(metrics.length(), 1)
+    }
+  }
 }
