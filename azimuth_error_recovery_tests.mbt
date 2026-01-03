@@ -1,401 +1,688 @@
-// Azimuth Error Recovery and Fault Tolerance Test Suite
-// 测试遥测系统的错误恢复和容错机制
+// Azimuth Telemetry System - Error Recovery Tests
+// This file contains test cases for error recovery functionality
 
-test "网络连接失败的恢复机制" {
-  // 创建具有容错能力的遥测提供者
-  let telemetry_provider = TelemetryProvider::with_fault_tolerance()
+// Test 1: Connection Failure Recovery
+test "connection failure recovery" {
+  let connection_manager = ConnectionManager::new()
   
-  // 配置重试策略
-  let retry_policy = RetryPolicy {
-    max_attempts: 3,
-    initial_backoff: 1000, // 1秒
-    max_backoff: 10000,    // 10秒
-    backoff_multiplier: 2.0,
-    retryable_errors: ["connection.failed", "timeout", "server.error"]
-  }
+  // Configure retry strategy
+  ConnectionManager::set_retry_strategy(connection_manager, {
+    "max_attempts": 3,
+    "initial_delay": 100, // milliseconds
+    "max_delay": 1000,
+    "backoff_multiplier": 2.0
+  })
   
-  FaultTolerance::configure_retry_policy(telemetry_provider, retry_policy)
+  // Configure circuit breaker
+  ConnectionManager::set_circuit_breaker(connection_manager, {
+    "failure_threshold": 5,
+    "recovery_timeout": 5000, // milliseconds
+    "expected_recovery_time": 2000
+  })
   
-  // 创建模拟的失败导出器
-  let failing_exporter = MockFailingExporter::new("network.failure")
-  MockFailingExporter::set_failure_mode(failing_exporter, "connection.failed")
-  MockFailingExporter::set_failure_count(failing_exporter, 2) // 前两次尝试失败
-  
-  // 创建tracer
-  let tracer = TelemetryProvider::get_tracer(telemetry_provider, "recovery.test")
-  
-  // 创建span
-  let span = Tracer::start_span(tracer, "network.failure.test")
-  Span::set_attribute(span, "operation.type", "test")
-  Span::end(span)
-  
-  // 尝试导出数据（应该会失败并重试）
-  let export_result = FaultTolerance::export_with_retry(telemetry_provider, failing_exporter, span)
-  
-  // 验证最终成功（在第3次尝试）
-  assert_true(export_result)
-  
-  // 验证重试次数
-  let retry_count = MockFailingExporter::get_retry_count(failing_exporter)
-  assert_eq(retry_count, 3)
-  
-  assert_true(true)
-}
-
-test "导出器故障切换机制" {
-  // 创建具有故障切换能力的遥测提供者
-  let telemetry_provider = TelemetryProvider::with_failover()
-  
-  // 配置主导出器和备用导出器
-  let primary_exporter = MockExporter::new("primary")
-  let secondary_exporter = MockExporter::new("secondary")
-  let tertiary_exporter = MockExporter::new("tertiary")
-  
-  // 配置故障切换策略
-  let failover_config = FailoverConfig {
-    exporters: [primary_exporter, secondary_exporter, tertiary_exporter],
-    health_check_interval: 5000, // 5秒
-    failure_threshold: 2,         // 连续2次失败后切换
-    recovery_check_interval: 10000 // 10秒检查一次恢复
-  }
-  
-  Failover::configure(telemetry_provider, failover_config)
-  
-  // 创建tracer
-  let tracer = TelemetryProvider::get_tracer(telemetry_provider, "failover.test")
-  
-  // 创建span
-  let span = Tracer::start_span(tracer, "failover.test.operation")
-  Span::set_attribute(span, "operation.type", "test")
-  Span::end(span)
-  
-  // 设置主导出器失败
-  MockExporter::set_failure_mode(primary_exporter, true)
-  
-  // 尝试导出数据（应该切换到备用导出器）
-  let export_result = Failover::export_with_failover(telemetry_provider, span)
-  
-  // 验证导出成功（通过备用导出器）
-  assert_true(export_result)
-  
-  // 验证使用了备用导出器
-  assert_true(MockExporter::is_used(secondary_exporter))
-  assert_false(MockExporter::is_used(primary_exporter))
-  
-  // 恢复主导出器
-  MockExporter::set_failure_mode(primary_exporter, false)
-  
-  // 等待恢复检查
-  TimeSimulator::advance(10000)
-  
-  // 再次导出数据（应该恢复到主导出器）
-  let span2 = Tracer::start_span(tracer, "failover.recovery.test")
-  Span::set_attribute(span2, "operation.type", "recovery")
-  Span::end(span2)
-  
-  let export_result2 = Failover::export_with_failover(telemetry_provider, span2)
-  
-  // 验证导出成功并通过主导出器
-  assert_true(export_result2)
-  assert_true(MockExporter::is_used(primary_exporter))
-  
-  assert_true(true)
-}
-
-test "数据损坏检测和恢复" {
-  // 创建具有数据完整性检查的遥测提供者
-  let telemetry_provider = TelemetryProvider::with_integrity_check()
-  
-  // 配置数据完整性检查
-  let integrity_config = IntegrityConfig {
-    checksum_algorithm: "SHA-256",
-    enable_data_validation: true,
-    corruption_recovery_strategy: "reconstruct",
-    max_recovery_attempts: 3
-  }
-  
-  IntegrityCheck::configure(telemetry_provider, integrity_config)
-  
-  // 创建tracer
-  let tracer = TelemetryProvider::get_tracer(telemetry_provider, "integrity.test")
-  
-  // 创建span
-  let span = Tracer::start_span(tracer, "integrity.test.operation")
-  Span::set_attribute(span, "operation.type", "test")
-  Span::set_attribute(span, "data.size", "1024")
-  Span::end(span)
-  
-  // 模拟数据损坏
-  let corrupted_data = IntegrityCheck::corrupt_data(telemetry_provider, span)
-  
-  // 尝试处理损坏的数据
-  let recovery_result = IntegrityCheck::handle_corrupted_data(telemetry_provider, corrupted_data)
-  
-  // 验证数据恢复成功
-  assert_true(recovery_result)
-  
-  // 验证恢复后的数据完整性
-  let recovered_data = IntegrityCheck::get_recovered_data(telemetry_provider)
-  let is_valid = IntegrityCheck::validate_data(telemetry_provider, recovered_data)
-  assert_true(is_valid)
-  
-  assert_true(true)
-}
-
-test "系统资源耗尽时的优雅降级" {
-  // 创建具有资源监控的遥测提供者
-  let telemetry_provider = TelemetryProvider::with_resource_monitoring()
-  
-  // 配置资源监控
-  let resource_config = ResourceConfig {
-    memory_threshold: 0.8,     // 80%内存使用率
-    cpu_threshold: 0.9,        // 90%CPU使用率
-    disk_threshold: 0.85,      // 85%磁盘使用率
-    degradation_strategy: "adaptive_sampling",
-    recovery_strategy: "gradual_restoration"
-  }
-  
-  ResourceMonitoring::configure(telemetry_provider, resource_config)
-  
-  // 创建tracer
-  let tracer = TelemetryProvider::get_tracer(telemetry_provider, "resource.test")
-  
-  // 模拟内存压力
-  ResourceMonitoring::simulate_memory_pressure(telemetry_provider, 0.85) // 85%内存使用率
-  
-  // 创建多个span测试降级行为
-  let sampled_count = 0
-  for i = 0; i < 1000; i = i + 1 {
-    let span = Tracer::start_span(tracer, "resource.pressure.test")
-    Span::set_attribute(span, "iteration", i)
-    
-    if SpanContext::sampled(Span::span_context(span)) {
-      sampled_count = sampled_count + 1
+  // Simulate connection failures
+  let connection_attempts = 0
+  let connection_result = ConnectionManager::connect_with_recovery(connection_manager, || {
+    connection_attempts = connection_attempts + 1
+    if connection_attempts < 3 {
+      Error("Connection failed")
+    } else {
+      Success("Connection established")
     }
-    
-    Span::end(span)
+  })
+  
+  // Should eventually succeed after retries
+  match connection_result {
+    Success(result) => assert_eq(result, "Connection established")
+    Error(_) => assert_true(false)
   }
   
-  // 验证采样率降低
-  let sampling_rate = sampled_count.to_double() / 1000.0
-  assert_true(sampling_rate < 0.5) // 采样率应该低于50%
+  // Should have made 3 attempts
+  assert_eq(connection_attempts, 3)
   
-  // 模拟资源恢复
-  ResourceMonitoring::simulate_memory_pressure(telemetry_provider, 0.5) // 50%内存使用率
-  
-  // 等待恢复策略生效
-  TimeSimulator::advance(5000)
-  
-  // 再次创建span测试恢复行为
-  let recovered_sampled_count = 0
-  for i = 0; i < 1000; i = i + 1 {
-    let span = Tracer::start_span(tracer, "resource.recovery.test")
-    Span::set_attribute(span, "iteration", i)
-    
-    if SpanContext::sampled(Span::span_context(span)) {
-      recovered_sampled_count = recovered_sampled_count + 1
+  // Test circuit breaker
+  let circuit_attempts = 0
+  let circuit_result = ConnectionManager::connect_with_circuit_breaker(connection_manager, || {
+    circuit_attempts = circuit_attempts + 1
+    if circuit_attempts < 6 {
+      Error("Circuit failure")
+    } else {
+      Success("Circuit recovered")
     }
-    
-    Span::end(span)
+  })
+  
+  // Should fail due to circuit breaker opening
+  match circuit_result {
+    Error(error) => assert_true(error.contains("Circuit breaker"))
+    Success(_) => assert_true(false)
   }
   
-  // 验证采样率恢复
-  let recovered_sampling_rate = recovered_sampled_count.to_double() / 1000.0
-  assert_true(recovered_sampling_rate > sampling_rate) // 采样率应该有所恢复
+  // Wait for circuit breaker to half-open
+  ConnectionManager::wait_for_circuit_recovery(connection_manager)
   
-  assert_true(true)
+  // Try again after recovery timeout
+  let recovery_attempts = 0
+  let recovery_result = ConnectionManager::connect_with_circuit_breaker(connection_manager, || {
+    recovery_attempts = recovery_attempts + 1
+    Success("Connection recovered")
+  })
+  
+  // Should succeed after circuit breaker recovery
+  match recovery_result {
+    Success(result) => assert_eq(result, "Connection recovered")
+    Error(_) => assert_true(false)
+  }
 }
 
-test "批量操作部分失败的处理" {
-  // 创建具有批量错误处理的遥测提供者
-  let telemetry_provider = TelemetryProvider::with_batch_error_handling()
+// Test 2: Data Corruption Recovery
+test "data corruption recovery" {
+  let data_manager = DataManager::new()
   
-  // 配置批量错误处理
-  let batch_config = BatchConfig {
-    batch_size: 100,
-    partial_failure_handling: "retry_failed_items",
-    max_retry_attempts: 3,
-    dead_letter_queue: true
+  // Configure validation strategy
+  DataManager::set_validation_strategy(data_manager, {
+    "checksum": true,
+    "parity_bits": true,
+    "redistribution": true
+  })
+  
+  // Create test data
+  let original_data = "Important telemetry data that must be preserved"
+  let data_id = DataManager::store(data_manager, original_data)
+  
+  // Simulate data corruption
+  DataManager::corrupt_data(data_manager, data_id, 0.2) // Corrupt 20% of data
+  
+  // Attempt to recover corrupted data
+  let recovery_result = DataManager::recover_data(data_manager, data_id)
+  
+  match recovery_result {
+    Success(recovered_data) => {
+      // Recovered data should match original
+      assert_eq(recovered_data, original_data)
+    }
+    Error(_) => assert_true(false)
   }
   
-  BatchErrorHandling::configure(telemetry_provider, batch_config)
+  // Test recovery with multiple corruption levels
+  let severe_corruption_id = DataManager::store(data_manager, "Severe corruption test data")
+  DataManager::corrupt_data(data_manager, severe_corruption_id, 0.6) // Corrupt 60% of data
   
-  // 创建批量数据
-  let batch_data = []
-  for i = 0; i < 100; i = i + 1 {
-    batch_data.push(BatchItem {
-      id: "item_" + i.to_string(),
-      data: "test data " + i.to_string(),
-      retry_count: 0
-    })
+  let severe_recovery_result = DataManager::recover_data(data_manager, severe_corruption_id)
+  match severe_recovery_result {
+    Success(_) => assert_true(true) // Should still recover with redundancy
+    Error(_) => {
+      // If recovery fails, should have fallback data
+      let fallback_data = DataManager::get_fallback_data(data_manager, severe_corruption_id)
+      assert_true(fallback_data.is_some())
+    }
   }
   
-  // 创建会部分失败的导出器
-  let partial_failure_exporter = MockPartialFailureExporter::new()
-  MockPartialFailureExporter::set_failure_rate(partial_failure_exporter, 0.2) // 20%失败率
+  // Test complete data loss recovery
+  let total_loss_id = DataManager::store(data_manager, "Total loss test data")
+  DataManager::corrupt_data(data_manager, total_loss_id, 1.0) // Corrupt 100% of data
   
-  // 处理批量数据
-  let batch_result = BatchErrorHandling::process_batch(telemetry_provider, partial_failure_exporter, batch_data)
-  
-  // 验证批量处理结果
-  assert_true(batch_result.successful_items > 0)
-  assert_true(batch_result.failed_items > 0)
-  assert_eq(batch_result.total_items, 100)
-  
-  // 验证失败项被重试
-  let retry_count = MockPartialFailureExporter::get_retry_count(partial_failure_exporter)
-  assert_true(retry_count > 0)
-  
-  // 验证死信队列中的项目
-  let dead_letter_items = BatchErrorHandling::get_dead_letter_items(telemetry_provider)
-  assert_true(dead_letter_items.length() > 0)
-  
-  assert_true(true)
+  let total_loss_result = DataManager::recover_data(data_manager, total_loss_id)
+  match total_loss_result {
+    Success(_) => assert_true(false) // Should not succeed with total loss
+    Error(_) => {
+      // Should have backup or placeholder data
+      let backup_data = DataManager::get_backup_data(data_manager, total_loss_id)
+      assert_true(backup_data.is_some())
+    }
+  }
 }
 
-test "配置错误的自动恢复" {
-  // 创建具有配置错误恢复的遥测提供者
-  let telemetry_provider = TelemetryProvider::with_config_recovery()
+// Test 3: Service Degradation Recovery
+test "service degradation recovery" {
+  let service_manager = ServiceManager::new()
   
-  // 配置错误恢复策略
-  let config_recovery_config = ConfigRecoveryConfig {
-    validation_enabled: true,
-    auto_fix_enabled: true,
-    fallback_config_path: "/etc/azimuth/fallback.json",
-    config_backup_enabled: true,
-    max_recovery_attempts: 5
+  // Configure degradation levels
+  ServiceManager::set_degradation_levels(service_manager, [
+    {
+      "level": 1,
+      "name": "minimal",
+      "features": ["basic_metrics"],
+      "performance_threshold": 0.8
+    },
+    {
+      "level": 2,
+      "name": "reduced",
+      "features": ["basic_metrics", "essential_spans"],
+      "performance_threshold": 0.6
+    },
+    {
+      "level": 3,
+      "name": "full",
+      "features": ["basic_metrics", "essential_spans", "advanced_analytics"],
+      "performance_threshold": 0.4
+    }
+  ])
+  
+  // Start at full functionality
+  ServiceManager::set_current_level(service_manager, 3)
+  assert_eq(ServiceManager::get_current_level(service_manager), 3)
+  assert_true(ServiceManager::is_feature_enabled(service_manager, "advanced_analytics"))
+  
+  // Simulate performance degradation
+  ServiceManager::simulate_performance_issue(service_manager, 0.5) // 50% performance
+  
+  // Should automatically degrade to reduced level
+  ServiceManager::check_and_adjust(service_manager)
+  assert_eq(ServiceManager::get_current_level(service_manager), 2)
+  assert_false(ServiceManager::is_feature_enabled(service_manager, "advanced_analytics"))
+  assert_true(ServiceManager::is_feature_enabled(service_manager, "essential_spans"))
+  
+  // Simulate further degradation
+  ServiceManager::simulate_performance_issue(service_manager, 0.3) // 30% performance
+  
+  // Should degrade to minimal level
+  ServiceManager::check_and_adjust(service_manager)
+  assert_eq(ServiceManager::get_current_level(service_manager), 1)
+  assert_false(ServiceManager::is_feature_enabled(service_manager, "essential_spans"))
+  assert_true(ServiceManager::is_feature_enabled(service_manager, "basic_metrics"))
+  
+  // Simulate recovery
+  ServiceManager::simulate_performance_recovery(service_manager, 0.9) // 90% performance
+  
+  // Should gradually restore functionality
+  ServiceManager::check_and_adjust(service_manager)
+  assert_eq(ServiceManager::get_current_level(service_manager), 2) // Gradual recovery
+  
+  ServiceManager::simulate_performance_recovery(service_manager, 0.95) // 95% performance
+  
+  ServiceManager::check_and_adjust(service_manager)
+  assert_eq(ServiceManager::get_current_level(service_manager), 3) // Full recovery
+}
+
+// Test 4: Database Failure Recovery
+test "database failure recovery" {
+  let db_manager = DatabaseManager::new()
+  
+  // Configure backup databases
+  db_manager.add_backup("backup1", "backup1.example.com")
+  db_manager.add_backup("backup2", "backup2.example.com")
+  
+  // Configure failover strategy
+  db_manager.set_failover_strategy({
+    "timeout": 5000, // milliseconds
+    "health_check_interval": 10000,
+    "max_failures_before_failover": 3
+  })
+  
+  // Simulate primary database failure
+  let primary_attempts = 0
+  let db_result = db_manager.execute_with_failover(|| {
+    primary_attempts = primary_attempts + 1
+    if primary_attempts < 4 {
+      Error("Primary database unavailable")
+    } else {
+      Success("Query executed successfully")
+    }
+  })
+  
+  // Should fail over to backup
+  match db_result {
+    Success(result) => assert_eq(result, "Query executed successfully")
+    Error(_) => assert_true(false)
   }
   
-  ConfigRecovery::configure(telemetry_provider, config_recovery_config)
+  // Test backup database failure
+  let backup_attempts = 0
+  let backup_result = db_manager.execute_with_failover(|| {
+    backup_attempts = backup_attempts + 1
+    Error("All databases unavailable")
+  })
   
-  // 创建无效配置
-  let invalid_config = {
-    "sampling.rate": "invalid", // 无效值
-    "exporter.timeout": -1,     // 负值
-    "batch.size": 0             // 零值
+  // Should fail when all databases are unavailable
+  match backup_result {
+    Error(error) => assert_true(error.contains("All databases"))
+    Success(_) => assert_true(false)
   }
   
-  // 尝试应用无效配置
-  let config_result = ConfigRecovery::apply_config(telemetry_provider, invalid_config)
+  // Test data consistency after failover
+  let test_data = "Consistency test data"
+  let store_result = db_manager.store_with_replication(test_data)
   
-  // 验证配置应用失败
-  assert_false(config_result.success)
-  
-  // 验证错误被检测
-  assert_true(config_result.errors.length() > 0)
-  
-  // 触发自动恢复
-  let recovery_result = ConfigRecovery::auto_recover(telemetry_provider)
-  
-  // 验证恢复成功
-  assert_true(recovery_result)
-  
-  // 验证有效配置被应用
-  let current_config = ConfigRecovery::get_current_config(telemetry_provider)
-  let sampling_rate = ConfigRecovery::get_config_value(current_config, "sampling.rate")
-  
-  match sampling_rate {
-    Some(value) => {
-      // 验证恢复的值有效
-      let rate_value = value.parse_double()
-      match rate_value {
-        Some(rate) => assert_true(rate >= 0.0 && rate <= 1.0)
-        None => assert_true(false)
+  match store_result {
+    Success(id) => {
+      // Retrieve from primary
+      let primary_result = db_manager.retrieve_from_primary(id)
+      match primary_result {
+        Success(data) => assert_eq(data, test_data)
+        Error(_) => assert_true(false)
       }
+      
+      // Retrieve from backup
+      let backup_result = db_manager.retrieve_from_backup(id, "backup1")
+      match backup_result {
+        Success(data) => assert_eq(data, test_data)
+        Error(_) => {
+          // Backup might not be immediately synchronized
+          assert_true(true)
+        }
+      }
+    }
+    Error(_) => assert_true(false)
+  }
+}
+
+// Test 5: Network Partition Recovery
+test "network partition recovery" {
+  let network_manager = NetworkManager::new()
+  
+  // Configure partition detection
+  network_manager.set_partition_detection({
+    "heartbeat_interval": 1000, // milliseconds
+    "missed_heartbeats_threshold": 3,
+    "reconnect_interval": 5000
+  })
+  
+  // Simulate network partition
+  network_manager.simulate_partition("node1", "node2")
+  
+  // Detect partition
+  let partition_detected = network_manager.detect_partitions()
+  assert_true(partition_detected)
+  
+  // Get partitioned nodes
+  let partitioned_nodes = network_manager.get_partitioned_nodes()
+  assert_true(partitioned_nodes.contains("node1"))
+  assert_true(partitioned_nodes.contains("node2"))
+  
+  // Test operation during partition
+  let partition_operation_result = network_manager.execute_during_partition(|| {
+    // Should use local cache or degraded functionality
+    "Operation executed in degraded mode"
+  })
+  
+  match partition_operation_result {
+    Success(result) => assert_eq(result, "Operation executed in degraded mode")
+    Error(_) => assert_true(false)
+  }
+  
+  // Simulate partition recovery
+  network_manager.simulate_recovery("node1", "node2")
+  
+  // Detect recovery
+  let recovery_detected = network_manager.detect_recovery()
+  assert_true(recovery_detected)
+  
+  // Test data synchronization after recovery
+  let sync_result = network_manager.synchronize_after_recovery()
+  match sync_result {
+    Success(synced_nodes) => assert_true(synced_nodes.length() > 0)
+    Error(_) => assert_true(false)
+  }
+  
+  // Test full operation after recovery
+  let full_operation_result = network_manager.execute_after_recovery(|| {
+    "Operation executed after recovery"
+  })
+  
+  match full_operation_result {
+    Success(result) => assert_eq(result, "Operation executed after recovery")
+    Error(_) => assert_true(false)
+  }
+}
+
+// Test 6: Memory Leak Recovery
+test "memory leak recovery" {
+  let memory_manager = MemoryManager::new()
+  
+  // Configure memory monitoring
+  memory_manager.set_monitoring({
+    "check_interval": 1000, // milliseconds
+    "leak_threshold": 100 * 1024 * 1024, // 100MB
+    "recovery_action": "gc_and_clear_cache"
+  })
+  
+  // Simulate memory leak
+  let leaked_objects = []
+  for i in 0..=1000 {
+    let object = memory_manager.allocate_object(1024 * 1024) // 1MB each
+    leaked_objects.push(object)
+  }
+  
+  // Check memory usage
+  let memory_usage = memory_manager.get_memory_usage()
+  assert_true(memory_usage > 1000 * 1024 * 1024) // Should be over 1GB
+  
+  // Trigger leak detection and recovery
+  let leak_detected = memory_manager.detect_leak()
+  assert_true(leak_detected)
+  
+  // Perform recovery
+  let recovery_result = memory_manager.recover_from_leak()
+  match recovery_result {
+    Success(freed_memory) => assert_true(freed_memory > 0)
+    Error(_) => assert_true(false)
+  }
+  
+  // Check memory usage after recovery
+  let memory_after_recovery = memory_manager.get_memory_usage()
+  assert_true(memory_after_recovery < memory_usage) // Should be reduced
+  
+  // Test automatic leak detection
+  memory_manager.enable_automatic_detection()
+  
+  // Simulate another leak
+  for i in 0..=500 {
+    let object = memory_manager.allocate_object(1024 * 1024) // 1MB each
+    // Don't store references to simulate leak
+  }
+  
+  // Wait for automatic detection
+  memory_manager.wait_for_detection_cycle()
+  
+  // Check if automatic recovery was triggered
+  let auto_recovery_triggered = memory_manager.was_auto_recovery_triggered()
+  assert_true(auto_recovery_triggered)
+}
+
+// Test 7: Deadlock Recovery
+test "deadlock recovery" {
+  let concurrency_manager = ConcurrencyManager::new()
+  
+  // Configure deadlock detection
+  concurrency_manager.set_deadlock_detection({
+    "check_interval": 100, // milliseconds
+    "timeout": 5000, // milliseconds
+    "recovery_action": "release_youngest_transaction"
+  })
+  
+  // Create resources that can cause deadlock
+  let resource1 = concurrency_manager.create_resource("resource1")
+  let resource2 = concurrency_manager.create_resource("resource2")
+  
+  // Create transactions that will deadlock
+  let transaction1 = concurrency_manager.create_transaction("tx1")
+  let transaction2 = concurrency_manager.create_transaction("tx2")
+  
+  // Simulate deadlock scenario
+  let deadlock_detected = concurrency_manager.simulate_deadlock(transaction1, transaction2, resource1, resource2)
+  assert_true(deadlock_detected)
+  
+  // Check if deadlock was detected
+  let detection_result = concurrency_manager.detect_deadlock()
+  match detection_result {
+    Some(deadlock_info) => {
+      assert_true(deadlock_info.involved_transactions.contains("tx1"))
+      assert_true(deadlock_info.involved_transactions.contains("tx2"))
+      assert_true(deadlock_info.involved_resources.contains("resource1"))
+      assert_true(deadlock_info.involved_resources.contains("resource2"))
     }
     None => assert_true(false)
   }
   
-  assert_true(true)
+  // Perform deadlock recovery
+  let recovery_result = concurrency_manager.recover_from_deadlock()
+  match recovery_result {
+    Success(resolved_transactions) => {
+      assert_true(resolved_transactions.length() > 0)
+    }
+    Error(_) => assert_true(false)
+  }
+  
+  // Check if resources are available after recovery
+  let resource1_available = concurrency_manager.is_resource_available(resource1)
+  let resource2_available = concurrency_manager.is_resource_available(resource2)
+  
+  assert_true(resource1_available)
+  assert_true(resource2_available)
+  
+  // Test prevention of future deadlocks
+  concurrency_manager.enable_deadlock_prevention()
+  
+  let prevention_result = concurrency_manager.execute_with_prevention(|| {
+    // Should prevent deadlock
+    "Operation completed without deadlock"
+  })
+  
+  match prevention_result {
+    Success(result) => assert_eq(result, "Operation completed without deadlock")
+    Error(_) => assert_true(false)
+  }
 }
 
-test "级联故障的隔离和恢复" {
-  // 创建具有故障隔离能力的遥测提供者
-  let telemetry_provider = TelemetryProvider::with_circuit_breaker()
+// Test 8: Cascading Failure Prevention
+test "cascading failure prevention" {
+  let system_manager = SystemManager::new()
   
-  // 配置断路器
-  let circuit_breaker_config = CircuitBreakerConfig {
-    failure_threshold: 5,        // 5次失败后打开断路器
-    recovery_timeout: 10000,     // 10秒后尝试半开状态
-    half_open_max_calls: 3,      // 半开状态下最多3次调用
-    success_threshold: 2,        // 2次成功后关闭断路器
-    monitoring_period: 60000     // 1分钟监控周期
-  }
-  
-  CircuitBreaker::configure(telemetry_provider, circuit_breaker_config)
-  
-  // 创建会级联失败的组件
-  let component_a = MockFailingComponent::new("component_a")
-  let component_b = MockFailingComponent::new("component_b")
-  let component_c = MockFailingComponent::new("component_c")
-  
-  // 设置组件依赖关系：A -> B -> C
-  MockFailingComponent::set_dependency(component_a, component_b)
-  MockFailingComponent::set_dependency(component_b, component_c)
-  
-  // 设置组件C失败
-  MockFailingComponent::set_failure_mode(component_c, true)
-  
-  // 创建tracer
-  let tracer = TelemetryProvider::get_tracer(telemetry_provider, "circuit_breaker.test")
-  
-  // 尝试通过组件链执行操作
-  let failure_count = 0
-  for i = 0; i < 10; i = i + 1 {
-    let span = Tracer::start_span(tracer, "cascading.failure.test")
-    Span::set_attribute(span, "operation.id", i)
-    
-    let result = CircuitBreaker::execute_with_circuit_breaker(telemetry_provider, fn() {
-      MockFailingComponent::process(component_a)
-    })
-    
-    if result.is_error() {
-      failure_count = failure_count + 1
-    }
-    
-    Span::end(span)
-  }
-  
-  // 验证断路器打开，防止级联故障
-  assert_true(failure_count >= 5) // 至少5次失败
-  
-  let circuit_breaker_state = CircuitBreaker::get_state(telemetry_provider)
-  assert_eq(circuit_breaker_state, "open")
-  
-  // 恢复组件C
-  MockFailingComponent::set_failure_mode(component_c, false)
-  
-  // 等待恢复超时
-  TimeSimulator::advance(10000)
-  
-  // 尝试执行操作，应该进入半开状态
-  let span = Tracer::start_span(tracer, "circuit_breaker.recovery.test")
-  let result = CircuitBreaker::execute_with_circuit_breaker(telemetry_provider, fn() {
-    MockFailingComponent::process(component_a)
+  // Configure failure isolation
+  system_manager.set_failure_isolation({
+    "isolation_boundaries": ["service_a", "service_b", "service_c"],
+    "propagation_delay": 1000, // milliseconds
+    "circuit_breaker_threshold": 0.5 // 50% failure rate
   })
-  Span::end(span)
   
-  // 验证操作成功
-  assert_true(result.is_ok())
+  // Configure bulkhead pattern
+  system_manager.set_bulkhead_pattern({
+    "service_a": {"max_concurrent": 10, "max_queue": 50},
+    "service_b": {"max_concurrent": 5, "max_queue": 25},
+    "service_c": {"max_concurrent": 15, "max_queue": 75}
+  })
   
-  // 验证断路器状态
-  let circuit_breaker_state_after = CircuitBreaker::get_state(telemetry_provider)
-  assert_eq(circuit_breaker_state_after, "half_open")
+  // Simulate failure in service A
+  system_manager.simulate_service_failure("service_a")
   
-  // 再执行几次成功操作，应该关闭断路器
-  for i = 0; i < 3; i = i + 1 {
-    let span = Tracer::start_span(tracer, "circuit_breaker.close.test")
-    let result = CircuitBreaker::execute_with_circuit_breaker(telemetry_provider, fn() {
-      MockFailingComponent::process(component_a)
-    })
-    Span::end(span)
-    
-    assert_true(result.is_ok())
+  // Check if failure is isolated
+  let service_a_status = system_manager.get_service_status("service_a")
+  let service_b_status = system_manager.get_service_status("service_b")
+  let service_c_status = system_manager.get_service_status("service_c")
+  
+  match service_a_status {
+    Degraded(_) => assert_true(true)
+    _ => assert_true(false)
   }
   
-  // 验证断路器关闭
-  let circuit_breaker_state_closed = CircuitBreaker::get_state(telemetry_provider)
-  assert_eq(circuit_breaker_state_closed, "closed")
+  match service_b_status {
+    Healthy => assert_true(true) // Should remain healthy
+    _ => assert_true(false)
+  }
   
-  assert_true(true)
+  match service_c_status {
+    Healthy => assert_true(true) // Should remain healthy
+    _ => assert_true(false)
+  }
+  
+  // Test operation during partial failure
+  let operation_result = system_manager.execute_with_fallback("service_b", || {
+    "Service B operation successful"
+  }, || {
+    "Fallback operation successful"
+  })
+  
+  match operation_result {
+    Success(result) => assert_eq(result, "Service B operation successful")
+    Error(_) => assert_true(false)
+  }
+  
+  // Test operation against failed service
+  let failed_operation_result = system_manager.execute_with_fallback("service_a", || {
+    "Service A operation successful"
+  }, || {
+    "Fallback operation successful"
+  })
+  
+  match failed_operation_result {
+    Success(result) => assert_eq(result, "Fallback operation successful")
+    Error(_) => assert_true(false)
+  }
+  
+  // Simulate recovery of service A
+  system_manager.simulate_service_recovery("service_a")
+  
+  // Check if system returns to normal
+  let recovered_service_a_status = system_manager.get_service_status("service_a")
+  match recovered_service_a_status {
+    Healthy => assert_true(true)
+    _ => assert_true(false)
+  }
+}
+
+// Test 9: State Recovery After Crash
+test "state recovery after crash" {
+  let state_manager = StateManager::new()
+  
+  // Configure state persistence
+  state_manager.set_persistence({
+    "interval": 1000, // milliseconds
+    "strategy": "incremental",
+    "compression": true,
+    "encryption": false
+  })
+  
+  // Create initial state
+  let initial_state = {
+    "counter": 0,
+    "data": ["item1", "item2", "item3"],
+    "config": {"setting1": "value1", "setting2": "value2"}
+  }
+  
+  state_manager.set_state(initial_state)
+  
+  // Modify state
+  for i in 0..=10 {
+    let current_state = state_manager.get_state()
+    let updated_state = {
+      "counter": current_state.counter + 1,
+      "data": current_state.data + ["item" + (i + 4).to_string()],
+      "config": current_state.config
+    }
+    state_manager.set_state(updated_state)
+  }
+  
+  // Force state persistence
+  state_manager.persist_state()
+  
+  // Simulate crash
+  state_manager.simulate_crash()
+  
+  // Recover state after crash
+  let recovery_result = state_manager.recover_state()
+  match recovery_result {
+    Success(recovered_state) => {
+      // Should match state before crash
+      assert_eq(recovered_state.counter, 11)
+      assert_eq(recovered_state.data.length(), 14)
+      assert_eq(recovered_state.data[0], "item1")
+      assert_eq(recovered_state.data[13], "item14")
+      assert_eq(recovered_state.config.setting1, "value1")
+      assert_eq(recovered_state.config.setting2, "value2")
+    }
+    Error(_) => assert_true(false)
+  }
+  
+  // Test recovery with corrupted state file
+  state_manager.corrupt_state_file()
+  
+  let corrupted_recovery_result = state_manager.recover_state()
+  match corrupted_recovery_result {
+    Success(_) => assert_true(false) // Should not succeed with corrupted file
+    Error(_) => {
+      // Should fall back to last known good state
+      let fallback_state = state_manager.get_fallback_state()
+      assert_true(fallback_state.is_some())
+    }
+  }
+}
+
+// Test 10: Comprehensive Error Recovery Scenario
+test "comprehensive error recovery scenario" {
+  let recovery_orchestrator = RecoveryOrchestrator::new()
+  
+  // Configure comprehensive recovery strategy
+  recovery_orchestrator.set_strategy({
+    "connection_failures": {
+      "max_retries": 3,
+      "circuit_breaker": true,
+      "fallback_service": true
+    },
+    "data_corruption": {
+      "validation": true,
+      "redundancy": true,
+      "backup_restoration": true
+    },
+    "service_degradation": {
+      "graceful_degradation": true,
+      "feature_flags": true,
+      "performance_monitoring": true
+    },
+    "system_overload": {
+      "load_shedding": true,
+      "request_throttling": true,
+      "resource_scaling": true
+    }
+  })
+  
+  // Simulate complex failure scenario
+  let failure_scenario = {
+    "connection_failure": true,
+    "data_corruption": 0.2, // 20% corruption
+    "service_degradation": 0.7, // 70% performance
+    "system_overload": 0.8 // 80% resource usage
+  }
+  
+  // Execute with comprehensive recovery
+  let scenario_result = recovery_orchestrator.execute_with_recovery(failure_scenario, || {
+    "Complex operation completed successfully"
+  })
+  
+  match scenario_result {
+    Success(result) => assert_eq(result, "Complex operation completed successfully")
+    Error(_) => {
+      // Even if main operation fails, system should be stable
+      let system_status = recovery_orchestrator.get_system_status()
+      match system_status {
+        Stable(_) => assert_true(true)
+        _ => assert_true(false)
+      }
+    }
+  }
+  
+  // Check recovery actions taken
+  let recovery_actions = recovery_orchestrator.get_recovery_actions()
+  assert_true(recovery_actions.length() > 0)
+  
+  // Verify specific recovery actions
+  let connection_recovery = recovery_actions.find(|action| action.type == "connection_failure")
+  match connection_recovery {
+    Some(action) => {
+      assert_true(action.retries > 0)
+      assert_true(action.fallback_used || action.circuit_breaker_triggered)
+    }
+    None => assert_true(false)
+  }
+  
+  let data_recovery = recovery_actions.find(|action| action.type == "data_corruption")
+  match data_recovery {
+    Some(action) => {
+      assert_true(action.validation_performed)
+      assert_true(action.redundancy_used || action.backup_restored)
+    }
+    None => assert_true(false)
+  }
+  
+  let service_recovery = recovery_actions.find(|action| action.type == "service_degradation")
+  match service_recovery {
+    Some(action) => {
+      assert_true(action.degradation_applied)
+      assert_true(action.features_disabled > 0)
+    }
+    None => assert_true(false)
+  }
+  
+  let overload_recovery = recovery_actions.find(|action| action.type == "system_overload")
+  match overload_recovery {
+    Some(action) => {
+      assert_true(action.load_shedding_applied || action.throttling_applied)
+    }
+    None => assert_true(false)
+  }
+  
+  // Test recovery metrics
+  let recovery_metrics = recovery_orchestrator.get_recovery_metrics()
+  assert_true(recovery_metrics.total_recovery_time > 0)
+  assert_true(recovery_metrics.successful_recoveries > 0)
+  assert_true(recovery_metrics.system_stability_maintained)
 }

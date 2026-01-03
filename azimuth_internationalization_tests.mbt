@@ -1,609 +1,485 @@
-// Azimuth 国际化支持测试用例
-// 测试多语言、本地化和文化适应性功能
+// Azimuth Telemetry System - Internationalization Tests
+// This file contains test cases for internationalization functionality
 
-test "多语言错误消息本地化" {
-  // 创建国际化资源管理器
-  let i18n_manager = @azimuth.I18nManager {
-    default_locale: "en-US",
-    supported_locales: ["en-US", "zh-CN", "ja-JP", "fr-FR", "de-DE", "es-ES"],
-    resource_bundles: @azimuth.Map.from_list([
-      ("en-US", @azimuth.ResourceBundle {
-        locale: "en-US",
-        messages: @azimuth.Map.from_list([
-          ("error.connection.timeout", "Connection timeout after {0}ms"),
-          ("error.connection.refused", "Connection refused"),
-          ("error.database.unavailable", "Database is unavailable"),
-          ("error.validation.failed", "Validation failed: {0}"),
-          ("error.authentication.failed", "Authentication failed"),
-          ("error.authorization.denied", "Access denied"),
-          ("error.resource.not_found", "Resource not found: {0}"),
-          ("error.rate.limit.exceeded", "Rate limit exceeded"),
-          ("error.internal.server", "Internal server error"),
-          ("error.service.unavailable", "Service temporarily unavailable")
-        ])
-      }),
-      ("zh-CN", @azimuth.ResourceBundle {
-        locale: "zh-CN",
-        messages: @azimuth.Map.from_list([
-          ("error.connection.timeout", "连接超时，已等待{0}毫秒"),
-          ("error.connection.refused", "连接被拒绝"),
-          ("error.database.unavailable", "数据库不可用"),
-          ("error.validation.failed", "验证失败：{0}"),
-          ("error.authentication.failed", "身份验证失败"),
-          ("error.authorization.denied", "访问被拒绝"),
-          ("error.resource.not_found", "资源未找到：{0}"),
-          ("error.rate.limit.exceeded", "超过速率限制"),
-          ("error.internal.server", "内部服务器错误"),
-          ("error.service.unavailable", "服务暂时不可用")
-        ])
-      }),
-      ("ja-JP", @azimuth.ResourceBundle {
-        locale: "ja-JP",
-        messages: @azimuth.Map.from_list([
-          ("error.connection.timeout", "{0}ミリ秒後に接続タイムアウト"),
-          ("error.connection.refused", "接続が拒否されました"),
-          ("error.database.unavailable", "データベースが利用できません"),
-          ("error.validation.failed", "検証に失敗しました：{0}"),
-          ("error.authentication.failed", "認証に失敗しました"),
-          ("error.authorization.denied", "アクセスが拒否されました"),
-          ("error.resource.not_found", "リソースが見つかりません：{0}"),
-          ("error.rate.limit.exceeded", "レート制限を超えました"),
-          ("error.internal.server", "内部サーバーエラー"),
-          ("error.service.unavailable", "サービスが一時的に利用できません")
-        ])
-      })
-    ])
-  }
+// Test 1: Unicode String Handling
+test "unicode string handling" {
+  // Test various Unicode characters
+  let chinese_text = "遥测系统"
+  let arabic_text = "نظام القياس عن بعد"
+  let russian_text = "Система телеметрии"
+  let japanese_text = "テレメトリシステム"
+  let emoji_text = "🔍 📊 📈 📉"
+  let mixed_text = "Azimuth 遥测系统 📊"
   
-  // 创建错误消息本地化器
-  let localizer = @azimuth.ErrorLocalizer {
-    i18n_manager: i18n_manager,
-    current_locale: "en-US"
-  }
+  // Test string length with Unicode
+  assert_eq(chinese_text.length(), 4)
+  assert_eq(arabic_text.length(), 20)
+  assert_eq(russian_text.length(), 19)
+  assert_eq(japanese_text.length(), 9)
+  assert_eq(emoji_text.length(), 7) // Each emoji counts as one character
+  assert_eq(mixed_text.length(), 12)
   
-  // 测试英文错误消息
-  let en_timeout_error = localizer.get_message("error.connection.timeout", ["5000"], "en-US")
-  let en_refused_error = localizer.get_message("error.connection.refused", [], "en-US")
-  let en_validation_error = localizer.get_message("error.validation.failed", ["Invalid input"], "en-US")
+  // Test string concatenation with Unicode
+  let combined = chinese_text + " " + japanese_text
+  assert_eq(combined, "遥测系统 テレメトリシステム")
   
-  assert_eq(en_timeout_error, "Connection timeout after 5000ms")
-  assert_eq(en_refused_error, "Connection refused")
-  assert_eq(en_validation_error, "Validation failed: Invalid input")
+  // Test substring operations with Unicode
+  let chinese_substring = chinese_text.substring(0, 2)
+  assert_eq(chinese_substring, "遥测")
   
-  // 测试中文错误消息
-  let zh_timeout_error = localizer.get_message("error.connection.timeout", ["5000"], "zh-CN")
-  let zh_refused_error = localizer.get_message("error.connection.refused", [], "zh-CN")
-  let zh_validation_error = localizer.get_message("error.validation.failed", ["输入无效"], "zh-CN")
-  
-  assert_eq(zh_timeout_error, "连接超时，已等待5000毫秒")
-  assert_eq(zh_refused_error, "连接被拒绝")
-  assert_eq(zh_validation_error, "验证失败：输入无效")
-  
-  // 测试日文错误消息
-  let ja_timeout_error = localizer.get_message("error.connection.timeout", ["5000"], "ja-JP")
-  let ja_refused_error = localizer.get_message("error.connection.refused", [], "ja-JP")
-  let ja_validation_error = localizer.get_message("error.validation.failed", ["無効な入力"], "ja-JP")
-  
-  assert_eq(ja_timeout_error, "5000ミリ秒後に接続タイムアウト")
-  assert_eq(ja_refused_error, "接続が拒否されました")
-  assert_eq(ja_validation_error, "検証に失敗しました：無効な入力")
-  
-  // 测试回退到默认语言（当请求的语言不支持时）
-  let unsupported_locale_error = localizer.get_message("error.connection.timeout", ["5000"], "ko-KR")
-  assert_eq(unsupported_locale_error, "Connection timeout after 5000ms") // 回退到英文
-  
-  // 测试消息键不存在时的回退
-  let missing_key_error = localizer.get_message("error.unknown.key", [], "zh-CN")
-  assert_eq(missing_key_error, "error.unknown.key") // 回退到消息键本身
+  let mixed_substring = mixed_text.substring(8, 11)
+  assert_eq(mixed_substring, "📊")
 }
 
-test "日期时间格式本地化" {
-  // 创建日期时间本地化器
-  let datetime_localizer = @azimuth.DateTimeLocalizer {
-    locale_formatters: @azimuth.Map.from_list([
-      ("en-US", @azimuth.LocaleFormatter {
-        date_format: "MM/dd/yyyy",
-        time_format: "HH:mm:ss a",
-        datetime_format: "MM/dd/yyyy HH:mm:ss a",
-        timezone: "UTC"
-      }),
-      ("zh-CN", @azimuth.LocaleFormatter {
-        date_format: "yyyy年MM月dd日",
-        time_format: "HH:mm:ss",
-        datetime_format: "yyyy年MM月dd日 HH:mm:ss",
-        timezone: "Asia/Shanghai"
-      }),
-      ("ja-JP", @azimuth.LocaleFormatter {
-        date_format: "yyyy/MM/dd",
-        time_format: "HH:mm:ss",
-        datetime_format: "yyyy/MM/dd HH:mm:ss",
-        timezone: "Asia/Tokyo"
-      }),
-      ("de-DE", @azimuth.LocaleFormatter {
-        date_format: "dd.MM.yyyy",
-        time_format: "HH:mm:ss",
-        datetime_format: "dd.MM.yyyy HH:mm:ss",
-        timezone: "Europe/Berlin"
-      })
-    ])
-  }
+// Test 2: Locale-aware Date/Time Formatting
+test "locale-aware date/time formatting" {
+  let timestamp = 1609459200L // 2021-01-01 00:00:00 UTC
+  let formatter = DateTimeFormatter::new()
   
-  // 创建测试时间戳
-  let test_timestamp = @azimuth.Timestamp(1640995200) // 2022-01-01 00:00:00 UTC
+  // Test different locales
+  DateTimeFormatter::set_locale(formatter, "en-US")
+  let us_format = DateTimeFormatter::format(formatter, timestamp, "YYYY-MM-DD HH:mm:ss")
+  assert_eq(us_format, "2021-01-01 00:00:00")
   
-  // 测试英文格式
-  let en_date = datetime_localizer.format_date(test_timestamp, "en-US")
-  let en_time = datetime_localizer.format_time(test_timestamp, "en-US")
-  let en_datetime = datetime_localizer.format_datetime(test_timestamp, "en-US")
+  DateTimeFormatter::set_locale(formatter, "zh-CN")
+  let cn_format = DateTimeFormatter::format(formatter, timestamp, "YYYY年MM月DD日 HH:mm:ss")
+  assert_eq(cn_format, "2021年01月01日 00:00:00")
   
-  assert_eq(en_date, "01/01/2022")
-  assert_eq(en_time, "00:00:00 AM")
-  assert_eq(en_datetime, "01/01/2022 00:00:00 AM")
+  DateTimeFormatter::set_locale(formatter, "ja-JP")
+  let jp_format = DateTimeFormatter::format(formatter, timestamp, "YYYY年MM月DD日 HH:mm:ss")
+  assert_eq(jp_format, "2021年01月01日 00:00:00")
   
-  // 测试中文格式
-  let zh_date = datetime_localizer.format_date(test_timestamp, "zh-CN")
-  let zh_time = datetime_localizer.format_time(test_timestamp, "zh-CN")
-  let zh_datetime = datetime_localizer.format_datetime(test_timestamp, "zh-CN")
+  DateTimeFormatter::set_locale(formatter, "ar-SA")
+  let ar_format = DateTimeFormatter::format(formatter, timestamp, "YYYY/MM/DD HH:mm:ss")
+  assert_eq(ar_format, "2021/01/01 00:00:00")
   
-  assert_eq(zh_date, "2022年01月01日")
-  assert_eq(zh_time, "08:00:00") // UTC+8 时区
-  assert_eq(zh_datetime, "2022年01月01日 08:00:00")
+  // Test timezone handling
+  DateTimeFormatter::set_timezone(formatter, "Asia/Shanghai")
+  let shanghai_time = DateTimeFormatter::format(formatter, timestamp, "YYYY-MM-DD HH:mm:ss ZZ")
+  assert_eq(shanghai_time, "2021-01-01 08:00:00 +0800")
   
-  // 测试日文格式
-  let ja_date = datetime_localizer.format_date(test_timestamp, "ja-JP")
-  let ja_time = datetime_localizer.format_time(test_timestamp, "ja-JP")
-  let ja_datetime = datetime_localizer.format_datetime(test_timestamp, "ja-JP")
-  
-  assert_eq(ja_date, "2022/01/01")
-  assert_eq(ja_time, "09:00:00") // UTC+9 时区
-  assert_eq(ja_datetime, "2022/01/01 09:00:00")
-  
-  // 测试德文格式
-  let de_date = datetime_localizer.format_date(test_timestamp, "de-DE")
-  let de_time = datetime_localizer.format_time(test_timestamp, "de-DE")
-  let de_datetime = datetime_localizer.format_datetime(test_timestamp, "de-DE")
-  
-  assert_eq(de_date, "01.01.2022")
-  assert_eq(de_time, "01:00:00") // UTC+1 时区
-  assert_eq(de_datetime, "01.01.2022 01:00:00")
-  
-  // 测试相对时间格式化
-  let now = @azimuth.Timestamp(1640995800) // 10分钟后
-  let relative_time = datetime_localizer.format_relative_time(test_timestamp, now, "en-US")
-  assert_eq(relative_time, "10 minutes ago")
-  
-  let relative_time_zh = datetime_localizer.format_relative_time(test_timestamp, now, "zh-CN")
-  assert_eq(relative_time_zh, "10分钟前")
-  
-  let relative_time_ja = datetime_localizer.format_relative_time(test_timestamp, now, "ja-JP")
-  assert_eq(relative_time_ja, "10分前")
+  DateTimeFormatter::set_timezone(formatter, "America/New_York")
+  let ny_time = DateTimeFormatter::format(formatter, timestamp, "YYYY-MM-DD HH:mm:ss ZZ")
+  assert_eq(ny_time, "2020-12-31 19:00:00 -0500")
 }
 
-test "数字和货币格式本地化" {
-  // 创建数字格式化器
-  let number_localizer = @azimuth.NumberLocalizer {
-    locale_formatters: @azimuth.Map.from_list([
-      ("en-US", @azimuth.NumberFormatter {
-        decimal_separator: ".",
-        thousands_separator: ",",
-        currency_symbol: "$",
-        currency_position: "before",
-        decimal_places: 2
-      }),
-      ("zh-CN", @azimuth.NumberFormatter {
-        decimal_separator: ".",
-        thousands_separator: ",",
-        currency_symbol: "¥",
-        currency_position: "before",
-        decimal_places: 2
-      }),
-      ("ja-JP", @azimuth.NumberFormatter {
-        decimal_separator: ".",
-        thousands_separator: ",",
-        currency_symbol: "¥",
-        currency_position: "before",
-        decimal_places: 0
-      }),
-      ("de-DE", @azimuth.NumberFormatter {
-        decimal_separator: ",",
-        thousands_separator: ".",
-        currency_symbol: "€",
-        currency_position: "after",
-        decimal_places: 2
-      }),
-      ("fr-FR", @azimuth.NumberFormatter {
-        decimal_separator: ",",
-        thousands_separator: " ",
-        currency_symbol: "€",
-        currency_position: "after",
-        decimal_places: 2
-      })
-    ])
-  }
+// Test 3: Number Formatting with Locales
+test "number formatting with locales" {
+  let number_formatter = NumberFormatter::new()
   
-  // 测试数字格式化
-  let test_number = 1234567.89
+  // Test decimal formatting
+  let test_number = 1234.5678
   
-  // 英文格式
-  let en_number = number_localizer.format_number(test_number, "en-US")
-  assert_eq(en_number, "1,234,567.89")
+  NumberFormatter::set_locale(number_formatter, "en-US")
+  let us_decimal = NumberFormatter::format_decimal(number_formatter, test_number, 2)
+  assert_eq(us_decimal, "1,234.57")
   
-  // 中文格式
-  let zh_number = number_localizer.format_number(test_number, "zh-CN")
-  assert_eq(zh_number, "1,234,567.89")
+  NumberFormatter::set_locale(number_formatter, "de-DE")
+  let de_decimal = NumberFormatter::format_decimal(number_formatter, test_number, 2)
+  assert_eq(de_decimal, "1.234,57")
   
-  // 德文格式
-  let de_number = number_localizer.format_number(test_number, "de-DE")
-  assert_eq(de_number, "1.234.567,89")
+  NumberFormatter::set_locale(number_formatter, "zh-CN")
+  let cn_decimal = NumberFormatter::format_decimal(number_formatter, test_number, 2)
+  assert_eq(cn_decimal, "1,234.57")
   
-  // 法文格式
-  let fr_number = number_localizer.format_number(test_number, "fr-FR")
-  assert_eq(fr_number, "1 234 567,89")
+  NumberFormatter::set_locale(number_formatter, "ar-SA")
+  let ar_decimal = NumberFormatter::format_decimal(number_formatter, test_number, 2)
+  assert_eq(ar_decimal, "1,234.57")
   
-  // 测试货币格式化
-  let test_currency = 1234.56
+  // Test percentage formatting
+  let percentage = 0.7543
   
-  // 英文货币
-  let en_currency = number_localizer.format_currency(test_currency, "en-US")
-  assert_eq(en_currency, "$1,234.56")
+  NumberFormatter::set_locale(number_formatter, "en-US")
+  let us_percent = NumberFormatter::format_percentage(number_formatter, percentage, 1)
+  assert_eq(us_percent, "75.4%")
   
-  // 中文货币
-  let zh_currency = number_localizer.format_currency(test_currency, "zh-CN")
-  assert_eq(zh_currency, "¥1,234.56")
+  NumberFormatter::set_locale(number_formatter, "fr-FR")
+  let fr_percent = NumberFormatter::format_percentage(number_formatter, percentage, 1)
+  assert_eq(fr_percent, "75,4 %")
   
-  // 日文货币
-  let ja_currency = number_localizer.format_currency(test_currency, "ja-JP")
-  assert_eq(ja_currency, "¥1,235") // 无小数位，四舍五入
+  // Test currency formatting
+  let currency = 1234.56
   
-  // 德文货币
-  let de_currency = number_localizer.format_currency(test_currency, "de-DE")
-  assert_eq(de_currency, "1.234,56€")
+  NumberFormatter::set_locale(number_formatter, "en-US")
+  let us_currency = NumberFormatter::format_currency(number_formatter, currency, "USD")
+  assert_eq(us_currency, "$1,234.56")
   
-  // 法文货币
-  let fr_currency = number_localizer.format_currency(test_currency, "fr-FR")
-  assert_eq(fr_currency, "1 234,56€")
+  NumberFormatter::set_locale(number_formatter, "ja-JP")
+  let jp_currency = NumberFormatter::format_currency(number_formatter, currency, "JPY")
+  assert_eq(jp_currency, "¥1,235") // Japanese yen doesn't use decimal places
   
-  // 测试百分比格式化
-  let test_percentage = 0.7543
-  
-  let en_percentage = number_localizer.format_percentage(test_percentage, "en-US")
-  assert_eq(en_percentage, "75.43%")
-  
-  let zh_percentage = number_localizer.format_percentage(test_percentage, "zh-CN")
-  assert_eq(zh_percentage, "75.43%")
-  
-  let de_percentage = number_localizer.format_percentage(test_percentage, "de-DE")
-  assert_eq(de_percentage, "75,43%")
+  NumberFormatter::set_locale(number_formatter, "de-DE")
+  let de_currency = NumberFormatter::format_currency(number_formatter, currency, "EUR")
+  assert_eq(de_currency, "1.234,56 €")
 }
 
-test "遥测指标名称本地化" {
-  // 创建指标名称本地化器
-  let metric_localizer = @azimuth.MetricLocalizer {
-    locale_translations: @azimuth.Map.from_list([
-      ("en-US", @azimuth.Map.from_list([
-        ("cpu.usage", "CPU Usage"),
-        ("memory.usage", "Memory Usage"),
-        ("disk.usage", "Disk Usage"),
-        ("network.incoming", "Network Incoming"),
-        ("network.outgoing", "Network Outgoing"),
-        ("request.count", "Request Count"),
-        ("response.time", "Response Time"),
-        ("error.rate", "Error Rate"),
-        ("throughput", "Throughput"),
-        ("availability", "Availability")
-      ])),
-      ("zh-CN", @azimuth.Map.from_list([
-        ("cpu.usage", "CPU使用率"),
-        ("memory.usage", "内存使用率"),
-        ("disk.usage", "磁盘使用率"),
-        ("network.incoming", "网络入流量"),
-        ("network.outgoing", "网络出流量"),
-        ("request.count", "请求数量"),
-        ("response.time", "响应时间"),
-        ("error.rate", "错误率"),
-        ("throughput", "吞吐量"),
-        ("availability", "可用性")
-      ])),
-      ("ja-JP", @azimuth.Map.from_list([
-        ("cpu.usage", "CPU使用率"),
-        ("memory.usage", "メモリ使用率"),
-        ("disk.usage", "ディスク使用率"),
-        ("network.incoming", "ネットワーク受信"),
-        ("network.outgoing", "ネットワーク送信"),
-        ("request.count", "リクエスト数"),
-        ("response.time", "応答時間"),
-        ("error.rate", "エラー率"),
-        ("throughput", "スループット"),
-        ("availability", "可用性")
-      ]))
-    ])
+// Test 4: Message Localization
+test "message localization" {
+  let localizer = MessageLocalizer::new()
+  
+  // Load message bundles for different locales
+  let en_messages = {
+    "telemetry.started": "Telemetry collection started",
+    "telemetry.stopped": "Telemetry collection stopped",
+    "telemetry.error": "Telemetry error: {0}",
+    "metric.recorded": "Metric {0} recorded with value {1}",
+    "span.created": "Span {0} created",
+    "span.ended": "Span {0} ended"
   }
   
-  // 测试指标名称本地化
-  let metric_names = [
-    "cpu.usage",
-    "memory.usage",
-    "disk.usage",
-    "network.incoming",
-    "network.outgoing",
-    "request.count",
-    "response.time",
-    "error.rate",
-    "throughput",
-    "availability"
-  ]
+  let zh_messages = {
+    "telemetry.started": "遥测收集已启动",
+    "telemetry.stopped": "遥测收集已停止",
+    "telemetry.error": "遥测错误：{0}",
+    "metric.recorded": "指标 {0} 已记录，值为 {1}",
+    "span.created": "跨度 {0} 已创建",
+    "span.ended": "跨度 {0} 已结束"
+  }
   
-  // 测试英文
-  let en_metric_names = metric_names.map(fn(name) {
-    metric_localizer.get_metric_name(name, "en-US")
-  })
+  let ja_messages = {
+    "telemetry.started": "テレメトリ収集が開始されました",
+    "telemetry.stopped": "テレメトリ収集が停止されました",
+    "telemetry.error": "テレメトリエラー: {0}",
+    "metric.recorded": "メトリック {0} が値 {1} で記録されました",
+    "span.created": "スパン {0} が作成されました",
+    "span.ended": "スパン {0} が終了しました"
+  }
   
-  assert_eq(en_metric_names[0], "CPU Usage")
-  assert_eq(en_metric_names[1], "Memory Usage")
-  assert_eq(en_metric_names[2], "Disk Usage")
-  assert_eq(en_metric_names[3], "Network Incoming")
-  assert_eq(en_metric_names[4], "Network Outgoing")
-  assert_eq(en_metric_names[5], "Request Count")
-  assert_eq(en_metric_names[6], "Response Time")
-  assert_eq(en_metric_names[7], "Error Rate")
-  assert_eq(en_metric_names[8], "Throughput")
-  assert_eq(en_metric_names[9], "Availability")
+  MessageLocalizer::load_bundle(localizer, "en", en_messages)
+  MessageLocalizer::load_bundle(localizer, "zh", zh_messages)
+  MessageLocalizer::load_bundle(localizer, "ja", ja_messages)
   
-  // 测试中文
-  let zh_metric_names = metric_names.map(fn(name) {
-    metric_localizer.get_metric_name(name, "zh-CN")
-  })
+  // Test English localization
+  MessageLocalizer::set_locale(localizer, "en")
+  assert_eq(MessageLocalizer::get_message(localizer, "telemetry.started"), "Telemetry collection started")
+  assert_eq(MessageLocalizer::get_message(localizer, "telemetry.stopped"), "Telemetry collection stopped")
+  assert_eq(MessageLocalizer::format_message(localizer, "telemetry.error", ["connection failed"]), "Telemetry error: connection failed")
+  assert_eq(MessageLocalizer::format_message(localizer, "metric.recorded", ["cpu_usage", "75.5"]), "Metric cpu_usage recorded with value 75.5")
   
-  assert_eq(zh_metric_names[0], "CPU使用率")
-  assert_eq(zh_metric_names[1], "内存使用率")
-  assert_eq(zh_metric_names[2], "磁盘使用率")
-  assert_eq(zh_metric_names[3], "网络入流量")
-  assert_eq(zh_metric_names[4], "网络出流量")
-  assert_eq(zh_metric_names[5], "请求数量")
-  assert_eq(zh_metric_names[6], "响应时间")
-  assert_eq(zh_metric_names[7], "错误率")
-  assert_eq(zh_metric_names[8], "吞吐量")
-  assert_eq(zh_metric_names[9], "可用性")
+  // Test Chinese localization
+  MessageLocalizer::set_locale(localizer, "zh")
+  assert_eq(MessageLocalizer::get_message(localizer, "telemetry.started"), "遥测收集已启动")
+  assert_eq(MessageLocalizer::get_message(localizer, "telemetry.stopped"), "遥测收集已停止")
+  assert_eq(MessageLocalizer::format_message(localizer, "telemetry.error", ["连接失败"]), "遥测错误：连接失败")
+  assert_eq(MessageLocalizer::format_message(localizer, "metric.recorded", ["cpu使用率", "75.5"]), "指标 cpu使用率 已记录，值为 75.5")
   
-  // 测试日文
-  let ja_metric_names = metric_names.map(fn(name) {
-    metric_localizer.get_metric_name(name, "ja-JP")
-  })
+  // Test Japanese localization
+  MessageLocalizer::set_locale(localizer, "ja")
+  assert_eq(MessageLocalizer::get_message(localizer, "telemetry.started"), "テレメトリ収集が開始されました")
+  assert_eq(MessageLocalizer::get_message(localizer, "telemetry.stopped"), "テレメトリ収集が停止されました")
+  assert_eq(MessageLocalizer::format_message(localizer, "telemetry.error", ["接続に失敗しました"]), "テレメトリエラー: 接続に失敗しました")
+  assert_eq(MessageLocalizer::format_message(localizer, "metric.recorded", ["CPU使用率", "75.5"]), "メトリック CPU使用率 が値 75.5 で記録されました")
   
-  assert_eq(ja_metric_names[0], "CPU使用率")
-  assert_eq(ja_metric_names[1], "メモリ使用率")
-  assert_eq(ja_metric_names[2], "ディスク使用率")
-  assert_eq(ja_metric_names[3], "ネットワーク受信")
-  assert_eq(ja_metric_names[4], "ネットワーク送信")
-  assert_eq(ja_metric_names[5], "リクエスト数")
-  assert_eq(ja_metric_names[6], "応答時間")
-  assert_eq(ja_metric_names[7], "エラー率")
-  assert_eq(ja_metric_names[8], "スループット")
-  assert_eq(ja_metric_names[9], "可用性")
-  
-  // 测试未知指标名称的回退
-  let unknown_metric = metric_localizer.get_metric_name("unknown.metric", "zh-CN")
-  assert_eq(unknown_metric, "unknown.metric") // 回退到原始名称
-  
-  // 测试未知语言的回退
-  let unknown_locale = metric_localizer.get_metric_name("cpu.usage", "ko-KR")
-  assert_eq(unknown_locale, "cpu.usage") // 回退到原始名称
+  // Test fallback to default locale
+  MessageLocalizer::set_locale(localizer, "fr") // French not loaded
+  assert_eq(MessageLocalizer::get_message(localizer, "telemetry.started"), "Telemetry collection started") // Falls back to English
 }
 
-test "仪表盘界面本地化" {
-  // 创建仪表盘本地化器
-  let dashboard_localizer = @azimuth.DashboardLocalizer {
-    locale_resources: @azimuth.Map.from_list([
-      ("en-US", @azimuth.DashboardResources {
-        title: "Azimuth Telemetry Dashboard",
-        navigation: @azimuth.Map.from_list([
-          ("overview", "Overview"),
-          ("metrics", "Metrics"),
-          ("traces", "Traces"),
-          ("logs", "Logs"),
-          ("alerts", "Alerts"),
-          ("settings", "Settings")
-        ]),
-        common_labels: @azimuth.Map.from_list([
-          ("loading", "Loading..."),
-          ("error", "Error"),
-          ("success", "Success"),
-          ("warning", "Warning"),
-          ("info", "Information"),
-          ("refresh", "Refresh"),
-          ("export", "Export"),
-          ("filter", "Filter"),
-          ("search", "Search"),
-          ("close", "Close")
-        ]),
-        time_ranges: @azimuth.Map.from_list([
-          ("1h", "Last 1 Hour"),
-          ("6h", "Last 6 Hours"),
-          ("24h", "Last 24 Hours"),
-          ("7d", "Last 7 Days"),
-          ("30d", "Last 30 Days")
-        ])
-      }),
-      ("zh-CN", @azimuth.DashboardResources {
-        title: "Azimuth 遥测仪表盘",
-        navigation: @azimuth.Map.from_list([
-          ("overview", "概览"),
-          ("metrics", "指标"),
-          ("traces", "追踪"),
-          ("logs", "日志"),
-          ("alerts", "告警"),
-          ("settings", "设置")
-        ]),
-        common_labels: @azimuth.Map.from_list([
-          ("loading", "加载中..."),
-          ("error", "错误"),
-          ("success", "成功"),
-          ("warning", "警告"),
-          ("info", "信息"),
-          ("refresh", "刷新"),
-          ("export", "导出"),
-          ("filter", "筛选"),
-          ("search", "搜索"),
-          ("close", "关闭")
-        ]),
-        time_ranges: @azimuth.Map.from_list([
-          ("1h", "最近1小时"),
-          ("6h", "最近6小时"),
-          ("24h", "最近24小时"),
-          ("7d", "最近7天"),
-          ("30d", "最近30天")
-        ])
-      }),
-      ("ja-JP", @azimuth.DashboardResources {
-        title: "Azimuth テレメトリーダッシュボード",
-        navigation: @azimuth.Map.from_list([
-          ("overview", "概要"),
-          ("metrics", "メトリック"),
-          ("traces", "トレース"),
-          ("logs", "ログ"),
-          ("alerts", "アラート"),
-          ("settings", "設定")
-        ]),
-        common_labels: @azimuth.Map.from_list([
-          ("loading", "読み込み中..."),
-          ("error", "エラー"),
-          ("success", "成功"),
-          ("warning", "警告"),
-          ("info", "情報"),
-          ("refresh", "更新"),
-          ("export", "エクスポート"),
-          ("filter", "フィルター"),
-          ("search", "検索"),
-          ("close", "閉じる")
-        ]),
-        time_ranges: @azimuth.Map.from_list([
-          ("1h", "過去1時間"),
-          ("6h", "過去6時間"),
-          ("24h", "過去24時間"),
-          ("7d", "過去7日間"),
-          ("30d", "過去30日間")
-        ])
-      })
-    ])
+// Test 5: Right-to-Left Text Support
+test "right-to-left text support" {
+  let text_processor = TextProcessor::new()
+  
+  // Test Arabic text (RTL)
+  let arabic_text = "نظام القياس عن بعد"
+  TextProcessor::set_direction(text_processor, "rtl")
+  let processed_arabic = TextProcessor::process(text_processor, arabic_text)
+  assert_eq(processed_arabic, "نظام القياس عن بعد")
+  
+  // Test mixed LTR/RTL text
+  let mixed_text = "Azimuth نظام القياس"
+  let processed_mixed = TextProcessor::process(text_processor, mixed_text)
+  // Should preserve both LTR and RTL parts correctly
+  assert_true(processed_mixed.contains("Azimuth"))
+  assert_true(processed_mixed.contains("نظام القياس"))
+  
+  // Test Hebrew text (RTL)
+  let hebrew_text = "מערכת טלמטריה"
+  let processed_hebrew = TextProcessor::process(text_processor, hebrew_text)
+  assert_eq(processed_hebrew, "מערכת טלמטריה")
+  
+  // Test text direction detection
+  assert_eq(TextProcessor::detect_direction(text_processor, arabic_text), "rtl")
+  assert_eq(TextProcessor::detect_direction(text_processor, hebrew_text), "rtl")
+  assert_eq(TextProcessor::detect_direction(text_processor, "English text"), "ltr")
+  assert_eq(TextProcessor::detect_direction(text_processor, "中文文本"), "ltr") // Chinese is LTR
+}
+
+// Test 6: Telemetry Data with International Characters
+test "telemetry data with international characters" {
+  // Create spans with international names
+  let chinese_span_ctx = SpanContext::new("中文追踪ID", "中文跨度ID", true, "")
+  let chinese_span = Span::new("中文跨度名称", Internal, chinese_span_ctx)
+  Span::add_event(chinese_span, "中文事件", Some([("中文属性", StringValue("中文值"))]))
+  
+  let arabic_span_ctx = SpanContext::new("معرف التتبع", "معرف الامتداد", true, "")
+  let arabic_span = Span::new("اسم الامتداد", Internal, arabic_span_ctx)
+  Span::add_event(arabic_span, "حدث", Some([("سمة", StringValue("قيمة"))]))
+  
+  let japanese_span_ctx = SpanContext::new("トレースID", "スパンID", true, "")
+  let japanese_span = Span::new("スパン名", Internal, japanese_span_ctx)
+  Span::add_event(japanese_span, "イベント", Some([("属性", StringValue("値"))]))
+  
+  // Test that international data is preserved
+  assert_eq(Span::name(chinese_span), "中文跨度名称")
+  assert_eq(SpanContext::trace_id(chinese_span_ctx), "中文追踪ID")
+  
+  assert_eq(Span::name(arabic_span), "اسم الامتداد")
+  assert_eq(SpanContext::trace_id(arabic_span_ctx), "معرف التتبع")
+  
+  assert_eq(Span::name(japanese_span), "スパン名")
+  assert_eq(SpanContext::trace_id(japanese_span_ctx), "トレースID")
+  
+  // Test serialization and deserialization with international data
+  let serialized_chinese = SpanSerializer::serialize(chinese_span)
+  let deserialized_chinese = SpanSerializer::deserialize(serialized_chinese)
+  
+  assert_eq(Span::name(deserialized_chinese), "中文跨度名称")
+  
+  let serialized_arabic = SpanSerializer::serialize(arabic_span)
+  let deserialized_arabic = SpanSerializer::deserialize(serialized_arabic)
+  
+  assert_eq(Span::name(deserialized_arabic), "اسم الامتداد")
+  
+  let serialized_japanese = SpanSerializer::serialize(japanese_span)
+  let deserialized_japanese = SpanSerializer::deserialize(serialized_japanese)
+  
+  assert_eq(Span::name(deserialized_japanese), "スパン名")
+}
+
+// Test 7: Localized Error Messages
+test "localized error messages" {
+  let error_localizer = ErrorLocalizer::new()
+  
+  // Load error messages for different locales
+  let en_errors = {
+    "connection.failed": "Connection failed: {0}",
+    "data.invalid": "Invalid data: {0}",
+    "permission.denied": "Permission denied",
+    "resource.not_found": "Resource not found: {0}",
+    "timeout.exceeded": "Operation timed out after {0} seconds"
   }
   
-  // 测试仪表盘标题本地化
-  let en_title = dashboard_localizer.get_dashboard_title("en-US")
-  let zh_title = dashboard_localizer.get_dashboard_title("zh-CN")
-  let ja_title = dashboard_localizer.get_dashboard_title("ja-JP")
+  let zh_errors = {
+    "connection.failed": "连接失败：{0}",
+    "data.invalid": "无效数据：{0}",
+    "permission.denied": "权限被拒绝",
+    "resource.not_found": "资源未找到：{0}",
+    "timeout.exceeded": "操作在 {0} 秒后超时"
+  }
   
-  assert_eq(en_title, "Azimuth Telemetry Dashboard")
-  assert_eq(zh_title, "Azimuth 遥测仪表盘")
-  assert_eq(ja_title, "Azimuth テレメトリーダッシュボード")
+  let ja_errors = {
+    "connection.failed": "接続に失敗しました: {0}",
+    "data.invalid": "無効なデータ: {0}",
+    "permission.denied": "アクセスが拒否されました",
+    "resource.not_found": "リソースが見つかりません: {0}",
+    "timeout.exceeded": "操作が {0} 秒後にタイムアウトしました"
+  }
   
-  // 测试导航菜单本地化
-  let navigation_items = ["overview", "metrics", "traces", "logs", "alerts", "settings"]
+  ErrorLocalizer::load_bundle(error_localizer, "en", en_errors)
+  ErrorLocalizer::load_bundle(error_localizer, "zh", zh_errors)
+  ErrorLocalizer::load_bundle(error_localizer, "ja", ja_errors)
   
-  let en_navigation = navigation_items.map(fn(item) {
-    dashboard_localizer.get_navigation_label(item, "en-US")
-  })
+  // Test English error messages
+  ErrorLocalizer::set_locale(error_localizer, "en")
+  assert_eq(ErrorLocalizer::get_error_message(error_localizer, "permission.denied"), "Permission denied")
+  assert_eq(ErrorLocalizer::format_error_message(error_localizer, "connection.failed", ["network unreachable"]), "Connection failed: network unreachable")
   
-  let zh_navigation = navigation_items.map(fn(item) {
-    dashboard_localizer.get_navigation_label(item, "zh-CN")
-  })
+  // Test Chinese error messages
+  ErrorLocalizer::set_locale(error_localizer, "zh")
+  assert_eq(ErrorLocalizer::get_error_message(error_localizer, "permission.denied"), "权限被拒绝")
+  assert_eq(ErrorLocalizer::format_error_message(error_localizer, "connection.failed", ["网络不可达"]), "连接失败：网络不可达")
   
-  let ja_navigation = navigation_items.map(fn(item) {
-    dashboard_localizer.get_navigation_label(item, "ja-JP")
-  })
+  // Test Japanese error messages
+  ErrorLocalizer::set_locale(error_localizer, "ja")
+  assert_eq(ErrorLocalizer::get_error_message(error_localizer, "permission.denied"), "アクセスが拒否されました")
+  assert_eq(ErrorLocalizer::format_error_message(error_localizer, "connection.failed", ["ネットワークに到達できません"]), "接続に失敗しました: ネットワークに到達できません")
+}
+
+// Test 8: Localized Log Messages
+test "localized log messages" {
+  let log_localizer = LogLocalizer::new()
   
-  // 验证英文导航
-  assert_eq(en_navigation[0], "Overview")
-  assert_eq(en_navigation[1], "Metrics")
-  assert_eq(en_navigation[2], "Traces")
-  assert_eq(en_navigation[3], "Logs")
-  assert_eq(en_navigation[4], "Alerts")
-  assert_eq(en_navigation[5], "Settings")
+  // Load log messages for different locales
+  let en_logs = {
+    "service.started": "Service {0} started on port {1}",
+    "service.stopped": "Service {0} stopped",
+    "request.received": "Received {0} request from {1}",
+    "response.sent": "Sent {0} response to {1}",
+    "error.occurred": "Error occurred: {0}"
+  }
   
-  // 验证中文导航
-  assert_eq(zh_navigation[0], "概览")
-  assert_eq(zh_navigation[1], "指标")
-  assert_eq(zh_navigation[2], "追踪")
-  assert_eq(zh_navigation[3], "日志")
-  assert_eq(zh_navigation[4], "告警")
-  assert_eq(zh_navigation[5], "设置")
+  let zh_logs = {
+    "service.started": "服务 {0} 已在端口 {1} 上启动",
+    "service.stopped": "服务 {0} 已停止",
+    "request.received": "从 {1} 收到 {0} 请求",
+    "response.sent": "向 {1} 发送 {0} 响应",
+    "error.occurred": "发生错误：{0}"
+  }
   
-  // 验证日文导航
-  assert_eq(ja_navigation[0], "概要")
-  assert_eq(ja_navigation[1], "メトリック")
-  assert_eq(ja_navigation[2], "トレース")
-  assert_eq(ja_navigation[3], "ログ")
-  assert_eq(ja_navigation[4], "アラート")
-  assert_eq(ja_navigation[5], "設定")
+  let ja_logs = {
+    "service.started": "サービス {0} がポート {1} で開始されました",
+    "service.stopped": "サービス {0} が停止されました",
+    "request.received": "{1} から {0} リクエストを受信しました",
+    "response.sent": "{1} に {0} レスポンスを送信しました",
+    "error.occurred": "エラーが発生しました: {0}"
+  }
   
-  // 测试通用标签本地化
-  let common_labels = ["loading", "error", "success", "warning", "info", "refresh", "export", "filter", "search", "close"]
+  LogLocalizer::load_bundle(log_localizer, "en", en_logs)
+  LogLocalizer::load_bundle(log_localizer, "zh", zh_logs)
+  LogLocalizer::load_bundle(log_localizer, "ja", ja_logs)
   
-  let en_labels = common_labels.map(fn(label) {
-    dashboard_localizer.get_common_label(label, "en-US")
-  })
+  // Create localized log records
+  LogLocalizer::set_locale(log_localizer, "en")
+  let en_log = LogLocalizer::create_log(log_localizer, Info, "service.started", ["telemetry", "8080"])
+  assert_eq(LogRecord::severity_number(en_log), Info)
+  match LogRecord::body(en_log) {
+    Some(body) => assert_eq(body, "Service telemetry started on port 8080")
+    None => assert_true(false)
+  }
   
-  let zh_labels = common_labels.map(fn(label) {
-    dashboard_localizer.get_common_label(label, "zh-CN")
-  })
+  LogLocalizer::set_locale(log_localizer, "zh")
+  let zh_log = LogLocalizer::create_log(log_localizer, Info, "service.started", ["遥测", "8080"])
+  match LogRecord::body(zh_log) {
+    Some(body) => assert_eq(body, "服务 遥测 已在端口 8080 上启动")
+    None => assert_true(false)
+  }
   
-  let ja_labels = common_labels.map(fn(label) {
-    dashboard_localizer.get_common_label(label, "ja-JP")
-  })
+  LogLocalizer::set_locale(log_localizer, "ja")
+  let ja_log = LogLocalizer::create_log(log_localizer, Info, "service.started", ["テレメトリ", "8080"])
+  match LogRecord::body(ja_log) {
+    Some(body) => assert_eq(body, "サービス テレメトリ がポート 8080 で開始されました")
+    None => assert_true(false)
+  }
+}
+
+// Test 9: Localized Metric Names and Descriptions
+test "localized metric names and descriptions" {
+  let metric_localizer = MetricLocalizer::new()
   
-  // 验证部分英文标签
-  assert_eq(en_labels[0], "Loading...")
-  assert_eq(en_labels[1], "Error")
-  assert_eq(en_labels[2], "Success")
-  assert_eq(en_labels[3], "Warning")
-  assert_eq(en_labels[4], "Information")
+  // Load metric information for different locales
+  let en_metrics = {
+    "cpu.usage": {
+      "name": "CPU Usage",
+      "description": "Percentage of CPU utilization",
+      "unit": "%"
+    },
+    "memory.usage": {
+      "name": "Memory Usage",
+      "description": "Percentage of memory utilization",
+      "unit": "%"
+    },
+    "request.count": {
+      "name": "Request Count",
+      "description": "Total number of requests",
+      "unit": "count"
+    }
+  }
   
-  // 验证部分中文标签
-  assert_eq(zh_labels[0], "加载中...")
-  assert_eq(zh_labels[1], "错误")
-  assert_eq(zh_labels[2], "成功")
-  assert_eq(zh_labels[3], "警告")
-  assert_eq(zh_labels[4], "信息")
+  let zh_metrics = {
+    "cpu.usage": {
+      "name": "CPU使用率",
+      "description": "CPU利用率百分比",
+      "unit": "%"
+    },
+    "memory.usage": {
+      "name": "内存使用率",
+      "description": "内存利用率百分比",
+      "unit": "%"
+    },
+    "request.count": {
+      "name": "请求数量",
+      "description": "请求总数",
+      "unit": "计数"
+    }
+  }
   
-  // 验证部分日文标签
-  assert_eq(ja_labels[0], "読み込み中...")
-  assert_eq(ja_labels[1], "エラー")
-  assert_eq(ja_labels[2], "成功")
-  assert_eq(ja_labels[3], "警告")
-  assert_eq(ja_labels[4], "情報")
+  let ja_metrics = {
+    "cpu.usage": {
+      "name": "CPU使用率",
+      "description": "CPU利用率のパーセンテージ",
+      "unit": "%"
+    },
+    "memory.usage": {
+      "name": "メモリ使用率",
+      "description": "メモリ利用率のパーセンテージ",
+      "unit": "%"
+    },
+    "request.count": {
+      "name": "リクエスト数",
+      "description": "リクエストの総数",
+      "unit": "カウント"
+    }
+  }
   
-  // 测试时间范围本地化
-  let time_ranges = ["1h", "6h", "24h", "7d", "30d"]
+  MetricLocalizer::load_bundle(metric_localizer, "en", en_metrics)
+  MetricLocalizer::load_bundle(metric_localizer, "zh", zh_metrics)
+  MetricLocalizer::load_bundle(metric_localizer, "ja", ja_metrics)
   
-  let en_time_ranges = time_ranges.map(fn(range) {
-    dashboard_localizer.get_time_range_label(range, "en-US")
-  })
+  // Test English metric information
+  MetricLocalizer::set_locale(metric_localizer, "en")
+  let en_cpu_info = MetricLocalizer::get_metric_info(metric_localizer, "cpu.usage")
+  assert_eq(en_cpu_info.name, "CPU Usage")
+  assert_eq(en_cpu_info.description, "Percentage of CPU utilization")
+  assert_eq(en_cpu_info.unit, "%")
   
-  let zh_time_ranges = time_ranges.map(fn(range) {
-    dashboard_localizer.get_time_range_label(range, "zh-CN")
-  })
+  // Test Chinese metric information
+  MetricLocalizer::set_locale(metric_localizer, "zh")
+  let zh_cpu_info = MetricLocalizer::get_metric_info(metric_localizer, "cpu.usage")
+  assert_eq(zh_cpu_info.name, "CPU使用率")
+  assert_eq(zh_cpu_info.description, "CPU利用率百分比")
+  assert_eq(zh_cpu_info.unit, "%")
   
-  let ja_time_ranges = time_ranges.map(fn(range) {
-    dashboard_localizer.get_time_range_label(range, "ja-JP")
-  })
+  // Test Japanese metric information
+  MetricLocalizer::set_locale(metric_localizer, "ja")
+  let ja_cpu_info = MetricLocalizer::get_metric_info(metric_localizer, "cpu.usage")
+  assert_eq(ja_cpu_info.name, "CPU使用率")
+  assert_eq(ja_cpu_info.description, "CPU利用率のパーセンテージ")
+  assert_eq(ja_cpu_info.unit, "%")
+}
+
+// Test 10: Locale-aware Sorting and Comparison
+test "locale-aware sorting and comparison" {
+  let string_comparator = StringComparator::new()
   
-  // 验证英文时间范围
-  assert_eq(en_time_ranges[0], "Last 1 Hour")
-  assert_eq(en_time_ranges[1], "Last 6 Hours")
-  assert_eq(en_time_ranges[2], "Last 24 Hours")
-  assert_eq(en_time_ranges[3], "Last 7 Days")
-  assert_eq(en_time_ranges[4], "Last 30 Days")
+  // Test strings with different locales
+  let strings = ["apple", "banana", "cherry", "date", "elderberry"]
+  let chinese_strings = ["苹果", "香蕉", "樱桃", "枣", "接骨木莓"]
+  let japanese_strings = ["りんご", "バナナ", "チェリー", "デート", "エルダベリー"]
   
-  // 验证中文时间范围
-  assert_eq(zh_time_ranges[0], "最近1小时")
-  assert_eq(zh_time_ranges[1], "最近6小时")
-  assert_eq(zh_time_ranges[2], "最近24小时")
-  assert_eq(zh_time_ranges[3], "最近7天")
-  assert_eq(zh_time_ranges[4], "最近30天")
+  // Test English sorting
+  StringComparator::set_locale(string_comparator, "en-US")
+  let sorted_en = StringComparator::sort(string_comparator, strings)
+  assert_eq(sorted_en, ["apple", "banana", "cherry", "date", "elderberry"])
   
-  // 验证日文时间范围
-  assert_eq(ja_time_ranges[0], "過去1時間")
-  assert_eq(ja_time_ranges[1], "過去6時間")
-  assert_eq(ja_time_ranges[2], "過去24時間")
-  assert_eq(ja_time_ranges[3], "過去7日間")
-  assert_eq(ja_time_ranges[4], "過去30日間")
+  // Test Chinese sorting
+  StringComparator::set_locale(string_comparator, "zh-CN")
+  let sorted_zh = StringComparator::sort(string_comparator, chinese_strings)
+  // Note: Actual sorting order depends on Chinese collation rules
+  assert_eq(sorted_zh.length(), 5)
+  assert_true(sorted_zh.contains("苹果"))
+  assert_true(sorted_zh.contains("香蕉"))
+  
+  // Test Japanese sorting
+  StringComparator::set_locale(string_comparator, "ja-JP")
+  let sorted_ja = StringComparator::sort(string_comparator, japanese_strings)
+  // Note: Actual sorting order depends on Japanese collation rules
+  assert_eq(sorted_ja.length(), 5)
+  assert_true(sorted_ja.contains("りんご"))
+  assert_true(sorted_ja.contains("バナナ"))
+  
+  // Test locale-aware comparison
+  StringComparator::set_locale(string_comparator, "en-US")
+  assert_eq(StringComparator::compare(string_comparator, "apple", "banana"), -1)
+  assert_eq(StringComparator::compare(string_comparator, "banana", "apple"), 1)
+  assert_eq(StringComparator::compare(string_comparator, "apple", "apple"), 0)
+  
+  // Test case-insensitive comparison
+  StringComparator::set_case_sensitive(string_comparator, false)
+  assert_eq(StringComparator::compare(string_comparator, "Apple", "apple"), 0)
+  assert_eq(StringComparator::compare(string_comparator, "APPLE", "banana"), -1)
+  
+  // Test accent-sensitive comparison
+  StringComparator::set_locale(string_comparator, "fr-FR")
+  StringComparator::set_case_sensitive(string_comparator, false)
+  assert_eq(StringComparator::compare(string_comparator, "café", "cafe"), 1) // café comes after cafe
 }
