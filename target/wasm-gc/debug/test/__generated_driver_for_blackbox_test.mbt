@@ -1084,6 +1084,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_dynamic_config_tests.mbt": {
   },
+  "azimuth_diverse_comprehensive_tests.mbt": {
+  },
   "azimuth_distributed_transaction_tracing_tests.mbt": {
   },
   "azimuth_distributed_tracing_tests.mbt": {
