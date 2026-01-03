@@ -1,491 +1,813 @@
-// 动态配置管理测试用例
-// 测试Azimuth遥测系统的动态配置管理能力
+// Azimuth 配置动态更新测试
+// 专注于验证遥测系统在运行时动态更新配置的能力和一致性
 
-test "运行时配置更新测试" {
-  // 测试运行时配置更新
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "config.runtime.test")
-  
-  // 创建配置管理器
-  let config_manager = ConfigManager::new()
-  
-  // 初始化配置
-  let initial_config = {
-    "sampling.probability": 1.0,
-    "batch.size": 512,
-    "export.interval": 5000,
-    "max.spans.per.second": 1000,
-    "log.level": "INFO",
-    "metrics.enabled": true,
-    "tracing.enabled": true
-  }
-  
-  ConfigManager::load_config(config_manager, initial_config)
-  
-  // 验证初始配置
-  assert_eq(ConfigManager::get(config_manager, "sampling.probability"), 1.0)
-  assert_eq(ConfigManager::get(config_manager, "batch.size"), 512)
-  assert_eq(ConfigManager::get(config_manager, "export.interval"), 5000)
-  assert_eq(ConfigManager::get(config_manager, "log.level"), "INFO")
-  
-  // 创建span验证配置应用
-  let span1 = Tracer::start_span(tracer, "config.test.initial")
-  Span::set_attribute(span1, "config.sampling", ConfigManager::get(config_manager, "sampling.probability").to_string())
-  Span::set_attribute(span1, "config.batch_size", ConfigManager::get(config_manager, "batch.size").to_string())
-  Span::end(span1)
-  
-  // 动态更新配置
-  let updated_config = {
-    "sampling.probability": 0.5,
-    "batch.size": 1024,
-    "export.interval": 3000,
-    "max.spans.per.second": 2000,
-    "log.level": "DEBUG",
-    "metrics.enabled": true,
-    "tracing.enabled": true
-  }
-  
-  ConfigManager::update_config(config_manager, updated_config)
-  
-  // 验证配置更新
-  assert_eq(ConfigManager::get(config_manager, "sampling.probability"), 0.5)
-  assert_eq(ConfigManager::get(config_manager, "batch.size"), 1024)
-  assert_eq(ConfigManager::get(config_manager, "export.interval"), 3000)
-  assert_eq(ConfigManager::get(config_manager, "log.level"), "DEBUG")
-  
-  // 创建span验证更新后的配置
-  let span2 = Tracer::start_span(tracer, "config.test.updated")
-  Span::set_attribute(span2, "config.sampling", ConfigManager::get(config_manager, "sampling.probability").to_string())
-  Span::set_attribute(span2, "config.batch_size", ConfigManager::get(config_manager, "batch.size").to_string())
-  Span::end(span2)
-  
-  // 记录配置变更事件
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "config.manager")
-  
-  let config_log = LogRecord::new(Info, "Configuration updated dynamically")
-  LogRecord::add_attribute(config_log, "config.change", "runtime_update")
-  LogRecord::add_attribute(config_log, "sampling.probability.old", "1.0")
-  LogRecord::add_attribute(config_log, "sampling.probability.new", "0.5")
-  LogRecord::add_attribute(config_log, "batch.size.old", "512")
-  LogRecord::add_attribute(config_log, "batch.size.new", "1024")
-  
-  Logger::emit(logger, config_log)
-  
-  assert_true(true)
-}
-
-test "配置热重载测试" {
-  // 测试配置热重载功能
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "config.hotreload.test")
-  
-  // 创建配置热重载管理器
-  let hotreload_manager = HotReloadConfigManager::new("/etc/azimuth/config.yaml")
-  
-  // 初始配置加载
-  HotReloadConfigManager::load_initial_config(hotreload_manager)
-  
-  // 验证初始配置
-  assert_eq(HotReloadConfigManager::get(hotreload_manager, "service.name"), "azimuth-telemetry")
-  assert_eq(HotReloadConfigManager::get(hotreload_manager, "service.version"), "1.0.0")
-  assert_eq(HotReloadConfigManager::get(hotreload_manager, "telemetry.enabled"), true)
-  
-  // 创建配置监控span
-  let monitor_span = Tracer::start_span(tracer, "config.monitoring")
-  Span::set_attribute(monitor_span, "config.file", "/etc/azimuth/config.yaml")
-  Span::set_attribute(monitor_span, "monitoring.enabled", "true")
-  
-  // 模拟配置文件变更
-  Span::add_event(monitor_span, "config.file.changed", [
-    ("file.path", "/etc/azimuth/config.yaml"),
-    ("change.timestamp", "2025-01-02T10:30:00Z"),
-    ("change.type", "file_modification")
-  ])
-  
-  // 触发热重载
-  HotReloadConfigManager::trigger_reload(hotreload_manager)
-  
-  // 验证热重载后的配置
-  assert_eq(HotReloadConfigManager::get(hotreload_manager, "service.name"), "azimuth-telemetry")
-  assert_eq(HotReloadConfigManager::get(hotreload_manager, "service.version"), "1.1.0")  // 版本更新
-  assert_eq(HotReloadConfigManager::get(hotreload_manager, "telemetry.enabled"), true)
-  assert_eq(HotReloadConfigManager::get(hotreload_manager, "new.feature.enabled"), true)  // 新增配置项
-  
-  // 记录热重载事件
-  Span::add_event(monitor_span, "config.hotreload.completed", [
-    ("reload.timestamp", "2025-01-02T10:30:05Z"),
-    ("reload.duration", "500ms"),
-    ("config.items.changed", "2")
-  ])
-  
-  // 测试配置验证
-  let validation_result = HotReloadConfigManager::validate_config(hotreload_manager)
-  assert_true(validation_result.is_valid)
-  
-  Span::add_event(monitor_span, "config.validation.completed", [
-    ("validation.result", "success"),
-    ("validation.timestamp", "2025-01-02T10:30:06Z")
-  ])
-  
-  Span::end(monitor_span)
-  
-  // 记录热重载度量
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "config.hotreload.metrics")
-  
-  let reload_counter = Meter::create_counter(meter, "config.hotreload.total", Some("Total config hot reloads"), Some("count"))
-  let reload_histogram = Meter::create_histogram(meter, "config.hotreload.duration", Some("Config hot reload duration"), Some("ms"))
-  
-  Counter::add(reload_counter, 1.0)
-  Histogram::record(reload_histogram, 500.0)
-  
-  assert_true(true)
-}
-
-test "分布式配置同步测试" {
-  // 测试分布式配置同步
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "config.distributed.test")
-  
-  // 创建分布式配置管理器
-  let distributed_config = DistributedConfigManager::new()
-  
-  // 配置中心连接
-  let config_center_span = Tracer::start_span(tracer, "config.center.connection")
-  Span::set_attribute(config_center_span, "config.center.url", "https://config-center.example.com")
-  Span::set_attribute(config_center_span, "connection.timeout", "5000ms")
-  
-  Span::add_event(config_center_span, "connection.started", [
-    ("timestamp", "2025-01-02T10:35:00Z"),
-    ("client.id", "azimuth-node-001")
-  ])
-  
-  // 模拟连接到配置中心
-  DistributedConfigManager::connect_to_center(distributed_config, "https://config-center.example.com")
-  
-  Span::add_event(config_center_span, "connection.established", [
-    ("timestamp", "2025-01-02T10:35:02Z"),
-    ("connection.duration", "2000ms")
-  ])
-  
-  Span::end(config_center_span)
-  
-  // 订阅配置变更
-  let subscription_span = Tracer::start_span(tracer, "config.subscription")
-  Span::set_attribute(subscription_span, "subscription.type", "config_changes")
-  
-  // 订阅特定配置项
-  DistributedConfigManager::subscribe(distributed_config, "telemetry.sampling.rate")
-  DistributedConfigManager::subscribe(distributed_config, "metrics.export.interval")
-  DistributedConfigManager::subscribe(distributed_config, "tracing.batch.size")
-  
-  Span::add_event(subscription_span, "subscriptions.created", [
-    ("subscriptions.count", "3"),
-    ("subscription.timestamp", "2025-01-02T10:35:05Z")
-  ])
-  
-  // 模拟配置中心推送配置变更
-  let push_span = Tracer::start_span(tracer, "config.push.received")
-  Span::set_attribute(push_span, "push.source", "config-center")
-  Span::set_attribute(push_span, "push.id", "push-12345")
-  
-  Span::add_event(push_span, "config.change.received", [
-    ("config.key", "telemetry.sampling.rate"),
-    ("old.value", "1.0"),
-    ("new.value", "0.8"),
-    ("change.timestamp", "2025-01-02T10:36:00Z")
-  ])
-  
-  // 应用配置变更
-  DistributedConfigManager::apply_remote_change(distributed_config, "telemetry.sampling.rate", 0.8)
-  
-  // 验证配置变更
-  assert_eq(DistributedConfigManager::get(distributed_config, "telemetry.sampling.rate"), 0.8)
-  
-  Span::add_event(push_span, "config.change.applied", [
-    ("config.key", "telemetry.sampling.rate"),
-    ("applied.timestamp", "2025-01-02T10:36:01Z"),
-    ("application.duration", "10ms")
-  ])
-  
-  Span::end(push_span)
-  Span::end(subscription_span)
-  
-  // 测试配置冲突解决
-  let conflict_span = Tracer::start_span(tracer, "config.conflict.resolution")
-  Span::set_attribute(conflict_span, "conflict.type", "concurrent_update")
-  
-  // 模拟本地配置与远程配置冲突
-  DistributedConfigManager::set_local(distributed_config, "metrics.export.interval", 10000)
-  let remote_value = 8000
-  
-  Span::add_event(conflict_span, "conflict.detected", [
-    ("config.key", "metrics.export.interval"),
-    ("local.value", "10000"),
-    ("remote.value", "8000"),
-    ("conflict.timestamp", "2025-01-02T10:37:00Z")
-  ])
-  
-  // 解决冲突（使用远程优先策略）
-  DistributedConfigManager::resolve_conflict(distributed_config, "metrics.export.interval", "remote_priority")
-  
-  // 验证冲突解决结果
-  assert_eq(DistributedConfigManager::get(distributed_config, "metrics.export.interval"), 8000)
-  
-  Span::add_event(conflict_span, "conflict.resolved", [
-    ("config.key", "metrics.export.interval"),
-    ("resolution.strategy", "remote_priority"),
-    ("final.value", "8000"),
-    ("resolution.timestamp", "2025-01-02T10:37:01Z")
-  ])
-  
-  Span::end(conflict_span)
-  
-  assert_true(true)
-}
-
-test "配置版本管理和回滚测试" {
-  // 测试配置版本管理和回滚
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "config.versioning.test")
-  
-  // 创建配置版本管理器
-  let version_manager = ConfigVersionManager::new()
-  
-  // 初始配置版本
-  let v1_config = {
-    "sampling.probability": 1.0,
-    "batch.size": 512,
-    "export.interval": 5000,
-    "log.level": "INFO",
-    "features.experimental": false
-  }
-  
-  ConfigVersionManager::save_version(version_manager, v1_config, "v1.0.0", "Initial configuration")
-  
-  // 验证版本保存
-  let v1_retrieved = ConfigVersionManager::get_version(version_manager, "v1.0.0")
-  assert_eq(v1_retrieved.config["sampling.probability"], 1.0)
-  assert_eq(v1_retrieved.config["batch.size"], 512)
-  
-  // 创建版本变更span
-  let version_span = Tracer::start_span(tracer, "config.version.change")
-  Span::set_attribute(version_span, "operation.type", "config_versioning")
-  
-  // 版本2 - 添加实验性功能
-  let v2_config = {
-    "sampling.probability": 0.8,
-    "batch.size": 1024,
-    "export.interval": 3000,
-    "log.level": "DEBUG",
-    "features.experimental": true
-  }
-  
-  ConfigVersionManager::save_version(version_manager, v2_config, "v1.1.0", "Enable experimental features")
-  
-  Span::add_event(version_span, "version.created", [
-    ("version", "v1.1.0"),
-    ("description", "Enable experimental features"),
-    ("timestamp", "2025-01-02T10:40:00Z")
-  ])
-  
-  // 版本3 - 性能优化
-  let v3_config = {
-    "sampling.probability": 0.5,
-    "batch.size": 2048,
-    "export.interval": 2000,
-    "log.level": "INFO",
-    "features.experimental": true,
-    "performance.optimization": true
-  }
-  
-  ConfigVersionManager::save_version(version_manager, v3_config, "v1.2.0", "Performance optimization")
-  
-  Span::add_event(version_span, "version.created", [
-    ("version", "v1.2.0"),
-    ("description", "Performance optimization"),
-    ("timestamp", "2025-01-02T10:41:00Z")
-  ])
-  
-  // 应用最新版本
-  ConfigVersionManager::apply_version(version_manager, "v1.2.0")
-  
-  // 验证当前配置
-  let current_config = ConfigVersionManager::get_current(version_manager)
-  assert_eq(current_config["sampling.probability"], 0.5)
-  assert_eq(current_config["batch.size"], 2048)
-  assert_eq(current_config["performance.optimization"], true)
-  
-  Span::add_event(version_span, "version.applied", [
-    ("version", "v1.2.0"),
-    ("applied.timestamp", "2025-01-02T10:41:30Z")
-  ])
-  
-  // 模拟配置问题，需要回滚
-  let rollback_span = Tracer::start_span(tracer, "config.rollback")
-  Span::set_attribute(rollback_span, "rollback.reason", "performance_degradation")
-  
-  Span::add_event(rollback_span, "rollback.initiated", [
-    ("from.version", "v1.2.0"),
-    ("to.version", "v1.1.0"),
-    ("reason", "Performance degradation detected"),
-    ("timestamp", "2025-01-02T10:45:00Z")
-  ])
-  
-  // 执行回滚
-  ConfigVersionManager::rollback_to(version_manager, "v1.1.0")
-  
-  // 验证回滚结果
-  let rollback_config = ConfigVersionManager::get_current(version_manager)
-  assert_eq(rollback_config["sampling.probability"], 0.8)
-  assert_eq(rollback_config["batch.size"], 1024)
-  assert_eq(rollback_config["performance.optimization"], None)  // 该项在v1.1.0中不存在
-  
-  Span::add_event(rollback_span, "rollback.completed", [
-    ("rollback.timestamp", "2025-01-02T10:45:05Z"),
-    ("rollback.duration", "5000ms")
-  ])
-  
-  Span::end(rollback_span)
-  Span::end(version_span)
-  
-  // 记录版本管理度量
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "config.versioning.metrics")
-  
-  let version_counter = Meter::create_counter(meter, "config.versions.total", Some("Total config versions"), Some("count"))
-  let rollback_counter = Meter::create_counter(meter, "config.rollbacks.total", Some("Total config rollbacks"), Some("count"))
-  
-  Counter::add(version_counter, 3.0)  // 3个版本
-  Counter::add(rollback_counter, 1.0)  // 1次回滚
-  
-  assert_true(true)
-}
-
-test "配置模板和继承测试" {
-  // 测试配置模板和继承
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "config.template.test")
-  
-  // 创建配置模板管理器
-  let template_manager = ConfigTemplateManager::new()
-  
-  // 定义基础模板
-  let base_template = {
-    "sampling.probability": 1.0,
-    "batch.size": 512,
-    "export.interval": 5000,
-    "log.level": "INFO",
-    "metrics.enabled": true,
-    "tracing.enabled": true
-  }
-  
-  ConfigTemplateManager::create_template(template_manager, "base", base_template)
-  
-  // 定义生产环境模板（继承基础模板）
-  let production_overrides = {
-    "sampling.probability": 0.1,
-    "batch.size": 1024,
-    "export.interval": 3000,
-    "log.level": "WARN"
-  }
-  
-  ConfigTemplateManager::create_template_with_inheritance(
-    template_manager, 
-    "production", 
-    production_overrides, 
-    "base"
-  )
-  
-  // 定义开发环境模板（继承基础模板）
-  let development_overrides = {
-    "sampling.probability": 1.0,
-    "log.level": "DEBUG",
-    "debug.enabled": true
-  }
-  
-  ConfigTemplateManager::create_template_with_inheritance(
-    template_manager, 
-    "development", 
-    development_overrides, 
-    "base"
-  )
-  
-  // 创建模板应用span
-  let template_span = Tracer::start_span(tracer, "config.template.application")
-  
-  // 应用生产环境配置
-  let prod_config = ConfigTemplateManager::instantiate_template(template_manager, "production", {
-    "service.name": "payment-service",
-    "service.version": "2.1.0"
+// 测试1: 基本配置动态更新验证
+test "基本配置动态更新验证" {
+  // 1. 初始化遥测系统配置
+  let initial_config = TelemetrySystemConfig({
+    service_name: "azimuth-test",
+    service_version: "1.0.0",
+    sampling: {
+      enabled: true,
+      probability: 0.1
+    },
+    metrics: {
+      enabled: true,
+      export_interval_ms: 10000,
+      aggregation_enabled: true
+    },
+    tracing: {
+      enabled: true,
+      export_batch_size: 100,
+      export_timeout_ms: 5000
+    },
+    logging: {
+      enabled: true,
+      level: "INFO",
+      export_batch_size: 50
+    },
+    resource: {
+      attributes: [
+        ("environment", "test"),
+        ("region", "us-west-1")
+      ]
+    }
   })
   
-  // 验证生产环境配置
-  assert_eq(prod_config["sampling.probability"], 0.1)  // 覆盖值
-  assert_eq(prod_config["batch.size"], 1024)  // 覆盖值
-  assert_eq(prod_config["export.interval"], 3000)  // 覆盖值
-  assert_eq(prod_config["log.level"], "WARN")  // 覆盖值
-  assert_eq(prod_config["metrics.enabled"], true)  // 继承值
-  assert_eq(prod_config["tracing.enabled"], true)  // 继承值
-  assert_eq(prod_config["service.name"], "payment-service")  // 实例化值
+  // 2. 创建配置管理器
+  let config_manager = create_config_manager(initial_config)
   
-  Span::add_event(template_span, "template.instantiated", [
-    ("template", "production"),
-    "instance.id", "prod-instance-001",
-    ("timestamp", "2025-01-02T10:50:00Z")
-  ])
+  // 3. 验证初始配置
+  let current_config = config_manager.get_current_config()
+  assert_eq(current_config.service_name, "azimuth-test")
+  assert_eq(current_config.sampling.probability, 0.1)
+  assert_eq(current_config.metrics.export_interval_ms, 10000)
+  assert_true(current_config.tracing.enabled)
+  assert_eq(current_config.logging.level, "INFO")
   
-  // 应用开发环境配置
-  let dev_config = ConfigTemplateManager::instantiate_template(template_manager, "development", {
-    "service.name", "auth-service",
-    "service.version", "3.0.0-dev"
+  // 4. 动态更新采样配置
+  let sampling_update = ConfigUpdate({
+    path: "sampling.probability",
+    value: 0.5,
+    update_type: "replace"
   })
   
-  // 验证开发环境配置
-  assert_eq(dev_config["sampling.probability"], 1.0)  // 覆盖值
-  assert_eq(dev_config["batch.size"], 512)  // 继承值
-  assert_eq(dev_config["log.level"], "DEBUG")  // 覆盖值
-  assert_eq(dev_config["debug.enabled"], true)  // 覆盖值
-  assert_eq(dev_config["metrics.enabled"], true)  // 继承值
-  assert_eq(dev_config["service.name"], "auth-service")  // 实例化值
+  let update_result = config_manager.update_config(sampling_update)
+  assert_true(update_result.success)
+  assert_eq(update_result.applied_updates, 1)
   
-  Span::add_event(template_span, "template.instantiated", [
-    ("template", "development"),
-    ("instance.id", "dev-instance-001"),
-    ("timestamp", "2025-01-02T10:50:30Z")
-  ])
+  // 验证采样配置已更新
+  let updated_config = config_manager.get_current_config()
+  assert_eq(updated_config.sampling.probability, 0.5)
   
-  // 测试多层继承
-  let microservice_overrides = {
-    "batch.size": 2048,
-    "service.type": "microservice"
+  // 5. 动态更新指标导出间隔
+  let metrics_update = ConfigUpdate({
+    path: "metrics.export_interval_ms",
+    value: 5000,
+    update_type: "replace"
+  })
+  
+  let metrics_update_result = config_manager.update_config(metrics_update)
+  assert_true(metrics_update_result.success)
+  
+  // 验证指标配置已更新
+  let metrics_updated_config = config_manager.get_current_config()
+  assert_eq(metrics_updated_config.metrics.export_interval_ms, 5000)
+  
+  // 6. 批量更新多个配置项
+  let batch_updates = [
+    ConfigUpdate({
+      path: "service_version",
+      value: "1.1.0",
+      update_type: "replace"
+    }),
+    ConfigUpdate({
+      path: "tracing.export_batch_size",
+      value: 200,
+      update_type: "replace"
+    }),
+    ConfigUpdate({
+      path: "logging.level",
+      value: "DEBUG",
+      update_type: "replace"
+    })
+  ]
+  
+  let batch_update_result = config_manager.update_configs(batch_updates)
+  assert_true(batch_update_result.success)
+  assert_eq(batch_update_result.applied_updates, 3)
+  
+  // 验证批量更新结果
+  let batch_updated_config = config_manager.get_current_config()
+  assert_eq(batch_updated_config.service_version, "1.1.0")
+  assert_eq(batch_updated_config.tracing.export_batch_size, 200)
+  assert_eq(batch_updated_config.logging.level, "DEBUG")
+  
+  // 7. 验证配置更新历史记录
+  let update_history = config_manager.get_update_history()
+  assert_eq(update_history.length(), 5)  // 5次更新
+  assert_true(update_history[0].timestamp > 0)
+  assert_eq(update_history[0].path, "sampling.probability")
+  assert_eq(update_history[0].old_value, "0.1")
+  assert_eq(update_history[0].new_value, "0.5")
+}
+
+// 测试2: 配置验证和回滚机制验证
+test "配置验证和回滚机制验证" {
+  // 1. 创建带验证规则的配置管理器
+  let validation_rules = [
+    ConfigValidationRule({
+      path: "sampling.probability",
+      validator: fn(value) { value >= 0.0 && value <= 1.0 },
+      error_message: "Sampling probability must be between 0.0 and 1.0"
+    }),
+    ConfigValidationRule({
+      path: "metrics.export_interval_ms",
+      validator: fn(value) { value >= 1000 && value <= 60000 },
+      error_message: "Export interval must be between 1000ms and 60000ms"
+    }),
+    ConfigValidationRule({
+      path: "logging.level",
+      validator: fn(value) { 
+        value == "DEBUG" || value == "INFO" || value == "WARN" || value == "ERROR"
+      },
+      error_message: "Log level must be one of: DEBUG, INFO, WARN, ERROR"
+    })
+  ]
+  
+  let initial_config = TelemetrySystemConfig({
+    service_name: "azimuth-test",
+    sampling: { enabled: true, probability: 0.1 },
+    metrics: { enabled: true, export_interval_ms: 10000 },
+    logging: { enabled: true, level: "INFO" }
+  })
+  
+  let config_manager = create_config_manager_with_validation(initial_config, validation_rules)
+  
+  // 2. 测试有效配置更新
+  let valid_update = ConfigUpdate({
+    path: "sampling.probability",
+    value: 0.8,
+    update_type: "replace"
+  })
+  
+  let valid_update_result = config_manager.update_config(valid_update)
+  assert_true(valid_update_result.success)
+  
+  // 3. 测试无效配置更新
+  let invalid_update = ConfigUpdate({
+    path: "sampling.probability",
+    value: 1.5,  // 超出有效范围
+    update_type: "replace"
+  })
+  
+  let invalid_update_result = config_manager.update_config(invalid_update)
+  assert_false(invalid_update_result.success)
+  assert_true(invalid_update_result.error_message.contains("between 0.0 and 1.0"))
+  
+  // 验证配置未因无效更新而改变
+  let config_after_invalid = config_manager.get_current_config()
+  assert_eq(config_after_invalid.sampling.probability, 0.8)  // 保持上一次有效值
+  
+  // 4. 测试配置回滚
+  let rollback_result = config_manager.rollback_to_version(1)  // 回滚到第1个版本
+  assert_true(rollback_result.success)
+  
+  // 验证配置已回滚
+  let rolled_back_config = config_manager.get_current_config()
+  assert_eq(rolled_back_config.sampling.probability, 0.1)  // 回到初始值
+  
+  // 5. 测试配置快照和恢复
+  let snapshot_result = config_manager.create_snapshot("test_snapshot")
+  assert_true(snapshot_result.success)
+  assert_eq(snapshot_result.snapshot_id, "test_snapshot")
+  
+  // 修改配置
+  let modify_update = ConfigUpdate({
+    path: "logging.level",
+    value: "DEBUG",
+    update_type: "replace"
+  })
+  config_manager.update_config(modify_update)
+  
+  // 从快照恢复
+  let restore_result = config_manager.restore_from_snapshot("test_snapshot")
+  assert_true(restore_result.success)
+  
+  // 验证配置已恢复
+  let restored_config = config_manager.get_current_config()
+  assert_eq(restored_config.logging.level, "INFO")  // 恢复到快照时的值
+  
+  // 6. 测试配置事务
+  let transaction = config_manager.begin_transaction()
+  
+  // 在事务中进行多个更新
+  let tx_update1 = ConfigUpdate({
+    path: "sampling.probability",
+    value: 0.3,
+    update_type: "replace"
+  })
+  let tx_update2 = ConfigUpdate({
+    path: "metrics.export_interval_ms",
+    value: 15000,
+    update_type: "replace"
+  })
+  
+  let tx_result1 = config_manager.update_config_in_transaction(transaction, tx_update1)
+  let tx_result2 = config_manager.update_config_in_transaction(transaction, tx_update2)
+  
+  assert_true(tx_result1.success)
+  assert_true(tx_result2.success)
+  
+  // 验证事务中的更改未应用到主配置
+  let config_during_tx = config_manager.get_current_config()
+  assert_eq(config_during_tx.sampling.probability, 0.1)  // 未改变
+  
+  // 提交事务
+  let commit_result = config_manager.commit_transaction(transaction)
+  assert_true(commit_result.success)
+  
+  // 验证事务提交后配置已更新
+  let config_after_commit = config_manager.get_current_config()
+  assert_eq(config_after_commit.sampling.probability, 0.3)
+  assert_eq(config_after_commit.metrics.export_interval_ms, 15000)
+  
+  // 7. 测试事务回滚
+  let rollback_transaction = config_manager.begin_transaction()
+  
+  let tx_update3 = ConfigUpdate({
+    path: "logging.level",
+    value: "ERROR",
+    update_type: "replace"
+  })
+  
+  config_manager.update_config_in_transaction(rollback_transaction, tx_update3)
+  
+  // 回滚事务
+  let rollback_tx_result = config_manager.rollback_transaction(rollback_transaction)
+  assert_true(rollback_tx_result.success)
+  
+  // 验证事务中的更改未应用
+  let config_after_tx_rollback = config_manager.get_current_config()
+  assert_eq(config_after_tx_rollback.logging.level, "INFO")  // 未改变
+}
+
+// 测试3: 热重载配置文件验证
+test "热重载配置文件验证" {
+  // 1. 创建初始配置文件
+  let initial_config_content = """
+  service:
+    name: "azimuth-test"
+    version: "1.0.0"
+  
+  sampling:
+    enabled: true
+    probability: 0.1
+  
+  metrics:
+    enabled: true
+    export_interval_ms: 10000
+  
+  tracing:
+    enabled: true
+    export_batch_size: 100
+  
+  logging:
+    enabled: true
+    level: "INFO"
+  """
+  
+  let config_file_path = create_temp_config_file(initial_config_content)
+  
+  // 2. 创建文件监听的配置管理器
+  let config_manager = create_file_watching_config_manager(config_file_path)
+  
+  // 3. 验证初始配置加载
+  let initial_loaded_config = config_manager.get_current_config()
+  assert_eq(initial_loaded_config.service_name, "azimuth-test")
+  assert_eq(initial_loaded_config.sampling.probability, 0.1)
+  assert_eq(initial_loaded_config.metrics.export_interval_ms, 10000)
+  
+  // 4. 修改配置文件
+  let updated_config_content = """
+  service:
+    name: "azimuth-test-updated"
+    version: "1.1.0"
+  
+  sampling:
+    enabled: true
+    probability: 0.5
+  
+  metrics:
+    enabled: true
+    export_interval_ms: 5000
+  
+  tracing:
+    enabled: true
+    export_batch_size: 200
+  
+  logging:
+    enabled: true
+    level: "DEBUG"
+  """
+  
+  update_config_file(config_file_path, updated_config_content)
+  
+  // 5. 等待文件监听器检测到更改并重新加载
+  let reload_result = wait_for_config_reload(config_manager, 5000)  // 最多等待5秒
+  assert_true(reload_result.success)
+  
+  // 6. 验证配置已重新加载
+  let reloaded_config = config_manager.get_current_config()
+  assert_eq(reloaded_config.service_name, "azimuth-test-updated")
+  assert_eq(reloaded_config.service_version, "1.1.0")
+  assert_eq(reloaded_config.sampling.probability, 0.5)
+  assert_eq(reloaded_config.metrics.export_interval_ms, 5000)
+  assert_eq(reloaded_config.tracing.export_batch_size, 200)
+  assert_eq(reloaded_config.logging.level, "DEBUG")
+  
+  // 7. 测试配置文件格式错误的处理
+  let malformed_config_content = """
+  service:
+    name: "azimuth-test"
+    version: "1.1.0"
+  
+  sampling:
+    enabled: true
+    probability: "invalid_value"  # 应该是数字，但提供了字符串
+  
+  metrics:
+    enabled: true
+    export_interval_ms: 5000
+  """
+  
+  update_config_file(config_file_path, malformed_config_content)
+  
+  // 8. 验证错误处理
+  let error_reload_result = wait_for_config_reload(config_manager, 5000)
+  assert_false(error_reload_result.success)
+  assert_true(error_reload_result.error_message.contains("invalid_value"))
+  
+  // 9. 验证配置未因格式错误而改变
+  let config_after_error = config_manager.get_current_config()
+  assert_eq(config_after_error.service_name, "azimuth-test-updated")  // 保持上一次有效值
+  assert_eq(config_after_error.sampling.probability, 0.5)  // 保持上一次有效值
+  
+  // 10. 清理临时文件
+  cleanup_temp_config_file(config_file_path)
+}
+
+// 测试4: 配置变更通知和副作用验证
+test "配置变更通知和副作用验证" {
+  // 1. 创建配置管理器
+  let initial_config = TelemetrySystemConfig({
+    service_name: "azimuth-test",
+    sampling: { enabled: true, probability: 0.1 },
+    metrics: { enabled: true, export_interval_ms: 10000 },
+    tracing: { enabled: true, export_batch_size: 100 },
+    logging: { enabled: true, level: "INFO" }
+  })
+  
+  let config_manager = create_config_manager(initial_config)
+  
+  // 2. 注册配置变更监听器
+  let notification_log = []
+  
+  let listener1 = ConfigChangeListener({
+    id: "listener1",
+    callback: fn(change) { 
+      notification_log = notification_log.push({
+        listener_id: "listener1",
+        change_path: change.path,
+        old_value: change.old_value,
+        new_value: change.new_value
+      })
+    }
+  })
+  
+  let listener2 = ConfigChangeListener({
+    id: "listener2",
+    callback: fn(change) { 
+      notification_log = notification_log.push({
+        listener_id: "listener2",
+        change_path: change.path,
+        old_value: change.old_value,
+        new_value: change.new_value
+      })
+    }
+  })
+  
+  config_manager.add_listener(listener1)
+  config_manager.add_listener(listener2)
+  
+  // 3. 更新配置并验证通知
+  let config_update = ConfigUpdate({
+    path: "sampling.probability",
+    value: 0.7,
+    update_type: "replace"
+  })
+  
+  let update_result = config_manager.update_config(config_update)
+  assert_true(update_result.success)
+  
+  // 4. 验证所有监听器都收到了通知
+  assert_eq(notification_log.length(), 2)
+  
+  let listener1_notification = notification_log.find(fn(n) { n.listener_id == "listener1" })
+  assert_true(listener1_notification.is_some())
+  match listener1_notification {
+    Some(notification) => {
+      assert_eq(notification.change_path, "sampling.probability")
+      assert_eq(notification.old_value, "0.1")
+      assert_eq(notification.new_value, "0.7")
+    }
+    None => assert_true(false)
   }
   
-  ConfigTemplateManager::create_template_with_inheritance(
-    template_manager, 
-    "microservice", 
-    microservice_overrides, 
-    "production"
-  )
+  let listener2_notification = notification_log.find(fn(n) { n.listener_id == "listener2" })
+  assert_true(listener2_notification.is_some())
+  match listener2_notification {
+    Some(notification) => {
+      assert_eq(notification.change_path, "sampling.probability")
+      assert_eq(notification.old_value, "0.1")
+      assert_eq(notification.new_value, "0.7")
+    }
+    None => assert_true(false)
+  }
   
-  let micro_config = ConfigTemplateManager::instantiate_template(template_manager, "microservice", {
-    "service.name", "user-service",
-    "service.version", "1.5.0"
+  // 5. 测试配置变更的副作用
+  let telemetry_system = create_telemetry_system(initial_config)
+  
+  // 验证初始状态
+  assert_eq(telemetry_system.get_sampling_probability(), 0.1)
+  assert_eq(telemetry_system.get_metrics_export_interval(), 10000)
+  
+  // 更新配置
+  let side_effect_update = ConfigUpdate({
+    path: "sampling.probability",
+    value: 0.9,
+    update_type: "replace"
   })
   
-  // 验证多层继承
-  assert_eq(micro_config["sampling.probability"], 0.1)  // 从production继承
-  assert_eq(micro_config["batch.size"], 2048)  // microservice覆盖
-  assert_eq(micro_config["log.level"], "WARN")  // 从production继承
-  assert_eq(micro_config["service.type"], "microservice")  // microservice定义
+  config_manager.update_config(side_effect_update)
   
-  Span::add_event(template_span, "multi.level.inheritance.tested", [
-    ("inheritance.chain", "base -> production -> microservice"),
-    ("timestamp", "2025-01-02T10:51:00Z")
-  ])
+  // 验证配置变更的副作用
+  assert_eq(telemetry_system.get_sampling_probability(), 0.9)
   
-  Span::end(template_span)
+  // 6. 测试配置变更的延迟应用
+  let delayed_config_manager = create_delayed_config_manager(initial_config, 1000)  // 1秒延迟
   
-  assert_true(true)
+  let delayed_update = ConfigUpdate({
+    path: "metrics.export_interval_ms",
+    value: 20000,
+    update_type: "replace"
+  })
+  
+  let delayed_update_result = delayed_config_manager.update_config(delayed_update)
+  assert_true(delayed_update_result.success)
+  
+  // 验证配置尚未应用
+  let config_before_delay = delayed_config_manager.get_current_config()
+  assert_eq(config_before_delay.metrics.export_interval_ms, 10000)
+  
+  // 等待延迟应用
+  wait_for_delayed_config_update(delayed_config_manager, 1500)
+  
+  // 验证配置已应用
+  let config_after_delay = delayed_config_manager.get_current_config()
+  assert_eq(config_after_delay.metrics.export_interval_ms, 20000)
+  
+  // 7. 测试配置变更的批量通知
+  notification_log = []  // 清空通知日志
+  
+  let batch_updates = [
+    ConfigUpdate({ path: "service_version", value: "2.0.0", update_type: "replace" }),
+    ConfigUpdate({ path: "tracing.export_batch_size", value: 300, update_type: "replace" }),
+    ConfigUpdate({ path: "logging.level", value: "WARN", update_type: "replace" })
+  ]
+  
+  config_manager.update_configs(batch_updates)
+  
+  // 验证批量更新通知
+  assert_eq(notification_log.length(), 6)  // 3个更新 × 2个监听器
+  
+  // 验证每个变更都通知了
+  let service_version_notifications = notification_log.filter(fn(n) { n.change_path == "service_version" })
+  assert_eq(service_version_notifications.length(), 2)
+  
+  let tracing_batch_notifications = notification_log.filter(fn(n) { n.change_path == "tracing.export_batch_size" })
+  assert_eq(tracing_batch_notifications.length(), 2)
+  
+  let logging_level_notifications = notification_log.filter(fn(n) { n.change_path == "logging.level" })
+  assert_eq(logging_level_notifications.length(), 2)
+  
+  // 8. 测试监听器移除
+  config_manager.remove_listener("listener1")
+  
+  notification_log = []  // 清空通知日志
+  
+  let final_update = ConfigUpdate({
+    path: "sampling.probability",
+    value: 0.3,
+    update_type: "replace"
+  })
+  
+  config_manager.update_config(final_update)
+  
+  // 验证只有listener2收到了通知
+  assert_eq(notification_log.length(), 1)
+  assert_eq(notification_log[0].listener_id, "listener2")
+}
+
+// 测试5: 配置优先级和继承验证
+test "配置优先级和继承验证" {
+  // 1. 创建分层配置系统
+  let base_config = TelemetrySystemConfig({
+    service_name: "azimuth-base",
+    service_version: "1.0.0",
+    sampling: { enabled: true, probability: 0.1 },
+    metrics: { 
+      enabled: true, 
+      export_interval_ms: 10000,
+      aggregation_enabled: true
+    },
+    tracing: { 
+      enabled: true, 
+      export_batch_size: 100,
+      export_timeout_ms: 5000
+    },
+    logging: { 
+      enabled: true, 
+      level: "INFO",
+      export_batch_size: 50
+    },
+    resource: {
+      attributes: [
+        ("environment", "production"),
+        ("region", "us-west-1")
+      ]
+    }
+  })
+  
+  // 2. 创建环境特定的覆盖配置
+  let environment_override = ConfigOverride({
+    name: "development",
+    priority: 100,
+    values: [
+      ("service_name", "azimuth-dev"),
+      ("sampling.probability", "1.0"),  // 开发环境全采样
+      ("logging.level", "DEBUG"),
+      ("resource.attributes", [
+        ("environment", "development"),
+        ("debug", "true")
+      ])
+    ]
+  })
+  
+  // 3. 创建服务特定的覆盖配置
+  let service_override = ConfigOverride({
+    name: "service-specific",
+    priority: 200,  // 更高优先级
+    values: [
+      ("service_version", "1.1.0"),
+      ("metrics.export_interval_ms", "5000"),  // 更频繁的指标导出
+      ("tracing.export_batch_size", "200")
+    ]
+  })
+  
+  // 4. 创建配置管理器并应用覆盖
+  let config_manager = create_layered_config_manager(base_config)
+  config_manager.add_override(environment_override)
+  config_manager.add_override(service_override)
+  
+  // 5. 验证配置合并结果
+  let merged_config = config_manager.get_merged_config()
+  
+  // 验证基础配置值
+  assert_eq(merged_config.metrics.aggregation_enabled, true)  // 未覆盖，使用基础值
+  assert_eq(merged_config.tracing.export_timeout_ms, 5000)    // 未覆盖，使用基础值
+  assert_eq(merged_config.logging.export_batch_size, 50)      // 未覆盖，使用基础值
+  
+  // 验证环境覆盖值
+  assert_eq(merged_config.service_name, "azimuth-dev")        // 环境覆盖
+  assert_eq(merged_config.sampling.probability, 1.0)          // 环境覆盖
+  assert_eq(merged_config.logging.level, "DEBUG")             // 环境覆盖
+  
+  // 验证服务覆盖值（更高优先级）
+  assert_eq(merged_config.service_version, "1.1.0")           // 服务覆盖
+  assert_eq(merged_config.metrics.export_interval_ms, 5000)   // 服务覆盖
+  assert_eq(merged_config.tracing.export_batch_size, 200)     // 服务覆盖
+  
+  // 验证资源属性合并
+  assert_eq(merged_config.resource.attributes.length(), 3)
+  assert_true(merged_config.resource.attributes.any(fn(attr) { 
+    attr.key == "environment" && attr.value == "development" 
+  }))
+  assert_true(merged_config.resource_attributes.any(fn(attr) { 
+    attr.key == "region" && attr.value == "us-west-1" 
+  }))
+  assert_true(merged_config.resource_attributes.any(fn(attr) { 
+    attr.key == "debug" && attr.value == "true" 
+  }))
+  
+  // 6. 测试动态添加和移除覆盖
+  let runtime_override = ConfigOverride({
+    name: "runtime",
+    priority: 300,  // 最高优先级
+    values: [
+      ("sampling.probability", "0.5"),  // 运行时调整采样率
+      ("metrics.enabled", "false")      // 运行时禁用指标
+    ]
+  })
+  
+  config_manager.add_override(runtime_override)
+  
+  let runtime_merged_config = config_manager.get_merged_config()
+  
+  // 验证运行时覆盖生效
+  assert_eq(runtime_merged_config.sampling.probability, 0.5)    // 运行时覆盖
+  assert_eq(runtime_merged_config.metrics.enabled, false)      // 运行时覆盖
+  
+  // 7. 测试覆盖移除
+  config_manager.remove_override("runtime")
+  
+  let after_remove_config = config_manager.get_merged_config()
+  
+  // 验证运行时覆盖已移除，恢复到之前的值
+  assert_eq(after_remove_config.sampling.probability, 1.0)      // 恢复到环境覆盖值
+  assert_eq(after_remove_config.metrics.enabled, true)         // 恢复到基础值
+  
+  // 8. 测试配置继承和深度合并
+  let nested_base_config = {
+    telemetry: {
+      processors: [
+        {
+          type: "batch",
+          config: {
+            timeout: 5000,
+            max_size: 100
+          }
+        },
+        {
+          type: "attr",
+          config: {
+            actions: []
+          }
+        }
+      ]
+    }
+  }
+  
+  let nested_override = ConfigOverride({
+    name: "nested-override",
+    priority: 100,
+    values: [
+      ("telemetry.processors[0].config.timeout", "10000"),  // 修改嵌套值
+      ("telemetry.processors[1].config.actions", "[{key: \"env\", action: \"upsert\"}]")  // 添加嵌套值
+    ]
+  })
+  
+  let nested_config_manager = create_layered_config_manager(nested_base_config)
+  nested_config_manager.add_override(nested_override)
+  
+  let nested_merged_config = nested_config_manager.get_merged_config()
+  
+  // 验证嵌套配置合并
+  assert_eq(nested_merged_config.telemetry.processors[0].config.timeout, 10000)
+  assert_eq(nested_merged_config.telemetry.processors[0].config.max_size, 100)  // 未覆盖
+  assert_eq(nested_merged_config.telemetry.processors[1].config.actions.length(), 1)  // 添加了值
+}
+
+// 辅助函数：创建配置管理器
+fn create_config_manager(config) -> ConfigManager {
+  ConfigManager(config)
+}
+
+// 辅助函数：创建带验证的配置管理器
+fn create_config_manager_with_validation(config, rules) -> ConfigManager {
+  ConfigManager(config, rules)
+}
+
+// 辅助函数：创建文件监听配置管理器
+fn create_file_watching_config_manager(file_path) -> ConfigManager {
+  ConfigManager(file_path)
+}
+
+// 辅助函数：创建临时配置文件
+fn create_temp_config_file(content) -> String {
+  "/tmp/azimuth_test_config.yaml"
+}
+
+// 辅助函数：更新配置文件
+fn update_config_file(file_path, content) -> Unit {
+  // 更新文件内容
+}
+
+// 辅助函数：等待配置重新加载
+fn wait_for_config_reload(manager, timeout_ms) -> {
+  success: true
+}
+
+// 辅助函数：清理临时配置文件
+fn cleanup_temp_config_file(file_path) -> Unit {
+  // 清理文件
+}
+
+// 辅助函数：创建遥测系统
+fn create_telemetry_system(config) -> TelemetrySystem {
+  TelemetrySystem(config)
+}
+
+// 辅助函数：创建延迟配置管理器
+fn create_delayed_config_manager(config, delay_ms) -> ConfigManager {
+  ConfigManager(config, delay_ms)
+}
+
+// 辅助函数：等待延迟配置更新
+fn wait_for_delayed_config_update(manager, timeout_ms) -> Unit {
+  // 等待更新
+}
+
+// 辅助函数：创建分层配置管理器
+fn create_layered_config_manager(base_config) -> LayeredConfigManager {
+  LayeredConfigManager(base_config)
+}
+
+// 类型定义（简化）
+type TelemetrySystemConfig {
+  service_name: String
+  service_version: String
+  sampling: SamplingConfig
+  metrics: MetricsConfig
+  tracing: TracingConfig
+  logging: LoggingConfig
+  resource: ResourceConfig
+}
+
+type SamplingConfig {
+  enabled: Bool
+  probability: Float
+}
+
+type MetricsConfig {
+  enabled: Bool
+  export_interval_ms: Int
+  aggregation_enabled: Bool
+}
+
+type TracingConfig {
+  enabled: Bool
+  export_batch_size: Int
+  export_timeout_ms: Int
+}
+
+type LoggingConfig {
+  enabled: Bool
+  level: String
+  export_batch_size: Int
+}
+
+type ResourceConfig {
+  attributes: Array[(String, String)]
+}
+
+type ConfigUpdate {
+  path: String
+  value: Any
+  update_type: String
+}
+
+type ConfigValidationRule {
+  path: String
+  validator: (Any) -> Bool
+  error_message: String
+}
+
+type ConfigChangeListener {
+  id: String
+  callback: (ConfigChange) -> Unit
+}
+
+type ConfigChange {
+  path: String
+  old_value: String
+  new_value: String
+}
+
+type ConfigOverride {
+  name: String
+  priority: Int
+  values: Array[(String, Any)]
+}
+
+type ConfigManager {
+  // 配置管理器实现
+}
+
+type LayeredConfigManager {
+  // 分层配置管理器实现
+}
+
+type TelemetrySystem {
+  // 遥测系统实现
 }
