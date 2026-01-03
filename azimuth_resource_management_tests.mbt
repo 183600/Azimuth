@@ -1,330 +1,386 @@
-// Azimuth Resource Management and Cleanup Tests
-// This file contains test cases for resource management and cleanup
+// Azimuth 资源管理测试用例
+// 专注于测试系统资源的分配、监控、回收和优化
 
-// Test 1: Basic Resource Management
-test "basic resource management" {
-  let resource_manager = ResourceManager::new()
-  
-  // Test resource creation and registration
-  let resource1 = TestResource::new("resource1")
-  let resource2 = TestResource::new("resource2")
-  
-  let id1 = ResourceManager::register(resource_manager, resource1)
-  let id2 = ResourceManager::register(resource_manager, resource2)
-  
-  // Test resource retrieval
-  let retrieved1 = ResourceManager::get(resource_manager, id1)
-  match retrieved1 {
-    Some(resource) => assert_eq(TestResource::name(resource), "resource1")
-    None => assert_true(false)
-  }
-  
-  let retrieved2 = ResourceManager::get(resource_manager, id2)
-  match retrieved2 {
-    Some(resource) => assert_eq(TestResource::name(resource), "resource2")
-    None => assert_true(false)
-  }
-  
-  // Test resource removal
-  ResourceManager::remove(resource_manager, id1)
-  let removed1 = ResourceManager::get(resource_manager, id1)
-  match removed1 {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  // Verify resource2 is still available
-  let still_available = ResourceManager::get(resource_manager, id2)
-  match still_available {
-    Some(_) => assert_true(true)
-    None => assert_true(false)
-  }
-}
-
-// Test 2: Automatic Resource Cleanup
-test "automatic resource cleanup" {
-  let resource_manager = ResourceManager::new()
-  let cleanup_called = AtomicInt::new(0)
-  
-  // Create a resource with cleanup callback
-  let resource = TestResource::with_cleanup("cleanup_resource", {
-    AtomicInt::increment(cleanup_called)
+// 测试1: 内存资源管理
+test "内存资源管理测试" {
+  // 创建内存管理器
+  let memory_manager = MemoryManager::new({
+    max_heap_size: 100 * 1024 * 1024,  // 100MB
+    gc_threshold: 0.8,  // 80%时触发GC
+    allocation_strategy: "generational"
   })
   
-  let id = ResourceManager::register(resource_manager, resource)
+  let initial_memory = memory_manager.get_current_usage()
   
-  // Verify resource is registered
-  let retrieved = ResourceManager::get(resource_manager, id)
-  match retrieved {
-    Some(_) => assert_true(true)
-    None => assert_true(false)
-  }
+  // 分配大量对象
+  let allocated_objects = []
+  let object_size = 1024  // 1KB per object
   
-  // Remove resource and verify cleanup is called
-  ResourceManager::remove(resource_manager, id)
-  assert_eq(AtomicInt::get(cleanup_called), 1)
-  
-  // Verify resource is no longer available
-  let removed = ResourceManager::get(resource_manager, id)
-  match removed {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-}
-
-// Test 3: Resource Pool Management
-test "resource pool management" {
-  let resource_pool = ResourcePool::new(5) // Pool size 5
-  
-  // Test pool initial state
-  assert_eq(ResourcePool::available_count(resource_pool), 5)
-  assert_eq(ResourcePool::active_count(resource_pool), 0)
-  
-  // Test resource acquisition
-  let resource1 = ResourcePool::acquire(resource_pool)
-  let resource2 = ResourcePool::acquire(resource_pool)
-  let resource3 = ResourcePool::acquire(resource_pool)
-  
-  assert_eq(ResourcePool::available_count(resource_pool), 2)
-  assert_eq(ResourcePool::active_count(resource_pool), 3)
-  
-  // Test resource release
-  ResourcePool::release(resource_pool, resource1)
-  assert_eq(ResourcePool::available_count(resource_pool), 3)
-  assert_eq(ResourcePool::active_count(resource_pool), 2)
-  
-  // Test pool exhaustion
-  let resources = []
-  for i = 0; i < 5; i = i + 1 {
-    match ResourcePool::try_acquire(resource_pool) {
-      Some(resource) => resources.push(resource)
-      None => break
+  for i = 0; i < 50000; i = i + 1 {
+    let obj = memory_manager.allocate(object_size)
+    allocated_objects.push(obj)
+    
+    // 每10000个对象检查一次内存使用
+    if i % 10000 == 0 {
+      let current_usage = memory_manager.get_current_usage()
+      let usage_percentage = current_usage.to_float() / memory_manager.get_max_heap_size().to_float()
+      
+      // 如果使用率超过阈值，应该触发GC
+      if usage_percentage > 0.8 {
+        memory_manager.trigger_gc()
+        
+        // GC后内存使用应该减少
+        let post_gc_usage = memory_manager.get_current_usage()
+        assert_true(post_gc_usage < current_usage)
+      }
     }
   }
   
-  // Pool should be exhausted now
-  let exhausted = ResourcePool::try_acquire(resource_pool)
-  match exhausted {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
+  let peak_memory = memory_manager.get_peak_usage()
+  
+  // 验证内存使用在限制范围内
+  assert_true(peak_memory <= memory_manager.get_max_heap_size())
+  
+  // 释放部分对象
+  for i = 0; i < allocated_objects.length() / 2; i = i + 1 {
+    memory_manager.deallocate(allocated_objects[i])
   }
   
-  // Release all resources
-  for resource in resources {
-    ResourcePool::release(resource_pool, resource)
+  // 手动触发GC
+  memory_manager.trigger_gc()
+  
+  let final_memory = memory_manager.get_current_usage()
+  
+  // 验证内存回收效果
+  assert_true(final_memory < peak_memory)
+  
+  // 获取内存统计信息
+  let stats = memory_manager.get_stats()
+  assert_true(stats.total_allocations > 0)
+  assert_true(stats.total_deallocations > 0)
+  assert_true(stats.gc_count > 0)
+}
+
+// 测试2: 连接池管理
+test "连接池管理测试" {
+  // 创建数据库连接池
+  let connection_pool = ConnectionPool::new({
+    min_connections: 2,
+    max_connections: 10,
+    connection_timeout_ms: 5000,
+    idle_timeout_ms: 30000,
+    max_lifetime_ms: 300000
+  })
+  
+  // 初始状态验证
+  assert_eq(connection_pool.get_active_connections(), 0)
+  assert_eq(connection_pool.get_idle_connections(), 2)
+  assert_eq(connection_pool.get_total_connections(), 2)
+  
+  // 获取连接
+  let connections = []
+  for i = 0; i < 8; i = i + 1 {
+    let conn = connection_pool.get_connection()
+    connections.push(conn)
   }
   
-  // Pool should be fully available again
-  assert_eq(ResourcePool::available_count(resource_pool), 5)
-  assert_eq(ResourcePool::active_count(resource_pool), 0)
-}
-
-// Test 4: Resource Lifecycle Management
-test "resource lifecycle management" {
-  let lifecycle_manager = ResourceLifecycleManager::new()
+  // 验证连接池状态
+  assert_eq(connection_pool.get_active_connections(), 8)
+  assert_eq(connection_pool.get_idle_connections(), 0)
+  assert_eq(connection_pool.get_total_connections(), 8)
   
-  // Test resource lifecycle states
-  let resource = TestResource::new("lifecycle_resource")
-  let lifecycle = ResourceLifecycle::new(resource)
-  
-  // Initial state should be Uninitialized
-  assert_eq(ResourceLifecycle::state(lifecycle), Uninitialized)
-  
-  // Initialize resource
-  ResourceLifecycle::initialize(lifecycle)
-  assert_eq(ResourceLifecycle::state(lifecycle), Ready)
-  
-  // Activate resource
-  ResourceLifecycle::activate(lifecycle)
-  assert_eq(ResourceLifecycle::state(lifecycle), Active)
-  
-  // Deactivate resource
-  ResourceLifecycle::deactivate(lifecycle)
-  assert_eq(ResourceLifecycle::state(lifecycle), Inactive)
-  
-  // Cleanup resource
-  ResourceLifecycle::cleanup(lifecycle)
-  assert_eq(ResourceLifecycle::state(lifecycle), Disposed)
-}
-
-// Test 5: Memory Resource Management
-test "memory resource management" {
-  let memory_manager = MemoryResourceManager::new(1024 * 1024) // 1MB limit
-  
-  // Test memory allocation
-  let allocation1 = MemoryResourceManager::allocate(memory_manager, 1024) // 1KB
-  let allocation2 = MemoryResourceManager::allocate(memory_manager, 2048) // 2KB
-  
-  // Verify allocations
-  assert_true(MemoryResourceManager::is_valid(allocation1))
-  assert_true(MemoryResourceManager::is_valid(allocation2))
-  
-  // Test memory usage tracking
-  assert_eq(MemoryResourceManager::used_memory(memory_manager), 3072) // 1KB + 2KB
-  assert_eq(MemoryResourceManager::available_memory(memory_manager), 1047552) // 1MB - 3KB
-  
-  // Test memory deallocation
-  MemoryResourceManager::deallocate(memory_manager, allocation1)
-  assert_eq(MemoryResourceManager::used_memory(memory_manager), 2048)
-  assert_false(MemoryResourceManager::is_valid(allocation1))
-  
-  // Test memory limit enforcement
-  let large_allocation = MemoryResourceManager::try_allocate(memory_manager, 2 * 1024 * 1024) // 2MB
-  match large_allocation {
-    Some(_) => assert_true(false) // Should fail
-    None => assert_true(true)    // Expected to fail
+  // 尝试获取超过最大连接数的连接
+  let extra_conn_result = connection_pool.get_connection()
+  match extra_conn_result {
+    Ok(_) => assert_true(false, "不应该能获取超过最大连接数的连接")
+    Err(error) => assert_true(true, "正确返回连接池耗尽错误")
   }
+  
+  // 释放部分连接
+  for i = 0; i < 4; i = i + 1 {
+    connection_pool.release_connection(connections[i])
+  }
+  
+  // 验证连接回收
+  assert_eq(connection_pool.get_active_connections(), 4)
+  assert_eq(connection_pool.get_idle_connections(), 4)
+  assert_eq(connection_pool.get_total_connections(), 8)
+  
+  // 现在应该能获取新连接
+  let new_conn = connection_pool.get_connection()
+  match new_conn {
+    Ok(_) => assert_true(true, "成功获取回收的连接")
+    Err(_) => assert_true(false, "应该能获取回收的连接")
+  }
+  
+  // 释放所有连接
+  for i = 4; i < connections.length(); i = i + 1 {
+    connection_pool.release_connection(connections[i])
+  }
+  connection_pool.release_connection(new_conn.unwrap())
+  
+  // 验证最终状态
+  assert_eq(connection_pool.get_active_connections(), 0)
+  assert_true(connection_pool.get_idle_connections() >= 2)
+  assert_true(connection_pool.get_total_connections() >= 2)
+  
+  // 测试连接健康检查
+  let unhealthy_conn = connection_pool.get_connection().unwrap()
+  // 模拟连接不健康
+  unhealthy_conn.mark_unhealthy()
+  connection_pool.release_connection(unhealthy_conn)
+  
+  // 下次获取时应该得到健康连接
+  let healthy_conn = connection_pool.get_connection().unwrap()
+  assert_true(healthy_conn.is_healthy())
 }
 
-// Test 6: File Resource Management
-test "file resource management" {
-  let file_manager = FileResourceManager::new()
+// 测试3: 线程池管理
+test "线程池管理测试" {
+  // 创建线程池
+  let thread_pool = ThreadPool::new({
+    min_threads: 2,
+    max_threads: 8,
+    keep_alive_time_ms: 60000,
+    queue_size: 100
+  })
   
-  // Test file resource creation
-  let temp_file = "/tmp/azimuth_test_file.txt"
-  let file_resource = FileResourceManager::create(file_manager, temp_file)
+  // 初始状态验证
+  assert_eq(thread_pool.get_active_threads(), 0)
+  assert_eq(thread_pool.get_idle_threads(), 2)
+  assert_eq(thread_pool.get_total_threads(), 2)
+  assert_eq(thread_pool.get_queue_size(), 0)
   
-  assert_true(FileResourceManager::exists(file_resource))
-  assert_eq(FileResourceManager::path(file_resource), temp_file)
+  // 提交任务
+  let task_results = []
+  let task_count = 20
   
-  // Test file resource operations
-  FileResourceManager::write(file_resource, "Test content")
-  let content = FileResourceManager::read(file_resource)
-  assert_eq(content, "Test content")
+  for i = 0; i < task_count; i = i + 1 {
+    let task_id = i
+    let result = thread_pool.submit(|| {
+      // 模拟耗时任务
+      Thread::sleep(100)  // 100ms
+      return task_id * 2
+    })
+    task_results.push(result)
+  }
   
-  // Test file resource cleanup
-  FileResourceManager::cleanup(file_resource)
-  assert_false(FileResourceManager::exists(file_resource))
+  // 验证线程池扩展
+  assert_true(thread_pool.get_total_threads() >= 2)
+  assert_true(thread_pool.get_total_threads() <= 8)
+  
+  // 等待所有任务完成
+  let completed_results = []
+  for result in task_results {
+    let value = result.get()  // 阻塞等待任务完成
+    completed_results.push(value)
+  }
+  
+  // 验证任务执行结果
+  assert_eq(completed_results.length(), task_count)
+  for i = 0; i < task_count; i = i + 1 {
+    assert_eq(completed_results[i], i * 2)
+  }
+  
+  // 验证线程池状态恢复
+  Thread::sleep(1000)  // 等待线程回收
+  assert_true(thread_pool.get_active_threads() < thread_pool.get_total_threads())
+  
+  // 测试任务队列限制
+  let queue_overflow_results = []
+  
+  // 提交大量任务以填满队列
+  for i = 0; i < 150; i = i + 1 {  // 超过队列大小(100)
+    let result = thread_pool.submit(|| {
+      Thread::sleep(50)
+      return "completed"
+    })
+    
+    match result {
+      Ok(_) => queue_overflow_results.push("submitted")
+      Err(_) => queue_overflow_results.push("rejected")
+    }
+  }
+  
+  // 验证队列溢出处理
+  let submitted_count = queue_overflow_results.count(|r| r == "submitted")
+  let rejected_count = queue_overflow_results.count(|r| r == "rejected")
+  
+  assert_true(submitted_count <= 100 + 8)  // 队列大小 + 最大线程数
+  assert_true(rejected_count > 0)  // 应该有任务被拒绝
 }
 
-// Test 7: Network Resource Management
-test "network resource management" {
-  let network_manager = NetworkResourceManager::new()
+// 测试4: 文件句柄管理
+test "文件句柄管理测试" {
+  // 创建文件句柄管理器
+  let fd_manager = FileDescriptorManager::new({
+    max_open_files: 100,
+    cleanup_interval_ms: 10000,
+    file_timeout_ms: 300000
+  })
   
-  // Test connection resource
-  let connection = NetworkResourceManager::create_connection(
-    network_manager,
-    "https://example.com",
-    8080,
-    5000 // timeout
-  )
+  // 创建临时文件
+  let temp_files = []
+  for i = 0; i < 50; i = i + 1 {
+    let file_path = "/tmp/test_file_" + i.to_string()
+    let file = File::create(file_path).unwrap()
+    file.write_all("test content").unwrap()
+    temp_files.push(file_path)
+  }
   
-  assert_true(NetworkResourceManager::is_connected(connection))
-  assert_eq(NetworkResourceManager::get_endpoint(connection), "https://example.com:8080")
+  // 打开文件
+  let open_files = []
+  for file_path in temp_files {
+    let file = fd_manager.open_file(file_path, "read").unwrap()
+    open_files.push(file)
+  }
   
-  // Test connection pool
-  let pool = NetworkResourceManager::create_pool(network_manager, 10) // Max 10 connections
-  let pooled_connection = NetworkResourceManager::acquire_connection(pool)
+  // 验证文件句柄使用
+  assert_eq(fd_manager.get_open_file_count(), 50)
+  assert_true(fd_manager.get_open_file_count() <= fd_manager.get_max_open_files())
   
-  assert_true(NetworkResourceManager::is_connected(pooled_connection))
+  // 关闭部分文件
+  for i = 0; i < 25; i = i + 1 {
+    fd_manager.close_file(open_files[i])
+  }
   
-  // Test connection release
-  NetworkResourceManager::release_connection(pool, pooled_connection)
-  assert_eq(NetworkResourceManager::available_connections(pool), 1)
+  // 验证文件句柄回收
+  assert_eq(fd_manager.get_open_file_count(), 25)
   
-  // Test pool cleanup
-  NetworkResourceManager::cleanup_pool(pool)
-  assert_eq(NetworkResourceManager::available_connections(pool), 0)
+  // 重新打开文件
+  for i = 0; i < 25; i = i + 1 {
+    let file_path = temp_files[i]
+    let file = fd_manager.open_file(file_path, "read").unwrap()
+    open_files[i] = file
+  }
+  
+  // 验证文件句柄重用
+  assert_eq(fd_manager.get_open_file_count(), 50)
+  
+  // 测试文件句柄泄漏检测
+  // 模拟忘记关闭文件
+  let leaked_files = []
+  for i = 0; i < 10; i = i + 1 {
+    let file_path = "/tmp/leaked_file_" + i.to_string()
+    let file = File::create(file_path).unwrap()
+    file.write_all("leaked content").unwrap()
+    
+    // 直接打开，不通过管理器
+    let raw_file = File::open(file_path).unwrap()
+    leaked_files.push(raw_file)
+  }
+  
+  // 检测泄漏
+  let leaked_count = fd_manager.detect_leaked_descriptors()
+  assert_true(leaked_count >= 10)
+  
+  // 清理泄漏的文件
+  for file in leaked_files {
+    drop(file)  // 显式关闭
+  }
+  
+  // 清理所有文件
+  for file in open_files {
+    fd_manager.close_file(file)
+  }
+  
+  for file_path in temp_files {
+    File::remove(file_path).unwrap()
+  }
+  
+  for i = 0; i < 10; i = i + 1 {
+    let file_path = "/tmp/leaked_file_" + i.to_string()
+    File::remove(file_path).unwrap()
+  }
+  
+  // 验证清理完成
+  assert_eq(fd_manager.get_open_file_count(), 0)
 }
 
-// Test 8: Database Resource Management
-test "database resource management" {
-  let db_manager = DatabaseResourceManager::new()
+// 测试5: 缓存资源管理
+test "缓存资源管理测试" {
+  // 创建缓存管理器
+  let cache_manager = CacheManager::new({
+    max_memory_size: 50 * 1024 * 1024,  // 50MB
+    max_entries: 10000,
+    eviction_policy: "lru",  // Least Recently Used
+    cleanup_interval_ms: 30000
+  })
   
-  // Test database connection
-  let connection = DatabaseResourceManager::create_connection(
-    db_manager,
-    "postgresql://localhost:5432/testdb",
-    "user",
-    "password"
-  )
+  // 添加缓存项
+  let cache_keys = []
+  let item_size = 1024  // 1KB per item
   
-  assert_true(DatabaseResourceManager::is_connected(connection))
+  for i = 0; i < 50000; i = i + 1 {
+    let key = "item_" + i.to_string()
+    let value = "data_" + i.to_string() + "_".repeat(item_size / 10)  // 创建约1KB的数据
+    cache_manager.put(key, value)
+    cache_keys.push(key)
+    
+    // 每10000项检查缓存状态
+    if i % 10000 == 0 {
+      let stats = cache_manager.get_stats()
+      
+      // 验证缓存大小限制
+      assert_true(stats.memory_usage <= cache_manager.get_max_memory_size())
+      assert_true(stats.entry_count <= cache_manager.get_max_entries())
+      
+      // 验证淘汰策略生效
+      if stats.entry_count >= cache_manager.get_max_entries() {
+        assert_true(stats.evictions > 0)
+      }
+    }
+  }
   
-  // Test connection reuse
-  let reused_connection = DatabaseResourceManager::get_connection(
-    db_manager,
-    "postgresql://localhost:5432/testdb"
-  )
+  let final_stats = cache_manager.get_stats()
   
-  assert_true(reused_connection.id == connection.id) // Should reuse connection
+  // 验证缓存限制
+  assert_true(final_stats.memory_usage <= cache_manager.get_max_memory_size())
+  assert_true(final_stats.entry_count <= cache_manager.get_max_entries())
+  assert_true(final_stats.evictions > 0)
   
-  // Test transaction management
-  let transaction = DatabaseResourceManager::begin_transaction(connection)
-  assert_true(DatabaseResourceManager::is_active(transaction))
+  // 测试缓存命中率
+  let hits = 0
+  let total_requests = 1000
   
-  DatabaseResourceManager::commit_transaction(transaction)
-  assert_false(DatabaseResourceManager::is_active(transaction))
+  for i = 0; i < total_requests; i = i + 1 {
+    // 70%概率访问存在的key，30%概率访问不存在的key
+    let key_index = if i % 10 < 7 { i % cache_keys.length() } else { cache_keys.length() + i }
+    let key = "item_" + key_index.to_string()
+    
+    let result = cache_manager.get(key)
+    match result {
+      Some(_) => hits = hits + 1
+      None => {}
+    }
+  }
   
-  // Test connection cleanup
-  DatabaseResourceManager::cleanup_connection(connection)
-  assert_false(DatabaseResourceManager::is_connected(connection))
-}
-
-// Test 9: Resource Leak Detection
-test "resource leak detection" {
-  let leak_detector = ResourceLeakDetector::new()
+  let hit_rate = hits.to_float() / total_requests.to_float()
   
-  // Test leak detection with proper cleanup
-  let resource1 = TestResource::new("leak_test_1")
-  LeakDetector::track(leak_detector, resource1)
+  // 验证命中率合理（考虑到淘汰策略）
+  assert_true(hit_rate >= 0.5)  // 至少50%命中率
   
-  // Properly cleanup resource
-  TestResource::cleanup(resource1)
-  LeakDetector::untrack(leak_detector, resource1)
+  // 测试缓存过期
+  cache_manager.put("temp_item", "temp_value", Some(100))  // 100ms过期
+  Thread::sleep(150)
   
-  let leaks = LeakDetector::detect_leaks(leak_detector)
-  assert_eq(leaks.length(), 0) // No leaks
+  let expired_result = cache_manager.get("temp_item")
+  match expired_result {
+    Some(_) => assert_true(false, "过期项应该被清除")
+    None => assert_true(true, "过期项已清除")
+  }
   
-  // Test leak detection with improper cleanup
-  let resource2 = TestResource::new("leak_test_2")
-  LeakDetector::track(leak_detector, resource2)
+  // 测试缓存清理
+  let before_cleanup = cache_manager.get_stats().entry_count
+  cache_manager.cleanup_expired()
+  let after_cleanup = cache_manager.get_stats().entry_count
   
-  // Forget to cleanup resource (simulating a leak)
-  // TestResource::cleanup(resource2) // This is intentionally omitted
-  // LeakDetector::untrack(leak_detector, resource2) // This is intentionally omitted
+  // 清理后项数可能减少（如果有过期项）
+  assert_true(after_cleanup <= before_cleanup)
   
-  let leaks2 = LeakDetector::detect_leaks(leak_detector)
-  assert_eq(leaks2.length(), 1) // One leak detected
-  assert_eq(leaks2[0].resource_name, "leak_test_2")
-}
-
-// Test 10: Resource Usage Monitoring
-test "resource usage monitoring" {
-  let monitor = ResourceMonitor::new()
-  
-  // Test CPU monitoring
-  let cpu_usage = ResourceMonitor::get_cpu_usage(monitor)
-  assert_true(cpu_usage >= 0.0 && cpu_usage <= 100.0)
-  
-  // Test memory monitoring
-  let memory_usage = ResourceMonitor::get_memory_usage(monitor)
-  assert_true(memory_usage.total > 0)
-  assert_true(memory_usage.used > 0)
-  assert_true(memory_usage.available > 0)
-  assert_true(memory_usage.used <= memory_usage.total)
-  
-  // Test disk monitoring
-  let disk_usage = ResourceMonitor::get_disk_usage(monitor, "/")
-  assert_true(disk_usage.total > 0)
-  assert_true(disk_usage.used > 0)
-  assert_true(disk_usage.available > 0)
-  assert_true(disk_usage.used <= disk_usage.total)
-  
-  // Test network monitoring
-  let network_usage = ResourceMonitor::get_network_usage(monitor)
-  assert_true(network_usage.bytes_sent >= 0)
-  assert_true(network_usage.bytes_received >= 0)
-  assert_true(network_usage.packets_sent >= 0)
-  assert_true(network_usage.packets_received >= 0)
-  
-  // Test resource thresholds
-  ResourceMonitor::set_cpu_threshold(monitor, 80.0) // Alert if CPU > 80%
-  ResourceMonitor::set_memory_threshold(monitor, 90.0) // Alert if memory > 90%
-  
-  // Simulate high resource usage
-  let alerts = ResourceMonitor::check_thresholds(monitor)
-  // Depending on actual system conditions, this might or might not trigger alerts
-  // We just verify the mechanism works
-  assert_true(alerts.length() >= 0)
+  // 测试缓存清空
+  cache_manager.clear()
+  let cleared_stats = cache_manager.get_stats()
+  assert_eq(cleared_stats.entry_count, 0)
+  assert_eq(cleared_stats.memory_usage, 0)
 }

@@ -1,406 +1,602 @@
-// Azimuth Data Serialization and Deserialization Tests
-// This file contains test cases for data serialization and deserialization
+// Azimuth 序列化反序列化测试用例
+// 专注于测试各种数据格式的序列化和反序列化功能
 
-// Test 1: JSON Serialization
-test "json serialization" {
-  let telemetry_data = TelemetryData::new(
-    "service-123",
-    "operation-456",
-    [
-      ("http.method", StringValue("GET")),
-      ("http.url", StringValue("/api/users")),
-      ("http.status_code", IntValue(200)),
-      ("duration_ms", FloatValue(125.5))
+// 测试1: JSON序列化反序列化
+test "JSON序列化反序列化测试" {
+  // 创建复杂的数据结构
+  let telemetry_data = {
+    trace_id: "trace-123456789",
+    span_id: "span-001",
+    parent_span_id: Some("parent-000"),
+    operation_name: "http.request",
+    start_time: 1640995200000,
+    end_time: 1640995200100,
+    duration_ms: 100,
+    status: "ok",
+    tags: {
+      "http.method": "GET",
+      "http.url": "/api/users/123",
+      "http.status_code": "200",
+      "service.name": "user-service",
+      "service.version": "1.2.3"
+    },
+    logs: [
+      {
+        timestamp: 1640995200050,
+        level: "info",
+        message: "Processing user request",
+        fields: {
+          "user.id": "123",
+          "request.id": "req-abc123"
+        }
+      },
+      {
+        timestamp: 1640995200080,
+        level: "debug",
+        message: "Database query executed",
+        fields: {
+          "query.time": "25ms",
+          "db.connection": "conn-456"
+        }
+      }
     ],
-    1234567890L
-  )
-  
-  // Test JSON serialization
-  let serializer = JsonSerializer::new()
-  let json_data = Serializer::serialize(serializer, telemetry_data)
-  
-  // Verify JSON structure
-  assert_true(json_data.contains("\"service_name\":\"service-123\""))
-  assert_true(json_data.contains("\"operation_name\":\"operation-456\""))
-  assert_true(json_data.contains("\"http.method\":\"GET\""))
-  assert_true(json_data.contains("\"http.status_code\":200"))
-  assert_true(json_data.contains("\"duration_ms\":125.5"))
-  
-  // Test JSON deserialization
-  let deserializer = JsonDeserializer::new()
-  let deserialized_data = Deserializer::deserialize(deserializer, json_data)
-  
-  // Verify deserialized data
-  assert_eq(TelemetryData::service_name(deserialized_data), "service-123")
-  assert_eq(TelemetryData::operation_name(deserialized_data), "operation-456")
-  assert_eq(TelemetryData::timestamp(deserialized_data), 1234567890L)
-  
-  let http_method = TelemetryData::get_attribute(deserialized_data, "http.method")
-  match http_method {
-    Some(StringValue(method)) => assert_eq(method, "GET")
-    _ => assert_true(false)
+    metrics: {
+      "cpu.usage": 45.2,
+      "memory.usage": 67.8,
+      "request.count": 1234
+    }
   }
   
-  let status_code = TelemetryData::get_attribute(deserialized_data, "http.status_code")
-  match status_code {
-    Some(IntValue(code)) => assert_eq(code, 200)
-    _ => assert_true(false)
-  }
-}
-
-// Test 2: XML Serialization
-test "xml serialization" {
-  let telemetry_data = TelemetryData::new(
-    "service-123",
-    "operation-456",
-    [
-      ("http.method", StringValue("POST")),
-      ("http.url", StringValue("/api/data")),
-      ("request.size", IntValue(1024)),
-      ("response.size", IntValue(2048))
-    ],
-    1234567890L
-  )
-  
-  // Test XML serialization
-  let serializer = XmlSerializer::new()
-  let xml_data = Serializer::serialize(serializer, telemetry_data)
-  
-  // Verify XML structure
-  assert_true(xml_data.contains("<telemetry>"))
-  assert_true(xml_data.contains("<service_name>service-123</service_name>"))
-  assert_true(xml_data.contains("<operation_name>operation-456</operation_name>"))
-  assert_true(xml_data.contains("<attributes>"))
-  assert_true(xml_data.contains("<attribute name=\"http.method\" type=\"string\">POST</attribute>"))
-  assert_true(xml_data.contains("<attribute name=\"request.size\" type=\"int\">1024</attribute>"))
-  assert_true(xml_data.contains("</telemetry>"))
-  
-  // Test XML deserialization
-  let deserializer = XmlDeserializer::new()
-  let deserialized_data = Deserializer::deserialize(deserializer, xml_data)
-  
-  // Verify deserialized data
-  assert_eq(TelemetryData::service_name(deserialized_data), "service-123")
-  assert_eq(TelemetryData::operation_name(deserialized_data), "operation-456")
-  
-  let http_method = TelemetryData::get_attribute(deserialized_data, "http.method")
-  match http_method {
-    Some(StringValue(method)) => assert_eq(method, "POST")
-    _ => assert_true(false)
-  }
-}
-
-// Test 3: Binary Serialization
-test "binary serialization" {
-  let telemetry_data = TelemetryData::new(
-    "service-123",
-    "operation-456",
-    [
-      ("counter", IntValue(42)),
-      ("ratio", FloatValue(3.14159)),
-      ("enabled", BoolValue(true))
-    ],
-    1234567890L
-  )
-  
-  // Test binary serialization
-  let serializer = BinarySerializer::new()
-  let binary_data = Serializer::serialize(serializer, telemetry_data)
-  
-  // Binary data should be non-empty
-  assert_true(binary_data.length() > 0)
-  
-  // Test binary deserialization
-  let deserializer = BinaryDeserializer::new()
-  let deserialized_data = Deserializer::deserialize(deserializer, binary_data)
-  
-  // Verify deserialized data
-  assert_eq(TelemetryData::service_name(deserialized_data), "service-123")
-  assert_eq(TelemetryData::operation_name(deserialized_data), "operation-456")
-  
-  let counter = TelemetryData::get_attribute(deserialized_data, "counter")
-  match counter {
-    Some(IntValue(value)) => assert_eq(value, 42)
-    _ => assert_true(false)
-  }
-  
-  let ratio = TelemetryData::get_attribute(deserialized_data, "ratio")
-  match ratio {
-    Some(FloatValue(value)) => assert_true((value - 3.14159).abs() < 0.00001)
-    _ => assert_true(false)
-  }
-  
-  let enabled = TelemetryData::get_attribute(deserialized_data, "enabled")
-  match enabled {
-    Some(BoolValue(value)) => assert_true(value)
-    _ => assert_true(false)
-  }
-}
-
-// Test 4: Protocol Buffers Serialization
-test "protocol buffers serialization" {
-  let telemetry_data = TelemetryData::new(
-    "service-123",
-    "operation-456",
-    [
-      ("user.id", StringValue("user-789")),
-      ("session.id", StringValue("session-abc")),
-      ("event.count", IntValue(10))
-    ],
-    1234567890L
-  )
-  
-  // Test Protocol Buffers serialization
-  let serializer = ProtobufSerializer::new()
-  let protobuf_data = Serializer::serialize(serializer, telemetry_data)
-  
-  // Protobuf data should be non-empty
-  assert_true(protobuf_data.length() > 0)
-  
-  // Test Protocol Buffers deserialization
-  let deserializer = ProtobufDeserializer::new()
-  let deserialized_data = Deserializer::deserialize(deserializer, protobuf_data)
-  
-  // Verify deserialized data
-  assert_eq(TelemetryData::service_name(deserialized_data), "service-123")
-  assert_eq(TelemetryData::operation_name(deserialized_data), "operation-456")
-  
-  let user_id = TelemetryData::get_attribute(deserialized_data, "user.id")
-  match user_id {
-    Some(StringValue(id)) => assert_eq(id, "user-789")
-    _ => assert_true(false)
-  }
-}
-
-// Test 5: MessagePack Serialization
-test "messagepack serialization" {
-  let telemetry_data = TelemetryData::new(
-    "service-123",
-    "operation-456",
-    [
-      ("temperature", FloatValue(23.5)),
-      ("humidity", FloatValue(65.2)),
-      ("pressure", FloatValue(1013.25))
-    ],
-    1234567890L
-  )
-  
-  // Test MessagePack serialization
-  let serializer = MessagePackSerializer::new()
-  let msgpack_data = Serializer::serialize(serializer, telemetry_data)
-  
-  // MessagePack data should be non-empty
-  assert_true(msgpack_data.length() > 0)
-  
-  // Test MessagePack deserialization
-  let deserializer = MessagePackDeserializer::new()
-  let deserialized_data = Deserializer::deserialize(deserializer, msgpack_data)
-  
-  // Verify deserialized data
-  assert_eq(TelemetryData::service_name(deserialized_data), "service-123")
-  assert_eq(TelemetryData::operation_name(deserialized_data), "operation-456")
-  
-  let temperature = TelemetryData::get_attribute(deserialized_data, "temperature")
-  match temperature {
-    Some(FloatValue(value)) => assert_true((value - 23.5).abs() < 0.00001)
-    _ => assert_true(false)
-  }
-}
-
-// Test 6: CSV Serialization
-test "csv serialization" {
-  let telemetry_data_list = [
-    TelemetryData::new("service-1", "op-1", [("value", IntValue(10))], 1234567890L),
-    TelemetryData::new("service-1", "op-2", [("value", IntValue(20))], 1234567891L),
-    TelemetryData::new("service-2", "op-1", [("value", IntValue(30))], 1234567892L)
-  ]
-  
-  // Test CSV serialization
-  let serializer = CsvSerializer::new()
-  let csv_data = Serializer::serialize_list(serializer, telemetry_data_list)
-  
-  // Verify CSV structure
-  assert_true(csv_data.contains("service_name,operation_name,timestamp,value"))
-  assert_true(csv_data.contains("service-1,op-1,1234567890,10"))
-  assert_true(csv_data.contains("service-1,op-2,1234567891,20"))
-  assert_true(csv_data.contains("service-2,op-1,1234567892,30"))
-  
-  // Test CSV deserialization
-  let deserializer = CsvDeserializer::new()
-  let deserialized_list = Deserializer::deserialize_list(deserializer, csv_data)
-  
-  // Verify deserialized data
-  assert_eq(deserialized_list.length(), 3)
-  
-  let first_item = deserialized_list[0]
-  assert_eq(TelemetryData::service_name(first_item), "service-1")
-  assert_eq(TelemetryData::operation_name(first_item), "op-1")
-  
-  let value = TelemetryData::get_attribute(first_item, "value")
-  match value {
-    Some(IntValue(v)) => assert_eq(v, 10)
-    _ => assert_true(false)
-  }
-}
-
-// Test 7: YAML Serialization
-test "yaml serialization" {
-  let telemetry_data = TelemetryData::new(
-    "service-123",
-    "operation-456",
-    [
-      ("database.host", StringValue("db.example.com")),
-      ("database.port", IntValue(5432)),
-      ("database.ssl", BoolValue(true))
-    ],
-    1234567890L
-  )
-  
-  // Test YAML serialization
-  let serializer = YamlSerializer::new()
-  let yaml_data = Serializer::serialize(serializer, telemetry_data)
-  
-  // Verify YAML structure
-  assert_true(yaml_data.contains("service_name: service-123"))
-  assert_true(yaml_data.contains("operation_name: operation-456"))
-  assert_true(yaml_data.contains("attributes:"))
-  assert_true(yaml_data.contains("database.host: db.example.com"))
-  assert_true(yaml_data.contains("database.port: 5432"))
-  assert_true(yaml_data.contains("database.ssl: true"))
-  
-  // Test YAML deserialization
-  let deserializer = YamlDeserializer::new()
-  let deserialized_data = Deserializer::deserialize(deserializer, yaml_data)
-  
-  // Verify deserialized data
-  assert_eq(TelemetryData::service_name(deserialized_data), "service-123")
-  assert_eq(TelemetryData::operation_name(deserialized_data), "operation-456")
-  
-  let db_host = TelemetryData::get_attribute(deserialized_data, "database.host")
-  match db_host {
-    Some(StringValue(host)) => assert_eq(host, "db.example.com")
-    _ => assert_true(false)
-  }
-}
-
-// Test 8: Custom Serialization Format
-test "custom serialization format" {
-  let telemetry_data = TelemetryData::new(
-    "service-123",
-    "operation-456",
-    [
-      ("custom.field1", StringValue("value1")),
-      ("custom.field2", IntValue(42)),
-      ("custom.field3", BoolValue(false))
-    ],
-    1234567890L
-  )
-  
-  // Test custom serialization (key-value pairs with type prefixes)
-  let serializer = CustomSerializer::new()
-  let custom_data = Serializer::serialize(serializer, telemetry_data)
-  
-  // Verify custom format
-  assert_true(custom_data.contains("s:service_name=service-123"))
-  assert_true(custom_data.contains("s:operation_name=operation-456"))
-  assert_true(custom_data.contains("t:1234567890"))
-  assert_true(custom_data.contains("a:custom.field1=s:value1"))
-  assert_true(custom_data.contains("a:custom.field2=i:42"))
-  assert_true(custom_data.contains("a:custom.field3=b:false"))
-  
-  // Test custom deserialization
-  let deserializer = CustomDeserializer::new()
-  let deserialized_data = Deserializer::deserialize(deserializer, custom_data)
-  
-  // Verify deserialized data
-  assert_eq(TelemetryData::service_name(deserialized_data), "service-123")
-  assert_eq(TelemetryData::operation_name(deserialized_data), "operation-456")
-  
-  let field1 = TelemetryData::get_attribute(deserialized_data, "custom.field1")
-  match field1 {
-    Some(StringValue(value)) => assert_eq(value, "value1")
-    _ => assert_true(false)
-  }
-}
-
-// Test 9: Serialization with Compression
-test "serialization with compression" {
-  let telemetry_data = TelemetryData::new(
-    "service-123",
-    "operation-456",
-    [
-      ("large.data", StringValue("x".repeat(1000))),
-      ("another.large.data", StringValue("y".repeat(1000)))
-    ],
-    1234567890L
-  )
-  
-  // Test JSON serialization with compression
+  // 序列化为JSON
   let json_serializer = JsonSerializer::new()
-  let compressor = GzipCompressor::new()
+  let serialized_result = json_serializer.serialize(telemetry_data)
   
-  let json_data = Serializer::serialize(json_serializer, telemetry_data)
-  let compressed_json = Compressor::compress(compressor, json_data.to_bytes())
+  match serialized_result {
+    Ok(json_string) => {
+      // 验证JSON字符串不为空
+      assert_true(json_string.length() > 0)
+      
+      // 验证JSON包含必要的字段
+      assert_true(json_string.contains("\"trace_id\":\"trace-123456789\""))
+      assert_true(json_string.contains("\"span_id\":\"span-001\""))
+      assert_true(json_string.contains("\"operation_name\":\"http.request\""))
+      assert_true(json_string.contains("\"status\":\"ok\""))
+      assert_true(json_string.contains("\"http.method\":\"GET\""))
+      
+      // 反序列化
+      let deserialized_result = json_serializer.deserialize(json_string)
+      
+      match deserialized_result {
+        Ok(deserialized_data) => {
+          // 验证反序列化数据完整性
+          assert_eq(deserialized_data.trace_id, telemetry_data.trace_id)
+          assert_eq(deserialized_data.span_id, telemetry_data.span_id)
+          assert_eq(deserialized_data.parent_span_id, telemetry_data.parent_span_id)
+          assert_eq(deserialized_data.operation_name, telemetry_data.operation_name)
+          assert_eq(deserialized_data.start_time, telemetry_data.start_time)
+          assert_eq(deserialized_data.end_time, telemetry_data.end_time)
+          assert_eq(deserialized_data.status, telemetry_data.status)
+          
+          // 验证tags
+          assert_eq(deserialized_data.tags.get("http.method"), telemetry_data.tags.get("http.method"))
+          assert_eq(deserialized_data.tags.get("http.url"), telemetry_data.tags.get("http.url"))
+          
+          // 验证logs
+          assert_eq(deserialized_data.logs.length(), telemetry_data.logs.length())
+          assert_eq(deserialized_data.logs[0].level, telemetry_data.logs[0].level)
+          assert_eq(deserialized_data.logs[0].message, telemetry_data.logs[0].message)
+          
+          // 验证metrics
+          assert_eq(deserialized_data.metrics.get("cpu.usage"), telemetry_data.metrics.get("cpu.usage"))
+          assert_eq(deserialized_data.metrics.get("memory.usage"), telemetry_data.metrics.get("memory.usage"))
+        }
+        Err(error) => {
+          assert_true(false, "反序列化失败: " + error.to_string())
+        }
+      }
+    }
+    Err(error) => {
+      assert_true(false, "序列化失败: " + error.to_string())
+    }
+  }
   
-  // Verify compression reduces size
-  assert_true(compressed_json.length() < json_data.length())
+  // 测试无效JSON处理
+  let invalid_json = "{ invalid json format }"
+  let invalid_result = json_serializer.deserialize(invalid_json)
   
-  // Test decompression and deserialization
-  let decompressor = GzipDecompressor::new()
-  let json_deserializer = JsonDeserializer::new()
-  
-  let decompressed_json = Decompressor::decompress(decompressor, compressed_json)
-  let deserialized_data = Deserializer::deserialize(json_deserializer, decompressed_json.to_string())
-  
-  // Verify deserialized data
-  assert_eq(TelemetryData::service_name(deserialized_data), "service-123")
-  assert_eq(TelemetryData::operation_name(deserialized_data), "operation-456")
-  
-  let large_data = TelemetryData::get_attribute(deserialized_data, "large.data")
-  match large_data {
-    Some(StringValue(data)) => assert_eq(data, "x".repeat(1000))
-    _ => assert_true(false)
+  match invalid_result {
+    Ok(_) => {
+      assert_true(false, "应该解析无效JSON失败")
+    }
+    Err(error) => {
+      match error {
+        SerializationError::InvalidJson => {
+          assert_true(true, "正确捕获无效JSON错误")
+        }
+        _ => {
+          assert_true(false, "错误类型不匹配")
+        }
+      }
+    }
   }
 }
 
-// Test 10: Serialization Error Handling
-test "serialization error handling" {
-  // Test serialization of invalid data
-  let invalid_data = TelemetryData::new("", "", [], -1L) // Invalid empty strings and negative timestamp
-  
-  let json_serializer = JsonSerializer::new()
-  let result = Serializer::try_serialize(json_serializer, invalid_data)
-  
-  match result {
-    Success(_) => assert_true(false) // Should fail with invalid data
-    Error(error) => assert_eq(error.code, SerializationError)
+// 测试2: 二进制序列化反序列化
+test "二进制序列化反序列化测试" {
+  // 创建包含各种数据类型的结构
+  let binary_data = {
+    id: 12345,
+    name: "test_binary_data",
+    timestamp: 1640995200000,
+    active: true,
+    score: 95.7,
+    tags: ["tag1", "tag2", "tag3"],
+    metadata: {
+      version: 1,
+      flags: 0b10101010,
+      checksum: 3847562938475629384
+    },
+    payload: [0x01, 0x02, 0x03, 0x04, 0x05]
   }
   
-  // Test deserialization of malformed data
-  let malformed_json = "{ invalid json }"
-  let json_deserializer = JsonDeserializer::new()
-  let result2 = Deserializer::try_deserialize(json_deserializer, malformed_json)
+  // 序列化为二进制
+  let binary_serializer = BinarySerializer::new({
+    format: "protobuf",
+    compression: true,
+    endian: "little"
+  })
   
-  match result2 {
-    Success(_) => assert_true(false) // Should fail with malformed data
-    Error(error) => assert_eq(error.code, DeserializationError)
+  let serialized_result = binary_serializer.serialize(binary_data)
+  
+  match serialized_result {
+    Ok(binary_bytes) => {
+      // 验证二进制数据不为空
+      assert_true(binary_bytes.length() > 0)
+      
+      // 验证压缩效果（如果启用）
+      if binary_serializer.is_compression_enabled() {
+        let uncompressed_size = binary_serializer.calculate_uncompressed_size(binary_data)
+        assert_true(binary_bytes.length() < uncompressed_size)
+      }
+      
+      // 反序列化
+      let deserialized_result = binary_serializer.deserialize(binary_bytes)
+      
+      match deserialized_result {
+        Ok(deserialized_data) => {
+          // 验证反序列化数据完整性
+          assert_eq(deserialized_data.id, binary_data.id)
+          assert_eq(deserialized_data.name, binary_data.name)
+          assert_eq(deserialized_data.timestamp, binary_data.timestamp)
+          assert_eq(deserialized_data.active, binary_data.active)
+          assert_eq(deserialized_data.score, binary_data.score)
+          
+          // 验证数组
+          assert_eq(deserialized_data.tags.length(), binary_data.tags.length())
+          for i = 0; i < binary_data.tags.length(); i = i + 1 {
+            assert_eq(deserialized_data.tags[i], binary_data.tags[i])
+          }
+          
+          // 验证嵌套对象
+          assert_eq(deserialized_data.metadata.version, binary_data.metadata.version)
+          assert_eq(deserialized_data.metadata.flags, binary_data.metadata.flags)
+          assert_eq(deserialized_data.metadata.checksum, binary_data.metadata.checksum)
+          
+          // 验证二进制payload
+          assert_eq(deserialized_data.payload.length(), binary_data.payload.length())
+          for i = 0; i < binary_data.payload.length(); i = i + 1 {
+            assert_eq(deserialized_data.payload[i], binary_data.payload[i])
+          }
+        }
+        Err(error) => {
+          assert_true(false, "反序列化失败: " + error.to_string())
+        }
+      }
+    }
+    Err(error) => {
+      assert_true(false, "序列化失败: " + error.to_string())
+    }
   }
   
-  // Test deserialization with missing required fields
-  let incomplete_json = "{\"service_name\":\"test\"}" // Missing operation_name
-  let result3 = Deserializer::try_deserialize(json_deserializer, incomplete_json)
-  
-  match result3 {
-    Success(_) => assert_true(false) // Should fail with incomplete data
-    Error(error) => assert_eq(error.code, ValidationError)
+  // 测试版本兼容性
+  let v1_data = {
+    id: 12345,
+    name: "v1_data",
+    timestamp: 1640995200000,
+    active: true
+    // v2新增的字段在v1中不存在
   }
   
-  // Test deserialization with type mismatch
-  let type_mismatch_json = "{\"service_name\":\"test\",\"operation_name\":\"op\",\"timestamp\":\"not_a_number\"}"
-  let result4 = Deserializer::try_deserialize(json_deserializer, type_mismatch_json)
+  let v1_serialized = binary_serializer.serialize(v1_data).unwrap()
   
-  match result4 {
-    Success(_) => assert_true(false) // Should fail with type mismatch
-    Error(error) => assert_eq(error.code, TypeMismatchError)
+  // 使用v2格式反序列化v1数据
+  let v2_result = binary_serializer.deserialize_with_version(v1_serialized, "2.0")
+  
+  match v2_result {
+    Ok(v2_data) => {
+      // 验证v1字段正确保留
+      assert_eq(v2_data.id, v1_data.id)
+      assert_eq(v2_data.name, v1_data.name)
+      assert_eq(v2_data.timestamp, v1_data.timestamp)
+      assert_eq(v2_data.active, v1_data.active)
+      
+      // v2新增字段应该有默认值
+      assert_eq(v2_data.score, 0.0)  // 默认值
+      assert_eq(v2_data.tags.length(), 0)  // 默认空数组
+    }
+    Err(error) => {
+      assert_true(false, "版本兼容性测试失败: " + error.to_string())
+    }
+  }
+}
+
+// 测试3: 自定义序列化格式
+test "自定义序列化格式测试" {
+  // 创建自定义序列化器
+  let custom_serializer = CustomFormatSerializer::new({
+    format_name: "telemetry_v1",
+    field_separator: "|",
+    value_separator: "=",
+    array_separator: ",",
+    escape_character: "\\"
+  })
+  
+  // 创建测试数据
+  let custom_data = {
+    trace_id: "trace-custom-001",
+    span_id: "span-custom-001",
+    operation: "custom.operation",
+    duration: 250,
+    success: true,
+    tags: {
+      "service": "custom-service",
+      "version": "1.0.0",
+      "env": "test"
+    },
+    events: ["start", "process", "end"]
+  }
+  
+  // 序列化为自定义格式
+  let serialized_result = custom_serializer.serialize(custom_data)
+  
+  match serialized_result {
+    Ok(custom_string) => {
+      // 验证自定义格式字符串
+      assert_true(custom_string.length() > 0)
+      assert_true(custom_string.contains("trace_id=trace-custom-001"))
+      assert_true(custom_string.contains("span_id=span-custom-001"))
+      assert_true(custom_string.contains("operation=custom.operation"))
+      assert_true(custom_string.contains("duration=250"))
+      assert_true(custom_string.contains("success=true"))
+      assert_true(custom_string.contains("service=custom-service"))
+      assert_true(custom_string.contains("events=start,process,end"))
+      
+      // 反序列化
+      let deserialized_result = custom_serializer.deserialize(custom_string)
+      
+      match deserialized_result {
+        Ok(deserialized_data) => {
+          // 验证反序列化数据
+          assert_eq(deserialized_data.trace_id, custom_data.trace_id)
+          assert_eq(deserialized_data.span_id, custom_data.span_id)
+          assert_eq(deserialized_data.operation, custom_data.operation)
+          assert_eq(deserialized_data.duration, custom_data.duration)
+          assert_eq(deserialized_data.success, custom_data.success)
+          
+          // 验证tags
+          assert_eq(deserialized_data.tags.get("service"), custom_data.tags.get("service"))
+          assert_eq(deserialized_data.tags.get("version"), custom_data.tags.get("version"))
+          assert_eq(deserialized_data.tags.get("env"), custom_data.tags.get("env"))
+          
+          // 验证events数组
+          assert_eq(deserialized_data.events.length(), custom_data.events.length())
+          for i = 0; i < custom_data.events.length(); i = i + 1 {
+            assert_eq(deserialized_data.events[i], custom_data.events[i])
+          }
+        }
+        Err(error) => {
+          assert_true(false, "反序列化失败: " + error.to_string())
+        }
+      }
+    }
+    Err(error) => {
+      assert_true(false, "序列化失败: " + error.to_string())
+    }
+  }
+  
+  // 测试特殊字符处理
+  let special_chars_data = {
+    message: "This|contains=special,characters\\that\\need=escaping",
+    tags: {
+      "key=with=special": "value|with|special",
+      "another,key": "another,value"
+    }
+  }
+  
+  let special_result = custom_serializer.serialize(special_chars_data)
+  
+  match special_result {
+    Ok(special_string) => {
+      // 验证特殊字符被正确转义
+      assert_true(special_string.contains("\\|"))
+      assert_true(special_string.contains("\\="))
+      assert_true(special_string.contains("\\,"))
+      assert_true(special_string.contains("\\\\"))
+      
+      // 反序列化并验证
+      let deserialized_special = custom_serializer.deserialize(special_string).unwrap()
+      assert_eq(deserialized_special.message, special_chars_data.message)
+      assert_eq(deserialized_special.tags.get("key=with=special"), 
+                special_chars_data.tags.get("key=with=special"))
+    }
+    Err(_) => {
+      assert_true(false, "特殊字符处理失败")
+    }
+  }
+}
+
+// 测试4: 序列化性能和大小优化
+test "序列化性能和大小优化测试" {
+  // 创建大型数据集
+  let large_dataset = []
+  
+  for i = 0; i < 1000; i = i + 1 {
+    large_dataset.push({
+      id: i,
+      name: "item_" + i.to_string(),
+      description: "This is a detailed description for item " + i.to_string() + 
+                   " with additional text to increase size",
+      timestamp: 1640995200000 + i * 1000,
+      metadata: {
+        category: ["category_" + (i % 10).to_string()],
+        tags: ["tag1", "tag2", "tag3", "tag4", "tag5"],
+        properties: {
+          "prop1": "value1_" + i.to_string(),
+          "prop2": "value2_" + i.to_string(),
+          "prop3": i * 2,
+          "prop4": i * 3.14
+        }
+      },
+      measurements: [i * 0.1, i * 0.2, i * 0.3, i * 0.4, i * 0.5]
+    })
+  }
+  
+  // 测试不同序列化格式的性能和大小
+  let formats = ["json", "binary", "custom"]
+  let results = []
+  
+  for format in formats {
+    let serializer = SerializerFactory::create(format)
+    
+    // 测量序列化时间
+    let start_time = timestamp()
+    let serialized_result = serializer.serialize(large_dataset)
+    let serialization_time = timestamp() - start_time
+    
+    match serialized_result {
+      Ok(serialized_data) => {
+        // 测量数据大小
+        let data_size = serialized_data.length()
+        
+        // 测量反序列化时间
+        let start_time = timestamp()
+        let deserialized_result = serializer.deserialize(serialized_data)
+        let deserialization_time = timestamp() - start_time
+        
+        match deserialized_result {
+          Ok(_) => {
+            results.push({
+              format: format,
+              serialization_time: serialization_time,
+              deserialization_time: deserialization_time,
+              data_size: data_size,
+              total_time: serialization_time + deserialization_time
+            })
+          }
+          Err(_) => {
+            assert_true(false, format + "格式反序列化失败")
+          }
+        }
+      }
+      Err(_) => {
+        assert_true(false, format + "格式序列化失败")
+      }
+    }
+  }
+  
+  // 验证所有格式都成功处理
+  assert_eq(results.length(), formats.length())
+  
+  // 查找最快的序列化格式
+  let fastest_serialization = results.reduce(|min, current| 
+    if current.serialization_time < min.serialization_time { current } else { min }
+  )
+  
+  // 查找最小的数据格式
+  let smallest_size = results.reduce(|min, current| 
+    if current.data_size < min.data_size { current } else { min }
+  )
+  
+  // 验证性能在合理范围内
+  for result in results {
+    // 序列化时间不应超过5秒
+    assert_true(result.serialization_time < 5000, 
+                result.format + "序列化时间过长: " + result.serialization_time.to_string() + "ms")
+    
+    // 反序列化时间不应超过5秒
+    assert_true(result.deserialization_time < 5000, 
+                result.format + "反序列化时间过长: " + result.deserialization_time.to_string() + "ms")
+    
+    // 数据大小不应超过原始数据的10倍（估算）
+    let estimated_original_size = 1000 * 500  // 估算每个项目500字节
+    assert_true(result.data_size < estimated_original_size * 10, 
+                result.format + "序列化后数据过大")
+  }
+  
+  // 验证二进制格式通常更紧凑
+  let binary_result = results.find(|r| r.format == "binary")
+  let json_result = results.find(|r| r.format == "json")
+  
+  match (binary_result, json_result) {
+    (Some(binary), Some(json)) => {
+      // 二进制格式通常应该比JSON更紧凑
+      assert_true(binary.data_size <= json.data_size * 1.2, 
+                  "二进制格式应该比JSON更紧凑或相近")
+    }
+    _ => {}
+  }
+}
+
+// 测试5: 序列化安全性和验证
+test "序列化安全性和验证测试" {
+  // 创建安全的序列化器
+  let secure_serializer = SecureSerializer::new({
+    max_data_size: 10 * 1024 * 1024,  // 10MB限制
+    max_depth: 100,  // 最大嵌套深度
+    allowed_types: ["telemetry", "metrics", "logs"],
+    enable_signature: true,
+    encryption_key: "test_encryption_key_12345"
+  })
+  
+  // 创建正常数据
+  let normal_data = {
+    type: "telemetry",
+    trace_id: "trace-secure-001",
+    data: {
+      operation: "test.operation",
+      duration: 100,
+      success: true
+    }
+  }
+  
+  // 序列化正常数据
+  let secure_result = secure_serializer.serialize(normal_data)
+  
+  match secure_result {
+    Ok(secure_data) => {
+      // 验证签名存在
+      assert_true(secure_serializer.has_signature(secure_data))
+      
+      // 验证签名
+      assert_true(secure_serializer.verify_signature(secure_data))
+      
+      // 反序列化
+      let deserialize_result = secure_serializer.deserialize(secure_data)
+      
+      match deserialize_result {
+        Ok(deserialized_data) => {
+          assert_eq(deserialized_data.type, normal_data.type)
+          assert_eq(deserialized_data.trace_id, normal_data.trace_id)
+        }
+        Err(_) => {
+          assert_true(false, "安全反序列化失败")
+        }
+      }
+      
+      // 测试篡改检测
+      let tampered_data = secure_data.substring(0, secure_data.length() - 1) + "X"
+      let tampered_result = secure_serializer.deserialize(tampered_data)
+      
+      match tampered_result {
+        Ok(_) => {
+          assert_true(false, "应该检测到数据篡改")
+        }
+        Err(error) => {
+          match error {
+            SerializationError::InvalidSignature => {
+              assert_true(true, "正确检测到无效签名")
+            }
+            _ => {
+              assert_true(false, "错误类型不匹配")
+            }
+          }
+        }
+      }
+    }
+    Err(_) => {
+      assert_true(false, "安全序列化失败")
+    }
+  }
+  
+  // 测试大小限制
+  let oversized_data = {
+    type: "telemetry",
+    data: "x".repeat(20 * 1024 * 1024)  // 20MB数据，超过10MB限制
+  }
+  
+  let oversized_result = secure_serializer.serialize(oversized_data)
+  
+  match oversized_result {
+    Ok(_) => {
+      assert_true(false, "应该拒绝过大数据")
+    }
+    Err(error) => {
+      match error {
+        SerializationError::DataTooLarge => {
+          assert_true(true, "正确拒绝过大数据")
+        }
+        _ => {
+          assert_true(false, "错误类型不匹配")
+        }
+      }
+    }
+  }
+  
+  // 测试深度限制
+  let deep_data = {
+    type: "telemetry",
+    level: 0
+  }
+  
+  // 创建深度嵌套结构
+  let mut current = deep_data
+  for i = 1; i <= 150; i = i + 1 {  // 超过100层限制
+    current = {
+      type: "telemetry",
+      level: i,
+      nested: current
+    }
+  }
+  
+  let deep_result = secure_serializer.serialize(current)
+  
+  match deep_result {
+    Ok(_) => {
+      assert_true(false, "应该拒绝过深嵌套")
+    }
+    Err(error) => {
+      match error {
+        SerializationError::NestingTooDeep => {
+          assert_true(true, "正确拒绝过深嵌套")
+        }
+        _ => {
+          assert_true(false, "错误类型不匹配")
+        }
+      }
+    }
+  }
+  
+  // 测试类型限制
+  let unauthorized_type = {
+    type: "malicious",  // 不在允许列表中
+    data: "malicious payload"
+  }
+  
+  let unauthorized_result = secure_serializer.serialize(unauthorized_type)
+  
+  match unauthorized_result {
+    Ok(_) => {
+      assert_true(false, "应该拒绝未授权类型")
+    }
+    Err(error) => {
+      match error {
+        SerializationError::UnauthorizedType => {
+          assert_true(true, "正确拒绝未授权类型")
+        }
+        _ => {
+          assert_true(false, "错误类型不匹配")
+        }
+      }
+    }
   }
 }
