@@ -68,6 +68,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_webassembly_compatibility_comprehensive_tests.mbt": {
   },
+  "azimuth_voice_stream_telemetry_tests.mbt": {
+  },
   "azimuth_updown_counter_gauge_tests.mbt": {
   },
   "azimuth_type_system_tests.mbt": {
@@ -408,6 +410,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_premium_advanced_telemetry_tests.mbt": {
   },
+  "azimuth_premium_advanced_integration_tests.mbt": {
+  },
   "azimuth_practical_telemetry_tests.mbt": {
   },
   "azimuth_platform_specific_telemetry_adaptation_tests.mbt": {
@@ -647,6 +651,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_high_quality_edge_case_tests.mbt": {
   },
   "azimuth_high_quality_comprehensive_tests.mbt": {
+  },
+  "azimuth_healthcare_telemetry_tests.mbt": {
   },
   "azimuth_gauge_detailed_tests.mbt": {
   },
