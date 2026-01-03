@@ -324,6 +324,14 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     5: (__test_617a696d7574685f6572726f725f68616e646c696e675f626f756e646172795f74657374732e6d6274_5, ["enum boundary conditions"]),
     6: (__test_617a696d7574685f6572726f725f68616e646c696e675f626f756e646172795f74657374732e6d6274_6, ["map boundary conditions"]),
   },
+  "azimuth_error_boundary_handling_tests.mbt": {
+    0: (__test_617a696d7574685f6572726f725f626f756e646172795f68616e646c696e675f74657374732e6d6274_0, ["span error handling with exceptions"]),
+    1: (__test_617a696d7574685f6572726f725f626f756e646172795f68616e646c696e675f74657374732e6d6274_1, ["metrics error handling"]),
+    2: (__test_617a696d7574685f6572726f725f626f756e646172795f68616e646c696e675f74657374732e6d6274_2, ["log record error handling"]),
+    3: (__test_617a696d7574685f6572726f725f626f756e646172795f68616e646c696e675f74657374732e6d6274_3, ["context propagation error handling"]),
+    4: (__test_617a696d7574685f6572726f725f626f756e646172795f68616e646c696e675f74657374732e6d6274_4, ["resource exhaustion error handling"]),
+    5: (__test_617a696d7574685f6572726f725f626f756e646172795f68616e646c696e675f74657374732e6d6274_5, ["circuit breaker error handling"]),
+  },
   "azimuth_enhanced_test_suite.mbt": {
     0: (__test_617a696d7574685f656e68616e6365645f746573745f73756974652e6d6274_0, ["span events and status management"]),
     1: (__test_617a696d7574685f656e68616e6365645f746573745f73756974652e6d6274_1, ["baggage propagation edge cases"]),
