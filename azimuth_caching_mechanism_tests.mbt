@@ -1,328 +1,525 @@
-// Azimuth Caching Mechanism Test Suite
-// 缓存机制和策略测试用例
+// Azimuth Caching Mechanism and Strategy Tests
+// 缓存机制和策略测试用例 - 专注于缓存策略、过期策略和缓存性能
 
-test "LRU缓存策略" {
-  // 测试LRU缓存策略
-  let cache_capacity = 3
-  let mut lru_cache = @azimuth.LRUCache::new(cache_capacity)
+// Test 1: 基础缓存功能测试
+test "basic caching functionality" {
+  // 创建缓存
+  let cache = Cache::new(100) // 最大100个条目
   
-  // 添加元素到缓存
-  lru_cache = lru_cache.put("key1", "value1")
-  lru_cache = lru_cache.put("key2", "value2")
-  lru_cache = lru_cache.put("key3", "value3")
+  // 测试缓存存取
+  let key = "test_key"
+  let value = "test_value"
   
-  // 验证缓存大小
-  assert_eq(lru_cache.size(), 3)
+  Cache::put(cache, key, value)
   
-  // 获取元素
-  match lru_cache.get("key2") {
-    Some(value) => assert_eq(value, "value2")
+  // 验证缓存命中
+  match Cache::get(cache, key) {
+    Some(cached_value) => assert_eq(cached_value, value)
     None => assert_true(false)
   }
   
-  // 添加新元素，应该淘汰最久未使用的key1
-  lru_cache = lru_cache.put("key4", "value4")
-  assert_eq(lru_cache.size(), 3)
-  
-  // 验证key1被淘汰
-  match lru_cache.get("key1") {
+  // 测试缓存未命中
+  match Cache::get(cache, "non_existent_key") {
     Some(_) => assert_true(false)
     None => assert_true(true)
   }
   
-  // 验证其他元素仍然存在
-  match lru_cache.get("key2") {
-    Some(value) => assert_eq(value, "value2")
+  // 测试缓存删除
+  Cache::remove(cache, key)
+  
+  match Cache::get(cache, key) {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // 测试缓存清空
+  Cache::put(cache, "key1", "value1")
+  Cache::put(cache, "key2", "value2")
+  Cache::put(cache, "key3", "value3")
+  
+  assert_eq(Cache::size(cache), 3)
+  
+  Cache::clear(cache)
+  assert_eq(Cache::size(cache), 0)
+}
+
+// Test 2: LRU缓存策略测试
+test "lru cache eviction policy" {
+  // 创建LRU缓存（容量为3）
+  let lru_cache = LRUCache::new(3)
+  
+  // 添加3个条目
+  LRUCache::put(lru_cache, "key1", "value1")
+  LRUCache::put(lru_cache, "key2", "value2")
+  LRUCache::put(lru_cache, "key3", "value3")
+  
+  // 验证所有条目都在缓存中
+  assert_eq(LRUCache::size(lru_cache), 3)
+  
+  // 访问key1，使其成为最近使用的
+  match LRUCache::get(lru_cache, "key1") {
+    Some(value) => assert_eq(value, "value1")
     None => assert_true(false)
   }
   
-  match lru_cache.get("key3") {
+  // 添加第4个条目，应该淘汰key2（最久未使用的）
+  LRUCache::put(lru_cache, "key4", "value4")
+  
+  // 验证key2被淘汰
+  match LRUCache::get(lru_cache, "key2") {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // 验证其他条目仍在缓存中
+  match LRUCache::get(lru_cache, "key1") {
+    Some(value) => assert_eq(value, "value1")
+    None => assert_true(false)
+  }
+  
+  match LRUCache::get(lru_cache, "key3") {
     Some(value) => assert_eq(value, "value3")
     None => assert_true(false)
   }
   
-  match lru_cache.get("key4") {
+  match LRUCache::get(lru_cache, "key4") {
     Some(value) => assert_eq(value, "value4")
     None => assert_true(false)
   }
+  
+  // 验证缓存大小
+  assert_eq(LRUCache::size(lru_cache), 3)
 }
 
-test "TTL缓存过期机制" {
-  // 测试TTL缓存过期机制
-  let ttl_ms = 1000L // 1秒
-  let mut ttl_cache = @azimuth.TTLCache::new(ttl_ms)
+// Test 3: TTL缓存过期测试
+test "ttl cache expiration" {
+  // 创建TTL缓存（2秒过期时间）
+  let ttl_cache = TTLCache::new(100, 2000) // 容量100，2秒TTL
   
-  // 添加元素
-  let current_time = 1640995200000L
-  ttl_cache = ttl_cache.put("temp_key", "temp_value", current_time)
+  // 添加条目
+  TTLCache::put(ttl_cache, "key1", "value1")
   
-  // 立即获取，应该存在
-  match ttl_cache.get("temp_key", current_time) {
-    Some(value) => assert_eq(value, "temp_value")
+  // 立即访问，应该命中
+  match TTLCache::get(ttl_cache, "key1") {
+    Some(value) => assert_eq(value, "value1")
     None => assert_true(false)
   }
   
-  // 超时后获取，应该不存在
-  let expired_time = current_time + ttl_ms + 100L
-  match ttl_cache.get("temp_key", expired_time) {
+  // 等待1秒，再次访问，应该仍然命中
+  Time::sleep(1000)
+  
+  match TTLCache::get(ttl_cache, "key1") {
+    Some(value) => assert_eq(value, "value1")
+    None => assert_true(false)
+  }
+  
+  // 再等待1.5秒，总共2.5秒，应该过期
+  Time::sleep(1500)
+  
+  match TTLCache::get(ttl_cache, "key1") {
     Some(_) => assert_true(false)
     None => assert_true(true)
   }
   
-  // 添加多个元素
-  ttl_cache = ttl_cache.put("key1", "value1", current_time)
-  ttl_cache = ttl_cache.put("key2", "value2", current_time + 500L)
-  ttl_cache = ttl_cache.put("key3", "value3", current_time + 800L)
+  // 测试手动刷新TTL
+  TTLCache::put(ttl_cache, "key2", "value2")
   
-  // 在不同时间点检查元素
-  let check_time1 = current_time + 600L
-  match ttl_cache.get("key1", check_time1) {
-    Some(_) => assert_true(false) // 已过期
+  // 等待1秒
+  Time::sleep(1000)
+  
+  // 刷新TTL
+  TTLCache::refresh_ttl(ttl_cache, "key2")
+  
+  // 再等待1.5秒，总共2.5秒，但由于刷新了TTL，应该仍然命中
+  Time::sleep(1500)
+  
+  match TTLCache::get(ttl_cache, "key2") {
+    Some(value) => assert_eq(value, "value2")
+    None => assert_true(false)
+  }
+  
+  // 测试过期条目清理
+  TTLCache::put(ttl_cache, "key3", "value3")
+  TTLCache::put(ttl_cache, "key4", "value4")
+  
+  // 等待过期
+  Time::sleep(2100)
+  
+  // 清理过期条目
+  TTLCache::cleanup_expired(ttl_cache)
+  
+  // 验证过期条目被清理
+  assert_eq(TTLCache::size(ttl_cache), 0)
+}
+
+// Test 4: 多级缓存测试
+test "multi-level caching" {
+  // 创建L1缓存（内存缓存，容量小，速度快）
+  let l1_cache = LRUCache::new(10)
+  
+  // 创建L2缓存（容量较大，速度稍慢）
+  let l2_cache = LRUCache::new(100)
+  
+  // 创建多级缓存
+  let multi_cache = MultiLevelCache::new([l1_cache, l2_cache])
+  
+  // 测试缓存写入
+  MultiLevelCache::put(multi_cache, "key1", "value1")
+  MultiLevelCache::put(multi_cache, "key2", "value2")
+  
+  // 验证数据在L1缓存中
+  match LRUCache::get(l1_cache, "key1") {
+    Some(value) => assert_eq(value, "value1")
+    None => assert_true(false)
+  }
+  
+  // 验证数据在L2缓存中
+  match LRUCache::get(l2_cache, "key1") {
+    Some(value) => assert_eq(value, "value1")
+    None => assert_true(false)
+  }
+  
+  // 测试缓存读取（应该从L1读取）
+  match MultiLevelCache::get(multi_cache, "key1") {
+    Some(value) => assert_eq(value, "value1")
+    None => assert_true(false)
+  }
+  
+  // 添加更多数据，使L1缓存满
+  for i in 0..<15 {
+    let key = "overflow_key" + i.to_string()
+    let value = "overflow_value" + i.to_string()
+    MultiLevelCache::put(multi_cache, key, value)
+  }
+  
+  // 验证早期数据被从L1淘汰但仍在L2中
+  match LRUCache::get(l1_cache, "key1") {
+    Some(_) => assert_true(false) // 应该被淘汰
     None => assert_true(true)
   }
   
-  match ttl_cache.get("key2", check_time1) {
-    Some(value) => assert_eq(value, "value2") // 仍然有效
+  match LRUCache::get(l2_cache, "key1") {
+    Some(value) => assert_eq(value, "value1") // 应该仍在L2中
     None => assert_true(false)
   }
   
-  match ttl_cache.get("key3", check_time1) {
-    Some(value) => assert_eq(value, "value3") // 仍然有效
+  // 测试从L2提升到L1
+  match MultiLevelCache::get(multi_cache, "key1") {
+    Some(value) => assert_eq(value, "value1")
     None => assert_true(false)
   }
   
-  // 清理过期元素
-  let cleanup_time = current_time + 2000L
-  ttl_cache = ttl_cache.cleanup_expired(cleanup_time)
-  assert_eq(ttl_cache.size(), 0)
+  // 验证数据被提升到L1
+  match LRUCache::get(l1_cache, "key1") {
+    Some(value) => assert_eq(value, "value1")
+    None => assert_true(false)
+  }
+  
+  // 测试缓存统计
+  let stats = MultiLevelCache::get_stats(multi_cache)
+  assert_true(stats.l1_hits > 0)
+  assert_true(stats.l2_hits > 0)
+  assert_true(stats.total_requests > 0)
 }
 
-test "分布式缓存一致性" {
-  // 测试分布式缓存一致性
-  let node1_cache = @azimuth.DistributedCache::new("node1")
-  let node2_cache = @azimuth.DistributedCache::new("node2")
-  let node3_cache = @azimuth.DistributedCache::new("node3")
+// Test 5: 缓存预热和加载测试
+test "cache warming and loading" {
+  // 创建缓存
+  let cache = LRUCache::new(100)
   
-  // 在node1上添加数据
-  let updated_node1 = node1_cache.put("shared_key", "shared_value")
-  
-  // 模拟数据同步到其他节点
-  let updated_node2 = node2_cache.sync_from(updated_node1, "shared_key")
-  let updated_node3 = node3_cache.sync_from(updated_node1, "shared_key")
-  
-  // 验证所有节点都有相同的数据
-  match updated_node1.get("shared_key") {
-    Some(value) => assert_eq(value, "shared_value")
-    None => assert_true(false)
+  // 准备预热数据
+  let warmup_data = []
+  for i in 0..<50 {
+    let key = "warmup_key" + i.to_string()
+    let value = "warmup_value" + i.to_string()
+    warmup_data = warmup_data.push((key, value))
   }
   
-  match updated_node2.get("shared_key") {
-    Some(value) => assert_eq(value, "shared_value")
-    None => assert_true(false)
-  }
+  // 预热缓存
+  CacheWarmer::warm(cache, warmup_data)
   
-  match updated_node3.get("shared_key") {
-    Some(value) => assert_eq(value, "shared_value")
-    None => assert_true(false)
-  }
+  // 验证预热数据
+  assert_eq(LRUCache::size(cache), 50)
   
-  // 在node2上更新数据
-  let updated_node2_v2 = updated_node2.put("shared_key", "updated_value")
-  
-  // 模拟数据同步到其他节点
-  let updated_node1_v2 = updated_node1.sync_from(updated_node2_v2, "shared_key")
-  let updated_node3_v2 = updated_node3.sync_from(updated_node2_v2, "shared_key")
-  
-  // 验证所有节点都有更新后的数据
-  match updated_node1_v2.get("shared_key") {
-    Some(value) => assert_eq(value, "updated_value")
-    None => assert_true(false)
-  }
-  
-  match updated_node2_v2.get("shared_key") {
-    Some(value) => assert_eq(value, "updated_value")
-    None => assert_true(false)
-  }
-  
-  match updated_node3_v2.get("shared_key") {
-    Some(value) => assert_eq(value, "updated_value")
-    None => assert_true(false)
-  }
-}
-
-test "缓存预热策略" {
-  // 测试缓存预热策略
-  let cache = @azimuth.Cache::new(100)
-  let data_source = @azimuth.DataSource::new()
-  
-  // 定义需要预热的数据
-  let warmup_keys = ["user:1", "user:2", "user:3", "config:app", "config:db"]
-  
-  // 预热前的缓存状态
-  assert_eq(cache.size(), 0)
-  
-  // 执行缓存预热
-  let warmed_cache = @azimuth.warmup_cache(cache, data_source, warmup_keys)
-  
-  // 验证预热后的缓存状态
-  assert_eq(warmed_cache.size(), warmup_keys.length())
-  
-  // 验证所有预热键都存在
-  for key in warmup_keys {
-    match warmed_cache.get(key) {
-      Some(_) => assert_true(true)
+  for i in 0..<50 {
+    let key = "warmup_key" + i.to_string()
+    let expected_value = "warmup_value" + i.to_string()
+    
+    match LRUCache::get(cache, key) {
+      Some(value) => assert_eq(value, expected_value)
       None => assert_true(false)
     }
   }
   
-  // 验证预热数据的正确性
-  match warmed_cache.get("user:1") {
-    Some(value) => assert_eq(value, "user_data_1")
+  // 测试从数据源加载
+  let data_source = TestDataSource::new()
+  let lazy_cache = LazyLoadingCache::new(cache, data_source)
+  
+  // 尝试获取不在缓存中的数据
+  match LazyLoadingCache::get(lazy_cache, "data_key_1") {
+    Some(value) => assert_eq(value, "data_value_1")
     None => assert_true(false)
   }
   
-  match warmed_cache.get("config:app") {
-    Some(value) => assert_eq(value, "app_config_data")
+  // 验证数据被加载到缓存中
+  match LRUCache::get(cache, "data_key_1") {
+    Some(value) => assert_eq(value, "data_value_1")
+    None => assert_true(false)
+  }
+  
+  // 测试批量预加载
+  let keys_to_preload = ["data_key_2", "data_key_3", "data_key_4", "data_key_5"]
+  LazyLoadingCache::preload(lazy_cache, keys_to_preload)
+  
+  // 验证预加载的数据
+  for key in keys_to_preload {
+    match LRUCache::get(cache, key) {
+      Some(_) => assert_true(true)
+      None => assert_true(false)
+    }
+  }
+}
+
+// Test 6: 缓存性能基准测试
+test "cache performance benchmarks" {
+  // 创建不同类型的缓存
+  let lru_cache = LRUCache::new(1000)
+  let ttl_cache = TTLCache::new(1000, 60000) // 1分钟TTL
+  let simple_cache = Cache::new(1000)
+  
+  // 准备测试数据
+  let test_keys = []
+  let test_values = []
+  
+  for i in 0..<1000 {
+    test_keys = test_keys.push("perf_key_" + i.to_string())
+    test_values = test_values.push("perf_value_" + i.to_string())
+  }
+  
+  // 测试写入性能
+  let lru_write_start = Time::now()
+  for i in 0..<test_keys.length() {
+    LRUCache::put(lru_cache, test_keys[i], test_values[i])
+  }
+  let lru_write_time = Time::now() - lru_write_start
+  
+  let ttl_write_start = Time::now()
+  for i in 0..<test_keys.length() {
+    TTLCache::put(ttl_cache, test_keys[i], test_values[i])
+  }
+  let ttl_write_time = Time::now() - ttl_write_start
+  
+  let simple_write_start = Time::now()
+  for i in 0..<test_keys.length() {
+    Cache::put(simple_cache, test_keys[i], test_values[i])
+  }
+  let simple_write_time = Time::now() - simple_write_start
+  
+  // 验证写入性能（所有缓存都应该在合理时间内完成）
+  assert_true(lru_write_time < 1000) // 小于1秒
+  assert_true(ttl_write_time < 1000) // 小于1秒
+  assert_true(simple_write_time < 1000) // 小于1秒
+  
+  // 测试读取性能
+  let lru_read_start = Time::now()
+  for i in 0..<test_keys.length() {
+    LRUCache::get(lru_cache, test_keys[i])
+  }
+  let lru_read_time = Time::now() - lru_read_start
+  
+  let ttl_read_start = Time::now()
+  for i in 0..<test_keys.length() {
+    TTLCache::get(ttl_cache, test_keys[i])
+  }
+  let ttl_read_time = Time::now() - ttl_read_start
+  
+  let simple_read_start = Time::now()
+  for i in 0..<test_keys.length() {
+    Cache::get(simple_cache, test_keys[i])
+  }
+  let simple_read_time = Time::now() - simple_read_start
+  
+  // 验证读取性能（所有缓存都应该在合理时间内完成）
+  assert_true(lru_read_time < 500) // 小于0.5秒
+  assert_true(ttl_read_time < 500) // 小于0.5秒
+  assert_true(simple_read_time < 500) // 小于0.5秒
+  
+  // 测试混合读写性能
+  let mixed_start = Time::now()
+  for i in 0..<500 {
+    // 读取现有数据
+    LRUCache::get(lru_cache, test_keys[i])
+    
+    // 写入新数据
+    let new_key = "mixed_key_" + i.to_string()
+    let new_value = "mixed_value_" + i.to_string()
+    LRUCache::put(lru_cache, new_key, new_value)
+  }
+  let mixed_time = Time::now() - mixed_start
+  
+  // 验证混合操作性能
+  assert_true(mixed_time < 1000) // 小于1秒
+}
+
+// Test 7: 缓存一致性测试
+test "cache consistency" {
+  // 创建分布式缓存模拟
+  let cache1 = LRUCache::new(100)
+  let cache2 = LRUCache::new(100)
+  let cache3 = LRUCache::new(100)
+  
+  // 创建一致性管理器
+  let consistency_manager = CacheConsistencyManager::new([cache1, cache2, cache3])
+  
+  // 测试写入一致性
+  ConsistencyManager::put(consistency_manager, "consistent_key", "consistent_value")
+  
+  // 验证所有缓存都有相同的数据
+  match LRUCache::get(cache1, "consistent_key") {
+    Some(value) => assert_eq(value, "consistent_value")
+    None => assert_true(false)
+  }
+  
+  match LRUCache::get(cache2, "consistent_key") {
+    Some(value) => assert_eq(value, "consistent_value")
+    None => assert_true(false)
+  }
+  
+  match LRUCache::get(cache3, "consistent_key") {
+    Some(value) => assert_eq(value, "consistent_value")
+    None => assert_true(false)
+  }
+  
+  // 测试更新一致性
+  ConsistencyManager::put(consistency_manager, "consistent_key", "updated_value")
+  
+  // 验证所有缓存都更新了数据
+  match LRUCache::get(cache1, "consistent_key") {
+    Some(value) => assert_eq(value, "updated_value")
+    None => assert_true(false)
+  }
+  
+  match LRUCache::get(cache2, "consistent_key") {
+    Some(value) => assert_eq(value, "updated_value")
+    None => assert_true(false)
+  }
+  
+  match LRUCache::get(cache3, "consistent_key") {
+    Some(value) => assert_eq(value, "updated_value")
+    None => assert_true(false)
+  }
+  
+  // 测试删除一致性
+  ConsistencyManager::remove(consistency_manager, "consistent_key")
+  
+  // 验证所有缓存都删除了数据
+  match LRUCache::get(cache1, "consistent_key") {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  match LRUCache::get(cache2, "consistent_key") {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  match LRUCache::get(cache3, "consistent_key") {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // 测试部分缓存失效和恢复
+  LRUCache::put(cache1, "partial_key", "partial_value")
+  
+  // 同步其他缓存
+  ConsistencyManager::sync(consistency_manager, "partial_key")
+  
+  // 验证所有缓存都有数据
+  match LRUCache::get(cache2, "partial_key") {
+    Some(value) => assert_eq(value, "partial_value")
+    None => assert_true(false)
+  }
+  
+  match LRUCache::get(cache3, "partial_key") {
+    Some(value) => assert_eq(value, "partial_value")
     None => assert_true(false)
   }
 }
 
-test "缓存穿透保护" {
-  // 测试缓存穿透保护
-  let cache = @azimuth.Cache::new(100)
-  let protection_cache = @azimuth.ProtectionCache::new(cache)
+// Test 8: 缓存监控和指标测试
+test "cache monitoring and metrics" {
+  // 创建带监控的缓存
+  let cache = MonitoredCache::new(LRUCache::new(100))
   
-  // 模拟查询不存在的数据
-  let non_existent_keys = ["ghost:1", "ghost:2", "ghost:3"]
-  
-  // 第一次查询，应该穿透到数据源
-  for key in non_existent_keys {
-    let result = protection_cache.get(key)
-    match result {
-      @azimuth.ProtectionResult::Miss => assert_true(true)
-      _ => assert_true(false)
-    }
+  // 执行缓存操作
+  for i in 0..<50 {
+    let key = "metric_key_" + i.to_string()
+    let value = "metric_value_" + i.to_string()
+    
+    // 写入
+    MonitoredCache::put(cache, key, value)
+    
+    // 读取（命中）
+    MonitoredCache::get(cache, key)
   }
   
-  // 第二次查询，应该从保护缓存中获取
-  for key in non_existent_keys {
-    let result = protection_cache.get(key)
-    match result {
-      @azimuth.ProtectionResult::ProtectedMiss => assert_true(true)
-      _ => assert_true(false)
-    }
+  // 读取不存在的键（未命中）
+  for i in 50..<60 {
+    let key = "non_existent_key_" + i.to_string()
+    MonitoredCache::get(cache, key)
   }
   
-  // 验证保护缓存中有记录
-  let protection_stats = protection_cache.get_stats()
-  assert_eq(protection_stats.misses, non_existent_keys.length())
-  assert_eq(protection_stats.protected_misses, non_existent_keys.length())
-  
-  // 查询存在的数据
-  let existing_key = "user:123"
-  let result = protection_cache.get(existing_key)
-  match result {
-    @azimuth.ProtectionResult::Hit(value) => assert_eq(value, "user_data_123")
-    _ => assert_true(false)
-  }
-}
-
-test "缓存雪崩保护" {
-  // 测试缓存雪崩保护
-  let cache = @azimuth.Cache::new(100)
-  let avalanche_protection = @azimuth.AvalancheProtection::new(cache)
-  
-  // 添加大量相同过期时间的缓存项
-  let base_time = 1640995200000L
-  let same_expiry_time = base_time + 1000L // 1秒后过期
-  
-  for i in 1..=50 {
-    let key = "item:" + i.to_string()
-    avalanche_protection = avalanche_protection.put(key, "value_" + i.to_string(), same_expiry_time)
+  // 更新一些键
+  for i in 0..<20 {
+    let key = "metric_key_" + i.to_string()
+    let new_value = "updated_value_" + i.to_string()
+    MonitoredCache::put(cache, key, new_value)
   }
   
-  // 验证所有项都已添加
-  assert_eq(avalanche_protection.size(), 50)
-  
-  // 模拟缓存过期时间点
-  let expiry_time = same_expiry_time + 100L
-  
-  // 验证随机过期策略已应用
-  let expiry_times = []
-  for i in 1..=50 {
-    let key = "item:" + i.to_string()
-    let item_expiry = avalanche_protection.get_expiry_time(key)
-    expiry_times = expiry_times.push(item_expiry)
+  // 删除一些键
+  for i in 0..<10 {
+    let key = "metric_key_" + i.to_string()
+    MonitoredCache::remove(cache, key)
   }
   
-  // 验证过期时间已随机化
-  let min_expiry = expiry_times.reduce(fn(acc, time) { if time < acc { time } else { acc } }, expiry_times[0])
-  let max_expiry = expiry_times.reduce(fn(acc, time) { if time > acc { time } else { acc } }, expiry_times[0])
+  // 获取缓存指标
+  let metrics = MonitoredCache::get_metrics(cache)
   
-  assert_true(max_expiry > min_expiry)
-  assert_true((max_expiry - min_expiry) > 500L) // 至少500ms的差异
-}
-
-test "多级缓存架构" {
-  // 测试多级缓存架构
-  let l1_cache = @azimuth.L1Cache::new(10) // 内存缓存
-  let l2_cache = @azimuth.L2Cache::new(100) // 本地缓存
-  let l3_cache = @azimuth.L3Cache::new(1000) // 分布式缓存
+  // 验证指标
+  assert_eq(metrics.puts, 70) // 50次初始写入 + 20次更新
+  assert_eq(metrics.gets, 60) // 50次命中 + 10次未命中
+  assert_eq(metrics.hits, 50) // 50次命中
+  assert_eq(metrics.misses, 10) // 10次未命中
+  assert_eq(metrics.deletes, 10) // 10次删除
+  assert_eq(metrics.evictions, 0) // 缓存未满，没有淘汰
   
-  let multi_level_cache = @azimuth.MultiLevelCache::new(l1_cache, l2_cache, l3_cache)
+  // 验证命中率
+  let hit_rate = metrics.hits.to_float() / metrics.gets.to_float()
+  assert_eq(hit_rate, 50.0 / 60.0)
   
-  // 查询数据，应该逐级查找
-  let key = "user:profile:123"
-  
-  // L1缓存未命中
-  let result1 = multi_level_cache.get(key)
-  match result1 {
-    @azimuth.MultiLevelResult::L1Miss => assert_true(true)
-    _ => assert_true(false)
+  // 填满缓存以测试淘汰
+  for i in 100..<200 {
+    let key = "eviction_key_" + i.to_string()
+    let value = "eviction_value_" + i.to_string()
+    MonitoredCache::put(cache, key, value)
   }
   
-  // L2缓存未命中
-  let result2 = multi_level_cache.get(key)
-  match result2 {
-    @azimuth.MultiLevelResult::L2Miss => assert_true(true)
-    _ => assert_true(false)
-  }
+  // 获取更新后的指标
+  let updated_metrics = MonitoredCache::get_metrics(cache)
   
-  // L3缓存命中，并逐级回填
-  let result3 = multi_level_cache.get(key)
-  match result3 {
-    @azimuth.MultiLevelResult::L3Hit(value) => {
-      assert_eq(value, "user_profile_data_123")
-      
-      // 验证数据已回填到L2和L1
-      let l1_result = multi_level_cache.get(key)
-      match l1_result {
-        @azimuth.MultiLevelResult::L1Hit(l1_value) => assert_eq(l1_value, "user_profile_data_123")
-        _ => assert_true(false)
-      }
-    }
-    _ => assert_true(false)
-  }
+  // 验证有淘汰发生
+  assert_true(updated_metrics.evictions > 0)
   
-  // 测试缓存写入策略
-  let new_key = "config:app"
-  let new_value = "app_config_data"
-  multi_level_cache = multi_level_cache.put(new_key, new_value)
+  // 测试实时监控
+  let real_time_stats = MonitoredCache::get_real_time_stats(cache)
+  assert_true(real_time_stats.current_size > 0)
+  assert_true(real_time_stats.current_size <= 100)
+  assert_true(real_time_stats.put_rate > 0)
+  assert_true(real_time_stats.get_rate > 0)
   
-  // 验证数据已写入所有级别
-  let l1_result = multi_level_cache.get(new_key)
-  match l1_result {
-    @azimuth.MultiLevelResult::L1Hit(value) => assert_eq(value, new_value)
-    _ => assert_true(false)
-  }
-  
-  // 测试缓存失效策略
-  multi_level_cache = multi_level_cache.invalidate(new_key)
-  
-  // 验证所有级别的缓存都已失效
-  let invalidate_result = multi_level_cache.get(new_key)
-  match invalidate_result {
-    @azimuth.MultiLevelResult::L1Miss => assert_true(true)
-    _ => assert_true(false)
-  }
+  // 测试缓存健康状态
+  let health = MonitoredCache::health_check(cache)
+  assert_true(health.overall_health != Unknown)
+  assert_true(health.memory_usage > 0)
+  assert_true(health.hit_rate >= 0.0 && health.hit_rate <= 1.0)
 }

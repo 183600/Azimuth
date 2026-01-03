@@ -151,6 +151,18 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     7: (__test_617a696d7574685f706572666f726d616e63655f62656e63686d61726b5f74657374732e6d6274_7, ["序列化性能测试"]),
     8: (__test_617a696d7574685f706572666f726d616e63655f62656e63686d61726b5f74657374732e6d6274_8, ["内存使用性能测试"]),
   },
+  "azimuth_new_high_quality_tests.mbt": {
+    0: (__test_617a696d7574685f6e65775f686967685f7175616c6974795f74657374732e6d6274_0, ["time series data processing and analysis"]),
+    1: (__test_617a696d7574685f6e65775f686967685f7175616c6974795f74657374732e6d6274_1, ["memory management and resource cleanup simulation"]),
+    2: (__test_617a696d7574685f6e65775f686967685f7175616c6974795f74657374732e6d6274_2, ["concurrent safety simulation with atomic operations"]),
+    3: (__test_617a696d7574685f6e65775f686967685f7175616c6974795f74657374732e6d6274_3, ["data compression and transmission optimization simulation"]),
+    4: (__test_617a696d7574685f6e65775f686967685f7175616c6974795f74657374732e6d6274_4, ["error recovery and fault tolerance mechanisms simulation"]),
+    5: (__test_617a696d7574685f6e65775f686967685f7175616c6974795f74657374732e6d6274_5, ["performance benchmarking and optimization simulation"]),
+    6: (__test_617a696d7574685f6e65775f686967685f7175616c6974795f74657374732e6d6274_6, ["configuration management and dynamic updates simulation"]),
+    7: (__test_617a696d7574685f6e65775f686967685f7175616c6974795f74657374732e6d6274_7, ["cross-platform compatibility and adaptation simulation"]),
+    8: (__test_617a696d7574685f6e65775f686967685f7175616c6974795f74657374732e6d6274_8, ["security and privacy protection mechanisms simulation"]),
+    9: (__test_617a696d7574685f6e65775f686967685f7175616c6974795f74657374732e6d6274_9, ["internationalization and localization support simulation"]),
+  },
   "azimuth_new_comprehensive_tests.mbt": {
     0: (__test_617a696d7574685f6e65775f636f6d70726568656e736976655f74657374732e6d6274_0, ["时间序列数据处理测试"]),
     1: (__test_617a696d7574685f6e65775f636f6d70726568656e736976655f74657374732e6d6274_1, ["资源限制和恢复测试"]),
