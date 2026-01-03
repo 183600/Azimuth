@@ -2089,6 +2089,18 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_617a696d7574685f6e65775f6d6f6f6e6269745f74657374732e6d6274_6, ["日志严重级别和上下文关联测试"]),
     7: (__test_617a696d7574685f6e65775f6d6f6f6e6269745f74657374732e6d6274_7, ["Span 类型和状态转换测试"]),
   },
+  "azimuth_new_moonbit_test_cases.mbt": {
+    0: (__test_617a696d7574685f6e65775f6d6f6f6e6269745f746573745f63617365732e6d6274_0, ["advanced data structure operations"]),
+    1: (__test_617a696d7574685f6e65775f6d6f6f6e6269745f746573745f63617365732e6d6274_1, ["error handling and recovery mechanisms"]),
+    2: (__test_617a696d7574685f6e65775f6d6f6f6e6269745f746573745f63617365732e6d6274_2, ["type system validation and constraints"]),
+    3: (__test_617a696d7574685f6e65775f6d6f6f6e6269745f746573745f63617365732e6d6274_3, ["functional programming patterns"]),
+    4: (__test_617a696d7574685f6e65775f6d6f6f6e6269745f746573745f63617365732e6d6274_4, ["advanced pattern matching scenarios"]),
+    5: (__test_617a696d7574685f6e65775f6d6f6f6e6269745f746573745f63617365732e6d6274_5, ["boundary conditions and edge cases"]),
+    6: (__test_617a696d7574685f6e65775f6d6f6f6e6269745f746573745f63617365732e6d6274_6, ["resource management and cleanup patterns"]),
+    7: (__test_617a696d7574685f6e65775f6d6f6f6e6269745f746573745f63617365732e6d6274_7, ["serialization and deserialization patterns"]),
+    8: (__test_617a696d7574685f6e65775f6d6f6f6e6269745f746573745f63617365732e6d6274_8, ["performance and efficiency patterns"]),
+    9: (__test_617a696d7574685f6e65775f6d6f6f6e6269745f746573745f63617365732e6d6274_9, ["integration and system level tests"]),
+  },
   "azimuth_new_moonbit_feature_tests.mbt": {
     0: (__test_617a696d7574685f6e65775f6d6f6f6e6269745f666561747572655f74657374732e6d6274_0, ["recursive function tests"]),
     1: (__test_617a696d7574685f6e65775f6d6f6f6e6269745f666561747572655f74657374732e6d6274_1, ["struct and record type tests"]),
@@ -3656,10 +3668,10 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     5: (__test_617a696d7574685f656e645f746f5f656e645f74656c656d657472795f74657374732e6d6274_5, ["端到端安全审计追踪测试"]),
   },
   "azimuth_edge_iot_telemetry_tests.mbt": {
-    0: (__test_617a696d7574685f656467655f696f745f74656c656d657472795f74657374732e6d6274_0, ["边缘设备资源受限环境遥测"]),
-    1: (__test_617a696d7574685f656467655f696f745f74656c656d657472795f74657374732e6d6274_1, ["IoT传感器数据流处理"]),
-    2: (__test_617a696d7574685f656467655f696f745f74656c656d657472795f74657374732e6d6274_2, ["边缘计算本地数据处理"]),
-    3: (__test_617a696d7574685f656467655f696f745f74656c656d657472795f74657374732e6d6274_3, ["边缘与云端协同遥测"]),
+    0: (__test_617a696d7574685f656467655f696f745f74656c656d657472795f74657374732e6d6274_0, ["IoT设备遥测数据收集和优化"]),
+    1: (__test_617a696d7574685f656467655f696f745f74656c656d657472795f74657374732e6d6274_1, ["边缘节点数据聚合和处理验证"]),
+    2: (__test_617a696d7574685f656467655f696f745f74656c656d657472795f74657374732e6d6274_2, ["边缘设备故障检测和恢复机制验证"]),
+    3: (__test_617a696d7574685f656467655f696f745f74656c656d657472795f74657374732e6d6274_3, ["边缘设备同步和离线处理验证"]),
   },
   "azimuth_edge_iot_telemetry_enhanced_tests.mbt": {
     0: (__test_617a696d7574685f656467655f696f745f74656c656d657472795f656e68616e6365645f74657374732e6d6274_0, ["edge device data collection optimization"]),
