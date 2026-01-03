@@ -334,6 +334,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_advanced_quality_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/azimuth_advanced_resilience_tests.mbt": {
           "backend": [
             "Wasm",
@@ -972,6 +985,19 @@
           ]
         },
         "/home/runner/work/Azimuth/Azimuth/azimuth_comprehensive_advanced_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_comprehensive_edge_case_tests.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
@@ -4637,6 +4663,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_new_comprehensive_telemetry_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/azimuth_new_comprehensive_test_cases.mbt": {
           "backend": [
             "Wasm",
@@ -6405,6 +6444,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_simple_basic_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/azimuth_simple_data_tests.mbt": {
           "backend": [
             "Wasm",
@@ -8081,6 +8133,35 @@
     {
       "is-main": false,
       "is-third-party": false,
+      "root-path": "/home/runner/work/Azimuth/Azimuth/azimuth_standalone_test",
+      "root": "azimuth/telemetry",
+      "rel": "azimuth_standalone_test",
+      "files": {
+        "/home/runner/work/Azimuth/Azimuth/azimuth_standalone_test/test.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        }
+      },
+      "wbtest-files": {},
+      "test-files": {},
+      "mbt-md-files": {},
+      "deps": [],
+      "wbtest-deps": [],
+      "test-deps": [],
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/azimuth_standalone_test/azimuth_standalone_test.mi"
+    },
+    {
+      "is-main": false,
+      "is-third-party": false,
       "root-path": "/home/runner/work/Azimuth/Azimuth/azimuth_test",
       "root": "azimuth/telemetry",
       "rel": "azimuth_test",
@@ -9255,6 +9336,35 @@
       "wbtest-deps": [],
       "test-deps": [],
       "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/src/src.mi"
+    },
+    {
+      "is-main": false,
+      "is-third-party": false,
+      "root-path": "/home/runner/work/Azimuth/Azimuth/standalone_azimuth_test",
+      "root": "azimuth/telemetry",
+      "rel": "standalone_azimuth_test",
+      "files": {
+        "/home/runner/work/Azimuth/Azimuth/standalone_azimuth_test/test.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        }
+      },
+      "wbtest-files": {},
+      "test-files": {},
+      "mbt-md-files": {},
+      "deps": [],
+      "wbtest-deps": [],
+      "test-deps": [],
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/standalone_azimuth_test/standalone_azimuth_test.mi"
     },
     {
       "is-main": false,

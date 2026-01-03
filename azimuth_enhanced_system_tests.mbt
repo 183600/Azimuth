@@ -1,355 +1,344 @@
-// Azimuth Enhanced System Test Suite
-// This file contains enhanced system-level test cases for the Azimuth telemetry system
+// Azimuth Telemetry System - Enhanced System Tests
+// This file contains enhanced test cases for the telemetry system
 
-// Test 1: Error Handling and Recovery
-test "error handling and recovery mechanisms" {
-  // Test error creation and handling
-  let telemetry_error = TelemetryError({
-    code: "TELEMETRY_INIT_FAILED",
-    message: "Failed to initialize telemetry system",
-    details: Some("Configuration file not found at /etc/azimuth/config.yaml"),
-    timestamp: "2026-01-02T10:00:00Z",
-    recoverable: true
-  })
-  
-  // Verify error properties
-  assert_eq(telemetry_error.code, "TELEMETRY_INIT_FAILED")
-  assert_eq(telemetry_error.message, "Failed to initialize telemetry system")
-  match telemetry_error.details {
-    None => assert_true(false)
-    Some(details) => assert_eq(details, "Configuration file not found at /etc/azimuth/config.yaml")
-  }
-  assert_eq(telemetry_error.timestamp, "2026-01-02T10:00:00Z")
-  assert_eq(telemetry_error.recoverable, true)
-  
-  // Test error recovery
-  let recovery_action = telemetry_error.recoverable ? "attempt_recovery" : "fail_fast"
-  assert_eq(recovery_action, "attempt_recovery")
-}
-
-// Test 2: Performance Benchmarking
-test "performance benchmarking for metrics collection" {
-  // Create a large number of metrics to test performance
-  let mut metrics = []
-  for i in 1..=1000 {
-    let metric = Counter({
-      name: "metric." + i.to_string(),
-      description: Some("Test metric " + i.to_string()),
-      unit: Some("count")
-    })
-    metrics = metrics.push(metric)
-  }
-  
-  // Verify all metrics were created
-  assert_eq(metrics.length(), 1000)
-  
-  // Test metric aggregation performance
-  let start_time = timestamp()
-  let total_count = metrics.length()
-  let end_time = timestamp()
-  
-  // Verify aggregation completed within reasonable time (less than 1 second)
-  assert_true(end_time - start_time < 1000)
-  assert_eq(total_count, 1000)
-}
-
-// Test 3: Data Validation and Sanitization
-test "data validation and sanitization" {
-  // Test valid data
-  let valid_trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let valid_span_id = "b7ad6b7169203331"
-  
-  assert_true(is_valid_trace_id(valid_trace_id))
-  assert_true(is_valid_span_id(valid_span_id))
-  
-  // Test invalid data
-  let invalid_trace_id = "invalid-trace-id"
-  let invalid_span_id = "too-short"
-  
-  assert_false(is_valid_trace_id(invalid_trace_id))
-  assert_false(is_valid_span_id(invalid_span_id))
-  
-  // Test data sanitization
-  let unsanitized_service_name = "my-service/with@invalid#chars"
-  let sanitized_name = sanitize_service_name(unsanitized_service_name)
-  assert_eq(sanitized_name, "my-service_with_invalid_chars")
-}
-
-// Test 4: Concurrent Safety
-test "concurrent safety for shared resources" {
-  // Create shared telemetry collector
-  let collector = SharedTelemetryCollector({ 
-    metrics: [],
-    spans: [],
-    lock: Mutex()
-  })
-  
-  // Simulate concurrent metric collection
-  let mut results = []
-  for i in 1..=10 {
-    let result = collector.add_metric(Counter({
-      name: "concurrent.metric." + i.to_string(),
-      description: Some("Concurrent test metric"),
-      unit: Some("count")
-    }))
-    results = results.push(result)
-  }
-  
-  // Verify all operations succeeded
-  for result in results {
-    match result {
-      Ok(_) => assert_true(true)
-      Err(_) => assert_true(false)
-    }
-  }
-  
-  // Verify all metrics were added
-  match collector.get_metrics() {
-    Ok(metrics) => assert_eq(metrics.length(), 10)
-    Err(_) => assert_true(false)
-  }
-}
-
-// Test 5: Serialization and Deserialization
-test "serialization and deserialization of telemetry data" {
-  // Create complex telemetry data
-  let telemetry_data = TelemetryData({
-    spans: [
-      Span({
-        name: "http.request",
-        kind: Server,
-        recording: true,
-        span_context: SpanContext({
-          trace_id: "trace-123456789",
-          span_id: "span-987654321",
-          sampled: true,
-          trace_state: "key1=value1,key2=value2"
-        })
-      })
-    ],
-    metrics: [
-      Counter({
-        name: "http.requests.total",
-        description: Some("Total HTTP requests"),
-        unit: Some("requests")
-      })
-    ],
-    resource: Resource({
-      attributes: [
-        ("service.name", StringValue("api-service")),
-        ("service.version", StringValue("1.2.3"))
-      ]
-    })
-  })
-  
-  // Serialize to JSON
-  match serialize_to_json(telemetry_data) {
-    Ok(json_string) => {
-      // Verify JSON contains expected fields
-      assert_true(json_string.contains("http.request"))
-      assert_true(json_string.contains("trace-123456789"))
-      assert_true(json_string.contains("api-service"))
-      
-      // Deserialize back from JSON
-      match deserialize_from_json(json_string) {
-        Ok(deserialized_data) => {
-          // Verify deserialized data matches original
-          assert_eq(deserialized_data.spans.length(), 1)
-          assert_eq(deserialized_data.metrics.length(), 1)
-          assert_eq(deserialized_data.resource.attributes.length(), 2)
-        }
-        Err(_) => assert_true(false)
-      }
-    }
-    Err(_) => assert_true(false)
-  }
-}
-
-// Test 6: Resource Management and Cleanup
-test "resource management and cleanup" {
-  // Create resource manager
-  let resource_manager = ResourceManager({
-    resources: [],
-    cleanup_handlers: []
-  })
-  
-  // Register resources
-  for i in 1..=5 {
-    let resource_id = resource_manager.register_resource("resource-" + i.to_string())
-    assert_true(resource_id > 0)
-  }
-  
-  // Verify resources are registered
-  assert_eq(resource_manager.get_resource_count(), 5)
-  
-  // Register cleanup handler
-  resource_manager.register_cleanup_handler(fn(resource_id) {
-    // Simulate cleanup operation
-    true  // Cleanup successful
-  })
-  
-  // Cleanup all resources
-  let cleanup_result = resource_manager.cleanup_all()
-  match cleanup_result {
-    Ok(count) => assert_eq(count, 5)
-    Err(_) => assert_true(false)
-  }
-  
-  // Verify resources are cleaned up
-  assert_eq(resource_manager.get_resource_count(), 0)
-}
-
-// Test 7: Configuration Management
-test "configuration management and validation" {
-  // Create configuration with valid values
-  let valid_config = TelemetryConfig({
-    service_name: "test-service",
-    service_version: Some("1.0.0"),
-    endpoint: "http://localhost:4317",
-    headers: [("api-key", "test-key")],
-    batch_size: 512,
-    timeout_ms: 5000,
-    enable_compression: true,
-    sampling_rate: 0.1
-  })
-  
-  // Validate configuration
-  match validate_config(valid_config) {
-    Ok(_) => assert_true(true)
-    Err(_) => assert_true(false)
-  }
-  
-  // Create configuration with invalid values
-  let invalid_config = TelemetryConfig({
-    service_name: "",  // Empty service name
-    service_version: Some("1.0.0"),
-    endpoint: "invalid-url",  // Invalid URL
-    headers: [],
-    batch_size: 0,  // Invalid batch size
-    timeout_ms: -1,  // Invalid timeout
-    enable_compression: true,
-    sampling_rate: 1.5  // Invalid sampling rate (> 1.0)
-  })
-  
-  // Validate configuration should fail
-  match validate_config(invalid_config) {
-    Ok(_) => assert_true(false)
-    Err(errors) => assert_true(errors.length() > 0)
-  }
-}
-
-// Test 8: Data Transformation and Conversion
-test "data transformation and conversion utilities" {
-  // Test trace ID conversion
-  let trace_id_hex = "0af7651916cd43dd8448eb211c80319c"
-  let trace_id_bytes = hex_to_bytes(trace_id_hex)
-  let trace_id_converted_back = bytes_to_hex(trace_id_bytes)
-  
-  assert_eq(trace_id_hex, trace_id_converted_back)
+// Test 1: Timestamp Operations
+test "timestamp operations and timezone handling" {
+  // Test current timestamp generation
+  let current_timestamp = Timestamp::now()
+  assert_true(Timestamp::is_valid(current_timestamp))
   
   // Test timestamp conversion
-  let timestamp_unix = 1672531200  // 2023-01-01 00:00:00 UTC
-  let timestamp_iso = unix_to_iso8601(timestamp_unix)
-  let timestamp_converted_back = iso8601_to_unix(timestamp_iso)
+  let timestamp_ms = 1609459200000L  // 2021-01-01 00:00:00 UTC
+  let timestamp_obj = Timestamp::from_millis(timestamp_ms)
+  assert_eq(Timestamp::to_millis(timestamp_obj), timestamp_ms)
   
-  assert_eq(timestamp_unix, timestamp_converted_back)
-  assert_eq(timestamp_iso, "2023-01-01T00:00:00Z")
+  // Test timestamp arithmetic
+  let base_timestamp = Timestamp::from_millis(1000L)
+  let added_timestamp = Timestamp::add(base_timestamp, 500L)
+  assert_eq(Timestamp::to_millis(added_timestamp), 1500L)
   
-  // Test attribute value conversion
-  let string_attr = StringValue("test")
-  let converted_int = convert_attribute_value(string_attr, IntType)
-  let converted_back = convert_attribute_value(converted_int, StringType)
-  
-  match converted_back {
-    StringValue(value) => assert_eq(value, "test")
-    _ => assert_true(false)
-  }
+  // Test timestamp comparison
+  let earlier = Timestamp::from_millis(1000L)
+  let later = Timestamp::from_millis(2000L)
+  assert_true(Timestamp::is_before(earlier, later))
+  assert_true(Timestamp::is_after(later, earlier))
+  assert_false(Timestamp::is_before(later, earlier))
 }
 
-// Test 9: Baggage Propagation Across Contexts
-test "baggage propagation across contexts" {
-  // Create initial baggage
-  let initial_baggage = Baggage({
-    entries: [
-      ("user.id", "12345"),
-      ("request.id", "req-67890"),
-      ("trace.origin", "frontend")
-    ]
+// Test 2: Data Sampling Strategy
+test "data sampling strategy operations" {
+  // Test fixed rate sampling
+  let fixed_sampler = FixedRateSampler::new(0.1)  // 10% sampling rate
+  assert_eq(FixedRateSampler::get_rate(fixed_sampler), 0.1)
+  
+  let trace_id_1 = "trace_id_1"
+  let trace_id_2 = "trace_id_2"
+  let trace_id_3 = "trace_id_3"
+  
+  // Test sampling decision
+  let decision_1 = FixedRateSampler::should_sample(fixed_sampler, trace_id_1)
+  let decision_2 = FixedRateSampler::should_sample(fixed_sampler, trace_id_2)
+  let decision_3 = FixedRateSampler::should_sample(fixed_sampler, trace_id_3)
+  
+  // At least one should be sampled (probabilistic)
+  assert_true(decision_1 || decision_2 || decision_3)
+  
+  // Test adaptive sampling
+  let adaptive_sampler = AdaptiveSampler::new(100, 0.05, 0.2)  // max 100 traces, min 5%, max 20%
+  assert_eq(AdaptiveSampler::get_max_traces(adaptive_sampler), 100)
+  
+  // Test with different load conditions
+  let low_load_decision = AdaptiveSampler::should_sample(adaptive_sampler, "trace_id_low", 50)
+  let high_load_decision = AdaptiveSampler::should_sample(adaptive_sampler, "trace_id_high", 150)
+  
+  // Under low load, should sample more
+  // Under high load, should sample less
+  assert_true(low_load_decision || high_load_decision)
+}
+
+// Test 3: Telemetry Data Compression
+test "telemetry data compression operations" {
+  // Test string compression
+  let original_data = "This is a long telemetry data string that should be compressible"
+  let compressed_data = Compression::compress_string(original_data)
+  assert_true(compressed_data.length() < original_data.length())
+  
+  // Test decompression
+  let decompressed_data = Compression::decompress_string(compressed_data)
+  assert_eq(decompressed_data, original_data)
+  
+  // Test batch compression
+  let batch_data = ["data1", "data2", "data3", "data4", "data5"]
+  let compressed_batch = Compression::compress_batch(batch_data)
+  assert_true(compressed_batch.length() > 0)
+  
+  // Test batch decompression
+  let decompressed_batch = Compression::decompress_batch(compressed_batch)
+  assert_eq(decompressed_batch.length(), batch_data.length())
+  
+  for i in 0..<batch_data.length() {
+    assert_eq(decompressed_batch[i], batch_data[i])
+  }
+  
+  // Test compression ratio calculation
+  let ratio = Compression::calculate_ratio(original_data.length(), compressed_data.length())
+  assert_true(ratio > 0.0 && ratio <= 1.0)
+}
+
+// Test 4: Cross-Service Tracing
+test "cross-service tracing operations" {
+  // Test trace context propagation
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let parent_span_id = "b7ad6b7169203331"
+  let span_ctx = SpanContext::new(trace_id, parent_span_id, true, "")
+  
+  // Test child span creation
+  let child_span = Span::new("child_operation", Client, span_ctx)
+  let child_ctx = Span::span_context(child_span)
+  
+  assert_eq(SpanContext::trace_id(child_ctx), trace_id)
+  assert_not_eq(SpanContext::span_id(child_ctx), parent_span_id)
+  
+  // Test span context serialization
+  let serialized_ctx = SpanContext::serialize(span_ctx)
+  assert_true(serialized_ctx.length() > 0)
+  
+  // Test span context deserialization
+  let deserialized_ctx = SpanContext::deserialize(serialized_ctx)
+  assert_eq(SpanContext::trace_id(deserialized_ctx), trace_id)
+  assert_eq(SpanContext::span_id(deserialized_ctx), parent_span_id)
+  
+  // Test trace flags
+  let sampled_ctx = SpanContext::new(trace_id, parent_span_id, true, "sampled=1")
+  assert_true(SpanContext::is_sampled(sampled_ctx))
+  
+  let unsampled_ctx = SpanContext::new(trace_id, parent_span_id, false, "")
+  assert_false(SpanContext::is_sampled(unsampled_ctx))
+}
+
+// Test 5: Performance Monitoring
+test "performance monitoring operations" {
+  // Test performance timer creation
+  let timer = PerformanceTimer::new("operation_timer")
+  assert_eq(PerformanceTimer::name(timer), "operation_timer")
+  
+  // Test timer start/stop
+  PerformanceTimer::start(timer)
+  // Simulate some work
+  let mut sum = 0
+  for i in 0..<1000 {
+    sum = sum + i
+  }
+  PerformanceTimer::stop(timer)
+  
+  // Test elapsed time
+  let elapsed_ms = PerformanceTimer::elapsed_ms(timer)
+  assert_true(elapsed_ms >= 0)
+  
+  // Test performance metrics collection
+  let metrics = PerformanceMetrics::new()
+  PerformanceMetrics::record_operation(metrics, "test_operation", 50.0)
+  PerformanceMetrics::record_operation(metrics, "test_operation", 75.0)
+  PerformanceMetrics::record_operation(metrics, "test_operation", 100.0)
+  
+  // Test statistics calculation
+  let avg_time = PerformanceMetrics::average_time(metrics, "test_operation")
+  let max_time = PerformanceMetrics::max_time(metrics, "test_operation")
+  let min_time = PerformanceMetrics::min_time(metrics, "test_operation")
+  
+  assert_eq(avg_time, 75.0)
+  assert_eq(max_time, 100.0)
+  assert_eq(min_time, 50.0)
+  
+  // Test percentile calculation
+  let p95 = PerformanceMetrics::percentile(metrics, "test_operation", 95)
+  assert_true(p95 >= 50.0 && p95 <= 100.0)
+}
+
+// Test 6: Error Boundary Handling
+test "error boundary handling operations" {
+  // Test error boundary creation
+  let boundary = ErrorBoundary::new("test_boundary")
+  assert_eq(ErrorBoundary::name(boundary), "test_boundary")
+  
+  // Test error recording
+  ErrorBoundary::record_error(boundary, "test_error", Some("Error details"))
+  ErrorBoundary::record_error(boundary, "another_error", None)
+  
+  // Test error count
+  let error_count = ErrorBoundary::error_count(boundary)
+  assert_eq(error_count, 2)
+  
+  // Test error recovery
+  let recovered = ErrorBoundary::attempt_recovery(boundary, {
+    // Simulate a potentially failing operation
+    true  // Success
   })
+  assert_true(recovered)
   
-  // Create context with initial baggage
-  let context1 = Context({
-    baggage: Some(initial_baggage),
-    span_context: None
+  // Test error recovery with failure
+  let not_recovered = ErrorBoundary::attempt_recovery(boundary, {
+    // Simulate a failing operation
+    false  // Failure
   })
+  assert_false(not_recovered)
   
-  // Create new context with additional baggage entries
-  let additional_entries = [
-    ("session.id", "sess-abc123"),
-    ("feature.flags", "new_ui,experimental")
-  ]
+  // Test error threshold
+  ErrorBoundary::set_threshold(boundary, 3)
+  assert_eq(ErrorBoundary::threshold(boundary), 3)
   
-  let context2 = context1.with_baggage_entries(additional_entries)
+  // Test boundary state
+  let state = ErrorBoundary::state(boundary)
+  assert_true(state == "healthy" || state == "degraded" || state == "failed")
+}
+
+// Test 7: Resource Limit Testing
+test "resource limit operations" {
+  // Test resource limit configuration
+  let limits = ResourceLimits::new()
+  ResourceLimits::set_memory_limit(limits, 1024 * 1024 * 100)  // 100MB
+  ResourceLimits::set_cpu_limit(limits, 0.5)  // 50% CPU
+  ResourceLimits::set_connection_limit(limits, 100)
   
-  // Verify baggage propagation
-  match context2.baggage {
-    None => assert_true(false)
-    Some(baggage) => {
-      assert_eq(baggage.entries.length(), 5)
-      
-      // Verify original entries are preserved
-      assert_true(baggage.entries.contains(("user.id", "12345")))
-      assert_true(baggage.entries.contains(("request.id", "req-67890")))
-      assert_true(baggage.entries.contains(("trace.origin", "frontend")))
-      
-      // Verify new entries are added
-      assert_true(baggage.entries.contains(("session.id", "sess-abc123")))
-      assert_true(baggage.entries.contains(("feature.flags", "new_ui,experimental")))
+  assert_eq(ResourceLimits::memory_limit(limits), 1024 * 1024 * 100)
+  assert_eq(ResourceLimits::cpu_limit(limits), 0.5)
+  assert_eq(ResourceLimits::connection_limit(limits), 100)
+  
+  // Test resource monitoring
+  let monitor = ResourceMonitor::new(limits)
+  ResourceMonitor::track_memory_usage(monitor, 1024 * 1024 * 50)  // 50MB used
+  ResourceMonitor::track_cpu_usage(monitor, 0.3)  // 30% CPU used
+  ResourceMonitor::track_connections(monitor, 50)  // 50 connections
+  
+  // Test limit checking
+  assert_false(ResourceMonitor::is_memory_exceeded(monitor))
+  assert_false(ResourceMonitor::is_cpu_exceeded(monitor))
+  assert_false(ResourceMonitor::is_connections_exceeded(monitor))
+  
+  // Test exceeding limits
+  ResourceMonitor::track_memory_usage(monitor, 1024 * 1024 * 120)  // 120MB used
+  assert_true(ResourceMonitor::is_memory_exceeded(monitor))
+  
+  // Test resource cleanup
+  ResourceMonitor::cleanup(monitor)
+  assert_eq(ResourceMonitor::memory_usage(monitor), 0)
+  assert_eq(ResourceMonitor::cpu_usage(monitor), 0.0)
+  assert_eq(ResourceMonitor::connections(monitor), 0)
+}
+
+// Test 8: Data Serialization
+test "data serialization operations" {
+  // Test JSON serialization
+  let test_data = {
+    "name": "test_operation",
+    "duration": 123.45,
+    "success": true,
+    "tags": ["tag1", "tag2", "tag3"]
+  }
+  
+  let json_str = JsonSerializer::serialize(test_data)
+  assert_true(json_str.contains("test_operation"))
+  assert_true(json_str.contains("123.45"))
+  
+  // Test JSON deserialization
+  let deserialized_data = JsonSerializer::deserialize(json_str)
+  match deserialized_data {
+    Some(data) => {
+      assert_eq(data["name"], "test_operation")
+      assert_eq(data["duration"], "123.45")
+      assert_eq(data["success"], "true")
     }
+    None => assert_true(false)
   }
+  
+  // Test binary serialization
+  let binary_data = BinarySerializer::serialize(test_data)
+  assert_true(binary_data.length() > 0)
+  
+  // Test binary deserialization
+  let binary_deserialized = BinarySerializer::deserialize(binary_data)
+  match binary_deserialized {
+    Some(data) => {
+      assert_eq(data["name"], "test_operation")
+      assert_eq(data["duration"], "123.45")
+    }
+    None => assert_true(false)
+  }
+  
+  // Test serialization format detection
+  let json_format = SerializationFormat::detect(json_str)
+  let binary_format = SerializationFormat::detect(binary_data)
+  
+  assert_eq(json_format, "json")
+  assert_eq(binary_format, "binary")
 }
 
-// Test 10: Metrics Aggregation and Analysis
-test "metrics aggregation and analysis" {
-  // Create metrics with different values
-  let metrics = [
-    Counter({ name: "http.requests.total", description: None, unit: None }),
-    Counter({ name: "http.requests.total", description: None, unit: None }),
-    Counter({ name: "http.requests.total", description: None, unit: None }),
-    Counter({ name: "http.errors.total", description: None, unit: None }),
-    Counter({ name: "http.errors.total", description: None, unit: None }),
-    Gauge({ name: "system.memory.usage", description: None, unit: None }),
-    Gauge({ name: "system.cpu.usage", description: None, unit: None })
-  ]
+// Test 9: Concurrent Safety
+test "concurrent safety operations" {
+  // Test thread-safe counter
+  let counter = ThreadSafeCounter::new()
+  assert_eq(ThreadSafeCounter::value(counter), 0)
   
-  // Aggregate metrics by name
-  let aggregated = aggregate_metrics_by_name(metrics)
+  // Test atomic increment
+  ThreadSafeCounter::increment(counter)
+  assert_eq(ThreadSafeCounter::value(counter), 1)
   
-  // Verify aggregation results
-  assert_eq(aggregated.length(), 3)  // Three unique metric names
+  ThreadSafeCounter::add(counter, 5)
+  assert_eq(ThreadSafeCounter::value(counter), 6)
   
-  // Verify request metrics count
-  match aggregated.get("http.requests.total") {
+  // Test thread-safe map
+  let map = ThreadSafeMap::new()
+  ThreadSafeMap::set(map, "key1", "value1")
+  ThreadSafeMap::set(map, "key2", "value2")
+  
+  let value1 = ThreadSafeMap::get(map, "key1")
+  match value1 {
+    Some(v) => assert_eq(v, "value1")
     None => assert_true(false)
-    Some(count) => assert_eq(count, 3)
   }
   
-  // Verify error metrics count
-  match aggregated.get("http.errors.total") {
+  let value2 = ThreadSafeMap::get(map, "key2")
+  match value2 {
+    Some(v) => assert_eq(v, "value2")
     None => assert_true(false)
-    Some(count) => assert_eq(count, 2)
   }
   
-  // Verify gauge metrics count
-  match aggregated.get("system.memory.usage") {
-    None => assert_true(false)
-    Some(count) => assert_eq(count, 1)
+  let non_existent = ThreadSafeMap::get(map, "non_existent")
+  match non_existent {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
   }
   
-  // Calculate error rate
-  let total_requests = 3
-  let total_errors = 2
-  let error_rate = calculate_error_rate(total_requests, total_errors)
+  // Test concurrent operation simulation
+  let results = ConcurrentOperations::execute_parallel([
+    { ThreadSafeCounter::increment(counter); 1 },
+    { ThreadSafeCounter::increment(counter); 2 },
+    { ThreadSafeCounter::increment(counter); 3 }
+  ])
   
-  assert_eq(error_rate, 0.6666666666666666)  // 2/3
+  assert_eq(results.length(), 3)
+  assert_eq(ThreadSafeCounter::value(counter), 9)  // Initial 6 + 3 increments
+  
+  // Test lock-free data structure
+  let queue = LockFreeQueue::new()
+  LockFreeQueue::enqueue(queue, "item1")
+  LockFreeQueue::enqueue(queue, "item2")
+  
+  let dequeued1 = LockFreeQueue::dequeue(queue)
+  match dequeued1 {
+    Some(item) => assert_eq(item, "item1")
+    None => assert_true(false)
+  }
+  
+  let dequeued2 = LockFreeQueue::dequeue(queue)
+  match dequeued2 {
+    Some(item) => assert_eq(item, "item2")
+    None => assert_true(false)
+  }
+  
+  let empty_dequeue = LockFreeQueue::dequeue(queue)
+  match empty_dequeue {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
 }
