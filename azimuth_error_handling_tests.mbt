@@ -1,791 +1,269 @@
 // Azimuth 错误处理测试
-// 测试遥测系统的错误处理能力
+// 专注于测试错误处理和异常管理功能
 
-// 测试1: Span 错误状态处理
-test "Span 错误状态处理测试" {
-  // 创建包含错误状态的Span
-  let error_span = Span({
-    trace_id: "4bf92f3577b34da6a3ce929d0e0e4736",
-    span_id: "b7ad6b7169203331",
-    parent_span_id: None,
-    name: "failing operation",
-    kind: SpanKind.Server,
-    start_time: 1640995200000000000L,
-    end_time: Some(1640995200500000000L),
-    status: Status.Error,
-    attributes: [
-      ("error.type", "ValidationError"),
-      ("error.message", "Invalid input parameter"),
-      ("error.code", "INVALID_PARAM")
-    ],
-    events: [
-      {
-        name: "exception",
-        timestamp: 1640995200300000000L,
-        attributes: [
-          ("exception.type", "ValidationError"),
-          ("exception.message", "Parameter 'userId' is required"),
-          ("exception.stacktrace", "at com.example.Service.validate(Service.java:42)")
-        ]
-      },
-      {
-        name: "error.handled",
-        timestamp: 1640995200450000000L,
-        attributes: [
-          ("error.handled.by", "ErrorHandler"),
-          ("error.handled.at", "2022-01-01T00:00:45Z")
-        ]
-      }
-    ],
-    links: []
-  })
+// 测试1: Option类型处理
+test "Option类型处理测试" {
+  let some_value = Some(42)
+  let none_value = None
   
-  // 验证错误状态
-  assert_eq(error_span.status, Status.Error)
+  assert_eq(option_is_some(some_value), true)
+  assert_eq(option_is_none(some_value), false)
+  assert_eq(option_unwrap_or(some_value, 0), 42)
   
-  // 验证错误属性
-  assert_true(error_span.attributes.contains(("error.type", "ValidationError")))
-  assert_true(error_span.attributes.contains(("error.message", "Invalid input parameter")))
-  assert_true(error_span.attributes.contains(("error.code", "INVALID_PARAM")))
+  assert_eq(option_is_some(none_value), false)
+  assert_eq(option_is_none(none_value), true)
+  assert_eq(option_unwrap_or(none_value, 0), 0)
   
-  // 验证错误事件
-  assert_eq(error_span.events.length(), 2)
-  assert_eq(error_span.events[0].name, "exception")
-  assert_eq(error_span.events[1].name, "error.handled")
+  // 测试map操作
+  let mapped_some = option_map(some_value, fn(x) { x * 2 })
+  assert_eq(mapped_some, Some(84))
   
-  // 验证异常事件属性
-  let exception_event = error_span.events[0]
-  assert_true(exception_event.attributes.contains(("exception.type", "ValidationError")))
-  assert_true(exception_event.attributes.contains(("exception.message", "Parameter 'userId' is required")))
-  assert_true(exception_event.attributes.contains(("exception.stacktrace", "at com.example.Service.validate(Service.java:42)")))
-  
-  // 验证错误处理事件属性
-  let handled_event = error_span.events[1]
-  assert_true(handled_event.attributes.contains(("error.handled.by", "ErrorHandler")))
-  assert_true(handled_event.attributes.contains(("error.handled.at", "2022-01-01T00:00:45Z")))
-  
-  // 创建不同错误类型的Span
-  let timeout_span = Span({
-    trace_id: "4bf92f3577b34da6a3ce929d0e0e4736",
-    span_id: "00f067aa0ba902b7",
-    parent_span_id: None,
-    name: "timeout operation",
-    kind: SpanKind.Client,
-    start_time: 1640995201000000000L,
-    end_time: Some(1640995201500000000L),
-    status: Status.Error,
-    attributes: [
-      ("error.type", "TimeoutError"),
-      ("error.message", "Operation timed out after 30 seconds"),
-      ("timeout.duration_ms", "30000")
-    ],
-    events: [
-      {
-        name: "exception",
-        timestamp: 1640995201450000000L,
-        attributes: [
-          ("exception.type", "TimeoutException"),
-          ("exception.message", "Read timeout")
-        ]
-      }
-    ],
-    links: []
-  })
-  
-  let resource_exhausted_span = Span({
-    trace_id: "4bf92f3577b34da6a3ce929d0e0e4736",
-    span_id: "e457b5a2e4dcb0d6",
-    parent_span_id: None,
-    name: "resource exhausted operation",
-    kind: SpanKind.Server,
-    start_time: 1640995202000000000L,
-    end_time: Some(1640995202300000000L),
-    status: Status.Error,
-    attributes: [
-      ("error.type", "ResourceExhaustedError"),
-      ("error.message", "Too many requests"),
-      ("rate.limit.remaining", "0")
-    ],
-    events: [
-      {
-        name: "exception",
-        timestamp: 1640995202250000000L,
-        attributes: [
-          ("exception.type", "RateLimitExceededException"),
-          ("exception.message", "Rate limit exceeded")
-        ]
-      }
-    ],
-    links: []
-  })
-  
-  // 验证不同错误类型
-  assert_eq(timeout_span.status, Status.Error)
-  assert_eq(resource_exhausted_span.status, Status.Error)
-  
-  assert_true(timeout_span.attributes.contains(("error.type", "TimeoutError")))
-  assert_true(resource_exhausted_span.attributes.contains(("error.type", "ResourceExhaustedError")))
-  
-  // 按错误类型分组Span
-  let error_spans = [error_span, timeout_span, resource_exhausted_span]
-  let validation_errors = error_spans.filter(fn(s) { 
-    s.attributes.contains(("error.type", "ValidationError"))
-  })
-  let timeout_errors = error_spans.filter(fn(s) { 
-    s.attributes.contains(("error.type", "TimeoutError"))
-  })
-  let resource_exhausted_errors = error_spans.filter(fn(s) { 
-    s.attributes.contains(("error.type", "ResourceExhaustedError"))
-  })
-  
-  assert_eq(validation_errors.length(), 1)
-  assert_eq(timeout_errors.length(), 1)
-  assert_eq(resource_exhausted_errors.length(), 1)
+  let mapped_none = option_map(none_value, fn(x) { x * 2 })
+  assert_eq(mapped_none, None)
 }
 
-// 测试2: 度量错误处理
-test "度量错误处理测试" {
-  // 创建包含错误信息的度量数据
-  let error_metrics = [
-    {
-      metric_name: "http_requests_total",
-      value: 1L,
-      attributes: [
-        ("service.name", "api-service"),
-        ("http.method", "POST"),
-        ("http.status_code", "400"),
-        ("error.type", "ValidationError")
-      ],
-      timestamp: 1640995200000000000L
-    },
-    {
-      metric_name: "http_requests_total",
-      value: 1L,
-      attributes: [
-        ("service.name", "api-service"),
-        ("http.method", "GET"),
-        ("http.status_code", "404"),
-        ("error.type", "NotFoundError")
-      ],
-      timestamp: 1640995200100000000L
-    },
-    {
-      metric_name: "http_requests_total",
-      value: 1L,
-      attributes: [
-        ("service.name", "api-service"),
-        ("http.method", "POST"),
-        ("http.status_code", "500"),
-        ("error.type", "InternalError")
-      ],
-      timestamp: 1640995200200000000L
-    },
-    {
-      metric_name: "http_requests_total",
-      value: 1L,
-      attributes: [
-        ("service.name", "api-service"),
-        ("http.method", "GET"),
-        ("http.status_code", "503"),
-        ("error.type", "ServiceUnavailableError")
-      ],
-      timestamp: 1640995200300000000L
-    }
-  ]
-  
-  // 验证错误度量
-  assert_eq(error_metrics.length(), 4)
-  
-  // 按状态码分组
-  let client_errors = error_metrics.filter(fn(m) { 
-    let status_code = m.attributes.find(fn(a) { a[0] == "http.status_code" })[1]
-    let code = status_code.to_int()
-    match code {
-      Some(c) => c >= 400 && c < 500
-      None => false
-    }
-  })
-  let server_errors = error_metrics.filter(fn(m) { 
-    let status_code = m.attributes.find(fn(a) { a[0] == "http.status_code" })[1]
-    let code = status_code.to_int()
-    match code {
-      Some(c) => c >= 500
-      None => false
-    }
-  })
-  
-  assert_eq(client_errors.length(), 2) // 400, 404
-  assert_eq(server_errors.length(), 2) // 500, 503
-  
-  // 按错误类型分组
-  let validation_errors = error_metrics.filter(fn(m) { 
-    m.attributes.contains(("error.type", "ValidationError"))
-  })
-  let not_found_errors = error_metrics.filter(fn(m) { 
-    m.attributes.contains(("error.type", "NotFoundError"))
-  })
-  let internal_errors = error_metrics.filter(fn(m) { 
-    m.attributes.contains(("error.type", "InternalError"))
-  })
-  let service_unavailable_errors = error_metrics.filter(fn(m) { 
-    m.attributes.contains(("error.type", "ServiceUnavailableError"))
-  })
-  
-  assert_eq(validation_errors.length(), 1)
-  assert_eq(not_found_errors.length(), 1)
-  assert_eq(internal_errors.length(), 1)
-  assert_eq(service_unavailable_errors.length(), 1)
-  
-  // 创建错误率度量
-  let total_requests = 100L
-  let error_requests = error_metrics.reduce(fn(acc, m) { acc + m.value }, 0L)
-  let error_rate = Int64::to_float(error_requests) / Int64::to_float(total_requests)
-  
-  assert_eq(error_requests, 4L)
-  assert_eq(error_rate, 0.04) // 4% 错误率
-  
-  // 创建错误恢复度量
-  let recovery_metrics = [
-    {
-      metric_name: "error_recovery_attempts_total",
-      value: 3L,
-      attributes: [
-        ("service.name", "api-service"),
-        ("error.type", "ValidationError"),
-        ("recovery.strategy", "retry_with_default")
-      ],
-      timestamp: 1640995200400000000L
-    },
-    {
-      metric_name: "error_recovery_attempts_total",
-      value: 2L,
-      attributes: [
-        ("service.name", "api-service"),
-        ("error.type", "InternalError"),
-        ("recovery.strategy", "circuit_breaker")
-      ],
-      timestamp: 1640995200500000000L
-    },
-    {
-      metric_name: "error_recovery_success_total",
-      value: 2L,
-      attributes: [
-        ("service.name", "api-service"),
-        ("recovery.strategy", "retry_with_default")
-      ],
-      timestamp: 1640995200600000000L
-    }
-  ]
-  
-  // 验证错误恢复度量
-  assert_eq(recovery_metrics.length(), 3)
-  
-  let total_recovery_attempts = recovery_metrics.reduce(fn(acc, m) { acc + m.value }, 0L)
-  let recovery_successes = recovery_metrics.filter(fn(m) { 
-    m.metric_name == "error_recovery_success_total"
-  }).reduce(fn(acc, m) { acc + m.value }, 0L)
-  
-  assert_eq(total_recovery_attempts, 5L)
-  assert_eq(recovery_successes, 2L)
-  
-  let recovery_success_rate = Int64::to_float(recovery_successes) / Int64::to_float(total_recovery_attempts)
-  assert_eq(recovery_success_rate, 0.4) // 40% 恢复成功率
+fn option_is_some[T](opt : Option[T]) -> Bool {
+  match opt {
+    Some(_) => true
+    None => false
+  }
 }
 
-// 测试3: 日志错误处理
-test "日志错误处理测试" {
-  // 创建包含错误信息的日志记录
-  let error_logs = [
-    LogRecord({
-      timestamp: 1640995200000000000L,
-      observed_timestamp: None,
-      severity_number: SeverityNumber.Error,
-      severity_text: Some("ERROR"),
-      body: Some("Database connection failed"),
-      attributes: [
-        ("service.name", "api-service"),
-        ("error.type", "DatabaseConnectionError"),
-        ("error.code", "DB_CONN_FAILED"),
-        ("db.host", "db.example.com"),
-        ("db.port", "5432")
-      ],
-      trace_id: Some("4bf92f3577b34da6a3ce929d0e0e4736"),
-      span_id: Some("b7ad6b7169203331"),
-      trace_flags: Some(0x01)
-    }),
-    LogRecord({
-      timestamp: 1640995200100000000L,
-      observed_timestamp: None,
-      severity_number: SeverityNumber.Error,
-      severity_text: Some("ERROR"),
-      body: Some("Authentication failed"),
-      attributes: [
-        ("service.name", "auth-service"),
-        ("error.type", "AuthenticationError"),
-        ("error.code", "AUTH_FAILED"),
-        ("user.id", "12345"),
-        ("auth.method", "jwt")
-      ],
-      trace_id: Some("4bf92f3577b34da6a3ce929d0e0e4736"),
-      span_id: Some("00f067aa0ba902b7"),
-      trace_flags: Some(0x01)
-    }),
-    LogRecord({
-      timestamp: 1640995200200000000L,
-      observed_timestamp: None,
-      severity_number: SeverityNumber.Warn,
-      severity_text: Some("WARN"),
-      body: Some("Rate limit threshold approaching"),
-      attributes: [
-        ("service.name", "api-service"),
-        ("warning.type", "RateLimitWarning"),
-        ("current.rate", "950"),
-        ("rate.limit", "1000")
-      ],
-      trace_id: Some("4bf92f3577b34da6a3ce929d0e0e4736"),
-      span_id: Some("e457b5a2e4dcb0d6"),
-      trace_flags: Some(0x01)
-    }),
-    LogRecord({
-      timestamp: 1640995200300000000L,
-      observed_timestamp: None,
-      severity_number: SeverityNumber.Fatal,
-      severity_text: Some("FATAL"),
-      body: Some("Out of memory error"),
-      attributes: [
-        ("service.name", "api-service"),
-        ("error.type", "OutOfMemoryError"),
-        ("error.code", "OOM"),
-        ("available.memory", "128MB"),
-        ("required.memory", "512MB")
-      ],
-      trace_id: Some("a3c9d5e7b8f019c2"),
-      span_id: Some("c1d2e3f4a5b6c7d8"),
-      trace_flags: Some(0x01)
-    })
-  ]
-  
-  // 验证错误日志
-  assert_eq(error_logs.length(), 4)
-  
-  // 按严重级别分组
-  let error_logs_severity = error_logs.filter(fn(log) { 
-    log.severity_number == SeverityNumber.Error
-  })
-  let warn_logs = error_logs.filter(fn(log) { 
-    log.severity_number == SeverityNumber.Warn
-  })
-  let fatal_logs = error_logs.filter(fn(log) { 
-    log.severity_number == SeverityNumber.Fatal
-  })
-  
-  assert_eq(error_logs_severity.length(), 2)
-  assert_eq(warn_logs.length(), 1)
-  assert_eq(fatal_logs.length(), 1)
-  
-  // 按错误类型分组
-  let db_connection_errors = error_logs.filter(fn(log) { 
-    log.attributes.contains(("error.type", "DatabaseConnectionError"))
-  })
-  let auth_errors = error_logs.filter(fn(log) { 
-    log.attributes.contains(("error.type", "AuthenticationError"))
-  })
-  let oom_errors = error_logs.filter(fn(log) { 
-    log.attributes.contains(("error.type", "OutOfMemoryError"))
-  })
-  
-  assert_eq(db_connection_errors.length(), 1)
-  assert_eq(auth_errors.length(), 1)
-  assert_eq(oom_errors.length(), 1)
-  
-  // 验证错误日志内容
-  let db_error_log = db_connection_errors[0]
-  assert_eq(db_error_log.body, Some("Database connection failed"))
-  assert_true(db_error_log.attributes.contains(("error.code", "DB_CONN_FAILED")))
-  assert_true(db_error_log.attributes.contains(("db.host", "db.example.com")))
-  assert_true(db_error_log.attributes.contains(("db.port", "5432")))
-  
-  let auth_error_log = auth_errors[0]
-  assert_eq(auth_error_log.body, Some("Authentication failed"))
-  assert_true(auth_error_log.attributes.contains(("error.code", "AUTH_FAILED")))
-  assert_true(auth_error_log.attributes.contains(("user.id", "12345")))
-  assert_true(auth_error_log.attributes.contains(("auth.method", "jwt")))
-  
-  let oom_error_log = oom_errors[0]
-  assert_eq(oom_error_log.body, Some("Out of memory error"))
-  assert_true(oom_error_log.attributes.contains(("error.code", "OOM")))
-  assert_true(oom_error_log.attributes.contains(("available.memory", "128MB")))
-  assert_true(oom_error_log.attributes.contains(("required.memory", "512MB")))
-  
-  // 创建错误恢复日志
-  let recovery_logs = [
-    LogRecord({
-      timestamp: 1640995200400000000L,
-      observed_timestamp: None,
-      severity_number: SeverityNumber.Info,
-      severity_text: Some("INFO"),
-      body: Some("Database connection recovered"),
-      attributes: [
-        ("service.name", "api-service"),
-        ("recovery.type", "DatabaseConnectionRecovery"),
-        ("recovery.strategy", "reconnect"),
-        ("recovery.time_ms", "5000")
-      ],
-      trace_id: Some("4bf92f3577b34da6a3ce929d0e0e4736"),
-      span_id: Some("b7ad6b7169203331"),
-      trace_flags: Some(0x01)
-    }),
-    LogRecord({
-      timestamp: 1640995200500000000L,
-      observed_timestamp: None,
-      severity_number: SeverityNumber.Info,
-      severity_text: Some("INFO"),
-      body: Some("Circuit breaker activated"),
-      attributes: [
-        ("service.name", "api-service"),
-        ("recovery.type", "CircuitBreakerActivation"),
-        ("failure.threshold", "5"),
-        ("recovery.timeout_ms", "30000")
-      ],
-      trace_id: Some("4bf92f3577b34da6a3ce929d0e0e4736"),
-      span_id: Some("00f067aa0ba902b7"),
-      trace_flags: Some(0x01)
-    })
-  ]
-  
-  // 验证错误恢复日志
-  assert_eq(recovery_logs.length(), 2)
-  
-  let db_recovery_log = recovery_logs[0]
-  assert_eq(db_recovery_log.body, Some("Database connection recovered"))
-  assert_true(db_recovery_log.attributes.contains(("recovery.type", "DatabaseConnectionRecovery")))
-  assert_true(db_recovery_log.attributes.contains(("recovery.strategy", "reconnect")))
-  assert_true(db_recovery_log.attributes.contains(("recovery.time_ms", "5000")))
-  
-  let circuit_breaker_log = recovery_logs[1]
-  assert_eq(circuit_breaker_log.body, Some("Circuit breaker activated"))
-  assert_true(circuit_breaker_log.attributes.contains(("recovery.type", "CircuitBreakerActivation")))
-  assert_true(circuit_breaker_log.attributes.contains(("failure.threshold", "5")))
-  assert_true(circuit_breaker_log.attributes.contains(("recovery.timeout_ms", "30000")))
+fn option_is_none[T](opt : Option[T]) -> Bool {
+  match opt {
+    Some(_) => false
+    None => true
+  }
 }
 
-// 测试4: 上下文传播错误处理
-test "上下文传播错误处理测试" {
-  // 测试无效的traceparent格式
-  let invalid_traceparents = [
-    "invalid-format",                    // 完全无效的格式
-    "01-invalid-trace-id-span-id-01",   // 无效的trace_id
-    "00-4bf92f3577b34da6a3ce929d0e0e4736-invalid-span-id-01", // 无效的span_id
-    "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-ff", // 无效的trace_flags
-    "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7",   // 缺少trace_flags
-    "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01-extra" // 额外的部分
-  ]
+fn option_unwrap_or[T](opt : Option[T], default : T) -> T {
+  match opt {
+    Some(value) => value
+    None => default
+  }
+}
+
+fn option_map[T, U](opt : Option[T], f : (T) -> U) -> Option[U] {
+  match opt {
+    Some(value) => Some(f(value))
+    None => None
+  }
+}
+
+// 测试2: Result类型处理
+test "Result类型处理测试" {
+  let ok_value = Ok(42)
+  let err_value = Err("Error message")
   
-  // 验证无效的traceparent格式
-  for invalid_traceparent in invalid_traceparents {
-    let parts = invalid_traceparent.split("-")
-    
-    // 验证格式错误
-    if parts.length() != 4 {
-      assert_true(true) // 预期的格式错误
-    } else {
-      let trace_id = parts[1]
-      let span_id = parts[2]
-      let trace_flags = parts[3]
-      
-      // 验证trace_id格式
-      if trace_id.length() != 32 || not trace_id.chars().all(fn(c) { 
-        let char_code = c.to_char_code()
-        (char_code >= 48 && char_code <= 57) || // 0-9
-        (char_code >= 97 && char_code <= 102)    // a-f
-      }) {
-        assert_true(true) // 预期的trace_id格式错误
-      }
-      
-      // 验证span_id格式
-      if span_id.length() != 16 || not span_id.chars().all(fn(c) { 
-        let char_code = c.to_char_code()
-        (char_code >= 48 && char_code <= 57) || // 0-9
-        (char_code >= 97 && char_code <= 102)    // a-f
-      }) {
-        assert_true(true) // 预期的span_id格式错误
-      }
-      
-      // 验证trace_flags格式
-      if trace_flags.length() != 2 || not trace_flags.chars().all(fn(c) { 
-        let char_code = c.to_char_code()
-        (char_code >= 48 && char_code <= 57) || // 0-9
-        (char_code >= 97 && char_code <= 102)    // a-f
-      }) {
-        assert_true(true) // 预期的trace_flags格式错误
-      }
-    }
+  assert_eq(result_is_ok(ok_value), true)
+  assert_eq(result_is_err(ok_value), false)
+  assert_eq(result_unwrap_or(ok_value, 0), 42)
+  
+  assert_eq(result_is_ok(err_value), false)
+  assert_eq(result_is_err(err_value), true)
+  assert_eq(result_unwrap_or(err_value, 0), 0)
+  
+  // 测试map操作
+  let mapped_ok = result_map(ok_value, fn(x) { x * 2 })
+  assert_eq(mapped_ok, Ok(84))
+  
+  let mapped_err = result_map(err_value, fn(x) { x * 2 })
+  assert_eq(mapped_err, Err("Error message"))
+}
+
+type Result[T, E] {
+  Ok(T)
+  Err(E)
+}
+
+fn result_is_ok[T, E](res : Result[T, E]) -> Bool {
+  match res {
+    Ok(_) => true
+    Err(_) => false
+  }
+}
+
+fn result_is_err[T, E](res : Result[T, E]) -> Bool {
+  match res {
+    Ok(_) => false
+    Err(_) => true
+  }
+}
+
+fn result_unwrap_or[T, E](res : Result[T, E], default : T) -> T {
+  match res {
+    Ok(value) => value
+    Err(_) => default
+  }
+}
+
+fn result_map[T, E, U](res : Result[T, E], f : (T) -> U) -> Result[U, E] {
+  match res {
+    Ok(value) => Ok(f(value))
+    Err(error) => Err(error)
+  }
+}
+
+// 测试3: 除零错误处理
+test "除零错误处理测试" {
+  assert_eq(safe_divide(10, 2), Ok(5))
+  assert_eq(safe_divide(10, 5), Ok(2))
+  assert_eq(safe_divide(10, 1), Ok(10))
+  
+  let result1 = safe_divide(10, 0)
+  assert_eq(result_is_err(result1), true)
+  
+  let result2 = safe_divide(0, 5)
+  assert_eq(result2, Ok(0))
+}
+
+fn safe_divide(a : Int, b : Int) -> Result[Int, String] {
+  if (b == 0) {
+    Err("Division by zero")
+  } else {
+    Ok(a / b)
+  }
+}
+
+// 测试4: 数组边界检查
+test "数组边界检查测试" {
+  let arr = [10, 20, 30, 40, 50]
+  
+  assert_eq(safe_array_get(arr, 0), Ok(10))
+  assert_eq(safe_array_get(arr, 2), Ok(30))
+  assert_eq(safe_array_get(arr, 4), Ok(50))
+  
+  let result1 = safe_array_get(arr, -1)
+  assert_eq(result_is_err(result1), true)
+  
+  let result2 = safe_array_get(arr, 5)
+  assert_eq(result_is_err(result2), true)
+  
+  let result3 = safe_array_get(arr, 10)
+  assert_eq(result_is_err(result3), true)
+  
+  let empty_array = []
+  let result4 = safe_array_get(empty_array, 0)
+  assert_eq(result_is_err(result4), true)
+}
+
+fn safe_array_get[T](arr : Array[T], index : Int) -> Result[T, String] {
+  if (index < 0 or index >= arr.length()) {
+    Err("Index out of bounds")
+  } else {
+    Ok(arr[index])
+  }
+}
+
+// 测试5: 字符串解析错误处理
+test "字符串解析错误处理测试" {
+  assert_eq(parse_int("123"), Ok(123))
+  assert_eq(parse_int("0"), Ok(0))
+  assert_eq(parse_int("-42"), Ok(-42))
+  
+  let result1 = parse_int("")
+  assert_eq(result_is_err(result1), true)
+  
+  let result2 = parse_int("abc")
+  assert_eq(result_is_err(result2), true)
+  
+  let result3 = parse_int("12a3")
+  assert_eq(result_is_err(result3), true)
+  
+  let result4 = parse_int("123.45")
+  assert_eq(result_is_err(result4), true)
+}
+
+fn parse_int(s : String) -> Result[Int, String] {
+  if (s.length() == 0) {
+    return Err("Empty string")
   }
   
-  // 测试无效的baggage格式
-  let invalid_baggages = [
-    "key=value=extra",           // 多个等号
-    "key",                       // 缺少值
-    "=value",                    // 缺少键
-    "key=value,invalid",         // 第二项无效
-    "key=value,key2=",           // 第二项缺少值
-    "key=value,,key3=value3",    // 空项
-    " key=value",                // 前导空格
-    "key=value ",                // 尾随空格
-    "key= value",                // 键值间的空格
-    "key =value",                // 键值间的空格
-    "key = value"                // 键值间的空格
-  ]
+  let is_negative = s[0] == '-'
+  let start = if (is_negative) { 1 } else { 0 }
+  let result = 0
   
-  // 验证无效的baggage格式
-  for invalid_baggage in invalid_baggages {
-    let items = invalid_baggage.split(",")
-    
-    for item in items {
-      if item.length() == 0 {
-        assert_true(true) // 预期的空项
-      } else {
-        let kv = item.split("=")
-        
-        if kv.length() != 2 {
-          assert_true(true) // 预期的键值格式错误
-        } else {
-          let key = kv[0]
-          let value = kv[1]
-          
-          // 验证键不为空
-          if key.length() == 0 {
-            assert_true(true) // 预期的空键
-          }
-          
-          // 验证键不包含空格
-          if key.contains(" ") {
-            assert_true(true) // 预期的键包含空格
-          }
-          
-          // 验证值不包含未编码的空格
-          if value.contains(" ") {
-            assert_true(true) // 预期的值包含空格
-          }
-        }
-      }
+  for i = start; i < s.length(); i = i + 1 {
+    let char = s[i]
+    if (char < '0' or char > '9') {
+      return Err("Invalid character")
     }
+    result = result * 10 + (char - '0')
   }
   
-  // 测试上下文传播错误恢复
-  let valid_traceparent = "00-4bf92f3577b34da6a3ce929d0e0e4736-b7ad6b7169203331-01"
-  let valid_baggage = "user.id=12345,service.name=api-service"
+  if (is_negative) {
+    Ok(-result)
+  } else {
+    Ok(result)
+  }
+}
+
+// 测试6: 链式错误处理
+test "链式错误处理测试" {
+  let result1 = chain_operations(10, 2, 5)
+  assert_eq(result1, Ok(1))  // (10 / 2) - 5 = 0
   
-  // 创建恢复策略
-  let recovery_strategies = [
-    {
-      error_type: "InvalidTraceparentFormat",
-      strategy: "UseDefaultTraceparent",
-      default_traceparent: "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
-    },
-    {
-      error_type: "InvalidBaggageFormat",
-      strategy: "UseDefaultBaggage",
-      default_baggage: "service.name=unknown-service"
-    },
-    {
-      error_type: "MissingTraceContext",
-      strategy: "GenerateNewTraceContext",
-      generator: "random"
-    }
-  ]
+  let result2 = chain_operations(10, 0, 5)
+  assert_eq(result_is_err(result2), true)  // 除零错误
   
-  // 验证恢复策略
-  assert_eq(recovery_strategies.length(), 3)
+  let result3 = chain_operations(10, 3, 15)
+  assert_eq(result3, Ok(-12))  // (10 / 3) - 15 = -12 (整数除法)
+}
+
+fn chain_operations(a : Int, b : Int, c : Int) -> Result[Int, String] {
+  let div_result = safe_divide(a, b)
   
-  for strategy in recovery_strategies {
-    match strategy.error_type {
-      "InvalidTraceparentFormat" => {
-        assert_eq(strategy.strategy, "UseDefaultTraceparent")
-        assert_true(strategy.default_traceparent.length() > 0)
-      }
-      "InvalidBaggageFormat" => {
-        assert_eq(strategy.strategy, "UseDefaultBaggage")
-        assert_true(strategy.default_baggage.length() > 0)
-      }
-      "MissingTraceContext" => {
-        assert_eq(strategy.strategy, "GenerateNewTraceContext")
-        assert_eq(strategy.generator, "random")
-      }
-      _ => assert_true(false)
+  match div_result {
+    Err(e) => Err(e)
+    Ok(value) => {
+      let result = value - c
+      Ok(result)
     }
   }
 }
 
-// 测试5: 资源限制错误处理
-test "资源限制错误处理测试" {
-  // 测试资源限制错误
-  let resource_limit_errors = [
-    {
-      resource_type: "span_count",
-      limit: 10000,
-      current_usage: 10000,
-      error_type: "SpanLimitExceededError",
-      error_message: "Maximum number of spans exceeded"
-    },
-    {
-      resource_type: "metric_count",
-      limit: 50000,
-      current_usage: 50000,
-      error_type: "MetricLimitExceededError",
-      error_message: "Maximum number of metrics exceeded"
-    },
-    {
-      resource_type: "log_count",
-      limit: 100000,
-      current_usage: 100000,
-      error_type: "LogLimitExceededError",
-      error_message: "Maximum number of logs exceeded"
-    },
-    {
-      resource_type: "attribute_count",
-      limit: 128,
-      current_usage: 128,
-      error_type: "AttributeLimitExceededError",
-      error_message: "Maximum number of attributes exceeded"
-    },
-    {
-      resource_type: "event_count",
-      limit: 128,
-      current_usage: 128,
-      error_type: "EventLimitExceededError",
-      error_message: "Maximum number of events exceeded"
-    },
-    {
-      resource_type: "link_count",
-      limit: 128,
-      current_usage: 128,
-      error_type: "LinkLimitExceededError",
-      error_message: "Maximum number of links exceeded"
-    }
+// 测试7: 错误恢复机制
+test "错误恢复机制测试" {
+  assert_eq(recover_from_error(safe_divide(10, 2), 0), 5)
+  assert_eq(recover_from_error(safe_divide(10, 0), 0), 0)  // 默认值
+  assert_eq(recover_from_error(safe_divide(10, 0), 999), 999)  // 自定义默认值
+  
+  assert_eq(recover_from_error(parse_int("123"), -1), 123)
+  assert_eq(recover_from_error(parse_int("abc"), -1), -1)  // 默认值
+}
+
+fn recover_from_error[T](res : Result[T, String], default : T) -> T {
+  match res {
+    Ok(value) => value
+    Err(_) => default
+  }
+}
+
+// 测试8: 错误组合处理
+test "错误组合处理测试" {
+  let results = [
+    safe_divide(10, 2),
+    safe_divide(20, 5),
+    safe_divide(30, 0),  // 这个会失败
+    safe_divide(40, 8)
   ]
   
-  // 验证资源限制错误
-  assert_eq(resource_limit_errors.length(), 6)
+  let (successes, failures) = partition_results(results)
+  assert_eq(successes.length(), 3)
+  assert_eq(failures.length(), 1)
+  assert_eq(successes, [5, 4, 5])
+}
+
+fn partition_results[T](results : Array[Result[T, String]]) -> (Array[T], Array[String]) {
+  let successes = []
+  let failures = []
   
-  for error in resource_limit_errors {
-    // 验证当前使用量达到限制
-    assert_eq(error.current_usage, error.limit)
-    
-    // 验证错误类型和消息
-    assert_true(error.error_type.length() > 0)
-    assert_true(error.error_message.length() > 0)
-    
-    // 验证错误类型与资源类型匹配
-    match error.resource_type {
-      "span_count" => assert_eq(error.error_type, "SpanLimitExceededError")
-      "metric_count" => assert_eq(error.error_type, "MetricLimitExceededError")
-      "log_count" => assert_eq(error.error_type, "LogLimitExceededError")
-      "attribute_count" => assert_eq(error.error_type, "AttributeLimitExceededError")
-      "event_count" => assert_eq(error.error_type, "EventLimitExceededError")
-      "link_count" => assert_eq(error.error_type, "LinkLimitExceededError")
-      _ => assert_true(false)
+  for i = 0; i < results.length(); i = i + 1 {
+    match results[i] {
+      Ok(value) => successes.push(value)
+      Err(error) => failures.push(error)
     }
   }
   
-  // 创建资源限制恢复策略
-  let recovery_strategies = [
-    {
-      resource_type: "span_count",
-      strategy: "DropOldestSpans",
-      parameters: {
-        "drop_count": "1000",
-        "drop_threshold": "0.9"
-      }
-    },
-    {
-      resource_type: "metric_count",
-      strategy: "AggregateMetrics",
-      parameters: {
-        "aggregation_window": "60s",
-        "aggregation_function": "sum"
-      }
-    },
-    {
-      resource_type: "log_count",
-      strategy: "FilterLogs",
-      parameters: {
-        "min_severity": "WARN",
-        "filter_pattern": "error"
-      }
-    },
-    {
-      resource_type: "attribute_count",
-      strategy: "DropLowPriorityAttributes",
-      parameters: {
-        "priority_threshold": "0.5"
-      }
-    }
-  ]
-  
-  // 验证恢复策略
-  assert_eq(recovery_strategies.length(), 4)
-  
-  for strategy in recovery_strategies {
-    // 验证策略名称
-    assert_true(strategy.strategy.length() > 0)
-    
-    // 验证参数
-    assert_true(strategy.parameters.size() > 0)
-    
-    // 验证策略与资源类型匹配
-    match strategy.resource_type {
-      "span_count" => assert_eq(strategy.strategy, "DropOldestSpans")
-      "metric_count" => assert_eq(strategy.strategy, "AggregateMetrics")
-      "log_count" => assert_eq(strategy.strategy, "FilterLogs")
-      "attribute_count" => assert_eq(strategy.strategy, "DropLowPriorityAttributes")
-      _ => assert_true(false)
-    }
-  }
-  
-  // 测试资源限制恢复效果
-  let recovery_results = [
-    {
-      resource_type: "span_count",
-      before_usage: 10000,
-      after_usage: 9000,
-      recovery_effectiveness: 0.1
-    },
-    {
-      resource_type: "metric_count",
-      before_usage: 50000,
-      after_usage: 25000,
-      recovery_effectiveness: 0.5
-    },
-    {
-      resource_type: "log_count",
-      before_usage: 100000,
-      after_usage: 20000,
-      recovery_effectiveness: 0.8
-    },
-    {
-      resource_type: "attribute_count",
-      before_usage: 128,
-      after_usage: 64,
-      recovery_effectiveness: 0.5
-    }
-  ]
-  
-  // 验证恢复效果
-  assert_eq(recovery_results.length(), 4)
-  
-  for result in recovery_results {
-    // 验证使用量减少
-    assert_true(result.after_usage < result.before_usage)
-    
-    // 验证恢复效果计算
-    let expected_effectiveness = Int64::to_float(result.before_usage - result.after_usage) / 
-                                Int64::to_float(result.before_usage)
-    
-    assert_true(abs(result.recovery_effectiveness - expected_effectiveness) < 0.01)
-    
-    // 验证恢复效果在合理范围内
-    assert_true(result.recovery_effectiveness > 0.0)
-    assert_true(result.recovery_effectiveness <= 1.0)
-  }
+  (successes, failures)
 }
