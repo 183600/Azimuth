@@ -1,539 +1,704 @@
-// Azimuth 边界条件和边缘情况测试
-// 测试系统在极限条件和特殊情况下的行为
+// Azimuth Telemetry System - Boundary Condition Edge Case Tests
+// This file contains comprehensive boundary condition and edge case test scenarios
 
-// 测试1: 数值边界条件测试
-test "数值边界条件测试" {
-  // 测试整数边界
-  let int_min = -2147483648  // 32位有符号整数最小值
-  let int_max = 2147483647   // 32位有符号整数最大值
+// Test 1: Numeric Boundary Conditions
+test "numeric boundary conditions" {
+  // Test maximum and minimum integer values
+  let max_int32 = 2147483647
+  let min_int32 = -2147483648
+  let max_int64 = 9223372036854775807
+  let min_int64 = -9223372036854775808
   
-  // 测试整数加法边界
-  let add_result1 = int_max + 0
-  let add_result2 = int_max + (-1)
-  let add_result3 = int_min + 0
-  let add_result4 = int_min + 1
+  // Test with attributes
+  let attrs = Attributes::new()
   
-  assert_eq(add_result1, int_max)
-  assert_eq(add_result2, int_max - 1)
-  assert_eq(add_result3, int_min)
-  assert_eq(add_result4, int_min + 1)
+  Attributes::set(attrs, "max_int32", IntValue(max_int32))
+  Attributes::set(attrs, "min_int32", IntValue(min_int32))
+  Attributes::set(attrs, "max_int64", IntValue(max_int64))
+  Attributes::set(attrs, "min_int64", IntValue(min_int64))
   
-  // 测试整数减法边界
-  let sub_result1 = int_min - 0
-  let sub_result2 = int_min - (-1)
-  let sub_result3 = int_max - 0
-  let sub_result4 = int_max - 1
+  // Verify retrieval
+  let retrieved_max_int32 = Attributes::get(attrs, "max_int32")
+  match retrieved_max_int32 {
+    Some(IntValue(v)) => assert_eq(v, max_int32)
+    _ => assert_true(false)
+  }
   
-  assert_eq(sub_result1, int_min)
-  assert_eq(sub_result2, int_min + 1)
-  assert_eq(sub_result3, int_max)
-  assert_eq(sub_result4, int_max - 1)
+  let retrieved_min_int32 = Attributes::get(attrs, "min_int32")
+  match retrieved_min_int32 {
+    Some(IntValue(v)) => assert_eq(v, min_int32)
+    _ => assert_true(false)
+  }
   
-  // 测试整数乘法边界
-  let mul_result1 = int_max * 1
-  let mul_result2 = int_max * 0
-  let mul_result3 = int_min * 1
-  let mul_result4 = int_min * 0
+  let retrieved_max_int64 = Attributes::get(attrs, "max_int64")
+  match retrieved_max_int64 {
+    Some(IntValue(v)) => assert_eq(v, max_int64)
+    _ => assert_true(false)
+  }
   
-  assert_eq(mul_result1, int_max)
-  assert_eq(mul_result2, 0)
-  assert_eq(mul_result3, int_min)
-  assert_eq(mul_result4, 0)
+  let retrieved_min_int64 = Attributes::get(attrs, "min_int64")
+  match retrieved_min_int64 {
+    Some(IntValue(v)) => assert_eq(v, min_int64)
+    _ => assert_true(false)
+  }
   
-  // 测试整数除法边界
-  let div_result1 = int_max / 1
-  let div_result2 = 0 / 1
-  let div_result3 = int_min / 1
+  // Test floating point boundaries
+  let max_float = 1.7976931348623157e+308  // Max double
+  let min_float = -1.7976931348623157e+308 // Min double
+  let min_positive_float = 2.2250738585072014e-308 // Smallest positive double
   
-  assert_eq(div_result1, int_max)
-  assert_eq(div_result2, 0)
-  assert_eq(div_result3, int_min)
+  Attributes::set(attrs, "max_float", FloatValue(max_float))
+  Attributes::set(attrs, "min_float", FloatValue(min_float))
+  Attributes::set(attrs, "min_positive_float", FloatValue(min_positive_float))
   
-  // 测试浮点数边界
-  let float_max = 3.4028235e38  // 32位浮点数最大值
-  let float_min = -3.4028235e38 // 32位浮点数最小值
-  let float_small = 1.17549435e-38 // 32位浮点数最小正值
+  // Test special floating point values
+  let inf_value = 1.0/0.0  // Infinity
+  let neg_inf_value = -1.0/0.0  // Negative infinity
+  let nan_value = 0.0/0.0  // NaN
   
-  // 测试浮点数运算
-  let float_add1 = float_max + 0.0
-  let float_add2 = float_min + 0.0
-  let float_mul1 = float_max * 1.0
-  let float_mul2 = float_small * 1.0
+  Attributes::set(attrs, "inf", FloatValue(inf_value))
+  Attributes::set(attrs, "neg_inf", FloatValue(neg_inf_value))
+  Attributes::set(attrs, "nan", FloatValue(nan_value))
   
-  assert_true(float_add1 == float_max)
-  assert_true(float_add2 == float_min)
-  assert_true(float_mul1 == float_max)
-  assert_true(float_mul2 == float_small)
+  // Verify floating point values
+  let retrieved_max_float = Attributes::get(attrs, "max_float")
+  match retrieved_max_float {
+    Some(FloatValue(v)) => assert_true(v.is_infinite() || v > 1.0e+307)
+    _ => assert_true(false)
+  }
   
-  // 测试零值边界
-  let zero_int = 0
-  let zero_float = 0.0
-  
-  // 零值运算
-  assert_eq(zero_int + 5, 5)
-  assert_eq(zero_int - 5, -5)
-  assert_eq(zero_int * 5, 0)
-  assert_eq(5 * zero_int, 0)
-  
-  assert_eq(zero_float + 5.0, 5.0)
-  assert_eq(zero_float - 5.0, -5.0)
-  assert_eq(zero_float * 5.0, 0.0)
-  assert_eq(5.0 * zero_float, 0.0)
-  
-  // 测试一值边界
-  let one_int = 1
-  let one_float = 1.0
-  
-  // 一值运算
-  assert_eq(one_int * 5, 5)
-  assert_eq(5 * one_int, 5)
-  assert_eq(5 / one_int, 5)
-  
-  assert_eq(one_float * 5.0, 5.0)
-  assert_eq(5.0 * one_float, 5.0)
-  assert_eq(5.0 / one_float, 5.0)
+  let retrieved_nan = Attributes::get(attrs, "nan")
+  match retrieved_nan {
+    Some(FloatValue(v)) => assert_true(v.is_nan())
+    _ => assert_true(false)
+  }
 }
 
-// 测试2: 字符串边界条件测试
-test "字符串边界条件测试" {
-  // 测试空字符串
+// Test 2: String Length Boundary Conditions
+test "string length boundary conditions" {
+  let attrs = Attributes::new()
+  
+  // Test empty string
   let empty_string = ""
+  Attributes::set(attrs, "empty_string", StringValue(empty_string))
   
-  assert_eq(empty_string.length(), 0)
-  assert_eq(empty_string + "test", "test")
-  assert_eq("test" + empty_string, "test")
-  assert_true(empty_string == "")
-  assert_false(empty_string == "test")
-  assert_false(empty_string.contains("test"))
+  let retrieved_empty = Attributes::get(attrs, "empty_string")
+  match retrieved_empty {
+    Some(StringValue(v)) => assert_eq(v, empty_string)
+    _ => assert_true(false)
+  }
   
-  // 测试单字符字符串
+  // Test single character string
   let single_char = "a"
+  Attributes::set(attrs, "single_char", StringValue(single_char))
   
-  assert_eq(single_char.length(), 1)
-  assert_eq(single_char[0], 'a')
-  assert_true(single_char.contains("a"))
-  assert_false(single_char.contains("b"))
+  let retrieved_single = Attributes::get(attrs, "single_char")
+  match retrieved_single {
+    Some(StringValue(v)) => assert_eq(v, single_char)
+    _ => assert_true(false)
+  }
   
-  // 测试长字符串
-  let long_string = "a".repeat(10000)  // 10000个'a'
+  // Test very long string (1MB)
+  let long_string = "x".repeat(1000000)
+  Attributes::set(attrs, "long_string", StringValue(long_string))
   
-  assert_eq(long_string.length(), 10000)
-  assert_true(long_string.contains("a"))
-  assert_false(long_string.contains("b"))
+  let retrieved_long = Attributes::get(attrs, "long_string")
+  match retrieved_long {
+    Some(StringValue(v)) => assert_eq(v.length(), 1000000)
+    _ => assert_true(false)
+  }
   
-  // 测试字符串边界索引
-  let test_string = "hello"
+  // Test string with special characters
+  let special_chars = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f"
+  Attributes::set(attrs, "special_chars", StringValue(special_chars))
   
-  assert_eq(test_string[0], 'h')
-  assert_eq(test_string[test_string.length() - 1], 'o')
+  let retrieved_special = Attributes::get(attrs, "special_chars")
+  match retrieved_special {
+    Some(StringValue(v)) => assert_eq(v, special_chars)
+    _ => assert_true(false)
+  }
   
-  // 测试字符串比较边界
-  let string1 = "abc"
-  let string2 = "abc"
-  let string3 = "abd"
+  // Test Unicode boundary cases
+  let unicode_boundary = "\u{0000}\u{D7FF}\u{E000}\u{FFFD}\u{FFFF}\u{10000}\u{10FFFF}"
+  Attributes::set(attrs, "unicode_boundary", StringValue(unicode_boundary))
   
-  assert_true(string1 == string2)
-  assert_false(string1 == string3)
-  assert_true(string1 < string3)
-  assert_false(string3 < string1)
-  
-  // 测试特殊字符字符串
-  let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
-  
-  assert_true(special_chars.length() > 0)
-  assert_true(special_chars.contains("!"))
-  assert_true(special_chars.contains("@"))
-  assert_true(special_chars.contains("#"))
-  assert_true(special_chars.contains("?"))
-  
-  // 测试Unicode字符串
-  let unicode_string = "你好世界"
-  
-  assert_eq(unicode_string.length(), 4)
-  assert_true(unicode_string.contains("你"))
-  assert_true(unicode_string.contains("好"))
-  assert_true(unicode_string.contains("世"))
-  assert_true(unicode_string.contains("界"))
+  let retrieved_unicode = Attributes::get(attrs, "unicode_boundary")
+  match retrieved_unicode {
+    Some(StringValue(v)) => assert_eq(v, unicode_boundary)
+    _ => assert_true(false)
+  }
 }
 
-// 测试3: 数组边界条件测试
-test "数组边界条件测试" {
-  // 测试空数组
-  let empty_array = []
+// Test 3: Array Size Boundary Conditions
+test "array size boundary conditions" {
+  let attrs = Attributes::new()
   
-  assert_eq(empty_array.length(), 0)
-  assert_true(empty_array.is_empty())
-  assert_false(empty_array.contains(1))
+  // Test empty array
+  let empty_string_array = []
+  Attributes::set(attrs, "empty_string_array", ArrayStringValue(empty_string_array))
   
-  // 测试单元素数组
-  let single_element = [42]
-  
-  assert_eq(single_element.length(), 1)
-  assert_false(single_element.is_empty())
-  assert_eq(single_element[0], 42)
-  assert_true(single_element.contains(42))
-  assert_false(single_element.contains(43))
-  
-  // 测试数组边界索引
-  let test_array = [1, 2, 3, 4, 5]
-  
-  assert_eq(test_array[0], 1)
-  assert_eq(test_array[test_array.length() - 1], 5)
-  
-  // 测试数组添加边界
-  let mut array = []
-  
-  // 添加元素
-  array = array.push(1)
-  assert_eq(array.length(), 1)
-  assert_eq(array[0], 1)
-  
-  array = array.push(2)
-  assert_eq(array.length(), 2)
-  assert_eq(array[0], 1)
-  assert_eq(array[1], 2)
-  
-  // 测试数组移除边界
-  let array_with_elements = [1, 2, 3, 4, 5]
-  let removed_array = array_with_elements.slice(1, array_with_elements.length())
-  
-  assert_eq(removed_array.length(), 4)
-  assert_eq(removed_array[0], 2)
-  assert_eq(removed_array[3], 5)
-  
-  // 测试数组过滤边界
-  let filter_array = [1, 2, 3, 4, 5]
-  let filtered_even = filter_array.filter(fn(x) { x % 2 == 0 })
-  let filtered_odd = filter_array.filter(fn(x) { x % 2 != 0 })
-  let filtered_all = filter_array.filter(fn(x) { x > 0 })
-  let filtered_none = filter_array.filter(fn(x) { x > 10 })
-  
-  assert_eq(filtered_even.length(), 2)
-  assert_eq(filtered_odd.length(), 3)
-  assert_eq(filtered_all.length(), 5)
-  assert_eq(filtered_none.length(), 0)
-  
-  // 测试数组映射边界
-  let map_array = [1, 2, 3, 4, 5]
-  let mapped_doubled = map_array.map(fn(x) { x * 2 })
-  let mapped_to_string = map_array.map(fn(x) { x.to_string() })
-  
-  assert_eq(mapped_doubled.length(), 5)
-  assert_eq(mapped_doubled[0], 2)
-  assert_eq(mapped_doubled[4], 10)
-  
-  assert_eq(mapped_to_string.length(), 5)
-  assert_eq(mapped_to_string[0], "1")
-  assert_eq(mapped_to_string[4], "5")
-}
-
-// 测试4: Option类型边界条件测试
-test "Option类型边界条件测试" {
-  // 测试None值
-  let none_value = None
-  
-  match none_value {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
+  let retrieved_empty_array = Attributes::get(attrs, "empty_string_array")
+  match retrieved_empty_array {
+    Some(ArrayStringValue(v)) => assert_eq(v.length(), 0)
+    _ => assert_true(false)
   }
   
-  // 测试Some值
-  let some_value = Some(42)
+  // Test single element array
+  let single_element_array = ["single"]
+  Attributes::set(attrs, "single_element_array", ArrayStringValue(single_element_array))
   
-  match some_value {
-    Some(value) => assert_eq(value, 42)
-    None => assert_true(false)
+  let retrieved_single_array = Attributes::get(attrs, "single_element_array")
+  match retrieved_single_array {
+    Some(ArrayStringValue(v)) => {
+      assert_eq(v.length(), 1)
+      assert_eq(v[0], "single")
+    }
+    _ => assert_true(false)
   }
   
-  // 测试Option的map操作
-  let some_mapped = some_value.map(fn(x) { x * 2 })
-  let none_mapped = none_value.map(fn(x) { x * 2 })
+  // Test large array (10000 elements)
+  let large_array = []
+  for i in 0..10000 {
+    large_array.push("element_" + i.to_string())
+  }
+  Attributes::set(attrs, "large_array", ArrayStringValue(large_array))
   
-  match some_mapped {
-    Some(value) => assert_eq(value, 84)
-    None => assert_true(false)
+  let retrieved_large_array = Attributes::get(attrs, "large_array")
+  match retrieved_large_array {
+    Some(ArrayStringValue(v)) => {
+      assert_eq(v.length(), 10000)
+      assert_eq(v[0], "element_0")
+      assert_eq(v[9999], "element_9999")
+    }
+    _ => assert_true(false)
   }
   
-  match none_mapped {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
+  // Test array with empty strings
+  let empty_strings_array = ["", "", "", "", ""]
+  Attributes::set(attrs, "empty_strings_array", ArrayStringValue(empty_strings_array))
   
-  // 测试Option的map_or操作
-  let some_map_or = some_value.map_or(0, fn(x) { x })
-  let none_map_or = none_value.map_or(0, fn(x) { x })
-  
-  assert_eq(some_map_or, 42)
-  assert_eq(none_map_or, 0)
-  
-  // 测试嵌套Option
-  let nested_some = Some(Some(42))
-  let nested_none = Some(None)
-  let flat_none = None
-  
-  match nested_some {
-    Some(inner) => {
-      match inner {
-        Some(value) => assert_eq(value, 42)
-        None => assert_true(false)
+  let retrieved_empty_strings = Attributes::get(attrs, "empty_strings_array")
+  match retrieved_empty_strings {
+    Some(ArrayStringValue(v)) => {
+      assert_eq(v.length(), 5)
+      for element in v {
+        assert_eq(element, "")
       }
     }
+    _ => assert_true(false)
+  }
+  
+  // Test array with special characters
+  let special_chars_array = ["\x00", "\n", "\t", "\r", "\\"]
+  Attributes::set(attrs, "special_chars_array", ArrayStringValue(special_chars_array))
+  
+  let retrieved_special_chars = Attributes::get(attrs, "special_chars_array")
+  match retrieved_special_chars {
+    Some(ArrayStringValue(v)) => {
+      assert_eq(v.length(), 5)
+      assert_eq(v[0], "\x00")
+      assert_eq(v[1], "\n")
+      assert_eq(v[2], "\t")
+      assert_eq(v[3], "\r")
+      assert_eq(v[4], "\\")
+    }
+    _ => assert_true(false)
+  }
+}
+
+// Test 4: Span ID and Trace ID Boundary Conditions
+test "span and trace ID boundary conditions" {
+  // Test valid boundary cases for trace IDs (32 hex characters)
+  let valid_trace_ids = [
+    "00000000000000000000000000000000", // All zeros
+    "ffffffffffffffffffffffffffffffff", // All f's
+    "0123456789abcdef0123456789abcdef", // Mixed case
+    "fedcba9876543210fedcba9876543210"  // Reverse mixed
+  ]
+  
+  for trace_id in valid_trace_ids {
+    let span_ctx = SpanContext::new(trace_id, "1234567890abcdef", true, "boundary_test")
+    assert_true(SpanContext::is_valid(span_ctx))
+    assert_eq(SpanContext::trace_id(span_ctx), trace_id)
+  }
+  
+  // Test valid boundary cases for span IDs (16 hex characters)
+  let valid_span_ids = [
+    "0000000000000000", // All zeros
+    "ffffffffffffffff", // All f's
+    "0123456789abcdef", // Mixed case
+    "fedcba9876543210"  // Reverse mixed
+  ]
+  
+  for span_id in valid_span_ids {
+    let span_ctx = SpanContext::new("0123456789abcdef0123456789abcdef", span_id, true, "boundary_test")
+    assert_true(SpanContext::is_valid(span_ctx))
+    assert_eq(SpanContext::span_id(span_ctx), span_id)
+  }
+  
+  // Test invalid boundary cases
+  let invalid_trace_ids = [
+    "0000000000000000000000000000000",  // 31 chars
+    "000000000000000000000000000000000", // 33 chars
+    "g0000000000000000000000000000000", // Invalid hex char
+    "0000000000000000000000000000000 ", // Space
+    " 0000000000000000000000000000000", // Leading space
+    "0000000000000000000000000000000\n", // Newline
+    "0000000000000000000000000000000\t", // Tab
+    "0000000000000000000000000000000\r", // Carriage return
+    "0000000000000000000000000000000\x00" // Null character
+  ]
+  
+  for trace_id in invalid_trace_ids {
+    let span_ctx = SpanContext::new(trace_id, "1234567890abcdef", true, "boundary_test")
+    assert_false(SpanContext::is_valid(span_ctx))
+  }
+  
+  let invalid_span_ids = [
+    "000000000000000",  // 15 chars
+    "00000000000000000", // 17 chars
+    "g000000000000000", // Invalid hex char
+    "0000000000000000 ", // Space
+    " 0000000000000000", // Leading space
+    "0000000000000000\n", // Newline
+    "0000000000000000\t", // Tab
+    "0000000000000000\r", // Carriage return
+    "0000000000000000\x00" // Null character
+  ]
+  
+  for span_id in invalid_span_ids {
+    let span_ctx = SpanContext::new("0123456789abcdef0123456789abcdef", span_id, true, "boundary_test")
+    assert_false(SpanContext::is_valid(span_ctx))
+  }
+}
+
+// Test 5: Timestamp Boundary Conditions
+test "timestamp boundary conditions" {
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "boundary_logger")
+  
+  // Test boundary timestamp values
+  let boundary_timestamps = [
+    0L, // Unix epoch
+    -1L, // Before epoch
+    1L, // After epoch
+    9223372036854775807L, // Max int64
+    -9223372036854775808L, // Min int64
+    1234567890L, // Common timestamp
+    -1234567890L // Negative common timestamp
+  ]
+  
+  for timestamp in boundary_timestamps {
+    let log_record = LogRecord::new_with_context(
+      Info,
+      Some("Boundary timestamp test"),
+      None,
+      Some(timestamp),
+      Some(timestamp + 1L),
+      None,
+      None,
+      None
+    )
+    
+    Logger::emit(logger, log_record)
+  }
+  
+  // Test with same timestamp for both timestamp and observed_timestamp
+  let same_timestamp_log = LogRecord::new_with_context(
+    Info,
+    Some("Same timestamp test"),
+    None,
+    Some(1234567890L),
+    Some(1234567890L),
+    None,
+    None,
+    None
+  )
+  
+  Logger::emit(logger, same_timestamp_log)
+  
+  // Test with observed_timestamp before timestamp (edge case)
+  let reversed_timestamp_log = LogRecord::new_with_context(
+    Info,
+    Some("Reversed timestamp test"),
+    None,
+    Some(1234567891L),
+    Some(1234567890L),
+    None,
+    None,
+    None
+  )
+  
+  Logger::emit(logger, reversed_timestamp_log)
+}
+
+// Test 6: Resource Limit Boundary Conditions
+test "resource limit boundary conditions" {
+  // Test with maximum number of attributes
+  let attrs = Attributes::new()
+  
+  // Add many attributes to test limits
+  let max_attributes = 1000
+  for i in 0..max_attributes {
+    let key = "boundary_attr_" + i.to_string()
+    let value = StringValue("boundary_value_" + i.to_string())
+    Attributes::set(attrs, key, value)
+  }
+  
+  // Verify all attributes can be retrieved
+  for i in 0..max_attributes {
+    let key = "boundary_attr_" + i.to_string()
+    let expected_value = "boundary_value_" + i.to_string()
+    
+    let retrieved = Attributes::get(attrs, key)
+    match retrieved {
+      Some(StringValue(v)) => assert_eq(v, expected_value)
+      None => assert_true(false)
+    }
+  }
+  
+  // Test with very long attribute keys
+  let long_key = "k".repeat(1000)
+  Attributes::set(attrs, long_key, StringValue("long_key_value"))
+  
+  let retrieved_long_key = Attributes::get(attrs, long_key)
+  match retrieved_long_key {
+    Some(StringValue(v)) => assert_eq(v, "long_key_value")
     None => assert_true(false)
   }
   
-  match nested_none {
-    Some(inner) => {
-      match inner {
-        Some(_) => assert_true(false)
-        None => assert_true(true)
-      }
+  // Test with attribute keys containing special characters
+  let special_keys = [
+    "key.with.dots",
+    "key-with-dashes",
+    "key_with_underscores",
+    "key/with/slashes",
+    "key\\with\\backslashes",
+    "key@with@symbols",
+    "key#with#hashes",
+    "key$with$dollars",
+    "key%with%percents",
+    "key^with^carets",
+    "key&with&ampersands",
+    "key*with*asterisks",
+    "key(with)parentheses",
+    "key[with]brackets",
+    "key{with}braces",
+    "key|with|pipes",
+    "key+with+plus",
+    "key=with=equals",
+    "key?with?questions",
+    "key<with>angles",
+    "key\"with\"quotes",
+    "key'with'apostrophes"
+  ]
+  
+  for key in special_keys {
+    Attributes::set(attrs, key, StringValue("special_key_value"))
+    let retrieved = Attributes::get(attrs, key)
+    match retrieved {
+      Some(StringValue(v)) => assert_eq(v, "special_key_value")
+      None => assert_true(false)
     }
+  }
+}
+
+// Test 7: Context Nesting Boundary Conditions
+test "context nesting boundary conditions" {
+  let root_ctx = Context::root()
+  
+  // Test deep context nesting
+  let mut current_ctx = root_ctx
+  let max_depth = 1000
+  
+  for i in 0..max_depth {
+    let key = ContextKey::new("deep_key_" + i.to_string())
+    let value = "deep_value_" + i.to_string()
+    current_ctx = Context::with_value(current_ctx, key, value)
+  }
+  
+  // Verify deep context retrieval
+  for i in 0..max_depth {
+    let key = ContextKey::new("deep_key_" + i.to_string())
+    let expected_value = "deep_value_" + i.to_string()
+    
+    let retrieved = Context::get(current_ctx, key)
+    match retrieved {
+      Some(value) => assert_eq(value, expected_value)
+      None => assert_true(false)
+    }
+  }
+  
+  // Test context with very long keys and values
+  let long_key = ContextKey::new("k".repeat(1000))
+  let long_value = "v".repeat(1000)
+  let long_ctx = Context::with_value(root_ctx, long_key, long_value)
+  
+  let retrieved_long = Context::get(long_ctx, long_key)
+  match retrieved_long {
+    Some(value) => assert_eq(value, long_value)
     None => assert_true(false)
   }
   
-  match flat_none {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
+  // Test context with special characters in keys and values
+  let special_key = ContextKey::new("special_key!@#$%^&*()")
+  let special_value = "special_value!@#$%^&*()"
+  let special_ctx = Context::with_value(root_ctx, special_key, special_value)
+  
+  let retrieved_special = Context::get(special_ctx, special_key)
+  match retrieved_special {
+    Some(value) => assert_eq(value, special_value)
+    None => assert_true(false)
   }
 }
 
-// 测试5: 函数边界条件测试
-test "函数边界条件测试" {
-  // 测试递归函数边界
-  let factorial = fn(n) {
-    if n <= 0 {
-      1
-    } else {
-      n * factorial(n - 1)
-    }
+// Test 8: HTTP Boundary Conditions
+test "http boundary conditions" {
+  let client = HttpClient::new()
+  
+  // Test with very long URL
+  let long_url = "https://example.com/" + "a".repeat(10000)
+  let long_url_headers = []
+  let long_url_request = HttpRequest::new("GET", long_url, long_url_headers, None)
+  
+  assert_eq(HttpRequest::url(long_url_request), long_url)
+  
+  // Test with many headers
+  let many_headers = []
+  for i in 0..1000 {
+    many_headers.push(("X-Header-" + i.to_string(), "Value-" + i.to_string()))
+  }
+  let many_headers_request = HttpRequest::new("GET", "https://example.com", many_headers, None)
+  
+  assert_eq(HttpRequest::http_method(many_headers_request), "GET")
+  
+  // Test with very long header values
+  let long_value = "v".repeat(10000)
+  let long_value_headers = [("X-Long-Value", long_value)]
+  let long_value_request = HttpRequest::new("GET", "https://example.com", long_value_headers, None)
+  
+  assert_eq(HttpRequest::http_method(long_value_request), "GET")
+  
+  // Test with special characters in URLs
+  let special_urls = [
+    "https://example.com/path with spaces",
+    "https://example.com/path-with-dashes",
+    "https://example.com/path_with_underscores",
+    "https://example.com/path/with/slashes",
+    "https://example.com/path?query=value&other=test",
+    "https://example.com/path#fragment",
+    "https://example.com/path?query=value#fragment",
+    "https://example.com/测试中文",
+    "https://example.com/🚀emoji",
+    "https://example.com/path%20with%20encoding",
+    "https://example.com/path\x00with\x00null"
+  ]
+  
+  for url in special_urls {
+    let headers = []
+    let request = HttpRequest::new("GET", url, headers, None)
+    assert_eq(HttpRequest::url(request), url)
   }
   
-  // 测试递归边界条件
-  assert_eq(factorial(0), 1)
-  assert_eq(factorial(1), 1)
-  assert_eq(factorial(5), 120)
+  // Test boundary HTTP status codes
+  let boundary_status_codes = [
+    -1,    // Invalid
+    0,     // Invalid
+    99,    // Invalid
+    100,   // Continue (minimum valid)
+    199,   // Informational (maximum)
+    200,   // OK (minimum success)
+    299,   // Success (maximum)
+    300,   // Multiple Choices (minimum redirect)
+    399,   // Redirection (maximum)
+    400,   // Bad Request (minimum client error)
+    499,   // Client Error (maximum)
+    500,   // Internal Server Error (minimum server error)
+    599,   // Server Error (maximum)
+    600,   // Invalid
+    1000,  // Invalid
+    9999   // Invalid
+  ]
   
-  // 测试高阶函数边界
-  let apply_function = fn(f, x) { f(x) }
-  
-  let identity = fn(x) { x }
-  let double = fn(x) { x * 2 }
-  let square = fn(x) { x * x }
-  
-  assert_eq(apply_function(identity, 5), 5)
-  assert_eq(apply_function(double, 5), 10)
-  assert_eq(apply_function(square, 5), 25)
-  
-  // 测试函数组合边界
-  let compose = fn(f, g) { fn(x) { f(g(x)) } }
-  
-  let add_one = fn(x) { x + 1 }
-  let multiply_by_two = fn(x) { x * 2 }
-  
-  let add_one_then_multiply_by_two = compose(multiply_by_two, add_one)
-  let multiply_by_two_then_add_one = compose(add_one, multiply_by_two)
-  
-  assert_eq(add_one_then_multiply_by_two(5), 12)  // (5 + 1) * 2
-  assert_eq(multiply_by_two_then_add_one(5), 11)  // (5 * 2) + 1
-  
-  // 测试柯里化函数边界
-  let add = fn(x) { fn(y) { x + y } }
-  
-  let add_five = add(5)
-  let add_zero = add(0)
-  let add_negative = add(-5)
-  
-  assert_eq(add_five(3), 8)
-  assert_eq(add_zero(3), 3)
-  assert_eq(add_negative(3), -2)
-  
-  // 测试函数作为参数边界
-  let apply_to_list = fn(list, f) {
-    list.map(f)
+  for status_code in boundary_status_codes {
+    let headers = []
+    let response = HttpResponse::new(status_code, headers, Some("Boundary status test"))
+    assert_eq(HttpResponse::status_code(response), status_code)
   }
-  
-  let numbers = [1, 2, 3, 4, 5]
-  let doubled = apply_to_list(numbers, double)
-  let squared = apply_to_list(numbers, square)
-  
-  assert_eq(doubled, [2, 4, 6, 8, 10])
-  assert_eq(squared, [1, 4, 9, 16, 25])
 }
 
-// 测试6: 时间边界条件测试
-test "时间边界条件测试" {
-  // 测试时间戳边界
-  let current_time = Time::now()
-  let zero_time = 0
-  let max_time = 2147483647  // 32位时间戳最大值
+// Test 9: Metrics Boundary Conditions
+test "metrics boundary conditions" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "boundary_meter")
   
-  // 验证当前时间合理性
-  assert_true(current_time > zero_time)
-  assert_true(current_time < max_time)
+  // Test with boundary metric values
+  let counter = Meter::create_counter(meter, "boundary_counter", None, None)
+  let histogram = Meter::create_histogram(meter, "boundary_histogram", None, None)
+  let updown_counter = Meter::create_updown_counter(meter, "boundary_updown", None, None)
+  let gauge = Meter::create_gauge(meter, "boundary_gauge", None, None)
   
-  // 测试时间计算边界
-  let time_plus_one = current_time + 1
-  let time_minus_one = current_time - 1
+  // Test with extreme values
+  let extreme_values = [
+    0.0,
+    -0.0,
+    1.0,
+    -1.0,
+    1.7976931348623157e+308,  // Max double
+    -1.7976931348623157e+308, // Min double
+    2.2250738585072014e-308,  // Min positive double
+    -2.2250738585072014e-308, // Max negative double
+    1.0/0.0,   // Infinity
+    -1.0/0.0,  // Negative infinity
+    0.0/0.0    // NaN
+  ]
   
-  assert_true(time_plus_one > current_time)
-  assert_true(time_minus_one < current_time)
+  for value in extreme_values {
+    Counter::add(counter, value)
+    Histogram::record(histogram, value)
+    UpDownCounter::add(updown_counter, value)
+    Gauge::record(gauge, value)
+  }
   
-  // 测试时间差边界
-  let time_diff_positive = time_plus_one - current_time
-  let time_diff_negative = current_time - time_plus_one
+  // Test with very long instrument names
+  let long_name = "very_long_instrument_name_".repeat(100)
+  let long_counter = Meter::create_counter(meter, long_name, None, None)
+  Counter::add(long_counter, 1.0)
   
-  assert_eq(time_diff_positive, 1)
-  assert_eq(time_diff_negative, -1)
+  // Test with special characters in instrument names
+  let special_names = [
+    "instrument.with.dots",
+    "instrument-with-dashes",
+    "instrument_with_underscores",
+    "instrument/with/slashes",
+    "instrument@with@symbols",
+    "instrument#with#hashes",
+    "instrument$with$dollars",
+    "instrument%with%percents",
+    "instrument^with^carets",
+    "instrument&with&ampersands",
+    "instrument*with*asterisks",
+    "instrument(with)parentheses",
+    "instrument[with]brackets",
+    "instrument{with}braces",
+    "instrument|with|pipes",
+    "instrument+with+plus",
+    "instrument=with=equals",
+    "instrument?with?questions",
+    "instrument<with>angles",
+    "instrument\"with\"quotes",
+    "instrument'with'apostrophes",
+    "instrument测试中文",
+    "instrument🚀emoji"
+  ]
   
-  // 测试时间比较边界
-  assert_true(time_plus_one > current_time)
-  assert_true(current_time > time_minus_one)
-  assert_true(time_plus_one >= current_time)
-  assert_true(current_time >= time_minus_one)
-  assert_true(current_time < time_plus_one)
-  assert_true(time_minus_one < current_time)
-  assert_true(current_time <= time_plus_one)
-  assert_true(time_minus_one <= current_time)
-  assert_true(current_time == current_time)
-  assert_false(current_time == time_plus_one)
+  for name in special_names {
+    let special_counter = Meter::create_counter(meter, name, None, None)
+    Counter::add(special_counter, 1.0)
+  }
 }
 
-// 测试7: 类型转换边界条件测试
-test "类型转换边界条件测试" {
-  // 测试整数到浮点数转换
-  let int_to_float_zero = 0
-  let int_to_float_positive = 42
-  let int_to_float_negative = -42
-  let int_to_float_max = 2147483647
-  let int_to_float_min = -2147483648
+// Test 10: Log Record Boundary Conditions
+test "log record boundary conditions" {
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "boundary_logger")
   
-  assert_eq(int_to_float_zero.to_float(), 0.0)
-  assert_eq(int_to_float_positive.to_float(), 42.0)
-  assert_eq(int_to_float_negative.to_float(), -42.0)
-  assert_eq(int_to_float_max.to_float(), 2147483647.0)
-  assert_eq(int_to_float_min.to_float(), -2147483648.0)
+  // Test with very long log messages
+  let very_long_message = "x".repeat(1000000)
+  let long_log = LogRecord::new(Info, very_long_message)
+  Logger::emit(logger, long_log)
   
-  // 测试浮点数到整数转换
-  let float_to_int_zero = 0.0
-  let float_to_int_positive = 42.0
-  let float_to_int_negative = -42.0
-  let float_to_int_fractional = 3.14
-  let float_to_int_negative_fractional = -3.14
+  // Test with empty log message
+  let empty_log = LogRecord::new(Info, "")
+  Logger::emit(logger, empty_log)
   
-  assert_eq(float_to_int_zero.to_int(), 0)
-  assert_eq(float_to_int_positive.to_int(), 42)
-  assert_eq(float_to_int_negative.to_int(), -42)
-  assert_eq(float_to_int_fractional.to_int(), 3)
-  assert_eq(float_to_int_negative_fractional.to_int(), -3)
+  // Test with log message containing only whitespace
+  let whitespace_messages = [
+    " ",
+    "\t",
+    "\n",
+    "\r",
+    "\x00",
+    "   ",
+    "\t\t\t",
+    "\n\n\n",
+    "\r\r\r",
+    "\x00\x00\x00",
+    " \t\n\r\x00"
+  ]
   
-  // 测试数值到字符串转换
-  let int_to_string_zero = 0
-  let int_to_string_positive = 42
-  let int_to_string_negative = -42
-  let float_to_string_zero = 0.0
-  let float_to_string_positive = 3.14
-  let float_to_string_negative = -3.14
+  for message in whitespace_messages {
+    let whitespace_log = LogRecord::new(Info, message)
+    Logger::emit(logger, whitespace_log)
+  }
   
-  assert_eq(int_to_string_zero.to_string(), "0")
-  assert_eq(int_to_string_positive.to_string(), "42")
-  assert_eq(int_to_string_negative.to_string(), "-42")
-  assert_eq(float_to_string_zero.to_string(), "0.0")
-  assert_eq(float_to_string_positive.to_string(), "3.14")
-  assert_eq(float_to_string_negative.to_string(), "-3.14")
+  // Test with log messages containing special characters
+  let special_messages = [
+    "Message with \"quotes\"",
+    "Message with 'apostrophes'",
+    "Message with \nnewlines\n",
+    "Message with \ttabs\t",
+    "Message with \rcarriage\rreturn\r",
+    "Message with \\backslashes\\",
+    "Message with /slashes/",
+    "Message with @at@signs@",
+    "Message with #hashes#",
+    "Message with $dollars$",
+    "Message with %percents%",
+    "Message with ^carets^",
+    "Message with &ampersands&",
+    "Message with *asterisks*",
+    "Message with (parentheses)",
+    "Message with [brackets]",
+    "Message with {braces}",
+    "Message with |pipes|",
+    "Message with +plus+signs+",
+    "Message with =equals=",
+    "Message with ?questions?",
+    "Message with <angles>",
+    "Message with 中文测试",
+    "Message with 🚀emoji🌟"
+  ]
   
-  // 测试字符串到数值转换(模拟)
-  let parse_int = fn(s) {
-    match s {
-      "0" => 0
-      "42" => 42
-      "-42" => -42
-      "2147483647" => 2147483647
-      "-2147483648" => -2147483648
-      _ => 0  // 默认值
+  for message in special_messages {
+    let special_log = LogRecord::new(Info, message)
+    Logger::emit(logger, special_log)
+  }
+  
+  // Test with all severity levels
+  let all_severities = [Trace, Debug, Info, Warn, Error, Fatal]
+  
+  for severity in all_severities {
+    let severity_log = LogRecord::new(severity, "Severity test")
+    Logger::emit(logger, severity_log)
+  }
+  
+  // Test with boundary trace and span IDs
+  let boundary_trace_ids = [
+    "00000000000000000000000000000000", // All zeros
+    "ffffffffffffffffffffffffffffffff", // All f's
+    "0123456789abcdef0123456789abcdef"  // Mixed case
+  ]
+  
+  let boundary_span_ids = [
+    "0000000000000000", // All zeros
+    "ffffffffffffffff", // All f's
+    "0123456789abcdef"  // Mixed case
+  ]
+  
+  for trace_id in boundary_trace_ids {
+    for span_id in boundary_span_ids {
+      let boundary_log = LogRecord::new_with_context(
+        Info,
+        Some("Boundary ID test"),
+        None,
+        None,
+        None,
+        Some(trace_id),
+        Some(span_id),
+        None
+      )
+      Logger::emit(logger, boundary_log)
     }
   }
-  
-  let parse_float = fn(s) {
-    match s {
-      "0.0" => 0.0
-      "3.14" => 3.14
-      "-3.14" => -3.14
-      _ => 0.0  // 默认值
-    }
-  }
-  
-  assert_eq(parse_int("0"), 0)
-  assert_eq(parse_int("42"), 42)
-  assert_eq(parse_int("-42"), -42)
-  assert_eq(parse_int("2147483647"), 2147483647)
-  assert_eq(parse_int("-2147483648"), -2147483648)
-  assert_eq(parse_int("invalid"), 0)  // 默认值
-  
-  assert_eq(parse_float("0.0"), 0.0)
-  assert_eq(parse_float("3.14"), 3.14)
-  assert_eq(parse_float("-3.14"), -3.14)
-  assert_eq(parse_float("invalid"), 0.0)  // 默认值
-}
-
-// 测试8: 循环和迭代边界条件测试
-test "循环和迭代边界条件测试" {
-  // 测试零次循环
-  let mut zero_loop_result = 0
-  for i = 0; i < 0; i = i + 1 {
-    zero_loop_result = zero_loop_result + 1
-  }
-  assert_eq(zero_loop_result, 0)
-  
-  // 测试单次循环
-  let mut single_loop_result = 0
-  for i = 0; i < 1; i = i + 1 {
-    single_loop_result = single_loop_result + 1
-  }
-  assert_eq(single_loop_result, 1)
-  
-  // 测试多次循环
-  let mut multi_loop_result = 0
-  for i = 0; i < 5; i = i + 1 {
-    multi_loop_result = multi_loop_result + 1
-  }
-  assert_eq(multi_loop_result, 5)
-  
-  // 测试循环边界条件
-  let mut boundary_loop_result = []
-  for i = 0; i <= 5; i = i + 1 {
-    boundary_loop_result = boundary_loop_result.push(i)
-  }
-  assert_eq(boundary_loop_result, [0, 1, 2, 3, 4, 5])
-  
-  // 测试递归边界
-  let recursive_sum = fn(arr, index) {
-    if index >= arr.length() {
-      0
-    } else {
-      arr[index] + recursive_sum(arr, index + 1)
-    }
-  }
-  
-  let test_array = [1, 2, 3, 4, 5]
-  assert_eq(recursive_sum(test_array, 0), 15)
-  assert_eq(recursive_sum(test_array, 5), 0)  // 边界条件：索引等于数组长度
-  
-  // 测试迭代器边界
-  let test_list = [1, 2, 3, 4, 5]
-  let filtered_empty = test_list.filter(fn(x) { x > 10 })
-  let filtered_all = test_list.filter(fn(x) { x > 0 })
-  let filtered_none = test_list.filter(fn(x) { x < 0 })
-  
-  assert_eq(filtered_empty.length(), 0)
-  assert_eq(filtered_all.length(), 5)
-  assert_eq(filtered_none.length(), 0)
-  
-  // 测试reduce边界
-  let empty_reduce = [].reduce(0, fn(acc, x) { acc + x })
-  let single_reduce = [5].reduce(0, fn(acc, x) { acc + x })
-  let multi_reduce = [1, 2, 3, 4, 5].reduce(0, fn(acc, x) { acc + x })
-  
-  assert_eq(empty_reduce, 0)
-  assert_eq(single_reduce, 5)
-  assert_eq(multi_reduce, 15)
 }
