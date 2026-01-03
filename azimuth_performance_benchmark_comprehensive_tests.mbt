@@ -1,726 +1,562 @@
-// Azimuth Performance Benchmark Comprehensive Tests
-// This file contains test cases for performance benchmarking and optimization
+// Azimuth Comprehensive Performance Benchmark Tests
+// This file contains comprehensive test cases for performance benchmarking
 
-// Test 1: Throughput Benchmarking
-test "throughput benchmarking" {
-  // Test operation throughput measurement
-  let num_operations = 10000
-  let time_window_ms = 1000
-  let mut operations_completed = 0
+// Test 1: Basic Arithmetic Performance
+test "basic arithmetic performance benchmark" {
+  let iterations = 100000
   
-  // Simulate operations with varying completion times
-  let operation_times = [1, 2, 1, 3, 1, 2, 1, 1, 2, 1]  // milliseconds
-  let mut total_time = 0
-  
-  while operations_completed < num_operations && total_time < time_window_ms {
-    let op_time = operation_times[operations_completed % operation_times.length()]
-    total_time = total_time + op_time
-    operations_completed = operations_completed + 1
+  // Benchmark addition
+  let add_start_time = get_current_time()
+  let add_result = 0
+  for i = 0; i < iterations; i = i + 1 {
+    add_result = add_result + i
   }
+  let add_time = get_current_time() - add_start_time
   
-  let throughput = operations_completed.to_float() / (total_time.to_float() / 1000.0)
+  // Verify result correctness
+  let expected_add = (iterations * (iterations - 1)) / 2
+  assert_eq(add_result, expected_add)
   
-  assert_true(throughput > 0.0)
-  assert_true(operations_completed <= num_operations)
-  
-  // Test concurrent throughput simulation
-  let num_threads = 4
-  let operations_per_thread = 2500
-  let mut thread_throughputs = []
-  
-  for thread_id in 0..<num_threads {
-    let mut thread_operations = 0
-    let mut thread_time = 0
-    
-    while thread_operations < operations_per_thread {
-      let op_time = operation_times[thread_operations % operation_times.length()]
-      thread_time = thread_time + op_time
-      thread_operations = thread_operations + 1
-    }
-    
-    let thread_throughput = thread_operations.to_float() / (thread_time.to_float() / 1000.0)
-    thread_throughputs = thread_throughputs.push(thread_throughput)
+  // Benchmark multiplication
+  let mul_start_time = get_current_time()
+  let mul_result = 1
+  for i = 1; i <= 20; i = i + 1 {
+    mul_result = mul_result * i
   }
+  let mul_time = get_current_time() - mul_start_time
   
-  assert_eq(thread_throughputs.length(), num_threads)
+  // Verify result correctness (20!)
+  assert_eq(mul_result, 2432902008176640000)
   
-  // Calculate aggregate throughput
-  let mut total_ops = 0
-  let mut total_time_sum = 0.0
-  
-  for throughput in thread_throughputs {
-    total_ops = total_ops + operations_per_thread
-    total_time_sum = total_time_sum + (operations_per_thread.to_float() / throughput)
+  // Benchmark division
+  let div_start_time = get_current_time()
+  let div_result = 0.0
+  for i = 1; i <= iterations; i = i + 1 {
+    div_result = div_result + (1000000.0 / i.to_float())
   }
+  let div_time = get_current_time() - div_start_time
   
-  let aggregate_throughput = total_ops.to_float() / (total_time_sum / num_threads.to_float())
-  assert_true(aggregate_throughput > 0.0)
+  // Verify result is reasonable
+  assert_true(div_result > 0.0)
+  
+  // Performance assertions
+  assert_true(add_time < 1000)  // Should complete in less than 1 second
+  assert_true(mul_time < 100)   // Should complete in less than 0.1 seconds
+  assert_true(div_time < 2000)  // Should complete in less than 2 seconds
+  
+  // Log performance metrics
+  log_performance_metric("addition", iterations, add_time)
+  log_performance_metric("multiplication", 20, mul_time)
+  log_performance_metric("division", iterations, div_time)
 }
 
-// Test 2: Latency Benchmarking
-test "latency benchmarking" {
-  // Test operation latency measurement
-  let operations = [
-    ("fast_operation", 10),
-    ("medium_operation", 50),
-    ("slow_operation", 200),
-    ("variable_operation", 75)
-  ]
+// Test 2: String Operations Performance
+test "string operations performance benchmark" {
+  let iterations = 10000
   
-  let mut latencies = []
-  
-  for operation in operations {
-    let base_latency = operation.1
-    let mut total_latency = 0
-    let num_samples = 100
-    
-    for i in 0..<num_samples {
-      // Simulate latency variation
-      let variation = (i * 7) % 20 - 10  // -10 to +10
-      let sample_latency = base_latency + variation
-      total_latency = total_latency + sample_latency
-    }
-    
-    let average_latency = total_latency / num_samples
-    latencies = latencies.push((operation.0, average_latency))
+  // Benchmark string concatenation
+  let concat_start_time = get_current_time()
+  let concat_result = ""
+  for i = 0; i < iterations; i = i + 1 {
+    concat_result = concat_result + i.to_string()
   }
+  let concat_time = get_current_time() - concat_start_time
   
-  assert_eq(latencies.length(), 4)
+  // Verify result length
+  assert_true(concat_result.length() > 0)
   
-  // Find fastest and slowest operations
-  let mut fastest = latencies[0]
-  let mut slowest = latencies[0]
-  
-  for latency in latencies {
-    if latency.1 < fastest.1 {
-      fastest = latency
-    }
-    if latency.1 > slowest.1 {
-      slowest = latency
-    }
+  // Benchmark string splitting
+  let long_string = "a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z"
+  let split_start_time = get_current_time()
+  for i = 0; i < iterations; i = i + 1 {
+    let parts = long_string.split(",")
+    assert_eq(parts.length(), 26)
   }
+  let split_time = get_current_time() - split_start_time
   
-  assert_eq(fastest.0, "fast_operation")
-  assert_eq(slowest.0, "slow_operation")
+  // Benchmark string searching
+  let search_text = "The quick brown fox jumps over the lazy dog"
+  let search_start_time = get_current_time()
+  for i = 0; i < iterations; i = i + 1 {
+    let found = search_text.contains("fox")
+    assert_true(found)
+    
+    let not_found = search_text.contains("cat")
+    assert_false(not_found)
+  }
+  let search_time = get_current_time() - search_start_time
   
-  // Test percentile latency calculation
-  let latency_samples = [10, 15, 20, 25, 30, 35, 40, 45, 50, 55]
-  let sorted_samples = latency_samples  // Already sorted
+  // Performance assertions
+  assert_true(concat_time < 5000)  // Should complete in less than 5 seconds
+  assert_true(split_time < 1000)   // Should complete in less than 1 second
+  assert_true(search_time < 1000)  // Should complete in less than 1 second
   
-  let p50_index = (sorted_samples.length() * 50) / 100
-  let p95_index = (sorted_samples.length() * 95) / 100
-  let p99_index = (sorted_samples.length() * 99) / 100
-  
-  let p50_latency = sorted_samples[p50_index]
-  let p95_latency = sorted_samples[p95_index]
-  let p99_latency = sorted_samples[p99_index]
-  
-  assert_eq(p50_latency, 30)
-  assert_eq(p95_latency, 50)
-  assert_eq(p99_latency, 55)
+  // Log performance metrics
+  log_performance_metric("string_concatenation", iterations, concat_time)
+  log_performance_metric("string_splitting", iterations, split_time)
+  log_performance_metric("string_searching", iterations, search_time)
 }
 
-// Test 3: Memory Usage Benchmarking
-test "memory usage benchmarking" {
-  // Test memory allocation patterns
-  let allocation_sizes = [100, 200, 50, 300, 150, 75, 250, 125]
-  let mut total_allocated = 0
-  let mut allocation_count = 0
-  let mut peak_memory = 0
+// Test 3: Array Operations Performance
+test "array operations performance benchmark" {
+  let array_size = 10000
+  let iterations = 1000
   
-  for size in allocation_sizes {
-    total_allocated = total_allocated + size
-    allocation_count = allocation_count + 1
-    
-    if total_allocated > peak_memory {
-      peak_memory = total_allocated
-    }
-    
-    // Simulate some deallocations
-    if allocation_count % 3 == 0 {
-      let deallocation_size = allocation_sizes[allocation_count - 3]
-      total_allocated = total_allocated - deallocation_size
+  // Create test array
+  let test_array = []
+  for i = 0; i < array_size; i = i + 1 {
+    test_array = test_array.push(i)
+  }
+  assert_eq(test_array.length(), array_size)
+  
+  // Benchmark array traversal
+  let traversal_start_time = get_current_time()
+  let sum = 0
+  for i = 0; i < iterations; i = i + 1 {
+    for j = 0; j < test_array.length(); j = j + 1 {
+      sum = sum + test_array[j]
     }
   }
+  let traversal_time = get_current_time() - traversal_start_time
   
-  assert_eq(allocation_count, 8)
-  assert_true(peak_memory > 0)
-  assert_true(total_allocated <= peak_memory)
+  // Verify result correctness
+  let expected_sum = (array_size * (array_size - 1) / 2) * iterations
+  assert_eq(sum, expected_sum)
   
-  // Test memory fragmentation simulation
-  let block_sizes = [50, 30, 70, 20, 40, 60, 25, 35]
-  let mut memory_blocks = []
-  let mut total_memory = 0
-  let mut fragmented_blocks = []
+  // Benchmark array filtering
+  let filter_start_time = get_current_time()
+  for i = 0; i < iterations; i = i + 1 {
+    let filtered = test_array.filter(fn(x) { x % 2 == 0 })
+    assert_eq(filtered.length(), array_size / 2)
+  }
+  let filter_time = get_current_time() - filter_start_time
   
-  // Allocate blocks
-  for size in block_sizes {
-    memory_blocks = memory_blocks.push(("block_" + total_memory.to_string(), size))
-    total_memory = total_memory + size
+  // Benchmark array mapping
+  let map_start_time = get_current_time()
+  for i = 0; i < iterations; i = i + 1 {
+    let mapped = test_array.map(fn(x) { x * 2 })
+    assert_eq(mapped.length(), array_size)
+    assert_eq(mapped[0], 0)
+    assert_eq(mapped[array_size - 1], (array_size - 1) * 2)
+  }
+  let map_time = get_current_time() - map_start_time
+  
+  // Performance assertions
+  assert_true(traversal_time < 5000)  // Should complete in less than 5 seconds
+  assert_true(filter_time < 3000)     // Should complete in less than 3 seconds
+  assert_true(map_time < 3000)        // Should complete in less than 3 seconds
+  
+  // Log performance metrics
+  log_performance_metric("array_traversal", iterations * array_size, traversal_time)
+  log_performance_metric("array_filtering", iterations, filter_time)
+  log_performance_metric("array_mapping", iterations, map_time)
+}
+
+// Test 4: Memory Allocation Performance
+test "memory allocation performance benchmark" {
+  let iterations = 1000
+  let object_size = 100
+  
+  // Benchmark object creation
+  let create_start_time = get_current_time()
+  let objects = []
+  for i = 0; i < iterations; i = i + 1 {
+    let obj = {
+      id: i,
+      name: "object_" + i.to_string(),
+      data: [0] * object_size,
+      timestamp: get_current_time()
+    }
+    objects = objects.push(obj)
+  }
+  let create_time = get_current_time() - create_start_time
+  
+  // Verify object creation
+  assert_eq(objects.length(), iterations)
+  assert_eq(objects[0].id, 0)
+  assert_eq(objects[iterations - 1].id, iterations - 1)
+  
+  // Benchmark object access
+  let access_start_time = get_current_time()
+  let total_id = 0
+  for i = 0; i < iterations; i = i + 1 {
+    total_id = total_id + objects[i].id
+    assert_true(objects[i].name.contains("object_"))
+    assert_eq(objects[i].data.length(), object_size)
+  }
+  let access_time = get_current_time() - access_start_time
+  
+  // Verify access correctness
+  let expected_total_id = (iterations * (iterations - 1)) / 2
+  assert_eq(total_id, expected_total_id)
+  
+  // Benchmark garbage collection
+  let gc_start_time = get_current_time()
+  objects = []  // Clear reference to allow garbage collection
+  let gc_time = get_current_time() - gc_start_time
+  
+  // Performance assertions
+  assert_true(create_time < 2000)  // Should complete in less than 2 seconds
+  assert_true(access_time < 1000)  // Should complete in less than 1 second
+  assert_true(gc_time < 1000)      // Should complete in less than 1 second
+  
+  // Log performance metrics
+  log_performance_metric("object_creation", iterations, create_time)
+  log_performance_metric("object_access", iterations, access_time)
+  log_performance_metric("garbage_collection", 1, gc_time)
+}
+
+// Test 5: Algorithm Performance Comparison
+test "algorithm performance comparison" {
+  let data_size = 10000
+  
+  // Create test data
+  let test_data = []
+  for i = 0; i < data_size; i = i + 1 {
+    test_data = test_data.push(data_size - i)  // Reverse sorted data
   }
   
-  // Deallocate some blocks (fragmentation)
-  let deallocation_indices = [1, 4, 6]  // Deallocate blocks at these indices
-  let mut remaining_blocks = []
+  // Benchmark bubble sort
+  let bubble_data = test_data.copy()
+  let bubble_start_time = get_current_time()
+  bubble_sort(bubble_data)
+  let bubble_time = get_current_time() - bubble_start_time
   
-  for i in 0..<memory_blocks.length() {
-    let should_deallocate = false
-    for index in deallocation_indices {
-      if i == index {
-        should_deallocate = true
-        break
+  // Verify bubble sort result
+  assert_true(is_sorted(bubble_data))
+  
+  // Benchmark quick sort
+  let quick_data = test_data.copy()
+  let quick_start_time = get_current_time()
+  quick_sort(quick_data)
+  let quick_time = get_current_time() - quick_start_time
+  
+  // Verify quick sort result
+  assert_true(is_sorted(quick_data))
+  
+  // Benchmark merge sort
+  let merge_data = test_data.copy()
+  let merge_start_time = get_current_time()
+  merge_sort(merge_data)
+  let merge_time = get_current_time() - merge_start_time
+  
+  // Verify merge sort result
+  assert_true(is_sorted(merge_data))
+  
+  // Performance comparison
+  assert_true(quick_time < bubble_time)   // Quick sort should be faster than bubble sort
+  assert_true(merge_time < bubble_time)   // Merge sort should be faster than bubble sort
+  
+  // Log performance metrics
+  log_performance_metric("bubble_sort", data_size, bubble_time)
+  log_performance_metric("quick_sort", data_size, quick_time)
+  log_performance_metric("merge_sort", data_size, merge_time)
+}
+
+// Test 6: Data Structure Performance
+test "data structure performance benchmark" {
+  let operations = 10000
+  
+  // Benchmark list operations
+  let list_start_time = get_current_time()
+  let test_list = []
+  for i = 0; i < operations; i = i + 1 {
+    test_list = test_list.push(i)
+  }
+  let list_push_time = get_current_time() - list_start_time
+  
+  // Test list access
+  let list_access_start = get_current_time()
+  let list_sum = 0
+  for i = 0; i < operations; i = i + 1 {
+    list_sum = list_sum + test_list[i]
+  }
+  let list_access_time = get_current_time() - list_access_start
+  
+  // Benchmark map operations
+  let map_start_time = get_current_time()
+  let test_map = {}
+  for i = 0; i < operations; i = i + 1 {
+    test_map = test_map.set("key_" + i.to_string(), i)
+  }
+  let map_insert_time = get_current_time() - map_start_time
+  
+  // Test map access
+  let map_access_start = get_current_time()
+  let map_sum = 0
+  for i = 0; i < operations; i = i + 1 {
+    match test_map.get("key_" + i.to_string()) {
+      Some(value) => map_sum = map_sum + value
+      None => assert_true(false)
+    }
+  }
+  let map_access_time = get_current_time() - map_access_start
+  
+  // Benchmark set operations
+  let set_start_time = get_current_time()
+  let test_set = Set::empty()
+  for i = 0; i < operations; i = i + 1 {
+    test_set = Set::add(test_set, i)
+  }
+  let set_insert_time = get_current_time() - set_start_time
+  
+  // Test set membership
+  let set_lookup_start = get_current_time()
+  let found_count = 0
+  for i = 0; i < operations; i = i + 1 {
+    if Set::contains(test_set, i) {
+      found_count = found_count + 1
+    }
+  }
+  let set_lookup_time = get_current_time() - set_lookup_start
+  
+  // Verify results
+  assert_eq(list_sum, (operations * (operations - 1)) / 2)
+  assert_eq(map_sum, (operations * (operations - 1)) / 2)
+  assert_eq(found_count, operations)
+  
+  // Performance assertions
+  assert_true(list_push_time < 2000)
+  assert_true(list_access_time < 1000)
+  assert_true(map_insert_time < 2000)
+  assert_true(map_access_time < 1000)
+  assert_true(set_insert_time < 2000)
+  assert_true(set_lookup_time < 1000)
+  
+  // Log performance metrics
+  log_performance_metric("list_push", operations, list_push_time)
+  log_performance_metric("list_access", operations, list_access_time)
+  log_performance_metric("map_insert", operations, map_insert_time)
+  log_performance_metric("map_access", operations, map_access_time)
+  log_performance_metric("set_insert", operations, set_insert_time)
+  log_performance_metric("set_lookup", operations, set_lookup_time)
+}
+
+// Test 7: I/O Performance
+test "io performance benchmark" {
+  let data_size = 10000
+  let iterations = 100
+  
+  // Create test data
+  let test_data = "x" * data_size
+  assert_eq(test_data.length(), data_size)
+  
+  // Benchmark string serialization
+  let serialize_start_time = get_current_time()
+  let serialized_data = []
+  for i = 0; i < iterations; i = i + 1 {
+    let item = {
+      id: i,
+      data: test_data,
+      timestamp: get_current_time()
+    }
+    let serialized = serialize_to_string(item)
+    serialized_data = serialized_data.push(serialized)
+  }
+  let serialize_time = get_current_time() - serialize_start_time
+  
+  // Benchmark string deserialization
+  let deserialize_start_time = get_current_time()
+  let deserialized_count = 0
+  for i = 0; i < serialized_data.length(); i = i + 1 {
+    match deserialize_from_string(serialized_data[i]) {
+      Some(item) => deserialized_count = deserialized_count + 1
+      None => assert_true(false)
+    }
+  }
+  let deserialize_time = get_current_time() - deserialize_start_time
+  
+  // Verify results
+  assert_eq(serialized_data.length(), iterations)
+  assert_eq(deserialized_count, iterations)
+  
+  // Performance assertions
+  assert_true(serialize_time < 5000)    // Should complete in less than 5 seconds
+  assert_true(deserialize_time < 5000)  // Should complete in less than 5 seconds
+  
+  // Log performance metrics
+  log_performance_metric("serialization", iterations, serialize_time)
+  log_performance_metric("deserialization", iterations, deserialize_time)
+}
+
+// Test 8: Telemetry Performance
+test "telemetry performance benchmark" {
+  let metrics_count = 10000
+  let operations = 1000
+  
+  // Create metrics
+  let metrics_start_time = get_current_time()
+  let metrics = []
+  for i = 0; i < metrics_count; i = i + 1 {
+    let metric = Counter({
+      name: "metric_" + i.to_string(),
+      description: Some("Test metric " + i.to_string()),
+      unit: Some("operations")
+    })
+    metrics = metrics.push(metric)
+  }
+  let metrics_creation_time = get_current_time() - metrics_start_time
+  
+  // Benchmark metric recording
+  let record_start_time = get_current_time()
+  for i = 0; i < operations; i = i + 1 {
+    for j = 0; j < metrics.length(); j = j + 1 {
+      match metrics[j] {
+        Counter(name, _, _) => {
+          // Record a value for the counter
+          record_counter_value(name, i + j)
+        }
+        _ => assert_true(false)
       }
     }
-    
-    if !should_deallocate {
-      remaining_blocks = remaining_blocks.push(memory_blocks[i])
-    } else {
-      fragmented_blocks = fragmented_blocks.push(memory_blocks[i])
-    }
   }
+  let record_time = get_current_time() - record_start_time
   
-  assert_eq(remaining_blocks.length(), 5)
-  assert_eq(fragmented_blocks.length(), 3)
-  
-  // Calculate fragmentation ratio
-  let fragmented_memory = fragmented_blocks.fold(0, fn(acc, block) { acc + block.1 })
-  let fragmentation_ratio = fragmented_memory.to_float() / total_memory.to_float()
-  
-  assert_true(fragmentation_ratio > 0.0)
-  assert_true(fragmentation_ratio < 1.0)
-}
-
-// Test 4: CPU Utilization Benchmarking
-test "cpu utilization benchmarking" {
-  // Test CPU-intensive operations
-  let cpu_tasks = [
-    ("calculation_task", 100),
-    ("sorting_task", 150),
-    ("compression_task", 200),
-    ("encryption_task", 250)
-  ]
-  
-  let mut cpu_times = []
-  let mut total_cpu_time = 0
-  
-  for task in cpu_tasks {
-    let task_time = task.1
-    cpu_times = cpu_times.push((task.0, task_time))
-    total_cpu_time = total_cpu_time + task_time
-  }
-  
-  assert_eq(cpu_times.length(), 4)
-  assert_eq(total_cpu_time, 700)
-  
-  // Test CPU efficiency calculation
-  let useful_work = 600
-  let overhead_time = total_cpu_time - useful_work
-  let cpu_efficiency = (useful_work.to_float() / total_cpu_time.to_float()) * 100.0
-  
-  assert_eq(cpu_efficiency, 85.71428571428571)
-  
-  // Test parallel CPU utilization
-  let num_cores = 4
-  let parallel_tasks = [
-    [80, 120, 60, 100],  // Core 1 tasks
-    [90, 110, 70, 80],   // Core 2 tasks
-    [100, 80, 90, 110],  // Core 3 tasks
-    [70, 90, 100, 120]   // Core 4 tasks
-  ]
-  
-  let mut core_utilizations = []
-  
-  for core_tasks in parallel_tasks {
-    let core_total = core_tasks.fold(0, fn(acc, time) { acc + time })
-    let max_time = core_tasks.fold(0, fn(acc, time) { if time > acc { time } else { acc } })
-    let utilization = (core_total.to_float() / max_time.to_float()) * 100.0
-    core_utilizations = core_utilizations.push(utilization)
-  }
-  
-  assert_eq(core_utilizations.length(), num_cores)
-  
-  for utilization in core_utilizations {
-    assert_true(utilization <= 100.0)
-    assert_true(utilization > 0.0)
-  }
-  
-  // Calculate overall CPU utilization
-  let total_utilization = core_utilizations.fold(0.0, fn(acc, util) { acc + util })
-  let average_utilization = total_utilization / num_cores.to_float()
-  
-  assert_true(average_utilization > 0.0)
-  assert_true(average_utilization <= 100.0)
-}
-
-// Test 5: I/O Performance Benchmarking
-test "io performance benchmarking" {
-  // Test disk I/O performance
-  let file_sizes = [1024, 2048, 4096, 8192, 16384]  // bytes
-  let read_speeds = [10.0, 15.0, 20.0, 25.0, 30.0]  // MB/s
-  let write_speeds = [8.0, 12.0, 18.0, 22.0, 28.0]   // MB/s
-  
-  let mut read_throughputs = []
-  let mut write_throughputs = []
-  
-  for i in 0..<file_sizes.length() {
-    let file_size_mb = file_sizes[i].to_float() / (1024.0 * 1024.0)
-    let read_time = file_size_mb / read_speeds[i]
-    let write_time = file_size_mb / write_speeds[i]
-    
-    let read_throughput = file_sizes[i].to_float() / (read_time * 1000.0)
-    let write_throughput = file_sizes[i].to_float() / (write_time * 1000.0)
-    
-    read_throughputs = read_throughputs.push(read_throughput)
-    write_throughputs = write_throughputs.push(write_throughput)
-  }
-  
-  assert_eq(read_throughputs.length(), 5)
-  assert_eq(write_throughputs.length(), 5)
-  
-  // Test network I/O performance
-  let packet_sizes = [64, 128, 256, 512, 1024, 1500]  // bytes
-  let network_bandwidth = 100.0  // Mbps
-  let latency_per_packet = 1.0   // ms
-  
-  let mut effective_throughputs = []
-  
-  for packet_size in packet_sizes {
-    let packet_size_bits = packet_size * 8
-    let transmission_time = packet_size_bits / (network_bandwidth * 1000.0)  // seconds
-    let total_time = transmission_time + (latency_per_packet / 1000.0)
-    let effective_throughput = packet_size_bits / total_time  // bits per second
-    
-    effective_throughputs = effective_throughputs.push(effective_throughput)
-  }
-  
-  assert_eq(effective_throughputs.length(), 6)
-  
-  // Verify throughput increases with packet size (due to lower overhead ratio)
-  for i in 1..<effective_throughputs.length() {
-    assert_true(effective_throughputs[i] >= effective_throughputs[i-1])
-  }
-}
-
-// Test 6: Scalability Benchmarking
-test "scalability benchmarking" {
-  // Test horizontal scalability
-  let node_counts = [1, 2, 4, 8, 16]
-  let base_throughput = 1000.0  // operations per second for single node
-  let mut scale_throughputs = []
-  
-  for node_count in node_counts {
-    // Simulate non-linear scaling with diminishing returns
-    let efficiency_factor = 1.0 - (0.05 * (node_count - 1).to_float())
-    if efficiency_factor < 0.5 {
-      efficiency_factor = 0.5
-    }
-    
-    let scaled_throughput = base_throughput * node_count.to_float() * efficiency_factor
-    scale_throughputs = scale_throughputs.push(scaled_throughput)
-  }
-  
-  assert_eq(scale_throughputs.length(), 5)
-  assert_eq(scale_throughputs[0], 1000.0)  // 1 node
-  assert_true(scale_throughputs[1] > 1500.0)  // 2 nodes
-  assert_true(scale_throughputs[4] < 8000.0)  // 16 nodes (due to overhead)
-  
-  // Test vertical scalability
-  let cpu_configs = [
-    ("2_cores", 2.0),
-    ("4_cores", 4.0),
-    ("8_cores", 8.0),
-    ("16_cores", 16.0)
-  ]
-  
-  let base_performance = 100.0
-  let mut vertical_performances = []
-  
-  for config in cpu_configs {
-    let core_count = config.1
-    // Simulate diminishing returns with more cores
-    let scaling_efficiency = 1.0 / (1.0 + (core_count - 1.0) * 0.1)
-    let performance = base_performance * core_count * scaling_efficiency
-    vertical_performances = vertical_performances.push((config.0, performance))
-  }
-  
-  assert_eq(vertical_performances.length(), 4)
-  
-  // Verify performance increases but with diminishing returns
-  assert_true(vertical_performances[1].1 > vertical_performances[0].1)
-  assert_true(vertical_performances[2].1 > vertical_performances[1].1)
-  assert_true(vertical_performances[3].1 > vertical_performances[2].1)
-  
-  // Check scaling efficiency
-  let scaling_2_to_4 = vertical_performances[1].1 / vertical_performances[0].1
-  let scaling_4_to_8 = vertical_performances[2].1 / vertical_performances[1].1
-  let scaling_8_to_16 = vertical_performances[3].1 / vertical_performances[2].1
-  
-  assert_true(scaling_2_to_4 > scaling_4_to_8)
-  assert_true(scaling_4_to_8 > scaling_8_to_16)
-}
-
-// Test 7: Cache Performance Benchmarking
-test "cache performance benchmarking" {
-  // Test cache hit rates
-  let cache_sizes = [100, 500, 1000, 5000, 10000]
-  let total_requests = 10000
-  let mut cache_hit_rates = []
-  
-  for cache_size in cache_sizes {
-    // Simulate cache hit rate based on cache size (larger cache = higher hit rate)
-    let hit_rate = 1.0 - (1.0 / (cache_size.to_float() / 1000.0 + 1.0))
-    if hit_rate > 0.95 {
-      hit_rate = 0.95
-    }
-    
-    let hits = (total_requests.to_float() * hit_rate).to_int()
-    let misses = total_requests - hits
-    
-    cache_hit_rates = cache_hit_rates.push((cache_size, hit_rate, hits, misses))
-  }
-  
-  assert_eq(cache_hit_rates.length(), 5)
-  
-  // Verify hit rate increases with cache size
-  for i in 1..<cache_hit_rates.length() {
-    assert_true(cache_hit_rates[i].1 >= cache_hit_rates[i-1].1)
-  }
-  
-  // Test cache performance impact
-  let memory_access_time = 100  // nanoseconds
-  let cache_access_time = 5     // nanoseconds
-  
-  let mut average_access_times = []
-  
-  for cache_data in cache_hit_rates {
-    let hit_rate = cache_data.1
-    let avg_access_time = (hit_rate * cache_access_time.to_float()) + 
-                         ((1.0 - hit_rate) * memory_access_time.to_float())
-    average_access_times = avg_access_times.push((cache_data.0, avg_access_time))
-  }
-  
-  assert_eq(average_access_times.length(), 5)
-  
-  // Verify access time decreases with higher hit rates
-  for i in 1..<average_access_times.length() {
-    assert_true(average_access_times[i].1 <= average_access_times[i-1].1)
-  }
-  
-  // Test cache eviction policies
-  let eviction_policies = ["LRU", "LFU", "FIFO", "Random"]
-  let policy_hit_rates = [0.85, 0.82, 0.78, 0.75]
-  
-  let mut policy_performance = []
-  
-  for i in 0..<eviction_policies.length() {
-    let policy = eviction_policies[i]
-    let hit_rate = policy_hit_rates[i]
-    let avg_access_time = (hit_rate * cache_access_time.to_float()) + 
-                         ((1.0 - hit_rate) * memory_access_time.to_float())
-    
-    policy_performance = policy_performance.push((policy, hit_rate, avg_access_time))
-  }
-  
-  assert_eq(policy_performance.length(), 4)
-  
-  // Find best performing policy
-  let mut best_policy = policy_performance[0]
-  for policy in policy_performance {
-    if policy.2 < best_policy.2 {
-      best_policy = policy
-    }
-  }
-  
-  assert_eq(best_policy.0, "LRU")
-  assert_eq(best_policy.1, 0.85)
-}
-
-// Test 8: Algorithm Performance Benchmarking
-test "algorithm performance benchmarking" {
-  // Test sorting algorithm performance
-  let data_sizes = [100, 500, 1000, 5000, 10000]
-  let sorting_algorithms = ["bubble_sort", "quick_sort", "merge_sort", "heap_sort"]
-  
-  // Simulate time complexity (O(n²) for bubble sort, O(n log n) for others)
-  let algorithm_complexities = {
-    "bubble_sort": 2.0,    // O(n²)
-    "quick_sort": 1.5,     // O(n log n) - lower constant factor
-    "merge_sort": 1.8,     // O(n log n) - higher constant factor
-    "heap_sort": 2.0       // O(n log n) - highest constant factor
-  }
-  
-  let mut sorting_performance = []
-  
-  for algorithm in sorting_algorithms {
-    let complexity = match algorithm_complexities.get(algorithm) {
-      Some(c) => c,
-      None => 1.0
-    }
-    
-    let mut algorithm_times = []
-    
-    for size in data_sizes {
-      // Simulate execution time based on complexity
-      let base_time = 0.001  // milliseconds
-      let execution_time = base_time * (size.to_float().pow(complexity))
-      algorithm_times = algorithm_times.push((size, execution_time))
-    }
-    
-    sorting_performance = sorting_performance.push((algorithm, algorithm_times))
-  }
-  
-  assert_eq(sorting_performance.length(), 4)
-  
-  // Verify bubble sort is slowest for large datasets
-  let bubble_sort_times = match sorting_performance[0] {
-    ("bubble_sort", times) => times,
-    _ => []
-  }
-  
-  let quick_sort_times = match sorting_performance[1] {
-    ("quick_sort", times) => times,
-    _ => []
-  }
-  
-  // For larger datasets, quick_sort should be faster than bubble_sort
-  assert_true(quick_sort_times[4].1 < bubble_sort_times[4].1)
-  
-  // Test search algorithm performance
-  let search_algorithms = ["linear_search", "binary_search"]
-  let search_dataset_sizes = [100, 1000, 10000, 100000]
-  
-  let mut search_performance = []
-  
-  for algorithm in search_algorithms {
-    let mut algorithm_times = []
-    
-    for size in search_dataset_sizes {
-      let execution_time = match algorithm {
-        "linear_search" => size.to_float() * 0.001,  // O(n)
-        "binary_search" => size.to_float().log2() * 0.001,  // O(log n)
-        _ => 0.0
+  // Benchmark metric aggregation
+  let aggregate_start_time = get_current_time()
+  let total_operations = 0
+  for i = 0; i < metrics.length(); i = i + 1 {
+    match metrics[i] {
+      Counter(name, _, _) => {
+        let value = get_counter_value(name)
+        total_operations = total_operations + value
       }
-      algorithm_times = algorithm_times.push((size, execution_time))
+      _ => assert_true(false)
     }
-    
-    search_performance = search_performance.push((algorithm, algorithm_times))
   }
+  let aggregate_time = get_current_time() - aggregate_start_time
   
-  assert_eq(search_performance.length(), 2)
+  // Verify results
+  assert_eq(metrics.length(), metrics_count)
+  assert_true(total_operations > 0)
   
-  // Verify binary search is faster for large datasets
-  let linear_times = match search_performance[0] {
-    ("linear_search", times) => times,
-    _ => []
-  }
+  // Performance assertions
+  assert_true(metrics_creation_time < 2000)  // Should complete in less than 2 seconds
+  assert_true(record_time < 5000)            // Should complete in less than 5 seconds
+  assert_true(aggregate_time < 1000)         // Should complete in less than 1 second
   
-  let binary_times = match search_performance[1] {
-    ("binary_search", times) => times,
-    _ => []
-  }
-  
-  // For larger datasets, binary search should be significantly faster
-  assert_true(binary_times[3].1 < linear_times[3].1)
-  assert_true(binary_times[3].1 * 10.0 < linear_times[3].1)
+  // Log performance metrics
+  log_performance_metric("metrics_creation", metrics_count, metrics_creation_time)
+  log_performance_metric("metrics_recording", operations * metrics_count, record_time)
+  log_performance_metric("metrics_aggregation", metrics_count, aggregate_time)
 }
 
-// Test 9: Database Performance Benchmarking
-test "database performance benchmarking" {
-  // Test query performance
-  let query_types = [
-    ("simple_select", 10),
-    ("complex_join", 100),
-    ("aggregate_query", 50),
-    ("insert_operation", 20),
-    ("update_operation", 30),
-    ("delete_operation", 25)
-  ]
-  
-  let mut query_performance = []
-  
-  for query in query_types {
-    let base_time = query.1  // milliseconds
-    let num_executions = 100
-    let mut total_time = 0.0
-    
-    for i in 0..<num_executions {
-      // Simulate query time variation
-      let variation = (i * 13) % 20 - 10  // -10 to +10
-      let execution_time = base_time + variation
-      total_time = total_time + execution_time.to_float()
-    }
-    
-    let average_time = total_time / num_executions.to_float()
-    let throughput = 1000.0 / average_time  // queries per second
-    
-    query_performance = query_performance.push((query.0, average_time, throughput))
-  }
-  
-  assert_eq(query_performance.length(), 6)
-  
-  // Find fastest and slowest queries
-  let mut fastest_query = query_performance[0]
-  let mut slowest_query = query_performance[0]
-  
-  for query in query_performance {
-    if query.1 < fastest_query.1 {
-      fastest_query = query
-    }
-    if query.1 > slowest_query.1 {
-      slowest_query = query
+// Helper functions for performance testing
+func log_performance_metric(operation : String, iterations : Int, time_ms : Int) {
+  let ops_per_second = (iterations * 1000) / time_ms
+  let message = operation + ": " + iterations.to_string() + " operations in " + 
+                time_ms.to_string() + "ms (" + ops_per_second.to_string() + " ops/sec)"
+  // In a real implementation, this would log to a monitoring system
+  assert_true(message.length() > 0)
+}
+
+func bubble_sort(arr : Array[Int]) -> Array[Int] {
+  let result = arr.copy()
+  let n = result.length()
+  for i = 0; i < n; i = i + 1 {
+    for j = 0; j < n - i - 1; j = j + 1 {
+      if result[j] > result[j + 1] {
+        let temp = result[j]
+        result[j] = result[j + 1]
+        result[j + 1] = temp
+      }
     }
   }
-  
-  assert_eq(fastest_query.0, "simple_select")
-  assert_eq(slowest_query.0, "complex_join")
-  
-  // Test index performance impact
-  let indexed_queries = [
-    ("indexed_select", 5),
-    ("non_indexed_select", 50)
-  ]
-  
-  let mut index_performance = []
-  
-  for query in indexed_queries {
-    let execution_time = query.1
-    let performance_gain = 50.0 / execution_time.to_float()  // Relative to non-indexed
-    index_performance = index_performance.push((query.0, execution_time, performance_gain))
+  return result
+}
+
+func quick_sort(arr : Array[Int]) -> Array[Int] {
+  if arr.length() <= 1 {
+    return arr
   }
   
-  assert_eq(index_performance.length(), 2)
+  let pivot = arr[0]
+  let less = []
+  let equal = []
+  let greater = []
   
-  let indexed_performance = match index_performance[0] {
-    ("indexed_select", time, gain) => (time, gain),
-    _ => (0, 0.0)
-  }
-  
-  assert_eq(indexed_performance.0, 5)
-  assert_eq(indexed_performance.1, 10.0)  // 10x performance improvement
-  
-  // Test connection pool performance
-  let pool_sizes = [5, 10, 20, 50]
-  let concurrent_requests = 100
-  
-  let mut pool_performance = []
-  
-  for pool_size in pool_sizes {
-    // Simulate queuing delay based on pool size
-    let max_concurrent = pool_size
-    let queue_length = if concurrent_requests > max_concurrent {
-      concurrent_requests - max_concurrent
+  for i = 0; i < arr.length(); i = i + 1 {
+    if arr[i] < pivot {
+      less = less.push(arr[i])
+    } else if arr[i] == pivot {
+      equal = equal.push(arr[i])
     } else {
-      0
+      greater = greater.push(arr[i])
     }
-    
-    let base_response_time = 10.0  // milliseconds
-    let queue_delay = queue_length.to_float() * 2.0  // 2ms per queued request
-    let avg_response_time = base_response_time + queue_delay
-    let throughput = 1000.0 / avg_response_time
-    
-    pool_performance = pool_performance.push((pool_size, avg_response_time, throughput))
   }
   
-  assert_eq(pool_performance.length(), 4)
-  
-  // Verify larger pools have better throughput (up to a point)
-  assert_true(pool_performance[1].2 > pool_performance[0].2)
-  assert_true(pool_performance[2].2 > pool_performance[1].2)
+  return quick_sort(less) + equal + quick_sort(greater)
 }
 
-// Test 10: Network Performance Benchmarking
-test "network performance benchmarking" {
-  // Test bandwidth utilization
-  let connection_types = [
-    ("wifi", 54.0),
-    ("ethernet", 1000.0),
-    ("fiber", 10000.0)
-  ]
+func merge_sort(arr : Array[Int]) -> Array[Int] {
+  if arr.length() <= 1 {
+    return arr
+  }
   
-  let file_sizes = [1, 10, 100, 1000]  // MB
+  let middle = arr.length() / 2
+  let left = merge_sort(arr.slice(0, middle))
+  let right = merge_sort(arr.slice(middle, arr.length()))
   
-  let mut transfer_times = []
+  return merge(left, right)
+}
+
+func merge(left : Array[Int], right : Array[Int]) -> Array[Int] {
+  let result = []
+  let i = 0
+  let j = 0
   
-  for connection in connection_types {
-    let bandwidth_mbps = connection.1
-    let mut connection_times = []
-    
-    for size in file_sizes {
-      let size_mb = size.to_float()
-      let size_megabits = size_mb * 8.0
-      let transfer_time = size_megabits / bandwidth_mbps  // seconds
-      connection_times = connection_times.push((size, transfer_time))
+  while i < left.length() && j < right.length() {
+    if left[i] <= right[j] {
+      result = result.push(left[i])
+      i = i + 1
+    } else {
+      result = result.push(right[j])
+      j = j + 1
     }
-    
-    transfer_times = transfer_times.push((connection.0, connection_times))
   }
   
-  assert_eq(transfer_times.length(), 3)
-  
-  // Verify fiber is fastest for all file sizes
-  let fiber_times = match transfer_times[2] {
-    ("fiber", times) => times,
-    _ => []
+  while i < left.length() {
+    result = result.push(left[i])
+    i = i + 1
   }
   
-  let wifi_times = match transfer_times[0] {
-    ("wifi", times) => times,
-    _ => []
+  while j < right.length() {
+    result = result.push(right[j])
+    j = j + 1
   }
   
-  for i in 0..<fiber_times.length() {
-    assert_true(fiber_times[i].1 < wifi_times[i].1)
+  return result
+}
+
+func is_sorted(arr : Array[Int]) -> Bool {
+  for i = 1; i < arr.length(); i = i + 1 {
+    if arr[i] < arr[i - 1] {
+      return false
+    }
   }
-  
-  // Test latency impact on small transfers
-  let latencies = [1, 10, 50, 100]  // milliseconds
-  let small_file_size = 0.001  // MB (1 KB)
-  let high_bandwidth = 1000.0  // Mbps
-  
-  let mut latency_impact = []
-  
-  for latency in latencies {
-    let transfer_time = (small_file_size * 8.0) / high_bandwidth  // seconds
-    let total_time = transfer_time + (latency / 1000.0)
-    let latency_percentage = (latency / 1000.0) / total_time * 100.0
-    
-    latency_impact = latency_impact.push((latency, total_time, latency_percentage))
+  return true
+}
+
+func serialize_to_string(obj : Any) -> String {
+  // Simplified serialization for testing
+  return "serialized:" + obj.to_string()
+}
+
+func deserialize_from_string(str : String) -> Option[Any] {
+  // Simplified deserialization for testing
+  if str.contains("serialized:") {
+    return Some("deserialized_object")
   }
-  
-  assert_eq(latency_impact.length(), 4)
-  
-  // Verify latency has higher impact on small transfers
-  assert_true(latency_impact[0].2 > 50.0)  // 1ms latency > 50% of total time
-  assert_true(latency_impact[3].2 > 90.0)  // 100ms latency > 90% of total time
-  
-  // Test concurrent connection performance
-  let concurrent_connections = [1, 5, 10, 20, 50]
-  let total_bandwidth = 1000.0  // Mbps
-  
-  let mut concurrent_performance = []
-  
-  for connections in concurrent_connections {
-    // Simulate bandwidth sharing with overhead
-    let per_connection_bandwidth = total_bandwidth / connections.to_float()
-    let overhead_factor = 1.0 + (connections.to_float() * 0.02)  // 2% overhead per connection
-    let effective_bandwidth = per_connection_bandwidth / overhead_factor
-    
-    let file_size_mb = 10.0
-    let transfer_time = (file_size_mb * 8.0) / effective_bandwidth
-    let total_throughput = connections.to_float() * (file_size_mb / transfer_time)
-    
-    concurrent_performance = concurrent_performance.push((connections, effective_bandwidth, total_throughput))
-  }
-  
-  assert_eq(concurrent_performance.length(), 5)
-  
-  // Verify total throughput increases with more connections (but with diminishing returns)
-  assert_true(concurrent_performance[1].2 > concurrent_performance[0].2)
-  assert_true(concurrent_performance[2].2 > concurrent_performance[1].2)
-  
-  // Check for diminishing returns
-  let scaling_1_to_5 = concurrent_performance[1].2 / concurrent_performance[0].2
-  let scaling_10_to_20 = concurrent_performance[3].2 / concurrent_performance[2].2
-  
-  assert_true(scaling_1_to_5 > scaling_10_to_20)
+  return None
+}
+
+func record_counter_value(name : String, value : Int) -> Unit {
+  // Simplified counter recording for testing
+  assert_true(name.length() > 0)
+  assert_true(value >= 0)
+}
+
+func get_counter_value(name : String) -> Int {
+  // Simplified counter retrieval for testing
+  return 100  // Return a fixed value for testing
 }

@@ -1,609 +1,983 @@
-// Azimuth 配置管理综合测试
-// 测试遥测系统的配置管理功能，包括动态配置、验证和默认值处理
+// Azimuth Comprehensive Configuration Management Tests
+// This file contains comprehensive test cases for configuration management
 
-test "基本配置加载测试" {
-  // 模拟配置结构
-  struct TelemetryConfig {
-    service_name: String
-    service_version: String
-    endpoint: String
-    timeout: Int
-    enable_metrics: Bool
-    enable_tracing: Bool
-    sample_rate: Float
+// Test 1: Basic Configuration Loading and Access
+test "basic configuration loading and access" {
+  let config_manager = ConfigurationManager::new()
+  
+  // Load configuration from different sources
+  config_manager.load_from_file("config.json")
+  config_manager.load_from_environment()
+  config_manager.load_from_command_line()
+  
+  // Test string configuration values
+  let app_name = config_manager.get_string("app.name")
+  match app_name {
+    Some(name) => assert_eq(name, "Azimuth")
+    None => assert_true(false)
   }
   
-  // 创建默认配置
-  let default_config = TelemetryConfig {
-    service_name: "unknown_service",
-    service_version: "1.0.0",
-    endpoint: "http://localhost:4318",
-    timeout: 30,
-    enable_metrics: true,
-    enable_tracing: true,
-    sample_rate: 1.0
+  let app_version = config_manager.get_string("app.version")
+  match app_version {
+    Some(version) => assert_eq(version, "1.0.0")
+    None => assert_true(false)
   }
   
-  // 模拟配置加载函数
-  let load_config = fn(config_data: String) -> TelemetryConfig {
-    if config_data.contains("service_name") {
-      TelemetryConfig {
-        service_name: "payment_service",
-        service_version: "2.1.0",
-        endpoint: "https://otel-collector.example.com:4318",
-        timeout: 60,
-        enable_metrics: true,
-        enable_tracing: false,
-        sample_rate: 0.5
+  // Test integer configuration values
+  let server_port = config_manager.get_int("server.port")
+  match server_port {
+    Some(port) => assert_eq(port, 8080)
+    None => assert_true(false)
+  }
+  
+  let max_connections = config_manager.get_int("server.max_connections")
+  match max_connections {
+    Some(connections) => assert_eq(connections, 100)
+    None => assert_true(false)
+  }
+  
+  // Test boolean configuration values
+  let debug_mode = config_manager.get_bool("debug.enabled")
+  match debug_mode {
+    Some(debug) => assert_true(debug)
+    None => assert_true(false)
+  }
+  
+  let production_mode = config_manager.get_bool("app.production")
+  match production_mode {
+    Some(production) => assert_false(production)
+    None => assert_true(false)
+  }
+  
+  // Test float configuration values
+  let timeout = config_manager.get_float("server.timeout")
+  match timeout {
+    Some(t) => assert_eq(t, 30.5)
+    None => assert_true(false)
+  }
+  
+  // Test array configuration values
+  let allowed_hosts = config_manager.get_string_array("security.allowed_hosts")
+  match allowed_hosts {
+    Some(hosts) => {
+      assert_eq(hosts.length(), 3)
+      assert_eq(hosts[0], "localhost")
+      assert_eq(hosts[1], "127.0.0.1")
+      assert_eq(hosts[2], "::1")
+    }
+    None => assert_true(false)
+  }
+}
+
+// Test 2: Configuration Hierarchy and Override
+test "configuration hierarchy and override" {
+  let config_manager = ConfigurationManager::new()
+  
+  // Set up configuration hierarchy: defaults < file < environment < command line
+  config_manager.set_default("database.host", "localhost")
+  config_manager.set_default("database.port", 5432)
+  config_manager.set_default("database.name", "azimuth_db")
+  
+  // Load from file (overrides defaults)
+  config_manager.load_from_file("database_config.json")
+  
+  // Override with environment variables
+  config_manager.set_environment("DATABASE_HOST", "db.example.com")
+  config_manager.set_environment("DATABASE_PORT", "5433")
+  
+  // Override with command line arguments
+  config_manager.set_command_line("--database-name", "production_db")
+  
+  // Verify hierarchy
+  let db_host = config_manager.get_string("database.host")
+  match db_host {
+    Some(host) => assert_eq(host, "db.example.com")  // From environment
+    None => assert_true(false)
+  }
+  
+  let db_port = config_manager.get_int("database.port")
+  match db_port {
+    Some(port) => assert_eq(port, 5433)  // From environment
+    None => assert_true(false)
+  }
+  
+  let db_name = config_manager.get_string("database.name")
+  match db_name {
+    Some(name) => assert_eq(name, "production_db")  // From command line
+    None => assert_true(false)
+  }
+  
+  // Test nested configuration access
+  let nested_value = config_manager.get_string("database.connection.pool.size")
+  match nested_value {
+    Some(value) => assert_eq(value, "10")
+    None => assert_true(false)
+  }
+}
+
+// Test 3: Configuration Validation
+test "configuration validation" {
+  let config_manager = ConfigurationManager::new()
+  
+  // Set up validation rules
+  config_manager.add_validation_rule("server.port", ValidationRule::int_range(1, 65535))
+  config_manager.add_validation_rule("database.host", ValidationRule::non_empty_string())
+  config_manager.add_validation_rule("app.name", ValidationRule::regex_match("^[a-zA-Z][a-zA-Z0-9_]*$"))
+  config_manager.add_validation_rule("security.ssl.enabled", ValidationRule::boolean())
+  config_manager.add_validation_rule("cache.ttl", ValidationRule::float_range(0.0, 3600.0))
+  
+  // Load valid configuration
+  config_manager.set_value("server.port", 8080)
+  config_manager.set_value("database.host", "localhost")
+  config_manager.set_value("app.name", "Azimuth")
+  config_manager.set_value("security.ssl.enabled", true)
+  config_manager.set_value("cache.ttl", 300.5)
+  
+  // Validate configuration
+  let validation_result = config_manager.validate()
+  assert_true(validation_result.is_valid)
+  assert_eq(validation_result.errors.length(), 0)
+  
+  // Test invalid configuration
+  config_manager.set_value("server.port", 70000)  // Invalid port
+  config_manager.set_value("database.host", "")   // Empty host
+  config_manager.set_value("app.name", "123Invalid")  // Invalid name
+  config_manager.set_value("security.ssl.enabled", "not_a_boolean")  // Invalid boolean
+  config_manager.set_value("cache.ttl", -10.0)    // Invalid TTL
+  
+  // Validate invalid configuration
+  let invalid_validation_result = config_manager.validate()
+  assert_false(invalid_validation_result.is_valid)
+  assert_eq(invalid_validation_result.errors.length(), 5)
+  
+  // Verify specific error messages
+  assert_true(invalid_validation_result.errors[0].contains("server.port"))
+  assert_true(invalid_validation_result.errors[1].contains("database.host"))
+  assert_true(invalid_validation_result.errors[2].contains("app.name"))
+  assert_true(invalid_validation_result.errors[3].contains("security.ssl.enabled"))
+  assert_true(invalid_validation_result.errors[4].contains("cache.ttl"))
+}
+
+// Test 4: Dynamic Configuration Updates
+test "dynamic configuration updates" {
+  let config_manager = ConfigurationManager::new()
+  
+  // Set initial configuration
+  config_manager.set_value("feature.flags.new_ui", true)
+  config_manager.set_value("feature.flags.experimental_api", false)
+  config_manager.set_value("performance.max_workers", 4)
+  config_manager.set_value("logging.level", "INFO")
+  
+  // Register configuration change listeners
+  let ui_flag_changed = AtomicBoolean(false)
+  let api_flag_changed = AtomicBoolean(false)
+  let workers_changed = AtomicBoolean(false)
+  let log_level_changed = AtomicBoolean(false)
+  
+  config_manager.add_change_listener("feature.flags.new_ui", fn(old_value, new_value) {
+    if old_value != new_value {
+      ui_flag_changed.set(true)
+    }
+  })
+  
+  config_manager.add_change_listener("feature.flags.experimental_api", fn(old_value, new_value) {
+    if old_value != new_value {
+      api_flag_changed.set(true)
+    }
+  })
+  
+  config_manager.add_change_listener("performance.max_workers", fn(old_value, new_value) {
+    if old_value != new_value {
+      workers_changed.set(true)
+    }
+  })
+  
+  config_manager.add_change_listener("logging.level", fn(old_value, new_value) {
+    if old_value != new_value {
+      log_level_changed.set(true)
+    }
+  })
+  
+  // Update configuration values
+  config_manager.update_value("feature.flags.new_ui", false)
+  config_manager.update_value("feature.flags.experimental_api", true)
+  config_manager.update_value("performance.max_workers", 8)
+  config_manager.update_value("logging.level", "DEBUG")
+  
+  // Verify change listeners were triggered
+  assert_true(ui_flag_changed.get())
+  assert_true(api_flag_changed.get())
+  assert_true(workers_changed.get())
+  assert_true(log_level_changed.get())
+  
+  // Verify updated values
+  let new_ui_flag = config_manager.get_bool("feature.flags.new_ui")
+  match new_ui_flag {
+    Some(flag) => assert_false(flag)
+    None => assert_true(false)
+  }
+  
+  let api_flag = config_manager.get_bool("feature.flags.experimental_api")
+  match api_flag {
+    Some(flag) => assert_true(flag)
+    None => assert_true(false)
+  }
+  
+  let max_workers = config_manager.get_int("performance.max_workers")
+  match max_workers {
+    Some(workers) => assert_eq(workers, 8)
+    None => assert_true(false)
+  }
+  
+  let log_level = config_manager.get_string("logging.level")
+  match log_level {
+    Some(level) => assert_eq(level, "DEBUG")
+    None => assert_true(false)
+  }
+}
+
+// Test 5: Configuration Profiles and Environments
+test "configuration profiles and environments" {
+  let config_manager = ConfigurationManager::new()
+  
+  // Load base configuration
+  config_manager.load_from_file("base_config.json")
+  
+  // Load development profile
+  config_manager.load_profile("development")
+  
+  // Verify development-specific values
+  let dev_db_host = config_manager.get_string("database.host")
+  match dev_db_host {
+    Some(host) => assert_eq(host, "localhost")
+    None => assert_true(false)
+  }
+  
+  let dev_log_level = config_manager.get_string("logging.level")
+  match dev_log_level {
+    Some(level) => assert_eq(level, "DEBUG")
+    None => assert_true(false)
+  }
+  
+  let dev_debug = config_manager.get_bool("debug.enabled")
+  match dev_debug {
+    Some(debug) => assert_true(debug)
+    None => assert_true(false)
+  }
+  
+  // Switch to production profile
+  config_manager.load_profile("production")
+  
+  // Verify production-specific values
+  let prod_db_host = config_manager.get_string("database.host")
+  match prod_db_host {
+    Some(host) => assert_eq(host, "prod-db.example.com")
+    None => assert_true(false)
+  }
+  
+  let prod_log_level = config_manager.get_string("logging.level")
+  match prod_log_level {
+    Some(level) => assert_eq(level, "ERROR")
+    None => assert_true(false)
+  }
+  
+  let prod_debug = config_manager.get_bool("debug.enabled")
+  match prod_debug {
+    Some(debug) => assert_false(debug)
+    None => assert_true(false)
+  }
+  
+  // Test profile inheritance
+  let app_name = config_manager.get_string("app.name")
+  match app_name {
+    Some(name) => assert_eq(name, "Azimuth")  // Should be inherited from base
+    None => assert_true(false)
+  }
+  
+  // Test profile-specific overrides
+  let prod_ssl_enabled = config_manager.get_bool("security.ssl.enabled")
+  match prod_ssl_enabled {
+    Some(enabled) => assert_true(enabled)
+    None => assert_true(false)
+  }
+}
+
+// Test 6: Configuration Encryption and Security
+test "configuration encryption and security" {
+  let config_manager = ConfigurationManager::new()
+  
+  // Set up encryption
+  let encryption_key = "my_secret_key_12345"
+  config_manager.set_encryption_key(encryption_key)
+  
+  // Store sensitive configuration values
+  config_manager.set_encrypted_value("database.password", "secret_password")
+  config_manager.set_encrypted_value("api.secret_key", "api_key_12345")
+  config_manager.set_encrypted_value("jwt.secret", "jwt_secret_key")
+  
+  // Verify encrypted values are stored (not in plain text)
+  let raw_db_password = config_manager.get_raw_value("database.password")
+  assert_ne(raw_db_password, "secret_password")
+  assert_true(raw_db_password.contains("encrypted:"))
+  
+  // Verify decrypted values can be retrieved
+  let db_password = config_manager.get_decrypted_string("database.password")
+  match db_password {
+    Some(password) => assert_eq(password, "secret_password")
+    None => assert_true(false)
+  }
+  
+  let api_key = config_manager.get_decrypted_string("api.secret_key")
+  match api_key {
+    Some(key) => assert_eq(key, "api_key_12345")
+    None => assert_true(false)
+  }
+  
+  let jwt_secret = config_manager.get_decrypted_string("jwt.secret")
+  match jwt_secret {
+    Some(secret) => assert_eq(secret, "jwt_secret_key")
+    None => assert_true(false)
+  }
+  
+  // Test configuration access control
+  config_manager.set_access_control("admin.credentials", ["admin", "superuser"])
+  config_manager.set_access_control("database.password", ["db_admin", "admin"])
+  config_manager.set_access_control("api.secret_key", ["api_admin", "admin"])
+  
+  // Test access with different user roles
+  let admin_access = config_manager.check_access("admin.credentials", "admin")
+  assert_true(admin_access)
+  
+  let user_access = config_manager.check_access("admin.credentials", "user")
+  assert_false(user_access)
+  
+  let db_admin_access = config_manager.check_access("database.password", "db_admin")
+  assert_true(db_admin_access)
+  
+  // Test secure configuration export
+  let secure_export = config_manager.export_secure()
+  assert_true(secure_export.contains("database.password=encrypted:"))
+  assert_true(secure_export.contains("api.secret_key=encrypted:"))
+  assert_false(secure_export.contains("secret_password"))
+  assert_false(secure_export.contains("api_key_12345"))
+}
+
+// Test 7: Configuration Backup and Restore
+test "configuration backup and restore" {
+  let config_manager = ConfigurationManager::new()
+  
+  // Set up initial configuration
+  config_manager.set_value("app.name", "Azimuth")
+  config_manager.set_value("app.version", "1.0.0")
+  config_manager.set_value("server.port", 8080)
+  config_manager.set_value("database.host", "localhost")
+  config_manager.set_value("database.port", 5432)
+  config_manager.set_value("debug.enabled", true)
+  
+  // Create backup
+  let backup_id = config_manager.create_backup()
+  assert_true(backup_id.length() > 0)
+  
+  // Modify configuration
+  config_manager.set_value("app.version", "2.0.0")
+  config_manager.set_value("server.port", 9090)
+  config_manager.set_value("database.host", "remote.db.example.com")
+  config_manager.set_value("debug.enabled", false)
+  
+  // Verify modified values
+  let modified_version = config_manager.get_string("app.version")
+  match modified_version {
+    Some(version) => assert_eq(version, "2.0.0")
+    None => assert_true(false)
+  }
+  
+  // Restore from backup
+  config_manager.restore_from_backup(backup_id)
+  
+  // Verify restored values
+  let restored_version = config_manager.get_string("app.version")
+  match restored_version {
+    Some(version) => assert_eq(version, "1.0.0")
+    None => assert_true(false)
+  }
+  
+  let restored_port = config_manager.get_int("server.port")
+  match restored_port {
+    Some(port) => assert_eq(port, 8080)
+    None => assert_true(false)
+  }
+  
+  let restored_host = config_manager.get_string("database.host")
+  match restored_host {
+    Some(host) => assert_eq(host, "localhost")
+    None => assert_true(false)
+  }
+  
+  let restored_debug = config_manager.get_bool("debug.enabled")
+  match restored_debug {
+    Some(debug) => assert_true(debug)
+    None => assert_true(false)
+  }
+  
+  // Test backup listing and deletion
+  let backups = config_manager.list_backups()
+  assert_true(backups.length() >= 1)
+  assert_true(backups.contains(backup_id))
+  
+  // Delete backup
+  config_manager.delete_backup(backup_id)
+  
+  // Verify backup is deleted
+  let backups_after_delete = config_manager.list_backups()
+  assert_false(backups_after_delete.contains(backup_id))
+}
+
+// Test 8: Configuration Templates and Inheritance
+test "configuration templates and inheritance" {
+  let config_manager = ConfigurationManager::new()
+  
+  // Create base template
+  let base_template = ConfigurationTemplate::new("base")
+  base_template.set_value("app.name", "Azimuth")
+  base_template.set_value("app.version", "1.0.0")
+  base_template.set_value("server.port", 8080)
+  base_template.set_value("server.host", "0.0.0.0")
+  base_template.set_value("logging.level", "INFO")
+  
+  // Create service template that inherits from base
+  let service_template = ConfigurationTemplate::new("service")
+  service_template.inherit_from(base_template)
+  service_template.set_value("service.name", "telemetry_service")
+  service_template.set_value("service.version", "1.0.0")
+  service_template.set_value("service.port", 8081)
+  service_template.override_value("logging.level", "DEBUG")  // Override base value
+  
+  // Create environment-specific template
+  let prod_template = ConfigurationTemplate::new("production")
+  prod_template.inherit_from(service_template)
+  prod_template.set_value("environment", "production")
+  prod_template.override_value("server.host", "prod.example.com")
+  prod_template.override_value("logging.level", "ERROR")
+  prod_template.set_value("database.host", "prod.db.example.com")
+  
+  // Apply template to configuration manager
+  config_manager.apply_template(prod_template)
+  
+  // Verify inherited values
+  let app_name = config_manager.get_string("app.name")
+  match app_name {
+    Some(name) => assert_eq(name, "Azimuth")  // From base template
+    None => assert_true(false)
+  }
+  
+  let service_name = config_manager.get_string("service.name")
+  match service_name {
+    Some(name) => assert_eq(name, "telemetry_service")  // From service template
+    None => assert_true(false)
+  }
+  
+  // Verify overridden values
+  let server_host = config_manager.get_string("server.host")
+  match server_host {
+    Some(host) => assert_eq(host, "prod.example.com")  // Overridden in prod template
+    None => assert_true(false)
+  }
+  
+  let log_level = config_manager.get_string("logging.level")
+  match log_level {
+    Some(level) => assert_eq(level, "ERROR")  // Overridden in prod template
+    None => assert_true(false)
+  }
+  
+  // Verify environment-specific values
+  let environment = config_manager.get_string("environment")
+  match environment {
+    Some(env) => assert_eq(env, "production")  // Only in prod template
+    None => assert_true(false)
+  }
+  
+  let db_host = config_manager.get_string("database.host")
+  match db_host {
+    Some(host) => assert_eq(host, "prod.db.example.com")  // Only in prod template
+    None => assert_true(false)
+  }
+  
+  // Test template merging
+  let override_template = ConfigurationTemplate::new("override")
+  override_template.set_value("app.name", "CustomAzimuth")  // Override
+  override_template.set_value("new.feature", "enabled")    // Add new
+  override_template.set_value("service.port", 9090)        // Override
+  
+  config_manager.merge_template(override_template)
+  
+  // Verify merged values
+  let merged_app_name = config_manager.get_string("app.name")
+  match merged_app_name {
+    Some(name) => assert_eq(name, "CustomAzimuth")  // Overridden
+    None => assert_true(false)
+  }
+  
+  let new_feature = config_manager.get_string("new.feature")
+  match new_feature {
+    Some(feature) => assert_eq(feature, "enabled")  // New value added
+    None => assert_true(false)
+  }
+  
+  let merged_service_port = config_manager.get_int("service.port")
+  match merged_service_port {
+    Some(port) => assert_eq(port, 9090)  // Overridden
+    None => assert_true(false)
+  }
+}
+
+// Helper classes and functions for configuration management testing
+class ConfigurationManager {
+  config_values : Map[String, Any]
+  validation_rules : Map[String, ValidationRule]
+  change_listeners : Map[String, (Any, Any) -> Unit]
+  encrypted_values : Map[String, String]
+  access_controls : Map[String, Array[String]]
+  backups : Map[String, Map[String, Any]]
+  encryption_key : String
+  
+  new() {
+    config_values = {}
+    validation_rules = {}
+    change_listeners = {}
+    encrypted_values = {}
+    access_controls = {}
+    backups = {}
+    encryption_key = ""
+    
+    // Set up default values for testing
+    config_values = config_values.set("app.name", "Azimuth")
+    config_values = config_values.set("app.version", "1.0.0")
+    config_values = config_values.set("server.port", 8080)
+    config_values = config_values.set("server.max_connections", 100)
+    config_values = config_values.set("server.timeout", 30.5)
+    config_values = config_values.set("debug.enabled", true)
+    config_values = config_values.set("app.production", false)
+    config_values = config_values.set("security.allowed_hosts", ["localhost", "127.0.0.1", "::1"])
+  }
+  
+  load_from_file(filename : String) -> Unit {
+    // Simplified implementation for testing
+    if filename == "config.json" {
+      config_values = config_values.set("app.name", "Azimuth")
+      config_values = config_values.set("app.version", "1.0.0")
+    } else if filename == "database_config.json" {
+      config_values = config_values.set("database.host", "db.example.com")
+      config_values = config_values.set("database.port", 5433)
+      config_values = config_values.set("database.connection.pool.size", "10")
+    } else if filename == "base_config.json" {
+      config_values = config_values.set("app.name", "Azimuth")
+      config_values = config_values.set("security.ssl.enabled", false)
+    }
+  }
+  
+  load_from_environment() -> Unit {
+    // Simplified implementation for testing
+    config_values = config_values.set("database.host", "db.example.com")
+    config_values = config_values.set("database.port", 5433)
+  }
+  
+  load_from_command_line() -> Unit {
+    // Simplified implementation for testing
+    config_values = config_values.set("database.name", "production_db")
+  }
+  
+  get_string(key : String) -> Option[String] {
+    match config_values.get(key) {
+      Some(value) => {
+        match value {
+          String(s) => Some(s)
+          _ => None
+        }
       }
-    } else {
-      default_config
+      None => None
     }
   }
   
-  // 测试加载有效配置
-  let valid_config_data = "service_name=payment_service&version=2.1.0"
-  let config = load_config(valid_config_data)
-  
-  assert_eq(config.service_name, "payment_service")
-  assert_eq(config.service_version, "2.1.0")
-  assert_eq(config.endpoint, "https://otel-collector.example.com:4318")
-  assert_eq(config.timeout, 60)
-  assert_true(config.enable_metrics)
-  assert_false(config.enable_tracing)
-  assert_eq(config.sample_rate, 0.5)
-  
-  // 测试加载无效配置（使用默认值）
-  let invalid_config_data = ""
-  let default_applied_config = load_config(invalid_config_data)
-  
-  assert_eq(default_applied_config.service_name, "unknown_service")
-  assert_eq(default_applied_config.service_version, "1.0.0")
-  assert_eq(default_applied_config.endpoint, "http://localhost:4318")
-  assert_eq(default_applied_config.timeout, 30)
-  assert_true(default_applied_config.enable_metrics)
-  assert_true(default_applied_config.enable_tracing)
-  assert_eq(default_applied_config.sample_rate, 1.0)
-}
-
-test "配置验证测试" {
-  // 模拟配置验证器
-  let validate_config = fn(config: TelemetryConfig) -> (Bool, String) {
-    let mut errors = []
-    
-    // 验证服务名称
-    if config.service_name == "" {
-      errors = errors.push("Service name cannot be empty")
-    }
-    
-    // 验证超时值
-    if config.timeout <= 0 {
-      errors = errors.push("Timeout must be positive")
-    }
-    
-    // 验证采样率
-    if config.sample_rate < 0.0 || config.sample_rate > 1.0 {
-      errors = errors.push("Sample rate must be between 0.0 and 1.0")
-    }
-    
-    // 验证端点URL
-    if !config.endpoint.starts_with("http://") && !config.endpoint.starts_with("https://") {
-      errors = errors.push("Endpoint must be a valid HTTP/HTTPS URL")
-    }
-    
-    if errors.length() == 0 {
-      (true, "")
-    } else {
-      (false, errors.join(", "))
-    }
-  }
-  
-  // 测试有效配置
-  let valid_config = TelemetryConfig {
-    service_name: "valid_service",
-    service_version: "1.0.0",
-    endpoint: "https://collector.example.com:4318",
-    timeout: 30,
-    enable_metrics: true,
-    enable_tracing: true,
-    sample_rate: 0.8
-  }
-  
-  let (is_valid, error_message) = validate_config(valid_config)
-  assert_true(is_valid)
-  assert_eq(error_message, "")
-  
-  // 测试无效配置
-  let invalid_config = TelemetryConfig {
-    service_name: "",
-    service_version: "1.0.0",
-    endpoint: "ftp://invalid.protocol.com",
-    timeout: -5,
-    enable_metrics: true,
-    enable_tracing: true,
-    sample_rate: 1.5
-  }
-  
-  let (is_invalid, invalid_error_message) = validate_config(invalid_config)
-  assert_false(is_invalid)
-  assert_true(invalid_error_message.contains("Service name cannot be empty"))
-  assert_true(invalid_error_message.contains("Endpoint must be a valid HTTP/HTTPS URL"))
-  assert_true(invalid_error_message.contains("Timeout must be positive"))
-  assert_true(invalid_error_message.contains("Sample rate must be between 0.0 and 1.0"))
-}
-
-test "配置合并测试" {
-  // 模拟配置合并函数
-  let merge_configs = fn(base: TelemetryConfig, override: TelemetryConfig) -> TelemetryConfig {
-    TelemetryConfig {
-      service_name: if override.service_name != "" { override.service_name } else { base.service_name },
-      service_version: if override.service_version != "" { override.service_version } else { base.service_version },
-      endpoint: if override.endpoint != "" { override.endpoint } else { base.endpoint },
-      timeout: if override.timeout > 0 { override.timeout } else { base.timeout },
-      enable_metrics: override.enable_metrics,
-      enable_tracing: override.enable_tracing,
-      sample_rate: if override.sample_rate >= 0.0 { override.sample_rate } else { base.sample_rate }
-    }
-  }
-  
-  // 创建基础配置
-  let base_config = TelemetryConfig {
-    service_name: "base_service",
-    service_version: "1.0.0",
-    endpoint: "http://localhost:4318",
-    timeout: 30,
-    enable_metrics: true,
-    enable_tracing: true,
-    sample_rate: 1.0
-  }
-  
-  // 创建覆盖配置
-  let override_config = TelemetryConfig {
-    service_name: "override_service",
-    service_version: "", // 空值，不应覆盖
-    endpoint: "https://prod-collector.example.com:4318",
-    timeout: 60,
-    enable_metrics: false,
-    enable_tracing: true,
-    sample_rate: 0.5
-  }
-  
-  // 合并配置
-  let merged_config = merge_configs(base_config, override_config)
-  
-  // 验证合并结果
-  assert_eq(merged_config.service_name, "override_service") // 被覆盖
-  assert_eq(merged_config.service_version, "1.0.0") // 保持原值
-  assert_eq(merged_config.endpoint, "https://prod-collector.example.com:4318") // 被覆盖
-  assert_eq(merged_config.timeout, 60) // 被覆盖
-  assert_false(merged_config.enable_metrics) // 被覆盖
-  assert_true(merged_config.enable_tracing) // 被覆盖
-  assert_eq(merged_config.sample_rate, 0.5) // 被覆盖
-}
-
-test "动态配置更新测试" {
-  // 模拟配置管理器
-  struct ConfigManager {
-    current_config: TelemetryConfig
-    listeners: Array[fn(TelemetryConfig) -> Unit]
-  }
-  
-  // 创建配置管理器
-  let manager = ConfigManager {
-    current_config: TelemetryConfig {
-      service_name: "initial_service",
-      service_version: "1.0.0",
-      endpoint: "http://localhost:4318",
-      timeout: 30,
-      enable_metrics: true,
-      enable_tracing: true,
-      sample_rate: 1.0
-    },
-    listeners: []
-  }
-  
-  // 模拟配置更新函数
-  let update_config = fn(manager: ConfigManager, new_config: TelemetryConfig) -> ConfigManager {
-    // 验证新配置
-    let (is_valid, _) = validate_config(new_config)
-    if is_valid {
-      // 更新配置
-      let updated_manager = { ...manager, current_config: new_config }
-      
-      // 通知监听器
-      for listener in updated_manager.listeners {
-        listener(new_config)
+  get_int(key : String) -> Option[Int] {
+    match config_values.get(key) {
+      Some(value) => {
+        match value {
+          Int(i) => Some(i)
+          _ => None
+        }
       }
-      
-      updated_manager
-    } else {
-      manager // 配置无效，保持原状
+      None => None
     }
   }
   
-  // 测试有效配置更新
-  let valid_new_config = TelemetryConfig {
-    service_name: "updated_service",
-    service_version: "2.0.0",
-    endpoint: "https://new-collector.example.com:4318",
-    timeout: 45,
-    enable_metrics: false,
-    enable_tracing: true,
-    sample_rate: 0.7
-  }
-  
-  let updated_manager = update_config(manager, valid_new_config)
-  
-  // 验证配置已更新
-  assert_eq(updated_manager.current_config.service_name, "updated_service")
-  assert_eq(updated_manager.current_config.service_version, "2.0.0")
-  assert_eq(updated_manager.current_config.endpoint, "https://new-collector.example.com:4318")
-  assert_eq(updated_manager.current_config.timeout, 45)
-  assert_false(updated_manager.current_config.enable_metrics)
-  assert_true(updated_manager.current_config.enable_tracing)
-  assert_eq(updated_manager.current_config.sample_rate, 0.7)
-  
-  // 测试无效配置更新（应保持原状）
-  let invalid_new_config = TelemetryConfig {
-    service_name: "",
-    service_version: "2.0.0",
-    endpoint: "https://new-collector.example.com:4318",
-    timeout: 45,
-    enable_metrics: false,
-    enable_tracing: true,
-    sample_rate: 0.7
-  }
-  
-  let unchanged_manager = update_config(updated_manager, invalid_new_config)
-  
-  // 验证配置未改变
-  assert_eq(unchanged_manager.current_config.service_name, "updated_service")
-  assert_eq(unchanged_manager.current_config.service_version, "2.0.0")
-}
-
-test "环境变量配置测试" {
-  // 模拟环境变量
-  let env_vars = [
-    ("OTEL_SERVICE_NAME", "env_service"),
-    ("OTEL_SERVICE_VERSION", "3.2.1"),
-    ("OTEL_EXPORTER_OTLP_ENDPOINT", "https://otel.example.com:4318"),
-    ("OTEL_EXPORTER_OTLP_TIMEOUT", "120"),
-    ("OTEL_METRICS_ENABLED", "false"),
-    ("OTEL_TRACES_ENABLED", "true"),
-    ("OTEL_TRACE_SAMPLE", "0.3")
-  ]
-  
-  // 模拟从环境变量加载配置
-  let load_from_env = fn() -> TelemetryConfig {
-    let mut config = TelemetryConfig {
-      service_name: "default_service",
-      service_version: "1.0.0",
-      endpoint: "http://localhost:4318",
-      timeout: 30,
-      enable_metrics: true,
-      enable_tracing: true,
-      sample_rate: 1.0
+  get_bool(key : String) -> Option[Bool] {
+    match config_values.get(key) {
+      Some(value) => {
+        match value {
+          Bool(b) => Some(b)
+          _ => None
+        }
+      }
+      None => None
     }
+  }
+  
+  get_float(key : String) -> Option[Float] {
+    match config_values.get(key) {
+      Some(value) => {
+        match value {
+          Float(f) => Some(f)
+          _ => None
+        }
+      }
+      None => None
+    }
+  }
+  
+  get_string_array(key : String) -> Option[Array[String]] {
+    match config_values.get(key) {
+      Some(value) => {
+        match value {
+          Array(arr) => {
+            let string_array = []
+            for i = 0; i < arr.length(); i = i + 1 {
+              match arr[i] {
+                String(s) => string_array = string_array.push(s)
+                _ => return None
+              }
+            }
+            return Some(string_array)
+          }
+          _ => None
+        }
+      }
+      None => None
+    }
+  }
+  
+  set_default(key : String, value : Any) -> Unit {
+    if !config_values.contains_key(key) {
+      config_values = config_values.set(key, value)
+    }
+  }
+  
+  set_environment(key : String, value : String) -> Unit {
+    // Simplified implementation for testing
+    if key == "DATABASE_HOST" {
+      config_values = config_values.set("database.host", value)
+    } else if key == "DATABASE_PORT" {
+      config_values = config_values.set("database.port", value.parse_int().unwrap_or(5432))
+    }
+  }
+  
+  set_command_line(key : String, value : String) -> Unit {
+    // Simplified implementation for testing
+    if key == "--database-name" {
+      config_values = config_values.set("database.name", value)
+    }
+  }
+  
+  set_value(key : String, value : Any) -> Unit {
+    config_values = config_values.set(key, value)
+  }
+  
+  add_validation_rule(key : String, rule : ValidationRule) -> Unit {
+    validation_rules = validation_rules.set(key, rule)
+  }
+  
+  validate() -> ValidationResult {
+    let errors = []
     
-    // 查找并应用环境变量
-    for (key, value) in env_vars {
-      match key {
-        "OTEL_SERVICE_NAME" => config.service_name = value
-        "OTEL_SERVICE_VERSION" => config.service_version = value
-        "OTEL_EXPORTER_OTLP_ENDPOINT" => config.endpoint = value
-        "OTEL_EXPORTER_OTLP_TIMEOUT" => config.timeout = value.to_int()
-        "OTEL_METRICS_ENABLED" => config.enable_metrics = (value == "true")
-        "OTEL_TRACES_ENABLED" => config.enable_tracing = (value == "true")
-        "OTEL_TRACE_SAMPLE" => config.sample_rate = value.to_float()
-        _ => ()
+    for (key, rule) in validation_rules {
+      match config_values.get(key) {
+        Some(value) => {
+          if !rule.validate(value) {
+            errors = errors.push("Validation failed for key: " + key)
+          }
+        }
+        None => {
+          errors = errors.push("Missing required key: " + key)
+        }
       }
     }
     
-    config
+    return ValidationResult::new(errors.length() == 0, errors)
   }
   
-  // 加载环境变量配置
-  let env_config = load_from_env()
+  add_change_listener(key : String, listener : (Any, Any) -> Unit) -> Unit {
+    change_listeners = change_listeners.set(key, listener)
+  }
   
-  // 验证环境变量配置
-  assert_eq(env_config.service_name, "env_service")
-  assert_eq(env_config.service_version, "3.2.1")
-  assert_eq(env_config.endpoint, "https://otel.example.com:4318")
-  assert_eq(env_config.timeout, 120)
-  assert_false(env_config.enable_metrics)
-  assert_true(env_config.enable_tracing)
-  assert_eq(env_config.sample_rate, 0.3)
+  update_value(key : String, new_value : Any) -> Unit {
+    let old_value = config_values.get(key).unwrap_or(null)
+    config_values = config_values.set(key, new_value)
+    
+    match change_listeners.get(key) {
+      Some(listener) => listener(old_value, new_value)
+      None => {}
+    }
+  }
+  
+  load_profile(profile : String) -> Unit {
+    // Simplified implementation for testing
+    if profile == "development" {
+      config_values = config_values.set("database.host", "localhost")
+      config_values = config_values.set("logging.level", "DEBUG")
+      config_values = config_values.set("debug.enabled", true)
+    } else if profile == "production" {
+      config_values = config_values.set("database.host", "prod-db.example.com")
+      config_values = config_values.set("logging.level", "ERROR")
+      config_values = config_values.set("debug.enabled", false)
+      config_values = config_values.set("security.ssl.enabled", true)
+    }
+  }
+  
+  set_encryption_key(key : String) -> Unit {
+    encryption_key = key
+  }
+  
+  set_encrypted_value(key : String, value : String) -> Unit {
+    let encrypted = "encrypted:" + simple_encrypt(value, encryption_key)
+    encrypted_values = encrypted_values.set(key, encrypted)
+    config_values = config_values.set(key, encrypted)
+  }
+  
+  get_raw_value(key : String) -> String {
+    match config_values.get(key) {
+      Some(value) => {
+        match value {
+          String(s) => s
+          _ => ""
+        }
+      }
+      None => ""
+    }
+  }
+  
+  get_decrypted_string(key : String) -> Option[String] {
+    match encrypted_values.get(key) {
+      Some(encrypted) => {
+        if encrypted.contains("encrypted:") {
+          let decrypted = simple_decrypt(encrypted.substring(10), encryption_key)
+          return Some(decrypted)
+        }
+        return None
+      }
+      None => None
+    }
+  }
+  
+  set_access_control(key : String, roles : Array[String]) -> Unit {
+    access_controls = access_controls.set(key, roles)
+  }
+  
+  check_access(key : String, role : String) -> Bool {
+    match access_controls.get(key) {
+      Some(roles) => {
+        for i = 0; i < roles.length(); i = i + 1 {
+          if roles[i] == role {
+            return true
+          }
+        }
+        return false
+      }
+      None => true  // No access control means everyone has access
+    }
+  }
+  
+  export_secure() -> String {
+    let result = ""
+    
+    for (key, value) in config_values {
+      match value {
+        String(s) => {
+          if encrypted_values.contains_key(key) {
+            result = result + key + "=" + s + "\n"
+          }
+        }
+        _ => {}
+      }
+    }
+    
+    return result
+  }
+  
+  create_backup() -> String {
+    let backup_id = "backup_" + UUID::generate().to_string()
+    backups = backups.set(backup_id, config_values)
+    return backup_id
+  }
+  
+  restore_from_backup(backup_id : String) -> Unit {
+    match backups.get(backup_id) {
+      Some(backup_config) => {
+        config_values = backup_config
+      }
+      None => {}
+    }
+  }
+  
+  list_backups() -> Array[String] {
+    let result = []
+    for (id, _) in backups {
+      result = result.push(id)
+    }
+    return result
+  }
+  
+  delete_backup(backup_id : String) -> Unit {
+    backups = backups.remove(backup_id)
+  }
+  
+  apply_template(template : ConfigurationTemplate) -> Unit {
+    let template_config = template.get_all_values()
+    
+    for (key, value) in template_config {
+      config_values = config_values.set(key, value)
+    }
+  }
+  
+  merge_template(template : ConfigurationTemplate) -> Unit {
+    let template_config = template.get_all_values()
+    
+    for (key, value) in template_config {
+      config_values = config_values.set(key, value)
+    }
+  }
 }
 
-test "配置文件解析测试" {
-  // 模拟JSON配置内容
-  let json_config = "{\n    \"service_name\": \"json_service\",\n    \"service_version\": \"4.1.0\",\n    \"endpoint\": \"https://json-collector.example.com:4318\",\n    \"timeout\": 90,\n    \"enable_metrics\": true,\n    \"enable_tracing\": false,\n    \"sample_rate\": 0.2\n  }"
+class ConfigurationTemplate {
+  name : String
+  values : Map[String, Any]
   
-  // 模拟JSON解析函数
-  let parse_json_config = fn(json_str: String) -> TelemetryConfig {
-    if json_str.contains("json_service") {
-      TelemetryConfig {
-        service_name: "json_service",
-        service_version: "4.1.0",
-        endpoint: "https://json-collector.example.com:4318",
-        timeout: 90,
-        enable_metrics: true,
-        enable_tracing: false,
-        sample_rate: 0.2
-      }
-    } else {
-      TelemetryConfig {
-        service_name: "default_service",
-        service_version: "1.0.0",
-        endpoint: "http://localhost:4318",
-        timeout: 30,
-        enable_metrics: true,
-        enable_tracing: true,
-        sample_rate: 1.0
+  new(name : String) {
+    name = name
+    values = {}
+  }
+  
+  set_value(key : String, value : Any) -> Unit {
+    values = values.set(key, value)
+  }
+  
+  inherit_from(parent : ConfigurationTemplate) -> Unit {
+    let parent_values = parent.get_all_values()
+    
+    for (key, value) in parent_values {
+      if !values.contains_key(key) {
+        values = values.set(key, value)
       }
     }
   }
   
-  // 解析JSON配置
-  let parsed_config = parse_json_config(json_config)
+  override_value(key : String, value : Any) -> Unit {
+    values = values.set(key, value)
+  }
   
-  // 验证解析结果
-  assert_eq(parsed_config.service_name, "json_service")
-  assert_eq(parsed_config.service_version, "4.1.0")
-  assert_eq(parsed_config.endpoint, "https://json-collector.example.com:4318")
-  assert_eq(parsed_config.timeout, 90)
-  assert_true(parsed_config.enable_metrics)
-  assert_false(parsed_config.enable_tracing)
-  assert_eq(parsed_config.sample_rate, 0.2)
-  
-  // 测试无效JSON
-  let invalid_json = "{ invalid json }"
-  let fallback_config = parse_json_config(invalid_json)
-  
-  // 验证回退到默认配置
-  assert_eq(fallback_config.service_name, "default_service")
-  assert_eq(fallback_config.service_version, "1.0.0")
-  assert_eq(fallback_config.endpoint, "http://localhost:4318")
-  assert_eq(fallback_config.timeout, 30)
-  assert_true(fallback_config.enable_metrics)
-  assert_true(fallback_config.enable_tracing)
-  assert_eq(fallback_config.sample_rate, 1.0)
+  get_all_values() -> Map[String, Any] {
+    return values
+  }
 }
 
-test "配置优先级测试" {
-  // 模拟配置优先级：环境变量 > 配置文件 > 默认值
+class ValidationRule {
+  validator : (Any) -> Bool
   
-  // 默认配置
-  let default_config = TelemetryConfig {
-    service_name: "default_service",
-    service_version: "1.0.0",
-    endpoint: "http://localhost:4318",
-    timeout: 30,
-    enable_metrics: true,
-    enable_tracing: true,
-    sample_rate: 1.0
+  new(validator : (Any) -> Bool) {
+    validator = validator
   }
   
-  // 配置文件配置
-  let file_config = TelemetryConfig {
-    service_name: "file_service",
-    service_version: "2.0.0",
-    endpoint: "https://file-collector.example.com:4318",
-    timeout: 60,
-    enable_metrics: false,
-    enable_tracing: true,
-    sample_rate: 0.5
+  validate(value : Any) -> Bool {
+    return validator(value)
   }
   
-  // 环境变量配置（只覆盖部分字段）
-  let env_config = TelemetryConfig {
-    service_name: "env_service",
-    service_version: "", // 空值表示不覆盖
-    endpoint: "", // 空值表示不覆盖
-    timeout: 120,
-    enable_metrics: true, // 覆盖文件配置
-    enable_tracing: false, // 覆盖文件配置
-    sample_rate: 0.0 // 空值表示不覆盖
-  }
-  
-  // 模拟配置合并函数（按优先级合并）
-  let merge_with_priority = fn(default: TelemetryConfig, file: TelemetryConfig, env: TelemetryConfig) -> TelemetryConfig {
-    // 先合并默认和文件配置
-    let merged = TelemetryConfig {
-      service_name: file.service_name,
-      service_version: file.service_version,
-      endpoint: file.endpoint,
-      timeout: file.timeout,
-      enable_metrics: file.enable_metrics,
-      enable_tracing: file.enable_tracing,
-      sample_rate: file.sample_rate
-    }
-    
-    // 再应用环境变量（只覆盖非空值）
-    TelemetryConfig {
-      service_name: if env.service_name != "" { env.service_name } else { merged.service_name },
-      service_version: if env.service_version != "" { env.service_version } else { merged.service_version },
-      endpoint: if env.endpoint != "" { env.endpoint } else { merged.endpoint },
-      timeout: if env.timeout > 0 { env.timeout } else { merged.timeout },
-      enable_metrics: env.enable_metrics,
-      enable_tracing: env.enable_tracing,
-      sample_rate: if env.sample_rate >= 0.0 { env.sample_rate } else { merged.sample_rate }
-    }
-  }
-  
-  // 按优先级合并配置
-  let final_config = merge_with_priority(default_config, file_config, env_config)
-  
-  // 验证优先级结果
-  assert_eq(final_config.service_name, "env_service") // 环境变量优先
-  assert_eq(final_config.service_version, "2.0.0") // 文件配置
-  assert_eq(final_config.endpoint, "https://file-collector.example.com:4318") // 文件配置
-  assert_eq(final_config.timeout, 120) // 环境变量优先
-  assert_true(final_config.enable_metrics) // 环境变量优先
-  assert_false(final_config.enable_tracing) // 环境变量优先
-  assert_eq(final_config.sample_rate, 0.5) // 文件配置
-}
-
-test "配置热重载测试" {
-  // 模拟配置热重载机制
-  struct ConfigWatcher {
-    config: TelemetryConfig
-    file_path: String
-    last_modified: Int
-  }
-  
-  // 创建配置监视器
-  let watcher = ConfigWatcher {
-    config: TelemetryConfig {
-      service_name: "initial_service",
-      service_version: "1.0.0",
-      endpoint: "http://localhost:4318",
-      timeout: 30,
-      enable_metrics: true,
-      enable_tracing: true,
-      sample_rate: 1.0
-    },
-    file_path: "/etc/telemetry/config.json",
-    last_modified: 1000
-  }
-  
-  // 模拟检查文件修改时间
-  let check_file_modified = fn(watcher: ConfigWatcher, current_time: Int) -> Bool {
-    current_time > watcher.last_modified
-  }
-  
-  // 模拟重新加载配置
-  let reload_config = fn(watcher: ConfigWatcher, new_config: TelemetryConfig, new_modified_time: Int) -> ConfigWatcher {
-    ConfigWatcher {
-      config: new_config,
-      file_path: watcher.file_path,
-      last_modified: new_modified_time
-    }
-  }
-  
-  // 测试初始状态（文件未修改）
-  assert_false(check_file_modified(watcher, 1000))
-  
-  // 模拟文件修改
-  let current_time = 2000
-  assert_true(check_file_modified(watcher, current_time))
-  
-  // 重新加载配置
-  let new_config = TelemetryConfig {
-    service_name: "reloaded_service",
-    service_version: "2.0.0",
-    endpoint: "https://new-collector.example.com:4318",
-    timeout: 60,
-    enable_metrics: false,
-    enable_tracing: true,
-    sample_rate: 0.7
-  }
-  
-  let updated_watcher = reload_config(watcher, new_config, current_time)
-  
-  // 验证配置已更新
-  assert_eq(updated_watcher.config.service_name, "reloaded_service")
-  assert_eq(updated_watcher.config.service_version, "2.0.0")
-  assert_eq(updated_watcher.config.endpoint, "https://new-collector.example.com:4318")
-  assert_eq(updated_watcher.config.timeout, 60)
-  assert_false(updated_watcher.config.enable_metrics)
-  assert_true(updated_watcher.config.enable_tracing)
-  assert_eq(updated_watcher.config.sample_rate, 0.7)
-  
-  // 验证修改时间已更新
-  assert_eq(updated_watcher.last_modified, current_time)
-  
-  // 测试文件未修改时不会重载
-  assert_false(check_file_modified(updated_watcher, current_time))
-}
-
-test "配置模板和继承测试" {
-  // 模拟配置模板
-  struct ConfigTemplate {
-    name: String
-    base_config: TelemetryConfig
-    overrides: Array[(String, String)]
-  }
-  
-  // 创建基础模板
-  let base_template = ConfigTemplate {
-    name: "base",
-    base_config: TelemetryConfig {
-      service_name: "template_service",
-      service_version: "1.0.0",
-      endpoint: "http://localhost:4318",
-      timeout: 30,
-      enable_metrics: true,
-      enable_tracing: true,
-      sample_rate: 1.0
-    },
-    overrides: []
-  }
-  
-  // 创建生产环境模板（继承基础模板）
-  let prod_template = ConfigTemplate {
-    name: "production",
-    base_config: base_template.base_config,
-    overrides: [
-      ("endpoint", "https://prod-collector.example.com:4318"),
-      ("timeout", "60"),
-      ("sample_rate", "0.1")
-    ]
-  }
-  
-  // 创建开发环境模板（继承基础模板）
-  let dev_template = ConfigTemplate {
-    name: "development",
-    base_config: base_template.base_config,
-    overrides: [
-      ("endpoint", "http://dev-collector.example.com:4318"),
-      ("enable_metrics", "false"),
-      ("sample_rate", "1.0")
-    ]
-  }
-  
-  // 模拟应用模板
-  let apply_template = fn(template: ConfigTemplate) -> TelemetryConfig {
-    let mut config = template.base_config
-    
-    // 应用覆盖
-    for (key, value) in template.overrides {
-      match key {
-        "service_name" => config.service_name = value
-        "service_version" => config.service_version = value
-        "endpoint" => config.endpoint = value
-        "timeout" => config.timeout = value.to_int()
-        "enable_metrics" => config.enable_metrics = (value == "true")
-        "enable_tracing" => config.enable_tracing = (value == "true")
-        "sample_rate" => config.sample_rate = value.to_float()
-        _ => ()
+  static int_range(min : Int, max : Int) -> ValidationRule {
+    return ValidationRule::new(fn(value) {
+      match value {
+        Int(i) => i >= min && i <= max
+        _ => false
       }
-    }
-    
-    config
+    })
   }
   
-  // 应用生产环境模板
-  let prod_config = apply_template(prod_template)
+  static non_empty_string() -> ValidationRule {
+    return ValidationRule::new(fn(value) {
+      match value {
+        String(s) => s.length() > 0
+        _ => false
+      }
+    })
+  }
   
-  // 验证生产环境配置
-  assert_eq(prod_config.service_name, "template_service") // 继承自基础模板
-  assert_eq(prod_config.service_version, "1.0.0") // 继承自基础模板
-  assert_eq(prod_config.endpoint, "https://prod-collector.example.com:4318") // 覆盖
-  assert_eq(prod_config.timeout, 60) // 覆盖
-  assert_true(prod_config.enable_metrics) // 继承自基础模板
-  assert_true(prod_config.enable_tracing) // 继承自基础模板
-  assert_eq(prod_config.sample_rate, 0.1) // 覆盖
+  static regex_match(pattern : String) -> ValidationRule {
+    return ValidationRule::new(fn(value) {
+      match value {
+        String(s) => s.matches(pattern)
+        _ => false
+      }
+    })
+  }
   
-  // 应用开发环境模板
-  let dev_config = apply_template(dev_template)
+  static boolean() -> ValidationRule {
+    return ValidationRule::new(fn(value) {
+      match value {
+        Bool(_) => true
+        _ => false
+      }
+    })
+  }
   
-  // 验证开发环境配置
-  assert_eq(dev_config.service_name, "template_service") // 继承自基础模板
-  assert_eq(dev_config.service_version, "1.0.0") // 继承自基础模板
-  assert_eq(dev_config.endpoint, "http://dev-collector.example.com:4318") // 覆盖
-  assert_eq(dev_config.timeout, 30) // 继承自基础模板
-  assert_false(dev_config.enable_metrics) // 覆盖
-  assert_true(dev_config.enable_tracing) // 继承自基础模板
-  assert_eq(dev_config.sample_rate, 1.0) // 覆盖
+  static float_range(min : Float, max : Float) -> ValidationRule {
+    return ValidationRule::new(fn(value) {
+      match value {
+        Float(f) => f >= min && f <= max
+        _ => false
+      }
+    })
+  }
+}
+
+class ValidationResult {
+  is_valid : Bool
+  errors : Array[String]
+  
+  new(is_valid : Bool, errors : Array[String]) {
+    is_valid = is_valid
+    errors = errors
+  }
+}
+
+class AtomicBoolean {
+  value : Bool
+  
+  new(initial_value : Bool) {
+    value = initial_value
+  }
+  
+  set(new_value : Bool) -> Unit {
+    value = new_value
+  }
+  
+  get() -> Bool {
+    return value
+  }
+}
+
+// Helper functions for encryption/decryption (simplified for testing)
+func simple_encrypt(text : String, key : String) -> String {
+  // Simplified encryption for testing
+  return "encrypted_" + text + "_with_" + key
+}
+
+func simple_decrypt(encrypted_text : String, key : String) -> String {
+  // Simplified decryption for testing
+  if encrypted_text.contains("_with_" + key) {
+    return encrypted_text.substring(9, encrypted_text.length() - key.length() - 6)
+  }
+  return ""
+}
+
+// Simplified UUID implementation
+class UUID {
+  static generate() -> String {
+    return "12345678-1234-1234-1234-123456789abc"
+  }
 }
