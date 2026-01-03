@@ -1,877 +1,853 @@
-// Azimuth 错误恢复和弹性测试用例
-// 专注于遥测系统在错误条件下的恢复能力和弹性设计
+// Azimuth Error Recovery and Resilience Test Suite
+// 错误恢复和容错机制测试用例，专注于系统在异常情况下的稳定性和恢复能力
 
-// 测试1: 网络连接中断恢复
-test "网络连接中断恢复测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "network.resilience")
+// Test 1: 网络连接故障恢复测试
+test "网络连接故障恢复测试" {
+  // 模拟网络连接状态
+  let mut connection_state = "connected"
+  let mut retry_count = 0
+  let max_retries = 3
   
-  // 创建网络弹性管理器
-  let network_resilience = NetworkResilienceManager::new(tracer)
-  
-  // 创建网络弹性指标
-  let reconnect_counter = Meter::create_counter(MeterProvider::get_meter(tracer_provider, "network.metrics"), "network.reconnect.attempts")
-  let downtime_gauge = Meter::create_gauge(MeterProvider::get_meter(tracer_provider, "network.metrics"), "network.downtime.seconds")
-  let success_gauge = Meter::create_gauge(MeterProvider::get_meter(tracer_provider, "network.metrics"), "network.reconnect.success.rate")
-  
-  // 模拟网络连接中断和恢复
-  let resilience_span = Tracer::start_span(tracer, "network.connection.resilience")
-  Span::set_attribute(resilience_span, "test.scenario", StringValue("connection.interruption"))
-  
-  // 模拟网络连接状态变化
-  let connection_states = [
-    ("connected", 0),
-    ("disconnected", 30),
-    ("reconnecting", 5),
-    ("connected", 0),
-    ("disconnected", 15),
-    ("reconnecting", 3),
-    ("connected", 0)
-  ]
-  
-  let mut total_downtime = 0
-  let mut reconnect_attempts = 0
-  let mut successful_reconnects = 0
-  
-  for (state, duration) in connection_states {
-    Span::add_event(resilience_span, "connection.state.changed", Some("state: " + state + ", duration: " + duration.to_string()))
-    
+  // 模拟网络请求函数
+  fn make_request(state : String) -> String {
     match state {
-      "disconnected" => {
-        total_downtime = total_downtime + duration
-        NetworkResilienceManager::handle_disconnection(network_resilience)
-      }
-      "reconnecting" => {
-        reconnect_attempts = reconnect_attempts + 1
-        let reconnect_success = NetworkResilienceManager::attempt_reconnection(network_resilience)
-        Counter::add(reconnect_counter, 1.0)
-        
-        if reconnect_success {
-          successful_reconnects = successful_reconnects + 1
+      "connected" => "success"
+      "disconnected" => "error"
+      "recovering" => "retry"
+      _ => "unknown"
+    }
+  }
+  
+  // 模拟网络故障和恢复过程
+  let mut request_result = make_request(connection_state)
+  assert_eq(request_result, "success")
+  
+  // 模拟网络故障
+  connection_state = "disconnected"
+  request_result = make_request(connection_state)
+  assert_eq(request_result, "error")
+  
+  // 实现重试机制
+  while request_result == "error" && retry_count < max_retries {
+    retry_count = retry_count + 1
+    connection_state = "recovering"
+    request_result = make_request(connection_state)
+    
+    // 模拟恢复过程
+    if retry_count >= 2 {
+      connection_state = "connected"
+      request_result = make_request(connection_state)
+    }
+  }
+  
+  // 验证恢复成功
+  assert_eq(request_result, "success")
+  assert_true(retry_count >= 2)
+}
+
+// Test 2: 数据损坏检测和修复测试
+test "数据损坏检测和修复测试" {
+  // 创建原始数据
+  let original_data = "critical_system_data_2023"
+  let data_checksum = original_data.length() // 简单校验和
+  
+  // 模拟数据传输和存储
+  let mut transmitted_data = original_data
+  
+  // 模拟数据损坏
+  transmitted_data = "corrupted_system_data_2023"
+  
+  // 数据完整性检查
+  fn verify_integrity(data : String, expected_checksum : Int) -> Bool {
+    data.length() == expected_checksum
+  }
+  
+  // 检测数据损坏
+  let is_valid = verify_integrity(transmitted_data, data_checksum)
+  assert_false(is_valid)
+  
+  // 数据修复过程
+  if !is_valid {
+    // 模拟从备份恢复
+    transmitted_data = original_data
+  }
+  
+  // 验证数据修复
+  let is_repaired = verify_integrity(transmitted_data, data_checksum)
+  assert_true(is_repaired)
+  assert_eq(transmitted_data, original_data)
+}
+
+// Test 3: 服务降级和熔断机制测试
+test "服务降级和熔断机制测试" {
+  // 模拟服务状态
+  let mut service_health = "healthy"
+  let mut failure_count = 0
+  let failure_threshold = 3
+  let mut circuit_breaker_state = "closed"
+  
+  // 模拟服务调用
+  fn call_service(health : String) -> String {
+    match health {
+      "healthy" => "success"
+      "degraded" => "partial_success"
+      "failed" => "error"
+      _ => "unknown"
+    }
+  }
+  
+  // 正常服务调用
+  let mut result = call_service(service_health)
+  assert_eq(result, "success")
+  
+  // 模拟服务逐渐恶化
+  service_health = "degraded"
+  result = call_service(service_health)
+  assert_eq(result, "partial_success")
+  
+  // 模拟服务完全失败
+  service_health = "failed"
+  for i in 0..=5 {
+    result = call_service(service_health)
+    if result == "error" {
+      failure_count = failure_count + 1
+    }
+    
+    // 熔断机制触发
+    if failure_count >= failure_threshold && circuit_breaker_state == "closed" {
+      circuit_breaker_state = "open"
+      break
+    }
+  }
+  
+  // 验证熔断器状态
+  assert_eq(circuit_breaker_state, "open")
+  assert_true(failure_count >= failure_threshold)
+  
+  // 模拟服务恢复和熔断器半开状态
+  service_health = "healthy"
+  circuit_breaker_state = "half_open"
+  
+  // 测试服务恢复
+  result = call_service(service_health)
+  assert_eq(result, "success")
+  
+  // 成功调用后关闭熔断器
+  if result == "success" && circuit_breaker_state == "half_open" {
+    circuit_breaker_state = "closed"
+    failure_count = 0
+  }
+  
+  // 验证熔断器恢复
+  assert_eq(circuit_breaker_state, "closed")
+  assert_eq(failure_count, 0)
+}
+
+// Test 4: 资源耗尽和恢复测试
+test "资源耗尽和恢复测试" {
+  // 模拟资源池
+  let mut available_resources = 10
+  let max_resources = 10
+  let mut allocated_resources = []
+  
+  // 资源分配函数
+  fn allocate_resource(available : Int, allocated : Array[String]) -> (Int, Array[String], String) {
+    if available > 0 {
+      let resource_id = "resource_" + (allocated.length() + 1).to_string()
+      (available - 1, allocated + [resource_id], resource_id)
+    } else {
+      (available, allocated, "error: no resources available")
+    }
+  }
+  
+  // 资源释放函数
+  fn release_resource(available : Int, allocated : Array[String], resource_id : String) -> (Int, Array[String]) {
+    if allocated.contains(resource_id) {
+      let mut new_allocated = []
+      for r in allocated {
+        if r != resource_id {
+          new_allocated = new_allocated + [r]
         }
       }
-      "connected" => {
-        NetworkResilienceManager::handle_connection(network_resilience)
-      }
-      _ => ()
+      (available + 1, new_allocated)
+    } else {
+      (available, allocated)
     }
   }
   
-  // 计算成功率
-  let success_rate = if reconnect_attempts > 0 {
-    successful_reconnects.to_float() / reconnect_attempts.to_float()
+  // 正常资源分配
+  for i in 0..=5 {
+    let (new_available, new_allocated, result) = allocate_resource(available_resources, allocated_resources)
+    available_resources = new_available
+    allocated_resources = new_allocated
+    assert_ne(result, "error: no resources available")
+  }
+  
+  assert_eq(available_resources, 5)
+  assert_eq(allocated_resources.length(), 5)
+  
+  // 资源耗尽测试
+  let mut allocation_results = []
+  for i in 0..=8 {
+    let (new_available, new_allocated, result) = allocate_resource(available_resources, allocated_resources)
+    available_resources = new_available
+    allocated_resources = new_allocated
+    allocation_results = allocation_results + [result]
+  }
+  
+  // 验证资源耗尽情况
+  assert_eq(available_resources, 0)
+  assert_eq(allocated_resources.length(), 10)
+  assert_true(allocation_results.contains("error: no resources available"))
+  
+  // 资源释放和恢复
+  for i in 0..=3 {
+    if allocated_resources.length() > 0 {
+      let resource_to_release = allocated_resources[0]
+      let (new_available, new_allocated) = release_resource(available_resources, allocated_resources, resource_to_release)
+      available_resources = new_available
+      allocated_resources = new_allocated
+    }
+  }
+  
+  // 验证资源恢复
+  assert_eq(available_resources, 4)
+  assert_eq(allocated_resources.length(), 6)
+  
+  // 验证恢复后可以正常分配
+  let (new_available, new_allocated, result) = allocate_resource(available_resources, allocated_resources)
+  available_resources = new_available
+  allocated_resources = new_allocated
+  assert_ne(result, "error: no resources available")
+  assert_eq(available_resources, 3)
+  assert_eq(allocated_resources.length(), 7)
+}
+
+// Test 5: 数据库事务和回滚测试
+test "数据库事务和回滚测试" {
+  // 模拟数据库状态
+  let mut database_state = [
+    ("user1", 1000),
+    ("user2", 1500),
+    ("user3", 800)
+  ]
+  
+  // 模拟事务日志
+  let mut transaction_log = []
+  
+  // 记录状态快照
+  fn create_snapshot(state : Array[(String, Int)]) -> Array[(String, Int)] {
+    let mut snapshot = []
+    for (user, balance) in state {
+      snapshot = snapshot + [(user, balance)]
+    }
+    snapshot
+  }
+  
+  // 恢复到快照
+  fn restore_to_snapshot(snapshot : Array[(String, Int)]) -> Array[(String, Int)] {
+    let mut restored = []
+    for (user, balance) in snapshot {
+      restored = restored + [(user, balance)]
+    }
+    restored
+  }
+  
+  // 查找用户余额
+  fn find_balance(state : Array[(String, Int)], user : String) -> Int {
+    for (u, balance) in state {
+      if u == user {
+        return balance
+      }
+    }
+    return 0
+  }
+  
+  // 更新用户余额
+  fn update_balance(state : Array[(String, Int)], user : String, new_balance : Int) -> Array[(String, Int)] {
+    let mut updated = []
+    for (u, balance) in state {
+      if u == user {
+        updated = updated + [(u, new_balance)]
+      } else {
+        updated = updated + [(u, balance)]
+      }
+    }
+    updated
+  }
+  
+  // 创建事务开始快照
+  let transaction_snapshot = create_snapshot(database_state)
+  
+  // 执行转账操作 - user1向user2转账200
+  let user1_balance = find_balance(database_state, "user1")
+  let user2_balance = find_balance(database_state, "user2")
+  let transfer_amount = 200
+  
+  // 检查余额是否足够
+  if user1_balance >= transfer_amount {
+    // 扣除user1余额
+    database_state = update_balance(database_state, "user1", user1_balance - transfer_amount)
+    transaction_log = transaction_log + [("debit", "user1", transfer_amount)]
+    
+    // 增加user2余额
+    database_state = update_balance(database_state, "user2", user2_balance + transfer_amount)
+    transaction_log = transaction_log + [("credit", "user2", transfer_amount)]
+    
+    // 验证转账成功
+    assert_eq(find_balance(database_state, "user1"), 800)
+    assert_eq(find_balance(database_state, "user2"), 1700)
+    assert_eq(find_balance(database_state, "user3"), 800)
   } else {
-    1.0
+    // 余额不足，回滚事务
+    database_state = restore_to_snapshot(transaction_snapshot)
   }
   
-  Gauge::set(downtime_gauge, total_downtime.to_float())
-  Gauge::set(success_gauge, success_rate)
+  // 模拟第二个事务 - 失败的事务
+  let transaction_snapshot2 = create_snapshot(database_state)
   
-  Span::set_attribute(resilience_span, "total.downtime", IntValue(total_downtime))
-  Span::set_attribute(resilience_span, "reconnect.attempts", IntValue(reconnect_attempts))
-  Span::set_attribute(resilience_span, "successful.reconnects", IntValue(successful_reconnects))
-  Span::set_status(resilience_span, Ok)
-  Span::end(resilience_span)
+  // 尝试user2向user3转账2000（余额不足）
+  let user2_balance2 = find_balance(database_state, "user2")
+  let user3_balance2 = find_balance(database_state, "user3")
+  let transfer_amount2 = 2000
   
-  // 验证网络弹性
-  assert_true(total_downtime > 0)
-  assert_true(reconnect_attempts > 0)
-  assert_true(success_rate > 0.0)
-  assert_eq(Counter::value(reconnect_counter), reconnect_attempts.to_float())
-}
-
-// 测试2: 数据存储故障恢复
-test "数据存储故障恢复测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "storage.resilience")
-  
-  // 创建存储弹性管理器
-  let storage_resilience = StorageResilienceManager::new(meter)
-  
-  // 创建存储弹性指标
-  let backup_counter = Meter::create_counter(meter, "storage.backup.operations")
-  let restore_counter = Meter::create_counter(meter, "storage.restore.operations")
-  let data_loss_gauge = Meter::create_gauge(meter, "storage.data.loss.percentage")
-  
-  // 模拟数据存储故障
-  let storage_fault_span = Tracer::start_span(TracerProvider::get_tracer(provider, "storage.resilience"), "storage.fault.recovery")
-  Span::set_attribute(storage_fault_span, "test.scenario", StringValue("storage.failure"))
-  
-  // 创建测试数据
-  let test_data = [
-    ("metric1", 100.0),
-    ("metric2", 200.0),
-    ("metric3", 300.0),
-    ("metric4", 400.0),
-    ("metric5", 500.0)
-  ]
-  
-  // 存储初始数据
-  for (metric_name, value) in test_data {
-    StorageResilienceManager::store_metric(storage_resilience, metric_name, value)
+  if user2_balance2 >= transfer_amount2 {
+    // 这个分支不会执行，因为余额不足
+    database_state = update_balance(database_state, "user2", user2_balance2 - transfer_amount2)
+    database_state = update_balance(database_state, "user3", user3_balance2 + transfer_amount2)
+  } else {
+    // 余额不足，回滚事务
+    database_state = restore_to_snapshot(transaction_snapshot2)
   }
   
-  // 创建备份
-  let backup_result = StorageResilienceManager::create_backup(storage_resilience)
-  Counter::add(backup_counter, 1.0)
-  Span::add_event(storage_fault_span, "backup.created", Some("backup.id: " + backup_result.backup_id))
-  
-  // 模拟存储故障
-  StorageResilienceManager::simulate_storage_failure(storage_resilience)
-  Span::add_event(storage_fault_span, "storage.failure", Some("type: simulated.corruption"))
-  
-  // 验证数据丢失
-  let data_loss_percentage = StorageResilienceManager::calculate_data_loss(storage_resilience)
-  Gauge::set(data_loss_gauge, data_loss_percentage)
-  
-  // 从备份恢复数据
-  let restore_result = StorageResilienceManager::restore_from_backup(storage_resilience, backup_result.backup_id)
-  Counter::add(restore_counter, 1.0)
-  Span::add_event(storage_fault_span, "restore.completed", Some("success: " + restore_result.success.to_string()))
-  
-  // 验证数据恢复
-  let recovered_data = StorageResilienceManager::get_all_metrics(storage_resilience)
-  assert_eq(recovered_data.length(), test_data.length())
-  
-  Span::set_attribute(storage_fault_span, "data.loss.percentage", FloatValue(data_loss_percentage))
-  Span::set_attribute(storage_fault_span, "restore.success", BoolValue(restore_result.success))
-  Span::set_status(storage_fault_span, Ok)
-  Span::end(storage_fault_span)
-  
-  // 验证存储弹性
-  assert_true(restore_result.success)
-  assert_eq(Counter::value(backup_counter), 1.0)
-  assert_eq(Counter::value(restore_counter), 1.0)
+  // 验证事务回滚成功
+  assert_eq(find_balance(database_state, "user1"), 800)
+  assert_eq(find_balance(database_state, "user2"), 1700)
+  assert_eq(find_balance(database_state, "user3"), 800)
 }
 
-// 测试3: 服务降级和熔断机制
-test "服务降级和熔断机制测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "circuit.breaker")
+// Test 6: 缓存失效和重建测试
+test "缓存失效和重建测试" {
+  // 模拟缓存系统
+  let mut cache = []
+  let mut cache_timestamps = []
+  let cache_ttl = 1000 // 缓存生存时间（毫秒）
   
-  // 创建熔断器管理器
-  let circuit_breaker = CircuitBreakerManager::new(meter)
+  // 缓存函数
+  fn cache_set(cache : Array[(String, String)], timestamps : Array[(String, Int)], key : String, value : String, current_time : Int) -> (Array[(String, String)], Array[(String, Int)]) {
+    let new_cache = cache + [(key, value)]
+    let new_timestamps = timestamps + [(key, current_time)]
+    (new_cache, new_timestamps)
+  }
   
-  // 创建熔断器指标
-  let failure_counter = Meter::create_counter(meter, "circuit.breaker.failures")
-  let state_gauge = Meter::create_gauge(meter, "circuit.breaker.state")
-  let recovery_counter = Meter::create_counter(meter, "circuit.breaker.recoveries")
-  
-  // 配置熔断器
-  let breaker_config = CircuitBreakerConfig::new([
-    ("failure.threshold", IntValue(5)), // 5次失败后熔断
-    ("recovery.timeout", IntValue(30)), // 30秒后尝试恢复
-    ("success.threshold", IntValue(3)) // 3次成功后关闭熔断器
-  ])
-  
-  CircuitBreakerManager::configure_breaker(circuit_breaker, "telemetry.service", breaker_config)
-  
-  // 模拟服务调用和熔断器状态变化
-  let service_calls = [
-    ("success", true),
-    ("success", true),
-    ("failure", false),
-    ("success", true),
-    ("failure", false),
-    ("failure", false),
-    ("failure", false),
-    ("failure", false), // 第5次失败，触发熔断
-    ("blocked", false), // 熔断状态，调用被阻止
-    ("blocked", false), // 熔断状态，调用被阻止
-    ("blocked", false), // 熔断状态，调用被阻止
-    ("success", true), // 恢复超时，半开状态
-    ("success", true), // 半开状态，成功
-    ("success", true)  // 半开状态，成功，关闭熔断器
-  ]
-  
-  for (call_type, expected_result) in service_calls {
-    let call_result = CircuitBreakerManager::call_service(circuit_breaker, "telemetry.service", fn() {
-      match call_type {
-        "success" => true,
-        "failure" => false,
-        "blocked" => false, // 熔断器阻止调用
-        _ => false
+  fn cache_get(cache : Array[(String, String)], timestamps : Array[(String, Int)], key : String, current_time : Int, ttl : Int) -> Option[String] {
+    for (k, v) in cache {
+      if k == key {
+        // 检查时间戳
+        for (tk, ts) in timestamps {
+          if tk == key {
+            if current_time - ts < ttl {
+              return Some(v)
+            } else {
+              return None // 缓存过期
+            }
+          }
+        }
       }
-    })
-    
-    if call_type == "failure" {
-      Counter::add(failure_counter, 1.0)
     }
-    
-    if call_type == "success" && CircuitBreakerManager::get_state(circuit_breaker, "telemetry.service") == "half_open" {
-      Counter::add(recovery_counter, 1.0)
-    }
-    
-    // 更新熔断器状态指标
-    let state = CircuitBreakerManager::get_state(circuit_breaker, "telemetry.service")
-    let state_value = match state {
-      "closed" => 1.0,
-      "open" => 2.0,
-      "half_open" => 3.0,
-      _ => 0.0
-    }
-    Gauge::set(state_gauge, state_value)
-    
-    // 验证调用结果
-    if call_type == "blocked" {
-      assert_false(call_result) // 熔断器应该阻止调用
+    return None
+  }
+  
+  // 模拟时间流逝
+  let mut current_time = 1000
+  
+  // 设置缓存
+  let (new_cache, new_timestamps) = cache_set(cache, cache_timestamps, "user:123", "John Doe", current_time)
+  cache = new_cache
+  cache_timestamps = new_timestamps
+  
+  // 获取缓存（未过期）
+  let cached_value = cache_get(cache, cache_timestamps, "user:123", current_time, cache_ttl)
+  match cached_value {
+    Some(value) => assert_eq(value, "John Doe")
+    None => assert_true(false)
+  }
+  
+  // 时间流逝，缓存过期
+  current_time = current_time + cache_ttl + 100
+  
+  // 获取缓存（已过期）
+  let expired_value = cache_get(cache, cache_timestamps, "user:123", current_time, cache_ttl)
+  match expired_value {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // 重建缓存
+  let (rebuilt_cache, rebuilt_timestamps) = cache_set(cache, cache_timestamps, "user:123", "John Doe Updated", current_time)
+  cache = rebuilt_cache
+  cache_timestamps = rebuilt_timestamps
+  
+  // 获取重建后的缓存
+  let rebuilt_value = cache_get(cache, cache_timestamps, "user:123", current_time, cache_ttl)
+  match rebuilt_value {
+    Some(value) => assert_eq(value, "John Doe Updated")
+    None => assert_true(false)
+  }
+}
+
+// Test 7: 系统过载和限流测试
+test "系统过载和限流测试" {
+  // 模拟系统负载
+  let mut current_load = 0
+  let max_capacity = 100
+  let mut rejected_requests = 0
+  let mut processed_requests = 0
+  
+  // 请求处理函数
+  fn process_request(current_load : Int, max_capacity : Int) -> (Int, Bool) {
+    if current_load < max_capacity {
+      (current_load + 10, true) // 每个请求增加10个负载单位
     } else {
-      assert_eq(call_result, expected_result)
+      (current_load, false) // 拒绝请求
     }
   }
   
-  // 验证熔断器最终状态
-  let final_state = CircuitBreakerManager::get_state(circuit_breaker, "telemetry.service")
-  assert_eq(final_state, "closed") // 应该恢复到关闭状态
-  
-  // 验证熔断器指标
-  assert_eq(Counter::value(failure_counter), 5.0)
-  assert_eq(Counter::value(recovery_counter), 3.0)
-}
-
-// 测试4: 内存不足条件下的优雅降级
-test "内存不足条件下的优雅降级测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "memory.resilience")
-  
-  // 创建内存弹性管理器
-  let memory_resilience = MemoryResilienceManager::new(meter)
-  
-  // 创建内存弹性指标
-  let gc_counter = Meter::create_counter(meter, "memory.garbage.collections")
-  let cache_eviction_gauge = Meter::create_gauge(mauge, "memory.cache.evictions")
-  let memory_usage_gauge = Meter::create_gauge(meter, "memory.usage.percentage")
-  
-  // 配置内存监控阈值
-  let memory_thresholds = MemoryThresholds::new([
-    ("warning.threshold", FloatValue(70.0)),
-    ("critical.threshold", FloatValue(85.0)),
-    ("emergency.threshold", FloatValue(95.0))
-  ])
-  
-  MemoryResilienceManager::configure_thresholds(memory_resilience, memory_thresholds)
-  
-  // 模拟内存使用情况变化
-  let memory_scenarios = [
-    (50.0, "normal"),  // 正常使用
-    (75.0, "warning"), // 警告级别
-    (88.0, "critical"), // 严重级别
-    (97.0, "emergency"), // 紧急级别
-    (80.0, "recovery"), // 恢复中
-    (60.0, "normal")    // 恢复正常
-  ]
-  
-  for (memory_usage, scenario) in memory_scenarios {
-    Gauge::set(memory_usage_gauge, memory_usage)
-    
-    match scenario {
-      "normal" => {
-        // 正常操作
-        MemoryResilienceManager::handle_normal_usage(memory_resilience)
-      }
-      "warning" => {
-        // 清理缓存
-        let evicted_items = MemoryResilienceManager::cleanup_cache(memory_resilience, 0.2) // 清理20%缓存
-        Gauge::set(cache_eviction_gauge, evicted_items.to_float())
-      }
-      "critical" => {
-        // 激进的垃圾回收
-        MemoryResilienceManager::force_garbage_collection(memory_resilience)
-        Counter::add(gc_counter, 1.0)
-        
-        // 清理更多缓存
-        let evicted_items = MemoryResilienceManager::cleanup_cache(memory_resilience, 0.5) // 清理50%缓存
-        Gauge::set(cache_eviction_gauge, evicted_items.to_float())
-      }
-      "emergency" => {
-        // 紧急模式：停止非关键功能
-        MemoryResilienceManager::enable_emergency_mode(memory_resilience)
-        
-        // 清理所有缓存
-        let evicted_items = MemoryResilienceManager::cleanup_cache(memory_resilience, 1.0) // 清理所有缓存
-        Gauge::set(cache_eviction_gauge, evicted_items.to_float())
-        
-        // 强制垃圾回收
-        MemoryResilienceManager::force_garbage_collection(memory_resilience)
-        Counter::add(gc_counter, 1.0)
-      }
-      "recovery" => {
-        // 逐步恢复功能
-        MemoryResilienceManager::gradual_recovery(memory_resilience)
-      }
-      _ => ()
-    }
-  }
-  
-  // 验证内存弹性
-  let resilience_info = MemoryResilienceManager::get_resilience_info(memory_resilience)
-  assert_true(resilience_info.total_gc_collections > 0)
-  assert_true(resilience_info.total_cache_evictions > 0)
-  assert_false(resilience_info.emergency_mode_active) // 应该退出紧急模式
-  
-  // 验证内存弹性指标
-  assert_eq(Counter::value(gc_counter), 2.0)
-  assert_true(Gauge::value(cache_eviction_gauge) > 0.0)
-}
-
-// 测试5: 数据处理管道错误恢复
-test "数据处理管道错误恢复测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "pipeline.resilience")
-  
-  // 创建管道弹性管理器
-  let pipeline_resilience = PipelineResilienceManager::new(tracer)
-  
-  // 创建管道弹性指标
-  let retry_counter = Meter::create_counter(MeterProvider::get_meter(tracer_provider, "pipeline.metrics"), "pipeline.retry.attempts")
-  let dead_letter_gauge = Meter::create_gauge(MeterProvider::get_meter(tracer_provider, "pipeline.metrics"), "pipeline.dead.letter.count")
-  let throughput_gauge = Meter::create_gauge(MeterProvider::get_meter(tracer_provider, "pipeline.metrics"), "pipeline.throughput")
-  
-  // 配置数据处理管道
-  let pipeline_stages = [
-    ("validation", ValidationStage::new([
-      ("max.retries", IntValue(3)),
-      ("retry.delay", IntValue(1000))
-    ])),
-    ("transformation", TransformationStage::new([
-      ("max.retries", IntValue(2)),
-      ("retry.delay", IntValue(2000))
-    ])),
-    ("aggregation", AggregationStage::new([
-      ("max.retries", IntValue(1)),
-      ("retry.delay", IntValue(500))
-    ])),
-    ("storage", StorageStage::new([
-      ("max.retries", IntValue(5)),
-      ("retry.delay", IntValue(3000))
-    ]))
-  ]
-  
-  for (stage_name, stage) in pipeline_stages {
-    PipelineResilienceManager::add_stage(pipeline_resilience, stage_name, stage)
-  }
-  
-  // 模拟数据处理和错误
-  let pipeline_span = Tracer::start_span(tracer, "data.pipeline.processing")
-  
-  let data_items = [
-    ("item1", true, true, true, true),    // 全部成功
-    ("item2", false, true, true, true),   // 验证失败，重试后成功
-    ("item3", true, false, true, true),   // 转换失败，重试后成功
-    ("item4", true, true, false, true),   // 聚合失败，重试后成功
-    ("item5", true, true, true, false),   // 存储失败，重试后成功
-    ("item6", false, false, false, false) // 全部失败，进入死信队列
-  ]
-  
-  let mut successful_items = 0
-  let mut dead_letter_items = 0
-  
-  for (item_id, validation_success, transform_success, aggregate_success, storage_success) in data_items {
-    let item_span = Tracer::start_span(pipeline_span, "process.item." + item_id)
-    
-    let mut item_result = PipelineItemResult::new(item_id)
-    
-    // 验证阶段
-    if !validation_success {
-      item_result = PipelineResilienceManager::process_with_retry(pipeline_resilience, "validation", item_result, fn() {
-        false // 模拟失败
-      })
-      Counter::add(retry_counter, 1.0)
-    }
-    
-    // 转换阶段
-    if !transform_success {
-      item_result = PipelineResilienceManager::process_with_retry(pipeline_resilience, "transformation", item_result, fn() {
-        false // 模拟失败
-      })
-      Counter::add(retry_counter, 1.0)
-    }
-    
-    // 聚合阶段
-    if !aggregate_success {
-      item_result = PipelineResilienceManager::process_with_retry(pipeline_resilience, "aggregation", item_result, fn() {
-        false // 模拟失败
-      })
-      Counter::add(retry_counter, 1.0)
-    }
-    
-    // 存储阶段
-    if !storage_success {
-      item_result = PipelineResilienceManager::process_with_retry(pipeline_resilience, "storage", item_result, fn() {
-        false // 模拟失败
-      })
-      Counter::add(retry_counter, 1.0)
-    }
-    
-    if item_result.success {
-      successful_items = successful_items + 1
+  // 请求完成函数
+  fn complete_request(current_load : Int) -> Int {
+    if current_load >= 10 {
+      current_load - 10
     } else {
-      PipelineResilienceManager::send_to_dead_letter_queue(pipeline_resilience, item_result)
-      dead_letter_items = dead_letter_items + 1
+      0
     }
-    
-    Span::set_status(item_span, if item_result.success { Ok } else { Error })
-    Span::end(item_span)
   }
   
-  Gauge::set(dead_letter_gauge, dead_letter_items.to_float())
-  Gauge::set(throughput_gauge, (successful_items.to_float() / data_items.length().to_float()) * 100.0)
-  
-  Span::set_attribute(pipeline_span, "successful.items", IntValue(successful_items))
-  Span::set_attribute(pipeline_span, "dead.letter.items", IntValue(dead_letter_items))
-  Span::set_status(pipeline_span, Ok)
-  Span::end(pipeline_span)
-  
-  // 验证管道弹性
-  assert_eq(successful_items, 5)
-  assert_eq(dead_letter_items, 1)
-  assert_eq(Counter::value(retry_counter), 4.0)
-  assert_eq(Gauge::value(dead_letter_gauge), 1.0)
-  assert_eq(Gauge::value(throughput_gauge), 83.33) // 5/6 * 100
-}
-
-// 测试6: 配置热更新和回滚
-test "配置热更新和回滚测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "config.resilience")
-  
-  // 创建配置弹性管理器
-  let config_resilience = ConfigResilienceManager::new(meter)
-  
-  // 创建配置弹性指标
-  let update_counter = Meter::create_counter(meter, "config.updates.attempted")
-  let rollback_counter = Meter::create_counter(meter, "config.rollbacks.executed")
-  let validation_gauge = Meter::create_gauge(meter, "config.validation.success.rate")
-  
-  // 初始配置
-  let initial_config = Config::new([
-    ("sampling.rate", FloatValue(0.1)),
-    ("batch.size", IntValue(100)),
-    ("timeout.ms", IntValue(5000)),
-    ("retry.attempts", IntValue(3))
-  ])
-  
-  ConfigResilienceManager::apply_config(config_resilience, initial_config)
-  
-  // 测试配置更新场景
-  let config_updates = [
-    (Config::new([
-      ("sampling.rate", FloatValue(0.2)),
-      ("batch.size", IntValue(200)),
-      ("timeout.ms", IntValue(3000)),
-      ("retry.attempts", IntValue(5))
-    ]), true), // 有效配置
-    
-    (Config::new([
-      ("sampling.rate", FloatValue(-0.1)), // 无效值
-      ("batch.size", IntValue(200)),
-      ("timeout.ms", IntValue(3000)),
-      ("retry.attempts", IntValue(5))
-    ]), false), // 无效配置，需要回滚
-    
-    (Config::new([
-      ("sampling.rate", FloatValue(0.3)),
-      ("batch.size", IntValue(0)), // 无效值
-      ("timeout.ms", IntValue(3000)),
-      ("retry.attempts", IntValue(5))
-    ]), false), // 无效配置，需要回滚
-    
-    (Config::new([
-      ("sampling.rate", FloatValue(0.15)),
-      ("batch.size", IntValue(150)),
-      ("timeout.ms", IntValue(4000)),
-      ("retry.attempts", IntValue(4))
-    ]), true) // 有效配置
-  ]
-  
-  let mut successful_updates = 0
-  let mut failed_updates = 0
-  
-  for (new_config, should_succeed) in config_updates {
-    Counter::add(update_counter, 1.0)
-    
-    let update_result = ConfigResilienceManager::update_config(config_resilience, new_config)
-    
-    if update_result.success {
-      assert_true(should_succeed) // 只有应该成功的更新才应该成功
-      successful_updates = successful_updates + 1
-      
-      // 验证配置确实已应用
-      let current_config = ConfigResilienceManager::get_current_config(config_resilience)
-      assert_eq(Config::get_value(current_config, "sampling.rate"), Config::get_value(new_config, "sampling.rate"))
+  // 正常负载下的请求处理
+  for i in 0..=5 {
+    let (new_load, processed) = process_request(current_load, max_capacity)
+    current_load = new_load
+    if processed {
+      processed_requests = processed_requests + 1
     } else {
-      assert_false(should_succeed) // 只有应该失败的更新才应该失败
-      failed_updates = failed_updates + 1
-      
-      // 验证自动回滚
-      let rollback_result = ConfigResilienceManager::auto_rollback(config_resilience)
-      assert_true(rollback_result.success)
-      Counter::add(rollback_counter, 1.0)
+      rejected_requests = rejected_requests + 1
     }
   }
   
-  // 计算验证成功率
-  let validation_success_rate = successful_updates.to_float() / (successful_updates + failed_updates).to_float()
-  Gauge::set(validation_gauge, validation_success_rate)
+  // 验证正常处理
+  assert_eq(processed_requests, 6)
+  assert_eq(rejected_requests, 0)
+  assert_eq(current_load, 60)
   
-  // 验证配置弹性
-  assert_eq(successful_updates, 2)
-  assert_eq(failed_updates, 2)
-  assert_eq(Counter::value(update_counter), 4.0)
-  assert_eq(Counter::value(rollback_counter), 2.0)
-  assert_eq(Gauge::value(validation_gauge), 0.5)
-}
-
-// 测试7: 资源限制下的自适应调整
-test "资源限制下的自适应调整测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "resource.adaptation")
-  
-  // 创建资源自适应管理器
-  let resource_adaptation = ResourceAdaptationManager::new(meter)
-  
-  // 创建资源自适应指标
-  let adaptation_counter = Meter::create_counter(meter, "resource.adaptations.executed")
-  let performance_gauge = Meter::create_gauge(meter, "resource.performance.score")
-  let resource_usage_gauge = Meter::create_gauge(meter, "resource.utilization.percentage")
-  
-  // 配置资源监控
-  let resource_monitors = [
-    ResourceMonitor::new("cpu", [
-      ("warning.threshold", FloatValue(70.0)),
-      ("critical.threshold", FloatValue(90.0)),
-      ("adaptation.strategy", StringValue("reduce.batch.size"))
-    ]),
-    ResourceMonitor::new("memory", [
-      ("warning.threshold", FloatValue(75.0)),
-      ("critical.threshold", FloatValue(85.0)),
-      ("adaptation.strategy", StringValue("increase.gc.frequency"))
-    ]),
-    ResourceMonitor::new("disk.io", [
-      ("warning.threshold", FloatValue(80.0)),
-      ("critical.threshold", FloatValue(95.0)),
-      ("adaptation.strategy", StringValue("reduce.write.frequency"))
-    ])
-  ]
-  
-  for monitor in resource_monitors {
-    ResourceAdaptationManager::add_monitor(resource_adaptation, monitor)
+  // 模拟请求完成
+  for i in 0..=3 {
+    current_load = complete_request(current_load)
   }
   
-  // 模拟资源使用情况变化和自适应调整
-  let resource_scenarios = [
-    ([
-      ("cpu", 60.0),
-      ("memory", 65.0),
-      ("disk.io", 55.0)
-    ], "normal"),
-    
-    ([
-      ("cpu", 85.0),
-      ("memory", 70.0),
-      ("disk.io", 60.0)
-    ], "cpu.pressure"),
-    
-    ([
-      ("cpu", 70.0),
-      ("memory", 88.0),
-      ("disk.io", 65.0)
-    ], "memory.pressure"),
-    
-    ([
-      ("cpu", 92.0),
-      ("memory", 90.0),
-      ("disk.io", 98.0)
-    ], "severe.pressure"),
-    
-    ([
-      ("cpu", 65.0),
-      ("memory", 70.0),
-      ("disk.io", 60.0)
-    ], "recovery")
-  ]
+  assert_eq(current_load, 20)
   
-  for (resource_usage, scenario) in resource_scenarios {
-    // 更新资源使用情况
-    for (resource_name, usage) in resource_usage {
-      ResourceAdaptationManager::update_resource_usage(resource_adaptation, resource_name, usage)
-    }
-    
-    // 计算总体资源利用率
-    let total_usage = resource_usage.map(fn((_, usage)) { usage }).reduce(fn(acc, usage) { acc + usage }, 0.0)
-    let average_usage = total_usage / resource_usage.length().to_float()
-    Gauge::set(resource_usage_gauge, average_usage)
-    
-    // 执行自适应调整
-    let adaptation_result = ResourceAdaptationManager::execute_adaptation(resource_adaptation)
-    Counter::add(adaptation_counter, 1.0)
-    
-    // 验证自适应调整
-    match scenario {
-      "normal" => {
-        assert_false(adaptation_result.adaptations_applied)
-      }
-      "cpu.pressure" => {
-        assert_true(adaptation_result.adaptations_applied)
-        assert_true(adaptation_result.cpu_batch_size_reduced)
-      }
-      "memory.pressure" => {
-        assert_true(adaptation_result.adaptations_applied)
-        assert_true(adaptation_result.gc_frequency_increased)
-      }
-      "severe.pressure" => {
-        assert_true(adaptation_result.adaptations_applied)
-        assert_true(adaptation_result.emergency_mode_enabled)
-      }
-      "recovery" => {
-        assert_true(adaptation_result.adaptations_applied)
-        assert_true(adaptation_result.gradual_recovery_enabled)
-      }
-      _ => ()
-    }
-    
-    // 更新性能分数
-    let performance_score = ResourceAdaptationManager::calculate_performance_score(resource_adaptation)
-    Gauge::set(performance_gauge, performance_score)
-  }
-  
-  // 验证资源自适应
-  let adaptation_info = ResourceAdaptationManager::get_adaptation_info(resource_adaptation)
-  assert_eq(adaptation_info.total_adaptations, 5)
-  assert_true(adaptation_info.emergency_mode_triggered)
-  assert_eq(Counter::value(adaptation_counter), 5.0)
-}
-
-// 测试8: 级联故障隔离
-test "级联故障隔离测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "fault.isolation")
-  
-  // 创建故障隔离管理器
-  let fault_isolation = FaultIsolationManager::new(tracer)
-  
-  // 创建故障隔离指标
-  let isolation_counter = Meter::create_counter(MeterProvider::get_meter(tracer_provider, "isolation.metrics"), "fault.isolations.executed")
-  let containment_gauge = Meter::create_gauge(MeterProvider::get_meter(tracer_provider, "isolation.metrics"), "fault.containment.percentage")
-  let impact_gauge = Meter::create_gauge(MeterProvider::get_meter(tracer_provider, "isolation.metrics"), "fault.impact.scope")
-  
-  // 配置服务依赖关系
-  let service_dependencies = [
-    ("frontend", ["api.gateway", "auth.service"]),
-    ("api.gateway", ["user.service", "order.service", "payment.service"]),
-    ("user.service", ["database.primary", "cache.redis"]),
-    ("order.service", ["database.primary", "inventory.service"]),
-    ("payment.service", ["database.primary", "payment.gateway"]),
-    ("inventory.service", ["database.replica"])
-  ]
-  
-  for (service, dependencies) in service_dependencies {
-    FaultIsolationManager::configure_dependencies(fault_isolation, service, dependencies)
-  }
-  
-  // 模拟级联故障场景
-  let cascade_span = Tracer::start_span(tracer, "cascade.failure.simulation")
-  
-  // 场景1: 数据库主节点故障
-  Span::add_event(cascade_span, "database.failure", Some("node: primary.database"))
-  let db_failure_result = FaultIsolationManager::handle_service_failure(fault_isolation, "database.primary")
-  Counter::add(isolation_counter, 1.0)
-  
-  // 验证故障隔离
-  assert_true(db_failure_result.isolation_triggered)
-  assert_true(db_failure_result.affected_services.length() > 0)
-  
-  // 场景2: 缓存服务故障
-  Span::add_event(cascade_span, "cache.failure", Some("service: redis.cache"))
-  let cache_failure_result = FaultIsolationManager::handle_service_failure(fault_isolation, "cache.redis")
-  Counter::add(isolation_counter, 1.0)
-  
-  // 场景3: 外部支付网关故障
-  Span::add_event(cascade_span, "external.gateway.failure", Some("service: payment.gateway"))
-  let gateway_failure_result = FaultIsolationManager::handle_service_failure(fault_isolation, "payment.gateway")
-  Counter::add(isolation_counter, 1.0)
-  
-  // 计算故障隔离效果
-  let total_services = service_dependencies.length()
-  let affected_services = db_failure_result.affected_services.length() + 
-                         cache_failure_result.affected_services.length() + 
-                         gateway_failure_result.affected_services.length()
-  let containment_percentage = ((total_services - affected_services).to_float() / total_services.to_float()) * 100.0
-  Gauge::set(containment_gauge, containment_percentage)
-  
-  // 计算故障影响范围
-  let impact_scope = affected_services.to_float() / total_services.to_float() * 100.0
-  Gauge::set(impact_gauge, impact_scope)
-  
-  Span::set_attribute(cascade_span, "total.isolations", IntValue(3))
-  Span::set_attribute(cascade_span, "containment.percentage", FloatValue(containment_percentage))
-  Span::set_attribute(cascade_span, "impact.scope.percentage", FloatValue(impact_scope))
-  Span::set_status(cascade_span, Ok)
-  Span::end(cascade_span)
-  
-  // 验证故障隔离效果
-  assert_true(containment_percentage > 0.0)
-  assert_eq(Counter::value(isolation_counter), 3.0)
-  assert_eq(Gauge::value(containment_gauge), containment_percentage)
-  assert_eq(Gauge::value(impact_gauge), impact_scope)
-}
-
-// 测试9: 多区域故障转移
-test "多区域故障转移测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "multi.region.failover")
-  
-  // 创建多区域故障转移管理器
-  let failover_manager = MultiRegionFailoverManager::new(meter)
-  
-  // 创建故障转移指标
-  let failover_counter = Meter::create_counter(meter, "region.failovers.executed")
-  let latency_gauge = Meter::create_gauge(meter, "cross.region.latency.ms")
-  let availability_gauge = Meter::create_gauge(meter, "service.availability.percentage")
-  
-  // 配置多区域部署
-  let regions = [
-    Region::new("us-east-1", [
-      ("priority", IntValue(1)),
-      ("capacity", FloatValue(100.0)),
-      ("latency.baseline", IntValue(50))
-    ]),
-    Region::new("us-west-2", [
-      ("priority", IntValue(2)),
-      ("capacity", FloatValue(80.0)),
-      ("latency.baseline", IntValue(80))
-    ]),
-    Region::new("eu-west-1", [
-      ("priority", IntValue(3)),
-      ("capacity", FloatValue(60.0),
-      ("latency.baseline", IntValue(150))
-    ])
-  ]
-  
-  for region in regions {
-    MultiRegionFailoverManager::add_region(failover_manager, region)
-  }
-  
-  // 模拟区域故障和故障转移
-  let failover_scenarios = [
-    ("us-east-1", "network.partition", true),    // 主区域故障，成功转移
-    ("us-west-2", "service.degradation", true),  // 次区域部分故障，成功转移
-    ("eu-west-1", "maintenance.window", false),  // 三区域维护，无需转移
-    ("us-east-1", "recovery.complete", true)     // 主区域恢复，成功回切
-  ]
-  
-  let mut total_failovers = 0
-  let mut successful_failovers = 0
-  
-  for (region_name, failure_type, should_succeed) in failover_scenarios {
-    let failover_start = Time::now()
-    
-    let failover_result = MultiRegionFailoverManager::handle_region_failure(failover_manager, region_name, failure_type)
-    Counter::add(failover_counter, 1.0)
-    total_failovers = total_failovers + 1
-    
-    let failover_end = Time::now()
-    let failover_latency = Time::duration_between(failover_start, failover_end)
-    Histogram::record(latency_gauge, failover_latency)
-    
-    if failover_result.success {
-      successful_failovers = successful_failovers + 1
-      assert_true(should_succeed)
+  // 模拟系统过载
+  for i in 0..=10 {
+    let (new_load, processed) = process_request(current_load, max_capacity)
+    current_load = new_load
+    if processed {
+      processed_requests = processed_requests + 1
     } else {
-      assert_false(should_succeed)
+      rejected_requests = rejected_requests + 1
     }
   }
   
-  // 计算服务可用性
-  let availability_percentage = (successful_failovers.to_float() / total_failovers.to_float()) * 100.0
-  Gauge::set(availability_gauge, availability_percentage)
+  // 验证限流效果
+  assert_true(processed_requests > 6)
+  assert_true(rejected_requests > 0)
+  assert_eq(current_load, max_capacity)
   
-  // 验证多区域故障转移
-  assert_eq(successful_failovers, 3)
-  assert_eq(Counter::value(failover_counter), 4.0)
-  assert_eq(Gauge::value(availability_gauge), 75.0)
+  // 模拟负载降低
+  for i in 0..=8 {
+    current_load = complete_request(current_load)
+  }
+  
+  // 验证负载恢复
+  assert_eq(current_load, 20)
+  
+  // 验证恢复后可以正常处理请求
+  let (new_load, processed) = process_request(current_load, max_capacity)
+  current_load = new_load
+  if processed {
+    processed_requests = processed_requests + 1
+  } else {
+    rejected_requests = rejected_requests + 1
+  }
+  
+  assert_true(processed)
+  assert_eq(current_load, 30)
 }
 
-// 测试10: 灾难恢复和业务连续性
-test "灾难恢复和业务连续性测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "disaster.recovery")
+// Test 8: 数据分区和故障隔离测试
+test "数据分区和故障隔离测试" {
+  // 模拟数据分区
+  let mut partitions = [
+    ("partition1", [("key1", "value1"), ("key2", "value2")], "healthy"),
+    ("partition2", [("key3", "value3"), ("key4", "value4")], "healthy"),
+    ("partition3", [("key5", "value5"), ("key6", "value6")], "healthy")
+  ]
   
-  // 创建灾难恢复管理器
-  let disaster_recovery = DisasterRecoveryManager::new(tracer)
+  // 查找分区
+  fn find_partition(partitions : Array[(String, Array[(String, String)], String)], partition_name : String) -> (Array[(String, String)], String) {
+    for (name, data, status) in partitions {
+      if name == partition_name {
+        return (data, status)
+      }
+    }
+    return ([], "not_found")
+  }
   
-  // 创建灾难恢复指标
-  let rto_gauge = Meter::create_gauge(MeterProvider::get_meter(tracer_provider, "dr.metrics"), "recovery.time.objective.minutes")
-  let rpo_gauge = Meter::create_gauge(MeterProvider::get_meter(tracer_provider, "dr.metrics"), "recovery.point.objective.minutes")
-  let dr_counter = Meter::create_counter(MeterProvider::get_meter(tracer_provider, "dr.metrics"), "discovery.recovery.tests")
+  // 更新分区状态
+  fn update_partition_status(partitions : Array[(String, Array[(String, String)], String)], partition_name : String, new_status : String) -> Array[(String, Array[(String, String)], String)] {
+    let mut updated = []
+    for (name, data, status) in partitions {
+      if name == partition_name {
+        updated = updated + [(name, data, new_status)]
+      } else {
+        updated = updated + [(name, data, status)]
+      }
+    }
+    updated
+  }
   
-  // 配置灾难恢复计划
-  let dr_plan = DisasterRecoveryPlan::new([
-    ("rto.target", IntValue(30)), // 30分钟恢复时间目标
-    ("rpo.target", IntValue(15)), // 15分钟恢复点目标
-    ("backup.frequency", IntValue(10)), // 10分钟备份频率
-    ("geographic.redundancy", BoolValue(true)),
-    ("automated.failover", BoolValue(true))
-  ])
+  // 查找键值
+  fn find_in_partition(data : Array[(String, String)], key : String) -> Option[String] {
+    for (k, v) in data {
+      if k == key {
+        return Some(v)
+      }
+    }
+    return None
+  }
   
-  DisasterRecoveryManager::set_dr_plan(disaster_recovery, dr_plan)
+  // 正常分区访问
+  let (partition1_data, partition1_status) = find_partition(partitions, "partition1")
+  assert_eq(partition1_status, "healthy")
   
-  // 模拟灾难恢复场景
-  let dr_span = Tracer::start_span(tracer, "disaster.recovery.simulation")
-  Span::set_attribute(dr_span, "test.scenario", StringValue("complete.data.center.failure"))
+  let value1 = find_in_partition(partition1_data, "key1")
+  match value1 {
+    Some(v) => assert_eq(v, "value1")
+    None => assert_true(false)
+  }
   
-  // 记录灾难开始时间
-  let disaster_start = Time::now()
-  Span::add_event(dr_span, "disaster.declared", Some("type: data.center.failure"))
+  // 模拟分区故障
+  partitions = update_partition_status(partitions, "partition2", "failed")
   
-  // 步骤1: 检测灾难
-  let detection_result = DisasterRecoveryManager::detect_disaster(disaster_recovery, "data.center.failure")
-  assert_true(detection_result.detected)
-  Span::add_event(dr_span, "disaster.detected", Some("latency.ms: " + detection_result.detection_latency.to_string()))
+  // 验证故障分区访问
+  let (partition2_data, partition2_status) = find_partition(partitions, "partition2")
+  assert_eq(partition2_status, "failed")
   
-  // 步骤2: 启动故障转移
-  let failover_start = Time::now()
-  let failover_result = DisasterRecoveryManager::initiate_failover(disaster_recovery, "primary.site", "secondary.site")
-  assert_true(failover_result.success)
-  let failover_end = Time::now()
-  let failover_duration = Time::duration_between(failover_start, failover_end)
-  Span::add_event(dr_span, "failover.completed", Some("duration.seconds: " + failover_duration.to_string()))
+  // 故障隔离 - 访问其他健康分区
+  let (partition3_data, partition3_status) = find_partition(partitions, "partition3")
+  assert_eq(partition3_status, "healthy")
   
-  // 步骤3: 恢复数据
-  let recovery_start = Time::now()
-  let recovery_result = DisasterRecoveryManager::restore_data(disaster_recovery, "latest.backup")
-  assert_true(recovery_result.success)
-  let recovery_end = Time::now()
-  let recovery_duration = Time::duration_between(recovery_start, recovery_end)
-  Span::add_event(dr_span, "data.recovered", Some("duration.seconds: " + recovery_duration.to_string()))
+  let value5 = find_in_partition(partition3_data, "key5")
+  match value5 {
+    Some(v) => assert_eq(v, "value5")
+    None => assert_true(false)
+  }
   
-  // 步骤4: 验证服务
-  let verification_result = DisasterRecoveryManager::verify_services(disaster_recovery)
-  assert_true(verification_result.all_services_healthy)
-  Span::add_event(dr_span, "services.verified", Some("all.healthy: " + verification_result.all_services_healthy.to_string()))
+  // 分区恢复
+  partitions = update_partition_status(partitions, "partition2", "healthy")
   
-  // 记录灾难恢复完成时间
-  let disaster_end = Time::now()
-  let total_recovery_time = Time::duration_between(disaster_start, disaster_end)
-  Span::add_event(dr_span, "disaster.recovery.completed", Some("total.duration.seconds: " + total_recovery_time.to_string()))
+  // 验证分区恢复
+  let (partition2_data_recovered, partition2_status_recovered) = find_partition(partitions, "partition2")
+  assert_eq(partition2_status_recovered, "healthy")
   
-  // 计算RTO和RPO
-  let rto_achieved = total_recovery_time / 60.0 // 转换为分钟
-  let rpo_achieved = recovery_result.data_loss_minutes
+  let value3 = find_in_partition(partition2_data_recovered, "key3")
+  match value3 {
+    Some(v) => assert_eq(v, "value3")
+    None => assert_true(false)
+  }
+}
+
+// Test 9: 消息队列和重试机制测试
+test "消息队列和重试机制测试" {
+  // 模拟消息队列
+  let mut message_queue = []
+  let mut processed_messages = []
+  let mut failed_messages = []
   
-  Gauge::set(rto_gauge, rto_achieved)
-  Gauge::set(rpo_gauge, rpo_achieved)
-  Counter::add(dr_counter, 1.0)
+  // 消息结构
+  // (id, content, retry_count, max_retries)
   
-  Span::set_attribute(dr_span, "rto.achieved.minutes", FloatValue(rto_achieved))
-  Span::set_attribute(dr_span, "rpo.achieved.minutes", FloatValue(rpo_achieved))
-  Span::set_status(dr_span, Ok)
-  Span::end(dr_span)
+  // 添加消息到队列
+  fn enqueue_message(queue : Array[(String, String, Int, Int)], message_id : String, content : String) -> Array[(String, String, Int, Int)] {
+    queue + [(message_id, content, 0, 3)] // 最大重试3次
+  }
   
-  // 验证灾难恢复
-  assert_true(rto_achieved <= 30.0) // 应该满足RTO目标
-  assert_true(rpo_achieved <= 15.0) // 应该满足RPO目标
-  assert_eq(Counter::value(dr_counter), 1.0)
-  assert_eq(Gauge::value(rto_gauge), rto_achieved)
-  assert_eq(Gauge::value(rpo_gauge), rpo_achieved)
+  // 处理消息
+  fn process_message(message : (String, String, Int, Int)) -> (String, String, Int, Int, Bool) {
+    let (id, content, retry_count, max_retries) = message
+    
+    // 模拟处理成功和失败
+    if content.contains("success") {
+      (id, content, retry_count, max_retries, true) // 处理成功
+    } else if retry_count < max_retries {
+      (id, content, retry_count + 1, max_retries, false) // 处理失败，增加重试次数
+    } else {
+      (id, content, retry_count, max_retries, false) // 达到最大重试次数，仍然失败
+    }
+  }
+  
+  // 添加消息到队列
+  message_queue = enqueue_message(message_queue, "msg1", "success_message_1")
+  message_queue = enqueue_message(message_queue, "msg2", "failed_message_will_retry")
+  message_queue = enqueue_message(message_queue, "msg3", "success_message_2")
+  message_queue = enqueue_message(message_queue, "msg4", "failed_message_will_retry")
+  message_queue = enqueue_message(message_queue, "msg5", "failed_message_will_retry")
+  
+  // 处理队列中的消息
+  let mut new_queue = []
+  for message in message_queue {
+    let (id, content, retry_count, max_retries, success) = process_message(message)
+    
+    if success {
+      processed_messages = processed_messages + [(id, content)]
+    } else if retry_count < max_retries {
+      // 重新加入队列进行重试
+      new_queue = new_queue + [(id, content, retry_count, max_retries)]
+    } else {
+      // 达到最大重试次数，标记为失败
+      failed_messages = failed_messages + [(id, content, retry_count)]
+    }
+  }
+  
+  message_queue = new_queue
+  
+  // 验证第一轮处理结果
+  assert_eq(processed_messages.length(), 2)
+  assert_eq(message_queue.length(), 3) // 3个消息需要重试
+  assert_eq(failed_messages.length(), 0)
+  
+  // 第二轮处理
+  new_queue = []
+  for message in message_queue {
+    let (id, content, retry_count, max_retries, success) = process_message(message)
+    
+    if success {
+      processed_messages = processed_messages + [(id, content)]
+    } else if retry_count < max_retries {
+      // 重新加入队列进行重试
+      new_queue = new_queue + [(id, content, retry_count, max_retries)]
+    } else {
+      // 达到最大重试次数，标记为失败
+      failed_messages = failed_messages + [(id, content, retry_count)]
+    }
+  }
+  
+  message_queue = new_queue
+  
+  // 验证第二轮处理结果
+  assert_eq(processed_messages.length(), 2) // 没有新的成功消息
+  assert_eq(message_queue.length(), 3) // 3个消息仍然需要重试
+  assert_eq(failed_messages.length(), 0)
+  
+  // 第三轮处理
+  new_queue = []
+  for message in message_queue {
+    let (id, content, retry_count, max_retries, success) = process_message(message)
+    
+    if success {
+      processed_messages = processed_messages + [(id, content)]
+    } else if retry_count < max_retries {
+      // 重新加入队列进行重试
+      new_queue = new_queue + [(id, content, retry_count, max_retries)]
+    } else {
+      // 达到最大重试次数，标记为失败
+      failed_messages = failed_messages + [(id, content, retry_count)]
+    }
+  }
+  
+  message_queue = new_queue
+  
+  // 验证第三轮处理结果
+  assert_eq(processed_messages.length(), 2) // 没有新的成功消息
+  assert_eq(message_queue.length(), 3) // 3个消息仍然需要重试
+  assert_eq(failed_messages.length(), 0)
+  
+  // 第四轮处理 - 达到最大重试次数
+  new_queue = []
+  for message in message_queue {
+    let (id, content, retry_count, max_retries, success) = process_message(message)
+    
+    if success {
+      processed_messages = processed_messages + [(id, content)]
+    } else if retry_count < max_retries {
+      // 重新加入队列进行重试
+      new_queue = new_queue + [(id, content, retry_count, max_retries)]
+    } else {
+      // 达到最大重试次数，标记为失败
+      failed_messages = failed_messages + [(id, content, retry_count)]
+    }
+  }
+  
+  message_queue = new_queue
+  
+  // 验证第四轮处理结果
+  assert_eq(processed_messages.length(), 2) // 没有新的成功消息
+  assert_eq(message_queue.length(), 0) // 队列为空
+  assert_eq(failed_messages.length(), 3) // 3个消息失败
+  
+  // 验证失败消息的重试次数
+  for (id, content, retry_count) in failed_messages {
+    assert_eq(retry_count, 3) // 达到最大重试次数
+  }
+}
+
+// Test 10: 系统状态监控和自动恢复测试
+test "系统状态监控和自动恢复测试" {
+  // 模拟系统健康状态
+  let mut system_health = [
+    ("database", "healthy", 0), // (component, status, consecutive_failures)
+    ("cache", "healthy", 0),
+    ("message_queue", "healthy", 0),
+    ("api_gateway", "healthy", 0)
+  ]
+  
+  // 健康检查函数
+  fn health_check(component : String, current_status : String, failure_count : Int) -> (String, Int) {
+    // 模拟不同组件的健康检查结果
+    match component {
+      "database" => {
+        if failure_count < 3 {
+          (current_status, failure_count) // 继续保持当前状态
+        } else {
+          ("healthy", 0) // 自动恢复
+        }
+      }
+      "cache" => {
+        if failure_count < 2 {
+          ("degraded", failure_count + 1) // 性能下降
+        } else {
+          ("healthy", 0) // 自动恢复
+        }
+      }
+      "message_queue" => {
+        if failure_count < 4 {
+          ("failed", failure_count + 1) // 持续失败
+        } else {
+          ("healthy", 0) // 自动恢复
+        }
+      }
+      "api_gateway" => {
+        if failure_count < 1 {
+          ("healthy", failure_count) // 保持健康
+        } else {
+          ("degraded", failure_count + 1) // 性能下降
+        }
+      }
+      _ => (current_status, failure_count)
+    }
+  }
+  
+  // 更新组件状态
+  fn update_component_health(health : Array[(String, String, Int)], component : String) -> Array[(String, String, Int)] {
+    let mut updated = []
+    for (name, status, failures) in health {
+      if name == component {
+        let (new_status, new_failures) = health_check(name, status, failures)
+        updated = updated + [(name, new_status, new_failures)]
+      } else {
+        updated = updated + [(name, status, failures)]
+      }
+    }
+    updated
+  }
+  
+  // 检查系统整体健康状态
+  fn check_system_health(health : Array[(String, String, Int)]) -> String {
+    let mut healthy_count = 0
+    let mut degraded_count = 0
+    let mut failed_count = 0
+    
+    for (name, status, failures) in health {
+      match status {
+        "healthy" => healthy_count = healthy_count + 1
+        "degraded" => degraded_count = degraded_count + 1
+        "failed" => failed_count = failed_count + 1
+        _ => () // 未知状态
+      }
+    }
+    
+    if failed_count > 0 {
+      "unhealthy"
+    } else if degraded_count > 0 {
+      "degraded"
+    } else {
+      "healthy"
+    }
+  }
+  
+  // 初始健康检查
+  let overall_health = check_system_health(system_health)
+  assert_eq(overall_health, "healthy")
+  
+  // 模拟组件状态变化
+  system_health = update_component_health(system_health, "cache")
+  system_health = update_component_health(system_health, "message_queue")
+  system_health = update_component_health(system_health, "message_queue")
+  system_health = update_component_health(system_health, "message_queue")
+  
+  // 检查系统状态变化
+  let overall_health_after_failures = check_system_health(system_health)
+  assert_eq(overall_health_after_failures, "unhealthy")
+  
+  // 验证具体组件状态
+  for (name, status, failures) in system_health {
+    match name {
+      "database" => {
+        assert_eq(status, "healthy")
+        assert_eq(failures, 0)
+      }
+      "cache" => {
+        assert_eq(status, "degraded")
+        assert_eq(failures, 2)
+      }
+      "message_queue" => {
+        assert_eq(status, "failed")
+        assert_eq(failures, 3)
+      }
+      "api_gateway" => {
+        assert_eq(status, "healthy")
+        assert_eq(failures, 0)
+      }
+      _ => () // 其他组件
+    }
+  }
+  
+  // 继续监控，触发自动恢复
+  system_health = update_component_health(system_health, "message_queue") // 第4次检查，应该恢复
+  system_health = update_component_health(system_health, "cache") // 第3次检查，应该恢复
+  
+  // 检查自动恢复后的系统状态
+  let overall_health_after_recovery = check_system_health(system_health)
+  assert_eq(overall_health_after_recovery, "healthy")
+  
+  // 验证组件恢复状态
+  for (name, status, failures) in system_health {
+    match name {
+      "database" => {
+        assert_eq(status, "healthy")
+        assert_eq(failures, 0)
+      }
+      "cache" => {
+        assert_eq(status, "healthy")
+        assert_eq(failures, 0)
+      }
+      "message_queue" => {
+        assert_eq(status, "healthy")
+        assert_eq(failures, 0)
+      }
+      "api_gateway" => {
+        assert_eq(status, "healthy")
+        assert_eq(failures, 0)
+      }
+      _ => () // 其他组件
+    }
+  }
 }

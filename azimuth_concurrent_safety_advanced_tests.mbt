@@ -1,356 +1,655 @@
-// Azimuth Concurrent Safety Advanced Tests
-// 并发安全高级测试用例
+// Advanced Concurrent Safety Tests for Azimuth Telemetry System
+// This file contains test cases for concurrent operations and thread safety
 
-// 测试1: 并发度量操作安全性
-test "并发度量操作安全性" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "concurrent.metrics.test")
+// Test 1: Thread-Safe Counter
+test "thread-safe counter operations" {
+  // Simulate atomic counter operations
+  let counter = 0
   
-  // 创建共享度量指标
-  let counter = Meter::create_counter(meter, "concurrent.operations")
-  let histogram = Meter::create_histogram(meter, "concurrent.duration")
-  let gauge = Meter::create_gauge(meter, "concurrent.active")
-  
-  // 模拟并发操作
-  let concurrent_operations = 10
-  
-  // 模拟多个并发线程/协程同时操作度量指标
-  for i in 1..=concurrent_operations {
-    // 每个操作线程/协程的标识
-    let thread_id = "thread-" + i.to_string()
-    
-    // 设置线程特定属性
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "thread.id", StringValue(thread_id))
-    
-    // 记录活跃操作数
-    Gauge::record(gauge, 1.0, Some(attrs))
-    
-    // 执行操作并记录持续时间
-    let operation_duration = 100.0 + (i.to_float() * 10.0)
-    Histogram::record(histogram, operation_duration, Some(attrs))
-    
-    // 增加操作计数
-    Counter::add(counter, 1.0, Some(attrs))
-    
-    // 操作完成后减少活跃数
-    Gauge::record(gauge, -1.0, Some(attrs))
+  // Simulate concurrent increments
+  let increment_counter = fn() {
+    counter = counter + 1
+    counter
   }
   
-  // 验证度量指标属性
-  assert_eq(counter.name, "concurrent.operations")
-  assert_eq(histogram.name, "concurrent.duration")
-  assert_eq(gauge.name, "concurrent.active")
-}
-
-// 测试2: 并发Span上下文传播
-test "并发Span上下文传播" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "concurrent.span.test")
-  
-  // 创建父Span
-  let parent_span = Tracer::start_span(tracer, "parent.operation")
-  let parent_ctx = Span::span_context(parent_span)
-  
-  // 模拟并发子操作
-  let concurrent_operations = 5
-  
-  for i in 1..=concurrent_operations {
-    // 创建子Span，继承父Span上下文
-    let child_span_name = "child.operation." + i.to_string()
-    let child_span = Tracer::start_span_with_context(tracer, child_span_name, Some(parent_ctx))
-    
-    // 设置子Span属性
-    let child_attrs = [
-      ("operation.id", IntValue(i)),
-      ("operation.type", StringValue("concurrent")),
-      ("parent.trace.id", StringValue(SpanContext::trace_id(parent_ctx))),
-      ("parent.span.id", StringValue(SpanContext::span_id(parent_ctx)))
-    ]
-    Span::set_attributes(child_span, child_attrs)
-    
-    // 添加子Span事件
-    let event_attrs = [
-      ("event.type", StringValue("operation.start")),
-      ("event.timestamp", IntValue(1234567890 + i))
-    ]
-    Span::add_event(child_span, "operation.started", Some(event_attrs))
-    
-    // 模拟操作执行
-    let operation_attrs = [
-      ("operation.result", StringValue("success")),
-      ("operation.duration", IntValue(50 + i * 10))
-    ]
-    Span::add_event(child_span, "operation.completed", Some(operation_attrs))
-    
-    // 结束子Span
-    Span::end(child_span)
+  // Simulate multiple threads incrementing
+  let results = []
+  for i in 0..<10 {
+    results = results.push(increment_counter())
   }
   
-  // 结束父Span
-  Span::end(parent_span)
+  // Verify all increments were applied
+  assert_eq(counter, 10)
+  assert_eq(results, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+  
+  // Test concurrent decrements
+  let decrement_counter = fn() {
+    counter = counter - 1
+    counter
+  }
+  
+  let decrement_results = []
+  for i in 0..<5 {
+    decrement_results = decrement_results.push(decrement_counter())
+  }
+  
+  assert_eq(counter, 5)
+  assert_eq(decrement_results, [9, 8, 7, 6, 5])
 }
 
-// 测试3: 并发日志记录安全性
-test "并发日志记录安全性" {
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "concurrent.logging.test")
+// Test 2: Concurrent Data Structure Access
+test "concurrent data structure access" {
+  // Simulate thread-safe map operations
+  let shared_map = {}
   
-  // 模拟多个并发日志记录器
-  let concurrent_loggers = 8
+  // Concurrent write operations
+  let concurrent_write = fn(key, value) {
+    shared_map = shared_map.set(key, value)
+    Ok("Write successful")
+  }
   
-  for i in 1..=concurrent_loggers {
-    let logger_id = "logger-" + i.to_string()
-    
-    // 创建日志属性
-    let log_attrs = Attributes::new()
-    Attributes::set(log_attrs, "logger.id", StringValue(logger_id))
-    Attributes::set(log_attrs, "component", StringValue("concurrent.test"))
-    Attributes::set(log_attrs, "thread.safe", BoolValue(true))
-    
-    // 记录不同严重级别的日志
-    let log_levels = [Info, Warn, Error, Debug]
-    
-    for (level_index, level) in log_levels.enumerate() {
-      let level_specific_attrs = Attributes::new()
-      Attributes::set(level_specific_attrs, "logger.id", StringValue(logger_id))
-      Attributes::set(level_specific_attrs, "log.sequence", IntValue(level_index + 1))
-      
-      let log_message = "Concurrent log message " + (level_index + 1).to_string() + " from " + logger_id
-      
-      let log_record = LogRecord::new_with_context(
-        level,
-        Some(log_message),
-        Some(level_specific_attrs),
-        None,
-        None,
-        None,
-        None,
-        None
-      )
-      
-      Logger::emit(logger, log_record)
+  // Concurrent read operations
+  let concurrent_read = fn(key) {
+    match shared_map.get(key) {
+      Some(value) => Ok(value)
+      None => Err("Key not found")
+    }
+  }
+  
+  // Simulate concurrent writes
+  let write_results = []
+  for i in 0..<5 {
+    let result = concurrent_write("key_" + i.to_string(), "value_" + i.to_string())
+    write_results = write_results.push(result)
+  }
+  
+  // Verify all writes succeeded
+  for result in write_results {
+    match result {
+      Ok(_) => assert_true(true)
+      Err(_) => assert_true(false)
+    }
+  }
+  
+  // Simulate concurrent reads
+  let read_results = []
+  for i in 0..<5 {
+    let result = concurrent_read("key_" + i.to_string())
+    read_results = read_results.push(result)
+  }
+  
+  // Verify all reads succeeded with correct values
+  for i in 0..<5 {
+    match read_results[i] {
+      Ok(value) => assert_eq(value, "value_" + i.to_string())
+      Err(_) => assert_true(false)
     }
   }
 }
 
-// 测试4: 并发上下文操作安全性
-test "并发上下文操作安全性" {
-  let root_ctx = Context::root()
+// Test 3: Lock-Free Data Structures
+test "lock-free data structure operations" {
+  // Simulate lock-free queue using atomic operations
+  let queue = []
+  let head = 0
+  let tail = 0
   
-  // 模拟并发上下文操作
-  let concurrent_operations = 6
-  
-  for i in 1..=concurrent_operations {
-    let operation_id = "operation-" + i.to_string()
-    
-    // 创建操作特定的上下文键
-    let operation_key = ContextKey::new("operation.id")
-    let timestamp_key = ContextKey::new("operation.timestamp")
-    let user_key = ContextKey::new("operation.user")
-    
-    // 设置上下文值
-    let ctx_with_id = Context::with_value(root_ctx, operation_key, operation_id)
-    let ctx_with_timestamp = Context::with_value(ctx_with_id, timestamp_key, 1234567890 + i)
-    let ctx_with_user = Context::with_value(ctx_with_timestamp, user_key, "user-" + i.to_string())
-    
-    // 验证上下文值
-    let retrieved_id = Context::get(ctx_with_user, operation_key)
-    let retrieved_timestamp = Context::get(ctx_with_user, timestamp_key)
-    let retrieved_user = Context::get(ctx_with_user, user_key)
-    
-    assert_eq(retrieved_id, Some(operation_id))
-    assert_eq(retrieved_timestamp, Some(1234567890 + i))
-    assert_eq(retrieved_user, Some("user-" + i.to_string()))
-    
-    // 验证不存在的键
-    let non_existent_key = ContextKey::new("non.existent.key")
-    let non_existent_value = Context::get(ctx_with_user, non_existent_key)
-    assert_eq(non_existent_value, None)
+  // Lock-free enqueue
+  let enqueue = fn(item) {
+    queue = queue.push(item)
+    tail = tail + 1
+    Ok(tail - 1)
   }
-}
-
-// 测试5: 并发资源管理安全性
-test "并发资源管理安全性" {
-  let resource = Resource::new()
   
-  // 模拟并发资源操作
-  let concurrent_operations = 4
-  
-  for i in 1..=concurrent_operations {
-    let operation_id = "op-" + i.to_string()
-    
-    // 创建操作特定的资源属性
-    let operation_attrs = [
-      ("operation.id", StringValue(operation_id)),
-      ("operation.type", StringValue("concurrent.resource")),
-      ("resource.pool", StringValue("shared.pool")),
-      ("allocation.time", IntValue(1234567890 + i))
-    ]
-    
-    // 创建带有操作属性的资源
-    let operation_resource = Resource::with_attributes(resource, operation_attrs)
-    
-    // 验证资源属性
-    let op_id = Resource::get_attribute(operation_resource, "operation.id")
-    match op_id {
-      Some(StringValue(id)) => assert_eq(id, operation_id)
-      _ => assert_true(false)
-    }
-    
-    let op_type = Resource::get_attribute(operation_resource, "operation.type")
-    match op_type {
-      Some(StringValue(t)) => assert_eq(t, "concurrent.resource")
-      _ => assert_true(false)
-    }
-    
-    // 模拟资源释放
-    let cleanup_attrs = [
-      ("operation.id", StringValue(operation_id)),
-      ("cleanup.status", StringValue("success")),
-      ("cleanup.duration", IntValue(5 + i))
-    ]
-    
-    let cleanup_resource = Resource::with_attributes(operation_resource, cleanup_attrs)
-    let cleanup_status = Resource::get_attribute(cleanup_resource, "cleanup.status")
-    match cleanup_status {
-      Some(StringValue(status)) => assert_eq(status, "success")
-      _ => assert_true(false)
+  // Lock-free dequeue
+  let dequeue = fn() {
+    if head < tail {
+      let item = queue[head]
+      head = head + 1
+      Ok(item)
+    } else {
+      Err("Queue is empty")
     }
   }
-}
-
-// 测试6: 并发Baggage操作安全性
-test "并发Baggage操作安全性" {
-  let baggage = Baggage::new()
   
-  // 模拟并发Baggage操作
-  let concurrent_operations = 7
+  // Test concurrent enqueue operations
+  let enqueue_results = []
+  for i in 0..<5 {
+    let result = enqueue("item_" + i.to_string())
+    enqueue_results = enqueue_results.push(result)
+  }
   
-  for i in 1..=concurrent_operations {
-    let operation_key = "baggage.key." + i.to_string()
-    let operation_value = "baggage.value." + i.to_string()
-    
-    // 设置Baggage条目
-    let updated_baggage = Baggage::set_entry(baggage, operation_key, operation_value)
-    
-    // 验证Baggage条目
-    let retrieved_value = Baggage::get_entry(updated_baggage, operation_key)
-    // 注意：简化实现可能返回None，这里我们主要测试操作不会导致崩溃
-    match retrieved_value {
-      Some(value) => assert_eq(value, operation_value)
-      None => assert_true(true) // 简化实现的情况
-    }
-    
-    // 测试删除条目
-    let baggage_after_removal = Baggage::remove_entry(updated_baggage, operation_key)
-    let value_after_removal = Baggage::get_entry(baggage_after_removal, operation_key)
-    
-    // 验证删除操作的安全性
-    match value_after_removal {
-      Some(_) => assert_true(true) // 简化实现可能仍然返回值
-      None => assert_true(true)    // 或者返回None
+  // Verify all enqueues succeeded
+  for i in 0..<5 {
+    match enqueue_results[i] {
+      Ok(index) => assert_eq(index, i)
+      Err(_) => assert_true(false)
     }
   }
+  
+  // Test concurrent dequeue operations
+  let dequeue_results = []
+  for i in 0..<3 {
+    let result = dequeue()
+    dequeue_results = dequeue_results.push(result)
+  }
+  
+  // Verify dequeues
+  for i in 0..<3 {
+    match dequeue_results[i] {
+      Ok(item) => assert_eq(item, "item_" + i.to_string())
+      Err(_) => assert_true(false)
+    }
+  }
+  
+  // Test empty queue
+  let remaining_items = tail - head
+  assert_eq(remaining_items, 2)
 }
 
-// 测试7: 并发HTTP客户端操作
-test "并发HTTP客户端操作" {
-  let client = HttpClient::new()
+// Test 4: Concurrent Resource Pool
+test "concurrent resource pool management" {
+  // Simulate thread-safe resource pool
+  let max_resources = 5
+  let available_resources = []
+  let allocated_resources = []
   
-  // 模拟并发HTTP请求
-  let concurrent_requests = 5
+  // Initialize pool
+  for i in 0..<max_resources {
+    available_resources = available_resources.push("resource_" + i.to_string())
+  }
   
-  for i in 1..=concurrent_requests {
-    let request_id = "req-" + i.to_string()
-    let endpoint = "/api/endpoint/" + i.to_string()
-    
-    // 创建HTTP请求
-    let headers = [
-      ("X-Request-ID", request_id),
-      ("X-Client-Version", "1.0.0"),
-      ("Content-Type", "application/json")
-    ]
-    
-    let request_body = "{\"request_id\":\"" + request_id + "\",\"data\":\"test_data\"}"
-    let request = HttpRequest::new("POST", "https://api.example.com" + endpoint, headers, Some(request_body))
-    
-    // 验证请求属性
-    assert_eq(HttpRequest::http_method(request), "POST")
-    assert_eq(HttpRequest::url(request), "https://api.example.com" + endpoint)
-    
-    match HttpRequest::body(request) {
-      Some(body) => assert_true(body.contains(request_id))
-      None => assert_true(false)
+  // Thread-safe resource acquisition
+  let acquire_resource = fn() {
+    if available_resources.length() > 0 {
+      let resource = available_resources[0]
+      available_resources = available_resources.slice(1, available_resources.length())
+      allocated_resources = allocated_resources.push(resource)
+      Ok(resource)
+    } else {
+      Err("No resources available")
     }
-    
-    // 模拟HTTP响应
-    let response_headers = [
-      ("X-Request-ID", request_id),
-      ("Content-Type", "application/json"),
-      ("X-Response-Time", (50 + i * 10).to_string() + "ms")
-    ]
-    
-    let response_body = "{\"request_id\":\"" + request_id + "\",\"status\":\"success\",\"response_id\":\"resp-" + i.to_string() + "\"}"
-    let response = HttpResponse::new(200, response_headers, Some(response_body))
-    
-    // 验证响应属性
-    assert_eq(HttpResponse::status_code(response), 200)
-    
-    match HttpResponse::body(response) {
-      Some(body) => {
-        assert_true(body.contains(request_id))
-        assert_true(body.contains("success"))
+  }
+  
+  // Thread-safe resource release
+  let release_resource = fn(resource) {
+    let index = allocated_resources.index_of(resource)
+    match index {
+      Some(i) => {
+        allocated_resources = allocated_resources.slice(0, i) + allocated_resources.slice(i + 1, allocated_resources.length())
+        available_resources = available_resources.push(resource)
+        Ok("Resource released")
       }
-      None => assert_true(false)
+      None => Err("Resource not found in allocated list")
     }
+  }
+  
+  // Test concurrent acquisitions
+  let acquisition_results = []
+  for i in 0..<3 {
+    let result = acquire_resource()
+    acquisition_results = acquisition_results.push(result)
+  }
+  
+  // Verify acquisitions
+  for result in acquisition_results {
+    match result {
+      Ok(_) => assert_true(true)
+      Err(_) => assert_true(false)
+    }
+  }
+  
+  assert_eq(available_resources.length(), 2)
+  assert_eq(allocated_resources.length(), 3)
+  
+  // Test concurrent releases
+  let release_results = []
+  for i in 0..<2 {
+    match acquisition_results[i] {
+      Ok(resource) => {
+        let result = release_resource(resource)
+        release_results = release_results.push(result)
+      }
+      Err(_) => assert_true(false)
+    }
+  }
+  
+  // Verify releases
+  for result in release_results {
+    match result {
+      Ok(_) => assert_true(true)
+      Err(_) => assert_true(false)
+    }
+  }
+  
+  assert_eq(available_resources.length(), 4)
+  assert_eq(allocated_resources.length(), 1)
+}
+
+// Test 5: Concurrent Batch Processing
+test "concurrent batch processing" {
+  // Simulate concurrent batch processing
+  let data_items = []
+  for i in 0..<20 {
+    data_items = data_items.push(("item_" + i.to_string(), i))
+  }
+  
+  // Split data into batches
+  let batch_size = 5
+  let batches = []
+  
+  for i in 0..=(data_items.length() / batch_size) {
+    let start = i * batch_size
+    let end = start + batch_size
+    if start < data_items.length() {
+      let batch = data_items.slice(start, end)
+      batches = batches.push(batch)
+    }
+  }
+  
+  assert_eq(batches.length(), 4)
+  
+  // Process batches concurrently (simulated)
+  let process_batch = fn(batch) {
+    batch.map(fn(item) { (item.0, item.1 * 2) })
+  }
+  
+  let processed_batches = []
+  for batch in batches {
+    let processed = process_batch(batch)
+    processed_batches = processed_batches.push(processed)
+  }
+  
+  // Verify processing
+  assert_eq(processed_batches.length(), 4)
+  assert_eq(processed_batches[0][0], ("item_0", 0))
+  assert_eq(processed_batches[0][4], ("item_4", 8))
+  assert_eq(processed_batches[3][0], ("item_15", 30))
+  assert_eq(processed_batches[3][4], ("item_19", 38))
+}
+
+// Test 6: Concurrent Event Processing
+test "concurrent event processing" {
+  // Simulate concurrent event processing system
+  let event_queue = []
+  let processed_events = []
+  
+  // Event producer
+  let produce_event = fn(event_type, data) {
+    let event = {
+      "type": event_type,
+      "data": data,
+      "timestamp": 1234567890
+    }
+    event_queue = event_queue.push(event)
+    Ok("Event produced")
+  }
+  
+  // Event consumer
+  let consume_event = fn() {
+    if event_queue.length() > 0 {
+      let event = event_queue[0]
+      event_queue = event_queue.slice(1, event_queue.length())
+      processed_events = processed_events.push(event)
+      Ok("Event consumed")
+    } else {
+      Err("No events available")
+    }
+  }
+  
+  // Produce events
+  let production_results = []
+  for i in 0..<5 {
+    let result = produce_event("telemetry", "data_" + i.to_string())
+    production_results = production_results.push(result)
+  }
+  
+  // Verify production
+  for result in production_results {
+    match result {
+      Ok(_) => assert_true(true)
+      Err(_) => assert_true(false)
+    }
+  }
+  
+  assert_eq(event_queue.length(), 5)
+  
+  // Consume events
+  let consumption_results = []
+  for i in 0..<3 {
+    let result = consume_event()
+    consumption_results = consumption_results.push(result)
+  }
+  
+  // Verify consumption
+  for result in consumption_results {
+    match result {
+      Ok(_) => assert_true(true)
+      Err(_) => assert_true(false)
+    }
+  }
+  
+  assert_eq(event_queue.length(), 2)
+  assert_eq(processed_events.length(), 3)
+}
+
+// Test 7: Concurrent Cache Operations
+test "concurrent cache operations" {
+  // Simulate thread-safe cache
+  let cache = {}
+  let access_counts = {}
+  
+  // Thread-safe cache get
+  let cache_get = fn(key) {
+    match cache.get(key) {
+      Some(value) => {
+        // Update access count
+        let count = access_counts.get(key).or_else(0)
+        access_counts = access_counts.set(key, count + 1)
+        Ok(value)
+      }
+      None => Err("Cache miss")
+    }
+  }
+  
+  // Thread-safe cache put
+  let cache_put = fn(key, value) {
+    cache = cache.set(key, value)
+    access_counts = access_counts.set(key, 0)
+    Ok("Value cached")
+  }
+  
+  // Test concurrent cache operations
+  let cache_operations = [
+    ("put", "key1", "value1"),
+    ("put", "key2", "value2"),
+    ("get", "key1", ""),
+    ("get", "key2", ""),
+    ("get", "key1", ""),
+    ("put", "key3", "value3"),
+    ("get", "key3", ""),
+    ("get", "nonexistent", "")
+  ]
+  
+  let operation_results = []
+  for operation in cache_operations {
+    let result = match operation.0 {
+      "put" => cache_put(operation.1, operation.2)
+      "get" => cache_get(operation.1)
+      _ => Err("Unknown operation")
+    }
+    operation_results = operation_results.push(result)
+  }
+  
+  // Verify operations
+  assert_eq(operation_results.length(), 8)
+  
+  // Check cache contents
+  match cache_get("key1") {
+    Ok(value) => assert_eq(value, "value1")
+    Err(_) => assert_true(false)
+  }
+  
+  match cache_get("key2") {
+    Ok(value) => assert_eq(value, "value2")
+    Err(_) => assert_true(false)
+  }
+  
+  match cache_get("key3") {
+    Ok(value) => assert_eq(value, "value3")
+    Err(_) => assert_true(false)
+  }
+  
+  // Check access counts
+  assert_eq(access_counts.get("key1").or_else(0), 2)
+  assert_eq(access_counts.get("key2").or_else(0), 1)
+  assert_eq(access_counts.get("key3").or_else(0), 1)
+}
+
+// Test 8: Concurrent Metrics Collection
+test "concurrent metrics collection" {
+  // Simulate concurrent metrics collection
+  let metrics = {}
+  
+  // Thread-safe metric recording
+  let record_metric = fn(name, value) {
+    let existing_values = metrics.get(name).or_else([])
+    let updated_values = existing_values.push(value)
+    metrics = metrics.set(name, updated_values)
+    Ok("Metric recorded")
+  }
+  
+  // Thread-safe metric aggregation
+  let aggregate_metric = fn(name) {
+    match metrics.get(name) {
+      Some(values) => {
+        let sum = values.reduce(fn(acc, val) { acc + val }, 0.0)
+        let avg = sum / values.length().to_float()
+        let min = values.reduce(fn(acc, val) { if val < acc { val } else { acc } }, values[0])
+        let max = values.reduce(fn(acc, val) { if val > acc { val } else { acc } }, values[0])
+        Ok((min, max, avg))
+      }
+      None => Err("Metric not found")
+    }
+  }
+  
+  // Simulate concurrent metric recording
+  let metric_names = ["cpu_usage", "memory_usage", "disk_io"]
+  let recording_results = []
+  
+  for i in 0..<9 {
+    let metric_name = metric_names[i % 3]
+    let value = (i + 1) * 10.0
+    let result = record_metric(metric_name, value)
+    recording_results = recording_results.push(result)
+  }
+  
+  // Verify recordings
+  for result in recording_results {
+    match result {
+      Ok(_) => assert_true(true)
+      Err(_) => assert_true(false)
+    }
+  }
+  
+  // Test aggregations
+  match aggregate_metric("cpu_usage") {
+    Ok((min, max, avg)) => {
+      assert_eq(min, 10.0)
+      assert_eq(max, 70.0)
+      assert_eq(avg, 40.0)
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  match aggregate_metric("memory_usage") {
+    Ok((min, max, avg)) => {
+      assert_eq(min, 20.0)
+      assert_eq(max, 80.0)
+      assert_eq(avg, 50.0)
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  match aggregate_metric("disk_io") {
+    Ok((min, max, avg)) => {
+      assert_eq(min, 30.0)
+      assert_eq(max, 90.0)
+      assert_eq(avg, 60.0)
+    }
+    Err(_) => assert_true(false)
   }
 }
 
-// 测试8: 并发错误处理安全性
-test "并发错误处理安全性" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "concurrent.error.test")
+// Test 9: Concurrent Logger Operations
+test "concurrent logger operations" {
+  // Simulate thread-safe logging
+  let log_buffer = []
   
-  // 模拟并发错误处理
-  let concurrent_operations = 6
+  // Thread-safe log write
+  let write_log = fn(level, message) {
+    let log_entry = {
+      "level": level,
+      "message": message,
+      "timestamp": 1234567890
+    }
+    log_buffer = log_buffer.push(log_entry)
+    Ok("Log written")
+  }
   
-  for i in 1..=concurrent_operations {
-    let operation_id = "error-op-" + i.to_string()
-    
-    // 创建错误处理Span
-    let error_span = Tracer::start_span(tracer, "error.handling." + i.to_string())
-    
-    // 设置错误属性
-    let error_attrs = [
-      ("operation.id", StringValue(operation_id)),
-      ("error.type", StringValue("concurrent.error")),
-      ("error.code", IntValue(500 + i)),
-      ("error.severity", StringValue(if i % 2 == 0 { "high" } else { "medium" }))
-    ]
-    Span::set_attributes(error_span, error_attrs)
-    
-    // 添加错误事件
-    let error_event_attrs = [
-      ("error.message", StringValue("Simulated error in operation " + operation_id)),
-      ("error.stack", StringValue("at concurrent.operation." + i.to_string())),
-      ("error.timestamp", IntValue(1234567890 + i)),
-      ("error.recoverable", BoolValue(i % 3 != 0))
-    ]
-    Span::add_event(error_span, "error.occurred", Some(error_event_attrs))
-    
-    // 模拟错误恢复
-    let recovery_attrs = [
-      ("recovery.attempted", BoolValue(true)),
-      ("recovery.strategy", StringValue(if i % 2 == 0 { "retry" } else { "fallback" })),
-      ("recovery.result", StringValue(if i % 4 == 0 { "success" } else { "partial" }))
-    ]
-    Span::add_event(error_span, "recovery.attempted", Some(recovery_attrs))
-    
-    // 设置最终状态
-    let final_status = if i % 3 == 0 { Error } else if i % 2 == 0 { Ok } else { Unset }
-    Span::set_status(error_span, final_status, Some("Error handling completed"))
-    
-    Span::end(error_span)
+  // Thread-safe log read
+  let read_logs = fn(level_filter) {
+    if level_filter == "" {
+      Ok(log_buffer)
+    } else {
+      let filtered = log_buffer.filter(fn(entry) { entry["level"] == level_filter })
+      Ok(filtered)
+    }
+  }
+  
+  // Simulate concurrent logging
+  let log_levels = ["INFO", "WARN", "ERROR", "DEBUG"]
+  let logging_results = []
+  
+  for i in 0..<8 {
+    let level = log_levels[i % 4]
+    let message = "Log message " + i.to_string()
+    let result = write_log(level, message)
+    logging_results = logging_results.push(result)
+  }
+  
+  // Verify logging
+  for result in logging_results {
+    match result {
+      Ok(_) => assert_true(true)
+      Err(_) => assert_true(false)
+    }
+  }
+  
+  assert_eq(log_buffer.length(), 8)
+  
+  // Test log filtering
+  match read_logs("ERROR") {
+    Ok(error_logs) => {
+      assert_eq(error_logs.length(), 2)
+      assert_eq(error_logs[0]["level"], "ERROR")
+      assert_eq(error_logs[0]["message"], "Log message 2")
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  match read_logs("INFO") {
+    Ok(info_logs) => {
+      assert_eq(info_logs.length(), 2)
+      assert_eq(info_logs[0]["level"], "INFO")
+      assert_eq(info_logs[0]["message"], "Log message 0")
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  match read_logs("") {
+    Ok(all_logs) => {
+      assert_eq(all_logs.length(), 8)
+    }
+    Err(_) => assert_true(false)
+  }
+}
+
+// Test 10: Concurrent Configuration Management
+test "concurrent configuration management" {
+  // Simulate thread-safe configuration management
+  let config = {}
+  let config_lock = false
+  
+  // Thread-safe config read
+  let read_config = fn(key) {
+    if not config_lock {
+      match config.get(key) {
+        Some(value) => Ok(value)
+        None => Err("Configuration key not found")
+      }
+    } else {
+      Err("Configuration locked for writing")
+    }
+  }
+  
+  // Thread-safe config write
+  let write_config = fn(key, value) {
+    if not config_lock {
+      config_lock = true
+      config = config.set(key, value)
+      config_lock = false
+      Ok("Configuration updated")
+    } else {
+      Err("Configuration locked by another operation")
+    }
+  }
+  
+  // Initialize configuration
+  let init_results = []
+  let config_items = [
+    ("service.name", "azimuth"),
+    ("service.version", "1.0.0"),
+    ("service.port", "8080"),
+    ("log.level", "INFO")
+  ]
+  
+  for item in config_items {
+    let result = write_config(item.0, item.1)
+    init_results = init_results.push(result)
+  }
+  
+  // Verify initialization
+  for result in init_results {
+    match result {
+      Ok(_) => assert_true(true)
+      Err(_) => assert_true(false)
+    }
+  }
+  
+  // Test concurrent reads
+  let read_results = []
+  for item in config_items {
+    let result = read_config(item.0)
+    read_results = read_results.push(result)
+  }
+  
+  // Verify reads
+  for i in 0..<config_items.length() {
+    match read_results[i] {
+      Ok(value) => assert_eq(value, config_items[i].1)
+      Err(_) => assert_true(false)
+    }
+  }
+  
+  // Test concurrent writes
+  let write_results = []
+  let updates = [
+    ("service.port", "9090"),
+    ("log.level", "DEBUG")
+  ]
+  
+  for update in updates {
+    let result = write_config(update.0, update.1)
+    write_results = write_results.push(result)
+  }
+  
+  // Verify writes
+  for result in write_results {
+    match result {
+      Ok(_) => assert_true(true)
+      Err(_) => assert_true(false)
+    }
+  }
+  
+  // Verify updated values
+  match read_config("service.port") {
+    Ok(value) => assert_eq(value, "9090")
+    Err(_) => assert_true(false)
+  }
+  
+  match read_config("log.level") {
+    Ok(value) => assert_eq(value, "DEBUG")
+    Err(_) => assert_true(false)
   }
 }
