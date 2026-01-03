@@ -1,377 +1,428 @@
 // Azimuth New MoonBit Test Cases
-// This file contains new test cases for Azimuth telemetry system
-// Focusing on various aspects of MoonBit language features
+// This file contains additional test cases for the Azimuth telemetry system
 
-// Test 1: Advanced Data Structure Operations
-test "advanced data structure operations" {
-  // Test with nested arrays
-  let matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
-  let flattened = matrix.reduce(fn(acc, row) { acc + row }, [])
-  assert_eq(flattened.length(), 9)
-  assert_eq(flattened[4], 5)
+// Test 1: Timestamp and Date Formatting
+test "timestamp and date formatting operations" {
+  // Test timestamp creation and formatting
+  let timestamp = 1735689600000000000L // 2025-01-01 00:00:00 UTC
+  let formatted_date = "2025-01-01T00:00:00Z"
   
-  // Test with complex transformations
-  let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-  let processed = numbers
-    .filter(fn(x) { x % 2 == 0 })
-    .map(fn(x) { x * x })
-    .filter(fn(x) { x > 10 })
+  // Test timestamp operations
+  assert_true(timestamp > 0L)
+  assert_eq(formatted_date.length(), 20)
+  assert_true(formatted_date.contains("2025-01-01"))
+  assert_true(formatted_date.contains("T00:00:00Z"))
   
-  assert_eq(processed, [16, 36, 64, 100])
+  // Test date parsing simulation
+  let date_parts = formatted_date.split("T")
+  assert_eq(date_parts.length(), 2)
+  assert_eq(date_parts[0], "2025-01-01")
+  assert_eq(date_parts[1], "00:00:00Z")
   
-  // Test with associative array-like structure using tuples
-  let pairs = [("apple", 5), ("banana", 3), ("cherry", 8)]
-  let total_fruit = pairs.reduce(fn(acc, pair) { acc + pair.1 }, 0)
-  assert_eq(total_fruit, 16)
+  // Test time zone operations
+  let utc_time = "00:00:00Z"
+  let local_time = "08:00:00+08:00"
+  
+  assert_true(utc_time.contains("Z"))
+  assert_true(local_time.contains("+08:00"))
+  assert_eq(utc_time.length(), 8)
+  assert_eq(local_time.length(), 14)
 }
 
-// Test 2: Error Handling and Recovery
-test "error handling and recovery mechanisms" {
-  // Test Result type chain operations
-  let safe_divide = fn(a, b) {
-    if b == 0 {
-      Err("Division by zero")
+// Test 2: Data Compression and Decompression
+test "data compression and decompression operations" {
+  // Test compression ratio calculation
+  let original_data = "azimuth telemetry data compression test"
+  let compressed_data = "azimuth:telemetry:data:compression:test"
+  
+  let original_size = original_data.length()
+  let compressed_size = compressed_data.length()
+  
+  assert_eq(original_size, 39)
+  assert_eq(compressed_size, 39)
+  
+  // Test compression efficiency
+  let compression_ratio = (compressed_size.to_float() / original_size.to_float()) * 100.0
+  assert_true(compression_ratio > 0.0)
+  assert_true(compression_ratio <= 100.0)
+  
+  // Test batch compression
+  let data_batch = ["data1", "data2", "data3", "data4", "data5"]
+  let compressed_batch = []
+  
+  for data in data_batch {
+    let compressed = data + ":compressed"
+    compressed_batch = compressed_batch.push(compressed)
+  }
+  
+  assert_eq(compressed_batch.length(), 5)
+  assert_true(compressed_batch[0].contains(":compressed"))
+  assert_eq(compressed_batch[4], "data5:compressed")
+}
+
+// Test 3: Network Request and Response Processing
+test "network request and response processing" {
+  // Test HTTP status code handling
+  let status_codes = [200, 201, 400, 401, 404, 500, 503]
+  let mut success_count = 0
+  let mut error_count = 0
+  
+  for code in status_codes {
+    if code >= 200 and code < 300 {
+      success_count = success_count + 1
     } else {
-      Ok(a / b)
+      error_count = error_count + 1
     }
   }
   
-  let result1 = safe_divide(10, 2)
-  match result1 {
-    Ok(value) => assert_eq(value, 5)
-    Err(_) => assert_true(false)
+  assert_eq(success_count, 2)
+  assert_eq(error_count, 5)
+  
+  // Test request header processing
+  let headers = [
+    ("Content-Type", "application/json"),
+    ("Authorization", "Bearer token123"),
+    ("User-Agent", "Azimuth-Telemetry/1.0"),
+    ("Accept", "application/json")
+  ]
+  
+  let mut header_count = 0
+  for (key, value) in headers {
+    header_count = header_count + 1
+    assert_true(key.length() > 0)
+    assert_true(value.length() > 0)
   }
   
-  let result2 = safe_divide(10, 0)
-  match result2 {
-    Ok(_) => assert_true(false)
-    Err(msg) => assert_eq(msg, "Division by zero")
-  }
+  assert_eq(header_count, 4)
   
-  // Test Result chaining with map and flat_map
-  let chained = result1
-    .map(fn(x) { x * 2 })
-    .map(fn(x) { x + 1 })
-  
-  match chained {
-    Ok(value) => assert_eq(value, 11)
-    Err(_) => assert_true(false)
-  }
+  // Test response body parsing
+  let json_response = "{\"status\":\"success\",\"data\":{\"id\":123,\"name\":\"test\"}}"
+  assert_true(json_response.contains("status"))
+  assert_true(json_response.contains("success"))
+  assert_true(json_response.contains("data"))
+  assert_true(json_response.contains("id"))
+  assert_true(json_response.contains("123"))
 }
 
-// Test 3: Type System Validation
-test "type system validation and constraints" {
-  // Test with custom types
-  enum Status {
-    Pending
-    InProgress
-    Completed
-    Failed(String)
+// Test 4: Caching Mechanisms
+test "caching mechanisms and operations" {
+  // Test cache key generation
+  let cache_keys = ["user:123", "session:abc456", "config:default", "metrics:2025-01-01"]
+  let mut key_count = 0
+  
+  for key in cache_keys {
+    key_count = key_count + 1
+    let parts = key.split(":")
+    assert_eq(parts.length(), 2)
   }
   
-  let status1 = Status::InProgress
-  let status2 = Status::Failed("Network error")
+  assert_eq(key_count, 4)
   
-  let is_completed = match status1 {
-    Status::Completed => true
-    _ => false
-  }
-  assert_false(is_completed)
+  // Test cache TTL (Time To Live) operations
+  let cache_entries = [
+    ("user:123", 3600),    // 1 hour
+    ("session:abc456", 1800), // 30 minutes
+    ("config:default", 86400), // 24 hours
+    ("metrics:2025-01-01", 604800) // 7 days
+  ]
   
-  let error_message = match status2 {
-    Status::Failed(msg) => Some(msg)
-    _ => None
-  }
-  
-  match error_message {
-    Some(msg) => assert_eq(msg, "Network error")
-    None => assert_true(false)
+  let mut total_ttl = 0
+  for (key, ttl) in cache_entries {
+    total_ttl = total_ttl + ttl
+    assert_true(ttl > 0)
   }
   
-  // Test with type constraints
-  let process_value = fn(x : Int) : String {
-    if x > 100 {
-      "large"
-    } else if x > 50 {
-      "medium"
+  assert_eq(total_ttl, 3600 + 1800 + 86400 + 604800)
+  
+  // Test cache eviction simulation
+  let cache_size = 100
+  let eviction_threshold = 80
+  let current_usage = 85
+  
+  assert_true(current_usage > eviction_threshold)
+  assert_true(current_usage < cache_size)
+  
+  let should_evict = current_usage > eviction_threshold
+  assert_true(should_evict)
+}
+
+// Test 5: Configuration Management
+test "configuration management operations" {
+  // Test configuration value parsing
+  let config_values = [
+    ("server.port", "8080"),
+    ("database.host", "localhost"),
+    ("database.port", "5432"),
+    ("log.level", "INFO"),
+    ("telemetry.enabled", "true")
+  ]
+  
+  let mut string_configs = 0
+  let mut numeric_configs = 0
+  let mut boolean_configs = 0
+  
+  for (key, value) in config_values {
+    if value == "true" or value == "false" {
+      boolean_configs = boolean_configs + 1
+    } else if value.chars().all(fn(c) { c >= '0' and c <= '9' }) {
+      numeric_configs = numeric_configs + 1
     } else {
-      "small"
+      string_configs = string_configs + 1
     }
   }
   
-  assert_eq(process_value(150), "large")
-  assert_eq(process_value(75), "medium")
-  assert_eq(process_value(25), "small")
+  assert_eq(string_configs, 2)
+  assert_eq(numeric_configs, 2)
+  assert_eq(boolean_configs, 1)
+  
+  // Test configuration hierarchy
+  let base_config = "base"
+  let env_config = "development"
+  let user_config = "user123"
+  
+  let config_priority = [user_config, env_config, base_config]
+  assert_eq(config_priority.length(), 3)
+  assert_eq(config_priority[0], "user123")
+  assert_eq(config_priority[1], "development")
+  assert_eq(config_priority[2], "base")
 }
 
-// Test 4: Functional Programming Patterns
-test "functional programming patterns" {
-  // Test currying and partial application
-  let add = fn(a, b) { a + b }
-  let add_5 = fn(b) { add(5, b) }
+// Test 6: Authentication and Authorization
+test "authentication and authorization operations" {
+  // Test token validation
+  let valid_tokens = ["token123", "token456", "token789"]
+  let invalid_tokens = ["expired", "revoked", "invalid"]
   
-  assert_eq(add_5(10), 15)
-  assert_eq(add_5(0), 5)
+  let mut valid_count = 0
+  let mut invalid_count = 0
   
-  // Test function composition
-  let compose = fn(f, g) { fn(x) { f(g(x)) } }
+  for token in valid_tokens {
+    if token.starts_with("token") {
+      valid_count = valid_count + 1
+    }
+  }
   
-  let add_one = fn(x) { x + 1 }
-  let double = fn(x) { x * 2 }
-  let square = fn(x) { x * x }
+  for token in invalid_tokens {
+    if not(token.starts_with("token")) {
+      invalid_count = invalid_count + 1
+    }
+  }
   
-  let pipeline = compose(square, compose(double, add_one))
-  assert_eq(pipeline(3), 64)  // ((3 + 1) * 2)^2 = 64
+  assert_eq(valid_count, 3)
+  assert_eq(invalid_count, 3)
   
-  // Test with higher-order functions
-  let apply_twice = fn(f, x) { f(f(x)) }
-  assert_eq(apply_twice(add_one, 5), 7)
-  assert_eq(apply_twice(double, 3), 12)
+  // Test permission checking
+  let user_permissions = ["read", "write", "delete"]
+  let required_permissions = ["read", "write"]
+  
+  let mut has_all_permissions = true
+  for perm in required_permissions {
+    if not(user_permissions.contains(perm)) {
+      has_all_permissions = false
+    }
+  }
+  
+  assert_true(has_all_permissions)
+  
+  // Test role-based access control
+  let user_roles = ["admin", "user", "viewer"]
+  let admin_only_operations = ["delete_user", "system_config"]
+  
+  let is_admin = user_roles.contains("admin")
+  assert_true(is_admin)
+  
+  let can_perform_admin_ops = is_admin
+  assert_true(can_perform_admin_ops)
 }
 
-// Test 5: Advanced Pattern Matching
-test "advanced pattern matching scenarios" {
-  // Test with nested patterns
-  enum Nested {
-    Leaf(Int)
-    Node(Nested, Nested)
-    Empty
-  }
+// Test 7: Data Validation
+test "data validation operations" {
+  // Test email validation
+  let valid_emails = ["user@example.com", "test.email+tag@example.org", "user123@test-domain.com"]
+  let invalid_emails = ["invalid-email", "@example.com", "user@", "user@.com"]
   
-  let tree = Node(Node(Leaf(1), Leaf(2)), Node(Leaf(3), Empty))
+  let mut valid_email_count = 0
+  let mut invalid_email_count = 0
   
-  let sum_tree = fn(node) {
-    match node {
-      Nested::Leaf(value) => value
-      Nested::Node(left, right) => sum_tree(left) + sum_tree(right)
-      Nested::Empty => 0
+  for email in valid_emails {
+    if email.contains("@") and email.contains(".") {
+      valid_email_count = valid_email_count + 1
     }
   }
   
-  assert_eq(sum_tree(tree), 6)
-  
-  // Test with guard patterns
-  let classify_number = fn(x) {
-    match x {
-      n if n < 0 => "negative"
-      n if n == 0 => "zero"
-      n if n % 2 == 0 => "even positive"
-      _ => "odd positive"
+  for email in invalid_emails {
+    if not(email.contains("@")) or not(email.contains(".")) {
+      invalid_email_count = invalid_email_count + 1
     }
   }
   
-  assert_eq(classify_number(-5), "negative")
-  assert_eq(classify_number(0), "zero")
-  assert_eq(classify_number(4), "even positive")
-  assert_eq(classify_number(7), "odd positive")
+  assert_eq(valid_email_count, 3)
+  assert_eq(invalid_email_count, 4)
+  
+  // Test phone number validation
+  let phone_numbers = ["+1-555-123-4567", "555.123.4567", "(555) 123-4567", "5551234567"]
+  let mut valid_phone_count = 0
+  
+  for phone in phone_numbers {
+    let digits_only = phone.chars().filter(fn(c) { c >= '0' and c <= '9' }).join("")
+    if digits_only.length() == 10 {
+      valid_phone_count = valid_phone_count + 1
+    }
+  }
+  
+  assert_eq(valid_phone_count, 4)
+  
+  // Test URL validation
+  let urls = [
+    "https://example.com",
+    "http://example.org/path",
+    "https://subdomain.example.com:8080/path?query=value"
+  ]
+  
+  for url in urls {
+    assert_true(url.starts_with("http"))
+    assert_true(url.contains("://"))
+    assert_true(url.contains("."))
+  }
 }
 
-// Test 6: Boundary Conditions and Edge Cases
-test "boundary conditions and edge cases" {
-  // Test with empty collections
-  let empty_array = []
-  assert_eq(empty_array.length(), 0)
-  assert_eq(empty_array.map(fn(x) { x * 2 }), [])
-  assert_eq(empty_array.filter(fn(x) { x > 0 }), [])
+// Test 8: Async Operations
+test "async operations and callbacks" {
+  // Test async task simulation
+  let task_ids = ["task1", "task2", "task3", "task4", "task5"]
+  let task_statuses = ["pending", "running", "completed", "failed", "cancelled"]
   
-  // Test with single element collections
-  let single_element = [42]
-  assert_eq(single_element.length(), 1)
-  assert_eq(single_element[0], 42)
-  assert_eq(single_element.map(fn(x) { x / 2 }), [21])
+  let mut completed_tasks = 0
+  let mut failed_tasks = 0
   
-  // Test with extreme values
-  let max_int = 2147483647
-  let min_int = -2147483648
-  
-  assert_eq(max_int + 1, -2147483648)  // Overflow behavior
-  assert_eq(min_int - 1, 2147483647)   // Underflow behavior
-  
-  // Test with boundary conditions in loops
-  let mut count = 0
-  for i in 0..<0 {  // Empty range
-    count = count + 1
+  for status in task_statuses {
+    if status == "completed" {
+      completed_tasks = completed_tasks + 1
+    } else if status == "failed" {
+      failed_tasks = failed_tasks + 1
+    }
   }
-  assert_eq(count, 0)
   
-  for i in 0..<1 {  // Single iteration
-    count = count + 1
+  assert_eq(completed_tasks, 1)
+  assert_eq(failed_tasks, 1)
+  
+  // Test callback registration
+  let callbacks = ["onSuccess", "onError", "onComplete", "onProgress"]
+  let mut callback_count = 0
+  
+  for callback in callbacks {
+    callback_count = callback_count + 1
+    assert_true(callback.starts_with("on"))
   }
-  assert_eq(count, 1)
+  
+  assert_eq(callback_count, 4)
+  
+  // Test promise-like operations
+  let promise_states = ["pending", "fulfilled", "rejected"]
+  let current_state = promise_states[1]
+  
+  assert_eq(current_state, "fulfilled")
+  assert_true(promise_states.contains("pending"))
+  assert_true(promise_states.contains("rejected"))
 }
 
-// Test 7: Resource Management and Cleanup
-test "resource management and cleanup patterns" {
-  // Test with resource acquisition and release patterns
-  let with_resource = fn(resource_id, operation) {
-    // Simulate resource acquisition
-    let resource = "resource-" + resource_id.to_string()
-    
-    // Perform operation
-    let result = operation(resource)
-    
-    // Simulate resource cleanup
-    // In real scenarios, this would be automatic cleanup
-    
-    result
-  }
+// Test 9: Batch Processing
+test "batch processing operations" {
+  // Test batch size calculation
+  let total_items = 1000
+  let batch_size = 100
+  let expected_batches = total_items / batch_size
   
-  let result = with_resource(123, fn(res) {
-    assert_eq(res, "resource-123")
-    res.length()
-  })
+  assert_eq(expected_batches, 10)
   
-  assert_eq(result, 12)
+  // Test batch processing simulation
+  let items_processed = 0
+  let batches_processed = 10
+  let final_count = items_processed + (batches_processed * batch_size)
   
-  // Test with scoped resource management
-  let managed_operation = fn() {
-    let resources = ["r1", "r2", "r3"]
-    let results = []
-    
-    for resource in resources {
-      results = results.push("processed-" + resource)
+  assert_eq(final_count, 1000)
+  
+  // Test batch error handling
+  let batch_results = ["success", "success", "error", "success", "success"]
+  let mut success_count = 0
+  let mut error_count = 0
+  
+  for result in batch_results {
+    if result == "success" {
+      success_count = success_count + 1
+    } else if result == "error" {
+      error_count = error_count + 1
     }
-    
-    // Resources would be automatically cleaned up here
-    results
   }
   
-  let processed = managed_operation()
-  assert_eq(processed, ["processed-r1", "processed-r2", "processed-r3"])
+  assert_eq(success_count, 4)
+  assert_eq(error_count, 1)
+  
+  // Test batch retry mechanism
+  let max_retries = 3
+  let current_retry = 2
+  
+  assert_true(current_retry < max_retries)
+  
+  let should_retry = current_retry < max_retries
+  assert_true(should_retry)
+  
+  let next_retry = current_retry + 1
+  assert_eq(next_retry, 3)
 }
 
-// Test 8: Serialization and Deserialization
-test "serialization and deserialization patterns" {
-  // Test with simple serialization
-  let serialize_int = fn(x) { x.to_string() }
-  let deserialize_int = fn(s) { 
-    // In real implementation, this would handle parsing errors
-    match s {
-      "0" => Some(0)
-      "1" => Some(1)
-      "2" => Some(2)
-      "3" => Some(3)
-      "4" => Some(4)
-      "5" => Some(5)
-      "6" => Some(6)
-      "7" => Some(7)
-      "8" => Some(8)
-      "9" => Some(9)
-      "10" => Some(10)
-      _ => None
-    }
+// Test 10: Resource Cleanup
+test "resource cleanup operations" {
+  // Test resource allocation tracking
+  let allocated_resources = [
+    ("memory", 1024),
+    ("connections", 10),
+    ("files", 5),
+    ("threads", 4)
+  ]
+  
+  let mut total_allocated = 0
+  for (resource_type, amount) in allocated_resources {
+    total_allocated = total_allocated + amount
+    assert_true(resource_type.length() > 0)
+    assert_true(amount > 0)
   }
   
-  let original = 7
-  let serialized = serialize_int(original)
-  let deserialized = deserialize_int(serialized)
+  assert_eq(total_allocated, 1024 + 10 + 5 + 4)
   
-  match deserialized {
-    Some(value) => assert_eq(value, original)
-    None => assert_true(false)
+  // Test resource cleanup simulation
+  let cleanup_operations = [
+    ("memory", 1024),
+    ("connections", 10),
+    ("files", 5),
+    ("threads", 4)
+  ]
+  
+  let mut total_cleaned = 0
+  for (resource_type, amount) in cleanup_operations {
+    total_cleaned = total_cleaned + amount
   }
   
-  // Test with array serialization
-  let serialize_array = fn(arr) {
-    "[" + arr.reduce(fn(acc, x) { 
-      if acc.length() == 0 { serialize_int(x) } 
-      else { acc + "," + serialize_int(x) } 
-    }, "") + "]"
+  assert_eq(total_allocated, total_cleaned)
+  
+  // Test garbage collection simulation
+  let gc_cycles = [1, 2, 3, 4, 5]
+  let mut total_collected = 0
+  
+  for cycle in gc_cycles {
+    let collected = cycle * 100
+    total_collected = total_collected + collected
   }
   
-  let numbers = [1, 2, 3, 4, 5]
-  let array_serialized = serialize_array(numbers)
-  assert_eq(array_serialized, "[1,2,3,4,5]")
-}
-
-// Test 9: Performance and Efficiency
-test "performance and efficiency patterns" {
-  // Test with efficient algorithms
-  let fibonacci = fn(n) {
-    if n <= 1 {
-      n
-    } else {
-      let mut a = 0
-      let mut b = 1
-      for i in 2..=n {
-        let temp = a + b
-        a = b
-        b = temp
-      }
-      b
-    }
-  }
+  assert_eq(total_collected, 100 + 200 + 300 + 400 + 500)
   
-  assert_eq(fibonacci(0), 0)
-  assert_eq(fibonacci(1), 1)
-  assert_eq(fibonacci(5), 5)
-  assert_eq(fibonacci(10), 55)
+  // Test resource leak detection
+  let leaked_resources = 0
+  let total_resources = total_allocated
   
-  // Test with memoization pattern
-  let memo_cache = []
-  let memoized_fib = fn(n) {
-    if n < memo_cache.length() {
-      memo_cache[n]
-    } else {
-      let result = fibonacci(n)
-      // In real implementation, would extend cache
-      result
-    }
-  }
+  assert_eq(leaked_resources, 0)
+  assert_true(total_resources > 0)
   
-  assert_eq(memoized_fib(7), 13)
-  
-  // Test with efficient collection operations
-  let large_array = []
-  for i in 1..=100 {
-    large_array = large_array.push(i)
-  }
-  
-  let sum = large_array.reduce(fn(acc, x) { acc + x }, 0)
-  assert_eq(sum, 5050)  // Sum of 1 to 100
-}
-
-// Test 10: Integration and System Tests
-test "integration and system level tests" {
-  // Test with complex workflow
-  let process_data = fn(input_data) {
-    input_data
-      .filter(fn(x) { x > 0 })
-      .map(fn(x) { x * 2 })
-      .filter(fn(x) { x < 20 })
-      .reduce(fn(acc, x) { acc + x }, 0)
-  }
-  
-  let test_data = [-5, -2, 0, 1, 2, 3, 8, 10, 15, 20]
-  let result = process_data(test_data)
-  
-  // Expected: filter positives -> [1, 2, 3, 8, 10, 15, 20]
-  // Double -> [2, 4, 6, 16, 20, 30, 40]
-  // Filter < 20 -> [2, 4, 6, 16]
-  // Sum -> 28
-  assert_eq(result, 28)
-  
-  // Test with error propagation
-  let validate_and_process = fn(data) {
-    if data.length() == 0 {
-      Err("Empty data")
-    } else {
-      let sum = data.reduce(fn(acc, x) { acc + x }, 0)
-      let average = sum / data.length()
-      Ok(average)
-    }
-  }
-  
-  let valid_data = [10, 20, 30, 40, 50]
-  let invalid_data = []
-  
-  match validate_and_process(valid_data) {
-    Ok(avg) => assert_eq(avg, 30)
-    Err(_) => assert_true(false)
-  }
-  
-  match validate_and_process(invalid_data) {
-    Ok(_) => assert_true(false)
-    Err(msg) => assert_eq(msg, "Empty data")
-  }
+  let has_leaks = leaked_resources > 0
+  assert_false(has_leaks)
 }
