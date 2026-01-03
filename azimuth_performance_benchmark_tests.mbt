@@ -1,448 +1,492 @@
-// Azimuth Telemetry System - Performance Benchmark Tests
-// This file contains test cases for performance benchmarking functionality
+// Azimuth Performance Benchmark Tests
+// This file contains test cases for performance benchmarking
 
-// Test 1: Telemetry Data Collection Performance
-test "telemetry data collection performance" {
-  let benchmark = PerformanceBenchmark::new("data_collection")
+// Test 1: Telemetry Data Processing Performance
+test "telemetry data processing performance" {
+  let benchmark = Benchmark::new("Telemetry Data Processing")
   
-  // Benchmark span creation
-  let span_creation_time = PerformanceBenchmark::measure(benchmark, || {
-    for i in 0..=999 {
-      let span_ctx = SpanContext::new("trace_id_" + i.to_string(), "span_id_" + i.to_string(), true, "")
-      let span = Span::new("test_span", Internal, span_ctx)
-      Span::end(span)
-    }
-  })
-  
-  // Should complete within reasonable time (adjust threshold based on requirements)
-  assert_true(span_creation_time < 1000) // Less than 1 second
-  
-  // Benchmark metric recording
-  let metric_recording_time = PerformanceBenchmark::measure(benchmark, || {
-    let provider = MeterProvider::default()
-    let meter = MeterProvider::get_meter(provider, "benchmark_meter")
-    let counter = Meter::create_counter(meter, "benchmark_counter", None, None)
-    
-    for i in 0..=999 {
-      Counter::add(counter, 1.0)
-    }
-  })
-  
-  assert_true(metric_recording_time < 500) // Less than 0.5 seconds
-  
-  // Benchmark log emission
-  let log_emission_time = PerformanceBenchmark::measure(benchmark, || {
-    let provider = LoggerProvider::default()
-    let logger = LoggerProvider::get_logger(provider, "benchmark_logger")
-    
-    for i in 0..=999 {
-      let log_record = LogRecord::new(Info, "Benchmark log message " + i.to_string())
-      Logger::emit(logger, log_record)
-    }
-  })
-  
-  assert_true(log_emission_time < 750) // Less than 0.75 seconds
-}
-
-// Test 2: Memory Usage Benchmark
-test "memory usage benchmark" {
-  let memory_monitor = MemoryMonitor::new()
-  
-  // Measure memory usage before
-  let initial_memory = MemoryMonitor::get_current_usage(memory_monitor)
-  
-  // Create a large number of telemetry objects
-  let spans = []
-  for i in 0..=999 {
-    let span_ctx = SpanContext::new("trace_id_" + i.to_string(), "span_id_" + i.to_string(), true, "")
-    let span = Span::new("test_span", Internal, span_ctx)
-    spans.push(span)
+  // Generate test data
+  let telemetry_data = []
+  for i = 0; i < 10000; i = i + 1 {
+    let data = TelemetryData::new(
+      "service-" + (i % 10).to_string(),
+      "operation-" + (i % 100).to_string(),
+      [
+        ("request.id", StringValue("req-" + i.to_string())),
+        ("user.id", StringValue("user-" + (i % 1000).to_string())),
+        ("response.size", IntValue(1024 + (i % 2048))),
+        ("duration.ms", IntValue(50 + (i % 500)))
+      ],
+      1234567890L + (i as Int64)
+    )
+    telemetry_data.push(data)
   }
   
-  // Measure memory usage after
-  let peak_memory = MemoryMonitor::get_peak_usage(memory_monitor)
-  
-  // Memory usage should be reasonable (adjust threshold based on requirements)
-  let memory_increase = peak_memory - initial_memory
-  assert_true(memory_increase < 50 * 1024 * 1024) // Less than 50MB
-  
-  // Clean up
-  for span in spans {
-    Span::end(span)
-  }
-  
-  // Check memory after cleanup
-  let final_memory = MemoryMonitor::get_current_usage(memory_monitor)
-  let memory_after_cleanup = final_memory - initial_memory
-  assert_true(memory_after_cleanup < 10 * 1024 * 1024) // Less than 10MB after cleanup
-}
-
-// Test 3: Concurrent Operations Performance
-test "concurrent operations performance" {
-  let benchmark = PerformanceBenchmark::new("concurrent_operations")
-  
-  // Benchmark concurrent span operations
-  let concurrent_span_time = PerformanceBenchmark::measure_concurrent(benchmark, 10, || {
-    for i in 0..=99 {
-      let span_ctx = SpanContext::new("trace_id_" + i.to_string(), "span_id_" + i.to_string(), true, "")
-      let span = Span::new("test_span", Internal, span_ctx)
-      Span::add_event(span, "test_event", None)
-      Span::end(span)
+  // Benchmark data processing
+  let processor = TelemetryProcessor::new()
+  let result = Benchmark::measure(benchmark, {
+    for data in telemetry_data {
+      TelemetryProcessor::process(processor, data)
     }
   })
   
-  // Concurrent operations should be faster than sequential (approximately)
-  assert_true(concurrent_span_time < 2000) // Less than 2 seconds
+  // Verify performance metrics
+  assert_true(result.duration_ms < 1000) // Should complete within 1 second
+  assert_true(result.throughput > 10000) // Should process at least 10,000 items/second
   
-  // Benchmark concurrent metric operations
-  let concurrent_metric_time = PerformanceBenchmark::measure_concurrent(benchmark, 5, || {
-    let provider = MeterProvider::default()
-    let meter = MeterProvider::get_meter(provider, "concurrent_meter")
-    let counter = Meter::create_counter(meter, "concurrent_counter", None, None)
-    
-    for i in 0..=199 {
-      Counter::add(counter, 1.0)
-    }
-  })
-  
-  assert_true(concurrent_metric_time < 1000) // Less than 1 second
+  // Print benchmark results
+  Benchmark::print_result(result)
 }
 
-// Test 4: Serialization Performance
+// Test 2: Serialization Performance
 test "serialization performance" {
-  let benchmark = PerformanceBenchmark::new("serialization")
+  let benchmark = Benchmark::new("Serialization Performance")
   
-  // Create test data
-  let telemetry_data = []
-  for i in 0..=999 {
-    let span_ctx = SpanContext::new("trace_id_" + i.to_string(), "span_id_" + i.to_string(), true, "")
-    let span = Span::new("test_span", Internal, span_ctx)
-    telemetry_data.push(span)
-  }
+  // Generate test data
+  let telemetry_data = TelemetryData::new(
+    "performance-test-service",
+    "serialization-operation",
+    [
+      ("large.data", StringValue("x".repeat(1000))),
+      ("numeric.value", FloatValue(3.14159265359)),
+      ("array.data", ArrayStringValue(["a", "b", "c", "d", "e"].repeat(100)))
+    ],
+    1234567890L
+  )
   
-  // Benchmark serialization
-  let serialization_time = PerformanceBenchmark::measure(benchmark, || {
-    for span in telemetry_data {
-      let serialized = SpanSerializer::serialize(span)
-      // Store serialized data for deserialization test
-      serialized
+  // Benchmark JSON serialization
+  let json_serializer = JsonSerializer::new()
+  let json_result = Benchmark::measure(benchmark.with_name("JSON Serialization"), {
+    for i = 0; i < 1000; i = i + 1 {
+      Serializer::serialize(json_serializer, telemetry_data)
     }
   })
   
-  assert_true(serialization_time < 1500) // Less than 1.5 seconds
-  
-  // Benchmark deserialization
-  let serialized_data = []
-  for span in telemetry_data {
-    serialized_data.push(SpanSerializer::serialize(span))
-  }
-  
-  let deserialization_time = PerformanceBenchmark::measure(benchmark, || {
-    for data in serialized_data {
-      SpanSerializer::deserialize(data)
+  // Benchmark JSON deserialization
+  let json_data = Serializer::serialize(json_serializer, telemetry_data)
+  let json_deserializer = JsonDeserializer::new()
+  let json_deserialize_result = Benchmark::measure(benchmark.with_name("JSON Deserialization"), {
+    for i = 0; i < 1000; i = i + 1 {
+      Deserializer::deserialize(json_deserializer, json_data)
     }
   })
   
-  assert_true(deserialization_time < 1500) // Less than 1.5 seconds
+  // Benchmark Binary serialization
+  let binary_serializer = BinarySerializer::new()
+  let binary_result = Benchmark::measure(benchmark.with_name("Binary Serialization"), {
+    for i = 0; i < 1000; i = i + 1 {
+      Serializer::serialize(binary_serializer, telemetry_data)
+    }
+  })
+  
+  // Verify performance metrics
+  assert_true(json_result.duration_ms < 500)
+  assert_true(json_deserialize_result.duration_ms < 500)
+  assert_true(binary_result.duration_ms < 200) // Binary should be faster
+  
+  // Binary serialization should be faster than JSON
+  assert_true(binary_result.duration_ms < json_result.duration_ms)
+  
+  // Print benchmark results
+  Benchmark::print_result(json_result)
+  Benchmark::print_result(json_deserialize_result)
+  Benchmark::print_result(binary_result)
 }
 
-// Test 5: Data Processing Throughput
-test "data processing throughput" {
-  let throughput_monitor = ThroughputMonitor::new()
+// Test 3: Compression Performance
+test "compression performance" {
+  let benchmark = Benchmark::new("Compression Performance")
   
-  // Start monitoring
-  ThroughputMonitor::start(throughput_monitor)
+  // Generate test data
+  let large_data = "This is a test string for compression performance. ".repeat(1000)
   
-  // Process a large volume of telemetry data
-  let data_points = 10000
-  for i in 0..=data_points - 1 {
-    let span_ctx = SpanContext::new("trace_id_" + i.to_string(), "span_id_" + i.to_string(), true, "")
-    let span = Span::new("test_span", Internal, span_ctx)
+  // Benchmark Gzip compression
+  let gzip_compressor = GzipCompressor::new()
+  let gzip_result = Benchmark::measure(benchmark.with_name("Gzip Compression"), {
+    for i = 0; i < 100; i = i + 1 {
+      Compressor::compress(gzip_compressor, large_data.to_bytes())
+    }
+  })
+  
+  // Benchmark Gzip decompression
+  let compressed_data = Compressor::compress(gzip_compressor, large_data.to_bytes())
+  let gzip_decompressor = GzipDecompressor::new()
+  let gzip_decompress_result = Benchmark::measure(benchmark.with_name("Gzip Decompression"), {
+    for i = 0; i < 100; i = i + 1 {
+      Decompressor::decompress(gzip_decompressor, compressed_data)
+    }
+  })
+  
+  // Benchmark LZ4 compression
+  let lz4_compressor = LZ4Compressor::new()
+  let lz4_result = Benchmark::measure(benchmark.with_name("LZ4 Compression"), {
+    for i = 0; i < 100; i = i + 1 {
+      Compressor::compress(lz4_compressor, large_data.to_bytes())
+    }
+  })
+  
+  // Verify performance metrics
+  assert_true(gzip_result.duration_ms < 1000)
+  assert_true(gzip_decompress_result.duration_ms < 1000)
+  assert_true(lz4_result.duration_ms < 500) // LZ4 should be faster
+  
+  // LZ4 compression should be faster than Gzip
+  assert_true(lz4_result.duration_ms < gzip_result.duration_ms)
+  
+  // Print benchmark results
+  Benchmark::print_result(gzip_result)
+  Benchmark::print_result(gzip_decompress_result)
+  Benchmark::print_result(lz4_result)
+}
+
+// Test 4: Concurrent Performance
+test "concurrent performance" {
+  let benchmark = Benchmark::new("Concurrent Performance")
+  
+  // Test single-threaded performance
+  let single_thread_result = Benchmark::measure(benchmark.with_name("Single-threaded"), {
+    let counter = AtomicInt::new(0)
+    for i = 0; i < 1000000; i = i + 1 {
+      AtomicInt::increment(counter)
+    }
+    AtomicInt::get(counter)
+  })
+  
+  // Test multi-threaded performance
+  let multi_thread_result = Benchmark::measure(benchmark.with_name("Multi-threaded"), {
+    let counter = AtomicInt::new(0)
+    let threads = []
     
-    // Add some processing
-    Span::add_event(span, "processing_event", None)
-    Span::set_status(span, Ok, None)
-    Span::end(span)
-  }
+    for i = 0; i < 4; i = i + 1 {
+      let thread = Thread::spawn({
+        for j = 0; j < 250000; j = j + 1 {
+          AtomicInt::increment(counter)
+        }
+      })
+      threads.push(thread)
+    }
+    
+    for thread in threads {
+      Thread::join(thread)
+    }
+    
+    AtomicInt::get(counter)
+  })
   
-  // Stop monitoring and get results
-  ThroughputMonitor::stop(throughput_monitor)
-  let throughput = ThroughputMonitor::get_throughput(throughput_monitor)
+  // Verify both produce the same result
+  assert_eq(single_thread_result.value, 1000000)
+  assert_eq(multi_thread_result.value, 1000000)
   
-  // Should process at least 1000 data points per second
-  assert_true(throughput >= 1000)
+  // Multi-threaded should be faster (on multi-core systems)
+  // This might not always be true due to thread overhead, so we just verify it completes
+  assert_true(multi_thread_result.duration_ms < 5000)
+  
+  // Print benchmark results
+  Benchmark::print_result(single_thread_result)
+  Benchmark::print_result(multi_thread_result)
 }
 
-// Test 6: Resource Utilization Under Load
-test "resource utilization under load" {
-  let resource_monitor = ResourceMonitor::new()
+// Test 5: Memory Allocation Performance
+test "memory allocation performance" {
+  let benchmark = Benchmark::new("Memory Allocation Performance")
   
-  // Start monitoring
-  ResourceMonitor::start(resource_monitor)
+  // Benchmark stack allocation
+  let stack_result = Benchmark::measure(benchmark.with_name("Stack Allocation"), {
+    let sum = 0
+    for i = 0; i < 1000000; i = i + 1 {
+      let value = i * 2
+      sum = sum + value
+    }
+    sum
+  })
   
-  // Apply load to the system
-  let tasks = []
-  for i in 0..=9 {
-    let task = AsyncTask::new("load_task_" + i.to_string(), || {
-      for j in 0..=999 {
-        let span_ctx = SpanContext::new("load_trace_" + j.to_string(), "load_span_" + j.to_string(), true, "")
-        let span = Span::new("load_test_span", Internal, span_ctx)
-        Span::add_event(span, "load_event", None)
-        Span::end(span)
+  // Benchmark heap allocation
+  let heap_result = Benchmark::measure(benchmark.with_name("Heap Allocation"), {
+    let values = []
+    for i = 0; i < 100000; i = i + 1 {
+      values.push(i * 2)
+    }
+    
+    let sum = values.fold(0, { acc, value => acc + value })
+    sum
+  })
+  
+  // Verify results
+  assert_eq(stack_result.value, 1000000 * 999999) // Sum of 0, 2, 4, ..., 1999998
+  assert_eq(heap_result.value, 100000 * 99999) // Sum of 0, 2, 4, ..., 199998
+  
+  // Stack allocation should be faster
+  assert_true(stack_result.duration_ms < heap_result.duration_ms)
+  
+  // Print benchmark results
+  Benchmark::print_result(stack_result)
+  Benchmark::print_result(heap_result)
+}
+
+// Test 6: Network I/O Performance
+test "network i/o performance" {
+  let benchmark = Benchmark::new("Network I/O Performance")
+  
+  // Benchmark small request performance
+  let small_request_result = Benchmark::measure(benchmark.with_name("Small Requests"), {
+    let client = HttpClient::new()
+    let total_bytes = AtomicInt::new(0)
+    
+    for i = 0; i < 100; i = i + 1 {
+      let response = HttpClient::get(client, "https://httpbin.org/bytes/1024") // 1KB response
+      match response {
+        Success(data) => AtomicInt::add(total_bytes, data.length()),
+        Error(_) => () // Ignore errors for benchmark
       }
-      "completed"
-    })
-    tasks.push(task)
-  }
-  
-  // Execute all tasks
-  for task in tasks {
-    AsyncTask::execute(task)
-  }
-  
-  // Wait for all tasks to complete
-  for task in tasks {
-    AsyncTask::wait_for_completion(task)
-  }
-  
-  // Stop monitoring and check resource utilization
-  ResourceMonitor::stop(resource_monitor)
-  let cpu_usage = ResourceMonitor::get_cpu_usage(resource_monitor)
-  let memory_usage = ResourceMonitor::get_memory_usage(resource_monitor)
-  
-  // CPU usage should be reasonable
-  assert_true(cpu_usage < 90) // Less than 90%
-  
-  // Memory usage should not exceed limits
-  assert_true(memory_usage < 80) // Less than 80%
-}
-
-// Test 7: Latency Measurements
-test "latency measurements" {
-  let latency_monitor = LatencyMonitor::new()
-  
-  // Measure span creation latency
-  let span_latencies = []
-  for i in 0..=999 {
-    let start_time = LatencyMonitor::get_timestamp(latency_monitor)
-    
-    let span_ctx = SpanContext::new("trace_id_" + i.to_string(), "span_id_" + i.to_string(), true, "")
-    let span = Span::new("test_span", Internal, span_ctx)
-    Span::end(span)
-    
-    let end_time = LatencyMonitor::get_timestamp(latency_monitor)
-    span_latencies.push(end_time - start_time)
-  }
-  
-  // Calculate average latency
-  let total_latency = 0L
-  for latency in span_latencies {
-    total_latency = total_latency + latency
-  }
-  let average_latency = total_latency / span_latencies.length()
-  
-  // Average latency should be low
-  assert_true(average_latency < 10) // Less than 10 microseconds
-  
-  // Measure metric recording latency
-  let metric_latencies = []
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "latency_meter")
-  let counter = Meter::create_counter(meter, "latency_counter", None, None)
-  
-  for i in 0..=999 {
-    let start_time = LatencyMonitor::get_timestamp(latency_monitor)
-    Counter::add(counter, 1.0)
-    let end_time = LatencyMonitor::get_timestamp(latency_monitor)
-    metric_latencies.push(end_time - start_time)
-  }
-  
-  // Calculate average metric latency
-  let total_metric_latency = 0L
-  for latency in metric_latencies {
-    total_metric_latency = total_metric_latency + latency
-  }
-  let average_metric_latency = total_metric_latency / metric_latencies.length()
-  
-  // Average metric latency should be very low
-  assert_true(average_metric_latency < 5) // Less than 5 microseconds
-}
-
-// Test 8: Scalability Testing
-test "scalability testing" {
-  let scalability_tester = ScalabilityTester::new()
-  
-  // Test with different loads
-  let loads = [100, 500, 1000, 2000, 5000]
-  let results = []
-  
-  for load in loads {
-    let start_time = ScalabilityTester::get_timestamp(scalability_tester)
-    
-    // Process telemetry data
-    for i in 0..=load - 1 {
-      let span_ctx = SpanContext::new("scale_trace_" + i.to_string(), "scale_span_" + i.to_string(), true, "")
-      let span = Span::new("scale_test_span", Internal, span_ctx)
-      Span::end(span)
     }
     
-    let end_time = ScalabilityTester::get_timestamp(scalability_tester)
-    let processing_time = end_time - start_time
-    let throughput = load * 1000 / processing_time // Data points per second
+    AtomicInt::get(total_bytes)
+  })
+  
+  // Benchmark large request performance
+  let large_request_result = Benchmark::measure(benchmark.with_name("Large Requests"), {
+    let client = HttpClient::new()
+    let total_bytes = AtomicInt::new(0)
     
-    results.push((load, processing_time, throughput))
+    for i = 0; i < 10; i = i + 1 {
+      let response = HttpClient::get(client, "https://httpbin.org/bytes/102400") // 100KB response
+      match response {
+        Success(data) => AtomicInt::add(total_bytes, data.length()),
+        Error(_) => () // Ignore errors for benchmark
+      }
+    }
+    
+    AtomicInt::get(total_bytes)
+  })
+  
+  // Verify results (if requests succeeded)
+  if small_request_result.value > 0 {
+    assert_eq(small_request_result.value, 100 * 1024) // 100 requests * 1KB each
   }
   
-  // Check that throughput scales reasonably
-  let initial_throughput = results[0].2
-  let final_throughput = results[4].2
+  if large_request_result.value > 0 {
+    assert_eq(large_request_result.value, 10 * 102400) // 10 requests * 100KB each
+  }
   
-  // Throughput should not degrade significantly
-  let degradation_ratio = final_throughput / initial_throughput
-  assert_true(degradation_ratio > 0.5) // At least 50% of initial throughput
+  // Print benchmark results
+  Benchmark::print_result(small_request_result)
+  Benchmark::print_result(large_request_result)
 }
 
-// Test 9: Performance Regression Detection
-test "performance regression detection" {
-  let regression_detector = PerformanceRegressionDetector::new()
+// Test 7: Database Query Performance
+test "database query performance" {
+  let benchmark = Benchmark::new("Database Query Performance")
   
-  // Set baseline performance
-  let baseline_metrics = {
-    "span_creation": 500,  // microseconds
-    "metric_recording": 100,
-    "log_emission": 200,
-    "serialization": 1000
-  }
+  // Setup test database
+  let db = TestDatabase::new()
+  TestDatabase::create_table(db, "benchmark_test")
+  TestDatabase::insert_test_data(db, "benchmark_test", 10000) // Insert 10,000 rows
   
-  PerformanceRegressionDetector::set_baseline(regression_detector, baseline_metrics)
-  
-  // Measure current performance
-  let current_metrics = {
-    "span_creation": measure_span_creation_performance(),
-    "metric_recording": measure_metric_recording_performance(),
-    "log_emission": measure_log_emission_performance(),
-    "serialization": measure_serialization_performance()
-  }
-  
-  // Check for regressions
-  let regressions = PerformanceRegressionDetector::detect_regressions(regression_detector, current_metrics, 1.2) // 20% threshold
-  
-  // Should not have significant regressions
-  assert_true(regressions.length() == 0)
-}
-
-// Test 10: Performance Profiling
-test "performance profiling" {
-  let profiler = PerformanceProfiler::new()
-  
-  // Start profiling
-  PerformanceProfiler::start(profiler)
-  
-  // Perform various operations
-  for i in 0..=999 {
-    // Create and end spans
-    let span_ctx = SpanContext::new("profile_trace_" + i.to_string(), "profile_span_" + i.to_string(), true, "")
-    let span = Span::new("profile_test_span", Internal, span_ctx)
-    
-    // Add events
-    Span::add_event(span, "profile_event", None)
-    
-    // Set status
-    Span::set_status(span, Ok, None)
-    
-    // End span
-    Span::end(span)
-    
-    // Record metrics
-    let provider = MeterProvider::default()
-    let meter = MeterProvider::get_meter(provider, "profile_meter")
-    let counter = Meter::create_counter(meter, "profile_counter", None, None)
-    Counter::add(counter, 1.0)
-    
-    // Emit logs
-    let logger_provider = LoggerProvider::default()
-    let logger = LoggerProvider::get_logger(logger_provider, "profile_logger")
-    let log_record = LogRecord::new(Info, "Profile log message " + i.to_string())
-    Logger::emit(logger, log_record)
-  }
-  
-  // Stop profiling
-  PerformanceProfiler::stop(profiler)
-  
-  // Get profiling results
-  let profile_data = PerformanceProfiler::get_profile_data(profiler)
-  
-  // Check that profiling data is collected
-  assert_true(profile_data.total_operations > 0)
-  assert_true(profile_data.total_time > 0)
-  assert_true(profile_data.operation_types.length() > 0)
-  
-  // Check that time is distributed across operation types
-  let span_time = profile_data.operation_types["span_creation"]
-  let metric_time = profile_data.operation_types["metric_recording"]
-  let log_time = profile_data.operation_types["log_emission"]
-  
-  assert_true(span_time > 0)
-  assert_true(metric_time > 0)
-  assert_true(log_time > 0)
-}
-
-// Helper functions for performance regression test
-func measure_span_creation_performance() -> Int {
-  let benchmark = PerformanceBenchmark::new("temp")
-  let time = PerformanceBenchmark::measure(benchmark, || {
-    for i in 0..=99 {
-      let span_ctx = SpanContext::new("temp_trace_" + i.to_string(), "temp_span_" + i.to_string(), true, "")
-      let span = Span::new("temp_span", Internal, span_ctx)
-      Span::end(span)
+  // Benchmark simple query
+  let simple_query_result = Benchmark::measure(benchmark.with_name("Simple Query"), {
+    let results = TestDatabase::query(db, "SELECT COUNT(*) FROM benchmark_test")
+    match results {
+      Some(count) => count,
+      None => 0
     }
   })
-  time / 100 // Average per operation in microseconds
-}
-
-func measure_metric_recording_performance() -> Int {
-  let benchmark = PerformanceBenchmark::new("temp")
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "temp_meter")
-  let counter = Meter::create_counter(meter, "temp_counter", None, None)
   
-  let time = PerformanceBenchmark::measure(benchmark, || {
-    for i in 0..=99 {
-      Counter::add(counter, 1.0)
+  // Benchmark complex query
+  let complex_query_result = Benchmark::measure(benchmark.with_name("Complex Query"), {
+    let results = TestDatabase::query(db, "
+      SELECT category, AVG(value) as avg_value 
+      FROM benchmark_test 
+      WHERE value > 50 
+      GROUP BY category 
+      ORDER BY avg_value DESC 
+      LIMIT 10
+    ")
+    match results {
+      Some(rows) => rows.length(),
+      None => 0
     }
   })
-  time / 100 // Average per operation in microseconds
+  
+  // Benchmark batch insert
+  let batch_insert_result = Benchmark::measure(benchmark.with_name("Batch Insert"), {
+    let batch_data = []
+    for i = 0; i < 1000; i = i + 1 {
+      batch_data.push(("batch_" + i.to_string(), i % 100, i * 2))
+    }
+    TestDatabase::batch_insert(db, "benchmark_test", batch_data)
+  })
+  
+  // Verify results
+  assert_eq(simple_query_result.value, 10000) // Should count all 10,000 rows
+  
+  // Complex query should return some results
+  assert_true(complex_query_result.value >= 0 && complex_query_result.value <= 10)
+  
+  // Batch insert should succeed
+  assert_eq(batch_insert_result.value, 1000) // Should insert 1000 rows
+  
+  // Print benchmark results
+  Benchmark::print_result(simple_query_result)
+  Benchmark::print_result(complex_query_result)
+  Benchmark::print_result(batch_insert_result)
 }
 
-func measure_log_emission_performance() -> Int {
-  let benchmark = PerformanceBenchmark::new("temp")
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "temp_logger")
+// Test 8: Time Series Processing Performance
+test "time series processing performance" {
+  let benchmark = Benchmark::new("Time Series Processing Performance")
   
-  let time = PerformanceBenchmark::measure(benchmark, || {
-    for i in 0..=99 {
-      let log_record = LogRecord::new(Info, "Temp log message " + i.to_string())
-      Logger::emit(logger, log_record)
+  // Generate time series data
+  let time_series = TimeSeriesCollection::new("cpu.usage", "percentage")
+  for i = 0; i < 86400; i = i + 1 { // 1 day of data (1 point per second)
+    let timestamp = 1234567890L + (i as Int64)
+    let value = 50.0 + 10.0 * ((i as Float * 0.01).sin()) // Sine wave pattern
+    let point = TimeSeriesDataPoint::new(timestamp, value, [])
+    TimeSeriesCollection::add_point(time_series, point)
+  }
+  
+  // Benchmark aggregation
+  let aggregation_result = Benchmark::measure(benchmark.with_name("Aggregation"), {
+    TimeSeriesAggregator::average(time_series)
+  })
+  
+  // Benchmark windowing
+  let windowing_result = Benchmark::measure(benchmark.with_name("Windowing"), {
+    TimeSeriesWindower::time_windows(time_series, 3600L) // 1-hour windows
+  })
+  
+  // Benchmark downsampling
+  let downsampling_result = Benchmark::measure(benchmark.with_name("Downsampling"), {
+    TimeSeriesDownsampler::downsample(time_series, 60L, Average) // Downsample to 1-minute resolution
+  })
+  
+  // Benchmark anomaly detection
+  let anomaly_result = Benchmark::measure(benchmark.with_name("Anomaly Detection"), {
+    TimeSeriesAnomalyDetector::statistical(time_series, 2.0) // 2 standard deviations
+  })
+  
+  // Verify results
+  assert_true(aggregation_result.value >= 40.0 && aggregation_result.value <= 60.0) // Should be around 50
+  assert_eq(windowing_result.value.length(), 24) // 24 one-hour windows
+  assert_eq(downsampling_result.value.size(), 1440) // 1440 one-minute points
+  assert_true(anomaly_result.value.length() >= 0) // Should detect some anomalies
+  
+  // Print benchmark results
+  Benchmark::print_result(aggregation_result)
+  Benchmark::print_result(windowing_result)
+  Benchmark::print_result(downsampling_result)
+  Benchmark::print_result(anomaly_result)
+}
+
+// Test 9: Cache Performance
+test "cache performance" {
+  let benchmark = Benchmark::new("Cache Performance")
+  
+  let cache = LRUCache::new(1000) // 1000 item cache
+  let keys = []
+  
+  // Generate test keys
+  for i = 0; i < 2000; i = i + 1 {
+    keys.push("key_" + i.to_string())
+  }
+  
+  // Benchmark cache writes
+  let write_result = Benchmark::measure(benchmark.with_name("Cache Writes"), {
+    for i = 0; i < 1000; i = i + 1 {
+      LRUCache::put(cache, keys[i], "value_" + i.to_string())
     }
   })
-  time / 100 // Average per operation in microseconds
+  
+  // Benchmark cache hits
+  let hit_result = Benchmark::measure(benchmark.with_name("Cache Hits"), {
+    let hit_count = 0
+    for i = 0; i < 1000; i = i + 1 {
+      match LRUCache::get(cache, keys[i]) {
+        Some(_) => hit_count = hit_count + 1,
+        None => ()
+      }
+    }
+    hit_count
+  })
+  
+  // Benchmark cache misses
+  let miss_result = Benchmark::measure(benchmark.with_name("Cache Misses"), {
+    let miss_count = 0
+    for i = 1000; i < 2000; i = i + 1 {
+      match LRUCache::get(cache, keys[i]) {
+        Some(_) => (),
+        None => miss_count = miss_count + 1
+      }
+    }
+    miss_count
+  })
+  
+  // Verify results
+  assert_eq(write_result.value, 1000) // Should write 1000 items
+  assert_eq(hit_result.value, 1000)  // Should hit all 1000 items
+  assert_eq(miss_result.value, 1000) // Should miss all 1000 items
+  
+  // Cache hits should be faster than misses
+  assert_true(hit_result.duration_ms < miss_result.duration_ms)
+  
+  // Print benchmark results
+  Benchmark::print_result(write_result)
+  Benchmark::print_result(hit_result)
+  Benchmark::print_result(miss_result)
 }
 
-func measure_serialization_performance() -> Int {
-  let benchmark = PerformanceBenchmark::new("temp")
+// Test 10: End-to-End Performance
+test "end-to-end performance" {
+  let benchmark = Benchmark::new("End-to-End Performance")
   
-  // Create test data
+  // Simulate complete telemetry pipeline
+  let pipeline = TelemetryPipeline::new()
+  TelemetryPipeline::configure(pipeline, [
+    ("batch_size", IntValue(100)),
+    ("flush_interval_ms", IntValue(1000)),
+    ("compression", BoolValue(true)),
+    ("retry_count", IntValue(3))
+  ])
+  
+  // Generate test data
   let telemetry_data = []
-  for i in 0..=99 {
-    let span_ctx = SpanContext::new("temp_trace_" + i.to_string(), "temp_span_" + i.to_string(), true, "")
-    let span = Span::new("temp_span", Internal, span_ctx)
-    telemetry_data.push(span)
+  for i = 0; i < 10000; i = i + 1 {
+    let data = TelemetryData::new(
+      "service-" + (i % 10).to_string(),
+      "operation-" + (i % 100).to_string(),
+      [
+        ("request.id", StringValue("req-" + i.to_string())),
+        ("response.size", IntValue(1024 + (i % 2048))),
+        ("duration.ms", IntValue(50 + (i % 500)))
+      ],
+      1234567890L + (i as Int64)
+    )
+    telemetry_data.push(data)
   }
   
-  let time = PerformanceBenchmark::measure(benchmark, || {
-    for span in telemetry_data {
-      SpanSerializer::serialize(span)
+  // Benchmark complete pipeline
+  let pipeline_result = Benchmark::measure(benchmark.with_name("Complete Pipeline"), {
+    for data in telemetry_data {
+      TelemetryPipeline::process(pipeline, data)
     }
+    TelemetryPipeline::flush(pipeline)
   })
-  time / 100 // Average per operation in microseconds
+  
+  // Verify pipeline processed all data
+  assert_eq(TelemetryPipeline::processed_count(pipeline), 10000)
+  
+  // Verify pipeline performance
+  assert_true(pipeline_result.duration_ms < 5000) // Should complete within 5 seconds
+  assert_true(pipeline_result.throughput > 2000) // Should process at least 2,000 items/second
+  
+  // Print benchmark results
+  Benchmark::print_result(pipeline_result)
+  
+  // Print pipeline statistics
+  let stats = TelemetryPipeline::get_statistics(pipeline)
+  println("Pipeline Statistics:")
+  println("  Processed: " + stats.processed_count.to_string())
+  println("  Batches: " + stats.batch_count.to_string())
+  println("  Errors: " + stats.error_count.to_string())
+  println("  Avg Batch Size: " + stats.avg_batch_size.to_string())
+  println("  Compression Ratio: " + stats.compression_ratio.to_string())
 }

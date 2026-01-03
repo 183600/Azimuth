@@ -1244,6 +1244,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_compression_decompression_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/azimuth_concise_telemetry_tests.mbt": {
           "backend": [
             "Wasm",
@@ -6770,6 +6783,19 @@
           ]
         },
         "/home/runner/work/Azimuth/Azimuth/azimuth_simple_moonbit_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_simple_new_tests.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
