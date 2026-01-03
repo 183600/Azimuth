@@ -1,268 +1,429 @@
-// Azimuth Performance Optimization Test Suite
-// 性能优化和资源管理测试用例
+// Performance Optimization Tests for Azimuth Telemetry System
+// This file contains test cases for performance optimization functionality
 
-test "批量处理性能优化" {
-  // 测试批量处理性能优化
-  let single_items = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-  let batch_size = 3
+// Test 1: Memory Pool Management
+test "memory pool management" {
+  let memory_pool = MemoryPool::new(1024) // 1KB pool
   
-  // 单个处理模拟
-  let mut single_start_time = 1640995200000L
-  for item in single_items {
-    // 模拟单个处理时间
-    single_start_time = single_start_time + 100L
-  }
-  let single_total_time = single_start_time - 1640995200000L
+  // Test pool allocation
+  let block1 = MemoryPool::allocate(memory_pool, 256)
+  let block2 = MemoryPool::allocate(memory_pool, 256)
+  let block3 = MemoryPool::allocate(memory_pool, 256)
   
-  // 批量处理模拟
-  let mut batch_start_time = 1640995200000L
-  let batches = []
-  let mut current_batch = []
+  assert_true(MemoryPool::is_valid(block1))
+  assert_true(MemoryPool::is_valid(block2))
+  assert_true(MemoryPool::is_valid(block3))
   
-  for item in single_items {
-    current_batch = current_batch.push(item)
-    if current_batch.length() == batch_size {
-      batches = batches.push(current_batch)
-      current_batch = []
-      // 模拟批量处理时间（比单个处理总时间少）
-      batch_start_time = batch_start_time + 200L
-    }
-  }
+  // Test pool deallocation
+  MemoryPool::deallocate(memory_pool, block2)
+  assert_false(MemoryPool::is_valid(block2))
   
-  // 处理剩余项
-  if current_batch.length() > 0 {
-    batches = batches.push(current_batch)
-    batch_start_time = batch_start_time + 100L
-  }
+  // Test reuse of deallocated block
+  let block4 = MemoryPool::allocate(memory_pool, 256)
+  assert_true(MemoryPool::is_valid(block4))
   
-  let batch_total_time = batch_start_time - 1640995200000L
+  // Test pool statistics
+  let stats = MemoryPool::get_stats(memory_pool)
+  assert_eq(stats.total_size, 1024)
+  assert_eq(stats.used_size, 768) // 3 blocks of 256 bytes
+  assert_eq(stats.free_size, 256)
+  assert_eq(stats.allocation_count, 3)
+  assert_eq(stats.deallocation_count, 1)
   
-  // 验证批量处理更高效
-  assert_true(batch_total_time < single_total_time)
-  assert_eq(batches.length(), 4) // 3+3+3+1
-  assert_eq(batches[0].length(), 3)
-  assert_eq(batches[3].length(), 1)
+  // Test pool reset
+  MemoryPool::reset(memory_pool)
+  let reset_stats = MemoryPool::get_stats(memory_pool)
+  assert_eq(reset_stats.used_size, 0)
+  assert_eq(reset_stats.free_size, 1024)
 }
 
-test "内存使用优化" {
-  // 测试内存使用优化
-  let initial_memory = 1048576 // 1MB
-  let optimized_memory = 524288 // 512KB
-  let memory_reduction_percentage = ((initial_memory - optimized_memory) * 100) / initial_memory
+// Test 2: Object Caching
+test "object caching" {
+  let object_cache = ObjectCache::new(100) // Cache up to 100 objects
   
-  // 验证内存减少
-  assert_true(optimized_memory < initial_memory)
-  assert_eq(memory_reduction_percentage, 50)
+  // Test cache insertion
+  let obj1 = CachedObject::new("key1", "value1")
+  let obj2 = CachedObject::new("key2", "value2")
+  let obj3 = CachedObject::new("key3", "value3")
   
-  // 测试对象池优化
-  let object_pool = @azimuth.ObjectPool {
-    max_size : 100,
-    current_size : 25,
-    allocated_objects : []
+  ObjectCache::put(object_cache, obj1)
+  ObjectCache::put(object_cache, obj2)
+  ObjectCache::put(object_cache, obj3)
+  
+  // Test cache retrieval
+  let retrieved1 = ObjectCache::get(object_cache, "key1")
+  let retrieved2 = ObjectCache::get(object_cache, "key2")
+  let retrieved3 = ObjectCache::get(object_cache, "key3")
+  
+  assert_true(retrieved1.is_some())
+  assert_true(retrieved2.is_some())
+  assert_true(retrieved3.is_some())
+  
+  match retrieved1 {
+    Some(obj) => assert_eq(obj.value, "value1")
+    None => assert_true(false)
   }
   
-  // 验证对象池状态
-  assert_true(object_pool.current_size < object_pool.max_size)
-  assert_eq(object_pool.current_size, 25)
-  assert_eq(object_pool.max_size, 100)
+  // Test cache eviction (LRU)
+  for i = 4; i <= 150; i = i + 1 {
+    let obj = CachedObject::new("key" + i.to_string(), "value" + i.to_string())
+    ObjectCache::put(object_cache, obj)
+  }
   
-  // 计算对象池利用率
-  let utilization_percentage = (object_pool.current_size * 100) / object_pool.max_size
-  assert_eq(utilization_percentage, 25)
+  let evicted1 = ObjectCache::get(object_cache, "key1")
+  let evicted2 = ObjectCache::get(object_cache, "key2")
+  
+  assert_true(evicted1.is_none()) // Should be evicted
+  assert_true(evicted2.is_none()) // Should be evicted
+  
+  // Test cache statistics
+  let stats = ObjectCache::get_stats(object_cache)
+  assert_eq(stats.size, 100) // Should be at max capacity
+  assert_eq(stats.hits, 3)
+  assert_eq(stats.misses, 2)
+  assert_eq(stats.evictions, 2)
 }
 
-test "缓存性能优化" {
-  // 测试缓存性能优化
-  let cache = @azimuth.Cache {
-    max_size : 1000,
-    current_size : 0,
-    hits : 0,
-    misses : 0,
-    entries : []
+// Test 3: Batch Processing Optimization
+test "batch processing optimization" {
+  let batch_processor = BatchProcessor::new(10, 1000) // 10 items or 1 second timeout
+  
+  // Test batch accumulation
+  for i = 1; i <= 5; i = i + 1 {
+    let item = BatchItem::new("item" + i.to_string(), i.to_float())
+    BatchProcessor::add_item(batch_processor, item)
   }
   
-  // 模拟缓存操作
-  let operations = [
-    ("get", "key1"),
-    ("put", "key1"),
-    ("get", "key1"),
-    ("get", "key2"),
-    ("put", "key2"),
-    ("get", "key2"),
-    ("get", "key3"),
-    ("put", "key3"),
-    ("get", "key3"),
-    ("get", "key1")
+  let stats = BatchProcessor::get_stats(batch_processor)
+  assert_eq(stats.pending_items, 5)
+  
+  // Test batch flush
+  let flushed_items = BatchProcessor::flush(batch_processor)
+  assert_eq(flushed_items.length(), 5)
+  
+  let flushed_stats = BatchProcessor::get_stats(batch_processor)
+  assert_eq(flushed_stats.pending_items, 0)
+  assert_eq(flushed_stats.processed_batches, 1)
+  
+  // Test auto-flush on size limit
+  for i = 1; i <= 10; i = i + 1 {
+    let item = BatchItem::new("auto_item" + i.to_string(), i.to_float())
+    BatchProcessor::add_item(batch_processor, item)
+  }
+  
+  let auto_stats = BatchProcessor::get_stats(batch_processor)
+  assert_eq(auto_stats.pending_items, 0) // Should auto-flush
+  assert_eq(auto_stats.processed_batches, 2)
+  
+  // Test batch aggregation
+  let aggregator = BatchAggregator::new()
+  BatchAggregator::add_aggregation_rule(aggregator, "sum", lambda { items => items.map(lambda { item => item.value }).sum() })
+  BatchAggregator::add_aggregation_rule(aggregator, "avg", lambda { items => items.map(lambda { item => item.value }).sum() / items.length().to_float() })
+  
+  let test_items = [
+    BatchItem::new("test1", 10.0),
+    BatchItem::new("test2", 20.0),
+    BatchItem::new("test3", 30.0)
   ]
   
-  for op in operations {
-    match op.0 {
-      "get" => {
-        // 检查缓存中是否存在
-        let found = cache.entries.filter(fn(entry) { entry.0 == op.1 }).length() > 0
-        if found {
-          // 缓存命中
-          cache.hits = cache.hits + 1
-        } else {
-          // 缓存未命中
-          cache.misses = cache.misses + 1
-        }
-      }
-      "put" => {
-        // 添加到缓存
-        let existing = cache.entries.filter(fn(entry) { entry.0 == op.1 }).length() > 0
-        if !existing {
-          cache.entries = cache.entries.push((op.1, "value"))
-          cache.current_size = cache.current_size + 1
-        }
-      }
-      _ => assert_true(false)
+  let sum_result = BatchAggregator::aggregate(aggregator, "sum", test_items)
+  let avg_result = BatchAggregator::aggregate(aggregator, "avg", test_items)
+  
+  assert_eq(sum_result, 60.0)
+  assert_eq(avg_result, 20.0)
+}
+
+// Test 4: Lazy Loading
+test "lazy loading optimization" {
+  // Test lazy value creation
+  let lazy_value = Lazy::new(lambda { 
+    // Simulate expensive computation
+    let mut result = 0
+    for i = 1; i <= 1000; i = i + 1 {
+      result = result + i
     }
-  }
+    result
+  })
   
-  // 计算缓存命中率
-  let total_requests = cache.hits + cache.misses
-  let hit_rate = (cache.hits * 100) / total_requests
+  assert_false(Lazy::is_evaluated(lazy_value))
   
-  // 验证缓存性能
-  assert_true(cache.hits > 0)
-  assert_true(cache.misses > 0)
-  assert_true(hit_rate > 50) // 命中率应该超过50%
-  assert_eq(cache.current_size, 3) // 应该有3个不同的键
+  // Test lazy evaluation
+  let value = Lazy::get(lazy_value)
+  assert_eq(value, 500500) // Sum of 1 to 1000
+  assert_true(Lazy::is_evaluated(lazy_value))
+  
+  // Test multiple accesses don't re-evaluate
+  let value2 = Lazy::get(lazy_value)
+  assert_eq(value2, 500500)
+  
+  // Test lazy collection
+  let lazy_collection = LazyCollection::new(lambda { 
+    // Simulate expensive data loading
+    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  })
+  
+  assert_false(LazyCollection::is_loaded(lazy_collection))
+  
+  let first_item = LazyCollection::get(lazy_collection, 0)
+  assert_eq(first_item, 1)
+  assert_true(LazyCollection::is_loaded(lazy_collection))
+  
+  let collection_length = LazyCollection::length(lazy_collection)
+  assert_eq(collection_length, 10)
 }
 
-test "序列化性能优化" {
-  // 测试序列化性能优化
-  let telemetry_data = @azimuth.TelemetryData {
-    timestamp : 1640995200000L,
-    trace_id : "abcdef1234567890abcdef1234567890",
-    span_id : "1234567890abcdef",
-    parent_span_id : Some("abcdef1234567890"),
-    operation_name : "http.request",
-    status : @azimuth.SpanStatus::Ok,
-    duration_ms : 150L,
-    attributes : [
-      ("http.method", @azimuth.StringValue("GET")),
-      ("http.url", @azimuth.StringValue("/api/users")),
-      ("http.status_code", @azimuth.IntValue(200)),
-      ("user.id", @azimuth.StringValue("user123"))
-    ],
-    events : [
-      @azimuth.SpanEvent {
-        name : "cache.hit",
-        timestamp : 1640995200050L,
-        attributes : [("cache.key", @azimuth.StringValue("user:123"))]
-      }
-    ]
-  }
+// Test 5: Connection Pooling
+test "connection pooling optimization" {
+  let connection_pool = ConnectionPool::new(5) // Max 5 connections
   
-  // 模拟JSON序列化时间
-  let json_serialization_time = 5000L // 5ms
-  // 模拟二进制序列化时间
-  let binary_serialization_time = 2000L // 2ms
+  // Test connection acquisition
+  let conn1 = ConnectionPool::acquire(connection_pool)
+  let conn2 = ConnectionPool::acquire(connection_pool)
+  let conn3 = ConnectionPool::acquire(connection_pool)
   
-  // 模拟JSON反序列化时间
-  let json_deserialization_time = 6000L // 6ms
-  // 模拟二进制反序列化时间
-  let binary_deserialization_time = 2500L // 2.5ms
+  assert_true(ConnectionPool::is_valid(conn1))
+  assert_true(ConnectionPool::is_valid(conn2))
+  assert_true(ConnectionPool::is_valid(conn3))
   
-  let json_total_time = json_serialization_time + json_deserialization_time
-  let binary_total_time = binary_serialization_time + binary_deserialization_time
+  let pool_stats = ConnectionPool::get_stats(connection_pool)
+  assert_eq(pool_stats.active_connections, 3)
+  assert_eq(pool_stats.available_connections, 2)
   
-  // 计算性能提升
-  let performance_improvement = ((json_total_time - binary_total_time) * 100) / json_total_time
+  // Test connection release
+  ConnectionPool::release(connection_pool, conn2)
   
-  // 验证二进制序列化更高效
-  assert_true(binary_total_time < json_total_time)
-  assert_true(performance_improvement > 40) // 性能提升应该超过40%
+  let release_stats = ConnectionPool::get_stats(connection_pool)
+  assert_eq(release_stats.active_connections, 2)
+  assert_eq(release_stats.available_connections, 3)
   
-  // 计算数据大小
-  let json_size = 512 // 字节
-  let binary_size = 256 // 字节
-  let size_reduction = ((json_size - binary_size) * 100) / json_size
+  // Test connection reuse
+  let conn4 = ConnectionPool::acquire(connection_pool)
+  assert_true(ConnectionPool::is_valid(conn4))
   
-  // 验证二进制格式更紧凑
-  assert_true(binary_size < json_size)
-  assert_eq(size_reduction, 50) // 大小减少50%
+  // Test pool exhaustion
+  let conn5 = ConnectionPool::acquire(connection_pool)
+  let conn6 = ConnectionPool::acquire(connection_pool)
+  let conn7 = ConnectionPool::acquire(connection_pool) // Should fail
+  
+  assert_true(ConnectionPool::is_valid(conn5))
+  assert_true(ConnectionPool::is_valid(conn6))
+  assert_false(ConnectionPool::is_valid(conn7)) // Pool exhausted
+  
+  let exhaustion_stats = ConnectionPool::get_stats(connection_pool)
+  assert_eq(exhaustion_stats.active_connections, 5)
+  assert_eq(exhaustion_stats.available_connections, 0)
+  assert_eq(exhaustion_stats.rejected_requests, 1)
 }
 
-test "并发处理性能优化" {
-  // 测试并发处理性能优化
-  let sequential_tasks = [
-    ("task1", 100L),
-    ("task2", 150L),
-    ("task3", 200L),
-    ("task4", 120L),
-    ("task5", 180L)
+// Test 6: Data Compression
+test "data compression optimization" {
+  let original_data = "This is a test string for compression. It contains repeated patterns and should compress well. This is a test string for compression. It contains repeated patterns and should compress well."
+  
+  // Test GZIP compression
+  let compressed_data = Compression::gzip_compress(original_data)
+  assert_true(compressed_data.length() < original_data.length())
+  
+  let decompressed_data = Compression::gzip_decompress(compressed_data)
+  assert_eq(decompressed_data, original_data)
+  
+  // Test LZ4 compression
+  let lz4_compressed = Compression::lz4_compress(original_data)
+  assert_true(lz4_compressed.length() < original_data.length())
+  
+  let lz4_decompressed = Compression::lz4_decompress(lz4_compressed)
+  assert_eq(lz4_decompressed, original_data)
+  
+  // Test compression ratio calculation
+  let gzip_ratio = Compression::calculate_compression_ratio(original_data, compressed_data)
+  let lz4_ratio = Compression::calculate_compression_ratio(original_data, lz4_compressed)
+  
+  assert_true(gzip_ratio > 0.0 && gzip_ratio < 1.0)
+  assert_true(lz4_ratio > 0.0 && lz4_ratio < 1.0)
+  
+  // Test adaptive compression (chooses best algorithm based on data)
+  let adaptive_compressed = Compression::adaptive_compress(original_data)
+  let adaptive_decompressed = Compression::adaptive_decompress(adaptive_compressed)
+  
+  assert_eq(adaptive_decompressed, original_data)
+}
+
+// Test 7: Parallel Processing
+test "parallel processing optimization" {
+  let data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  
+  // Test parallel map
+  let mapped_data = Parallel::map(data, 4, lambda { x => x * 2 })
+  assert_eq(mapped_data, [2, 4, 6, 8, 10, 12, 14, 16, 18, 20])
+  
+  // Test parallel filter
+  let filtered_data = Parallel::filter(data, 4, lambda { x => x % 2 == 0 })
+  assert_eq(filtered_data, [2, 4, 6, 8, 10])
+  
+  // Test parallel reduce
+  let sum = Parallel::reduce(data, 4, 0, lambda { acc, x => acc + x })
+  assert_eq(sum, 55)
+  
+  // Test parallel foreach
+  let results = Array::new(data.length(), 0)
+  Parallel::foreach(data, 4, lambda { i, x => results[i] = x * x })
+  assert_eq(results, [1, 4, 9, 16, 25, 36, 49, 64, 81, 100])
+  
+  // Test work stealing
+  let work_stealing_pool = WorkStealingPool::new(4)
+  let tasks = [
+    Task::new(lambda { 1 }),
+    Task::new(lambda { 2 }),
+    Task::new(lambda { 3 }),
+    Task::new(lambda { 4 })
   ]
   
-  // 顺序处理总时间
-  let mut sequential_total_time = 0L
-  for task in sequential_tasks {
-    sequential_total_time = sequential_total_time + task.1
-  }
-  
-  // 并发处理总时间（取最长任务时间）
-  let concurrent_total_time = 200L // 最长任务的时间
-  
-  // 计算性能提升
-  let performance_improvement = ((sequential_total_time - concurrent_total_time) * 100) / sequential_total_time
-  
-  // 验证并发处理更高效
-  assert_true(concurrent_total_time < sequential_total_time)
-  assert_true(performance_improvement > 70) // 性能提升应该超过70%
-  
-  // 测试线程池优化
-  let thread_pool = @azimuth.ThreadPool {
-    max_threads : 10,
-    active_threads : 5,
-    task_queue_size : 25,
-    completed_tasks : 100
-  }
-  
-  // 计算线程利用率
-  let thread_utilization = (thread_pool.active_threads * 100) / thread_pool.max_threads
-  assert_eq(thread_utilization, 50)
-  
-  // 计算任务完成率
-  let task_completion_rate = (thread_pool.completed_tasks * 100) / (thread_pool.completed_tasks + thread_pool.task_queue_size)
-  assert_eq(task_completion_rate, 80) // 100/(100+25) = 80%
+  let task_results = WorkStealingPool::execute_all(work_stealing_pool, tasks)
+  assert_eq(task_results.length(), 4)
+  assert_true(task_results.contains(1))
+  assert_true(task_results.contains(2))
+  assert_true(task_results.contains(3))
+  assert_true(task_results.contains(4))
 }
 
-test "网络传输优化" {
-  // 测试网络传输优化
-  let uncompressed_data_size = 10240 // 10KB
-  let compressed_data_size = 2048 // 2KB
-  let compression_ratio = ((uncompressed_data_size - compressed_data_size) * 100) / uncompressed_data_size
+// Test 8: Lock-Free Data Structures
+test "lock-free data structures" {
+  // Test lock-free queue
+  let lock_free_queue = LockFreeQueue::new()
   
-  // 验证压缩效果
-  assert_true(compressed_data_size < uncompressed_data_size)
-  assert_eq(compression_ratio, 80) // 压缩率80%
+  // Test enqueue
+  LockFreeQueue::enqueue(lock_free_queue, 1)
+  LockFreeQueue::enqueue(lock_free_queue, 2)
+  LockFreeQueue::enqueue(lock_free_queue, 3)
   
-  // 测试网络传输时间
-  let network_bandwidth = 1000 // bytes/ms
-  let uncompressed_transmission_time = uncompressed_data_size / network_bandwidth
-  let compressed_transmission_time = compressed_data_size / network_bandwidth
+  // Test dequeue
+  let item1 = LockFreeQueue::dequeue(lock_free_queue)
+  let item2 = LockFreeQueue::dequeue(lock_free_queue)
+  let item3 = LockFreeQueue::dequeue(lock_free_queue)
+  let item4 = LockFreeQueue::dequeue(lock_free_queue) // Should be empty
   
-  // 计算传输时间节省
-  let transmission_time_saving = ((uncompressed_transmission_time - compressed_transmission_time) * 100) / uncompressed_transmission_time
+  assert_eq(item1, Some(1))
+  assert_eq(item2, Some(2))
+  assert_eq(item3, Some(3))
+  assert_eq(item4, None)
   
-  // 验证压缩传输更高效
-  assert_true(compressed_transmission_time < uncompressed_transmission_time)
-  assert_eq(transmission_time_saving, 80) // 传输时间节省80%
+  // Test lock-free stack
+  let lock_free_stack = LockFreeStack::new()
   
-  // 测试批量传输优化
-  let single_request_overhead = 50L // ms
-  let batch_request_overhead = 80L // ms
-  let request_count = 10
+  // Test push
+  LockFreeStack::push(lock_free_stack, 1)
+  LockFreeStack::push(lock_free_stack, 2)
+  LockFreeStack::push(lock_free_stack, 3)
   
-  let single_total_overhead = single_request_overhead * request_count
-  let batch_total_overhead = batch_request_overhead
+  // Test pop
+  let stack_item1 = LockFreeStack::pop(lock_free_stack)
+  let stack_item2 = LockFreeStack::pop(lock_free_stack)
+  let stack_item3 = LockFreeStack::pop(lock_free_stack)
+  let stack_item4 = LockFreeStack::pop(lock_free_stack) // Should be empty
   
-  // 计算批量传输开销节省
-  let overhead_saving = ((single_total_overhead - batch_total_overhead) * 100) / single_total_overhead
+  assert_eq(stack_item1, Some(3))
+  assert_eq(stack_item2, Some(2))
+  assert_eq(stack_item3, Some(1))
+  assert_eq(stack_item4, None)
   
-  // 验证批量传输更高效
-  assert_true(batch_total_overhead < single_total_overhead)
-  assert_eq(overhead_saving, 84) // 开销节省84%
+  // Test lock-free counter
+  let lock_free_counter = LockFreeCounter::new(0)
+  
+  // Test increment
+  LockFreeCounter::increment(lock_free_counter)
+  LockFreeCounter::increment(lock_free_counter)
+  LockFreeCounter::increment(lock_free_counter)
+  
+  let counter_value = LockFreeCounter::get(lock_free_counter)
+  assert_eq(counter_value, 3)
+  
+  // Test add
+  LockFreeCounter::add(lock_free_counter, 5)
+  let added_value = LockFreeCounter::get(lock_free_counter)
+  assert_eq(added_value, 8)
+}
+
+// Test 9: Adaptive Algorithms
+test "adaptive algorithms optimization" {
+  // Test adaptive sorting
+  let small_array = [3, 1, 4, 1, 5]
+  let large_array = Array::new(1000, 0)
+  
+  // Initialize large array with random values
+  for i = 0; i < large_array.length(); i = i + 1 {
+    large_array[i] = Random::int(10000)
+  }
+  
+  let sorted_small = AdaptiveSort::sort(small_array)
+  let sorted_large = AdaptiveSort::sort(large_array)
+  
+  assert_eq(sorted_small, [1, 1, 3, 4, 5])
+  assert_true(Array::is_sorted(sorted_large))
+  
+  // Test adaptive hash table
+  let adaptive_table = AdaptiveHashTable::new()
+  
+  // Add items
+  AdaptiveHashTable::put(adaptive_table, "key1", "value1")
+  AdaptiveHashTable::put(adaptive_table, "key2", "value2")
+  AdaptiveHashTable::put(adaptive_table, "key3", "value3")
+  
+  // Get items
+  let value1 = AdaptiveHashTable::get(adaptive_table, "key1")
+  let value2 = AdaptiveHashTable::get(adaptive_table, "key2")
+  let value3 = AdaptiveHashTable::get(adaptive_table, "key3")
+  
+  assert_eq(value1, Some("value1"))
+  assert_eq(value2, Some("value2"))
+  assert_eq(value3, Some("value3"))
+  
+  // Check if table adapted based on usage patterns
+  let stats = AdaptiveHashTable::get_stats(adaptive_table)
+  assert_true(stats.resize_count >= 0)
+  assert_true(stats.collision_rate >= 0.0)
+}
+
+// Test 10: Resource-Aware Processing
+test "resource-aware processing" {
+  // Test memory-aware processing
+  let memory_monitor = MemoryMonitor::new()
+  let memory_threshold = MemoryMonitor::get_available_memory(memory_monitor) * 0.8
+  
+  let processor = ResourceAwareProcessor::new()
+  ResourceAwareProcessor::set_memory_threshold(processor, memory_threshold)
+  
+  // Test CPU-aware processing
+  let cpu_monitor = CPUMonitor::new()
+  let cpu_cores = CPUMonitor::get_core_count(cpu_monitor)
+  
+  ResourceAwareProcessor::set_cpu_threshold(processor, cpu_cores * 0.9)
+  
+  // Test adaptive batch size based on resources
+  let initial_batch_size = 100
+  let adaptive_batch_size = ResourceAwareProcessor::calculate_adaptive_batch_size(
+    processor, 
+    initial_batch_size
+  )
+  
+  assert_true(adaptive_batch_size > 0)
+  assert_true(adaptive_batch_size <= initial_batch_size)
+  
+  // Test resource-aware task scheduling
+  let scheduler = ResourceAwareScheduler::new()
+  let task1 = ResourceAwareTask::new("task1", 100, 50) // 100MB memory, 50% CPU
+  let task2 = ResourceAwareTask::new("task2", 200, 25) // 200MB memory, 25% CPU
+  let task3 = ResourceAwareTask::new("task3", 50, 75)  // 50MB memory, 75% CPU
+  
+  ResourceAwareScheduler::schedule_task(scheduler, task1)
+  ResourceAwareScheduler::schedule_task(scheduler, task2)
+  ResourceAwareScheduler::schedule_task(scheduler, task3)
+  
+  let scheduled_tasks = ResourceAwareScheduler::get_scheduled_tasks(scheduler)
+  assert_eq(scheduled_tasks.length(), 3)
+  
+  // Test resource usage reporting
+  let resource_report = ResourceAwareProcessor::generate_resource_report(processor)
+  assert_true(resource_report.memory_usage >= 0.0)
+  assert_true(resource_report.cpu_usage >= 0.0)
+  assert_true(resource_report.memory_usage <= 100.0)
+  assert_true(resource_report.cpu_usage <= 100.0)
 }
