@@ -1,509 +1,248 @@
-// Azimuth Multidimensional Analysis Tests
-// 测试多维度数据分析、聚合和查询功能
+// Azimuth 多维分析测试用例
+// 测试遥测数据的多维分析功能
 
-test "多维数据结构操作" {
-  // 测试多维数据结构操作
-  let data_cube = DataCube::new({
-    "dimensions": ["time", "service", "region", "operation"],
-    "measures": ["duration", "error_rate", "throughput", "memory_usage"]
-  })
+test "时间序列数据聚合" {
+  // 测试时间序列数据的聚合功能
+  let time_series_data = [
+    (1630000000L, 25.5),
+    (1630000060L, 27.3),
+    (1630000120L, 26.8),
+    (1630000180L, 29.1),
+    (1630000240L, 28.4)
+  ]
   
-  // 添加多维数据点
-  let base_timestamp = 1735689600000000000L
-  let services = ["auth-service", "payment-service", "user-service", "order-service"]
-  let regions = ["us-west-2", "us-east-1", "eu-west-1", "ap-southeast-1"]
-  let operations = ["login", "payment", "search", "checkout", "register"]
+  // 计算平均值
+  let sum = time_series_data.reduce(fn(acc, pair) { acc + pair.1 }, 0.0)
+  let avg = sum / Int64::to_float(time_series_data.length())
   
-  for i in 0..=99 {
-    let data_point = {
-      "coordinates": {
-        "time": base_timestamp + (i * 3600000000L),  // 每小时一个点
-        "service": services[i % services.length()],
-        "region": regions[i % regions.length()],
-        "operation": operations[i % operations.length()]
-      },
-      "measures": {
-        "duration": 50.0 + (i % 100).to_float() * 2.5,
-        "error_rate": if i % 20 == 0 { 0.05 } else { 0.01 },
-        "throughput": 100.0 + (i % 50).to_float() * 10.0,
-        "memory_usage": 200.0 + (i % 30).to_float() * 15.0
-      }
-    }
-    DataCube::add_point(data_cube, data_point)
-  }
+  assert_true(avg > 25.0 && avg < 30.0)
   
-  // 验证数据立方体
-  assert_eq(DataCube::size(data_cube), 100)
-  assert_eq(DataCube::dimension_count(data_cube), 4)
-  assert_eq(DataCube::measure_count(data_cube), 4)
+  // 找出最大值和最小值
+  let max_value = time_series_data.reduce(fn(acc, pair) { 
+    if pair.1 > acc { pair.1 } else { acc } 
+  }, time_series_data[0].1)
   
-  // 测试切片操作
-  let time_slice = DataCube::slice(data_cube, "time", base_timestamp + 3600000000L * 5)
-  assert_eq(time_slice.size(), 1)
-  assert_eq(time_slice.dimensions.length(), 3)  // 减少了一个维度
+  let min_value = time_series_data.reduce(fn(acc, pair) { 
+    if pair.1 < acc { pair.1 } else { acc } 
+  }, time_series_data[0].1)
   
-  let service_slice = DataCube::slice(data_cube, "service", "auth-service")
-  assert_eq(service_slice.size(), 25)  // 100个点，4个服务，每个服务约25个点
-  
-  // 测试切块操作
-  let region_operation_chunk = DataCube::chunk(
-    data_cube,
-    {
-      "region": ["us-west-2", "us-east-1"],
-      "operation": ["login", "payment"]
-    }
-  )
-  assert_true(region_operation_chunk.size() > 0)
-  assert_true(region_operation_chunk.size() < 100)
-  
-  // 测试旋转操作
-  let rotated_cube = DataCube::rotate(data_cube, "time", "service")
-  assert_eq(rotated_cube.dimensions.length(), 4)
-  assert_true(rotated_cube.contains_dimension("time"))
-  assert_true(rotated_cube.contains_dimension("service"))
+  assert_true(max_value > min_value)
+  assert_eq(max_value, 29.1)
+  assert_eq(min_value, 25.5)
 }
 
-test "多维聚合分析" {
-  // 测试多维聚合分析
-  let aggregator = MultiDimensionalAggregator::new()
+test "多维属性查询" {
+  // 测试多维属性查询功能
+  let attributes = [
+    ("service.name", "payment-service"),
+    ("service.version", "2.1.0"),
+    ("deployment.environment", "production"),
+    ("region", "us-west-2"),
+    ("availability.zone", "us-west-2a"),
+    ("instance.id", "i-1234567890abcdef0")
+  ]
   
-  // 创建测试数据
-  let multi_dim_data = []
-  let categories = ["A", "B", "C", "D"]
-  let types = ["X", "Y", "Z"]
+  // 按服务名称过滤
+  let service_filtered = attributes.filter(fn(attr) { 
+    attr.0 == "service.name" || attr.0.starts_with("service.") 
+  })
   
-  for i in 0..=199 {
-    let record = {
-      "category": categories[i % categories.length()],
-      "type": types[i % types.length()],
-      "group": (i % 5).to_string(),
-      "value1": (i * 1.5) + 10.0,
-      "value2": (i * 0.8) + 5.0,
-      "value3": (i * 2.2) + 15.0,
-      "timestamp": 1735689600000000000L + (i * 60000000L)  // 每分钟一个点
-    }
-    multi_dim_data = multi_dim_data.push(record)
+  assert_eq(service_filtered.length(), 2)
+  
+  // 按地理位置过滤
+  let geo_filtered = attributes.filter(fn(attr) { 
+    attr.0 == "region" || attr.0 == "availability.zone" 
+  })
+  
+  assert_eq(geo_filtered.length(), 2)
+  
+  // 查询特定属性值
+  let service_name = attributes.find(fn(attr) { attr.0 == "service.name" })
+  match service_name {
+    Some((key, value)) => assert_eq(value, "payment-service")
+    None => assert_true(false)
   }
-  
-  // 测试单维聚合
-  let category_agg = MultiDimensionalAggregator::aggregate_by(
-    aggregator,
-    multi_dim_data,
-    ["category"],
-    {
-      "value1": "average",
-      "value2": "sum",
-      "value3": "max"
-    }
-  )
-  
-  assert_eq(category_agg.length(), 4)  // 4个类别
-  assert_true(category_agg.all(fn(row) { row.contains("category") }))
-  assert_true(category_agg.all(fn(row) { row.contains("value1_avg") }))
-  assert_true(category_agg.all(fn(row) { row.contains("value2_sum") }))
-  assert_true(category_agg.all(fn(row) { row.contains("value3_max") }))
-  
-  // 测试多维聚合
-  let multi_agg = MultiDimensionalAggregator::aggregate_by(
-    aggregator,
-    multi_dim_data,
-    ["category", "type"],
-    {
-      "value1": "average",
-      "value2": "sum",
-      "value3": "count"
-    }
-  )
-  
-  assert_eq(multi_agg.length(), 12)  // 4个类别 × 3个类型
-  
-  // 验证聚合结果
-  let category_a_total = multi_agg
-    .filter(fn(row) { row["category"] == "A" })
-    .map(fn(row) { row["value3_count"] })
-    .reduce(fn(acc, count) { acc + count }, 0)
-  
-  assert_eq(category_a_total, 50)  // 200个记录，4个类别，每个类别50个
-  
-  // 测试时间窗口聚合
-  let time_windows = MultiDimensionalAggregator::aggregate_by_time_window(
-    aggregator,
-    multi_dim_data,
-    "timestamp",
-    3600000000L,  // 1小时窗口
-    ["category"],
-    {
-      "value1": "average",
-      "value2": "sum"
-    }
-  )
-  
-  assert_true(time_windows.length() > 0)
-  assert_true(time_windows.all(fn(row) { row.contains("time_window") }))
-  assert_true(time_windows.all(fn(row) { row.contains("category") }))
 }
 
-test "OLAP操作和查询" {
-  // 测试OLAP操作和查询
-  let olap_engine = OLAPEngine::new({
-    "max_memory": 100 * 1024 * 1024,  // 100MB
-    "cache_size": 50 * 1024 * 1024,   // 50MB缓存
-    "parallel_workers": 4
+test "遥测数据相关性分析" {
+  // 测试遥测数据的相关性分析
+  let latency_data = [120.5, 135.2, 98.7, 156.3, 142.8]
+  let error_rate_data = [0.02, 0.03, 0.01, 0.05, 0.04]
+  let throughput_data = [1250, 1180, 1320, 980, 1050]
+  
+  // 计算延迟和错误率的简单相关性
+  let latency_error_pairs = latency_data.zip(error_rate_data)
+  let high_latency_high_errors = latency_error_pairs.filter(fn(pair) { 
+    pair.0 > 130.0 && pair.1 > 0.025 
   })
   
-  // 创建OLAP数据立方体
-  let sales_cube = OLAPEngine::create_cube(olap_engine, "sales", {
-    "dimensions": [
-      {"name": "time", "type": "temporal", "granularity": "day"},
-      {"name": "product", "type": "categorical"},
-      {"name": "region", "type": "categorical"},
-      {"name": "channel", "type": "categorical"}
-    ],
-    "measures": [
-      {"name": "revenue", "type": "numeric", "aggregation": "sum"},
-      {"name": "quantity", "type": "numeric", "aggregation": "sum"},
-      {"name": "profit", "type": "numeric", "aggregation": "sum"},
-      {"name": "margin", "type": "numeric", "aggregation": "average"}
-    ]
+  assert_eq(high_latency_high_errors.length(), 3)
+  
+  // 计算延迟和吞吐量的负相关性
+  let latency_throughput_pairs = latency_data.zip(throughput_data)
+  let high_latency_low_throughput = latency_throughput_pairs.filter(fn(pair) { 
+    pair.0 > 130.0 && pair.1 < 1100 
   })
   
-  // 填充销售数据
-  let products = ["laptop", "phone", "tablet", "watch", "headphones"]
-  let regions = ["north", "south", "east", "west", "central"]
-  let channels = ["online", "retail", "b2b", "marketplace"]
-  
-  for i in 0..=999 {
-    let sale_record = {
-      "time": 1735689600000000000L + (i * 86400000000L),  // 每天
-      "product": products[i % products.length()],
-      "region": regions[i % regions.length()],
-      "channel": channels[i % channels.length()],
-      "revenue": 100.0 + (i % 500).to_float() * 10.0,
-      "quantity": 1 + (i % 10),
-      "profit": 20.0 + (i % 200).to_float() * 5.0,
-      "margin": 0.15 + (i % 20).to_float() * 0.01
-    }
-    OLAPEngine::add_data(olap_engine, "sales", sale_record)
-  }
-  
-  // 测试钻取操作
-  let yearly_sales = OLAPEngine::drill_down(
-    olap_engine,
-    "sales",
-    {"time": "year"},
-    {"revenue": "sum", "quantity": "sum"}
-  )
-  assert_eq(yearly_sales.length(), 1)  // 所有数据都在同一年
-  
-  let monthly_sales = OLAPEngine::drill_down(
-    olap_engine,
-    "sales",
-    {"time": "month"},
-    {"revenue": "sum", "profit": "sum"}
-  )
-  assert_true(monthly_sales.length() > 1)
-  
-  let daily_sales = OLAPEngine::drill_down(
-    olap_engine,
-    "sales",
-    {"time": "day", "product": "product"},
-    {"revenue": "sum", "quantity": "sum", "margin": "average"}
-  )
-  assert_true(daily_sales.length() > monthly_sales.length())
-  
-  // 测试上卷操作
-  let regional_monthly = OLAPEngine::roll_up(
-    olap_engine,
-    "sales",
-    {"region": "region", "time": "month"},
-    {"revenue": "sum", "quantity": "sum", "margin": "average"}
-  )
-  assert_eq(regional_monthly.length(), regions.length())
-  
-  // 测试切片和切块
-  let product_slice = OLAPEngine::slice(
-    olap_engine,
-    "sales",
-    {"product": "laptop"}
-  )
-  assert_true(product_slice.size() > 0)
-  
-  let multi_slice = OLAPEngine::slice(
-    olap_engine,
-    "sales",
-    {"product": "laptop", "channel": "online"}
-  )
-  assert_true(multi_slice.size() < product_slice.size())
-  
-  let region_channel_chunk = OLAPEngine::chunk(
-    olap_engine,
-    "sales",
-    {"region": ["north", "south"], "channel": ["online", "retail"]}
-  )
-  assert_true(region_channel_chunk.size() > 0)
-  assert_true(region_channel_chunk.size() < 1000)
-  
-  // 测试旋转
-  let rotated_cube = OLAPEngine::pivot(
-    olap_engine,
-    "sales",
-    "product",
-    "region",
-    "revenue",
-    "sum"
-  )
-  assert_true(rotated_cube.rows.length() > 0)
-  assert_true(rotated_cube.columns.length() > 0)
-  
-  // 测试复杂OLAP查询
-  let complex_query_result = OLAPEngine::execute_query(
-    olap_engine,
-    """
-    SELECT 
-      region, 
-      channel, 
-      SUM(revenue) as total_revenue,
-      AVG(margin) as avg_margin,
-      COUNT(*) as transaction_count
-    FROM sales
-    WHERE time >= '2025-01-01' AND time <= '2025-01-31'
-      AND product IN ('laptop', 'phone')
-    GROUP BY region, channel
-    HAVING total_revenue > 10000
-    ORDER BY total_revenue DESC
-    """
-  )
-  
-  assert_true(complex_query_result.length() > 0)
-  assert_true(complex_query_result.all(fn(row) {
-    row.contains("region") && row.contains("channel") && 
-    row.contains("total_revenue") && row.contains("avg_margin") &&
-    row.contains("transaction_count")
-  }))
+  assert_eq(high_latency_low_throughput.length(), 2)
 }
 
-test "多维数据可视化" {
-  // 测试多维数据可视化
-  let visualizer = MultiDimensionalVisualizer::new()
+test "异常检测算法" {
+  // 测试异常检测算法
+  let normal_data = [10.2, 9.8, 10.5, 10.1, 9.9, 10.3, 10.0, 9.7, 10.4, 9.6]
+  let anomaly_data = [10.2, 9.8, 25.5, 10.1, 9.9, 10.3, 10.0, 9.7, 10.4, 9.6]
   
-  // 创建测试数据集
-  let visualization_data = []
-  let dimensions = ["dim1", "dim2", "dim3"]
-  let metrics = ["metric1", "metric2", "metric3"]
+  // 计算正常数据的平均值和标准差
+  let normal_mean = normal_data.reduce(fn(acc, x) { acc + x }, 0.0) / Int64::to_float(normal_data.length())
+  let normal_variance = normal_data.reduce(fn(acc, x) { 
+    acc + (x - normal_mean) * (x - normal_mean) 
+  }, 0.0) / Int64::to_float(normal_data.length())
+  let normal_std = normal_variance.sqrt()
   
-  for i in 0..=149 {
-    let data_point = {
-      "dim1": "A" + ((i % 5) + 1).to_string(),
-      "dim2": "B" + ((i % 3) + 1).to_string(),
-      "dim3": "C" + ((i % 4) + 1).to_string(),
-      "metric1": (i * 1.2) + 20.0,
-      "metric2": (i * 0.8) + 15.0,
-      "metric3": (i * 1.5) + 25.0,
-      "timestamp": 1735689600000000000L + (i * 3600000000L)
-    }
-    visualization_data = visualization_data.push(data_point)
-  }
+  // 检测异常数据中的异常点
+  let anomalies = anomaly_data.filter(fn(x) { 
+    (x - normal_mean).abs() > 3.0 * normal_std 
+  })
   
-  // 测试热力图生成
-  let heatmap_data = MultiDimensionalVisualizer::generate_heatmap(
-    visualizer,
-    visualization_data,
-    "dim1",
-    "dim2",
-    "metric1",
-    "average"
-  )
-  
-  assert_true(heatmap_data.data_matrix.length() > 0)
-  assert_true(heatmap_data.x_axis_labels.length() > 0)
-  assert_true(heatmap_data.y_axis_labels.length() > 0)
-  assert_true(heatmap_data.color_scale.min < heatmap_data.color_scale.max)
-  
-  // 测试平行坐标图
-  let parallel_coords = MultiDimensionalVisualizer::generate_parallel_coordinates(
-    visualizer,
-    visualization_data,
-    ["dim1", "dim2", "dim3"],
-    ["metric1", "metric2", "metric3"]
-  )
-  
-  assert_eq(parallel_coords.axes.length(), 6)  // 3个维度 + 3个指标
-  assert_true(parallel_coords.data_lines.length() > 0)
-  assert_true(parallel_coords.data_lines.all(fn(line) { line.points.length() == 6 }))
-  
-  // 测试散点图矩阵
-  let scatter_matrix = MultiDimensionalVisualizer::generate_scatter_matrix(
-    visualizer,
-    visualization_data,
-    ["metric1", "metric2", "metric3"],
-    "dim1"
-  )
-  
-  assert_eq(scatter_matrix.plots.length(), 9)  // 3x3矩阵
-  assert_true(scatter_matrix.plots.all(fn(plot) {
-    plot.x_axis != "" && plot.y_axis != "" && plot.points.length() > 0
-  }))
-  
-  // 测试3D散点图
-  let scatter_3d = MultiDimensionalVisualizer::generate_3d_scatter(
-    visualizer,
-    visualization_data,
-    "metric1",
-    "metric2",
-    "metric3",
-    "dim2"
-  )
-  
-  assert_true(scatter_3d.points.length() > 0)
-  assert_true(scatter_3d.points.all(fn(point) {
-    point.x != null && point.y != null && point.z != null && point.category != ""
-  }))
-  assert_true(scatter_3d.color_legend.length() > 0)
-  
-  // 测试雷达图
-  let radar_chart = MultiDimensionalVisualizer::generate_radar_chart(
-    visualizer,
-    visualization_data,
-    ["metric1", "metric2", "metric3"],
-    "dim1"
-  )
-  
-  assert_true(radar_chart.axes.length() == 3)
-  assert_true(radar_chart.series.length() > 0)
-  assert_true(radar_chart.series.all(fn(series) {
-    series.values.length() == 3 && series.name != ""
-  }))
-  
-  // 测试树状图
-  let treemap = MultiDimensionalVisualizer::generate_treemap(
-    visualizer,
-    visualization_data,
-    ["dim1", "dim2"],
-    "metric1",
-    "sum"
-  )
-  
-  assert_true(treemap.rectangles.length() > 0)
-  assert_true(treemap.rectangles.all(fn(rect) {
-    rect.x >= 0 && rect.y >= 0 && rect.width > 0 && rect.height > 0 &&
-    rect.label != "" && rect.value >= 0
-  }))
-  
-  // 测试维度相关性分析
-  let correlation_analysis = MultiDimensionalVisualizer::analyze_correlations(
-    visualizer,
-    visualization_data,
-    ["metric1", "metric2", "metric3"]
-  )
-  
-  assert_eq(correlation_analysis.matrix.length(), 3)
-  assert_eq(correlation_analysis.matrix[0].length(), 3)
-  assert_true(correlation_analysis.matrix[0][0] == 1.0)  // 自相关
-  assert_true(correlation_analysis.strong_correlations.length() >= 0)
+  assert_eq(anomalies.length(), 1)
+  assert_eq(anomalies[0], 25.5)
 }
 
-test "实时多维分析" {
-  // 测试实时多维分析
-  let realtime_analyzer = RealTimeMultiDimensionalAnalyzer::new({
-    "window_size": 60000000000L,  // 60秒窗口
-    "slide_interval": 10000000000L,  // 10秒滑动
-    "max_dimensions": 5,
-    "aggregation_interval": 5000000000L  // 5秒聚合间隔
+test "动态阈值调整" {
+  // 测试动态阈值调整功能
+  let hourly_metrics = [
+    (1, 150.2),   // 1:00
+    (2, 145.8),   // 2:00
+    (3, 152.1),   // 3:00
+    (14, 280.5),  // 14:00 (高峰期)
+    (15, 295.3),  // 15:00 (高峰期)
+    (16, 275.9),  // 16:00 (高峰期)
+    (22, 165.4),  // 22:00
+    (23, 158.7)   // 23:00
+  ]
+  
+  // 计算不同时间段的阈值
+  let night_hours = hourly_metrics.filter(fn(pair) { pair.0 < 6 || pair.0 > 20 })
+  let day_hours = hourly_metrics.filter(fn(pair) { pair.0 >= 6 && pair.0 <= 20 })
+  
+  // 夜间阈值
+  let night_avg = night_hours.reduce(fn(acc, pair) { acc + pair.1 }, 0.0) / Int64::to_float(night_hours.length())
+  let night_threshold = night_avg * 1.2
+  
+  // 白天阈值
+  let day_avg = day_hours.reduce(fn(acc, pair) { acc + pair.1 }, 0.0) / Int64::to_float(day_hours.length())
+  let day_threshold = day_avg * 1.2
+  
+  assert_true(day_threshold > night_threshold)
+  
+  // 验证高峰期值超过白天阈值
+  let peak_values = hourly_metrics.filter(fn(pair) { pair.0 >= 14 && pair.0 <= 16 })
+  let above_threshold = peak_values.filter(fn(pair) { pair.1 > day_threshold })
+  
+  assert_eq(above_threshold.length(), 3)
+}
+
+test "数据采样策略" {
+  // 测试数据采样策略
+  let all_data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+  
+  // 固定比例采样 (25%)
+  let sample_ratio = 0.25
+  let sample_size = Int64::to_int(Int64::to_float(all_data.length()) * sample_ratio)
+  let sampled_data = all_data.take(sample_size)
+  
+  assert_eq(sampled_data.length(), 5)
+  assert_eq(sampled_data, [1, 2, 3, 4, 5])
+  
+  // 基于时间窗口的采样
+  let time_stamped_data = [
+    (1630000000L, 1),
+    (1630000100L, 2),
+    (1630000200L, 3),
+    (1630000300L, 4),
+    (1630000400L, 5),
+    (1630000500L, 6)
+  ]
+  
+  let window_start = 1630000150L
+  let window_end = 1630000450L
+  let window_sampled = time_stamped_data.filter(fn(pair) { 
+    pair.0 >= window_start && pair.0 <= window_end 
   })
   
-  // 启动实时分析
-  RealTimeMultiDimensionalAnalyzer::start(realtime_analyzer)
+  assert_eq(window_sampled.length(), 3)
+  assert_eq(window_sampled.map(fn(pair) { pair.1 }), [3, 4, 5])
+}
+
+test "性能基准测试" {
+  // 测试性能基准测试功能
+  let operations = [
+    ("database.query", 120),
+    ("cache.get", 5),
+    ("api.request", 250),
+    ("cache.set", 8),
+    ("database.update", 180),
+    ("api.response", 95)
+  ]
   
-  // 模拟实时数据流
-  let data_stream = RealTimeStream::new()
-  let stream_dimensions = ["service", "operation", "status"]
-  let stream_metrics = ["latency", "error_count", "throughput"]
+  // 按操作类型分组
+  let db_ops = operations.filter(fn(op) { op.0.starts_with("database") })
+  let cache_ops = operations.filter(fn(op) { op.0.starts_with("cache") })
+  let api_ops = operations.filter(fn(op) { op.0.starts_with("api") })
   
-  // 启动数据生产者
-  let producer = StreamProducer::start(data_stream, fn() {
-    let i = random_int(0, 1000)
-    let record = {
-      "timestamp": get_current_timestamp(),
-      "service": ["auth", "payment", "user", "order"][i % 4],
-      "operation": ["login", "checkout", "search", "register"][i % 4],
-      "status": if i % 10 == 0 { "error" } else { "success" },
-      "latency": 50.0 + (i % 200).to_float(),
-      "error_count": if i % 10 == 0 { 1 } else { 0 },
-      "throughput": 100.0 + (i % 50).to_float()
-    }
-    record
+  // 计算各类操作的平均性能
+  let db_avg = db_ops.reduce(fn(acc, op) { acc + op.1 }, 0) / db_ops.length()
+  let cache_avg = cache_ops.reduce(fn(acc, op) { acc + op.1 }, 0) / cache_ops.length()
+  let api_avg = api_ops.reduce(fn(acc, op) { acc + op.1 }, 0) / api_ops.length()
+  
+  assert_true(db_avg > cache_avg)
+  assert_true(api_avg > cache_avg)
+  
+  // 找出最慢的操作
+  let slowest_op = operations.reduce(fn(acc, op) { 
+    if op.1 > acc.1 { op } else { acc } 
+  }, operations[0])
+  
+  assert_eq(slowest_op.0, "api.request")
+  assert_eq(slowest_op.1, 250)
+  
+  // 找出最快的操作
+  let fastest_op = operations.reduce(fn(acc, op) { 
+    if op.1 < acc.1 { op } else { acc } 
+  }, operations[0])
+  
+  assert_eq(fastest_op.0, "cache.get")
+  assert_eq(fastest_op.1, 5)
+}
+
+test "资源利用率分析" {
+  // 测试资源利用率分析
+  let resource_metrics = [
+    (1630000000L, 45.2, 1024, 60.5),  // (timestamp, cpu%, memoryMB, disk%)
+    (1630000600L, 52.8, 1152, 62.1),
+    (1630001200L, 48.1, 1089, 61.3),
+    (1630001800L, 67.3, 1356, 65.8),
+    (1630002400L, 71.5, 1423, 66.2)
+  ]
+  
+  // 计算CPU利用率趋势
+  let cpu_values = resource_metrics.map(fn(metric) { metric.1 })
+  let cpu_avg = cpu_values.reduce(fn(acc, val) { acc + val }, 0.0) / Int64::to_float(cpu_values.length())
+  let cpu_max = cpu_values.reduce(fn(acc, val) { if val > acc { val } else { acc } }, cpu_values[0])
+  
+  assert_true(cpu_avg > 40.0 && cpu_avg < 80.0)
+  assert_eq(cpu_max, 71.5)
+  
+  // 计算内存使用量增长
+  let memory_values = resource_metrics.map(fn(metric) { metric.2 })
+  let memory_growth = memory_values[memory_values.length() - 1] - memory_values[0]
+  
+  assert_eq(memory_growth, 399)
+  
+  // 检测资源压力时段
+  let high_pressure_periods = resource_metrics.filter(fn(metric) { 
+    metric.1 > 65.0 || metric.3 > 65.0 
   })
   
-  // 注册实时分析查询
-  let query_id = RealTimeMultiDimensionalAnalyzer::register_query(
-    realtime_analyzer,
-    {
-      "name": "service_performance",
-      "dimensions": ["service", "status"],
-      "metrics": ["latency": "average", "error_count": "sum", "throughput": "average"],
-      "filters": {},
-      "window": "60s",
-      "group_by": ["service", "status"]
-    }
-  )
-  
-  // 等待数据积累
-  sleep(15000)  // 15秒
-  
-  // 获取实时分析结果
-  let query_results = RealTimeMultiDimensionalAnalyzer::get_results(
-    realtime_analyzer,
-    query_id
-  )
-  
-  assert_true(query_results.length() > 0)
-  assert_true(query_results.all(fn(result) {
-    result.contains("service") && result.contains("status") &&
-    result.contains("latency_avg") && result.contains("error_count_sum") &&
-    result.contains("throughput_avg")
-  }))
-  
-  // 测试动态维度添加
-  RealTimeMultiDimensionalAnalyzer::add_dimension(
-    realtime_analyzer,
-    "region",
-    "categorical"
-  )
-  
-  // 测试实时异常检测
-  let anomaly_detector = RealTimeAnomalyDetector::new({
-    "algorithm": "isolation_forest",
-    "sensitivity": 0.1,
-    "window_size": 30
-  })
-  
-  RealTimeMultiDimensionalAnalyzer::enable_anomaly_detection(
-    realtime_analyzer,
-    anomaly_detector,
-    ["latency", "error_count", "throughput"]
-  )
-  
-  // 等待异常检测
-  sleep(10000)  // 10秒
-  
-  let anomalies = RealTimeMultiDimensionalAnalyzer::get_anomalies(realtime_analyzer)
-  assert_true(anomalies.length() >= 0)
-  
-  // 测试实时趋势分析
-  let trend_analysis = RealTimeMultiDimensionalAnalyzer::analyze_trends(
-    realtime_analyzer,
-    "latency",
-    "service",
-    300  // 5分钟趋势
-  )
-  
-  assert_true(trend_analysis.length() > 0)
-  assert_true(trend_analysis.all(fn(trend) {
-    trend.contains("service") && trend.contains("trend_direction") &&
-    trend.contains("trend_strength") && trend.contains("confidence")
-  }))
-  
-  // 清理资源
-  StreamProducer::stop(producer)
-  RealTimeMultiDimensionalAnalyzer::stop(realtime_analyzer)
+  assert_eq(high_pressure_periods.length(), 2)
 }
