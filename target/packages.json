@@ -490,6 +490,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_advanced_telemetry_aggregation_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/azimuth_advanced_telemetry_comprehensive_test_cases.mbt": {
           "backend": [
             "Wasm",
@@ -2687,6 +2700,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_data_validation_comprehensive_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/azimuth_data_validation_conversion_tests.mbt": {
           "backend": [
             "Wasm",
@@ -3793,6 +3819,19 @@
           ]
         },
         "/home/runner/work/Azimuth/Azimuth/azimuth_error_handling_resilience_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_error_handling_robustness_tests.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
@@ -5002,6 +5041,19 @@
           ]
         },
         "/home/runner/work/Azimuth/Azimuth/azimuth_memory_leak_protection_resource_cleanup_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_memory_leak_protection_tests.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
@@ -8291,6 +8343,19 @@
           ]
         },
         "/home/runner/work/Azimuth/Azimuth/azimuth_span_lifecycle_state_management_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_specialized_advanced_test_cases.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",

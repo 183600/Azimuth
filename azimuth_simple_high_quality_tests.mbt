@@ -30,6 +30,30 @@ test "basic attribute value type operations" {
     BoolValue(v) => assert_true(v)
     _ => assert_true(false)
   }
+  
+  // Test array string attribute value
+  let array_string_attr = ArrayStringValue(["a", "b", "c"])
+  match array_string_attr {
+    ArrayStringValue(v) => {
+      assert_eq(v.length(), 3)
+      assert_eq(v[0], "a")
+      assert_eq(v[1], "b")
+      assert_eq(v[2], "c")
+    }
+    _ => assert_true(false)
+  }
+  
+  // Test array int attribute value
+  let array_int_attr = ArrayIntValue([1, 2, 3])
+  match array_int_attr {
+    ArrayIntValue(v) => {
+      assert_eq(v.length(), 3)
+      assert_eq(v[0], 1)
+      assert_eq(v[1], 2)
+      assert_eq(v[2], 3)
+    }
+    _ => assert_true(false)
+  }
 }
 
 // Test 2: Basic Attributes Operations

@@ -316,6 +316,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_simple_integration_tests.mbt": {
   },
+  "azimuth_simple_high_quality_tests.mbt": {
+  },
   "azimuth_simple_enhanced_tests.mbt": {
   },
   "azimuth_simple_enhanced_system_tests.mbt": {
