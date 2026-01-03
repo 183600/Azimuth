@@ -198,6 +198,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_specialized_comprehensive_test_suite.mbt": {
   },
+  "azimuth_specialized_advanced_tests.mbt": {
+  },
   "azimuth_span_lifecycle_state_management_tests.mbt": {
   },
   "azimuth_span_lifecycle_management_tests.mbt": {
