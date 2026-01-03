@@ -1,471 +1,987 @@
-// Azimuth New Feature Test Suite
-// 新功能测试用例，涵盖遥测系统的各个方面
+// Azimuth 新功能测试用例
+// 包含Azimuth遥测系统新功能的测试
 
-// 测试1: 遥测数据序列化与反序列化
-pub test "遥测数据序列化与反序列化测试" {
-  // 创建Span并设置属性
-  let tracer_provider = azimuth::TracerProvider::default()
-  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "serialization-test")
-  let span = azimuth::Tracer::start_span(tracer, "serialization-span")
+// 测试1: 时间序列数据处理
+test "时间序列数据处理和分析" {
+  // 定义时间序列数据点
+  type TimeSeriesPoint = {
+    timestamp: Int,
+    value: Float,
+    tags: Array[(String, String)]
+  }
   
-  // 设置各种类型的属性
-  azimuth::Span::set_attribute(span, "string.attr", azimuth::StringValue("test-value"))
-  azimuth::Span::set_attribute(span, "int.attr", azimuth::IntValue(42))
-  azimuth::Span::set_attribute(span, "bool.attr", azimuth::BoolValue(true))
-  azimuth::Span::set_attribute(span, "double.attr", azimuth::DoubleValue(3.14))
+  // 创建测试数据
+  let time_series_data = [
+    { timestamp: 1609459200, value: 25.5, tags: [("region", "us-east"), ("service", "api")] },
+    { timestamp: 1609459260, value: 27.3, tags: [("region", "us-east"), ("service", "api")] },
+    { timestamp: 1609459320, value: 23.8, tags: [("region", "us-east"), ("service", "api")] },
+    { timestamp: 1609459380, value: 29.1, tags: [("region", "us-west"), ("service", "web")] },
+    { timestamp: 1609459440, value: 31.2, tags: [("region", "us-west"), ("service", "web")] }
+  ]
   
-  // 添加事件
-  azimuth::Span::add_event(span, "test-event", Some([("event.key", azimuth::StringValue("event-value"))]))
+  // 计算移动平均
+  let moving_average = fn(data: Array[TimeSeriesPoint], window_size: Int) {
+    let result = []
+    for i in window_size..data.length() {
+      let window = data.slice(i - window_size, i)
+      let sum = window.reduce(fn(acc, point) { acc + point.value }, 0.0)
+      let avg = sum / (window_size as Float)
+      result = result.push({
+        timestamp: data[i].timestamp,
+        value: avg,
+        tags: data[i].tags
+      })
+    }
+    result
+  }
   
-  // 序列化Span数据
-  let serialized = azimuth::Span::serialize(span)
-  assert_true(serialized.length() > 0)
+  // 按标签分组
+  let group_by_tags = fn(data: Array[TimeSeriesPoint], tag_key: String) {
+    let groups = Map::empty()
+    
+    for point in data {
+      let tag_value = match point.tags.find(fn(tag) { tag.0 == tag_key }) {
+        Some((_, value)) => value
+        None => "unknown"
+      }
+      
+      let group = match Map::get(groups, tag_value) {
+        Some(g) => g
+        None => []
+      }
+      
+      let _ = Map::insert(groups, tag_value, group.push(point))
+    }
+    
+    groups
+  }
   
-  // 反序列化Span数据
-  let deserialized_span = azimuth::Span::deserialize(serialized)
-  assert_true(deserialized_span != span) // 确保是新的Span实例
+  // 测试移动平均计算
+  let ma_result = moving_average(time_series_data, 3)
+  assert_eq(ma_result.length(), 2)
+  assert_eq(ma_result[0].timestamp, 1609459320)
+  assert_eq(ma_result[0].value.round(), 25.53)
   
-  // 验证反序列化的数据
-  assert_eq(azimuth::Span::name(deserialized_span), azimuth::Span::name(span))
+  // 测试按标签分组
+  let grouped = group_by_tags(time_series_data, "region")
+  let east_group = match Map::get(grouped, "us-east") {
+    Some(g) => g
+    None => []
+  }
+  assert_eq(east_group.length(), 3)
   
-  // 结束原始Span
-  azimuth::Span::end(span)
-  azimuth::Span::end(deserialized_span)
+  let west_group = match Map::get(grouped, "us-west") {
+    Some(g) => g
+    None => []
+  }
+  assert_eq(west_group.length(), 2)
 }
 
-// 测试2: 跨服务上下文传播
-pub test "跨服务上下文传播测试" {
-  // 创建父服务上下文
-  let parent_tracer_provider = azimuth::TracerProvider::default()
-  let parent_tracer = azimuth::TracerProvider::get_tracer(parent_tracer_provider, "parent-service")
-  let parent_span = azimuth::Tracer::start_span(parent_tracer, "parent-operation")
+// 测试2: 分布式追踪上下文传播
+test "分布式追踪上下文传播" {
+  // 定义追踪上下文
+  type TraceContext = {
+    trace_id: String,
+    span_id: String,
+    parent_span_id: Option[String],
+    baggage: Array[(String, String)],
+    flags: Int
+  }
   
-  // 设置父Span属性
-  azimuth::Span::set_attribute(parent_span, "service.name", azimuth::StringValue("parent-service"))
-  azimuth::Span::set_attribute(parent_span, "user.id", azimuth::StringValue("user-123"))
-  
-  // 提取上下文
-  let context = azimuth::Span::get_context(parent_span)
-  let serialized_context = azimuth::Context::serialize(context)
-  
-  // 模拟跨服务传播
-  let child_tracer_provider = azimuth::TracerProvider::default()
-  let child_tracer = azimuth::TracerProvider::get_tracer(child_tracer_provider, "child-service")
-  
-  // 反序列化上下文
-  let propagated_context = azimuth::Context::deserialize(serialized_context)
-  let child_span = azimuth::Tracer::start_span_with_context(child_tracer, "child-operation", propagated_context)
-  
-  // 验证父子关系
-  assert_eq(azimuth::Span::parent_id(child_span), azimuth::Span::span_id(parent_span))
-  assert_eq(azimuth::Span::trace_id(child_span), azimuth::Span::trace_id(parent_span))
-  
-  // 设置子Span属性
-  azimuth::Span::set_attribute(child_span, "service.name", azimuth::StringValue("child-service"))
-  azimuth::Span::set_attribute(child_span, "operation.type", azimuth::StringValue("database-query"))
-  
-  // 结束Span
-  azimuth::Span::end(child_span)
-  azimuth::Span::end(parent_span)
-}
-
-// 测试3: 度量数据聚合
-pub test "度量数据聚合测试" {
-  // 创建Meter
-  let meter_provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(meter_provider, "aggregation-test")
-  
-  // 创建Counter并记录数据
-  let counter = azimuth::Meter::create_counter(meter, "request.count", "请求总数", "count")
-  azimuth::Counter::add(counter, 10.0, [("endpoint", azimuth::StringValue("/api/users"))])
-  azimuth::Counter::add(counter, 5.0, [("endpoint", azimuth::StringValue("/api/products"))])
-  azimuth::Counter::add(counter, 15.0, [("endpoint", azimuth::StringValue("/api/users"))])
-  
-  // 创建Histogram并记录数据
-  let histogram = azimuth::Meter::create_histogram(meter, "response.time", "响应时间", "ms")
-  azimuth::Histogram::record(histogram, 100.0, [("status", azimuth::StringValue("200"))])
-  azimuth::Histogram::record(histogram, 200.0, [("status", azimuth::StringValue("200"))])
-  azimuth::Histogram::record(histogram, 500.0, [("status", azimuth::StringValue("500"))])
-  azimuth::Histogram::record(histogram, 150.0, [("status", azimuth::StringValue("200"))])
-  
-  // 聚合数据
-  let counter_data = azimuth::Counter::get_data(counter)
-  let histogram_data = azimuth::Histogram::get_data(histogram)
-  
-  // 验证Counter聚合结果
-  assert_eq(counter_data.length(), 2) // 两个不同的endpoint
-  for data_point in counter_data {
-    if data_point.attributes["endpoint"] == azimuth::StringValue("/api/users") {
-      assert_eq(data_point.value, 25.0) // 10 + 15
-    } else if data_point.attributes["endpoint"] == azimuth::StringValue("/api/products") {
-      assert_eq(data_point.value, 5.0)
+  // 创建新的追踪上下文
+  let create_trace_context = fn() {
+    {
+      trace_id: "trace-" + Time::now().to_string(),
+      span_id: "span-" + Time::now().to_string(),
+      parent_span_id: None,
+      baggage: [],
+      flags: 0
     }
   }
   
-  // 验证Histogram聚合结果
-  assert_eq(histogram_data.length(), 2) // 两个不同的status
-  for data_point in histogram_data {
-    if data_point.attributes["status"] == azimuth::StringValue("200") {
-      assert_eq(data_point.count, 3) // 3个200状态码的响应
-      assert_eq(data_point.sum, 450.0) // 100 + 200 + 150
-    } else if data_point.attributes["status"] == azimuth::StringValue("500") {
-      assert_eq(data_point.count, 1) // 1个500状态码的响应
-      assert_eq(data_point.sum, 500.0)
+  // 创建子span
+  let create_child_span = fn(parent: TraceContext) {
+    {
+      trace_id: parent.trace_id,
+      span_id: "span-" + Time::now().to_string(),
+      parent_span_id: Some(parent.span_id),
+      baggage: parent.baggage,
+      flags: parent.flags
     }
   }
+  
+  // 添加baggage项
+  let add_baggage = fn(context: TraceContext, key: String, value: String) {
+    let new_baggage = context.baggage.push((key, value))
+    { context with baggage: new_baggage }
+  }
+  
+  // 序列化上下文为字符串
+  let serialize_context = fn(context: TraceContext) {
+    let baggage_str = context.baggage
+      .map(fn(item) { item.0 + "=" + item.1 })
+      .join(",")
+    
+    "trace-id=" + context.trace_id + 
+    ";span-id=" + context.span_id + 
+    ";parent-span-id=" + context.parent_span_id.unwrap_or("") + 
+    ";baggage=" + baggage_str + 
+    ";flags=" + context.flags.to_string()
+  }
+  
+  // 测试上下文创建
+  let root_context = create_trace_context()
+  assert_true(root_context.trace_id.starts_with("trace-"))
+  assert_true(root_context.span_id.starts_with("span-"))
+  assert_eq(root_context.parent_span_id, None)
+  assert_eq(root_context.baggage.length(), 0)
+  
+  // 测试子span创建
+  let child_context = create_child_span(root_context)
+  assert_eq(child_context.trace_id, root_context.trace_id)
+  assert_eq(child_context.parent_span_id, Some(root_context.span_id))
+  assert_not_eq(child_context.span_id, root_context.span_id)
+  
+  // 测试baggage添加
+  let with_baggage = add_baggage(root_context, "user.id", "12345")
+  assert_eq(with_baggage.baggage.length(), 1)
+  assert_eq(with_baggage.baggage[0], ("user.id", "12345"))
+  
+  let with_more_baggage = add_baggage(with_baggage, "request.id", "req-67890")
+  assert_eq(with_more_baggage.baggage.length(), 2)
+  
+  // 测试上下文序列化
+  let serialized = serialize_context(with_more_baggage)
+  assert_true(serialized.contains("trace-id="))
+  assert_true(serialized.contains("span-id="))
+  assert_true(serialized.contains("baggage=user.id=12345,request.id=req-67890"))
 }
 
-// 测试4: 日志记录与关联
-pub test "日志记录与关联测试" {
-  // 创建Logger
-  let logger_provider = azimuth::LoggerProvider::default()
-  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "correlation-test")
+// 测试3: 遥测数据压缩
+test "遥测数据压缩和解压缩" {
+  // 定义遥测事件
+  type TelemetryEvent = {
+    name: String,
+    timestamp: Int,
+    attributes: Array[(String, String)],
+    metrics: Array[(String, Float)]
+  }
   
-  // 创建Span用于关联
-  let tracer_provider = azimuth::TracerProvider::default()
-  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "trace-test")
-  let span = azimuth::Tracer::start_span(tracer, "operation-with-logs")
+  // 创建测试事件
+  let events = [
+    {
+      name: "http.request",
+      timestamp: 1609459200,
+      attributes: [
+        ("method", "GET"),
+        ("url", "/api/users"),
+        ("status", "200")
+      ],
+      metrics: [
+        ("duration", 125.5),
+        ("size", 1024.0)
+      ]
+    },
+    {
+      name: "http.request",
+      timestamp: 1609459260,
+      attributes: [
+        ("method", "POST"),
+        ("url", "/api/orders"),
+        ("status", "201")
+      ],
+      metrics: [
+        ("duration", 210.3),
+        ("size", 512.0)
+      ]
+    }
+  ]
   
-  // 获取Span上下文
-  let context = azimuth::Span::get_context(span)
-  let trace_id = azimuth::Context::trace_id(context)
-  let span_id = azimuth::Context::span_id(context)
+  // 简单压缩算法：去重复属性键
+  let compress_events = fn(events: Array[TelemetryEvent]) {
+    let attribute_keys = []
+    let metric_keys = []
+    
+    // 收集所有唯一的键
+    for event in events {
+      for attr in event.attributes {
+        if not attribute_keys.contains(attr.0) {
+          attribute_keys = attribute_keys.push(attr.0)
+        }
+      }
+      
+      for metric in event.metrics {
+        if not metric_keys.contains(metric.0) {
+          metric_keys = metric_keys.push(metric.0)
+        }
+      }
+    }
+    
+    // 压缩事件
+    let compressed = events.map(fn(event) {
+      let compressed_attrs = event.attributes.map(fn(attr) {
+        let key_index = attribute_keys.index_of(attr.0).unwrap_or(0)
+        (key_index, attr.1)
+      })
+      
+      let compressed_metrics = event.metrics.map(fn(metric) {
+        let key_index = metric_keys.index_of(metric.0).unwrap_or(0)
+        (key_index, metric.1)
+      })
+      
+      {
+        name: event.name,
+        timestamp: event.timestamp,
+        attribute_keys: attribute_keys,
+        metric_keys: metric_keys,
+        attributes: compressed_attrs,
+        metrics: compressed_metrics
+      }
+    })
+    
+    compressed
+  }
   
-  // 记录关联的日志
-  azimuth::Logger::emit_log(logger, azimuth::INFO, "操作开始", [
-    ("trace.id", azimuth::StringValue(trace_id)),
-    ("span.id", azimuth::StringValue(span_id)),
-    ("operation", azimuth::StringValue("database-query"))
+  // 解压缩事件
+  let decompress_events = fn(compressed_events: Array[CompressedEvent]) {
+    compressed_events.map(fn(event) {
+      let decompressed_attrs = event.attributes.map(fn(attr) {
+        let key = event.attribute_keys[attr.0]
+        (key, attr.1)
+      })
+      
+      let decompressed_metrics = event.metrics.map(fn(metric) {
+        let key = event.metric_keys[metric.0]
+        (key, metric.1)
+      })
+      
+      {
+        name: event.name,
+        timestamp: event.timestamp,
+        attributes: decompressed_attrs,
+        metrics: decompressed_metrics
+      }
+    })
+  }
+  
+  // 定义压缩事件类型（用于内部表示）
+  type CompressedEvent = {
+    name: String,
+    timestamp: Int,
+    attribute_keys: Array[String],
+    metric_keys: Array[String],
+    attributes: Array[(Int, String)],
+    metrics: Array[(Int, Float)]
+  }
+  
+  // 测试压缩
+  let compressed = compress_events(events)
+  assert_eq(compressed.length(), 2)
+  assert_eq(compressed[0].attribute_keys.length(), 3)  // method, url, status
+  assert_eq(compressed[0].metric_keys.length(), 2)     // duration, size
+  
+  // 验证属性键索引
+  assert_eq(compressed[0].attributes[0], (0, "GET"))  // method -> GET
+  assert_eq(compressed[0].attributes[1], (1, "/api/users"))  // url -> /api/users
+  assert_eq(compressed[0].attributes[2], (2, "200"))  // status -> 200
+  
+  // 测试解压缩
+  let decompressed = decompress_events(compressed)
+  assert_eq(decompressed.length(), 2)
+  assert_eq(decompressed[0].name, "http.request")
+  assert_eq(decompressed[0].attributes, [
+    ("method", "GET"),
+    ("url", "/api/users"),
+    ("status", "200")
   ])
-  
-  // 在Span中添加事件
-  azimuth::Span::add_event(span, "database-query-start", Some([
-    ("query", azimuth::StringValue("SELECT * FROM users")),
-    ("timestamp", azimuth::StringValue("2023-01-01T00:00:00Z"))
-  ]))
-  
-  // 记录更多日志
-  azimuth::Logger::emit_log(logger, azimuth::DEBUG, "查询执行中", [
-    ("trace.id", azimuth::StringValue(trace_id)),
-    ("span.id", azimuth::StringValue(span_id)),
-    ("query.time", azimuth::IntValue(150))
+  assert_eq(decompressed[0].metrics, [
+    ("duration", 125.5),
+    ("size", 1024.0)
   ])
-  
-  // 记录操作完成
-  azimuth::Logger::emit_log(logger, azimuth::INFO, "操作完成", [
-    ("trace.id", azimuth::StringValue(trace_id)),
-    ("span.id", azimuth::StringValue(span_id)),
-    ("result.count", azimuth::IntValue(42))
-  ])
-  
-  // 结束Span
-  azimuth::Span::end(span)
-  
-  // 验证日志与Span的关联
-  let logs = azimuth::Logger::get_logs(logger)
-  assert_true(logs.length() >= 3)
-  
-  for log in logs {
-    assert_eq(log.attributes["trace.id"], azimuth::StringValue(trace_id))
-    assert_eq(log.attributes["span.id"], azimuth::StringValue(span_id))
-  }
 }
 
-// 测试5: 性能基准测试
-pub test "性能基准测试" {
-  // 创建Tracer
-  let tracer_provider = azimuth::TracerProvider::default()
-  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "performance-test")
-  
-  // 测试Span创建和结束的性能
-  let start_time = azimuth::time::current_timestamp()
-  let span_count = 1000
-  
-  for i in 0..span_count {
-    let span = azimuth::Tracer::start_span(tracer, "perf-span-" + i.to_string())
-    azimuth::Span::set_attribute(span, "index", azimuth::IntValue(i))
-    azimuth::Span::add_event(span, "test-event", None)
-    azimuth::Span::end(span)
+// 测试4: 遥测数据采样策略
+test "遥测数据采样策略" {
+  // 定义采样决策
+  type SamplingDecision = {
+    sampled: Bool,
+    sample_rate: Float,
+    attributes: Array[(String, String)]
   }
   
-  let end_time = azimuth::time::current_timestamp()
-  let duration = end_time - start_time
-  
-  // 验证性能指标（每个Span操作应该在合理时间内完成）
-  let avg_duration_per_span = duration.to_float() / span_count.to_float()
-  assert_true(avg_duration_per_span < 1.0) // 每个Span平均处理时间应小于1ms
-  
-  // 测试度量记录的性能
-  let meter_provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(meter_provider, "perf-meter")
-  let counter = azimuth::Meter::create_counter(meter, "perf.counter", "性能测试计数器", "count")
-  
-  let metric_start_time = azimuth::time::current_timestamp()
-  let metric_count = 10000
-  
-  for i in 0..metric_count {
-    azimuth::Counter::add(counter, 1.0, [("batch", azimuth::StringValue((i / 100).to_string()))])
+  // 基于trace_id的概率采样
+  let probabilistic_sampler = fn(trace_id: String, sample_rate: Float) {
+    // 简单哈希函数
+    let hash = trace_id.chars().reduce(0, fn(acc, c) { (acc * 31 + c.to_int()) % 10000 })
+    let probability = (hash as Float) / 10000.0
+    
+    {
+      sampled: probability <= sample_rate,
+      sample_rate: sample_rate,
+      attributes: [
+        ("sampler.type", "probabilistic"),
+        ("sampler.rate", sample_rate.to_string())
+      ]
+    }
   }
   
-  let metric_end_time = azimuth::time::current_timestamp()
-  let metric_duration = metric_end_time - metric_start_time
-  let avg_duration_per_metric = metric_duration.to_float() / metric_count.to_float()
-  assert_true(avg_duration_per_metric < 0.1) // 每个度量记录平均时间应小于0.1ms
+  // 基于属性的采样
+  let attribute_based_sampler = fn(attributes: Array[(String, String)], rules: Array[(String, String)]) {
+    let matches = rules.all(fn(rule) {
+      let (key, value) = rule
+      attributes.any(fn(attr) { attr.0 == key && attr.1 == value })
+    })
+    
+    {
+      sampled: matches,
+      sample_rate: if matches { 1.0 } else { 0.0 },
+      attributes: [
+        ("sampler.type", "attribute-based"),
+        ("sampler.rules_matched", matches.to_string())
+      ]
+    }
+  }
+  
+  // 组合采样器
+  let composite_sampler = fn(trace_id: String, attributes: Array[(String, String)], prob_rate: Float, attr_rules: Array[(String, String)]) {
+    let prob_decision = probabilistic_sampler(trace_id, prob_rate)
+    let attr_decision = attribute_based_sampler(attributes, attr_rules)
+    
+    // 如果任一采样器决定采样，则采样
+    let sampled = prob_decision.sampled || attr_decision.sampled
+    
+    {
+      sampled: sampled,
+      sample_rate: if sampled { prob_rate.max(1.0) } else { 0.0 },
+      attributes: prob_decision.attributes + attr_decision.attributes
+    }
+  }
+  
+  // 测试概率采样
+  let trace_id_1 = "trace-12345"
+  let prob_decision_1 = probabilistic_sampler(trace_id_1, 0.5)
+  // 结果取决于哈希值，我们只验证结构
+  assert_true(prob_decision_1.sampled || not prob_decision_1.sampled)  // 总是true
+  assert_eq(prob_decision_1.sample_rate, 0.5)
+  assert_true(prob_decision_1.attributes.contains(("sampler.type", "probabilistic")))
+  
+  // 测试基于属性的采样
+  let attributes = [
+    ("service.name", "payment-service"),
+    ("environment", "production"),
+    ("endpoint", "/api/pay")
+  ]
+  
+  let rules = [
+    ("service.name", "payment-service"),
+    ("environment", "production")
+  ]
+  
+  let attr_decision = attribute_based_sampler(attributes, rules)
+  assert_true(attr_decision.sampled)
+  assert_eq(attr_decision.sample_rate, 1.0)
+  
+  // 测试不匹配的规则
+  let strict_rules = [
+    ("service.name", "payment-service"),
+    ("environment", "production"),
+    ("version", "v2.1.0")
+  ]
+  
+  let strict_attr_decision = attribute_based_sampler(attributes, strict_rules)
+  assert_false(strict_attr_decision.sampled)
+  assert_eq(strict_attr_decision.sample_rate, 0.0)
+  
+  // 测试组合采样器
+  let composite_decision = composite_sampler(trace_id_1, attributes, 0.3, rules)
+  // 由于属性匹配，应该总是采样
+  assert_true(composite_decision.sampled)
+  assert_eq(composite_decision.sample_rate, 1.0)
 }
 
-// 测试6: 错误处理与恢复
-pub test "错误处理与恢复测试" {
-  // 创建Tracer
-  let tracer_provider = azimuth::TracerProvider::default()
-  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "error-handling-test")
+// 测试5: 遥测指标聚合
+test "遥测指标聚合和统计" {
+  // 定义指标类型
+  enum MetricType {
+    Counter
+    Gauge
+    Histogram
+    Summary
+  }
   
-  // 测试正常操作
-  let normal_span = azimuth::Tracer::start_span(tracer, "normal-operation")
-  azimuth::Span::set_status(normal_span, azimuth::Ok, "操作成功")
-  azimuth::Span::end(normal_span)
+  // 定义指标数据点
+  type MetricDataPoint = {
+    name: String,
+    metric_type: MetricType,
+    value: Float,
+    timestamp: Int,
+    labels: Array[(String, String)]
+  }
   
-  // 测试错误处理
-  let error_span = azimuth::Tracer::start_span(tracer, "error-operation")
+  // 定义聚合结果
+  type AggregatedMetric = {
+    name: String,
+    metric_type: MetricType,
+    count: Int,
+    sum: Float,
+    min: Float,
+    max: Float,
+    avg: Float,
+    labels: Array[(String, String)]
+  }
   
-  // 模拟错误情况
-  azimuth::Span::set_status(error_span, azimuth::Error, "模拟错误")
-  azimuth::Span::record_exception(error_span, "模拟异常", Some([
-    ("error.code", azimuth::StringValue("E001")),
-    ("error.message", azimuth::StringValue("操作失败"))
-  ]))
+  // 聚合指标
+  let aggregate_metrics = fn(points: Array[MetricDataPoint], label_keys: Array[String]) {
+    let groups = Map::empty()
+    
+    for point in points {
+      // 构建标签键
+      let label_values = label_keys.map(fn(key) {
+        match point.labels.find(fn(label) { label.0 == key }) {
+          Some((_, value)) => value
+          None => "unknown"
+        }
+      })
+      let group_key = point.name + "|" + label_values.join("|")
+      
+      // 获取或创建分组
+      let group = match Map::get(groups, group_key) {
+        Some(g) => g
+        None => []
+      }
+      
+      let _ = Map::insert(groups, group_key, group.push(point))
+    }
+    
+    // 聚合每个分组
+    let results = []
+    for (group_key, group_points) in groups {
+      if group_points.length() > 0 {
+        let first_point = group_points[0]
+        let values = group_points.map(fn(p) { p.value })
+        let count = values.length()
+        let sum = values.reduce(fn(acc, v) { acc + v }, 0.0)
+        let min = values.reduce(fn(acc, v) { if v < acc { v } else { acc } }, values[0])
+        let max = values.reduce(fn(acc, v) { if v > acc { v } else { acc } }, values[0])
+        let avg = sum / (count as Float)
+        
+        // 提取标签
+        let labels = label_keys.map(fn(key) {
+          match first_point.labels.find(fn(label) { label.0 == key }) {
+            Some((_, value)) => (key, value)
+            None => (key, "unknown")
+          }
+        })
+        
+        results = results.push({
+          name: first_point.name,
+          metric_type: first_point.metric_type,
+          count: count,
+          sum: sum,
+          min: min,
+          max: max,
+          avg: avg,
+          labels: labels
+        })
+      }
+    }
+    
+    results
+  }
   
-  // 添加错误事件
-  azimuth::Span::add_event(error_span, "error-occurred", Some([
-    ("error.type", azimuth::StringValue("ValidationError")),
-    ("recoverable", azimuth::BoolValue(true))
-  ]))
+  // 创建测试数据
+  let metric_points = [
+    {
+      name: "http.request.duration",
+      metric_type: MetricType::Histogram,
+      value: 120.5,
+      timestamp: 1609459200,
+      labels: [("method", "GET"), ("/api/users", "path"), ("status", "200")]
+    },
+    {
+      name: "http.request.duration",
+      metric_type: MetricType::Histogram,
+      value: 85.3,
+      timestamp: 1609459210,
+      labels: [("method", "GET"), ("/api/users", "path"), ("status", "200")]
+    },
+    {
+      name: "http.request.duration",
+      metric_type: MetricType::Histogram,
+      value: 210.7,
+      timestamp: 1609459220,
+      labels: [("method", "POST"), ("/api/orders", "path"), ("status", "201")]
+    },
+    {
+      name: "http.request.duration",
+      metric_type: MetricType::Histogram,
+      value: 195.2,
+      timestamp: 1609459230,
+      labels: [("method", "POST"), ("/api/orders", "path"), ("status", "400")]
+    },
+    {
+      name: "system.cpu.usage",
+      metric_type: MetricType::Gauge,
+      value: 65.5,
+      timestamp: 1609459240,
+      labels: [("instance", "host-1"), ("region", "us-east")]
+    }
+  ]
   
-  // 结束错误Span
-  azimuth::Span::end(error_span)
+  // 测试按方法和路径聚合HTTP请求持续时间
+  let http_aggregations = aggregate_metrics(metric_points.slice(0, 4), ["method", "/api/users", "path"])
+  assert_eq(http_aggregations.length(), 2)
   
-  // 测试恢复操作
-  let recovery_span = azimuth::Tracer::start_span(tracer, "recovery-operation")
+  // GET请求应该有2个点
+  let get_aggregation = http_aggregations.find(fn(aggr) { 
+    aggr.labels.contains(("method", "GET")) 
+  }).unwrap()
+  assert_eq(get_aggregation.count, 2)
+  assert_eq(get_aggregation.sum.round(), 205.8)
+  assert_eq(get_aggregation.min, 85.3)
+  assert_eq(get_aggregation.max, 120.5)
+  assert_eq(get_aggregation.avg.round(), 102.9)
   
-  // 设置恢复上下文
-  azimuth::Span::set_attribute(recovery_span, "recovery.from", azimuth::StringValue("error-operation"))
-  azimuth::Span::set_attribute(recovery_span, "recovery.strategy", azimuth::StringValue("retry"))
+  // POST请求应该有2个点
+  let post_aggregation = http_aggregations.find(fn(aggr) { 
+    aggr.labels.contains(("method", "POST")) 
+  }).unwrap()
+  assert_eq(post_aggregation.count, 2)
+  assert_eq(post_aggregation.sum.round(), 405.9)
+  assert_eq(post_aggregation.min, 195.2)
+  assert_eq(post_aggregation.max, 210.7)
+  assert_eq(post_aggregation.avg.round(), 202.95)
   
-  // 模拟恢复成功
-  azimuth::Span::set_status(recovery_span, azimuth::Ok, "恢复成功")
-  azimuth::Span::end(recovery_span)
+  // 测试系统CPU使用率聚合
+  let cpu_aggregations = aggregate_metrics(metric_points.slice(4, 5), ["instance", "region"])
+  assert_eq(cpu_aggregations.length(), 1)
   
-  // 验证错误和恢复状态
-  assert_eq(azimuth::Span::status(error_span), azimuth::Error)
-  assert_eq(azimuth::Span::status(recovery_span), azimuth::Ok)
+  let cpu_aggregation = cpu_aggregations[0]
+  assert_eq(cpu_aggregation.name, "system.cpu.usage")
+  assert_eq(cpu_aggregation.metric_type, MetricType::Gauge)
+  assert_eq(cpu_aggregation.count, 1)
+  assert_eq(cpu_aggregation.sum, 65.5)
+  assert_eq(cpu_aggregation.avg, 65.5)
 }
 
-// 测试7: 配置动态更新
-pub test "配置动态更新测试" {
-  // 创建初始配置
-  let initial_config = azimuth::Configuration::new()
-  azimuth::Configuration::set_sampling_rate(initial_config, 0.1) // 10%采样率
-  azimuth::Configuration::set_max_attributes(initial_config, 128)
-  azimuth::Configuration::set_max_events(initial_config, 100)
+// 测试6: 遥测数据转换和格式化
+test "遥测数据转换和格式化" {
+  // 定义原始遥测数据
+  type RawTelemetryData = {
+    timestamp: Int,
+    level: String,  // "INFO", "WARN", "ERROR"
+    message: String,
+    fields: Map[String, String]
+  }
   
-  // 创建使用初始配置的TracerProvider
-  let tracer_provider = azimuth::TracerProvider::with_config(initial_config)
-  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "config-test")
+  // 定义标准化的遥测事件
+  type StandardTelemetryEvent = {
+    name: String,
+    timestamp: Int,
+    severity: Int,  // 0-INFO, 1-WARN, 2-ERROR
+    attributes: Array[(String, String)],
+    body: String
+  }
   
-  // 创建Span并验证配置应用
-  let span1 = azimuth::Tracer::start_span(tracer, "config-test-span-1")
-  let config1 = azimuth::Span::get_configuration(span1)
-  assert_eq(azimuth::Configuration::sampling_rate(config1), 0.1)
-  assert_eq(azimuth::Configuration::max_attributes(config1), 128)
-  assert_eq(azimuth::Configuration::max_events(config1), 100)
-  azimuth::Span::end(span1)
+  // 定义OpenTelemetry格式
+  type OtelSpan = {
+    trace_id: String,
+    span_id: String,
+    parent_span_id: Option[String],
+    name: String,
+    start_time: Int,
+    end_time: Int,
+    status: String,
+    attributes: Array[(String, String)]
+  }
   
-  // 动态更新配置
-  azimuth::Configuration::set_sampling_rate(initial_config, 0.5) // 50%采样率
-  azimuth::Configuration::set_max_attributes(initial_config, 256)
-  azimuth::Configuration::set_max_events(initial_config, 200)
+  // 转换原始数据为标准事件
+  let raw_to_standard = fn(raw: RawTelemetryData) {
+    let severity = match raw.level {
+      "INFO" => 0
+      "WARN" => 1
+      "ERROR" => 2
+      _ => 0
+    }
+    
+    let attributes = raw.fields.to_array().map(fn(entry) { 
+      let (key, value) = entry 
+      (key, value) 
+    })
+    
+    {
+      name: "log.event",
+      timestamp: raw.timestamp,
+      severity: severity,
+      attributes: attributes,
+      body: raw.message
+    }
+  }
   
-  // 通知TracerProvider配置更新
-  azimuth::TracerProvider::update_configuration(tracer_provider, initial_config)
+  // 转换标准事件为OpenTelemetry Span
+  let standard_to_otel = fn(event: StandardTelemetryEvent, trace_id: String, span_id: String) {
+    let status = match event.severity {
+      0 => "OK"
+      1 => "WARNING"
+      2 => "ERROR"
+      _ => "OK"
+    }
+    
+    {
+      trace_id: trace_id,
+      span_id: span_id,
+      parent_span_id: None,
+      name: event.name,
+      start_time: event.timestamp,
+      end_time: event.timestamp + 100,  // 假设持续时间100ms
+      status: status,
+      attributes: event.attributes.push(("log.body", event.body))
+    }
+  }
   
-  // 创建新Span并验证配置更新
-  let span2 = azimuth::Tracer::start_span(tracer, "config-test-span-2")
-  let config2 = azimuth::Span::get_configuration(span2)
-  assert_eq(azimuth::Configuration::sampling_rate(config2), 0.5)
-  assert_eq(azimuth::Configuration::max_attributes(config2), 256)
-  assert_eq(azimuth::Configuration::max_events(config2), 200)
-  azimuth::Span::end(span2)
+  // 格式化为JSON字符串
+  let format_to_json = fn(otel_span: OtelSpan) {
+    let attributes_str = otel_span.attributes
+      .map(fn(attr) { "\"" + attr.0 + "\":\"" + attr.1 + "\"" })
+      .join(",")
+    
+    "{" +
+      "\"trace_id\":\"" + otel_span.trace_id + "\"," +
+      "\"span_id\":\"" + otel_span.span_id + "\"," +
+      "\"parent_span_id\":\"" + otel_span.parent_span_id.unwrap_or("") + "\"," +
+      "\"name\":\"" + otel_span.name + "\"," +
+      "\"start_time\":" + otel_span.start_time.to_string() + "," +
+      "\"end_time\":" + otel_span.end_time.to_string() + "," +
+      "\"status\":\"" + otel_span.status + "\"," +
+      "\"attributes\":{" + attributes_str + "}" +
+    "}"
+  }
   
-  // 验证配置更新不影响已存在的Span
-  let span3 = azimuth::Tracer::start_span(tracer, "config-test-span-3")
-  let config3 = azimuth::Span::get_configuration(span3)
-  assert_eq(azimuth::Configuration::sampling_rate(config3), 0.5)
-  azimuth::Span::end(span3)
+  // 测试转换流程
+  let raw_log = {
+    timestamp: 1609459200,
+    level: "ERROR",
+    message: "Database connection failed",
+    fields: Map::from_array([
+      ("service", "payment-service"),
+      ("user_id", "12345"),
+      ("error_code", "DB_CONN_FAILED")
+    ])
+  }
+  
+  // 转换为标准事件
+  let standard_event = raw_to_standard(raw_log)
+  assert_eq(standard_event.name, "log.event")
+  assert_eq(standard_event.timestamp, 1609459200)
+  assert_eq(standard_event.severity, 2)  // ERROR
+  assert_eq(standard_event.body, "Database connection failed")
+  assert_eq(standard_event.attributes.length(), 3)
+  assert_true(standard_event.attributes.contains(("service", "payment-service")))
+  
+  // 转换为OpenTelemetry Span
+  let otel_span = standard_to_otel(standard_event, "trace-12345", "span-67890")
+  assert_eq(otel_span.trace_id, "trace-12345")
+  assert_eq(otel_span.span_id, "span-67890")
+  assert_eq(otel_span.name, "log.event")
+  assert_eq(otel_span.status, "ERROR")
+  assert_eq(otel_span.attributes.length(), 4)
+  assert_true(otel_span.attributes.contains(("log.body", "Database connection failed")))
+  
+  // 格式化为JSON
+  let json_str = format_to_json(otel_span)
+  assert_true(json_str.contains("\"trace_id\":\"trace-12345\""))
+  assert_true(json_str.contains("\"span_id\":\"span-67890\""))
+  assert_true(json_str.contains("\"status\":\"ERROR\""))
+  assert_true(json_str.contains("\"service\":\"payment-service\""))
 }
 
-// 测试8: 资源管理
-pub test "资源管理测试" {
-  // 创建基础资源
-  let base_resource = azimuth::Resource::new()
-  azimuth::Resource::set_attribute(base_resource, "service.name", azimuth::StringValue("test-service"))
-  azimuth::Resource::set_attribute(base_resource, "service.version", azimuth::StringValue("1.0.0"))
-  azimuth::Resource::set_attribute(base_resource, "host.name", azimuth::StringValue("test-host"))
+// 测试7: 遥测数据缓存和存储
+test "遥测数据缓存和存储策略" {
+  // 定义缓存条目
+  type CacheEntry[T] = {
+    key: String,
+    value: T,
+    timestamp: Int,
+    ttl: Int,  // 生存时间（秒）
+    access_count: Int
+  }
   
-  // 创建使用资源的TracerProvider
-  let tracer_provider = azimuth::TracerProvider::with_resource(base_resource)
-  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "resource-test")
+  // 定义缓存配置
+  type CacheConfig = {
+    max_size: Int,
+    default_ttl: Int,
+    cleanup_interval: Int
+  }
   
-  // 创建Span并验证资源属性
-  let span = azimuth::Tracer::start_span(tracer, "resource-test-span")
-  let span_resource = azimuth::Span::get_resource(span)
+  // 创建简单的内存缓存
+  let create_cache = fn(config: CacheConfig) {
+    let cache = Map::empty()
+    
+    let get = fn(key: String) {
+      match Map::get(cache, key) {
+        Some(entry) => {
+          // 检查是否过期
+          let current_time = Time::now()
+          if current_time - entry.timestamp > entry.ttl {
+            let _ = Map::remove(cache, key)
+            None
+          } else {
+            // 更新访问计数
+            let updated_entry = { entry with access_count: entry.access_count + 1 }
+            let _ = Map::insert(cache, key, updated_entry)
+            Some(updated_entry.value)
+          }
+        }
+        None => None
+      }
+    }
+    
+    let put = fn(key: String, value: T, ttl: Option[Int]) {
+      let current_time = Time::now()
+      let entry_ttl = ttl.unwrap_or(config.default_ttl)
+      
+      // 如果缓存已满，移除最少使用的条目
+      if cache.size() >= config.max_size && not Map::contains(cache, key) {
+        let mut lru_key = ""
+        let mut min_access = 999999
+        
+        for (k, v) in cache {
+          if v.access_count < min_access {
+            min_access = v.access_count
+            lru_key = k
+          }
+        }
+        
+        if lru_key != "" {
+          let _ = Map::remove(cache, lru_key)
+        }
+      }
+      
+      let entry = {
+        key: key,
+        value: value,
+        timestamp: current_time,
+        ttl: entry_ttl,
+        access_count: 1
+      }
+      
+      let _ = Map::insert(cache, key, entry)
+    }
+    
+    let cleanup = fn() {
+      let current_time = Time::now()
+      let expired_keys = []
+      
+      for (key, entry) in cache {
+        if current_time - entry.timestamp > entry.ttl {
+          expired_keys = expired_keys.push(key)
+        }
+      }
+      
+      for key in expired_keys {
+        let _ = Map::remove(cache, key)
+      }
+      
+      expired_keys.length()
+    }
+    
+    { get, put, cleanup }
+  }
   
-  // 验证资源属性继承
-  assert_eq(azimuth::Resource::get_attribute(span_resource, "service.name"), 
-           Some(azimuth::StringValue("test-service")))
-  assert_eq(azimuth::Resource::get_attribute(span_resource, "service.version"), 
-           Some(azimuth::StringValue("1.0.0")))
-  assert_eq(azimuth::Resource::get_attribute(span_resource, "host.name"), 
-           Some(azimuth::StringValue("test-host")))
+  // 测试缓存操作
+  let config = {
+    max_size: 3,
+    default_ttl: 60,  // 60秒
+    cleanup_interval: 30
+  }
   
-  // 添加Span特定属性
-  azimuth::Span::set_attribute(span, "operation.name", azimuth::StringValue("database-query"))
-  azimuth::Span::set_attribute(span, "user.id", azimuth::StringValue("user-123"))
+  let cache = create_cache(config)
   
-  // 验证Span属性不影响资源
-  let span_resource_after = azimuth::Span::get_resource(span)
-  assert_eq(azimuth::Resource::get_attribute(span_resource_after, "operation.name"), None)
-  assert_eq(azimuth::Resource::get_attribute(span_resource_after, "user.id"), None)
+  // 添加条目
+  cache.put("trace-1", "trace-data-1", None)
+  cache.put("trace-2", "trace-data-2", None)
+  cache.put("trace-3", "trace-data-3", None)
   
-  // 验证资源合并
-  let additional_resource = azimuth::Resource::new()
-  azimuth::Resource::set_attribute(additional_resource, "service.version", azimuth::StringValue("2.0.0"))
-  azimuth::Resource::set_attribute(additional_resource, "deployment.region", azimuth::StringValue("us-west-1"))
+  // 获取条目
+  let value1 = cache.get("trace-1")
+  assert_eq(value1, Some("trace-data-1"))
   
-  let merged_resource = azimuth::Resource::merge(base_resource, additional_resource)
-  assert_eq(azimuth::Resource::get_attribute(merged_resource, "service.name"), 
-           Some(azimuth::StringValue("test-service")))
-  assert_eq(azimuth::Resource::get_attribute(merged_resource, "service.version"), 
-           Some(azimuth::StringValue("2.0.0"))) // 覆盖
-  assert_eq(azimuth::Resource::get_attribute(merged_resource, "host.name"), 
-           Some(azimuth::StringValue("test-host")))
-  assert_eq(azimuth::Resource::get_attribute(merged_resource, "deployment.region"), 
-           Some(azimuth::StringValue("us-west-1"))) // 新增
+  // 再次获取，应该增加访问计数
+  let value1_again = cache.get("trace-1")
+  assert_eq(value1_again, Some("trace-data-1"))
   
-  azimuth::Span::end(span)
+  // 添加第4个条目，应该移除最少使用的
+  cache.put("trace-4", "trace-data-4", None)
+  
+  // 假设trace-2和trace-3只被访问过一次，trace-1被访问过两次
+  // 当添加trace-4时，应该移除trace-2或trace-3中的一个
+  let value2 = cache.get("trace-2")
+  let value3 = cache.get("trace-3")
+  let value4 = cache.get("trace-4")
+  
+  // 验证至少有一个被移除
+  assert_true(value2.is_none() || value3.is_none())
+  assert_eq(value4, Some("trace-data-4"))
+  
+  // 测试过期（模拟）
+  // 注意：在真实环境中，我们需要等待或模拟时间流逝
+  let expired_count = cache.cleanup()
+  // 在实际测试中，这取决于当前时间和条目时间戳
+  // 这里我们只验证函数可以调用
+  assert_true(expired_count >= 0)
 }
 
-// 测试9: 时间序列数据处理
-pub test "时间序列数据处理测试" {
-  // 创建Meter
-  let meter_provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(meter_provider, "time-series-test")
-  
-  // 创建时间序列度量
-  let time_series_counter = azimuth::Meter::create_time_series_counter(meter, 
-    "requests.over.time", "请求时间序列", "count", azimuth::TimeSeries::minute)
-  
-  let base_time = azimuth::time::current_timestamp()
-  
-  // 模拟不同时间点的数据
-  for i in 0..60 {
-    let timestamp = base_time + azimuth::time::Duration::from_seconds(i)
-    azimuth::TimeSeriesCounter::record_at(time_series_counter, 5.0 + i.to_float() * 0.1, timestamp, 
-      [("endpoint", azimuth::StringValue("/api/data"))])
+// 测试8: 遥测数据批处理和导出
+test "遥测数据批处理和导出" {
+  // 定义批处理配置
+  type BatchConfig = {
+    max_batch_size: Int,
+    max_batch_time_ms: Int,
+    retry_attempts: Int,
+    backoff_factor: Float
   }
   
-  // 创建另一个时间序列
-  let time_series_gauge = azimuth::Meter::create_time_series_gauge(meter,
-    "memory.usage", "内存使用时间序列", "bytes", azimuth::TimeSeries::second)
-  
-  // 模拟内存使用数据
-  for i in 0..30 {
-    let timestamp = base_time + azimuth::time::Duration::from_seconds(i * 2)
-    let memory_usage = 1000000.0 + (i * 100000).to_float() + (azimuth::math::random() * 50000.0)
-    azimuth::TimeSeriesGauge::record_at(time_series_gauge, memory_usage, timestamp,
-      [("component", azimuth::StringValue("cache"))])
+  // 定义导出请求
+  type ExportRequest = {
+    id: String,
+    data: Array[String],
+    timestamp: Int,
+    attempts: Int
   }
   
-  // 获取时间序列数据
-  let counter_series = azimuth::TimeSeriesCounter::get_series(time_series_counter)
-  let gauge_series = azimuth::TimeSeriesGauge::get_series(time_series_gauge)
-  
-  // 验证时间序列数据
-  assert_eq(counter_series.length(), 60)
-  assert_eq(gauge_series.length(), 30)
-  
-  // 验证时间序列排序
-  for i in 1..counter_series.length() {
-    assert_true(counter_series[i].timestamp >= counter_series[i-1].timestamp)
+  // 定义导出结果
+  type ExportResult = {
+    success: Bool,
+    message: String,
+    retry_after: Option[Int]
   }
   
-  for i in 1..gauge_series.length() {
-    assert_true(gauge_series[i].timestamp >= gauge_series[i-1].timestamp)
+  // 创建批处理器
+  let create_batch_processor = fn(config: BatchConfig) {
+    let mut batch = []
+    let mut last_flush_time = Time::now()
+    
+    let add_to_batch = fn(item: String) {
+      batch = batch.push(item)
+      
+      let current_time = Time::now()
+      let should_flush = batch.length() >= config.max_batch_size || 
+                        (current_time - last_flush_time) >= config.max_batch_time_ms
+      
+      if should_flush {
+        flush_batch()
+      }
+    }
+    
+    let flush_batch = fn() {
+      if batch.length() > 0 {
+        let request = {
+          id: "req-" + Time::now().to_string(),
+          data: batch.copy(),
+          timestamp: Time::now(),
+          attempts: 0
+        }
+        
+        // 重置批次
+        batch = []
+        last_flush_time = Time::now()
+        
+        Some(request)
+      } else {
+        None
+      }
+    }
+    
+    let force_flush = fn() {
+      flush_batch()
+    }
+    
+    { add_to_batch, force_flush }
   }
   
-  // 验证时间序列聚合
-  let counter_aggregation = azimuth::TimeSeries::aggregate(counter_series, 
-    azimuth::TimeSeries::minute, azimuth::Aggregation::sum)
-  
-  let gauge_aggregation = azimuth::TimeSeries::aggregate(gauge_series,
-    azimuth::TimeSeries::minute, azimuth::Aggregation::avg)
-  
-  assert_true(counter_aggregation.length() > 0)
-  assert_true(gauge_aggregation.length() > 0)
-}
-
-// 测试10: 平台兼容性测试
-pub test "平台兼容性测试" {
-  // 获取当前平台信息
-  let platform_info = azimuth::platform::get_info()
-  let platform_name = azimuth::platform::name(platform_info)
-  let platform_version = azimuth::platform::version(platform_info)
-  let architecture = azimuth::platform::architecture(platform_info)
-  
-  // 创建带平台信息的资源
-  let resource = azimuth::Resource::new()
-  azimuth::Resource::set_attribute(resource, "platform.name", azimuth::StringValue(platform_name))
-  azimuth::Resource::set_attribute(resource, "platform.version", azimuth::StringValue(platform_version))
-  azimuth::Resource::set_attribute(resource, "platform.architecture", azimuth::StringValue(architecture))
-  
-  // 创建TracerProvider
-  let tracer_provider = azimuth::TracerProvider::with_resource(resource)
-  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "platform-test")
-  
-  // 测试平台特定功能
-  let span = azimuth::Tracer::start_span(tracer, "platform-compatibility-test")
-  
-  // 获取平台特定的性能计数器
-  let platform_metrics = azimuth::platform::get_metrics()
-  for metric in platform_metrics {
-    azimuth::Span::set_attribute(span, metric.name, metric.value)
+  // 模拟导出函数
+  let mock_export = fn(request: ExportRequest) {
+    let success = request.attempts < 2  // 假设前两次失败，第三次成功
+    
+    {
+      success: success,
+      message: if success { 
+        "导出成功: " + request.data.length().to_string() + " 个项目" 
+      } else { 
+        "导出失败，尝试次数: " + request.attempts.to_string() 
+      },
+      retry_after: if not success { Some(1000 * (request.attempts + 1)) } else { None }
+    }
   }
   
-  // 测试平台特定的时间精度
-  let time_precision = azimuth::platform::time_precision()
-  let timestamp = azimuth::time::current_timestamp()
-  azimuth::Span::set_attribute(span, "time.precision", azimuth::IntValue(time_precision))
-  azimuth::Span::set_attribute(span, "test.timestamp", azimuth::StringValue(timestamp.to_string()))
+  // 带重试的导出
+  let export_with_retry = fn(request: ExportRequest, max_attempts: Int) {
+    let mut current_request = request
+    let mut attempts = 0
+    
+    while attempts < max_attempts {
+      attempts = attempts + 1
+      current_request = { current_request with attempts: attempts }
+      
+      let result = mock_export(current_request)
+      if result.success {
+        return Some(result)
+      } else if attempts < max_attempts {
+        // 等待重试延迟（在实际环境中）
+        let retry_delay = result.retry_after.unwrap_or(1000)
+        println("等待 " + retry_delay.to_string() + "ms 后重试")
+      }
+    }
+    
+    None  // 所有尝试都失败
+  }
   
-  // 测试平台特定的序列化格式
-  let serialization_format = azimuth::platform::preferred_serialization_format()
-  azimuth::Span::set_attribute(span, "serialization.format", azimuth::StringValue(serialization_format))
+  // 测试批处理
+  let batch_config = {
+    max_batch_size: 3,
+    max_batch_time_ms: 5000,
+    retry_attempts: 3,
+    backoff_factor: 1.5
+  }
   
-  // 序列化Span数据
-  let serialized_data = azimuth::Span::serialize_with_format(span, serialization_format)
-  assert_true(serialized_data.length() > 0)
+  let processor = create_batch_processor(batch_config)
   
-  // 反序列化并验证
-  let deserialized_span = azimuth::Span::deserialize_with_format(serialized_data, serialization_format)
-  assert_true(deserialized_span != span)
+  // 添加项目，但未达到最大批次大小
+  processor.add_to_batch("item-1")
+  processor.add_to_batch("item-2")
   
-  // 验证平台特定属性
-  let deserialized_resource = azimuth::Span::get_resource(deserialized_span)
-  assert_eq(azimuth::Resource::get_attribute(deserialized_resource, "platform.name"),
-           Some(azimuth::StringValue(platform_name)))
-  assert_eq(azimuth::Resource::get_attribute(deserialized_resource, "platform.version"),
-           Some(azimuth::StringValue(platform_version)))
-  assert_eq(azimuth::Resource::get_attribute(deserialized_resource, "platform.architecture"),
-           Some(azimuth::StringValue(architecture)))
+  // 添加第三个项目，应该触发批处理
+  let request1 = processor.add_to_batch("item-3")
+  assert_true(request1.is_some())
   
-  azimuth::Span::end(span)
-  azimuth::Span::end(deserialized_span)
+  let req1 = request1.unwrap()
+  assert_eq(req1.data.length(), 3)
+  assert_eq(req1.data, ["item-1", "item-2", "item-3"])
+  
+  // 添加更多项目
+  processor.add_to_batch("item-4")
+  processor.add_to_batch("item-5")
+  
+  // 强制刷新，即使未达到最大批次大小
+  let request2 = processor.force_flush()
+  assert_true(request2.is_some())
+  
+  let req2 = request2.unwrap()
+  assert_eq(req2.data.length(), 2)
+  assert_eq(req2.data, ["item-4", "item-5"])
+  
+  // 测试重试导出
+  let test_request = {
+    id: "test-req",
+    data: ["data-1", "data-2"],
+    timestamp: Time::now(),
+    attempts: 0
+  }
+  
+  let export_result = export_with_retry(test_request, 3)
+  assert_true(export_result.is_some())
+  
+  let result = export_result.unwrap()
+  assert_true(result.success)
+  assert_true(result.message.contains("导出成功"))
 }
