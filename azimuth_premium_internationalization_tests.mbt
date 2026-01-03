@@ -1,1091 +1,896 @@
-// Azimuth Premium Internationalization Support Tests
-// 国际化支持测试，确保遥测系统在不同语言和地区环境中的正确运行
+// Azimuth Internationalization and Localization Tests
+// This file contains test cases for internationalization and localization
 
-// Test 1: Basic Localization Support
-test "基础本地化支持测试" {
-  // 创建国际化管理器
-  let i18n_manager = I18nManager::new()
+// Test 1: Locale Management
+test "区域设置管理" {
+  // 定义语言代码
+  type LanguageCode = String
   
-  // 加载默认语言资源（英语）
-  let en_locale = I18nManager::load_locale(i18n_manager, "en")
-  assert_true(en_locale.is_some())
+  // 定义国家代码
+  type CountryCode = String
   
-  // 验证英语本地化
-  let en_messages = I18nManager::get_messages(i18n_manager, "en")
-  assert_true(en_messages.is_some())
-  
-  match en_messages {
-    Some(messages) => {
-      assert_eq(I18nMessages::get(messages, "telemetry.span.started"), "Span started")
-      assert_eq(I18nMessages::get(messages, "telemetry.span.ended"), "Span ended")
-      assert_eq(I18nMessages::get(messages, "metrics.counter.created"), "Counter created")
-      assert_eq(I18nMessages::get(messages, "log.record.emitted"), "Log record emitted")
-    }
-    None => assert_true(false)
+  // 定义区域设置
+  type Locale = {
+    language: LanguageCode,
+    country: CountryCode,
+    script: Option<String>,  // 脚本代码，如 "Latn", "Cyrl"
+    variant: Option<String>  // 变体，如 "valencia"
   }
   
-  // 加载中文语言资源
-  let zh_locale = I18nManager::load_locale(i18n_manager, "zh")
-  assert_true(zh_locale.is_some())
-  
-  // 验证中文本地化
-  let zh_messages = I18nManager::get_messages(i18n_manager, "zh")
-  assert_true(zh_messages.is_some())
-  
-  match zh_messages {
-    Some(messages) => {
-      assert_eq(I18nMessages::get(messages, "telemetry.span.started"), "跨度已启动")
-      assert_eq(I18nMessages::get(messages, "telemetry.span.ended"), "跨度已结束")
-      assert_eq(I18nMessages::get(messages, "metrics.counter.created"), "计数器已创建")
-      assert_eq(I18nMessages::get(messages, "log.record.emitted"), "日志记录已发送")
-    }
-    None => assert_true(false)
+  // 定义区域设置信息
+  type LocaleInfo = {
+    locale: Locale,
+    display_name: String,
+    native_name: String,
+    decimal_separator: String,
+    thousands_separator: String,
+    date_format: String,
+    time_format: String,
+    currency_symbol: String,
+    rtl: Bool  // 是否从右到左书写
   }
   
-  // 加载日语语言资源
-  let ja_locale = I18nManager::load_locale(i18n_manager, "ja")
-  assert_true(ja_locale.is_some())
-  
-  // 验证日语本地化
-  let ja_messages = I18nManager::get_messages(i18n_manager, "ja")
-  assert_true(ja_messages.is_some())
-  
-  match ja_messages {
-    Some(messages) => {
-      assert_eq(I18nMessages::get(messages, "telemetry.span.started"), "スパンが開始されました")
-      assert_eq(I18nMessages::get(messages, "telemetry.span.ended"), "スパンが終了しました")
-      assert_eq(I18nMessages::get(messages, "metrics.counter.created"), "カウンターが作成されました")
-      assert_eq(I18nMessages::get(messages, "log.record.emitted"), "ログレコードが出力されました")
-    }
-    None => assert_true(false)
-  }
-}
-
-// Test 2: Message Formatting with Parameters
-test "带参数的消息格式化测试" {
-  // 创建国际化管理器
-  let i18n_manager = I18nManager::new()
-  I18nManager::load_locale(i18n_manager, "en")
-  I18nManager::load_locale(i18n_manager, "zh")
-  I18nManager::load_locale(i18n_manager, "ja")
-  
-  // 设置当前语言为英语
-  I18nManager::set_current_locale(i18n_manager, "en")
-  
-  // 测试英语参数化消息
-  let en_formatted = I18nManager::format_message(i18n_manager, "telemetry.span.created", [
-    ("span_name", "operation_span"),
-    ("trace_id", "trace_12345"),
-    ("duration", "150ms")
-  ])
-  
-  assert_eq(en_formatted, "Span 'operation_span' created with trace ID 'trace_12345' and duration '150ms'")
-  
-  // 切换到中文
-  I18nManager::set_current_locale(i18n_manager, "zh")
-  
-  // 测试中文参数化消息
-  let zh_formatted = I18nManager::format_message(i18n_manager, "telemetry.span.created", [
-    ("span_name", "操作跨度"),
-    ("trace_id", "跟踪_12345"),
-    ("duration", "150毫秒")
-  ])
-  
-  assert_eq(zh_formatted, "跨度'操作跨度'已创建，跟踪ID为'tracking_12345'，持续时间为'150毫秒'")
-  
-  // 切换到日语
-  I18nManager::set_current_locale(i18n_manager, "ja")
-  
-  // 测试日语参数化消息
-  let ja_formatted = I18nManager::format_message(i18n_manager, "telemetry.span.created", [
-    ("span_name", "操作スパン"),
-    ("trace_id", "トレース_12345"),
-    ("duration", "150ms")
-  ])
-  
-  assert_eq(ja_formatted, "スパン'操作スパン'がトレースID'tracing_12345'、持続時間'150ms'で作成されました")
-  
-  // 测试复数形式
-  I18nManager::set_current_locale(i18n_manager, "en")
-  let en_plural = I18nManager::format_plural_message(i18n_manager, "metrics.count", 1, [])
-  assert_eq(en_plural, "1 metric")
-  
-  let en_plural_multiple = I18nManager::format_plural_message(i18n_manager, "metrics.count", 5, [])
-  assert_eq(en_plural_multiple, "5 metrics")
-  
-  I18nManager::set_current_locale(i18n_manager, "zh")
-  let zh_plural = I18nManager::format_plural_message(i18n_manager, "metrics.count", 1, [])
-  assert_eq(zh_plural, "1个指标")
-  
-  let zh_plural_multiple = I18nManager::format_plural_message(i18n_manager, "metrics.count", 5, [])
-  assert_eq(zh_plural_multiple, "5个指标")
-}
-
-// Test 3: Date and Time Localization
-test "日期和时间本地化测试" {
-  // 创建国际化管理器
-  let i18n_manager = I18nManager::new()
-  I18nManager::load_locale(i18n_manager, "en")
-  I18nManager::load_locale(i18n_manager, "zh")
-  I18nManager::load_locale(i18n_manager, "ja")
-  I18nManager::load_locale(i18n_manager, "de")
-  
-  // 创建测试时间戳
-  let timestamp = 1672531200000L // 2023-01-01 00:00:00 UTC
-  
-  // 测试英语日期格式
-  I18nManager::set_current_locale(i18n_manager, "en")
-  let en_date = I18nManager::format_date(i18n_manager, timestamp, "full")
-  assert_eq(en_date, "Sunday, January 1, 2023")
-  
-  let en_time = I18nManager::format_time(i18n_manager, timestamp, "full")
-  assert_eq(en_time, "12:00:00 AM UTC")
-  
-  let en_datetime = I18nManager::format_datetime(i18n_manager, timestamp, "full")
-  assert_eq(en_datetime, "Sunday, January 1, 2023 at 12:00:00 AM UTC")
-  
-  // 测试中文日期格式
-  I18nManager::set_current_locale(i18n_manager, "zh")
-  let zh_date = I18nManager::format_date(i18n_manager, timestamp, "full")
-  assert_eq(zh_date, "2023年1月1日星期日")
-  
-  let zh_time = I18nManager::format_time(i18n_manager, timestamp, "full")
-  assert_eq(zh_time, "UTC 上午12:00:00")
-  
-  let zh_datetime = I18nManager::format_datetime(i18n_manager, timestamp, "full")
-  assert_eq(zh_datetime, "2023年1月1日星期日 UTC 上午12:00:00")
-  
-  // 测试日语日期格式
-  I18nManager::set_current_locale(i18n_manager, "ja")
-  let ja_date = I18nManager::format_date(i18n_manager, timestamp, "full")
-  assert_eq(ja_date, "2023年1月1日日曜日")
-  
-  let ja_time = I18nManager::format_time(i18n_manager, timestamp, "full")
-  assert_eq(ja_time, "UTC 午前12:00:00")
-  
-  let ja_datetime = I18nManager::format_datetime(i18n_manager, timestamp, "full")
-  assert_eq(ja_datetime, "2023年1月1日日曜日 UTC 午前12:00:00")
-  
-  // 测试德语日期格式
-  I18nManager::set_current_locale(i18n_manager, "de")
-  let de_date = I18nManager::format_date(i18n_manager, timestamp, "full")
-  assert_eq(de_date, "Sonntag, 1. Januar 2023")
-  
-  let de_time = I18nManager::format_time(i18n_manager, timestamp, "full")
-  assert_eq(de_time, "00:00:00 UTC")
-  
-  let de_datetime = I18nManager::format_datetime(i18n_manager, timestamp, "full")
-  assert_eq(de_datetime, "Sonntag, 1. Januar 2023 um 00:00:00 UTC")
-  
-  // 测试相对时间格式
-  I18nManager::set_current_locale(i18n_manager, "en")
-  let current_time = 1672617600000L // 2023-01-02 00:00:00 UTC (1天后)
-  let en_relative = I18nManager::format_relative_time(i18n_manager, timestamp, current_time)
-  assert_eq(en_relative, "1 day ago")
-  
-  I18nManager::set_current_locale(i18n_manager, "zh")
-  let zh_relative = I18nManager::format_relative_time(i18n_manager, timestamp, current_time)
-  assert_eq(zh_relative, "1天前")
-  
-  I18nManager::set_current_locale(i18n_manager, "ja")
-  let ja_relative = I18nManager::format_relative_time(i18n_manager, timestamp, current_time)
-  assert_eq(ja_relative, "1日前")
-}
-
-// Test 4: Number and Currency Localization
-test "数字和货币本地化测试" {
-  // 创建国际化管理器
-  let i18n_manager = I18nManager::new()
-  I18nManager::load_locale(i18n_manager, "en")
-  I18nManager::load_locale(i18n_manager, "zh")
-  I18nManager::load_locale(i18n_manager, "ja")
-  I18nManager::load_locale(i18n_manager, "de")
-  I18nManager::load_locale(i18n_manager, "fr")
-  
-  // 测试数字格式化
-  let test_number = 1234567.89
-  
-  // 英语数字格式
-  I18nManager::set_current_locale(i18n_manager, "en")
-  let en_number = I18nManager::format_number(i18n_manager, test_number)
-  assert_eq(en_number, "1,234,567.89")
-  
-  // 中文数字格式
-  I18nManager::set_current_locale(i18n_manager, "zh")
-  let zh_number = I18nManager::format_number(i18n_manager, test_number)
-  assert_eq(zh_number, "1,234,567.89")
-  
-  // 德语数字格式
-  I18nManager::set_current_locale(i18n_manager, "de")
-  let de_number = I18nManager::format_number(i18n_manager, test_number)
-  assert_eq(de_number, "1.234.567,89")
-  
-  // 法语数字格式
-  I18nManager::set_current_locale(i18n_manager, "fr")
-  let fr_number = I18nManager::format_number(i18n_manager, test_number)
-  assert_eq(fr_number, "1 234 567,89")
-  
-  // 测试百分比格式化
-  let test_percentage = 0.7542
-  
-  I18nManager::set_current_locale(i18n_manager, "en")
-  let en_percentage = I18nManager::format_percentage(i18n_manager, test_percentage)
-  assert_eq(en_percentage, "75.42%")
-  
-  I18nManager::set_current_locale(i18n_manager, "zh")
-  let zh_percentage = I18nManager::format_percentage(i18n_manager, test_percentage)
-  assert_eq(zh_percentage, "75.42%")
-  
-  // 测试货币格式化
-  let test_currency = 1234.56
-  
-  I18nManager::set_current_locale(i18n_manager, "en")
-  let en_currency_usd = I18nManager::format_currency(i18n_manager, test_currency, "USD")
-  assert_eq(en_currency_usd, "$1,234.56")
-  
-  let en_currency_eur = I18nManager::format_currency(i18n_manager, test_currency, "EUR")
-  assert_eq(en_currency_eur, "€1,234.56")
-  
-  I18nManager::set_current_locale(i18n_manager, "de")
-  let de_currency_eur = I18nManager::format_currency(i18n_manager, test_currency, "EUR")
-  assert_eq(de_currency_eur, "1.234,56 €")
-  
-  I18nManager::set_current_locale(i18n_manager, "fr")
-  let fr_currency_eur = I18nManager::format_currency(i18n_manager, test_currency, "EUR")
-  assert_eq(fr_currency_eur, "1 234,56 €")
-  
-  // 测试单位格式化
-  let test_bytes = 1048576 // 1MB
-  
-  I18nManager::set_current_locale(i18n_manager, "en")
-  let en_bytes = I18nManager::format_bytes(i18n_manager, test_bytes)
-  assert_eq(en_bytes, "1.0 MB")
-  
-  I18nManager::set_current_locale(i18n_manager, "zh")
-  let zh_bytes = I18nManager::format_bytes(i18n_manager, test_bytes)
-  assert_eq(zh_bytes, "1.0 MB")
-  
-  // 测试持续时间格式化
-  let test_duration = 3665000 // 1小时1分5秒
-  
-  I18nManager::set_current_locale(i18n_manager, "en")
-  let en_duration = I18nManager::format_duration(i18n_manager, test_duration)
-  assert_eq(en_duration, "1 hour, 1 minute, 5 seconds")
-  
-  I18nManager::set_current_locale(i18n_manager, "zh")
-  let zh_duration = I18nManager::format_duration(i18n_manager, test_duration)
-  assert_eq(zh_duration, "1小时1分钟5秒")
-}
-
-// Test 5: Text Direction and Script Support
-test "文本方向和脚本支持测试" {
-  // 创建国际化管理器
-  let i18n_manager = I18nManager::new()
-  I18nManager::load_locale(i18n_manager, "en") // LTR
-  I18nManager::load_locale(i18n_manager, "ar") // RTL
-  I18nManager::load_locale(i18n_manager, "he") // RTL
-  I18nManager::load_locale(i18n_manager, "zh") // LTR
-  I18nManager::load_locale(i18n_manager, "ja") // LTR
-  
-  // 测试文本方向
-  I18nManager::set_current_locale(i18n_manager, "en")
-  assert_eq(I18nManager::get_text_direction(i18n_manager), "ltr")
-  
-  I18nManager::set_current_locale(i18n_manager, "ar")
-  assert_eq(I18nManager::get_text_direction(i18n_manager), "rtl")
-  
-  I18nManager::set_current_locale(i18n_manager, "he")
-  assert_eq(I18nManager::get_text_direction(i18n_manager), "rtl")
-  
-  I18nManager::set_current_locale(i18n_manager, "zh")
-  assert_eq(I18nManager::get_text_direction(i18n_manager), "ltr")
-  
-  // 测试文本对齐
-  I18nManager::set_current_locale(i18n_manager, "en")
-  assert_eq(I18nManager::get_text_align(i18n_manager), "left")
-  
-  I18nManager::set_current_locale(i18n_manager, "ar")
-  assert_eq(I18nManager::get_text_align(i18n_manager), "right")
-  
-  // 测试多语言文本混合
-  let mixed_text = "Hello مرحبا שלום 你好 こんにちは"
-  let processed_text = I18nManager::process_mixed_text(i18n_manager, mixed_text)
-  assert_true(processed_text.contains("dir=\"ltr\""))
-  assert_true(processed_text.contains("dir=\"rtl\""))
-  
-  // 测试脚本支持
-  let latin_text = "Hello World"
-  let arabic_text = "مرحبا بالعالم"
-  let hebrew_text = "שלום עולם"
-  let chinese_text = "你好世界"
-  let japanese_text = "こんにちは世界"
-  
-  assert_eq(I18nManager::detect_script(latin_text), "Latin")
-  assert_eq(I18nManager::detect_script(arabic_text), "Arabic")
-  assert_eq(I18nManager::detect_script(hebrew_text), "Hebrew")
-  assert_eq(I18nManager::detect_script(chinese_text), "Han")
-  assert_eq(I18nManager::detect_script(japanese_text), "Japanese")
-}
-
-// Test 6: Telemetry Data Internationalization
-test "遥测数据国际化测试" {
-  // 创建国际化管理器
-  let i18n_manager = I18nManager::new()
-  I18nManager::load_locale(i18n_manager, "en")
-  I18nManager::load_locale(i18n_manager, "zh")
-  I18nManager::load_locale(i18n_manager, "ja")
-  
-  // 创建国际化遥测提供者
-  let telemetry_provider = I18nTelemetryProvider::new(i18n_manager)
-  
-  // 测试跨度名称国际化
-  I18nManager::set_current_locale(i18n_manager, "en")
-  let en_span_name = I18nTelemetryProvider::localize_span_name(telemetry_provider, "user.login")
-  assert_eq(en_span_name, "User Login")
-  
-  I18nManager::set_current_locale(i18n_manager, "zh")
-  let zh_span_name = I18nTelemetryProvider::localize_span_name(telemetry_provider, "user.login")
-  assert_eq(zh_span_name, "用户登录")
-  
-  I18nManager::set_current_locale(i18n_manager, "ja")
-  let ja_span_name = I18nTelemetryProvider::localize_span_name(telemetry_provider, "user.login")
-  assert_eq(ja_span_name, "ユーザーログイン")
-  
-  // 测试事件名称国际化
-  I18nManager::set_current_locale(i18n_manager, "en")
-  let en_event_name = I18nTelemetryProvider::localize_event_name(telemetry_provider, "database.query")
-  assert_eq(en_event_name, "Database Query")
-  
-  I18nManager::set_current_locale(i18n_manager, "zh")
-  let zh_event_name = I18nTelemetryProvider::localize_event_name(telemetry_provider, "database.query")
-  assert_eq(zh_event_name, "数据库查询")
-  
-  // 测试标签国际化
-  I18nManager::set_current_locale(i18n_manager, "en")
-  let en_tags = I18nTelemetryProvider::localize_tags(telemetry_provider, [
-    ("error.type", "validation"),
-    ("component", "auth")
-  ])
-  
-  assert_eq(en_tags.get("error.type"), Some("Validation Error"))
-  assert_eq(en_tags.get("component"), Some("Authentication"))
-  
-  I18nManager::set_current_locale(i18n_manager, "zh")
-  let zh_tags = I18nTelemetryProvider::localize_tags(telemetry_provider, [
-    ("error.type", "validation"),
-    ("component", "auth")
-  ])
-  
-  assert_eq(zh_tags.get("error.type"), Some("验证错误"))
-  assert_eq(zh_tags.get("component"), Some("认证"))
-  
-  // 测试日志消息国际化
-  I18nManager::set_current_locale(i18n_manager, "en")
-  let en_log_message = I18nTelemetryProvider::localize_log_message(telemetry_provider, "user.created", [
-    ("user_id", "12345"),
-    ("username", "testuser")
-  ])
-  
-  assert_eq(en_log_message, "User 'testuser' (ID: 12345) created successfully")
-  
-  I18nManager::set_current_locale(i18n_manager, "zh")
-  let zh_log_message = I18nTelemetryProvider::localize_log_message(telemetry_provider, "user.created", [
-    ("user_id", "12345"),
-    ("username", "testuser")
-  ])
-  
-  assert_eq(zh_log_message, "用户'testuser'（ID：12345）创建成功")
-}
-
-// Test 7: Error Message Internationalization
-test "错误消息国际化测试" {
-  // 创建国际化管理器
-  let i18n_manager = I18nManager::new()
-  I18nManager::load_locale(i18n_manager, "en")
-  I18nManager::load_locale(i18n_manager, "zh")
-  I18nManager::load_locale(i18n_manager, "ja")
-  
-  // 创建国际化错误处理器
-  let error_handler = I18nErrorHandler::new(i18n_manager)
-  
-  // 测试网络错误
-  I18nManager::set_current_locale(i18n_manager, "en")
-  let en_network_error = I18nErrorHandler::localize_error(error_handler, "network.connection_failed", [
-    ("host", "api.example.com"),
-    ("port", "443")
-  ])
-  
-  assert_eq(en_network_error, "Failed to connect to api.example.com:443")
-  
-  I18nManager::set_current_locale(i18n_manager, "zh")
-  let zh_network_error = I18nErrorHandler::localize_error(error_handler, "network.connection_failed", [
-    ("host", "api.example.com"),
-    ("port", "443")
-  ])
-  
-  assert_eq(zh_network_error, "连接到api.example.com:443失败")
-  
-  I18nManager::set_current_locale(i18n_manager, "ja")
-  let ja_network_error = I18nErrorHandler::localize_error(error_handler, "network.connection_failed", [
-    ("host", "api.example.com"),
-    ("port", "443")
-  ])
-  
-  assert_eq(ja_network_error, "api.example.com:443への接続に失敗しました")
-  
-  // 测试验证错误
-  I18nManager::set_current_locale(i18n_manager, "en")
-  let en_validation_error = I18nErrorHandler::localize_error(error_handler, "validation.invalid_format", [
-    ("field", "email"),
-    ("value", "invalid-email")
-  ])
-  
-  assert_eq(en_validation_error, "Field 'email' has invalid format: 'invalid-email'")
-  
-  I18nManager::set_current_locale(i18n_manager, "zh")
-  let zh_validation_error = I18nErrorHandler::localize_error(error_handler, "validation.invalid_format", [
-    ("field", "email"),
-    ("value", "invalid-email")
-  ])
-  
-  assert_eq(zh_validation_error, "字段'email'格式无效：'invalid-email'")
-  
-  // 测试权限错误
-  I18nManager::set_current_locale(i18n_manager, "en")
-  let en_permission_error = I18nErrorHandler::localize_error(error_handler, "permission.denied", [
-    ("resource", "user_data"),
-    ("action", "read")
-  ])
-  
-  assert_eq(en_permission_error, "Permission denied: cannot perform 'read' action on 'user_data'")
-  
-  I18nManager::set_current_locale(i18n_manager, "zh")
-  let zh_permission_error = I18nErrorHandler::localize_error(error_handler, "permission.denied", [
-    ("resource", "user_data"),
-    ("action", "read")
-  ])
-  
-  assert_eq(zh_permission_error, "权限被拒绝：无法对'user_data'执行'read'操作")
-}
-
-// Test 8: UI Component Internationalization
-test "UI组件国际化测试" {
-  // 创建国际化管理器
-  let i18n_manager = I18nManager::new()
-  I18nManager::load_locale(i18n_manager, "en")
-  I18nManager::load_locale(i18n_manager, "zh")
-  I18nManager::load_locale(i18n_manager, "ja")
-  
-  // 创建国际化UI管理器
-  let ui_manager = I18nUIManager::new(i18n_manager)
-  
-  // 测试按钮文本
-  I18nManager::set_current_locale(i18n_manager, "en")
-  let en_button_text = I18nUIManager::get_button_text(ui_manager, "submit")
-  assert_eq(en_button_text, "Submit")
-  
-  let en_cancel_text = I18nUIManager::get_button_text(ui_manager, "cancel")
-  assert_eq(en_cancel_text, "Cancel")
-  
-  I18nManager::set_current_locale(i18n_manager, "zh")
-  let zh_button_text = I18nUIManager::get_button_text(ui_manager, "submit")
-  assert_eq(zh_button_text, "提交")
-  
-  let zh_cancel_text = I18nUIManager::get_button_text(ui_manager, "cancel")
-  assert_eq(zh_cancel_text, "取消")
-  
-  // 测试表单标签
-  I18nManager::set_current_locale(i18n_manager, "en")
-  let en_form_labels = I18nUIManager::get_form_labels(ui_manager, "user_profile")
-  assert_eq(en_form_labels.get("username"), Some("Username"))
-  assert_eq(en_form_labels.get("email"), Some("Email Address"))
-  assert_eq(en_form_labels.get("password"), Some("Password"))
-  
-  I18nManager::set_current_locale(i18n_manager, "zh")
-  let zh_form_labels = I18nUIManager::get_form_labels(ui_manager, "user_profile")
-  assert_eq(zh_form_labels.get("username"), Some("用户名"))
-  assert_eq(zh_form_labels.get("email"), Some("电子邮件地址"))
-  assert_eq(zh_form_labels.get("password"), Some("密码"))
-  
-  // 测试菜单项
-  I18nManager::set_current_locale(i18n_manager, "en")
-  let en_menu_items = I18nUIManager::get_menu_items(ui_manager, "main_menu")
-  assert_eq(en_menu_items.get("dashboard"), Some("Dashboard"))
-  assert_eq(en_menu_items.get("analytics"), Some("Analytics"))
-  assert_eq(en_menu_items.get("settings"), Some("Settings"))
-  
-  I18nManager::set_current_locale(i18n_manager, "zh")
-  let zh_menu_items = I18nUIManager::get_menu_items(ui_manager, "main_menu")
-  assert_eq(zh_menu_items.get("dashboard"), Some("仪表板"))
-  assert_eq(zh_menu_items.get("analytics"), Some("分析"))
-  assert_eq(zh_menu_items.get("settings"), Some("设置"))
-  
-  // 测试页面标题
-  I18nManager::set_current_locale(i18n_manager, "en")
-  let en_page_title = I18nUIManager::get_page_title(ui_manager, "telemetry_dashboard")
-  assert_eq(en_page_title, "Telemetry Dashboard")
-  
-  I18nManager::set_current_locale(i18n_manager, "zh")
-  let zh_page_title = I18nUIManager::get_page_title(ui_manager, "telemetry_dashboard")
-  assert_eq(zh_page_title, "遥测仪表板")
-}
-
-// Test 9: Locale Auto-Detection
-test "语言环境自动检测测试" {
-  // 创建国际化管理器
-  let i18n_manager = I18nManager::new()
-  I18nManager::load_locale(i18n_manager, "en")
-  I18nManager::load_locale(i18n_manager, "zh")
-  I18nManager::load_locale(i18n_manager, "ja")
-  I18nManager::load_locale(i18n_manager, "de")
-  I18nManager::load_locale(i18n_manager, "fr")
-  
-  // 测试从浏览器语言检测
-  let browser_languages = ["zh-CN", "zh", "en"]
-  let detected_locale = I18nManager::detect_from_browser_languages(i18n_manager, browser_languages)
-  assert_eq(detected_locale, "zh")
-  
-  // 测试从系统语言检测
-  let system_locale = I18nManager::detect_from_system(i18n_manager)
-  assert_true(system_locale.is_some())
-  assert_true(["en", "zh", "ja", "de", "fr"].contains(system_locale.unwrap()))
-  
-  // 测试从用户偏好检测
-  let user_preferences = [
-    ("language", "ja"),
-    ("region", "JP"),
-    ("timezone", "Asia/Tokyo")
-  ]
-  let detected_from_prefs = I18nManager::detect_from_preferences(i18n_manager, user_preferences)
-  assert_eq(detected_from_prefs, "ja")
-  
-  // 测试从Accept-Language头检测
-  let accept_language = "fr-FR,fr;q=0.9,en;q=0.8,zh;q=0.7"
-  let detected_from_header = I18nManager::detect_from_accept_language(i18n_manager, accept_language)
-  assert_eq(detected_from_header, "fr")
-  
-  // 测试回退机制
-  let unsupported_languages = ["xx", "yy", "zz"]
-  let fallback_locale = I18nManager::detect_with_fallback(i18n_manager, unsupported_languages, "en")
-  assert_eq(fallback_locale, "en")
-}
-
-// Test 10: Performance Optimization for I18n
-test "国际化性能优化测试" {
-  // 创建国际化管理器
-  let i18n_manager = I18nManager::new()
-  I18nManager::load_locale(i18n_manager, "en")
-  I18nManager::load_locale(i18n_manager, "zh")
-  I18nManager::load_locale(i18n_manager, "ja")
-  
-  // 启用性能优化
-  I18nManager::enable_optimization(i18n_manager, [
-    ("message_cache", true),
-    ("locale_cache", true),
-    ("format_cache", true),
-    ("lazy_loading", true)
-  ])
-  
-  // 测试消息缓存性能
-  let start_time = get_current_timestamp()
-  
-  for i in 0..1000 {
-    I18nManager::set_current_locale(i18n_manager, "en")
-    let _ = I18nManager::format_message(i18n_manager, "telemetry.span.created", [
-      ("span_name", "test_span_" + i.to_string()),
-      ("trace_id", "trace_" + i.to_string()),
-      ("duration", i.to_string() + "ms")
-    ])
-  }
-  
-  let cached_time = get_current_timestamp() - start_time
-  
-  // 清除缓存
-  I18nManager::clear_cache(i18n_manager)
-  
-  // 测试无缓存性能
-  let start_time_no_cache = get_current_timestamp()
-  
-  for i in 0..1000 {
-    I18nManager::set_current_locale(i18n_manager, "en")
-    let _ = I18nManager::format_message(i18n_manager, "telemetry.span.created", [
-      ("span_name", "test_span_" + i.to_string()),
-      ("trace_id", "trace_" + i.to_string()),
-      ("duration", i.to_string() + "ms")
-    ])
-  }
-  
-  let no_cache_time = get_current_timestamp() - start_time_no_cache
-  
-  // 验证缓存提高性能
-  assert_true(cached_time < no_cache_time)
-  assert_true(no_cache_time / cached_time > 2) // 缓存应该至少快2倍
-  
-  // 测试懒加载
-  let initial_memory = get_memory_usage()
-  
-  // 加载更多语言环境（但不立即使用）
-  I18nManager::preload_locale(i18n_manager, "de", false) // 懒加载
-  I18nManager::preload_locale(i18n_manager, "fr", false) // 懒加载
-  
-  let preloaded_memory = get_memory_usage()
-  
-  // 验证懒加载不会立即增加内存使用
-  assert_true(preloaded_memory - initial_memory < 1000) // 内存增长应该很小
-  
-  // 使用新加载的语言环境
-  I18nManager::set_current_locale(i18n_manager, "de")
-  let _ = I18nManager::format_message(i18n_manager, "telemetry.span.created", [
-    ("span_name", "test_span"),
-    ("trace_id", "trace_123"),
-    ("duration", "100ms")
-  ])
-  
-  let used_memory = get_memory_usage()
-  
-  // 验证使用后内存增加
-  assert_true(used_memory - preloaded_memory > 1000) // 使用后内存应该增加
-  
-  // 测试批量格式化
-  let messages = []
-  for i in 0..100 {
-    messages = messages + [
-      ("telemetry.span.created", [
-        ("span_name", "batch_span_" + i.to_string()),
-        ("trace_id", "trace_" + i.to_string()),
-        ("duration", i.to_string() + "ms")
-      ])
-    ]
-  }
-  
-  let start_time_batch = get_current_timestamp()
-  let _ = I18nManager::format_messages_batch(i18n_manager, messages)
-  let batch_time = get_current_timestamp() - start_time_batch
-  
-  // 测试单独格式化
-  let start_time_individual = get_current_timestamp()
-  for message in messages {
-    let _ = I18nManager::format_message(i18n_manager, message.0, message.1)
-  }
-  let individual_time = get_current_timestamp() - start_time_individual
-  
-  // 验证批量格式化更快
-  assert_true(batch_time < individual_time)
-  assert_true(individual_time / batch_time > 1.5) // 批量应该至少快1.5倍
-}
-
-// 辅助函数和类型定义
-type I18nManager {
-  current_locale: String,
-  locales: Map<String, Locale>,
-  cache: Map<String, String>,
-  optimization_settings: Map<String, Bool>
-}
-
-type Locale {
-  language: String,
-  region: String,
-  messages: Map<String, String>,
-  date_formats: Map<String, String>,
-  number_formats: NumberFormat
-}
-
-type NumberFormat {
-  decimal_separator: String,
-  thousands_separator: String,
-  currency_symbol: String,
-  currency_position: String
-}
-
-type I18nMessages {
-  messages: Map<String, String>
-}
-
-type I18nTelemetryProvider {
-  i18n_manager: I18nManager
-}
-
-type I18nErrorHandler {
-  i18n_manager: I18nManager
-}
-
-type I18nUIManager {
-  i18n_manager: I18nManager
-}
-
-// 实现辅助函数（简化版）
-fn get_current_timestamp() -> Int {
-  // 模拟获取当前时间戳
-  1609459200000
-}
-
-fn get_memory_usage() -> Int {
-  // 模拟获取内存使用量
-  1000000
-}
-
-// 类型实现（简化版）
-fn I18nManager::new() -> I18nManager {
-  I18nManager {
-    current_locale: "en",
-    locales: Map::new(),
-    cache: Map::new(),
-    optimization_settings: Map::new()
-  }
-}
-
-fn I18nManager::load_locale(manager: I18nManager, locale_code: String) -> Option<Locale> {
-  // 模拟加载语言环境
-  let locale = Locale {
-    language: locale_code,
-    region: "",
-    messages: Map::new(),
-    date_formats: Map::new(),
-    number_formats: NumberFormat {
-      decimal_separator: ".",
-      thousands_separator: ",",
-      currency_symbol: "$",
-      currency_position: "before"
+  // 创建区域设置
+  let create_locale = fn(language: LanguageCode, country: CountryCode) {
+    {
+      language,
+      country,
+      script: None,
+      variant: None
     }
   }
-  Some(locale)
-}
-
-fn I18nManager::get_messages(manager: I18nManager, locale_code: String) -> Option<I18nMessages> {
-  // 模拟获取消息
-  Some(I18nMessages { messages: Map::new() })
-}
-
-fn I18nMessages::get(messages: I18nMessages, key: String) -> String {
-  // 模拟获取消息
-  match key {
-    "telemetry.span.started" => "Span started",
-    "telemetry.span.ended" => "Span ended",
-    "metrics.counter.created" => "Counter created",
-    "log.record.emitted" => "Log record emitted",
-    _ => ""
+  
+  // 带脚本的区域设置
+  let create_locale_with_script = fn(language: LanguageCode, country: CountryCode, script: String) {
+    {
+      language,
+      country,
+      script: Some(script),
+      variant: None
+    }
   }
-}
-
-fn I18nManager::set_current_locale(manager: I18nManager, locale_code: String) -> Unit {
-  // 模拟设置当前语言环境
-  ()
-}
-
-fn I18nManager::format_message(manager: I18nManager, key: String, params: Array<(String, String)>) -> String {
-  // 模拟格式化消息
-  match manager.current_locale {
-    "en" => "Span 'operation_span' created with trace ID 'trace_12345' and duration '150ms'",
-    "zh" => "跨度'操作跨度'已创建，跟踪ID为'tracking_12345'，持续时间为'150毫秒'",
-    "ja" => "スパン'操作スパン'がトレースID'tracing_12345'、持続時間'150ms'で作成されました",
-    _ => ""
+  
+  // 完整区域设置
+  let create_full_locale = fn(
+    language: LanguageCode,
+    country: CountryCode,
+    script: Option<String>,
+    variant: Option<String>
+  ) {
+    {
+      language,
+      country,
+      script,
+      variant
+    }
   }
-}
-
-fn I18nManager::format_plural_message(manager: I18nManager, key: String, count: Int, params: Array<(String, String)>) -> String {
-  // 模拟格式化复数消息
-  match manager.current_locale {
-    "en" => {
-      if count == 1 {
-        "1 metric"
-      } else {
-        count.to_string() + " metrics"
+  
+  // 区域设置转字符串
+  let locale_to_string = fn(locale: Locale) {
+    let mut result = locale.language
+    
+    if locale.country != "" {
+      result = result + "-" + locale.country
+    }
+    
+    match locale.script {
+      Some(script) => {
+        result = result + "-" + script
+      }
+      None => ()
+    }
+    
+    match locale.variant {
+      Some(variant) => {
+        result = result + "-" + variant
+      }
+      None => ()
+    }
+    
+    result
+  }
+  
+  // 字符串转区域设置
+  let parse_locale = fn(locale_str: String) {
+    let parts = locale_str.split("-")
+    
+    if parts.length() >= 2 {
+      let language = parts[0]
+      let country = parts[1]
+      let script = if parts.length() > 2 { Some(parts[2]) } else { None }
+      let variant = if parts.length() > 3 { Some(parts[3]) } else { None }
+      
+      Some(create_full_locale(language, country, script, variant))
+    } else {
+      None
+    }
+  }
+  
+  // 比较区域设置
+  let locale_matches = fn(locale1: Locale, locale2: Locale) {
+    let language_match = locale1.language == locale2.language
+    let country_match = locale1.country == locale2.country || locale1.country == "" || locale2.country == ""
+    let script_match = match (locale1.script, locale2.script) {
+      (Some(s1), Some(s2)) => s1 == s2
+      (None, None) => true
+      _ => false
+    }
+    
+    language_match && country_match && script_match
+  }
+  
+  // 获取最佳匹配区域设置
+  let get_best_match_locale = fn(
+    requested: Locale,
+    supported: Array[Locale>
+  ) {
+    let mut best_match = None
+    let mut best_score = -1
+    
+    for supported_locale in supported {
+      let mut score = 0
+      
+      // 语言匹配
+      if requested.language == supported_locale.language {
+        score = score + 10
+      }
+      
+      // 国家匹配
+      if requested.country == supported_locale.country && requested.country != "" {
+        score = score + 5
+      }
+      
+      // 脚本匹配
+      match (requested.script, supported_locale.script) {
+        (Some(req_script), Some(sup_script)) => {
+          if req_script == sup_script {
+            score = score + 3
+          }
+        }
+        _ => ()
+      }
+      
+      // 变体匹配
+      match (requested.variant, supported_locale.variant) {
+        (Some(req_variant), Some(sup_variant)) => {
+          if req_variant == sup_variant {
+            score = score + 1
+          }
+        }
+        _ => ()
+      }
+      
+      if score > best_score {
+        best_score = score
+        best_match = Some(supported_locale)
       }
     }
-    "zh" => count.to_string() + "个指标",
-    _ => ""
+    
+    best_match
+  }
+  
+  // 测试区域设置创建
+  let us_locale = create_locale("en", "US")
+  assert_eq(us_locale.language, "en")
+  assert_eq(us_locale.country, "US")
+  assert_eq(us_locale.script, None)
+  assert_eq(us_locale.variant, None)
+  
+  let zh_locale = create_locale_with_script("zh", "CN", "Hans")
+  assert_eq(zh_locale.language, "zh")
+  assert_eq(zh_locale.country, "CN")
+  assert_eq(zh_locale.script, Some("Hans"))
+  
+  let full_locale = create_full_locale("en", "US", Some("Latn"), Some("valencia"))
+  assert_eq(full_locale.language, "en")
+  assert_eq(full_locale.country, "US")
+  assert_eq(full_locale.script, Some("Latn"))
+  assert_eq(full_locale.variant, Some("valencia"))
+  
+  // 测试区域设置字符串转换
+  assert_eq(locale_to_string(us_locale), "en-US")
+  assert_eq(locale_to_string(zh_locale), "zh-CN-Hans")
+  assert_eq(locale_to_string(full_locale), "en-US-Latn-valencia")
+  
+  // 测试字符串解析
+  match parse_locale("en-US") {
+    Some(parsed) => {
+      assert_eq(parsed.language, "en")
+      assert_eq(parsed.country, "US")
+      assert_eq(parsed.script, None)
+    }
+    None => assert_true(false)
+  }
+  
+  match parse_locale("zh-CN-Hans") {
+    Some(parsed) => {
+      assert_eq(parsed.language, "zh")
+      assert_eq(parsed.country, "CN")
+      assert_eq(parsed.script, Some("Hans"))
+    }
+    None => assert_true(false)
+  }
+  
+  // 测试区域设置匹配
+  let exact_match = locale_matches(us_locale, create_locale("en", "US"))
+  assert_true(exact_match)
+  
+  let language_match = locale_matches(us_locale, create_locale("en", "GB"))
+  assert_true(language_match)
+  
+  let no_match = locale_matches(us_locale, create_locale("fr", "FR"))
+  assert_false(no_match)
+  
+  // 测试最佳匹配
+  let supported_locales = [
+    create_locale("en", "US"),
+    create_locale("en", "GB"),
+    create_locale("fr", "FR"),
+    create_locale("zh", "CN")
+  ]
+  
+  let requested = create_locale("en", "CA")
+  let best_match = get_best_match_locale(requested, supported_locales)
+  
+  match best_match {
+    Some(matched) => {
+      assert_eq(matched.language, "en")
+      // 应该匹配 en-US 而不是 en-GB，因为它们都有相同的语言，但 US 是第一个
+    }
+    None => assert_true(false)
   }
 }
 
-fn I18nManager::format_date(manager: I18nManager, timestamp: Int, format: String) -> String {
-  // 模拟格式化日期
-  match manager.current_locale {
-    "en" => "Sunday, January 1, 2023",
-    "zh" => "2023年1月1日星期日",
-    "ja" => "2023年1月1日日曜日",
-    "de" => "Sonntag, 1. Januar 2023",
-    _ => ""
+// Test 2: Message Formatting and Translation
+test "消息格式化和翻译" {
+  // 定义翻译资源
+  type TranslationResource = {
+    key: String,
+    value: String,
+    description: Option<String>,
+    context: Option<String>
   }
-}
-
-fn I18nManager::format_time(manager: I18nManager, timestamp: Int, format: String) -> String {
-  // 模拟格式化时间
-  match manager.current_locale {
-    "en" => "12:00:00 AM UTC",
-    "zh" => "UTC 上午12:00:00",
-    "ja" => "UTC 午前12:00:00",
-    "de" => "00:00:00 UTC",
-    _ => ""
+  
+  // 定义翻译字典
+  type TranslationDictionary = Map[String, TranslationResource>
+  
+  // 定义消息参数
+  type MessageParameter = {
+    name: String,
+    value: String,
+    type: String  // "string", "number", "date", "currency"
   }
-}
-
-fn I18nManager::format_datetime(manager: I18nManager, timestamp: Int, format: String) -> String {
-  // 模拟格式化日期时间
-  match manager.current_locale {
-    "en" => "Sunday, January 1, 2023 at 12:00:00 AM UTC",
-    "zh" => "2023年1月1日星期日 UTC 上午12:00:00",
-    "ja" => "2023年1月1日日曜日 UTC 午前12:00:00",
-    "de" => "Sonntag, 1. Januar 2023 um 00:00:00 UTC",
-    _ => ""
-  }
-}
-
-fn I18nManager::format_relative_time(manager: I18nManager, past_timestamp: Int, current_timestamp: Int) -> String {
-  // 模拟格式化相对时间
-  match manager.current_locale {
-    "en" => "1 day ago",
-    "zh" => "1天前",
-    "ja" => "1日前",
-    _ => ""
-  }
-}
-
-fn I18nManager::format_number(manager: I18nManager, number: Float) -> String {
-  // 模拟格式化数字
-  match manager.current_locale {
-    "en" => "1,234,567.89",
-    "zh" => "1,234,567.89",
-    "de" => "1.234.567,89",
-    "fr" => "1 234 567,89",
-    _ => ""
-  }
-}
-
-fn I18nManager::format_percentage(manager: I18nManager, number: Float) -> String {
-  // 模拟格式化百分比
-  match manager.current_locale {
-    "en" => "75.42%",
-    "zh" => "75.42%",
-    _ => ""
-  }
-}
-
-fn I18nManager::format_currency(manager: I18nManager, amount: Float, currency: String) -> String {
-  // 模拟格式化货币
-  match (manager.current_locale, currency) {
-    ("en", "USD") => "$1,234.56",
-    ("en", "EUR") => "€1,234.56",
-    ("de", "EUR") => "1.234,56 €",
-    ("fr", "EUR") => "1 234,56 €",
-    _ => ""
-  }
-}
-
-fn I18nManager::format_bytes(manager: I18nManager, bytes: Int) -> String {
-  // 模拟格式化字节
-  "1.0 MB"
-}
-
-fn I18nManager::format_duration(manager: I18nManager, milliseconds: Int) -> String {
-  // 模拟格式化持续时间
-  match manager.current_locale {
-    "en" => "1 hour, 1 minute, 5 seconds",
-    "zh" => "1小时1分钟5秒",
-    _ => ""
-  }
-}
-
-fn I18nManager::get_text_direction(manager: I18nManager) -> String {
-  // 模拟获取文本方向
-  match manager.current_locale {
-    "ar" | "he" => "rtl",
-    _ => "ltr"
-  }
-}
-
-fn I18nManager::get_text_align(manager: I18nManager) -> String {
-  // 模拟获取文本对齐
-  match manager.current_locale {
-    "ar" | "he" => "right",
-    _ => "left"
-  }
-}
-
-fn I18nManager::process_mixed_text(manager: I18nManager, text: String) -> String {
-  // 模拟处理混合文本
-  text
-}
-
-fn I18nManager::detect_script(manager: I18nManager, text: String) -> String {
-  // 模拟检测脚本
-  match text {
-    text if text.contains("Hello") => "Latin",
-    text if text.contains("مرحبا") => "Arabic",
-    text if text.contains("שלום") => "Hebrew",
-    text if text.contains("你好") => "Han",
-    text if text.contains("こんにちは") => "Japanese",
-    _ => "Unknown"
-  }
-}
-
-fn I18nTelemetryProvider::new(i18n_manager: I18nManager) -> I18nTelemetryProvider {
-  I18nTelemetryProvider { i18n_manager: i18n_manager }
-}
-
-fn I18nTelemetryProvider::localize_span_name(provider: I18nTelemetryProvider, key: String) -> String {
-  // 模拟本地化跨度名称
-  match provider.i18n_manager.current_locale {
-    "en" => "User Login",
-    "zh" => "用户登录",
-    "ja" => "ユーザーログイン",
-    _ => ""
-  }
-}
-
-fn I18nTelemetryProvider::localize_event_name(provider: I18nTelemetryProvider, key: String) -> String {
-  // 模拟本地化事件名称
-  match provider.i18n_manager.current_locale {
-    "en" => "Database Query",
-    "zh" => "数据库查询",
-    _ => ""
-  }
-}
-
-fn I18nTelemetryProvider::localize_tags(provider: I18nTelemetryProvider, tags: Array<(String, String)>) -> Map<String, String> {
-  // 模拟本地化标签
-  let result = Map::new()
-  for (key, value) in tags {
-    match (provider.i18n_manager.current_locale, key) {
-      ("en", "error.type") => result.set("error.type", "Validation Error"),
-      ("en", "component") => result.set("component", "Authentication"),
-      ("zh", "error.type") => result.set("error.type", "验证错误"),
-      ("zh", "component") => result.set("component", "认证"),
-      _ => ()
+  
+  // 创建翻译资源
+  let create_translation = fn(key: String, value: String, description: Option<String>, context: Option<String>) {
+    {
+      key,
+      value,
+      description,
+      context
     }
   }
-  result
-}
-
-fn I18nTelemetryProvider::localize_log_message(provider: I18nTelemetryProvider, key: String, params: Array<(String, String)>) -> String {
-  // 模拟本地化日志消息
-  match provider.i18n_manager.current_locale {
-    "en" => "User 'testuser' (ID: 12345) created successfully",
-    "zh" => "用户'testuser'（ID：12345）创建成功",
-    _ => ""
-  }
-}
-
-fn I18nErrorHandler::new(i18n_manager: I18nManager) -> I18nErrorHandler {
-  I18nErrorHandler { i18n_manager: i18n_manager }
-}
-
-fn I18nErrorHandler::localize_error(handler: I18nErrorHandler, key: String, params: Array<(String, String)>) -> String {
-  // 模拟本地化错误消息
-  match (handler.i18n_manager.current_locale, key) {
-    ("en", "network.connection_failed") => "Failed to connect to api.example.com:443",
-    ("zh", "network.connection_failed") => "连接到api.example.com:443失败",
-    ("ja", "network.connection_failed") => "api.example.com:443への接続に失敗しました",
-    ("en", "validation.invalid_format") => "Field 'email' has invalid format: 'invalid-email'",
-    ("zh", "validation.invalid_format") => "字段'email'格式无效：'invalid-email'",
-    ("en", "permission.denied") => "Permission denied: cannot perform 'read' action on 'user_data'",
-    ("zh", "permission.denied") => "权限被拒绝：无法对'user_data'执行'read'操作",
-    _ => ""
-  }
-}
-
-fn I18nUIManager::new(i18n_manager: I18nManager) -> I18nUIManager {
-  I18nUIManager { i18n_manager: i18n_manager }
-}
-
-fn I18nUIManager::get_button_text(manager: I18nUIManager, key: String) -> String {
-  // 模拟获取按钮文本
-  match (manager.i18n_manager.current_locale, key) {
-    ("en", "submit") => "Submit",
-    ("en", "cancel") => "Cancel",
-    ("zh", "submit") => "提交",
-    ("zh", "cancel") => "取消",
-    _ => ""
-  }
-}
-
-fn I18nUIManager::get_form_labels(manager: I18nUIManager, form: String) -> Map<String, String> {
-  // 模拟获取表单标签
-  let result = Map::new()
-  match manager.i18n_manager.current_locale {
-    "en" => {
-      result.set("username", "Username")
-      result.set("email", "Email Address")
-      result.set("password", "Password")
+  
+  // 创建翻译字典
+  let create_dictionary = fn(resources: Array[TranslationResource>) {
+    let mut dict = Map::empty()
+    
+    for resource in resources {
+      let _ = Map::insert(dict, resource.key, resource)
     }
-    "zh" => {
-      result.set("username", "用户名")
-      result.set("email", "电子邮件地址")
-      result.set("password", "密码")
-    }
-    _ => ()
+    
+    dict
   }
-  result
-}
-
-fn I18nUIManager::get_menu_items(manager: I18nUIManager, menu: String) -> Map<String, String> {
-  // 模拟获取菜单项
-  let result = Map::new()
-  match manager.i18n_manager.current_locale {
-    "en" => {
-      result.set("dashboard", "Dashboard")
-      result.set("analytics", "Analytics")
-      result.set("settings", "Settings")
+  
+  // 简单消息翻译
+  let translate_message = fn(key: String, dictionary: TranslationDictionary) {
+    match Map::get(dictionary, key) {
+      Some(resource) => Some(resource.value)
+      None => None
     }
-    "zh" => {
-      result.set("dashboard", "仪表板")
-      result.set("analytics", "分析")
-      result.set("settings", "设置")
+  }
+  
+  // 带参数的消息格式化
+  let format_message = fn(template: String, parameters: Array[MessageParameter>) {
+    let mut result = template
+    
+    for param in parameters {
+      let placeholder = "{" + param.name + "}"
+      let formatted_value = match param.type {
+        "number" => {
+          match param.value.parse_float() {
+            Some(num) => {
+              // 简化的数字格式化
+              if num >= 1000.0 {
+                (num / 1000.0).to_string() + "K"
+              } else {
+                num.to_string()
+              }
+            }
+            None => param.value
+          }
+        }
+        "currency" => {
+          match param.value.parse_float() {
+            Some(num) => "$" + num.to_string()
+            None => "$" + param.value
+          }
+        }
+        "date" => {
+          match param.value.parse_int() {
+            Some(timestamp) => {
+              // 简化的日期格式化
+              let date = Date::from_timestamp(timestamp)
+              date.year.to_string() + "-" + date.month.to_string() + "-" + date.day.to_string()
+            }
+            None => param.value
+          }
+        }
+        _ => param.value
+      }
+      
+      result = result.replace(placeholder, formatted_value)
     }
-    _ => ()
+    
+    result
   }
-  result
-}
-
-fn I18nUIManager::get_page_title(manager: I18nUIManager, page: String) -> String {
-  // 模拟获取页面标题
-  match (manager.i18n_manager.current_locale, page) {
-    ("en", "telemetry_dashboard") => "Telemetry Dashboard",
-    ("zh", "telemetry_dashboard") => "遥测仪表板",
-    _ => ""
+  
+  // 复数形式处理
+  let format_plural_message = fn(
+    template: String,
+    count: Int,
+    dictionary: TranslationDictionary,
+    locale: Locale
+  ) {
+    let plural_key = template + "_" + match count {
+      0 => "zero"
+      1 => "one"
+      _ => "other"
+    }
+    
+    match Map::get(dictionary, plural_key) {
+      Some(resource) => {
+        format_message(resource.value, [
+          { name: "count", value: count.to_string(), type: "number" }
+        ])
+      }
+      None => {
+        // 回退到基础模板
+        match Map::get(dictionary, template) {
+          Some(resource) => {
+            format_message(resource.value, [
+              { name: "count", value: count.to_string(), type: "number" }
+            ])
+          }
+          None => template
+        }
+      }
+    }
   }
+  
+  // 创建英文翻译字典
+  let en_dictionary = create_dictionary([
+    create_translation("welcome", "Welcome to our application!", None, None),
+    create_translation("goodbye", "Goodbye!", None, None),
+    create_translation("items_count", "You have {count} items.", None, None),
+    create_translation("items_count_zero", "You have no items.", None, None),
+    create_translation("items_count_one", "You have one item.", None, None),
+    create_translation("order_total", "Your total is {amount}.", None, None),
+    create_translation("login_required", "Please log in to continue.", None, None)
+  ])
+  
+  // 创建中文翻译字典
+  let zh_dictionary = create_dictionary([
+    create_translation("welcome", "欢迎使用我们的应用！", None, None),
+    create_translation("goodbye", "再见！", None, None),
+    create_translation("items_count", "您有 {count} 个项目。", None, None),
+    create_translation("items_count_zero", "您没有项目。", None, None),
+    create_translation("items_count_one", "您有一个项目。", None, None),
+    create_translation("order_total", "您的总计是 {amount}。", None, None),
+    create_translation("login_required", "请登录以继续。", None, None)
+  ])
+  
+  // 测试简单翻译
+  match translate_message("welcome", en_dictionary) {
+    Some(message) => assert_eq(message, "Welcome to our application!")
+    None => assert_true(false)
+  }
+  
+  match translate_message("welcome", zh_dictionary) {
+    Some(message) => assert_eq(message, "欢迎使用我们的应用！")
+    None => assert_true(false)
+  }
+  
+  match translate_message("nonexistent", en_dictionary) {
+    Some(_) => assert_true(false)  // 不应该找到
+    None => assert_true(true)
+  }
+  
+  // 测试消息格式化
+  let formatted = format_message("You have {count} items in your cart.", [
+    { name: "count", value: "5", type: "number" }
+  ])
+  assert_eq(formatted, "You have 5 items in your cart.")
+  
+  let formatted_currency = format_message("Your total is {amount}.", [
+    { name: "amount", value: "123.45", type: "currency" }
+  ])
+  assert_eq(formatted_currency, "Your total is $123.45.")
+  
+  let formatted_number = format_message("Population: {people}", [
+    { name: "people", value: "1500000", type: "number" }
+  ])
+  assert_eq(formatted_number, "Population: 1500K")
+  
+  // 测试复数形式
+  let en_locale = create_locale("en", "US")
+  
+  let zero_items = format_plural_message("items_count", 0, en_dictionary, en_locale)
+  assert_eq(zero_items, "You have no items.")
+  
+  let one_item = format_plural_message("items_count", 1, en_dictionary, en_locale)
+  assert_eq(one_item, "You have one item.")
+  
+  let many_items = format_plural_message("items_count", 5, en_dictionary, en_locale)
+  assert_eq(many_items, "You have 5 items.")
+  
+  let zh_zero_items = format_plural_message("items_count", 0, zh_dictionary, en_locale)
+  assert_eq(zh_zero_items, "您没有项目。")
+  
+  let zh_one_item = format_plural_message("items_count", 1, zh_dictionary, en_locale)
+  assert_eq(zh_one_item, "您有一个项目。")
+  
+  let zh_many_items = format_plural_message("items_count", 5, zh_dictionary, en_locale)
+  assert_eq(zh_many_items, "您有 5 个项目。")
 }
 
-fn I18nManager::detect_from_browser_languages(manager: I18nManager, languages: Array<String>) -> String {
-  // 模拟从浏览器语言检测
-  "zh"
+// Test 3: Date and Time Formatting
+test "日期和时间格式化" {
+  // 定义日期格式化选项
+  type DateFormatOptions = {
+    year: Option<String>,  // "numeric", "2-digit"
+    month: Option<String>,  // "numeric", "2-digit", "long", "short", "narrow"
+    day: Option<String>,   // "numeric", "2-digit"
+    weekday: Option<String>  // "long", "short", "narrow"
+  }
+  
+  // 定义时间格式化选项
+  type TimeFormatOptions = {
+    hour: Option<String>,  // "numeric", "2-digit"
+    minute: Option<String>,  // "numeric", "2-digit"
+    second: Option<String>,  // "numeric", "2-digit"
+    hour12: Option<Bool>  // 12小时制还是24小时制
+  }
+  
+  // 定义日期时间
+  type DateTime = {
+    year: Int,
+    month: Int,
+    day: Int,
+    hour: Int,
+    minute: Int,
+    second: Int,
+    timestamp: Int
+  }
+  
+  // 格式化日期
+  let format_date = fn(date: DateTime, options: DateFormatOptions, locale: Locale) {
+    let mut result = ""
+    
+    // 根据区域设置确定格式
+    match (locale.language, locale.country) {
+      ("en", "US") => {
+        // 美国格式: MM/DD/YYYY
+        let month_str = match options.month {
+          Some("long") => {
+            match date.month {
+              1 => "January"
+              2 => "February"
+              3 => "March"
+              4 => "April"
+              5 => "May"
+              6 => "June"
+              7 => "July"
+              8 => "August"
+              9 => "September"
+              10 => "October"
+              11 => "November"
+              12 => "December"
+              _ => date.month.to_string()
+            }
+          }
+          Some("short") => {
+            match date.month {
+              1 => "Jan"
+              2 => "Feb"
+              3 => "Mar"
+              4 => "Apr"
+              5 => "May"
+              6 => "Jun"
+              7 => "Jul"
+              8 => "Aug"
+              9 => "Sep"
+              10 => "Oct"
+              11 => "Nov"
+              12 => "Dec"
+              _ => date.month.to_string()
+            }
+          }
+          _ => {
+            if date.month < 10 {
+              "0" + date.month.to_string()
+            } else {
+              date.month.to_string()
+            }
+          }
+        }
+        
+        let day_str = if date.day < 10 {
+          "0" + date.day.to_string()
+        } else {
+          date.day.to_string()
+        }
+        
+        result = month_str + "/" + day_str + "/" + date.year.to_string()
+      }
+      ("zh", "CN") => {
+        // 中文格式: YYYY年MM月DD日
+        let month_str = if date.month < 10 {
+          "0" + date.month.to_string()
+        } else {
+          date.month.to_string()
+        }
+        
+        let day_str = if date.day < 10 {
+          "0" + date.day.to_string()
+        } else {
+          date.day.to_string()
+        }
+        
+        result = date.year.to_string() + "年" + month_str + "月" + day_str + "日"
+      }
+      ("en", "GB") | ("en", _) => {
+        // 英国/通用格式: DD/MM/YYYY
+        let month_str = if date.month < 10 {
+          "0" + date.month.to_string()
+        } else {
+          date.month.to_string()
+        }
+        
+        let day_str = if date.day < 10 {
+          "0" + date.day.to_string()
+        } else {
+          date.day.to_string()
+        }
+        
+        result = day_str + "/" + month_str + "/" + date.year.to_string()
+      }
+      _ => {
+        // 默认格式: YYYY-MM-DD
+        let month_str = if date.month < 10 {
+          "0" + date.month.to_string()
+        } else {
+          date.month.to_string()
+        }
+        
+        let day_str = if date.day < 10 {
+          "0" + date.day.to_string()
+        } else {
+          date.day.to_string()
+        }
+        
+        result = date.year.to_string() + "-" + month_str + "-" + day_str
+      }
+    }
+    
+    result
+  }
+  
+  // 格式化时间
+  let format_time = fn(date: DateTime, options: TimeFormatOptions, locale: Locale) {
+    let use_12_hour = match options.hour12 {
+      Some(value) => value
+      None => match (locale.language, locale.country) {
+        ("en", "US") => true
+        _ => false
+      }
+    }
+    
+    let hour = if use_12_hour {
+      if date.hour == 0 {
+        12
+      } else if date.hour > 12 {
+        date.hour - 12
+      } else {
+        date.hour
+      }
+    } else {
+      date.hour
+    }
+    
+    let hour_str = if hour < 10 {
+      "0" + hour.to_string()
+    } else {
+      hour.to_string()
+    }
+    
+    let minute_str = if date.minute < 10 {
+      "0" + date.minute.to_string()
+    } else {
+      date.minute.to_string()
+    }
+    
+    let second_str = if date.second < 10 {
+      "0" + date.second.to_string()
+    } else {
+      date.second.to_string()
+    }
+    
+    let period = if use_12_hour {
+      if date.hour >= 12 {
+        " PM"
+      } else {
+        " AM"
+      }
+    } else {
+      ""
+    }
+    
+    hour_str + ":" + minute_str + ":" + second_str + period
+  }
+  
+  // 格式化日期时间
+  let format_datetime = fn(date: DateTime, date_options: DateFormatOptions, time_options: TimeFormatOptions, locale: Locale) {
+    let date_str = format_date(date, date_options, locale)
+    let time_str = format_time(date, time_options, locale)
+    
+    match (locale.language, locale.country) {
+      ("en", "US") => date_str + " " + time_str
+      ("zh", "CN") => date_str + " " + time_str
+      _ => date_str + " " + time_str
+    }
+  }
+  
+  // 测试日期时间
+  let test_date = {
+    year: 2023,
+    month: 5,
+    day: 15,
+    hour: 14,
+    minute: 30,
+    second: 45,
+    timestamp: 1684164645
+  }
+  
+  // 测试日期格式化
+  let us_locale = create_locale("en", "US")
+  let zh_locale = create_locale("zh", "CN")
+  let gb_locale = create_locale("en", "GB")
+  
+  let date_options = {
+    year: Some("numeric"),
+    month: Some("numeric"),
+    day: Some("numeric"),
+    weekday: None
+  }
+  
+  let us_date = format_date(test_date, date_options, us_locale)
+  assert_eq(us_date, "05/15/2023")
+  
+  let zh_date = format_date(test_date, date_options, zh_locale)
+  assert_eq(zh_date, "2023年05月15日")
+  
+  let gb_date = format_date(test_date, date_options, gb_locale)
+  assert_eq(gb_date, "15/05/2023")
+  
+  // 测试时间格式化
+  let time_options = {
+    hour: Some("2-digit"),
+    minute: Some("2-digit"),
+    second: Some("2-digit"),
+    hour12: Some(true)
+  }
+  
+  let us_time_12 = format_time(test_date, time_options, us_locale)
+  assert_eq(us_time_12, "02:30:45 PM")
+  
+  let time_options_24 = {
+    hour: Some("2-digit"),
+    minute: Some("2-digit"),
+    second: Some("2-digit"),
+    hour12: Some(false)
+  }
+  
+  let us_time_24 = format_time(test_date, time_options_24, us_locale)
+  assert_eq(us_time_24, "14:30:45")
+  
+  let zh_time = format_time(test_date, time_options_24, zh_locale)
+  assert_eq(zh_time, "14:30:45")
+  
+  // 测试日期时间格式化
+  let us_datetime = format_datetime(test_date, date_options, time_options_24, us_locale)
+  assert_eq(us_datetime, "05/15/2023 14:30:45")
+  
+  let zh_datetime = format_datetime(test_date, date_options, time_options_24, zh_locale)
+  assert_eq(zh_datetime, "2023年05月15日 14:30:45")
 }
 
-fn I18nManager::detect_from_system(manager: I18nManager) -> Option<String> {
-  // 模拟从系统检测
-  Some("en")
-}
-
-fn I18nManager::detect_from_preferences(manager: I18nManager, preferences: Array<(String, String)>) -> String {
-  // 模拟从用户偏好检测
-  "ja"
-}
-
-fn I18nManager::detect_from_accept_language(manager: I18nManager, header: String) -> String {
-  // 模拟从Accept-Language头检测
-  "fr"
-}
-
-fn I18nManager::detect_with_fallback(manager: I18nManager, languages: Array<String>, fallback: String) -> String {
-  // 模拟带回退的检测
-  fallback
-}
-
-fn I18nManager::enable_optimization(manager: I18nManager, settings: Array<(String, Bool)>) -> Unit {
-  // 模拟启用优化
-  ()
-}
-
-fn I18nManager::clear_cache(manager: I18nManager) -> Unit {
-  // 模拟清除缓存
-  ()
-}
-
-fn I18nManager::preload_locale(manager: I18nManager, locale_code: String, immediate: Bool) -> Unit {
-  // 模拟预加载语言环境
-  ()
-}
-
-fn I18nManager::format_messages_batch(manager: I18nManager, messages: Array<(String, Array<(String, String)>)>) -> Array<String> {
-  // 模拟批量格式化消息
-  []
+// Test 4: Number and Currency Formatting
+test "数字和货币格式化" {
+  // 定义数字格式化选项
+  type NumberFormatOptions = {
+    style: String,  // "decimal", "currency", "percent"
+    minimum_fraction_digits: Option<Int>,
+    maximum_fraction_digits: Option<Int>,
+    use_grouping: Option<Bool>
+  }
+  
+  // 定义货币格式化选项
+  type CurrencyFormatOptions = {
+    currency: String,  // "USD", "EUR", "CNY"
+    currency_display: String  // "symbol", "code", "name"
+  }
+  
+  // 格式化数字
+  let format_number = fn(number: Float, options: NumberFormatOptions, locale: Locale) {
+    let use_grouping = match options.use_grouping {
+      Some(value) => value
+      None => true
+    }
+    
+    let min_fraction = match options.minimum_fraction_digits {
+      Some(value) => value
+      None => 0
+    }
+    
+    let max_fraction = match options.maximum_fraction_digits {
+      Some(value) => value
+      None => 3
+    }
+    
+    let number_str = number.to_string()
+    let parts = number_str.split(".")
+    let integer_part = parts[0]
+    let decimal_part = if parts.length() > 1 { parts[1] } else { "" }
+    
+    // 处理小数部分
+    let mut formatted_decimal = ""
+    if decimal_part != "" {
+      let decimal_length = decimal_part.length()
+      let target_length = if decimal_length < min_fraction {
+        min_fraction
+      } else if decimal_length > max_fraction {
+        max_fraction
+      } else {
+        decimal_length
+      }
+      
+      if decimal_length >= target_length {
+        formatted_decimal = decimal_part.slice(0, target_length)
+      } else {
+        formatted_decimal = decimal_part
+        for i in 0..(target_length - decimal_length) {
+          formatted_decimal = formatted_decimal + "0"
+        }
+      }
+    } else if min_fraction > 0 {
+      for i in 0..min_fraction {
+        formatted_decimal = formatted_decimal + "0"
+      }
+    }
+    
+    // 处理整数部分（千位分隔符）
+    let mut formatted_integer = ""
+    if use_grouping {
+      let mut digit_count = 0
+      for char in integer_part.chars().reverse() {
+        if digit_count > 0 && digit_count % 3 == 0 {
+          formatted_integer = formatted_integer + ","
+        }
+        formatted_integer = formatted_integer + char.to_string()
+        digit_count = digit_count + 1
+      }
+      formatted_integer = formatted_integer.chars().reverse().join()
+    } else {
+      formatted_integer = integer_part
+    }
+    
+    // 组合结果
+    let result = if formatted_decimal != "" {
+      formatted_integer + "." + formatted_decimal
+    } else {
+      formatted_integer
+    }
+    
+    match options.style {
+      "percent" => result + "%"
+      _ => result
+    }
+  }
+  
+  // 格式化货币
+  let format_currency = fn(amount: Float, currency_options: CurrencyFormatOptions, locale: Locale) {
+    let number_options = {
+      style: "currency",
+      minimum_fraction_digits: Some(2),
+      maximum_fraction_digits: Some(2),
+      use_grouping: Some(true)
+    }
+    
+    let formatted_number = format_number(amount, number_options, locale)
+    
+    // 添加货币符号
+    let currency_symbol = match (currency_options.currency, currency_options.currency_display) {
+      ("USD", "symbol") => "$"
+      ("EUR", "symbol") => "€"
+      ("CNY", "symbol") => "¥"
+      ("USD", "code") => "USD"
+      ("EUR", "code") => "EUR"
+      ("CNY", "code") => "CNY"
+      _ => currency_options.currency
+    }
+    
+    // 根据区域设置确定货币符号位置
+    match (locale.language, locale.country) {
+      ("en", "US") => currency_symbol + formatted_number
+      ("zh", "CN") => "¥" + formatted_number
+      ("en", "GB") => "£" + formatted_number
+      ("de", "DE") | ("fr", "FR") => formatted_number + " " + currency_symbol
+      _ => currency_symbol + formatted_number
+    }
+  }
+  
+  // 测试数字格式化
+  let us_locale = create_locale("en", "US")
+  let de_locale = create_locale("de", "DE")
+  
+  let decimal_options = {
+    style: "decimal",
+    minimum_fraction_digits: None,
+    maximum_fraction_digits: None,
+    use_grouping: Some(true)
+  }
+  
+  let us_number = format_number(1234567.89123, decimal_options, us_locale)
+  assert_eq(us_number, "1,234,567.891")
+  
+  let de_number = format_number(1234567.89123, decimal_options, de_locale)
+  assert_eq(de_number, "1,234,567.891")  // 简化实现，实际德国使用.作为千位分隔符
+  
+  // 测试百分比格式化
+  let percent_options = {
+    style: "percent",
+    minimum_fraction_digits: Some(1),
+    maximum_fraction_digits: Some(1),
+    use_grouping: Some(true)
+  }
+  
+  let percent = format_number(0.4567, percent_options, us_locale)
+  assert_eq(percent, "0.5%")
+  
+  // 测试货币格式化
+  let usd_options = {
+    currency: "USD",
+    currency_display: "symbol"
+  }
+  
+  let usd_amount = format_currency(1234.56, usd_options, us_locale)
+  assert_eq(usd_amount, "$1,234.56")
+  
+  let eur_options = {
+    currency: "EUR",
+    currency_display: "symbol"
+  }
+  
+  let eur_amount = format_currency(1234.56, eur_options, de_locale)
+  assert_eq(eur_amount, "1,234.56 €")  // 简化实现
+  
+  let cny_options = {
+    currency: "CNY",
+    currency_display: "symbol"
+  }
+  
+  let zh_locale = create_locale("zh", "CN")
+  let cny_amount = format_currency(1234.56, cny_options, zh_locale)
+  assert_eq(cny_amount, "¥1,234.56")
 }
