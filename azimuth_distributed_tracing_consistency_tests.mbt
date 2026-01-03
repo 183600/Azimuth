@@ -1,399 +1,589 @@
-// Azimuth 分布式追踪一致性测试用例
-// 专注于测试分布式系统中追踪数据的一致性和完整性
+// Azimuth Telemetry System - Distributed Tracing Consistency Tests
+// This file contains comprehensive distributed tracing consistency test cases
 
-// 测试1: 跨服务追踪链完整性
-test "跨服务追踪链完整性测试" {
-  // 创建模拟的分布式追踪链
-  let trace_id = "trace-123456789"
-  let spans = [
-    {
-      trace_id: trace_id,
-      span_id: "span-1",
-      parent_span_id: None,
-      service_name: "gateway",
-      operation_name: "http.request",
-      start_time: 1640995200000,
-      end_time: 1640995200100,
-      status: "ok"
-    },
-    {
-      trace_id: trace_id,
-      span_id: "span-2",
-      parent_span_id: Some("span-1"),
-      service_name: "auth-service",
-      operation_name: "authenticate",
-      start_time: 1640995200050,
-      end_time: 1640995200080,
-      status: "ok"
-    },
-    {
-      trace_id: trace_id,
-      span_id: "span-3",
-      parent_span_id: Some("span-1"),
-      service_name: "user-service",
-      operation_name: "get.user.profile",
-      start_time: 1640995200060,
-      end_time: 1640995200090,
-      status: "ok"
-    },
-    {
-      trace_id: trace_id,
-      span_id: "span-4",
-      parent_span_id: Some("span-3"),
-      service_name: "database",
-      operation_name: "sql.query",
-      start_time: 1640995200070,
-      end_time: 1640995200085,
-      status: "ok"
-    }
-  ]
+// Test 1: Trace Context Propagation
+test "trace context propagation" {
+  // Create root span with trace context
+  let provider = TracerProvider::new()
+  let tracer = TracerProvider::get_tracer(provider, "propagation_test_tracer")
+  let root_span = Tracer::start_span(tracer, "root_operation")
   
-  // 验证所有span属于同一个trace
-  for span in spans {
-    assert_eq(span.trace_id, trace_id)
+  // Get trace context from root span
+  let root_context = Span::span_context(root_span)
+  let trace_id = SpanContext::trace_id(root_context)
+  let root_span_id = SpanContext::span_id(root_context)
+  
+  // Verify root context is valid
+  assert_true(SpanContext::is_valid(root_context))
+  assert_true(SpanContext::is_sampled(root_context))
+  
+  // Create child span with propagated context
+  let child_span = Tracer::start_span_with_context(tracer, "child_operation", root_context)
+  let child_context = Span::span_context(child_span)
+  
+  // Verify trace ID is propagated
+  assert_eq(SpanContext::trace_id(child_context), trace_id)
+  
+  // Verify span ID is different
+  assert_not_eq(SpanContext::span_id(child_context), root_span_id)
+  
+  // Verify parent span ID is set
+  let parent_span_id = SpanContext::parent_span_id(child_context)
+  match parent_span_id {
+    Some(id) => assert_eq(id, root_span_id)
+    None => assert_true(false)
   }
   
-  // 验证根span（没有父span的span）
-  let root_spans = spans.filter(|span| span.parent_span_id == None)
-  assert_eq(root_spans.length(), 1)
-  assert_eq(root_spans[0].span_id, "span-1")
-  assert_eq(root_spans[0].service_name, "gateway")
+  // Create grandchild span with propagated context
+  let grandchild_span = Tracer::start_span_with_context(tracer, "grandchild_operation", child_context)
+  let grandchild_context = Span::span_context(grandchild_span)
   
-  // 验证父子关系
-  let span_2 = spans.find(|span| span.span_id == "span-2")
-  match span_2 {
-    Some(span) => {
-      match span.parent_span_id {
-        Some(parent_id) => assert_eq(parent_id, "span-1")
+  // Verify trace ID is still propagated
+  assert_eq(SpanContext::trace_id(grandchild_context), trace_id)
+  
+  // Verify span ID is different from both parent and grandparent
+  assert_not_eq(SpanContext::span_id(grandchild_context), root_span_id)
+  assert_not_eq(SpanContext::span_id(grandchild_context), SpanContext::span_id(child_context))
+  
+  // Verify parent span ID is set to child span ID
+  let grandchild_parent_span_id = SpanContext::parent_span_id(grandchild_context)
+  match grandchild_parent_span_id {
+    Some(id) => assert_eq(id, SpanContext::span_id(child_context))
+    None => assert_true(false)
+  }
+  
+  // End spans
+  Span::end(grandchild_span)
+  Span::end(child_span)
+  Span::end(root_span)
+  
+  // Shutdown provider
+  TracerProvider::shutdown(provider)
+}
+
+// Test 2: Cross-Service Trace Propagation
+test "cross-service trace propagation" {
+  // Simulate Service A
+  let service_a_provider = TracerProvider::new()
+  let service_a_tracer = TracerProvider::get_tracer(service_a_provider, "service_a")
+  let service_a_span = Tracer::start_span(service_a_tracer, "service_a_operation")
+  let service_a_context = Span::span_context(service_a_span)
+  
+  // Extract trace context for propagation
+  let trace_headers = TraceContext::extract_headers(service_a_context)
+  
+  // Verify headers contain trace information
+  assert_true(trace_headers.contains("traceparent"))
+  assert_true(trace_headers.contains("tracestate"))
+  
+  // Simulate Service B receiving the trace context
+  let service_b_provider = TracerProvider::new()
+  let service_b_tracer = TracerProvider::get_tracer(service_b_provider, "service_b")
+  let service_b_context = TraceContext::extract_from_headers(trace_headers)
+  
+  // Verify context was extracted correctly
+  assert_eq(SpanContext::trace_id(service_b_context), SpanContext::trace_id(service_a_context))
+  
+  // Create span in Service B with extracted context
+  let service_b_span = Tracer::start_span_with_context(service_b_tracer, "service_b_operation", service_b_context)
+  let service_b_span_context = Span::span_context(service_b_span)
+  
+  // Verify trace ID is consistent
+  assert_eq(SpanContext::trace_id(service_b_span_context), SpanContext::trace_id(service_a_context))
+  
+  // Verify parent relationship
+  let service_b_parent_span_id = SpanContext::parent_span_id(service_b_span_context)
+  match service_b_parent_span_id {
+    Some(id) => assert_eq(id, SpanContext::span_id(service_a_context))
+    None => assert_true(false)
+  }
+  
+  // Simulate Service C calling Service B
+  let service_c_provider = TracerProvider::new()
+  let service_c_tracer = TracerProvider::get_tracer(service_c_provider, "service_c")
+  let service_c_span = Tracer::start_span_with_context(service_c_tracer, "service_c_operation", service_b_span_context)
+  let service_c_span_context = Span::span_context(service_c_span)
+  
+  // Verify trace ID is still consistent
+  assert_eq(SpanContext::trace_id(service_c_span_context), SpanContext::trace_id(service_a_context))
+  
+  // Verify parent relationship
+  let service_c_parent_span_id = SpanContext::parent_span_id(service_c_span_context)
+  match service_c_parent_span_id {
+    Some(id) => assert_eq(id, SpanContext::span_id(service_b_span_context))
+    None => assert_true(false)
+  }
+  
+  // End spans
+  Span::end(service_c_span)
+  Span::end(service_b_span)
+  Span::end(service_a_span)
+  
+  // Shutdown providers
+  TracerProvider::shutdown(service_c_provider)
+  TracerProvider::shutdown(service_b_provider)
+  TracerProvider::shutdown(service_a_provider)
+}
+
+// Test 3: Baggage Propagation
+test "baggage propagation" {
+  // Create initial baggage
+  let initial_baggage = Baggage::new()
+  let baggage_with_user = Baggage::set_entry(initial_baggage, "user.id", "user123")
+  let baggage_with_session = Baggage::set_entry(baggage_with_user, "session.id", "session456")
+  let final_baggage = Baggage::set_entry(baggage_with_session, "request.id", "req789")
+  
+  // Create span with baggage
+  let provider = TracerProvider::new()
+  let tracer = TracerProvider::get_tracer(provider, "baggage_test_tracer")
+  let span = Tracer::start_span(tracer, "baggage_test_span")
+  
+  // Set baggage in span context
+  Span::set_baggage(span, final_baggage)
+  
+  // Extract baggage from span
+  let extracted_baggage = Span::get_baggage(span)
+  
+  // Verify baggage entries
+  let user_id = Baggage::get_entry(extracted_baggage, "user.id")
+  match user_id {
+    Some(value) => assert_eq(value, "user123")
+    None => assert_true(false)
+  }
+  
+  let session_id = Baggage::get_entry(extracted_baggage, "session.id")
+  match session_id {
+    Some(value) => assert_eq(value, "session456")
+    None => assert_true(false)
+  }
+  
+  let request_id = Baggage::get_entry(extracted_baggage, "request.id")
+  match request_id {
+    Some(value) => assert_eq(value, "req789")
+    None => assert_true(false)
+  }
+  
+  // Create child span and verify baggage is propagated
+  let child_span = Tracer::start_span(tracer, "child_span")
+  let child_baggage = Span::get_baggage(child_span)
+  
+  // Verify baggage is propagated to child span
+  let child_user_id = Baggage::get_entry(child_baggage, "user.id")
+  match child_user_id {
+    Some(value) => assert_eq(value, "user123")
+    None => assert_true(false)
+  }
+  
+  // Add new baggage entry to child span
+  let child_baggage_with_new_entry = Baggage::set_entry(child_baggage, "child.entry", "child_value")
+  Span::set_baggage(child_span, child_baggage_with_new_entry)
+  
+  // Create grandchild span and verify all baggage is propagated
+  let grandchild_span = Tracer::start_span(tracer, "grandchild_span")
+  let grandchild_baggage = Span::get_baggage(grandchild_span)
+  
+  // Verify original baggage is still there
+  let grandchild_user_id = Baggage::get_entry(grandchild_baggage, "user.id")
+  match grandchild_user_id {
+    Some(value) => assert_eq(value, "user123")
+    None => assert_true(false)
+  }
+  
+  // Verify child baggage entry is also propagated
+  let grandchild_child_entry = Baggage::get_entry(grandchild_baggage, "child.entry")
+  match grandchild_child_entry {
+    Some(value) => assert_eq(value, "child_value")
+    None => assert_true(false)
+  }
+  
+  // End spans
+  Span::end(grandchild_span)
+  Span::end(child_span)
+  Span::end(span)
+  
+  // Shutdown provider
+  TracerProvider::shutdown(provider)
+}
+
+// Test 4: Trace Consistency in Concurrent Operations
+test "trace consistency in concurrent operations" {
+  // Create root span
+  let provider = TracerProvider::new()
+  let tracer = TracerProvider::get_tracer(provider, "concurrent_test_tracer")
+  let root_span = Tracer::start_span(tracer, "concurrent_root_operation")
+  let root_context = Span::span_context(root_span)
+  let trace_id = SpanContext::trace_id(root_context)
+  
+  // Create multiple concurrent child spans
+  let mut results = []
+  let num_threads = 10
+  
+  for thread_id in 0..=num_threads {
+    let thread_result = Thread::spawn({
+      let tracer_ref = tracer
+      let context_ref = root_context
+      let trace_id_ref = trace_id
+      
+      // Create child span in thread
+      let child_span = Tracer::start_span_with_context(tracer_ref, "thread_" + thread_id.to_string() + "_operation", context_ref)
+      let child_context = Span::span_context(child_span)
+      
+      // Verify trace ID is consistent
+      assert_eq(SpanContext::trace_id(child_context), trace_id_ref)
+      
+      // Verify parent relationship
+      let parent_span_id = SpanContext::parent_span_id(child_context)
+      match parent_span_id {
+        Some(id) => assert_eq(id, SpanContext::span_id(context_ref))
         None => assert_true(false)
       }
-    }
-    None => assert_true(false)
-  }
-  
-  // 验证时间顺序（子span开始时间应该在父span时间范围内）
-  let span_1 = spans.find(|span| span.span_id == "span-1")
-  let span_3 = spans.find(|span| span.span_id == "span-3")
-  
-  match (span_1, span_3) {
-    (Some(parent), Some(child)) => {
-      assert_true(child.start_time >= parent.start_time)
-      assert_true(child.end_time <= parent.end_time)
-    }
-    _ => assert_true(false)
-  }
-}
-
-// 测试2: 追踪上下文传播正确性
-test "追踪上下文传播正确性测试" {
-  // 创建追踪上下文
-  let trace_context = {
-    trace_id: "trace-987654321",
-    span_id: "parent-span-001",
-    baggage: {
-      "user.id": "user-12345",
-      "request.id": "req-abcdef",
-      "session.id": "sess-xyz789"
-    }
-  }
-  
-  // 模拟跨服务传播
-  let propagated_contexts = []
-  
-  // 服务A -> 服务B
-  let service_b_context = {
-    trace_id: trace_context.trace_id,
-    span_id: "span-b-001",
-    parent_span_id: Some(trace_context.span_id),
-    baggage: trace_context.baggage.copy()
-  }
-  propagated_contexts.push(service_b_context)
-  
-  // 服务B -> 服务C (添加新的baggage项)
-  let mut service_c_baggage = service_b_context.baggage
-  service_c_baggage.set("service.b.timestamp", "1640995200")
-  
-  let service_c_context = {
-    trace_id: service_b_context.trace_id,
-    span_id: "span-c-001",
-    parent_span_id: Some(service_b_context.span_id),
-    baggage: service_c_baggage
-  }
-  propagated_contexts.push(service_c_context)
-  
-  // 验证trace_id一致性
-  for ctx in propagated_contexts {
-    assert_eq(ctx.trace_id, trace_context.trace_id)
-  }
-  
-  // 验证baggage传播
-  assert_true(propagated_contexts[0].baggage.contains_key("user.id"))
-  assert_true(propagated_contexts[0].baggage.contains_key("request.id"))
-  assert_true(propagated_contexts[0].baggage.contains_key("session.id"))
-  
-  assert_true(propagated_contexts[1].baggage.contains_key("user.id"))
-  assert_true(propagated_contexts[1].baggage.contains_key("request.id"))
-  assert_true(propagated_contexts[1].baggage.contains_key("session.id"))
-  assert_true(propagated_contexts[1].baggage.contains_key("service.b.timestamp"))
-  
-  // 验证baggage值不变性
-  assert_eq(propagated_contexts[0].baggage.get("user.id"), trace_context.baggage.get("user.id"))
-  assert_eq(propagated_contexts[1].baggage.get("user.id"), trace_context.baggage.get("user.id"))
-}
-
-// 测试3: 分布式事务追踪一致性
-test "分布式事务追踪一致性测试" {
-  // 创建分布式事务的多个操作
-  let transaction_id = "txn-abc123"
-  let operations = [
-    {
-      transaction_id: transaction_id,
-      operation_id: "op-001",
-      service: "order-service",
-      operation: "create.order",
-      status: "completed",
-      start_time: 1640995200000,
-      end_time: 1640995200200
-    },
-    {
-      transaction_id: transaction_id,
-      operation_id: "op-002",
-      service: "payment-service",
-      operation: "process.payment",
-      status: "completed",
-      start_time: 1640995200150,
-      end_time: 1640995200350
-    },
-    {
-      transaction_id: transaction_id,
-      operation_id: "op-003",
-      service: "inventory-service",
-      operation: "reserve.inventory",
-      status: "completed",
-      start_time: 1640995200250,
-      end_time: 1640995200400
-    },
-    {
-      transaction_id: transaction_id,
-      operation_id: "op-004",
-      service: "notification-service",
-      operation: "send.confirmation",
-      status: "failed",
-      start_time: 1640995200410,
-      end_time: 1640995200450
-    }
-  ]
-  
-  // 验证所有操作属于同一事务
-  for op in operations {
-    assert_eq(op.transaction_id, transaction_id)
-  }
-  
-  // 验证操作时间顺序
-  for i = 1; i < operations.length(); i = i + 1 {
-    assert_true(operations[i].start_time >= operations[i-1].start_time)
-  }
-  
-  // 验证事务整体状态（有一个操作失败，整个事务应该标记为失败）
-  let failed_operations = operations.filter(|op| op.status == "failed")
-  assert_eq(failed_operations.length(), 1)
-  assert_eq(failed_operations[0].service, "notification-service")
-  
-  // 计算事务总耗时
-  let transaction_start = operations[0].start_time
-  let transaction_end = operations[operations.length() - 1].end_time
-  let transaction_duration = transaction_end - transaction_start
-  
-  assert_eq(transaction_duration, 450)  // 毫秒
-  
-  // 验证关键路径
-  let critical_path_operations = ["create.order", "process.payment", "reserve.inventory"]
-  let critical_ops_found = 0
-  
-  for op in operations {
-    if critical_path_operations.contains(op.operation) && op.status == "completed" {
-      critical_ops_found = critical_ops_found + 1
-    }
-  }
-  
-  assert_eq(critical_ops_found, 3)
-}
-
-// 测试4: 追踪采样策略一致性
-test "追踪采样策略一致性测试" {
-  // 创建采样策略配置
-  let sampling_config = {
-    sample_rate: 0.1,  // 10%采样率
-    default_sampling: false,
-    service_specific_rates: {
-      "critical-service": 1.0,  // 100%采样
-      "debug-service": 0.5      // 50%采样
-    }
-  }
-  
-  // 模拟不同服务的追踪决策
-  let trace_decisions = []
-  let traces = [
-    { trace_id: "trace-001", service: "web-service" },
-    { trace_id: "trace-002", service: "critical-service" },
-    { trace_id: "trace-003", service: "debug-service" },
-    { trace_id: "trace-004", service: "web-service" },
-    { trace_id: "trace-005", service: "database-service" }
-  ]
-  
-  for trace in traces {
-    let should_sample = false
-    
-    // 检查服务特定采样率
-    match sampling_config.service_specific_rates.get(trace.service) {
-      Some(rate) => {
-        // 简化的采样决策（实际应该基于hash）
-        should_sample = rate >= 0.5
-      }
-      None => {
-        // 使用默认采样率
-        should_sample = sampling_config.sample_rate >= 0.1
-      }
-    }
-    
-    trace_decisions.push({
-      trace_id: trace.trace_id,
-      service: trace.service,
-      sampled: should_sample
-    })
-  }
-  
-  // 验证采样决策
-  let critical_service_trace = trace_decisions.find(|dec| dec.service == "critical-service")
-  match critical_service_trace {
-    Some(dec) => assert_true(dec.sampled)  // critical-service应该总是被采样
-    None => assert_true(false)
-  }
-  
-  let debug_service_trace = trace_decisions.find(|dec| dec.service == "debug-service")
-  match debug_service_trace {
-    Some(dec) => assert_true(dec.sampled)  // debug-service应该被采样（50%概率）
-    None => assert_true(false)
-  }
-  
-  // 验证采样一致性（同一个trace的所有span应该有相同的采样决策）
-  let sampled_traces = trace_decisions.filter(|dec| dec.sampled).map(|dec| dec.trace_id)
-  
-  // 模拟同一trace下的多个span
-  let spans_for_trace_001 = [
-    { trace_id: "trace-001", span_id: "span-1", service: "web-service" },
-    { trace_id: "trace-001", span_id: "span-2", service: "auth-service" },
-    { trace_id: "trace-001", span_id: "span-3", service: "user-service" }
-  ]
-  
-  // 验证同一trace的所有span采样决策一致
-  let trace_001_sampled = trace_decisions.find(|dec| dec.trace_id == "trace-001")
-  match trace_001_sampled {
-    Some(decision) => {
-      for span in spans_for_trace_001 {
-        // 在实际实现中，span的采样决策应该与trace的采样决策一致
-        assert_true(decision.sampled == false)  // 基于我们的简化逻辑
-      }
-    }
-    None => assert_true(false)
-  }
-}
-
-// 测试5: 追踪数据完整性验证
-test "追踪数据完整性验证测试" {
-  // 创建包含缺失字段的追踪数据
-  let complete_trace = {
-    trace_id: "trace-complete-001",
-    spans: [
-      {
-        span_id: "span-1",
-        parent_span_id: None,
-        operation_name: "http.get",
-        start_time: Some(1640995200000),
-        end_time: Some(1640995200100),
-        status: Some("ok"),
-        tags: Some({ "http.method": "GET", "http.url": "/api/users" })
-      },
-      {
-        span_id: "span-2",
-        parent_span_id: Some("span-1"),
-        operation_name: "db.query",
-        start_time: Some(1640995200050),
-        end_time: None,  // 缺失结束时间
-        status: None,    // 缺失状态
-        tags: None       // 缺失标签
-      }
-    ]
-  }
-  
-  // 验证追踪数据完整性
-  let validation_errors = []
-  
-  for span in complete_trace.spans {
-    // 检查必需字段
-    if span.start_time == None {
-      validation_errors.push("span " + span.span_id + " 缺失开始时间")
-    }
-    
-    if span.end_time == None {
-      validation_errors.push("span " + span.span_id + " 缺失结束时间")
-    }
-    
-    if span.status == None {
-      validation_errors.push("span " + span.span_id + " 缺失状态")
-    }
-    
-    // 检查时间逻辑
-    match (span.start_time, span.end_time) {
-      (Some(start), Some(end)) => {
-        if end < start {
-          validation_errors.push("span " + span.span_id + " 结束时间早于开始时间")
+      
+      // Create grandchild spans
+      for i in 0..=5 {
+        let grandchild_span = Tracer::start_span_with_context(tracer_ref, "grandchild_" + i.to_string(), child_context)
+        let grandchild_context = Span::span_context(grandchild_span)
+        
+        // Verify trace ID is still consistent
+        assert_eq(SpanContext::trace_id(grandchild_context), trace_id_ref)
+        
+        // Verify parent relationship
+        let grandchild_parent_span_id = SpanContext::parent_span_id(grandchild_context)
+        match grandchild_parent_span_id {
+          Some(id) => assert_eq(id, SpanContext::span_id(child_context))
+          None => assert_true(false)
         }
+        
+        // End grandchild span
+        Span::end(grandchild_span)
       }
-      _ => {}
-    }
+      
+      // End child span
+      Span::end(child_span)
+      
+      thread_id
+    })
+    results.push(thread_result)
   }
   
-  // 验证错误检测结果
-  assert_eq(validation_errors.length(), 3)  // span-2有3个缺失字段
-  assert_true(validation_errors.contains("span span-2 缺失结束时间"))
-  assert_true(validation_errors.contains("span span-2 缺失状态"))
-  
-  // 验证数据修复功能
-  let repaired_spans = []
-  
-  for span in complete_trace.spans {
-    let repaired_span = span
-    
-    // 修复缺失的结束时间（使用开始时间 + 默认持续时间）
-    if repaired_span.end_time == None && repaired_span.start_time != None {
-      repaired_span.end_time = Some(repaired_span.start_time.unwrap() + 100)
-    }
-    
-    // 修复缺失的状态（使用默认值）
-    if repaired_span.status == None {
-      repaired_span.status = Some("unknown")
-    }
-    
-    // 修复缺失的标签（使用空对象）
-    if repaired_span.tags == None {
-      repaired_span.tags = Some({})
-    }
-    
-    repaired_spans.push(repaired_span)
+  // Wait for all threads to complete
+  for result in results {
+    Thread::join(result)
   }
   
-  // 验证修复结果
-  assert_eq(repaired_spans.length(), 2)
+  // End root span
+  Span::end(root_span)
   
-  let repaired_span_2 = repaired_spans.find(|span| span.span_id == "span-2")
-  match repaired_span_2 {
-    Some(span) => {
-      assert_true(span.end_time != None)
-      assert_true(span.status != None)
-      assert_true(span.tags != None)
-      assert_eq(span.status.unwrap(), "unknown")
-    }
-    None => assert_true(false)
+  // Shutdown provider
+  TracerProvider::shutdown(provider)
+}
+
+// Test 5: Trace State Propagation
+test "trace state propagation" {
+  // Create span with trace state
+  let provider = TracerProvider::new()
+  let tracer = TracerProvider::get_tracer(provider, "trace_state_test_tracer")
+  let span = Tracer::start_span(tracer, "trace_state_test_span")
+  let span_context = Span::span_context(span)
+  
+  // Set trace state
+  let trace_state = "vendor1=opaque_value1,vendor2=opaque_value2"
+  let updated_context = SpanContext::with_trace_state(span_context, trace_state)
+  
+  // Verify trace state is set
+  assert_eq(SpanContext::trace_state(updated_context), trace_state)
+  
+  // Create child span with updated context
+  let child_span = Tracer::start_span_with_context(tracer, "child_span", updated_context)
+  let child_context = Span::span_context(child_span)
+  
+  // Verify trace state is propagated
+  assert_eq(SpanContext::trace_state(child_context), trace_state)
+  
+  // Update trace state in child span
+  let updated_child_state = trace_state + ",vendor3=opaque_value3"
+  let updated_child_context = SpanContext::with_trace_state(child_context, updated_child_state)
+  
+  // Create grandchild span with updated child context
+  let grandchild_span = Tracer::start_span_with_context(tracer, "grandchild_span", updated_child_context)
+  let grandchild_context = Span::span_context(grandchild_span)
+  
+  // Verify updated trace state is propagated
+  assert_eq(SpanContext::trace_state(grandchild_context), updated_child_state)
+  
+  // End spans
+  Span::end(grandchild_span)
+  Span::end(child_span)
+  Span::end(span)
+  
+  // Shutdown provider
+  TracerProvider::shutdown(provider)
+}
+
+// Test 6: Sampling Consistency
+test "sampling consistency" {
+  // Create root span with sampling decision
+  let provider = TracerProvider::new()
+  let tracer = TracerProvider::get_tracer(provider, "sampling_test_tracer")
+  let root_span = Tracer::start_span(tracer, "sampling_root_operation")
+  let root_context = Span::span_context(root_span)
+  let is_sampled = SpanContext::is_sampled(root_context)
+  
+  // Create child span
+  let child_span = Tracer::start_span_with_context(tracer, "child_operation", root_context)
+  let child_context = Span::span_context(child_span)
+  
+  // Verify sampling decision is propagated
+  assert_eq(SpanContext::is_sampled(child_context), is_sampled)
+  
+  // Create grandchild span
+  let grandchild_span = Tracer::start_span_with_context(tracer, "grandchild_operation", child_context)
+  let grandchild_context = Span::span_context(grandchild_span)
+  
+  // Verify sampling decision is still propagated
+  assert_eq(SpanContext::is_sampled(grandchild_context), is_sampled)
+  
+  // End spans
+  Span::end(grandchild_span)
+  Span::end(child_span)
+  Span::end(root_span)
+  
+  // Test with unsampled trace
+  let unsampled_root_span = Tracer::start_span_with_sampling(tracer, "unsampled_root_operation", false)
+  let unsampled_root_context = Span::span_context(unsampled_root_span)
+  let is_unsampled = SpanContext::is_sampled(unsampled_root_context)
+  
+  // Verify trace is not sampled
+  assert_false(is_unsampled)
+  
+  // Create child span with unsampled context
+  let unsampled_child_span = Tracer::start_span_with_context(tracer, "unsampled_child_operation", unsampled_root_context)
+  let unsampled_child_context = Span::span_context(unsampled_child_span)
+  
+  // Verify sampling decision is propagated
+  assert_eq(SpanContext::is_sampled(unsampled_child_context), is_unsampled)
+  
+  // End spans
+  Span::end(unsampled_child_span)
+  Span::end(unsampled_root_span)
+  
+  // Shutdown provider
+  TracerProvider::shutdown(provider)
+}
+
+// Test 7: Trace ID Format Consistency
+test "trace id format consistency" {
+  // Create multiple spans and verify trace ID format
+  let provider = TracerProvider::new()
+  let tracer = TracerProvider::get_tracer(provider, "trace_id_format_test_tracer")
+  
+  for i in 0..=100 {
+    let span = Tracer::start_span(tracer, "format_test_span_" + i.to_string())
+    let span_context = Span::span_context(span)
+    let trace_id = SpanContext::trace_id(span_context)
+    let span_id = SpanContext::span_id(span_context)
+    
+    // Verify trace ID format (32 hex characters)
+    assert_eq(trace_id.length(), 32)
+    assert_true(TraceId::is_valid_format(trace_id))
+    
+    // Verify span ID format (16 hex characters)
+    assert_eq(span_id.length(), 16)
+    assert_true(SpanId::is_valid_format(span_id))
+    
+    Span::end(span)
   }
+  
+  // Shutdown provider
+  TracerProvider::shutdown(provider)
+}
+
+// Test 8: Cross-Protocol Trace Propagation
+test "cross-protocol trace propagation" {
+  // Create span with HTTP context
+  let provider = TracerProvider::new()
+  let tracer = TracerProvider::get_tracer(provider, "cross_protocol_test_tracer")
+  let http_span = Tracer::start_span(tracer, "http_operation")
+  let http_context = Span::span_context(http_span)
+  
+  // Extract HTTP headers
+  let http_headers = TraceContext::extract_http_headers(http_context)
+  
+  // Verify HTTP headers contain trace information
+  assert_true(http_headers.contains("traceparent"))
+  assert_true(http_headers.contains("tracestate"))
+  
+  // Simulate gRPC service receiving HTTP headers
+  let grpc_context = TraceContext::extract_from_http_headers(http_headers)
+  
+  // Verify context was extracted correctly
+  assert_eq(SpanContext::trace_id(grpc_context), SpanContext::trace_id(http_context))
+  
+  // Create gRPC span with extracted context
+  let grpc_span = Tracer::start_span_with_context(tracer, "grpc_operation", grpc_context)
+  let grpc_span_context = Span::span_context(grpc_span)
+  
+  // Verify trace ID is consistent
+  assert_eq(SpanContext::trace_id(grpc_span_context), SpanContext::trace_id(http_context))
+  
+  // Extract gRPC metadata
+  let grpc_metadata = TraceContext::extract_grpc_metadata(grpc_span_context)
+  
+  // Verify gRPC metadata contains trace information
+  assert_true(grpc_metadata.contains("grpc-trace-bin"))
+  
+  // Simulate Message Queue service receiving gRPC metadata
+  let mq_context = TraceContext::extract_from_grpc_metadata(grpc_metadata)
+  
+  // Verify context was extracted correctly
+  assert_eq(SpanContext::trace_id(mq_context), SpanContext::trace_id(http_context))
+  
+  // Create Message Queue span with extracted context
+  let mq_span = Tracer::start_span_with_context(tracer, "mq_operation", mq_context)
+  let mq_span_context = Span::span_context(mq_span)
+  
+  // Verify trace ID is still consistent
+  assert_eq(SpanContext::trace_id(mq_span_context), SpanContext::trace_id(http_context))
+  
+  // End spans
+  Span::end(mq_span)
+  Span::end(grpc_span)
+  Span::end(http_span)
+  
+  // Shutdown provider
+  TracerProvider::shutdown(provider)
+}
+
+// Test 9: Trace Continuity in Async Operations
+test "trace continuity in async operations" {
+  // Create root span
+  let provider = TracerProvider::new()
+  let tracer = TracerProvider::get_tracer(provider, "async_test_tracer")
+  let root_span = Tracer::start_span(tracer, "async_root_operation")
+  let root_context = Span::span_context(root_span)
+  let trace_id = SpanContext::trace_id(root_context)
+  
+  // Simulate async operation 1
+  let async1_result = Async::execute({
+    let tracer_ref = tracer
+    let context_ref = root_context
+    let trace_id_ref = trace_id
+    
+    // Create span in async operation
+    let async1_span = Tracer::start_span_with_context(tracer_ref, "async_operation_1", context_ref)
+    let async1_context = Span::span_context(async1_span)
+    
+    // Verify trace ID is consistent
+    assert_eq(SpanContext::trace_id(async1_context), trace_id_ref)
+    
+    // Simulate nested async operation
+    let nested_result = Async::execute({
+      let tracer_ref2 = tracer_ref
+      let context_ref2 = async1_context
+      let trace_id_ref2 = trace_id_ref
+      
+      // Create span in nested async operation
+      let nested_span = Tracer::start_span_with_context(tracer_ref2, "nested_async_operation", context_ref2)
+      let nested_context = Span::span_context(nested_span)
+      
+      // Verify trace ID is still consistent
+      assert_eq(SpanContext::trace_id(nested_context), trace_id_ref2)
+      
+      Span::end(nested_span)
+      "nested_result"
+    })
+    
+    // Wait for nested operation
+    let nested_value = Async::await(nested_result)
+    assert_eq(nested_value, "nested_result")
+    
+    Span::end(async1_span)
+    "async1_result"
+  })
+  
+  // Simulate async operation 2
+  let async2_result = Async::execute({
+    let tracer_ref = tracer
+    let context_ref = root_context
+    let trace_id_ref = trace_id
+    
+    // Create span in async operation
+    let async2_span = Tracer::start_span_with_context(tracer_ref, "async_operation_2", context_ref)
+    let async2_context = Span::span_context(async2_span)
+    
+    // Verify trace ID is consistent
+    assert_eq(SpanContext::trace_id(async2_context), trace_id_ref)
+    
+    Span::end(async2_span)
+    "async2_result"
+  })
+  
+  // Wait for async operations
+  let async1_value = Async::await(async1_result)
+  let async2_value = Async::await(async2_result)
+  
+  assert_eq(async1_value, "async1_result")
+  assert_eq(async2_value, "async2_result")
+  
+  // End root span
+  Span::end(root_span)
+  
+  // Shutdown provider
+  TracerProvider::shutdown(provider)
+}
+
+// Test 10: Trace Consistency Under Failures
+test "trace consistency under failures" {
+  // Create root span
+  let provider = TracerProvider::new()
+  let tracer = TracerProvider::get_tracer(provider, "failure_test_tracer")
+  let root_span = Tracer::start_span(tracer, "failure_root_operation")
+  let root_context = Span::span_context(root_span)
+  let trace_id = SpanContext::trace_id(root_context)
+  
+  // Create child span that will fail
+  let child_span = Tracer::start_span_with_context(tracer, "failing_operation", root_context)
+  let child_context = Span::span_context(child_span)
+  
+  // Verify trace ID is consistent before failure
+  assert_eq(SpanContext::trace_id(child_context), trace_id)
+  
+  // Simulate failure in child operation
+  Span::set_status(child_span, Error, Some("Operation failed"))
+  Span::add_event(child_span, "exception", Some([
+    ("exception.type", StringValue("RuntimeException")),
+    ("exception.message", StringValue("Simulated failure"))
+  ]))
+  
+  // End child span with error
+  Span::end(child_span)
+  
+  // Create recovery span
+  let recovery_span = Tracer::start_span_with_context(tracer, "recovery_operation", root_context)
+  let recovery_context = Span::span_context(recovery_span)
+  
+  // Verify trace ID is still consistent after failure
+  assert_eq(SpanContext::trace_id(recovery_context), trace_id)
+  
+  // Add recovery events
+  Span::add_event(recovery_span, "recovery_started", None)
+  Span::set_status(recovery_span, Ok, Some("Operation recovered successfully"))
+  
+  // End recovery span
+  Span::end(recovery_span)
+  
+  // Create final operation span
+  let final_span = Tracer::start_span_with_context(tracer, "final_operation", root_context)
+  let final_context = Span::span_context(final_span)
+  
+  // Verify trace ID is still consistent
+  assert_eq(SpanContext::trace_id(final_context), trace_id)
+  
+  // End final span
+  Span::end(final_span)
+  
+  // End root span
+  Span::end(root_span)
+  
+  // Shutdown provider
+  TracerProvider::shutdown(provider)
 }
