@@ -1116,6 +1116,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_concurrent_safety_comprehensive_tests.mbt": {
   },
+  "azimuth_concurrent_safety_advanced_tests.mbt": {
+  },
   "azimuth_concurrent_resource_management_tests.mbt": {
   },
   "azimuth_concurrent_performance_tests.mbt": {

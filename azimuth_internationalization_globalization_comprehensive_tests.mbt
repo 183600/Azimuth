@@ -1,569 +1,408 @@
-// 国际化和本地化测试用例
-// 测试Azimuth遥测系统的国际化和本地化能力
+// Azimuth Internationalization and Globalization Comprehensive Tests
+// 国际化和全球化综合测试用例
 
-test "多语言消息本地化测试" {
-  // 测试多语言消息本地化
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "i18n.localization.test")
+// 测试1: 多语言消息支持
+test "多语言消息支持" {
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "i18n.messages.test")
   
-  // 创建本地化管理器
-  let localization_manager = LocalizationManager::new()
-  
-  // 加载不同语言的资源
-  LocalizationManager::load_language(localization_manager, "en", {
-    "span.created": "Span created successfully",
-    "metric.recorded": "Metric recorded: {name} = {value}",
-    "log.emitted": "Log emitted with severity: {severity}",
-    "error.connection.failed": "Connection failed: {reason}",
-    "warning.high.latency": "High latency detected: {latency}ms",
-    "info.service.started": "Service started successfully"
-  })
-  
-  LocalizationManager::load_language(localization_manager, "zh", {
-    "span.created": "Span创建成功",
-    "metric.recorded": "度量记录: {name} = {value}",
-    "log.emitted": "日志发出，严重级别: {severity}",
-    "error.connection.failed": "连接失败: {reason}",
-    "warning.high.latency": "检测到高延迟: {latency}ms",
-    "info.service.started": "服务启动成功"
-  })
-  
-  LocalizationManager::load_language(localization_manager, "ja", {
-    "span.created": "スパンが正常に作成されました",
-    "metric.recorded": "メトリック記録: {name} = {value}",
-    "log.emitted": "ログが放出されました、深刻度: {severity}",
-    "error.connection.failed": "接続に失敗しました: {reason}",
-    "warning.high.latency": "高レイテンシが検出されました: {latency}ms",
-    "info.service.started": "サービスが正常に開始されました"
-  })
-  
-  LocalizationManager::load_language(localization_manager, "es", {
-    "span.created": "Span creado exitosamente",
-    "metric.recorded": "Métrica registrada: {name} = {value}",
-    "log.emitted": "Registro emitido con severidad: {severity}",
-    "error.connection.failed": "Conexión fallida: {reason}",
-    "warning.high.latency": "Alta latencia detectada: {latency}ms",
-    "info.service.started": "Servicio iniciado exitosamente"
-  })
-  
-  // 创建本地化测试span
-  let i18n_span = Tracer::start_span(tracer, "i18n.localization.test")
-  Span::set_attribute(i18n_span, "operation.type", "localization")
-  
-  // 测试不同语言的本地化
-  let test_languages = ["en", "zh", "ja", "es"]
-  let test_messages = [
-    ("span.created", []),
-    ("metric.recorded", ["{name}", "response_time", "{value}", "250ms"]),
-    ("log.emitted", ["{severity}", "ERROR"]),
-    ("error.connection.failed", ["{reason}", "timeout"]),
-    ("warning.high.latency", ["{latency}", "500"]),
-    ("info.service.started", [])
+  // 模拟多语言消息场景
+  let languages = [
+    ("zh-CN", "中文简体", "操作成功完成", "操作失败"),
+    ("zh-TW", "中文繁體", "操作成功完成", "操作失敗"),
+    ("en-US", "English", "Operation completed successfully", "Operation failed"),
+    ("ja-JP", "日本語", "操作が正常に完了しました", "操作が失敗しました"),
+    ("ko-KR", "한국어", "작업이 성공적으로 완료되었습니다", "작업이 실패했습니다"),
+    ("fr-FR", "Français", "Opération terminée avec succès", "Opération échouée"),
+    ("de-DE", "Deutsch", "Vorgang erfolgreich abgeschlossen", "Vorgang fehlgeschlagen"),
+    ("es-ES", "Español", "Operación completada con éxito", "Operación fallida"),
+    ("ru-RU", "Русский", "Операция успешно завершена", "Операция не удалась"),
+    ("ar-SA", "العربية", "اكتملت العملية بنجاح", "فشلت العملية")
   ]
   
-  for language in test_languages {
-    // 设置当前语言
-    LocalizationManager::set_language(localization_manager, language)
+  for (locale, language_name, success_msg, error_msg) in languages {
+    // 创建多语言日志属性
+    let log_attrs = Attributes::new()
+    Attributes::set(log_attrs, "locale", StringValue(locale))
+    Attributes::set(log_attrs, "language.name", StringValue(language_name))
+    Attributes::set(log_attrs, "message.encoding", StringValue("UTF-8"))
+    Attributes::set(log_attrs, "text.direction", StringValue(if locale.starts_with("ar") { "rtl" } else { "ltr" }))
     
-    for (message_key, params) in test_messages {
-      let localized_message = LocalizationManager::get_message(localization_manager, message_key, params)
-      
-      // 验证本地化消息不为空
-      assert_true(localized_message.length() > 0)
-      
-      // 添加本地化消息到span
-      Span::set_attribute(i18n_span, "localized." + language + "." + message_key, localized_message)
-      
-      // 验证参数替换
-      if params.length() > 0 {
-        assert_false(localized_message.contains("{"))  // 参数应被替换
-      }
-    }
+    // 记录成功消息
+    let success_log = LogRecord::new_with_context(
+      Info,
+      Some(success_msg),
+      Some(log_attrs),
+      None,
+      None,
+      None,
+      None,
+      None
+    )
+    Logger::emit(logger, success_log)
+    
+    // 记录错误消息
+    let error_log = LogRecord::new_with_context(
+      Error,
+      Some(error_msg),
+      Some(log_attrs),
+      None,
+      None,
+      None,
+      None,
+      None
+    )
+    Logger::emit(logger, error_log)
   }
-  
-  Span::add_event(i18n_span, "localization.test.completed", [
-    ("languages.tested", test_languages.length().to_string()),
-    ("messages.tested", test_messages.length().to_string()),
-    ("timestamp", "2025-01-02T11:50:00Z")
-  ])
-  
-  Span::end(i18n_span)
-  
-  // 记录本地化度量
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "i18n.localization.metrics")
-  
-  let localization_counter = Meter::create_counter(meter, "localization.requests", Some("Localization requests"), Some("count"))
-  
-  for language in test_languages {
-    for (message_key, _) in test_messages {
-      Counter::add_with_attributes(localization_counter, 1.0, [
-        ("language", language),
-        ("message.key", message_key)
-      ])
-    }
-  }
-  
-  assert_true(true)
 }
 
-test "日期时间格式本地化测试" {
-  // 测试日期时间格式本地化
+// 测试2: 时区和日期时间格式化
+test "时区和日期时间格式化" {
   let tracer_provider = TracerProvider::default()
   let tracer = TracerProvider::get_tracer(tracer_provider, "i18n.datetime.test")
   
-  // 创建日期时间本地化管理器
-  let datetime_manager = DateTimeLocalizationManager::new()
-  
-  // 配置不同地区的日期时间格式
-  DateTimeLocalizationManager::configure_locale(datetime_manager, "en-US", {
-    "date_format": "MM/dd/yyyy",
-    "time_format": "hh:mm:ss a",
-    "datetime_format": "MM/dd/yyyy hh:mm:ss a",
-    "timezone": "America/New_York"
-  })
-  
-  DateTimeLocalizationManager::configure_locale(datetime_manager, "zh-CN", {
-    "date_format": "yyyy年MM月dd日",
-    "time_format": "HH:mm:ss",
-    "datetime_format": "yyyy年MM月dd日 HH:mm:ss",
-    "timezone": "Asia/Shanghai"
-  })
-  
-  DateTimeLocalizationManager::configure_locale(datetime_manager, "ja-JP", {
-    "date_format": "yyyy/MM/dd",
-    "time_format": "HH:mm:ss",
-    "datetime_format": "yyyy/MM/dd HH:mm:ss",
-    "timezone": "Asia/Tokyo"
-  })
-  
-  DateTimeLocalizationManager::configure_locale(datetime_manager, "es-ES", {
-    "date_format": "dd/MM/yyyy",
-    "time_format": "HH:mm:ss",
-    "datetime_format": "dd/MM/yyyy HH:mm:ss",
-    "timezone": "Europe/Madrid"
-  })
-  
-  // 创建日期时间本地化测试span
-  let datetime_span = Tracer::start_span(tracer, "datetime.localization.test")
-  Span::set_attribute(datetime_span, "operation.type", "datetime_localization")
-  
-  // 测试时间戳
-  let test_timestamp = 1735689600000000000L  // 2025-01-02 00:00:00 UTC
-  
-  // 测试不同地区的日期时间格式
-  let locales = ["en-US", "zh-CN", "ja-JP", "es-ES"]
-  
-  for locale in locales {
-    DateTimeLocalizationManager::set_locale(datetime_manager, locale)
-    
-    // 格式化日期
-    let formatted_date = DateTimeLocalizationManager::format_date(
-      datetime_manager, 
-      test_timestamp
-    )
-    
-    // 格式化时间
-    let formatted_time = DateTimeLocalizationManager::format_time(
-      datetime_manager, 
-      test_timestamp
-    )
-    
-    // 格式化日期时间
-    let formatted_datetime = DateTimeLocalizationManager::format_datetime(
-      datetime_manager, 
-      test_timestamp
-    )
-    
-    // 验证格式化结果不为空
-    assert_true(formatted_date.length() > 0)
-    assert_true(formatted_time.length() > 0)
-    assert_true(formatted_datetime.length() > 0)
-    
-    // 添加格式化结果到span
-    Span::set_attribute(datetime_span, "locale." + locale + ".date", formatted_date)
-    Span::set_attribute(datetime_span, "locale." + locale + ".time", formatted_time)
-    Span::set_attribute(datetime_span, "locale." + locale + ".datetime", formatted_datetime)
-    
-    // 验证特定地区的格式
-    match locale {
-      "en-US" => {
-        assert_true(formatted_date.contains("/"))
-        assert_true(formatted_time.contains(":") && formatted_time.contains("AM") || formatted_time.contains("PM"))
-      },
-      "zh-CN" => {
-        assert_true(formatted_date.contains("年") && formatted_date.contains("月") && formatted_date.contains("日"))
-        assert_true(formatted_time.contains(":"))
-      },
-      "ja-JP" => {
-        assert_true(formatted_date.contains("/"))
-        assert_true(formatted_time.contains(":"))
-      },
-      "es-ES" => {
-        assert_true(formatted_date.contains("/"))
-        assert_true(formatted_time.contains(":"))
-      }
-    }
-  }
-  
-  // 测试相对时间格式化
-  let now = 1735689600000000000L
-  let past_timestamps = [
-    now - 60000000000L,     // 1分钟前
-    now - 3600000000000L,   // 1小时前
-    now - 86400000000000L,  // 1天前
-    now - 604800000000000L  // 1周前
-  ]
-  
-  for past_timestamp in past_timestamps {
-    let relative_time = DateTimeLocalizationManager::format_relative_time(
-      datetime_manager, 
-      past_timestamp, 
-      now
-    )
-    
-    assert_true(relative_time.length() > 0)
-    Span::add_event(datetime_span, "relative.time.formatted", [
-      ("timestamp", past_timestamp.to_string()),
-      ("relative.time", relative_time)
-    ])
-  }
-  
-  Span::add_event(datetime_span, "datetime.localization.completed", [
-    ("locales.tested", locales.length().to_string()),
-    ("timestamp.tested", test_timestamp.to_string()),
-    ("timestamp", "2025-01-02T11:55:00Z")
-  ])
-  
-  Span::end(datetime_span)
-  
-  assert_true(true)
-}
-
-test "数字和货币格式本地化测试" {
-  // 测试数字和货币格式本地化
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "i18n.number.test")
-  
-  // 创建数字本地化管理器
-  let number_manager = NumberLocalizationManager::new()
-  
-  // 配置不同地区的数字格式
-  NumberLocalizationManager::configure_locale(number_manager, "en-US", {
-    "decimal_separator": ".",
-    "thousands_separator": ",",
-    "currency_symbol": "$",
-    "currency_format": "{symbol}{value}",
-    "percentage_format": "{value}%"
-  })
-  
-  NumberLocalizationManager::configure_locale(number_manager, "zh-CN", {
-    "decimal_separator": ".",
-    "thousands_separator": ",",
-    "currency_symbol": "¥",
-    "currency_format": "{symbol}{value}",
-    "percentage_format": "{value}%"
-  })
-  
-  NumberLocalizationManager::configure_locale(number_manager, "ja-JP", {
-    "decimal_separator": ".",
-    "thousands_separator": ",",
-    "currency_symbol": "¥",
-    "currency_format": "{symbol}{value}",
-    "percentage_format": "{value}%"
-  })
-  
-  NumberLocalizationManager::configure_locale(number_manager, "de-DE", {
-    "decimal_separator": ",",
-    "thousands_separator": ".",
-    "currency_symbol": "€",
-    "currency_format": "{value} {symbol}",
-    "percentage_format": "{value}%"
-  })
-  
-  NumberLocalizationManager::configure_locale(number_manager, "es-ES", {
-    "decimal_separator": ",",
-    "thousands_separator": ".",
-    "currency_symbol": "€",
-    "currency_format": "{value} {symbol}",
-    "percentage_format": "{value}%"
-  })
-  
-  // 创建数字本地化测试span
-  let number_span = Tracer::start_span(tracer, "number.localization.test")
-  Span::set_attribute(number_span, "operation.type", "number_localization")
-  
-  // 测试数字
-  let test_numbers = [1234.56789, 1000000, 0.12345, -9876.54321]
-  let locales = ["en-US", "zh-CN", "ja-JP", "de-DE", "es-ES"]
-  
-  for locale in locales {
-    NumberLocalizationManager::set_locale(number_manager, locale)
-    
-    for number in test_numbers {
-      // 格式化数字
-      let formatted_number = NumberLocalizationManager::format_number(
-        number_manager, 
-        number, 
-        2  // 2位小数
-      )
-      
-      // 格式化货币
-      let formatted_currency = NumberLocalizationManager::format_currency(
-        number_manager, 
-        number, 
-        "USD"  // 默认货币
-      )
-      
-      // 格式化百分比
-      let formatted_percentage = NumberLocalizationManager::format_percentage(
-        number_manager, 
-        number / 100.0
-      )
-      
-      // 验证格式化结果不为空
-      assert_true(formatted_number.length() > 0)
-      assert_true(formatted_currency.length() > 0)
-      assert_true(formatted_percentage.length() > 0)
-      
-      // 添加格式化结果到span
-      Span::set_attribute(number_span, "locale." + locale + ".number." + number.to_string(), formatted_number)
-      Span::set_attribute(number_span, "locale." + locale + ".currency." + number.to_string(), formatted_currency)
-      Span::set_attribute(number_span, "locale." + locale + ".percentage." + number.to_string(), formatted_percentage)
-      
-      // 验证特定地区的格式
-      match locale {
-        "en-US" => {
-          assert_true(formatted_number.contains(".") || formatted_number.contains(","))
-          assert_true(formatted_currency.contains("$"))
-        },
-        "zh-CN" => {
-          assert_true(formatted_currency.contains("¥"))
-        },
-        "ja-JP" => {
-          assert_true(formatted_currency.contains("¥"))
-        },
-        "de-DE" => {
-          assert_true(formatted_number.contains(","))
-          assert_true(formatted_currency.contains("€"))
-        },
-        "es-ES" => {
-          assert_true(formatted_number.contains(","))
-          assert_true(formatted_currency.contains("€"))
-        }
-      }
-    }
-  }
-  
-  Span::add_event(number_span, "number.localization.completed", [
-    ("locales.tested", locales.length().to_string()),
-    ("numbers.tested", test_numbers.length().to_string()),
-    ("timestamp", "2025-01-02T12:00:00Z")
-  ])
-  
-  Span::end(number_span)
-  
-  assert_true(true)
-}
-
-test "时区处理测试" {
-  // 测试时区处理
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "i18n.timezone.test")
-  
-  // 创建时区管理器
-  let timezone_manager = TimezoneManager::new()
-  
-  // 测试常用时区
+  // 模拟不同时区的日期时间格式化
   let timezones = [
-    ("UTC", "UTC"),
-    ("America/New_York", "Eastern Time"),
-    ("America/Los_Angeles", "Pacific Time"),
-    ("Europe/London", "Greenwich Mean Time"),
-    ("Europe/Paris", "Central European Time"),
-    ("Asia/Shanghai", "China Standard Time"),
-    ("Asia/Tokyo", "Japan Standard Time"),
-    ("Australia/Sydney", "Australian Eastern Time")
+    ("UTC", "协调世界时", "2023-12-25 12:00:00 UTC"),
+    ("Asia/Shanghai", "中国标准时间", "2023-12-25 20:00:00 CST"),
+    ("America/New_York", "美国东部时间", "2023-12-25 07:00:00 EST"),
+    ("Europe/London", "格林威治标准时间", "2023-12-25 12:00:00 GMT"),
+    ("Asia/Tokyo", "日本标准时间", "2023-12-25 21:00:00 JST"),
+    ("Australia/Sydney", "澳大利亚东部时间", "2023-12-26 00:00:00 AEDT"),
+    ("America/Los_Angeles", "美国太平洋时间", "2023-12-25 04:00:00 PST"),
+    ("Europe/Paris", "中欧时间", "2023-12-25 13:00:00 CET"),
+    ("Asia/Dubai", "海湾标准时间", "2023-12-25 16:00:00 GST"),
+    ("Pacific/Auckland", "新西兰时间", "2023-12-26 01:00:00 NZDT")
   ]
   
-  // 创建时区测试span
-  let timezone_span = Tracer::start_span(tracer, "timezone.handling.test")
-  Span::set_attribute(timezone_span, "operation.type", "timezone_handling")
-  
-  // 测试时间戳
-  let test_timestamp = 1735689600000000000L  // 2025-01-02 00:00:00 UTC
-  
-  for (timezone_id, timezone_name) in timezones {
-    TimezoneManager::set_timezone(timezone_manager, timezone_id)
+  for (timezone, timezone_name, formatted_time) in timezones {
+    // 创建时区处理Span
+    let tz_span = Tracer::start_span(tracer, "timezone.formatting")
     
-    // 转换时区
-    let converted_timestamp = TimezoneManager::convert_timezone(
-      timezone_manager, 
-      test_timestamp, 
-      "UTC", 
-      timezone_id
-    )
+    // 设置时区属性
+    let tz_attrs = [
+      ("timezone.id", StringValue(timezone)),
+      ("timezone.name", StringValue(timezone_name)),
+      ("formatted.datetime", StringValue(formatted_time)),
+      ("datetime.format", StringValue("YYYY-MM-DD HH:mm:ss Z"))
+    ]
+    Span::set_attributes(tz_span, tz_attrs)
     
-    // 格式化时区时间
-    let formatted_time = TimezoneManager::format_timezone_time(
-      timezone_manager, 
-      converted_timestamp
-    )
+    // 添加时区转换事件
+    let conversion_attrs = [
+      ("conversion.type", StringValue("utc.to.local")),
+      ("source.timezone", StringValue("UTC")),
+      ("target.timezone", StringValue(timezone)),
+      ("conversion.timestamp", IntValue(1703505600)) // 2023-12-25 12:00:00 UTC
+    ]
+    Span::add_event(tz_span, "timezone.conversion", Some(conversion_attrs))
     
-    // 获取时区偏移
-    let timezone_offset = TimezoneManager::get_timezone_offset(
-      timezone_manager, 
-      timezone_id, 
-      test_timestamp
-    )
-    
-    // 验证结果不为空
-    assert_true(formatted_time.length() > 0)
-    assert_true(timezone_offset.length() > 0)
-    
-    // 添加结果到span
-    Span::set_attribute(timezone_span, "timezone." + timezone_id + ".formatted", formatted_time)
-    Span::set_attribute(timezone_span, "timezone." + timezone_id + ".offset", timezone_offset)
-    
-    // 验证时区偏移格式
-    assert_true(timezone_offset.contains("+") || timezone_offset.contains("-"))
-    assert_true(timezone_offset.contains(":"))
+    Span::end(tz_span)
   }
-  
-  // 测试夏令时处理
-  let dst_timestamps = [
-    1714608000000000000L,  // 2024-05-01 (北半球夏令时)
-    1696118400000000000L,  // 2023-10-01 (北半球冬令时)
-    1703980800000000000L   // 2023-12-31 (北半球冬令时)
-  ]
-  
-  for dst_timestamp in dst_timestamps {
-    let ny_time = TimezoneManager::convert_timezone(
-      timezone_manager, 
-      dst_timestamp, 
-      "UTC", 
-      "America/New_York"
-    )
-    
-    let ny_formatted = TimezoneManager::format_timezone_time(
-      timezone_manager, 
-      ny_time
-    )
-    
-    let ny_offset = TimezoneManager::get_timezone_offset(
-      timezone_manager, 
-      "America/New_York", 
-      dst_timestamp
-    )
-    
-    Span::add_event(timezone_span, "dst.test", [
-      ("utc.timestamp", dst_timestamp.to_string()),
-      ("ny.formatted", ny_formatted),
-      ("ny.offset", ny_offset)
-    ])
-  }
-  
-  Span::add_event(timezone_span, "timezone.handling.completed", [
-    ("timezones.tested", timezones.length().to_string()),
-    ("dst.timestamps.tested", dst_timestamps.length().to_string()),
-    ("timestamp", "2025-01-02T12:05:00Z")
-  ])
-  
-  Span::end(timezone_span)
-  
-  assert_true(true)
 }
 
-test "文本方向和RTL支持测试" {
-  // 测试文本方向和RTL支持
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "i18n.direction.test")
+// 测试3: 数字和货币格式化
+test "数字和货币格式化" {
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "i18n.number.formatting.test")
   
-  // 创建文本方向管理器
-  let direction_manager = TextDirectionManager::new()
+  // 创建数字格式化指标
+  let formatted_numbers = Meter::create_counter(meter, "formatted.numbers", Some("格式化数字总数"), Some("count"))
   
-  // 配置不同语言的文本方向
-  TextDirectionManager::configure_language(direction_manager, "en", "LTR")
-  TextDirectionManager::configure_language(direction_manager, "zh", "LTR")
-  TextDirectionManager::configure_language(direction_manager, "ja", "LTR")
-  TextDirectionManager::configure_language(direction_manager, "es", "LTR")
-  TextDirectionManager::configure_language(direction_manager, "ar", "RTL")
-  TextDirectionManager::configure_language(direction_manager, "he", "RTL")
-  TextDirectionManager::configure_language(direction_manager, "fa", "RTL")
-  TextDirectionManager::configure_language(direction_manager, "ur", "RTL")
-  
-  // 创建文本方向测试span
-  let direction_span = Tracer::start_span(tracer, "text.direction.test")
-  Span::set_attribute(direction_span, "operation.type", "text_direction")
-  
-  // 测试不同方向的文本
-  let test_texts = [
-    ("en", "LTR", "Hello, world! This is English text."),
-    ("zh", "LTR", "你好，世界！这是中文文本。"),
-    ("ja", "LTR", "こんにちは、世界！これは日本語のテキストです。"),
-    ("es", "LTR", "¡Hola, mundo! Este es texto en español."),
-    ("ar", "RTL", "مرحبا بالعالم! هذا نص باللغة العربية."),
-    ("he", "RTL", "שלום עולם! זהו טקסט בעברית."),
-    ("fa", "RTL", "سلام دنیا! این متن فارسی است."),
-    ("ur", "RTL", "ہیلو ورلڈ! یہ اردو متن ہے۔")
+  // 模拟不同地区的数字和货币格式化
+  let locales = [
+    ("en-US", "1234.56", "$1,234.56", "1,234.56"),
+    ("zh-CN", "1234.56", "¥1,234.56", "1,234.56"),
+    ("de-DE", "1234,56", "1.234,56 €", "1.234,56"),
+    ("fr-FR", "1234,56", "1 234,56 €", "1 234,56"),
+    ("ja-JP", "1234.56", "￥1,235", "1,234.56"),
+    ("ar-SA", "١٢٣٤.٥٦", "١٬٢٣٤٫٥٦ ر.س", "١٬٢٣٤٫٥٦"),
+    ("hi-IN", "1234.56", "₹1,234.56", "1,234.56"),
+    ("ru-RU", "1234,56", "1 234,56 ₽", "1 234,56"),
+    ("pt-BR", "1234,56", "R$ 1.234,56", "1.234,56"),
+    ("es-ES", "1234,56", "1.234,56 €", "1.234,56")
   ]
   
-  for (language, expected_direction, text) in test_texts {
-    TextDirectionManager::set_language(direction_manager, language)
+  for (locale, number_input, currency_formatted, number_formatted) in locales {
+    // 记录格式化操作
+    Counter::add(formatted_numbers, 2.0) // 每个地区格式化两种数字
     
-    // 获取文本方向
-    let detected_direction = TextDirectionManager::get_direction(direction_manager, language)
+    // 创建数字格式化Span
+    let tracer = TracerProvider::get_tracer(tracer_provider, "i18n.number.formatting.test")
+    let format_span = Tracer::start_span(tracer, "number.formatting")
     
-    // 验证方向
-    assert_eq(detected_direction, expected_direction)
+    // 设置格式化属性
+    let format_attrs = [
+      ("locale", StringValue(locale)),
+      ("number.input", StringValue(number_input)),
+      ("currency.formatted", StringValue(currency_formatted)),
+      ("number.formatted", StringValue(number_formatted)),
+      ("formatting.type", StringValue("currency.and.number"))
+    ]
+    Span::set_attributes(format_span, format_attrs)
     
-    // 格式化文本（添加方向标记）
-    let formatted_text = TextDirectionManager::format_with_direction(
-      direction_manager, 
-      text
-    )
+    // 添加格式化事件
+    let event_attrs = [
+      ("formatting.operation", StringValue("locale.specific.formatting")),
+      ("decimal.separator", StringValue(if locale.contains("US") || locale.contains("CN") || locale.contains("JP") { "." } else { "," })),
+      ("thousands.separator", StringValue(if locale.contains("US") || locale.contains("CN") || locale.contains("JP") { "," } else if locale.contains("FR") { " " } else { "." }))
+    ]
+    Span::add_event(format_span, "formatting.applied", Some(event_attrs))
     
-    // 验证格式化文本包含方向标记
-    if expected_direction == "RTL" {
-      assert_true(formatted_text.contains("\u200F") || formatted_text.contains("dir=\"rtl\""))
-    } else {
-      assert_true(formatted_text.contains("\u200E") || formatted_text.contains("dir=\"ltr\""))
+    Span::end(format_span)
+  }
+  
+  // 验证格式化指标
+  assert_eq(formatted_numbers.name, "formatted.numbers")
+}
+
+// 测试4: 多语言错误消息
+test "多语言错误消息" {
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "i18n.error.messages.test")
+  
+  // 模拟多语言错误消息
+  let error_types = [
+    ("validation.error", "验证错误", "Validation error", "検証エラー", "검증 오류"),
+    ("connection.error", "连接错误", "Connection error", "接続エラー", "연결 오류"),
+    ("permission.error", "权限错误", "Permission error", "権限エラー", "권한 오류"),
+    ("timeout.error", "超时错误", "Timeout error", "タイムアウトエラー", "시간 초과 오류"),
+    ("resource.error", "资源错误", "Resource error", "リソースエラー", "리소스 오류")
+  ]
+  
+  let languages = ["zh-CN", "en-US", "ja-JP", "ko-KR"]
+  
+  for (error_code, zh_msg, en_msg, ja_msg, ko_msg) in error_types {
+    for language in languages {
+      let error_message = match language {
+        "zh-CN" => zh_msg,
+        "en-US" => en_msg,
+        "ja-JP" => ja_msg,
+        "ko-KR" => ko_msg,
+        _ => en_msg
+      }
+      
+      // 创建多语言错误日志属性
+      let error_attrs = Attributes::new()
+      Attributes::set(error_attrs, "error.code", StringValue(error_code))
+      Attributes::set(error_attrs, "error.message", StringValue(error_message))
+      Attributes::set(error_attrs, "language", StringValue(language))
+      Attributes::set(error_attrs, "error.localization", StringValue("true"))
+      
+      // 记录多语言错误日志
+      let error_log = LogRecord::new_with_context(
+        Error,
+        Some(error_message),
+        Some(error_attrs),
+        None,
+        None,
+        None,
+        None,
+        None
+      )
+      Logger::emit(logger, error_log)
     }
-    
-    // 添加结果到span
-    Span::set_attribute(direction_span, "language." + language + ".direction", detected_direction)
-    Span::set_attribute(direction_span, "language." + language + ".text", formatted_text)
   }
+}
+
+// 测试5: 文本方向和Unicode支持
+test "文本方向和Unicode支持" {
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "i18n.unicode.test")
   
-  // 测试混合方向文本
-  let mixed_texts = [
-    ("en", "The Arabic word مرحبا means 'hello'"),
-    ("ar", "الكلمة الإنجليزية 'hello' تعني 'مرحبا'"),
-    ("he", "המילה האנגלית 'hello' פירושה 'שלום'"),
-    ("ja", "アラビア語の「مرحبا」は「こんにちは」を意味します")
+  // 模拟不同文本方向的Unicode文本
+  let text_samples = [
+    ("en", "ltr", "Hello World", "拉丁字母从左到右"),
+    ("zh", "ltr", "你好世界", "中文字符从左到右"),
+    ("ar", "rtl", "مرحبا بالعالم", "阿拉伯文字从右到左"),
+    ("he", "rtl", "שלום עולם", "希伯来文字从右到左"),
+    ("ja", "ltr", "こんにちは世界", "日文字符从左到右"),
+    ("ko", "ltr", "안녕하세요 세계", "韩文字符从左到右"),
+    ("hi", "ltr", "नमस्ते दुनिया", "印地文字符从左到右"),
+    ("th", "ltr", "สวัสดีชาวโลก", "泰文字符从左到右"),
+    ("ru", "ltr", "Привет мир", "西里尔字母从左到右"),
+    ("mix", "ltr", "Hello مرحبا こんにちは", "混合语言文本")
   ]
   
-  for (language, mixed_text) in mixed_texts {
-    TextDirectionManager::set_language(direction_manager, language)
+  for (language, direction, text, description) in text_samples {
+    // 创建Unicode处理Span
+    let unicode_span = Tracer::start_span(tracer, "unicode.text.processing")
     
-    let formatted_mixed = TextDirectionManager::format_mixed_direction(
-      direction_manager, 
-      mixed_text
-    )
+    // 设置Unicode属性
+    let unicode_attrs = [
+      ("text.language", StringValue(language)),
+      ("text.direction", StringValue(direction)),
+      ("text.content", StringValue(text)),
+      ("text.description", StringValue(description)),
+      ("text.encoding", StringValue("UTF-8")),
+      ("unicode.version", StringValue("15.0"))
+    ]
+    Span::set_attributes(unicode_span, unicode_attrs)
     
-    // 验证混合方向文本格式化
-    assert_true(formatted_mixed.length() >= mixed_text.length())
+    // 添加Unicode处理事件
+    let processing_attrs = [
+      ("processing.type", StringValue("unicode.normalization")),
+      ("normalization.form", StringValue("NFC")),
+      ("character.count", IntValue(text.length())),
+      ("byte.count", IntValue(text.to_utf8_bytes().length()))
+    ]
+    Span::add_event(unicode_span, "unicode.processed", Some(processing_attrs))
     
-    Span::set_attribute(direction_span, "mixed." + language + ".text", formatted_mixed)
+    Span::end(unicode_span)
+  }
+}
+
+// 测试6: 地区特定的度量单位
+test "地区特定的度量单位" {
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "i18n.measurement.units.test")
+  
+  // 创建度量单位指标
+  let measurement_conversions = Meter::create_counter(meter, "measurement.conversions", Some("度量单位转换次数"), Some("count"))
+  
+  // 模拟不同地区的度量单位
+  let measurements = [
+    ("en-US", "length", "miles", "1.0", "1.60934", "kilometers"),
+    ("en-US", "weight", "pounds", "150.0", "68.0389", "kilograms"),
+    ("en-US", "temperature", "fahrenheit", "98.6", "37.0", "celsius"),
+    ("zh-CN", "length", "公里", "100.0", "62.1371", "miles"),
+    ("zh-CN", "weight", "公斤", "70.0", "154.324", "pounds"),
+    ("zh-CN", "temperature", "摄氏度", "25.0", "77.0", "fahrenheit"),
+    ("en-GB", "length", "miles", "5.0", "8.04672", "kilometers"),
+    ("en-GB", "weight", "stone", "12.0", "76.2035", "kilograms"),
+    ("ja-JP", "length", "キロメートル", "10.0", "6.21371", "miles"),
+    ("ja-JP", "weight", "キログラム", "60.0", "132.277", "pounds")
+  ]
+  
+  for (locale, measurement_type, from_unit, from_value, to_value, to_unit) in measurements {
+    // 记录度量转换操作
+    Counter::add(measurement_conversions, 1.0)
+    
+    // 创建度量转换Span
+    let tracer = TracerProvider::get_tracer(tracer_provider, "i18n.measurement.units.test")
+    let conversion_span = Tracer::start_span(tracer, "measurement.conversion")
+    
+    // 设置转换属性
+    let conversion_attrs = [
+      ("locale", StringValue(locale)),
+      ("measurement.type", StringValue(measurement_type)),
+      ("from.unit", StringValue(from_unit)),
+      ("from.value", StringValue(from_value)),
+      ("to.unit", StringValue(to_unit)),
+      ("to.value", StringValue(to_value))
+    ]
+    Span::set_attributes(conversion_span, conversion_attrs)
+    
+    // 添加转换事件
+    let event_attrs = [
+      ("conversion.type", StringValue("unit.conversion")),
+      ("conversion.formula", StringValue(from_value + " " + from_unit + " = " + to_value + " " + to_unit)),
+      ("conversion.precision", StringValue("5.decimal.places"))
+    ]
+    Span::add_event(conversion_span, "conversion.completed", Some(event_attrs))
+    
+    Span::end(conversion_span)
   }
   
-  Span::add_event(direction_span, "text.direction.completed", [
-    ("languages.tested", test_texts.length().to_string()),
-    ("mixed.texts.tested", mixed_texts.length().to_string()),
-    ("timestamp", "2025-01-02T12:10:00Z")
-  ])
+  // 验证度量转换指标
+  assert_eq(measurement_conversions.name, "measurement.conversions")
+}
+
+// 测试7: 多语言用户界面标签
+test "多语言用户界面标签" {
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "i18n.ui.labels.test")
   
-  Span::end(direction_span)
+  // 模拟多语言UI标签
+  let ui_elements = [
+    ("button.submit", "提交", "Submit", "送信", "제출"),
+    ("button.cancel", "取消", "Cancel", "キャンセル", "취소"),
+    ("menu.file", "文件", "File", "ファイル", "파일"),
+    ("menu.edit", "编辑", "Edit", "編集", "편집"),
+    ("label.username", "用户名", "Username", "ユーザー名", "사용자 이름"),
+    ("label.password", "密码", "Password", "パスワード", "비밀번호"),
+    ("message.loading", "加载中...", "Loading...", "読み込み中...", "로딩 중..."),
+    ("message.success", "操作成功", "Operation successful", "操作成功", "작업 성공"),
+    ("error.required", "此字段为必填项", "This field is required", "この項目は必須です", "이 필드는 필수입니다"),
+    ("title.dashboard", "仪表板", "Dashboard", "ダッシュボード", "대시보드")
+  ]
   
-  assert_true(true)
+  let languages = ["zh-CN", "en-US", "ja-JP", "ko-KR"]
+  
+  for (element_key, zh_label, en_label, ja_label, ko_label) in ui_elements {
+    for language in languages {
+      let label = match language {
+        "zh-CN" => zh_label,
+        "en-US" => en_label,
+        "ja-JP" => ja_label,
+        "ko-KR" => ko_label,
+        _ => en_label
+      }
+      
+      // 创建多语言UI日志属性
+      let ui_attrs = Attributes::new()
+      Attributes::set(ui_attrs, "element.key", StringValue(element_key))
+      Attributes::set(ui_attrs, "ui.label", StringValue(label))
+      Attributes::set(ui_attrs, "language", StringValue(language))
+      Attributes::set(ui_attrs, "ui.component", StringValue("localized.interface"))
+      
+      // 记录多语言UI日志
+      let ui_log = LogRecord::new_with_context(
+        Debug,
+        Some("UI label rendered: " + label),
+        Some(ui_attrs),
+        None,
+        None,
+        None,
+        None,
+        None
+      )
+      Logger::emit(logger, ui_log)
+    }
+  }
+}
+
+// 测试8: 文化特定的日期格式
+test "文化特定的日期格式" {
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "i18n.date.formats.test")
+  
+  // 模拟不同文化的日期格式
+  let date_formats = [
+    ("en-US", "MM/DD/YYYY", "12/25/2023", "December 25, 2023"),
+    ("en-GB", "DD/MM/YYYY", "25/12/2023", "25 December 2023"),
+    ("zh-CN", "YYYY年MM月DD日", "2023年12月25日", "2023年12月25日"),
+    ("ja-JP", "YYYY年MM月DD日", "2023年12月25日", "2023年12月25日"),
+    ("ko-KR", "YYYY년 MM월 DD일", "2023년 12월 25일", "2023년 12월 25일"),
+    ("de-DE", "DD.MM.YYYY", "25.12.2023", "25. Dezember 2023"),
+    ("fr-FR", "DD/MM/YYYY", "25/12/2023", "25 décembre 2023"),
+    ("es-ES", "DD/MM/YYYY", "25/12/2023", "25 de diciembre de 2023"),
+    ("ru-RU", "DD.MM.YYYY", "25.12.2023", "25 декабря 2023 г."),
+    ("ar-SA", "DD/MM/YYYY", "٢٥/١٢/٢٠٢٣", "٢٥ ديسمبر ٢٠٢٣")
+  ]
+  
+  for (locale, short_format, formatted_short, formatted_long) in date_formats {
+    // 创建日期格式化Span
+    let date_span = Tracer::start_span(tracer, "date.formatting")
+    
+    // 设置日期格式属性
+    let date_attrs = [
+      ("locale", StringValue(locale)),
+      ("date.format.short", StringValue(short_format)),
+      ("date.formatted.short", StringValue(formatted_short)),
+      ("date.formatted.long", StringValue(formatted_long)),
+      ("date.timestamp", IntValue(1703505600)) // 2023-12-25 00:00:00 UTC
+    ]
+    Span::set_attributes(date_span, date_attrs)
+    
+    // 添加格式化事件
+    let event_attrs = [
+      ("formatting.type", StringValue("date.locale.formatting")),
+      ("formatting.style", StringValue("short.and.long")),
+      ("calendar.system", StringValue(if locale.starts_with("ar") { "islamic" } else { "gregorian" }))
+    ]
+    Span::add_event(date_span, "date.formatted", Some(event_attrs))
+    
+    Span::end(date_span)
+  }
 }

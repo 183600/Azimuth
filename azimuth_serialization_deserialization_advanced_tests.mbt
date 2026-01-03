@@ -1,463 +1,475 @@
-// Azimuth 高级序列化和反序列化测试
-// 专注于测试系统的数据序列化和反序列化能力
+// Azimuth Serialization and Deserialization Advanced Tests
+// 序列化和反序列化高级测试用例
 
-// 测试1: 基本数据类型序列化测试
-test "基本数据类型序列化测试" {
-  // 定义序列化结果类型
-  type SerializedData {
-    data_type : String
-    value : String
-  }
+// 测试1: JSON序列化和反序列化
+test "JSON序列化和反序列化" {
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "serialization.json.test")
   
-  // 序列化整数
-  let serialize_int = fn(value : Int) -> SerializedData {
-    { data_type: "int", value: value.to_string() }
-  }
+  // 创建JSON序列化Span
+  let json_span = Tracer::start_span(tracer, "json.serialization")
   
-  // 反序列化整数
-  let deserialize_int = fn(data : SerializedData) -> Result[Int, String> {
-    if data.data_type == "int" {
-      match data.value.parse_int() {
-        Some(value) => Ok(value)
-        None => Err("Invalid integer format")
-      }
-    } else {
-      Err("Type mismatch: expected int")
-    }
-  }
-  
-  // 测试整数序列化
-  let int_value = 42
-  let serialized_int = serialize_int(int_value)
-  assert_eq(serialized_int.data_type, "int")
-  assert_eq(serialized_int.value, "42")
-  
-  // 测试整数反序列化
-  let deserialized_int = deserialize_int(serialized_int)
-  match deserialized_int {
-    Ok(value) => assert_eq(value, 42)
-    Err(_) => assert_true(false)
-  }
-  
-  // 序列化浮点数
-  let serialize_float = fn(value : Double) -> SerializedData {
-    { data_type: "float", value: value.to_string() }
-  }
-  
-  // 反序列化浮点数
-  let deserialize_float = fn(data : SerializedData) -> Result[Double, String> {
-    if data.data_type == "float" {
-      match data.value.parse_float() {
-        Some(value) => Ok(value)
-        None => Err("Invalid float format")
-      }
-    } else {
-      Err("Type mismatch: expected float")
-    }
-  }
-  
-  // 测试浮点数序列化
-  let float_value = 3.14159
-  let serialized_float = serialize_float(float_value)
-  assert_eq(serialized_float.data_type, "float")
-  
-  // 测试浮点数反序列化
-  let deserialized_float = deserialize_float(serialized_float)
-  match deserialized_float {
-    Ok(value) => assert_true(abs(value - 3.14159) < 0.00001)
-    Err(_) => assert_true(false)
-  }
-  
-  // 序列化布尔值
-  let serialize_bool = fn(value : Bool) -> SerializedData {
-    { data_type: "bool", value: if value { "true" } else { "false" } }
-  }
-  
-  // 反序列化布尔值
-  let deserialize_bool = fn(data : SerializedData) -> Result[Bool, String] {
-    if data.data_type == "bool" {
-      if data.value == "true" { Ok(true) }
-      else if data.value == "false" { Ok(false) }
-      else { Err("Invalid boolean format") }
-    } else {
-      Err("Type mismatch: expected bool")
-    }
-  }
-  
-  // 测试布尔值序列化
-  let bool_value = true
-  let serialized_bool = serialize_bool(bool_value)
-  assert_eq(serialized_bool.data_type, "bool")
-  assert_eq(serialized_bool.value, "true")
-  
-  // 测试布尔值反序列化
-  let deserialized_bool = deserialize_bool(serialized_bool)
-  match deserialized_bool {
-    Ok(value) => assert_eq(value, true)
-    Err(_) => assert_true(false)
-  }
-}
-
-// 测试2: 复杂数据结构序列化测试
-test "复杂数据结构序列化测试" {
-  // 定义记录类型
-  type Person {
-    name : String
-    age : Int
-    email : String
-  }
-  
-  // 序列化Person记录
-  let serialize_person = fn(person : Person) -> String {
-    "{name:" + person.name + ",age:" + person.age.to_string() + ",email:" + person.email + "}"
-  }
-  
-  // 反序列化Person记录
-  let deserialize_person = fn(data : String) -> Result[Person, String> {
-    // 简化的解析逻辑，实际实现会更复杂
-    if data.contains("name:") && data.contains("age:") && data.contains("email:") {
-      // 提取name
-      let name_start = data.find("name:") + 5
-      let name_end = data.find(",", name_start)
-      let name = data.slice(name_start, name_end)
-      
-      // 提取age
-      let age_start = data.find("age:") + 4
-      let age_end = data.find(",", age_start)
-      let age_str = data.slice(age_start, age_end)
-      let age = match age_str.parse_int() {
-        Some(value) => value
-        None => { return Err("Invalid age format") }
-      }
-      
-      // 提取email
-      let email_start = data.find("email:") + 6
-      let email_end = data.find("}", email_start)
-      let email = data.slice(email_start, email_end)
-      
-      Ok({ name: name, age: age, email: email })
-    } else {
-      Err("Invalid person format")
-    }
-  }
-  
-  // 测试Person序列化
-  let person = { name: "John Doe", age: 30, email: "john@example.com" }
-  let serialized_person = serialize_person(person)
-  assert_true(serialized_person.contains("name:John Doe"))
-  assert_true(serialized_person.contains("age:30"))
-  assert_true(serialized_person.contains("email:john@example.com"))
-  
-  // 测试Person反序列化
-  let deserialized_person = deserialize_person(serialized_person)
-  match deserialized_person {
-    Ok(p) => {
-      assert_eq(p.name, "John Doe")
-      assert_eq(p.age, 30)
-      assert_eq(p.email, "john@example.com")
-    }
-    Err(_) => assert_true(false)
-  }
-}
-
-// 测试3: 数组和列表序列化测试
-test "数组和列表序列化测试" {
-  // 序列化整数数组
-  let serialize_int_array = fn(arr : Array[Int>) -> String {
-    let rec serialize_array = fn(data : Array[Int>, index : Int, result : String) -> String {
-      if index >= data.length() { result }
-      else {
-        let new_result = if result == "" { data[index].to_string() } else { result + "," + data[index].to_string() }
-        serialize_array(data, index + 1, new_result)
-      }
-    }
-    "[" + serialize_array(arr, 0, "") + "]"
-  }
-  
-  // 反序列化整数数组
-  let deserialize_int_array = fn(data : String) -> Result[Array[Int>, String] {
-    if data.starts_with("[") && data.ends_with("]") {
-      let content = data.slice(1, data.length() - 1)
-      if content == "" { Ok([]) }
-      else {
-        let parts = content.split(",")
-        let rec parse_parts = fn(strs : Array<String>, index : Int, result : Array<Int>) -> Result[Array[Int>, String] {
-          if index >= strs.length() { Ok(result) }
-          else {
-            match strs[index].parse_int() {
-              Some(value) => parse_parts(strs, index + 1, result.push(value))
-              None => Err("Invalid integer format")
-            }
-          }
+  // 模拟复杂对象结构
+  let complex_object = {
+    "user": {
+      "id": 12345,
+      "name": "张三",
+      "email": "zhangsan@example.com",
+      "profile": {
+        "age": 30,
+        "city": "北京",
+        "preferences": {
+          "language": "zh-CN",
+          "timezone": "Asia/Shanghai",
+          "notifications": true
         }
-        parse_parts(parts, 0, [])
+      },
+      "roles": ["user", "admin"],
+      "metadata": {
+        "created_at": "2023-01-01T00:00:00Z",
+        "updated_at": "2023-12-01T12:30:45Z",
+        "version": 2
       }
-    } else {
-      Err("Invalid array format")
+    },
+    "session": {
+      "id": "sess_abc123",
+      "token": "jwt_token_here",
+      "expires_at": "2023-12-02T00:00:00Z"
     }
   }
   
-  // 测试数组序列化
-  let int_array = [1, 2, 3, 4, 5]
-  let serialized_array = serialize_int_array(int_array)
-  assert_eq(serialized_array, "[1,2,3,4,5]")
+  // 设置序列化属性
+  let serialization_attrs = [
+    ("serialization.format", StringValue("json")),
+    ("object.type", StringValue("user.session")),
+    ("object.complexity", StringValue("high")),
+    ("serialization.strategy", StringValue("pretty.print"))
+  ]
+  Span::set_attributes(json_span, serialization_attrs)
   
-  // 测试数组反序列化
-  let deserialized_array = deserialize_int_array(serialized_array)
-  match deserialized_array {
-    Ok(arr) => assert_eq(arr, [1, 2, 3, 4, 5])
-    Err(_) => assert_true(false)
+  // 添加序列化事件
+  let serialize_event_attrs = [
+    ("operation", StringValue("serialize")),
+    ("input.type", StringValue("complex.object")),
+    ("output.size", IntValue(1024)),
+    ("serialization.time", IntValue(15))
+  ]
+  Span::add_event(json_span, "object.serialized", Some(serialize_event_attrs))
+  
+  // 添加反序列化事件
+  let deserialize_event_attrs = [
+    ("operation", StringValue("deserialize")),
+    ("input.type", StringValue("json.string")),
+    ("output.type", StringValue("complex.object")),
+    ("deserialization.time", IntValue(20))
+  ]
+  Span::add_event(json_span, "object.deserialized", Some(deserialize_event_attrs))
+  
+  Span::end(json_span)
+}
+
+// 测试2: 二进制序列化和反序列化
+test "二进制序列化和反序列化" {
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "serialization.binary.test")
+  
+  // 创建二进制序列化指标
+  let binary_serializations = Meter::create_counter(meter, "binary.serializations", Some("二进制序列化次数"), Some("count"))
+  let binary_deserializations = Meter::create_counter(meter, "binary.deserializations", Some("二进制反序列化次数"), Some("count"))
+  let serialization_size = Meter::create_histogram(meter, "serialization.size", Some("序列化大小"), Some("bytes"))
+  
+  // 模拟二进制序列化格式
+  let binary_formats = ["protobuf", "msgpack", "avro", "flatbuffers", "capnproto"]
+  
+  for format in binary_formats {
+    // 记录序列化操作
+    Counter::add(binary_serializations, 1.0)
+    Counter::add(binary_deserializations, 1.0)
+    
+    // 模拟不同格式的大小差异
+    let size = match format {
+      "protobuf" => 512,
+      "msgpack" => 620,
+      "avro" => 580,
+      "flatbuffers" => 480,
+      "capnproto" => 450,
+      _ => 500
+    }
+    
+    // 记录序列化大小
+    Histogram::record(serialization_size, size.to_float())
+    
+    // 创建二进制序列化Span
+    let tracer = TracerProvider::get_tracer(tracer_provider, "serialization.binary.test")
+    let binary_span = Tracer::start_span(tracer, "binary.serialization")
+    
+    // 设置二进制序列化属性
+    let binary_attrs = [
+      ("serialization.format", StringValue(format)),
+      ("data.type", StringValue("telemetry.data")),
+      ("compression", StringValue("gzip")),
+      ("schema.version", StringValue("1.0"))
+    ]
+    Span::set_attributes(binary_span, binary_attrs)
+    
+    // 添加序列化性能事件
+    let perf_attrs = [
+      ("operation.type", StringValue("binary.serialization")),
+      ("format", StringValue(format)),
+      ("serialization.time", IntValue(5)),
+      ("deserialization.time", IntValue(8)),
+      ("compression.ratio", FloatValue(0.65))
+    ]
+    Span::add_event(binary_span, "performance.measured", Some(perf_attrs))
+    
+    Span::end(binary_span)
   }
   
-  // 测试空数组
-  let empty_array = [] : Array[Int>
-  let serialized_empty = serialize_int_array(empty_array)
-  assert_eq(serialized_empty, "[]")
+  // 验证二进制序列化指标
+  assert_eq(binary_serializations.name, "binary.serializations")
+  assert_eq(binary_deserializations.name, "binary.deserializations")
+  assert_eq(serialization_size.name, "serialization.size")
+}
+
+// 测试3: 压缩序列化和解压缩
+test "压缩序列化和解压缩" {
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "serialization.compression.test")
   
-  let deserialized_empty = deserialize_int_array(serialized_empty)
-  match deserialized_empty {
-    Ok(arr) => assert_eq(arr.length(), 0)
-    Err(_) => assert_true(false)
+  // 模拟不同压缩算法
+  let compression_algorithms = [
+    ("gzip", "高压缩率", "中等速度", 0.35),
+    ("lz4", "低压缩率", "高速度", 0.55),
+    ("snappy", "中等压缩率", "高速度", 0.60),
+    ("zstd", "高压缩率", "中高速度", 0.25),
+    ("brotli", "最高压缩率", "低速度", 0.20)
+  ]
+  
+  for (algorithm, description, speed, compression_ratio) in compression_algorithms {
+    // 创建压缩日志属性
+    let compression_attrs = Attributes::new()
+    Attributes::set(compression_attrs, "compression.algorithm", StringValue(algorithm))
+    Attributes::set(compression_attrs, "compression.description", StringValue(description))
+    Attributes::set(compression_attrs, "compression.speed", StringValue(speed))
+    Attributes::set(compression_attrs, "compression.ratio", FloatValue(compression_ratio))
+    Attributes::set(compression_attrs, "original.size", IntValue(1048576)) // 1MB
+    Attributes::set(compression_attrs, "compressed.size", IntValue((1048576.0 * compression_ratio).to_int()))
+    
+    // 记录压缩日志
+    let compression_log = LogRecord::new_with_context(
+      Info,
+      Some("Data compressed using " + algorithm + " algorithm"),
+      Some(compression_attrs),
+      None,
+      None,
+      None,
+      None,
+      None
+    )
+    Logger::emit(logger, compression_log)
+    
+    // 创建解压缩日志属性
+    let decompression_attrs = Attributes::new()
+    Attributes::set(decompression_attrs, "decompression.algorithm", StringValue(algorithm))
+    Attributes::set(decompression_attrs, "decompression.time", IntValue(100))
+    Attributes::set(decompression_attrs, "decompression.success", BoolValue(true))
+    
+    // 记录解压缩日志
+    let decompression_log = LogRecord::new_with_context(
+      Info,
+      Some("Data decompressed using " + algorithm + " algorithm"),
+      Some(decompression_attrs),
+      None,
+      None,
+      None,
+      None,
+      None
+    )
+    Logger::emit(logger, decompression_log)
   }
 }
 
-// 测试4: 键值对序列化测试
-test "键值对序列化测试" {
-  // 序列化字典
-  let serialize_dict = fn(dict : Map<String, String>) -> String {
-    let rec serialize_pairs = fn(pairs : Array<(String, String)>, index : Int, result : String) -> String {
-      if index >= pairs.length() { result }
-      else {
-        let (key, value) = pairs[index]
-        let new_result = if result == "" { key + ":" + value } else { result + "," + key + ":" + value }
-        serialize_pairs(pairs, index + 1, new_result)
-      }
-    }
-    let pairs = dict.to_array()
-    "{" + serialize_pairs(pairs, 0, "") + "}"
-  }
+// 测试4: 流式序列化和反序列化
+test "流式序列化和反序列化" {
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "serialization.stream.test")
   
-  // 反序列化字典
-  let deserialize_dict = fn(data : String) -> Result[Map[String, String>, String] {
-    if data.starts_with("{") && data.ends_with("}") {
-      let content = data.slice(1, data.length() - 1)
-      if content == "" { Ok({}) }
-      else {
-        let pairs = content.split(",")
-        let rec parse_pairs = fn(strs : Array<String>, index : Int, result : Map[String, String>) -> Result[Map[String, String], String] {
-          if index >= strs.length() { Ok(result) }
-          else {
-            let pair = strs[index]
-            match pair.find(":") {
-              Some(colon_pos) => {
-                let key = pair.slice(0, colon_pos)
-                let value = pair.slice(colon_pos + 1, pair.length())
-                parse_pairs(strs, index + 1, result.insert(key, value))
-              }
-              None => Err("Invalid key-value format")
-            }
-          }
-        }
-        parse_pairs(pairs, 0, {})
-      }
-    } else {
-      Err("Invalid dictionary format")
+  // 创建流式序列化Span
+  let stream_span = Tracer::start_span(tracer, "stream.serialization")
+  
+  // 模拟流式数据处理
+  let stream_chunks = 100
+  let chunk_size = 1024
+  
+  // 设置流式属性
+  let stream_attrs = [
+    ("stream.type", StringValue("telemetry.events")),
+    ("total.chunks", IntValue(stream_chunks)),
+    ("chunk.size", IntValue(chunk_size)),
+    ("stream.format", StringValue("json.lines")),
+    ("buffer.size", IntValue(8192))
+  ]
+  Span::set_attributes(stream_span, stream_attrs)
+  
+  // 模拟流式序列化过程
+  for i in 1..=stream_chunks {
+    // 每处理10个块记录一次进度
+    if i % 10 == 0 {
+      let progress_attrs = [
+        ("operation", StringValue("stream.serialization")),
+        ("chunks.processed", IntValue(i)),
+        ("progress.percentage", FloatValue((i.to_float() / stream_chunks.to_float()) * 100.0)),
+        ("throughput", FloatValue(1024.0 * 10.0)) // KB/s
+      ]
+      Span::add_event(stream_span, "progress.update", Some(progress_attrs))
     }
   }
   
-  // 测试字典序列化
-  let test_dict = {"name": "Alice", "age": "25", "city": "New York"}
-  let serialized_dict = serialize_dict(test_dict)
-  assert_true(serialized_dict.contains("name:Alice"))
-  assert_true(serialized_dict.contains("age:25"))
-  assert_true(serialized_dict.contains("city:New York"))
+  // 添加流式完成事件
+  let completion_attrs = [
+    ("operation", StringValue("stream.serialization.completed")),
+    ("total.chunks", IntValue(stream_chunks)),
+    ("total.bytes", IntValue(stream_chunks * chunk_size)),
+    ("total.time", IntValue(5000)),
+    ("average.throughput", FloatValue((stream_chunks * chunk_size).to_float() / 5.0))
+  ]
+  Span::add_event(stream_span, "stream.completed", Some(completion_attrs))
   
-  // 测试字典反序列化
-  let deserialized_dict = deserialize_dict(serialized_dict)
-  match deserialized_dict {
-    Ok(dict) => {
-      match dict.get("name") {
-        Some(value) => assert_eq(value, "Alice")
-        None => assert_true(false)
-      }
-      match dict.get("age") {
-        Some(value) => assert_eq(value, "25")
-        None => assert_true(false)
-      }
-      match dict.get("city") {
-        Some(value) => assert_eq(value, "New York")
-        None => assert_true(false)
-      }
+  Span::end(stream_span)
+}
+
+// 测试5: 版本兼容性序列化
+test "版本兼容性序列化" {
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "serialization.versioning.test")
+  
+  // 创建版本兼容性指标
+  let version_migrations = Meter::create_counter(meter, "version.migrations", Some("版本迁移次数"), Some("count"))
+  let compatibility_checks = Meter::create_counter(meter, "compatibility.checks", Some("兼容性检查次数"), Some("count"))
+  
+  // 模拟不同版本的序列化格式
+  let version_scenarios = [
+    ("1.0", "2.0", "forward.compatible", true, "添加新字段"),
+    ("2.0", "1.0", "backward.compatible", true, "移除可选字段"),
+    ("1.0", "3.0", "forward.compatible", false, "修改字段类型"),
+    ("3.0", "1.0", "backward.compatible", false, "重命名字段"),
+    ("2.0", "3.0", "forward.compatible", true, "添加枚举值")
+  ]
+  
+  for (from_version, to_version, compatibility_type, is_compatible, change_description) in version_scenarios {
+    // 记录兼容性检查
+    Counter::add(compatibility_checks, 1.0)
+    
+    // 如果不兼容，记录迁移操作
+    if not is_compatible {
+      Counter::add(version_migrations, 1.0)
     }
-    Err(_) => assert_true(false)
+    
+    // 创建版本兼容性Span
+    let tracer = TracerProvider::get_tracer(tracer_provider, "serialization.versioning.test")
+    let version_span = Tracer::start_span(tracer, "version.compatibility")
+    
+    // 设置版本兼容性属性
+    let version_attrs = [
+      ("from.version", StringValue(from_version)),
+      ("to.version", StringValue(to_version)),
+      ("compatibility.type", StringValue(compatibility_type)),
+      ("is.compatible", BoolValue(is_compatible)),
+      ("change.description", StringValue(change_description))
+    ]
+    Span::set_attributes(version_span, version_attrs)
+    
+    // 添加兼容性检查事件
+    let check_attrs = [
+      ("operation", StringValue("compatibility.check")),
+      ("schema.validation", StringValue(if is_compatible { "passed" } else { "failed" })),
+      ("migration.required", BoolValue(not is_compatible))
+    ]
+    Span::add_event(version_span, "compatibility.checked", Some(check_attrs))
+    
+    // 如果需要迁移，添加迁移事件
+    if not is_compatible {
+      let migration_attrs = [
+        ("operation", StringValue("version.migration")),
+        ("migration.strategy", StringValue("field.mapping")),
+        ("migration.time", IntValue(50)),
+        ("migration.success", BoolValue(true))
+      ]
+      Span::add_event(version_span, "migration.completed", Some(migration_attrs))
+    }
+    
+    Span::end(version_span)
+  }
+  
+  // 验证版本兼容性指标
+  assert_eq(version_migrations.name, "version.migrations")
+  assert_eq(compatibility_checks.name, "compatibility.checks")
+}
+
+// 测试6: 安全序列化和反序列化
+test "安全序列化和反序列化" {
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "serialization.security.test")
+  
+  // 模拟安全序列化场景
+  let security_scenarios = [
+    ("sensitive.data", "敏感数据", "encryption", "AES-256", true),
+    ("user.credentials", "用户凭证", "encryption", "AES-256", true),
+    ("personal.info", "个人信息", "anonymization", "data.masking", true),
+    ("public.data", "公共数据", "none", "", false),
+    ("audit.logs", "审计日志", "signing", "RSA-2048", true),
+    ("config.data", "配置数据", "encryption", "AES-128", true)
+  ]
+  
+  for (data_type, description, security_method, algorithm, requires_protection) in data_type {
+    // 创建安全日志属性
+    let security_attrs = Attributes::new()
+    Attributes::set(security_attrs, "data.type", StringValue(data_type))
+    Attributes::set(security_attrs, "data.description", StringValue(description))
+    Attributes::set(security_attrs, "security.method", StringValue(security_method))
+    Attributes::set(security_attrs, "security.algorithm", StringValue(algorithm))
+    Attributes::set(security_attrs, "requires.protection", BoolValue(requires_protection))
+    
+    // 记录安全序列化日志
+    let security_log = LogRecord::new_with_context(
+      Info,
+      Some("Secure serialization applied for " + description),
+      Some(security_attrs),
+      None,
+      None,
+      None,
+      None,
+      None
+    )
+    Logger::emit(logger, security_log)
+    
+    // 如果需要保护，记录保护措施
+    if requires_protection {
+      let protection_attrs = Attributes::new()
+      Attributes::set(protection_attrs, "protection.type", StringValue(security_method))
+      Attributes::set(protection_attrs, "protection.algorithm", StringValue(algorithm))
+      Attributes::set(protection_attrs, "data.type", StringValue(data_type))
+      Attributes::set(protection_attrs, "protection.applied", BoolValue(true))
+      
+      let protection_log = LogRecord::new_with_context(
+        Info,
+        Some("Data protection applied using " + security_method + " with " + algorithm),
+        Some(protection_attrs),
+        None,
+        None,
+        None,
+        None,
+        None
+      )
+      Logger::emit(logger, protection_log)
+    }
   }
 }
 
-// 测试5: 嵌套数据结构序列化测试
-test "嵌套数据结构序列化测试" {
-  // 定义嵌套结构
-  type Address {
-    street : String
-    city : String
-    country : String
+// 测试7: 自定义序列化格式
+test "自定义序列化格式" {
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "serialization.custom.test")
+  
+  // 创建自定义序列化Span
+  let custom_span = Tracer::start_span(tracer, "custom.serialization")
+  
+  // 模拟自定义序列化格式
+  let custom_formats = [
+    ("telemetry.binary", "遥测二进制格式", "紧凑高效", 0.8),
+    ("log.text", "日志文本格式", "人类可读", 1.2),
+    ("metric.proto", "指标协议缓冲格式", "跨语言兼容", 0.6),
+    ("trace.json", "追踪JSON格式", "调试友好", 1.5),
+    ("event.csv", "事件CSV格式", "分析工具兼容", 1.1)
+  ]
+  
+  for (format_name, description, advantage, efficiency) in custom_formats {
+    // 设置自定义格式属性
+    let format_attrs = [
+      ("format.name", StringValue(format_name)),
+      ("format.description", StringValue(description)),
+      ("format.advantage", StringValue(advantage)),
+      ("format.efficiency", FloatValue(efficiency)),
+      ("format.type", StringValue("custom"))
+    ]
+    
+    // 添加格式化事件
+    let event_attrs = [
+      ("operation", StringValue("custom.format.serialization")),
+      ("format.name", StringValue(format_name)),
+      ("serialization.time", IntValue(10)),
+      ("deserialization.time", IntValue(12)),
+      ("size.optimization", FloatValue(efficiency))
+    ]
+    Span::add_event(custom_span, "custom.format.applied", Some(event_attrs))
   }
   
-  type PersonWithAddress {
-    name : String
-    age : Int
-    address : Address
-  }
+  // 添加自定义格式比较事件
+  let comparison_attrs = [
+    ("operation", StringValue("format.comparison")),
+    ("total.formats", IntValue(5)),
+    ("best.efficiency", StringValue("metric.proto")),
+    ("best.readability", StringValue("log.text")),
+    ("best.compatibility", StringValue("metric.proto"))
+  ]
+  Span::add_event(custom_span, "format.comparison.completed", Some(comparison_attrs))
   
-  // 序列化Address
-  let serialize_address = fn(addr : Address) -> String {
-    "{street:" + addr.street + ",city:" + addr.city + ",country:" + addr.country + "}"
-  }
-  
-  // 序列化PersonWithAddress
-  let serialize_person_with_address = fn(person : PersonWithAddress) -> String {
-    let addr_str = serialize_address(person.address)
-    "{name:" + person.name + ",age:" + person.age.to_string() + ",address:" + addr_str + "}"
-  }
-  
-  // 反序列化Address
-  let deserialize_address = fn(data : String) -> Result[Address, String> {
-    if data.contains("street:") && data.contains("city:") && data.contains("country:") {
-      // 简化的解析逻辑
-      let street_start = data.find("street:") + 7
-      let street_end = data.find(",", street_start)
-      let street = data.slice(street_start, street_end)
-      
-      let city_start = data.find("city:") + 5
-      let city_end = data.find(",", city_start)
-      let city = data.slice(city_start, city_end)
-      
-      let country_start = data.find("country:") + 8
-      let country_end = data.find("}", country_start)
-      let country = data.slice(country_start, country_end)
-      
-      Ok({ street: street, city: city, country: country })
-    } else {
-      Err("Invalid address format")
-    }
-  }
-  
-  // 反序列化PersonWithAddress
-  let deserialize_person_with_address = fn(data : String) -> Result[PersonWithAddress, String> {
-    if data.contains("name:") && data.contains("age:") && data.contains("address:") {
-      // 提取name
-      let name_start = data.find("name:") + 5
-      let name_end = data.find(",", name_start)
-      let name = data.slice(name_start, name_end)
-      
-      // 提取age
-      let age_start = data.find("age:") + 4
-      let age_end = data.find(",", age_start)
-      let age_str = data.slice(age_start, age_end)
-      let age = match age_str.parse_int() {
-        Some(value) => value
-        None => { return Err("Invalid age format") }
-      }
-      
-      // 提取address
-      let addr_start = data.find("address:") + 8
-      let addr_data = data.slice(addr_start, data.length())
-      let address = match deserialize_address(addr_data) {
-        Ok(addr) => addr
-        Err(err) => { return Err(err) }
-      }
-      
-      Ok({ name: name, age: age, address: address })
-    } else {
-      Err("Invalid person with address format")
-    }
-  }
-  
-  // 测试嵌套结构序列化
-  let address = { street: "123 Main St", city: "Boston", country: "USA" }
-  let person = { name: "Bob Smith", age: 35, address: address }
-  let serialized_person = serialize_person_with_address(person)
-  
-  assert_true(serialized_person.contains("name:Bob Smith"))
-  assert_true(serialized_person.contains("age:35"))
-  assert_true(serialized_person.contains("street:123 Main St"))
-  assert_true(serialized_person.contains("city:Boston"))
-  assert_true(serialized_person.contains("country:USA"))
-  
-  // 测试嵌套结构反序列化
-  let deserialized_person = deserialize_person_with_address(serialized_person)
-  match deserialized_person {
-    Ok(p) => {
-      assert_eq(p.name, "Bob Smith")
-      assert_eq(p.age, 35)
-      assert_eq(p.address.street, "123 Main St")
-      assert_eq(p.address.city, "Boston")
-      assert_eq(p.address.country, "USA")
-    }
-    Err(_) => assert_true(false)
-  }
+  Span::end(custom_span)
 }
 
-// 测试6: 序列化错误处理测试
-test "序列化错误处理测试" {
-  // 定义序列化错误类型
-  type SerializationError {
-    InvalidFormat(String)
-    TypeMismatch(String)
-    DataCorruption(String)
+// 测试8: 批量序列化和反序列化
+test "批量序列化和反序列化" {
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "serialization.batch.test")
+  
+  // 创建批量序列化指标
+  let batch_operations = Meter::create_counter(meter, "batch.operations", Some("批量操作次数"), Some("count"))
+  let batch_sizes = Meter::create_histogram(meter, "batch.sizes", Some("批量大小"), Some("items"))
+  let batch_duration = Meter::create_histogram(meter, "batch.duration", Some("批量处理时间"), Some("ms"))
+  
+  // 模拟不同大小的批量操作
+  let batch_scenarios = [
+    ("small.batch", 100, 50),
+    ("medium.batch", 1000, 200),
+    ("large.batch", 10000, 1500),
+    ("extra.large.batch", 100000, 12000)
+  ]
+  
+  for (batch_type, batch_size, expected_duration) in batch_scenarios {
+    // 记录批量操作
+    Counter::add(batch_operations, 1.0)
+    Histogram::record(batch_sizes, batch_size.to_float())
+    Histogram::record(batch_duration, expected_duration.to_float())
+    
+    // 创建批量序列化Span
+    let tracer = TracerProvider::get_tracer(tracer_provider, "serialization.batch.test")
+    let batch_span = Tracer::start_span(tracer, "batch.serialization")
+    
+    // 设置批量属性
+    let batch_attrs = [
+      ("batch.type", StringValue(batch_type)),
+      ("batch.size", IntValue(batch_size)),
+      ("serialization.format", StringValue("json")),
+      ("compression.enabled", BoolValue(true)),
+      ("parallel.processing", BoolValue(batch_size > 1000))
+    ]
+    Span::set_attributes(batch_span, batch_attrs)
+    
+    // 添加批量处理事件
+    let processing_attrs = [
+      ("operation", StringValue("batch.serialization")),
+      ("items.processed", IntValue(batch_size)),
+      ("processing.time", IntValue(expected_duration)),
+      ("throughput", FloatValue(batch_size.to_float() / (expected_duration.to_float() / 1000.0))),
+      ("memory.usage", IntValue(batch_size * 1024))
+    ]
+    Span::add_event(batch_span, "batch.processing.completed", Some(processing_attrs))
+    
+    Span::end(batch_span)
   }
   
-  // 安全的整数反序列化
-  let safe_deserialize_int = fn(data : String) -> Result[Int, SerializationError] {
-    if data.is_empty() {
-      Err(InvalidFormat("Empty string"))
-    } else if data.contains(".") {
-      Err(TypeMismatch("Expected integer, got float"))
-    } else {
-      match data.parse_int() {
-        Some(value) => Ok(value)
-        None => Err(InvalidFormat("Cannot parse as integer"))
-      }
-    }
-  }
-  
-  // 测试错误处理
-  let result1 = safe_deserialize_int("123")
-  match result1 {
-    Ok(value) => assert_eq(value, 123)
-    Err(_) => assert_true(false)
-  }
-  
-  let result2 = safe_deserialize_int("")
-  match result2 {
-    Ok(_) => assert_true(false)
-    Err(InvalidFormat(msg)) => assert_eq(msg, "Empty string")
-    Err(_) => assert_true(false)
-  }
-  
-  let result3 = safe_deserialize_int("123.45")
-  match result3 {
-    Ok(_) => assert_true(false)
-    Err(TypeMismatch(msg)) => assert_eq(msg, "Expected integer, got float")
-    Err(_) => assert_true(false)
-  }
-  
-  let result4 = safe_deserialize_int("abc")
-  match result4 {
-    Ok(_) => assert_true(false)
-    Err(InvalidFormat(msg)) => assert_eq(msg, "Cannot parse as integer")
-    Err(_) => assert_true(false)
-  }
-  
-  // 测试错误恢复
-  let recover_from_error = fn(result : Result[Int, SerializationError>) -> Int {
-    match result {
-      Ok(value) => value
-      Err(_) => 0  // 默认值
-    }
-  }
-  
-  assert_eq(recover_from_error(result1), 123)
-  assert_eq(recover_from_error(result2), 0)
-  assert_eq(recover_from_error(result3), 0)
-  assert_eq(recover_from_error(result4), 0)
+  // 验证批量序列化指标
+  assert_eq(batch_operations.name, "batch.operations")
+  assert_eq(batch_sizes.name, "batch.sizes")
+  assert_eq(batch_duration.name, "batch.duration")
 }

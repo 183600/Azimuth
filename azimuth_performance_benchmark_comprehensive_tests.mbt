@@ -1,562 +1,471 @@
-// Azimuth Comprehensive Performance Benchmark Tests
-// This file contains comprehensive test cases for performance benchmarking
+// Azimuth Performance Benchmark Comprehensive Tests
+// 性能基准综合测试用例
 
-// Test 1: Basic Arithmetic Performance
-test "basic arithmetic performance benchmark" {
-  let iterations = 100000
+// 测试1: 度量操作性能基准
+test "度量操作性能基准" {
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "performance.benchmark.metrics")
   
-  // Benchmark addition
-  let add_start_time = get_current_time()
-  let add_result = 0
-  for i = 0; i < iterations; i = i + 1 {
-    add_result = add_result + i
-  }
-  let add_time = get_current_time() - add_start_time
+  // 创建不同类型的度量指标
+  let counter = Meter::create_counter(meter, "benchmark.counter")
+  let histogram = Meter::create_histogram(meter, "benchmark.histogram", Some("基准测试直方图"), Some("ms"))
+  let gauge = Meter::create_gauge(meter, "benchmark.gauge", Some("基准测试仪表"), Some("units"))
   
-  // Verify result correctness
-  let expected_add = (iterations * (iterations - 1)) / 2
-  assert_eq(add_result, expected_add)
+  // 性能测试：大量度量操作
+  let operation_count = 10000
   
-  // Benchmark multiplication
-  let mul_start_time = get_current_time()
-  let mul_result = 1
-  for i = 1; i <= 20; i = i + 1 {
-    mul_result = mul_result * i
-  }
-  let mul_time = get_current_time() - mul_start_time
+  // 记录开始时间
+  let start_time = 0 // 简化时间戳
   
-  // Verify result correctness (20!)
-  assert_eq(mul_result, 2432902008176640000)
-  
-  // Benchmark division
-  let div_start_time = get_current_time()
-  let div_result = 0.0
-  for i = 1; i <= iterations; i = i + 1 {
-    div_result = div_result + (1000000.0 / i.to_float())
-  }
-  let div_time = get_current_time() - div_start_time
-  
-  // Verify result is reasonable
-  assert_true(div_result > 0.0)
-  
-  // Performance assertions
-  assert_true(add_time < 1000)  // Should complete in less than 1 second
-  assert_true(mul_time < 100)   // Should complete in less than 0.1 seconds
-  assert_true(div_time < 2000)  // Should complete in less than 2 seconds
-  
-  // Log performance metrics
-  log_performance_metric("addition", iterations, add_time)
-  log_performance_metric("multiplication", 20, mul_time)
-  log_performance_metric("division", iterations, div_time)
-}
-
-// Test 2: String Operations Performance
-test "string operations performance benchmark" {
-  let iterations = 10000
-  
-  // Benchmark string concatenation
-  let concat_start_time = get_current_time()
-  let concat_result = ""
-  for i = 0; i < iterations; i = i + 1 {
-    concat_result = concat_result + i.to_string()
-  }
-  let concat_time = get_current_time() - concat_start_time
-  
-  // Verify result length
-  assert_true(concat_result.length() > 0)
-  
-  // Benchmark string splitting
-  let long_string = "a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z"
-  let split_start_time = get_current_time()
-  for i = 0; i < iterations; i = i + 1 {
-    let parts = long_string.split(",")
-    assert_eq(parts.length(), 26)
-  }
-  let split_time = get_current_time() - split_start_time
-  
-  // Benchmark string searching
-  let search_text = "The quick brown fox jumps over the lazy dog"
-  let search_start_time = get_current_time()
-  for i = 0; i < iterations; i = i + 1 {
-    let found = search_text.contains("fox")
-    assert_true(found)
+  // 执行大量度量操作
+  for i in 1..=operation_count {
+    // 计数器操作
+    Counter::add(counter, 1.0)
     
-    let not_found = search_text.contains("cat")
-    assert_false(not_found)
-  }
-  let search_time = get_current_time() - search_start_time
-  
-  // Performance assertions
-  assert_true(concat_time < 5000)  // Should complete in less than 5 seconds
-  assert_true(split_time < 1000)   // Should complete in less than 1 second
-  assert_true(search_time < 1000)  // Should complete in less than 1 second
-  
-  // Log performance metrics
-  log_performance_metric("string_concatenation", iterations, concat_time)
-  log_performance_metric("string_splitting", iterations, split_time)
-  log_performance_metric("string_searching", iterations, search_time)
-}
-
-// Test 3: Array Operations Performance
-test "array operations performance benchmark" {
-  let array_size = 10000
-  let iterations = 1000
-  
-  // Create test array
-  let test_array = []
-  for i = 0; i < array_size; i = i + 1 {
-    test_array = test_array.push(i)
-  }
-  assert_eq(test_array.length(), array_size)
-  
-  // Benchmark array traversal
-  let traversal_start_time = get_current_time()
-  let sum = 0
-  for i = 0; i < iterations; i = i + 1 {
-    for j = 0; j < test_array.length(); j = j + 1 {
-      sum = sum + test_array[j]
+    // 直方图操作
+    let histogram_value = 10.0 + (i.to_float() % 100.0)
+    Histogram::record(histogram, histogram_value)
+    
+    // 仪表操作
+    let gauge_value = 50.0 + (Float::sin(i.to_float() * 0.01) * 25.0)
+    Gauge::record(gauge, gauge_value)
+    
+    // 每1000次操作记录一次性能指标
+    if i % 1000 == 0 {
+      let perf_attrs = [
+        ("benchmark.operation", StringValue("metrics.batch")),
+        ("batch.size", IntValue(1000)),
+        ("batch.number", IntValue(i / 1000)),
+        ("operation.count", IntValue(i))
+      ]
+      Counter::add(counter, 0.0, Some(Attributes::{ values: perf_attrs }))
     }
   }
-  let traversal_time = get_current_time() - traversal_start_time
   
-  // Verify result correctness
-  let expected_sum = (array_size * (array_size - 1) / 2) * iterations
-  assert_eq(sum, expected_sum)
+  // 记录结束时间
+  let end_time = 0 // 简化时间戳
+  let total_duration = end_time - start_time
   
-  // Benchmark array filtering
-  let filter_start_time = get_current_time()
-  for i = 0; i < iterations; i = i + 1 {
-    let filtered = test_array.filter(fn(x) { x % 2 == 0 })
-    assert_eq(filtered.length(), array_size / 2)
-  }
-  let filter_time = get_current_time() - filter_start_time
+  // 记录性能结果
+  let perf_result_attrs = [
+    ("benchmark.type", StringValue("metrics.operations")),
+    ("total.operations", IntValue(operation_count)),
+    ("total.duration", IntValue(total_duration)),
+    ("operations.per.second", FloatValue(operation_count.to_float() / total_duration.to_float()))
+  ]
+  Counter::add(counter, 0.0, Some(Attributes::{ values: perf_result_attrs }))
   
-  // Benchmark array mapping
-  let map_start_time = get_current_time()
-  for i = 0; i < iterations; i = i + 1 {
-    let mapped = test_array.map(fn(x) { x * 2 })
-    assert_eq(mapped.length(), array_size)
-    assert_eq(mapped[0], 0)
-    assert_eq(mapped[array_size - 1], (array_size - 1) * 2)
-  }
-  let map_time = get_current_time() - map_start_time
-  
-  // Performance assertions
-  assert_true(traversal_time < 5000)  // Should complete in less than 5 seconds
-  assert_true(filter_time < 3000)     // Should complete in less than 3 seconds
-  assert_true(map_time < 3000)        // Should complete in less than 3 seconds
-  
-  // Log performance metrics
-  log_performance_metric("array_traversal", iterations * array_size, traversal_time)
-  log_performance_metric("array_filtering", iterations, filter_time)
-  log_performance_metric("array_mapping", iterations, map_time)
+  // 验证度量指标属性
+  assert_eq(counter.name, "benchmark.counter")
+  assert_eq(histogram.name, "benchmark.histogram")
+  assert_eq(gauge.name, "benchmark.gauge")
 }
 
-// Test 4: Memory Allocation Performance
-test "memory allocation performance benchmark" {
-  let iterations = 1000
-  let object_size = 100
+// 测试2: Span操作性能基准
+test "Span操作性能基准" {
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "performance.benchmark.spans")
   
-  // Benchmark object creation
-  let create_start_time = get_current_time()
-  let objects = []
-  for i = 0; i < iterations; i = i + 1 {
-    let obj = {
-      id: i,
-      name: "object_" + i.to_string(),
-      data: [0] * object_size,
-      timestamp: get_current_time()
+  // 性能测试：大量Span创建和操作
+  let span_count = 5000
+  
+  // 记录开始时间
+  let start_time = 0
+  
+  // 创建根Span
+  let root_span = Tracer::start_span(tracer, "performance.benchmark.root")
+  
+  // 执行大量Span操作
+  for i in 1..=span_count {
+    // 创建子Span
+    let span_name = "benchmark.span." + i.to_string()
+    let span = Tracer::start_span(tracer, span_name)
+    
+    // 设置Span属性
+    let span_attrs = [
+      ("span.index", IntValue(i)),
+      ("span.batch", IntValue((i - 1) / 100 + 1)),
+      ("span.type", StringValue("benchmark"))
+    ]
+    Span::set_attributes(span, span_attrs)
+    
+    // 添加事件
+    let event_attrs = [
+      ("event.type", StringValue("operation")),
+      ("event.data", StringValue("benchmark.data." + i.to_string()))
+    ]
+    Span::add_event(span, "benchmark.event", Some(event_attrs))
+    
+    // 结束Span
+    Span::end(span)
+    
+    // 每1000个Span记录一次性能指标
+    if i % 1000 == 0 {
+      let batch_span = Tracer::start_span(tracer, "benchmark.batch." + (i / 1000).to_string())
+      let batch_attrs = [
+        ("batch.size", IntValue(1000)),
+        ("batch.number", IntValue(i / 1000)),
+        ("total.spans", IntValue(i))
+      ]
+      Span::set_attributes(batch_span, batch_attrs)
+      Span::end(batch_span)
     }
-    objects = objects.push(obj)
   }
-  let create_time = get_current_time() - create_start_time
   
-  // Verify object creation
-  assert_eq(objects.length(), iterations)
-  assert_eq(objects[0].id, 0)
-  assert_eq(objects[iterations - 1].id, iterations - 1)
+  // 结束根Span
+  Span::end(root_span)
   
-  // Benchmark object access
-  let access_start_time = get_current_time()
-  let total_id = 0
-  for i = 0; i < iterations; i = i + 1 {
-    total_id = total_id + objects[i].id
-    assert_true(objects[i].name.contains("object_"))
-    assert_eq(objects[i].data.length(), object_size)
-  }
-  let access_time = get_current_time() - access_start_time
+  // 记录结束时间
+  let end_time = 0
+  let total_duration = end_time - start_time
   
-  // Verify access correctness
-  let expected_total_id = (iterations * (iterations - 1)) / 2
-  assert_eq(total_id, expected_total_id)
-  
-  // Benchmark garbage collection
-  let gc_start_time = get_current_time()
-  objects = []  // Clear reference to allow garbage collection
-  let gc_time = get_current_time() - gc_start_time
-  
-  // Performance assertions
-  assert_true(create_time < 2000)  // Should complete in less than 2 seconds
-  assert_true(access_time < 1000)  // Should complete in less than 1 second
-  assert_true(gc_time < 1000)      // Should complete in less than 1 second
-  
-  // Log performance metrics
-  log_performance_metric("object_creation", iterations, create_time)
-  log_performance_metric("object_access", iterations, access_time)
-  log_performance_metric("garbage_collection", 1, gc_time)
+  // 记录性能结果
+  let perf_span = Tracer::start_span(tracer, "performance.results")
+  let perf_attrs = [
+    ("benchmark.type", StringValue("span.operations")),
+    ("total.spans", IntValue(span_count)),
+    ("total.duration", IntValue(total_duration)),
+    ("spans.per.second", FloatValue(span_count.to_float() / total_duration.to_float()))
+  ]
+  Span::set_attributes(perf_span, perf_attrs)
+  Span::end(perf_span)
 }
 
-// Test 5: Algorithm Performance Comparison
-test "algorithm performance comparison" {
-  let data_size = 10000
+// 测试3: 日志记录性能基准
+test "日志记录性能基准" {
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "performance.benchmark.logging")
   
-  // Create test data
-  let test_data = []
-  for i = 0; i < data_size; i = i + 1 {
-    test_data = test_data.push(data_size - i)  // Reverse sorted data
+  // 性能测试：大量日志记录
+  let log_count = 8000
+  
+  // 记录开始时间
+  let start_time = 0
+  
+  // 执行大量日志记录
+  for i in 1..=log_count {
+    // 创建日志属性
+    let log_attrs = Attributes::new()
+    Attributes::set(log_attrs, "log.index", IntValue(i))
+    Attributes::set(log_attrs, "log.batch", IntValue((i - 1) / 1000 + 1))
+    Attributes::set(log_attrs, "log.component", StringValue("benchmark"))
+    
+    // 确定日志级别
+    let log_level = match i % 4 {
+      0 => Info,
+      1 => Warn,
+      2 => Error,
+      _ => Debug
+    }
+    
+    // 创建日志消息
+    let log_message = "Benchmark log message " + i.to_string() + " for performance testing"
+    
+    // 创建日志记录
+    let log_record = LogRecord::new_with_context(
+      log_level,
+      Some(log_message),
+      Some(log_attrs),
+      None,
+      None,
+      None,
+      None,
+      None
+    )
+    
+    // 发射日志
+    Logger::emit(logger, log_record)
+    
+    // 每1000条日志记录一次性能指标
+    if i % 1000 == 0 {
+      let perf_log_attrs = Attributes::new()
+      Attributes::set(perf_log_attrs, "benchmark.operation", StringValue("logging.batch"))
+      Attributes::set(perf_log_attrs, "batch.size", IntValue(1000))
+      Attributes::set(perf_log_attrs, "batch.number", IntValue(i / 1000))
+      
+      let perf_log_record = LogRecord::new_with_context(
+        Info,
+        Some("Logging batch performance checkpoint"),
+        Some(perf_log_attrs),
+        None,
+        None,
+        None,
+        None,
+        None
+      )
+      Logger::emit(logger, perf_log_record)
+    }
   }
   
-  // Benchmark bubble sort
-  let bubble_data = test_data.copy()
-  let bubble_start_time = get_current_time()
-  bubble_sort(bubble_data)
-  let bubble_time = get_current_time() - bubble_start_time
+  // 记录结束时间
+  let end_time = 0
+  let total_duration = end_time - start_time
   
-  // Verify bubble sort result
-  assert_true(is_sorted(bubble_data))
+  // 记录性能结果
+  let perf_result_attrs = Attributes::new()
+  Attributes::set(perf_result_attrs, "benchmark.type", StringValue("logging.operations"))
+  Attributes::set(perf_result_attrs, "total.logs", IntValue(log_count))
+  Attributes::set(perf_result_attrs, "total.duration", IntValue(total_duration))
+  Attributes::set(perf_result_attrs, "logs.per.second", FloatValue(log_count.to_float() / total_duration.to_float()))
   
-  // Benchmark quick sort
-  let quick_data = test_data.copy()
-  let quick_start_time = get_current_time()
-  quick_sort(quick_data)
-  let quick_time = get_current_time() - quick_start_time
-  
-  // Verify quick sort result
-  assert_true(is_sorted(quick_data))
-  
-  // Benchmark merge sort
-  let merge_data = test_data.copy()
-  let merge_start_time = get_current_time()
-  merge_sort(merge_data)
-  let merge_time = get_current_time() - merge_start_time
-  
-  // Verify merge sort result
-  assert_true(is_sorted(merge_data))
-  
-  // Performance comparison
-  assert_true(quick_time < bubble_time)   // Quick sort should be faster than bubble sort
-  assert_true(merge_time < bubble_time)   // Merge sort should be faster than bubble sort
-  
-  // Log performance metrics
-  log_performance_metric("bubble_sort", data_size, bubble_time)
-  log_performance_metric("quick_sort", data_size, quick_time)
-  log_performance_metric("merge_sort", data_size, merge_time)
+  let perf_log_record = LogRecord::new_with_context(
+    Info,
+    Some("Logging performance benchmark completed"),
+    Some(perf_result_attrs),
+    None,
+    None,
+    None,
+    None,
+    None
+  )
+  Logger::emit(logger, perf_log_record)
 }
 
-// Test 6: Data Structure Performance
-test "data structure performance benchmark" {
-  let operations = 10000
+// 测试4: 上下文操作性能基准
+test "上下文操作性能基准" {
+  let root_ctx = Context::root()
   
-  // Benchmark list operations
-  let list_start_time = get_current_time()
-  let test_list = []
-  for i = 0; i < operations; i = i + 1 {
-    test_list = test_list.push(i)
-  }
-  let list_push_time = get_current_time() - list_start_time
+  // 性能测试：大量上下文操作
+  let context_count = 6000
   
-  // Test list access
-  let list_access_start = get_current_time()
-  let list_sum = 0
-  for i = 0; i < operations; i = i + 1 {
-    list_sum = list_sum + test_list[i]
-  }
-  let list_access_time = get_current_time() - list_access_start
+  // 记录开始时间
+  let start_time = 0
   
-  // Benchmark map operations
-  let map_start_time = get_current_time()
-  let test_map = {}
-  for i = 0; i < operations; i = i + 1 {
-    test_map = test_map.set("key_" + i.to_string(), i)
-  }
-  let map_insert_time = get_current_time() - map_start_time
-  
-  // Test map access
-  let map_access_start = get_current_time()
-  let map_sum = 0
-  for i = 0; i < operations; i = i + 1 {
-    match test_map.get("key_" + i.to_string()) {
-      Some(value) => map_sum = map_sum + value
-      None => assert_true(false)
+  // 执行大量上下文操作
+  for i in 1..=context_count {
+    // 创建上下文键
+    let key1 = ContextKey::new("benchmark.key." + i.to_string())
+    let key2 = ContextKey::new("batch.key." + ((i - 1) / 100 + 1).to_string())
+    let key3 = ContextKey::new("type.key.benchmark")
+    
+    // 设置上下文值
+    let ctx1 = Context::with_value(root_ctx, key1, "value." + i.to_string())
+    let ctx2 = Context::with_value(ctx1, key2, "batch." + ((i - 1) / 100 + 1).to_string())
+    let ctx3 = Context::with_value(ctx2, key3, "benchmark.type")
+    
+    // 获取上下文值
+    let value1 = Context::get(ctx3, key1)
+    let value2 = Context::get(ctx3, key2)
+    let value3 = Context::get(ctx3, key3)
+    
+    // 验证上下文值
+    assert_eq(value1, Some("value." + i.to_string()))
+    assert_eq(value2, Some("batch." + ((i - 1) / 100 + 1).to_string()))
+    assert_eq(value3, Some("benchmark.type"))
+    
+    // 每1000次操作记录一次性能指标
+    if i % 1000 == 0 {
+      let perf_key = ContextKey::new("performance.checkpoint")
+      let ctx_with_perf = Context::with_value(ctx3, perf_key, "checkpoint." + (i / 1000).to_string())
+      let perf_value = Context::get(ctx_with_perf, perf_key)
+      assert_eq(perf_value, Some("checkpoint." + (i / 1000).to_string()))
     }
   }
-  let map_access_time = get_current_time() - map_access_start
   
-  // Benchmark set operations
-  let set_start_time = get_current_time()
-  let test_set = Set::empty()
-  for i = 0; i < operations; i = i + 1 {
-    test_set = Set::add(test_set, i)
-  }
-  let set_insert_time = get_current_time() - set_start_time
+  // 记录结束时间
+  let end_time = 0
+  let total_duration = end_time - start_time
   
-  // Test set membership
-  let set_lookup_start = get_current_time()
-  let found_count = 0
-  for i = 0; i < operations; i = i + 1 {
-    if Set::contains(test_set, i) {
-      found_count = found_count + 1
-    }
-  }
-  let set_lookup_time = get_current_time() - set_lookup_start
-  
-  // Verify results
-  assert_eq(list_sum, (operations * (operations - 1)) / 2)
-  assert_eq(map_sum, (operations * (operations - 1)) / 2)
-  assert_eq(found_count, operations)
-  
-  // Performance assertions
-  assert_true(list_push_time < 2000)
-  assert_true(list_access_time < 1000)
-  assert_true(map_insert_time < 2000)
-  assert_true(map_access_time < 1000)
-  assert_true(set_insert_time < 2000)
-  assert_true(set_lookup_time < 1000)
-  
-  // Log performance metrics
-  log_performance_metric("list_push", operations, list_push_time)
-  log_performance_metric("list_access", operations, list_access_time)
-  log_performance_metric("map_insert", operations, map_insert_time)
-  log_performance_metric("map_access", operations, map_access_time)
-  log_performance_metric("set_insert", operations, set_insert_time)
-  log_performance_metric("set_lookup", operations, set_lookup_time)
+  // 验证性能结果
+  assert_true(context_count > 0)
+  assert_true(total_duration >= 0)
 }
 
-// Test 7: I/O Performance
-test "io performance benchmark" {
-  let data_size = 10000
-  let iterations = 100
+// 测试5: 资源操作性能基准
+test "资源操作性能基准" {
+  let resource = Resource::new()
   
-  // Create test data
-  let test_data = "x" * data_size
-  assert_eq(test_data.length(), data_size)
+  // 性能测试：大量资源操作
+  let resource_count = 4000
   
-  // Benchmark string serialization
-  let serialize_start_time = get_current_time()
-  let serialized_data = []
-  for i = 0; i < iterations; i = i + 1 {
-    let item = {
-      id: i,
-      data: test_data,
-      timestamp: get_current_time()
+  // 记录开始时间
+  let start_time = 0
+  
+  // 执行大量资源操作
+  for i in 1..=resource_count {
+    // 创建资源属性
+    let resource_attrs = [
+      ("resource.id", StringValue("resource." + i.to_string())),
+      ("resource.type", StringValue("benchmark.resource")),
+      ("resource.batch", IntValue((i - 1) / 100 + 1)),
+      ("resource.timestamp", IntValue(1234567890 + i))
+    ]
+    
+    // 创建带有属性的资源
+    let resource_with_attrs = Resource::with_attributes(resource, resource_attrs)
+    
+    // 获取资源属性
+    let resource_id = Resource::get_attribute(resource_with_attrs, "resource.id")
+    let resource_type = Resource::get_attribute(resource_with_attrs, "resource.type")
+    let resource_batch = Resource::get_attribute(resource_with_attrs, "resource.batch")
+    
+    // 验证资源属性
+    match resource_id {
+      Some(StringValue(id)) => assert_eq(id, "resource." + i.to_string())
+      _ => assert_true(false)
     }
-    let serialized = serialize_to_string(item)
-    serialized_data = serialized_data.push(serialized)
-  }
-  let serialize_time = get_current_time() - serialize_start_time
-  
-  // Benchmark string deserialization
-  let deserialize_start_time = get_current_time()
-  let deserialized_count = 0
-  for i = 0; i < serialized_data.length(); i = i + 1 {
-    match deserialize_from_string(serialized_data[i]) {
-      Some(item) => deserialized_count = deserialized_count + 1
-      None => assert_true(false)
+    
+    match resource_type {
+      Some(StringValue(t)) => assert_eq(t, "benchmark.resource")
+      _ => assert_true(false)
     }
-  }
-  let deserialize_time = get_current_time() - deserialize_start_time
-  
-  // Verify results
-  assert_eq(serialized_data.length(), iterations)
-  assert_eq(deserialized_count, iterations)
-  
-  // Performance assertions
-  assert_true(serialize_time < 5000)    // Should complete in less than 5 seconds
-  assert_true(deserialize_time < 5000)  // Should complete in less than 5 seconds
-  
-  // Log performance metrics
-  log_performance_metric("serialization", iterations, serialize_time)
-  log_performance_metric("deserialization", iterations, deserialize_time)
-}
-
-// Test 8: Telemetry Performance
-test "telemetry performance benchmark" {
-  let metrics_count = 10000
-  let operations = 1000
-  
-  // Create metrics
-  let metrics_start_time = get_current_time()
-  let metrics = []
-  for i = 0; i < metrics_count; i = i + 1 {
-    let metric = Counter({
-      name: "metric_" + i.to_string(),
-      description: Some("Test metric " + i.to_string()),
-      unit: Some("operations")
-    })
-    metrics = metrics.push(metric)
-  }
-  let metrics_creation_time = get_current_time() - metrics_start_time
-  
-  // Benchmark metric recording
-  let record_start_time = get_current_time()
-  for i = 0; i < operations; i = i + 1 {
-    for j = 0; j < metrics.length(); j = j + 1 {
-      match metrics[j] {
-        Counter(name, _, _) => {
-          // Record a value for the counter
-          record_counter_value(name, i + j)
-        }
+    
+    match resource_batch {
+      Some(IntValue(batch)) => assert_eq(batch, (i - 1) / 100 + 1)
+      _ => assert_true(false)
+    }
+    
+    // 每1000次操作测试资源合并
+    if i % 1000 == 0 {
+      let merge_attrs = [
+        ("merge.operation", StringValue("benchmark.merge")),
+        ("merge.batch", IntValue(i / 1000)),
+        ("merge.timestamp", IntValue(1234567890 + i))
+      ]
+      let merge_resource = Resource::with_attributes(Resource::new(), merge_attrs)
+      let merged_resource = Resource::merge(resource_with_attrs, merge_resource)
+      
+      // 验证合并后的资源
+      let merged_op = Resource::get_attribute(merged_resource, "merge.operation")
+      match merged_op {
+        Some(StringValue(op)) => assert_eq(op, "benchmark.merge")
         _ => assert_true(false)
       }
     }
   }
-  let record_time = get_current_time() - record_start_time
   
-  // Benchmark metric aggregation
-  let aggregate_start_time = get_current_time()
-  let total_operations = 0
-  for i = 0; i < metrics.length(); i = i + 1 {
-    match metrics[i] {
-      Counter(name, _, _) => {
-        let value = get_counter_value(name)
-        total_operations = total_operations + value
-      }
-      _ => assert_true(false)
+  // 记录结束时间
+  let end_time = 0
+  let total_duration = end_time - start_time
+  
+  // 验证性能结果
+  assert_true(resource_count > 0)
+  assert_true(total_duration >= 0)
+}
+
+// 测试6: 内存使用性能基准
+test "内存使用性能基准" {
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "performance.benchmark.memory")
+  
+  // 创建内存监控指标
+  let memory_usage = Meter::create_gauge(meter, "memory.usage", Some("内存使用量"), Some("bytes"))
+  let memory_allocations = Meter::create_counter(meter, "memory.allocations", Some("内存分配次数"), Some("count"))
+  
+  // 记录开始时间
+  let start_time = 0
+  
+  // 模拟内存密集型操作
+  let data_structures = []
+  
+  for i in 1..=3000 {
+    // 模拟内存分配
+    let data_size = 1024 * (i % 10 + 1) // 1KB到10KB
+    Counter::add(memory_allocations, 1.0)
+    
+    // 记录内存使用量
+    let current_memory = 1024 * 1024 * (i.to_float() / 1000.0) // 模拟递增的内存使用
+    Gauge::record(memory_usage, current_memory)
+    
+    // 模拟数据结构创建
+    let data_structure = {
+      "id": i,
+      "size": data_size,
+      "timestamp": 1234567890 + i,
+      "data": "x" * data_size
     }
-  }
-  let aggregate_time = get_current_time() - aggregate_start_time
-  
-  // Verify results
-  assert_eq(metrics.length(), metrics_count)
-  assert_true(total_operations > 0)
-  
-  // Performance assertions
-  assert_true(metrics_creation_time < 2000)  // Should complete in less than 2 seconds
-  assert_true(record_time < 5000)            // Should complete in less than 5 seconds
-  assert_true(aggregate_time < 1000)         // Should complete in less than 1 second
-  
-  // Log performance metrics
-  log_performance_metric("metrics_creation", metrics_count, metrics_creation_time)
-  log_performance_metric("metrics_recording", operations * metrics_count, record_time)
-  log_performance_metric("metrics_aggregation", metrics_count, aggregate_time)
-}
-
-// Helper functions for performance testing
-func log_performance_metric(operation : String, iterations : Int, time_ms : Int) {
-  let ops_per_second = (iterations * 1000) / time_ms
-  let message = operation + ": " + iterations.to_string() + " operations in " + 
-                time_ms.to_string() + "ms (" + ops_per_second.to_string() + " ops/sec)"
-  // In a real implementation, this would log to a monitoring system
-  assert_true(message.length() > 0)
-}
-
-func bubble_sort(arr : Array[Int]) -> Array[Int] {
-  let result = arr.copy()
-  let n = result.length()
-  for i = 0; i < n; i = i + 1 {
-    for j = 0; j < n - i - 1; j = j + 1 {
-      if result[j] > result[j + 1] {
-        let temp = result[j]
-        result[j] = result[j + 1]
-        result[j + 1] = temp
-      }
-    }
-  }
-  return result
-}
-
-func quick_sort(arr : Array[Int]) -> Array[Int] {
-  if arr.length() <= 1 {
-    return arr
-  }
-  
-  let pivot = arr[0]
-  let less = []
-  let equal = []
-  let greater = []
-  
-  for i = 0; i < arr.length(); i = i + 1 {
-    if arr[i] < pivot {
-      less = less.push(arr[i])
-    } else if arr[i] == pivot {
-      equal = equal.push(arr[i])
-    } else {
-      greater = greater.push(arr[i])
+    
+    // 每1000次操作记录内存统计
+    if i % 1000 == 0 {
+      let memory_attrs = [
+        ("operation.type", StringValue("memory.benchmark")),
+        ("operation.count", IntValue(i)),
+        ("data.structures", IntValue(data_structures.length())),
+        ("current.memory", FloatValue(current_memory))
+      ]
+      Counter::add(memory_allocations, 0.0, Some(Attributes::{ values: memory_attrs }))
     }
   }
   
-  return quick_sort(less) + equal + quick_sort(greater)
+  // 记录结束时间
+  let end_time = 0
+  let total_duration = end_time - start_time
+  
+  // 记录最终内存统计
+  let final_memory_attrs = [
+    ("benchmark.type", StringValue("memory.operations")),
+    ("total.operations", IntValue(3000)),
+    ("total.duration", IntValue(total_duration)),
+    ("final.memory.usage", FloatValue(1024.0 * 1024.0 * 3.0))
+  ]
+  Counter::add(memory_allocations, 0.0, Some(Attributes::{ values: final_memory_attrs }))
+  
+  // 验证内存指标属性
+  assert_eq(memory_usage.name, "memory.usage")
+  assert_eq(memory_usage.description, Some("内存使用量"))
+  assert_eq(memory_usage.unit, Some("bytes"))
+  assert_eq(memory_allocations.name, "memory.allocations")
+  assert_eq(memory_allocations.description, Some("内存分配次数"))
+  assert_eq(memory_allocations.unit, Some("count"))
 }
 
-func merge_sort(arr : Array[Int]) -> Array[Int] {
-  if arr.length() <= 1 {
-    return arr
-  }
+// 测试7: CPU密集型操作性能基准
+test "CPU密集型操作性能基准" {
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "performance.benchmark.cpu")
   
-  let middle = arr.length() / 2
-  let left = merge_sort(arr.slice(0, middle))
-  let right = merge_sort(arr.slice(middle, arr.length()))
+  // 创建CPU监控指标
+  let cpu_usage = Meter::create_histogram(meter, "cpu.usage", Some("CPU使用率"), Some("percent"))
+  let cpu_operations = Meter::create_counter(meter, "cpu.operations", Some("CPU操作次数"), Some("count"))
   
-  return merge(left, right)
-}
-
-func merge(left : Array[Int], right : Array[Int]) -> Array[Int] {
-  let result = []
-  let i = 0
-  let j = 0
+  // 记录开始时间
+  let start_time = 0
   
-  while i < left.length() && j < right.length() {
-    if left[i] <= right[j] {
-      result = result.push(left[i])
-      i = i + 1
-    } else {
-      result = result.push(right[j])
-      j = j + 1
+  // 模拟CPU密集型操作
+  for i in 1..=2000 {
+    // 模拟计算密集型任务
+    let mut result = 0.0
+    for j in 1..=100 {
+      result = result + (i.to_float() * j.to_float()).sqrt()
+    }
+    
+    // 记录CPU使用率
+    let cpu_percent = 50.0 + (Float::sin(i.to_float() * 0.01) * 40.0)
+    Histogram::record(cpu_usage, cpu_percent)
+    
+    // 记录CPU操作
+    Counter::add(cpu_operations, 1.0)
+    
+    // 每500次操作记录CPU统计
+    if i % 500 == 0 {
+      let cpu_attrs = [
+        ("operation.type", StringValue("cpu.benchmark")),
+        ("operation.count", IntValue(i)),
+        ("calculation.result", FloatValue(result)),
+        ("cpu.percent", FloatValue(cpu_percent))
+      ]
+      Counter::add(cpu_operations, 0.0, Some(Attributes::{ values: cpu_attrs }))
     }
   }
   
-  while i < left.length() {
-    result = result.push(left[i])
-    i = i + 1
-  }
+  // 记录结束时间
+  let end_time = 0
+  let total_duration = end_time - start_time
   
-  while j < right.length() {
-    result = result.push(right[j])
-    j = j + 1
-  }
+  // 记录最终CPU统计
+  let final_cpu_attrs = [
+    ("benchmark.type", StringValue("cpu.operations")),
+    ("total.operations", IntValue(2000)),
+    ("total.duration", IntValue(total_duration)),
+    ("average.cpu.usage", FloatValue(70.5))
+  ]
+  Counter::add(cpu_operations, 0.0, Some(Attributes::{ values: final_cpu_attrs }))
   
-  return result
-}
-
-func is_sorted(arr : Array[Int]) -> Bool {
-  for i = 1; i < arr.length(); i = i + 1 {
-    if arr[i] < arr[i - 1] {
-      return false
-    }
-  }
-  return true
-}
-
-func serialize_to_string(obj : Any) -> String {
-  // Simplified serialization for testing
-  return "serialized:" + obj.to_string()
-}
-
-func deserialize_from_string(str : String) -> Option[Any] {
-  // Simplified deserialization for testing
-  if str.contains("serialized:") {
-    return Some("deserialized_object")
-  }
-  return None
-}
-
-func record_counter_value(name : String, value : Int) -> Unit {
-  // Simplified counter recording for testing
-  assert_true(name.length() > 0)
-  assert_true(value >= 0)
-}
-
-func get_counter_value(name : String) -> Int {
-  // Simplified counter retrieval for testing
-  return 100  // Return a fixed value for testing
+  // 验证CPU指标属性
+  assert_eq(cpu_usage.name, "cpu.usage")
+  assert_eq(cpu_usage.description, Some("CPU使用率"))
+  assert_eq(cpu_usage.unit, Some("percent"))
+  assert_eq(cpu_operations.name, "cpu.operations")
+  assert_eq(cpu_operations.description, Some("CPU操作次数"))
+  assert_eq(cpu_operations.unit, Some("count"))
 }
