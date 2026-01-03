@@ -1,0 +1,10 @@
+{
+  "name": "standalone-azimuth-test",
+  "version": "0.1.0",
+  "description": "Standalone test package for Azimuth",
+  "target": "wasm-gc",
+  "source": ["."],
+  "deps": {
+    "moonbitlang/core/assertion": "*"
+  }
+}
