@@ -462,6 +462,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_numeric_operations_tests.mbt": {
   },
+  "azimuth_next_gen_features_tests.mbt": {
+  },
   "azimuth_new_test_cases.mbt": {
   },
   "azimuth_new_telemetry_tests.mbt": {
