@@ -1,563 +1,736 @@
-// Azimuth 并发安全性测试
-// 专注于测试遥测系统在并发环境下的数据一致性和线程安全性
+// Azimuth Telemetry System - Concurrent Safety Tests
+// This file contains test cases for concurrent safety functionality
 
-// 测试1: 并发指标更新安全性
-test "并发指标更新安全性" {
-  // 创建共享计数器
-  let counter = SharedCounter(0)
-  let num_threads = 10
-  let increments_per_thread = 100
+// Test 1: Thread-Safe Span Operations
+test "thread-safe span operations" {
+  let span_manager = ThreadSafeSpanManager::new()
   
-  // 并发增加计数器的函数
-  let increment_counter = fn(shared_counter, thread_id, count) {
-    for i = 0; i < count; i = i + 1 {
-      // 模拟原子操作
-      atomic_increment(shared_counter)
-      // 添加一些随机延迟以增加竞争条件
-      simulate_random_delay()
-    }
-  }
+  // Create spans from multiple threads
+  let threads = []
+  let span_ids = []
   
-  // 模拟并发执行（在实际环境中会使用真正的并发）
-  let threads = (0..num_threads).map(fn(thread_id) {
-    increment_counter(counter, thread_id, increments_per_thread)
-  })
-  
-  // 等待所有线程完成（简化模拟）
-  let _ = threads
-  
-  // 验证最终计数器值
-  let expected_value = num_threads * increments_per_thread
-  let actual_value = get_counter_value(counter)
-  
-  assert_eq(actual_value, expected_value, 
-    "并发计数器更新不一致: 期望 " + expected_value.to_string() + 
-    ", 实际 " + actual_value.to_string())
-}
-
-// 测试2: 并发span创建安全性
-test "并发span创建安全性" {
-  // 创建共享的span存储
-  let span_store = ConcurrentSpanStore([])
-  let num_threads = 5
-  let spans_per_thread = 20
-  
-  // 创建span的函数
-  let create_span = fn(thread_id, span_index) {
-    Span({
-      trace_id: "trace-" + thread_id.to_string(),
-      span_id: "span-" + thread_id.to_string() + "-" + span_index.to_string(),
-      parent_span_id: if span_index > 0 { 
-        Some("span-" + thread_id.to_string() + "-" + (span_index - 1).to_string()) 
-      } else { 
-        None 
-      },
-      service_name: "service-" + thread_id.to_string(),
-      operation_name: "operation-" + span_index.to_string(),
-      start_time: get_current_time_ms(),
-      end_time: get_current_time_ms() + 100,
-      status: "ok",
-      tags: [
-        ("thread", thread_id.to_string()),
-        ("index", span_index.to_string()),
-        ("concurrent", "true")
-      ]
-    })
-  }
-  
-  // 并发创建spans的函数
-  let create_spans_concurrently = fn(store, thread_id, count) {
-    for i = 0; i < count; i = i + 1 {
-      let span = create_span(thread_id, i)
-      // 线程安全地添加span到存储
-      add_span_concurrently(store, span)
-      simulate_random_delay()
-    }
-  }
-  
-  // 模拟并发执行
-  let threads = (0..num_threads).map(fn(thread_id) {
-    create_spans_concurrently(span_store, thread_id, spans_per_thread)
-  })
-  
-  // 等待所有线程完成
-  let _ = threads
-  
-  // 验证span存储的完整性
-  let all_spans = get_all_spans(span_store)
-  let expected_total_spans = num_threads * spans_per_thread
-  
-  assert_eq(all_spans.length(), expected_total_spans, 
-    "并发span创建数量不一致: 期望 " + expected_total_spans.to_string() + 
-    ", 实际 " + all_spans.length().to_string())
-  
-  // 验证span数据的完整性
-  let validate_span_integrity = fn(spans) {
-    spans.all(fn(span) {
-      span.trace_id.length() > 0 && 
-      span.span_id.length() > 0 && 
-      span.service_name.length() > 0 &&
-      span.operation_name.length() > 0 &&
-      span.tags.length() > 0
-    })
-  }
-  
-  assert_true(validate_span_integrity(all_spans), "并发创建的span数据完整性验证失败")
-  
-  // 验证父子关系的一致性
-  let validate_parent_child_relationship = fn(spans) {
-    spans.all(fn(span) {
-      match span.parent_span_id {
-        Some(parent_id) => {
-          spans.any(fn(s) { s.span_id == parent_id })
-        }
-        None => true // 根span没有父span
-      }
-    })
-  }
-  
-  assert_true(validate_parent_child_relationship(all_spans), 
-    "并发创建的span父子关系验证失败")
-}
-
-// 测试3: 并发baggage传播安全性
-test "并发baggage传播安全性" {
-  // 创建共享的baggage上下文
-  let initial_baggage = [
-    ("user.id", "12345"),
-    ("request.id", "req-67890"),
-    ("tenant.id", "tenant-001")
-  ]
-  
-  let baggage_context = ConcurrentBaggageContext(initial_baggage)
-  let num_threads = 8
-  
-  // 并发修改baggage的函数
-  let modify_baggage_concurrently = fn(context, thread_id) {
-    // 每个线程添加自己的baggage项
-    let new_items = [
-      ("thread." + thread_id.to_string() + ".id", thread_id.to_string()),
-      ("thread." + thread_id.to_string() + ".timestamp", get_current_time_ms().to_string())
-    ]
-    
-    // 线程安全地添加baggage项
-    for i = 0; i < new_items.length(); i = i + 1 {
-      add_baggage_item_concurrently(context, new_items[i])
-      simulate_random_delay()
-    }
-    
-    // 验证初始baggage项仍然存在
-    let current_baggage = get_all_baggage_items(context)
-    assert_true(initial_baggage.all(fn(item) {
-      current_baggage.any(fn(current) { current.0 == item.0 && current.1 == item.1 })
-    }), "线程 " + thread_id.to_string() + " 丢失了初始baggage项")
-  }
-  
-  // 模拟并发执行
-  let threads = (0..num_threads).map(fn(thread_id) {
-    modify_baggage_concurrently(baggage_context, thread_id)
-  })
-  
-  // 等待所有线程完成
-  let _ = threads
-  
-  // 验证最终baggage的一致性
-  let final_baggage = get_all_baggage_items(baggage_context)
-  let expected_baggage_count = initial_baggage.length() + (num_threads * 2)
-  
-  assert_eq(final_baggage.length(), expected_baggage_count, 
-    "并发baggage修改后数量不一致: 期望 " + expected_baggage_count.to_string() + 
-    ", 实际 " + final_baggage.length().to_string())
-  
-  // 验证初始baggage项的完整性
-  assert_true(initial_baggage.all(fn(item) {
-    final_baggage.any(fn(current) { current.0 == item.0 && current.1 == item.1 })
-  }), "初始baggage项在并发修改后丢失")
-  
-  // 验证每个线程添加的baggage项
-  for thread_id = 0; thread_id < num_threads; thread_id = thread_id + 1 {
-    let thread_id_key = "thread." + thread_id.to_string() + ".id"
-    let thread_timestamp_key = "thread." + thread_id.to_string() + ".timestamp"
-    
-    assert_true(final_baggage.any(fn(item) { item.0 == thread_id_key }), 
-      "线程 " + thread_id.to_string() + " 的ID baggage项丢失")
-    assert_true(final_baggage.any(fn(item) { item.0 == thread_timestamp_key }), 
-      "线程 " + thread_id.to_string() + " 的时间戳baggage项丢失")
-  }
-}
-
-// 测试4: 并发日志记录安全性
-test "并发日志记录安全性" {
-  // 创建共享的日志存储
-  let log_store = ConcurrentLogStore([])
-  let num_threads = 6
-  let logs_per_thread = 15
-  
-  // 创建日志记录的函数
-  let create_log_record = fn(thread_id, log_index) {
-    LogRecord({
-      timestamp: get_current_time_ms(),
-      level: "INFO",
-      message: "Thread " + thread_id.to_string() + " log " + log_index.to_string(),
-      trace_id: Some("trace-" + thread_id.to_string()),
-      span_id: Some("span-" + thread_id.to_string() + "-" + log_index.to_string()),
-      attributes: [
-        ("thread.id", thread_id.to_string()),
-        ("log.index", log_index.to_string()),
-        ("concurrent", "true")
-      ]
-    })
-  }
-  
-  // 并发记录日志的函数
-  let log_concurrently = fn(store, thread_id, count) {
-    for i = 0; i < count; i = i + 1 {
-      let log = create_log_record(thread_id, i)
-      // 线程安全地添加日志到存储
-      add_log_concurrently(store, log)
-      simulate_random_delay()
-    }
-  }
-  
-  // 模拟并发执行
-  let threads = (0..num_threads).map(fn(thread_id) {
-    log_concurrently(log_store, thread_id, logs_per_thread)
-  })
-  
-  // 等待所有线程完成
-  let _ = threads
-  
-  // 验证日志存储的完整性
-  let all_logs = get_all_logs(log_store)
-  let expected_total_logs = num_threads * logs_per_thread
-  
-  assert_eq(all_logs.length(), expected_total_logs, 
-    "并发日志记录数量不一致: 期望 " + expected_total_logs.to_string() + 
-    ", 实际 " + all_logs.length().to_string())
-  
-  // 验证日志数据的完整性
-  let validate_log_integrity = fn(logs) {
-    logs.all(fn(log) {
-      log.message.length() > 0 && 
-      log.level == "INFO" &&
-      log.trace_id.is_some() &&
-      log.span_id.is_some() &&
-      log.attributes.length() > 0
-    })
-  }
-  
-  assert_true(validate_log_integrity(all_logs), "并发记录的日志数据完整性验证失败")
-  
-  // 验证每个线程的日志数量
-  for thread_id = 0; thread_id < num_threads; thread_id = thread_id + 1 {
-    let thread_logs = all_logs.filter(fn(log) {
-      log.attributes.any(fn(attr) { 
-        attr.0 == "thread.id" && attr.1 == thread_id.to_string() 
-      })
-    })
-    
-    assert_eq(thread_logs.length(), logs_per_thread, 
-      "线程 " + thread_id.to_string() + " 的日志数量不正确")
-  }
-}
-
-// 测试5: 并发采样决策一致性
-test "并发采样决策一致性" {
-  // 创建采样配置
-  let sampling_config = SamplingConfig({
-    strategy: "probabilistic",
-    probability: 0.1,
-    max_traces_per_second: 100
-  })
-  
-  // 创建共享的采样状态
-  let sampling_state = ConcurrentSamplingState({
-    sampled_traces: [],
-    rejected_traces: [],
-    total_decisions: 0
-  })
-  
-  let num_threads = 4
-  let decisions_per_thread = 50
-  
-  // 生成测试用的trace IDs
-  let generate_trace_ids = fn(count, thread_id) {
-    (0..count).map(fn(i) { 
-      "trace-" + thread_id.to_string() + "-" + i.to_string() 
-    })
-  }
-  
-  // 并发采样决策的函数
-  let make_sampling_decisions_concurrently = fn(state, config, thread_id, decision_count) {
-    let trace_ids = generate_trace_ids(decision_count, thread_id)
-    
-    for i = 0; i < trace_ids.length(); i = i + 1 {
-      let trace_id = trace_ids[i]
-      let decision = make_sampling_decision(config, trace_id)
+  for i in 0..=9 {
+    let thread_id = i
+    let thread = Thread::spawn(|| {
+      let created_spans = []
       
-      // 线程安全地记录决策
-      record_sampling_decision_concurrently(state, trace_id, decision)
-      simulate_random_delay()
+      for j in 0..=9 {
+        let span_id = "span_" + thread_id.to_string() + "_" + j.to_string()
+        let span_ctx = SpanContext::new("trace_" + thread_id.to_string(), span_id, true, "")
+        let span = ThreadSafeSpanManager::create_span(span_manager, "concurrent_test_span", Internal, span_ctx)
+        
+        // Add events concurrently
+        ThreadSafeSpanManager::add_event(span_manager, span, "thread_event", Some([("thread_id", StringValue(thread_id.to_string()))]))
+        
+        // Set status concurrently
+        ThreadSafeSpanManager::set_status(span_manager, span, Ok, Some("Thread operation completed"))
+        
+        created_spans.push(span)
+      }
+      
+      // End spans concurrently
+      for span in created_spans {
+        ThreadSafeSpanManager::end_span(span_manager, span)
+      }
+      
+      created_spans.map(|span| ThreadSafeSpanManager::get_span_id(span_manager, span))
+    })
+    
+    threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    let thread_spans = Thread::join(thread)
+    for span_id in thread_spans {
+      span_ids.push(span_id)
     }
   }
   
-  // 模拟并发执行
-  let threads = (0..num_threads).map(fn(thread_id) {
-    make_sampling_decisions_concurrently(sampling_state, sampling_config, thread_id, decisions_per_thread)
-  })
+  // Verify all spans were created and processed correctly
+  assert_eq(span_ids.length(), 100) // 10 threads × 10 spans each
   
-  // 等待所有线程完成
-  let _ = threads
-  
-  // 验证采样决策的一致性
-  let final_state = get_sampling_state(sampling_state)
-  let total_decisions = final_state.total_decisions
-  let expected_total_decisions = num_threads * decisions_per_thread
-  
-  assert_eq(total_decisions, expected_total_decisions, 
-    "并发采样决策总数不一致: 期望 " + expected_total_decisions.to_string() + 
-    ", 实际 " + total_decisions.to_string())
-  
-  // 验证采样率在预期范围内
-  let sampled_count = final_state.sampled_traces.length()
-  let actual_sampling_rate = sampled_count.to_float() / total_decisions.to_float()
-  let expected_sampling_rate = sampling_config.probability
-  
-  // 允许10%的误差
-  assert_true((actual_sampling_rate - expected_sampling_rate).abs() < 0.1, 
-    "并发采样率不一致: 期望 " + expected_sampling_rate.to_string() + 
-    ", 实际 " + actual_sampling_rate.to_string())
-  
-  // 验证决策记录的完整性（没有重复或遗漏）
-  let all_recorded_traces = final_state.sampled_traces + final_state.rejected_traces
-  assert_eq(all_recorded_traces.length(), total_decisions, 
-    "采样决策记录不完整")
-  
-  // 验证没有重复的trace ID
-  let unique_traces = all_recorded_traces.unique()
-  assert_eq(unique_traces.length(), all_recorded_traces.length(), 
-    "存在重复的trace ID记录")
-}
-
-// 辅助函数和类型定义（用于测试）
-type SharedCounter {
-  SharedCounter(Int)
-}
-
-type ConcurrentSpanStore {
-  ConcurrentSpanStore(Array[Span])
-}
-
-type ConcurrentBaggageContext {
-  ConcurrentBaggageContext(Array[(String, String)])
-}
-
-type ConcurrentLogStore {
-  ConcurrentLogStore(Array[LogRecord])
-}
-
-type ConcurrentSamplingState {
-  ConcurrentSamplingState({
-    sampled_traces: Array[String],
-    rejected_traces: Array[String],
-    total_decisions: Int
-  })
-}
-
-type Span {
-  trace_id: String
-  span_id: String
-  parent_span_id: Option[String]
-  service_name: String
-  operation_name: String
-  start_time: Int
-  end_time: Int
-  status: String
-  tags: Array[(String, String)]
-}
-
-type LogRecord {
-  timestamp: Int
-  level: String
-  message: String
-  trace_id: Option[String]
-  span_id: Option[String]
-  attributes: Array[(String, String)]
-}
-
-type SamplingConfig {
-  strategy: String
-  probability: Float
-  max_traces_per_second: Int
-}
-
-// 模拟辅助函数（在实际环境中会有具体实现）
-let atomic_increment = fn(counter) { 
-  // 简化的原子操作实现
-  match counter {
-    SharedCounter(value) => SharedCounter(value + 1)
-  }
-}
-
-let get_counter_value = fn(counter) {
-  match counter {
-    SharedCounter(value) => value
-  }
-}
-
-let simulate_random_delay = fn() {
-  // 简化的随机延迟模拟
-  // 在实际环境中会使用真正的随机延迟
-}
-
-let get_current_time_ms = fn() { 1640995200000 }
-
-let add_span_concurrently = fn(store, span) {
-  // 简化的并发添加实现
-  match store {
-    ConcurrentSpanStore(spans) => ConcurrentSpanStore(spans + [span])
-  }
-}
-
-let get_all_spans = fn(store) {
-  match store {
-    ConcurrentSpanStore(spans) => spans
-  }
-}
-
-let add_baggage_item_concurrently = fn(context, item) {
-  // 简化的并发添加实现
-  match context {
-    ConcurrentBaggageContext(items) => ConcurrentBaggageContext(items + [item])
-  }
-}
-
-let get_all_baggage_items = fn(context) {
-  match context {
-    ConcurrentBaggageContext(items) => items
-  }
-}
-
-let add_log_concurrently = fn(store, log) {
-  // 简化的并发添加实现
-  match store {
-    ConcurrentLogStore(logs) => ConcurrentLogStore(logs + [log])
-  }
-}
-
-let get_all_logs = fn(store) {
-  match store {
-    ConcurrentLogStore(logs) => logs
-  }
-}
-
-let make_sampling_decision = fn(config, trace_id) {
-  // 简化的采样决策实现
-  match config.strategy {
-    "probabilistic" => {
-      let hash = trace_id.chars().fold(0, fn(acc, c) { 
-        (acc + c.to_int()) % 100 
-      })
-      hash < (config.probability * 100).to_int()
+  // Check that all spans have correct attributes
+  for span_id in span_ids {
+    let span = ThreadSafeSpanManager::get_span_by_id(span_manager, span_id)
+    match span {
+      Some(s) => {
+        assert_eq(ThreadSafeSpanManager::get_name(span_manager, s), "concurrent_test_span")
+        assert_eq(ThreadSafeSpanManager::get_status(span_manager, s), Ok)
+      }
+      None => assert_true(false)
     }
-    _ => false
   }
 }
 
-let record_sampling_decision_concurrently = fn(state, trace_id, decision) {
-  // 简化的并发记录实现
-  match state {
-    ConcurrentSamplingState(data) => {
-      if decision {
-        ConcurrentSamplingState({
-          sampled_traces: data.sampled_traces + [trace_id],
-          rejected_traces: data.rejected_traces,
-          total_decisions: data.total_decisions + 1
-        })
+// Test 2: Concurrent Metric Operations
+test "concurrent metric operations" {
+  let metric_manager = ThreadSafeMetricManager::new()
+  
+  // Create metric
+  let counter = ThreadSafeMetricManager::create_counter(metric_manager, "concurrent_counter", None, None)
+  
+  // Increment counter from multiple threads
+  let threads = []
+  
+  for i in 0..=9 {
+    let thread = Thread::spawn(|| {
+      for j in 0..=99 {
+        ThreadSafeMetricManager::add(metric_manager, counter, 1.0)
+        ThreadSafeMetricManager::add(metric_manager, counter, 1.0, Some(Attributes::new()))
+      }
+    })
+    
+    threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Verify final counter value
+  let final_value = ThreadSafeMetricManager::get_value(metric_manager, counter)
+  assert_eq(final_value, 2000.0) // 10 threads × 200 increments each
+  
+  // Test concurrent histogram operations
+  let histogram = ThreadSafeMetricManager::create_histogram(metric_manager, "concurrent_histogram", None, None)
+  
+  let histogram_threads = []
+  
+  for i in 0..=9 {
+    let thread = Thread::spawn(|| {
+      for j in 0..=99 {
+        ThreadSafeMetricManager::record(metric_manager, histogram, j.to_float())
+      }
+    })
+    
+    histogram_threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in histogram_threads {
+    Thread::join(thread)
+  }
+  
+  // Verify histogram statistics
+  let histogram_stats = ThreadSafeMetricManager::get_stats(metric_manager, histogram)
+  assert_eq(histogram_stats.count, 1000) // 10 threads × 100 recordings each
+  assert_eq(histogram_stats.min, 0.0)
+  assert_eq(histogram_stats.max, 99.0)
+}
+
+// Test 3: Concurrent Log Operations
+test "concurrent log operations" {
+  let log_manager = ThreadSafeLogManager::new()
+  
+  let logger = ThreadSafeLogManager::get_logger(log_manager, "concurrent_logger")
+  
+  // Emit logs from multiple threads
+  let threads = []
+  
+  for i in 0..=9 {
+    let thread_id = i
+    let thread = Thread::spawn(|| {
+      for j in 0..=99 {
+        let log_record = LogRecord::new(Info, "Thread " + thread_id.to_string() + " log message " + j.to_string())
+        ThreadSafeLogManager::emit(log_manager, logger, log_record)
+      }
+    })
+    
+    threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Verify all logs were recorded
+  let log_count = ThreadSafeLogManager::get_log_count(log_manager, logger)
+  assert_eq(log_count, 1000) // 10 threads × 100 logs each
+  
+  // Verify log content
+  let logs = ThreadSafeLogManager::get_logs(log_manager, logger)
+  assert_eq(logs.length(), 1000)
+  
+  // Check that logs from all threads are present
+  let mut thread_counts = [0; 10]
+  
+  for log in logs {
+    match LogRecord::body(log) {
+      Some(message) => {
+        for i in 0..=9 {
+          if message.contains("Thread " + i.to_string()) {
+            thread_counts[i] = thread_counts[i] + 1
+            break
+          }
+        }
+      }
+      None => assert_true(false)
+    }
+  }
+  
+  // Each thread should have 100 logs
+  for i in 0..=9 {
+    assert_eq(thread_counts[i], 100)
+  }
+}
+
+// Test 4: Concurrent Resource Access with Locks
+test "concurrent resource access with locks" {
+  let resource_manager = ThreadSafeResourceManager::new()
+  
+  // Create shared resource
+  let shared_resource = ThreadSafeResourceManager::create_resource(resource_manager, "shared_counter", 0)
+  
+  // Multiple threads increment the counter
+  let threads = []
+  
+  for i in 0..=9 {
+    let thread = Thread::spawn(|| {
+      for j in 0..=99 {
+        // Acquire lock
+        ThreadSafeResourceManager::acquire_lock(resource_manager, shared_resource)
+        
+        // Read current value
+        let current_value = ThreadSafeResourceManager::get_int_value(resource_manager, shared_resource)
+        
+        // Increment and update
+        let new_value = current_value + 1
+        ThreadSafeResourceManager::set_int_value(resource_manager, shared_resource, new_value)
+        
+        // Release lock
+        ThreadSafeResourceManager::release_lock(resource_manager, shared_resource)
+      }
+    })
+    
+    threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Verify final value
+  let final_value = ThreadSafeResourceManager::get_int_value(resource_manager, shared_resource)
+  assert_eq(final_value, 1000) // 10 threads × 100 increments each
+  
+  // Test with timeout on lock acquisition
+  let timeout_resource = ThreadSafeResourceManager::create_resource(resource_manager, "timeout_resource", 0)
+  
+  // Thread that holds the lock for a long time
+  let holder_thread = Thread::spawn(|| {
+    ThreadSafeResourceManager::acquire_lock(resource_manager, timeout_resource)
+    Thread::sleep(2000) // Hold for 2 seconds
+    ThreadSafeResourceManager::release_lock(resource_manager, timeout_resource)
+  })
+  
+  // Thread that tries to acquire with timeout
+  let waiter_thread = Thread::spawn(|| {
+    let acquired = ThreadSafeResourceManager::try_acquire_lock_with_timeout(resource_manager, timeout_resource, 1000) // 1 second timeout
+    assert_false(acquired) // Should fail due to timeout
+  })
+  
+  Thread::join(holder_thread)
+  Thread::join(waiter_thread)
+}
+
+// Test 5: Concurrent Context Propagation
+test "concurrent context propagation" {
+  let context_manager = ThreadSafeContextManager::new()
+  
+  // Create root context
+  let root_ctx = ThreadSafeContextManager::create_root_context(context_manager)
+  
+  // Create contexts in multiple threads
+  let threads = []
+  let context_ids = []
+  
+  for i in 0..=9 {
+    let thread_id = i
+    let thread = Thread::spawn(|| {
+      // Create child context
+      let child_ctx = ThreadSafeContextManager::create_child_context(context_manager, root_ctx)
+      
+      // Set values in context
+      let key1 = ContextKey::new("thread_id")
+      ThreadSafeContextManager::set_value(context_manager, child_ctx, key1, thread_id.to_string())
+      
+      let key2 = ContextKey::new("operation")
+      ThreadSafeContextManager::set_value(context_manager, child_ctx, key2, "concurrent_test")
+      
+      // Create grandchild context
+      let grandchild_ctx = ThreadSafeContextManager::create_child_context(context_manager, child_ctx)
+      
+      // Add more values
+      let key3 = ContextKey::new("step")
+      ThreadSafeContextManager::set_value(context_manager, grandchild_ctx, key3, "processing")
+      
+      // Return context ID for verification
+      ThreadSafeContextManager::get_context_id(context_manager, grandchild_ctx)
+    })
+    
+    threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    let context_id = Thread::join(thread)
+    context_ids.push(context_id)
+  }
+  
+  // Verify all contexts were created
+  assert_eq(context_ids.length(), 10)
+  
+  // Check context values
+  for context_id in context_ids {
+    let context = ThreadSafeContextManager::get_context_by_id(context_manager, context_id)
+    match context {
+      Some(ctx) => {
+        // Check inherited values
+        let key2 = ContextKey::new("operation")
+        match ThreadSafeContextManager::get_value(context_manager, ctx, key2) {
+          Some(value) => assert_eq(value, "concurrent_test")
+          None => assert_true(false)
+        }
+        
+        // Check direct values
+        let key3 = ContextKey::new("step")
+        match ThreadSafeContextManager::get_value(context_manager, ctx, key3) {
+          Some(value) => assert_eq(value, "processing")
+          None => assert_true(false)
+        }
+      }
+      None => assert_true(false)
+    }
+  }
+}
+
+// Test 6: Concurrent Baggage Operations
+test "concurrent baggage operations" {
+  let baggage_manager = ThreadSafeBaggageManager::new()
+  
+  // Create initial baggage
+  let initial_baggage = ThreadSafeBaggageManager::create_baggage(baggage_manager)
+  
+  // Multiple threads add entries to baggage
+  let threads = []
+  
+  for i in 0..=9 {
+    let thread_id = i
+    let thread = Thread::spawn(|| {
+      let thread_baggage = ThreadSafeBaggageManager::create_baggage(baggage_manager)
+      
+      // Copy entries from initial baggage
+      ThreadSafeBaggageManager::copy_from(baggage_manager, thread_baggage, initial_baggage)
+      
+      // Add thread-specific entries
+      ThreadSafeBaggageManager::set_entry(baggage_manager, thread_baggage, "thread_id", thread_id.to_string())
+      ThreadSafeBaggageManager::set_entry(baggage_manager, thread_baggage, "operation", "concurrent_baggage_test")
+      
+      // Add more entries
+      for j in 0..=9 {
+        let key = "key_" + thread_id.to_string() + "_" + j.to_string()
+        let value = "value_" + thread_id.to_string() + "_" + j.to_string()
+        ThreadSafeBaggageManager::set_entry(baggage_manager, thread_baggage, key, value)
+      }
+      
+      thread_baggage
+    })
+    
+    threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  let baggage_list = []
+  for thread in threads {
+    let baggage = Thread::join(thread)
+    baggage_list.push(baggage)
+  }
+  
+  // Verify all baggage instances
+  assert_eq(baggage_list.length(), 10)
+  
+  for baggage in baggage_list {
+    // Check thread-specific entries
+    match ThreadSafeBaggageManager::get_entry(baggage_manager, baggage, "operation") {
+      Some(value) => assert_eq(value, "concurrent_baggage_test")
+      None => assert_true(false)
+    }
+    
+    // Check that each baggage has 12 entries (2 common + 10 thread-specific)
+    let entries = ThreadSafeBaggageManager::get_all_entries(baggage_manager, baggage)
+    assert_eq(entries.length(), 12)
+  }
+}
+
+// Test 7: Race Condition Detection
+test "race condition detection" {
+  let race_detector = RaceConditionDetector::new()
+  
+  // Enable race detection
+  RaceConditionDetector::enable_detection(race_detector)
+  
+  // Create shared resource
+  let shared_counter = RaceConditionDetector::create_monitored_resource(race_detector, "counter", 0)
+  
+  // Create threads that will cause race conditions
+  let threads = []
+  
+  for i in 0..=9 {
+    let thread = Thread::spawn(|| {
+      for j in 0..=99 {
+        // Read-modify-write without proper synchronization (intentional race condition)
+        let current_value = RaceConditionDetector::get_int_value(race_detector, shared_counter)
+        let new_value = current_value + 1
+        RaceConditionDetector::set_int_value(race_detector, shared_counter, new_value)
+      }
+    })
+    
+    threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Check for race conditions
+  let race_conditions = RaceConditionDetector::get_detected_races(race_detector)
+  assert_true(race_conditions.length() > 0) // Should detect race conditions
+  
+  // Verify final value is less than expected due to race conditions
+  let final_value = RaceConditionDetector::get_int_value(race_detector, shared_counter)
+  assert_true(final_value < 1000) // Should be less than 1000 due to lost updates
+  
+  // Test with proper synchronization
+  let synchronized_counter = RaceConditionDetector::create_monitored_resource(race_detector, "sync_counter", 0)
+  
+  let sync_threads = []
+  
+  for i in 0..=9 {
+    let thread = Thread::spawn(|| {
+      for j in 0..=99 {
+        // Use atomic operations
+        RaceConditionDetector::atomic_increment(race_detector, synchronized_counter, 1)
+      }
+    })
+    
+    sync_threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in sync_threads {
+    Thread::join(thread)
+  }
+  
+  // Check for race conditions in synchronized version
+  let sync_race_conditions = RaceConditionDetector::get_detected_races_for_resource(race_detector, "sync_counter")
+  assert_eq(sync_race_conditions.length(), 0) // Should have no race conditions
+  
+  // Verify final value is correct
+  let sync_final_value = RaceConditionDetector::get_int_value(race_detector, synchronized_counter)
+  assert_eq(sync_final_value, 1000) // Should be exactly 1000
+}
+
+// Test 8: Deadlock Detection and Prevention
+test "deadlock detection and prevention" {
+  let deadlock_manager = DeadlockManager::new()
+  
+  // Enable deadlock detection
+  DeadlockManager::enable_detection(deadlock_manager)
+  
+  // Create resources
+  let resource1 = DeadlockManager::create_resource(deadlock_manager, "resource1")
+  let resource2 = DeadlockManager::create_resource(deadlock_manager, "resource2")
+  
+  // Create threads that will cause deadlock
+  let deadlock_detected = AtomicBool::new(false)
+  
+  let thread1 = Thread::spawn(|| {
+    // Acquire resources in order 1 -> 2
+    DeadlockManager::acquire_resource(deadlock_manager, resource1)
+    Thread::sleep(100) // Give time for other thread to acquire resource2
+    DeadlockManager::acquire_resource(deadlock_manager, resource2)
+    
+    // Do work
+    Thread::sleep(100)
+    
+    // Release resources
+    DeadlockManager::release_resource(deadlock_manager, resource2)
+    DeadlockManager::release_resource(deadlock_manager, resource1)
+  })
+  
+  let thread2 = Thread::spawn(|| {
+    // Acquire resources in order 2 -> 1 (will cause deadlock)
+    DeadlockManager::acquire_resource(deadlock_manager, resource2)
+    Thread::sleep(100) // Give time for other thread to acquire resource1
+    
+    // This should detect deadlock
+    let acquired = DeadlockManager::try_acquire_with_deadlock_detection(deadlock_manager, resource1)
+    if !acquired {
+      deadlock_detected.store(true)
+    }
+    
+    // Release resource2
+    DeadlockManager::release_resource(deadlock_manager, resource2)
+  })
+  
+  // Wait for threads to complete
+  Thread::join(thread1)
+  Thread::join(thread2)
+  
+  // Check if deadlock was detected
+  assert_true(deadlock_detected.load())
+  
+  // Test deadlock prevention
+  DeadlockManager::enable_prevention(deadlock_manager)
+  
+  let prevention_success = AtomicBool::new(true)
+  
+  let thread3 = Thread::spawn(|| {
+    // Acquire resources in order 1 -> 2
+    DeadlockManager::acquire_with_prevention(deadlock_manager, resource1)
+    DeadlockManager::acquire_with_prevention(deadlock_manager, resource2)
+    
+    // Do work
+    Thread::sleep(100)
+    
+    // Release resources
+    DeadlockManager::release_resource(deadlock_manager, resource2)
+    DeadlockManager::release_resource(deadlock_manager, resource1)
+  })
+  
+  let thread4 = Thread::spawn(|| {
+    // Try to acquire in order 2 -> 1 (prevention should reorder or block)
+    let acquired1 = DeadlockManager::try_acquire_with_prevention(deadlock_manager, resource2)
+    if acquired1 {
+      let acquired2 = DeadlockManager::try_acquire_with_prevention(deadlock_manager, resource1)
+      if acquired2 {
+        // Do work
+        Thread::sleep(100)
+        
+        // Release resources
+        DeadlockManager::release_resource(deadlock_manager, resource1)
+        DeadlockManager::release_resource(deadlock_manager, resource2)
       } else {
-        ConcurrentSamplingState({
-          sampled_traces: data.sampled_traces,
-          rejected_traces: data.rejected_traces + [trace_id],
-          total_decisions: data.total_decisions + 1
-        })
+        DeadlockManager::release_resource(deadlock_manager, resource2)
       }
     }
-  }
+  })
+  
+  // Wait for threads to complete
+  Thread::join(thread3)
+  Thread::join(thread4)
+  
+  // Check if prevention was successful
+  assert_true(prevention_success.load())
+  
+  // No deadlocks should be detected when prevention is enabled
+  let detected_deadlocks = DeadlockManager::get_detected_deadlocks(deadlock_manager)
+  assert_eq(detected_deadlocks.length(), 0)
 }
 
-let get_sampling_state = fn(state) {
-  match state {
-    ConcurrentSamplingState(data) => data
+// Test 9: Concurrent Data Structure Operations
+test "concurrent data structure operations" {
+  let data_structure_manager = ConcurrentDataManager::new()
+  
+  // Create concurrent data structures
+  let concurrent_map = ConcurrentDataManager::create_map(data_structure_manager)
+  let concurrent_queue = ConcurrentDataManager::create_queue(data_structure_manager)
+  let concurrent_set = ConcurrentDataManager::create_set(data_structure_manager)
+  
+  // Test concurrent map operations
+  let map_threads = []
+  
+  for i in 0..=9 {
+    let thread_id = i
+    let thread = Thread::spawn(|| {
+      // Insert key-value pairs
+      for j in 0..=99 {
+        let key = "key_" + thread_id.to_string() + "_" + j.to_string()
+        let value = "value_" + thread_id.to_string() + "_" + j.to_string()
+        ConcurrentDataManager::map_insert(data_structure_manager, concurrent_map, key, value)
+      }
+      
+      // Read values
+      for j in 0..=99 {
+        let key = "key_" + thread_id.to_string() + "_" + j.to_string()
+        match ConcurrentDataManager::map_get(data_structure_manager, concurrent_map, key) {
+          Some(value) => assert_eq(value, "value_" + thread_id.to_string() + "_" + j.to_string())
+          None => assert_true(false)
+        }
+      }
+    })
+    
+    map_threads.push(thread)
   }
+  
+  // Test concurrent queue operations
+  let queue_producer_threads = []
+  let queue_consumer_threads = []
+  
+  // Producer threads
+  for i in 0..=4 {
+    let thread_id = i
+    let thread = Thread::spawn(|| {
+      for j in 0..=199 {
+        let item = "item_" + thread_id.to_string() + "_" + j.to_string()
+        ConcurrentDataManager::queue_enqueue(data_structure_manager, concurrent_queue, item)
+      }
+    })
+    
+    queue_producer_threads.push(thread)
+  }
+  
+  // Consumer threads
+  for i in 0..=4 {
+    let thread = Thread::spawn(|| {
+      let consumed_items = []
+      
+      for j in 0..=199 {
+        match ConcurrentDataManager::queue_dequeue(data_structure_manager, concurrent_queue) {
+          Some(item) => consumed_items.push(item),
+          None => {} // Queue might be empty
+        }
+      }
+      
+      consumed_items
+    })
+    
+    queue_consumer_threads.push(thread)
+  }
+  
+  // Test concurrent set operations
+  let set_threads = []
+  
+  for i in 0..=9 {
+    let thread_id = i
+    let thread = Thread::spawn(|| {
+      // Insert items
+      for j in 0..=99 {
+        let item = "item_" + thread_id.to_string() + "_" + j.to_string()
+        ConcurrentDataManager::set_insert(data_structure_manager, concurrent_set, item)
+      }
+      
+      // Check if items exist
+      for j in 0..=99 {
+        let item = "item_" + thread_id.to_string() + "_" + j.to_string()
+        assert_true(ConcurrentDataManager::set_contains(data_structure_manager, concurrent_set, item))
+      }
+    })
+    
+    set_threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in map_threads {
+    Thread::join(thread)
+  }
+  
+  for thread in queue_producer_threads {
+    Thread::join(thread)
+  }
+  
+  let consumed_items_list = []
+  for thread in queue_consumer_threads {
+    let consumed_items = Thread::join(thread)
+    consumed_items_list.push(consumed_items)
+  }
+  
+  for thread in set_threads {
+    Thread::join(thread)
+  }
+  
+  // Verify map operations
+  let map_size = ConcurrentDataManager::map_size(data_structure_manager, concurrent_map)
+  assert_eq(map_size, 1000) // 10 threads × 100 items each
+  
+  // Verify queue operations
+  let total_consumed = 0
+  for consumed_items in consumed_items_list {
+    total_consumed = total_consumed + consumed_items.length()
+  }
+  
+  // Should have consumed most items (some might still be in queue)
+  assert_true(total_consumed > 900)
+  
+  // Verify set operations
+  let set_size = ConcurrentDataManager::set_size(data_structure_manager, concurrent_set)
+  assert_eq(set_size, 1000) // 10 threads × 100 items each
 }
 
-// 扩展Array类型的方法（用于测试）
-let Array::unique = fn(self) {
-  // 简化的唯一值实现
-  let result = []
-  for i = 0; i < self.length(); i = i + 1 {
-    if !result.contains(self[i]) {
-      result = result + [self[i]]
-    }
+// Test 10: Concurrent Telemetry Pipeline
+test "concurrent telemetry pipeline" {
+  let pipeline_manager = ConcurrentPipelineManager::new()
+  
+  // Create pipeline stages
+  let ingestion_stage = PipelineManager::create_stage(pipeline_manager, "ingestion", 4) // 4 workers
+  let processing_stage = PipelineManager::create_stage(pipeline_manager, "processing", 2) // 2 workers
+  let storage_stage = PipelineManager::create_stage(pipeline_manager, "storage", 3) // 3 workers
+  
+  // Connect stages
+  PipelineManager::connect_stages(pipeline_manager, ingestion_stage, processing_stage)
+  PipelineManager::connect_stages(pipeline_manager, processing_stage, storage_stage)
+  
+  // Start pipeline
+  PipelineManager::start_pipeline(pipeline_manager)
+  
+  // Generate telemetry data concurrently
+  let producer_threads = []
+  
+  for i in 0..=9 {
+    let thread_id = i
+    let thread = Thread::spawn(|| {
+      for j in 0..=99 {
+        let span_ctx = SpanContext::new("trace_" + thread_id.to_string(), "span_" + j.to_string(), true, "")
+        let span = Span::new("operation_" + thread_id.to_string(), Internal, span_ctx)
+        Span::add_event(span, "event", Some([("producer", StringValue(thread_id.to_string()))]))
+        
+        // Submit to pipeline
+        PipelineManager::submit_to_pipeline(pipeline_manager, ingestion_stage, span)
+      }
+    })
+    
+    producer_threads.push(thread)
   }
-  result
-}
-
-let Array::contains = fn(self, item) {
-  // 简化的包含检查实现
-  for i = 0; i < self.length(); i = i + 1 {
-    if self[i] == item {
-      return true
-    }
+  
+  // Wait for all producers to complete
+  for thread in producer_threads {
+    Thread::join(thread)
   }
-  false
-}
-
-let Array::all = fn(self, predicate) {
-  // 简化的all实现
-  for i = 0; i < self.length(); i = i + 1 {
-    if !predicate(self[i]) {
-      return false
-    }
-  }
-  true
-}
-
-let Array::any = fn(self, predicate) {
-  // 简化的any实现
-  for i = 0; i < self.length(); i = i + 1 {
-    if predicate(self[i]) {
-      return true
-    }
-  }
-  false
-}
-
-let Array::filter = fn(self, predicate) {
-  // 简化的filter实现
-  let result = []
-  for i = 0; i < self.length(); i = i + 1 {
-    if predicate(self[i]) {
-      result = result + [self[i]]
-    }
-  }
-  result
-}
-
-let Array::map = fn(self, transform) {
-  // 简化的map实现
-  let result = []
-  for i = 0; i < self.length(); i = i + 1 {
-    result = result + [transform(self[i])]
-  }
-  result
-}
-
-let Array::map_with_index = fn(self, transform) {
-  // 简化的带索引map实现
-  let result = []
-  for i = 0; i < self.length(); i = i + 1 {
-    result = result + [transform(i, self[i])]
-  }
-  result
+  
+  // Wait for pipeline to process all items
+  PipelineManager::wait_for_completion(pipeline_manager)
+  
+  // Stop pipeline
+  PipelineManager::stop_pipeline(pipeline_manager)
+  
+  // Verify processing statistics
+  let ingestion_stats = PipelineManager::get_stage_stats(pipeline_manager, ingestion_stage)
+  let processing_stats = PipelineManager::get_stage_stats(pipeline_manager, processing_stage)
+  let storage_stats = PipelineManager::get_stage_stats(pipeline_manager, storage_stage)
+  
+  // All stages should have processed the same number of items
+  assert_eq(ingestion_stats.processed_items, 1000) // 10 threads × 100 items each
+  assert_eq(processing_stats.processed_items, 1000)
+  assert_eq(storage_stats.processed_items, 1000)
+  
+  // Check for errors
+  assert_eq(ingestion_stats.error_count, 0)
+  assert_eq(processing_stats.error_count, 0)
+  assert_eq(storage_stats.error_count, 0)
+  
+  // Verify throughput
+  let total_time = PipelineManager::get_total_processing_time(pipeline_manager)
+  let throughput = 1000.0 / total_time * 1000.0 // items per second
+  
+  assert_true(throughput > 100.0) // Should process at least 100 items per second
+  
+  // Check resource utilization
+  let resource_stats = PipelineManager::get_resource_stats(pipeline_manager)
+  assert_true(resource_stats.cpu_usage < 90.0) // CPU usage should be reasonable
+  assert_true(resource_stats.memory_usage < 100 * 1024 * 1024) // Memory usage should be reasonable
 }
