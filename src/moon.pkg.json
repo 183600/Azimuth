@@ -65,6 +65,7 @@
         "../azimuth_type_system_tests.mbt",
         "../azimuth_async_concurrent_tests.mbt",
         "../azimuth_pattern_matching_tests.mbt",
-        "../azimuth_memory_management_tests.mbt"]
+        "../azimuth_memory_management_tests.mbt",
+        "../azimuth_premium_data_integrity_tests.mbt"]
   }
 }

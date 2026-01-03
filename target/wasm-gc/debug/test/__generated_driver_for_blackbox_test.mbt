@@ -438,6 +438,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_premium_serialization_tests.mbt": {
   },
+  "azimuth_premium_serialization_edge_cases.mbt": {
+  },
   "azimuth_premium_resource_management_tests.mbt": {
   },
   "azimuth_premium_quality_tests.mbt": {
@@ -448,6 +450,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_premium_performance_optimization_tests.mbt": {
   },
+  "azimuth_premium_performance_load_tests.mbt": {
+  },
   "azimuth_premium_performance_benchmark_tests.mbt": {
   },
   "azimuth_premium_memory_management_tests.mbt": {
@@ -455,6 +459,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_premium_internationalization_tests.mbt": {
   },
   "azimuth_premium_error_recovery_tests.mbt": {
+  },
+  "azimuth_premium_error_boundary_tests.mbt": {
   },
   "azimuth_premium_distributed_tracing_tests.mbt": {
   },
