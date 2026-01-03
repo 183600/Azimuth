@@ -47,6 +47,11 @@
     },
     {
       "root": "azimuth/telemetry",
+      "rel": "clean_test",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/debug/test/clean_test/clean_test.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
       "rel": "core_tests",
       "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/debug/test/core_tests/core_tests.mi"
     },
@@ -79,6 +84,11 @@
       "root": "azimuth/telemetry",
       "rel": "simple_azimuth_test",
       "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/debug/test/simple_azimuth_test/simple_azimuth_test.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "simple_new_test_dir",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/debug/test/simple_new_test_dir/simple_new_test_dir.mi"
     },
     {
       "root": "azimuth/telemetry",
