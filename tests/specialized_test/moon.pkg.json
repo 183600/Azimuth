@@ -1,0 +1,16 @@
+{
+  "name": "specialized-test",
+  "version": "0.1.0",
+  "description": "Specialized comprehensive test package for Azimuth telemetry system",
+  "target": "wasm-gc",
+  "source": ["."],
+  "deps": {
+    "azimuth": "local:../../azimuth",
+    "moonbitlang/core/assertion": "*"
+  },
+  "test": {
+    "test": [
+      "azimuth_specialized_comprehensive_tests.mbt"
+    ]
+  }
+}
