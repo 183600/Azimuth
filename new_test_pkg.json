@@ -1,0 +1,13 @@
+{
+  "name": "azimuth/new/test",
+  "version": "0.1.0",
+  "description": "Azimuth new comprehensive test cases",
+  "target": "wasm-gc",
+  "source": ["../azimuth/azimuth.mbt"],
+  "deps": {
+    "moonbitlang/core/assertion": "*"
+  },
+  "test": {
+    "test": ["../azimuth_new_comprehensive_test_cases.mbt"]
+  }
+}
