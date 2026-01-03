@@ -488,6 +488,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_network_communication_tests.mbt": {
   },
+  "azimuth_network_communication_telemetry_tests.mbt": {
+  },
   "azimuth_multidimensional_attribute_query_tests.mbt": {
   },
   "azimuth_multidimensional_attribute_query_comprehensive_tests.mbt": {
@@ -875,6 +877,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_configuration_validation_defaults_tests.mbt": {
   },
   "azimuth_configuration_management_tests.mbt": {
+  },
+  "azimuth_configuration_management_dynamic_update_tests.mbt": {
   },
   "azimuth_configuration_management_dynamic_tests.mbt": {
   },
