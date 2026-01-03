@@ -106,6 +106,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_time_series_data_processing_comprehensive_tests.mbt": {
   },
+  "azimuth_time_series_data_processing_advanced_tests.mbt": {
+  },
   "azimuth_time_series_data_analysis_tests.mbt": {
   },
   "azimuth_time_series_data_analysis_high_quality_tests.mbt": {
@@ -1240,6 +1242,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_cross_service_context_propagation_tests.mbt": {
   },
+  "azimuth_cross_service_context_propagation_boundary_tests.mbt": {
+  },
   "azimuth_cross_service_consistency_enhanced_tests.mbt": {
   },
   "azimuth_cross_service_communication_tests.mbt": {
@@ -1375,6 +1379,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_composite_propagator_injection_extraction_enhanced_tests.mbt": {
   },
   "azimuth_composite_propagator_advanced_tests.mbt": {
+  },
+  "azimuth_composite_propagator_advanced_injection_extraction_tests.mbt": {
   },
   "azimuth_cold_start_hot_recovery_tests.mbt": {
   },
