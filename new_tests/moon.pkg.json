@@ -1,0 +1,10 @@
+{
+  "name": "new-tests",
+  "version": "0.1.0",
+  "description": "New test cases for Azimuth",
+  "target": "wasm-gc",
+  "source": ["."],
+  "deps": {
+    "moonbitlang/core/assertion": "*"
+  }
+}

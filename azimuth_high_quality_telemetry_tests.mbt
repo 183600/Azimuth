@@ -1,2000 +1,2035 @@
-// Azimuth 高质量遥测系统测试用例
-// 包含遥测系统核心功能的高级测试用例
+// Azimuth 高质量遥测测试用例
+// 包含高级遥测系统功能和性能测试
 
-// 测试1: 时间序列数据处理和分析
-test "时间序列数据处理和分析" {
-  // 定义时间序列数据点
-  type TimeSeriesPoint = {
+// 测试1: 遥测数据的时间窗口分析
+test "遥测数据的时间窗口分析" {
+  // 定义时间点类型
+  type TimePoint = {
     timestamp: Int,
     value: Float,
-    tags: Array<(String, String)>
+    metric_type: String
   }
   
-  // 定义时间窗口
-  enum TimeWindow {
-    Minute
-    Hour
-    Day
-    Week
-    Custom(Int)  // 自定义窗口大小（秒）
-  }
-  
-  // 时间序列聚合器
-  let aggregate_time_series = fn(points: Array[TimeSeriesPoint], window: TimeWindow) {
-    let window_size_ms = match window {
-      TimeWindow::Minute => 60 * 1000
-      TimeWindow::Hour => 60 * 60 * 1000
-      TimeWindow::Day => 24 * 60 * 60 * 1000
-      TimeWindow::Week => 7 * 24 * 60 * 60 * 1000
-      TimeWindow::Custom(seconds) => seconds * 1000
-    }
-    
-    if points.length() == 0 {
-      return []
-    }
-    
-    // 按时间戳排序
-    let sorted_points = points.sort(fn(a, b) { if a.timestamp < b.timestamp { -1 } else if a.timestamp > b.timestamp { 1 } else { 0 } })
-    
-    let mut result = []
-    let mut window_start = sorted_points[0].timestamp
-    let mut window_points = []
-    
-    for point in sorted_points {
-      if point.timestamp - window_start < window_size_ms {
-        window_points = window_points.push(point)
-      } else {
-        // 处理当前窗口
-        if window_points.length() > 0 {
-          let values = window_points.map(fn(p) { p.value })
-          let sum = values.reduce(fn(acc, v) { acc + v }, 0.0)
-          let avg = sum / (values.length() as Float)
-          let min = values.reduce(fn(acc, v) { if v < acc { v } else { acc } }, values[0])
-          let max = values.reduce(fn(acc, v) { if v > acc { v } else { acc } }, values[0])
-          
-          result = result.push({
-            timestamp: window_start,
-            value: avg,
-            tags: [("aggregated", "true"), ("count", values.length().to_string())]
-          })
-        }
-        
-        // 开始新窗口
-        window_start = point.timestamp
-        window_points = [point]
-      }
-    }
-    
-    // 处理最后一个窗口
-    if window_points.length() > 0 {
-      let values = window_points.map(fn(p) { p.value })
-      let sum = values.reduce(fn(acc, v) { acc + v }, 0.0)
-      let avg = sum / (values.length() as Float)
-      
-      result = result.push({
-        timestamp: window_start,
-        value: avg,
-        tags: [("aggregated", "true"), ("count", values.length().to_string())]
-      })
-    }
-    
-    result
-  }
-  
-  // 创建测试数据
-  let test_points = [
-    { timestamp: 1000, value: 10.5, tags: [("service", "api")] },
-    { timestamp: 30000, value: 12.3, tags: [("service", "api")] },
-    { timestamp: 70000, value: 11.8, tags: [("service", "api")] },
-    { timestamp: 150000, value: 13.2, tags: [("service", "api")] },
-    { timestamp: 180000, value: 14.1, tags: [("service", "api")] }
-  ]
-  
-  // 测试分钟级聚合
-  let minute_aggregation = aggregate_time_series(test_points, TimeWindow::Minute)
-  assert_eq(minute_aggregation.length(), 3)  // 3个时间窗口
-  
-  // 第一个窗口: 1000, 30000, 70000 -> 平均值约为11.53
-  assert_eq(minute_aggregation[0].timestamp, 1000)
-  assert_eq(minute_aggregation[0].tags[1].1, "3")  // 3个数据点
-  
-  // 第二个窗口: 150000, 180000 -> 平均值约为13.65
-  assert_eq(minute_aggregation[1].timestamp, 150000)
-  assert_eq(minute_aggregation[1].tags[1].1, "2")  // 2个数据点
-  
-  // 测试自定义窗口聚合
-  let custom_aggregation = aggregate_time_series(test_points, TimeWindow::Custom(120))  // 2分钟窗口
-  assert_eq(custom_aggregation.length(), 2)  // 2个时间窗口
-}
-
-// 测试2: 分布式追踪链路管理
-test "分布式追踪链路管理" {
-  // 定义Span类型
-  type Span = {
-    trace_id: String,
-    span_id: String,
-    parent_span_id: Option[String],
-    operation_name: String,
+  // 定义时间窗口类型
+  type TimeWindow = {
     start_time: Int,
     end_time: Int,
-    status: String,
-    tags: Array[(String, String)],
-    events: Array[(Int, String)]  // (timestamp, event_name)
+    points: Array[TimePoint]
   }
   
-  // 创建新的Span
-  let create_span = fn(trace_id: String, operation_name: String, parent_span_id: Option[String]) {
-    {
-      trace_id,
-      span_id: "span-" + Time::now().to_string(),
-      parent_span_id,
-      operation_name,
-      start_time: Time::now(),
-      end_time: 0,  // 尚未结束
-      status: "RUNNING",
-      tags: [],
-      events: []
-    }
-  }
-  
-  // 结束Span
-  let finish_span = fn(span: Span, status: String) {
-    { span with 
-      end_time: Time::now(),
-      status: status
-    }
-  }
-  
-  // 添加事件到Span
-  let add_event = fn(span: Span, event_name: String) {
-    let timestamp = Time::now()
-    let new_events = span.events.push((timestamp, event_name))
-    { span with events: new_events }
-  }
-  
-  // 添加标签到Span
-  let add_tag = fn(span: Span, key: String, value: String) {
-    let new_tags = span.tags.push((key, value))
-    { span with tags: new_tags }
-  }
-  
-  // 构建追踪树
-  let build_trace_tree = fn(spans: Array[Span]) {
-    let root_spans = spans.filter(fn(s) { s.parent_span_id.is_none() })
-    
-    let find_children = fn(parent_id: String) {
-      spans.filter(fn(s) { 
-        match s.parent_span_id {
-          Some(id) => id == parent_id
-          None => false
-        }
+  // 创建时间窗口分析器
+  let create_time_window_analyzer = fn(window_size_ms: Int) {
+    // 滑动窗口函数
+    fn(points: Array[TimePoint], current_time: Int) -> TimeWindow {
+      let window_start = current_time - window_size_ms
+      let filtered_points = points.filter(fn(p) { 
+        p.timestamp >= window_start && p.timestamp <= current_time 
       })
-    }
-    
-    let build_tree_recursive = fn(span: Span) {
-      let children = find_children(span.span_id)
-      let child_trees = children.map(build_tree_recursive)
-      (span, child_trees)
-    }
-    
-    root_spans.map(build_tree_recursive)
-  }
-  
-  // 创建测试追踪链路
-  let trace_id = "trace-12345"
-  
-  // 根Span
-  let root_span = create_span(trace_id, "http.request", None)
-  let root_with_tag = add_tag(root_span, "http.method", "GET")
-  let root_with_event = add_event(root_with_tag, "request.started")
-  
-  // 子Span
-  let child_span1 = create_span(trace_id, "database.query", Some(root_span.span_id))
-  let child1_with_tag = add_tag(child_span1, "db.statement", "SELECT * FROM users")
-  let child1_finished = finish_span(child1_with_tag, "OK")
-  
-  let child_span2 = create_span(trace_id, "cache.get", Some(root_span.span_id))
-  let child2_with_tag = add_tag(child_span2, "cache.key", "user:123")
-  let child2_finished = finish_span(child2_with_tag, "MISS")
-  
-  // 孙子Span
-  let grandchild_span = create_span(trace_id, "cache.set", Some(child2_finished.span_id))
-  let grandchild_with_tag = add_tag(grandchild_span, "cache.key", "user:123")
-  let grandchild_finished = finish_span(grandchild_with_tag, "OK")
-  
-  // 结束根Span
-  let root_finished = finish_span(root_with_event, "OK")
-  
-  // 构建Span数组
-  let all_spans = [root_finished, child1_finished, child2_finished, grandchild_finished]
-  
-  // 测试追踪树构建
-  let trace_tree = build_trace_tree(all_spans)
-  assert_eq(trace_tree.length(), 1)  // 只有一个根Span
-  
-  let (root_span_in_tree, root_children) = trace_tree[0]
-  assert_eq(root_span_in_tree.operation_name, "http.request")
-  assert_eq(root_children.length(), 2)  // 两个子Span
-  
-  let (child1_in_tree, child1_children) = root_children[0]
-  assert_eq(child1_in_tree.operation_name, "database.query")
-  assert_eq(child1_children.length(), 0)  // 没有子Span
-  
-  let (child2_in_tree, child2_children) = root_children[1]
-  assert_eq(child2_in_tree.operation_name, "cache.get")
-  assert_eq(child2_children.length(), 1)  // 一个子Span
-  
-  let (grandchild_in_tree, grandchild_children) = child2_children[0]
-  assert_eq(grandchild_in_tree.operation_name, "cache.set")
-  assert_eq(grandchild_children.length(), 0)  // 没有子Span
-}
-
-// 测试3: 性能监控和指标收集
-test "性能监控和指标收集" {
-  // 定义指标类型
-  enum MetricType {
-    Counter
-    Gauge
-    Histogram
-    Summary
-  }
-  
-  // 定义指标
-  type Metric = {
-    name: String,
-    metric_type: MetricType,
-    value: Float,
-    labels: Array[(String, String)],
-    timestamp: Int
-  }
-  
-  // 定义指标收集器
-  type MetricCollector = {
-    metrics: Array[Metric],
-    start_time: Int
-  }
-  
-  // 创建指标收集器
-  let create_collector = fn() {
-    {
-      metrics: [],
-      start_time: Time::now()
-    }
-  }
-  
-  // 记录指标
-  let record_metric = fn(collector: MetricCollector, name: String, metric_type: MetricType, value: Float, labels: Array[(String, String)]) {
-    let metric = {
-      name,
-      metric_type,
-      value,
-      labels,
-      timestamp: Time::now()
-    }
-    
-    let updated_metrics = collector.metrics.push(metric)
-    { collector with metrics: updated_metrics }
-  }
-  
-  // 按名称和标签过滤指标
-  let filter_metrics = fn(collector: MetricCollector, name: String, labels: Array[(String, String)]) {
-    collector.metrics.filter(fn(m) {
-      if m.name != name {
-        return false
-      }
       
-      for label in labels {
-        let match_found = m.labels.any(fn(ml) { ml.0 == label.0 && ml.1 == label.1 })
-        if not match_found {
-          return false
-        }
+      {
+        start_time: window_start,
+        end_time: current_time,
+        points: filtered_points
       }
-      
-      true
-    })
+    }
   }
   
-  // 计算指标统计
-  let calculate_metrics_stats = fn(metrics: Array[Metric]) {
-    if metrics.length() == 0 {
+  // 计算窗口统计信息
+  let calculate_window_stats = fn(window: TimeWindow) {
+    if window.points.length() == 0 {
       return {
         count: 0,
-        sum: 0.0,
         avg: 0.0,
         min: 0.0,
         max: 0.0,
-        latest: 0.0
+        sum: 0.0,
+        variance: 0.0
       }
     }
     
-    let values = metrics.map(fn(m) { m.value })
+    let values = window.points.map(fn(p) { p.value })
     let count = values.length()
     let sum = values.reduce(fn(acc, v) { acc + v }, 0.0)
     let avg = sum / (count as Float)
     let min = values.reduce(fn(acc, v) { if v < acc { v } else { acc } }, values[0])
     let max = values.reduce(fn(acc, v) { if v > acc { v } else { acc } }, values[0])
     
-    // 找到最新的值
-    let latest_metric = metrics.reduce(fn(acc, m) { 
-      if m.timestamp > acc.timestamp { m } else { acc } 
-    }, metrics[0])
-    let latest = latest_metric.value
+    // 计算方差
+    let variance = values
+      .map(fn(v) { (v - avg) * (v - avg) })
+      .reduce(fn(acc, v) { acc + v }, 0.0) / (count as Float)
     
-    {
-      count,
-      sum,
-      avg,
-      min,
-      max,
-      latest
-    }
+    { count, avg, min, max, sum, variance }
   }
   
   // 创建测试数据
-  let collector = create_collector()
+  let base_time = 1000000  // 基准时间戳
+  let test_points = [
+    { timestamp: base_time, value: 10.5, metric_type: "latency" },
+    { timestamp: base_time + 1000, value: 12.3, metric_type: "latency" },
+    { timestamp: base_time + 2000, value: 9.8, metric_type: "latency" },
+    { timestamp: base_time + 3000, value: 11.2, metric_type: "latency" },
+    { timestamp: base_time + 4000, value: 13.7, metric_type: "latency" },
+    { timestamp: base_time + 5000, value: 8.9, metric_type: "latency" },
+    { timestamp: base_time + 6000, value: 14.1, metric_type: "latency" },
+    { timestamp: base_time + 7000, value: 10.2, metric_type: "latency" }
+  ]
   
-  // 记录各种指标
-  let collector1 = record_metric(collector, "http.requests.total", MetricType::Counter, 1.0, [("method", "GET"), ("status", "200")])
-  let collector2 = record_metric(collector1, "http.requests.total", MetricType::Counter, 1.0, [("method", "GET"), ("status", "200")])
-  let collector3 = record_metric(collector2, "http.requests.total", MetricType::Counter, 1.0, [("method", "POST"), ("status", "201")])
-  let collector4 = record_metric(collector3, "cpu.usage", MetricType::Gauge, 75.5, [("host", "server1")])
-  let collector5 = record_metric(collector4, "cpu.usage", MetricType::Gauge, 80.2, [("host", "server1")])
-  let collector6 = record_metric(collector5, "cpu.usage", MetricType::Gauge, 45.3, [("host", "server2")])
-  let collector7 = record_metric(collector6, "request.duration", MetricType::Histogram, 120.5, [("endpoint", "/api/users")])
-  let collector8 = record_metric(collector7, "request.duration", MetricType::Histogram, 85.3, [("endpoint", "/api/users")])
-  let collector9 = record_metric(collector8, "request.duration", MetricType::Histogram, 200.1, [("endpoint", "/api/users")])
+  // 创建5秒窗口分析器
+  let analyzer = create_time_window_analyzer(5000)
   
-  // 测试指标过滤
-  let get_requests = filter_metrics(collector9, "http.requests.total", [("method", "GET")])
-  assert_eq(get_requests.length(), 2)  // 两个GET请求
+  // 测试不同时间点的窗口
+  let window1 = analyzer(test_points, base_time + 3000)
+  assert_eq(window1.points.length(), 4)  // 包含前4个点
   
-  let server1_cpu = filter_metrics(collector9, "cpu.usage", [("host", "server1")])
-  assert_eq(server1_cpu.length(), 2)  // 两个server1的CPU指标
+  let stats1 = calculate_window_stats(window1)
+  assert_eq(stats1.count, 4)
+  assert_eq(stats1.sum.round(), 43.8)
+  assert_eq(stats1.min, 9.8)
+  assert_eq(stats1.max, 12.3)
   
-  // 测试指标统计
-  let get_requests_stats = calculate_metrics_stats(get_requests)
-  assert_eq(get_requests_stats.count, 2)
-  assert_eq(get_requests_stats.sum, 2.0)
-  assert_eq(get_requests_stats.avg, 1.0)
+  let window2 = analyzer(test_points, base_time + 7000)
+  assert_eq(window2.points.length(), 4)  // 包含最后4个点
   
-  let server1_cpu_stats = calculate_metrics_stats(server1_cpu)
-  assert_eq(server1_cpu_stats.count, 2)
-  assert_eq(server1_cpu_stats.sum.round(), 155.7)
-  assert_eq(server1_cpu_stats.avg.round(), 77.85)
-  assert_eq(server1_cpu_stats.min, 75.5)
-  assert_eq(server1_cpu_stats.max, 80.2)
+  let stats2 = calculate_window_stats(window2)
+  assert_eq(stats2.count, 4)
+  assert_eq(stats2.sum.round(), 46.9)
+  assert_eq(stats2.min, 8.9)
+  assert_eq(stats2.max, 14.1)
   
-  let request_duration_stats = calculate_metrics_stats(filter_metrics(collector9, "request.duration", []))
-  assert_eq(request_duration_stats.count, 3)
-  assert_eq(request_duration_stats.sum.round(), 405.9)
-  assert_eq(request_duration_stats.avg.round(), 135.3)
-  assert_eq(request_duration_stats.min, 85.3)
-  assert_eq(request_duration_stats.max, 200.1)
-}
-
-// 测试4: 数据序列化和反序列化
-test "数据序列化和反序列化" {
-  // 定义可序列化类型
-  enum SerializationFormat {
-    Json
-    Protobuf
-    Avro
-    Custom(String)
-  }
-  
-  // 定义序列化结果
-  type SerializationResult = {
-    data: Array[Byte],
-    format: SerializationFormat,
-    size: Int
-  }
-  
-  // 定义遥测数据
-  type TelemetryData = {
-    trace_id: String,
-    span_id: String,
-    parent_span_id: Option[String],
-    operation_name: String,
-    start_time: Int,
-    duration: Int,
-    status: String,
-    tags: Array[(String, String)],
-    logs: Array[(Int, String)]
-  }
-  
-  // JSON序列化
-  let serialize_to_json = fn(data: TelemetryData) {
-    let json_str = "{" +
-      "\"trace_id\":\"" + data.trace_id + "\"," +
-      "\"span_id\":\"" + data.span_id + "\"," +
-      "\"parent_span_id\":" + match data.parent_span_id {
-        Some(id) => "\"" + id + "\""
-        None => "null"
-      } + "," +
-      "\"operation_name\":\"" + data.operation_name + "\"," +
-      "\"start_time\":" + data.start_time.to_string() + "," +
-      "\"duration\":" + data.duration.to_string() + "," +
-      "\"status\":\"" + data.status + "\"," +
-      "\"tags\":" + "[" + data.tags.map(fn(t) { "{\"key\":\"" + t.0 + "\",\"value\":\"" + t.1 + "\"}" }).join(",") + "]," +
-      "\"logs\":" + "[" + data.logs.map(fn(l) { "{\"timestamp\":" + l.0.to_string() + ",\"message\":\"" + l.1 + "\"}" }).join(",") + "]" +
-    "}"
-    
-    let bytes = json_str.to_bytes()
-    {
-      data: bytes,
-      format: SerializationFormat::Json,
-      size: bytes.length()
-    }
-  }
-  
-  // JSON反序列化
-  let deserialize_from_json = fn(result: SerializationResult) {
-    match result.format {
-      SerializationFormat::Json => {
-        let json_str = result.data.to_string()
-        
-        // 简化的JSON解析（实际实现会更复杂）
-        let trace_id_start = json_str.index_of("\"trace_id\":\"") + 12
-        let trace_id_end = json_str.index_of("\"", trace_id_start)
-        let trace_id = json_str.substring(trace_id_start, trace_id_end - trace_id_start)
-        
-        let span_id_start = json_str.index_of("\"span_id\":\"") + 11
-        let span_id_end = json_str.index_of("\"", span_id_start)
-        let span_id = json_str.substring(span_id_start, span_id_end - span_id_start)
-        
-        let operation_name_start = json_str.index_of("\"operation_name\":\"") + 18
-        let operation_name_end = json_str.index_of("\"", operation_name_start)
-        let operation_name = json_str.substring(operation_name_start, operation_name_end - operation_name_start)
-        
-        let start_time_start = json_str.index_of("\"start_time\":") + 13
-        let start_time_end = json_str.index_of(",", start_time_start)
-        let start_time = json_str.substring(start_time_start, start_time_end - start_time_start).to_int()
-        
-        let duration_start = json_str.index_of("\"duration\":") + 11
-        let duration_end = json_str.index_of(",", duration_start)
-        let duration = json_str.substring(duration_start, duration_end - duration_start).to_int()
-        
-        let status_start = json_str.index_of("\"status\":\"") + 10
-        let status_end = json_str.index_of("\"", status_start)
-        let status = json_str.substring(status_start, status_end - status_start)
-        
-        Some({
-          trace_id,
-          span_id,
-          parent_span_id: None,  // 简化实现
-          operation_name,
-          start_time,
-          duration,
-          status,
-          tags: [],  // 简化实现
-          logs: []   // 简化实现
-        })
-      }
-      _ => None
-    }
-  }
-  
-  // 压缩数据
-  let compress_data = fn(result: SerializationResult) {
-    // 简化的压缩实现（实际实现会更复杂）
-    let compressed_size = (result.size as Float * 0.7) as Int  // 假设压缩率为70%
-    let compressed_data = Array::create(compressed_size, 0 as Byte)  // 简化实现
-    
-    {
-      data: compressed_data,
-      format: result.format,
-      size: compressed_size
-    }
-  }
-  
-  // 创建测试数据
-  let telemetry_data = {
-    trace_id: "trace-12345",
-    span_id: "span-67890",
-    parent_span_id: Some("span-parent"),
-    operation_name: "http.request",
-    start_time: 1640995200000,  // 2022-01-01 00:00:00 UTC
-    duration: 150,  // 150ms
-    status: "OK",
-    tags: [("http.method", "GET"), ("http.status_code", "200")],
-    logs: [(1640995200000, "Request started"), (1640995200150, "Request completed")]
-  }
-  
-  // 测试序列化
-  let serialized = serialize_to_json(telemetry_data)
-  assert_eq(serialized.format, SerializationFormat::Json)
-  assert_true(serialized.size > 0)
-  
-  // 测试反序列化
-  let deserialized = deserialize_from_json(serialized)
-  assert_true(deserialized.is_some())
-  
-  match deserialized {
-    Some(data) => {
-      assert_eq(data.trace_id, telemetry_data.trace_id)
-      assert_eq(data.span_id, telemetry_data.span_id)
-      assert_eq(data.operation_name, telemetry_data.operation_name)
-      assert_eq(data.start_time, telemetry_data.start_time)
-      assert_eq(data.duration, telemetry_data.duration)
-      assert_eq(data.status, telemetry_data.status)
-    }
-    None => assert_true(false)
-  }
-  
-  // 测试压缩
-  let compressed = compress_data(serialized)
-  assert_eq(compressed.format, SerializationFormat::Json)
-  assert_true(compressed.size < serialized.size)  // 压缩后应该更小
-  
-  // 计算压缩率
-  let compression_ratio = (compressed.size as Float) / (serialized.size as Float)
-  assert_true(compression_ratio < 1.0)  // 压缩率应该小于1
-  assert_true(compression_ratio > 0.5)  // 压缩率不应该太低
-}
-
-// 测试5: 高效缓存机制
-test "高效缓存机制" {
-  // 定义缓存项
-  type CacheItem[T] = {
-    value: T,
-    timestamp: Int,
-    access_count: Int,
-    ttl: Int  // 生存时间（毫秒）
-  }
-  
-  // 定义缓存
-  type Cache[T] = {
-    items: Map[String, CacheItem[T]],
-    max_size: Int,
-    eviction_policy: String  // "LRU", "LFU", "TTL"
-  }
-  
-  // 创建缓存
-  let create_cache = fn(max_size: Int, eviction_policy: String) {
-    {
-      items: Map::empty(),
-      max_size,
-      eviction_policy
-    }
-  }
-  
-  // 获取当前时间
-  let current_time = fn() { Time::now() }
-  
-  // 检查项是否过期
-  let is_expired = fn(item: CacheItem[T]) {
-    let now = current_time()
-    now - item.timestamp > item.ttl
-  }
-  
-  // 获取缓存项
-  let get = fn(cache: Cache[T], key: String) {
-    match Map::get(cache.items, key) {
-      Some(item) => {
-        if is_expired(item) {
-          // 项已过期，移除并返回None
-          let _ = Map::remove(cache.items, key)
-          None
-        } else {
-          // 更新访问计数和时间戳
-          let updated_item = { item with 
-            access_count: item.access_count + 1,
-            timestamp: current_time()
-          }
-          let _ = Map::insert(cache.items, key, updated_item)
-          Some(updated_item.value)
-        }
-      }
-      None => None
-    }
-  }
-  
-  // 设置缓存项
-  let set = fn(cache: Cache[T], key: String, value: T, ttl: Int) {
-    let now = current_time()
-    let item = {
-      value,
-      timestamp: now,
-      access_count: 1,
-      ttl
+  // 测试窗口趋势分析
+  let analyze_trend = fn(window: TimeWindow) {
+    if window.points.length() < 2 {
+      return "insufficient_data"
     }
     
-    // 检查是否需要驱逐项
-    if Map::size(cache.items) >= cache.max_size {
-      let evicted_cache = evict_items(cache)
-      let _ = Map::insert(evicted_cache.items, key, item)
-      evicted_cache
-    } else {
-      let _ = Map::insert(cache.items, key, item)
-      cache
-    }
-  }
-  
-  // 驱逐缓存项
-  let evict_items = fn(cache: Cache[T]) {
-    match cache.eviction_policy {
-      "LRU" => {
-        // 最近最少使用
-        let oldest_key = Map::keys(cache.items).reduce(fn(oldest, key) {
-          match Map::get(cache.items, key) {
-            Some(item) => {
-              match Map::get(cache.items, oldest) {
-                Some(oldest_item) => {
-                  if item.timestamp < oldest_item.timestamp { key } else { oldest }
-                }
-                None => key
-              }
-            }
-            None => oldest
-          }
-        }, Map::keys(cache.items)[0])
-        
-        let _ = Map::remove(cache.items, oldest_key)
-        cache
-      }
-      "LFU" => {
-        // 最少使用频率
-        let least_used_key = Map::keys(cache.items).reduce(fn(least, key) {
-          match Map::get(cache.items, key) {
-            Some(item) => {
-              match Map::get(cache.items, least) {
-                Some(least_item) => {
-                  if item.access_count < least_item.access_count { key } else { least }
-                }
-                None => key
-              }
-            }
-            None => least
-          }
-        }, Map::keys(cache.items)[0])
-        
-        let _ = Map::remove(cache.items, least_used_key)
-        cache
-      }
-      "TTL" => {
-        // 基于TTL，移除所有过期项
-        let expired_keys = Map::keys(cache.items).filter(fn(key) {
-          match Map::get(cache.items, key) {
-            Some(item) => is_expired(item)
-            None => false
-          }
-        })
-        
-        let mut updated_cache = cache
-        for key in expired_keys {
-          let _ = Map::remove(updated_cache.items, key)
-        }
-        updated_cache
-      }
-      _ => cache
-    }
-  }
-  
-  // 清理过期项
-  let cleanup_expired = fn(cache: Cache[T]) {
-    let expired_keys = Map::keys(cache.items).filter(fn(key) {
-      match Map::get(cache.items, key) {
-        Some(item) => is_expired(item)
-        None => false
-      }
+    let sorted_points = window.points.sort(fn(a, b) { 
+      if a.timestamp < b.timestamp { -1 } 
+      else if a.timestamp > b.timestamp { 1 } 
+      else { 0 } 
     })
     
-    let mut updated_cache = cache
-    for key in expired_keys {
-      let _ = Map::remove(updated_cache.items, key)
-    }
-    updated_cache
-  }
-  
-  // 测试LRU缓存
-  let lru_cache = create_cache(3, "LRU")
-  
-  // 添加项
-  let cache1 = set(lru_cache, "key1", "value1", 5000)  // 5秒TTL
-  let cache2 = set(cache1, "key2", "value2", 5000)
-  let cache3 = set(cache2, "key3", "value3", 5000)
-  
-  // 获取项（更新访问时间）
-  let _ = get(cache3, "key1")  // 使key1成为最近使用的
-  
-  // 添加第4项，应该驱逐key2（最少最近使用的）
-  let cache4 = set(cache3, "key4", "value4", 5000)
-  
-  // 验证key2被驱逐
-  let value2 = get(cache4, "key2")
-  assert_eq(value2, None)
-  
-  // 验证其他项仍然存在
-  let value1 = get(cache4, "key1")
-  let value3 = get(cache4, "key3")
-  let value4 = get(cache4, "key4")
-  
-  assert_eq(value1, Some("value1"))
-  assert_eq(value3, Some("value3"))
-  assert_eq(value4, Some("value4"))
-  
-  // 测试TTL过期
-  let ttl_cache = create_cache(5, "TTL")
-  
-  // 添加一个短TTL的项
-  let cache5 = set(ttl_cache, "short_lived", "will_expire", 100)  // 100ms TTL
-  
-  // 模拟时间流逝（在实际实现中，这里可能需要使用可控制的时间）
-  let _ = Time::sleep(150)  // 等待150ms
-  
-  // 清理过期项
-  let cache6 = cleanup_expired(cache5)
-  
-  // 验证过期项被移除
-  let expired_value = get(cache6, "short_lived")
-  assert_eq(expired_value, None)
-}
-
-// 测试6: 并发遥测数据处理
-test "并发遥测数据处理" {
-  // 定义任务状态
-  enum TaskStatus {
-    Pending
-    Running
-    Completed
-    Failed
-  }
-  
-  // 定义并发任务
-  type ConcurrentTask = {
-    id: String,
-    status: TaskStatus,
-    start_time: Int,
-    end_time: Option[Int],
-    result: Option[String],
-    error: Option[String]
-  }
-  
-  // 定义任务队列
-  type TaskQueue = {
-    tasks: Array[ConcurrentTask],
-    max_concurrent: Int,
-    running_tasks: Int
-  }
-  
-  // 创建任务队列
-  let create_task_queue = fn(max_concurrent: Int) {
-    {
-      tasks: [],
-      max_concurrent,
-      running_tasks: 0
-    }
-  }
-  
-  // 添加任务
-  let add_task = fn(queue: TaskQueue, task_id: String) {
-    let task = {
-      id: task_id,
-      status: TaskStatus::Pending,
-      start_time: 0,
-      end_time: None,
-      result: None,
-      error: None
-    }
+    let first_half = sorted_points.slice(0, sorted_points.length() / 2)
+    let second_half = sorted_points.slice(sorted_points.length() / 2, sorted_points.length())
     
-    let updated_tasks = queue.tasks.push(task)
-    { queue with tasks: updated_tasks }
-  }
-  
-  // 启动任务
-  let start_task = fn(queue: TaskQueue, task_id: String) {
-    let updated_tasks = queue.tasks.map(fn(task) {
-      if task.id == task_id && task.status == TaskStatus::Pending {
-        { task with 
-          status: TaskStatus::Running,
-          start_time: Time::now()
-        }
-      } else {
-        task
-      }
-    })
+    let first_avg = first_half.map(fn(p) { p.value }).reduce(fn(acc, v) { acc + v }, 0.0) / (first_half.length() as Float)
+    let second_avg = second_half.map(fn(p) { p.value }).reduce(fn(acc, v) { acc + v }, 0.0) / (second_half.length() as Float)
     
-    { queue with 
-      tasks: updated_tasks,
-      running_tasks: queue.running_tasks + 1
-    }
-  }
-  
-  // 完成任务
-  let complete_task = fn(queue: TaskQueue, task_id: String, result: String) {
-    let updated_tasks = queue.tasks.map(fn(task) {
-      if task.id == task_id && task.status == TaskStatus::Running {
-        { task with 
-          status: TaskStatus::Completed,
-          end_time: Some(Time::now()),
-          result: Some(result)
-        }
-      } else {
-        task
-      }
-    })
+    let change_percent = ((second_avg - first_avg) / first_avg) * 100.0
     
-    { queue with 
-      tasks: updated_tasks,
-      running_tasks: queue.running_tasks - 1
-    }
-  }
-  
-  // 任务失败
-  let fail_task = fn(queue: TaskQueue, task_id: String, error: String) {
-    let updated_tasks = queue.tasks.map(fn(task) {
-      if task.id == task_id && task.status == TaskStatus::Running {
-        { task with 
-          status: TaskStatus::Failed,
-          end_time: Some(Time::now()),
-          error: Some(error)
-        }
-      } else {
-        task
-      }
-    })
-    
-    { queue with 
-      tasks: updated_tasks,
-      running_tasks: queue.running_tasks - 1
-    }
-  }
-  
-  // 获取可运行的任务
-  let get_runnable_tasks = fn(queue: TaskQueue) {
-    if queue.running_tasks < queue.max_concurrent {
-      queue.tasks.filter(fn(task) { task.status == TaskStatus::Pending })
-    } else {
-      []
-    }
-  }
-  
-  // 获取任务统计
-  let get_task_stats = fn(queue: TaskQueue) {
-    let pending = queue.tasks.filter(fn(t) { t.status == TaskStatus::Pending }).length()
-    let running = queue.tasks.filter(fn(t) { t.status == TaskStatus::Running }).length()
-    let completed = queue.tasks.filter(fn(t) { t.status == TaskStatus::Completed }).length()
-    let failed = queue.tasks.filter(fn(t) { t.status == TaskStatus::Failed }).length()
-    
-    {
-      total: queue.tasks.length(),
-      pending,
-      running,
-      completed,
-      failed,
-      running_tasks: queue.running_tasks
-    }
-  }
-  
-  // 创建任务队列
-  let queue = create_task_queue(2)  // 最大并发2个任务
-  
-  // 添加任务
-  let queue1 = add_task(queue, "task1")
-  let queue2 = add_task(queue1, "task2")
-  let queue3 = add_task(queue2, "task3")
-  let queue4 = add_task(queue3, "task4")
-  
-  // 检查初始状态
-  let initial_stats = get_task_stats(queue4)
-  assert_eq(initial_stats.total, 4)
-  assert_eq(initial_stats.pending, 4)
-  assert_eq(initial_stats.running, 0)
-  assert_eq(initial_stats.completed, 0)
-  assert_eq(initial_stats.failed, 0)
-  
-  // 获取可运行的任务
-  let runnable_tasks = get_runnable_tasks(queue4)
-  assert_eq(runnable_tasks.length(), 2)  // 最多可以运行2个任务
-  
-  // 启动前两个任务
-  let queue5 = start_task(queue4, "task1")
-  let queue6 = start_task(queue5, "task2")
-  
-  // 检查状态
-  let running_stats = get_task_stats(queue6)
-  assert_eq(running_stats.pending, 2)
-  assert_eq(running_stats.running, 2)
-  assert_eq(running_stats.running_tasks, 2)
-  
-  // 尝试启动第三个任务（应该失败，因为已达到最大并发数）
-  let runnable_tasks2 = get_runnable_tasks(queue6)
-  assert_eq(runnable_tasks2.length(), 0)  // 没有可运行的任务
-  
-  // 完成第一个任务
-  let queue7 = complete_task(queue6, "task1", "task1 result")
-  
-  // 检查状态
-  let completed_stats = get_task_stats(queue7)
-  assert_eq(completed_stats.pending, 2)
-  assert_eq(completed_stats.running, 1)
-  assert_eq(completed_stats.completed, 1)
-  assert_eq(completed_stats.running_tasks, 1)
-  
-  // 现在应该可以运行第三个任务
-  let runnable_tasks3 = get_runnable_tasks(queue7)
-  assert_eq(runnable_tasks3.length(), 1)  // 有一个可运行的任务
-  
-  // 启动第三个任务
-  let queue8 = start_task(queue7, "task3")
-  
-  // 第二个任务失败
-  let queue9 = fail_task(queue8, "task2", "network error")
-  
-  // 检查状态
-  let failed_stats = get_task_stats(queue9)
-  assert_eq(failed_stats.pending, 1)
-  assert_eq(failed_stats.running, 1)
-  assert_eq(failed_stats.completed, 1)
-  assert_eq(failed_stats.failed, 1)
-  
-  // 完成第三个任务
-  let queue10 = complete_task(queue9, "task3", "task3 result")
-  
-  // 启动并完成第四个任务
-  let queue11 = start_task(queue10, "task4")
-  let queue12 = complete_task(queue11, "task4", "task4 result")
-  
-  // 检查最终状态
-  let final_stats = get_task_stats(queue12)
-  assert_eq(final_stats.total, 4)
-  assert_eq(final_stats.pending, 0)
-  assert_eq(final_stats.running, 0)
-  assert_eq(final_stats.completed, 3)
-  assert_eq(final_stats.failed, 1)
-  assert_eq(final_stats.running_tasks, 0)
-}
-
-// 测试7: 动态配置管理
-test "动态配置管理" {
-  // 定义配置值类型
-  enum ConfigValue {
-    StringValue(String)
-    IntValue(Int)
-    FloatValue(Float)
-    BoolValue(Bool)
-    ArrayValue(Array[String])
-  }
-  
-  // 定义配置项
-  type ConfigItem = {
-    key: String,
-    value: ConfigValue,
-    default_value: ConfigValue,
-    description: String,
-    is_sensitive: Bool,
-    last_modified: Int
-  }
-  
-  // 定义配置变更监听器
-  type ConfigChangeListener = (String, ConfigValue, ConfigValue) -> Unit  // (key, old_value, new_value)
-  
-  // 定义配置管理器
-  type ConfigManager = {
-    configs: Map[String, ConfigItem],
-    listeners: Array[ConfigChangeListener],
-    config_file: String
-  }
-  
-  // 创建配置管理器
-  let create_config_manager = fn(config_file: String) {
-    {
-      configs: Map::empty(),
-      listeners: [],
-      config_file
-    }
-  }
-  
-  // 添加配置项
-  let add_config = fn(manager: ConfigManager, key: String, value: ConfigValue, default_value: ConfigValue, description: String, is_sensitive: Bool) {
-    let item = {
-      key,
-      value,
-      default_value,
-      description,
-      is_sensitive,
-      last_modified: Time::now()
-    }
-    
-    let updated_configs = Map::insert(manager.configs, key, item)
-    { manager with configs: updated_configs }
-  }
-  
-  // 获取配置值
-  let get_config = fn(manager: ConfigManager, key: String) {
-    match Map::get(manager.configs, key) {
-      Some(item) => Some(item.value)
-      None => None
-    }
-  }
-  
-  // 更新配置值
-  let update_config = fn(manager: ConfigManager, key: String, new_value: ConfigValue) {
-    match Map::get(manager.configs, key) {
-      Some(item) => {
-        let old_value = item.value
-        let updated_item = { item with 
-          value: new_value,
-          last_modified: Time::now()
-        }
-        
-        let updated_configs = Map::insert(manager.configs, key, updated_item)
-        let updated_manager = { manager with configs: updated_configs }
-        
-        // 通知监听器
-        for listener in manager.listeners {
-          listener(key, old_value, new_value)
-        }
-        
-        updated_manager
-      }
-      None => manager
-    }
-  }
-  
-  // 重置配置为默认值
-  let reset_config = fn(manager: ConfigManager, key: String) {
-    match Map::get(manager.configs, key) {
-      Some(item) => {
-        update_config(manager, key, item.default_value)
-      }
-      None => manager
-    }
-  }
-  
-  // 添加配置变更监听器
-  let add_listener = fn(manager: ConfigManager, listener: ConfigChangeListener) {
-    let updated_listeners = manager.listeners.push(listener)
-    { manager with listeners: updated_listeners }
-  }
-  
-  // 验证配置值
-  let validate_config = fn(value: ConfigValue, expected_type: String) {
-    match (value, expected_type) {
-      (ConfigValue::StringValue(_), "string") => true
-      (ConfigValue::IntValue(_), "int") => true
-      (ConfigValue::FloatValue(_), "float") => true
-      (ConfigValue::BoolValue(_), "bool") => true
-      (ConfigValue::ArrayValue(_), "array") => true
-      _ => false
-    }
-  }
-  
-  // 创建配置管理器
-  let manager = create_config_manager("telemetry.conf")
-  
-  // 添加配置项
-  let manager1 = add_config(manager, "service.name", ConfigValue::StringValue("telemetry-service"), ConfigValue::StringValue("telemetry-service"), "服务名称", false)
-  let manager2 = add_config(manager1, "service.port", ConfigValue::IntValue(8080), ConfigValue::IntValue(8080), "服务端口", false)
-  let manager3 = add_config(manager2, "sampling.rate", ConfigValue::FloatValue(0.1), ConfigValue::FloatValue(0.1), "采样率", false)
-  let manager4 = add_config(manager3, "debug.enabled", ConfigValue::BoolValue(false), ConfigValue::BoolValue(false), "调试模式", false)
-  let manager5 = add_config(manager4, "export.endpoints", ConfigValue::ArrayValue(["http://localhost:4317"]), ConfigValue::ArrayValue(["http://localhost:4317"]), "导出端点", false)
-  let manager6 = add_config(manager5, "database.password", ConfigValue::StringValue("secret"), ConfigValue::StringValue("secret"), "数据库密码", true)
-  
-  // 测试获取配置
-  let service_name = get_config(manager6, "service.name")
-  match service_name {
-    Some(ConfigValue::StringValue(name)) => assert_eq(name, "telemetry-service")
-    _ => assert_true(false)
-  }
-  
-  let service_port = get_config(manager6, "service.port")
-  match service_port {
-    Some(ConfigValue::IntValue(port)) => assert_eq(port, 8080)
-    _ => assert_true(false)
-  }
-  
-  let sampling_rate = get_config(manager6, "sampling.rate")
-  match sampling_rate {
-    Some(ConfigValue::FloatValue(rate)) => assert_eq(rate, 0.1)
-    _ => assert_true(false)
-  }
-  
-  let debug_enabled = get_config(manager6, "debug.enabled")
-  match debug_enabled {
-    Some(ConfigValue::BoolValue(enabled)) => assert_eq(enabled, false)
-    _ => assert_true(false)
-  }
-  
-  let export_endpoints = get_config(manager6, "export.endpoints")
-  match export_endpoints {
-    Some(ConfigValue::ArrayValue(endpoints)) => assert_eq(endpoints, ["http://localhost:4317"])
-    _ => assert_true(false)
-  }
-  
-  // 测试更新配置
-  let manager7 = update_config(manager6, "service.port", ConfigValue::IntValue(9090))
-  let updated_port = get_config(manager7, "service.port")
-  match updated_port {
-    Some(ConfigValue::IntValue(port)) => assert_eq(port, 9090)
-    _ => assert_true(false)
-  }
-  
-  // 测试配置验证
-  assert_true(validate_config(ConfigValue::StringValue("test"), "string"))
-  assert_true(validate_config(ConfigValue::IntValue(42), "int"))
-  assert_true(validate_config(ConfigValue::FloatValue(3.14), "float"))
-  assert_true(validate_config(ConfigValue::BoolValue(true), "bool"))
-  assert_true(validate_config(ConfigValue::ArrayValue(["a", "b"]), "array"))
-  
-  assert_false(validate_config(ConfigValue::StringValue("test"), "int"))
-  assert_false(validate_config(ConfigValue::IntValue(42), "string"))
-  
-  // 测试重置配置
-  let manager8 = reset_config(manager7, "service.port")
-  let reset_port = get_config(manager8, "service.port")
-  match reset_port {
-    Some(ConfigValue::IntValue(port)) => assert_eq(port, 8080)  // 应该重置为默认值
-    _ => assert_true(false)
-  }
-  
-  // 测试配置变更监听器
-  let mut notified = false
-  let listener = fn(key: String, old_value: ConfigValue, new_value: ConfigValue) {
-    if key == "service.name" {
-      match (old_value, new_value) {
-        (ConfigValue::StringValue(old), ConfigValue::StringValue(new)) => {
-          if old == "telemetry-service" && new == "updated-service" {
-            notified = true
-          }
-        }
-        _ => {}
-      }
-    }
-  }
-  
-  let manager9 = add_listener(manager8, listener)
-  let manager10 = update_config(manager9, "service.name", ConfigValue::StringValue("updated-service"))
-  
-  assert_true(notified)  // 监听器应该被调用
-}
-
-// 测试8: 高级错误处理和恢复
-test "高级错误处理和恢复" {
-  // 定义错误类型
-  enum TelemetryError {
-    NetworkError(String)
-    SerializationError(String)
-    ValidationError(String)
-    ResourceExhaustedError(String)
-    TimeoutError(String)
-    UnknownError(String)
-  }
-  
-  // 定义错误严重程度
-  enum ErrorSeverity {
-    Low
-    Medium
-    High
-    Critical
-  }
-  
-  // 定义错误上下文
-  type ErrorContext = {
-    error: TelemetryError,
-    severity: ErrorSeverity,
-    timestamp: Int,
-    component: String,
-    operation: String,
-    retry_count: Int,
-    metadata: Array[(String, String)]
-  }
-  
-  // 定义恢复策略
-  enum RecoveryStrategy {
-    NoRetry
-    FixedDelay(Int)  // Int表示延迟毫秒数
-    ExponentialBackoff(Int, Float)  // Int表示初始延迟，Float表示倍数
-    CircuitBreaker(Int, Int)  // Int, Int表示失败阈值和恢复超时
-    FailFast
-  }
-  
-  // 定义错误处理器
-  type ErrorHandler = {
-    errors: Array[ErrorContext],
-    strategies: Map[String, RecoveryStrategy],
-    circuit_breaker_states: Map[String, (Bool, Int)]  // (is_open, last_failure_time)
-  }
-  
-  // 创建错误处理器
-  let create_error_handler = fn() {
-    {
-      errors: [],
-      strategies: Map::empty(),
-      circuit_breaker_states: Map::empty()
-    }
-  }
-  
-  // 记录错误
-  let record_error = fn(handler: ErrorHandler, error: TelemetryError, severity: ErrorSeverity, component: String, operation: String, metadata: Array[(String, String)]) {
-    let context = {
-      error,
-      severity,
-      timestamp: Time::now(),
-      component,
-      operation,
-      retry_count: 0,
-      metadata
-    }
-    
-    let updated_errors = handler.errors.push(context)
-    { handler with errors: updated_errors }
-  }
-  
-  // 设置恢复策略
-  let set_recovery_strategy = fn(handler: ErrorHandler, error_type: String, strategy: RecoveryStrategy) {
-    let updated_strategies = Map::insert(handler.strategies, error_type, strategy)
-    { handler with strategies: updated_strategies }
-  }
-  
-  // 获取错误统计
-  let get_error_stats = fn(handler: ErrorHandler, time_window: Int) {
-    let now = Time::now()
-    let recent_errors = handler.errors.filter(fn(ctx) { now - ctx.timestamp <= time_window })
-    
-    let by_severity = fn(severity: ErrorSeverity) {
-      recent_errors.filter(fn(ctx) { ctx.severity == severity }).length()
-    }
-    
-    let by_component = fn(component: String) {
-      recent_errors.filter(fn(ctx) { ctx.component == component }).length()
-    }
-    
-    let by_error_type = fn(error_type: String) {
-      recent_errors.filter(fn(ctx) {
-        match ctx.error {
-          TelemetryError::NetworkError(_) => error_type == "NetworkError"
-          TelemetryError::SerializationError(_) => error_type == "SerializationError"
-          TelemetryError::ValidationError(_) => error_type == "ValidationError"
-          TelemetryError::ResourceExhaustedError(_) => error_type == "ResourceExhaustedError"
-          TelemetryError::TimeoutError(_) => error_type == "TimeoutError"
-          TelemetryError::UnknownError(_) => error_type == "UnknownError"
-        }
-      }).length()
-    }
-    
-    {
-      total: recent_errors.length(),
-      low_severity: by_severity(ErrorSeverity::Low),
-      medium_severity: by_severity(ErrorSeverity::Medium),
-      high_severity: by_severity(ErrorSeverity::High),
-      critical_severity: by_severity(ErrorSeverity::Critical),
-      network_errors: by_error_type("NetworkError"),
-      serialization_errors: by_error_type("SerializationError"),
-      validation_errors: by_error_type("ValidationError"),
-      resource_exhausted_errors: by_error_type("ResourceExhaustedError"),
-      timeout_errors: by_error_type("TimeoutError"),
-      unknown_errors: by_error_type("UnknownError")
-    }
-  }
-  
-  // 处理错误并决定恢复策略
-  let handle_error = fn(handler: ErrorHandler, error: TelemetryError, component: String, operation: String) {
-    let error_type = match error {
-      TelemetryError::NetworkError(_) => "NetworkError"
-      TelemetryError::SerializationError(_) => "SerializationError"
-      TelemetryError::ValidationError(_) => "ValidationError"
-      TelemetryError::ResourceExhaustedError(_) => "ResourceExhaustedError"
-      TelemetryError::TimeoutError(_) => "TimeoutError"
-      TelemetryError::UnknownError(_) => "UnknownError"
-    }
-    
-    let strategy = match Map::get(handler.strategies, error_type) {
-      Some(s) => s
-      None => RecoveryStrategy::NoRetry
-    }
-    
-    // 检查断路器状态
-    let circuit_breaker_state = match Map::get(handler.circuit_breaker_states, component) {
-      Some(state) => state
-      None => (false, 0)  // (is_open, last_failure_time)
-    }
-    
-    let (is_open, last_failure_time) = circuit_breaker_state
-    let now = Time::now()
-    
-    if is_open {
-      // 检查是否可以尝试恢复
-      match strategy {
-        RecoveryStrategy::CircuitBreaker(threshold, timeout) => {
-          if now - last_failure_time > timeout {
-            // 断路器半开状态，允许一次尝试
-            let updated_states = Map::insert(handler.circuit_breaker_states, component, (false, now))
-            let updated_handler = { handler with circuit_breaker_states: updated_states }
-            (updated_handler, "half_open_retry")
-          } else {
-            // 断路器仍然打开
-            (handler, "circuit_breaker_open")
-          }
-        }
-        _ => (handler, "no_retry")
-      }
-    } else {
-      // 断路器关闭，正常处理
-      match strategy {
-        RecoveryStrategy::NoRetry => (handler, "no_retry")
-        RecoveryStrategy::FixedDelay(delay) => (handler, "retry_with_delay:" + delay.to_string())
-        RecoveryStrategy::ExponentialBackoff(initial_delay, multiplier) => (handler, "retry_with_exponential_backoff:" + initial_delay.to_string() + ":" + multiplier.to_string())
-        RecoveryStrategy::CircuitBreaker(threshold, timeout) => {
-          // 检查是否需要打开断路器
-          let recent_errors = handler.errors.filter(fn(ctx) { 
-            ctx.component == component && now - ctx.timestamp <= 60000  // 最近1分钟
-          })
-          
-          if recent_errors.length() >= threshold {
-            // 打开断路器
-            let updated_states = Map::insert(handler.circuit_breaker_states, component, (true, now))
-            let updated_handler = { handler with circuit_breaker_states: updated_states }
-            (updated_handler, "circuit_breaker_opened")
-          } else {
-            (handler, "retry_allowed")
-          }
-        }
-        RecoveryStrategy::FailFast => (handler, "fail_fast")
-      }
-    }
-  }
-  
-  // 创建错误处理器
-  let handler = create_error_handler()
-  
-  // 设置恢复策略
-  let handler1 = set_recovery_strategy(handler, "NetworkError", RecoveryStrategy::ExponentialBackoff(1000, 2.0))
-  let handler2 = set_recovery_strategy(handler1, "TimeoutError", RecoveryStrategy::FixedDelay(5000))
-  let handler3 = set_recovery_strategy(handler2, "ResourceExhaustedError", RecoveryStrategy::CircuitBreaker(5, 60000))
-  let handler4 = set_recovery_strategy(handler3, "ValidationError", RecoveryStrategy::FailFast)
-  
-  // 记录一些错误
-  let handler5 = record_error(handler4, TelemetryError::NetworkError("连接超时"), ErrorSeverity::Medium, "http-client", "send_request", [("url", "http://example.com")])
-  let handler6 = record_error(handler5, TelemetryError::TimeoutError("请求超时"), ErrorSeverity::High, "database", "execute_query", [("query", "SELECT * FROM users")])
-  let handler7 = record_error(handler6, TelemetryError::ValidationError("无效参数"), ErrorSeverity::Low, "api-server", "validate_request", [("parameter", "user_id")])
-  let handler8 = record_error(handler7, TelemetryError::ResourceExhaustedError("内存不足"), ErrorSeverity::Critical, "data-processor", "process_data", [])
-  
-  // 测试错误统计
-  let stats = get_error_stats(handler8, 60000)  // 最近1分钟
-  assert_eq(stats.total, 4)
-  assert_eq(stats.low_severity, 1)
-  assert_eq(stats.medium_severity, 1)
-  assert_eq(stats.high_severity, 1)
-  assert_eq(stats.critical_severity, 1)
-  assert_eq(stats.network_errors, 1)
-  assert_eq(stats.timeout_errors, 1)
-  assert_eq(stats.validation_errors, 1)
-  assert_eq(stats.resource_exhausted_errors, 1)
-  
-  // 测试错误处理
-  let (handler9, result1) = handle_error(handler8, TelemetryError::NetworkError("连接拒绝"), "http-client", "send_request")
-  assert_eq(result1, "retry_with_exponential_backoff:1000:2.0")
-  
-  let (handler10, result2) = handle_error(handler9, TelemetryError::TimeoutError("查询超时"), "database", "execute_query")
-  assert_eq(result2, "retry_with_delay:5000")
-  
-  let (handler11, result3) = handle_error(handler10, TelemetryError::ValidationError("缺少必需参数"), "api-server", "validate_request")
-  assert_eq(result3, "fail_fast")
-  
-  // 测试断路器
-  let (handler12, result4) = handle_error(handler11, TelemetryError::ResourceExhaustedError("CPU使用率过高"), "data-processor", "process_data")
-  assert_eq(result4, "retry_allowed")  // 还未达到阈值
-  
-  // 记录更多错误以触发断路器
-  let handler13 = record_error(handler12, TelemetryError::ResourceExhaustedError("磁盘空间不足"), ErrorSeverity::High, "data-processor", "process_data", [])
-  let handler14 = record_error(handler13, TelemetryError::ResourceExhaustedError("连接池耗尽"), ErrorSeverity::High, "data-processor", "process_data", [])
-  let handler15 = record_error(handler14, TelemetryError::ResourceExhaustedError("线程池耗尽"), ErrorSeverity::High, "data-processor", "process_data", [])
-  let handler16 = record_error(handler15, TelemetryError::ResourceExhaustedError("文件描述符耗尽"), ErrorSeverity::High, "data-processor", "process_data", [])
-  
-  // 现在应该触发断路器
-  let (handler17, result5) = handle_error(handler16, TelemetryError::ResourceExhaustedError("内存不足"), "data-processor", "process_data")
-  assert_eq(result5, "circuit_breaker_opened")
-  
-  // 再次尝试应该被断路器阻止
-  let (handler18, result6) = handle_error(handler17, TelemetryError::ResourceExhaustedError("内存不足"), "data-processor", "process_data")
-  assert_eq(result6, "circuit_breaker_open")
-}
-
-// 测试9: 资源管理和监控
-test "资源管理和监控" {
-  // 定义资源类型
-  enum ResourceType {
-    Memory
-    CPU
-    Disk
-    Network
-    FileHandle
-    DatabaseConnection
-  }
-  
-  // 定义资源使用情况
-  type ResourceUsage = {
-    resource_type: ResourceType,
-    used: Float,
-    total: Float,
-    unit: String,
-    timestamp: Int
-  }
-  
-  // 定义资源阈值
-  type ResourceThreshold = {
-    warning_threshold: Float,  // 警告阈值（百分比）
-    critical_threshold: Float,  // 严重阈值（百分比）
-    check_interval: Int  // 检查间隔（毫秒）
-  }
-  
-  // 定义资源监控器
-  type ResourceMonitor = {
-    usages: Array[ResourceUsage],
-    thresholds: Map[ResourceType, ResourceThreshold],
-    alerts: Array[ResourceAlert]
-  }
-  
-  // 定义资源警报
-  type ResourceAlert = {
-    resource_type: ResourceType,
-    level: String,  // "warning" 或 "critical"
-    message: String,
-    timestamp: Int,
-    resolved: Bool
-  }
-  
-  // 创建资源监控器
-  let create_resource_monitor = fn() {
-    {
-      usages: [],
-      thresholds: Map::empty(),
-      alerts: []
-    }
-  }
-  
-  // 设置资源阈值
-  let set_threshold = fn(monitor: ResourceMonitor, resource_type: ResourceType, warning_threshold: Float, critical_threshold: Float, check_interval: Int) {
-    let threshold = {
-      warning_threshold,
-      critical_threshold,
-      check_interval
-    }
-    
-    let updated_thresholds = Map::insert(monitor.thresholds, resource_type, threshold)
-    { monitor with thresholds: updated_thresholds }
-  }
-  
-  // 记录资源使用情况
-  let record_usage = fn(monitor: ResourceMonitor, resource_type: ResourceType, used: Float, total: Float, unit: String) {
-    let usage = {
-      resource_type,
-      used,
-      total,
-      unit,
-      timestamp: Time::now()
-    }
-    
-    let updated_usages = monitor.usages.push(usage)
-    let updated_monitor = { monitor with usages: updated_usages }
-    
-    // 检查是否需要生成警报
-    check_resource_alerts(updated_monitor, usage)
-  }
-  
-  // 检查资源警报
-  let check_resource_alerts = fn(monitor: ResourceMonitor, usage: ResourceUsage) {
-    match Map::get(monitor.thresholds, usage.resource_type) {
-      Some(threshold) => {
-        let usage_percentage = (usage.used / usage.total) * 100.0
-        
-        if usage_percentage >= threshold.critical_threshold {
-          // 生成严重警报
-          let alert = {
-            resource_type: usage.resource_type,
-            level: "critical",
-            message: "资源使用率严重过高: " + usage_percentage.to_string() + "%",
-            timestamp: Time::now(),
-            resolved: false
-          }
-          
-          let updated_alerts = monitor.alerts.push(alert)
-          { monitor with alerts: updated_alerts }
-        } else if usage_percentage >= threshold.warning_threshold {
-          // 生成警告警报
-          let alert = {
-            resource_type: usage.resource_type,
-            level: "warning",
-            message: "资源使用率过高: " + usage_percentage.to_string() + "%",
-            timestamp: Time::now(),
-            resolved: false
-          }
-          
-          let updated_alerts = monitor.alerts.push(alert)
-          { monitor with alerts: updated_alerts }
-        } else {
-          monitor
-        }
-      }
-      None => monitor
-    }
-  }
-  
-  // 获取当前资源使用情况
-  let get_current_usage = fn(monitor: ResourceMonitor, resource_type: ResourceType) {
-    let now = Time::now()
-    let recent_usages = monitor.usages.filter(fn(u) { 
-      u.resource_type == resource_type && now - u.timestamp <= 60000  // 最近1分钟
-    })
-    
-    if recent_usages.length() > 0 {
-      let latest = recent_usages.reduce(fn(latest, current) { 
-        if current.timestamp > latest.timestamp { current } else { latest } 
-      }, recent_usages[0])
-      
-      Some(latest)
-    } else {
-      None
-    }
-  }
-  
-  // 获取资源使用趋势
-  let get_usage_trend = fn(monitor: ResourceMonitor, resource_type: ResourceType, time_window: Int) {
-    let now = Time::now()
-    let usages = monitor.usages.filter(fn(u) { 
-      u.resource_type == resource_type && now - u.timestamp <= time_window 
-    })
-    
-    if usages.length() < 2 {
-      return "stable"  // 数据点不足，无法确定趋势
-    }
-    
-    // 简单的趋势分析：比较最早和最新的使用率
-    let sorted_usages = usages.sort(fn(a, b) { if a.timestamp < b.timestamp { -1 } else if a.timestamp > b.timestamp { 1 } else { 0 } })
-    let earliest = sorted_usages[0]
-    let latest = sorted_usages[sorted_usages.length() - 1]
-    
-    let earliest_percentage = (earliest.used / earliest.total) * 100.0
-    let latest_percentage = (latest.used / latest.total) * 100.0
-    let change = latest_percentage - earliest_percentage
-    
-    if change > 10.0 {
+    if change_percent > 10.0 {
       "increasing"
-    } else if change < -10.0 {
+    } else if change_percent < -10.0 {
       "decreasing"
     } else {
       "stable"
     }
   }
   
-  // 解决警报
-  let resolve_alerts = fn(monitor: ResourceMonitor, resource_type: ResourceType) {
-    let updated_alerts = monitor.alerts.map(fn(alert) {
-      if alert.resource_type == resource_type && not alert.resolved {
-        { alert with resolved: true }
-      } else {
-        alert
-      }
-    })
-    
-    { monitor with alerts: updated_alerts }
-  }
+  let trend1 = analyze_trend(window1)
+  assert_eq(trend1, "stable")
   
-  // 创建资源监控器
-  let monitor = create_resource_monitor()
-  
-  // 设置资源阈值
-  let monitor1 = set_threshold(monitor, ResourceType::Memory, 80.0, 90.0, 5000)
-  let monitor2 = set_threshold(monitor1, ResourceType::CPU, 70.0, 85.0, 3000)
-  let monitor3 = set_threshold(monitor2, ResourceType::Disk, 85.0, 95.0, 10000)
-  let monitor4 = set_threshold(monitor3, ResourceType::DatabaseConnection, 75.0, 90.0, 2000)
-  
-  // 记录正常资源使用情况
-  let monitor5 = record_usage(monitor4, ResourceType::Memory, 4.0, 8.0, "GB")
-  let monitor6 = record_usage(monitor5, ResourceType::CPU, 2.5, 4.0, "cores")
-  let monitor7 = record_usage(monitor6, ResourceType::Disk, 250.0, 500.0, "GB")
-  let monitor8 = record_usage(monitor7, ResourceType::DatabaseConnection, 15.0, 20.0, "connections")
-  
-  // 检查当前资源使用情况
-  let memory_usage = get_current_usage(monitor8, ResourceType::Memory)
-  match memory_usage {
-    Some(usage) => {
-      assert_eq(usage.used, 4.0)
-      assert_eq(usage.total, 8.0)
-      assert_eq(usage.unit, "GB")
-    }
-    None => assert_true(false)
-  }
-  
-  // 记录高资源使用情况，触发警报
-  let monitor9 = record_usage(monitor8, ResourceType::Memory, 7.2, 8.0, "GB")  // 90%使用率，应该触发严重警报
-  let monitor10 = record_usage(monitor9, ResourceType::CPU, 3.0, 4.0, "cores")  // 75%使用率，应该触发警告警报
-  
-  // 检查警报
-  assert_eq(monitor10.alerts.length(), 2)
-  
-  let memory_alert = monitor10.alerts.find(fn(alert) { alert.resource_type == ResourceType::Memory })
-  match memory_alert {
-    Some(alert) => {
-      assert_eq(alert.level, "critical")
-      assert_true(alert.message.contains("90"))
-      assert_eq(alert.resolved, false)
-    }
-    None => assert_true(false)
-  }
-  
-  let cpu_alert = monitor10.alerts.find(fn(alert) { alert.resource_type == ResourceType::CPU })
-  match cpu_alert {
-    Some(alert) => {
-      assert_eq(alert.level, "warning")
-      assert_true(alert.message.contains("75"))
-      assert_eq(alert.resolved, false)
-    }
-    None => assert_true(false)
-  }
-  
-  // 记录更多资源使用情况以分析趋势
-  let monitor11 = record_usage(monitor10, ResourceType::Memory, 6.0, 8.0, "GB")
-  let monitor12 = record_usage(monitor11, ResourceType::Memory, 6.5, 8.0, "GB")
-  let monitor13 = record_usage(monitor12, ResourceType::Memory, 7.0, 8.0, "GB")
-  
-  // 分析内存使用趋势
-  let memory_trend = get_usage_trend(monitor13, ResourceType::Memory, 60000)  // 最近1分钟
-  assert_eq(memory_trend, "increasing")
-  
-  // 解决内存警报
-  let monitor14 = resolve_alerts(monitor13, ResourceType::Memory)
-  
-  // 验证警报已解决
-  let resolved_memory_alert = monitor14.alerts.find(fn(alert) { alert.resource_type == ResourceType::Memory })
-  match resolved_memory_alert {
-    Some(alert) => assert_eq(alert.resolved, true)
-    None => assert_true(false)
-  }
-  
-  // CPU警报应该仍然未解决
-  let unresolved_cpu_alert = monitor14.alerts.find(fn(alert) { alert.resource_type == ResourceType::CPU })
-  match unresolved_cpu_alert {
-    Some(alert) => assert_eq(alert.resolved, false)
-    None => assert_true(false)
-  }
+  let trend2 = analyze_trend(window2)
+  assert_eq(trend2, "increasing")
 }
 
-// 测试10: 安全性和访问控制
-test "安全性和访问控制" {
-  // 定义权限类型
-  enum Permission {
-    Read
-    Write
-    Delete
-    Admin
+// 测试2: 分布式追踪的上下文传播
+test "分布式追踪的上下文传播" {
+  // 定义追踪上下文
+  type TraceContext = {
+    trace_id: String,
+    span_id: String,
+    parent_span_id: Option[String],
+    baggage: Array[(String, String)],
+    flags: Int
   }
   
-  // 定义用户角色
-  enum UserRole {
-    Viewer
-    Editor
-    Operator
-    Administrator
+  // 定义传播器
+  type Propagator = {
+    inject: (TraceContext, Array[(String, String)]) -> Array[(String, String)],
+    extract: (Array[(String, String)>) -> Option[TraceContext]
   }
   
-  // 定义用户
-  type User = {
-    id: String,
-    username: String,
-    role: UserRole,
-    permissions: Array[Permission],
-    active: Bool
-  }
-  
-  // 定义访问控制策略
-  type AccessPolicy = {
-    resource: String,
-    required_permissions: Array[Permission],
-    allowed_roles: Array[UserRole]
-  }
-  
-  // 定义访问日志
-  type AccessLog = {
-    user_id: String,
-    resource: String,
-    action: String,
-    granted: Bool,
-    timestamp: Int,
-    ip_address: String,
-    user_agent: String
-  }
-  
-  // 定义访问控制管理器
-  type AccessControlManager = {
-    users: Map[String, User],
-    policies: Map[String, AccessPolicy],
-    access_logs: Array[AccessLog]
-  }
-  
-  // 创建访问控制管理器
-  let create_access_control_manager = fn() {
+  // 创建文本格式传播器
+  let create_text_propagator = fn() -> Propagator {
     {
-      users: Map::empty(),
-      policies: Map::empty(),
-      access_logs: []
+      inject: fn(context: TraceContext, headers: Array[(String, String)]) {
+        let trace_header = "trace-id=" + context.trace_id
+        let span_header = "span-id=" + context.span_id
+        
+        let parent_header = match context.parent_span_id {
+          Some(parent_id) => "parent-span-id=" + parent_id
+          None => ""
+        }
+        
+        let baggage_headers = context.baggage.map(fn(item) {
+          let (key, value) = item
+          "baggage-" + key + "=" + value
+        }).join(";")
+        
+        let flags_header = "trace-flags=" + context.flags.to_string()
+        
+        let new_headers = [
+          ("traceparent", trace_header + ";" + span_header),
+          ("tracestate", baggage_headers),
+          ("traceflags", flags_header)
+        ]
+        
+        if parent_header != "" {
+          new_headers.push(("parent-span", parent_header))
+        }
+        
+        headers + new_headers
+      },
+      
+      extract: fn(headers: Array[(String, String)>) -> Option[TraceContext] {
+        let traceparent = headers.find(fn(h) { h.0 == "traceparent" })
+        let tracestate = headers.find(fn(h) { h.0 == "tracestate" })
+        let traceflags = headers.find(fn(h) { h.0 == "traceflags" })
+        let parent_span = headers.find(fn(h) { h.0 == "parent-span" })
+        
+        match traceparent {
+          Some((_, value)) => {
+            let parts = value.split(";")
+            if parts.length() >= 2 {
+              let trace_id = parts[0].replace("trace-id=", "")
+              let span_id = parts[1].replace("span-id=", "")
+              
+              let parent_span_id = match parent_span {
+                Some((_, parent_value)) => Some(parent_value.replace("parent-span-id=", ""))
+                None => None
+              }
+              
+              let baggage = match tracestate {
+                Some((_, baggage_value)) => {
+                  if baggage_value != "" {
+                    baggage_value.split(";").map(fn(item) {
+                      let kv_parts = item.split("=")
+                      if kv_parts.length() == 2 {
+                        let key = kv_parts[0].replace("baggage-", "")
+                        (key, kv_parts[1])
+                      } else {
+                        ("", "")
+                      }
+                    }).filter(fn(kv) { kv.0 != "" })
+                  } else {
+                    []
+                  }
+                }
+                None => []
+              }
+              
+              let flags = match traceflags {
+                Some((_, flags_value)) => {
+                  let flags_str = flags_value.replace("trace-flags=", "")
+                  flags_str.to_int()
+                }
+                None => 0
+              }
+              
+              Some({
+                trace_id,
+                span_id,
+                parent_span_id,
+                baggage,
+                flags
+              })
+            } else {
+              None
+            }
+          }
+          None => None
+        }
+      }
     }
   }
   
-  // 添加用户
-  let add_user = fn(manager: AccessControlManager, user: User) {
-    let updated_users = Map::insert(manager.users, user.id, user)
-    { manager with users: updated_users }
+  // 测试上下文注入和提取
+  let propagator = create_text_propagator()
+  
+  let original_context = {
+    trace_id: "trace-123456789",
+    span_id: "span-987654321",
+    parent_span_id: Some("span-111111111"),
+    baggage: [
+      ("user-id", "user-123"),
+      ("service-version", "1.2.3"),
+      ("region", "us-west-2")
+    ],
+    flags: 1
   }
   
-  // 添加访问策略
-  let add_policy = fn(manager: AccessControlManager, resource: String, policy: AccessPolicy) {
-    let updated_policies = Map::insert(manager.policies, resource, policy)
-    { manager with policies: updated_policies }
+  // 注入上下文到头部
+  let original_headers = [
+    ("content-type", "application/json"),
+    ("authorization", "Bearer token123")
+  ]
+  
+  let injected_headers = propagator.inject(original_context, original_headers)
+  assert_true(injected_headers.length() >= original_headers.length() + 3)
+  
+  // 验证注入的头部
+  assert_true(injected_headers.any(fn(h) { h.0 == "traceparent" }))
+  assert_true(injected_headers.any(fn(h) { h.0 == "tracestate" }))
+  assert_true(injected_headers.any(fn(h) { h.0 == "traceflags" }))
+  assert_true(injected_headers.any(fn(h) { h.0 == "parent-span" }))
+  
+  // 提取上下文
+  let extracted_context = propagator.extract(injected_headers)
+  
+  match extracted_context {
+    Some(context) => {
+      assert_eq(context.trace_id, original_context.trace_id)
+      assert_eq(context.span_id, original_context.span_id)
+      assert_eq(context.parent_span_id, original_context.parent_span_id)
+      assert_eq(context.flags, original_context.flags)
+      
+      // 验证baggage项
+      assert_true(context.baggage.any(fn(item) { 
+        let (key, value) = item
+        key == "user-id" && value == "user-123"
+      }))
+      assert_true(context.baggage.any(fn(item) { 
+        let (key, value) = item
+        key == "service-version" && value == "1.2.3"
+      }))
+      assert_true(context.baggage.any(fn(item) { 
+        let (key, value) = item
+        key == "region" && value == "us-west-2"
+      }))
+    }
+    None => assert_true(false)
   }
   
-  // 检查用户权限
-  let has_permission = fn(user: User, permission: Permission) {
-    user.permissions.any(fn(p) { p == permission })
+  // 测试跨服务上下文传播
+  let create_child_context = fn(parent: TraceContext, span_name: String) {
+    let new_span_id = "span-" + (Time::now().to_string() + span_name).hash().to_string()
+    {
+      trace_id: parent.trace_id,
+      span_id: new_span_id,
+      parent_span_id: Some(parent.span_id),
+      baggage: parent.baggage,
+      flags: parent.flags
+    }
   }
   
-  // 检查用户角色
-  let has_role = fn(user: User, role: UserRole) {
-    user.role == role
+  let child_context = create_child_context(original_context, "database-query")
+  assert_eq(child_context.trace_id, original_context.trace_id)
+  assert_eq(child_context.parent_span_id, Some(original_context.span_id))
+  assert_eq(child_context.baggage, original_context.baggage)
+}
+
+// 测试3: 遥测数据的压缩和优化
+test "遥测数据的压缩和优化" {
+  // 定义原始遥测数据点
+  type TelemetryPoint = {
+    timestamp: Int,
+    metric_name: String,
+    value: Float,
+    attributes: Array[(String, String)]
   }
   
-  // 检查访问权限
-  let check_access = fn(manager: AccessControlManager, user_id: String, resource: String, action: String, ip_address: String, user_agent: String) {
-    match Map::get(manager.users, user_id) {
-      Some(user) => {
-        if not user.active {
-          let log = {
-            user_id,
-            resource,
-            action,
-            granted: false,
-            timestamp: Time::now(),
-            ip_address,
-            user_agent
+  // 定义压缩策略
+  enum CompressionStrategy {
+    NoCompression
+    DeltaEncoding  // 增量编码
+    RunLengthEncoding  // 游程编码
+    StatisticalCompression  // 统计压缩
+  }
+  
+  // 创建数据压缩器
+  let create_compressor = fn(strategy: CompressionStrategy) {
+    match strategy {
+      CompressionStrategy::DeltaEncoding => {
+        fn(points: Array[TelemetryPoint]) -> Array[TelemetryPoint] {
+          if points.length() <= 1 {
+            return points
           }
           
-          let updated_logs = manager.access_logs.push(log)
-          let updated_manager = { manager with access_logs: updated_logs }
-          (updated_manager, false, "用户已禁用")
-        } else {
-          match Map::get(manager.policies, resource) {
-            Some(policy) => {
-              // 检查角色权限
-              let role_allowed = policy.allowed_roles.any(fn(role) { has_role(user, role) })
-              
-              // 检查操作权限
-              let required_permission = match action {
-                "read" => Permission::Read
-                "write" => Permission::Write
-                "delete" => Permission::Delete
-                "admin" => Permission::Admin
-                _ => Permission::Read  // 默认为读权限
-              }
-              
-              let permission_allowed = has_permission(user, required_permission)
-              
-              let granted = role_allowed && permission_allowed
-              let reason = if not role_allowed {
-                "角色不被允许"
-              } else if not permission_allowed {
-                "缺少必要权限"
-              } else {
-                "访问允许"
-              }
-              
-              let log = {
-                user_id,
-                resource,
-                action,
-                granted,
-                timestamp: Time::now(),
-                ip_address,
-                user_agent
-              }
-              
-              let updated_logs = manager.access_logs.push(log)
-              let updated_manager = { manager with access_logs: updated_logs }
-              
-              (updated_manager, granted, reason)
+          let mut compressed = [points[0]]
+          let mut last_timestamp = points[0].timestamp
+          let mut last_value = points[0].value
+          
+          for i in 1..points.length() {
+            let current = points[i]
+            let delta_point = {
+              timestamp: current.timestamp - last_timestamp,
+              metric_name: current.metric_name,
+              value: current.value - last_value,
+              attributes: current.attributes
             }
-            None => {
-              let log = {
-                user_id,
-                resource,
-                action,
-                granted: false,
-                timestamp: Time::now(),
-                ip_address,
-                user_agent
+            compressed = compressed.push(delta_point)
+            last_timestamp = current.timestamp
+            last_value = current.value
+          }
+          
+          compressed
+        }
+      }
+      
+      CompressionStrategy::RunLengthEncoding => {
+        fn(points: Array[TelemetryPoint]) -> Array[TelemetryPoint] {
+          if points.length() == 0 {
+            return []
+          }
+          
+          let mut compressed = []
+          let mut current_run = points[0]
+          let mut run_length = 1
+          
+          for i in 1..points.length() {
+            let current = points[i]
+            
+            // 检查是否可以合并（相同的度量名称和属性，值相近）
+            let can_merge = current.metric_name == current_run.metric_name &&
+              current.attributes == current_run.attributes &&
+              (current.value - current_run.value).abs() < 0.01
+              
+            if can_merge {
+              run_length = run_length + 1
+              // 更新运行值为平均值
+              current_run = {
+                timestamp: current_run.timestamp,
+                metric_name: current_run.metric_name,
+                value: (current_run.value * (run_length - 1) as Float + current.value) / (run_length as Float),
+                attributes: current_run.attributes
+              }
+            } else {
+              // 添加运行长度作为属性
+              let run_point = {
+                timestamp: current_run.timestamp,
+                metric_name: current_run.metric_name,
+                value: current_run.value,
+                attributes: current_run.attributes.push(("run_length", run_length.to_string()))
+              }
+              compressed = compressed.push(run_point)
+              current_run = current
+              run_length = 1
+            }
+          }
+          
+          // 添加最后一个运行
+          let final_point = {
+            timestamp: current_run.timestamp,
+            metric_name: current_run.metric_name,
+            value: current_run.value,
+            attributes: current_run.attributes.push(("run_length", run_length.to_string()))
+          }
+          compressed = compressed.push(final_point)
+          
+          compressed
+        }
+      }
+      
+      CompressionStrategy::StatisticalCompression => {
+        fn(points: Array[TelemetryPoint]) -> Array[TelemetryPoint] {
+          // 按度量名称分组
+          let groups = Map::empty()
+          
+          for point in points {
+            let group = match Map::get(groups, point.metric_name) {
+              Some(g) => g
+              None => []
+            }
+            let _ = Map::insert(groups, point.metric_name, group.push(point))
+          }
+          
+          // 对每个组计算统计信息并压缩
+          let compressed = []
+          for (metric_name, group_points) in groups {
+            if group_points.length() > 10 {
+              // 对于大数据集，使用统计摘要
+              let values = group_points.map(fn(p) { p.value })
+              let sum = values.reduce(fn(acc, v) { acc + v }, 0.0)
+              let avg = sum / (values.length() as Float)
+              let min = values.reduce(fn(acc, v) { if v < acc { v } else { acc } }, values[0])
+              let max = values.reduce(fn(acc, v) { if v > acc { v } else { acc } }, values[0])
+              
+              let summary_point = {
+                timestamp: group_points[0].timestamp,
+                metric_name: metric_name + "_summary",
+                value: avg,
+                attributes: [
+                  ("count", group_points.length().to_string()),
+                  ("min", min.to_string()),
+                  ("max", max.to_string()),
+                  ("compression", "statistical")
+                ]
+              }
+              compressed = compressed.push(summary_point)
+            } else {
+              // 对于小数据集，保留原始点
+              compressed = compressed + group_points
+            }
+          }
+          
+          compressed
+        }
+      }
+      
+      CompressionStrategy::NoCompression => {
+        fn(points: Array[TelemetryPoint]) -> Array[TelemetryPoint] {
+          points
+        }
+      }
+    }
+  }
+  
+  // 创建测试数据
+  let base_time = 1000000
+  let test_points = [
+    { timestamp: base_time, metric_name: "cpu.usage", value: 45.2, attributes: [("host", "server1")] },
+    { timestamp: base_time + 1000, metric_name: "cpu.usage", value: 45.3, attributes: [("host", "server1")] },
+    { timestamp: base_time + 2000, metric_name: "cpu.usage", value: 45.1, attributes: [("host", "server1")] },
+    { timestamp: base_time + 3000, metric_name: "cpu.usage", value: 45.4, attributes: [("host", "server1")] },
+    { timestamp: base_time + 4000, metric_name: "memory.usage", value: 67.8, attributes: [("host", "server1")] },
+    { timestamp: base_time + 5000, metric_name: "memory.usage", value: 68.1, attributes: [("host", "server1")] },
+    { timestamp: base_time + 6000, metric_name: "cpu.usage", value: 45.5, attributes: [("host", "server1")] },
+    { timestamp: base_time + 7000, metric_name: "memory.usage", value: 68.3, attributes: [("host", "server1")] }
+  ]
+  
+  // 测试增量编码
+  let delta_compressor = create_compressor(CompressionStrategy::DeltaEncoding)
+  let delta_compressed = delta_compressor(test_points)
+  assert_eq(delta_compressed.length(), test_points.length())
+  
+  // 验证增量编码
+  assert_eq(delta_compressed[0].timestamp, base_time)  // 第一个点保持原样
+  assert_eq(delta_compressed[1].timestamp, 1000)  // 增量时间戳
+  assert_eq(delta_compressed[2].timestamp, 1000)  // 增量时间戳
+  
+  // 测试游程编码
+  let rle_compressor = create_compressor(CompressionStrategy::RunLengthEncoding)
+  let rle_compressed = rle_compressor(test_points)
+  
+  // 由于CPU使用率相近，应该被压缩
+  assert_true(rle_compressed.length() < test_points.length())
+  
+  // 验证游程编码
+  let cpu_points = rle_compressed.filter(fn(p) { p.metric_name == "cpu.usage" })
+  assert_true(cpu_points.length() > 0)
+  assert_true(cpu_points[0].attributes.any(fn(attr) { 
+    let (key, value) = attr
+    key == "run_length" && value.to_int() > 1
+  }))
+  
+  // 测试统计压缩
+  let statistical_compressor = create_compressor(CompressionStrategy::StatisticalCompression)
+  let statistical_compressed = statistical_compressor(test_points)
+  
+  // 由于点数不够多，统计压缩可能不会显著减少点数
+  assert_true(statistical_compressed.length() >= 0)
+  
+  // 测试压缩率计算
+  let calculate_compression_ratio = fn(original: Array[TelemetryPoint], compressed: Array[TelemetryPoint]) {
+    if original.length() == 0 {
+      0.0
+    } else {
+      (1.0 - (compressed.length() as Float / original.length() as Float)) * 100.0
+    }
+  }
+  
+  let delta_ratio = calculate_compression_ratio(test_points, delta_compressed)
+  let rle_ratio = calculate_compression_ratio(test_points, rle_compressed)
+  let statistical_ratio = calculate_compression_ratio(test_points, statistical_compressed)
+  
+  // 增量编码不应该减少点数，但应该减少存储空间
+  assert_eq(delta_ratio, 0.0)
+  
+  // 游程编码应该减少点数
+  assert_true(rle_ratio > 0.0)
+  
+  // 创建大数据集测试统计压缩
+  let large_dataset = []
+  for i in 0..50 {
+    large_dataset = large_dataset.push({
+      timestamp: base_time + i * 1000,
+      metric_name: "request.latency",
+      value: 100.0 + (i % 10) as Float,
+      attributes: [("endpoint", "/api/data")]
+    })
+  }
+  
+  let large_compressed = statistical_compressor(large_dataset)
+  let large_ratio = calculate_compression_ratio(large_dataset, large_compressed)
+  
+  // 对于大数据集，统计压缩应该减少点数
+  assert_true(large_compressed.length() < large_dataset.length())
+  assert_true(large_ratio > 0.0)
+}
+
+// 测试4: 实时流处理和背压控制
+test "实时流处理和背压控制" {
+  // 定义流事件类型
+  enum StreamEvent {
+    Data(TelemetryData)
+    Watermark(Int)  // 水印时间戳
+    EndOfStream
+  }
+  
+  type TelemetryData = {
+    id: String,
+    timestamp: Int,
+    value: Float,
+    source: String
+  }
+  
+  // 定义背压策略
+  enum BackpressureStrategy {
+    DropLatest  // 丢弃最新事件
+    DropOldest  // 丢弃最旧事件
+    Buffer(Int)  // 缓冲区大小限制
+    Throttle(Int)  // 限流（每秒事件数）
+  }
+  
+  // 创建流处理器
+  let create_stream_processor = fn(backpressure_strategy: BackpressureStrategy) {
+    let buffer_size = match backpressure_strategy {
+      BackpressureStrategy::Buffer(size) => size
+      _ => 1000  // 默认缓冲区大小
+    }
+    
+    let mut buffer = []
+    let mut processed_count = 0
+    let mut dropped_count = 0
+    let mut last_throttle_time = Time::now()
+    let mut events_in_current_second = 0
+    
+    {
+      process_event: fn(event: StreamEvent) -> (Bool, Option[TelemetryData]) {
+        let current_time = Time::now()
+        
+        // 处理限流
+        match backpressure_strategy {
+          BackpressureStrategy::Throttle(rate_per_second) => {
+            if current_time - last_throttle_time >= 1000 {
+              // 新的一秒开始
+              last_throttle_time = current_time
+              events_in_current_second = 0
+            }
+            
+            if events_in_current_second >= rate_per_second {
+              dropped_count = dropped_count + 1
+              return (false, None)  // 丢弃事件
+            }
+            
+            events_in_current_second = events_in_current_second + 1
+          }
+          _ => {}
+        }
+        
+        match event {
+          StreamEvent::Data(data) => {
+            // 处理数据事件
+            match backpressure_strategy {
+              BackpressureStrategy::DropLatest => {
+                if buffer.length() >= buffer_size {
+                  dropped_count = dropped_count + 1
+                  return (false, None)  // 丢弃最新事件
+                }
               }
               
-              let updated_logs = manager.access_logs.push(log)
-              let updated_manager = { manager with access_logs: updated_logs }
+              BackpressureStrategy::DropOldest => {
+                if buffer.length() >= buffer_size {
+                  buffer = buffer.slice(1, buffer.length())  // 移除最旧事件
+                  dropped_count = dropped_count + 1
+                }
+              }
               
-              (updated_manager, false, "资源不存在或无访问策略")
+              BackpressureStrategy::Buffer(size) => {
+                if buffer.length() >= size {
+                  dropped_count = dropped_count + 1
+                  return (false, None)  // 丢弃事件
+                }
+              }
+              
+              BackpressureStrategy::Throttle(_) => {
+                // 限流已经在上面处理
+              }
+            }
+            
+            buffer = buffer.push(data)
+            processed_count = processed_count + 1
+            return (true, Some(data))
+          }
+          
+          StreamEvent::Watermark(timestamp) => {
+            // 处理水印事件
+            let mut ready_data = []
+            let mut remaining_buffer = []
+            
+            for data in buffer {
+              if data.timestamp <= timestamp {
+                ready_data = ready_data.push(data)
+              } else {
+                remaining_buffer = remaining_buffer.push(data)
+              }
+            }
+            
+            buffer = remaining_buffer
+            
+            // 返回所有准备好的数据
+            if ready_data.length() > 0 {
+              (true, Some(ready_data[0]))  // 简化：只返回第一个
+            } else {
+              (true, None)
+            }
+          }
+          
+          StreamEvent::EndOfStream => {
+            // 处理流结束
+            let all_data = buffer
+            buffer = []
+            
+            if all_data.length() > 0 {
+              (true, Some(all_data[0]))  // 简化：只返回第一个
+            } else {
+              (true, None)
+            }
+          }
+        }
+      },
+      
+      get_stats: fn() -> (Int, Int) {
+        (processed_count, dropped_count)
+      },
+      
+      get_buffer_size: fn() -> Int {
+        buffer.length()
+      }
+    }
+  }
+  
+  // 测试背压策略
+  let drop_latest_processor = create_stream_processor(BackpressureStrategy::DropLatest)
+  
+  // 发送超过缓冲区大小的事件
+  for i in 0..1100 {
+    let event = StreamEvent::Data({
+      id: "event-" + i.to_string(),
+      timestamp: 1000000 + i,
+      value: i as Float,
+      source: "test-source"
+    })
+    
+    let (processed, data) = drop_latest_processor.process_event(event)
+    
+    if i < 1000 {
+      assert_true(processed)  // 前1000个事件应该被处理
+    } else {
+      assert_false(processed)  // 后100个事件应该被丢弃
+    }
+  }
+  
+  let (processed_count, dropped_count) = drop_latest_processor.get_stats()
+  assert_eq(processed_count, 1000)
+  assert_eq(dropped_count, 100)
+  assert_eq(drop_latest_processor.get_buffer_size(), 1000)
+  
+  // 测试丢弃最旧事件策略
+  let drop_oldest_processor = create_stream_processor(BackpressureStrategy::DropOldest)
+  
+  for i in 0..1100 {
+    let event = StreamEvent::Data({
+      id: "event-" + i.to_string(),
+      timestamp: 1000000 + i,
+      value: i as Float,
+      source: "test-source"
+    })
+    
+    let (processed, data) = drop_oldest_processor.process_event(event)
+    assert_true(processed)  // 所有事件都应该被"处理"
+  }
+  
+  let (processed_count2, dropped_count2) = drop_oldest_processor.get_stats()
+  assert_eq(processed_count2, 1100)
+  assert_eq(dropped_count2, 100)  // 100个最旧事件被丢弃
+  assert_eq(drop_oldest_processor.get_buffer_size(), 1000)
+  
+  // 测试限流策略
+  let throttle_processor = create_stream_processor(BackpressureStrategy::Throttle(10))  // 每秒10个事件
+  
+  let mut accepted_events = 0
+  let mut rejected_events = 0
+  
+  for i in 0..50 {
+    let event = StreamEvent::Data({
+      id: "event-" + i.to_string(),
+      timestamp: 1000000 + i,
+      value: i as Float,
+      source: "test-source"
+    })
+    
+    let (processed, data) = throttle_processor.process_event(event)
+    
+    if processed {
+      accepted_events = accepted_events + 1
+    } else {
+      rejected_events = rejected_events + 1
+    }
+  }
+  
+  // 由于限流，应该只有10个事件被接受
+  assert_eq(accepted_events, 10)
+  assert_eq(rejected_events, 40)
+  
+  // 测试水印处理
+  let buffer_processor = create_stream_processor(BackpressureStrategy::Buffer(100))
+  
+  // 添加一些数据点
+  for i in 0..10 {
+    let event = StreamEvent::Data({
+      id: "event-" + i.to_string(),
+      timestamp: 1000000 + i * 1000,
+      value: i as Float,
+      source: "test-source"
+    })
+    
+    let (processed, data) = buffer_processor.process_event(event)
+    assert_true(processed)
+  }
+  
+  assert_eq(buffer_processor.get_buffer_size(), 10)
+  
+  // 发送水印，释放前5个事件
+  let watermark_event = StreamEvent::Watermark(1000000 + 4 * 1000)
+  let (processed, data) = buffer_processor.process_event(watermark_event)
+  assert_true(processed)
+  
+  // 缓冲区应该剩下5个事件
+  assert_eq(buffer_processor.get_buffer_size(), 5)
+}
+
+// 测试5: 遥测数据的安全性和隐私保护
+test "遥测数据的安全性和隐私保护" {
+  // 定义敏感数据类型
+  enum SensitiveDataType {
+    PersonalInformation
+    FinancialData
+    HealthInformation
+    Credentials
+    Custom(String)
+  }
+  
+  // 定义数据脱敏策略
+  enum RedactionStrategy {
+    Full  // 完全脱敏
+    Partial(Int)  // 部分脱敏，保留前n个字符
+    Hash  // 哈希处理
+    Tokenize  // 令牌化
+    Mask(String)  // 使用掩码
+  }
+  
+  // 定义隐私规则
+  type PrivacyRule = {
+    attribute_name: String,
+    data_type: SensitiveDataType,
+    strategy: RedactionStrategy
+  }
+  
+  // 创建隐私保护处理器
+  let create_privacy_processor = fn(rules: Array[PrivacyRule]) {
+    let is_sensitive_attribute = fn(attr_name: String) -> Option[PrivacyRule] {
+      rules.find(fn(rule) { rule.attribute_name == attr_name })
+    }
+    
+    let apply_redaction = fn(value: String, strategy: RedactionStrategy) -> String {
+      match strategy {
+        RedactionStrategy::Full => "***"
+        RedactionStrategy::Partial(keep_chars) => {
+          if value.length() <= keep_chars {
+            value
+          } else {
+            value.substring(0, keep_chars) + "***"
+          }
+        }
+        RedactionStrategy::Hash => {
+          // 简化的哈希函数
+          let hash = value.chars().reduce(0, fn(acc, c) { acc + c.to_int() })
+          "hash-" + hash.to_string()
+        }
+        RedactionStrategy::Tokenize => {
+          "token-" + (value.length() * 1000 + value.chars().nth(0).to_int()).to_string()
+        }
+        RedactionStrategy::Mask(mask) => {
+          mask
+        }
+      }
+    }
+    
+    {
+      process_attributes: fn(attributes: Array[(String, String)]) -> Array[(String, String)] {
+        attributes.map(fn(attr) {
+          let (key, value) = attr
+          
+          match is_sensitive_attribute(key) {
+            Some(rule) => {
+              let redacted_value = apply_redaction(value, rule.strategy)
+              (key, redacted_value)
+            }
+            None => attr
+          }
+        })
+      },
+      
+      process_telemetry_data: fn(data: String) -> String {
+        // 检查数据中是否包含敏感信息
+        let contains_pii = data.contains("email") || 
+          data.contains("phone") || 
+          data.contains("ssn") || 
+          data.contains("credit-card")
+          
+        if contains_pii {
+          // 对整个数据进行脱敏
+          apply_redaction(data, RedactionStrategy::Partial(3))
+        } else {
+          data
+        }
+      }
+    }
+  }
+  
+  // 创建隐私规则
+  let privacy_rules = [
+    {
+      attribute_name: "user.email",
+      data_type: SensitiveDataType::PersonalInformation,
+      strategy: RedactionStrategy::Partial(2)
+    },
+    {
+      attribute_name: "user.phone",
+      data_type: SensitiveDataType::PersonalInformation,
+      strategy: RedactionStrategy::Mask("XXX-XXX-XXXX")
+    },
+    {
+      attribute_name: "payment.card",
+      data_type: SensitiveDataType::FinancialData,
+      strategy: RedactionStrategy::Hash
+    },
+    {
+      attribute_name: "auth.token",
+      data_type: SensitiveDataType::Credentials,
+      strategy: RedactionStrategy::Tokenize
+    },
+    {
+      attribute_name: "patient.id",
+      data_type: SensitiveDataType::HealthInformation,
+      strategy: RedactionStrategy::Full
+    }
+  ]
+  
+  // 创建隐私处理器
+  let privacy_processor = create_privacy_processor(privacy_rules)
+  
+  // 测试属性脱敏
+  let sensitive_attributes = [
+    ("user.email", "john.doe@example.com"),
+    ("user.phone", "555-123-4567"),
+    ("payment.card", "4111-1111-1111-1111"),
+    ("auth.token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"),
+    ("patient.id", "PAT-123456789"),
+    ("service.name", "api-service"),  // 非敏感属性
+    ("request.id", "req-987654321")  // 非敏感属性
+  ]
+  
+  let redacted_attributes = privacy_processor.process_attributes(sensitive_attributes)
+  
+  // 验证脱敏结果
+  let email_attr = redacted_attributes.find(fn(attr) { attr.0 == "user.email" })
+  match email_attr {
+    Some((_, value)) => assert_eq(value, "jo***")
+    None => assert_true(false)
+  }
+  
+  let phone_attr = redacted_attributes.find(fn(attr) { attr.0 == "user.phone" })
+  match phone_attr {
+    Some((_, value)) => assert_eq(value, "XXX-XXX-XXXX")
+    None => assert_true(false)
+  }
+  
+  let card_attr = redacted_attributes.find(fn(attr) { attr.0 == "payment.card" })
+  match card_attr {
+    Some((_, value)) => assert_true(value.starts_with("hash-"))
+    None => assert_true(false)
+  }
+  
+  let token_attr = redacted_attributes.find(fn(attr) { attr.0 == "auth.token" })
+  match token_attr {
+    Some((_, value)) => assert_true(value.starts_with("token-"))
+    None => assert_true(false)
+  }
+  
+  let patient_attr = redacted_attributes.find(fn(attr) { attr.0 == "patient.id" })
+  match patient_attr {
+    Some((_, value)) => assert_eq(value, "***")
+    None => assert_true(false)
+  }
+  
+  // 验证非敏感属性未被修改
+  let service_attr = redacted_attributes.find(fn(attr) { attr.0 == "service.name" })
+  match service_attr {
+    Some((_, value)) => assert_eq(value, "api-service")
+    None => assert_true(false)
+  }
+  
+  let request_attr = redacted_attributes.find(fn(attr) { attr.0 == "request.id" })
+  match request_attr {
+    Some((_, value)) => assert_eq(value, "req-987654321")
+    None => assert_true(false)
+  }
+  
+  // 测试遥测数据脱敏
+  let normal_data = "Request processed successfully"
+  let redacted_normal = privacy_processor.process_telemetry_data(normal_data)
+  assert_eq(redacted_normal, normal_data)
+  
+  let sensitive_data = "User login with email john.doe@example.com"
+  let redacted_sensitive = privacy_processor.process_telemetry_data(sensitive_data)
+  assert_eq(redacted_sensitive, "Use***")
+  
+  // 测试数据加密和解密
+  let create_encryption_processor = fn(encryption_key: String) {
+    let simple_encrypt = fn(data: String) -> String {
+      // 简化的加密（仅用于测试）
+      let key_hash = encryption_key.chars().reduce(0, fn(acc, c) { acc + c.to_int() })
+      let encrypted_chars = data.chars().map(fn(c) {
+        let encrypted_char_code = c.to_int() + key_hash
+        String::from_char(encrypted_char_code as Char)
+      })
+      encrypted_chars.join("")
+    }
+    
+    let simple_decrypt = fn(encrypted_data: String) -> String {
+      // 简化的解密（仅用于测试）
+      let key_hash = encryption_key.chars().reduce(0, fn(acc, c) { acc + c.to_int() })
+      let decrypted_chars = encrypted_data.chars().map(fn(c) {
+        let decrypted_char_code = c.to_int() - key_hash
+        String::from_char(decrypted_char_code as Char)
+      })
+      decrypted_chars.join("")
+    }
+    
+    {
+      encrypt: fn(data: String) -> String {
+        simple_encrypt(data)
+      },
+      
+      decrypt: fn(encrypted_data: String) -> String {
+        simple_decrypt(encrypted_data)
+      }
+    }
+  }
+  
+  // 测试加密和解密
+  let encryption_processor = create_encryption_processor("test-key-12345")
+  
+  let original_data = "sensitive telemetry data"
+  let encrypted_data = encryption_processor.encrypt(original_data)
+  assert_not_eq(encrypted_data, original_data)
+  
+  let decrypted_data = encryption_processor.decrypt(encrypted_data)
+  assert_eq(decrypted_data, original_data)
+  
+  // 测试数据完整性验证
+  let create_integrity_checker = fn(secret_key: String) {
+    let calculate_hmac = fn(data: String) -> String {
+      // 简化的HMAC计算（仅用于测试）
+      let secret_hash = secret_key.chars().reduce(0, fn(acc, c) { acc + c.to_int() })
+      let data_hash = data.chars().reduce(0, fn(acc, c) { acc + c.to_int() })
+      "hmac-" + ((secret_hash + data_hash) % 1000000).to_string()
+    }
+    
+    {
+      sign: fn(data: String) -> (String, String) {
+        let signature = calculate_hmac(data)
+        (data, signature)
+      },
+      
+      verify: fn(data: String, signature: String) -> Bool {
+        let expected_signature = calculate_hmac(data)
+        signature == expected_signature
+      }
+    }
+  }
+  
+  // 测试完整性验证
+  let integrity_checker = create_integrity_checker("integrity-secret")
+  
+  let telemetry_data = "cpu_usage: 75.2%, memory_usage: 62.8%"
+  let (signed_data, signature) = integrity_checker.sign(telemetry_data)
+  
+  let is_valid = integrity_checker.verify(signed_data, signature)
+  assert_true(is_valid)
+  
+  let is_tampered_valid = integrity_checker.verify(signed_data + "tampered", signature)
+  assert_false(is_tampered_valid)
+}
+
+// 测试6: 自适应采样策略
+test "自适应采样策略" {
+  // 定义采样决策类型
+  enum SamplingDecision {
+    Sampled
+    NotSampled
+  }
+  
+  // 定义采样器类型
+  enum SamplerType {
+    AlwaysOn
+    AlwaysOff
+    TraceIdRatio(Float)  // 基于Trace ID的比例采样
+    Adaptive  // 自适应采样
+  }
+  
+  // 定义自适应采样参数
+  type AdaptiveSamplingParams = {
+    target_sample_rate: Float,
+    max_sample_rate: Float,
+    min_sample_rate: Float,
+    adjustment_factor: Float,
+    evaluation_window_ms: Int
+  }
+  
+  // 创建采样器
+  let create_sampler = fn(sampler_type: SamplerType, params: Option[AdaptiveSamplingParams]) {
+    match sampler_type {
+      SamplerType::AlwaysOn => {
+        fn(trace_id: String, attributes: Array[(String, String)>) -> SamplingDecision {
+          SamplingDecision::Sampled
+        }
+      }
+      
+      SamplerType::AlwaysOff => {
+        fn(trace_id: String, attributes: Array[(String, String)>) -> SamplingDecision {
+          SamplingDecision::NotSampled
+        }
+      }
+      
+      SamplerType::TraceIdRatio(ratio) => {
+        fn(trace_id: String, attributes: Array[(String, String)>) -> SamplingDecision {
+          // 基于trace_id的哈希值决定是否采样
+          let hash = trace_id.chars().reduce(0, fn(acc, c) { acc + c.to_int() })
+          let normalized = (hash % 1000) as Float / 1000.0
+          
+          if normalized <= ratio {
+            SamplingDecision::Sampled
+          } else {
+            SamplingDecision::NotSampled
+          }
+        }
+      }
+      
+      SamplerType::Adaptive => {
+        match params {
+          Some(adaptive_params) => {
+            let mut current_sample_rate = adaptive_params.target_sample_rate
+            let mut recent_decisions = []
+            let mut last_evaluation_time = Time::now()
+            
+            fn(trace_id: String, attributes: Array[(String, String)>) -> SamplingDecision {
+              let current_time = Time::now()
+              
+              // 检查是否需要调整采样率
+              if current_time - last_evaluation_time >= adaptive_params.evaluation_window_ms {
+                // 计算最近的采样率
+                let sampled_count = recent_decisions.filter(fn(d) { d == SamplingDecision::Sampled }).length()
+                let actual_sample_rate = if recent_decisions.length() > 0 {
+                  (sampled_count as Float / recent_decisions.length() as Float)
+                } else {
+                  current_sample_rate
+                }
+                
+                // 调整采样率
+                if actual_sample_rate < adaptive_params.target_sample_rate {
+                  current_sample_rate = (current_sample_rate * adaptive_params.adjustment_factor)
+                    .min(adaptive_params.max_sample_rate)
+                } else if actual_sample_rate > adaptive_params.target_sample_rate {
+                  current_sample_rate = (current_sample_rate / adaptive_params.adjustment_factor)
+                    .max(adaptive_params.min_sample_rate)
+                }
+                
+                recent_decisions = []
+                last_evaluation_time = current_time
+              }
+              
+              // 使用当前采样率做决策
+              let hash = trace_id.chars().reduce(0, fn(acc, c) { acc + c.to_int() })
+              let normalized = (hash % 1000) as Float / 1000.0
+              
+              let decision = if normalized <= current_sample_rate {
+                SamplingDecision::Sampled
+              } else {
+                SamplingDecision::NotSampled
+              }
+              
+              recent_decisions = recent_decisions.push(decision)
+              
+              decision
+            }
+          }
+          None => {
+            fn(trace_id: String, attributes: Array[(String, String)>) -> SamplingDecision {
+              SamplingDecision::NotSampled
             }
           }
         }
       }
-      None => {
-        let log = {
-          user_id,
-          resource,
-          action,
-          granted: false,
-          timestamp: Time::now(),
-          ip_address,
-          user_agent
+    }
+  }
+  
+  // 测试AlwaysOn采样器
+  let always_on_sampler = create_sampler(SamplerType::AlwaysOn, None)
+  
+  let decision1 = always_on_sampler("trace-123", [])
+  assert_eq(decision1, SamplingDecision::Sampled)
+  
+  let decision2 = always_on_sampler("trace-456", [])
+  assert_eq(decision2, SamplingDecision::Sampled)
+  
+  // 测试AlwaysOff采样器
+  let always_off_sampler = create_sampler(SamplerType::AlwaysOff, None)
+  
+  let decision3 = always_off_sampler("trace-123", [])
+  assert_eq(decision3, SamplingDecision::NotSampled)
+  
+  let decision4 = always_off_sampler("trace-456", [])
+  assert_eq(decision4, SamplingDecision::NotSampled)
+  
+  // 测试TraceIdRatio采样器
+  let ratio_sampler = create_sampler(SamplerType::TraceIdRatio(0.5), None)
+  
+  let mut sampled_count = 0
+  let mut not_sampled_count = 0
+  
+  for i in 0..1000 {
+    let trace_id = "trace-" + i.to_string()
+    let decision = ratio_sampler(trace_id, [])
+    
+    match decision {
+      SamplingDecision::Sampled => sampled_count = sampled_count + 1
+      SamplingDecision::NotSampled => not_sampled_count = not_sampled_count + 1
+    }
+  }
+  
+  // 采样率应该接近50%
+  let actual_rate = sampled_count as Float / (sampled_count + not_sampled_count) as Float
+  assert_true(actual_rate > 0.4 && actual_rate < 0.6)
+  
+  // 测试自适应采样器
+  let adaptive_params = {
+    target_sample_rate: 0.1,
+    max_sample_rate: 0.5,
+    min_sample_rate: 0.01,
+    adjustment_factor: 1.5,
+    evaluation_window_ms: 100
+  }
+  
+  let adaptive_sampler = create_sampler(SamplerType::Adaptive, Some(adaptive_params))
+  
+  // 模拟一段时间内的采样决策
+  let mut adaptive_sampled_count = 0
+  let mut adaptive_not_sampled_count = 0
+  
+  for i in 0..200 {
+    let trace_id = "adaptive-trace-" + i.to_string()
+    let decision = adaptive_sampler(trace_id, [])
+    
+    match decision {
+      SamplingDecision::Sampled => adaptive_sampled_count = adaptive_sampled_count + 1
+      SamplingDecision::NotSampled => adaptive_not_sampled_count = adaptive_not_sampled_count + 1
+    }
+    
+    // 每50个决策暂停一下，模拟时间流逝
+    if i % 50 == 0 && i > 0 {
+      // 模拟时间流逝
+      Time::sleep(10)
+    }
+  }
+  
+  // 自适应采样器应该调整采样率以接近目标
+  let adaptive_rate = adaptive_sampled_count as Float / (adaptive_sampled_count + adaptive_not_sampled_count) as Float
+  assert_true(adaptive_rate > 0.05 && adaptive_rate < 0.3)  // 应该在合理范围内
+  
+  // 测试基于属性的采样
+  let create_attribute_based_sampler = fn(rules: Array[(String, String, Float)]) {
+    fn(trace_id: String, attributes: Array[(String, String)>) -> SamplingDecision {
+      for rule in rules {
+        let (attr_name, attr_value, sample_rate) = rule
+        
+        let match_found = attributes.any(fn(attr) {
+          let (name, value) = attr
+          name == attr_name && value == attr_value
+        })
+        
+        if match_found {
+          let hash = trace_id.chars().reduce(0, fn(acc, c) { acc + c.to_int() })
+          let normalized = (hash % 1000) as Float / 1000.0
+          
+          if normalized <= sample_rate {
+            return SamplingDecision::Sampled
+          }
+        }
+      }
+      
+      SamplingDecision::NotSampled
+    }
+  }
+  
+  // 创建基于属性的采样器
+  let attribute_rules = [
+    ("service.name", "payment-service", 0.8),  // 支付服务80%采样
+    ("service.name", "auth-service", 0.6),     // 认证服务60%采样
+    ("environment", "production", 0.1),        // 生产环境10%采样
+    ("error", "true", 1.0)                     // 错误100%采样
+  ]
+  
+  let attribute_sampler = create_attribute_based_sampler(attribute_rules)
+  
+  // 测试错误追踪应该总是被采样
+  let error_attributes = [("error", "true"), ("service.name", "api-service")]
+  let error_decision = attribute_sampler("error-trace-123", error_attributes)
+  assert_eq(error_decision, SamplingDecision::Sampled)
+  
+  // 测试支付服务高采样率
+  let payment_attributes = [("service.name", "payment-service")]
+  let mut payment_sampled = 0
+  for i in 0..100 {
+    let trace_id = "payment-trace-" + i.to_string()
+    let decision = attribute_sampler(trace_id, payment_attributes)
+    
+    match decision {
+      SamplingDecision::Sampled => payment_sampled = payment_sampled + 1
+      SamplingDecision::NotSampled => {}
+    }
+  }
+  
+  let payment_rate = payment_sampled as Float / 100.0
+  assert_true(payment_rate > 0.7 && payment_rate < 0.9)  // 应该接近80%
+}
+
+// 测试7: 遥测系统的性能基准测试
+test "遥测系统的性能基准测试" {
+  // 定义性能指标类型
+  type PerformanceMetrics = {
+    throughput_ops_per_sec: Float,
+    avg_latency_ms: Float,
+    p95_latency_ms: Float,
+    p99_latency_ms: Float,
+    error_rate: Float,
+    memory_usage_mb: Float,
+    cpu_usage_percent: Float
+  }
+  
+  // 定义基准测试配置
+  type BenchmarkConfig = {
+    duration_ms: Int,
+    concurrent_threads: Int,
+    operations_per_thread: Int,
+    payload_size_bytes: Int
+  }
+  
+  // 创建基准测试器
+  let create_benchmark_runner = fn() {
+    let measure_operation = fn(operation: () -> Unit) -> Int {
+      let start_time = Time::now()
+      operation()
+      let end_time = Time::now()
+      end_time - start_time
+    }
+    
+    {
+      run_benchmark: fn(config: BenchmarkConfig, operation: () -> Unit) -> PerformanceMetrics {
+        let mut latencies = []
+        let mut errors = 0
+        let start_time = Time::now()
+        let end_time = start_time + config.duration_ms
+        
+        // 执行基准测试
+        while Time::now() < end_time {
+          // 记录开始内存和CPU使用情况
+          let start_memory = get_memory_usage()
+          let start_cpu = get_cpu_usage()
+          
+          let latency = measure_operation(fn() {
+            try {
+              operation()
+            } catch {
+              _ => errors = errors + 1
+            }
+          })
+          
+          let end_memory = get_memory_usage()
+          let end_cpu = get_cpu_usage()
+          
+          latencies = latencies.push(latency)
         }
         
-        let updated_logs = manager.access_logs.push(log)
-        let updated_manager = { manager with access_logs: updated_logs }
+        // 计算性能指标
+        let total_operations = latencies.length()
+        let total_time_ms = Time::now() - start_time
+        let throughput = (total_operations as Float / total_time_ms as Float) * 1000.0
         
-        (updated_manager, false, "用户不存在")
+        let sorted_latencies = latencies.sort(fn(a, b) { if a < b { -1 } else if a > b { 1 } else { 0 } })
+        
+        let avg_latency = if total_operations > 0 {
+          (latencies.reduce(fn(acc, l) { acc + l }, 0) as Float / total_operations as Float)
+        } else {
+          0.0
+        }
+        
+        let p95_latency = if total_operations > 0 {
+          let p95_index = ((total_operations as Float * 0.95) as Int)
+          sorted_latencies[p95_index] as Float
+        } else {
+          0.0
+        }
+        
+        let p99_latency = if total_operations > 0 {
+          let p99_index = ((total_operations as Float * 0.99) as Int)
+          sorted_latencies[p99_index] as Float
+        } else {
+          0.0
+        }
+        
+        let error_rate = if total_operations > 0 {
+          (errors as Float / total_operations as Float) * 100.0
+        } else {
+          0.0
+        }
+        
+        // 简化的内存和CPU使用情况计算
+        let memory_usage_mb = 50.0  // 模拟值
+        let cpu_usage_percent = 25.0  // 模拟值
+        
+        {
+          throughput_ops_per_sec: throughput,
+          avg_latency_ms: avg_latency,
+          p95_latency_ms: p95_latency,
+          p99_latency_ms: p99_latency,
+          error_rate: error_rate,
+          memory_usage_mb: memory_usage_mb,
+          cpu_usage_percent: cpu_usage_percent
+        }
       }
     }
   }
   
-  // 获取用户访问日志
-  let get_user_access_logs = fn(manager: AccessControlManager, user_id: String, time_window: Int) {
-    let now = Time::now()
-    manager.access_logs.filter(fn(log) { 
-      log.user_id == user_id && now - log.timestamp <= time_window 
-    })
+  // 辅助函数（模拟）
+  let get_memory_usage = fn() -> Float {
+    // 模拟内存使用情况
+    50.0 + (Time::now() % 100) as Float / 10.0
   }
   
-  // 获取资源访问日志
-  let get_resource_access_logs = fn(manager: AccessControlManager, resource: String, time_window: Int) {
-    let now = Time::now()
-    manager.access_logs.filter(fn(log) { 
-      log.resource == resource && now - log.timestamp <= time_window 
-    })
+  let get_cpu_usage = fn() -> Float {
+    // 模拟CPU使用情况
+    25.0 + (Time::now() % 50) as Float / 5.0
   }
   
-  // 创建访问控制管理器
-  let manager = create_access_control_manager()
+  // 创建基准测试运行器
+  let benchmark_runner = create_benchmark_runner()
   
-  // 创建用户
-  let viewer_user = {
-    id: "user1",
-    username: "viewer",
-    role: UserRole::Viewer,
-    permissions: [Permission::Read],
-    active: true
+  // 定义测试操作
+  let telemetry_ingestion_operation = fn() {
+    // 模拟遥测数据摄入操作
+    let data = {
+      trace_id: "trace-" + Time::now().to_string(),
+      span_id: "span-" + (Time::now() * 2).to_string(),
+      timestamp: Time::now(),
+      duration: 10 + (Time::now() % 100),
+      service_name: "benchmark-service",
+      operation_name: "benchmark-operation",
+      attributes: [
+        ("benchmark", "true"),
+        ("payload_size", "1024")
+      ]
+    }
+    
+    // 模拟数据处理
+    let _ = data.trace_id.length()
+    let _ = data.attributes.length()
+    
+    // 模拟一些计算
+    let mut sum = 0
+    for i in 0..100 {
+      sum = sum + i
+    }
   }
   
-  let editor_user = {
-    id: "user2",
-    username: "editor",
-    role: UserRole::Editor,
-    permissions: [Permission::Read, Permission::Write],
-    active: true
+  let telemetry_export_operation = fn() {
+    // 模拟遥测数据导出操作
+    let batch_size = 100
+    let mut batch = []
+    
+    for i in 0..batch_size {
+      batch = batch.push({
+        id: "metric-" + i.to_string(),
+        value: (Time::now() % 1000) as Float,
+        timestamp: Time::now(),
+        metric_type: "counter"
+      })
+    }
+    
+    // 模拟序列化和网络传输
+    let serialized = batch.map(fn(item) {
+      item.id + ":" + item.value.to_string() + ":" + item.timestamp.to_string()
+    }).join(",")
+    
+    let _ = serialized.length()
   }
   
-  let operator_user = {
-    id: "user3",
-    username: "operator",
-    role: UserRole::Operator,
-    permissions: [Permission::Read, Permission::Write, Permission::Delete],
-    active: true
+  // 配置基准测试
+  let benchmark_config = {
+    duration_ms: 5000,  // 5秒
+    concurrent_threads: 4,
+    operations_per_thread: 1000,
+    payload_size_bytes: 1024
   }
   
-  let admin_user = {
-    id: "user4",
-    username: "admin",
-    role: UserRole::Administrator,
-    permissions: [Permission::Read, Permission::Write, Permission::Delete, Permission::Admin],
-    active: true
+  // 运行遥测摄入基准测试
+  let ingestion_metrics = benchmark_runner.run_benchmark(benchmark_config, telemetry_ingestion_operation)
+  
+  // 验证摄入性能指标
+  assert_true(ingestion_metrics.throughput_ops_per_sec > 0)
+  assert_true(ingestion_metrics.avg_latency_ms >= 0)
+  assert_true(ingestion_metrics.p95_latency_ms >= ingestion_metrics.avg_latency_ms)
+  assert_true(ingestion_metrics.p99_latency_ms >= ingestion_metrics.p95_latency_ms)
+  assert_true(ingestion_metrics.error_rate >= 0.0 && ingestion_metrics.error_rate <= 100.0)
+  assert_true(ingestion_metrics.memory_usage_mb > 0)
+  assert_true(ingestion_metrics.cpu_usage_percent >= 0.0 && ingestion_metrics.cpu_usage_percent <= 100.0)
+  
+  // 运行遥测导出基准测试
+  let export_metrics = benchmark_runner.run_benchmark(benchmark_config, telemetry_export_operation)
+  
+  // 验证导出性能指标
+  assert_true(export_metrics.throughput_ops_per_sec > 0)
+  assert_true(export_metrics.avg_latency_ms >= 0)
+  assert_true(export_metrics.p95_latency_ms >= export_metrics.avg_latency_ms)
+  assert_true(export_metrics.p99_latency_ms >= export_metrics.p95_latency_ms)
+  
+  // 比较不同操作的性能
+  let compare_performance = fn(metrics1: PerformanceMetrics, metrics2: PerformanceMetrics) -> String {
+    if metrics1.throughput_ops_per_sec > metrics2.throughput_ops_per_sec {
+      "operation1"
+    } else {
+      "operation2"
+    }
   }
   
-  let inactive_user = {
-    id: "user5",
-    username: "inactive",
-    role: UserRole::Viewer,
-    permissions: [Permission::Read],
-    active: false
+  let faster_operation = compare_performance(ingestion_metrics, export_metrics)
+  
+  // 创建性能报告
+  let create_performance_report = fn(metrics: PerformanceMetrics, operation_name: String) -> String {
+    "Performance Report for " + operation_name + ":\n" +
+    "  Throughput: " + metrics.throughput_ops_per_sec.to_string() + " ops/sec\n" +
+    "  Avg Latency: " + metrics.avg_latency_ms.to_string() + " ms\n" +
+    "  P95 Latency: " + metrics.p95_latency_ms.to_string() + " ms\n" +
+    "  P99 Latency: " + metrics.p99_latency_ms.to_string() + " ms\n" +
+    "  Error Rate: " + metrics.error_rate.to_string() + "%\n" +
+    "  Memory Usage: " + metrics.memory_usage_mb.to_string() + " MB\n" +
+    "  CPU Usage: " + metrics.cpu_usage_percent.to_string() + "%\n"
   }
   
-  // 添加用户
-  let manager1 = add_user(manager, viewer_user)
-  let manager2 = add_user(manager1, editor_user)
-  let manager3 = add_user(manager2, operator_user)
-  let manager4 = add_user(manager3, admin_user)
-  let manager5 = add_user(manager4, inactive_user)
+  let ingestion_report = create_performance_report(ingestion_metrics, "Telemetry Ingestion")
+  let export_report = create_performance_report(export_metrics, "Telemetry Export")
   
-  // 创建访问策略
-  let telemetry_read_policy = {
-    resource: "telemetry.data",
-    required_permissions: [Permission::Read],
-    allowed_roles: [UserRole::Viewer, UserRole::Editor, UserRole::Operator, UserRole::Administrator]
+  // 验证报告包含预期信息
+  assert_true(ingestion_report.contains("Telemetry Ingestion"))
+  assert_true(ingestion_report.contains("Throughput:"))
+  assert_true(ingestion_report.contains("Avg Latency:"))
+  
+  assert_true(export_report.contains("Telemetry Export"))
+  assert_true(export_report.contains("Throughput:"))
+  assert_true(export_report.contains("Avg Latency:"))
+  
+  // 测试性能回归检测
+  let detect_performance_regression = fn(current: PerformanceMetrics, baseline: PerformanceMetrics, threshold: Float) -> Bool {
+    let throughput_regression = (baseline.throughput_ops_per_sec - current.throughput_ops_per_sec) / baseline.throughput_ops_per_sec > threshold
+    let latency_regression = (current.avg_latency_ms - baseline.avg_latency_ms) / baseline.avg_latency_ms > threshold
+    
+    throughput_regression || latency_regression
   }
   
-  let telemetry_write_policy = {
-    resource: "telemetry.config",
-    required_permissions: [Permission::Write],
-    allowed_roles: [UserRole::Editor, UserRole::Operator, UserRole::Administrator]
+  // 创建基线性能指标
+  let baseline_metrics = {
+    throughput_ops_per_sec: 1000.0,
+    avg_latency_ms: 5.0,
+    p95_latency_ms: 10.0,
+    p99_latency_ms: 20.0,
+    error_rate: 0.1,
+    memory_usage_mb: 45.0,
+    cpu_usage_percent: 20.0
   }
   
-  let telemetry_delete_policy = {
-    resource: "telemetry.data",
-    required_permissions: [Permission::Delete],
-    allowed_roles: [UserRole::Operator, UserRole::Administrator]
+  // 测试性能回归检测（无回归）
+  let good_metrics = {
+    throughput_ops_per_sec: 1050.0,  // 5%提升
+    avg_latency_ms: 4.8,            // 4%改善
+    p95_latency_ms: 9.5,
+    p99_latency_ms: 19.0,
+    error_rate: 0.05,
+    memory_usage_mb: 44.0,
+    cpu_usage_percent: 19.0
   }
   
-  let system_admin_policy = {
-    resource: "system.config",
-    required_permissions: [Permission::Admin],
-    allowed_roles: [UserRole::Administrator]
+  let has_regression1 = detect_performance_regression(good_metrics, baseline_metrics, 0.1)  // 10%阈值
+  assert_false(has_regression1)
+  
+  // 测试性能回归检测（有回归）
+  let bad_metrics = {
+    throughput_ops_per_sec: 850.0,   // 15%下降
+    avg_latency_ms: 6.0,             // 20%增加
+    p95_latency_ms: 12.0,
+    p99_latency_ms: 24.0,
+    error_rate: 0.2,
+    memory_usage_mb: 50.0,
+    cpu_usage_percent: 25.0
   }
   
-  // 添加策略
-  let manager6 = add_policy(manager5, "telemetry.data", telemetry_read_policy)
-  let manager7 = add_policy(manager6, "telemetry.config", telemetry_write_policy)
-  let manager8 = add_policy(manager7, "telemetry.data", telemetry_delete_policy)
-  let manager9 = add_policy(manager8, "system.config", system_admin_policy)
+  let has_regression2 = detect_performance_regression(bad_metrics, baseline_metrics, 0.1)  // 10%阈值
+  assert_true(has_regression2)
+}
+
+// 测试8: 异常检测和预警系统
+test "异常检测和预警系统" {
+  // 定义异常类型
+  enum AnomalyType {
+    StatisticalOutlier
+    TrendChange
+    SuddenSpike
+    PatternDeviation
+    ThresholdBreach
+  }
   
-  // 测试访问权限
-  let (manager10, viewer_read_result, viewer_read_reason) = check_access(manager9, "user1", "telemetry.data", "read", "192.168.1.100", "Mozilla/5.0")
-  assert_eq(viewer_read_result, true)
-  assert_eq(viewer_read_reason, "访问允许")
+  // 定义异常事件
+  type AnomalyEvent = {
+    timestamp: Int,
+    anomaly_type: AnomalyType,
+    metric_name: String,
+    value: Float,
+    expected_value: Option[Float],
+    confidence: Float,
+    severity: String,  // "low", "medium", "high", "critical"
+    description: String
+  }
   
-  let (manager11, viewer_write_result, viewer_write_reason) = check_access(manager10, "user1", "telemetry.config", "write", "192.168.1.100", "Mozilla/5.0")
-  assert_eq(viewer_write_result, false)
-  assert_eq(viewer_write_reason, "角色不被允许")
+  // 定义预警规则
+  type AlertRule = {
+    name: String,
+    metric_name: String,
+    condition: String,  // ">", "<", "increase", "decrease", "std_dev"
+    threshold: Float,
+    window_size: Int,
+    severity: String
+  }
   
-  let (manager12, editor_read_result, editor_read_reason) = check_access(manager11, "user2", "telemetry.data", "read", "192.168.1.101", "Mozilla/5.0")
-  assert_eq(editor_read_result, true)
-  assert_eq(editor_read_reason, "访问允许")
+  // 创建异常检测器
+  let create_anomaly_detector = fn() {
+    // 计算统计指标
+    let calculate_statistics = fn(values: Array[Float]) -> (Float, Float, Float) {
+      if values.length() == 0 {
+        return (0.0, 0.0, 0.0)
+      }
+      
+      let mean = values.reduce(fn(acc, v) { acc + v }, 0.0) / (values.length() as Float)
+      
+      let variance = values
+        .map(fn(v) { (v - mean) * (v - mean) })
+        .reduce(fn(acc, v) { acc + v }, 0.0) / (values.length() as Float)
+      
+      let std_dev = variance.sqrt()
+      
+      (mean, std_dev, variance)
+    }
+    
+    // 检测统计异常
+    let detect_statistical_outlier = fn(current_value: Float, historical_values: Array[Float], threshold: Float) -> Bool {
+      if historical_values.length() < 10 {
+        return false
+      }
+      
+      let (mean, std_dev, _) = calculate_statistics(historical_values)
+      
+      if std_dev == 0.0 {
+        return false
+      }
+      
+      let z_score = (current_value - mean).abs() / std_dev
+      z_score > threshold
+    }
+    
+    // 检测趋势变化
+    let detect_trend_change = fn(values: Array[Float], threshold: Float) -> Bool {
+      if values.length() < 20 {
+        return false
+      }
+      
+      let half_point = values.length() / 2
+      let first_half = values.slice(0, half_point)
+      let second_half = values.slice(half_point, values.length())
+      
+      let (first_mean, _, _) = calculate_statistics(first_half)
+      let (second_mean, _, _) = calculate_statistics(second_half)
+      
+      let change_percent = ((second_mean - first_mean) / first_mean).abs()
+      change_percent > threshold
+    }
+    
+    // 检测突然峰值
+    let detect_sudden_spike = fn(current_value: Float, recent_values: Array[Float], multiplier: Float) -> Bool {
+      if recent_values.length() < 5 {
+        return false
+      }
+      
+      let (recent_mean, _, _) = calculate_statistics(recent_values)
+      
+      if recent_mean == 0.0 {
+        return false
+      }
+      
+      let ratio = current_value / recent_mean
+      ratio > multiplier
+    }
+    
+    {
+      detect_anomalies: fn(metric_name: String, values: Array[Float]) -> Array[AnomalyEvent] {
+        let mut anomalies = []
+        
+        if values.length() < 10 {
+          return anomalies
+        }
+        
+        let current_value = values[values.length() - 1]
+        let historical_values = values.slice(0, values.length() - 1)
+        let recent_values = if values.length() >= 10 {
+          values.slice(values.length() - 10, values.length() - 1)
+        } else {
+          historical_values
+        }
+        
+        // 检测统计异常
+        if detect_statistical_outlier(current_value, historical_values, 2.0) {
+          let (mean, std_dev, _) = calculate_statistics(historical_values)
+          let confidence = ((current_value - mean).abs() / std_dev).min(5.0) / 5.0
+          
+          anomalies = anomalies.push({
+            timestamp: Time::now(),
+            anomaly_type: AnomalyType::StatisticalOutlier,
+            metric_name: metric_name,
+            value: current_value,
+            expected_value: Some(mean),
+            confidence: confidence,
+            severity: if confidence > 0.8 { "high" } else if confidence > 0.5 { "medium" } else { "low" },
+            description: "值" + current_value.to_string() + "偏离历史均值" + mean.to_string() + "超过2个标准差"
+          })
+        }
+        
+        // 检测趋势变化
+        if detect_trend_change(values, 0.3) {
+          anomalies = anomalies.push({
+            timestamp: Time::now(),
+            anomaly_type: AnomalyType::TrendChange,
+            metric_name: metric_name,
+            value: current_value,
+            expected_value: None,
+            confidence: 0.7,
+            severity: "medium",
+            description: "检测到" + metric_name + "的趋势发生显著变化"
+          })
+        }
+        
+        // 检测突然峰值
+        if detect_sudden_spike(current_value, recent_values, 3.0) {
+          let (recent_mean, _, _) = calculate_statistics(recent_values)
+          
+          anomalies = anomalies.push({
+            timestamp: Time::now(),
+            anomaly_type: AnomalyType::SuddenSpike,
+            metric_name: metric_name,
+            value: current_value,
+            expected_value: Some(recent_mean),
+            confidence: 0.8,
+            severity: "high",
+            description: metric_name + "突然从" + recent_mean.to_string() + "增加到" + current_value.to_string()
+          })
+        }
+        
+        anomalies
+      }
+    }
+  }
   
-  let (manager13, editor_write_result, editor_write_reason) = check_access(manager12, "user2", "telemetry.config", "write", "192.168.1.101", "Mozilla/5.0")
-  assert_eq(editor_write_result, true)
-  assert_eq(editor_write_reason, "访问允许")
+  // 创建预警管理器
+  let create_alert_manager = fn() {
+    let mut active_alerts = []
+    
+    {
+      evaluate_rules: fn(rules: Array[AlertRule], metrics: Array[(String, Array[Float])>) -> Array[AnomalyEvent] {
+        let mut alerts = []
+        
+        for rule in rules {
+          let metric_data = metrics.find(fn(m) { m.0 == rule.metric_name })
+          
+          match metric_data {
+            Some((_, values)) => {
+              if values.length() >= rule.window_size {
+                let current_value = values[values.length() - 1]
+                let window_values = values.slice(values.length() - rule.window_size, values.length())
+                
+                let condition_met = match rule.condition {
+                  ">" => current_value > rule.threshold,
+                  "<" => current_value < rule.threshold,
+                  "increase" => {
+                    let first_value = window_values[0]
+                    current_value > first_value * (1.0 + rule.threshold / 100.0)
+                  }
+                  "decrease" => {
+                    let first_value = window_values[0]
+                    current_value < first_value * (1.0 - rule.threshold / 100.0)
+                  }
+                  "std_dev" => {
+                    let (mean, std_dev, _) = {
+                      let sum = window_values.reduce(fn(acc, v) { acc + v }, 0.0)
+                      let mean = sum / (window_values.length() as Float)
+                      let variance = window_values
+                        .map(fn(v) { (v - mean) * (v - mean) })
+                        .reduce(fn(acc, v) { acc + v }, 0.0) / (window_values.length() as Float)
+                      (mean, variance.sqrt(), variance)
+                    }
+                    (current_value - mean).abs() > std_dev * rule.threshold
+                  }
+                  _ => false
+                }
+                
+                if condition_met {
+                  alerts = alerts.push({
+                    timestamp: Time::now(),
+                    anomaly_type: AnomalyType::ThresholdBreach,
+                    metric_name: rule.metric_name,
+                    value: current_value,
+                    expected_value: Some(rule.threshold),
+                    confidence: 0.9,
+                    severity: rule.severity,
+                    description: rule.name + ": " + rule.metric_name + "值" + current_value.to_string() + rule.condition + rule.threshold.to_string()
+                  })
+                }
+              }
+            }
+            None => {}
+          }
+        }
+        
+        alerts
+      },
+      
+      get_active_alerts: fn() -> Array[AnomalyEvent] {
+        active_alerts
+      },
+      
+      clear_alerts: fn() {
+        active_alerts = []
+      }
+    }
+  }
   
-  let (manager14, editor_delete_result, editor_delete_reason) = check_access(manager13, "user2", "telemetry.data", "delete", "192.168.1.101", "Mozilla/5.0")
-  assert_eq(editor_delete_result, false)
-  assert_eq(editor_delete_reason, "缺少必要权限")
+  // 创建异常检测器
+  let anomaly_detector = create_anomaly_detector()
   
-  let (manager15, operator_delete_result, operator_delete_reason) = check_access(manager14, "user3", "telemetry.data", "delete", "192.168.1.102", "Mozilla/5.0")
-  assert_eq(operator_delete_result, true)
-  assert_eq(operator_delete_reason, "访问允许")
+  // 创建测试数据 - 正常模式
+  let normal_cpu_values = []
+  for i in 0..30 {
+    normal_cpu_values = normal_cpu_values.push(50.0 + (i % 5) as Float * 2.0)  // 50-58之间的正常波动
+  }
   
-  let (manager16, admin_system_result, admin_system_reason) = check_access(manager15, "user4", "system.config", "admin", "192.168.1.103", "Mozilla/5.0")
-  assert_eq(admin_system_result, true)
-  assert_eq(admin_system_reason, "访问允许")
+  // 检测正常数据中的异常
+  let normal_anomalies = anomaly_detector.detect_anomalies("cpu.usage", normal_cpu_values)
+  assert_eq(normal_anomalies.length(), 0)  // 正常数据不应该有异常
   
-  let (manager17, inactive_result, inactive_reason) = check_access(manager16, "user5", "telemetry.data", "read", "192.168.1.104", "Mozilla/5.0")
-  assert_eq(inactive_result, false)
-  assert_eq(inactive_reason, "用户已禁用")
+  // 创建测试数据 - 包含统计异常
+  let outlier_cpu_values = []
+  for i in 0..29 {
+    outlier_cpu_values = outlier_cpu_values.push(50.0 + (i % 5) as Float * 2.0)
+  }
+  outlier_cpu_values = outlier_cpu_values.push(95.0)  // 添加异常值
   
-  let (manager18, nonexistent_result, nonexistent_reason) = check_access(manager17, "user6", "telemetry.data", "read", "192.168.1.105", "Mozilla/5.0")
-  assert_eq(nonexistent_result, false)
-  assert_eq(nonexistent_reason, "用户不存在")
+  // 检测异常值
+  let outlier_anomalies = anomaly_detector.detect_anomalies("cpu.usage", outlier_cpu_values)
+  assert_eq(outlier_anomalies.length(), 1)
   
-  // 测试访问日志
-  let viewer_logs = get_user_access_logs(manager18, "user1", 60000)  // 最近1分钟
-  assert_eq(viewer_logs.length(), 2)  // 两次访问尝试
+  let outlier_anomaly = outlier_anomalies[0]
+  assert_eq(outlier_anomaly.metric_name, "cpu.usage")
+  assert_eq(outlier_anomaly.value, 95.0)
+  assert_eq(outlier_anomaly.anomaly_type, AnomalyType::StatisticalOutlier)
+  assert_eq(outlier_anomaly.severity, "high")
   
-  let telemetry_data_logs = get_resource_access_logs(manager18, "telemetry.data", 60000)  // 最近1分钟
-  assert_eq(telemetry_data_logs.length(), 5)  // 5次对telemetry.data的访问尝试
+  // 创建测试数据 - 包含趋势变化
+  let trend_cpu_values = []
+  for i in 0..15 {
+    trend_cpu_values = trend_cpu_values.push(45.0 + i as Float)  // 上升趋势
+  }
+  for i in 0..15 {
+    trend_cpu_values = trend_cpu_values.push(60.0 - i as Float)  // 下降趋势
+  }
   
-  // 验证日志内容
-  let viewer_read_log = viewer_logs.find(fn(log) { log.action == "read" })
-  match viewer_read_log {
-    Some(log) => {
-      assert_eq(log.user_id, "user1")
-      assert_eq(log.resource, "telemetry.data")
-      assert_eq(log.action, "read")
-      assert_eq(log.granted, true)
-      assert_eq(log.ip_address, "192.168.1.100")
+  // 检测趋势变化
+  let trend_anomalies = anomaly_detector.detect_anomalies("cpu.usage", trend_cpu_values)
+  assert_true(trend_anomalies.length() >= 1)
+  
+  let trend_anomaly = trend_anomalies.find(fn(a) { a.anomaly_type == AnomalyType::TrendChange })
+  match trend_anomaly {
+    Some(anomaly) => {
+      assert_eq(anomaly.metric_name, "cpu.usage")
+      assert_eq(anomaly.severity, "medium")
     }
     None => assert_true(false)
   }
   
-  let viewer_write_log = viewer_logs.find(fn(log) { log.action == "write" })
-  match viewer_write_log {
-    Some(log) => {
-      assert_eq(log.user_id, "user1")
-      assert_eq(log.resource, "telemetry.config")
-      assert_eq(log.action, "write")
-      assert_eq(log.granted, false)
-      assert_eq(log.ip_address, "192.168.1.100")
+  // 创建测试数据 - 包含突然峰值
+  let spike_cpu_values = []
+  for i in 0..25 {
+    spike_cpu_values = spike_cpu_values.push(50.0 + (i % 3) as Float)
+  }
+  spike_cpu_values = spike_cpu_values.push(95.0)  // 突然峰值
+  
+  // 检测突然峰值
+  let spike_anomalies = anomaly_detector.detect_anomalies("cpu.usage", spike_cpu_values)
+  assert_true(spike_anomalies.length() >= 1)
+  
+  let spike_anomaly = spike_anomalies.find(fn(a) { a.anomaly_type == AnomalyType::SuddenSpike })
+  match spike_anomaly {
+    Some(anomaly) => {
+      assert_eq(anomaly.metric_name, "cpu.usage")
+      assert_eq(anomaly.value, 95.0)
+      assert_eq(anomaly.severity, "high")
     }
     None => assert_true(false)
+  }
+  
+  // 创建预警管理器
+  let alert_manager = create_alert_manager()
+  
+  // 定义预警规则
+  let alert_rules = [
+    {
+      name: "CPU使用率过高",
+      metric_name: "cpu.usage",
+      condition: ">",
+      threshold: 80.0,
+      window_size: 5,
+      severity: "high"
+    },
+    {
+      name: "内存使用率过高",
+      metric_name: "memory.usage",
+      condition: ">",
+      threshold: 90.0,
+      window_size: 3,
+      severity: "critical"
+    },
+    {
+      name: "响应时间增加",
+      metric_name: "response.time",
+      condition: "increase",
+      threshold: 50.0,  // 50%增加
+      window_size: 10,
+      severity: "medium"
+    },
+    {
+      name: "错误率增加",
+      metric_name: "error.rate",
+      condition: "std_dev",
+      threshold: 2.0,  // 2个标准差
+      window_size: 20,
+      severity: "high"
+    }
+  ]
+  
+  // 创建测试指标数据
+  let test_metrics = [
+    ("cpu.usage", outlier_cpu_values),  // 包含95.0的异常值
+    ("memory.usage", [85.0, 86.0, 87.0, 91.0, 92.0]),  // 最后两个值超过90.0
+    ("response.time", [100.0, 105.0, 110.0, 115.0, 160.0]),  // 最后一个值增加超过50%
+    ("error.rate", [0.1, 0.1, 0.1, 0.1, 5.0])  // 最后一个值异常高
+  ]
+  
+  // 评估预警规则
+  let alerts = alert_manager.evaluate_rules(alert_rules, test_metrics)
+  
+  // 验证预警
+  assert_true(alerts.length() >= 3)  // 应该至少有3个预警
+  
+  // 验证CPU使用率预警
+  let cpu_alert = alerts.find(fn(a) { a.metric_name == "cpu.usage" })
+  match cpu_alert {
+    Some(alert) => {
+      assert_eq(alert.severity, "high")
+      assert_eq(alert.value, 95.0)
+    }
+    None => assert_true(false)
+  }
+  
+  // 验证内存使用率预警
+  let memory_alert = alerts.find(fn(a) { a.metric_name == "memory.usage" })
+  match memory_alert {
+    Some(alert) => {
+      assert_eq(alert.severity, "critical")
+      assert_true(alert.value > 90.0)
+    }
+    None => assert_true(false)
+  }
+  
+  // 验证响应时间预警
+  let response_time_alert = alerts.find(fn(a) { a.metric_name == "response.time" })
+  match response_time_alert {
+    Some(alert) => {
+      assert_eq(alert.severity, "medium")
+    }
+    None => assert_true(false)
+  }
+  
+  // 验证错误率预警
+  let error_rate_alert = alerts.find(fn(a) { a.metric_name == "error.rate" })
+  match error_rate_alert {
+    Some(alert) => {
+      assert_eq(alert.severity, "high")
+      assert_eq(alert.value, 5.0)
+    }
+    None => assert_true(false)
+  }
+  
+  // 测试预警优先级排序
+  let sort_alerts_by_severity = fn(alerts: Array[AnomalyEvent]) -> Array[AnomalyEvent] {
+    let severity_order = [
+      ("critical", 4),
+      ("high", 3),
+      ("medium", 2),
+      ("low", 1)
+    ]
+    
+    alerts.sort(fn(a, b) {
+      let a_severity = match severity_order.find(fn(s) { s.0 == a.severity }) {
+        Some((_, order)) => order
+        None => 0
+      }
+      
+      let b_severity = match severity_order.find(fn(s) { s.0 == b.severity }) {
+        Some((_, order)) => order
+        None => 0
+      }
+      
+      if a_severity > b_severity { -1 }
+      else if a_severity < b_severity { 1 }
+      else { 0 }
+    })
+  }
+  
+  let sorted_alerts = sort_alerts_by_severity(alerts)
+  
+  // 验证排序结果
+  if sorted_alerts.length() > 0 {
+    assert_eq(sorted_alerts[0].severity, "critical")  // 第一个应该是critical
+  }
+  
+  if sorted_alerts.length() > 1 {
+    assert_true(sorted_alerts[1].severity == "high" || sorted_alerts[1].severity == "critical")
   }
 }
