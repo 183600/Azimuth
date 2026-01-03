@@ -1,891 +1,854 @@
-// Azimuth 跨平台兼容性测试用例
-// 专注于测试遥测系统在不同平台上的兼容性和功能一致性
+// Azimuth 跨平台兼容性综合测试
+// 专注于测试遥测系统在不同平台和环境下的一致性和兼容性
 
 // 测试1: 操作系统兼容性测试
 test "操作系统兼容性测试" {
-  // 创建平台检测器
-  let platform_detector = PlatformDetector({
-    detected_platform: "unknown",
-    platform_capabilities: []
-  })
+  // 定义操作系统信息
+  type OperatingSystem = {
+    os_name: String,
+    version: String,
+    architecture: String,
+    endianness: String,  // "little" or "big"
+    path_separator: String,
+    line_ending: String,
+    max_path_length: Int,
+    case_sensitive: Bool
+  }
   
-  // 测试不同操作系统的平台检测
-  let platforms = ["linux", "windows", "macos", "freebsd"]
+  type PlatformCompatibilityResult = {
+    platform: OperatingSystem,
+    telemetry_supported: Bool,
+    features_supported: Array[String],
+    limitations: Array[String],
+    performance_impact: Float,
+    compatibility_score: Float
+  }
   
-  for platform in platforms {
-    let detection_result = detect_platform(platform_detector, platform)
-    match detection_result {
-      PlatformDetectionSuccess(detected_info) => {
-        assert_eq(detected_info.platform_name, platform)
-        
-        // 验证平台特定能力
-        match platform {
-          "linux" => {
-            assert_true(detected_info.capabilities.contains("inotify"))
-            assert_true(detected_info.capabilities.contains("epoll"))
-            assert_true(detected_info.capabilities.contains("posix_signals"))
-          }
-          "windows" => {
-            assert_true(detected_info.capabilities.contains("windows_events"))
-            assert_true(detected_info.capabilities.contains("win32_api"))
-            assert_true(detected_info.capabilities.contains("registry_access"))
-          }
-          "macos" => {
-            assert_true(detected_info.capabilities.contains("fsevents"))
-            assert_true(detected_info.capabilities.contains("bsd_sockets"))
-            assert_true(detected_info.capabilities.contains("launchd"))
-          }
-          "freebsd" => {
-            assert_true(detected_info.capabilities.contains("kqueue"))
-            assert_true(detected_info.capabilities.contains("bsd_sockets"))
-            assert_true(detected_info.capabilities.contains("jails"))
-          }
-          _ => assert_true(false)
-        }
+  // 创建不同操作系统配置
+  let windows_os = {
+    os_name: "Windows",
+    version: "10.0",
+    architecture: "x64",
+    endianness: "little",
+    path_separator: "\\",
+    line_ending: "\r\n",
+    max_path_length: 260,
+    case_sensitive: false
+  }
+  
+  let linux_os = {
+    os_name: "Linux",
+    version: "5.15",
+    architecture: "x64",
+    endianness: "little",
+    path_separator: "/",
+    line_ending: "\n",
+    max_path_length: 4096,
+    case_sensitive: true
+  }
+  
+  let macos_os = {
+    os_name: "macOS",
+    version: "12.0",
+    architecture: "arm64",
+    endianness: "little",
+    path_separator: "/",
+    line_ending: "\n",
+    max_path_length: 1024,
+    case_sensitive: false
+  }
+  
+  let freebsd_os = {
+    os_name: "FreeBSD",
+    version: "13.0",
+    architecture: "x64",
+    endianness: "little",
+    path_separator: "/",
+    line_ending: "\n",
+    max_path_length: 1024,
+    case_sensitive: true
+  }
+  
+  // 测试平台兼容性
+  let test_platform_compatibility = fn(os: OperatingSystem) -> PlatformCompatibilityResult {
+    let mut features_supported = []
+    let mut limitations = []
+    let mut telemetry_supported = true
+    let mut performance_impact = 1.0
+    let mut compatibility_score = 0.0
+    
+    // 检查基本遥测功能支持
+    match os.os_name {
+      "Windows" => {
+        features_supported = ["event_tracing", "performance_counters", "wmi", "registry"]
+        limitations = ["path_length_limit", "case_insensitivity"]
+        performance_impact = 1.2  // Windows性能开销稍高
+        compatibility_score = 0.9
       }
-      PlatformDetectionError(_) => assert_true(false)
+      "Linux" => {
+        features_supported = ["procfs", "sysfs", "perf_events", "cgroups"]
+        limitations = ["distribution_specific"]
+        performance_impact = 0.8  // Linux性能较好
+        compatibility_score = 1.0
+      }
+      "macOS" => {
+        features_supported = ["mach_ports", "sysctl", "instruments"]
+        limitations = ["sandbox_restrictions", "arm64_specific"]
+        performance_impact = 0.9
+        compatibility_score = 0.85
+      }
+      "FreeBSD" => {
+        features_supported = ["kvm", "sysctl", "jails"]
+        limitations = ["limited_tools", "niche_platform"]
+        performance_impact = 0.85
+        compatibility_score = 0.75
+      }
+      _ => {
+        telemetry_supported = false
+        limitations = ["unsupported_platform"]
+        compatibility_score = 0.0
+      }
+    }
+    
+    // 检查架构兼容性
+    match os.architecture {
+      "x64" => {
+        features_supported = features_supported.push("64_bit_optimized")
+        compatibility_score = compatibility_score + 0.1
+      }
+      "arm64" => {
+        features_supported = features_supported.push("arm64_support")
+        compatibility_score = compatibility_score + 0.05
+      }
+      "x86" => {
+        limitations = limitations.push("32_bit_limitations")
+        compatibility_score = compatibility_score - 0.1
+      }
+      _ => {
+        limitations = limitations.push("unsupported_architecture")
+        compatibility_score = compatibility_score - 0.2
+      }
+    }
+    
+    // 确保兼容性分数在0-1范围内
+    compatibility_score = if compatibility_score > 1.0 { 1.0 } else { compatibility_score }
+    compatibility_score = if compatibility_score < 0.0 { 0.0 } else { compatibility_score }
+    
+    {
+      platform: os,
+      telemetry_supported: telemetry_supported,
+      features_supported: features_supported,
+      limitations: limitations,
+      performance_impact: performance_impact,
+      compatibility_score: compatibility_score
     }
   }
   
-  // 测试平台特定的文件路径处理
-  let linux_path_result = normalize_path_for_platform(platform_detector, "/var/log/azimuth/telemetry.log", "linux")
-  match linux_path_result {
-    PathNormalizationSuccess(normalized_path) => {
-      assert_eq(normalized_path, "/var/log/azimuth/telemetry.log")
-    }
-    PathNormalizationError(_) => assert_true(false)
-  }
+  // 测试所有平台
+  let windows_result = test_platform_compatibility(windows_os)
+  let linux_result = test_platform_compatibility(linux_os)
+  let macos_result = test_platform_compatibility(macos_os)
+  let freebsd_result = test_platform_compatibility(freebsd_os)
   
-  let windows_path_result = normalize_path_for_platform(platform_detector, "C:\\ProgramData\\Azimuth\\telemetry.log", "windows")
-  match windows_path_result {
-    PathNormalizationSuccess(normalized_path) => {
-      assert_eq(normalized_path, "C:\\ProgramData\\Azimuth\\telemetry.log")
-    }
-    PathNormalizationError(_) => assert_true(false)
-  }
+  // 验证Windows兼容性
+  assert_true(windows_result.telemetry_supported)
+  assert_true(windows_result.features_supported.length() > 0)
+  assert_true(windows_result.compatibility_score > 0.8)
+  assert_true(windows_result.performance_impact > 0.0)
+  
+  // 验证Linux兼容性
+  assert_true(linux_result.telemetry_supported)
+  assert_true(linux_result.features_supported.length() > 0)
+  assert_eq(linux_result.compatibility_score, 1.0)  // Linux应该有最高兼容性
+  assert_true(linux_result.performance_impact < 1.0)  // 性能应该较好
+  
+  // 验证macOS兼容性
+  assert_true(macos_result.telemetry_supported)
+  assert_true(macos_result.features_supported.length() > 0)
+  assert_true(macos_result.compatibility_score > 0.8)
+  assert_true(macos_result.limitations.contains("arm64_specific"))
+  
+  // 验证FreeBSD兼容性
+  assert_true(freebsd_result.telemetry_supported)
+  assert_true(freebsd_result.features_supported.length() > 0)
+  assert_true(freebsd_result.compatibility_score > 0.7)
+  assert_true(freebsd_result.limitations.contains("niche_platform"))
+  
+  // 比较平台兼容性
+  assert_true(linux_result.compatibility_score >= windows_result.compatibility_score)
+  assert_true(windows_result.compatibility_score >= macos_result.compatibility_score)
+  assert_true(macos_result.compatibility_score >= freebsd_result.compatibility_score)
 }
 
 // 测试2: 架构兼容性测试
 test "架构兼容性测试" {
-  // 创建架构检测器
-  let architecture_detector = ArchitectureDetector({
-    detected_architecture: "unknown",
-    endianness: "unknown",
-    word_size: 0
-  })
+  // 定义处理器架构信息
+  type ProcessorArchitecture = {
+    arch_name: String,
+    bits: Int,
+    endianness: String,
+    alignment: Int,
+    cache_line_size: Int,
+    vector_extensions: Array[String],
+    atomic_operations: Bool,
+    specific_features: Array[String]
+  }
   
-  // 测试不同CPU架构的检测
-  let architectures = ["x86_64", "arm64", "x86", "arm", "riscv64"]
+  type ArchitectureCompatibilityResult = {
+    architecture: ProcessorArchitecture,
+    telemetry_optimized: Bool,
+    performance_tier: String,  // "high", "medium", "low"
+    optimization_available: Array[String],
+    compatibility_issues: Array[String],
+    benchmark_score: Float
+  }
   
-  for arch in architectures {
-    let detection_result = detect_architecture(architecture_detector, arch)
-    match detection_result {
-      ArchitectureDetectionSuccess(arch_info) => {
-        assert_eq(arch_info.architecture_name, arch)
-        
-        // 验证架构特定特性
-        match arch {
-          "x86_64" => {
-            assert_eq(arch_info.endianness, "little")
-            assert_eq(arch_info.word_size, 64)
-            assert_true(arch_info.features.contains("sse2"))
-            assert_true(arch_info.features.contains("avx"))
-          }
-          "arm64" => {
-            assert_eq(arch_info.endianness, "little")
-            assert_eq(arch_info.word_size, 64)
-            assert_true(arch_info.features.contains("neon"))
-            assert_true(arch_info.features.contains("crypto"))
-          }
-          "x86" => {
-            assert_eq(arch_info.endianness, "little")
-            assert_eq(arch_info.word_size, 32)
-            assert_true(arch_info.features.contains("sse"))
-            assert_true(arch_info.features.contains("mmx"))
-          }
-          "arm" => {
-            assert_eq(arch_info.endianness, "little")
-            assert_eq(arch_info.word_size, 32)
-            assert_true(arch_info.features.contains("thumb"))
-            assert_true(arch_info.features.contains("vfp"))
-          }
-          "riscv64" => {
-            assert_eq(arch_info.endianness, "little")
-            assert_eq(arch_info.word_size, 64)
-            assert_true(arch_info.features.contains("atomic"))
-            assert_true(arch_info.features.contains("mul_div"))
-          }
-          _ => assert_true(false)
-        }
+  // 创建不同架构配置
+  let x64_arch = {
+    arch_name: "x86_64",
+    bits: 64,
+    endianness: "little",
+    alignment: 8,
+    cache_line_size: 64,
+    vector_extensions: ["sse", "avx", "avx2"],
+    atomic_operations: true,
+    specific_features: ["out_of_order", "branch_prediction"]
+  }
+  
+  let arm64_arch = {
+    arch_name: "ARM64",
+    bits: 64,
+    endianness: "little",
+    alignment: 8,
+    cache_line_size: 128,
+    vector_extensions: ["neon", "sve"],
+    atomic_operations: true,
+    specific_features: ["big_little", "trustzone"]
+  }
+  
+  let x86_arch = {
+    arch_name: "x86",
+    bits: 32,
+    endianness: "little",
+    alignment: 4,
+    cache_line_size: 64,
+    vector_extensions: ["sse", "mmx"],
+    atomic_operations: true,
+    specific_features: ["legacy_support"]
+  }
+  
+  let riscv_arch = {
+    arch_name: "RISC-V",
+    bits: 64,
+    endianness: "little",
+    alignment: 8,
+    cache_line_size: 64,
+    vector_extensions: ["rvv"],
+    atomic_operations: true,
+    specific_features: ["modular_isa", "open_source"]
+  }
+  
+  // 测试架构兼容性
+  let test_architecture_compatibility = fn(arch: ProcessorArchitecture) -> ArchitectureCompatibilityResult {
+    let mut optimization_available = []
+    let mut compatibility_issues = []
+    let mut telemetry_optimized = true
+    let mut performance_tier = "medium"
+    let mut benchmark_score = 0.0
+    
+    // 基于架构评估优化
+    match arch.arch_name {
+      "x86_64" => {
+        optimization_available = ["simd_optimized", "cache_aligned", "atomic_fast"]
+        performance_tier = "high"
+        benchmark_score = 1.0
       }
-      ArchitectureDetectionError(_) => assert_true(false)
-    }
-  }
-  
-  // 测试字节序转换
-  let little_endian_value = 0x12345678
-  let big_endian_value = convert_endianness(little_endian_value, "little", "big")
-  assert_eq(big_endian_value, 0x78563412)
-  
-  let converted_back = convert_endianness(big_endian_value, "big", "little")
-  assert_eq(converted_back, little_endian_value)
-}
-
-// 测试3: WebAssembly兼容性测试
-test "WebAssembly兼容性测试" {
-  // 创建WebAssembly环境检测器
-  let wasm_detector = WASMDetector({
-    wasm_supported: false,
-    wasm_features: [],
-    browser_environment: false
-  })
-  
-  // 测试WebAssembly支持检测
-  let wasm_detection_result = detect_wasm_support(wasm_detector)
-  match wasm_detection_result {
-    WASMSupportDetectionSuccess(wasm_info) => {
-      assert_true(wasm_info.wasm_supported)
-      assert_true(wasm_info.wasm_features.contains("bulk_memory"))
-      assert_true(wasm_info.wasm_features.contains("mutable_globals"))
-      
-      // 测试浏览器环境检测
-      if wasm_info.browser_environment {
-        assert_true(wasm_info.wasm_features.contains("javascript_interop"))
-        assert_true(wasm_info.wasm_features.contains("dom_access"))
-      } else {
-        assert_true(wasm_info.wasm_features.contains("wasi"))
-        assert_true(wasm_info.wasm_features.contains("standalone_runtime"))
+      "ARM64" => {
+        optimization_available = ["neon_optimized", "power_efficient", "thermal_aware"]
+        performance_tier = "high"
+        benchmark_score = 0.95
       }
-    }
-    WASMSupportDetectionError(_) => assert_true(false)
-  }
-  
-  // 测试WebAssembly遥测功能
-  let wasm_telemetry = WASMTelemetry({
-    memory_size_mb: 64,
-    max_telemetry_points: 1000,
-    export_functions: ["collect_metrics", "send_telemetry", "get_stats"]
-  })
-  
-  // 测试内存管理
-  let memory_usage_result = get_wasm_memory_usage(wasm_telemetry)
-  match memory_usage_result {
-    WASMMemoryUsageSuccess(usage) => {
-      assert_true(usage.used_memory_mb <= wasm_telemetry.memory_size_mb)
-      assert_true(usage.allocated_telemetry_points <= wasm_telemetry.max_telemetry_points)
-    }
-    WASMMemoryUsageError(_) => assert_true(false)
-  }
-  
-  // 测试函数导出
-  let export_result = call_wasm_exported_function(wasm_telemetry, "collect_metrics", [])
-  match export_result {
-    WASMFunctionCallSuccess(result) => {
-      assert_eq(result, "metrics_collected")
-    }
-    WASMFunctionCallError(_) => assert_true(false)
-  }
-}
-
-// 测试4: 容器环境兼容性测试
-test "容器环境兼容性测试" {
-  // 创建容器环境检测器
-  let container_detector = ContainerDetector({
-    container_type: "none",
-    container_runtime: "unknown",
-    orchestrator: "none"
-  })
-  
-  // 测试不同容器环境的检测
-  let container_environments = [
-    ("docker", "docker", "none"),
-    ("kubernetes", "containerd", "kubernetes"),
-    ("podman", "podman", "none"),
-    ("lxc", "lxc", "lxd")
-  ]
-  
-  for env in container_environments {
-    let detection_result = detect_container_environment(container_detector, env.0)
-    match detection_result {
-      ContainerDetectionSuccess(container_info) => {
-        assert_eq(container_info.container_type, env.0)
-        assert_eq(container_info.container_runtime, env.1)
-        assert_eq(container_info.orchestrator, env.2)
-        
-        // 验证容器特定能力
-        match env.0 {
-          "docker" => {
-            assert_true(container_info.capabilities.contains("docker_api"))
-            assert_true(container_info.capabilities.contains("volume_mounts"))
-            assert_true(container_info.capabilities.contains("network_isolation"))
-          }
-          "kubernetes" => {
-            assert_true(container_info.capabilities.contains("k8s_api"))
-            assert_true(container_info.capabilities.contains("service_discovery"))
-            assert_true(container_info.capabilities.contains("config_maps"))
-          }
-          "podman" => {
-            assert_true(container_info.capabilities.contains("podman_api"))
-            assert_true(container_info.capabilities.contains("rootless"))
-            assert_true(container_info.capabilities.contains("systemd_integration"))
-          }
-          "lxc" => {
-            assert_true(container_info.capabilities.contains("lxc_api"))
-            assert_true(container_info.capabilities.contains("cgroup_limits"))
-            assert_true(container_info.capabilities.contains("namespace_isolation"))
-          }
-          _ => assert_true(false)
-        }
+      "x86" => {
+        optimization_available = ["legacy_compatible", "low_memory"]
+        compatibility_issues = ["32_bit_limitations", "no_avx"]
+        performance_tier = "medium"
+        benchmark_score = 0.7
       }
-      ContainerDetectionError(_) => assert_true(false)
-    }
-  }
-  
-  // 测试容器资源限制检测
-  let resource_limits_result = get_container_resource_limits(container_detector)
-  match resource_limits_result {
-    ContainerResourceLimitsSuccess(limits) => {
-      assert_true(limits.memory_limit_mb > 0)
-      assert_true(limits.cpu_limit_cores > 0)
-      assert_true(limits.disk_limit_mb > 0)
-    }
-    ContainerResourceLimitsError(_) => assert_true(false)
-  }
-  
-  // 测试容器遥测数据收集
-  let container_telemetry_result = collect_container_telemetry(container_detector)
-  match container_telemetry_result {
-    ContainerTelemetrySuccess(telemetry_data) => {
-      assert_true(telemetry_data.container_id.length() > 0)
-      assert_true(telemetry_data.container_name.length() > 0)
-      assert_true(telemetry_data.memory_usage_mb >= 0)
-      assert_true(telemetry_data.cpu_usage_percent >= 0.0)
-    }
-    ContainerTelemetryError(_) => assert_true(false)
-  }
-}
-
-// 测试5: 云平台兼容性测试
-test "云平台兼容性测试" {
-  // 创建云平台检测器
-  let cloud_detector = CloudDetector({
-    cloud_provider: "none",
-    cloud_region: "unknown",
-    instance_type: "unknown"
-  })
-  
-  // 测试不同云平台的检测
-  let cloud_providers = [
-    ("aws", "us-west-2", "t3.medium"),
-    ("gcp", "us-central1", "n1-standard-1"),
-    ("azure", "eastus", "Standard_B2s"),
-    ("alibaba", "cn-hangzhou", "ecs.c6.large")
-  ]
-  
-  for provider in cloud_providers {
-    let detection_result = detect_cloud_platform(cloud_detector, provider.0)
-    match detection_result {
-      CloudDetectionSuccess(cloud_info) => {
-        assert_eq(cloud_info.cloud_provider, provider.0)
-        assert_eq(cloud_info.cloud_region, provider.1)
-        assert_eq(cloud_info.instance_type, provider.2)
-        
-        // 验证云平台特定能力
-        match provider.0 {
-          "aws" => {
-            assert_true(cloud_info.capabilities.contains("ec2_metadata"))
-            assert_true(cloud_info.capabilities.contains("cloudwatch"))
-            assert_true(cloud_info.capabilities.contains("iam_roles"))
-          }
-          "gcp" => {
-            assert_true(cloud_info.capabilities.contains("gce_metadata"))
-            assert_true(cloud_info.capabilities.contains("stackdriver"))
-            assert_true(cloud_info.capabilities.contains("service_accounts"))
-          }
-          "azure" => {
-            assert_true(cloud_info.capabilities.contains("azure_metadata"))
-            assert_true(cloud_info.capabilities.contains("monitor"))
-            assert_true(cloud_info.capabilities.contains("managed_identities"))
-          }
-          "alibaba" => {
-            assert_true(cloud_info.capabilities.contains("ecs_metadata"))
-            assert_true(cloud_info.capabilities.contains("cms"))
-            assert_true(cloud_info.capabilities.contains("ram_roles"))
-          }
-          _ => assert_true(false)
-        }
+      "RISC-V" => {
+        optimization_available = ["custom_extensions", "power_efficient"]
+        compatibility_issues = ["emerging_platform", "limited_tooling"]
+        performance_tier = "medium"
+        benchmark_score = 0.8
       }
-      CloudDetectionError(_) => assert_true(false)
-    }
-  }
-  
-  // 测试云平台特定遥测数据收集
-  let cloud_telemetry_result = collect_cloud_telemetry(cloud_detector)
-  match cloud_telemetry_result {
-    CloudTelemetrySuccess(telemetry_data) => {
-      assert_true(telemetry_data.instance_id.length() > 0)
-      assert_true(telemetry_data.availability_zone.length() > 0)
-      assert_true(telemetry_data.instance_type.length() > 0)
-      assert_true(telemetry_data.network_interfaces.length() > 0)
-    }
-    CloudTelemetryError(_) => assert_true(false)
-  }
-}
-
-// 测试6: 跨平台性能基准测试
-test "跨平台性能基准测试测试" {
-  // 创建性能基准测试器
-  let benchmark_runner = BenchmarkRunner({
-    test_duration_ms: 5000,
-    warmup_duration_ms: 1000,
-    metrics_to_collect: ["cpu_usage", "memory_usage", "io_throughput", "network_latency"]
-  })
-  
-  // 测试不同平台的性能基准
-  let platforms = ["linux-x86_64", "windows-x86_64", "macos-arm64", "freebsd-arm64"]
-  let benchmark_results = []
-  
-  for platform in platforms {
-    let benchmark_result = run_platform_benchmarks(benchmark_runner, platform)
-    match benchmark_result {
-      BenchmarkSuccess(results) => {
-        assert_true(results.platform_name == platform)
-        assert_true(results.cpu_benchmark_score > 0)
-        assert_true(results.memory_benchmark_score > 0)
-        assert_true(results.io_benchmark_score > 0)
-        assert_true(results.network_benchmark_score > 0)
-        
-        benchmark_results.push(results)
+      _ => {
+        telemetry_optimized = false
+        compatibility_issues = ["unsupported_architecture"]
+        performance_tier = "low"
+        benchmark_score = 0.0
       }
-      BenchmarkError(_) => assert_true(false)
-    }
-  }
-  
-  // 验证跨平台性能比较
-  let performance_comparison = compare_platform_performance(benchmark_results)
-  assert_eq(performance_comparison.platform_count, platforms.length())
-  assert_true(performance_comparison.fastest_platform_cpu.length() > 0)
-  assert_true(performance_comparison.fastest_platform_memory.length() > 0)
-  assert_true(performance_comparison.fastest_platform_io.length() > 0)
-  assert_true(performance_comparison.fastest_platform_network.length() > 0)
-  
-  // 验证性能基准一致性
-  let consistency_check = check_benchmark_consistency(benchmark_results)
-  assert_true(consistency_check.variance_within_acceptable_range)
-  assert_true(consistency_check.outliers_detected == 0)
-}
-
-// 类型定义
-type PlatformDetector PlatformDetectorStruct
-type ArchitectureDetector ArchitectureDetectorStruct
-type WASMDetector WASMDetectorStruct
-type ContainerDetector ContainerDetectorStruct
-type CloudDetector CloudDetectorStruct
-type BenchmarkRunner BenchmarkRunnerStruct
-
-type PlatformDetectorStruct {
-  detected_platform : String
-  platform_capabilities : [String]
-}
-
-type ArchitectureDetectorStruct {
-  detected_architecture : String
-  endianness : String
-  word_size : Int
-}
-
-type WASMDetectorStruct {
-  wasm_supported : Bool
-  wasm_features : [String]
-  browser_environment : Bool
-}
-
-type ContainerDetectorStruct {
-  container_type : String
-  container_runtime : String
-  orchestrator : String
-}
-
-type CloudDetectorStruct {
-  cloud_provider : String
-  cloud_region : String
-  instance_type : String
-}
-
-type BenchmarkRunnerStruct {
-  test_duration_ms : Int
-  warmup_duration_ms : Int
-  metrics_to_collect : [String]
-}
-
-type PlatformInfo PlatformInfoStruct
-type ArchitectureInfo ArchitectureInfoStruct
-type WASMInfo WASMInfoStruct
-type ContainerInfo ContainerInfoStruct
-type CloudInfo CloudInfoStruct
-type BenchmarkResults BenchmarkResultsStruct
-type ContainerResourceLimits ContainerResourceLimitsStruct
-type ContainerTelemetryData ContainerTelemetryDataStruct
-type CloudTelemetryData CloudTelemetryDataStruct
-type WASMTelemetry WASMTelemetryStruct
-type WASMMemoryUsage WASMMemoryUsageStruct
-type PlatformPerformanceComparison PlatformPerformanceComparisonStruct
-type BenchmarkConsistencyCheck BenchmarkConsistencyCheckStruct
-
-type PlatformInfoStruct {
-  platform_name : String
-  capabilities : [String]
-}
-
-type ArchitectureInfoStruct {
-  architecture_name : String
-  endianness : String
-  word_size : Int
-  features : [String]
-}
-
-type WASMInfoStruct {
-  wasm_supported : Bool
-  wasm_features : [String]
-  browser_environment : Bool
-}
-
-type ContainerInfoStruct {
-  container_type : String
-  container_runtime : String
-  orchestrator : String
-  capabilities : [String]
-}
-
-type CloudInfoStruct {
-  cloud_provider : String
-  cloud_region : String
-  instance_type : String
-  capabilities : [String]
-}
-
-type BenchmarkResultsStruct {
-  platform_name : String
-  cpu_benchmark_score : Float
-  memory_benchmark_score : Float
-  io_benchmark_score : Float
-  network_benchmark_score : Float
-}
-
-type ContainerResourceLimitsStruct {
-  memory_limit_mb : Int
-  cpu_limit_cores : Float
-  disk_limit_mb : Int
-}
-
-type ContainerTelemetryDataStruct {
-  container_id : String
-  container_name : String
-  memory_usage_mb : Int
-  cpu_usage_percent : Float
-}
-
-type CloudTelemetryDataStruct {
-  instance_id : String
-  availability_zone : String
-  instance_type : String
-  network_interfaces : [String]
-}
-
-type WASMTelemetryStruct {
-  memory_size_mb : Int
-  max_telemetry_points : Int
-  export_functions : [String]
-}
-
-type WASMMemoryUsageStruct {
-  used_memory_mb : Int
-  allocated_telemetry_points : Int
-}
-
-type PlatformPerformanceComparisonStruct {
-  platform_count : Int
-  fastest_platform_cpu : String
-  fastest_platform_memory : String
-  fastest_platform_io : String
-  fastest_platform_network : String
-}
-
-type BenchmarkConsistencyCheckStruct {
-  variance_within_acceptable_range : Bool
-  outliers_detected : Int
-}
-
-type PlatformDetectionResult 
-  = PlatformDetectionSuccess(PlatformInfo)
-  | PlatformDetectionError(String)
-
-type PathNormalizationResult 
-  = PathNormalizationSuccess(String)
-  | PathNormalizationError(String)
-
-type ArchitectureDetectionResult 
-  = ArchitectureDetectionSuccess(ArchitectureInfo)
-  | ArchitectureDetectionError(String)
-
-type WASMSupportDetectionResult 
-  = WASMSupportDetectionSuccess(WASMInfo)
-  | WASMSupportDetectionError(String)
-
-type WASMMemoryUsageResult 
-  = WASMMemoryUsageSuccess(WASMMemoryUsage)
-  | WASMMemoryUsageError(String)
-
-type WASMFunctionCallResult 
-  = WASMFunctionCallSuccess(String)
-  | WASMFunctionCallError(String)
-
-type ContainerDetectionResult 
-  = ContainerDetectionSuccess(ContainerInfo)
-  | ContainerDetectionError(String)
-
-type ContainerResourceLimitsResult 
-  = ContainerResourceLimitsSuccess(ContainerResourceLimits)
-  | ContainerResourceLimitsError(String)
-
-type ContainerTelemetryResult 
-  = ContainerTelemetrySuccess(ContainerTelemetryData)
-  | ContainerTelemetryError(String)
-
-type CloudDetectionResult 
-  = CloudDetectionSuccess(CloudInfo)
-  | CloudDetectionError(String)
-
-type CloudTelemetryResult 
-  = CloudTelemetrySuccess(CloudTelemetryData)
-  | CloudTelemetryError(String)
-
-type BenchmarkResult 
-  = BenchmarkSuccess(BenchmarkResults)
-  | BenchmarkError(String)
-
-// 辅助函数：检测平台
-fn detect_platform(detector : PlatformDetector, platform : String) -> PlatformDetectionResult {
-  let capabilities = []
-  
-  match platform {
-    "linux" => {
-      capabilities.push("inotify")
-      capabilities.push("epoll")
-      capabilities.push("posix_signals")
-    }
-    "windows" => {
-      capabilities.push("windows_events")
-      capabilities.push("win32_api")
-      capabilities.push("registry_access")
-    }
-    "macos" => {
-      capabilities.push("fsevents")
-      capabilities.push("bsd_sockets")
-      capabilities.push("launchd")
-    }
-    "freebsd" => {
-      capabilities.push("kqueue")
-      capabilities.push("bsd_sockets")
-      capabilities.push("jails")
-    }
-    _ => return PlatformDetectionError("Unsupported platform")
-  }
-  
-  let platform_info = PlatformInfo({
-    platform_name: platform,
-    capabilities: capabilities
-  })
-  
-  PlatformDetectionSuccess(platform_info)
-}
-
-// 辅助函数：平台路径规范化
-fn normalize_path_for_platform(detector : PlatformDetector, path : String, platform : String) -> PathNormalizationResult {
-  // 简化的路径规范化
-  PathNormalizationSuccess(path)
-}
-
-// 辅助函数：检测架构
-fn detect_architecture(detector : ArchitectureDetector, arch : String) -> ArchitectureDetectionResult {
-  let features = []
-  let endianness = "little"
-  let word_size = 32
-  
-  match arch {
-    "x86_64" => {
-      features.push("sse2")
-      features.push("avx")
-      word_size = 64
-    }
-    "arm64" => {
-      features.push("neon")
-      features.push("crypto")
-      word_size = 64
-    }
-    "x86" => {
-      features.push("sse")
-      features.push("mmx")
-      word_size = 32
-    }
-    "arm" => {
-      features.push("thumb")
-      features.push("vfp")
-      word_size = 32
-    }
-    "riscv64" => {
-      features.push("atomic")
-      features.push("mul_div")
-      word_size = 64
-    }
-    _ => return ArchitectureDetectionError("Unsupported architecture")
-  }
-  
-  let arch_info = ArchitectureInfo({
-    architecture_name: arch,
-    endianness: endianness,
-    word_size: word_size,
-    features: features
-  })
-  
-  ArchitectureDetectionSuccess(arch_info)
-}
-
-// 辅助函数：字节序转换
-fn convert_endianness(value : Int, from : String, to : String) -> Int {
-  // 简化的字节序转换
-  if from == to {
-    return value
-  }
-  
-  // 模拟字节序转换
-  match value {
-    0x12345678 => 0x78563412
-    0x78563412 => 0x12345678
-    _ => value
-  }
-}
-
-// 辅助函数：检测WebAssembly支持
-fn detect_wasm_support(detector : WASMDetector) -> WASMSupportDetectionResult {
-  let features = ["bulk_memory", "mutable_globals", "javascript_interop", "dom_access"]
-  
-  let wasm_info = WASMInfo({
-    wasm_supported: true,
-    wasm_features: features,
-    browser_environment: true
-  })
-  
-  WASMSupportDetectionSuccess(wasm_info)
-}
-
-// 辅助函数：获取WebAssembly内存使用
-fn get_wasm_memory_usage(telemetry : WASMTelemetry) -> WASMMemoryUsageResult {
-  let usage = WASMMemoryUsage({
-    used_memory_mb: 32,
-    allocated_telemetry_points: 500
-  })
-  
-  WASMMemoryUsageSuccess(usage)
-}
-
-// 辅助函数：调用WebAssembly导出函数
-fn call_wasm_exported_function(telemetry : WASMTelemetry, function_name : String, args : [String]) -> WASMFunctionCallResult {
-  // 模拟函数调用
-  match function_name {
-    "collect_metrics" => WASMFunctionCallSuccess("metrics_collected")
-    "send_telemetry" => WASMFunctionCallSuccess("telemetry_sent")
-    "get_stats" => WASMFunctionCallSuccess("stats_retrieved")
-    _ => WASMFunctionCallError("Function not found")
-  }
-}
-
-// 辅助函数：检测容器环境
-fn detect_container_environment(detector : ContainerDetector, container_type : String) -> ContainerDetectionResult {
-  let (runtime, orchestrator) = match container_type {
-    "docker" => ("docker", "none")
-    "kubernetes" => ("containerd", "kubernetes")
-    "podman" => ("podman", "none")
-    "lxc" => ("lxc", "lxd")
-    _ => return ContainerDetectionError("Unsupported container type")
-  }
-  
-  let capabilities = []
-  
-  match container_type {
-    "docker" => {
-      capabilities.push("docker_api")
-      capabilities.push("volume_mounts")
-      capabilities.push("network_isolation")
-    }
-    "kubernetes" => {
-      capabilities.push("k8s_api")
-      capabilities.push("service_discovery")
-      capabilities.push("config_maps")
-    }
-    "podman" => {
-      capabilities.push("podman_api")
-      capabilities.push("rootless")
-      capabilities.push("systemd_integration")
-    }
-    "lxc" => {
-      capabilities.push("lxc_api")
-      capabilities.push("cgroup_limits")
-      capabilities.push("namespace_isolation")
-    }
-    _ => {}
-  }
-  
-  let container_info = ContainerInfo({
-    container_type: container_type,
-    container_runtime: runtime,
-    orchestrator: orchestrator,
-    capabilities: capabilities
-  })
-  
-  ContainerDetectionSuccess(container_info)
-}
-
-// 辅助函数：获取容器资源限制
-fn get_container_resource_limits(detector : ContainerDetector) -> ContainerResourceLimitsResult {
-  let limits = ContainerResourceLimits({
-    memory_limit_mb: 2048,
-    cpu_limit_cores: 2.0,
-    disk_limit_mb: 10240
-  })
-  
-  ContainerResourceLimitsSuccess(limits)
-}
-
-// 辅助函数：收集容器遥测数据
-fn collect_container_telemetry(detector : ContainerDetector) -> ContainerTelemetryResult {
-  let telemetry_data = ContainerTelemetryData({
-    container_id: "abc123def456",
-    container_name: "azimuth-telemetry",
-    memory_usage_mb: 512,
-    cpu_usage_percent: 25.5
-  })
-  
-  ContainerTelemetrySuccess(telemetry_data)
-}
-
-// 辅助函数：检测云平台
-fn detect_cloud_platform(detector : CloudDetector, provider : String) -> CloudDetectionResult {
-  let (region, instance_type) = match provider {
-    "aws" => ("us-west-2", "t3.medium")
-    "gcp" => ("us-central1", "n1-standard-1")
-    "azure" => ("eastus", "Standard_B2s")
-    "alibaba" => ("cn-hangzhou", "ecs.c6.large")
-    _ => return CloudDetectionError("Unsupported cloud provider")
-  }
-  
-  let capabilities = []
-  
-  match provider {
-    "aws" => {
-      capabilities.push("ec2_metadata")
-      capabilities.push("cloudwatch")
-      capabilities.push("iam_roles")
-    }
-    "gcp" => {
-      capabilities.push("gce_metadata")
-      capabilities.push("stackdriver")
-      capabilities.push("service_accounts")
-    }
-    "azure" => {
-      capabilities.push("azure_metadata")
-      capabilities.push("monitor")
-      capabilities.push("managed_identities")
-    }
-    "alibaba" => {
-      capabilities.push("ecs_metadata")
-      capabilities.push("cms")
-      capabilities.push("ram_roles")
-    }
-    _ => {}
-  }
-  
-  let cloud_info = CloudInfo({
-    cloud_provider: provider,
-    cloud_region: region,
-    instance_type: instance_type,
-    capabilities: capabilities
-  })
-  
-  CloudDetectionSuccess(cloud_info)
-}
-
-// 辅助函数：收集云平台遥测数据
-fn collect_cloud_telemetry(detector : CloudDetector) -> CloudTelemetryResult {
-  let telemetry_data = CloudTelemetryData({
-    instance_id: "i-1234567890abcdef0",
-    availability_zone: "us-west-2a",
-    instance_type: "t3.medium",
-    network_interfaces: ["eth0", "eth1"]
-  })
-  
-  CloudTelemetrySuccess(telemetry_data)
-}
-
-// 辅助函数：运行平台基准测试
-fn run_platform_benchmarks(runner : BenchmarkRunner, platform : String) -> BenchmarkResult {
-  // 模拟基准测试结果
-  let cpu_score = 1000.0 + (platform.length().to_float() * 100.0)
-  let memory_score = 800.0 + (platform.length().to_float() * 80.0)
-  let io_score = 600.0 + (platform.length().to_float() * 60.0)
-  let network_score = 1200.0 + (platform.length().to_float() * 120.0)
-  
-  let results = BenchmarkResults({
-    platform_name: platform,
-    cpu_benchmark_score: cpu_score,
-    memory_benchmark_score: memory_score,
-    io_benchmark_score: io_score,
-    network_benchmark_score: network_score
-  })
-  
-  BenchmarkSuccess(results)
-}
-
-// 辅助函数：比较平台性能
-fn compare_platform_performance(results : [BenchmarkResults]) -> PlatformPerformanceComparison {
-  let fastest_cpu = results[0].platform_name
-  let fastest_memory = results[0].platform_name
-  let fastest_io = results[0].platform_name
-  let fastest_network = results[0].platform_name
-  
-  // 简化的比较逻辑
-  for result in results {
-    if result.cpu_benchmark_score > results.find_fn(r => r.platform_name == fastest_cpu).cpu_benchmark_score {
-      fastest_cpu = result.platform_name
     }
     
-    if result.memory_benchmark_score > results.find_fn(r => r.platform_name == fastest_memory).memory_benchmark_score {
-      fastest_memory = result.platform_name
+    // 检查位宽影响
+    if arch.bits < 64 {
+      compatibility_issues = compatibility_issues.push("limited_address_space")
+      benchmark_score = benchmark_score - 0.2
     }
     
-    if result.io_benchmark_score > results.find_fn(r => r.platform_name == fastest_io).io_benchmark_score {
-      fastest_io = result.platform_name
+    // 检查原子操作支持
+    if !arch.atomic_operations {
+      compatibility_issues = compatibility_issues.push("no_atomic_operations")
+      benchmark_score = benchmark_score - 0.3
+      telemetry_optimized = false
     }
     
-    if result.network_benchmark_score > results.find_fn(r => r.platform_name == fastest_network).network_benchmark_score {
-      fastest_network = result.platform_name
+    // 检查向量扩展
+    if arch.vector_extensions.length() > 0 {
+      optimization_available = optimization_available.push("vectorized_processing")
+      benchmark_score = benchmark_score + 0.1
+    }
+    
+    // 确保分数在合理范围内
+    benchmark_score = if benchmark_score > 1.0 { 1.0 } else { benchmark_score }
+    benchmark_score = if benchmark_score < 0.0 { 0.0 } else { benchmark_score }
+    
+    {
+      architecture: arch,
+      telemetry_optimized: telemetry_optimized,
+      performance_tier: performance_tier,
+      optimization_available: optimization_available,
+      compatibility_issues: compatibility_issues,
+      benchmark_score: benchmark_score
     }
   }
   
-  PlatformPerformanceComparison({
-    platform_count: results.length(),
-    fastest_platform_cpu: fastest_cpu,
-    fastest_platform_memory: fastest_memory,
-    fastest_platform_io: fastest_io,
-    fastest_platform_network: fastest_network
-  })
+  // 测试所有架构
+  let x64_result = test_architecture_compatibility(x64_arch)
+  let arm64_result = test_architecture_compatibility(arm64_arch)
+  let x86_result = test_architecture_compatibility(x86_arch)
+  let riscv_result = test_architecture_compatibility(riscv_arch)
+  
+  // 验证x64架构
+  assert_true(x64_result.telemetry_optimized)
+  assert_eq(x64_result.performance_tier, "high")
+  assert_true(x64_result.optimization_available.length() > 0)
+  assert_eq(x64_result.benchmark_score, 1.0)
+  
+  // 验证ARM64架构
+  assert_true(arm64_result.telemetry_optimized)
+  assert_eq(arm64_result.performance_tier, "high")
+  assert_true(arm64_result.optimization_available.contains("power_efficient"))
+  assert_true(arm64_result.benchmark_score > 0.9)
+  
+  // 验证x86架构
+  assert_true(x86_result.telemetry_optimized)
+  assert_eq(x86_result.performance_tier, "medium")
+  assert_true(x86_result.compatibility_issues.contains("32_bit_limitations"))
+  assert_true(x86_result.benchmark_score < x64_result.benchmark_score)
+  
+  // 验证RISC-V架构
+  assert_true(riscv_result.telemetry_optimized)
+  assert_eq(riscv_result.performance_tier, "medium")
+  assert_true(riscv_result.compatibility_issues.contains("emerging_platform"))
+  assert_true(riscv_result.optimization_available.contains("custom_extensions"))
+  
+  // 比较架构性能
+  assert_eq(x64_result.performance_tier, "high")
+  assert_eq(arm64_result.performance_tier, "high")
+  assert_eq(x86_result.performance_tier, "medium")
+  assert_eq(riscv_result.performance_tier, "medium")
 }
 
-// 辅助函数：检查基准测试一致性
-fn check_benchmark_consistency(results : [BenchmarkResults]) -> BenchmarkConsistencyCheck {
-  // 简化的一致性检查
-  BenchmarkConsistencyCheck({
-    variance_within_acceptable_range: true,
-    outliers_detected: 0
-  })
+// 测试3: 网络环境兼容性测试
+test "网络环境兼容性测试" {
+  // 定义网络环境信息
+  type NetworkEnvironment = {
+    environment_name: String,
+    bandwidth_mbps: Int,
+    latency_ms: Int,
+    packet_loss_rate: Float,
+    connection_type: String,  // "wired", "wireless", "cellular", "satellite"
+    nat_type: String,         // "none", "full_cone", "restricted", "symmetric"
+    firewall_restrictions: Bool,
+    proxy_required: Bool
+  }
+  
+  type NetworkCompatibilityResult = {
+    environment: NetworkEnvironment,
+    telemetry_feasible: Bool,
+    recommended_config: TelemetryConfig,
+    performance_impact: Float,
+    data_compression_needed: Bool,
+    fallback_strategies: Array[String]
+  }
+  
+  type TelemetryConfig = {
+    batch_size: Int,
+    send_interval_ms: Int,
+    retry_attempts: Int,
+    timeout_ms: Int,
+    compression_enabled: Bool,
+    encryption_enabled: Bool
+  }
+  
+  // 创建不同网络环境配置
+  let high_speed_network = {
+    environment_name: "High-Speed Office",
+    bandwidth_mbps: 1000,
+    latency_ms: 5,
+    packet_loss_rate: 0.001,
+    connection_type: "wired",
+    nat_type: "none",
+    firewall_restrictions: false,
+    proxy_required: false
+  }
+  
+  let home_network = {
+    environment_name: "Home WiFi",
+    bandwidth_mbps: 100,
+    latency_ms: 20,
+    packet_loss_rate: 0.01,
+    connection_type: "wireless",
+    nat_type: "full_cone",
+    firewall_restrictions: false,
+    proxy_required: false
+  }
+  
+  let mobile_network = {
+    environment_name: "4G Mobile",
+    bandwidth_mbps: 20,
+    latency_ms: 100,
+    packet_loss_rate: 0.02,
+    connection_type: "cellular",
+    nat_type: "restricted",
+    firewall_restrictions: false,
+    proxy_required: false
+  }
+  
+  let satellite_network = {
+    environment_name: "Satellite",
+    bandwidth_mbps: 5,
+    latency_ms: 600,
+    packet_loss_rate: 0.05,
+    connection_type: "satellite",
+    nat_type: "symmetric",
+    firewall_restrictions: true,
+    proxy_required: true
+  }
+  
+  // 测试网络环境兼容性
+  let test_network_compatibility = fn(network: NetworkEnvironment) -> NetworkCompatibilityResult {
+    let mut telemetry_feasible = true
+    let mut performance_impact = 1.0
+    let mut data_compression_needed = false
+    let mut fallback_strategies = []
+    
+    // 基于网络条件推荐配置
+    let recommended_config = match network.connection_type {
+      "wired" => {
+        if network.bandwidth_mbps >= 100 {
+          {
+            batch_size: 100,
+            send_interval_ms: 1000,
+            retry_attempts: 3,
+            timeout_ms: 5000,
+            compression_enabled: false,
+            encryption_enabled: true
+          }
+        } else {
+          {
+            batch_size: 50,
+            send_interval_ms: 2000,
+            retry_attempts: 3,
+            timeout_ms: 5000,
+            compression_enabled: true,
+            encryption_enabled: true
+          }
+        }
+      }
+      "wireless" => {
+        data_compression_needed = true
+        performance_impact = 1.2
+        fallback_strategies = ["buffered_sending", "adaptive_batching"]
+        {
+          batch_size: 50,
+          send_interval_ms: 2000,
+          retry_attempts: 5,
+          timeout_ms: 10000,
+          compression_enabled: true,
+          encryption_enabled: true
+        }
+      }
+      "cellular" => {
+        data_compression_needed = true
+        performance_impact = 1.5
+        fallback_strategies = ["offline_storage", "batch_compression", "priority_sending"]
+        {
+          batch_size: 25,
+          send_interval_ms: 5000,
+          retry_attempts: 5,
+          timeout_ms: 15000,
+          compression_enabled: true,
+          encryption_enabled: true
+        }
+      }
+      "satellite" => {
+        data_compression_needed = true
+        performance_impact = 2.0
+        fallback_strategies = ["offline_storage", "extreme_compression", "scheduled_sending"]
+        {
+          batch_size: 10,
+          send_interval_ms: 30000,
+          retry_attempts: 10,
+          timeout_ms: 60000,
+          compression_enabled: true,
+          encryption_enabled: false  // 加密会增加延迟
+        }
+      }
+      _ => {
+        telemetry_feasible = false
+        {
+          batch_size: 1,
+          send_interval_ms: 60000,
+          retry_attempts: 1,
+          timeout_ms: 30000,
+          compression_enabled: true,
+          encryption_enabled: false
+        }
+      }
+    }
+    
+    // 考虑网络限制
+    if network.packet_loss_rate > 0.1 {
+      telemetry_feasible = false
+      fallback_strategies = fallback_strategies.push("error_correction")
+    }
+    
+    if network.latency_ms > 1000 {
+      performance_impact = performance_impact + 0.5
+      fallback_strategies = fallback_strategies.push("async_processing")
+    }
+    
+    if network.firewall_restrictions {
+      fallback_strategies = fallback_strategies.push("alternative_ports")
+    }
+    
+    {
+      environment: network,
+      telemetry_feasible: telemetry_feasible,
+      recommended_config: recommended_config,
+      performance_impact: performance_impact,
+      data_compression_needed: data_compression_needed,
+      fallback_strategies: fallback_strategies
+    }
+  }
+  
+  // 测试所有网络环境
+  let high_speed_result = test_network_compatibility(high_speed_network)
+  let home_result = test_network_compatibility(home_network)
+  let mobile_result = test_network_compatibility(mobile_network)
+  let satellite_result = test_network_compatibility(satellite_network)
+  
+  // 验证高速网络
+  assert_true(high_speed_result.telemetry_feasible)
+  assert_eq(high_speed_result.recommended_config.batch_size, 100)
+  assert_false(high_speed_result.data_compression_needed)
+  assert_eq(high_speed_result.performance_impact, 1.0)
+  
+  // 验证家庭网络
+  assert_true(home_result.telemetry_feasible)
+  assert_eq(home_result.recommended_config.batch_size, 50)
+  assert_true(home_result.data_compression_needed)
+  assert_true(home_result.performance_impact > 1.0)
+  
+  // 验证移动网络
+  assert_true(mobile_result.telemetry_feasible)
+  assert_eq(mobile_result.recommended_config.batch_size, 25)
+  assert_true(mobile_result.data_compression_needed)
+  assert_true(mobile_result.fallback_strategies.length() > 0)
+  
+  // 验证卫星网络
+  assert_true(satellite_result.telemetry_feasible)
+  assert_eq(satellite_result.recommended_config.batch_size, 10)
+  assert_true(satellite_result.data_compression_needed)
+  assert_eq(satellite_result.performance_impact, 2.0)
+  assert_false(satellite_result.recommended_config.encryption_enabled)
+  
+  // 比较不同网络环境的配置
+  assert_true(high_speed_result.recommended_config.batch_size >= home_result.recommended_config.batch_size)
+  assert_true(home_result.recommended_config.batch_size >= mobile_result.recommended_config.batch_size)
+  assert_true(mobile_result.recommended_config.batch_size >= satellite_result.recommended_config.batch_size)
+  
+  assert_true(high_speed_result.recommended_config.send_interval_ms <= home_result.recommended_config.send_interval_ms)
+  assert_true(home_result.recommended_config.send_interval_ms <= mobile_result.recommended_config.send_interval_ms)
+  assert_true(mobile_result.recommended_config.send_interval_ms <= satellite_result.recommended_config.send_interval_ms)
+}
+
+// 测试4: 运行时环境兼容性测试
+test "运行时环境兼容性测试" {
+  // 定义运行时环境信息
+  type RuntimeEnvironment = {
+    runtime_name: String,
+    version: String,
+    language_version: String,
+    memory_model: String,      // "managed", "native", "webassembly"
+    threading_model: String,   // "preemptive", "cooperative", "single_threaded"
+    garbage_collected: Bool,
+    sandboxed: Bool,
+    resource_limits: ResourceLimits
+  }
+  
+  type ResourceLimits = {
+    max_memory_mb: Int,
+    max_cpu_percent: Float,
+    max_file_descriptors: Int,
+    max_network_connections: Int,
+    execution_timeout_ms: Int
+  }
+  
+  type RuntimeCompatibilityResult = {
+    environment: RuntimeEnvironment,
+    telemetry_supported: Bool,
+    integration_complexity: String,  // "low", "medium", "high"
+    performance_characteristics: PerformanceCharacteristics,
+    required_adaptations: Array[String],
+    compatibility_score: Float
+  }
+  
+  type PerformanceCharacteristics = {
+    startup_overhead_ms: Int,
+    memory_overhead_mb: Int,
+    cpu_overhead_percent: Float,
+    collection_impact: String
+  }
+  
+  // 创建不同运行时环境配置
+  let node_runtime = {
+    runtime_name: "Node.js",
+    version: "18.0",
+    language_version: "ES2022",
+    memory_model: "managed",
+    threading_model: "single_threaded",
+    garbage_collected: true,
+    sandboxed: false,
+    resource_limits: {
+      max_memory_mb: 2048,
+      max_cpu_percent: 80.0,
+      max_file_descriptors: 1024,
+      max_network_connections: 100,
+      execution_timeout_ms: 30000
+    }
+  }
+  
+  let go_runtime = {
+    runtime_name: "Go",
+    version: "1.19",
+    language_version: "1.19",
+    memory_model: "native",
+    threading_model: "preemptive",
+    garbage_collected: true,
+    sandboxed: false,
+    resource_limits: {
+      max_memory_mb: 1024,
+      max_cpu_percent: 90.0,
+      max_file_descriptors: 2048,
+      max_network_connections: 200,
+      execution_timeout_ms: 60000
+    }
+  }
+  
+  let wasm_runtime = {
+    runtime_name: "WebAssembly",
+    version: "2.0",
+    language_version: "WASM",
+    memory_model: "webassembly",
+    threading_model: "cooperative",
+    garbage_collected: false,
+    sandboxed: true,
+    resource_limits: {
+      max_memory_mb: 512,
+      max_cpu_percent: 70.0,
+      max_file_descriptors: 0,  // WASM没有直接文件访问
+      max_network_connections: 10,
+      execution_timeout_ms: 10000
+    }
+  }
+  
+  let java_runtime = {
+    runtime_name: "Java",
+    version: "17",
+    language_version: "17",
+    memory_model: "managed",
+    threading_model: "preemptive",
+    garbage_collected: true,
+    sandboxed: true,
+    resource_limits: {
+      max_memory_mb: 4096,
+      max_cpu_percent: 85.0,
+      max_file_descriptors: 1024,
+      max_network_connections: 150,
+      execution_timeout_ms: 120000
+    }
+  }
+  
+  // 测试运行时环境兼容性
+  let test_runtime_compatibility = fn(runtime: RuntimeEnvironment) -> RuntimeCompatibilityResult {
+    let mut telemetry_supported = true
+    let mut integration_complexity = "medium"
+    let mut required_adaptations = []
+    let mut compatibility_score = 0.0
+    
+    // 基于运行时特性评估性能特征
+    let performance_characteristics = match runtime.runtime_name {
+      "Node.js" => {
+        integration_complexity = "low"
+        required_adaptations = ["event_loop_integration", "async_processing"]
+        compatibility_score = 0.9
+        {
+          startup_overhead_ms: 50,
+          memory_overhead_mb: 64,
+          cpu_overhead_percent: 10.0,
+          collection_impact: "periodic"
+        }
+      }
+      "Go" => {
+        integration_complexity = "low"
+        required_adaptations = ["goroutine_integration", "channel_communication"]
+        compatibility_score = 0.95
+        {
+          startup_overhead_ms: 10,
+          memory_overhead_mb: 32,
+          cpu_overhead_percent: 5.0,
+          collection_impact: "concurrent"
+        }
+      }
+      "WebAssembly" => {
+        integration_complexity = "high"
+        required_adaptations = ["js_bridge", "memory_sharing", "sandbox_compliance"]
+        compatibility_score = 0.7
+        {
+          startup_overhead_ms: 20,
+          memory_overhead_mb: 16,
+          cpu_overhead_percent: 15.0,
+          collection_impact: "manual"
+        }
+      }
+      "Java" => {
+        integration_complexity = "medium"
+        required_adaptations = ["jvm_integration", "class_loading", "gc_tuning"]
+        compatibility_score = 0.85
+        {
+          startup_overhead_ms: 200,
+          memory_overhead_mb: 256,
+          cpu_overhead_percent: 15.0,
+          collection_impact: "generational"
+        }
+      }
+      _ => {
+        telemetry_supported = false
+        integration_complexity = "high"
+        required_adaptations = ["custom_integration"]
+        compatibility_score = 0.0
+        {
+          startup_overhead_ms: 0,
+          memory_overhead_mb: 0,
+          cpu_overhead_percent: 0.0,
+          collection_impact: "unknown"
+        }
+      }
+    }
+    
+    // 考虑内存模型影响
+    match runtime.memory_model {
+      "native" => {
+        compatibility_score = compatibility_score + 0.05
+        required_adaptations = required_adaptations.push("manual_memory_management")
+      }
+      "managed" => {
+        required_adaptations = required_adaptations.push("gc_aware_allocation")
+      }
+      "webassembly" => {
+        required_adaptations = required_adaptations.push("linear_memory_model")
+        compatibility_score = compatibility_score - 0.1
+      }
+      _ => ()
+    }
+    
+    // 考虑线程模型影响
+    match runtime.threading_model {
+      "preemptive" => {
+        compatibility_score = compatibility_score + 0.05
+      }
+      "single_threaded" => {
+        required_adaptations = required_adaptations.push("async_processing")
+        compatibility_score = compatibility_score - 0.05
+      }
+      "cooperative" => {
+        required_adaptations = required_adaptations.push("yield_points")
+        compatibility_score = compatibility_score - 0.1
+      }
+      _ => ()
+    }
+    
+    // 考虑沙箱限制
+    if runtime.sandboxed {
+      required_adaptations = required_adaptations.push("sandbox_compliance")
+      compatibility_score = compatibility_score - 0.1
+    }
+    
+    // 确保分数在合理范围内
+    compatibility_score = if compatibility_score > 1.0 { 1.0 } else { compatibility_score }
+    compatibility_score = if compatibility_score < 0.0 { 0.0 } else { compatibility_score }
+    
+    {
+      environment: runtime,
+      telemetry_supported: telemetry_supported,
+      integration_complexity: integration_complexity,
+      performance_characteristics: performance_characteristics,
+      required_adaptations: required_adaptations,
+      compatibility_score: compatibility_score
+    }
+  }
+  
+  // 测试所有运行时环境
+  let node_result = test_runtime_compatibility(node_runtime)
+  let go_result = test_runtime_compatibility(go_runtime)
+  let wasm_result = test_runtime_compatibility(wasm_runtime)
+  let java_result = test_runtime_compatibility(java_runtime)
+  
+  // 验证Node.js运行时
+  assert_true(node_result.telemetry_supported)
+  assert_eq(node_result.integration_complexity, "low")
+  assert_true(node_result.required_adaptations.contains("event_loop_integration"))
+  assert_true(node_result.compatibility_score > 0.8)
+  assert_true(node_result.performance_characteristics.startup_overhead_ms < 100)
+  
+  // 验证Go运行时
+  assert_true(go_result.telemetry_supported)
+  assert_eq(go_result.integration_complexity, "low")
+  assert_true(go_result.required_adaptations.contains("goroutine_integration"))
+  assert_eq(go_result.compatibility_score, 0.95)  // Go应该有最高兼容性
+  assert_true(go_result.performance_characteristics.startup_overhead_ms < 20)
+  
+  // 验证WebAssembly运行时
+  assert_true(wasm_result.telemetry_supported)
+  assert_eq(wasm_result.integration_complexity, "high")
+  assert_true(wasm_result.required_adaptations.contains("js_bridge"))
+  assert_true(wasm_result.compatibility_score < go_result.compatibility_score)
+  assert_true(wasm_result.performance_characteristics.memory_overhead_mb < 32)
+  
+  // 验证Java运行时
+  assert_true(java_result.telemetry_supported)
+  assert_eq(java_result.integration_complexity, "medium")
+  assert_true(java_result.required_adaptations.contains("jvm_integration"))
+  assert_true(java_result.performance_characteristics.startup_overhead_ms > 100)
+  assert_true(java_result.performance_characteristics.memory_overhead_mb > 100)
+  
+  // 比较运行时性能特征
+  assert_true(go_result.performance_characteristics.startup_overhead_ms < node_result.performance_characteristics.startup_overhead_ms)
+  assert_true(node_result.performance_characteristics.startup_overhead_ms < wasm_result.performance_characteristics.startup_overhead_ms)
+  assert_true(wasm_result.performance_characteristics.startup_overhead_ms < java_result.performance_characteristics.startup_overhead_ms)
+  
+  assert_true(go_result.performance_characteristics.memory_overhead_mb < node_result.performance_characteristics.memory_overhead_mb)
+  assert_true(node_result.performance_characteristics.memory_overhead_mb < wasm_result.performance_characteristics.memory_overhead_mb)
+  assert_true(wasm_result.performance_characteristics.memory_overhead_mb < java_result.performance_characteristics.memory_overhead_mb)
 }
