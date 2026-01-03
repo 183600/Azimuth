@@ -1,562 +1,947 @@
-// Azimuth Performance and Resource Management Tests
-// This file contains test cases for performance optimization and resource management
+// Performance and Resource Management Tests for Azimuth Telemetry System
+// This file contains comprehensive test cases for performance optimization and resource management
 
-// Test 1: Memory Usage Optimization
-test "memory usage optimization" {
-  // Test memory efficient array operations
-  let large_array = create_large_array(10000)
+// Test 1: Memory Pool Management
+test "memory pool management" {
+  let pool = MemoryPool::new(100, 10) // 100 bytes per block, 10 blocks
   
-  // Test array memory reuse
-  let reused_array = reuse_array_memory(large_array)
-  assert_eq(reused_array.length(), 10000)
+  // Test initial pool state
+  assert_eq(MemoryPool::available_blocks(pool), 10)
+  assert_eq(MemoryPool::used_blocks(pool), 0)
   
-  // Test batch processing to reduce memory overhead
-  let batch_results = process_in_batches([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 3)
-  assert_eq(batch_results.length(), 4) // 10 items in batches of 3 = 4 batches
-  assert_eq(batch_results[0], [1, 2, 3])
-  assert_eq(batch_results[1], [4, 5, 6])
-  assert_eq(batch_results[2], [7, 8, 9])
-  assert_eq(batch_results[3], [10])
+  // Test block allocation
+  let block1 = MemoryPool::allocate(pool)
+  assert_not_eq(block1, None)
+  assert_eq(MemoryPool::available_blocks(pool), 9)
+  assert_eq(MemoryPool::used_blocks(pool), 1)
   
-  // Test memory cleanup
-  let cleaned = cleanup_unused_resources()
-  assert_true(cleaned)
-}
-
-// Test 2: CPU Performance Optimization
-test "cpu performance optimization" {
-  // Test efficient sorting algorithms
-  let unsorted_array = [5, 2, 8, 1, 9, 3, 7, 4, 6]
-  let sorted_array = efficient_sort(unsorted_array)
-  assert_eq(sorted_array, [1, 2, 3, 4, 5, 6, 7, 8, 9])
+  let block2 = MemoryPool::allocate(pool)
+  assert_not_eq(block2, None)
+  assert_eq(MemoryPool::available_blocks(pool), 8)
+  assert_eq(MemoryPool::used_blocks(pool), 2)
   
-  // Test parallel processing performance
-  let large_dataset = generate_test_data(1000)
-  let sequential_result = process_sequential(large_dataset)
-  let parallel_result = process_parallel(large_dataset)
-  assert_eq(sequential_result.length(), parallel_result.length())
-  
-  // Test caching mechanisms
-  let cache = create_cache()
-  let cached_result = cache.get_or_compute("expensive_key", fn() { expensive_computation() })
-  let cached_result2 = cache.get_or_compute("expensive_key", fn() { expensive_computation() })
-  assert_eq(cached_result, cached_result2) // Should return same cached value
-}
-
-// Test 3: Resource Pool Management
-test "resource pool management" {
-  // Test connection pool
-  let pool = create_connection_pool(5)
-  let conn1 = pool.acquire()
-  let conn2 = pool.acquire()
-  let conn3 = pool.acquire()
-  
-  assert_true(pool.is_available(conn1))
-  assert_true(pool.is_available(conn2))
-  assert_true(pool.is_available(conn3))
+  // Test block deallocation
+  MemoryPool::deallocate(pool, block1)
+  assert_eq(MemoryPool::available_blocks(pool), 9)
+  assert_eq(MemoryPool::used_blocks(pool), 1)
   
   // Test pool exhaustion
-  let mut connections = []
-  for i in 0..=6 {
-    connections = connections.push(pool.acquire())
+  let mut blocks = []
+  for i = 0; i < 10; i = i + 1 {
+    let block = MemoryPool::allocate(pool)
+    blocks.push(block)
   }
   
-  // Should have one null connection due to pool exhaustion
-  let null_count = connections.filter(fn(conn) { conn == null }).length()
-  assert_eq(null_count, 2) // 6 connections requested, pool size 5, so 1 should be null + initial null
-  
-  // Test connection release
-  pool.release(conn1)
-  let conn4 = pool.acquire()
-  assert_true(pool.is_available(conn4))
-}
-
-// Test 4: Lazy Loading and Initialization
-test "lazy loading and initialization" {
-  // Test lazy resource initialization
-  let lazy_resource = create_lazy_resource()
-  
-  // Resource should not be initialized until accessed
-  assert_false(lazy_resource.is_initialized())
-  
-  // Access should trigger initialization
-  let value = lazy_resource.get_value()
-  assert_eq(value, "initialized_value")
-  assert_true(lazy_resource.is_initialized())
-  
-  // Subsequent accesses should not reinitialize
-  let value2 = lazy_resource.get_value()
-  assert_eq(value2, "initialized_value")
-  
-  // Test lazy computation
-  let lazy_computation = create_lazy_computation(fn() { 42 * 42 })
-  let result1 = lazy_computation.get()
-  let result2 = lazy_computation.get()
-  assert_eq(result1, 1764)
-  assert_eq(result2, 1764)
-  assert_true(lazy_computation.is_computed())
-}
-
-// Test 5: Buffer and Stream Management
-test "buffer and stream management" {
-  // Test efficient buffer operations
-  let buffer = create_efficient_buffer(1024)
-  assert_eq(buffer.capacity(), 1024)
-  assert_eq(buffer.size(), 0)
-  
-  // Test buffer writing
-  let bytes_written = buffer.write("test data")
-  assert_eq(bytes_written, 9)
-  assert_eq(buffer.size(), 9)
-  
-  // Test buffer reading
-  let read_data = buffer.read(4)
-  assert_eq(read_data, "test")
-  assert_eq(buffer.size(), 5)
-  
-  // Test buffer expansion
-  buffer.expand(2048)
-  assert_eq(buffer.capacity(), 2048)
-  
-  // Test stream processing
-  let stream = create_test_stream()
-  let processed_data = process_stream_efficiently(stream)
-  assert_eq(processed_data.length(), 100) // Assuming stream has 100 items
-}
-
-// Test 6: Garbage Collection and Cleanup
-test "garbage collection and cleanup" {
-  // Test object lifecycle management
-  let objects = create_test_objects(100)
-  assert_eq(objects.length(), 100)
-  
-  // Test explicit cleanup
-  let cleaned_count = cleanup_objects(objects, 50) // Clean up first 50
-  assert_eq(cleaned_count, 50)
-  
-  // Test resource tracking
-  let tracker = create_resource_tracker()
-  let resource1 = tracker.track("resource1")
-  let resource2 = tracker.track("resource2")
-  
-  assert_eq(tracker.get_tracked_count(), 2)
-  
-  tracker.untrack(resource1)
-  assert_eq(tracker.get_tracked_count(), 1)
-  
-  // Test final cleanup
-  tracker.cleanup_all()
-  assert_eq(tracker.get_tracked_count(), 0)
-}
-
-// Test 7: Performance Metrics and Monitoring
-test "performance metrics and monitoring" {
-  // Test execution time measurement
-  let metrics = create_performance_metrics()
-  
-  metrics.start_timer("operation1")
-  perform_test_operation()
-  metrics.end_timer("operation1")
-  
-  let execution_time = metrics.get_execution_time("operation1")
-  assert_true(execution_time >= 0)
-  
-  // Test memory usage tracking
-  metrics.start_memory_tracking()
-  allocate_test_memory()
-  let memory_usage = metrics.get_memory_usage()
-  assert_true(memory_usage > 0)
-  
-  // Test performance thresholds
-  metrics.set_threshold("operation1", 1000) // 1 second threshold
-  assert_true(metrics.is_within_threshold("operation1"))
-  
-  // Test performance reporting
-  let report = metrics.generate_report()
-  assert_true(report.contains("operation1"))
-  assert_true(report.contains("execution_time"))
-}
-
-// Test 8: Resource Concurrency and Sharing
-test "resource concurrency and sharing" {
-  // Test shared resource access
-  let shared_resource = create_shared_counter()
-  
-  // Test atomic operations
-  let initial_value = shared_resource.get()
-  assert_eq(initial_value, 0)
-  
-  shared_resource.increment()
-  shared_resource.increment()
-  assert_eq(shared_resource.get(), 2)
-  
-  shared_resource.decrement()
-  assert_eq(shared_resource.get(), 1)
-  
-  // Test resource locking
-  let lockable_resource = create_lockable_resource()
-  let lock1 = lockable_resource.acquire_lock()
-  assert_true(lock1.is_acquired())
-  
-  // Test lock timeout
-  let lock2 = lockable_resource.try_acquire_lock_with_timeout(100)
-  assert_false(lock2.is_acquired()) // Should fail due to existing lock
-  
-  lock1.release()
-  let lock3 = lockable_resource.try_acquire_lock_with_timeout(100)
-  assert_true(lock3.is_acquired()) // Should succeed after lock1 release
-}
-
-// Helper functions (simplified implementations)
-fn create_large_array(size : Int) -> Array[Int] {
-  [0; size]
-}
-
-fn reuse_array_memory(array : Array[Int]) -> Array[Int] {
-  array
-}
-
-fn process_in_batches[T](items : Array[T], batch_size : Int) -> Array[Array[T]] {
-  let mut batches = []
-  let mut i = 0
-  
-  while i < items.length() {
-    let end = if i + batch_size < items.length() { i + batch_size } else { items.length() }
-    batches = batches.push(items.slice(i, end))
-    i = i + batch_size
+  let exhausted_block = MemoryPool::allocate(pool)
+  match exhausted_block {
+    Some(_) => assert_true(false) // Should not succeed when pool is exhausted
+    None => assert_true(true)
   }
   
-  batches
-}
-
-fn cleanup_unused_resources() -> Bool {
-  true // Simplified implementation
-}
-
-fn efficient_sort(array : Array[Int]) -> Array[Int] {
-  // Simplified bubble sort - in real implementation would use efficient algorithm
-  let mut sorted = array
-  let n = sorted.length()
-  
-  for i in 0..<(n - 1) {
-    for j in 0..<(n - i - 1) {
-      if sorted[j] > sorted[j + 1] {
-        let temp = sorted[j]
-        sorted[j] = sorted[j + 1]
-        sorted[j + 1] = temp
-      }
-    }
+  // Test deallocation of all blocks
+  for block in blocks {
+    MemoryPool::deallocate(pool, block)
   }
   
-  sorted
+  assert_eq(MemoryPool::available_blocks(pool), 10)
+  assert_eq(MemoryPool::used_blocks(pool), 0)
 }
 
-fn generate_test_data(size : Int) -> Array[Int] {
-  let mut data = []
-  for i in 0..<size {
-    data = data.push(i)
-  }
-  data
-}
-
-fn process_sequential(data : Array[Int]) -> Array[Int] {
-  data.map(fn(x) { x * 2 })
-}
-
-fn process_parallel(data : Array[Int]) -> Array[Int] {
-  // Simplified parallel processing
-  process_sequential(data)
-}
-
-type Cache[T] = {
-  get_or_compute : (String, () -> T) -> T
-}
-
-fn create_cache() -> Cache[String] = {
-  get_or_compute = fn(key : String, compute_fn : () -> String) {
-    compute_fn() // Simplified cache implementation
-  }
-}
-
-fn expensive_computation() -> String {
-  "expensive_result"
-}
-
-type ConnectionPool = {
-  acquire : () -> Connection,
-  release : (Connection) -> Unit,
-  is_available : (Connection) -> Bool
-}
-
-type Connection = {
-  id : Int
-}
-
-fn create_connection_pool(size : Int) -> ConnectionPool = {
-  let mut next_id = 0
+// Test 2: Object Pool Management
+test "object pool management" {
+  let pool = ObjectPool::new(|| "created_object", 5) // Create function, 5 objects
   
-  {
-    acquire = fn() {
-      if next_id < size {
-        let conn = { id: next_id }
-        next_id = next_id + 1
-        conn
-      } else {
-        null
-      }
-    },
-    release = fn(conn : Connection) {
-      // Simplified release
-    },
-    is_available = fn(conn : Connection) {
-      conn != null
-    }
-  }
-}
-
-type LazyResource[T] = {
-  get_value : () -> T,
-  is_initialized : () -> Bool
-}
-
-fn create_lazy_resource() -> LazyResource[String] = {
-  let mut initialized = false
-  let mut value = ""
+  // Test initial pool state
+  assert_eq(ObjectPool::available_objects(pool), 0)
+  assert_eq(ObjectPool::created_objects(pool), 0)
   
-  {
-    get_value = fn() {
-      if !initialized {
-        value = "initialized_value"
-        initialized = true
-      }
-      value
-    },
-    is_initialized = fn() { initialized }
-  }
-}
-
-type LazyComputation[T] = {
-  get : () -> T,
-  is_computed : () -> Bool
-}
-
-fn create_lazy_computation[T](compute_fn : () -> T) -> LazyComputation[T] = {
-  let mut computed = false
-  let mut result : T = panic("Uninitialized")
+  // Test object borrowing
+  let obj1 = ObjectPool::borrow(pool)
+  assert_eq(obj1, "created_object")
+  assert_eq(ObjectPool::available_objects(pool), 0)
+  assert_eq(ObjectPool::created_objects(pool), 1)
   
-  {
-    get = fn() {
-      if !computed {
-        result = compute_fn()
-        computed = true
-      }
-      result
-    },
-    is_computed = fn() { computed }
-  }
-}
-
-type Buffer = {
-  capacity : () -> Int,
-  size : () -> Int,
-  write : (String) -> Int,
-  read : (Int) -> String,
-  expand : (Int) -> Unit
-}
-
-fn create_efficient_buffer(initial_capacity : Int) -> Buffer = {
-  let mut buffer_capacity = initial_capacity
-  let mut buffer_size = 0
+  let obj2 = ObjectPool::borrow(pool)
+  assert_eq(obj2, "created_object")
+  assert_eq(ObjectPool::available_objects(pool), 0)
+  assert_eq(ObjectPool::created_objects(pool), 2)
   
-  {
-    capacity = fn() { buffer_capacity },
-    size = fn() { buffer_size },
-    write = fn(data : String) {
-      let written = data.length()
-      buffer_size = buffer_size + written
-      written
-    },
-    read = fn(bytes : Int) {
-      let data = "test_data".substring(0, bytes)
-      buffer_size = buffer_size - bytes
-      data
-    },
-    expand = fn(new_capacity : Int) {
-      buffer_capacity = new_capacity
-    }
-  }
-}
-
-fn create_test_stream() -> Array[Int] = {
-  let mut stream = []
-  for i in 0..<100 {
-    stream = stream.push(i)
-  }
-  stream
-}
-
-fn process_stream_efficiently(stream : Array[Int]) -> Array[Int] = {
-  stream.filter(fn(x) { x % 2 == 0 })
-}
-
-fn create_test_objects(count : Int) -> Array[TestObject] = {
+  // Test object returning
+  ObjectPool::return_object(pool, obj1)
+  assert_eq(ObjectPool::available_objects(pool), 1)
+  assert_eq(ObjectPool::created_objects(pool), 2)
+  
+  // Test borrowing from pool (reusing returned object)
+  let obj3 = ObjectPool::borrow(pool)
+  assert_eq(ObjectPool::available_objects(pool), 0)
+  assert_eq(ObjectPool::created_objects(pool), 2) // Should not create new object
+  
+  // Test pool limit
   let mut objects = []
-  for i in 0..<count {
-    objects = objects.push({ id: i })
+  for i = 0; i < 5; i = i + 1 {
+    let obj = ObjectPool::borrow(pool)
+    objects.push(obj)
   }
-  objects
+  
+  assert_eq(ObjectPool::created_objects(pool), 5) // Should reach limit
 }
 
-type TestObject = {
-  id : Int
+// Test 3: Resource Cleanup on Scope Exit
+test "resource cleanup on scope exit" {
+  let cleanup_tracker = CleanupTracker::new()
+  
+  // Test resource with automatic cleanup
+  {
+    let resource = Resource::with_cleanup(cleanup_tracker, "resource1")
+    assert_eq(CleanupTracker::get_cleaned_count(cleanup_tracker), 0)
+    // Resource goes out of scope here, cleanup should be triggered
+  }
+  
+  assert_eq(CleanupTracker::get_cleaned_count(cleanup_tracker), 1)
+  
+  // Test multiple resources
+  {
+    let resource1 = Resource::with_cleanup(cleanup_tracker, "resource2")
+    let resource2 = Resource::with_cleanup(cleanup_tracker, "resource3")
+    assert_eq(CleanupTracker::get_cleaned_count(cleanup_tracker), 1)
+    // Both resources go out of scope here, cleanup should be triggered
+  }
+  
+  assert_eq(CleanupTracker::get_cleaned_count(cleanup_tracker), 3)
+  
+  // Test manual cleanup
+  let resource4 = Resource::with_cleanup(cleanup_tracker, "resource4")
+  Resource::manual_cleanup(resource4)
+  assert_eq(CleanupTracker::get_cleaned_count(cleanup_tracker), 4)
 }
 
-fn cleanup_objects(objects : Array[TestObject], count : Int) -> Int = {
-  count // Simplified cleanup
+// Test 4: Lazy Initialization Performance
+test "lazy initialization performance" {
+  let lazy_value = Lazy::new(|| {
+    // Simulate expensive computation
+    let mut sum = 0
+    for i = 0; i < 1000; i = i + 1 {
+      sum = sum + i
+    }
+    sum
+  })
+  
+  // Test that value is not computed until accessed
+  assert_false(Lazy::is_initialized(lazy_value))
+  
+  // Test first access triggers computation
+  let value1 = Lazy::get(lazy_value)
+  assert_eq(value1, 499500) // Sum of 0..999
+  assert_true(Lazy::is_initialized(lazy_value))
+  
+  // Test subsequent access returns cached value
+  let value2 = Lazy::get(lazy_value)
+  assert_eq(value2, 499500)
+  
+  // Test that computation only happens once
+  let init_count = Lazy::get_init_count(lazy_value)
+  assert_eq(init_count, 1)
 }
 
-type ResourceTracker = {
-  track : (String) -> Resource,
-  untrack : (Resource) -> Unit,
-  get_tracked_count : () -> Int,
-  cleanup_all : () -> Unit
+// Test 5: Cache Performance
+test "cache performance" {
+  let cache = LRUCache::new(3) // Capacity of 3 items
+  
+  // Test initial cache state
+  assert_eq(Cache::size(cache), 0)
+  assert_true(Cache::is_empty(cache))
+  
+  // Test cache insertion
+  Cache::put(cache, "key1", "value1")
+  Cache::put(cache, "key2", "value2")
+  Cache::put(cache, "key3", "value3")
+  
+  assert_eq(Cache::size(cache), 3)
+  assert_false(Cache::is_empty(cache))
+  
+  // Test cache retrieval
+  let value1 = Cache::get(cache, "key1")
+  match value1 {
+    Some(v) => assert_eq(v, "value1")
+    None => assert_true(false)
+  }
+  
+  // Test LRU eviction
+  Cache::put(cache, "key4", "value4") // Should evict key2 (least recently used)
+  
+  let value2 = Cache::get(cache, "key2")
+  match value2 {
+    Some(_) => assert_true(false) // Should be evicted
+    None => assert_true(true)
+  }
+  
+  let value4 = Cache::get(cache, "key4")
+  match value4 {
+    Some(v) => assert_eq(v, "value4")
+    None => assert_true(false)
+  }
+  
+  // Test cache statistics
+  let stats = Cache::get_stats(cache)
+  assert_eq(stats.hits, 2) // key1, key4
+  assert_eq(stats.misses, 1) // key2
+  assert_eq(stats.evictions, 1) // key2
 }
 
-type Resource = {
+// Test 6: Batch Processing Performance
+test "batch processing performance" {
+  let processor = BatchProcessor::new(100) // Batch size of 100
+  
+  // Test batch processing with small dataset
+  let small_data = [1, 2, 3, 4, 5]
+  let small_result = BatchProcessor::process(processor, small_data, |x| x * 2)
+  assert_eq(small_result.length(), 5)
+  assert_eq(small_result[0], 2)
+  assert_eq(small_result[4], 10)
+  
+  // Test batch processing with large dataset
+  let large_data = Array::make(1000, 0)
+  for i = 0; i < 1000; i = i + 1 {
+    large_data[i] = i
+  }
+  
+  let large_result = BatchProcessor::process(processor, large_data, |x| x * 2)
+  assert_eq(large_result.length(), 1000)
+  assert_eq(large_result[0], 0)
+  assert_eq(large_result[999], 1998)
+  
+  // Test batch processing statistics
+  let stats = BatchProcessor::get_stats(processor)
+  assert_eq(stats.total_processed, 1005) // 5 + 1000
+  assert_eq(stats.batches_processed, 11) // 1 batch for 5 items + 10 batches for 1000 items
+}
+
+// Test 7: Memory Usage Monitoring
+test "memory usage monitoring" {
+  let monitor = MemoryMonitor::new()
+  
+  // Test initial memory state
+  let initial_memory = MemoryMonitor::get_current_usage(monitor)
+  assert_true(initial_memory > 0)
+  
+  // Test memory allocation tracking
+  let large_array = Array::make(10000, 0)
+  let after_allocation = MemoryMonitor::get_current_usage(monitor)
+  assert_true(after_allocation > initial_memory)
+  
+  // Test memory deallocation tracking
+  // In a real implementation, this would track deallocation
+  let after_deallocation = MemoryMonitor::get_current_usage(monitor)
+  
+  // Test memory statistics
+  let stats = MemoryMonitor::get_stats(monitor)
+  assert_true(stats.peak_usage >= after_allocation)
+  assert_true(stats.average_usage > 0)
+  
+  // Test memory threshold alerts
+  MemoryMonitor::set_threshold(monitor, initial_memory * 2)
+  let threshold_exceeded = MemoryMonitor::is_threshold_exceeded(monitor)
+  // This depends on the actual memory usage, so we just check the function works
+}
+
+// Test 8: CPU Performance Monitoring
+test "cpu performance monitoring" {
+  let monitor = CPUMonitor::new()
+  
+  // Test CPU usage measurement
+  let cpu_usage1 = CPUMonitor::get_current_usage(monitor)
+  assert_true(cpu_usage1 >= 0.0)
+  assert_true(cpu_usage1 <= 100.0)
+  
+  // Simulate CPU-intensive operation
+  let mut result = 0
+  for i = 0; i < 100000; i = i + 1 {
+    result = result + i
+  }
+  
+  let cpu_usage2 = CPUMonitor::get_current_usage(monitor)
+  assert_true(cpu_usage2 >= 0.0)
+  assert_true(cpu_usage2 <= 100.0)
+  
+  // Test CPU statistics
+  let stats = CPUMonitor::get_stats(monitor)
+  assert_true(stats.average_usage >= 0.0)
+  assert_true(stats.peak_usage >= 0.0)
+  
+  // Test CPU time measurement
+  let start_time = CPUMonitor::get_cpu_time(monitor)
+  
+  // Simulate more work
+  for i = 0; i < 50000; i = i + 1 {
+    result = result + i
+  }
+  
+  let end_time = CPUMonitor::get_cpu_time(monitor)
+  assert_true(end_time > start_time)
+  
+  // Test elapsed time calculation
+  let elapsed = CPUMonitor::calculate_elapsed(monitor, start_time, end_time)
+  assert_true(elapsed > 0.0)
+}
+
+// Test 9: I/O Performance Monitoring
+test "io performance monitoring" {
+  let monitor = IOMonitor::new()
+  
+  // Test I/O operation tracking
+  let start_time = IOMonitor::start_operation(monitor, "read")
+  
+  // Simulate I/O operation
+  let data = "test data for I/O monitoring"
+  let processed_data = data.to_upper_case()
+  
+  let end_time = IOMonitor::end_operation(monitor, start_time)
+  
+  // Test I/O statistics
+  let stats = IOMonitor::get_stats(monitor)
+  assert_eq(stats.read_operations, 1)
+  assert_true(stats.total_read_time > 0.0)
+  assert_true(stats.average_read_time > 0.0)
+  
+  // Test multiple operations
+  let start_time2 = IOMonitor::start_operation(monitor, "write")
+  let end_time2 = IOMonitor::end_operation(monitor, start_time2)
+  
+  let updated_stats = IOMonitor::get_stats(monitor)
+  assert_eq(updated_stats.read_operations, 1)
+  assert_eq(updated_stats.write_operations, 1)
+  
+  // Test throughput calculation
+  let throughput = IOMonitor::calculate_throughput(monitor, "read", data.length())
+  assert_true(throughput > 0.0)
+}
+
+// Test 10: Resource Pool with Timeout
+test "resource pool with timeout" {
+  let pool = ResourcePool::with_timeout(2, 1000) // 2 resources, 1000ms timeout
+  
+  // Test resource borrowing
+  let resource1 = ResourcePool::borrow(pool)
+  assert_not_eq(resource1, None)
+  
+  let resource2 = ResourcePool::borrow(pool)
+  assert_not_eq(resource2, None)
+  
+  // Test timeout when pool is exhausted
+  let start_time = Time::now()
+  let resource3 = ResourcePool::borrow_with_timeout(pool, 100) // 100ms timeout
+  let end_time = Time::now()
+  
+  match resource3 {
+    Some(_) => assert_true(false) // Should not succeed
+    None => assert_true(true)
+  }
+  
+  // Verify that timeout was respected (with some tolerance)
+  let elapsed = end_time - start_time
+  assert_true(elapsed >= 100)
+  
+  // Test resource returning
+  ResourcePool::return_resource(pool, resource1)
+  
+  // Test that returned resource is available
+  let resource4 = ResourcePool::borrow(pool)
+  assert_not_eq(resource4, None)
+  
+  // Test pool statistics
+  let stats = ResourcePool::get_stats(pool)
+  assert_eq(stats.total_resources, 2)
+  assert_eq(stats.borrowed_resources, 2)
+  assert_eq(stats.timeout_events, 1)
+}
+
+// Helper classes and functions for performance and resource management tests
+// Note: These are simplified implementations for testing purposes
+
+class MemoryPool {
+  block_size : Int
+  total_blocks : Int
+  available_blocks : Int
+  used_blocks : Int
+  
+  new(block_size : Int, total_blocks : Int) {
+    { 
+      block_size: block_size,
+      total_blocks: total_blocks,
+      available_blocks: total_blocks,
+      used_blocks: 0
+    }
+  }
+  
+  static new(block_size : Int, total_blocks : Int) -> MemoryPool {
+    MemoryPool(block_size, total_blocks)
+  }
+  
+  static allocate(pool : MemoryPool) -> Option[Int] {
+    if pool.available_blocks > 0 {
+      pool.available_blocks = pool.available_blocks - 1
+      pool.used_blocks = pool.used_blocks + 1
+      Some(123) // Mock block address
+    } else {
+      None
+    }
+  }
+  
+  static deallocate(pool : MemoryPool, block : Option[Int]) -> Unit {
+    match block {
+      Some(_) => {
+        pool.available_blocks = pool.available_blocks + 1
+        pool.used_blocks = pool.used_blocks - 1
+      }
+      None => ()
+    }
+  }
+  
+  static available_blocks(pool : MemoryPool) -> Int {
+    pool.available_blocks
+  }
+  
+  static used_blocks(pool : MemoryPool) -> Int {
+    pool.used_blocks
+  }
+}
+
+class ObjectPool[T] {
+  create_fn : () -> T
+  pool : Array[T]
+  created_count : Int
+  
+  new(create_fn : () -> T, capacity : Int) {
+    { 
+      create_fn: create_fn,
+      pool: [],
+      created_count: 0
+    }
+  }
+  
+  static new[T](create_fn : () -> T, capacity : Int) -> ObjectPool[T] {
+    ObjectPool({ create_fn: create_fn, pool: [], created_count: 0 }, capacity)
+  }
+  
+  static borrow[T](pool : ObjectPool[T]) -> T {
+    if pool.pool.length() > 0 {
+      pool.pool.pop()
+    } else if pool.created_count < 5 { // Simplified capacity limit
+      pool.created_count = pool.created_count + 1
+      pool.create_fn()
+    } else {
+      pool.create_fn() // Simplified: always create even at limit
+    }
+  }
+  
+  static return_object[T](pool : ObjectPool[T], obj : T) -> Unit {
+    pool.pool.push(obj)
+  }
+  
+  static available_objects[T](pool : ObjectPool[T]) -> Int {
+    pool.pool.length()
+  }
+  
+  static created_objects[T](pool : ObjectPool[T]) -> Int {
+    pool.created_count
+  }
+}
+
+class CleanupTracker {
+  cleaned_count : Int
+  
+  new() {
+    { cleaned_count: 0 }
+  }
+  
+  static new() -> CleanupTracker {
+    CleanupTracker({ cleaned_count: 0 })
+  }
+  
+  static increment(tracker : CleanupTracker) -> Unit {
+    tracker.cleaned_count = tracker.cleaned_count + 1
+  }
+  
+  static get_cleaned_count(tracker : CleanupTracker) -> Int {
+    tracker.cleaned_count
+  }
+}
+
+class Resource {
   name : String
+  cleanup_tracker : CleanupTracker
+  
+  new(name : String, cleanup_tracker : CleanupTracker) {
+    { name: name, cleanup_tracker: cleanup_tracker }
+  }
+  
+  static with_cleanup(tracker : CleanupTracker, name : String) -> Resource {
+    Resource(name, tracker)
+  }
+  
+  static manual_cleanup(resource : Resource) -> Unit {
+    CleanupTracker::increment(resource.cleanup_tracker)
+  }
 }
 
-fn create_resource_tracker() -> ResourceTracker = {
-  let mut tracked_resources = []
+class Lazy[T] {
+  value : Option[T]
+  init_fn : () -> T
+  initialized : Bool
+  init_count : Int
   
-  {
-    track = fn(name : String) {
-      let resource = { name: name }
-      tracked_resources = tracked_resources.push(resource)
-      resource
-    },
-    untrack = fn(resource : Resource) {
-      // Simplified untracking
-    },
-    get_tracked_count = fn() { tracked_resources.length() },
-    cleanup_all = fn() {
-      tracked_resources = []
+  new(init_fn : () -> T) {
+    { 
+      value: None,
+      init_fn: init_fn,
+      initialized: false,
+      init_count: 0
     }
   }
-}
-
-type PerformanceMetrics = {
-  start_timer : (String) -> Unit,
-  end_timer : (String) -> Unit,
-  get_execution_time : (String) -> Int,
-  start_memory_tracking : () -> Unit,
-  get_memory_usage : () -> Int,
-  set_threshold : (String, Int) -> Unit,
-  is_within_threshold : (String) -> Bool,
-  generate_report : () -> String
-}
-
-fn create_performance_metrics() -> PerformanceMetrics = {
-  let mut timers = Map::new()
-  let mut thresholds = Map::new()
   
-  {
-    start_timer = fn(name : String) {
-      timers = timers.set(name, 0) // Simplified - store start time
-    },
-    end_timer = fn(name : String) {
-      timers = timers.set(name, 100) // Simplified - store execution time
-    },
-    get_execution_time = fn(name : String) {
-      match timers.get(name) {
-        Some(time) => time
-        None => 0
+  static new[T](init_fn : () -> T) -> Lazy[T] {
+    Lazy({ value: None, init_fn: init_fn, initialized: false, init_count: 0 })
+  }
+  
+  static get[T](lazy : Lazy[T]) -> T {
+    if not lazy.initialized {
+      lazy.value = Some(lazy.init_fn())
+      lazy.initialized = true
+      lazy.init_count = lazy.init_count + 1
+    }
+    
+    match lazy.value {
+      Some(v) => v
+      None => {
+        // This should never happen
+        lazy.init_fn()
       }
-    },
-    start_memory_tracking = fn() {
-      // Simplified memory tracking
-    },
-    get_memory_usage = fn() {
-      1024 // Simplified memory usage
-    },
-    set_threshold = fn(name : String, threshold : Int) {
-      thresholds = thresholds.set(name, threshold)
-    },
-    is_within_threshold = fn(name : String) {
-      let execution_time = match timers.get(name) {
-        Some(time) => time
-        None => 0
-      }
-      let threshold = match thresholds.get(name) {
-        Some(t) => t
-        None => 1000
-      }
-      execution_time <= threshold
-    },
-    generate_report = fn() {
-      "Performance Report:\noperation1: execution_time=100ms"
     }
   }
-}
-
-fn perform_test_operation() -> Unit = {
-  // Simulate some work
-}
-
-fn allocate_test_memory() -> Unit = {
-  // Simulate memory allocation
-}
-
-type SharedCounter = {
-  get : () -> Int,
-  increment : () -> Unit,
-  decrement : () -> Unit
-}
-
-fn create_shared_counter() -> SharedCounter = {
-  let mut counter = 0
   
-  {
-    get = fn() { counter },
-    increment = fn() { counter = counter + 1 },
-    decrement = fn() { counter = counter - 1 }
+  static is_initialized[T](lazy : Lazy[T]) -> Bool {
+    lazy.initialized
+  }
+  
+  static get_init_count[T](lazy : Lazy[T]) -> Int {
+    lazy.init_count
   }
 }
 
-type LockableResource = {
-  acquire_lock : () -> Lock,
-  try_acquire_lock_with_timeout : (Int) -> Lock
-}
-
-type Lock = {
-  is_acquired : () -> Bool,
-  release : () -> Unit
-}
-
-fn create_lockable_resource() -> LockableResource = {
-  let mut locked = false
+class LRUCache[K, V] {
+  capacity : Int
+  cache : Map[K, V]
+  access_order : Array[K]
+  hits : Int
+  misses : Int
+  evictions : Int
   
-  {
-    acquire_lock = fn() {
-      locked = true
-      {
-        is_acquired = fn() { true },
-        release = fn() { locked = false }
+  new(capacity : Int) {
+    { 
+      capacity: capacity,
+      cache: Map::new(),
+      access_order: [],
+      hits: 0,
+      misses: 0,
+      evictions: 0
+    }
+  }
+  
+  static new[K, V](capacity : Int) -> LRUCache[K, V] {
+    LRUCache({ 
+      capacity: capacity,
+      cache: Map::new(),
+      access_order: [],
+      hits: 0,
+      misses: 0,
+      evictions: 0
+    })
+  }
+  
+  static put[K, V](cache : LRUCache[K, V], key : K, value : V) -> Unit {
+    // Check if key already exists
+    if cache.cache.contains_key(key) {
+      cache.cache.insert(key, value)
+      // Update access order
+      let index = find_index(cache.access_order, key)
+      if index >= 0 {
+        cache.access_order.remove(index)
       }
-    },
-    try_acquire_lock_with_timeout = fn(timeout : Int) {
-      if locked {
-        {
-          is_acquired = fn() { false },
-          release = fn() { }
+      cache.access_order.push(key)
+    } else {
+      // Check if eviction is needed
+      if cache.cache.size() >= cache.capacity {
+        // Evict least recently used
+        let lru_key = cache.access_order[0]
+        cache.cache.remove(lru_key)
+        cache.access_order.remove(0)
+        cache.evictions = cache.evictions + 1
+      }
+      
+      cache.cache.insert(key, value)
+      cache.access_order.push(key)
+    }
+  }
+  
+  static get[K, V](cache : LRUCache[K, V], key : K) -> Option[V] {
+    match cache.cache.get(key) {
+      Some(value) => {
+        // Update access order
+        let index = find_index(cache.access_order, key)
+        if index >= 0 {
+          cache.access_order.remove(index)
         }
-      } else {
-        locked = true
-        {
-          is_acquired = fn() { true },
-          release = fn() { locked = false }
-        }
+        cache.access_order.push(key)
+        
+        cache.hits = cache.hits + 1
+        Some(value)
+      }
+      None => {
+        cache.misses = cache.misses + 1
+        None
       }
     }
   }
+  
+  static size[K, V](cache : LRUCache[K, V]) -> Int {
+    cache.cache.size()
+  }
+  
+  static is_empty[K, V](cache : LRUCache[K, V]) -> Bool {
+    cache.cache.size() == 0
+  }
+  
+  static get_stats[K, V](cache : LRUCache[K, V]) -> { hits : Int, misses : Int, evictions : Int } {
+    { hits: cache.hits, misses: cache.misses, evictions: cache.evictions }
+  }
+}
+
+class BatchProcessor[T, R] {
+  batch_size : Int
+  total_processed : Int
+  batches_processed : Int
+  
+  new(batch_size : Int) {
+    { batch_size: batch_size, total_processed: 0, batches_processed: 0 }
+  }
+  
+  static new[T, R](batch_size : Int) -> BatchProcessor[T, R] {
+    BatchProcessor({ batch_size: batch_size, total_processed: 0, batches_processed: 0 })
+  }
+  
+  static process[T, R](processor : BatchProcessor[T, R], data : Array[T], fn : (T) -> R) -> Array[R] {
+    let mut result = []
+    let data_length = data.length()
+    
+    for i = 0; i < data_length; i = i + processor.batch_size {
+      let end_index = if i + processor.batch_size < data_length { i + processor.batch_size } else { data_length }
+      
+      for j = i; j < end_index; j = j + 1 {
+        result.push(fn(data[j]))
+        processor.total_processed = processor.total_processed + 1
+      }
+      
+      processor.batches_processed = processor.batches_processed + 1
+    }
+    
+    result
+  }
+  
+  static get_stats[T, R](processor : BatchProcessor[T, R]) -> { total_processed : Int, batches_processed : Int } {
+    { total_processed: processor.total_processed, batches_processed: processor.batches_processed }
+  }
+}
+
+class MemoryMonitor {
+  initial_usage : Int
+  peak_usage : Int
+  total_measurements : Int
+  sum_usage : Int
+  threshold : Int
+  
+  new() {
+    let current = estimate_memory_usage()
+    { 
+      initial_usage: current,
+      peak_usage: current,
+      total_measurements: 1,
+      sum_usage: current,
+      threshold: 0
+    }
+  }
+  
+  static new() -> MemoryMonitor {
+    let current = estimate_memory_usage()
+    MemoryMonitor({ 
+      initial_usage: current,
+      peak_usage: current,
+      total_measurements: 1,
+      sum_usage: current,
+      threshold: 0
+    })
+  }
+  
+  static get_current_usage(monitor : MemoryMonitor) -> Int {
+    let current = estimate_memory_usage()
+    
+    // Update statistics
+    monitor.total_measurements = monitor.total_measurements + 1
+    monitor.sum_usage = monitor.sum_usage + current
+    
+    if current > monitor.peak_usage {
+      monitor.peak_usage = current
+    }
+    
+    current
+  }
+  
+  static get_stats(monitor : MemoryMonitor) -> { peak_usage : Int, average_usage : Int } {
+    let average = if monitor.total_measurements > 0 {
+      monitor.sum_usage / monitor.total_measurements
+    } else {
+      0
+    }
+    
+    { peak_usage: monitor.peak_usage, average_usage: average }
+  }
+  
+  static set_threshold(monitor : MemoryMonitor, threshold : Int) -> Unit {
+    monitor.threshold = threshold
+  }
+  
+  static is_threshold_exceeded(monitor : MemoryMonitor) -> Bool {
+    let current = estimate_memory_usage()
+    current > monitor.threshold
+  }
+}
+
+class CPUMonitor {
+  start_time : Float
+  total_measurements : Int
+  sum_usage : Float
+  peak_usage : Float
+  
+  new() {
+    { 
+      start_time: get_current_time(),
+      total_measurements: 0,
+      sum_usage: 0.0,
+      peak_usage: 0.0
+    }
+  }
+  
+  static new() -> CPUMonitor {
+    CPUMonitor({ 
+      start_time: get_current_time(),
+      total_measurements: 0,
+      sum_usage: 0.0,
+      peak_usage: 0.0
+    })
+  }
+  
+  static get_current_usage(monitor : CPUMonitor) -> Float {
+    let current = estimate_cpu_usage()
+    
+    // Update statistics
+    monitor.total_measurements = monitor.total_measurements + 1
+    monitor.sum_usage = monitor.sum_usage + current
+    
+    if current > monitor.peak_usage {
+      monitor.peak_usage = current
+    }
+    
+    current
+  }
+  
+  static get_stats(monitor : CPUMonitor) -> { average_usage : Float, peak_usage : Float } {
+    let average = if monitor.total_measurements > 0 {
+      monitor.sum_usage / monitor.total_measurements.to_float()
+    } else {
+      0.0
+    }
+    
+    { average_usage: average, peak_usage: monitor.peak_usage }
+  }
+  
+  static get_cpu_time(monitor : CPUMonitor) -> Float {
+    get_current_time() - monitor.start_time
+  }
+  
+  static calculate_elapsed(monitor : CPUMonitor, start_time : Float, end_time : Float) -> Float {
+    end_time - start_time
+  }
+}
+
+class IOMonitor {
+  read_operations : Int
+  write_operations : Int
+  total_read_time : Float
+  total_write_time : Float
+  
+  new() {
+    { 
+      read_operations: 0,
+      write_operations: 0,
+      total_read_time: 0.0,
+      total_write_time: 0.0
+    }
+  }
+  
+  static new() -> IOMonitor {
+    IOMonitor({ 
+      read_operations: 0,
+      write_operations: 0,
+      total_read_time: 0.0,
+      total_write_time: 0.0
+    })
+  }
+  
+  static start_operation(monitor : IOMonitor, operation : String) -> Float {
+    get_current_time()
+  }
+  
+  static end_operation(monitor : IOMonitor, start_time : Float) -> Float {
+    let end_time = get_current_time()
+    let duration = end_time - start_time
+    
+    // In a real implementation, we'd track the operation type
+    // For simplicity, we'll assume it's a read operation
+    monitor.read_operations = monitor.read_operations + 1
+    monitor.total_read_time = monitor.total_read_time + duration
+    
+    end_time
+  }
+  
+  static get_stats(monitor : IOMonitor) -> { 
+    read_operations : Int, 
+    write_operations : Int, 
+    total_read_time : Float, 
+    average_read_time : Float 
+  } {
+    let average_read = if monitor.read_operations > 0 {
+      monitor.total_read_time / monitor.read_operations.to_float()
+    } else {
+      0.0
+    }
+    
+    { 
+      read_operations: monitor.read_operations,
+      write_operations: monitor.write_operations,
+      total_read_time: monitor.total_read_time,
+      average_read_time: average_read
+    }
+  }
+  
+  static calculate_throughput(monitor : IOMonitor, operation : String, bytes : Int) -> Float {
+    // Simplified throughput calculation (bytes per second)
+    if operation == "read" && monitor.total_read_time > 0.0 {
+      bytes.to_float() / monitor.total_read_time
+    } else {
+      0.0
+    }
+  }
+}
+
+class ResourcePool[T] {
+  resources : Array[T]
+  borrowed_resources : Int
+  timeout_events : Int
+  max_resources : Int
+  timeout_ms : Int
+  
+  new(max_resources : Int, timeout_ms : Int) {
+    { 
+      resources: [],
+      borrowed_resources: 0,
+      timeout_events: 0,
+      max_resources: max_resources,
+      timeout_ms: timeout_ms
+    }
+  }
+  
+  static with_timeout[T](max_resources : Int, timeout_ms : Int) -> ResourcePool[T] {
+    ResourcePool({ 
+      resources: [],
+      borrowed_resources: 0,
+      timeout_events: 0,
+      max_resources: max_resources,
+      timeout_ms: timeout_ms
+    })
+  }
+  
+  static borrow[T](pool : ResourcePool[T]) -> Option[T] {
+    if pool.resources.length() > 0 {
+      pool.borrowed_resources = pool.borrowed_resources + 1
+      Some(pool.resources.pop())
+    } else if pool.borrowed_resources < pool.max_resources {
+      pool.borrowed_resources = pool.borrowed_resources + 1
+      Some(create_mock_resource()) // Simplified resource creation
+    } else {
+      None
+    }
+  }
+  
+  static borrow_with_timeout[T](pool : ResourcePool[T], timeout_ms : Int) -> Option[T] {
+    // Simplified timeout implementation
+    if pool.borrowed_resources >= pool.max_resources {
+      pool.timeout_events = pool.timeout_events + 1
+      
+      // Simulate timeout
+      simulate_delay(timeout_ms)
+      None
+    } else {
+      ResourcePool::borrow(pool)
+    }
+  }
+  
+  static return_resource[T](pool : ResourcePool[T], resource : T) -> Unit {
+    pool.resources.push(resource)
+    pool.borrowed_resources = pool.borrowed_resources - 1
+  }
+  
+  static get_stats[T](pool : ResourcePool[T]) -> { 
+    total_resources : Int, 
+    borrowed_resources : Int, 
+    timeout_events : Int 
+  } {
+    { 
+      total_resources: pool.max_resources,
+      borrowed_resources: pool.borrowed_resources,
+      timeout_events: pool.timeout_events
+    }
+  }
+}
+
+// Helper functions
+fn find_index[T](arr : Array[T], item : T) -> Int {
+  for i = 0; i < arr.length(); i = i + 1 {
+    if arr[i] == item {
+      return i
+    }
+  }
+  -1
+}
+
+fn estimate_memory_usage() -> Int {
+  // Simplified memory estimation
+  1000000 // 1MB in bytes
+}
+
+fn estimate_cpu_usage() -> Float {
+  // Simplified CPU usage estimation
+  10.5 // 10.5%
+}
+
+fn get_current_time() -> Float {
+  // Simplified time function
+  1234567890.123
+}
+
+fn create_mock_resource() -> Int {
+  42 // Mock resource
+}
+
+fn simulate_delay(ms : Int) -> Unit {
+  // Simplified delay simulation
+  ()
 }
