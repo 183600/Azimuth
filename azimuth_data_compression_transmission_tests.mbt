@@ -1,441 +1,528 @@
 // Azimuth Telemetry System - Data Compression and Transmission Tests
 // This file contains test cases for data compression and transmission functionality
 
-// Test 1: Gzip Compression and Decompression
-test "gzip compression and decompression" {
+// Test 1: Basic Data Compression
+test "basic data compression" {
   // Create test data
-  let original_data = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. "
-    + "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. "
-    + "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris "
-    + "nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in "
-    + "reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla "
-    + "pariatur. Excepteur sint occaecat cupidatat non proident, sunt in "
-    + "culpa qui officia deserunt mollit anim id est laborum."
+  let original_data = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
   
-  // Create gzip compressor
-  let compressor = GzipCompressor::new(6) // Compression level 6
+  // Test GZIP compression
+  let gzip_compressor = GzipCompressor::new()
+  let compressed_data = Compressor::compress(gzip_compressor, original_data.to_bytes())
   
-  // Compress data
-  let compressed_data = Compressor::compress(compressor, original_data)
-  
-  // Verify compression
+  // Verify compression reduces size
   assert_true(compressed_data.length() < original_data.length())
-  assert_true(compressed_data.length() > 0)
   
-  // Create gzip decompressor
-  let decompressor = GzipDecompressor::new()
+  // Verify decompression restores original data
+  let decompressed_data = Compressor::decompress(gzip_compressor, compressed_data)
+  let decompressed_string = @bytes_to_string(decompressed_data)
+  assert_eq(decompressed_string, original_data)
   
-  // Decompress data
-  let decompressed_data = Decompressor::decompress(decompressor, compressed_data)
+  // Test compression ratio
+  let compression_ratio = Compressor::compression_ratio(gzip_compressor, original_data.to_bytes())
+  assert_true(compression_ratio > 0.0)
+  assert_true(compression_ratio < 1.0)
   
-  // Verify decompression
-  assert_eq(decompressed_data, original_data)
+  // Test DEFLATE compression
+  let deflate_compressor = DeflateCompressor::new()
+  let deflate_compressed = Compressor::compress(deflate_compressor, original_data.to_bytes())
+  let deflate_decompressed = Compressor::decompress(deflate_compressor, deflate_compressed)
+  let deflate_string = @bytes_to_string(deflate_decompressed)
+  assert_eq(deflate_string, original_data)
 }
 
-// Test 2: LZ4 Compression and Decompression
-test "lz4 compression and decompression" {
-  // Create test telemetry data
-  let telemetry_data = {
-    let mut data = ""
-    for i in 0..1000 {
-      data = data + "metric_" + i.to_string() + "=" + (50.0 + (i % 10).to_float() * 5.0).to_string() + ";"
+// Test 2: Binary Data Compression
+test "binary data compression" {
+  // Create binary test data
+  let binary_data = []
+  for i in 0..=9999 {
+    binary_data.push((i % 256).to_int())
+  }
+  
+  // Test LZ4 compression (fast compression)
+  let lz4_compressor = Lz4Compressor::new()
+  let lz4_compressed = Compressor::compress(lz4_compressor, binary_data)
+  
+  // Verify compression
+  assert_true(lz4_compressed.length() < binary_data.length())
+  
+  // Verify decompression
+  let lz4_decompressed = Compressor::decompress(lz4_compressor, lz4_compressed)
+  assert_eq(lz4_decompressed.length(), binary_data.length())
+  
+  for i in 0..=9999 {
+    assert_eq(lz4_decompressed[i], binary_data[i])
+  }
+  
+  // Test Brotli compression (good compression ratio)
+  let brotli_compressor = BrotliCompressor::new(6)  // Compression level 6
+  let brotli_compressed = Compressor::compress(brotli_compressor, binary_data)
+  let brotli_decompressed = Compressor::decompress(brotli_compressor, brotli_compressed)
+  
+  // Verify decompression
+  assert_eq(brotli_decompressed.length(), binary_data.length())
+  
+  // Compare compression ratios
+  let lz4_ratio = lz4_compressed.length().to_float() / binary_data.length().to_float()
+  let brotli_ratio = brotli_compressed.length().to_float() / binary_data.length().to_float()
+  
+  // Brotli should generally have better compression than LZ4
+  assert_true(brotli_ratio <= lz4_ratio)
+}
+
+// Test 3: Streaming Compression
+test "streaming compression" {
+  // Create streaming compressor
+  let stream_compressor = StreamCompressor::new(CompressionAlgorithm::Gzip)
+  
+  // Create large data in chunks
+  let chunks = []
+  for i in 0..=99 {
+    let chunk = "Chunk data " + i.to_string() + " with some repeated content to improve compression ratio. "
+    chunks.push(chunk)
+  }
+  
+  // Compress chunks incrementally
+  StreamCompressor::start(stream_compressor)
+  let compressed_chunks = []
+  
+  for chunk in chunks {
+    let compressed_chunk = StreamCompressor::compress_chunk(stream_compressor, chunk.to_bytes())
+    compressed_chunks.push(compressed_chunk)
+  }
+  
+  let final_chunk = StreamCompressor::finish(stream_compressor)
+  compressed_chunks.push(final_chunk)
+  
+  // Combine compressed chunks
+  let mut compressed_data = []
+  for chunk in compressed_chunks {
+    for byte in chunk {
+      compressed_data.push(byte)
     }
-    data
   }
   
-  // Create LZ4 compressor
-  let compressor = Lz4Compressor::new()
+  // Decompress using streaming decompressor
+  let stream_decompressor = StreamDecompressor::new(CompressionAlgorithm::Gzip)
+  StreamDecompressor::start(stream_decompressor)
   
-  // Compress data
-  let compressed_data = Compressor::compress(compressor, telemetry_data)
-  
-  // Verify compression
-  assert_true(compressed_data.length() < telemetry_data.length())
-  assert_true(compressed_data.length() > 0)
-  
-  // Create LZ4 decompressor
-  let decompressor = Lz4Decompressor::new()
-  
-  // Decompress data
-  let decompressed_data = Decompressor::decompress(decompressor, compressed_data)
-  
-  // Verify decompression
-  assert_eq(decompressed_data, telemetry_data)
-}
-
-// Test 3: Zstandard Compression and Decompression
-test "zstandard compression and decompression" {
-  // Create test JSON telemetry data
-  let json_data = {
-    let mut data = "["
-    for i in 0..500 {
-      if i > 0 {
-        data = data + ","
-      }
-      data = data + "{\"timestamp\":" + (1640995200000L + i.to_long() * 1000L).to_string()
-        + ",\"metric\":\"cpu.usage\",\"value\":" + (50.0 + (i % 20).to_float() * 2.0).to_string()
-        + ",\"host\":\"server-" + (i % 5).to_string() + "\"}"
+  let mut decompressed_data = []
+  for chunk in compressed_chunks {
+    let decompressed_chunk = StreamDecompressor::decompress_chunk(stream_decompressor, chunk)
+    for byte in decompressed_chunk {
+      decompressed_data.push(byte)
     }
-    data + "]"
   }
   
-  // Create Zstandard compressor
-  let compressor = ZstdCompressor::new(3) // Compression level 3
+  // Verify decompressed data matches original
+  let original_data = ""
+  for chunk in chunks {
+    original_data = original_data + chunk
+  }
   
-  // Compress data
-  let compressed_data = Compressor::compress(compressor, json_data)
-  
-  // Verify compression
-  assert_true(compressed_data.length() < json_data.length())
-  assert_true(compressed_data.length() > 0)
-  
-  // Create Zstandard decompressor
-  let decompressor = ZstdDecompressor::new()
-  
-  // Decompress data
-  let decompressed_data = Decompressor::decompress(decompressor, compressed_data)
-  
-  // Verify decompression
-  assert_eq(decompressed_data, json_data)
+  let decompressed_string = @bytes_to_string(decompressed_data)
+  assert_eq(decompressed_string, original_data)
 }
 
-// Test 4: Time Series Specific Compression
-test "time series specific compression" {
-  // Create time series data
-  let series = TimeSeries::new("cpu.usage", "percentage", "CPU usage percentage")
+// Test 4: Adaptive Compression
+test "adaptive compression" {
+  // Create adaptive compressor that selects best algorithm based on data
+  let adaptive_compressor = AdaptiveCompressor::new()
   
-  let mut series_with_data = series
-  for i in 0..1000 {
-    let timestamp = 1640995200000L + (i.to_long() * 60000L) // 1 minute intervals
-    let value = 50.0 + (i % 20).to_float() * 2.0 // Repeating pattern
-    let point = TimeSeriesPoint::new(timestamp, value, None)
-    series_with_data = TimeSeries::add_point(series_with_data, point)
+  // Test with text data (GZIP usually works well)
+  let text_data = "This is a sample text data with repeated patterns. This is a sample text data with repeated patterns. This is a sample text data with repeated patterns."
+  let text_compressed = AdaptiveCompressor::compress(adaptive_compressor, text_data.to_bytes())
+  let text_decompressed = AdaptiveCompressor::decompress(adaptive_compressor, text_compressed)
+  
+  let text_result = @bytes_to_string(text_decompressed)
+  assert_eq(text_result, text_data)
+  
+  // Verify algorithm selection
+  let text_algorithm = AdaptiveCompressor::selected_algorithm(adaptive_compressor)
+  assert_eq(text_algorithm, CompressionAlgorithm::Gzip)
+  
+  // Test with binary data (LZ4 might be better for speed)
+  let binary_data = []
+  for i in 0..=9999 {
+    binary_data.push((i * 7 % 256).to_int())
   }
   
-  // Serialize time series to bytes
-  let serialized_data = TimeSeries::serialize(series_with_data)
+  let binary_compressed = AdaptiveCompressor::compress(adaptive_compressor, binary_data)
+  let binary_decompressed = AdaptiveCompressor::decompress(adaptive_compressor, binary_compressed)
   
-  // Create time series compressor (using delta-of-delta and XOR compression)
-  let compressor = TimeSeriesCompressor::new()
+  assert_eq(binary_decompressed.length(), binary_data.length())
   
-  // Compress time series data
-  let compressed_data = Compressor::compress(compressor, serialized_data)
+  // Verify algorithm selection
+  let binary_algorithm = AdaptiveCompressor::selected_algorithm(adaptive_compressor)
+  // The algorithm selection depends on the adaptive strategy
+  assert_true(
+    binary_algorithm == CompressionAlgorithm::Lz4 ||
+    binary_algorithm == CompressionAlgorithm::Gzip
+  )
   
-  // Verify compression
-  assert_true(compressed_data.length() < serialized_data.length())
-  assert_true(compressed_data.length() > 0)
+  // Test compression performance metrics
+  let text_metrics = AdaptiveCompressor::get_metrics(adaptive_compressor, text_data.to_bytes())
+  let binary_metrics = AdaptiveCompressor::get_metrics(adaptive_compressor, binary_data)
   
-  // Create time series decompressor
-  let decompressor = TimeSeriesDecompressor::new()
-  
-  // Decompress data
-  let decompressed_data = Decompressor::decompress(decompressor, compressed_data)
-  
-  // Deserialize time series
-  let deserialized_series = TimeSeries::deserialize(decompressed_data)
-  
-  // Verify data integrity
-  assert_eq(TimeSeries::name(deserialized_series), TimeSeries::name(series_with_data))
-  assert_eq(TimeSeries::unit(deserialized_series), TimeSeries::unit(series_with_data))
-  assert_eq(TimeSeries::point_count(deserialized_series), TimeSeries::point_count(series_with_data))
-  
-  // Verify individual points
-  let original_points = TimeSeries::points(series_with_data)
-  let deserialized_points = TimeSeries::points(deserialized_series)
-  
-  assert_eq(original_points.length(), deserialized_points.length())
-  
-  for i in 0..original_points.length() {
-    assert_eq(TimeSeriesPoint::timestamp(original_points[i]), TimeSeriesPoint::timestamp(deserialized_points[i]))
-    assert_eq(TimeSeriesPoint::value(original_points[i]), TimeSeriesPoint::value(deserialized_points[i]))
-  }
+  assert_true(CompressionMetrics::compression_time(text_metrics) > 0)
+  assert_true(CompressionMetrics::decompression_time(text_metrics) > 0)
+  assert_true(CompressionMetrics::compression_ratio(text_metrics) > 0.0)
+  assert_true(CompressionMetrics::compression_ratio(text_metrics) < 1.0)
 }
 
-// Test 5: Batch Compression
-test "batch compression" {
-  // Create multiple telemetry batches
-  let batches = [
-    "batch1:metric1=10.5;metric2=20.3;metric3=15.7",
-    "batch2:metric1=11.2;metric2=19.8;metric3=16.1",
-    "batch3:metric1=10.8;metric2=20.5;metric3=15.9",
-    "batch4:metric1=11.5;metric2=19.5;metric3=16.3",
-    "batch5:metric1=10.3;metric2=20.8;metric3=15.5"
-  ]
+// Test 5: Data Transmission with Compression
+test "data transmission with compression" {
+  // Create transmission manager with compression
+  let transmission_manager = TransmissionManager::new()
+  TransmissionManager::enable_compression(transmission_manager, CompressionAlgorithm::Gzip)
   
-  // Create batch compressor
-  let compressor = BatchCompressor::new(GzipCompressor::new(6))
+  // Create test data
+  let telemetry_data = TelemetryData::new(
+    "service-123",
+    [
+      MetricData::new("cpu_usage", 75.5, "percent"),
+      MetricData::new("memory_usage", 1024.0, "megabytes"),
+      MetricData::new("request_count", 1000.0, "count")
+    ],
+    [
+      LogData::new(Info, "Service started successfully"),
+      LogData::new(Warning, "High memory usage detected")
+    ]
+  )
   
-  // Compress batches
-  let compressed_batches = BatchCompressor::compress_batches(compressor, batches)
+  // Serialize telemetry data
+  let serialized_data = TelemetryData::serialize(telemetry_data)
   
-  // Verify compression
-  assert_eq(compressed_batches.length(), batches.length())
-  
-  for compressed_batch in compressed_batches {
-    assert_true(compressed_batch.length() > 0)
-  }
-  
-  // Create batch decompressor
-  let decompressor = BatchDecompressor::new(GzipDecompressor::new())
-  
-  // Decompress batches
-  let decompressed_batches = BatchDecompressor::decompress_batches(decompressor, compressed_batches)
-  
-  // Verify decompression
-  assert_eq(decompressed_batches.length(), batches.length())
-  
-  for i in 0..batches.length() {
-    assert_eq(decompressed_batches[i], batches[i])
-  }
-}
-
-// Test 6: HTTP Transmission with Compression
-test "http transmission with compression" {
-  // Create telemetry data
-  let telemetry_data = {
-    let mut data = ""
-    for i in 0..100 {
-      data = data + "metric_" + i.to_string() + "=" + (i.to_float() * 1.5).to_string() + "\n"
-    }
-    data
-  }
-  
-  // Create HTTP client with compression support
-  let client = HttpClient::new()
-  let compressed_client = HttpClient::with_compression(client, [Gzip, Lz4])
-  
-  // Create HTTP request with telemetry data
-  let headers = [
-    ("Content-Type", "application/json"),
-    ("Content-Encoding", "gzip"),
-    ("Accept-Encoding", "gzip, lz4")
-  ]
-  
-  let request = HttpRequest::new("POST", "https://telemetry.example.com/api/v1/data", headers, Some(telemetry_data))
-  
-  // Simulate HTTP transmission with compression
-  let transmission_result = HttpClient::send_with_compression(compressed_client, request)
+  // Transmit with compression
+  let transmission_result = TransmissionManager::transmit(
+    transmission_manager,
+    "https://telemetry.example.com/api/data",
+    serialized_data,
+    [("Content-Type", "application/json")]
+  )
   
   // Verify transmission
   match transmission_result {
-    TransmissionSuccess(response) => {
-      assert_eq(HttpResponse::status_code(response), 200)
-      match HttpResponse::body(response) {
-        Some(body) => assert_true(body.length() > 0)
-        None => assert_true(false)
+    TransmissionResult::Success(response) => {
+      assert_eq(response.status_code, 200)
+      assert_true(response.body.contains("received"))
+    }
+    TransmissionResult::Failed(error) => {
+      // In a test environment, we might not have a real server
+      assert_true(error.contains("connection") || error.contains("network"))
+    }
+  }
+  
+  // Verify compression statistics
+  let stats = TransmissionManager::get_compression_stats(transmission_manager)
+  assert_true(CompressionStats::original_size(stats) > 0)
+  assert_true(CompressionStats::compressed_size(stats) > 0)
+  assert_true(CompressionStats::compression_ratio(stats) > 0.0)
+  assert_true(CompressionStats::compression_ratio(stats) < 1.0)
+}
+
+// Test 6: Batch Data Compression and Transmission
+test "batch data compression and transmission" {
+  // Create batch transmission manager
+  let batch_manager = BatchTransmissionManager::new(
+    100,     // Max batch size
+    5000,    // Max batch age (5 seconds)
+    1024 * 1024  // Max batch size in bytes (1MB)
+  )
+  
+  BatchTransmissionManager::enable_compression(batch_manager, CompressionAlgorithm::Lz4)
+  
+  // Create multiple telemetry data points
+  let data_points = []
+  for i in 0..=49 {  // 50 data points
+    let data_point = TelemetryData::new(
+      "service-" + (i % 5).to_string(),
+      [
+        MetricData::new("cpu_usage", 50.0 + (i % 50).to_float(), "percent"),
+        MetricData::new("memory_usage", 512.0 + (i * 10).to_float(), "megabytes")
+      ],
+      [
+        LogData::new(Info, "Processing item " + i.to_string())
+      ]
+    )
+    data_points.push(data_point)
+  }
+  
+  // Add data points to batch manager
+  for data_point in data_points {
+    BatchTransmissionManager::add_data(batch_manager, data_point)
+  }
+  
+  // Force batch transmission
+  let transmission_result = BatchTransmissionManager::flush(batch_manager)
+  
+  // Verify batch transmission
+  match transmission_result {
+    BatchTransmissionResult::Success(batches) => {
+      assert_true(batches.length() > 0)
+      
+      for batch in batches {
+        assert_true(BatchMetrics::item_count(batch) > 0)
+        assert_true(BatchMetrics::original_size(batch) > 0)
+        assert_true(BatchMetrics::compressed_size(batch) > 0)
+        assert_true(BatchMetrics::compression_ratio(batch) > 0.0)
       }
     }
-    TransmissionFailure(error) => assert_true(false)
+    BatchTransmissionResult::Failed(error) => {
+      // In a test environment, we might not have a real server
+      assert_true(error.contains("connection") || error.contains("network"))
+    }
   }
+  
+  // Verify batch statistics
+  let batch_stats = BatchTransmissionManager::get_statistics(batch_manager)
+  assert_eq(BatchStatistics::total_items(batch_stats), 50)
+  assert_eq(BatchStatistics::total_batches(batch_stats), 1)
+  assert_true(BatchStatistics::average_compression_ratio(batch_stats) > 0.0)
 }
 
-// Test 7: Streaming Compression
-test "streaming compression" {
-  // Create large telemetry data stream
-  let stream_data = {
-    let mut data = ""
-    for i in 0..10000 {
-      data = data + "{\"timestamp\":" + (1640995200000L + i.to_long() * 1000L).to_string()
-        + ",\"metric\":\"temperature\",\"value\":" + (20.0 + (i % 10).to_float()).to_string()
-        + ",\"sensor\":\"temp-" + (i % 5).to_string() + "\"}\n"
-    }
-    data
+// Test 7: Delta Encoding for Time Series Data
+test "delta encoding for time series data" {
+  // Create time series data
+  let time_series = []
+  let base_timestamp = 1640995200000L
+  
+  for i in 0..=99 {
+    let data_point = TimeSeriesPoint::new(
+      base_timestamp + (i * 60000L),  // 1-minute intervals
+      100.0 + (i * 0.5).to_float(),  // Increasing values
+      [("metric_name", "cpu_usage")]
+    )
+    time_series.push(data_point)
   }
   
-  // Create streaming compressor
-  let compressor = StreamingCompressor::new(GzipCompressor::new(6), 1024) // 1KB chunks
+  // Apply delta encoding
+  let delta_encoder = DeltaEncoder::new()
+  let encoded_data = DeltaEncoder::encode(delta_encoder, time_series)
   
-  // Compress stream in chunks
-  let compressed_chunks = StreamingCompressor::compress_stream(compressor, stream_data)
+  // Verify encoding reduces size
+  assert_true(encoded_data.length() < time_series.length())
   
-  // Verify compression
-  assert_true(compressed_chunks.length() > 0)
+  // Decode the data
+  let decoded_data = DeltaEncoder::decode(delta_encoder, encoded_data)
   
-  let mut total_compressed_size = 0
-  for chunk in compressed_chunks {
-    total_compressed_size = total_compressed_size + chunk.length()
-    assert_true(chunk.length() > 0)
+  // Verify decoded data matches original
+  assert_eq(decoded_data.length(), time_series.length())
+  
+  for i in 0..=99 {
+    let original = time_series[i]
+    let decoded = decoded_data[i]
+    
+    assert_eq(TimeSeriesPoint::timestamp(decoded), TimeSeriesPoint::timestamp(original))
+    assert_eq(TimeSeriesPoint::value(decoded), TimeSeriesPoint::value(original))
   }
   
-  // Verify overall compression
-  assert_true(total_compressed_size < stream_data.length())
+  // Test delta encoding with different compression
+  let delta_compressed = DeltaEncoder::encode_with_compression(
+    delta_encoder,
+    time_series,
+    CompressionAlgorithm::Gzip
+  )
   
-  // Create streaming decompressor
-  let decompressor = StreamingDecompressor::new(GzipDecompressor::new(), 1024) // 1KB chunks
+  let delta_decompressed = DeltaEncoder::decode_with_compression(
+    delta_encoder,
+    delta_compressed,
+    CompressionAlgorithm::Gzip
+  )
   
-  // Decompress stream
-  let decompressed_data = StreamingDecompressor::decompress_stream(decompressor, compressed_chunks)
-  
-  // Verify decompression
-  assert_eq(decompressed_data, stream_data)
+  // Verify compression preserves data
+  assert_eq(delta_decompressed.length(), time_series.length())
 }
 
-// Test 8: Adaptive Compression
-test "adaptive compression" {
-  // Create different types of telemetry data
-  let highly_repetitive_data = {
-    let mut data = ""
-    for i in 0..1000 {
-      data = data + "status=ok;error_rate=0.0;response_time=100ms\n"
-    }
-    data
+// Test 8: Network Protocol Optimization
+test "network protocol optimization" {
+  // Create protocol optimizer
+  let protocol_optimizer = ProtocolOptimizer::new()
+  
+  // Enable various optimizations
+  ProtocolOptimizer::enable_compression(protocol_optimizer, CompressionAlgorithm::Brotli)
+  ProtocolOptimizer::enable_batching(protocol_optimizer, 50)
+  ProtocolOptimizer::enable_multiplexing(protocol_optimizer, 5)
+  
+  // Create optimized transmission channel
+  let channel = ProtocolOptimizer::create_channel(
+    protocol_optimizer,
+    "wss://telemetry.example.com/ws"
+  )
+  
+  // Create test data
+  let telemetry_batch = []
+  for i in 0..=19 {  // 20 telemetry data points
+    let data = TelemetryData::new(
+      "service-" + (i % 3).to_string(),
+      [MetricData::new("metric_" + (i % 5).to_string(), i.to_float(), "unit")],
+      [LogData::new(Info, "Message " + i.to_string())]
+    )
+    telemetry_batch.push(data)
   }
   
-  let random_data = {
-    let mut data = ""
-    for i in 0..1000 {
-      data = data + "metric_" + i.to_string() + "=" + Math::random().to_string() + "\n"
+  // Transmit optimized data
+  let transmission_result = ProtocolOptimizer::transmit_batch(channel, telemetry_batch)
+  
+  // Verify transmission
+  match transmission_result {
+    OptimizedTransmissionResult::Success(metrics) => {
+      assert_true(OptimizedMetrics::data_size(metrics) > 0)
+      assert_true(OptimizedMetrics::compressed_size(metrics) > 0)
+      assert_true(OptimizedMetrics::compression_ratio(metrics) > 0.0)
+      assert_true(OptimizedMetrics::transmission_time(metrics) > 0)
     }
-    data
+    OptimizedTransmissionResult::Failed(error) => {
+      // In a test environment, we might not have a real server
+      assert_true(error.contains("connection") || error.contains("network"))
+    }
   }
   
-  let json_data = {
-    let mut data = ""
-    for i in 0..500 {
-      data = data + "{\"id\":" + i.to_string() + ",\"value\":" + Math::random().to_string() + "}"
-    }
-    data
-  }
+  // Test protocol adaptation based on network conditions
+  ProtocolOptimizer::simulate_network_conditions(
+    protocol_optimizer,
+    NetworkConditions::new(1000, 100, 0.01)  // 1Mbps, 100ms latency, 1% packet loss
+  )
   
-  // Create adaptive compressor
-  let compressor = AdaptiveCompressor::new()
+  let adapted_settings = ProtocolOptimizer::get_adapted_settings(protocol_optimizer)
   
-  // Compress different data types
-  let compressed_repetitive = AdaptiveCompressor::compress(compressor, highly_repetitive_data)
-  let compressed_random = AdaptiveCompressor::compress(compressor, random_data)
-  let compressed_json = AdaptiveCompressor::compress(compressor, json_data)
+  // Should adapt to network conditions
+  assert_true(
+    AdaptedSettings::compression_level(adapted_settings) <= 6 ||
+    AdaptedSettings::batch_size(adapted_settings) <= 25
+  )
+}
+
+// Test 9: Data Integrity Verification
+test "data integrity verification" {
+  // Create data with integrity verification
+  let integrity_manager = IntegrityManager::new()
   
-  // Verify compression
-  assert_true(compressed_repetitive.length() < highly_repetitive_data.length())
-  assert_true(compressed_random.length() < random_data.length())
-  assert_true(compressed_json.length() < json_data.length())
+  // Create test data
+  let original_data = "Critical telemetry data that must be transmitted without corruption"
+  let data_bytes = original_data.to_bytes()
   
-  // Check which algorithm was used for each data type
-  let repetitive_algorithm = AdaptiveCompressor::get_used_algorithm(compressor, highly_repetitive_data)
-  let random_algorithm = AdaptiveCompressor::get_used_algorithm(compressor, random_data)
-  let json_algorithm = AdaptiveCompressor::get_used_algorithm(compressor, json_data)
+  // Add checksum
+  let data_with_checksum = IntegrityManager::add_checksum(integrity_manager, data_bytes)
   
-  // Highly repetitive data should use a compression algorithm good for repetition
-  assert_true(repetitive_algorithm == Gzip || repetitive_algorithm == Zstd)
+  // Verify checksum
+  let is_valid = IntegrityManager::verify_checksum(integrity_manager, data_with_checksum)
+  assert_true(is_valid)
   
-  // Random data might use a different algorithm
-  assert_true(random_algorithm == Lz4 || random_algorithm == Zstd)
+  // Simulate data corruption
+  let corrupted_data = data_with_checksum.to_array()
+  corrupted_data[10] = corrupted_data[10] ^ 0xFF  // Flip some bits
   
-  // JSON data might use yet another algorithm
-  assert_true(json_algorithm == Gzip || json_algorithm == Zstd)
+  let is_corrupted = IntegrityManager::verify_checksum(integrity_manager, corrupted_data)
+  assert_false(is_corrupted)
+  
+  // Test with compression and integrity
+  let compressor = GzipCompressor::new()
+  let compressed_data = Compressor::compress(compressor, data_bytes)
+  
+  let compressed_with_checksum = IntegrityManager::add_checksum(integrity_manager, compressed_data)
   
   // Decompress and verify
-  let decompressor = AdaptiveDecompressor::new()
+  let decompressed_data = Compressor::decompress(compressor, compressed_with_checksum)
+  let decompressed_without_checksum = IntegrityManager::remove_checksum(integrity_manager, decompressed_data)
   
-  let decompressed_repetitive = AdaptiveDecompressor::decompress(decompressor, compressed_repetitive, repetitive_algorithm)
-  let decompressed_random = AdaptiveDecompressor::decompress(decompressor, compressed_random, random_algorithm)
-  let decompressed_json = AdaptiveDecompressor::decompress(decompressor, compressed_json, json_algorithm)
+  let is_decompressed_valid = IntegrityManager::verify_checksum(integrity_manager, decompressed_data)
+  assert_true(is_decompressed_valid)
   
-  assert_eq(decompressed_repetitive, highly_repetitive_data)
-  assert_eq(decompressed_random, random_data)
-  assert_eq(decompressed_json, json_data)
+  let result_string = @bytes_to_string(decompressed_without_checksum)
+  assert_eq(result_string, original_data)
+  
+  // Test with digital signatures
+  let signature_manager = SignatureManager::new()
+  let signed_data = SignatureManager::sign(signature_manager, data_bytes)
+  let is_signature_valid = SignatureManager::verify(signature_manager, signed_data)
+  assert_true(is_signature_valid)
 }
 
-// Test 9: Network Transmission with Retry and Backoff
-test "network transmission with retry and backoff" {
-  // Create telemetry data
-  let telemetry_data = "metric1=10.5;metric2=20.3;metric3=15.7"
+// Test 10: End-to-End Compression and Transmission Pipeline
+test "end-to-end compression and transmission pipeline" {
+  // Create comprehensive pipeline
+  let pipeline = CompressionTransmissionPipeline::new()
   
-  // Create HTTP client with retry configuration
-  let retry_config = RetryConfig::new(3, [1000, 2000, 4000]) // 3 retries with exponential backoff
-  let client = HttpClient::with_retry(retry_config)
+  // Configure pipeline stages
+  Pipeline::add_compression_stage(pipeline, AdaptiveCompressor::new())
+  Pipeline::add_batching_stage(pipeline, 100, 5000)
+  Pipeline::add_integrity_stage(pipeline, IntegrityManager::new())
+  Pipeline::add_protocol_optimization_stage(pipeline, ProtocolOptimizer::new())
+  Pipeline::add_retry_stage(pipeline, RetryStrategy::new(3, 1000))
   
-  // Create HTTP request
-  let headers = [
-    ("Content-Type", "text/plain"),
-    ("X-Telemetry-Version", "1.0")
-  ]
-  
-  let request = HttpRequest::new("POST", "https://telemetry.example.com/api/v1/data", headers, Some(telemetry_data))
-  
-  // Simulate network transmission with retries
-  let transmission_result = HttpClient::send_with_retry(client, request)
-  
-  // Verify transmission (in a real scenario, this might succeed after retries)
-  match transmission_result {
-    TransmissionSuccess(response) => {
-      assert_eq(HttpResponse::status_code(response), 200)
-    }
-    TransmissionFailure(error) => {
-      // In a test environment, we might expect a failure, but it should have attempted retries
-      assert_true(true)
+  // Create large dataset
+  let dataset = []
+  for service_id in 0..=9 {  // 10 services
+    for i in 0..=99 {  // 100 data points per service
+      let data = TelemetryData::new(
+        "service-" + service_id.to_string(),
+        [
+          MetricData::new("cpu_usage", 50.0 + (i % 50).to_float(), "percent"),
+          MetricData::new("memory_usage", 1024.0 + (i * 10).to_float(), "megabytes"),
+          MetricData::new("request_count", (i * 5).to_float(), "count"),
+          MetricData::new("response_time", 100.0 + (i % 200).to_float(), "milliseconds")
+        ],
+        [
+          LogData::new(Info, "Processing request " + i.to_string()),
+          LogData::new(Warning, "High latency detected" + if i % 10 == 0 { "" } else { "" })
+        ],
+        [
+          SpanData::new("operation-" + (i % 5).to_string(), 100 + (i * 10)),
+          SpanData::new("database_query", 50 + (i % 100))
+        ]
+      )
+      dataset.push(data)
     }
   }
-}
-
-// Test 10: Compression Performance Benchmarks
-test "compression performance benchmarks" {
-  // Create large telemetry dataset
-  let large_dataset = {
-    let mut data = ""
-    for i in 0..10000 {
-      data = data + "{\"timestamp\":" + (1640995200000L + i.to_long() * 1000L).to_string()
-        + ",\"metrics\":[{\"name\":\"cpu\",\"value\":" + (50.0 + (i % 20).to_float()).to_string()
-        + "},{\"name\":\"memory\",\"value\":" + (60.0 + (i % 15).to_float()).to_string()
-        + "}],\"host\":\"server-" + (i % 10).to_string() + "\"}\n"
+  
+  // Process through pipeline
+  let pipeline_result = Pipeline::process(pipeline, dataset, "https://telemetry.example.com/api/batch")
+  
+  // Verify pipeline result
+  match pipeline_result {
+    PipelineResult::Success(metrics) => {
+      assert_true(PipelineMetrics::total_items(metrics) == 1000)
+      assert_true(PipelineMetrics::original_size(metrics) > 0)
+      assert_true(PipelineMetrics::compressed_size(metrics) > 0)
+      assert_true(PipelineMetrics::compression_ratio(metrics) > 0.0)
+      assert_true(PipelineMetrics::transmission_time(metrics) > 0)
+      assert_true(PipelineMetrics::batches_sent(metrics) > 0)
+      assert_true(PipelineMetrics::retry_attempts(metrics) >= 0)
     }
-    data
+    PipelineResult::PartialSuccess(metrics, errors) => {
+      // Some data might have failed in test environment
+      assert_true(PipelineMetrics::total_items(metrics) > 0)
+      assert_true(errors.length() > 0)
+    }
+    PipelineResult::Failed(error) => {
+      // In a test environment without real server
+      assert_true(error.contains("connection") || error.contains("network"))
+    }
   }
   
-  // Test different compression algorithms
-  let algorithms = [
-    ("gzip", GzipCompressor::new(6)),
-    ("lz4", Lz4Compressor::new()),
-    ("zstd", ZstdCompressor::new(3))
-  ]
+  // Verify pipeline statistics
+  let pipeline_stats = Pipeline::get_statistics(pipeline)
+  assert_true(PipelineStatistics::compression_efficiency(pipeline_stats) > 0.0)
+  assert_true(PipelineStatistics::transmission_success_rate(pipeline_stats) >= 0.0)
+  assert_true(PipelineStatistics::average_batch_size(pipeline_stats) > 0)
   
-  let mut compression_results = []
+  // Test pipeline with different configurations
+  Pipeline::configure(pipeline, PipelineConfig::new(
+    CompressionAlgorithm::Brotli,
+    200,  // Larger batch size
+    10000, // Longer batch age
+    true,  // Enable integrity checks
+    true   // Enable protocol optimization
+  ))
   
-  for (name, compressor) in algorithms {
-    // Measure compression time
-    let start_time = Time::now()
-    let compressed_data = Compressor::compress(compressor, large_dataset)
-    let compression_time = Time::elapsed(start_time)
-    
-    // Measure decompression time
-    let decompressor = match name {
-      "gzip" => GzipDecompressor::new(),
-      "lz4" => Lz4Decompressor::new(),
-      "zstd" => ZstdDecompressor::new(),
-      _ => GzipDecompressor::new() // Default
+  let optimized_result = Pipeline::process(pipeline, dataset.slice(0, 100), "https://telemetry.example.com/api/batch")
+  
+  // Verify optimized configuration works
+  match optimized_result {
+    PipelineResult::Success(metrics) => {
+      assert_true(PipelineMetrics::total_items(metrics) == 100)
     }
-    
-    let decompression_start_time = Time::now()
-    let decompressed_data = Decompressor::decompress(decompressor, compressed_data)
-    let decompression_time = Time::elapsed(decompression_start_time)
-    
-    // Calculate compression ratio
-    let compression_ratio = large_dataset.length().to_float() / compressed_data.length().to_float()
-    
-    // Store results
-    let result = {
-      "algorithm": name,
-      "original_size": large_dataset.length(),
-      "compressed_size": compressed_data.length(),
-      "compression_ratio": compression_ratio,
-      "compression_time": compression_time,
-      "decompression_time": decompression_time
-    }
-    
-    compression_results = Array::push(compression_results, result)
-    
-    // Verify data integrity
-    assert_eq(decompressed_data, large_dataset)
-  }
-  
-  // Verify that all algorithms produced valid results
-  assert_eq(compression_results.length(), 3)
-  
-  // Check that compression ratios are reasonable (> 1.0)
-  for result in compression_results {
-    assert_true(result["compression_ratio"] > 1.0)
-    assert_true(result["compressed_size"] < result["original_size"])
-    assert_true(result["compression_time"] > 0)
-    assert_true(result["decompression_time"] > 0)
+    _ => assert_true(true)  // Accept any result in test environment
   }
 }

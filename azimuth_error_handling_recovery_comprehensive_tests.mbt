@@ -1,541 +1,753 @@
-// Azimuth Error Handling and Recovery Comprehensive Tests
-// 错误处理和恢复综合测试用例
+// Azimuth Telemetry System - Error Handling and Recovery Comprehensive Tests
+// This file contains comprehensive test cases for error handling and recovery mechanisms
 
-// 测试1: 网络错误处理和恢复
-test "网络错误处理和恢复" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "error.network.test")
+// Test 1: Exception Handling and Propagation
+test "exception handling and propagation" {
+  // Test custom exception types
+  let telemetry_exception = TelemetryException::new(
+    "TELEMETRY_ERROR",
+    "Telemetry data processing failed",
+    ErrorDetails::new([("data_type", "metrics"), ("source", "sensor-1")])
+  )
   
-  // 创建网络操作Span
-  let network_span = Tracer::start_span(tracer, "network.operation")
+  assert_eq(TelemetryException::get_error_code(telemetry_exception), "TELEMETRY_ERROR")
+  assert_eq(TelemetryException::get_message(telemetry_exception), "Telemetry data processing failed")
+  assert_eq(TelemetryException::get_details(telemetry_exception).get("data_type"), Some("metrics"))
   
-  // 模拟网络错误场景
-  let network_errors = [
-    ("connection.timeout", "连接超时", true, "retry"),
-    ("connection.refused", "连接被拒绝", true, "retry"),
-    ("dns.resolution.failed", "DNS解析失败", true, "fallback"),
-    ("ssl.handshake.failed", "SSL握手失败", false, "abort"),
-    ("network.unreachable", "网络不可达", true, "retry"),
-    ("http.5xx.error", "服务器错误", true, "retry")
-  ]
+  // Test exception chaining
+  let cause_exception = NetworkException::new("NETWORK_ERROR", "Connection timeout")
+  let chained_exception = TelemetryException::with_cause(
+    "TELEMETRY_NETWORK_ERROR",
+    "Failed to send telemetry data",
+    cause_exception
+  )
   
-  for (error_type, error_message, recoverable, strategy) in network_errors {
-    // 添加错误事件
-    let error_attrs = [
-      ("error.type", StringValue(error_type)),
-      ("error.message", StringValue(error_message)),
-      ("error.recoverable", BoolValue(recoverable)),
-      ("error.timestamp", IntValue(1234567890)),
-      ("error.component", StringValue("network.client"))
-    ]
-    Span::add_event(network_span, "error.occurred", Some(error_attrs))
-    
-    // 模拟恢复策略
-    let recovery_attrs = [
-      ("recovery.strategy", StringValue(strategy)),
-      ("recovery.attempt", IntValue(1)),
-      ("recovery.max.attempts", IntValue(3)),
-      ("recovery.delay", IntValue(1000))
-    ]
-    Span::add_event(network_span, "recovery.attempted", Some(recovery_attrs))
-    
-    // 模拟恢复结果
-    let recovery_result = if recoverable && strategy != "abort" { "success" } else { "failed" }
-    let result_attrs = [
-      ("recovery.result", StringValue(recovery_result)),
-      ("recovery.duration", IntValue(1500)),
-      ("final.status", StringValue(if recovery_result == "success" { "resolved" } else { "failed" }))
-    ]
-    Span::add_event(network_span, "recovery.completed", Some(result_attrs))
+  assert_eq(TelemetryException::get_error_code(chained_exception), "TELEMETRY_NETWORK_ERROR")
+  match TelemetryException::get_cause(chained_exception) {
+    Some(cause) => assert_eq(NetworkException::get_error_code(cause), "NETWORK_ERROR")
+    None => assert_true(false)
   }
   
-  // 设置最终状态
-  Span::set_status(network_span, Error, Some("Network operation completed with errors"))
-  Span::end(network_span)
-}
-
-// 测试2: 数据库错误处理和恢复
-test "数据库错误处理和恢复" {
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "error.database.test")
-  
-  // 模拟数据库错误场景
-  let database_errors = [
-    ("connection.pool.exhausted", "连接池耗尽", "retry", 2000),
-    ("deadlock.detected", "检测到死锁", "retry", 500),
-    ("constraint.violation", "约束违反", "abort", 0),
-    ("query.timeout", "查询超时", "retry", 3000),
-    ("disk.full", "磁盘空间不足", "fallback", 1000),
-    ("transaction.rollback", "事务回滚", "retry", 1000)
-  ]
-  
-  for (error_type, error_message, strategy, delay) in database_errors {
-    // 创建错误日志属性
-    let error_attrs = Attributes::new()
-    Attributes::set(error_attrs, "error.type", StringValue(error_type))
-    Attributes::set(error_attrs, "error.message", StringValue(error_message))
-    Attributes::set(error_attrs, "error.component", StringValue("database.client"))
-    Attributes::set(error_attrs, "error.severity", StringValue("high"))
-    
-    // 记录错误日志
-    let error_log = LogRecord::new_with_context(
-      Error,
-      Some("Database error occurred: " + error_message),
-      Some(error_attrs),
-      None,
-      None,
-      None,
-      None,
-      None
-    )
-    Logger::emit(logger, error_log)
-    
-    // 创建恢复日志属性
-    let recovery_attrs = Attributes::new()
-    Attributes::set(recovery_attrs, "recovery.strategy", StringValue(strategy))
-    Attributes::set(recovery_attrs, "recovery.delay", IntValue(delay))
-    Attributes::set(recovery_attrs, "error.type", StringValue(error_type))
-    
-    // 记录恢复尝试日志
-    let recovery_log = LogRecord::new_with_context(
-      Info,
-      Some("Database recovery attempted with strategy: " + strategy),
-      Some(recovery_attrs),
-      None,
-      None,
-      None,
-      None,
-      None
-    )
-    Logger::emit(logger, recovery_log)
-    
-    // 模拟恢复结果
-    let recovery_success = strategy != "abort"
-    let result_attrs = Attributes::new()
-    Attributes::set(result_attrs, "recovery.result", StringValue(if recovery_success { "success" } else { "failed" }))
-    Attributes::set(result_attrs, "error.type", StringValue(error_type))
-    Attributes::set(result_attrs, "final.status", StringValue(if recovery_success { "resolved" } else { "failed" }))
-    
-    let result_log = LogRecord::new_with_context(
-      Info,
-      Some("Database recovery " + if recovery_success { "succeeded" } else { "failed" }),
-      Some(result_attrs),
-      None,
-      None,
-      None,
-      None,
-      None
-    )
-    Logger::emit(logger, result_log)
-  }
-}
-
-// 测试3: 内存不足错误处理和恢复
-test "内存不足错误处理和恢复" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "error.memory.test")
-  
-  // 创建内存监控指标
-  let memory_errors = Meter::create_counter(meter, "memory.errors.total", Some("内存错误总数"), Some("count"))
-  let memory_recoveries = Meter::create_counter(meter, "memory.recoveries.total", Some("内存恢复总数"), Some("count"))
-  let memory_usage = Meter::create_gauge(meter, "memory.usage.current", Some("当前内存使用量"), Some("bytes"))
-  
-  // 模拟内存不足场景
-  let memory_scenarios = [
-    ("heap.space.exhausted", "堆空间耗尽", 1073741824), // 1GB
-    ("gc.overhead.limit", "GC开销限制", 2147483648),     // 2GB
-    ("native.memory.exhausted", "本地内存耗尽", 536870912), // 512MB
-    ("direct.memory.exhausted", "直接内存耗尽", 268435456)  // 256MB
-  ]
-  
-  for (error_type, error_message, memory_size) in memory_scenarios {
-    // 记录内存错误
-    Counter::add(memory_errors, 1.0)
-    
-    // 模拟内存使用量
-    Gauge::record(memory_usage, memory_size.to_float())
-    
-    // 创建错误处理Span
-    let tracer = TracerProvider::get_tracer(tracer_provider, "error.memory.test")
-    let memory_span = Tracer::start_span(tracer, "memory.error.handling")
-    
-    // 设置内存错误属性
-    let error_attrs = [
-      ("error.type", StringValue(error_type)),
-      ("error.message", StringValue(error_message)),
-      ("memory.size", IntValue(memory_size)),
-      ("memory.unit", StringValue("bytes")),
-      ("error.severity", StringValue("critical"))
-    ]
-    Span::set_attributes(memory_span, error_attrs)
-    
-    // 添加内存回收事件
-    let gc_attrs = [
-      ("gc.type", StringValue("full")),
-      ("gc.triggered.by", StringValue(error_type)),
-      ("gc.duration", IntValue(5000)),
-      ("gc.memory.freed", IntValue(memory_size / 2))
-    ]
-    Span::add_event(memory_span, "garbage.collection", Some(gc_attrs))
-    
-    // 添加内存恢复事件
-    let recovery_attrs = [
-      ("recovery.strategy", StringValue("memory.cleanup")),
-      ("recovery.memory.freed", IntValue(memory_size / 3)),
-      ("recovery.duration", IntValue(2000)),
-      ("recovery.success", BoolValue(true))
-    ]
-    Span::add_event(memory_span, "memory.recovered", Some(recovery_attrs))
-    
-    // 记录内存恢复
-    Counter::add(memory_recoveries, 1.0)
-    
-    // 更新内存使用量
-    Gauge::record(memory_usage, (memory_size * 2 / 3).to_float())
-    
-    Span::set_status(memory_span, Ok, Some("Memory error recovered"))
-    Span::end(memory_span)
+  // Test exception handling with try-catch
+  let result = try {
+    // Simulate operation that might fail
+    if true { // Condition to trigger exception
+      throw telemetry_exception
+    }
+    "success"
+  } catch (e: TelemetryException) {
+    assert_eq(TelemetryException::get_error_code(e), "TELEMETRY_ERROR")
+    "handled"
   }
   
-  // 验证内存指标
-  assert_eq(memory_errors.name, "memory.errors.total")
-  assert_eq(memory_recoveries.name, "memory.recoveries.total")
-  assert_eq(memory_usage.name, "memory.usage.current")
+  assert_eq(result, "handled")
+  
+  // Test exception recovery
+  let recovery_strategy = RecoveryStrategy::new(
+    "telemetry_retry",
+    3, // Max retries
+    1000 // Delay between retries in ms
+  )
+  
+  let mut attempt_count = 0
+  let recovery_result = RecoveryStrategy::execute_with_recovery(recovery_strategy, fn() {
+    attempt_count = attempt_count + 1
+    if attempt_count < 3 {
+      throw NetworkException::new("NETWORK_ERROR", "Temporary failure")
+    }
+    "recovered_success"
+  })
+  
+  match recovery_result {
+    Ok(value) => assert_eq(value, "recovered_success")
+    Error(_) => assert_true(false)
+  }
+  assert_eq(attempt_count, 3)
 }
 
-// 测试4: 文件系统错误处理和恢复
-test "文件系统错误处理和恢复" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "error.filesystem.test")
+// Test 2: Circuit Breaker Pattern
+test "circuit breaker pattern" {
+  // Test circuit breaker configuration
+  let circuit_breaker_config = CircuitBreakerConfig::new(
+    5, // Failure threshold
+    10000, // Recovery timeout in ms
+    50 // Half-open max calls
+  )
   
-  // 创建文件系统操作Span
-  let fs_span = Tracer::start_span(tracer, "filesystem.operation")
+  let circuit_breaker = CircuitBreaker::with_config("telemetry_service", circuit_breaker_config)
   
-  // 模拟文件系统错误场景
-  let fs_errors = [
-    ("file.not.found", "文件未找到", "/path/to/missing/file.txt", "create"),
-    ("permission.denied", "权限被拒绝", "/restricted/file.txt", "escalate"),
-    ("disk.full", "磁盘空间不足", "/var/log/app.log", "cleanup"),
-    ("file.locked", "文件被锁定", "/tmp/lock.file", "retry"),
-    ("directory.not.found", "目录未找到", "/missing/directory", "create"),
-    ("corrupted.file", "文件损坏", "/data/corrupted.dat", "restore")
-  ]
+  // Test initial state
+  assert_eq(CircuitBreaker::get_state(circuit_breaker), Closed)
+  assert_true(CircuitBreaker::is_call_permitted(circuit_breaker))
   
-  for (error_type, error_message, file_path, strategy) in fs_errors {
-    // 添加文件系统错误事件
-    let error_attrs = [
-      ("error.type", StringValue(error_type)),
-      ("error.message", StringValue(error_message)),
-      ("file.path", StringValue(file_path)),
-      ("error.component", StringValue("filesystem.client")),
-      ("error.timestamp", IntValue(1234567890))
-    ]
-    Span::add_event(fs_span, "fs.error.occurred", Some(error_attrs))
-    
-    // 添加文件系统恢复事件
-    let recovery_attrs = [
-      ("recovery.strategy", StringValue(strategy)),
-      ("recovery.attempt", IntValue(1)),
-      ("recovery.max.attempts", IntValue(3)),
-      ("file.path", StringValue(file_path))
-    ]
-    Span::add_event(fs_span, "fs.recovery.attempted", Some(recovery_attrs))
-    
-    // 模拟恢复结果
-    let recovery_success = strategy != "escalate" // 假设权限提升失败
-    let result_attrs = [
-      ("recovery.result", StringValue(if recovery_success { "success" } else { "failed" })),
-      ("recovery.duration", IntValue(1200)),
-      ("file.path", StringValue(file_path)),
-      ("final.status", StringValue(if recovery_success { "resolved" } else { "failed" }))
-    ]
-    Span::add_event(fs_span, "fs.recovery.completed", Some(result_attrs))
+  // Test successful calls
+  for i in 0..=3 {
+    let result = CircuitBreaker::execute(circuit_breaker, fn() { "success_" + i.to_string() })
+    match result {
+      Ok(value) => assert_eq(value, "success_" + i.to_string())
+      Error(_) => assert_true(false)
+    }
   }
   
-  Span::set_status(fs_span, Error, Some("Filesystem operation completed with errors"))
-  Span::end(fs_span)
-}
-
-// 测试5: 配置错误处理和恢复
-test "配置错误处理和恢复" {
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "error.config.test")
+  assert_eq(CircuitBreaker::get_state(circuit_breaker), Closed)
+  assert_eq(CircuitBreaker::get_failure_count(circuit_breaker), 0)
   
-  // 模拟配置错误场景
-  let config_errors = [
-    ("missing.required.field", "缺少必需字段", "database.url", "use.default"),
-    ("invalid.value.type", "无效的值类型", "server.port", "validate"),
-    ("out.of.range.value", "超出范围的值", "thread.pool.size", "clamp"),
-    ("malformed.json", "格式错误的JSON", "app.config", "fallback"),
-    ("circular.reference", "循环引用", "config.dependencies", "break"),
-    ("unknown.property", "未知属性", "legacy.setting", "ignore")
-  ]
-  
-  for (error_type, error_message, config_key, strategy) in config_errors {
-    // 创建配置错误日志属性
-    let error_attrs = Attributes::new()
-    Attributes::set(error_attrs, "error.type", StringValue(error_type))
-    Attributes::set(error_attrs, "error.message", StringValue(error_message))
-    Attributes::set(error_attrs, "config.key", StringValue(config_key))
-    Attributes::set(error_attrs, "error.component", StringValue("config.loader"))
-    Attributes::set(error_attrs, "error.severity", StringValue("medium"))
-    
-    // 记录配置错误日志
-    let error_log = LogRecord::new_with_context(
-      Warn,
-      Some("Configuration error: " + error_message),
-      Some(error_attrs),
-      None,
-      None,
-      None,
-      None,
-      None
-    )
-    Logger::emit(logger, error_log)
-    
-    // 创建配置恢复日志属性
-    let recovery_attrs = Attributes::new()
-    Attributes::set(recovery_attrs, "recovery.strategy", StringValue(strategy))
-    Attributes::set(recovery_attrs, "config.key", StringValue(config_key))
-    Attributes::set(recovery_attrs, "recovery.applied", BoolValue(true))
-    
-    // 记录配置恢复日志
-    let recovery_log = LogRecord::new_with_context(
-      Info,
-      Some("Configuration recovery applied: " + strategy),
-      Some(recovery_attrs),
-      None,
-      None,
-      None,
-      None,
-      None
-    )
-    Logger::emit(logger, recovery_log)
-    
-    // 记录配置验证结果
-    let validation_attrs = Attributes::new()
-    Attributes::set(validation_attrs, "validation.status", StringValue("passed"))
-    Attributes::set(validation_attrs, "config.key", StringValue(config_key))
-    Attributes::set(validation_attrs, "final.value", StringValue("default.value"))
-    
-    let validation_log = LogRecord::new_with_context(
-      Info,
-      Some("Configuration validation passed"),
-      Some(validation_attrs),
-      None,
-      None,
-      None,
-      None,
-      None
-    )
-    Logger::emit(logger, validation_log)
+  // Test failure calls
+  for i in 0..=5 {
+    let result = CircuitBreaker::execute(circuit_breaker, fn() {
+      throw NetworkException::new("NETWORK_ERROR", "Service unavailable")
+    })
+    match result {
+      Ok(_) => assert_true(false)
+      Error(_) => assert_true(true) // Expected failure
+    }
   }
+  
+  // Circuit should open after threshold failures
+  assert_eq(CircuitBreaker::get_state(circuit_breaker), Open)
+  assert_false(CircuitBreaker::is_call_permitted(circuit_breaker))
+  
+  // Test calls when circuit is open
+  let open_result = CircuitBreaker::execute(circuit_breaker, fn() { "should_not_execute" })
+  match open_result {
+    Ok(_) => assert_true(false)
+    Error(e) => assert_eq(Error::get_error_code(e), "CIRCUIT_BREAKER_OPEN")
+  }
+  
+  // Test transition to half-open state (simulating time passing)
+  CircuitBreaker::attempt_reset(circuit_breaker)
+  assert_eq(CircuitBreaker::get_state(circuit_breaker), HalfOpen)
+  assert_true(CircuitBreaker::is_call_permitted(circuit_breaker))
+  
+  // Test successful call in half-open state
+  let half_open_result = CircuitBreaker::execute(circuit_breaker, fn() { "half_open_success" })
+  match half_open_result {
+    Ok(value) => assert_eq(value, "half_open_success")
+    Error(_) => assert_true(false)
+  }
+  
+  // Circuit should close after successful call in half-open state
+  assert_eq(CircuitBreaker::get_state(circuit_breaker), Closed)
+  assert_true(CircuitBreaker::is_call_permitted(circuit_breaker))
+  
+  // Test circuit breaker metrics
+  let metrics = CircuitBreaker::get_metrics(circuit_breaker)
+  assert_eq(CircuitBreakerMetrics::total_calls(metrics), 9)
+  assert_eq(CircuitBreakerMetrics::successful_calls(metrics), 4)
+  assert_eq(CircuitBreakerMetrics::failed_calls(metrics), 5)
+  assert_eq(CircuitBreakerMetrics::state_transitions(metrics), 2) // Open -> HalfOpen -> Closed
 }
 
-// 测试6: 服务降级和熔断错误处理
-test "服务降级和熔断错误处理" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "error.circuitbreaker.test")
+// Test 3: Retry Mechanisms
+test "retry mechanisms" {
+  // Test exponential backoff retry policy
+  let exponential_backoff = ExponentialBackoffRetryPolicy::new(
+    5, // Max attempts
+    1000, // Initial delay in ms
+    2.0 // Backoff multiplier
+  )
   
-  // 创建服务降级监控指标
-  let circuit_breaker_opens = Meter::create_counter(meter, "circuit.breaker.opens", Some("熔断器打开次数"), Some("count"))
-  let circuit_breaker_closes = Meter::create_counter(meter, "circuit.breaker.closes", Some("熔断器关闭次数"), Some("count"))
-  let service_degradations = Meter::create_counter(meter, "service.degradations", Some("服务降级次数"), Some("count"))
-  let service_availability = Meter::create_gauge(meter, "service.availability", Some("服务可用性"), Some("percent"))
+  assert_eq(ExponentialBackoffRetryPolicy::get_max_attempts(exponential_backoff), 5)
+  assert_eq(ExponentialBackoffRetryPolicy::get_initial_delay(exponential_backoff), 1000)
+  assert_eq(ExponentialBackoffRetryPolicy::get_backoff_multiplier(exponential_backoff), 2.0)
   
-  // 模拟服务降级场景
-  let services = [
-    ("user.service", "用户服务", 0.95),
-    ("payment.service", "支付服务", 0.87),
-    ("notification.service", "通知服务", 0.72),
-    ("analytics.service", "分析服务", 0.65),
-    ("recommendation.service", "推荐服务", 0.58)
-  ]
+  // Test delay calculation
+  let delay1 = ExponentialBackoffRetryPolicy::calculate_delay(exponential_backoff, 1) // First retry
+  assert_eq(delay1, 1000)
   
-  for (service_name, service_desc, availability) in services {
-    // 记录服务可用性
-    Gauge::record(service_availability, availability * 100.0)
-    
-    // 创建服务降级Span
-    let tracer = TracerProvider::get_tracer(tracer_provider, "error.circuitbreaker.test")
-    let service_span = Tracer::start_span(tracer, "service.degradation")
-    
-    // 设置服务属性
-    let service_attrs = [
-      ("service.name", StringValue(service_name)),
-      ("service.description", StringValue(service_desc)),
-      ("service.availability", FloatValue(availability)),
-      ("service.status", StringValue(if availability > 0.8 { "healthy" } else if availability > 0.5 { "degraded" } else { "critical" }))
-    ]
-    Span::set_attributes(service_span, service_attrs)
-    
-    // 根据可用性决定是否触发熔断器
-    if availability < 0.7 {
-      // 记录熔断器打开
-      Counter::add(circuit_breaker_opens, 1.0)
-      
-      let cb_attrs = [
-        ("circuit.breaker.state", StringValue("open")),
-        ("circuit.breaker.service", StringValue(service_name)),
-        ("circuit.breaker.threshold", FloatValue(0.7)),
-        ("circuit.breaker.current.availability", FloatValue(availability))
-      ]
-      Span::add_event(service_span, "circuit.breaker.opened", Some(cb_attrs))
-      
-      // 模拟服务降级
-      Counter::add(service_degradations, 1.0)
-      
-      let degrade_attrs = [
-        ("degradation.type", StringValue("circuit.breaker")),
-        ("degradation.service", StringValue(service_name)),
-        ("degradation.fallback", StringValue("cache"))
-      ]
-      Span::add_event(service_span, "service.degraded", Some(degrade_attrs))
-      
-      // 模拟恢复
-      if availability > 0.6 {
-        Counter::add(circuit_breaker_closes, 1.0)
-        
-        let recover_attrs = [
-          ("circuit.breaker.state", StringValue("closed")),
-          ("circuit.breaker.service", StringValue(service_name)),
-          ("recovery.reason", StringValue("availability.improved"))
-        ]
-        Span::add_event(service_span, "circuit.breaker.closed", Some(recover_attrs))
+  let delay2 = ExponentialBackoffRetryPolicy::calculate_delay(exponential_backoff, 2) // Second retry
+  assert_eq(delay2, 2000) // 1000 * 2.0
+  
+  let delay3 = ExponentialBackoffRetryPolicy::calculate_delay(exponential_backoff, 3) // Third retry
+  assert_eq(delay3, 4000) // 2000 * 2.0
+  
+  // Test retry execution with eventual success
+  let mut attempt_count = 0
+  let retry_result = ExponentialBackoffRetryPolicy::execute(exponential_backoff, fn() {
+    attempt_count = attempt_count + 1
+    if attempt_count < 3 {
+      throw DatabaseException::new("DB_TIMEOUT", "Database timeout")
+    }
+    "retry_success"
+  })
+  
+  match retry_result {
+    Ok(value) => assert_eq(value, "retry_success")
+    Error(_) => assert_true(false)
+  }
+  assert_eq(attempt_count, 3)
+  
+  // Test retry execution with max attempts reached
+  let mut failure_count = 0
+  let failure_result = ExponentialBackoffRetryPolicy::execute(exponential_backoff, fn() {
+    failure_count = failure_count + 1
+    throw DatabaseException::new("DB_CONNECTION_ERROR", "Cannot connect to database")
+  })
+  
+  match failure_result {
+    Ok(_) => assert_true(false)
+    Error(e) => assert_eq(DatabaseException::get_error_code(e), "DB_CONNECTION_ERROR")
+  }
+  assert_eq(failure_count, 5) // Should have attempted max times
+  
+  // Test conditional retry (only retry on specific errors)
+  let conditional_retry = ConditionalRetryPolicy::new(
+    3, // Max attempts
+    500, // Delay in ms
+    fn(error) { // Retry condition
+      match error {
+        DatabaseException(code, _) => code == "DB_TIMEOUT" || code == "DB_CONNECTION_ERROR"
+        _ => false
       }
     }
-    
-    Span::end(service_span)
-  }
+  )
   
-  // 验证服务降级指标
-  assert_eq(circuit_breaker_opens.name, "circuit.breaker.opens")
-  assert_eq(circuit_breaker_closes.name, "circuit.breaker.closes")
-  assert_eq(service_degradations.name, "service.degradations")
-  assert_eq(service_availability.name, "service.availability")
+  let mut conditional_attempt = 0
+  let conditional_result = ConditionalRetryPolicy::execute(conditional_retry, fn() {
+    conditional_attempt = conditional_attempt + 1
+    if conditional_attempt == 1 {
+      throw DatabaseException::new("DB_TIMEOUT", "Database timeout")
+    } else if conditional_attempt == 2 {
+      throw ValidationException::new("VALIDATION_ERROR", "Invalid data") // Should not retry
+    }
+    "conditional_success"
+  })
+  
+  match conditional_result {
+    Ok(_) => assert_true(false) // Should not succeed due to non-retryable error
+    Error(e) => assert_eq(ValidationException::get_error_code(e), "VALIDATION_ERROR")
+  }
+  assert_eq(conditional_attempt, 2) // Should have stopped after non-retryable error
 }
 
-// 测试7: 超时错误处理和恢复
-test "超时错误处理和恢复" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "error.timeout.test")
+// Test 4: Fallback Mechanisms
+test "fallback mechanisms" {
+  // Test primary service with fallback
+  let primary_service = TelemetryService::new("primary")
+  let fallback_service = TelemetryService::new("fallback")
   
-  // 创建超时处理Span
-  let timeout_span = Tracer::start_span(tracer, "timeout.handling")
+  let service_with_fallback = ServiceWithFallback::new(primary_service, fallback_service)
   
-  // 模拟超时错误场景
-  let timeout_scenarios = [
-    ("operation.timeout", "操作超时", 30000, "extend"),
-    ("query.timeout", "查询超时", 10000, "optimize"),
-    ("connection.timeout", "连接超时", 5000, "retry"),
-    ("read.timeout", "读取超时", 15000, "buffer"),
-    ("write.timeout", "写入超时", 20000, "batch"),
-    ("idle.timeout", "空闲超时", 60000, "ping")
-  ]
+  // Test successful primary service call
+  TelemetryService::set_availability(primary_service, true)
+  let primary_result = ServiceWithFallback::execute(service_with_fallback, fn(service) {
+    TelemetryService::process_data(service, "test_data")
+  })
   
-  for (timeout_type, timeout_message, timeout_ms, strategy) in timeout_scenarios {
-    // 添加超时错误事件
-    let error_attrs = [
-      ("error.type", StringValue(timeout_type)),
-      ("error.message", StringValue(timeout_message)),
-      ("timeout.duration", IntValue(timeout_ms)),
-      ("timeout.unit", StringValue("milliseconds")),
-      ("error.component", StringValue("timeout.handler"))
-    ]
-    Span::add_event(timeout_span, "timeout.occurred", Some(error_attrs))
-    
-    // 添加超时恢复事件
-    let recovery_attrs = [
-      ("recovery.strategy", StringValue(strategy)),
-      ("recovery.new.timeout", IntValue(timeout_ms * 2)),
-      ("recovery.reason", StringValue("timeout.extension"))
-    ]
-    Span::add_event(timeout_span, "timeout.recovery", Some(recovery_attrs))
-    
-    // 模拟恢复结果
-    let recovery_success = strategy != "optimize" // 假设优化失败
-    let result_attrs = [
-      ("recovery.result", StringValue(if recovery_success { "success" } else { "failed" })),
-      ("final.timeout", IntValue(if recovery_success { timeout_ms * 2 } else { timeout_ms })),
-      ("strategy", StringValue(strategy))
-    ]
-    Span::add_event(timeout_span, "timeout.recovery.completed", Some(result_attrs))
+  match primary_result {
+    Ok(value) => assert_eq(value, "processed_by_primary")
+    Error(_) => assert_true(false)
   }
   
-  Span::set_status(timeout_span, Ok, Some("Timeout handling completed"))
-  Span::end(timeout_span)
+  // Test fallback when primary fails
+  TelemetryService::set_availability(primary_service, false)
+  TelemetryService::set_availability(fallback_service, true)
+  
+  let fallback_result = ServiceWithFallback::execute(service_with_fallback, fn(service) {
+    TelemetryService::process_data(service, "test_data")
+  })
+  
+  match fallback_result {
+    Ok(value) => assert_eq(value, "processed_by_fallback")
+    Error(_) => assert_true(false)
+  }
+  
+  // Test failure when both primary and fallback fail
+  TelemetryService::set_availability(fallback_service, false)
+  
+  let both_fail_result = ServiceWithFallback::execute(service_with_fallback, fn(service) {
+    TelemetryService::process_data(service, "test_data")
+  })
+  
+  match both_fail_result {
+    Ok(_) => assert_true(false)
+    Error(e) => assert_eq(Error::get_error_code(e), "ALL_SERVICES_UNAVAILABLE")
+  }
+  
+  // Test multiple fallbacks (cascade)
+  let tertiary_service = TelemetryService::new("tertiary")
+  let cascade_fallback = ServiceWithMultipleFallbacks::new(
+    primary_service,
+    [fallback_service, tertiary_service]
+  )
+  
+  TelemetryService::set_availability(primary_service, false)
+  TelemetryService::set_availability(fallback_service, false)
+  TelemetryService::set_availability(tertiary_service, true)
+  
+  let cascade_result = ServiceWithMultipleFallbacks::execute(cascade_fallback, fn(service) {
+    TelemetryService::process_data(service, "test_data")
+  })
+  
+  match cascade_result {
+    Ok(value) => assert_eq(value, "processed_by_tertiary")
+    Error(_) => assert_true(false)
+  }
+  
+  // Test fallback metrics
+  let fallback_metrics = ServiceWithFallback::get_metrics(service_with_fallback)
+  assert_eq(FallbackMetrics::primary_calls(fallback_metrics), 1)
+  assert_eq(FallbackMetrics::fallback_calls(fallback_metrics), 1)
+  assert_eq(FallbackMetrics::total_failures(fallback_metrics), 1)
 }
 
-// 测试8: 级联错误处理和恢复
-test "级联错误处理和恢复" {
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "error.cascade.test")
+// Test 5: Error Context and Correlation
+test "error context and correlation" {
+  // Test error context creation
+  let error_context = ErrorContext::new()
   
-  // 模拟级联错误场景
-  let error_chain = [
-    ("service.a.failure", "服务A失败", "primary"),
-    ("service.b.dependency", "服务B依赖失败", "secondary"),
-    ("service.c.propagation", "服务C传播失败", "tertiary"),
-    ("service.d.impact", "服务D受影响", "quaternary")
+  ErrorContext::add_correlation_id(error_context, "corr-12345")
+  ErrorContext::add_trace_id(error_context, "trace-67890")
+  ErrorContext::add_span_id(error_context, "span-11111")
+  ErrorContext::add_user_id(error_context, "user-22222")
+  ErrorContext::add_session_id(error_context, "session-33333")
+  
+  assert_eq(ErrorContext::get_correlation_id(error_context), Some("corr-12345"))
+  assert_eq(ErrorContext::get_trace_id(error_context), Some("trace-67890"))
+  assert_eq(ErrorContext::get_span_id(error_context), Some("span-11111"))
+  assert_eq(ErrorContext::get_user_id(error_context), Some("user-22222"))
+  assert_eq(ErrorContext::get_session_id(error_context), Some("session-33333"))
+  
+  // Test error context propagation
+  let propagated_context = ErrorContext::propagate(error_context)
+  
+  assert_eq(ErrorContext::get_correlation_id(propagated_context), Some("corr-12345"))
+  assert_eq(ErrorContext::get_trace_id(propagated_context), Some("trace-67890"))
+  
+  // Test error with context
+  let contextual_error = ContextualError::new(
+    "PROCESSING_ERROR",
+    "Failed to process telemetry data",
+    error_context
+  )
+  
+  assert_eq(ContextualError::get_error_code(contextual_error), "PROCESSING_ERROR")
+  assert_eq(ContextualError::get_message(contextual_error), "Failed to process telemetry data")
+  assert_eq(ContextualError::get_context(contextual_error), error_context)
+  
+  // Test error context serialization
+  let serialized_context = ErrorContext::serialize(error_context)
+  assert_true(serialized_context.contains("corr-12345"))
+  assert_true(serialized_context.contains("trace-67890"))
+  
+  let deserialized_context = ErrorContext::deserialize(serialized_context)
+  assert_eq(ErrorContext::get_correlation_id(deserialized_context), Some("corr-12345"))
+  assert_eq(ErrorContext::get_trace_id(deserialized_context), Some("trace-67890"))
+  
+  // Test error context in distributed system
+  let distributed_context = DistributedErrorContext::new()
+  
+  DistributedErrorContext::add_service_context(distributed_context, "telemetry-processor", "v1.2.3")
+  DistributedErrorContext::add_service_context(distributed_context, "data-collector", "v2.1.0")
+  DistributedErrorContext::add_service_context(distributed_context, "storage-service", "v1.5.2")
+  
+  assert_eq(DistributedErrorContext::get_service_contexts(distributed_context).length(), 3)
+  
+  // Test error context merging
+  let additional_context = ErrorContext::new()
+  ErrorContext::add_request_id(additional_context, "req-44444")
+  ErrorContext::add_operation(additional_context, "data_processing")
+  
+  let merged_context = ErrorContext::merge(error_context, additional_context)
+  
+  assert_eq(ErrorContext::get_correlation_id(merged_context), Some("corr-12345"))
+  assert_eq(ErrorContext::get_request_id(merged_context), Some("req-44444"))
+  assert_eq(ErrorContext::get_operation(merged_context), Some("data_processing"))
+}
+
+// Test 6: Error Recovery Strategies
+test "error recovery strategies" {
+  // Test checkpoint recovery
+  let checkpoint_manager = CheckpointManager::new("recovery_checkpoints")
+  
+  // Test checkpoint creation
+  let checkpoint1 = CheckpointManager::create_checkpoint(checkpoint_manager, "process_step1")
+  assert_true(Checkpoint::is_valid(checkpoint1))
+  assert_eq(Checkpoint::get_step_name(checkpoint1), "process_step1")
+  
+  // Test checkpoint data storage
+  Checkpoint::store_data(checkpoint1, "processed_items", 100)
+  Checkpoint::store_data(checkpoint1, "last_timestamp", 1234567890)
+  
+  assert_eq(Checkpoint::get_data(checkpoint1, "processed_items"), Some("100"))
+  assert_eq(Checkpoint::get_data(checkpoint1, "last_timestamp"), Some("1234567890"))
+  
+  // Test recovery from checkpoint
+  let recovered_data = CheckpointManager::recover_from_checkpoint(checkpoint_manager, "process_step1")
+  match recovered_data {
+    Some(data) => {
+      assert_eq(data.get("processed_items"), Some("100"))
+      assert_eq(data.get("last_timestamp"), Some("1234567890"))
+    }
+    None => assert_true(false)
+  }
+  
+  // Test state machine recovery
+  let state_machine = StateMachine::new("initial")
+  
+  StateMachine::add_transition(state_machine, "initial", "processing", "start_processing")
+  StateMachine::add_transition(state_machine, "processing", "completed", "complete")
+  StateMachine::add_transition(state_machine, "processing", "error", "handle_error")
+  StateMachine::add_transition(state_machine, "error", "processing", "retry")
+  
+  // Test state transitions
+  StateMachine::transition(state_machine, "start_processing")
+  assert_eq(StateMachine::get_current_state(state_machine), "processing")
+  
+  // Simulate error and recovery
+  StateMachine::transition(state_machine, "handle_error")
+  assert_eq(StateMachine::get_current_state(state_machine), "error")
+  
+  StateMachine::transition(state_machine, "retry")
+  assert_eq(StateMachine::get_current_state(state_machine), "processing")
+  
+  StateMachine::transition(state_machine, "complete")
+  assert_eq(StateMachine::get_current_state(state_machine), "completed")
+  
+  // Test transaction recovery
+  let transaction_manager = TransactionManager::new()
+  
+  // Test transaction creation
+  let transaction = TransactionManager::begin_transaction(transaction_manager)
+  assert_true(Transaction::is_active(transaction))
+  
+  // Test transaction operations
+  Transaction::execute_operation(transaction, "operation1")
+  Transaction::execute_operation(transaction, "operation2")
+  
+  // Simulate transaction failure
+  Transaction::mark_for_rollback(transaction)
+  assert_true(Transaction::needs_rollback(transaction))
+  
+  // Test transaction rollback
+  TransactionManager::rollback_transaction(transaction_manager, transaction)
+  assert_false(Transaction::is_active(transaction))
+  assert_true(Transaction::is_rolled_back(transaction))
+  
+  // Test transaction recovery log
+  let recovery_log = TransactionManager::get_recovery_log(transaction_manager)
+  assert_eq(RecoveryLog::get_transaction_count(recovery_log), 1)
+  assert_eq(RecoveryLog::get_rolled_back_transactions(recovery_log), 1)
+}
+
+// Test 7: Error Monitoring and Alerting
+test "error monitoring and alerting" {
+  // Test error monitor
+  let error_monitor = ErrorMonitor::new()
+  
+  // Test error reporting
+  let telemetry_error = TelemetryException::new(
+    "TELEMETRY_ERROR",
+    "Telemetry processing failed",
+    ErrorDetails::new([("component", "data_processor"), ("severity", "high")])
+  )
+  
+  ErrorMonitor::report_error(error_monitor, telemetry_error)
+  
+  // Test error statistics
+  let error_stats = ErrorMonitor::get_statistics(error_monitor)
+  assert_eq(ErrorStatistics::get_total_errors(error_stats), 1)
+  assert_eq(ErrorStatistics::get_errors_by_type(error_stats, "TELEMETRY_ERROR"), 1)
+  
+  // Test error rate monitoring
+  for i in 0..=10 {
+    ErrorMonitor::report_error(error_monitor, telemetry_error)
+  }
+  
+  let error_rate = ErrorMonitor::get_error_rate(error_monitor, 60000) // Last minute
+  assert_true(error_rate > 0)
+  
+  // Test error alerting
+  let alert_manager = AlertManager::new()
+  
+  // Test alert rule configuration
+  AlertManager::add_rule(alert_manager, AlertRule::new(
+    "high_error_rate",
+    fn(stats) { ErrorStatistics::get_total_errors(stats) > 5 },
+    Warning,
+    "High error rate detected"
+  ))
+  
+  AlertManager::add_rule(alert_manager, AlertRule::new(
+    "critical_error",
+    fn(stats) { ErrorStatistics::get_errors_by_type(stats, "CRITICAL_ERROR") > 0 },
+    Critical,
+    "Critical error occurred"
+  ))
+  
+  // Test alert evaluation
+  let alerts = AlertManager::evaluate_rules(alert_manager, error_stats)
+  
+  assert_true(alerts.length() > 0)
+  for alert in alerts {
+    match alert.severity {
+      Warning => assert_eq(alert.message, "High error rate detected")
+      Critical => assert_eq(alert.message, "Critical error occurred")
+      _ => assert_true(false)
+    }
+  }
+  
+  // Test error aggregation
+  let error_aggregator = ErrorAggregator::new()
+  
+  // Test error grouping
+  ErrorAggregator::group_errors_by_type(error_aggregator, error_monitor.get_errors())
+  let grouped_errors = ErrorAggregator::get_grouped_errors(error_aggregator)
+  
+  assert_eq(grouped_errors.get("TELEMETRY_ERROR").unwrap().length(), 11)
+  
+  // Test error trends analysis
+  let trends = ErrorAggregator::analyze_error_trends(error_aggregator, 3600000) // Last hour
+  assert_true(trends.length() > 0)
+  
+  for trend in trends {
+    assert_true(ErrorTrend::get_error_type(trend).length() > 0)
+    assert_true(ErrorTrend::get_trend_direction(trend) == Increasing || ErrorTrend::get_trend_direction(trend) == Decreasing || ErrorTrend::get_trend_direction(trend) == Stable)
+  }
+}
+
+// Test 8: Graceful Degradation
+test "graceful degradation" {
+  // Test degradation manager
+  let degradation_manager = DegradationManager::new()
+  
+  // Test degradation levels
+  DegradationManager::add_level(degradation_manager, "full", 1.0)
+  DegradationManager::add_level(degradation_manager, "partial", 0.5)
+  DegradationManager::add_level(degradation_manager, "minimal", 0.1)
+  DegradationManager::add_level(degradation_manager, "emergency", 0.01)
+  
+  // Test degradation strategy
+  let telemetry_processor = TelemetryProcessor::new()
+  
+  DegradationManager::set_strategy(degradation_manager, "full", fn() {
+    TelemetryProcessor::process_all_data(telemetry_processor)
+  })
+  
+  DegradationManager::set_strategy(degradation_manager, "partial", fn() {
+    TelemetryProcessor::process_critical_data(telemetry_processor)
+  })
+  
+  DegradationManager::set_strategy(degradation_manager, "minimal", fn() {
+    TelemetryProcessor::process_essential_data(telemetry_processor)
+  })
+  
+  DegradationManager::set_strategy(degradation_manager, "emergency", fn() {
+    TelemetryProcessor::process_emergency_data(telemetry_processor)
+  })
+  
+  // Test degradation based on system health
+  let system_health = SystemHealthMonitor::new()
+  SystemHealthMonitor::set_cpu_usage(system_health, 0.3) // 30% CPU usage
+  SystemHealthMonitor::set_memory_usage(system_health, 0.4) // 40% memory usage
+  SystemHealthMonitor::set_disk_usage(system_health, 0.2) // 20% disk usage
+  
+  let degradation_level = DegradationManager::determine_level(degradation_manager, system_health)
+  assert_eq(degradation_level, "full") // System is healthy
+  
+  // Test degradation under load
+  SystemHealthMonitor::set_cpu_usage(system_health, 0.8) // 80% CPU usage
+  SystemHealthMonitor::set_memory_usage(system_health, 0.7) // 70% memory usage
+  
+  let high_load_level = DegradationManager::determine_level(degradation_manager, system_health)
+  assert_eq(high_load_level, "partial") // System under load
+  
+  // Test emergency degradation
+  SystemHealthMonitor::set_cpu_usage(system_health, 0.95) // 95% CPU usage
+  SystemHealthMonitor::set_memory_usage(system_health, 0.9) // 90% memory usage
+  
+  let emergency_level = DegradationManager::determine_level(degradation_manager, system_health)
+  assert_eq(emergency_level, "emergency") // System in critical state
+  
+  // Test degradation execution
+  let degradation_result = DegradationManager::execute_degradation(degradation_manager, emergency_level)
+  assert_true(degradation_result)
+  
+  // Test degradation metrics
+  let degradation_metrics = DegradationManager::get_metrics(degradation_manager)
+  assert_eq(DegradationMetrics::get_degradation_count(degradation_metrics, "emergency"), 1)
+  assert_eq(DegradationMetrics::get_current_level(degradation_metrics), "emergency")
+}
+
+// Test 9: Error Recovery Testing
+test "error recovery testing" {
+  // Test chaos engineering
+  let chaos_engineer = ChaosEngineer::new()
+  
+  // Test fault injection
+  ChaosEngineer::inject_fault(chaos_engineer, "network_delay", 0.3, 1000) // 30% chance, 1000ms delay
+  ChaosEngineer::inject_fault(chaos_engineer, "service_failure", 0.1, 5000) // 10% chance, 5s duration
+  ChaosEngineer::inject_fault(chaos_engineer, "memory_leak", 0.05, 100) // 5% chance, 100MB leak
+  
+  // Test system resilience under chaos
+  let resilient_system = ResilientSystem::new()
+  
+  let chaos_results = []
+  
+  // Run system under chaos conditions
+  for i in 0..=100 {
+    let result = ResilientSystem::execute_operation(resilient_system, "process_telemetry")
+    chaos_results.push(result)
+  }
+  
+  // Analyze results
+  let successful_operations = 0
+  let failed_operations = 0
+  
+  for result in chaos_results {
+    match result {
+      Ok(_) => successful_operations = successful_operations + 1
+      Error(_) => failed_operations = failed_operations + 1
+    }
+  }
+  
+  // System should maintain reasonable success rate under chaos
+  let success_rate = successful_operations / (successful_operations + failed_operations)
+  assert_true(success_rate > 0.7) // At least 70% success rate
+  
+  // Test recovery time measurement
+  let recovery_monitor = RecoveryMonitor::new()
+  
+  // Simulate system failure and recovery
+  RecoveryMonitor::start_failure_simulation(recovery_monitor)
+  
+  // Simulate recovery process
+  let recovery_steps = [
+    "detect_failure",
+    "isolate_component",
+    "activate_fallback",
+    "restore_component",
+    "verify_health"
   ]
   
-  for (error_type, error_message, impact_level) in error_chain {
-    // 创建级联错误日志属性
-    let error_attrs = Attributes::new()
-    Attributes::set(error_attrs, "error.type", StringValue(error_type))
-    Attributes::set(error_attrs, "error.message", StringValue(error_message))
-    Attributes::set(error_attrs, "error.impact.level", StringValue(impact_level))
-    Attributes::set(error_attrs, "error.chain.position", IntValue(if impact_level == "primary" { 1 } else if impact_level == "secondary" { 2 } else if impact_level == "tertiary" { 3 } else { 4 }))
-    Attributes::set(error_attrs, "error.component", StringValue("cascade.detector"))
-    
-    // 记录级联错误日志
-    let error_log = LogRecord::new_with_context(
-      Error,
-      Some("Cascade error detected: " + error_message),
-      Some(error_attrs),
-      None,
-      None,
-      None,
-      None,
-      None
-    )
-    Logger::emit(logger, error_log)
-    
-    // 创建级联恢复日志属性
-    let recovery_attrs = Attributes::new()
-    Attributes::set(recovery_attrs, "recovery.strategy", StringValue("isolation"))
-    Attributes::set(recovery_attrs, "recovery.impact.level", StringValue(impact_level))
-    Attributes::set(recovery_attrs, "recovery.isolation.applied", BoolValue(true))
-    
-    // 记录级联恢复日志
-    let recovery_log = LogRecord::new_with_context(
-      Info,
-      Some("Cascade recovery applied: isolation at " + impact_level + " level"),
-      Some(recovery_attrs),
-      None,
-      None,
-      None,
-      None,
-      None
-    )
-    Logger::emit(logger, recovery_log)
-    
-    // 记录级联控制结果
-    let control_attrs = Attributes::new()
-    Attributes::set(control_attrs, "control.status", StringValue("contained"))
-    Attributes::set(control_attrs, "control.impact.level", StringValue(impact_level))
-    Attributes::set(control_attrs, "control.propagation.stopped", BoolValue(true))
-    
-    let control_log = LogRecord::new_with_context(
-      Info,
-      Some("Cascade error contained at " + impact_level + " level"),
-      Some(control_attrs),
-      None,
-      None,
-      None,
-      None,
-      None
-    )
-    Logger::emit(logger, control_log)
+  for step in recovery_steps {
+    RecoveryMonitor::record_recovery_step(recovery_monitor, step)
+  }
+  
+  RecoveryMonitor::end_failure_simulation(recovery_monitor)
+  
+  // Test recovery metrics
+  let recovery_metrics = RecoveryMonitor::get_metrics(recovery_monitor)
+  assert_true(RecoveryMetrics::get_total_recovery_time(recovery_metrics) > 0)
+  assert_eq(RecoveryMetrics::get_recovery_steps(recovery_metrics), 5)
+  
+  // Test recovery time objectives
+  let rto = 30000 // 30 seconds Recovery Time Objective
+  let rpo = 60000 // 60 seconds Recovery Point Objective
+  
+  assert_true(RecoveryMetrics::get_total_recovery_time(recovery_metrics) < rto)
+  assert_true(RecoveryMetrics::get_data_loss(recovery_metrics) < rpo)
+}
+
+// Test 10: Error Documentation and Knowledge Base
+test "error documentation and knowledge base" {
+  // Test error documentation
+  let error_documentation = ErrorDocumentation::new()
+  
+  // Test error documentation creation
+  ErrorDocumentation::add_error_documentation(error_documentation, ErrorDoc::new(
+    "TELEMETRY_ERROR",
+    "Telemetry Processing Error",
+    "Error occurred during telemetry data processing",
+    [
+      "Check data format",
+      "Verify data source",
+      "Review processing configuration"
+    ],
+    [
+      "Invalid data format",
+      "Data source unavailable",
+      "Processing configuration error"
+    ],
+    "https://docs.example.com/telemetry-error"
+  ))
+  
+  // Test error documentation retrieval
+  let error_doc = ErrorDocumentation::get_documentation(error_documentation, "TELEMETRY_ERROR")
+  match error_doc {
+    Some(doc) => {
+      assert_eq(ErrorDoc::get_error_code(doc), "TELEMETRY_ERROR")
+      assert_eq(ErrorDoc::get_title(doc), "Telemetry Processing Error")
+      assert_eq(ErrorDoc::get_troubleshooting_steps(doc).length(), 3)
+      assert_eq(ErrorDoc::get_common_causes(doc).length(), 3)
+    }
+    None => assert_true(false)
+  }
+  
+  // Test error knowledge base
+  let knowledge_base = ErrorKnowledgeBase::new()
+  
+  // Test knowledge base entry creation
+  KnowledgeBase::add_entry(knowledge_base, KnowledgeEntry::new(
+    "TELEMETRY_ERROR",
+    "How to handle telemetry processing errors",
+    "This article explains common causes and solutions for telemetry processing errors",
+    ["telemetry", "processing", "error"],
+    "2023-01-15",
+    "john.doe@example.com"
+  ))
+  
+  // Test knowledge base search
+  let search_results = KnowledgeBase::search(knowledge_base, "telemetry error")
+  assert_eq(search_results.length(), 1)
+  
+  let search_result = search_results[0]
+  assert_eq(KnowledgeEntry::get_error_code(search_result), "TELEMETRY_ERROR")
+  assert_true(KnowledgeEntry::get_title(search_result).contains("telemetry"))
+  
+  // Test error resolution tracking
+  let resolution_tracker = ErrorResolutionTracker::new()
+  
+  // Test resolution tracking
+  let resolution_id = ResolutionTracker::track_resolution(resolution_tracker, "TELEMETRY_ERROR", "Fixed data format issue")
+  assert_true(ResolutionTracker::is_resolution_id_valid(resolution_id))
+  
+  ResolutionTracker::add_step(resolution_tracker, resolution_id, "Identified root cause")
+  ResolutionTracker::add_step(resolution_tracker, resolution_id, "Applied fix")
+  ResolutionTracker::add_step(resolution_tracker, resolution_id, "Verified resolution")
+  
+  let resolution = ResolutionTracker::get_resolution(resolution_tracker, resolution_id)
+  match resolution {
+    Some(res) => {
+      assert_eq(Resolution::get_error_code(res), "TELEMETRY_ERROR")
+      assert_eq(Resolution::get_solution(res), "Fixed data format issue")
+      assert_eq(Resolution::get_steps(res).length(), 3)
+    }
+    None => assert_true(false)
+  }
+  
+  // Test error pattern recognition
+  let pattern_recognizer = ErrorPatternRecognizer::new()
+  
+  // Test pattern learning
+  let error_instances = [
+    "TELEMETRY_ERROR: Data format invalid at line 10",
+    "TELEMETRY_ERROR: Data format invalid at line 25",
+    "TELEMETRY_ERROR: Data format invalid at line 42",
+    "NETWORK_ERROR: Connection timeout to server",
+    "NETWORK_ERROR: Connection timeout to server",
+    "NETWORK_ERROR: Connection timeout to server"
+  ]
+  
+  for error in error_instances {
+    PatternRecognizer::learn_pattern(pattern_recognizer, error)
+  }
+  
+  // Test pattern recognition
+  let patterns = PatternRecognizer::get_detected_patterns(pattern_recognizer)
+  assert_eq(patterns.length(), 2)
+  
+  for pattern in patterns {
+    assert_true(ErrorPattern::get_frequency(pattern) > 1)
+    assert_true(ErrorPattern::get_pattern_string(pattern).contains("ERROR"))
+  }
+  
+  // Test pattern-based suggestions
+  let suggestions = PatternRecognizer::get_suggestions(pattern_recognizer, "TELEMETRY_ERROR: Data format invalid at line 55")
+  assert_true(suggestions.length() > 0)
+  
+  for suggestion in suggestions {
+    assert_true(PatternSuggestion::get_confidence(suggestion) > 0.0)
+    assert_true(PatternSuggestion::get_suggestion_text(suggestion).length() > 0)
   }
 }

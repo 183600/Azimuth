@@ -1,681 +1,524 @@
-// Azimuth 网络通信遥测测试用例
-// 专注于测试遥测系统中的网络通信功能和遥测数据传输
+// Azimuth Telemetry System - Network Communication Telemetry Tests
+// This file contains comprehensive test cases for network communication and telemetry
 
-// 测试1: HTTP遥测数据传输
-test "HTTP遥测数据传输测试" {
-  // 创建HTTP遥测客户端
-  let telemetry_client = HTTPTelemetryClient({
-    endpoint: "https://telemetry.example.com/api/v1/metrics",
-    api_key: "test-api-key-12345",
-    timeout_ms: 5000,
-    retry_count: 3
-  })
+// Test 1: HTTP Client Telemetry
+test "http client telemetry" {
+  // Test HTTP client creation with telemetry
+  let telemetry_client = HttpClient::with_telemetry("test-service")
   
-  // 创建遥测数据
-  let telemetry_data = [
-    TelemetryMetric({
-      name: "cpu.usage",
-      value: 75.5,
-      timestamp: 1640995200,
-      tags: [("host", "server1"), ("region", "us-west")]
-    }),
-    TelemetryMetric({
-      name: "memory.usage",
-      value: 60.2,
-      timestamp: 1640995200,
-      tags: [("host", "server1"), ("region", "us-west")]
-    }),
-    TelemetryMetric({
-      name: "disk.usage",
-      value: 45.8,
-      timestamp: 1640995200,
-      tags: [("host", "server1"), ("region", "us-west")]
-    })
+  // Test request creation with telemetry context
+  let headers = [
+    ("Content-Type", "application/json"),
+    ("X-Trace-ID", "trace-123"),
+    ("X-Span-ID", "span-456")
   ]
   
-  // 测试数据传输
-  let transmission_result = send_telemetry_data(telemetry_client, telemetry_data)
+  let request = HttpRequest::with_telemetry(
+    "GET",
+    "https://api.example.com/data",
+    headers,
+    None,
+    "test-operation",
+    [("operation.type", "http.request")]
+  )
   
-  match transmission_result {
-    TransmissionSuccess(response) => {
-      assert_eq(response.status_code, 200)
-      assert_eq(response.message, "Metrics received successfully")
-      assert_eq(response.metrics_count, 3)
-    }
-    TransmissionError(error) => assert_true(false)
-  }
+  assert_eq(HttpRequest::http_method(request), "GET")
+  assert_eq(HttpRequest::url(request), "https://api.example.com/data")
+  assert_eq(HttpRequest::telemetry_operation(request), "test-operation")
   
-  // 测试网络超时处理
-  let timeout_client = HTTPTelemetryClient({
-    endpoint: "https://timeout.example.com/api/v1/metrics",
-    api_key: telemetry_client.api_key,
-    timeout_ms: 1, // 极短超时
-    retry_count: 1
-  })
-  
-  let timeout_result = send_telemetry_data(timeout_client, telemetry_data)
-  match timeout_result {
-    TransmissionSuccess(_) => assert_true(false)
-    TransmissionError(error) => assert_eq(error, "Request timeout")
-  }
-}
-
-// 测试2: WebSocket实时遥测流
-test "WebSocket实时遥测流测试" {
-  // 创建WebSocket遥测流客户端
-  let websocket_client = WebSocketTelemetryClient({
-    endpoint: "wss://telemetry.example.com/ws/metrics",
-    auth_token: "bearer-token-67890",
-    heartbeat_interval_ms: 30000,
-    reconnect_attempts: 5
-  })
-  
-  // 测试WebSocket连接
-  let connection_result = connect_websocket(websocket_client)
-  match connection_result {
-    WebSocketConnected => assert_true(true)
-    WebSocketConnectionError(error) => assert_true(false)
-  }
-  
-  // 测试实时数据流传输
-  let realtime_metrics = [
-    RealtimeMetric({
-      name: "request.latency",
-      value: 125.5,
-      timestamp: 1640995200,
-      service: "api-gateway"
-    }),
-    RealtimeMetric({
-      name: "error.rate",
-      value: 0.01,
-      timestamp: 1640995201,
-      service: "api-gateway"
-    }),
-    RealtimeMetric({
-      name: "throughput",
-      value: 1024.0,
-      timestamp: 1640995202,
-      service: "api-gateway"
-    })
+  // Test response handling with telemetry
+  let response_headers = [
+    ("Content-Type", "application/json"),
+    ("X-Response-Time", "150ms")
   ]
   
-  let stream_result = stream_realtime_metrics(websocket_client, realtime_metrics)
-  match stream_result {
-    StreamSuccess(metrics_sent) => {
-      assert_eq(metrics_sent, 3)
+  let response = HttpResponse::with_telemetry(
+    200,
+    response_headers,
+    Some("{\"data\":\"success\"}"),
+    [("response.size", "23"), ("response.time", "150")]
+  )
+  
+  assert_eq(HttpResponse::status_code(response), 200)
+  assert_eq(HttpResponse::telemetry_attributes(response).length(), 2)
+  
+  // Test telemetry metrics collection
+  let metrics = HttpClient::get_telemetry_metrics(telemetry_client)
+  assert_eq(HttpMetrics::request_count(metrics), 1)
+  assert_eq(HttpMetrics::success_count(metrics), 1)
+  assert_eq(HttpMetrics::error_count(metrics), 0)
+}
+
+// Test 2: WebSocket Telemetry
+test "websocket telemetry" {
+  // Test WebSocket client with telemetry
+  let ws_client = WebSocketClient::with_telemetry("websocket-service")
+  
+  // Test connection with telemetry
+  let connection = WebSocketClient::connect_with_telemetry(
+    ws_client,
+    "wss://echo.example.com/socket",
+    [("connection.type", "websocket"), ("service.name", "echo")]
+  )
+  
+  assert_true(WebSocketClient::is_connected(connection))
+  assert_eq(WebSocketClient::get_connection_id(connection), "ws-conn-123")
+  
+  // Test message sending with telemetry
+  let message = WebSocketMessage::text("Hello, WebSocket!")
+  let send_result = WebSocketClient::send_with_telemetry(
+    connection,
+    message,
+    [("message.type", "text"), ("message.size", "18")]
+  )
+  
+  assert_true(send_result)
+  
+  // Test message receiving with telemetry
+  let received = WebSocketClient::receive_with_telemetry(
+    connection,
+    [("receive.operation", "message.process")]
+  )
+  
+  match received {
+    Some(msg) => {
+      match WebSocketMessage::content(msg) {
+        Text(content) => assert_eq(content, "Hello, WebSocket!")
+        _ => assert_true(false)
+      }
     }
-    StreamError(error) => assert_true(false)
+    None => assert_true(false)
   }
   
-  // 测试连接断开和重连
-  let disconnect_result = disconnect_websocket(websocket_client)
-  match disconnect_result {
-    WebSocketDisconnected => assert_true(true)
-    WebSocketDisconnectionError(_) => assert_true(false)
-  }
-  
-  // 测试自动重连
-  let reconnect_result = auto_reconnect_websocket(websocket_client)
-  match reconnect_result {
-    WebSocketReconnected => assert_true(true)
-    WebSocketReconnectFailed(_) => assert_true(false)
-  }
+  // Test telemetry metrics
+  let ws_metrics = WebSocketClient::get_telemetry_metrics(connection)
+  assert_eq(WebSocketMetrics::messages_sent(ws_metrics), 1)
+  assert_eq(WebSocketMetrics::messages_received(ws_metrics), 1)
+  assert_eq(WebSocketMetrics::connection_duration(ws_metrics) > 0, true)
 }
 
-// 测试3: 遥测数据压缩传输
-test "遥测数据压缩传输测试" {
-  // 创建压缩传输客户端
-  let compression_client = CompressionTelemetryClient({
-    endpoint: "https://telemetry.example.com/api/v1/compressed",
-    compression_algorithm: "gzip",
-    compression_level: 6,
-    api_key: "compression-test-key"
-  })
+// Test 3: TCP/UDP Socket Telemetry
+test "tcp_udp_socket telemetry" {
+  // Test TCP socket with telemetry
+  let tcp_socket = TcpSocket::with_telemetry("tcp-service")
   
-  // 创建大量遥测数据
-  let large_telemetry_data = generate_large_telemetry_dataset(1000)
+  // Test connection with telemetry
+  let tcp_connection = TcpSocket::connect_with_telemetry(
+    tcp_socket,
+    "tcp.example.com",
+    8080,
+    [("protocol", "tcp"), ("port", "8080")]
+  )
   
-  // 测试未压缩数据大小
-  let uncompressed_size = calculate_data_size(large_telemetry_data)
-  assert_true(uncompressed_size > 100000) // 确保数据量足够大
+  assert_true(TcpSocket::is_connected(tcp_connection))
   
-  // 测试压缩传输
-  let compression_result = send_compressed_telemetry(compression_client, large_telemetry_data)
-  match compression_result {
-    CompressionTransmissionSuccess(stats) => {
-      assert_true(stats.compression_ratio > 0.5) // 压缩率至少50%
-      assert_eq(stats.original_size, uncompressed_size)
-      assert_true(stats.compressed_size < stats.original_size)
-      assert_eq(stats.status_code, 200)
+  // Test data transmission with telemetry
+  let data = "Hello, TCP Server!"
+  let send_result = TcpSocket::send_with_telemetry(
+    tcp_connection,
+    data.to_bytes(),
+    [("operation", "send"), ("data.size", data.length().to_string())]
+  )
+  
+  assert_true(send_result)
+  
+  // Test receiving data with telemetry
+  let received = TcpSocket::receive_with_telemetry(
+    tcp_connection,
+    1024,
+    [("operation", "receive")]
+  )
+  
+  match received {
+    Some(data) => assert_eq(data.length(), data.length())
+    None => assert_true(false)
+  }
+  
+  // Test UDP socket with telemetry
+  let udp_socket = UdpSocket::with_telemetry("udp-service")
+  
+  // Test UDP send with telemetry
+  let udp_data = "Hello, UDP Server!"
+  let udp_send_result = UdpSocket::send_to_with_telemetry(
+    udp_socket,
+    udp_data.to_bytes(),
+    "udp.example.com",
+    9090,
+    [("protocol", "udp"), ("port", "9090")]
+  )
+  
+  assert_true(udp_send_result)
+  
+  // Test telemetry metrics
+  let tcp_metrics = TcpSocket::get_telemetry_metrics(tcp_connection)
+  assert_eq(TcpMetrics::bytes_sent(tcp_metrics), data.length())
+  assert_eq(TcpMetrics::connection_uptime(tcp_metrics) > 0, true)
+  
+  let udp_metrics = UdpSocket::get_telemetry_metrics(udp_socket)
+  assert_eq(UdpMetrics::packets_sent(udp_metrics), 1)
+  assert_eq(UdpMetrics::bytes_sent(udp_metrics), udp_data.length())
+}
+
+// Test 4: Network Telemetry Context Propagation
+test "network telemetry context propagation" {
+  // Test context creation
+  let trace_id = "trace-789"
+  let span_id = "span-101"
+  let baggage = [("user.id", "12345"), ("session.id", "session-abc")]
+  
+  let telemetry_context = TelemetryContext::new(trace_id, span_id, baggage)
+  
+  assert_eq(TelemetryContext::trace_id(telemetry_context), trace_id)
+  assert_eq(TelemetryContext::span_id(telemetry_context), span_id)
+  assert_eq(TelemetryContext::baggage_items(telemetry_context).length(), 2)
+  
+  // Test context injection into HTTP headers
+  let injected_headers = TelemetryContext::inject_to_headers(telemetry_context)
+  
+  assert_eq(injected_headers.get("X-Trace-ID"), Some(trace_id))
+  assert_eq(injected_headers.get("X-Span-ID"), Some(span_id))
+  assert_eq(injected_headers.get("X-Baggage-User-ID"), Some("12345"))
+  
+  // Test context extraction from headers
+  let extracted_context = TelemetryContext::extract_from_headers(injected_headers)
+  
+  assert_eq(TelemetryContext::trace_id(extracted_context), trace_id)
+  assert_eq(TelemetryContext::span_id(extracted_context), span_id)
+  assert_eq(TelemetryContext::baggage_items(extracted_context).length(), 2)
+  
+  // Test context propagation through network calls
+  let client = HttpClient::with_context(telemetry_context)
+  let request = HttpRequest::with_context(
+    "POST",
+    "https://api.example.com/propagate",
+    [("Content-Type", "application/json")],
+    Some("{\"test\":\"data\"}"),
+    telemetry_context
+  )
+  
+  // Verify context is preserved in request
+  let request_context = HttpRequest::get_telemetry_context(request)
+  assert_eq(TelemetryContext::trace_id(request_context), trace_id)
+  assert_eq(TelemetryContext::span_id(request_context), span_id)
+}
+
+// Test 5: Network Performance Telemetry
+test "network performance telemetry" {
+  // Test performance monitoring setup
+  let performance_monitor = NetworkPerformanceMonitor::new()
+  
+  // Test latency measurement
+  let start_time = performance_monitor.start_operation("api_call")
+  
+  // Simulate network operation
+  // In real scenario, this would be an actual network call
+  let operation_result = true // Simulated success
+  
+  let end_time = performance_monitor.end_operation("api_call")
+  let latency = performance_monitor.calculate_latency(start_time, end_time)
+  
+  assert_true(latency >= 0)
+  
+  // Test throughput measurement
+  let data_size = 1024 // 1KB
+  let throughput_start = performance_monitor.start_throughput_measurement()
+  
+  // Simulate data transfer
+  let transfer_result = true // Simulated success
+  
+  let throughput_end = performance_monitor.end_throughput_measurement(throughput_start, data_size)
+  let throughput = performance_monitor.calculate_throughput(throughput_start, throughput_end, data_size)
+  
+  assert_true(throughput > 0)
+  
+  // Test error rate calculation
+  performance_monitor.record_success("api_call")
+  performance_monitor.record_success("api_call")
+  performance_monitor.record_error("api_call")
+  
+  let error_rate = performance_monitor.calculate_error_rate("api_call")
+  assert_eq(error_rate, 0.33) // 1 error out of 3 total calls (approximately)
+  
+  // Test performance metrics collection
+  let metrics = performance_monitor.get_metrics()
+  assert_eq(PerformanceMetrics::operation_count(metrics, "api_call"), 3)
+  assert_eq(PerformanceMetrics::success_count(metrics, "api_call"), 2)
+  assert_eq(PerformanceMetrics::error_count(metrics, "api_call"), 1)
+  assert_eq(PerformanceMetrics::average_latency(metrics, "api_call"), latency)
+}
+
+// Test 6: Network Resilience Telemetry
+test "network resilience telemetry" {
+  // Test circuit breaker with telemetry
+  let circuit_breaker = CircuitBreaker::with_telemetry(
+    "api-service",
+    3, // Failure threshold
+    1000 // Recovery timeout in ms
+  )
+  
+  assert_eq(CircuitBreaker::get_state(circuit_breaker), Closed)
+  
+  // Test failure recording
+  CircuitBreaker::record_failure(circuit_breaker)
+  CircuitBreaker::record_failure(circuit_breaker)
+  CircuitBreaker::record_failure(circuit_breaker)
+  
+  // Circuit should open after threshold failures
+  assert_eq(CircuitBreaker::get_state(circuit_breaker), Open)
+  
+  // Test telemetry metrics
+  let cb_metrics = CircuitBreaker::get_telemetry_metrics(circuit_breaker)
+  assert_eq(CircuitBreakerMetrics::failure_count(cb_metrics), 3)
+  assert_eq(CircuitBreakerMetrics::state_transitions(cb_metrics), 1)
+  
+  // Test retry mechanism with telemetry
+  let retry_policy = RetryPolicy::with_telemetry(
+    3, // Max attempts
+    100 // Base delay in ms
+  )
+  
+  let retry_result = RetryPolicy::execute_with_retry(
+    retry_policy,
+    fn() {
+      // Simulate operation that fails twice then succeeds
+      static mut attempt_count = 0
+      attempt_count = attempt_count + 1
+      
+      if attempt_count <= 2 {
+        Error("Temporary failure")
+      } else {
+        Ok("Success after retries")
+      }
     }
-    CompressionTransmissionError(error) => assert_true(false)
+  )
+  
+  match retry_result {
+    Ok(result) => assert_eq(result, "Success after retries")
+    Error(_) => assert_true(false)
   }
   
-  // 测试不同压缩算法
-  let deflate_client = CompressionTelemetryClient({
-    endpoint: compression_client.endpoint,
-    compression_algorithm: "deflate",
-    compression_level: 6,
-    api_key: compression_client.api_key
-  })
+  // Test retry telemetry metrics
+  let retry_metrics = RetryPolicy::get_telemetry_metrics(retry_policy)
+  assert_eq(RetryMetrics::total_attempts(retry_metrics), 3)
+  assert_eq(RetryMetrics::successful_retries(retry_metrics), 1)
+  assert_eq(RetryMetrics::failed_retries(retry_metrics), 2)
+}
+
+// Test 7: Network Security Telemetry
+test "network security telemetry" {
+  // Test TLS/SSL telemetry
+  let tls_client = TlsClient::with_telemetry("secure-service")
   
-  let deflate_result = send_compressed_telemetry(deflate_client, large_telemetry_data)
-  match deflate_result {
-    CompressionTransmissionSuccess(stats) => {
-      assert_true(stats.compression_ratio > 0.4) // deflate压缩率至少40%
+  // Test secure connection with telemetry
+  let secure_connection = TlsClient::connect_with_telemetry(
+    tls_client,
+    "secure.example.com",
+    443,
+    [("security.protocol", "tls"), ("security.version", "1.3")]
+  )
+  
+  assert_true(TlsClient::is_connected(secure_connection))
+  
+  // Test certificate verification telemetry
+  let cert_info = TlsClient::get_certificate_info(secure_connection)
+  assert_eq(CertificateInfo::is_valid(cert_info), true)
+  assert_eq(CertificateInfo::issuer(cert_info), "Example CA")
+  assert_eq(CertificateInfo::subject(cert_info), "secure.example.com")
+  
+  // Test handshake telemetry
+  let handshake_metrics = TlsClient::get_handshake_metrics(secure_connection)
+  assert_eq(HandshakeMetrics::handshake_duration(handshake_metrics) > 0, true)
+  assert_eq(HandshakeMetrics::cipher_suite(handshake_metrics), "TLS_AES_256_GCM_SHA384")
+  
+  // Test authentication telemetry
+  let auth_client = AuthenticatedClient::with_telemetry("auth-service")
+  
+  // Test token-based authentication with telemetry
+  let auth_result = AuthenticatedClient::authenticate_with_token(
+    auth_client,
+    "bearer-token-123",
+    [("auth.method", "bearer"), ("auth.type", "jwt")]
+  )
+  
+  match auth_result {
+    Ok(session) => {
+      assert_true(AuthenticatedClient::is_authenticated(session))
+      assert_eq(AuthSession::get_token_type(session), "Bearer")
     }
-    CompressionTransmissionError(_) => assert_true(false)
-  }
-}
-
-// 测试4: 批量遥测数据传输
-test "批量遥测数据传输测试" {
-  // 创建批量传输客户端
-  let batch_client = BatchTelemetryClient({
-    endpoint: "https://telemetry.example.com/api/v1/batch",
-    batch_size: 100,
-    flush_interval_ms: 5000,
-    max_buffer_size: 10000,
-    api_key: "batch-test-key"
-  })
-  
-  // 创建批量数据
-  let batch_data = generate_batch_telemetry_data(250) // 250个数据点，应该分成3批
-  
-  // 测试批量传输
-  let batch_result = send_batch_telemetry(batch_client, batch_data)
-  match batch_result {
-    BatchTransmissionSuccess(stats) => {
-      assert_eq(stats.total_metrics, 250)
-      assert_eq(stats.batch_count, 3) // 100 + 100 + 50
-      assert_eq(stats.successful_batches, 3)
-      assert_eq(stats.failed_batches, 0)
-    }
-    BatchTransmissionError(error) => assert_true(false)
+    Error(_) => assert_true(false)
   }
   
-  // 测试部分批次失败处理
-  let failing_batch_client = BatchTelemetryClient({
-    endpoint: "https://telemetry.example.com/api/v1/batch",
-    batch_size: 100,
-    flush_interval_ms: 5000,
-    max_buffer_size: 10000,
-    api_key: "batch-test-key",
-    simulate_failure_rate: 0.3 // 30%失败率
-  })
-  
-  let partial_failure_result = send_batch_telemetry(failing_batch_client, batch_data)
-  match partial_failure_result {
-    BatchTransmissionSuccess(stats) => {
-      assert_eq(stats.total_metrics, 250)
-      assert_eq(stats.batch_count, 3)
-      assert_true(stats.successful_batches >= 2) // 至少2批成功
-      assert_true(stats.failed_batches >= 1) // 至少1批失败
-    }
-    BatchTransmissionError(_) => assert_true(false)
-  }
+  // Test security metrics
+  let security_metrics = AuthenticatedClient::get_security_metrics(auth_client)
+  assert_eq(SecurityMetrics::authentication_attempts(security_metrics), 1)
+  assert_eq(SecurityMetrics::successful_authentications(security_metrics), 1)
+  assert_eq(SecurityMetrics::failed_authentications(security_metrics), 0)
 }
 
-// 测试5: 遥测数据加密传输
-test "遥测数据加密传输测试" {
-  // 创建加密传输客户端
-  let encryption_client = EncryptionTelemetryClient({
-    endpoint: "https://telemetry.example.com/api/v1/encrypted",
-    encryption_algorithm: "AES-256-GCM",
-    encryption_key: "32-byte-encryption-key-1234567890",
-    api_key: "encryption-test-key"
-  })
+// Test 8: Network Service Discovery Telemetry
+test "network service discovery telemetry" {
+  // Test service registry with telemetry
+  let service_registry = ServiceRegistry::with_telemetry("discovery-service")
   
-  // 创建敏感遥测数据
-  let sensitive_telemetry_data = [
-    SensitiveTelemetryMetric({
-      name: "user.authentication.events",
-      value: 15,
-      timestamp: 1640995200,
-      user_id: "user123",
-      session_id: "session456",
-      tags: [("sensitivity", "high"), (" pii", "true")]
-    }),
-    SensitiveTelemetryMetric({
-      name: "payment.transactions",
-      value: 1250.75,
-      timestamp: 1640995201,
-      user_id: "user789",
-      transaction_id: "txn123456",
-      tags: [("sensitivity", "high"), ("financial", "true")]
-    })
-  ]
+  // Test service registration with telemetry
+  let service_info = ServiceInfo::new(
+    "user-service",
+    "1.0.0",
+    ["http://user-service-1:8080", "http://user-service-2:8080"],
+    [("environment", "production"), ("region", "us-west")]
+  )
   
-  // 测试加密传输
-  let encryption_result = send_encrypted_telemetry(encryption_client, sensitive_telemetry_data)
-  match encryption_result {
-    EncryptionTransmissionSuccess(stats) => {
-      assert_eq(stats.encrypted_metrics, 2)
-      assert_true(stats.encrypted_size > 0)
-      assert_eq(stats.status_code, 200)
-      assert_eq(stats.decryption_successful, true)
-    }
-    EncryptionTransmissionError(error) => assert_true(false)
-  }
+  let registration_result = ServiceRegistry::register_with_telemetry(
+    service_registry,
+    service_info,
+    [("operation", "service.register"), ("service.type", "user-service")]
+  )
   
-  // 测试密钥验证
-  let invalid_key_client = EncryptionTelemetryClient({
-    endpoint: encryption_client.endpoint,
-    encryption_algorithm: encryption_client.encryption_algorithm,
-    encryption_key: "invalid-key",
-    api_key: encryption_client.api_key
-  })
+  assert_true(registration_result)
   
-  let invalid_key_result = send_encrypted_telemetry(invalid_key_client, sensitive_telemetry_data)
-  match invalid_key_result {
-    EncryptionTransmissionSuccess(_) => assert_true(false)
-    EncryptionTransmissionError(error) => assert_eq(error, "Invalid encryption key")
-  }
-}
-
-// 测试6: 遥测网络性能监控
-test "遥测网络性能监控测试" {
-  // 创建网络性能监控器
-  let network_monitor = NetworkPerformanceMonitor({
-    monitoring_enabled: true,
-    metrics_collection_interval_ms: 1000,
-    performance_history_size: 100
-  })
+  // Test service discovery with telemetry
+  let discovered_services = ServiceRegistry::discover_with_telemetry(
+    service_registry,
+    "user-service",
+    [("operation", "service.discover"), ("service.name", "user-service")]
+  )
   
-  // 测试网络延迟监控
-  let latency_result = measure_network_latency(network_monitor, "telemetry.example.com", 80)
-  match latency_result {
-    LatencyMeasurementSuccess(latency_ms) => {
-      assert_true(latency_ms > 0)
-      assert_true(latency_ms < 5000) // 合理的延迟范围
-    }
-    LatencyMeasurementError(error) => assert_true(false)
+  assert_eq(discovered_services.length(), 2)
+  assert_eq(discovered_services[0].name, "user-service")
+  assert_eq(discovered_services[1].name, "user-service")
+  
+  // Test health check with telemetry
+  let health_check_result = ServiceRegistry::health_check_with_telemetry(
+    service_registry,
+    "user-service",
+    [("operation", "health.check"), ("check.type", "liveness")]
+  )
+  
+  assert_true(health_check_result)
+  
+  // Test load balancer with telemetry
+  let load_balancer = LoadBalancer::with_telemetry("round-robin")
+  
+  // Test service selection with telemetry
+  let selected_service = LoadBalancer::select_service_with_telemetry(
+    load_balancer,
+    discovered_services,
+    [("algorithm", "round-robin"), ("selection.strategy", "healthy-first")]
+  )
+  
+  match selected_service {
+    Some(service) => assert_eq(service.name, "user-service")
+    None => assert_true(false)
   }
   
-  // 测试带宽监控
-  let bandwidth_result = measure_network_bandwidth(network_monitor, "telemetry.example.com", 8080)
-  match bandwidth_result {
-    BandwidthMeasurementSuccess(bandwidth_bps) => {
-      assert_true(bandwidth_bps > 0)
-      assert_true(bandwidth_bps < 1000000000) // 合理的带宽范围（小于1Gbps）
-    }
-    BandwidthMeasurementError(error) => assert_true(false)
+  // Test discovery metrics
+  let discovery_metrics = ServiceRegistry::get_telemetry_metrics(service_registry)
+  assert_eq(DiscoveryMetrics::registered_services(discovery_metrics), 1)
+  assert_eq(DiscoveryMetrics::discovery_requests(discovery_metrics), 1)
+  assert_eq(DiscoveryMetrics::health_checks(discovery_metrics), 1)
+  
+  // Test load balancer metrics
+  let lb_metrics = LoadBalancer::get_telemetry_metrics(load_balancer)
+  assert_eq(LoadBalancerMetrics::selection_requests(lb_metrics), 1)
+  assert_eq(LoadBalancerMetrics::selections_per_service(lb_metrics, "user-service"), 1)
+}
+
+// Test 9: Network Protocol Telemetry
+test "network protocol telemetry" {
+  // Test HTTP/2 telemetry
+  let http2_client = Http2Client::with_telemetry("http2-service")
+  
+  // Test HTTP/2 request with telemetry
+  let http2_request = Http2Request::with_telemetry(
+    "GET",
+    "https://http2.example.com/data",
+    [("protocol", "http/2"), ("stream.id", "1")]
+  )
+  
+  assert_eq(Http2Request::get_protocol_version(http2_request), "HTTP/2")
+  assert_eq(Http2Request::get_stream_id(http2_request), 1)
+  
+  // Test HTTP/2 response with telemetry
+  let http2_response = Http2Response::with_telemetry(
+    200,
+    [("protocol", "http/2"), ("stream.id", "1"), ("frames.count", "3")],
+    Some("response data")
+  )
+  
+  assert_eq(Http2Response::get_protocol_version(http2_response), "HTTP/2")
+  assert_eq(Http2Response::get_stream_id(http2_response), 1)
+  
+  // Test gRPC telemetry
+  let grpc_client = GrpcClient::with_telemetry("grpc-service")
+  
+  // Test gRPC call with telemetry
+  let grpc_request = GrpcRequest::with_telemetry(
+    "UserService.GetUser",
+    [("user.id", "123")],
+    [("protocol", "grpc"), ("service.method", "UserService.GetUser")]
+  )
+  
+  assert_eq(GrpcRequest::get_service_method(grpc_request), "UserService.GetUser")
+  
+  let grpc_response = GrpcResponse::with_telemetry(
+    Ok([("user.name", "John Doe"), ("user.email", "john@example.com")]),
+    [("protocol", "grpc"), ("status.code", "0")]
+  )
+  
+  match grpc_response.status {
+    Ok(_) => assert_true(true)
+    Error(_) => assert_true(false)
   }
   
-  // 测试丢包率监控
-  let packet_loss_result = measure_packet_loss(network_monitor, "telemetry.example.com")
-  match packet_loss_result {
-    PacketLossMeasurementSuccess(loss_rate) => {
-      assert_true(loss_rate >= 0.0)
-      assert_true(loss_rate <= 1.0) // 丢包率在0-100%之间
-    }
-    PacketLossMeasurementError(error) => assert_true(false)
-  }
+  // Test protocol metrics
+  let http2_metrics = Http2Client::get_telemetry_metrics(http2_client)
+  assert_eq(Http2Metrics::streams_opened(http2_metrics), 1)
+  assert_eq(Http2Metrics::frames_received(http2_metrics), 3)
   
-  // 测试网络性能历史记录
-  let performance_history = get_network_performance_history(network_monitor)
-  assert_true(performance_history.length() > 0)
+  let grpc_metrics = GrpcClient::get_telemetry_metrics(grpc_client)
+  assert_eq(GrpcMetrics::rpc_calls(grpc_metrics), 1)
+  assert_eq(GrpcMetrics::successful_calls(grpc_metrics), 1)
+}
+
+// Test 10: Network Telemetry Aggregation
+test "network telemetry aggregation" {
+  // Test telemetry aggregator
+  let aggregator = NetworkTelemetryAggregator::new()
   
-  // 验证性能统计
-  let performance_stats = calculate_network_performance_stats(performance_history)
-  assert_true(performance_stats.average_latency > 0)
-  assert_true(performance_stats.min_latency <= performance_stats.average_latency)
-  assert_true(performance_stats.max_latency >= performance_stats.average_latency)
-  assert_true(performance_stats.average_bandwidth > 0)
-}
-
-// 类型定义
-type HTTPTelemetryClient HTTPTelemetryClientStruct
-type WebSocketTelemetryClient WebSocketTelemetryClientStruct
-type CompressionTelemetryClient CompressionTelemetryClientStruct
-type BatchTelemetryClient BatchTelemetryClientStruct
-type EncryptionTelemetryClient EncryptionTelemetryClientStruct
-type NetworkPerformanceMonitor NetworkPerformanceMonitorStruct
-
-type HTTPTelemetryClientStruct {
-  endpoint : String
-  api_key : String
-  timeout_ms : Int
-  retry_count : Int
-}
-
-type WebSocketTelemetryClientStruct {
-  endpoint : String
-  auth_token : String
-  heartbeat_interval_ms : Int
-  reconnect_attempts : Int
-}
-
-type CompressionTelemetryClientStruct {
-  endpoint : String
-  compression_algorithm : String
-  compression_level : Int
-  api_key : String
-}
-
-type BatchTelemetryClientStruct {
-  endpoint : String
-  batch_size : Int
-  flush_interval_ms : Int
-  max_buffer_size : Int
-  api_key : String
-  simulate_failure_rate : Float // 可选，用于测试
-}
-
-type EncryptionTelemetryClientStruct {
-  endpoint : String
-  encryption_algorithm : String
-  encryption_key : String
-  api_key : String
-}
-
-type NetworkPerformanceMonitorStruct {
-  monitoring_enabled : Bool
-  metrics_collection_interval_ms : Int
-  performance_history_size : Int
-}
-
-type TelemetryMetric TelemetryMetricStruct
-type RealtimeMetric RealtimeMetricStruct
-type SensitiveTelemetryMetric SensitiveTelemetryMetricStruct
-
-type TelemetryMetricStruct {
-  name : String
-  value : Float
-  timestamp : Int
-  tags : [(String, String)]
-}
-
-type RealtimeMetricStruct {
-  name : String
-  value : Float
-  timestamp : Int
-  service : String
-}
-
-type SensitiveTelemetryMetricStruct {
-  name : String
-  value : Float
-  timestamp : Int
-  user_id : String
-  session_id : String
-  tags : [(String, String)]
-}
-
-type TransmissionResponse TransmissionResponseStruct
-
-type TransmissionResponseStruct {
-  status_code : Int
-  message : String
-  metrics_count : Int
-}
-
-type CompressionTransmissionStats CompressionTransmissionStatsStruct
-
-type CompressionTransmissionStatsStruct {
-  original_size : Int
-  compressed_size : Int
-  compression_ratio : Float
-  status_code : Int
-}
-
-type BatchTransmissionStats BatchTransmissionStatsStruct
-
-type BatchTransmissionStatsStruct {
-  total_metrics : Int
-  batch_count : Int
-  successful_batches : Int
-  failed_batches : Int
-}
-
-type EncryptionTransmissionStats EncryptionTransmissionStatsStruct
-
-type EncryptionTransmissionStatsStruct {
-  encrypted_metrics : Int
-  encrypted_size : Int
-  status_code : Int
-  decryption_successful : Bool
-}
-
-type NetworkPerformanceStats NetworkPerformanceStatsStruct
-
-type NetworkPerformanceStatsStruct {
-  average_latency : Float
-  min_latency : Float
-  max_latency : Float
-  average_bandwidth : Float
-}
-
-type TransmissionResult 
-  = TransmissionSuccess(TransmissionResponse)
-  | TransmissionError(String)
-
-type WebSocketConnectionResult 
-  = WebSocketConnected
-  | WebSocketConnectionError(String)
-
-type StreamResult 
-  = StreamSuccess(Int)
-  | StreamError(String)
-
-type WebSocketDisconnectionResult 
-  = WebSocketDisconnected
-  | WebSocketDisconnectionError(String)
-
-type WebSocketReconnectionResult 
-  = WebSocketReconnected
-  | WebSocketReconnectFailed(String)
-
-type CompressionTransmissionResult 
-  = CompressionTransmissionSuccess(CompressionTransmissionStats)
-  | CompressionTransmissionError(String)
-
-type BatchTransmissionResult 
-  = BatchTransmissionSuccess(BatchTransmissionStats)
-  | BatchTransmissionError(String)
-
-type EncryptionTransmissionResult 
-  = EncryptionTransmissionSuccess(EncryptionTransmissionStats)
-  | EncryptionTransmissionError(String)
-
-type LatencyMeasurementResult 
-  = LatencyMeasurementSuccess(Float)
-  | LatencyMeasurementError(String)
-
-type BandwidthMeasurementResult 
-  = BandwidthMeasurementSuccess(Float)
-  | BandwidthMeasurementError(String)
-
-type PacketLossMeasurementResult 
-  = PacketLossMeasurementSuccess(Float)
-  | PacketLossMeasurementError(String)
-
-// 辅助函数：发送遥测数据
-fn send_telemetry_data(client : HTTPTelemetryClient, data : [TelemetryMetric]) -> TransmissionResult {
-  // 模拟HTTP传输
-  let response = TransmissionResponse({
-    status_code: 200,
-    message: "Metrics received successfully",
-    metrics_count: data.length()
-  })
+  // Test adding telemetry data from different sources
+  let http_metrics = HttpMetrics::new(10, 8, 2, 150.5)
+  let ws_metrics = WebSocketMetrics::new(5, 5, 30.0)
+  let tcp_metrics = TcpMetrics::new(1024, 2048, 60.0)
   
-  TransmissionSuccess(response)
-}
-
-// 辅助函数：连接WebSocket
-fn connect_websocket(client : WebSocketTelemetryClient) -> WebSocketConnectionResult {
-  // 模拟WebSocket连接
-  WebSocketConnected
-}
-
-// 辅助函数：流式传输实时指标
-fn stream_realtime_metrics(client : WebSocketTelemetryClient, metrics : [RealtimeMetric]) -> StreamResult {
-  // 模拟实时流传输
-  StreamSuccess(metrics.length())
-}
-
-// 辅助函数：断开WebSocket连接
-fn disconnect_websocket(client : WebSocketTelemetryClient) -> WebSocketDisconnectionResult {
-  // 模拟WebSocket断开
-  WebSocketDisconnected
-}
-
-// 辅助函数：自动重连WebSocket
-fn auto_reconnect_websocket(client : WebSocketTelemetryClient) -> WebSocketReconnectionResult {
-  // 模拟自动重连
-  WebSocketReconnected
-}
-
-// 辅助函数：生成大量遥测数据集
-fn generate_large_telemetry_dataset(count : Int) -> [TelemetryMetric] {
-  let dataset = []
+  NetworkTelemetryAggregator::add_metrics(aggregator, "http", http_metrics)
+  NetworkTelemetryAggregator::add_metrics(aggregator, "websocket", ws_metrics)
+  NetworkTelemetryAggregator::add_metrics(aggregator, "tcp", tcp_metrics)
   
-  for i = 0; i < count; i = i + 1 {
-    let metric = TelemetryMetric({
-      name: "metric_" + i.to_string(),
-      value: (i % 100).to_float(),
-      timestamp: 1640995200 + i,
-      tags: [("source", "test"), ("index", i.to_string())]
-    })
-    dataset.push(metric)
-  }
+  // Test aggregation results
+  let aggregated_metrics = NetworkTelemetryAggregator::get_aggregated_metrics(aggregator)
   
-  dataset
-}
-
-// 辅助函数：计算数据大小
-fn calculate_data_size(data : [TelemetryMetric]) -> Int {
-  // 简化计算：每个指标约100字节
-  data.length() * 100
-}
-
-// 辅助函数：发送压缩遥测数据
-fn send_compressed_telemetry(client : CompressionTelemetryClient, data : [TelemetryMetric]) -> CompressionTransmissionResult {
-  let original_size = calculate_data_size(data)
-  let compressed_size = (original_size.to_float() * 0.6).to_int() // 假设60%压缩率
-  let compression_ratio = compressed_size.to_float() / original_size.to_float()
+  assert_eq(AggregatedMetrics::total_requests(aggregated_metrics), 15) // 10 HTTP + 5 WebSocket
+  assert_eq(AggregatedMetrics::total_bytes_sent(aggregated_metrics), 3072) // 1024 TCP + 2048 TCP
+  assert_eq(AggregatedMetrics::average_latency(aggregated_metrics), 80.25) // (150.5 + 30.0 + 60.0) / 3
   
-  let stats = CompressionTransmissionStats({
-    original_size: original_size,
-    compressed_size: compressed_size,
-    compression_ratio: compression_ratio,
-    status_code: 200
-  })
+  // Test time-based aggregation
+  let time_window = TimeWindow::new(3600) // 1 hour
+  let time_aggregated = NetworkTelemetryAggregator::get_metrics_by_time_window(aggregator, time_window)
   
-  CompressionTransmissionSuccess(stats)
-}
-
-// 辅助函数：生成批量遥测数据
-fn generate_batch_telemetry_data(count : Int) -> [TelemetryMetric] {
-  generate_large_telemetry_dataset(count)
-}
-
-// 辅助函数：发送批量遥测数据
-fn send_batch_telemetry(client : BatchTelemetryClient, data : [TelemetryMetric]) -> BatchTransmissionResult {
-  let batch_size = client.batch_size
-  let total_batches = (data.length() + batch_size - 1) / batch_size
+  assert_eq(TimeAggregatedMetrics::window_duration(time_aggregated), 3600)
+  assert_eq(TimeAggregatedMetrics::metrics_count(time_aggregated), 3)
   
-  let successful_batches = if client.simulate_failure_rate > 0.0 {
-    // 模拟部分失败
-    (total_batches.to_float() * (1.0 - client.simulate_failure_rate)).to_int()
-  } else {
-    total_batches
-  }
+  // Test service-based aggregation
+  let service_aggregated = NetworkTelemetryAggregator::get_metrics_by_service(aggregator, "user-service")
   
-  let failed_batches = total_batches - successful_batches
+  assert_eq(ServiceAggregatedMetrics::service_name(service_aggregated), "user-service")
+  assert_eq(ServiceAggregatedMetrics::total_operations(service_aggregated), 15)
   
-  let stats = BatchTransmissionStats({
-    total_metrics: data.length(),
-    batch_count: total_batches,
-    successful_batches: successful_batches,
-    failed_batches: failed_batches
-  })
+  // Test telemetry export
+  let export_format = "json"
+  let exported_data = NetworkTelemetryAggregator::export_metrics(aggregator, export_format)
   
-  BatchTransmissionSuccess(stats)
-}
-
-// 辅助函数：发送加密遥测数据
-fn send_encrypted_telemetry(client : EncryptionTelemetryClient, data : [SensitiveTelemetryMetric]) -> EncryptionTransmissionResult {
-  // 验证密钥
-  if client.encryption_key == "invalid-key" {
-    return EncryptionTransmissionError("Invalid encryption key")
-  }
-  
-  let encrypted_size = data.length() * 150 // 假设加密后每个指标150字节
-  
-  let stats = EncryptionTransmissionStats({
-    encrypted_metrics: data.length(),
-    encrypted_size: encrypted_size,
-    status_code: 200,
-    decryption_successful: true
-  })
-  
-  EncryptionTransmissionSuccess(stats)
-}
-
-// 辅助函数：测量网络延迟
-fn measure_network_latency(monitor : NetworkPerformanceMonitor, host : String, port : Int) -> LatencyMeasurementResult {
-  // 模拟延迟测量
-  let latency_ms = 50.0 + (host.length().to_float() * 2.0) // 简单的模拟计算
-  LatencyMeasurementSuccess(latency_ms)
-}
-
-// 辅助函数：测量网络带宽
-fn measure_network_bandwidth(monitor : NetworkPerformanceMonitor, host : String, port : Int) -> BandwidthMeasurementResult {
-  // 模拟带宽测量
-  let bandwidth_bps = 1000000.0 + (port.to_float() * 1000.0) // 简单的模拟计算
-  BandwidthMeasurementSuccess(bandwidth_bps)
-}
-
-// 辅助函数：测量丢包率
-fn measure_packet_loss(monitor : NetworkPerformanceMonitor, host : String) -> PacketLossMeasurementResult {
-  // 模拟丢包率测量
-  let loss_rate = 0.01 // 1%丢包率
-  PacketLossMeasurementSuccess(loss_rate)
-}
-
-// 辅助函数：获取网络性能历史
-fn get_network_performance_history(monitor : NetworkPerformanceMonitor) -> [NetworkPerformanceRecord] {
-  // 模拟性能历史记录
-  [
-    NetworkPerformanceRecord({ timestamp: 1640995200, latency: 45.2, bandwidth: 1024000.0, packet_loss: 0.01 }),
-    NetworkPerformanceRecord({ timestamp: 1640995201, latency: 47.8, bandwidth: 1015000.0, packet_loss: 0.02 }),
-    NetworkPerformanceRecord({ timestamp: 1640995202, latency: 44.1, bandwidth: 1032000.0, packet_loss: 0.01 }),
-    NetworkPerformanceRecord({ timestamp: 1640995203, latency: 46.5, bandwidth: 1008000.0, packet_loss: 0.03 }),
-    NetworkPerformanceRecord({ timestamp: 1640995204, latency: 43.9, bandwidth: 1045000.0, packet_loss: 0.01 })
-  ]
-}
-
-// 辅助函数：计算网络性能统计
-fn calculate_network_performance_stats(history : [NetworkPerformanceRecord]) -> NetworkPerformanceStats {
-  let total_latency = history.fold(0.0, fn(acc, record) { acc + record.latency })
-  let total_bandwidth = history.fold(0.0, fn(acc, record) { acc + record.bandwidth })
-  
-  let average_latency = total_latency / history.length().to_float()
-  let average_bandwidth = total_bandwidth / history.length().to_float()
-  
-  let min_latency = history.fold(9999.0, fn(acc, record) { 
-    if record.latency < acc { record.latency } else { acc }
-  })
-  
-  let max_latency = history.fold(0.0, fn(acc, record) { 
-    if record.latency > acc { record.latency } else { acc }
-  })
-  
-  NetworkPerformanceStats({
-    average_latency: average_latency,
-    min_latency: min_latency,
-    max_latency: max_latency,
-    average_bandwidth: average_bandwidth
-  })
-}
-
-// 网络性能记录类型
-type NetworkPerformanceRecord NetworkPerformanceRecordStruct
-
-type NetworkPerformanceRecordStruct {
-  timestamp : Int
-  latency : Float
-  bandwidth : Float
-  packet_loss : Float
+  assert_true(exported_data.contains("\"total_requests\":15"))
+  assert_true(exported_data.contains("\"total_bytes_sent\":3072"))
+  assert_true(exported_data.contains("\"average_latency\":80.25"))
 }

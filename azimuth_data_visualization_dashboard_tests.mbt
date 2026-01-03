@@ -1,2050 +1,1247 @@
-// Azimuth Data Visualization and Dashboard Integration Tests
-// 数据可视化和仪表板集成测试套件
+// Azimuth Telemetry System - Data Visualization Dashboard Tests
+// This file contains test cases for data visualization dashboard functionality
 
-// Test 1: 图表数据生成和格式化
-test "chart data generation and formatting" {
-  // 图表类型定义
-  let chart_types = [
-    {"name": "line", "requires_time_series": true, "min_data_points": 2},
-    {"name": "bar", "requires_time_series": false, "min_data_points": 1},
-    {"name": "pie", "requires_time_series": false, "min_data_points": 1},
-    {"name": "scatter", "requires_time_series": false, "min_data_points": 2},
-    {"name": "heatmap", "requires_time_series": false, "min_data_points": 4},
-    {"name": "gauge", "requires_time_series": false, "min_data_points": 1}
-  ]
+// Test 1: Dashboard Creation and Configuration
+test "dashboard creation and configuration" {
+  // Create dashboard manager
+  let dashboard_manager = DashboardManager::new()
   
-  // 模拟遥测数据
-  let generate_telemetry_data = fn(chart_type, data_points) {
-    let data = []
-    let base_time = @lib.time.now() - 3600000  // 1小时前
-    
-    match chart_type {
-      "line" => {
-        for i in 0..data_points {
-          let timestamp = base_time + i * 60000  // 每分钟一个点
-          let value = 50.0 + @lib.sin(i.to_decimal() * 0.1) * 20.0 + @lib.random.float() * 5.0
-          data = data.push({
-            "timestamp": timestamp,
-            "value": value,
-            "label": @lib.date.format(timestamp, "HH:mm")
-          })
-        }
-      }
-      "bar" => {
-        let categories = ["CPU", "Memory", "Disk", "Network", "GPU"]
-        for category in categories {
-          data = data.push({
-            "category": category,
-            "value": @lib.random.float() * 100.0,
-            "label": category
-          })
-        }
-      }
-      "pie" => {
-        let segments = ["Success", "Warning", "Error", "Critical"]
-        let total = 100.0
-        let mut remaining = total
-        
-        for i in 0..segments.length() {
-          let segment = segments[i]
-          let value = if i == segments.length() - 1 {
-            remaining
-          } else {
-            let segment_value = @lib.random.float() * remaining * 0.6
-            remaining = remaining - segment_value
-            segment_value
-          }
-          
-          data = data.push({
-            "segment": segment,
-            "value": value,
-            "percentage": value / total * 100.0,
-            "label": segment
-          })
-        }
-      }
-      "scatter" => {
-        for i in 0..data_points {
-          data = data.push({
-            "x": @lib.random.float() * 100.0,
-            "y": @lib.random.float() * 100.0,
-            "size": @lib.random.float() * 20.0 + 5.0,
-            "label": "Point " + i.to_string()
-          })
-        }
-      }
-      "heatmap" => {
-        for i in 0..4 {
-          for j in 0..4 {
-            data = data.push({
-              "x": i,
-              "y": j,
-              "value": @lib.random.float() * 100.0,
-              "label": "(" + i.to_string() + "," + j.to_string() + ")"
-            })
-          }
-        }
-      }
-      "gauge" => {
-        data = data.push({
-          "value": @lib.random.float() * 100.0,
-          "min": 0.0,
-          "max": 100.0,
-          "thresholds": [30.0, 70.0, 90.0],
-          "label": "Usage"
-        })
-      }
-      _ => {}
-    }
-    
-    data
-  }
+  // Create dashboard
+  let dashboard = DashboardManager::create_dashboard(dashboard_manager, "System Overview")
   
-  // 图表数据格式化
-  let format_chart_data = fn(data, chart_type) {
-    match chart_type {
-      "line" => {
-        let formatted = {
-          "labels": data.map_fn(d => d["label"]),
-          "datasets": [{
-            "label": "Telemetry Data",
-            "data": data.map_fn(d => d["value"]),
-            "timestamps": data.map_fn(d => d["timestamp"]),
-            "borderColor": "#3498db",
-            "backgroundColor": "rgba(52, 152, 219, 0.1)"
-          }]
-        }
-        formatted
-      }
-      "bar" => {
-        let formatted = {
-          "labels": data.map_fn(d => d["category"]),
-          "datasets": [{
-            "label": "Resource Usage",
-            "data": data.map_fn(d => d["value"]),
-            "backgroundColor": ["#3498db", "#e74c3c", "#f39c12", "#2ecc71", "#9b59b6"]
-          }]
-        }
-        formatted
-      }
-      "pie" => {
-        let formatted = {
-          "labels": data.map_fn(d => d["segment"]),
-          "datasets": [{
-            "data": data.map_fn(d => d["value"]),
-            "backgroundColor": ["#2ecc71", "#f39c12", "#e74c3c", "#c0392b"]
-          }]
-        }
-        formatted
-      }
-      "scatter" => {
-        let formatted = {
-          "datasets": [{
-            "label": "Scatter Plot",
-            "data": data.map_fn(d => {"x": d["x"], "y": d["y"], "r": d["size"]}),
-            "backgroundColor": "rgba(52, 152, 219, 0.6)"
-          }]
-        }
-        formatted
-      }
-      "heatmap" => {
-        let formatted = {
-          "data": data.map_fn(d => [d["x"], d["y"], d["value"]]),
-          "labels": {
-            "x": ["0", "1", "2", "3"],
-            "y": ["0", "1", "2", "3"]
-          }
-        }
-        formatted
-      }
-      "gauge" => {
-        let point = data[0]
-        let formatted = {
-          "value": point["value"],
-          "min": point["min"],
-          "max": point["max"],
-          "thresholds": point["thresholds"],
-          "label": point["label"]
-        }
-        formatted
-      }
-      _ => {"error": "Unsupported chart type"}
-    }
-  }
+  // Configure dashboard properties
+  Dashboard::set_title(dashboard, "System Overview Dashboard")
+  Dashboard::set_description(dashboard, "Real-time system monitoring and metrics")
+  Dashboard::set_refresh_interval(dashboard, 30)  // 30 seconds
+  Dashboard::set_theme(dashboard, DashboardTheme::Dark)
+  Dashboard::set_layout(dashboard, DashboardLayout::Grid)
   
-  // 测试各种图表类型的数据生成和格式化
-  let chart_results = []
+  // Verify dashboard properties
+  assert_eq(Dashboard::title(dashboard), "System Overview Dashboard")
+  assert_eq(Dashboard::description(dashboard), "Real-time system monitoring and metrics")
+  assert_eq(Dashboard::refresh_interval(dashboard), 30)
+  assert_eq(Dashboard::theme(dashboard), DashboardTheme::Dark)
+  assert_eq(Dashboard::layout(dashboard), DashboardLayout::Grid)
   
-  for chart_type in chart_types {
-    let data_points = @lib.max(chart_type["min_data_points"], 10)
-    let raw_data = generate_telemetry_data(chart_type["name"], data_points)
-    let formatted_data = format_chart_data(raw_data, chart_type["name"])
-    
-    chart_results = {
-      "chart_type": chart_type["name"],
-      "data_points_generated": raw_data.length(),
-      "format_success": not(formatted_data["error"]),
-      "formatted_data": formatted_data
-    }
-  }
+  // Add widgets to dashboard
+  let cpu_widget = Widget::create_metric_widget("CPU Usage", MetricType::Gauge)
+  let memory_widget = Widget::create_metric_widget("Memory Usage", MetricType::Gauge)
+  let request_widget = Widget::create_chart_widget("Request Rate", ChartType::Line)
+  let error_widget = Widget::create_chart_widget("Error Rate", ChartType::Bar)
   
-  // 验证图表数据生成
-  for result in chart_results {
-    assert_true(result["data_points_generated"] >= chart_types.filter_fn(ct => ct["name"] == result["chart_type"])[0]["min_data_points"], 
-               result["chart_type"] + "图表应该生成足够的数据点")
-    assert_true(result["format_success"], result["chart_type"] + "图表数据格式化应该成功")
-  }
+  Dashboard::add_widget(dashboard, cpu_widget, Position::new(0, 0, 6, 4))
+  Dashboard::add_widget(dashboard, memory_widget, Position::new(6, 0, 6, 4))
+  Dashboard::add_widget(dashboard, request_widget, Position::new(0, 4, 6, 4))
+  Dashboard::add_widget(dashboard, error_widget, Position::new(6, 4, 6, 4))
   
-  // 验证特定图表类型的格式化结果
-  let line_chart = chart_results.filter_fn(r => r["chart_type"] == "line")[0]
-  assert_true(line_chart["formatted_data"]["labels"].length() > 0, "线图应该有标签")
-  assert_true(line_chart["formatted_data"]["datasets"].length() > 0, "线图应该有数据集")
+  // Verify widgets are added
+  assert_eq(Dashboard::widget_count(dashboard), 4)
+  assert_true(Dashboard::has_widget(dashboard, cpu_widget))
+  assert_true(Dashboard::has_widget(dashboard, memory_widget))
+  assert_true(Dashboard::has_widget(dashboard, request_widget))
+  assert_true(Dashboard::has_widget(dashboard, error_widget))
   
-  let pie_chart = chart_results.filter_fn(r => r["chart_type"] == "pie")[0]
-  assert_true(pie_chart["formatted_data"]["labels"].length() > 0, "饼图应该有标签")
-  assert_true(pie_chart["formatted_data"]["datasets"][0]["data"].length() > 0, "饼图应该有数据")
+  // Test widget positioning
+  let cpu_position = Dashboard::get_widget_position(dashboard, cpu_widget)
+  assert_eq(cpu_position.x, 0)
+  assert_eq(cpu_position.y, 0)
+  assert_eq(cpu_position.width, 6)
+  assert_eq(cpu_position.height, 4)
   
-  let gauge_chart = chart_results.filter_fn(r => r["chart_type"] == "gauge")[0]
-  assert_true(gauge_chart["formatted_data"]["value"] >= 0.0, "仪表盘值应该非负")
-  assert_true(gauge_chart["formatted_data"]["value"] <= 100.0, "仪表盘值应该在0-100范围内")
+  // Test dashboard serialization
+  let dashboard_json = Dashboard::to_json(dashboard)
+  assert_true(dashboard_json.contains("System Overview Dashboard"))
+  assert_true(dashboard_json.contains("CPU Usage"))
+  assert_true(dashboard_json.contains("Memory Usage"))
+  
+  // Test dashboard deserialization
+  let restored_dashboard = Dashboard::from_json(dashboard_json)
+  assert_eq(Dashboard::title(restored_dashboard), "System Overview Dashboard")
+  assert_eq(Dashboard::widget_count(restored_dashboard), 4)
 }
 
-// Test 2: 实时数据流可视化
-test "real-time data stream visualization" {
-  // 实时数据流配置
-  let stream_config = {
-    "update_interval": 1000,    // 1秒更新间隔
-    "buffer_size": 100,         // 缓冲区大小
-    "max_display_points": 50,   // 最大显示点数
-    "smoothing_enabled": true,  // 启用平滑
-    "anomaly_detection": true   // 启用异常检测
+// Test 2: Widget Types and Data Binding
+test "widget types and data binding" {
+  // Create various widget types
+  let gauge_widget = Widget::create_metric_widget("CPU Usage", MetricType::Gauge)
+  let line_chart_widget = Widget::create_chart_widget("Response Time", ChartType::Line)
+  let bar_chart_widget = Widget::create_chart_widget("Request Count", ChartType::Bar)
+  let pie_chart_widget = Widget::create_chart_widget("Status Distribution", ChartType::Pie)
+  let table_widget = Widget::create_table_widget("Recent Events")
+  let text_widget = Widget::create_text_widget("System Status")
+  let heatmap_widget = Widget::create_heatmap_widget("Activity Heatmap")
+  
+  // Configure gauge widget
+  Widget::set_data_source(gauge_widget, "metrics.cpu.usage")
+  Widget::set_range(gauge_widget, 0.0, 100.0)
+  Widget::set_unit(gauge_widget, "%")
+  Widget::set_thresholds(gauge_widget, [
+    Threshold::new(70.0, Color::Yellow),
+    Threshold::new(90.0, Color::Red)
+  ])
+  
+  // Configure line chart widget
+  Widget::set_data_source(line_chart_widget, "timeseries.response_time")
+  Widget::set_time_range(line_chart_widget, TimeRange::LastHour)
+  Widget::set_aggregation(line_chart_widget, AggregationType::Average)
+  Widget::add_series(line_chart_widget, Series::new("p50", Color::Blue))
+  Widget::add_series(line_chart_widget, Series::new("p95", Color::Red))
+  Widget::add_series(line_chart_widget, Series::new("p99", Color::Orange))
+  
+  // Configure bar chart widget
+  Widget::set_data_source(bar_chart_widget, "metrics.request_count")
+  Widget::set_grouping(bar_chart_widget, GroupingType::ByService)
+  Widget::set_sort_order(bar_chart_widget, SortOrder::Descending)
+  
+  // Configure pie chart widget
+  Widget::set_data_source(pie_chart_widget, "metrics.status_distribution")
+  Widget::set_colors(pie_chart_widget, [
+    Color::Green,  // Success
+    Color::Yellow, // Warning
+    Color::Red     // Error
+  ])
+  
+  // Configure table widget
+  Widget::set_data_source(table_widget, "events.recent")
+  Widget::add_column(table_widget, TableColumn::new("Timestamp", "timestamp", "datetime"))
+  Widget::add_column(table_widget, TableColumn::new("Level", "level", "string"))
+  Widget::add_column(table_widget, TableColumn::new("Message", "message", "string"))
+  Widget::set_page_size(table_widget, 10)
+  
+  // Configure text widget
+  Widget::set_data_source(text_widget, "status.system")
+  Widget::set_template(text_widget, "System Status: {{status}} - Last updated: {{timestamp}}")
+  
+  // Configure heatmap widget
+  Widget::set_data_source(heatmap_widget, "heatmap.activity")
+  Widget::set_x_axis(heatmap_widget, "hour_of_day")
+  Widget::set_y_axis(heatmap_widget, "day_of_week")
+  Widget::set_color_scale(heatmap_widget, ColorScale::Viridis)
+  
+  // Test widget properties
+  assert_eq(Widget::type(gauge_widget), WidgetType::Metric)
+  assert_eq(Widget::type(line_chart_widget), WidgetType::Chart)
+  assert_eq(Widget::type(bar_chart_widget), WidgetType::Chart)
+  assert_eq(Widget::type(pie_chart_widget), WidgetType::Chart)
+  assert_eq(Widget::type(table_widget), WidgetType::Table)
+  assert_eq(Widget::type(text_widget), WidgetType::Text)
+  assert_eq(Widget::type(heatmap_widget), WidgetType::Heatmap)
+  
+  // Test data binding
+  assert_eq(Widget::data_source(gauge_widget), "metrics.cpu.usage")
+  assert_eq(Widget::data_source(line_chart_widget), "timeseries.response_time")
+  assert_eq(Widget::data_source(bar_chart_widget), "metrics.request_count")
+  
+  // Test widget-specific properties
+  match Widget::get_metric_config(gauge_widget) {
+    Some(config) => {
+      assert_eq(config.metric_type, MetricType::Gauge)
+      assert_eq(config.min_value, 0.0)
+      assert_eq(config.max_value, 100.0)
+      assert_eq(config.unit, "%")
+      assert_eq(config.thresholds.length(), 2)
+    }
+    None => assert_true(false)
   }
   
-  // 实时数据流状态
-  let stream_state = {
-    "data_buffer": [],
-    "last_update": 0,
-    "update_count": 0,
-    "anomalies_detected": [],
-    "chart_updates": 0
+  match Widget::get_chart_config(line_chart_widget) {
+    Some(config) => {
+      assert_eq(config.chart_type, ChartType::Line)
+      assert_eq(config.time_range, TimeRange::LastHour)
+      assert_eq(config.aggregation, AggregationType::Average)
+      assert_eq(config.series.length(), 3)
+    }
+    None => assert_true(false)
   }
+}
+
+// Test 3: Real-time Data Updates
+test "real-time data updates" {
+  // Create dashboard with real-time updates
+  let dashboard = Dashboard::new("Real-time Monitoring")
+  Dashboard::set_refresh_interval(dashboard, 5)  // 5 seconds
   
-  // 生成实时数据点
-  let generate_realtime_point = fn(timestamp) {
+  // Create real-time widgets
+  let cpu_widget = Widget::create_metric_widget("CPU Usage", MetricType::Gauge)
+  let memory_widget = Widget::create_metric_widget("Memory Usage", MetricType::Gauge)
+  let request_widget = Widget::create_chart_widget("Request Rate", ChartType::Line)
+  
+  Widget::set_real_time(cpu_widget, true)
+  Widget::set_real_time(memory_widget, true)
+  Widget::set_real_time(request_widget, true)
+  
+  Dashboard::add_widget(dashboard, cpu_widget, Position::new(0, 0, 4, 4))
+  Dashboard::add_widget(dashboard, memory_widget, Position::new(4, 0, 4, 4))
+  Dashboard::add_widget(dashboard, request_widget, Position::new(0, 4, 8, 4))
+  
+  // Create data provider
+  let data_provider = DataProvider::new()
+  
+  // Mock real-time data
+  DataProvider::mock_time_series(data_provider, "metrics.cpu.usage", || {
+    // Simulate CPU usage fluctuating between 20% and 80%
     let base_value = 50.0
-    let trend = @lib.sin(timestamp.to_decimal() * 0.001) * 10.0
-    let noise = (@lib.random.float() - 0.5) * 10.0
-    let anomaly = if @lib.random.float() < 0.05 {  // 5%概率异常
-      (@lib.random.float() - 0.5) * 50.0
-    } else {
-      0.0
+    let variation = 30.0 * @sin(@time() / 10000.0)  // 10 second period
+    base_value + variation
+  })
+  
+  DataProvider::mock_time_series(data_provider, "metrics.memory.usage", || {
+    // Simulate memory usage gradually increasing
+    let base_value = 40.0
+    let growth = (@time() / 60000.0) % 60.0  // 1 minute cycle
+    base_value + growth
+  })
+  
+  DataProvider::mock_time_series(data_provider, "metrics.request_rate", || {
+    // Simulate request rate with spikes
+    let base_rate = 100.0
+    let spike = if @time() % 30000 < 5000 { 200.0 } else { 0.0 }  // 5 second spike every 30 seconds
+    base_rate + spike
+  })
+  
+  // Start real-time updates
+  Dashboard::start_real_time_updates(dashboard, data_provider)
+  
+  // Wait for initial data load
+  @sleep(1000)
+  
+  // Verify widgets have data
+  let cpu_data = Widget::get_current_data(cpu_widget)
+  let memory_data = Widget::get_current_data(memory_widget)
+  let request_data = Widget::get_current_data(request_widget)
+  
+  match cpu_data {
+    Some(data) => {
+      assert_true(data.value >= 20.0)
+      assert_true(data.value <= 80.0)
+      assert_true(data.timestamp > 0)
     }
-    
-    let value = base_value + trend + noise + anomaly
-    let is_anomaly = @lib.abs(anomaly) > 20.0
-    
-    {
-      "timestamp": timestamp,
-      "value": value,
-      "is_anomaly": is_anomaly,
-      "label": @lib.date.format(timestamp, "HH:mm:ss")
-    }
+    None => assert_true(false)
   }
   
-  // 更新数据流
-  let update_data_stream = fn(state, config) {
-    let current_time = @lib.time.now()
-    
-    // 检查是否需要更新
-    if current_time - state["last_update"] < config["update_interval"] {
-      return {"updated": false}
+  match memory_data {
+    Some(data) => {
+      assert_true(data.value >= 40.0)
+      assert_true(data.value <= 100.0)
+      assert_true(data.timestamp > 0)
     }
-    
-    // 生成新数据点
-    let new_point = generate_realtime_point(current_time)
-    
-    // 更新缓冲区
-    state["data_buffer"] = state["data_buffer"].push(new_point)
-    
-    // 保持缓冲区大小
-    if state["data_buffer"].length() > config["buffer_size"] {
-      state["data_buffer"] = state["data_buffer"].slice(state["data_buffer"].length() - config["buffer_size"], state["data_buffer"].length())
-    }
-    
-    // 检测异常
-    if new_point["is_anomaly"] {
-      state["anomalies_detected"] = state["anomalies_detected"].push({
-        "timestamp": new_point["timestamp"],
-        "value": new_point["value"],
-        "severity": if @lib.abs(new_point["value"] - 50.0) > 30.0 { "high" } else { "medium" }
-      })
-    }
-    
-    state["last_update"] = current_time
-    state["update_count"] = state["update_count"] + 1
-    state["chart_updates"] = state["chart_updates"] + 1
-    
-    {"updated": true, "new_point": new_point}
+    None => assert_true(false)
   }
   
-  // 获取图表数据
-  let get_chart_data = fn(state, config) {
-    let buffer = state["data_buffer"]
-    if buffer.length() == 0 {
-      return {"labels": [], "data": []}
+  match request_data {
+    Some(data) => {
+      assert_true(data.value >= 100.0)
+      assert_true(data.timestamp > 0)
     }
-    
-    // 获取最新的显示点
-    let display_data = if buffer.length() > config["max_display_points"] {
-      buffer.slice(buffer.length() - config["max_display_points"], buffer.length())
-    } else {
-      buffer
-    }
-    
-    // 应用平滑
-    let smoothed_data = if config["smoothing_enabled"] && display_data.length() >= 3 {
-      let smoothed = []
-      for i in 0..display_data.length() {
-        if i == 0 || i == display_data.length() - 1 {
-          smoothed = smoothed.push(display_data[i]["value"])
-        } else {
-          let smoothed_value = (display_data[i-1]["value"] + display_data[i]["value"] + display_data[i+1]["value"]) / 3.0
-          smoothed = smoothed.push(smoothed_value)
-        }
-      }
-      smoothed
-    } else {
-      display_data.map_fn(d => d["value"])
-    }
-    
-    {
-      "labels": display_data.map_fn(d => d["label"]),
-      "data": smoothed_data,
-      "anomalies": display_data.filter_fn(d => d["is_anomaly"]).map_fn(d => d["label"]),
-      "update_count": state["update_count"]
-    }
+    None => assert_true(false)
   }
   
-  // 模拟实时数据流
-  let simulation_duration = 10000  // 10秒
-  let start_time = @lib.time.now()
-  let chart_snapshots = []
+  // Test data history for charts
+  let request_history = Widget::get_data_history(request_widget, 10)  // Last 10 data points
+  assert_eq(request_history.length(), 10)
   
-  while @lib.time.now() - start_time < simulation_duration {
-    // 更新数据流
-    let update_result = update_data_stream(stream_state, stream_config)
-    
-    if update_result["updated"] {
-      // 获取图表数据快照
-      let chart_data = get_chart_data(stream_state, stream_config)
-      
-      if stream_state["update_count"] % 5 == 0 {  // 每5次更新记录一次快照
-        chart_snapshots = chart_snapshots.push({
-          "timestamp": @lib.time.now(),
-          "update_count": stream_state["update_count"],
-          "data_points": chart_data["data"].length(),
-          "anomalies_count": chart_data["anomalies"].length()
-        })
-      }
-    }
-    
-    @lib.time.sleep(200)  // 200ms间隔
+  // Verify timestamps are increasing
+  for i in 1..=9 {
+    assert_true(request_history[i].timestamp > request_history[i-1].timestamp)
   }
   
-  // 验证实时数据流
-  assert_true(stream_state["update_count"] > 0, "应该有数据更新")
-  assert_true(stream_state["data_buffer"].length() > 0, "数据缓冲区应该有数据")
-  assert_true(chart_snapshots.length() > 0, "应该有图表快照")
+  // Test update callbacks
+  let mut update_count = 0
+  Widget::on_update(cpu_widget, || {
+    update_count = update_count + 1
+  })
   
-  // 验证异常检测
-  if stream_config["anomaly_detection"] {
-    assert_true(stream_state["anomalies_detected"].length() >= 0, "异常检测应该工作")
-  }
+  // Wait for more updates
+  @sleep(6000)  // Wait for at least one refresh cycle
   
-  // 验证图表更新
-  let final_chart_data = get_chart_data(stream_state, stream_config)
-  assert_true(final_chart_data["labels"].length() > 0, "最终图表应该有标签")
-  assert_true(final_chart_data["data"].length() > 0, "最终图表应该有数据")
-  assert_eq(final_chart_data["labels"].length(), final_chart_data["data"].length(), "标签和数据数量应该匹配")
+  // Verify update callbacks were called
+  assert_true(update_count > 0)
   
-  // 验证数据平滑
-  if stream_config["smoothing_enabled"] {
-    // 平滑后的数据应该变化更平稳
-    let data_variances = []
-    for i in 1..final_chart_data["data"].length() {
-      let variance = @lib.abs(final_chart_data["data"][i] - final_chart_data["data"][i-1])
-      data_variances = data_variances.push(variance)
-    }
-    
-    let avg_variance = data_variances.reduce(fn(acc, v) { acc + v }, 0.0) / data_variances.length().to_decimal()
-    assert_true(avg_variance < 15.0, "平滑后的数据变化应该更平稳")
-  }
+  // Stop real-time updates
+  Dashboard::stop_real_time_updates(dashboard)
 }
 
-// Test 3: 仪表板布局和组件管理
-test "dashboard layout and component management" {
-  // 仪表板布局配置
-  let dashboard_layout = {
-    "grid_columns": 12,
-    "grid_rows": 8,
-    "components": [
-      {
-        "id": "cpu_chart",
-        "type": "line_chart",
-        "position": {"x": 0, "y": 0, "w": 6, "h": 3},
-        "title": "CPU Usage",
-        "refresh_interval": 5000
-      },
-      {
-        "id": "memory_gauge",
-        "type": "gauge",
-        "position": {"x": 6, "y": 0, "w": 6, "h": 3},
-        "title": "Memory Usage",
-        "refresh_interval": 3000
-      },
-      {
-        "id": "error_pie",
-        "type": "pie_chart",
-        "position": {"x": 0, "y": 3, "w": 4, "h": 3},
-        "title": "Error Distribution",
-        "refresh_interval": 10000
-      },
-      {
-        "id": "network_bar",
-        "type": "bar_chart",
-        "position": {"x": 4, "y": 3, "w": 8, "h": 3},
-        "title": "Network Traffic",
-        "refresh_interval": 4000
-      },
-      {
-        "id": "status_panel",
-        "type": "status_panel",
-        "position": {"x": 0, "y": 6, "w": 12, "h": 2},
-        "title": "System Status",
-        "refresh_interval": 2000
-      }
-    ]
+// Test 4: Dashboard Interactions and Filtering
+test "dashboard interactions and filtering" {
+  // Create interactive dashboard
+  let dashboard = Dashboard::new("Interactive Dashboard")
+  
+  // Create filterable widgets
+  let service_chart = Widget::create_chart_widget("Service Performance", ChartType::Line)
+  let error_chart = Widget::create_chart_widget("Error Rate", ChartType::Bar)
+  let log_table = Widget::create_table_widget("Service Logs")
+  
+  // Configure filters
+  let service_filter = Filter::new("service", FilterType::MultiSelect)
+  Filter::add_option(service_filter, "user-service")
+  Filter::add_option(service_filter, "order-service")
+  Filter::add_option(service_filter, "payment-service")
+  Filter::set_default(service_filter, ["user-service", "order-service"])
+  
+  let time_filter = Filter::new("time_range", FilterType::TimeRange)
+  Filter::add_option(time_filter, "Last 15 minutes")
+  Filter::add_option(time_filter, "Last hour")
+  Filter::add_option(time_filter, "Last 24 hours")
+  Filter::set_default(time_filter, "Last hour")
+  
+  let level_filter = Filter::new("log_level", FilterType::MultiSelect)
+  Filter::add_option(level_filter, "ERROR")
+  Filter::add_option(level_filter, "WARN")
+  Filter::add_option(level_filter, "INFO")
+  Filter::set_default(level_filter, ["ERROR", "WARN"])
+  
+  // Add filters to dashboard
+  Dashboard::add_filter(dashboard, service_filter)
+  Dashboard::add_filter(dashboard, time_filter)
+  Dashboard::add_filter(dashboard, level_filter)
+  
+  // Add widgets to dashboard
+  Dashboard::add_widget(dashboard, service_chart, Position::new(0, 0, 8, 4))
+  Dashboard::add_widget(dashboard, error_chart, Position::new(0, 4, 4, 4))
+  Dashboard::add_widget(dashboard, log_table, Position::new(4, 4, 4, 4))
+  
+  // Configure widget data sources with filter bindings
+  Widget::set_data_source(service_chart, "metrics.service_performance")
+  Widget::add_filter_binding(service_chart, "service")
+  Widget::add_filter_binding(service_chart, "time_range")
+  
+  Widget::set_data_source(error_chart, "metrics.error_rate")
+  Widget::add_filter_binding(error_chart, "service")
+  Widget::add_filter_binding(error_chart, "time_range")
+  
+  Widget::set_data_source(log_table, "logs.service")
+  Widget::add_filter_binding(log_table, "service")
+  Widget::add_filter_binding(log_table, "log_level")
+  Widget::add_filter_binding(log_table, "time_range")
+  
+  // Test initial filter values
+  let current_filters = Dashboard::get_current_filters(dashboard)
+  assert_eq(current_filters.get("service"), Some(["user-service", "order-service"]))
+  assert_eq(current_filters.get("time_range"), Some(["Last hour"]))
+  assert_eq(current_filters.get("log_level"), Some(["ERROR", "WARN"]))
+  
+  // Test filter application
+  Dashboard::set_filter_value(dashboard, "service", ["payment-service"])
+  
+  let updated_filters = Dashboard::get_current_filters(dashboard)
+  assert_eq(updated_filters.get("service"), Some(["payment-service"]))
+  
+  // Test widget data updates based on filters
+  let service_data = Widget::get_filtered_data(service_chart)
+  match service_data {
+    Some(data) => {
+      // Data should be filtered by payment-service only
+      assert_true(data.filters.contains("service=payment-service"))
+    }
+    None => assert_true(false)
   }
   
-  // 仪表板状态
-  let dashboard_state = {
-    "active_components": [],
-    "component_data": {},
-    "layout_valid": true,
-    "last_refresh": 0,
-    "refresh_count": 0
+  // Test multiple filter combinations
+  Dashboard::set_filter_value(dashboard, "service", ["user-service", "payment-service"])
+  Dashboard::set_filter_value(dashboard, "time_range", ["Last 15 minutes"])
+  Dashboard::set_filter_value(dashboard, "log_level", ["ERROR"])
+  
+  let multi_filtered_data = Widget::get_filtered_data(log_table)
+  match multi_filtered_data {
+    Some(data) => {
+      assert_true(data.filters.contains("service=user-service"))
+      assert_true(data.filters.contains("service=payment-service"))
+      assert_true(data.filters.contains("time_range=Last 15 minutes"))
+      assert_true(data.filters.contains("log_level=ERROR"))
+    }
+    None => assert_true(false)
   }
   
-  // 验证布局
-  let validate_layout = fn(layout) {
-    let grid_width = layout["grid_columns"]
-    let grid_height = layout["grid_rows"]
-    let occupied_cells = {}
-    let layout_valid = true
-    let conflicts = []
-    
-    for component in layout["components"] {
-      let pos = component["position"]
-      let component_id = component["id"]
-      
-      // 检查边界
-      if pos["x"] < 0 || pos["y"] < 0 || 
-         pos["x"] + pos["w"] > grid_width || 
-         pos["y"] + pos["h"] > grid_height {
-        layout_valid = false
-        conflicts = conflicts.push({
-          "component": component_id,
-          "issue": "out_of_bounds",
-          "position": pos
-        })
-      }
-      
-      // 检查重叠
-      for x in pos["x"]..(pos["x"] + pos["w"] - 1) {
-        for y in pos["y"]..(pos["y"] + pos["h"] - 1) {
-          let cell_key = x.to_string() + "," + y.to_string()
-          
-          if occupied_cells[cell_key] {
-            layout_valid = false
-            conflicts = conflicts.push({
-              "component": component_id,
-              "issue": "overlap",
-              "conflicts_with": occupied_cells[cell_key],
-              "cell": cell_key
-            })
-          } else {
-            occupied_cells[cell_key] = component_id
-          }
-        }
-      }
-    }
-    
-    {
-      "valid": layout_valid,
-      "conflicts": conflicts,
-      "occupied_cells": occupied_cells
-    }
-  }
+  // Test filter presets
+  let production_preset = FilterPreset::new("Production View")
+  FilterPreset::set_filter_value(production_preset, "service", ["user-service", "order-service", "payment-service"])
+  FilterPreset::set_filter_value(production_preset, "time_range", ["Last 24 hours"])
+  FilterPreset::set_filter_value(production_preset, "log_level", ["ERROR", "WARN"])
   
-  // 初始化组件
-  let initialize_component = fn(component, state) {
-    let component_data = {
-      "id": component["id"],
-      "type": component["type"],
-      "title": component["title"],
-      "last_update": @lib.time.now(),
-      "update_count": 0,
-      "data": nil,
-      "error": nil
-    }
-    
-    state["component_data"][component["id"]] = component_data
-    state["active_components"] = state["active_components"].push(component["id"])
-    
-    {
-      "success": true,
-      "component_id": component["id"]
-    }
-  }
+  Dashboard::add_filter_preset(dashboard, production_preset)
   
-  // 刷新组件数据
-  let refresh_component = fn(component_id, state, layout) {
-    let component = layout["components"].filter_fn(c => c["id"] == component_id)[0]
-    let component_data = state["component_data"][component_id]
-    
-    if not(component) || not(component_data) {
-      return {"success": false, "error": "Component not found"}
-    }
-    
-    // 检查刷新间隔
-    let current_time = @lib.time.now()
-    if current_time - component_data["last_update"] < component["refresh_interval"] {
-      return {"success": false, "reason": "too_soon"}
-    }
-    
-    // 模拟数据刷新
-    let refresh_success = @lib.random.float() > 0.1  // 90%成功率
-    
-    if refresh_success {
-      component_data["last_update"] = current_time
-      component_data["update_count"] = component_data["update_count"] + 1
-      
-      // 生成模拟数据
-      component_data["data"] = match component["type"] {
-        "line_chart" => {
-          "labels": ["00:00", "00:01", "00:02", "00:03", "00:04"],
-          "data": [45.2, 52.1, 48.7, 55.3, 51.8]
-        }
-        "gauge" => {
-          "value": @lib.random.float() * 100.0,
-          "thresholds": [30.0, 70.0, 90.0]
-        }
-        "pie_chart" => {
-          "labels": ["Success", "Warning", "Error"],
-          "data": [75.0, 20.0, 5.0]
-        }
-        "bar_chart" => {
-          "labels": ["Inbound", "Outbound"],
-          "data": [125.5, 98.3]
-        }
-        "status_panel" => {
-          "status": "healthy",
-          "services": ["API", "Database", "Cache"],
-          "uptime": 99.9
-        }
-        _ => nil
-      }
-      
-      state["refresh_count"] = state["refresh_count"] + 1
-      
-      {"success": true, "component_id": component_id}
-    } else {
-      component_data["error"] = "Data refresh failed"
-      {"success": false, "error": "Data refresh failed"}
-    }
-  }
+  // Apply preset
+  Dashboard::apply_filter_preset(dashboard, "Production View")
   
-  // 验证布局
-  let layout_validation = validate_layout(dashboard_layout)
-  assert_true(layout_validation["valid"], "仪表板布局应该有效")
-  assert_eq(layout_validation["conflicts"].length(), 0, "不应该有布局冲突")
+  let preset_filters = Dashboard::get_current_filters(dashboard)
+  assert_eq(preset_filters.get("service"), Some(["user-service", "order-service", "payment-service"]))
+  assert_eq(preset_filters.get("time_range"), Some(["Last 24 hours"]))
+  assert_eq(preset_filters.get("log_level"), Some(["ERROR", "WARN"]))
   
-  // 初始化所有组件
-  let init_results = []
-  for component in dashboard_layout["components"] {
-    let result = initialize_component(component, dashboard_state)
-    init_results = init_results.push(result)
-  }
+  // Test filter callbacks
+  let mut filter_change_count = 0
+  Dashboard::on_filter_change(dashboard, |filter_name, old_value, new_value| {
+    filter_change_count = filter_change_count + 1
+    assert_eq(filter_name, "service")
+  })
   
-  // 验证组件初始化
-  assert_eq(init_results.filter_fn(r => r["success"]).length(), dashboard_layout["components"].length(), 
-             "所有组件应该初始化成功")
-  assert_eq(dashboard_state["active_components"].length(), dashboard_layout["components"].length(), 
-             "活动组件数量应该正确")
+  Dashboard::set_filter_value(dashboard, "service", ["order-service"])
   
-  // 刷新组件数据
-  let refresh_results = []
-  for component_id in dashboard_state["active_components"] {
-    let result = refresh_component(component_id, dashboard_state, dashboard_layout)
-    refresh_results = refresh_results.push(result)
-  }
-  
-  // 验证组件刷新
-  let successful_refreshes = refresh_results.filter_fn(r => r["success"])
-  assert_true(successful_refreshes.length() > 0, "应该有成功的组件刷新")
-  
-  // 验证组件数据
-  for component_id in dashboard_state["active_components"] {
-    let component_data = dashboard_state["component_data"][component_id]
-    if component_data {
-      assert_true(component_data["update_count"] >= 0, "组件更新次数应该非负")
-      
-      if component_data["data"] {
-        assert_not_nil(component_data["data"], "组件应该有数据")
-      }
-    }
-  }
-  
-  // 验证仪表板状态
-  assert_true(dashboard_state["refresh_count"] > 0, "应该有刷新计数")
-  assert_true(dashboard_state["last_refresh"] > 0, "应该有最后刷新时间")
+  assert_eq(filter_change_count, 1)
 }
 
-// Test 4: 响应式图表适配
-test "responsive chart adaptation" {
-  // 响应式配置
-  let responsive_config = {
-    "breakpoints": [
-      {"name": "mobile", "max_width": 768, "chart_height": 300, "font_size": 12},
-      {"name": "tablet", "max_width": 1024, "chart_height": 400, "font_size": 14},
-      {"name": "desktop", "max_width": 999999, "chart_height": 500, "font_size": 16}
-    ],
-    "adaptive_features": {
-      "auto_resize": true,
-      "touch_optimized": true,
-      "reduced_data_points": true,
-      "simplified_labels": true
+// Test 5: Dashboard Templates and Customization
+test "dashboard templates and customization" {
+  // Create dashboard template manager
+  let template_manager = DashboardTemplateManager::new()
+  
+  // Create system monitoring template
+  let system_template = DashboardTemplate::new("System Monitoring")
+  
+  // Add template widgets
+  let cpu_widget = WidgetTemplate::new("CPU Usage", WidgetType::Metric)
+  WidgetTemplate::set_property(cpu_widget, "metric_type", MetricType::Gauge)
+  WidgetTemplate::set_property(cpu_widget, "data_source", "metrics.cpu.usage")
+  WidgetTemplate::set_property(cpu_widget, "range", [0.0, 100.0])
+  WidgetTemplate::set_property(cpu_widget, "unit", "%")
+  
+  let memory_widget = WidgetTemplate::new("Memory Usage", WidgetType::Metric)
+  WidgetTemplate::set_property(memory_widget, "metric_type", MetricType::Gauge)
+  WidgetTemplate::set_property(memory_widget, "data_source", "metrics.memory.usage")
+  WidgetTemplate::set_property(memory_widget, "range", [0.0, 100.0])
+  WidgetTemplate::set_property(memory_widget, "unit", "%")
+  
+  let network_widget = WidgetTemplate::new("Network I/O", WidgetType::Chart)
+  WidgetTemplate::set_property(network_widget, "chart_type", ChartType::Line)
+  WidgetTemplate::set_property(network_widget, "data_source", "metrics.network.io")
+  WidgetTemplate::set_property(network_widget, "time_range", TimeRange::LastHour)
+  
+  let disk_widget = WidgetTemplate::new("Disk Usage", WidgetType::Chart)
+  WidgetTemplate::set_property(disk_widget, "chart_type", ChartType::Bar)
+  WidgetTemplate::set_property(disk_widget, "data_source", "metrics.disk.usage")
+  
+  // Add widgets to template
+  DashboardTemplate::add_widget(system_template, cpu_widget, Position::new(0, 0, 6, 4))
+  DashboardTemplate::add_widget(system_template, memory_widget, Position::new(6, 0, 6, 4))
+  DashboardTemplate::add_widget(system_template, network_widget, Position::new(0, 4, 6, 4))
+  DashboardTemplate::add_widget(system_template, disk_widget, Position::new(6, 4, 6, 4))
+  
+  // Set template properties
+  DashboardTemplate::set_refresh_interval(system_template, 30)
+  DashboardTemplate::set_theme(system_template, DashboardTheme::Dark)
+  
+  // Register template
+  DashboardTemplateManager::register_template(template_manager, system_template)
+  
+  // Create dashboard from template
+  let dashboard = DashboardTemplateManager::create_from_template(template_manager, "System Monitoring")
+  
+  // Verify dashboard properties
+  assert_eq(Dashboard::refresh_interval(dashboard), 30)
+  assert_eq(Dashboard::theme(dashboard), DashboardTheme::Dark)
+  assert_eq(Dashboard::widget_count(dashboard), 4)
+  
+  // Verify widgets were created correctly
+  let widgets = Dashboard::get_widgets(dashboard)
+  let cpu_widget = widgets.find(@(w) Widget::title(w) == "CPU Usage").unwrap()
+  let memory_widget = widgets.find(@(w) Widget::title(w) == "Memory Usage").unwrap()
+  
+  assert_eq(Widget::data_source(cpu_widget), "metrics.cpu.usage")
+  assert_eq(Widget::data_source(memory_widget), "metrics.memory.usage")
+  
+  // Test template customization
+  let custom_dashboard = DashboardTemplateManager::create_from_template(template_manager, "System Monitoring")
+  
+  // Customize CPU widget thresholds
+  let custom_cpu_widget = Dashboard::get_widget_by_title(custom_dashboard, "CPU Usage").unwrap()
+  Widget::set_thresholds(custom_cpu_widget, [
+    Threshold::new(60.0, Color::Yellow),
+    Threshold::new(85.0, Color::Red)
+  ])
+  
+  // Add custom widget
+  let custom_widget = Widget::create_metric_widget("Custom Metric", MetricType::Gauge)
+  Dashboard::add_widget(custom_dashboard, custom_widget, Position::new(0, 8, 12, 4))
+  
+  // Verify customization
+  let custom_thresholds = Widget::get_thresholds(custom_cpu_widget)
+  assert_eq(custom_thresholds.length(), 2)
+  assert_eq(custom_thresholds[0].value, 60.0)
+  assert_eq(custom_thresholds[1].value, 85.0)
+  
+  assert_eq(Dashboard::widget_count(custom_dashboard), 5)
+  
+  // Test template inheritance
+  let production_template = DashboardTemplate::new("Production Monitoring")
+  DashboardTemplate::set_parent(production_template, "System Monitoring")
+  
+  // Override refresh interval
+  DashboardTemplate::set_refresh_interval(production_template, 10)
+  
+  // Add additional widget
+  let error_widget = WidgetTemplate::new("Error Rate", WidgetType::Chart)
+  WidgetTemplate::set_property(error_widget, "chart_type", ChartType::Line)
+  WidgetTemplate::set_property(error_widget, "data_source", "metrics.error.rate")
+  
+  DashboardTemplate::add_widget(production_template, error_widget, Position::new(0, 8, 12, 4))
+  
+  DashboardTemplateManager::register_template(template_manager, production_template)
+  
+  // Create dashboard from inherited template
+  let production_dashboard = DashboardTemplateManager::create_from_template(template_manager, "Production Monitoring")
+  
+  // Verify inherited and overridden properties
+  assert_eq(Dashboard::refresh_interval(production_dashboard), 10)  // Overridden
+  assert_eq(Dashboard::theme(production_dashboard), DashboardTheme::Dark)  // Inherited
+  assert_eq(Dashboard::widget_count(production_dashboard), 5)  // 4 from parent + 1 new
+  
+  // Test template listing and search
+  let templates = DashboardTemplateManager::list_templates(template_manager)
+  assert_eq(templates.length(), 2)
+  assert_true(templates.contains("System Monitoring"))
+  assert_true(templates.contains("Production Monitoring"))
+  
+  let monitoring_templates = DashboardTemplateManager::search_templates(template_manager, "monitoring")
+  assert_eq(monitoring_templates.length(), 2)
+}
+
+// Test 6: Dashboard Export and Sharing
+test "dashboard export and sharing" {
+  // Create dashboard with various widgets
+  let dashboard = Dashboard::new("Shared Dashboard")
+  Dashboard::set_description(dashboard, "Dashboard for sharing with team")
+  
+  // Add widgets
+  let cpu_widget = Widget::create_metric_widget("CPU Usage", MetricType::Gauge)
+  let memory_widget = Widget::create_metric_widget("Memory Usage", MetricType::Gauge)
+  let request_chart = Widget::create_chart_widget("Request Rate", ChartType::Line)
+  let error_table = Widget::create_table_widget("Recent Errors")
+  
+  Dashboard::add_widget(dashboard, cpu_widget, Position::new(0, 0, 6, 4))
+  Dashboard::add_widget(dashboard, memory_widget, Position::new(6, 0, 6, 4))
+  Dashboard::add_widget(dashboard, request_chart, Position::new(0, 4, 6, 4))
+  Dashboard::add_widget(dashboard, error_table, Position::new(6, 4, 6, 4))
+  
+  // Test dashboard export to different formats
+  let json_export = Dashboard::export_to_json(dashboard)
+  assert_true(json_export.contains("Shared Dashboard"))
+  assert_true(json_export.contains("CPU Usage"))
+  assert_true(json_export.contains("Memory Usage"))
+  
+  let yaml_export = Dashboard::export_to_yaml(dashboard)
+  assert_true(yaml_export.contains("Shared Dashboard"))
+  assert_true(yaml_export.contains("CPU Usage"))
+  
+  // Test dashboard import
+  let imported_dashboard = Dashboard::import_from_json(json_export)
+  assert_eq(Dashboard::title(imported_dashboard), "Shared Dashboard")
+  assert_eq(Dashboard::widget_count(imported_dashboard), 4)
+  
+  // Test dashboard sharing configuration
+  let share_config = ShareConfiguration::new()
+  ShareConfiguration::set_public(share_config, false)
+  ShareConfiguration::set_allowed_users(share_config, ["user1@example.com", "user2@example.com"])
+  ShareConfiguration::set_permissions(share_config, SharePermission::View)
+  ShareConfiguration::set_expiry(share_config, 7 * 24 * 60 * 60)  // 7 days
+  
+  // Create share link
+  let share_link = Dashboard::create_share_link(dashboard, share_config)
+  assert_true(share_link.contains("dashboards/share/"))
+  
+  // Test share link validation
+  let share_token = share_link.split("/").last()
+  let validation_result = Dashboard::validate_share_link(share_token)
+  
+  match validation_result {
+    ShareValidationResult::Valid(dashboard_id) => {
+      assert_true(dashboard_id.length() > 0)
     }
+    ShareValidationResult::Expired => assert_true(false)
+    ShareValidationResult::Invalid => assert_true(false)
   }
   
-  // 模拟屏幕尺寸
-  let screen_sizes = [
-    {"width": 480, "height": 800, "type": "mobile"},
-    {"width": 768, "height": 1024, "type": "tablet"},
-    {"width": 1200, "height": 800, "type": "desktop"},
-    {"width": 1920, "height": 1080, "type": "desktop"}
-  ]
+  // Test dashboard snapshot
+  let snapshot = Dashboard::create_snapshot(dashboard)
+  assert_eq(Snapshot::dashboard_title(snapshot), "Shared Dashboard")
+  assert_eq(Snapshot::widget_count(snapshot), 4)
+  assert_true(Snapshot::timestamp(snapshot) > 0)
   
-  // 基础图表数据
-  let base_chart_data = {
-    "labels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-    "datasets": [{
-      "label": "Monthly Data",
-      "data": [65, 59, 80, 81, 56, 55, 40, 65, 75, 82, 90, 85],
-      "borderColor": "#3498db",
-      "backgroundColor": "rgba(52, 152, 219, 0.1)"
-    }]
+  // Test snapshot data
+  let snapshot_data = Snapshot::get_widget_data(snapshot, "CPU Usage")
+  match snapshot_data {
+    Some(data) => {
+      assert_true(data.timestamp > 0)
+    }
+    None => assert_true(false)
   }
   
-  // 获取当前断点
-  let get_breakpoint = fn(width, config) {
-    for breakpoint in config["breakpoints"] {
-      if width <= breakpoint["max_width"] {
-        return breakpoint
-      }
-    }
-    config["breakpoints"][config["breakpoints"].length() - 1]
+  // Test dashboard comparison
+  let modified_dashboard = Dashboard::import_from_json(json_export)
+  let new_widget = Widget::create_metric_widget("New Widget", MetricType::Gauge)
+  Dashboard::add_widget(modified_dashboard, new_widget, Position::new(0, 8, 12, 4))
+  
+  let comparison = Dashboard::compare(dashboard, modified_dashboard)
+  assert_eq(Comparison::added_widgets(comparison).length(), 1)
+  assert_eq(Comparison::removed_widgets(comparison).length(), 0)
+  assert_eq(Comparison::modified_widgets(comparison).length(), 0)
+  
+  // Test dashboard versioning
+  let versioned_dashboard = Dashboard::create_versioned(dashboard)
+  Dashboard::save_version(versioned_dashboard, "Initial version")
+  
+  // Modify dashboard
+  Dashboard::set_title(versioned_dashboard, "Updated Dashboard")
+  Dashboard::save_version(versioned_dashboard, "Updated title")
+  
+  let versions = Dashboard::list_versions(versioned_dashboard)
+  assert_eq(versions.length(), 2)
+  assert_eq(versions[0].title, "Updated Dashboard")
+  assert_eq(versions[1].title, "Shared Dashboard")
+  
+  // Test dashboard rollback
+  Dashboard::restore_version(versioned_dashboard, versions[1].id)
+  assert_eq(Dashboard::title(versioned_dashboard), "Shared Dashboard")
+}
+
+// Test 7: Dashboard Performance and Optimization
+test "dashboard performance and optimization" {
+  // Create performance-optimized dashboard
+  let dashboard = OptimizedDashboard::new("Performance Dashboard")
+  
+  // Configure optimization settings
+  OptimizedDashboard::enable_data_caching(dashboard, 1000)  // Cache 1000 data points
+  OptimizedDashboard::enable_lazy_loading(dashboard)
+  OptimizedDashboard::enable_data_compression(dashboard)
+  OptimizedDashboard::set_max_update_frequency(dashboard, 1000)  // Max 1 update per second
+  
+  // Create many widgets to test performance
+  let widgets = []
+  for i in 0..=49 {  // 50 widgets
+    let widget = Widget::create_chart_widget("Chart " + i.to_string(), ChartType::Line)
+    Widget::set_data_source(widget, "metrics.data_" + i.to_string())
+    widgets.push(widget)
   }
   
-  // 适配图表数据
-  let adapt_chart_data = fn(data, screen_size, config) {
-    let breakpoint = get_breakpoint(screen_size["width"], config)
-    let adapted_data = @lib.object.clone(data)
-    
-    // 根据屏幕大小减少数据点
-    if config["adaptive_features"]["reduced_data_points"] && screen_size["type"] == "mobile" {
-      let target_points = 6  // 移动设备显示6个点
-      let step = @lib.ceil(data["labels"].length().to_decimal() / target_points.to_decimal()).to_int()
-      
-      let reduced_labels = []
-      let reduced_data = []
-      
-      for i in 0..data["labels"].length() {
-        if i % step == 0 || i == data["labels"].length() - 1 {
-          reduced_labels = reduced_labels.push(data["labels"][i])
-          reduced_data = reduced_data.push(data["datasets"][0]["data"][i])
-        }
-      }
-      
-      adapted_data["labels"] = reduced_labels
-      adapted_data["datasets"][0]["data"] = reduced_data
-    }
-    
-    // 简化标签
-    if config["adaptive_features"]["simplified_labels"] && screen_size["type"] == "mobile" {
-      adapted_data["labels"] = adapted_data["labels"].map_fn(label => 
-        if label.length() > 3 { label.slice(0, 3) } else { label }
-      )
-    }
-    
-    // 设置图表高度
-    adapted_data["options"] = {
-      "responsive": true,
-      "maintainAspectRatio": false,
-      "height": breakpoint["chart_height"],
-      "fontSize": breakpoint["font_size"]
-    }
-    
-    adapted_data
+  // Add widgets to dashboard in a grid layout
+  for i in 0..=49 {
+    let x = (i % 10) * 2
+    let y = (i / 10) * 4
+    Dashboard::add_widget(dashboard, widgets[i], Position::new(x, y, 2, 4))
   }
   
-  // 测试响应式适配
-  let adaptation_results = []
+  // Test dashboard loading performance
+  let start_time = @time()
+  OptimizedDashboard::load(dashboard)
+  let load_time = @time() - start_time
   
-  for screen_size in screen_sizes {
-    let breakpoint = get_breakpoint(screen_size["width"], responsive_config)
-    let adapted_data = adapt_chart_data(base_chart_data, screen_size, responsive_config)
-    
-    adaptation_results = adaptation_results.push({
-      "screen_size": screen_size,
-      "breakpoint": breakpoint["name"],
-      "chart_height": adapted_data["options"]["height"],
-      "font_size": adapted_data["options"]["fontSize"],
-      "data_points": adapted_data["labels"].length(),
-      "original_points": base_chart_data["labels"].length()
+  // Loading should be fast even with many widgets
+  assert_true(load_time < 1000)  // Less than 1 second
+  
+  // Test data loading performance
+  let data_provider = DataProvider::new()
+  
+  // Mock data for all widgets
+  for i in 0..=49 {
+    DataProvider::mock_time_series(data_provider, "metrics.data_" + i.to_string(), || {
+      @random() * 100.0
     })
   }
   
-  // 验证响应式适配结果
-  for result in adaptation_results {
-    let expected_breakpoint = get_breakpoint(result["screen_size"]["width"], responsive_config)
-    assert_eq(result["breakpoint"], expected_breakpoint["name"], "断点检测应该正确")
-    assert_eq(result["chart_height"], expected_breakpoint["chart_height"], "图表高度应该适配")
-    assert_eq(result["font_size"], expected_breakpoint["font_size"], "字体大小应该适配")
-  }
+  // Test batch data loading
+  let start_time = @time()
+  OptimizedDashboard::load_data_batch(dashboard, data_provider)
+  let batch_load_time = @time() - start_time
   
-  // 验证移动设备数据点减少
-  let mobile_result = adaptation_results.filter_fn(r => r["screen_size"]["type"] == "mobile")[0]
-  assert_true(mobile_result["data_points"] < mobile_result["original_points"], "移动设备应该减少数据点")
+  // Batch loading should be efficient
+  assert_true(batch_load_time < 2000)  // Less than 2 seconds
   
-  // 验证桌面设备数据点保持
-  let desktop_result = adaptation_results.filter_fn(r => r["screen_size"]["type"] == "desktop")[0]
-  assert_eq(desktop_result["data_points"], desktop_result["original_points"], "桌面设备应该保持所有数据点")
+  // Test data caching
+  let start_time = @time()
+  OptimizedDashboard::refresh_widgets(dashboard, widgets.slice(0, 10))  // Refresh first 10 widgets
+  let first_refresh_time = @time() - start_time
   
-  // 验证标签简化
-  let mobile_adapted = adapt_chart_data(base_chart_data, screen_sizes[0], responsive_config)
-  for label in mobile_adapted["labels"] {
-    assert_true(label.length() <= 3, "移动设备标签应该被简化")
-  }
-}
-
-// Test 5: 图表交互功能
-test "chart interaction functionality" {
-  // 交互功能配置
-  let interaction_config = {
-    "zoom_enabled": true,
-    "pan_enabled": true,
-    "tooltip_enabled": true,
-    "legend_interactive": true,
-    "data_point_click": true,
-    "selection_enabled": true
-  }
+  // Second refresh should be faster due to caching
+  let start_time = @time()
+  OptimizedDashboard::refresh_widgets(dashboard, widgets.slice(0, 10))  // Refresh same widgets
+  let second_refresh_time = @time() - start_time
   
-  // 图表交互状态
-  let interaction_state = {
-    "zoom_level": 1.0,
-    "pan_offset": {"x": 0, "y": 0},
-    "selected_points": [],
-    "hovered_point": nil,
-    "legend_visibility": {},
-    "interaction_log": []
-  }
+  assert_true(second_refresh_time < first_refresh_time)
   
-  // 模拟图表数据
-  let chart_data = {
-    "labels": ["Point 1", "Point 2", "Point 3", "Point 4", "Point 5", "Point 6", "Point 7", "Point 8"],
-    "datasets": [
-      {
-        "label": "Dataset A",
-        "data": [12, 19, 3, 5, 2, 3, 15, 8],
-        "color": "#3498db"
-      },
-      {
-        "label": "Dataset B", 
-        "data": [7, 11, 5, 8, 3, 7, 12, 6],
-        "color": "#e74c3c"
-      }
-    ]
-  }
+  // Test lazy loading
+  let visible_widgets = widgets.slice(0, 10)  // Only first 10 are visible
+  let start_time = @time()
+  OptimizedDashboard::load_visible_widgets(dashboard, visible_widgets)
+  let lazy_load_time = @time() - start_time
   
-  // 缩放功能
-  let zoom_chart = fn(state, factor, center_point) {
-    if not(interaction_config["zoom_enabled"]) {
-      return {"success": false, "reason": "zoom_disabled"}
-    }
-    
-    let old_zoom = state["zoom_level"]
-    let new_zoom = old_zoom * factor
-    
-    // 限制缩放范围
-    if new_zoom < 0.5 || new_zoom > 5.0 {
-      return {"success": false, "reason": "zoom_out_of_range"}
-    }
-    
-    state["zoom_level"] = new_zoom
-    
-    // 记录交互
-    state["interaction_log"] = state["interaction_log"].push({
-      "action": "zoom",
-      "old_level": old_zoom,
-      "new_level": new_zoom,
-      "center": center_point,
-      "timestamp": @lib.time.now()
-    })
-    
-    {
-      "success": true,
-      "old_zoom": old_zoom,
-      "new_zoom": new_zoom
-    }
-  }
+  // Lazy loading should only load visible widgets
+  assert_true(lazy_load_time < batch_load_time)
   
-  // 平移功能
-  let pan_chart = fn(state, delta_x, delta_y) {
-    if not(interaction_config["pan_enabled"]) {
-      return {"success": false, "reason": "pan_disabled"}
-    }
-    
-    let old_offset = state["pan_offset"]
-    state["pan_offset"]["x"] = old_offset["x"] + delta_x
-    state["pan_offset"]["y"] = old_offset["y"] + delta_y
-    
-    // 限制平移范围
-    let max_pan = 1000
-    state["pan_offset"]["x"] = @lib.max(-max_pan, @lib.min(max_pan, state["pan_offset"]["x"]))
-    state["pan_offset"]["y"] = @lib.max(-max_pan, @lib.min(max_pan, state["pan_offset"]["y"]))
-    
-    // 记录交互
-    state["interaction_log"] = state["interaction_log"].push({
-      "action": "pan",
-      "delta": {"x": delta_x, "y": delta_y},
-      "new_offset": state["pan_offset"],
-      "timestamp": @lib.time.now()
-    })
-    
-    {
-      "success": true,
-      "old_offset": old_offset,
-      "new_offset": state["pan_offset"]
-    }
-  }
+  // Test data compression
+  let compression_stats = OptimizedDashboard::get_compression_stats(dashboard)
+  assert_true(CompressionStats::original_size(compression_stats) > CompressionStats::compressed_size(compression_stats))
+  assert_true(CompressionStats::compression_ratio(compression_stats) > 0.0)
   
-  // 数据点选择
-  let select_data_point = fn(state, dataset_index, point_index) {
-    if not(interaction_config["data_point_click"]) {
-      return {"success": false, "reason": "selection_disabled"}
-    }
-    
-    let point_id = dataset_index.to_string() + "_" + point_index.to_string()
-    let existing_selection = state["selected_points"].index_of(point_id)
-    
-    match existing_selection {
-      Some(index) => {
-        // 取消选择
-        state["selected_points"] = state["selected_points"].slice(0, index) + 
-                                   state["selected_points"].slice(index + 1, state["selected_points"].length())
-        
-        state["interaction_log"] = state["interaction_log"].push({
-          "action": "deselect_point",
-          "point_id": point_id,
-          "timestamp": @lib.time.now()
-        })
-        
-        {"success": true, "action": "deselected", "point_id": point_id}
-      }
-      None => {
-        // 添加选择
-        state["selected_points"] = state["selected_points"].push(point_id)
-        
-        state["interaction_log"] = state["interaction_log"].push({
-          "action": "select_point",
-          "point_id": point_id,
-          "timestamp": @lib.time.now()
-        })
-        
-        {"success": true, "action": "selected", "point_id": point_id}
-      }
-    }
-  }
+  // Test performance metrics
+  let performance_metrics = OptimizedDashboard::get_performance_metrics(dashboard)
   
-  // 图例交互
-  let toggle_legend = fn(state, dataset_label) {
-    if not(interaction_config["legend_interactive"]) {
-      return {"success": false, "reason": "legend_disabled"}
-    }
-    
-    let current_visibility = state["legend_visibility"][dataset_label] ?? true
-    state["legend_visibility"][dataset_label] = not(current_visibility)
-    
-    state["interaction_log"] = state["interaction_log"].push({
-      "action": "toggle_legend",
-      "dataset": dataset_label,
-      "new_visibility": state["legend_visibility"][dataset_label],
-      "timestamp": @lib.time.now()
-    })
-    
-    {
-      "success": true,
-      "dataset": dataset_label,
-      "visibility": state["legend_visibility"][dataset_label]
-    }
-  }
+  assert_true(PerformanceMetrics::average_load_time(performance_metrics) > 0.0)
+  assert_true(PerformanceMetrics::average_refresh_time(performance_metrics) > 0.0)
+  assert_true(PerformanceMetrics::cache_hit_rate(performance_metrics) > 0.0)
+  assert_true(PerformanceMetrics::memory_usage(performance_metrics) > 0)
+  assert_true(PerformanceMetrics::data_throughput(performance_metrics) > 0.0)
   
-  // 测试缩放功能
-  let zoom_result = zoom_chart(interaction_state, 1.5, {"x": 0.5, "y": 0.5})
-  assert_true(zoom_result["success"], "缩放应该成功")
-  assert_eq(interaction_state["zoom_level"], 1.5, "缩放级别应该更新")
+  // Test widget virtualization for large datasets
+  let large_chart = Widget::create_chart_widget("Large Dataset", ChartType::Line)
+  Widget::set_data_source(large_chart, "metrics.large_dataset")
+  Widget::enable_virtualization(large_chart, 1000)  // Virtualize beyond 1000 points
   
-  // 测试平移功能
-  let pan_result = pan_chart(interaction_state, 50, 30)
-  assert_true(pan_result["success"], "平移应该成功")
-  assert_eq(interaction_state["pan_offset"]["x"], 50, "平移X偏移应该更新")
-  assert_eq(interaction_state["pan_offset"]["y"], 30, "平移Y偏移应该更新")
+  Dashboard::add_widget(dashboard, large_chart, Position::new(0, 20, 12, 8))
   
-  // 测试数据点选择
-  let select_result1 = select_data_point(interaction_state, 0, 2)
-  assert_true(select_result1["success"], "数据点选择应该成功")
-  assert_eq(select_result1["action"], "selected", "应该选择数据点")
-  assert_true(interaction_state["selected_points"].contains("0_2"), "数据点应该在选择列表中")
-  
-  let select_result2 = select_data_point(interaction_state, 0, 2)
-  assert_true(select_result2["success"], "重复选择应该成功")
-  assert_eq(select_result2["action"], "deselected", "应该取消选择数据点")
-  assert_false(interaction_state["selected_points"].contains("0_2"), "数据点应该从选择列表中移除")
-  
-  // 测试图例交互
-  let legend_result = toggle_legend(interaction_state, "Dataset A")
-  assert_true(legend_result["success"], "图例切换应该成功")
-  assert_false(legend_result["visibility"], "数据集应该被隐藏")
-  
-  // 验证交互日志
-  assert_true(interaction_state["interaction_log"].length() > 0, "应该有交互日志")
-  
-  let zoom_log = interaction_state["interaction_log"].filter_fn(log => log["action"] == "zoom")
-  let pan_log = interaction_state["interaction_log"].filter_fn(log => log["action"] == "pan")
-  let select_log = interaction_state["interaction_log"].filter_fn(log => log["action"] == "select_point")
-  let legend_log = interaction_state["interaction_log"].filter_fn(log => log["action"] == "toggle_legend")
-  
-  assert_true(zoom_log.length() > 0, "应该有缩放日志")
-  assert_true(pan_log.length() > 0, "应该有平移日志")
-  assert_true(select_log.length() > 0, "应该有选择日志")
-  assert_true(legend_log.length() > 0, "应该有图例日志")
-  
-  // 测试缩放限制
-  let zoom_over_limit = zoom_chart(interaction_state, 10.0, {"x": 0.5, "y": 0.5})
-  assert_false(zoom_over_limit["success"], "超出限制的缩放应该失败")
-  assert_eq(zoom_over_limit["reason"], "zoom_out_of_range", "失败原因应该正确")
-}
-
-// Test 6: 数据导出和分享功能
-test "data export and sharing functionality" {
-  // 导出配置
-  let export_config = {
-    "formats": ["png", "jpg", "svg", "pdf", "csv", "json"],
-    "quality": {
-      "png": 0.9,
-      "jpg": 0.8,
-      "svg": 1.0
-    },
-    "sharing": {
-      "enabled": true,
-      "url_expiry": 86400,  // 24小时
-      "allow_download": true
-    }
-  }
-  
-  // 模拟图表数据
-  let chart_data = {
-    "title": "System Performance Metrics",
-    "type": "line_chart",
-    "labels": ["00:00", "04:00", "08:00", "12:00", "16:00", "20:00"],
-    "datasets": [
-      {
-        "label": "CPU Usage (%)",
-        "data": [45.2, 52.1, 48.7, 55.3, 51.8, 49.6],
-        "color": "#3498db"
-      },
-      {
-        "label": "Memory Usage (%)",
-        "data": [62.3, 65.8, 61.2, 68.5, 64.7, 63.1],
-        "color": "#e74c3c"
-      }
-    ],
-    "metadata": {
-      "generated_at": @lib.time.now(),
-      "data_source": "telemetry_system",
-      "time_range": "24h"
-    }
-  }
-  
-  // 导出状态
-  let export_state = {
-    "exports": [],
-    "shares": [],
-    "last_export_id": 0
-  }
-  
-  // 导出为图片格式
-  let export_as_image = fn(data, format, state, config) {
-    if not(config["formats"].contains(format)) {
-      return {"success": false, "error": "unsupported_format"}
-    }
-    
-    let export_id = state["last_export_id"] + 1
-    state["last_export_id"] = export_id
-    
-    // 模拟导出过程
-    let export_start = @lib.time.now()
-    let export_time = match format {
-      "png" | "jpg" => @lib.random.int(2000) + 1000  // 1-3秒
-      "svg" => @lib.random.int(1000) + 500          // 0.5-1.5秒
-      _ => 0
-    }
-    
-    @lib.time.sleep(export_time)
-    
-    let export_end = @lib.time.now()
-    let quality = config["quality"][format] ?? 1.0
-    let file_size = match format {
-      "png" => (1024 * 1024 * quality).to_int()       // 1MB * quality
-      "jpg" => (800 * 1024 * quality).to_int()        // 800KB * quality
-      "svg" => (200 * 1024).to_int()                   // 200KB
-      _ => 0
-    }
-    
-    let export_record = {
-      "id": export_id,
-      "format": format,
-      "filename": "chart_" + export_id.to_string() + "." + format,
-      "file_size": file_size,
-      "quality": quality,
-      "created_at": export_end,
-      "duration": export_end - export_start
-    }
-    
-    state["exports"] = state["exports"].push(export_record)
-    
-    {
-      "success": true,
-      "export_id": export_id,
-      "filename": export_record["filename"],
-      "file_size": file_size
-    }
-  }
-  
-  // 导出为数据格式
-  let export_as_data = fn(data, format, state, config) {
-    if not(config["formats"].contains(format)) {
-      return {"success": false, "error": "unsupported_format"}
-    }
-    
-    let export_id = state["last_export_id"] + 1
-    state["last_export_id"] = export_id
-    
-    let export_start = @lib.time.now()
-    
-    let export_content = match format {
-      "csv" => {
-        let headers = ["Time", data["datasets"][0]["label"], data["datasets"][1]["label"]]
-        let rows = []
-        
-        for i in 0..data["labels"].length() {
-          let row = data["labels"][i] + "," + 
-                   data["datasets"][0]["data"][i].to_string() + "," + 
-                   data["datasets"][1]["data"][i].to_string()
-          rows = rows.push(row)
-        }
-        
-        headers.join(",") + "\n" + rows.join("\n")
-      }
-      "json" => {
-        @lib.json.stringify(data)
-      }
-      _ => ""
-    }
-    
-    let export_end = @lib.time.now()
-    let file_size = export_content.length()
-    
-    let export_record = {
-      "id": export_id,
-      "format": format,
-      "filename": "data_" + export_id.to_string() + "." + format,
-      "file_size": file_size,
-      "created_at": export_end,
-      "duration": export_end - export_start
-    }
-    
-    state["exports"] = state["exports"].push(export_record)
-    
-    {
-      "success": true,
-      "export_id": export_id,
-      "filename": export_record["filename"],
-      "file_size": file_size
-    }
-  }
-  
-  // 创建分享链接
-  let create_share_link = fn(export_id, state, config) {
-    if not(config["sharing"]["enabled"]) {
-      return {"success": false, "error": "sharing_disabled"}
-    }
-    
-    let share_id = @lib.string.random(16)
-    let created_at = @lib.time.now()
-    let expires_at = created_at + config["sharing"]["url_expiry"] * 1000
-    
-    let share_record = {
-      "share_id": share_id,
-      "export_id": export_id,
-      "created_at": created_at,
-      "expires_at": expires_at,
-      "download_count": 0,
-      "url": "https://dashboard.example.com/share/" + share_id
-    }
-    
-    state["shares"] = state["shares"].push(share_record)
-    
-    {
-      "success": true,
-      "share_id": share_id,
-      "url": share_record["url"],
-      "expires_at": expires_at
-    }
-  }
-  
-  // 测试图片导出
-  let image_exports = ["png", "jpg", "svg"]
-  let image_export_results = []
-  
-  for format in image_exports {
-    let result = export_as_image(chart_data, format, export_state, export_config)
-    image_export_results = image_export_results.push(result)
-  }
-  
-  // 验证图片导出
-  assert_eq(image_export_results.filter_fn(r => r["success"]).length(), image_exports.length(), 
-             "所有图片格式导出应该成功")
-  
-  for result in image_export_results {
-    assert_true(result["file_size"] > 0, "导出文件应该有大小")
-    assert_true(result["filename"].contains("."), "文件名应该包含扩展名")
-  }
-  
-  // 测试数据导出
-  let data_exports = ["csv", "json"]
-  let data_export_results = []
-  
-  for format in data_exports {
-    let result = export_as_data(chart_data, format, export_state, export_config)
-    data_export_results = data_export_results.push(result)
-  }
-  
-  // 验证数据导出
-  assert_eq(data_export_results.filter_fn(r => r["success"]).length(), data_exports.length(), 
-             "所有数据格式导出应该成功")
-  
-  // 测试分享功能
-  if export_config["sharing"]["enabled"] && export_state["exports"].length() > 0 {
-    let first_export_id = export_state["exports"][0]["id"]
-    let share_result = create_share_link(first_export_id, export_state, export_config)
-    
-    assert_true(share_result["success"], "分享链接创建应该成功")
-    assert_true(share_result["url"].length() > 0, "分享URL应该不为空")
-    assert_true(share_result["expires_at"] > @lib.time.now(), "过期时间应该在未来")
-  }
-  
-  // 验证导出状态
-  assert_true(export_state["exports"].length() > 0, "应该有导出记录")
-  assert_eq(export_state["last_export_id"], export_state["exports"].length(), "导出ID应该正确")
-  
-  // 验证导出记录
-  for export_record in export_state["exports"] {
-    assert_true(export_record["id"] > 0, "导出ID应该大于0")
-    assert_true(export_record["filename"].length() > 0, "文件名应该不为空")
-    assert_true(export_record["file_size"] > 0, "文件大小应该大于0")
-    assert_true(export_record["created_at"] > 0, "创建时间应该有效")
-  }
-  
-  // 验证分享记录
-  if export_state["shares"].length() > 0 {
-    for share_record in export_state["shares"] {
-      assert_true(share_record["share_id"].length() > 0, "分享ID应该不为空")
-      assert_true(share_record["url"].length() > 0, "分享URL应该不为空")
-      assert_true(share_record["export_id"] > 0, "关联的导出ID应该有效")
-    }
-  }
-}
-
-// Test 7: 主题和样式自定义
-test "theme and style customization" {
-  // 主题配置
-  let themes = {
-    "light": {
-      "name": "Light Theme",
-      "background": "#ffffff",
-      "text": "#333333",
-      "grid": "#e0e0e0",
-      "colors": ["#3498db", "#e74c3c", "#f39c12", "#2ecc71", "#9b59b6"],
-      "chart_background": "#fafafa",
-      "legend_text": "#666666"
-    },
-    "dark": {
-      "name": "Dark Theme", 
-      "background": "#2c3e50",
-      "text": "#ecf0f1",
-      "grid": "#34495e",
-      "colors": ["#3498db", "#e74c3c", "#f39c12", "#2ecc71", "#9b59b6"],
-      "chart_background": "#34495e",
-      "legend_text": "#bdc3c7"
-    },
-    "high_contrast": {
-      "name": "High Contrast Theme",
-      "background": "#000000",
-      "text": "#ffffff", 
-      "grid": "#666666",
-      "colors": ["#ffff00", "#00ff00", "#ff00ff", "#00ffff", "#ffffff"],
-      "chart_background": "#1a1a1a",
-      "legend_text": "#cccccc"
-    }
-  }
-  
-  // 样式配置
-  let style_options = {
-    "line_width": [1, 2, 3, 4],
-    "point_size": [3, 5, 7, 9],
-    "font_family": ["Arial", "Helvetica", "Roboto", "Open Sans"],
-    "animation_duration": [0, 500, 1000, 2000],
-    "border_radius": [0, 4, 8, 12]
-  }
-  
-  // 当前主题和样式状态
-  let current_theme = "light"
-  let current_style = {
-    "line_width": 2,
-    "point_size": 5,
-    "font_family": "Arial",
-    "animation_duration": 1000,
-    "border_radius": 4
-  }
-  
-  // 应用主题
-  let apply_theme = fn(theme_name, data) {
-    let theme = themes[theme_name]
-    
-    if not(theme) {
-      return {"success": false, "error": "theme_not_found"}
-    }
-    
-    // 应用主题到图表数据
-    let themed_data = @lib.object.clone(data)
-    
-    // 更新颜色
-    for i in 0..themed_data["datasets"].length() {
-      let color_index = i % theme["colors"].length()
-      themed_data["datasets"][i]["borderColor"] = theme["colors"][color_index]
-      themed_data["datasets"][i]["backgroundColor"] = theme["colors"][color_index] + "33"  // 添加透明度
-    }
-    
-    // 应用主题选项
-    themed_data["options"] = {
-      "responsive": true,
-      "plugins": {
-        "legend": {
-          "labels": {
-            "color": theme["legend_text"],
-            "font": {
-              "family": current_style["font_family"]
-            }
-          }
-        }
-      },
-      "scales": {
-        "x": {
-          "grid": {
-            "color": theme["grid"]
-          },
-          "ticks": {
-            "color": theme["text"]
-          }
-        },
-        "y": {
-          "grid": {
-            "color": theme["grid"]
-          },
-          "ticks": {
-            "color": theme["text"]
-          }
-        }
-      },
-      "elements": {
-        "line": {
-          "borderWidth": current_style["line_width"]
-        },
-        "point": {
-          "radius": current_style["point_size"]
-        }
-      },
-      "animation": {
-        "duration": current_style["animation_duration"]
-      },
-      "layout": {
-        "borderRadius": current_style["border_radius"]
-      }
-    }
-    
-    {
-      "success": true,
-      "theme_name": theme_name,
-      "themed_data": themed_data
-    }
-  }
-  
-  // 更新样式
-  let update_style = fn(style_property, value, current_styles) {
-    if not(style_options[style_property].contains(value)) {
-      return {"success": false, "error": "invalid_style_value"}
-    }
-    
-    current_styles[style_property] = value
-    
-    {
-      "success": true,
-      "property": style_property,
-      "value": value,
-      "updated_styles": current_styles
-    }
-  }
-  
-  // 模拟图表数据
-  let base_chart_data = {
-    "labels": ["January", "February", "March", "April", "May"],
-    "datasets": [
-      {
-        "label": "Dataset 1",
-        "data": [12, 19, 3, 5, 2]
-      },
-      {
-        "label": "Dataset 2", 
-        "data": [7, 11, 5, 8, 3]
-      }
-    ]
-  }
-  
-  // 测试主题应用
-  let theme_results = []
-  
-  for theme_name in themes.keys() {
-    let result = apply_theme(theme_name, base_chart_data)
-    theme_results = theme_results.push(result)
-  }
-  
-  // 验证主题应用
-  assert_eq(theme_results.filter_fn(r => r["success"]).length(), themes.keys().length(), 
-             "所有主题应该应用成功")
-  
-  for result in theme_results {
-    let themed_data = result["themed_data"]
-    assert_not_nil(themed_data["options"], "主题数据应该有选项")
-    assert_not_nil(themed_data["options"]["plugins"], "应该有插件配置")
-    assert_not_nil(themed_data["options"]["scales"], "应该有缩放配置")
-  }
-  
-  // 测试样式更新
-  let style_update_results = []
-  
-  for style_property in style_options.keys() {
-    let valid_values = style_options[style_property]
-    let test_value = valid_values[@lib.random.int(valid_values.length())]
-    
-    let result = update_style(style_property, test_value, current_style)
-    style_update_results = style_update_results.push(result)
-  }
-  
-  // 验证样式更新
-  assert_eq(style_update_results.filter_fn(r => r["success"]).length(), style_options.keys().length(), 
-             "所有样式更新应该成功")
-  
-  // 测试无效样式值
-  let invalid_style_result = update_style("line_width", 10, current_style)
-  assert_false(invalid_style_result["success"], "无效样式值应该失败")
-  assert_eq(invalid_style_result["error"], "invalid_style_value", "错误信息应该正确")
-  
-  // 测试主题特定属性
-  let light_theme_result = theme_results.filter_fn(r => r["theme_name"] == "light")[0]
-  let light_options = light_theme_result["themed_data"]["options"]
-  
-  assert_eq(light_options["scales"]["x"]["ticks"]["color"], themes["light"]["text"], 
-             "浅色主题文本颜色应该正确")
-  assert_eq(light_options["scales"]["x"]["grid"]["color"], themes["light"]["grid"], 
-             "浅色主题网格颜色应该正确")
-  
-  let dark_theme_result = theme_results.filter_fn(r => r["theme_name"] == "dark")[0]
-  let dark_options = dark_theme_result["themed_data"]["options"]
-  
-  assert_eq(dark_options["scales"]["x"]["ticks"]["color"], themes["dark"]["text"], 
-             "深色主题文本颜色应该正确")
-  assert_eq(dark_options["scales"]["x"]["grid"]["color"], themes["dark"]["grid"], 
-             "深色主题网格颜色应该正确")
-  
-  // 验证高对比度主题
-  let high_contrast_result = theme_results.filter_fn(r => r["theme_name"] == "high_contrast")[0]
-  let high_contrast_data = high_contrast_result["themed_data"]["datasets"][0]
-  
-  assert_true(themes["high_contrast"]["colors"].contains(high_contrast_data["borderColor"]), 
-             "高对比度主题应该使用高对比度颜色")
-}
-
-// Test 8: 性能监控和优化
-test "performance monitoring and optimization" {
-  // 性能监控配置
-  let performance_config = {
-    "max_render_time": 100,      // 100ms最大渲染时间
-    "max_data_points": 1000,     // 最大数据点数
-    "update_throttle": 100,      // 100ms更新节流
-    "lazy_loading": true,        // 启用懒加载
-    "virtualization": true       // 启用虚拟化
-  }
-  
-  // 性能监控状态
-  let performance_state = {
-    "render_times": [],
-    "data_point_counts": [],
-    "update_intervals": [],
-    "memory_usage": [],
-    "optimizations_applied": []
-  }
-  
-  // 模拟图表渲染
-  let render_chart = fn(data_points, state, config) {
-    let render_start = @lib.time.now()
-    
-    // 模拟渲染时间（基于数据点数量）
-    let base_render_time = 10  // 基础渲染时间10ms
-    let data_point_time = data_points.to_decimal() * 0.1  // 每个数据点0.1ms
-    let total_render_time = base_render_time + data_point_time
-    
-    // 应用优化
-    let optimized_time = if config["lazy_loading"] && data_points > 100 {
-      total_render_time * 0.7  // 懒加载减少30%时间
-    } else if config["virtualization"] && data_points > 500 {
-      total_render_time * 0.5  // 虚拟化减少50%时间
-    } else {
-      total_render_time
-    }
-    
-    @lib.time.sleep(optimized_time.to_int())
-    
-    let render_end = @lib.time.now()
-    let actual_render_time = render_end - render_start
-    
-    // 记录性能数据
-    state["render_times"] = state["render_times"].push(actual_render_time)
-    state["data_point_counts"] = state["data_point_counts"].push(data_points)
-    
-    // 检查是否超时
-    let timeout = actual_render_time > config["max_render_time"]
-    
-    {
-      "success": not(timeout),
-      "render_time": actual_render_time,
-      "data_points": data_points,
-      "timeout": timeout,
-      "optimized": optimized_time < total_render_time
-    }
-  }
-  
-  // 数据优化
-  let optimize_data = fn(data, max_points, strategy) {
-    if data.length() <= max_points {
-      return {"optimized": false, "data": data}
-    }
-    
-    let optimized_data = match strategy {
-      "sampling" => {
-        // 采样：均匀选择数据点
-        let step = @lib.ceil(data.length().to_decimal() / max_points.to_decimal()).to_int()
-        let sampled = []
-        
-        for i in 0..data.length() {
-          if i % step == 0 || i == data.length() - 1 {
-            sampled = sampled.push(data[i])
-          }
-        }
-        
-        sampled
-      }
-      "aggregation" => {
-        // 聚合：将数据点分组聚合
-        let group_size = @lib.ceil(data.length().to_decimal() / max_points.to_decimal()).to_int()
-        let aggregated = []
-        
-        for i in 0..data.length() {
-          if i % group_size == 0 {
-            let group_end = @lib.min(i + group_size, data.length())
-            let group = data.slice(i, group_end)
-            
-            // 计算平均值
-            let avg = group.reduce(fn(acc, val) { acc + val }, 0) / group.length()
-            aggregated = aggregated.push(avg)
-          }
-        }
-        
-        aggregated
-      }
-      "latest" => {
-        // 最新：保留最新的数据点
-        data.slice(data.length() - max_points, data.length())
-      }
-      _ => data
-    }
-    
-    {"optimized": true, "data": optimized_data, "original_count": data.length(), "optimized_count": optimized_data.length()}
-  }
-  
-  // 测试不同数据量的渲染性能
-  let test_data_sizes = [10, 50, 100, 500, 1000, 2000]
-  let render_results = []
-  
-  for size in test_data_sizes {
-    let result = render_chart(size, performance_state, performance_config)
-    render_results = render_results.push(result)
-  }
-  
-  // 验证渲染性能
-  for result in render_results {
-    assert_true(result["render_time"] > 0, "渲染时间应该大于0")
-    
-    if result["data_points"] <= 1000 {
-      assert_true(result["success"], "小数据量渲染应该成功")
-    }
-  }
-  
-  // 测试数据优化
-  let optimization_strategies = ["sampling", "aggregation", "latest"]
+  // Mock large dataset
   let large_data = []
-  
-  for i in 0..2000 {
-    large_data = large_data.push(@lib.random.float() * 100.0)
+  for i in 0..=9999 {  // 10,000 data points
+    large_data.push(DataPoint::new(i * 1000, @random() * 100.0))
   }
   
-  let optimization_results = []
+  DataProvider::mock_large_dataset(data_provider, "metrics.large_dataset", large_data)
   
-  for strategy in optimization_strategies {
-    let result = optimize_data(large_data, performance_config["max_data_points"], strategy)
-    optimization_results = optimization_results.push(result)
-  }
+  // Test virtualized loading
+  let start_time = @time()
+  OptimizedDashboard::load_virtualized_data(dashboard, large_chart)
+  let virtualized_load_time = @time() - start_time
   
-  // 验证数据优化
-  for result in optimization_results {
-    if result["optimized"] {
-      assert_true(result["optimized_count"] <= performance_config["max_data_points"], 
-                 "优化后数据点数应该不超过限制")
-      assert_true(result["optimized_count"] < result["original_count"], 
-                 "优化后数据点数应该少于原始数量")
-    }
-  }
+  // Virtualized loading should be fast even with large datasets
+  assert_true(virtualized_load_time < 500)  // Less than 500ms
   
-  // 计算性能统计
-  let avg_render_time = performance_state["render_times"].reduce(fn(acc, time) { acc + time }, 0.0) / 
-                        performance_state["render_times"].length().to_decimal()
+  // Test optimization recommendations
+  let recommendations = OptimizedDashboard::get_optimization_recommendations(dashboard)
+  assert_true(recommendations.length() > 0)
   
-  let max_render_time = performance_state["render_times"].reduce(fn(acc, time) { 
-    if time > acc { time } else { acc } 
-  }, 0.0)
-  
-  let timeout_count = render_results.filter_fn(r => r["timeout"]).length()
-  
-  // 验证性能统计
-  assert_true(avg_render_time > 0, "平均渲染时间应该大于0")
-  assert_true(max_render_time > 0, "最大渲染时间应该大于0")
-  
-  // 验证优化效果
-  let optimized_renders = render_results.filter_fn(r => r["optimized"])
-  assert_true(optimized_renders.length() > 0, "应该有优化的渲染")
-  
-  // 测试内存使用监控
-  let memory_snapshots = []
-  
-  for i in 0..5 {
-    // 模拟内存使用
-    let base_memory = 1024 * 1024  // 1MB基础内存
-    let data_memory = i * 512 * 1024  // 每次增加512KB
-    let total_memory = base_memory + data_memory
-    
-    memory_snapshots = memory_snapshots.push({
-      "snapshot": i,
-      "memory_usage": total_memory,
-      "data_points": test_data_sizes[@lib.min(i, test_data_sizes.length() - 1)]
-    })
-    
-    performance_state["memory_usage"] = performance_state["memory_usage"].push(total_memory)
-  }
-  
-  // 验证内存监控
-  assert_eq(memory_snapshots.length(), 5, "应该有5个内存快照")
-  
-  for snapshot in memory_snapshots {
-    assert_true(snapshot["memory_usage"] > 0, "内存使用应该大于0")
-  }
-  
-  // 验证内存增长趋势
-  let memory_growth = memory_snapshots[memory_snapshots.length() - 1]["memory_usage"] - 
-                     memory_snapshots[0]["memory_usage"]
-  assert_true(memory_growth > 0, "内存使用应该有增长")
+  // Should include recommendations for widget count, refresh rates, etc.
+  let has_widget_count_recommendation = recommendations.any(@(r) 
+    Recommendation::type(r) == RecommendationType::WidgetCount
+  )
+  assert_true(has_widget_count_recommendation)
 }
 
-// Test 9: 多图表联动和交互
-test "multi-chart linkage and interaction" {
-  // 图表联动配置
-  let linkage_config = {
-    "cross_filter": true,        // 交叉过滤
-    "brush_selection": true,     // 刷选
-    "synchronized_zoom": true,   // 同步缩放
-    "linked_legends": true,      // 联动图例
-    "shared_time_range": true    // 共享时间范围
-  }
+// Test 8: Dashboard Accessibility and Localization
+test "dashboard accessibility and localization" {
+  // Create accessible dashboard
+  let dashboard = AccessibleDashboard::new("Accessible Dashboard")
   
-  // 图表集合
-  let chart_collection = {
-    "charts": [
-      {
-        "id": "overview_chart",
-        "type": "line_chart",
-        "title": "System Overview",
-        "time_range": {"start": 0, "end": 86400000},  // 24小时
-        "linked_charts": ["cpu_chart", "memory_chart", "network_chart"]
-      },
-      {
-        "id": "cpu_chart",
-        "type": "area_chart",
-        "title": "CPU Usage",
-        "time_range": {"start": 0, "end": 86400000},
-        "linked_charts": ["overview_chart", "memory_chart"]
-      },
-      {
-        "id": "memory_chart",
-        "type": "line_chart",
-        "title": "Memory Usage",
-        "time_range": {"start": 0, "end": 86400000},
-        "linked_charts": ["overview_chart", "cpu_chart", "network_chart"]
-      },
-      {
-        "id": "network_chart",
-        "type": "bar_chart",
-        "title": "Network Traffic",
-        "time_range": {"start": 0, "end": 86400000},
-        "linked_charts": ["overview_chart", "memory_chart"]
-      }
-    ]
-  }
+  // Configure accessibility settings
+  AccessibleDashboard::enable_high_contrast(dashboard)
+  AccessibleDashboard::enable_screen_reader_support(dashboard)
+  AccessibleDashboard::enable_keyboard_navigation(dashboard)
+  AccessibleDashboard::set_font_size(dashboard, FontSize::Large)
   
-  // 联动状态
-  let linkage_state = {
-    "active_filters": {},
-    "shared_time_range": {"start": 0, "end": 86400000},
-    "selected_datasets": {},
-    "zoom_level": 1.0,
-    "interaction_log": []
-  }
+  // Create widgets with accessibility features
+  let cpu_widget = Widget::create_metric_widget("CPU Usage", MetricType::Gauge)
+  Widget::set_accessibility_label(cpu_widget, "Current CPU usage percentage")
+  Widget::set_accessibility_description(cpu_widget, "Shows the current CPU utilization as a percentage of total capacity")
   
-  // 应用时间范围过滤
-  let apply_time_filter = fn(chart_id, time_range, collection, state) {
-    if not(linkage_config["shared_time_range"]) {
-      return {"success": false, "reason": "time_sharing_disabled"}
-    }
-    
-    let chart = collection["charts"].filter_fn(c => c["id"] == chart_id)[0]
-    if not(chart) {
-      return {"success": false, "error": "chart_not_found"}
-    }
-    
-    // 更新共享时间范围
-    state["shared_time_range"] = time_range
-    
-    // 记录交互
-    state["interaction_log"] = state["interaction_log"].push({
-      "action": "time_filter",
-      "source_chart": chart_id,
-      "time_range": time_range,
-      "affected_charts": chart["linked_charts"],
-      "timestamp": @lib.time.now()
-    })
-    
-    {
-      "success": true,
-      "source_chart": chart_id,
-      "time_range": time_range,
-      "affected_charts": chart["linked_charts"]
-    }
-  }
+  let memory_widget = Widget::create_metric_widget("Memory Usage", MetricType::Gauge)
+  Widget::set_accessibility_label(memory_widget, "Current memory usage percentage")
+  Widget::set_accessibility_description(memory_widget, "Shows the current memory utilization as a percentage of total capacity")
   
-  // 应用数据集过滤
-  let apply_dataset_filter = fn(chart_id, dataset_filter, collection, state) {
-    if not(linkage_config["cross_filter"]) {
-      return {"success": false, "reason": "cross_filter_disabled"}
-    }
-    
-    let chart = collection["charts"].filter_fn(c => c["id"] == chart_id)[0]
-    if not(chart) {
-      return {"success": false, "error": "chart_not_found"}
-    }
-    
-    // 更新选中数据集
-    state["selected_datasets"][chart_id] = dataset_filter
-    
-    // 记录交互
-    state["interaction_log"] = state["interaction_log"].push({
-      "action": "dataset_filter",
-      "source_chart": chart_id,
-      "filter": dataset_filter,
-      "affected_charts": chart["linked_charts"],
-      "timestamp": @lib.time.now()
-    })
-    
-    {
-      "success": true,
-      "source_chart": chart_id,
-      "filter": dataset_filter,
-      "affected_charts": chart["linked_charts"]
-    }
-  }
+  let chart_widget = Widget::create_chart_widget("Response Time", ChartType::Line)
+  Widget::set_accessibility_label(chart_widget, "Response time trend over time")
+  Widget::set_accessibility_description(chart_widget, "Line chart showing response time trends with p50, p95, and p99 percentiles")
   
-  // 同步缩放
-  let synchronize_zoom = fn(chart_id, zoom_level, collection, state) {
-    if not(linkage_config["synchronized_zoom"]) {
-      return {"success": false, "reason": "zoom_sync_disabled"}
-    }
-    
-    let chart = collection["charts"].filter_fn(c => c["id"] == chart_id)[0]
-    if not(chart) {
-      return {"success": false, "error": "chart_not_found"}
-    }
-    
-    let old_zoom = state["zoom_level"]
-    state["zoom_level"] = zoom_level
-    
-    // 记录交互
-    state["interaction_log"] = state["interaction_log"].push({
-      "action": "synchronize_zoom",
-      "source_chart": chart_id,
-      "old_zoom": old_zoom,
-      "new_zoom": zoom_level,
-      "affected_charts": chart["linked_charts"],
-      "timestamp": @lib.time.now()
-    })
-    
-    {
-      "success": true,
-      "source_chart": chart_id,
-      "zoom_level": zoom_level,
-      "affected_charts": chart["linked_charts"]
-    }
-  }
+  // Add widgets to dashboard
+  Dashboard::add_widget(dashboard, cpu_widget, Position::new(0, 0, 4, 4))
+  Dashboard::add_widget(dashboard, memory_widget, Position::new(4, 0, 4, 4))
+  Dashboard::add_widget(dashboard, chart_widget, Position::new(0, 4, 8, 4))
   
-  // 测试时间范围过滤
-  let time_filter_result = apply_time_filter(
-    "overview_chart", 
-    {"start": 21600000, "end": 64800000},  // 6:00-18:00
-    chart_collection, 
-    linkage_state
+  // Test accessibility features
+  assert_true(AccessibleDashboard::is_high_contrast_enabled(dashboard))
+  assert_true(AccessibleDashboard::is_screen_reader_support_enabled(dashboard))
+  assert_true(AccessibleDashboard::is_keyboard_navigation_enabled(dashboard))
+  assert_eq(AccessibleDashboard::get_font_size(dashboard), FontSize::Large)
+  
+  // Test widget accessibility labels
+  assert_eq(Widget::get_accessibility_label(cpu_widget), "Current CPU usage percentage")
+  assert_eq(Widget::get_accessibility_description(cpu_widget), "Shows the current CPU utilization as a percentage of total capacity")
+  
+  // Test keyboard navigation order
+  AccessibleDashboard::set_navigation_order(dashboard, [cpu_widget, memory_widget, chart_widget])
+  let navigation_order = AccessibleDashboard::get_navigation_order(dashboard)
+  assert_eq(navigation_order.length(), 3)
+  assert_eq(navigation_order[0], cpu_widget)
+  assert_eq(navigation_order[1], memory_widget)
+  assert_eq(navigation_order[2], chart_widget)
+  
+  // Test localization
+  let localization_manager = LocalizationManager::new()
+  
+  // Add translations
+  LocalizationManager::add_translation(localization_manager, "en", "CPU Usage", "CPU Usage")
+  LocalizationManager::add_translation(localization_manager, "en", "Memory Usage", "Memory Usage")
+  LocalizationManager::add_translation(localization_manager, "en", "Response Time", "Response Time")
+  
+  LocalizationManager::add_translation(localization_manager, "es", "CPU Usage", "Uso de CPU")
+  LocalizationManager::add_translation(localization_manager, "es", "Memory Usage", "Uso de Memoria")
+  LocalizationManager::add_translation(localization_manager, "es", "Response Time", "Tiempo de Respuesta")
+  
+  LocalizationManager::add_translation(localization_manager, "fr", "CPU Usage", "Utilisation CPU")
+  LocalizationManager::add_translation(localization_manager, "fr", "Memory Usage", "Utilisation Mémoire")
+  LocalizationManager::add_translation(localization_manager, "fr", "Response Time", "Temps de Réponse")
+  
+  // Set dashboard locale
+  AccessibleDashboard::set_locale(dashboard, "es")
+  AccessibleDashboard::set_localization_manager(dashboard, localization_manager)
+  
+  // Test localized widget titles
+  assert_eq(Widget::get_localized_title(cpu_widget), "Uso de CPU")
+  assert_eq(Widget::get_localized_title(memory_widget), "Uso de Memoria")
+  assert_eq(Widget::get_localized_title(chart_widget), "Tiempo de Respuesta")
+  
+  // Test locale change
+  AccessibleDashboard::set_locale(dashboard, "fr")
+  
+  assert_eq(Widget::get_localized_title(cpu_widget), "Utilisation CPU")
+  assert_eq(Widget::get_localized_title(memory_widget), "Utilisation Mémoire")
+  assert_eq(Widget::get_localized_title(chart_widget), "Temps de Réponse")
+  
+  // Test right-to-left language support
+  LocalizationManager::add_translation(localization_manager, "ar", "CPU Usage", "استخدام المعالج")
+  LocalizationManager::set_text_direction(localization_manager, "ar", TextDirection::RTL)
+  
+  AccessibleDashboard::set_locale(dashboard, "ar")
+  
+  assert_eq(AccessibleDashboard::get_text_direction(dashboard), TextDirection::RTL)
+  assert_eq(Widget::get_localized_title(cpu_widget), "استخدام المعالج")
+  
+  // Test number and date formatting
+  AccessibleDashboard::set_locale(dashboard, "en")
+  let formatted_number = AccessibleDashboard::format_number(dashboard, 1234.567)
+  assert_eq(formatted_number, "1,234.567")
+  
+  let formatted_date = AccessibleDashboard::format_date(dashboard, 1640995200000L)
+  assert_eq(formatted_date, "1/1/2022")
+  
+  AccessibleDashboard::set_locale(dashboard, "es")
+  let spanish_number = AccessibleDashboard::format_number(dashboard, 1234.567)
+  assert_eq(spanish_number, "1.234,567")
+  
+  // Test accessibility validation
+  let validation_result = AccessibleDashboard::validate_accessibility(dashboard)
+  
+  assert_true(validation_result.overall_score > 0.8)  // Should have good accessibility score
+  assert_true(validation_result.issues.length() == 0)  // No accessibility issues
+  
+  // Test missing accessibility label
+  let new_widget = Widget::create_metric_widget("New Widget", MetricType::Gauge)
+  Dashboard::add_widget(dashboard, new_widget, Position::new(0, 8, 4, 4))
+  
+  let validation_result_with_issue = AccessibleDashboard::validate_accessibility(dashboard)
+  assert_true(validation_result_with_issue.issues.length() > 0)
+  
+  let missing_label_issue = validation_result_with_issue.issues.find(@(i) 
+    AccessibilityIssue::type(i) == AccessibilityIssueType::MissingLabel
   )
-  
-  assert_true(time_filter_result["success"], "时间范围过滤应该成功")
-  assert_eq(linkage_state["shared_time_range"]["start"], 21600000, "共享时间范围开始时间应该更新")
-  assert_eq(linkage_state["shared_time_range"]["end"], 64800000, "共享时间范围结束时间应该更新")
-  assert_true(time_filter_result["affected_charts"].length() > 0, "应该有受影响的图表")
-  
-  // 测试数据集过滤
-  let dataset_filter_result = apply_dataset_filter(
-    "cpu_chart",
-    {"enabled": ["CPU_Total"], "disabled": ["CPU_User", "CPU_System"]},
-    chart_collection,
-    linkage_state
-  )
-  
-  assert_true(dataset_filter_result["success"], "数据集过滤应该成功")
-  assert_true(linkage_state["selected_datasets"]["cpu_chart"], "CPU图表应该有过滤设置")
-  assert_true(dataset_filter_result["affected_charts"].length() > 0, "应该有受影响的图表")
-  
-  // 测试同步缩放
-  let zoom_sync_result = synchronize_zoom("memory_chart", 2.5, chart_collection, linkage_state)
-  
-  assert_true(zoom_sync_result["success"], "同步缩放应该成功")
-  assert_eq(linkage_state["zoom_level"], 2.5, "缩放级别应该更新")
-  assert_true(zoom_sync_result["affected_charts"].length() > 0, "应该有受影响的图表")
-  
-  // 验证交互日志
-  assert_true(linkage_state["interaction_log"].length() > 0, "应该有交互日志")
-  
-  let time_filter_logs = linkage_state["interaction_log"].filter_fn(log => log["action"] == "time_filter")
-  let dataset_filter_logs = linkage_state["interaction_log"].filter_fn(log => log["action"] == "dataset_filter")
-  let zoom_sync_logs = linkage_state["interaction_log"].filter_fn(log => log["action"] == "synchronize_zoom")
-  
-  assert_true(time_filter_logs.length() > 0, "应该有时间过滤日志")
-  assert_true(dataset_filter_logs.length() > 0, "应该有数据集过滤日志")
-  assert_true(zoom_sync_logs.length() > 0, "应该有同步缩放日志")
-  
-  // 验证联动关系
-  let overview_chart = chart_collection["charts"].filter_fn(c => c["id"] == "overview_chart")[0]
-  assert_true(overview_chart["linked_charts"].length() > 0, "总览图表应该有联动图表")
-  
-  // 验证联动影响范围
-  for log in linkage_state["interaction_log"] {
-    assert_true(log["affected_charts"].length() > 0, "每个交互都应该影响其他图表")
-    assert_true(log["timestamp"] > 0, "交互时间戳应该有效")
-  }
-  
-  // 测试联动配置禁用情况
-  let original_config = linkage_config["shared_time_range"]
-  linkage_config["shared_time_range"] = false
-  
-  let disabled_time_filter = apply_time_filter(
-    "overview_chart",
-    {"start": 0, "end": 43200000},
-    chart_collection,
-    linkage_state
-  )
-  
-  assert_false(disabled_time_filter["success"], "禁用时间共享时过滤应该失败")
-  assert_eq(disabled_time_filter["reason"], "time_sharing_disabled", "失败原因应该正确")
-  
-  // 恢复配置
-  linkage_config["shared_time_range"] = original_config
+  assert_true(missing_label_issue.is_some())
 }
 
-// Test 10: 可访问性支持
-test "accessibility support" {
-  // 可访问性配置
-  let accessibility_config = {
-    "keyboard_navigation": true,
-    "screen_reader_support": true,
-    "high_contrast_mode": true,
-    "focus_management": true,
-    "aria_labels": true,
-    "keyboard_shortcuts": {
-      "next_chart": "Tab",
-      "previous_chart": "Shift+Tab",
-      "toggle_legend": "Space",
-      "zoom_in": "Plus",
-      "zoom_out": "Minus"
+// Test 9: Dashboard Alerts and Notifications
+test "dashboard alerts and notifications" {
+  // Create dashboard with alerting
+  let dashboard = AlertingDashboard::new("Alerting Dashboard")
+  
+  // Create widgets for monitoring
+  let cpu_widget = Widget::create_metric_widget("CPU Usage", MetricType::Gauge)
+  let memory_widget = Widget::create_metric_widget("Memory Usage", MetricType::Gauge)
+  let error_rate_widget = Widget::create_chart_widget("Error Rate", ChartType::Line)
+  let response_time_widget = Widget::create_chart_widget("Response Time", ChartType::Line)
+  
+  Dashboard::add_widget(dashboard, cpu_widget, Position::new(0, 0, 6, 4))
+  Dashboard::add_widget(dashboard, memory_widget, Position::new(6, 0, 6, 4))
+  Dashboard::add_widget(dashboard, error_rate_widget, Position::new(0, 4, 6, 4))
+  Dashboard::add_widget(dashboard, response_time_widget, Position::new(6, 4, 6, 4))
+  
+  // Configure alert rules
+  let cpu_alert = AlertRule::new("High CPU Usage", "cpu_widget")
+  AlertRule::set_condition(cpu_alert, AlertCondition::GreaterThan(80.0))
+  AlertRule::set_severity(cpu_alert, AlertSeverity::Warning)
+  AlertRule::set_duration(cpu_alert, 300)  // 5 minutes
+  AlertRule::set_message(cpu_alert, "CPU usage has been above 80% for more than 5 minutes")
+  
+  let memory_alert = AlertRule::new("High Memory Usage", "memory_widget")
+  AlertRule::set_condition(memory_alert, AlertCondition::GreaterThan(90.0))
+  AlertRule::set_severity(memory_alert, AlertSeverity::Critical)
+  AlertRule::set_duration(memory_alert, 180)  // 3 minutes
+  AlertRule::set_message(memory_alert, "Memory usage has been above 90% for more than 3 minutes")
+  
+  let error_rate_alert = AlertRule::new("High Error Rate", "error_rate_widget")
+  AlertRule::set_condition(error_rate_alert, AlertCondition::GreaterThan(5.0))
+  AlertRule::set_severity(error_rate_alert, AlertSeverity::Warning)
+  AlertRule::set_duration(error_rate_alert, 600)  // 10 minutes
+  
+  let response_time_alert = AlertRule::new("High Response Time", "response_time_widget")
+  AlertRule::set_condition(response_time_alert, AlertCondition::GreaterThan(1000.0))
+  AlertRule::set_severity(response_time_alert, AlertSeverity::Critical)
+  AlertRule::set_duration(response_time_alert, 120)  // 2 minutes
+  
+  // Add alert rules to dashboard
+  AlertingDashboard::add_alert_rule(dashboard, cpu_alert)
+  AlertingDashboard::add_alert_rule(dashboard, memory_alert)
+  AlertingDashboard::add_alert_rule(dashboard, error_rate_alert)
+  AlertingDashboard::add_alert_rule(dashboard, response_time_alert)
+  
+  // Configure notification channels
+  let email_channel = NotificationChannel::email("admin@example.com")
+  let slack_channel = NotificationChannel::slack("https://hooks.slack.com/webhook")
+  let webhook_channel = NotificationChannel::webhook("https://api.example.com/alerts")
+  
+  AlertingDashboard::add_notification_channel(dashboard, email_channel)
+  AlertingDashboard::add_notification_channel(dashboard, slack_channel)
+  AlertingDashboard::add_notification_channel(dashboard, webhook_channel)
+  
+  // Configure alert routing
+  AlertingDashboard::route_alert(dashboard, "High CPU Usage", [email_channel, slack_channel])
+  AlertingDashboard::route_alert(dashboard, "High Memory Usage", [email_channel, slack_channel, webhook_channel])
+  AlertingDashboard::route_alert(dashboard, "High Error Rate", [slack_channel])
+  AlertingDashboard::route_alert(dashboard, "High Response Time", [email_channel, webhook_channel])
+  
+  // Create data provider with alert-triggering values
+  let data_provider = DataProvider::new()
+  
+  // Mock data that triggers alerts
+  DataProvider::mock_time_series(data_provider, "metrics.cpu.usage", || {
+    85.0  // Above 80% threshold
+  })
+  
+  DataProvider::mock_time_series(data_provider, "metrics.memory.usage", || {
+    95.0  // Above 90% threshold
+  })
+  
+  DataProvider::mock_time_series(data_provider, "metrics.error_rate", || {
+    6.0  // Above 5% threshold
+  })
+  
+  DataProvider::mock_time_series(data_provider, "metrics.response_time", || {
+    1200.0  // Above 1000ms threshold
+  })
+  
+  // Start alert monitoring
+  AlertingDashboard::start_monitoring(dashboard, data_provider)
+  
+  // Wait for alert evaluation
+  @sleep(1000)
+  
+  // Check active alerts
+  let active_alerts = AlertingDashboard::get_active_alerts(dashboard)
+  assert_eq(active_alerts.length(), 4)
+  
+  // Verify alert details
+  let cpu_active_alert = active_alerts.find(@(a) Alert::rule_name(a) == "High CPU Usage")
+  match cpu_active_alert {
+    Some(alert) => {
+      assert_eq(Alert::severity(alert), AlertSeverity::Warning)
+      assert_eq(Alert::status(alert), AlertStatus::Firing)
+      assert_eq(Alert::value(alert), 85.0)
     }
+    None => assert_true(false)
   }
   
-  // 可访问性状态
-  let accessibility_state = {
-    "focused_chart": nil,
-    "focusable_elements": [],
-    "screen_reader_text": {},
-    "keyboard_navigation_log": [],
-    "high_contrast_enabled": false
+  let memory_active_alert = active_alerts.find(@(a) Alert::rule_name(a) == "High Memory Usage")
+  match memory_active_alert {
+    Some(alert) => {
+      assert_eq(Alert::severity(alert), AlertSeverity::Critical)
+      assert_eq(Alert::status(alert), AlertStatus::Firing)
+      assert_eq(Alert::value(alert), 95.0)
+    }
+    None => assert_true(false)
   }
   
-  // 模拟图表数据
-  let chart_data = {
-    "title": "Monthly Performance",
-    "type": "bar_chart",
-    "labels": ["January", "February", "March", "April", "May"],
-    "datasets": [
-      {
-        "label": "Sales",
-        "data": [12000, 19000, 15000, 25000, 22000],
-        "color": "#3498db"
-      },
-      {
-        "label": "Expenses",
-        "data": [8000, 12000, 10000, 14000, 13000],
-        "color": "#e74c3c"
-      }
-    ]
-  }
+  // Test alert history
+  let alert_history = AlertingDashboard::get_alert_history(dashboard)
+  assert_true(alert_history.length() >= 4)
   
-  // 生成屏幕阅读器文本
-  let generate_screen_reader_text = fn(data, config) {
-    if not(config["screen_reader_support"]) {
-      return {"success": false, "reason": "screen_reader_disabled"}
-    }
-    
-    let title_text = "Chart: " + data["title"]
-    let type_text = "Type: " + data["type"].replace("_", " ")
-    
-    let data_text = "Data includes " + data["labels"].length().to_string() + " time periods: " + 
-                   data["labels"].join(", ")
-    
-    let datasets_text = data["datasets"].map_fn(dataset => {
-      "Dataset " + dataset["label"] + " with values: " + 
-      dataset["data"].map_fn(v => v.to_string()).join(", ")
-    }).join(". ")
-    
-    let full_text = title_text + ". " + type_text + ". " + data_text + ". " + datasets_text
-    
-    {
-      "success": true,
-      "title": title_text,
-      "type": type_text,
-      "data": data_text,
-      "datasets": datasets_text,
-      "full_text": full_text
-    }
-  }
+  // Test alert acknowledgment
+  let cpu_alert_to_ack = active_alerts.find(@(a) Alert::rule_name(a) == "High CPU Usage").unwrap()
+  AlertingDashboard::acknowledge_alert(dashboard, Alert::id(cpu_alert_to_ack), "Acknowledged by admin")
   
-  // 添加键盘导航支持
-  let add_keyboard_navigation = fn(chart_id, elements, state, config) {
-    if not(config["keyboard_navigation"]) {
-      return {"success": false, "reason": "keyboard_navigation_disabled"}
-    }
-    
-    // 为图表添加可聚焦元素
-    let focusable_elements = [
-      {"id": chart_id + "_title", "type": "heading", "text": chart_data["title"]},
-      {"id": chart_id + "_legend", "type": "legend", "datasets": chart_data["datasets"].length()},
-      {"id": chart_id + "_canvas", "type": "canvas", "interactive": true},
-      {"id": chart_id + "_tooltip", "type": "tooltip", "visible": false}
-    ]
-    
-    // 更新状态
-    state["focusable_elements"] = state["focusable_elements"] + focusable_elements
-    
-    {
-      "success": true,
-      "chart_id": chart_id,
-      "focusable_elements": focusable_elements
-    }
-  }
-  
-  // 处理键盘导航
-  let handle_keyboard_navigation = fn(key, state, config) {
-    if not(config["keyboard_navigation"]) {
-      return {"success": false, "reason": "keyboard_navigation_disabled"}
-    }
-    
-    let shortcuts = config["keyboard_shortcuts"]
-    let action = nil
-    
-    // 查找对应的操作
-    for shortcut_action in shortcuts.keys() {
-      if shortcuts[shortcut_action] == key {
-        action = shortcut_action
-        break
-      }
-    }
-    
-    match action {
-      Some(action_name) => {
-        // 记录键盘导航
-        state["keyboard_navigation_log"] = state["keyboard_navigation_log"].push({
-          "key": key,
-          "action": action_name,
-          "timestamp": @lib.time.now()
-        })
-        
-        {
-          "success": true,
-          "key": key,
-          "action": action_name
+  let updated_alerts = AlertingDashboard::get_active_alerts(dashboard)
+  let acked_alert = updated_alerts.find(@(a) Alert::id(a) == Alert::id(cpu_alert_to_ack))
+  match acked_alert {
+    Some(alert) => {
+      assert_eq(Alert::status(alert), AlertStatus::Acknowledged)
+      match Alert::acknowledgment(alert) {
+        Some(ack) => {
+          assert_eq(ack.message, "Acknowledged by admin")
+          assert_true(ack.timestamp > 0)
         }
+        None => assert_true(false)
       }
-      None => {
+    }
+    None => assert_true(false)
+  }
+  
+  // Test alert resolution
+  // Update data to resolve alerts
+  DataProvider::mock_time_series(data_provider, "metrics.cpu.usage", || {
+    45.0  // Below 80% threshold
+  })
+  
+  // Wait for re-evaluation
+  @sleep(1000)
+  
+  let resolved_alerts = AlertingDashboard::get_resolved_alerts(dashboard)
+  let cpu_resolved = resolved_alerts.find(@(a) Alert::rule_name(a) == "High CPU Usage")
+  match cpu_resolved {
+    Some(alert) => {
+      assert_eq(Alert::status(alert), AlertStatus::Resolved)
+      assert_eq(Alert::value(alert), 45.0)
+    }
+    None => assert_true(false)
+  }
+  
+  // Test alert suppression
+  AlertingDashboard::suppress_alert(dashboard, "High Memory Usage", 3600)  // Suppress for 1 hour
+  
+  let suppressed_rules = AlertingDashboard::get_suppressed_rules(dashboard)
+  assert_eq(suppressed_rules.length(), 1)
+  assert_eq(suppressed_rules[0], "High Memory Usage")
+  
+  // Test alert statistics
+  let alert_stats = AlertingDashboard::get_alert_statistics(dashboard)
+  assert_eq(AlertStatistics::total_alerts(alert_stats), 4)
+  assert_eq(AlertStatistics::active_alerts(alert_stats), 3)  // CPU resolved, memory suppressed
+  assert_eq(AlertStatistics::critical_alerts(alert_stats), 2)
+  assert_eq(AlertStatistics::warning_alerts(alert_stats), 2)
+}
+
+// Test 10: Dashboard Integration with External Systems
+test "dashboard integration with external systems" {
+  // Create dashboard with external integrations
+  let dashboard = IntegratedDashboard::new("Integrated Dashboard")
+  
+  // Configure Prometheus integration
+  let prometheus_config = PrometheusConfig::new("http://prometheus.example.com:9090")
+  PrometheusConfig::set_query_timeout(prometheus_config, 30)
+  PrometheusConfig::set_auth_token(prometheus_config, "prometheus-auth-token")
+  
+  IntegratedDashboard::add_prometheus_integration(dashboard, prometheus_config)
+  
+  // Configure Grafana integration
+  let grafana_config = GrafanaConfig::new("http://grafana.example.com:3000")
+  GrafanaConfig::set_api_key(grafana_config, "grafana-api-key")
+  GrafanaConfig::set_default_datasource(grafana_config, "prometheus")
+  
+  IntegratedDashboard::add_grafana_integration(dashboard, grafana_config)
+  
+  // Configure Elasticsearch integration
+  let elasticsearch_config = ElasticsearchConfig::new("http://elasticsearch.example.com:9200")
+  ElasticsearchConfig::set_index_pattern(elasticsearch_config, "logs-*")
+  ElasticsearchConfig::set_username(elasticsearch_config, "elastic")
+  ElasticsearchConfig::set_password(elasticsearch_config, "elastic-password")
+  
+  IntegratedDashboard::add_elasticsearch_integration(dashboard, elasticsearch_config)
+  
+  // Create widgets with external data sources
+  let cpu_widget = Widget::create_metric_widget("CPU Usage", MetricType::Gauge)
+  Widget::set_prometheus_query(cpu_widget, "avg(100 - (avg by(instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100))")
+  
+  let memory_widget = Widget::create_metric_widget("Memory Usage", MetricType::Gauge)
+  Widget::set_prometheus_query(memory_widget, "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100")
+  
+  let request_rate_widget = Widget::create_chart_widget("Request Rate", ChartType::Line)
+  Widget::set_prometheus_query(request_rate_widget, "sum(rate(http_requests_total[5m])) by(service)")
+  
+  let error_logs_widget = Widget::create_table_widget("Error Logs")
+  Widget::set_elasticsearch_query(error_logs_widget, {
+    "query": {
+      "bool": {
+        "must": [
+          {"match": {"level": "ERROR"}}
+        ],
+        "filter": [
+          {"range": {"@timestamp": {"gte": "now-1h"}}}
+        ]
+      }
+    },
+    "sort": [
+      {"@timestamp": {"order": "desc"}}
+    ]
+  })
+  
+  Dashboard::add_widget(dashboard, cpu_widget, Position::new(0, 0, 6, 4))
+  Dashboard::add_widget(dashboard, memory_widget, Position::new(6, 0, 6, 4))
+  Dashboard::add_widget(dashboard, request_rate_widget, Position::new(0, 4, 12, 4))
+  Dashboard::add_widget(dashboard, error_logs_widget, Position::new(0, 8, 12, 4))
+  
+  // Test Prometheus integration
+  let prometheus_client = IntegratedDashboard::get_prometheus_client(dashboard)
+  
+  // Mock Prometheus response
+  IntegratedDashboard::mock_prometheus_response(dashboard, "avg(100 - (avg by(instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100))", {
+    "status": "success",
+    "data": {
+      "resultType": "vector",
+      "result": [
         {
-          "success": false,
-          "key": key,
-          "reason": "unknown_shortcut"
+          "metric": {"instance": "server1"},
+          "value": [1640995200, "75.5"]
+        },
+        {
+          "metric": {"instance": "server2"},
+          "value": [1640995200, "82.3"]
         }
+      ]
+    }
+  })
+  
+  let prometheus_data = PrometheusClient::query(prometheus_client, "avg(100 - (avg by(instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100))")
+  
+  match prometheus_data {
+    Ok(data) => {
+      assert_eq(data.result_type, "vector")
+      assert_eq(data.result.length(), 2)
+      assert_eq(data.result[0].value[1], "75.5")
+      assert_eq(data.result[1].value[1], "82.3")
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  // Test Elasticsearch integration
+  let elasticsearch_client = IntegratedDashboard::get_elasticsearch_client(dashboard)
+  
+  // Mock Elasticsearch response
+  IntegratedDashboard::mock_elasticsearch_response(dashboard, {
+    "took": 5,
+    "timed_out": false,
+    "_shards": {"total": 1, "successful": 1, "skipped": 0, "failed": 0},
+    "hits": {
+      "total": {"value": 10000, "relation": "eq"},
+      "max_score": 1.0,
+      "hits": [
+        {
+          "_index": "logs-2022.01.01",
+          "_id": "1",
+          "_score": 1.0,
+          "_source": {
+            "@timestamp": "2022-01-01T12:00:00.000Z",
+            "level": "ERROR",
+            "message": "Database connection failed",
+            "service": "user-service"
+          }
+        },
+        {
+          "_index": "logs-2022.01.01",
+          "_id": "2",
+          "_score": 1.0,
+          "_source": {
+            "@timestamp": "2022-01-01T12:01:00.000Z",
+            "level": "ERROR",
+            "message": "API rate limit exceeded",
+            "service": "order-service"
+          }
+        }
+      ]
+    }
+  })
+  
+  let elasticsearch_data = ElasticsearchClient::search(elasticsearch_client, {
+    "query": {
+      "bool": {
+        "must": [
+          {"match": {"level": "ERROR"}}
+        ],
+        "filter": [
+          {"range": {"@timestamp": {"gte": "now-1h"}}}
+        ]
       }
+    },
+    "sort": [
+      {"@timestamp": {"order": "desc"}}
+    ]
+  })
+  
+  match elasticsearch_data {
+    Ok(data) => {
+      assert_eq(data.hits.total.value, 10000)
+      assert_eq(data.hits.hits.length(), 2)
+      assert_eq(data.hits.hits[0]._source.level, "ERROR")
+      assert_eq(data.hits.hits[0]._source.message, "Database connection failed")
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  // Test Grafana integration
+  let grafana_client = IntegratedDashboard::get_grafana_client(dashboard)
+  
+  // Mock Grafana response
+  IntegratedDashboard::mock_grafana_response(dashboard, {
+    "dashboard": {
+      "id": 123,
+      "title": "System Overview",
+      "panels": [
+        {
+          "id": 1,
+          "title": "CPU Usage",
+          "type": "stat"
+        },
+        {
+          "id": 2,
+          "title": "Memory Usage",
+          "type": "stat"
+        }
+      ]
+    }
+  })
+  
+  let grafana_dashboard = GrafanaClient::get_dashboard(grafana_client, 123)
+  
+  match grafana_dashboard {
+    Ok(dashboard) => {
+      assert_eq(dashboard.dashboard.id, 123)
+      assert_eq(dashboard.dashboard.title, "System Overview")
+      assert_eq(dashboard.dashboard.panels.length(), 2)
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  // Test widget data loading from external sources
+  IntegratedDashboard::load_widget_data(dashboard, cpu_widget)
+  
+  let cpu_data = Widget::get_current_data(cpu_widget)
+  match cpu_data {
+    Some(data) => {
+      assert_true(data.value >= 0.0)
+      assert_true(data.timestamp > 0)
+    }
+    None => assert_true(false)
+  }
+  
+  // Test data source health checks
+  let health_status = IntegratedDashboard::check_data_source_health(dashboard)
+  
+  assert_true(health_status.contains("prometheus"))
+  assert_true(health_status.contains("elasticsearch"))
+  assert_true(health_status.contains("grafana"))
+  
+  // Test integration metrics
+  let integration_metrics = IntegratedDashboard::get_integration_metrics(dashboard)
+  
+  assert_true(IntegrationMetrics::prometheus_query_count(integration_metrics) > 0)
+  assert_true(IntegrationMetrics::elasticsearch_query_count(integration_metrics) > 0)
+  assert_true(IntegrationMetrics::grafana_api_calls(integration_metrics) > 0)
+  assert_true(IntegrationMetrics::average_response_time(integration_metrics) > 0.0)
+  
+  // Test external dashboard import
+  let grafana_dashboard_json = {
+    "dashboard": {
+      "title": "Imported Dashboard",
+      "panels": [
+        {
+          "title": "Imported Panel",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "up"
+            }
+          ]
+        }
+      ]
     }
   }
   
-  // 启用高对比度模式
-  let enable_high_contrast = fn(state, config) {
-    if not(config["high_contrast_mode"]) {
-      return {"success": false, "reason": "high_contrast_disabled"}
-    }
-    
-    state["high_contrast_enabled"] = not(state["high_contrast_enabled"])
-    
-    {
-      "success": true,
-      "high_contrast_enabled": state["high_contrast_enabled"]
-    }
-  }
+  let imported_dashboard = IntegratedDashboard::import_from_grafana(dashboard, grafana_dashboard_json)
   
-  // 测试屏幕阅读器支持
-  let screen_reader_result = generate_screen_reader_text(chart_data, accessibility_config)
+  assert_eq(Dashboard::title(imported_dashboard), "Imported Dashboard")
+  assert_eq(Dashboard::widget_count(imported_dashboard), 1)
   
-  assert_true(screen_reader_result["success"], "屏幕阅读器文本生成应该成功")
-  assert_true(screen_reader_result["title"].length() > 0, "标题文本应该不为空")
-  assert_true(screen_reader_result["type"].length() > 0, "类型文本应该不为空")
-  assert_true(screen_reader_result["data"].length() > 0, "数据文本应该不为空")
-  assert_true(screen_reader_result["datasets"].length() > 0, "数据集文本应该不为空")
-  assert_true(screen_reader_result["full_text"].length() > 0, "完整文本应该不为空")
-  
-  // 测试键盘导航
-  let keyboard_nav_result = add_keyboard_navigation("chart_1", [], accessibility_state, accessibility_config)
-  
-  assert_true(keyboard_nav_result["success"], "键盘导航添加应该成功")
-  assert_eq(keyboard_nav_result["focusable_elements"].length(), 4, "应该有4个可聚焦元素")
-  
-  // 测试键盘快捷键
-  let keyboard_shortcuts = ["Tab", "Space", "Plus", "Minus"]
-  let shortcut_results = []
-  
-  for shortcut in keyboard_shortcuts {
-    let result = handle_keyboard_navigation(shortcut, accessibility_state, accessibility_config)
-    shortcut_results = shortcut_results.push(result)
-  }
-  
-  // 验证键盘快捷键
-  assert_eq(shortcut_results.filter_fn(r => r["success"]).length(), keyboard_shortcuts.length(), 
-             "所有键盘快捷键应该成功")
-  
-  for result in shortcut_results {
-    if result["success"] {
-      assert_not_nil(result["action"], "成功的快捷键应该有对应操作")
-    }
-  }
-  
-  // 验证键盘导航日志
-  assert_eq(accessibility_state["keyboard_navigation_log"].length(), keyboard_shortcuts.length(), 
-             "键盘导航日志应该记录所有操作")
-  
-  // 测试高对比度模式
-  let high_contrast_result = enable_high_contrast(accessibility_state, accessibility_config)
-  
-  assert_true(high_contrast_result["success"], "高对比度模式切换应该成功")
-  assert_true(high_contrast_result["high_contrast_enabled"], "高对比度应该启用")
-  
-  // 再次切换应该禁用
-  let disable_high_contrast = enable_high_contrast(accessibility_state, accessibility_config)
-  assert_false(disable_high_contrast["high_contrast_enabled"], "高对比度应该禁用")
-  
-  // 测试可访问性配置禁用
-  let original_config = accessibility_config["screen_reader_support"]
-  accessibility_config["screen_reader_support"] = false
-  
-  let disabled_screen_reader = generate_screen_reader_text(chart_data, accessibility_config)
-  assert_false(disabled_screen_reader["success"], "禁用屏幕阅读器时应该失败")
-  assert_eq(disabled_screen_reader["reason"], "screen_reader_disabled", "失败原因应该正确")
-  
-  // 恢复配置
-  accessibility_config["screen_reader_support"] = original_config
-  
-  // 验证可聚焦元素
-  for element in accessibility_state["focusable_elements"] {
-    assert_true(element["id"].length() > 0, "元素ID应该不为空")
-    assert_true(element["type"].length() > 0, "元素类型应该不为空")
-  }
-  
-  // 验证焦点管理
-  assert_true(accessibility_config["focus_management"], "焦点管理应该启用")
+  let imported_panel = Dashboard::get_widgets(imported_dashboard)[0]
+  assert_eq(Widget::title(imported_panel), "Imported Panel")
 }

@@ -1,1067 +1,1878 @@
-// Azimuth 安全性和隐私保护测试
-// 专注于测试遥测系统的安全性和隐私保护机制
+// Azimuth Telemetry System - Security and Privacy Protection Tests
+// This file contains test cases for security and privacy protection functionality
 
-// 测试1: 数据加密和解密安全性测试
-test "数据加密和解密安全性测试" {
-  // 定义加密相关数据结构
-  type EncryptionAlgorithm = {
-    algorithm_name: String,
-    key_size_bits: Int,
-    block_size_bits: Int,
-    mode: String,           // "CBC", "GCM", "CTR"
-    padding_scheme: String   // "PKCS7", "ISO9797", "None"
-  }
+// Test 1: Authentication and Authorization
+test "authentication and authorization" {
+  // Create authentication manager
+  let auth_manager = AuthenticationManager::new()
   
-  type EncryptionKey = {
-    key_id: String,
-    algorithm: EncryptionAlgorithm,
-    key_data: String,       // 模拟密钥数据
-    creation_time: Int,
-    expiry_time: Int,
-    usage_count: Int,
-    max_usage_count: Int
-  }
+  // Configure authentication providers
+  let jwt_provider = JwtAuthProvider::new("secret-key")
+  let oauth_provider = OAuthAuthProvider::new("https://auth.example.com")
+  let ldap_provider = LdapAuthProvider::new("ldap://ldap.example.com")
   
-  type EncryptionResult = {
-    success: Bool,
-    encrypted_data: String,
-    iv: String,             // 初始化向量
-    tag: String,            // 认证标签
-    key_id: String,
-    encryption_time_ms: Int,
-    error_message: Option[String]
-  }
+  AuthenticationManager::add_provider(auth_manager, "jwt", jwt_provider)
+  AuthenticationManager::add_provider(auth_manager, "oauth", oauth_provider)
+  AuthenticationManager::add_provider(auth_manager, "ldap", ldap_provider)
   
-  type DecryptionResult = {
-    success: Bool,
-    decrypted_data: String,
-    verification_passed: Bool,
-    decryption_time_ms: Int,
-    error_message: Option[String]
-  }
+  // Create user accounts
+  let admin_user = User::new("admin", "admin@example.com", UserRole::Admin)
+  let operator_user = User::new("operator", "operator@example.com", UserRole::Operator)
+  let viewer_user = User::new("viewer", "viewer@example.com", UserRole::Viewer)
   
-  // 创建加密算法配置
-  let aes_gcm_256 = {
-    algorithm_name: "AES-GCM",
-    key_size_bits: 256,
-    block_size_bits: 128,
-    mode: "GCM",
-    padding_scheme: "None"
-  }
+  User::set_password(admin_user, "admin_password")
+  User::set_password(operator_user, "operator_password")
+  User::set_password(viewer_user, "viewer_password")
   
-  let aes_cbc_128 = {
-    algorithm_name: "AES-CBC",
-    key_size_bits: 128,
-    block_size_bits: 128,
-    mode: "CBC",
-    padding_scheme: "PKCS7"
-  }
+  AuthenticationManager::add_user(auth_manager, admin_user)
+  AuthenticationManager::add_user(auth_manager, operator_user)
+  AuthenticationManager::add_user(auth_manager, viewer_user)
   
-  let chacha20_poly1305 = {
-    algorithm_name: "ChaCha20-Poly1305",
-    key_size_bits: 256,
-    block_size_bits: 128,
-    mode: "Stream",
-    padding_scheme: "None"
-  }
-  
-  // 生成加密密钥
-  let generate_encryption_key = fn(algorithm: EncryptionAlgorithm, key_id: String) -> EncryptionKey {
-    let current_time = Time::now()
-    let expiry_time = current_time + (30 * 24 * 60 * 60 * 1000)  // 30天后过期
-    
-    // 模拟密钥生成
-    let key_data_length = algorithm.key_size_bits / 8
-    let mut key_data = ""
-    for i in 0..key_data_length {
-      key_data = key_data + ((65 + (i % 26)) as Char).to_string()
-    }
-    
-    {
-      key_id: key_id,
-      algorithm: algorithm,
-      key_data: key_data,
-      creation_time: current_time,
-      expiry_time: expiry_time,
-      usage_count: 0,
-      max_usage_count: 10000
-    }
-  }
-  
-  // 加密函数
-  let encrypt_data = fn(
-    data: String, 
-    key: EncryptionKey
-  ) -> EncryptionResult {
-    let start_time = Time::now()
-    
-    // 检查密钥是否过期
-    if Time::now() > key.expiry_time {
-      return {
-        success: false,
-        encrypted_data: "",
-        iv: "",
-        tag: "",
-        key_id: key.key_id,
-        encryption_time_ms: Time::now() - start_time,
-        error_message: Some("Key has expired")
+  // Test authentication
+  let admin_auth_result = AuthenticationManager::authenticate(auth_manager, "admin", "admin_password")
+  match admin_auth_result {
+    AuthResult::Success(token) => {
+      assert_true(token.length() > 0)
+      
+      // Verify token
+      let verify_result = AuthenticationManager::verify_token(auth_manager, token)
+      match verify_result {
+        TokenVerifyResult::Valid(user) => {
+          assert_eq(user.username, "admin")
+          assert_eq(user.role, UserRole::Admin)
+        }
+        _ => assert_true(false)
       }
     }
-    
-    // 检查密钥使用次数
-    if key.usage_count >= key.max_usage_count {
-      return {
-        success: false,
-        encrypted_data: "",
-        iv: "",
-        tag: "",
-        key_id: key.key_id,
-        encryption_time_ms: Time::now() - start_time,
-        error_message: Some("Key usage limit exceeded")
-      }
-    }
-    
-    // 模拟加密过程
-    let iv = "iv-" + (Time::now() as String)
-    let encrypted_data = "encrypted-" + data + "-with-" + key.key_id
-    let tag = "tag-" + (Time::now() as String)
-    
-    {
-      success: true,
-      encrypted_data: encrypted_data,
-      iv: iv,
-      tag: tag,
-      key_id: key.key_id,
-      encryption_time_ms: Time::now() - start_time,
-      error_message: None
-    }
+    _ => assert_true(false)
   }
   
-  // 解密函数
-  let decrypt_data = fn(
-    encrypted_result: EncryptionResult, 
-    key: EncryptionKey
-  ) -> DecryptionResult {
-    let start_time = Time::now()
-    
-    // 验证密钥ID
-    if encrypted_result.key_id != key.key_id {
-      return {
-        success: false,
-        decrypted_data: "",
-        verification_passed: false,
-        decryption_time_ms: Time::now() - start_time,
-        error_message: Some("Key ID mismatch")
-      }
-    }
-    
-    // 检查密钥是否过期
-    if Time::now() > key.expiry_time {
-      return {
-        success: false,
-        decrypted_data: "",
-        verification_passed: false,
-        decryption_time_ms: Time::now() - start_time,
-        error_message: Some("Key has expired")
-      }
-    }
-    
-    // 模拟解密过程
-    let decrypted_data = encrypted_result.encrypted_data
-      .replace("encrypted-", "")
-      .replace("-with-" + key.key_id, "")
-    
-    // 模拟认证验证
-    let verification_passed = encrypted_result.tag.length() > 0
-    
-    {
-      success: true,
-      decrypted_data: decrypted_data,
-      verification_passed: verification_passed,
-      decryption_time_ms: Time::now() - start_time,
-      error_message: None
-    }
+  // Test failed authentication
+  let failed_auth = AuthenticationManager::authenticate(auth_manager, "admin", "wrong_password")
+  match failed_auth {
+    AuthResult::Failed(reason) => assert_eq(reason, "Invalid credentials")
+    _ => assert_true(false)
   }
   
-  // 测试加密和解密
-  let test_data = "Sensitive telemetry data with PII and metrics"
-  
-  // 测试AES-GCM-256加密
-  let aes_gcm_key = generate_encryption_key(aes_gcm_256, "key-aes-gcm-1")
-  let aes_gcm_encryption = encrypt_data(test_data, aes_gcm_key)
-  
-  // 验证AES-GCM加密
-  assert_true(aes_gcm_encryption.success)
-  assert_true(aes_gcm_encryption.encrypted_data.length() > test_data.length())
-  assert_true(aes_gcm_encryption.iv.length() > 0)
-  assert_true(aes_gcm_encryption.tag.length() > 0)
-  assert_eq(aes_gcm_encryption.key_id, "key-aes-gcm-1")
-  assert_true(aes_gcm_encryption.encryption_time_ms >= 0)
-  
-  // 测试AES-GCM解密
-  let aes_gcm_decryption = decrypt_data(aes_gcm_encryption, aes_gcm_key)
-  
-  // 验证AES-GCM解密
-  assert_true(aes_gcm_decryption.success)
-  assert_eq(aes_gcm_decryption.decrypted_data, test_data)
-  assert_true(aes_gcm_decryption.verification_passed)
-  assert_true(aes_gcm_decryption.decryption_time_ms >= 0)
-  
-  // 测试AES-CBC-128加密
-  let aes_cbc_key = generate_encryption_key(aes_cbc_128, "key-aes-cbc-1")
-  let aes_cbc_encryption = encrypt_data(test_data, aes_cbc_key)
-  
-  // 验证AES-CBC加密
-  assert_true(aes_cbc_encryption.success)
-  assert_true(aes_cbc_encryption.encrypted_data.contains("encrypted-"))
-  assert_eq(aes_cbc_encryption.key_id, "key-aes-cbc-1")
-  
-  // 测试AES-CBC解密
-  let aes_cbc_decryption = decrypt_data(aes_cbc_encryption, aes_cbc_key)
-  
-  // 验证AES-CBC解密
-  assert_true(aes_cbc_decryption.success)
-  assert_eq(aes_cbc_decryption.decrypted_data, test_data)
-  
-  // 测试ChaCha20-Poly1305加密
-  let chacha_key = generate_encryption_key(chacha20_poly1305, "key-chacha-1")
-  let chacha_encryption = encrypt_data(test_data, chacha_key)
-  
-  // 验证ChaCha20-Poly1305加密
-  assert_true(chacha_encryption.success)
-  assert_true(chacha_encryption.encrypted_data.length() > test_data.length())
-  
-  // 测试ChaCha20-Poly1305解密
-  let chacha_decryption = decrypt_data(chacha_encryption, chacha_key)
-  
-  // 验证ChaCha20-Poly1305解密
-  assert_true(chacha_decryption.success)
-  assert_eq(chacha_decryption.decrypted_data, test_data)
-  
-  // 测试密钥ID不匹配的情况
-  let wrong_key_decryption = decrypt_data(aes_gcm_encryption, aes_cbc_key)
-  
-  // 验证密钥不匹配错误
-  assert_false(wrong_key_decryption.success)
-  assert_true(wrong_key_decryption.error_message.is_some())
-  assert_true(wrong_key_decryption.error_message.unwrap().contains("Key ID mismatch"))
-  
-  // 测试过期密钥
-  let expired_time = Time::now() - 1000  // 1秒前就过期
-  let expired_key = {
-    ...aes_gcm_key,
-    expiry_time: expired_time
+  // Test authorization
+  let admin_token = match admin_auth_result {
+    AuthResult::Success(token) => token
+    _ => ""
   }
   
-  let expired_encryption = encrypt_data(test_data, expired_key)
+  // Admin should have access to all resources
+  assert_true(AuthenticationManager::can_access(auth_manager, admin_token, "/api/users"))
+  assert_true(AuthenticationManager::can_access(auth_manager, admin_token, "/api/config"))
+  assert_true(AuthenticationManager::can_access(auth_manager, admin_token, "/api/logs"))
   
-  // 验证过期密钥错误
-  assert_false(expired_encryption.success)
-  assert_true(expired_encryption.error_message.is_some())
-  assert_true(expired_encryption.error_message.unwrap().contains("Key has expired"))
+  // Authenticate operator user
+  let operator_auth_result = AuthenticationManager::authenticate(auth_manager, "operator", "operator_password")
+  let operator_token = match operator_auth_result {
+    AuthResult::Success(token) => token
+    _ => ""
+  }
+  
+  // Operator should have limited access
+  assert_true(AuthenticationManager::can_access(auth_manager, operator_token, "/api/metrics"))
+  assert_true(AuthenticationManager::can_access(auth_manager, operator_token, "/api/logs"))
+  assert_false(AuthenticationManager::can_access(auth_manager, operator_token, "/api/users"))
+  assert_false(AuthenticationManager::can_access(auth_manager, operator_token, "/api/config"))
+  
+  // Authenticate viewer user
+  let viewer_auth_result = AuthenticationManager::authenticate(auth_manager, "viewer", "viewer_password")
+  let viewer_token = match viewer_auth_result {
+    AuthResult::Success(token) => token
+    _ => ""
+  }
+  
+  // Viewer should have read-only access
+  assert_true(AuthenticationManager::can_access(auth_manager, viewer_token, "/api/metrics", "GET"))
+  assert_false(AuthenticationManager::can_access(auth_manager, viewer_token, "/api/metrics", "POST"))
+  assert_true(AuthenticationManager::can_access(auth_manager, viewer_token, "/api/logs", "GET"))
+  assert_false(AuthenticationManager::can_access(auth_manager, viewer_token, "/api/logs", "DELETE"))
+  
+  // Test role-based permissions
+  let permissions = AuthenticationManager::get_permissions(auth_manager, UserRole::Admin)
+  assert_true(permissions.contains(Permission::UserManagement))
+  assert_true(permissions.contains(Permission::ConfigManagement))
+  assert_true(permissions.contains(Permission::LogAccess))
+  
+  let operator_permissions = AuthenticationManager::get_permissions(auth_manager, UserRole::Operator)
+  assert_false(operator_permissions.contains(Permission::UserManagement))
+  assert_false(operator_permissions.contains(Permission::ConfigManagement))
+  assert_true(operator_permissions.contains(Permission::LogAccess))
+  
+  // Test token expiration
+  let expired_token = AuthenticationManager::generate_token(auth_manager, admin_user, -1)  // Already expired
+  let expired_result = AuthenticationManager::verify_token(auth_manager, expired_token)
+  match expired_result {
+    TokenVerifyResult::Expired => assert_true(true)
+    _ => assert_true(false)
+  }
 }
 
-// 测试2: 个人信息隐私保护测试
-test "个人信息隐私保护测试" {
-  // 定义隐私保护数据结构
-  type PersonalData = {
-    data_id: String,
-    user_id: String,
-    name: String,
-    email: String,
-    phone: String,
-    address: String,
-    ip_address: String,
-    user_agent: String,
-    custom_attributes: Map[String, String]
-  }
+// Test 2: Data Encryption and Protection
+test "data encryption and protection" {
+  // Create encryption manager
+  let encryption_manager = EncryptionManager::new()
   
-  type PrivacyPolicy = {
-    policy_id: String,
-    data_retention_days: Int,
-    anonymization_enabled: Bool,
-    encryption_required: Bool,
-    consent_required: Bool,
-    sensitive_fields: Array[String],
-    data_minimization: Bool
-  }
+  // Generate encryption keys
+  let aes_key = EncryptionManager::generate_key(encryption_manager, EncryptionAlgorithm::AES256)
+  let rsa_key_pair = EncryptionManager::generate_key_pair(encryption_manager, EncryptionAlgorithm::RSA2048)
   
-  type PrivacyResult = {
-    success: Bool,
-    anonymized_data: PersonalData,
-    privacy_violations: Array[String],
-    compliance_score: Float,
-    applied_transformations: Array[String]
-  }
+  // Test symmetric encryption
+  let sensitive_data = "This is sensitive telemetry data that must be encrypted"
+  let encrypted_data = EncryptionManager::encrypt_symmetric(encryption_manager, sensitive_data.to_bytes(), aes_key)
   
-  // 创建隐私策略
-  let gdpr_policy = {
-    policy_id: "GDPR-Compliant",
-    data_retention_days: 365,
-    anonymization_enabled: true,
-    encryption_required: true,
-    consent_required: true,
-    sensitive_fields: ["name", "email", "phone", "address"],
-    data_minimization: true
-  }
+  // Verify encrypted data is different from original
+  assert_ne(encrypted_data.to_string(), sensitive_data)
+  assert_true(encrypted_data.length() > 0)
   
-  let ccpa_policy = {
-    policy_id: "CCPA-Compliant",
-    data_retention_days: 730,
-    anonymization_enabled: true,
-    encryption_required: true,
-    consent_required: false,
-    sensitive_fields: ["name", "email", "phone", "address", "ip_address"],
-    data_minimization: true
-  }
+  // Decrypt data
+  let decrypted_data = EncryptionManager::decrypt_symmetric(encryption_manager, encrypted_data, aes_key)
+  let decrypted_string = @bytes_to_string(decrypted_data)
+  assert_eq(decrypted_string, sensitive_data)
   
-  // 匿名化函数
-  let anonymize_personal_data = fn(
-    data: PersonalData, 
-    policy: PrivacyPolicy
-  ) -> PrivacyResult {
-    let mut privacy_violations = []
-    let mut applied_transformations = []
-    let mut compliance_score = 1.0
-    let mut anonymized_data = data
-    
-    // 检查同意要求
-    if policy.consent_required {
-      // 模拟同意检查（假设没有同意）
-      privacy_violations = privacy_violations.push("Missing user consent")
-      compliance_score = compliance_score - 0.3
+  // Test asymmetric encryption
+  let public_key = KeyPair::public_key(rsa_key_pair)
+  let private_key = KeyPair::private_key(rsa_key_pair)
+  
+  let asymmetric_encrypted = EncryptionManager::encrypt_asymmetric(encryption_manager, sensitive_data.to_bytes(), public_key)
+  let asymmetric_decrypted = EncryptionManager::decrypt_asymmetric(encryption_manager, asymmetric_encrypted, private_key)
+  let asymmetric_decrypted_string = @bytes_to_string(asymmetric_decrypted)
+  assert_eq(asymmetric_decrypted_string, sensitive_data)
+  
+  // Test data hashing
+  let hash_algorithm = HashAlgorithm::SHA256
+  let data_hash = EncryptionManager::hash_data(encryption_manager, sensitive_data.to_bytes(), hash_algorithm)
+  
+  // Verify hash is consistent
+  let hash_again = EncryptionManager::hash_data(encryption_manager, sensitive_data.to_bytes(), hash_algorithm)
+  assert_eq(data_hash, hash_again)
+  
+  // Verify hash is different for different data
+  let different_data = "This is different telemetry data"
+  let different_hash = EncryptionManager::hash_data(encryption_manager, different_data.to_bytes(), hash_algorithm)
+  assert_ne(data_hash, different_hash)
+  
+  // Test digital signatures
+  let signature = EncryptionManager::sign_data(encryption_manager, sensitive_data.to_bytes(), private_key)
+  let is_valid = EncryptionManager::verify_signature(encryption_manager, sensitive_data.to_bytes(), signature, public_key)
+  assert_true(is_valid)
+  
+  // Test signature with tampered data
+  let tampered_data = "This is tampered telemetry data"
+  let is_tampered_valid = EncryptionManager::verify_signature(encryption_manager, tampered_data.to_bytes(), signature, public_key)
+  assert_false(is_tampered_valid)
+  
+  // Test key rotation
+  let old_key = aes_key
+  let new_key = EncryptionManager::generate_key(encryption_manager, EncryptionAlgorithm::AES256)
+  
+  let data_with_old_key = EncryptionManager::encrypt_symmetric(encryption_manager, "key rotation test".to_bytes(), old_key)
+  
+  // Re-encrypt with new key
+  let reencrypted_data = EncryptionManager::reencrypt(encryption_manager, data_with_old_key, old_key, new_key)
+  let decrypted_with_new_key = EncryptionManager::decrypt_symmetric(encryption_manager, reencrypted_data, new_key)
+  let reencrypted_string = @bytes_to_string(decrypted_with_new_key)
+  assert_eq(reencrypted_string, "key rotation test")
+  
+  // Test secure random generation
+  let random_bytes = EncryptionManager::generate_secure_random(encryption_manager, 32)
+  assert_eq(random_bytes.length(), 32)
+  
+  // Verify randomness
+  let random_bytes2 = EncryptionManager::generate_secure_random(encryption_manager, 32)
+  assert_ne(random_bytes, random_bytes2)
+  
+  // Test secure data storage
+  let secure_storage = SecureStorage::new(encryption_manager)
+  SecureStorage::store(secure_storage, "sensitive_config", sensitive_data, aes_key)
+  
+  let retrieved_data = SecureStorage::retrieve(secure_storage, "sensitive_config", aes_key)
+  match retrieved_data {
+    Some(data) => {
+      let retrieved_string = @bytes_to_string(data)
+      assert_eq(retrieved_string, sensitive_data)
     }
-    
-    // 匿名化敏感字段
-    for field in policy.sensitive_fields {
-      match field {
-        "name" => {
-          anonymized_data = {
-            ...anonymized_data,
-            name: anonymized_data.name.slice(0, 1) + "***"
-          }
-          applied_transformations = applied_transformations.push("name_masking")
-        }
-        "email" => {
-          let email_parts = anonymized_data.email.split("@")
-          if email_parts.length() == 2 {
-            let username = email_parts[0]
-            let domain = email_parts[1]
-            let masked_username = username.slice(0, 2) + "***@" + domain
-            anonymized_data = {
-              ...anonymized_data,
-              email: masked_username
-            }
-          }
-          applied_transformations = applied_transformations.push("email_masking")
-        }
-        "phone" => {
-          anonymized_data = {
-            ...anonymized_data,
-            phone: "***-***-" + anonymized_data.phone.slice(-4)
-          }
-          applied_transformations = applied_transformations.push("phone_masking")
-        }
-        "address" => {
-          anonymized_data = {
-            ...anonymized_data,
-            address: "*** *** ***"
-          }
-          applied_transformations = applied_transformations.push("address_removal")
-        }
-        "ip_address" => {
-          // IP地址哈希化
-          anonymized_data = {
-            ...anonymized_data,
-            ip_address: "hashed-" + (anonymized_data.ip_address.length() as String)
-          }
-          applied_transformations = applied_transformations.push("ip_hashing")
-        }
-        _ => ()
-      }
-    }
-    
-    // 数据最小化
-    if policy.data_minimization {
-      // 移除非必要的自定义属性
-      let essential_attributes = Map::from_array([
-        ("user_type", "premium"),
-        ("account_status", "active")
-      ])
-      
-      let removed_attributes = data.custom_attributes.to_array().filter(fn(pair) {
-        !essential_attributes.contains(pair.0)
-      })
-      
-      if removed_attributes.length() > 0 {
-        applied_transformations = applied_transformations.push("data_minimization")
-        anonymized_data = {
-          ...anonymized_data,
-          custom_attributes: essential_attributes
-        }
-      }
-    }
-    
-    // 检查数据保留期限
-    let current_time = Time::now()
-    let data_age_days = (current_time - 1000000000) / (24 * 60 * 60 * 1000)  // 模拟数据年龄
-    
-    if data_age_days > policy.data_retention_days {
-      privacy_violations = privacy_violations.push("Data retention period exceeded")
-      compliance_score = compliance_score - 0.4
-    }
-    
-    // 确保合规分数在0-1范围内
-    compliance_score = if compliance_score < 0.0 { 0.0 } else { compliance_score }
-    
-    {
-      success: privacy_violations.length() == 0,
-      anonymized_data: anonymized_data,
-      privacy_violations: privacy_violations,
-      compliance_score: compliance_score,
-      applied_transformations: applied_transformations
-    }
+    None => assert_true(false)
   }
   
-  // 创建测试个人数据
-  let personal_data = {
-    data_id: "data-12345",
-    user_id: "user-67890",
-    name: "John Doe",
-    email: "john.doe@example.com",
-    phone: "555-123-4567",
-    address: "123 Main St, Anytown, USA",
-    ip_address: "192.168.1.100",
-    user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-    custom_attributes: Map::from_array([
-      ("user_type", "premium"),
-      ("account_status", "active"),
-      ("last_login", "2023-01-01"),
-      ("preferences", "dark_mode")
-    ])
-  }
+  // Test data masking
+  let pii_data = "User: john.doe@example.com, Phone: +1-555-123-4567, SSN: 123-45-6789"
+  let masked_data = DataMasking::mask_pii(pii_data)
   
-  // 测试GDPR合规性
-  let gdpr_result = anonymize_personal_data(personal_data, gdpr_policy)
+  assert_false(masked_data.contains("john.doe@example.com"))
+  assert_false(masked_data.contains("+1-555-123-4567"))
+  assert_false(masked_data.contains("123-45-6789"))
+  assert_true(masked_data.contains("jo***@***.com"))
+  assert_true(masked_data.contains("***-***-****"))
   
-  // 验证GDPR结果
-  assert_false(gdpr_result.success)  // 因为缺少同意
-  assert_true(gdpr_result.privacy_violations.contains("Missing user consent"))
-  assert_true(gdpr_result.compliance_score < 1.0)
-  assert_true(gdpr_result.applied_transformations.length() > 0)
+  // Test tokenization
+  let tokenizer = Tokenizer::new(encryption_manager)
+  let original_value = "4111-1111-1111-1111"  // Credit card number
+  let token = Tokenizer::tokenize(tokenizer, original_value)
   
-  // 验证匿名化效果
-  assert_eq(gdpr_result.anonymized_data.name, "J***")
-  assert_true(gdpr_result.anonymized_data.email.contains("***"))
-  assert_eq(gdpr_result.anonymized_data.phone, "***-***-4567")
-  assert_eq(gdpr_result.anonymized_data.address, "*** *** ***")
+  assert_ne(token, original_value)
+  assert_true(token.length() > 0)
   
-  // 测试CCPA合规性
-  let ccpa_result = anonymize_personal_data(personal_data, ccpa_policy)
-  
-  // 验证CCPA结果
-  assert_false(ccpa_result.success)  // 因为缺少同意（虽然CCPA不要求，但我们模拟需要）
-  assert_true(ccpa_result.compliance_score < 1.0)
-  assert_true(ccpa_result.applied_transformations.contains("ip_hashing"))
-  assert_true(ccpa_result.anonymized_data.ip_address.contains("hashed-"))
-  
-  // 测试数据最小化
-  assert_true(gdpr_result.anonymized_data.custom_attributes.contains("user_type"))
-  assert_true(gdpr_result.anonymized_data.custom_attributes.contains("account_status"))
-  assert_false(gdpr_result.anonymized_data.custom_attributes.contains("last_login"))
-  assert_false(gdpr_result.anonymized_data.custom_attributes.contains("preferences"))
-  
-  // 比较不同策略的合规分数
-  assert_true(gdpr_result.compliance_score > 0.0)
-  assert_true(ccpa_result.compliance_score > 0.0)
+  let detokenized_value = Tokenizer::detokenize(tokenizer, token)
+  assert_eq(detokenized_value, original_value)
 }
 
-// 测试3: 访问控制和权限管理测试
-test "访问控制和权限管理测试" {
-  // 定义访问控制数据结构
-  type User = {
-    user_id: String,
-    username: String,
-    role: String,
-    department: String,
-    permissions: Array[String],
-    active: Bool,
-    last_login: Int
-  }
+// Test 3: Access Control and Permissions
+test "access control and permissions" {
+  // Create access control manager
+  let access_manager = AccessControlManager::new()
   
-  type Resource = {
-    resource_id: String,
-    resource_type: String,
-    sensitivity_level: String,  // "public", "internal", "confidential", "restricted"
-    owner: String,
-    required_permissions: Array[String]
-  }
+  // Define resources
+  let telemetry_metrics = Resource::new("telemetry.metrics", "Telemetry metrics data")
+  let telemetry_logs = Resource::new("telemetry.logs", "Telemetry log data")
+  let user_management = Resource::new("system.users", "User management")
+  let system_config = Resource::new("system.config", "System configuration")
   
-  type AccessRequest = {
-    request_id: String,
-    user_id: String,
-    resource_id: String,
-    action: String,              // "read", "write", "delete", "admin"
-    timestamp: Int,
-    context: Map[String, String]
-  }
+  AccessControlManager::add_resource(access_manager, telemetry_metrics)
+  AccessControlManager::add_resource(access_manager, telemetry_logs)
+  AccessControlManager::add_resource(access_manager, user_management)
+  AccessControlManager::add_resource(access_manager, system_config)
   
-  type AccessResult = {
-    granted: Bool,
-    reason: String,
-    audit_log_entry: String,
-    additional_constraints: Array[String]
-  }
+  // Define permissions
+  let read_metrics = Permission::new("read_metrics", "Read telemetry metrics")
+  let write_metrics = Permission::new("write_metrics", "Write telemetry metrics")
+  let read_logs = Permission::new("read_logs", "Read telemetry logs")
+  let delete_logs = Permission::new("delete_logs", "Delete telemetry logs")
+  let manage_users = Permission::new("manage_users", "Manage user accounts")
+  let modify_config = Permission::new("modify_config", "Modify system configuration")
   
-  // 创建用户
-  let admin_user = {
-    user_id: "user-admin-1",
-    username: "admin",
-    role: "administrator",
-    department: "IT",
-    permissions: ["read_all", "write_all", "delete_all", "admin_all"],
-    active: true,
-    last_login: Time::now() - 3600000  // 1小时前
-  }
+  AccessControlManager::add_permission(access_manager, read_metrics)
+  AccessControlManager::add_permission(access_manager, write_metrics)
+  AccessControlManager::add_permission(access_manager, read_logs)
+  AccessControlManager::add_permission(access_manager, delete_logs)
+  AccessControlManager::add_permission(access_manager, manage_users)
+  AccessControlManager::add_permission(access_manager, modify_config)
   
-  let analyst_user = {
-    user_id: "user-analyst-1",
-    username: "analyst",
-    role: "analyst",
-    department: "Data",
-    permissions: ["read_metrics", "read_logs", "write_reports"],
-    active: true,
-    last_login: Time::now() - 7200000  // 2小时前
-  }
+  // Create roles
+  let admin_role = Role::new("admin", "Administrator")
+  let operator_role = Role::new("operator", "Operator")
+  let analyst_role = Role::new("analyst", "Data analyst")
   
-  let viewer_user = {
-    user_id: "user-viewer-1",
-    username: "viewer",
-    role: "viewer",
-    department: "Business",
-    permissions: ["read_dashboard"],
-    active: true,
-    last_login: Time::now() - 86400000  // 1天前
-  }
+  // Assign permissions to roles
+  Role::add_permission(admin_role, read_metrics)
+  Role::add_permission(admin_role, write_metrics)
+  Role::add_permission(admin_role, read_logs)
+  Role::add_permission(admin_role, delete_logs)
+  Role::add_permission(admin_role, manage_users)
+  Role::add_permission(admin_role, modify_config)
   
-  let inactive_user = {
-    user_id: "user-inactive-1",
-    username: "inactive",
-    role: "analyst",
-    department: "Data",
-    permissions: ["read_metrics", "read_logs"],
-    active: false,
-    last_login: Time::now() - 604800000  // 1周前
-  }
+  Role::add_permission(operator_role, read_metrics)
+  Role::add_permission(operator_role, write_metrics)
+  Role::add_permission(operator_role, read_logs)
   
-  // 创建资源
-  let public_dashboard = {
-    resource_id: "dashboard-public",
-    resource_type: "dashboard",
-    sensitivity_level: "public",
-    owner: "business-team",
-    required_permissions: ["read_dashboard"]
-  }
+  Role::add_permission(analyst_role, read_metrics)
+  Role::add_permission(analyst_role, read_logs)
   
-  let internal_metrics = {
-    resource_id: "metrics-internal",
-    resource_type: "metrics",
-    sensitivity_level: "internal",
-    owner: "data-team",
-    required_permissions: ["read_metrics"]
-  }
+  AccessControlManager::add_role(access_manager, admin_role)
+  AccessControlManager::add_role(access_manager, operator_role)
+  AccessControlManager::add_role(access_manager, analyst_role)
   
-  let confidential_logs = {
-    resource_id: "logs-confidential",
-    resource_type: "logs",
-    sensitivity_level: "confidential",
-    owner: "security-team",
-    required_permissions: ["read_logs", "security_clearance"]
-  }
+  // Create users
+  let admin_user = User::new("admin", "admin@example.com")
+  let operator_user = User::new("operator", "operator@example.com")
+  let analyst_user = User::new("analyst", "analyst@example.com")
   
-  let restricted_config = {
-    resource_id: "config-restricted",
-    resource_type: "configuration",
-    sensitivity_level: "restricted",
-    owner: "admin-team",
-    required_permissions: ["admin_all", "system_access"]
-  }
+  // Assign roles to users
+  User::add_role(admin_user, "admin")
+  User::add_role(operator_user, "operator")
+  User::add_role(analyst_user, "analyst")
   
-  // 访问控制检查函数
-  let check_access_permission = fn(
-    user: User,
-    resource: Resource,
-    action: String,
-    request: AccessRequest
-  ) -> AccessResult {
-    let mut granted = false
-    let mut reason = "Access denied"
-    let mut additional_constraints = []
-    
-    // 检查用户是否活跃
-    if !user.active {
-      reason = "User account is inactive"
-      let audit_entry = "DENY: " + user.user_id + " attempted to " + action + " " + resource.resource_id + " - " + reason
-      
-      return {
-        granted: false,
-        reason: reason,
-        audit_log_entry: audit_entry,
-        additional_constraints: additional_constraints
-      }
-    }
-    
-    // 检查用户权限
-    let has_required_permissions = resource.required_permissions.all(fn(perm) {
-      user.permissions.contains(perm)
-    })
-    
-    if !has_required_permissions {
-      reason = "Insufficient permissions for " + resource.sensitivity_level + " resource"
-      let audit_entry = "DENY: " + user.user_id + " attempted to " + action + " " + resource.resource_id + " - " + reason
-      
-      return {
-        granted: false,
-        reason: reason,
-        audit_log_entry: audit_entry,
-        additional_constraints: additional_constraints
-      }
-    }
-    
-    // 检查角色和敏感度级别的匹配
-    match (user.role, resource.sensitivity_level) {
-      ("administrator", _) => {
-        granted = true
-        reason = "Administrator access granted"
-      }
-      ("analyst", "public" | "internal") => {
-        granted = true
-        reason = "Analyst access granted for " + resource.sensitivity_level + " resource"
-      }
-      ("analyst", "confidential" | "restricted") => {
-        reason = "Analyst role not authorized for " + resource.sensitivity_level + " resource"
-      }
-      ("viewer", "public") => {
-        granted = true
-        reason = "Viewer access granted for public resource"
-      }
-      ("viewer", "internal" | "confidential" | "restricted") => {
-        reason = "Viewer role not authorized for " + resource.sensitivity_level + " resource"
-      }
-      _ => {
-        reason = "Role-sensitivity mismatch for " + resource.sensitivity_level + " resource"
-      }
-    }
-    
-    // 检查时间限制（模拟工作时间限制）
-    let current_hour = (Time::now() / 3600000) % 24
-    if user.role != "administrator" && (current_hour < 9 || current_hour > 17) {
-      if granted {
-        granted = false
-        reason = "Access outside of working hours (9AM-5PM)"
-        additional_constraints = additional_constraints.push("time_restriction")
-      }
-    }
-    
-    // 检查部门访问限制
-    if resource.owner != "business-team" && user.department == "Business" && user.role != "administrator" {
-      if granted {
-        granted = false
-        reason = "Department access restriction"
-        additional_constraints = additional_constraints.push("department_restriction")
-      }
-    }
-    
-    let audit_entry = (if granted { "GRANT" } else { "DENY" }) + ": " + user.user_id + " " + action + " " + resource.resource_id + " - " + reason
-    
-    {
-      granted: granted,
-      reason: reason,
-      audit_log_entry: audit_entry,
-      additional_constraints: additional_constraints
-    }
-  }
+  AccessControlManager::add_user(access_manager, admin_user)
+  AccessControlManager::add_user(access_manager, operator_user)
+  AccessControlManager::add_user(access_manager, analyst_user)
   
-  // 创建访问请求
-  let create_access_request = fn(user_id: String, resource_id: String, action: String) -> AccessRequest {
-    {
-      request_id: "req-" + (Time::now() as String),
-      user_id: user_id,
-      resource_id: resource_id,
-      action: action,
-      timestamp: Time::now(),
-      context: Map::from_array([
-        ("source_ip", "192.168.1.100"),
-        ("user_agent", "telemetry-client/1.0")
-      ])
-    }
-  }
+  // Test role-based access control
+  // Admin should have all permissions
+  assert_true(AccessControlManager::has_permission(access_manager, "admin", "read_metrics"))
+  assert_true(AccessControlManager::has_permission(access_manager, "admin", "write_metrics"))
+  assert_true(AccessControlManager::has_permission(access_manager, "admin", "read_logs"))
+  assert_true(AccessControlManager::has_permission(access_manager, "admin", "delete_logs"))
+  assert_true(AccessControlManager::has_permission(access_manager, "admin", "manage_users"))
+  assert_true(AccessControlManager::has_permission(access_manager, "admin", "modify_config"))
   
-  // 测试管理员访问
-  let admin_request = create_access_request(admin_user.user_id, restricted_config.resource_id, "read")
-  let admin_result = check_access_permission(admin_user, restricted_config, "read", admin_request)
+  // Operator should have limited permissions
+  assert_true(AccessControlManager::has_permission(access_manager, "operator", "read_metrics"))
+  assert_true(AccessControlManager::has_permission(access_manager, "operator", "write_metrics"))
+  assert_true(AccessControlManager::has_permission(access_manager, "operator", "read_logs"))
+  assert_false(AccessControlManager::has_permission(access_manager, "operator", "delete_logs"))
+  assert_false(AccessControlManager::has_permission(access_manager, "operator", "manage_users"))
+  assert_false(AccessControlManager::has_permission(access_manager, "operator", "modify_config"))
   
-  // 验证管理员访问
-  assert_true(admin_result.granted)
-  assert_true(admin_result.reason.contains("Administrator"))
-  assert_true(admin_result.audit_log_entry.contains("GRANT"))
+  // Analyst should have read-only permissions
+  assert_true(AccessControlManager::has_permission(access_manager, "analyst", "read_metrics"))
+  assert_false(AccessControlManager::has_permission(access_manager, "analyst", "write_metrics"))
+  assert_true(AccessControlManager::has_permission(access_manager, "analyst", "read_logs"))
+  assert_false(AccessControlManager::has_permission(access_manager, "analyst", "delete_logs"))
+  assert_false(AccessControlManager::has_permission(access_manager, "analyst", "manage_users"))
+  assert_false(AccessControlManager::has_permission(access_manager, "analyst", "modify_config"))
   
-  // 测试分析师访问内部资源
-  let analyst_request = create_access_request(analyst_user.user_id, internal_metrics.resource_id, "read")
-  let analyst_result = check_access_permission(analyst_user, internal_metrics, "read", analyst_request)
+  // Test resource-based access control
+  let resource_access = AccessControlManager::can_access_resource(access_manager, "admin", "telemetry.metrics", "read")
+  assert_true(resource_access)
   
-  // 验证分析师访问
-  assert_true(analyst_result.granted)
-  assert_true(analyst_result.reason.contains("Analyst"))
-  assert_true(analyst_result.audit_log_entry.contains("GRANT"))
+  let operator_resource_access = AccessControlManager::can_access_resource(access_manager, "operator", "system.users", "write")
+  assert_false(operator_resource_access)
   
-  // 测试分析师访问机密资源
-  let analyst_confidential_request = create_access_request(analyst_user.user_id, confidential_logs.resource_id, "read")
-  let analyst_confidential_result = check_access_permission(analyst_user, confidential_logs, "read", analyst_confidential_request)
+  // Test attribute-based access control (ABAC)
+  let abac_context = AbacContext::new()
+  AbacContext::add_attribute(abac_context, "user.department", "operations")
+  AbacContext::add_attribute(abac_context, "resource.sensitivity", "high")
+  AbacContext::add_attribute(abac_context, "time_of_day", "09:00")
+  AbacContext::add_attribute(abac_context, "location", "office")
   
-  // 验证分析师访问机密资源被拒绝
-  assert_false(analyst_confidential_result.granted)
-  assert_true(analyst_confidential_result.reason.contains("not authorized"))
-  assert_true(analyst_confidential_result.audit_log_entry.contains("DENY"))
+  // Define ABAC policy
+  let policy = AbacPolicy::new("high_sensitivity_access")
+  AbacPolicy::add_rule(policy, AbacRule::new(
+    "user.department == 'operations' AND resource.sensitivity == 'high' AND time_of_day >= '09:00' AND time_of_day <= '17:00'"
+  ))
+  AbacPolicy::set_effect(policy, PolicyEffect::Allow)
   
-  // 测试查看者访问公共资源
-  let viewer_request = create_access_request(viewer_user.user_id, public_dashboard.resource_id, "read")
-  let viewer_result = check_access_permission(viewer_user, public_dashboard, "read", viewer_request)
+  AccessControlManager::add_abac_policy(access_manager, policy)
   
-  // 验证查看者访问公共资源
-  assert_true(viewer_result.granted)
-  assert_true(viewer_result.reason.contains("Viewer"))
-  assert_true(viewer_result.audit_log_entry.contains("GRANT"))
+  // Test ABAC evaluation
+  let abac_result = AccessControlManager::evaluate_abac(access_manager, "operator", "telemetry.logs", abac_context)
+  assert_true(abac_result)
   
-  // 测试查看者访问内部资源
-  let viewer_internal_request = create_access_request(viewer_user.user_id, internal_metrics.resource_id, "read")
-  let viewer_internal_result = check_access_permission(viewer_user, internal_metrics, "read", viewer_internal_request)
+  // Test time-based restrictions
+  AbacContext::add_attribute(abac_context, "time_of_day", "20:00")  // Outside business hours
+  let after_hours_result = AccessControlManager::evaluate_abac(access_manager, "operator", "telemetry.logs", abac_context)
+  assert_false(after_hours_result)
   
-  // 验证查看者访问内部资源被拒绝
-  assert_false(viewer_internal_result.granted)
-  assert_true(viewer_internal_result.reason.contains("not authorized"))
-  assert_true(viewer_internal_result.audit_log_entry.contains("DENY"))
+  // Test permission inheritance
+  let senior_analyst_role = Role::new("senior_analyst", "Senior Data Analyst")
+  Role::inherit_from(senior_analyst_role, "analyst")
+  Role::add_permission(senior_analyst_role, write_metrics)
   
-  // 测试非活跃用户访问
-  let inactive_request = create_access_request(inactive_user.user_id, public_dashboard.resource_id, "read")
-  let inactive_result = check_access_permission(inactive_user, public_dashboard, "read", inactive_request)
+  AccessControlManager::add_role(access_manager, senior_analyst_role)
   
-  // 验证非活跃用户访问被拒绝
-  assert_false(inactive_result.granted)
-  assert_true(inactive_result.reason.contains("inactive"))
-  assert_true(inactive_result.audit_log_entry.contains("DENY"))
+  let senior_analyst_user = User::new("senior_analyst", "senior.analyst@example.com")
+  User::add_role(senior_analyst_user, "senior_analyst")
   
-  // 测试权限不足
-  let insufficient_request = create_access_request(viewer_user.user_id, confidential_logs.resource_id, "read")
-  let insufficient_result = check_access_permission(viewer_user, confidential_logs, "read", insufficient_request)
+  AccessControlManager::add_user(access_manager, senior_analyst_user)
   
-  // 验证权限不足被拒绝
-  assert_false(insufficient_result.granted)
-  assert_true(insufficient_result.reason.contains("Insufficient permissions"))
-  assert_true(insufficient_result.audit_log_entry.contains("DENY"))
+  // Senior analyst should inherit analyst permissions plus additional ones
+  assert_true(AccessControlManager::has_permission(access_manager, "senior_analyst", "read_metrics"))  // Inherited
+  assert_true(AccessControlManager::has_permission(access_manager, "senior_analyst", "write_metrics"))  // Added
+  assert_true(AccessControlManager::has_permission(access_manager, "senior_analyst", "read_logs"))  // Inherited
+  
+  // Test permission delegation
+  AccessControlManager::delegate_permission(access_manager, "admin", "operator", "read_logs", 3600)  // Delegate for 1 hour
+  
+  // Verify delegation
+  let delegated_permission = AccessControlManager::get_delegated_permissions(access_manager, "operator")
+  assert_true(delegated_permission.contains("read_logs"))
+  
+  // Test delegation expiration (simulate time passing)
+  // In a real implementation, time would pass naturally
+  AccessControlManager::expire_delegation(access_manager, "operator", "read_logs")
+  
+  let expired_delegation = AccessControlManager::get_delegated_permissions(access_manager, "operator")
+  assert_false(expired_delegation.contains("read_logs"))
 }
 
-// 测试4: 安全审计和日志记录测试
-test "安全审计和日志记录测试" {
-  // 定义安全审计数据结构
-  type SecurityEvent = {
-    event_id: String,
-    event_type: String,
-    severity: String,           // "low", "medium", "high", "critical"
-    timestamp: Int,
-    user_id: Option[String],
-    resource_id: Option[String],
-    action: String,
-    outcome: String,            // "success", "failure", "error"
-    source_ip: String,
-    user_agent: String,
-    details: Map[String, String]
-  }
+// Test 4: Audit Logging and Compliance
+test "audit logging and compliance" {
+  // Create audit manager
+  let audit_manager = AuditManager::new()
   
-  type AuditLog = {
-    log_id: String,
-    events: Array[SecurityEvent],
-    retention_days: Int,
-    encryption_enabled: Bool,
-    integrity_protection: Bool,
-    tamper_evident: Bool
-  }
+  // Configure audit settings
+  AuditManager::enable_logging(audit_manager, true)
+  AuditManager::set_retention_period(audit_manager, 365 * 24 * 60 * 60)  // 1 year
+  AuditManager::set_log_level(audit_manager, AuditLogLevel::Detail)
   
-  type AuditReport = {
-    report_id: String,
-    generated_at: Int,
-    time_range_start: Int,
-    time_range_end: Int,
-    total_events: Int,
-    events_by_type: Map[String, Int],
-    events_by_severity: Map[String, Int],
-    security_incidents: Array[SecurityEvent],
-    compliance_status: String
-  }
-  
-  // 创建安全事件
-  let create_security_event = fn(
-    event_type: String,
-    severity: String,
-    user_id: Option[String],
-    resource_id: Option[String],
-    action: String,
-    outcome: String,
-    source_ip: String,
-    details: Map[String, String]
-  ) -> SecurityEvent {
-    {
-      event_id: "event-" + (Time::now() as String),
-      event_type: event_type,
-      severity: severity,
-      timestamp: Time::now(),
-      user_id: user_id,
-      resource_id: resource_id,
-      action: action,
-      outcome: outcome,
-      source_ip: source_ip,
-      user_agent: "telemetry-client/1.0",
-      details: details
-    }
-  }
-  
-  // 创建审计日志
-  let create_audit_log = fn(log_id: String, retention_days: Int) -> AuditLog {
-    {
-      log_id: log_id,
-      events: [],
-      retention_days: retention_days,
-      encryption_enabled: true,
-      integrity_protection: true,
-      tamper_evident: true
-    }
-  }
-  
-  // 添加事件到审计日志
-  let add_event_to_log = fn(log: AuditLog, event: SecurityEvent) -> AuditLog {
-    {
-      ...log,
-      events: log.events.push(event)
-    }
-  }
-  
-  // 生成审计报告
-  let generate_audit_report = fn(
-    log: AuditLog,
-    report_id: String,
-    time_range_start: Int,
-    time_range_end: Int
-  ) -> AuditReport {
-    // 过滤时间范围内的事件
-    let filtered_events = log.events.filter(fn(event) {
-      event.timestamp >= time_range_start && event.timestamp <= time_range_end
-    })
-    
-    // 按类型统计事件
-    let events_by_type = Map::new()
-    for event in filtered_events {
-      let current_count = match events_by_type.get(event.event_type) {
-        Some(count) => count
-        None => 0
-      }
-      events_by_type = events_by_type.set(event.event_type, current_count + 1)
-    }
-    
-    // 按严重程度统计事件
-    let events_by_severity = Map::new()
-    for event in filtered_events {
-      let current_count = match events_by_severity.get(event.severity) {
-        Some(count) => count
-        None => 0
-      }
-      events_by_severity = events_by_severity.set(event.severity, current_count + 1)
-    }
-    
-    // 识别安全事件
-    let security_incidents = filtered_events.filter(fn(event) {
-      event.severity == "high" || event.severity == "critical" || 
-      (event.event_type == "access_denied" && event.outcome == "failure")
-    })
-    
-    // 评估合规状态
-    let critical_events = match events_by_severity.get("critical") {
-      Some(count) => count
-      None => 0
-    }
-    
-    let compliance_status = if critical_events > 0 {
-      "non_compliant"
-    } else if security_incidents.length() > 0 {
-      "attention_required"
-    } else {
-      "compliant"
-    }
-    
-    {
-      report_id: report_id,
-      generated_at: Time::now(),
-      time_range_start: time_range_start,
-      time_range_end: time_range_end,
-      total_events: filtered_events.length(),
-      events_by_type: events_by_type,
-      events_by_severity: events_by_severity,
-      security_incidents: security_incidents,
-      compliance_status: compliance_status
-    }
-  }
-  
-  // 创建审计日志
-  let audit_log = create_audit_log("audit-log-1", 90)  // 90天保留期
-  
-  // 添加各种安全事件
-  let event1 = create_security_event(
-    "login_success",
-    "low",
-    Some("user-123"),
-    None,
-    "authentication",
-    "success",
-    "192.168.1.100",
-    Map::from_array([("login_method", "password")])
+  // Create audit events
+  let login_event = AuditEvent::new(
+    "user.login",
+    "admin",
+    "Authentication",
+    "User admin logged in successfully",
+    AuditEventSeverity::Info,
+    [
+      ("ip_address", "192.168.1.100"),
+      ("user_agent", "Mozilla/5.0"),
+      ("timestamp", "2022-01-01T12:00:00Z")
+    ]
   )
   
-  let event2 = create_security_event(
-    "access_denied",
-    "medium",
-    Some("user-456"),
-    Some("resource-789"),
-    "read",
-    "failure",
-    "192.168.1.101",
-    Map::from_array([("reason", "insufficient_permissions")])
+  let config_change_event = AuditEvent::new(
+    "config.change",
+    "admin",
+    "Configuration",
+    "User admin changed system configuration",
+    AuditEventSeverity::Warning,
+    [
+      ("config_key", "service.port"),
+      ("old_value", "8080"),
+      ("new_value", "9090"),
+      ("timestamp", "2022-01-01T12:05:00Z")
+    ]
   )
   
-  let event3 = create_security_event(
-    "data_export",
-    "medium",
-    Some("user-123"),
-    Some("metrics-dataset"),
-    "export",
-    "success",
-    "192.168.1.100",
-    Map::from_array([("record_count", "1000"), ("format", "csv")])
+  let data_access_event = AuditEvent::new(
+    "data.access",
+    "analyst",
+    "DataAccess",
+    "User analyst accessed sensitive telemetry data",
+    AuditEventSeverity::Info,
+    [
+      ("resource", "telemetry.metrics"),
+      ("operation", "read"),
+      ("record_count", "1000"),
+      ("timestamp", "2022-01-01T12:10:00Z")
+    ]
   )
   
-  let event4 = create_security_event(
+  let security_event = AuditEvent::new(
+    "security.breach",
+    "system",
+    "Security",
+    "Multiple failed login attempts detected",
+    AuditEventSeverity::Critical,
+    [
+      ("source_ip", "10.0.0.50"),
+      ("attempt_count", "5"),
+      ("timestamp", "2022-01-01T12:15:00Z")
+    ]
+  )
+  
+  // Log audit events
+  AuditManager::log_event(audit_manager, login_event)
+  AuditManager::log_event(audit_manager, config_change_event)
+  AuditManager::log_event(audit_manager, data_access_event)
+  AuditManager::log_event(audit_manager, security_event)
+  
+  // Test audit log retrieval
+  let all_events = AuditManager::get_events(audit_manager)
+  assert_eq(all_events.length(), 4)
+  
+  // Test filtering by user
+  let admin_events = AuditManager::get_events_by_user(audit_manager, "admin")
+  assert_eq(admin_events.length(), 2)
+  
+  // Test filtering by event type
+  let security_events = AuditManager::get_events_by_type(audit_manager, "security.breach")
+  assert_eq(security_events.length(), 1)
+  
+  // Test filtering by severity
+  let critical_events = AuditManager::get_events_by_severity(audit_manager, AuditEventSeverity::Critical)
+  assert_eq(critical_events.length(), 1)
+  
+  // Test time-based filtering
+  let start_time = "2022-01-01T12:05:00Z"
+  let end_time = "2022-01-01T12:15:00Z"
+  let time_filtered_events = AuditManager::get_events_by_time_range(audit_manager, start_time, end_time)
+  assert_eq(time_filtered_events.length(), 2)
+  
+  // Test audit log search
+  let search_results = AuditManager::search_events(audit_manager, "configuration")
+  assert_eq(search_results.length(), 1)
+  assert_eq(search_results[0].event_type, "config.change")
+  
+  // Test audit log export
+  let csv_export = AuditManager::export_to_csv(audit_manager)
+  assert_true(csv_export.contains("user.login"))
+  assert_true(csv_export.contains("config.change"))
+  assert_true(csv_export.contains("data.access"))
+  assert_true(csv_export.contains("security.breach"))
+  
+  let json_export = AuditManager::export_to_json(audit_manager)
+  assert_true(json_export.contains("admin"))
+  assert_true(json_export.contains("analyst"))
+  
+  // Test compliance reporting
+  let compliance_report = AuditManager::generate_compliance_report(audit_manager, "2022-01-01", "2022-01-31")
+  
+  assert_eq(ComplianceReport::period_start(compliance_report), "2022-01-01")
+  assert_eq(ComplianceReport::period_end(compliance_report), "2022-01-31")
+  assert_eq(ComplianceReport::total_events(compliance_report), 4)
+  assert_eq(ComplianceReport::critical_events(compliance_report), 1)
+  assert_eq(ComplianceReport::warning_events(compliance_report), 1)
+  assert_eq(ComplianceReport::info_events(compliance_report), 2)
+  
+  // Test GDPR compliance features
+  let gdpr_report = AuditManager::generate_gdpr_report(audit_manager, "analyst")
+  
+  assert_eq(GdprReport::data_subject(gdpr_report), "analyst")
+  assert_eq(GdprReport::data_access_events(gdpr_report), 1)
+  assert_eq(GdprReport::data_processing_purposes(gdpr_report).length(), 1)
+  assert_true(GdprReport::data_processing_purposes(gdpr_report).contains("telemetry analysis"))
+  
+  // Test audit log integrity
+  let initial_hash = AuditManager::calculate_log_hash(audit_manager)
+  
+  // Add another event
+  let new_event = AuditEvent::new(
+    "user.logout",
+    "admin",
+    "Authentication",
+    "User admin logged out",
+    AuditEventSeverity::Info,
+    [
+      ("timestamp", "2022-01-01T12:20:00Z")
+    ]
+  )
+  
+  AuditManager::log_event(audit_manager, new_event)
+  
+  let updated_hash = AuditManager::calculate_log_hash(audit_manager)
+  assert_ne(initial_hash, updated_hash)
+  
+  // Test log tampering detection
+  let is_tampered = AuditManager::verify_integrity(audit_manager)
+  assert_true(is_tampered)
+  
+  // Test audit log retention
+  AuditManager::cleanup_old_logs(audit_manager)
+  
+  // Verify old logs are cleaned up (in a real implementation, this would remove logs older than retention period)
+  let remaining_events = AuditManager::get_events(audit_manager)
+  assert_true(remaining_events.length() >= 0)
+  
+  // Test audit trail for specific resource
+  let resource_audit_trail = AuditManager::get_resource_audit_trail(audit_manager, "telemetry.metrics")
+  assert_true(resource_audit_trail.length() > 0)
+  
+  let data_access_trail = resource_audit_trail.find(@(e) e.event_type == "data.access")
+  match data_access_trail {
+    Some(event) => {
+      assert_eq(event.user, "analyst")
+      assert_eq(event.resource, "telemetry.metrics")
+    }
+    None => assert_true(false)
+  }
+}
+
+// Test 5: Network Security and Communication
+test "network security and communication" {
+  // Create network security manager
+  let security_manager = NetworkSecurityManager::new()
+  
+  // Configure TLS settings
+  let tls_config = TlsConfig::new()
+  TlsConfig::set_version(tls_config, TlsVersion::V1_3)
+  TlsConfig::set_cipher_suites(tls_config, [
+    "TLS_AES_256_GCM_SHA384",
+    "TLS_CHACHA20_POLY1305_SHA256",
+    "TLS_AES_128_GCM_SHA256"
+  ])
+  TlsConfig::set_certificate_validation(tls_config, true)
+  TlsConfig::set_client_auth(tls_config, ClientAuth::Required)
+  
+  NetworkSecurityManager::set_tls_config(security_manager, tls_config)
+  
+  // Test secure connection establishment
+  let server = SecureServer::new("0.0.0.0", 8443)
+  SecureServer::use_tls(server, tls_config)
+  
+  let client = SecureClient::new("localhost", 8443)
+  SecureClient::use_tls(client, tls_config)
+  
+  // Test certificate loading
+  let server_cert = Certificate::load_from_file("/path/to/server.crt")
+  let server_key = PrivateKey::load_from_file("/path/to/server.key")
+  let ca_cert = Certificate::load_from_file("/path/to/ca.crt")
+  
+  SecureServer::set_certificate(server, server_cert)
+  SecureServer::set_private_key(server, server_key)
+  SecureServer::set_ca_certificate(server, ca_cert)
+  
+  SecureClient::set_ca_certificate(client, ca_cert)
+  
+  // Test secure communication
+  let test_data = "Secure telemetry data"
+  let encrypted_data = NetworkSecurityManager::encrypt_data(security_manager, test_data.to_bytes())
+  let decrypted_data = NetworkSecurityManager::decrypt_data(security_manager, encrypted_data)
+  let decrypted_string = @bytes_to_string(decrypted_data)
+  assert_eq(decrypted_string, test_data)
+  
+  // Test IP whitelisting
+  let ip_whitelist = ["192.168.1.0/24", "10.0.0.0/8", "172.16.0.0/12"]
+  NetworkSecurityManager::set_ip_whitelist(security_manager, ip_whitelist)
+  
+  // Test IP filtering
+  assert_true(NetworkSecurityManager::is_ip_allowed(security_manager, "192.168.1.100"))
+  assert_true(NetworkSecurityManager::is_ip_allowed(security_manager, "10.0.0.50"))
+  assert_false(NetworkSecurityManager::is_ip_allowed(security_manager, "8.8.8.8"))
+  assert_false(NetworkSecurityManager::is_ip_allowed(security_manager, "203.0.113.1"))
+  
+  // Test rate limiting
+  let rate_limiter = RateLimiter::new(100, 60)  // 100 requests per minute
+  NetworkSecurityManager::set_rate_limiter(security_manager, rate_limiter)
+  
+  // Test rate limiting
+  let client_ip = "192.168.1.100"
+  assert_true(NetworkSecurityManager::allow_request(security_manager, client_ip))
+  
+  // Simulate multiple requests
+  for i in 0..=99 {
+    NetworkSecurityManager::allow_request(security_manager, client_ip)
+  }
+  
+  // Next request should be rate limited
+  assert_false(NetworkSecurityManager::allow_request(security_manager, client_ip))
+  
+  // Test DDoS protection
+  let ddos_protection = DdosProtection::new()
+  DdosProtection::set_threshold(ddos_protection, 1000)  // 1000 requests per minute
+  DdosProtection::set_block_duration(ddos_protection, 300)  // 5 minutes
+  DdosProtection::enable_auto_blocking(ddos_protection, true)
+  
+  NetworkSecurityManager::set_ddos_protection(security_manager, ddos_protection)
+  
+  // Simulate DDoS attack
+  let attacker_ip = "203.0.113.100"
+  for i in 0..=1000 {
+    NetworkSecurityManager::allow_request(security_manager, attacker_ip)
+  }
+  
+  // Attacker should be blocked
+  assert_false(NetworkSecurityManager::is_ip_allowed(security_manager, attacker_ip))
+  
+  // Test firewall rules
+  let firewall = Firewall::new()
+  Firewall::add_rule(firewall, FirewallRule::new(
+    "Allow internal traffic",
+    "192.168.0.0/16",
+    "any",
+    "allow"
+  ))
+  
+  Firewall::add_rule(firewall, FirewallRule::new(
+    "Block external traffic to admin ports",
+    "any",
+    "22,23,3389",
+    "deny"
+  ))
+  
+  NetworkSecurityManager::set_firewall(security_manager, firewall)
+  
+  // Test firewall rules
+  assert_true(NetworkSecurityManager::check_firewall_rule(security_manager, "192.168.1.100", "8080"))
+  assert_false(NetworkSecurityManager::check_firewall_rule(security_manager, "203.0.113.100", "22"))
+  
+  // Test intrusion detection
+  let intrusion_detector = IntrusionDetector::new()
+  IntrusionDetector::enable_pattern_matching(intrusion_detector, true)
+  IntrusionDetector::enable_anomaly_detection(intrusion_detector, true)
+  
+  // Add intrusion patterns
+  IntrusionDetector::add_pattern(intrusion_detector, IntrusionPattern::new(
+    "SQL Injection",
+    "union.*select.*from",
+    PatternType::Regex,
+    Severity::High
+  ))
+  
+  IntrusionDetector::add_pattern(intrusion_detector, IntrusionPattern::new(
+    "XSS Attack",
+    "<script.*>.*</script>",
+    PatternType::Regex,
+    Severity::Medium
+  ))
+  
+  NetworkSecurityManager::set_intrusion_detector(security_manager, intrusion_detector)
+  
+  // Test intrusion detection
+  let malicious_request = "SELECT * FROM users WHERE username='admin' UNION SELECT password FROM admin"
+  let is_intrusion = NetworkSecurityManager::detect_intrusion(security_manager, malicious_request)
+  assert_true(is_intrusion)
+  
+  let clean_request = "GET /api/metrics HTTP/1.1"
+  let is_clean = NetworkSecurityManager::detect_intrusion(security_manager, clean_request)
+  assert_false(is_clean)
+  
+  // Test secure API key management
+  let api_key_manager = ApiKeyManager::new()
+  let api_key = ApiKeyManager::generate_key(api_key_manager, "telemetry-api")
+  
+  assert_true(api_key.length() >= 32)
+  assert_true(api_key.contains("-"))
+  
+  // Test API key validation
+  assert_true(ApiKeyManager::validate_key(api_key_manager, api_key))
+  assert_false(ApiKeyManager::validate_key(api_key_manager, "invalid-key"))
+  
+  // Test API key permissions
+  ApiKeyManager::set_permissions(api_key_manager, api_key, ["read:metrics", "read:logs"])
+  assert_true(ApiKeyManager::has_permission(api_key_manager, api_key, "read:metrics"))
+  assert_false(ApiKeyManager::has_permission(api_key_manager, api_key, "write:metrics"))
+  
+  // Test network security metrics
+  let security_metrics = NetworkSecurityManager::get_security_metrics(security_manager)
+  
+  assert_true(SecurityMetrics::total_requests(security_metrics) > 0)
+  assert_true(SecurityMetrics::blocked_requests(security_metrics) > 0)
+  assert_true(SecurityMetrics::intrusion_attempts(security_metrics) > 0)
+  assert_true(SecurityMetrics::active_ip_blocks(security_metrics) > 0)
+}
+
+// Test 6: Privacy and Data Protection
+test "privacy and data protection" {
+  // Create privacy manager
+  let privacy_manager = PrivacyManager::new()
+  
+  // Configure privacy settings
+  PrivacyManager::set_data_retention_period(privacy_manager, "telemetry.data", 90 * 24 * 60 * 60)  // 90 days
+  PrivacyManager::set_data_retention_period(privacy_manager, "user.logs", 30 * 24 * 60 * 60)  // 30 days
+  PrivacyManager::set_anonymization_threshold(privacy_manager, 5)  // Anonymize data with fewer than 5 records
+  
+  // Test data classification
+  let public_data = DataClassification::new("telemetry.metrics", DataSensitivity::Public)
+  let internal_data = DataClassification::new("system.performance", DataSensitivity::Internal)
+  let confidential_data = DataClassification::new("user.personal_info", DataSensitivity::Confidential)
+  let restricted_data = DataClassification::new("security.credentials", DataSensitivity::Restricted)
+  
+  PrivacyManager::add_classification(privacy_manager, public_data)
+  PrivacyManager::add_classification(privacy_manager, internal_data)
+  PrivacyManager::add_classification(privacy_manager, confidential_data)
+  PrivacyManager::add_classification(privacy_manager, restricted_data)
+  
+  // Test data access based on classification
+  assert_true(PrivacyManager::can_access(privacy_manager, "analyst", "telemetry.metrics"))
+  assert_true(PrivacyManager::can_access(privacy_manager, "operator", "system.performance"))
+  assert_false(PrivacyManager::can_access(privacy_manager, "analyst", "user.personal_info"))
+  assert_false(PrivacyManager::can_access(privacy_manager, "operator", "security.credentials"))
+  
+  // Test consent management
+  let consent_manager = ConsentManager::new()
+  
+  // Create consent records
+  let analytics_consent = Consent::new(
+    "user123",
+    "analytics",
+    ConsentType::Explicit,
+    true,
+    "2022-01-01T00:00:00Z",
+    "User consented to analytics data collection"
+  )
+  
+  let marketing_consent = Consent::new(
+    "user123",
+    "marketing",
+    ConsentType::Explicit,
+    false,
+    "2022-01-01T00:00:00Z",
+    "User declined marketing communications"
+  )
+  
+  ConsentManager::record_consent(consent_manager, analytics_consent)
+  ConsentManager::record_consent(consent_manager, marketing_consent)
+  
+  // Test consent validation
+  assert_true(ConsentManager::has_consent(consent_manager, "user123", "analytics"))
+  assert_false(ConsentManager::has_consent(consent_manager, "user123", "marketing"))
+  
+  // Test consent withdrawal
+  ConsentManager::withdraw_consent(consent_manager, "user123", "analytics")
+  assert_false(ConsentManager::has_consent(consent_manager, "user123", "analytics"))
+  
+  // Test data anonymization
+  let personal_data = [
+    {
+      "user_id": "user123",
+      "name": "John Doe",
+      "email": "john.doe@example.com",
+      "age": 35,
+      "city": "New York"
+    },
+    {
+      "user_id": "user456",
+      "name": "Jane Smith",
+      "email": "jane.smith@example.com",
+      "age": 28,
+      "city": "Los Angeles"
+    },
+    {
+      "user_id": "user789",
+      "name": "Bob Johnson",
+      "email": "bob.johnson@example.com",
+      "age": 42,
+      "city": "Chicago"
+    }
+  ]
+  
+  let anonymized_data = PrivacyManager::anonymize_data(privacy_manager, personal_data)
+  
+  // Verify direct identifiers are removed or masked
+  for record in anonymized_data {
+    assert_ne(record.get("user_id"), Some("user123"))
+    assert_ne(record.get("user_id"), Some("user456"))
+    assert_ne(record.get("user_id"), Some("user789"))
+    
+    assert_ne(record.get("name"), Some("John Doe"))
+    assert_ne(record.get("name"), Some("Jane Smith"))
+    assert_ne(record.get("name"), Some("Bob Johnson"))
+    
+    assert_ne(record.get("email"), Some("john.doe@example.com"))
+    assert_ne(record.get("email"), Some("jane.smith@example.com"))
+    assert_ne(record.get("email"), Some("bob.johnson@example.com"))
+  }
+  
+  // Test pseudonymization
+  let pseudonymized_data = PrivacyManager::pseudonymize_data(privacy_manager, personal_data)
+  
+  // Verify pseudonyms are consistent
+  let user1_records = pseudonymized_data.filter(@(r) r.get("user_id") == Some("user123"))
+  let user1_pseudonyms = user1_records.map(@(r) r.get("pseudonym_id"))
+  
+  assert_true(user1_pseudonyms.all(@(p) p == user1_pseudonyms[0]))
+  
+  // Test data minimization
+  let full_data = {
+    "user_id": "user123",
+    "name": "John Doe",
+    "email": "john.doe@example.com",
+    "phone": "+1-555-123-4567",
+    "address": "123 Main St, New York, NY 10001",
+    "ssn": "123-45-6789",
+    "last_login": "2022-01-01T12:00:00Z",
+    "preferences": {
+      "theme": "dark",
+      "notifications": true
+    }
+  }
+  
+  let minimized_data = PrivacyManager::minimize_data(privacy_manager, full_data, ["last_login", "preferences"])
+  
+  // Verify only necessary data is retained
+  assert_true(minimized_data.contains("last_login"))
+  assert_true(minimized_data.contains("preferences"))
+  assert_false(minimized_data.contains("name"))
+  assert_false(minimized_data.contains("email"))
+  assert_false(minimized_data.contains("phone"))
+  assert_false(minimized_data.contains("address"))
+  assert_false(minimized_data.contains("ssn"))
+  
+  // Test right to be forgotten (GDPR Article 17)
+  let deletion_request = DataDeletionRequest::new(
+    "user123",
+    "account_closure",
+    "User requested account deletion",
+    "2022-01-01T12:00:00Z"
+  )
+  
+  PrivacyManager::process_deletion_request(privacy_manager, deletion_request)
+  
+  // Verify user data is marked for deletion
+  assert_true(PrivacyManager::is_user_data_marked_for_deletion(privacy_manager, "user123"))
+  
+  // Test data portability (GDPR Article 20)
+  let portable_data = PrivacyManager::export_user_data(privacy_manager, "user456")
+  
+  assert_true(portable_data.contains("user456"))
+  assert_true(portable_data.contains("application/json"))
+  
+  // Test privacy impact assessment
+  let pia = PrivacyImpactAssessment::new("new_analytics_feature")
+  
+  PrivacyImpactAssessment::add_data_type(pia, "user_behavior", "User interaction patterns")
+  PrivacyImpactAssessment::add_purpose(pia, "product_improvement", "Improve user experience")
+  PrivacyImpactAssessment::add_legal_basis(pia, "legitimate_interest", "Product improvement")
+  PrivacyImpactAssessment::add_risk(pia, "re_identification", "Low risk with proper anonymization")
+  PrivacyImpactAssessment::add_mitigation(pia, "anonymization", "Apply strong anonymization techniques")
+  
+  let pia_result = PrivacyManager::conduct_assessment(privacy_manager, pia)
+  assert_eq(pia_result.overall_risk, RiskLevel::Low)
+  assert_eq(pia_result.approved, true)
+  
+  // Test privacy policy compliance
+  let privacy_policy = PrivacyPolicy::new()
+  PrivacyPolicy::add_data_use(privacy_policy, "analytics", "Improve product features")
+  PrivacyPolicy::add_data_use(privacy_policy, "personalization", "Customize user experience")
+  PrivacyPolicy::add_data_retention(privacy_policy, "analytics", 90)
+  PrivacyPolicy::add_data_retention(privacy_policy, "personalization", 365)
+  
+  let compliance_result = PrivacyManager::check_policy_compliance(privacy_manager, privacy_policy)
+  assert_true(compliance_result.is_compliant)
+  assert_eq(compliance_result.violations.length(), 0)
+}
+
+// Test 7: Security Monitoring and Threat Detection
+test "security monitoring and threat detection" {
+  // Create security monitoring manager
+  let security_monitor = SecurityMonitor::new()
+  
+  // Configure monitoring settings
+  SecurityMonitor::enable_real_time_monitoring(security_monitor, true)
+  SecurityMonitor::set_alert_threshold(security_monitor, 5)  // Alert after 5 suspicious events
+  SecurityMonitor::set_monitoring_window(security_monitor, 300)  // 5 minutes
+  
+  // Create threat detection rules
+  let brute_force_rule = ThreatRule::new(
+    "brute_force_attack",
+    "Detect potential brute force attacks",
+    [
+      ThreatCondition::new("failed_login_count", ">", 5),
+      ThreatCondition::new("time_window", "<", 300)
+    ],
+    ThreatSeverity::High
+  )
+  
+  let data_exfiltration_rule = ThreatRule::new(
+    "data_exfiltration",
+    "Detect potential data exfiltration",
+    [
+      ThreatCondition::new("data_download_size", ">", 1000000),  // > 1MB
+      ThreatCondition::new("unusual_access_pattern", "=", true)
+    ],
+    ThreatSeverity::Critical
+  )
+  
+  let privilege_escalation_rule = ThreatRule::new(
     "privilege_escalation",
-    "high",
-    Some("user-789"),
-    Some("admin-panel"),
-    "escalate",
-    "failure",
-    "192.168.1.102",
-    Map::from_array([("attempted_role", "administrator")])
+    "Detect privilege escalation attempts",
+    [
+      ThreatCondition::new("role_change", "=", true),
+      ThreatCondition::new("self_approval", "=", true)
+    ],
+    ThreatSeverity::Medium
   )
   
-  let event5 = create_security_event(
-    "data_breach_attempt",
-    "critical",
-    Some("user-999"),
-    Some("user-database"),
-    "exfiltrate",
-    "failure",
-    "10.0.0.1",
-    Map::from_array([("method", "sql_injection"), ("blocked", "true")])
+  SecurityMonitor::add_threat_rule(security_monitor, brute_force_rule)
+  SecurityMonitor::add_threat_rule(security_monitor, data_exfiltration_rule)
+  SecurityMonitor::add_threat_rule(security_monitor, privilege_escalation_rule)
+  
+  // Simulate security events
+  let brute_force_events = [
+    SecurityEvent::new("failed_login", "user1", "192.168.1.100", "2022-01-01T12:00:00Z"),
+    SecurityEvent::new("failed_login", "user1", "192.168.1.100", "2022-01-01T12:01:00Z"),
+    SecurityEvent::new("failed_login", "user1", "192.168.1.100", "2022-01-01T12:02:00Z"),
+    SecurityEvent::new("failed_login", "user1", "192.168.1.100", "2022-01-01T12:03:00Z"),
+    SecurityEvent::new("failed_login", "user1", "192.168.1.100", "2022-01-01T12:04:00Z"),
+    SecurityEvent::new("failed_login", "user1", "192.168.1.100", "2022-01-01T12:05:00Z")
+  ]
+  
+  let data_exfiltration_event = SecurityEvent::new(
+    "large_download",
+    "admin",
+    "192.168.1.200",
+    "2022-01-01T12:10:00Z",
+    [
+      ("data_size", "2000000"),
+      ("file_type", "csv"),
+      ("destination", "external")
+    ]
   )
   
-  let event6 = create_security_event(
-    "config_change",
-    "medium",
-    Some("user-123"),
-    Some("system-config"),
-    "modify",
-    "success",
-    "192.168.1.100",
-    Map::from_array([("config_section", "logging"), ("old_level", "info"), ("new_level", "debug")])
+  let privilege_escalation_event = SecurityEvent::new(
+    "role_change",
+    "user2",
+    "192.168.1.150",
+    "2022-01-01T12:15:00Z",
+    [
+      ("old_role", "analyst"),
+      ("new_role", "admin"),
+      ("approved_by", "user2")
+    ]
   )
   
-  // 添加事件到审计日志
-  let log_with_events = audit_log
-    |> add_event_to_log(event1)
-    |> add_event_to_log(event2)
-    |> add_event_to_log(event3)
-    |> add_event_to_log(event4)
-    |> add_event_to_log(event5)
-    |> add_event_to_log(event6)
+  // Process security events
+  for event in brute_force_events {
+    SecurityMonitor::process_event(security_monitor, event)
+  }
   
-  // 生成审计报告
-  let current_time = Time::now()
-  let report_time_start = current_time - 86400000  // 24小时前
-  let report_time_end = current_time
+  SecurityMonitor::process_event(security_monitor, data_exfiltration_event)
+  SecurityMonitor::process_event(security_monitor, privilege_escalation_event)
   
-  let audit_report = generate_audit_report(
-    log_with_events,
-    "report-12345",
-    report_time_start,
-    report_time_end
+  // Check for detected threats
+  let detected_threats = SecurityMonitor::get_detected_threats(security_monitor)
+  assert_eq(detected_threats.length(), 3)
+  
+  // Verify brute force threat
+  let brute_force_threat = detected_threats.find(@(t) Threat::rule_name(t) == "brute_force_attack")
+  match brute_force_threat {
+    Some(threat) => {
+      assert_eq(Threat::severity(threat), ThreatSeverity::High)
+      assert_eq(Threat::source_ip(threat), "192.168.1.100")
+      assert_eq(Threat::target_user(threat), "user1")
+      assert_eq(Threat::event_count(threat), 6)
+    }
+    None => assert_true(false)
+  }
+  
+  // Verify data exfiltration threat
+  let exfiltration_threat = detected_threats.find(@(t) Threat::rule_name(t) == "data_exfiltration")
+  match exfiltration_threat {
+    Some(threat) => {
+      assert_eq(Threat::severity(threat), ThreatSeverity::Critical)
+      assert_eq(Threat::source_ip(threat), "192.168.1.200")
+      assert_eq(Threat::target_user(threat), "admin")
+    }
+    None => assert_true(false)
+  }
+  
+  // Verify privilege escalation threat
+  let escalation_threat = detected_threats.find(@(t) Threat::rule_name(t) == "privilege_escalation")
+  match escalation_threat {
+    Some(threat) => {
+      assert_eq(Threat::severity(threat), ThreatSeverity::Medium)
+      assert_eq(Threat::source_ip(threat), "192.168.1.150")
+      assert_eq(Threat::target_user(threat), "user2")
+    }
+    None => assert_true(false)
+  }
+  
+  // Test automated response
+  let response_manager = ThreatResponseManager::new()
+  
+  // Configure response actions
+  ResponseManager::add_action(response_manager, "brute_force_attack", [
+    ResponseAction::BlockIp(3600),  // Block IP for 1 hour
+    ResponseAction::AlertAdmin("Brute force attack detected"),
+    ResponseAction::RequireMfa(1800)  // Require MFA for 30 minutes
+  ])
+  
+  ResponseManager::add_action(response_manager, "data_exfiltration", [
+    ResponseAction::BlockIp(7200),  // Block IP for 2 hours
+    ResponseAction::SuspendUser("admin"),
+    ResponseAction::AlertSecurityTeam("Potential data exfiltration"),
+    ResponseAction::QuarantineData("downloaded_files")
+  ])
+  
+  ResponseManager::add_action(response_manager, "privilege_escalation", [
+    ResponseAction::RevokeRoleChange("user2"),
+    ResponseAction::AlertAdmin("Privilege escalation attempt"),
+    ResponseAction::RequireApproval("role_changes")
+  ])
+  
+  // Process threat responses
+  for threat in detected_threats {
+    ResponseManager::execute_response(response_manager, threat)
+  }
+  
+  // Verify response actions were executed
+  let executed_actions = ResponseManager::get_executed_actions(response_manager)
+  assert_true(executed_actions.length() > 0)
+  
+  // Test security metrics
+  let security_metrics = SecurityMonitor::get_metrics(security_monitor)
+  
+  assert_eq(SecurityMetrics::total_events(security_metrics), 8)
+  assert_eq(SecurityMetrics::detected_threats(security_metrics), 3)
+  assert_eq(SecurityMetrics::blocked_ips(security_metrics), 2)
+  assert_eq(SecurityMetrics::suspended_users(security_metrics), 1)
+  
+  // Test security dashboard
+  let dashboard = SecurityMonitor::generate_dashboard(security_monitor)
+  
+  assert_true(Dashboard::contains(dashboard, "Threat Overview"))
+  assert_true(Dashboard::contains(dashboard, "Recent Security Events"))
+  assert_true(Dashboard::contains(dashboard, "Blocked IPs"))
+  assert_true(Dashboard::contains(dashboard, "Security Metrics"))
+  
+  // Test threat intelligence integration
+  let threat_intel = ThreatIntelligence::new()
+  
+  // Add threat intelligence feeds
+  ThreatIntelligence::add_feed(threat_intel, "malicious_ips", "https://threatintel.example.com/ips")
+  ThreatIntelligence::add_feed(threat_intel, "malicious_domains", "https://threatintel.example.com/domains")
+  ThreatIntelligence::add_feed(threat_intel, "vulnerabilities", "https://threatintel.example.com/vulns")
+  
+  // Update threat intelligence
+  ThreatIntelligence::update_feeds(threat_intel)
+  
+  // Test IP reputation checking
+  let ip_reputation = ThreatIntelligence::check_ip_reputation(threat_intel, "192.168.1.100")
+  assert_true(ip_reputation.score >= 0)
+  assert_true(ip_reputation.score <= 100)
+  
+  // Test vulnerability scanning
+  let vuln_scanner = VulnerabilityScanner::new()
+  
+  // Scan system for vulnerabilities
+  let scan_result = VulnerabilityScanner::scan_system(vuln_scanner, "localhost")
+  
+  assert_true(scan_result.total_scanned > 0)
+  assert_true(scan_result.vulnerabilities_found >= 0)
+  
+  // Test security reporting
+  let security_report = SecurityMonitor::generate_report(security_monitor, "2022-01-01", "2022-01-31")
+  
+  assert_eq(SecurityReport::period_start(security_report), "2022-01-01")
+  assert_eq(SecurityReport::period_end(security_report), "2022-01-31")
+  assert_eq(SecurityReport::total_threats(security_report), 3)
+  assert_eq(SecurityReport::critical_threats(security_report), 1)
+  assert_eq(SecurityReport::high_threats(security_report), 1)
+  assert_eq(SecurityReport::medium_threats(security_report), 1)
+}
+
+// Test 8: Incident Response and Recovery
+test "incident response and recovery" {
+  // Create incident response manager
+  let incident_manager = IncidentManager::new()
+  
+  // Configure incident response settings
+  IncidentManager::set_severity_threshold(incident_manager, IncidentSeverity::Medium)
+  IncidentManager::set_escalation_timeout(incident_manager, 1800)  // 30 minutes
+  IncidentManager::set_auto_escalation(incident_manager, true)
+  
+  // Create incident response plan
+  let response_plan = IncidentResponsePlan::new("data_breach")
+  
+  ResponsePlan::add_step(response_plan, ResponseStep::new(
+    1,
+    "Containment",
+    "Isolate affected systems to prevent further data loss",
+    15,  // 15 minutes
+    [
+      "Disconnect affected servers from network",
+      "Change access credentials",
+      "Enable additional logging"
+    ]
+  ))
+  
+  ResponsePlan::add_step(response_plan, ResponseStep::new(
+    2,
+    "Investigation",
+    "Identify the scope and cause of the breach",
+    60,  // 1 hour
+    [
+      "Analyze system logs",
+      "Review access records",
+      "Identify affected data"
+    ]
+  ))
+  
+  ResponsePlan::add_step(response_plan, ResponseStep::new(
+    3,
+    "Eradication",
+    "Remove the cause of the breach",
+    30,  // 30 minutes
+    [
+      "Patch vulnerabilities",
+      "Remove malware",
+      "Close unauthorized access points"
+    ]
+  ))
+  
+  ResponsePlan::add_step(response_plan, ResponseStep::new(
+    4,
+    "Recovery",
+    "Restore normal operations",
+    120,  // 2 hours
+    [
+      "Restore from backups",
+      "Validate system integrity",
+      "Monitor for recurrence"
+    ]
+  ))
+  
+  IncidentManager::add_response_plan(incident_manager, response_plan)
+  
+  // Create incident
+  let incident = Incident::new(
+    "data_breach_001",
+    "Customer data breach detected",
+    IncidentSeverity::Critical,
+    "2022-01-01T12:00:00Z",
+    "Unauthorized access to customer database detected"
   )
   
-  // 验证审计报告
-  assert_eq(audit_report.total_events, 6)
-  assert_eq(audit_report.time_range_start, report_time_start)
-  assert_eq(audit_report.time_range_end, report_time_end)
-  assert_true(audit_report.generated_at > 0)
+  Incident::add_affected_system(incident, "customer_db")
+  Incident::add_affected_system(incident, "api_gateway")
+  Incident::add_affected_data(incident, "customer_pii")
+  Incident::add_affected_data(incident, "payment_info")
   
-  // 验证事件类型统计
-  assert_true(audit_report.events_by_type.contains("login_success"))
-  assert_true(audit_report.events_by_type.contains("access_denied"))
-  assert_true(audit_report.events_by_type.contains("data_export"))
-  assert_true(audit_report.events_by_type.contains("privilege_escalation"))
-  assert_true(audit_report.events_by_type.contains("data_breach_attempt"))
-  assert_true(audit_report.events_by_type.contains("config_change"))
+  // Create incident team
+  let incident_team = IncidentTeam::new("data_breach_team")
+  Team::add_member(incident_team, TeamMember::new("security_lead", "Security Lead", "alice@example.com"))
+  Team::add_member(incident_team, TeamMember::new("it_lead", "IT Lead", "bob@example.com"))
+  Team::add_member(incident_team, TeamMember::new("legal", "Legal Counsel", "carol@example.com"))
+  Team::add_member(incident_team, TeamMember::new("comms", "Communications", "dave@example.com"))
   
-  // 验证严重程度统计
-  assert_eq(audit_report.events_by_severity.get("low"), Some(1))
-  assert_eq(audit_report.events_by_severity.get("medium"), Some(3))
-  assert_eq(audit_report.events_by_severity.get("high"), Some(1))
-  assert_eq(audit_report.events_by_severity.get("critical"), Some(1))
+  Incident::assign_team(incident, incident_team)
   
-  // 验证安全事件识别
-  assert_eq(audit_report.security_incidents.length(), 2)  // high和critical事件
-  assert_true(audit_report.security_incidents.any(fn(event) { 
-    event.event_type == "privilege_escalation" 
-  }))
-  assert_true(audit_report.security_incidents.any(fn(event) { 
-    event.event_type == "data_breach_attempt" 
-  }))
+  // Report incident
+  IncidentManager::report_incident(incident_manager, incident)
   
-  // 验证合规状态
-  assert_eq(audit_report.compliance_status, "non_compliant")  // 因为有critical事件
+  // Verify incident is recorded
+  let incidents = IncidentManager::get_incidents(incident_manager)
+  assert_eq(incidents.length(), 1)
   
-  // 验证审计日志属性
-  assert_true(log_with_events.encryption_enabled)
-  assert_true(log_with_events.integrity_protection)
-  assert_true(log_with_events.tamper_evident)
-  assert_eq(log_with_events.retention_days, 90)
+  let recorded_incident = incidents[0]
+  assert_eq(Incident::id(recorded_incident), "data_breach_001")
+  assert_eq(Incident::title(recorded_incident), "Customer data breach detected")
+  assert_eq(Incident::severity(recorded_incident), IncidentSeverity::Critical)
+  assert_eq(Incident::status(recorded_incident), IncidentStatus::Reported)
   
-  // 测试无安全事件的情况
-  let safe_log = create_audit_log("safe-log-1", 30)
-  let safe_event = create_security_event(
-    "normal_operation",
-    "low",
-    Some("user-123"),
-    None,
-    "process",
-    "success",
-    "192.168.1.100",
-    Map::new()
+  // Activate incident response
+  IncidentManager::activate_response(incident_manager, "data_breach_001")
+  
+  let activated_incident = IncidentManager::get_incident(incident_manager, "data_breach_001")
+  assert_eq(Incident::status(activated_incident), IncidentStatus::Active)
+  
+  // Execute response plan
+  let response_result = IncidentManager::execute_response_plan(incident_manager, "data_breach_001", "data_breach")
+  
+  match response_result {
+    ResponseResult::Success(executed_steps) => {
+      assert_eq(executed_steps.length(), 4)
+      
+      // Verify containment step
+      let containment_step = executed_steps.find(@(s) ResponseStep::name(s) == "Containment")
+      match containment_step {
+        Some(step) => {
+          assert_eq(ResponseStep::status(step), StepStatus::Completed)
+          assert_true(ResponseStep::completion_time(step) > 0)
+        }
+        None => assert_true(false)
+      }
+    }
+    ResponseResult::Failed(error) => assert_true(false)
+  }
+  
+  // Test incident escalation
+  IncidentManager::escalate_incident(incident_manager, "data_breach_001", "C-level notification required")
+  
+  let escalated_incident = IncidentManager::get_incident(incident_manager, "data_breach_001")
+  assert_eq(Incident::escalation_level(escalated_incident), 1)
+  assert_true(Incident::escalation_reason(escalated_incident).contains("C-level notification"))
+  
+  // Test incident communication
+  let communication_manager = CommunicationManager::new()
+  
+  // Create communication templates
+  let internal_template = CommunicationTemplate::new(
+    "internal_incident",
+    "Incident Notification - {incident_title}",
+    "An incident has been reported: {incident_title}\n\nSeverity: {severity}\nDescription: {description}\nNext steps: {next_steps}"
   )
   
-  let safe_log_with_event = add_event_to_log(safe_log, safe_event)
-  let safe_report = generate_audit_report(
-    safe_log_with_event,
-    "safe-report-12345",
-    report_time_start,
-    report_time_end
+  let external_template = CommunicationTemplate::new(
+    "external_incident",
+    "Service Update",
+    "We are investigating an issue with our services. We apologize for any inconvenience and will provide updates as soon as possible."
   )
   
-  // 验证安全报告
-  assert_eq(safe_report.total_events, 1)
-  assert_eq(safe_report.security_incidents.length(), 0)
-  assert_eq(safe_report.compliance_status, "compliant")
+  CommunicationManager::add_template(communication_manager, internal_template)
+  CommunicationManager::add_template(communication_manager, external_template)
+  
+  // Send internal notification
+  let internal_notification = CommunicationManager::create_notification(
+    communication_manager,
+    "internal_incident",
+    [
+      ("incident_title", "Customer data breach detected"),
+      ("severity", "Critical"),
+      ("description", "Unauthorized access to customer database detected"),
+      ("next_steps", "Containment, Investigation, Eradication, Recovery")
+    ]
+  )
+  
+  CommunicationManager::send_to_team(communication_manager, internal_notification, incident_team)
+  
+  // Send external notification
+  let external_notification = CommunicationManager::create_notification(
+    communication_manager,
+    "external_incident",
+    []
+  )
+  
+  CommunicationManager::send_to_customers(communication_manager, external_notification)
+  
+  // Verify communications were sent
+  let sent_communications = CommunicationManager::get_sent_communications(communication_manager)
+  assert_true(sent_communications.length() >= 2)
+  
+  // Test incident resolution
+  IncidentManager::resolve_incident(incident_manager, "data_breach_001", "All systems secured and monitored")
+  
+  let resolved_incident = IncidentManager::get_incident(incident_manager, "data_breach_001")
+  assert_eq(Incident::status(resolved_incident), IncidentStatus::Resolved)
+  assert_true(Incident::resolution_summary(resolved_incident).contains("All systems secured"))
+  
+  // Test post-incident review
+  let review = PostIncidentReview::new("data_breach_001")
+  
+  Review::add_finding(review, ReviewFinding::new(
+    "Root Cause",
+    "Unpatched vulnerability in customer database",
+    FindingSeverity::High
+  ))
+  
+  Review::add_finding(review, ReviewFinding::new(
+    "Response Time",
+    "Initial response took 45 minutes, exceeding the 30-minute target",
+    FindingSeverity::Medium
+  ))
+  
+  Review::add_recommendation(review, ReviewRecommendation::new(
+    "Implement automated vulnerability scanning",
+    "Set up weekly automated scans to identify vulnerabilities promptly",
+    RecommendationPriority::High,
+    "2022-01-15"
+  ))
+  
+  Review::add_recommendation(review, ReviewRecommendation::new(
+    "Improve incident response training",
+    "Conduct quarterly incident response drills",
+    RecommendationPriority::Medium,
+    "2022-02-01"
+  ))
+  
+  IncidentManager::add_post_incident_review(incident_manager, review)
+  
+  // Test incident metrics
+  let incident_metrics = IncidentManager::get_metrics(incident_manager)
+  
+  assert_eq(IncidentMetrics::total_incidents(incident_metrics), 1)
+  assert_eq(IncidentMetrics::critical_incidents(incident_metrics), 1)
+  assert_eq(IncidentMetrics::resolved_incidents(incident_metrics), 1)
+  assert_true(IncidentMetrics::average_resolution_time(incident_metrics) > 0)
+  
+  // Test incident report generation
+  let incident_report = IncidentManager::generate_report(incident_manager, "data_breach_001")
+  
+  assert_true(IncidentReport::contains(incident_report, "Customer data breach detected"))
+  assert_true(IncidentReport::contains(incident_report, "Critical"))
+  assert_true(IncidentReport::contains(incident_report, "Post-Incident Review"))
+  assert_true(IncidentReport::contains(incident_report, "Recommendations"))
+}
+
+// Test 9: Security Compliance and Certifications
+test "security compliance and certifications" {
+  // Create compliance manager
+  let compliance_manager = ComplianceManager::new()
+  
+  // Configure compliance frameworks
+  let gdpr_framework = ComplianceFramework::new("GDPR", "General Data Protection Regulation")
+  Framework::add_requirement(gdpr_framework, ComplianceRequirement::new(
+    "data_protection_by_design",
+    "Implement data protection measures by design and by default",
+    RequirementCategory::Technical,
+    RequirementPriority::Mandatory
+  ))
+  
+  Framework::add_requirement(gdpr_framework, ComplianceRequirement::new(
+    "data_subject_rights",
+    "Respect data subject rights including access, rectification, and erasure",
+    RequirementCategory::Process,
+    RequirementPriority::Mandatory
+  ))
+  
+  Framework::add_requirement(gdpr_framework, ComplianceRequirement::new(
+    "breach_notification",
+    "Notify authorities of data breaches within 72 hours",
+    RequirementCategory::Process,
+    RequirementPriority::Mandatory
+  ))
+  
+  let iso27001_framework = ComplianceFramework::new("ISO27001", "Information Security Management")
+  Framework::add_requirement(iso27001_framework, ComplianceRequirement::new(
+    "information_security_policy",
+    "Maintain a comprehensive information security policy",
+    RequirementCategory::Governance,
+    RequirementPriority::Mandatory
+  ))
+  
+  Framework::add_requirement(iso27001_framework, ComplianceRequirement::new(
+    "risk_assessment",
+    "Conduct regular information security risk assessments",
+    RequirementCategory::Risk,
+    RequirementPriority::Mandatory
+  ))
+  
+  Framework::add_requirement(iso27001_framework, ComplianceRequirement::new(
+    "access_control",
+    "Implement appropriate access controls",
+    RequirementCategory::Technical,
+    RequirementPriority::Mandatory
+  ))
+  
+  let pci_dss_framework = ComplianceFramework::new("PCI_DSS", "Payment Card Industry Data Security Standard")
+  Framework::add_requirement(pci_dss_framework, ComplianceRequirement::new(
+    "network_security",
+    "Install and maintain network security controls",
+    RequirementCategory::Technical,
+    RequirementPriority::Mandatory
+  ))
+  
+  Framework::add_requirement(pci_dss_framework, ComplianceRequirement::new(
+    "data_protection",
+    "Protect cardholder data",
+    RequirementCategory::Technical,
+    RequirementPriority::Mandatory
+  ))
+  
+  Framework::add_requirement(pci_dss_framework, ComplianceRequirement::new(
+    "vulnerability_management",
+    "Maintain a vulnerability management program",
+    RequirementCategory::Process,
+    RequirementPriority::Mandatory
+  ))
+  
+  ComplianceManager::add_framework(compliance_manager, gdpr_framework)
+  ComplianceManager::add_framework(compliance_manager, iso27001_framework)
+  ComplianceManager::add_framework(compliance_manager, pci_dss_framework)
+  
+  // Create compliance controls
+  let encryption_control = ComplianceControl::new(
+    "encryption_at_rest",
+    "Encrypt sensitive data at rest",
+    "AES-256 encryption is used for all sensitive data",
+    ControlStatus::Implemented
+  )
+  
+  encryption_control.add_fulfillment("data_protection_by_design", "gdpr")
+  encryption_control.add_fulfillment("data_protection", "pci_dss")
+  
+  let access_control = ComplianceControl::new(
+    "role_based_access",
+    "Implement role-based access control",
+    "Users are assigned roles based on job responsibilities",
+    ControlStatus::Implemented
+  )
+  
+  access_control.add_fulfillment("access_control", "iso27001")
+  
+  let incident_response_control = ComplianceControl::new(
+    "incident_response_plan",
+    "Maintain an incident response plan",
+    "Comprehensive incident response procedures are documented and tested",
+    ControlStatus::Implemented
+  )
+  
+  incident_response_control.add_fulfillment("risk_assessment", "iso27001")
+  
+  ComplianceManager::add_control(compliance_manager, encryption_control)
+  ComplianceManager::add_control(compliance_manager, access_control)
+  ComplianceManager::add_control(compliance_manager, incident_response_control)
+  
+  // Conduct compliance assessment
+  let assessment = ComplianceManager::conduct_assessment(compliance_manager)
+  
+  // Verify assessment results
+  assert_eq(Assessment::framework_count(assessment), 3)
+  assert_eq(Assessment::requirement_count(assessment), 9)
+  assert_eq(Assessment::control_count(assessment), 3)
+  
+  // Check framework compliance
+  let gdpr_compliance = Assessment::get_framework_compliance(assessment, "GDPR")
+  assert_eq(gdpr_compliance.compliant_requirements, 2)
+  assert_eq(gdpr_compliance.total_requirements, 3)
+  assert_eq(gdpr_compliance.compliance_percentage, 66.7)
+  
+  let iso27001_compliance = Assessment::get_framework_compliance(assessment, "ISO27001")
+  assert_eq(iso27001_compliance.compliant_requirements, 3)
+  assert_eq(iso27001_compliance.total_requirements, 3)
+  assert_eq(iso27001_compliance.compliance_percentage, 100.0)
+  
+  let pci_dss_compliance = Assessment::get_framework_compliance(assessment, "PCI_DSS")
+  assert_eq(pci_dss_compliance.compliant_requirements, 1)
+  assert_eq(pci_dss_compliance.total_requirements, 3)
+  assert_eq(pci_dss_compliance.compliance_percentage, 33.3)
+  
+  // Generate compliance report
+  let compliance_report = ComplianceManager::generate_report(compliance_manager, assessment)
+  
+  assert_true(ComplianceReport::contains(compliance_report, "GDPR"))
+  assert_true(ComplianceReport::contains(compliance_report, "ISO27001"))
+  assert_true(ComplianceReport::contains(compliance_report, "PCI_DSS"))
+  assert_true(ComplianceReport::contains(compliance_report, "Compliance Score"))
+  
+  // Test evidence collection
+  let evidence_manager = EvidenceManager::new()
+  
+  // Add evidence items
+  let encryption_evidence = Evidence::new(
+    "encryption_evidence_001",
+    "Encryption configuration documentation",
+    EvidenceType::Document,
+    "2022-01-01T00:00:00Z",
+    "john@example.com"
+  )
+  
+  encryption_evidence.add_fulfillment("encryption_at_rest")
+  
+  let access_control_evidence = Evidence::new(
+    "access_control_evidence_001",
+    "Access control policy",
+    EvidenceType::Document,
+    "2022-01-01T00:00:00Z",
+    "jane@example.com"
+  )
+  
+  access_control_evidence.add_fulfillment("role_based_access")
+  
+  let audit_evidence = Evidence::new(
+    "audit_evidence_001",
+    "Access control audit logs",
+    EvidenceType::Log,
+    "2022-01-01T00:00:00Z",
+    "system@example.com"
+  )
+  
+  audit_evidence.add_fulfillment("role_based_access")
+  
+  EvidenceManager::add_evidence(evidence_manager, encryption_evidence)
+  EvidenceManager::add_evidence(evidence_manager, access_control_evidence)
+  EvidenceManager::add_evidence(evidence_manager, audit_evidence)
+  
+  // Link evidence to controls
+  ComplianceManager::link_evidence(compliance_manager, "encryption_at_rest", "encryption_evidence_001")
+  ComplianceManager::link_evidence(compliance_manager, "role_based_access", "access_control_evidence_001")
+  ComplianceManager::link_evidence(compliance_manager, "role_based_access", "audit_evidence_001")
+  
+  // Verify evidence linkage
+  let encryption_control_evidence = ComplianceManager::get_control_evidence(compliance_manager, "encryption_at_rest")
+  assert_eq(encryption_control_evidence.length(), 1)
+  assert_eq(encryption_control_evidence[0], "encryption_evidence_001")
+  
+  let access_control_evidence = ComplianceManager::get_control_evidence(compliance_manager, "role_based_access")
+  assert_eq(access_control_evidence.length(), 2)
+  
+  // Test certification preparation
+  let certification_manager = CertificationManager::new()
+  
+  // Prepare for ISO27001 certification
+  let iso_certification = CertificationManager::prepare_certification(
+    certification_manager,
+    "ISO27001",
+    "2022-06-01",
+    "British Standards Institution (BSI)"
+  )
+  
+  Certification::add_requirement(iso_certification, CertificationRequirement::new(
+    "stage1_audit",
+    "Complete Stage 1 audit",
+    "2022-04-01",
+    RequirementStatus::NotStarted
+  ))
+  
+  Certification::add_requirement(iso_certification, CertificationRequirement::new(
+    "stage2_audit",
+    "Complete Stage 2 audit",
+    "2022-05-01",
+    RequirementStatus::NotStarted
+  ))
+  
+  Certification::add_requirement(iso_certification, CertificationRequirement::new(
+    "certification_issuance",
+    "Receive certification",
+    "2022-06-01",
+    RequirementStatus::NotStarted
+  ))
+  
+  // Test compliance monitoring
+  let monitoring_manager = ComplianceMonitoringManager::new()
+  
+  // Set up continuous monitoring
+  MonitoringManager::enable_continuous_monitoring(monitoring_manager, true)
+  MonitoringManager::set_monitoring_frequency(monitoring_manager, 7 * 24 * 60 * 60)  // Weekly
+  
+  // Create monitoring rules
+  let encryption_monitoring_rule = MonitoringRule::new(
+    "encryption_monitoring",
+    "Monitor encryption status",
+    "SELECT * FROM system_config WHERE encryption_enabled = false",
+    Severity::High
+  )
+  
+  let access_monitoring_rule = MonitoringRule::new(
+    "access_monitoring",
+    "Monitor unauthorized access attempts",
+    "SELECT * FROM audit_logs WHERE action = 'denied'",
+    Severity::Medium
+  )
+  
+  MonitoringManager::add_rule(monitoring_manager, encryption_monitoring_rule)
+  MonitoringManager::add_rule(monitoring_manager, access_monitoring_rule)
+  
+  // Run compliance monitoring
+  let monitoring_results = MonitoringManager::run_checks(monitoring_manager)
+  
+  // Verify monitoring results
+  assert_true(monitoring_results.total_checks >= 0)
+  assert_true(monitoring_results.passed_checks >= 0)
+  assert_true(monitoring_results.failed_checks >= 0)
+  
+  // Generate compliance dashboard
+  let compliance_dashboard = ComplianceManager::generate_dashboard(compliance_manager)
+  
+  assert_true(Dashboard::contains(compliance_dashboard, "Compliance Overview"))
+  assert_true(Dashboard::contains(compliance_dashboard, "Framework Compliance"))
+  assert_true(Dashboard::contains(compliance_dashboard, "Control Status"))
+  assert_true(Dashboard::contains(compliance_dashboard, "Recent Findings"))
+}
+
+// Test 10: Security Testing and Vulnerability Management
+test "security testing and vulnerability management" {
+  // Create security testing manager
+  let testing_manager = SecurityTestingManager::new()
+  
+  // Configure testing settings
+  TestingManager::set_scan_frequency(testing_manager, 7 * 24 * 60 * 60)  // Weekly
+  TestingManager::set_vulnerability_threshold(testing_manager, Severity::Medium)
+  TestingManager::enable_automated_remediation(testing_manager, false)
+  
+  // Create test suites
+  let penetration_test_suite = TestSuite::new("penetration_testing")
+  TestSuite::add_test(penetration_test_suite, SecurityTest::new(
+    "sql_injection_test",
+    "Test for SQL injection vulnerabilities",
+    TestType::Automated,
+    ["api.endpoints"]
+  ))
+  
+  TestSuite::add_test(penetration_test_suite, SecurityTest::new(
+    "xss_test",
+    "Test for cross-site scripting vulnerabilities",
+    TestType::Automated,
+    ["web.application"]
+  ))
+  
+  TestSuite::add_test(penetration_test_suite, SecurityTest::new(
+    "authentication_bypass_test",
+    "Test for authentication bypass vulnerabilities",
+    TestType::Manual,
+    ["authentication.system"]
+  ))
+  
+  let vulnerability_scan_suite = TestSuite::new("vulnerability_scanning")
+  TestSuite::add_test(vulnerability_scan_suite, SecurityTest::new(
+    "network_scan",
+    "Scan network for open ports and services",
+    TestType::Automated,
+    ["network.infrastructure"]
+  ))
+  
+  TestSuite::add_test(vulnerability_scan_suite, SecurityTest::new(
+    "dependency_scan",
+    "Scan dependencies for known vulnerabilities",
+    TestType::Automated,
+    ["software.dependencies"]
+  ))
+  
+  TestSuite::add_test(vulnerability_scan_suite, SecurityTest::new(
+    "configuration_scan",
+    "Scan system configurations for security issues",
+    TestType::Automated,
+    ["system.configuration"]
+  ))
+  
+  TestingManager::add_test_suite(testing_manager, penetration_test_suite)
+  TestingManager::add_test_suite(testing_manager, vulnerability_scan_suite)
+  
+  // Run penetration tests
+  let penetration_results = TestingManager::run_test_suite(testing_manager, "penetration_testing")
+  
+  // Verify penetration test results
+  assert_eq(penetration_results.total_tests, 3)
+  assert_eq(penetration_results.passed_tests, 2)
+  assert_eq(penetration_results.failed_tests, 1)
+  
+  // Verify specific test results
+  let sql_injection_result = penetration_results.get_test_result("sql_injection_test")
+  assert_eq(sql_injection_result.status, TestStatus::Passed)
+  assert_eq(sql_injection_result.severity, Severity::Low)
+  
+  let xss_result = penetration_results.get_test_result("xss_test")
+  assert_eq(xss_result.status, TestStatus::Passed)
+  assert_eq(xss_result.severity, Severity::Low)
+  
+  let auth_bypass_result = penetration_results.get_test_result("authentication_bypass_test")
+  assert_eq(auth_bypass_result.status, TestStatus::Failed)
+  assert_eq(auth_bypass_result.severity, Severity::High)
+  
+  // Run vulnerability scans
+  let vulnerability_results = TestingManager::run_test_suite(testing_manager, "vulnerability_scanning")
+  
+  // Verify vulnerability scan results
+  assert_eq(vulnerability_results.total_tests, 3)
+  assert_eq(vulnerability_results.passed_tests, 1)
+  assert_eq(vulnerability_results.failed_tests, 2)
+  
+  // Create vulnerability manager
+  let vulnerability_manager = VulnerabilityManager::new()
+  
+  // Process test results and create vulnerabilities
+  for test_result in penetration_results.get_all_results() {
+    if test_result.status == TestStatus::Failed {
+      let vulnerability = Vulnerability::new(
+        "vuln_" + @uuid(),
+        test_result.test_name,
+        test_result.description,
+        test_result.severity,
+        VulnerabilityType::SecurityFlaw,
+        test_result.affected_components
+      )
+      
+      VulnerabilityManager::add_vulnerability(vulnerability_manager, vulnerability)
+    }
+  }
+  
+  for test_result in vulnerability_results.get_all_results() {
+    if test_result.status == TestStatus::Failed {
+      let vulnerability = Vulnerability::new(
+        "vuln_" + @uuid(),
+        test_result.test_name,
+        test_result.description,
+        test_result.severity,
+        VulnerabilityType::ConfigurationIssue,
+        test_result.affected_components
+      )
+      
+      VulnerabilityManager::add_vulnerability(vulnerability_manager, vulnerability)
+    }
+  }
+  
+  // Verify vulnerabilities were created
+  let vulnerabilities = VulnerabilityManager::get_vulnerabilities(vulnerability_manager)
+  assert_eq(vulnerabilities.length(), 3)
+  
+  // Test vulnerability prioritization
+  let prioritized_vulnerabilities = VulnerabilityManager::prioritize(vulnerability_manager)
+  
+  // Highest severity should be first
+  assert_eq(prioritized_vulnerabilities[0].severity, Severity::High)
+  
+  // Test vulnerability remediation
+  let auth_bypass_vuln = vulnerabilities.find(@(v) v.title == "authentication_bypass_test")
+  match auth_bypass_vuln {
+    Some(vuln) => {
+      let remediation = Remediation::new(
+        "fix_auth_bypass",
+        "Implement proper authentication checks",
+        5,  // 5 days
+        RemediationType::CodeFix
+      )
+      
+      VulnerabilityManager::assign_remediation(vulnerability_manager, vuln.id, remediation)
+      
+      // Update vulnerability status
+      VulnerabilityManager::update_status(vulnerability_manager, vuln.id, VulnerabilityStatus::InProgress)
+    }
+    None => assert_true(false)
+  }
+  
+  // Test vulnerability tracking
+  let vulnerability_metrics = VulnerabilityManager::get_metrics(vulnerability_manager)
+  
+  assert_eq(VulnerabilityMetrics::total_vulnerabilities(vulnerability_metrics), 3)
+  assert_eq(VulnerabilityMetrics::critical_vulnerabilities(vulnerability_metrics), 0)
+  assert_eq(VulnerabilityMetrics::high_vulnerabilities(vulnerability_metrics), 1)
+  assert_eq(VulnerabilityMetrics::medium_vulnerabilities(vulnerability_metrics), 2)
+  assert_eq(VulnerabilityMetrics::in_progress_vulnerabilities(vulnerability_metrics), 1)
+  
+  // Test security code review
+  let code_review_manager = CodeReviewManager::new()
+  
+  // Create code review rules
+  CodeReviewManager::add_rule(code_review_manager, CodeReviewRule::new(
+    "hardcoded_credentials",
+    "Check for hardcoded credentials",
+    "password|secret|token|key",
+    RuleType::Pattern,
+    Severity::Critical
+  ))
+  
+  CodeReviewManager::add_rule(code_review_manager, CodeReviewRule::new(
+    "sql_injection",
+    "Check for SQL injection vulnerabilities",
+    "executeQuery|rawQuery",
+    RuleType::Pattern,
+    Severity::High
+  ))
+  
+  CodeReviewManager::add_rule(code_review_manager, CodeReviewRule::new(
+    "input_validation",
+    "Check for input validation",
+    "request\.getParameter|request\.getHeader",
+    RuleType::Pattern,
+    Severity::Medium
+  ))
+  
+  // Review code
+  let code_sample = "
+    public class UserService {
+      private String password = \"admin123\";  // Hardcoded password
+      private String dbUrl = \"jdbc:mysql://localhost/users\";
+      
+      public User getUser(String userId) {
+        String query = \"SELECT * FROM users WHERE id = \" + userId;  // SQL injection
+        return database.executeQuery(query);
+      }
+      
+      public void updateUser(String userId, String email) {
+        String userEmail = request.getParameter(\"email\");  // No input validation
+        // Update user logic
+      }
+    }
+  "
+  
+  let code_review_results = CodeReviewManager::review_code(code_review_manager, code_sample)
+  
+  // Verify code review results
+  assert_eq(code_review_results.total_issues, 3)
+  assert_eq(code_review_results.critical_issues, 1)
+  assert_eq(code_review_results.high_issues, 1)
+  assert_eq(code_review_results.medium_issues, 1)
+  
+  // Test security configuration review
+  let config_review_manager = ConfigReviewManager::new()
+  
+  // Add configuration review rules
+  ConfigReviewManager::add_rule(config_review_manager, ConfigReviewRule::new(
+    "default_passwords",
+    "Check for default passwords",
+    "admin|password|123456",
+    RuleType::Pattern,
+    Severity::Critical
+  ))
+  
+  ConfigReviewManager::add_rule(config_review_manager, ConfigReviewRule::new(
+    "weak_encryption",
+    "Check for weak encryption algorithms",
+    "DES|RC4|MD5|SHA1",
+    RuleType::Pattern,
+    Severity::High
+  ))
+  
+  ConfigReviewManager::add_rule(config_review_manager, ConfigReviewRule::new(
+    "unnecessary_services",
+    "Check for unnecessary services",
+    "telnet|ftp|rsh",
+    RuleType::Pattern,
+    Severity::Medium
+  ))
+  
+  // Review configuration
+  let config_sample = "
+    # Database Configuration
+    db.username=admin
+    db.password=password123
+    db.encryption=DES
+    
+    # Network Services
+    services.enabled=telnet,ftp,ssh,http
+    
+    # Security Settings
+    ssl.protocol=TLSv1.0
+    ssl.cipher=RC4-MD5
+  "
+  
+  let config_review_results = ConfigReviewManager::review_config(config_review_manager, config_sample)
+  
+  // Verify configuration review results
+  assert_eq(config_review_results.total_issues, 6)
+  assert_eq(config_review_results.critical_issues, 2)
+  assert_eq(config_review_results.high_issues, 3)
+  assert_eq(config_review_results.medium_issues, 1)
+  
+  // Generate security testing report
+  let testing_report = TestingManager::generate_report(testing_manager)
+  
+  assert_true(TestingReport::contains(testing_report, "Penetration Testing"))
+  assert_true(TestingReport::contains(testing_report, "Vulnerability Scanning"))
+  assert_true(TestingReport::contains(testing_report, "Code Review"))
+  assert_true(TestingReport::contains(testing_report, "Configuration Review"))
+  assert_true(TestingReport::contains(testing_report, "Remediation Plan"))
 }

@@ -1,435 +1,585 @@
-// 分布式追踪链路测试用例
-// 测试Azimuth遥测系统中分布式追踪的链路传播和关联功能
+// Azimuth Telemetry System - Distributed Tracing Chain Tests
+// This file contains test cases for distributed tracing chain functionality
 
-test "跨服务追踪链路完整性" {
-  // 创建多个服务的tracer
-  let tracer_provider = TracerProvider::default()
+// Test 1: Trace Context Creation and Propagation
+test "trace context creation and propagation" {
+  // Create a trace context with trace ID and span ID
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_id = "b7ad6b7169203331"
+  let trace_flags = 1  // Sampled
   
-  let gateway_tracer = TracerProvider::get_tracer(tracer_provider, "api-gateway")
-  let auth_tracer = TracerProvider::get_tracer(tracer_provider, "auth-service")
-  let user_tracer = TracerProvider::get_tracer(tracer_provider, "user-service")
-  let order_tracer = TracerProvider::get_tracer(tracer_provider, "order-service")
+  let trace_context = TraceContext::new(trace_id, span_id, trace_flags)
   
-  // 网关服务创建根span
-  let gateway_span = Tracer::start_span(gateway_tracer, "gateway.process.request")
-  let gateway_context = Span::span_context(gateway_span)
-  let trace_id = SpanContext::trace_id(gateway_context)
+  assert_eq(TraceContext::trace_id(trace_context), trace_id)
+  assert_eq(TraceContext::span_id(trace_context), span_id)
+  assert_eq(TraceContext::trace_flags(trace_context), trace_flags)
+  assert_true(TraceContext::is_sampled(trace_context))
   
-  // 设置网关span属性
-  Span::set_attribute(gateway_span, "service.name", "api-gateway")
-  Span::set_attribute(gateway_span, "http.method", "POST")
-  Span::set_attribute(gateway_span, "http.url", "/api/orders")
-  Span::set_attribute(gateway_span, "client.ip", "192.168.1.100")
+  // Create child context
+  let child_span_id = "00f067aa0ba902b7"
+  let child_context = TraceContext::create_child(trace_context, child_span_id)
   
-  // 网关调用认证服务
-  let auth_span = Tracer::start_span(auth_tracer, "auth.validate.token")
-  let auth_context = Span::span_context(auth_span)
-  
-  // 验证认证服务span与网关span在同一trace中
-  assert_eq(SpanContext::trace_id(auth_context), trace_id)
-  
-  // 设置认证服务span属性
-  Span::set_attribute(auth_span, "service.name", "auth-service")
-  Span::set_attribute(auth_span, "auth.token", "bearer-token-xyz")
-  Span::set_attribute(auth_span, "auth.user.id", "user-123")
-  
-  // 认证服务调用用户服务
-  let user_span = Tracer::start_span(user_tracer, "user.get.profile")
-  let user_context = Span::span_context(user_span)
-  
-  // 验证用户服务span在同一trace中
-  assert_eq(SpanContext::trace_id(user_context), trace_id)
-  
-  // 设置用户服务span属性
-  Span::set_attribute(user_span, "service.name", "user-service")
-  Span::set_attribute(user_span, "user.id", "user-123")
-  Span::set_attribute(user_span, "db.query", "SELECT * FROM users WHERE id = ?")
-  
-  // 用户服务调用订单服务
-  let order_span = Tracer::start_span(order_tracer, "order.get.history")
-  let order_context = Span::span_context(order_span)
-  
-  // 验证订单服务span在同一trace中
-  assert_eq(SpanContext::trace_id(order_context), trace_id)
-  
-  // 设置订单服务span属性
-  Span::set_attribute(order_span, "service.name", "order-service")
-  Span::set_attribute(order_span, "user.id", "user-123")
-  Span::set_attribute(order_span, "order.count", 5)
-  
-  // 按相反顺序结束span（模拟服务响应）
-  Span::end(order_span)
-  Span::end(user_span)
-  Span::end(auth_span)
-  Span::end(gateway_span)
-  
-  // 验证所有span都有有效的上下文
-  assert_true(SpanContext::is_valid(gateway_context))
-  assert_true(SpanContext::is_valid(auth_context))
-  assert_true(SpanContext::is_valid(user_context))
-  assert_true(SpanContext::is_valid(order_context))
+  // Child should inherit trace ID and flags
+  assert_eq(TraceContext::trace_id(child_context), trace_id)
+  assert_eq(TraceContext::span_id(child_context), child_span_id)
+  assert_eq(TraceContext::trace_flags(child_context), trace_flags)
+  assert_true(TraceContext::is_sampled(child_context))
 }
 
-test "异步操作追踪关联" {
-  // 测试异步操作的追踪关联
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "async.test")
+// Test 2: Trace Chain Builder
+test "trace chain builder" {
+  // Create a trace chain builder
+  let builder = TraceChainBuilder::new("user_request")
   
-  // 创建主操作span
-  let main_span = Tracer::start_span(tracer, "async.main.operation")
-  let main_context = Span::span_context(main_span)
-  let trace_id = SpanContext::trace_id(main_context)
+  // Add root span
+  let root_span = TraceChainBuilder::add_root_span(
+    builder,
+    "user_request",
+    SpanKind::Server,
+    [("http.method", StringValue("GET")), ("http.url", StringValue("/api/users"))]
+  )
   
-  // 设置主操作属性
-  Span::set_attribute(main_span, "operation.type", "async.processing")
-  Span::set_attribute(main_span, "task.count", 3)
+  // Add child spans
+  let auth_span = TraceChainBuilder::add_child_span(
+    builder,
+    root_span,
+    "authenticate_user",
+    SpanKind::Internal,
+    [("user.id", StringValue("12345"))]
+  )
   
-  // 创建异步任务spans
-  let async_spans = []
-  let async_tasks = ["task.email.send", "task.notification.push", "task.analytics.update"]
+  let db_span = TraceChainBuilder::add_child_span(
+    builder,
+    auth_span,
+    "database_query",
+    SpanKind::Client,
+    [("db.statement", StringValue("SELECT * FROM users WHERE id = ?"))]
+  )
   
-  for i = 0; i < async_tasks.length(); i = i + 1 {
-    let task_name = async_tasks[i]
-    let async_span = Tracer::start_span(tracer, task_name)
-    let async_context = Span::span_context(async_span)
-    
-    // 验证异步span与主span在同一trace中
-    assert_eq(SpanContext::trace_id(async_context), trace_id)
-    
-    // 设置异步任务属性
-    Span::set_attribute(async_span, "task.name", task_name)
-    Span::set_attribute(async_span, "task.id", "task-" + i.to_string())
-    Span::set_attribute(async_span, "async.parent", "async.main.operation")
-    
-    // 模拟异步任务中的子操作
-    let sub_span = Tracer::start_span(tracer, "sub.operation." + i.to_string())
-    let sub_context = Span::span_context(sub_span)
-    
-    // 验证子操作也在同一trace中
-    assert_eq(SpanContext::trace_id(sub_context), trace_id)
-    
-    Span::set_attribute(sub_span, "sub.operation.type", "database.query")
-    Span::set_attribute(sub_span, "sub.operation.parent", task_name)
-    
-    // 结束子操作
-    Span::end(sub_span)
-    
-    async_spans.push(async_span)
+  let cache_span = TraceChainBuilder::add_child_span(
+    builder,
+    root_span,
+    "cache_lookup",
+    SpanKind::Internal,
+    [("cache.key", StringValue("user:12345"))]
+  )
+  
+  // Build the trace chain
+  let trace_chain = TraceChainBuilder::build(builder)
+  
+  // Verify trace chain structure
+  assert_eq(TraceChain::trace_id(trace_chain), TraceChainBuilder::trace_id(builder))
+  assert_eq(TraceChain::span_count(trace_chain), 4)
+  
+  // Verify root span
+  let root = TraceChain::get_root_span(trace_chain)
+  assert_eq(Span::name(root), "user_request")
+  match Span::kind(root) {
+    SpanKind::Server => assert_true(true)
+    _ => assert_true(false)
   }
   
-  // 结束所有异步任务
-  for async_span in async_spans {
-    Span::end(async_span)
-  }
+  // Verify parent-child relationships
+  let auth_children = TraceChain::get_child_spans(trace_chain, root_span)
+  assert_eq(auth_children.length(), 2)  // auth_span and cache_span
   
-  // 结束主操作
-  Span::end(main_span)
-  
-  assert_true(true)
+  let db_children = TraceChain::get_child_spans(trace_chain, auth_span)
+  assert_eq(db_children.length(), 1)  // db_span
 }
 
-test "批处理操作追踪" {
-  // 测试批处理操作的追踪
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "batch.test")
+// Test 3: Cross-Service Trace Propagation
+test "cross-service trace propagation" {
+  // Service A: Create trace
+  let service_a_trace_id = TraceId::generate()
+  let service_a_span_id = SpanId::generate()
+  let service_a_context = TraceContext::new(service_a_trace_id, service_a_span_id, 1)
   
-  // 创建批处理主span
-  let batch_span = Tracer::start_span(tracer, "batch.process.orders")
-  let batch_context = Span::span_context(batch_span)
-  let trace_id = SpanContext::trace_id(batch_context)
+  let service_a_span = Span::new("service_a_handler", SpanKind::Server, service_a_context)
+  Span::add_event(service_a_span, "request_received", None)
   
-  // 设置批处理属性
-  Span::set_attribute(batch_span, "batch.id", "batch-12345")
-  Span::set_attribute(batch_span, "batch.size", 100)
-  Span::set_attribute(batch_span, "batch.type", "order.processing")
+  // Simulate HTTP call to Service B
+  let trace_headers = TraceContext::to_headers(service_a_context)
   
-  // 创建批处理中的子操作spans
-  let batch_items = []
-  let batch_size = 10  // 简化为10个批处理项
+  // Service B: Extract trace context from headers
+  let service_b_context = TraceContext::from_headers(trace_headers)
+  let service_b_span_id = SpanId::generate()
+  let service_b_child_context = TraceContext::create_child(service_b_context, service_b_span_id)
   
-  for i = 0; i < batch_size; i = i + 1 {
-    let item_span = Tracer::start_span(tracer, "batch.item.process")
-    let item_context = Span::span_context(item_span)
-    
-    // 验证批处理项span与主span在同一trace中
-    assert_eq(SpanContext::trace_id(item_context), trace_id)
-    
-    // 设置批处理项属性
-    Span::set_attribute(item_span, "batch.item.id", "item-" + i.to_string())
-    Span::set_attribute(item_span, "batch.item.index", i)
-    Span::set_attribute(item_span, "batch.parent", "batch.process.orders")
-    
-    // 模拟批处理项中的操作
-    let validate_span = Tracer::start_span(tracer, "item.validate")
-    let validate_context = Span::span_context(validate_span)
-    
-    assert_eq(SpanContext::trace_id(validate_context), trace_id)
-    Span::set_attribute(validate_span, "validation.type", "order.data")
-    Span::end(validate_span)
-    
-    let transform_span = Tracer::start_span(tracer, "item.transform")
-    let transform_context = Span::span_context(transform_span)
-    
-    assert_eq(SpanContext::trace_id(transform_context), trace_id)
-    Span::set_attribute(transform_span, "transformation.type", "data.format")
-    Span::end(transform_span)
-    
-    let persist_span = Tracer::start_span(tracer, "item.persist")
-    let persist_context = Span::span_context(persist_span)
-    
-    assert_eq(SpanContext::trace_id(persist_context), trace_id)
-    Span::set_attribute(persist_span, "persistence.type", "database.write")
-    Span::end(persist_span)
-    
-    // 结束批处理项span
-    Span::end(item_span)
-    batch_items.push(item_span)
-  }
+  let service_b_span = Span::new("service_b_handler", SpanKind::Server, service_b_child_context)
+  Span::add_event(service_b_span, "request_received", None)
   
-  // 结束批处理主span
-  Span::end(batch_span)
+  // Simulate database call from Service B
+  let db_span_id = SpanId::generate()
+  let db_context = TraceContext::create_child(service_b_child_context, db_span_id)
   
-  // 验证批处理追踪完整性
-  assert_eq(batch_items.length(), batch_size)
-  assert_true(SpanContext::is_valid(batch_context))
+  let db_span = Span::new("database_query", SpanKind::Client, db_context)
+  Span::add_event(db_span, "query_executed", None)
+  
+  // Complete the spans
+  Span::end(service_b_span)
+  Span::end(db_span)
+  
+  // Service A: Complete after receiving response from Service B
+  Span::add_event(service_a_span, "response_received", None)
+  Span::end(service_a_span)
+  
+  // Verify trace continuity
+  assert_eq(TraceContext::trace_id(service_a_context), TraceContext::trace_id(service_b_context))
+  assert_eq(TraceContext::trace_id(service_b_context), TraceContext::trace_id(db_context))
+  
+  // Verify span hierarchy
+  assert_eq(TraceContext::parent_span_id(service_b_child_context), Some(service_a_span_id))
+  assert_eq(TraceContext::parent_span_id(db_context), Some(service_b_span_id))
 }
 
-test "微服务调用链追踪" {
-  // 测试微服务调用链追踪
-  let tracer_provider = TracerProvider::default()
+// Test 4: Trace Chain Analysis
+test "trace chain analysis" {
+  // Create a complex trace chain
+  let builder = TraceChainBuilder::new("api_request")
   
-  // 创建多个微服务的tracer
-  let services = [
-    ("frontend", "web-frontend"),
-    ("api-gateway", "api-gateway"),
-    ("user-service", "user-service"),
-    ("product-service", "product-service"),
-    ("order-service", "order-service"),
-    ("payment-service", "payment-service"),
-    ("notification-service", "notification-service")
-  ]
+  // Root span
+  let root_span = TraceChainBuilder::add_root_span(
+    builder,
+    "api_request",
+    SpanKind::Server,
+    [("http.method", StringValue("POST")), ("http.route", StringValue("/api/process"))]
+  )
   
-  let tracers = []
-  for (service_type, service_name) in services {
-    let tracer = TracerProvider::get_tracer(tracer_provider, service_name)
-    tracers.push((service_type, service_name, tracer))
-  }
+  // Authentication span
+  let auth_span = TraceChainBuilder::add_child_span(
+    builder,
+    root_span,
+    "authentication",
+    SpanKind::Internal,
+    [("auth.method", StringValue("jwt"))]
+  )
   
-  // 模拟微服务调用链
-  let call_chain = [
-    ("frontend", "web-frontend", "user.click.checkout"),
-    ("api-gateway", "api-gateway", "gateway.route.request"),
-    ("user-service", "user-service", "user.validate.session"),
-    ("product-service", "product-service", "product.get.details"),
-    ("order-service", "order-service", "order.create"),
-    ("payment-service", "payment-service", "payment.process"),
-    ("order-service", "order-service", "order.update.status"),
-    ("notification-service", "notification-service", "notification.send.confirmation")
-  ]
+  // Authorization span
+  let authz_span = TraceChainBuilder::add_child_span(
+    builder,
+    auth_span,
+    "authorization",
+    SpanKind::Internal,
+    [("authz.resource", StringValue("data"))]
+  )
   
-  let spans = []
-  let trace_id = ""
+  // Business logic span
+  let business_span = TraceChainBuilder::add_child_span(
+    builder,
+    root_span,
+    "business_logic",
+    SpanKind::Internal,
+    [("operation.type", StringValue("process"))]
+  )
   
-  for i = 0; i < call_chain.length(); i = i + 1 {
-    let (service_type, service_name, operation_name) = call_chain[i]
-    
-    // 找到对应的tracer
-    let tracer = match service_type {
-      "frontend" => TracerProvider::get_tracer(tracer_provider, "web-frontend"),
-      "api-gateway" => TracerProvider::get_tracer(tracer_provider, "api-gateway"),
-      "user-service" => TracerProvider::get_tracer(tracer_provider, "user-service"),
-      "product-service" => TracerProvider::get_tracer(tracer_provider, "product-service"),
-      "order-service" => TracerProvider::get_tracer(tracer_provider, "order-service"),
-      "payment-service" => TracerProvider::get_tracer(tracer_provider, "payment-service"),
-      "notification-service" => TracerProvider::get_tracer(tracer_provider, "notification-service"),
-      _ => TracerProvider::get_tracer(tracer_provider, "unknown")
-    }
-    
-    // 创建span
-    let span = Tracer::start_span(tracer, operation_name)
-    let context = Span::span_context(span)
-    
-    // 第一个span的trace_id作为整个调用链的trace_id
-    if i == 0 {
-      trace_id = SpanContext::trace_id(context)
-    }
-    
-    // 验证所有span在同一trace中
-    assert_eq(SpanContext::trace_id(context), trace_id)
-    
-    // 设置span属性
-    Span::set_attribute(span, "service.type", service_type)
-    Span::set_attribute(span, "service.name", service_name)
-    Span::set_attribute(span, "operation.name", operation_name)
-    
-    // 设置调用链关系
-    if i > 0 {
-      let (prev_service_type, _, _) = call_chain[i - 1]
-      Span::set_attribute(span, "caller.service", prev_service_type)
-    }
-    
-    if i < call_chain.length() - 1 {
-      let (next_service_type, _, _) = call_chain[i + 1]
-      Span::set_attribute(span, "callee.service", next_service_type)
-    }
-    
-    spans.push(span)
-  }
+  // Database spans
+  let db_read_span = TraceChainBuilder::add_child_span(
+    builder,
+    business_span,
+    "database_read",
+    SpanKind::Client,
+    [("db.operation", StringValue("SELECT"))]
+  )
   
-  // 按相反顺序结束span（模拟服务响应）
-  for i = spans.length() - 1; i >= 0; i = i - 1 {
-    Span::end(spans[i])
-  }
+  let db_write_span = TraceChainBuilder::add_child_span(
+    builder,
+    business_span,
+    "database_write",
+    SpanKind::Client,
+    [("db.operation", StringValue("INSERT"))]
+  )
   
-  // 验证调用链完整性
-  assert_eq(spans.length(), call_chain.length())
-  assert_true(trace_id != "")
+  // External service call
+  let external_span = TraceChainBuilder::add_child_span(
+    builder,
+    business_span,
+    "external_service_call",
+    SpanKind::Client,
+    [("service.name", StringValue("payment")), ("service.version", StringValue("v2"))]
+  )
+  
+  // Build the trace chain
+  let trace_chain = TraceChainBuilder::build(builder)
+  
+  // Analyze the trace chain
+  let analysis = TraceChainAnalyzer::analyze(trace_chain)
+  
+  // Verify analysis results
+  assert_eq(analysis.total_spans, 7)
+  assert_eq(analysis.max_depth, 3)  // root -> auth -> authz
+  assert_eq(analysis.service_count, 1)  // All spans in same service
+  
+  // Verify span types
+  assert_eq(analysis.span_types.get("server"), Some(1))  // root span
+  assert_eq(analysis.span_types.get("internal"), Some(3))  // auth, authz, business
+  assert_eq(analysis.span_types.get("client"), Some(3))  // db_read, db_write, external
+  
+  // Verify critical path
+  let critical_path = TraceChainAnalyzer::find_critical_path(trace_chain)
+  assert_eq(critical_path.length(), 3)  // root -> business -> external (longest path)
 }
 
-test "错误传播和上下文保留" {
-  // 测试错误传播和上下文保留
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "error.propagation.test")
+// Test 5: Trace Chain Performance Metrics
+test "trace chain performance metrics" {
+  // Create a trace chain with timing information
+  let builder = TraceChainBuilder::new("performance_test")
   
-  // 创建根span
-  let root_span = Tracer::start_span(tracer, "root.operation")
-  let root_context = Span::span_context(root_span)
-  let trace_id = SpanContext::trace_id(root_context)
+  let start_time = 1640995200000000L  // High precision timestamp
   
-  // 设置根span属性
-  Span::set_attribute(root_span, "operation.type", "error.prone")
-  Span::set_attribute(root_span, "user.id", "user-123")
-  Span::set_attribute(root_span, "request.id", "req-456")
+  // Root span
+  let root_span = TraceChainBuilder::add_root_span_with_timing(
+    builder,
+    "root_operation",
+    SpanKind::Server,
+    [],
+    start_time,
+    start_time + 1000000L  // 1ms
+  )
   
-  // 创建子span1（成功）
-  let child_span1 = Tracer::start_span(tracer, "child.operation.1")
-  let child_context1 = Span::span_context(child_span1)
+  // Child spans with different durations
+  let fast_span = TraceChainBuilder::add_child_span_with_timing(
+    builder,
+    root_span,
+    "fast_operation",
+    SpanKind::Internal,
+    [],
+    start_time + 100000L,
+    start_time + 200000L  // 0.1ms
+  )
   
-  assert_eq(SpanContext::trace_id(child_context1), trace_id)
-  Span::set_attribute(child_span1, "operation.type", "validation")
-  Span::end(child_span1)  // 成功结束
+  let slow_span = TraceChainBuilder::add_child_span_with_timing(
+    builder,
+    root_span,
+    "slow_operation",
+    SpanKind::Internal,
+    [],
+    start_time + 200000L,
+    start_time + 800000L  // 0.6ms
+  )
   
-  // 创建子span2（失败）
-  let child_span2 = Tracer::start_span(tracer, "child.operation.2")
-  let child_context2 = Span::span_context(child_span2)
+  let parallel_span = TraceChainBuilder::add_child_span_with_timing(
+    builder,
+    root_span,
+    "parallel_operation",
+    SpanKind::Internal,
+    [],
+    start_time + 100000L,
+    start_time + 900000L  // 0.8ms, overlaps with other spans
+  )
   
-  assert_eq(SpanContext::trace_id(child_context2), trace_id)
-  Span::set_attribute(child_span2, "operation.type", "database.query")
+  // Build the trace chain
+  let trace_chain = TraceChainBuilder::build(builder)
   
-  // 设置错误状态
-  Span::set_status(child_span2, Error, Some("Database connection timeout"))
-  Span::add_event(child_span2, "error.occurred", [
-    ("error.type", "TimeoutError"),
-    ("error.code", "DB_TIMEOUT"),
-    ("error.message", "Connection timeout after 30 seconds")
+  // Calculate performance metrics
+  let metrics = TraceChainAnalyzer::calculate_performance_metrics(trace_chain)
+  
+  // Verify metrics
+  assert_eq(metrics.total_duration, 1000000L)  // 1ms (root span duration)
+  assert_eq(metrics.span_count, 4)
+  
+  // Verify slowest span
+  match metrics.slowest_span {
+    Some((span_name, duration)) => {
+      assert_eq(span_name, "slow_operation")
+      assert_eq(duration, 600000L)  // 0.6ms
+    }
+    None => assert_true(false)
+  }
+  
+  // Verify fastest span
+  match metrics.fastest_span {
+    Some((span_name, duration)) => {
+      assert_eq(span_name, "fast_operation")
+      assert_eq(duration, 100000L)  // 0.1ms
+    }
+    None => assert_true(false)
+  }
+  
+  // Verify parallelism calculation
+  assert_true(metrics.max_parallelism >= 2)  // At least 2 spans overlap
+}
+
+// Test 6: Trace Chain Error Handling
+test "trace chain error handling" {
+  // Create a trace chain with errors
+  let builder = TraceChainBuilder::new("error_test")
+  
+  // Root span
+  let root_span = TraceChainBuilder::add_root_span(
+    builder,
+    "request_handler",
+    SpanKind::Server,
+    [("http.method", StringValue("GET"))]
+  )
+  
+  // Span with error
+  let error_span = TraceChainBuilder::add_child_span(
+    builder,
+    root_span,
+    "database_operation",
+    SpanKind::Client,
+    [("db.operation", StringValue("SELECT"))]
+  )
+  
+  // Simulate error in the span
+  Span::set_status(error_span, StatusCode::Error, Some("Connection timeout"))
+  Span::add_event(error_span, "exception", Some([
+    ("exception.type", StringValue("TimeoutException")),
+    ("exception.message", StringValue("Database connection timeout after 30s"))
+  ]))
+  
+  // Span that handles the error
+  let recovery_span = TraceChainBuilder::add_child_span(
+    builder,
+    root_span,
+    "error_recovery",
+    SpanKind::Internal,
+    [("recovery.strategy", StringValue("fallback_cache"))]
+  )
+  
+  Span::add_event(recovery_span, "fallback_used", Some([
+    ("cache.key", StringValue("user_data"))
+  ]))
+  
+  // Build the trace chain
+  let trace_chain = TraceChainBuilder::build(builder)
+  
+  // Analyze errors in the trace chain
+  let error_analysis = TraceChainAnalyzer::analyze_errors(trace_chain)
+  
+  // Verify error analysis
+  assert_eq(error_analysis.error_count, 1)
+  assert_eq(error_analysis.total_spans, 3)
+  
+  // Verify error details
+  match error_analysis.errors.get(0) {
+    Some(error) => {
+      assert_eq(error.span_name, "database_operation")
+      assert_eq(error.status_code, StatusCode::Error)
+      match error.error_message {
+        Some(msg) => assert_eq(msg, "Connection timeout")
+        None => assert_true(false)
+      }
+    }
+    None => assert_true(false)
+  }
+  
+  // Verify error recovery detection
+  assert_true(error_analysis.has_recovery)
+  match error_analysis.recovery_strategy {
+    Some(strategy) => assert_eq(strategy, "fallback_cache")
+    None => assert_true(false)
+  }
+}
+
+// Test 7: Trace Chain Sampling
+test "trace chain sampling" {
+  // Test different sampling strategies
+  let always_on_sampler = AlwaysOnSampler::new()
+  let always_off_sampler = AlwaysOffSampler::new()
+  let rate_limiting_sampler = RateLimitingSampler::new(10)  // 10 traces per second
+  let probability_sampler = ProbabilitySampler::new(0.1)  // 10% probability
+  
+  // Test always on sampler
+  let trace_id_1 = TraceId::generate()
+  let decision_1 = Sampler::should_sample(always_on_sampler, trace_id_1, "test_operation")
+  match decision_1 {
+    SamplingDecision::RecordAndSample => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // Test always off sampler
+  let trace_id_2 = TraceId::generate()
+  let decision_2 = Sampler::should_sample(always_off_sampler, trace_id_2, "test_operation")
+  match decision_2 {
+    SamplingDecision::Drop => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // Test probability sampler with known trace ID for deterministic result
+  let trace_id_3 = "40000000000000000000000000000000"  // Known to be sampled at 10%
+  let decision_3 = Sampler::should_sample(probability_sampler, trace_id_3, "test_operation")
+  // This specific trace ID should be sampled with probability sampler at 10%
+  match decision_3 {
+    SamplingDecision::RecordAndSample => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // Test rate limiting sampler
+  let trace_id_4 = TraceId::generate()
+  let decision_4 = Sampler::should_sample(rate_limiting_sampler, trace_id_4, "test_operation")
+  // First few traces should be sampled
+  match decision_4 {
+    SamplingDecision::RecordAndSample => assert_true(true)
+    SamplingDecision::Drop => assert_true(true)  // Also valid if rate limit exceeded
+    _ => assert_true(false)
+  }
+}
+
+// Test 8: Trace Chain Context Baggage
+test "trace chain context baggage" {
+  // Create trace context with baggage
+  let trace_id = TraceId::generate()
+  let span_id = SpanId::generate()
+  let trace_context = TraceContext::new(trace_id, span_id, 1)
+  
+  // Add baggage items
+  let baggage = Baggage::new()
+  let updated_baggage = Baggage::set_entry(baggage, "user.id", "12345")
+  let updated_baggage = Baggage::set_entry(updated_baggage, "request.id", "req-67890")
+  let updated_baggage = Baggage::set_entry(updated_baggage, "tenant.id", "tenant-001")
+  
+  // Create context with baggage
+  let context_with_baggage = TraceContext::with_baggage(trace_context, updated_baggage)
+  
+  // Verify baggage propagation
+  let retrieved_baggage = TraceContext::baggage(context_with_baggage)
+  let user_id = Baggage::get_entry(retrieved_baggage, "user.id")
+  match user_id {
+    Some(value) => assert_eq(value, "12345")
+    None => assert_true(false)
+  }
+  
+  // Test baggage serialization
+  let baggage_headers = Baggage::to_headers(retrieved_baggage)
+  
+  // Test baggage deserialization
+  let deserialized_baggage = Baggage::from_headers(baggage_headers)
+  let request_id = Baggage::get_entry(deserialized_baggage, "request.id")
+  match request_id {
+    Some(value) => assert_eq(value, "req-67890")
+    None => assert_true(false)
+  }
+  
+  // Test baggage removal
+  let filtered_baggage = Baggage::remove_entry(deserialized_baggage, "tenant.id")
+  let tenant_id = Baggage::get_entry(filtered_baggage, "tenant.id")
+  match tenant_id {
+    Some(_) => assert_true(false)  // Should be removed
+    None => assert_true(true)
+  }
+}
+
+// Test 9: Trace Chain Export
+test "trace chain export" {
+  // Create a trace chain
+  let builder = TraceChainBuilder::new("export_test")
+  
+  let root_span = TraceChainBuilder::add_root_span(
+    builder,
+    "root_operation",
+    SpanKind::Server,
+    [("service.name", StringValue("test_service"))]
+  )
+  
+  let child_span = TraceChainBuilder::add_child_span(
+    builder,
+    root_span,
+    "child_operation",
+    SpanKind::Internal,
+    [("operation.type", StringValue("test"))]
+  )
+  
+  // Build the trace chain
+  let trace_chain = TraceChainBuilder::build(builder)
+  
+  // Export to JSON format
+  let json_exporter = JsonTraceExporter::new()
+  let json_data = TraceExporter::export(json_exporter, trace_chain)
+  
+  // Verify JSON contains expected data
+  assert_true(json_data.contains("root_operation"))
+  assert_true(json_data.contains("child_operation"))
+  assert_true(json_data.contains("test_service"))
+  
+  // Export to Protocol Buffers format
+  let protobuf_exporter = ProtobufTraceExporter::new()
+  let protobuf_data = TraceExporter::export(protobuf_exporter, trace_chain)
+  
+  // Verify protobuf data is not empty
+  assert_true(protobuf_data.length() > 0)
+  
+  // Export to Jaeger format
+  let jaeger_exporter = JaegerTraceExporter::new("http://localhost:14268/api/traces")
+  let jaeger_data = TraceExporter::export(jaeger_exporter, trace_chain)
+  
+  // Verify Jaeger format
+  assert_true(jaeger_data.contains("spans"))
+  assert_true(jaeger_data.contains("traceID"))
+}
+
+// Test 10: Trace Chain Filtering and Search
+test "trace chain filtering and search" {
+  // Create multiple trace chains
+  let chains = []
+  
+  // Chain 1: Successful request
+  let builder1 = TraceChainBuilder::new("success_request")
+  let root1 = TraceChainBuilder::add_root_span(
+    builder1,
+    "api_request",
+    SpanKind::Server,
+    [("http.status_code", StringValue("200"))]
+  )
+  let chain1 = TraceChainBuilder::build(builder1)
+  chains.push(chain1)
+  
+  // Chain 2: Failed request
+  let builder2 = TraceChainBuilder::new("error_request")
+  let root2 = TraceChainBuilder::add_root_span(
+    builder2,
+    "api_request",
+    SpanKind::Server,
+    [("http.status_code", StringValue("500"))]
+  )
+  let error_span = TraceChainBuilder::add_child_span(
+    builder2,
+    root2,
+    "database_error",
+    SpanKind::Client,
+    [("error.type", StringValue("ConnectionError"))]
+  )
+  Span::set_status(error_span, StatusCode::Error, Some("Database connection failed"))
+  let chain2 = TraceChainBuilder::build(builder2)
+  chains.push(chain2)
+  
+  // Chain 3: Slow request
+  let builder3 = TraceChainBuilder::new("slow_request")
+  let start_time = 1640995200000000L
+  let root3 = TraceChainBuilder::add_root_span_with_timing(
+    builder3,
+    "api_request",
+    SpanKind::Server,
+    [("http.status_code", StringValue("200"))],
+    start_time,
+    start_time + 5000000L  // 5ms
+  )
+  let chain3 = TraceChainBuilder::build(builder3)
+  chains.push(chain3)
+  
+  // Filter by status code
+  let success_chains = TraceChainFilter::by_attribute(chains, "http.status_code", "200")
+  assert_eq(success_chains.length(), 2)
+  
+  let error_chains = TraceChainFilter::by_attribute(chains, "http.status_code", "500")
+  assert_eq(error_chains.length(), 1)
+  
+  // Filter by error status
+  let chains_with_errors = TraceChainFilter::by_error_status(chains, StatusCode::Error)
+  assert_eq(chains_with_errors.length(), 1)
+  
+  // Filter by duration (> 1ms)
+  let slow_chains = TraceChainFilter::by_min_duration(chains, 1000000L)
+  assert_eq(slow_chains.length(), 1)
+  
+  // Search by span name
+  let chains_with_db = TraceChainFilter::by_span_name(chains, "database_error")
+  assert_eq(chains_with_db.length(), 1)
+  
+  // Complex filter: successful requests with duration > 1ms
+  let complex_filter = TraceChainFilter::and([
+    TraceChainFilter::by_attribute(chains, "http.status_code", "200"),
+    TraceChainFilter::by_min_duration(chains, 1000000L)
   ])
-  
-  // 创建子span3（错误处理）
-  let child_span3 = Tracer::start_span(tracer, "child.operation.3")
-  let child_context3 = Span::span_context(child_span3)
-  
-  assert_eq(SpanContext::trace_id(child_context3), trace_id)
-  Span::set_attribute(child_span3, "operation.type", "error.handling")
-  Span::set_attribute(child_span3, "error.recovery", "retry")
-  
-  // 模拟错误恢复
-  Span::set_status(child_span3, Ok, Some("Error recovered successfully"))
-  Span::add_event(child_span3, "recovery.started", [
-    ("recovery.strategy", "exponential.backoff"),
-    ("max.retries", "3")
-  ])
-  
-  Span::end(child_span3)
-  Span::end(child_span2)
-  
-  // 创建子span4（后续操作）
-  let child_span4 = Tracer::start_span(tracer, "child.operation.4")
-  let child_context4 = Span::span_context(child_span4)
-  
-  assert_eq(SpanContext::trace_id(child_context4), trace_id)
-  Span::set_attribute(child_span4, "operation.type", "cleanup")
-  Span::set_attribute(child_span4, "error.context", "preserved")
-  Span::end(child_span4)
-  
-  // 结束根span
-  Span::set_status(root_span, Error, Some("Operation completed with errors"))
-  Span::end(root_span)
-  
-  // 验证错误传播和上下文保留
-  assert_true(SpanContext::is_valid(root_context))
-  assert_true(SpanContext::is_valid(child_context1))
-  assert_true(SpanContext::is_valid(child_context2))
-  assert_true(SpanContext::is_valid(child_context3))
-  assert_true(SpanContext::is_valid(child_context4))
-}
-
-test "跨线程追踪上下文传播" {
-  // 测试跨线程追踪上下文传播
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "thread.propagation.test")
-  
-  // 创建主线程span
-  let main_span = Tracer::start_span(tracer, "main.thread.operation")
-  let main_context = Span::span_context(main_span)
-  let trace_id = SpanContext::trace_id(main_context)
-  
-  // 设置主线程span属性
-  Span::set_attribute(main_span, "thread.id", "main")
-  Span::set_attribute(main_span, "thread.type", "main")
-  
-  // 模拟创建多个工作线程
-  let worker_threads = []
-  let worker_count = 3
-  
-  for i = 0; i < worker_count; i = i + 1 {
-    // 创建工作线程span
-    let worker_span = Tracer::start_span(tracer, "worker.thread.operation")
-    let worker_context = Span::span_context(worker_span)
-    
-    // 验证工作线程span与主线程span在同一trace中
-    assert_eq(SpanContext::trace_id(worker_context), trace_id)
-    
-    // 设置工作线程span属性
-    Span::set_attribute(worker_span, "thread.id", "worker-" + i.to_string())
-    Span::set_attribute(worker_span, "thread.type", "worker")
-    Span::set_attribute(worker_span, "parent.thread", "main")
-    
-    // 模拟工作线程中的子操作
-    let sub_operation_span = Tracer::start_span(tracer, "sub.operation.in.worker")
-    let sub_operation_context = Span::span_context(sub_operation_span)
-    
-    // 验证子操作也在同一trace中
-    assert_eq(SpanContext::trace_id(sub_operation_context), trace_id)
-    
-    Span::set_attribute(sub_operation_span, "operation.type", "data.processing")
-    Span::set_attribute(sub_operation_span, "worker.thread.id", "worker-" + i.to_string())
-    
-    // 结束子操作
-    Span::end(sub_operation_span)
-    
-    worker_threads.push(worker_span)
-  }
-  
-  // 模拟线程池操作
-  let pool_span = Tracer::start_span(tracer, "thread.pool.operation")
-  let pool_context = Span::span_context(pool_span)
-  
-  assert_eq(SpanContext::trace_id(pool_context), trace_id)
-  Span::set_attribute(pool_span, "thread.pool.size", worker_count.to_string())
-  Span::set_attribute(pool_span, "thread.pool.type", "fixed")
-  
-  // 结束线程池操作
-  Span::end(pool_span)
-  
-  // 结束所有工作线程span
-  for worker_span in worker_threads {
-    Span::end(worker_span)
-  }
-  
-  // 结束主线程span
-  Span::end(main_span)
-  
-  // 验证跨线程追踪上下文传播
-  assert_true(SpanContext::is_valid(main_context))
-  assert_eq(worker_threads.length(), worker_count)
+  assert_eq(complex_filter.length(), 1)
 }

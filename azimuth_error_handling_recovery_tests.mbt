@@ -1,600 +1,561 @@
-// Azimuth 错误处理和恢复机制测试
-// 测试系统在各种错误情况下的处理能力和恢复机制
+// Azimuth Telemetry System - Error Handling and Recovery Tests
+// This file contains test cases for error handling and recovery functionality
 
-// 测试1: 错误类型定义和处理
-test "错误类型定义和处理" {
-  // 定义错误类型
-  enum AzimuthError {
-    NetworkError(String)
-    DataValidationError(String)
-    ResourceExhaustedError(String)
-    TimeoutError(Int)
-    UnknownError(String)
-  }
+// Test 1: Error Classification and Categorization
+test "error classification and categorization" {
+  // Create different types of errors
+  let network_error = NetworkError::new("Connection timeout", ErrorSeverity::High, ErrorCategory::Transient)
+  let database_error = DatabaseError::new("Connection failed", ErrorSeverity::Critical, ErrorCategory::Persistent)
+  let validation_error = ValidationError::new("Invalid input", ErrorSeverity::Low, ErrorCategory::UserError)
+  let system_error = SystemError::new("Out of memory", ErrorSeverity::Critical, ErrorCategory::System)
   
-  // 定义结果类型
-  type Result[T] = {
-    success: Bool,
-    data: Option[T],
-    error: Option[AzimuthError]
-  }
+  // Verify error classification
+  assert_eq(Error::type_name(network_error), "NetworkError")
+  assert_eq(Error::type_name(database_error), "DatabaseError")
+  assert_eq(Error::type_name(validation_error), "ValidationError")
+  assert_eq(Error::type_name(system_error), "SystemError")
   
-  // 创建成功结果
-  let success_result: Result[String] = {
-    success: true,
-    data: Some("操作成功"),
-    error: None
-  }
+  // Verify error severity
+  assert_eq(Error::severity(network_error), ErrorSeverity::High)
+  assert_eq(Error::severity(database_error), ErrorSeverity::Critical)
+  assert_eq(Error::severity(validation_error), ErrorSeverity::Low)
+  assert_eq(Error::severity(system_error), ErrorSeverity::Critical)
   
-  // 创建失败结果
-  let failure_result: Result[String] = {
-    success: false,
-    data: None,
-    error: Some(AzimuthError::NetworkError("连接超时"))
-  }
+  // Verify error category
+  assert_eq(Error::category(network_error), ErrorCategory::Transient)
+  assert_eq(Error::category(database_error), ErrorCategory::Persistent)
+  assert_eq(Error::category(validation_error), ErrorCategory::UserError)
+  assert_eq(Error::category(system_error), ErrorCategory::System)
   
-  // 验证成功结果
-  assert_true(success_result.success)
-  match success_result.data {
-    Some(data) => assert_eq(data, "操作成功")
+  // Verify error messages
+  assert_eq(Error::message(network_error), "Connection timeout")
+  assert_eq(Error::message(database_error), "Connection failed")
+  assert_eq(Error::message(validation_error), "Invalid input")
+  assert_eq(Error::message(system_error), "Out of memory")
+}
+
+// Test 2: Error Context and Metadata
+test "error context and metadata" {
+  // Create error with context
+  let error = DatabaseError::new("Query failed", ErrorSeverity::Medium, ErrorCategory::Transient)
+  
+  // Add context information
+  let context = ErrorContext::new()
+  ErrorContext::add(context, "query", "SELECT * FROM users WHERE id = ?")
+  ErrorContext::add(context, "user_id", "12345")
+  ErrorContext::add(context, "timestamp", "1640995200000")
+  ErrorContext::add(context, "retry_count", "3")
+  
+  // Attach context to error
+  let error_with_context = Error::with_context(error, context)
+  
+  // Verify context is preserved
+  let retrieved_context = Error::context(error_with_context)
+  match ErrorContext::get(retrieved_context, "query") {
+    Some(value) => assert_eq(value, "SELECT * FROM users WHERE id = ?")
     None => assert_true(false)
   }
-  match success_result.error {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
   
-  // 验证失败结果
-  assert_false(failure_result.success)
-  match failure_result.data {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  match failure_result.error {
-    Some(AzimuthError::NetworkError(msg)) => assert_eq(msg, "连接超时")
-    _ => assert_true(false)
-  }
-}
-
-// 测试2: 错误恢复机制
-test "错误恢复机制" {
-  // 定义重试策略
-  enum RetryStrategy {
-    NoRetry
-    FixedDelay(Int)  // 固定延迟(毫秒)
-    ExponentialBackoff(Int, Int)  // (初始延迟, 最大重试次数)
-    Custom(fn(Int) -> Int)  // 自定义延迟函数
-  }
-  
-  // 定义重试配置
-  type RetryConfig = {
-    strategy: RetryStrategy,
-    max_attempts: Int,
-    retry_on: Array[String]  // 需要重试的错误类型
-  }
-  
-  // 模拟可能失败的操作
-  let operation = fn(attempt: Int) -> Result[String] {
-    if attempt < 3 {
-      // 前两次尝试失败
-      {
-        success: false,
-        data: None,
-        error: Some(AzimuthError::NetworkError("临时网络问题"))
-      }
-    } else {
-      // 第三次尝试成功
-      {
-        success: true,
-        data: Some("操作成功"),
-        error: None
-      }
-    }
-  }
-  
-  // 带重试的操作执行器
-  let execute_with_retry = fn(config: RetryConfig, op: fn(Int) -> Result[String]) -> Result[String] {
-    let mut attempt = 1
-    let mut last_result = op(attempt)
-    
-    while attempt < config.max_attempts && !last_result.success {
-      attempt = attempt + 1
-      
-      // 检查是否应该重试此错误类型
-      let should_retry = match last_result.error {
-        Some(AzimuthError::NetworkError(_)) => config.retry_on.contains("NetworkError")
-        Some(AzimuthError::TimeoutError(_)) => config.retry_on.contains("TimeoutError")
-        _ => false
-      }
-      
-      if should_retry {
-        last_result = op(attempt)
-      } else {
-        break
-      }
-    }
-    
-    last_result
-  }
-  
-  // 配置重试策略
-  let retry_config = {
-    strategy: RetryStrategy::FixedDelay(1000),
-    max_attempts: 5,
-    retry_on: ["NetworkError", "TimeoutError"]
-  }
-  
-  // 执行带重试的操作
-  let result = execute_with_retry(retry_config, operation)
-  
-  // 验证最终结果成功
-  assert_true(result.success)
-  match result.data {
-    Some(data) => assert_eq(data, "操作成功")
+  match ErrorContext::get(retrieved_context, "user_id") {
+    Some(value) => assert_eq(value, "12345")
     None => assert_true(false)
   }
+  
+  // Verify error serialization with context
+  let serialized = Error::to_json(error_with_context)
+  assert_true(serialized.contains("Query failed"))
+  assert_true(serialized.contains("SELECT * FROM users WHERE id = ?"))
+  assert_true(serialized.contains("user_id"))
 }
 
-// 测试3: 断路器模式
-test "断路器模式" {
-  // 定义断路器状态
-  enum CircuitBreakerState {
-    Closed    // 正常状态
-    Open      // 断路状态
-    HalfOpen  // 半开状态
+// Test 3: Error Recovery Strategies
+test "error recovery strategies" {
+  // Create error recovery manager
+  let recovery_manager = ErrorRecoveryManager::new()
+  
+  // Register recovery strategies for different error types
+  let retry_strategy = RetryStrategy::new(3, 1000)  // 3 retries with 1s delay
+  let fallback_strategy = FallbackStrategy::new("backup_database")
+  let circuit_breaker_strategy = CircuitBreakerStrategy::new(5, 60000)  // 5 failures, 1min timeout
+  
+  ErrorRecoveryManager::register_strategy(recovery_manager, "NetworkError", retry_strategy)
+  ErrorRecoveryManager::register_strategy(recovery_manager, "DatabaseError", fallback_strategy)
+  ErrorRecoveryManager::register_strategy(recovery_manager, "ServiceError", circuit_breaker_strategy)
+  
+  // Test retry strategy
+  let network_error = NetworkError::new("Connection timeout", ErrorSeverity::High, ErrorCategory::Transient)
+  let retry_result = ErrorRecoveryManager::handle_error(recovery_manager, network_error, || {
+    // Simulate operation that might fail
+    true  // Success on retry
+  })
+  
+  match retry_result {
+    RecoveryResult::Success => assert_true(true)
+    RecoveryResult::Failed => assert_true(false)
+    RecoveryResult::RetriesExhausted => assert_true(false)
   }
   
-  // 定义断路器配置
-  type CircuitBreakerConfig = {
-    failure_threshold: Int,     // 失败阈值
-    success_threshold: Int,     // 成功阈值(半开状态)
-    timeout_ms: Int            // 断路超时时间
-  }
+  // Test fallback strategy
+  let database_error = DatabaseError::new("Primary DB down", ErrorSeverity::Critical, ErrorCategory::Persistent)
+  let fallback_result = ErrorRecoveryManager::handle_error(recovery_manager, database_error, || {
+    // Simulate operation that fails
+    false  // Primary operation fails
+  })
   
-  // 定义断路器
-  type CircuitBreaker = {
-    state: CircuitBreakerState,
-    failure_count: Int,
-    success_count: Int,
-    last_failure_time: Int,
-    config: CircuitBreakerConfig
-  }
-  
-  // 创建断路器
-  let create_circuit_breaker = fn(config: CircuitBreakerConfig) -> CircuitBreaker {
-    {
-      state: CircuitBreakerState::Closed,
-      failure_count: 0,
-      success_count: 0,
-      last_failure_time: 0,
-      config: config
-    }
-  }
-  
-  // 模拟操作执行
-  let execute_with_circuit_breaker = fn(
-    cb: CircuitBreaker, 
-    operation: fn() -> Result[String]
-  ) -> (CircuitBreaker, Result[String]) {
-    let current_time = Time::now()
-    let mut new_cb = cb
-    
-    // 检查断路器状态
-    match new_cb.state {
-      CircuitBreakerState::Open => {
-        // 检查是否可以转为半开状态
-        if current_time - new_cb.last_failure_time > new_cb.config.timeout_ms {
-          new_cb.state = CircuitBreakerState::HalfOpen
-          new_cb.success_count = 0
-        } else {
-          // 仍然断路，直接返回错误
-          return (new_cb, {
-            success: false,
-            data: None,
-            error: Some(AzimuthError::ResourceExhaustedError("断路器打开"))
-          })
-        }
-      }
-      _ => ()  // 其他状态继续执行
-    }
-    
-    // 执行操作
-    let result = operation()
-    
-    // 根据结果更新断路器状态
-    match result.success {
-      true => {
-        new_cb.success_count = new_cb.success_count + 1
-        
-        match new_cb.state {
-          CircuitBreakerState::HalfOpen => {
-            // 半开状态下的成功
-            if new_cb.success_count >= new_cb.config.success_threshold {
-              new_cb.state = CircuitBreakerState::Closed
-              new_cb.failure_count = 0
-            }
-          }
-          CircuitBreakerState::Closed => {
-            // 正常状态下的成功，重置失败计数
-            new_cb.failure_count = 0
-          }
-          _ => ()
-        }
-      }
-      false => {
-        new_cb.failure_count = new_cb.failure_count + 1
-        new_cb.last_failure_time = current_time
-        
-        match new_cb.state {
-          CircuitBreakerState::Closed => {
-            // 正常状态下的失败
-            if new_cb.failure_count >= new_cb.config.failure_threshold {
-              new_cb.state = CircuitBreakerState::Open
-            }
-          }
-          CircuitBreakerState::HalfOpen => {
-            // 半开状态下的失败，立即打开断路器
-            new_cb.state = CircuitBreakerState::Open
-          }
-          _ => ()
-        }
-      }
-    }
-    
-    (new_cb, result)
-  }
-  
-  // 创建断路器配置
-  let config = {
-    failure_threshold: 3,
-    success_threshold: 2,
-    timeout_ms: 5000
-  }
-  
-  // 创建断路器
-  let mut circuit_breaker = create_circuit_breaker(config)
-  
-  // 模拟失败操作
-  let failing_operation = fn() -> Result[String] {
-    {
-      success: false,
-      data: None,
-      error: Some(AzimuthError::NetworkError("连接失败"))
-    }
-  }
-  
-  // 模拟成功操作
-  let successful_operation = fn() -> Result[String] {
-    {
-      success: true,
-      data: Some("操作成功"),
-      error: None
-    }
-  }
-  
-  // 执行几次失败操作，触发断路器打开
-  for i = 0; i < 3; i = i + 1 {
-    let (new_cb, result) = execute_with_circuit_breaker(circuit_breaker, failing_operation)
-    circuit_breaker = new_cb
-    assert_false(result.success)
-  }
-  
-  // 验证断路器已打开
-  assert_eq(circuit_breaker.state, CircuitBreakerState::Open)
-  
-  // 再次执行操作，应该被断路器拦截
-  let (new_cb, result) = execute_with_circuit_breaker(circuit_breaker, successful_operation)
-  circuit_breaker = new_cb
-  assert_false(result.success)
-  match result.error {
-    Some(AzimuthError::ResourceExhaustedError(msg)) => assert_eq(msg, "断路器打开")
+  match fallback_result {
+    RecoveryResult::FallbackUsed(fallback) => assert_eq(fallback, "backup_database")
     _ => assert_true(false)
   }
-}
-
-// 测试4: 错误聚合和报告
-test "错误聚合和报告" {
-  // 定义错误统计
-  type ErrorStats = {
-    total_errors: Int,
-    error_types: Array[(String, Int)],
-    recent_errors: Array[String],
-    last_error_time: Int
-  }
   
-  // 创建错误统计器
-  let create_error_stats = fn() -> ErrorStats {
-    {
-      total_errors: 0,
-      error_types: [],
-      recent_errors: [],
-      last_error_time: 0
-    }
-  }
+  // Test circuit breaker strategy
+  let service_error = ServiceError::new("Service unavailable", ErrorSeverity::Medium, ErrorCategory::Transient)
   
-  // 记录错误
-  let record_error = fn(stats: ErrorStats, error: AzimuthError, current_time: Int) -> ErrorStats {
-    let error_type_str = match error {
-      AzimuthError::NetworkError(_) => "NetworkError"
-      AzimuthError::DataValidationError(_) => "DataValidationError"
-      AzimuthError::ResourceExhaustedError(_) => "ResourceExhaustedError"
-      AzimuthError::TimeoutError(_) => "TimeoutError"
-      AzimuthError::UnknownError(_) => "UnknownError"
-    }
-    
-    let error_msg = match error {
-      AzimuthError::NetworkError(msg) => "网络错误: " + msg
-      AzimuthError::DataValidationError(msg) => "数据验证错误: " + msg
-      AzimuthError::ResourceExhaustedError(msg) => "资源耗尽错误: " + msg
-      AzimuthError::TimeoutError(timeout) => "超时错误: " + timeout.to_string() + "ms"
-      AzimuthError::UnknownError(msg) => "未知错误: " + msg
-    }
-    
-    // 更新错误类型计数
-    let mut found_type = false
-    let mut new_error_types = stats.error_types.map(fn((type_str, count)) {
-      if type_str == error_type_str {
-        found_type = true
-        (type_str, count + 1)
-      } else {
-        (type_str, count)
-      }
+  // Simulate multiple failures to trigger circuit breaker
+  for i in 0..=5 {
+    let result = ErrorRecoveryManager::handle_error(recovery_manager, service_error, || {
+      false  // Operation fails
     })
     
-    if !found_type {
-      new_error_types = new_error_types.push((error_type_str, 1))
-    }
-    
-    // 更新最近错误列表(保留最近10个)
-    let mut new_recent_errors = stats.recent_errors.push(error_msg)
-    if new_recent_errors.length() > 10 {
-      new_recent_errors = new_recent_errors.slice(1, new_recent_errors.length())
-    }
-    
-    {
-      total_errors: stats.total_errors + 1,
-      error_types: new_error_types,
-      recent_errors: new_recent_errors,
-      last_error_time: current_time
+    if i < 4 {
+      match result {
+        RecoveryResult::Failed => assert_true(true)
+        _ => assert_true(false)
+      }
+    } else {
+      match result {
+        RecoveryResult::CircuitBreakerOpen => assert_true(true)
+        _ => assert_true(false)
+      }
     }
   }
-  
-  // 创建错误统计器
-  let mut error_stats = create_error_stats()
-  
-  // 记录各种错误
-  let current_time = Time::now()
-  error_stats = record_error(error_stats, AzimuthError::NetworkError("连接超时"), current_time)
-  error_stats = record_error(error_stats, AzimuthError::DataValidationError("无效输入"), current_time + 1000)
-  error_stats = record_error(error_stats, AzimuthError::NetworkError("DNS解析失败"), current_time + 2000)
-  error_stats = record_error(error_stats, AzimuthError::TimeoutError(5000), current_time + 3000)
-  error_stats = record_error(error_stats, AzimuthError::NetworkError("连接被拒绝"), current_time + 4000)
-  
-  // 验证错误统计
-  assert_eq(error_stats.total_errors, 5)
-  assert_eq(error_stats.error_types.length(), 3)  // NetworkError, DataValidationError, TimeoutError
-  assert_eq(error_stats.recent_errors.length(), 5)
-  assert_eq(error_stats.last_error_time, current_time + 4000)
-  
-  // 验证错误类型计数
-  let mut network_error_count = 0
-  let mut data_validation_error_count = 0
-  let mut timeout_error_count = 0
-  
-  for (error_type, count) in error_stats.error_types {
-    match error_type {
-      "NetworkError" => network_error_count = count
-      "DataValidationError" => data_validation_error_count = count
-      "TimeoutError" => timeout_error_count = count
-      _ => assert_true(false)  // 不应该有其他错误类型
-    }
-  }
-  
-  assert_eq(network_error_count, 3)
-  assert_eq(data_validation_error_count, 1)
-  assert_eq(timeout_error_count, 1)
 }
 
-// 测试5: 错误恢复策略
-test "错误恢复策略" {
-  // 定义恢复策略
-  enum RecoveryStrategy {
-    Retry              // 重试
-    Fallback           // 降级处理
-    Cache              // 使用缓存
-    Default            // 使用默认值
-    Ignore             // 忽略错误
+// Test 4: Error Aggregation and Analysis
+test "error aggregation and analysis" {
+  // Create error aggregator
+  let error_aggregator = ErrorAggregator::new()
+  
+  // Add various errors
+  let errors = [
+    NetworkError::new("Timeout", ErrorSeverity::Medium, ErrorCategory::Transient),
+    DatabaseError::new("Connection failed", ErrorSeverity::High, ErrorCategory::Persistent),
+    NetworkError::new("DNS resolution failed", ErrorSeverity::Low, ErrorCategory::Transient),
+    ValidationError::new("Invalid input", ErrorSeverity::Low, ErrorCategory::UserError),
+    DatabaseError::new("Query timeout", ErrorSeverity::Medium, ErrorCategory::Transient),
+    SystemError::new("Disk full", ErrorSeverity::Critical, ErrorCategory::System),
+    NetworkError::new("Connection refused", ErrorSeverity::Medium, ErrorCategory::Transient)
+  ]
+  
+  // Add errors to aggregator
+  for error in errors {
+    ErrorAggregator::add_error(error_aggregator, error)
   }
   
-  // 定义恢复动作
-  type RecoveryAction[T] = {
-    strategy: RecoveryStrategy,
-    max_attempts: Int,
-    fallback_value: Option[T],
-    cache_key: Option[String],
-    default_value: Option[T]
-  }
+  // Analyze errors
+  let analysis = ErrorAggregator::analyze(error_aggregator)
   
-  // 模拟缓存
-  let mut cache = Map::new()
+  // Verify error counts by type
+  assert_eq(ErrorAnalysis::count_by_type(analysis, "NetworkError"), 3)
+  assert_eq(ErrorAnalysis::count_by_type(analysis, "DatabaseError"), 2)
+  assert_eq(ErrorAnalysis::count_by_type(analysis, "ValidationError"), 1)
+  assert_eq(ErrorAnalysis::count_by_type(analysis, "SystemError"), 1)
   
-  // 带恢复策略的操作执行器
-  let execute_with_recovery = fn[T](
-    action: RecoveryAction[T], 
-    operation: fn() -> Result[T],
-    cache: Map[String, T]
-  ) -> Result[T] {
-    let mut attempt = 1
-    let mut last_result = operation()
-    
-    while attempt < action.max_attempts && !last_result.success {
-      attempt = attempt + 1
-      last_result = operation()
+  // Verify error counts by severity
+  assert_eq(ErrorAnalysis::count_by_severity(analysis, ErrorSeverity::Critical), 1)
+  assert_eq(ErrorAnalysis::count_by_severity(analysis, ErrorSeverity::High), 1)
+  assert_eq(ErrorAnalysis::count_by_severity(analysis, ErrorSeverity::Medium), 3)
+  assert_eq(ErrorAnalysis::count_by_severity(analysis, ErrorSeverity::Low), 2)
+  
+  // Verify error counts by category
+  assert_eq(ErrorAnalysis::count_by_category(analysis, ErrorCategory::Transient), 4)
+  assert_eq(ErrorAnalysis::count_by_category(analysis, ErrorCategory::Persistent), 2)
+  assert_eq(ErrorAnalysis::count_by_category(analysis, ErrorCategory::UserError), 1)
+  assert_eq(ErrorAnalysis::count_by_category(analysis, ErrorCategory::System), 1)
+  
+  // Verify most common error
+  match ErrorAnalysis::most_common_error(analysis) {
+    Some((error_type, count)) => {
+      assert_eq(error_type, "NetworkError")
+      assert_eq(count, 3)
     }
-    
-    if last_result.success {
-      return last_result
-    }
-    
-    // 操作失败，应用恢复策略
-    match action.strategy {
-      RecoveryStrategy::Fallback => {
-        match action.fallback_value {
-          Some(value) => {
-            return {
-              success: true,
-              data: Some(value),
-              error: None
-            }
-          }
-          None => {
-            return {
-              success: false,
-              data: None,
-              error: Some(AzimuthError::UnknownError("降级处理失败：未提供降级值"))
-            }
-          }
-        }
-      }
-      RecoveryStrategy::Cache => {
-        match action.cache_key {
-          Some(key) => {
-            match cache.get(key) {
-              Some(value) => {
-                return {
-                  success: true,
-                  data: Some(value),
-                  error: None
-                }
-              }
-              None => {
-                return {
-                  success: false,
-                  data: None,
-                  error: Some(AzimuthError::UnknownError("缓存恢复失败：缓存中无数据"))
-                }
-              }
-            }
-          }
-          None => {
-            return {
-              success: false,
-              data: None,
-              error: Some(AzimuthError::UnknownError("缓存恢复失败：未提供缓存键"))
-            }
-          }
-        }
-      }
-      RecoveryStrategy::Default => {
-        match action.default_value {
-          Some(value) => {
-            return {
-              success: true,
-              data: Some(value),
-              error: None
-            }
-          }
-          None => {
-            return {
-              success: false,
-              data: None,
-              error: Some(AzimuthError::UnknownError("默认值恢复失败：未提供默认值"))
-            }
-          }
-        }
-      }
-      RecoveryStrategy::Ignore => {
-        return {
-          success: true,
-          data: None,
-          error: None
-        }
-      }
-      RecoveryStrategy::Retry => {
-        // 已经尝试过重试，直接返回失败
-        return last_result
-      }
-    }
+    None => assert_true(false)
+  }
+}
+
+// Test 5: Error Rate Monitoring and Alerting
+test "error rate monitoring and alerting" {
+  // Create error rate monitor
+  let error_monitor = ErrorRateMonitor::new()
+  
+  // Configure alerting thresholds
+  ErrorRateMonitor::set_threshold(error_monitor, "error_rate", 0.1)  // 10% error rate
+  ErrorRateMonitor::set_threshold(error_monitor, "critical_errors", 2)  // 2 critical errors
+  ErrorRateMonitor::set_threshold(error_monitor, "error_burst", 5)    // 5 errors in 1 minute
+  
+  // Add operations and errors
+  let base_time = @time()
+  
+  // Add successful operations
+  for i in 0..=89 {
+    ErrorRateMonitor::record_operation(error_monitor, "api_request", true, base_time + (i * 1000))
   }
   
-  // 设置缓存数据
-  cache = cache.set("user_profile_123", { name: "默认用户", age: 30 })
-  
-  // 测试降级策略
-  let fallback_action = {
-    strategy: RecoveryStrategy::Fallback,
-    max_attempts: 3,
-    fallback_value: Some({ name: "降级用户", age: 0 }),
-    cache_key: None,
-    default_value: None
+  // Add errors (10% error rate)
+  for i in 0..=9 {
+    let error = NetworkError::new("Timeout", ErrorSeverity::Medium, ErrorCategory::Transient)
+    ErrorRateMonitor::record_operation(error_monitor, "api_request", false, base_time + (i * 1000))
+    ErrorRateMonitor::record_error(error_monitor, error)
   }
   
-  let failing_operation = fn() -> Result[{ name: String, age: Int }] {
-    {
-      success: false,
-      data: None,
-      error: Some(AzimuthError::NetworkError("服务不可用"))
-    }
-  }
+  // Add critical errors
+  let critical_error1 = SystemError::new("Out of memory", ErrorSeverity::Critical, ErrorCategory::System)
+  let critical_error2 = DatabaseError::new("Connection failed", ErrorSeverity::Critical, ErrorCategory::Persistent)
   
-  let fallback_result = execute_with_recovery(fallback_action, failing_operation, cache)
-  assert_true(fallback_result.success)
-  match fallback_result.data {
-    Some(user) => {
-      assert_eq(user.name, "降级用户")
-      assert_eq(user.age, 0)
+  ErrorRateMonitor::record_error(error_monitor, critical_error1)
+  ErrorRateMonitor::record_error(error_monitor, critical_error2)
+  
+  // Check for alerts
+  let alerts = ErrorRateMonitor::check_alerts(error_monitor)
+  
+  // Verify alerts
+  assert_true(alerts.length() >= 2)  // Should have alerts for error rate and critical errors
+  
+  // Verify error rate alert
+  let error_rate_alert = alerts.find(@(a) Alert::type(a) == "error_rate")
+  match error_rate_alert {
+    Some(alert) => {
+      assert_eq(Alert::severity(alert), AlertSeverity::Warning)
+      assert_true(Alert::message(alert).contains("Error rate"))
     }
     None => assert_true(false)
   }
   
-  // 测试缓存策略
-  let cache_action = {
-    strategy: RecoveryStrategy::Cache,
-    max_attempts: 3,
-    fallback_value: None,
-    cache_key: Some("user_profile_123"),
-    default_value: None
-  }
-  
-  let cache_result = execute_with_recovery(cache_action, failing_operation, cache)
-  assert_true(cache_result.success)
-  match cache_result.data {
-    Some(user) => {
-      assert_eq(user.name, "默认用户")
-      assert_eq(user.age, 30)
+  // Verify critical errors alert
+  let critical_alert = alerts.find(@(a) Alert::type(a) == "critical_errors")
+  match critical_alert {
+    Some(alert) => {
+      assert_eq(Alert::severity(alert), AlertSeverity::Critical)
+      assert_true(Alert::message(alert).contains("Critical errors"))
     }
     None => assert_true(false)
   }
+}
+
+// Test 6: Error Recovery with Exponential Backoff
+test "error recovery with exponential backoff" {
+  // Create exponential backoff strategy
+  let backoff_strategy = ExponentialBackoffStrategy::new(1000, 30000, 2.0)  // 1s base, 30s max, 2x multiplier
+  let retry_manager = RetryManager::new(backoff_strategy)
   
-  // 测试默认值策略
-  let default_action = {
-    strategy: RecoveryStrategy::Default,
-    max_attempts: 3,
-    fallback_value: None,
-    cache_key: None,
-    default_value: Some({ name: "默认用户", age: 25 })
-  }
-  
-  let default_result = execute_with_recovery(default_action, failing_operation, cache)
-  assert_true(default_result.success)
-  match default_result.data {
-    Some(user) => {
-      assert_eq(user.name, "默认用户")
-      assert_eq(user.age, 25)
+  // Simulate operation that fails twice then succeeds
+  let mut attempt_count = 0
+  let operation = || {
+    attempt_count = attempt_count + 1
+    if attempt_count < 3 {
+      Err(NetworkError::new("Connection timeout", ErrorSeverity::Medium, ErrorCategory::Transient))
+    } else {
+      Ok("Operation successful")
     }
-    None => assert_true(false)
   }
   
-  // 测试忽略策略
-  let ignore_action = {
-    strategy: RecoveryStrategy::Ignore,
-    max_attempts: 3,
-    fallback_value: None,
-    cache_key: None,
-    default_value: None
+  // Execute operation with retry
+  let result = RetryManager::execute(retry_manager, operation)
+  
+  // Verify eventual success
+  match result {
+    Ok(value) => assert_eq(value, "Operation successful")
+    Err(_) => assert_true(false)
   }
   
-  let ignore_result = execute_with_recovery(ignore_action, failing_operation, cache)
-  assert_true(ignore_result.success)
-  assert_eq(ignore_result.data, None)
+  // Verify retry attempts
+  assert_eq(attempt_count, 3)
+  
+  // Test with operation that always fails
+  let mut always_fail_count = 0
+  let failing_operation = || {
+    always_fail_count = always_fail_count + 1
+    Err(DatabaseError::new("Connection failed", ErrorSeverity::High, ErrorCategory::Persistent))
+  }
+  
+  let failing_result = RetryManager::execute(retry_manager, failing_operation)
+  
+  // Verify failure after max retries
+  match failing_result {
+    Ok(_) => assert_true(false)
+    Err(error) => assert_eq(Error::type_name(error), "DatabaseError")
+  }
+  
+  // Verify max retry attempts
+  assert_eq(always_fail_count, 5)  // Default max retries
+}
+
+// Test 7: Error Recovery with Circuit Breaker
+test "error recovery with circuit breaker" {
+  // Create circuit breaker
+  let circuit_breaker = CircuitBreaker::new("database_service", 3, 30000)  // 3 failures, 30s timeout
+  
+  // Test successful operations
+  for i in 0..=4 {
+    let result = CircuitBreaker::execute(circuit_breaker, || {
+      Ok("Query result")
+    })
+    
+    match result {
+      Ok(value) => assert_eq(value, "Query result")
+      Err(_) => assert_true(false)
+    }
+  }
+  
+  // Verify circuit breaker state
+  assert_eq(CircuitBreaker::state(circuit_breaker), CircuitBreakerState::Closed)
+  assert_eq(CircuitBreaker::failure_count(circuit_breaker), 0)
+  assert_eq(CircuitBreaker::success_count(circuit_breaker), 5)
+  
+  // Test failing operations to trigger circuit breaker
+  for i in 0..=2 {
+    let result = CircuitBreaker::execute(circuit_breaker, || {
+      Err(DatabaseError::new("Connection failed", ErrorSeverity::High, ErrorCategory::Persistent))
+    })
+    
+    match result {
+      Ok(_) => assert_true(false)
+      Err(error) => assert_eq(Error::type_name(error), "DatabaseError")
+    }
+  }
+  
+  // Verify circuit breaker is now open
+  assert_eq(CircuitBreaker::state(circuit_breaker), CircuitBreakerState::Open)
+  assert_eq(CircuitBreaker::failure_count(circuit_breaker), 3)
+  
+  // Test operation when circuit breaker is open
+  let open_result = CircuitBreaker::execute(circuit_breaker, || {
+    Ok("Should not execute")
+  })
+  
+  match open_result {
+    Ok(_) => assert_true(false)
+    Err(error) => assert_eq(Error::type_name(error), "CircuitBreakerOpenError")
+  }
+  
+  // Simulate time passing for circuit breaker to half-open
+  // CircuitBreaker::advance_time(circuit_breaker, 35000)  // 35 seconds
+  
+  // Test operation in half-open state
+  let half_open_result = CircuitBreaker::execute(circuit_breaker, || {
+    Ok("Recovery successful")
+  })
+  
+  match half_open_result {
+    Ok(value) => assert_eq(value, "Recovery successful")
+    Err(_) => assert_true(false)
+  }
+  
+  // Verify circuit breaker returns to closed state
+  assert_eq(CircuitBreaker::state(circuit_breaker), CircuitBreakerState::Closed)
+}
+
+// Test 8: Error Recovery with Bulkhead Pattern
+test "error recovery with bulkhead pattern" {
+  // Create bulkhead isolation
+  let bulkhead = Bulkhead::new("database_operations", 3, 10)  // 3 concurrent, 10 queued
+  
+  // Test operations within limits
+  let results = []
+  for i in 0..=2 {
+    let result = Bulkhead::execute(bulkhead, || {
+      // Simulate database operation
+      @sleep(100)  // 100ms operation
+      Ok("Operation " + i.to_string())
+    })
+    results.push(result)
+  }
+  
+  // Verify all operations succeed
+  for result in results {
+    match result {
+      Ok(_) => assert_true(true)
+      Err(_) => assert_true(false)
+    }
+  }
+  
+  // Test operation exceeding concurrent limit
+  let excess_result = Bulkhead::execute(bulkhead, || {
+    Ok("Should not execute immediately")
+  })
+  
+  // Should either succeed (if queued) or fail (if queue full)
+  match excess_result {
+    Ok(_) => assert_true(true)  // Queued successfully
+    Err(error) => {
+      // Either rejected due to limits or executed
+      assert_true(
+        Error::type_name(error) == "BulkheadRejectedError" ||
+        Error::type_name(error) == "BulkheadFullError"
+      )
+    }
+  }
+  
+  // Test operation when bulkhead is full
+  let operations = []
+  for i in 0..=14 {  // 15 operations (3 concurrent + 10 queued + 2 rejected)
+    let result = Bulkhead::execute(bulkhead, || {
+      @sleep(1000)  // 1s operation
+      Ok("Operation " + i.to_string())
+    })
+    operations.push(result)
+  }
+  
+  // Count successful and rejected operations
+  let mut success_count = 0
+  let mut rejected_count = 0
+  
+  for result in operations {
+    match result {
+      Ok(_) => success_count = success_count + 1
+      Err(error) => {
+        if Error::type_name(error) == "BulkheadRejectedError" {
+          rejected_count = rejected_count + 1
+        }
+      }
+    }
+  }
+  
+  // Verify bulkhead limits
+  assert_eq(success_count, 13)  // 3 concurrent + 10 queued
+  assert_eq(rejected_count, 2)   // 2 rejected
+}
+
+// Test 9: Error Recovery with Timeout Pattern
+test "error recovery with timeout pattern" {
+  // Create timeout manager
+  let timeout_manager = TimeoutManager::new()
+  
+  // Test operation that completes within timeout
+  let fast_result = TimeoutManager::execute_with_timeout(timeout_manager, || {
+    @sleep(100)  // 100ms operation
+    Ok("Fast operation completed")
+  }, 500)  // 500ms timeout
+  
+  match fast_result {
+    Ok(value) => assert_eq(value, "Fast operation completed")
+    Err(_) => assert_true(false)
+  }
+  
+  // Test operation that exceeds timeout
+  let slow_result = TimeoutManager::execute_with_timeout(timeout_manager, || {
+    @sleep(1000)  // 1s operation
+    Ok("Slow operation completed")
+  }, 500)  // 500ms timeout
+  
+  match slow_result {
+    Ok(_) => assert_true(false)
+    Err(error) => assert_eq(Error::type_name(error), "TimeoutError")
+  }
+  
+  // Test operation with custom timeout strategy
+  let adaptive_timeout = AdaptiveTimeoutStrategy::new(1000, 5000, 2.0)  // 1s base, 5s max, 2x multiplier
+  let adaptive_manager = TimeoutManager::with_strategy(adaptive_timeout)
+  
+  // First attempt with base timeout
+  let first_result = TimeoutManager::execute_with_timeout(adaptive_manager, || {
+    @sleep(1500)  // 1.5s operation (exceeds base timeout)
+    Ok("First attempt")
+  }, 0)  // Use strategy timeout
+  
+  match first_result {
+    Ok(_) => assert_true(false)
+    Err(error) => assert_eq(Error::type_name(error), "TimeoutError")
+  }
+  
+  // Second attempt with adjusted timeout
+  let second_result = TimeoutManager::execute_with_timeout(adaptive_manager, || {
+    @sleep(1500)  // 1.5s operation (within adjusted timeout)
+    Ok("Second attempt")
+  }, 0)  // Use strategy timeout
+  
+  match second_result {
+    Ok(value) => assert_eq(value, "Second attempt")
+    Err(_) => assert_true(false)
+  }
+}
+
+// Test 10: Comprehensive Error Recovery Pipeline
+test "comprehensive error recovery pipeline" {
+  // Create comprehensive recovery pipeline
+  let pipeline = ErrorRecoveryPipeline::new()
+  
+  // Add recovery stages
+  let retry_stage = RetryStage::new(3, 1000)  // 3 retries, 1s delay
+  let circuit_breaker_stage = CircuitBreakerStage::new("external_service", 5, 30000)
+  let fallback_stage = FallbackStage::new(|| {
+    Ok("Fallback response")
+  })
+  let timeout_stage = TimeoutStage::new(5000)  // 5s timeout
+  
+  ErrorRecoveryPipeline::add_stage(pipeline, retry_stage)
+  ErrorRecoveryPipeline::add_stage(pipeline, circuit_breaker_stage)
+  ErrorRecoveryPipeline::add_stage(pipeline, timeout_stage)
+  ErrorRecoveryPipeline::add_stage(pipeline, fallback_stage)
+  
+  // Test successful operation
+  let success_result = ErrorRecoveryPipeline::execute(pipeline, || {
+    Ok("Primary operation successful")
+  })
+  
+  match success_result {
+    Ok(value) => assert_eq(value, "Primary operation successful")
+    Err(_) => assert_true(false)
+  }
+  
+  // Test operation that fails but succeeds on retry
+  let mut retry_count = 0
+  let retry_result = ErrorRecoveryPipeline::execute(pipeline, || {
+    retry_count = retry_count + 1
+    if retry_count < 2 {
+      Err(NetworkError::new("Temporary failure", ErrorSeverity::Medium, ErrorCategory::Transient))
+    } else {
+      Ok("Retry successful")
+    }
+  })
+  
+  match retry_result {
+    Ok(value) => assert_eq(value, "Retry successful")
+    Err(_) => assert_true(false)
+  }
+  
+  assert_eq(retry_count, 2)
+  
+  // Test operation that always fails and triggers fallback
+  let fail_result = ErrorRecoveryPipeline::execute(pipeline, || {
+    Err(DatabaseError::new("Persistent failure", ErrorSeverity::High, ErrorCategory::Persistent))
+  })
+  
+  match fail_result {
+    Ok(value) => assert_eq(value, "Fallback response")
+    Err(_) => assert_true(false)
+  }
+  
+  // Test operation that times out
+  let timeout_result = ErrorRecoveryPipeline::execute(pipeline, || {
+    @sleep(6000)  // 6s operation (exceeds 5s timeout)
+    Ok("Should not complete")
+  })
+  
+  match timeout_result {
+    Ok(_) => assert_true(false)
+    Err(error) => {
+      // Should be timeout error or fallback response
+      assert_true(
+        Error::type_name(error) == "TimeoutError" ||
+        Error::type_name(error) == "FallbackUsed"
+      )
+    }
+  }
+  
+  // Verify pipeline metrics
+  let metrics = ErrorRecoveryPipeline::get_metrics(pipeline)
+  assert_eq(PipelineMetrics::total_operations(metrics), 4)
+  assert_eq(PipelineMetrics::successful_operations(metrics), 2)
+  assert_eq(PipelineMetrics::fallback_used(metrics), 2)
+  assert_true(PipelineMetrics::retry_attempts(metrics) > 0)
 }

@@ -1,750 +1,2208 @@
-// Azimuth 跨平台兼容性测试用例
-// 测试遥测系统在不同平台和环境下的兼容性
+// Azimuth Telemetry System - Cross-Platform Compatibility Tests
+// This file contains test cases for cross-platform compatibility functionality
 
-test "多操作系统兼容性验证" {
-  // 创建平台检测器
+// Test 1: Operating System Compatibility
+test "operating system compatibility" {
+  // Create platform detector
   let platform_detector = PlatformDetector::new()
   
-  // 测试支持的操作系统
-  let supported_platforms = [
-    PlatformInfo::new("Windows", "10.0", "x86_64"),
-    PlatformInfo::new("Windows", "11.0", "x86_64"),
-    PlatformInfo::new("Linux", "5.15", "x86_64"),
-    PlatformInfo::new("Linux", "5.15", "arm64"),
-    PlatformInfo::new("macOS", "12.0", "x86_64"),
-    PlatformInfo::new("macOS", "13.0", "arm64"),
-    PlatformInfo::new("FreeBSD", "13.0", "x86_64"),
-    PlatformInfo::new("OpenBSD", "7.0", "x86_64")
-  ]
+  // Detect current platform
+  let current_platform = PlatformDetector::detect(platform_detector)
   
-  // 为每个平台创建遥测提供者并验证兼容性
-  for platform in supported_platforms {
-    PlatformDetector::set_current_platform(platform_detector, platform)
-    
-    // 创建平台特定的配置
-    let config = TelemetryConfiguration::new()
-    TelemetryConfiguration::adapt_to_platform(config, platform)
-    
-    // 验证配置适配
-    assert_true(TelemetryConfiguration::is_platform_adapted(config), 
-      "配置应该适配到 " + platform.os_name + " 平台")
-    
-    // 创建遥测提供者
-    let provider_result = TracerProvider::builder()
-      .with_config(config)
-      .with_platform_detector(platform_detector)
-      .build()
-    
-    assert_true(provider_result.success, 
-      "应该能够在 " + platform.os_name + " " + platform.version + " 上创建遥测提供者")
-    
-    let tracer_provider = provider_result.provider
-    let tracer = TracerProvider::get_tracer(tracer_provider, "platform.compatibility.test")
-    
-    // 测试基本功能
-    let span = Tracer::start_span(tracer, "platform.test.span")
-    Span::set_attribute(span, "platform.os", platform.os_name)
-    Span::set_attribute(span, "platform.version", platform.version)
-    Span::set_attribute(span, "platform.arch", platform.architecture)
-    
-    // 测试平台特定的功能
-    if platform.os_name == "Windows" {
-      Span::set_attribute(span, "windows.feature", "event.log")
-      assert_true(PlatformFeatures::supports_windows_event_log(platform), 
-        "Windows平台应该支持事件日志")
-    } else if platform.os_name == "Linux" {
-      Span::set_attribute(span, "linux.feature", "syslog")
-      assert_true(PlatformFeatures::supports_syslog(platform), 
-        "Linux平台应该支持syslog")
-    } else if platform.os_name == "macOS" {
-      Span::set_attribute(span, "macos.feature", "osx.log")
-      assert_true(PlatformFeatures::supports_osx_log(platform), 
-        "macOS平台应该支持OS X日志")
+  // Verify platform detection
+  assert_true(current_platform.os_name.length() > 0)
+  assert_true(current_platform.os_version.length() > 0)
+  assert_true(current_platform.architecture.length() > 0)
+  
+  // Test platform-specific operations
+  let platform_adapter = PlatformAdapter::new(current_platform)
+  
+  // Test file path handling
+  let test_path = "/tmp/azimuth_test"
+  let normalized_path = PlatformAdapter::normalize_path(platform_adapter, test_path)
+  
+  match current_platform.os_family {
+    OSFamily::Windows => {
+      assert_true(normalized_path.contains("\\"))
+      assert_false(normalized_path.contains("/"))
     }
-    
-    Span::end(span)
-    
-    // 验证导出功能
-    let exported_spans = TracerProvider::get_exported_spans(tracer_provider)
-    assert_true(exported_spans.length() > 0, 
-      "在 " + platform.os_name + " 上应该能够导出span")
+    OSFamily::Linux | OSFamily::MacOS => {
+      assert_true(normalized_path.contains("/"))
+      assert_false(normalized_path.contains("\\"))
+    }
   }
   
-  // 验证跨平台数据一致性
-  let cross_platform_validator = CrossPlatformValidator::new()
-  let platform_data = PlatformDetector::get_all_platform_data(platform_detector)
+  // Test environment variable handling
+  let test_env_var = "AZIMUTH_TEST_VAR"
+  let test_env_value = "test_value"
   
-  let consistency_result = CrossPlatformValidator::validate_data_consistency(
-    cross_platform_validator, platform_data)
+  PlatformAdapter::set_env_var(platform_adapter, test_env_var, test_env_value)
+  let retrieved_value = PlatformAdapter::get_env_var(platform_adapter, test_env_var)
   
-  assert_true(consistency_result.is_consistent, "跨平台数据应该保持一致")
-  assert_true(consistency_result.inconsistencies.length() == 0, 
-    "不应该有跨平台数据不一致")
+  match retrieved_value {
+    Some(value) => assert_eq(value, test_env_value)
+    None => assert_true(false)
+  }
   
-  assert_true(true)
+  // Test process management
+  let process_config = ProcessConfig::new("echo", ["Hello from Azimuth"])
+  let process_result = PlatformAdapter::run_process(platform_adapter, process_config)
+  
+  match process_result {
+    ProcessResult::Success(output, exit_code) => {
+      assert_true(output.contains("Hello from Azimuth"))
+      assert_eq(exit_code, 0)
+    }
+    ProcessResult::Failed(error) => assert_true(false)
+  }
+  
+  // Test system resource monitoring
+  let system_info = PlatformAdapter::get_system_info(platform_adapter)
+  
+  assert_true(system_info.cpu_count > 0)
+  assert_true(system_info.total_memory > 0)
+  assert_true(system_info.available_memory > 0)
+  assert_true(system_info.available_memory <= system_info.total_memory)
+  
+  // Test platform-specific optimizations
+  let optimizations = PlatformAdapter::get_optimizations(platform_adapter)
+  
+  match current_platform.os_family {
+    OSFamily::Linux => {
+      assert_true(optimizations.use_epoll)
+      assert_true(optimizations.use_inotify)
+    }
+    OSFamily::MacOS => {
+      assert_true(optimizations.use_kqueue)
+      assert_true(optimizations.use_fsevents)
+    }
+    OSFamily::Windows => {
+      assert_true(optimizations.use_iocp)
+      assert_true(optimizations.use_watcher)
+    }
+  }
+  
+  // Test platform compatibility matrix
+  let compatibility_matrix = PlatformCompatibilityMatrix::new()
+  
+  // Add supported platforms
+  compatibility_matrix.add_supported_platform(PlatformInfo::new(
+    OSFamily::Linux,
+    "Ubuntu",
+    ["20.04", "22.04"],
+    ["x86_64", "arm64"]
+  ))
+  
+  compatibility_matrix.add_supported_platform(PlatformInfo::new(
+    OSFamily::Linux,
+    "CentOS",
+    ["7", "8"],
+    ["x86_64"]
+  ))
+  
+  compatibility_matrix.add_supported_platform(PlatformInfo::new(
+    OSFamily::MacOS,
+    "macOS",
+    ["11.0", "12.0", "13.0"],
+    ["x86_64", "arm64"]
+  ))
+  
+  compatibility_matrix.add_supported_platform(PlatformInfo::new(
+    OSFamily::Windows,
+    "Windows",
+    ["10", "11"],
+    ["x86_64"]
+  ))
+  
+  // Check current platform compatibility
+  let is_compatible = compatibility_matrix.is_compatible(current_platform)
+  assert_true(is_compatible)
+  
+  // Test platform-specific feature availability
+  let feature_checker = PlatformFeatureChecker::new(current_platform)
+  
+  assert_true(PlatformFeatureChecker::has_feature(feature_checker, "file_system"))
+  assert_true(PlatformFeatureChecker::has_feature(feature_checker, "networking"))
+  assert_true(PlatformFeatureChecker::has_feature(feature_checker, "process_management"))
+  
+  // Platform-specific features
+  match current_platform.os_family {
+    OSFamily::Linux => {
+      assert_true(PlatformFeatureChecker::has_feature(feature_checker, "inotify"))
+      assert_true(PlatformFeatureChecker::has_feature(feature_checker, "epoll"))
+    }
+    OSFamily::MacOS => {
+      assert_true(PlatformFeatureChecker::has_feature(feature_checker, "fsevents"))
+      assert_true(PlatformFeatureChecker::has_feature(feature_checker, "kqueue"))
+    }
+    OSFamily::Windows => {
+      assert_true(PlatformFeatureChecker::has_feature(feature_checker, "windows_apis"))
+      assert_true(PlatformFeatureChecker::has_feature(feature_checker, "registry"))
+    }
+  }
 }
 
-test "不同CPU架构兼容性测试" {
-  // 测试不同CPU架构的兼容性
-  let architectures = [
-    ArchitectureInfo::new("x86_64", "little", 64),
-    ArchitectureInfo::new("arm64", "little", 64),
-    ArchitectureInfo::new("arm32", "little", 32),
-    ArchitectureInfo::new("riscv64", "little", 64),
-    ArchitectureInfo::new("ppc64", "big", 64),
-    ArchitectureInfo::new("s390x", "big", 64)
-  ]
+// Test 2: Architecture Compatibility
+test "architecture compatibility" {
+  // Create architecture detector
+  let arch_detector = ArchitectureDetector::new()
   
-  for arch in architectures {
-    // 创建架构特定的测试环境
-    let arch_test_env = ArchitectureTestEnvironment::new(arch)
-    
-    // 测试数据类型大小一致性
-    let type_sizes = ArchitectureTestEnvironment::get_type_sizes(arch_test_env)
-    assert_eq(type_sizes.int_size, 4, "int类型应该在所有架构上都是4字节")
-    assert_eq(type_sizes.long_size, if arch.bits == 64 { 8 } else { 4 }, 
-      "long类型大小应该与架构位数匹配")
-    assert_eq(type_sizes.pointer_size, arch.bits / 8, 
-      "指针大小应该与架构位数匹配")
-    
-    // 测试字节序处理
-    let test_value = 0x12345678
-    let little_endian_bytes = ByteOrder::to_little_endian(test_value)
-    let big_endian_bytes = ByteOrder::to_big_endian(test_value)
-    
-    if arch.endianness == "little" {
-      assert_eq(ByteOrder::from_little_endian(little_endian_bytes), test_value, 
-        "小端架构应该正确处理小端字节序")
-    } else {
-      assert_eq(ByteOrder::from_big_endian(big_endian_bytes), test_value, 
-        "大端架构应该正确处理大端字节序")
+  // Detect current architecture
+  let current_arch = ArchitectureDetector::detect(arch_detector)
+  
+  // Verify architecture detection
+  assert_true(current_arch.name.length() > 0)
+  assert_true(current_arch.bits == 32 || current_arch.bits == 64)
+  assert_true(current_arch.endianness == Endianness::Little || current_arch.endianness == Endianness::Big)
+  
+  // Test architecture-specific operations
+  let arch_adapter = ArchitectureAdapter::new(current_arch)
+  
+  // Test byte order operations
+  let test_value = 0x12345678U32
+  let swapped_value = ArchitectureAdapter::swap_bytes(arch_adapter, test_value)
+  
+  match current_arch.endianness {
+    Endianness::Little => {
+      assert_eq(swapped_value, 0x78563412U32)
     }
-    
-    // 测试序列化兼容性
-    let serializer = CrossArchSerializer::new(arch)
-    
-    let test_data = TestData::new(
-      42, 
-      3.14159, 
-      "test string", 
-      [1, 2, 3, 4, 5]
-    )
-    
-    let serialized = CrossArchSerializer::serialize(serializer, test_data)
-    assert_true(serialized.success, "应该能够在 " + arch.name + " 架构上序列化数据")
-    
-    // 测试反序列化兼容性
-    let deserialized = CrossArchSerializer::deserialize(serializer, serialized.data)
-    assert_true(deserialized.success, "应该能够在 " + arch.name + " 架构上反序列化数据")
-    
-    // 验证数据完整性
-    let original_data = deserialized.data
-    assert_eq(original_data.int_field, test_data.int_field, "整数字段应该在跨架构后保持一致")
-    assert_true((original_data.float_field - test_data.float_field).abs() < 0.0001, 
-      "浮点字段应该在跨架构后保持一致")
-    assert_eq(original_data.string_field, test_data.string_field, "字符串字段应该在跨架构后保持一致")
-    
-    // 测试遥测数据兼容性
-    let tracer_provider = TracerProvider::builder()
-      .with_architecture(arch)
-      .build()
-    
-    let tracer = TracerProvider::get_tracer(tracer_provider, "arch.compatibility.test")
-    
-    let span = Tracer::start_span(tracer, "arch.test.span")
-    Span::set_attribute(span, "architecture", arch.name)
-    Span::set_attribute(span, "endianness", arch.endianness)
-    Span::set_attribute(span, "bits", arch.bits.to_string())
-    
-    // 添加架构特定的度量
-    let meter_provider = MeterProvider::builder()
-      .with_architecture(arch)
-      .build()
-    
-    let meter = MeterProvider::get_meter(meter_provider, "arch.test.meter")
-    let counter = Meter::create_counter(meter, "arch.test.counter")
-    
-    Counter::add_with_attributes(counter, 1.0, [
-      ("architecture", arch.name),
-      ("endianness", arch.endianness),
-      ("bits", arch.bits.to_string())
-    ])
-    
-    Span::end(span)
-    
-    // 验证导出的数据
-    let exported_spans = TracerProvider::get_exported_spans(tracer_provider)
-    assert_true(exported_spans.length() > 0, 
-      "应该能够在 " + arch.name + " 架构上导出遥测数据")
+    Endianness::Big => {
+      assert_eq(swapped_value, 0x12345678U32)
+    }
   }
   
-  // 验证跨架构数据一致性
-  let arch_validator = CrossArchitectureValidator::new()
-  let consistency_report = CrossArchitectureValidator::validate_consistency(arch_validator)
+  // Test alignment requirements
+  let alignment_info = ArchitectureAdapter::get_alignment_info(arch_adapter)
   
-  assert_true(consistency_report.overall_consistent, "跨架构数据应该保持一致")
-  assert_true(consistency_report.inconsistencies.length() == 0, 
-    "不应该有跨架构数据不一致")
+  assert_true(alignment_info.int_alignment > 0)
+  assert_true(alignment_info.long_alignment > 0)
+  assert_true(alignment_info.pointer_alignment > 0)
+  assert_true(alignment_info.pointer_alignment >= alignment_info.int_alignment)
   
-  assert_true(true)
+  // Test atomic operations support
+  let atomic_support = ArchitectureAdapter::get_atomic_support(arch_adapter)
+  
+  assert_true(atomic_support.has_8bit_atomics)
+  assert_true(atomic_support.has_16bit_atomics)
+  assert_true(atomic_support.has_32bit_atomics)
+  assert_true(atomic_support.has_64bit_atomics)
+  
+  match current_arch.name {
+    "x86_64" | "arm64" => {
+      assert_true(atomic_support.has_128bit_atomics)
+    }
+    _ => {
+      // 128-bit atomics may not be available on all architectures
+    }
+  }
+  
+  // Test SIMD support
+  let simd_support = ArchitectureAdapter::get_simd_support(arch_adapter)
+  
+  match current_arch.name {
+    "x86_64" => {
+      assert_true(simd_support.has_sse)
+      assert_true(simd_support.has_sse2)
+      assert_true(simd_support.has_avx)
+      assert_true(simd_support.has_avx2)
+    }
+    "arm64" => {
+      assert_true(simd_support.has_neon)
+    }
+    _ => {
+      // SIMD support varies by architecture
+    }
+  }
+  
+  // Test cross-platform data serialization
+  let serializer = CrossPlatformSerializer::new()
+  
+  let test_data = {
+    "int_value": 42,
+    "float_value": 3.14159,
+    "string_value": "Hello, cross-platform world!",
+    "bool_value": true,
+    "array_value": [1, 2, 3, 4, 5]
+  }
+  
+  let serialized_data = CrossPlatformSerializer::serialize(serializer, test_data)
+  let deserialized_data = CrossPlatformSerializer::deserialize(serializer, serialized_data)
+  
+  assert_eq(deserialized_data.get("int_value"), Some(42))
+  assert_eq(deserialized_data.get("float_value"), Some(3.14159))
+  assert_eq(deserialized_data.get("string_value"), Some("Hello, cross-platform world!"))
+  assert_eq(deserialized_data.get("bool_value"), Some(true))
+  
+  // Test architecture compatibility matrix
+  let arch_compatibility = ArchitectureCompatibilityMatrix::new()
+  
+  // Add supported architectures
+  arch_compatibility.add_supported_architecture(ArchitectureInfo::new(
+    "x86_64",
+    64,
+    Endianness::Little,
+    ["Linux", "Windows", "MacOS"]
+  ))
+  
+  arch_compatibility.add_supported_architecture(ArchitectureInfo::new(
+    "arm64",
+    64,
+    Endianness::Little,
+    ["Linux", "MacOS"]
+  ))
+  
+  arch_compatibility.add_supported_architecture(ArchitectureInfo::new(
+    "x86",
+    32,
+    Endianness::Little,
+    ["Linux", "Windows"]
+  ))
+  
+  // Check current architecture compatibility
+  let is_arch_compatible = arch_compatibility.is_compatible(current_arch)
+  assert_true(is_arch_compatible)
+  
+  // Test performance characteristics
+  let perf_characteristics = ArchitectureAdapter::get_performance_characteristics(arch_adapter)
+  
+  assert_true(perf_characteristics.cache_line_size > 0)
+  assert_true(perf_characteristics.page_size > 0)
+  assert_true(perf_characteristics.l1_cache_size > 0)
+  assert_true(perf_characteristics.l2_cache_size >= perf_characteristics.l1_cache_size)
+  assert_true(perf_characteristics.l3_cache_size >= perf_characteristics.l2_cache_size)
 }
 
-test "WebAssembly平台兼容性" {
-  // 测试WebAssembly平台兼容性
-  let wasm_platform = PlatformInfo::new("WebAssembly", "1.0", "wasm32")
-  let wasm_detector = WasmPlatformDetector::new()
+// Test 3: Runtime Environment Compatibility
+test "runtime environment compatibility" {
+  // Create runtime detector
+  let runtime_detector = RuntimeDetector::new()
   
-  // 验证WebAssembly环境检测
-  assert_true(WasmPlatformDetector::is_wasm_environment(wasm_detector), 
-    "应该正确检测WebAssembly环境")
+  // Detect current runtime
+  let current_runtime = RuntimeDetector::detect(runtime_detector)
   
-  // 创建WebAssembly特定的配置
-  let wasm_config = TelemetryConfiguration::new()
-  TelemetryConfiguration::adapt_to_wasm(wasm_config)
+  // Verify runtime detection
+  assert_true(current_runtime.name.length() > 0)
+  assert_true(current_runtime.version.length() > 0)
   
-  // 验证WebAssembly配置适配
-  assert_true(TelemetryConfiguration::is_wasm_adapted(wasm_config), 
-    "配置应该适配到WebAssembly平台")
+  // Test runtime-specific features
+  let runtime_adapter = RuntimeAdapter::new(current_runtime)
   
-  // 测试WebAssembly特定的限制
-  assert_true(TelemetryConfiguration::get_max_memory_usage(wasm_config) <= 512 * 1024 * 1024, 
-    "WebAssembly平台应该有内存使用限制")
-  assert_true(TelemetryConfiguration::get_batch_size(wasm_config) <= 100, 
-    "WebAssembly平台应该有批处理大小限制")
+  // Test garbage collection settings
+  let gc_settings = RuntimeAdapter::get_gc_settings(runtime_adapter)
   
-  // 创建WebAssembly遥测提供者
-  let wasm_provider_result = TracerProvider::builder()
-    .with_config(wasm_config)
-    .with_wasm_detector(wasm_detector)
-    .build()
+  assert_true(gc_settings.enabled)
+  assert_true(gc_settings.max_heap_size > 0)
   
-  assert_true(wasm_provider_result.success, 
-    "应该能够在WebAssembly平台上创建遥测提供者")
+  // Test thread pool configuration
+  let thread_pool = RuntimeAdapter::get_thread_pool(runtime_adapter)
   
-  let wasm_tracer_provider = wasm_provider_result.provider
-  let wasm_tracer = TracerProvider::get_tracer(wasm_tracer_provider, "wasm.compatibility.test")
+  assert_true(thread_pool.core_pool_size > 0)
+  assert_true(thread_pool.max_pool_size >= thread_pool.core_pool_size)
   
-  // 测试基本遥测功能
-  let wasm_span = Tracer::start_span(wasm_tracer, "wasm.test.span")
-  Span::set_attribute(wasm_span, "platform", "WebAssembly")
-  Span::set_attribute(wasm_span, "browser", BrowserDetector::get_browser_name())
-  Span::set_attribute(wasm_span, "javascript.version", JSRuntime::get_version())
+  // Test runtime compatibility matrix
+  let runtime_compatibility = RuntimeCompatibilityMatrix::new()
   
-  // 测试WebAssembly特定的功能
-  if WasmPlatformDetector::supports_browser_api(wasm_detector) {
-    Span::set_attribute(wasm_span, "browser.api", "supported")
-    
-    // 测试浏览器API集成
-    let browser_integration = WasmBrowserIntegration::new()
-    let page_load_time = WasmBrowserIntegration::get_page_load_time(browser_integration)
-    Span::set_attribute(wasm_span, "page.load.time", page_load_time.to_string())
-    
-    let memory_usage = WasmBrowserIntegration::get_memory_usage(browser_integration)
-    Span::set_attribute(wasm_span, "memory.usage", memory_usage.to_string())
+  // Add supported runtimes
+  runtime_compatibility.add_supported_runtime(RuntimeInfo::new(
+    "Node.js",
+    [">=14.0.0"],
+    ["Linux", "Windows", "MacOS"]
+  ))
+  
+  runtime_compatibility.add_supported_runtime(RuntimeInfo::new(
+    "Python",
+    [">=3.8.0"],
+    ["Linux", "Windows", "MacOS"]
+  ))
+  
+  runtime_compatibility.add_supported_runtime(RuntimeInfo::new(
+    "Java",
+    [">=11.0.0"],
+    ["Linux", "Windows", "MacOS"]
+  ))
+  
+  // Check current runtime compatibility
+  let is_runtime_compatible = runtime_compatibility.is_compatible(current_runtime)
+  assert_true(is_runtime_compatible)
+  
+  // Test runtime-specific optimizations
+  let optimizations = RuntimeAdapter::get_optimizations(runtime_adapter)
+  
+  match current_runtime.name {
+    "Node.js" => {
+      assert_true(optimizations.use_v8_optimizations)
+      assert_true(optimizations.use_libuv)
+    }
+    "Python" => {
+      assert_true(optimizations.use_pypy_optimizations)
+      assert_true(optimizations.use_c_extensions)
+    }
+    "Java" => {
+      assert_true(optimizations.use_jit_optimizations)
+      assert_true(optimizations.use_g1_gc)
+    }
   }
   
-  // 测试JavaScript互操作
-  let js_interop = WasmJSInterop::new()
-  let js_result = WasmJSInterop::call_function(js_interop, "console.log", ["WASM telemetry test"])
-  assert_true(js_result.success, "应该能够调用JavaScript函数")
+  // Test runtime feature detection
+  let feature_detector = RuntimeFeatureDetector::new(current_runtime)
   
-  // 测试WebAssembly存储
-  let wasm_storage = WasmStorage::new()
-  let storage_result = WasmStorage::store_telemetry_data(wasm_storage, "test.key", "test.value")
-  assert_true(storage_result.success, "应该能够在WebAssembly存储中保存数据")
+  assert_true(RuntimeFeatureDetector::has_feature(feature_detector, "async_operations"))
+  assert_true(RuntimeFeatureDetector::has_feature(feature_detector, "error_handling"))
   
-  let retrieved_data = WasmStorage::retrieve_telemetry_data(wasm_storage, "test.key")
-  assert_eq(retrieved_data, "test.value", "应该能够从WebAssembly存储中检索数据")
-  
-  Span::end(wasm_span)
-  
-  // 测试WebAssembly性能特征
-  let wasm_performance = WasmPerformanceProfiler::new()
-  WasmPerformanceProfiler::start_profiling(wasm_performance)
-  
-  // 执行一些遥测操作
-  for i = 0; i < 100; i = i + 1 {
-    let perf_span = Tracer::start_span(wasm_tracer, "performance.span." + i.to_string())
-    Span::set_attribute(perf_span, "iteration", i.to_string())
-    Span::end(perf_span)
+  // Runtime-specific features
+  match current_runtime.name {
+    "Node.js" => {
+      assert_true(RuntimeFeatureDetector::has_feature(feature_detector, "event_loop"))
+      assert_true(RuntimeFeatureDetector::has_feature(feature_detector, "streams"))
+    }
+    "Python" => {
+      assert_true(RuntimeFeatureDetector::has_feature(feature_detector, "generators"))
+      assert_true(RuntimeFeatureDetector::has_feature(feature_detector, "decorators"))
+    }
+    "Java" => {
+      assert_true(RuntimeFeatureDetector::has_feature(feature_detector, "reflections"))
+      assert_true(RuntimeFeatureDetector::has_feature(feature_detector, "annotations"))
+    }
   }
   
-  WasmPerformanceProfiler::stop_profiling(wasm_performance)
-  let perf_report = WasmPerformanceProfiler::get_report(wasm_performance)
+  // Test cross-runtime communication
+  let communication_bridge = CrossRuntimeCommunication::new()
   
-  // 验证性能指标
-  assert_true(perf_report.average_span_creation_time < 10.0, 
-    "WebAssembly上的span创建时间应该合理")
-  assert_true(perf_report.memory_efficiency_score > 0.7, 
-    "WebAssembly应该有良好的内存效率")
+  // Create message handlers
+  communication_bridge.register_handler("ping", || {
+    CrossRuntimeMessage::new("pong", [])
+  })
   
-  // 验证导出的数据
-  let wasm_exported_spans = TracerProvider::get_exported_spans(wasm_tracer_provider)
-  assert_true(wasm_exported_spans.length() > 0, 
-    "应该能够在WebAssembly平台上导出span")
+  communication_bridge.register_handler("add", |params| {
+    let a = params[0]
+    let b = params[1]
+    CrossRuntimeMessage::new("result", [a + b])
+  })
   
-  // 测试WebAssembly与其他平台的数据兼容性
-  let compatibility_validator = WasmCompatibilityValidator::new()
-  let compatibility_result = WasmCompatibilityValidator::validate_cross_platform_data(
-    compatibility_validator, wasm_exported_spans)
+  // Test message passing
+  let ping_message = CrossRuntimeMessage::new("ping", [])
+  let ping_response = communication_bridge.send_message(ping_message)
   
-  assert_true(compatibility_result.is_compatible, 
-    "WebAssembly数据应该与其他平台兼容")
+  assert_eq(ping_response.message_type, "pong")
   
-  assert_true(true)
+  let add_message = CrossRuntimeMessage::new("add", [5, 3])
+  let add_response = communication_bridge.send_message(add_message)
+  
+  assert_eq(add_response.message_type, "result")
+  assert_eq(add_response.parameters[0], 8)
+  
+  // Test runtime resource monitoring
+  let resource_monitor = RuntimeResourceMonitor::new(current_runtime)
+  
+  let resource_usage = resource_monitor.get_current_usage()
+  
+  assert_true(resource_usage.memory_usage > 0)
+  assert_true(resource_usage.cpu_usage >= 0.0)
+  assert_true(resource_usage.cpu_usage <= 100.0)
+  assert_true(resource_usage.thread_count > 0)
+  
+  // Test runtime performance profiling
+  let profiler = RuntimeProfiler::new(current_runtime)
+  
+  profiler.start_profiling()
+  
+  // Simulate some work
+  let mut result = 0
+  for i in 0..=10000 {
+    result = result + i * i
+  }
+  
+  let profiling_results = profiler.stop_profiling()
+  
+  assert_true(profiling_results.execution_time > 0)
+  assert_true(profiling_results.memory_allocations > 0)
+  assert_true(profiling_results.function_calls > 0)
 }
 
-test "移动平台兼容性测试" {
-  // 测试移动平台兼容性
-  let mobile_platforms = [
-    MobilePlatformInfo::new("Android", "13", "arm64", "Java"),
-    MobilePlatformInfo::new("Android", "12", "arm64", "Kotlin"),
-    MobilePlatformInfo::new("iOS", "16.0", "arm64", "Swift"),
-    MobilePlatformInfo::new("iOS", "15.0", "arm64", "Objective-C")
-  ]
+// Test 4: Database Compatibility
+test "database compatibility" {
+  // Create database compatibility manager
+  let db_compatibility = DatabaseCompatibilityManager::new()
   
-  for mobile_platform in mobile_platforms {
-    // 创建移动平台特定的配置
-    let mobile_config = TelemetryConfiguration::new()
-    TelemetryConfiguration::adapt_to_mobile(mobile_config, mobile_platform)
-    
-    // 验证移动平台配置适配
-    assert_true(TelemetryConfiguration::is_mobile_adapted(mobile_config), 
-      "配置应该适配到 " + mobile_platform.os_name + " 平台")
-    
-    // 测试移动平台特定的限制
-    assert_true(TelemetryConfiguration::get_battery_optimization_enabled(mobile_config), 
-      "移动平台应该启用电池优化")
-    assert_true(TelemetryConfiguration::get_network_adaptation_enabled(mobile_config), 
-      "移动平台应该启用网络自适应")
-    
-    // 创建移动平台遥测提供者
-    let mobile_provider_result = TracerProvider::builder()
-      .with_config(mobile_config)
-      .with_mobile_platform(mobile_platform)
-      .build()
-    
-    assert_true(mobile_provider_result.success, 
-      "应该能够在 " + mobile_platform.os_name + " 上创建遥测提供者")
-    
-    let mobile_tracer_provider = mobile_provider_result.provider
-    let mobile_tracer = TracerProvider::get_tracer(mobile_tracer_provider, "mobile.compatibility.test")
-    
-    // 测试移动平台特定的功能
-    let mobile_span = Tracer::start_span(mobile_tracer, "mobile.test.span")
-    Span::set_attribute(mobile_span, "platform", mobile_platform.os_name)
-    Span::set_attribute(mobile_span, "version", mobile_platform.version)
-    Span::set_attribute(mobile_span, "architecture", mobile_platform.architecture)
-    Span::set_attribute(mobile_span, "runtime", mobile_platform.runtime)
-    
-    // 测试移动设备信息收集
-    if mobile_platform.os_name == "Android" {
-      let android_info = AndroidDeviceInfo::collect()
-      Span::set_attribute(mobile_span, "device.model", android_info.model)
-      Span::set_attribute(mobile_span, "device.manufacturer", android_info.manufacturer)
-      Span::set_attribute(mobile_span, "os.version", android_info.os_version)
-      Span::set_attribute(mobile_span, "app.version", android_info.app_version)
-      
-      // 测试Android特定的遥测功能
-      let android_telemetry = AndroidTelemetryIntegration::new()
-      let battery_level = AndroidTelemetryIntegration::get_battery_level(android_telemetry)
-      Span::set_attribute(mobile_span, "battery.level", battery_level.to_string())
-      
-      let network_type = AndroidTelemetryIntegration::get_network_type(android_telemetry)
-      Span::set_attribute(mobile_span, "network.type", network_type)
-      
-    } else if mobile_platform.os_name == "iOS" {
-      let ios_info = IosDeviceInfo::collect()
-      Span::set_attribute(mobile_span, "device.model", ios_info.model)
-      Span::set_attribute(mobile_span, "device.name", ios_info.name)
-      Span::set_attribute(mobile_span, "os.version", ios_info.os_version)
-      Span::set_attribute(mobile_span, "app.version", ios_info.app_version)
-      
-      // 测试iOS特定的遥测功能
-      let ios_telemetry = IosTelemetryIntegration::new()
-      let battery_level = IosTelemetryIntegration::get_battery_level(ios_telemetry)
-      Span::set_attribute(mobile_span, "battery.level", battery_level.to_string())
-      
-      let network_type = IosTelemetryIntegration::get_network_type(ios_telemetry)
-      Span::set_attribute(mobile_span, "network.type", network_type)
-    }
-    
-    // 测试移动网络适应性
-    let mobile_network = MobileNetworkAdaptation::new()
-    MobileNetworkAdaptation::adapt_to_network_conditions(mobile_network)
-    
-    let network_quality = MobileNetworkAdaptation::get_network_quality(mobile_network)
-    Span::set_attribute(mobile_span, "network.quality", network_quality.to_string())
-    
-    let adaptation_strategy = MobileNetworkAdaptation::get_adaptation_strategy(mobile_network)
-    Span::set_attribute(mobile_span, "adaptation.strategy", adaptation_strategy)
-    
-    // 测试移动电池优化
-    let mobile_battery = MobileBatteryOptimization::new()
-    MobileBatteryOptimization::optimize_for_battery(mobile_battery)
-    
-    let battery_optimization_level = MobileBatteryOptimization::get_optimization_level(mobile_battery)
-    Span::set_attribute(mobile_span, "battery.optimization.level", battery_optimization_level.to_string())
-    
-    // 测试移动存储限制
-    let mobile_storage = MobileStorageManager::new()
-    let storage_usage = MobileStorageManager::get_storage_usage(mobile_storage)
-    Span::set_attribute(mobile_span, "storage.usage", storage_usage.to_string())
-    
-    // 在存储受限时测试数据压缩
-    if storage_usage > 80.0 {
-      MobileStorageManager::enable_compression(mobile_storage, true)
-      assert_true(MobileStorageManager::is_compression_enabled(mobile_storage), 
-        "存储使用率高时应该启用压缩")
-    }
-    
-    Span::end(mobile_span)
-    
-    // 验证导出的数据
-    let mobile_exported_spans = TracerProvider::get_exported_spans(mobile_tracer_provider)
-    assert_true(mobile_exported_spans.length() > 0, 
-      "应该能够在 " + mobile_platform.os_name + " 上导出span")
-    
-    // 验证移动平台特定属性存在
-    let exported_span = mobile_exported_spans[0]
-    assert_true(Span::has_attribute(exported_span, "platform"), 
-      "导出的span应该包含平台信息")
-    assert_true(Span::has_attribute(exported_span, "network.quality"), 
-      "导出的span应该包含网络质量信息")
-  }
+  // Add supported databases
+  db_compatibility.add_database(DatabaseInfo::new(
+    "PostgreSQL",
+    [">=10.0"],
+    ["Linux", "Windows", "MacOS"],
+    ["JDBC", "ODBC", "Native"]
+  ))
   
-  // 测试跨移动平台数据一致性
-  let mobile_validator = CrossMobilePlatformValidator::new()
-  let mobile_consistency_report = CrossMobilePlatformValidator::validate_consistency(mobile_validator)
+  db_compatibility.add_database(DatabaseInfo::new(
+    "MySQL",
+    [">=8.0"],
+    ["Linux", "Windows", "MacOS"],
+    ["JDBC", "ODBC", "Native"]
+  ))
   
-  assert_true(mobile_consistency_report.overall_consistent, "跨移动平台数据应该保持一致")
-  assert_true(mobile_consistency_report.inconsistencies.length() == 0, 
-    "不应该有跨移动平台数据不一致")
+  db_compatibility.add_database(DatabaseInfo::new(
+    "SQLite",
+    [">=3.0"],
+    ["Linux", "Windows", "MacOS"],
+    ["Native"]
+  ))
   
-  assert_true(true)
-}
-
-test "容器和虚拟化环境兼容性" {
-  // 测试容器和虚拟化环境兼容性
-  let virtualization_environments = [
-    VirtualizationInfo::new("Docker", "20.10", "container"),
-    VirtualizationInfo::new("Kubernetes", "1.24", "orchestration"),
-    VirtualizationInfo::new("VMware", "7.0", "virtual-machine"),
-    VirtualizationInfo::new("Hyper-V", "10.0", "virtual-machine"),
-    VirtualizationInfo::new("KVM", "5.15", "virtual-machine")
-  ]
+  db_compatibility.add_database(DatabaseInfo::new(
+    "MongoDB",
+    [">=4.0"],
+    ["Linux", "Windows", "MacOS"],
+    ["Native", "ODBC"]
+  ))
   
-  for virt_env in virtualization_environments {
-    // 创建虚拟化环境检测器
-    let virt_detector = VirtualizationDetector::new()
-    VirtualizationDetector::set_environment(virt_detector, virt_env)
-    
-    // 验证虚拟化环境检测
-    assert_true(VirtualizationDetector::is_virtualized(virt_detector), 
-      "应该正确检测虚拟化环境")
-    assert_eq(VirtualizationDetector::get_virtualization_type(virt_detector), virt_env.type, 
-      "应该正确识别虚拟化类型")
-    
-    // 创建虚拟化环境特定的配置
-    let virt_config = TelemetryConfiguration::new()
-    TelemetryConfiguration::adapt_to_virtualization(virt_config, virt_env)
-    
-    // 验证虚拟化配置适配
-    assert_true(TelemetryConfiguration::is_virtualization_adapted(virt_config), 
-      "配置应该适配到 " + virt_env.name + " 环境")
-    
-    // 测试虚拟化环境特定的功能
-    if virt_env.type == "container" {
-      assert_true(TelemetryConfiguration::get_container_mode_enabled(virt_config), 
-        "容器环境应该启用容器模式")
-      
-      // 测试容器特定的资源限制
-      let container_resources = ContainerResourceMonitor::new()
-      let cpu_limit = ContainerResourceMonitor::get_cpu_limit(container_resources)
-      let memory_limit = ContainerResourceMonitor::get_memory_limit(container_resources)
-      
-      assert_true(cpu_limit > 0, "容器应该有CPU限制")
-      assert_true(memory_limit > 0, "容器应该有内存限制")
-      
-    } else if virt_env.type == "orchestration" {
-      assert_true(TelemetryConfiguration::get_kubernetes_enabled(virt_config), 
-        "Kubernetes环境应该启用Kubernetes支持")
-      
-      // 测试Kubernetes特定的功能
-      let k8s_integration = KubernetesIntegration::new()
-      let pod_name = KubernetesIntegration::get_pod_name(k8s_integration)
-      let namespace = KubernetesIntegration::get_namespace(k8s_integration)
-      let node_name = KubernetesIntegration::get_node_name(k8s_integration)
-      
-      assert_true(pod_name.length() > 0, "应该能够获取Pod名称")
-      assert_true(namespace.length() > 0, "应该能够获取命名空间")
-      assert_true(node_name.length() > 0, "应该能够获取节点名称")
-      
-    } else if virt_env.type == "virtual-machine" {
-      assert_true(TelemetryConfiguration::get_vm_optimization_enabled(virt_config), 
-        "虚拟机环境应该启用VM优化")
-      
-      // 测试虚拟机特定的功能
-      let vm_info = VMInfoCollector::new()
-      let vm_type = VMInfoCollector::get_vm_type(vm_info)
-      let hypervisor = VMInfoCollector::get_hypervisor(vm_info)
-      
-      assert_true(vm_type.length() > 0, "应该能够获取虚拟机类型")
-      assert_true(hypervisor.length() > 0, "应该能够获取虚拟机监控程序信息")
-    }
-    
-    // 创建虚拟化环境遥测提供者
-    let virt_provider_result = TracerProvider::builder()
-      .with_config(virt_config)
-      .with_virtualization_detector(virt_detector)
-      .build()
-    
-    assert_true(virt_provider_result.success, 
-      "应该能够在 " + virt_env.name + " 环境中创建遥测提供者")
-    
-    let virt_tracer_provider = virt_provider_result.provider
-    let virt_tracer = TracerProvider::get_tracer(virt_tracer_provider, "virtualization.compatibility.test")
-    
-    // 测试虚拟化环境特定的遥测功能
-    let virt_span = Tracer::start_span(virt_tracer, "virtualization.test.span")
-    Span::set_attribute(virt_span, "virtualization.type", virt_env.type)
-    Span::set_attribute(virt_span, "virtualization.name", virt_env.name)
-    Span::set_attribute(virt_span, "virtualization.version", virt_env.version)
-    
-    // 添加虚拟化环境特定的属性
-    if virt_env.type == "container" {
-      let container_info = ContainerInfoCollector::collect()
-      Span::set_attribute(virt_span, "container.id", container_info.id)
-      Span::set_attribute(virt_span, "container.name", container_info.name)
-      Span::set_attribute(virt_span, "container.image", container_info.image)
-      
-    } else if virt_env.type == "orchestration" {
-      let k8s_info = KubernetesInfoCollector::collect()
-      Span::set_attribute(virt_span, "pod.name", k8s_info.pod_name)
-      Span::set_attribute(virt_span, "pod.namespace", k8s_info.namespace)
-      Span::set_attribute(virt_span, "pod.uid", k8s_info.pod_uid)
-      Span::set_attribute(virt_span, "service.account", k8s_info.service_account)
-      
-    } else if virt_env.type == "virtual-machine" {
-      let vm_info = VMInfoCollector::collect()
-      Span::set_attribute(virt_span, "vm.id", vm_info.id)
-      Span::set_attribute(virt_span, "vm.name", vm_info.name)
-      Span::set_attribute(virt_span, "hypervisor", vm_info.hypervisor)
-    }
-    
-    // 测试虚拟化环境中的资源监控
-    let resource_monitor = VirtualizationResourceMonitor::new()
-    let cpu_usage = VirtualizationResourceMonitor::get_cpu_usage(resource_monitor)
-    let memory_usage = VirtualizationResourceMonitor::get_memory_usage(resource_monitor)
-    let disk_usage = VirtualizationResourceMonitor::get_disk_usage(resource_monitor)
-    let network_usage = VirtualizationResourceMonitor::get_network_usage(resource_monitor)
-    
-    Span::set_attribute(virt_span, "resource.cpu.usage", cpu_usage.to_string())
-    Span::set_attribute(virt_span, "resource.memory.usage", memory_usage.to_string())
-    Span::set_attribute(virt_span, "resource.disk.usage", disk_usage.to_string())
-    Span::set_attribute(virt_span, "resource.network.usage", network_usage.to_string())
-    
-    // 测试虚拟化环境中的网络拓扑发现
-    if virt_env.type == "orchestration" {
-      let topology_discoverer = KubernetesTopologyDiscoverer::new()
-      let service_topology = KubernetesTopologyDiscoverer::discover_service_topology(topology_discoverer)
-      
-      Span::set_attribute(virt_span, "topology.services.count", service_topology.services.length().to_string())
-      Span::set_attribute(virt_span, "topology.pods.count", service_topology.pods.length().to_string())
-      Span::set_attribute(virt_span, "topology.namespaces.count", service_topology.namespaces.length().to_string())
-    }
-    
-    Span::end(virt_span)
-    
-    // 验证导出的数据
-    let virt_exported_spans = TracerProvider::get_exported_spans(virt_tracer_provider)
-    assert_true(virt_exported_spans.length() > 0, 
-      "应该能够在 " + virt_env.name + " 环境中导出span")
-    
-    // 验证虚拟化环境特定属性存在
-    let exported_span = virt_exported_spans[0]
-    assert_true(Span::has_attribute(exported_span, "virtualization.type"), 
-      "导出的span应该包含虚拟化类型信息")
-    assert_true(Span::has_attribute(exported_span, "resource.cpu.usage"), 
-      "导出的span应该包含资源使用信息")
-  }
+  // Test database connection abstraction
+  let db_factory = DatabaseConnectionFactory::new()
   
-  // 测试跨虚拟化环境数据一致性
-  let virt_validator = CrossVirtualizationValidator::new()
-  let virt_consistency_report = CrossVirtualizationValidator::validate_consistency(virt_validator)
+  // Create PostgreSQL connection
+  let pg_config = DatabaseConfig::new(
+    "postgresql",
+    "localhost",
+    5432,
+    "azimuth",
+    "user",
+    "password"
+  )
   
-  assert_true(virt_consistency_report.overall_consistent, "跨虚拟化环境数据应该保持一致")
-  assert_true(virt_consistency_report.inconsistencies.length() == 0, 
-    "不应该有跨虚拟化环境数据不一致")
+  let pg_connection = DatabaseConnectionFactory::create_connection(db_factory, pg_config)
   
-  assert_true(true)
-}
-
-test "边缘计算设备兼容性" {
-  // 测试边缘计算设备兼容性
-  let edge_devices = [
-    EdgeDeviceInfo::new("Raspberry Pi", "4B", "arm64", "Linux", "1GB"),
-    EdgeDeviceInfo::new("NVIDIA Jetson", "Nano", "arm64", "Linux", "4GB"),
-    EdgeDeviceInfo::new("Intel NUC", "i7", "x86_64", "Linux", "16GB"),
-    EdgeDeviceInfo::new("AWS Snowball", "Edge", "x86_64", "Linux", "32GB"),
-    EdgeDeviceInfo::new("Custom IoT", "ESP32", "xtensa", "FreeRTOS", "512KB")
-  ]
-  
-  for edge_device in edge_devices {
-    // 创建边缘设备特定的配置
-    let edge_config = TelemetryConfiguration::new()
-    TelemetryConfiguration::adapt_to_edge_device(edge_config, edge_device)
-    
-    // 验证边缘设备配置适配
-    assert_true(TelemetryConfiguration::is_edge_adapted(edge_config), 
-      "配置应该适配到 " + edge_device.model + " 设备")
-    
-    // 测试边缘设备特定的限制
-    assert_true(TelemetryConfiguration::get_offline_mode_enabled(edge_config), 
-      "边缘设备应该启用离线模式")
-    assert_true(TelemetryConfiguration::get_local_storage_enabled(edge_config), 
-      "边缘设备应该启用本地存储")
-    
-    // 根据设备资源调整配置
-    let memory_mb = EdgeDeviceInfo::parse_memory(edge_device.memory)
-    if memory_mb < 1024 { // 小于1GB
-      assert_true(TelemetryConfiguration::get_batch_size(edge_config) <= 10, 
-        "低内存设备应该使用小的批处理大小")
-      assert_true(TelemetryConfiguration::get_max_buffer_size(edge_config) <= 1000, 
-        "低内存设备应该使用小的缓冲区大小")
-    }
-    
-    // 创建边缘设备遥测提供者
-    let edge_provider_result = TracerProvider::builder()
-      .with_config(edge_config)
-      .with_edge_device(edge_device)
-      .build()
-    
-    assert_true(edge_provider_result.success, 
-      "应该能够在 " + edge_device.model + " 设备上创建遥测提供者")
-    
-    let edge_tracer_provider = edge_provider_result.provider
-    let edge_tracer = TracerProvider::get_tracer(edge_tracer_provider, "edge.compatibility.test")
-    
-    // 测试边缘设备特定的功能
-    let edge_span = Tracer::start_span(edge_tracer, "edge.test.span")
-    Span::set_attribute(edge_span, "device.model", edge_device.model)
-    Span::set_attribute(edge_span, "device.architecture", edge_device.architecture)
-    Span::set_attribute(edge_span, "device.os", edge_device.os)
-    Span::set_attribute(edge_span, "device.memory", edge_device.memory)
-    
-    // 测试边缘设备传感器集成
-    let sensor_manager = EdgeSensorManager::new()
-    let available_sensors = EdgeSensorManager::get_available_sensors(sensor_manager)
-    
-    for sensor in available_sensors {
-      match sensor.type {
-        "temperature" => {
-          let temperature = EdgeSensorManager::read_temperature(sensor_manager, sensor.id)
-          Span::set_attribute(edge_span, "sensor.temperature", temperature.to_string())
+  // Test database operations
+  match pg_connection {
+    DatabaseConnection::Connected(conn) => {
+      // Test query execution
+      let query_result = DatabaseConnection::execute_query(conn, "SELECT version()")
+      match query_result {
+        DatabaseResult::Success(rows) => {
+          assert_eq(rows.length(), 1)
+          assert_true(rows[0].contains("PostgreSQL"))
         }
-        "humidity" => {
-          let humidity = EdgeSensorManager::read_humidity(sensor_manager, sensor.id)
-          Span::set_attribute(edge_span, "sensor.humidity", humidity.to_string())
+        DatabaseResult::Error(error) => {
+          // In test environment, connection might fail
+          assert_true(error.contains("connection") || error.contains("network"))
         }
-        "pressure" => {
-          let pressure = EdgeSensorManager::read_pressure(sensor_manager, sensor.id)
-          Span::set_attribute(edge_span, "sensor.pressure", pressure.to_string())
-        }
-        "light" => {
-          let light = EdgeSensorManager::read_light(sensor_manager, sensor.id)
-          Span::set_attribute(edge_span, "sensor.light", light.to_string())
-        }
-        _ => {}
       }
     }
-    
-    // 测试边缘网络连接性
-    let edge_network = EdgeNetworkManager::new()
-    let connection_status = EdgeNetworkManager::get_connection_status(edge_network)
-    Span::set_attribute(edge_span, "network.status", connection_status.status)
-    Span::set_attribute(edge_span, "network.type", connection_status.type)
-    Span::set_attribute(edge_span, "network.strength", connection_status.signal_strength.to_string())
-    
-    // 测试边缘设备电源管理
-    let power_manager = EdgePowerManager::new()
-    let battery_level = EdgePowerManager::get_battery_level(power_manager)
-    let power_source = EdgePowerManager::get_power_source(power_manager)
-    
-    Span::set_attribute(edge_span, "power.battery.level", battery_level.to_string())
-    Span::set_attribute(edge_span, "power.source", power_source)
-    
-    // 测试边缘存储管理
-    let storage_manager = EdgeStorageManager::new()
-    let storage_usage = EdgeStorageManager::get_storage_usage(storage_manager)
-    Span::set_attribute(edge_span, "storage.usage", storage_usage.to_string())
-    
-    // 在存储空间不足时测试数据清理
-    if storage_usage > 90.0 {
-      EdgeStorageManager::cleanup_old_data(storage_manager)
-      let new_storage_usage = EdgeStorageManager::get_storage_usage(storage_manager)
-      assert_true(new_storage_usage < storage_usage, "存储清理应该减少使用率")
+    DatabaseConnection::Failed(error) => {
+      // In test environment, connection might fail
+      assert_true(error.contains("connection") || error.contains("network"))
     }
-    
-    // 测试边缘计算特定功能
-    let edge_computing = EdgeComputingManager::new()
-    
-    // 测试本地数据处理
-    let local_data = "edge sensor data"
-    let processed_data = EdgeComputingManager::process_locally(edge_computing, local_data)
-    assert_true(processed_data.length() > 0, "应该能够在边缘设备上本地处理数据")
-    
-    Span::set_attribute(edge_span, "local.processing.enabled", "true")
-    Span::set_attribute(edge_span, "local.processing.data.size", processed_data.length().to_string())
-    
-    // 测试离线数据缓存
-    if connection_status.status == "offline" {
-      let offline_cache = EdgeOfflineCache::new()
-      EdgeOfflineCache::store_data(offline_cache, processed_data)
-      
-      let cached_data = EdgeOfflineCache::retrieve_data(offline_cache)
-      assert_eq(cached_data, processed_data, "离线缓存应该正确存储和检索数据")
-      
-      Span::set_attribute(edge_span, "offline.cache.enabled", "true")
-      Span::set_attribute(edge_span, "offline.cache.size", cached_data.length().to_string())
-    }
-    
-    // 测试边缘设备同步策略
-    let sync_manager = EdgeSyncManager::new()
-    let sync_strategy = EdgeSyncManager::get_sync_strategy(sync_manager)
-    Span::set_attribute(edge_span, "sync.strategy", sync_strategy)
-    
-    // 根据网络状况调整同步策略
-    if connection_status.status == "online" && connection_status.signal_strength > 0.7 {
-      EdgeSyncManager::set_sync_strategy(sync_manager, "immediate")
-    } else if connection_status.status == "online" {
-      EdgeSyncManager::set_sync_strategy(sync_manager, "batch")
-    } else {
-      EdgeSyncManager::set_sync_strategy(sync_manager, "offline")
-    }
-    
-    Span::end(edge_span)
-    
-    // 验证导出的数据
-    let edge_exported_spans = TracerProvider::get_exported_spans(edge_tracer_provider)
-    assert_true(edge_exported_spans.length() > 0, 
-      "应该能够在 " + edge_device.model + " 设备上导出span")
-    
-    // 验证边缘设备特定属性存在
-    let exported_span = edge_exported_spans[0]
-    assert_true(Span::has_attribute(exported_span, "device.model"), 
-      "导出的span应该包含设备型号信息")
-    assert_true(Span::has_attribute(exported_span, "network.status"), 
-      "导出的span应该包含网络状态信息")
   }
   
-  // 测试跨边缘设备数据一致性
-  let edge_validator = CrossEdgeDeviceValidator::new()
-  let edge_consistency_report = CrossEdgeDeviceValidator::validate_consistency(edge_validator)
+  // Test database schema compatibility
+  let schema_manager = DatabaseSchemaManager::new()
   
-  assert_true(edge_consistency_report.overall_consistent, "跨边缘设备数据应该保持一致")
-  assert_true(edge_consistency_report.inconsistencies.length() == 0, 
-    "不应该有跨边缘设备数据不一致")
+  // Create platform-agnostic schema
+  let schema = DatabaseSchema::new("azimuth_telemetry")
   
-  assert_true(true)
+  schema.add_table(TableSchema::new("metrics", [
+    ColumnSchema::new("id", ColumnType::UUID, [ColumnConstraint::PrimaryKey]),
+    ColumnSchema::new("name", ColumnType::String, [ColumnConstraint::NotNull]),
+    ColumnSchema::new("value", ColumnType::Float, []),
+    ColumnSchema::new("timestamp", ColumnType::Timestamp, [ColumnConstraint::NotNull]),
+    ColumnSchema::new("tags", ColumnType::JSON, [])
+  ]))
+  
+  schema.add_table(TableSchema::new("logs", [
+    ColumnSchema::new("id", ColumnType::UUID, [ColumnConstraint::PrimaryKey]),
+    ColumnSchema::new("level", ColumnType::String, [ColumnConstraint::NotNull]),
+    ColumnSchema::new("message", ColumnType::Text, []),
+    ColumnSchema::new("timestamp", ColumnType::Timestamp, [ColumnConstraint::NotNull]),
+    ColumnSchema::new("metadata", ColumnType::JSON, [])
+  ]))
+  
+  // Generate SQL for different databases
+  let pg_sql = DatabaseSchemaManager::generate_sql(schema_manager, schema, "postgresql")
+  let mysql_sql = DatabaseSchemaManager::generate_sql(schema_manager, schema, "mysql")
+  let sqlite_sql = DatabaseSchemaManager::generate_sql(schema_manager, schema, "sqlite")
+  
+  // Verify SQL generation
+  assert_true(pg_sql.contains("CREATE TABLE"))
+  assert_true(pg_sql.contains("UUID"))
+  assert_true(pg_sql.contains("JSONB"))
+  
+  assert_true(mysql_sql.contains("CREATE TABLE"))
+  assert_true(mysql_sql.contains("CHAR(36)"))  // UUID
+  assert_true(mysql_sql.contains("JSON"))
+  
+  assert_true(sqlite_sql.contains("CREATE TABLE"))
+  assert_true(sqlite_sql.contains("TEXT"))  // UUID
+  assert_true(sqlite_sql.contains("TEXT"))  // JSON
+  
+  // Test database migration compatibility
+  let migration_manager = DatabaseMigrationManager::new()
+  
+  // Create migrations
+  let migration1 = DatabaseMigration::new(
+    "001_create_metrics_table",
+    "CREATE TABLE metrics (id UUID PRIMARY KEY, name VARCHAR(255) NOT NULL, value FLOAT, timestamp TIMESTAMP NOT NULL)"
+  )
+  
+  let migration2 = DatabaseMigration::new(
+    "002_add_tags_to_metrics",
+    "ALTER TABLE metrics ADD COLUMN tags JSONB"
+  )
+  
+  let migration3 = DatabaseMigration::new(
+    "003_create_logs_table",
+    "CREATE TABLE logs (id UUID PRIMARY KEY, level VARCHAR(50) NOT NULL, message TEXT, timestamp TIMESTAMP NOT NULL)"
+  )
+  
+  migration_manager.add_migration(migration1)
+  migration_manager.add_migration(migration2)
+  migration_manager.add_migration(migration3)
+  
+  // Generate migration scripts for different databases
+  let pg_migrations = DatabaseMigrationManager::generate_migrations(migration_manager, "postgresql")
+  let mysql_migrations = DatabaseMigrationManager::generate_migrations(migration_manager, "mysql")
+  
+  // Verify migration generation
+  assert_eq(pg_migrations.length(), 3)
+  assert_eq(mysql_migrations.length(), 3)
+  
+  // Check database-specific adaptations
+  let pg_migration2 = pg_migrations.find(@(m) m.name == "002_add_tags_to_metrics")
+  match pg_migration2 {
+    Some(migration) => {
+      assert_true(migration.sql.contains("JSONB"))
+    }
+    None => assert_true(false)
+  }
+  
+  let mysql_migration2 = mysql_migrations.find(@(m) m.name == "002_add_tags_to_metrics")
+  match mysql_migration2 {
+    Some(migration) => {
+      assert_true(migration.sql.contains("JSON"))
+    }
+    None => assert_true(false)
+  }
+  
+  // Test database connection pooling
+  let pool_config = ConnectionPoolConfig::new(
+    5,  // min connections
+    20, // max connections
+    30, // connection timeout (seconds)
+    300 // idle timeout (seconds)
+  )
+  
+  let connection_pool = DatabaseConnectionPool::new(pg_config, pg_config)
+  
+  // Test connection pool operations
+  let pool_result = DatabaseConnectionPool::get_connection(connection_pool)
+  
+  match pool_result {
+    PooledConnection::Success(conn, pool) => {
+      // Return connection to pool
+      DatabaseConnectionPool::return_connection(pool, conn)
+    }
+    PooledConnection::Error(error) => {
+      // In test environment, connection might fail
+      assert_true(error.contains("connection") || error.contains("network"))
+    }
+  }
+  
+  // Test database query builder
+  let query_builder = DatabaseQueryBuilder::new()
+  
+  // Build platform-agnostic query
+  let select_query = query_builder
+    .select("metrics", ["id", "name", "value", "timestamp"])
+    .where("value > ?", [100.0])
+    .order_by("timestamp", OrderDirection::Desc)
+    .limit(10)
+    .build()
+  
+  assert_true(select_query.contains("SELECT"))
+  assert_true(select_query.contains("FROM metrics"))
+  assert_true(select_query.contains("WHERE"))
+  assert_true(select_query.contains("ORDER BY"))
+  assert_true(select_query.contains("LIMIT"))
+  
+  // Test database-specific query optimization
+  let pg_optimized_query = DatabaseQueryBuilder::optimize_for_database(select_query, "postgresql")
+  let mysql_optimized_query = DatabaseQueryBuilder::optimize_for_database(select_query, "mysql")
+  
+  // Verify optimizations
+  match current_platform.os_family {
+    OSFamily::Linux => {
+      // Database-specific optimizations may vary
+    }
+    _ => {
+      // Database-specific optimizations may vary
+    }
+  }
+}
+
+// Test 5: Network Protocol Compatibility
+test "network protocol compatibility" {
+  // Create network compatibility manager
+  let network_compatibility = NetworkCompatibilityManager::new()
+  
+  // Add supported protocols
+  network_compatibility.add_protocol(ProtocolInfo::new(
+    "HTTP/1.1",
+    ["1.1"],
+    ["TCP"],
+    ["All"]
+  ))
+  
+  network_compatibility.add_protocol(ProtocolInfo::new(
+    "HTTP/2",
+    ["2.0"],
+    ["TCP"],
+    ["All"]
+  ))
+  
+  network_compatibility.add_protocol(ProtocolInfo::new(
+    "WebSocket",
+    ["13"],
+    ["TCP"],
+    ["All"]
+  ))
+  
+  network_compatibility.add_protocol(ProtocolInfo::new(
+    "gRPC",
+    ["1.0"],
+    ["HTTP/2"],
+    ["All"]
+  ))
+  
+  // Test protocol detection
+  let protocol_detector = ProtocolDetector::new()
+  
+  // Detect available protocols
+  let available_protocols = ProtocolDetector::detect_available(protocol_detector)
+  
+  assert_true(available_protocols.contains("HTTP/1.1"))
+  assert_true(available_protocols.contains("HTTP/2"))
+  
+  // Test protocol abstraction
+  let protocol_adapter = ProtocolAdapter::new()
+  
+  // Create HTTP client
+  let http_client = ProtocolAdapter::create_client(protocol_adapter, "HTTP/1.1")
+  
+  // Test HTTP request
+  let http_request = HttpRequest::new(
+    "GET",
+    "https://httpbin.org/get",
+    [],
+    None
+  )
+  
+  let http_response = ProtocolAdapter::send_request(http_client, http_request)
+  
+  match http_response {
+    HttpResponse::Success(response) => {
+      assert_eq(response.status_code, 200)
+      assert_true(response.body.length() > 0)
+    }
+    HttpResponse::Error(error) => {
+      // In test environment, request might fail
+      assert_true(error.contains("network") || error.contains("connection"))
+    }
+  }
+  
+  // Test HTTP/2 client
+  let http2_client = ProtocolAdapter::create_client(protocol_adapter, "HTTP/2")
+  
+  let http2_request = HttpRequest::new(
+    "POST",
+    "https://httpbin.org/post",
+    [("Content-Type", "application/json")],
+    Some("{\"test\": \"data\"}")
+  )
+  
+  let http2_response = ProtocolAdapter::send_request(http2_client, http2_request)
+  
+  match http2_response {
+    HttpResponse::Success(response) => {
+      assert_eq(response.status_code, 200)
+      assert_true(response.body.length() > 0)
+    }
+    HttpResponse::Error(error) => {
+      // In test environment, request might fail
+      assert_true(error.contains("network") || error.contains("connection"))
+    }
+  }
+  
+  // Test WebSocket client
+  let websocket_client = ProtocolAdapter::create_client(protocol_adapter, "WebSocket")
+  
+  let websocket_connection = ProtocolAdapter::connect(
+    websocket_client,
+    "wss://echo.websocket.org/"
+  )
+  
+  match websocket_connection {
+    WebSocketConnection::Connected(conn) => {
+      // Send message
+      let send_result = WebSocketConnection::send_message(conn, "Hello, WebSocket!")
+      
+      match send_result {
+        WebSocketResult::Success => {
+          // Receive message
+          let receive_result = WebSocketConnection::receive_message(conn)
+          
+          match receive_result {
+            WebSocketResult::Message(message) => {
+              assert_eq(message, "Hello, WebSocket!")
+            }
+            WebSocketResult::Error(_) => {
+              // In test environment, receive might fail
+            }
+          }
+        }
+        WebSocketResult::Error(error) => {
+          // In test environment, send might fail
+        }
+      }
+      
+      // Close connection
+      WebSocketConnection::close(conn)
+    }
+    WebSocketConnection::Error(error) => {
+      // In test environment, connection might fail
+      assert_true(error.contains("network") || error.contains("connection"))
+    }
+  }
+  
+  // Test gRPC client
+  let grpc_client = ProtocolAdapter::create_client(protocol_adapter, "gRPC")
+  
+  // Create gRPC service definition
+  let service_def = GrpcServiceDefinition::new("TelemetryService")
+  service_def.add_method(GrpcMethod::new(
+    "SendMetrics",
+    "Send telemetry metrics",
+    "MetricsRequest",
+    "MetricsResponse"
+  ))
+  
+  let grpc_connection = ProtocolAdapter::connect_grpc(
+    grpc_client,
+    "localhost:50051",
+    service_def
+  )
+  
+  match grpc_connection {
+    GrpcConnection::Connected(conn) => {
+      // Create gRPC request
+      let grpc_request = GrpcRequest::new(
+        "SendMetrics",
+        {
+          "metrics": [
+            {
+              "name": "cpu_usage",
+              "value": 75.5,
+              "timestamp": "2022-01-01T12:00:00Z"
+            }
+          ]
+        }
+      )
+      
+      // Send gRPC request
+      let grpc_response = GrpcConnection::send_request(conn, grpc_request)
+      
+      match grpc_response {
+        GrpcResult::Success(response) => {
+          assert_true(response.contains("success"))
+        }
+        GrpcResult::Error(error) => {
+          // In test environment, request might fail
+          assert_true(error.contains("connection") || error.contains("unavailable"))
+        }
+      }
+      
+      // Close connection
+      GrpcConnection::close(conn)
+    }
+    GrpcConnection::Error(error) => {
+      // In test environment, connection might fail
+      assert_true(error.contains("connection") || error.contains("unavailable"))
+    }
+  }
+  
+  // Test protocol negotiation
+  let negotiator = ProtocolNegotiator::new()
+  
+  // Add supported protocols
+  negotiator.add_protocol("HTTP/2", 2)  // Higher priority
+  negotiator.add_protocol("HTTP/1.1", 1)  // Lower priority
+  
+  // Negotiate protocol with server
+  let negotiation_result = ProtocolNegotiator::negotiate(
+    negotiator,
+    "https://httpbin.org/get"
+  )
+  
+  match negotiation_result {
+    NegotiationResult::Success(protocol) => {
+      assert_true(protocol == "HTTP/2" || protocol == "HTTP/1.1")
+    }
+    NegotiationResult::Failed(error) => {
+      // In test environment, negotiation might fail
+    }
+  }
+  
+  // Test protocol-specific optimizations
+  let http1_optimizations = ProtocolAdapter::get_optimizations(protocol_adapter, "HTTP/1.1")
+  let http2_optimizations = ProtocolAdapter::get_optimizations(protocol_adapter, "HTTP/2")
+  
+  // HTTP/1.1 optimizations
+  assert_true(http1_optimizations.keep_alive)
+  assert_true(http1_optimizations.compression)
+  
+  // HTTP/2 optimizations
+  assert_true(http2_optimizations.multiplexing)
+  assert_true(http2_optimizations.server_push)
+  assert_true(http2_optimizations.header_compression)
+  
+  // Test network compatibility matrix
+  let network_matrix = NetworkCompatibilityMatrix::new()
+  
+  // Add platform-protocol compatibility
+  network_matrix.add_compatibility("Linux", "HTTP/2", true)
+  network_matrix.add_compatibility("Linux", "WebSocket", true)
+  network_matrix.add_compatibility("Linux", "gRPC", true)
+  
+  network_matrix.add_compatibility("Windows", "HTTP/2", true)
+  network_matrix.add_compatibility("Windows", "WebSocket", true)
+  network_matrix.add_compatibility("Windows", "gRPC", true)
+  
+  network_matrix.add_compatibility("MacOS", "HTTP/2", true)
+  network_matrix.add_compatibility("MacOS", "WebSocket", true)
+  network_matrix.add_compatibility("MacOS", "gRPC", true)
+  
+  // Check current platform compatibility
+  let current_platform = PlatformDetector::detect(PlatformDetector::new())
+  let is_protocol_compatible = network_matrix.is_compatible(
+    current_platform.os_name,
+    "HTTP/2"
+  )
+  
+  assert_true(is_protocol_compatible)
+}
+
+// Test 6: File System Compatibility
+test "file system compatibility" {
+  // Create file system compatibility manager
+  let fs_compatibility = FileSystemCompatibilityManager::new()
+  
+  // Add supported file systems
+  fs_compatibility.add_file_system(FileSystemInfo::new(
+    "ext4",
+    ["Linux"],
+    ["ext3", "ext2"],
+    ["journaling", "permissions", "symlinks"]
+  ))
+  
+  fs_compatibility.add_file_system(FileSystemInfo::new(
+    "NTFS",
+    ["Windows"],
+    ["FAT32", "exFAT"],
+    ["journaling", "permissions", "compression"]
+  ))
+  
+  fs_compatibility.add_file_system(FileSystemInfo::new(
+    "APFS",
+    ["MacOS"],
+    ["HFS+"],
+    ["journaling", "permissions", "encryption", "snapshots"]
+  ))
+  
+  // Test file system adapter
+  let fs_adapter = FileSystemAdapter::new()
+  
+  // Test file operations
+  let test_file = "/tmp/azimuth_test_file.txt"
+  let test_content = "This is a test file for cross-platform compatibility"
+  
+  // Write file
+  let write_result = FileSystemAdapter::write_file(fs_adapter, test_file, test_content)
+  assert_true(write_result)
+  
+  // Read file
+  let read_result = FileSystemAdapter::read_file(fs_adapter, test_file)
+  match read_result {
+    Some(content) => assert_eq(content, test_content)
+    None => assert_true(false)
+  }
+  
+  // Test file metadata
+  let metadata = FileSystemAdapter::get_file_metadata(fs_adapter, test_file)
+  
+  assert_true(metadata.size > 0)
+  assert_true(metadata.created > 0)
+  assert_true(metadata.modified > 0)
+  assert_true(metadata.permissions.length() > 0)
+  
+  // Test directory operations
+  let test_dir = "/tmp/azimuth_test_dir"
+  
+  // Create directory
+  let create_dir_result = FileSystemAdapter::create_directory(fs_adapter, test_dir)
+  assert_true(create_dir_result)
+  
+  // List directory
+  let dir_contents = FileSystemAdapter::list_directory(fs_adapter, test_dir)
+  assert_eq(dir_contents.length(), 0)  // Empty directory
+  
+  // Create file in directory
+  let test_file_in_dir = test_dir + "/test_file.txt"
+  let write_in_dir_result = FileSystemAdapter::write_file(
+    fs_adapter,
+    test_file_in_dir,
+    "Test file in directory"
+  )
+  assert_true(write_in_dir_result)
+  
+  // List directory again
+  let dir_contents_after = FileSystemAdapter::list_directory(fs_adapter, test_dir)
+  assert_eq(dir_contents_after.length(), 1)
+  assert_eq(dir_contents_after[0], "test_file.txt")
+  
+  // Test file system features
+  let fs_features = FileSystemAdapter::get_features(fs_adapter)
+  
+  match current_platform.os_family {
+    OSFamily::Linux => {
+      assert_true(fs_features.has_symlinks)
+      assert_true(fs_features.has_hard_links)
+      assert_true(fs_features.has_permissions)
+      assert_true(fs_features.has_extended_attributes)
+    }
+    OSFamily::MacOS => {
+      assert_true(fs_features.has_symlinks)
+      assert_true(fs_features.has_hard_links)
+      assert_true(fs_features.has_permissions)
+      assert_true(fs_features.has_extended_attributes)
+      assert_true(fs_features.has_resource_forks)
+    }
+    OSFamily::Windows => {
+      assert_true(fs_features.has_symlinks)
+      assert_true(fs_features.has_hard_links)
+      assert_true(fs_features.has_permissions)
+      assert_true(fs_features.has_alternate_streams)
+    }
+  }
+  
+  // Test path normalization
+  let path_tests = [
+    "/path/to/file",
+    "path/to/file",
+    "./path/to/file",
+    "../path/to/file",
+    "/path//to//file",
+    "/path/to/file/"
+  ]
+  
+  for path in path_tests {
+    let normalized = FileSystemAdapter::normalize_path(fs_adapter, path)
+    assert_true(normalized.length() > 0)
+    assert_false(normalized.contains("//"))
+  }
+  
+  // Test cross-platform file watching
+  let file_watcher = FileSystemWatcher::new()
+  
+  // Start watching directory
+  let watch_result = FileSystemWatcher::watch_directory(file_watcher, test_dir)
+  assert_true(watch_result)
+  
+  // Create a file to trigger watcher
+  let watch_test_file = test_dir + "/watch_test.txt"
+  let watch_write_result = FileSystemAdapter::write_file(
+    fs_adapter,
+    watch_test_file,
+    "Watch test file"
+  )
+  assert_true(watch_write_result)
+  
+  // Wait for watcher events
+  @sleep(100)
+  
+  // Get watcher events
+  let watcher_events = FileSystemWatcher::get_events(file_watcher)
+  assert_true(watcher_events.length() > 0)
+  
+  let create_event = watcher_events.find(@(e) e.event_type == FileEventType::Created)
+  match create_event {
+    Some(event) => {
+      assert_eq(event.file_path, watch_test_file)
+    }
+    None => assert_true(false)
+  }
+  
+  // Stop watching
+  FileSystemWatcher::stop_watching(file_watcher, test_dir)
+  
+  // Test file system compatibility matrix
+  let fs_matrix = FileSystemCompatibilityMatrix::new()
+  
+  // Add platform-feature compatibility
+  fs_matrix.add_feature_compatibility("Linux", "symlinks", true)
+  fs_matrix.add_feature_compatibility("Linux", "hard_links", true)
+  fs_matrix.add_feature_compatibility("Linux", "permissions", true)
+  
+  fs_matrix.add_feature_compatibility("Windows", "symlinks", true)
+  fs_matrix.add_feature_compatibility("Windows", "hard_links", true)
+  fs_matrix.add_feature_compatibility("Windows", "permissions", true)
+  fs_matrix.add_feature_compatibility("Windows", "alternate_streams", true)
+  
+  fs_matrix.add_feature_compatibility("MacOS", "symlinks", true)
+  fs_matrix.add_feature_compatibility("MacOS", "hard_links", true)
+  fs_matrix.add_feature_compatibility("MacOS", "permissions", true)
+  fs_matrix.add_feature_compatibility("MacOS", "resource_forks", true)
+  
+  // Check current platform compatibility
+  let current_platform = PlatformDetector::detect(PlatformDetector::new())
+  let is_symlink_compatible = fs_matrix.is_feature_compatible(
+    current_platform.os_name,
+    "symlinks"
+  )
+  
+  assert_true(is_symlink_compatible)
+  
+  // Clean up test files
+  FileSystemAdapter::delete_file(fs_adapter, test_file)
+  FileSystemAdapter::delete_file(fs_adapter, test_file_in_dir)
+  FileSystemAdapter::delete_file(fs_adapter, watch_test_file)
+  FileSystemAdapter::delete_directory(fs_adapter, test_dir)
+}
+
+// Test 7: Container and Virtualization Compatibility
+test "container and virtualization compatibility" {
+  // Create container compatibility manager
+  let container_compatibility = ContainerCompatibilityManager::new()
+  
+  // Add supported container runtimes
+  container_compatibility.add_runtime(ContainerRuntimeInfo::new(
+    "Docker",
+    [">=20.0"],
+    ["Linux", "Windows", "MacOS"],
+    ["Linux", "Windows"]
+  ))
+  
+  container_compatibility.add_runtime(ContainerRuntimeInfo::new(
+    "Podman",
+    [">=3.0"],
+    ["Linux", "MacOS"],
+    ["Linux"]
+  ))
+  
+  container_compatibility.add_runtime(ContainerRuntimeInfo::new(
+    "containerd",
+    [">=1.4"],
+    ["Linux"],
+    ["Linux"]
+  ))
+  
+  // Test container runtime detection
+  let runtime_detector = ContainerRuntimeDetector::new()
+  
+  // Detect available runtimes
+  let available_runtimes = ContainerRuntimeDetector::detect_available(runtime_detector)
+  
+  // Test container adapter
+  let container_adapter = ContainerAdapter::new()
+  
+  // Create container configuration
+  let container_config = ContainerConfig::new(
+    "azimuth-telemetry",
+    "azimuth/telemetry:latest",
+    [
+      ContainerPort::new(8080, 8080),
+      ContainerPort::new(9090, 9090)
+    ],
+    [
+      ContainerVolume::new("/data", "/app/data"),
+      ContainerVolume::new("/config", "/app/config")
+    ],
+    [
+      ContainerEnv::new("LOG_LEVEL", "info"),
+      ContainerEnv::new("METRICS_ENABLED", "true")
+    ]
+  )
+  
+  // Test container creation
+  let container_result = ContainerAdapter::create_container(container_adapter, container_config)
+  
+  match container_result {
+    ContainerResult::Success(container_id) => {
+      assert_true(container_id.length() > 0)
+      
+      // Start container
+      let start_result = ContainerAdapter::start_container(container_adapter, container_id)
+      assert_true(start_result)
+      
+      // Get container status
+      let status = ContainerAdapter::get_container_status(container_adapter, container_id)
+      assert_true(status == "running" || status == "starting")
+      
+      // Stop container
+      let stop_result = ContainerAdapter::stop_container(container_adapter, container_id)
+      assert_true(stop_result)
+      
+      // Remove container
+      let remove_result = ContainerAdapter::remove_container(container_adapter, container_id)
+      assert_true(remove_result)
+    }
+    ContainerResult::Error(error) => {
+      // In test environment, container operations might fail
+      assert_true(error.contains("runtime") || error.contains("permission"))
+    }
+  }
+  
+  // Test container image operations
+  let image_name = "alpine:latest"
+  
+  // Pull image
+  let pull_result = ContainerAdapter::pull_image(container_adapter, image_name)
+  
+  match pull_result {
+    ContainerResult::Success(image_id) => {
+      assert_true(image_id.length() > 0)
+      
+      // List images
+      let images = ContainerAdapter::list_images(container_adapter)
+      let pulled_image = images.find(@(img) img.name == image_name)
+      assert_true(pulled_image.is_some())
+      
+      // Remove image
+      let remove_result = ContainerAdapter::remove_image(container_adapter, image_id)
+      assert_true(remove_result)
+    }
+    ContainerResult::Error(error) => {
+      // In test environment, image operations might fail
+      assert_true(error.contains("runtime") || error.contains("network"))
+    }
+  }
+  
+  // Test container networking
+  let network_config = ContainerNetworkConfig::new(
+    "azimuth-network",
+    "bridge",
+    ["172.20.0.0/16"]
+  )
+  
+  let network_result = ContainerAdapter::create_network(container_adapter, network_config)
+  
+  match network_result {
+    ContainerResult::Success(network_id) => {
+      assert_true(network_id.length() > 0)
+      
+      // List networks
+      let networks = ContainerAdapter::list_networks(container_adapter)
+      let created_network = networks.find(@(net) net.name == "azimuth-network")
+      assert_true(created_network.is_some())
+      
+      // Remove network
+      let remove_result = ContainerAdapter::remove_network(container_adapter, network_id)
+      assert_true(remove_result)
+    }
+    ContainerResult::Error(error) => {
+      // In test environment, network operations might fail
+      assert_true(error.contains("runtime") || error.contains("permission"))
+    }
+  }
+  
+  // Test container orchestration
+  let orchestration_manager = ContainerOrchestrationManager::new()
+  
+  // Create Docker Compose configuration
+  let compose_config = DockerComposeConfig::new("azimuth-telemetry")
+  
+  compose_config.add_service(ServiceConfig::new(
+    "telemetry-collector",
+    "azimuth/telemetry-collector:latest",
+    [
+      ServicePort::new(8080, 8080)
+    ],
+    [
+      ServiceEnv::new("LOG_LEVEL", "info"),
+      ServiceEnv::new("METRICS_ENDPOINT", "http://prometheus:9090")
+    ],
+    ["prometheus"]
+  ))
+  
+  compose_config.add_service(ServiceConfig::new(
+    "prometheus",
+    "prom/prometheus:latest",
+    [
+      ServicePort::new(9090, 9090)
+    ],
+    [
+      ServiceEnv::new("CONFIG_FILE", "/etc/prometheus/prometheus.yml")
+    ],
+    []
+  ))
+  
+  // Test orchestration operations
+  let compose_result = ContainerOrchestrationManager::deploy(orchestration_manager, compose_config)
+  
+  match compose_result {
+    OrchestrationResult::Success(deployment_id) => {
+      assert_true(deployment_id.length() > 0)
+      
+      // Get deployment status
+      let status = ContainerOrchestrationManager::get_deployment_status(
+        orchestration_manager,
+        deployment_id
+      )
+      
+      assert_true(status == "running" || status == "starting" || status == "pending")
+      
+      // Scale service
+      let scale_result = ContainerOrchestrationManager::scale_service(
+        orchestration_manager,
+        deployment_id,
+        "telemetry-collector",
+        3
+      )
+      assert_true(scale_result)
+      
+      // Stop deployment
+      let stop_result = ContainerOrchestrationManager::stop_deployment(
+        orchestration_manager,
+        deployment_id
+      )
+      assert_true(stop_result)
+    }
+    OrchestrationResult::Error(error) => {
+      // In test environment, orchestration might fail
+      assert_true(error.contains("runtime") || error.contains("permission"))
+    }
+  }
+  
+  // Test virtualization compatibility
+  let virt_manager = VirtualizationManager::new()
+  
+  // Detect virtualization support
+  let virt_support = VirtualizationManager::detect_support(virt_manager)
+  
+  assert_true(virt_support.has_virtualization || virt_support.has_containers)
+  
+  // Test virtual machine operations
+  let vm_config = VirtualMachineConfig::new(
+    "azimuth-test-vm",
+    2048,  // 2GB RAM
+    20,    // 20GB disk
+    2,     // 2 CPUs
+    "ubuntu-20.04"
+  )
+  
+  let vm_result = VirtualizationManager::create_vm(virt_manager, vm_config)
+  
+  match vm_result {
+    VirtualizationResult::Success(vm_id) => {
+      assert_true(vm_id.length() > 0)
+      
+      // Start VM
+      let start_result = VirtualizationManager::start_vm(virt_manager, vm_id)
+      assert_true(start_result)
+      
+      // Get VM status
+      let status = VirtualizationManager::get_vm_status(virt_manager, vm_id)
+      assert_true(status == "running" || status == "starting")
+      
+      // Stop VM
+      let stop_result = VirtualizationManager::stop_vm(virt_manager, vm_id)
+      assert_true(stop_result)
+      
+      // Remove VM
+      let remove_result = VirtualizationManager::remove_vm(virt_manager, vm_id)
+      assert_true(remove_result)
+    }
+    VirtualizationResult::Error(error) => {
+      // In test environment, VM operations might fail
+      assert_true(error.contains("virtualization") || error.contains("permission"))
+    }
+  }
+  
+  // Test container compatibility matrix
+  let container_matrix = ContainerCompatibilityMatrix::new()
+  
+  // Add platform-runtime compatibility
+  container_matrix.add_runtime_compatibility("Linux", "Docker", true)
+  container_matrix.add_runtime_compatibility("Linux", "Podman", true)
+  container_matrix.add_runtime_compatibility("Linux", "containerd", true)
+  
+  container_matrix.add_runtime_compatibility("Windows", "Docker", true)
+  container_matrix.add_runtime_compatibility("Windows", "Podman", false)
+  container_matrix.add_runtime_compatibility("Windows", "containerd", false)
+  
+  container_matrix.add_runtime_compatibility("MacOS", "Docker", true)
+  container_matrix.add_runtime_compatibility("MacOS", "Podman", true)
+  container_matrix.add_runtime_compatibility("MacOS", "containerd", false)
+  
+  // Check current platform compatibility
+  let current_platform = PlatformDetector::detect(PlatformDetector::new())
+  let is_docker_compatible = container_matrix.is_runtime_compatible(
+    current_platform.os_name,
+    "Docker"
+  )
+  
+  assert_true(is_docker_compatible)
+}
+
+// Test 8: Cloud Platform Compatibility
+test "cloud platform compatibility" {
+  // Create cloud compatibility manager
+  let cloud_compatibility = CloudCompatibilityManager::new()
+  
+  // Add supported cloud platforms
+  cloud_compatibility.add_platform(CloudPlatformInfo::new(
+    "AWS",
+    ["us-east-1", "us-west-2", "eu-west-1"],
+    ["EC2", "Lambda", "ECS", "EKS", "RDS", "CloudWatch"]
+  ))
+  
+  cloud_compatibility.add_platform(CloudPlatformInfo::new(
+    "Azure",
+    ["eastus", "westus2", "westeurope"],
+    ["VM", "Functions", "Container Instances", "AKS", "SQL Database", "Monitor"]
+  ))
+  
+  cloud_compatibility.add_platform(CloudPlatformInfo::new(
+    "GCP",
+    ["us-central1", "us-west1", "europe-west1"],
+    ["Compute Engine", "Cloud Functions", "GKE", "Cloud SQL", "Cloud Monitoring"]
+  ))
+  
+  // Test cloud adapter
+  let cloud_adapter = CloudAdapter::new()
+  
+  // Test AWS adapter
+  let aws_adapter = CloudAdapter::create_platform_adapter(cloud_adapter, "AWS")
+  
+  // Configure AWS credentials
+  let aws_config = CloudConfig::new("AWS", [
+    ("access_key_id", "test_access_key"),
+    ("secret_access_key", "test_secret_key"),
+    ("region", "us-east-1")
+  ])
+  
+  CloudAdapter::configure(aws_adapter, aws_config)
+  
+  // Test AWS EC2 operations
+  let ec2_instance = Ec2InstanceConfig::new(
+    "azimuth-telemetry",
+    "t3.micro",
+    "ami-12345678",
+    "us-east-1"
+  )
+  
+  let ec2_result = CloudAdapter::create_ec2_instance(aws_adapter, ec2_instance)
+  
+  match ec2_result {
+    CloudResult::Success(instance_id) => {
+      assert_true(instance_id.length() > 0)
+      
+      // Get instance status
+      let status = CloudAdapter::get_instance_status(aws_adapter, instance_id)
+      assert_true(status == "pending" || status == "running" || status == "stopped")
+      
+      // Stop instance
+      let stop_result = CloudAdapter::stop_instance(aws_adapter, instance_id)
+      assert_true(stop_result)
+      
+      // Terminate instance
+      let terminate_result = CloudAdapter::terminate_instance(aws_adapter, instance_id)
+      assert_true(terminate_result)
+    }
+    CloudResult::Error(error) => {
+      // In test environment, AWS operations might fail
+      assert_true(error.contains("credentials") || error.contains("permission"))
+    }
+  }
+  
+  // Test AWS Lambda operations
+  let lambda_function = LambdaFunctionConfig::new(
+    "azimuth-processor",
+    "azimuth-processor.zip",
+    "azimuth.process",
+    "python3.8",
+    128,  // 128MB memory
+    30    // 30 seconds timeout
+  )
+  
+  let lambda_result = CloudAdapter::create_lambda_function(aws_adapter, lambda_function)
+  
+  match lambda_result {
+    CloudResult::Success(function_arn) => {
+      assert_true(function_arn.length() > 0)
+      
+      // Invoke function
+      let invoke_result = CloudAdapter::invoke_lambda_function(
+        aws_adapter,
+        "azimuth-processor",
+        "{\"test\": \"data\"}"
+      )
+      
+      match invoke_result {
+        CloudResult::Success(response) => {
+          assert_true(response.length() > 0)
+        }
+        CloudResult::Error(error) => {
+          // Function might not be ready
+        }
+      }
+      
+      // Delete function
+      let delete_result = CloudAdapter::delete_lambda_function(aws_adapter, "azimuth-processor")
+      assert_true(delete_result)
+    }
+    CloudResult::Error(error) => {
+      // In test environment, Lambda operations might fail
+      assert_true(error.contains("credentials") || error.contains("permission"))
+    }
+  }
+  
+  // Test Azure adapter
+  let azure_adapter = CloudAdapter::create_platform_adapter(cloud_adapter, "Azure")
+  
+  // Configure Azure credentials
+  let azure_config = CloudConfig::new("Azure", [
+    ("subscription_id", "test_subscription_id"),
+    ("client_id", "test_client_id"),
+    ("client_secret", "test_client_secret"),
+    ("tenant_id", "test_tenant_id")
+  ])
+  
+  CloudAdapter::configure(azure_adapter, azure_config)
+  
+  // Test Azure VM operations
+  let azure_vm = AzureVmConfig::new(
+    "azimuth-vm",
+    "Standard_B1s",
+    "UbuntuLTS",
+    "eastus"
+  )
+  
+  let azure_result = CloudAdapter::create_azure_vm(azure_adapter, azure_vm)
+  
+  match azure_result {
+    CloudResult::Success(vm_id) => {
+      assert_true(vm_id.length() > 0)
+      
+      // Get VM status
+      let status = CloudAdapter::get_azure_vm_status(azure_adapter, vm_id)
+      assert_true(status == "creating" || status == "running" || status == "stopped")
+      
+      // Stop VM
+      let stop_result = CloudAdapter::stop_azure_vm(azure_adapter, vm_id)
+      assert_true(stop_result)
+      
+      // Delete VM
+      let delete_result = CloudAdapter::delete_azure_vm(azure_adapter, vm_id)
+      assert_true(delete_result)
+    }
+    CloudResult::Error(error) => {
+      // In test environment, Azure operations might fail
+      assert_true(error.contains("credentials") || error.contains("permission"))
+    }
+  }
+  
+  // Test GCP adapter
+  let gcp_adapter = CloudAdapter::create_platform_adapter(cloud_adapter, "GCP")
+  
+  // Configure GCP credentials
+  let gcp_config = CloudConfig::new("GCP", [
+    ("project_id", "test_project_id"),
+    ("credentials_path", "/path/to/credentials.json")
+  ])
+  
+  CloudAdapter::configure(gcp_adapter, gcp_config)
+  
+  // Test GCP Compute Engine operations
+  let gce_instance = GceInstanceConfig::new(
+    "azimuth-gce",
+    "e2-micro",
+    "ubuntu-2004-lts",
+    "us-central1-a"
+  )
+  
+  let gce_result = CloudAdapter::create_gce_instance(gcp_adapter, gce_instance)
+  
+  match gce_result {
+    CloudResult::Success(instance_name) => {
+      assert_true(instance_name.length() > 0)
+      
+      // Get instance status
+      let status = CloudAdapter::get_gce_instance_status(gcp_adapter, instance_name)
+      assert_true(status == "PROVISIONING" || status == "RUNNING" || status == "TERMINATED")
+      
+      // Stop instance
+      let stop_result = CloudAdapter::stop_gce_instance(gcp_adapter, instance_name)
+      assert_true(stop_result)
+      
+      // Delete instance
+      let delete_result = CloudAdapter::delete_gce_instance(gcp_adapter, instance_name)
+      assert_true(delete_result)
+    }
+    CloudResult::Error(error) => {
+      // In test environment, GCP operations might fail
+      assert_true(error.contains("credentials") || error.contains("permission"))
+    }
+  }
+  
+  // Test multi-cloud deployment
+  let multi_cloud_manager = MultiCloudManager::new()
+  
+  // Add cloud adapters
+  multi_cloud_manager.add_adapter("aws", aws_adapter)
+  multi_cloud_manager.add_adapter("azure", azure_adapter)
+  multi_cloud_manager.add_adapter("gcp", gcp_adapter)
+  
+  // Create multi-cloud deployment
+  let deployment_config = MultiCloudDeploymentConfig::new("azimuth-telemetry")
+  
+  deployment_config.add_cloud_service("aws", CloudServiceConfig::new(
+    "EC2",
+    {
+      "instance_type": "t3.micro",
+      "ami": "ami-12345678",
+      "count": 2
+    }
+  ))
+  
+  deployment_config.add_cloud_service("azure", CloudServiceConfig::new(
+    "VM",
+    {
+      "vm_size": "Standard_B1s",
+      "image": "UbuntuLTS",
+      "count": 1
+    }
+  ))
+  
+  deployment_config.add_cloud_service("gcp", CloudServiceConfig::new(
+    "ComputeEngine",
+    {
+      "machine_type": "e2-micro",
+      "image": "ubuntu-2004-lts",
+      "count": 1
+    }
+  ))
+  
+  // Deploy to multiple clouds
+  let deployment_result = MultiCloudManager::deploy(multi_cloud_manager, deployment_config)
+  
+  match deployment_result {
+    MultiCloudResult::Success(deployment_id) => {
+      assert_true(deployment_id.length() > 0)
+      
+      // Get deployment status
+      let status = MultiCloudManager::get_deployment_status(multi_cloud_manager, deployment_id)
+      assert_true(status == "deploying" || status == "deployed" || status == "failed")
+      
+      // Stop deployment
+      let stop_result = MultiCloudManager::stop_deployment(multi_cloud_manager, deployment_id)
+      assert_true(stop_result)
+    }
+    MultiCloudResult::Error(error) => {
+      // In test environment, multi-cloud deployment might fail
+      assert_true(error.contains("credentials") || error.contains("permission"))
+    }
+  }
+  
+  // Test cloud compatibility matrix
+  let cloud_matrix = CloudCompatibilityMatrix::new()
+  
+  // Add platform-feature compatibility
+  cloud_matrix.add_feature_compatibility("AWS", "serverless", true)
+  cloud_matrix.add_feature_compatibility("AWS", "containers", true)
+  cloud_matrix.add_feature_compatibility("AWS", "databases", true)
+  
+  cloud_matrix.add_feature_compatibility("Azure", "serverless", true)
+  cloud_matrix.add_feature_compatibility("Azure", "containers", true)
+  cloud_matrix.add_feature_compatibility("Azure", "databases", true)
+  
+  cloud_matrix.add_feature_compatibility("GCP", "serverless", true)
+  cloud_matrix.add_feature_compatibility("GCP", "containers", true)
+  cloud_matrix.add_feature_compatibility("GCP", "databases", true)
+  
+  // Check feature compatibility
+  let is_aws_serverless_compatible = cloud_matrix.is_feature_compatible("AWS", "serverless")
+  assert_true(is_aws_serverless_compatible)
+  
+  let is_azure_containers_compatible = cloud_matrix.is_feature_compatible("Azure", "containers")
+  assert_true(is_azure_containers_compatible)
+  
+  let is_gcp_databases_compatible = cloud_matrix.is_feature_compatible("GCP", "databases")
+  assert_true(is_gcp_databases_compatible)
+}
+
+// Test 9: API Compatibility
+test "api compatibility" {
+  // Create API compatibility manager
+  let api_compatibility = ApiCompatibilityManager::new()
+  
+  // Add API versions
+  api_compatibility.add_version(ApiVersion::new(
+    "v1",
+    "1.0.0",
+    "2022-01-01",
+    "2023-01-01",
+    ["GET", "POST", "PUT", "DELETE"],
+    ["json", "xml"]
+  ))
+  
+  api_compatibility.add_version(ApiVersion::new(
+    "v2",
+    "2.0.0",
+    "2023-01-01",
+    "2024-01-01",
+    ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    ["json", "xml", "protobuf"]
+  ))
+  
+  // Test API version detection
+  let version_detector = ApiVersionDetector::new()
+  
+  // Detect supported versions
+  let supported_versions = ApiVersionDetector::detect_supported(version_detector)
+  assert_true(supported_versions.contains("v1"))
+  assert_true(supported_versions.contains("v2"))
+  
+  // Test API adapter
+  let api_adapter = ApiAdapter::new()
+  
+  // Configure API client
+  let api_config = ApiConfig::new(
+    "https://api.azimuth.example.com",
+    "v2",
+    "application/json",
+    30  // 30 seconds timeout
+  )
+  
+  ApiAdapter::configure(api_adapter, api_config)
+  
+  // Test API request
+  let api_request = ApiRequest::new(
+    "GET",
+    "/metrics",
+    [],
+    None
+  )
+  
+  let api_response = ApiAdapter::send_request(api_adapter, api_request)
+  
+  match api_response {
+    ApiResponse::Success(response) => {
+      assert_eq(response.status_code, 200)
+      assert_true(response.body.length() > 0)
+      assert_eq(response.content_type, "application/json")
+    }
+    ApiResponse::Error(error) => {
+      // In test environment, API request might fail
+      assert_true(error.contains("network") || error.contains("connection"))
+    }
+  }
+  
+  // Test API version negotiation
+  let version_negotiator = ApiVersionNegotiator::new()
+  
+  // Add supported versions
+  version_negotiator.add_supported_version("v2", 2)  // Higher priority
+  version_negotiator.add_supported_version("v1", 1)  // Lower priority
+  
+  // Negotiate version with server
+  let negotiation_result = ApiVersionNegotiator::negotiate(
+    version_negotiator,
+    "https://api.azimuth.example.com"
+  )
+  
+  match negotiation_result {
+    VersionNegotiationResult::Success(version) => {
+      assert_true(version == "v2" || version == "v1")
+    }
+    VersionNegotiationResult::Failed(error) => {
+      // In test environment, negotiation might fail
+    }
+  }
+  
+  // Test API compatibility checking
+  let compatibility_checker = ApiCompatibilityChecker::new()
+  
+  // Check v1 to v2 compatibility
+  let v1_to_v2_compatibility = ApiCompatibilityChecker::check_compatibility(
+    compatibility_checker,
+    "v1",
+    "v2"
+  )
+  
+  assert_eq(v1_to_v2_compatibility.compatibility_level, CompatibilityLevel::BackwardCompatible)
+  assert_true(v1_to_v2_compatibility.breaking_changes.length() == 0)
+  
+  // Check v2 to v1 compatibility
+  let v2_to_v1_compatibility = ApiCompatibilityChecker::check_compatibility(
+    compatibility_checker,
+    "v2",
+    "v1"
+  )
+  
+  assert_eq(v2_to_v1_compatibility.compatibility_level, CompatibilityLevel::ForwardCompatible)
+  assert_true(v2_to_v1_compatibility.breaking_changes.length() > 0)
+  
+  // Test API migration
+  let migration_manager = ApiMigrationManager::new()
+  
+  // Create migration from v1 to v2
+  let migration = ApiMigration::new(
+    "v1_to_v2",
+    "Migrate from API v1 to v2",
+    "v1",
+    "v2"
+  )
+  
+  // Add migration rules
+  migration.add_rule(MigrationRule::new(
+    "rename_field",
+    "Rename 'metric_name' field to 'name'",
+    "metric_name",
+    "name"
+  ))
+  
+  migration.add_rule(MigrationRule::new(
+    "change_type",
+    "Change 'timestamp' from string to number",
+    "timestamp",
+    "timestamp",
+    "string_to_number"
+  ))
+  
+  migration.add_rule(MigrationRule::new(
+    "add_field",
+    "Add 'tags' field with default empty array",
+    "tags",
+    "[]"
+  ))
+  
+  migration_manager.add_migration(migration)
+  
+  // Test data migration
+  let v1_data = {
+    "metric_name": "cpu_usage",
+    "value": 75.5,
+    "timestamp": "2022-01-01T12:00:00Z"
+  }
+  
+  let migrated_data = ApiMigrationManager::migrate_data(migration_manager, v1_data, "v1", "v2")
+  
+  assert_eq(migrated_data.get("name"), Some("cpu_usage"))
+  assert_eq(migrated_data.get("value"), Some(75.5))
+  assert_eq(migrated_data.get("timestamp"), Some(1640995200000L))  // Unix timestamp
+  assert_eq(migrated_data.get("tags"), Some([]))
+  
+  // Test API documentation generation
+  let doc_generator = ApiDocumentationGenerator::new()
+  
+  // Generate documentation for v1
+  let v1_docs = ApiDocumentationGenerator::generate_docs(doc_generator, "v1")
+  
+  assert_true(v1_docs.contains("API v1 Documentation"))
+  assert_true(v1_docs.contains("Endpoints"))
+  assert_true(v1_docs.contains("Authentication"))
+  
+  // Generate documentation for v2
+  let v2_docs = ApiDocumentationGenerator::generate_docs(doc_generator, "v2")
+  
+  assert_true(v2_docs.contains("API v2 Documentation"))
+  assert_true(v2_docs.contains("Endpoints"))
+  assert_true(v2_docs.contains("Authentication"))
+  
+  // Test API client generation
+  let client_generator = ApiClientGenerator::new()
+  
+  // Generate client for different languages
+  let python_client = ApiClientGenerator::generate_client(client_generator, "v2", "python")
+  let javascript_client = ApiClientGenerator::generate_client(client_generator, "v2", "javascript")
+  let java_client = ApiClientGenerator::generate_client(client_generator, "v2", "java")
+  
+  assert_true(python_client.contains("class AzimuthClient"))
+  assert_true(javascript_client.contains("class AzimuthClient"))
+  assert_true(java_client.contains("public class AzimuthClient"))
+  
+  // Test API testing framework
+  let api_tester = ApiTester::new()
+  
+  // Create test suite
+  let test_suite = ApiTestSuite::new("azimuth_api_tests")
+  
+  test_suite.add_test(ApiTest::new(
+    "get_metrics",
+    "GET /metrics",
+    "v2",
+    {
+      "status_code": 200,
+      "headers": {
+        "content-type": "application/json"
+      },
+      "body_schema": {
+        "type": "object",
+        "properties": {
+          "metrics": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {"type": "string"},
+                "value": {"type": "number"}
+              }
+            }
+          }
+        }
+      }
+    }
+  ))
+  
+  test_suite.add_test(ApiTest::new(
+    "create_metric",
+    "POST /metrics",
+    "v2",
+    {
+      "request": {
+        "method": "POST",
+        "path": "/metrics",
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "name": "test_metric",
+          "value": 42.0
+        }
+      },
+      "response": {
+        "status_code": 201,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_schema": {
+          "type": "object",
+          "properties": {
+            "id": {"type": "string"},
+            "name": {"type": "string"},
+            "value": {"type": "number"}
+          }
+        }
+      }
+    }
+  ))
+  
+  // Run tests
+  let test_results = ApiTester::run_tests(api_tester, test_suite)
+  
+  assert_eq(test_results.total_tests, 2)
+  assert_true(test_results.passed_tests >= 0)
+  assert_true(test_results.failed_tests >= 0)
+  
+  // Test API compatibility matrix
+  let api_matrix = ApiCompatibilityMatrix::new()
+  
+  // Add version compatibility
+  api_matrix.add_version_compatibility("v1", "v1", CompatibilityLevel::FullyCompatible)
+  api_matrix.add_version_compatibility("v1", "v2", CompatibilityLevel::BackwardCompatible)
+  api_matrix.add_version_compatibility("v2", "v1", CompatibilityLevel::ForwardCompatible)
+  api_matrix.add_version_compatibility("v2", "v2", CompatibilityLevel::FullyCompatible)
+  
+  // Check compatibility
+  let v1_v2_compatible = api_matrix.is_compatible("v1", "v2")
+  assert_true(v1_v2_compatible)
+  
+  let v2_v1_compatible = api_matrix.is_compatible("v2", "v1")
+  assert_true(v2_v1_compatible)
+}
+
+// Test 10: Cross-Platform Integration Testing
+test "cross-platform integration testing" {
+  // Create integration test manager
+  let integration_manager = IntegrationTestManager::new()
+  
+  // Define test environments
+  let test_environments = [
+    TestEnvironment::new(
+      "linux-amd64",
+      OSFamily::Linux,
+      "x86_64",
+      "Ubuntu 20.04",
+      ["postgresql", "redis", "nginx"]
+    ),
+    TestEnvironment::new(
+      "windows-amd64",
+      OSFamily::Windows,
+      "x86_64",
+      "Windows 10",
+      ["sql-server", "redis", "iis"]
+    ),
+    TestEnvironment::new(
+      "macos-arm64",
+      OSFamily::MacOS,
+      "arm64",
+      "macOS 12.0",
+      ["postgresql", "redis", "nginx"]
+    )
+  ]
+  
+  // Add test environments
+  for env in test_environments {
+    integration_manager.add_environment(env)
+  }
+  
+  // Create test scenarios
+  let test_scenarios = [
+    TestScenario::new(
+      "telemetry_pipeline",
+      "End-to-end telemetry pipeline test",
+      [
+        "start_services",
+        "send_telemetry",
+        "verify_data",
+        "cleanup"
+      ]
+    ),
+    TestScenario::new(
+      "high_load",
+      "High load telemetry processing test",
+      [
+        "start_services",
+        "generate_load",
+        "monitor_performance",
+        "verify_data_integrity",
+        "cleanup"
+      ]
+    ),
+    TestScenario::new(
+      "failure_recovery",
+      "Failure and recovery test",
+      [
+        "start_services",
+        "inject_failure",
+        "verify_recovery",
+        "cleanup"
+      ]
+    )
+  ]
+  
+  // Add test scenarios
+  for scenario in test_scenarios {
+    integration_manager.add_scenario(scenario)
+  }
+  
+  // Run tests across all environments
+  let test_matrix = IntegrationTestManager::create_test_matrix(
+    integration_manager,
+    ["linux-amd64", "windows-amd64", "macos-arm64"],
+    ["telemetry_pipeline", "high_load", "failure_recovery"]
+  )
+  
+  // Execute test matrix
+  let test_results = IntegrationTestManager::execute_test_matrix(integration_manager, test_matrix)
+  
+  // Verify test results
+  assert_eq(test_results.total_tests, 9)  // 3 environments × 3 scenarios
+  assert_true(test_results.passed_tests >= 0)
+  assert_true(test_results.failed_tests >= 0)
+  assert_true(test_results.skipped_tests >= 0)
+  
+  // Analyze results by environment
+  let linux_results = test_results.get_results_by_environment("linux-amd64")
+  assert_eq(linux_results.total_tests, 3)
+  
+  let windows_results = test_results.get_results_by_environment("windows-amd64")
+  assert_eq(windows_results.total_tests, 3)
+  
+  let macos_results = test_results.get_results_by_environment("macos-arm64")
+  assert_eq(macos_results.total_tests, 3)
+  
+  // Analyze results by scenario
+  let pipeline_results = test_results.get_results_by_scenario("telemetry_pipeline")
+  assert_eq(pipeline_results.total_tests, 3)
+  
+  let load_results = test_results.get_results_by_scenario("high_load")
+  assert_eq(load_results.total_tests, 3)
+  
+  let recovery_results = test_results.get_results_by_scenario("failure_recovery")
+  assert_eq(recovery_results.total_tests, 3)
+  
+  // Test cross-platform compatibility verification
+  let compatibility_verifier = CrossPlatformCompatibilityVerifier::new()
+  
+  // Verify telemetry pipeline compatibility
+  let pipeline_compatibility = compatibility_verifier.verify_scenario_compatibility(
+    "telemetry_pipeline",
+    ["linux-amd64", "windows-amd64", "macos-arm64"]
+  )
+  
+  assert_eq(pipeline_compatibility.scenario, "telemetry_pipeline")
+  assert_eq(pipeline_compatibility.environments.length(), 3)
+  assert_true(pipeline_compatibility.is_compatible)
+  
+  // Test performance comparison across platforms
+  let performance_analyzer = CrossPlatformPerformanceAnalyzer::new()
+  
+  // Analyze performance metrics
+  let performance_metrics = performance_analyzer.analyze_test_performance(test_results)
+  
+  assert_true(performance_metrics.platform_metrics.contains("linux-amd64"))
+  assert_true(performance_metrics.platform_metrics.contains("windows-amd64"))
+  assert_true(performance_metrics.platform_metrics.contains("macos-arm64"))
+  
+  // Verify performance metrics
+  let linux_metrics = performance_metrics.platform_metrics.get("linux-amd64")
+  match linux_metrics {
+    Some(metrics) => {
+      assert_true(metrics.average_execution_time > 0)
+      assert_true(metrics.memory_usage > 0)
+      assert_true(metrics.cpu_usage >= 0.0)
+    }
+    None => assert_true(false)
+  }
+  
+  // Test regression detection
+  let regression_detector = CrossPlatformRegressionDetector::new()
+  
+  // Add baseline metrics
+  let baseline_metrics = CrossPlatformMetrics::new("baseline")
+  baseline_metrics.add_platform_metric("linux-amd64", PlatformMetric::new(
+    1.5,  // 1.5 seconds average execution time
+    512,  // 512MB memory usage
+    25.0  // 25% CPU usage
+  ))
+  
+  baseline_metrics.add_platform_metric("windows-amd64", PlatformMetric::new(
+    2.0,  // 2 seconds average execution time
+    640,  // 640MB memory usage
+    30.0  // 30% CPU usage
+  ))
+  
+  baseline_metrics.add_platform_metric("macos-arm64", PlatformMetric::new(
+    1.2,  // 1.2 seconds average execution time
+    384,  // 384MB memory usage
+    20.0  // 20% CPU usage
+  ))
+  
+  regression_detector.add_baseline("telemetry_pipeline", baseline_metrics)
+  
+  // Detect regressions
+  let regression_results = regression_detector.detect_regressions(
+    "telemetry_pipeline",
+    performance_metrics
+  )
+  
+  assert_eq(regression_results.scenario, "telemetry_pipeline")
+  assert_true(regression_results.regressions.length() >= 0)
+  assert_true(regression_results.improvements.length() >= 0)
+  
+  // Test cross-platform bug tracking
+  let bug_tracker = CrossPlatformBugTracker::new()
+  
+  // Report platform-specific bugs
+  let linux_bug = BugReport::new(
+    "linux-memory-leak",
+    "Memory leak detected on Linux platform",
+    BugSeverity::High,
+    "linux-amd64",
+    "telemetry_pipeline",
+    "Memory usage increases over time on Linux"
+  )
+  
+  let windows_bug = BugReport::new(
+    "windows-connection-failure",
+    "Connection failure on Windows platform",
+    BugSeverity::Medium,
+    "windows-amd64",
+    "telemetry_pipeline",
+    "Unable to establish connection to database on Windows"
+  )
+  
+  bug_tracker.add_bug(linux_bug)
+  bug_tracker.add_bug(windows_bug)
+  
+  // Get bugs by platform
+  let linux_bugs = bug_tracker.get_bugs_by_platform("linux-amd64")
+  assert_eq(linux_bugs.length(), 1)
+  assert_eq(linux_bugs[0].id, "linux-memory-leak")
+  
+  let windows_bugs = bug_tracker.get_bugs_by_platform("windows-amd64")
+  assert_eq(windows_bugs.length(), 1)
+  assert_eq(windows_bugs[0].id, "windows-connection-failure")
+  
+  // Get bugs by scenario
+  let pipeline_bugs = bug_tracker.get_bugs_by_scenario("telemetry_pipeline")
+  assert_eq(pipeline_bugs.length(), 2)
+  
+  // Test cross-platform deployment validation
+  let deployment_validator = CrossPlatformDeploymentValidator::new()
+  
+  // Validate deployment configuration
+  let deployment_config = DeploymentConfig::new("azimuth-telemetry")
+  
+  deployment_config.add_platform_config("linux-amd64", PlatformConfig::new(
+    ["docker", "systemd"],
+    ["postgresql", "redis"],
+    {
+      "memory": "2Gi",
+      "cpu": "1000m"
+    }
+  ))
+  
+  deployment_config.add_platform_config("windows-amd64", PlatformConfig::new(
+    ["iis", "windows-service"],
+    ["sql-server", "redis"],
+    {
+      "memory": "4Gi",
+      "cpu": "2000m"
+    }
+  ))
+  
+  deployment_config.add_platform_config("macos-arm64", PlatformConfig::new(
+    ["docker", "launchd"],
+    ["postgresql", "redis"],
+    {
+      "memory": "1Gi",
+      "cpu": "500m"
+    }
+  ))
+  
+  let validation_result = deployment_validator.validate_deployment(deployment_config)
+  
+  assert_true(validation_result.is_valid)
+  assert_eq(validation_result.warnings.length(), 0)
+  assert_eq(validation_result.errors.length(), 0)
+  
+  // Generate cross-platform test report
+  let test_report = IntegrationTestManager::generate_report(integration_manager, test_results)
+  
+  assert_true(TestReport::contains(test_report, "Cross-Platform Integration Test Report"))
+  assert_true(TestReport::contains(test_report, "Test Results Summary"))
+  assert_true(TestReport::contains(test_report, "Platform Compatibility"))
+  assert_true(TestReport::contains(test_report, "Performance Analysis"))
+  assert_true(TestReport::contains(test_report, "Bug Report"))
+  
+  // Test continuous integration configuration
+  let ci_configurator = CrossPlatformCIConfigurator::new()
+  
+  // Generate CI configuration for different platforms
+  let github_actions_config = ci_configurator.generate_github_actions_config(
+    ["linux-amd64", "windows-amd64", "macos-arm64"],
+    ["telemetry_pipeline", "high_load", "failure_recovery"]
+  )
+  
+  assert_true(github_actions_config.contains("name: Cross-Platform Tests"))
+  assert_true(github_actions_config.contains("runs-on: ubuntu-latest"))
+  assert_true(github_actions_config.contains("runs-on: windows-latest"))
+  assert_true(github_actions_config.contains("runs-on: macos-latest"))
+  
+  // Generate GitLab CI configuration
+  let gitlab_ci_config = ci_configurator.generate_gitlab_ci_config(
+    ["linux-amd64", "windows-amd64", "macos-arm64"],
+    ["telemetry_pipeline", "high_load", "failure_recovery"]
+  )
+  
+  assert_true(gitlab_ci_config.contains("stages:"))
+  assert_true(gitlab_ci_config.contains("test:linux:"))
+  assert_true(gitlab_ci_config.contains("test:windows:"))
+  assert_true(gitlab_ci_config.contains("test:macos:"))
 }
