@@ -1,4 +1,4 @@
-// Azimuth Telemetry System - High Quality Comprehensive Test Suite
+// Azimuth Telemetry System - New High Quality Test Suite
 // This file contains 10 high-quality test cases covering various aspects of the telemetry system
 
 // Test 1: Time Series Data Processing
@@ -464,16 +464,16 @@ fn update_config_value(config : Array[(String, String)], key : String, value : S
 fn validate_config(config : Array[(String, String)], rules : Array[(String, Bool)]) -> Bool {
   for (key, required) in rules {
     if required {
-      let found = false
+      let mut found = false
       for (k, _) in config {
         if k == key {
-          // found = true  // This would be the correct implementation
+          found = true
           break
         }
       }
-      // if !found {
-      //   return false
-      // }
+      if !found {
+        return false
+      }
     }
   }
   true
