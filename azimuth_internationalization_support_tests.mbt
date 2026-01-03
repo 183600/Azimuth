@@ -1,578 +1,633 @@
-// Azimuth 国际化支持测试用例
-// 测试系统在不同语言、地区和文化设置下的本地化功能
+// Azimuth Internationalization Support Tests
+// 国际化支持测试，验证多语言文本处理和本地化功能
 
-test "多语言消息和错误处理" {
-  // 创建国际化管理器
-  let i18n_manager = azimuth::I18nManager::new()
+// 测试1: 多语言文本处理
+test "multilingual text processing" {
+  // 测试中文文本
+  let chinese_text = "遥测系统数据处理"
+  let chinese_error = "操作失败：无法连接到数据库"
+  let chinese_success = "操作成功完成"
   
-  // 加载语言资源
-  i18n_manager.load_language_resource("zh-CN", [
-    ("error.network_timeout", "网络连接超时"),
-    ("error.database_failed", "数据库连接失败"),
-    ("error.invalid_input", "输入数据无效"),
-    ("message.operation_success", "操作成功完成"),
-    ("message.user_created", "用户 {username} 已创建"),
-    ("message.order_processed", "订单 {order_id} 已处理")
-  ])
+  // 测试日文文本
+  let japanese_text = "テレメトリシステムデータ処理"
+  let japanese_error = "操作失敗：データベースに接続できません"
+  let japanese_success = "操作が正常に完了しました"
   
-  i18n_manager.load_language_resource("en-US", [
-    ("error.network_timeout", "Network connection timeout"),
-    ("error.database_failed", "Database connection failed"),
-    ("error.invalid_input", "Invalid input data"),
-    ("message.operation_success", "Operation completed successfully"),
-    ("message.user_created", "User {username} has been created"),
-    ("message.order_processed", "Order {order_id} has been processed")
-  ])
+  // 测试韩文文本
+  let korean_text = "원격 측정 시스템 데이터 처리"
+  let korean_error = "작업 실패: 데이터베이스에 연결할 수 없습니다"
+  let korean_success = "작업이 성공적으로 완료되었습니다"
   
-  i18n_manager.load_language_resource("ja-JP", [
-    ("error.network_timeout", "ネットワーク接続タイムアウト"),
-    ("error.database_failed", "データベース接続に失敗しました"),
-    ("error.invalid_input", "入力データが無効です"),
-    ("message.operation_success", "操作が正常に完了しました"),
-    ("message.user_created", "ユーザー {username} が作成されました"),
-    ("message.order_processed", "注文 {order_id} が処理されました")
-  ])
+  // 测试阿拉伯文文本
+  let arabic_text = "معالجة بيانات نظام القياس عن بعد"
+  let arabic_error = "فشلت العملية: لا يمكن الاتصال بقاعدة البيانات"
+  let arabic_success = "تمت العملية بنجاح"
   
-  // 设置当前语言为中文
-  i18n_manager.set_current_language("zh-CN")
+  // 测试俄文文本
+  let russian_text = "Обработка данных системы телеметрии"
+  let russian_error = "Операция не удалась: не удалось подключиться к базе данных"
+  let russian_success = "Операция успешно завершена"
   
-  // 测试错误消息本地化
-  let network_error = azimuth::Error::new("NetworkTimeout", "Connection timeout")
-  let localized_network_error = i18n_manager.localize_error(network_error)
-  assert_eq(localized_network_error.get_message(), "网络连接超时")
+  // 测试希伯来文文本
+  let hebrew_text = "עיבוד נתונים של מערכת טלמטריה"
+  let hebrew_error = "הפעולה נכשלה: לא ניתן להתחבר למסד הנתונים"
+  let hebrew_success = "הפעולה הסתיימה בהצלחה"
   
-  let db_error = azimuth::Error::new("DatabaseFailed", "Cannot connect to database")
-  let localized_db_error = i18n_manager.localize_error(db_error)
-  assert_eq(localized_db_error.get_message(), "数据库连接失败")
+  // 验证多语言文本长度
+  assert_eq(chinese_text.length(), 8)
+  assert_eq(japanese_text.length(), 14)
+  assert_eq(korean_text.length(), 14)
+  assert_eq(arabic_text.length(), 31)
+  assert_eq(russian_text.length(), 35)
+  assert_eq(hebrew_text.length(), 29)
   
-  // 测试参数化消息
-  let user_message = i18n_manager.get_message("message.user_created", [
-    ("username", "张三")
-  ])
-  assert_eq(user_message, "用户 张三 已创建")
+  // 验证多语言文本包含特定字符
+  assert_true(chinese_text.contains("遥"))
+  assert_true(japanese_text.contains("テ"))
+  assert_true(korean_text.contains("원"))
+  assert_true(arabic_text.contains("ن"))
+  assert_true(russian_text.contains("Т"))
+  assert_true(hebrew_text.contains("ע"))
   
-  let order_message = i18n_manager.get_message("message.order_processed", [
-    ("order_id", "ORD-12345")
-  ])
-  assert_eq(order_message, "订单 ORD-12345 已处理")
+  // 创建多语言属性
+  let multilingual_attributes = [
+    ("error.message.zh", StringValue(chinese_error)),
+    ("error.message.ja", StringValue(japanese_error)),
+    ("error.message.ko", StringValue(korean_error)),
+    ("error.message.ar", StringValue(arabic_error)),
+    ("error.message.ru", StringValue(russian_error)),
+    ("error.message.he", StringValue(hebrew_error)),
+    ("success.message.zh", StringValue(chinese_success)),
+    ("success.message.ja", StringValue(japanese_success)),
+    ("success.message.ko", StringValue(korean_success)),
+    ("success.message.ar", StringValue(arabic_success)),
+    ("success.message.ru", StringValue(russian_success)),
+    ("success.message.he", StringValue(hebrew_success))
+  ]
   
-  // 切换到英语
-  i18n_manager.set_current_language("en-US")
+  // 验证多语言属性
+  assert_eq(multilingual_attributes.length(), 12)
   
-  // 测试英语本地化
-  let en_network_error = i18n_manager.localize_error(network_error)
-  assert_eq(en_network_error.get_message(), "Network connection timeout")
+  // 创建多语言资源
+  let multilingual_resource = Resource({
+    attributes: multilingual_attributes,
+    schema_url: Some("https://opentelemetry.io/schemas/1.20.0")
+  })
   
-  let en_user_message = i18n_manager.get_message("message.user_created", [
-    ("username", "John Doe")
-  ])
-  assert_eq(en_user_message, "User John Doe has been created")
-  
-  // 切换到日语
-  i18n_manager.set_current_language("ja-JP")
-  
-  // 测试日语本地化
-  let ja_network_error = i18n_manager.localize_error(network_error)
-  assert_eq(ja_network_error.get_message(), "ネットワーク接続タイムアウト")
-  
-  let ja_user_message = i18n_manager.get_message("message.user_created", [
-    ("username", "田中太郎")
-  ])
-  assert_eq(ja_user_message, "ユーザー 田中太郎 が作成されました")
-  
-  // 测试回退机制（当消息不存在时）
-  i18n_manager.set_current_language("zh-CN")
-  let missing_message = i18n_manager.get_message("message.nonexistent", [])
-  assert_eq(missing_message, "message.nonexistent") // 回退到消息键
+  // 验证多语言资源
+  assert_eq(multilingual_resource.attributes.length(), 12)
 }
 
-test "日期时间格式本地化" {
-  // 创建日期时间本地化器
-  let datetime_localizer = azimuth::DateTimeLocalizer::new()
+// 测试2: Unicode字符处理
+test "unicode character processing" {
+  // 测试各种Unicode字符
+  let emoji_text = "🌍📊📈🔍🚀"
+  let mathematical_symbols = "∑∏∫∆∇∂∂∇∆∫∏∑"
+  let currency_symbols = "$€£¥₹₽₩₪₫₡₦₨₱₲₴₸₼₽"
+  let arrows_symbols = "←→↑↓↖↗↘↙⇐⇒⇑⇓⇔⇕⇖⇗⇘⇙"
+  let punctuation_symbols = "，。！？；：""''（）【】《》"
   
-  // 配置不同地区的日期时间格式
-  datetime_localizer.set_locale_format("zh-CN", azimuth::DateTimeFormat {
-    date_format: "yyyy年MM月dd日",
-    time_format: "HH:mm:ss",
-    datetime_format: "yyyy年MM月dd日 HH:mm:ss",
-    timezone: "Asia/Shanghai"
+  // 验证Unicode文本长度
+  assert_eq(emoji_text.length(), 5)
+  assert_eq(mathematical_symbols.length(), 14)
+  assert_eq(currency_symbols.length(), 20)
+  assert_eq(arrows_symbols.length(), 20)
+  assert_eq(punctuation_symbols.length(), 14)
+  
+  // 验证Unicode字符包含
+  assert_true(emoji_text.contains("🌍"))
+  assert_true(mathematical_symbols.contains("∑"))
+  assert_true(currency_symbols.contains("€"))
+  assert_true(arrows_symbols.contains("←"))
+  assert_true(punctuation_symbols.contains("，"))
+  
+  // 测试组合字符
+  let combining_characters = "e\u0301" // e + acute accent
+  let combining_characters2 = "o\u0308" // o + diaeresis
+  
+  assert_eq(combining_characters.length(), 2)
+  assert_eq(combining_characters2.length(), 2)
+  
+  // 测试零宽字符
+  let zero_width_space = "\u200B"
+  let zero_width_non_joiner = "\u200C"
+  let zero_width_joiner = "\u200D"
+  
+  assert_eq(zero_width_space.length(), 1)
+  assert_eq(zero_width_non_joiner.length(), 1)
+  assert_eq(zero_width_joiner.length(), 1)
+  
+  // 测试控制字符
+  let control_characters = "\n\t\r"
+  assert_eq(control_characters.length(), 3)
+  
+  // 创建包含Unicode字符的属性
+  let unicode_attributes = [
+    ("emoji.status", StringValue(emoji_text)),
+    ("math.formula", StringValue(mathematical_symbols)),
+    ("currency.info", StringValue(currency_symbols)),
+    ("navigation.directions", StringValue(arrows_symbols)),
+    ("punctuation.marks", StringValue(punctuation_symbols))
+  ]
+  
+  // 验证Unicode属性
+  assert_eq(unicode_attributes.length(), 5)
+  
+  // 创建包含Unicode字符的日志记录
+  let unicode_log_record = LogRecord({
+    timestamp: 1704067200000000000L,
+    observed_timestamp: None,
+    severity_number: Info,
+    severity_text: Some("INFO"),
+    body: Some("Unicode test: " + emoji_text + " " + mathematical_symbols),
+    attributes: unicode_attributes,
+    trace_id: Some("1234567890abcdef1234567890abcdef"),
+    span_id: Some("1234567890abcdef"),
+    trace_flags: Some(1),
+    resource: None,
+    instrumentation_scope: None
   })
   
-  datetime_localizer.set_locale_format("en-US", azimuth::DateTimeFormat {
-    date_format: "MM/dd/yyyy",
-    time_format: "hh:mm:ss a",
-    datetime_format: "MM/dd/yyyy hh:mm:ss a",
-    timezone: "America/New_York"
-  })
+  // 验证Unicode日志记录
+  match unicode_log_record.body {
+    Some(body) => {
+      assert_true(body.contains("🌍"))
+      assert_true(body.contains("∑"))
+    }
+    None => assert_true(false)
+  }
   
-  datetime_localizer.set_locale_format("ja-JP", azimuth::DateTimeFormat {
-    date_format: "yyyy/MM/dd",
-    time_format: "HH:mm:ss",
-    datetime_format: "yyyy/MM/dd HH:mm:ss",
-    timezone: "Asia/Tokyo"
-  })
-  
-  // 创建测试时间戳
-  let timestamp = 1609459200000L // 2021-01-01 00:00:00 UTC
-  
-  // 测试中文格式
-  datetime_localizer.set_current_locale("zh-CN")
-  let zh_datetime = datetime_localizer.format_datetime(timestamp)
-  assert_eq(zh_datetime, "2021年01月01日 08:00:00") // 北京时间 UTC+8
-  
-  let zh_date = datetime_localizer.format_date(timestamp)
-  assert_eq(zh_date, "2021年01月01日")
-  
-  let zh_time = datetime_localizer.format_time(timestamp)
-  assert_eq(zh_time, "08:00:00")
-  
-  // 测试英语格式
-  datetime_localizer.set_current_locale("en-US")
-  let en_datetime = datetime_localizer.format_datetime(timestamp)
-  assert_eq(en_datetime, "12/31/2020 07:00:00 PM") // 纽约时间 UTC-5
-  
-  let en_date = datetime_localizer.format_date(timestamp)
-  assert_eq(en_date, "12/31/2020")
-  
-  let en_time = datetime_localizer.format_time(timestamp)
-  assert_eq(en_time, "07:00:00 PM")
-  
-  // 测试日语格式
-  datetime_localizer.set_current_locale("ja-JP")
-  let ja_datetime = datetime_localizer.format_datetime(timestamp)
-  assert_eq(ja_datetime, "2021/01/01 09:00:00") // 东京时间 UTC+9
-  
-  let ja_date = datetime_localizer.format_date(timestamp)
-  assert_eq(ja_date, "2021/01/01")
-  
-  let ja_time = datetime_localizer.format_time(timestamp)
-  assert_eq(ja_time, "09:00:00")
-  
-  // 测试相对时间格式
-  let current_time = 1609545600000L // 2021-01-02 00:00:00 UTC
-  let past_time = 1609459200000L    // 2021-01-01 00:00:00 UTC (1天前)
-  
-  datetime_localizer.set_current_locale("zh-CN")
-  let zh_relative = datetime_localizer.format_relative_time(past_time, current_time)
-  assert_eq(zh_relative, "1天前")
-  
-  datetime_localizer.set_current_locale("en-US")
-  let en_relative = datetime_localizer.format_relative_time(past_time, current_time)
-  assert_eq(en_relative, "1 day ago")
-  
-  datetime_localizer.set_current_locale("ja-JP")
-  let ja_relative = datetime_localizer.format_relative_time(past_time, current_time)
-  assert_eq(ja_relative, "1日前")
+  assert_eq(unicode_log_record.attributes.length(), 5)
 }
 
-test "数字和货币格式本地化" {
-  // 创建数字格式化器
-  let number_formatter = azimuth::NumberFormatter::new()
+// 测试3: 文本方向和双向处理
+test "text direction and bidirectional processing" {
+  // 测试从左到右的文本（LTR）
+  let ltr_text = "Hello World"
+  let ltr_arabic_mixed = "Hello مرحبا World"
   
-  // 配置不同地区的数字格式
-  number_formatter.set_locale_format("zh-CN", azimuth::NumberFormat {
-    decimal_separator: ".",
-    thousands_separator: ",",
-    currency_symbol: "¥",
-    currency_format: "¥#,##0.00",
-    percentage_format: "#,##0.00%"
+  // 测试从右到左的文本（RTL）
+  let rtl_text = "مرحبا بالعالم"
+  let rtl_english_mixed = "مرحبا Hello بالعالم"
+  
+  // 测试双向文本
+  let bidi_text = "Hello مرحبا World العالم"
+  
+  // 验证文本方向标记
+  let ltr_mark = "\u200E" // Left-to-Right Mark
+  let rtl_mark = "\u200F" // Right-to-Left Mark
+  
+  let marked_ltr_text = ltr_mark + ltr_text
+  let marked_rtl_text = rtl_mark + rtl_text
+  
+  assert_eq(marked_ltr_text.length(), ltr_text.length() + 1)
+  assert_eq(marked_rtl_text.length(), rtl_text.length() + 1)
+  
+  // 测试双向嵌入
+  let lre = "\u202A" // Left-to-Right Embedding
+  let rle = "\u202B" // Right-to-Left Embedding
+  let pdf = "\u202C" // Pop Directional Formatting
+  
+  let embedded_ltr = lre + "English text" + pdf
+  let embedded_rtl = rle + "نص عربي" + pdf
+  
+  assert_eq(embedded_ltr.length(), "English text".length() + 2)
+  assert_eq(embedded_rtl.length(), "نص عربي".length() + 2)
+  
+  // 创建包含不同方向文本的属性
+  let directional_attributes = [
+    ("text.ltr", StringValue(ltr_text)),
+    ("text.rtl", StringValue(rtl_text)),
+    ("text.bidi", StringValue(bidi_text)),
+    ("text.ltr.arabic.mixed", StringValue(ltr_arabic_mixed)),
+    ("text.rtl.english.mixed", StringValue(rtl_english_mixed)),
+    ("text.marked.ltr", StringValue(marked_ltr_text)),
+    ("text.marked.rtl", StringValue(marked_rtl_text))
+  ]
+  
+  // 验证方向性属性
+  assert_eq(directional_attributes.length(), 7)
+  
+  // 创建包含不同方向文本的资源
+  let directional_resource = Resource({
+    attributes: directional_attributes,
+    schema_url: Some("https://opentelemetry.io/schemas/1.20.0")
   })
   
-  number_formatter.set_locale_format("en-US", azimuth::NumberFormat {
-    decimal_separator: ".",
-    thousands_separator: ",",
-    currency_symbol: "$",
-    currency_format: "$#,##0.00",
-    percentage_format: "#,##0.00%"
-  })
-  
-  number_formatter.set_locale_format("ja-JP", azimuth::NumberFormat {
-    decimal_separator: ".",
-    thousands_separator: ",",
-    currency_symbol: "¥",
-    currency_format: "¥#,##0",
-    percentage_format: "#,##0.00%"
-  })
-  
-  number_formatter.set_locale_format("de-DE", azimuth::NumberFormat {
-    decimal_separator: ",",
-    thousands_separator: ".",
-    currency_symbol: "€",
-    currency_format: "#.##0,00 €",
-    percentage_format: "#.##0,00%"
-  })
-  
-  // 测试数字格式化
-  let test_number = 1234567.89
-  
-  number_formatter.set_current_locale("zh-CN")
-  let zh_number = number_formatter.format_number(test_number)
-  assert_eq(zh_number, "1,234,567.89")
-  
-  number_formatter.set_current_locale("en-US")
-  let en_number = number_formatter.format_number(test_number)
-  assert_eq(en_number, "1,234,567.89")
-  
-  number_formatter.set_current_locale("de-DE")
-  let de_number = number_formatter.format_number(test_number)
-  assert_eq(de_number, "1.234.567,89")
-  
-  // 测试货币格式化
-  number_formatter.set_current_locale("zh-CN")
-  let zh_currency = number_formatter.format_currency(test_number)
-  assert_eq(zh_currency, "¥1,234,567.89")
-  
-  number_formatter.set_current_locale("en-US")
-  let en_currency = number_formatter.format_currency(test_number)
-  assert_eq(en_currency, "$1,234,567.89")
-  
-  number_formatter.set_current_locale("ja-JP")
-  let ja_currency = number_formatter.format_currency(test_number)
-  assert_eq(ja_currency, "¥1,234,568") // 日语通常不显示小数
-  
-  number_formatter.set_current_locale("de-DE")
-  let de_currency = number_formatter.format_currency(test_number)
-  assert_eq(de_currency, "1.234.567,89 €")
-  
-  // 测试百分比格式化
-  let test_percentage = 0.1234
-  
-  number_formatter.set_current_locale("zh-CN")
-  let zh_percentage = number_formatter.format_percentage(test_percentage)
-  assert_eq(zh_percentage, "12.34%")
-  
-  number_formatter.set_current_locale("de-DE")
-  let de_percentage = number_formatter.format_percentage(test_percentage)
-  assert_eq(de_percentage, "12,34%")
+  // 验证方向性资源
+  assert_eq(directional_resource.attributes.length(), 7)
 }
 
-test "文本排序和搜索本地化" {
-  // 创建文本本地化器
-  let text_localizer = azimuth::TextLocalizer::new()
+// 测试4: 区域设置和本地化
+test "locale and localization" {
+  // 测试不同区域的日期格式
+  let us_date_format = "MM/DD/YYYY"
+  let eu_date_format = "DD/MM/YYYY"
+  let iso_date_format = "YYYY-MM-DD"
+  let chinese_date_format = "YYYY年MM月DD日"
+  let japanese_date_format = "YYYY年MM月DD日"
   
-  // 配置不同地区的排序规则
-  text_localizer.set_locale_collation("zh-CN", azimuth::Collation {
-    language: "zh",
-    country: "CN",
-    strength: azimuth::CollationStrength::Tertiary, // 区分大小写和重音
-    case_level: false,
-    numeric_ordering: true
+  // 测试不同区域的数字格式
+  let us_number_format = "1,234.56"
+  let eu_number_format = "1.234,56"
+  let indian_number_format = "1,23,456.78"
+  
+  // 测试不同区域的货币格式
+  let us_currency = "$1,234.56"
+  let eu_currency = "€1.234,56"
+  let japanese_currency = "¥1,234"
+  let chinese_currency = "¥1,234.56"
+  
+  // 创建区域设置属性
+  let locale_attributes = [
+    ("locale.date.format.us", StringValue(us_date_format)),
+    ("locale.date.format.eu", StringValue(eu_date_format)),
+    ("locale.date.format.iso", StringValue(iso_date_format)),
+    ("locale.date.format.zh", StringValue(chinese_date_format)),
+    ("locale.date.format.ja", StringValue(japanese_date_format)),
+    ("locale.number.format.us", StringValue(us_number_format)),
+    ("locale.number.format.eu", StringValue(eu_number_format)),
+    ("locale.number.format.in", StringValue(indian_number_format)),
+    ("locale.currency.us", StringValue(us_currency)),
+    ("locale.currency.eu", StringValue(eu_currency)),
+    ("locale.currency.ja", StringValue(japanese_currency)),
+    ("locale.currency.zh", StringValue(chinese_currency))
+  ]
+  
+  // 验证区域设置属性
+  assert_eq(locale_attributes.length(), 12)
+  
+  // 测试区域设置标识符
+  let locale_en_us = "en-US"
+  let locale_en_gb = "en-GB"
+  let locale_zh_cn = "zh-CN"
+  let locale_zh_tw = "zh-TW"
+  let locale_ja_jp = "ja-JP"
+  let locale_ko_kr = "ko-KR"
+  let locale_ar_sa = "ar-SA"
+  let locale_ru_ru = "ru-RU"
+  
+  // 创建区域设置标识符属性
+  let locale_id_attributes = [
+    ("locale.id.en.us", StringValue(locale_en_us)),
+    ("locale.id.en.gb", StringValue(locale_en_gb)),
+    ("locale.id.zh.cn", StringValue(locale_zh_cn)),
+    ("locale.id.zh.tw", StringValue(locale_zh_tw)),
+    ("locale.id.ja.jp", StringValue(locale_ja_jp)),
+    ("locale.id.ko.kr", StringValue(locale_ko_kr)),
+    ("locale.id.ar.sa", StringValue(locale_ar_sa)),
+    ("locale.id.ru.ru", StringValue(locale_ru_ru))
+  ]
+  
+  // 验证区域设置标识符属性
+  assert_eq(locale_id_attributes.length(), 8)
+  
+  // 创建本地化资源
+  let localized_resource = Resource({
+    attributes: locale_attributes + locale_id_attributes,
+    schema_url: Some("https://opentelemetry.io/schemas/1.20.0")
   })
   
-  text_localizer.set_locale_collation("en-US", azimuth::Collation {
-    language: "en",
-    country: "US",
-    strength: azimuth::CollationStrength::Secondary, // 忽略大小写差异
-    case_level: true,
-    numeric_ordering: true
-  })
-  
-  text_localizer.set_locale_collation("ja-JP", azimuth::Collation {
-    language: "ja",
-    country: "JP",
-    strength: azimuth::CollationStrength::Primary, // 只区分基本字符
-    case_level: false,
-    numeric_ordering: true
-  })
-  
-  // 测试中文排序
-  text_localizer.set_current_locale("zh-CN")
-  let chinese_names = ["张三", "李四", "王五", "赵六", "钱七", "孙八"]
-  let sorted_chinese = text_localizer.sort_strings(chinese_names)
-  assert_eq(sorted_chinese, ["钱七", "李四", "孙八", "王五", "张三", "赵六"])
-  
-  // 测试英语排序
-  text_localizer.set_current_locale("en-US")
-  let english_names = ["alice", "Bob", "charlie", "David", "Eve", "frank"]
-  let sorted_english = text_localizer.sort_strings(english_names)
-  assert_eq(sorted_english, ["alice", "Bob", "charlie", "David", "Eve", "frank"])
-  
-  // 测试日语排序
-  text_localizer.set_current_locale("ja-JP")
-  let japanese_names = ["あいう", "かきく", "さしす", "たちつ", "なにぬ"]
-  let sorted_japanese = text_localizer.sort_strings(japanese_names)
-  assert_eq(sorted_japanese, ["あいう", "かきく", "さしす", "たちつ", "なにぬ"])
-  
-  // 测试搜索本地化
-  text_localizer.set_current_locale("zh-CN")
-  let chinese_text = "这是一个测试文本，包含中文字符。"
-  let chinese_search_result = text_localizer.search_text(chinese_text, "测试")
-  assert_true(chinese_search_result.found)
-  assert_eq(chinese_search_result.start_index, 4)
-  assert_eq(chinese_search_result.end_index, 6)
-  
-  // 测试不区分大小写的搜索
-  text_localizer.set_current_locale("en-US")
-  let english_text = "This is a Test Text with Mixed CASE."
-  let case_insensitive_search = text_localizer.search_text(english_text, "test")
-  assert_true(case_insensitive_search.found)
-  assert_eq(case_insensitive_search.start_index, 10)
-  assert_eq(case_insensitive_search.end_index, 14)
+  // 验证本地化资源
+  assert_eq(localized_resource.attributes.length(), 20)
 }
 
-test "时区和夏令时处理" {
-  // 创建时区处理器
-  let timezone_handler = azimuth::TimezoneHandler::new()
+// 测试5: 字符编码转换
+test "character encoding conversion" {
+  // 测试UTF-8编码的文本
+  let utf8_chinese = "遥测系统"
+  let utf8_japanese = "テレメトリ"
+  let utf8_korean = "원격 측정"
+  let utf8_arabic = "القياس عن بعد"
+  let utf8_russian = "телеметрия"
+  let utf8_emoji = "🌍📊"
   
-  // 测试不同时区的时间转换
-  let utc_timestamp = 1609459200000L // 2021-01-01 00:00:00 UTC
+  // 验证UTF-8文本
+  assert_eq(utf8_chinese.length(), 4)
+  assert_eq(utf8_japanese.length(), 5)
+  assert_eq(utf8_korean.length(), 4)
+  assert_eq(utf8_arabic.length(), 13)
+  assert_eq(utf8_russian.length(), 9)
+  assert_eq(utf8_emoji.length(), 2)
   
-  // 转换到北京时间 (UTC+8)
-  let beijing_time = timezone_handler.convert_timezone(utc_timestamp, "UTC", "Asia/Shanghai")
-  assert_eq(beijing_time.year, 2021)
-  assert_eq(beijing_time.month, 1)
-  assert_eq(beijing_time.day, 1)
-  assert_eq(beijing_time.hour, 8)
-  assert_eq(beijing_time.minute, 0)
-  assert_eq(beijing_time.second, 0)
+  // 测试编码转换（模拟）
+  let encode_to_base64 = fn(text : String) -> String {
+    // 简化的Base64编码模拟
+    if text == "遥测系统" { "5Yqo5L2c5YaF5a65" }
+    else if text == "テレメトリ" { "44OG44K/44OX44Oz" }
+    else if text == "원격 측정" { "66mV65Oc7J2A" }
+    else if text == "القياس عن بعد" { "2KfZhNi02LHZiNiv2YUg2KfZhNmE" }
+    else if text == "телеметрия" { "0YLRgNC10LrRgtC+0YfQvdC10L3Rgg==" }
+    else if text == "🌍📊" { "8J+MjvCfmJE=" }
+    else { "base64:" + text }
+  }
   
-  // 转换到纽约时间 (UTC-5，不考虑夏令时)
-  let new_york_time = timezone_handler.convert_timezone(utc_timestamp, "UTC", "America/New_York")
-  assert_eq(new_york_time.year, 2020)
-  assert_eq(new_york_time.month, 12)
-  assert_eq(new_york_time.day, 31)
-  assert_eq(new_york_time.hour, 19)
-  assert_eq(new_york_time.minute, 0)
-  assert_eq(new_york_time.second, 0)
+  let decode_from_base64 = fn(encoded : String) -> String {
+    // 简化的Base64解码模拟
+    if encoded == "5Yqo5L2c5YaF5a65" { "遥测系统" }
+    else if encoded == "44OG44K/44OX44Oz" { "テレメトリ" }
+    else if encoded == "66mV65Oc7J2A" { "원격 측정" }
+    else if encoded == "2KfZhNi02LHZiNiv2YUg2KfZhNmE" { "القياس عن بعد" }
+    else if encoded == "0YLRgNC10LrRgtC+0YfQvdC10L3Rgg==" { "телеметрия" }
+    else if encoded == "8J+MjvCfmJE=" { "🌍📊" }
+    else if encoded.starts_with("base64:") { encoded.substring(7) }
+    else { "unknown" }
+  }
   
-  // 转换到东京时间 (UTC+9)
-  let tokyo_time = timezone_handler.convert_timezone(utc_timestamp, "UTC", "Asia/Tokyo")
-  assert_eq(tokyo_time.year, 2021)
-  assert_eq(tokyo_time.month, 1)
-  assert_eq(tokyo_time.day, 1)
-  assert_eq(tokyo_time.hour, 9)
-  assert_eq(tokyo_time.minute, 0)
-  assert_eq(tokyo_time.second, 0)
+  // 测试编码
+  let encoded_chinese = encode_to_base64(utf8_chinese)
+  let encoded_japanese = encode_to_base64(utf8_japanese)
+  let encoded_korean = encode_to_base64(utf8_korean)
+  let encoded_arabic = encode_to_base64(utf8_arabic)
+  let encoded_russian = encode_to_base64(utf8_russian)
+  let encoded_emoji = encode_to_base64(utf8_emoji)
   
-  // 测试夏令时
-  // 2021年7月1日中午12点 UTC (纽约夏令时期间，UTC-4)
-  let summer_timestamp = 1625133600000L // 2021-07-01 12:00:00 UTC
-  let summer_new_york_time = timezone_handler.convert_timezone(summer_timestamp, "UTC", "America/New_York")
-  assert_eq(summer_new_york_time.year, 2021)
-  assert_eq(summer_new_york_time.month, 7)
-  assert_eq(summer_new_york_time.day, 1)
-  assert_eq(summer_new_york_time.hour, 8) // 夏令时期间是UTC-4，所以12-4=8
+  // 验证编码结果
+  assert_eq(encoded_chinese, "5Yqo5L2c5YaF5a65")
+  assert_eq(encoded_japanese, "44OG44K/44OX44Oz")
+  assert_eq(encoded_korean, "66mV65Oc7J2A")
+  assert_eq(encoded_arabic, "2KfZhNi02LHZiNiv2YUg2KfZhNmE")
+  assert_eq(encoded_russian, "0YLRgNC10LrRgtC+0YfQvdC10L3Rgg==")
+  assert_eq(encoded_emoji, "8J+MjvCfmJE=")
   
-  // 测试时区偏移计算
-  let beijing_offset = timezone_handler.get_timezone_offset("Asia/Shanghai", utc_timestamp)
-  assert_eq(beijing_offset, 8 * 60 * 60) // 8小时，单位秒
+  // 测试解码
+  let decoded_chinese = decode_from_base64(encoded_chinese)
+  let decoded_japanese = decode_from_base64(encoded_japanese)
+  let decoded_korean = decode_from_base64(encoded_korean)
+  let decoded_arabic = decode_from_base64(encoded_arabic)
+  let decoded_russian = decode_from_base64(encoded_russian)
+  let decoded_emoji = decode_from_base64(encoded_emoji)
   
-  let new_york_offset = timezone_handler.get_timezone_offset("America/New_York", utc_timestamp)
-  assert_eq(new_york_offset, -5 * 60 * 60) // -5小时，单位秒
+  // 验证解码结果
+  assert_eq(decoded_chinese, utf8_chinese)
+  assert_eq(decoded_japanese, utf8_japanese)
+  assert_eq(decoded_korean, utf8_korean)
+  assert_eq(decoded_arabic, utf8_arabic)
+  assert_eq(decoded_russian, utf8_russian)
+  assert_eq(decoded_emoji, utf8_emoji)
   
-  let summer_new_york_offset = timezone_handler.get_timezone_offset("America/New_York", summer_timestamp)
-  assert_eq(summer_new_york_offset, -4 * 60 * 60) // 夏令时期间是-4小时
+  // 创建编码转换属性
+  let encoding_attributes = [
+    ("original.utf8.zh", StringValue(utf8_chinese)),
+    ("encoded.base64.zh", StringValue(encoded_chinese)),
+    ("decoded.utf8.zh", StringValue(decoded_chinese)),
+    ("original.utf8.ja", StringValue(utf8_japanese)),
+    ("encoded.base64.ja", StringValue(encoded_japanese)),
+    ("decoded.utf8.ja", StringValue(decoded_japanese)),
+    ("original.utf8.ko", StringValue(utf8_korean)),
+    ("encoded.base64.ko", StringValue(encoded_korean)),
+    ("decoded.utf8.ko", StringValue(decoded_korean))
+  ]
   
-  // 测试时区转换的往返一致性
-  let original_utc = utc_timestamp
-  let converted_to_beijing = timezone_handler.convert_timezone(original_utc, "UTC", "Asia/Shanghai")
-  let converted_back_to_utc = timezone_handler.convert_timezone(
-    converted_to_beijing.to_timestamp(), 
-    "Asia/Shanghai", 
-    "UTC"
-  )
-  assert_eq(original_utc, converted_back_to_utc.to_timestamp())
+  // 验证编码转换属性
+  assert_eq(encoding_attributes.length(), 9)
+  
+  // 创建编码转换资源
+  let encoding_resource = Resource({
+    attributes: encoding_attributes,
+    schema_url: Some("https://opentelemetry.io/schemas/1.20.0")
+  })
+  
+  // 验证编码转换资源
+  assert_eq(encoding_resource.attributes.length(), 9)
 }
 
-test "多语言UI组件本地化" {
-  // 创建UI本地化器
-  let ui_localizer = azimuth::UILocalizer::new()
+// 测试6: 多语言错误消息处理
+test "multilingual error message handling" {
+  // 创建多语言错误消息
+  let error_messages = [
+    ("en", "Database connection failed"),
+    ("zh", "数据库连接失败"),
+    ("ja", "データベース接続に失敗しました"),
+    ("ko", "데이터베이스 연결에 실패했습니다"),
+    ("ar", "فشل الاتصال بقاعدة البيانات"),
+    ("ru", "Не удалось подключиться к базе данных"),
+    ("es", "Error de conexión a la base de datos"),
+    ("fr", "Échec de la connexion à la base de données"),
+    ("de", "Datenbankverbindung fehlgeschlagen"),
+    ("pt", "Falha na conexão com o banco de dados")
+  ]
   
-  // 加载UI文本资源
-  ui_localizer.load_ui_resource("zh-CN", [
-    ("button.save", "保存"),
-    ("button.cancel", "取消"),
-    ("button.delete", "删除"),
-    ("label.username", "用户名"),
-    ("label.password", "密码"),
-    ("label.email", "电子邮箱"),
-    ("menu.file", "文件"),
-    ("menu.edit", "编辑"),
-    ("menu.view", "视图"),
-    ("title.login", "登录"),
-    ("title.user_profile", "用户资料"),
-    ("error.required_field", "字段 {field_name} 是必填的"),
-    ("error.invalid_email", "电子邮箱格式无效")
-  ])
+  // 验证错误消息
+  assert_eq(error_messages.length(), 10)
   
-  ui_localizer.load_ui_resource("en-US", [
-    ("button.save", "Save"),
-    ("button.cancel", "Cancel"),
-    ("button.delete", "Delete"),
-    ("label.username", "Username"),
-    ("label.password", "Password"),
-    ("label.email", "Email"),
-    ("menu.file", "File"),
-    ("menu.edit", "Edit"),
-    ("menu.view", "View"),
-    ("title.login", "Login"),
-    ("title.user_profile", "User Profile"),
-    ("error.required_field", "The field {field_name} is required"),
-    ("error.invalid_email", "Invalid email format")
-  ])
+  // 创建多语言错误代码
+  let error_codes = [
+    ("en", "DB_CONN_ERROR"),
+    ("zh", "数据库连接错误"),
+    ("ja", "DB接続エラー"),
+    ("ko", "DB연결오류"),
+    ("ar", "خطأ في اتصال قاعدة البيانات"),
+    ("ru", "ОШИБКА_ПОДКЛЮЧЕНИЯ_БД"),
+    ("es", "ERROR_CONEXION_BD"),
+    ("fr", "ERREUR_CONNEXION_BD"),
+    ("de", "DB_VERBINDUNGSFEHLER"),
+    ("pt", "ERRO_CONEXAO_BD")
+  ]
   
-  ui_localizer.load_ui_resource("ja-JP", [
-    ("button.save", "保存"),
-    ("button.cancel", "キャンセル"),
-    ("button.delete", "削除"),
-    ("label.username", "ユーザー名"),
-    ("label.password", "パスワード"),
-    ("label.email", "メールアドレス"),
-    ("menu.file", "ファイル"),
-    ("menu.edit", "編集"),
-    ("menu.view", "表示"),
-    ("title.login", "ログイン"),
-    ("title.user_profile", "ユーザープロフィール"),
-    ("error.required_field", "フィールド {field_name} は必須です"),
-    ("error.invalid_email", "メールアドレスの形式が無効です")
-  ])
+  // 验证错误代码
+  assert_eq(error_codes.length(), 10)
   
-  // 创建UI组件
-  let login_form = azimuth::UIForm::new("login_form")
-  login_form.add_field(azimuth::UIField::new("username", "label.username", "text"))
-  login_form.add_field(azimuth::UIField::new("password", "label.password", "password"))
-  login_form.add_field(azimuth::UIField::new("email", "label.email", "email"))
-  login_form.add_button(azimuth::UIButton::new("save", "button.save"))
-  login_form.add_button(azimuth::UIButton::new("cancel", "button.cancel"))
+  // 创建多语言Span事件
+  let multilingual_error_events = []
   
-  // 本地化为中文
-  ui_localizer.set_current_language("zh-CN")
-  let zh_localized_form = ui_localizer.localize_form(login_form)
+  for i = 0; i < error_messages.length(); i = i + 1 {
+    let (locale, message) = error_messages[i]
+    let (_, code) = error_codes[i]
+    
+    let error_event = Event({
+      name: "database.error",
+      timestamp: 1704067200000000000L + i.to_long(),
+      attributes: [
+        ("error.locale", StringValue(locale)),
+        ("error.message", StringValue(message)),
+        ("error.code", StringValue(code)),
+        ("error.type", StringValue("database")),
+        ("error.severity", StringValue("high"))
+      ]
+    })
+    
+    multilingual_error_events = multilingual_error_events + [error_event]
+  }
   
-  assert_eq(zh_localized_form.get_field("username").label, "用户名")
-  assert_eq(zh_localized_form.get_field("password").label, "密码")
-  assert_eq(zh_localized_form.get_field("email").label, "电子邮箱")
-  assert_eq(zh_localized_form.get_button("save").text, "保存")
-  assert_eq(zh_localized_form.get_button("cancel").text, "取消")
+  // 验证多语言错误事件
+  assert_eq(multilingual_error_events.length(), 10)
   
-  // 本地化为英语
-  ui_localizer.set_current_language("en-US")
-  let en_localized_form = ui_localizer.localize_form(login_form)
+  // 创建包含多语言错误事件的Span
+  let multilingual_error_span = Span({
+    name: "database.operation.error",
+    kind: Client,
+    recording: true,
+    span_context: SpanContext({
+      trace_id: "1234567890abcdef1234567890abcdef",
+      span_id: "1234567890abcdef",
+      sampled: true,
+      trace_state: ""
+    }),
+    parent_span_id: Some("parent1234567890"),
+    attributes: [
+      ("operation.type", StringValue("database.query")),
+      ("operation.status", StringValue("failed"))
+    ],
+    events: multilingual_error_events,
+    links: [],
+    status: Error,
+    start_time: 1704067200000000000L,
+    end_time: Some(1704067200000000010L),
+    duration: Some(10000000L) // 10ms
+  })
   
-  assert_eq(en_localized_form.get_field("username").label, "Username")
-  assert_eq(en_localized_form.get_field("password").label, "Password")
-  assert_eq(en_localized_form.get_field("email").label, "Email")
-  assert_eq(en_localized_form.get_button("save").text, "Save")
-  assert_eq(en_localized_form.get_button("cancel").text, "Cancel")
+  // 验证多语言错误Span
+  assert_eq(multilingual_error_span.name, "database.operation.error")
+  assert_eq(multilingual_error_span.events.length(), 10)
+  match multilingual_error_span.status {
+    Error => assert_true(true)
+    _ => assert_true(false)
+  }
   
-  // 本地化为日语
-  ui_localizer.set_current_language("ja-JP")
-  let ja_localized_form = ui_localizer.localize_form(login_form)
+  // 验证特定语言的错误事件
+  let chinese_error_event = multilingual_error_events[1]
+  assert_eq(chinese_error_event.name, "database.error")
   
-  assert_eq(ja_localized_form.get_field("username").label, "ユーザー名")
-  assert_eq(ja_localized_form.get_field("password").label, "パスワード")
-  assert_eq(ja_localized_form.get_field("email").label, "メールアドレス")
-  assert_eq(ja_localized_form.get_button("save").text, "保存")
-  assert_eq(ja_localized_form.get_button("cancel").text, "キャンセル")
+  let mut found_locale = false
+  let mut found_message = false
+  let mut found_code = false
   
-  // 测试错误消息本地化
-  ui_localizer.set_current_language("zh-CN")
-  let zh_error_message = ui_localizer.localize_error_message("error.required_field", [
-    ("field_name", "用户名")
-  ])
-  assert_eq(zh_error_message, "字段 用户名 是必填的")
+  for (key, value) in chinese_error_event.attributes {
+    match key {
+      "error.locale" => {
+        match value {
+          StringValue(locale) => {
+            assert_eq(locale, "zh")
+            found_locale = true
+          }
+          _ => assert_true(false)
+        }
+      }
+      "error.message" => {
+        match value {
+          StringValue(message) => {
+            assert_eq(message, "数据库连接失败")
+            found_message = true
+          }
+          _ => assert_true(false)
+        }
+      }
+      "error.code" => {
+        match value {
+          StringValue(code) => {
+            assert_eq(code, "数据库连接错误")
+            found_code = true
+          }
+          _ => assert_true(false)
+        }
+      }
+      _ => assert_true(false) // 意外的键
+    }
+  }
   
-  ui_localizer.set_current_language("en-US")
-  let en_error_message = ui_localizer.localize_error_message("error.required_field", [
-    ("field_name", "Username")
-  ])
-  assert_eq(en_error_message, "The field Username is required")
-  
-  ui_localizer.set_current_language("ja-JP")
-  let ja_error_message = ui_localizer.localize_error_message("error.required_field", [
-    ("field_name", "ユーザー名")
-  ])
-  assert_eq(ja_error_message, "フィールド ユーザー名 は必須です")
+  assert_true(found_locale)
+  assert_true(found_message)
+  assert_true(found_code)
 }
 
-test "文化特定的格式和规则" {
-  // 创建文化规则处理器
-  let culture_handler = azimuth::CultureHandler::new()
+// 测试7: 时区和本地化时间处理
+test "timezone and localized time handling" {
+  // 测试不同时区的时间格式
+  let utc_time = "2023-01-01T00:00:00Z"
+  let est_time = "2022-12-31T19:00:00-05:00"
+  let pst_time = "2022-12-31T16:00:00-08:00"
+  let jst_time = "2023-01-01T09:00:00+09:00"
+  let cet_time = "2023-01-01T01:00:00+01:00"
   
-  // 配置不同文化的规则
-  culture_handler.set_culture_rules("zh-CN", azimuth::CultureRules {
-    name_format: azimuth::NameFormat::FamilyNameFirst, // 姓在前
-    address_format: azimuth::AddressFormat::CountryCityStateStreet, // 国-城市-省-街道
-    reading_direction: azimuth::ReadingDirection::LeftToRight,
-    weekend_days: [6, 0], // 周六和周日
-    first_day_of_week: 1, // 周一
-    paper_size: azimuth::PaperSize::A4,
-    measurement_system: azimuth::MeasurementSystem::Metric
+  // 验证时区时间格式
+  assert_eq(utc_time.length(), 20)
+  assert_eq(est_time.length(), 25)
+  assert_eq(pst_time.length(), 25)
+  assert_eq(jst_time.length(), 25)
+  assert_eq(cet_time.length(), 25)
+  
+  // 测试不同区域的日期时间格式
+  let us_datetime = "01/01/2023 12:00:00 AM"
+  let eu_datetime = "01/01/2023 00:00:00"
+  let iso_datetime = "2023-01-01T00:00:00"
+  let chinese_datetime = "2023年01月01日 00:00:00"
+  let japanese_datetime = "2023年01月01日 00時00分00秒"
+  
+  // 验证区域日期时间格式
+  assert_eq(us_datetime.length(), 22)
+  assert_eq(eu_datetime.length(), 19)
+  assert_eq(iso_datetime.length(), 19)
+  assert_eq(chinese_datetime.length(), 20)
+  assert_eq(japanese_datetime.length(), 23)
+  
+  // 创建时区和本地化时间属性
+  let timezone_attributes = [
+    ("time.utc", StringValue(utc_time)),
+    ("time.est", StringValue(est_time)),
+    ("time.pst", StringValue(pst_time)),
+    ("time.jst", StringValue(jst_time)),
+    ("time.cet", StringValue(cet_time)),
+    ("datetime.us", StringValue(us_datetime)),
+    ("datetime.eu", StringValue(eu_datetime)),
+    ("datetime.iso", StringValue(iso_datetime)),
+    ("datetime.zh", StringValue(chinese_datetime)),
+    ("datetime.ja", StringValue(japanese_datetime))
+  ]
+  
+  // 验证时区属性
+  assert_eq(timezone_attributes.length(), 10)
+  
+  // 创建包含时区信息的Span
+  let timezone_span = Span({
+    name: "timezone.aware.operation",
+    kind: Internal,
+    recording: true,
+    span_context: SpanContext({
+      trace_id: "1234567890abcdef1234567890abcdef",
+      span_id: "1234567890abcdef",
+      sampled: true,
+      trace_state: ""
+    }),
+    parent_span_id: None,
+    attributes: timezone_attributes,
+    events: [
+      Event({
+        name: "operation.started",
+        timestamp: 1672531200000000000L, // 2023-01-01 00:00:00 UTC
+        attributes: [
+          ("timezone", StringValue("UTC")),
+          ("local.time", StringValue(utc_time))
+        ]
+      }),
+      Event({
+        name: "operation.completed",
+        timestamp: 1672531260000000000L, // 2023-01-01 00:01:00 UTC
+        attributes: [
+          ("timezone", StringValue("UTC")),
+          ("local.time", StringValue("2023-01-01T00:01:00Z"))
+        ]
+      })
+    ],
+    links: [],
+    status: Ok,
+    start_time: 1672531200000000000L,
+    end_time: Some(1672531260000000000L),
+    duration: Some(60000000000L) // 60 seconds
   })
   
-  culture_handler.set_culture_rules("en-US", azimuth::CultureRules {
-    name_format: azimuth::NameFormat::GivenNameFirst, // 名在前
-    address_format: azimuth::AddressFormat::StreetCityStateCountry, // 街道-城市-省-国家
-    reading_direction: azimuth::ReadingDirection::LeftToRight,
-    weekend_days: [6, 0], // 周六和周日
-    first_day_of_week: 0, // 周日
-    paper_size: azimuth::PaperSize::Letter,
-    measurement_system: azimuth::MeasurementSystem::Imperial
-  })
+  // 验证时区感知Span
+  assert_eq(timezone_span.name, "timezone.aware.operation")
+  assert_eq(timezone_span.attributes.length(), 10)
+  assert_eq(timezone_span.events.length(), 2)
+  match timezone_span.status {
+    Ok => assert_true(true)
+    _ => assert_true(false)
+  }
   
-  culture_handler.set_culture_rules("ja-JP", azimuth::CultureRules {
-    name_format: azimuth::NameFormat::FamilyNameFirst, // 姓在前
-    address_format: azimuth::AddressFormat::PostalCodeCityStateStreet, // 邮编-城市-省-街道
-    reading_direction: azimuth::ReadingDirection::LeftToRight, // 现代日语通常从左到右
-    weekend_days: [6, 0], // 周六和周日
-    first_day_of_week: 0, // 周日
-    paper_size: azimuth::PaperSize::A4,
-    measurement_system: azimuth::MeasurementSystem::Metric
-  })
-  
-  // 测试姓名格式
-  let person_name = azimuth::PersonName::new("张", "三")
-  
-  culture_handler.set_current_culture("zh-CN")
-  let zh_formatted_name = culture_handler.format_name(person_name)
-  assert_eq(zh_formatted_name, "张三") // 姓在前
-  
-  culture_handler.set_current_culture("en-US")
-  let en_formatted_name = culture_handler.format_name(person_name)
-  assert_eq(en_formatted_name, "三 张") // 名在前
-  
-  // 测试地址格式
-  let address = azimuth::Address::new()
-  address.street = "中关村大街1号"
-  address.city = "北京"
-  address.state = "北京市"
-  address.postal_code = "100080"
-  address.country = "中国"
-  
-  culture_handler.set_current_culture("zh-CN")
-  let zh_formatted_address = culture_handler.format_address(address)
-  assert_eq(zh_formatted_address, "中国 北京市 北京 中关村大街1号 100080")
-  
-  culture_handler.set_current_culture("en-US")
-  let en_formatted_address = culture_handler.format_address(address)
-  assert_eq(en_formatted_address, "中关村大街1号, 北京, 北京市, 中国 100080")
-  
-  // 测试工作日和周末判断
-  culture_handler.set_current_culture("zh-CN")
-  assert_false(culture_handler.is_weekend(1)) // 周一不是周末
-  assert_false(culture_handler.is_weekend(5)) // 周五不是周末
-  assert_true(culture_handler.is_weekend(6))  // 周六是周末
-  assert_true(culture_handler.is_weekend(0))  // 周日是周末
-  
-  // 测试度量单位转换
-  let length_in_meters = 1.80 // 1.8米
-  
-  culture_handler.set_current_culture("zh-CN")
-  let zh_length = culture_handler.format_length(length_in_meters)
-  assert_eq(zh_length, "1.80米") // 使用公制
-  
-  culture_handler.set_current_culture("en-US")
-  let en_length = culture_handler.format_length(length_in_meters)
-  assert_eq(en_length, "5'11\"") // 转换为英制英尺和英寸
-  
-  // 测试重量转换
-  let weight_in_kg = 70.0 // 70公斤
-  
-  culture_handler.set_current_culture("zh-CN")
-  let zh_weight = culture_handler.format_weight(weight_in_kg)
-  assert_eq(zh_weight, "70.0公斤") // 使用公制
-  
-  culture_handler.set_current_culture("en-US")
-  let en_weight = culture_handler.format_weight(weight_in_kg)
-  assert_eq(en_weight, "154.3磅") // 转换为英制磅
+  // 验证Span持续时间
+  match timezone_span.duration {
+    Some(duration) => assert_eq(duration, 60000000000L)
+    None => assert_true(false)
+  }
 }

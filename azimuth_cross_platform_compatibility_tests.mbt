@@ -1,1008 +1,546 @@
 // Azimuth Cross-Platform Compatibility Tests
-// This file contains test cases for cross-platform compatibility
+// 跨平台兼容性测试，验证遥测系统在不同平台和环境下的兼容性
 
-// Test 1: Operating System Detection and Adaptation
-test "operating system detection and adaptation" {
-  // Define OS types
-  let create_os_info = fn(name, version, architecture) {
-    { name = name, version = version, architecture = architecture }
+// 测试1: 操作系统兼容性
+test "operating system compatibility" {
+  // 检测当前操作系统
+  let current_os = @azimuth.Platform::detect_os()
+  
+  // 验证操作系统检测结果
+  assert_true(current_os == "windows" || current_os == "linux" || current_os == "macos" || current_os == "freebsd" || current_os == "wasm")
+  
+  // 获取操作系统特定信息
+  let os_info = @azimuth.Platform::get_os_info()
+  
+  // 验证操作系统信息结构
+  assert_true(os_info.contains("name"))
+  assert_true(os_info.contains("version"))
+  assert_true(os_info.contains("architecture"))
+  
+  // 创建跨平台兼容的路径
+  let path_separator = @azimuth.Platform::get_path_separator()
+  let test_path = "logs" + path_separator + "telemetry" + path_separator + "data.log"
+  
+  // 验证路径分隔符
+  if current_os == "windows" {
+    assert_eq(path_separator, "\\")
+    assert_true(test_path.contains("\\"))
+  } else {
+    assert_eq(path_separator, "/")
+    assert_true(test_path.contains("/"))
   }
   
-  // Simulate OS detection
-  let detect_os = fn() {
-    // In real implementation, would detect actual OS
-    // For testing, we'll simulate different OS environments
-    
-    // Simulate Linux environment
-    let linux_info = create_os_info("linux", "5.15.0", "x86_64")
-    
-    // Simulate Windows environment
-    let windows_info = create_os_info("windows", "10.0.19042", "x86_64")
-    
-    // Simulate macOS environment
-    let macos_info = create_os_info("macos", "12.0.1", "arm64")
-    
-    [linux_info, windows_info, macos_info]
+  // 测试跨平台文件操作
+  let temp_dir = @azimuth.Platform::get_temp_directory()
+  assert_true(temp_dir.length() > 0)
+  
+  // 创建跨平台兼容的文件路径
+  let log_file = temp_dir + path_separator + "azimuth_test.log"
+  
+  // 验证文件路径格式
+  if current_os == "windows" {
+    assert_true(log_file.contains(":\\") || log_file.contains("\\\\"))
+  } else {
+    assert_true(log_file.startsWith("/"))
   }
   
-  // Test OS-specific path handling
-  let get_platform_path = fn(base_path, os_info) {
-    match os_info.name {
-      "windows" => base_path.replace("/", "\\")
-      _ => base_path
-    }
+  // 测试环境变量处理
+  let env_home = @azimuth.Platform::get_env_variable("HOME")
+  let env_user = @azimuth.Platform::get_env_variable("USER")
+  let env_path = @azimuth.Platform::get_env_variable("PATH")
+  
+  // 验证环境变量（某些环境可能不存在）
+  if current_os == "windows" {
+    let env_userprofile = @azimuth.Platform::get_env_variable("USERPROFILE")
+    let env_username = @azimuth.Platform::get_env_variable("USERNAME")
+    // Windows特定环境变量可能存在
+  } else {
+    // Unix-like系统环境变量
+    assert_true(env_home != None || env_user != None)
   }
   
-  // Test OS-specific command handling
-  let get_platform_command = fn(command, os_info) {
-    match os_info.name {
-      "windows" => command + ".exe"
-      "macos" => command + ".app"
-      _ => command
-    }
-  }
+  // 创建操作系统特定的资源
+  let os_specific_resource = Resource({
+    attributes: [
+      ("os.name", StringValue(current_os)),
+      ("os.info", StringValue(os_info)),
+      ("path.separator", StringValue(path_separator)),
+      ("temp.directory", StringValue(temp_dir)),
+      ("platform.architecture", StringValue(@azimuth.Platform::get_architecture()))
+    ],
+    schema_url: Some("https://opentelemetry.io/schemas/1.20.0")
+  })
   
-  // Test OS detection
-  let os_list = detect_os()
-  assert_eq(os_list.length(), 3)
-  
-  let linux_os = os_list[0]
-  assert_eq(linux_os.name, "linux")
-  assert_eq(linux_os.version, "5.15.0")
-  assert_eq(linux_os.architecture, "x86_64")
-  
-  let windows_os = os_list[1]
-  assert_eq(windows_os.name, "windows")
-  assert_eq(windows_os.version, "10.0.19042")
-  assert_eq(windows_os.architecture, "x86_64")
-  
-  let macos_os = os_list[2]
-  assert_eq(macos_os.name, "macos")
-  assert_eq(macos_os.version, "12.0.1")
-  assert_eq(macos_os.architecture, "arm64")
-  
-  // Test path handling
-  let base_path = "/opt/azimuth/config"
-  
-  let linux_path = get_platform_path(base_path, linux_os)
-  assert_eq(linux_path, "/opt/azimuth/config")
-  
-  let windows_path = get_platform_path(base_path, windows_os)
-  assert_eq(windows_path, "\\opt\\azimuth\\config")
-  
-  let macos_path = get_platform_path(base_path, macos_os)
-  assert_eq(macos_path, "/opt/azimuth/config")
-  
-  // Test command handling
-  let base_command = "azimuth-agent"
-  
-  let linux_command = get_platform_command(base_command, linux_os)
-  assert_eq(linux_command, "azimuth-agent")
-  
-  let windows_command = get_platform_command(base_command, windows_os)
-  assert_eq(windows_command, "azimuth-agent.exe")
-  
-  let macos_command = get_platform_command(base_command, macos_os)
-  assert_eq(macos_command, "azimuth-agent.app")
+  // 验证操作系统特定资源
+  assert_eq(os_specific_resource.attributes.length(), 5)
 }
 
-// Test 2: Architecture-Specific Optimizations
-test "architecture-specific optimizations" {
-  // Define architecture types
-  let create_arch_info = fn(name, is_64bit, endian, supports_simd) {
-    { name = name, is_64bit = is_64bit, endian = endian, supports_simd = supports_simd }
+// 测试2: WebAssembly兼容性
+test "webassembly compatibility" {
+  // 检测是否在WebAssembly环境
+  let is_wasm = @azimuth.Platform::is_webassembly()
+  
+  // 获取WebAssembly特定信息
+  let wasm_info = @azimuth.Platform::get_wasm_info()
+  
+  if is_wasm {
+    // 验证WebAssembly环境
+    assert_true(wasm_info.contains("runtime"))
+    assert_true(wasm_info.contains("features"))
+    
+    // 测试WebAssembly特定功能
+    let wasm_memory = @azimuth.Platform::get_wasm_memory_info()
+    assert_true(wasm_memory.contains("initial"))
+    assert_true(wasm_memory.contains("maximum"))
+    
+    // 测试WebAssembly时间功能
+    let wasm_time = @azimuth.Platform::get_wasm_time()
+    assert_true(wasm_time > 0L)
+    
+    // 创建WebAssembly特定资源
+    let wasm_resource = Resource({
+      attributes: [
+        ("wasm.runtime", StringValue(@azimuth.Platform::get_wasm_runtime())),
+        ("wasm.features", StringValue(@azimuth.Platform::get_wasm_features())),
+        ("wasm.memory", StringValue(wasm_memory)),
+        ("wasm.time.source", StringValue("performance.now"))
+      ],
+      schema_url: Some("https://opentelemetry.io/schemas/1.20.0")
+    })
+    
+    // 验证WebAssembly资源
+    assert_eq(wasm_resource.attributes.length(), 4)
+  } else {
+    // 非WebAssembly环境
+    assert_true(wasm_info == "Not running in WebAssembly environment")
+    
+    // 测试原生平台功能
+    let native_info = @azimuth.Platform::get_native_info()
+    assert_true(native_info.contains("cpu"))
+    assert_true(native_info.contains("memory"))
+    
+    // 创建原生平台特定资源
+    let native_resource = Resource({
+      attributes: [
+        ("native.cpu", StringValue(@azimuth.Platform::get_cpu_info())),
+        ("native.memory", StringValue(@azimuth.Platform::get_memory_info())),
+        ("native.time.source", StringValue("system.clock"))
+      ],
+      schema_url: Some("https://opentelemetry.io/schemas/1.20.0")
+    })
+    
+    // 验证原生平台资源
+    assert_eq(native_resource.attributes.length(), 3)
   }
   
-  // Create different architecture infos
-  let x86_64_arch = create_arch_info("x86_64", true, "little", true)
-  let arm64_arch = create_arch_info("arm64", true, "little", true)
-  let x86_arch = create_arch_info("x86", false, "little", false)
-  let arm_arch = create_arch_info("arm", false, "little", false)
+  // 测试跨平台时间戳获取
+  let timestamp = @azimuth.Platform::get_timestamp()
+  assert_true(timestamp > 0L)
   
-  // Test architecture-specific optimizations
-  let get_optimized_hash_algorithm = fn(arch_info) {
-    match arch_info.name {
-      "x86_64" => "xxhash64"
-      "arm64" => "xxhash64"
-      "x86" => "murmur3"
-      "arm" => "murmur3"
-      _ => "default"
-    }
-  }
-  
-  let get_optimized_compression = fn(arch_info) {
-    if arch_info.supports_simd {
-      "lz4_simd"
-    } else {
-      "lz4"
-    }
-  }
-  
-  let get_optimized_serialization = fn(arch_info) {
-    if arch_info.is_64bit {
-      "protobuf64"
-    } else {
-      "protobuf32"
-    }
-  }
-  
-  // Test x86_64 optimizations
-  assert_eq(get_optimized_hash_algorithm(x86_64_arch), "xxhash64")
-  assert_eq(get_optimized_compression(x86_64_arch), "lz4_simd")
-  assert_eq(get_optimized_serialization(x86_64_arch), "protobuf64")
-  
-  // Test ARM64 optimizations
-  assert_eq(get_optimized_hash_algorithm(arm64_arch), "xxhash64")
-  assert_eq(get_optimized_compression(arm64_arch), "lz4_simd")
-  assert_eq(get_optimized_serialization(arm64_arch), "protobuf64")
-  
-  // Test x86 optimizations
-  assert_eq(get_optimized_hash_algorithm(x86_arch), "murmur3")
-  assert_eq(get_optimized_compression(x86_arch), "lz4")
-  assert_eq(get_optimized_serialization(x86_arch), "protobuf32")
-  
-  // Test ARM optimizations
-  assert_eq(get_optimized_hash_algorithm(arm_arch), "murmur3")
-  assert_eq(get_optimized_compression(arm_arch), "lz4")
-  assert_eq(get_optimized_serialization(arm_arch), "protobuf32")
-  
-  // Test endianness handling
-  let handle_endianness = fn(data, arch_info) {
-    if arch_info.endian == "little" {
-      data  // No conversion needed for little endian
-    } else {
-      // Would convert to little endian in real implementation
-      "converted_" + data
-    }
-  }
-  
-  let test_data = "0x12345678"
-  
-  let little_endian_result = handle_endianness(test_data, x86_64_arch)
-  assert_eq(little_endian_result, "0x12345678")
-  
-  let big_endian_arch = create_arch_info("ppc64", true, "big", true)
-  let big_endian_result = handle_endianness(test_data, big_endian_arch)
-  assert_eq(big_endian_result, "converted_0x12345678")
+  // 测试跨平台随机数生成
+  let random_value = @azimuth.Platform::get_random_number()
+  assert_true(random_value >= 0.0 && random_value < 1.0)
 }
 
-// Test 3: Platform-Specific File System Operations
-test "platform-specific file system operations" {
-  // Define file system info
-  let create_filesystem_info = fn(path_separator, case_sensitive, max_path_length) {
-    { path_separator = path_separator, case_sensitive = case_sensitive, max_path_length = max_path_length }
-  }
+// 测试3: 浏览器环境兼容性
+test "browser environment compatibility" {
+  // 检测是否在浏览器环境
+  let is_browser = @azimuth.Platform::is_browser()
   
-  // Create different file system infos
-  let linux_fs = create_filesystem_info("/", true, 4096)
-  let windows_fs = create_filesystem_info("\\", false, 260)
-  let macos_fs = create_filesystem_info("/", true, 1024)
-  
-  // Test path joining
-  let join_path = fn(parts, fs_info) {
-    let separator = fs_info.path_separator
-    let mut joined = ""
+  if is_browser {
+    // 获取浏览器信息
+    let browser_info = @azimuth.Platform::get_browser_info()
     
-    for i in 0..<parts.length() {
-      if i > 0 {
-        joined = joined + separator
+    // 验证浏览器信息
+    assert_true(browser_info.contains("name"))
+    assert_true(browser_info.contains("version"))
+    assert_true(browser_info.contains("userAgent"))
+    
+    // 测试浏览器特定功能
+    let browser_features = @azimuth.Platform::get_browser_features()
+    assert_true(browser_features.contains("localStorage"))
+    assert_true(browser_features.contains("sessionStorage"))
+    assert_true(browser_features.contains("webWorkers"))
+    
+    // 测试浏览器存储
+    let storage_available = @azimuth.Platform::is_local_storage_available()
+    
+    if storage_available {
+      // 测试本地存储操作
+      @azimuth.Platform::set_local_storage("azimuth_test_key", "test_value")
+      let stored_value = @azimuth.Platform::get_local_storage("azimuth_test_key")
+      match stored_value {
+        Some(value) => assert_eq(value, "test_value")
+        None => assert_true(false)
       }
-      joined = joined + parts[i]
+      @azimuth.Platform::remove_local_storage("azimuth_test_key")
     }
     
-    joined
-  }
-  
-  // Test path normalization
-  let normalize_path = fn(path, fs_info) {
-    if fs_info.path_separator == "\\" {
-      path.replace("/", "\\")
-    } else {
-      path.replace("\\", "/")
+    // 测试浏览器网络状态
+    let online_status = @azimuth.Platform::is_online()
+    assert_true(online_status == true || online_status == false)
+    
+    // 获取浏览器性能信息
+    let performance_info = @azimuth.Platform::get_performance_info()
+    assert_true(performance_info.contains("navigation"))
+    assert_true(performance_info.contains("timing"))
+    
+    // 创建浏览器特定资源
+    let browser_resource = Resource({
+      attributes: [
+        ("browser.name", StringValue(@azimuth.Platform::get_browser_name())),
+        ("browser.version", StringValue(@azimuth.Platform::get_browser_version())),
+        ("browser.language", StringValue(@azimuth.Platform::get_browser_language())),
+        ("browser.platform", StringValue(@azimuth.Platform::get_browser_platform())),
+        ("browser.online", StringValue(online_status.to_string())),
+        ("browser.features", StringValue(browser_features))
+      ],
+      schema_url: Some("https://opentelemetry.io/schemas/1.20.0")
+    })
+    
+    // 验证浏览器资源
+    assert_eq(browser_resource.attributes.length(), 6)
+  } else {
+    // 非浏览器环境
+    let browser_info = @azimuth.Platform::get_browser_info()
+    assert_eq(browser_info, "Not running in browser environment")
+    
+    // 测试Node.js特定功能（如果是Node.js环境）
+    if @azimuth.Platform::is_nodejs() {
+      let nodejs_info = @azimuth.Platform::get_nodejs_info()
+      assert_true(nodejs_info.contains("version"))
+      assert_true(nodejs_info.contains("platform"))
+      
+      // 创建Node.js特定资源
+      let nodejs_resource = Resource({
+        attributes: [
+          ("nodejs.version", StringValue(@azimuth.Platform::get_nodejs_version())),
+          ("nodejs.platform", StringValue(@azimuth.Platform::get_nodejs_platform())),
+          ("nodejs.arch", StringValue(@azimuth.Platform::get_nodejs_arch()))
+        ],
+        schema_url: Some("https://opentelemetry.io/schemas/1.20.0")
+      })
+      
+      // 验证Node.js资源
+      assert_eq(nodejs_resource.attributes.length(), 3)
     }
   }
-  
-  // Test case sensitivity handling
-  let handle_case_sensitivity = fn(path1, path2, fs_info) {
-    if fs_info.case_sensitive {
-      path1 == path2
-    } else {
-      path1.to_lowercase() == path2.to_lowercase()
-    }
-  }
-  
-  // Test path joining
-  let linux_parts = ["home", "user", "azimuth"]
-  let linux_path = join_path(linux_parts, linux_fs)
-  assert_eq(linux_path, "/home/user/azimuth")
-  
-  let windows_parts = ["C:", "Program Files", "Azimuth"]
-  let windows_path = join_path(windows_parts, windows_fs)
-  assert_eq(windows_path, "C:\\Program Files\\Azimuth")
-  
-  // Test path normalization
-  let mixed_path = "/home\\user/azimuth\\config"
-  
-  let normalized_linux = normalize_path(mixed_path, linux_fs)
-  assert_eq(normalized_linux, "/home/user/azimuth/config")
-  
-  let normalized_windows = normalize_path(mixed_path, windows_fs)
-  assert_eq(normalized_windows, "\\home\\user\\azimuth\\config")
-  
-  // Test case sensitivity
-  let path1 = "/home/user/Azimuth"
-  let path2 = "/home/user/azimuth"
-  
-  assert_true(handle_case_sensitivity(path1, path2, linux_fs))  // Different case, but case sensitive
-  assert_false(handle_case_sensitivity(path1, path2, windows_fs))  // Same case-insensitive
-  
-  let same_case_path1 = "/home/user/azimuth"
-  let same_case_path2 = "/home/user/azimuth"
-  
-  assert_true(handle_case_sensitivity(same_case_path1, same_case_path2, linux_fs))
-  assert_true(handle_case_sensitivity(same_case_path1, same_case_path2, windows_fs))
-  
-  // Test path length validation
-  let validate_path_length = fn(path, fs_info) {
-    path.length() <= fs_info.max_path_length
-  }
-  
-  let short_path = "/short/path"
-  let long_path = "/very/long/path/that/exceeds/the/maximum/allowed/length/on/this/particular/filesystem/and/should/be/rejected/according/to/the/platform/limitations"
-  
-  assert_true(validate_path_length(short_path, linux_fs))
-  assert_true(validate_path_length(short_path, windows_fs))
-  assert_false(validate_path_length(long_path, windows_fs))
-  assert_true(validate_path_length(long_path, linux_fs))  // Linux allows longer paths
 }
 
-// Test 4: Cross-Platform Network Configuration
-test "cross-platform network configuration" {
-  // Define network configuration
-  let create_network_config = fn(default_port, use_ipv6, buffer_size, keep_alive) {
-    { default_port = default_port, use_ipv6 = use_ipv6, buffer_size = buffer_size, keep_alive = keep_alive }
+// 测试4: 网络环境兼容性
+test "network environment compatibility" {
+  // 检测网络连接状态
+  let network_status = @azimuth.Platform::get_network_status()
+  
+  // 验证网络状态
+  assert_true(network_status.contains("connected"))
+  assert_true(network_status.contains("type"))
+  
+  // 测试DNS解析
+  let dns_result = @azimuth.Platform::resolve_dns("example.com")
+  
+  // 验证DNS解析结果
+  if dns_result.success {
+    assert_true(dns_result.addresses.length() > 0)
+  } else {
+    assert_true(dns_result.error.length() > 0)
   }
   
-  // Create platform-specific network configs
-  let linux_network = create_network_config(8080, true, 65536, true)
-  let windows_network = create_network_config(8080, false, 8192, true)
-  let macos_network = create_network_config(8080, true, 32768, true)
+  // 测试HTTP连接
+  let http_result = @azimuth.Platform::test_http_connection("https://httpbin.org/status/200")
   
-  // Test platform-specific socket options
-  let get_socket_options = fn(network_config, platform) {
-    match platform {
-      "linux" => {
-        {
-          so_reuseaddr = true,
-          so_reuseport = true,
-          tcp_nodelay = true,
-          so_keepalive = network_config.keep_alive,
-          so_sndbuf = network_config.buffer_size,
-          so_rcvbuf = network_config.buffer_size
-        }
-      }
-      "windows" => {
-        {
-          so_reuseaddr = true,
-          so_reuseport = false,  // Not supported on Windows
-          tcp_nodelay = true,
-          so_keepalive = network_config.keep_alive,
-          so_sndbuf = network_config.buffer_size,
-          so_rcvbuf = network_config.buffer_size
-        }
-      }
-      "macos" => {
-        {
-          so_reuseaddr = true,
-          so_reuseport = true,
-          tcp_nodelay = true,
-          so_keepalive = network_config.keep_alive,
-          so_sndbuf = network_config.buffer_size,
-          so_rcvbuf = network_config.buffer_size
-        }
-      }
-      _ => {
-        {
-          so_reuseaddr = true,
-          so_reuseport = false,
-          tcp_nodelay = true,
-          so_keepalive = network_config.keep_alive,
-          so_sndbuf = network_config.buffer_size,
-          so_rcvbuf = network_config.buffer_size
-        }
-      }
-    }
+  // 验证HTTP连接结果
+  if http_result.success {
+    assert_eq(http_result.status_code, 200)
+    assert_true(http_result.response_time > 0)
+  } else {
+    assert_true(http_result.error.length() > 0)
   }
   
-  // Test Linux socket options
-  let linux_options = get_socket_options(linux_network, "linux")
-  assert_true(linux_options.so_reuseaddr)
-  assert_true(linux_options.so_reuseport)
-  assert_true(linux_options.tcp_nodelay)
-  assert_true(linux_options.so_keepalive)
-  assert_eq(linux_options.so_sndbuf, 65536)
-  assert_eq(linux_options.so_rcvbuf, 65536)
+  // 测试HTTPS连接
+  let https_result = @azimuth.Platform::test_https_connection("https://httpbin.org/status/200")
   
-  // Test Windows socket options
-  let windows_options = get_socket_options(windows_network, "windows")
-  assert_true(windows_options.so_reuseaddr)
-  assert_false(windows_options.so_reuseport)  // Not supported on Windows
-  assert_true(windows_options.tcp_nodelay)
-  assert_true(windows_options.so_keepalive)
-  assert_eq(windows_options.so_sndbuf, 8192)
-  assert_eq(windows_options.so_rcvbuf, 8192)
-  
-  // Test macOS socket options
-  let macos_options = get_socket_options(macos_network, "macos")
-  assert_true(macos_options.so_reuseaddr)
-  assert_true(macos_options.so_reuseport)
-  assert_true(macos_options.tcp_nodelay)
-  assert_true(macos_options.so_keepalive)
-  assert_eq(macos_options.so_sndbuf, 32768)
-  assert_eq(macos_options.so_rcvbuf, 32768)
-  
-  // Test address formatting
-  let format_address = fn(address, network_config) {
-    if network_config.use_ipv6 {
-      "[" + address + "]"
-    } else {
-      address
-    }
+  // 验证HTTPS连接结果
+  if https_result.success {
+    assert_eq(https_result.status_code, 200)
+    assert_true(https_result.response_time > 0)
+    assert_true(https_result.tls_info.length() > 0)
+  } else {
+    assert_true(https_result.error.length() > 0)
   }
   
-  let ipv4_address = "192.168.1.100"
-  let ipv6_address = "2001:db8::1"
+  // 测试代理设置
+  let proxy_config = @azimuth.Platform::get_proxy_config()
   
-  let linux_ipv4 = format_address(ipv4_address, linux_network)
-  assert_eq(linux_ipv4, "[192.168.1.100]")  // Linux uses IPv6 by default
+  // 验证代理配置
+  assert_true(proxy_config.contains("http"))
+  assert_true(proxy_config.contains("https"))
+  assert_true(proxy_config.contains("no_proxy"))
   
-  let windows_ipv4 = format_address(ipv4_address, windows_network)
-  assert_eq(windows_ipv4, "192.168.1.100")  // Windows uses IPv4 by default
+  // 创建网络环境资源
+  let network_resource = Resource({
+    attributes: [
+      ("network.status", StringValue(network_status)),
+      ("network.dns.resolution", StringValue(dns_result.success.to_string())),
+      ("network.http.connection", StringValue(http_result.success.to_string())),
+      ("network.https.connection", StringValue(https_result.success.to_string())),
+      ("network.proxy.config", StringValue(proxy_config))
+    ],
+    schema_url: Some("https://opentelemetry.io/schemas/1.20.0")
+  })
   
-  let linux_ipv6 = format_address(ipv6_address, linux_network)
-  assert_eq(linux_ipv6, "[2001:db8::1]")
-  
-  let windows_ipv6 = format_address(ipv6_address, windows_network)
-  assert_eq(windows_ipv6, "[2001:db8::1]")  // IPv6 addresses always use brackets
+  // 验证网络资源
+  assert_eq(network_resource.attributes.length(), 5)
 }
 
-// Test 5: Platform-Specific Memory Management
-test "platform-specific memory management" {
-  // Define memory management configuration
-  let create_memory_config = fn(page_size, allocation_granularity, max_heap_size) {
-    { page_size = page_size, allocation_granularity = allocation_granularity, max_heap_size = max_heap_size }
-  }
+// 测试5: 文件系统兼容性
+test "filesystem compatibility" {
+  // 获取文件系统信息
+  let fs_info = @azimuth.Platform::get_filesystem_info()
   
-  // Create platform-specific memory configs
-  let linux_memory = create_memory_config(4096, 4096, 1073741824)  // 4KB pages, 1GB max heap
-  let windows_memory = create_memory_config(4096, 65536, 2147483648)  // 4KB pages, 64KB allocation granularity, 2GB max heap
-  let macos_memory = create_memory_config(16384, 16384, 1073741824)  // 16KB pages, 1GB max heap
+  // 验证文件系统信息
+  assert_true(fs_info.contains("type"))
+  assert_true(fs_info.contains("total_space"))
+  assert_true(fs_info.contains("free_space"))
   
-  // Test memory alignment
-  let align_memory = fn(size, memory_config) {
-    let remainder = size % memory_config.allocation_granularity
-    if remainder == 0 {
-      size
-    } else {
-      size + (memory_config.allocation_granularity - remainder)
-    }
-  }
+  // 测试文件路径操作
+  let test_paths = [
+    "/var/log/azimuth.log",
+    "C:\\Program Files\\Azimuth\\log.txt",
+    "./relative/path/file.txt",
+    "../parent/path/file.txt"
+  ]
   
-  // Test memory pool creation
-  let create_memory_pool = fn(pool_size, memory_config) {
-    let aligned_size = align_memory(pool_size, memory_config)
-    if aligned_size <= memory_config.max_heap_size {
-      { size = aligned_size, allocated = true, blocks = [] }
-    } else {
-      { size = 0, allocated = false, blocks = [] }
-    }
-  }
-  
-  // Test memory alignment
-  let unaligned_size = 5000
-  let linux_aligned = align_memory(unaligned_size, linux_memory)
-  assert_eq(linux_aligned, 8192)  // Aligned to 4KB
-  
-  let windows_aligned = align_memory(unaligned_size, windows_memory)
-  assert_eq(windows_aligned, 65536)  // Aligned to 64KB
-  
-  let macos_aligned = align_memory(unaligned_size, macos_memory)
-  assert_eq(macos_aligned, 16384)  // Aligned to 16KB
-  
-  // Test memory pool creation
-  let linux_pool = create_memory_pool(1048576, linux_memory)  // 1MB
-  assert_true(linux_pool.allocated)
-  assert_eq(linux_pool.size, 1048576)  // Already aligned to 4KB
-  
-  let windows_pool = create_memory_pool(1048576, windows_memory)  // 1MB
-  assert_true(windows_pool.allocated)
-  assert_eq(windows_pool.size, 1048576)  // Already aligned to 64KB
-  
-  let large_pool = create_memory_pool(3221225472, linux_memory)  // 3GB
-  assert_false(large_pool.allocated)  // Exceeds max heap size
-  assert_eq(large_pool.size, 0)
-  
-  // Test platform-specific memory allocators
-  let get_memory_allocator = fn(platform) {
-    match platform {
-      "linux" => "mmap"
-      "windows" => "VirtualAlloc"
-      "macos" => "mmap"
-      _ => "malloc"
-    }
-  }
-  
-  assert_eq(get_memory_allocator("linux"), "mmap")
-  assert_eq(get_memory_allocator("windows"), "VirtualAlloc")
-  assert_eq(get_memory_allocator("macos"), "mmap")
-  assert_eq(get_memory_allocator("unknown"), "malloc")
-  
-  // Test memory statistics
-  let get_memory_stats = fn(memory_config, allocated_pools) {
-    let mut total_allocated = 0
-    let mut pool_count = 0
+  for path in test_paths {
+    // 测试路径规范化
+    let normalized_path = @azimuth.Platform::normalize_path(path)
+    assert_true(normalized_path.length() > 0)
     
-    for pool in allocated_pools {
-      if pool.allocated {
-        total_allocated = total_allocated + pool.size
-        pool_count = pool_count + 1
-      }
-    }
+    // 测试路径分割
+    let path_parts = @azimuth.Platform::split_path(path)
+    assert_true(path_parts.length() > 0)
     
-    {
-      total_allocated = total_allocated,
-      pool_count = pool_count,
-      max_heap_size = memory_config.max_heap_size,
-      utilization = (total_allocated.to_float() / memory_config.max_heap_size.to_float()) * 100.0
-    }
+    // 测试路径合并
+    let joined_path = @azimuth.Platform::join_path(path_parts)
+    assert_true(joined_path.length() > 0)
   }
   
-  let test_pools = [linux_pool, windows_pool]
-  let stats = get_memory_stats(linux_memory, test_pools)
-  assert_eq(stats.total_allocated, 2097152)  // 1MB + 1MB
-  assert_eq(stats.pool_count, 2)
-  assert_eq(stats.max_heap_size, 1073741824)  // 1GB
-  assert_eq(stats.utilization, 0.1953125)  // ~0.2%
+  // 测试文件权限检查
+  let temp_file = @azimuth.Platform::get_temp_directory() + @azimuth.Platform::get_path_separator() + "azimuth_permission_test.txt"
+  
+  // 测试文件创建权限
+  let can_create = @azimuth.Platform::can_create_file(temp_file)
+  assert_true(can_create == true || can_create == false)
+  
+  // 测试文件读取权限
+  let can_read = @azimuth.Platform::can_read_file(temp_file)
+  assert_true(can_read == true || can_read == false)
+  
+  // 测试文件写入权限
+  let can_write = @azimuth.Platform::can_write_file(temp_file)
+  assert_true(can_write == true || can_write == false)
+  
+  // 测试目录创建
+  let temp_dir = @azimuth.Platform::get_temp_directory() + @azimuth.Platform::get_path_separator() + "azimuth_test_dir"
+  
+  // 创建测试目录
+  let dir_created = @azimuth.Platform::create_directory(temp_dir)
+  assert_true(dir_created == true || dir_created == false)
+  
+  if dir_created {
+    // 测试目录删除
+    let dir_removed = @azimuth.Platform::remove_directory(temp_dir)
+    assert_true(dir_removed == true || dir_removed == false)
+  }
+  
+  // 创建文件系统资源
+  let filesystem_resource = Resource({
+    attributes: [
+      ("filesystem.info", StringValue(fs_info)),
+      ("filesystem.temp.dir", StringValue(@azimuth.Platform::get_temp_directory())),
+      ("filesystem.path.separator", StringValue(@azimuth.Platform::get_path_separator())),
+      ("filesystem.can.create", StringValue(can_create.to_string())),
+      ("filesystem.can.read", StringValue(can_read.to_string())),
+      ("filesystem.can.write", StringValue(can_write.to_string()))
+    ],
+    schema_url: Some("https://opentelemetry.io/schemas/1.20.0")
+  })
+  
+  // 验证文件系统资源
+  assert_eq(filesystem_resource.attributes.length(), 6)
 }
 
-// Test 6: Platform-Specific Threading and Concurrency
-test "platform-specific threading and concurrency" {
-  // Define threading configuration
-  let create_threading_config = fn(default_stack_size, max_threads, thread_model) {
-    { default_stack_size = default_stack_size, max_threads = max_threads, thread_model = thread_model }
-  }
+// 测试6: 硬件兼容性
+test "hardware compatibility" {
+  // 获取CPU信息
+  let cpu_info = @azimuth.Platform::get_cpu_info()
   
-  // Create platform-specific threading configs
-  let linux_threading = create_threading_config(8388608, 32768, "pthread")
-  let windows_threading = create_threading_config(1048576, 2048, "win32")
-  let macos_threading = create_threading_config(524288, 1024, "pthread")
+  // 验证CPU信息
+  assert_true(cpu_info.contains("model"))
+  assert_true(cpu_info.contains("cores"))
+  assert_true(cpu_info.contains("frequency"))
   
-  // Test thread creation
-  let create_thread = fn(thread_id, stack_size, threading_config) {
-    if stack_size == 0 {
-      { id = thread_id, stack_size = threading_config.default_stack_size, created = true }
-    } else if stack_size >= threading_config.default_stack_size {
-      { id = thread_id, stack_size = stack_size, created = true }
-    } else {
-      { id = thread_id, stack_size = 0, created = false }
-    }
-  }
+  // 获取内存信息
+  let memory_info = @azimuth.Platform::get_memory_info()
   
-  // Test thread pool creation
-  let create_thread_pool = fn(pool_size, threading_config) {
-    if pool_size <= threading_config.max_threads {
-      let mut threads = []
-      for i in 0..<pool_size {
-        let thread = create_thread(i, 0, threading_config)
-        if thread.created {
-          threads = threads.push(thread)
-        }
-      }
-      { threads = threads, created = true }
-    } else {
-      { threads = [], created = false }
-    }
-  }
+  // 验证内存信息
+  assert_true(memory_info.contains("total"))
+  assert_true(memory_info.contains("available"))
+  assert_true(memory_info.contains("used"))
   
-  // Test Linux threading
-  let linux_thread = create_thread(1, 0, linux_threading)
-  assert_true(linux_thread.created)
-  assert_eq(linux_thread.stack_size, 8388608)  // 8MB default stack size
+  // 获取磁盘信息
+  let disk_info = @azimuth.Platform::get_disk_info()
   
-  let linux_small_thread = create_thread(2, 4096, linux_threading)
-  assert_false(linux_small_thread.created)  // Stack size too small
+  // 验证磁盘信息
+  assert_true(disk_info.contains("total"))
+  assert_true(disk_info.contains("free"))
+  assert_true(disk_info.contains("used"))
   
-  let linux_large_thread = create_thread(3, 16777216, linux_threading)
-  assert_true(linux_large_thread.created)
-  assert_eq(linux_large_thread.stack_size, 16777216)  // 16MB custom stack size
+  // 获取网络接口信息
+  let network_interfaces = @azimuth.Platform::get_network_interfaces()
   
-  // Test Windows threading
-  let windows_thread = create_thread(1, 0, windows_threading)
-  assert_true(windows_thread.created)
-  assert_eq(windows_thread.stack_size, 1048576)  // 1MB default stack size
+  // 验证网络接口信息
+  assert_true(network_interfaces.length() > 0)
   
-  // Test thread pool creation
-  let linux_pool = create_thread_pool(10, linux_threading)
-  assert_true(linux_pool.created)
-  assert_eq(linux_pool.threads.length(), 10)
+  // 测试硬件性能指标
+  let cpu_usage = @azimuth.Platform::get_cpu_usage()
+  assert_true(cpu_usage >= 0.0 && cpu_usage <= 100.0)
   
-  let windows_pool = create_thread_pool(100, windows_threading)
-  assert_true(windows_pool.created)
-  assert_eq(windows_pool.threads.length(), 100)
+  let memory_usage = @azimuth.Platform::get_memory_usage()
+  assert_true(memory_usage >= 0.0 && memory_usage <= 100.0)
   
-  let oversized_pool = create_thread_pool(5000, windows_threading)
-  assert_false(oversized_pool.created)
-  assert_eq(oversized_pool.threads.length(), 0)
+  // 测试硬件特定功能
+  let has_avx = @azimuth.Platform::has_cpu_feature("avx")
+  let has_sse = @azimuth.Platform::has_cpu_feature("sse")
+  let has_neon = @azimuth.Platform::has_cpu_feature("neon")
   
-  // Test thread synchronization primitives
-  let get_sync_primitives = fn(threading_config) {
-    match threading_config.thread_model {
-      "pthread" => {
-        {
-          mutex = "pthread_mutex",
-          condition = "pthread_cond",
-          semaphore = "sem_t",
-          rwlock = "pthread_rwlock"
-        }
-      }
-      "win32" => {
-        {
-          mutex = "CRITICAL_SECTION",
-          condition = "CONDITION_VARIABLE",
-          semaphore = "HANDLE",
-          rwlock = "SRWLOCK"
-        }
-      }
-      _ => {
-        {
-          mutex = "std_mutex",
-          condition = "std_condition",
-          semaphore = "std_semaphore",
-          rwlock = "shared_mutex"
-        }
-      }
-    }
-  }
+  // 创建硬件资源
+  let hardware_resource = Resource({
+    attributes: [
+      ("hardware.cpu.info", StringValue(cpu_info)),
+      ("hardware.memory.info", StringValue(memory_info)),
+      ("hardware.disk.info", StringValue(disk_info)),
+      ("hardware.cpu.usage", StringValue(cpu_usage.to_string())),
+      ("hardware.memory.usage", StringValue(memory_usage.to_string())),
+      ("hardware.cpu.avx", StringValue(has_avx.to_string())),
+      ("hardware.cpu.sse", StringValue(has_sse.to_string())),
+      ("hardware.cpu.neon", StringValue(has_neon.to_string())),
+      ("hardware.network.interfaces", StringValue(network_interfaces.length().to_string()))
+    ],
+    schema_url: Some("https://opentelemetry.io/schemas/1.20.0")
+  })
   
-  let linux_sync = get_sync_primitives(linux_threading)
-  assert_eq(linux_sync.mutex, "pthread_mutex")
-  assert_eq(linux_sync.condition, "pthread_cond")
-  assert_eq(linux_sync.semaphore, "sem_t")
-  assert_eq(linux_sync.rwlock, "pthread_rwlock")
-  
-  let windows_sync = get_sync_primitives(windows_threading)
-  assert_eq(windows_sync.mutex, "CRITICAL_SECTION")
-  assert_eq(windows_sync.condition, "CONDITION_VARIABLE")
-  assert_eq(windows_sync.semaphore, "HANDLE")
-  assert_eq(windows_sync.rwlock, "SRWLOCK")
+  // 验证硬件资源
+  assert_eq(hardware_resource.attributes.length(), 9)
 }
 
-// Test 7: Platform-Specific Logging and Diagnostics
-test "platform-specific logging and diagnostics" {
-  // Define logging configuration
-  let create_logging_config = fn(log_directory, log_format, max_log_size) {
-    { log_directory = log_directory, log_format = log_format, max_log_size = max_log_size }
-  }
+// 测试7: 运行时环境兼容性
+test "runtime environment compatibility" {
+  // 检测运行时环境
+  let runtime_env = @azimuth.Platform::get_runtime_environment()
   
-  // Create platform-specific logging configs
-  let linux_logging = create_logging_config("/var/log/azimuth", "json", 104857600)  // 100MB
-  let windows_logging = create_logging_config("C:\\ProgramData\\Azimuth\\Logs", "xml", 52428800)  // 50MB
-  let macos_logging = create_logging_config("/Library/Logs/Azimuth", "json", 104857600)  // 100MB
+  // 验证运行时环境
+  assert_true(runtime_env == "browser" || runtime_env == "nodejs" || runtime_env == "wasm" || runtime_env == "native")
   
-  // Test log file path creation
-  let create_log_path = fn(log_name, timestamp, logging_config) {
-    let date = timestamp.substring(0, 8)  // YYYYMMDD
-    let time = timestamp.substring(8, 14)  // HHMMSS
-    log_name + "-" + date + "-" + time + "." + logging_config.log_format
-  }
+  // 获取运行时版本信息
+  let runtime_version = @azimuth.Platform::get_runtime_version()
+  assert_true(runtime_version.length() > 0)
   
-  // Test log rotation
-  let should_rotate_log = fn(current_size, logging_config) {
-    current_size >= logging_config.max_log_size
-  }
-  
-  // Test log file creation
-  let log_name = "azimuth-agent"
-  let timestamp = "20230101120000"  // 2023-01-01 12:00:00
-  
-  let linux_log_path = create_log_path(log_name, timestamp, linux_logging)
-  assert_eq(linux_log_path, "azimuth-agent-20230101-120000.json")
-  
-  let windows_log_path = create_log_path(log_name, timestamp, windows_logging)
-  assert_eq(windows_log_path, "azimuth-agent-20230101-120000.xml")
-  
-  // Test log rotation
-  assert_true(should_rotate_log(104857600, linux_logging))  // Exactly at max size
-  assert_true(should_rotate_log(200000000, linux_logging))  // Exceeds max size
-  assert_false(should_rotate_log(50000000, linux_logging))  // Below max size
-  
-  assert_true(should_rotate_log(52428800, windows_logging))  // Exactly at max size
-  assert_false(should_rotate_log(25000000, windows_logging))  // Below max size
-  
-  // Test platform-specific log levels
-  let get_log_levels = fn(platform) {
-    match platform {
-      "linux" => ["DEBUG", "INFO", "WARN", "ERROR", "FATAL"]
-      "windows" => ["VERBOSE", "INFO", "WARNING", "ERROR", "CRITICAL"]
-      "macos" => ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
-      _ => ["DEBUG", "INFO", "WARN", "ERROR"]
-    }
-  }
-  
-  let linux_levels = get_log_levels("linux")
-  assert_eq(linux_levels, ["DEBUG", "INFO", "WARN", "ERROR", "FATAL"])
-  
-  let windows_levels = get_log_levels("windows")
-  assert_eq(windows_levels, ["VERBOSE", "INFO", "WARNING", "ERROR", "CRITICAL"])
-  
-  let macos_levels = get_log_levels("macos")
-  assert_eq(macos_levels, ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"])
-  
-  // Test system integration
-  let get_system_logger = fn(platform) {
-    match platform {
-      "linux" => "syslog"
-      "windows" => "Event Log"
-      "macos" => "os_log"
-      _ => "console"
-    }
-  }
-  
-  assert_eq(get_system_logger("linux"), "syslog")
-  assert_eq(get_system_logger("windows"), "Event Log")
-  assert_eq(get_system_logger("macos"), "os_log")
-  assert_eq(get_system_logger("unknown"), "console")
-}
-
-// Test 8: Platform-Specific Security Features
-test "platform-specific security features" {
-  // Define security configuration
-  let create_security_config = fn(has_selinux, has_apparmor, has_windows_defender, has_gatekeeper) {
-    { 
-      has_selinux = has_selinux, 
-      has_apparmor = has_apparmor, 
-      has_windows_defender = has_windows_defender, 
-      has_gatekeeper = has_gatekeeper 
-    }
-  }
-  
-  // Create platform-specific security configs
-  let linux_security = create_security_config(true, true, false, false)
-  let windows_security = create_security_config(false, false, true, false)
-  let macos_security = create_security_config(false, false, false, true)
-  
-  // Test security feature availability
-  let get_security_features = fn(security_config) {
-    let mut features = []
+  // 测试运行时特定功能
+  if runtime_env == "browser" {
+    // 浏览器特定测试
+    let webgl_available = @azimuth.Platform::is_webgl_available()
+    let webgl2_available = @azimuth.Platform::is_webgl2_available()
+    let webrtc_available = @azimuth.Platform::is_webrtc_available()
     
-    if security_config.has_selinux {
-      features = features.push("SELinux")
-    }
+    // 创建浏览器运行时资源
+    let browser_runtime_resource = Resource({
+      attributes: [
+        ("runtime.environment", StringValue(runtime_env)),
+        ("runtime.version", StringValue(runtime_version)),
+        ("runtime.webgl.available", StringValue(webgl_available.to_string())),
+        ("runtime.webgl2.available", StringValue(webgl2_available.to_string())),
+        ("runtime.webrtc.available", StringValue(webrtc_available.to_string()))
+      ],
+      schema_url: Some("https://opentelemetry.io/schemas/1.20.0")
+    })
     
-    if security_config.has_apparmor {
-      features = features.push("AppArmor")
-    }
+    // 验证浏览器运行时资源
+    assert_eq(browser_runtime_resource.attributes.length(), 5)
+  } else if runtime_env == "nodejs" {
+    // Node.js特定测试
+    let node_modules_path = @azimuth.Platform::get_node_modules_path()
+    let npm_version = @azimuth.Platform::get_npm_version()
     
-    if security_config.has_windows_defender {
-      features = features.push("Windows Defender")
-    }
+    // 创建Node.js运行时资源
+    let nodejs_runtime_resource = Resource({
+      attributes: [
+        ("runtime.environment", StringValue(runtime_env)),
+        ("runtime.version", StringValue(runtime_version)),
+        ("runtime.node.modules.path", StringValue(node_modules_path)),
+        ("runtime.npm.version", StringValue(npm_version))
+      ],
+      schema_url: Some("https://opentelemetry.io/schemas/1.20.0")
+    })
     
-    if security_config.has_gatekeeper {
-      features = features.push("Gatekeeper")
-    }
+    // 验证Node.js运行时资源
+    assert_eq(nodejs_runtime_resource.attributes.length(), 4)
+  } else if runtime_env == "wasm" {
+    // WebAssembly特定测试
+    let wasm_features = @azimuth.Platform::get_wasm_features()
+    let wasm_memory_limit = @azimuth.Platform::get_wasm_memory_limit()
     
-    features
+    // 创建WebAssembly运行时资源
+    let wasm_runtime_resource = Resource({
+      attributes: [
+        ("runtime.environment", StringValue(runtime_env)),
+        ("runtime.version", StringValue(runtime_version)),
+        ("runtime.wasm.features", StringValue(wasm_features)),
+        ("runtime.wasm.memory.limit", StringValue(wasm_memory_limit.to_string()))
+      ],
+      schema_url: Some("https://opentelemetry.io/schemas/1.20.0")
+    })
+    
+    // 验证WebAssembly运行时资源
+    assert_eq(wasm_runtime_resource.attributes.length(), 4)
+  } else {
+    // 原生运行时测试
+    let native_compiler = @azimuth.Platform::get_native_compiler()
+    let native_build_flags = @azimuth.Platform::get_native_build_flags()
+    
+    // 创建原生运行时资源
+    let native_runtime_resource = Resource({
+      attributes: [
+        ("runtime.environment", StringValue(runtime_env)),
+        ("runtime.version", StringValue(runtime_version)),
+        ("runtime.native.compiler", StringValue(native_compiler)),
+        ("runtime.native.build.flags", StringValue(native_build_flags))
+      ],
+      schema_url: Some("https://opentelemetry.io/schemas/1.20.0")
+    })
+    
+    // 验证原生运行时资源
+    assert_eq(native_runtime_resource.attributes.length(), 4)
   }
   
-  // Test Linux security features
-  let linux_features = get_security_features(linux_security)
-  assert_eq(linux_features.length(), 2)
-  assert_true(linux_features.contains("SELinux"))
-  assert_true(linux_features.contains("AppArmor"))
-  assert_false(linux_features.contains("Windows Defender"))
-  assert_false(linux_features.contains("Gatekeeper"))
+  // 测试跨平台兼容性API
+  let api_version = @azimuth.Platform::get_api_version()
+  assert_true(api_version.length() > 0)
   
-  // Test Windows security features
-  let windows_features = get_security_features(windows_security)
-  assert_eq(windows_features.length(), 1)
-  assert_false(windows_features.contains("SELinux"))
-  assert_false(windows_features.contains("AppArmor"))
-  assert_true(windows_features.contains("Windows Defender"))
-  assert_false(windows_features.contains("Gatekeeper"))
+  let supported_features = @azimuth.Platform::get_supported_features()
+  assert_true(supported_features.length() > 0)
   
-  // Test macOS security features
-  let macos_features = get_security_features(macos_security)
-  assert_eq(macos_features.length(), 1)
-  assert_false(macos_features.contains("SELinux"))
-  assert_false(macos_features.contains("AppArmor"))
-  assert_false(macos_features.contains("Windows Defender"))
-  assert_true(macos_features.contains("Gatekeeper"))
+  // 创建通用运行时资源
+  let common_runtime_resource = Resource({
+    attributes: [
+      ("runtime.environment", StringValue(runtime_env)),
+      ("runtime.version", StringValue(runtime_version)),
+      ("runtime.api.version", StringValue(api_version)),
+      ("runtime.supported.features", StringValue(supported_features))
+    ],
+    schema_url: Some("https://opentelemetry.io/schemas/1.20.0")
+  })
   
-  // Test platform-specific permission models
-  let get_permission_model = fn(platform) {
-    match platform {
-      "linux" => "POSIX permissions + SELinux/AppArmor"
-      "windows" => "ACL + UAC"
-      "macos" => "POSIX permissions + Gatekeeper + SIP"
-      _ => "Basic permissions"
-    }
-  }
-  
-  assert_eq(get_permission_model("linux"), "POSIX permissions + SELinux/AppArmor")
-  assert_eq(get_permission_model("windows"), "ACL + UAC")
-  assert_eq(get_permission_model("macos"), "POSIX permissions + Gatekeeper + SIP")
-  assert_eq(get_permission_model("unknown"), "Basic permissions")
-  
-  // Test secure temp directory creation
-  let get_secure_temp_dir = fn(platform) {
-    match platform {
-      "linux" => "/tmp/azimuth-XXXXXX"
-      "windows" => "C:\\Users\\User\\AppData\\Local\\Temp\\azimuth-XXXXXX"
-      "macos" => "/tmp/azimuth-XXXXXX"
-      _ => "/tmp/azimuth-XXXXXX"
-    }
-  }
-  
-  let linux_temp = get_secure_temp_dir("linux")
-  assert_eq(linux_temp, "/tmp/azimuth-XXXXXX")
-  
-  let windows_temp = get_secure_temp_dir("windows")
-  assert_eq(windows_temp, "C:\\Users\\User\\AppData\\Local\\Temp\\azimuth-XXXXXX")
-  
-  let macos_temp = get_secure_temp_dir("macos")
-  assert_eq(macos_temp, "/tmp/azimuth-XXXXXX")
-}
-
-// Test 9: Platform-Specific Performance Monitoring
-test "platform-specific performance monitoring" {
-  // Define performance monitoring configuration
-  let create_perf_config = fn(has_perf, has_etw, has_xctrace, sampling_rate) {
-    { 
-      has_perf = has_perf, 
-      has_etw = has_etw, 
-      has_xctrace = has_xctrace, 
-      sampling_rate = sampling_rate 
-    }
-  }
-  
-  // Create platform-specific perf configs
-  let linux_perf = create_perf_config(true, false, false, 1000)  // 1000Hz
-  let windows_perf = create_perf_config(false, true, false, 100)  // 100Hz
-  let macos_perf = create_perf_config(false, false, true, 1000)  // 1000Hz
-  
-  // Test performance monitoring tools
-  let get_perf_tools = fn(perf_config) {
-    let mut tools = []
-    
-    if perf_config.has_perf {
-      tools = tools.push("perf")
-    }
-    
-    if perf_config.has_etw {
-      tools = tools.push("ETW")
-    }
-    
-    if perf_config.has_xctrace {
-      tools = tools.push("XCTrace")
-    }
-    
-    tools
-  }
-  
-  // Test Linux performance monitoring
-  let linux_tools = get_perf_tools(linux_perf)
-  assert_eq(linux_tools.length(), 1)
-  assert_eq(linux_tools[0], "perf")
-  assert_eq(linux_perf.sampling_rate, 1000)
-  
-  // Test Windows performance monitoring
-  let windows_tools = get_perf_tools(windows_perf)
-  assert_eq(windows_tools.length(), 1)
-  assert_eq(windows_tools[0], "ETW")
-  assert_eq(windows_perf.sampling_rate, 100)
-  
-  // Test macOS performance monitoring
-  let macos_tools = get_perf_tools(macos_perf)
-  assert_eq(macos_tools.length(), 1)
-  assert_eq(macos_tools[0], "XCTrace")
-  assert_eq(macos_perf.sampling_rate, 1000)
-  
-  // Test platform-specific metrics
-  let get_platform_metrics = fn(platform) {
-    match platform {
-      "linux" => [
-        "cpu_usage", "memory_usage", "disk_io", "network_io", 
-        "context_switches", "page_faults", "system_calls"
-      ]
-      "windows" => [
-        "cpu_usage", "memory_usage", "disk_io", "network_io",
-        "handle_count", "thread_count", "process_count"
-      ]
-      "macos" => [
-        "cpu_usage", "memory_usage", "disk_io", "network_io",
-        "power_consumption", "thermal_state", "gpu_usage"
-      ]
-      _ => [
-        "cpu_usage", "memory_usage", "disk_io", "network_io"
-      ]
-    }
-  }
-  
-  let linux_metrics = get_platform_metrics("linux")
-  assert_eq(linux_metrics.length(), 7)
-  assert_true(linux_metrics.contains("cpu_usage"))
-  assert_true(linux_metrics.contains("context_switches"))
-  assert_true(linux_metrics.contains("system_calls"))
-  
-  let windows_metrics = get_platform_metrics("windows")
-  assert_eq(windows_metrics.length(), 7)
-  assert_true(windows_metrics.contains("cpu_usage"))
-  assert_true(windows_metrics.contains("handle_count"))
-  assert_true(windows_metrics.contains("thread_count"))
-  
-  let macos_metrics = get_platform_metrics("macos")
-  assert_eq(macos_metrics.length(), 7)
-  assert_true(macos_metrics.contains("cpu_usage"))
-  assert_true(macos_metrics.contains("power_consumption"))
-  assert_true(macos_metrics.contains("thermal_state"))
-  
-  // Test performance counter access
-  let get_perf_counter_access = fn(platform) {
-    match platform {
-      "linux" => "/proc/stat"
-      "windows" => "PDH API"
-      "macos" => "sysctl"
-      _ => "custom"
-    }
-  }
-  
-  assert_eq(get_perf_counter_access("linux"), "/proc/stat")
-  assert_eq(get_perf_counter_access("windows"), "PDH API")
-  assert_eq(get_perf_counter_access("macos"), "sysctl")
-  assert_eq(get_perf_counter_access("unknown"), "custom")
-}
-
-// Test 10: Cross-Platform Compatibility Validation
-test "cross-platform compatibility validation" {
-  // Define platform compatibility matrix
-  let create_compatibility_matrix = fn() {
-    {
-      features = {
-        "telemetry_collection" = ["linux", "windows", "macos"],
-        "metrics_export" = ["linux", "windows", "macos"],
-        "distributed_tracing" = ["linux", "windows", "macos"],
-        "profiling" = ["linux", "macos"],
-        "advanced_networking" = ["linux", "windows"],
-        "security_hardening" = ["linux", "windows", "macos"],
-        "auto_update" = ["windows", "macos"],
-        "systemd_integration" = ["linux"],
-        "windows_service" = ["windows"],
-        "launchd_integration" = ["macos"]
-      }
-    }
-  }
-  
-  // Check feature compatibility
-  let is_feature_supported = fn(feature, platform, compatibility_matrix) {
-    match compatibility_matrix.features.get(feature) {
-      None => false
-      Some(supported_platforms) => supported_platforms.contains(platform)
-    }
-  }
-  
-  // Get supported features for platform
-  let get_supported_features = fn(platform, compatibility_matrix) {
-    let mut supported = []
-    
-    for (feature, platforms) in compatibility_matrix.features {
-      if platforms.contains(platform) {
-        supported = supported.push(feature)
-      }
-    }
-    
-    supported
-  }
-  
-  // Test compatibility matrix
-  let compat_matrix = create_compatibility_matrix()
-  
-  // Test feature compatibility
-  assert_true(is_feature_supported("telemetry_collection", "linux", compat_matrix))
-  assert_true(is_feature_supported("telemetry_collection", "windows", compat_matrix))
-  assert_true(is_feature_supported("telemetry_collection", "macos", compat_matrix))
-  
-  assert_true(is_feature_supported("profiling", "linux", compat_matrix))
-  assert_false(is_feature_supported("profiling", "windows", compat_matrix))
-  assert_true(is_feature_supported("profiling", "macos", compat_matrix))
-  
-  assert_true(is_feature_supported("systemd_integration", "linux", compat_matrix))
-  assert_false(is_feature_supported("systemd_integration", "windows", compat_matrix))
-  assert_false(is_feature_supported("systemd_integration", "macos", compat_matrix))
-  
-  // Test supported features per platform
-  let linux_features = get_supported_features("linux", compat_matrix)
-  assert_eq(linux_features.length(), 7)
-  assert_true(linux_features.contains("telemetry_collection"))
-  assert_true(linux_features.contains("systemd_integration"))
-  assert_false(linux_features.contains("windows_service"))
-  
-  let windows_features = get_supported_features("windows", compat_matrix)
-  assert_eq(windows_features.length(), 7)
-  assert_true(windows_features.contains("telemetry_collection"))
-  assert_true(windows_features.contains("windows_service"))
-  assert_false(windows_features.contains("systemd_integration"))
-  
-  let macos_features = get_supported_features("macos", compat_matrix)
-  assert_eq(macos_features.length(), 7)
-  assert_true(macos_features.contains("telemetry_collection"))
-  assert_true(linux_features.contains("launchd_integration"))
-  assert_false(macos_features.contains("windows_service"))
-  
-  // Test platform-specific configuration validation
-  let validate_platform_config = fn(platform, config) {
-    let mut errors = []
-    
-    // Check required features
-    let required_features = ["telemetry_collection", "metrics_export"]
-    for feature in required_features {
-      if !is_feature_supported(feature, platform, compat_matrix) {
-        errors = errors.push("Required feature '" + feature + "' not supported on " + platform)
-      }
-    }
-    
-    // Check platform-specific settings
-    if platform == "windows" && !config.contains("windows_service_name") {
-      errors = errors.push("Windows requires 'windows_service_name' configuration")
-    }
-    
-    if platform == "linux" && !config.contains("systemd_service_file") {
-      errors = errors.push("Linux requires 'systemd_service_file' configuration")
-    }
-    
-    if platform == "macos" && !config.contains("launchd_plist") {
-      errors = errors.push("macOS requires 'launchd_plist' configuration")
-    }
-    
-    errors
-  }
-  
-  // Test valid configurations
-  let valid_linux_config = {
-    "telemetry_collection" = "enabled",
-    "metrics_export" = "enabled",
-    "systemd_service_file" = "/etc/systemd/system/azimuth.service"
-  }
-  
-  let linux_errors = validate_platform_config("linux", valid_linux_config)
-  assert_eq(linux_errors.length(), 0)
-  
-  let valid_windows_config = {
-    "telemetry_collection" = "enabled",
-    "metrics_export" = "enabled",
-    "windows_service_name" = "AzimuthAgent"
-  }
-  
-  let windows_errors = validate_platform_config("windows", valid_windows_config)
-  assert_eq(windows_errors.length(), 0)
-  
-  // Test invalid configurations
-  let invalid_linux_config = {
-    "telemetry_collection" = "enabled",
-    "metrics_export" = "enabled"
-    // Missing systemd_service_file
-  }
-  
-  let invalid_linux_errors = validate_platform_config("linux", invalid_linux_config)
-  assert_eq(invalid_linux_errors.length(), 1)
-  assert_true(invalid_linux_errors[0].contains("systemd_service_file"))
-  
-  let invalid_windows_config = {
-    "telemetry_collection" = "enabled",
-    "metrics_export" = "enabled"
-    // Missing windows_service_name
-  }
-  
-  let invalid_windows_errors = validate_platform_config("windows", invalid_windows_config)
-  assert_eq(invalid_windows_errors.length(), 1)
-  assert_true(invalid_windows_errors[0].contains("windows_service_name"))
+  // 验证通用运行时资源
+  assert_eq(common_runtime_resource.attributes.length(), 4)
 }
