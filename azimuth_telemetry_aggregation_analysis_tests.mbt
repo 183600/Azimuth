@@ -1,1398 +1,982 @@
-// Azimuth Telemetry Aggregation Analysis Tests
-// 遥测数据聚合分析测试 - 验证遥测数据的聚合、分析和统计功能
+// Azimuth 遥测聚合分析测试用例
+// 专注于遥测数据的聚合、分析和高级处理功能
 
-// 测试1: 度量数据聚合
-test "度量数据聚合测试" {
-  // 创建度量数据点
-  let metric_points = [
-    MetricPoint { timestamp: 1609459200000L, value: 10.5, attributes: [("service", StringValue("service-a")), ("version", StringValue("1.0.0"))] },
-    MetricPoint { timestamp: 1609459260000L, value: 15.2, attributes: [("service", StringValue("service-a")), ("version", StringValue("1.0.0"))] },
-    MetricPoint { timestamp: 1609459320000L, value: 12.8, attributes: [("service", StringValue("service-b")), ("version", StringValue("1.0.0"))] },
-    MetricPoint { timestamp: 1609459380000L, value: 18.3, attributes: [("service", StringValue("service-b")), ("version", StringValue("1.1.0"))] },
-    MetricPoint { timestamp: 1609459440000L, value: 14.7, attributes: [("service", StringValue("service-a")), ("version", StringValue("1.1.0"))] }
-  ]
-  
-  // 按服务名称聚合
-  let service_aggregation = aggregate_metrics_by_attribute(metric_points, "service")
-  
-  // 验证聚合结果
-  assert_eq(service_aggregation.length(), 2) // 两个服务
-  
-  // 验证service-a的聚合
-  let service_a_data = find_aggregation_by_key(service_aggregation, "service-a")
-  match service_a_data {
-    Some(data) => {
-      assert_eq(data.count, 3)
-      assert_eq(data.sum, 10.5 + 15.2 + 14.7)
-      assert_eq(data.min, 10.5)
-      assert_eq(data.max, 15.2)
-      assert_eq(data.average, data.sum / 3.0)
-    }
-    None => assert_true(false)
-  }
-  
-  // 验证service-b的聚合
-  let service_b_data = find_aggregation_by_key(service_aggregation, "service-b")
-  match service_b_data {
-    Some(data) => {
-      assert_eq(data.count, 2)
-      assert_eq(data.sum, 12.8 + 18.3)
-      assert_eq(data.min, 12.8)
-      assert_eq(data.max, 18.3)
-      assert_eq(data.average, data.sum / 2.0)
-    }
-    None => assert_true(false)
-  }
-  
-  // 按版本聚合
-  let version_aggregation = aggregate_metrics_by_attribute(metric_points, "version")
-  
-  // 验证聚合结果
-  assert_eq(version_aggregation.length(), 2) // 两个版本
-  
-  // 验证版本1.0.0的聚合
-  let version_1_0_0_data = find_aggregation_by_key(version_aggregation, "1.0.0")
-  match version_1_0_0_data {
-    Some(data) => {
-      assert_eq(data.count, 3)
-      assert_eq(data.sum, 10.5 + 15.2 + 12.8)
-      assert_eq(data.min, 10.5)
-      assert_eq(data.max, 15.2)
-    }
-    None => assert_true(false)
-  }
-  
-  // 验证版本1.1.0的聚合
-  let version_1_1_0_data = find_aggregation_by_key(version_aggregation, "1.1.0")
-  match version_1_1_0_data {
-    Some(data) => {
-      assert_eq(data.count, 2)
-      assert_eq(data.sum, 18.3 + 14.7)
-      assert_eq(data.min, 14.7)
-      assert_eq(data.max, 18.3)
-    }
-    None => assert_true(false)
-  }
-}
-
-// 测试2: 时间序列数据分析
-test "时间序列数据分析测试" {
+// 测试1: 时间序列数据聚合
+test "时间序列数据聚合分析" {
   // 创建时间序列数据点
-  let time_series_points = [
-    TimeSeriesPoint { timestamp: 1609459200000L, value: 100.0 },
-    TimeSeriesPoint { timestamp: 1609459260000L, value: 110.0 },
-    TimeSeriesPoint { timestamp: 1609459320000L, value: 105.0 },
-    TimeSeriesPoint { timestamp: 1609459380000L, value: 120.0 },
-    TimeSeriesPoint { timestamp: 1609459440000L, value: 115.0 },
-    TimeSeriesPoint { timestamp: 1609459500000L, value: 130.0 },
-    TimeSeriesPoint { timestamp: 1609459560000L, value: 125.0 },
-    TimeSeriesPoint { timestamp: 1609459620000L, value: 140.0 }
+  let data_points = [
+    {"timestamp": 1640995200000, "value": 10.5, "metric": "cpu.usage"},
+    {"timestamp": 1640995200600, "value": 12.3, "metric": "cpu.usage"},
+    {"timestamp": 1640995201200, "value": 15.7, "metric": "cpu.usage"},
+    {"timestamp": 1640995201800, "value": 14.2, "metric": "cpu.usage"},
+    {"timestamp": 1640995202400, "value": 11.8, "metric": "cpu.usage"}
   ]
   
-  // 计算基本统计信息
-  let stats = calculate_time_series_statistics(time_series_points)
+  // 计算聚合统计
+  let sum = data_points.reduce(fn(acc, point) { acc + point["value"] }, 0.0)
+  let count = data_points.length().to_float()
+  let average = sum / count
   
-  // 验证统计结果
-  assert_eq(stats.count, 8)
-  assert_eq(stats.sum, 100.0 + 110.0 + 105.0 + 120.0 + 115.0 + 130.0 + 125.0 + 140.0)
-  assert_eq(stats.min, 100.0)
-  assert_eq(stats.max, 140.0)
-  assert_eq(stats.average, stats.sum / 8.0)
+  // 找到最大值和最小值
+  let max_value = data_points.reduce(fn(acc, point) { 
+    if point["value"] > acc { point["value"] } else { acc } 
+  }, data_points[0]["value"])
   
-  // 计算趋势
-  let trend = calculate_time_series_trend(time_series_points)
-  match trend {
-    Increasing => assert_true(true) // 值总体上在增加
-    Decreasing => assert_true(false)
-    Stable => assert_true(false)
+  let min_value = data_points.reduce(fn(acc, point) { 
+    if point["value"] < acc { point["value"] } else { acc } 
+  }, data_points[0]["value"])
+  
+  // 计算方差
+  let variance = data_points.reduce(fn(acc, point) { 
+    let diff = point["value"] - average
+    acc + (diff * diff)
+  }, 0.0) / count
+  
+  // 验证聚合结果
+  assert_eq(count, 5.0)
+  assert_eq(sum, 64.5)
+  assert_eq(average, 12.9)
+  assert_eq(max_value, 15.7)
+  assert_eq(min_value, 10.5)
+  assert_true(variance > 0.0)
+  
+  // 按时间窗口聚合（1分钟窗口）
+  let time_windows = {}
+  for point in data_points {
+    let window_start = (point["timestamp"] / 60000) * 60000
+    let window_key = window_start.to_string()
+    
+    let current_window = match time_windows.get(window_key) {
+      Some(window) => window
+      None => {"sum": 0.0, "count": 0}
+    }
+    
+    let updated_window = {
+      "sum": current_window["sum"] + point["value"],
+      "count": current_window["count"] + 1
+    }
+    
+    time_windows = time_windows.set(window_key, updated_window)
   }
   
-  // 计算移动平均（窗口大小为3）
-  let moving_averages = calculate_moving_average(time_series_points, 3)
-  
-  // 验证移动平均结果
-  assert_eq(moving_averages.length(), 6) // 8-3+1 = 6
-  
-  // 验证第一个移动平均：(100+110+105)/3 = 105.0
-  assert_eq(moving_averages[0], 105.0)
-  
-  // 验证最后一个移动平均：(130+125+140)/3 = 131.666...
-  assert_true(abs(moving_averages[5] - 131.6666666667) < 0.0001)
-  
-  // 计算变化率
-  let change_rates = calculate_change_rates(time_series_points)
-  
-  // 验证变化率结果
-  assert_eq(change_rates.length(), 7) // 8-1 = 7
-  
-  // 验证第一个变化率：(110-100)/100 = 0.1
-  assert_true(abs(change_rates[0] - 0.1) < 0.0001)
-  
-  // 验证第二个变化率：(105-110)/110 = -0.04545...
-  assert_true(abs(change_rates[1] - (-0.0454545455)) < 0.0001)
+  // 验证时间窗口聚合
+  assert_eq(time_windows.keys().length(), 1) // 所有数据点在同一分钟窗口
+  let window = time_windows.get("1640995200000").unwrap()
+  assert_eq(window["sum"], 64.5)
+  assert_eq(window["count"], 5)
 }
 
-// 测试3: 分布式追踪数据分析
-test "分布式追踪数据分析测试" {
-  // 创建分布式追踪数据
-  let trace_data = [
-    SpanData {
-      trace_id: "trace-001",
-      span_id: "span-001",
-      parent_span_id: None,
-      operation_name: "GET /api/users",
-      start_time: 1609459200000L,
-      end_time: 1609459200150L,
-      status: "OK",
-      service_name: "api-gateway",
-      attributes: [("http.method", StringValue("GET")), ("http.status_code", IntValue(200))]
-    },
-    SpanData {
-      trace_id: "trace-001",
-      span_id: "span-002",
-      parent_span_id: Some("span-001"),
-      operation_name: "database.query",
-      start_time: 1609459200050L,
-      end_time: 1609459200120L,
-      status: "OK",
-      service_name: "user-service",
-      attributes: [("db.type", StringValue("postgresql")), ("db.statement", StringValue("SELECT * FROM users"))]
-    },
-    SpanData {
-      trace_id: "trace-001",
-      span_id: "span-003",
-      parent_span_id: Some("span-001"),
-      operation_name: "cache.get",
-      start_time: 1609459200125L,
-      end_time: 1609459200140L,
-      status: "OK",
-      service_name: "cache-service",
-      attributes: [("cache.key", StringValue("user:123")), ("cache.hit", BoolValue(true))]
-    },
-    SpanData {
-      trace_id: "trace-002",
-      span_id: "span-004",
-      parent_span_id: None,
-      operation_name: "POST /api/orders",
-      start_time: 1609459210000L,
-      end_time: 1609459210300L,
-      status: "ERROR",
-      service_name: "api-gateway",
-      attributes: [("http.method", StringValue("POST")), ("http.status_code", IntValue(500))]
-    },
-    SpanData {
-      trace_id: "trace-002",
-      span_id: "span-005",
-      parent_span_id: Some("span-004"),
-      operation_name: "database.insert",
-      start_time: 1609459210100L,
-      end_time: 1609459210280L,
-      status: "ERROR",
-      service_name: "order-service",
-      attributes: [("db.type", StringValue("postgresql")), ("error.message", StringValue("Connection timeout"))]
-    }
+// 测试2: 异常检测和告警机制
+test "异常检测和告警机制" {
+  // 创建阈值配置
+  let alert_thresholds = {
+    "cpu.usage": {"warning": 70.0, "critical": 90.0},
+    "memory.usage": {"warning": 80.0, "critical": 95.0},
+    "response.time": {"warning": 1000.0, "critical": 5000.0},
+    "error.rate": {"warning": 5.0, "critical": 10.0}
+  }
+  
+  // 创建监控数据点
+  let metrics = [
+    {"metric": "cpu.usage", "value": 45.2, "timestamp": 1640995200000},
+    {"metric": "memory.usage", "value": 82.5, "timestamp": 1640995200000},
+    {"metric": "response.time", "value": 1200.0, "timestamp": 1640995200000},
+    {"metric": "error.rate", "value": 12.3, "timestamp": 1640995200000}
   ]
   
-  // 按追踪ID分组
-  let traces_by_id = group_spans_by_trace_id(trace_data)
-  
-  // 验证分组结果
-  assert_eq(traces_by_id.length(), 2) // 两个追踪
-  
-  // 验证trace-001
-  let trace_001 = find_trace_by_id(traces_by_id, "trace-001")
-  match trace_001 {
-    Some(spans) => {
-      assert_eq(spans.length(), 3)
-      
-      // 验证根跨度
-      let root_span = find_root_span(spans)
-      match root_span {
-        Some(span) => {
-          assert_eq(span.span_id, "span-001")
-          assert_eq(span.operation_name, "GET /api/users")
-          assert_eq(span.service_name, "api-gateway")
-          assert_eq(span.parent_span_id, None)
-        }
-        None => assert_true(false)
-      }
-      
-      // 验证追踪持续时间
-      let trace_duration = calculate_trace_duration(spans)
-      assert_eq(trace_duration, 150) // 1609459200150 - 1609459200000
-      
-      // 验证服务调用次数
-      let service_counts = count_service_calls(spans)
-      assert_eq(service_counts.length(), 3) // 三个服务
-      
-      let api_gateway_count = find_service_call_count(service_counts, "api-gateway")
-      match api_gateway_count {
-        Some(count) => assert_eq(count, 1)
-        None => assert_true(false)
-      }
-      
-      let user_service_count = find_service_call_count(service_counts, "user-service")
-      match user_service_count {
-        Some(count) => assert_eq(count, 1)
-        None => assert_true(false)
-      }
-      
-      let cache_service_count = find_service_call_count(service_counts, "cache-service")
-      match cache_service_count {
-        Some(count) => assert_eq(count, 1)
-        None => assert_true(false)
-      }
-    }
-    None => assert_true(false)
-  }
-  
-  // 验证trace-002
-  let trace_002 = find_trace_by_id(traces_by_id, "trace-002")
-  match trace_002 {
-    Some(spans) => {
-      assert_eq(spans.length(), 2)
-      
-      // 验证错误状态
-      let error_spans = filter_spans_by_status(spans, "ERROR")
-      assert_eq(error_spans.length(), 2) // 两个错误跨度
-      
-      // 验证错误率
-      let error_rate = calculate_error_rate(spans)
-      assert_eq(error_rate, 1.0) // 100%错误率
-    }
-    None => assert_true(false)
-  }
-  
-  // 计算整体统计
-  let overall_stats = calculate_overall_trace_statistics(trace_data)
-  
-  // 验证整体统计
-  assert_eq(overall_stats.total_traces, 2)
-  assert_eq(overall_stats.total_spans, 5)
-  assert_eq(overall_stats.successful_traces, 1)
-  assert_eq(overall_stats.failed_traces, 1)
-  assert_eq(overall_stats.success_rate, 0.5) // 50%
-  
-  // 验证平均追踪持续时间
-  let average_trace_duration = overall_stats.average_trace_duration
-  assert_eq(average_trace_duration, (150 + 300) / 2) // (trace-001: 150ms, trace-002: 300ms)
-}
-
-// 测试4: 日志数据分析
-test "日志数据分析测试" {
-  // 创建日志数据
-  let log_data = [
-    LogData {
-      timestamp: 1609459200000L,
-      level: "INFO",
-      message: "User login successful",
-      service_name: "auth-service",
-      trace_id: Some("trace-001"),
-      span_id: Some("span-001"),
-      attributes: [("user.id", StringValue("user123")), ("ip.address", StringValue("192.168.1.1"))]
-    },
-    LogData {
-      timestamp: 1609459200050L,
-      level: "INFO",
-      message: "Database connection established",
-      service_name: "user-service",
-      trace_id: Some("trace-001"),
-      span_id: Some("span-002"),
-      attributes: [("db.connection", StringValue("conn-12345"))]
-    },
-    LogData {
-      timestamp: 1609459200100L,
-      level: "WARN",
-      message: "Cache miss for user profile",
-      service_name: "cache-service",
-      trace_id: Some("trace-001"),
-      span_id: Some("span-003"),
-      attributes: [("cache.key", StringValue("user:123")), ("cache.ttl", IntValue(3600))]
-    },
-    LogData {
-      timestamp: 1609459210000L,
-      level: "ERROR",
-      message: "Database connection timeout",
-      service_name: "order-service",
-      trace_id: Some("trace-002"),
-      span_id: Some("span-004"),
-      attributes: [("db.connection", StringValue("conn-67890")), ("timeout", IntValue(5000))]
-    },
-    LogData {
-      timestamp: 1609459210050L,
-      level: "ERROR",
-      message: "Order processing failed",
-      service_name: "order-service",
-      trace_id: Some("trace-002"),
-      span_id: Some("span-005"),
-      attributes: [("order.id", StringValue("order-456")), ("error.code", StringValue("DB_TIMEOUT"))]
-    }
-  ]
-  
-  // 按日志级别分组
-  let logs_by_level = group_logs_by_level(log_data)
-  
-  // 验证分组结果
-  assert_eq(logs_by_level.length(), 3) // INFO, WARN, ERROR
-  
-  // 验证INFO级别
-  let info_logs = find_logs_by_level(logs_by_level, "INFO")
-  match info_logs {
-    Some(logs) => assert_eq(logs.length(), 2)
-    None => assert_true(false)
-  }
-  
-  // 验证WARN级别
-  let warn_logs = find_logs_by_level(logs_by_level, "WARN")
-  match warn_logs {
-    Some(logs) => assert_eq(logs.length(), 1)
-    None => assert_true(false)
-  }
-  
-  // 验证ERROR级别
-  let error_logs = find_logs_by_level(logs_by_level, "ERROR")
-  match error_logs {
-    Some(logs) => assert_eq(logs.length(), 2)
-    None => assert_true(false)
-  }
-  
-  // 按服务分组
-  let logs_by_service = group_logs_by_service(log_data)
-  
-  // 验证分组结果
-  assert_eq(logs_by_service.length(), 3) // auth-service, user-service, cache-service, order-service
-  
-  // 验证order-service的日志
-  let order_service_logs = find_logs_by_service(logs_by_service, "order-service")
-  match order_service_logs {
-    Some(logs) => {
-      assert_eq(logs.length(), 2)
-      
-      // 验证都是ERROR级别
-      for log in logs {
-        assert_eq(log.level, "ERROR")
-      }
-    }
-    None => assert_true(false)
-  }
-  
-  // 按追踪ID分组
-  let logs_by_trace = group_logs_by_trace_id(log_data)
-  
-  // 验证分组结果
-  assert_eq(logs_by_trace.length(), 2) // trace-001, trace-002
-  
-  // 验证trace-001的日志
-  let trace_001_logs = find_logs_by_trace_id(logs_by_trace, "trace-001")
-  match trace_001_logs {
-    Some(logs) => {
-      assert_eq(logs.length(), 3)
-      
-      // 验证日志时间顺序
-      assert_true(logs[0].timestamp <= logs[1].timestamp)
-      assert_true(logs[1].timestamp <= logs[2].timestamp)
-    }
-    None => assert_true(false)
-  }
-  
-  // 计算错误率
-  let error_rate = calculate_log_error_rate(log_data)
-  assert_eq(error_rate, 0.4) // 2/5 = 40%
-  
-  // 识别错误模式
-  let error_patterns = identify_error_patterns(log_data)
-  
-  // 验证错误模式
-  assert_eq(error_patterns.length(), 2) // 两种错误模式
-  
-  let db_timeout_pattern = find_error_pattern(error_patterns, "Database connection timeout")
-  match db_timeout_pattern {
-    Some(pattern) => {
-      assert_eq(pattern.count, 1)
-      assert_eq(pattern.service_name, "order-service")
-    }
-    None => assert_true(false)
-  }
-  
-  let order_processing_failed_pattern = find_error_pattern(error_patterns, "Order processing failed")
-  match order_processing_failed_pattern {
-    Some(pattern) => {
-      assert_eq(pattern.count, 1)
-      assert_eq(pattern.service_name, "order-service")
-    }
-    None => assert_true(false)
-  }
-}
-
-// 测试5: 多维度数据分析
-test "多维度数据分析测试" {
-  // 创建多维度数据
-  let multi_dimensional_data = [
-    DimensionalDataPoint {
-      timestamp: 1609459200000L,
-      metrics: [
-        ("response_time", 150.0),
-        ("cpu_usage", 45.2),
-        ("memory_usage", 67.8),
-        ("throughput", 1200.0)
-      ],
-      dimensions: [
-        ("service", "api-gateway"),
-        ("region", "us-west-1"),
-        ("version", "1.0.0")
-      ]
-    },
-    DimensionalDataPoint {
-      timestamp: 1609459260000L,
-      metrics: [
-        ("response_time", 120.0),
-        ("cpu_usage", 50.1),
-        ("memory_usage", 70.2),
-        ("throughput", 1350.0)
-      ],
-      dimensions: [
-        ("service", "api-gateway"),
-        ("region", "us-west-1"),
-        ("version", "1.0.0")
-      ]
-    },
-    DimensionalDataPoint {
-      timestamp: 1609459320000L,
-      metrics: [
-        ("response_time", 200.0),
-        ("cpu_usage", 65.3),
-        ("memory_usage", 75.4),
-        ("throughput", 980.0)
-      ],
-      dimensions: [
-        ("service", "user-service"),
-        ("region", "us-east-1"),
-        ("version", "1.1.0")
-      ]
-    },
-    DimensionalDataPoint {
-      timestamp: 1609459380000L,
-      metrics: [
-        ("response_time", 180.0),
-        ("cpu_usage", 60.5),
-        ("memory_usage", 72.1),
-        ("throughput", 1100.0)
-      ],
-      dimensions: [
-        ("service", "user-service"),
-        ("region", "us-east-1"),
-        ("version", "1.1.0")
-      ]
-    }
-  ]
-  
-  // 按服务和区域分组
-  let grouped_by_service_region = group_dimensional_data(multi_dimensional_data, ["service", "region"])
-  
-  // 验证分组结果
-  assert_eq(grouped_by_service_region.length(), 2) // 两种组合
-  
-  // 验证api-gateway/us-west-1的聚合
-  let api_gateway_west = find_dimensional_group(grouped_by_service_region, [("service", "api-gateway"), ("region", "us-west-1")])
-  match api_gateway_west {
-    Some(group) => {
-      assert_eq(group.count, 2)
-      
-      // 验证response_time的平均值
-      let response_time_avg = calculate_metric_average(group, "response_time")
-      assert_eq(response_time_avg, (150.0 + 120.0) / 2.0)
-      
-      // 验证cpu_usage的平均值
-      let cpu_usage_avg = calculate_metric_average(group, "cpu_usage")
-      assert_eq(cpu_usage_avg, (45.2 + 50.1) / 2.0)
-      
-      // 验证throughput的平均值
-      let throughput_avg = calculate_metric_average(group, "throughput")
-      assert_eq(throughput_avg, (1200.0 + 1350.0) / 2.0)
-    }
-    None => assert_true(false)
-  }
-  
-  // 验证user-service/us-east-1的聚合
-  let user_service_east = find_dimensional_group(grouped_by_service_region, [("service", "user-service"), ("region", "us-east-1")])
-  match user_service_east {
-    Some(group) => {
-      assert_eq(group.count, 2)
-      
-      // 验证response_time的平均值
-      let response_time_avg = calculate_metric_average(group, "response_time")
-      assert_eq(response_time_avg, (200.0 + 180.0) / 2.0)
-      
-      // 验证cpu_usage的平均值
-      let cpu_usage_avg = calculate_metric_average(group, "cpu_usage")
-      assert_eq(cpu_usage_avg, (65.3 + 60.5) / 2.0)
-      
-      // 验证throughput的平均值
-      let throughput_avg = calculate_metric_average(group, "throughput")
-      assert_eq(throughput_avg, (980.0 + 1100.0) / 2.0)
-    }
-    None => assert_true(false)
-  }
-  
-  // 按版本分组
-  let grouped_by_version = group_dimensional_data(multi_dimensional_data, ["version"])
-  
-  // 验证分组结果
-  assert_eq(grouped_by_version.length(), 2) // 两个版本
-  
-  // 验证版本1.0.0的聚合
-  let version_1_0_0 = find_dimensional_group(grouped_by_version, [("version", "1.0.0")])
-  match version_1_0_0 {
-    Some(group) => {
-      assert_eq(group.count, 2)
-      
-      // 验证响应时间更小（性能更好）
-      let response_time_avg = calculate_metric_average(group, "response_time")
-      assert_true(response_time_avg < 150.0)
-      
-      // 验证吞吐量更高
-      let throughput_avg = calculate_metric_average(group, "throughput")
-      assert_true(throughput_avg > 1200.0)
-    }
-    None => assert_true(false)
-  }
-  
-  // 验证版本1.1.0的聚合
-  let version_1_1_0 = find_dimensional_group(grouped_by_version, [("version", "1.1.0")])
-  match version_1_1_0 {
-    Some(group) => {
-      assert_eq(group.count, 2)
-      
-      // 验证响应时间更大（性能较差）
-      let response_time_avg = calculate_metric_average(group, "response_time")
-      assert_true(response_time_avg > 180.0)
-      
-      // 验证吞吐量较低
-      let throughput_avg = calculate_metric_average(group, "throughput")
-      assert_true(throughput_avg < 1100.0)
-    }
-    None => assert_true(false)
-  }
-  
-  // 计算相关性分析
-  let correlations = calculate_metric_correlations(multi_dimensional_data, ["response_time", "cpu_usage", "memory_usage", "throughput"])
-  
-  // 验证相关性结果
-  assert_eq(correlations.length(), 6) // 4个指标两两组合: 4*3/2 = 6
-  
-  // 验证response_time和throughput的负相关
-  let response_time_throughput_corr = find_correlation(correlations, "response_time", "throughput")
-  match response_time_throughput_corr {
-    Some(corr) => assert_true(corr < 0.0) // 负相关
-    None => assert_true(false)
-  }
-  
-  // 验证cpu_usage和memory_usage的正相关
-  let cpu_memory_corr = find_correlation(correlations, "cpu_usage", "memory_usage")
-  match cpu_memory_corr {
-    Some(corr) => assert_true(corr > 0.0) // 正相关
-    None => assert_true(false)
-  }
-}
-
-// 类型定义
-type MetricPoint {
-  timestamp: Int64
-  value: Double
-  attributes: Array[(String, AttributeValue)]
-}
-
-type AggregationResult {
-  key: String
-  count: Int
-  sum: Double
-  min: Double
-  max: Double
-  average: Double
-}
-
-type TimeSeriesPoint {
-  timestamp: Int64
-  value: Double
-}
-
-type TimeSeriesStatistics {
-  count: Int
-  sum: Double
-  min: Double
-  max: Double
-  average: Double
-}
-
-type Trend {
-  Increasing
-  Decreasing
-  Stable
-}
-
-type SpanData {
-  trace_id: String
-  span_id: String
-  parent_span_id: Option[String]
-  operation_name: String
-  start_time: Int64
-  end_time: Int64
-  status: String
-  service_name: String
-  attributes: Array[(String, AttributeValue)]
-}
-
-type TraceStatistics {
-  total_traces: Int
-  total_spans: Int
-  successful_traces: Int
-  failed_traces: Int
-  success_rate: Double
-  average_trace_duration: Int64
-}
-
-type LogData {
-  timestamp: Int64
-  level: String
-  message: String
-  service_name: String
-  trace_id: Option[String]
-  span_id: Option[String]
-  attributes: Array[(String, AttributeValue)]
-}
-
-type ErrorPattern {
-  message: String
-  count: Int
-  service_name: String
-}
-
-type DimensionalDataPoint {
-  timestamp: Int64
-  metrics: Array[(String, Double)]
-  dimensions: Array[(String, String)]
-}
-
-type DimensionalGroup {
-  dimensions: Array[(String, String)]
-  count: Int
-  data_points: Array[DimensionalDataPoint]
-}
-
-type AttributeValue {
-  StringValue(String)
-  IntValue(Int)
-  DoubleValue(Double)
-  BoolValue(Bool)
-}
-
-// 辅助函数实现
-fn aggregate_metrics_by_attribute(points: Array[MetricPoint], attribute: String) -> Array[AggregationResult] {
-  let mut groups = []
-  
-  // 按属性值分组
-  for point in points {
-    let mut attribute_value = ""
-    for (key, value) in point.attributes {
-      if key == attribute {
-        match value {
-          StringValue(s) => attribute_value = s
-          _ => ()
-        }
-      }
-    }
+  // 检测异常并生成告警
+  let alerts = []
+  for metric in metrics {
+    let metric_name = metric["metric"]
+    let value = metric["value"]
     
-    // 查找或创建分组
-    let mut group_found = false
-    let mut updated_groups = []
-    
-    for group in groups {
-      if group.key == attribute_value {
-        group_found = true
-        let new_count = group.count + 1
-        let new_sum = group.sum + point.value
-        let new_min = if point.value < group.min { point.value } else { group.min }
-        let new_max = if point.value > group.max { point.value } else { group.max }
-        let new_average = new_sum / new_count.to_double()
-        
-        updated_groups = updated_groups + [AggregationResult {
-          key: group.key,
-          count: new_count,
-          sum: new_sum,
-          min: new_min,
-          max: new_max,
-          average: new_average
-        }]
-      } else {
-        updated_groups = updated_groups + [group]
-      }
-    }
-    
-    if !group_found {
-      updated_groups = updated_groups + [AggregationResult {
-        key: attribute_value,
-        count: 1,
-        sum: point.value,
-        min: point.value,
-        max: point.value,
-        average: point.value
-      }]
-    }
-    
-    groups = updated_groups
-  }
-  
-  groups
-}
-
-fn find_aggregation_by_key(aggregations: Array[AggregationResult], key: String) -> Option[AggregationResult] {
-  for agg in aggregations {
-    if agg.key == key {
-      return Some(agg)
-    }
-  }
-  None
-}
-
-fn calculate_time_series_statistics(points: Array[TimeSeriesPoint]) -> TimeSeriesStatistics {
-  if points.length() == 0 {
-    return TimeSeriesStatistics { count: 0, sum: 0.0, min: 0.0, max: 0.0, average: 0.0 }
-  }
-  
-  let mut sum = 0.0
-  let mut min = points[0].value
-  let mut max = points[0].value
-  
-  for point in points {
-    sum = sum + point.value
-    if point.value < min { min = point.value }
-    if point.value > max { max = point.value }
-  }
-  
-  TimeSeriesStatistics {
-    count: points.length(),
-    sum: sum,
-    min: min,
-    max: max,
-    average: sum / points.length().to_double()
-  }
-}
-
-fn calculate_time_series_trend(points: Array[TimeSeriesPoint]) -> Trend {
-  if points.length() < 2 {
-    return Stable
-  }
-  
-  let first_half_avg = calculate_average_of_range(points, 0, points.length() / 2)
-  let second_half_avg = calculate_average_of_range(points, points.length() / 2, points.length())
-  
-  if second_half_avg > first_half_avg * 1.05 {
-    Increasing
-  } else if second_half_avg < first_half_avg * 0.95 {
-    Decreasing
-  } else {
-    Stable
-  }
-}
-
-fn calculate_average_of_range(points: Array[TimeSeriesPoint], start: Int, end: Int) -> Double {
-  if start >= end {
-    return 0.0
-  }
-  
-  let mut sum = 0.0
-  let mut count = 0
-  
-  let mut i = start
-  while i < end && i < points.length() {
-    sum = sum + points[i].value
-    count = count + 1
-    i = i + 1
-  }
-  
-  if count == 0 { 0.0 } else { sum / count.to_double() }
-}
-
-fn calculate_moving_average(points: Array[TimeSeriesPoint], window_size: Int) -> Array[Double] {
-  if points.length() < window_size || window_size <= 0 {
-    return []
-  }
-  
-  let mut result = []
-  let mut i = 0
-  
-  while i <= points.length() - window_size {
-    let mut sum = 0.0
-    let mut j = 0
-    
-    while j < window_size {
-      sum = sum + points[i + j].value
-      j = j + 1
-    }
-    
-    result = result + [sum / window_size.to_double()]
-    i = i + 1
-  }
-  
-  result
-}
-
-fn calculate_change_rates(points: Array[TimeSeriesPoint]) -> Array[Double] {
-  if points.length() < 2 {
-    return []
-  }
-  
-  let mut result = []
-  let mut i = 0
-  
-  while i < points.length() - 1 {
-    let current = points[i].value
-    let next = points[i + 1].value
-    
-    if current != 0.0 {
-      result = result + [(next - current) / current]
-    } else {
-      result = result + [0.0]
-    }
-    
-    i = i + 1
-  }
-  
-  result
-}
-
-fn group_spans_by_trace_id(spans: Array[SpanData]) -> Array[(String, Array[SpanData])] {
-  let mut groups = []
-  
-  for span in spans {
-    let mut group_found = false
-    let mut updated_groups = []
-    
-    for (trace_id, span_list) in groups {
-      if trace_id == span.trace_id {
-        group_found = true
-        updated_groups = updated_groups + [(trace_id, span_list + [span])]
-      } else {
-        updated_groups = updated_groups + [(trace_id, span_list)]
-      }
-    }
-    
-    if !group_found {
-      updated_groups = updated_groups + [(span.trace_id, [span])]
-    }
-    
-    groups = updated_groups
-  }
-  
-  groups
-}
-
-fn find_trace_by_id(traces: Array[(String, Array[SpanData])], trace_id: String) -> Option[Array[SpanData]] {
-  for (id, spans) in traces {
-    if id == trace_id {
-      return Some(spans)
-    }
-  }
-  None
-}
-
-fn find_root_span(spans: Array[SpanData]) -> Option[SpanData] {
-  for span in spans {
-    match span.parent_span_id {
-      None => return Some(span)
-      Some(_) => () // 不是根跨度
-    }
-  }
-  None
-}
-
-fn calculate_trace_duration(spans: Array[SpanData]) -> Int64 {
-  if spans.length() == 0 {
-    return 0L
-  }
-  
-  let mut min_start = spans[0].start_time
-  let mut max_end = spans[0].end_time
-  
-  for span in spans {
-    if span.start_time < min_start { min_start = span.start_time }
-    if span.end_time > max_end { max_end = span.end_time }
-  }
-  
-  max_end - min_start
-}
-
-fn count_service_calls(spans: Array[SpanData]) -> Array[(String, Int)] {
-  let mut counts = []
-  
-  for span in spans {
-    let mut service_found = false
-    let mut updated_counts = []
-    
-    for (service, count) in counts {
-      if service == span.service_name {
-        service_found = true
-        updated_counts = updated_counts + [(service, count + 1)]
-      } else {
-        updated_counts = updated_counts + [(service, count)]
-      }
-    }
-    
-    if !service_found {
-      updated_counts = updated_counts + [(span.service_name, 1)]
-    }
-    
-    counts = updated_counts
-  }
-  
-  counts
-}
-
-fn find_service_call_count(counts: Array[(String, Int)], service: String) -> Option[Int] {
-  for (s, count) in counts {
-    if s == service {
-      return Some(count)
-    }
-  }
-  None
-}
-
-fn filter_spans_by_status(spans: Array[SpanData], status: String) -> Array[SpanData] {
-  let mut result = []
-  
-  for span in spans {
-    if span.status == status {
-      result = result + [span]
-    }
-  }
-  
-  result
-}
-
-fn calculate_error_rate(spans: Array[SpanData]) -> Double {
-  if spans.length() == 0 {
-    return 0.0
-  }
-  
-  let error_spans = filter_spans_by_status(spans, "ERROR")
-  error_spans.length().to_double() / spans.length().to_double()
-}
-
-fn calculate_overall_trace_statistics(spans: Array[SpanData]) -> TraceStatistics {
-  let traces = group_spans_by_trace_id(spans)
-  
-  let mut successful_traces = 0
-  let mut failed_traces = 0
-  let mut total_duration = 0L
-  
-  for (_, span_list) in traces {
-    let error_rate = calculate_error_rate(span_list)
-    let duration = calculate_trace_duration(span_list)
-    
-    if error_rate == 0.0 {
-      successful_traces = successful_traces + 1
-    } else {
-      failed_traces = failed_traces + 1
-    }
-    
-    total_duration = total_duration + duration
-  }
-  
-  let total_traces = traces.length()
-  let success_rate = if total_traces > 0 {
-    successful_traces.to_double() / total_traces.to_double()
-  } else {
-    0.0
-  }
-  
-  let average_trace_duration = if total_traces > 0 {
-    total_duration / total_traces.to_int64()
-  } else {
-    0L
-  }
-  
-  TraceStatistics {
-    total_traces: total_traces,
-    total_spans: spans.length(),
-    successful_traces: successful_traces,
-    failed_traces: failed_traces,
-    success_rate: success_rate,
-    average_trace_duration: average_trace_duration
-  }
-}
-
-fn group_logs_by_level(logs: Array[LogData]) -> Array[(String, Array[LogData])] {
-  let mut groups = []
-  
-  for log in logs {
-    let mut group_found = false
-    let mut updated_groups = []
-    
-    for (level, log_list) in groups {
-      if level == log.level {
-        group_found = true
-        updated_groups = updated_groups + [(level, log_list + [log])]
-      } else {
-        updated_groups = updated_groups + [(level, log_list)]
-      }
-    }
-    
-    if !group_found {
-      updated_groups = updated_groups + [(log.level, [log])]
-    }
-    
-    groups = updated_groups
-  }
-  
-  groups
-}
-
-fn find_logs_by_level(groups: Array[(String, Array[LogData])], level: String) -> Option[Array[LogData]] {
-  for (l, logs) in groups {
-    if l == level {
-      return Some(logs)
-    }
-  }
-  None
-}
-
-fn group_logs_by_service(logs: Array[LogData]) -> Array[(String, Array[LogData])] {
-  let mut groups = []
-  
-  for log in logs {
-    let mut group_found = false
-    let mut updated_groups = []
-    
-    for (service, log_list) in groups {
-      if service == log.service_name {
-        group_found = true
-        updated_groups = updated_groups + [(service, log_list + [log])]
-      } else {
-        updated_groups = updated_groups + [(service, log_list)]
-      }
-    }
-    
-    if !group_found {
-      updated_groups = updated_groups + [(log.service_name, [log])]
-    }
-    
-    groups = updated_groups
-  }
-  
-  groups
-}
-
-fn find_logs_by_service(groups: Array[(String, Array[LogData])], service: String) -> Option[Array[LogData]] {
-  for (s, logs) in groups {
-    if s == service {
-      return Some(logs)
-    }
-  }
-  None
-}
-
-fn group_logs_by_trace_id(logs: Array[LogData]) -> Array[(String, Array[LogData])] {
-  let mut groups = []
-  
-  for log in logs {
-    match log.trace_id {
-      Some(trace_id) => {
-        let mut group_found = false
-        let mut updated_groups = []
-        
-        for (id, log_list) in groups {
-          if id == trace_id {
-            group_found = true
-            updated_groups = updated_groups + [(id, log_list + [log])]
-          } else {
-            updated_groups = updated_groups + [(id, log_list)]
+    match alert_thresholds.get(metric_name) {
+      Some(thresholds) => {
+        if value >= thresholds["critical"] {
+          let alert = {
+            "level": "critical",
+            "metric": metric_name,
+            "value": value,
+            "threshold": thresholds["critical"],
+            "timestamp": metric["timestamp"]
           }
-        }
-        
-        if !group_found {
-          updated_groups = updated_groups + [(trace_id, [log])]
-        }
-        
-        groups = updated_groups
-      }
-      None => () // 没有追踪ID的日志忽略
-    }
-  }
-  
-  groups
-}
-
-fn find_logs_by_trace_id(groups: Array[(String, Array[LogData])], trace_id: String) -> Option[Array[LogData]] {
-  for (id, logs) in groups {
-    if id == trace_id {
-      return Some(logs)
-    }
-  }
-  None
-}
-
-fn calculate_log_error_rate(logs: Array[LogData]) -> Double {
-  if logs.length() == 0 {
-    return 0.0
-  }
-  
-  let mut error_count = 0
-  
-  for log in logs {
-    if log.level == "ERROR" {
-      error_count = error_count + 1
-    }
-  }
-  
-  error_count.to_double() / logs.length().to_double()
-}
-
-fn identify_error_patterns(logs: Array[LogData]) -> Array[ErrorPattern] {
-  let mut patterns = []
-  
-  for log in logs {
-    if log.level == "ERROR" {
-      let mut pattern_found = false
-      let mut updated_patterns = []
-      
-      for pattern in patterns {
-        if pattern.message == log.message && pattern.service_name == log.service_name {
-          pattern_found = true
-          updated_patterns = updated_patterns + [ErrorPattern {
-            message: pattern.message,
-            count: pattern.count + 1,
-            service_name: pattern.service_name
-          }]
-        } else {
-          updated_patterns = updated_patterns + [pattern]
+          alerts = alerts.push(alert)
+        } else if value >= thresholds["warning"] {
+          let alert = {
+            "level": "warning",
+            "metric": metric_name,
+            "value": value,
+            "threshold": thresholds["warning"],
+            "timestamp": metric["timestamp"]
+          }
+          alerts = alerts.push(alert)
         }
       }
-      
-      if !pattern_found {
-        updated_patterns = updated_patterns + [ErrorPattern {
-          message: log.message,
-          count: 1,
-          service_name: log.service_name
-        }]
-      }
-      
-      patterns = updated_patterns
+      None => {}
     }
   }
   
-  patterns
+  // 验证告警生成
+  assert_eq(alerts.length(), 3) // memory.usage(warning), response.time(warning), error.rate(critical)
+  
+  // 验证具体告警
+  let critical_alerts = alerts.filter(fn(alert) { alert["level"] == "critical" })
+  let warning_alerts = alerts.filter(fn(alert) { alert["level"] == "warning" })
+  
+  assert_eq(critical_alerts.length(), 1)
+  assert_eq(critical_alerts[0]["metric"], "error.rate")
+  assert_eq(critical_alerts[0]["value"], 12.3)
+  assert_eq(critical_alerts[0]["threshold"], 10.0)
+  
+  assert_eq(warning_alerts.length(), 2)
+  let memory_alert = warning_alerts.filter(fn(alert) { alert["metric"] == "memory.usage" })[0]
+  assert_eq(memory_alert["value"], 82.5)
+  assert_eq(memory_alert["threshold"], 80.0)
+  
+  let response_alert = warning_alerts.filter(fn(alert) { alert["metric"] == "response.time" })[0]
+  assert_eq(response_alert["value"], 1200.0)
+  assert_eq(response_alert["threshold"], 1000.0)
 }
 
-fn find_error_pattern(patterns: Array[ErrorPattern], message: String) -> Option[ErrorPattern] {
-  for pattern in patterns {
-    if pattern.message == message {
-      return Some(pattern)
+// 测试3: 自适应采样策略
+test "自适应采样策略" {
+  // 定义采样策略配置
+  let sampling_strategies = {
+    "error_based": {
+      "error_threshold": 5.0,
+      "sample_rate_multiplier": 2.0
+    },
+    "latency_based": {
+      "latency_threshold": 1000.0,
+      "sample_rate_multiplier": 1.5
+    },
+    "volume_based": {
+      "high_volume_threshold": 1000,
+      "low_volume_threshold": 100,
+      "high_sample_rate": 0.1,
+      "low_sample_rate": 0.5
     }
   }
-  None
-}
-
-fn group_dimensional_data(data: Array[DimensionalDataPoint], dimensions: Array[String]) -> Array[(Array[(String, String)], DimensionalGroup)] {
-  let mut groups = []
   
-  for point in data {
-    // 提取当前点的维度值
-    let mut current_dims = []
-    for dim in dimensions {
-      let mut dim_value = ""
-      for (d, v) in point.dimensions {
-        if d == dim {
-          dim_value = v
-        }
-      }
-      current_dims = current_dims + [(dim, dim_value)]
+  // 创建服务指标数据
+  let service_metrics = [
+    {
+      "service": "auth.service",
+      "request_count": 150,
+      "error_rate": 2.1,
+      "avg_latency": 450.0,
+      "base_sample_rate": 0.2
+    },
+    {
+      "service": "payment.service",
+      "request_count": 2500,
+      "error_rate": 8.7,
+      "avg_latency": 2100.0,
+      "base_sample_rate": 0.1
+    },
+    {
+      "service": "notification.service",
+      "request_count": 50,
+      "error_rate": 0.5,
+      "avg_latency": 200.0,
+      "base_sample_rate": 0.3
+    }
+  ]
+  
+  // 计算自适应采样率
+  let adaptive_sampling_rates = []
+  for service in service_metrics {
+    let mut sample_rate = service["base_sample_rate"]
+    
+    // 基于错误的采样调整
+    if service["error_rate"] >= sampling_strategies["error_based"]["error_threshold"] {
+      sample_rate = sample_rate * sampling_strategies["error_based"]["sample_rate_multiplier"]
     }
     
-    // 查找或创建分组
-    let mut group_found = false
-    let mut updated_groups = []
+    // 基于延迟的采样调整
+    if service["avg_latency"] >= sampling_strategies["latency_based"]["latency_threshold"] {
+      sample_rate = sample_rate * sampling_strategies["latency_based"]["sample_rate_multiplier"]
+    }
     
-    for (group_dims, group) in groups {
-      if dimensions_match(group_dims, current_dims) {
-        group_found = true
-        updated_groups = updated_groups + [(group_dims, DimensionalGroup {
-          dimensions: group.dimensions,
-          count: group.count + 1,
-          data_points: group.data_points + [point]
-        })]
+    // 基于请求量的采样调整
+    if service["request_count"] >= sampling_strategies["volume_based"]["high_volume_threshold"] {
+      sample_rate = sampling_strategies["volume_based"]["high_sample_rate"]
+    } else if service["request_count"] <= sampling_strategies["volume_based"]["low_volume_threshold"] {
+      sample_rate = sampling_strategies["volume_based"]["low_sample_rate"]
+    }
+    
+    // 确保采样率在合理范围内
+    sample_rate = if sample_rate > 1.0 { 1.0 } else { sample_rate }
+    sample_rate = if sample_rate < 0.01 { 0.01 } else { sample_rate }
+    
+    adaptive_sampling_rates.push({
+      "service": service["service"],
+      "original_rate": service["base_sample_rate"],
+      "adaptive_rate": sample_rate,
+      "request_count": service["request_count"],
+      "error_rate": service["error_rate"],
+      "avg_latency": service["avg_latency"]
+    })
+  }
+  
+  // 验证自适应采样率
+  assert_eq(adaptive_sampling_rates.length(), 3)
+  
+  // auth.service: 低错误率、低延迟、中等请求量，采样率应该保持或略微调整
+  let auth_sampling = adaptive_sampling_rates.filter(fn(s) { s["service"] == "auth.service" })[0]
+  assert_eq(auth_sampling["original_rate"], 0.2)
+  assert_eq(auth_sampling["adaptive_rate"], 0.2) // 没有触发调整条件
+  
+  // payment.service: 高错误率、高延迟、高请求量，采样率应该显著调整
+  let payment_sampling = adaptive_sampling_rates.filter(fn(s) { s["service"] == "payment.service" })[0]
+  assert_eq(payment_sampling["original_rate"], 0.1)
+  assert_eq(payment_sampling["adaptive_rate"], 0.3) // 触发错误和延迟调整，但受高请求量限制
+  
+  // notification.service: 低错误率、低延迟、低请求量，采样率应该提高
+  let notification_sampling = adaptive_sampling_rates.filter(fn(s) { s["service"] == "notification.service" })[0]
+  assert_eq(notification_sampling["original_rate"], 0.3)
+  assert_eq(notification_sampling["adaptive_rate"], 0.5) // 触发低请求量调整
+}
+
+// 测试4: 跨服务上下文传播
+test "跨服务上下文传播" {
+  // 创建服务调用链
+  let service_chain = [
+    {
+      "service": "api.gateway",
+      "operation": "POST /api/orders",
+      "trace_id": "trace-12345-67890-abcdef",
+      "span_id": "span-gateway-00000-00000",
+      "parent_span_id": None,
+      "baggage": {
+        "user.id": "user-12345",
+        "request.id": "req-abcde",
+        "auth.token": "token-xyz"
+      }
+    },
+    {
+      "service": "order.service",
+      "operation": "createOrder",
+      "trace_id": "trace-12345-67890-abcdef",
+      "span_id": "span-order-11111-11111",
+      "parent_span_id": Some("span-gateway-00000-00000"),
+      "baggage": {
+        "user.id": "user-12345",
+        "request.id": "req-abcde",
+        "auth.token": "token-xyz",
+        "order.source": "web"
+      }
+    },
+    {
+      "service": "payment.service",
+      "operation": "processPayment",
+      "trace_id": "trace-12345-67890-abcdef",
+      "span_id": "span-payment-22222-22222",
+      "parent_span_id": Some("span-order-11111-11111"),
+      "baggage": {
+        "user.id": "user-12345",
+        "request.id": "req-abcde",
+        "auth.token": "token-xyz",
+        "order.source": "web",
+        "payment.method": "credit_card"
+      }
+    },
+    {
+      "service": "notification.service",
+      "operation": "sendConfirmation",
+      "trace_id": "trace-12345-67890-abcdef",
+      "span_id": "span-notification-33333-33333",
+      "parent_span_id": Some("span-order-11111-11111"),
+      "baggage": {
+        "user.id": "user-12345",
+        "request.id": "req-abcde",
+        "auth.token": "token-xyz",
+        "notification.type": "email"
+      }
+    }
+  ]
+  
+  // 验证追踪上下文一致性
+  let trace_ids = service_chain.map(fn(service) { service["trace_id"] })
+  for trace_id in trace_ids {
+    assert_eq(trace_id, "trace-12345-67890-abcdef")
+  }
+  
+  // 验证父子关系
+  assert_eq(service_chain[1]["parent_span_id"].unwrap(), service_chain[0]["span_id"])
+  assert_eq(service_chain[2]["parent_span_id"].unwrap(), service_chain[1]["span_id"])
+  assert_eq(service_chain[3]["parent_span_id"].unwrap(), service_chain[1]["span_id"])
+  
+  // 验证baggage传播
+  let root_baggage = service_chain[0]["baggage"]
+  let order_baggage = service_chain[1]["baggage"]
+  let payment_baggage = service_chain[2]["baggage"]
+  let notification_baggage = service_chain[3]["baggage"]
+  
+  // 验证原始baggage项在所有服务中保持不变
+  assert_eq(root_baggage["user.id"], "user-12345")
+  assert_eq(order_baggage["user.id"], "user-12345")
+  assert_eq(payment_baggage["user.id"], "user-12345")
+  assert_eq(notification_baggage["user.id"], "user-12345")
+  
+  // 验证服务特定的baggage项
+  assert_eq(order_baggage["order.source"], "web")
+  assert_eq(payment_baggage["payment.method"], "credit_card")
+  assert_eq(notification_baggage["notification.type"], "email")
+  
+  // 构建调用链拓扑
+  let service_topology = {}
+  for service in service_chain {
+    let service_name = service["service"]
+    let parent_span_id = service["parent_span_id"]
+    
+    match parent_span_id {
+      Some(parent_id) => {
+        // 找到父服务
+        let parent_service = service_chain.filter(fn(s) { s["span_id"] == parent_id })[0]
+        let parent_name = parent_service["service"]
+        
+        // 更新拓扑
+        let current_children = match service_topology.get(parent_name) {
+          Some(children) => children
+          None => []
+        }
+        
+        service_topology = service_topology.set(parent_name, current_children.push(service_name))
+      }
+      None => {
+        // 根服务
+        if service_topology.contains(service_name) == false {
+          service_topology = service_topology.set(service_name, [])
+        }
+      }
+    }
+  }
+  
+  // 验证调用链拓扑
+  assert_eq(service_topology["api.gateway"], ["order.service"])
+  assert_eq(service_topology["order.service"], ["payment.service", "notification.service"])
+  assert_eq(service_topology["payment.service"], [])
+  assert_eq(service_topology["notification.service"], [])
+}
+
+// 测试5: 性能基准和资源监控
+test "性能基准和资源监控" {
+  // 创建性能基准数据
+  let performance_benchmarks = {
+    "api.gateway": {
+      "max_response_time": 500.0,
+      "max_memory_usage": 512.0,
+      "max_cpu_usage": 70.0,
+      "min_throughput": 1000.0
+    },
+    "order.service": {
+      "max_response_time": 1000.0,
+      "max_memory_usage": 1024.0,
+      "max_cpu_usage": 80.0,
+      "min_throughput": 500.0
+    },
+    "payment.service": {
+      "max_response_time": 2000.0,
+      "max_memory_usage": 2048.0,
+      "max_cpu_usage": 90.0,
+      "min_throughput": 200.0
+    }
+  }
+  
+  // 创建实际性能数据
+  let actual_performance = [
+    {
+      "service": "api.gateway",
+      "response_time": 420.0,
+      "memory_usage": 480.0,
+      "cpu_usage": 65.0,
+      "throughput": 1200.0,
+      "timestamp": 1640995200000
+    },
+    {
+      "service": "order.service",
+      "response_time": 1100.0,
+      "memory_usage": 980.0,
+      "cpu_usage": 75.0,
+      "throughput": 450.0,
+      "timestamp": 1640995200000
+    },
+    {
+      "service": "payment.service",
+      "response_time": 1800.0,
+      "memory_usage": 2100.0,
+      "cpu_usage": 85.0,
+      "throughput": 220.0,
+      "timestamp": 1640995200000
+    }
+  ]
+  
+  // 评估性能合规性
+  let performance_violations = []
+  for perf in actual_performance {
+    let service_name = perf["service"]
+    let benchmark = performance_benchmarks[service_name]
+    
+    // 检查响应时间
+    if perf["response_time"] > benchmark["max_response_time"] {
+      performance_violations.push({
+        "service": service_name,
+        "metric": "response_time",
+        "actual": perf["response_time"],
+        "threshold": benchmark["max_response_time"],
+        "violation": "exceeds_threshold"
+      })
+    }
+    
+    // 检查内存使用
+    if perf["memory_usage"] > benchmark["max_memory_usage"] {
+      performance_violations.push({
+        "service": service_name,
+        "metric": "memory_usage",
+        "actual": perf["memory_usage"],
+        "threshold": benchmark["max_memory_usage"],
+        "violation": "exceeds_threshold"
+      })
+    }
+    
+    // 检查CPU使用
+    if perf["cpu_usage"] > benchmark["max_cpu_usage"] {
+      performance_violations.push({
+        "service": service_name,
+        "metric": "cpu_usage",
+        "actual": perf["cpu_usage"],
+        "threshold": benchmark["max_cpu_usage"],
+        "violation": "exceeds_threshold"
+      })
+    }
+    
+    // 检查吞吐量
+    if perf["throughput"] < benchmark["min_throughput"] {
+      performance_violations.push({
+        "service": service_name,
+        "metric": "throughput",
+        "actual": perf["throughput"],
+        "threshold": benchmark["min_throughput"],
+        "violation": "below_threshold"
+      })
+    }
+  }
+  
+  // 验证性能违规
+  assert_eq(performance_violations.length(), 3)
+  
+  // order.service: 响应时间超标，吞吐量不足
+  let order_violations = performance_violations.filter(fn(v) { v["service"] == "order.service" })
+  assert_eq(order_violations.length(), 2)
+  
+  let response_time_violation = order_violations.filter(fn(v) { v["metric"] == "response_time" })[0]
+  assert_eq(response_time_violation["actual"], 1100.0)
+  assert_eq(response_time_violation["threshold"], 1000.0)
+  assert_eq(response_time_violation["violation"], "exceeds_threshold")
+  
+  let throughput_violation = order_violations.filter(fn(v) { v["metric"] == "throughput" })[0]
+  assert_eq(throughput_violation["actual"], 450.0)
+  assert_eq(throughput_violation["threshold"], 500.0)
+  assert_eq(throughput_violation["violation"], "below_threshold")
+  
+  // payment.service: 内存使用超标
+  let payment_violations = performance_violations.filter(fn(v) { v["service"] == "payment.service" })
+  assert_eq(payment_violations.length(), 1)
+  
+  let memory_violation = payment_violations[0]
+  assert_eq(memory_violation["metric"], "memory_usage")
+  assert_eq(memory_violation["actual"], 2100.0)
+  assert_eq(memory_violation["threshold"], 2048.0)
+  
+  // api.gateway: 无违规
+  let gateway_violations = performance_violations.filter(fn(v) { v["service"] == "api.gateway" })
+  assert_eq(gateway_violations.length(), 0)
+}
+
+// 测试6: 数据压缩和传输优化
+test "数据压缩和传输优化" {
+  // 创建原始遥测数据
+  let raw_telemetry_data = [
+    {
+      "trace_id": "trace-compression-12345",
+      "span_id": "span-001",
+      "service": "api.gateway",
+      "operation": "GET /api/users",
+      "start_time": 1640995200000,
+      "end_time": 1640995200200,
+      "attributes": {
+        "http.method": "GET",
+        "http.url": "/api/users",
+        "http.status_code": 200,
+        "user.id": "user-12345",
+        "client.ip": "192.168.1.100"
+      }
+    },
+    {
+      "trace_id": "trace-compression-12345",
+      "span_id": "span-002",
+      "service": "user.service",
+      "operation": "getUserProfile",
+      "start_time": 1640995200100,
+      "end_time": 1640995200180,
+      "attributes": {
+        "db.system": "postgresql",
+        "db.statement": "SELECT * FROM users WHERE id = ?",
+        "db.operation": "SELECT",
+        "user.id": "user-12345"
+      }
+    }
+  ]
+  
+  // 计算原始数据大小（简化计算）
+  let original_size = raw_telemetry_data.to_string().length()
+  assert_true(original_size > 0)
+  
+  // 应用压缩策略
+  let compression_strategies = {
+    "attribute_deduplication": true,
+    "common_string_replacement": true,
+    "numeric_compression": true,
+    "timestamp_delta_encoding": true
+  }
+  
+  // 实现属性去重
+  let common_attributes = {}
+  let deduplicated_data = []
+  
+  for span in raw_telemetry_data {
+    let mut new_span = span
+    let mut new_attributes = {}
+    
+    // 识别公共属性
+    for (key, value) in span["attributes"] {
+      if common_attributes.contains(key) && common_attributes[key] == value {
+        // 属性已在公共集合中，跳过
       } else {
-        updated_groups = updated_groups + [(group_dims, group)]
+        // 新属性或值不同
+        if common_attributes.contains(key) == false {
+          common_attributes = common_attributes.set(key, value)
+        }
+        new_attributes = new_attributes.set(key, value)
       }
     }
     
-    if !group_found {
-      updated_groups = updated_groups + [(current_dims, DimensionalGroup {
-        dimensions: current_dims,
-        count: 1,
-        data_points: [point]
-      })]
+    new_span = new_span.set("attributes", new_attributes)
+    deduplicated_data = deduplicated_data.push(new_span)
+  }
+  
+  // 验证属性去重
+  assert_eq(deduplicated_data.length(), 2)
+  assert_eq(common_attributes.keys().length(), 8) // 所有属性都被识别为公共属性
+  
+  // 实现时间戳增量编码
+  let base_timestamp = raw_telemetry_data[0]["start_time"]
+  let delta_encoded_data = []
+  
+  for span in deduplicated_data {
+    let start_time_delta = span["start_time"] - base_timestamp
+    let end_time_delta = span["end_time"] - base_timestamp
+    
+    let encoded_span = {
+      "trace_id": span["trace_id"],
+      "span_id": span["span_id"],
+      "service": span["service"],
+      "operation": span["operation"],
+      "start_time_delta": start_time_delta,
+      "end_time_delta": end_time_delta,
+      "attributes": span["attributes"]
     }
     
-    groups = updated_groups
+    delta_encoded_data = delta_encoded_data.push(encoded_span)
   }
   
-  groups
+  // 验证增量编码
+  assert_eq(delta_encoded_data.length(), 2)
+  assert_eq(delta_encoded_data[0]["start_time_delta"], 0)
+  assert_eq(delta_encoded_data[0]["end_time_delta"], 200)
+  assert_eq(delta_encoded_data[1]["start_time_delta"], 100)
+  assert_eq(delta_encoded_data[1]["end_time_delta"], 180)
+  
+  // 计算压缩后大小（简化计算）
+  let compressed_size = (delta_encoded_data.to_string().length() + common_attributes.to_string().length())
+  let compression_ratio = compressed_size.to_float() / original_size.to_float()
+  
+  // 验证压缩效果
+  assert_true(compression_ratio < 1.0) // 压缩后应该更小
+  assert_true(compression_ratio > 0.1) // 但不应该过度压缩
+  
+  // 模拟批量传输优化
+  let batch_config = {
+    "max_batch_size": 100,
+    "max_batch_delay_ms": 5000,
+    "compression_threshold": 1024
+  }
+  
+  // 创建批处理逻辑
+  let create_batch = fn(data_points) {
+    if data_points.length() == 0 {
+      None
+    } else if data_points.length() >= batch_config["max_batch_size"] {
+      Some(data_points.take(batch_config["max_batch_size"]))
+    } else {
+      // 简化批处理逻辑
+      Some(data_points)
+    }
+  }
+  
+  // 测试批处理
+  let batch = create_batch(delta_encoded_data)
+  match batch {
+    Some(batch_data) => {
+      assert_eq(batch_data.length(), 2)
+      assert_eq(batch_data[0]["span_id"], "span-001")
+      assert_eq(batch_data[1]["span_id"], "span-002")
+    }
+    None => assert_true(false)
+  }
 }
 
-fn dimensions_match(dims1: Array[(String, String)], dims2: Array[(String, String)]) -> Bool {
-  if dims1.length() != dims2.length() {
-    return false
-  }
-  
-  for (d1, v1) in dims1 {
-    let mut found = false
-    for (d2, v2) in dims2 {
-      if d1 == d2 && v1 == v2 {
-        found = true
-        break
+// 测试7: 配置动态更新和热重载
+test "配置动态更新和热重载" {
+  // 创建初始配置
+  let initial_config = {
+    "sampling": {
+      "default_rate": 0.1,
+      "max_rate": 1.0,
+      "min_rate": 0.01
+    },
+    "exporter": {
+      "endpoint": "https://otel-collector.example.com:4317",
+      "timeout_ms": 30000,
+      "batch_size": 512,
+      "max_export_batch_size": 512
+    },
+    "processor": {
+      "attribute_limits": {
+        "attribute_count_limit": 128,
+        "attribute_value_length_limit": 1024
+      },
+      "span_limits": {
+        "attribute_count_limit": 128,
+        "event_count_limit": 128,
+        "link_count_limit": 128
       }
     }
-    if !found {
-      return false
-    }
   }
   
-  true
-}
-
-fn find_dimensional_group(groups: Array[(Array[(String, String)], DimensionalGroup)], dimensions: Array[(String, String)]) -> Option[DimensionalGroup] {
-  for (group_dims, group) in groups {
-    if dimensions_match(group_dims, dimensions) {
-      return Some(group)
-    }
-  }
-  None
-}
-
-fn calculate_metric_average(group: DimensionalGroup, metric: String) -> Double {
-  if group.count == 0 {
-    return 0.0
-  }
+  // 创建配置版本管理
+  let config_versions = []
+  config_versions = config_versions.push({
+    "version": "1.0.0",
+    "timestamp": 1640995200000,
+    "config": initial_config
+  })
   
-  let mut sum = 0.0
-  let mut count = 0
-  
-  for point in group.data_points {
-    for (m, value) in point.metrics {
-      if m == metric {
-        sum = sum + value
-        count = count + 1
+  // 模拟配置更新请求
+  let update_requests = [
+    {
+      "timestamp": 1640995201000,
+      "changes": {
+        "sampling.default_rate": 0.2,
+        "exporter.endpoint": "https://otel-collector-v2.example.com:4317"
+      }
+    },
+    {
+      "timestamp": 1640995202000,
+      "changes": {
+        "processor.attribute_limits.attribute_count_limit": 256,
+        "processor.span_limits.event_count_limit": 256
       }
     }
-  }
+  ]
   
-  if count == 0 { 0.0 } else { sum / count.to_double() }
-}
-
-fn calculate_metric_correlations(data: Array[DimensionalDataPoint], metrics: Array[String]) -> Array[(String, String, Double)] {
-  let mut correlations = []
-  
-  // 计算所有指标对之间的相关性
-  let mut i = 0
-  while i < metrics.length() {
-    let mut j = i + 1
-    while j < metrics.length() {
-      let metric1 = metrics[i]
-      let metric2 = metrics[j]
+  // 应用配置更新
+  let apply_config_update = fn(config, changes) {
+    let mut updated_config = config
+    
+    for (path, new_value) in changes {
+      let path_parts = path.split(".")
+      let mut current = updated_config
       
-      let correlation = calculate_correlation(data, metric1, metric2)
-      correlations = correlations + [(metric1, metric2, correlation)]
-      
-      j = j + 1
-    }
-    i = i + 1
-  }
-  
-  correlations
-}
-
-fn calculate_correlation(data: Array[DimensionalDataPoint], metric1: String, metric2: String) -> Double {
-  if data.length() < 2 {
-    return 0.0
-  }
-  
-  // 提取两个指标的值
-  let mut values1 = []
-  let mut values2 = []
-  
-  for point in data {
-    let mut v1 = 0.0
-    let mut v2 = 0.0
-    let mut found1 = false
-    let mut found2 = false
-    
-    for (m, value) in point.metrics {
-      if m == metric1 {
-        v1 = value
-        found1 = true
-      } else if m == metric2 {
-        v2 = value
-        found2 = true
+      // 简化的路径更新逻辑
+      if path_parts[0] == "sampling" && path_parts[1] == "default_rate" {
+        let sampling = updated_config["sampling"]
+        let updated_sampling = sampling.set("default_rate", new_value)
+        updated_config = updated_config.set("sampling", updated_sampling)
+      } else if path_parts[0] == "exporter" && path_parts[1] == "endpoint" {
+        let exporter = updated_config["exporter"]
+        let updated_exporter = exporter.set("endpoint", new_value)
+        updated_config = updated_config.set("exporter", updated_exporter)
+      } else if path_parts[0] == "processor" && path_parts[1] == "attribute_limits" && path_parts[2] == "attribute_count_limit" {
+        let processor = updated_config["processor"]
+        let attribute_limits = processor["attribute_limits"]
+        let updated_attribute_limits = attribute_limits.set("attribute_count_limit", new_value)
+        let updated_processor = processor.set("attribute_limits", updated_attribute_limits)
+        updated_config = updated_config.set("processor", updated_processor)
+      } else if path_parts[0] == "processor" && path_parts[1] == "span_limits" && path_parts[2] == "event_count_limit" {
+        let processor = updated_config["processor"]
+        let span_limits = processor["span_limits"]
+        let updated_span_limits = span_limits.set("event_count_limit", new_value)
+        let updated_processor = processor.set("span_limits", updated_span_limits)
+        updated_config = updated_config.set("processor", updated_processor)
       }
     }
     
-    if found1 && found2 {
-      values1 = values1 + [v1]
-      values2 = values2 + [v2]
-    }
+    updated_config
   }
   
-  if values1.length() < 2 {
-    return 0.0
-  }
-  
-  // 计算平均值
-  let mut sum1 = 0.0
-  let mut sum2 = 0.0
-  
-  for i in 0..values1.length() {
-    sum1 = sum1 + values1[i]
-    sum2 = sum2 + values2[i]
-  }
-  
-  let avg1 = sum1 / values1.length().to_double()
-  let avg2 = sum2 / values2.length().to_double()
-  
-  // 计算协方差和方差
-  let mut covariance = 0.0
-  let mut variance1 = 0.0
-  let mut variance2 = 0.0
-  
-  for i in 0..values1.length() {
-    let diff1 = values1[i] - avg1
-    let diff2 = values2[i] - avg2
+  // 按顺序应用更新
+  let mut current_config = initial_config
+  for request in update_requests {
+    current_config = apply_config_update(current_config, request["changes"])
     
-    covariance = covariance + diff1 * diff2
-    variance1 = variance1 + diff1 * diff1
-    variance2 = variance2 + diff2 * diff2
+    // 记录新版本
+    config_versions = config_versions.push({
+      "version": (config_versions.length() + 1).to_string() + ".0.0",
+      "timestamp": request["timestamp"],
+      "config": current_config
+    })
   }
   
-  if variance1 == 0.0 || variance2 == 0.0 {
-    return 0.0
+  // 验证配置版本
+  assert_eq(config_versions.length(), 3)
+  assert_eq(config_versions[0]["version"], "1.0.0")
+  assert_eq(config_versions[1]["version"], "2.0.0")
+  assert_eq(config_versions[2]["version"], "3.0.0")
+  
+  // 验证最终配置
+  let final_config = config_versions[2]["config"]
+  assert_eq(final_config["sampling"]["default_rate"], 0.2) // 已更新
+  assert_eq(final_config["exporter"]["endpoint"], "https://otel-collector-v2.example.com:4317") // 已更新
+  assert_eq(final_config["processor"]["attribute_limits"]["attribute_count_limit"], 256) // 已更新
+  assert_eq(final_config["processor"]["span_limits"]["event_count_limit"], 256) // 已更新
+  
+  // 验证未更改的配置
+  assert_eq(final_config["sampling"]["max_rate"], 1.0) // 未更改
+  assert_eq(final_config["exporter"]["timeout_ms"], 30000) // 未更改
+  assert_eq(final_config["processor"]["attribute_limits"]["attribute_value_length_limit"], 1024) // 未更改
+  
+  // 模拟配置回滚
+  let rollback_to_version = fn(versions, target_version) {
+    let target_version_data = versions.filter(fn(v) { v["version"] == target_version })[0]
+    target_version_data["config"]
   }
   
-  covariance / (sqrt(variance1) * sqrt(variance2))
+  let rollback_config = rollback_to_version(config_versions, "1.0.0")
+  
+  // 验证回滚配置
+  assert_eq(rollback_config["sampling"]["default_rate"], 0.1) // 回滚到原始值
+  assert_eq(rollback_config["exporter"]["endpoint"], "https://otel-collector.example.com:4317") // 回滚到原始值
+  assert_eq(rollback_config["processor"]["attribute_limits"]["attribute_count_limit"], 128) // 回滚到原始值
 }
 
-fn find_correlation(correlations: Array[(String, String, Double)], metric1: String, metric2: String) -> Option[Double] {
-  for (m1, m2, corr) in correlations {
-    if (m1 == metric1 && m2 == metric2) || (m1 == metric2 && m2 == metric1) {
-      return Some(corr)
+// 测试8: 多租户隔离和权限控制
+test "多租户隔离和权限控制" {
+  // 创建租户配置
+  let tenant_configs = [
+    {
+      "tenant_id": "tenant-enterprise",
+      "tenant_name": "Enterprise Corp",
+      "plan": "enterprise",
+      "quota": {
+        "max_metrics_per_day": 10000000,
+        "max_traces_per_day": 5000000,
+        "max_spans_per_trace": 1000,
+        "max_attribute_value_length": 4096
+      },
+      "permissions": {
+        "can_export": true,
+        "can_access_raw_data": true,
+        "can_configure_sampling": true,
+        "can_view_all_services": true
+      },
+      "services": ["payment.service", "order.service", "user.service", "inventory.service"]
+    },
+    {
+      "tenant_id": "tenant-standard",
+      "tenant_name": "Standard LLC",
+      "plan": "standard",
+      "quota": {
+        "max_metrics_per_day": 1000000,
+        "max_traces_per_day": 500000,
+        "max_spans_per_trace": 500,
+        "max_attribute_value_length": 1024
+      },
+      "permissions": {
+        "can_export": true,
+        "can_access_raw_data": false,
+        "can_configure_sampling": false,
+        "can_view_all_services": false
+      },
+      "services": ["web.service", "api.service"]
+    },
+    {
+      "tenant_id": "tenant-basic",
+      "tenant_name": "Basic Startup",
+      "plan": "basic",
+      "quota": {
+        "max_metrics_per_day": 100000,
+        "max_traces_per_day": 50000,
+        "max_spans_per_trace": 100,
+        "max_attribute_value_length": 512
+      },
+      "permissions": {
+        "can_export": false,
+        "can_access_raw_data": false,
+        "can_configure_sampling": false,
+        "can_view_all_services": false
+      },
+      "services": ["web.service"]
+    }
+  ]
+  
+  // 创建租户使用数据
+  let tenant_usage = [
+    {
+      "tenant_id": "tenant-enterprise",
+      "date": "2023-01-01",
+      "metrics_count": 8500000,
+      "traces_count": 4200000,
+      "avg_spans_per_trace": 750,
+      "max_attribute_value_length": 2048
+    },
+    {
+      "tenant_id": "tenant-standard",
+      "date": "2023-01-01",
+      "metrics_count": 950000,
+      "traces_count": 480000,
+      "avg_spans_per_trace": 450,
+      "max_attribute_value_length": 800
+    },
+    {
+      "tenant_id": "tenant-basic",
+      "date": "2023-01-01",
+      "metrics_count": 120000,
+      "traces_count": 55000,
+      "avg_spans_per_trace": 120,
+      "max_attribute_value_length": 400
+    }
+  ]
+  
+  // 检查配额违规
+  let quota_violations = []
+  for usage in tenant_usage {
+    let tenant_id = usage["tenant_id"]
+    let tenant_config = tenant_configs.filter(fn(t) { t["tenant_id"] == tenant_id })[0]
+    let quota = tenant_config["quota"]
+    
+    // 检查指标配额
+    if usage["metrics_count"] > quota["max_metrics_per_day"] {
+      quota_violations.push({
+        "tenant_id": tenant_id,
+        "quota_type": "metrics",
+        "used": usage["metrics_count"],
+        "limit": quota["max_metrics_per_day"],
+        "overage": usage["metrics_count"] - quota["max_metrics_per_day"]
+      })
+    }
+    
+    // 检查追踪配额
+    if usage["traces_count"] > quota["max_traces_per_day"] {
+      quota_violations.push({
+        "tenant_id": tenant_id,
+        "quota_type": "traces",
+        "used": usage["traces_count"],
+        "limit": quota["max_traces_per_day"],
+        "overage": usage["traces_count"] - quota["max_traces_per_day"]
+      })
+    }
+    
+    // 检查每个追踪的Span配额
+    if usage["avg_spans_per_trace"] > quota["max_spans_per_trace"] {
+      quota_violations.push({
+        "tenant_id": tenant_id,
+        "quota_type": "spans_per_trace",
+        "used": usage["avg_spans_per_trace"],
+        "limit": quota["max_spans_per_trace"],
+        "overage": usage["avg_spans_per_trace"] - quota["max_spans_per_trace"]
+      })
+    }
+    
+    // 检查属性值长度配额
+    if usage["max_attribute_value_length"] > quota["max_attribute_value_length"] {
+      quota_violations.push({
+        "tenant_id": tenant_id,
+        "quota_type": "attribute_value_length",
+        "used": usage["max_attribute_value_length"],
+        "limit": quota["max_attribute_value_length"],
+        "overage": usage["max_attribute_value_length"] - quota["max_attribute_value_length"]
+      })
     }
   }
-  None
-}
-
-fn abs(x: Double) -> Double {
-  if x < 0.0 { -x } else { x }
-}
-
-fn sqrt(x: Double) -> Double {
-  // 简化实现，实际应该使用数学库
-  if x == 0.0 { 0.0 } else { x / 2.0 }
+  
+  // 验证配额违规
+  assert_eq(quota_violations.length(), 2)
+  
+  // tenant-basic: 指标和每个追踪的Span数超标
+  let basic_violations = quota_violations.filter(fn(v) { v["tenant_id"] == "tenant-basic" })
+  assert_eq(basic_violations.length(), 2)
+  
+  let metrics_violation = basic_violations.filter(fn(v) { v["quota_type"] == "metrics" })[0]
+  assert_eq(metrics_violation["used"], 120000)
+  assert_eq(metrics_violation["limit"], 100000)
+  assert_eq(metrics_violation["overage"], 20000)
+  
+  let spans_violation = basic_violations.filter(fn(v) { v["quota_type"] == "spans_per_trace" })[0]
+  assert_eq(spans_violation["used"], 120)
+  assert_eq(spans_violation["limit"], 100)
+  assert_eq(spans_violation["overage"], 20)
+  
+  // tenant-enterprise和tenant-standard无违规
+  let enterprise_violations = quota_violations.filter(fn(v) { v["tenant_id"] == "tenant-enterprise" })
+  let standard_violations = quota_violations.filter(fn(v) { v["tenant_id"] == "tenant-standard" })
+  assert_eq(enterprise_violations.length(), 0)
+  assert_eq(standard_violations.length(), 0)
+  
+  // 验证权限控制
+  let check_permission = fn(tenant_id, permission) {
+    let tenant_config = tenant_configs.filter(fn(t) { t["tenant_id"] == tenant_id })[0]
+    tenant_config["permissions"][permission]
+  }
+  
+  // 验证企业租户权限
+  assert_true(check_permission("tenant-enterprise", "can_export"))
+  assert_true(check_permission("tenant-enterprise", "can_access_raw_data"))
+  assert_true(check_permission("tenant-enterprise", "can_configure_sampling"))
+  assert_true(check_permission("tenant-enterprise", "can_view_all_services"))
+  
+  // 验证标准租户权限
+  assert_true(check_permission("tenant-standard", "can_export"))
+  assert_false(check_permission("tenant-standard", "can_access_raw_data"))
+  assert_false(check_permission("tenant-standard", "can_configure_sampling"))
+  assert_false(check_permission("tenant-standard", "can_view_all_services"))
+  
+  // 验证基础租户权限
+  assert_false(check_permission("tenant-basic", "can_export"))
+  assert_false(check_permission("tenant-basic", "can_access_raw_data"))
+  assert_false(check_permission("tenant-basic", "can_configure_sampling"))
+  assert_false(check_permission("tenant-basic", "can_view_all_services"))
+  
+  // 验证服务隔离
+  let get_tenant_services = fn(tenant_id) {
+    let tenant_config = tenant_configs.filter(fn(t) { t["tenant_id"] == tenant_id })[0]
+    tenant_config["services"]
+  }
+  
+  let enterprise_services = get_tenant_services("tenant-enterprise")
+  let standard_services = get_tenant_services("tenant-standard")
+  let basic_services = get_tenant_services("tenant-basic")
+  
+  assert_eq(enterprise_services.length(), 4)
+  assert_true(enterprise_services.contains("payment.service"))
+  assert_true(enterprise_services.contains("order.service"))
+  
+  assert_eq(standard_services.length(), 2)
+  assert_true(standard_services.contains("web.service"))
+  assert_true(standard_services.contains("api.service"))
+  assert_false(standard_services.contains("payment.service")) // 企业租户专属服务
+  
+  assert_eq(basic_services.length(), 1)
+  assert_eq(basic_services[0], "web.service")
 }
