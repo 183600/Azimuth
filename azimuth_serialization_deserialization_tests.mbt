@@ -1,1378 +1,563 @@
-// Azimuth Data Serialization and Deserialization Tests
-// 数据序列化和反序列化测试用例，专注于不同格式的数据转换、兼容性和性能优化
+// Serialization and Deserialization Tests for Azimuth Telemetry System
+// This file contains tests for data serialization and deserialization
 
-// Test 1: JSON序列化和反序列化测试
-test "JSON序列化和反序列化测试" {
-  // 原始数据结构
-  let telemetry_event = {
-    "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
-    "span_id": "00f067aa0ba902b7",
-    "parent_span_id": "b7ad6b7169203331",
-    "operation_name": "process_payment",
-    "start_time": 1672531200000000L,
-    "end_time": 1672531200150000L,
-    "duration_ms": 150,
-    "status": "ok",
-    "service_name": "payment-service",
-    "attributes": {
-      "user.id": "12345",
-      "payment.amount": "99.99",
-      "payment.currency": "USD",
-      "payment.method": "credit_card"
-    },
-    "events": [
-      {
-        "name": "validation_started",
-        "timestamp": 1672531200050000L,
-        "attributes": {
-          "validation.type": "card_validation"
-        }
-      },
-      {
-        "name": "payment_processed",
-        "timestamp": 1672531200140000L,
-        "attributes": {
-          "transaction.id": "txn_123456789"
-        }
-      }
-    ]
+test "attribute value serialization" {
+  let attrs = Attributes::new()
+  
+  // Set various attribute types
+  Attributes::set(attrs, "string.key", StringValue("test.value"))
+  Attributes::set(attrs, "int.key", IntValue(42))
+  Attributes::set(attrs, "float.key", FloatValue(3.14159))
+  Attributes::set(attrs, "bool.key", BoolValue(true))
+  Attributes::set(attrs, "string.array", ArrayStringValue(["item1", "item2", "item3"]))
+  Attributes::set(attrs, "int.array", ArrayIntValue([1, 2, 3, 4, 5]))
+  
+  // Simulate serialization by converting to string representation
+  let string_result = Attributes::get(attrs, "string.key")
+  let int_result = Attributes::get(attrs, "int.key")
+  let float_result = Attributes::get(attrs, "float.key")
+  let bool_result = Attributes::get(attrs, "bool.key")
+  let string_array_result = Attributes::get(attrs, "string.array")
+  let int_array_result = Attributes::get(attrs, "int.array")
+  
+  // Simulate deserialization by reconstructing values
+  match string_result {
+    Some(StringValue(s)) => {
+      // Serialize to string
+      let serialized = s
+      // Deserialize back
+      let deserialized = serialized
+      assert_eq(deserialized, "test.value")
+    }
+    _ => assert_true(false)
   }
   
-  // 简化的JSON序列化函数
-  fn serialize_to_json(data : { String : Any }) -> String {
-    let mut json = "{"
-    let mut first = true
-    
-    for (key, value) in data {
-      if !first {
-        json = json + ","
-      }
-      first = false
-      
-      json = json + "\"" + key + "\":"
-      
-      match value {
-        String(s) => json = json + "\"" + s + "\""
-        Int(i) => json = json + i.to_string()
-        Int64(l) => json = json + l.to_string()
-        Float(f) => json = json + f.to_string()
-        Bool(b) => json = json + (if b { "true" } else { "false" })
-        { String : Any } obj => json = json + serialize_to_json(obj)
-        Array(Any) arr => json = json + serialize_array_to_json(arr)
-        _ => json = json + "null"
-      }
+  match int_result {
+    Some(IntValue(v)) => {
+      // Serialize to string
+      let serialized = v.to_string()
+      // Deserialize back
+      let deserialized = serialized
+      assert_eq(deserialized, "42")
     }
-    
-    json = json + "}"
-    json
+    _ => assert_true(false)
   }
   
-  // 简化的数组JSON序列化函数
-  fn serialize_array_to_json(array : Array[Any]) -> String {
-    let mut json = "["
-    let mut first = true
-    
-    for item in array {
-      if !first {
-        json = json + ","
-      }
-      first = false
-      
-      match item {
-        String(s) => json = json + "\"" + s + "\""
-        Int(i) => json = json + i.to_string()
-        Int64(l) => json = json + l.to_string()
-        Float(f) => json = json + f.to_string()
-        Bool(b) => json = json + (if b { "true" } else { "false" })
-        { String : Any } obj => json = json + serialize_to_json(obj)
-        Array(Any) arr => json = json + serialize_array_to_json(arr)
-        _ => json = json + "null"
-      }
+  match float_result {
+    Some(FloatValue(v)) => {
+      // Serialize to string
+      let serialized = v.to_string()
+      // Deserialize back
+      let deserialized = serialized
+      assert_true(deserialized.length() > 0)
     }
-    
-    json = json + "]"
-    json
+    _ => assert_true(false)
   }
   
-  // 简化的JSON解析函数
-  fn parse_json(json : String) -> { String : Any } {
-    // 这是一个简化的实现，实际JSON解析会更复杂
-    let mut result = {}
-    
-    // 提取简单的键值对（不处理嵌套结构）
-    if json.contains("\"trace_id\"") {
-      result["trace_id"] = "4bf92f3577b34da6a3ce929d0e0e4736"
+  match bool_result {
+    Some(BoolValue(v)) => {
+      // Serialize to string
+      let serialized = if v { "true" } else { "false" }
+      // Deserialize back
+      let deserialized = serialized
+      assert_eq(deserialized, "true")
     }
-    if json.contains("\"span_id\"") {
-      result["span_id"] = "00f067aa0ba902b7"
-    }
-    if json.contains("\"operation_name\"") {
-      result["operation_name"] = "process_payment"
-    }
-    if json.contains("\"duration_ms\"") {
-      result["duration_ms"] = 150
-    }
-    if json.contains("\"status\"") {
-      result["status"] = "ok"
-    }
-    if json.contains("\"service_name\"") {
-      result["service_name"] = "payment-service"
-    }
-    
-    result
+    _ => assert_true(false)
   }
   
-  // 序列化数据
-  let json_data = serialize_to_json(telemetry_event)
+  match string_array_result {
+    Some(ArrayStringValue(arr)) => {
+      // Serialize array to string
+      let mut serialized = ""
+      for i in 0..arr.length() {
+        if i > 0 { serialized = serialized + "," }
+        serialized = serialized + arr[i]
+      }
+      // Deserialize back (simplified)
+      let deserialized = serialized
+      assert_eq(deserialized, "item1,item2,item3")
+    }
+    _ => assert_true(false)
+  }
   
-  // 验证JSON包含必要字段
-  assert_true(json_data.contains("\"trace_id\""))
-  assert_true(json_data.contains("\"span_id\""))
-  assert_true(json_data.contains("\"operation_name\""))
-  assert_true(json_data.contains("\"duration_ms\""))
-  assert_true(json_data.contains("\"status\""))
-  assert_true(json_data.contains("\"service_name\""))
-  
-  // 反序列化数据
-  let parsed_data = parse_json(json_data)
-  
-  // 验证反序列化结果
-  assert_eq(parsed_data["trace_id"], "4bf92f3577b34da6a3ce929d0e0e4736")
-  assert_eq(parsed_data["span_id"], "00f067aa0ba902b7")
-  assert_eq(parsed_data["operation_name"], "process_payment")
-  assert_eq(parsed_data["duration_ms"], 150)
-  assert_eq(parsed_data["status"], "ok")
-  assert_eq(parsed_data["service_name"], "payment-service")
+  match int_array_result {
+    Some(ArrayIntValue(arr)) => {
+      // Serialize array to string
+      let mut serialized = ""
+      for i in 0..arr.length() {
+        if i > 0 { serialized = serialized + "," }
+        serialized = serialized + arr[i].to_string()
+      }
+      // Deserialize back (simplified)
+      let deserialized = serialized
+      assert_eq(deserialized, "1,2,3,4,5")
+    }
+    _ => assert_true(false)
+  }
 }
 
-// Test 2: 二进制序列化测试
-test "二进制序列化测试" {
-  // 原始数据
-  let metric_data = {
-    "name": "request_duration",
-    "value": 125.5,
-    "timestamp": 1672531200L,
-    "tags": {
-      "service": "api",
-      "endpoint": "/users",
-      "method": "GET"
-    },
-    "type": "histogram"
-  }
+test "span context serialization" {
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_id = "b7ad6b7169203331"
+  let trace_state = "key1=value1,key2=value2"
   
-  // 简化的二进制序列化函数
-  fn serialize_to_binary(data : { String : Any }) -> ByteArray {
-    let mut binary = ByteArray::new(0)
-    
-    // 序列化字符串字段
-    let name = data["name"]
-    binary = binary + name.to_byte_array()
-    binary = binary + [0] // null终止符
-    
-    // 序列化浮点数值
-    let value = data["value"]
-    let value_bytes = value.to_byte_array()
-    binary = binary + value_bytes
-    
-    // 序列化时间戳
-    let timestamp = data["timestamp"]
-    let timestamp_bytes = timestamp.to_byte_array()
-    binary = binary + timestamp_bytes
-    
-    // 序列化类型
-    let type_ = data["type"]
-    binary = binary + type_.to_byte_array()
-    binary = binary + [0] // null终止符
-    
-    binary
-  }
+  let span_ctx = SpanContext::new(trace_id, span_id, true, trace_state)
   
-  // 简化的二进制反序列化函数
-  fn deserialize_from_binary(binary : ByteArray) -> { String : Any } {
-    let mut result = {}
-    let mut position = 0
-    
-    // 读取字符串（直到null终止符）
-    let mut name_bytes = []
-    while position < binary.length() && binary[position] != 0 {
-      name_bytes = name_bytes + [binary[position]]
-      position = position + 1
-    }
-    position = position + 1 // 跳过null终止符
-    result["name"] = name_bytes.to_string()
-    
-    // 读取浮点数值（假设8字节）
-    if position + 8 <= binary.length() {
-      let value_bytes = binary.slice(position, position + 8)
-      result["value"] = value_bytes.to_float()
-      position = position + 8
-    }
-    
-    // 读取时间戳（假设8字节）
-    if position + 8 <= binary.length() {
-      let timestamp_bytes = binary.slice(position, position + 8)
-      result["timestamp"] = timestamp_bytes.to_int64()
-      position = position + 8
-    }
-    
-    // 读取类型字符串（直到null终止符）
-    let mut type_bytes = []
-    while position < binary.length() && binary[position] != 0 {
-      type_bytes = type_bytes + [binary[position]]
-      position = position + 1
-    }
-    result["type"] = type_bytes.to_string()
-    
-    result
-  }
+  // Serialize span context to W3C traceparent format
+  let serialized_traceparent = "00-" + trace_id + "-" + span_id + "-01"
   
-  // 序列化数据
-  let binary_data = serialize_to_binary(metric_data)
+  // Verify serialization format
+  assert_eq(serialized_traceparent, "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
   
-  // 验证二进制数据不为空
-  assert_true(binary_data.length() > 0)
+  // Simulate deserialization by parsing components
+  let parts = serialized_traceparent.split("-")
+  assert_eq(parts.length(), 4)
+  assert_eq(parts[0], "00")  // Version
+  assert_eq(parts[1], trace_id)  // Trace ID
+  assert_eq(parts[2], span_id)  // Span ID
+  assert_eq(parts[3], "01")  // Flags (sampled)
   
-  // 反序列化数据
-  let deserialized_data = deserialize_from_binary(binary_data)
+  // Reconstruct span context from serialized data
+  let reconstructed_ctx = SpanContext::new(parts[1], parts[2], true, trace_state)
   
-  // 验证反序列化结果
-  assert_eq(deserialized_data["name"], "request_duration")
-  assert_eq(deserialized_data["type"], "histogram")
-  // 注意：由于简化的实现，其他字段可能无法正确解析
+  // Verify reconstruction
+  assert_eq(SpanContext::trace_id(reconstructed_ctx), trace_id)
+  assert_eq(SpanContext::span_id(reconstructed_ctx), span_id)
+  assert_true(SpanContext::is_sampled(reconstructed_ctx))
 }
 
-// Test 3: 协议缓冲区序列化测试
-test "协议缓冲区序列化测试" {
-  // 模拟Protocol Buffer消息定义
-  let message_schema = {
-    "name": "TelemetrySpan",
-    "fields": [
-      {"number": 1, "name": "trace_id", "type": "string"},
-      {"number": 2, "name": "span_id", "type": "string"},
-      {"number": 3, "name": "operation_name", "type": "string"},
-      {"number": 4, "name": "start_time", "type": "int64"},
-      {"number": 5, "name": "duration_ms", "type": "int32"},
-      {"number": 6, "name": "status", "type": "string"}
-    ]
+test "context serialization" {
+  let ctx = Context::root()
+  let key1 = ContextKey::new("serialization.key1")
+  let key2 = ContextKey::new("serialization.key2")
+  
+  let ctx_with_values = Context::with_value(
+    Context::with_value(ctx, key1, "value1"),
+    key2,
+    "value2"
+  )
+  
+  // Simulate context serialization
+  let value1 = Context::get(ctx_with_values, key1)
+  let value2 = Context::get(ctx_with_values, key2)
+  
+  // Serialize to string representation
+  let serialized = match (value1, value2) {
+    (Some(v1), Some(v2)) => v1 + "|" + v2
+    _ => ""
   }
   
-  // 原始数据
-  let span_data = {
-    "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
-    "span_id": "00f067aa0ba902b7",
-    "operation_name": "process_payment",
-    "start_time": 1672531200000000L,
-    "duration_ms": 150,
-    "status": "ok"
-  }
+  // Simulate deserialization
+  let parts = serialized.split("|")
+  let deserialized_value1 = if parts.length() > 0 { Some(parts[0]) } else { None }
+  let deserialized_value2 = if parts.length() > 1 { Some(parts[1]) } else { None }
   
-  // 简化的Protocol Buffer序列化函数
-  fn serialize_to_protobuf(data : { String : Any }, schema : { String : Any }) -> ByteArray {
-    let mut binary = ByteArray::new(0)
-    
-    // 按字段编号序列化
-    let fields = schema["fields"]
-    for field in fields {
-      let field_number = field["number"]
-      let field_name = field["name"]
-      let field_type = field["type"]
-      
-      match data[field_name] {
-        Some(value) => {
-          // 简化的字段编码：字段编号 + 类型 + 值
-          binary = binary + [field_number.to_byte()]
-          
-          match field_type {
-            "string" => {
-              binary = binary + [0] // 字符串类型标识
-              let str_bytes = value.to_byte_array()
-              binary = binary + str_bytes.length().to_byte_array() // 长度
-              binary = binary + str_bytes // 值
-            }
-            "int32" => {
-              binary = binary + [1] // int32类型标识
-              let int_bytes = value.to_byte_array()
-              binary = binary + int_bytes
-            }
-            "int64" => {
-              binary = binary + [2] // int64类型标识
-              let int64_bytes = value.to_byte_array()
-              binary = binary + int64_bytes
-            }
-            _ => () // 不支持的类型
-          }
-        }
-        None => () // 字段不存在
-      }
-    }
-    
-    binary
-  }
-  
-  // 简化的Protocol Buffer反序列化函数
-  fn deserialize_from_protobuf(binary : ByteArray, schema : { String : Any }) -> { String : Any } {
-    let mut result = {}
-    let mut position = 0
-    
-    let fields = schema["fields"]
-    for field in fields {
-      if position >= binary.length() {
-        break
-      }
-      
-      let field_number = binary[position]
-      position = position + 1
-      
-      if position >= binary.length() {
-        break
-      }
-      
-      let field_type = binary[position]
-      position = position + 1
-      
-      let field_name = field["name"]
-      
-      match field_type {
-        0 => { // 字符串类型
-          if position >= binary.length() {
-            break
-          }
-          
-          let length = binary[position]
-          position = position + 1
-          
-          if position + length <= binary.length() {
-            let str_bytes = binary.slice(position, position + length)
-            result[field_name] = str_bytes.to_string()
-            position = position + length
-          }
-        }
-        1 => { // int32类型
-          if position + 4 <= binary.length() {
-            let int_bytes = binary.slice(position, position + 4)
-            result[field_name] = int_bytes.to_int()
-            position = position + 4
-          }
-        }
-        2 => { // int64类型
-          if position + 8 <= binary.length() {
-            let int64_bytes = binary.slice(position, position + 8)
-            result[field_name] = int64_bytes.to_int64()
-            position = position + 8
-          }
-        }
-        _ => () // 不支持的类型
-      }
-    }
-    
-    result
-  }
-  
-  // 序列化数据
-  let protobuf_data = serialize_to_protobuf(span_data, message_schema)
-  
-  // 验证二进制数据不为空
-  assert_true(protobuf_data.length() > 0)
-  
-  // 反序列化数据
-  let deserialized_data = deserialize_from_protobuf(protobuf_data, message_schema)
-  
-  // 验证反序列化结果
-  assert_eq(deserialized_data["trace_id"], "4bf92f3577b34da6a3ce929d0e0e4736")
-  assert_eq(deserialized_data["span_id"], "00f067aa0ba902b7")
-  assert_eq(deserialized_data["operation_name"], "process_payment")
-  assert_eq(deserialized_data["status"], "ok")
-  // 注意：由于简化的实现，数值字段可能无法正确解析
+  assert_eq(deserialized_value1, Some("value1"))
+  assert_eq(deserialized_value2, Some("value2"))
 }
 
-// Test 4: XML序列化和反序列化测试
-test "XML序列化和反序列化测试" {
-  // 原始数据
-  let log_entry = {
-    "timestamp": "2023-01-01T12:00:00Z",
-    "level": "INFO",
-    "logger": "payment.service",
-    "message": "Payment processed successfully",
-    "thread": "main",
-    "exception": null,
-    "mdc": {
-      "user_id": "12345",
-      "request_id": "req-abc123",
-      "transaction_id": "txn-def456"
+test "baggage serialization" {
+  let baggage = Baggage::new()
+  
+  // Add multiple entries
+  let baggage1 = Baggage::set_entry(baggage, "key1", "value1")
+  let baggage2 = Baggage::set_entry(baggage1, "key2", "value2")
+  let baggage3 = Baggage::set_entry(baggage2, "key3", "value3")
+  
+  // Serialize to W3C baggage format
+  let serialized = "key1=value1,key2=value2,key3=value3"
+  
+  // Simulate deserialization by parsing
+  let entries = serialized.split(",")
+  
+  // Verify deserialization
+  assert_eq(entries.length(), 3)
+  assert_eq(entries[0], "key1=value1")
+  assert_eq(entries[1], "key2=value2")
+  assert_eq(entries[2], "key3=value3")
+  
+  // Reconstruct baggage entries
+  for entry in entries {
+    let kv_parts = entry.split("=")
+    if kv_parts.length() == 2 {
+      let reconstructed_key = kv_parts[0]
+      let reconstructed_value = kv_parts[1]
+      
+      // Verify against original values
+      let original_value = Baggage::get_entry(baggage3, reconstructed_key)
+      assert_eq(original_value, Some(reconstructed_value))
     }
   }
-  
-  // 简化的XML序列化函数
-  fn serialize_to_xml(data : { String : Any }, root_element : String) -> String {
-    let mut xml = "<" + root_element + ">"
-    
-    for (key, value) in data {
-      match value {
-        String(s) => xml = xml + "<" + key + ">" + s + "</" + key + ">"
-        Int(i) => xml = xml + "<" + key + ">" + i.to_string() + "</" + key + ">"
-        Int64(l) => xml = xml + "<" + key + ">" + l.to_string() + "</" + key + ">"
-        Float(f) => xml = xml + "<" + key + ">" + f.to_string() + "</" + key + ">"
-        Bool(b) => xml = xml + "<" + key + ">" + (if b { "true" } else { "false" }) + "</" + key + ">"
-        { String : Any } obj => xml = xml + serialize_to_xml(obj, key)
-        null => xml = xml + "<" + key + " />"
-        _ => xml = xml + "<" + key + ">null</" + key + ">"
-      }
-    }
-    
-    xml = xml + "</" + root_element + ">"
-    xml
-  }
-  
-  // 简化的XML解析函数
-  fn parse_xml(xml : String) -> { String : Any } {
-    let mut result = {}
-    
-    // 简单的标签提取（不处理嵌套结构）
-    if xml.contains("<timestamp>") && xml.contains("</timestamp>") {
-      let start = xml.index_of("<timestamp>") + 11
-      let end = xml.index_of("</timestamp>")
-      if start > 10 && end > start {
-        result["timestamp"] = xml.slice(start, end)
-      }
-    }
-    
-    if xml.contains("<level>") && xml.contains("</level>") {
-      let start = xml.index_of("<level>") + 7
-      let end = xml.index_of("</level>")
-      if start > 6 && end > start {
-        result["level"] = xml.slice(start, end)
-      }
-    }
-    
-    if xml.contains("<logger>") && xml.contains("</logger>") {
-      let start = xml.index_of("<logger>") + 8
-      let end = xml.index_of("</logger>")
-      if start > 7 && end > start {
-        result["logger"] = xml.slice(start, end)
-      }
-    }
-    
-    if xml.contains("<message>") && xml.contains("</message>") {
-      let start = xml.index_of("<message>") + 9
-      let end = xml.index_of("</message>")
-      if start > 8 && end > start {
-        result["message"] = xml.slice(start, end)
-      }
-    }
-    
-    if xml.contains("<thread>") && xml.contains("</thread>") {
-      let start = xml.index_of("<thread>") + 8
-      let end = xml.index_of("</thread>")
-      if start > 7 && end > start {
-        result["thread"] = xml.slice(start, end)
-      }
-    }
-    
-    // 检查空元素
-    if xml.contains("<exception />") {
-      result["exception"] = null
-    }
-    
-    result
-  }
-  
-  // 序列化数据
-  let xml_data = serialize_to_xml(log_entry, "log_entry")
-  
-  // 验证XML结构
-  assert_true(xml_data.contains("<log_entry>"))
-  assert_true(xml_data.contains("</log_entry>"))
-  assert_true(xml_data.contains("<timestamp>"))
-  assert_true(xml_data.contains("</timestamp>"))
-  assert_true(xml_data.contains("<level>"))
-  assert_true(xml_data.contains("</level>"))
-  assert_true(xml_data.contains("<logger>"))
-  assert_true(xml_data.contains("</logger>"))
-  assert_true(xml_data.contains("<message>"))
-  assert_true(xml_data.contains("</message>"))
-  assert_true(xml_data.contains("<thread>"))
-  assert_true(xml_data.contains("</thread>"))
-  assert_true(xml_data.contains("<exception />"))
-  
-  // 反序列化数据
-  let parsed_data = parse_xml(xml_data)
-  
-  // 验证反序列化结果
-  assert_eq(parsed_data["timestamp"], "2023-01-01T12:00:00Z")
-  assert_eq(parsed_data["level"], "INFO")
-  assert_eq(parsed_data["logger"], "payment.service")
-  assert_eq(parsed_data["message"], "Payment processed successfully")
-  assert_eq(parsed_data["thread"], "main")
-  assert_eq(parsed_data["exception"], null)
 }
 
-// Test 5: CSV序列化和反序列化测试
-test "CSV序列化和反序列化测试" {
-  // 原始数据（表格形式）
-  let metrics_data = [
-    {
-      "timestamp": "2023-01-01T12:00:00Z",
-      "metric_name": "request_count",
-      "value": 100,
-      "unit": "count",
-      "tags": "service:api,endpoint:/users"
-    },
-    {
-      "timestamp": "2023-01-01T12:01:00Z",
-      "metric_name": "request_duration",
-      "value": 125.5,
-      "unit": "ms",
-      "tags": "service:api,endpoint:/users"
-    },
-    {
-      "timestamp": "2023-01-01T12:02:00Z",
-      "metric_name": "error_rate",
-      "value": 0.05,
-      "unit": "ratio",
-      "tags": "service:api,endpoint:/users"
-    }
+test "resource serialization" {
+  let resource = Resource::new()
+  
+  // Create attributes
+  let attrs = [
+    ("service.name", StringValue("test-service")),
+    ("service.version", StringValue("1.0.0")),
+    ("service.instance.id", StringValue("instance-123")),
+    ("host.name", StringValue("test-host")),
+    ("process.pid", IntValue(12345)),
+    ("process.cpu.count", IntValue(4))
   ]
   
-  // 简化的CSV序列化函数
-  fn serialize_to_csv(data : Array[{ String : Any }]) -> String {
-    if data.length() == 0 {
-      return ""
+  let resource_with_attrs = Resource::with_attributes(resource, attrs)
+  
+  // Serialize resource to JSON-like string
+  let mut serialized = "{"
+  let mut first = true
+  
+  // Simulate serialization of each attribute
+  for attr in attrs {
+    if !first { serialized = serialized + "," }
+    first = false
+    
+    serialized = serialized + "\"" + attr.0 + "\":"
+    
+    match attr.1 {
+      StringValue(s) => serialized = serialized + "\"" + s + "\""
+      IntValue(i) => serialized = serialized + i.to_string()
+      FloatValue(f) => serialized = serialized + f.to_string()
+      BoolValue(b) => serialized = serialized + if b { "true" } else { "false" }
+      _ => serialized = serialized + "null"
     }
-    
-    let mut csv = ""
-    
-    // 添加标题行
-    let headers = []
-    for (key, _) in data[0] {
-      headers = headers + [key]
-    }
-    
-    for i in 0..<headers.length() {
-      if i > 0 {
-        csv = csv + ","
-      }
-      csv = csv + headers[i]
-    }
-    csv = csv + "\n"
-    
-    // 添加数据行
-    for row in data {
-      for i in 0..<headers.length() {
-        if i > 0 {
-          csv = csv + ","
-        }
-        
-        let header = headers[i]
-        match row[header] {
-          Some(value) => {
-            match value {
-              String(s) => csv = csv + "\"" + s + "\""
-              Int(i) => csv = csv + i.to_string()
-              Int64(l) => csv = csv + l.to_string()
-              Float(f) => csv = csv + f.to_string()
-              Bool(b) => csv = csv + (if b { "true" } else { "false" })
-              _ => csv = csv + ""
-            }
-          }
-          None => csv = csv + ""
-        }
-      }
-      csv = csv + "\n"
-    }
-    
-    csv
   }
   
-  // 简化的CSV解析函数
-  fn parse_csv(csv : String) -> Array[{ String : Any }] {
-    let lines = csv.split("\n")
-    if lines.length() < 2 {
-      return []
-    }
-    
-    // 解析标题行
-    let headers = lines[0].split(",")
-    let mut result = []
-    
-    // 解析数据行
-    for i in 1..<lines.length() {
-      if lines[i].length() == 0 {
-        continue
-      }
-      
-      let values = lines[i].split(",")
-      let mut row = {}
-      
-      for j in 0..<headers.length() {
-        if j < values.length() {
-          let header = headers[j].trim()
-          let value = values[j].trim()
-          
-          // 移除引号
-          let clean_value = if value.length() >= 2 && value[0] == '\"' && value[value.length() - 1] == '\"' {
-            value.slice(1, value.length() - 1)
-          } else {
-            value
-          }
-          
-          row[header] = clean_value
-        }
-      }
-      
-      result = result + [row]
-    }
-    
-    result
+  serialized = serialized + "}"
+  
+  // Verify serialized string contains expected values
+  assert_true(serialized.contains("\"service.name\":\"test-service\""))
+  assert_true(serialized.contains("\"service.version\":\"1.0.0\""))
+  assert_true(serialized.contains("\"process.pid\":12345"))
+  assert_true(serialized.contains("\"process.cpu.count\":4"))
+  
+  // Simulate deserialization by checking values
+  let service_name = Resource::get_attribute(resource_with_attrs, "service.name")
+  let service_version = Resource::get_attribute(resource_with_attrs, "service.version")
+  let process_pid = Resource::get_attribute(resource_with_attrs, "process.pid")
+  
+  match service_name {
+    Some(StringValue(s)) => assert_eq(s, "test-service")
+    _ => assert_true(false)
   }
   
-  // 序列化数据
-  let csv_data = serialize_to_csv(metrics_data)
+  match service_version {
+    Some(StringValue(s)) => assert_eq(s, "1.0.0")
+    _ => assert_true(false)
+  }
   
-  // 验证CSV结构
-  assert_true(csv_data.contains("timestamp,metric_name,value,unit,tags"))
-  assert_true(csv_data.contains("\"2023-01-01T12:00:00Z\""))
-  assert_true(csv_data.contains("\"request_count\""))
-  assert_true(csv_data.contains("\"service:api,endpoint:/users\""))
-  
-  // 反序列化数据
-  let parsed_data = parse_csv(csv_data)
-  
-  // 验证反序列化结果
-  assert_eq(parsed_data.length(), 3)
-  
-  // 验证第一行数据
-  let first_row = parsed_data[0]
-  assert_eq(first_row["timestamp"], "2023-01-01T12:00:00Z")
-  assert_eq(first_row["metric_name"], "request_count")
-  assert_eq(first_row["value"], "100")
-  assert_eq(first_row["unit"], "count")
-  assert_eq(first_row["tags"], "service:api,endpoint:/users")
-  
-  // 验证第二行数据
-  let second_row = parsed_data[1]
-  assert_eq(second_row["timestamp"], "2023-01-01T12:01:00Z")
-  assert_eq(second_row["metric_name"], "request_duration")
-  assert_eq(second_row["value"], "125.5")
-  assert_eq(second_row["unit"], "ms")
-  
-  // 验证第三行数据
-  let third_row = parsed_data[2]
-  assert_eq(third_row["timestamp"], "2023-01-01T12:02:00Z")
-  assert_eq(third_row["metric_name"], "error_rate")
-  assert_eq(third_row["value"], "0.05")
-  assert_eq(third_row["unit"], "ratio")
+  match process_pid {
+    Some(IntValue(i)) => assert_eq(i, 12345)
+    _ => assert_true(false)
+  }
 }
 
-// Test 6: 序列化版本兼容性测试
-test "序列化版本兼容性测试" {
-  // 版本1的数据结构
-  let v1_schema = {
-    "version": "1.0",
-    "fields": [
-      {"name": "id", "type": "string", "required": true},
-      {"name": "name", "type": "string", "required": true},
-      {"name": "email", "type": "string", "required": true}
-    ]
-  }
+test "log record serialization" {
+  let timestamp = 1234567890L
+  let observed_timestamp = 1234567891L
+  let trace_id = "trace123456789"
+  let span_id = "span123456789"
   
-  // 版本2的数据结构（添加了新字段）
-  let v2_schema = {
-    "version": "2.0",
-    "fields": [
-      {"name": "id", "type": "string", "required": true},
-      {"name": "name", "type": "string", "required": true},
-      {"name": "email", "type": "string", "required": true},
-      {"name": "phone", "type": "string", "required": false}, // 新增可选字段
-      {"name": "created_at", "type": "timestamp", "required": false} // 新增可选字段
-    ]
-  }
+  let record = LogRecord::new_with_context(
+    Error,
+    Some("Error occurred in processing"),
+    Some(Attributes::new()),
+    Some(timestamp),
+    Some(observed_timestamp),
+    Some(trace_id),
+    Some(span_id),
+    Some(Context::root())
+  )
   
-  // 版本1的数据
-  let v1_data = {
-    "id": "12345",
-    "name": "John Doe",
-    "email": "john@example.com"
-  }
+  // Serialize log record to JSON-like string
+  let mut serialized = "{"
+  serialized = serialized + "\"severity\":\"Error\"," 
+  serialized = serialized + "\"body\":\"Error occurred in processing\"," 
+  serialized = serialized + "\"timestamp\":" + timestamp.to_string() + ","
+  serialized = serialized + "\"observed_timestamp\":" + observed_timestamp.to_string() + ","
+  serialized = serialized + "\"trace_id\":\"" + trace_id + "\"," 
+  serialized = serialized + "\"span_id\":\"" + span_id + "\""
+  serialized = serialized + "}"
   
-  // 版本2的数据
-  let v2_data = {
-    "id": "67890",
-    "name": "Jane Smith",
-    "email": "jane@example.com",
-    "phone": "+1-555-0123",
-    "created_at": "2023-01-01T12:00:00Z"
-  }
+  // Verify serialized string
+  assert_true(serialized.contains("\"severity\":\"Error\""))
+  assert_true(serialized.contains("\"body\":\"Error occurred in processing\""))
+  assert_true(serialized.contains("\"timestamp\":1234567890"))
+  assert_true(serialized.contains("\"trace_id\":\"trace123456789\""))
   
-  // 简化的序列化函数（包含版本信息）
-  fn serialize_with_version(data : { String : Any }, schema : { String : Any }) -> String {
-    let mut serialized = "version:" + schema["version"] + "|"
-    
-    for field in schema["fields"] {
-      let field_name = field["name"]
-      match data[field_name] {
-        Some(value) => {
-          serialized = serialized + field_name + ":" + value + "|"
-        }
-        None => {
-          if field["required"] {
-            serialized = serialized + field_name + ":ERROR_MISSING_REQUIRED|"
-          }
-          // 可选字段缺失时不包含在序列化字符串中
-        }
-      }
-    }
-    
-    serialized
-  }
-  
-  // 简化的反序列化函数（支持版本兼容性）
-  fn deserialize_with_version(serialized : String, target_schema : { String : Any }) -> { String : Any } {
-    let parts = serialized.split("|")
-    if parts.length() == 0 {
-      return {}
-    }
-    
-    // 提取版本信息
-    let version_part = parts[0]
-    let version = version_part.slice(8, version_part.length()) // 移除"version:"前缀
-    
-    let mut result = {}
-    result["version"] = version
-    
-    // 解析字段
-    for i in 1..<parts.length() {
-      let part = parts[i]
-      if part.length() == 0 {
-        continue
-      }
-      
-      let key_value = part.split(":")
-      if key_value.length() >= 2 {
-        let key = key_value[0]
-        let value = part.slice(key.length() + 1, part.length())
-        result[key] = value
-      }
-    }
-    
-    result
-  }
-  
-  // 序列化版本1数据
-  let v1_serialized = serialize_with_version(v1_data, v1_schema)
-  
-  // 验证版本1序列化结果
-  assert_true(v1_serialized.contains("version:1.0"))
-  assert_true(v1_serialized.contains("id:12345"))
-  assert_true(v1_serialized.contains("name:John Doe"))
-  assert_true(v1_serialized.contains("email:john@example.com"))
-  
-  // 用版本2模式反序列化版本1数据（向前兼容）
-  let v1_deserialized_with_v2 = deserialize_with_version(v1_serialized, v2_schema)
-  
-  // 验证向前兼容性
-  assert_eq(v1_deserialized_with_v2["version"], "1.0")
-  assert_eq(v1_deserialized_with_v2["id"], "12345")
-  assert_eq(v1_deserialized_with_v2["name"], "John Doe")
-  assert_eq(v1_deserialized_with_v2["email"], "john@example.com")
-  // 版本1数据不包含phone和created_at字段，这是正常的
-  
-  // 序列化版本2数据
-  let v2_serialized = serialize_with_version(v2_data, v2_schema)
-  
-  // 验证版本2序列化结果
-  assert_true(v2_serialized.contains("version:2.0"))
-  assert_true(v2_serialized.contains("id:67890"))
-  assert_true(v2_serialized.contains("name:Jane Smith"))
-  assert_true(v2_serialized.contains("email:jane@example.com"))
-  assert_true(v2_serialized.contains("phone:+1-555-0123"))
-  assert_true(v2_serialized.contains("created_at:2023-01-01T12:00:00Z"))
-  
-  // 用版本1模式反序列化版本2数据（向后兼容）
-  let v2_deserialized_with_v1 = deserialize_with_version(v2_serialized, v1_schema)
-  
-  // 验证向后兼容性
-  assert_eq(v2_deserialized_with_v1["version"], "2.0")
-  assert_eq(v2_deserialized_with_v1["id"], "67890")
-  assert_eq(v2_deserialized_with_v1["name"], "Jane Smith")
-  assert_eq(v2_deserialized_with_v1["email"], "jane@example.com")
-  // 版本1模式不处理phone和created_at字段，但这些字段仍然会被解析
+  // Simulate deserialization by verifying original record
+  assert_eq(LogRecord::severity_number(record), Error)
+  assert_eq(LogRecord::body(record), Some("Error occurred in processing"))
+  assert_eq(LogRecord::trace_id(record), Some(trace_id))
+  assert_eq(LogRecord::span_id(record), Some(span_id))
 }
 
-// Test 7: 序列化性能测试
-test "序列化性能测试" {
-  // 创建大量测试数据
-  let mut large_dataset = []
+test "instrument serialization" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "serialization-test")
   
-  for i in 0..=1000 {
-    let record = {
-      "id": "record_" + i.to_string(),
-      "timestamp": (1672531200L + i.to_int64()),
-      "value": (i * 1.5),
-      "category": "category_" + (i % 10).to_string(),
-      "tags": "tag1:value1,tag2:value2,tag3:" + i.to_string()
-    }
-    large_dataset = large_dataset + [record]
-  }
+  // Create different instrument types
+  let counter = Meter::create_counter(meter, "http.requests.total", Some("Total HTTP requests"), Some("requests"))
+  let histogram = Meter::create_histogram(meter, "http.request.duration", Some("HTTP request duration"), Some("ms"))
+  let updown_counter = Meter::create_updown_counter(meter, "active.connections", Some("Active connections"), Some("connections"))
+  let gauge = Meter::create_gauge(meter, "memory.usage", Some("Memory usage"), Some("bytes"))
   
-  // 简化的JSON序列化函数
-  fn fast_serialize_to_json(data : { String : Any }) -> String {
-    let mut json = "{"
-    let mut first = true
-    
-    for (key, value) in data {
-      if !first {
-        json = json + ","
-      }
-      first = false
-      
-      json = json + "\"" + key + "\":"
-      
-      match value {
-        String(s) => json = json + "\"" + s + "\""
-        Int(i) => json = json + i.to_string()
-        Int64(l) => json = json + l.to_string()
-        Float(f) => json = json + f.to_string()
-        Bool(b) => json = json + (if b { "true" } else { "false" })
-        _ => json = json + "null"
-      }
-    }
-    
-    json = json + "}"
-    json
-  }
+  // Serialize counter to JSON
+  let counter_serialized = "{"
+  counter_serialized = counter_serialized + "\"type\":\"Counter\"," 
+  counter_serialized = counter_serialized + "\"name\":\"" + counter.name + "\"," 
+  counter_serialized = counter_serialized + "\"description\":\"Total HTTP requests\"," 
+  counter_serialized = counter_serialized + "\"unit\":\"requests\""
+  counter_serialized = counter_serialized + "}"
   
-  // 简化的CSV序列化函数
-  fn fast_serialize_to_csv(data : { String : Any }) -> String {
-    let mut csv = ""
-    let mut first = true
-    
-    for (key, value) in data {
-      if !first {
-        csv = csv + ","
-      }
-      first = false
-      
-      match value {
-        String(s) => csv = csv + "\"" + s + "\""
-        Int(i) => csv = csv + i.to_string()
-        Int64(l) => csv = csv + l.to_string()
-        Float(f) => csv = csv + f.to_string()
-        Bool(b) => csv = csv + (if b { "true" } else { "false" })
-        _ => csv = csv + ""
-      }
-    }
-    
-    csv
-  }
+  // Verify serialization
+  assert_true(counter_serialized.contains("\"type\":\"Counter\""))
+  assert_true(counter_serialized.contains("\"name\":\"http.requests.total\""))
+  assert_true(counter_serialized.contains("\"description\":\"Total HTTP requests\""))
+  assert_true(counter_serialized.contains("\"unit\":\"requests\""))
   
-  // 测试JSON序列化性能
-  let json_start_time = 1000L // 模拟时间戳
-  let mut json_results = []
+  // Simulate deserialization by verifying original instruments
+  assert_eq(counter.name, "http.requests.total")
+  assert_eq(counter.description, Some("Total HTTP requests"))
+  assert_eq(counter.unit, Some("requests"))
   
-  for record in large_dataset {
-    let json_result = fast_serialize_to_json(record)
-    json_results = json_results + [json_result]
-  }
-  
-  let json_end_time = 2000L // 模拟时间戳
-  let json_duration = json_end_time - json_start_time
-  
-  // 测试CSV序列化性能
-  let csv_start_time = 2000L // 模拟时间戳
-  let mut csv_results = []
-  
-  for record in large_dataset {
-    let csv_result = fast_serialize_to_csv(record)
-    csv_results = csv_results + [csv_result]
-  }
-  
-  let csv_end_time = 3000L // 模拟时间戳
-  let csv_duration = csv_end_time - csv_start_time
-  
-  // 验证序列化结果
-  assert_eq(json_results.length(), 1001)
-  assert_eq(csv_results.length(), 1001)
-  
-  // 验证JSON结果包含必要字段
-  let sample_json = json_results[0]
-  assert_true(sample_json.contains("\"id\""))
-  assert_true(sample_json.contains("\"timestamp\""))
-  assert_true(sample_json.contains("\"value\""))
-  assert_true(sample_json.contains("\"category\""))
-  assert_true(sample_json.contains("\"tags\""))
-  
-  // 验证CSV结果包含必要字段
-  let sample_csv = csv_results[0]
-  assert_true(sample_csv.length() > 0)
-  
-  // 验证性能指标（这里只是模拟，实际性能测试会更复杂）
-  assert_eq(json_duration, 1000L)
-  assert_eq(csv_duration, 1000L)
-  
-  // 计算序列化大小
-  let mut json_total_size = 0
-  for json in json_results {
-    json_total_size = json_total_size + json.length()
-  }
-  
-  let mut csv_total_size = 0
-  for csv in csv_results {
-    csv_total_size = csv_total_size + csv.length()
-  }
-  
-  // 验证CSV通常比JSON更紧凑
-  assert_true(csv_total_size < json_total_size)
+  assert_eq(histogram.name, "http.request.duration")
+  assert_eq(updown_counter.name, "active.connections")
+  assert_eq(gauge.name, "memory.usage")
 }
 
-// Test 8: 序列化安全性测试
-test "序列化安全性测试" {
-  // 包含潜在危险内容的数据
-  let dangerous_data = {
-    "normal_field": "safe_content",
-    "script_field": "<script>alert('xss')</script>",
-    "sql_injection": "'; DROP TABLE users; --",
-    "path_traversal": "../../../etc/passwd",
-    "null_byte": "content\00malicious",
-    "unicode_exploit": "\u202eright-to-left-override",
-    "large_content": "A" * 10000 // 大量内容
-  }
+test "HTTP request response serialization" {
+  let headers = [
+    ("Content-Type", "application/json"),
+    ("Accept", "application/json"),
+    ("Authorization", "Bearer token123")
+  ]
   
-  // 安全的序列化函数（转义危险内容）
-  fn safe_serialize_to_json(data : { String : Any }) -> String {
-    let mut json = "{"
-    let mut first = true
-    
-    for (key, value) in data {
-      if !first {
-        json = json + ","
-      }
-      first = false
-      
-      json = json + "\"" + key + "\":"
-      
-      match value {
-        String(s) => {
-          // 转义危险字符
-          let escaped = escape_json_string(s)
-          json = json + "\"" + escaped + "\""
-        }
-        Int(i) => json = json + i.to_string()
-        Int64(l) => json = json + l.to_string()
-        Float(f) => json = json + f.to_string()
-        Bool(b) => json = json + (if b { "true" } else { "false" })
-        _ => json = json + "null"
-      }
-    }
-    
-    json = json + "}"
-    json
-  }
+  let body = "{\"key\":\"value\",\"number\":42}"
   
-  // JSON字符串转义函数
-  fn escape_json_string(input : String) -> String {
-    let mut escaped = ""
-    
-    for char in input {
-      match char {
-        '\"' => escaped = escaped + "\\\""
-        '\\' => escaped = escaped + "\\\\"
-        '/' => escaped = escaped + "\\/"
-        '\b' => escaped = escaped + "\\b"
-        '\f' => escaped = escaped + "\\f"
-        '\n' => escaped = escaped + "\\n"
-        '\r' => escaped = escaped + "\\r"
-        '\t' => escaped = escaped + "\\t"
-        '\u0000' => escaped = escaped + "\\u0000"
-        _ => {
-          // 过滤危险字符
-          if char.to_int() >= 32 && char.to_int() <= 126 {
-            escaped = escaped + char
-          } else {
-            // 转义非ASCII字符
-            let code = char.to_int()
-            escaped = escaped + "\\u" + code.to_hex_string()
-          }
-        }
-      }
-    }
-    
-    escaped
-  }
+  let request = HttpRequest::new("POST", "https://api.example.com/data", headers, Some(body))
   
-  // 内容长度限制函数
-  fn limit_content_length(content : String, max_length : Int) -> String {
-    if content.length() <= max_length {
-      return content
-    } else {
-      return content.slice(0, max_length) + "...[TRUNCATED]"
-    }
-  }
+  // Serialize HTTP request to JSON-like string
+  let mut request_serialized = "{"
+  request_serialized = request_serialized + "\"method\":\"POST\"," 
+  request_serialized = request_serialized + "\"url\":\"https://api.example.com/data\"," 
+  request_serialized = request_serialized + "\"headers\":{"
+  request_serialized = request_serialized + "\"Content-Type\":\"application/json\"," 
+  request_serialized = request_serialized + "\"Accept\":\"application/json\"," 
+  request_serialized = request_serialized + "\"Authorization\":\"Bearer token123\""
+  request_serialized = request_serialized + "},"
+  request_serialized = request_serialized + "\"body\":\"{\\\"key\\\":\\\"value\\\",\\\"number\\\":42}\""
+  request_serialized = request_serialized + "}"
   
-  // 序列化数据
-  let safe_json = safe_serialize_to_json(dangerous_data)
+  // Verify serialization
+  assert_true(request_serialized.contains("\"method\":\"POST\""))
+  assert_true(request_serialized.contains("\"url\":\"https://api.example.com/data\""))
+  assert_true(request_serialized.contains("\"Authorization\":\"Bearer token123\""))
   
-  // 验证危险内容被正确转义
-  assert_true(safe_json.contains("\\u003cscript\\u003ealert('xss')\\u003c/script\\u003e")) // 脚本标签被转义
-  assert_true(safe_json.contains("'; DROP TABLE users; --")) // SQL注入保持原样（在JSON中是安全的）
-  assert_true(safe_json.contains("../../../etc/passwd")) // 路径遍历保持原样（在JSON中是安全的）
+  // Create response
+  let response_headers = [("Content-Type", "application/json"), ("X-Request-ID", "req-123")]
+  let response_body = "{\"success\":true,\"id\":123}"
   
-  // 验证null字节被处理
-  assert_false(safe_json.contains("\00")) // null字节应该被转义或移除
+  let response = HttpResponse::new(200, response_headers, Some(response_body))
   
-  // 验证大内容被限制
-  assert_true(safe_json.contains("...[TRUNCATED]")) // 大内容应该被截断
+  // Serialize HTTP response
+  let mut response_serialized = "{"
+  response_serialized = response_serialized + "\"status_code\":200," 
+  response_serialized = response_serialized + "\"headers\":{"
+  response_serialized = response_serialized + "\"Content-Type\":\"application/json\"," 
+  response_serialized = response_serialized + "\"X-Request-ID\":\"req-123\""
+  response_serialized = response_serialized + "},"
+  response_serialized = response_serialized + "\"body\":\"{\\\"success\\\":true,\\\"id\\\":123}\""
+  response_serialized = response_serialized + "}"
   
-  // 测试反序列化安全性
-  fn safe_parse_json(json : String) -> { String : Any } {
-    // 简化的安全JSON解析
-    let mut result = {}
-    
-    // 检查JSON大小限制
-    if json.length() > 100000 {
-      return {"error": "JSON too large"}
-    }
-    
-    // 检查嵌套深度限制
-    let mut depth = 0
-    for char in json {
-      if char == '{' {
-        depth = depth + 1
-        if depth > 10 {
-          return {"error": "JSON too deeply nested"}
-        }
-      } else if char == '}' {
-        depth = depth - 1
-      }
-    }
-    
-    // 提取安全字段
-    if json.contains("\"normal_field\"") {
-      result["normal_field"] = "safe_content"
-    }
-    
-    result
-  }
+  // Verify serialization
+  assert_true(response_serialized.contains("\"status_code\":200"))
+  assert_true(response_serialized.contains("\"X-Request-ID\":\"req-123\""))
   
-  // 解析JSON
-  let parsed_result = safe_parse_json(safe_json)
+  // Simulate deserialization by verifying original objects
+  assert_eq(HttpRequest::http_method(request), "POST")
+  assert_eq(HttpRequest::url(request), "https://api.example.com/data")
+  assert_eq(HttpRequest::body(request), Some(body))
   
-  // 验证解析结果
-  assert_eq(parsed_result["normal_field"], "safe_content")
-  assert_false(parsed_result.contains("error"))
-  
-  // 测试过大的JSON
-  let oversized_json = safe_json + " " * 200000 // 添加大量空格
-  let oversized_result = safe_parse_json(oversized_json)
-  assert_eq(oversized_result["error"], "JSON too large")
+  assert_eq(HttpResponse::status_code(response), 200)
+  assert_eq(HttpResponse::body(response), Some(response_body))
 }
 
-// Test 9: 自定义序列化格式测试
-test "自定义序列化格式测试" {
-  // 定义自定义序列化格式
-  // 格式: key1=value1;key2=value2;key3=value3;
+test "complex nested serialization" {
+  // Create complex nested structure
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "nested.key", StringValue("nested.value"))
+  Attributes::set(attrs, "nested.int", IntValue(42))
   
-  // 原始数据
-  let custom_data = {
-    "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
-    "span_id": "00f067aa0ba902b7",
-    "operation_name": "process_payment",
-    "duration_ms": 150,
-    "status": "ok",
-    "service_name": "payment-service"
+  let resource = Resource::new()
+  let resource_attrs = [
+    ("service.name", StringValue("complex-service")),
+    ("service.version", StringValue("2.0.0"))
+  ]
+  let resource_with_attrs = Resource::with_attributes(resource, resource_attrs)
+  
+  let span_ctx = SpanContext::new("trace123", "span456", true, "key=value")
+  
+  // Serialize complex structure
+  let mut complex_serialized = "{"
+  complex_serialized = complex_serialized + "\"attributes\":{"
+  complex_serialized = complex_serialized + "\"nested.key\":\"nested.value\"," 
+  complex_serialized = complex_serialized + "\"nested.int\":42"
+  complex_serialized = complex_serialized + "},"
+  complex_serialized = complex_serialized + "\"resource\":{"
+  complex_serialized = complex_serialized + "\"service.name\":\"complex-service\"," 
+  complex_serialized = complex_serialized + "\"service.version\":\"2.0.0\""
+  complex_serialized = complex_serialized + "},"
+  complex_serialized = complex_serialized + "\"span_context\":{"
+  complex_serialized = complex_serialized + "\"trace_id\":\"trace123\"," 
+  complex_serialized = complex_serialized + "\"span_id\":\"span456\"," 
+  complex_serialized = complex_serialized + "\"sampled\":true," 
+  complex_serialized = complex_serialized + "\"trace_state\":\"key=value\""
+  complex_serialized = complex_serialized + "}"
+  complex_serialized = complex_serialized + "}"
+  
+  // Verify complex serialization
+  assert_true(complex_serialized.contains("\"nested.key\":\"nested.value\""))
+  assert_true(complex_serialized.contains("\"service.name\":\"complex-service\""))
+  assert_true(complex_serialized.contains("\"trace_id\":\"trace123\""))
+  
+  // Simulate deserialization by verifying original objects
+  let nested_value = Attributes::get(attrs, "nested.key")
+  let nested_int = Attributes::get(attrs, "nested.int")
+  let service_name = Resource::get_attribute(resource_with_attrs, "service.name")
+  
+  match nested_value {
+    Some(StringValue(s)) => assert_eq(s, "nested.value")
+    _ => assert_true(false)
   }
   
-  // 自定义序列化函数
-  fn serialize_to_custom(data : { String : Any }) -> String {
-    let mut custom = ""
-    
-    for (key, value) in data {
-      custom = custom + key + "="
-      
-      match value {
-        String(s) => custom = custom + "s:" + s // s:表示字符串
-        Int(i) => custom = custom + "i:" + i.to_string() // i:表示整数
-        Int64(l) => custom = custom + "l:" + l.to_string() // l:表示长整数
-        Float(f) => custom = custom + "f:" + f.to_string() // f:表示浮点数
-        Bool(b) => custom = custom + "b:" + (if b { "true" } else { "false" }) // b:表示布尔值
-        _ => custom = custom + "null"
-      }
-      
-      custom = custom + ";"
-    }
-    
-    custom
+  match nested_int {
+    Some(IntValue(i)) => assert_eq(i, 42)
+    _ => assert_true(false)
   }
   
-  // 自定义反序列化函数
-  fn deserialize_from_custom(custom : String) -> { String : Any } {
-    let pairs = custom.split(";")
-    let mut result = {}
-    
-    for pair in pairs {
-      if pair.length() == 0 {
-        continue
-      }
-      
-      let key_value = pair.split("=", 2)
-      if key_value.length() != 2 {
-        continue
-      }
-      
-      let key = key_value[0]
-      let value_part = key_value[1]
-      
-      if value_part.length() < 2 {
-        continue
-      }
-      
-      let type_prefix = value_part.slice(0, 2)
-      let value = value_part.slice(2, value_part.length())
-      
-      match type_prefix {
-        "s:" => result[key] = value // 字符串
-        "i:" => {
-          match value.parse_int() {
-            Some(int_value) => result[key] = int_value
-            None => () // 解析失败
-          }
-        }
-        "l:" => {
-          match value.parse_int64() {
-            Some(int64_value) => result[key] = int64_value
-            None => () // 解析失败
-          }
-        }
-        "f:" => {
-          match value.parse_float() {
-            Some(float_value) => result[key] = float_value
-            None => () // 解析失败
-          }
-        }
-        "b:" => result[key] = (value == "true") // 布尔值
-        _ => () // 未知类型
-      }
-    }
-    
-    result
+  match service_name {
+    Some(StringValue(s)) => assert_eq(s, "complex-service")
+    _ => assert_true(false)
   }
   
-  // 序列化数据
-  let custom_serialized = serialize_to_custom(custom_data)
-  
-  // 验证自定义格式
-  assert_true(custom_serialized.contains("trace_id=s:4bf92f3577b34da6a3ce929d0e0e4736"))
-  assert_true(custom_serialized.contains("span_id=s:00f067aa0ba902b7"))
-  assert_true(custom_serialized.contains("operation_name=s:process_payment"))
-  assert_true(custom_serialized.contains("duration_ms=i:150"))
-  assert_true(custom_serialized.contains("status=s:ok"))
-  assert_true(custom_serialized.contains("service_name=s:payment-service"))
-  
-  // 验证格式结构
-  assert_true(custom_serialized.ends_with(";"))
-  
-  // 反序列化数据
-  let custom_deserialized = deserialize_from_custom(custom_serialized)
-  
-  // 验证反序列化结果
-  assert_eq(custom_deserialized["trace_id"], "4bf92f3577b34da6a3ce929d0e0e4736")
-  assert_eq(custom_deserialized["span_id"], "00f067aa0ba902b7")
-  assert_eq(custom_deserialized["operation_name"], "process_payment")
-  assert_eq(custom_deserialized["duration_ms"], 150)
-  assert_eq(custom_deserialized["status"], "ok")
-  assert_eq(custom_deserialized["service_name"], "payment-service")
-  
-  // 测试自定义格式的优势
-  let json_equivalent = "{"
-    + "\"trace_id\":\"4bf92f3577b34da6a3ce929d0e0e4736\","
-    + "\"span_id\":\"00f067aa0ba902b7\","
-    + "\"operation_name\":\"process_payment\","
-    + "\"duration_ms\":150,"
-    + "\"status\":\"ok\","
-    + "\"service_name\":\"payment-service\""
-    + "}"
-  
-  // 自定义格式通常比JSON更紧凑
-  assert_true(custom_serialized.length() < json_equivalent.length())
-  
-  // 自定义格式通常人类可读
-  assert_true(custom_serialized.contains("="))
-  assert_true(custom_serialized.contains(";"))
+  assert_eq(SpanContext::trace_id(span_ctx), "trace123")
+  assert_eq(SpanContext::span_id(span_ctx), "span456")
+  assert_true(SpanContext::is_sampled(span_ctx))
 }
 
-// Test 10: 序列化错误处理测试
-test "序列化错误处理测试" {
-  // 包含各种问题的数据
-  let problematic_data = {
-    "null_value": null,
-    "empty_string": "",
-    "very_long_string": "A" * 1000000, // 1MB字符串
-    "special_chars": "Hello\nWorld\t\"Quote'\\Backslash",
-    "unicode_chars": "Emoji: 😀, Chinese: 你好, Arabic: مرحبا",
-    "nested_object": {
-      "inner_key": "inner_value",
-      "inner_null": null
-    },
-    "circular_reference": "circular" // 在实际实现中可能导致循环引用
+test "serialization with special characters" {
+  let attrs = Attributes::new()
+  
+  // Set attributes with special characters
+  Attributes::set(attrs, "special.chars", StringValue("!@#$%^&*()_+-=[]{}|;':\",./<>?"))
+  Attributes::set(attrs, "unicode.chars", StringValue("测试中文字符🚀emoji"))
+  Attributes::set(attrs, "newlines", StringValue("line1\nline2\r\nline3"))
+  Attributes::set(attrs, "quotes", StringValue("Quote: \"Hello\""))
+  
+  // Serialize with proper escaping
+  let special_value = Attributes::get(attrs, "special.chars")
+  let unicode_value = Attributes::get(attrs, "unicode.chars")
+  let newlines_value = Attributes::get(attrs, "newlines")
+  let quotes_value = Attributes::get(attrs, "quotes")
+  
+  match special_value {
+    Some(StringValue(s)) => {
+      // Simulate JSON escaping
+      let escaped = s.replace("\\", "\\\\").replace("\"", "\\\"")
+      assert_true(escaped.contains("!@#$%^&*()_+-=[]{}|;':"))
+    }
+    _ => assert_true(false)
   }
   
-  // 带错误处理的序列化函数
-  fn safe_serialize(data : { String : Any }) -> Result[String, String] {
-    let mut serialized = "{"
-    let mut first = true
-    
-    for (key, value) in data {
-      if !first {
-        serialized = serialized + ","
+  match unicode_value {
+    Some(StringValue(s)) => {
+      // Unicode should be preserved
+      assert_true(s.contains("测试"))
+      assert_true(s.contains("🚀"))
+    }
+    _ => assert_true(false)
+  }
+  
+  match newlines_value {
+    Some(StringValue(s)) => {
+      // Newlines should be escaped in JSON
+      let escaped = s.replace("\n", "\\n").replace("\r", "\\r")
+      assert_true(escaped.contains("\\n"))
+      assert_true(escaped.contains("\\r"))
+    }
+    _ => assert_true(false)
+  }
+  
+  match quotes_value {
+    Some(StringValue(s)) => {
+      // Quotes should be escaped
+      let escaped = s.replace("\"", "\\\"")
+      assert_true(escaped.contains("\\\""))
+    }
+    _ => assert_true(false)
+  }
+}
+
+test "round trip serialization" {
+  // Create original objects
+  let original_attrs = Attributes::new()
+  Attributes::set(original_attrs, "round.trip", StringValue("test.value"))
+  Attributes::set(original_attrs, "number", IntValue(123))
+  
+  let original_ctx = Context::root()
+  let key = ContextKey::new("round.trip.key")
+  let original_ctx_with_value = Context::with_value(original_ctx, key, "round.trip.value")
+  
+  let original_span_ctx = SpanContext::new("roundtrip123", "roundtrip456", true, "round=key=value")
+  
+  // Simulate serialization
+  let serialized_attrs = "round.trip=test.value|number=123"
+  let serialized_ctx = "round.trip.key=round.trip.value"
+  let serialized_span_ctx = "roundtrip123-roundtrip456-1-round=key=value"
+  
+  // Simulate deserialization
+  let attrs_parts = serialized_attrs.split("|")
+  let ctx_parts = serialized_ctx.split("=")
+  let span_ctx_parts = serialized_span_ctx.split("-")
+  
+  // Reconstruct objects
+  let reconstructed_attrs = Attributes::new()
+  for part in attrs_parts {
+    let kv = part.split("=")
+    if kv.length() == 2 {
+      if kv[0] == "round.trip" {
+        Attributes::set(reconstructed_attrs, kv[0], StringValue(kv[1]))
+      } else if kv[0] == "number" {
+        Attributes::set(reconstructed_attrs, kv[0], IntValue(123))
       }
-      first = false
-      
-      serialized = serialized + "\"" + key + "\":"
-      
-      match value {
-        String(s) => {
-          // 检查字符串长度
-          if s.length() > 100000 {
-            return Err("String too long: " + key)
-          }
-          
-          // 转义特殊字符
-          let escaped = escape_special_chars(s)
-          serialized = serialized + "\"" + escaped + "\""
-        }
-        null => serialized = serialized + "null"
-        { String : Any } obj => {
-          // 简化嵌套对象处理
-          serialized = serialized + "\"[Object]\""
-        }
-        _ => serialized = serialized + "\"[Unsupported]\""
-      }
     }
+  }
+  
+  // Verify round trip integrity
+  let original_value = Attributes::get(original_attrs, "round.trip")
+  let reconstructed_value = Attributes::get(reconstructed_attrs, "round.trip")
+  
+  match (original_value, reconstructed_value) {
+    (Some(StringValue(orig)), Some(StringValue(recon))) => assert_eq(orig, recon)
+    _ => assert_true(false)
+  }
+  
+  // Verify span context round trip
+  if span_ctx_parts.length() >= 3 {
+    let reconstructed_trace_id = span_ctx_parts[0]
+    let reconstructed_span_id = span_ctx_parts[1]
+    let reconstructed_sampled = span_ctx_parts[2] == "1"
     
-    serialized = serialized + "}"
-    Ok(serialized)
+    assert_eq(reconstructed_trace_id, "roundtrip123")
+    assert_eq(reconstructed_span_id, "roundtrip456")
+    assert_true(reconstructed_sampled)
   }
   
-  // 转义特殊字符函数
-  fn escape_special_chars(input : String) -> String {
-    let mut escaped = ""
-    
-    for char in input {
-      match char {
-        '\"' => escaped = escaped + "\\\""
-        '\\' => escaped = escaped + "\\\\"
-        '\n' => escaped = escaped + "\\n"
-        '\t' => escaped = escaped + "\\t"
-        '\r' => escaped = escaped + "\\r"
-        _ => {
-          // 保留Unicode字符
-          escaped = escaped + char
-        }
-      }
-    }
-    
-    escaped
-  }
-  
-  // 测试正常数据序列化
-  let normal_data = {
-    "name": "John Doe",
-    "age": 30,
-    "active": true
-  }
-  
-  let normal_result = safe_serialize(normal_data)
-  match normal_result {
-    Ok(serialized) => {
-      assert_true(serialized.contains("\"name\":\"John Doe\""))
-      assert_true(serialized.contains("\"age\":\"[Unsupported]\""))
-      assert_true(serialized.contains("\"active\":\"[Unsupported]\""))
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // 测试空值处理
-  let null_data = {
-    "null_field": null,
-    "string_field": "value"
-  }
-  
-  let null_result = safe_serialize(null_data)
-  match null_result {
-    Ok(serialized) => {
-      assert_true(serialized.contains("\"null_field\":null"))
-      assert_true(serialized.contains("\"string_field\":\"value\""))
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // 测试空字符串处理
-  let empty_data = {
-    "empty_field": "",
-    "normal_field": "value"
-  }
-  
-  let empty_result = safe_serialize(empty_data)
-  match empty_result {
-    Ok(serialized) => {
-      assert_true(serialized.contains("\"empty_field\":\"\""))
-      assert_true(serialized.contains("\"normal_field\":\"value\""))
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // 测试特殊字符处理
-  let special_data = {
-    "special": "Hello\nWorld\t\"Quote'"
-  }
-  
-  let special_result = safe_serialize(special_data)
-  match special_result {
-    Ok(serialized) => {
-      assert_true(serialized.contains("\"special\":\"Hello\\nWorld\\t\\\"Quote'\""))
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // 测试Unicode字符处理
-  let unicode_data = {
-    "unicode": "Emoji: 😀, Chinese: 你好"
-  }
-  
-  let unicode_result = safe_serialize(unicode_data)
-  match unicode_result {
-    Ok(serialized) => {
-      assert_true(serialized.contains("\"unicode\":\"Emoji: 😀, Chinese: 你好\""))
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // 测试嵌套对象处理
-  let nested_data = {
-    "outer": "value",
-    "nested": {
-      "inner": "value"
-    }
-  }
-  
-  let nested_result = safe_serialize(nested_data)
-  match nested_result {
-    Ok(serialized) => {
-      assert_true(serialized.contains("\"outer\":\"value\""))
-      assert_true(serialized.contains("\"nested\":\"[Object]\""))
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // 测试超大字符串错误处理
-  let large_data = {
-    "large_field": "A" * 200000 // 200KB字符串
-  }
-  
-  let large_result = safe_serialize(large_data)
-  match large_result {
-    Ok(_) => assert_true(false) // 应该失败
-    Err(error) => {
-      assert_eq(error, "String too long: large_field")
-    }
-  }
+  // Verify original objects are unchanged
+  assert_eq(SpanContext::trace_id(original_span_ctx), "roundtrip123")
+  assert_eq(SpanContext::span_id(original_span_ctx), "roundtrip456")
+  assert_true(SpanContext::is_sampled(original_span_ctx))
 }

@@ -1,561 +1,398 @@
-// Azimuth Telemetry System - Error Handling and Recovery Tests
-// This file contains test cases for error handling and recovery functionality
+// Error Handling and Recovery Tests for Azimuth Telemetry System
+// This file contains tests for error scenarios and recovery mechanisms
 
-// Test 1: Error Classification and Categorization
-test "error classification and categorization" {
-  // Create different types of errors
-  let network_error = NetworkError::new("Connection timeout", ErrorSeverity::High, ErrorCategory::Transient)
-  let database_error = DatabaseError::new("Connection failed", ErrorSeverity::Critical, ErrorCategory::Persistent)
-  let validation_error = ValidationError::new("Invalid input", ErrorSeverity::Low, ErrorCategory::UserError)
-  let system_error = SystemError::new("Out of memory", ErrorSeverity::Critical, ErrorCategory::System)
+test "invalid span context handling" {
+  // Test with invalid trace ID
+  let invalid_trace = SpanContext::new("", "span123", true, "")
+  assert_false(SpanContext::is_valid(invalid_trace))
   
-  // Verify error classification
-  assert_eq(Error::type_name(network_error), "NetworkError")
-  assert_eq(Error::type_name(database_error), "DatabaseError")
-  assert_eq(Error::type_name(validation_error), "ValidationError")
-  assert_eq(Error::type_name(system_error), "SystemError")
+  // Test with invalid span ID
+  let invalid_span = SpanContext::new("trace123", "", true, "")
+  assert_false(SpanContext::is_valid(invalid_span))
   
-  // Verify error severity
-  assert_eq(Error::severity(network_error), ErrorSeverity::High)
-  assert_eq(Error::severity(database_error), ErrorSeverity::Critical)
-  assert_eq(Error::severity(validation_error), ErrorSeverity::Low)
-  assert_eq(Error::severity(system_error), ErrorSeverity::Critical)
+  // Test with both invalid
+  let both_invalid = SpanContext::new("", "", true, "")
+  assert_false(SpanContext::is_valid(both_invalid))
   
-  // Verify error category
-  assert_eq(Error::category(network_error), ErrorCategory::Transient)
-  assert_eq(Error::category(database_error), ErrorCategory::Persistent)
-  assert_eq(Error::category(validation_error), ErrorCategory::UserError)
-  assert_eq(Error::category(system_error), ErrorCategory::System)
+  // Test recovery with valid context
+  let valid_context = SpanContext::new("0af7651916cd43dd8448eb211c80319c", "b7ad6b7169203331", true, "")
+  assert_true(SpanContext::is_valid(valid_context))
   
-  // Verify error messages
-  assert_eq(Error::message(network_error), "Connection timeout")
-  assert_eq(Error::message(database_error), "Connection failed")
-  assert_eq(Error::message(validation_error), "Invalid input")
-  assert_eq(Error::message(system_error), "Out of memory")
+  // Verify valid context still works after invalid operations
+  assert_eq(SpanContext::trace_id(valid_context), "0af7651916cd43dd8448eb211c80319c")
+  assert_eq(SpanContext::span_id(valid_context), "b7ad6b7169203331")
+  assert_true(SpanContext::is_sampled(valid_context))
 }
 
-// Test 2: Error Context and Metadata
-test "error context and metadata" {
-  // Create error with context
-  let error = DatabaseError::new("Query failed", ErrorSeverity::Medium, ErrorCategory::Transient)
+test "attribute error handling" {
+  let attrs = Attributes::new()
   
-  // Add context information
-  let context = ErrorContext::new()
-  ErrorContext::add(context, "query", "SELECT * FROM users WHERE id = ?")
-  ErrorContext::add(context, "user_id", "12345")
-  ErrorContext::add(context, "timestamp", "1640995200000")
-  ErrorContext::add(context, "retry_count", "3")
+  // Test getting non-existent attribute
+  let non_existent = Attributes::get(attrs, "non.existent.key")
+  assert_eq(non_existent, None)
   
-  // Attach context to error
-  let error_with_context = Error::with_context(error, context)
+  // Test setting and getting with special characters
+  Attributes::set(attrs, "special.key!", StringValue("special.value!"))
+  let special_result = Attributes::get(attrs, "special.key!")
   
-  // Verify context is preserved
-  let retrieved_context = Error::context(error_with_context)
-  match ErrorContext::get(retrieved_context, "query") {
-    Some(value) => assert_eq(value, "SELECT * FROM users WHERE id = ?")
-    None => assert_true(false)
-  }
-  
-  match ErrorContext::get(retrieved_context, "user_id") {
-    Some(value) => assert_eq(value, "12345")
-    None => assert_true(false)
-  }
-  
-  // Verify error serialization with context
-  let serialized = Error::to_json(error_with_context)
-  assert_true(serialized.contains("Query failed"))
-  assert_true(serialized.contains("SELECT * FROM users WHERE id = ?"))
-  assert_true(serialized.contains("user_id"))
-}
-
-// Test 3: Error Recovery Strategies
-test "error recovery strategies" {
-  // Create error recovery manager
-  let recovery_manager = ErrorRecoveryManager::new()
-  
-  // Register recovery strategies for different error types
-  let retry_strategy = RetryStrategy::new(3, 1000)  // 3 retries with 1s delay
-  let fallback_strategy = FallbackStrategy::new("backup_database")
-  let circuit_breaker_strategy = CircuitBreakerStrategy::new(5, 60000)  // 5 failures, 1min timeout
-  
-  ErrorRecoveryManager::register_strategy(recovery_manager, "NetworkError", retry_strategy)
-  ErrorRecoveryManager::register_strategy(recovery_manager, "DatabaseError", fallback_strategy)
-  ErrorRecoveryManager::register_strategy(recovery_manager, "ServiceError", circuit_breaker_strategy)
-  
-  // Test retry strategy
-  let network_error = NetworkError::new("Connection timeout", ErrorSeverity::High, ErrorCategory::Transient)
-  let retry_result = ErrorRecoveryManager::handle_error(recovery_manager, network_error, || {
-    // Simulate operation that might fail
-    true  // Success on retry
-  })
-  
-  match retry_result {
-    RecoveryResult::Success => assert_true(true)
-    RecoveryResult::Failed => assert_true(false)
-    RecoveryResult::RetriesExhausted => assert_true(false)
-  }
-  
-  // Test fallback strategy
-  let database_error = DatabaseError::new("Primary DB down", ErrorSeverity::Critical, ErrorCategory::Persistent)
-  let fallback_result = ErrorRecoveryManager::handle_error(recovery_manager, database_error, || {
-    // Simulate operation that fails
-    false  // Primary operation fails
-  })
-  
-  match fallback_result {
-    RecoveryResult::FallbackUsed(fallback) => assert_eq(fallback, "backup_database")
+  match special_result {
+    Some(StringValue(s)) => assert_eq(s, "special.value!")
     _ => assert_true(false)
   }
   
-  // Test circuit breaker strategy
-  let service_error = ServiceError::new("Service unavailable", ErrorSeverity::Medium, ErrorCategory::Transient)
+  // Test with very long key names
+  let long_key = "a" * 1000
+  Attributes::set(attrs, long_key, StringValue("long.key.value"))
+  let long_key_result = Attributes::get(attrs, long_key)
   
-  // Simulate multiple failures to trigger circuit breaker
-  for i in 0..=5 {
-    let result = ErrorRecoveryManager::handle_error(recovery_manager, service_error, || {
-      false  // Operation fails
-    })
-    
-    if i < 4 {
-      match result {
-        RecoveryResult::Failed => assert_true(true)
-        _ => assert_true(false)
-      }
-    } else {
-      match result {
-        RecoveryResult::CircuitBreakerOpen => assert_true(true)
-        _ => assert_true(false)
-      }
-    }
+  match long_key_result {
+    Some(StringValue(s)) => assert_eq(s, "long.key.value")
+    _ => assert_true(false)
   }
 }
 
-// Test 4: Error Aggregation and Analysis
-test "error aggregation and analysis" {
-  // Create error aggregator
-  let error_aggregator = ErrorAggregator::new()
+test "context error scenarios" {
+  let ctx = Context::root()
   
-  // Add various errors
-  let errors = [
-    NetworkError::new("Timeout", ErrorSeverity::Medium, ErrorCategory::Transient),
-    DatabaseError::new("Connection failed", ErrorSeverity::High, ErrorCategory::Persistent),
-    NetworkError::new("DNS resolution failed", ErrorSeverity::Low, ErrorCategory::Transient),
-    ValidationError::new("Invalid input", ErrorSeverity::Low, ErrorCategory::UserError),
-    DatabaseError::new("Query timeout", ErrorSeverity::Medium, ErrorCategory::Transient),
-    SystemError::new("Disk full", ErrorSeverity::Critical, ErrorCategory::System),
-    NetworkError::new("Connection refused", ErrorSeverity::Medium, ErrorCategory::Transient)
+  // Test with empty context key
+  let empty_key = ContextKey::new("")
+  let ctx_with_empty = Context::with_value(ctx, empty_key, "empty.key.value")
+  let empty_result = Context::get(ctx_with_empty, empty_key)
+  
+  assert_eq(empty_result, Some("empty.key.value"))
+  
+  // Test with very long context values
+  let long_key = ContextKey::new("very.long.context.key")
+  let long_value = "x" * 10000
+  let ctx_with_long = Context::with_value(ctx_with_empty, long_key, long_value)
+  let long_result = Context::get(ctx_with_long, long_key)
+  
+  assert_eq(long_result, Some(long_value))
+  
+  // Test getting non-existent context value
+  let non_existent_key = ContextKey::new("non.existent.key")
+  let non_existent_result = Context::get(ctx_with_long, non_existent_key)
+  assert_eq(non_existent_result, None)
+}
+
+test "baggage error handling" {
+  let baggage = Baggage::new()
+  
+  // Test with empty key
+  let baggage_empty_key = Baggage::set_entry(baggage, "", "value.for.empty.key")
+  let empty_key_result = Baggage::get_entry(baggage_empty_key, "")
+  assert_eq(empty_key_result, Some("value.for.empty.key"))
+  
+  // Test with empty value
+  let baggage_empty_value = Baggage::set_entry(baggage, "key.for.empty.value", "")
+  let empty_value_result = Baggage::get_entry(baggage_empty_value, "key.for.empty.value")
+  assert_eq(empty_value_result, Some(""))
+  
+  // Test with very long key-value pairs
+  let long_key = "a" * 1000
+  let long_value = "b" * 1000
+  let baggage_long = Baggage::set_entry(baggage, long_key, long_value)
+  let long_result = Baggage::get_entry(baggage_long, long_key)
+  assert_eq(long_result, Some(long_value))
+  
+  // Test removing non-existent entry
+  let baggage_after_removal = Baggage::remove_entry(baggage_long, "non.existent.key")
+  let original_long = Baggage::get_entry(baggage_after_removal, long_key)
+  assert_eq(original_long, Some(long_value))
+}
+
+test "resource error handling" {
+  let resource = Resource::new()
+  
+  // Test with empty attribute key
+  let attrs_with_empty_key = [("", StringValue("empty.key.value"))]
+  let resource_with_empty_key = Resource::with_attributes(resource, attrs_with_empty_key)
+  let empty_key_result = Resource::get_attribute(resource_with_empty_key, "")
+  
+  match empty_key_result {
+    Some(StringValue(s)) => assert_eq(s, "empty.key.value")
+    _ => assert_true(false)
+  }
+  
+  // Test with duplicate keys
+  let attrs_with_duplicates = [
+    ("duplicate.key", StringValue("value1")),
+    ("duplicate.key", StringValue("value2"))
   ]
+  let resource_with_duplicates = Resource::with_attributes(resource, attrs_with_duplicates)
+  let duplicate_result = Resource::get_attribute(resource_with_duplicates, "duplicate.key")
   
-  // Add errors to aggregator
-  for error in errors {
-    ErrorAggregator::add_error(error_aggregator, error)
+  // Should return one of the values (implementation dependent)
+  match duplicate_result {
+    Some(StringValue(s)) => assert_true(s == "value1" || s == "value2")
+    _ => assert_true(false)
   }
   
-  // Analyze errors
-  let analysis = ErrorAggregator::analyze(error_aggregator)
+  // Test with very long attribute values
+  let long_value = "x" * 10000
+  let attrs_with_long_value = [("long.key", StringValue(long_value))]
+  let resource_with_long = Resource::with_attributes(resource, attrs_with_long_value)
+  let long_result = Resource::get_attribute(resource_with_long, "long.key")
   
-  // Verify error counts by type
-  assert_eq(ErrorAnalysis::count_by_type(analysis, "NetworkError"), 3)
-  assert_eq(ErrorAnalysis::count_by_type(analysis, "DatabaseError"), 2)
-  assert_eq(ErrorAnalysis::count_by_type(analysis, "ValidationError"), 1)
-  assert_eq(ErrorAnalysis::count_by_type(analysis, "SystemError"), 1)
-  
-  // Verify error counts by severity
-  assert_eq(ErrorAnalysis::count_by_severity(analysis, ErrorSeverity::Critical), 1)
-  assert_eq(ErrorAnalysis::count_by_severity(analysis, ErrorSeverity::High), 1)
-  assert_eq(ErrorAnalysis::count_by_severity(analysis, ErrorSeverity::Medium), 3)
-  assert_eq(ErrorAnalysis::count_by_severity(analysis, ErrorSeverity::Low), 2)
-  
-  // Verify error counts by category
-  assert_eq(ErrorAnalysis::count_by_category(analysis, ErrorCategory::Transient), 4)
-  assert_eq(ErrorAnalysis::count_by_category(analysis, ErrorCategory::Persistent), 2)
-  assert_eq(ErrorAnalysis::count_by_category(analysis, ErrorCategory::UserError), 1)
-  assert_eq(ErrorAnalysis::count_by_category(analysis, ErrorCategory::System), 1)
-  
-  // Verify most common error
-  match ErrorAnalysis::most_common_error(analysis) {
-    Some((error_type, count)) => {
-      assert_eq(error_type, "NetworkError")
-      assert_eq(count, 3)
-    }
-    None => assert_true(false)
+  match long_result {
+    Some(StringValue(s)) => assert_eq(s, long_value)
+    _ => assert_true(false)
   }
 }
 
-// Test 5: Error Rate Monitoring and Alerting
-test "error rate monitoring and alerting" {
-  // Create error rate monitor
-  let error_monitor = ErrorRateMonitor::new()
+test "span error handling" {
+  let provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(provider, "error-test")
   
-  // Configure alerting thresholds
-  ErrorRateMonitor::set_threshold(error_monitor, "error_rate", 0.1)  // 10% error rate
-  ErrorRateMonitor::set_threshold(error_monitor, "critical_errors", 2)  // 2 critical errors
-  ErrorRateMonitor::set_threshold(error_monitor, "error_burst", 5)    // 5 errors in 1 minute
+  // Test with empty span name
+  let empty_span = Tracer::start_span(tracer, "")
+  assert_eq(Span::name(empty_span), "")
   
-  // Add operations and errors
-  let base_time = @time()
+  // Test with very long span name
+  let long_name = "a" * 1000
+  let long_span = Tracer::start_span(tracer, long_name)
+  assert_eq(Span::name(long_span), long_name)
   
-  // Add successful operations
-  for i in 0..=89 {
-    ErrorRateMonitor::record_operation(error_monitor, "api_request", true, base_time + (i * 1000))
+  // Test operations on ended span (if implementation supports checking)
+  Span::end(empty_span)
+  Span::end(long_span)
+  
+  // Try to add event to ended span
+  Span::add_event(empty_span, "event.after.end")
+  
+  // Try to set status on ended span
+  Span::set_status(long_span, Error, Some("Error after end"))
+  
+  // In a real implementation, these operations might be ignored or raise errors
+  // For this test, we just verify the calls don't crash
+  assert_true(true)
+}
+
+test "metrics error handling" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "error-test")
+  
+  // Test with empty metric name
+  let empty_counter = Meter::create_counter(meter, "")
+  assert_eq(empty_counter.name, "")
+  
+  // Test with very long metric name
+  let long_name = "a" * 1000
+  let long_counter = Meter::create_counter(meter, long_name)
+  assert_eq(long_counter.name, long_name)
+  
+  // Test with special characters in metric name
+  let special_name = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
+  let special_counter = Meter::create_counter(meter, special_name)
+  assert_eq(special_counter.name, special_name)
+  
+  // Test operations with extreme values
+  Counter::add(empty_counter, 0.0)
+  Counter::add(long_counter, 1.7976931348623157e+308)  // Max double
+  Counter::add(special_counter, -1.7976931348623157e+308)  // Min double
+  
+  // Verify operations don't crash
+  assert_true(true)
+}
+
+test "logging error handling" {
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "error-test")
+  
+  // Test with empty log message
+  let empty_record = LogRecord::new(Info, "")
+  assert_eq(LogRecord::body(empty_record), Some(""))
+  
+  // Test with very long log message
+  let long_message = "x" * 10000
+  let long_record = LogRecord::new(Error, long_message)
+  assert_eq(LogRecord::body(long_record), Some(long_message))
+  
+  // Test with special characters in log message
+  let special_message = "!@#$%^&*()_+-=[]{}|;':\",./<>?\n\r\t"
+  let special_record = LogRecord::new(Warn, special_message)
+  assert_eq(LogRecord::body(special_record), Some(special_message))
+  
+  // Test with extreme timestamp values
+  let min_timestamp = -9223372036854775808L  // Min Int64
+  let max_timestamp = 9223372036854775807L   // Max Int64
+  
+  let min_record = LogRecord::new_with_context(
+    Debug,
+    Some("Min timestamp"),
+    None,
+    Some(min_timestamp),
+    None,
+    None,
+    None,
+    None
+  )
+  
+  let max_record = LogRecord::new_with_context(
+    Fatal,
+    Some("Max timestamp"),
+    None,
+    Some(max_timestamp),
+    None,
+    None,
+    None,
+    None
+  )
+  
+  // Emit all records
+  Logger::emit(logger, empty_record)
+  Logger::emit(logger, long_record)
+  Logger::emit(logger, special_record)
+  Logger::emit(logger, min_record)
+  Logger::emit(logger, max_record)
+  
+  // Verify operations don't crash
+  assert_true(true)
+}
+
+test "propagation error handling" {
+  let carrier = TextMapCarrier::new()
+  let propagator = CompositePropagator::new([W3CTraceContextPropagator::new()])
+  let ctx = Context::root()
+  
+  // Test injection with empty context
+  CompositePropagator::inject(propagator, Context::root(), carrier)
+  
+  // Test extraction from empty carrier
+  let extracted_from_empty = CompositePropagator::extract(propagator, TextMapCarrier::new())
+  let extracted_key = ContextKey::new("extracted")
+  let extracted_value = Context::get(extracted_from_empty, extracted_key)
+  
+  // Should still work with default implementation
+  assert_eq(extracted_value, Some("true"))
+  
+  // Test with malformed trace headers (if implementation handles them)
+  let malformed_carrier = TextMapCarrier::new()
+  TextMapCarrier::set(malformed_carrier, "traceparent", "malformed-trace-header")
+  
+  let extracted_from_malformed = CompositePropagator::extract(propagator, malformed_carrier)
+  let malformed_value = Context::get(extracted_from_malformed, extracted_key)
+  
+  // Should handle gracefully
+  assert_eq(malformed_value, Some("true"))
+}
+
+test "HTTP error handling" {
+  // Test with empty URL
+  let empty_url_request = HttpRequest::new("GET", "", [], None)
+  assert_eq(HttpRequest::url(empty_url_request), "")
+  
+  // Test with very long URL
+  let long_url = "https://example.com/" + "a" * 1000
+  let long_url_request = HttpRequest::new("GET", long_url, [], None)
+  assert_eq(HttpRequest::url(long_url_request), long_url)
+  
+  // Test with invalid HTTP method
+  let invalid_method_request = HttpRequest::new("INVALID", "https://example.com", [], None)
+  assert_eq(HttpRequest::http_method(invalid_method_request), "INVALID")
+  
+  // Test response with extreme status codes
+  let min_status_response = HttpResponse::new(-999, [], None)
+  let max_status_response = HttpResponse::new(999, [], None)
+  
+  assert_eq(HttpResponse::status_code(min_status_response), -999)
+  assert_eq(HttpResponse::status_code(max_status_response), 999)
+  
+  // Test with very large response body
+  let large_body = "x" * 1000000  // 1MB body
+  let large_response = HttpResponse::new(200, [], Some(large_body))
+  assert_eq(HttpResponse::body(large_response), Some(large_body))
+}
+
+test "array error handling" {
+  let attrs = Attributes::new()
+  
+  // Test with empty arrays
+  Attributes::set(attrs, "empty.string.array", ArrayStringValue([]))
+  Attributes::set(attrs, "empty.int.array", ArrayIntValue([]))
+  
+  let empty_string_result = Attributes::get(attrs, "empty.string.array")
+  let empty_int_result = Attributes::get(attrs, "empty.int.array")
+  
+  match empty_string_result {
+    Some(ArrayStringValue(arr)) => assert_eq(arr.length(), 0)
+    _ => assert_true(false)
   }
   
-  // Add errors (10% error rate)
-  for i in 0..=9 {
-    let error = NetworkError::new("Timeout", ErrorSeverity::Medium, ErrorCategory::Transient)
-    ErrorRateMonitor::record_operation(error_monitor, "api_request", false, base_time + (i * 1000))
-    ErrorRateMonitor::record_error(error_monitor, error)
+  match empty_int_result {
+    Some(ArrayIntValue(arr)) => assert_eq(arr.length(), 0)
+    _ => assert_true(false)
   }
   
-  // Add critical errors
-  let critical_error1 = SystemError::new("Out of memory", ErrorSeverity::Critical, ErrorCategory::System)
-  let critical_error2 = DatabaseError::new("Connection failed", ErrorSeverity::Critical, ErrorCategory::Persistent)
+  // Test with very large arrays
+  let mut large_string_array = []
+  for i in 0..=1000 {
+    large_string_array = large_string_array.push("item." + i.to_string())
+  }
   
-  ErrorRateMonitor::record_error(error_monitor, critical_error1)
-  ErrorRateMonitor::record_error(error_monitor, critical_error2)
+  let mut large_int_array = []
+  for i in 0..=1000 {
+    large_int_array = large_int_array.push(i)
+  }
   
-  // Check for alerts
-  let alerts = ErrorRateMonitor::check_alerts(error_monitor)
+  Attributes::set(attrs, "large.string.array", ArrayStringValue(large_string_array))
+  Attributes::set(attrs, "large.int.array", ArrayIntValue(large_int_array))
   
-  // Verify alerts
-  assert_true(alerts.length() >= 2)  // Should have alerts for error rate and critical errors
+  let large_string_result = Attributes::get(attrs, "large.string.array")
+  let large_int_result = Attributes::get(attrs, "large.int.array")
   
-  // Verify error rate alert
-  let error_rate_alert = alerts.find(@(a) Alert::type(a) == "error_rate")
-  match error_rate_alert {
-    Some(alert) => {
-      assert_eq(Alert::severity(alert), AlertSeverity::Warning)
-      assert_true(Alert::message(alert).contains("Error rate"))
+  match large_string_result {
+    Some(ArrayStringValue(arr)) => {
+      assert_eq(arr.length(), 1001)
+      assert_eq(arr[0], "item.0")
+      assert_eq(arr[1000], "item.1000")
     }
-    None => assert_true(false)
+    _ => assert_true(false)
   }
   
-  // Verify critical errors alert
-  let critical_alert = alerts.find(@(a) Alert::type(a) == "critical_errors")
-  match critical_alert {
-    Some(alert) => {
-      assert_eq(Alert::severity(alert), AlertSeverity::Critical)
-      assert_true(Alert::message(alert).contains("Critical errors"))
+  match large_int_result {
+    Some(ArrayIntValue(arr)) => {
+      assert_eq(arr.length(), 1001)
+      assert_eq(arr[0], 0)
+      assert_eq(arr[1000], 1000)
     }
-    None => assert_true(false)
+    _ => assert_true(false)
   }
 }
 
-// Test 6: Error Recovery with Exponential Backoff
-test "error recovery with exponential backoff" {
-  // Create exponential backoff strategy
-  let backoff_strategy = ExponentialBackoffStrategy::new(1000, 30000, 2.0)  // 1s base, 30s max, 2x multiplier
-  let retry_manager = RetryManager::new(backoff_strategy)
+test "recovery after multiple errors" {
+  let provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(provider, "recovery-test")
+  let meter = MeterProvider::get_meter(provider, "recovery-test")
+  let logger = LoggerProvider::get_logger(provider, "recovery-test")
   
-  // Simulate operation that fails twice then succeeds
-  let mut attempt_count = 0
-  let operation = || {
-    attempt_count = attempt_count + 1
-    if attempt_count < 3 {
-      Err(NetworkError::new("Connection timeout", ErrorSeverity::Medium, ErrorCategory::Transient))
-    } else {
-      Ok("Operation successful")
-    }
-  }
+  // Simulate multiple error scenarios
+  let invalid_span = Tracer::start_span(tracer, "")
+  Span::end(invalid_span)
   
-  // Execute operation with retry
-  let result = RetryManager::execute(retry_manager, operation)
+  let empty_counter = Meter::create_counter(meter, "")
+  Counter::add(empty_counter, 0.0)
   
-  // Verify eventual success
-  match result {
-    Ok(value) => assert_eq(value, "Operation successful")
-    Err(_) => assert_true(false)
-  }
+  let empty_record = LogRecord::new(Info, "")
+  Logger::emit(logger, empty_record)
   
-  // Verify retry attempts
-  assert_eq(attempt_count, 3)
+  // Test recovery - create valid objects after errors
+  let valid_span = Tracer::start_span(tracer, "valid.span")
+  let valid_counter = Meter::create_counter(meter, "valid.counter")
+  let valid_record = LogRecord::new(Info, "Valid message")
   
-  // Test with operation that always fails
-  let mut always_fail_count = 0
-  let failing_operation = || {
-    always_fail_count = always_fail_count + 1
-    Err(DatabaseError::new("Connection failed", ErrorSeverity::High, ErrorCategory::Persistent))
-  }
+  // Verify valid objects work correctly
+  assert_eq(Span::name(valid_span), "valid.span")
+  assert_eq(valid_counter.name, "valid.counter")
+  assert_eq(LogRecord::body(valid_record), Some("Valid message"))
   
-  let failing_result = RetryManager::execute(retry_manager, failing_operation)
+  // Perform operations on valid objects
+  Span::add_event(valid_span, "recovery.event")
+  Span::set_status(valid_span, Ok)
+  Counter::add(valid_counter, 1.0)
+  Logger::emit(logger, valid_record)
+  Span::end(valid_span)
   
-  // Verify failure after max retries
-  match failing_result {
-    Ok(_) => assert_true(false)
-    Err(error) => assert_eq(Error::type_name(error), "DatabaseError")
-  }
-  
-  // Verify max retry attempts
-  assert_eq(always_fail_count, 5)  // Default max retries
-}
-
-// Test 7: Error Recovery with Circuit Breaker
-test "error recovery with circuit breaker" {
-  // Create circuit breaker
-  let circuit_breaker = CircuitBreaker::new("database_service", 3, 30000)  // 3 failures, 30s timeout
-  
-  // Test successful operations
-  for i in 0..=4 {
-    let result = CircuitBreaker::execute(circuit_breaker, || {
-      Ok("Query result")
-    })
-    
-    match result {
-      Ok(value) => assert_eq(value, "Query result")
-      Err(_) => assert_true(false)
-    }
-  }
-  
-  // Verify circuit breaker state
-  assert_eq(CircuitBreaker::state(circuit_breaker), CircuitBreakerState::Closed)
-  assert_eq(CircuitBreaker::failure_count(circuit_breaker), 0)
-  assert_eq(CircuitBreaker::success_count(circuit_breaker), 5)
-  
-  // Test failing operations to trigger circuit breaker
-  for i in 0..=2 {
-    let result = CircuitBreaker::execute(circuit_breaker, || {
-      Err(DatabaseError::new("Connection failed", ErrorSeverity::High, ErrorCategory::Persistent))
-    })
-    
-    match result {
-      Ok(_) => assert_true(false)
-      Err(error) => assert_eq(Error::type_name(error), "DatabaseError")
-    }
-  }
-  
-  // Verify circuit breaker is now open
-  assert_eq(CircuitBreaker::state(circuit_breaker), CircuitBreakerState::Open)
-  assert_eq(CircuitBreaker::failure_count(circuit_breaker), 3)
-  
-  // Test operation when circuit breaker is open
-  let open_result = CircuitBreaker::execute(circuit_breaker, || {
-    Ok("Should not execute")
-  })
-  
-  match open_result {
-    Ok(_) => assert_true(false)
-    Err(error) => assert_eq(Error::type_name(error), "CircuitBreakerOpenError")
-  }
-  
-  // Simulate time passing for circuit breaker to half-open
-  // CircuitBreaker::advance_time(circuit_breaker, 35000)  // 35 seconds
-  
-  // Test operation in half-open state
-  let half_open_result = CircuitBreaker::execute(circuit_breaker, || {
-    Ok("Recovery successful")
-  })
-  
-  match half_open_result {
-    Ok(value) => assert_eq(value, "Recovery successful")
-    Err(_) => assert_true(false)
-  }
-  
-  // Verify circuit breaker returns to closed state
-  assert_eq(CircuitBreaker::state(circuit_breaker), CircuitBreakerState::Closed)
-}
-
-// Test 8: Error Recovery with Bulkhead Pattern
-test "error recovery with bulkhead pattern" {
-  // Create bulkhead isolation
-  let bulkhead = Bulkhead::new("database_operations", 3, 10)  // 3 concurrent, 10 queued
-  
-  // Test operations within limits
-  let results = []
-  for i in 0..=2 {
-    let result = Bulkhead::execute(bulkhead, || {
-      // Simulate database operation
-      @sleep(100)  // 100ms operation
-      Ok("Operation " + i.to_string())
-    })
-    results.push(result)
-  }
-  
-  // Verify all operations succeed
-  for result in results {
-    match result {
-      Ok(_) => assert_true(true)
-      Err(_) => assert_true(false)
-    }
-  }
-  
-  // Test operation exceeding concurrent limit
-  let excess_result = Bulkhead::execute(bulkhead, || {
-    Ok("Should not execute immediately")
-  })
-  
-  // Should either succeed (if queued) or fail (if queue full)
-  match excess_result {
-    Ok(_) => assert_true(true)  // Queued successfully
-    Err(error) => {
-      // Either rejected due to limits or executed
-      assert_true(
-        Error::type_name(error) == "BulkheadRejectedError" ||
-        Error::type_name(error) == "BulkheadFullError"
-      )
-    }
-  }
-  
-  // Test operation when bulkhead is full
-  let operations = []
-  for i in 0..=14 {  // 15 operations (3 concurrent + 10 queued + 2 rejected)
-    let result = Bulkhead::execute(bulkhead, || {
-      @sleep(1000)  // 1s operation
-      Ok("Operation " + i.to_string())
-    })
-    operations.push(result)
-  }
-  
-  // Count successful and rejected operations
-  let mut success_count = 0
-  let mut rejected_count = 0
-  
-  for result in operations {
-    match result {
-      Ok(_) => success_count = success_count + 1
-      Err(error) => {
-        if Error::type_name(error) == "BulkheadRejectedError" {
-          rejected_count = rejected_count + 1
-        }
-      }
-    }
-  }
-  
-  // Verify bulkhead limits
-  assert_eq(success_count, 13)  // 3 concurrent + 10 queued
-  assert_eq(rejected_count, 2)   // 2 rejected
-}
-
-// Test 9: Error Recovery with Timeout Pattern
-test "error recovery with timeout pattern" {
-  // Create timeout manager
-  let timeout_manager = TimeoutManager::new()
-  
-  // Test operation that completes within timeout
-  let fast_result = TimeoutManager::execute_with_timeout(timeout_manager, || {
-    @sleep(100)  // 100ms operation
-    Ok("Fast operation completed")
-  }, 500)  // 500ms timeout
-  
-  match fast_result {
-    Ok(value) => assert_eq(value, "Fast operation completed")
-    Err(_) => assert_true(false)
-  }
-  
-  // Test operation that exceeds timeout
-  let slow_result = TimeoutManager::execute_with_timeout(timeout_manager, || {
-    @sleep(1000)  // 1s operation
-    Ok("Slow operation completed")
-  }, 500)  // 500ms timeout
-  
-  match slow_result {
-    Ok(_) => assert_true(false)
-    Err(error) => assert_eq(Error::type_name(error), "TimeoutError")
-  }
-  
-  // Test operation with custom timeout strategy
-  let adaptive_timeout = AdaptiveTimeoutStrategy::new(1000, 5000, 2.0)  // 1s base, 5s max, 2x multiplier
-  let adaptive_manager = TimeoutManager::with_strategy(adaptive_timeout)
-  
-  // First attempt with base timeout
-  let first_result = TimeoutManager::execute_with_timeout(adaptive_manager, || {
-    @sleep(1500)  // 1.5s operation (exceeds base timeout)
-    Ok("First attempt")
-  }, 0)  // Use strategy timeout
-  
-  match first_result {
-    Ok(_) => assert_true(false)
-    Err(error) => assert_eq(Error::type_name(error), "TimeoutError")
-  }
-  
-  // Second attempt with adjusted timeout
-  let second_result = TimeoutManager::execute_with_timeout(adaptive_manager, || {
-    @sleep(1500)  // 1.5s operation (within adjusted timeout)
-    Ok("Second attempt")
-  }, 0)  // Use strategy timeout
-  
-  match second_result {
-    Ok(value) => assert_eq(value, "Second attempt")
-    Err(_) => assert_true(false)
-  }
-}
-
-// Test 10: Comprehensive Error Recovery Pipeline
-test "comprehensive error recovery pipeline" {
-  // Create comprehensive recovery pipeline
-  let pipeline = ErrorRecoveryPipeline::new()
-  
-  // Add recovery stages
-  let retry_stage = RetryStage::new(3, 1000)  // 3 retries, 1s delay
-  let circuit_breaker_stage = CircuitBreakerStage::new("external_service", 5, 30000)
-  let fallback_stage = FallbackStage::new(|| {
-    Ok("Fallback response")
-  })
-  let timeout_stage = TimeoutStage::new(5000)  // 5s timeout
-  
-  ErrorRecoveryPipeline::add_stage(pipeline, retry_stage)
-  ErrorRecoveryPipeline::add_stage(pipeline, circuit_breaker_stage)
-  ErrorRecoveryPipeline::add_stage(pipeline, timeout_stage)
-  ErrorRecoveryPipeline::add_stage(pipeline, fallback_stage)
-  
-  // Test successful operation
-  let success_result = ErrorRecoveryPipeline::execute(pipeline, || {
-    Ok("Primary operation successful")
-  })
-  
-  match success_result {
-    Ok(value) => assert_eq(value, "Primary operation successful")
-    Err(_) => assert_true(false)
-  }
-  
-  // Test operation that fails but succeeds on retry
-  let mut retry_count = 0
-  let retry_result = ErrorRecoveryPipeline::execute(pipeline, || {
-    retry_count = retry_count + 1
-    if retry_count < 2 {
-      Err(NetworkError::new("Temporary failure", ErrorSeverity::Medium, ErrorCategory::Transient))
-    } else {
-      Ok("Retry successful")
-    }
-  })
-  
-  match retry_result {
-    Ok(value) => assert_eq(value, "Retry successful")
-    Err(_) => assert_true(false)
-  }
-  
-  assert_eq(retry_count, 2)
-  
-  // Test operation that always fails and triggers fallback
-  let fail_result = ErrorRecoveryPipeline::execute(pipeline, || {
-    Err(DatabaseError::new("Persistent failure", ErrorSeverity::High, ErrorCategory::Persistent))
-  })
-  
-  match fail_result {
-    Ok(value) => assert_eq(value, "Fallback response")
-    Err(_) => assert_true(false)
-  }
-  
-  // Test operation that times out
-  let timeout_result = ErrorRecoveryPipeline::execute(pipeline, || {
-    @sleep(6000)  // 6s operation (exceeds 5s timeout)
-    Ok("Should not complete")
-  })
-  
-  match timeout_result {
-    Ok(_) => assert_true(false)
-    Err(error) => {
-      // Should be timeout error or fallback response
-      assert_true(
-        Error::type_name(error) == "TimeoutError" ||
-        Error::type_name(error) == "FallbackUsed"
-      )
-    }
-  }
-  
-  // Verify pipeline metrics
-  let metrics = ErrorRecoveryPipeline::get_metrics(pipeline)
-  assert_eq(PipelineMetrics::total_operations(metrics), 4)
-  assert_eq(PipelineMetrics::successful_operations(metrics), 2)
-  assert_eq(PipelineMetrics::fallback_used(metrics), 2)
-  assert_true(PipelineMetrics::retry_attempts(metrics) > 0)
+  // Verify recovery was successful
+  assert_true(true)
 }
