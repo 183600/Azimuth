@@ -1,421 +1,535 @@
 // Azimuth Enhanced Test Cases
-// 增强测试用例集合 - 覆盖多个关键功能领域
+// This file contains enhanced test cases for the Azimuth telemetry system
 
-// 测试1: 错误处理机制
-test "错误处理和恢复机制" {
-  // 测试异常捕获和处理
-  let result = try {
-    let divisor = 0
-    let _ = 10 / divisor
-    "success"
-  } catch {
-    e => "error: " + e.to_string()
-  }
+// Test 1: Advanced Data Structure Operations
+test "advanced data structure operations" {
+  // 测试链表操作
+  let empty_list = []
+  let list1 = empty_list.push(1).push(2).push(3)
+  let list2 = list1.reverse()
   
-  assert_true(result.contains("error"))
+  assert_eq(list1, [3, 2, 1])
+  assert_eq(list2, [1, 2, 3])
   
-  // 测试资源清理
-  let resource_acquired = ref false
-  let resource_cleaned = ref false
+  // 测试字典操作
+  let empty_dict = {}
+  let dict1 = empty_dict.insert("key1", "value1")
+  let dict2 = dict1.insert("key2", "value2")
+  let dict3 = dict2.insert("key1", "new_value")
   
-  try {
-    resource_acquired := true
-    // 模拟可能失败的操作
-    if true { throw "模拟操作失败" }
-    "操作成功"
-  } catch {
-    _ => "操作失败"
-  } finally {
-    resource_cleaned := true
-  }
+  assert_eq(dict1.get("key1"), Some("value1"))
+  assert_eq(dict2.get("key2"), Some("value2"))
+  assert_eq(dict3.get("key1"), Some("new_value"))
+  assert_eq(dict3.get("key2"), Some("value2"))
+  assert_eq(dict3.get("key3"), None)
   
-  assert_true(resource_acquired^)
-  assert_true(resource_cleaned^)
+  // 测试集合操作
+  let set1 = [1, 2, 3, 4, 5]
+  let set2 = [4, 5, 6, 7, 8]
+  let union = set1.concat(set2).unique()
+  let intersection = set1.filter(fn(x) { set2.contains(x) })
+  
+  assert_eq(union.length(), 8)
+  assert_eq(intersection, [4, 5])
 }
 
-// 测试2: 数据验证和完整性检查
-test "数据验证和完整性检查" {
-  // 测试输入验证
-  let validate_input = fn(input : String) -> Bool {
-    if input.length() == 0 { false }
-    else if input.length() > 100 { false }
-    else if !input.contains("@") && input.contains("email") { false }
-    else { true }
-  }
-  
-  assert_true(validate_input("test@example.com"))
-  assert_false(validate_input(""))
-  assert_false(validate_input("email-without-at"))
-  assert_false(validate_input("a".repeat(101)))
-  
-  // 测试数据完整性
-  let data = [("name", "azimuth"), ("version", "1.0.0"), ("type", "telemetry")]
-  let check_integrity = fn(items : List[(String, String)]) -> Bool {
-    let required_fields = ["name", "version", "type"]
-    required_fields.all(fn(field) {
-      items.any(fn(item) { item.0 == field })
-    })
-  }
-  
-  assert_true(check_integrity(data))
-  assert_false(check_integrity([("name", "test")]))
-}
-
-// 测试3: 性能基准测试
-test "性能基准测试" {
-  // 测试大量数据处理性能
-  let large_dataset = Array::range(0, 10000)
-  
-  let start_time = Time::now()
-  let processed = large_dataset
-    .map(fn(x) { x * 2 })
-    .filter(fn(x) { x % 4 == 0 })
-    .take(100)
-  let end_time = Time::now()
-  
-  let duration = end_time - start_time
-  assert_true(duration < 1000) // 应该在1秒内完成
-  assert_eq(processed.length(), 100)
-  assert_eq(processed[0], 0)
-  assert_eq(processed[1], 4)
-  
-  // 测试内存使用效率
-  let memory_before = Memory::used()
-  let large_string = "x".repeat(1000000)
-  let memory_after = Memory::used()
-  
-  assert_true(memory_after - memory_before > 1000000)
-}
-
-// 测试4: 配置管理
-test "配置管理和动态更新" {
-  // 模拟配置管理器
-  type Config = {
-    server_host : String,
-    server_port : Int,
-    debug_mode : Bool,
-    max_connections : Int
-  }
-  
-  let default_config = {
-    server_host: "localhost",
-    server_port: 8080,
-    debug_mode: false,
-    max_connections: 100
-  }
-  
-  // 测试配置加载
-  let load_config = fn(json_str : String) -> Config {
-    // 简化的JSON解析模拟
-    if json_str.contains("production") {
-      { default_config | server_port: 80, debug_mode: false, max_connections: 1000 }
-    } else if json_str.contains("development") {
-      { default_config | server_port: 3000, debug_mode: true, max_connections: 50 }
-    } else {
-      default_config
+// Test 2: Telemetry Data Serialization
+test "telemetry data serialization" {
+  // 测试遥测数据序列化
+  let telemetry_data = {
+    "trace_id": "trace-123456",
+    "span_id": "span-789012",
+    "service_name": "payment-service",
+    "operation_name": "process_payment",
+    "duration_ms": 256,
+    "status": "success",
+    "attributes": {
+      "user_id": "user-123",
+      "amount": 99.99,
+      "currency": "USD"
     }
   }
   
-  let prod_config = load_config('{"environment": "production"}')
-  let dev_config = load_config('{"environment": "development"}')
+  // 测试JSON序列化
+  let json_string = Json::stringify(telemetry_data)
+  assert_true(json_string.contains("payment-service"))
+  assert_true(json_string.contains("process_payment"))
+  assert_true(json_string.contains("99.99"))
   
-  assert_eq(prod_config.server_port, 80)
-  assert_false(prod_config.debug_mode)
-  assert_eq(dev_config.server_port, 3000)
-  assert_true(dev_config.debug_mode)
-}
-
-// 测试5: 并发安全
-test "并发安全操作" {
-  // 测试共享状态的并发访问
-  let counter = ref 0
-  let mutex = Mutex::new()
-  
-  // 模拟并发操作
-  let concurrent_increment = fn() {
-    for i = 0; i < 100; i++ {
-      Mutex::lock(mutex)
-      counter := counter^ + 1
-      Mutex::unlock(mutex)
+  // 测试JSON反序列化
+  let parsed_data = Json::parse(json_string)
+  match parsed_data {
+    Ok(data) => {
+      assert_eq(data["service_name"], "payment-service")
+      assert_eq(data["operation_name"], "process_payment")
+      assert_eq(data["duration_ms"], 256)
     }
+    Err(_) => assert_true(false)
   }
   
-  // 启动多个并发任务
-  let task1 = async(concurrent_increment())
-  let task2 = async(concurrent_increment())
-  let task3 = async(concurrent_increment())
+  // 测试二进制序列化
+  let binary_data = Binary::serialize(telemetry_data)
+  let deserialized_data = Binary::deserialize(binary_data)
   
-  // 等待所有任务完成
-  Task::await(task1)
-  Task::await(task2)
-  Task::await(task3)
-  
-  assert_eq(counter^, 300)
-  
-  // 测试线程安全的集合操作
-  let shared_list = ref []
-  let list_mutex = Mutex::new()
-  
-  let add_to_list = fn(item : Int) {
-    Mutex::lock(list_mutex)
-    shared_list := [item, ..shared_list^]
-    Mutex::unlock(list_mutex)
-  }
-  
-  for i = 0; i < 10; i++ {
-    let task = async(add_to_list(i))
-    Task::await(task)
-  }
-  
-  assert_eq(shared_list^.length(), 10)
-}
-
-// 测试6: 数据序列化
-test "数据序列化和反序列化" {
-  // 测试基本数据类型序列化
-  let serialize_string = fn(s : String) -> String {
-    "\"" + s + "\""
-  }
-  
-  let serialize_number = fn(n : Int) -> String {
-    n.to_string()
-  }
-  
-  let serialize_bool = fn(b : Bool) -> String {
-    if b { "true" } else { "false" }
-  }
-  
-  // 测试复合数据序列化
-  type Point = { x : Int, y : Int }
-  
-  let serialize_point = fn(p : Point) -> String {
-    "{\"x\":" + serialize_number(p.x) + ",\"y\":" + serialize_number(p.y) + "}"
-  }
-  
-  let point = { x: 10, y: 20 }
-  let serialized = serialize_point(point)
-  
-  assert_true(serialized.contains("\"x\":10"))
-  assert_true(serialized.contains("\"y\":20"))
-  
-  // 测试反序列化
-  let deserialize_point = fn(s : String) -> Point {
-    // 简化的解析逻辑
-    if s.contains("10") && s.contains("20") {
-      { x: 10, y: 20 }
-    } else {
-      { x: 0, y: 0 }
+  match deserialized_data {
+    Ok(data) => {
+      assert_eq(data["trace_id"], "trace-123456")
+      assert_eq(data["span_id"], "span-789012")
+      assert_eq(data["status"], "success")
     }
+    Err(_) => assert_true(false)
   }
-  
-  let deserialized = deserialize_point(serialized)
-  assert_eq(deserialized.x, 10)
-  assert_eq(deserialized.y, 20)
 }
 
-// 测试7: 时间序列操作
-test "时间序列数据处理" {
-  // 模拟时间序列数据点
-  type TimeSeriesPoint = {
-    timestamp : Time,
-    value : Double,
-    tags : List[(String, String)]
-  }
-  
-  let now = Time::now()
+// Test 3: Time Series Data Processing
+test "time series data processing" {
+  // 测试时间序列数据处理
   let time_series = [
-    { timestamp: now, value: 10.5, tags: [("sensor", "temp")] },
-    { timestamp: now + 1000, value: 11.2, tags: [("sensor", "temp")] },
-    { timestamp: now + 2000, value: 10.8, tags: [("sensor", "temp")] },
-    { timestamp: now + 3000, value: 12.1, tags: [("sensor", "humidity")] }
+    (1609459200000L, 10.5),  // 2021-01-01 00:00:00
+    (1609459260000L, 12.3),  // 2021-01-01 00:01:00
+    (1609459320000L, 11.8),  // 2021-01-01 00:02:00
+    (1609459380000L, 13.2),  // 2021-01-01 00:03:00
+    (1609459440000L, 14.1)   // 2021-01-01 00:04:00
   ]
   
   // 测试时间窗口过滤
-  let filter_by_time_window = fn(points : List[TimeSeriesPoint], start : Time, end : Time) -> List[TimeSeriesPoint] {
-    points.filter(fn(p) { p.timestamp >= start && p.timestamp <= end })
+  let start_time = 1609459260000L
+  let end_time = 1609459380000L
+  let filtered_series = time_series.filter(fn(entry) {
+    let (timestamp, _) = entry
+    timestamp >= start_time && timestamp <= end_time
+  })
+  
+  assert_eq(filtered_series.length(), 3)
+  assert_eq(filtered_series[0], (1609459260000L, 12.3))
+  assert_eq(filtered_series[1], (1609459320000L, 11.8))
+  assert_eq(filtered_series[2], (1609459380000L, 13.2))
+  
+  // 测试聚合计算
+  let values = time_series.map(fn(entry) { let (_, value) = entry; value })
+  let sum = values.reduce(fn(acc, val) { acc + val }, 0.0)
+  let avg = sum / values.length()
+  let max = values.reduce(fn(acc, val) { if val > acc { val } else { acc }, 0.0)
+  let min = values.reduce(fn(acc, val) { if val < acc { val } else { acc }, 100.0)
+  
+  assert_eq(sum, 61.9)
+  assert_eq(avg, 12.38)
+  assert_eq(max, 14.1)
+  assert_eq(min, 10.5)
+  
+  // 测试移动平均
+  let moving_avg = []
+  for i in 1..time_series.length() {
+    let window = [time_series[i-1], time_series[i]]
+    let window_values = window.map(fn(entry) { let (_, value) = entry; value })
+    let window_avg = window_values.reduce(fn(acc, val) { acc + val }, 0.0) / window_values.length()
+    moving_avg = moving_avg.push(window_avg)
   }
   
-  let window_start = now + 500
-  let window_end = now + 2500
-  let filtered = filter_by_time_window(time_series, window_start, window_end)
-  
-  assert_eq(filtered.length(), 2)
-  
-  // 测试按标签聚合
-  let aggregate_by_tag = fn(points : List[TimeSeriesPoint], tag_key : String) -> List[(String, Double)] {
-    let grouped = points.group_by(fn(p) {
-      p.tags.find(fn(t) { t.0 == tag_key }).map(fn(t) { t.1 }).unwrap_or("unknown")
-    })
-    
-    grouped.map(fn(group) {
-      let tag_value = group.0
-      let values = group.1.map(fn(p) { p.value })
-      let avg = values.reduce(fn(acc, v) { acc + v }, 0.0) / values.length().to_double()
-      (tag_value, avg)
-    })
-  }
-  
-  let aggregated = aggregate_by_tag(time_series, "sensor")
-  assert_true(aggregated.length() >= 1)
+  assert_eq(moving_avg.length(), 4)
+  assert_eq(moving_avg[0], 11.4)  // (10.5 + 12.3) / 2
+  assert_eq(moving_avg[1], 12.05) // (12.3 + 11.8) / 2
 }
 
-// 测试8: 资源管理
-test "资源管理和清理" {
-  // 测试资源池管理
-  type Resource = { id : Int, in_use : Bool }
-  
-  let create_resource_pool = fn(size : Int) -> Array[Resource] {
-    Array::range(0, size).map(fn(i) { { id: i, in_use: false } })
-  }
-  
-  let acquire_resource = fn(pool : Array[Resource]) -> Option[Int] {
-    let available = pool.find_index(fn(r) { !r.in_use })
-    match available {
-      Some(idx) => {
-        pool[idx].in_use := true
-        Some(pool[idx].id)
-      }
-      None => None
+// Test 4: Exception Handling and Recovery
+test "exception handling and recovery mechanisms" {
+  // 测试异常处理和恢复机制
+  let safe_divide = fn(a, b) {
+    if b == 0 {
+      Err("Division by zero")
+    } else {
+      Ok(a / b)
     }
   }
   
-  let release_resource = fn(pool : Array[Resource], resource_id : Int) {
-    let idx = pool.find_index(fn(r) { r.id == resource_id })
-    match idx {
-      Some(i) => pool[i].in_use := false
-      None => ()
+  // 测试成功情况
+  match safe_divide(10, 2) {
+    Ok(result) => assert_eq(result, 5.0)
+    Err(_) => assert_true(false)
+  }
+  
+  // 测试错误情况
+  match safe_divide(10, 0) {
+    Ok(_) => assert_true(false)
+    Err(msg) => assert_eq(msg, "Division by zero")
+  }
+  
+  // 测试错误恢复
+  let divide_with_default = fn(a, b, default) {
+    match safe_divide(a, b) {
+      Ok(result) => result
+      Err(_) => default
     }
   }
   
-  let pool = create_resource_pool(5)
+  assert_eq(divide_with_default(10, 2, 0.0), 5.0)
+  assert_eq(divide_with_default(10, 0, 0.0), 0.0)
   
-  // 测试资源获取
-  let r1 = acquire_resource(pool)
-  let r2 = acquire_resource(pool)
-  let r3 = acquire_resource(pool)
-  
-  assert_true(r1.is_some())
-  assert_true(r2.is_some())
-  assert_true(r3.is_some())
-  assert_true(r1.unwrap() != r2.unwrap())
-  assert_true(r2.unwrap() != r3.unwrap())
-  
-  // 测试资源释放
-  release_resource(pool, r1.unwrap())
-  let r1_again = acquire_resource(pool)
-  assert_eq(r1_again.unwrap(), r1.unwrap())
-  
-  // 测试资源耗尽
-  for i = 0; i < 5; i++ {
-    let _ = acquire_resource(pool)
-  }
-  let exhausted = acquire_resource(pool)
-  assert_true(exhausted.is_none())
-}
-
-// 测试9: 缓存功能
-test "缓存功能和过期策略" {
-  // 模拟缓存实现
-  type CacheEntry = { value : String, expires_at : Time }
-  
-  let cache = ref Map::empty[String, CacheEntry]()
-  
-  let set_cache = fn(key : String, value : String, ttl_seconds : Int) {
-    let expires_at = Time::now() + (ttl_seconds * 1000)
-    cache := Map::insert(cache^, key, { value, expires_at })
-  }
-  
-  let get_cache = fn(key : String) -> Option[String] {
-    match Map::get(cache^, key) {
-      Some(entry) => {
-        if Time::now() < entry.expires_at {
-          Some(entry.value)
-        } else {
-          cache := Map::remove(cache^, key)
-          None
-        }
-      }
-      None => None
+  // 测试链式错误处理
+  let chain_operation = fn(value) {
+    match safe_divide(100, value) {
+      Ok(result) => safe_divide(result, 2)
+      Err(msg) => Err(msg)
     }
   }
   
-  // 测试缓存设置和获取
-  set_cache("user:123", "Alice", 60)
-  set_cache("config:app", "production", 30)
+  match chain_operation(4) {
+    Ok(result) => assert_eq(result, 12.5)  // (100 / 4) / 2
+    Err(_) => assert_true(false)
+  }
   
-  assert_eq(get_cache("user:123").unwrap(), "Alice")
-  assert_eq(get_cache("config:app").unwrap(), "production")
-  assert_true(get_cache("nonexistent").is_none())
-  
-  // 测试缓存过期（模拟）
-  let past_time = Time::now() - 1000
-  cache := Map::insert(cache^, "expired", { value: "old", expires_at: past_time })
-  
-  assert_true(get_cache("expired").is_none())
-  assert_true(Map::contains_key(cache^, "expired") == false)
+  match chain_operation(0) {
+    Ok(_) => assert_true(false)
+    Err(msg) => assert_eq(msg, "Division by zero")
+  }
 }
 
-// 测试10: 监控指标收集
-test "监控指标收集和报告" {
-  // 模拟指标收集器
-  type Metric = {
-    name : String,
-    value : Double,
-    timestamp : Time,
-    tags : List[(String, String)]
+// Test 5: Performance Monitoring and Metrics
+test "performance monitoring and metrics collection" {
+  // 测试性能监控和度量收集
+  let performance_monitor = PerformanceMonitor::new()
+  
+  // 开始性能监控
+  let session_id = PerformanceMonitor::start_session(performance_monitor, "api.request")
+  
+  // 模拟一些工作
+  let mut result = 0
+  for i in 1..=1000 {
+    result = result + i
   }
   
-  let metrics = ref []
+  // 结束性能监控
+  let metrics = PerformanceMonitor::end_session(performance_monitor, session_id)
   
-  let record_metric = fn(name : String, value : Double, tags : List[(String, String)]) {
-    metrics := [{ name, value, timestamp: Time::now(), tags }, ..metrics^]
+  // 验证度量数据
+  assert_true(metrics.duration_ms > 0)
+  assert_eq(metrics.operation_name, "api.request")
+  assert_true(metrics.memory_usage > 0)
+  
+  // 测试自定义度量
+  let custom_metrics = MetricsCollector::new()
+  MetricsCollector::increment_counter(custom_metrics, "requests.total")
+  MetricsCollector::increment_counter(custom_metrics, "requests.total")
+  MetricsCollector::increment_counter(custom_metrics, "requests.total")
+  
+  MetricsCollector::record_gauge(custom_metrics, "active.connections", 25)
+  MetricsCollector::record_histogram(custom_metrics, "response.time", 150.5)
+  MetricsCollector::record_histogram(custom_metrics, "response.time", 200.3)
+  MetricsCollector::record_histogram(custom_metrics, "response.time", 125.8)
+  
+  let counter_value = MetricsCollector::get_counter(custom_metrics, "requests.total")
+  let gauge_value = MetricsCollector::get_gauge(custom_metrics, "active.connections")
+  let histogram_stats = MetricsCollector::get_histogram_stats(custom_metrics, "response.time")
+  
+  assert_eq(counter_value, 3)
+  assert_eq(gauge_value, 25)
+  assert_eq(histogram_stats.count, 3)
+  assert_eq(histogram_stats.sum, 476.6)
+  assert_eq(histogram_stats.min, 125.8)
+  assert_eq(histogram_stats.max, 200.3)
+}
+
+// Test 6: Configuration Management
+test "configuration management and validation" {
+  // 测试配置管理和验证
+  let default_config = {
+    "service.name": "azimuth-telemetry",
+    "service.version": "1.0.0",
+    "telemetry.enabled": true,
+    "telemetry.sample_rate": 1.0,
+    "log.level": "INFO",
+    "metrics.export.interval": 60000
   }
   
-  let increment_counter = fn(name : String, tags : List[(String, String)]) {
-    record_metric(name + "_count", 1.0, tags)
+  let config_manager = ConfigManager::new(default_config)
+  
+  // 测试配置获取
+  let service_name = ConfigManager::get_string(config_manager, "service.name")
+  let service_version = ConfigManager::get_string(config_manager, "service.version")
+  let telemetry_enabled = ConfigManager::get_bool(config_manager, "telemetry.enabled")
+  let sample_rate = ConfigManager::get_float(config_manager, "telemetry.sample_rate")
+  let log_level = ConfigManager::get_string(config_manager, "log.level")
+  let export_interval = ConfigManager::get_int(config_manager, "metrics.export.interval")
+  
+  assert_eq(service_name, "azimuth-telemetry")
+  assert_eq(service_version, "1.0.0")
+  assert_eq(telemetry_enabled, true)
+  assert_eq(sample_rate, 1.0)
+  assert_eq(log_level, "INFO")
+  assert_eq(export_interval, 60000)
+  
+  // 测试配置更新
+  ConfigManager::set_string(config_manager, "service.version", "1.1.0")
+  ConfigManager::set_bool(config_manager, "telemetry.enabled", false)
+  ConfigManager::set_float(config_manager, "telemetry.sample_rate", 0.5)
+  ConfigManager::set_int(config_manager, "metrics.export.interval", 30000)
+  
+  let new_version = ConfigManager::get_string(config_manager, "service.version")
+  let new_telemetry_enabled = ConfigManager::get_bool(config_manager, "telemetry.enabled")
+  let new_sample_rate = ConfigManager::get_float(config_manager, "telemetry.sample_rate")
+  let new_export_interval = ConfigManager::get_int(config_manager, "metrics.export.interval")
+  
+  assert_eq(new_version, "1.1.0")
+  assert_eq(new_telemetry_enabled, false)
+  assert_eq(new_sample_rate, 0.5)
+  assert_eq(new_export_interval, 30000)
+  
+  // 测试配置验证
+  let validation_rules = {
+    "telemetry.sample_rate": ValidationRule::Range(0.0, 1.0),
+    "metrics.export.interval": ValidationRule::Min(1000),
+    "log.level": ValidationRule::Enum(["DEBUG", "INFO", "WARN", "ERROR"])
   }
   
-  let record_gauge = fn(name : String, value : Double, tags : List[(String, String)]) {
-    record_metric(name + "_gauge", value, tags)
+  let validation_result = ConfigManager::validate(config_manager, validation_rules)
+  
+  assert_true(validation_result.is_valid)
+  assert_eq(validation_result.errors.length(), 0)
+}
+
+// Test 7: Context Propagation Across Service Boundaries
+test "context propagation across service boundaries" {
+  // 测试跨服务边界的上下文传播
+  let root_context = Context::root()
+  
+  // 添加追踪上下文
+  let trace_context = TraceContext::new("trace-123456", "span-789012", "sampled")
+  let context_with_trace = Context::with_value(root_context, ContextKey::new("trace"), trace_context)
+  
+  // 添加 baggage
+  let baggage = Baggage::new()
+  let baggage_with_user = Baggage::set(baggage, "user.id", "user-123")
+  let baggage_with_session = Baggage::set(baggage_with_user, "session.id", "session-456")
+  let context_with_baggage = Context::with_value(context_with_trace, ContextKey::new("baggage"), baggage_with_session)
+  
+  // 模拟服务间传播
+  let propagated_context = Context::with_value(context_with_baggage, ContextKey::new("service.name"), "order-service")
+  
+  // 验证传播后的上下文
+  let propagated_trace = Context::get(propagated_context, ContextKey::new("trace"))
+  let propagated_baggage = Context::get(propagated_context, ContextKey::new("baggage"))
+  let service_name = Context::get(propagated_context, ContextKey::new("service.name"))
+  
+  match propagated_trace {
+    Some(trace) => {
+      assert_eq(trace.trace_id, "trace-123456")
+      assert_eq(trace.span_id, "span-789012")
+      assert_eq(trace.flags, "sampled")
+    }
+    None => assert_true(false)
   }
   
-  let record_histogram = fn(name : String, value : Double, tags : List[(String, String)]) {
-    record_metric(name + "_histogram", value, tags)
+  match propagated_baggage {
+    Some(baggage) => {
+      assert_eq(Baggage::get(baggage, "user.id"), Some("user-123"))
+      assert_eq(Baggage::get(baggage, "session.id"), Some("session-456"))
+    }
+    None => assert_true(false)
   }
   
-  // 记录各种指标
-  increment_counter("requests", [("method", "GET"), ("status", "200")])
-  increment_counter("requests", [("method", "POST"), ("status", "201")])
-  increment_counter("errors", [("type", "timeout")])
+  assert_eq(service_name, Some("order-service"))
   
-  record_gauge("memory_usage", 512.5, [("unit", "MB")])
-  record_gauge("cpu_usage", 75.2, [("unit", "percent")])
+  // 测试上下文序列化和反序列化
+  let serialized_context = Context::serialize(propagated_context)
+  let deserialized_context = Context::deserialize(serialized_context)
   
-  record_histogram("response_time", 120.5, [("endpoint", "/api/data")])
-  record_histogram("response_time", 85.3, [("endpoint", "/api/data")])
-  record_histogram("response_time", 200.1, [("endpoint", "/api/users")])
+  let deserialized_trace = Context::get(deserialized_context, ContextKey::new("trace"))
+  let deserialized_service = Context::get(deserialized_context, ContextKey::new("service.name"))
   
-  // 验证指标收集
-  assert_true(metrics^.length() >= 8)
-  
-  // 测试指标查询
-  let get_metrics_by_name = fn(name : String) -> List[Metric] {
-    metrics^.filter(fn(m) { m.name.contains(name) })
+  match deserialized_trace {
+    Some(trace) => assert_eq(trace.trace_id, "trace-123456")
+    None => assert_true(false)
   }
   
-  let request_metrics = get_metrics_by_name("requests")
-  let error_metrics = get_metrics_by_name("errors")
-  let gauge_metrics = get_metrics_by_name("gauge")
+  assert_eq(deserialized_service, Some("order-service"))
+}
+
+// Test 8: Resource Management and Cleanup
+test "resource management and cleanup" {
+  // 测试资源管理和清理
+  let resource_manager = ResourceManager::new()
   
-  assert_eq(request_metrics.length(), 2)
-  assert_eq(error_metrics.length(), 1)
-  assert_eq(gauge_metrics.length(), 2)
+  // 创建资源
+  let resource_id1 = ResourceManager::create_resource(resource_manager, "database.connection")
+  let resource_id2 = ResourceManager::create_resource(resource_manager, "file.handle")
+  let resource_id3 = ResourceManager::create_resource(resource_manager, "network.socket")
   
-  // 测试指标聚合
-  let sum_values = fn(metrics : List[Metric]) -> Double {
-    metrics.reduce(fn(acc, m) { acc + m.value }, 0.0)
+  // 配置资源
+  ResourceManager::configure_resource(resource_manager, resource_id1, {
+    "host": "localhost",
+    "port": 5432,
+    "database": "azimuth",
+    "pool_size": 10
+  })
+  
+  ResourceManager::configure_resource(resource_manager, resource_id2, {
+    "path": "/var/log/azimuth.log",
+    "mode": "append",
+    "buffer_size": 8192
+  })
+  
+  ResourceManager::configure_resource(resource_manager, resource_id3, {
+    "host": "api.example.com",
+    "port": 443,
+    "protocol": "https",
+    "timeout": 30000
+  })
+  
+  // 验证资源配置
+  let db_config = ResourceManager::get_resource_config(resource_manager, resource_id1)
+  let file_config = ResourceManager::get_resource_config(resource_manager, resource_id2)
+  let socket_config = ResourceManager::get_resource_config(resource_manager, resource_id3)
+  
+  assert_eq(db_config["host"], "localhost")
+  assert_eq(db_config["port"], 5432)
+  assert_eq(file_config["path"], "/var/log/azimuth.log")
+  assert_eq(socket_config["protocol"], "https")
+  
+  // 测试资源状态
+  assert_eq(ResourceManager::get_resource_status(resource_manager, resource_id1), "initialized")
+  assert_eq(ResourceManager::get_resource_status(resource_manager, resource_id2), "initialized")
+  assert_eq(ResourceManager::get_resource_status(resource_manager, resource_id3), "initialized")
+  
+  // 激活资源
+  ResourceManager::activate_resource(resource_manager, resource_id1)
+  ResourceManager::activate_resource(resource_manager, resource_id2)
+  
+  assert_eq(ResourceManager::get_resource_status(resource_manager, resource_id1), "active")
+  assert_eq(ResourceManager::get_resource_status(resource_manager, resource_id2), "active")
+  assert_eq(ResourceManager::get_resource_status(resource_manager, resource_id3), "initialized")
+  
+  // 测试资源清理
+  ResourceManager::cleanup_resource(resource_manager, resource_id2)
+  assert_eq(ResourceManager::get_resource_status(resource_manager, resource_id2), "cleaned")
+  
+  // 测试批量清理
+  ResourceManager::cleanup_all_resources(resource_manager)
+  assert_eq(ResourceManager::get_resource_status(resource_manager, resource_id1), "cleaned")
+  assert_eq(ResourceManager::get_resource_status(resource_manager, resource_id3), "cleaned")
+}
+
+// Test 9: Data Compression and Optimization
+test "data compression and optimization" {
+  // 测试数据压缩和优化
+  let original_data = "This is a sample telemetry data that needs to be compressed for efficient transmission and storage. ".repeat(100)
+  
+  // 测试字符串压缩
+  let compressed_data = Compression::compress_string(original_data)
+  let decompressed_data = Compression::decompress_string(compressed_data)
+  
+  assert_true(compressed_data.length() < original_data.length())
+  assert_eq(decompressed_data, original_data)
+  
+  // 测试二进制数据压缩
+  let binary_data = [1, 2, 3, 4, 5].repeat(1000)
+  let compressed_binary = Compression::compress_binary(binary_data)
+  let decompressed_binary = Compression::decompress_binary(compressed_binary)
+  
+  assert_true(compressed_binary.length() < binary_data.length())
+  assert_eq(decompressed_binary, binary_data)
+  
+  // 测试遥测数据批量压缩
+  let telemetry_batch = [
+    {"trace_id": "trace-1", "span_id": "span-1", "duration": 100},
+    {"trace_id": "trace-2", "span_id": "span-2", "duration": 150},
+    {"trace_id": "trace-3", "span_id": "span-3", "duration": 200}
+  ]
+  
+  let compressed_batch = Compression::compress_telemetry_batch(telemetry_batch)
+  let decompressed_batch = Compression::decompress_telemetry_batch(compressed_batch)
+  
+  assert_eq(decompressed_batch.length(), 3)
+  assert_eq(decompressed_batch[0]["trace_id"], "trace-1")
+  assert_eq(decompressed_batch[1]["duration"], 150)
+  assert_eq(decompressed_batch[2]["span_id"], "span-3")
+  
+  // 测试压缩比统计
+  let compression_ratio = Compression::calculate_compression_ratio(original_data.length(), compressed_data.length())
+  assert_true(compression_ratio > 0.0)
+  assert_true(compression_ratio < 1.0)
+  
+  // 测试不同压缩算法
+  let gzip_compressed = Compression::compress_with_algorithm(original_data, "gzip")
+  let deflate_compressed = Compression::compress_with_algorithm(original_data, "deflate")
+  let brotli_compressed = Compression::compress_with_algorithm(original_data, "brotli")
+  
+  assert_true(gzip_compressed.length() != original_data.length())
+  assert_true(deflate_compressed.length() != original_data.length())
+  assert_true(brotli_compressed.length() != original_data.length())
+}
+
+// Test 10: Caching Mechanisms
+test "caching mechanisms and strategies" {
+  // 测试缓存机制和策略
+  let cache = Cache::new(100)  // 最大100个条目
+  
+  // 测试基本缓存操作
+  assert_eq(Cache::get(cache, "key1"), None)
+  
+  Cache::set(cache, "key1", "value1")
+  assert_eq(Cache::get(cache, "key1"), Some("value1"))
+  
+  Cache::set(cache, "key2", "value2")
+  Cache::set(cache, "key3", "value3")
+  
+  assert_eq(Cache::get(cache, "key2"), Some("value2"))
+  assert_eq(Cache::get(cache, "key3"), Some("value3"))
+  
+  // 测试缓存更新
+  Cache::set(cache, "key1", "new_value1")
+  assert_eq(Cache::get(cache, "key1"), Some("new_value1"))
+  
+  // 测试缓存删除
+  Cache::delete(cache, "key2")
+  assert_eq(Cache::get(cache, "key2"), None)
+  assert_eq(Cache::get(cache, "key3"), Some("value3"))
+  
+  // 测试缓存大小限制
+  for i in 1..=150 {
+    Cache::set(cache, "key" + i.to_string(), "value" + i.to_string())
   }
   
-  let total_requests = sum_values(request_metrics)
-  assert_eq(total_requests, 2.0)
+  // 验证缓存大小不超过限制
+  assert_true(Cache::size(cache) <= 100)
+  
+  // 测试TTL缓存
+  let ttl_cache = TTLCache::new(50, 1000)  // 最大50个条目，TTL 1000ms
+  
+  TTLCache::set(ttl_cache, "ttl_key", "ttl_value")
+  assert_eq(TTLCache::get(ttl_cache, "ttl_key"), Some("ttl_value"))
+  
+  // 模拟时间流逝
+  Time::sleep(1100)
+  
+  // 验证TTL过期
+  assert_eq(TTLCache::get(ttl_cache, "ttl_key"), None)
+  
+  // 测试LRU缓存策略
+  let lru_cache = LRUCache::new(10)
+  
+  LRUCache::set(lru_cache, "a", "value_a")
+  LRUCache::set(lru_cache, "b", "value_b")
+  LRUCache::set(lru_cache, "c", "value_c")
+  
+  // 访问键'a'使其成为最近使用
+  LRUCache::get(lru_cache, "a")
+  
+  // 添加更多键直到容量满
+  for i in 1..=8 {
+    LRUCache::set(lru_cache, "key" + i.to_string(), "value" + i.to_string())
+  }
+  
+  // 验证键'a'仍在缓存中（因为最近被访问）
+  assert_eq(LRUCache::get(lru_cache, "a"), Some("value_a"))
+  
+  // 验证键'b'不在缓存中（因为最久未被访问）
+  assert_eq(LRUCache::get(lru_cache, "b"), None)
+  
+  // 测试缓存统计
+  let stats = Cache::get_stats(cache)
+  assert_true(stats.hits > 0)
+  assert_true(stats.misses > 0)
+  assert_true(stats.sets > 0)
+  assert_true(stats.deletes > 0)
+  assert_eq(stats.hit_ratio, stats.hits / (stats.hits + stats.misses))
 }
