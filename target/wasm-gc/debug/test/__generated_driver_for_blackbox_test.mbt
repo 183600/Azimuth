@@ -1426,6 +1426,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_advanced_comprehensive_moonbit_tests.mbt": {
   },
+  "azimuth_advanced_caching_mechanism_tests.mbt": {
+  },
   "azimuth_advanced_attribute_system_tests.mbt": {
   },
   "azimuth_additional_test_cases.mbt": {
