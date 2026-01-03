@@ -79,6 +79,7 @@
         "../azimuth_new_enhanced_test_cases.mbt",
         "../azimuth_type_system_functional_programming_tests.mbt",
         "../azimuth_simple_type_system_tests.mbt",
+        "../azimuth_new_comprehensive_test_suite.mbt",
         "../azimuth_new_comprehensive_test_suite.mbt"]
   }
 }
