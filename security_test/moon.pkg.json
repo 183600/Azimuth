@@ -1,0 +1,13 @@
+{
+  "name": "azimuth_security_test",
+  "version": "0.1.0",
+  "description": "Azimuth security test package",
+  "target": "wasm-gc",
+  "source": ["."],
+  "deps": {
+    "moonbitlang/core/assertion": "*"
+  },
+  "test": {
+    "test": ["azimuth_high_quality_security_tests.mbt"]
+  }
+}

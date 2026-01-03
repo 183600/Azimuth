@@ -57,103 +57,17 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
-  "basic_tests.mbt": {
-  },
-  "azimuth_telemetry_serialization_tests.mbt": {
-  },
-  "azimuth_telemetry_aggregation_enhanced_tests.mbt": {
-  },
-  "azimuth_specialized_test_cases.mbt": {
-  },
-  "azimuth_span_lifecycle_tests.mbt": {
-  },
-  "azimuth_simple_new_test_cases.mbt": {
-  },
-  "azimuth_simple_integration_tests.mbt": {
-  },
-  "azimuth_simple_additional_tests.mbt": {
-  },
-  "azimuth_serialization_deserialization_tests.mbt": {
-  },
-  "azimuth_resource_management_tests.mbt": {
-  },
-  "azimuth_realtime_stream_processing_tests.mbt": {
-  },
-  "azimuth_premium_resource_optimization_tests.mbt": {
-  },
-  "azimuth_performance_resource_management_tests.mbt": {
-  },
-  "azimuth_performance_benchmark_tests.mbt": {
-  },
-  "azimuth_performance_benchmark_enhanced_tests.mbt": {
-  },
-  "azimuth_new_test_suite.mbt": {
-  },
-  "azimuth_new_high_quality_tests.mbt": {
-  },
-  "azimuth_new_focused_test_cases.mbt": {
-  },
-  "azimuth_new_comprehensive_tests.mbt": {
-  },
-  "azimuth_minimal_tests.mbt": {
-  },
-  "azimuth_integration_tests.mbt": {
-  },
-  "azimuth_high_quality_performance_tests.mbt": {
-  },
-  "azimuth_focused_telemetry_tests.mbt": {
-  },
-  "azimuth_error_handling_tests.mbt": {
-  },
-  "azimuth_error_handling_boundary_tests.mbt": {
-  },
-  "azimuth_enhanced_test_suite.mbt": {
-  },
-  "azimuth_enhanced_security_privacy_tests.mbt": {
-  },
-  "azimuth_distributed_tracing_consistency_tests.mbt": {
-  },
-  "azimuth_cross_service_propagation_tests.mbt": {
-  },
-  "azimuth_cross_service_consistency_tests.mbt": {
-  },
-  "azimuth_core_functionality_tests.mbt": {
-  },
-  "azimuth_core_data_types_tests.mbt": {
-  },
-  "azimuth_context_propagation_tests.mbt": {
-  },
-  "azimuth_concurrent_thread_safety_tests.mbt": {
-  },
-  "azimuth_concurrent_safety_tests.mbt": {
-  },
-  "azimuth_concurrent_safety_high_quality_tests.mbt": {
-  },
-  "azimuth_comprehensive_new_tests.mbt": {
-  },
-  "azimuth_comprehensive_feature_tests.mbt": {
-  },
-  "azimuth_comprehensive_data_processing_tests.mbt": {
-  },
-  "azimuth_basic_test_cases.mbt": {
-  },
-  "azimuth_basic_language_tests.mbt": {
-  },
-  "azimuth_attributes_operations_tests.mbt": {
-  },
-  "azimuth_advanced_time_series_operations_tests.mbt": {
-  },
-  "azimuth_advanced_telemetry_integration_tests.mbt": {
-  },
-  "azimuth_advanced_telemetry_analysis_tests.mbt": {
-  },
-  "azimuth_advanced_feature_tests.mbt": {
-  },
-  "azimuth_advanced_data_structures_tests.mbt": {
-  },
-  "azimuth_additional_tests.mbt": {
-  },
-  "azimuth_additional_simple_test_cases.mbt": {
+  "azimuth_high_quality_security_tests.mbt": {
+    0: (__test_617a696d7574685f686967685f7175616c6974795f73656375726974795f74657374732e6d6274_0, ["输入验证和清理机制"]),
+    1: (__test_617a696d7574685f686967685f7175616c6974795f73656375726974795f74657374732e6d6274_1, ["认证和授权安全机制"]),
+    2: (__test_617a696d7574685f686967685f7175616c6974795f73656375726974795f74657374732e6d6274_2, ["加密和数据保护机制"]),
+    3: (__test_617a696d7574685f686967685f7175616c6974795f73656375726974795f74657374732e6d6274_3, ["审计日志和安全追踪"]),
+    4: (__test_617a696d7574685f686967685f7175616c6974795f73656375726974795f74657374732e6d6274_4, ["网络安全和通信保护"]),
+    5: (__test_617a696d7574685f686967685f7175616c6974795f73656375726974795f74657374732e6d6274_5, ["资源访问控制和隔离"]),
+    6: (__test_617a696d7574685f686967685f7175616c6974795f73656375726974795f74657374732e6d6274_6, ["数据完整性验证和校验"]),
+    7: (__test_617a696d7574685f686967685f7175616c6974795f73656375726974795f74657374732e6d6274_7, ["安全配置管理"]),
+    8: (__test_617a696d7574685f686967685f7175616c6974795f73656375726974795f74657374732e6d6274_8, ["安全监控和告警系统"]),
+    9: (__test_617a696d7574685f686967685f7175616c6974795f73656375726974795f74657374732e6d6274_9, ["灾难恢复和备份机制"]),
   },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
@@ -231,7 +145,7 @@ pub fn moonbit_test_driver_internal_do_execute(
     let message = message.escape()
     @moonbitlang/core/builtin.println("----- BEGIN MOON TEST RESULT -----")
     @moonbitlang/core/builtin.println(
-      "{\"package\": \"azimuth/telemetry/src\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
+      "{\"package\": \"azimuth/telemetry/security_test\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
     )
     @moonbitlang/core/builtin.println("----- END MOON TEST RESULT -----")
   }

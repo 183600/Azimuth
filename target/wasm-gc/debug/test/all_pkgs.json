@@ -87,6 +87,11 @@
     },
     {
       "root": "azimuth/telemetry",
+      "rel": "security_test",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/debug/test/security_test/security_test.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
       "rel": "simple_azimuth_test",
       "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/debug/test/simple_azimuth_test/simple_azimuth_test.mi"
     },
