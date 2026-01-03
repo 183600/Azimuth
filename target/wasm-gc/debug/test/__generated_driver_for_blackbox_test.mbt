@@ -484,6 +484,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_premium_boundary_error_handling_tests.mbt": {
   },
+  "azimuth_premium_async_context_propagation.mbt": {
+  },
   "azimuth_premium_advanced_tests.mbt": {
   },
   "azimuth_premium_advanced_telemetry_tests.mbt": {
