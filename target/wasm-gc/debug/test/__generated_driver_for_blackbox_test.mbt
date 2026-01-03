@@ -980,6 +980,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_comprehensive_moonbit_test_suite.mbt": {
   },
+  "azimuth_comprehensive_enhancement_tests.mbt": {
+  },
   "azimuth_composite_propagator_tests.mbt": {
   },
   "azimuth_composite_propagator_injection_extraction_tests.mbt": {
