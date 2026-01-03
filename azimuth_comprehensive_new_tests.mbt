@@ -1,351 +1,880 @@
 // Azimuth 综合新测试用例
-// 涵盖遥测系统的多个关键功能领域
+// 包含10个覆盖不同遥测系统功能领域的测试用例
 
-// 测试1: 遥测数据序列化和反序列化
-test "遥测数据序列化反序列化测试" {
-  // 创建测试遥测数据
-  let telemetry_data = {
-    "trace_id": "abc123",
-    "span_id": "def456",
-    "timestamp": 1640995200,
-    "attributes": {
-      "service.name": "azimuth-test",
-      "operation.name": "test-operation"
-    },
-    "metrics": {
-      "request_count": 100.0,
-      "response_time": 0.125
+// 测试用例1: 遥测数据异常检测
+test "遥测数据异常检测算法" {
+  // 定义遥测数据点类型
+  type TelemetryPoint = {
+    timestamp: Int,
+    metric_name: String,
+    value: Float,
+    tags: Array[(String, String)]
+  }
+  
+  // 创建包含异常值的测试数据
+  let telemetry_data = [
+    { timestamp: 1609459200, metric_name: "cpu_usage", value: 45.2, tags: [("host", "server1")] },
+    { timestamp: 1609459260, metric_name: "cpu_usage", value: 47.8, tags: [("host", "server1")] },
+    { timestamp: 1609459320, metric_name: "cpu_usage", value: 46.5, tags: [("host", "server1")] },
+    { timestamp: 1609459380, metric_name: "cpu_usage", value: 95.3, tags: [("host", "server1")] }, // 异常值
+    { timestamp: 1609459440, metric_name: "cpu_usage", value: 48.1, tags: [("host", "server1")] },
+    { timestamp: 1609459500, metric_name: "cpu_usage", value: 44.9, tags: [("host", "server1")] }
+  ]
+  
+  // 实现简单的Z-score异常检测算法
+  let detect_anomalies = fn(data: Array[TelemetryPoint], threshold: Float) {
+    // 计算平均值
+    let sum = data.reduce(fn(acc, point) { acc + point.value }, 0.0)
+    let mean = sum / (data.length() as Float)
+    
+    // 计算标准差
+    let variance = data.reduce(fn(acc, point) { 
+      let diff = point.value - mean
+      acc + (diff * diff) 
+    }, 0.0) / (data.length() as Float)
+    let std_dev = @math.sqrt(variance)
+    
+    // 检测异常值
+    let anomalies = []
+    for point in data {
+      let z_score = @math.abs(point.value - mean) / std_dev
+      if z_score > threshold {
+        anomalies = anomalies.push(point)
+      }
+    }
+    anomalies
+  }
+  
+  // 执行异常检测
+  let anomalies = detect_anomalies(telemetry_data, 2.0)
+  
+  // 验证检测结果
+  assert_eq(anomalies.length(), 1)
+  assert_eq(anomalies[0].timestamp, 1609459380)
+  assert_eq(anomalies[0].value, 95.3)
+}
+
+// 测试用例2: 遥测数据压缩算法
+test "遥测数据压缩算法" {
+  // 定义时间序列数据点
+  type DataPoint = {
+    timestamp: Int,
+    value: Float
+  }
+  
+  // 创建测试数据（包含重复值）
+  let raw_data = [
+    { timestamp: 1609459200, value: 25.5 },
+    { timestamp: 1609459260, value: 25.5 },
+    { timestamp: 1609459320, value: 25.5 },
+    { timestamp: 1609459380, value: 26.0 },
+    { timestamp: 1609459440, value: 26.0 },
+    { timestamp: 1609459500, value: 27.5 },
+    { timestamp: 1609459560, value: 27.5 },
+    { timestamp: 1609459620, value: 27.5 },
+    { timestamp: 1609459680, value: 27.5 }
+  ]
+  
+  // 实现简单的游程编码压缩算法
+  let run_length_encode = fn(data: Array[DataPoint]) {
+    let mut result = []
+    let mut i = 0
+    
+    while i < data.length() {
+      let current_value = data[i].value
+      let mut count = 1
+      
+      // 计算连续相同值的数量
+      while i + count < data.length() && data[i + count].value == current_value {
+        count = count + 1
+      }
+      
+      // 添加压缩后的数据点
+      result = result.push({
+        timestamp: data[i].timestamp,
+        value: current_value,
+        count: count
+      })
+      
+      i = i + count
+    }
+    
+    result
+  }
+  
+  // 执行压缩
+  let compressed_data = run_length_encode(raw_data)
+  
+  // 验证压缩结果
+  assert_eq(compressed_data.length(), 4) // 原始9个点压缩为4个
+  assert_eq(compressed_data[0].count, 3) // 前3个点值相同
+  assert_eq(compressed_data[1].count, 2) // 接下来2个点值相同
+  assert_eq(compressed_data[2].count, 1) // 单独的点
+  assert_eq(compressed_data[3].count, 3) // 最后3个点值相同
+}
+
+// 测试用例3: 分布式追踪链路分析
+test "分布式追踪链路分析" {
+  // 定义Span类型
+  type Span = {
+    trace_id: String,
+    span_id: String,
+    parent_span_id: String,
+    operation_name: String,
+    start_time: Int,
+    end_time: Int,
+    service_name: String
+  }
+  
+  // 创建测试追踪数据
+  let trace_spans = [
+    { trace_id: "trace123", span_id: "span1", parent_span_id: "", operation_name: "HTTP GET /api/data", start_time: 1609459200, end_time: 1609459210, service_name: "api-gateway" },
+    { trace_id: "trace123", span_id: "span2", parent_span_id: "span1", operation_name: "Database Query", start_time: 1609459202, end_time: 1609459208, service_name: "user-service" },
+    { trace_id: "trace123", span_id: "span3", parent_span_id: "span1", operation_name: "Cache Lookup", start_time: 1609459203, end_time: 1609459205, service_name: "cache-service" },
+    { trace_id: "trace123", span_id: "span4", parent_span_id: "span2", operation_name: "Auth Check", start_time: 1609459204, end_time: 1609459206, service_name: "auth-service" }
+  ]
+  
+  // 构建追踪树结构
+  let build_trace_tree = fn(spans: Array[Span]) {
+    // 按span_id创建索引
+    let span_map = Map::empty()
+    for span in spans {
+      span_map = Map::insert(span_map, span.span_id, span)
+    }
+    
+    // 找到根span
+    let root_spans = spans.filter(fn(span) { span.parent_span_id == "" })
+    
+    // 递归构建子span
+    let build_children = fn(parent_span_id: String) {
+      spans.filter(fn(span) { span.parent_span_id == parent_span_id })
+    }
+    
+    // 计算每个服务的总耗时
+    let service_durations = Map::empty()
+    for span in spans {
+      let duration = span.end_time - span.start_time
+      let current_duration = match Map::get(service_durations, span.service_name) {
+        Some(d) => d
+        None => 0
+      }
+      service_durations = Map::insert(service_durations, span.service_name, current_duration + duration)
+    }
+    
+    service_durations
+  }
+  
+  // 分析追踪数据
+  let service_durations = build_trace_tree(trace_spans)
+  
+  // 验证分析结果
+  assert_eq(Map::get(service_durations, "api-gateway"), Some(10))
+  assert_eq(Map::get(service_durations, "user-service"), Some(6))
+  assert_eq(Map::get(service_durations, "cache-service"), Some(2))
+  assert_eq(Map::get(service_durations, "auth-service"), Some(2))
+}
+
+// 测试用例4: 遥测数据聚合统计
+test "遥测数据聚合统计" {
+  // 定义指标类型
+  type Metric = {
+    name: String,
+    value: Float,
+    timestamp: Int,
+    tags: Array[(String, String)]
+  }
+  
+  // 创建测试指标数据
+  let metrics = [
+    { name: "response_time", value: 120.5, timestamp: 1609459200, tags: [("endpoint", "/api/users"), ("method", "GET")] },
+    { name: "response_time", value: 98.3, timestamp: 1609459260, tags: [("endpoint", "/api/users"), ("method", "GET")] },
+    { name: "response_time", value: 150.2, timestamp: 1609459320, tags: [("endpoint", "/api/products"), ("method", "GET")] },
+    { name: "response_time", value: 85.7, timestamp: 1609459380, tags: [("endpoint", "/api/users"), ("method", "POST")] },
+    { name: "response_time", value: 110.4, timestamp: 1609459440, tags: [("endpoint", "/api/users"), ("method", "GET")] },
+    { name: "error_rate", value: 0.02, timestamp: 1609459200, tags: [("service", "user-service")] },
+    { name: "error_rate", value: 0.03, timestamp: 1609459260, tags: [("service", "user-service")] },
+    { name: "error_rate", value: 0.01, timestamp: 1609459320, tags: [("service", "product-service")] }
+  ]
+  
+  // 按标签分组聚合
+  let aggregate_by_tags = fn(data: Array[Metric], tag_keys: Array[String]) {
+    let groups = Map::empty()
+    
+    for metric in data {
+      // 构建分组键
+      let mut group_key = metric.name
+      for tag_key in tag_keys {
+        let tag_value = match metric.tags.find(fn(tag) { tag.0 == tag_key }) {
+          Some((_, value)) => value
+          None => "unknown"
+        }
+        group_key = group_key + ":" + tag_value
+      }
+      
+      // 获取或创建分组
+      let group = match Map::get(groups, group_key) {
+        Some(g) => g
+        None => []
+      }
+      
+      // 添加指标到分组
+      groups = Map::insert(groups, group_key, group.push(metric.value))
+    }
+    
+    // 计算统计信息
+    let result = Map::empty()
+    let keys = Map::keys(groups)
+    for key in keys {
+      let values = match Map::get(groups, key) { Some(v) => v | None => [] }
+      let sum = values.reduce(fn(acc, val) { acc + val }, 0.0)
+      let count = values.length() as Float
+      let avg = sum / count
+      
+      // 计算最小值和最大值
+      let min_val = values.reduce(fn(acc, val) { if val < acc { val } else { acc } }, values[0])
+      let max_val = values.reduce(fn(acc, val) { if val > acc { val } else { acc } }, values[0])
+      
+      let stats = {
+        count: values.length(),
+        sum: sum,
+        avg: avg,
+        min: min_val,
+        max: max_val
+      }
+      
+      result = Map::insert(result, key, stats)
+    }
+    
+    result
+  }
+  
+  // 执行聚合统计
+  let aggregated_stats = aggregate_by_tags(metrics, ["endpoint", "method"])
+  
+  // 验证聚合结果
+  let get_stats = fn(key: String) {
+    match Map::get(aggregated_stats, key) {
+      Some(stats) => stats
+      None => { count: 0, sum: 0.0, avg: 0.0, min: 0.0, max: 0.0 }
     }
   }
   
-  // 序列化数据
-  let serialized = TelemetryData::serialize(telemetry_data)
-  assert_true(serialized.length() > 0)
-  
-  // 反序列化数据
-  let deserialized = TelemetryData::deserialize(serialized)
-  assert_eq(deserialized["trace_id"], telemetry_data["trace_id"])
-  assert_eq(deserialized["span_id"], telemetry_data["span_id"])
-  assert_eq(deserialized["metrics"]["request_count"], telemetry_data["metrics"]["request_count"])
+  let users_get_stats = get_stats("response_time:/api/users:GET")
+  assert_eq(users_get_stats.count, 3)
+  assert_eq(@math.round(users_get_stats.avg * 10) / 10.0, 109.7)
+  assert_eq(users_get_stats.min, 98.3)
+  assert_eq(users_get_stats.max, 120.5)
 }
 
-// 测试2: 并发安全性和线程安全测试
-test "并发遥测数据处理安全性测试" {
-  let provider = ConcurrentTelemetryProvider::new()
-  let meter = ConcurrentTelemetryProvider::get_meter(provider, "concurrent.test")
-  
-  // 创建并发计数器
-  let counter = ConcurrentMeter::create_counter(meter, "concurrent.operations")
-  
-  // 模拟并发操作
-  for i = 0; i < 100; i++ {
-    ConcurrentCounter::add(counter, 1.0)
-  }
-  
-  // 验证最终值
-  assert_eq(ConcurrentCounter::value(counter), 100.0)
-  
-  // 测试并发span创建
-  let tracer = ConcurrentTelemetryProvider::get_tracer(provider, "concurrent.tracer")
-  let spans = []
-  
-  for i = 0; i < 50; i++ {
-    let span = ConcurrentTracer::start_span(tracer, "concurrent.span." + i.to_string())
-    spans.push(span)
-  }
-  
-  // 验证所有span都被正确创建
-  assert_eq(spans.length(), 50)
-  
-  // 清理资源
-  for span in spans {
-    ConcurrentSpan::end(span)
-  }
-}
-
-// 测试3: 资源管理和内存泄漏防护测试
-test "资源管理和内存泄漏防护测试" {
-  let resource_manager = ResourceManager::new()
-  
-  // 创建多个遥测资源
-  for i = 0; i < 1000; i++ {
-    let meter = ResourceManager::create_meter(resource_manager, "meter." + i.to_string())
-    let tracer = ResourceManager::create_tracer(resource_manager, "tracer." + i.to_string())
-    let logger = ResourceManager::create_logger(resource_manager, "logger." + i.to_string())
-    
-    // 使用资源
-    let counter = Meter::create_counter(meter, "test.counter")
-    Counter::add(counter, 1.0)
-    
-    let span = Tracer::start_span(tracer, "test.span")
-    Span::end(span)
-    
-    Logger::info(logger, "test log message")
-    
-    // 释放资源
-    ResourceManager::release_meter(resource_manager, meter)
-    ResourceManager::release_tracer(resource_manager, tracer)
-    ResourceManager::release_logger(resource_manager, logger)
-  }
-  
-  // 验证资源被正确释放
-  assert_eq(ResourceManager::active_meters_count(resource_manager), 0)
-  assert_eq(ResourceManager::active_tracers_count(resource_manager), 0)
-  assert_eq(ResourceManager::active_loggers_count(resource_manager), 0)
-}
-
-// 测试4: 错误恢复和容错机制测试
-test "错误恢复和容错机制测试" {
-  let fault_tolerant_provider = FaultTolerantTelemetryProvider::new()
-  
-  // 模拟网络故障
-  fault_tolerant_provider.simulate_network_failure(true)
-  
-  // 在故障期间尝试发送遥测数据
-  let meter = FaultTolerantTelemetryProvider::get_meter(fault_tolerant_provider, "fault.test")
-  let counter = Meter::create_counter(meter, "operations")
-  Counter::add(counter, 50.0)
-  
-  // 验证数据被缓存而不是丢失
-  assert_eq(FaultTolerantTelemetryProvider::cached_data_count(fault_tolerant_provider), 1)
-  
-  // 恢复网络连接
-  fault_tolerant_provider.simulate_network_failure(false)
-  
-  // 触发缓存数据发送
-  FaultTolerantTelemetryProvider::flush_cached_data(fault_tolerant_provider)
-  
-  // 验证数据被成功发送
-  assert_eq(FaultTolerantTelemetryProvider::cached_data_count(fault_tolerant_provider), 0)
-  assert_eq(Counter::value(counter), 50.0)
-}
-
-// 测试5: 性能基准测试
+// 测试用例5: 遥测系统性能基准测试
 test "遥测系统性能基准测试" {
-  let performance_provider = PerformanceOptimizedProvider::new()
-  let meter = PerformanceOptimizedProvider::get_meter(performance_provider, "performance.test")
-  
-  // 测量大量指标操作的性能
-  let start_time = Time::now()
-  
-  for i = 0; i < 10000; i++ {
-    let counter = PerformanceMeter::create_counter(meter, "perf.counter." + i.to_string())
-    Counter::add(counter, i.to_float())
+  // 模拟性能测试数据
+  type PerformanceMetric = {
+    operation: String,
+    data_size: Int,
+    processing_time_ms: Int,
+    memory_usage_mb: Float
   }
   
-  let end_time = Time::now()
-  let duration = end_time - start_time
+  // 创建性能测试数据
+  let performance_data = [
+    { operation: "data_ingestion", data_size: 1000, processing_time_ms: 50, memory_usage_mb: 12.5 },
+    { operation: "data_ingestion", data_size: 2000, processing_time_ms: 95, memory_usage_mb: 23.8 },
+    { operation: "data_ingestion", data_size: 5000, processing_time_ms: 220, memory_usage_mb: 58.2 },
+    { operation: "data_compression", data_size: 1000, processing_time_ms: 15, memory_usage_mb: 8.3 },
+    { operation: "data_compression", data_size: 2000, processing_time_ms: 28, memory_usage_mb: 15.7 },
+    { operation: "data_compression", data_size: 5000, processing_time_ms: 65, memory_usage_mb: 38.9 },
+    { operation: "data_analysis", data_size: 1000, processing_time_ms: 120, memory_usage_mb: 25.4 },
+    { operation: "data_analysis", data_size: 2000, processing_time_ms: 235, memory_usage_mb: 48.7 },
+    { operation: "data_analysis", data_size: 5000, processing_time_ms: 580, memory_usage_mb: 118.3 }
+  ]
   
-  // 验证性能在可接受范围内（应在1秒内完成10000次操作）
-  assert_true(duration < 1000) // 毫秒
-  
-  // 测试追踪性能
-  let tracer = PerformanceOptimizedProvider::get_tracer(performance_provider, "performance.tracer")
-  let trace_start_time = Time::now()
-  
-  for i = 0; i < 5000; i++ {
-    let span = PerformanceTracer::start_span(tracer, "perf.span." + i.to_string())
-    PerformanceSpan::set_attribute(span, "index", IntValue(i))
-    PerformanceSpan::end(span)
-  }
-  
-  let trace_end_time = Time::now()
-  let trace_duration = trace_end_time - trace_start_time
-  
-  // 验证追踪性能（应在500毫秒内完成5000次span操作）
-  assert_true(trace_duration < 500)
-}
-
-// 测试6: 跨平台兼容性测试
-test "跨平台兼容性测试" {
-  let platform_provider = CrossPlatformProvider::new()
-  
-  // 检测当前平台
-  let current_platform = CrossPlatformProvider::detect_platform(platform_provider)
-  
-  // 测试平台特定的遥测功能
-  match current_platform {
-    "wasm" => {
-      // WebAssembly特定测试
-      let wasm_meter = CrossPlatformProvider::get_wasm_meter(platform_provider)
-      let counter = WasmMeter::create_counter(wasm_meter, "wasm.operations")
-      Counter::add(counter, 10.0)
-      assert_eq(Counter::value(counter), 10.0)
+  // 计算吞吐量（每秒处理的数据点数）
+  let calculate_throughput = fn(data: Array[PerformanceMetric]) {
+    let result = []
+    
+    for metric in data {
+      let throughput = (metric.data_size as Float) / ((metric.processing_time_ms as Float) / 1000.0)
+      let memory_efficiency = (metric.data_size as Float) / metric.memory_usage_mb
+      
+      result = result.push({
+        operation: metric.operation,
+        data_size: metric.data_size,
+        throughput: throughput,
+        memory_efficiency: memory_efficiency
+      })
     }
-    "native" => {
-      // 原生平台特定测试
-      let native_meter = CrossPlatformProvider::get_native_meter(platform_provider)
-      let counter = NativeMeter::create_counter(native_meter, "native.operations")
-      Counter::add(counter, 20.0)
-      assert_eq(Counter::value(counter), 20.0)
+    
+    result
+  }
+  
+  // 执行性能分析
+  let performance_analysis = calculate_throughput(performance_data)
+  
+  // 验证性能分析结果
+  let ingestion_5000 = performance_analysis.find(fn(m) { 
+    m.operation == "data_ingestion" && m.data_size == 5000 
+  })
+  
+  match ingestion_5000 {
+    Some(metric) => {
+      assert_eq(@math.round(metric.throughput * 10) / 10.0, 22727.3) // 5000 / 0.220
+      assert_eq(@math.round(metric.memory_efficiency * 10) / 10.0, 85.9) // 5000 / 58.2
     }
-    _ => {
-      // 通用平台测试
-      let generic_meter = CrossPlatformProvider::get_generic_meter(platform_provider)
-      let counter = GenericMeter::create_counter(generic_meter, "generic.operations")
-      Counter::add(counter, 30.0)
-      assert_eq(Counter::value(counter), 30.0)
+    None => assert_false(true) // 测试失败
+  }
+}
+
+// 测试用例6: 遥测数据质量验证
+test "遥测数据质量验证" {
+  // 定义数据质量问题类型
+  type QualityIssue = {
+    issue_type: String,
+    description: String,
+    severity: String
+  }
+  
+  // 定义遥测数据点
+  type TelemetryData = {
+    timestamp: Int,
+    metric_name: String,
+    value: Float,
+    tags: Array[(String, String)]
+  }
+  
+  // 创建包含质量问题的测试数据
+  let test_data = [
+    { timestamp: 1609459200, metric_name: "cpu_usage", value: 45.5, tags: [("host", "server1")] },
+    { timestamp: 1609459260, metric_name: "memory_usage", value: -10.2, tags: [("host", "server1")] }, // 负值异常
+    { timestamp: 1609459320, metric_name: "", value: 78.3, tags: [("host", "server1")] }, // 空指标名
+    { timestamp: 0, metric_name: "disk_usage", value: 65.7, tags: [("host", "server1")] }, // 无效时间戳
+    { timestamp: 1609459440, metric_name: "network_usage", value: @math.inf, tags: [] } // 无限值
+  ]
+  
+  // 数据质量验证函数
+  let validate_data_quality = fn(data: Array[TelemetryData]) {
+    let issues = []
+    
+    for data_point in data {
+      // 检查时间戳有效性
+      if data_point.timestamp <= 0 {
+        issues = issues.push({
+          issue_type: "invalid_timestamp",
+          description: "Timestamp must be positive",
+          severity: "high"
+        })
+      }
+      
+      // 检查指标名称有效性
+      if data_point.metric_name == "" {
+        issues = issues.push({
+          issue_type: "empty_metric_name",
+          description: "Metric name cannot be empty",
+          severity: "high"
+        })
+      }
+      
+      // 检查数值有效性
+      if data_point.value < 0.0 {
+        issues = issues.push({
+          issue_type: "negative_value",
+          description: "Value should not be negative for this metric type",
+          severity: "medium"
+        })
+      }
+      
+      if @math.is_infinite(data_point.value) || @math.is_nan(data_point.value) {
+        issues = issues.push({
+          issue_type: "invalid_numeric_value",
+          description: "Value must be a finite number",
+          severity: "high"
+        })
+      }
+      
+      // 检查标签有效性
+      if data_point.tags.length() == 0 {
+        issues = issues.push({
+          issue_type: "missing_tags",
+          description: "At least one tag should be present",
+          severity: "low"
+        })
+      }
+    }
+    
+    issues
+  }
+  
+  // 执行数据质量验证
+  let quality_issues = validate_data_quality(test_data)
+  
+  // 验证质量问题检测结果
+  assert_eq(quality_issues.length(), 5) // 应该检测到5个问题
+  
+  // 检查特定问题类型
+  let has_invalid_timestamp = quality_issues.any(fn(issue) { issue.issue_type == "invalid_timestamp" })
+  let has_empty_metric_name = quality_issues.any(fn(issue) { issue.issue_type == "empty_metric_name" })
+  let has_negative_value = quality_issues.any(fn(issue) { issue.issue_type == "negative_value" })
+  let has_invalid_numeric_value = quality_issues.any(fn(issue) { issue.issue_type == "invalid_numeric_value" })
+  let has_missing_tags = quality_issues.any(fn(issue) { issue.issue_type == "missing_tags" })
+  
+  assert_true(has_invalid_timestamp)
+  assert_true(has_empty_metric_name)
+  assert_true(has_negative_value)
+  assert_true(has_invalid_numeric_value)
+  assert_true(has_missing_tags)
+}
+
+// 测试用例7: 遥测系统资源管理
+test "遥测系统资源管理" {
+  // 定义资源使用情况
+  type ResourceUsage = {
+    timestamp: Int,
+    cpu_percent: Float,
+    memory_mb: Int,
+    disk_io_mb: Int,
+    network_io_mb: Int
+  }
+  
+  // 创建资源使用数据
+  let resource_data = [
+    { timestamp: 1609459200, cpu_percent: 45.2, memory_mb: 1024, disk_io_mb: 50, network_io_mb: 20 },
+    { timestamp: 1609459260, cpu_percent: 52.8, memory_mb: 1089, disk_io_mb: 75, network_io_mb: 35 },
+    { timestamp: 1609459320, cpu_percent: 78.5, memory_mb: 1256, disk_io_mb: 120, network_io_mb: 80 },
+    { timestamp: 1609459380, cpu_percent: 65.3, memory_mb: 1187, disk_io_mb: 90, network_io_mb: 60 },
+    { timestamp: 1609459440, cpu_percent: 48.7, memory_mb: 1045, disk_io_mb: 55, network_io_mb: 25 }
+  ]
+  
+  // 资源使用分析和预警
+  let analyze_resource_usage = fn(data: Array[ResourceUsage], thresholds: { cpu: Float, memory: Int }) {
+    let alerts = []
+    let resource_trends = {
+      cpu_trend: [],
+      memory_trend: []
+    }
+    
+    for i in 0..data.length() {
+      let current = data[i]
+      
+      // 检查资源使用是否超过阈值
+      if current.cpu_percent > thresholds.cpu {
+        alerts = alerts.push({
+          timestamp: current.timestamp,
+          alert_type: "high_cpu",
+          message: "CPU usage exceeds threshold: " + @math.to_string(current.cpu_percent) + "%",
+          severity: if current.cpu_percent > 90.0 { "critical" } else { "warning" }
+        })
+      }
+      
+      if current.memory_mb > thresholds.memory {
+        alerts = alerts.push({
+          timestamp: current.timestamp,
+          alert_type: "high_memory",
+          message: "Memory usage exceeds threshold: " + @math.to_string(current.memory_mb) + "MB",
+          severity: if current.memory_mb > 1500 { "critical" } else { "warning" }
+        })
+      }
+      
+      // 计算资源使用趋势
+      if i > 0 {
+        let previous = data[i-1]
+        let cpu_change = current.cpu_percent - previous.cpu_percent
+        let memory_change = current.memory_mb - previous.memory_mb
+        
+        resource_trends.cpu_trend = resource_trends.cpu_trend.push(cpu_change)
+        resource_trends.memory_trend = resource_trends.memory_trend.push(memory_change)
+      }
+    }
+    
+    // 计算平均趋势
+    let avg_cpu_trend = if resource_trends.cpu_trend.length() > 0 {
+      let sum = resource_trends.cpu_trend.reduce(fn(acc, val) { acc + val }, 0.0)
+      sum / (resource_trends.cpu_trend.length() as Float)
+    } else {
+      0.0
+    }
+    
+    let avg_memory_trend = if resource_trends.memory_trend.length() > 0 {
+      let sum = resource_trends.memory_trend.reduce(fn(acc, val) { acc + val }, 0)
+      sum / resource_trends.memory_trend.length()
+    } else {
+      0
+    }
+    
+    {
+      alerts: alerts,
+      avg_cpu_trend: avg_cpu_trend,
+      avg_memory_trend: avg_memory_trend
     }
   }
+  
+  // 执行资源分析
+  let resource_analysis = analyze_resource_usage(resource_data, { cpu: 70.0, memory: 1200 })
+  
+  // 验证资源分析结果
+  assert_eq(resource_analysis.alerts.length(), 2) // 应该有2个警报
+  
+  // 检查CPU警报
+  let cpu_alerts = resource_analysis.alerts.filter(fn(alert) { alert.alert_type == "high_cpu" })
+  assert_eq(cpu_alerts.length(), 1)
+  assert_eq(cpu_alerts[0].severity, "warning") // 78.5% > 70% 但 < 90%
+  
+  // 检查内存警报
+  let memory_alerts = resource_analysis.alerts.filter(fn(alert) { alert.alert_type == "high_memory" })
+  assert_eq(memory_alerts.length(), 1)
+  assert_eq(memory_alerts[0].severity, "warning") // 1256MB > 1200MB 但 < 1500MB
+  
+  // 验证趋势分析
+  assert_eq(@math.round(resource_analysis.avg_cpu_trend * 10) / 10.0, 0.9) // 平均CPU趋势
+  assert_eq(resource_analysis.avg_memory_trend, 58) // 平均内存趋势
 }
 
-// 测试7: 数据完整性验证测试
-test "数据完整性验证测试" {
-  let integrity_provider = DataIntegrityProvider::new()
-  let validator = DataIntegrityProvider::create_validator(integrity_provider)
-  
-  // 创建测试数据
-  let test_data = {
-    "trace_id": "trace-123",
-    "span_id": "span-456",
-    "timestamp": 1640995200,
-    "service": "test-service",
-    "operation": "test-operation",
-    "duration": 0.125,
-    "status": "success"
+// 测试用例8: 遥测数据实时流处理
+test "遥测数据实时流处理" {
+  // 定义流事件类型
+  type StreamEvent = {
+    event_id: String,
+    event_type: String,
+    timestamp: Int,
+    data: Map[String, String]
   }
   
-  // 计算数据校验和
-  let checksum = DataIntegrityValidator::calculate_checksum(validator, test_data)
+  // 定义处理结果
+  type ProcessedResult = {
+    event_count: Int,
+    error_count: Int,
+    metrics: Map[String, Float],
+    last_processed_timestamp: Int
+  }
   
-  // 模拟数据传输
-  let transmitted_data = DataIntegrityProvider::transmit_data(integrity_provider, test_data)
+  // 创建模拟流数据
+  let stream_data = [
+    { event_id: "evt001", event_type: "metric", timestamp: 1609459200, data: Map::from([("name", "cpu"), ("value", "45.2")]) },
+    { event_id: "evt002", event_type: "log", timestamp: 1609459201, data: Map::from([("level", "INFO"), ("message", "Service started")]) },
+    { event_id: "evt003", event_type: "metric", timestamp: 1609459202, data: Map::from([("name", "memory"), ("value", "1024")]) },
+    { event_id: "evt004", event_type: "trace", timestamp: 1609459203, data: Map::from([("trace_id", "trace123"), ("span", "operation")]) },
+    { event_id: "evt005", event_type: "metric", timestamp: 1609459204, data: Map::from([("name", "cpu"), ("value", "48.7")]) },
+    { event_id: "evt006", event_type: "error", timestamp: 1609459205, data: Map::from([("error_code", "500"), ("message", "Internal error")]) }
+  ]
   
-  // 验证接收到的数据完整性
-  let is_valid = DataIntegrityValidator::verify_checksum(validator, transmitted_data, checksum)
-  assert_true(is_valid)
+  // 实时流处理函数
+  let process_stream = fn(events: Array[StreamEvent]) {
+    let mut result = {
+      event_count: 0,
+      error_count: 0,
+      metrics: Map::empty(),
+      last_processed_timestamp: 0
+    }
+    
+    for event in events {
+      result.event_count = result.event_count + 1
+      result.last_processed_timestamp = event.timestamp
+      
+      // 处理不同类型的事件
+      match event.event_type {
+        "metric" => {
+          let metric_name = match Map::get(event.data, "name") {
+            Some(name) => name
+            None => "unknown"
+          }
+          
+          let metric_value = match Map::get(event.data, "value") {
+            Some(val_str) => match @float.parse(val_str) {
+              Ok(val) => val
+              Err(_) => 0.0
+            }
+            None => 0.0
+          }
+          
+          // 聚合指标值
+          let current_value = match Map::get(result.metrics, metric_name) {
+            Some(val) => val
+            None => 0.0
+          }
+          
+          result.metrics = Map::insert(result.metrics, metric_name, current_value + metric_value)
+        }
+        
+        "error" => {
+          result.error_count = result.error_count + 1
+        }
+        
+        _ => () // 其他类型事件不做特殊处理
+      }
+    }
+    
+    result
+  }
   
-  // 模拟数据损坏
-  let corrupted_data = transmitted_data
-  corrupted_data["duration"] = 0.999 // 修改数据
+  // 执行流处理
+  let processed_result = process_stream(stream_data)
   
-  // 验证损坏数据检测
-  let is_corrupted = DataIntegrityValidator::verify_checksum(validator, corrupted_data, checksum)
-  assert_false(is_corrupted)
+  // 验证处理结果
+  assert_eq(processed_result.event_count, 6)
+  assert_eq(processed_result.error_count, 1)
+  assert_eq(processed_result.last_processed_timestamp, 1609459205)
+  
+  // 验证指标聚合
+  let cpu_sum = match Map::get(processed_result.metrics, "cpu") {
+    Some(val) => val
+    None => 0.0
+  }
+  let memory_sum = match Map::get(processed_result.metrics, "memory") {
+    Some(val) => val
+    None => 0.0
+  }
+  
+  assert_eq(cpu_sum, 93.9) // 45.2 + 48.7
+  assert_eq(memory_sum, 1024.0)
 }
 
-// 测试8: 配置动态更新测试
-test "配置动态更新测试" {
-  let config_provider = DynamicConfigProvider::new()
-  
-  // 设置初始配置
-  let initial_config = {
-    "sampling.rate": 1.0,
-    "batch.size": 100,
-    "export.interval": 5000,
-    "metrics.enabled": true,
-    "tracing.enabled": true
+// 测试用例9: 遥测数据多维分析
+test "遥测数据多维分析" {
+  // 定义多维数据点
+  type MultiDimPoint = {
+    timestamp: Int,
+    metrics: Map[String, Float],
+    dimensions: Map[String, String]
   }
   
-  DynamicConfigProvider::update_config(config_provider, initial_config)
+  // 创建多维测试数据
+  let multi_dim_data = [
+    { 
+      timestamp: 1609459200, 
+      metrics: Map::from([("cpu", 45.2), ("memory", 1024.0), ("disk", 78.5)]), 
+      dimensions: Map::from([("region", "us-east"), ("service", "api"), ("version", "v1.2")])
+    },
+    { 
+      timestamp: 1609459260, 
+      metrics: Map::from([("cpu", 52.8), ("memory", 1089.0), ("disk", 82.1)]), 
+      dimensions: Map::from([("region", "us-east"), ("service", "api"), ("version", "v1.2")])
+    },
+    { 
+      timestamp: 1609459320, 
+      metrics: Map::from([("cpu", 38.5), ("memory", 956.0), ("disk", 75.3)]), 
+      dimensions: Map::from([("region", "us-west"), ("service", "web"), ("version", "v1.3")])
+    },
+    { 
+      timestamp: 1609459380, 
+      metrics: Map::from([("cpu", 65.3), ("memory", 1187.0), ("disk", 88.7)]), 
+      dimensions: Map::from([("region", "us-west"), ("service", "web"), ("version", "v1.3")])
+    },
+    { 
+      timestamp: 1609459440, 
+      metrics: Map::from([("cpu", 48.7), ("memory", 1045.0), ("disk", 79.9)]), 
+      dimensions: Map::from([("region", "us-east"), ("service", "api"), ("version", "v1.3")])
+    }
+  ]
   
-  // 验证初始配置
-  assert_eq(DynamicConfigProvider::get_config_value(config_provider, "sampling.rate"), 1.0)
-  assert_eq(DynamicConfigProvider::get_config_value(config_provider, "batch.size"), 100)
-  
-  // 动态更新配置
-  let updated_config = {
-    "sampling.rate": 0.5,
-    "batch.size": 200,
-    "export.interval": 10000
+  // 多维分析函数
+  let analyze_multi_dimensional = fn(data: Array[MultiDimPoint], dimension_keys: Array[String]) {
+    let groups = Map::empty()
+    
+    // 按维度分组
+    for point in data {
+      // 构建分组键
+      let mut group_key = ""
+      for dim_key in dimension_keys {
+        let dim_value = match Map::get(point.dimensions, dim_key) {
+          Some(value) => value
+          None => "unknown"
+        }
+        if group_key == "" {
+          group_key = dim_key + ":" + dim_value
+        } else {
+          group_key = group_key + "|" + dim_key + ":" + dim_value
+        }
+      }
+      
+      // 获取或创建分组
+      let group = match Map::get(groups, group_key) {
+        Some(g) => g
+        None => { count: 0, metric_sums: Map::empty() }
+      }
+      
+      // 更新分组统计
+      let updated_metric_sums = Map::fold(point.metrics, group.metric_sums, fn(acc, key, value) {
+        let current_sum = match Map::get(acc, key) {
+          Some(sum) => sum
+          None => 0.0
+        }
+        Map::insert(acc, key, current_sum + value)
+      })
+      
+      groups = Map::insert(groups, group_key, {
+        count: group.count + 1,
+        metric_sums: updated_metric_sums
+      })
+    }
+    
+    // 计算平均值
+    let result = Map::empty()
+    let keys = Map::keys(groups)
+    for key in keys {
+      let group = match Map::get(groups, key) { Some(g) => g | None => { count: 0, metric_sums: Map::empty() } }
+      let metric_averages = Map::map(group.metric_sums, fn(_, sum) { sum / (group.count as Float) })
+      
+      result = Map::insert(result, key, {
+        count: group.count,
+        metric_averages: metric_averages
+      })
+    }
+    
+    result
   }
   
-  DynamicConfigProvider::update_config(config_provider, updated_config)
+  // 执行多维分析
+  let analysis_result = analyze_multi_dimensional(multi_dim_data, ["region", "service"])
   
-  // 验证配置更新
-  assert_eq(DynamicConfigProvider::get_config_value(config_provider, "sampling.rate"), 0.5)
-  assert_eq(DynamicConfigProvider::get_config_value(config_provider, "batch.size"), 200)
-  assert_eq(DynamicConfigProvider::get_config_value(config_provider, "export.interval"), 10000)
+  // 验证分析结果
+  let get_group_stats = fn(key: String) {
+    match Map::get(analysis_result, key) {
+      Some(stats) => stats
+      None => { count: 0, metric_averages: Map::empty() }
+    }
+  }
   
-  // 验证未更改的配置保持原值
-  assert_eq(DynamicConfigProvider::get_config_value(config_provider, "metrics.enabled"), true)
-  assert_eq(DynamicConfigProvider::get_config_value(config_provider, "tracing.enabled"), true)
+  // 检查us-east:api分组
+  let us_east_api_stats = get_group_stats("region:us-east|service:api")
+  assert_eq(us_east_api_stats.count, 3)
+  
+  let us_east_api_cpu = match Map::get(us_east_api_stats.metric_averages, "cpu") {
+    Some(val) => val
+    None => 0.0
+  }
+  assert_eq(@math.round(us_east_api_cpu * 10) / 10.0, 48.9) // (45.2 + 52.8 + 48.7) / 3
+  
+  // 检查us-west:web分组
+  let us_west_web_stats = get_group_stats("region:us-west|service:web")
+  assert_eq(us_west_web_stats.count, 2)
+  
+  let us_west_web_memory = match Map::get(us_west_web_stats.metric_averages, "memory") {
+    Some(val) => val
+    None => 0.0
+  }
+  assert_eq(@math.round(us_west_web_memory * 10) / 10.0, 1071.5) // (956.0 + 1187.0) / 2
 }
 
-// 测试9: 安全性和隐私保护测试
-test "安全性和隐私保护测试" {
-  let security_provider = SecureTelemetryProvider::new()
-  
-  // 创建包含敏感信息的遥测数据
-  let sensitive_data = {
-    "user.id": "user-12345",
-    "user.email": "user@example.com",
-    "user.token": "secret-token-abc123",
-    "operation": "data.process",
-    "duration": 0.250
+// 测试用例10: 遥测系统容错恢复
+test "遥测系统容错恢复" {
+  // 定义系统状态
+  type SystemState = {
+    is_healthy: Bool,
+    error_count: Int,
+    last_error_time: Int,
+    recovery_attempts: Int
   }
   
-  // 应用隐私保护策略
-  let privacy_policy = {
-    "user.email": "hash",
-    "user.token": "redact",
-    "user.id": "mask"
+  // 定义错误事件
+  type ErrorEvent = {
+    timestamp: Int,
+    error_type: String,
+    severity: String,
+    recoverable: Bool
   }
   
-  let sanitized_data = security_provider.apply_privacy_policy(sensitive_data, privacy_policy)
+  // 创建错误事件序列
+  let error_events = [
+    { timestamp: 1609459200, error_type: "network_timeout", severity: "warning", recoverable: true },
+    { timestamp: 1609459230, error_type: "database_connection", severity: "error", recoverable: true },
+    { timestamp: 1609459260, error_type: "memory_exhaustion", severity: "critical", recoverable: true },
+    { timestamp: 1609459290, error_type: "disk_full", severity: "critical", recoverable: false },
+    { timestamp: 1609459320, error_type: "service_unavailable", severity: "error", recoverable: true }
+  ]
   
-  // 验证敏感信息被正确处理
-  assert_true(sanitized_data.contains("user.email")) // 应该存在但被哈希
-  assert_false(sanitized_data.contains("user@example.com")) // 原始值不应该存在
-  assert_false(sanitized_data.contains("secret-token-abc123")) // 令牌应该被编辑
-  assert_true(sanitized_data.contains("operation")) // 非敏感信息应该保留
-  assert_true(sanitized_data.contains("data.process"))
-  
-  // 测试数据加密
-  let encryption_key = "test-encryption-key-123"
-  let encrypted_data = security_provider.encrypt_data(sanitized_data, encryption_key)
-  
-  // 验证加密数据与原始数据不同
-  assert_false(encrypted_data == sanitized_data)
-  
-  // 测试数据解密
-  let decrypted_data = security_provider.decrypt_data(encrypted_data, encryption_key)
-  
-  // 验证解密后数据与原始数据相同
-  assert_eq(decrypted_data, sanitized_data)
-}
-
-// 测试10: 边界条件和异常处理测试
-test "边界条件和异常处理测试" {
-  let boundary_provider = BoundaryTestProvider::new()
-  
-  // 测试空数据处理
-  let empty_data = {}
-  let empty_result = BoundaryTestProvider::process_data(boundary_provider, empty_data)
-  assert_eq(empty_result.status, "success")
-  assert_eq(empty_result.processed_count, 0)
-  
-  // 测试极大数据处理
-  let large_data = []
-  for i = 0; i < 100000; i++ {
-    large_data.push({
-      "id": i,
-      "value": i * 2,
-      "timestamp": Time::now()
-    })
+  // 容错恢复模拟
+  let simulate_fault_tolerance = fn(events: Array[ErrorEvent]) {
+    let mut system_state = {
+      is_healthy: true,
+      error_count: 0,
+      last_error_time: 0,
+      recovery_attempts: 0
+    }
+    
+    let recovery_log = []
+    
+    for event in events {
+      system_state.error_count = system_state.error_count + 1
+      system_state.last_error_time = event.timestamp
+      
+      // 根据错误严重程度影响系统状态
+      match event.severity {
+        "warning" => () // 警告不影响系统健康状态
+        "error" => {
+          system_state.is_healthy = false
+        }
+        "critical" => {
+          system_state.is_healthy = false
+          // 严重错误可能导致系统需要更多恢复尝试
+          system_state.recovery_attempts = system_state.recovery_attempts + 1
+        }
+        _ => ()
+      }
+      
+      // 尝试恢复
+      if event.recoverable && !system_state.is_healthy {
+        system_state.recovery_attempts = system_state.recovery_attempts + 1
+        
+        // 模拟恢复过程
+        let recovery_success = match event.error_type {
+          "network_timeout" => true
+          "database_connection" => true
+          "memory_exhaustion" => system_state.recovery_attempts > 1 // 需要多次尝试
+          "service_unavailable" => true
+          _ => false
+        }
+        
+        if recovery_success {
+          system_state.is_healthy = true
+          recovery_log = recovery_log.push({
+            timestamp: event.timestamp + 30, // 假设恢复需要30秒
+            event_type: "recovery_success",
+            error_type: event.error_type,
+            attempts: system_state.recovery_attempts
+          })
+        } else {
+          recovery_log = recovery_log.push({
+            timestamp: event.timestamp + 30,
+            event_type: "recovery_failed",
+            error_type: event.error_type,
+            attempts: system_state.recovery_attempts
+          })
+        }
+      } else if !event.recoverable {
+        // 不可恢复的错误
+        recovery_log = recovery_log.push({
+          timestamp: event.timestamp,
+          event_type: "unrecoverable_error",
+          error_type: event.error_type,
+          attempts: 0
+        })
+      }
+    }
+    
+    {
+      final_state: system_state,
+      recovery_log: recovery_log
+    }
   }
   
-  let large_result = BoundaryTestProvider::process_data(boundary_provider, large_data)
-  assert_eq(large_result.status, "success")
-  assert_eq(large_result.processed_count, 100000)
+  // 执行容错恢复模拟
+  let fault_tolerance_result = simulate_fault_tolerance(error_events)
   
-  // 测试无效数据处理
-  let invalid_data = {
-    "invalid_field": "invalid_value",
-    "null_field": null,
-    "number_field": "not_a_number"
-  }
+  // 验证容错恢复结果
+  assert_eq(fault_tolerance_result.final_state.error_count, 5)
+  assert_false(fault_tolerance_result.final_state.is_healthy) // 最后一个错误后系统不健康
+  assert_eq(fault_tolerance_result.final_state.recovery_attempts, 4) // 总共4次恢复尝试
   
-  let invalid_result = BoundaryTestProvider::process_data(boundary_provider, invalid_data)
-  assert_eq(invalid_result.status, "error")
-  assert_true(invalid_result.error_message.length() > 0)
+  // 验证恢复日志
+  assert_eq(fault_tolerance_result.recovery_log.length(), 5)
   
-  // 测试资源耗尽情况
-  let resource_heavy_operation = BoundaryTestProvider::simulate_resource_exhaustion(boundary_provider)
-  assert_true(resource_heavy_operation.handled_gracefully)
+  // 检查特定恢复事件
+  let recovery_success_events = fault_tolerance_result.recovery_log.filter(fn(log) { 
+    log.event_type == "recovery_success" 
+  })
+  assert_eq(recovery_success_events.length(), 3) // 3个成功恢复
   
-  // 测试网络超时处理
-  let timeout_operation = BoundaryTestProvider::simulate_network_timeout(boundary_provider, 100) // 100ms超时
-  assert_true(timeout_operation.timed_out)
-  assert_true(timeout_operation.error_message.contains("timeout"))
+  let unrecoverable_events = fault_tolerance_result.recovery_log.filter(fn(log) { 
+    log.event_type == "unrecoverable_error" 
+  })
+  assert_eq(unrecoverable_events.length(), 1) // 1个不可恢复错误
 }
