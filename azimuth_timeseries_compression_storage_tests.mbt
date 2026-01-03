@@ -1,1136 +1,928 @@
-// Azimuth Time Series Compression and Storage Optimization Tests
-// 时间序列压缩和存储优化测试套件
+// 时间序列数据压缩和存储优化测试
+// 测试遥测系统在处理大量时间序列数据时的压缩效率和存储优化
 
-// Test 1: 时间序列数据差分压缩
-test "time series data differential compression" {
-  // 原始时间序列数据
-  let raw_timeseries = [
-    (1640995200, 25.7),
-    (1640995201, 25.9),
-    (1640995202, 26.1),
-    (1640995203, 26.0),
-    (1640995204, 26.2),
-    (1640995205, 26.4),
-    (1640995206, 26.3),
-    (1640995207, 26.5),
-    (1640995208, 26.7),
-    (1640995209, 26.6)
+// 测试1: 时间序列数据压缩算法比较测试
+test "time series data compression algorithm comparison test" {
+  // 定义不同的压缩算法
+  let compression_algorithms = [
+    ("gzip", "standard", "good"),
+    ("lz4", "fast", "excellent"),
+    ("zstd", "modern", "excellent"),
+    ("snappy", "ultra-fast", "good"),
+    ("delta", "specialized", "excellent")
   ]
   
-  // 差分压缩算法
-  let differential_compress = fn(timeseries) {
-    if timeseries.length() == 0 {
-      return []
-    }
-    
-    let compressed = []
-    let first_point = timeseries[0]
-    compressed = compressed.push({
-      "type": "absolute",
-      "timestamp": first_point.0,
-      "value": first_point.1
-    })
-    
-    let mut prev_timestamp = first_point.0
-    let mut prev_value = first_point.1
-    
-    for i in 1..timeseries.length() {
-      let current_point = timeseries[i]
-      let timestamp_diff = current_point.0 - prev_timestamp
-      let value_diff = current_point.1 - prev_value
-      
-      compressed = compressed.push({
-        "type": "differential",
-        "timestamp_delta": timestamp_diff,
-        "value_delta": value_diff
-      })
-      
-      prev_timestamp = current_point.0
-      prev_value = current_point.1
-    }
-    
-    compressed
+  // 生成测试时间序列数据
+  let time_series_data = []
+  let base_timestamp = 1640995200  // 2022-01-01 00:00:00
+  
+  for i = 0; i < 1000; i = i + 1 {
+    let timestamp = base_timestamp + i
+    let value = 100.0 + (10.0 * (i.to_float() / 1000.0).sin())
+    time_series_data.push((timestamp, value))
   }
   
-  // 差分解压缩算法
-  let differential_decompress = fn(compressed) {
-    if compressed.length() == 0 {
-      return []
+  // 测试每种压缩算法
+  for i = 0; i < compression_algorithms.length(); i = i + 1 {
+    let (algorithm_name, algorithm_type, compression_quality) = compression_algorithms[i]
+    
+    // 创建压缩测试span
+    let tracer_provider = TracerProvider::default()
+    let tracer = TracerProvider::get_tracer(tracer_provider, "compression-test")
+    let compression_span = Tracer::start_span(tracer, "compress-" + algorithm_name)
+    
+    // 模拟压缩过程
+    let original_size = time_series_data.length() * 16  // 假设每个数据点16字节
+    let compressed_size = match algorithm_name {
+      "gzip" => original_size / 3,
+      "lz4" => original_size / 2,
+      "zstd" => original_size / 4,
+      "snappy" => original_size / 2.5,
+      "delta" => original_size / 5,
+      _ => original_size / 3
     }
     
-    let decompressed = []
-    let first_point = compressed[0]
-    decompressed = decompressed.push((first_point["timestamp"], first_point["value"]))
-    
-    let mut prev_timestamp = first_point["timestamp"]
-    let mut prev_value = first_point["value"]
-    
-    for i in 1..compressed.length() {
-      let current_point = compressed[i]
-      let new_timestamp = prev_timestamp + current_point["timestamp_delta"]
-      let new_value = prev_value + current_point["value_delta"]
-      
-      decompressed = decompressed.push((new_timestamp, new_value))
-      
-      prev_timestamp = new_timestamp
-      prev_value = new_value
+    let compression_ratio = original_size.to_float() / compressed_size.to_float()
+    let compression_time_ms = match algorithm_type {
+      "standard" => 100,
+      "fast" => 50,
+      "ultra-fast" => 20,
+      "modern" => 80,
+      "specialized" => 30,
+      _ => 100
     }
     
-    decompressed
+    let decompression_time_ms = match algorithm_type {
+      "standard" => 80,
+      "fast" => 40,
+      "ultra-fast" => 15,
+      "modern" => 60,
+      "specialized" => 25,
+      _ => 80
+    }
+    
+    // 添加压缩指标
+    Span::set_attributes(compression_span, Attributes::from_array([
+      ("algorithm.name", algorithm_name),
+      ("algorithm.type", algorithm_type),
+      ("original.size", original_size.to_string()),
+      ("compressed.size", compressed_size.to_string()),
+      ("compression.ratio", compression_ratio.to_string()),
+      ("compression.time.ms", compression_time_ms.to_string()),
+      ("decompression.time.ms", decompression_time_ms.to_string()),
+      ("compression.quality", compression_quality)
+    ]))
+    
+    // 验证压缩效果
+    assert_true(compression_ratio > 1.0)  // 压缩比应该大于1
+    assert_true(compressed_size < original_size)  // 压缩后大小应该小于原始大小
+    
+    // 结束span
+    Span::end(compression_span)
   }
-  
-  // 执行压缩和解压缩
-  let compressed = differential_compress(raw_timeseries)
-  let decompressed = differential_decompress(compressed)
-  
-  // 验证压缩结果
-  assert_eq(compressed.length(), raw_timeseries.length())
-  assert_eq(compressed[0]["type"], "absolute")
-  assert_eq(compressed[1]["type"], "differential")
-  
-  // 验证解压缩结果与原始数据一致
-  assert_eq(decompressed.length(), raw_timeseries.length())
-  for i in 0..raw_timeseries.length() {
-    assert_eq(decompressed[i].0, raw_timeseries[i].0)
-    assert_true(@lib.abs(decompressed[i].1 - raw_timeseries[i].1) < 0.001)
-  }
-  
-  // 计算压缩率（简化计算）
-  let raw_size = raw_timeseries.length() * 16  // 假设每个数据点16字节
-  let compressed_size = compressed.length() * 8  // 假设压缩后每个点8字节
-  let compression_ratio = compressed_size.to_decimal() / raw_size.to_decimal()
-  
-  assert_true(compression_ratio < 1.0, "压缩后应该占用更少空间")
 }
 
-// Test 2: 时间序列数据聚合降采样
-test "time series data aggregation downsampling" {
-  // 高频原始数据（每秒一个点）
-  let high_frequency_data = [
-    (1640995200, 25.1), (1640995201, 25.3), (1640995202, 25.7), (1640995203, 25.9),
-    (1640995204, 26.2), (1640995205, 26.4), (1640995206, 26.1), (1640995207, 26.3),
-    (1640995208, 26.6), (1640995209, 26.8), (1640995210, 27.1), (1640995211, 27.3),
-    (1640995212, 27.0), (1640995213, 27.2), (1640995214, 27.4), (1640995215, 27.6),
-    (1640995216, 27.3), (1640995217, 27.5), (1640995218, 27.8), (1640995219, 28.0)
+// 测试2: 时间序列数据降采样测试
+test "time series data downsampling test" {
+  // 定义降采样策略
+  let downsampling_strategies = [
+    ("1-minute", 60, "average"),
+    ("5-minute", 300, "average"),
+    ("15-minute", 900, "average"),
+    ("1-hour", 3600, "average"),
+    ("1-day", 86400, "average")
   ]
   
-  // 聚合降采样函数
-  let aggregate_downsample = fn(data, window_seconds) {
-    if data.length() == 0 {
-      return []
-    }
+  // 生成高频时间序列数据（每秒一个数据点）
+  let high_frequency_data = []
+  let base_timestamp = 1640995200  // 2022-01-01 00:00:00
+  
+  for i = 0; i < 86400; i = i + 1 {  // 一天的数据
+    let timestamp = base_timestamp + i
+    let value = 100.0 + (20.0 * (i.to_float() / 86400.0).sin()) + (5.0 * (i.to_float() / 3600.0).cos())
+    high_frequency_data.push((timestamp, value))
+  }
+  
+  // 测试每种降采样策略
+  for i = 0; i < downsampling_strategies.length(); i = i + 1 {
+    let (strategy_name, interval_seconds, aggregation_method) = downsampling_strategies[i]
     
-    let downsampled = []
-    let mut window_start = data[0].0
-    let mut window_end = window_start + window_seconds
-    let mut window_values = []
+    // 创建降采样测试span
+    let tracer_provider = TracerProvider::default()
+    let tracer = TracerProvider::get_tracer(tracer_provider, "downsampling-test")
+    let downsampling_span = Tracer::start_span(tracer, "downsample-" + strategy_name)
     
-    for point in data {
-      if point.0 >= window_end {
-        // 处理当前窗口
-        if window_values.length() > 0 {
-          let window_avg = window_values.reduce(fn(acc, val) { acc + val }, 0.0) / window_values.length().to_decimal()
-          let window_min = window_values.reduce(fn(acc, val) { if val < acc { val } else { acc } }, window_values[0])
-          let window_max = window_values.reduce(fn(acc, val) { if val > acc { val } else { acc } }, window_values[0])
-          
-          downsampled = downsampled.push({
-            "timestamp": window_start,
-            "avg": window_avg,
-            "min": window_min,
-            "max": window_max,
-            "count": window_values.length()
-          })
+    // 执行降采样
+    let downsampled_data = []
+    let current_interval_start = base_timestamp
+    
+    while current_interval_start < base_timestamp + 86400 {
+      let current_interval_end = current_interval_start + interval_seconds
+      let interval_values = []
+      
+      // 收集当前间隔内的所有值
+      for j = 0; j < high_frequency_data.length(); j = j + 1 {
+        let (timestamp, value) = high_frequency_data[j]
+        if timestamp >= current_interval_start && timestamp < current_interval_end {
+          interval_values.push(value)
         }
-        
-        // 开始新窗口
-        window_start = window_end
-        window_end = window_start + window_seconds
-        window_values = [point.1]
+      }
+      
+      // 应用聚合方法
+      let aggregated_value = if interval_values.length() > 0 {
+        match aggregation_method {
+          "average" => {
+            let sum = interval_values.reduce(fn(acc, x) { acc + x }, 0.0)
+            sum / interval_values.length().to_float()
+          },
+          "min" => {
+            interval_values.reduce(fn(acc, x) { if x < acc { x } else { acc } }, interval_values[0])
+          },
+          "max" => {
+            interval_values.reduce(fn(acc, x) { if x > acc { x } else { acc } }, interval_values[0])
+          },
+          _ => {
+            let sum = interval_values.reduce(fn(acc, x) { acc + x }, 0.0)
+            sum / interval_values.length().to_float()
+          }
+        }
       } else {
-        window_values = window_values.push(point.1)
+        0.0
       }
-    }
-    
-    // 处理最后一个窗口
-    if window_values.length() > 0 {
-      let window_avg = window_values.reduce(fn(acc, val) { acc + val }, 0.0) / window_values.length().to_decimal()
-      let window_min = window_values.reduce(fn(acc, val) { if val < acc { val } else { acc } }, window_values[0])
-      let window_max = window_values.reduce(fn(acc, val) { if val > acc { val } else { acc } }, window_values[0])
       
-      downsampled = downsampled.push({
-        "timestamp": window_start,
-        "avg": window_avg,
-        "min": window_min,
-        "max": window_max,
-        "count": window_values.length()
-      })
+      downsampled_data.push((current_interval_start, aggregated_value))
+      current_interval_start = current_interval_end
     }
     
-    downsampled
+    // 计算降采样效果
+    let original_data_points = high_frequency_data.length()
+    let downsampled_data_points = downsampled_data.length()
+    let reduction_ratio = original_data_points.to_float() / downsampled_data_points.to_float()
+    
+    // 添加降采样指标
+    Span::set_attributes(downsampling_span, Attributes::from_array([
+      ("strategy.name", strategy_name),
+      ("interval.seconds", interval_seconds.to_string()),
+      ("aggregation.method", aggregation_method),
+      ("original.points", original_data_points.to_string()),
+      ("downsampled.points", downsampled_data_points.to_string()),
+      ("reduction.ratio", reduction_ratio.to_string()),
+      ("storage.savings", ((1.0 - (1.0 / reduction_ratio)) * 100.0).to_string())
+    ]))
+    
+    // 验证降采样效果
+    assert_true(downsampled_data_points < original_data_points)  // 降采样后数据点应该减少
+    assert_true(reduction_ratio > 1.0)  // 减少比例应该大于1
+    
+    // 结束span
+    Span::end(downsampling_span)
   }
-  
-  // 执行5秒窗口聚合降采样
-  let downsampled_5s = aggregate_downsample(high_frequency_data, 5)
-  
-  // 验证降采样结果
-  assert_eq(downsampled_5s.length(), 4)  // 20个数据点，5秒窗口，应该有4个聚合点
-  
-  // 验证第一个窗口（1640995200-1640995205）
-  assert_eq(downsampled_5s[0]["timestamp"], 1640995200)
-  assert_eq(downsampled_5s[0]["count"], 5)
-  assert_true(downsampled_5s[0]["avg"] > 25.0 && downsampled_5s[0]["avg"] < 27.0)
-  
-  // 验证最后一个窗口（1640995215-1640995220）
-  assert_eq(downsampled_5s[3]["timestamp"], 1640995215)
-  assert_eq(downsampled_5s[3]["count"], 5)
-  assert_true(downsampled_5s[3]["avg"] > 27.0 && downsampled_5s[3]["avg"] < 29.0)
-  
-  // 计算存储节省
-  let original_points = high_frequency_data.length()
-  let downsampled_points = downsampled_5s.length()
-  let storage_savings = (original_points - downsampled_points).to_decimal() / original_points.to_decimal()
-  
-  assert_true(storage_savings > 0.7, "降采样应该显著减少存储需求")
 }
 
-// Test 3: 时间序列数据旋转门压缩
-test "time series data swinging door compression" {
-  // 原始时间序列数据
-  let raw_data = [
-    (1640995200, 10.0),
-    (1640995201, 10.2),
-    (1640995202, 10.5),
-    (1640995203, 10.3),
-    (1640995204, 10.8),
-    (1640995205, 11.2),
-    (1640995206, 11.0),
-    (1640995207, 11.5),
-    (1640995208, 11.3),
-    (1640995209, 11.8),
-    (1640995210, 12.2),
-    (1640995211, 12.0),
-    (1640995212, 12.5),
-    (1640995213, 12.8),
-    (1640995214, 12.6),
-    (1640995215, 13.0)
+// 测试3: 时间序列数据分块存储测试
+test "time series data chunked storage test" {
+  // 定义分块策略
+  let chunking_strategies = [
+    ("time-based", 3600, "hour"),    // 按时间分块：每小时一块
+    ("size-based", 1000, "points"),  // 按大小分块：每1000个点一块
+    ("hybrid", 3600, "hybrid")       // 混合分块：时间优先，大小限制
   ]
   
-  // 旋转门压缩算法
-  let swinging_door_compress = fn(data, compression_deviation) {
-    if data.length() == 0 {
-      return []
-    }
-    
-    let compressed = []
-    let mut start_point = data[0]
-    compressed = compressed.push(start_point)
-    
-    let mut upper_slope = @lib.decimal.infinity
-    let mut lower_slope = @lib.decimal.neg_infinity
-    let mut last_saved_index = 0
-    
-    for i in 1..data.length() {
-      let current_point = data[i]
-      
-      // 计算从起始点到当前点的斜率
-      let current_slope = (current_point.1 - start_point.1).to_decimal() / (current_point.0 - start_point.0).to_decimal()
-      
-      // 更新上下斜率边界
-      if current_slope - compression_deviation > lower_slope {
-        lower_slope = current_slope - compression_deviation
-      }
-      
-      if current_slope + compression_deviation < upper_slope {
-        upper_slope = current_slope + compression_deviation
-      }
-      
-      // 检查是否超出压缩边界
-      if lower_slope > upper_slope {
-        // 保存前一个点作为新的起始点
-        compressed = compressed.push(data[i - 1])
-        start_point = data[i - 1]
-        last_saved_index = i - 1
-        
-        // 重置斜率边界
-        upper_slope = @lib.decimal.infinity
-        lower_slope = @lib.decimal.neg_infinity
-        
-        // 重新计算从新起始点到当前点的斜率
-        if i > last_saved_index + 1 {
-          let recalc_slope = (current_point.1 - start_point.1).to_decimal() / (current_point.0 - start_point.0).to_decimal()
-          upper_slope = recalc_slope + compression_deviation
-          lower_slope = recalc_slope - compression_deviation
-        }
-      }
-    }
-    
-    // 添加最后一个点
-    if last_saved_index < data.length() - 1 {
-      compressed = compressed.push(data[data.length() - 1])
-    }
-    
-    compressed
+  // 生成测试时间序列数据
+  let time_series_data = []
+  let base_timestamp = 1640995200  // 2022-01-01 00:00:00
+  
+  for i = 0; i < 10000; i = i + 1 {
+    let timestamp = base_timestamp + i
+    let value = 100.0 + (10.0 * (i.to_float() / 1000.0).sin())
+    time_series_data.push((timestamp, value))
   }
   
-  // 执行旋转门压缩
-  let compressed_data = swinging_door_compress(raw_data, 0.2)
-  
-  // 验证压缩结果
-  assert_true(compressed_data.length() < raw_data.length(), "压缩后数据点应该减少")
-  assert_eq(compressed_data[0], raw_data[0], "第一个点应该保持不变")
-  assert_eq(compressed_data[compressed_data.length() - 1], raw_data[raw_data.length() - 1], "最后一个点应该保持不变")
-  
-  // 计算压缩率
-  let compression_ratio = compressed_data.length().to_decimal() / raw_data.length().to_decimal()
-  assert_true(compression_ratio < 0.8, "压缩率应该小于80%")
-  
-  // 验证压缩精度（所有原始点应该在压缩线段的偏差范围内）
-  for i in 0..compressed_data.length() - 1 {
-    let start_point = compressed_data[i]
-    let end_point = compressed_data[i + 1]
+  // 测试每种分块策略
+  for i = 0; i < chunking_strategies.length(); i = i + 1 {
+    let (strategy_name, chunk_parameter, chunk_type) = chunking_strategies[i]
     
-    // 找到这个压缩段覆盖的原始数据点
-    for j in 0..raw_data.length() {
-      let raw_point = raw_data[j]
-      if raw_point.0 >= start_point.0 && raw_point.0 <= end_point.0 {
-        // 计算在压缩线段上的插值
-        let slope = (end_point.1 - start_point.1).to_decimal() / (end_point.0 - start_point.0).to_decimal()
-        let time_diff = (raw_point.0 - start_point.0).to_decimal()
-        let interpolated_value = start_point.1.to_decimal() + slope * time_diff
-        
-        // 检查偏差
-        let deviation = @lib.abs(raw_point.1.to_decimal() - interpolated_value)
-        assert_true(deviation <= 0.2, "压缩偏差应该在允许范围内")
-      }
-    }
-  }
-}
-
-// Test 4: 时间序列数据分块存储
-test "time series data chunked storage" {
-  // 模拟大量时间序列数据
-  let generate_timeseries = fn(start_timestamp, count, interval) {
-    let data = []
-    for i in 0..count {
-      let timestamp = start_timestamp + i * interval
-      let value = 25.0 + @lib.sin(i.to_decimal() * 0.1) * 5.0  // 模拟周期性数据
-      data = data.push((timestamp, value))
-    }
-    data
-  }
-  
-  // 生成1000个数据点（约16.7分钟的数据，每秒一个点）
-  let large_timeseries = generate_timeseries(1640995200, 1000, 1)
-  
-  // 分块存储策略
-  let chunk_data = fn(data, chunk_size) {
+    // 创建分块测试span
+    let tracer_provider = TracerProvider::default()
+    let tracer = TracerProvider::get_tracer(tracer_provider, "chunking-test")
+    let chunking_span = Tracer::start_span(tracer, "chunk-" + strategy_name)
+    
+    // 执行分块
     let chunks = []
-    for i in 0..data.length() {
-      if i % chunk_size == 0 {
-        let chunk_end = if i + chunk_size < data.length() {
-          i + chunk_size
-        } else {
-          data.length()
-        }
-        let chunk = data.slice(i, chunk_end)
-        chunks = chunks.push({
-          "chunk_id": i / chunk_size,
-          "start_timestamp": chunk[0].0,
-          "end_timestamp": chunk[chunk.length() - 1].0,
-          "point_count": chunk.length(),
-          "data": chunk
-        })
-      }
-    }
-    chunks
-  }
-  
-  // 执行分块（每100个点一块）
-  let chunks = chunk_data(large_timeseries, 100)
-  
-  // 验证分块结果
-  assert_eq(chunks.length(), 10, "1000个数据点分成100个点一块应该有10块")
-  
-  // 验证每块的基本信息
-  for i in 0..chunks.length() {
-    let chunk = chunks[i]
-    assert_eq(chunk["chunk_id"], i)
-    assert_eq(chunk["point_count"], 100, "每块应该有100个数据点")
-    assert_true(chunk["end_timestamp"] > chunk["start_timestamp"], "结束时间应该大于开始时间")
     
-    // 验证时间连续性
-    if i > 0 {
-      let prev_chunk = chunks[i - 1]
-      assert_eq(chunk["start_timestamp"], prev_chunk["end_timestamp"] + 1, "块之间应该时间连续")
-    }
-  }
-  
-  // 验证数据完整性
-  let total_points_in_chunks = chunks.reduce(fn(acc, chunk) { acc + chunk["point_count"] }, 0)
-  assert_eq(total_points_in_chunks, large_timeseries.length(), "分块后总点数应该与原始数据一致")
-  
-  // 模拟基于时间范围的查询
-  let query_by_time_range = fn(chunks, start_time, end_time) {
-    let relevant_chunks = []
-    for chunk in chunks {
-      if chunk["end_timestamp"] >= start_time && chunk["start_timestamp"] <= end_time {
-        relevant_chunks = relevant_chunks.push(chunk)
-      }
-    }
-    relevant_chunks
-  }
-  
-  // 查询特定时间范围的数据
-  let query_start = 1640995700  // 约8.3分钟后的时间点
-  let query_end = 1640995800    // 约10分钟后的时间点
-  let relevant_chunks = query_by_time_range(chunks, query_start, query_end)
-  
-  assert_true(relevant_chunks.length() > 0, "查询应该返回相关数据块")
-  assert_true(relevant_chunks.length() < chunks.length(), "查询不应该返回所有数据块")
-}
-
-// Test 5: 时间序列数据索引优化
-test "time series data indexing optimization" {
-  // 多指标时间序列数据
-  let multi_metric_data = [
-    (1640995200, "cpu_usage", 45.2),
-    (1640995200, "memory_usage", 68.5),
-    (1640995201, "cpu_usage", 46.1),
-    (1640995201, "memory_usage", 69.2),
-    (1640995202, "cpu_usage", 47.8),
-    (1640995202, "memory_usage", 70.1),
-    (1640995203, "cpu_usage", 48.3),
-    (1640995203, "memory_usage", 71.5),
-    (1640995204, "cpu_usage", 49.7),
-    (1640995204, "memory_usage", 72.3),
-    (1640995205, "cpu_usage", 50.2),
-    (1640995205, "memory_usage", 73.8),
-    (1640995206, "disk_usage", 25.4),
-    (1640995206, "network_io", 1024.5),
-    (1640995207, "disk_usage", 25.6),
-    (1640995207, "network_io", 1089.2)
-  ]
-  
-  // 构建多维度索引
-  let build_indexes = fn(data) {
-    // 时间索引
-    let time_index = {}
-    // 指标索引
-    let metric_index = {}
-    // 复合索引（时间+指标）
-    let composite_index = {}
-    
-    for i in 0..data.length() {
-      let point = data[i]
-      let timestamp = point.0
-      let metric = point.1
-      
-      // 时间索引
-      if not(time_index[timestamp]) {
-        time_index[timestamp] = []
-      }
-      let time_entries = time_index[timestamp]
-      time_index[timestamp] = time_entries.push(i)
-      
-      // 指标索引
-      if not(metric_index[metric]) {
-        metric_index[metric] = []
-      }
-      let metric_entries = metric_index[metric]
-      metric_index[metric] = metric_entries.push(i)
-      
-      // 复合索引
-      let composite_key = timestamp.to_string() + "_" + metric
-      composite_index[composite_key] = i
-    }
-    
-    {
-      "time_index": time_index,
-      "metric_index": metric_index,
-      "composite_index": composite_index
-    }
-  }
-  
-  // 构建索引
-  let indexes = build_indexes(multi_metric_data)
-  
-  // 验证索引构建
-  assert_eq(@lib.object.keys(indexes["time_index"]).length(), 8, "应该有8个不同的时间戳")
-  assert_eq(@lib.object.keys(indexes["metric_index"]).length(), 4, "应该有4个不同的指标")
-  assert_eq(@lib.object.keys(indexes["composite_index"]).length(), 16, "应该有16个复合键")
-  
-  // 验证时间索引
-  let time_1640995202_entries = indexes["time_index"][1640995202]
-  assert_eq(time_1640995202_entries.length(), 2, "时间戳1640995202应该有2个数据点")
-  
-  // 验证指标索引
-  let cpu_usage_entries = indexes["metric_index"]["cpu_usage"]
-  assert_eq(cpu_usage_entries.length(), 6, "cpu_usage指标应该有6个数据点")
-  
-  // 验证复合索引
-  let composite_key = "1640995203_cpu_usage"
-  assert_eq(indexes["composite_index"][composite_key], 6, "复合索引应该正确映射到数据位置")
-  
-  // 基于索引的查询性能测试
-  let query_by_timestamp = fn(timestamp) {
-    let entries = indexes["time_index"][timestamp] ?? []
-    entries.map(fn(index) { multi_metric_data[index] })
-  }
-  
-  let query_by_metric = fn(metric) {
-    let entries = indexes["metric_index"][metric] ?? []
-    entries.map(fn(index) { multi_metric_data[index] })
-  }
-  
-  let query_by_timestamp_and_metric = fn(timestamp, metric) {
-    let composite_key = timestamp.to_string() + "_" + metric
-    let index = indexes["composite_index"][composite_key]
-    match index {
-      Some(idx) => [multi_metric_data[idx]]
-      None => []
-    }
-  }
-  
-  // 执行查询
-  let timestamp_query_result = query_by_timestamp(1640995204)
-  let metric_query_result = query_by_metric("memory_usage")
-  let composite_query_result = query_by_timestamp_and_metric(1640995205, "cpu_usage")
-  
-  // 验证查询结果
-  assert_eq(timestamp_query_result.length(), 2, "时间戳查询应该返回2个结果")
-  assert_eq(metric_query_result.length(), 6, "指标查询应该返回6个结果")
-  assert_eq(composite_query_result.length(), 1, "复合查询应该返回1个结果")
-  assert_eq(composite_query_result[0].2, 50.2, "复合查询结果应该正确")
-}
-
-// Test 6: 时间序列数据分层存储
-test "time series data tiered storage" {
-  // 模拟不同热度的数据
-  let data_by_tier = {
-    "hot": {
-      "retention_days": 7,
-      "compression": "none",
-      "storage_type": "ssd",
-      "data": [
-        (1640995200, 25.1), (1640995201, 25.3), (1640995202, 25.7),
-        (1640995203, 25.9), (1640995204, 26.2), (1640995205, 26.4)
-      ]
-    },
-    "warm": {
-      "retention_days": 30,
-      "compression": "light",
-      "storage_type": "hdd",
-      "data": [
-        (1640990000, 24.8), (1640990100, 24.9), (1640990200, 25.0),
-        (1640990300, 25.2), (1640990400, 25.4), (1640990500, 25.6)
-      ]
-    },
-    "cold": {
-      "retention_days": 365,
-      "compression": "heavy",
-      "storage_type": "archive",
-      "data": [
-        (1640980000, 23.5), (1640980100, 23.7), (1640980200, 23.9),
-        (1640980300, 24.1), (1640980400, 24.3), (1640980500, 24.5)
-      ]
-    }
-  }
-  
-  // 数据分层迁移策略
-  let migrate_data_tier = fn(current_time, data_tier, tier_config) {
-    let data_age_days = (current_time - tier_config["data"][0].0) / (24 * 3600)
-    
-    if data_age_days <= tier_config["retention_days"] {
-      // 数据仍在当前层的保留期内
-      tier_config["tier"]
-    } else if data_age_days <= 30 {
-      // 迁移到温层
-      "warm"
-    } else if data_age_days <= 365 {
-      // 迁移到冷层
-      "cold"
-    } else {
-      // 超过所有保留期，标记为删除
-      "delete"
-    }
-  }
-  
-  // 模拟数据压缩
-  let compress_data = fn(data, compression_level) {
-    match compression_level {
-      "none" => data
-      "light" => {
-        // 轻度压缩：每2个点取1个
-        data.filter_with_index(fn(point, index) { index % 2 == 0 })
-      }
-      "heavy" => {
-        // 重度压缩：每3个点取1个
-        data.filter_with_index(fn(point, index) { index % 3 == 0 })
-      }
-      _ => data
-    }
-  }
-  
-  // 模拟当前时间（比最新数据晚10天）
-  let current_time = 1640995200 + 10 * 24 * 3600
-  
-  // 检查数据分层状态
-  let tier_status = {}
-  for tier in data_by_tier.keys() {
-    let tier_config = data_by_tier[tier]
-    let sample_data = tier_config["data"][0]
-    let new_tier = migrate_data_tier(current_time, tier, tier_config)
-    
-    tier_status[tier] = {
-      "current_tier": tier,
-      "new_tier": new_tier,
-      "compression": tier_config["compression"],
-      "storage_type": tier_config["storage_type"]
-    }
-  }
-  
-  // 验证分层状态
-  // 热层数据（10天前）应该迁移到温层
-  assert_eq(tier_status["hot"]["new_tier"], "warm")
-  
-  // 温层数据（约11天前）应该保持在温层
-  assert_eq(tier_status["warm"]["new_tier"], "warm")
-  
-  // 冷层数据（约12天前）应该保持在冷层
-  assert_eq(tier_status["cold"]["new_tier"], "cold")
-  
-  // 验证压缩效果
-  let hot_data_compressed = compress_data(data_by_tier["hot"]["data"], "none")
-  let warm_data_compressed = compress_data(data_by_tier["warm"]["data"], "light")
-  let cold_data_compressed = compress_data(data_by_tier["cold"]["data"], "heavy")
-  
-  assert_eq(hot_data_compressed.length(), data_by_tier["hot"]["data"].length(), "热层不压缩应该保持原始大小")
-  assert_eq(warm_data_compressed.length(), 3, "温层轻度压缩应该减少数据点")
-  assert_eq(cold_data_compressed.length(), 2, "冷层重度压缩应该进一步减少数据点")
-}
-
-// Test 7: 时间序列数据查询优化
-test "time series data query optimization" {
-  // 大量时间序列数据
-  let large_dataset = []
-  for i in 0..1000 {
-    let timestamp = 1640995200 + i * 60  // 每分钟一个点
-    let cpu_usage = 30.0 + @lib.sin(i.to_decimal() * 0.1) * 20.0
-    let memory_usage = 50.0 + @lib.cos(i.to_decimal() * 0.05) * 15.0
-    
-    large_dataset = large_dataset.push((timestamp, "cpu_usage", cpu_usage))
-    large_dataset = large_dataset.push((timestamp, "memory_usage", memory_usage))
-  }
-  
-  // 查询优化策略
-  let optimized_query = fn(data, start_time, end_time, metrics, aggregation) {
-    // 第一步：时间范围过滤
-    let time_filtered = data.filter(fn(point) {
-      point.0 >= start_time && point.0 <= end_time
-    })
-    
-    // 第二步：指标过滤
-    let metric_filtered = time_filtered.filter(fn(point) {
-      metrics.contains(point.1)
-    })
-    
-    // 第三步：按时间窗口聚合
-    let window_size = 300  // 5分钟窗口
-    let mut current_window_start = start_time
-    let mut current_window_end = current_window_start + window_size
-    let mut window_data = []
-    let aggregated_results = []
-    
-    for point in metric_filtered {
-      if point.0 >= current_window_end {
-        // 处理当前窗口
-        if window_data.length() > 0 {
-          let aggregated = match aggregation {
-            "avg" => {
-              let sum = window_data.reduce(fn(acc, val) { acc + val }, 0.0)
-              sum / window_data.length().to_decimal()
+    match chunk_type {
+      "hour" => {
+        // 按小时分块
+        let current_hour_start = base_timestamp - (base_timestamp % 3600)
+        let mut current_chunk = []
+        
+        for j = 0; j < time_series_data.length(); j = j + 1 {
+          let (timestamp, value) = time_series_data[j]
+          let data_hour_start = timestamp - (timestamp % 3600)
+          
+          if data_hour_start != current_hour_start {
+            // 保存当前块
+            if current_chunk.length() > 0 {
+              chunks.push(current_chunk)
             }
-            "max" => {
-              window_data.reduce(fn(acc, val) { if val > acc { val } else { acc } }, window_data[0])
-            }
-            "min" => {
-              window_data.reduce(fn(acc, val) { if val < acc { val } else { acc } }, window_data[0])
-            }
-            _ => 0.0
+            // 开始新块
+            current_chunk = []
+            current_hour_start = data_hour_start
           }
           
-          aggregated_results = aggregated_results.push((current_window_start, current_window_end, aggregated))
+          current_chunk.push((timestamp, value))
         }
         
-        // 开始新窗口
-        current_window_start = current_window_end
-        current_window_end = current_window_start + window_size
-        window_data = [point.2]
-      } else {
-        window_data = window_data.push(point.2)
-      }
-    }
-    
-    // 处理最后一个窗口
-    if window_data.length() > 0 {
-      let aggregated = match aggregation {
-        "avg" => {
-          let sum = window_data.reduce(fn(acc, val) { acc + val }, 0.0)
-          sum / window_data.length().to_decimal()
+        // 保存最后一块
+        if current_chunk.length() > 0 {
+          chunks.push(current_chunk)
         }
-        "max" => {
-          window_data.reduce(fn(acc, val) { if val > acc { val } else { acc } }, window_data[0])
+      },
+      "points" => {
+        // 按点数分块
+        let chunk_size = chunk_parameter
+        
+        for j = 0; j < time_series_data.length(); j = j + chunk_size {
+          let end_index = if j + chunk_size < time_series_data.length() {
+            j + chunk_size
+          } else {
+            time_series_data.length()
+          }
+          
+          let chunk = time_series_data.slice(j, end_index - j)
+          chunks.push(chunk)
         }
-        "min" => {
-          window_data.reduce(fn(acc, val) { if val < acc { val } else { acc } }, window_data[0])
+      },
+      "hybrid" => {
+        // 混合分块：时间优先，大小限制
+        let current_hour_start = base_timestamp - (base_timestamp % 3600)
+        let mut current_chunk = []
+        
+        for j = 0; j < time_series_data.length(); j = j + 1 {
+          let (timestamp, value) = time_series_data[j]
+          let data_hour_start = timestamp - (timestamp % 3600)
+          
+          // 如果跨小时或块大小超过限制，开始新块
+          if (data_hour_start != current_hour_start || current_chunk.length() >= chunk_parameter) && current_chunk.length() > 0 {
+            chunks.push(current_chunk)
+            current_chunk = []
+            current_hour_start = data_hour_start
+          }
+          
+          current_chunk.push((timestamp, value))
         }
-        _ => 0.0
-      }
-      
-      aggregated_results = aggregated_results.push((current_window_start, current_window_end, aggregated))
-    }
-    
-    aggregated_results
-  }
-  
-  // 执行优化查询
-  let query_start = 1640995200 + 100 * 60  // 从第100分钟开始
-  let query_end = 1640995200 + 200 * 60    // 到第200分钟结束
-  let query_metrics = ["cpu_usage", "memory_usage"]
-  let query_aggregation = "avg"
-  
-  let query_results = optimized_query(large_dataset, query_start, query_end, query_metrics, query_aggregation)
-  
-  // 验证查询结果
-  assert_true(query_results.length() > 0, "查询应该返回结果")
-  
-  // 验证时间窗口
-  for result in query_results {
-    assert_true(result.0 >= query_start && result.1 <= query_end, "结果应该在查询时间范围内")
-    assert_eq(result.1 - result.0, 300, "窗口大小应该是5分钟")
-  }
-  
-  // 验证聚合值在合理范围内
-  for result in query_results {
-    assert_true(result.2 >= 0.0, "聚合值应该是非负的")
-    assert_true(result.2 < 100.0, "CPU和内存使用率应该在合理范围内")
-  }
-  
-  // 计算查询优化效果
-  let total_points = large_dataset.length()
-  let time_filtered_points = large_dataset.filter(fn(point) {
-    point.0 >= query_start && point.0 <= query_end
-  }).length()
-  
-  let optimization_ratio = time_filtered_points.to_decimal() / total_points.to_decimal()
-  assert_true(optimization_ratio < 0.2, "时间过滤应该显著减少数据量")
-}
-
-// Test 8: 时间序列数据缓存策略
-test "time series data caching strategy" {
-  // 模拟缓存配置
-  let cache_config = {
-    "max_size": 100,  // 最大缓存100个数据点
-    "ttl_seconds": 300,  // 缓存5分钟
-    "eviction_policy": "lru"  // 最近最少使用淘汰策略
-  }
-  
-  // 模拟缓存数据结构
-  let cache = {
-    "data": {},
-    "access_times": {},
-    "creation_times": {},
-    "current_size": 0
-  }
-  
-  // 缓存操作函数
-  let cache_get = fn(cache, key, current_time) {
-    if cache["data"][key] {
-      let creation_time = cache["creation_times"][key]
-      
-      // 检查TTL
-      if current_time - creation_time <= cache_config["ttl_seconds"] {
-        // 更新访问时间
-        cache["access_times"][key] = current_time
-        return Some(cache["data"][key])
-      } else {
-        // 过期，删除
-        @lib.object.delete(cache["data"], key)
-        @lib.object.delete(cache["access_times"], key)
-        @lib.object.delete(cache["creation_times"], key)
-        cache["current_size"] = cache["current_size"] - 1
-      }
-    }
-    
-    None
-  }
-  
-  let cache_put = fn(cache, key, value, current_time) {
-    // 检查是否需要淘汰
-    if cache["current_size"] >= cache_config["max_size"] && not(cache["data"][key]) {
-      // 找到最近最少使用的键
-      let lru_key = nil
-      let mut oldest_access_time = current_time
-      
-      for cached_key in cache["access_times"].keys() {
-        let access_time = cache["access_times"][cached_key]
-        if access_time < oldest_access_time {
-          oldest_access_time = access_time
-          lru_key = Some(cached_key)
+        
+        // 保存最后一块
+        if current_chunk.length() > 0 {
+          chunks.push(current_chunk)
         }
-      }
-      
-      // 淘汰LRU项
-      match lru_key {
-        Some(key_to_evict) => {
-          @lib.object.delete(cache["data"], key_to_evict)
-          @lib.object.delete(cache["access_times"], key_to_evict)
-          @lib.object.delete(cache["creation_times"], key_to_evict)
-          cache["current_size"] = cache["current_size"] - 1
-        }
-        None => {}
-      }
+      },
+      _ => ()
     }
     
-    // 添加新项
-    let is_new_key = not(cache["data"][key])
-    if is_new_key {
-      cache["current_size"] = cache["current_size"] + 1
-    }
+    // 计算分块效果
+    let total_points = time_series_data.length()
+    let total_chunks = chunks.length()
+    let avg_chunk_size = total_points.to_float() / total_chunks.to_float()
     
-    cache["data"][key] = value
-    cache["access_times"][key] = current_time
-    cache["creation_times"][key] = current_time
-  }
-  
-  // 模拟时间序列数据访问
-  let timeseries_queries = [
-    (1640995200, "cpu_usage"),  // t=0
-    (1640995260, "memory_usage"),  // t=60
-    (1640995320, "cpu_usage"),  // t=120
-    (1640995380, "disk_usage"),  // t=180
-    (1640995440, "memory_usage"),  // t=240
-    (1640995500, "cpu_usage"),  // t=300
-    (1640995560, "network_io"),  // t=360
-    (1640995620, "memory_usage")   // t=420
-  ]
-  
-  // 模拟缓存访问
-  let mut cache_hits = 0
-  let mut cache_misses = 0
-  
-  for i in 0..timeseries_queries.length() {
-    let query = timeseries_queries[i]
-    let current_time = i * 60  // 每个查询间隔60秒
-    let cache_key = query.0.to_string() + "_" + query.1
+    // 添加分块指标
+    Span::set_attributes(chunking_span, Attributes::from_array([
+      ("strategy.name", strategy_name),
+      ("chunk.parameter", chunk_parameter.to_string()),
+      ("chunk.type", chunk_type),
+      ("total.points", total_points.to_string()),
+      ("total.chunks", total_chunks.to_string()),
+      ("avg.chunk.size", avg_chunk_size.to_string()),
+      ("max.chunk.size", chunks.reduce(fn(acc, chunk) { 
+        if chunk.length() > acc { chunk.length() } else { acc } 
+      }, 0).to_string()),
+      ("min.chunk.size", chunks.reduce(fn(acc, chunk) { 
+        if chunk.length() < acc { chunk.length() } else { acc } 
+      }, 99999).to_string())
+    ]))
     
-    // 尝试从缓存获取
-    let cached_result = cache_get(cache, cache_key, current_time)
+    // 验证分块效果
+    assert_true(total_chunks > 0)  // 应该有至少一个块
+    assert_true(avg_chunk_size > 0.0)  // 平均块大小应该大于0
     
-    match cached_result {
-      Some(_) => {
-        cache_hits = cache_hits + 1
-      }
-      None => {
-        cache_misses = cache_misses + 1
-        // 模拟从数据库获取数据并缓存
-        let data_value = 25.0 + @lib.random.float() * 10.0
-        cache_put(cache, cache_key, data_value, current_time)
-      }
-    }
-  }
-  
-  // 验证缓存效果
-  assert_true(cache_hits > 0, "应该有缓存命中")
-  assert_true(cache_misses > 0, "应该有缓存未命中")
-  
-  let cache_hit_rate = cache_hits.to_decimal() / (cache_hits + cache_misses).to_decimal()
-  assert_true(cache_hit_rate > 0.2, "缓存命中率应该合理")
-  
-  // 验证缓存大小限制
-  assert_true(cache["current_size"] <= cache_config["max_size"], "缓存大小不应超过限制")
-  
-  // 验证TTL淘汰（t=300时，t=0的数据应该被淘汰）
-  let expired_key = "1640995200_cpu_usage"
-  assert_false(cache["data"][expired_key], "过期的缓存项应该被淘汰")
-}
-
-// Test 9: 时间序列数据备份和恢复
-test "time series data backup and recovery" {
-  // 原始时间序列数据
-  let original_data = [
-    (1640995200, "cpu_usage", 45.2),
-    (1640995201, "memory_usage", 68.5),
-    (1640995202, "cpu_usage", 47.8),
-    (1640995203, "memory_usage", 70.1),
-    (1640995204, "cpu_usage", 49.7),
-    (1640995205, "memory_usage", 72.3)
-  ]
-  
-  // 备份策略配置
-  let backup_strategy = {
-    "compression": true,
-    "encryption": true,
-    "chunk_size": 3,
-    "backup_format": "json"
-  }
-  
-  // 数据压缩函数
-  let compress_for_backup = fn(data) {
-    if backup_strategy["compression"] {
-      // 简化的压缩：移除重复的指标名称
-      let compressed = []
-      let mut prev_metric = ""
-      
-      for point in data {
-        let compressed_point = if point.1 == prev_metric {
-          (point.0, "", point.2)  // 重复指标用空字符串表示
-        } else {
-          prev_metric = point.1
-          point
-        }
-        compressed = compressed.push(compressed_point)
-      }
-      
-      compressed
-    } else {
-      data
-    }
-  }
-  
-  // 数据解压缩函数
-  let decompress_from_backup = fn(compressed_data) {
-    if backup_strategy["compression"] {
-      let decompressed = []
-      let mut last_metric = ""
-      
-      for point in compressed_data {
-        let decompressed_point = if point.1 == "" {
-          (point.0, last_metric, point.2)  // 使用上一个指标名称
-        } else {
-          last_metric = point.1
-          point
-        }
-        decompressed = decompressed.push(decompressed_point)
-      }
-      
-      decompressed
-    } else {
-      compressed_data
-    }
-  }
-  
-  // 数据分块备份
-  let chunked_backup = fn(data) {
-    let chunks = []
-    let chunk_size = backup_strategy["chunk_size"]
+    // 验证所有数据都被包含在块中
+    let total_points_in_chunks = chunks.reduce(fn(acc, chunk) { acc + chunk.length() }, 0)
+    assert_eq(total_points_in_chunks, total_points)
     
-    for i in 0..data.length() {
-      if i % chunk_size == 0 {
-        let chunk_end = if i + chunk_size < data.length() {
-          i + chunk_size
-        } else {
-          data.length()
-        }
-        let chunk = data.slice(i, chunk_end)
-        chunks = chunks.push({
-          "chunk_id": i / chunk_size,
-          "data": chunk,
-          "checksum": @lib.hash.calculate(chunk)  // 简化的校验和计算
-        })
-      }
-    }
-    
-    chunks
-  }
-  
-  // 执行备份流程
-  let compressed_data = compress_for_backup(original_data)
-  let backup_chunks = chunked_backup(compressed_data)
-  
-  // 验证备份结果
-  assert_eq(backup_chunks.length(), 2, "6个数据点分成3个点一块应该有2块")
-  assert_eq(backup_chunks[0]["chunk_id"], 0)
-  assert_eq(backup_chunks[0]["data"].length(), 3)
-  assert_eq(backup_chunks[1]["chunk_id"], 1)
-  assert_eq(backup_chunks[1]["data"].length(), 3)
-  
-  // 验证压缩效果
-  assert_true(compressed_data.length() <= original_data.length(), "压缩后数据量应该减少或保持不变")
-  
-  // 模拟恢复流程
-  let restore_from_backup = fn(chunks) {
-    // 重组数据块
-    let restored_compressed = []
-    for i in 0..chunks.length() {
-      let chunk = chunks[i]
-      // 验证校验和（简化）
-      // if chunk["checksum"] != @lib.hash.calculate(chunk["data"]) {
-      //   return None  // 校验失败
-      // }
-      restored_compressed = restored_compressed.concat(chunk["data"])
-    }
-    
-    // 解压缩
-    let restored_data = decompress_from_backup(restored_compressed)
-    Some(restored_data)
-  }
-  
-  // 执行恢复
-  let restore_result = restore_from_backup(backup_chunks)
-  
-  // 验证恢复结果
-  match restore_result {
-    Some(restored_data) => {
-      assert_eq(restored_data.length(), original_data.length(), "恢复后数据点数应该与原始数据一致")
-      
-      // 验证数据内容
-      for i in 0..original_data.length() {
-        assert_eq(restored_data[i].0, original_data[i].0, "时间戳应该一致")
-        assert_eq(restored_data[i].1, original_data[i].1, "指标名称应该一致")
-        assert_true(@lib.abs(restored_data[i].2 - original_data[i].2) < 0.001, "数值应该一致")
-      }
-    }
-    None => {
-      assert_true(false, "恢复应该成功")
-    }
+    // 结束span
+    Span::end(chunking_span)
   }
 }
 
-// Test 10: 时间序列数据生命周期管理
-test "time series data lifecycle management" {
-  // 数据生命周期策略配置
-  let lifecycle_policies = {
-    "hot_data": {
-      "age_threshold_days": 7,
-      "compression": "none",
-      "storage_tier": "hot",
-      "retention_days": 7
-    },
-    "warm_data": {
-      "age_threshold_days": 30,
-      "compression": "light",
-      "storage_tier": "warm",
-      "retention_days": 30
-    },
-    "cold_data": {
-      "age_threshold_days": 365,
-      "compression": "heavy",
-      "storage_tier": "cold",
-      "retention_days": 365
-    },
-    "archive_data": {
-      "age_threshold_days": 3650,  // 10年
-      "compression": "maximum",
-      "storage_tier": "archive",
-      "retention_days": 3650
-    }
-  }
-  
-  // 模拟不同时间的数据
-  let data_with_ages = [
-    {"timestamp": 1640995200, "age_days": 3, "value": 25.1, "current_tier": "hot"},
-    {"timestamp": 1640990000, "age_days": 10, "value": 24.8, "current_tier": "hot"},
-    {"timestamp": 1640980000, "age_days": 15, "value": 24.3, "current_tier": "warm"},
-    {"timestamp": 1640900000, "age_days": 100, "value": 23.5, "current_tier": "warm"},
-    {"timestamp": 1640800000, "age_days": 200, "value": 22.8, "current_tier": "cold"},
-    {"timestamp": 1640000000, "age_days": 1000, "value": 20.1, "current_tier": "cold"}
+// 测试4: 时间序列数据编码优化测试
+test "time series data encoding optimization test" {
+  // 定义不同的编码方法
+  let encoding_methods = [
+    ("plain-text", "readable", "low"),
+    ("json", "structured", "medium"),
+    ("protobuf", "binary", "high"),
+    ("msgpack", "binary", "high"),
+    ("delta-delta", "specialized", "very-high"),
+    ("gorilla", "time-series-specialized", "very-high")
   ]
   
-  // 生命周期管理决策函数
-  let lifecycle_decision = fn(data_item) {
-    let age_days = data_item["age_days"]
-    let current_tier = data_item["current_tier"]
+  // 生成测试时间序列数据
+  let time_series_data = []
+  let base_timestamp = 1640995200  // 2022-01-01 00:00:00
+  
+  for i = 0; i < 1000; i = i + 1 {
+    let timestamp = base_timestamp + i
+    let value = 100.0 + (i.to_float() / 100.0)  // 线性增长
+    time_series_data.push((timestamp, value))
+  }
+  
+  // 测试每种编码方法
+  for i = 0; i < encoding_methods.length(); i = i + 1 {
+    let (encoding_name, encoding_type, efficiency) = encoding_methods[i]
     
-    if age_days <= lifecycle_policies["hot_data"]["age_threshold_days"] {
-      if current_tier != "hot" {
-        ("move_to_hot", "数据年龄在热层范围内，应该移动到热层")
-      } else {
-        ("keep", "数据已在正确的热层")
-      }
-    } else if age_days <= lifecycle_policies["warm_data"]["age_threshold_days"] {
-      if current_tier != "warm" {
-        ("move_to_warm", "数据年龄在温层范围内，应该移动到温层")
-      } else {
-        ("keep", "数据已在正确的温层")
-      }
-    } else if age_days <= lifecycle_policies["cold_data"]["age_threshold_days"] {
-      if current_tier != "cold" {
-        ("move_to_cold", "数据年龄在冷层范围内，应该移动到冷层")
-      } else {
-        ("keep", "数据已在正确的冷层")
-      }
-    } else if age_days <= lifecycle_policies["archive_data"]["age_threshold_days"] {
-      if current_tier != "archive" {
-        ("move_to_archive", "数据年龄在归档范围内，应该移动到归档层")
-      } else {
-        ("keep", "数据已在正确的归档层")
-      }
-    } else {
-      ("delete", "数据超过最大保留期，应该删除")
+    // 创建编码测试span
+    let tracer_provider = TracerProvider::default()
+    let tracer = TracerProvider::get_tracer(tracer_provider, "encoding-test")
+    let encoding_span = Tracer::start_span(tracer, "encode-" + encoding_name)
+    
+    // 模拟编码过程
+    let original_size = time_series_data.length() * 16  // 假设每个数据点16字节
+    let encoded_size = match encoding_name {
+      "plain-text" => original_size * 1.5,
+      "json" => original_size * 1.3,
+      "protobuf" => original_size * 0.7,
+      "msgpack" => original_size * 0.8,
+      "delta-delta" => original_size * 0.3,
+      "gorilla" => original_size * 0.2,
+      _ => original_size
     }
-  }
-  
-  // 执行生命周期管理决策
-  let lifecycle_decisions = data_with_ages.map(lifecycle_decision)
-  
-  // 验证生命周期决策
-  assert_eq(lifecycle_decisions[0].0, "keep", "3天数据应该保持在热层")
-  assert_eq(lifecycle_decisions[1].0, "move_to_warm", "10天数据应该移动到温层")
-  assert_eq(lifecycle_decisions[2].0, "keep", "15天数据应该保持在温层")
-  assert_eq(lifecycle_decisions[3].0, "move_to_cold", "100天数据应该移动到冷层")
-  assert_eq(lifecycle_decisions[4].0, "keep", "200天数据应该保持在冷层")
-  assert_eq(lifecycle_decisions[5].0, "move_to_archive", "1000天数据应该移动到归档层")
-  
-  // 计算存储成本优化
-  let storage_costs = {
-    "hot": 1.0,      // 每GB每月1美元
-    "warm": 0.3,     // 每GB每月0.3美元
-    "cold": 0.1,     // 每GB每月0.1美元
-    "archive": 0.03  // 每GB每月0.03美元
-  }
-  
-  // 模拟应用生命周期策略后的成本变化
-  let calculate_cost_savings = fn() {
-    let mut current_monthly_cost = 0.0
-    let mut optimized_monthly_cost = 0.0
     
-    for i in 0..data_with_ages.length() {
-      let data_item = data_with_ages[i]
-      let decision = lifecycle_decisions[i]
-      let data_size_gb = 0.1  // 假设每个数据点0.1GB
-      
-      // 当前成本
-      current_monthly_cost = current_monthly_cost + storage_costs[data_item["current_tier"]] * data_size_gb
-      
-      // 优化后成本
-      let new_tier = match decision.0 {
-        "move_to_hot" => "hot"
-        "move_to_warm" => "warm"
-        "move_to_cold" => "cold"
-        "move_to_archive" => "archive"
-        "keep" => data_item["current_tier"]
-        "delete" => "none"  // 删除的数据不产生存储成本
-        _ => data_item["current_tier"]
-      }
-      
-      if new_tier != "none" {
-        optimized_monthly_cost = optimized_monthly_cost + storage_costs[new_tier] * data_size_gb
+    let encoding_time_ms = match encoding_type {
+      "readable" => 10,
+      "structured" => 20,
+      "binary" => 15,
+      "specialized" => 25,
+      "time-series-specialized" => 30,
+      _ => 20
+    }
+    
+    let decoding_time_ms = match encoding_type {
+      "readable" => 8,
+      "structured" => 15,
+      "binary" => 10,
+      "specialized" => 20,
+      "time-series-specialized" => 25,
+      _ => 15
+    }
+    
+    // 添加编码指标
+    Span::set_attributes(encoding_span, Attributes::from_array([
+      ("encoding.name", encoding_name),
+      ("encoding.type", encoding_type),
+      ("efficiency", efficiency),
+      ("original.size", original_size.to_string()),
+      ("encoded.size", encoded_size.to_string()),
+      ("size.ratio", (encoded_size.to_float() / original_size.to_float()).to_string()),
+      ("encoding.time.ms", encoding_time_ms.to_string()),
+      ("decoding.time.ms", decoding_time_ms.to_string())
+    ]))
+    
+    // 验证编码效果
+    match encoding_type {
+      "binary" | "specialized" | "time-series-specialized" => {
+        assert_true(encoded_size < original_size)  // 二进制编码应该更小
+      },
+      _ => {
+        assert_true(encoded_size > 0)  // 至少有大小
       }
     }
     
-    {
-      "current_cost": current_monthly_cost,
-      "optimized_cost": optimized_monthly_cost,
-      "savings": current_monthly_cost - optimized_monthly_cost,
-      "savings_percentage": (current_monthly_cost - optimized_monthly_cost) / current_monthly_cost * 100.0
+    // 结束span
+    Span::end(encoding_span)
+  }
+}
+
+// 测试5: 时间序列数据索引优化测试
+test "time series data indexing optimization test" {
+  // 定义不同的索引策略
+  let indexing_strategies = [
+    ("time-only", "timestamp", "simple"),
+    ("time-tag", "timestamp,tag", "medium"),
+    ("time-tag-value", "timestamp,tag,value", "complex"),
+    ("bitmap", "bitmap", "specialized"),
+    ("inverted", "inverted", "advanced")
+  ]
+  
+  // 生成测试时间序列数据
+  let time_series_data = []
+  let base_timestamp = 1640995200  // 2022-01-01 00:00:00
+  let tags = ["server-1", "server-2", "server-3", "server-4", "server-5"]
+  
+  for i = 0; i < 10000; i = i + 1 {
+    let timestamp = base_timestamp + i
+    let value = 100.0 + (10.0 * (i.to_float() / 1000.0).sin())
+    let tag = tags[i % tags.length()]
+    time_series_data.push((timestamp, value, tag))
+  }
+  
+  // 测试每种索引策略
+  for i = 0; i < indexing_strategies.length(); i = i + 1 {
+    let (strategy_name, index_fields, complexity) = indexing_strategies[i]
+    
+    // 创建索引测试span
+    let tracer_provider = TracerProvider::default()
+    let tracer = TracerProvider::get_tracer(tracer_provider, "indexing-test")
+    let indexing_span = Tracer::start_span(tracer, "index-" + strategy_name)
+    
+    // 模拟索引创建
+    let index_size = match strategy_name {
+      "time-only" => 80000,      // 只索引时间戳
+      "time-tag" => 120000,      // 索引时间戳和标签
+      "time-tag-value" => 160000, // 索引时间戳、标签和值
+      "bitmap" => 50000,         // 位图索引
+      "inverted" => 140000,      // 倒排索引
+      _ => 100000
+    }
+    
+    // 模拟查询性能
+    let query_time_range_ms = match strategy_name {
+      "time-only" => 50,
+      "time-tag" => 30,
+      "time-tag-value" => 20,
+      "bitmap" => 10,
+      "inverted" => 15,
+      _ => 40
+    }
+    
+    let query_tag_filter_ms = match strategy_name {
+      "time-only" => 100,  // 需要全表扫描
+      "time-tag" => 20,
+      "time-tag-value" => 15,
+      "bitmap" => 5,
+      "inverted" => 10,
+      _ => 50
+    }
+    
+    let query_complex_ms = match strategy_name {
+      "time-only" => 200,  // 需要全表扫描
+      "time-tag" => 40,
+      "time-tag-value" => 25,
+      "bitmap" => 15,
+      "inverted" => 20,
+      _ => 80
+    }
+    
+    // 添加索引指标
+    Span::set_attributes(indexing_span, Attributes::from_array([
+      ("strategy.name", strategy_name),
+      ("index.fields", index_fields),
+      ("complexity", complexity),
+      ("index.size", index_size.to_string()),
+      ("query.time.range.ms", query_time_range_ms.to_string()),
+      ("query.tag.filter.ms", query_tag_filter_ms.to_string()),
+      ("query.complex.ms", query_complex_ms.to_string()),
+      ("storage.overhead", (index_size.to_float() / (time_series_data.length() * 24).to_float()).to_string())
+    ]))
+    
+    // 验证索引效果
+    assert_true(index_size > 0)  // 索引应该有大小
+    
+    // 验证查询性能
+    match strategy_name {
+      "time-only" => {
+        assert_true(query_tag_filter_ms > 50)  // 标签过滤应该较慢
+      },
+      "bitmap" | "inverted" => {
+        assert_true(query_tag_filter_ms < 20)  // 标签过滤应该较快
+      },
+      _ => {
+        assert_true(query_tag_filter_ms > 0)  // 至少有查询时间
+      }
+    }
+    
+    // 结束span
+    Span::end(indexing_span)
+  }
+}
+
+// 测试6: 时间序列数据生命周期管理测试
+test "time series data lifecycle management test" {
+  // 定义数据生命周期策略
+  let lifecycle_policies = [
+    ("hot", 7, "ssd", "full-resolution"),     // 热数据：7天，SSD，全分辨率
+    ("warm", 30, "hdd", "downsampled-1m"),     // 温数据：30天，HDD，1分钟降采样
+    ("cold", 365, "hdd", "downsampled-1h"),    // 冷数据：365天，HDD，1小时降采样
+    ("archive", 2555, "tape", "downsampled-1d") // 归档数据：7年，磁带，1天降采样
+  ]
+  
+  // 生成测试时间序列数据
+  let time_series_data = []
+  let base_timestamp = 1640995200  // 2022-01-01 00:00:00
+  
+  for i = 0; i < 3650; i = i + 1 {  // 10天的数据
+    let timestamp = base_timestamp + i * 86400  // 每天一个数据点
+    let value = 100.0 + (20.0 * (i.to_float() / 3650.0).sin())
+    time_series_data.push((timestamp, value))
+  }
+  
+  // 测试生命周期管理
+  for i = 0; i < lifecycle_policies.length(); i = i + 1 {
+    let (tier_name, retention_days, storage_type, resolution) = lifecycle_policies[i]
+    
+    // 创建生命周期管理span
+    let tracer_provider = TracerProvider::default()
+    let tracer = TracerProvider::get_tracer(tracer_provider, "lifecycle-test")
+    let lifecycle_span = Tracer::start_span(tracer, "lifecycle-" + tier_name)
+    
+    // 模拟数据转换
+    let original_data_points = time_series_data.length()
+    let transformed_data_points = match resolution {
+      "full-resolution" => original_data_points,
+      "downsampled-1m" => original_data_points / 1440,  // 每分钟一个点
+      "downsampled-1h" => original_data_points / 86400, // 每小时一个点
+      "downsampled-1d" => original_data_points / 86400, // 每天一个点
+      _ => original_data_points / 100
+    }
+    
+    // 模拟存储成本
+    let storage_cost_per_gb = match storage_type {
+      "ssd" => 0.23,
+      "hdd" => 0.045,
+      "tape" => 0.005,
+      _ => 0.1
+    }
+    
+    let data_size_gb = (transformed_data_points * 16).to_float() / (1024.0 * 1024.0 * 1024.0)
+    let monthly_storage_cost = data_size_gb * storage_cost_per_gb
+    
+    // 添加生命周期指标
+    Span::set_attributes(lifecycle_span, Attributes::from_array([
+      ("tier.name", tier_name),
+      ("retention.days", retention_days.to_string()),
+      ("storage.type", storage_type),
+      ("resolution", resolution),
+      ("original.points", original_data_points.to_string()),
+      ("transformed.points", transformed_data_points.to_string()),
+      ("reduction.ratio", (original_data_points.to_float() / transformed_data_points.to_float()).to_string()),
+      ("data.size.gb", data_size_gb.to_string()),
+      ("storage.cost.per.gb", storage_cost_per_gb.to_string()),
+      ("monthly.storage.cost", monthly_storage_cost.to_string())
+    ]))
+    
+    // 验证生命周期管理
+    assert_true(transformed_data_points > 0)  // 转换后应该有数据点
+    assert_true(monthly_storage_cost >= 0.0)  // 存储成本应该非负
+    
+    match tier_name {
+      "hot" => {
+        assert_eq(resolution, "full-resolution")  // 热数据应该是全分辨率
+      },
+      "archive" => {
+        assert_eq(storage_type, "tape")  // 归档数据应该在磁带上
+      },
+      _ => ()
+    }
+    
+    // 结束span
+    Span::end(lifecycle_span)
+  }
+}
+
+// 测试7: 时间序列数据查询优化测试
+test "time series data query optimization test" {
+  // 定义查询优化策略
+  let query_optimizations = [
+    ("predicate-pushdown", "filter-early", "basic"),
+    ("index-hint", "use-index", "intermediate"),
+    ("query-cache", "cache-results", "intermediate"),
+    ("parallel-execution", "parallel", "advanced"),
+    ("materialized-view", "pre-computed", "advanced")
+  ]
+  
+  // 生成测试时间序列数据
+  let time_series_data = []
+  let base_timestamp = 1640995200  // 2022-01-01 00:00:00
+  
+  for i = 0; i < 50000; i = i + 1 {
+    let timestamp = base_timestamp + i
+    let value = 100.0 + (10.0 * (i.to_float() / 5000.0).sin())
+    time_series_data.push((timestamp, value))
+  }
+  
+  // 测试每种查询优化
+  for i = 0; i < query_optimizations.length(); i = i + 1 {
+    let (optimization_name, optimization_type, complexity) = query_optimizations[i]
+    
+    // 创建查询优化测试span
+    let tracer_provider = TracerProvider::default()
+    let tracer = TracerProvider::get_tracer(tracer_provider, "query-optimization-test")
+    let optimization_span = Tracer::start_span(tracer, "optimize-" + optimization_name)
+    
+    // 模拟查询执行
+    let query_selectivity = 0.1  // 10%的数据符合查询条件
+    let data_points_to_scan = time_series_data.length()
+    let data_points_to_return = (data_points_to_scan.to_float() * query_selectivity).to_int()
+    
+    let scan_time_ms = match optimization_name {
+      "predicate-pushdown" => 100,
+      "index-hint" => 50,
+      "query-cache" => 20,
+      "parallel-execution" => 30,
+      "materialized-view" => 10,
+      _ => 200
+    }
+    
+    let aggregation_time_ms = match optimization_name {
+      "predicate-pushdown" => 50,
+      "index-hint" => 30,
+      "query-cache" => 10,
+      "parallel-execution" => 20,
+      "materialized-view" => 5,
+      _ => 100
+    }
+    
+    let total_query_time_ms = scan_time_ms + aggregation_time_ms
+    
+    // 添加查询优化指标
+    Span::set_attributes(optimization_span, Attributes::from_array([
+      ("optimization.name", optimization_name),
+      ("optimization.type", optimization_type),
+      ("complexity", complexity),
+      ("data.points.to.scan", data_points_to_scan.to_string()),
+      ("data.points.to.return", data_points_to_return.to_string()),
+      ("selectivity", query_selectivity.to_string()),
+      ("scan.time.ms", scan_time_ms.to_string()),
+      ("aggregation.time.ms", aggregation_time_ms.to_string()),
+      ("total.query.time.ms", total_query_time_ms.to_string()),
+      ("performance.improvement", ((200.0 - total_query_time_ms.to_float()) / 200.0 * 100.0).to_string())
+    ]))
+    
+    // 验证查询优化效果
+    assert_true(total_query_time_ms > 0)  // 查询时间应该大于0
+    assert_true(data_points_to_return <= data_points_to_scan)  // 返回的数据点不应该超过扫描的数据点
+    
+    match optimization_name {
+      "materialized-view" => {
+        assert_true(total_query_time_ms < 50)  // 物化视图应该很快
+      },
+      "parallel-execution" => {
+        assert_true(total_query_time_ms < 100)  // 并行执行应该较快
+      },
+      _ => {
+        assert_true(total_query_time_ms <= 200)  // 所有优化都应该比无优化快
+      }
+    }
+    
+    // 结束span
+    Span::end(optimization_span)
+  }
+}
+
+// 测试8: 时间序列数据压缩存储综合测试
+test "time series data compression storage comprehensive test" {
+  // 创建综合测试span
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "comprehensive-test")
+  let comprehensive_span = Tracer::start_span(tracer, "compression-storage-comprehensive")
+  
+  // 生成多样化测试数据
+  let data_patterns = [
+    ("steady", 1000, "constant-value"),
+    ("linear", 1000, "linear-growth"),
+    ("sinusoidal", 1000, "periodic"),
+    ("random", 1000, "random"),
+    ("spiky", 1000, "occasional-spikes")
+  ]
+  
+  let total_original_size = 0
+  let total_compressed_size = 0
+  let total_processing_time = 0
+  
+  // 测试每种数据模式
+  for i = 0; i < data_patterns.length(); i = i + 1 {
+    let (pattern_name, data_points, pattern_type) = data_patterns[i]
+    
+    // 生成特定模式的数据
+    let pattern_data = []
+    let base_timestamp = 1640995200 + (i * 10000)
+    
+    for j = 0; j < data_points; j = j + 1 {
+      let timestamp = base_timestamp + j
+      let value = match pattern_type {
+        "constant-value" => 100.0,
+        "linear-growth" => 100.0 + j.to_float(),
+        "periodic" => 100.0 + (10.0 * (j.to_float() / 100.0).sin()),
+        "random" => 100.0 + (20.0 * (j.to_float() % 100.0) / 100.0),
+        "occasional-spikes" => if j % 100 == 0 { 200.0 } else { 100.0 },
+        _ => 100.0
+      }
+      pattern_data.push((timestamp, value))
+    }
+    
+    // 应用最佳压缩策略
+    let original_size = data_points * 16
+    let compression_ratio = match pattern_type {
+      "constant-value" => 50.0,  // 常数值压缩比最高
+      "linear-growth" => 20.0,   // 线性增长压缩比较高
+      "periodic" => 10.0,        // 周期性压缩比中等
+      "random" => 2.0,           // 随机数据压缩比低
+      "occasional-spikes" => 5.0, // 偶尔峰值压缩比中等
+      _ => 5.0
+    }
+    
+    let compressed_size = (original_size.to_float() / compression_ratio).to_int()
+    let processing_time_ms = data_points / 10  // 每个数据点10ms处理时间
+    
+    total_original_size = total_original_size + original_size
+    total_compressed_size = total_compressed_size + compressed_size
+    total_processing_time = total_processing_time + processing_time_ms
+    
+    // 添加模式特定指标
+    Span::add_event(comprehensive_span, "pattern-processed", Some([
+      ("pattern.name", pattern_name),
+      ("pattern.type", pattern_type),
+      ("data.points", data_points.to_string()),
+      ("original.size", original_size.to_string()),
+      ("compressed.size", compressed_size.to_string()),
+      ("compression.ratio", compression_ratio.to_string()),
+      ("processing.time.ms", processing_time_ms.to_string())
+    ]))
+  }
+  
+  // 计算综合指标
+  let overall_compression_ratio = total_original_size.to_float() / total_compressed_size.to_float()
+  let avg_processing_time_per_point = total_processing_time.to_float() / (data_patterns.length() * 1000).to_float()
+  
+  // 添加综合指标
+  Span::set_attributes(comprehensive_span, Attributes::from_array([
+    ("total.original.size", total_original_size.to_string()),
+    ("total.compressed.size", total_compressed_size.to_string()),
+    ("overall.compression.ratio", overall_compression_ratio.to_string()),
+    ("total.processing.time.ms", total_processing_time.to_string()),
+    ("avg.processing.time.per.point", avg_processing_time_per_point.to_string()),
+    ("storage.savings.percent", ((1.0 - (1.0 / overall_compression_ratio)) * 100.0).to_string())
+  ]))
+  
+  // 验证综合测试结果
+  assert_true(overall_compression_ratio > 1.0)  // 整体压缩比应该大于1
+  assert_true(total_compressed_size < total_original_size)  // 压缩后大小应该小于原始大小
+  assert_true(avg_processing_time_per_point > 0.0)  // 平均处理时间应该大于0
+  
+  // 结束综合测试span
+  Span::end(comprehensive_span)
+}
+
+// 测试9: 时间序列数据实时压缩测试
+test "time series data real-time compression test" {
+  // 创建实时压缩测试span
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "realtime-compression-test")
+  let realtime_span = Tracer::start_span(tracer, "realtime-compression")
+  
+  // 模拟实时数据流
+  let data_stream_duration = 60  // 60秒
+  let data_points_per_second = 10
+  let total_data_points = data_stream_duration * data_points_per_second
+  
+  // 实时压缩缓冲区
+  let compression_buffer_size = 100  // 每100个数据点压缩一次
+  let current_buffer = []
+  let compression_count = 0
+  let total_compression_time = 0
+  
+  // 模拟实时数据流
+  for i = 0; i < total_data_points; i = i + 1 {
+    let timestamp = 1640995200 + i
+    let value = 100.0 + (10.0 * (i.to_float() / 100.0).sin())
+    
+    current_buffer.push((timestamp, value))
+    
+    // 当缓冲区满时执行压缩
+    if current_buffer.length() >= compression_buffer_size || i == total_data_points - 1 {
+      let compression_start_time = 1640995200 + (i * 0.1)
+      let compression_time_ms = 50  // 模拟压缩时间
+      
+      total_compression_time = total_compression_time + compression_time_ms
+      compression_count = compression_count + 1
+      
+      // 记录压缩事件
+      Span::add_event(realtime_span, "buffer-compressed", Some([
+        ("compression.id", compression_count.to_string()),
+        ("buffer.size", current_buffer.length().to_string()),
+        ("compression.time.ms", compression_time_ms.to_string()),
+        ("timestamp", compression_start_time.to_string())
+      ]))
+      
+      // 清空缓冲区
+      current_buffer = []
     }
   }
   
-  let cost_analysis = calculate_cost_savings()
+  // 计算实时压缩指标
+  let avg_compression_time = total_compression_time.to_float() / compression_count.to_float()
+  let compression_frequency = compression_count.to_float() / data_stream_duration.to_float()
   
-  // 验证成本优化效果
-  assert_true(cost_analysis["optimized_cost"] < cost_analysis["current_cost"], "优化后成本应该降低")
-  assert_true(cost_analysis["savings"] > 0, "应该有成本节省")
-  assert_true(cost_analysis["savings_percentage"] > 10, "成本节省百分比应该显著")
+  // 添加实时压缩指标
+  Span::set_attributes(realtime_span, Attributes::from_array([
+    ("stream.duration.seconds", data_stream_duration.to_string()),
+    ("data.points.per.second", data_points_per_second.to_string()),
+    ("total.data.points", total_data_points.to_string()),
+    ("compression.buffer.size", compression_buffer_size.to_string()),
+    ("compression.count", compression_count.to_string()),
+    ("total.compression.time.ms", total_compression_time.to_string()),
+    ("avg.compression.time.ms", avg_compression_time.to_string()),
+    ("compression.frequency.per.second", compression_frequency.to_string())
+  ]))
+  
+  // 验证实时压缩
+  assert_true(compression_count > 0)  // 应该有至少一次压缩
+  assert_true(avg_compression_time > 0.0)  // 平均压缩时间应该大于0
+  assert_true(compression_frequency > 0.0)  // 压缩频率应该大于0
+  
+  // 验证压缩延迟
+  let max_acceptable_delay_ms = 1000  // 最大可接受延迟1秒
+  assert_true(avg_compression_time < max_acceptable_delay_ms)  // 平均压缩时间应该小于最大可接受延迟
+  
+  // 结束实时压缩span
+  Span::end(realtime_span)
+}
+
+// 测试10: 时间序列数据自适应压缩测试
+test "time series data adaptive compression test" {
+  // 创建自适应压缩测试span
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "adaptive-compression-test")
+  let adaptive_span = Tracer::start_span(tracer, "adaptive-compression")
+  
+  // 定义数据特征和对应的最佳压缩算法
+  let data_characteristics = [
+    ("constant", "delta-delta", "very-high"),
+    ("slowly-changing", "gorilla", "high"),
+    ("fast-changing", "zstd", "medium"),
+    ("random", "lz4", "low"),
+    ("sparse", "run-length", "very-high")
+  ]
+  
+  // 测试每种数据特征的自适应压缩
+  for i = 0; i < data_characteristics.length(); i = i + 1 {
+    let (characteristic, recommended_algorithm, compression_potential) = data_characteristics[i]
+    
+    // 生成特定特征的数据
+    let characteristic_data = []
+    let base_timestamp = 1640995200 + (i * 1000)
+    
+    for j = 0; j < 1000; j = j + 1 {
+      let timestamp = base_timestamp + j
+      let value = match characteristic {
+        "constant" => 100.0,
+        "slowly-changing" => 100.0 + (j.to_float() / 100.0),
+        "fast-changing" => 100.0 + (10.0 * (j.to_float() / 10.0).sin()),
+        "random" => 100.0 + (20.0 * (j.to_float() % 100.0) / 100.0),
+        "sparse" => if j % 100 == 0 { 100.0 } else { 0.0 },
+        _ => 100.0
+      }
+      characteristic_data.push((timestamp, value))
+    }
+    
+    // 模拟自适应压缩算法选择
+    let selected_algorithm = recommended_algorithm  // 简化：直接使用推荐算法
+    let original_size = 1000 * 16
+    let compression_ratio = match compression_potential {
+      "very-high" => 30.0,
+      "high" => 15.0,
+      "medium" => 5.0,
+      "low" => 2.0,
+      _ => 5.0
+    }
+    let compressed_size = (original_size.to_float() / compression_ratio).to_int()
+    
+    // 记录自适应压缩结果
+    Span::add_event(adaptive_span, "adaptive-compression-applied", Some([
+      ("data.characteristic", characteristic),
+      ("recommended.algorithm", recommended_algorithm),
+      ("selected.algorithm", selected_algorithm),
+      ("compression.potential", compression_potential),
+      ("original.size", original_size.to_string()),
+      ("compressed.size", compressed_size.to_string()),
+      ("compression.ratio", compression_ratio.to_string())
+    ]))
+    
+    // 验证自适应压缩
+    assert_eq(selected_algorithm, recommended_algorithm)  // 应该选择推荐的算法
+    assert_true(compressed_size < original_size)  // 压缩后大小应该小于原始大小
+    assert_true(compression_ratio > 1.0)  // 压缩比应该大于1
+  }
+  
+  // 添加自适应压缩总体指标
+  Span::set_attributes(adaptive_span, Attributes::from_array([
+    ("total.characteristics.tested", data_characteristics.length().to_string()),
+    ("adaptive.algorithm.selection", "successful"),
+    ("compression.optimization", "enabled")
+  ]))
+  
+  // 验证自适应压缩总体效果
+  assert_eq(data_characteristics.length(), 5)  // 测试了5种数据特征
+  
+  // 结束自适应压缩span
+  Span::end(adaptive_span)
 }

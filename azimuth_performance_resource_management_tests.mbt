@@ -1,588 +1,294 @@
-// Azimuth Performance and Resource Management Tests
-// This file contains test cases for performance optimization and resource management
+// Azimuth 性能和资源管理测试
+// 专注于测试系统的性能表现和资源管理能力
 
-// Test 1: Metrics Collection Performance
-test "metrics collection performance optimization" {
-  // Test bulk metrics creation
-  let create_metrics = fn(count) {
-    let mut metrics = []
-    for i in 0..<count {
-      let metric = Counter({
-        name: "metric." + i.to_string(),
-        description: Some("Metric number " + i.to_string()),
-        unit: Some("count")
-      })
-      metrics = metrics.push(metric)
-    }
-    metrics
-  }
+// 测试1: 内存使用优化测试
+test "内存使用优化测试" {
+  // 创建大型数据集
+  let large_dataset = Array::range(0, 10000)
+  assert_eq(large_dataset.length(), 10000)
   
-  // Test with small batch
-  let small_batch = create_metrics(10)
-  assert_eq(small_batch.length(), 10)
+  // 测试内存效率的映射操作
+  let mapped_data = large_dataset.map(fn(x) { x * 2 })
+  assert_eq(mapped_data.length(), 10000)
+  assert_eq(mapped_data[0], 0)
+  assert_eq(mapped_data[9999], 19998)
   
-  // Test with medium batch
-  let medium_batch = create_metrics(100)
-  assert_eq(medium_batch.length(), 100)
+  // 测试内存效率的过滤操作
+  let filtered_data = large_dataset.filter(fn(x) { x % 2 == 0 })
+  assert_eq(filtered_data.length(), 5000)
   
-  // Test with large batch
-  let large_batch = create_metrics(1000)
-  assert_eq(large_batch.length(), 1000)
+  // 测试内存效率的归约操作
+  let sum_result = large_dataset.reduce(fn(acc, x) { acc + x }, 0)
+  assert_eq(sum_result, 49995000)
   
-  // Verify first and last metrics in large batch
-  match large_batch[0] {
-    Counter(name, _, _) => assert_eq(name, "metric.0")
-    _ => assert_true(false)
-  }
-  
-  match large_batch[999] {
-    Counter(name, _, _) => assert_eq(name, "metric.999")
-    _ => assert_true(false)
-  }
+  // 验证资源清理
+  let cleared_dataset = [] : Array<Int>
+  assert_eq(cleared_dataset.length(), 0)
 }
 
-// Test 2: Memory Usage Optimization
-test "memory usage optimization patterns" {
-  // Test with efficient data structures
-  let create_efficient_attributes = fn(count) {
-    let mut attributes = []
-    for i in 0..<count {
-      attributes = attributes.push(("attr." + i.to_string(), IntValue(i)))
-    }
-    Attributes({ values = attributes })
-  }
+// 测试2: 算法性能基准测试
+test "算法性能基准测试" {
+  // 创建测试数据
+  let test_data = [5, 2, 8, 1, 9, 3, 7, 4, 6, 0]
   
-  // Test with different sizes
-  let small_attrs = create_efficient_attributes(10)
-  let medium_attrs = create_efficient_attributes(100)
-  let large_attrs = create_efficient_attributes(1000)
+  // 测试排序性能
+  let sorted_data = test_data.sort_by(fn(a, b) { a - b })
+  assert_eq(sorted_data, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
   
-  assert_eq(small_attrs.values.length(), 10)
-  assert_eq(medium_attrs.values.length(), 100)
-  assert_eq(large_attrs.values.length(), 1000)
+  // 测试查找性能
+  let contains_five = sorted_data.contains(5)
+  assert_true(contains_five)
   
-  // Test memory reuse patterns
-  let reuse_buffer = fn(data, operation) {
-    // Simulate buffer reuse
-    let result = operation(data)
-    result
-  }
+  let contains_eleven = sorted_data.contains(11)
+  assert_false(contains_eleven)
   
-  let test_data = [1, 2, 3, 4, 5]
-  let sum_result = reuse_buffer(test_data, fn(arr) {
-    arr.reduce(fn(acc, x) { acc + x }, 0)
-  })
-  assert_eq(sum_result, 15)
-  
-  let product_result = reuse_buffer(test_data, fn(arr) {
-    arr.reduce(fn(acc, x) { acc * x }, 1)
-  })
-  assert_eq(product_result, 120)
-}
-
-// Test 3: Resource Pool Management
-test "resource pool management" {
-  // Simulate resource pool
-  let create_resource_pool = fn(size) {
-    let mut resources = []
-    for i in 0..<size {
-      resources = resources.push("resource_" + i.to_string())
-    }
-    { resources = resources, available = size }
-  }
-  
-  let pool = create_resource_pool(10)
-  assert_eq(pool.resources.length(), 10)
-  assert_eq(pool.available, 10)
-  
-  // Simulate resource acquisition
-  let acquire_resource = fn(pool) {
-    if pool.available > 0 {
-      let resource = pool.resources[pool.resources.length() - pool.available]
-      { pool = { resources = pool.resources, available = pool.available - 1 }, resource = Some(resource) }
-    } else {
-      { pool = pool, resource = None }
-    }
-  }
-  
-  // Acquire resources
-  let result1 = acquire_resource(pool)
-  match result1.resource {
-    None => assert_true(false)
-    Some(res) => assert_eq(res, "resource_0")
-  }
-  assert_eq(result1.pool.available, 9)
-  
-  let result2 = acquire_resource(result1.pool)
-  match result2.resource {
-    None => assert_true(false)
-    Some(res) => assert_eq(res, "resource_1")
-  }
-  assert_eq(result2.pool.available, 8)
-  
-  // Simulate resource release
-  let release_resource = fn(pool, resource) {
-    { pool = { resources = pool.resources, available = pool.available + 1 }, released = true }
-  }
-  
-  let release_result = release_resource(result2.pool, "resource_0")
-  assert_true(release_result.released)
-  assert_eq(release_result.pool.available, 9)
-}
-
-// Test 4: Lazy Loading and Caching
-test "lazy loading and caching patterns" {
-  // Simulate expensive computation
-  let expensive_computation = fn(input) {
-    input * input * input  // Cube operation
-  }
-  
-  // Simulate cache
-  let cache = {}
-  
-  // Simulate cached computation
-  let cached_computation = fn(input, cache) {
-    let key = input.to_string()
-    // In real implementation, check cache first
-    let result = expensive_computation(input)
-    // Store in cache
-    result
-  }
-  
-  // Test caching behavior
-  let result1 = cached_computation(5, cache)
-  assert_eq(result1, 125)  // 5^3
-  
-  let result2 = cached_computation(5, cache)
-  assert_eq(result2, 125)  // Should be cached
-  
-  let result3 = cached_computation(10, cache)
-  assert_eq(result3, 1000)  // 10^3
-  
-  // Test lazy loading
-  let lazy_value = fn(computation) {
-    // In real implementation, defer computation until needed
-    computation()
-  }
-  
-  let lazy_result = lazy_value(fn() { 42 * 2 })
-  assert_eq(lazy_result, 84)
-}
-
-// Test 5: Batch Processing Optimization
-test "batch processing optimization" {
-  // Test batch processing of telemetry data
-  let process_batch = fn(batch_size, data) {
-    let mut results = []
-    let mut i = 0
-    while i < data.length() {
-      let batch_end = if i + batch_size < data.length() { i + batch_size } else { data.length() }
-      let batch = data.substring(i, batch_end)
-      results = results.push(batch)
-      i = i + batch_size
-    }
-    results
-  }
-  
-  let test_data = "abcdefghijklmnopqrstuvwxyz"
-  
-  // Test with different batch sizes
-  let batch_5 = process_batch(5, test_data)
-  assert_eq(batch_5.length(), 6)  // 26/5 = 5.2, so 6 batches
-  assert_eq(batch_5[0], "abcde")
-  assert_eq(batch_5[5], "z")
-  
-  let batch_10 = process_batch(10, test_data)
-  assert_eq(batch_10.length(), 3)  // 26/10 = 2.6, so 3 batches
-  assert_eq(batch_10[0], "abcdefghij")
-  assert_eq(batch_10[2], "z")
-  
-  // Test batch processing of metrics
-  let process_metrics_batch = fn(metrics) {
-    let mut processed = 0
-    for metric in metrics {
-      match metric {
-        Counter(name, _, _) => {
-          // Simulate processing
-          processed = processed + 1
-        }
-        _ => processed = processed + 1
+  // 测试二分查找性能
+  let binary_search = fn(arr : Array[Int>, target : Int) -> Bool {
+    let rec search = fn(low : Int, high : Int) -> Bool {
+      if low > high { false }
+      else {
+        let mid = (low + high) / 2
+        let mid_val = arr[mid]
+        
+        if mid_val == target { true }
+        else if mid_val < target { search(mid + 1, high) }
+        else { search(low, mid - 1) }
       }
     }
-    processed
+    search(0, arr.length() - 1)
   }
   
-  let test_metrics = []
-  for i in 0..<100 {
-    let metric = Counter({
-      name: "batch.metric." + i.to_string(),
-      description: None,
-      unit: None
-    })
-    test_metrics = test_metrics.push(metric)
-  }
-  
-  let processed_count = process_metrics_batch(test_metrics)
-  assert_eq(processed_count, 100)
+  assert_true(binary_search(sorted_data, 5))
+  assert_false(binary_search(sorted_data, 11))
 }
 
-// Test 6: Garbage Collection Optimization
-test "garbage collection optimization patterns" {
-  // Test object reuse patterns
-  let create_reusable_builder = fn() {
-    { buffer = [], capacity = 0 }
+// 测试3: 资源池管理测试
+test "资源池管理测试" {
+  // 定义资源池类型
+  type ResourcePool {
+    resources : Array<String>
+    max_size : Int
+    current_size : Int
   }
   
-  let reset_builder = fn(builder) {
-    { buffer = [], capacity = builder.capacity }
+  // 创建资源池
+  let create_pool = fn(max_size : Int) -> ResourcePool {
+    { resources: [], max_size: max_size, current_size: 0 }
   }
   
-  let add_to_builder = fn(builder, item) {
-    { buffer = builder.buffer.push(item), capacity = builder.capacity + 1 }
-  }
-  
-  // Test builder reuse
-  let builder1 = create_reusable_builder()
-  let builder1_with_data = add_to_builder(add_to_builder(add_to_builder(builder1, "a"), "b"), "c")
-  assert_eq(builder1_with_data.buffer.length(), 3)
-  
-  let builder1_reset = reset_builder(builder1_with_data)
-  assert_eq(builder1_reset.buffer.length(), 0)
-  assert_eq(builder1_reset.capacity, 3)
-  
-  // Test with minimal object creation
-  let process_with_minimal_allocation = fn(data) {
-    // Process data without creating new objects
-    let mut sum = 0
-    let mut i = 0
-    while i < data.length() {
-      sum = sum + data[i]
-      i = i + 1
-    }
-    sum
-  }
-  
-  let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-  let sum_result = process_with_minimal_allocation(numbers)
-  assert_eq(sum_result, 55)
-  
-  // Test with string interning simulation
-  let intern_string = fn(strings, value) {
-    // Simulate string interning
-    if strings.contains(value) {
-      value
+  // 获取资源
+  let acquire_resource = fn(pool : ResourcePool, resource_id : String) -> ResourcePool {
+    if pool.current_size < pool.max_size {
+      {
+        resources: pool.resources.push(resource_id),
+        max_size: pool.max_size,
+        current_size: pool.current_size + 1
+      }
     } else {
-      value  // In real implementation, return existing reference
+      pool  // 池已满，无法获取更多资源
     }
   }
   
-  let string_pool = []
-  let interned1 = intern_string(string_pool, "common_string")
-  let interned2 = intern_string(string_pool.push("common_string"), "common_string")
-  assert_eq(interned1, "common_string")
-  assert_eq(interned2, "common_string")
+  // 释放资源
+  let release_resource = fn(pool : ResourcePool, resource_id : String) -> ResourcePool {
+    let updated_resources = pool.resources.filter(fn(id) { id != resource_id })
+    {
+      resources: updated_resources,
+      max_size: pool.max_size,
+      current_size: pool.current_size - 1
+    }
+  }
+  
+  // 测试资源池操作
+  let initial_pool = create_pool(5)
+  assert_eq(initial_pool.current_size, 0)
+  
+  let pool1 = acquire_resource(initial_pool, "resource1")
+  assert_eq(pool1.current_size, 1)
+  
+  let pool2 = acquire_resource(pool1, "resource2")
+  assert_eq(pool2.current_size, 2)
+  
+  let pool3 = release_resource(pool2, "resource1")
+  assert_eq(pool3.current_size, 1)
+  assert_false(pool3.resources.contains("resource1"))
+  assert_true(pool3.resources.contains("resource2"))
 }
 
-// Test 7: CPU Performance Optimization
-test "cpu performance optimization" {
-  // Test efficient algorithms
-  let efficient_search = fn(sorted_array, target) {
-    // Simulate binary search
-    let mut left = 0
-    let mut right = sorted_array.length() - 1
+// 测试4: 缓存性能测试
+test "缓存性能测试" {
+  // 定义简单缓存类型
+  type Cache {
+    data : Map<String, Int>
+    max_size : Int
+    access_order : Array[String>
+  }
+  
+  // 创建缓存
+  let create_cache = fn(max_size : Int) -> Cache {
+    { data: {}, max_size: max_size, access_order: [] }
+  }
+  
+  // 缓存获取
+  let cache_get = fn(cache : Cache, key : String) -> (Option<Int>, Cache) {
+    match cache.data.get(key) {
+      Some(value) => {
+        // 更新访问顺序
+        let new_order = cache.access_order.filter(fn(k) { k != key }).push(key)
+        (Some(value), { data: cache.data, max_size: cache.max_size, access_order: new_order })
+      }
+      None => (None, cache)
+    }
+  }
+  
+  // 缓存设置
+  let cache_set = fn(cache : Cache, key : String, value : Int) -> Cache {
+    let new_data = cache.data.insert(key, value)
     
-    while left <= right {
-      let mid = (left + right) / 2
-      if sorted_array[mid] == target {
-        return true
-      } else if sorted_array[mid] < target {
-        left = mid + 1
-      } else {
-        right = mid - 1
-      }
-    }
-    false
-  }
-  
-  let sorted_data = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25]
-  
-  assert_true(efficient_search(sorted_data, 7))
-  assert_true(efficient_search(sorted_data, 1))
-  assert_true(efficient_search(sorted_data, 25))
-  assert_false(efficient_search(sorted_data, 8))
-  assert_false(efficient_search(sorted_data, 0))
-  assert_false(efficient_search(sorted_data, 26))
-  
-  // Test vectorized operations simulation
-  let vectorized_map = fn(data, operation) {
-    // Simulate SIMD/vectorized operations
-    let mut result = []
-    for item in data {
-      result = result.push(operation(item))
-    }
-    result
-  }
-  
-  let test_data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-  let squared = vectorized_map(test_data, fn(x) { x * x })
-  assert_eq(squared, [1, 4, 9, 16, 25, 36, 49, 64, 81, 100])
-  
-  let doubled = vectorized_map(test_data, fn(x) { x * 2 })
-  assert_eq(doubled, [2, 4, 6, 8, 10, 12, 14, 16, 18, 20])
-  
-  // Test memoization
-  let memoize = fn(fn_to_memoize) {
-    let cache = {}
-    fn(input) {
-      let key = input.to_string()
-      // In real implementation, check cache first
-      fn_to_memoize(input)
-    }
-  }
-  
-  let expensive_fib = fn(n) {
-    if n <= 1 { n } else { 
-      // Simulate expensive computation
-      let fib = fn(n) {
-        if n <= 1 { n } else { fib(n - 1) + fib(n - 2) }
-      }
-      fib(n)
-    }
-  }
-  
-  let memoized_fib = memoize(expensive_fib)
-  assert_eq(memoized_fib(5), 5)
-  assert_eq(memoized_fib(10), 55)
-}
-
-// Test 8: I/O Performance Optimization
-test "io performance optimization" {
-  // Test buffer management
-  let create_buffer = fn(size) {
-    let mut buffer = []
-    for i in 0..<size {
-      buffer = buffer.push(0)
-    }
-    { data = buffer, position = 0, capacity = size }
-  }
-  
-  let write_to_buffer = fn(buffer, data) {
-    if buffer.position + data.length() <= buffer.capacity {
-      let mut new_data = buffer.data
-      for i in 0..<data.length() {
-        new_data = new_data.with(buffer.position + i, data[i])
-      }
-      { data = new_data, position = buffer.position + data.length(), capacity = buffer.capacity }
+    // 如果缓存已满，移除最久未使用的项
+    let (final_data, final_order) = if new_data.size() > cache.max_size {
+      let oldest_key = cache.access_order[0]
+      let removed_data = new_data.remove(oldest_key)
+      let new_order = cache.access_order.slice(1, cache.access_order.length())
+        .push(key)
+      (removed_data, new_order)
     } else {
-      buffer  // Buffer full
+      let new_order = cache.access_order.filter(fn(k) { k != key }).push(key)
+      (new_data, new_order)
     }
+    
+    { data: final_data, max_size: cache.max_size, access_order: final_order }
   }
   
-  let buffer = create_buffer(10)
-  let buffer_with_data = write_to_buffer(buffer, [1, 2, 3, 4, 5])
-  assert_eq(buffer_with_data.position, 5)
-  assert_eq(buffer_with_data.data[0], 1)
-  assert_eq(buffer_with_data.data[4], 5)
+  // 测试缓存操作
+  let initial_cache = create_cache(3)
   
-  // Test batch I/O operations
-  let batch_operation = fn(operations) {
-    let mut results = []
-    for op in operations {
-      // Simulate batched I/O operation
-      results = results.push(op + "_processed")
-    }
-    results
-  }
+  let cache1 = cache_set(initial_cache, "key1", 100)
+  let cache2 = cache_set(cache1, "key2", 200)
+  let cache3 = cache_set(cache2, "key3", 300)
   
-  let ops = ["op1", "op2", "op3", "op4", "op5"]
-  let batch_results = batch_operation(ops)
-  assert_eq(batch_results, ["op1_processed", "op2_processed", "op3_processed", "op4_processed", "op5_processed"])
-  
-  // Test compression simulation
-  let compress_data = fn(data) {
-    // Simulate compression
-    if data.length() > 10 {
-      "compressed:" + data.length().to_string()
-    } else {
-      data
-    }
-  }
-  
-  let small_data = "small"
-  let large_data = "this is a very large piece of data that should be compressed"
-  
-  assert_eq(compress_data(small_data), "small")
-  assert_eq(compress_data(large_data), "compressed:47")
-}
-
-// Test 9: Network Performance Optimization
-test "network performance optimization" {
-  // Test connection pooling simulation
-  let create_connection_pool = fn(max_connections) {
-    let mut connections = []
-    for i in 0..<max_connections {
-      connections = connections.push("connection_" + i.to_string())
-    }
-    { connections = connections, available = max_connections, in_use = [] }
-  }
-  
-  let pool = create_connection_pool(5)
-  assert_eq(pool.available, 5)
-  assert_eq(pool.in_use.length(), 0)
-  
-  // Test connection acquisition
-  let acquire_connection = fn(pool) {
-    if pool.available > 0 {
-      let connection = pool.connections[pool.connections.length() - pool.available]
-      { 
-        connections = pool.connections,
-        available = pool.available - 1,
-        in_use = pool.in_use.push(connection)
-      }
-    } else {
-      pool
-    }
-  }
-  
-  let pool_with_conn = acquire_connection(pool)
-  assert_eq(pool_with_conn.available, 4)
-  assert_eq(pool_with_conn.in_use.length(), 1)
-  assert_eq(pool_with_conn.in_use[0], "connection_0")
-  
-  // Test request batching
-  let batch_requests = fn(requests, batch_size) {
-    let mut batches = []
-    let mut i = 0
-    while i < requests.length() {
-      let batch_end = if i + batch_size < requests.length() { i + batch_size } else { requests.length() }
-      let batch = requests.substring(i, batch_end)
-      batches = batches.push(batch)
-      i = i + batch_size
-    }
-    batches
-  }
-  
-  let requests = "req1,req2,req3,req4,req5,req6,req7,req8"
-  let batches = batch_requests(requests, 3)
-  assert_eq(batches.length(), 3)
-  assert_eq(batches[0], "req1,req2,req3")
-  assert_eq(batches[2], "req7,req8")
-  
-  // Test data compression for network
-  let compress_for_network = fn(data) {
-    if data.length() > 20 {
-      "compressed:" + data.length().to_string()
-    } else {
-      data
-    }
-  }
-  
-  let small_payload = "small_data"
-  let large_payload = "this_is_a_very_large_payload_that_should_be_compressed_for_network_transmission"
-  
-  assert_eq(compress_for_network(small_payload), "small_data")
-  assert_eq(compress_for_network(large_payload), "compressed:70")
-}
-
-// Test 10: Resource Cleanup and Lifecycle Management
-test "resource cleanup and lifecycle management" {
-  // Test resource lifecycle
-  let create_managed_resource = fn(name) {
-    { name = name, state = "created", cleanup_needed = true }
-  }
-  
-  let use_resource = fn(resource, operation) {
-    let used_resource = { name = resource.name, state = "in_use", cleanup_needed = true }
-    let result = operation(used_resource)
-    { result = result, resource = { name = used_resource.name, state = "used", cleanup_needed = true } }
-  }
-  
-  let cleanup_resource = fn(resource) {
-    if resource.cleanup_needed {
-      { name = resource.name, state = "cleaned", cleanup_needed = false }
-    } else {
-      resource
-    }
-  }
-  
-  // Test full lifecycle
-  let resource = create_managed_resource("test_resource")
-  assert_eq(resource.state, "created")
-  assert_true(resource.cleanup_needed)
-  
-  let usage_result = use_resource(resource, fn(r) { "operation_result" })
-  assert_eq(usage_result.result, "operation_result")
-  assert_eq(usage_result.resource.state, "used")
-  assert_true(usage_result.resource.cleanup_needed)
-  
-  let cleaned_resource = cleanup_resource(usage_result.resource)
-  assert_eq(cleaned_resource.state, "cleaned")
-  assert_false(cleaned_resource.cleanup_needed)
-  
-  // Test automatic cleanup pattern
-  let with_resource = fn(create_fn, cleanup_fn, operation) {
-    let resource = create_fn()
-    let result = operation(resource)
-    cleanup_fn(resource)
-    result
-  }
-  
-  let auto_cleanup_result = with_resource(
-    fn() { create_managed_resource("auto_resource") },
-    cleanup_resource,
-    fn(r) { "auto_operation_result" }
-  )
-  assert_eq(auto_cleanup_result, "auto_operation_result")
-  
-  // Test resource limit enforcement
-  let create_limited_resource_manager = fn(max_resources) {
-    { active_resources = [], max_resources = max_resources }
-  }
-  
-  let acquire_limited_resource = fn(manager, resource_name) {
-    if manager.active_resources.length() < manager.max_resources {
-      let resource = create_managed_resource(resource_name)
-      { 
-        active_resources = manager.active_resources.push(resource),
-        max_resources = manager.max_resources,
-        acquired = Some(resource)
-      }
-    } else {
-      { 
-        active_resources = manager.active_resources,
-        max_resources = manager.max_resources,
-        acquired = None
-      }
-    }
-  }
-  
-  let limited_manager = create_limited_resource_manager(3)
-  
-  let result1 = acquire_limited_resource(limited_manager, "res1")
-  match result1.acquired {
+  // 测试缓存命中
+  let (value1, cache4) = cache_get(cache3, "key1")
+  match value1 {
+    Some(v) => assert_eq(v, 100)
     None => assert_true(false)
-    Some(_) => assert_true(true)
   }
-  assert_eq(result1.active_resources.length(), 1)
   
-  let result2 = acquire_limited_resource(result1, "res2")
-  match result2.acquired {
-    None => assert_true(false)
-    Some(_) => assert_true(true)
-  }
-  assert_eq(result2.active_resources.length(), 2)
-  
-  let result3 = acquire_limited_resource(result2, "res3")
-  match result3.acquired {
-    None => assert_true(false)
-    Some(_) => assert_true(true)
-  }
-  assert_eq(result3.active_resources.length(), 3)
-  
-  let result4 = acquire_limited_resource(result3, "res4")
-  match result4.acquired {
-    None => assert_true(true)  // Should be rejected
+  // 测试缓存未命中
+  let (value4, _) = cache_get(cache4, "key4")
+  match value4 {
     Some(_) => assert_true(false)
+    None => assert_true(true)
   }
-  assert_eq(result4.active_resources.length(), 3)  // Still 3 active
+  
+  // 测试缓存淘汰
+  let cache5 = cache_set(cache4, "key4", 400)
+  let (value2, _) = cache_get(cache5, "key2")  // key2应该还在缓存中
+  match value2 {
+    Some(v) => assert_eq(v, 200)
+    None => assert_true(false)
+  }
+}
+
+// 测试5: 批处理性能测试
+test "批处理性能测试" {
+  // 创建测试数据
+  let batch_data = Array::range(0, 1000)
+  
+  // 定义批处理函数
+  let process_batch = fn(batch : Array<Int>) -> Array<Int> {
+    batch.map(fn(x) { x * x })
+  }
+  
+  // 定义批次大小
+  let batch_size = 100
+  
+  // 分批处理数据
+  let rec process_batches = fn(data : Array<Int>, start : Int, results : Array<Int>) -> Array<Int> {
+    if start >= data.length() { results }
+    else {
+      let end = if start + batch_size > data.length() { data.length() } else { start + batch_size }
+      let batch = data.slice(start, end)
+      let processed = process_batch(batch)
+      let new_results = results.concat(processed)
+      process_batches(data, end, new_results)
+    }
+  }
+  
+  // 执行批处理
+  let batch_results = process_batches(batch_data, 0, [])
+  
+  // 验证结果
+  assert_eq(batch_results.length(), 1000)
+  assert_eq(batch_results[0], 0)     // 0^2
+  assert_eq(batch_results[999], 998001)  // 999^2
+  
+  // 验证批处理的正确性
+  let direct_results = batch_data.map(fn(x) { x * x })
+  assert_eq(batch_results, direct_results)
+}
+
+// 测试6: 资源限制和监控测试
+test "资源限制和监控测试" {
+  // 定义资源监控器
+  type ResourceMonitor {
+    memory_used : Int
+    memory_limit : Int
+    cpu_time : Int
+    operations_count : Int
+  }
+  
+  // 创建监控器
+  let create_monitor = fn(memory_limit : Int) -> ResourceMonitor {
+    { memory_used: 0, memory_limit: memory_limit, cpu_time: 0, operations_count: 0 }
+  }
+  
+  // 模拟内存分配
+  let allocate_memory = fn(monitor : ResourceMonitor, size : Int) -> ResourceMonitor {
+    let new_usage = monitor.memory_used + size
+    if new_usage <= monitor.memory_limit {
+      { 
+        memory_used: new_usage, 
+        memory_limit: monitor.memory_limit, 
+        cpu_time: monitor.cpu_time + 1, 
+        operations_count: monitor.operations_count + 1 
+      }
+    } else {
+      monitor  // 超出限制，分配失败
+    }
+  }
+  
+  // 模拟内存释放
+  let free_memory = fn(monitor : ResourceMonitor, size : Int) -> ResourceMonitor {
+    let new_usage = if monitor.memory_used - size >= 0 { monitor.memory_used - size } else { 0 }
+    { 
+      memory_used: new_usage, 
+      memory_limit: monitor.memory_limit, 
+      cpu_time: monitor.cpu_time + 1, 
+      operations_count: monitor.operations_count + 1 
+    }
+  }
+  
+  // 测试资源监控
+  let initial_monitor = create_monitor(1000)
+  assert_eq(initial_monitor.memory_used, 0)
+  assert_eq(initial_monitor.memory_limit, 1000)
+  
+  let monitor1 = allocate_memory(initial_monitor, 500)
+  assert_eq(monitor1.memory_used, 500)
+  assert_eq(monitor1.operations_count, 1)
+  
+  let monitor2 = allocate_memory(monitor1, 300)
+  assert_eq(monitor2.memory_used, 800)
+  assert_eq(monitor2.operations_count, 2)
+  
+  // 测试超出限制的情况
+  let monitor3 = allocate_memory(monitor2, 300)
+  assert_eq(monitor3.memory_used, 800)  // 分配失败，内存使用不变
+  assert_eq(monitor3.operations_count, 3)
+  
+  // 测试内存释放
+  let monitor4 = free_memory(monitor3, 200)
+  assert_eq(monitor4.memory_used, 600)
+  assert_eq(monitor4.operations_count, 4)
 }
