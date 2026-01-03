@@ -1,480 +1,293 @@
-// Azimuth Telemetry Data Compression Optimization Tests
-// 遥测数据压缩优化测试用例，专注于数据压缩算法和性能优化
+// Azimuth 遥测数据压缩优化测试用例
+// 专注于测试遥测数据的压缩算法、存储优化和传输效率
 
-test "遥测数据批量压缩性能测试" {
-  // 创建大量遥测数据点
-  let telemetry_data_points = []
+// 测试1: 基本字符串压缩算法
+test "基本字符串压缩算法" {
+  // 创建重复性高的遥测数据
+  let original_data = "service=auth,region=us-east-1,version=1.2.3,status=ok;service=auth,region=us-east-1,version=1.2.3,status=ok;service=api,region=us-east-1,version=1.2.3,status=ok"
   
-  // 生成1000个数据点
-  for i = 0; i < 1000; i = i + 1 {
-    let data_point = {
-      "trace_id": "trace_" + i.to_string(),
-      "span_id": "span_" + i.to_string(),
-      "timestamp": 1640995200000L + i.to_long(),
-      "duration": 100 + i * 2,
-      "service_name": "service_" + (i % 10).to_string(),
-      "operation": "operation_" + (i % 5).to_string(),
-      "status": if i % 20 == 0 { "error" } else { "ok" }
-    }
-    telemetry_data_points.push(data_point)
-  }
-  
-  // 测试原始数据大小（简化为字符串长度）
-  let original_size = telemetry_data_points.to_string().length()
-  assert_true(original_size > 50000) // 确保有足够的数据量
-  
-  // 模拟压缩过程 - 简单的字符串替换作为压缩示例
-  let compressed_data = telemetry_data_points.to_string()
-    .replace("trace_", "t_")
-    .replace("span_", "s_")
-    .replace("service_", "sv_")
-    .replace("operation_", "op_")
-    .replace("timestamp", "ts")
-    .replace("duration", "dr")
-    .replace("service_name", "sn")
-    .replace("status", "st")
-  
-  let compressed_size = compressed_data.length()
-  
-  // 验证压缩率至少为20%（简化测试）
-  let compression_ratio = (original_size - compressed_size).to_double() / original_size.to_double()
-  assert_true(compression_ratio > 0.2)
-  
-  // 模拟解压缩过程
-  let decompressed_data = compressed_data
-    .replace("t_", "trace_")
-    .replace("s_", "span_")
-    .replace("sv_", "service_")
-    .replace("op_", "operation_")
-    .replace("ts", "timestamp")
-    .replace("dr", "duration")
-    .replace("sn", "service_name")
-    .replace("st", "status")
-  
-  // 验证解压缩后数据完整性
-  assert_eq(decompressed_data.length(), original_size)
-  
-  assert_true(true)
-}
-
-test "高频采样数据压缩策略测试" {
-  // 模拟高频采样场景（每毫秒一次）
-  let high_frequency_data = []
-  let base_timestamp = 1640995200000L
-  
-  // 生成24小时的高频数据（86400000毫秒）
-  for i = 0; i < 86400; i = i + 1000 { // 每秒一个数据点
-    let data_point = {
-      "timestamp": base_timestamp + i.to_long(),
-      "cpu_usage": 50.0 + (i % 100).to_double() * 0.5,
-      "memory_usage": 60.0 + (i % 80).to_double() * 0.4,
-      "disk_io": 10.0 + (i % 50).to_double() * 0.8,
-      "network_io": 20.0 + (i % 70).to_double() * 0.6,
-      "request_rate": 100.0 + (i % 200).to_double() * 0.3,
-      "error_rate": if i % 1000 == 0 { 1.0 } else { 0.0 }
-    }
-    high_frequency_data.push(data_point)
-  }
-  
-  // 测试时间差值压缩（只存储时间间隔，而非绝对时间戳）
-  let time_intervals = []
-  for i = 1; i < high_frequency_data.length(); i = i + 1 {
-    let current_time = high_frequency_data[i]["timestamp"]
-    let prev_time = high_frequency_data[i-1]["timestamp"]
-    time_intervals.push(current_time - prev_time)
-  }
-  
-  // 验证时间间隔一致性（高频采样应该有规律的时间间隔）
-  let consistent_intervals = time_intervals.filter(|interval| interval == 1000L)
-  assert_true(consistent_intervals.length() > time_intervals.length() * 90 / 100) // 90%以上的间隔应该一致
-  
-  // 测试数值压缩 - 使用增量编码
-  let cpu_usage_deltas = []
-  for i = 1; i < high_frequency_data.length(); i = i + 1 {
-    let current_cpu = high_frequency_data[i]["cpu_usage"]
-    let prev_cpu = high_frequency_data[i-1]["cpu_usage"]
-    cpu_usage_deltas.push(current_cpu - prev_cpu)
-  }
-  
-  // 验证增量编码的有效性（大部分增量应该很小）
-  let small_deltas = cpu_usage_deltas.filter(|delta| delta.abs() < 5.0)
-  assert_true(small_deltas.length() > cpu_usage_deltas.length() * 80 / 100) // 80%以上的增量应该很小
-  
-  assert_true(true)
-}
-
-test "属性值压缩优化测试" {
-  // 创建具有重复属性的遥测数据
-  let telemetry_events = []
-  
-  // 定义常见属性值
-  let common_services = ["auth-service", "user-service", "payment-service", "order-service", "inventory-service"]
-  let common_operations = ["login", "logout", "create", "update", "delete", "query"]
-  let common_regions = ["us-east-1", "us-west-2", "eu-west-1", "ap-southeast-1"]
-  let common_versions = ["1.0.0", "1.1.0", "1.2.0", "2.0.0"]
-  
-  // 生成1000个事件，使用重复的属性值
-  for i = 0; i < 1000; i = i + 1 {
-    let event = {
-      "event_id": "event_" + i.to_string(),
-      "service": common_services[i % common_services.length()],
-      "operation": common_operations[i % common_operations.length()],
-      "region": common_regions[i % common_regions.length()],
-      "version": common_versions[i % common_versions.length()],
-      "custom_attribute": "custom_value_" + (i % 20).to_string()
-    }
-    telemetry_events.push(event)
-  }
-  
-  // 测试字典压缩 - 创建属性值字典
-  let service_dict = {}
-  let operation_dict = {}
-  let region_dict = {}
-  let version_dict = {}
-  
-  // 构建字典
-  for event in telemetry_events {
-    let service = event["service"]
-    let operation = event["operation"]
-    let region = event["region"]
-    let version = event["version"]
-    
-    if service_dict[service] is None {
-      service_dict[service] = service_dict.length()
-    }
-    
-    if operation_dict[operation] is None {
-      operation_dict[operation] = operation_dict.length()
-    }
-    
-    if region_dict[region] is None {
-      region_dict[region] = region_dict.length()
-    }
-    
-    if version_dict[version] is None {
-      version_dict[version] = version_dict.length()
-    }
-  }
-  
-  // 验证字典大小（应该远小于原始数据）
-  assert_true(service_dict.length() <= common_services.length())
-  assert_true(operation_dict.length() <= common_operations.length())
-  assert_true(region_dict.length() <= common_regions.length())
-  assert_true(version_dict.length() <= common_versions.length())
-  
-  // 使用字典编码压缩数据
-  let compressed_events = []
-  for event in telemetry_events {
-    let compressed_event = {
-      "event_id": event["event_id"],
-      "service_id": service_dict[event["service"]],
-      "operation_id": operation_dict[event["operation"]],
-      "region_id": region_dict[event["region"]],
-      "version_id": version_dict[event["version"]],
-      "custom_attribute": event["custom_attribute"]
-    }
-    compressed_events.push(compressed_event)
-  }
-  
-  // 验证压缩效果
-  let original_size = telemetry_events.to_string().length()
-  let compressed_size = compressed_events.to_string().length()
-  let compression_ratio = (original_size - compressed_size).to_double() / original_size.to_double()
-  
-  assert_true(compression_ratio > 0.1) // 至少10%的压缩率
-  
-  assert_true(true)
-}
-
-test "分层压缩策略测试" {
-  // 测试针对不同数据类型的分层压缩策略
-  
-  // 1. 结构化数据压缩（JSON格式）
-  let structured_data = []
-  for i = 0; i < 100; i = i + 1 {
-    let data = {
-      "trace_id": "trace_" + i.to_string(),
-      "spans": [
-        {
-          "span_id": "span_" + (i * 10).to_string(),
-          "parent_id": "span_" + (i * 10 - 1).to_string(),
-          "operation": "http_request",
-          "start_time": 1640995200000L + i.to_long() * 1000L,
-          "duration": 100 + i,
-          "status": "ok"
-        },
-        {
-          "span_id": "span_" + (i * 10 + 1).to_string(),
-          "parent_id": "span_" + (i * 10).to_string(),
-          "operation": "db_query",
-          "start_time": 1640995200000L + i.to_long() * 1000L + 50L,
-          "duration": 50 + i,
-          "status": if i % 10 == 0 { "error" } else { "ok" }
-        }
-      ],
-      "attributes": {
-        "service": "test_service",
-        "version": "1.0.0",
-        "environment": "production"
-      }
-    }
-    structured_data.push(data)
-  }
-  
-  // 简化的结构化数据压缩 - 移除不必要的空格和缩短键名
-  let compressed_structured = structured_data.to_string()
-    .replace("trace_id", "tid")
-    .replace("spans", "s")
-    .replace("span_id", "sid")
-    .replace("parent_id", "pid")
-    .replace("operation", "op")
-    .replace("start_time", "st")
-    .replace("duration", "dr")
-    .replace("status", "st")
-    .replace("attributes", "attr")
-    .replace("service", "svc")
-    .replace("version", "ver")
-    .replace("environment", "env")
-  
-  let struct_compression_ratio = (structured_data.to_string().length() - compressed_structured.length()).to_double() / structured_data.to_string().length()
-  assert_true(struct_compression_ratio > 0.1)
-  
-  // 2. 时间序列数据压缩
-  let time_series_data = []
-  let base_time = 1640995200000L
-  
-  for i = 0; i < 1000; i = i + 1 {
-    let point = {
-      "timestamp": base_time + i.to_long() * 60000L, // 每分钟一个点
-      "metric_value": 100.0 + (i % 100).to_double() * 0.5,
-      "metric_name": "cpu_usage",
-      "labels": {
-        "host": "server_" + (i % 10).to_string(),
-        "region": "us-east-1"
-      }
-    }
-    time_series_data.push(point)
-  }
-  
-  // 时间序列压缩 - 使用时间间隔和增量编码
-  let time_intervals = []
-  let value_deltas = []
-  
-  for i = 1; i < time_series_data.length(); i = i + 1 {
-    let current_time = time_series_data[i]["timestamp"]
-    let prev_time = time_series_data[i-1]["timestamp"]
-    time_intervals.push(current_time - prev_time)
-    
-    let current_value = time_series_data[i]["metric_value"]
-    let prev_value = time_series_data[i-1]["metric_value"]
-    value_deltas.push(current_value - prev_value)
-  }
-  
-  // 验证时间间隔一致性
-  let consistent_time_intervals = time_intervals.filter(|interval| interval == 60000L)
-  assert_true(consistent_time_intervals.length() > time_intervals.length() * 95 / 100)
-  
-  // 验证值增量范围
-  let small_value_deltas = value_deltas.filter(|delta| delta.abs() < 2.0)
-  assert_true(small_value_deltas.length() > value_deltas.length() * 80 / 100)
-  
-  // 3. 日志数据压缩
-  let log_data = []
-  let common_messages = [
-    "Request processed successfully",
-    "User authentication completed",
-    "Database query executed",
-    "Cache miss occurred",
-    "Payment processed",
-    "Order created",
-    "Inventory updated",
-    "Notification sent"
+  // 模拟简单压缩：替换重复字符串
+  let compression_map = [
+    ("service=auth", "A"),
+    ("region=us-east-1", "B"),
+    ("version=1.2.3", "C"),
+    ("status=ok", "D"),
+    ("service=api", "E")
   ]
   
-  for i = 0; i < 500; i = i + 1 {
-    let log_entry = {
-      "timestamp": base_time + i.to_long() * 5000L, // 每5秒一个日志
-      "level": if i % 50 == 0 { "ERROR" } else if i % 10 == 0 { "WARN" } else { "INFO" },
-      "message": common_messages[i % common_messages.length()],
-      "trace_id": "trace_" + (i / 10).to_string(),
-      "span_id": "span_" + i.to_string(),
-      "attributes": {
-        "service": "app_service",
-        "version": "1.2.0"
-      }
-    }
-    log_data.push(log_entry)
-  }
-  
-  // 日志压缩 - 使用消息字典和缩短键名
-  let message_dict = {}
-  for entry in log_data {
-    let message = entry["message"]
-    if message_dict[message] is None {
-      message_dict[message] = message_dict.length()
-    }
-  }
-  
-  // 验证消息字典大小
-  assert_true(message_dict.length() <= common_messages.length())
-  
-  let compressed_logs = []
-  for entry in log_data {
-    let compressed_entry = {
-      "ts": entry["timestamp"],
-      "lvl": entry["level"],
-      "msg_id": message_dict[entry["message"]],
-      "tid": entry["trace_id"],
-      "sid": entry["span_id"]
-    }
-    compressed_logs.push(compressed_entry)
-  }
-  
-  let log_compression_ratio = (log_data.to_string().length() - compressed_logs.to_string().length()).to_double() / log_data.to_string().length()
-  assert_true(log_compression_ratio > 0.2)
-  
-  assert_true(true)
-}
-
-test "压缩数据完整性验证测试" {
-  // 测试压缩后数据的完整性和一致性
-  
-  // 创建原始遥测数据
-  let original_data = []
-  for i = 0; i < 100; i = i + 1 {
-    let data = {
-      "id": i,
-      "trace_id": "trace_" + i.to_string(),
-      "span_id": "span_" + i.to_string(),
-      "parent_span_id": if i > 0 { "span_" + (i-1).to_string() } else { "" },
-      "operation_name": "operation_" + (i % 5).to_string(),
-      "start_time": 1640995200000L + i.to_long() * 1000L,
-      "end_time": 1640995200000L + i.to_long() * 1000L + 100L,
-      "status": if i % 10 == 0 { "error" } else { "ok" },
-      "attributes": {
-        "service.name": "test_service",
-        "service.version": "1.0.0",
-        "host.name": "host_" + (i % 3).to_string(),
-        "custom.attribute": "value_" + (i % 10).to_string()
-      }
-    }
-    original_data.push(data)
-  }
-  
-  // 应用压缩策略
-  let compressed_data = []
-  let trace_dict = {}
-  let operation_dict = {}
-  let host_dict = {}
-  let custom_attr_dict = {}
-  
-  // 构建字典
-  for data in original_data {
-    let trace_id = data["trace_id"]
-    let operation = data["operation_name"]
-    let host_name = data["attributes"]["host.name"]
-    let custom_attr = data["attributes"]["custom.attribute"]
-    
-    if trace_dict[trace_id] is None {
-      trace_dict[trace_id] = trace_dict.length()
-    }
-    
-    if operation_dict[operation] is None {
-      operation_dict[operation] = operation_dict.length()
-    }
-    
-    if host_dict[host_name] is None {
-      host_dict[host_name] = host_dict.length()
-    }
-    
-    if custom_attr_dict[custom_attr] is None {
-      custom_attr_dict[custom_attr] = custom_attr_dict.length()
-    }
-  }
-  
-  // 压缩数据
-  for data in original_data {
-    let compressed = {
-      "id": data["id"],
-      "tid": trace_dict[data["trace_id"]],
-      "sid": data["span_id"],
-      "psid": data["parent_span_id"],
-      "op": operation_dict[data["operation_name"]],
-      "st": data["start_time"],
-      "et": data["end_time"],
-      "status": data["status"],
-      "svc": "test_service",
-      "ver": "1.0.0",
-      "host": host_dict[data["attributes"]["host.name"]],
-      "custom": custom_attr_dict[data["attributes"]["custom.attribute"]]
-    }
-    compressed_data.push(compressed)
-  }
+  // 应用压缩
+  let compressed_data = compression_map.fold(original_data, fn(acc, mapping) {
+    acc.replace(mapping.0, mapping.1)
+  })
   
   // 验证压缩效果
-  assert_true(compressed_data.to_string().length() < original_data.to_string().length())
+  assert_true(compressed_data.length() < original_data.length())
+  assert_true(compressed_data.contains("A"))  // service=auth 被压缩为 A
+  assert_true(compressed_data.contains("B"))  // region=us-east-1 被压缩为 B
   
-  // 解压缩数据并验证完整性
-  let decompressed_data = []
-  let reverse_trace_dict = {}
-  let reverse_operation_dict = {}
-  let reverse_host_dict = {}
-  let reverse_custom_attr_dict = {}
+  // 模拟解压缩
+  let decompressed_data = compression_map.fold(compressed_data, fn(acc, mapping) {
+    acc.replace(mapping.1, mapping.0)
+  })
   
-  // 构建反向字典
-  for (key, value) in trace_dict {
-    reverse_trace_dict[value] = key
-  }
+  // 验证解压缩后的数据完整性
+  assert_eq(decompressed_data, original_data)
+}
+
+// 测试2: 数值数据压缩
+test "数值数据压缩" {
+  // 创建时间序列数值数据
+  let metric_values = [100, 102, 105, 103, 108, 110, 107, 112, 115, 113]
   
-  for (key, value) in operation_dict {
-    reverse_operation_dict[value] = key
-  }
+  // 使用增量编码压缩
+  let delta_encoded = [metric_values[0]] + metric_values.slice(1).map_with_index(fn(i, value) {
+    value - metric_values[i]
+  })
   
-  for (key, value) in host_dict {
-    reverse_host_dict[value] = key
-  }
+  // 验证增量编码
+  assert_eq(delta_encoded[0], 100)
+  assert_eq(delta_encoded[1], 2)   // 102 - 100
+  assert_eq(delta_encoded[2], 3)   // 105 - 102
+  assert_eq(delta_encoded[3], -2)  // 103 - 105
   
-  for (key, value) in custom_attr_dict {
-    reverse_custom_attr_dict[value] = key
-  }
+  // 验证增量编码后的数值范围更小（更容易压缩）
+  let original_range = metric_values.max() - metric_values.min()
+  let delta_range = delta_encoded.max() - delta_encoded.min()
+  
+  assert_eq(original_range, 15)  // 115 - 100
+  assert_eq(delta_range, 8)     // 5 - (-3)
+  assert_true(delta_range < original_range)
   
   // 解压缩
-  for data in compressed_data {
-    let decompressed = {
-      "id": data["id"],
-      "trace_id": reverse_trace_dict[data["tid"]],
-      "span_id": data["sid"],
-      "parent_span_id": data["psid"],
-      "operation_name": reverse_operation_dict[data["op"]],
-      "start_time": data["st"],
-      "end_time": data["et"],
-      "status": data["status"],
-      "attributes": {
-        "service.name": data["svc"],
-        "service.version": data["ver"],
-        "host.name": reverse_host_dict[data["host"]],
-        "custom.attribute": reverse_custom_attr_dict[data["custom"]]
-      }
+  let decompressed = delta_encoded.slice(1).fold([delta_encoded[0]], fn(acc, delta) {
+    acc + [acc[acc.length() - 1] + delta]
+  })
+  
+  // 验证解压缩后的数据
+  assert_eq(decompressed.length(), metric_values.length())
+  assert_true(decompressed.all_with_index(fn(i, value) { value == metric_values[i] }))
+}
+
+// 测试3: 属性键值对压缩
+test "属性键值对压缩" {
+  // 创建重复的属性键值对
+  let attributes = [
+    ("service.name", "authentication-service"),
+    ("service.version", "1.2.3"),
+    ("deployment.environment", "production"),
+    ("host.name", "auth-server-01"),
+    ("service.name", "authentication-service"),
+    ("service.version", "1.2.3"),
+    ("deployment.environment", "production"),
+    ("host.name", "auth-server-02")
+  ]
+  
+  // 提取唯一的键
+  let unique_keys = attributes.map(fn(attr) { attr.0 }).to_set().to_array()
+  assert_eq(unique_keys.length(), 4)
+  
+  // 为每个键分配索引
+  let key_indices = [
+    ("service.name", 0),
+    ("service.version", 1),
+    ("deployment.environment", 2),
+    ("host.name", 3)
+  ]
+  
+  // 压缩属性：用索引替换键
+  let compressed_attrs = attributes.map(fn(attr) {
+    match key_indices.find(fn(ki) { ki.0 == attr.0 }) {
+      Some(ki) => (ki.1.to_string(), attr.1)
+      None => (attr.0, attr.1)
     }
-    decompressed_data.push(decompressed)
-  }
+  })
   
-  // 验证解压缩后数据的完整性
-  assert_eq(decompressed_data.length(), original_data.length())
+  // 验证压缩效果
+  assert_eq(compressed_attrs.length(), attributes.length())
+  assert_eq(compressed_attrs[0].0, "0")  // service.name -> 0
+  assert_eq(compressed_attrs[1].0, "1")  // service.version -> 1
   
-  // 验证关键字段
-  for i = 0; i < original_data.length(); i = i + 1 {
-    let orig = original_data[i]
-    let decomp = decompressed_data[i]
+  // 验证值保持不变
+  assert_eq(compressed_attrs[0].1, "authentication-service")
+  assert_eq(compressed_attrs[1].1, "1.2.3")
+}
+
+// 测试4: 时间戳压缩
+test "时间戳压缩" {
+  // 创建连续的时间戳
+  let timestamps = [
+    1640995200000L,  // 2022-01-01 00:00:00
+    1640995201000L,  // 2022-01-01 00:00:01
+    1640995202000L,  // 2022-01-01 00:00:02
+    1640995203000L,  // 2022-01-01 00:00:03
+    1640995204000L   // 2022-01-01 00:00:04
+  ]
+  
+  // 使用基准时间 + 偏移量压缩
+  let base_timestamp = timestamps[0]
+  let compressed_timestamps = timestamps.map(fn(ts) { ts - base_timestamp })
+  
+  // 验证压缩效果
+  assert_eq(compressed_timestamps[0], 0L)
+  assert_eq(compressed_timestamps[1], 1000L)
+  assert_eq(compressed_timestamps[2], 2000L)
+  assert_eq(compressed_timestamps[3], 3000L)
+  assert_eq(compressed_timestamps[4], 4000L)
+  
+  // 验证压缩后的数值范围更小
+  let original_max = timestamps.max()
+  let compressed_max = compressed_timestamps.max()
+  
+  assert_true(compressed_max < original_max)
+  assert_eq(compressed_max, 4000L)
+  
+  // 解压缩
+  let decompressed_timestamps = compressed_timestamps.map(fn(offset) { 
+    base_timestamp + offset 
+  })
+  
+  // 验证解压缩后的时间戳
+  assert_true(decompressed_timestamps.all_with_index(fn(i, ts) { 
+    ts == timestamps[i] 
+  }))
+}
+
+// 测试5: 批量数据压缩
+test "批量数据压缩" {
+  // 创建大量遥测数据点
+  let data_points = [
+    {timestamp: 1640995200000L, metric_name: "http.requests", value: 100.0, tags: [("service", "auth"), ("method", "POST")]},
+    {timestamp: 1640995201000L, metric_name: "http.requests", value: 105.0, tags: [("service", "auth"), ("method", "POST")]},
+    {timestamp: 1640995202000L, metric_name: "http.requests", value: 98.0, tags: [("service", "auth"), ("method", "GET")]},
+    {timestamp: 1640995203000L, metric_name: "http.requests", value: 102.0, tags: [("service", "api"), ("method", "GET")]},
+    {timestamp: 1640995204000L, metric_name: "http.requests", value: 110.0, tags: [("service", "api"), ("method", "POST")]}
+  ]
+  
+  // 提取唯一的metric_name和tags
+  let unique_metric_names = data_points.map(fn(dp) { dp.metric_name }).to_set().to_array()
+  let unique_tags = data_points.map(fn(dp) { dp.tags }).to_set().to_array()
+  
+  // 验证唯一值提取
+  assert_eq(unique_metric_names.length(), 1)  // 只有 "http.requests"
+  assert_eq(unique_tags.length(), 3)  // 三种不同的tag组合
+  
+  // 创建压缩映射
+  let metric_name_map = [("http.requests", "M1")]
+  let tags_map = [
+    ([("service", "auth"), ("method", "POST")], "T1"),
+    ([("service", "auth"), ("method", "GET")], "T2"),
+    ([("service", "api"), ("method", "GET")], "T3"),
+    ([("service", "api"), ("method", "POST")], "T4")
+  ]
+  
+  // 压缩数据点
+  let compressed_points = data_points.map(fn(dp) {
+    let compressed_metric_name = match metric_name_map.find(fn(m) { m.0 == dp.metric_name }) {
+      Some(m) => m.1
+      None => dp.metric_name
+    }
     
-    assert_eq(orig["id"], decomp["id"])
-    assert_eq(orig["trace_id"], decomp["trace_id"])
-    assert_eq(orig["span_id"], decomp["span_id"])
-    assert_eq(orig["operation_name"], decomp["operation_name"])
-    assert_eq(orig["status"], decomp["status"])
-    assert_eq(orig["attributes"]["service.name"], decomp["attributes"]["service.name"])
-    assert_eq(orig["attributes"]["custom.attribute"], decomp["attributes"]["custom.attribute"])
+    let compressed_tags = match tags_map.find_fn(fn(m) { 
+      m.0.length() == dp.tags.length() && 
+      m.0.all_with_index(fn(i, tag) { tag == dp.tags[i] })
+    }) {
+      Some(m) => m.1
+      None => ""
+    }
+    
+    {
+      timestamp: dp.timestamp - 1640995200000L,  // 基准时间压缩
+      metric_name: compressed_metric_name,
+      value: dp.value,
+      tags: compressed_tags
+    }
+  })
+  
+  // 验证压缩效果
+  assert_eq(compressed_points[0].metric_name, "M1")
+  assert_eq(compressed_points[0].tags, "T1")
+  assert_eq(compressed_points[0].timestamp, 0L)
+  
+  assert_eq(compressed_points[1].metric_name, "M1")
+  assert_eq(compressed_points[1].tags, "T1")
+  assert_eq(compressed_points[1].timestamp, 1000L)
+  
+  // 计算压缩率（简化计算）
+  let original_size = data_points.fold(0, fn(acc, dp) { 
+    acc + dp.metric_name.length() + dp.tags.length() * 20  // 估算大小
+  })
+  
+  let compressed_size = compressed_points.fold(0, fn(acc, dp) { 
+    acc + dp.metric_name.length() + dp.tags.length()
+  })
+  
+  // 验证压缩效果
+  assert_true(compressed_size < original_size)
+}
+
+// 测试6: 自适应压缩策略
+test "自适应压缩策略" {
+  // 创建不同类型的遥测数据
+  let high_repetition_data = [
+    "service=auth,region=us-east-1,status=ok",
+    "service=auth,region=us-east-1,status=ok",
+    "service=auth,region=us-east-1,status=ok",
+    "service=auth,region=us-east-1,status=ok"
+  ]
+  
+  let low_repetition_data = [
+    "unique_metric_1=value1",
+    "unique_metric_2=value2",
+    "unique_metric_3=value3",
+    "unique_metric_4=value4"
+  ]
+  
+  let numeric_data = ["100", "101", "102", "103", "104", "105"]
+  
+  // 分析数据特征并选择压缩策略
+  let high_repetition_ratio = high_repetition_data.to_set().to_array().length().to_double() / high_repetition_data.length().to_double()
+  let low_repetition_ratio = low_repetition_data.to_set().to_array().length().to_double() / low_repetition_data.length().to_double()
+  
+  // 验证重复率分析
+  assert_eq(high_repetition_ratio, 0.25)  // 只有1/4是唯一的
+  assert_eq(low_repetition_ratio, 1.0)    // 全部是唯一的
+  
+  // 根据数据特征选择压缩策略
+  let high_rep_compression = if high_repetition_ratio < 0.5 {
+    // 字典压缩适合高重复数据
+    "dictionary"
+  } else {
+    "generic"
   }
   
-  assert_true(true)
+  let low_rep_compression = if low_repetition_ratio > 0.8 {
+    // 通用压缩适合低重复数据
+    "generic"
+  } else {
+    "dictionary"
+  }
+  
+  let numeric_compression = "delta"  // 增量压缩适合数值数据
+  
+  // 验证压缩策略选择
+  assert_eq(high_rep_compression, "dictionary")
+  assert_eq(low_rep_compression, "generic")
+  assert_eq(numeric_compression, "delta")
+  
+  // 应用相应的压缩策略
+  let compressed_high_rep = high_repetition_data.map(fn(item) { 
+    if item == "service=auth,region=us-east-1,status=ok" { "A" } else { item }
+  })
+  
+  let compressed_numeric = numeric_data.slice(1).fold([numeric_data[0]], fn(acc, value) {
+    let prev = acc[acc.length() - 1]
+    let delta = value.to_int() - prev.to_int()
+    acc + [delta.to_string()]
+  })
+  
+  // 验证压缩效果
+  assert_true(compressed_high_rep.all(fn(item) { item == "A" }))
+  assert_eq(compressed_numeric[1], "1")   // 101 - 100
+  assert_eq(compressed_numeric[2], "1")   // 102 - 101
+  assert_eq(compressed_numeric[3], "1")   // 103 - 102
 }
