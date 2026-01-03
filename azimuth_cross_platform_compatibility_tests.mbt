@@ -1,482 +1,689 @@
-// Cross Platform Compatibility Tests for Azimuth Telemetry System
-// This file contains tests to verify compatibility across different platforms
+// Azimuth Telemetry System - Cross-Platform Compatibility Tests
+// This file contains test cases for cross-platform compatibility
 
-test "platform independent attribute handling" {
-  let attrs = Attributes::new()
+// Test 1: Operating System Compatibility
+test "operating system compatibility" {
+  // Test detection of current operating system
+  let current_os = Platform::get_os()
   
-  // Test with platform-independent data
-  Attributes::set(attrs, "platform.test", StringValue("cross.platform.value"))
-  Attributes::set(attrs, "numeric.value", IntValue(42))
-  Attributes::set(attrs, "float.value", FloatValue(3.14159))
-  Attributes::set(attrs, "boolean.value", BoolValue(true))
-  
-  // Verify values are consistent across platforms
-  let string_result = Attributes::get(attrs, "platform.test")
-  let numeric_result = Attributes::get(attrs, "numeric.value")
-  let float_result = Attributes::get(attrs, "float.value")
-  let boolean_result = Attributes::get(attrs, "boolean.value")
-  
-  match string_result {
-    Some(StringValue(s)) => assert_eq(s, "cross.platform.value")
-    _ => assert_true(false)
+  // Verify OS detection works
+  match current_os {
+    Windows => assert_true(true)
+    Linux => assert_true(true)
+    MacOS => assert_true(true)
+    FreeBSD => assert_true(true)
+    _ => assert_true(false) // Should not reach here for known platforms
   }
   
-  match numeric_result {
-    Some(IntValue(v)) => assert_eq(v, 42)
-    _ => assert_true(false)
+  // Test OS-specific path handling
+  let path_separator = Platform::get_path_separator()
+  
+  match current_os {
+    Windows => assert_eq(path_separator, "\\")
+    _ => assert_eq(path_separator, "/") // Unix-like systems
   }
   
-  match float_result {
-    Some(FloatValue(v)) => assert_true(v > 3.14 && v < 3.15)
-    _ => assert_true(false)
+  // Test OS-specific line endings
+  let line_ending = Platform::get_line_ending()
+  
+  match current_os {
+    Windows => assert_eq(line_ending, "\r\n")
+    _ => assert_eq(line_ending, "\n") // Unix-like systems
   }
   
-  match boolean_result {
-    Some(BoolValue(v)) => assert_true(v)
-    _ => assert_true(false)
+  // Test OS-specific temporary directory
+  let temp_dir = Platform::get_temp_directory()
+  
+  match current_os {
+    Windows => assert_true(temp_dir.contains("Temp") || temp_dir.contains("tmp"))
+    _ => assert_true(temp_dir.contains("tmp") || temp_dir.contains("temp"))
+  }
+  
+  // Test telemetry system works across different OS
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "os_compatibility_meter")
+  
+  let counter = Meter::create_counter(meter, "os_counter", Some("OS compatibility counter"), Some("operations"))
+  Counter::add(counter, 1.0, Some(Attributes::with([
+    ("os.type", StringValue(current_os.to_string())),
+    ("os.path_separator", StringValue(path_separator)),
+    ("os.line_ending", StringValue(line_ending))
+  ])))
+  
+  // Verify counter works regardless of OS
+  let counter_instrument = Counter::as_instrument(counter)
+  assert_eq(Instrument::name(counter_instrument), "os_counter")
+}
+
+// Test 2: Architecture Compatibility
+test "architecture compatibility" {
+  // Test detection of current architecture
+  let current_arch = Platform::get_architecture()
+  
+  // Verify architecture detection works
+  match current_arch {
+    X86 => assert_true(true)
+    X64 => assert_true(true)
+    ARM => assert_true(true)
+    ARM64 => assert_true(true)
+    _ => assert_true(false) // Should not reach here for known architectures
+  }
+  
+  // Test endianness detection
+  let is_little_endian = Platform::is_little_endian()
+  
+  // Verify endianness is detected
+  assert_true(is_little_endian == true || is_little_endian == false)
+  
+  // Test word size detection
+  let word_size = Platform::get_word_size()
+  
+  // Verify word size is reasonable
+  assert_true(word_size == 32 || word_size == 64)
+  
+  // Test telemetry system works across different architectures
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "arch_compatibility_meter")
+  
+  let counter = Meter::create_counter(meter, "arch_counter", Some("Architecture compatibility counter"), Some("operations"))
+  Counter::add(counter, 1.0, Some(Attributes::with([
+    ("arch.type", StringValue(current_arch.to_string())),
+    ("arch.word_size", IntValue(word_size)),
+    ("arch.endianness", StringValue(if is_little_endian { "little" } else { "big" }))
+  ])))
+  
+  // Verify counter works regardless of architecture
+  let counter_instrument = Counter::as_instrument(counter)
+  assert_eq(Instrument::name(counter_instrument), "arch_counter")
+}
+
+// Test 3: File System Compatibility
+test "file system compatibility" {
+  // Test file path handling across platforms
+  let path_components = ["home", "user", "documents", "test.txt"]
+  let platform_path = Platform::build_path(path_components)
+  
+  // Verify path is built correctly for current platform
+  let path_separator = Platform::get_path_separator()
+  let expected_path = path_components.join(path_separator)
+  assert_eq(platform_path, expected_path)
+  
+  // Test file path normalization
+  let messy_path = if path_separator == "/" {
+    "home//user/./documents/../documents/test.txt"
+  } else {
+    "home\\\\user\\\\.\\\\documents\\\\..\\\\documents\\\\test.txt"
+  }
+  
+  let normalized_path = Platform::normalize_path(messy_path)
+  
+  // Verify path is normalized
+  assert_false(normalized_path.contains(".."))
+  assert_false(normalized_path.contains(".")) // Current directory reference
+  
+  if path_separator == "/" {
+    assert_false(normalized_path.contains("//"))
+  } else {
+    assert_false(normalized_path.contains("\\\\"))
+  }
+  
+  // Test telemetry file operations across platforms
+  let temp_dir = Platform::get_temp_directory()
+  let telemetry_file_path = Platform::build_path([temp_dir, "azimuth_test.txt"])
+  
+  // Create telemetry data file
+  let span_context = SpanContext::new("trace123", "span123", true, "fs_test")
+  let span = Span::new("fs_test_span", Internal, span_context)
+  
+  Span::set_attribute(span, "fs.test", StringValue("file_system_compatibility"))
+  
+  // Serialize span to file
+  let json_data = JsonSerializer::serialize_span(span)
+  let write_result = File::write_all_text(telemetry_file_path, json_data)
+  
+  match write_result {
+    Ok(_) => assert_true(true)
+    Err(_) => assert_true(false) // File write should succeed
+  }
+  
+  // Read telemetry data from file
+  let read_result = File::read_all_text(telemetry_file_path)
+  
+  match read_result {
+    Ok(data) => {
+      // Verify data matches what was written
+      assert_eq(data, json_data)
+      
+      // Deserialize span from file data
+      let deserialized_span = JsonSerializer::deserialize_span(data)
+      assert_eq(Span::name(deserialized_span), "fs_test_span")
+    }
+    Err(_) => assert_true(false) // File read should succeed
+  }
+  
+  // Clean up test file
+  let delete_result = File::delete(telemetry_file_path)
+  match delete_result {
+    Ok(_) => assert_true(true)
+    Err(_) => assert_true(false) // File deletion should succeed
   }
 }
 
-test "timestamp compatibility across platforms" {
-  let clock = Clock::system()
-  let timestamp = Clock::now_unix_nanos(clock)
+// Test 4: Network Compatibility
+test "network compatibility" {
+  // Test network interface detection
+  let network_interfaces = Platform::get_network_interfaces()
   
-  // Verify timestamp format is consistent
-  assert_true(timestamp > 0L)
-  assert_true(timestamp < 9223372036854775807L)  // Max Int64
+  // Verify at least one network interface is detected
+  assert_true(network_interfaces.length() > 0)
   
-  // Test timestamp conversion (simulated)
-  let timestamp_seconds = timestamp / 1000000000L
-  let timestamp_millis = timestamp / 1000000L
-  let timestamp_micros = timestamp / 1000L
+  // Test localhost resolution
+  let localhost_ip = Platform::resolve_localhost()
   
-  assert_true(timestamp_seconds > 0L)
-  assert_true(timestamp_millis > 0L)
-  assert_true(timestamp_micros > 0L)
-  
-  // Verify consistency
-  assert_eq(timestamp_seconds * 1000000000L, timestamp - (timestamp % 1000000000L))
-  assert_eq(timestamp_millis * 1000000L, timestamp - (timestamp % 1000000L))
-  assert_eq(timestamp_micros * 1000L, timestamp - (timestamp % 1000L))
-}
-
-test "random number generation consistency" {
-  let random = Random::system()
-  
-  // Generate random values
-  let random_u64 = Random::next_u64(random)
-  let random_bytes = Random::next_bytes(random, 16)
-  
-  // Verify random value format
-  assert_true(random_u64 >= 0UL)
-  assert_true(random_u64 <= 18446744073709551615UL)  // Max UInt64
-  
-  // Verify random bytes
-  assert_eq(random_bytes.length(), 16)
-  
-  // Test multiple random generations
-  let random_u64_2 = Random::next_u64(random)
-  let random_bytes_2 = Random::next_bytes(random, 16)
-  
-  // In simplified implementation, these might be the same
-  // In real implementation, they should be different
-  assert_eq(random_u64, 12345UL)  // Based on simplified implementation
-  assert_eq(random_u64_2, 12345UL)
-  
-  assert_eq(random_bytes.length(), random_bytes_2.length())
-}
-
-test "unicode and encoding compatibility" {
-  let attrs = Attributes::new()
-  
-  // Test with various unicode characters
-  let latin_text = "Hello World"
-  let chinese_text = "你好世界"
-  let emoji_text = "🌍🚀💻"
-  let mixed_text = "Mixed: 你好 🌍 World!"
-  let rtl_text = "مرحبا بالعالم"
-  
-  // Set unicode attributes
-  Attributes::set(attrs, "latin.text", StringValue(latin_text))
-  Attributes::set(attrs, "chinese.text", StringValue(chinese_text))
-  Attributes::set(attrs, "emoji.text", StringValue(emoji_text))
-  Attributes::set(attrs, "mixed.text", StringValue(mixed_text))
-  Attributes::set(attrs, "rtl.text", StringValue(rtl_text))
-  
-  // Verify unicode handling
-  let latin_result = Attributes::get(attrs, "latin.text")
-  let chinese_result = Attributes::get(attrs, "chinese.text")
-  let emoji_result = Attributes::get(attrs, "emoji.text")
-  let mixed_result = Attributes::get(attrs, "mixed.text")
-  let rtl_result = Attributes::get(attrs, "rtl.text")
-  
-  match latin_result {
-    Some(StringValue(s)) => assert_eq(s, latin_text)
-    _ => assert_true(false)
+  // Verify localhost is resolved
+  match localhost_ip {
+    Some(ip) => {
+      if ip.contains("127.0.0.1") || ip.contains("::1") {
+        assert_true(true)
+      } else {
+        assert_true(false) // Should resolve to standard localhost addresses
+      }
+    }
+    None => assert_true(false) // Should resolve localhost
   }
   
-  match chinese_result {
-    Some(StringValue(s)) => assert_eq(s, chinese_text)
-    _ => assert_true(false)
-  }
-  
-  match emoji_result {
-    Some(StringValue(s)) => assert_eq(s, emoji_text)
-    _ => assert_true(false)
-  }
-  
-  match mixed_result {
-    Some(StringValue(s)) => assert_eq(s, mixed_text)
-    _ => assert_true(false)
-  }
-  
-  match rtl_result {
-    Some(StringValue(s)) => assert_eq(s, rtl_text)
-    _ => assert_true(false)
-  }
-}
-
-test "endian compatibility for numeric values" {
-  let attrs = Attributes::new()
-  
-  // Test with various numeric values
-  Attributes::set(attrs, "small.int", IntValue(127))
-  Attributes::set(attrs, "medium.int", IntValue(32767))
-  Attributes::set(attrs, "large.int", IntValue(2147483647))
-  Attributes::set(attrs, "small.float", FloatValue(1.23))
-  Attributes::set(attrs, "large.float", FloatValue(123456789.987654321))
-  
-  // Verify numeric values are preserved regardless of endianness
-  let small_int_result = Attributes::get(attrs, "small.int")
-  let medium_int_result = Attributes::get(attrs, "medium.int")
-  let large_int_result = Attributes::get(attrs, "large.int")
-  let small_float_result = Attributes::get(attrs, "small.float")
-  let large_float_result = Attributes::get(attrs, "large.float")
-  
-  match small_int_result {
-    Some(IntValue(v)) => assert_eq(v, 127)
-    _ => assert_true(false)
-  }
-  
-  match medium_int_result {
-    Some(IntValue(v)) => assert_eq(v, 32767)
-    _ => assert_true(false)
-  }
-  
-  match large_int_result {
-    Some(IntValue(v)) => assert_eq(v, 2147483647)
-    _ => assert_true(false)
-  }
-  
-  match small_float_result {
-    Some(FloatValue(v)) => assert_true(v > 1.22 && v < 1.24)
-    _ => assert_true(false)
-  }
-  
-  match large_float_result {
-    Some(FloatValue(v)) => assert_true(v > 123456789.0 && v < 123456790.0)
-    _ => assert_true(false)
-  }
-}
-
-test "path separator compatibility" {
-  let attrs = Attributes::new()
-  
-  // Test with different path separators
-  let unix_path = "/usr/local/bin/app"
-  let windows_path = "C:\\Program Files\\App\\bin"
-  let mixed_path = "/mixed\\path/separator"
-  
-  Attributes::set(attrs, "unix.path", StringValue(unix_path))
-  Attributes::set(attrs, "windows.path", StringValue(windows_path))
-  Attributes::set(attrs, "mixed.path", StringValue(mixed_path))
-  
-  // Verify path handling
-  let unix_result = Attributes::get(attrs, "unix.path")
-  let windows_result = Attributes::get(attrs, "windows.path")
-  let mixed_result = Attributes::get(attrs, "mixed.path")
-  
-  match unix_result {
-    Some(StringValue(s)) => assert_eq(s, unix_path)
-    _ => assert_true(false)
-  }
-  
-  match windows_result {
-    Some(StringValue(s)) => assert_eq(s, windows_path)
-    _ => assert_true(false)
-  }
-  
-  match mixed_result {
-    Some(StringValue(s)) => assert_eq(s, mixed_path)
-    _ => assert_true(false)
-  }
-}
-
-test "HTTP URL compatibility across platforms" {
+  // Test HTTP client compatibility across platforms
   let client = HttpClient::new()
   
-  // Test with various URL formats
-  let http_url = "http://example.com/path"
-  let https_url = "https://secure.example.com/path?param=value"
-  let ipv4_url = "http://192.168.1.1:8080/api"
-  let ipv6_url = "http://[2001:db8::1]:8080/api"
-  let localhost_url = "http://localhost:3000/api"
+  // Test HTTP request to a reliable endpoint
+  let request = HttpRequest::new("GET", "https://httpbin.org/ip", [], None)
+  let response = HttpClient::execute(client, request)
   
-  let headers = [("User-Agent", "Azimuth-Test/1.0")]
-  
-  let http_request = HttpRequest::new("GET", http_url, headers)
-  let https_request = HttpRequest::new("POST", https_url, headers, Some("{\"test\":true}"))
-  let ipv4_request = HttpRequest::new("PUT", ipv4_url, headers)
-  let ipv6_request = HttpRequest::new("DELETE", ipv6_url, headers)
-  let localhost_request = HttpRequest::new("PATCH", localhost_url, headers)
-  
-  // Verify URL handling
-  assert_eq(HttpRequest::url(http_request), http_url)
-  assert_eq(HttpRequest::url(https_request), https_url)
-  assert_eq(HttpRequest::url(ipv4_request), ipv4_url)
-  assert_eq(HttpRequest::url(ipv6_request), ipv6_url)
-  assert_eq(HttpRequest::url(localhost_request), localhost_url)
-  
-  // Test response compatibility
-  let response_headers = [("Content-Type", "application/json")]
-  let response_body = "{\"status\":\"ok\",\"platform\":\"cross-platform\"}"
-  
-  let response = HttpResponse::new(200, response_headers, Some(response_body))
-  
-  assert_eq(HttpResponse::status_code(response), 200)
-  assert_eq(HttpResponse::body(response), Some(response_body))
-}
-
-test "array type compatibility" {
-  let attrs = Attributes::new()
-  
-  // Test with different array types and sizes
-  let empty_string_array = []
-  let small_string_array = ["a", "b", "c"]
-  let large_string_array = []
-  for i in 0..=100 {
-    large_string_array = large_string_array.push("item." + i.to_string())
-  }
-  
-  let empty_int_array = []
-  let small_int_array = [1, 2, 3, 4, 5]
-  let large_int_array = []
-  for i in 0..=100 {
-    large_int_array = large_int_array.push(i)
-  }
-  
-  // Set array attributes
-  Attributes::set(attrs, "empty.string.array", ArrayStringValue(empty_string_array))
-  Attributes::set(attrs, "small.string.array", ArrayStringValue(small_string_array))
-  Attributes::set(attrs, "large.string.array", ArrayStringValue(large_string_array))
-  Attributes::set(attrs, "empty.int.array", ArrayIntValue(empty_int_array))
-  Attributes::set(attrs, "small.int.array", ArrayIntValue(small_int_array))
-  Attributes::set(attrs, "large.int.array", ArrayIntValue(large_int_array))
-  
-  // Verify array handling
-  let empty_string_result = Attributes::get(attrs, "empty.string.array")
-  let small_string_result = Attributes::get(attrs, "small.string.array")
-  let large_string_result = Attributes::get(attrs, "large.string.array")
-  let empty_int_result = Attributes::get(attrs, "empty.int.array")
-  let small_int_result = Attributes::get(attrs, "small.int.array")
-  let large_int_result = Attributes::get(attrs, "large.int.array")
-  
-  match empty_string_result {
-    Some(ArrayStringValue(arr)) => assert_eq(arr.length(), 0)
-    _ => assert_true(false)
-  }
-  
-  match small_string_result {
-    Some(ArrayStringValue(arr)) => {
-      assert_eq(arr.length(), 3)
-      assert_eq(arr[0], "a")
-      assert_eq(arr[1], "b")
-      assert_eq(arr[2], "c")
-    }
-    _ => assert_true(false)
-  }
-  
-  match large_string_result {
-    Some(ArrayStringValue(arr)) => {
-      assert_eq(arr.length(), 101)
-      assert_eq(arr[0], "item.0")
-      assert_eq(arr[100], "item.100")
-    }
-    _ => assert_true(false)
-  }
-  
-  match empty_int_result {
-    Some(ArrayIntValue(arr)) => assert_eq(arr.length(), 0)
-    _ => assert_true(false)
-  }
-  
-  match small_int_result {
-    Some(ArrayIntValue(arr)) => {
-      assert_eq(arr.length(), 5)
-      assert_eq(arr[0], 1)
-      assert_eq(arr[4], 5)
-    }
-    _ => assert_true(false)
-  }
-  
-  match large_int_result {
-    Some(ArrayIntValue(arr)) => {
-      assert_eq(arr.length(), 101)
-      assert_eq(arr[0], 0)
-      assert_eq(arr[100], 100)
-    }
-    _ => assert_true(false)
-  }
-}
-
-test "context propagation compatibility" {
-  let carrier = TextMapCarrier::new()
-  let propagator = CompositePropagator::new([W3CTraceContextPropagator::new()])
-  let ctx = Context::root()
-  
-  // Test context propagation with different platforms
-  let key = ContextKey::new("cross.platform.key")
-  let ctx_with_value = Context::with_value(ctx, key, "cross.platform.value")
-  
-  // Inject context
-  CompositePropagator::inject(propagator, ctx_with_value, carrier)
-  
-  // Extract context
-  let extracted_ctx = CompositePropagator::extract(propagator, carrier)
-  
-  // Verify propagation works
-  let extracted_value = Context::get(extracted_ctx, ContextKey::new("extracted"))
-  assert_eq(extracted_value, Some("true"))
-  
-  // Test with different header formats
-  let carrier2 = TextMapCarrier::new()
-  TextMapCarrier::set(carrier2, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-  TextMapCarrier::set(carrier2, "baggage", "key1=value1,key2=value2")
-  
-  let extracted_ctx2 = CompositePropagator::extract(propagator, carrier2)
-  let extracted_value2 = Context::get(extracted_ctx2, ContextKey::new("extracted"))
-  
-  assert_eq(extracted_value2, Some("true"))
-}
-
-test "logging compatibility across platforms" {
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "cross-platform-logger")
-  
-  // Test with different log levels and platforms
-  let timestamp = 1234567890L
-  let trace_id = "cross-platform-trace"
-  let span_id = "cross-platform-span"
-  
-  let record1 = LogRecord::new_with_context(
-    Trace,
-    Some("Trace message from cross-platform"),
-    None,
-    Some(timestamp),
-    None,
-    Some(trace_id),
-    Some(span_id),
-    None
-  )
-  
-  let record2 = LogRecord::new_with_context(
-    Info,
-    Some("Info message: 你好 🌍"),
-    Some(Attributes::new()),
-    Some(timestamp + 1L),
-    Some(timestamp + 1L),
-    Some(trace_id),
-    Some(span_id),
-    Some(Context::root())
-  )
-  
-  let record3 = LogRecord::new_with_context(
-    Fatal,
-    Some("Fatal error occurred"),
-    Some(Attributes::new()),
-    Some(timestamp + 2L),
-    Some(timestamp + 2L),
-    Some(trace_id),
-    Some(span_id),
-    Some(Context::root())
-  )
-  
-  // Emit all records
-  Logger::emit(logger, record1)
-  Logger::emit(logger, record2)
-  Logger::emit(logger, record3)
-  
-  // Verify record properties
-  assert_eq(LogRecord::severity_number(record1), Trace)
-  assert_eq(LogRecord::severity_number(record2), Info)
-  assert_eq(LogRecord::severity_number(record3), Fatal)
-  
-  assert_eq(LogRecord::body(record1), Some("Trace message from cross-platform"))
-  assert_eq(LogRecord::body(record2), Some("Info message: 你好 🌍"))
-  assert_eq(LogRecord::body(record3), Some("Fatal error occurred"))
-  
-  assert_eq(LogRecord::trace_id(record1), Some(trace_id))
-  assert_eq(LogRecord::span_id(record1), Some(span_id))
-}
-
-test "resource compatibility across platforms" {
-  let resource = Resource::new()
-  
-  // Test with platform-specific and platform-independent attributes
-  let attrs = [
-    ("service.name", StringValue("cross-platform-service")),
-    ("service.version", StringValue("1.0.0")),
-    ("service.instance.id", StringValue("instance-12345")),
-    ("host.name", StringValue("cross-platform-host")),
-    ("os.type", StringValue("linux")),
-    ("os.version", StringValue("5.4.0")),
-    ("process.pid", IntValue(12345)),
-    ("process.executable.name", StringValue("azimuth-test")),
-    ("telemetry.sdk.name", StringValue("azimuth")),
-    ("telemetry.sdk.version", StringValue("0.1.0")),
-    ("telemetry.sdk.language", StringValue("moonbit"))
-  ]
-  
-  let resource_with_attrs = Resource::with_attributes(resource, attrs)
-  
-  // Verify all attributes are preserved
-  for attr in attrs {
-    let result = Resource::get_attribute(resource_with_attrs, attr.0)
-    match result {
-      Some(value) => {
-        match (value, attr.1) {
-          (StringValue(s), StringValue(expected)) => assert_eq(s, expected)
-          (IntValue(i), IntValue(expected)) => assert_eq(i, expected)
-          (FloatValue(f), FloatValue(expected)) => assert_true(f == expected)
-          (BoolValue(b), BoolValue(expected)) => assert_eq(b, expected)
-          _ => assert_true(false)
-        }
+  match response {
+    Ok(http_response) => {
+      assert_eq(HttpResponse::status_code(http_response), 200)
+      
+      // Verify response body contains IP information
+      match HttpResponse::body(http_response) {
+        Some(body) => assert_true(body.contains("origin"))
+        None => assert_true(false)
       }
-      None => assert_true(false)
+    }
+    Err(_) => assert_true(false) // HTTP request should succeed
+  }
+  
+  // Test telemetry network operations
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "network_compatibility_meter")
+  
+  let counter = Meter::create_counter(meter, "network_counter", Some("Network compatibility counter"), Some("operations"))
+  Counter::add(counter, 1.0, Some(Attributes::with([
+    ("network.interfaces", IntValue(network_interfaces.length())),
+    ("network.localhost", StringValue(match localhost_ip { Some(ip) => ip, None => "unknown" }))
+  ])))
+  
+  // Verify counter works regardless of network configuration
+  let counter_instrument = Counter::as_instrument(counter)
+  assert_eq(Instrument::name(counter_instrument), "network_counter")
+}
+
+// Test 5: Time and Timezone Compatibility
+test "time and timezone compatibility" {
+  // Test current time retrieval
+  let current_time = Platform::get_current_time()
+  
+  // Verify time is reasonable (not zero, not negative)
+  assert_true(current_time > 0)
+  
+  // Test timezone detection
+  let timezone = Platform::get_timezone()
+  
+  // Verify timezone is detected
+  assert_true(timezone.length() > 0)
+  
+  // Test UTC time conversion
+  let utc_time = Platform::get_utc_time()
+  
+  // Verify UTC time is reasonable
+  assert_true(utc_time > 0)
+  
+  // Test time formatting
+  let formatted_time = Platform::format_time(current_time, "%Y-%m-%d %H:%M:%S")
+  
+  // Verify time is formatted correctly
+  assert_true(formatted_time.contains("-"))
+  assert_true(formatted_time.contains(":"))
+  assert_true(formatted_time.length() == 19) // YYYY-MM-DD HH:MM:SS
+  
+  // Test telemetry timestamp handling
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "time_compatibility_meter")
+  
+  let counter = Meter::create_counter(meter, "time_counter", Some("Time compatibility counter"), Some("operations"))
+  Counter::add(counter, 1.0, Some(Attributes::with([
+    ("time.current", StringValue(formatted_time)),
+    ("time.timezone", StringValue(timezone)),
+    ("time.utc", StringValue(Platform::format_time(utc_time, "%Y-%m-%d %H:%M:%S")))
+  ])))
+  
+  // Verify counter works regardless of time zone
+  let counter_instrument = Counter::as_instrument(counter)
+  assert_eq(Instrument::name(counter_instrument), "time_counter")
+  
+  // Test log record with platform-specific timestamp
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "time_compatibility_logger")
+  
+  let log_record = LogRecord::new_with_context(
+    Info,
+    Some("Time compatibility test message"),
+    Some(Attributes::with([
+      ("local.time", StringValue(formatted_time)),
+      ("utc.time", StringValue(Platform::format_time(utc_time, "%Y-%m-%d %H:%M:%S")))
+    ])),
+    Some(current_time),
+    Some(utc_time),
+    Some("trace123"),
+    Some("span123"),
+    Some(Context::root())
+  )
+  
+  Logger::emit(logger, log_record)
+  
+  // Verify log record was created
+  assert_eq(LogRecord::severity_number(log_record), Info)
+  match LogRecord::body(log_record) {
+    Some(body) => assert_eq(body, "Time compatibility test message")
+    None => assert_true(false)
+  }
+}
+
+// Test 6: Encoding and Locale Compatibility
+test "encoding and locale compatibility" {
+  // Test system encoding detection
+  let system_encoding = Platform::get_system_encoding()
+  
+  // Verify encoding is detected
+  assert_true(system_encoding.length() > 0)
+  
+  // Test UTF-8 handling
+  let utf8_string = "Azimuth 遥测系统 🌍"
+  let utf8_bytes = utf8_string.to_utf8_bytes()
+  let decoded_string = String::from_utf8_bytes(utf8_bytes)
+  
+  // Verify UTF-8 encoding/decoding works
+  assert_eq(decoded_string, utf8_string)
+  
+  // Test system locale detection
+  let system_locale = Platform::get_system_locale()
+  
+  // Verify locale is detected
+  assert_true(system_locale.length() > 0)
+  
+  // Test number formatting with locale
+  let number = 1234.56
+  let formatted_number = Platform::format_number(number, system_locale)
+  
+  // Verify number is formatted
+  assert_true(formatted_number.contains("1234"))
+  
+  // Test date formatting with locale
+  let date_time = Platform::get_current_time()
+  let formatted_date = Platform::format_date(date_time, system_locale)
+  
+  // Verify date is formatted
+  assert_true(formatted_date.length() > 0)
+  
+  // Test telemetry with international characters
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "encoding_compatibility_meter")
+  
+  let counter = Meter::create_counter(meter, "encoding_counter", Some("编码兼容性计数器"), Some("操作"))
+  Counter::add(counter, 1.0, Some(Attributes::with([
+    ("encoding.system", StringValue(system_encoding)),
+    ("locale.system", StringValue(system_locale)),
+    ("test.utf8", StringValue(utf8_string)),
+    ("number.formatted", StringValue(formatted_number)),
+    ("date.formatted", StringValue(formatted_date))
+  ])))
+  
+  // Verify counter works with international characters
+  let counter_instrument = Counter::as_instrument(counter)
+  assert_eq(Instrument::name(counter_instrument), "encoding_counter")
+  assert_eq(Instrument::description(counter_instrument), Some("编码兼容性计数器"))
+  assert_eq(Instrument::unit(counter_instrument), Some("操作"))
+}
+
+// Test 7: Environment Variable Compatibility
+test "environment variable compatibility" {
+  // Test environment variable retrieval
+  let path_var = Platform::get_environment_variable("PATH")
+  
+  // Verify PATH variable is retrieved (should exist on all platforms)
+  match path_var {
+    Some(path) => assert_true(path.length() > 0)
+    None => assert_true(false) // PATH should exist
+  }
+  
+  // Test environment variable setting and retrieval
+  let test_var_name = "AZIMUTH_TEST_VAR"
+  let test_var_value = "test_value"
+  
+  let set_result = Platform::set_environment_variable(test_var_name, test_var_value)
+  match set_result {
+    Ok(_) => assert_true(true)
+    Err(_) => assert_true(false) // Setting should succeed
+  }
+  
+  let get_result = Platform::get_environment_variable(test_var_name)
+  match get_result {
+    Some(value) => assert_eq(value, test_var_value)
+    None => assert_true(false) // Should retrieve the value we just set
+  }
+  
+  // Test environment variable deletion
+  let unset_result = Platform::unset_environment_variable(test_var_name)
+  match unset_result {
+    Ok(_) => assert_true(true)
+    Err(_) => assert_true(false) // Unsetting should succeed
+  }
+  
+  let get_after_unset = Platform::get_environment_variable(test_var_name)
+  match get_after_unset {
+    Some(_) => assert_true(false) // Should not exist after unsetting
+    None => assert_true(true)
+  }
+  
+  // Test telemetry with environment-specific configuration
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "env_compatibility_meter")
+  
+  let counter = Meter::create_counter(meter, "env_counter", Some("Environment compatibility counter"), Some("operations"))
+  Counter::add(counter, 1.0, Some(Attributes::with([
+    ("env.path", StringValue(match path_var { Some(path) => path.substring(0, 100), None => "unknown" })),
+    ("env.test_set", StringValue(if set_result.is_ok() { "success" } else { "failed" })),
+    ("env.test_get", StringValue(if get_result.is_some() { "success" } else { "failed" })),
+    ("env.test_unset", StringValue(if unset_result.is_ok() { "success" } else { "failed" }))
+  ])))
+  
+  // Verify counter works regardless of environment
+  let counter_instrument = Counter::as_instrument(counter)
+  assert_eq(Instrument::name(counter_instrument), "env_counter")
+}
+
+// Test 8: Process and Thread Compatibility
+test "process and thread compatibility" {
+  // Test current process ID retrieval
+  let process_id = Platform::get_current_process_id()
+  
+  // Verify process ID is reasonable
+  assert_true(process_id > 0)
+  
+  // Test current thread ID retrieval
+  let thread_id = Platform::get_current_thread_id()
+  
+  // Verify thread ID is reasonable
+  assert_true(thread_id > 0)
+  
+  // Test process start time
+  let process_start_time = Platform::get_process_start_time()
+  
+  // Verify process start time is reasonable
+  assert_true(process_start_time > 0)
+  
+  // Test CPU usage
+  let cpu_usage = Platform::get_cpu_usage()
+  
+  // Verify CPU usage is reasonable
+  assert_true(cpu_usage >= 0.0 && cpu_usage <= 100.0)
+  
+  // Test memory usage
+  let memory_usage = Platform::get_memory_usage()
+  
+  // Verify memory usage is reasonable
+  assert_true(memory_usage > 0)
+  
+  // Test telemetry with process information
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "process_compatibility_meter")
+  
+  let counter = Meter::create_counter(meter, "process_counter", Some("Process compatibility counter"), Some("operations"))
+  Counter::add(counter, 1.0, Some(Attributes::with([
+    ("process.id", IntValue(process_id)),
+    ("thread.id", IntValue(thread_id)),
+    ("process.start_time", StringValue(Platform::format_time(process_start_time, "%Y-%m-%d %H:%M:%S"))),
+    ("cpu.usage", FloatValue(cpu_usage)),
+    ("memory.usage", IntValue(memory_usage))
+  ])))
+  
+  // Verify counter works regardless of process/thread implementation
+  let counter_instrument = Counter::as_instrument(counter)
+  assert_eq(Instrument::name(counter_instrument), "process_counter")
+  
+  // Test span with process context
+  let span_context = SpanContext::new("trace123", "span123", true, "process_test")
+  let span = Span::new("process_test_span", Internal, span_context)
+  
+  Span::set_attribute(span, "process.id", IntValue(process_id))
+  Span::set_attribute(span, "thread.id", IntValue(thread_id))
+  Span::set_attribute(span, "cpu.usage", FloatValue(cpu_usage))
+  Span::set_attribute(span, "memory.usage", IntValue(memory_usage))
+  
+  // Verify span attributes are set
+  match Span::get_attribute(span, "process.id") {
+    Some(IntValue(id)) => assert_eq(id, process_id)
+    _ => assert_true(false)
+  }
+  
+  match Span::get_attribute(span, "thread.id") {
+    Some(IntValue(id)) => assert_eq(id, thread_id)
+    _ => assert_true(false)
+  }
+  
+  match Span::get_attribute(span, "cpu.usage") {
+    Some(FloatValue(usage)) => assert_eq(usage, cpu_usage)
+    _ => assert_true(false)
+  }
+  
+  match Span::get_attribute(span, "memory.usage") {
+    Some(IntValue(usage)) => assert_eq(usage, memory_usage)
+    _ => assert_true(false)
+  }
+}
+
+// Test 9: Platform-Specific Feature Detection
+test "platform-specific feature detection" {
+  // Test feature detection
+  let features = Platform::detect_features()
+  
+  // Verify features are detected
+  assert_true(features.length() > 0)
+  
+  // Test specific feature detection
+  let has_ipv6 = Platform::has_ipv6_support()
+  let has_ssl = Platform::has_ssl_support()
+  let has_gui = Platform::has_gui_support()
+  let has_sqlite = Platform::has_sqlite_support()
+  
+  // Verify feature detection returns boolean values
+  assert_true(has_ipv6 == true || has_ipv6 == false)
+  assert_true(has_ssl == true || has_ssl == false)
+  assert_true(has_gui == true || has_gui == false)
+  assert_true(has_sqlite == true || has_sqlite == false)
+  
+  // Test platform-specific capabilities
+  let capabilities = Platform::get_capabilities()
+  
+  // Verify capabilities are detected
+  assert_true(capabilities.length() > 0)
+  
+  // Test telemetry with feature information
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "feature_compatibility_meter")
+  
+  let counter = Meter::create_counter(meter, "feature_counter", Some("Feature compatibility counter"), Some("operations"))
+  Counter::add(counter, 1.0, Some(Attributes::with([
+    ("feature.ipv6", StringValue(if has_ipv6 { "supported" } else { "not_supported" })),
+    ("feature.ssl", StringValue(if has_ssl { "supported" } else { "not_supported" })),
+    ("feature.gui", StringValue(if has_gui { "supported" } else { "not_supported" })),
+    ("feature.sqlite", StringValue(if has_sqlite { "supported" } else { "not_supported" })),
+    ("features.count", IntValue(features.length())),
+    ("capabilities.count", IntValue(capabilities.length()))
+  ])))
+  
+  // Verify counter works regardless of feature support
+  let counter_instrument = Counter::as_instrument(counter)
+  assert_eq(Instrument::name(counter_instrument), "feature_counter")
+  
+  // Test conditional feature usage
+  if has_ssl {
+    // Test HTTPS request if SSL is supported
+    let client = HttpClient::new()
+    let request = HttpRequest::new("GET", "https://httpbin.org/get", [], None)
+    let response = HttpClient::execute(client, request)
+    
+    match response {
+      Ok(_) => assert_true(true) // HTTPS request should succeed
+      Err(_) => assert_true(false) // HTTPS request should succeed if SSL is supported
+    }
+  } else {
+    // Test HTTP request if SSL is not supported
+    let client = HttpClient::new()
+    let request = HttpRequest::new("GET", "http://httpbin.org/get", [], None)
+    let response = HttpClient::execute(client, request)
+    
+    match response {
+      Ok(_) => assert_true(true) // HTTP request should succeed
+      Err(_) => assert_true(false) // HTTP request should succeed
     }
   }
+}
+
+// Test 10: Cross-Platform Telemetry Data Consistency
+test "cross-platform telemetry data consistency" {
+  // Create consistent telemetry data across platforms
+  let trace_id = Platform::generate_trace_id()
+  let span_id = Platform::generate_span_id()
   
-  // Test resource merging across platforms
-  let resource2 = Resource::new()
-  let attrs2 = [
-    ("platform.specific", StringValue("cross-platform-value")),
-    ("another.attribute", StringValue("another-value"))
-  ]
+  // Verify IDs are generated consistently
+  assert_eq(trace_id.length(), 32) // Should be 16 bytes = 32 hex characters
+  assert_eq(span_id.length(), 16)   // Should be 8 bytes = 16 hex characters
   
-  let resource2_with_attrs = Resource::with_attributes(resource2, attrs2)
-  let merged = Resource::merge(resource_with_attrs, resource2_with_attrs)
+  // Create span with consistent data
+  let span_context = SpanContext::new(trace_id, span_id, true, "cross_platform_test")
+  let span = Span::new("cross_platform_span", Internal, span_context)
   
-  // Verify merged resource contains all attributes
-  let platform_specific = Resource::get_attribute(merged, "platform.specific")
-  let service_name = Resource::get_attribute(merged, "service.name")
+  // Add platform-agnostic attributes
+  Span::set_attribute(span, "service.name", StringValue("azimuth_test"))
+  Span::set_attribute(span, "service.version", StringValue("1.0.0"))
+  Span::set_attribute(span, "test.name", StringValue("cross_platform_consistency"))
   
-  match platform_specific {
-    Some(StringValue(s)) => assert_eq(s, "cross-platform-value")
-    _ => assert_true(false)
-  }
+  // Add platform-specific attributes
+  let current_os = Platform::get_os()
+  let current_arch = Platform::get_architecture()
   
-  match service_name {
-    Some(StringValue(s)) => assert_eq(s, "cross-platform-service")
-    _ => assert_true(false)
-  }
+  Span::set_attribute(span, "platform.os", StringValue(current_os.to_string()))
+  Span::set_attribute(span, "platform.arch", StringValue(current_arch.to_string()))
+  Span::set_attribute(span, "platform.encoding", StringValue(Platform::get_system_encoding()))
+  Span::set_attribute(span, "platform.locale", StringValue(Platform::get_system_locale()))
+  
+  // Add events with consistent timestamps
+  let current_time = Platform::get_current_time()
+  let utc_time = Platform::get_utc_time()
+  
+  Span::add_event(span, "test_started", Some([
+    ("local.timestamp", StringValue(Platform::format_time(current_time, "%Y-%m-%dT%H:%M:%S"))),
+    ("utc.timestamp", StringValue(Platform::format_time(utc_time, "%Y-%m-%dT%H:%M:%SZ")))
+  ]))
+  
+  // Serialize span to ensure consistent format
+  let json_data = JsonSerializer::serialize_span(span)
+  
+  // Verify JSON contains expected data
+  assert_true(json_data.contains("cross_platform_span"))
+  assert_true(json_data.contains("azimuth_test"))
+  assert_true(json_data.contains("1.0.0"))
+  assert_true(json_data.contains("cross_platform_consistency"))
+  assert_true(json_data.contains("platform.os"))
+  assert_true(json_data.contains("platform.arch"))
+  assert_true(json_data.contains("test_started"))
+  
+  // Test Protocol Buffer serialization for consistency
+  let pb_data = ProtobufSerializer::serialize_span(span)
+  
+  // Verify Protocol Buffer data is generated
+  assert_true(pb_data.length() > 0)
+  
+  // Test deserialization consistency
+  let json_deserialized = JsonSerializer::deserialize_span(json_data)
+  let pb_deserialized = ProtobufSerializer::deserialize_span(pb_data)
+  
+  // Verify both deserializations produce consistent results
+  assert_eq(Span::name(json_deserialized), Span::name(pb_deserialized))
+  assert_eq(Span::kind(json_deserialized), Span::kind(pb_deserialized))
+  
+  let json_context = Span::span_context(json_deserialized)
+  let pb_context = Span::span_context(pb_deserialized)
+  
+  assert_eq(SpanContext::trace_id(json_context), SpanContext::trace_id(pb_context))
+  assert_eq(SpanContext::span_id(json_context), SpanContext::span_id(pb_context))
+  
+  // Test metric consistency
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "consistency_meter")
+  
+  let counter = Meter::create_counter(meter, "consistency_counter", Some("Cross-platform consistency counter"), Some("operations"))
+  Counter::add(counter, 1.0, Some(Attributes::with([
+    ("platform.os", StringValue(current_os.to_string())),
+    ("platform.arch", StringValue(current_arch.to_string())),
+    ("trace.id", StringValue(trace_id)),
+    ("span.id", StringValue(span_id)),
+    ("test.timestamp", StringValue(Platform::format_time(current_time, "%Y-%m-%dT%H:%M:%S")))
+  ])))
+  
+  // Serialize metric for consistency check
+  let metric_json = JsonSerializer::serialize_metric(counter)
+  let metric_pb = ProtobufSerializer::serialize_metric(counter)
+  
+  // Verify both serializations contain expected data
+  assert_true(metric_json.contains("consistency_counter"))
+  assert_true(metric_json.contains(current_os.to_string()))
+  assert_true(metric_json.contains(current_arch.to_string()))
+  assert_true(metric_json.contains(trace_id))
+  assert_true(metric_json.contains(span_id))
+  
+  assert_true(metric_pb.length() > 0)
+  
+  // Test log record consistency
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "consistency_logger")
+  
+  let log_record = LogRecord::new_with_context(
+    Info,
+    Some("Cross-platform consistency test log"),
+    Some(Attributes::with([
+      ("platform.os", StringValue(current_os.to_string())),
+      ("platform.arch", StringValue(current_arch.to_string())),
+      ("trace.id", StringValue(trace_id)),
+      ("span.id", StringValue(span_id))
+    ])),
+    Some(current_time),
+    Some(utc_time),
+    Some(trace_id),
+    Some(span_id),
+    Some(Context::root())
+  )
+  
+  // Serialize log record for consistency check
+  let log_json = JsonSerializer::serialize_log_record(log_record)
+  let log_pb = ProtobufSerializer::serialize_log_record(log_record)
+  
+  // Verify both serializations contain expected data
+  assert_true(log_json.contains("Cross-platform consistency test log"))
+  assert_true(log_json.contains(current_os.to_string()))
+  assert_true(log_json.contains(current_arch.to_string()))
+  assert_true(log_json.contains(trace_id))
+  assert_true(log_json.contains(span_id))
+  
+  assert_true(log_pb.length() > 0)
 }
