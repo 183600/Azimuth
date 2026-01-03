@@ -1,0 +1,9 @@
+{
+  "packages": [
+    {
+      "root": "azimuth-test",
+      "rel": "",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/simple_test/target/wasm-gc/debug/test/azimuth-test.mi"
+    }
+  ]
+}

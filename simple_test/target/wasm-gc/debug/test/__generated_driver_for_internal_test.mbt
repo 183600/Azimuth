@@ -57,29 +57,17 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
-  "simple_additional_tests.mbt": {
-    0: (__test_73696d706c655f6164646974696f6e616c5f74657374732e6d6274_0, ["基础属性操作测试"]),
-    1: (__test_73696d706c655f6164646974696f6e616c5f74657374732e6d6274_1, ["上下文操作测试"]),
-    2: (__test_73696d706c655f6164646974696f6e616c5f74657374732e6d6274_2, ["Span上下文操作测试"]),
-    3: (__test_73696d706c655f6164646974696f6e616c5f74657374732e6d6274_3, ["Baggage操作测试"]),
-    4: (__test_73696d706c655f6164646974696f6e616c5f74657374732e6d6274_4, ["基础度量操作测试"]),
-    5: (__test_73696d706c655f6164646974696f6e616c5f74657374732e6d6274_5, ["日志记录操作测试"]),
-    6: (__test_73696d706c655f6164646974696f6e616c5f74657374732e6d6274_6, ["资源操作测试"]),
-    7: (__test_73696d706c655f6164646974696f6e616c5f74657374732e6d6274_7, ["HTTP客户端操作测试"]),
-    8: (__test_73696d706c655f6164646974696f6e616c5f74657374732e6d6274_8, ["时钟和随机数操作测试"]),
-    9: (__test_73696d706c655f6164646974696f6e616c5f74657374732e6d6274_9, ["文本映射载体操作测试"]),
-  },
   "azimuth_simple_quality_tests.mbt": {
     0: (__test_617a696d7574685f73696d706c655f7175616c6974795f74657374732e6d6274_0, ["string operations"]),
     1: (__test_617a696d7574685f73696d706c655f7175616c6974795f74657374732e6d6274_1, ["array operations"]),
     2: (__test_617a696d7574685f73696d706c655f7175616c6974795f74657374732e6d6274_2, ["option type operations"]),
     3: (__test_617a696d7574685f73696d706c655f7175616c6974795f74657374732e6d6274_3, ["numeric operations"]),
-    4: (__test_617a696d7574685f73696d706c655f7175616c6974795f74657374732e6d6274_4, ["boolean logic"]),
-    5: (__test_617a696d7574685f73696d706c655f7175616c6974795f74657374732e6d6274_5, ["tuple operations"]),
-    6: (__test_617a696d7574685f73696d706c655f7175616c6974795f74657374732e6d6274_6, ["pattern matching with enums"]),
-    7: (__test_617a696d7574685f73696d706c655f7175616c6974795f74657374732e6d6274_7, ["loop and iteration"]),
-    8: (__test_617a696d7574685f73696d706c655f7175616c6974795f74657374732e6d6274_8, ["function composition"]),
-    9: (__test_617a696d7574685f73696d706c655f7175616c6974795f74657374732e6d6274_9, ["result type operations"]),
+    4: (__test_617a696d7574685f73696d706c655f7175616c6974795f74657374732e6d6274_4, ["tuple operations"]),
+    5: (__test_617a696d7574685f73696d706c655f7175616c6974795f74657374732e6d6274_5, ["pattern matching with enums"]),
+    6: (__test_617a696d7574685f73696d706c655f7175616c6974795f74657374732e6d6274_6, ["loop and iteration"]),
+    7: (__test_617a696d7574685f73696d706c655f7175616c6974795f74657374732e6d6274_7, ["function composition"]),
+    8: (__test_617a696d7574685f73696d706c655f7175616c6974795f74657374732e6d6274_8, ["option type advanced operations"]),
+    9: (__test_617a696d7574685f73696d706c655f7175616c6974795f74657374732e6d6274_9, ["boolean logic operations"]),
   },
   "azimuth.mbt": {
   },
@@ -159,7 +147,7 @@ pub fn moonbit_test_driver_internal_do_execute(
     let message = message.escape()
     @moonbitlang/core/builtin.println("----- BEGIN MOON TEST RESULT -----")
     @moonbitlang/core/builtin.println(
-      "{\"package\": \"azimuth/telemetry/simple_test\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
+      "{\"package\": \"azimuth-test\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
     )
     @moonbitlang/core/builtin.println("----- END MOON TEST RESULT -----")
   }

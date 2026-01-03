@@ -67,6 +67,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     4: (__test_62617369635f746573742e6d6274_4, ["span context creation test"]),
     5: (__test_62617369635f746573742e6d6274_5, ["context operations test"]),
   },
+  "azimuth_simple_quality_tests.mbt": {
+  },
   "azimuth.mbt": {
   },
 }
