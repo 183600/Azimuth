@@ -1,590 +1,271 @@
-// Azimuth Premium Performance Benchmark Tests
-// 高质量性能基准测试用例
-// 专注于测试遥测系统的性能指标和基准性能
+// Azimuth Telemetry System - Premium Performance Benchmark Tests
+// This file contains high-quality performance benchmark tests for critical telemetry operations
 
-// 测试1: AttributeValue创建和访问性能
-test "AttributeValue创建和访问性能测试" {
-  // 1. 测试大量StringValue创建性能
-  let start_time = 0 // 模拟时间戳，实际实现中应该使用真实时间测量
+// Test 1: Attribute Operations Performance
+test "attribute operations performance benchmark" {
+  let attrs = Attributes::new()
+  let iterations = 10000
   
-  let mut string_values = []
-  for i in range(0, 10000) {
-    string_values = string_values.push(AttributeValue::StringValue("value" + i.to_string()))
+  // Benchmark attribute setting performance
+  let start_time = Clock::monotonic()
+  for i in 0..<iterations {
+    let key = "perf.key." + i.to_string()
+    let value = StringValue("performance.test.value." + i.to_string())
+    Attributes::set(attrs, key, value)
   }
+  let set_duration = Clock::monotonic() - start_time
   
-  // 模拟时间测量结束
-  let end_time = 100 // 模拟经过的时间单位
-  let creation_time = end_time - start_time
-  
-  // 验证创建性能（实际实现中应该有具体的性能阈值）
-  assert_eq(string_values.length(), 10000)
-  assert_true(creation_time > 0)
-  
-  // 2. 测试StringValue访问性能
-  let access_start_time = 0
-  let mut accessed_values = []
-  
-  for value in string_values {
-    match value {
-      AttributeValue::StringValue(s) => {
-        accessed_values = accessed_values.push(s)
-      }
-      _ => assert_true(false, "StringValue类型不匹配")
-    }
+  // Benchmark attribute getting performance
+  start_time = Clock::monotonic()
+  for i in 0..<iterations {
+    let key = "perf.key." + i.to_string()
+    let _result = Attributes::get(attrs, key)
   }
+  let get_duration = Clock::monotonic() - start_time
   
-  let access_end_time = 50
-  let access_time = access_end_time - access_start_time
-  
-  // 验证访问性能
-  assert_eq(accessed_values.length(), 10000)
-  assert_true(access_time > 0)
-  assert_true(access_time <= creation_time, "访问时间应该小于或等于创建时间")
-  
-  // 3. 测试不同类型的AttributeValue创建性能比较
-  let mixed_start_time = 0
-  let mut mixed_values = []
-  
-  for i in range(0, 2500) {
-    mixed_values = mixed_values.push(AttributeValue::StringValue("str" + i.to_string()))
-    mixed_values = mixed_values.push(AttributeValue::IntValue(i))
-    mixed_values = mixed_values.push(AttributeValue::FloatValue(i.to_double() * 1.5))
-    mixed_values = mixed_values.push(AttributeValue::BoolValue(i % 2 == 0))
-  }
-  
-  let mixed_end_time = 120
-  let mixed_time = mixed_end_time - mixed_start_time
-  
-  // 验证混合类型创建性能
-  assert_eq(mixed_values.length(), 10000)
-  assert_true(mixed_time > 0)
-  
-  // 4. 测试数组类型AttributeValue创建性能
-  let array_start_time = 0
-  let mut array_values = []
-  
-  for i in range(0, 1000) {
-    let string_array = AttributeValue::ArrayStringValue([
-      "item1_" + i.to_string(),
-      "item2_" + i.to_string(),
-      "item3_" + i.to_string()
-    ])
-    let int_array = AttributeValue::ArrayIntValue([i, i + 1, i + 2, i + 3, i + 4])
-    
-    array_values = array_values.push(string_array)
-    array_values = array_values.push(int_array)
-  }
-  
-  let array_end_time = 80
-  let array_time = array_end_time - array_start_time
-  
-  // 验证数组类型创建性能
-  assert_eq(array_values.length(), 2000)
-  assert_true(array_time > 0)
-  
-  // 5. 性能比较分析
-  assert_true(creation_time < 200, "StringValue创建时间应该在合理范围内")
-  assert_true(access_time < 100, "StringValue访问时间应该在合理范围内")
-  assert_true(mixed_time < 250, "混合类型创建时间应该在合理范围内")
-  assert_true(array_time < 150, "数组类型创建时间应该在合理范围内")
+  // Performance assertions - these should be adjusted based on actual requirements
+  assert_true(set_duration < 1000000L) // Set operations should complete within 1ms
+  assert_true(get_duration < 500000L)  // Get operations should complete within 0.5ms
+  assert_true(set_duration > get_duration) // Get should be faster than set
 }
 
-// 测试2: Attributes操作性能
-test "Attributes操作性能测试" {
-  // 1. 测试大量Attributes创建性能
-  let creation_start = 0
-  let mut attributes_list = []
+// Test 2: Span Creation and Lifecycle Performance
+test "span lifecycle performance benchmark" {
+  let span_ctx = SpanContext::new("trace_id", "span_id", true, "")
+  let iterations = 5000
+  let spans = []
   
-  for i in range(0, 5000) {
-    let attributes = Attributes({
-      values: [
-        ("key1_" + i.to_string(), AttributeValue::StringValue("value1_" + i.to_string())),
-        ("key2_" + i.to_string(), AttributeValue::IntValue(i)),
-        ("key3_" + i.to_string(), AttributeValue::BoolValue(i % 2 == 0)),
-        ("key4_" + i.to_string(), AttributeValue::FloatValue(i.to_double() * 2.5))
-      ]
-    })
-    attributes_list = attributes_list.push(attributes)
+  // Benchmark span creation performance
+  let start_time = Clock::monotonic()
+  for i in 0..<iterations {
+    let span_name = "performance.span." + i.to_string()
+    let span = Span::new(span_name, Internal, span_ctx)
+    spans.push(span)
   }
+  let creation_duration = Clock::monotonic() - start_time
   
-  let creation_end = 200
-  let attributes_creation_time = creation_end - creation_start
-  
-  // 验证创建性能
-  assert_eq(attributes_list.length(), 5000)
-  assert_true(attributes_creation_time > 0)
-  
-  // 2. 测试Attributes查找性能
-  let lookup_start = 0
-  let mut found_values = []
-  
-  for attributes in attributes_list {
-    for (key, value) in attributes.values {
-      if key.contains("key2_") {
-        match value {
-          AttributeValue::IntValue(i) => {
-            found_values = found_values.push(i)
-          }
-          _ => assert_true(false, "IntValue类型不匹配")
-        }
-      }
-    }
+  // Benchmark span operations performance
+  start_time = Clock::monotonic()
+  for span in spans {
+    Span::add_event(span, "performance.event", Some([("iteration", IntValue(1))]))
+    Span::set_status(span, Ok, Some("Performance test"))
   }
+  let operations_duration = Clock::monotonic() - start_time
   
-  let lookup_end = 150
-  let lookup_time = lookup_end - lookup_start
-  
-  // 验证查找性能
-  assert_eq(found_values.length(), 5000)
-  assert_true(lookup_time > 0)
-  
-  // 3. 测试Attributes过滤性能
-  let filter_start = 0
-  let mut filtered_attributes = []
-  
-  for attributes in attributes_list {
-    let mut matching_values = []
-    for (key, value) in attributes.values {
-      match value {
-        AttributeValue::BoolValue(b) => {
-          if b {
-            matching_values = matching_values.push((key, value))
-          }
-        }
-        _ => () // 忽略非布尔值
-      }
-    }
-    if matching_values.length() > 0 {
-      filtered_attributes = filtered_attributes.push(matching_values)
-    }
+  // Benchmark span ending performance
+  start_time = Clock::monotonic()
+  for span in spans {
+    Span::end(span)
   }
+  let end_duration = Clock::monotonic() - start_time
   
-  let filter_end = 180
-  let filter_time = filter_end - filter_start
-  
-  // 验证过滤性能
-  assert_eq(filtered_attributes.length(), 2500) // 大约一半的Attributes包含true值
-  assert_true(filter_time > 0)
-  
-  // 4. 性能比较分析
-  assert_true(attributes_creation_time < 500, "Attributes创建时间应该在合理范围内")
-  assert_true(lookup_time < 300, "Attributes查找时间应该在合理范围内")
-  assert_true(filter_time < 350, "Attributes过滤时间应该在合理范围内")
+  // Performance assertions
+  assert_true(creation_duration < 2000000L)  // Creation should complete within 2ms
+  assert_true(operations_duration < 1500000L) // Operations should complete within 1.5ms
+  assert_true(end_duration < 1000000L)       // Ending should complete within 1ms
 }
 
-// 测试3: SpanContext操作性能
-test "SpanContext操作性能测试" {
-  // 1. 测试大量SpanContext创建性能
-  let creation_start = 0
-  let mut span_contexts = []
+// Test 3: Metrics Collection Performance
+test "metrics collection performance benchmark" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "performance_meter")
+  let counter = Meter::create_counter(meter, "performance.counter", Some("Performance counter"), Some("count"))
+  let histogram = Meter::create_histogram(meter, "performance.histogram", Some("Performance histogram"), Some("ms"))
+  let iterations = 10000
   
-  for i in range(0, 10000) {
-    let span_context = SpanContext({
-      trace_id: "trace_" + i.to_string().lpad(32, '0'),
-      span_id: "span_" + i.to_string().lpad(16, '0'),
-      sampled: i % 2 == 0,
-      trace_state: "key=value" + i.to_string()
-    })
-    span_contexts = span_contexts.push(span_context)
+  // Benchmark counter operations
+  let start_time = Clock::monotonic()
+  for i in 0..<iterations {
+    Counter::add(counter, i.to_float())
   }
+  let counter_duration = Clock::monotonic() - start_time
   
-  let creation_end = 250
-  let span_creation_time = creation_end - creation_start
-  
-  // 验证创建性能
-  assert_eq(span_contexts.length(), 10000)
-  assert_true(span_creation_time > 0)
-  
-  // 2. 测试SpanContext访问性能
-  let access_start = 0
-  let mut trace_ids = []
-  let mut span_ids = []
-  let mut sampled_count = 0
-  
-  for context in span_contexts {
-    trace_ids = trace_ids.push(context.trace_id)
-    span_ids = span_ids.push(context.span_id)
-    if context.sampled {
-      sampled_count = sampled_count + 1
-    }
+  // Benchmark histogram operations
+  start_time = Clock::monotonic()
+  for i in 0..<iterations {
+    Histogram::record(histogram, i.to_float())
   }
+  let histogram_duration = Clock::monotonic() - start_time
   
-  let access_end = 120
-  let access_time = access_end - access_start
-  
-  // 验证访问性能
-  assert_eq(trace_ids.length(), 10000)
-  assert_eq(span_ids.length(), 10000)
-  assert_eq(sampled_count, 5000)
-  assert_true(access_time > 0)
-  
-  // 3. 测试SpanContext过滤性能
-  let filter_start = 0
-  let mut sampled_contexts = []
-  let mut unsampled_contexts = []
-  
-  for context in span_contexts {
-    if context.sampled {
-      sampled_contexts = sampled_contexts.push(context)
-    } else {
-      unsampled_contexts = unsampled_contexts.push(context)
-    }
-  }
-  
-  let filter_end = 80
-  let filter_time = filter_end - filter_start
-  
-  // 验证过滤性能
-  assert_eq(sampled_contexts.length(), 5000)
-  assert_eq(unsampled_contexts.length(), 5000)
-  assert_true(filter_time > 0)
-  
-  // 4. 测试SpanContext比较性能
-  let compare_start = 0
-  let mut same_trace_contexts = []
-  
-  for i in range(0, 5000) {
-    let context1 = span_contexts[i]
-    let context2 = span_contexts[i + 5000]
-    
-    if context1.trace_id == context2.trace_id {
-      same_trace_contexts = same_trace_contexts.push((context1, context2))
-    }
-  }
-  
-  let compare_end = 100
-  let compare_time = compare_end - compare_start
-  
-  // 验证比较性能
-  assert_eq(same_trace_contexts.length(), 0) // 在我们的测试中，所有trace_id都是不同的
-  assert_true(compare_time > 0)
-  
-  // 5. 性能比较分析
-  assert_true(span_creation_time < 500, "SpanContext创建时间应该在合理范围内")
-  assert_true(access_time < 250, "SpanContext访问时间应该在合理范围内")
-  assert_true(filter_time < 150, "SpanContext过滤时间应该在合理范围内")
-  assert_true(compare_time < 200, "SpanContext比较时间应该在合理范围内")
+  // Performance assertions
+  assert_true(counter_duration < 1000000L)   // Counter operations should complete within 1ms
+  assert_true(histogram_duration < 2000000L) // Histogram operations should complete within 2ms
 }
 
-// 测试4: Baggage操作性能
-test "Baggage操作性能测试" {
-  // 1. 测试大量Baggage创建性能
-  let creation_start = 0
-  let mut baggage_list = []
+// Test 4: Log Record Emission Performance
+test "log record emission performance benchmark" {
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "performance_logger")
+  let iterations = 5000
   
-  for i in range(0, 5000) {
-    let baggage = Baggage({
-      entries: [
-        ("user.id", "user" + i.to_string()),
-        ("request.id", "req" + i.to_string()),
-        ("session.id", "sess" + i.to_string()),
-        ("tenant.id", "tenant" + i.to_string()),
-        ("correlation.id", "corr" + i.to_string())
-      ]
-    })
-    baggage_list = baggage_list.push(baggage)
+  // Benchmark simple log record creation and emission
+  let start_time = Clock::monotonic()
+  for i in 0..<iterations {
+    let log_record = LogRecord::new(Info, "Performance test log message " + i.to_string())
+    Logger::emit(logger, log_record)
   }
+  let simple_log_duration = Clock::monotonic() - start_time
   
-  let creation_end = 180
-  let baggage_creation_time = creation_end - creation_start
-  
-  // 验证创建性能
-  assert_eq(baggage_list.length(), 5000)
-  assert_true(baggage_creation_time > 0)
-  
-  // 2. 测试Baggage查找性能
-  let lookup_start = 0
-  let mut user_ids = []
-  let mut request_ids = []
-  
-  for baggage in baggage_list {
-    for (key, value) in baggage.entries {
-      match key {
-        "user.id" => user_ids = user_ids.push(value)
-        "request.id" => request_ids = request_ids.push(value)
-        _ => () // 忽略其他键
-      }
-    }
-  }
-  
-  let lookup_end = 120
-  let lookup_time = lookup_end - lookup_start
-  
-  // 验证查找性能
-  assert_eq(user_ids.length(), 5000)
-  assert_eq(request_ids.length(), 5000)
-  assert_true(lookup_time > 0)
-  
-  // 3. 测试Baggage合并性能
-  let merge_start = 0
-  let mut merged_baggage_list = []
-  
-  for i in range(0, 2500) {
-    let baggage1 = baggage_list[i]
-    let baggage2 = baggage_list[i + 2500]
+  // Benchmark complex log record creation and emission
+  start_time = Clock::monotonic()
+  for i in 0..<iterations {
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "iteration", IntValue(i))
+    Attributes::set(attrs, "component", StringValue("performance_test"))
     
-    let mut merged_entries = baggage1.entries.to_array()
-    for entry in baggage2.entries {
-      merged_entries = merged_entries.push(entry)
-    }
-    
-    let merged_baggage = Baggage({ entries: merged_entries })
-    merged_baggage_list = merged_baggage_list.push(merged_baggage)
+    let log_record = LogRecord::new_with_context(
+      Info,
+      Some("Complex performance test log message " + i.to_string()),
+      Some(attrs),
+      Some(Clock::monotonic()),
+      Some(Clock::monotonic() + 1000L),
+      Some("trace_id_" + i.to_string()),
+      Some("span_id_" + i.to_string()),
+      None
+    )
+    Logger::emit(logger, log_record)
   }
+  let complex_log_duration = Clock::monotonic() - start_time
   
-  let merge_end = 150
-  let merge_time = merge_end - merge_start
-  
-  // 验证合并性能
-  assert_eq(merged_baggage_list.length(), 2500)
-  for baggage in merged_baggage_list {
-    assert_eq(baggage.entries.length(), 10)
-  }
-  assert_true(merge_time > 0)
-  
-  // 4. 测试Baggage过滤性能
-  let filter_start = 0
-  let mut filtered_baggage = []
-  
-  for baggage in baggage_list {
-    let mut matching_entries = []
-    for (key, value) in baggage.entries {
-      if key.contains("user") || key.contains("session") {
-        matching_entries = matching_entries.push((key, value))
-      }
-    }
-    if matching_entries.length() > 0 {
-      filtered_baggage = filtered_baggage.push(matching_entries)
-    }
-  }
-  
-  let filter_end = 100
-  let filter_time = filter_end - filter_start
-  
-  // 验证过滤性能
-  assert_eq(filtered_baggage.length(), 5000)
-  for entries in filtered_baggage {
-    assert_eq(entries.length(), 2)
-  }
-  assert_true(filter_time > 0)
-  
-  // 5. 性能比较分析
-  assert_true(baggage_creation_time < 400, "Baggage创建时间应该在合理范围内")
-  assert_true(lookup_time < 250, "Baggage查找时间应该在合理范围内")
-  assert_true(merge_time < 300, "Baggage合并时间应该在合理范围内")
-  assert_true(filter_time < 200, "Baggage过滤时间应该在合理范围内")
+  // Performance assertions
+  assert_true(simple_log_duration < 2000000L)   // Simple logs should complete within 2ms
+  assert_true(complex_log_duration < 5000000L)  // Complex logs should complete within 5ms
+  assert_true(complex_log_duration > simple_log_duration) // Complex logs should be slower
 }
 
-// 测试5: TextMapCarrier操作性能
-test "TextMapCarrier操作性能测试" {
-  // 1. 测试大量TextMapCarrier创建性能
-  let creation_start = 0
-  let mut carrier_list = []
+// Test 5: Context Propagation Performance
+test "context propagation performance benchmark" {
+  let root_ctx = Context::root()
+  let iterations = 10000
   
-  for i in range(0, 5000) {
-    let carrier = TextMapCarrier({
-      headers: [
-        ("traceparent", "00-" + i.to_string().lpad(32, '0') + "-" + i.to_string().lpad(16, '0') + "-01"),
-        ("tracestate", "key=value" + i.to_string()),
-        ("baggage", "user.id=user" + i.to_string() + ",request.id=req" + i.to_string()),
-        ("x-request-id", "req-" + i.to_string()),
-        ("x-correlation-id", "corr-" + i.to_string()),
-        ("content-type", "application/json"),
-        ("user-agent", "azimuth-telemetry/1.0.0")
-      ]
-    })
-    carrier_list = carrier_list.push(carrier)
+  // Benchmark context creation and value setting
+  let start_time = Clock::monotonic()
+  let mut ctx = root_ctx
+  for i in 0..<iterations {
+    let key = ContextKey::new("context.key." + i.to_string())
+    ctx = Context::with_value(ctx, key, "context.value." + i.to_string())
   }
+  let context_creation_duration = Clock::monotonic() - start_time
   
-  let creation_end = 220
-  let carrier_creation_time = creation_end - creation_start
-  
-  // 验证创建性能
-  assert_eq(carrier_list.length(), 5000)
-  assert_true(carrier_creation_time > 0)
-  
-  // 2. 测试TextMapCarrier查找性能
-  let lookup_start = 0
-  let mut traceparents = []
-  let mut request_ids = []
-  
-  for carrier in carrier_list {
-    for (key, value) in carrier.headers {
-      match key {
-        "traceparent" => traceparents = traceparents.push(value)
-        "x-request-id" => request_ids = request_ids.push(value)
-        _ => () // 忽略其他键
-      }
-    }
+  // Benchmark context value retrieval
+  start_time = Clock::monotonic()
+  for i in 0..<iterations {
+    let key = ContextKey::new("context.key." + i.to_string())
+    let _value = Context::get(ctx, key)
   }
+  let context_retrieval_duration = Clock::monotonic() - start_time
   
-  let lookup_end = 130
-  let lookup_time = lookup_end - lookup_start
-  
-  // 验证查找性能
-  assert_eq(traceparents.length(), 5000)
-  assert_eq(request_ids.length(), 5000)
-  assert_true(lookup_time > 0)
-  
-  // 3. 测试TextMapCarrier注入性能
-  let inject_start = 0
-  let mut injected_carriers = []
-  
-  for i in range(0, 2500) {
-    let base_carrier = carrier_list[i]
-    let mut new_headers = base_carrier.headers.to_array()
-    
-    new_headers = new_headers.push(("injected.header1", "value1_" + i.to_string()))
-    new_headers = new_headers.push(("injected.header2", "value2_" + i.to_string()))
-    
-    let injected_carrier = TextMapCarrier({ headers: new_headers })
-    injected_carriers = injected_carriers.push(injected_carrier)
-  }
-  
-  let inject_end = 140
-  let inject_time = inject_end - inject_start
-  
-  // 验证注入性能
-  assert_eq(injected_carriers.length(), 2500)
-  for carrier in injected_carriers {
-    assert_eq(carrier.headers.length(), 9)
-  }
-  assert_true(inject_time > 0)
-  
-  // 4. 测试TextMapCarrier提取性能
-  let extract_start = 0
-  let mut extracted_values = []
-  
-  for carrier in injected_carriers {
-    let mut traceparent = ""
-    let mut baggage = ""
-    let mut injected_header1 = ""
-    
-    for (key, value) in carrier.headers {
-      match key {
-        "traceparent" => traceparent = value
-        "baggage" => baggage = value
-        "injected.header1" => injected_header1 = value
-        _ => () // 忽略其他键
-      }
-    }
-    
-    extracted_values = extracted_values.push((traceparent, baggage, injected_header1))
-  }
-  
-  let extract_end = 110
-  let extract_time = extract_end - extract_start
-  
-  // 验证提取性能
-  assert_eq(extracted_values.length(), 2500)
-  for (traceparent, baggage, injected_header1) in extracted_values {
-    assert_true(traceparent.length() > 0)
-    assert_true(baggage.length() > 0)
-    assert_true(injected_header1.length() > 0)
-  }
-  assert_true(extract_time > 0)
-  
-  // 5. 性能比较分析
-  assert_true(carrier_creation_time < 450, "TextMapCarrier创建时间应该在合理范围内")
-  assert_true(lookup_time < 250, "TextMapCarrier查找时间应该在合理范围内")
-  assert_true(inject_time < 300, "TextMapCarrier注入时间应该在合理范围内")
-  assert_true(extract_time < 200, "TextMapCarrier提取时间应该在合理范围内")
+  // Performance assertions
+  assert_true(context_creation_duration < 3000000L)  // Context creation should complete within 3ms
+  assert_true(context_retrieval_duration < 2000000L) // Context retrieval should complete within 2ms
 }
 
-// 测试6: 复合操作性能
-test "复合操作性能测试" {
-  // 1. 测试完整的遥测数据处理流程性能
-  let pipeline_start = 0
-  let mut processed_results = []
+// Test 6: Memory Allocation and Cleanup Performance
+test "memory allocation and cleanup performance benchmark" {
+  let iterations = 1000
   
-  for i in range(0, 1000) {
-    // 创建SpanContext
-    let span_context = SpanContext({
-      trace_id: "trace_" + i.to_string().lpad(32, '0'),
-      span_id: "span_" + i.to_string().lpad(16, '0'),
-      sampled: i % 2 == 0,
-      trace_state: "key=value" + i.to_string()
-    })
-    
-    // 创建Baggage
-    let baggage = Baggage({
-      entries: [
-        ("user.id", "user" + i.to_string()),
-        ("request.id", "req" + i.to_string()),
-        ("operation.name", "operation_" + i.to_string())
-      ]
-    })
-    
-    // 创建TextMapCarrier并注入数据
-    let carrier = TextMapCarrier({
-      headers: [
-        ("traceparent", "00-" + span_context.trace_id + "-" + span_context.span_id + "-01"),
-        ("tracestate", span_context.trace_state),
-        ("baggage", "user.id=" + baggage.entries[0].1 + ",request.id=" + baggage.entries[1].1),
-        ("x-operation", baggage.entries[2].1),
-        ("content-type", "application/json")
-      ]
-    })
-    
-    // 模拟数据处理
-    let mut traceparent = ""
-    let mut operation_name = ""
-    let mut user_id = ""
-    
-    for (key, value) in carrier.headers {
-      match key {
-        "traceparent" => traceparent = value
-        "x-operation" => operation_name = value
-        "baggage" => {
-          // 简单解析baggage字符串
-          if value.contains("user.id=") {
-            let parts = value.split(",")
-            for part in parts {
-              if part.contains("user.id=") {
-                let kv_parts = part.split("=")
-                if kv_parts.length() >= 2 {
-                  user_id = kv_parts[1]
-                }
-              }
-            }
-          }
-        }
-        _ => () // 忽略其他键
-      }
+  // Benchmark attribute creation and cleanup
+  let start_time = Clock::monotonic()
+  for i in 0..<iterations {
+    let attrs = Attributes::new()
+    for j in 0..<100 {
+      let key = "memory.key." + j.to_string()
+      let value = StringValue("memory.value." + j.to_string())
+      Attributes::set(attrs, key, value)
     }
-    
-    processed_results = processed_results.push((traceparent, operation_name, user_id))
+    // Attributes should be automatically cleaned up when going out of scope
   }
+  let memory_cleanup_duration = Clock::monotonic() - start_time
   
-  let pipeline_end = 300
-  let pipeline_time = pipeline_end - pipeline_start
-  
-  // 验证复合操作性能
-  assert_eq(processed_results.length(), 1000)
-  for (traceparent, operation_name, user_id) in processed_results {
-    assert_true(traceparent.length() > 0)
-    assert_true(operation_name.length() > 0)
-    assert_true(user_id.length() > 0)
+  // Benchmark span creation and cleanup
+  start_time = Clock::monotonic()
+  for i in 0..<iterations {
+    let span_ctx = SpanContext::new("trace_id", "span_id", true, "")
+    let span = Span::new("memory.test.span", Internal, span_ctx)
+    Span::add_event(span, "memory.test.event", None)
+    Span::end(span)
+    // Span should be automatically cleaned up when going out of scope
   }
-  assert_true(pipeline_time > 0)
+  let span_cleanup_duration = Clock::monotonic() - start_time
   
-  // 2. 测试内存使用效率（模拟）
-  let memory_start = 10000 // 模拟初始内存使用
-  let memory_end = 15000 // 模拟结束内存使用
-  let memory_increase = memory_end - memory_start
+  // Performance assertions
+  assert_true(memory_cleanup_duration < 10000000L) // Memory cleanup should complete within 10ms
+  assert_true(span_cleanup_duration < 5000000L)    // Span cleanup should complete within 5ms
+}
+
+// Test 7: Serialization and Deserialization Performance
+test "serialization and deserialization performance benchmark" {
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "string.key", StringValue("test.value"))
+  Attributes::set(attrs, "int.key", IntValue(42))
+  Attributes::set(attrs, "float.key", FloatValue(3.14))
+  Attributes::set(attrs, "bool.key", BoolValue(true))
   
-  // 验证内存使用效率
-  assert_true(memory_increase < 10000, "内存增长应该在合理范围内")
-  assert_true(memory_increase > 0, "应该有内存增长")
+  let iterations = 1000
   
-  // 3. 性能基准验证
-  assert_true(pipeline_time < 600, "完整数据处理流程时间应该在合理范围内")
+  // Benchmark serialization performance
+  let start_time = Clock::monotonic()
+  let mut serialized_data = []
+  for i in 0..<iterations {
+    let data = Attributes::serialize(attrs)
+    serialized_data.push(data)
+  }
+  let serialization_duration = Clock::monotonic() - start_time
   
-  // 4. 计算吞吐量（模拟）
-  let throughput = 1000.0 / pipeline_time.to_double()
-  assert_true(throughput > 1.0, "吞吐量应该大于1操作/时间单位")
+  // Benchmark deserialization performance
+  start_time = Clock::monotonic()
+  for data in serialized_data {
+    let _deserialized_attrs = Attributes::deserialize(data)
+  }
+  let deserialization_duration = Clock::monotonic() - start_time
   
-  // 5. 计算延迟（模拟）
-  let average_latency = pipeline_time.to_double() / 1000.0
-  assert_true(average_latency < 1.0, "平均延迟应该小于1时间单位/操作")
+  // Performance assertions
+  assert_true(serialization_duration < 5000000L)   // Serialization should complete within 5ms
+  assert_true(deserialization_duration < 5000000L) // Deserialization should complete within 5ms
+}
+
+// Test 8: Concurrent Operations Performance
+test "concurrent operations performance benchmark" {
+  let attrs = Attributes::new()
+  let iterations_per_thread = 1000
+  let thread_count = 4
+  
+  // Benchmark concurrent attribute setting
+  let start_time = Clock::monotonic()
+  let threads = []
+  for thread_id in 0..<thread_count {
+    let thread = Thread::spawn(|| {
+      for i in 0..<iterations_per_thread {
+        let key = "concurrent.key." + thread_id.to_string() + "." + i.to_string()
+        let value = StringValue("concurrent.value." + thread_id.to_string() + "." + i.to_string())
+        Attributes::set(attrs, key, value)
+      }
+    })
+    threads.push(thread)
+  }
+  for thread in threads {
+    Thread::join(thread)
+  }
+  let concurrent_set_duration = Clock::monotonic() - start_time
+  
+  // Benchmark concurrent attribute getting
+  start_time = Clock::monotonic()
+  let get_threads = []
+  for thread_id in 0..<thread_count {
+    let thread = Thread::spawn(|| {
+      for i in 0..<iterations_per_thread {
+        let key = "concurrent.key." + thread_id.to_string() + "." + i.to_string()
+        let _value = Attributes::get(attrs, key)
+      }
+    })
+    get_threads.push(thread)
+  }
+  for thread in get_threads {
+    Thread::join(thread)
+  }
+  let concurrent_get_duration = Clock::monotonic() - start_time
+  
+  // Performance assertions
+  assert_true(concurrent_set_duration < 10000000L) // Concurrent set should complete within 10ms
+  assert_true(concurrent_get_duration < 10000000L) // Concurrent get should complete within 10ms
 }

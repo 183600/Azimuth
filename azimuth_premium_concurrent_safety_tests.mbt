@@ -1,472 +1,594 @@
-// Azimuth Premium Concurrent Safety and Thread Safety Tests
-// 并发安全和线程安全测试，确保系统在多线程环境下的正确性和一致性
+// Azimuth Telemetry System - Premium Concurrent Safety Tests
+// This file contains comprehensive concurrent safety tests for telemetry operations
 
-// Test 1: Concurrent Attribute Access
-test "并发属性访问测试" {
-  // 创建共享属性集合
-  let shared_attrs = Attributes::new()
+// Test 1: Concurrent Attribute Operations Safety
+test "concurrent attribute operations safety" {
+  let attrs = Attributes::new()
+  let thread_count = 8
+  let operations_per_thread = 1000
+  let threads = []
+  let results = Mutex::new([])
   
-  // 初始化一些基础数据
-  Attributes::set(shared_attrs, "base_key", StringValue("base_value"))
-  Attributes::set(shared_attrs, "counter", IntValue(0))
+  // Concurrent attribute setting
+  for thread_id in 0..<thread_count {
+    let thread = Thread::spawn(|| {
+      let mut thread_results = []
+      for i in 0..<operations_per_thread {
+        let key = "concurrent.key." + thread_id.to_string() + "." + i.to_string()
+        let value = StringValue("concurrent.value." + thread_id.to_string() + "." + i.to_string())
+        Attributes::set(attrs, key, value)
+        thread_results.push((key, value))
+      }
+      
+      // Store results in shared mutex
+      let mut guard = Mutex::lock(results)
+      for result in thread_results {
+        guard.push(result)
+      }
+    })
+    threads.push(thread)
+  }
   
-  // 模拟并发读取操作
-  let mut read_results = []
-  for i in 0..100 {
-    let result = Attributes::get(shared_attrs, "base_key")
-    match result {
-      Some(StringValue(v)) => read_results = read_results + [v]
-      _ => read_results = read_results + ["ERROR"]
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Verify all attributes were set correctly
+  let guard = Mutex::lock(results)
+  let total_expected = thread_count * operations_per_thread
+  assert_eq(guard.length(), total_expected)
+  
+  // Verify attribute retrieval integrity
+  for (key, expected_value) in guard {
+    let actual_value = Attributes::get(attrs, key)
+    match actual_value {
+      Some(value) => assert_eq(value, expected_value)
+      None => assert_true(false)
+    }
+  }
+}
+
+// Test 2: Concurrent Span Creation and Management Safety
+test "concurrent span creation and management safety" {
+  let span_ctx = SpanContext::new("trace_id", "span_id", true, "")
+  let thread_count = 6
+  let spans_per_thread = 500
+  let threads = []
+  let created_spans = Mutex::new([])
+  
+  // Concurrent span creation
+  for thread_id in 0..<thread_count {
+    let thread = Thread::spawn(|| {
+      let mut thread_spans = []
+      for i in 0..<spans_per_thread {
+        let span_name = "concurrent.span." + thread_id.to_string() + "." + i.to_string()
+        let span = Span::new(span_name, Internal, span_ctx)
+        
+        // Add events and set status
+        Span::add_event(span, "concurrent.event", Some([
+          ("thread_id", IntValue(thread_id)),
+          ("iteration", IntValue(i))
+        ]))
+        Span::set_status(span, Ok, Some("Concurrent test"))
+        
+        thread_spans.push(span)
+      }
+      
+      // Store spans in shared mutex
+      let mut guard = Mutex::lock(created_spans)
+      for span in thread_spans {
+        guard.push(span)
+      }
+    })
+    threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Verify all spans were created
+  let guard = Mutex::lock(created_spans)
+  let total_expected = thread_count * spans_per_thread
+  assert_eq(guard.length(), total_expected)
+  
+  // Verify span properties integrity
+  for span in guard {
+    assert_true(Span::is_recording(span))
+    assert_eq(Span::status(span), Ok)
+    assert_true(Span::name(span).contains("concurrent.span"))
+  }
+  
+  // Concurrent span ending
+  let end_threads = []
+  for span_batch in guard.chunks(100) {
+    let thread = Thread::spawn(|| {
+      for span in span_batch {
+        Span::end(span)
+      }
+    })
+    end_threads.push(thread)
+  }
+  
+  // Wait for all end threads to complete
+  for thread in end_threads {
+    Thread::join(thread)
+  }
+}
+
+// Test 3: Concurrent Metrics Collection Safety
+test "concurrent metrics collection safety" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "concurrent_meter")
+  let counter = Meter::create_counter(meter, "concurrent_counter", Some("Concurrent counter"), Some("count"))
+  let histogram = Meter::create_histogram(meter, "concurrent_histogram", Some("Concurrent histogram"), Some("ms"))
+  let updown_counter = Meter::create_updown_counter(meter, "concurrent_updown", Some("Concurrent updown"), Some("value"))
+  
+  let thread_count = 10
+  let operations_per_thread = 1000
+  let threads = []
+  
+  // Concurrent counter operations
+  for thread_id in 0..<thread_count {
+    let thread = Thread::spawn(|| {
+      for i in 0..<operations_per_thread {
+        let value = (thread_id * operations_per_thread + i).to_float()
+        Counter::add(counter, value, Some([
+          ("thread_id", IntValue(thread_id)),
+          ("iteration", IntValue(i))
+        ]))
+      }
+    })
+    threads.push(thread)
+  }
+  
+  // Concurrent histogram operations
+  for thread_id in 0..<thread_count {
+    let thread = Thread::spawn(|| {
+      for i in 0..<operations_per_thread {
+        let value = (thread_id * operations_per_thread + i).to_float()
+        Histogram::record(histogram, value, Some([
+          ("thread_id", IntValue(thread_id)),
+          ("iteration", IntValue(i))
+        ]))
+      }
+    })
+    threads.push(thread)
+  }
+  
+  // Concurrent updown counter operations
+  for thread_id in 0..<thread_count {
+    let thread = Thread::spawn(|| {
+      for i in 0..<operations_per_thread {
+        let value = if i % 2 == 0 { 1.0 } else { -1.0 }
+        UpDownCounter::add(updown_counter, value, Some([
+          ("thread_id", IntValue(thread_id)),
+          ("iteration", IntValue(i))
+        ]))
+      }
+    })
+    threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Verify instrument integrity
+  let counter_instrument = Counter::as_instrument(counter)
+  assert_eq(Instrument::name(counter_instrument), "concurrent_counter")
+  
+  let histogram_instrument = Histogram::as_instrument(histogram)
+  assert_eq(Instrument::name(histogram_instrument), "concurrent_histogram")
+  
+  let updown_instrument = UpDownCounter::as_instrument(updown_counter)
+  assert_eq(Instrument::name(updown_instrument), "concurrent_updown")
+}
+
+// Test 4: Concurrent Log Record Emission Safety
+test "concurrent log record emission safety" {
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "concurrent_logger")
+  
+  let thread_count = 8
+  let logs_per_thread = 500
+  let threads = []
+  let emitted_logs = Mutex::new([])
+  
+  // Concurrent log emission
+  for thread_id in 0..<thread_count {
+    let thread = Thread::spawn(|| {
+      let mut thread_logs = []
+      for i in 0..<logs_per_thread {
+        let attrs = Attributes::new()
+        Attributes::set(attrs, "thread_id", IntValue(thread_id))
+        Attributes::set(attrs, "iteration", IntValue(i))
+        Attributes::set(attrs, "component", StringValue("concurrent_test"))
+        
+        let log_record = LogRecord::new_with_context(
+          Info,
+          Some("Concurrent log message " + i.to_string()),
+          Some(attrs),
+          Some(Clock::monotonic()),
+          Some(Clock::monotonic() + 1000L),
+          Some("trace_id_" + thread_id.to_string()),
+          Some("span_id_" + i.to_string()),
+          None
+        )
+        
+        Logger::emit(logger, log_record)
+        thread_logs.push(log_record)
+      }
+      
+      // Store logs in shared mutex
+      let mut guard = Mutex::lock(emitted_logs)
+      for log in thread_logs {
+        guard.push(log)
+      }
+    })
+    threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Verify all logs were emitted
+  let guard = Mutex::lock(emitted_logs)
+  let total_expected = thread_count * logs_per_thread
+  assert_eq(guard.length(), total_expected)
+  
+  // Verify log record integrity
+  for log_record in guard {
+    assert_eq(LogRecord::severity_number(log_record), Info)
+    match LogRecord::body(log_record) {
+      Some(body) => assert_true(body.contains("Concurrent log message"))
+      None => assert_true(false)
+    }
+  }
+}
+
+// Test 5: Concurrent Context Propagation Safety
+test "concurrent context propagation safety" {
+  let root_ctx = Context::root()
+  let thread_count = 6
+  let context_depth = 100
+  let threads = []
+  let final_contexts = Mutex::new([])
+  
+  // Concurrent context creation and propagation
+  for thread_id in 0..<thread_count {
+    let thread = Thread::spawn(|| {
+      let mut ctx = root_ctx
+      
+      // Create nested context
+      for i in 0..<context_depth {
+        let key = ContextKey::new("ctx.key." + thread_id.to_string() + "." + i.to_string())
+        let value = "ctx.value." + thread_id.to_string() + "." + i.to_string()
+        ctx = Context::with_value(ctx, key, value)
+      }
+      
+      // Store final context in shared mutex
+      let mut guard = Mutex::lock(final_contexts)
+      guard.push((thread_id, ctx))
+    })
+    threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Verify context propagation integrity
+  let guard = Mutex::lock(final_contexts)
+  assert_eq(guard.length(), thread_count)
+  
+  for (thread_id, ctx) in guard {
+    // Verify all context values are present
+    for i in 0..<context_depth {
+      let key = ContextKey::new("ctx.key." + thread_id.to_string() + "." + i.to_string())
+      let expected_value = "ctx.value." + thread_id.to_string() + "." + i.to_string()
+      
+      match Context::get(ctx, key) {
+        Some(value) => assert_eq(value, expected_value)
+        None => assert_true(false)
+      }
+    }
+  }
+}
+
+// Test 6: Concurrent Resource Operations Safety
+test "concurrent resource operations safety" {
+  let resource = Resource::new()
+  let thread_count = 4
+  let attributes_per_thread = 250
+  let threads = []
+  let resource_results = Mutex::new([])
+  
+  // Concurrent resource attribute setting
+  for thread_id in 0..<thread_count {
+    let thread = Thread::spawn(|| {
+      let mut thread_attrs = []
+      for i in 0..<attributes_per_thread {
+        let key = "resource.key." + thread_id.to_string() + "." + i.to_string()
+        let value = StringValue("resource.value." + thread_id.to_string() + "." + i.to_string())
+        thread_attrs.push((key, value))
+      }
+      
+      let resource_with_attrs = Resource::with_attributes(resource, thread_attrs)
+      
+      // Store result in shared mutex
+      let mut guard = Mutex::lock(resource_results)
+      guard.push((thread_id, resource_with_attrs))
+    })
+    threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Verify resource operations integrity
+  let guard = Mutex::lock(resource_results)
+  assert_eq(guard.length(), thread_count)
+  
+  for (thread_id, resource_with_attrs) in guard {
+    // Verify all attributes are present
+    for i in 0..<attributes_per_thread {
+      let key = "resource.key." + thread_id.to_string() + "." + i.to_string()
+      let expected_value = StringValue("resource.value." + thread_id.to_string() + "." + i.to_string())
+      
+      let actual_value = Resource::get_attribute(resource_with_attrs, key)
+      match actual_value {
+        Some(value) => assert_eq(value, expected_value)
+        None => assert_true(false)
+      }
     }
   }
   
-  // 验证所有读取操作都返回一致的结果
-  for result in read_results {
-    assert_eq(result, "base_value")
+  // Test concurrent resource merging
+  let merge_threads = []
+  let merged_resources = Mutex::new([])
+  
+  for (thread_id, resource_with_attrs) in guard {
+    let thread = Thread::spawn(|| {
+      let override_attrs = [
+        ("override.key." + thread_id.to_string(), StringValue("override.value." + thread_id.to_string())),
+        ("shared.key", StringValue("shared.value." + thread_id.to_string()))
+      ]
+      
+      let override_resource = Resource::with_attributes(Resource::new(), override_attrs)
+      let merged_resource = Resource::merge(resource_with_attrs, override_resource)
+      
+      // Store merged resource in shared mutex
+      let mut guard = Mutex::lock(merged_resources)
+      guard.push((thread_id, merged_resource))
+    })
+    merge_threads.push(thread)
   }
   
-  // 模拟并发写入操作
-  let mut write_success = 0
-  for i in 0..50 {
-    Attributes::set(shared_attrs, "write_key_" + i.to_string(), StringValue("write_value_" + i.to_string()))
-    let verify_result = Attributes::get(shared_attrs, "write_key_" + i.to_string())
-    match verify_result {
-      Some(StringValue(v)) => {
-        if v == "write_value_" + i.to_string() {
-          write_success = write_success + 1
+  // Wait for all merge threads to complete
+  for thread in merge_threads {
+    Thread::join(thread)
+  }
+  
+  // Verify merge integrity
+  let merge_guard = Mutex::lock(merged_resources)
+  assert_eq(merge_guard.length(), thread_count)
+  
+  for (thread_id, merged_resource) in merge_guard {
+    // Verify override attributes
+    let override_key = "override.key." + thread_id.to_string()
+    let expected_override = StringValue("override.value." + thread_id.to_string())
+    
+    let actual_override = Resource::get_attribute(merged_resource, override_key)
+    match actual_override {
+      Some(value) => assert_eq(value, expected_override)
+      None => assert_true(false)
+    }
+    
+    // Verify shared key (last thread should win)
+    let shared_value = Resource::get_attribute(merged_resource, "shared.key")
+    match shared_value {
+      Some(StringValue(value)) => assert_true(value.contains("shared.value"))
+      None => assert_true(false)
+    }
+  }
+}
+
+// Test 7: Concurrent HTTP Client Operations Safety
+test "concurrent http client operations safety" {
+  let client = HttpClient::new()
+  let thread_count = 5
+  let requests_per_thread = 100
+  let threads = []
+  let responses = Mutex::new([])
+  
+  // Concurrent HTTP request creation
+  for thread_id in 0..<thread_count {
+    let thread = Thread::spawn(|| {
+      let mut thread_responses = []
+      
+      for i in 0..<requests_per_thread {
+        let headers = [
+          ("Content-Type", "application/json"),
+          ("X-Thread-ID", thread_id.to_string()),
+          ("X-Request-ID", i.to_string())
+        ]
+        
+        let request_body = "{\"thread_id\": " + thread_id.to_string() + ", \"request_id\": " + i.to_string() + "}"
+        let request = HttpRequest::new(
+          "POST",
+          "https://example.com/api/concurrent/" + thread_id.to_string(),
+          headers,
+          Some(request_body)
+        )
+        
+        // Simulate HTTP response creation
+        let response_headers = [
+          ("Content-Type", "application/json"),
+          ("X-Response-ID", "resp_" + thread_id.to_string() + "_" + i.to_string())
+        ]
+        
+        let response_body = "{\"status\": \"success\", \"thread_id\": " + thread_id.to_string() + "}"
+        let response = HttpResponse::new(200, response_headers, Some(response_body))
+        
+        thread_responses.push((request, response))
+      }
+      
+      // Store responses in shared mutex
+      let mut guard = Mutex::lock(responses)
+      for response in thread_responses {
+        guard.push(response)
+      }
+    })
+    threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Verify HTTP operations integrity
+  let guard = Mutex::lock(responses)
+  let total_expected = thread_count * requests_per_thread
+  assert_eq(guard.length(), total_expected)
+  
+  for (request, response) in guard {
+    // Verify request integrity
+    assert_eq(HttpRequest::http_method(request), "POST")
+    assert_true(HttpRequest::url(request).contains("concurrent"))
+    
+    match HttpRequest::headers(request) {
+      Some(headers) => {
+        assert_true(headers.contains(("Content-Type", "application/json")))
+        assert_true(headers.length() >= 3)
+      }
+      None => assert_true(false)
+    }
+    
+    // Verify response integrity
+    assert_eq(HttpResponse::status_code(response), 200)
+    match HttpResponse::body(response) {
+      Some(body) => {
+        assert_true(body.contains("success"))
+        assert_true(body.contains("thread_id"))
+      }
+      None => assert_true(false)
+    }
+  }
+}
+
+// Test 8: Concurrent Baggage Operations Safety
+test "concurrent baggage operations safety" {
+  let baggage = Baggage::new()
+  let thread_count = 6
+  let entries_per_thread = 200
+  let threads = []
+  let baggage_results = Mutex::new([])
+  
+  // Concurrent baggage entry setting
+  for thread_id in 0..<thread_count {
+    let thread = Thread::spawn(|| {
+      let mut current_baggage = baggage
+      
+      for i in 0..<entries_per_thread {
+        let key = "baggage.key." + thread_id.to_string() + "." + i.to_string()
+        let value = "baggage.value." + thread_id.to_string() + "." + i.to_string()
+        current_baggage = Baggage::set_entry(current_baggage, key, value)
+      }
+      
+      // Store final baggage in shared mutex
+      let mut guard = Mutex::lock(baggage_results)
+      guard.push((thread_id, current_baggage))
+    })
+    threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Verify baggage operations integrity
+  let guard = Mutex::lock(baggage_results)
+  assert_eq(guard.length(), thread_count)
+  
+  for (thread_id, final_baggage) in guard {
+    // Verify all baggage entries are present
+    for i in 0..<entries_per_thread {
+      let key = "baggage.key." + thread_id.to_string() + "." + i.to_string()
+      let expected_value = "baggage.value." + thread_id.to_string() + "." + i.to_string()
+      
+      let actual_value = Baggage::get_entry(final_baggage, key)
+      match actual_value {
+        Some(value) => assert_eq(value, expected_value)
+        None => assert_true(false)
+      }
+    }
+  }
+  
+  // Test concurrent baggage removal
+  let removal_threads = []
+  let removal_results = Mutex::new([])
+  
+  for (thread_id, final_baggage) in guard {
+    let thread = Thread::spawn(|| {
+      let mut current_baggage = final_baggage
+      
+      // Remove every other entry
+      for i in 0..<entries_per_thread {
+        if i % 2 == 0 {
+          let key = "baggage.key." + thread_id.to_string() + "." + i.to_string()
+          current_baggage = Baggage::remove_entry(current_baggage, key)
         }
       }
-      _ => ()
-    }
+      
+      // Store result in shared mutex
+      let mut guard = Mutex::lock(removal_results)
+      guard.push((thread_id, current_baggage))
+    })
+    removal_threads.push(thread)
   }
   
-  // 验证写入操作的成功率
-  assert_true(write_success >= 45) // 允许少量并发冲突
-}
-
-// Test 2: Concurrent Span Operations
-test "并发跨度操作测试" {
-  // 创建共享的跨度上下文
-  let trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
-  let base_span_ctx = SpanContext::new(trace_id, "base_span", true, "")
-  
-  // 模拟并发创建子跨度
-  let mut child_spans = []
-  for i in 0..20 {
-    let child_span_id = "child_span_" + i.to_string()
-    let child_ctx = SpanContext::new(trace_id, child_span_id, true, "")
-    let child_span = Span::new("child_operation_" + i.to_string(), Internal, child_ctx)
-    child_spans = child_spans + [child_span]
+  // Wait for all removal threads to complete
+  for thread in removal_threads {
+    Thread::join(thread)
   }
   
-  // 验证所有子跨度都有相同的trace_id
-  for child_span in child_spans {
-    let child_ctx = Span::span_context(child_span)
-    assert_eq(SpanContext::trace_id(child_ctx), trace_id)
-  }
+  // Verify removal integrity
+  let removal_guard = Mutex::lock(removal_results)
+  assert_eq(removal_guard.length(), thread_count)
   
-  // 模拟并发添加事件到跨度
-  for i in 0..child_spans.length() {
-    let span = child_spans[i]
-    Span::add_event(span, "event_" + i.to_string(), Some([
-      ("event_index", IntValue(i))
-    ]))
-  }
-  
-  // 验证事件添加的完整性
-  for i in 0..child_spans.length() {
-    let span = child_spans[i]
-    let events = Span::events(span)
-    assert_true(events.length() >= 1)
-  }
-}
-
-// Test 3: Concurrent Metrics Collection
-test "并发指标收集测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "concurrent_test_meter")
-  
-  // 创建共享的指标
-  let shared_counter = Meter::create_counter(meter, "shared_counter", None, None)
-  let shared_histogram = Meter::create_histogram(meter, "shared_histogram", None, None)
-  
-  // 模拟并发计数器操作
-  let mut counter_threads = []
-  for i in 0..10 {
-    let thread_operations = {
-      let counter = shared_counter
-      for j in 0..100 {
-        Counter::add(counter, 1.0, Some(Attributes::with_data([
-          ("thread_id", IntValue(i)),
-          ("operation_id", IntValue(j))
-        ])))
+  for (thread_id, final_baggage) in removal_guard {
+    // Verify even entries are removed
+    for i in 0..<entries_per_thread {
+      let key = "baggage.key." + thread_id.to_string() + "." + i.to_string()
+      let actual_value = Baggage::get_entry(final_baggage, key)
+      
+      if i % 2 == 0 {
+        // Even entries should be removed
+        match actual_value {
+          Some(_) => assert_true(false)
+          None => assert_true(true)
+        }
+      } else {
+        // Odd entries should remain
+        match actual_value {
+          Some(value) => {
+            let expected_value = "baggage.value." + thread_id.to_string() + "." + i.to_string()
+            assert_eq(value, expected_value)
+          }
+          None => assert_true(false)
+        }
       }
     }
-    counter_threads = counter_threads + [thread_operations]
   }
-  
-  // 模拟并发直方图操作
-  let mut histogram_values = []
-  for i in 0..10 {
-    for j in 0..50 {
-      let value = (i * 10 + j).to_float()
-      Histogram::record(shared_histogram, value, Some(Attributes::with_data([
-        ("thread_id", IntValue(i)),
-        ("measurement_id", IntValue(j))
-      ])))
-      histogram_values = histogram_values + [value]
-    }
-  }
-  
-  // 验证指标收集的一致性
-  let metrics = Meter::collect_metrics(meter)
-  assert_true(metrics.length() >= 2) // 至少有counter和histogram
-  
-  // 验证计数器的总和
-  let expected_total = 10 * 100 // 10个线程，每个100次操作
-  let actual_total = get_counter_total(shared_counter)
-  assert_true(actual_total >= expected_total * 0.95) // 允许少量并发冲突
-}
-
-// Test 4: Concurrent Context Propagation
-test "并发上下文传播测试" {
-  // 创建基础上下文
-  let root_ctx = Context::root()
-  let base_key = ContextKey::new("base_key")
-  let ctx_with_base = Context::with_value(root_ctx, base_key, "base_value")
-  
-  // 模拟并发上下文传播
-  let mut propagated_contexts = []
-  for i in 0..20 {
-    let thread_key = ContextKey::new("thread_key_" + i.to_string())
-    let thread_value = "thread_value_" + i.to_string()
-    let thread_ctx = Context::with_value(ctx_with_base, thread_key, thread_value)
-    propagated_contexts = propagated_contexts + [thread_ctx]
-  }
-  
-  // 验证所有传播的上下文都包含基础值
-  for ctx in propagated_contexts {
-    let base_value = Context::get(ctx, base_key)
-    match base_value {
-      Some(value) => assert_eq(value, "base_value")
-      None => assert_true(false)
-    }
-  }
-  
-  // 验证每个上下文都有其特定的线程值
-  for i in 0..propagated_contexts.length() {
-    let ctx = propagated_contexts[i]
-    let thread_key = ContextKey::new("thread_key_" + i.to_string())
-    let thread_value = Context::get(ctx, thread_key)
-    match thread_value {
-      Some(value) => assert_eq(value, "thread_value_" + i.to_string())
-      None => assert_true(false)
-    }
-  }
-}
-
-// Test 5: Concurrent Baggage Operations
-test "并发行李操作测试" {
-  // 创建基础行李
-  let base_baggage = Baggage::new()
-  let base_baggage_with_entry = Baggage::set_entry(base_baggage, "base_entry", "base_value")
-  
-  // 模拟并发行李操作
-  let mut baggage_operations = []
-  for i in 0..15 {
-    let operation = {
-      let baggage = base_baggage_with_entry
-      let entry_key = "entry_" + i.to_string()
-      let entry_value = "value_" + i.to_string()
-      Baggage::set_entry(baggage, entry_key, entry_value)
-    }
-    baggage_operations = baggage_operations + [operation]
-  }
-  
-  // 验证所有行李操作都保留了基础条目
-  for baggage in baggage_operations {
-    let base_entry = Baggage::get_entry(baggage, "base_entry")
-    match base_entry {
-      Some(value) => assert_eq(value, "base_value")
-      None => assert_true(false)
-    }
-  }
-  
-  // 验证特定条目的存在
-  for i in 0..baggage_operations.length() {
-    let baggage = baggage_operations[i]
-    let entry_key = "entry_" + i.to_string()
-    let entry_value = Baggage::get_entry(baggage, entry_key)
-    match entry_value {
-      Some(value) => assert_eq(value, "value_" + i.to_string())
-      None => assert_true(false)
-    }
-  }
-}
-
-// Test 6: Concurrent Resource Merging
-test "并发资源合并测试" {
-  // 创建基础资源
-  let base_resource = Resource::with_attributes(Resource::new(), [
-    ("service.name", StringValue("base_service")),
-    ("service.version", StringValue("1.0.0"))
-  ])
-  
-  // 模拟并发资源合并
-  let mut merged_resources = []
-  for i in 0..10 {
-    let thread_resource = Resource::with_attributes(Resource::new(), [
-      ("thread.id", IntValue(i)),
-      ("thread.name", StringValue("thread_" + i.to_string())),
-      ("operation.count", IntValue(i * 10))
-    ])
-    let merged = Resource::merge(base_resource, thread_resource)
-    merged_resources = merged_resources + [merged]
-  }
-  
-  // 验证所有合并资源都包含基础属性
-  for resource in merged_resources {
-    let service_name = Resource::get_attribute(resource, "service.name")
-    match service_name {
-      Some(StringValue(name)) => assert_eq(name, "base_service")
-      _ => assert_true(false)
-    }
-    
-    let service_version = Resource::get_attribute(resource, "service.version")
-    match service_version {
-      Some(StringValue(version)) => assert_eq(version, "1.0.0")
-      _ => assert_true(false)
-    }
-  }
-  
-  // 验证特定线程属性的存在
-  for i in 0..merged_resources.length() {
-    let resource = merged_resources[i]
-    let thread_id = Resource::get_attribute(resource, "thread.id")
-    match thread_id {
-      Some(IntValue(id)) => assert_eq(id, i)
-      _ => assert_true(false)
-    }
-  }
-}
-
-// Test 7: Concurrent Log Record Processing
-test "并发日志记录处理测试" {
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "concurrent_test_logger")
-  
-  // 模拟并发日志记录
-  let mut log_records = []
-  for i in 0..20 {
-    for j in 0..10 {
-      let severity = if j % 3 == 0 { Error } else if j % 2 == 0 { Warn } else { Info }
-      let message = "Log message from thread " + i.to_string() + ", operation " + j.to_string()
-      let log_record = LogRecord::new(severity, message)
-      log_records = log_records + [log_record]
-      Logger::emit(logger, log_record)
-    }
-  }
-  
-  // 验证日志记录的数量
-  assert_eq(log_records.length(), 200) // 20个线程，每个10条日志
-  
-  // 验证日志记录的完整性
-  let mut error_count = 0
-  let mut warn_count = 0
-  let mut info_count = 0
-  
-  for log_record in log_records {
-    match LogRecord::severity_number(log_record) {
-      Error => error_count = error_count + 1
-      Warn => warn_count = warn_count + 1
-      Info => info_count = info_count + 1
-    }
-  }
-  
-  assert_eq(error_count, 67)  // 约1/3
-  assert_eq(warn_count, 66)   // 约1/3
-  assert_eq(info_count, 67)   // 约1/3
-}
-
-// Test 8: Concurrent HTTP Client Operations
-test "并发HTTP客户端操作测试" {
-  let client = HttpClient::new()
-  let endpoints = [
-    "https://httpbin.org/get",
-    "https://httpbin.org/delay/1",
-    "https://httpbin.org/status/200"
-  ]
-  
-  // 模拟并发HTTP请求
-  let mut responses = []
-  for i in 0..15 {
-    let endpoint = endpoints[i % endpoints.length()]
-    let request = HttpRequest::new("GET", endpoint, [
-      ("X-Request-ID", "req-" + i.to_string()),
-      ("X-Thread-ID", "thread-" + (i / 3).to_string())
-    ], None)
-    
-    let response = HttpClient::send_with_timeout(client, request, 5000) // 5秒超时
-    responses = responses + [response]
-  }
-  
-  // 验证响应处理
-  let mut success_count = 0
-  let mut error_count = 0
-  
-  for response in responses {
-    match response {
-      Ok(_) => success_count = success_count + 1
-      Error(_) => error_count = error_count + 1
-    }
-  }
-  
-  // 允许一些请求失败（网络问题）
-  assert_true(success_count >= 10) // 至少2/3的请求应该成功
-  assert_true(error_count <= 5)    // 最多1/3的请求可能失败
-}
-
-// Test 9: Race Condition Detection
-test "竞态条件检测测试" {
-  // 创建共享计数器
-  let shared_counter = SharedCounter::new(0)
-  
-  // 模拟竞态条件场景
-  let mut results = []
-  for i in 0..100 {
-    let current_value = SharedCounter::get(shared_counter)
-    let new_value = current_value + 1
-    SharedCounter::set(shared_counter, new_value)
-    results = results + [new_value]
-  }
-  
-  // 验证最终结果
-  let final_value = SharedCounter::get(shared_counter)
-  assert_true(final_value <= 100) // 由于竞态条件，可能小于100
-  
-  // 使用原子操作重新测试
-  let atomic_counter = AtomicCounter::new(0)
-  
-  for i in 0..100 {
-    AtomicCounter::increment(atomic_counter)
-  }
-  
-  let atomic_final_value = AtomicCounter::get(atomic_counter)
-  assert_eq(atomic_final_value, 100) // 原子操作应该保证正确性
-}
-
-// Test 10: Deadlock Prevention
-test "死锁预防测试" {
-  // 创建多个锁资源
-  let lock1 = Mutex::new()
-  let lock2 = Mutex::new()
-  let lock3 = Mutex::new()
-  
-  // 模拟可能导致死锁的操作序列
-  let mut operations = []
-  
-  // 操作序列1：按顺序获取锁
-  let operation1 = {
-    Mutex::lock(lock1)
-    Mutex::lock(lock2)
-    Mutex::lock(lock3)
-    // 执行操作
-    Mutex::unlock(lock3)
-    Mutex::unlock(lock2)
-    Mutex::unlock(lock1)
-  }
-  operations = operations + [operation1]
-  
-  // 操作序列2：按相同顺序获取锁（避免死锁）
-  let operation2 = {
-    Mutex::lock(lock1)
-    Mutex::lock(lock2)
-    Mutex::lock(lock3)
-    // 执行操作
-    Mutex::unlock(lock3)
-    Mutex::unlock(lock2)
-    Mutex::unlock(lock1)
-  }
-  operations = operations + [operation2]
-  
-  // 验证所有操作都能完成（没有死锁）
-  for operation in operations {
-    // 在实际实现中，这里应该验证操作完成
-    assert_true(true) // 如果没有死锁，应该能到达这里
-  }
-  
-  // 测试超时机制
-  let timeout_result = Mutex::try_lock_with_timeout(lock1, 1000) // 1秒超时
-  match timeout_result {
-    Ok(_) => assert_true(true),
-    Error(_) => assert_true(false) // 不应该超时
-  }
-}
-
-// 辅助类型和函数
-type SharedCounter {
-  value: RefCell<Int>
-}
-
-type AtomicCounter {
-  value: AtomicInt
-}
-
-type Mutex {
-  locked: AtomicBool
-}
-
-fn SharedCounter::new(initial: Int) -> SharedCounter {
-  SharedCounter { value: RefCell::new(initial) }
-}
-
-fn SharedCounter::get(counter: SharedCounter) -> Int {
-  RefCell::borrow(&counter.value)
-}
-
-fn SharedCounter::set(counter: SharedCounter, value: Int) -> Unit {
-  RefCell::borrow_mut(&counter.value).set(value)
-}
-
-fn AtomicCounter::new(initial: Int) -> AtomicCounter {
-  AtomicCounter { value: AtomicInt::new(initial) }
-}
-
-fn AtomicCounter::increment(counter: AtomicCounter) -> Unit {
-  AtomicInt::fetch_add(&counter.value, 1)
-}
-
-fn AtomicCounter::get(counter: AtomicCounter) -> Int {
-  AtomicInt::load(&counter.value)
-}
-
-fn Mutex::new() -> Mutex {
-  Mutex { locked: AtomicBool::new(false) }
-}
-
-fn Mutex::lock(mutex: Mutex) -> Unit {
-  while AtomicBool::compare_exchange(&mutex.locked, false, true) {
-    // 简单的自旋锁实现
-  }
-}
-
-fn Mutex::unlock(mutex: Mutex) -> Unit {
-  AtomicBool::store(&mutex.locked, false)
-}
-
-fn Mutex::try_lock_with_timeout(mutex: Mutex, timeout_ms: Int) -> Result<Unit, String> {
-  let start_time = get_current_timestamp()
-  
-  while AtomicBool::compare_exchange(&mutex.locked, false, true) {
-    if get_current_timestamp() - start_time > timeout_ms {
-      return Error("Timeout")
-    }
-  }
-  
-  Ok(())
-}
-
-fn get_counter_total(counter: Counter) -> Float {
-  // 模拟获取计数器总值
-  1000.0
 }
