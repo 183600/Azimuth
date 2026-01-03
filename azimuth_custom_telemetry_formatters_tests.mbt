@@ -1,1121 +1,708 @@
-// Azimuth 自定义遥测格式化器测试用例
-// 专注于测试自定义输出格式和格式转换功能
+// Custom Telemetry Formatters Tests for Azimuth Telemetry System
+// This file contains test cases for custom telemetry data formatting and serialization
 
-// 测试1: 自定义JSON格式化器
-test "自定义JSON格式化器" {
-  // 定义遥测数据点
-  type TelemetryDataPoint = {
-    timestamp: Int,
-    metric_name: String,
-    value: Float,
-    labels: Array<(String, String)>,
-    data_type: String
-  }
-  
-  // 定义JSON格式化配置
-  type JSONFormatConfig = {
-    pretty_print: Bool,
-    include_timestamp: Bool,
-    include_labels: Bool,
-    custom_fields: Array<(String, String)>,
-    field_order: Array<String>,
-    date_format: String  // "iso", "unix", "custom"
-  }
-  
-  // 创建自定义JSON格式化器
-  let custom_json_formatter = fn(config: JSONFormatConfig) {
-    fn(data_points: Array[TelemetryDataPoint>) -> String {
-      let format_timestamp = fn(timestamp: Int) {
-        match config.date_format {
-          "iso" => "2025-01-01T00:00:00Z"  // 简化的ISO格式
-          "unix" => timestamp.to_string()
-          "custom" => "2025-01-01 00:00:00"  // 简化的自定义格式
-          _ => timestamp.to_string()
-        }
-      }
-      
-      let format_data_point = fn(dp: TelemetryDataPoint) {
-        let mut fields = Array::empty()
-        
-        // 按指定顺序添加字段
-        for field_name in config.field_order {
-          match field_name {
-            "timestamp" => {
-              if config.include_timestamp {
-                fields = fields.push("\"timestamp\": \"" + format_timestamp(dp.timestamp) + "\"")
-              }
-            }
-            "metric_name" => {
-              fields = fields.push("\"metric_name\": \"" + dp.metric_name + "\"")
-            }
-            "value" => {
-              fields = fields.push("\"value\": " + dp.value.to_string())
-            }
-            "data_type" => {
-              fields = fields.push("\"data_type\": \"" + dp.data_type + "\"")
-            }
-            "labels" => {
-              if config.include_labels {
-                let labels_str = dp.labels.map(fn(l) {
-                  "\"" + l.0 + "\": \"" + l.1 + "\""
-                }).join(",")
-                fields = fields.push("\"labels\": {" + labels_str + "}")
-              }
-            }
-            _ => ()
-          }
-        }
-        
-        // 添加自定义字段
-        for (field_name, field_value) in config.custom_fields {
-          fields = fields.push("\"" + field_name + "\": \"" + field_value + "\"")
-        }
-        
-        let json_str = "{" + fields.join(",") + "}"
-        
-        if config.pretty_print {
-          // 简化的美化打印
-          json_str
-            .replace("{", "{\n  ")
-            .replace("}", "\n}")
-            .replace(",", ",\n  ")
-        } else {
-          json_str
-        }
-      }
-      
-      let formatted_points = data_points.map(format_data_point)
-      
-      if data_points.length() == 1 {
-        formatted_points[0]
-      } else {
-        "[" + formatted_points.join(",") + "]"
-      }
+// Test 1: JSON Formatter
+test "json telemetry formatter" {
+  // Simulate telemetry data
+  let telemetry_data = {
+    "timestamp": 1234567890,
+    "trace_id": "abc123",
+    "span_id": "def456",
+    "service_name": "azimuth-collector",
+    "level": "INFO",
+    "message": "Processing telemetry data",
+    "attributes": {
+      "cpu_usage": 75.5,
+      "memory_usage": 1024,
+      "request_count": 42
     }
   }
   
-  // 创建测试数据
-  let test_data = [
+  // JSON formatter
+  let format_as_json = fn(data) {
+    let json_string = "{" +
+      "\"timestamp\":" + data["timestamp"].to_string() + "," +
+      "\"trace_id\":\"" + data["trace_id"] + "\"," +
+      "\"span_id\":\"" + data["span_id"] + "\"," +
+      "\"service_name\":\"" + data["service_name"] + "\"," +
+      "\"level\":\"" + data["level"] + "\"," +
+      "\"message\":\"" + data["message"] + "\"," +
+      "\"attributes\":{" +
+        "\"cpu_usage\":" + data["attributes"]["cpu_usage"].to_string() + "," +
+        "\"memory_usage\":" + data["attributes"]["memory_usage"].to_string() + "," +
+        "\"request_count\":" + data["attributes"]["request_count"].to_string() +
+      "}" +
+    "}"
+    json_string
+  }
+  
+  let formatted_json = format_as_json(telemetry_data)
+  
+  // Verify JSON structure
+  assert_true(formatted_json.contains("\"timestamp\":1234567890"))
+  assert_true(formatted_json.contains("\"trace_id\":\"abc123\""))
+  assert_true(formatted_json.contains("\"service_name\":\"azimuth-collector\""))
+  assert_true(formatted_json.contains("\"cpu_usage\":75.5"))
+  assert_true(formatted_json.contains("\"memory_usage\":1024"))
+  
+  // Test pretty JSON formatting
+  let format_as_pretty_json = fn(data) {
+    let json_string = "{\n" +
+      "  \"timestamp\": " + data["timestamp"].to_string() + ",\n" +
+      "  \"trace_id\": \"" + data["trace_id"] + "\",\n" +
+      "  \"span_id\": \"" + data["span_id"] + "\",\n" +
+      "  \"service_name\": \"" + data["service_name"] + "\",\n" +
+      "  \"level\": \"" + data["level"] + "\",\n" +
+      "  \"message\": \"" + data["message"] + "\",\n" +
+      "  \"attributes\": {\n" +
+      "    \"cpu_usage\": " + data["attributes"]["cpu_usage"].to_string() + ",\n" +
+      "    \"memory_usage\": " + data["attributes"]["memory_usage"].to_string() + ",\n" +
+      "    \"request_count\": " + data["attributes"]["request_count"].to_string() + "\n" +
+      "  }\n" +
+      "}"
+    json_string
+  }
+  
+  let pretty_json = format_as_pretty_json(telemetry_data)
+  assert_true(pretty_json.contains("\n  \"timestamp\":"))
+  assert_true(pretty_json.contains("\n    \"cpu_usage\":"))
+}
+
+// Test 2: CSV Formatter
+test "csv telemetry formatter" {
+  // Simulate multiple telemetry records
+  let telemetry_records = [
     {
-      timestamp: 1735689600000,
-      metric_name: "cpu_usage",
-      value: 45.2,
-      labels: [("host", "server1"), ("region", "us-west")],
-      data_type: "gauge"
+      "timestamp": 1234567890,
+      "service": "collector",
+      "level": "INFO",
+      "message": "Started processing",
+      "duration": 125,
+      "status": "success"
     },
     {
-      timestamp: 1735689660000,
-      metric_name: "memory_usage",
-      value: 78.5,
-      labels: [("host", "server1"), ("region", "us-west")],
-      data_type: "gauge"
+      "timestamp": 1234567891,
+      "service": "processor",
+      "level": "WARN",
+      "message": "High memory usage",
+      "duration": 200,
+      "status": "warning"
+    },
+    {
+      "timestamp": 1234567892,
+      "service": "exporter",
+      "level": "ERROR",
+      "message": "Connection failed",
+      "duration": 50,
+      "status": "error"
     }
   ]
   
-  // 测试紧凑JSON格式
-  let compact_config = JSONFormatConfig({
-    pretty_print: false,
-    include_timestamp: true,
-    include_labels: true,
-    custom_fields: [],
-    field_order: ["timestamp", "metric_name", "value", "data_type", "labels"],
-    date_format: "unix"
-  })
-  
-  let compact_formatter = custom_json_formatter(compact_config)
-  let compact_output = compact_formatter(test_data)
-  
-  assert_true(compact_output.contains("\"timestamp\": \"1735689600000\""))
-  assert_true(compact_output.contains("\"metric_name\": \"cpu_usage\""))
-  assert_true(compact_output.contains("\"value\": 45.2"))
-  assert_true(compact_output.contains("\"host\": \"server1\""))
-  assert_false(compact_output.contains("\n"))  // 不应该有换行符
-  
-  // 测试美化JSON格式
-  let pretty_config = JSONFormatConfig({
-    pretty_print: true,
-    include_timestamp: true,
-    include_labels: false,
-    custom_fields: [("source", "telemetry-collector"), ("version", "1.2.3")],
-    field_order: ["metric_name", "value", "data_type", "timestamp"],
-    date_format: "iso"
-  })
-  
-  let pretty_formatter = custom_json_formatter(pretty_config)
-  let pretty_output = pretty_formatter([test_data[0]])  // 只格式化第一个数据点
-  
-  assert_true(pretty_output.contains("\"metric_name\": \"cpu_usage\""))
-  assert_true(pretty_output.contains("\"value\": 45.2"))
-  assert_true(pretty_output.contains("\"source\": \"telemetry-collector\""))
-  assert_true(pretty_output.contains("\"version\": \"1.2.3\""))
-  assert_false(pretty_output.contains("\"labels\""))  // 不包含标签
-  assert_true(pretty_output.contains("\n"))  // 应该有换行符
-  
-  // 测试自定义字段顺序
-  let custom_order_config = JSONFormatConfig({
-    pretty_print: false,
-    include_timestamp: true,
-    include_labels: true,
-    custom_fields: [],
-    field_order: ["data_type", "metric_name", "value", "timestamp", "labels"],
-    date_format: "custom"
-  })
-  
-  let custom_order_formatter = custom_json_formatter(custom_order_config)
-  let custom_order_output = custom_order_formatter([test_data[0]])
-  
-  // 验证字段顺序
-  let data_type_pos = custom_order_output.index_of("\"data_type\":")
-  let metric_name_pos = custom_order_output.index_of("\"metric_name\":")
-  let value_pos = custom_order_output.index_of("\"value\":")
-  let timestamp_pos = custom_order_output.index_of("\"timestamp\":")
-  
-  assert_true(data_type_pos < metric_name_pos)
-  assert_true(metric_name_pos < value_pos)
-  assert_true(value_pos < timestamp_pos)
-}
-
-// 测试2: 自定义CSV格式化器
-test "自定义CSV格式化器" {
-  // 定义CSV格式化配置
-  type CSVFormatConfig = {
-    delimiter: String,
-    include_header: Bool,
-    include_timestamp: Bool,
-    include_labels: Bool,
-    label_columns: Array<String>,
-    date_format: String,
-    float_precision: Int,
-    quote_fields: Bool
+  // CSV formatter
+  let format_as_csv = fn(records) {
+    let header = "timestamp,service,level,message,duration,status\n"
+    
+    let rows = records.map(fn(record) {
+      record["timestamp"].to_string() + "," +
+      record["service"] + "," +
+      record["level"] + "," +
+      record["message"] + "," +
+      record["duration"].to_string() + "," +
+      record["status"]
+    })
+    
+    header + rows.join("\n")
   }
   
-  // 创建自定义CSV格式化器
-  let custom_csv_formatter = fn(config: CSVFormatConfig) {
-    fn(data_points: Array[TelemetryDataPoint>) -> String {
-      let format_timestamp = fn(timestamp: Int) {
-        match config.date_format {
-          "iso" => "2025-01-01T00:00:00Z"  // 简化的ISO格式
-          "unix" => timestamp.to_string()
-          "readable" => "2025-01-01 00:00:00"  // 简化的可读格式
-          _ => timestamp.to_string()
-        }
+  let csv_output = format_as_csv(telemetry_records)
+  
+  // Verify CSV structure
+  assert_true(csv_output.contains("timestamp,service,level,message,duration,status"))
+  assert_true(csv_output.contains("1234567890,collector,INFO,Started processing,125,success"))
+  assert_true(csv_output.contains("1234567891,processor,WARN,High memory usage,200,warning"))
+  assert_true(csv_output.contains("1234567892,exporter,ERROR,Connection failed,50,error"))
+  
+  // Test CSV with escaping
+  let records_with_special_chars = [
+    {
+      "timestamp": 1234567893,
+      "service": "test",
+      "level": "INFO",
+      "message": "Message with, comma and \"quotes\"",
+      "duration": 100,
+      "status": "success"
+    }
+  ]
+  
+  let format_as_csv_escaped = fn(records) {
+    let header = "timestamp,service,level,message,duration,status\n"
+    
+    let escape_csv_field = fn(field) {
+      if field.contains(",") || field.contains("\"") || field.contains("\n") {
+        "\"" + field.replace("\"", "\"\"") + "\""
+      } else {
+        field
       }
-      
-      let format_value = fn(value: Float) {
-        if config.float_precision >= 0 {
-          let multiplier = 10.0_f64.pow(config.float_precision as Float)
-          (value * multiplier).round() / multiplier
-        } else {
-          value
-        }
+    }
+    
+    let rows = records.map(fn(record) {
+      record["timestamp"].to_string() + "," +
+      escape_csv_field(record["service"]) + "," +
+      escape_csv_field(record["level"]) + "," +
+      escape_csv_field(record["message"]) + "," +
+      record["duration"].to_string() + "," +
+      escape_csv_field(record["status"])
+    })
+    
+    header + rows.join("\n")
+  }
+  
+  let escaped_csv = format_as_csv_escaped(records_with_special_chars)
+  assert_true(escaped_csv.contains("\"Message with, comma and \"\"quotes\"\"\""))
+}
+
+// Test 3: XML Formatter
+test "xml telemetry formatter" {
+  // Simulate telemetry data
+  let telemetry_event = {
+    "event_id": "evt-123",
+    "timestamp": 1234567890,
+    "source": "azimuth-service",
+    "type": "performance",
+    "data": {
+      "metric_name": "response_time",
+      "metric_value": 150.5,
+      "metric_unit": "ms"
+    }
+  }
+  
+  // XML formatter
+  let format_as_xml = fn(data) {
+    let xml_string = "<telemetry_event>\n" +
+      "  <event_id>" + data["event_id"] + "</event_id>\n" +
+      "  <timestamp>" + data["timestamp"].to_string() + "</timestamp>\n" +
+      "  <source>" + data["source"] + "</source>\n" +
+      "  <type>" + data["type"] + "</type>\n" +
+      "  <data>\n" +
+      "    <metric_name>" + data["data"]["metric_name"] + "</metric_name>\n" +
+      "    <metric_value>" + data["data"]["metric_value"].to_string() + "</metric_value>\n" +
+      "    <metric_unit>" + data["data"]["metric_unit"] + "</metric_unit>\n" +
+      "  </data>\n" +
+      "</telemetry_event>"
+    xml_string
+  }
+  
+  let xml_output = format_as_xml(telemetry_event)
+  
+  // Verify XML structure
+  assert_true(xml_output.contains("<telemetry_event>"))
+  assert_true(xml_output.contains("<event_id>evt-123</event_id>"))
+  assert_true(xml_output.contains("<timestamp>1234567890</timestamp>"))
+  assert_true(xml_output.contains("<metric_name>response_time</metric_name>"))
+  assert_true(xml_output.contains("<metric_value>150.5</metric_value>"))
+  assert_true(xml_output.contains("</telemetry_event>"))
+  
+  // Test XML with attributes
+  let format_as_xml_with_attributes = fn(data) {
+    let xml_string = "<telemetry_event id=\"" + data["event_id"] + "\" timestamp=\"" + data["timestamp"].to_string() + "\">\n" +
+      "  <source service=\"" + data["source"] + "\" type=\"" + data["type"] + "\"/>\n" +
+      "  <metrics>\n" +
+      "    <metric name=\"" + data["data"]["metric_name"] + "\" value=\"" + data["data"]["metric_value"].to_string() + "\" unit=\"" + data["data"]["metric_unit"] + "\"/>\n" +
+      "  </metrics>\n" +
+      "</telemetry_event>"
+    xml_string
+  }
+  
+  let xml_with_attrs = format_as_xml_with_attributes(telemetry_event)
+  assert_true(xml_with_attrs.contains("<telemetry_event id=\"evt-123\" timestamp=\"1234567890\">"))
+  assert_true(xml_with_attrs.contains("<source service=\"azimuth-service\" type=\"performance\"/>"))
+  assert_true(xml_with_attrs.contains("<metric name=\"response_time\" value=\"150.5\" unit=\"ms\"/>"))
+}
+
+// Test 4: Key-Value Formatter
+test "key-value telemetry formatter" {
+  // Simulate telemetry data
+  let log_entry = {
+    "timestamp": 1234567890,
+    "level": "INFO",
+    "logger": "azimuth.processor",
+    "message": "Processing batch complete",
+    "batch_id": "batch-456",
+    "record_count": 1000,
+    "processing_time": 2.5,
+    "success_rate": 0.95
+  }
+  
+  // Key-value formatter
+  let format_as_key_value = fn(data) {
+    let pairs = [
+      "timestamp=" + data["timestamp"].to_string(),
+      "level=" + data["level"],
+      "logger=" + data["logger"],
+      "message=\"" + data["message"] + "\"",
+      "batch_id=" + data["batch_id"],
+      "record_count=" + data["record_count"].to_string(),
+      "processing_time=" + data["processing_time"].to_string(),
+      "success_rate=" + data["success_rate"].to_string()
+    ]
+    pairs.join(" ")
+  }
+  
+  let kv_output = format_as_key_value(log_entry)
+  
+  // Verify key-value structure
+  assert_true(kv_output.contains("timestamp=1234567890"))
+  assert_true(kv_output.contains("level=INFO"))
+  assert_true(kv_output.contains("logger=azimuth.processor"))
+  assert_true(kv_output.contains("message=\"Processing batch complete\""))
+  assert_true(kv_output.contains("batch_id=batch-456"))
+  assert_true(kv_output.contains("record_count=1000"))
+  assert_true(kv_output.contains("processing_time=2.5"))
+  assert_true(kv_output.contains("success_rate=0.95"))
+  
+  // Test key-value with custom separator
+  let format_as_key_value_custom = fn(data, separator) {
+    let pairs = data.entries().map(fn(entry) {
+      entry.0 + separator + entry.1.to_string()
+    })
+    pairs.join(" ")
+  }
+  
+  let custom_kv = format_as_key_value_custom({
+    "a": 1,
+    "b": 2,
+    "c": 3
+  }, "=")
+  
+  assert_eq(custom_kv, "a=1 b=2 c=3")
+}
+
+// Test 5: Structured Text Formatter
+test "structured text telemetry formatter" {
+  // Simulate telemetry data
+  let performance_data = {
+    "timestamp": "2023-01-01T12:00:00Z",
+    "service": "azimuth-web",
+    "operation": "api_request",
+    "duration_ms": 150,
+    "status_code": 200,
+    "user_id": "user-789",
+    "endpoint": "/api/v1/telemetry"
+  }
+  
+  // Structured text formatter
+  let format_as_structured_text = fn(data) {
+    let text = "[TELEMETRY] " + data["timestamp"] + "\n" +
+      "Service: " + data["service"] + "\n" +
+      "Operation: " + data["operation"] + "\n" +
+      "Duration: " + data["duration_ms"].to_string() + "ms\n" +
+      "Status: " + data["status_code"].to_string() + "\n" +
+      "User ID: " + data["user_id"] + "\n" +
+      "Endpoint: " + data["endpoint"] + "\n" +
+      "---"
+    text
+  }
+  
+  let structured_output = format_as_structured_text(performance_data)
+  
+  // Verify structured text
+  assert_true(structured_output.contains("[TELEMETRY] 2023-01-01T12:00:00Z"))
+  assert_true(structured_output.contains("Service: azimuth-web"))
+  assert_true(structured_output.contains("Operation: api_request"))
+  assert_true(structured_output.contains("Duration: 150ms"))
+  assert_true(structured_output.contains("Status: 200"))
+  assert_true(structured_output.contains("User ID: user-789"))
+  assert_true(structured_output.contains("Endpoint: /api/v1/telemetry"))
+  assert_true(structured_output.contains("---"))
+  
+  // Test structured text with conditional fields
+  let format_as_conditional_text = fn(data) {
+    let text = "[EVENT] " + data["timestamp"] + "\n" +
+      "Type: " + data["operation"] + "\n"
+    
+    if data.contains("error_message") {
+      text = text + "Error: " + data["error_message"] + "\n"
+    }
+    
+    text = text + "Duration: " + data["duration_ms"].to_string() + "ms\n"
+    
+    if data["status_code"] >= 400 {
+      text = text + "STATUS: FAILED\n"
+    } else {
+      text = text + "STATUS: SUCCESS\n"
+    }
+    
+    text
+  }
+  
+  let error_data = {
+    "timestamp": "2023-01-01T12:01:00Z",
+    "operation": "database_query",
+    "duration_ms": 5000,
+    "status_code": 500,
+    "error_message": "Connection timeout"
+  }
+  
+  let error_output = format_as_conditional_text(error_data)
+  assert_true(error_output.contains("Error: Connection timeout"))
+  assert_true(error_output.contains("STATUS: FAILED"))
+}
+
+// Test 6: Binary Formatter
+test "binary telemetry formatter" {
+  // Simulate telemetry data
+  let metric_data = {
+    "metric_id": 1001,
+    "timestamp": 1234567890,
+    "value": 42.5,
+    "tags": ["env:prod", "service:azimuth"]
+  }
+  
+  // Binary formatter (simplified simulation)
+  let format_as_binary = fn(data) {
+    // Simulate binary encoding
+    let binary_parts = []
+    
+    // Add metric ID (4 bytes)
+    binary_parts = binary_parts.push(data["metric_id"].to_string())
+    
+    // Add timestamp (8 bytes)
+    binary_parts = binary_parts.push(data["timestamp"].to_string())
+    
+    // Add value (8 bytes, double precision)
+    binary_parts = binary_parts.push(data["value"].to_string())
+    
+    // Add tag count (2 bytes)
+    binary_parts = binary_parts.push(data["tags"].length().to_string())
+    
+    // Add tags
+    for tag in data["tags"] {
+      binary_parts = binary_parts.push(tag)
+    }
+    
+    // Join with separator to simulate binary stream
+    binary_parts.join("|")
+  }
+  
+  let binary_output = format_as_binary(metric_data)
+  
+  // Verify binary structure
+  assert_true(binary_output.contains("1001|1234567890|42.5|2|"))
+  assert_true(binary_output.contains("env:prod"))
+  assert_true(binary_output.contains("service:azimuth"))
+  
+  // Test binary parsing (simplified)
+  let parse_binary = fn(binary_data) {
+    let parts = binary_data.split("|")
+    {
+      "metric_id": parts[0].to_int(),
+      "timestamp": parts[1].to_int(),
+      "value": parts[2].to_float(),
+      "tag_count": parts[3].to_int(),
+      "tags": parts.slice(4, parts.length())
+    }
+  }
+  
+  let parsed_data = parse_binary(binary_output)
+  assert_eq(parsed_data["metric_id"], 1001)
+  assert_eq(parsed_data["timestamp"], 1234567890)
+  assert_eq(parsed_data["value"], 42.5)
+  assert_eq(parsed_data["tag_count"], 2)
+  assert_eq(parsed_data["tags"][0], "env:prod")
+  assert_eq(parsed_data["tags"][1], "service:azimuth")
+}
+
+// Test 7: Custom Template Formatter
+test "custom template telemetry formatter" {
+  // Simulate telemetry data
+  let alert_data = {
+    "alert_name": "HighCPUUsage",
+    "severity": "WARNING",
+    "timestamp": "2023-01-01T12:00:00Z",
+    "service": "azimuth-processor",
+    "current_value": 85.5,
+    "threshold": 80.0,
+    "duration": "5m"
+  }
+  
+  // Custom template formatter
+  let format_with_template = fn(data, template) {
+    let result = template
+    
+    // Replace template variables
+    result = result.replace("{{alert_name}}", data["alert_name"])
+    result = result.replace("{{severity}}", data["severity"])
+    result = result.replace("{{timestamp}}", data["timestamp"])
+    result = result.replace("{{service}}", data["service"])
+    result = result.replace("{{current_value}}", data["current_value"].to_string())
+    result = result.replace("{{threshold}}", data["threshold"].to_string())
+    result = result.replace("{{duration}}", data["duration"])
+    
+    result
+  }
+  
+  // Test email template
+  let email_template = "Alert: {{alert_name}}\n" +
+    "Severity: {{severity}}\n" +
+    "Time: {{timestamp}}\n" +
+    "Service: {{service}}\n" +
+    "Current Value: {{current_value}}%\n" +
+    "Threshold: {{threshold}}%\n" +
+    "Duration: {{duration}}"
+  
+  let email_output = format_with_template(alert_data, email_template)
+  
+  // Verify email template
+  assert_true(email_output.contains("Alert: HighCPUUsage"))
+  assert_true(email_output.contains("Severity: WARNING"))
+  assert_true(email_output.contains("Service: azimuth-processor"))
+  assert_true(email_output.contains("Current Value: 85.5%"))
+  assert_true(email_output.contains("Threshold: 80.0%"))
+  
+  // Test Slack template
+  let slack_template = "🚨 *{{severity}}*: {{alert_name}}\n" +
+    "Service: `{{service}}`\n" +
+    "Value: {{current_value}}% (threshold: {{threshold}}%)\n" +
+    "Time: {{timestamp}} ({{duration}})"
+  
+  let slack_output = format_with_template(alert_data, slack_template)
+  
+  // Verify Slack template
+  assert_true(slack_output.contains("🚨 *WARNING*: HighCPUUsage"))
+  assert_true(slack_output.contains("Service: `azimuth-processor`"))
+  assert_true(slack_output.contains("Value: 85.5% (threshold: 80.0%)"))
+}
+
+// Test 8: Compressed Formatter
+test "compressed telemetry formatter" {
+  // Simulate telemetry data
+  let batch_data = [
+    {
+      "timestamp": 1234567890,
+      "level": "INFO",
+      "service": "azimuth",
+      "message": "Processing started"
+    },
+    {
+      "timestamp": 1234567891,
+      "level": "INFO",
+      "service": "azimuth",
+      "message": "Processing in progress"
+    },
+    {
+      "timestamp": 1234567892,
+      "level": "INFO",
+      "service": "azimuth",
+      "message": "Processing completed"
+    }
+  ]
+  
+  // Compressed formatter (simplified simulation)
+  let format_compressed = fn(records) {
+    // Extract common fields
+    let common_fields = {
+      "service": records[0]["service"],
+      "level": records[0]["level"]
+    }
+    
+    // Extract varying fields
+    let varying_data = records.map(fn(record) {
+      {
+        "timestamp": record["timestamp"],
+        "message": record["message"]
       }
-      
-      let escape_field = fn(field: String) {
-        if config.quote_fields || field.contains(config.delimiter) || field.contains("\"") || field.contains("\n") {
-          "\"" + field.replace("\"", "\"\"") + "\""
-        } else {
-          field
-        }
-      }
-      
-      // 构建表头
-      let mut header_fields = Array::empty()
-      
-      if config.include_timestamp {
-        header_fields = header_fields.push("timestamp")
-      }
-      
-      header_fields = header_fields.concat(["metric_name", "value", "data_type"])
-      
-      if config.include_labels {
-        for label_name in config.label_columns {
-          header_fields = header_fields.push("label_" + label_name)
-        }
-      }
-      
-      let header = header_fields.map(escape_field).join(config.delimiter)
-      
-      // 格式化数据行
-      let data_rows = data_points.map(fn(dp) {
-        let mut row_fields = Array::empty()
-        
-        if config.include_timestamp {
-          row_fields = row_fields.push(format_timestamp(dp.timestamp))
-        }
-        
-        row_fields = row_fields.concat([
-          dp.metric_name,
-          format_value(dp.value).to_string(),
-          dp.data_type
-        ])
-        
-        if config.include_labels {
-          for label_name in config.label_columns {
-            let label_value = match dp.labels.find(fn(l) { l.0 == label_name }) {
-              Some((_, value)) => value
-              None => ""
-            }
-            row_fields = row_fields.push(label_value)
-          }
-        }
-        
-        row_fields.map(escape_field).join(config.delimiter)
+    })
+    
+    // Create compressed format
+    let compressed = {
+      "common": common_fields,
+      "count": records.length(),
+      "data": varying_data
+    }
+    
+    // Simulate compression by converting to string
+    "COMPRESSED:" + compressed["common"]["service"] + "|" + 
+    compressed["common"]["level"] + "|" + 
+    compressed["count"].to_string() + "|" +
+    varying_data.map(fn(d) { d["timestamp"].to_string() + ":" + d["message"] }).join(",")
+  }
+  
+  let compressed_output = format_compressed(batch_data)
+  
+  // Verify compressed format
+  assert_true(compressed_output.contains("COMPRESSED:azimuth|INFO|3|"))
+  assert_true(compressed_output.contains("1234567890:Processing started"))
+  assert_true(compressed_output.contains("1234567891:Processing in progress"))
+  assert_true(compressed_output.contains("1234567892:Processing completed"))
+  
+  // Test decompression
+  let decompress = fn(compressed_data) {
+    let parts = compressed_data.split(":")
+    let service = parts[1]
+    let level = parts[2]
+    let count = parts[3].to_int()
+    let data_parts = parts[4].split(",")
+    
+    let records = []
+    for i in 0..<count {
+      let data_item = data_parts[i].split(":")
+      records = records.push({
+        "timestamp": data_item[0].to_int(),
+        "level": level,
+        "service": service,
+        "message": data_item[1]
       })
-      
-      // 组合表头和数据行
-      if config.include_header {
-        header + "\n" + data_rows.join("\n")
-      } else {
-        data_rows.join("\n")
-      }
     }
+    
+    records
   }
   
-  // 创建测试数据
-  let test_data = [
-    {
-      timestamp: 1735689600000,
-      metric_name: "cpu_usage",
-      value: 45.234567,
-      labels: [("host", "server1"), ("region", "us-west"), ("env", "prod")],
-      data_type: "gauge"
-    },
-    {
-      timestamp: 1735689660000,
-      metric_name: "memory_usage",
-      value: 78.891234,
-      labels: [("host", "server1"), ("region", "us-west"), ("env", "prod")],
-      data_type: "gauge"
-    }
-  ]
-  
-  // 测试标准CSV格式
-  let standard_config = CSVFormatConfig({
-    delimiter: ",",
-    include_header: true,
-    include_timestamp: true,
-    include_labels: true,
-    label_columns: ["host", "region", "env"],
-    date_format: "unix",
-    float_precision: 2,
-    quote_fields: false
-  })
-  
-  let standard_formatter = custom_csv_formatter(standard_config)
-  let standard_output = standard_formatter(test_data)
-  
-  assert_true(standard_output.contains("timestamp,metric_name,value,data_type,label_host,label_region,label_env"))
-  assert_true(standard_output.contains("1735689600000,cpu_usage,45.23,gauge,server1,us-west,prod"))
-  assert_true(standard_output.contains("1735689660000,memory_usage,78.89,gauge,server1,us-west,prod"))
-  
-  // 测试分号分隔符
-  let semicolon_config = CSVFormatConfig({
-    delimiter: ";",
-    include_header: true,
-    include_timestamp: false,
-    include_labels: false,
-    label_columns: [],
-    date_format: "iso",
-    float_precision: 3,
-    quote_fields: true
-  })
-  
-  let semicolon_formatter = custom_csv_formatter(semicolon_config)
-  let semicolon_output = semicolon_formatter(test_data)
-  
-  assert_true(semicolon_output.contains("metric_name;value;data_type"))
-  assert_true(semicolon_output.contains("\"cpu_usage\";\"45.235\";\"gauge\""))
-  assert_true(semicolon_output.contains("\"memory_usage\";\"78.891\";\"gauge\""))
-  assert_false(semicolon_output.contains("timestamp"))  // 不包含时间戳
-  assert_false(semicolon_output.contains("server1"))   // 不包含标签
-  
-  // 测试无表头格式
-  let no_header_config = CSVFormatConfig({
-    delimiter: "\t",  // 制表符分隔
-    include_header: false,
-    include_timestamp: true,
-    include_labels: true,
-    label_columns: ["host", "env"],
-    date_format: "readable",
-    float_precision: 1,
-    quote_fields: false
-  })
-  
-  let no_header_formatter = custom_csv_formatter(no_header_config)
-  let no_header_output = no_header_formatter(test_data)
-  
-  assert_false(no_header_output.contains("metric_name"))  // 无表头
-  assert_true(no_header_output.contains("2025-01-01 00:00:00\tcpu_usage\t45.2\tgauge\tserver1\tprod"))
-  assert_true(no_header_output.contains("server1"))        // 包含host标签
-  assert_true(no_header_output.contains("prod"))          // 包含env标签
-  assert_false(no_header_output.contains("us-west"))     // 不包含region标签
+  let decompressed_data = decompress(compressed_output)
+  assert_eq(decompressed_data.length(), 3)
+  assert_eq(decompressed_data[0]["message"], "Processing started")
+  assert_eq(decompressed_data[1]["message"], "Processing in progress")
+  assert_eq(decompressed_data[2]["message"], "Processing completed")
 }
 
-// 测试3: 自定义Prometheus格式化器
-test "自定义Prometheus格式化器" {
-  // 定义Prometheus格式化配置
-  type PrometheusFormatConfig = {
-    metric_prefix: String,
-    include_help: Bool,
-    include_type: Bool,
-    label_handling: String,  // "include", "exclude", "custom"
-    custom_labels: Array<(String, String)>,
-    timestamp_format: String,  // "seconds", "milliseconds"
-    value_format: String      // "float", "integer"
+// Test 9: Multi-Format Formatter
+test "multi-format telemetry formatter" {
+  // Simulate telemetry data
+  let telemetry_record = {
+    "id": "req-123",
+    "timestamp": 1234567890,
+    "method": "GET",
+    "path": "/api/v1/metrics",
+    "status": 200,
+    "duration": 150,
+    "user_agent": "Mozilla/5.0"
   }
   
-  // 创建自定义Prometheus格式化器
-  let custom_prometheus_formatter = fn(config: PrometheusFormatConfig) {
-    fn(data_points: Array[TelemetryDataPoint>) -> String {
-      let format_timestamp = fn(timestamp: Int) {
-        match config.timestamp_format {
-          "seconds" => (timestamp / 1000).to_string()
-          "milliseconds" => timestamp.to_string()
-          _ => (timestamp / 1000).to_string()
-        }
+  // Multi-format formatter
+  let format_in_multiple_formats = fn(data) {
+    let json_format = format_as_json(data)
+    let csv_format = format_as_csv([data])
+    let xml_format = format_as_xml({
+      "event_id": data["id"],
+      "timestamp": data["timestamp"],
+      "source": "web-server",
+      "type": "http_request",
+      "data": {
+        "method": data["method"],
+        "path": data["path"],
+        "status": data["status"].to_string(),
+        "duration": data["duration"].to_string()
       }
-      
-      let format_value = fn(value: Float) {
-        match config.value_format {
-          "integer" => (value as Int).to_string()
-          "float" => value.to_string()
-          _ => value.to_string()
-        }
-      }
-      
-      // 按指标名称分组
-      let grouped_metrics = data_points.group_by(fn(dp) { dp.metric_name })
-      
-      let mut output_lines = Array::empty()
-      
-      // 生成每个指标的输出
-      for (metric_name, points) in grouped_metrics {
-        let full_metric_name = if config.metric_prefix.length() > 0 {
-          config.metric_prefix + "_" + metric_name
-        } else {
-          metric_name
-        }
-        
-        // 添加HELP注释
-        if config.include_help {
-          output_lines = output_lines.push("# HELP " + full_metric_name + " " + metric_name + " metric")
-        }
-        
-        // 添加TYPE注释
-        if config.include_type {
-          let metric_type = match points[0].data_type {
-            "counter" => "counter"
-            "gauge" => "gauge"
-            "histogram" => "histogram"
-            "summary" => "summary"
-            _ => "untyped"
-          }
-          output_lines = output_lines.push("# TYPE " + full_metric_name + " " + metric_type)
-        }
-        
-        // 生成指标数据行
-        for point in points {
-          let mut labels = Array::empty()
-          
-          // 处理标签
-          match config.label_handling {
-            "include" => {
-              labels = labels.concat(point.labels)
-            }
-            "exclude" => {
-              // 不包含原始标签
-            }
-            "custom" => {
-              // 只包含自定义标签
-              labels = labels.concat(config.custom_labels)
-            }
-            _ => {
-              labels = labels.concat(point.labels)
-            }
-          }
-          
-          // 添加自定义标签
-          for (label_name, label_value) in config.custom_labels {
-            if not labels.any(fn(l) { l.0 == label_name }) {
-              labels = labels.push((label_name, label_value))
-            }
-          }
-          
-          // 格式化标签
-          let labels_str = if labels.length() > 0 {
-            "{" + labels.map(fn(l) { l.0 + "=\"" + l.1 + "\"" }).join(",") + "}"
-          } else {
-            ""
-          }
-          
-          // 格式化指标行
-          let metric_line = full_metric_name + labels_str + " " + 
-                           format_value(point.value) + " " + 
-                           format_timestamp(point.timestamp)
-          
-          output_lines = output_lines.push(metric_line)
-        }
-      }
-      
-      output_lines.join("\n")
+    })
+    
+    {
+      "json": json_format,
+      "csv": csv_format,
+      "xml": xml_format
     }
   }
   
-  // 创建测试数据
-  let test_data = [
-    {
-      timestamp: 1735689600000,
-      metric_name: "cpu_usage",
-      value: 45.2,
-      labels: [("host", "server1"), ("region", "us-west")],
-      data_type: "gauge"
-    },
-    {
-      timestamp: 1735689660000,
-      metric_name: "cpu_usage",
-      value: 50.7,
-      labels: [("host", "server2"), ("region", "us-east")],
-      data_type: "gauge"
-    },
-    {
-      timestamp: 1735689720000,
-      metric_name: "request_count",
-      value: 1250.0,
-      labels: [("endpoint", "/api/users"), ("method", "GET")],
-      data_type: "counter"
+  // Helper functions (simplified)
+  let format_as_json = fn(data) {
+    "{\"id\":\"" + data["id"] + "\",\"timestamp\":" + data["timestamp"].to_string() + ",\"method\":\"" + data["method"] + "\"}"
+  }
+  
+  let format_as_csv = fn(records) {
+    if records.length() > 0 {
+      let record = records[0]
+      "id,timestamp,method,path,status,duration\n" +
+      record["id"] + "," + record["timestamp"].to_string() + "," + record["method"] + "," + record["path"] + "," + record["status"].to_string() + "," + record["duration"].to_string()
+    } else {
+      ""
     }
-  ]
+  }
   
-  // 测试标准Prometheus格式
-  let standard_config = PrometheusFormatConfig({
-    metric_prefix: "",
-    include_help: true,
-    include_type: true,
-    label_handling: "include",
-    custom_labels: [],
-    timestamp_format: "milliseconds",
-    value_format: "float"
-  })
+  let format_as_xml = fn(data) {
+    "<event><id>" + data["event_id"] + "</id><timestamp>" + data["timestamp"].to_string() + "</timestamp></event>"
+  }
   
-  let standard_formatter = custom_prometheus_formatter(standard_config)
-  let standard_output = standard_formatter(test_data)
+  let multi_format_output = format_in_multiple_formats(telemetry_record)
   
-  assert_true(standard_output.contains("# HELP cpu_usage cpu_usage metric"))
-  assert_true(standard_output.contains("# TYPE cpu_usage gauge"))
-  assert_true(standard_output.contains("cpu_usage{host=\"server1\",region=\"us-west\"} 45.2 1735689600000"))
-  assert_true(standard_output.contains("cpu_usage{host=\"server2\",region=\"us-east\"} 50.7 1735689660000"))
-  assert_true(standard_output.contains("# HELP request_count request_count metric"))
-  assert_true(standard_output.contains("# TYPE request_count counter"))
+  // Verify all formats
+  assert_true(multi_format_output["json"].contains("\"id\":\"req-123\""))
+  assert_true(multi_format_output["json"].contains("\"method\":\"GET\""))
   
-  // 测试带前缀和自定义标签的格式
-  let custom_config = PrometheusFormatConfig({
-    metric_prefix: "azimuth",
-    include_help: true,
-    include_type: true,
-    label_handling: "custom",
-    custom_labels: [("service", "telemetry"), ("env", "production")],
-    timestamp_format: "seconds",
-    value_format: "integer"
-  })
+  assert_true(multi_format_output["csv"].contains("id,timestamp,method,path,status,duration"))
+  assert_true(multi_format_output["csv"].contains("req-123,1234567890,GET"))
   
-  let custom_formatter = custom_prometheus_formatter(custom_config)
-  let custom_output = custom_formatter(test_data)
-  
-  assert_true(custom_output.contains("# HELP azimuth_cpu_usage cpu_usage metric"))
-  assert_true(custom_output.contains("# TYPE azimuth_cpu_usage gauge"))
-  assert_true(custom_output.contains("azimuth_cpu_usage{service=\"telemetry\",env=\"production\"} 45 1735689600"))
-  assert_true(custom_output.contains("azimuth_cpu_usage{service=\"telemetry\",env=\"production\"} 51 1735689660"))  // 50.7四舍五入为51
-  assert_true(custom_output.contains("azimuth_request_count{service=\"telemetry\",env=\"production\"} 1250 1735689720"))
-  assert_false(custom_output.contains("host=\"server1\""))  // 不包含原始标签
-  
-  // 测试简化格式（无注释）
-  let simple_config = PrometheusFormatConfig({
-    metric_prefix: "app",
-    include_help: false,
-    include_type: false,
-    label_handling: "include",
-    custom_labels: [],
-    timestamp_format: "seconds",
-    value_format: "float"
-  })
-  
-  let simple_formatter = custom_prometheus_formatter(simple_config)
-  let simple_output = simple_formatter(test_data)
-  
-  assert_false(simple_output.contains("# HELP"))  // 无HELP注释
-  assert_false(simple_output.contains("# TYPE"))  // 无TYPE注释
-  assert_true(simple_output.contains("app_cpu_usage{host=\"server1\",region=\"us-west\"} 45.2 1735689600"))
-  assert_true(simple_output.contains("app_cpu_usage{host=\"server2\",region=\"us-east\"} 50.7 1735689660"))
+  assert_true(multi_format_output["xml"].contains("<id>req-123</id>"))
+  assert_true(multi_format_output["xml"].contains("<timestamp>1234567890</timestamp>"))
 }
 
-// 测试4: 自定义XML格式化器
-test "自定义XML格式化器" {
-  // 定义XML格式化配置
-  type XMLFormatConfig = {
-    root_element: String,
-    item_element: String,
-    include_attributes: Bool,
-    include_timestamp: Bool,
-    include_labels: Bool,
-    label_format: String,  // "attribute", "subelement", "mixed"
-    date_format: String,
-    pretty_print: Bool,
-    indent_size: Int
+// Test 10: Conditional Formatter
+test "conditional telemetry formatter" {
+  // Simulate different types of telemetry data
+  let log_entry = {
+    "timestamp": 1234567890,
+    "level": "ERROR",
+    "service": "azimuth-db",
+    "message": "Database connection failed",
+    "error_code": "DB_CONN_ERROR",
+    "retry_count": 3
   }
   
-  // 创建自定义XML格式化器
-  let custom_xml_formatter = fn(config: XMLFormatConfig) {
-    fn(data_points: Array[TelemetryDataPoint>) -> String {
-      let format_timestamp = fn(timestamp: Int) {
-        match config.date_format {
-          "iso" => "2025-01-01T00:00:00Z"  // 简化的ISO格式
-          "unix" => timestamp.to_string()
-          "readable" => "2025-01-01 00:00:00"  // 简化的可读格式
-          _ => timestamp.to_string()
-        }
-      }
-      
-      let escape_xml = fn(text: String) {
-        text
-          .replace("&", "&amp;")
-          .replace("<", "&lt;")
-          .replace(">", "&gt;")
-          .replace("\"", "&quot;")
-          .replace("'", "&apos;")
-      }
-      
-      let indent = if config.pretty_print {
-        " ".repeat(config.indent_size)
-      } else {
-        ""
-      }
-      
-      let newline = if config.pretty_print { "\n" } else { "" }
-      
-      // 格式化单个数据点
-      let format_data_point = fn(dp: TelemetryDataPoint) {
-        let mut attributes = Array::empty()
-        let mut subelements = Array::empty()
-        
-        // 处理时间戳
-        if config.include_timestamp {
-          if config.include_attributes {
-            attributes = attributes.push(("timestamp", format_timestamp(dp.timestamp)))
-          } else {
-            subelements = subelements.push(indent + indent + "<timestamp>" + escape_xml(format_timestamp(dp.timestamp)) + "</timestamp>")
-          }
-        }
-        
-        // 处理指标名称
-        if config.include_attributes {
-          attributes = attributes.push(("name", escape_xml(dp.metric_name)))
-        } else {
-          subelements = subelements.push(indent + indent + "<name>" + escape_xml(dp.metric_name) + "</name>")
-        }
-        
-        // 处理值
-        if config.include_attributes {
-          attributes = attributes.push(("value", dp.value.to_string()))
-        } else {
-          subelements = subelements.push(indent + indent + "<value>" + dp.value.to_string() + "</value>")
-        }
-        
-        // 处理数据类型
-        if config.include_attributes {
-          attributes = attributes.push(("type", escape_xml(dp.data_type)))
-        } else {
-          subelements = subelements.push(indent + indent + "<type>" + escape_xml(dp.data_type) + "</type>")
-        }
-        
-        // 处理标签
-        if config.include_labels {
-          match config.label_format {
-            "attribute" => {
-              for label in dp.labels {
-                attributes = attributes.push(("label_" + label.0, escape_xml(label.1)))
-              }
-            }
-            "subelement" => {
-              let label_elements = dp.labels.map(fn(l) {
-                indent + indent + "<label name=\"" + escape_xml(l.0) + "\">" + escape_xml(l.1) + "</label>"
-              })
-              subelements = subelements.concat(label_elements)
-            }
-            "mixed" => {
-              // 混合模式：部分作为属性，部分作为子元素
-              for label in dp.labels {
-                if label.0 == "host" || label.0 == "region" {
-                  attributes = attributes.push(("label_" + label.0, escape_xml(label.1)))
-                } else {
-                  subelements = subelements.push(indent + indent + "<label name=\"" + escape_xml(l.0) + "\">" + escape_xml(l.1) + "</label>")
-                }
-              }
-            }
-            _ => ()
-          }
-        }
-        
-        // 构建属性字符串
-        let attributes_str = if attributes.length() > 0 {
-          " " + attributes.map(fn(a) { a.0 + "=\"" + a.1 + "\"" }).join(" ")
-        } else {
-          ""
-        }
-        
-        // 构建子元素字符串
-        let subelements_str = if subelements.length() > 0 {
-          newline + subelements.join(newline) + newline + indent
-        } else {
-          ""
-        }
-        
-        // 构建完整的元素
-        indent + "<" + config.item_element + attributes_str + ">" + 
-        subelements_str + 
-        "</" + config.item_element + ">"
-      }
-      
-      // 格式化所有数据点
-      let formatted_points = data_points.map(format_data_point)
-      
-      // 构建完整的XML文档
-      let xml_header = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + newline
-      let opening_tag = "<" + config.root_element + ">" + newline
-      let closing_tag = "</" + config.root_element + ">"
-      
-      xml_header + opening_tag + formatted_points.join(newline) + newline + closing_tag
+  let metric_entry = {
+    "timestamp": 1234567890,
+    "metric_name": "cpu_usage",
+    "metric_value": 75.5,
+    "metric_unit": "percent",
+    "tags": ["env:prod", "region:us-east-1"]
+  }
+  
+  let trace_entry = {
+    "trace_id": "trace-123",
+    "span_id": "span-456",
+    "parent_span_id": "span-123",
+    "operation_name": "database_query",
+    "duration_ms": 150,
+    "status": "ok"
+  }
+  
+  // Conditional formatter based on data type
+  let format_based_on_type = fn(data) {
+    if data.contains("level") && data.contains("message") {
+      // Log entry format
+      "[" + data["level"] + "] " + data["timestamp"].to_string() + " " + data["service"] + ": " + data["message"] +
+      (if data.contains("error_code") { " (Error: " + data["error_code"] + ")" } else { "" })
+    } else if data.contains("metric_name") && data.contains("metric_value") {
+      // Metric entry format
+      "METRIC " + data["timestamp"].to_string() + " " + data["metric_name"] + "=" + data["metric_value"].to_string() + data["metric_unit"] +
+      (if data.contains("tags") { " " + data["tags"].join(",") } else { "" })
+    } else if data.contains("trace_id") && data.contains("span_id") {
+      // Trace entry format
+      "TRACE " + data["trace_id"] + " " + data["span_id"] + " " + data["operation_name"] + " " + data["duration_ms"].to_string() + "ms " + data["status"]
+    } else {
+      // Default format
+      "UNKNOWN: " + data.entries().map(fn(entry) { entry.0 + "=" + entry.1.to_string() }).join(" ")
     }
   }
   
-  // 创建测试数据
-  let test_data = [
-    {
-      timestamp: 1735689600000,
-      metric_name: "cpu_usage",
-      value: 45.2,
-      labels: [("host", "server1"), ("region", "us-west"), ("env", "prod")],
-      data_type: "gauge"
-    },
-    {
-      timestamp: 1735689660000,
-      metric_name: "memory_usage",
-      value: 78.5,
-      labels: [("host", "server2"), ("region", "us-east"), ("env", "prod")],
-      data_type: "gauge"
-    }
-  ]
+  // Test formatting different types
+  let log_output = format_based_on_type(log_entry)
+  let metric_output = format_based_on_type(metric_entry)
+  let trace_output = format_based_on_type(trace_entry)
   
-  // 测试属性格式XML
-  let attribute_config = XMLFormatConfig({
-    root_element: "telemetry",
-    item_element: "metric",
-    include_attributes: true,
-    include_timestamp: true,
-    include_labels: true,
-    label_format: "attribute",
-    date_format: "iso",
-    pretty_print: true,
-    indent_size: 2
-  })
+  // Verify log formatting
+  assert_true(log_output.contains("[ERROR] 1234567890 azimuth-db: Database connection failed"))
+  assert_true(log_output.contains("(Error: DB_CONN_ERROR)"))
   
-  let attribute_formatter = custom_xml_formatter(attribute_config)
-  let attribute_output = attribute_formatter(test_data)
+  // Verify metric formatting
+  assert_true(metric_output.contains("METRIC 1234567890 cpu_usage=75.5percent"))
+  assert_true(metric_output.contains("env:prod,region:us-east-1"))
   
-  assert_true(attribute_output.contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"))
-  assert_true(attribute_output.contains("<telemetry>"))
-  assert_true(attribute_output.contains("<metric timestamp=\"2025-01-01T00:00:00Z\" name=\"cpu_usage\" value=\"45.2\" type=\"gauge\" label_host=\"server1\" label_region=\"us-west\" label_env=\"prod\" />"))
-  assert_true(attribute_output.contains("<metric timestamp=\"2025-01-01T00:01:00Z\" name=\"memory_usage\" value=\"78.5\" type=\"gauge\" label_host=\"server2\" label_region=\"us-east\" label_env=\"prod\" />"))
+  // Verify trace formatting
+  assert_true(trace_output.contains("TRACE trace-123 span-456 database_query 150ms ok"))
   
-  // 测试子元素格式XML
-  let subelement_config = XMLFormatConfig({
-    root_element: "metrics",
-    item_element: "data",
-    include_attributes: false,
-    include_timestamp: true,
-    include_labels: true,
-    label_format: "subelement",
-    date_format: "unix",
-    pretty_print: true,
-    indent_size: 4
-  })
-  
-  let subelement_formatter = custom_xml_formatter(subelement_config)
-  let subelement_output = subelement_formatter(test_data)
-  
-  assert_true(subelement_output.contains("<metrics>"))
-  assert_true(subelement_output.contains("<data>"))
-  assert_true(subelement_output.contains("<timestamp>1735689600000</timestamp>"))
-  assert_true(subelement_output.contains("<name>cpu_usage</name>"))
-  assert_true(subelement_output.contains("<value>45.2</value>"))
-  assert_true(subelement_output.contains("<label name=\"host\">server1</label>"))
-  assert_true(subelement_output.contains("<label name=\"region\">us-west</label>"))
-  
-  // 测试紧凑格式XML
-  let compact_config = XMLFormatConfig({
-    root_element: "data",
-    item_element: "m",
-    include_attributes: true,
-    include_timestamp: false,
-    include_labels: false,
-    label_format: "attribute",
-    date_format: "unix",
-    pretty_print: false,
-    indent_size: 0
-  })
-  
-  let compact_formatter = custom_xml_formatter(compact_config)
-  let compact_output = compact_formatter(test_data)
-  
-  assert_true(compact_output.contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"))
-  assert_true(compact_output.contains("<data>"))
-  assert_true(compact_output.contains("<m name=\"cpu_usage\" value=\"45.2\" type=\"gauge\"/>"))
-  assert_true(compact_output.contains("<m name=\"memory_usage\" value=\"78.5\" type=\"gauge\"/>"))
-  assert_false(compact_output.contains("\n"))  // 无换行符
-  assert_false(compact_output.contains("timestamp"))  // 不包含时间戳
-  assert_false(compact_output.contains("host"))  // 不包含标签
-}
-
-// 测试5: 自定义二进制格式化器
-test "自定义二进制格式化器" {
-  // 定义二进制格式化配置
-  type BinaryFormatConfig = {
-    version: Int,
-    include_header: Bool,
-    compression: Bool,
-    endianness: String,  // "little", "big"
-    value_encoding: String,  // "float32", "float64", "fixed_point"
-    timestamp_encoding: String,  // "unix32", "unix64", "custom"
-    string_encoding: String  // "utf8", "ascii", "length_prefixed"
+  // Test with unknown data type
+  let unknown_data = {
+    "foo": "bar",
+    "baz": 123
   }
   
-  // 创建自定义二进制格式化器
-  let custom_binary_formatter = fn(config: BinaryFormatConfig) {
-    fn(data_points: Array[TelemetryDataPoint>) -> Array[Byte> {
-      let mut output = Array::empty()
-      
-      // 添加文件头
-      if config.include_header {
-        // 魔数 (4字节)
-        output = output.concat([0x41, 0x5A, 0x49, 0x4D])  // "AZIM"
-        
-        // 版本 (2字节)
-        output = output.concat([
-          (config.version / 256) as Byte,
-          (config.version % 256) as Byte
-        ])
-        
-        // 数据点数量 (4字节)
-        let count = data_points.length()
-        output = output.concat([
-          (count / 16777216) as Byte,
-          ((count / 65536) % 256) as Byte,
-          ((count / 256) % 256) as Byte,
-          (count % 256) as Byte
-        ])
-        
-        // 标志位 (1字节)
-        let flags = if config.compression { 0x01 } else { 0x00 }
-        output = output.push(flags)
-        
-        // 保留字节 (3字节)
-        output = output.concat([0x00, 0x00, 0x00])
-      }
-      
-      // 格式化数据点
-      for dp in data_points {
-        // 时间戳 (8或4字节)
-        match config.timestamp_encoding {
-          "unix64" => {
-            let timestamp = dp.timestamp
-            if config.endianness == "little" {
-              output = output.concat([
-                (timestamp % 256) as Byte,
-                ((timestamp / 256) % 256) as Byte,
-                ((timestamp / 65536) % 256) as Byte,
-                ((timestamp / 16777216) % 256) as Byte,
-                ((timestamp / 4294967296) % 256) as Byte,
-                ((timestamp / 1099511627776) % 256) as Byte,
-                ((timestamp / 281474976710656) % 256) as Byte,
-                ((timestamp / 72057594037927936) % 256) as Byte
-              ])
-            } else {
-              output = output.concat([
-                ((timestamp / 72057594037927936) % 256) as Byte,
-                ((timestamp / 281474976710656) % 256) as Byte,
-                ((timestamp / 1099511627776) % 256) as Byte,
-                ((timestamp / 4294967296) % 256) as Byte,
-                ((timestamp / 16777216) % 256) as Byte,
-                ((timestamp / 65536) % 256) as Byte,
-                ((timestamp / 256) % 256) as Byte,
-                (timestamp % 256) as Byte
-              ])
-            }
-          }
-          "unix32" => {
-            let timestamp = (dp.timestamp / 1000) as Int  // 转换为秒
-            if config.endianness == "little" {
-              output = output.concat([
-                (timestamp % 256) as Byte,
-                ((timestamp / 256) % 256) as Byte,
-                ((timestamp / 65536) % 256) as Byte,
-                ((timestamp / 16777216) % 256) as Byte
-              ])
-            } else {
-              output = output.concat([
-                ((timestamp / 16777216) % 256) as Byte,
-                ((timestamp / 65536) % 256) as Byte,
-                ((timestamp / 256) % 256) as Byte,
-                (timestamp % 256) as Byte
-              ])
-            }
-          }
-          _ => {
-            // 默认使用64位Unix时间戳
-            let timestamp = dp.timestamp
-            output = output.concat([
-              (timestamp % 256) as Byte,
-              ((timestamp / 256) % 256) as Byte,
-              ((timestamp / 65536) % 256) as Byte,
-              ((timestamp / 16777216) % 256) as Byte,
-              ((timestamp / 4294967296) % 256) as Byte,
-              ((timestamp / 1099511627776) % 256) as Byte,
-              ((timestamp / 281474976710656) % 256) as Byte,
-              ((timestamp / 72057594037927936) % 256) as Byte
-            ])
-          }
-        }
-        
-        // 指标名称长度 (2字节)
-        let name_length = dp.metric_name.length()
-        output = output.concat([
-          (name_length / 256) as Byte,
-          (name_length % 256) as Byte
-        ])
-        
-        // 指标名称 (变长)
-        match config.string_encoding {
-          "utf8" => {
-            for char in dp.metric_name.chars() {
-              output = output.push(char as Byte)
-            }
-          }
-          "ascii" => {
-            for char in dp.metric_name.chars() {
-              output = output.push((char % 128) as Byte)  // 限制为ASCII
-            }
-          }
-          _ => {
-            // 默认UTF-8
-            for char in dp.metric_name.chars() {
-              output = output.push(char as Byte)
-            }
-          }
-        }
-        
-        // 值 (4或8字节)
-        match config.value_encoding {
-          "float32" => {
-            let value = dp.value as Float32
-            let bits = value.to_bits() as Int
-            if config.endianness == "little" {
-              output = output.concat([
-                (bits % 256) as Byte,
-                ((bits / 256) % 256) as Byte,
-                ((bits / 65536) % 256) as Byte,
-                ((bits / 16777216) % 256) as Byte
-              ])
-            } else {
-              output = output.concat([
-                ((bits / 16777216) % 256) as Byte,
-                ((bits / 65536) % 256) as Byte,
-                ((bits / 256) % 256) as Byte,
-                (bits % 256) as Byte
-              ])
-            }
-          }
-          "fixed_point" => {
-            // 简化的定点数表示 (整数部分2字节，小数部分2字节)
-            let int_part = dp.value as Int
-            let frac_part = ((dp.value - (int_part as Float)) * 10000.0) as Int
-            
-            if config.endianness == "little" {
-              output = output.concat([
-                (int_part % 256) as Byte,
-                ((int_part / 256) % 256) as Byte,
-                (frac_part % 256) as Byte,
-                ((frac_part / 256) % 256) as Byte
-              ])
-            } else {
-              output = output.concat([
-                ((int_part / 256) % 256) as Byte,
-                (int_part % 256) as Byte,
-                ((frac_part / 256) % 256) as Byte,
-                (frac_part % 256) as Byte
-              ])
-            }
-          }
-          _ => {
-            // 默认使用64位浮点数
-            let bits = dp.value.to_bits() as Int
-            if config.endianness == "little" {
-              output = output.concat([
-                (bits % 256) as Byte,
-                ((bits / 256) % 256) as Byte,
-                ((bits / 65536) % 256) as Byte,
-                ((bits / 16777216) % 256) as Byte,
-                ((bits / 4294967296) % 256) as Byte,
-                ((bits / 1099511627776) % 256) as Byte,
-                ((bits / 281474976710656) % 256) as Byte,
-                ((bits / 72057594037927936) % 256) as Byte
-              ])
-            } else {
-              output = output.concat([
-                ((bits / 72057594037927936) % 256) as Byte,
-                ((bits / 281474976710656) % 256) as Byte,
-                ((bits / 1099511627776) % 256) as Byte,
-                ((bits / 4294967296) % 256) as Byte,
-                ((bits / 16777216) % 256) as Byte,
-                ((bits / 65536) % 256) as Byte,
-                ((bits / 256) % 256) as Byte,
-                (bits % 256) as Byte
-              ])
-            }
-          }
-        }
-        
-        // 数据类型 (1字节)
-        let type_byte = match dp.data_type {
-          "counter" => 0x01
-          "gauge" => 0x02
-          "histogram" => 0x03
-          "summary" => 0x04
-          _ => 0x00
-        }
-        output = output.push(type_byte)
-        
-        // 标签数量 (2字节)
-        let label_count = dp.labels.length()
-        output = output.concat([
-          (label_count / 256) as Byte,
-          (label_count % 256) as Byte
-        ])
-        
-        // 标签 (变长)
-        for label in dp.labels {
-          // 标签名称长度 (2字节)
-          let label_name_length = label.0.length()
-          output = output.concat([
-            (label_name_length / 256) as Byte,
-            (label_name_length % 256) as Byte
-          ])
-          
-          // 标签名称
-          for char in label.0.chars() {
-            output = output.push(char as Byte)
-          }
-          
-          // 标签值长度 (2字节)
-          let label_value_length = label.1.length()
-          output = output.concat([
-            (label_value_length / 256) as Byte,
-            (label_value_length % 256) as Byte
-          ])
-          
-          // 标签值
-          for char in label.1.chars() {
-            output = output.push(char as Byte)
-          }
-        }
-      }
-      
-      // 模拟压缩（简化：只是返回前一半的数据）
-      if config.compression {
-        output.slice(0, output.length() / 2)
-      } else {
-        output
-      }
-    }
-  }
-  
-  // 创建测试数据
-  let test_data = [
-    {
-      timestamp: 1735689600000,
-      metric_name: "cpu",
-      value: 45.5,
-      labels: [("host", "server1"), ("region", "us-west")],
-      data_type: "gauge"
-    },
-    {
-      timestamp: 1735689660000,
-      metric_name: "mem",
-      value: 78.25,
-      labels: [("host", "server2"), ("region", "us-east")],
-      data_type: "counter"
-    }
-  ]
-  
-  // 测试标准二进制格式
-  let standard_config = BinaryFormatConfig({
-    version: 1,
-    include_header: true,
-    compression: false,
-    endianness: "little",
-    value_encoding: "float64",
-    timestamp_encoding: "unix64",
-    string_encoding: "utf8"
-  })
-  
-  let standard_formatter = custom_binary_formatter(standard_config)
-  let standard_output = standard_formatter(test_data)
-  
-  // 验证文件头
-  assert_eq(standard_output[0], 0x41)  // 'A'
-  assert_eq(standard_output[1], 0x5A)  // 'Z'
-  assert_eq(standard_output[2], 0x49)  // 'I'
-  assert_eq(standard_output[3], 0x4D)  // 'M'
-  assert_eq(standard_output[4], 0x00)  // 版本1
-  assert_eq(standard_output[5], 0x01)
-  assert_eq(standard_output[6], 0x00)  // 数据点数量2
-  assert_eq(standard_output[7], 0x00)
-  assert_eq(standard_output[8], 0x00)
-  assert_eq(standard_output[9], 0x02)
-  
-  // 测试压缩格式
-  let compressed_config = BinaryFormatConfig({
-    version: 1,
-    include_header: true,
-    compression: true,
-    endianness: "little",
-    value_encoding: "float32",
-    timestamp_encoding: "unix32",
-    string_encoding: "ascii"
-  })
-  
-  let compressed_formatter = custom_binary_formatter(compressed_config)
-  let compressed_output = compressed_formatter(test_data)
-  
-  // 验证压缩标志
-  assert_eq(compressed_output[10], 0x01)  // 压缩标志位
-  
-  // 验证压缩后的数据大小
-  assert_true(compressed_output.length() < standard_output.length())
-  
-  // 测试无头格式
-  let no_header_config = BinaryFormatConfig({
-    version: 1,
-    include_header: false,
-    compression: false,
-    endianness: "big",
-    value_encoding: "fixed_point",
-    timestamp_encoding: "unix64",
-    string_encoding: "utf8"
-  })
-  
-  let no_header_formatter = custom_binary_formatter(no_header_config)
-  let no_header_output = no_header_formatter(test_data)
-  
-  // 验证无文件头
-  assert_true(no_header_output.length() < standard_output.length())
-  assert_ne(no_header_output[0], 0x41)  // 不是魔数开头
+  let unknown_output = format_based_on_type(unknown_data)
+  assert_true(unknown_output.contains("UNKNOWN: foo=bar baz=123"))
 }
