@@ -88,6 +88,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_time_series_operations_new_tests.mbt": {
   },
+  "azimuth_time_series_data_tests.mbt": {
+  },
   "azimuth_time_series_data_processing_tests.mbt": {
   },
   "azimuth_time_series_data_processing_comprehensive_tests.mbt": {
@@ -438,6 +440,12 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_new_span_lifecycle_tests.mbt": {
   },
+  "azimuth_new_simple_test.mbt": {
+    0: (__test_617a696d7574685f6e65775f73696d706c655f746573742e6d6274_0, ["简单算术测试"]),
+    1: (__test_617a696d7574685f6e65775f73696d706c655f746573742e6d6274_1, ["字符串操作测试"]),
+    2: (__test_617a696d7574685f6e65775f73696d706c655f746573742e6d6274_2, ["数组操作测试"]),
+    3: (__test_617a696d7574685f6e65775f73696d706c655f746573742e6d6274_3, ["布尔逻辑测试"]),
+  },
   "azimuth_new_resource_management_tests.mbt": {
   },
   "azimuth_new_moonbit_tests.mbt": {
@@ -759,6 +767,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_data_structures_enhanced_tests.mbt": {
   },
   "azimuth_data_stream_pipeline_tests.mbt": {
+  },
+  "azimuth_data_serialization_tests.mbt": {
   },
   "azimuth_data_serialization_integrity_tests.mbt": {
   },

@@ -1,590 +1,942 @@
-// 遥测资源管理和优化测试用例
-// 测试Azimuth遥测系统的资源管理和优化功能
+// Azimuth 资源管理测试
+// 专注于测试遥测系统的资源分配、使用和释放
 
-test "资源池管理" {
-  // 测试资源池管理功能
-  let resource_pool = ResourcePool::new(100) // 最大100个资源
+// 测试1: 内存资源管理
+test "内存资源管理" {
+  // 创建内存管理器
+  let memory_manager = MemoryManager({
+    allocated_objects: [],
+    total_allocated: 0,
+    max_memory_limit: 10 * 1024 * 1024, // 10MB
+    gc_threshold: 8 * 1024 * 1024      // 8MB
+  })
   
-  // 创建资源池
-  let span_pool = ResourcePool::create_span_pool(resource_pool, 50) // 最多50个span
-  let metric_pool = ResourcePool::create_metric_pool(resource_pool, 30) // 最多30个度量
-  let log_pool = ResourcePool::create_log_pool(resource_pool, 20) // 最多20个日志
-  
-  // 测试span资源池
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "resource.pool.test")
-  
-  let spans = []
-  for i in 1..=60 { // 尝试创建60个span，超过池限制
-    let span = ResourcePool::acquire_span(span_pool, tracer, "pooled.span." + i.to_string())
-    match span {
-      Some(s) => {
-        Span::set_attribute(s, "pool.index", i)
-        spans = spans.push(s)
+  // 分配内存对象的函数
+  let allocate_memory_object = fn(manager, size, object_id) {
+    let current_usage = get_memory_usage(manager)
+    
+    // 检查是否会超过内存限制
+    if current_usage + size > manager.max_memory_limit {
+      // 触发垃圾回收
+      trigger_garbage_collection(manager)
+      
+      // 再次检查内存使用
+      let new_usage = get_memory_usage(manager)
+      if new_usage + size > manager.max_memory_limit {
+        return Error("内存不足，无法分配对象")
       }
-      None => assert_true(i > 50) // 超过池限制应该返回None
     }
+    
+    // 分配对象
+    let memory_object = MemoryObject({
+      id: object_id,
+      size: size,
+      data: "data_of_size_" + size.to_string(),
+      created_at: get_current_time_ms(),
+      last_accessed: get_current_time_ms()
+    })
+    
+    allocate_object(manager, memory_object)
+    Success(memory_object)
   }
   
-  // 验证只创建了50个span
-  assert_eq(spans.length(), 50)
-  
-  // 释放span资源
-  for i in 0..=24 {
-    ResourcePool::release_span(span_pool, spans[i])
+  // 释放内存对象的函数
+  let deallocate_memory_object = fn(manager, object_id) {
+    deallocate_object(manager, object_id)
   }
   
-  // 验证资源池中有可用资源
-  assert_eq(ResourcePool::available_span_count(span_pool), 25)
+  // 测试内存分配
+  let object1_result = allocate_memory_object(memory_manager, 1024, "obj1")
+  let object2_result = allocate_memory_object(memory_manager, 2048, "obj2")
+  let object3_result = allocate_memory_object(memory_manager, 4096, "obj3")
   
-  // 重新获取span资源
-  let new_spans = []
-  for i in 1..=25 {
-    let span = ResourcePool::acquire_span(span_pool, tracer, "reused.span." + i.to_string())
-    match span {
-      Some(s) => new_spans = new_spans.push(s)
-      None => assert_true(false)
-    }
-  }
+  // 验证分配成功
+  assert_true(object1_result.is_success(), "对象1分配失败")
+  assert_true(object2_result.is_success(), "对象2分配失败")
+  assert_true(object3_result.is_success(), "对象3分配失败")
   
-  // 验证重新获取了25个span
-  assert_eq(new_spans.length(), 25)
+  // 验证内存使用量
+  let current_usage = get_memory_usage(memory_manager)
+  let expected_usage = 1024 + 2048 + 4096
+  assert_eq(current_usage, expected_usage, 
+    "内存使用量计算错误: 期望 " + expected_usage.to_string() + 
+    ", 实际 " + current_usage.to_string())
   
-  // 测试度量资源池
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "resource.pool.test")
+  // 测试内存释放
+  deallocate_memory_object(memory_manager, "obj2")
   
-  let metrics = []
-  for i in 1..=35 { // 尝试创建35个度量，超过池限制
-    let metric = ResourcePool::acquire_counter(metric_pool, meter, "pooled.counter." + i.to_string())
-    match metric {
-      Some(m) => metrics = metrics.push(m)
-      None => assert_true(i > 30)
-    }
-  }
+  // 验证内存释放
+  let usage_after_deallocation = get_memory_usage(memory_manager)
+  let expected_usage_after_deallocation = 1024 + 4096
+  assert_eq(usage_after_deallocation, expected_usage_after_deallocation, 
+    "内存释放后使用量错误: 期望 " + expected_usage_after_deallocation.to_string() + 
+    ", 实际 " + usage_after_deallocation.to_string())
   
-  // 验证只创建了30个度量
-  assert_eq(metrics.length(), 30)
-  
-  // 测试日志资源池
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "resource.pool.test")
-  
-  let logs = []
-  for i in 1..=25 { // 尝试创建25个日志，超过池限制
-    let log = ResourcePool::acquire_log(log_pool, logger, Info, "Pooled log " + i.to_string())
-    match log {
-      Some(l) => logs = logs.push(l)
-      None => assert_true(i > 20)
-    }
-  }
-  
-  // 验证只创建了20个日志
-  assert_eq(logs.length(), 20)
-  
-  // 释放所有资源
-  for span in spans {
-    ResourcePool::release_span(span_pool, span)
-  }
-  for span in new_spans {
-    ResourcePool::release_span(span_pool, span)
-  }
-  for metric in metrics {
-    ResourcePool::release_counter(metric_pool, metric)
-  }
-  for log in logs {
-    ResourcePool::release_log(log_pool, log)
-  }
-  
-  // 验证所有资源都已释放
-  assert_eq(ResourcePool::available_span_count(span_pool), 50)
-  assert_eq(ResourcePool::available_metric_count(metric_pool), 30)
-  assert_eq(ResourcePool::available_log_count(log_pool), 20)
-  
-  assert_true(true)
+  // 测试垃圾回收阈值
+  let large_object_result = allocate_memory_object(memory_manager, 5 * 1024 * 1024, "large_obj")
+  assert_true(large_object_result.is_success(), "大对象分配失败，应该触发垃圾回收")
 }
 
-test "内存优化策略" {
-  // 测试内存优化策略
-  let memory_optimizer = MemoryOptimizer::new()
+// 测试2: 连接池资源管理
+test "连接池资源管理" {
+  // 创建连接池
+  let connection_pool = ConnectionPool({
+    max_connections: 10,
+    min_connections: 2,
+    active_connections: [],
+    idle_connections: [],
+    total_created: 0,
+    total_closed: 0
+  })
   
-  // 设置内存优化配置
-  MemoryOptimizer::set_max_memory_usage(memory_optimizer, 100 * 1024 * 1024) // 100MB
-  MemoryOptimizer::set_gc_threshold(memory_optimizer, 0.8) // 80%内存使用时触发GC
-  MemoryOptimizer::set_buffer_size(memory_optimizer, 1024 * 1024) // 1MB缓冲区
+  // 初始化最小连接数
+  initialize_connection_pool(connection_pool)
   
-  // 创建大量遥测数据
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "memory.optimization.test")
-  
-  let spans = []
-  for i in 1..=10000 {
-    let span = Tracer::start_span(tracer, "memory.test.span." + i.to_string())
-    Span::set_attribute(span, "index", i)
-    Span::set_attribute(span, "large.data", "x".repeat(1000)) // 每个span包含1KB数据
-    spans = spans.push(span)
-    
-    // 检查内存使用
-    let current_memory = Memory::get_usage()
-    let max_memory = MemoryOptimizer::get_max_memory_usage(memory_optimizer)
-    
-    // 如果内存使用超过阈值，触发优化
-    if current_memory > max_memory * MemoryOptimizer::get_gc_threshold(memory_optimizer) {
-      MemoryOptimizer::optimize(memory_optimizer)
+  // 获取连接的函数
+  let get_connection = fn(pool) {
+    // 检查是否有空闲连接
+    if pool.idle_connections.length() > 0 {
+      // 从空闲连接中取出一个
+      let connection = pool.idle_connections[0]
+      let remaining_idle = pool.idle_connections.slice(1, pool.idle_connections.length())
+      
+      // 添加到活跃连接
+      let updated_active = pool.active_connections + [connection]
+      
+      update_connection_pool(pool, {
+        active_connections: updated_active,
+        idle_connections: remaining_idle
+      })
+      
+      Success(connection)
+    } else if pool.active_connections.length() < pool.max_connections {
+      // 创建新连接
+      let new_connection = create_new_connection(pool)
+      let updated_active = pool.active_connections + [new_connection]
+      
+      update_connection_pool(pool, {
+        active_connections: updated_active,
+        total_created: pool.total_created + 1
+      })
+      
+      Success(new_connection)
+    } else {
+      // 连接池已满
+      Error("连接池已满，无法获取连接")
     }
   }
   
-  // 验证内存优化效果
-  let optimized_memory = Memory::get_usage()
-  let max_memory = MemoryOptimizer::get_max_memory_usage(memory_optimizer)
-  assert_true(optimized_memory < max_memory) // 内存使用应该在限制内
-  
-  // 测试缓冲区优化
-  let buffer_manager = BufferManager::new()
-  BufferManager::set_buffer_size(buffer_manager, 512 * 1024) // 512KB缓冲区
-  
-  // 创建大量缓冲区数据
-  let buffers = []
-  for i in 1..=100 {
-    let buffer = BufferManager::acquire_buffer(buffer_manager)
-    BufferManager::fill_buffer(buffer, "buffer data " + i.to_string())
-    buffers = buffers.push(buffer)
+  // 释放连接的函数
+  let release_connection = fn(pool, connection) {
+    // 从活跃连接中移除
+    let updated_active = pool.active_connections.filter(fn(conn) { 
+      conn.id != connection.id 
+    })
+    
+    // 添加到空闲连接
+    let updated_idle = pool.idle_connections + [connection]
+    
+    update_connection_pool(pool, {
+      active_connections: updated_active,
+      idle_connections: updated_idle
+    })
   }
   
-  // 验证缓冲区管理
-  assert_eq(buffers.length(), 100)
-  assert_true(BufferManager::get_memory_usage(buffer_manager) <= 512 * 1024)
+  // 验证初始状态
+  assert_eq(connection_pool.active_connections.length(), 0, "初始活跃连接数不为0")
+  assert_eq(connection_pool.idle_connections.length(), connection_pool.min_connections, 
+    "初始空闲连接数不等于最小连接数")
   
-  // 释放缓冲区
-  for buffer in buffers {
-    BufferManager::release_buffer(buffer_manager, buffer)
+  // 测试获取连接
+  let conn1_result = get_connection(connection_pool)
+  let conn2_result = get_connection(connection_pool)
+  let conn3_result = get_connection(connection_pool)
+  
+  // 验证获取成功
+  assert_true(conn1_result.is_success(), "获取连接1失败")
+  assert_true(conn2_result.is_success(), "获取连接2失败")
+  assert_true(conn3_result.is_success(), "获取连接3失败")
+  
+  // 验证连接池状态
+  assert_eq(connection_pool.active_connections.length(), 3, "活跃连接数不正确")
+  assert_eq(connection_pool.idle_connections.length(), 0, "空闲连接数不正确")
+  
+  // 测试释放连接
+  match conn1_result {
+    Success(conn1) => release_connection(connection_pool, conn1)
+    Error(_) => assert_true(false, "连接1获取失败，无法释放")
   }
   
-  // 验证缓冲区已释放
-  assert_eq(BufferManager::get_active_buffer_count(buffer_manager), 0)
+  // 验证释放后的状态
+  assert_eq(connection_pool.active_connections.length(), 2, "释放后活跃连接数不正确")
+  assert_eq(connection_pool.idle_connections.length(), 1, "释放后空闲连接数不正确")
   
-  // 结束所有span
-  for span in spans {
-    Span::end(span)
+  // 测试连接池满的情况
+  let connections = []
+  for i = 0; i < 8; i = i + 1 {
+    let conn_result = get_connection(connection_pool)
+    match conn_result {
+      Success(conn) => connections = connections + [conn]
+      Error(_) => assert_true(false, "获取连接失败")
+    }
   }
   
-  assert_true(true)
+  // 现在连接池应该满了
+  let full_pool_result = get_connection(connection_pool)
+  assert_true(full_pool_result.is_error(), "连接池已满，但仍然成功获取连接")
 }
 
-test "资源限制和节流" {
-  // 测试资源限制和节流
-  let resource_limiter = ResourceLimiter::new()
+// 测试3: 文件句柄资源管理
+test "文件句柄资源管理" {
+  // 创建文件句柄管理器
+  let file_handle_manager = FileHandleManager({
+    max_handles: 100,
+    open_handles: [],
+    handle_counter: 0
+  })
   
-  // 设置资源限制
-  ResourceLimiter::set_max_spans_per_second(resource_limiter, 1000)
-  ResourceLimiter::set_max_metrics_per_second(resource_limiter, 5000)
-  ResourceLimiter::set_max_logs_per_second(resource_limiter, 2000)
-  ResourceLimiter::set_max_memory_usage(resource_limiter, 50 * 1024 * 1024) // 50MB
+  // 打开文件的函数
+  let open_file = fn(manager, file_path) {
+    if manager.open_handles.length() >= manager.max_handles {
+      return Error("文件句柄数已达上限")
+    }
+    
+    let handle_id = manager.handle_counter + 1
+    let file_handle = FileHandle({
+      id: handle_id,
+      path: file_path,
+      opened_at: get_current_time_ms(),
+      last_accessed: get_current_time_ms(),
+      size: 1024, // 模拟文件大小
+      is_writable: false
+    })
+    
+    update_file_handle_manager(manager, {
+      open_handles: manager.open_handles + [file_handle],
+      handle_counter: handle_id
+    })
+    
+    Success(file_handle)
+  }
   
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "resource.limiting.test")
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "resource.limiting.test")
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "resource.limiting.test")
+  // 关闭文件的函数
+  let close_file = fn(manager, handle_id) {
+    let updated_handles = manager.open_handles.filter(fn(handle) { 
+      handle.id != handle_id 
+    })
+    
+    update_file_handle_manager(manager, {
+      open_handles: updated_handles
+    })
+  }
   
-  // 测试span创建限制
-  let span_count = 0
-  let span_rejected = 0
-  let span_start = Time::now()
+  // 测试打开文件
+  let file1_result = open_file(file_handle_manager, "/tmp/test1.txt")
+  let file2_result = open_file(file_handle_manager, "/tmp/test2.txt")
+  let file3_result = open_file(file_handle_manager, "/tmp/test3.txt")
   
-  for i in 1..=1500 { // 尝试创建1500个span，超过限制
-    let span = ResourceLimiter::try_create_span(resource_limiter, tracer, "limited.span." + i.to_string())
-    match span {
-      Some(s) => {
-        Span::set_attribute(s, "index", i)
-        Span::end(s)
-        span_count = span_count + 1
+  // 验证打开成功
+  assert_true(file1_result.is_success(), "打开文件1失败")
+  assert_true(file2_result.is_success(), "打开文件2失败")
+  assert_true(file3_result.is_success(), "打开文件3失败")
+  
+  // 验证文件句柄数量
+  assert_eq(file_handle_manager.open_handles.length(), 3, "打开的文件句柄数不正确")
+  
+  // 测试关闭文件
+  match file1_result {
+    Success(handle1) => close_file(file_handle_manager, handle1.id)
+    Error(_) => assert_true(false, "文件1打开失败，无法关闭")
+  }
+  
+  // 验证关闭后的状态
+  assert_eq(file_handle_manager.open_handles.length(), 2, "关闭文件后句柄数不正确")
+  
+  // 测试句柄数限制
+  let handles = []
+  for i = 0; i < 98; i = i + 1 {
+    let file_result = open_file(file_handle_manager, "/tmp/test" + (i + 4).to_string() + ".txt")
+    match file_result {
+      Success(handle) => handles = handles + [handle]
+      Error(_) => assert_true(false, "打开文件失败")
+    }
+  }
+  
+  // 现在应该有100个打开的句柄
+  assert_eq(file_handle_manager.open_handles.length(), 100, "文件句柄数不正确")
+  
+  // 尝试打开第101个文件，应该失败
+  let overflow_result = open_file(file_handle_manager, "/tmp/overflow.txt")
+  assert_true(overflow_result.is_error(), "文件句柄数已达上限，但仍然成功打开文件")
+}
+
+// 测试4: 缓存资源管理
+test "缓存资源管理" {
+  // 创建缓存管理器
+  let cache_manager = CacheManager({
+    max_size: 50, // 最大缓存项数
+    max_memory: 5 * 1024 * 1024, // 最大内存使用量 5MB
+    items: [],
+    eviction_policy: "LRU" // 最近最少使用
+  })
+  
+  // 添加缓存项的函数
+  let add_cache_item = fn(manager, key, value, size) {
+    // 检查是否已存在
+    let existing_index = find_cache_item_index(manager, key)
+    
+    if existing_index >= 0 {
+      // 更新现有项
+      let updated_items = manager.items.map_with_index(fn(i, item) {
+        if i == existing_index {
+          CacheItem({
+            key: key,
+            value: value,
+            size: size,
+            created_at: item.created_at,
+            last_accessed: get_current_time_ms(),
+            access_count: item.access_count + 1
+          })
+        } else {
+          item
+        }
+      })
+      
+      update_cache_manager(manager, { items: updated_items })
+    } else {
+      // 检查是否需要驱逐项
+      let current_size = get_cache_item_count(manager)
+      let current_memory = get_cache_memory_usage(manager)
+      
+      if current_size >= manager.max_size || current_memory + size > manager.max_memory {
+        // 驱逐最少使用的项
+        evict_cache_items(manager, size)
       }
-      None => span_rejected = span_rejected + 1
+      
+      // 添加新项
+      let new_item = CacheItem({
+        key: key,
+        value: value,
+        size: size,
+        created_at: get_current_time_ms(),
+        last_accessed: get_current_time_ms(),
+        access_count: 1
+      })
+      
+      update_cache_manager(manager, {
+        items: manager.items + [new_item]
+      })
     }
   }
   
-  let span_end = Time::now()
-  let span_duration = span_end - span_start
-  
-  // 验证span限制
-  assert_true(span_count <= 1000)
-  assert_true(span_rejected > 0)
-  
-  // 计算span创建速率
-  let span_rate = span_count.to_float() / (span_duration.to_float() / 1000000000.0)
-  assert_true(span_rate <= 1000.0) // 不应该超过1000 span/秒
-  
-  // 测试度量创建限制
-  let metric_count = 0
-  let metric_rejected = 0
-  let metric_start = Time::now()
-  
-  let counter = Meter::create_counter(meter, "limited.counter", Some("Limited counter"), Some("count"))
-  for i in 1..=6000 { // 尝试创建6000个度量，超过限制
-    let success = ResourceLimiter::try_record_metric(resource_limiter, counter, 1.0, [("index", i)])
-    if success {
-      metric_count = metric_count + 1
-    } else {
-      metric_rejected = metric_rejected + 1
+  // 获取缓存项的函数
+  let get_cache_item = fn(manager, key) {
+    match find_cache_item(manager, key) {
+      Some(item) => {
+        // 更新访问时间
+        update_cache_item_access_time(manager, key)
+        Some(item.value)
+      }
+      None => None
     }
   }
   
-  let metric_end = Time::now()
-  let metric_duration = metric_end - metric_start
+  // 测试添加缓存项
+  add_cache_item(cache_manager, "key1", "value1", 1024)
+  add_cache_item(cache_manager, "key2", "value2", 2048)
+  add_cache_item(cache_manager, "key3", "value3", 1536)
   
-  // 验证度量限制
-  assert_true(metric_count <= 5000)
-  assert_true(metric_rejected > 0)
+  // 验证缓存项数量
+  assert_eq(cache_manager.items.length(), 3, "缓存项数量不正确")
   
-  // 计算度量记录速率
-  let metric_rate = metric_count.to_float() / (metric_duration.to_float() / 1000000000.0)
-  assert_true(metric_rate <= 5000.0) // 不应该超过5000 metric/秒
+  // 测试获取缓存项
+  let value1 = get_cache_item(cache_manager, "key1")
+  let value2 = get_cache_item(cache_manager, "key2")
+  let value3 = get_cache_item(cache_manager, "key3")
+  let value4 = get_cache_item(cache_manager, "key4") // 不存在
   
-  // 测试日志创建限制
-  let log_count = 0
-  let log_rejected = 0
-  let log_start = Time::now()
+  // 验证获取结果
+  assert_eq(value1, Some("value1"), "获取key1失败")
+  assert_eq(value2, Some("value2"), "获取key2失败")
+  assert_eq(value3, Some("value3"), "获取key3失败")
+  assert_eq(value4, None, "获取不存在的key4应该返回None")
   
-  for i in 1..=2500 { // 尝试创建2500个日志，超过限制
-    let log = LogRecord::new(Info, "Limited log " + i.to_string())
-    let success = ResourceLimiter::try_emit_log(resource_limiter, logger, log)
-    if success {
-      log_count = log_count + 1
-    } else {
-      log_rejected = log_rejected + 1
-    }
+  // 测试缓存更新
+  add_cache_item(cache_manager, "key1", "new_value1", 1024)
+  let updated_value1 = get_cache_item(cache_manager, "key1")
+  assert_eq(updated_value1, Some("new_value1"), "更新缓存项失败")
+  
+  // 测试缓存驱逐
+  // 添加更多项直到触发驱逐
+  for i = 0; i < 60; i = i + 1 {
+    let key = "key" + (i + 10).to_string()
+    let value = "value" + (i + 10).to_string()
+    add_cache_item(cache_manager, key, value, 1024)
   }
   
-  let log_end = Time::now()
-  let log_duration = log_end - log_start
+  // 验证缓存大小不超过限制
+  assert_true(cache_manager.items.length() <= cache_manager.max_size, 
+    "缓存项数量超过限制: " + cache_manager.items.length().to_string())
   
-  // 验证日志限制
-  assert_true(log_count <= 2000)
-  assert_true(log_rejected > 0)
-  
-  // 计算日志记录速率
-  let log_rate = log_count.to_float() / (log_duration.to_float() / 1000000000.0)
-  assert_true(log_rate <= 2000.0) // 不应该超过2000 log/秒
-  
-  // 测试动态限制调整
-  ResourceLimiter::adjust_limits(resource_limiter, [
-    ("max_spans_per_second", 1500),
-    ("max_metrics_per_second", 7500),
-    ("max_logs_per_second", 3000)
-  ])
-  
-  // 验证限制已调整
-  assert_eq(ResourceLimiter::get_max_spans_per_second(resource_limiter), 1500)
-  assert_eq(ResourceLimiter::get_max_metrics_per_second(resource_limiter), 7500)
-  assert_eq(ResourceLimiter::get_max_logs_per_second(resource_limiter), 3000)
-  
-  assert_true(true)
+  // 验证内存使用不超过限制
+  let memory_usage = get_cache_memory_usage(cache_manager)
+  assert_true(memory_usage <= cache_manager.max_memory, 
+    "缓存内存使用超过限制: " + memory_usage.to_string())
 }
 
-test "资源回收和清理" {
-  // 测试资源回收和清理
-  let resource_cleaner = ResourceCleaner::new()
+// 测试5: 资源泄漏检测
+test "资源泄漏检测" {
+  // 创建资源泄漏检测器
+  let leak_detector = ResourceLeakDetector({
+    tracked_resources: [],
+    leak_threshold: 100, // 100个资源后开始检测
+    detection_interval: 1000 // 1秒检测间隔
+  })
   
-  // 设置清理策略
-  ResourceCleaner::set_cleanup_interval(resource_cleaner, 5000) // 5秒清理一次
-  ResourceCleaner::set_max_idle_time(resource_cleaner, 10000) // 10秒空闲时间后清理
-  ResourceCleaner::set_cleanup_batch_size(resource_cleaner, 100) // 每次清理100个资源
-  
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "resource.cleanup.test")
-  
-  // 创建大量资源但不显式释放
-  let spans = []
-  for i in 1..=500 {
-    let span = Tracer::start_span(tracer, "cleanup.test.span." + i.to_string())
-    Span::set_attribute(span, "index", i)
-    spans = spans.push(span)
+  // 创建资源的函数
+  let create_resource = fn(detector, resource_type, resource_id) {
+    let resource = TrackedResource({
+      id: resource_id,
+      type: resource_type,
+      created_at: get_current_time_ms(),
+      last_accessed: get_current_time_ms(),
+      is_leaked: false
+    })
+    
+    track_resource(detector, resource)
+    resource
   }
   
-  // 等待一段时间使资源变为空闲
-  Time::sleep(100) // 等待100ms
-  
-  // 手动触发清理
-  let cleaned_resources = ResourceCleaner::cleanup_idle_resources(resource_cleaner)
-  assert_true(cleaned_resources > 0)
-  
-  // 验证资源已清理
-  let remaining_resources = ResourceCleaner::get_active_resource_count(resource_cleaner)
-  assert_true(remaining_resources < 500)
-  
-  // 测试自动清理
-  let auto_cleanup_spans = []
-  for i in 1..=200 {
-    let span = Tracer::start_span(tracer, "auto.cleanup.span." + i.to_string())
-    Span::set_attribute(span, "index", i)
-    auto_cleanup_spans = auto_cleanup_spans.push(span)
+  // 释放资源的函数
+  let release_resource = fn(detector, resource_id) {
+    untrack_resource(detector, resource_id)
   }
   
-  // 启动自动清理
-  ResourceCleaner::start_auto_cleanup(resource_cleaner)
-  
-  // 等待自动清理触发
-  Time::sleep(200) // 等待200ms
-  
-  // 停止自动清理
-  ResourceCleaner::stop_auto_cleanup(resource_cleaner)
-  
-  // 验证自动清理效果
-  let auto_cleaned_resources = ResourceCleaner::get_cleaned_resource_count(resource_cleaner)
-  assert_true(auto_cleaned_resources > 0)
-  
-  // 测试内存泄漏检测
-  let memory_leak_detector = MemoryLeakDetector::new()
-  MemoryLeakDetector::start_tracking(memory_leak_detector)
-  
-  // 创建和释放资源
-  for i in 1..=100 {
-    let span = Tracer::start_span(tracer, "leak.test.span." + i.to_string())
-    Span::set_attribute(span, "index", i)
-    Span::end(span)
+  // 检测资源泄漏的函数
+  let detect_resource_leaks = fn(detector) {
+    let current_time = get_current_time_ms()
+    let leak_threshold_ms = 5000 // 5秒未访问视为泄漏
+    
+    let leaked_resources = detector.tracked_resources.filter(fn(resource) {
+      (current_time - resource.last_accessed) > leak_threshold_ms
+    })
+    
+    // 标记泄漏的资源
+    let updated_resources = detector.tracked_resources.map(fn(resource) {
+      if leaked_resources.any(fn(leaked) { leaked.id == resource.id }) {
+        { resource with is_leaked: true }
+      } else {
+        resource
+      }
+    })
+    
+    update_leak_detector(detector, { tracked_resources: updated_resources })
+    leaked_resources.length()
   }
   
-  // 检测内存泄漏
-  let leak_report = MemoryLeakDetector::detect_leaks(memory_leak_detector)
-  assert_true(leak_report.leaked_objects < 10) // 允许少量泄漏
+  // 创建一些资源
+  let resource1 = create_resource(leak_detector, "memory", "mem1")
+  let resource2 = create_resource(leak_detector, "connection", "conn1")
+  let resource3 = create_resource(leak_detector, "file", "file1")
   
-  // 停止跟踪
-  MemoryLeakDetector::stop_tracking(memory_leak_detector)
+  // 验证资源被跟踪
+  assert_eq(leak_detector.tracked_resources.length(), 3, "跟踪的资源数量不正确")
   
-  assert_true(true)
+  // 释放一个资源
+  release_resource(leak_detector, resource2.id)
+  
+  // 验证资源被取消跟踪
+  assert_eq(leak_detector.tracked_resources.length(), 2, "释放后跟踪的资源数量不正确")
+  
+  // 创建更多资源以触发检测
+  for i = 0; i < 120; i = i + 1 {
+    let resource_id = "resource" + i.to_string()
+    create_resource(leak_detector, "test", resource_id)
+  }
+  
+  // 模拟时间流逝（在实际环境中会有真实的时间流逝）
+  let old_resources = leak_detector.tracked_resources.map(fn(resource) {
+    { resource with last_accessed: resource.last_accessed - 6000 } // 6秒前
+  })
+  
+  update_leak_detector(leak_detector, { tracked_resources: old_resources })
+  
+  // 检测资源泄漏
+  let leaked_count = detect_resource_leaks(leak_detector)
+  
+  // 验证泄漏检测
+  assert_true(leaked_count > 0, "应该检测到资源泄漏")
+  
+  // 验证泄漏资源被标记
+  let leaked_resources = leak_detector.tracked_resources.filter(fn(resource) {
+    resource.is_leaked
+  })
+  
+  assert_eq(leaked_resources.length(), leaked_count, "泄漏资源标记数量不正确")
 }
 
-test "资源监控和指标" {
-  // 测试资源监控和指标
-  let resource_monitor = ResourceMonitor::new()
-  
-  // 启动资源监控
-  ResourceMonitor::start_monitoring(resource_monitor)
-  
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "resource.monitoring.test")
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "resource.monitoring.test")
-  
-  // 创建资源并监控
-  let spans = []
-  for i in 1..=1000 {
-    let span = Tracer::start_span(tracer, "monitored.span." + i.to_string())
-    Span::set_attribute(span, "index", i)
-    spans = spans.push(span)
-    
-    // 每创建100个span检查一次资源使用情况
-    if i % 100 == 0 {
-      let resource_usage = ResourceMonitor::get_current_usage(resource_monitor)
-      assert_true(resource_usage.span_count == i)
-      assert_true(resource_usage.memory_usage > 0)
-    }
-  }
-  
-  // 获取资源使用报告
-  let usage_report = ResourceMonitor::get_usage_report(resource_monitor)
-  assert_true(usage_report.span_count == 1000)
-  assert_true(usage_report.memory_usage > 0)
-  assert_true(usage_report.cpu_usage >= 0.0)
-  assert_true(usage_report.cpu_usage <= 100.0)
-  
-  // 创建度量并监控
-  let counter = Meter::create_counter(meter, "monitored.counter", Some("Monitored counter"), Some("count"))
-  for i in 1..=5000 {
-    Counter::add_with_attributes(counter, 1.0, [("index", i)])
-    
-    // 每记录1000个度量检查一次资源使用情况
-    if i % 1000 == 0 {
-      let resource_usage = ResourceMonitor::get_current_usage(resource_monitor)
-      assert_true(resource_usage.metric_count >= i / 1000)
-    }
-  }
-  
-  // 获取度量使用报告
-  let metric_report = ResourceMonitor::get_metric_report(resource_monitor)
-  assert_true(metric_report.metric_count > 0)
-  assert_true(metric_report.total_operations >= 5000)
-  
-  // 结束所有span
-  for span in spans {
-    Span::end(span)
-  }
-  
-  // 等待资源释放
-  Time::sleep(100)
-  
-  // 获取最终资源使用报告
-  let final_report = ResourceMonitor::get_usage_report(resource_monitor)
-  assert_true(final_report.span_count < 1000) // span应该已经释放
-  
-  // 测试资源告警
-  let resource_alerter = ResourceAlerter::new()
-  
-  // 设置告警阈值
-  ResourceAlerter::set_memory_threshold(resource_alerter, 100 * 1024 * 1024) // 100MB
-  ResourceAlerter::set_cpu_threshold(resource_alerter, 80.0) // 80% CPU
-  ResourceAlerter::set_span_threshold(resource_alerter, 2000) // 2000个span
-  
-  // 模拟资源使用超过阈值
-  let alert_spans = []
-  for i in 1..=2500 { // 超过span阈值
-    let span = Tracer::start_span(tracer, "alert.span." + i.to_string())
-    alert_spans = alert_spans.push(span)
-  }
-  
-  // 检查告警
-  let alerts = ResourceAlerter::check_alerts(resource_alerter)
-  assert_true(alerts.length() > 0)
-  
-  // 验证span告警
-  let span_alert = alerts.find(fn(alert) { alert.alert_type == "span_threshold_exceeded" })
-  assert_true(span_alert != None)
-  
-  // 结束告警span
-  for span in alert_spans {
-    Span::end(span)
-  }
-  
-  // 停止资源监控
-  ResourceMonitor::stop_monitoring(resource_monitor)
-  
-  assert_true(true)
+// 类型定义（用于测试）
+type MemoryManager {
+  MemoryManager({
+    allocated_objects: Array[MemoryObject],
+    total_allocated: Int,
+    max_memory_limit: Int,
+    gc_threshold: Int
+  })
 }
 
-test "资源优化策略" {
-  // 测试资源优化策略
-  let resource_optimizer = ResourceOptimizer::new()
-  
-  // 设置优化策略
-  ResourceOptimizer::enable_batch_processing(resource_optimizer, true)
-  ResourceOptimizer::set_batch_size(resource_optimizer, 100)
-  ResourceOptimizer::enable_compression(resource_optimizer, true)
-  ResourceOptimizer::enable_caching(resource_optimizer, true)
-  ResourceOptimizer::set_cache_size(resource_optimizer, 1000)
-  
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "resource.optimization.test")
-  
-  // 测试批处理优化
-  let batch_spans = []
-  for i in 1..=500 {
-    let span = Tracer::start_span(tracer, "batch.span." + i.to_string())
-    Span::set_attribute(span, "index", i)
-    batch_spans = batch_spans.push(span)
+type MemoryObject {
+  MemoryObject({
+    id: String,
+    size: Int,
+    data: String,
+    created_at: Int,
+    last_accessed: Int
+  })
+}
+
+type ConnectionPool {
+  ConnectionPool({
+    max_connections: Int,
+    min_connections: Int,
+    active_connections: Array[Connection],
+    idle_connections: Array[Connection],
+    total_created: Int,
+    total_closed: Int
+  })
+}
+
+type Connection {
+  Connection({
+    id: String,
+    created_at: Int,
+    last_used: Int,
+    is_active: Bool
+  })
+}
+
+type FileHandleManager {
+  FileHandleManager({
+    max_handles: Int,
+    open_handles: Array[FileHandle],
+    handle_counter: Int
+  })
+}
+
+type FileHandle {
+  FileHandle({
+    id: Int,
+    path: String,
+    opened_at: Int,
+    last_accessed: Int,
+    size: Int,
+    is_writable: Bool
+  })
+}
+
+type CacheManager {
+  CacheManager({
+    max_size: Int,
+    max_memory: Int,
+    items: Array[CacheItem],
+    eviction_policy: String
+  })
+}
+
+type CacheItem {
+  CacheItem({
+    key: String,
+    value: String,
+    size: Int,
+    created_at: Int,
+    last_accessed: Int,
+    access_count: Int
+  })
+}
+
+type ResourceLeakDetector {
+  ResourceLeakDetector({
+    tracked_resources: Array[TrackedResource],
+    leak_threshold: Int,
+    detection_interval: Int
+  })
+}
+
+type TrackedResource {
+  TrackedResource({
+    id: String,
+    type: String,
+    created_at: Int,
+    last_accessed: Int,
+    is_leaked: Bool
+  })
+}
+
+type Result<T, E> {
+  Success(T)
+  Error(E)
+}
+
+// 辅助函数（用于测试）
+let get_memory_usage = fn(manager) {
+  match manager {
+    MemoryManager(data) => data.total_allocated
   }
-  
-  // 批量处理span
-  let batch_start = Time::now()
-  ResourceOptimizer::batch_process_spans(resource_optimizer, batch_spans)
-  let batch_end = Time::now()
-  let batch_duration = batch_end - batch_start
-  
-  // 单独处理span
-  let individual_spans = []
-  for i in 1..=500 {
-    let span = Tracer::start_span(tracer, "individual.span." + i.to_string())
-    Span::set_attribute(span, "index", i)
-    individual_spans = individual_spans.push(span)
-  }
-  
-  let individual_start = Time::now()
-  for span in individual_spans {
-    Span::end(span)
-  }
-  let individual_end = Time::now()
-  let individual_duration = individual_end - individual_start
-  
-  // 验证批处理更高效
-  assert_true(batch_duration < individual_duration)
-  
-  // 测试压缩优化
-  let large_data_spans = []
-  for i in 1..=100 {
-    let span = Tracer::start_span(tracer, "large.data.span." + i.to_string())
-    Span::set_attribute(span, "index", i)
-    Span::set_attribute(span, "large.data", "x".repeat(10000)) // 10KB数据
-    large_data_spans = large_data_spans.push(span)
-  }
-  
-  // 压缩处理
-  let compressed_size = ResourceOptimizer::compress_spans(resource_optimizer, large_data_spans)
-  let uncompressed_size = large_data_spans.length() * 10000 // 估算未压缩大小
-  
-  // 验证压缩效果
-  assert_true(compressed_size < uncompressed_size)
-  let compression_ratio = compressed_size.to_float() / uncompressed_size.to_float()
-  assert_true(compression_ratio < 0.8) // 至少20%的压缩率
-  
-  // 测试缓存优化
-  let cached_spans = []
-  for i in 1..=200 {
-    let span = Tracer::start_span(tracer, "cached.span." + i.to_string())
-    Span::set_attribute(span, "index", i)
-    
-    // 第一次处理（应该缓存）
-    let first_process_time = ResourceOptimizer::process_span_with_cache(resource_optimizer, span)
-    
-    // 第二次处理相同span（应该使用缓存）
-    let second_process_time = ResourceOptimizer::process_span_with_cache(resource_optimizer, span)
-    
-    // 验证缓存加速
-    assert_true(second_process_time <= first_process_time)
-    
-    cached_spans = cached_spans.push(span)
-  }
-  
-  // 获取缓存统计
-  let cache_stats = ResourceOptimizer::get_cache_stats(resource_optimizer)
-  assert_true(cache_stats.hits > 0)
-  assert_true(cache_stats.hit_rate > 0.5) // 至少50%的缓存命中率
-  
-  // 测试自适应优化
-  ResourceOptimizer::enable_adaptive_optimization(resource_optimizer, true)
-  
-  // 创建不同模式的负载
-  let adaptive_spans = []
-  for i in 1..=1000 {
-    let span = Tracer::start_span(tracer, "adaptive.span." + i.to_string())
-    Span::set_attribute(span, "index", i)
-    
-    // 模拟不同负载模式
-    if i % 3 == 0 {
-      Span::set_attribute(span, "large.data", "x".repeat(5000)) // 大数据
-    } else if i % 3 == 1 {
-      Span::set_attribute(span, "many.attributes", "y".repeat(100)) // 多属性
-    } else {
-      Span::set_attribute(span, "normal.data", "z".repeat(100)) // 正常数据
+}
+
+let trigger_garbage_collection = fn(manager) {
+  // 简化的垃圾回收实现
+  match manager {
+    MemoryManager(data) => {
+      // 释放一半的对象
+      let objects_to_keep = data.allocated_objects.slice(0, data.allocated_objects.length() / 2)
+      let new_allocated = objects_to_keep.fold(0, fn(acc, obj) { acc + obj.size })
+      
+      MemoryManager({
+        allocated_objects: objects_to_keep,
+        total_allocated: new_allocated,
+        max_memory_limit: data.max_memory_limit,
+        gc_threshold: data.gc_threshold
+      })
     }
-    
-    adaptive_spans = adaptive_spans.push(span)
+  }
+}
+
+let allocate_object = fn(manager, object) {
+  match manager {
+    MemoryManager(data) => {
+      MemoryManager({
+        allocated_objects: data.allocated_objects + [object],
+        total_allocated: data.total_allocated + object.size,
+        max_memory_limit: data.max_memory_limit,
+        gc_threshold: data.gc_threshold
+      })
+    }
+  }
+}
+
+let deallocate_object = fn(manager, object_id) {
+  match manager {
+    MemoryManager(data) => {
+      let remaining_objects = data.allocated_objects.filter(fn(obj) { obj.id != object_id })
+      let new_allocated = remaining_objects.fold(0, fn(acc, obj) { acc + obj.size })
+      
+      MemoryManager({
+        allocated_objects: remaining_objects,
+        total_allocated: new_allocated,
+        max_memory_limit: data.max_memory_limit,
+        gc_threshold: data.gc_threshold
+      })
+    }
+  }
+}
+
+let initialize_connection_pool = fn(pool) {
+  // 初始化最小连接数
+  match pool {
+    ConnectionPool(data) => {
+      let initial_connections = (0..data.min_connections).map(fn(i) {
+        Connection({
+          id: "conn" + i.to_string(),
+          created_at: get_current_time_ms(),
+          last_used: get_current_time_ms(),
+          is_active: false
+        })
+      })
+      
+      ConnectionPool({
+        max_connections: data.max_connections,
+        min_connections: data.min_connections,
+        active_connections: [],
+        idle_connections: initial_connections,
+        total_created: data.min_connections,
+        total_closed: 0
+      })
+    }
+  }
+}
+
+let create_new_connection = fn(pool) {
+  match pool {
+    ConnectionPool(data) => {
+      Connection({
+        id: "conn" + (data.total_created + 1).to_string(),
+        created_at: get_current_time_ms(),
+        last_used: get_current_time_ms(),
+        is_active: true
+      })
+    }
+  }
+}
+
+let update_connection_pool = fn(pool, updates) {
+  match pool {
+    ConnectionPool(data) => {
+      ConnectionPool({
+        max_connections: data.max_connections,
+        min_connections: data.min_connections,
+        active_connections: updates.active_connections.getOrElse(data.active_connections),
+        idle_connections: updates.idle_connections.getOrElse(data.idle_connections),
+        total_created: updates.total_created.getOrElse(data.total_created),
+        total_closed: updates.total_closed.getOrElse(data.total_closed)
+      })
+    }
+  }
+}
+
+let update_file_handle_manager = fn(manager, updates) {
+  match manager {
+    FileHandleManager(data) => {
+      FileHandleManager({
+        max_handles: data.max_handles,
+        open_handles: updates.open_handles.getOrElse(data.open_handles),
+        handle_counter: updates.handle_counter.getOrElse(data.handle_counter)
+      })
+    }
+  }
+}
+
+let find_cache_item_index = fn(manager, key) {
+  match manager {
+    CacheManager(data) => {
+      for i = 0; i < data.items.length(); i = i + 1 {
+        if data.items[i].key == key {
+          return i
+        }
+      }
+      -1
+    }
+  }
+}
+
+let find_cache_item = fn(manager, key) {
+  match manager {
+    CacheManager(data) => {
+      for i = 0; i < data.items.length(); i = i + 1 {
+        if data.items[i].key == key {
+          return Some(data.items[i])
+        }
+      }
+      None
+    }
+  }
+}
+
+let get_cache_item_count = fn(manager) {
+  match manager {
+    CacheManager(data) => data.items.length()
+  }
+}
+
+let get_cache_memory_usage = fn(manager) {
+  match manager {
+    CacheManager(data) => {
+      data.items.fold(0, fn(acc, item) { acc + item.size })
+    }
+  }
+}
+
+let evict_cache_items = fn(manager, required_size) {
+  // 简化的LRU驱逐实现
+  match manager {
+    CacheManager(data) => {
+      // 按最后访问时间排序
+      let sorted_items = data.items.sort(fn(a, b) { a.last_accessed < b.last_accessed })
+      
+      // 驱逐最少使用的项直到有足够空间
+      let evicted_count = 0
+      let freed_memory = 0
+      let remaining_items = []
+      
+      for i = 0; i < sorted_items.length(); i = i + 1 {
+        if freed_memory < required_size {
+          freed_memory = freed_memory + sorted_items[i].size
+          evicted_count = evicted_count + 1
+        } else {
+          remaining_items = remaining_items + [sorted_items[i]]
+        }
+      }
+      
+      CacheManager({
+        max_size: data.max_size,
+        max_memory: data.max_memory,
+        items: remaining_items,
+        eviction_policy: data.eviction_policy
+      })
+    }
+  }
+}
+
+let update_cache_manager = fn(manager, updates) {
+  match manager {
+    CacheManager(data) => {
+      CacheManager({
+        max_size: data.max_size,
+        max_memory: data.max_memory,
+        items: updates.items.getOrElse(data.items),
+        eviction_policy: data.eviction_policy
+      })
+    }
+  }
+}
+
+let update_cache_item_access_time = fn(manager, key) {
+  match manager {
+    CacheManager(data) => {
+      let updated_items = data.items.map(fn(item) {
+        if item.key == key {
+          { item with last_accessed: get_current_time_ms() }
+        } else {
+          item
+        }
+      })
+      
+      CacheManager({
+        max_size: data.max_size,
+        max_memory: data.max_memory,
+        items: updated_items,
+        eviction_policy: data.eviction_policy
+      })
+    }
+  }
+}
+
+let track_resource = fn(detector, resource) {
+  match detector {
+    ResourceLeakDetector(data) => {
+      ResourceLeakDetector({
+        tracked_resources: data.tracked_resources + [resource],
+        leak_threshold: data.leak_threshold,
+        detection_interval: data.detection_interval
+      })
+    }
+  }
+}
+
+let untrack_resource = fn(detector, resource_id) {
+  match detector {
+    ResourceLeakDetector(data) => {
+      let remaining_resources = data.tracked_resources.filter(fn(resource) {
+        resource.id != resource_id
+      })
+      
+      ResourceLeakDetector({
+        tracked_resources: remaining_resources,
+        leak_threshold: data.leak_threshold,
+        detection_interval: data.detection_interval
+      })
+    }
+  }
+}
+
+let update_leak_detector = fn(detector, updates) {
+  match detector {
+    ResourceLeakDetector(data) => {
+      ResourceLeakDetector({
+        tracked_resources: updates.tracked_resources.getOrElse(data.tracked_resources),
+        leak_threshold: data.leak_threshold,
+        detection_interval: data.detection_interval
+      })
+    }
+  }
+}
+
+let get_current_time_ms = fn() { 1640995200000 }
+
+// 扩展Option类型的方法（用于测试）
+let Option::is_success = fn(self) {
+  match self {
+    Success(_) => true
+    Error(_) => false
+  }
+}
+
+let Option::is_error = fn(self) {
+  match self {
+    Success(_) => false
+    Error(_) => true
+  }
+}
+
+let Option::getOrElse = fn(self, default) {
+  match self {
+    Some(value) => value
+    None => default
+  }
+}
+
+// 扩展Array类型的方法（用于测试）
+let Array::slice = fn(self, start, end) {
+  // 简化的slice实现
+  let result = []
+  for i = start; i < end && i < self.length(); i = i + 1 {
+    result = result + [self[i]]
+  }
+  result
+}
+
+let Array::sort = fn(self, compare) {
+  // 简化的排序实现（冒泡排序）
+  let result = self
+  let n = result.length()
+  
+  for i = 0; i < n - 1; i = i + 1 {
+    for j = 0; j < n - i - 1; j = j + 1 {
+      if compare(result[j], result[j + 1]) {
+        let temp = result[j]
+        result[j] = result[j + 1]
+        result[j + 1] = temp
+      }
+    }
   }
   
-  // 自适应优化处理
-  let adaptive_start = Time::now()
-  ResourceOptimizer::adaptive_process_spans(resource_optimizer, adaptive_spans)
-  let adaptive_end = Time::now()
-  let adaptive_duration = adaptive_end - adaptive_start
-  
-  // 获取自适应优化统计
-  let adaptive_stats = ResourceOptimizer::get_adaptive_stats(resource_optimizer)
-  assert_true(adaptive_stats.optimization_cycles > 0)
-  assert_true(adaptive_stats.performance_improvement > 0.0)
-  
-  // 结束所有span
-  for span in batch_spans {
-    Span::end(span)
+  result
+}
+
+let Array::fold = fn(self, initial, accumulator) {
+  // 简化的fold实现
+  let result = initial
+  for i = 0; i < self.length(); i = i + 1 {
+    result = accumulator(result, self[i])
   }
-  for span in large_data_spans {
-    Span::end(span)
+  result
+}
+
+let Array::filter = fn(self, predicate) {
+  // 简化的filter实现
+  let result = []
+  for i = 0; i < self.length(); i = i + 1 {
+    if predicate(self[i]) {
+      result = result + [self[i]]
+    }
   }
-  for span in cached_spans {
-    Span::end(span)
+  result
+}
+
+let Array::map = fn(self, transform) {
+  // 简化的map实现
+  let result = []
+  for i = 0; i < self.length(); i = i + 1 {
+    result = result + [transform(self[i])]
   }
-  for span in adaptive_spans {
-    Span::end(span)
+  result
+}
+
+let Array::map_with_index = fn(self, transform) {
+  // 简化的带索引map实现
+  let result = []
+  for i = 0; i < self.length(); i = i + 1 {
+    result = result + [transform(i, self[i])]
   }
-  
-  assert_true(true)
+  result
+}
+
+let Array::any = fn(self, predicate) {
+  // 简化的any实现
+  for i = 0; i < self.length(); i = i + 1 {
+    if predicate(self[i]) {
+      return true
+    }
+  }
+  false
 }

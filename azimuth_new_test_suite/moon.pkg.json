@@ -1,12 +1,11 @@
 {
   "name": "azimuth/new/test/suite",
   "version": "0.1.0",
-  "description": "Azimuth new comprehensive test suite",
+  "description": "New comprehensive test suite for Azimuth",
   "target": "wasm-gc",
-  "source": ["."],
+  "source": ["azimuth.mbt"],
   "deps": {
-    "moonbitlang/core/assertion": "*",
-    "moonbitlang/core": "*"
+    "moonbitlang/core/assertion": "*"
   },
   "test": {
     "test": ["azimuth_new_comprehensive_test_suite.mbt"]
