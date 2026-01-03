@@ -57,6 +57,17 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
+  "azimuth_working_tests.mbt": {
+    0: (__test_617a696d7574685f776f726b696e675f74657374732e6d6274_0, ["telemetry data point processing"]),
+    1: (__test_617a696d7574685f776f726b696e675f74657374732e6d6274_1, ["distributed tracing context"]),
+    2: (__test_617a696d7574685f776f726b696e675f74657374732e6d6274_2, ["metric statistics calculation"]),
+    3: (__test_617a696d7574685f776f726b696e675f74657374732e6d6274_3, ["anomaly detection"]),
+    4: (__test_617a696d7574685f776f726b696e675f74657374732e6d6274_4, ["data sampling"]),
+    5: (__test_617a696d7574685f776f726b696e675f74657374732e6d6274_5, ["resource usage monitoring"]),
+    6: (__test_617a696d7574685f776f726b696e675f74657374732e6d6274_6, ["data serialization"]),
+    7: (__test_617a696d7574685f776f726b696e675f74657374732e6d6274_7, ["multi-tenant data isolation"]),
+    8: (__test_617a696d7574685f776f726b696e675f74657374732e6d6274_8, ["real-time stream processing"]),
+  },
   "azimuth_webassembly_platform_compatibility_tests.mbt": {
     0: (__test_617a696d7574685f776562617373656d626c795f706c6174666f726d5f636f6d7061746962696c6974795f74657374732e6d6274_0, ["webassembly module loading and initialization"]),
     1: (__test_617a696d7574685f776562617373656d626c795f706c6174666f726d5f636f6d7061746962696c6974795f74657374732e6d6274_1, ["webassembly cross-platform compatibility"]),
@@ -2252,6 +2263,17 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_617a696d7574685f6e6578745f67656e5f66656174757265735f74657374732e6d6274_8, ["nanotechnology telemetry"]),
     9: (__test_617a696d7574685f6e6578745f67656e5f66656174757265735f74657374732e6d6274_9, ["spatial computing telemetry"]),
   },
+  "azimuth_new_working_tests.mbt": {
+    0: (__test_617a696d7574685f6e65775f776f726b696e675f74657374732e6d6274_0, ["telemetry data point processing"]),
+    1: (__test_617a696d7574685f6e65775f776f726b696e675f74657374732e6d6274_1, ["distributed tracing context"]),
+    2: (__test_617a696d7574685f6e65775f776f726b696e675f74657374732e6d6274_2, ["metric statistics calculation"]),
+    3: (__test_617a696d7574685f6e65775f776f726b696e675f74657374732e6d6274_3, ["anomaly detection"]),
+    4: (__test_617a696d7574685f6e65775f776f726b696e675f74657374732e6d6274_4, ["data sampling"]),
+    5: (__test_617a696d7574685f6e65775f776f726b696e675f74657374732e6d6274_5, ["resource usage monitoring"]),
+    6: (__test_617a696d7574685f6e65775f776f726b696e675f74657374732e6d6274_6, ["data serialization"]),
+    7: (__test_617a696d7574685f6e65775f776f726b696e675f74657374732e6d6274_7, ["multi-tenant data isolation"]),
+    8: (__test_617a696d7574685f6e65775f776f726b696e675f74657374732e6d6274_8, ["real-time stream processing"]),
+  },
   "azimuth_new_test_cases.mbt": {
     0: (__test_617a696d7574685f6e65775f746573745f63617365732e6d6274_0, ["属性值类型转换和验证"]),
     1: (__test_617a696d7574685f6e65775f746573745f63617365732e6d6274_1, ["上下文传播的边界条件"]),
@@ -3574,6 +3596,30 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     7: (__test_617a696d7574685f666f63757365645f656467655f636173655f74657374732e6d6274_7, ["数组属性特殊情况测试"]),
     8: (__test_617a696d7574685f666f63757365645f656467655f636173655f74657374732e6d6274_8, ["并发资源合并测试"]),
     9: (__test_617a696d7574685f666f63757365645f656467655f636173655f74657374732e6d6274_9, ["错误恢复和异常处理测试"]),
+  },
+  "azimuth_fixed_new_tests.mbt": {
+    0: (__test_617a696d7574685f66697865645f6e65775f74657374732e6d6274_0, ["telemetry data point processing"]),
+    1: (__test_617a696d7574685f66697865645f6e65775f74657374732e6d6274_1, ["time series data aggregation"]),
+    2: (__test_617a696d7574685f66697865645f6e65775f74657374732e6d6274_2, ["distributed tracing context"]),
+    3: (__test_617a696d7574685f66697865645f6e65775f74657374732e6d6274_3, ["metric statistics calculation"]),
+    4: (__test_617a696d7574685f66697865645f6e65775f74657374732e6d6274_4, ["anomaly detection"]),
+    5: (__test_617a696d7574685f66697865645f6e65775f74657374732e6d6274_5, ["data sampling"]),
+    6: (__test_617a696d7574685f66697865645f6e65775f74657374732e6d6274_6, ["resource usage monitoring"]),
+    7: (__test_617a696d7574685f66697865645f6e65775f74657374732e6d6274_7, ["data serialization"]),
+    8: (__test_617a696d7574685f66697865645f6e65775f74657374732e6d6274_8, ["multi-tenant data isolation"]),
+    9: (__test_617a696d7574685f66697865645f6e65775f74657374732e6d6274_9, ["real-time stream processing"]),
+  },
+  "azimuth_final_new_tests.mbt": {
+    0: (__test_617a696d7574685f66696e616c5f6e65775f74657374732e6d6274_0, ["telemetry data point processing"]),
+    1: (__test_617a696d7574685f66696e616c5f6e65775f74657374732e6d6274_1, ["time series data aggregation"]),
+    2: (__test_617a696d7574685f66696e616c5f6e65775f74657374732e6d6274_2, ["distributed tracing context"]),
+    3: (__test_617a696d7574685f66696e616c5f6e65775f74657374732e6d6274_3, ["metric statistics calculation"]),
+    4: (__test_617a696d7574685f66696e616c5f6e65775f74657374732e6d6274_4, ["anomaly detection"]),
+    5: (__test_617a696d7574685f66696e616c5f6e65775f74657374732e6d6274_5, ["data sampling"]),
+    6: (__test_617a696d7574685f66696e616c5f6e65775f74657374732e6d6274_6, ["resource usage monitoring"]),
+    7: (__test_617a696d7574685f66696e616c5f6e65775f74657374732e6d6274_7, ["data serialization"]),
+    8: (__test_617a696d7574685f66696e616c5f6e65775f74657374732e6d6274_8, ["multi-tenant data isolation"]),
+    9: (__test_617a696d7574685f66696e616c5f6e65775f74657374732e6d6274_9, ["real-time stream processing"]),
   },
   "azimuth_extended_telemetry_tests.mbt": {
     0: (__test_617a696d7574685f657874656e6465645f74656c656d657472795f74657374732e6d6274_0, ["遥测数据序列化和反序列化"]),
@@ -5764,6 +5810,14 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     7: (__test_617a696d7574685f61695f6d6c5f74656c656d657472795f74657374732e6d6274_7, ["model version management telemetry"]),
     8: (__test_617a696d7574685f61695f6d6c5f74656c656d657472795f74657374732e6d6274_8, ["automated machine learning telemetry"]),
     9: (__test_617a696d7574685f61695f6d6c5f74656c656d657472795f74657374732e6d6274_9, ["edge AI telemetry"]),
+  },
+  "azimuth_advanced_type_conversion_tests.mbt": {
+    0: (__test_617a696d7574685f616476616e6365645f747970655f636f6e76657273696f6e5f74657374732e6d6274_0, ["基本数据类型转换测试"]),
+    1: (__test_617a696d7574685f616476616e6365645f747970655f636f6e76657273696f6e5f74657374732e6d6274_1, ["属性值类型转换测试"]),
+    2: (__test_617a696d7574685f616476616e6365645f747970655f636f6e76657273696f6e5f74657374732e6d6274_2, ["数组类型转换测试"]),
+    3: (__test_617a696d7574685f616476616e6365645f747970655f636f6e76657273696f6e5f74657374732e6d6274_3, ["复杂嵌套类型转换测试"]),
+    4: (__test_617a696d7574685f616476616e6365645f747970655f636f6e76657273696f6e5f74657374732e6d6274_4, ["类型转换错误处理和边界条件测试"]),
+    5: (__test_617a696d7574685f616476616e6365645f747970655f636f6e76657273696f6e5f74657374732e6d6274_5, ["批量类型转换性能测试"]),
   },
   "azimuth_advanced_time_series_tests.mbt": {
     0: (__test_617a696d7574685f616476616e6365645f74696d655f7365726965735f74657374732e6d6274_0, ["high-frequency time series data stream processing"]),
