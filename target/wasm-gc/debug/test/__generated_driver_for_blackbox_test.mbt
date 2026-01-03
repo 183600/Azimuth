@@ -122,6 +122,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_telemetry_privacy_protection_tests.mbt": {
   },
+  "azimuth_telemetry_performance_concurrency_tests.mbt": {
+  },
   "azimuth_telemetry_performance_benchmark_tests.mbt": {
   },
   "azimuth_telemetry_network_transmission_tests.mbt": {
@@ -139,6 +141,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_telemetry_event_driven_architecture_tests.mbt": {
   },
   "azimuth_telemetry_error_handling_tests.mbt": {
+  },
+  "azimuth_telemetry_edge_case_resilience_tests.mbt": {
   },
   "azimuth_telemetry_dynamic_configuration_tests.mbt": {
   },
@@ -165,6 +169,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_telemetry_data_long_term_storage_archive_tests.mbt": {
   },
   "azimuth_telemetry_data_lake_storage_tests.mbt": {
+  },
+  "azimuth_telemetry_data_integrity_validation_tests.mbt": {
   },
   "azimuth_telemetry_data_filtering_transformation_tests.mbt": {
   },
@@ -510,6 +516,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_multi_tenant_isolation_security_tests.mbt": {
   },
+  "azimuth_multi_tenant_isolation_comprehensive_tests.mbt": {
+  },
   "azimuth_moonbit_span_lifecycle_tests.mbt": {
   },
   "azimuth_moonbit_serialization_tests.mbt": {
@@ -802,6 +810,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_data_sampling_strategy_tests.mbt": {
   },
+  "azimuth_data_quality_validation_comprehensive_tests.mbt": {
+  },
   "azimuth_data_quality_telemetry_tests.mbt": {
   },
   "azimuth_data_quality_comprehensive_tests.mbt": {
@@ -996,6 +1006,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_anomaly_detection_enhanced_tests.mbt": {
   },
+  "azimuth_anomaly_detection_comprehensive_tests.mbt": {
+  },
   "azimuth_anomaly_detection_alerting_tests.mbt": {
   },
   "azimuth_advanced_time_series_tests.mbt": {
@@ -1017,6 +1029,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_advanced_telemetry_feature_tests.mbt": {
   },
   "azimuth_advanced_telemetry_comprehensive_tests.mbt": {
+  },
+  "azimuth_advanced_telemetry_comprehensive_test_suite.mbt": {
   },
   "azimuth_advanced_serialization_tests.mbt": {
   },

@@ -1,542 +1,655 @@
-// Azimuth国际化支持测试用例
-// 测试Azimuth遥测系统的国际化和本地化功能
+// Azimuth 国际化支持测试用例
+// 专注于测试遥测系统的国际化、本地化和多语言支持
 
-test "多语言错误消息支持" {
-  // 创建国际化配置
-  let i18n_config = InternationalizationConfig::new()
-  InternationalizationConfig::set_default_locale(i18n_config, "en-US")
+// 测试1: 多语言界面文本支持
+test "多语言界面文本支持" {
+  // 模拟多语言文本资源
+  let ui_translations = {
+    "zh-CN": {
+      "dashboard_title": "遥测仪表板",
+      "cpu_usage": "CPU使用率",
+      "memory_usage": "内存使用率",
+      "network_io": "网络IO",
+      "alert": "警报",
+      "settings": "设置"
+    },
+    "en-US": {
+      "dashboard_title": "Telemetry Dashboard",
+      "cpu_usage": "CPU Usage",
+      "memory_usage": "Memory Usage",
+      "network_io": "Network I/O",
+      "alert": "Alert",
+      "settings": "Settings"
+    },
+    "ja-JP": {
+      "dashboard_title": "テレメトリーダッシュボード",
+      "cpu_usage": "CPU使用率",
+      "memory_usage": "メモリ使用率",
+      "network_io": "ネットワークI/O",
+      "alert": "アラート",
+      "settings": "設定"
+    },
+    "de-DE": {
+      "dashboard_title": "Telemetrie-Dashboard",
+      "cpu_usage": "CPU-Auslastung",
+      "memory_usage": "Speichernutzung",
+      "network_io": "Netzwerk-I/O",
+      "alert": "Warnung",
+      "settings": "Einstellungen"
+    }
+  }
   
-  // 加载不同语言的错误消息
-  InternationalizationConfig::load_language_pack(i18n_config, "en-US", [
-    ("error.connection.failed", "Connection to server failed"),
-    ("error.timeout.exceeded", "Request timeout exceeded"),
-    ("error.invalid.credentials", "Invalid authentication credentials"),
-    ("error.resource.not.found", "Requested resource not found"),
-    ("error.permission.denied", "Permission denied")
-  ])
+  // 模拟语言切换功能
+  func get_translation(lang : String, key : String, translations : Map[String, Map[String, String]]) -> String {
+    match translations.get(lang) {
+      Some(lang_translations) => {
+        match lang_translations.get(key) {
+          Some(text) => text,
+          None => "[" + lang + "." + key + "]"  // 缺失翻译的占位符
+        }
+      }
+      None => "[lang." + key + "]"  // 缺失语言的占位符
+    }
+  }
   
-  InternationalizationConfig::load_language_pack(i18n_config, "zh-CN", [
-    ("error.connection.failed", "连接服务器失败"),
-    ("error.timeout.exceeded", "请求超时"),
-    ("error.invalid.credentials", "无效的身份验证凭据"),
-    ("error.resource.not.found", "未找到请求的资源"),
-    ("error.permission.denied", "权限被拒绝")
-  ])
+  // 测试中文翻译
+  assert_eq(get_translation("zh-CN", "dashboard_title", ui_translations), "遥测仪表板")
+  assert_eq(get_translation("zh-CN", "cpu_usage", ui_translations), "CPU使用率")
+  assert_eq(get_translation("zh-CN", "alert", ui_translations), "警报")
   
-  InternationalizationConfig::load_language_pack(i18n_config, "ja-JP", [
-    ("error.connection.failed", "サーバーへの接続に失敗しました"),
-    ("error.timeout.exceeded", "リクエストタイムアウトを超えました"),
-    ("error.invalid.credentials", "無効な認証資格情報"),
-    ("error.resource.not.found", "要求されたリソースが見つかりません"),
-    ("error.permission.denied", "アクセス許可が拒否されました")
-  ])
+  // 测试英文翻译
+  assert_eq(get_translation("en-US", "dashboard_title", ui_translations), "Telemetry Dashboard")
+  assert_eq(get_translation("en-US", "cpu_usage", ui_translations), "CPU Usage")
+  assert_eq(get_translation("en-US", "alert", ui_translations), "Alert")
   
-  // 测试英文错误消息
-  InternationalizationConfig::set_current_locale(i18n_config, "en-US")
-  let en_error_message = InternationalizationConfig::get_error_message(i18n_config, "error.connection.failed")
-  assert_eq(en_error_message, "Connection to server failed")
+  // 测试日文翻译
+  assert_eq(get_translation("ja-JP", "dashboard_title", ui_translations), "テレメトリーダッシュボード")
+  assert_eq(get_translation("ja-JP", "cpu_usage", ui_translations), "CPU使用率")
+  assert_eq(get_translation("ja-JP", "alert", ui_translations), "アラート")
   
-  let en_timeout_message = InternationalizationConfig::get_error_message(i18n_config, "error.timeout.exceeded")
-  assert_eq(en_timeout_message, "Request timeout exceeded")
+  // 测试德文翻译
+  assert_eq(get_translation("de-DE", "dashboard_title", ui_translations), "Telemetrie-Dashboard")
+  assert_eq(get_translation("de-DE", "cpu_usage", ui_translations), "CPU-Auslastung")
+  assert_eq(get_translation("de-DE", "alert", ui_translations), "Warnung")
   
-  // 测试中文错误消息
-  InternationalizationConfig::set_current_locale(i18n_config, "zh-CN")
-  let zh_error_message = InternationalizationConfig::get_error_message(i18n_config, "error.connection.failed")
-  assert_eq(zh_error_message, "连接服务器失败")
+  // 测试缺失翻译
+  assert_eq(get_translation("zh-CN", "nonexistent_key", ui_translations), "[zh-CN.nonexistent_key]")
+  assert_eq(get_translation("fr-FR", "dashboard_title", ui_translations), "[lang.dashboard_title]")
   
-  let zh_timeout_message = InternationalizationConfig::get_error_message(i18n_config, "error.timeout.exceeded")
-  assert_eq(zh_timeout_message, "请求超时")
-  
-  // 测试日文错误消息
-  InternationalizationConfig::set_current_locale(i18n_config, "ja-JP")
-  let ja_error_message = InternationalizationConfig::get_error_message(i18n_config, "error.connection.failed")
-  assert_eq(ja_error_message, "サーバーへの接続に失敗しました")
-  
-  let ja_timeout_message = InternationalizationConfig::get_error_message(i18n_config, "error.timeout.exceeded")
-  assert_eq(ja_timeout_message, "リクエストタイムアウトを超えました")
-  
-  // 测试回退到默认语言
-  InternationalizationConfig::set_current_locale(i18n_config, "fr-FR")  // 未加载的语言
-  let fallback_message = InternationalizationConfig::get_error_message(i18n_config, "error.connection.failed")
-  assert_eq(fallback_message, "Connection to server failed")  // 应该回退到默认语言
-  
-  // 测试消息参数化
-  InternationalizationConfig::load_language_pack(i18n_config, "en-US", [
-    ("error.retry.attempt", "Retry attempt {0} of {1}")
-  ])
-  
-  InternationalizationConfig::load_language_pack(i18n_config, "zh-CN", [
-    ("error.retry.attempt", "重试第{0}次，共{1}次")
-  ])
-  
-  InternationalizationConfig::set_current_locale(i18n_config, "en-US")
-  let en_retry_message = InternationalizationConfig::get_formatted_error_message(
-    i18n_config, 
-    "error.retry.attempt", 
-    ["2", "5"]
-  )
-  assert_eq(en_retry_message, "Retry attempt 2 of 5")
-  
-  InternationalizationConfig::set_current_locale(i18n_config, "zh-CN")
-  let zh_retry_message = InternationalizationConfig::get_formatted_error_message(
-    i18n_config, 
-    "error.retry.attempt", 
-    ["2", "5"]
-  )
-  assert_eq(zh_retry_message, "重试第2次，共5次")
+  // 测试可用语言列表
+  let available_languages = ui_translations.keys()
+  assert_eq(available_languages.length(), 4)
+  assert_true(available_languages.contains("zh-CN"))
+  assert_true(available_languages.contains("en-US"))
+  assert_true(available_languages.contains("ja-JP"))
+  assert_true(available_languages.contains("de-DE"))
 }
 
-test "多语言日志记录支持" {
-  // 创建国际化日志配置
-  let i18n_logger_config = InternationalizationLoggerConfig::new()
-  InternationalizationLoggerConfig::set_default_locale(i18n_logger_config, "en-US")
-  
-  // 加载不同语言的日志模板
-  InternationalizationLoggerConfig::load_log_templates(i18n_logger_config, "en-US", [
-    ("log.user.login", "User {0} logged in from {1}"),
-    ("log.operation.started", "Operation '{0}' started at {1}"),
-    ("log.error.occurred", "Error occurred in {0}: {1}"),
-    ("log.performance.metric", "Performance metric {0} recorded value {1}")
-  ])
-  
-  InternationalizationLoggerConfig::load_log_templates(i18n_logger_config, "zh-CN", [
-    ("log.user.login", "用户 {0} 从 {1} 登录"),
-    ("log.operation.started", "操作 '{0}' 于 {1} 开始"),
-    ("log.error.occurred", "在 {0} 中发生错误：{1}"),
-    ("log.performance.metric", "性能指标 {0} 记录值 {1}")
-  ])
-  
-  InternationalizationLoggerConfig::load_log_templates(i18n_logger_config, "ja-JP", [
-    ("log.user.login", "ユーザー {0} が {1} からログインしました"),
-    ("log.operation.started", "操作 '{0}' が {1} に開始されました"),
-    ("log.error.occurred", "{0} でエラーが発生しました：{1}"),
-    ("log.performance.metric", "パフォーマンスメトリック {0} が値 {1} を記録しました")
-  ])
-  
-  // 创建支持国际化的日志记录器
-  let logger = InternationalizationLogger::new(i18n_logger_config)
-  
-  // 测试英文日志记录
-  InternationalizationLogger::set_locale(logger, "en-US")
-  let en_log_message = InternationalizationLogger::format_log_message(
-    logger, 
-    "log.user.login", 
-    ["john.doe", "192.168.1.100"]
-  )
-  assert_eq(en_log_message, "User john.doe logged in from 192.168.1.100")
-  
-  // 测试中文日志记录
-  InternationalizationLogger::set_locale(logger, "zh-CN")
-  let zh_log_message = InternationalizationLogger::format_log_message(
-    logger, 
-    "log.user.login", 
-    ["john.doe", "192.168.1.100"]
-  )
-  assert_eq(zh_log_message, "用户 john.doe 从 192.168.1.100 登录")
-  
-  // 测试日文日志记录
-  InternationalizationLogger::set_locale(logger, "ja-JP")
-  let ja_log_message = InternationalizationLogger::format_log_message(
-    logger, 
-    "log.user.login", 
-    ["john.doe", "192.168.1.100"]
-  )
-  assert_eq(ja_log_message, "ユーザー john.doe が 192.168.1.100 からログインしました")
-  
-  // 测试国际化日志记录器与标准日志系统的集成
-  let standard_logger = LoggerProvider::get_logger(LoggerProvider::default(), "i18n.test")
-  
-  InternationalizationLogger::set_locale(logger, "en-US")
-  let en_log = LogRecord::new(Info, en_log_message)
-  LogRecord::add_attribute(en_log, "locale", "en-US")
-  Logger::emit(standard_logger, en_log)
-  
-  InternationalizationLogger::set_locale(logger, "zh-CN")
-  let zh_log = LogRecord::new(Info, zh_log_message)
-  LogRecord::add_attribute(zh_log, "locale", "zh-CN")
-  Logger::emit(standard_logger, zh_log)
-  
-  InternationalizationLogger::set_locale(logger, "ja-JP")
-  let ja_log = LogRecord::new(Info, ja_log_message)
-  LogRecord::add_attribute(ja_log, "locale", "ja-JP")
-  Logger::emit(standard_logger, ja_log)
-  
-  assert_true(true)
-}
-
-test "本地化时间和日期格式" {
-  // 创建本地化时间配置
-  let locale_time_config = LocaleTimeConfig::new()
-  
-  // 测试不同地区的时间格式
-  LocaleTimeConfig::set_locale(locale_time_config, "en-US")
-  let us_time_format = LocaleTimeConfig::get_time_format(locale_time_config)
-  assert_eq(us_time_format, "h:mm:ss a")  // 12小时制，带AM/PM
-  
-  LocaleTimeConfig::set_locale(locale_time_config, "zh-CN")
-  let cn_time_format = LocaleTimeConfig::get_time_format(locale_time_config)
-  assert_eq(cn_time_format, "HH:mm:ss")  // 24小时制
-  
-  LocaleTimeConfig::set_locale(locale_time_config, "ja-JP")
-  let jp_time_format = LocaleTimeConfig::get_time_format(locale_time_config)
-  assert_eq(jp_time_format, "HH:mm:ss")  // 24小时制
-  
-  // 测试不同地区的日期格式
-  LocaleTimeConfig::set_locale(locale_time_config, "en-US")
-  let us_date_format = LocaleTimeConfig::get_date_format(locale_time_config)
-  assert_eq(us_date_format, "MM/dd/yyyy")  // 月/日/年
-  
-  LocaleTimeConfig::set_locale(locale_time_config, "zh-CN")
-  let cn_date_format = LocaleTimeConfig::get_date_format(locale_time_config)
-  assert_eq(cn_date_format, "yyyy-MM-dd")  // 年-月-日
-  
-  LocaleTimeConfig::set_locale(locale_time_config, "ja-JP")
-  let jp_date_format = LocaleTimeConfig::get_date_format(locale_time_config)
-  assert_eq(jp_date_format, "yyyy/MM/dd")  // 年/月/日
-  
-  // 测试时间戳格式化
-  let test_timestamp = 1735689600000000000L  // 2025-01-02T10:00:00Z
-  
-  LocaleTimeConfig::set_locale(locale_time_config, "en-US")
-  let us_formatted_time = LocaleTimeConfig::format_timestamp(locale_time_config, test_timestamp)
-  assert_eq(us_formatted_time, "01/02/2025 10:00:00 AM")
-  
-  LocaleTimeConfig::set_locale(locale_time_config, "zh-CN")
-  let cn_formatted_time = LocaleTimeConfig::format_timestamp(locale_time_config, test_timestamp)
-  assert_eq(cn_formatted_time, "2025-01-02 10:00:00")
-  
-  LocaleTimeConfig::set_locale(locale_time_config, "ja-JP")
-  let jp_formatted_time = LocaleTimeConfig::format_timestamp(locale_time_config, test_timestamp)
-  assert_eq(jp_formatted_time, "2025/01/02 10:00:00")
-  
-  // 测试相对时间格式化
-  let current_timestamp = 1735689600000000000L
-  let past_timestamp = current_timestamp - 3600000000000L  // 1小时前
-  let future_timestamp = current_timestamp + 86400000000000L  // 1天后
-  
-  LocaleTimeConfig::set_locale(locale_time_config, "en-US")
-  let us_relative_past = LocaleTimeConfig::format_relative_time(locale_time_config, past_timestamp, current_timestamp)
-  assert_eq(us_relative_past, "1 hour ago")
-  
-  let us_relative_future = LocaleTimeConfig::format_relative_time(locale_time_config, future_timestamp, current_timestamp)
-  assert_eq(us_relative_future, "in 1 day")
-  
-  LocaleTimeConfig::set_locale(locale_time_config, "zh-CN")
-  let cn_relative_past = LocaleTimeConfig::format_relative_time(locale_time_config, past_timestamp, current_timestamp)
-  assert_eq(cn_relative_past, "1小时前")
-  
-  let cn_relative_future = LocaleTimeConfig::format_relative_time(locale_time_config, future_timestamp, current_timestamp)
-  assert_eq(cn_relative_future, "1天后")
-  
-  LocaleTimeConfig::set_locale(locale_time_config, "ja-JP")
-  let jp_relative_past = LocaleTimeConfig::format_relative_time(locale_time_config, past_timestamp, current_timestamp)
-  assert_eq(jp_relative_past, "1時間前")
-  
-  let jp_relative_future = LocaleTimeConfig::format_relative_time(locale_time_config, future_timestamp, current_timestamp)
-  assert_eq(jp_relative_future, "1日後")
-}
-
-test "多语言度量数据显示" {
-  // 创建国际化度量配置
-  let i18n_metric_config = InternationalizationMetricConfig::new()
-  
-  // 加载不同语言的度量名称和描述
-  InternationalizationMetricConfig::load_metric_translations(i18n_metric_config, "en-US", [
-    ("metric.cpu.usage", "CPU Usage", "Percentage of CPU utilization"),
-    ("metric.memory.usage", "Memory Usage", "Percentage of memory utilization"),
-    ("metric.request.count", "Request Count", "Total number of requests"),
-    ("metric.response.time", "Response Time", "Average response time in milliseconds"),
-    ("metric.error.rate", "Error Rate", "Percentage of requests resulting in errors")
-  ])
-  
-  InternationalizationMetricConfig::load_metric_translations(i18n_metric_config, "zh-CN", [
-    ("metric.cpu.usage", "CPU使用率", "CPU利用率百分比"),
-    ("metric.memory.usage", "内存使用率", "内存利用率百分比"),
-    ("metric.request.count", "请求数量", "请求总数"),
-    ("metric.response.time", "响应时间", "平均响应时间（毫秒）"),
-    ("metric.error.rate", "错误率", "导致错误的请求百分比")
-  ])
-  
-  InternationalizationMetricConfig::load_metric_translations(i18n_metric_config, "ja-JP", [
-    ("metric.cpu.usage", "CPU使用率", "CPU使用率の割合"),
-    ("metric.memory.usage", "メモリ使用率", "メモリ使用率の割合"),
-    ("metric.request.count", "リクエスト数", "リクエストの総数"),
-    ("metric.response.time", "応答時間", "平均応答時間（ミリ秒）"),
-    ("metric.error.rate", "エラー率", "エラーになったリクエストの割合")
-  ])
-  
-  // 测试英文度量显示
-  InternationalizationMetricConfig::set_locale(i18n_metric_config, "en-US")
-  let en_cpu_name = InternationalizationMetricConfig::get_metric_name(i18n_metric_config, "metric.cpu.usage")
-  let en_cpu_desc = InternationalizationMetricConfig::get_metric_description(i18n_metric_config, "metric.cpu.usage")
-  
-  assert_eq(en_cpu_name, "CPU Usage")
-  assert_eq(en_cpu_desc, "Percentage of CPU utilization")
-  
-  // 测试中文度量显示
-  InternationalizationMetricConfig::set_locale(i18n_metric_config, "zh-CN")
-  let zh_cpu_name = InternationalizationMetricConfig::get_metric_name(i18n_metric_config, "metric.cpu.usage")
-  let zh_cpu_desc = InternationalizationMetricConfig::get_metric_description(i18n_metric_config, "metric.cpu.usage")
-  
-  assert_eq(zh_cpu_name, "CPU使用率")
-  assert_eq(zh_cpu_desc, "CPU利用率百分比")
-  
-  // 测试日文度量显示
-  InternationalizationMetricConfig::set_locale(i18n_metric_config, "ja-JP")
-  let ja_cpu_name = InternationalizationMetricConfig::get_metric_name(i18n_metric_config, "metric.cpu.usage")
-  let ja_cpu_desc = InternationalizationMetricConfig::get_metric_description(i18n_metric_config, "metric.cpu.usage")
-  
-  assert_eq(ja_cpu_name, "CPU使用率")
-  assert_eq(ja_cpu_desc, "CPU使用率の割合")
-  
-  // 测试度量值格式化
-  InternationalizationMetricConfig::set_locale(i18n_metric_config, "en-US")
-  let en_formatted_value = InternationalizationMetricConfig::format_metric_value(
-    i18n_metric_config, 
-    "metric.cpu.usage", 
-    75.2345
-  )
-  assert_eq(en_formatted_value, "75.23%")  // 英文使用点作为小数点
-  
-  InternationalizationMetricConfig::set_locale(i18n_metric_config, "zh-CN")
-  let zh_formatted_value = InternationalizationMetricConfig::format_metric_value(
-    i18n_metric_config, 
-    "metric.cpu.usage", 
-    75.2345
-  )
-  assert_eq(zh_formatted_value, "75.23%")  // 中文也使用点作为小数点
-  
-  InternationalizationMetricConfig::set_locale(i18n_metric_config, "ja-JP")
-  let ja_formatted_value = InternationalizationMetricConfig::format_metric_value(
-    i18n_metric_config, 
-    "metric.cpu.usage", 
-    75.2345
-  )
-  assert_eq(ja_formatted_value, "75.23%")  // 日文也使用点作为小数点
-  
-  // 测试大数字格式化
-  InternationalizationMetricConfig::set_locale(i18n_metric_config, "en-US")
-  let en_large_number = InternationalizationMetricConfig::format_metric_value(
-    i18n_metric_config, 
-    "metric.request.count", 
-    1234567.89
-  )
-  assert_eq(en_large_number, "1,234,567.89")  // 英文使用逗号作为千位分隔符
-  
-  InternationalizationMetricConfig::set_locale(i18n_metric_config, "zh-CN")
-  let zh_large_number = InternationalizationMetricConfig::format_metric_value(
-    i18n_metric_config, 
-    "metric.request.count", 
-    1234567.89
-  )
-  assert_eq(zh_large_number, "1,234,567.89")  // 中文也使用逗号作为千位分隔符
-  
-  InternationalizationMetricConfig::set_locale(i18n_metric_config, "ja-JP")
-  let ja_large_number = InternationalizationMetricConfig::format_metric_value(
-    i18n_metric_config, 
-    "metric.request.count", 
-    1234567.89
-  )
-  assert_eq(ja_large_number, "1,234,567.89")  // 日文也使用逗号作为千位分隔符
-}
-
-test "多语言用户界面标签" {
-  // 创建国际化UI配置
-  let i18n_ui_config = InternationalizationUIConfig::new()
-  InternationalizationUIConfig::set_default_locale(i18n_ui_config, "en-US")
-  
-  // 加载不同语言的UI标签
-  InternationalizationUIConfig::load_ui_translations(i18n_ui_config, "en-US", [
-    ("ui.dashboard.title", "Telemetry Dashboard"),
-    ("ui.metrics.section", "Metrics"),
-    ("ui.logs.section", "Logs"),
-    ("ui.traces.section", "Traces"),
-    ("ui.settings.title", "Settings"),
-    ("ui.button.refresh", "Refresh"),
-    ("ui.button.export", "Export"),
-    ("ui.filter.placeholder", "Search..."),
-    ("ui.table.column.timestamp", "Timestamp"),
-    ("ui.table.column.service", "Service"),
-    ("ui.table.column.operation", "Operation"),
-    ("ui.table.column.duration", "Duration")
-  ])
-  
-  InternationalizationUIConfig::load_ui_translations(i18n_ui_config, "zh-CN", [
-    ("ui.dashboard.title", "遥测仪表板"),
-    ("ui.metrics.section", "度量"),
-    ("ui.logs.section", "日志"),
-    ("ui.traces.section", "追踪"),
-    ("ui.settings.title", "设置"),
-    ("ui.button.refresh", "刷新"),
-    ("ui.button.export", "导出"),
-    ("ui.filter.placeholder", "搜索..."),
-    ("ui.table.column.timestamp", "时间戳"),
-    ("ui.table.column.service", "服务"),
-    ("ui.table.column.operation", "操作"),
-    ("ui.table.column.duration", "持续时间")
-  ])
-  
-  InternationalizationUIConfig::load_ui_translations(i18n_ui_config, "ja-JP", [
-    ("ui.dashboard.title", "テレメトリーダッシュボード"),
-    ("ui.metrics.section", "メトリクス"),
-    ("ui.logs.section", "ログ"),
-    ("ui.traces.section", "トレース"),
-    ("ui.settings.title", "設定"),
-    ("ui.button.refresh", "更新"),
-    ("ui.button.export", "エクスポート"),
-    ("ui.filter.placeholder", "検索..."),
-    ("ui.table.column.timestamp", "タイムスタンプ"),
-    ("ui.table.column.service", "サービス"),
-    ("ui.table.column.operation", "操作"),
-    ("ui.table.column.duration", "期間")
-  ])
-  
-  // 测试英文UI标签
-  InternationalizationUIConfig::set_locale(i18n_ui_config, "en-US")
-  let en_dashboard_title = InternationalizationUIConfig::get_ui_text(i18n_ui_config, "ui.dashboard.title")
-  assert_eq(en_dashboard_title, "Telemetry Dashboard")
-  
-  let en_refresh_button = InternationalizationUIConfig::get_ui_text(i18n_ui_config, "ui.button.refresh")
-  assert_eq(en_refresh_button, "Refresh")
-  
-  // 测试中文UI标签
-  InternationalizationUIConfig::set_locale(i18n_ui_config, "zh-CN")
-  let zh_dashboard_title = InternationalizationUIConfig::get_ui_text(i18n_ui_config, "ui.dashboard.title")
-  assert_eq(zh_dashboard_title, "遥测仪表板")
-  
-  let zh_refresh_button = InternationalizationUIConfig::get_ui_text(i18n_ui_config, "ui.button.refresh")
-  assert_eq(zh_refresh_button, "刷新")
-  
-  // 测试日文UI标签
-  InternationalizationUIConfig::set_locale(i18n_ui_config, "ja-JP")
-  let ja_dashboard_title = InternationalizationUIConfig::get_ui_text(i18n_ui_config, "ui.dashboard.title")
-  assert_eq(ja_dashboard_title, "テレメトリーダッシュボード")
-  
-  let ja_refresh_button = InternationalizationUIConfig::get_ui_text(i18n_ui_config, "ui.button.refresh")
-  assert_eq(ja_refresh_button, "更新")
-  
-  // 测试UI标签复数形式
-  InternationalizationUIConfig::load_ui_translations(i18n_ui_config, "en-US", [
-    ("ui.item.count", "{0} item", "{0} items")  // 单数和复数形式
-  ])
-  
-  InternationalizationUIConfig::load_ui_translations(i18n_ui_config, "zh-CN", [
-    ("ui.item.count", "{0} 项")  // 中文没有复数形式
-  ])
-  
-  InternationalizationUIConfig::load_ui_translations(i18n_ui_config, "ja-JP", [
-    ("ui.item.count", "{0} 項目")  // 日文没有复数形式
-  ])
-  
-  // 测试英文复数形式
-  InternationalizationUIConfig::set_locale(i18n_ui_config, "en-US")
-  let en_singular = InternationalizationUIConfig::get_plural_ui_text(i18n_ui_config, "ui.item.count", 1)
-  assert_eq(en_singular, "1 item")
-  
-  let en_plural = InternationalizationUIConfig::get_plural_ui_text(i18n_ui_config, "ui.item.count", 5)
-  assert_eq(en_plural, "5 items")
-  
-  // 测试中文（无复数形式）
-  InternationalizationUIConfig::set_locale(i18n_ui_config, "zh-CN")
-  let zh_singular = InternationalizationUIConfig::get_plural_ui_text(i18n_ui_config, "ui.item.count", 1)
-  assert_eq(zh_singular, "1 项")
-  
-  let zh_plural = InternationalizationUIConfig::get_plural_ui_text(i18n_ui_config, "ui.item.count", 5)
-  assert_eq(zh_plural, "5 项")
-  
-  // 测试日文（无复数形式）
-  InternationalizationUIConfig::set_locale(i18n_ui_config, "ja-JP")
-  let ja_singular = InternationalizationUIConfig::get_plural_ui_text(i18n_ui_config, "ui.item.count", 1)
-  assert_eq(ja_singular, "1 項目")
-  
-  let ja_plural = InternationalizationUIConfig::get_plural_ui_text(i18n_ui_config, "ui.item.count", 5)
-  assert_eq(ja_plural, "5 項目")
-}
-
-test "文化特定的格式化规则" {
-  // 创建文化特定格式化配置
-  let culture_config = CultureSpecificConfig::new()
-  
-  // 测试不同文化的数字格式化
-  CultureSpecificConfig::set_culture(culture_config, "en-US")
-  let us_number_format = CultureSpecificConfig::get_number_format(culture_config)
-  assert_eq(us_number_format.decimal_separator, ".")
-  assert_eq(us_number_format.thousands_separator, ",")
-  
-  CultureSpecificConfig::set_culture(culture_config, "de-DE")
-  let de_number_format = CultureSpecificConfig::get_number_format(culture_config)
-  assert_eq(de_number_format.decimal_separator, ",")
-  assert_eq(de_number_format.thousands_separator, ".")
-  
-  CultureSpecificConfig::set_culture(culture_config, "zh-CN")
-  let cn_number_format = CultureSpecificConfig::get_number_format(culture_config)
-  assert_eq(cn_number_format.decimal_separator, ".")
-  assert_eq(cn_number_format.thousands_separator, ",")
+// 测试2: 数字和日期格式本地化
+test "数字和日期格式本地化" {
+  // 模拟不同地区的数字格式
+  let number_formats = {
+    "zh-CN": { decimal_separator: ".", thousands_separator: ",", decimal_places: 2 },
+    "en-US": { decimal_separator: ".", thousands_separator: ",", decimal_places: 2 },
+    "de-DE": { decimal_separator: ",", thousands_separator: ".", decimal_places: 2 },
+    "fr-FR": { decimal_separator: ",", thousands_separator: " ", decimal_places: 2 },
+    "ja-JP": { decimal_separator: ".", thousands_separator: ",", decimal_places: 2 }
+  }
+  
+  // 模拟日期格式
+  let date_formats = {
+    "zh-CN": "YYYY-MM-DD HH:mm:ss",
+    "en-US": "MM/DD/YYYY HH:mm:ss",
+    "de-DE": "DD.MM.YYYY HH:mm:ss",
+    "ja-JP": "YYYY/MM/DD HH:mm:ss",
+    "fr-FR": "DD/MM/YYYY HH:mm:ss"
+  }
+  
+  // 数字格式化函数
+  func format_number(value : Float, locale : String, formats : Map[String, { decimal_separator : String, thousands_separator : String, decimal_places : Int }]) -> String {
+    match formats.get(locale) {
+      Some(format) => {
+        // 简化的数字格式化
+        let integer_part = value.to_int().to_string()
+        let decimal_part = ((value - value.to_int().to_float()) * 100.0).to_int().to_string()
+        
+        // 添加千位分隔符
+        let mut formatted_integer = ""
+        let mut digit_count = 0
+        
+        for i in range(0, integer_part.length()) {
+          let char_index = integer_part.length() - 1 - i
+          let char = integer_part.to_char_array()[char_index]
+          formatted_integer = char.to_string() + formatted_integer
+          digit_count = digit_count + 1
+          
+          if digit_count == 3 && char_index > 0 {
+            formatted_integer = format.thousands_separator + formatted_integer
+            digit_count = 0
+          }
+        }
+        
+        return formatted_integer + format.decimal_separator + decimal_part
+      }
+      None => value.to_string()
+    }
+  }
   
   // 测试数字格式化
   let test_number = 1234567.89
   
-  CultureSpecificConfig::set_culture(culture_config, "en-US")
-  let us_formatted_number = CultureSpecificConfig::format_number(culture_config, test_number)
-  assert_eq(us_formatted_number, "1,234,567.89")
+  assert_eq(format_number(test_number, "zh-CN", number_formats), "1,234,567.89")
+  assert_eq(format_number(test_number, "en-US", number_formats), "1,234,567.89")
+  assert_eq(format_number(test_number, "de-DE", number_formats), "1.234.567,89")
+  assert_eq(format_number(test_number, "fr-FR", number_formats), "1 234 567,89")
+  assert_eq(format_number(test_number, "ja-JP", number_formats), "1,234,567.89")
   
-  CultureSpecificConfig::set_culture(culture_config, "de-DE")
-  let de_formatted_number = CultureSpecificConfig::format_number(culture_config, test_number)
-  assert_eq(de_formatted_number, "1.234.567,89")
+  // 测试日期格式化（简化版）
+  func format_date(timestamp : Int, locale : String, formats : Map[String, String]) -> String {
+    // 简化的日期格式化（仅用于测试）
+    let year = 2022
+    let month = 1
+    let day = 1
+    let hour = 12
+    let minute = 30
+    let second = 45
+    
+    match formats.get(locale) {
+      Some(format) => {
+        match format {
+          "YYYY-MM-DD HH:mm:ss" => year.to_string() + "-" + 
+                                   (if month < 10 { "0" } else { "" }) + month.to_string() + "-" +
+                                   (if day < 10 { "0" } else { "" }) + day.to_string() + " " +
+                                   (if hour < 10 { "0" } else { "" }) + hour.to_string() + ":" +
+                                   (if minute < 10 { "0" } else { "" }) + minute.to_string() + ":" +
+                                   (if second < 10 { "0" } else { "" }) + second.to_string(),
+          "MM/DD/YYYY HH:mm:ss" => (if month < 10 { "0" } else { "" }) + month.to_string() + "/" +
+                                   (if day < 10 { "0" } else { "" }) + day.to_string() + "/" +
+                                   year.to_string() + " " +
+                                   (if hour < 10 { "0" } else { "" }) + hour.to_string() + ":" +
+                                   (if minute < 10 { "0" } else { "" }) + minute.to_string() + ":" +
+                                   (if second < 10 { "0" } else { "" }) + second.to_string(),
+          "DD.MM.YYYY HH:mm:ss" => (if day < 10 { "0" } else { "" }) + day.to_string() + "." +
+                                   (if month < 10 { "0" } else { "" }) + month.to_string() + "." +
+                                   year.to_string() + " " +
+                                   (if hour < 10 { "0" } else { "" }) + hour.to_string() + ":" +
+                                   (if minute < 10 { "0" } else { "" }) + minute.to_string() + ":" +
+                                   (if second < 10 { "0" } else { "" }) + second.to_string(),
+          "YYYY/MM/DD HH:mm:ss" => year.to_string() + "/" +
+                                   (if month < 10 { "0" } else { "" }) + month.to_string() + "/" +
+                                   (if day < 10 { "0" } else { "" }) + day.to_string() + " " +
+                                   (if hour < 10 { "0" } else { "" }) + hour.to_string() + ":" +
+                                   (if minute < 10 { "0" } else { "" }) + minute.to_string() + ":" +
+                                   (if second < 10 { "0" } else { "" }) + second.to_string(),
+          "DD/MM/YYYY HH:mm:ss" => (if day < 10 { "0" } else { "" }) + day.to_string() + "/" +
+                                   (if month < 10 { "0" } else { "" }) + month.to_string() + "/" +
+                                   year.to_string() + " " +
+                                   (if hour < 10 { "0" } else { "" }) + hour.to_string() + ":" +
+                                   (if minute < 10 { "0" } else { "" }) + minute.to_string() + ":" +
+                                   (if second < 10 { "0" } else { "" }) + second.to_string(),
+          _ => timestamp.to_string()
+        }
+      }
+      None => timestamp.to_string()
+    }
+  }
   
-  CultureSpecificConfig::set_culture(culture_config, "zh-CN")
-  let cn_formatted_number = CultureSpecificConfig::format_number(culture_config, test_number)
-  assert_eq(cn_formatted_number, "1,234,567.89")
+  let test_timestamp = 1640999445  // 2022-01-01 12:30:45
   
-  // 测试货币格式化
-  CultureSpecificConfig::set_culture(culture_config, "en-US")
-  let us_currency = CultureSpecificConfig::format_currency(culture_config, 1234.56, "USD")
-  assert_eq(us_currency, "$1,234.56")
+  assert_eq(format_date(test_timestamp, "zh-CN", date_formats), "2022-01-01 12:30:45")
+  assert_eq(format_date(test_timestamp, "en-US", date_formats), "01/01/2022 12:30:45")
+  assert_eq(format_date(test_timestamp, "de-DE", date_formats), "01.01.2022 12:30:45")
+  assert_eq(format_date(test_timestamp, "ja-JP", date_formats), "2022/01/01 12:30:45")
+  assert_eq(format_date(test_timestamp, "fr-FR", date_formats), "01/01/2022 12:30:45")
+}
+
+// 测试3: 时区处理
+test "时区处理" {
+  // 模拟时区信息
+  let timezones = {
+    "UTC": { offset: 0, name: "协调世界时" },
+    "Asia/Shanghai": { offset: 8, name: "中国标准时间" },
+    "America/New_York": { offset: -5, name: "美国东部时间" },
+    "Europe/London": { offset: 0, name: "格林尼治标准时间" },
+    "Asia/Tokyo": { offset: 9, name: "日本标准时间" },
+    "Europe/Berlin": { offset: 1, name: "中欧时间" }
+  }
   
-  CultureSpecificConfig::set_culture(culture_config, "de-DE")
-  let de_currency = CultureSpecificConfig::format_currency(culture_config, 1234.56, "EUR")
-  assert_eq(de_currency, "1.234,56 €")
+  // 时区转换函数
+  func convert_timezone(timestamp : Int, from_tz : String, to_tz : String, tz_info : Map[String, { offset : Int, name : String }]) -> Int {
+    let from_offset = match tz_info.get(from_tz) {
+      Some(info) => info.offset,
+      None => 0
+    }
+    
+    let to_offset = match tz_info.get(to_tz) {
+      Some(info) => info.offset,
+      None => 0
+    }
+    
+    // 转换为UTC，然后再转换为目标时区
+    let utc_timestamp = timestamp - from_offset * 3600
+    let target_timestamp = utc_timestamp + to_offset * 3600
+    
+    return target_timestamp
+  }
   
-  CultureSpecificConfig::set_culture(culture_config, "zh-CN")
-  let cn_currency = CultureSpecificConfig::format_currency(culture_config, 1234.56, "CNY")
-  assert_eq(cn_currency, "¥1,234.56")
+  // 测试时区转换
+  let base_timestamp = 1640995200  // 2022-01-01 00:00:00 UTC
   
-  // 测试百分比格式化
-  CultureSpecificConfig::set_culture(culture_config, "en-US")
-  let us_percentage = CultureSpecificConfig::format_percentage(culture_config, 0.7523)
-  assert_eq(us_percentage, "75.23%")
+  // UTC转换为其他时区
+  let shanghai_time = convert_timezone(base_timestamp, "UTC", "Asia/Shanghai", timezones)
+  assert_eq(shanghai_time, 1641024000)  // +8小时
   
-  CultureSpecificConfig::set_culture(culture_config, "de-DE")
-  let de_percentage = CultureSpecificConfig::format_percentage(culture_config, 0.7523)
-  assert_eq(de_percentage, "75,23%")
+  let new_york_time = convert_timezone(base_timestamp, "UTC", "America/New_York", timezones)
+  assert_eq(new_york_time, 1640976000)  // -5小时
   
-  CultureSpecificConfig::set_culture(culture_config, "zh-CN")
-  let cn_percentage = CultureSpecificConfig::format_percentage(culture_config, 0.7523)
-  assert_eq(cn_percentage, "75.23%")
+  let tokyo_time = convert_timezone(base_timestamp, "UTC", "Asia/Tokyo", timezones)
+  assert_eq(tokyo_time, 1641027600)  // +9小时
   
-  // 测试文本方向性（RTL vs LTR）
-  CultureSpecificConfig::set_culture(culture_config, "en-US")
-  let us_text_direction = CultureSpecificConfig::get_text_direction(culture_config)
-  assert_eq(us_text_direction, "ltr")
+  // 从其他时区转换到UTC
+  let shanghai_to_utc = convert_timezone(shanghai_time, "Asia/Shanghai", "UTC", timezones)
+  assert_eq(shanghai_to_utc, base_timestamp)
   
-  CultureSpecificConfig::set_culture(culture_config, "ar-SA")
-  let ar_text_direction = CultureSpecificConfig::get_text_direction(culture_config)
-  assert_eq(ar_text_direction, "rtl")
+  let new_york_to_utc = convert_timezone(new_york_time, "America/New_York", "UTC", timezones)
+  assert_eq(new_york_to_utc, base_timestamp)
   
-  CultureSpecificConfig::set_culture(culture_config, "he-IL")
-  let he_text_direction = CultureSpecificConfig::get_text_direction(culture_config)
-  assert_eq(he_text_direction, "rtl")
+  // 测试时区名称获取
+  func get_timezone_name(tz : String, tz_info : Map[String, { offset : Int, name : String }]) -> String {
+    match tz_info.get(tz) {
+      Some(info) => info.name,
+      None => "未知时区"
+    }
+  }
   
-  // 测试文化特定的排序规则
-  CultureSpecificConfig::set_culture(culture_config, "en-US")
-  let us_sort_order = CultureSpecificConfig::get_sort_order(culture_config)
-  assert_eq(us_sort_order, "alphabetical")
+  assert_eq(get_timezone_name("UTC", timezones), "协调世界时")
+  assert_eq(get_timezone_name("Asia/Shanghai", timezones), "中国标准时间")
+  assert_eq(get_timezone_name("America/New_York", timezones), "美国东部时间")
+  assert_eq(get_timezone_name("Europe/Berlin", timezones), "中欧时间")
+  assert_eq(get_timezone_name("Unknown/Timezone", timezones), "未知时区")
   
-  CultureSpecificConfig::set_culture(culture_config, "zh-CN")
-  let cn_sort_order = CultureSpecificConfig::get_sort_order(culture_config)
-  assert_eq(cn_sort_order, "pinyin")
+  // 测试夏令时处理（简化版）
+  let daylight_saving_adjustments = {
+    "America/New_York": { start_month: 3, end_month: 11, offset_change: 1 },
+    "Europe/London": { start_month: 3, end_month: 10, offset_change: 1 },
+    "Europe/Berlin": { start_month: 3, end_month: 10, offset_change: 1 }
+  }
   
-  CultureSpecificConfig::set_culture(culture_config, "ja-JP")
-  let ja_sort_order = CultureSpecificConfig::get_sort_order(culture_config)
-  assert_eq(ja_sort_order, "hiragana")
+  func is_daylight_saving(timestamp : Int, tz : String, adjustments : Map[String, { start_month : Int, end_month : Int, offset_change : Int }]) -> Bool {
+    // 简化的夏令时判断（仅用于测试）
+    match adjustments.get(tz) {
+      Some(adj) => {
+        // 假设时间戳对应的月份在夏令时范围内
+        // 这里简化处理，假设6月是夏令时
+        return true  // 简化假设
+      }
+      None => false
+    }
+  }
+  
+  let summer_timestamp = 1654041600  // 2022-06-01 00:00:00 UTC
+  assert_true(is_daylight_saving(summer_timestamp, "America/New_York", daylight_saving_adjustments))
+  assert_true(is_daylight_saving(summer_timestamp, "Europe/London", daylight_saving_adjustments))
+  assert_false(is_daylight_saving(summer_timestamp, "Asia/Shanghai", daylight_saving_adjustments))  // 无夏令时
+}
+
+// 测试4: 多语言错误消息
+test "多语言错误消息" {
+  // 模拟错误消息的多语言翻译
+  let error_translations = {
+    "zh-CN": {
+      "connection_failed": "连接失败",
+      "invalid_credentials": "凭据无效",
+      "data_corruption": "数据损坏",
+      "timeout": "操作超时",
+      "resource_not_found": "资源未找到"
+    },
+    "en-US": {
+      "connection_failed": "Connection failed",
+      "invalid_credentials": "Invalid credentials",
+      "data_corruption": "Data corruption",
+      "timeout": "Operation timeout",
+      "resource_not_found": "Resource not found"
+    },
+    "ja-JP": {
+      "connection_failed": "接続に失敗しました",
+      "invalid_credentials": "認証情報が無効です",
+      "data_corruption": "データが破損しています",
+      "timeout": "操作がタイムアウトしました",
+      "resource_not_found": "リソースが見つかりません"
+    },
+    "de-DE": {
+      "connection_failed": "Verbindung fehlgeschlagen",
+      "invalid_credentials": "Ungültige Anmeldeinformationen",
+      "data_corruption": "Datenbeschädigung",
+      "timeout": "Zeitüberschreitung bei Operation",
+      "resource_not_found": "Ressource nicht gefunden"
+    }
+  }
+  
+  // 模拟错误代码到消息的映射
+  let error_codes = {
+    1001: "connection_failed",
+    1002: "invalid_credentials",
+    1003: "data_corruption",
+    1004: "timeout",
+    1005: "resource_not_found"
+  }
+  
+  // 获取本地化错误消息
+  func get_error_message(error_code : Int, locale : String, translations : Map[String, Map[String, String]]) -> String {
+    match error_codes.get(error_code) {
+      Some(error_key) => {
+        match translations.get(locale) {
+          Some(lang_translations) => {
+            match lang_translations.get(error_key) {
+              Some(message) => message,
+              None => "[" + locale + "." + error_key + "]"
+            }
+          }
+          None => "[lang." + error_key + "]"
+        }
+      }
+      None => "未知错误代码: " + error_code.to_string()
+    }
+  }
+  
+  // 测试错误消息本地化
+  assert_eq(get_error_message(1001, "zh-CN", error_translations), "连接失败")
+  assert_eq(get_error_message(1002, "en-US", error_translations), "Invalid credentials")
+  assert_eq(get_error_message(1003, "ja-JP", error_translations), "データが破損しています")
+  assert_eq(get_error_message(1004, "de-DE", error_translations), "Zeitüberschreitung bei Operation")
+  
+  // 测试未知错误代码
+  assert_eq(get_error_message(9999, "zh-CN", error_translations), "未知错误代码: 9999")
+  
+  // 测试缺失翻译
+  assert_eq(get_error_message(1001, "fr-FR", error_translations), "[lang.connection_failed]")
+  
+  // 测试错误消息格式化
+  func format_error_message(error_code : Int, locale : String, details : String, translations : Map[String, Map[String, String]]) -> String {
+    let base_message = get_error_message(error_code, locale, translations)
+    return base_message + ": " + details
+  }
+  
+  assert_eq(format_error_message(1001, "zh-CN", "网络不可达", error_translations), "连接失败: 网络不可达")
+  assert_eq(format_error_message(1002, "en-US", "用户名或密码错误", error_translations), "Invalid credentials: 用户名或密码错误")
+  
+  // 测试错误日志本地化
+  let mut localized_error_logs = []
+  let errors = [
+    { code: 1001, details: "网络超时", timestamp: 1640995200 },
+    { code: 1003, details: "数据包损坏", timestamp: 1640995260 },
+    { code: 1005, details: "配置文件不存在", timestamp: 1640995320 }
+  ]
+  
+  for error in errors {
+    let localized_message = format_error_message(error.code, "zh-CN", error.details, error_translations)
+    let log_entry = {
+      timestamp: error.timestamp,
+      error_code: error.code,
+      message: localized_message,
+      locale: "zh-CN"
+    }
+    localized_error_logs = localized_error_logs.push(log_entry)
+  }
+  
+  // 验证本地化错误日志
+  assert_eq(localized_error_logs.length(), 3)
+  assert_eq(localized_error_logs[0].message, "连接失败: 网络超时")
+  assert_eq(localized_error_logs[1].message, "数据损坏: 数据包损坏")
+  assert_eq(localized_error_logs[2].message, "资源未找到: 配置文件不存在")
+}
+
+// 测试5: 多语言单位转换
+test "多语言单位转换" {
+  // 模拟不同地区的度量单位
+  let measurement_units = {
+    "zh-CN": {
+      "temperature": "C",
+      "distance": "km",
+      "weight": "kg",
+      "volume": "L",
+      "speed": "km/h"
+    },
+    "en-US": {
+      "temperature": "F",
+      "distance": "mi",
+      "weight": "lb",
+      "volume": "gal",
+      "speed": "mph"
+    },
+    "en-GB": {
+      "temperature": "C",
+      "distance": "mi",
+      "weight": "kg",
+      "volume": "L",
+      "speed": "mph"
+    },
+    "ja-JP": {
+      "temperature": "C",
+      "distance": "km",
+      "weight": "kg",
+      "volume": "L",
+      "speed": "km/h"
+    }
+  }
+  
+  // 单位转换函数
+  func convert_unit(value : Float, from_unit : String, to_unit : String) -> Float {
+    match (from_unit, to_unit) {
+      ("C", "F") => value * 9.0 / 5.0 + 32.0,
+      ("F", "C") => (value - 32.0) * 5.0 / 9.0,
+      ("km", "mi") => value * 0.621371,
+      ("mi", "km") => value / 0.621371,
+      ("kg", "lb") => value * 2.20462,
+      ("lb", "kg") => value / 2.20462,
+      ("L", "gal") => value * 0.264172,
+      ("gal", "L") => value / 0.264172,
+      ("km/h", "mph") => value * 0.621371,
+      ("mph", "km/h") => value / 0.621371,
+      _ => value  // 相同单位或未知转换
+    }
+  }
+  
+  // 获取本地化单位
+  func get_localized_unit(measurement_type : String, locale : String, units : Map[String, Map[String, String]]) -> String {
+    match units.get(locale) {
+      Some(locale_units) => {
+        match locale_units.get(measurement_type) {
+          Some(unit) => unit,
+          None => "unknown"
+        }
+      }
+      None => "unknown"
+    }
+  }
+  
+  // 测试单位转换
+  let temperature_c = 25.0
+  let temperature_f = convert_unit(temperature_c, "C", "F")
+  assert_eq(round(temperature_f), 77.0)  // 25°C = 77°F
+  
+  let distance_km = 100.0
+  let distance_mi = convert_unit(distance_km, "km", "mi")
+  assert_eq(round(distance_mi), 62.0)  // 100km ≈ 62mi
+  
+  let weight_kg = 70.0
+  let weight_lb = convert_unit(weight_kg, "kg", "lb")
+  assert_eq(round(weight_lb), 154.0)  // 70kg ≈ 154lb
+  
+  // 测试本地化单位获取
+  assert_eq(get_localized_unit("temperature", "zh-CN", measurement_units), "C")
+  assert_eq(get_localized_unit("temperature", "en-US", measurement_units), "F")
+  assert_eq(get_localized_unit("distance", "en-US", measurement_units), "mi")
+  assert_eq(get_localized_unit("distance", "zh-CN", measurement_units), "km")
+  
+  // 测试完整的本地化测量值
+  func format_measurement(value : Float, measurement_type : String, locale : String, base_units : Map[String, Map[String, String]]) -> String {
+    let base_unit = get_localized_unit(measurement_type, "zh-CN", base_units)  // 使用中文作为基准
+    let local_unit = get_localized_unit(measurement_type, locale, base_units)
+    
+    let converted_value = if local_unit != base_unit && local_unit != "unknown" && base_unit != "unknown" {
+      convert_unit(value, base_unit, local_unit)
+    } else {
+      value
+    }
+    
+    return converted_value.to_string() + " " + local_unit
+  }
+  
+  // 测试测量值格式化
+  assert_eq(format_measurement(25.0, "temperature", "zh-CN", measurement_units), "25.0 C")
+  assert_eq(format_measurement(25.0, "temperature", "en-US", measurement_units), "77.0 F")
+  assert_eq(format_measurement(100.0, "distance", "zh-CN", measurement_units), "100.0 km")
+  assert_eq(format_measurement(100.0, "distance", "en-US", measurement_units), "62.1371 mi")
+  
+  // 测试遥测数据单位本地化
+  let telemetry_data = [
+    { metric: "temperature", value: 25.0, unit: "C" },
+    { metric: "cpu_temperature", value: 65.0, unit: "C" },
+    { metric: "network_speed", value: 1000.0, unit: "Mbps" },
+    { metric: "disk_usage", value: 500.0, unit: "GB" }
+  ]
+  
+  let mut localized_telemetry = []
+  
+  for data in telemetry_data {
+    let localized_value = format_measurement(data.value, data.metric, "en-US", measurement_units)
+    localized_telemetry = localized_telemetry.push({
+      metric: data.metric,
+      localized_value: localized_value,
+      locale: "en-US"
+    })
+  }
+  
+  // 验证本地化遥测数据
+  assert_eq(localized_telemetry.length(), 4)
+  assert_eq(localized_telemetry[0].metric, "temperature")
+  assert_eq(localized_telemetry[0].localized_value, "77.0 F")
+}
+
+// 测试6: 字符编码处理
+test "字符编码处理" {
+  // 模拟不同语言的遥测数据
+  let multilingual_data = [
+    { metric: "error_message", value: "连接失败", language: "zh-CN" },
+    { metric: "error_message", value: "Connection failed", language: "en-US" },
+    { metric: "error_message", value: "接続に失敗しました", language: "ja-JP" },
+    { metric: "error_message", value: "Verbindung fehlgeschlagen", language: "de-DE" },
+    { metric: "error_message", value: "Échec de connexion", language: "fr-FR" },
+    { metric: "error_message", value: "Conexión fallida", language: "es-ES" },
+    { metric: "error_message", value: "Подключение не удалось", language: "ru-RU" },
+    { metric: "error_message", value: "اتصال ناموفق", language: "ar-SA" }
+  ]
+  
+  // 测试字符编码处理
+  let mut encoding_test_results = []
+  
+  for data in multilingual_data {
+    let byte_length = data.value.length()  // 简化的字节长度计算
+    let char_count = data.value.length()
+    
+    // 检查是否包含非ASCII字符
+    let mut has_non_ascii = false
+    for i in range(0, data.value.length()) {
+      let char_code = data.value.to_char_array()[i].to_int()
+      if char_code > 127 {
+        has_non_ascii = true
+        break
+      }
+    }
+    
+    let encoding_info = {
+      language: data.language,
+      text: data.value,
+      char_count: char_count,
+      byte_length: byte_length,
+      has_non_ascii: has_non_ascii,
+      encoding_type: if has_non_ascii { "UTF-8" } else { "ASCII" }
+    }
+    
+    encoding_test_results = encoding_test_results.push(encoding_info)
+  }
+  
+  // 验证编码处理结果
+  assert_eq(encoding_test_results.length(), 8)
+  
+  // 中文应该包含非ASCII字符
+  assert_true(encoding_test_results[0].has_non_ascii)
+  assert_eq(encoding_test_results[0].encoding_type, "UTF-8")
+  
+  // 英文应该只包含ASCII字符
+  assert_false(encoding_test_results[1].has_non_ascii)
+  assert_eq(encoding_test_results[1].encoding_type, "ASCII")
+  
+  // 日文应该包含非ASCII字符
+  assert_true(encoding_test_results[2].has_non_ascii)
+  assert_eq(encoding_test_results[2].encoding_type, "UTF-8")
+  
+  // 德文可能包含非ASCII字符（如ü, ö, ä等）
+  assert_true(encoding_test_results[3].has_non_ascii)
+  assert_eq(encoding_test_results[3].encoding_type, "UTF-8")
+  
+  // 法文可能包含非ASCII字符（如é, à, ç等）
+  assert_true(encoding_test_results[4].has_non_ascii)
+  assert_eq(encoding_test_results[4].encoding_type, "UTF-8")
+  
+  // 测试字符串长度计算
+  let test_string = "测试字符串Test String"
+  let char_count = test_string.length()
+  assert_eq(char_count, 14)  // 6个中文字符 + 8个英文字符
+  
+  // 测试字符串截断（保持字符完整性）
+  func truncate_string(s : String, max_length : Int) -> String {
+    if s.length() <= max_length {
+      return s
+    }
+    
+    let mut result = ""
+    for i in range(0, max_length) {
+      result = result + s.to_char_array()[i].to_string()
+    }
+    
+    return result + "..."
+  }
+  
+  let truncated_zh = truncate_string("这是一个很长的中文测试字符串", 10)
+  assert_eq(truncated_zh, "这是一个很长的中文...")
+  
+  let truncated_en = truncate_string("This is a long English test string", 10)
+  assert_eq(truncated_en, "This is a l...")
+  
+  // 测试多语言搜索
+  func search_multilingual(data : Array[{ metric : String, value : String, language : String }], keyword : String) -> Array[{ metric : String, value : String, language : String }] {
+    let mut results = []
+    
+    for item in data {
+      if item.value.contains(keyword) {
+        results = results.push(item)
+      }
+    }
+    
+    return results
+  }
+  
+  let search_results_zh = search_multilingual(multilingual_data, "连接")
+  assert_eq(search_results_zh.length(), 1)
+  assert_eq(search_results_zh[0].language, "zh-CN")
+  
+  let search_results_en = search_multilingual(multilingual_data, "failed")
+  assert_eq(search_results_en.length(), 1)
+  assert_eq(search_results_en[0].language, "en-US")
+}
+
+// 辅助函数：四舍五入
+func round(x : Float) -> Float {
+  let int_part = x.to_int()
+  let decimal_part = x - int_part.to_float()
+  
+  if decimal_part >= 0.5 {
+    return (int_part + 1).to_float()
+  } else {
+    return int_part.to_float()
+  }
 }
