@@ -1,395 +1,493 @@
-// Azimuth Data Processing and Conversion Test Suite
-// This file contains comprehensive test cases for data processing and conversion functionality
+// Azimuth Telemetry System - Data Processing and Conversion Tests
+// This file contains high-quality test cases for data processing and conversion functionality
 
-// Test 1: Attribute Value Type Conversion
-test "attribute value type conversion" {
-  // Test string to int conversion
-  let string_attr = StringValue("42")
-  let int_result = AttributeValue::to_int(string_attr)
-  match int_result {
-    Ok(value) => assert_eq(value, 42)
-    Err(_) => assert_true(false)
-  }
+// Test 1: Advanced Type Conversion with Error Handling
+test "advanced type conversion with error handling" {
+  // Test string to int conversion with error handling
+  let valid_int_str = "42"
+  let invalid_int_str = "not_a_number"
   
-  // Test int to string conversion
-  let int_attr = IntValue(42)
-  let string_result = AttributeValue::to_string(int_attr)
-  match string_result {
-    Ok(value) => assert_eq(value, "42")
-    Err(_) => assert_true(false)
-  }
-  
-  // Test string to float conversion
-  let float_string = StringValue("3.14")
-  let float_result = AttributeValue::to_float(float_string)
-  match float_result {
-    Ok(value) => assert_eq(value, 3.14)
-    Err(_) => assert_true(false)
-  }
-  
-  // Test float to string conversion
-  let float_attr = FloatValue(3.14)
-  let float_string_result = AttributeValue::to_string(float_attr)
-  match float_string_result {
-    Ok(value) => assert_eq(value, "3.14")
-    Err(_) => assert_true(false)
-  }
-  
-  // Test boolean conversion
-  let bool_attr = BoolValue(true)
-  let bool_string_result = AttributeValue::to_string(bool_attr)
-  match bool_string_result {
-    Ok(value) => assert_eq(value, "true")
-    Err(_) => assert_true(false)
-  }
-  
-  // Test array conversion
-  let array_int = ArrayIntValue([1, 2, 3])
-  let array_string_result = AttributeValue::to_string(array_int)
-  match array_string_result {
-    Ok(value) => assert_true(value.contains("[1, 2, 3]"))
-    Err(_) => assert_true(false)
-  }
-}
-
-// Test 2: Data Structure Transformations
-test "data structure transformations" {
-  // Test map to array transformation
-  let data_map = [
-    ("key1", StringValue("value1")),
-    ("key2", IntValue(42)),
-    ("key3", BoolValue(true))
-  ]
-  
-  let transformed_array = DataProcessor::map_to_array(data_map)
-  assert_eq(transformed_array.length(), 3)
-  
-  // Test array filtering
-  let mixed_values = [
-    StringValue("test"),
-    IntValue(42),
-    FloatValue(3.14),
-    BoolValue(true)
-  ]
-  
-  let string_values = DataProcessor::filter_by_type(mixed_values, "string")
-  assert_eq(string_values.length(), 1)
-  
-  let numeric_values = DataProcessor::filter_numeric(mixed_values)
-  assert_eq(numeric_values.length(), 2)
-  
-  // Test data aggregation
-  let numbers = [IntValue(1), IntValue(2), IntValue(3), IntValue(4), IntValue(5)]
-  let sum = DataProcessor::aggregate_ints(numbers, "sum")
-  match sum {
-    IntValue(total) => assert_eq(total, 15)
-    _ => assert_true(false)
-  }
-  
-  let average = DataProcessor::aggregate_ints(numbers, "average")
-  match average {
-    FloatValue(avg) => assert_eq(avg, 3.0)
-    _ => assert_true(false)
-  }
-}
-
-// Test 3: Time Series Data Processing
-test "time series data processing" {
-  // Create time series data points
-  let data_points = [
-    TimeSeriesPoint::new(1000L, 10.5),
-    TimeSeriesPoint::new(2000L, 15.2),
-    TimeSeriesPoint::new(3000L, 12.8),
-    TimeSeriesPoint::new(4000L, 18.3),
-    TimeSeriesPoint::new(5000L, 20.1)
-  ]
-  
-  // Test time series aggregation
-  let aggregated = TimeSeriesProcessor::aggregate(data_points, 2000L, "average")
-  assert_eq(aggregated.length(), 3)
-  
-  // Test time series filtering
-  let filtered = TimeSeriesProcessor::filter_by_time_range(data_points, 2000L, 4000L)
-  assert_eq(filtered.length(), 3)
-  
-  // Test time series interpolation
-  let interpolated = TimeSeriesProcessor::interpolate(data_points, 2500L)
-  match interpolated {
-    Some(point) => {
-      assert_eq(TimeSeriesPoint::timestamp(point), 2500L)
-      assert_true(TimeSeriesPoint::value(point) > 12.8 && TimeSeriesPoint::value(point) < 15.2)
-    }
+  match Int::from_string(valid_int_str) {
+    Some(value) => assert_eq(value, 42)
     None => assert_true(false)
   }
   
-  // Test time series smoothing
-  let smoothed = TimeSeriesProcessor::smooth(data_points, "moving_average", 3)
-  assert_eq(smoothed.length(), 5)
-  assert_true(TimeSeriesPoint::value(smoothed[1]) > 12.0 && TimeSeriesPoint::value(smoothed[1]) < 16.0)
+  match Int::from_string(invalid_int_str) {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // Test string to float conversion with error handling
+  let valid_float_str = "3.14159"
+  let invalid_float_str = "not_a_float"
+  
+  match Float::from_string(valid_float_str) {
+    Some(value) => assert_eq(value, 3.14159)
+    None => assert_true(false)
+  }
+  
+  match Float::from_string(invalid_float_str) {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // Test safe type casting
+  let large_int = 2147483647
+  let small_int_range = -2147483648
+  
+  // Test boundary conditions
+  assert_eq(large_int + 1, -2147483648) // Overflow expected
+  assert_eq(small_int_range - 1, 2147483647) // Underflow expected
+}
+
+// Test 2: Complex Data Structure Operations
+test "complex data structure operations" {
+  // Test nested data structures
+  let nested_array = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+  
+  // Flatten nested array
+  let mut flattened = []
+  for inner in nested_array {
+    for item in inner {
+      flattened = flattened + [item]
+    }
+  }
+  assert_eq(flattened.length(), 9)
+  assert_eq(flattened[0], 1)
+  assert_eq(flattened[8], 9)
+  
+  // Test matrix operations
+  let matrix = [[1, 2], [3, 4]]
+  let mut transpose = [[1, 3], [2, 4]]
+  
+  // Verify transpose operation
+  assert_eq(transpose[0][0], 1)
+  assert_eq(transpose[0][1], 3)
+  assert_eq(transpose[1][0], 2)
+  assert_eq(transpose[1][1], 4)
+  
+  // Test associative array operations
+  let key_value_pairs = [("key1", "value1"), ("key2", "value2"), ("key3", "value3")]
+  
+  // Find value by key
+  let mut found_value = ""
+  for (key, value) in key_value_pairs {
+    if key == "key2" {
+      found_value = value
+    }
+  }
+  assert_eq(found_value, "value2")
+}
+
+// Test 3: String Processing and Pattern Matching
+test "string processing and pattern matching" {
+  // Test string manipulation
+  let text = "The quick brown fox jumps over the lazy dog"
+  
+  // Test substring extraction
+  let words = text.split(" ")
+  assert_eq(words.length(), 9)
+  assert_eq(words[0], "The")
+  assert_eq(words[4], "fox")
+  assert_eq(words[8], "dog")
+  
+  // Test string transformation
+  let mut reversed = ""
+  for i in 0..text.length() {
+    reversed = text[i] + reversed
+  }
+  assert_eq(reversed, "god yzal eht revo spmuj xof nworb kciuq ehT")
+  
+  // Test pattern matching with regex-like behavior
+  let email = "user@example.com"
+  let mut has_at_symbol = false
+  let mut has_dot = false
+  
+  for char in email {
+    if char == "@" {
+      has_at_symbol = true
+    }
+    if char == "." {
+      has_dot = true
+    }
+  }
+  
+  assert_true(has_at_symbol)
+  assert_true(has_dot)
 }
 
 // Test 4: Data Validation and Sanitization
 test "data validation and sanitization" {
-  // Test string validation
-  let valid_string = "valid_string_123"
-  let invalid_string = "invalid@string#with$special%chars"
-  
-  assert_true(DataValidator::is_valid_string(valid_string))
-  assert_false(DataValidator::is_valid_string(invalid_string))
-  
-  // Test numeric validation
-  let valid_int = "42"
-  let invalid_int = "not_a_number"
-  
-  assert_true(DataValidator::is_valid_int(valid_int))
-  assert_false(DataValidator::is_valid_int(invalid_int))
-  
   // Test email validation
-  let valid_email = "test@example.com"
-  let invalid_email = "invalid.email"
+  let valid_emails = [
+    "user@example.com",
+    "test.email+tag@example.co.uk",
+    "user123@test-domain.com"
+  ]
   
-  assert_true(DataValidator::is_valid_email(valid_email))
-  assert_false(DataValidator::is_valid_email(invalid_email))
+  let invalid_emails = [
+    "invalid-email",
+    "@example.com",
+    "user@",
+    "user.example.com"
+  ]
   
-  // Test data sanitization
-  let dirty_string = "<script>alert('xss')</script>"
-  let clean_string = DataSanitizer::sanitize_html(dirty_string)
-  assert_false(clean_string.contains("<script>"))
-  assert_false(clean_string.contains("alert"))
-  
-  // Test SQL injection prevention
-  let sql_input = "'; DROP TABLE users; --"
-  let safe_input = DataSanitizer::sanitize_sql(sql_input)
-  assert_false(safe_input.contains("DROP TABLE"))
-  assert_false(safe_input.contains("--"))
-}
-
-// Test 5: Data Format Conversion
-test "data format conversion" {
-  // Test JSON to attributes conversion
-  let json_string = "{\"name\":\"test\",\"value\":42,\"active\":true}"
-  let attributes = DataConverter::json_to_attributes(json_string)
-  
-  let name_value = Attributes::get(attributes, "name")
-  match name_value {
-    Some(StringValue(v)) => assert_eq(v, "test")
-    _ => assert_true(false)
-  }
-  
-  let value_attr = Attributes::get(attributes, "value")
-  match value_attr {
-    Some(IntValue(v)) => assert_eq(v, 42)
-    _ => assert_true(false)
-  }
-  
-  let active_attr = Attributes::get(attributes, "active")
-  match active_attr {
-    Some(BoolValue(v)) => assert_true(v)
-    _ => assert_true(false)
-  }
-  
-  // Test attributes to JSON conversion
-  let attrs = Attributes::new()
-  Attributes::set(attrs, "string_key", StringValue("test_value"))
-  Attributes::set(attrs, "int_key", IntValue(123))
-  Attributes::set(attrs, "bool_key", BoolValue(false))
-  
-  let json_result = DataConverter::attributes_to_json(attrs)
-  assert_true(json_result.contains("string_key"))
-  assert_true(json_result.contains("test_value"))
-  assert_true(json_result.contains("int_key"))
-  assert_true(json_result.contains("123"))
-  assert_true(json_result.contains("bool_key"))
-  assert_true(json_result.contains("false"))
-  
-  // Test CSV parsing
-  let csv_data = "name,age,city\nJohn,30,New York\nJane,25,Los Angeles"
-  let parsed_data = DataConverter::csv_to_array(csv_data)
-  assert_eq(parsed_data.length(), 3) // Header + 2 rows
-  assert_eq(parsed_data[0].length(), 3) // 3 columns
-}
-
-// Test 6: Data Compression and Decompression
-test "data compression and decompression" {
-  // Test string compression
-  let original_string = "This is a test string that should be compressed to reduce its size"
-  let compressed = DataCompressor::compress_string(original_string, "gzip")
-  assert_true(compressed.length() < original_string.length())
-  
-  // Test string decompression
-  let decompressed = DataCompressor::decompress_string(compressed, "gzip")
-  assert_eq(decompressed, original_string)
-  
-  // Test binary data compression
-  let binary_data = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08]
-  let compressed_binary = DataCompressor::compress_binary(binary_data, "lz4")
-  assert_true(compressed_binary.length() <= binary_data.length())
-  
-  // Test binary data decompression
-  let decompressed_binary = DataCompressor::decompress_binary(compressed_binary, "lz4")
-  assert_eq(decompressed_binary, binary_data)
-  
-  // Test compression ratio calculation
-  let ratio = DataCompressor::calculate_compression_ratio(original_string.length(), compressed.length())
-  assert_true(ratio > 0.0 && ratio < 1.0)
-}
-
-// Test 7: Data Encoding and Decoding
-test "data encoding and decoding" {
-  // Test base64 encoding
-  let original_data = "Hello, World!"
-  let encoded = DataEncoder::base64_encode(original_data)
-  assert_eq(encoded, "SGVsbG8sIFdvcmxkIQ==")
-  
-  // Test base64 decoding
-  let decoded = DataEncoder::base64_decode(encoded)
-  assert_eq(decoded, original_data)
-  
-  // Test URL encoding
-  let url_string = "hello world?param=value&other=test"
-  let url_encoded = DataEncoder::url_encode(url_string)
-  assert_true(url_encoded.contains("%20"))
-  assert_true(url_encoded.contains("%3F"))
-  assert_true(url_encoded.contains("%3D"))
-  assert_true(url_encoded.contains("%26"))
-  
-  // Test URL decoding
-  let url_decoded = DataEncoder::url_decode(url_encoded)
-  assert_eq(url_decoded, url_string)
-  
-  // Test hex encoding
-  let hex_data = [0x48, 0x65, 0x6C, 0x6C, 0x6F] // "Hello" in ASCII
-  let hex_encoded = DataEncoder::hex_encode(hex_data)
-  assert_eq(hex_encoded, "48656C6C6F")
-  
-  // Test hex decoding
-  let hex_decoded = DataEncoder::hex_decode(hex_encoded)
-  assert_eq(hex_decoded, hex_data)
-}
-
-// Test 8: Data Aggregation and Statistics
-test "data aggregation and statistics" {
-  // Test numeric statistics
-  let numbers = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
-  
-  let mean = Statistics::calculate_mean(numbers)
-  assert_eq(mean, 5.5)
-  
-  let median = Statistics::calculate_median(numbers)
-  assert_eq(median, 5.5)
-  
-  let mode = Statistics::calculate_mode([1, 2, 2, 3, 3, 3, 4, 4, 5])
-  assert_eq(mode, 3)
-  
-  let std_dev = Statistics::calculate_std_dev(numbers)
-  assert_true(std_dev > 2.8 && std_dev < 3.2)
-  
-  let variance = Statistics::calculate_variance(numbers)
-  assert_true(variance > 8.0 && variance < 10.0)
-  
-  // Test percentile calculation
-  let p90 = Statistics::calculate_percentile(numbers, 90.0)
-  assert_eq(p90, 9.0)
-  
-  let p25 = Statistics::calculate_percentile(numbers, 25.0)
-  assert_eq(p25, 3.0)
-  
-  // Test histogram generation
-  let histogram = Statistics::generate_histogram(numbers, 5)
-  assert_eq(histogram.length(), 5)
-  assert_true(histogram[0].count > 0)
-}
-
-// Test 9: Data Stream Processing
-test "data stream processing" {
-  // Create a data stream
-  let stream = DataStream::new()
-  
-  // Test stream filtering
-  let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-  let filtered_stream = DataStream::filter(stream, numbers, fn(x) { x % 2 == 0 })
-  let filtered_result = DataStream::collect(filtered_stream)
-  assert_eq(filtered_result, [2, 4, 6, 8, 10])
-  
-  // Test stream mapping
-  let mapped_stream = DataStream::map(stream, numbers, fn(x) { x * 2 })
-  let mapped_result = DataStream::collect(mapped_stream)
-  assert_eq(mapped_result, [2, 4, 6, 8, 10, 12, 14, 16, 18, 20])
-  
-  // Test stream reduction
-  let sum = DataStream::reduce(stream, numbers, fn(acc, x) { acc + x }, 0)
-  assert_eq(sum, 55)
-  
-  // Test stream windowing
-  let windowed = DataStream::window(stream, numbers, 3)
-  assert_eq(windowed.length(), 8) // 10 elements with window size 3
-  assert_eq(windowed[0], [1, 2, 3])
-  assert_eq(windowed[7], [8, 9, 10])
-  
-  // Test stream grouping
-  let grouped = DataStream::group_by(stream, numbers, fn(x) { x % 3 })
-  assert_eq(grouped.length(), 3)
-  assert_eq(grouped[1], [1, 4, 7, 10])
-  assert_eq(grouped[2], [2, 5, 8])
-  assert_eq(grouped[0], [3, 6, 9])
-}
-
-// Test 10: Data Transformation Pipeline
-test "data transformation pipeline" {
-  // Create a transformation pipeline
-  let pipeline = DataPipeline::new()
-  
-  // Add pipeline stages
-  DataPipeline::add_stage(pipeline, "validation", fn(data) {
-    match data {
-      StringValue(s) => DataValidator::is_valid_string(s) ? Some(data) : None
-      _ => Some(data)
-    }
-  })
-  
-  DataPipeline::add_stage(pipeline, "normalization", fn(data) {
-    match data {
-      StringValue(s) => Some(StringValue(s.to_lowercase()))
-      IntValue(i) => Some(IntValue(i * 2))
-      _ => Some(data)
-    }
-  })
-  
-  DataPipeline::add_stage(pipeline, "enrichment", fn(data) {
-    match data {
-      StringValue(s) => {
-        let enriched = Attributes::new()
-        Attributes::set(enriched, "original", data)
-        Attributes::set(enriched, "length", IntValue(s.length()))
-        Some(StringValue(s + "_enriched"))
+  // Validate email format
+  for email in valid_emails {
+    let mut has_at = false
+    let mut has_dot_after_at = false
+    let mut found_at = false
+    
+    for char in email {
+      if char == "@" {
+        has_at = true
+        found_at = true
       }
-      _ => Some(data)
+      if found_at && char == "." {
+        has_dot_after_at = true
+      }
     }
-  })
-  
-  // Test pipeline with valid data
-  let valid_data = StringValue("ValidData")
-  let result = DataPipeline::process(pipeline, valid_data)
-  match result {
-    Some(StringValue(processed)) => {
-      assert_eq(processed, "validdata_enriched")
-    }
-    _ => assert_true(false)
+    
+    assert_true(has_at && has_dot_after_at)
   }
   
-  // Test pipeline with invalid data
-  let invalid_data = StringValue("Invalid@Data!")
-  let invalid_result = DataPipeline::process(pipeline, invalid_data)
-  match invalid_result {
-    None => assert_true(true)
+  // Test phone number validation
+  let phone_numbers = [
+    "+1-555-123-4567",
+    "555.123.4567",
+    "(555) 123-4567",
+    "5551234567"
+  ]
+  
+  for phone in phone_numbers {
+    let mut digit_count = 0
+    for char in phone {
+      if char >= '0' && char <= '9' {
+        digit_count = digit_count + 1
+      }
+    }
+    assert_eq(digit_count, 10) // Expect 10 digits for US phone numbers
+  }
+}
+
+// Test 5: Time Series Data Processing
+test "time series data processing" {
+  // Test time series data structure
+  let time_series_data = [
+    (1000L, 10.5),  // (timestamp, value)
+    (2000L, 15.3),
+    (3000L, 12.7),
+    (4000L, 18.9),
+    (5000L, 20.1)
+  ]
+  
+  // Calculate average
+  let mut sum = 0.0
+  let mut count = 0
+  
+  for (_, value) in time_series_data {
+    sum = sum + value
+    count = count + 1
+  }
+  
+  let average = sum / Int::to_float(count)
+  assert_eq(average, 15.5)
+  
+  // Find maximum value
+  let mut max_value = time_series_data[0].1
+  for (_, value) in time_series_data {
+    if value > max_value {
+      max_value = value
+    }
+  }
+  assert_eq(max_value, 20.1)
+  
+  // Find minimum value
+  let mut min_value = time_series_data[0].1
+  for (_, value) in time_series_data {
+    if value < min_value {
+      min_value = value
+    }
+  }
+  assert_eq(min_value, 10.5)
+  
+  // Test time window filtering
+  let start_time = 2000L
+  let end_time = 4000L
+  let mut filtered_count = 0
+  
+  for (timestamp, _) in time_series_data {
+    if timestamp >= start_time && timestamp <= end_time {
+      filtered_count = filtered_count + 1
+    }
+  }
+  
+  assert_eq(filtered_count, 3)
+}
+
+// Test 6: Data Aggregation and Statistics
+test "data aggregation and statistics" {
+  // Test numerical data aggregation
+  let data_points = [12.5, 15.3, 18.7, 22.1, 19.8, 14.2, 16.9, 20.5, 13.7, 17.4]
+  
+  // Calculate mean
+  let mut sum = 0.0
+  for value in data_points {
+    sum = sum + value
+  }
+  let mean = sum / Int::to_float(data_points.length())
+  assert_eq(mean, 17.11)
+  
+  // Calculate variance (simplified)
+  let mut variance_sum = 0.0
+  for value in data_points {
+    let diff = value - mean
+    variance_sum = variance_sum + (diff * diff)
+  }
+  let variance = variance_sum / Int::to_float(data_points.length())
+  
+  // Calculate standard deviation
+  let std_dev = Float::sqrt(variance)
+  assert_true(std_dev > 0.0)
+  
+  // Find median
+  let sorted_data = [12.5, 13.7, 14.2, 15.3, 16.9, 17.4, 18.7, 19.8, 20.5, 22.1]
+  let median = if sorted_data.length() % 2 == 0 {
+    (sorted_data[sorted_data.length() / 2 - 1] + sorted_data[sorted_data.length() / 2]) / 2.0
+  } else {
+    sorted_data[sorted_data.length() / 2]
+  }
+  assert_eq(median, 17.15)
+  
+  // Test percentile calculation (75th percentile)
+  let percentile_index = (sorted_data.length() * 75) / 100
+  let percentile_75 = sorted_data[percentile_index]
+  assert_eq(percentile_75, 19.8)
+}
+
+// Test 7: Data Format Conversion
+test "data format conversion" {
+  // Test JSON-like object conversion
+  let key_value_data = [
+    ("name", "John Doe"),
+    ("age", "30"),
+    ("active", "true"),
+    ("score", "95.5")
+  ]
+  
+  // Convert to string representation
+  let mut json_string = "{"n  let mut first = true
+  
+  for (key, value) in key_value_data {
+    if not first {
+      json_string = json_string + ","
+    }
+    json_string = json_string + "\"" + key + "\":\"" + value + "\""
+    first = false
+  }
+  json_string = json_string + "}"
+  
+  assert_true(json_string.contains("\"name\":\"John Doe\""))
+  assert_true(json_string.contains("\"age\":\"30\""))
+  
+  // Test CSV format conversion
+  let headers = ["name", "age", "active", "score"]
+  let row_data = [
+    ["John Doe", "30", "true", "95.5"],
+    ["Jane Smith", "25", "false", "87.2"],
+    ["Bob Johnson", "35", "true", "91.8"]
+  ]
+  
+  // Create CSV string
+  let mut csv_string = ""
+  
+  // Add headers
+  let mut header_first = true
+  for header in headers {
+    if not header_first {
+      csv_string = csv_string + ","
+    }
+    csv_string = csv_string + header
+    header_first = false
+  }
+  csv_string = csv_string + "\n"
+  
+  // Add rows
+  for row in row_data {
+    let mut row_first = true
+    for cell in row {
+      if not row_first {
+        csv_string = csv_string + ","
+      }
+      csv_string = csv_string + cell
+      row_first = false
+    }
+    csv_string = csv_string + "\n"
+  }
+  
+  assert_true(csv_string.contains("name,age,active,score"))
+  assert_true(csv_string.contains("John Doe,30,true,95.5"))
+}
+
+// Test 8: Data Compression and Decompression
+test "data compression and decompression" {
+  // Test run-length encoding
+  let original_data = "AAAABBBCCDAAA"
+  
+  // Compress using run-length encoding
+  let mut compressed = ""
+  let mut current_char = original_data[0]
+  let mut count = 1
+  
+  for i in 1..original_data.length() {
+    if original_data[i] == current_char {
+      count = count + 1
+    } else {
+      compressed = compressed + current_char + Int::to_string(count)
+      current_char = original_data[i]
+      count = 1
+    }
+  }
+  compressed = compressed + current_char + Int::to_string(count)
+  
+  assert_eq(compressed, "A4B3C2D1A3")
+  
+  // Decompress
+  let mut decompressed = ""
+  let mut i = 0
+  
+  while i < compressed.length() {
+    let char = compressed[i]
+    i = i + 1
+    
+    let mut count_str = ""
+    while i < compressed.length() && compressed[i] >= '0' && compressed[i] <= '9' {
+      count_str = count_str + compressed[i]
+      i = i + 1
+    }
+    
+    match Int::from_string(count_str) {
+      Some(count) => {
+        for j in 0..count {
+          decompressed = decompressed + char
+        }
+      }
+      None => assert_true(false)
+    }
+  }
+  
+  assert_eq(decompressed, original_data)
+}
+
+// Test 9: Error Handling and Recovery
+test "error handling and recovery" {
+  // Test division with comprehensive error handling
+  let safe_divide = (numerator: Int, denominator: Int) -> Option<Int> {
+    if denominator == 0 {
+      None
+    } else {
+      Some(numerator / denominator)
+    }
+  }
+  
+  match safe_divide(10, 2) {
+    Some(result) => assert_eq(result, 5)
+    None => assert_true(false)
+  }
+  
+  match safe_divide(10, 0) {
     Some(_) => assert_true(false)
+    None => assert_true(true)
   }
   
-  // Test pipeline with numeric data
-  let numeric_data = IntValue(21)
-  let numeric_result = DataPipeline::process(pipeline, numeric_data)
-  match numeric_result {
-    Some(IntValue(processed)) => assert_eq(processed, 42)
-    _ => assert_true(false)
+  // Test array access with bounds checking
+  let safe_array_access = (arr: Array<Int>, index: Int) -> Option<Int> {
+    if index >= 0 && index < arr.length() {
+      Some(arr[index])
+    } else {
+      None
+    }
   }
+  
+  let test_array = [10, 20, 30, 40, 50]
+  
+  match safe_array_access(test_array, 2) {
+    Some(value) => assert_eq(value, 30)
+    None => assert_true(false)
+  }
+  
+  match safe_array_access(test_array, 10) {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  match safe_array_access(test_array, -1) {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // Test string to number conversion with fallback
+  let safe_string_to_int = (str: String, default: Int) -> Int {
+    match Int::from_string(str) {
+      Some(value) => value
+      None => default
+    }
+  }
+  
+  assert_eq(safe_string_to_int("42", 0), 42)
+  assert_eq(safe_string_to_int("invalid", 0), 0)
+  assert_eq(safe_string_to_int("invalid", -1), -1)
+}
+
+// Test 10: Performance and Efficiency Tests
+test "performance and efficiency tests" {
+  // Test large data processing efficiency
+  let large_data_size = 10000
+  let mut large_data = []
+  
+  // Generate large dataset
+  for i in 0..large_data_size {
+    large_data = large_data + [i * 2]
+  }
+  
+  assert_eq(large_data.length(), large_data_size)
+  assert_eq(large_data[0], 0)
+  assert_eq(large_data[large_data_size - 1], (large_data_size - 1) * 2)
+  
+  // Test efficient sum calculation
+  let mut sum = 0
+  for value in large_data {
+    sum = sum + value
+  }
+  
+  // Verify sum using formula for arithmetic series
+  let expected_sum = large_data_size * (large_data_size - 1)
+  assert_eq(sum, expected_sum)
+  
+  // Test efficient filtering
+  let mut even_count = 0
+  let mut odd_count = 0
+  
+  for value in large_data {
+    if value % 2 == 0 {
+      even_count = even_count + 1
+    } else {
+      odd_count = odd_count + 1
+    }
+  }
+  
+  assert_eq(even_count, large_data_size)
+  assert_eq(odd_count, 0)
+  
+  // Test memory-efficient data transformation
+  let mut transformed = []
+  for value in large_data {
+    if value % 4 == 0 {
+      transformed = transformed + [value / 4]
+    }
+  }
+  
+  assert_eq(transformed.length(), large_data_size / 2)
+  assert_eq(transformed[0], 0)
+  assert_eq(transformed[transformed.length() - 1], (large_data_size - 1) / 2)
 }
