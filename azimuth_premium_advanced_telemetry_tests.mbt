@@ -1,469 +1,630 @@
-// Azimuth 高级遥测数据处理测试
-// 专注于复杂遥测场景和高级数据处理功能
+// Azimuth Telemetry System - Premium Advanced Telemetry Features Tests
+// This file contains comprehensive advanced telemetry feature tests
 
-// 测试1: 多维度遥测数据聚合分析
-test "多维度遥测数据聚合分析" {
-  // 模拟多维度的遥测数据
-  let multi_dimensional_data = [
-    { service: "auth", region: "us-east", instance: "i-001", metric: "cpu", value: 45.0, timestamp: 1640995200 },
-    { service: "auth", region: "us-east", instance: "i-002", metric: "cpu", value: 50.0, timestamp: 1640995200 },
-    { service: "auth", region: "us-west", instance: "i-003", metric: "cpu", value: 40.0, timestamp: 1640995200 },
-    { service: "payment", region: "us-east", instance: "i-004", metric: "cpu", value: 60.0, timestamp: 1640995200 },
-    { service: "payment", region: "us-west", instance: "i-005", metric: "cpu", value: 55.0, timestamp: 1640995200 },
-    { service: "auth", region: "us-east", instance: "i-001", metric: "memory", value: 1024.0, timestamp: 1640995200 },
-    { service: "auth", region: "us-east", instance: "i-002", metric: "memory", value: 2048.0, timestamp: 1640995200 },
-    { service: "payment", region: "us-east", instance: "i-004", metric: "memory", value: 1536.0, timestamp: 1640995200 }
-  ]
+// Test 1: Distributed Tracing with Complex Scenarios
+test "distributed tracing with complex scenarios" {
+  // Create root span for distributed trace
+  let root_trace_id = TraceId::generate()
+  let root_span_id = SpanId::generate()
+  let root_ctx = SpanContext::new(root_trace_id, root_span_id, true, "")
   
-  // 按服务维度聚合
-  let mut service_aggregates = []
-  let processed_services = []
+  let root_span = Span::new("distributed_root_operation", Server, root_ctx)
+  Span::add_event(root_span, "root_operation_started", Some([
+    ("operation.type", StringValue("distributed_tracing")),
+    ("component", StringValue("root_service"))
+  ]))
   
-  for data_point in multi_dimensional_data {
-    let service_already_processed = false
-    for service in processed_services {
-      if service == data_point.service {
-        service_already_processed = true
-        break
-      }
-    }
+  // Create child spans simulating microservice calls
+  let child_spans = []
+  let service_names = ["auth_service", "user_service", "order_service", "payment_service"]
+  
+  for (i, service_name) in service_names.enumerate() {
+    let child_ctx = SpanContext::new(root_trace_id, SpanId::generate(), true, "")
+    let child_span = Span::new(
+      "call_" + service_name,
+      Client,
+      child_ctx
+    )
     
-    if not service_already_processed {
-      let mut service_data = []
-      for dp in multi_dimensional_data {
-        if dp.service == data_point.service {
-          service_data = service_data.push(dp)
-        }
-      }
-      
-      // 计算服务级别的统计信息
-      let mut cpu_sum = 0.0
-      let mut memory_sum = 0.0
-      let mut cpu_count = 0
-      let mut memory_count = 0
-      
-      for dp in service_data {
-        match dp.metric {
-          "cpu" => {
-            cpu_sum = cpu_sum + dp.value
-            cpu_count = cpu_count + 1
-          }
-          "memory" => {
-            memory_sum = memory_sum + dp.value
-            memory_count = memory_count + 1
-          }
-          _ => ()
-        }
-      }
-      
-      let avg_cpu = if cpu_count > 0 { cpu_sum / cpu_count.to_float() } else { 0.0 }
-      let avg_memory = if memory_count > 0 { memory_sum / memory_count.to_float() } else { 0.0 }
-      
-      service_aggregates = service_aggregates.push({
-        service: data_point.service,
-        avg_cpu: avg_cpu,
-        avg_memory: avg_memory,
-        instance_count: service_data.length()
-      })
-      
-      processed_services = processed_services.push(data_point.service)
-    }
-  }
-  
-  // 验证聚合结果
-  assert_eq(service_aggregates.length(), 2)
-  
-  // 验证auth服务聚合
-  let auth_service = service_aggregates[0]
-  assert_eq(auth_service.service, "auth")
-  assert_eq(auth_service.avg_cpu, 45.0) // (45 + 50 + 40) / 3
-  assert_eq(auth_service.avg_memory, 1536.0) // (1024 + 2048) / 2
-  assert_eq(auth_service.instance_count, 5)
-  
-  // 验证payment服务聚合
-  let payment_service = service_aggregates[1]
-  assert_eq(payment_service.service, "payment")
-  assert_eq(payment_service.avg_cpu, 57.5) // (60 + 55) / 2
-  assert_eq(payment_service.avg_memory, 1536.0) // 1536 / 1
-  assert_eq(payment_service.instance_count, 2)
-}
-
-// 测试2: 遥测数据异常检测算法
-test "遥测数据异常检测算法" {
-  // 模拟包含异常的遥测数据
-  let telemetry_stream = [
-    { timestamp: 1640995200, metric: "response_time", value: 120.0 },
-    { timestamp: 1640995260, metric: "response_time", value: 125.0 },
-    { timestamp: 1640995320, metric: "response_time", value: 118.0 },
-    { timestamp: 1640995380, metric: "response_time", value: 122.0 },
-    { timestamp: 1640995440, metric: "response_time", value: 450.0 }, // 异常值
-    { timestamp: 1640995500, metric: "response_time", value: 119.0 },
-    { timestamp: 1640995560, metric: "response_time", value: 121.0 },
-    { timestamp: 1640995620, metric: "response_time", value: 15.0 }, // 异常值
-    { timestamp: 1640995680, metric: "response_time", value: 123.0 },
-    { timestamp: 1640995740, metric: "response_time", value: 124.0 }
-  ]
-  
-  // 计算统计基线（使用四分位数方法）
-  let sorted_values = telemetry_stream.map(fn(x) { x.value }).sort(fn(a, b) { a <= b })
-  
-  let q1_index = (sorted_values.length() / 4).to_int()
-  let q3_index = (sorted_values.length() * 3 / 4).to_int()
-  let q1 = sorted_values[q1_index]
-  let q3 = sorted_values[q3_index]
-  let iqr = q3 - q1
-  let lower_bound = q1 - 1.5 * iqr
-  let upper_bound = q3 + 1.5 * iqr
-  
-  // 检测异常值
-  let mut anomalies = []
-  let mut normal_values = []
-  
-  for data_point in telemetry_stream {
-    if data_point.value < lower_bound || data_point.value > upper_bound {
-      anomalies = anomalies.push({
-        timestamp: data_point.timestamp,
-        value: data_point.value,
-        anomaly_type: if data_point.value < lower_bound { "low" } else { "high" },
-        deviation: if data_point.value < lower_bound { lower_bound - data_point.value } else { data_point.value - upper_bound }
-      })
+    // Add service-specific attributes
+    Span::add_event(child_span, "service_call_started", Some([
+      ("service.name", StringValue(service_name)),
+      ("call.sequence", IntValue(i)),
+      ("parent.service", StringValue("root_service"))
+    ]))
+    
+    // Simulate service processing time
+    let processing_time = if service_name == "payment_service" {
+      200L // Payment service takes longer
     } else {
-      normal_values = normal_values.push(data_point.value)
-    }
-  }
-  
-  // 验证异常检测结果
-  assert_eq(anomalies.length(), 2)
-  assert_eq(normal_values.length(), 8)
-  
-  // 验证第一个异常（高值）
-  assert_eq(anomalies[0].timestamp, 1640995440)
-  assert_eq(anomalies[0].value, 450.0)
-  assert_eq(anomalies[0].anomaly_type, "high")
-  assert_true(anomalies[0].deviation > 0)
-  
-  // 验证第二个异常（低值）
-  assert_eq(anomalies[1].timestamp, 1640995620)
-  assert_eq(anomalies[1].value, 15.0)
-  assert_eq(anomalies[1].anomaly_type, "low")
-  assert_true(anomalies[1].deviation > 0)
-}
-
-// 测试3: 智能遥测数据采样策略
-test "智能遥测数据采样策略" {
-  // 模拟高频遥测数据流
-  let high_frequency_data = []
-  let mut i = 0
-  while i < 1000 {
-    high_frequency_data = high_frequency_data.push({
-      timestamp: 1640995200 + i,
-      metric: "cpu",
-      value: 50.0 + (i % 20).to_int().to_float() - 10.0, // 40.0 到 60.0 之间波动
-      importance: if i % 10 == 0 { "high" } else if i % 5 == 0 { "medium" } else { "low" }
-    })
-    i = i + 1
-  }
-  
-  // 实现智能采样策略
-  let sampling_rate = 0.1 // 10% 采样率
-  let mut sampled_data = []
-  let mut high_importance_samples = []
-  let mut medium_importance_samples = []
-  let mut low_importance_samples = []
-  
-  for data_point in high_frequency_data {
-    match data_point.importance {
-      "high" => {
-        // 高重要性数据：100% 采样
-        high_importance_samples = high_importance_samples.push(data_point)
-        sampled_data = sampled_data.push(data_point)
-      }
-      "medium" => {
-        // 中等重要性数据：50% 采样
-        if (data_point.timestamp % 2) == 0 {
-          medium_importance_samples = medium_importance_samples.push(data_point)
-          sampled_data = sampled_data.push(data_point)
-        }
-      }
-      "low" => {
-        // 低重要性数据：5% 采样
-        if (data_point.timestamp % 20) == 0 {
-          low_importance_samples = low_importance_samples.push(data_point)
-          sampled_data = sampled_data.push(data_point)
-        }
-      }
-      _ => ()
-    }
-  }
-  
-  // 验证采样结果
-  assert_eq(high_importance_samples.length(), 100) // 1000 / 10
-  assert_eq(medium_importance_samples.length(), 50)  // 约 1000 / 10 / 2
-  assert_eq(low_importance_samples.length(), 50)    // 约 1000 / 10 / 2
-  
-  let total_sampled = high_importance_samples.length() + medium_importance_samples.length() + low_importance_samples.length()
-  assert_eq(total_sampled, sampled_data.length())
-  
-  // 验证采样数据的代表性
-  let original_avg = 50.0 // 理论平均值
-  let mut sampled_sum = 0.0
-  for sample in sampled_data {
-    sampled_sum = sampled_sum + sample.value
-  }
-  let sampled_avg = sampled_sum / sampled_data.length().to_float()
-  
-  // 采样平均值应该接近原始平均值
-  assert_true(sampled_avg >= 45.0 && sampled_avg <= 55.0)
-}
-
-// 测试4: 遥测数据预测性分析
-test "遥测数据预测性分析" {
-  // 模拟历史遥测数据
-  let historical_data = [
-    { timestamp: 1640995200, metric: "cpu", value: 45.0 },
-    { timestamp: 1640995260, metric: "cpu", value: 48.0 },
-    { timestamp: 1640995320, metric: "cpu", value: 52.0 },
-    { timestamp: 1640995380, metric: "cpu", value: 55.0 },
-    { timestamp: 1640995440, metric: "cpu", value: 58.0 },
-    { timestamp: 1640995500, metric: "cpu", value: 60.0 },
-    { timestamp: 1640995560, metric: "cpu", value: 63.0 },
-    { timestamp: 1640995620, metric: "cpu", value: 65.0 },
-    { timestamp: 1640995680, metric: "cpu", value: 68.0 },
-    { timestamp: 1640995740, metric: "cpu", value: 70.0 }
-  ]
-  
-  // 简单线性回归预测
-  let n = historical_data.length()
-  let mut sum_x = 0.0
-  let mut sum_y = 0.0
-  let mut sum_xy = 0.0
-  let mut sum_x2 = 0.0
-  
-  for i in 0..n {
-    let x = i.to_float()
-    let y = historical_data[i].value
-    sum_x = sum_x + x
-    sum_y = sum_y + y
-    sum_xy = sum_xy + x * y
-    sum_x2 = sum_x2 + x * x
-  }
-  
-  // 计算回归系数
-  let slope = (n.to_float() * sum_xy - sum_x * sum_y) / (n.to_float() * sum_x2 - sum_x * sum_x)
-  let intercept = (sum_y - slope * sum_x) / n.to_float()
-  
-  // 预测未来值
-  let future_timestamps = [10, 11, 12, 13, 14] // 接下来的5个时间点
-  let mut predictions = []
-  
-  for future_x in future_timestamps {
-    let predicted_value = slope * future_x.to_float() + intercept
-    predictions = predictions.push({
-      timestamp: 1640995200 + future_x * 60,
-      predicted_value: predicted_value,
-      confidence: if future_x <= 12 { "high" } else if future_x <= 13 { "medium" } else { "low" }
-    })
-  }
-  
-  // 验证预测结果
-  assert_eq(predictions.length(), 5)
-  
-  // 验证趋势（应该是上升趋势）
-  assert_true(predictions[0].predicted_value < predictions[1].predicted_value)
-  assert_true(predictions[1].predicted_value < predictions[2].predicted_value)
-  assert_true(predictions[2].predicted_value < predictions[3].predicted_value)
-  assert_true(predictions[3].predicted_value < predictions[4].predicted_value)
-  
-  // 验证预测值的合理性
-  assert_true(predictions[0].predicted_value > 70.0) // 应该高于最后一个历史值
-  assert_true(predictions[4].predicted_value < 100.0) // 合理范围内
-  
-  // 验证置信度递减
-  assert_eq(predictions[0].confidence, "high")
-  assert_eq(predictions[1].confidence, "high")
-  assert_eq(predictions[2].confidence, "high")
-  assert_eq(predictions[3].confidence, "medium")
-  assert_eq(predictions[4].confidence, "low")
-}
-
-// 测试5: 遥测数据关联性分析
-test "遥测数据关联性分析" {
-  // 模拟多个指标的遥测数据
-  let multi_metric_data = [
-    { timestamp: 1640995200, cpu: 45.0, memory: 1024.0, disk_io: 100.0, network: 50.0 },
-    { timestamp: 1640995260, cpu: 50.0, memory: 1080.0, disk_io: 120.0, network: 55.0 },
-    { timestamp: 1640995320, cpu: 55.0, memory: 1150.0, disk_io: 140.0, network: 60.0 },
-    { timestamp: 1640995380, cpu: 60.0, memory: 1230.0, disk_io: 160.0, network: 65.0 },
-    { timestamp: 1640995440, cpu: 58.0, memory: 1200.0, disk_io: 150.0, network: 62.0 },
-    { timestamp: 1640995500, cpu: 52.0, memory: 1100.0, disk_io: 130.0, network: 58.0 },
-    { timestamp: 1640995560, cpu: 48.0, memory: 1050.0, disk_io: 110.0, network: 54.0 },
-    { timestamp: 1640995620, cpu: 65.0, memory: 1300.0, disk_io: 180.0, network: 70.0 }
-  ]
-  
-  // 计算CPU与内存的相关系数
-  let n = multi_metric_data.length().to_float()
-  let mut cpu_sum = 0.0
-  let mut memory_sum = 0.0
-  let mut cpu_memory_sum = 0.0
-  let mut cpu_sum_sq = 0.0
-  let mut memory_sum_sq = 0.0
-  
-  for data_point in multi_metric_data {
-    cpu_sum = cpu_sum + data_point.cpu
-    memory_sum = memory_sum + data_point.memory
-    cpu_memory_sum = cpu_memory_sum + data_point.cpu * data_point.memory
-    cpu_sum_sq = cpu_sum_sq + data_point.cpu * data_point.cpu
-    memory_sum_sq = memory_sum_sq + data_point.memory * data_point.memory
-  }
-  
-  let cpu_mean = cpu_sum / n
-  let memory_mean = memory_sum / n
-  
-  let mut numerator = 0.0
-  let mut cpu_variance_sum = 0.0
-  let mut memory_variance_sum = 0.0
-  
-  for data_point in multi_metric_data {
-    let cpu_diff = data_point.cpu - cpu_mean
-    let memory_diff = data_point.memory - memory_mean
-    numerator = numerator + cpu_diff * memory_diff
-    cpu_variance_sum = cpu_variance_sum + cpu_diff * cpu_diff
-    memory_variance_sum = memory_variance_sum + memory_diff * memory_diff
-  }
-  
-  let correlation = numerator / (cpu_variance_sum.sqrt() * memory_variance_sum.sqrt())
-  
-  // 计算其他指标的相关性
-  let mut correlations = []
-  
-  // CPU与磁盘IO相关性
-  let mut cpu_disk_sum = 0.0
-  let mut disk_sum = 0.0
-  let mut disk_sum_sq = 0.0
-  for data_point in multi_metric_data {
-    cpu_disk_sum = cpu_disk_sum + data_point.cpu * data_point.disk_io
-    disk_sum = disk_sum + data_point.disk_io
-    disk_sum_sq = disk_sum_sq + data_point.disk_io * data_point.disk_io
-  }
-  let disk_mean = disk_sum / n
-  let mut cpu_disk_numer = 0.0
-  let mut disk_variance_sum = 0.0
-  for data_point in multi_metric_data {
-    let cpu_diff = data_point.cpu - cpu_mean
-    let disk_diff = data_point.disk_io - disk_mean
-    cpu_disk_numer = cpu_disk_numer + cpu_diff * disk_diff
-    disk_variance_sum = disk_variance_sum + disk_diff * disk_diff
-  }
-  let cpu_disk_correlation = cpu_disk_numer / (cpu_variance_sum.sqrt() * disk_variance_sum.sqrt())
-  
-  correlations = correlations.push({
-    metric1: "cpu",
-    metric2: "memory",
-    correlation: correlation,
-    strength: if correlation.abs() > 0.7 { "strong" } else if correlation.abs() > 0.3 { "moderate" } else { "weak" }
-  })
-  
-  correlations = correlations.push({
-    metric1: "cpu",
-    metric2: "disk_io",
-    correlation: cpu_disk_correlation,
-    strength: if cpu_disk_correlation.abs() > 0.7 { "strong" } else if cpu_disk_correlation.abs() > 0.3 { "moderate" } else { "weak" }
-  })
-  
-  // 验证相关性分析结果
-  assert_eq(correlations.length(), 2)
-  
-  // CPU和内存应该有强正相关
-  assert_true(correlations[0].correlation > 0.7)
-  assert_eq(correlations[0].metric1, "cpu")
-  assert_eq(correlations[0].metric2, "memory")
-  assert_eq(correlations[0].strength, "strong")
-  
-  // CPU和磁盘IO应该有强正相关
-  assert_true(correlations[1].correlation > 0.7)
-  assert_eq(correlations[1].metric1, "cpu")
-  assert_eq(correlations[1].metric2, "disk_io")
-  assert_eq(correlations[1].strength, "strong")
-}
-
-// 测试6: 遥测数据自适应阈值调整
-test "遥测数据自适应阈值调整" {
-  // 模拟随时间变化的遥测数据
-  let time_varying_data = [
-    { timestamp: 1640995200, hour: 8, metric: "response_time", value: 120.0 }, // 早晨
-    { timestamp: 1640995260, hour: 8, metric: "response_time", value: 125.0 },
-    { timestamp: 1640995320, hour: 9, metric: "response_time", value: 150.0 }, // 上午高峰
-    { timestamp: 1640995380, hour: 9, metric: "response_time", value: 155.0 },
-    { timestamp: 1640995440, hour: 10, metric: "response_time", value: 140.0 },
-    { timestamp: 1640995500, hour: 10, metric: "response_time", value: 145.0 },
-    { timestamp: 1640995560, hour: 14, metric: "response_time", value: 160.0 }, // 下午高峰
-    { timestamp: 1640995620, hour: 14, metric: "response_time", value: 165.0 },
-    { timestamp: 1640995680, hour: 18, metric: "response_time", value: 130.0 }, // 晚上
-    { timestamp: 1640995740, hour: 18, metric: "response_time", value: 135.0 },
-    { timestamp: 1640995800, hour: 22, metric: "response_time", value: 110.0 }, // 深夜
-    { timestamp: 1640995860, hour: 22, metric: "response_time", value: 115.0 }
-  ]
-  
-  // 按时间段分组计算基线
-  let time_periods = [
-    { name: "morning", start_hour: 6, end_hour: 10 },
-    { name: "afternoon", start_hour: 10, end_hour: 16 },
-    { name: "evening", start_hour: 16, end_hour: 22 },
-    { name: "night", start_hour: 22, end_hour: 24 }
-  ]
-  
-  let mut period_baselines = []
-  
-  for period in time_periods {
-    let mut period_data = []
-    for data_point in time_varying_data {
-      if data_point.hour >= period.start_hour && data_point.hour < period.end_hour {
-        period_data = period_data.push(data_point.value)
-      }
+      50L // Other services are faster
     }
     
-    if period_data.length() > 0 {
-      let mut sum = 0.0
-      for value in period_data {
-        sum = sum + value
-      }
-      let avg = sum / period_data.length().to_float()
+    Span::add_event(child_span, "service_processing", Some([
+      ("processing.time_ms", IntValue(processing_time)),
+      ("service.load", FloatValue(0.75))
+    ]))
+    
+    // Add nested spans for complex operations
+    if service_name == "order_service" {
+      let nested_ctx = SpanContext::new(root_trace_id, SpanId::generate(), true, "")
+      let nested_span = Span::new("database_query", Internal, nested_ctx)
       
-      // 计算标准差
-      let mut variance_sum = 0.0
-      for value in period_data {
-        let diff = value - avg
-        variance_sum = variance_sum + diff * diff
-      }
-      let std_dev = (variance_sum / period_data.length().to_float()).sqrt()
+      Span::add_event(nested_span, "query_started", Some([
+        ("query.type", StringValue("SELECT")),
+        ("table", StringValue("orders")),
+        ("complexity", StringValue("high"))
+      ]))
       
-      period_baselines = period_baselines.push({
-        period: period.name,
-        baseline: avg,
-        upper_threshold: avg + 2.0 * std_dev,
-        lower_threshold: avg - 2.0 * std_dev,
-        data_count: period_data.length()
-      })
+      Span::set_status(nested_span, Ok, Some("Query executed successfully"))
+      Span::end(nested_span)
+    }
+    
+    Span::set_status(child_span, Ok, Some(service_name + " call completed"))
+    Span::end(child_span)
+    child_spans.push(child_span)
+  }
+  
+  // Add completion event to root span
+  Span::add_event(root_span, "all_services_completed", Some([
+    ("total.services", IntValue(service_names.length())),
+    ("total.duration_ms", IntValue(450))
+  ]))
+  
+  Span::set_status(root_span, Ok, Some("Distributed operation completed successfully"))
+  Span::end(root_span)
+  
+  // Verify trace integrity
+  assert_eq(SpanContext::trace_id(root_ctx), root_trace_id)
+  assert_eq(child_spans.length(), service_names.length())
+  
+  // Test trace export and analysis
+  let trace_data = TraceExporter::export_trace(root_trace_id)
+  assert_true(trace_data.spans.length() > 0)
+  assert_eq(trace_data.root_span.name, "distributed_root_operation")
+}
+
+// Test 2: Advanced Metrics with Aggregation
+test "advanced metrics with aggregation" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "advanced_metrics_meter")
+  
+  // Create complex metric instruments
+  let request_counter = Meter::create_counter(meter, "http_requests_total", Some("Total HTTP requests"), Some("count"))
+  let response_histogram = Meter::create_histogram(meter, "http_response_duration", Some("HTTP response duration"), Some("ms"))
+  let error_gauge = Meter::create_gauge(meter, "current_errors", Some("Current error count"), Some("errors"))
+  let memory_updown = Meter::create_updown_counter(meter, "memory_usage", Some("Memory usage"), Some("bytes"))
+  
+  // Simulate complex metric scenarios
+  let endpoints = ["/api/users", "/api/orders", "/api/products", "/api/payments"]
+  let status_codes = [200, 201, 400, 404, 500]
+  
+  for i in 0..<1000 {
+    let endpoint = endpoints[i % endpoints.length()]
+    let status_code = status_codes[i % status_codes.length()]
+    let response_time = 50.0 + (i % 200).to_float() + Float::random() * 100.0
+    
+    // Record request with detailed attributes
+    Counter::add(request_counter, 1.0, Some([
+      ("endpoint", StringValue(endpoint)),
+      ("method", StringValue("GET")),
+      ("status_code", IntValue(status_code)),
+      ("user_type", if i % 10 == 0 { "premium" } else { "regular" })
+    ]))
+    
+    // Record response time
+    Histogram::record(response_histogram, response_time, Some([
+      ("endpoint", StringValue(endpoint)),
+      ("cache_hit", BoolValue(i % 3 == 0))
+    ]))
+    
+    // Simulate error tracking
+    if status_code >= 400 {
+      let current_errors = if i % 2 == 0 { 1.0 } else { -1.0 }
+      Gauge::set(error_gauge, Gauge::get(error_gauge) + current_errors, Some([
+        ("error_type", if status_code == 404 { "not_found" } else { "server_error" }),
+        ("endpoint", StringValue(endpoint))
+      ]))
+    }
+    
+    // Simulate memory usage tracking
+    let memory_delta = if i % 5 == 0 { 1024.0 } else { -512.0 }
+    UpDownCounter::add(memory_updown, memory_delta, Some([
+      ("component", StringValue("api_handler")),
+      ("operation", StringValue("request_processing"))
+    ]))
+  }
+  
+  // Test metric aggregation and analysis
+  let aggregation_result = MetricsAggregator::aggregate_metrics(meter)
+  
+  // Verify aggregation results
+  assert_true(aggregation_result.counters.length() > 0)
+  assert_true(aggregation_result.histograms.length() > 0)
+  assert_true(aggregation_result.gauges.length() > 0)
+  
+  // Test percentile calculations
+  let response_percentiles = Histogram::percentiles(response_histogram, [50.0, 90.0, 95.0, 99.0])
+  assert_true(response_percentiles.length() == 4)
+  assert_true(response_percentiles[0] < response_percentiles[3]) // P50 < P99
+}
+
+// Test 3: Advanced Logging with Correlation
+test "advanced logging with correlation" {
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "advanced_logger")
+  
+  // Create correlated log sequence
+  let correlation_id = Uuid::generate()
+  let trace_id = TraceId::generate()
+  let span_id = SpanId::generate()
+  
+  let base_attrs = [
+    ("correlation_id", StringValue(correlation_id)),
+    ("trace_id", StringValue(trace_id)),
+    ("session_id", StringValue("session_" + Uuid::generate())),
+    ("user_id", StringValue("user_12345")),
+    ("request_id", StringValue("req_" + Uuid::generate()))
+  ]
+  
+  // Create log sequence representing a user journey
+  let log_sequence = [
+    (Info, "User authentication started", [("auth_method", StringValue("oauth2"))]),
+    (Info, "User authenticated successfully", [("auth_duration_ms", IntValue(150))]),
+    (Info, "Loading user profile", [("profile_source", StringValue("database"))]),
+    (Warn, "User profile partially loaded", [("missing_fields", IntValue(2))]),
+    (Info, "Processing user request", [("request_type", StringValue("order_creation"))]),
+    (Error, "Payment processing failed", [("error_code", StringValue("PAYMENT_DECLINED"))]),
+    (Info, "Retrying payment processing", [("retry_attempt", IntValue(1))]),
+    (Info, "Payment processing succeeded", [("payment_id", StringValue("pay_12345"))]),
+    (Info, "Order created successfully", [("order_id", StringValue("order_67890"))]),
+    (Info, "User journey completed", [("total_duration_ms", IntValue(2500))])
+  ]
+  
+  for (i, (severity, message, additional_attrs)) in log_sequence.enumerate() {
+    let all_attrs = Array::concat(base_attrs, additional_attrs)
+    let timestamp = Clock::monotonic() + (i * 100).to_long()
+    
+    let log_record = LogRecord::new_with_context(
+      severity,
+      Some(message),
+      Some(Attributes::from_array(all_attrs)),
+      Some(timestamp),
+      Some(timestamp + 10L),
+      Some(trace_id),
+      Some(span_id),
+      None
+    )
+    
+    Logger::emit(logger, log_record)
+  }
+  
+  // Test log correlation and analysis
+  let correlation_analysis = LogAnalyzer::analyze_correlation(correlation_id)
+  
+  assert_eq(correlation_analysis.correlation_id, correlation_id)
+  assert_eq(correlation_analysis.log_count, log_sequence.length())
+  assert_true(correlation_analysis.has_errors) // Should contain error logs
+  assert_eq(correlation_analysis.error_count, 1) // One error in the sequence
+  
+  // Test log pattern detection
+  let patterns = LogAnalyzer::detect_patterns(logger)
+  assert_true(patterns.length() > 0)
+  
+  // Test log aggregation
+  let aggregated_logs = LogAnalyzer::aggregate_by_severity(logger)
+  assert_true(aggregated_logs.contains_key(Info))
+  assert_true(aggregated_logs.contains_key(Error))
+  assert_true(aggregated_logs.contains_key(Warn))
+}
+
+// Test 4: Real-time Telemetry Processing
+test "real-time telemetry processing" {
+  let processor = RealtimeProcessor::new()
+  
+  // Set up real-time processing pipelines
+  let alert_pipeline = Pipeline::new("alert_pipeline")
+  let metrics_pipeline = Pipeline::new("metrics_pipeline")
+  let storage_pipeline = Pipeline::new("storage_pipeline")
+  
+  // Configure alert rules
+  let error_rate_rule = AlertRule::new(
+    "high_error_rate",
+    "error_rate > 0.1",
+    Duration::from_seconds(60),
+    Severity::Critical
+  )
+  
+  let latency_rule = AlertRule::new(
+    "high_latency",
+    "p95_latency > 1000",
+    Duration::from_seconds(30),
+    Severity::Warning
+  )
+  
+  Pipeline::add_rule(alert_pipeline, error_rate_rule)
+  Pipeline::add_rule(alert_pipeline, latency_rule)
+  
+  // Simulate real-time telemetry stream
+  let telemetry_stream = TelemetryStream::new()
+  
+  for i in 0..<100 {
+    let timestamp = Clock::monotonic() + (i * 100).to_long()
+    
+    // Generate metrics
+    let metric = TelemetryMetric::new(
+      "response_time",
+      50.0 + (i % 500).to_float(),
+      timestamp,
+      [("endpoint", StringValue("/api/data")), ("status", StringValue("200"))]
+    )
+    
+    // Generate logs
+    let log = TelemetryLog::new(
+      if i % 20 == 0 { Error } else { Info },
+      "Processing request " + i.to_string(),
+      timestamp,
+      [("request_id", StringValue("req_" + i.to_string()))]
+    )
+    
+    // Generate traces
+    let span = TelemetrySpan::new(
+      "process_request",
+      timestamp,
+      timestamp + 50,
+      [("operation", StringValue("data_processing"))]
+    )
+    
+    // Process telemetry data
+    let alert_result = Pipeline::process(alert_pipeline, metric)
+    let metrics_result = Pipeline::process(metrics_pipeline, log)
+    let storage_result = Pipeline::process(storage_pipeline, span)
+    
+    // Check for alerts
+    if alert_result.has_alerts {
+      for alert in alert_result.alerts {
+        assert_true(alert.severity >= Severity::Warning)
+        assert_true(alert.rule_name.length() > 0)
+      }
     }
   }
   
-  // 验证自适应基线
-  assert_eq(period_baselines.length(), 4)
+  // Test real-time analytics
+  let analytics = RealtimeAnalytics::new()
+  Analytics::update(analytics, telemetry_stream)
   
-  // 验证不同时间段的基线差异
-  let morning_baseline = period_baselines[0]
-  let afternoon_baseline = period_baselines[1]
-  let evening_baseline = period_baselines[2]
-  let night_baseline = period_baselines[3]
+  let current_metrics = Analytics::current_metrics(analytics)
+  assert_true(current_metrics.request_rate > 0.0)
+  assert_true(current_metrics.error_rate >= 0.0)
   
-  // 下午和晚上的基线应该高于早晨和深夜
-  assert_true(afternoon_baseline.baseline > morning_baseline.baseline)
-  assert_true(evening_baseline.baseline > morning_baseline.baseline)
-  assert_true(morning_baseline.baseline > night_baseline.baseline)
+  let trends = Analytics::trends(analytics, Duration::from_minutes(5))
+  assert_true(trends.length() > 0)
+}
+
+// Test 5: Telemetry Data Enrichment
+test "telemetry data enrichment" {
+  let enricher = DataEnricher::new()
   
-  // 验证阈值的合理性
-  assert_true(morning_baseline.upper_threshold > morning_baseline.baseline)
-  assert_true(morning_baseline.lower_threshold < morning_baseline.baseline)
-  assert_true(afternoon_baseline.upper_threshold > afternoon_baseline.baseline)
-  assert_true(afternoon_baseline.lower_threshold < afternoon_baseline.baseline)
+  // Configure enrichment rules
+  let geo_enrichment = EnrichmentRule::geo_location("ip_address")
+  let user_enrichment = EnrichmentRule::user_profile("user_id")
+  let service_enrichment = EnrichmentRule::service_metadata("service_name")
+  
+  Enricher::add_rule(enricher, geo_enrichment)
+  Enricher::add_rule(enricher, user_enrichment)
+  Enricher::add_rule(enricher, service_enrichment)
+  
+  // Create base telemetry data
+  let base_attrs = [
+    ("ip_address", StringValue("192.168.1.100")),
+    ("user_id", StringValue("user_12345")),
+    ("service_name", StringValue("api_service")),
+    ("request_id", StringValue("req_67890"))
+  ]
+  
+  let span = Span::new("enriched_operation", Internal, SpanContext::new("trace", "span", true, ""))
+  
+  // Add base attributes
+  for (key, value) in base_attrs {
+    Span::add_event(span, "base_attribute", Some([(key, value)]))
+  }
+  
+  // Apply enrichment
+  let enriched_span = Enricher::enrich_span(enricher, span)
+  
+  // Verify enrichment results
+  let enriched_attrs = Span::get_all_attributes(enriched_span)
+  
+  // Should contain original attributes
+  assert_true(enriched_attrs.contains_key("ip_address"))
+  assert_true(enriched_attrs.contains_key("user_id"))
+  assert_true(enriched_attrs.contains_key("service_name"))
+  
+  // Should contain enriched attributes
+  assert_true(enriched_attrs.contains_key("country"))
+  assert_true(enriched_attrs.contains_key("city"))
+  assert_true(enriched_attrs.contains_key("user_tier"))
+  assert_true(enriched_attrs.contains_key("service_version"))
+  
+  // Test conditional enrichment
+  let conditional_rule = EnrichmentRule::conditional(
+    "user_tier == 'premium'",
+    [("priority", StringValue("high")), ("sla", StringValue("99.9%"))]
+  )
+  
+  Enricher::add_rule(enricher, conditional_rule)
+  let conditionally_enriched = Enricher::enrich_span(enricher, span)
+  
+  let conditional_attrs = Span::get_all_attributes(conditionally_enriched)
+  if conditional_attrs.get("user_tier") == Some(StringValue("premium")) {
+    assert_true(conditional_attrs.contains_key("priority"))
+    assert_true(conditional_attrs.contains_key("sla"))
+  }
+}
+
+// Test 6: Telemetry Data Sampling
+test "telemetry data sampling" {
+  let sampler = AdaptiveSampler::new()
+  
+  // Configure sampling strategies
+  let trace_sampling = SamplingStrategy::trace_based(0.1) // 10% sample rate
+  let error_sampling = SamplingStrategy::error_based(1.0)  // 100% for errors
+  let latency_sampling = SamplingStrategy::latency_based(1000.0, 0.5) // 50% for >1000ms
+  
+  Sampler::add_strategy(sampler, trace_sampling)
+  Sampler::add_strategy(sampler, error_sampling)
+  Sampler::add_strategy(sampler, latency_sampling)
+  
+  let sampled_data = []
+  let total_data = []
+  
+  // Generate test data with different characteristics
+  for i in 0..<1000 {
+    let latency = 50.0 + (i % 2000).to_float()
+    let is_error = i % 50 == 0
+    let severity = if is_error { Error } else { Info }
+    
+    let log_record = LogRecord::new_with_context(
+      severity,
+      Some("Test log " + i.to_string()),
+      Some(Attributes::from_array([
+        ("latency", FloatValue(latency)),
+        ("is_error", BoolValue(is_error)),
+        ("request_id", StringValue("req_" + i.to_string()))
+      ])),
+      Some(Clock::monotonic()),
+      None,
+      None,
+      None,
+      None
+    )
+    
+    total_data.push(log_record)
+    
+    // Apply sampling
+    if Sampler::should_sample(sampler, log_record) {
+      sampled_data.push(log_record)
+    }
+  }
+  
+  // Verify sampling results
+  assert_true(sampled_data.length() < total_data.length())
+  assert_true(sampled_data.length() > 0)
+  
+  // All errors should be sampled
+  let error_logs = Array::filter(total_data, |log| LogRecord::severity_number(log) == Error)
+  let sampled_errors = Array::filter(sampled_data, |log| LogRecord::severity_number(log) == Error)
+  assert_eq(error_logs.length(), sampled_errors.length())
+  
+  // High latency logs should have higher sampling rate
+  let high_latency_logs = Array::filter(total_data, |log| {
+    match LogRecord::get_attribute(log, "latency") {
+      Some(FloatValue(latency)) => latency > 1000.0
+      _ => false
+    }
+  })
+  
+  let sampled_high_latency = Array::filter(sampled_data, |log| {
+    match LogRecord::get_attribute(log, "latency") {
+      Some(FloatValue(latency)) => latency > 1000.0
+      _ => false
+    }
+  })
+  
+  assert_true(sampled_high_latency.length() > 0)
+  
+  // Test adaptive sampling
+  let adaptive_result = Sampler::adaptive_sampling(sampler, total_data, target_rate = 0.15)
+  assert_true(adaptive_result.actual_rate >= 0.1)
+  assert_true(adaptive_result.actual_rate <= 0.2)
+}
+
+// Test 7: Telemetry Data Transformation
+test "telemetry data transformation" {
+  let transformer = DataTransformer::new()
+  
+  // Configure transformation rules
+  let unit_conversion = TransformationRule::unit_conversion([
+    ("latency_ms", "ms", "s"),
+    ("memory_mb", "MB", "bytes"),
+    ("size_kb", "KB", "bytes")
+  ])
+  
+  let format_normalization = TransformationRule::format_normalization([
+    ("timestamp", "unix_to_iso"),
+    ("user_agent", "normalize"),
+    ("url", "decode")
+  ])
+  
+  let pii_masking = TransformationRule::pii_masking([
+    "email",
+    "phone_number",
+    "credit_card",
+    "ssn"
+  ])
+  
+  Transformer::add_rule(transformer, unit_conversion)
+  Transformer::add_rule(transformer, format_normalization)
+  Transformer::add_rule(transformer, pii_masking)
+  
+  // Create test data with various formats
+  let raw_attrs = [
+    ("latency_ms", FloatValue(1500.0)),
+    ("memory_mb", FloatValue(512.0)),
+    ("size_kb", FloatValue(1024.0)),
+    ("timestamp", IntValue(1640995200)),
+    ("user_agent", StringValue("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")),
+    ("url", StringValue("https%3A//example.com/path%3Fparam%3Dvalue")),
+    ("email", StringValue("user@example.com")),
+    ("phone_number", StringValue("+1-555-123-4567")),
+    ("request_id", StringValue("req_12345"))
+  ]
+  
+  let attrs = Attributes::from_array(raw_attrs)
+  
+  // Apply transformations
+  let transformed_attrs = Transformer::transform_attributes(transformer, attrs)
+  
+  // Verify unit conversions
+  match transformed_attrs.get("latency_s") {
+    Some(FloatValue(value)) => assert_eq(value, 1.5)
+    _ => assert_true(false)
+  }
+  
+  match transformed_attrs.get("memory_bytes") {
+    Some(FloatValue(value)) => assert_eq(value, 512.0 * 1024.0 * 1024.0)
+    _ => assert_true(false)
+  }
+  
+  // Verify format normalization
+  match transformed_attrs.get("timestamp_iso") {
+    Some(StringValue(value)) => assert_true(value.contains("T"))
+    _ => assert_true(false)
+  }
+  
+  match transformed_attrs.get("url") {
+    Some(StringValue(value)) => assert_eq(value, "https://example.com/path?param=value")
+    _ => assert_true(false)
+  }
+  
+  // Verify PII masking
+  match transformed_attrs.get("email") {
+    Some(StringValue(value)) => assert_eq(value, "u***@example.com")
+    _ => assert_true(false)
+  }
+  
+  match transformed_attrs.get("phone_number") {
+    Some(StringValue(value)) => assert_eq(value, "+1-***-***-4567")
+    _ => assert_true(false)
+  }
+  
+  // Non-PII data should remain unchanged
+  match transformed_attrs.get("request_id") {
+    Some(StringValue(value)) => assert_eq(value, "req_12345")
+    _ => assert_true(false)
+  }
+}
+
+// Test 8: Telemetry Data Retention and Archiving
+test "telemetry data retention and archiving" {
+  let retention_manager = RetentionManager::new()
+  
+  // Configure retention policies
+  let realtime_policy = RetentionPolicy::new(
+    "realtime_data",
+    Duration::from_hours(1),
+    StorageTier::Memory,
+    Compression::None
+  )
+  
+  let recent_policy = RetentionPolicy::new(
+    "recent_data",
+    Duration::from_days(7),
+    StorageTier::SSD,
+    Compression::LZ4
+  )
+  
+  let historical_policy = RetentionPolicy::new(
+    "historical_data",
+    Duration::from_days(365),
+    StorageTier::Cloud,
+    Compression::GZIP
+  )
+  
+  let archive_policy = RetentionPolicy::new(
+    "archive_data",
+    Duration::from_years(7),
+    StorageTier::ColdStorage,
+    Compression::ZSTD
+  )
+  
+  RetentionManager::add_policy(retention_manager, realtime_policy)
+  RetentionManager::add_policy(retention_manager, recent_policy)
+  RetentionManager::add_policy(retention_manager, historical_policy)
+  RetentionManager::add_policy(retention_manager, archive_policy)
+  
+  // Generate test data with different ages
+  let current_time = Clock::monotonic()
+  let test_data = []
+  
+  // Realtime data (current)
+  for i in 0..<100 {
+    let data = TelemetryData::new(
+      "realtime_" + i.to_string(),
+      current_time - (i * 1000).to_long(),
+      [("tier", StringValue("realtime"))]
+    )
+    test_data.push(data)
+  }
+  
+  // Recent data (1 day old)
+  for i in 0..<100 {
+    let data = TelemetryData::new(
+      "recent_" + i.to_string(),
+      current_time - Duration::from_days(1).to_long() - (i * 1000).to_long(),
+      [("tier", StringValue("recent"))]
+    )
+    test_data.push(data)
+  }
+  
+  // Historical data (30 days old)
+  for i in 0..<50 {
+    let data = TelemetryData::new(
+      "historical_" + i.to_string(),
+      current_time - Duration::from_days(30).to_long() - (i * 1000).to_long(),
+      [("tier", StringValue("historical"))]
+    )
+    test_data.push(data)
+  }
+  
+  // Apply retention policies
+  let retention_result = RetentionManager::apply_policies(retention_manager, test_data)
+  
+  // Verify retention results
+  assert_true(retention_result.kept_data.length() > 0)
+  assert_true(retention_result.archived_data.length() > 0)
+  assert_true(retention_result.deleted_data.length() >= 0)
+  
+  // Verify data is in correct storage tiers
+  let realtime_data = Array::filter(retention_result.kept_data, |data| data.tier == StorageTier::Memory)
+  let recent_data = Array::filter(retention_result.kept_data, |data| data.tier == StorageTier::SSD)
+  let historical_data = Array::filter(retention_result.kept_data, |data| data.tier == StorageTier::Cloud)
+  
+  assert_true(realtime_data.length() > 0)
+  assert_true(recent_data.length() > 0)
+  assert_true(historical_data.length() > 0)
+  
+  // Test data retrieval from different tiers
+  let realtime_retrieved = RetentionManager::retrieve(retention_manager, "realtime", Duration::from_hours(1))
+  let recent_retrieved = RetentionManager::retrieve(retention_manager, "recent", Duration::from_days(7))
+  let historical_retrieved = RetentionManager::retrieve(retention_manager, "historical", Duration::from_days(365))
+  
+  assert_true(realtime_retrieved.length() > 0)
+  assert_true(recent_retrieved.length() > 0)
+  assert_true(historical_retrieved.length() > 0)
+  
+  // Test archive compression
+  let archive_data = RetentionManager::create_archive(retention_manager, historical_data)
+  assert_true(archive_data.compressed_size < archive_data.original_size)
+  assert_eq(archive_data.compression_type, Compression::GZIP)
 }

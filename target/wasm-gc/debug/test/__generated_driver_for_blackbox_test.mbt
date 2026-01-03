@@ -496,6 +496,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_premium_cross_service_consistency_tests.mbt": {
   },
+  "azimuth_premium_cross_platform_tests.mbt": {
+  },
   "azimuth_premium_configuration_management_tests.mbt": {
   },
   "azimuth_premium_concurrent_safety_tests.mbt": {
