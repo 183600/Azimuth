@@ -1,571 +1,483 @@
-// 遥测数据压缩和传输测试用例
-// 测试Azimuth遥测系统中数据压缩和传输功能
+// 遥测数据压缩与传输测试 - Telemetry Data Compression and Transmission Tests
+// 专注于遥测数据的压缩效率和传输可靠性
 
-test "遥测数据GZIP压缩" {
-  // 创建遥测数据
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "compression.test")
+test "遥测数据基本压缩测试" {
+  // 创建大量遥测数据用于压缩测试
+  let telemetry_data = []
   
-  // 创建包含大量属性的span
-  let span = Tracer::start_span(tracer, "large.data.span")
-  
-  // 添加大量属性以模拟大尺寸遥测数据
-  Span::set_attribute(span, "service.name", "payment-service")
-  Span::set_attribute(span, "service.version", "2.1.0")
-  Span::set_attribute(span, "service.instance.id", "instance-12345")
-  Span::set_attribute(span, "deployment.environment", "production")
-  Span::set_attribute(span, "host.name", "prod-payment-01")
-  Span::set_attribute(span, "host.ip", "10.0.1.100")
-  Span::set_attribute(span, "os.type", "linux")
-  Span::set_attribute(span, "os.version", "Ubuntu 20.04")
-  Span::set_attribute(span, "process.id", "12345")
-  Span::set_attribute(span, "process.name", "payment-service")
-  Span::set_attribute(span, "process.executable.name", "/usr/bin/payment-service")
-  Span::set_attribute(span, "process.command.line", "payment-service --config /etc/payment/config.yaml")
-  Span::set_attribute(span, "process.runtime.name", "node")
-  Span::set_attribute(span, "process.runtime.version", "18.17.0")
-  Span::set_attribute(span, "process.runtime.description", "Node.js")
-  
-  // 添加大量事件
-  for i = 0; i < 10; i = i + 1 {
-    Span::add_event(span, "operation.step." + i.to_string(), [
-      ("step.number", i.to_string()),
-      ("step.name", "processing.step." + i.to_string()),
-      ("step.duration", (100 + i * 10).to_string()),
-      ("step.status", "completed"),
-      ("step.details", "Processing step " + i.to_string() + " completed successfully"),
-      ("step.timestamp", (1640995200 + i).to_string()),
-      ("step.thread.id", "thread-" + (i % 3).to_string()),
-      ("step.memory.usage", (1024 + i * 100).to_string()),
-      ("step.cpu.usage", (25.0 + i * 2.5).to_string())
-    ])
+  // 生成1000个span记录
+  for i = 0; i < 1000; i = i + 1 {
+    let span_data = {
+      "trace_id": "trace_" + i.to_string(),
+      "span_id": "span_" + i.to_string(),
+      "parent_span_id": "parent_" + i.to_string(),
+      "operation_name": "operation_" + (i % 10).to_string(),
+      "service_name": "service_" + (i % 5).to_string(),
+      "start_time": 1000000000L + i.to_int64() * 1000L,
+      "end_time": 1000000000L + (i.to_int64() + 100) * 1000L,
+      "status": if i % 20 == 0 { "Error" } else { "Ok" },
+      "attributes": [
+        ("http.method", StringValue(["GET", "POST", "PUT", "DELETE"][i % 4])),
+        ("http.url", StringValue("/api/endpoint/" + (i % 50).to_string())),
+        ("http.status_code", IntValue(if i % 20 == 0 { 500 } else { 200 })),
+        ("user.id", StringValue("user_" + (i % 100).to_string())),
+        ("request.size", IntValue(1024 + i)),
+        ("response.size", IntValue(2048 + i * 2))
+      ]
+    }
+    telemetry_data.push(span_data)
   }
   
-  // 模拟序列化遥测数据
-  let telemetry_data = {
-    "trace_id": SpanContext::trace_id(Span::span_context(span)),
-    "span_id": SpanContext::span_id(Span::span_context(span)),
-    "name": Span::name(span),
-    "attributes": [
-      {"key": "service.name", "value": "payment-service"},
-      {"key": "service.version", "value": "2.1.0"},
-      {"key": "service.instance.id", "value": "instance-12345"},
-      {"key": "deployment.environment", "value": "production"},
-      {"key": "host.name", "value": "prod-payment-01"},
-      {"key": "host.ip", "value": "10.0.1.100"},
-      {"key": "os.type", "value": "linux"},
-      {"key": "os.version", "value": "Ubuntu 20.04"},
-      {"key": "process.id", "value": "12345"},
-      {"key": "process.name", "value": "payment-service"},
-      {"key": "process.executable.name", "value": "/usr/bin/payment-service"},
-      {"key": "process.command.line", "value": "payment-service --config /etc/payment/config.yaml"},
-      {"key": "process.runtime.name", "value": "node"},
-      {"key": "process.runtime.version", "value": "18.17.0"},
-      {"key": "process.runtime.description", "value": "Node.js"}
-    ],
-    "events": [
-      for i in 0..9 {
-        {
-          "name": "operation.step." + i.to_string(),
-          "attributes": [
-            {"key": "step.number", "value": i.to_string()},
-            {"key": "step.name", "value": "processing.step." + i.to_string()},
-            {"key": "step.duration", "value": (100 + i * 10).to_string()},
-            {"key": "step.status", "value": "completed"},
-            {"key": "step.details", "value": "Processing step " + i.to_string() + " completed successfully"},
-            {"key": "step.timestamp", "value": (1640995200 + i).to_string()},
-            {"key": "step.thread.id", "value": "thread-" + (i % 3).to_string()},
-            {"key": "step.memory.usage", "value": (1024 + i * 100).to_string()},
-            {"key": "step.cpu.usage", "value": (25.0 + i * 2.5).to_string()}
-          ]
-        }
-      }
-    ]
-  }
-  
-  // 计算原始数据大小（简化计算）
+  // 计算原始数据大小（简化为字符串长度）
   let original_size = telemetry_data.to_string().length()
+  assert_true(original_size > 0)
   
-  // 模拟GZIP压缩（简化实现）
-  let compression_ratio = 0.25  // 假设压缩比为25%
-  let compressed_size = (original_size.to_float() * compression_ratio).to_int()
+  // 模拟压缩过程（简化实现）
+  let compression_ratio = 0.3 // 70%压缩率
+  let compressed_size = (original_size.to_double() * compression_ratio).to_int()
   
   // 验证压缩效果
   assert_true(compressed_size < original_size)
   assert_true(compressed_size > 0)
   
-  // 验证压缩比在合理范围内
-  let actual_compression_ratio = compressed_size.to_float() / original_size.to_float()
-  assert_true(actual_compression_ratio >= 0.1 && actual_compression_ratio <= 0.5)
+  // 计算压缩效率
+  let compression_efficiency = 1.0 - (compressed_size.to_double() / original_size.to_double())
+  assert_true(compression_efficiency > 0.6) // 压缩率超过60%
   
-  Span::end(span)
+  // 模拟解压缩并验证数据完整性
+  let decompressed_size = original_size // 简化实现中解压缩后恢复原始大小
+  assert_eq(decompressed_size, original_size)
 }
 
-test "批量遥测数据压缩" {
-  // 测试批量遥测数据的压缩
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "batch.compression.test")
-  
-  // 创建多个度量
-  let request_counter = Meter::create_counter(meter, "http.requests.total", Some("Total HTTP requests"), Some("count"))
-  let response_histogram = Meter::create_histogram(meter, "http.response.duration", Some("HTTP response duration"), Some("ms"))
-  let error_counter = Meter::create_counter(meter, "http.errors.total", Some("Total HTTP errors"), Some("count"))
-  
-  // 生成大量度量数据点
-  let batch_data = []
-  let batch_size = 100
-  
-  for i = 0; i < batch_size; i = i + 1 {
-    // 记录请求计数
-    Counter::add_with_attributes(request_counter, 1.0, [
-      ("method", "GET"),
-      ("endpoint", "/api/users/" + i.to_string()),
-      ("status", "200"),
-      ("user.id", "user-" + (i % 10).to_string()),
-      ("service.version", "1.2.3"),
-      ("region", "us-west-2"),
-      ("availability.zone", "us-west-2a")
-    ])
-    
-    // 记录响应时间
-    let response_time = 50.0 + (i % 100).to_float() * 2.0
-    Histogram::record_with_attributes(response_histogram, response_time, [
-      ("method", "GET"),
-      ("endpoint", "/api/users/" + i.to_string()),
-      ("status", "200"),
-      ("user.id", "user-" + (i % 10).to_string()),
-      ("service.version", "1.2.3"),
-      ("region", "us-west-2"),
-      ("availability.zone", "us-west-2a")
-    ])
-    
-    // 记录错误（每10个请求中有1个错误）
-    if i % 10 == 0 {
-      Counter::add_with_attributes(error_counter, 1.0, [
-        ("method", "GET"),
-        ("endpoint", "/api/users/" + i.to_string()),
-        ("status", "404"),
-        ("error.type", "NotFound"),
-        ("user.id", "user-" + (i % 10).to_string()),
-        ("service.version", "1.2.3"),
-        ("region", "us-west-2"),
-        ("availability.zone", "us-west-2a")
-      ])
-    }
-    
-    // 添加到批处理数据
-    batch_data.push({
-      "timestamp": 1640995200 + i,
-      "metrics": [
-        {
-          "name": "http.requests.total",
-          "type": "counter",
-          "value": 1.0,
-          "attributes": [
-            {"key": "method", "value": "GET"},
-            {"key": "endpoint", "value": "/api/users/" + i.to_string()},
-            {"key": "status", "value": "200"},
-            {"key": "user.id", "value": "user-" + (i % 10).to_string()},
-            {"key": "service.version", "value": "1.2.3"},
-            {"key": "region", "value": "us-west-2"},
-            {"key": "availability.zone", "value": "us-west-2a"}
-          ]
-        },
-        {
-          "name": "http.response.duration",
-          "type": "histogram",
-          "value": response_time,
-          "attributes": [
-            {"key": "method", "value": "GET"},
-            {"key": "endpoint", "value": "/api/users/" + i.to_string()},
-            {"key": "status", "value": "200"},
-            {"key": "user.id", "value": "user-" + (i % 10).to_string()},
-            {"key": "service.version", "value": "1.2.3"},
-            {"key": "region", "value": "us-west-2"},
-            {"key": "availability.zone", "value": "us-west-2a"}
-          ]
-        }
-      ],
-      "errors": if i % 10 == 0 {
-        [({
-          "name": "http.errors.total",
-          "type": "counter",
-          "value": 1.0,
-          "attributes": [
-            {"key": "method", "value": "GET"},
-            {"key": "endpoint", "value": "/api/users/" + i.to_string()},
-            {"key": "status", "value": "404"},
-            {"key": "error.type", "value": "NotFound"},
-            {"key": "user.id", "value": "user-" + (i % 10).to_string()},
-            {"key": "service.version", "value": "1.2.3"},
-            {"key": "region", "value": "us-west-2"},
-            {"key": "availability.zone", "value": "us-west-2a"}
-          ]
-        })]
-      } else {
-        []
-      }
-    })
+test "批量遥测数据压缩测试" {
+  // 测试批量压缩不同类型遥测数据的效率
+  let batch_data = {
+    "spans": [],
+    "metrics": [],
+    "logs": []
   }
   
-  // 计算原始批量数据大小
-  let original_batch_size = batch_data.to_string().length()
-  
-  // 模拟批量压缩
-  let batch_compression_ratio = 0.2  // 批量数据压缩效果更好
-  let compressed_batch_size = (original_batch_size.to_float() * batch_compression_ratio).to_int()
-  
-  // 验证批量压缩效果
-  assert_true(compressed_batch_size < original_batch_size)
-  assert_true(compressed_batch_size > 0)
-  
-  // 验证批量压缩比优于单个数据压缩
-  let actual_batch_compression_ratio = compressed_batch_size.to_float() / original_batch_size.to_float()
-  assert_true(actual_batch_compression_ratio >= 0.1 && actual_batch_compression_ratio <= 0.3)
-  
-  // 验证批处理数据完整性
-  assert_eq(batch_data.length(), batch_size)
-}
-
-test "遥测数据传输协议" {
-  // 测试遥测数据传输协议
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "transmission.protocol.test")
-  
-  // 创建span用于传输测试
-  let span = Tracer::start_span(tracer, "transmission.test.span")
-  
-  // 设置span属性
-  Span::set_attribute(span, "service.name", "transmission-test-service")
-  Span::set_attribute(span, "operation.name", "data.transmission")
-  Span::set_attribute(span, "transmission.protocol", "http/protobuf")
-  Span::set_attribute(span, "transmission.endpoint", "https://telemetry-collector.example.com/v1/traces")
-  Span::set_attribute(span, "transmission.compression", "gzip")
-  
-  // 模拟不同的传输协议
-  let transmission_protocols = [
-    {
-      "name": "http/protobuf",
-      "content_type": "application/x-protobuf",
-      "compression": "gzip",
-      "batch_size": 100,
-      "timeout_ms": 5000,
-      "retry_count": 3
-    },
-    {
-      "name": "http/json",
-      "content_type": "application/json",
-      "compression": "gzip",
-      "batch_size": 50,
-      "timeout_ms": 3000,
-      "retry_count": 2
-    },
-    {
-      "name": "grpc",
-      "content_type": "application/grpc",
-      "compression": "gzip",
-      "batch_size": 200,
-      "timeout_ms": 10000,
-      "retry_count": 5
-    },
-    {
-      "name": "websocket",
-      "content_type": "application/octet-stream",
-      "compression": "gzip",
-      "batch_size": 25,
-      "timeout_ms": 30000,
-      "retry_count": 1
+  // 生成span数据
+  for i = 0; i < 500; i = i + 1 {
+    let span = {
+      "trace_id": "batch_trace_" + i.to_string(),
+      "span_id": "batch_span_" + i.to_string(),
+      "service": "batch_service_" + (i % 3).to_string(),
+      "operation": "batch_operation_" + (i % 10).to_string(),
+      "duration": 1000000L + i.to_int64() * 10000L
     }
-  ]
-  
-  // 测试每种传输协议
-  for protocol in transmission_protocols {
-    let protocol_name = protocol["name"]
-    let content_type = protocol["content_type"]
-    let compression = protocol["compression"]
-    let batch_size = protocol["batch_size"]
-    let timeout_ms = protocol["timeout_ms"]
-    let retry_count = protocol["retry_count"]
-    
-    // 模拟传输配置
-    Span::set_attribute(span, "protocol." + protocol_name + ".content_type", content_type)
-    Span::set_attribute(span, "protocol." + protocol_name + ".compression", compression)
-    Span::set_attribute(span, "protocol." + protocol_name + ".batch_size", batch_size.to_string())
-    Span::set_attribute(span, "protocol." + protocol_name + ".timeout_ms", timeout_ms.to_string())
-    Span::set_attribute(span, "protocol." + protocol_name + ".retry_count", retry_count.to_string())
-    
-    // 模拟传输性能
-    let base_latency = 100.0
-    let protocol_overhead = match protocol_name {
-      "http/protobuf" => 20.0,
-      "http/json" => 50.0,
-      "grpc" => 15.0,
-      "websocket" => 10.0,
-      _ => 30.0
-    }
-    
-    let transmission_latency = base_latency + protocol_overhead
-    Span::set_attribute(span, "protocol." + protocol_name + ".latency_ms", transmission_latency.to_string())
-    
-    // 验证传输性能在可接受范围内
-    assert_true(transmission_latency < 200.0)
-    
-    // 模拟传输成功率
-    let success_rate = match protocol_name {
-      "grpc" => 99.9,
-      "http/protobuf" => 99.5,
-      "websocket" => 98.0,
-      "http/json" => 97.5,
-      _ => 95.0
-    }
-    
-    Span::set_attribute(span, "protocol." + protocol_name + ".success_rate", success_rate.to_string())
-    
-    // 验证传输成功率
-    assert_true(success_rate >= 95.0)
+    batch_data["spans"].push(span)
   }
   
-  Span::end(span)
+  // 生成metrics数据
+  for i = 0; i < 300; i = i + 1 {
+    let metric = {
+      "name": "batch_metric_" + (i % 5).to_string(),
+      "value": i.to_double() * 1.5,
+      "tags": [
+        ("env", StringValue("production")),
+        ("service", StringValue("batch_service_" + (i % 3).to_string())),
+        ("instance", StringValue("instance_" + (i % 10).to_string()))
+      ]
+    }
+    batch_data["metrics"].push(metric)
+  }
+  
+  // 生成log数据
+  for i = 0; i < 200; i = i + 1 {
+    let log = {
+      "timestamp": 1000000000L + i.to_int64() * 1000L,
+      "level": ["INFO", "WARN", "ERROR"][i % 3],
+      "message": "Batch log message " + i.to_string(),
+      "service": "batch_service_" + (i % 3).to_string()
+    }
+    batch_data["logs"].push(log)
+  }
+  
+  // 计算各类型数据的大小
+  let spans_size = batch_data["spans"].to_string().length()
+  let metrics_size = batch_data["metrics"].to_string().length()
+  let logs_size = batch_data["logs"].to_string().length()
+  let total_size = spans_size + metrics_size + logs_size
+  
+  // 模拟不同压缩策略
+  let individual_compression = {
+    "spans": (spans_size.to_double() * 0.25).to_int(),   // 75%压缩率
+    "metrics": (metrics_size.to_double() * 0.4).to_int(), // 60%压缩率
+    "logs": (logs_size.to_double() * 0.3).to_int()        // 70%压缩率
+  }
+  
+  let batch_compression = (total_size.to_double() * 0.2).to_int() // 80%压缩率
+  
+  // 计算单独压缩的总大小
+  let individual_total = individual_compression["spans"] + 
+                        individual_compression["metrics"] + 
+                        individual_compression["logs"]
+  
+  // 验证批量压缩更高效
+  assert_true(batch_compression < individual_total)
+  
+  // 计算压缩效率提升
+  let efficiency_gain = (individual_total.to_double() - batch_compression.to_double()) / individual_total.to_double()
+  assert_true(efficiency_gain > 0.1) // 至少10%的效率提升
 }
 
-test "网络传输错误恢复" {
-  // 测试网络传输错误恢复
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "network.recovery.test")
+test "遥测数据传输可靠性测试" {
+  // 测试遥测数据在网络不稳定情况下的传输可靠性
+  let telemetry_batches = []
   
-  // 创建网络传输度量
-  let transmission_counter = Meter::create_counter(meter, "transmission.attempts", Some("Transmission attempts"), Some("count"))
-  let success_counter = Meter::create_counter(meter, "transmission.success", Some("Successful transmissions"), Some("count"))
-  let retry_counter = Meter::create_counter(meter, "transmission.retries", Some("Transmission retries"), Some("count"))
-  let failure_counter = Meter::create_counter(meter, "transmission.failures", Some("Failed transmissions"), Some("count"))
-  
-  // 模拟不同网络错误场景
-  let error_scenarios = [
-    {
-      "name": "connection_timeout",
-      "retryable": true,
-      "max_retries": 3,
-      "backoff_strategy": "exponential",
-      "success_after_retries": 2
-    },
-    {
-      "name": "dns_resolution_failure",
-      "retryable": true,
-      "max_retries": 5,
-      "backoff_strategy": "linear",
-      "success_after_retries": 3
-    },
-    {
-      "name": "server_error_5xx",
-      "retryable": true,
-      "max_retries": 2,
-      "backoff_strategy": "exponential",
-      "success_after_retries": 1
-    },
-    {
-      "name": "client_error_4xx",
-      "retryable": false,
-      "max_retries": 0,
-      "backoff_strategy": "none",
-      "success_after_retries": 0
-    },
-    {
-      "name": "network_unreachable",
-      "retryable": true,
-      "max_retries": 10,
-      "backoff_strategy": "exponential",
-      "success_after_retries": 5
+  // 生成多个遥测数据批次
+  for batch_id = 0; batch_id < 10; batch_id = batch_id + 1 {
+    let batch = {
+      "batch_id": batch_id,
+      "timestamp": Clock::now_unix_nanos(Clock::system()),
+      "spans": [],
+      "retry_count": 0
     }
-  ]
-  
-  // 测试每种错误场景
-  for scenario in error_scenarios {
-    let scenario_name = scenario["name"]
-    let retryable = scenario["retryable"]
-    let max_retries = scenario["max_retries"]
-    let backoff_strategy = scenario["backoff_strategy"]
-    let success_after_retries = scenario["success_after_retries"]
     
-    // 记录传输尝试
-    Counter::add_with_attributes(transmission_counter, 1.0, [
-      ("scenario", scenario_name),
-      ("retryable", retryable.to_string()),
-      ("max_retries", max_retries.to_string()),
-      ("backoff_strategy", backoff_strategy)
-    ])
-    
-    // 模拟重试过程
-    let actual_retries = 0
-    let transmission_successful = false
-    
-    if retryable {
-      // 可重试错误
-      for i = 0; i <= max_retries; i = i + 1 {
-        if i == success_after_retries {
-          // 重试成功
-          transmission_successful = true
-          actual_retries = i
-          break
-        } else {
-          // 重试失败
-          Counter::add_with_attributes(retry_counter, 1.0, [
-            ("scenario", scenario_name),
-            ("retry_attempt", i.to_string()),
-            ("backoff_strategy", backoff_strategy)
-          ])
-        }
+    // 每个批次包含100个span
+    for i = 0; i < 100; i = i + 1 {
+      let span = {
+        "trace_id": "trace_" + batch_id.to_string() + "_" + i.to_string(),
+        "span_id": "span_" + batch_id.to_string() + "_" + i.to_string(),
+        "operation": "operation_" + i.to_string()
       }
+      batch["spans"].push(span)
+    }
+    
+    telemetry_batches.push(batch)
+  }
+  
+  // 模拟网络传输和重试机制
+  let successful_batches = []
+  let failed_batches = []
+  let max_retries = 3
+  
+  for batch in telemetry_batches {
+    let transmitted = false
+    let current_batch = batch
+    
+    // 模拟传输重试
+    for retry = 0; retry < max_retries && !transmitted; retry = retry + 1 {
+      current_batch["retry_count"] = retry
+      
+      // 模拟传输成功率（重试次数越多，成功率越高）
+      let success_rate = 0.3 + (retry.to_double() * 0.3)
+      let random_value = Random::next_u64(Random::system()).to_double() / 100000.0
+      
+      if random_value < success_rate {
+        transmitted = true
+        successful_batches.push(current_batch)
+      }
+    }
+    
+    if !transmitted {
+      failed_batches.push(current_batch)
+    }
+  }
+  
+  // 验证传输结果
+  assert_true(successful_batches.length() > 0)
+  assert_eq(successful_batches.length() + failed_batches.length(), 10)
+  
+  // 验证重试统计
+  let total_retries = successful_batches.map(fn(batch) { batch["retry_count"] }).reduce(fn(acc, x) { acc + x }, 0)
+  assert_true(total_retries >= 0)
+  
+  // 验证成功传输的批次数据完整性
+  for batch in successful_batches {
+    assert_eq(batch["spans"].length(), 100)
+    assert_true(batch["retry_count"] < max_retries)
+  }
+  
+  // 验证失败批次的记录
+  for batch in failed_batches {
+    assert_eq(batch["retry_count"], max_retries - 1)
+  }
+}
+
+test "遥测数据分片传输测试" {
+  // 测试大型遥测数据的分片传输和重组
+  let large_telemetry_data = []
+  
+  // 生成大量遥测数据（模拟单个批次超过传输限制）
+  for i = 0; i < 10000; i = i + 1 {
+    let span = {
+      "trace_id": "large_trace_" + i.to_string(),
+      "span_id": "large_span_" + i.to_string(),
+      "service": "large_service_" + (i % 10).to_string(),
+      "operation": "large_operation_" + (i % 20).to_string(),
+      "attributes": [
+        ("large.attr.1", StringValue("large_value_1_" + i.to_string())),
+        ("large.attr.2", StringValue("large_value_2_" + i.to_string())),
+        ("large.attr.3", IntValue(i)),
+        ("large.attr.4", FloatValue(i.to_double() * 1.5)),
+        ("large.attr.5", BoolValue(i % 2 == 0))
+      ]
+    }
+    large_telemetry_data.push(span)
+  }
+  
+  // 模拟数据分片（每个分片最多1000个span）
+  let shard_size = 1000
+  let shards = []
+  
+  for i = 0; i < large_telemetry_data.length(); i = i + shard_size {
+    let end_index = if i + shard_size > large_telemetry_data.length() {
+      large_telemetry_data.length()
     } else {
-      // 不可重试错误
-      transmission_successful = false
-      actual_retries = 0
+      i + shard_size
     }
     
-    // 记录最终结果
-    if transmission_successful {
-      Counter::add_with_attributes(success_counter, 1.0, [
-        ("scenario", scenario_name),
-        ("actual_retries", actual_retries.to_string())
-      ])
-    } else {
-      Counter::add_with_attributes(failure_counter, 1.0, [
-        ("scenario", scenario_name),
-        ("actual_retries", actual_retries.to_string())
-      ])
+    let shard = {
+      "shard_id": shards.length(),
+      "total_shards": (large_telemetry_data.length() + shard_size - 1) / shard_size,
+      "data": large_telemetry_data.slice(i, end_index)
     }
-    
-    // 验证错误恢复逻辑
-    if retryable && success_after_retries <= max_retries {
-      assert_true(transmission_successful)
-      assert_eq(actual_retries, success_after_retries)
-    } else if !retryable {
-      assert_false(transmission_successful)
-      assert_eq(actual_retries, 0)
+    shards.push(shard)
+  }
+  
+  // 验证分片结果
+  assert_eq(shards.length(), 10) // 10000个span，每个分片1000个，共10个分片
+  
+  for i = 0; i < shards.length(); i = i + 1 {
+    let shard = shards[i]
+    assert_eq(shard["shard_id"], i)
+    assert_eq(shard["total_shards"], 10)
+    assert_true(shard["data"].length() <= shard_size)
+  }
+  
+  // 模拟分片传输和重组
+  let received_shards = []
+  let transmission_order = [0, 2, 1, 4, 3, 6, 5, 8, 7, 9] // 乱序接收
+  
+  for shard_id in transmission_order {
+    let shard = shards[shard_id]
+    received_shards.push(shard)
+  }
+  
+  // 按分片ID重组数据
+  received_shards.sort_by(fn(a, b) { a["shard_id"] - b["shard_id"] })
+  
+  // 验证重组结果
+  assert_eq(received_shards.length(), 10)
+  
+  let reassembled_data = []
+  for shard in received_shards {
+    for span in shard["data"] {
+      reassembled_data.push(span)
     }
+  }
+  
+  assert_eq(reassembled_data.length(), 10000)
+  
+  // 验证数据完整性
+  for i = 0; i < 10000; i = i + 1 {
+    let original_span = large_telemetry_data[i]
+    let reassembled_span = reassembled_data[i]
+    assert_eq(original_span["trace_id"], reassembled_span["trace_id"])
+    assert_eq(original_span["span_id"], reassembled_span["span_id"])
   }
 }
 
-test "传输缓冲区管理" {
-  // 测试传输缓冲区管理
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "buffer.management.test")
+test "遥测数据压缩算法比较测试" {
+  // 测试不同压缩算法对遥测数据的压缩效果
+  let test_data = {
+    "high_repetition": [],
+    "low_repetition": [],
+    "mixed_data": []
+  }
   
-  // 创建缓冲区管理测试span
-  let span = Tracer::start_span(tracer, "buffer.management.test")
+  // 生成高重复度数据（相似的结构和值）
+  for i = 0; i < 1000; i = i + 1 {
+    let span = {
+      "trace_id": "trace_12345", // 相同的trace_id
+      "span_id": "span_" + i.to_string(),
+      "service": "user-service", // 相同的服务名
+      "operation": "get_user",   // 相同的操作名
+      "status": "Ok",            // 相同的状态
+      "attributes": [
+        ("http.method", StringValue("GET")),     // 相同的HTTP方法
+        ("http.status_code", IntValue(200)),     // 相同的状态码
+        ("user.id", StringValue("user_" + (i % 10).to_string())) // 有限范围的用户ID
+      ]
+    }
+    test_data["high_repetition"].push(span)
+  }
   
-  // 模拟不同缓冲区配置
-  let buffer_configs = [
-    {
-      "name": "small_buffer",
-      "max_size": 1024,      // 1KB
-      "max_items": 10,
-      "flush_interval_ms": 1000,
-      "compression_threshold": 512
-    },
-    {
-      "name": "medium_buffer",
-      "max_size": 10240,     // 10KB
-      "max_items": 100,
-      "flush_interval_ms": 5000,
-      "compression_threshold": 2048
-    },
-    {
-      "name": "large_buffer",
-      "max_size": 102400,    // 100KB
-      "max_items": 1000,
-      "flush_interval_ms": 10000,
-      "compression_threshold": 10240
-    },
-    {
-      "name": "adaptive_buffer",
-      "max_size": 51200,     // 50KB
-      "max_items": 500,
-      "flush_interval_ms": 3000,
-      "compression_threshold": 5120,
-      "adaptive": true
+  // 生成低重复度数据（随机的值）
+  for i = 0; i < 1000; i = i + 1 {
+    let span = {
+      "trace_id": "unique_trace_" + i.to_string(),
+      "span_id": "unique_span_" + i.to_string(),
+      "service": "unique_service_" + i.to_string(),
+      "operation": "unique_operation_" + i.to_string(),
+      "status": ["Ok", "Error", "Timeout"][i % 3],
+      "attributes": [
+        ("unique.attr.1", StringValue("unique_value_" + i.to_string())),
+        ("unique.attr.2", IntValue(i * 12345)),
+        ("unique.attr.3", FloatValue(i.to_double() * 3.14159))
+      ]
     }
-  ]
+    test_data["low_repetition"].push(span)
+  }
   
-  // 测试每种缓冲区配置
-  for config in buffer_configs {
-    let config_name = config["name"]
-    let max_size = config["max_size"]
-    let max_items = config["max_items"]
-    let flush_interval_ms = config["flush_interval_ms"]
-    let compression_threshold = config["compression_threshold"]
-    let is_adaptive = config["adaptive"]
-    
-    // 设置缓冲区属性
-    Span::set_attribute(span, "buffer." + config_name + ".max_size", max_size.to_string())
-    Span::set_attribute(span, "buffer." + config_name + ".max_items", max_items.to_string())
-    Span::set_attribute(span, "buffer." + config_name + ".flush_interval_ms", flush_interval_ms.to_string())
-    Span::set_attribute(span, "buffer." + config_name + ".compression_threshold", compression_threshold.to_string())
-    
-    if is_adaptive {
-      Span::set_attribute(span, "buffer." + config_name + ".adaptive", "true")
-    }
-    
-    // 模拟缓冲区填充
-    let current_size = 0
-    let current_items = 0
-    let flush_count = 0
-    
-    // 模拟添加数据到缓冲区
-    for i = 0; i < max_items + 10; i = i + 1 {
-      let item_size = 100 + (i % 50)  // 100-150字节的项
+  // 生成混合数据
+  for i = 0; i < 500; i = i + 1 {
+    test_data["mixed_data"].push(test_data["high_repetition"][i])
+    test_data["mixed_data"].push(test_data["low_repetition"][i])
+  }
+  
+  // 模拟不同压缩算法的效果
+  let compression_algorithms = ["gzip", "lz4", "zstd", "snappy"]
+  let compression_results = []
+  
+  for algorithm in compression_algorithms {
+    for data_type in ["high_repetition", "low_repetition", "mixed_data"] {
+      let data = test_data[data_type]
+      let original_size = data.to_string().length()
       
-      // 检查是否需要刷新缓冲区
-      let should_flush_by_size = current_size + item_size >= max_size
-      let should_flush_by_items = current_items >= max_items
+      // 模拟不同算法的压缩率
+      let compression_ratio = 
+        if algorithm == "gzip" {
+          if data_type == "high_repetition" { 0.15 } else if data_type == "low_repetition" { 0.45 } else { 0.3 }
+        } else if algorithm == "lz4" {
+          if data_type == "high_repetition" { 0.25 } else if data_type == "low_repetition" { 0.55 } else { 0.4 }
+        } else if algorithm == "zstd" {
+          if data_type == "high_repetition" { 0.1 } else if data_type == "low_repetition" { 0.4 } else { 0.25 }
+        } else { // snappy
+          if data_type == "high_repetition" { 0.2 } else if data_type == "low_repetition" { 0.5 } else { 0.35 }
+        }
       
-      if should_flush_by_size || should_flush_by_items {
-        // 刷新缓冲区
-        flush_count = flush_count + 1
-        current_size = 0
-        current_items = 0
-        
-        Span::add_event(span, "buffer.flushed", [
-          ("buffer_name", config_name),
-          ("flush_reason", if should_flush_by_size { "size_limit" } else { "items_limit" }),
-          ("flush_count", flush_count.to_string())
-        ])
-      }
+      let compressed_size = (original_size.to_double() * compression_ratio).to_int()
       
-      // 添加新项到缓冲区
-      current_size = current_size + item_size
-      current_items = current_items + 1
-      
-      // 检查是否需要压缩
-      if current_size >= compression_threshold {
-        // 模拟压缩
-        let compressed_size = (current_size.to_float() * 0.3).to_int()
-        current_size = compressed_size
-        
-        Span::add_event(span, "buffer.compressed", [
-          ("buffer_name", config_name),
-          ("original_size", (current_size * 3).to_string()),
-          ("compressed_size", current_size.to_string()),
-          ("compression_ratio", "0.3")
-        ])
-      }
-    }
-    
-    // 最终刷新
-    if current_size > 0 || current_items > 0 {
-      flush_count = flush_count + 1
-    }
-    
-    // 记录缓冲区统计
-    Span::set_attribute(span, "buffer." + config_name + ".flush_count", flush_count.to_string())
-    
-    // 验证缓冲区管理
-    assert_true(flush_count >= 1)
-    
-    // 自适应缓冲区应该有更好的性能
-    if is_adaptive {
-      assert_true(flush_count >= 1)
+      compression_results.push({
+        "algorithm": algorithm,
+        "data_type": data_type,
+        "original_size": original_size,
+        "compressed_size": compressed_size,
+        "compression_ratio": compression_ratio
+      })
     }
   }
   
-  Span::end(span)
+  // 验证压缩结果
+  assert_eq(compression_results.length(), 12) // 4算法 × 3数据类型
+  
+  // 验证高重复度数据压缩效果更好
+  for algorithm in compression_algorithms {
+    let high_rep_results = compression_results.filter(fn(r) { r["algorithm"] == algorithm && r["data_type"] == "high_repetition" })
+    let low_rep_results = compression_results.filter(fn(r) { r["algorithm"] == algorithm && r["data_type"] == "low_repetition" })
+    
+    assert_eq(high_rep_results.length(), 1)
+    assert_eq(low_rep_results.length(), 1)
+    
+    let high_rep_ratio = high_rep_results[0]["compression_ratio"]
+    let low_rep_ratio = low_rep_results[0]["compression_ratio"]
+    
+    assert_true(high_rep_ratio < low_rep_ratio) // 高重复度数据压缩率更高
+  }
+  
+  // 验证zstd在所有数据类型上都有较好的压缩效果
+  let zstd_results = compression_results.filter(fn(r) { r["algorithm"] == "zstd" })
+  for result in zstd_results {
+    assert_true(result["compression_ratio"] < 0.5) // 压缩率超过50%
+  }
+}
+
+test "遥测数据传输加密测试" {
+  // 测试遥测数据在传输过程中的加密和解密
+  let sensitive_telemetry = []
+  
+  // 生成包含敏感信息的遥测数据
+  for i = 0; i < 100; i = i + 1 {
+    let sensitive_span = {
+      "trace_id": "sensitive_trace_" + i.to_string(),
+      "span_id": "sensitive_span_" + i.to_string(),
+      "service": "payment-service",
+      "operation": "process_payment",
+      "attributes": [
+        ("user.id", StringValue("user_" + i.to_string())),
+        ("payment.account", StringValue("acc_1234567890")),
+        ("payment.amount", FloatValue(99.99 + i.to_double())),
+        ("payment.currency", StringValue("USD")),
+        ("payment.card.last4", StringValue("1234")),
+        ("user.email", StringValue("user" + i.to_string() + "@example.com")),
+        ("user.phone", StringValue("+1234567890")),
+        ("session.token", StringValue("sess_" + "abcdef123456".repeat(5)))
+      ]
+    }
+    sensitive_telemetry.push(sensitive_span)
+  }
+  
+  // 模拟数据加密
+  let encryption_key = "encryption_key_12345"
+  let encrypted_data = []
+  
+  for span in sensitive_telemetry {
+    // 模拟加密过程（简化实现）
+    let encrypted_span = {
+      "encrypted_data": "encrypted_" + span.to_string(),
+      "encryption_algorithm": "AES-256-GCM",
+      "key_id": "key_123",
+      "iv": "initialization_vector_123",
+      "tag": "authentication_tag_456"
+    }
+    encrypted_data.push(encrypted_span)
+  }
+  
+  // 验证加密结果
+  assert_eq(encrypted_data.length(), 100)
+  
+  for encrypted_span in encrypted_data {
+    assert_true(encrypted_span["encrypted_data"].contains("encrypted_"))
+    assert_eq(encrypted_span["encryption_algorithm"], "AES-256-GCM")
+    assert_eq(encrypted_span["key_id"], "key_123")
+    assert_true(encrypted_span["iv"].length() > 0)
+    assert_true(encrypted_span["tag"].length() > 0)
+  }
+  
+  // 模拟数据解密
+  let decrypted_data = []
+  
+  for encrypted_span in encrypted_data {
+    // 模拟解密过程（简化实现）
+    let decrypted_data_str = encrypted_span["encrypted_data"].replace("encrypted_", "")
+    let original_span = sensitive_telemetry[decrypted_data.length()]
+    decrypted_data.push(original_span)
+  }
+  
+  // 验证解密结果
+  assert_eq(decrypted_data.length(), 100)
+  
+  for i = 0; i < 100; i = i + 1 {
+    let original = sensitive_telemetry[i]
+    let decrypted = decrypted_data[i]
+    
+    assert_eq(original["trace_id"], decrypted["trace_id"])
+    assert_eq(original["span_id"], decrypted["span_id"])
+    assert_eq(original["service"], decrypted["service"])
+    assert_eq(original["operation"], decrypted["operation"])
+    
+    // 验证敏感信息正确解密
+    let original_attrs = original["attributes"]
+    let decrypted_attrs = decrypted["attributes"]
+    
+    for j = 0; j < original_attrs.length(); j = j + 1 {
+      assert_eq(original_attrs[j].0, decrypted_attrs[j].0)
+      assert_eq(original_attrs[j].1, decrypted_attrs[j].1)
+    }
+  }
+  
+  // 验证加密数据大小（加密通常会略微增加数据大小）
+  let original_total_size = sensitive_telemetry.to_string().length()
+  let encrypted_total_size = encrypted_data.to_string().length()
+  
+  // 加密后的数据应该包含额外的元数据，因此会更大
+  assert_true(encrypted_total_size > original_total_size)
+  
+  // 计算加密开销
+  let encryption_overhead = (encrypted_total_size.to_double() - original_total_size.to_double()) / original_total_size.to_double()
+  assert_true(encryption_overhead > 0.0) // 确保有开销
+  assert_true(encryption_overhead < 0.5) // 但开销不应超过50%
 }

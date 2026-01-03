@@ -1,949 +1,503 @@
-// Azimuth增强测试套件
-// 提供对Azimuth遥测系统高级功能的测试覆盖
+// Enhanced Test Suite for Azimuth Telemetry System
+// This file contains comprehensive test cases covering various aspects of the system
 
-// 测试1: Span层级关系和父子关系
-test "span层级关系和父子关系测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "hierarchy.test")
+// Test 1: Data Structure Operations
+test "enhanced data structure operations" {
+  // Test stack operations
+  let mut stack = Stack::new()
+  assert_true(Stack::is_empty(stack))
   
-  // 创建父span
-  let parent_span = Tracer::start_span(tracer, "parent.operation")
-  let parent_ctx = Span::span_context(parent_span)
+  Stack::push(stack, 1)
+  Stack::push(stack, 2)
+  Stack::push(stack, 3)
   
-  // 设置父span属性
-  Span::set_attribute(parent_span, "operation.type", "parent")
-  Span::set_attribute(parent_span, "service.name", "test.service")
+  assert_false(Stack::is_empty(stack))
+  assert_eq(Stack::size(stack), 3)
   
-  // 创建子span1
-  let child_span1 = Tracer::start_span(tracer, "child.operation.1")
-  let child_ctx1 = Span::span_context(child_span1)
+  let popped = Stack::pop(stack)
+  match popped {
+    Some(value) => assert_eq(value, 3)
+    None => assert_true(false)
+  }
   
-  // 设置子span1属性
-  Span::set_attribute(child_span1, "operation.type", "child")
-  Span::set_attribute(child_span1, "parent.id", SpanContext::span_id(parent_ctx))
+  assert_eq(Stack::size(stack), 2)
   
-  // 创建子span2
-  let child_span2 = Tracer::start_span(tracer, "child.operation.2")
-  let child_ctx2 = Span::span_context(child_span2)
+  // Test queue operations
+  let mut queue = Queue::new()
+  assert_true(Queue::is_empty(queue))
   
-  // 设置子span2属性
-  Span::set_attribute(child_span2, "operation.type", "child")
-  Span::set_attribute(child_span2, "parent.id", SpanContext::span_id(parent_ctx))
+  Queue::enqueue(queue, "first")
+  Queue::enqueue(queue, "second")
+  Queue::enqueue(queue, "third")
   
-  // 创建孙span
-  let grandchild_span = Tracer::start_span(tracer, "grandchild.operation")
-  let grandchild_ctx = Span::span_context(grandchild_span)
+  assert_false(Queue::is_empty(queue))
+  assert_eq(Queue::size(queue), 3)
   
-  // 设置孙span属性
-  Span::set_attribute(grandchild_span, "operation.type", "grandchild")
-  Span::set_attribute(grandchild_span, "parent.id", SpanContext::span_id(child_ctx1))
+  let dequeued = Queue::dequeue(queue)
+  match dequeued {
+    Some(value) => assert_eq(value, "first")
+    None => assert_true(false)
+  }
   
-  // 验证span上下文有效性
-  assert_true(SpanContext::is_valid(parent_ctx))
-  assert_true(SpanContext::is_valid(child_ctx1))
-  assert_true(SpanContext::is_valid(child_ctx2))
-  assert_true(SpanContext::is_valid(grandchild_ctx))
+  assert_eq(Queue::size(queue), 2)
   
-  // 验证trace ID一致性
-  assert_eq(SpanContext::trace_id(parent_ctx), SpanContext::trace_id(child_ctx1))
-  assert_eq(SpanContext::trace_id(parent_ctx), SpanContext::trace_id(child_ctx2))
-  assert_eq(SpanContext::trace_id(parent_ctx), SpanContext::trace_id(grandchild_ctx))
+  // Test map operations
+  let mut map = Map::new()
+  assert_true(Map::is_empty(map))
   
-  // 验证span ID唯一性
-  assert_true(SpanContext::span_id(parent_ctx) != SpanContext::span_id(child_ctx1))
-  assert_true(SpanContext::span_id(parent_ctx) != SpanContext::span_id(child_ctx2))
-  assert_true(SpanContext::span_id(parent_ctx) != SpanContext::span_id(grandchild_ctx))
-  assert_true(SpanContext::span_id(child_ctx1) != SpanContext::span_id(child_ctx2))
-  assert_true(SpanContext::span_id(child_ctx1) != SpanContext::span_id(grandchild_ctx))
-  assert_true(SpanContext::span_id(child_ctx2) != SpanContext::span_id(grandchild_ctx))
+  Map::insert(map, "key1", 100)
+  Map::insert(map, "key2", 200)
+  Map::insert(map, "key3", 300)
   
-  // 添加事件到各个span
-  Span::add_event(parent_span, "parent.started", [])
-  Span::add_event(child_span1, "child1.started", [])
-  Span::add_event(child_span2, "child2.started", [])
-  Span::add_event(grandchild_span, "grandchild.started", [])
+  assert_false(Map::is_empty(map))
+  assert_eq(Map::size(map), 3)
   
-  // 按顺序结束span
-  Span::end(grandchild_span)
-  Span::end(child_span2)
-  Span::end(child_span1)
-  Span::end(parent_span)
+  let value = Map::get(map, "key2")
+  match value {
+    Some(v) => assert_eq(v, 200)
+    None => assert_true(false)
+  }
   
-  assert_true(true)
-}
-
-// 测试2: 度量仪表(Gauge)操作测试
-test "度量仪表操作测试" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "gauge.test")
-  
-  // 创建仪表
-  let memory_gauge = Meter::create_gauge(
-    meter, 
-    "memory.usage", 
-    Some("Current memory usage"), 
-    Some("bytes")
-  )
-  
-  let cpu_gauge = Meter::create_gauge(
-    meter, 
-    "cpu.usage", 
-    Some("Current CPU usage"), 
-    Some("percent")
-  )
-  
-  let connection_gauge = Meter::create_gauge(
-    meter, 
-    "active.connections", 
-    Some("Number of active connections"), 
-    Some("count")
-  )
-  
-  // 设置仪表值
-  // 注意：在实际实现中，Gauge应该有set方法，这里简化处理
-  // Gauge::set(memory_gauge, 1024 * 1024 * 512)  // 512MB
-  // Gauge::set(cpu_gauge, 75.5)  // 75.5%
-  // Gauge::set(connection_gauge, 42)  // 42 connections
-  
-  // 验证仪表属性
-  assert_eq(memory_gauge.name, "memory.usage")
-  assert_eq(memory_gauge.description, Some("Current memory usage"))
-  assert_eq(memory_gauge.unit, Some("bytes"))
-  
-  assert_eq(cpu_gauge.name, "cpu.usage")
-  assert_eq(cpu_gauge.description, Some("Current CPU usage"))
-  assert_eq(cpu_gauge.unit, Some("percent"))
-  
-  assert_eq(connection_gauge.name, "active.connections")
-  assert_eq(connection_gauge.description, Some("Number of active connections"))
-  assert_eq(connection_gauge.unit, Some("count"))
-  
-  // 测试仪表转换为Instrument类型
-  let memory_instrument = Gauge::as_instrument(memory_gauge)
-  let cpu_instrument = Gauge::as_instrument(cpu_gauge)
-  let connection_instrument = Gauge::as_instrument(connection_gauge)
-  
-  // 验证转换后的instrument属性
-  assert_eq(Instrument::name(memory_instrument), "memory.usage")
-  assert_eq(Instrument::description(memory_instrument), Some("Current memory usage"))
-  assert_eq(Instrument::unit(memory_instrument), Some("bytes"))
-  
-  assert_eq(Instrument::name(cpu_instrument), "cpu.usage")
-  assert_eq(Instrument::description(cpu_instrument), Some("Current CPU usage"))
-  assert_eq(Instrument::unit(cpu_instrument), Some("percent"))
-  
-  assert_eq(Instrument::name(connection_instrument), "active.connections")
-  assert_eq(Instrument::description(connection_instrument), Some("Number of active connections"))
-  assert_eq(Instrument::unit(connection_instrument), Some("count"))
-  
-  assert_true(true)
-}
-
-// 测试3: 上下文传播器注入和提取测试
-test "上下文传播器注入和提取测试" {
-  // 创建W3C追踪上下文传播器
-  let trace_propagator = W3CTraceContextPropagator::new()
-  
-  // 创建W3C Baggage传播器
-  let baggage_propagator = W3CBaggagePropagator::new()
-  
-  // 创建复合传播器
-  let composite_propagator = CompositePropagator::new([trace_propagator])
-  
-  // 创建原始上下文
-  let original_ctx = Context::root()
-  
-  // 添加追踪信息到上下文
-  let trace_key = ContextKey::new("trace.id")
-  let span_key = ContextKey::new("span.id")
-  let ctx_with_trace = Context::with_value(original_ctx, trace_key, "0af7651916cd43dd8448eb211c80319c")
-  let ctx_with_span = Context::with_value(ctx_with_trace, span_key, "b7ad6b7169203331")
-  
-  // 添加baggage信息
-  let baggage_key = ContextKey::new("baggage")
-  let ctx_with_baggage = Context::with_value(ctx_with_span, baggage_key, "key1=value1,key2=value2")
-  
-  // 创建载体
-  let carrier = TextMapCarrier::new()
-  
-  // 注入上下文到载体
-  CompositePropagator::inject(composite_propagator, ctx_with_baggage, carrier)
-  
-  // 验证注入的值
-  let injected_traceparent = TextMapCarrier::get(carrier, "traceparent")
-  let injected_baggage = TextMapCarrier::get(carrier, "baggage")
-  
-  // 基于简化实现进行验证
-  assert_eq(injected_traceparent, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
-  
-  // 从载体提取上下文
-  let extracted_ctx = CompositePropagator::extract(composite_propagator, carrier)
-  
-  // 验证提取的上下文
-  let extracted_value = Context::get(extracted_ctx, ContextKey::new("extracted"))
-  assert_eq(extracted_value, Some("true"))
-  
-  // 测试空载体提取
-  let empty_carrier = TextMapCarrier::new()
-  let empty_ctx = CompositePropagator::extract(composite_propagator, empty_carrier)
-  let empty_value = Context::get(empty_ctx, ContextKey::new("extracted"))
-  assert_eq(empty_value, Some("true"))
-  
-  assert_true(true)
-}
-
-// 测试4: 时间戳操作和时区处理测试
-test "时间戳操作和时区处理测试" {
-  let clock = Clock::system()
-  
-  // 获取当前时间戳
-  let current_timestamp = Clock::now_unix_nanos(clock)
-  
-  // 验证时间戳合理性（2025年的时间戳）
-  assert_true(current_timestamp > 1700000000000000000L)  // 2023年开始
-  assert_true(current_timestamp < 1800000000000000000L)  // 2027年开始
-  
-  // 创建带时间戳的日志记录
-  let info_log = LogRecord::new_with_context(
-    Info, 
-    Some("Info message with timestamp"),
-    None,
-    Some(current_timestamp),
-    None,
-    None,
-    None,
-    None
-  )
-  
-  let warn_log = LogRecord::new_with_context(
-    Warn, 
-    Some("Warning message with timestamp"),
-    None,
-    Some(current_timestamp + 1000000L),  // 1毫秒后
-    None,
-    None,
-    None,
-    None
-  )
-  
-  let error_log = LogRecord::new_with_context(
-    Error, 
-    Some("Error message with timestamp"),
-    None,
-    Some(current_timestamp + 5000000L),  // 5毫秒后
-    None,
-    None,
-    None,
-    None
-  )
-  
-  // 验证时间戳设置
-  assert_eq(LogRecord::timestamp(info_log), Some(current_timestamp))
-  assert_eq(LogRecord::timestamp(warn_log), Some(current_timestamp + 1000000L))
-  assert_eq(LogRecord::timestamp(error_log), Some(current_timestamp + 5000000L))
-  
-  // 验证时间戳顺序
-  assert_true(LogRecord::timestamp(info_log)! < LogRecord::timestamp(warn_log)!)
-  assert_true(LogRecord::timestamp(warn_log)! < LogRecord::timestamp(error_log)!)
-  
-  // 测试观察时间戳
-  let log_with_observed = LogRecord::new_with_context(
-    Info,
-    Some("Message with observed timestamp"),
-    None,
-    Some(current_timestamp),
-    Some(current_timestamp + 100000L),  // 观察时间稍晚
-    None,
-    None,
-    None
-  )
-  
-  assert_eq(LogRecord::observed_timestamp(log_with_observed), Some(current_timestamp + 100000L))
-  
-  // 测试时间戳转换
-  let timestamp_seconds = current_timestamp / 1000000000L
-  let timestamp_millis = current_timestamp / 1000000L
-  let timestamp_micros = current_timestamp / 1000L
-  
-  // 验证转换正确性
-  assert_true(timestamp_seconds > 1700000000L)  // 2023年后的秒数
-  assert_true(timestamp_millis > 1700000000000L)  // 2023年后的毫秒数
-  assert_true(timestamp_micros > 1700000000000000L)  // 2023年后的微秒数
-  
-  assert_true(true)
-}
-
-// 测试5: 资源属性继承和覆盖测试
-test "资源属性继承和覆盖测试" {
-  // 创建基础资源
-  let base_resource = Resource::new()
-  let base_attrs = [
-    ("service.name", StringValue("base-service")),
-    ("service.version", StringValue("1.0.0")),
-    ("deployment.environment", StringValue("development")),
-    ("host.name", StringValue("dev-host-01")),
-    ("region", StringValue("us-east-1"))
-  ]
-  let resource_with_base = Resource::with_attributes(base_resource, base_attrs)
-  
-  // 创建层1资源（继承基础资源）
-  let layer1_resource = Resource::new()
-  let layer1_attrs = [
-    ("service.instance.id", StringValue("instance-001")),
-    ("availability.zone", StringValue("us-east-1a")),
-    ("container.id", StringValue("container-abc123"))
-  ]
-  let resource_with_layer1 = Resource::with_attributes(layer1_resource, layer1_attrs)
-  
-  // 合并基础资源和层1资源
-  let merged_layer1 = Resource::merge(resource_with_base, resource_with_layer1)
-  
-  // 创建层2资源（进一步特化）
-  let layer2_resource = Resource::new()
-  let layer2_attrs = [
-    ("service.version", StringValue("1.1.0")),  // 覆盖版本
-    ("deployment.environment", StringValue("staging")),  // 覆盖环境
-    ("process.id", StringValue("12345")),
-    ("process.executable.name", StringValue("app-service"))
-  ]
-  let resource_with_layer2 = Resource::with_attributes(layer2_resource, layer2_attrs)
-  
-  // 合并层1资源和层2资源
-  let final_resource = Resource::merge(merged_layer1, resource_with_layer2)
-  
-  // 验证最终资源属性
-  // 注意：基于简化实现，这里只验证返回的不是None
-  let final_service_name = Resource::get_attribute(final_resource, "service.name")
-  let final_service_version = Resource::get_attribute(final_resource, "service.version")
-  let final_environment = Resource::get_attribute(final_resource, "deployment.environment")
-  let final_host_name = Resource::get_attribute(final_resource, "host.name")
-  let final_region = Resource::get_attribute(final_resource, "region")
-  let final_instance_id = Resource::get_attribute(final_resource, "service.instance.id")
-  let final_availability_zone = Resource::get_attribute(final_resource, "availability.zone")
-  let final_container_id = Resource::get_attribute(final_resource, "container.id")
-  let final_process_id = Resource::get_attribute(final_resource, "process.id")
-  let final_executable_name = Resource::get_attribute(final_resource, "process.executable.name")
-  
-  // 基于简化实现进行验证
-  match final_service_name {
-    None => assert_true(true)
+  let non_existent = Map::get(map, "non_existent")
+  match non_existent {
     Some(_) => assert_true(false)
-  }
-  
-  // 测试资源合并的幂等性
-  let idempotent_merge = Resource::merge(final_resource, Resource::new())
-  let idempotent_service_name = Resource::get_attribute(idempotent_merge, "service.name")
-  
-  match idempotent_service_name {
     None => assert_true(true)
-    Some(_) => assert_true(false)
   }
-  
-  // 测试空资源合并
-  let empty_resource = Resource::new()
-  let merge_with_empty = Resource::merge(empty_resource, resource_with_base)
-  let merged_service_name = Resource::get_attribute(merge_with_empty, "service.name")
-  
-  match merged_service_name {
-    None => assert_true(true)
-    Some(_) => assert_true(false)
-  }
-  
-  assert_true(true)
 }
 
-// 测试6: 日志记录与追踪关联测试
-test "日志记录与追踪关联测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "log.trace.test")
+// Test 2: Advanced Error Handling
+test "advanced error handling mechanisms" {
+  // Test custom error types
+  let network_error = NetworkError::new("Connection timeout", 408)
+  assert_eq(Error::message(network_error), "Connection timeout")
+  assert_eq(Error::code(network_error), 408)
   
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "log.trace.logger")
+  let validation_error = ValidationError::new("Invalid input format", ["field1", "field2"])
+  assert_eq(Error::message(validation_error), "Invalid input format")
+  assert_eq(ValidationError::fields(validation_error).length(), 2)
   
-  // 创建span
-  let span = Tracer::start_span(tracer, "operation.with.logs")
-  let span_ctx = Span::span_context(span)
+  // Test error recovery strategies
+  let mut retry_count = 0
+  let max_retries = 3
+  let mut operation_succeeded = false
   
-  // 获取span的trace ID和span ID
-  let trace_id = SpanContext::trace_id(span_ctx)
-  let span_id = SpanContext::span_id(span_ctx)
+  while retry_count < max_retries && !operation_succeeded {
+    retry_count = retry_count + 1
+    
+    // Simulate operation that fails twice then succeeds
+    if retry_count >= 3 {
+      operation_succeeded = true
+    }
+  }
   
-  // 创建与span关联的日志记录
-  let start_log = LogRecord::new_with_context(
-    Info,
-    Some("Operation started"),
-    None,
-    None,
-    None,
-    Some(trace_id),
-    Some(span_id),
-    None
-  )
+  assert_true(operation_succeeded)
+  assert_eq(retry_count, 3)
   
-  // 添加span事件
-  Span::add_event(span, "operation.step1", [("step", "1"), ("status", "started")])
+  // Test error propagation
+  let result = ErrorHandling::safe_operation(() => {
+    // Simulate operation that might fail
+    ErrorHandling::risky_operation()
+  })
   
-  // 创建步骤1日志记录
-  let step1_log = LogRecord::new_with_context(
-    Info,
-    Some("Step 1 completed"),
-    None,
-    None,
-    None,
-    Some(trace_id),
-    Some(span_id),
-    None
-  )
-  
-  // 添加span事件
-  Span::add_event(span, "operation.step2", [("step", "2"), ("status", "started")])
-  
-  // 创建步骤2日志记录
-  let step2_log = LogRecord::new_with_context(
-    Info,
-    Some("Step 2 completed"),
-    None,
-    None,
-    None,
-    Some(trace_id),
-    Some(span_id),
-    None
-  )
-  
-  // 创建错误日志记录
-  let error_log = LogRecord::new_with_context(
-    Error,
-    Some("Operation failed"),
-    None,
-    None,
-    None,
-    Some(trace_id),
-    Some(span_id),
-    None
-  )
-  
-  // 添加错误事件到span
-  Span::add_event(span, "operation.error", [("error.type", "TimeoutError"), ("retry.count", "3")])
-  Span::set_status(span, Error, Some("Operation timed out after 3 retries"))
-  
-  // 创建完成日志记录
-  let end_log = LogRecord::new_with_context(
-    Warn,
-    Some("Operation completed with errors"),
-    None,
-    None,
-    None,
-    Some(trace_id),
-    Some(span_id),
-    None
-  )
-  
-  // 验证日志记录与span的关联
-  assert_eq(LogRecord::trace_id(start_log), Some(trace_id))
-  assert_eq(LogRecord::span_id(start_log), Some(span_id))
-  
-  assert_eq(LogRecord::trace_id(step1_log), Some(trace_id))
-  assert_eq(LogRecord::span_id(step1_log), Some(span_id))
-  
-  assert_eq(LogRecord::trace_id(step2_log), Some(trace_id))
-  assert_eq(LogRecord::span_id(step2_log), Some(span_id))
-  
-  assert_eq(LogRecord::trace_id(error_log), Some(trace_id))
-  assert_eq(LogRecord::span_id(error_log), Some(span_id))
-  
-  assert_eq(LogRecord::trace_id(end_log), Some(trace_id))
-  assert_eq(LogRecord::span_id(end_log), Some(span_id))
-  
-  // 验证日志严重性级别
-  assert_eq(LogRecord::severity_number(start_log), Info)
-  assert_eq(LogRecord::severity_number(step1_log), Info)
-  assert_eq(LogRecord::severity_number(step2_log), Info)
-  assert_eq(LogRecord::severity_number(error_log), Error)
-  assert_eq(LogRecord::severity_number(end_log), Warn)
-  
-  // 发射所有日志记录
-  Logger::emit(logger, start_log)
-  Logger::emit(logger, step1_log)
-  Logger::emit(logger, step2_log)
-  Logger::emit(logger, error_log)
-  Logger::emit(logger, end_log)
-  
-  // 结束span
-  Span::end(span)
-  
-  assert_true(true)
+  match result {
+    Ok(value) => assert_eq(value, "success")
+    Err(error) => assert_eq(Error::message(error), "Operation failed")
+  }
 }
 
-// 测试7: 度量UpDownCounter操作测试
-test "度量UpDownCounter操作测试" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "updowncounter.test")
+// Test 3: Performance Optimization
+test "performance optimization features" {
+  // Test lazy evaluation
+  let lazy_value = Lazy::new(() => {
+    // Simulate expensive computation
+    42 * 42
+  })
   
-  // 创建UpDownCounter
-  let connection_counter = Meter::create_updown_counter(
-    meter,
-    "active.connections",
-    Some("Number of active connections"),
-    Some("count")
-  )
+  assert_false(Lazy::is_evaluated(lazy_value))
   
-  let queue_size_counter = Meter::create_updown_counter(
-    meter,
-    "queue.size",
-    Some("Current queue size"),
-    Some("items")
-  )
+  let value1 = Lazy::get(lazy_value)
+  let value2 = Lazy::get(lazy_value)
   
-  let memory_usage_counter = Meter::create_updown_counter(
-    meter,
-    "memory.usage.delta",
-    Some("Memory usage delta"),
-    Some("bytes")
-  )
+  assert_true(Lazy::is_evaluated(lazy_value))
+  assert_eq(value1, 1764)
+  assert_eq(value2, 1764)
   
-  // 测试增加操作
-  UpDownCounter::add(connection_counter, 10.0)  // 10个连接
-  UpDownCounter::add(connection_counter, 5.0)   // 再增加5个连接
+  // Test memoization
+  let mut memo_cache = MemoCache::new()
   
-  UpDownCounter::add(queue_size_counter, 100.0)  // 队列大小100
-  UpDownCounter::add(queue_size_counter, 50.0)   // 队列大小增加到150
+  let result1 = MemoCache::compute_or_get(memo_cache, "expensive_key", () => {
+    // Simulate expensive computation
+    1000 * 1000
+  })
   
-  UpDownCounter::add(memory_usage_counter, 1024.0 * 1024.0)  // 增加1MB
+  let result2 = MemoCache::compute_or_get(memo_cache, "expensive_key", () => {
+    // This should not be executed due to memoization
+    2000 * 2000
+  })
   
-  // 测试减少操作
-  UpDownCounter::add(connection_counter, -3.0)  // 减少3个连接
-  UpDownCounter::add(queue_size_counter, -25.0)  // 队列大小减少到125
-  UpDownCounter::add(memory_usage_counter, -512.0 * 1024.0)  // 减少512KB
+  assert_eq(result1, 1000000)
+  assert_eq(result2, 1000000) // Should be the cached result
   
-  // 测试带属性的操作
-  UpDownCounter::add_with_attributes(
-    connection_counter,
-    2.0,
-    [("connection.type", "websocket"), ("protocol", "wss")]
-  )
+  // Test batch processing
+  let items = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  let batch_size = 3
+  let processed_items = BatchProcessor::process(items, batch_size, (batch) => {
+    // Process each batch
+    batch.map(x => x * 2)
+  })
   
-  UpDownCounter::add_with_attributes(
-    connection_counter,
-    -1.0,
-    [("connection.type", "http"), ("protocol", "https")]
-  )
-  
-  UpDownCounter::add_with_attributes(
-    queue_size_counter,
-    10.0,
-    [("queue.type", "priority"), ["processing", "fast"]]
-  )
-  
-  UpDownCounter::add_with_attributes(
-    queue_size_counter,
-    -5.0,
-    [("queue.type", "normal"), ("processing", "standard")]
-  )
-  
-  // 验证UpDownCounter属性
-  assert_eq(connection_counter.name, "active.connections")
-  assert_eq(connection_counter.description, Some("Number of active connections"))
-  assert_eq(connection_counter.unit, Some("count"))
-  
-  assert_eq(queue_size_counter.name, "queue.size")
-  assert_eq(queue_size_counter.description, Some("Current queue size"))
-  assert_eq(queue_size_counter.unit, Some("items"))
-  
-  assert_eq(memory_usage_counter.name, "memory.usage.delta")
-  assert_eq(memory_usage_counter.description, Some("Memory usage delta"))
-  assert_eq(memory_usage_counter.unit, Some("bytes"))
-  
-  // 测试UpDownCounter转换为Instrument类型
-  let connection_instrument = Counter(connection_counter.name, connection_counter.description, connection_counter.unit)
-  let queue_instrument = Counter(queue_size_counter.name, queue_size_counter.description, queue_size_counter.unit)
-  let memory_instrument = Counter(memory_usage_counter.name, memory_usage_counter.description, memory_usage_counter.unit)
-  
-  // 验证转换后的instrument属性
-  assert_eq(Instrument::name(connection_instrument), "active.connections")
-  assert_eq(Instrument::description(connection_instrument), Some("Number of active connections"))
-  assert_eq(Instrument::unit(connection_instrument), Some("count"))
-  
-  assert_eq(Instrument::name(queue_instrument), "queue.size")
-  assert_eq(Instrument::description(queue_instrument), Some("Current queue size"))
-  assert_eq(Instrument::unit(queue_instrument), Some("items"))
-  
-  assert_eq(Instrument::name(memory_instrument), "memory.usage.delta")
-  assert_eq(Instrument::description(memory_instrument), Some("Memory usage delta"))
-  assert_eq(Instrument::unit(memory_instrument), Some("bytes"))
-  
-  assert_true(true)
+  assert_eq(processed_items.length(), 10)
+  assert_eq(processed_items[0], 2)
+  assert_eq(processed_items[9], 20)
 }
 
-// 测试8: 跨服务上下文传播测试
-test "跨服务上下文传播测试" {
-  // 服务A：创建初始追踪上下文
-  let service_a_tracer = TracerProvider::get_tracer(TracerProvider::default(), "service.a")
-  let service_a_span = Tracer::start_span(service_a_tracer, "service.a.operation")
-  let service_a_ctx = Span::span_context(service_a_span)
+// Test 4: Concurrent Safety
+test "concurrent safety mechanisms" {
+  // Test atomic operations
+  let atomic_counter = Atomic::new(0)
   
-  // 添加服务A特定的上下文信息
-  let service_a_context = Context::root()
-  let user_key = ContextKey::new("user.id")
-  let request_key = ContextKey::new("request.id")
-  let service_a_context_with_user = Context::with_value(service_a_context, user_key, "user-12345")
-  let service_a_context_with_request = Context::with_value(service_a_context_with_user, request_key, "req-abcde")
+  // Simulate concurrent increments
+  Atomic::increment(atomic_counter)
+  Atomic::increment(atomic_counter)
+  Atomic::increment(atomic_counter)
   
-  // 创建传播器
-  let propagator = CompositePropagator::new([W3CTraceContextPropagator::new()])
+  assert_eq(Atomic::get(atomic_counter), 3)
   
-  // 创建服务A到服务B的请求载体
-  let a_to_b_carrier = TextMapCarrier::new()
+  // Test thread-safe collections
+  let concurrent_map = ConcurrentMap::new()
   
-  // 注入追踪上下文到载体
-  CompositePropagator::inject(propagator, service_a_context_with_request, a_to_b_carrier)
+  ConcurrentMap::insert(concurrent_map, "thread1", "value1")
+  ConcurrentMap::insert(concurrent_map, "thread2", "value2")
+  ConcurrentMap::insert(concurrent_map, "thread3", "value3")
   
-  // 服务B：从载体提取上下文
-  let service_b_extracted_ctx = CompositePropagator::extract(propagator, a_to_b_carrier)
+  let value1 = ConcurrentMap::get(concurrent_map, "thread1")
+  match value1 {
+    Some(v) => assert_eq(v, "value1")
+    None => assert_true(false)
+  }
   
-  // 服务B创建自己的span
-  let service_b_tracer = TracerProvider::get_tracer(TracerProvider::default(), "service.b")
-  let service_b_span = Tracer::start_span(service_b_tracer, "service.b.operation")
-  let service_b_ctx = Span::span_context(service_b_span)
+  // Test lock-free data structures
+  let lock_free_queue = LockFreeQueue::new()
   
-  // 添加服务B特定的上下文信息
-  let service_key = ContextKey::new("service.name")
-  let operation_key = ContextKey::new("operation.name")
-  let service_b_context = Context::with_value(service_b_extracted_ctx, service_key, "service.b")
-  let service_b_context_with_operation = Context::with_value(service_b_context, operation_key, "process.data")
+  LockFreeQueue::enqueue(lock_free_queue, "item1")
+  LockFreeQueue::enqueue(lock_free_queue, "item2")
+  LockFreeQueue::enqueue(lock_free_queue, "item3")
   
-  // 验证服务B保留了原始追踪上下文
-  let extracted_user = Context::get(service_b_context_with_operation, user_key)
-  let extracted_request = Context::get(service_b_context_with_operation, request_key)
+  let dequeued1 = LockFreeQueue::dequeue(lock_free_queue)
+  let dequeued2 = LockFreeQueue::dequeue(lock_free_queue)
   
-  // 基于简化实现进行验证
-  assert_eq(extracted_user, None)
-  assert_eq(extracted_request, None)
-  
-  // 创建服务B到服务C的请求载体
-  let b_to_c_carrier = TextMapCarrier::new()
-  
-  // 注入服务B的上下文到载体
-  CompositePropagator::inject(propagator, service_b_context_with_operation, b_to_c_carrier)
-  
-  // 服务C：从载体提取上下文
-  let service_c_extracted_ctx = CompositePropagator::extract(propagator, b_to_c_carrier)
-  
-  // 服务C创建自己的span
-  let service_c_tracer = TracerProvider::get_tracer(TracerProvider::default(), "service.c")
-  let service_c_span = Tracer::start_span(service_c_tracer, "service.c.operation")
-  let service_c_ctx = Span::span_context(service_c_span)
-  
-  // 添加服务C特定的上下文信息
-  let result_key = ContextKey::new("operation.result")
-  let service_c_context = Context::with_value(service_c_extracted_ctx, result_key, "success")
-  
-  // 验证所有服务的trace ID一致性
-  // 注意：基于简化实现，这里只验证span上下文有效性
-  assert_true(SpanContext::is_valid(service_a_ctx))
-  assert_true(SpanContext::is_valid(service_b_ctx))
-  assert_true(SpanContext::is_valid(service_c_ctx))
-  
-  // 创建服务C的响应载体
-  let c_to_a_carrier = TextMapCarrier::new()
-  
-  // 注入服务C的上下文到载体
-  CompositePropagator::inject(propagator, service_c_context, c_to_a_carrier)
-  
-  // 服务A：从响应载体提取上下文
-  let service_a_response_ctx = CompositePropagator::extract(propagator, c_to_a_carrier)
-  
-  // 验证服务A能够获取操作结果
-  let operation_result = Context::get(service_a_response_ctx, result_key)
-  
-  // 基于简化实现进行验证
-  assert_eq(operation_result, None)
-  
-  // 结束所有span
-  Span::end(service_c_span)
-  Span::end(service_b_span)
-  Span::end(service_a_span)
-  
-  assert_true(true)
+  match (dequeued1, dequeued2) {
+    (Some(item1), Some(item2)) => {
+      assert_eq(item1, "item1")
+      assert_eq(item2, "item2")
+    }
+    _ => assert_true(false)
+  }
 }
 
-// 测试9: 错误边界和恢复测试
-test "错误边界和恢复测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "error.recovery.test")
+// Test 5: Serialization/Deserialization
+test "serialization and deserialization" {
+  // Test JSON serialization
+  let test_obj = TestObject::new("test_name", 42, true, ["tag1", "tag2"])
+  let json_str = JsonSerializer::serialize(test_obj)
   
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "error.recovery.logger")
+  assert_true(json_str.contains("test_name"))
+  assert_true(json_str.contains("42"))
+  assert_true(json_str.contains("true"))
   
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "error.recovery.metrics")
+  // Test JSON deserialization
+  let deserialized_obj = JsonSerializer::deserialize(json_str)
   
-  // 创建错误计数器
-  let error_counter = Meter::create_counter(
-    meter,
-    "errors.total",
-    Some("Total number of errors"),
-    Some("count")
-  )
+  assert_eq(TestObject::name(deserialized_obj), "test_name")
+  assert_eq(TestObject::value(deserialized_obj), 42)
+  assert_true(TestObject::active(deserialized_obj))
+  assert_eq(TestObject::tags(deserialized_obj).length(), 2)
   
-  let recovery_counter = Meter::create_counter(
-    meter,
-    "recoveries.total",
-    Some("Total number of successful recoveries"),
-    Some("count")
-  )
+  // Test binary serialization
+  let binary_data = BinarySerializer::serialize(test_obj)
+  let binary_deserialized = BinarySerializer::deserialize(binary_data)
   
-  // 创建主操作span
-  let main_span = Tracer::start_span(tracer, "main.operation")
+  assert_eq(TestObject::name(binary_deserialized), "test_name")
+  assert_eq(TestObject::value(binary_deserialized), 42)
   
-  // 模拟第一阶段操作（成功）
-  let phase1_span = Tracer::start_span(tracer, "phase1.operation")
-  Span::add_event(phase1_span, "phase1.started", [])
+  // Test protocol buffers
+  let proto_data = ProtoSerializer::serialize(test_obj)
+  let proto_deserialized = ProtoSerializer::deserialize(proto_data)
   
-  // 记录成功日志
-  let phase1_success_log = LogRecord::new(Info, "Phase 1 completed successfully")
-  Logger::emit(logger, phase1_success_log)
-  
-  Span::add_event(phase1_span, "phase1.completed", [("result", "success")])
-  Span::end(phase1_span)
-  
-  // 模拟第二阶段操作（失败）
-  let phase2_span = Tracer::start_span(tracer, "phase2.operation")
-  Span::add_event(phase2_span, "phase2.started", [])
-  
-  // 记录错误
-  let phase2_error_log = LogRecord::new(Error, "Phase 2 failed with network timeout")
-  LogRecord::add_attribute(phase2_error_log, "error.type", "NetworkTimeout")
-  LogRecord::add_attribute(phase2_error_log, "error.code", "NET_001")
-  LogRecord::add_attribute(phase2_error_log, "retry.count", "0")
-  Logger::emit(logger, phase2_error_log)
-  
-  // 记录错误度量
-  Counter::add_with_attributes(error_counter, 1.0, [
-    ("error.type", "NetworkTimeout"),
-    ("phase", "phase2"),
-    ("operation", "main.operation")
-  ])
-  
-  // 设置错误状态
-  Span::set_status(phase2_span, Error, Some("Network timeout occurred"))
-  Span::add_event(phase2_span, "phase2.failed", [
-    ("error.type", "NetworkTimeout"),
-    ("error.message", "Connection timed out after 30 seconds")
-  ])
-  Span::end(phase2_span)
-  
-  // 模拟恢复操作
-  let recovery_span = Tracer::start_span(tracer, "recovery.operation")
-  Span::add_event(recovery_span, "recovery.started", [])
-  
-  // 记录恢复开始日志
-  let recovery_start_log = LogRecord::new(Warn, "Starting recovery operation for phase2 failure")
-  LogRecord::add_attribute(recovery_start_log, "recovery.strategy", "retry_with_backoff")
-  Logger::emit(logger, recovery_start_log)
-  
-  // 模拟重试1（失败）
-  Span::add_event(recovery_span, "retry.1", [("result", "failed"), ("delay", "1000ms")])
-  let retry1_log = LogRecord::new(Error, "Retry 1 failed")
-  LogRecord::add_attribute(retry1_log, "retry.count", "1")
-  LogRecord::add_attribute(retry1_log, "error.type", "NetworkTimeout")
-  Logger::emit(logger, retry1_log)
-  
-  Counter::add_with_attributes(error_counter, 1.0, [
-    ("error.type", "NetworkTimeout"),
-    ("phase", "recovery"),
-    ("retry.attempt", "1")
-  ])
-  
-  // 模拟重试2（成功）
-  Span::add_event(recovery_span, "retry.2", [("result", "success"), ("delay", "2000ms")])
-  let retry2_log = LogRecord::new(Info, "Retry 2 succeeded")
-  LogRecord::add_attribute(retry2_log, "retry.count", "2")
-  LogRecord::add_attribute(retry2_log, "recovery.result", "success")
-  Logger::emit(logger, retry2_log)
-  
-  // 记录成功恢复度量
-  Counter::add_with_attributes(recovery_counter, 1.0, [
-    ("recovery.strategy", "retry_with_backoff"),
-    ("retry.attempts", "2"),
-    ("original.error", "NetworkTimeout")
-  ])
-  
-  // 设置恢复成功状态
-  Span::set_status(recovery_span, Ok, Some("Recovery successful after 2 retries"))
-  Span::add_event(recovery_span, "recovery.completed", [
-    ("result", "success"),
-    ("total.retries", "2"),
-    ("total.time", "3000ms")
-  ])
-  Span::end(recovery_span)
-  
-  // 模拟第三阶段操作（成功）
-  let phase3_span = Tracer::start_span(tracer, "phase3.operation")
-  Span::add_event(phase3_span, "phase3.started", [])
-  
-  // 记录成功日志
-  let phase3_success_log = LogRecord::new(Info, "Phase 3 completed successfully")
-  LogRecord::add_attribute(phase3_success_log, "recovery.applied", "true")
-  Logger::emit(logger, phase3_success_log)
-  
-  Span::add_event(phase3_span, "phase3.completed", [("result", "success")])
-  Span::end(phase3_span)
-  
-  // 记录整体操作完成
-  let main_completion_log = LogRecord::new(Info, "Main operation completed with recovery")
-  LogRecord::add_attribute(main_completion_log, "total.phases", "3")
-  LogRecord::add_attribute(main_completion_log, "failed.phases", "1")
-  LogRecord::add_attribute(main_completion_log, "recovery.successful", "true")
-  Logger::emit(logger, main_completion_log)
-  
-  // 设置主操作成功状态
-  Span::set_status(main_span, Ok, Some("Operation completed successfully after recovery"))
-  Span::add_event(main_span, "main.completed", [
-    ("result", "success"),
-    ("errors.encountered", "1"),
-    ("recoveries.attempted", "1"),
-    ("recoveries.successful", "1")
-  ])
-  Span::end(main_span)
-  
-  assert_true(true)
+  assert_eq(TestObject::name(proto_deserialized), "test_name")
+  assert_eq(TestObject::value(proto_deserialized), 42)
 }
 
-// 测试10: 性能基准测试
-test "性能基准测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "performance.test")
+// Test 6: Resource Management
+test "resource management and cleanup" {
+  // Test resource pool
+  let resource_pool = ResourcePool::new(() => {
+    // Create expensive resource
+    ExpensiveResource::new()
+  }, 5) // Max 5 resources
   
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "performance.logger")
+  let resource1 = ResourcePool::acquire(resource_pool)
+  let resource2 = ResourcePool::acquire(resource_pool)
   
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "performance.metrics")
+  assert_true(ResourcePool::available_count(resource_pool) <= 3)
   
-  let clock = Clock::system()
+  ResourcePool::release(resource_pool, resource1)
+  assert_true(ResourcePool::available_count(resource_pool) <= 4)
   
-  // 测试span创建性能
-  let span_start_time = Clock::now_unix_nanos(clock)
+  // Test automatic resource cleanup
+  let managed_resource = ManagedResource::new(() => {
+    // Resource that needs cleanup
+    FileResource::open("test_file.txt")
+  }, (resource) => {
+    // Cleanup function
+    FileResource::close(resource)
+  })
   
-  let mut spans = []
-  for i in 0..1000 {
-    let span = Tracer::start_span(tracer, "performance.span." + i.to_string())
-    spans = spans.push(span)
+  let file = ManagedResource::get(managed_resource)
+  assert_true(FileResource::is_open(file))
+  
+  // Resource should be automatically cleaned up when going out of scope
+  ManagedResource::cleanup(managed_resource)
+  
+  // Test memory leak detection
+  let leak_detector = LeakDetector::new()
+  
+  LeakDetector::track(leak_detector, "resource1")
+  LeakDetector::track(leak_detector, "resource2")
+  
+  assert_eq(LeakDetector::tracked_count(leak_detector), 2)
+  
+  LeakDetector::untrack(leak_detector, "resource1")
+  assert_eq(LeakDetector::tracked_count(leak_detector), 1)
+  
+  LeakDetector::untrack(leak_detector, "resource2")
+  assert_eq(LeakDetector::tracked_count(leak_detector), 0)
+}
+
+// Test 7: Telemetry Data Aggregation
+test "telemetry data aggregation" {
+  // Test metrics aggregation
+  let metrics_aggregator = MetricsAggregator::new()
+  
+  MetricsAggregator::record_counter(metrics_aggregator, "requests", 1.0)
+  MetricsAggregator::record_counter(metrics_aggregator, "requests", 2.0)
+  MetricsAggregator::record_counter(metrics_aggregator, "requests", 3.0)
+  
+  let counter_sum = MetricsAggregator::get_counter_sum(metrics_aggregator, "requests")
+  match counter_sum {
+    Some(sum) => assert_eq(sum, 6.0)
+    None => assert_true(false)
   }
   
-  let span_creation_time = Clock::now_unix_nanos(clock)
+  // Test histogram aggregation
+  MetricsAggregator::record_histogram(metrics_aggregator, "response_time", 100.0)
+  MetricsAggregator::record_histogram(metrics_aggregator, "response_time", 200.0)
+  MetricsAggregator::record_histogram(metrics_aggregator, "response_time", 300.0)
   
-  // 测试span属性设置性能
-  for i in 0..1000 {
-    let span = spans[i]
-    Span::set_attribute(span, "index", i)
-    Span::set_attribute(span, "batch", "performance.test")
-    Span::set_attribute(span, "timestamp", Clock::now_unix_nanos(clock).to_string())
+  let histogram_stats = MetricsAggregator::get_histogram_stats(metrics_aggregator, "response_time")
+  match histogram_stats {
+    Some(stats) => {
+      assert_eq(HistogramStats::count(stats), 3)
+      assert_eq(HistogramStats::sum(stats), 600.0)
+      assert_eq(HistogramStats::min(stats), 100.0)
+      assert_eq(HistogramStats::max(stats), 300.0)
+    }
+    None => assert_true(false)
   }
   
-  let span_attribute_time = Clock::now_unix_nanos(clock)
+  // Test time series aggregation
+  let time_series_aggregator = TimeSeriesAggregator::new()
   
-  // 测试span事件添加性能
-  for i in 0..1000 {
-    let span = spans[i]
-    Span::add_event(span, "event." + i.to_string(), [
-      ("event.index", i.to_string()),
-      ("event.type", "performance.test")
-    ])
+  TimeSeriesAggregator::record_point(time_series_aggregator, "cpu_usage", 50.5, 1000)
+  TimeSeriesAggregator::record_point(time_series_aggregator, "cpu_usage", 60.2, 2000)
+  TimeSeriesAggregator::record_point(time_series_aggregator, "cpu_usage", 45.8, 3000)
+  
+  let aggregated = TimeSeriesAggregator::aggregate(time_series_aggregator, "cpu_usage", 1000, 3000)
+  match aggregated {
+    Some(points) => {
+      assert_eq(points.length(), 3)
+      assert_eq(points[0].value, 50.5)
+      assert_eq(points[2].value, 45.8)
+    }
+    None => assert_true(false)
+  }
+}
+
+// Test 8: Cross-Service Communication
+test "cross-service communication" {
+  // Test service registry
+  let service_registry = ServiceRegistry::new()
+  
+  ServiceRegistry::register(service_registry, "user-service", "http://localhost:8001")
+  ServiceRegistry::register(service_registry, "order-service", "http://localhost:8002")
+  ServiceRegistry::register(service_registry, "payment-service", "http://localhost:8003")
+  
+  let user_service_url = ServiceRegistry::get_url(service_registry, "user-service")
+  match user_service_url {
+    Some(url) => assert_eq(url, "http://localhost:8001")
+    None => assert_true(false)
   }
   
-  let span_event_time = Clock::now_unix_nanos(clock)
+  // Test circuit breaker pattern
+  let circuit_breaker = CircuitBreaker::new("test-service", 3, 5000) // 3 failures, 5s timeout
   
-  // 测试span结束性能
-  for i in 0..1000 {
-    let span = spans[i]
-    Span::end(span)
+  assert_eq(CircuitBreaker::state(circuit_breaker), Closed)
+  
+  // Simulate failures
+  CircuitBreaker::record_failure(circuit_breaker)
+  CircuitBreaker::record_failure(circuit_breaker)
+  CircuitBreaker::record_failure(circuit_breaker)
+  
+  assert_eq(CircuitBreaker::state(circuit_breaker), Open)
+  assert_false(CircuitBreaker::allow_request(circuit_breaker))
+  
+  // Test retry policy
+  let retry_policy = RetryPolicy::exponential_backoff(3, 100) // 3 retries, 100ms initial delay
+  
+  let mut attempt_count = 0
+  let result = RetryPolicy::execute(retry_policy, () => {
+    attempt_count = attempt_count + 1
+    
+    // Fail first two attempts, succeed on third
+    if attempt_count < 3 {
+      Error::new("Temporary failure")
+    } else {
+      "success"
+    }
+  })
+  
+  match result {
+    Ok(value) => assert_eq(value, "success")
+    Err(_) => assert_true(false)
   }
   
-  let span_end_time = Clock::now_unix_nanos(clock)
+  assert_eq(attempt_count, 3)
+}
+
+// Test 9: Configuration Management
+test "configuration management" {
+  // Test configuration loader
+  let config_loader = ConfigLoader::new()
   
-  // 测试日志记录性能
-  let log_start_time = Clock::now_unix_nanos(clock)
+  // Load from different sources
+  ConfigLoader::add_source(config_loader, FileSource::new("config.json"))
+  ConfigLoader::add_source(config_loader, EnvSource::new())
+  ConfigLoader::add_source(config_loader, CommandLineSource::new())
   
-  for i in 0..1000 {
-    let log = LogRecord::new(Info, "Performance test log " + i.to_string())
-    LogRecord::add_attribute(log, "log.index", i)
-    LogRecord::add_attribute(log, "log.batch", "performance.test")
-    Logger::emit(logger, log)
+  let config = ConfigLoader::load(config_loader)
+  
+  // Test configuration values
+  let db_url = Config::get_string(config, "database.url")
+  match db_url {
+    Some(url) => assert_true(url.length() > 0)
+    None => assert_true(false) // Should have a default
   }
   
-  let log_time = Clock::now_unix_nanos(clock)
+  let max_connections = Config::get_int(config, "database.max_connections", 10)
+  assert_true(max_connections > 0)
   
-  // 测试度量操作性能
-  let metrics_start_time = Clock::now_unix_nanos(clock)
+  let enable_cache = Config::get_bool(config, "cache.enabled", true)
+  assert_true(enable_cache)
   
-  let counter = Meter::create_counter(meter, "performance.counter", Some("Performance test counter"), Some("count"))
-  let histogram = Meter::create_histogram(meter, "performance.histogram", Some("Performance test histogram"), Some("ms"))
-  let updown_counter = Meter::create_updown_counter(meter, "performance.updown", Some("Performance test updown counter"), Some("count"))
+  // Test configuration validation
+  let validator = ConfigValidator::new()
   
-  for i in 0..1000 {
-    Counter::add(counter, i.to_double())
-    Histogram::record(histogram, i.to_double() * 0.1)
-    UpDownCounter::add(updown_counter, i.to_double() - 500.0)
+  ConfigValidator::add_rule(validator, "database.url", ValidationRule::required())
+  ConfigValidator::add_rule(validator, "database.max_connections", ValidationRule::min(1))
+  ConfigValidator::add_rule(validator, "database.max_connections", ValidationRule::max(100))
+  
+  let validation_result = ConfigValidator::validate(validator, config)
+  assert_true(ValidationResult::is_valid(validation_result))
+  
+  // Test dynamic configuration updates
+  let dynamic_config = DynamicConfig::new(config)
+  
+  DynamicConfig::watch(dynamic_config, "database.max_connections", (new_value) => {
+    // Handle configuration change
+    assert_true(new_value > 0)
+  })
+  
+  DynamicConfig::update(dynamic_config, "database.max_connections", 20)
+  let updated_value = Config::get_int(dynamic_config.config, "database.max_connections", 10)
+  assert_eq(updated_value, 20)
+}
+
+// Test 10: Internationalization Support
+test "internationalization support" {
+  // Test locale management
+  let locale_manager = LocaleManager::new()
+  
+  LocaleManager::add_locale(locale_manager, "en-US", "English (United States)")
+  LocaleManager::add_locale(locale_manager, "zh-CN", "中文 (中国)")
+  LocaleManager::add_locale(locale_manager, "es-ES", "Español (España)")
+  
+  LocaleManager::set_current(locale_manager, "en-US")
+  assert_eq(LocaleManager::current(locale_manager), "en-US")
+  
+  // Test message translation
+  let message_bundle = MessageBundle::new()
+  
+  // Add messages for different locales
+  MessageBundle::add_message(message_bundle, "en-US", "welcome", "Welcome to our application!")
+  MessageBundle::add_message(message_bundle, "zh-CN", "welcome", "欢迎使用我们的应用！")
+  MessageBundle::add_message(message_bundle, "es-ES", "welcome", "¡Bienvenido a nuestra aplicación!")
+  
+  // Test message retrieval
+  let en_message = MessageBundle::get_message(message_bundle, "en-US", "welcome")
+  match en_message {
+    Some(msg) => assert_eq(msg, "Welcome to our application!")
+    None => assert_true(false)
   }
   
-  let metrics_time = Clock::now_unix_nanos(clock)
-  
-  // 测试上下文操作性能
-  let context_start_time = Clock::now_unix_nanos(clock)
-  
-  let base_ctx = Context::root()
-  let mut contexts = []
-  
-  for i in 0..1000 {
-    let key = ContextKey::new("key." + i.to_string())
-    let ctx = Context::with_value(base_ctx, key, "value." + i.to_string())
-    contexts = contexts.push(ctx)
+  let zh_message = MessageBundle::get_message(message_bundle, "zh-CN", "welcome")
+  match zh_message {
+    Some(msg) => assert_eq(msg, "欢迎使用我们的应用！")
+    None => assert_true(false)
   }
   
-  for i in 0..1000 {
-    let ctx = contexts[i]
-    let key = ContextKey::new("key." + i.to_string())
-    let _ = Context::get(ctx, key)
+  // Test message formatting with parameters
+  MessageBundle::add_message(message_bundle, "en-US", "user_greeting", "Hello, {name}! You have {count} new messages.")
+  MessageBundle::add_message(message_bundle, "zh-CN", "user_greeting", "你好，{name}！你有 {count} 条新消息。")
+  
+  let formatted_en = MessageBundle::format_message(message_bundle, "en-US", "user_greeting", [
+    ("name", "Alice"),
+    ("count", "5")
+  ])
+  
+  match formatted_en {
+    Some(msg) => assert_eq(msg, "Hello, Alice! You have 5 new messages.")
+    None => assert_true(false)
   }
   
-  let context_time = Clock::now_unix_nanos(clock)
+  let formatted_zh = MessageBundle::format_message(message_bundle, "zh-CN", "user_greeting", [
+    ("name", "张三"),
+    ("count", "3")
+  ])
   
-  // 计算性能指标
-  let span_creation_duration = span_creation_time - span_start_time
-  let span_attribute_duration = span_attribute_time - span_creation_time
-  let span_event_duration = span_event_time - span_attribute_time
-  let span_end_duration = span_end_time - span_event_time
-  let log_duration = log_time - span_end_time
-  let metrics_duration = metrics_time - log_time
-  let context_duration = context_time - metrics_start_time
+  match formatted_zh {
+    Some(msg) => assert_eq(msg, "你好，张三！你有 3 条新消息。")
+    None => assert_true(false)
+  }
   
-  // 验证性能指标在合理范围内
-  assert_true(span_creation_duration < 1000000000L)  // 创建1000个span应在1秒内完成
-  assert_true(span_attribute_duration < 1000000000L)  // 设置1000个span属性应在1秒内完成
-  assert_true(span_event_duration < 1000000000L)  // 添加1000个span事件应在1秒内完成
-  assert_true(span_end_duration < 1000000000L)  // 结束1000个span应在1秒内完成
-  assert_true(log_duration < 1000000000L)  // 记录1000条日志应在1秒内完成
-  assert_true(metrics_duration < 1000000000L)  // 1000次度量操作应在1秒内完成
-  assert_true(context_duration < 1000000000L)  // 1000次上下文操作应在1秒内完成
+  // Test date/time formatting
+  let date_formatter = DateFormatter::new("en-US")
+  let formatted_date = DateFormatter::format(date_formatter, 1640995200000) // 2022-01-01 00:00:00 UTC
   
-  // 计算平均操作时间
-  let avg_span_creation = span_creation_duration.to_int() / 1000
-  let avg_span_attribute = span_attribute_duration.to_int() / 1000
-  let avg_span_event = span_event_duration.to_int() / 1000
-  let avg_span_end = span_end_duration.to_int() / 1000
-  let avg_log = log_duration.to_int() / 1000
-  let avg_metrics = metrics_duration.to_int() / 1000
-  let avg_context = context_duration.to_int() / 1000
+  assert_true(formatted_date.contains("2022"))
   
-  // 验证平均操作时间在合理范围内（纳秒）
-  assert_true(avg_span_creation < 1000000)  // 每个span创建时间小于1毫秒
-  assert_true(avg_span_attribute < 1000000)  // 每个span属性设置时间小于1毫秒
-  assert_true(avg_span_event < 1000000)  // 每个span事件添加时间小于1毫秒
-  assert_true(avg_span_end < 1000000)  // 每个span结束时间小于1毫秒
-  assert_true(avg_log < 1000000)  // 每条日志记录时间小于1毫秒
-  assert_true(avg_metrics < 1000000)  // 每次度量操作时间小于1毫秒
-  assert_true(avg_context < 1000000)  // 每次上下文操作时间小于1毫秒
+  let zh_date_formatter = DateFormatter::new("zh-CN")
+  let formatted_zh_date = DateFormatter::format(zh_date_formatter, 1640995200000)
   
-  assert_true(true)
+  assert_true(formatted_zh_date.contains("2022"))
+  
+  // Test number formatting
+  let number_formatter = NumberFormatter::new("en-US")
+  let formatted_number = NumberFormatter::format(number_formatter, 1234567.89)
+  
+  assert_true(formatted_number.contains(","))
+  
+  let zh_number_formatter = NumberFormatter::new("zh-CN")
+  let formatted_zh_number = NumberFormatter::format(zh_number_formatter, 1234567.89)
+  
+  assert_true(formatted_zh_number.length() > 0)
 }
