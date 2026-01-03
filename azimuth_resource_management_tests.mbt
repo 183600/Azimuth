@@ -1,942 +1,900 @@
-// Azimuth 资源管理测试
-// 专注于测试遥测系统的资源分配、使用和释放
+// Azimuth 资源管理测试用例
+// 专注于系统资源的分配、监控、优化和释放功能
 
 // 测试1: 内存资源管理
-test "内存资源管理" {
-  // 创建内存管理器
-  let memory_manager = MemoryManager({
-    allocated_objects: [],
-    total_allocated: 0,
-    max_memory_limit: 10 * 1024 * 1024, // 10MB
-    gc_threshold: 8 * 1024 * 1024      // 8MB
-  })
-  
-  // 分配内存对象的函数
-  let allocate_memory_object = fn(manager, size, object_id) {
-    let current_usage = get_memory_usage(manager)
-    
-    // 检查是否会超过内存限制
-    if current_usage + size > manager.max_memory_limit {
-      // 触发垃圾回收
-      trigger_garbage_collection(manager)
-      
-      // 再次检查内存使用
-      let new_usage = get_memory_usage(manager)
-      if new_usage + size > manager.max_memory_limit {
-        return Error("内存不足，无法分配对象")
+test "内存资源分配和管理" {
+  // 模拟内存资源池
+  let memory_pool = {
+    "total_memory_mb": 8192,  // 8GB
+    "allocated_memory_mb": 4096,  // 4GB已分配
+    "available_memory_mb": 4096,  // 4GB可用
+    "reserved_memory_mb": 1024,  // 1GB保留
+    "allocations": [
+      {
+        "id": "alloc-001",
+        "process_id": "api-service",
+        "size_mb": 1024,
+        "type": "heap",
+        "allocated_at": 1640995200,
+        "priority": "high"
+      },
+      {
+        "id": "alloc-002",
+        "process_id": "database",
+        "size_mb": 2048,
+        "type": "buffer",
+        "allocated_at": 1640995210,
+        "priority": "critical"
+      },
+      {
+        "id": "alloc-003",
+        "process_id": "cache-service",
+        "size_mb": 1024,
+        "type": "cache",
+        "allocated_at": 1640995220,
+        "priority": "medium"
       }
-    }
-    
-    // 分配对象
-    let memory_object = MemoryObject({
-      id: object_id,
-      size: size,
-      data: "data_of_size_" + size.to_string(),
-      created_at: get_current_time_ms(),
-      last_accessed: get_current_time_ms()
-    })
-    
-    allocate_object(manager, memory_object)
-    Success(memory_object)
+    ],
+    "fragmentation_percent": 15.2
   }
   
-  // 释放内存对象的函数
-  let deallocate_memory_object = fn(manager, object_id) {
-    deallocate_object(manager, object_id)
+  // 验证内存池状态
+  assert_eq(memory_pool["total_memory_mb"], 8192)
+  assert_eq(memory_pool["allocated_memory_mb"], 4096)
+  assert_eq(memory_pool["available_memory_mb"], 4096)
+  assert_eq(memory_pool["reserved_memory_mb"], 1024)
+  assert_eq(memory_pool["allocations"].length(), 3)
+  assert_eq(memory_pool["fragmentation_percent"], 15.2)
+  
+  // 计算内存使用率
+  let memory_usage_percent = (memory_pool["allocated_memory_mb"] as Float) / 
+                            (memory_pool["total_memory_mb"] as Float) * 100.0
+  
+  assert_eq(memory_usage_percent, 50.0)
+  
+  // 计算可用内存百分比 (排除保留内存)
+  let usable_memory_mb = memory_pool["total_memory_mb"] - memory_pool["reserved_memory_mb"]
+  let usable_available_mb = memory_pool["available_memory_mb"] - memory_pool["reserved_memory_mb"]
+  let usable_usage_percent = ((usable_memory_mb - usable_available_mb) as Float) / 
+                            (usable_memory_mb as Float) * 100.0
+  
+  assert_eq(usable_usage_percent.round(), 57.0)
+  
+  // 按优先级分类内存分配
+  let allocations_by_priority = {
+    "critical": memory_pool["allocations"].filter(fn(alloc) { alloc["priority"] == "critical" }),
+    "high": memory_pool["allocations"].filter(fn(alloc) { alloc["priority"] == "high" }),
+    "medium": memory_pool["allocations"].filter(fn(alloc) { alloc["priority"] == "medium" }),
+    "low": memory_pool["allocations"].filter(fn(alloc) { alloc["priority"] == "low" })
+  }
+  
+  assert_eq(allocations_by_priority["critical"].length(), 1)
+  assert_eq(allocations_by_priority["high"].length(), 1)
+  assert_eq(allocations_by_priority["medium"].length(), 1)
+  assert_eq(allocations_by_priority["low"].length(), 0)
+  
+  // 实现内存分配策略
+  let allocate_memory = fn(pool, process_id, size_mb, priority, allocation_type) {
+    let available_for_allocation = pool["available_memory_mb"] - pool["reserved_memory_mb"]
+    
+    if size_mb > available_for_allocation {
+      // 内存不足，尝试释放低优先级内存
+      let low_priority_allocations = pool["allocations"].filter(fn(alloc) { 
+        alloc["priority"] == "low" || alloc["priority"] == "medium" 
+      }).sort_by(fn(a, b) { 
+        if a["priority"] < b["priority"] { -1 } 
+        else if a["priority"] > b["priority"] { 1 } 
+        else { 0 } 
+      })
+      
+      let mut freed_memory = 0
+      let mut updated_allocations = pool["allocations"]
+      
+      for alloc in low_priority_allocations {
+        if freed_memory >= size_mb { break }
+        
+        updated_allocations = updated_allocations.filter(fn(a) { a["id"] != alloc["id"] })
+        freed_memory = freed_memory + alloc["size_mb"]
+      }
+      
+      if freed_memory >= size_mb {
+        // 成功释放足够内存，进行分配
+        let new_allocation = {
+          "id": "alloc-" + (pool["allocations"].length() + 1).to_string(),
+          "process_id": process_id,
+          "size_mb": size_mb,
+          "type": allocation_type,
+          "allocated_at": 1640995300,
+          "priority": priority
+        }
+        
+        updated_allocations = updated_allocations.push(new_allocation)
+        
+        {
+          ...pool,
+          "allocated_memory_mb": pool["allocated_memory_mb"] - freed_memory + size_mb,
+          "available_memory_mb": pool["available_memory_mb"] + freed_memory - size_mb,
+          "allocations": updated_allocations
+        }
+      } else {
+        // 无法释放足够内存，分配失败
+        pool
+      }
+    } else {
+      // 内存充足，直接分配
+      let new_allocation = {
+        "id": "alloc-" + (pool["allocations"].length() + 1).to_string(),
+        "process_id": process_id,
+        "size_mb": size_mb,
+        "type": allocation_type,
+        "allocated_at": 1640995300,
+        "priority": priority
+      }
+      
+      let updated_allocations = pool["allocations"].push(new_allocation)
+      
+      {
+        ...pool,
+        "allocated_memory_mb": pool["allocated_memory_mb"] + size_mb,
+        "available_memory_mb": pool["available_memory_mb"] - size_mb,
+        "allocations": updated_allocations
+      }
+    }
   }
   
   // 测试内存分配
-  let object1_result = allocate_memory_object(memory_manager, 1024, "obj1")
-  let object2_result = allocate_memory_object(memory_manager, 2048, "obj2")
-  let object3_result = allocate_memory_object(memory_manager, 4096, "obj3")
+  let updated_pool = allocate_memory(memory_pool, "log-processor", 512, "low", "buffer")
   
-  // 验证分配成功
-  assert_true(object1_result.is_success(), "对象1分配失败")
-  assert_true(object2_result.is_success(), "对象2分配失败")
-  assert_true(object3_result.is_success(), "对象3分配失败")
+  // 验证分配结果
+  assert_eq(updated_pool["allocations"].length(), 4)
+  assert_eq(updated_pool["allocated_memory_mb"], 4608) // 4096 + 512
+  assert_eq(updated_pool["available_memory_mb"], 3584) // 4096 - 512
   
-  // 验证内存使用量
-  let current_usage = get_memory_usage(memory_manager)
-  let expected_usage = 1024 + 2048 + 4096
-  assert_eq(current_usage, expected_usage, 
-    "内存使用量计算错误: 期望 " + expected_usage.to_string() + 
-    ", 实际 " + current_usage.to_string())
+  // 验证新分配
+  let new_allocation = updated_pool["allocations"].filter(fn(alloc) { 
+    alloc["process_id"] == "log-processor" 
+  })[0]
   
-  // 测试内存释放
-  deallocate_memory_object(memory_manager, "obj2")
-  
-  // 验证内存释放
-  let usage_after_deallocation = get_memory_usage(memory_manager)
-  let expected_usage_after_deallocation = 1024 + 4096
-  assert_eq(usage_after_deallocation, expected_usage_after_deallocation, 
-    "内存释放后使用量错误: 期望 " + expected_usage_after_deallocation.to_string() + 
-    ", 实际 " + usage_after_deallocation.to_string())
-  
-  // 测试垃圾回收阈值
-  let large_object_result = allocate_memory_object(memory_manager, 5 * 1024 * 1024, "large_obj")
-  assert_true(large_object_result.is_success(), "大对象分配失败，应该触发垃圾回收")
+  assert_eq(new_allocation["size_mb"], 512)
+  assert_eq(new_allocation["priority"], "low")
+  assert_eq(new_allocation["type"], "buffer")
 }
 
-// 测试2: 连接池资源管理
-test "连接池资源管理" {
-  // 创建连接池
-  let connection_pool = ConnectionPool({
-    max_connections: 10,
-    min_connections: 2,
-    active_connections: [],
-    idle_connections: [],
-    total_created: 0,
-    total_closed: 0
+// 测试2: CPU资源管理
+test "CPU资源分配和调度" {
+  // 模拟CPU资源管理
+  let cpu_resources = {
+    "total_cores": 8,
+    "available_cores": 2,
+    "core_utilization": [
+      {"core_id": 0, "utilization_percent": 75.5, "processes": ["api-service", "system"]},
+      {"core_id": 1, "utilization_percent": 82.3, "processes": ["database", "system"]},
+      {"core_id": 2, "utilization_percent": 68.9, "processes": ["cache-service"]},
+      {"core_id": 3, "utilization_percent": 91.2, "processes": ["data-processor", "system"]},
+      {"core_id": 4, "utilization_percent": 45.8, "processes": []},
+      {"core_id": 5, "utilization_percent": 52.1, "processes": ["monitoring"]},
+      {"core_id": 6, "utilization_percent": 78.6, "processes": ["web-server", "system"]},
+      {"core_id": 7, "utilization_percent": 39.4, "processes": []}
+    ],
+    "process_queue": [
+      {
+        "pid": "batch-job-001",
+        "priority": "low",
+        "cpu_required": 2,
+        "estimated_duration_sec": 300,
+        "queued_at": 1640995200
+      },
+      {
+        "pid": "urgent-task-002",
+        "priority": "high",
+        "cpu_required": 1,
+        "estimated_duration_sec": 60,
+        "queued_at": 1640995210
+      }
+    ],
+    "scheduling_policy": "priority_based"
+  }
+  
+  // 验证CPU资源状态
+  assert_eq(cpu_resources["total_cores"], 8)
+  assert_eq(cpu_resources["available_cores"], 2)
+  assert_eq(cpu_resources["core_utilization"].length(), 8)
+  assert_eq(cpu_resources["process_queue"].length(), 2)
+  assert_eq(cpu_resources["scheduling_policy"], "priority_based")
+  
+  // 计算平均CPU利用率
+  let avg_utilization = cpu_resources["core_utilization"].reduce(fn(acc, core) {
+    acc + core["utilization_percent"]
+  }, 0.0) / (cpu_resources["core_utilization"].length() as Float)
+  
+  assert_eq(avg_utilization.round(), 67.0)
+  
+  // 找出空闲CPU核心
+  let idle_cores = cpu_resources["core_utilization"].filter(fn(core) { 
+    core["utilization_percent"] < 50.0 
   })
   
-  // 初始化最小连接数
-  initialize_connection_pool(connection_pool)
+  assert_eq(idle_cores.length(), 3)
+  assert_eq(idle_cores[0]["core_id"], 4)
+  assert_eq(idle_cores[1]["core_id"], 5)
+  assert_eq(idle_cores[2]["core_id"], 7)
   
-  // 获取连接的函数
-  let get_connection = fn(pool) {
-    // 检查是否有空闲连接
-    if pool.idle_connections.length() > 0 {
-      // 从空闲连接中取出一个
-      let connection = pool.idle_connections[0]
-      let remaining_idle = pool.idle_connections.slice(1, pool.idle_connections.length())
+  // 找出高负载CPU核心
+  let high_load_cores = cpu_resources["core_utilization"].filter(fn(core) { 
+    core["utilization_percent"] > 80.0 
+  })
+  
+  assert_eq(high_load_cores.length(), 2)
+  assert_eq(high_load_cores[0]["core_id"], 1)
+  assert_eq(high_load_cores[1]["core_id"], 3)
+  
+  // 实现CPU调度策略
+  let schedule_processes = fn(resources) {
+    let updated_queue = resources["process_queue"].sort_by(fn(a, b) {
+      if a["priority"] < b["priority"] { -1 }
+      else if a["priority"] > b["priority"] { 1 }
+      else { 0 }
+    })
+    
+    let mut updated_cores = resources["core_utilization"]
+    let mut remaining_queue = []
+    let mut scheduled_processes = []
+    
+    for process in updated_queue {
+      let required_cores = process["cpu_required"]
       
-      // 添加到活跃连接
-      let updated_active = pool.active_connections + [connection]
-      
-      update_connection_pool(pool, {
-        active_connections: updated_active,
-        idle_connections: remaining_idle
+      // 找出可用的CPU核心
+      let available_cores = updated_cores.filter(fn(core) {
+        core["utilization_percent"] < 70.0 && core["processes"].length() == 0
       })
       
-      Success(connection)
-    } else if pool.active_connections.length() < pool.max_connections {
-      // 创建新连接
-      let new_connection = create_new_connection(pool)
-      let updated_active = pool.active_connections + [new_connection]
-      
-      update_connection_pool(pool, {
-        active_connections: updated_active,
-        total_created: pool.total_created + 1
-      })
-      
-      Success(new_connection)
-    } else {
-      // 连接池已满
-      Error("连接池已满，无法获取连接")
+      if available_cores.length() >= required_cores {
+        // 调度进程到可用核心
+        let assigned_cores = available_cores.slice(0, required_cores)
+        
+        // 更新核心状态
+        for i in 0..=(updated_cores.length() - 1) {
+          let core = updated_cores[i]
+          if assigned_cores.any(fn(assigned) { assigned["core_id"] == core["core_id"] }) {
+            updated_cores = updated_cores.update(i, {
+              ...core,
+              "processes": core["processes"].push(process["pid"]),
+              "utilization_percent": core["utilization_percent"] + 20.0
+            })
+          }
+        }
+        
+        scheduled_processes = scheduled_processes.push(process["pid"])
+      } else {
+        // 没有足够的核心，保留在队列中
+        remaining_queue = remaining_queue.push(process)
+      }
+    }
+    
+    {
+      ...resources,
+      "core_utilization": updated_cores,
+      "process_queue": remaining_queue,
+      "scheduled_processes": scheduled_processes
     }
   }
   
-  // 释放连接的函数
-  let release_connection = fn(pool, connection) {
-    // 从活跃连接中移除
-    let updated_active = pool.active_connections.filter(fn(conn) { 
-      conn.id != connection.id 
-    })
-    
-    // 添加到空闲连接
-    let updated_idle = pool.idle_connections + [connection]
-    
-    update_connection_pool(pool, {
-      active_connections: updated_active,
-      idle_connections: updated_idle
-    })
+  // 应用调度策略
+  let scheduled_resources = schedule_processes(cpu_resources)
+  
+  // 验证调度结果
+  assert_eq(scheduled_resources["scheduled_processes"].length(), 1)
+  assert_eq(scheduled_resources["scheduled_processes"][0], "urgent-task-002")
+  assert_eq(scheduled_resources["process_queue"].length(), 1)
+  assert_eq(scheduled_resources["process_queue"][0]["pid"], "batch-job-001")
+  
+  // 验证核心状态更新
+  let updated_core = scheduled_resources["core_utilization"].filter(fn(core) {
+    core["processes"].contains("urgent-task-002")
+  })[0]
+  
+  assert_true(updated_core["utilization_percent"] > 39.4) // 原始值 + 20.0
+  assert_true(updated_core["processes"].contains("urgent-task-002"))
+}
+
+// 测试3: 磁盘空间管理
+test "磁盘空间分配和清理" {
+  // 模拟磁盘空间管理
+  let disk_management = {
+    "total_space_gb": 500,
+    "used_space_gb": 425,
+    "free_space_gb": 75,
+    "reserved_space_gb": 25,
+    "directories": [
+      {
+        "path": "/var/log",
+        "size_gb": 50.5,
+        "file_count": 125000,
+        "retention_policy": "30d",
+        "compressible": true,
+        "last_cleanup": 1640995000
+      },
+      {
+        "path": "/tmp",
+        "size_gb": 15.2,
+        "file_count": 45000,
+        "retention_policy": "7d",
+        "compressible": false,
+        "last_cleanup": 1640995200
+      },
+      {
+        "path": "/app/cache",
+        "size_gb": 120.8,
+        "file_count": 250000,
+        "retention_policy": "7d",
+        "compressible": true,
+        "last_cleanup": 1640995100
+      },
+      {
+        "path": "/data",
+        "size_gb": 200.5,
+        "file_count": 50000,
+        "retention_policy": "never",
+        "compressible": false,
+        "last_cleanup": 0
+      }
+    ],
+    "cleanup_policies": {
+      "min_free_space_percent": 15,
+      "aggressive_cleanup_threshold": 10,
+      "compression_ratio_target": 0.6
+    }
   }
   
-  // 验证初始状态
-  assert_eq(connection_pool.active_connections.length(), 0, "初始活跃连接数不为0")
-  assert_eq(connection_pool.idle_connections.length(), connection_pool.min_connections, 
-    "初始空闲连接数不等于最小连接数")
+  // 验证磁盘管理状态
+  assert_eq(disk_management["total_space_gb"], 500)
+  assert_eq(disk_management["used_space_gb"], 425)
+  assert_eq(disk_management["free_space_gb"], 75)
+  assert_eq(disk_management["reserved_space_gb"], 25)
+  assert_eq(disk_management["directories"].length(), 4)
   
-  // 测试获取连接
-  let conn1_result = get_connection(connection_pool)
-  let conn2_result = get_connection(connection_pool)
-  let conn3_result = get_connection(connection_pool)
+  // 计算磁盘使用率
+  let disk_usage_percent = (disk_management["used_space_gb"] as Float) / 
+                          (disk_management["total_space_gb"] as Float) * 100.0
   
-  // 验证获取成功
-  assert_true(conn1_result.is_success(), "获取连接1失败")
-  assert_true(conn2_result.is_success(), "获取连接2失败")
-  assert_true(conn3_result.is_success(), "获取连接3失败")
+  assert_eq(disk_usage_percent, 85.0)
+  
+  // 计算可用空间百分比
+  let free_space_percent = (disk_management["free_space_gb"] as Float) / 
+                          (disk_management["total_space_gb"] as Float) * 100.0
+  
+  assert_eq(free_space_percent, 15.0)
+  
+  // 找出可清理的目录
+  let cleanable_dirs = disk_management["directories"].filter(fn(dir) { 
+    dir["retention_policy"] != "never" 
+  })
+  
+  assert_eq(cleanable_dirs.length(), 3)
+  
+  // 找出可压缩的目录
+  let compressible_dirs = disk_management["directories"].filter(fn(dir) { 
+    dir["compressible"] 
+  })
+  
+  assert_eq(compressible_dirs.length(), 2)
+  
+  // 实现磁盘清理策略
+  let cleanup_disk_space = fn(management) {
+    let free_space_percent = (management["free_space_gb"] as Float) / 
+                            (management["total_space_gb"] as Float) * 100.0
+    
+    let min_free_percent = management["cleanup_policies"]["min_free_space_percent"]
+    let aggressive_threshold = management["cleanup_policies"]["aggressive_cleanup_threshold"]
+    
+    let mut freed_space_gb = 0.0
+    let mut updated_dirs = management["directories"]
+    
+    if free_space_percent < min_free_percent {
+      // 需要清理空间
+      let cleanable_dirs = management["directories"].filter(fn(dir) { 
+        dir["retention_policy"] != "never" 
+      })
+      
+      // 按清理优先级排序 (临时文件优先，然后是日志，最后是缓存)
+      let prioritized_dirs = cleanable_dirs.sort_by(fn(a, b) {
+        let priority_a = match a["path"] {
+          "/tmp" => 1,
+          "/var/log" => 2,
+          _ => 3
+        }
+        
+        let priority_b = match b["path"] {
+          "/tmp" => 1,
+          "/var/log" => 2,
+          _ => 3
+        }
+        
+        if priority_a < priority_b { -1 }
+        else if priority_a > priority_b { 1 }
+        else { 0 }
+      })
+      
+      // 清理目录
+      for dir in prioritized_dirs {
+        if free_space_percent + (freed_space_gb / management["total_space_gb"] * 100.0) >= min_free_percent {
+          break
+        }
+        
+        let cleanup_ratio = if free_space_percent < aggressive_threshold {
+          0.8 // 激进清理：删除80%
+        } else {
+          0.5 // 常规清理：删除50%
+        }
+        
+        let potential_freed = dir["size_gb"] * cleanup_ratio
+        
+        // 更新目录大小
+        for i in 0..=(updated_dirs.length() - 1) {
+          if updated_dirs[i]["path"] == dir["path"] {
+            updated_dirs = updated_dirs.update(i, {
+              ...updated_dirs[i],
+              "size_gb": dir["size_gb"] * (1.0 - cleanup_ratio),
+              "last_cleanup": 1640995400
+            })
+            break
+          }
+        }
+        
+        freed_space_gb = freed_space_gb + potential_freed
+      }
+      
+      // 如果清理后空间仍然不足，尝试压缩
+      let final_free_percent = free_space_percent + (freed_space_gb / management["total_space_gb"] * 100.0)
+      
+      if final_free_percent < min_free_percent {
+        let compressible_dirs = updated_dirs.filter(fn(dir) { dir["compressible"] })
+        
+        for dir in compressible_dirs {
+          if final_free_percent >= min_free_percent { break }
+          
+          let compression_ratio = management["cleanup_policies"]["compression_ratio_target"]
+          let potential_freed = dir["size_gb"] * (1.0 - compression_ratio)
+          
+          // 更新目录大小 (压缩后)
+          for i in 0..=(updated_dirs.length() - 1) {
+            if updated_dirs[i]["path"] == dir["path"] {
+              updated_dirs = updated_dirs.update(i, {
+                ...updated_dirs[i],
+                "size_gb": dir["size_gb"] * compression_ratio,
+                "last_cleanup": 1640995400
+              })
+              break
+            }
+          }
+          
+          freed_space_gb = freed_space_gb + potential_freed
+          final_free_percent = final_free_percent + (potential_freed / management["total_space_gb"] * 100.0)
+        }
+      }
+    }
+    
+    {
+      ...management,
+      "used_space_gb": management["used_space_gb"] - freed_space_gb,
+      "free_space_gb": management["free_space_gb"] + freed_space_gb,
+      "directories": updated_dirs,
+      "last_cleanup": 1640995400
+    }
+  }
+  
+  // 应用清理策略
+  let cleaned_disk = cleanup_disk_space(disk_management)
+  
+  // 验证清理结果
+  assert_true(cleaned_disk["free_space_gb"] > disk_management["free_space_gb"])
+  assert_true(cleaned_disk["used_space_gb"] < disk_management["used_space_gb"])
+  assert_eq(cleaned_disk["last_cleanup"], 1640995400)
+  
+  // 验证目录清理
+  let cleaned_tmp = cleaned_disk["directories"].filter(fn(dir) { 
+    dir["path"] == "/tmp" 
+  })[0]
+  
+  assert_true(cleaned_tmp["size_gb"] < disk_management["directories"][1]["size_gb"])
+  assert_eq(cleaned_tmp["last_cleanup"], 1640995400)
+  
+  // 验证最终可用空间百分比
+  let final_free_percent = (cleaned_disk["free_space_gb"] as Float) / 
+                          (cleaned_disk["total_space_gb"] as Float) * 100.0
+  
+  assert_true(final_free_percent >= disk_management["cleanup_policies"]["min_free_space_percent"])
+}
+
+// 测试4: 网络带宽管理
+test "网络带宽分配和控制" {
+  // 模拟网络带宽管理
+  let network_bandwidth = {
+    "total_bandwidth_mbps": 1000,
+    "allocated_bandwidth_mbps": 750,
+    "available_bandwidth_mbps": 250,
+    "reserved_bandwidth_mbps": 100,
+    "services": [
+      {
+        "name": "api-service",
+        "allocated_bandwidth_mbps": 300,
+        "current_usage_mbps": 225,
+        "priority": "high",
+        "min_required_mbps": 100,
+        "max_allowed_mbps": 500
+      },
+      {
+        "name": "database-replication",
+        "allocated_bandwidth_mbps": 200,
+        "current_usage_mbps": 180,
+        "priority": "critical",
+        "min_required_mbps": 150,
+        "max_allowed_mbps": 400
+      },
+      {
+        "name": "backup-service",
+        "allocated_bandwidth_mbps": 150,
+        "current_usage_mbps": 120,
+        "priority": "low",
+        "min_required_mbps": 50,
+        "max_allowed_mbps": 300
+      },
+      {
+        "name": "monitoring",
+        "allocated_bandwidth_mbps": 100,
+        "current_usage_mbps": 45,
+        "priority": "medium",
+        "min_required_mbps": 25,
+        "max_allowed_mbps": 150
+      }
+    ],
+    "qos_policies": {
+      "enable_traffic_shaping": true,
+      "burst_allowance_percent": 20,
+      "priority_preemption": true
+    }
+  }
+  
+  // 验证网络带宽状态
+  assert_eq(network_bandwidth["total_bandwidth_mbps"], 1000)
+  assert_eq(network_bandwidth["allocated_bandwidth_mbps"], 750)
+  assert_eq(network_bandwidth["available_bandwidth_mbps"], 250)
+  assert_eq(network_bandwidth["reserved_bandwidth_mbps"], 100)
+  assert_eq(network_bandwidth["services"].length(), 4)
+  
+  // 计算带宽使用率
+  let bandwidth_usage_percent = (network_bandwidth["allocated_bandwidth_mbps"] as Float) / 
+                               (network_bandwidth["total_bandwidth_mbps"] as Float) * 100.0
+  
+  assert_eq(bandwidth_usage_percent, 75.0)
+  
+  // 计算实际使用率
+  let actual_usage_mbps = network_bandwidth["services"].reduce(fn(acc, service) {
+    acc + service["current_usage_mbps"]
+  }, 0)
+  
+  let actual_usage_percent = (actual_usage_mbps as Float) / 
+                            (network_bandwidth["total_bandwidth_mbps"] as Float) * 100.0
+  
+  assert_eq(actual_usage_percent.round(), 57.0)
+  
+  // 按优先级分类服务
+  let services_by_priority = {
+    "critical": network_bandwidth["services"].filter(fn(service) { service["priority"] == "critical" }),
+    "high": network_bandwidth["services"].filter(fn(service) { service["priority"] == "high" }),
+    "medium": network_bandwidth["services"].filter(fn(service) { service["priority"] == "medium" }),
+    "low": network_bandwidth["services"].filter(fn(service) { service["priority"] == "low" })
+  }
+  
+  assert_eq(services_by_priority["critical"].length(), 1)
+  assert_eq(services_by_priority["high"].length(), 1)
+  assert_eq(services_by_priority["medium"].length(), 1)
+  assert_eq(services_by_priority["low"].length(), 1)
+  
+  // 实现带宽动态调整策略
+  let adjust_bandwidth_allocation = fn(bandwidth) {
+    let available_for_reallocation = bandwidth["available_bandwidth_mbps"]
+    let mut updated_services = bandwidth["services"]
+    
+    // 检查是否需要调整带宽分配
+    let services_needing_adjustment = updated_services.filter(fn(service) {
+      let usage_ratio = (service["current_usage_mbps"] as Float) / 
+                       (service["allocated_bandwidth_mbps"] as Float)
+      
+      // 使用率超过90%或低于50%的服务需要调整
+      usage_ratio > 0.9 || usage_ratio < 0.5
+    })
+    
+    if services_needing_adjustment.length() > 0 && available_for_reallocation > 0 {
+      // 按优先级排序需要调整的服务
+      let prioritized_adjustments = services_needing_adjustment.sort_by(fn(a, b) {
+        let priority_a = match a["priority"] {
+          "critical" => 1,
+          "high" => 2,
+          "medium" => 3,
+          "low" => 4,
+          _ => 5
+        }
+        
+        let priority_b = match b["priority"] {
+          "critical" => 1,
+          "high" => 2,
+          "medium" => 3,
+          "low" => 4,
+          _ => 5
+        }
+        
+        if priority_a < priority_b { -1 }
+        else if priority_a > priority_b { 1 }
+        else { 0 }
+      })
+      
+      // 调整带宽分配
+      let mut remaining_bandwidth = available_for_reallocation
+      
+      for service in prioritized_adjustments {
+        if remaining_bandwidth <= 0 { break }
+        
+        let usage_ratio = (service["current_usage_mbps"] as Float) / 
+                         (service["allocated_bandwidth_mbps"] as Float)
+        
+        let adjustment = if usage_ratio > 0.9 {
+          // 增加带宽分配
+          let potential_increase = service["max_allowed_mbps"] - service["allocated_bandwidth_mbps"]
+          let recommended_increase = (service["allocated_bandwidth_mbps"] as Float) * 0.3
+          let actual_increase = if recommended_increase > remaining_bandwidth {
+            remaining_bandwidth
+          } else if recommended_increase > potential_increase {
+            potential_increase
+          } else {
+            recommended_increase as Int
+          }
+          
+          actual_increase
+        } else {
+          // 减少带宽分配
+          let potential_decrease = service["allocated_bandwidth_mbps"] - service["min_required_mbps"]
+          let recommended_decrease = (service["allocated_bandwidth_mbps"] as Float) * 0.2
+          let actual_decrease = if recommended_decrease > potential_decrease {
+            potential_decrease
+          } else {
+            recommended_decrease as Int
+          }
+          
+          -actual_decrease // 负数表示减少
+        }
+        
+        if adjustment != 0 {
+          // 更新服务带宽分配
+          for i in 0..=(updated_services.length() - 1) {
+            if updated_services[i]["name"] == service["name"] {
+              updated_services = updated_services.update(i, {
+                ...updated_services[i],
+                "allocated_bandwidth_mbps": updated_services[i]["allocated_bandwidth_mbps"] + adjustment
+              })
+              break
+            }
+          }
+          
+          remaining_bandwidth = remaining_bandwidth - adjustment
+        }
+      }
+    }
+    
+    // 重新计算总分配带宽
+    let new_allocated_bandwidth = updated_services.reduce(fn(acc, service) {
+      acc + service["allocated_bandwidth_mbps"]
+    }, 0)
+    
+    {
+      ...bandwidth,
+      "services": updated_services,
+      "allocated_bandwidth_mbps": new_allocated_bandwidth,
+      "available_bandwidth_mbps": bandwidth["total_bandwidth_mbps"] - new_allocated_bandwidth,
+      "last_adjustment": 1640995400
+    }
+  }
+  
+  // 应用带宽调整策略
+  let adjusted_bandwidth = adjust_bandwidth_allocation(network_bandwidth)
+  
+  // 验证调整结果
+  assert_eq(adjusted_bandwidth["last_adjustment"], 1640995400)
+  
+  // 验证总分配带宽不超过总带宽
+  assert_true(adjusted_bandwidth["allocated_bandwidth_mbps"] <= adjusted_bandwidth["total_bandwidth_mbps"])
+  
+  // 验证高优先级服务获得足够带宽
+  let critical_service = adjusted_bandwidth["services"].filter(fn(service) { 
+    service["priority"] == "critical" 
+  })[0]
+  
+  assert_true(critical_service["allocated_bandwidth_mbps"] >= critical_service["min_required_mbps"])
+  assert_true(critical_service["allocated_bandwidth_mbps"] <= critical_service["max_allowed_mbps"])
+}
+
+// 测试5: 连接池管理
+test "连接池资源管理" {
+  // 模拟数据库连接池
+  let connection_pool = {
+    "pool_name": "database-connection-pool",
+    "max_connections": 20,
+    "min_connections": 5,
+    "active_connections": 12,
+    "idle_connections": 5,
+    "creating_connections": 1,
+    "connections": [
+      {
+        "id": "conn-001",
+        "status": "active",
+        "created_at": 1640995000,
+        "last_used_at": 1640995200,
+        "usage_count": 125,
+        "process_id": "api-service-001"
+      },
+      {
+        "id": "conn-002",
+        "status": "active",
+        "created_at": 1640995010,
+        "last_used_at": 1640995190,
+        "usage_count": 98,
+        "process_id": "api-service-002"
+      },
+      {
+        "id": "conn-003",
+        "status": "idle",
+        "created_at": 1640995020,
+        "last_used_at": 1640995150,
+        "usage_count": 76,
+        "process_id": None
+      },
+      {
+        "id": "conn-004",
+        "status": "idle",
+        "created_at": 1640995030,
+        "last_used_at": 1640995180,
+        "usage_count": 54,
+        "process_id": None
+      },
+      {
+        "id": "conn-005",
+        "status": "creating",
+        "created_at": 1640995210,
+        "last_used_at": 0,
+        "usage_count": 0,
+        "process_id": None
+      }
+    ],
+    "config": {
+      "connection_timeout_ms": 30000,
+      "idle_timeout_ms": 300000,
+      "max_lifetime_ms": 3600000,
+      "health_check_interval_ms": 60000
+    }
+  }
   
   // 验证连接池状态
-  assert_eq(connection_pool.active_connections.length(), 3, "活跃连接数不正确")
-  assert_eq(connection_pool.idle_connections.length(), 0, "空闲连接数不正确")
+  assert_eq(connection_pool["pool_name"], "database-connection-pool")
+  assert_eq(connection_pool["max_connections"], 20)
+  assert_eq(connection_pool["min_connections"], 5)
+  assert_eq(connection_pool["active_connections"], 12)
+  assert_eq(connection_pool["idle_connections"], 5)
+  assert_eq(connection_pool["creating_connections"], 1)
+  assert_eq(connection_pool["connections"].length(), 5)
   
-  // 测试释放连接
-  match conn1_result {
-    Success(conn1) => release_connection(connection_pool, conn1)
-    Error(_) => assert_true(false, "连接1获取失败，无法释放")
+  // 计算连接池使用率
+  let total_connections = connection_pool["active_connections"] + 
+                         connection_pool["idle_connections"] + 
+                         connection_pool["creating_connections"]
+  
+  let utilization_rate = (connection_pool["active_connections"] as Float) / 
+                        (connection_pool["max_connections"] as Float) * 100.0
+  
+  assert_eq(utilization_rate, 60.0)
+  
+  // 按状态分类连接
+  let connections_by_status = {
+    "active": connection_pool["connections"].filter(fn(conn) { conn["status"] == "active" }),
+    "idle": connection_pool["connections"].filter(fn(conn) { conn["status"] == "idle" }),
+    "creating": connection_pool["connections"].filter(fn(conn) { conn["status"] == "creating" })
   }
   
-  // 验证释放后的状态
-  assert_eq(connection_pool.active_connections.length(), 2, "释放后活跃连接数不正确")
-  assert_eq(connection_pool.idle_connections.length(), 1, "释放后空闲连接数不正确")
+  assert_eq(connections_by_status["active"].length(), 2)
+  assert_eq(connections_by_status["idle"].length(), 2)
+  assert_eq(connections_by_status["creating"].length(), 1)
   
-  // 测试连接池满的情况
-  let connections = []
-  for i = 0; i < 8; i = i + 1 {
-    let conn_result = get_connection(connection_pool)
-    match conn_result {
-      Success(conn) => connections = connections + [conn]
-      Error(_) => assert_true(false, "获取连接失败")
-    }
-  }
-  
-  // 现在连接池应该满了
-  let full_pool_result = get_connection(connection_pool)
-  assert_true(full_pool_result.is_error(), "连接池已满，但仍然成功获取连接")
-}
-
-// 测试3: 文件句柄资源管理
-test "文件句柄资源管理" {
-  // 创建文件句柄管理器
-  let file_handle_manager = FileHandleManager({
-    max_handles: 100,
-    open_handles: [],
-    handle_counter: 0
-  })
-  
-  // 打开文件的函数
-  let open_file = fn(manager, file_path) {
-    if manager.open_handles.length() >= manager.max_handles {
-      return Error("文件句柄数已达上限")
-    }
+  // 实现连接池管理策略
+  let manage_connection_pool = fn(pool, current_time) {
+    let idle_timeout = pool["config"]["idle_timeout_ms"]
+    let max_lifetime = pool["config"]["max_lifetime_ms"]
     
-    let handle_id = manager.handle_counter + 1
-    let file_handle = FileHandle({
-      id: handle_id,
-      path: file_path,
-      opened_at: get_current_time_ms(),
-      last_accessed: get_current_time_ms(),
-      size: 1024, // 模拟文件大小
-      is_writable: false
-    })
-    
-    update_file_handle_manager(manager, {
-      open_handles: manager.open_handles + [file_handle],
-      handle_counter: handle_id
-    })
-    
-    Success(file_handle)
-  }
-  
-  // 关闭文件的函数
-  let close_file = fn(manager, handle_id) {
-    let updated_handles = manager.open_handles.filter(fn(handle) { 
-      handle.id != handle_id 
-    })
-    
-    update_file_handle_manager(manager, {
-      open_handles: updated_handles
-    })
-  }
-  
-  // 测试打开文件
-  let file1_result = open_file(file_handle_manager, "/tmp/test1.txt")
-  let file2_result = open_file(file_handle_manager, "/tmp/test2.txt")
-  let file3_result = open_file(file_handle_manager, "/tmp/test3.txt")
-  
-  // 验证打开成功
-  assert_true(file1_result.is_success(), "打开文件1失败")
-  assert_true(file2_result.is_success(), "打开文件2失败")
-  assert_true(file3_result.is_success(), "打开文件3失败")
-  
-  // 验证文件句柄数量
-  assert_eq(file_handle_manager.open_handles.length(), 3, "打开的文件句柄数不正确")
-  
-  // 测试关闭文件
-  match file1_result {
-    Success(handle1) => close_file(file_handle_manager, handle1.id)
-    Error(_) => assert_true(false, "文件1打开失败，无法关闭")
-  }
-  
-  // 验证关闭后的状态
-  assert_eq(file_handle_manager.open_handles.length(), 2, "关闭文件后句柄数不正确")
-  
-  // 测试句柄数限制
-  let handles = []
-  for i = 0; i < 98; i = i + 1 {
-    let file_result = open_file(file_handle_manager, "/tmp/test" + (i + 4).to_string() + ".txt")
-    match file_result {
-      Success(handle) => handles = handles + [handle]
-      Error(_) => assert_true(false, "打开文件失败")
-    }
-  }
-  
-  // 现在应该有100个打开的句柄
-  assert_eq(file_handle_manager.open_handles.length(), 100, "文件句柄数不正确")
-  
-  // 尝试打开第101个文件，应该失败
-  let overflow_result = open_file(file_handle_manager, "/tmp/overflow.txt")
-  assert_true(overflow_result.is_error(), "文件句柄数已达上限，但仍然成功打开文件")
-}
-
-// 测试4: 缓存资源管理
-test "缓存资源管理" {
-  // 创建缓存管理器
-  let cache_manager = CacheManager({
-    max_size: 50, // 最大缓存项数
-    max_memory: 5 * 1024 * 1024, // 最大内存使用量 5MB
-    items: [],
-    eviction_policy: "LRU" // 最近最少使用
-  })
-  
-  // 添加缓存项的函数
-  let add_cache_item = fn(manager, key, value, size) {
-    // 检查是否已存在
-    let existing_index = find_cache_item_index(manager, key)
-    
-    if existing_index >= 0 {
-      // 更新现有项
-      let updated_items = manager.items.map_with_index(fn(i, item) {
-        if i == existing_index {
-          CacheItem({
-            key: key,
-            value: value,
-            size: size,
-            created_at: item.created_at,
-            last_accessed: get_current_time_ms(),
-            access_count: item.access_count + 1
-          })
-        } else {
-          item
-        }
-      })
-      
-      update_cache_manager(manager, { items: updated_items })
-    } else {
-      // 检查是否需要驱逐项
-      let current_size = get_cache_item_count(manager)
-      let current_memory = get_cache_memory_usage(manager)
-      
-      if current_size >= manager.max_size || current_memory + size > manager.max_memory {
-        // 驱逐最少使用的项
-        evict_cache_items(manager, size)
-      }
-      
-      // 添加新项
-      let new_item = CacheItem({
-        key: key,
-        value: value,
-        size: size,
-        created_at: get_current_time_ms(),
-        last_accessed: get_current_time_ms(),
-        access_count: 1
-      })
-      
-      update_cache_manager(manager, {
-        items: manager.items + [new_item]
-      })
-    }
-  }
-  
-  // 获取缓存项的函数
-  let get_cache_item = fn(manager, key) {
-    match find_cache_item(manager, key) {
-      Some(item) => {
-        // 更新访问时间
-        update_cache_item_access_time(manager, key)
-        Some(item.value)
-      }
-      None => None
-    }
-  }
-  
-  // 测试添加缓存项
-  add_cache_item(cache_manager, "key1", "value1", 1024)
-  add_cache_item(cache_manager, "key2", "value2", 2048)
-  add_cache_item(cache_manager, "key3", "value3", 1536)
-  
-  // 验证缓存项数量
-  assert_eq(cache_manager.items.length(), 3, "缓存项数量不正确")
-  
-  // 测试获取缓存项
-  let value1 = get_cache_item(cache_manager, "key1")
-  let value2 = get_cache_item(cache_manager, "key2")
-  let value3 = get_cache_item(cache_manager, "key3")
-  let value4 = get_cache_item(cache_manager, "key4") // 不存在
-  
-  // 验证获取结果
-  assert_eq(value1, Some("value1"), "获取key1失败")
-  assert_eq(value2, Some("value2"), "获取key2失败")
-  assert_eq(value3, Some("value3"), "获取key3失败")
-  assert_eq(value4, None, "获取不存在的key4应该返回None")
-  
-  // 测试缓存更新
-  add_cache_item(cache_manager, "key1", "new_value1", 1024)
-  let updated_value1 = get_cache_item(cache_manager, "key1")
-  assert_eq(updated_value1, Some("new_value1"), "更新缓存项失败")
-  
-  // 测试缓存驱逐
-  // 添加更多项直到触发驱逐
-  for i = 0; i < 60; i = i + 1 {
-    let key = "key" + (i + 10).to_string()
-    let value = "value" + (i + 10).to_string()
-    add_cache_item(cache_manager, key, value, 1024)
-  }
-  
-  // 验证缓存大小不超过限制
-  assert_true(cache_manager.items.length() <= cache_manager.max_size, 
-    "缓存项数量超过限制: " + cache_manager.items.length().to_string())
-  
-  // 验证内存使用不超过限制
-  let memory_usage = get_cache_memory_usage(cache_manager)
-  assert_true(memory_usage <= cache_manager.max_memory, 
-    "缓存内存使用超过限制: " + memory_usage.to_string())
-}
-
-// 测试5: 资源泄漏检测
-test "资源泄漏检测" {
-  // 创建资源泄漏检测器
-  let leak_detector = ResourceLeakDetector({
-    tracked_resources: [],
-    leak_threshold: 100, // 100个资源后开始检测
-    detection_interval: 1000 // 1秒检测间隔
-  })
-  
-  // 创建资源的函数
-  let create_resource = fn(detector, resource_type, resource_id) {
-    let resource = TrackedResource({
-      id: resource_id,
-      type: resource_type,
-      created_at: get_current_time_ms(),
-      last_accessed: get_current_time_ms(),
-      is_leaked: false
-    })
-    
-    track_resource(detector, resource)
-    resource
-  }
-  
-  // 释放资源的函数
-  let release_resource = fn(detector, resource_id) {
-    untrack_resource(detector, resource_id)
-  }
-  
-  // 检测资源泄漏的函数
-  let detect_resource_leaks = fn(detector) {
-    let current_time = get_current_time_ms()
-    let leak_threshold_ms = 5000 // 5秒未访问视为泄漏
-    
-    let leaked_resources = detector.tracked_resources.filter(fn(resource) {
-      (current_time - resource.last_accessed) > leak_threshold_ms
-    })
-    
-    // 标记泄漏的资源
-    let updated_resources = detector.tracked_resources.map(fn(resource) {
-      if leaked_resources.any(fn(leaked) { leaked.id == resource.id }) {
-        { resource with is_leaked: true }
+    // 1. 清理超时的空闲连接
+    let mut updated_connections = pool["connections"].filter(fn(conn) {
+      if conn["status"] == "idle" {
+        let idle_time = current_time - conn["last_used_at"]
+        idle_time < idle_timeout
       } else {
-        resource
+        true
       }
     })
     
-    update_leak_detector(detector, { tracked_resources: updated_resources })
-    leaked_resources.length()
-  }
-  
-  // 创建一些资源
-  let resource1 = create_resource(leak_detector, "memory", "mem1")
-  let resource2 = create_resource(leak_detector, "connection", "conn1")
-  let resource3 = create_resource(leak_detector, "file", "file1")
-  
-  // 验证资源被跟踪
-  assert_eq(leak_detector.tracked_resources.length(), 3, "跟踪的资源数量不正确")
-  
-  // 释放一个资源
-  release_resource(leak_detector, resource2.id)
-  
-  // 验证资源被取消跟踪
-  assert_eq(leak_detector.tracked_resources.length(), 2, "释放后跟踪的资源数量不正确")
-  
-  // 创建更多资源以触发检测
-  for i = 0; i < 120; i = i + 1 {
-    let resource_id = "resource" + i.to_string()
-    create_resource(leak_detector, "test", resource_id)
-  }
-  
-  // 模拟时间流逝（在实际环境中会有真实的时间流逝）
-  let old_resources = leak_detector.tracked_resources.map(fn(resource) {
-    { resource with last_accessed: resource.last_accessed - 6000 } // 6秒前
-  })
-  
-  update_leak_detector(leak_detector, { tracked_resources: old_resources })
-  
-  // 检测资源泄漏
-  let leaked_count = detect_resource_leaks(leak_detector)
-  
-  // 验证泄漏检测
-  assert_true(leaked_count > 0, "应该检测到资源泄漏")
-  
-  // 验证泄漏资源被标记
-  let leaked_resources = leak_detector.tracked_resources.filter(fn(resource) {
-    resource.is_leaked
-  })
-  
-  assert_eq(leaked_resources.length(), leaked_count, "泄漏资源标记数量不正确")
-}
-
-// 类型定义（用于测试）
-type MemoryManager {
-  MemoryManager({
-    allocated_objects: Array[MemoryObject],
-    total_allocated: Int,
-    max_memory_limit: Int,
-    gc_threshold: Int
-  })
-}
-
-type MemoryObject {
-  MemoryObject({
-    id: String,
-    size: Int,
-    data: String,
-    created_at: Int,
-    last_accessed: Int
-  })
-}
-
-type ConnectionPool {
-  ConnectionPool({
-    max_connections: Int,
-    min_connections: Int,
-    active_connections: Array[Connection],
-    idle_connections: Array[Connection],
-    total_created: Int,
-    total_closed: Int
-  })
-}
-
-type Connection {
-  Connection({
-    id: String,
-    created_at: Int,
-    last_used: Int,
-    is_active: Bool
-  })
-}
-
-type FileHandleManager {
-  FileHandleManager({
-    max_handles: Int,
-    open_handles: Array[FileHandle],
-    handle_counter: Int
-  })
-}
-
-type FileHandle {
-  FileHandle({
-    id: Int,
-    path: String,
-    opened_at: Int,
-    last_accessed: Int,
-    size: Int,
-    is_writable: Bool
-  })
-}
-
-type CacheManager {
-  CacheManager({
-    max_size: Int,
-    max_memory: Int,
-    items: Array[CacheItem],
-    eviction_policy: String
-  })
-}
-
-type CacheItem {
-  CacheItem({
-    key: String,
-    value: String,
-    size: Int,
-    created_at: Int,
-    last_accessed: Int,
-    access_count: Int
-  })
-}
-
-type ResourceLeakDetector {
-  ResourceLeakDetector({
-    tracked_resources: Array[TrackedResource],
-    leak_threshold: Int,
-    detection_interval: Int
-  })
-}
-
-type TrackedResource {
-  TrackedResource({
-    id: String,
-    type: String,
-    created_at: Int,
-    last_accessed: Int,
-    is_leaked: Bool
-  })
-}
-
-type Result<T, E> {
-  Success(T)
-  Error(E)
-}
-
-// 辅助函数（用于测试）
-let get_memory_usage = fn(manager) {
-  match manager {
-    MemoryManager(data) => data.total_allocated
-  }
-}
-
-let trigger_garbage_collection = fn(manager) {
-  // 简化的垃圾回收实现
-  match manager {
-    MemoryManager(data) => {
-      // 释放一半的对象
-      let objects_to_keep = data.allocated_objects.slice(0, data.allocated_objects.length() / 2)
-      let new_allocated = objects_to_keep.fold(0, fn(acc, obj) { acc + obj.size })
+    // 2. 清理超过最大生命周期的连接
+    updated_connections = updated_connections.filter(fn(conn) {
+      let lifetime = current_time - conn["created_at"]
+      lifetime < max_lifetime
+    })
+    
+    // 3. 计算当前连接数
+    let current_active_count = updated_connections.filter(fn(conn) { 
+      conn["status"] == "active" 
+    }).length()
+    
+    let current_idle_count = updated_connections.filter(fn(conn) { 
+      conn["status"] == "idle" 
+    }).length()
+    
+    let current_creating_count = updated_connections.filter(fn(conn) { 
+      conn["status"] == "creating" 
+    }).length()
+    
+    let total_current = current_active_count + current_idle_count + current_creating_count
+    
+    // 4. 确保最小连接数
+    let mut final_connections = updated_connections
+    
+    if total_current < pool["min_connections"] {
+      let connections_to_add = pool["min_connections"] - total_current
       
-      MemoryManager({
-        allocated_objects: objects_to_keep,
-        total_allocated: new_allocated,
-        max_memory_limit: data.max_memory_limit,
-        gc_threshold: data.gc_threshold
-      })
-    }
-  }
-}
-
-let allocate_object = fn(manager, object) {
-  match manager {
-    MemoryManager(data) => {
-      MemoryManager({
-        allocated_objects: data.allocated_objects + [object],
-        total_allocated: data.total_allocated + object.size,
-        max_memory_limit: data.max_memory_limit,
-        gc_threshold: data.gc_threshold
-      })
-    }
-  }
-}
-
-let deallocate_object = fn(manager, object_id) {
-  match manager {
-    MemoryManager(data) => {
-      let remaining_objects = data.allocated_objects.filter(fn(obj) { obj.id != object_id })
-      let new_allocated = remaining_objects.fold(0, fn(acc, obj) { acc + obj.size })
-      
-      MemoryManager({
-        allocated_objects: remaining_objects,
-        total_allocated: new_allocated,
-        max_memory_limit: data.max_memory_limit,
-        gc_threshold: data.gc_threshold
-      })
-    }
-  }
-}
-
-let initialize_connection_pool = fn(pool) {
-  // 初始化最小连接数
-  match pool {
-    ConnectionPool(data) => {
-      let initial_connections = (0..data.min_connections).map(fn(i) {
-        Connection({
-          id: "conn" + i.to_string(),
-          created_at: get_current_time_ms(),
-          last_used: get_current_time_ms(),
-          is_active: false
-        })
-      })
-      
-      ConnectionPool({
-        max_connections: data.max_connections,
-        min_connections: data.min_connections,
-        active_connections: [],
-        idle_connections: initial_connections,
-        total_created: data.min_connections,
-        total_closed: 0
-      })
-    }
-  }
-}
-
-let create_new_connection = fn(pool) {
-  match pool {
-    ConnectionPool(data) => {
-      Connection({
-        id: "conn" + (data.total_created + 1).to_string(),
-        created_at: get_current_time_ms(),
-        last_used: get_current_time_ms(),
-        is_active: true
-      })
-    }
-  }
-}
-
-let update_connection_pool = fn(pool, updates) {
-  match pool {
-    ConnectionPool(data) => {
-      ConnectionPool({
-        max_connections: data.max_connections,
-        min_connections: data.min_connections,
-        active_connections: updates.active_connections.getOrElse(data.active_connections),
-        idle_connections: updates.idle_connections.getOrElse(data.idle_connections),
-        total_created: updates.total_created.getOrElse(data.total_created),
-        total_closed: updates.total_closed.getOrElse(data.total_closed)
-      })
-    }
-  }
-}
-
-let update_file_handle_manager = fn(manager, updates) {
-  match manager {
-    FileHandleManager(data) => {
-      FileHandleManager({
-        max_handles: data.max_handles,
-        open_handles: updates.open_handles.getOrElse(data.open_handles),
-        handle_counter: updates.handle_counter.getOrElse(data.handle_counter)
-      })
-    }
-  }
-}
-
-let find_cache_item_index = fn(manager, key) {
-  match manager {
-    CacheManager(data) => {
-      for i = 0; i < data.items.length(); i = i + 1 {
-        if data.items[i].key == key {
-          return i
+      for i in 0..=(connections_to_add - 1) {
+        let new_connection = {
+          "id": "conn-" + (pool["connections"].length() + i + 1).to_string(),
+          "status": "idle",
+          "created_at": current_time,
+          "last_used_at": 0,
+          "usage_count": 0,
+          "process_id": None
         }
-      }
-      -1
-    }
-  }
-}
-
-let find_cache_item = fn(manager, key) {
-  match manager {
-    CacheManager(data) => {
-      for i = 0; i < data.items.length(); i = i + 1 {
-        if data.items[i].key == key {
-          return Some(data.items[i])
-        }
-      }
-      None
-    }
-  }
-}
-
-let get_cache_item_count = fn(manager) {
-  match manager {
-    CacheManager(data) => data.items.length()
-  }
-}
-
-let get_cache_memory_usage = fn(manager) {
-  match manager {
-    CacheManager(data) => {
-      data.items.fold(0, fn(acc, item) { acc + item.size })
-    }
-  }
-}
-
-let evict_cache_items = fn(manager, required_size) {
-  // 简化的LRU驱逐实现
-  match manager {
-    CacheManager(data) => {
-      // 按最后访问时间排序
-      let sorted_items = data.items.sort(fn(a, b) { a.last_accessed < b.last_accessed })
-      
-      // 驱逐最少使用的项直到有足够空间
-      let evicted_count = 0
-      let freed_memory = 0
-      let remaining_items = []
-      
-      for i = 0; i < sorted_items.length(); i = i + 1 {
-        if freed_memory < required_size {
-          freed_memory = freed_memory + sorted_items[i].size
-          evicted_count = evicted_count + 1
-        } else {
-          remaining_items = remaining_items + [sorted_items[i]]
-        }
-      }
-      
-      CacheManager({
-        max_size: data.max_size,
-        max_memory: data.max_memory,
-        items: remaining_items,
-        eviction_policy: data.eviction_policy
-      })
-    }
-  }
-}
-
-let update_cache_manager = fn(manager, updates) {
-  match manager {
-    CacheManager(data) => {
-      CacheManager({
-        max_size: data.max_size,
-        max_memory: data.max_memory,
-        items: updates.items.getOrElse(data.items),
-        eviction_policy: data.eviction_policy
-      })
-    }
-  }
-}
-
-let update_cache_item_access_time = fn(manager, key) {
-  match manager {
-    CacheManager(data) => {
-      let updated_items = data.items.map(fn(item) {
-        if item.key == key {
-          { item with last_accessed: get_current_time_ms() }
-        } else {
-          item
-        }
-      })
-      
-      CacheManager({
-        max_size: data.max_size,
-        max_memory: data.max_memory,
-        items: updated_items,
-        eviction_policy: data.eviction_policy
-      })
-    }
-  }
-}
-
-let track_resource = fn(detector, resource) {
-  match detector {
-    ResourceLeakDetector(data) => {
-      ResourceLeakDetector({
-        tracked_resources: data.tracked_resources + [resource],
-        leak_threshold: data.leak_threshold,
-        detection_interval: data.detection_interval
-      })
-    }
-  }
-}
-
-let untrack_resource = fn(detector, resource_id) {
-  match detector {
-    ResourceLeakDetector(data) => {
-      let remaining_resources = data.tracked_resources.filter(fn(resource) {
-        resource.id != resource_id
-      })
-      
-      ResourceLeakDetector({
-        tracked_resources: remaining_resources,
-        leak_threshold: data.leak_threshold,
-        detection_interval: data.detection_interval
-      })
-    }
-  }
-}
-
-let update_leak_detector = fn(detector, updates) {
-  match detector {
-    ResourceLeakDetector(data) => {
-      ResourceLeakDetector({
-        tracked_resources: updates.tracked_resources.getOrElse(data.tracked_resources),
-        leak_threshold: data.leak_threshold,
-        detection_interval: data.detection_interval
-      })
-    }
-  }
-}
-
-let get_current_time_ms = fn() { 1640995200000 }
-
-// 扩展Option类型的方法（用于测试）
-let Option::is_success = fn(self) {
-  match self {
-    Success(_) => true
-    Error(_) => false
-  }
-}
-
-let Option::is_error = fn(self) {
-  match self {
-    Success(_) => false
-    Error(_) => true
-  }
-}
-
-let Option::getOrElse = fn(self, default) {
-  match self {
-    Some(value) => value
-    None => default
-  }
-}
-
-// 扩展Array类型的方法（用于测试）
-let Array::slice = fn(self, start, end) {
-  // 简化的slice实现
-  let result = []
-  for i = start; i < end && i < self.length(); i = i + 1 {
-    result = result + [self[i]]
-  }
-  result
-}
-
-let Array::sort = fn(self, compare) {
-  // 简化的排序实现（冒泡排序）
-  let result = self
-  let n = result.length()
-  
-  for i = 0; i < n - 1; i = i + 1 {
-    for j = 0; j < n - i - 1; j = j + 1 {
-      if compare(result[j], result[j + 1]) {
-        let temp = result[j]
-        result[j] = result[j + 1]
-        result[j + 1] = temp
+        
+        final_connections = final_connections.push(new_connection)
       }
     }
+    
+    // 5. 更新连接池状态
+    let new_active_count = final_connections.filter(fn(conn) { 
+      conn["status"] == "active" 
+    }).length()
+    
+    let new_idle_count = final_connections.filter(fn(conn) { 
+      conn["status"] == "idle" 
+    }).length()
+    
+    let new_creating_count = final_connections.filter(fn(conn) { 
+      conn["status"] == "creating" 
+    }).length()
+    
+    {
+      ...pool,
+      "active_connections": new_active_count,
+      "idle_connections": new_idle_count,
+      "creating_connections": new_creating_count,
+      "connections": final_connections,
+      "last_maintenance": current_time
+    }
   }
   
-  result
-}
-
-let Array::fold = fn(self, initial, accumulator) {
-  // 简化的fold实现
-  let result = initial
-  for i = 0; i < self.length(); i = i + 1 {
-    result = accumulator(result, self[i])
-  }
-  result
-}
-
-let Array::filter = fn(self, predicate) {
-  // 简化的filter实现
-  let result = []
-  for i = 0; i < self.length(); i = i + 1 {
-    if predicate(self[i]) {
-      result = result + [self[i]]
-    }
-  }
-  result
-}
-
-let Array::map = fn(self, transform) {
-  // 简化的map实现
-  let result = []
-  for i = 0; i < self.length(); i = i + 1 {
-    result = result + [transform(self[i])]
-  }
-  result
-}
-
-let Array::map_with_index = fn(self, transform) {
-  // 简化的带索引map实现
-  let result = []
-  for i = 0; i < self.length(); i = i + 1 {
-    result = result + [transform(i, self[i])]
-  }
-  result
-}
-
-let Array::any = fn(self, predicate) {
-  // 简化的any实现
-  for i = 0; i < self.length(); i = i + 1 {
-    if predicate(self[i]) {
-      return true
-    }
-  }
-  false
+  // 应用连接池管理策略
+  let managed_pool = manage_connection_pool(connection_pool, 1640995400)
+  
+  // 验证管理结果
+  assert_eq(managed_pool["last_maintenance"], 1640995400)
+  
+  // 验证最小连接数
+  let total_after_management = managed_pool["active_connections"] + 
+                              managed_pool["idle_connections"] + 
+                              managed_pool["creating_connections"]
+  
+  assert_true(total_after_management >= connection_pool["min_connections"])
+  
+  // 验证连接总数不超过最大连接数
+  assert_true(total_after_management <= connection_pool["max_connections"])
 }

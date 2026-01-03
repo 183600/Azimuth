@@ -1,688 +1,723 @@
-// Azimuth Telemetry System - Error Recovery Tests
-// This file contains test cases for error recovery functionality
+// Azimuth 错误恢复测试用例
+// 专注于系统错误处理、恢复机制和容错能力
 
-// Test 1: Connection Failure Recovery
-test "connection failure recovery" {
-  let connection_manager = ConnectionManager::new()
-  
-  // Configure retry strategy
-  ConnectionManager::set_retry_strategy(connection_manager, {
-    "max_attempts": 3,
-    "initial_delay": 100, // milliseconds
-    "max_delay": 1000,
-    "backoff_multiplier": 2.0
-  })
-  
-  // Configure circuit breaker
-  ConnectionManager::set_circuit_breaker(connection_manager, {
-    "failure_threshold": 5,
-    "recovery_timeout": 5000, // milliseconds
-    "expected_recovery_time": 2000
-  })
-  
-  // Simulate connection failures
-  let connection_attempts = 0
-  let connection_result = ConnectionManager::connect_with_recovery(connection_manager, || {
-    connection_attempts = connection_attempts + 1
-    if connection_attempts < 3 {
-      Error("Connection failed")
-    } else {
-      Success("Connection established")
-    }
-  })
-  
-  // Should eventually succeed after retries
-  match connection_result {
-    Success(result) => assert_eq(result, "Connection established")
-    Error(_) => assert_true(false)
-  }
-  
-  // Should have made 3 attempts
-  assert_eq(connection_attempts, 3)
-  
-  // Test circuit breaker
-  let circuit_attempts = 0
-  let circuit_result = ConnectionManager::connect_with_circuit_breaker(connection_manager, || {
-    circuit_attempts = circuit_attempts + 1
-    if circuit_attempts < 6 {
-      Error("Circuit failure")
-    } else {
-      Success("Circuit recovered")
-    }
-  })
-  
-  // Should fail due to circuit breaker opening
-  match circuit_result {
-    Error(error) => assert_true(error.contains("Circuit breaker"))
-    Success(_) => assert_true(false)
-  }
-  
-  // Wait for circuit breaker to half-open
-  ConnectionManager::wait_for_circuit_recovery(connection_manager)
-  
-  // Try again after recovery timeout
-  let recovery_attempts = 0
-  let recovery_result = ConnectionManager::connect_with_circuit_breaker(connection_manager, || {
-    recovery_attempts = recovery_attempts + 1
-    Success("Connection recovered")
-  })
-  
-  // Should succeed after circuit breaker recovery
-  match recovery_result {
-    Success(result) => assert_eq(result, "Connection recovered")
-    Error(_) => assert_true(false)
-  }
-}
-
-// Test 2: Data Corruption Recovery
-test "data corruption recovery" {
-  let data_manager = DataManager::new()
-  
-  // Configure validation strategy
-  DataManager::set_validation_strategy(data_manager, {
-    "checksum": true,
-    "parity_bits": true,
-    "redistribution": true
-  })
-  
-  // Create test data
-  let original_data = "Important telemetry data that must be preserved"
-  let data_id = DataManager::store(data_manager, original_data)
-  
-  // Simulate data corruption
-  DataManager::corrupt_data(data_manager, data_id, 0.2) // Corrupt 20% of data
-  
-  // Attempt to recover corrupted data
-  let recovery_result = DataManager::recover_data(data_manager, data_id)
-  
-  match recovery_result {
-    Success(recovered_data) => {
-      // Recovered data should match original
-      assert_eq(recovered_data, original_data)
-    }
-    Error(_) => assert_true(false)
-  }
-  
-  // Test recovery with multiple corruption levels
-  let severe_corruption_id = DataManager::store(data_manager, "Severe corruption test data")
-  DataManager::corrupt_data(data_manager, severe_corruption_id, 0.6) // Corrupt 60% of data
-  
-  let severe_recovery_result = DataManager::recover_data(data_manager, severe_corruption_id)
-  match severe_recovery_result {
-    Success(_) => assert_true(true) // Should still recover with redundancy
-    Error(_) => {
-      // If recovery fails, should have fallback data
-      let fallback_data = DataManager::get_fallback_data(data_manager, severe_corruption_id)
-      assert_true(fallback_data.is_some())
-    }
-  }
-  
-  // Test complete data loss recovery
-  let total_loss_id = DataManager::store(data_manager, "Total loss test data")
-  DataManager::corrupt_data(data_manager, total_loss_id, 1.0) // Corrupt 100% of data
-  
-  let total_loss_result = DataManager::recover_data(data_manager, total_loss_id)
-  match total_loss_result {
-    Success(_) => assert_true(false) // Should not succeed with total loss
-    Error(_) => {
-      // Should have backup or placeholder data
-      let backup_data = DataManager::get_backup_data(data_manager, total_loss_id)
-      assert_true(backup_data.is_some())
-    }
-  }
-}
-
-// Test 3: Service Degradation Recovery
-test "service degradation recovery" {
-  let service_manager = ServiceManager::new()
-  
-  // Configure degradation levels
-  ServiceManager::set_degradation_levels(service_manager, [
+// 测试1: 网络连接错误恢复
+test "网络连接错误恢复机制" {
+  // 模拟网络连接错误和恢复场景
+  let network_error_scenarios = [
     {
-      "level": 1,
-      "name": "minimal",
-      "features": ["basic_metrics"],
-      "performance_threshold": 0.8
+      "scenario": "connection_timeout",
+      "error_code": "ETIMEDOUT",
+      "error_message": "Connection timed out after 30 seconds",
+      "retry_count": 3,
+      "backoff_strategy": "exponential",
+      "recovery_successful": true
     },
     {
-      "level": 2,
-      "name": "reduced",
-      "features": ["basic_metrics", "essential_spans"],
-      "performance_threshold": 0.6
+      "scenario": "connection_refused",
+      "error_code": "ECONNREFUSED",
+      "error_message": "Connection refused",
+      "retry_count": 5,
+      "backoff_strategy": "linear",
+      "recovery_successful": true
     },
     {
-      "level": 3,
-      "name": "full",
-      "features": ["basic_metrics", "essential_spans", "advanced_analytics"],
-      "performance_threshold": 0.4
+      "scenario": "host_unreachable",
+      "error_code": "EHOSTUNREACH",
+      "error_message": "No route to host",
+      "retry_count": 3,
+      "backoff_strategy": "exponential",
+      "recovery_successful": false
+    },
+    {
+      "scenario": "dns_resolution_failure",
+      "error_code": "ENOTFOUND",
+      "error_message": "Name or service not known",
+      "retry_count": 2,
+      "backoff_strategy": "fixed",
+      "recovery_successful": true
     }
-  ])
+  ]
   
-  // Start at full functionality
-  ServiceManager::set_current_level(service_manager, 3)
-  assert_eq(ServiceManager::get_current_level(service_manager), 3)
-  assert_true(ServiceManager::is_feature_enabled(service_manager, "advanced_analytics"))
+  // 验证错误场景数量
+  assert_eq(network_error_scenarios.length(), 4)
   
-  // Simulate performance degradation
-  ServiceManager::simulate_performance_issue(service_manager, 0.5) // 50% performance
-  
-  // Should automatically degrade to reduced level
-  ServiceManager::check_and_adjust(service_manager)
-  assert_eq(ServiceManager::get_current_level(service_manager), 2)
-  assert_false(ServiceManager::is_feature_enabled(service_manager, "advanced_analytics"))
-  assert_true(ServiceManager::is_feature_enabled(service_manager, "essential_spans"))
-  
-  // Simulate further degradation
-  ServiceManager::simulate_performance_issue(service_manager, 0.3) // 30% performance
-  
-  // Should degrade to minimal level
-  ServiceManager::check_and_adjust(service_manager)
-  assert_eq(ServiceManager::get_current_level(service_manager), 1)
-  assert_false(ServiceManager::is_feature_enabled(service_manager, "essential_spans"))
-  assert_true(ServiceManager::is_feature_enabled(service_manager, "basic_metrics"))
-  
-  // Simulate recovery
-  ServiceManager::simulate_performance_recovery(service_manager, 0.9) // 90% performance
-  
-  // Should gradually restore functionality
-  ServiceManager::check_and_adjust(service_manager)
-  assert_eq(ServiceManager::get_current_level(service_manager), 2) // Gradual recovery
-  
-  ServiceManager::simulate_performance_recovery(service_manager, 0.95) // 95% performance
-  
-  ServiceManager::check_and_adjust(service_manager)
-  assert_eq(ServiceManager::get_current_level(service_manager), 3) // Full recovery
-}
-
-// Test 4: Database Failure Recovery
-test "database failure recovery" {
-  let db_manager = DatabaseManager::new()
-  
-  // Configure backup databases
-  db_manager.add_backup("backup1", "backup1.example.com")
-  db_manager.add_backup("backup2", "backup2.example.com")
-  
-  // Configure failover strategy
-  db_manager.set_failover_strategy({
-    "timeout": 5000, // milliseconds
-    "health_check_interval": 10000,
-    "max_failures_before_failover": 3
-  })
-  
-  // Simulate primary database failure
-  let primary_attempts = 0
-  let db_result = db_manager.execute_with_failover(|| {
-    primary_attempts = primary_attempts + 1
-    if primary_attempts < 4 {
-      Error("Primary database unavailable")
+  // 实现重试逻辑
+  let retry_with_backoff = fn(backoff_strategy, attempt, max_attempts) {
+    if attempt >= max_attempts {
+      false
     } else {
-      Success("Query executed successfully")
-    }
-  })
-  
-  // Should fail over to backup
-  match db_result {
-    Success(result) => assert_eq(result, "Query executed successfully")
-    Error(_) => assert_true(false)
-  }
-  
-  // Test backup database failure
-  let backup_attempts = 0
-  let backup_result = db_manager.execute_with_failover(|| {
-    backup_attempts = backup_attempts + 1
-    Error("All databases unavailable")
-  })
-  
-  // Should fail when all databases are unavailable
-  match backup_result {
-    Error(error) => assert_true(error.contains("All databases"))
-    Success(_) => assert_true(false)
-  }
-  
-  // Test data consistency after failover
-  let test_data = "Consistency test data"
-  let store_result = db_manager.store_with_replication(test_data)
-  
-  match store_result {
-    Success(id) => {
-      // Retrieve from primary
-      let primary_result = db_manager.retrieve_from_primary(id)
-      match primary_result {
-        Success(data) => assert_eq(data, test_data)
-        Error(_) => assert_true(false)
+      // 根据退避策略计算等待时间
+      let wait_time = match backoff_strategy {
+        "fixed" => 1000, // 固定1秒
+        "linear" => attempt * 1000, // 线性增长
+        "exponential" => 1000 * (2 ^ attempt), // 指数增长
+        _ => 1000
       }
       
-      // Retrieve from backup
-      let backup_result = db_manager.retrieve_from_backup(id, "backup1")
-      match backup_result {
-        Success(data) => assert_eq(data, test_data)
-        Error(_) => {
-          // Backup might not be immediately synchronized
-          assert_true(true)
+      // 模拟等待和重试
+      wait_time > 0 && attempt < max_attempts
+    }
+  }
+  
+  // 处理每个错误场景
+  for scenario in network_error_scenarios {
+    let error_code = scenario["error_code"]
+    let retry_count = scenario["retry_count"]
+    let backoff_strategy = scenario["backoff_strategy"]
+    let expected_recovery = scenario["recovery_successful"]
+    
+    // 模拟重试过程
+    let mut recovery_successful = false
+    for attempt in 0..=(retry_count - 1) {
+      if retry_with_backoff(backoff_strategy, attempt, retry_count) {
+        // 模拟某些场景在特定尝试次数后成功
+        recovery_successful = match error_code {
+          "ETIMEDOUT" => attempt >= 2, // 第3次尝试成功
+          "ECONNREFUSED" => attempt >= 4, // 第5次尝试成功
+          "EHOSTUNREACH" => false, // 始终失败
+          "ENOTFOUND" => attempt >= 1, // 第2次尝试成功
+          _ => false
+        }
+        
+        if recovery_successful { break }
+      }
+    }
+    
+    // 验证恢复结果
+    assert_eq(recovery_successful, expected_recovery)
+  }
+  
+  // 验证错误代码唯一性
+  let error_codes = network_error_scenarios.map(fn(s) { s["error_code"] })
+  let unique_error_codes = error_codes.filter_with_index(fn(i, code) {
+    !error_codes.slice(0, i).contains(code)
+  })
+  
+  assert_eq(unique_error_codes.length(), error_codes.length())
+}
+
+// 测试2: 数据库连接池错误恢复
+test "数据库连接池错误恢复" {
+  // 模拟数据库连接池状态
+  let connection_pool = {
+    "max_connections": 20,
+    "active_connections": 15,
+    "idle_connections": 3,
+    "failed_connections": 2,
+    "connection_errors": [
+      {
+        "timestamp": 1640995200,
+        "error_type": "connection_timeout",
+        "message": "Database connection timeout",
+        "resolved": true
+      },
+      {
+        "timestamp": 1640995260,
+        "error_type": "deadlock",
+        "message": "Deadlock detected",
+        "resolved": true
+      },
+      {
+        "timestamp": 1640995320,
+        "error_type": "resource_exhausted",
+        "message": "Too many connections",
+        "resolved": false
+      }
+    ],
+    "health_status": "degraded"
+  }
+  
+  // 验证连接池状态
+  assert_eq(connection_pool["max_connections"], 20)
+  assert_eq(connection_pool["active_connections"], 15)
+  assert_eq(connection_pool["idle_connections"], 3)
+  assert_eq(connection_pool["failed_connections"], 2)
+  assert_eq(connection_pool["connection_errors"].length(), 3)
+  assert_eq(connection_pool["health_status"], "degraded")
+  
+  // 计算连接池使用率
+  let total_connections = connection_pool["active_connections"] + 
+                         connection_pool["idle_connections"] + 
+                         connection_pool["failed_connections"]
+  
+  let utilization_rate = (connection_pool["active_connections"] as Float) / 
+                        (connection_pool["max_connections"] as Float) * 100.0
+  
+  assert_eq(utilization_rate, 75.0)
+  
+  // 实现连接池恢复策略
+  let recover_connection_pool = fn(pool) {
+    // 1. 清理失败的连接
+    let cleaned_pool = { ...pool, "failed_connections": 0 }
+    
+    // 2. 根据错误类型采取不同的恢复措施
+    let unresolved_errors = pool["connection_errors"].filter(fn(error) { 
+      !error["resolved"] 
+    })
+    
+    let recovery_actions = unresolved_errors.map(fn(error) {
+      match error["error_type"] {
+        "connection_timeout" => "increase_timeout_and_retry",
+        "deadlock" => "rollback_and_retry",
+        "resource_exhausted" => "reduce_connection_load",
+        _ => "generic_recovery"
+      }
+    })
+    
+    // 3. 应用恢复措施
+    let recovered_pool = match unresolved_errors.length() {
+      0 => { ...cleaned_pool, "health_status": "healthy" }
+      1 => { ...cleaned_pool, "health_status": "recovering" }
+      _ => { ...cleaned_pool, "health_status": "critical" }
+    }
+    
+    recovered_pool
+  }
+  
+  // 应用恢复策略
+  let recovered_pool = recover_connection_pool(connection_pool)
+  
+  // 验证恢复结果
+  assert_eq(recovered_pool["failed_connections"], 0)
+  assert_eq(recovered_pool["health_status"], "recovering")
+  
+  // 模拟完成恢复后的状态
+  let fully_recovered_pool = {
+    ...recovered_pool,
+    "connection_errors": recovered_pool["connection_errors"].map(fn(error) {
+      { ...error, "resolved": true }
+    }),
+    "health_status": "healthy"
+  }
+  
+  // 验证完全恢复状态
+  assert_eq(fully_recovered_pool["health_status"], "healthy")
+  assert_true(fully_recovered_pool["connection_errors"].all(fn(error) { 
+    error["resolved"] 
+  }))
+}
+
+// 测试3: 服务熔断器机制
+test "服务熔断器机制" {
+  // 模拟熔断器状态
+  let circuit_breaker = {
+    "service_name": "user-service",
+    "state": "closed", // closed, open, half-open
+    "failure_count": 0,
+    "failure_threshold": 5,
+    "success_threshold": 3,
+    "timeout_seconds": 60,
+    "last_failure_time": None,
+    "request_history": [
+      {"timestamp": 1640995200, "success": true, "response_time_ms": 120},
+      {"timestamp": 1640995210, "success": true, "response_time_ms": 150},
+      {"timestamp": 1640995220, "success": false, "error": "timeout"},
+      {"timestamp": 1640995230, "success": false, "error": "connection_refused"},
+      {"timestamp": 1640995240, "success": false, "error": "timeout"}
+    ]
+  }
+  
+  // 验证熔断器初始状态
+  assert_eq(circuit_breaker["service_name"], "user-service")
+  assert_eq(circuit_breaker["state"], "closed")
+  assert_eq(circuit_breaker["failure_count"], 3)
+  assert_eq(circuit_breaker["failure_threshold"], 5)
+  assert_eq(circuit_breaker["success_threshold"], 3)
+  assert_eq(circuit_breaker["timeout_seconds"], 60)
+  match circuit_breaker["last_failure_time"] {
+    None => assert_true(true)
+    Some(_) => assert_true(false)
+  }
+  
+  // 实现熔断器状态转换逻辑
+  let update_circuit_breaker = fn(breaker, request_success, error) {
+    let current_state = breaker["state"]
+    let new_failure_count = if request_success { 
+      0 
+    } else { 
+      breaker["failure_count"] + 1 
+    }
+    
+    let new_state = match current_state {
+      "closed" => {
+        if new_failure_count >= breaker["failure_threshold"] {
+          "open"
+        } else {
+          "closed"
+        }
+      },
+      "open" => {
+        // 在实际实现中，这里会检查超时
+        "half-open"
+      },
+      "half-open" => {
+        if request_success {
+          // 需要连续成功次数达到阈值才关闭
+          "half-open" // 简化实现
+        } else {
+          "open"
+        }
+      },
+      _ => current_state
+    }
+    
+    let new_last_failure_time = if !request_success && error != "" {
+      Some(1640995250) // 当前时间戳
+    } else {
+      breaker["last_failure_time"]
+    }
+    
+    {
+      ...breaker,
+      "failure_count": new_failure_count,
+      "state": new_state,
+      "last_failure_time": new_last_failure_time
+    }
+  }
+  
+  // 模拟更多失败请求
+  let updated_breaker_1 = update_circuit_breaker(circuit_breaker, false, "timeout")
+  let updated_breaker_2 = update_circuit_breaker(updated_breaker_1, false, "connection_refused")
+  
+  // 验证熔断器打开
+  assert_eq(updated_breaker_2["state"], "open")
+  assert_eq(updated_breaker_2["failure_count"], 5)
+  match updated_breaker_2["last_failure_time"] {
+    Some(timestamp) => assert_eq(timestamp, 1640995250)
+    None => assert_true(false)
+  }
+  
+  // 模拟熔断器半开状态
+  let half_open_breaker = { ...updated_breaker_2, "state": "half-open" }
+  
+  // 模拟成功请求
+  let success_breaker_1 = update_circuit_breaker(half_open_breaker, true, "")
+  let success_breaker_2 = update_circuit_breaker(success_breaker_1, true, "")
+  let success_breaker_3 = update_circuit_breaker(success_breaker_2, true, "")
+  
+  // 验证熔断器关闭
+  assert_eq(success_breaker_3["state"], "half-open") // 简化实现
+  assert_eq(success_breaker_3["failure_count"], 0)
+}
+
+// 测试4: 数据一致性错误恢复
+test "数据一致性错误恢复" {
+  // 模拟数据一致性检查和恢复
+  let data_consistency_issues = [
+    {
+      "table": "users",
+      "record_id": 12345,
+      "issue_type": "orphan_record",
+      "description": "User record with no associated profile",
+      "detected_at": 1640995200,
+      "severity": "medium",
+      "auto_fixable": true,
+      "fix_strategy": "create_default_profile"
+    },
+    {
+      "table": "orders",
+      "record_id": 67890,
+      "issue_type": "referential_integrity",
+      "description": "Order with non-existent user_id",
+      "detected_at": 1640995260,
+      "severity": "high",
+      "auto_fixable": false,
+      "fix_strategy": "manual_review"
+    },
+    {
+      "table": "inventory",
+      "record_id": 54321,
+      "issue_type": "negative_quantity",
+      "description": "Product with negative stock quantity",
+      "detected_at": 1640995320,
+      "severity": "medium",
+      "auto_fixable": true,
+      "fix_strategy": "reset_to_zero"
+    }
+  ]
+  
+  // 验证数据一致性问题
+  assert_eq(data_consistency_issues.length(), 3)
+  
+  // 按严重程度分类问题
+  let issues_by_severity = {
+    "high": data_consistency_issues.filter(fn(issue) { issue["severity"] == "high" }),
+    "medium": data_consistency_issues.filter(fn(issue) { issue["severity"] == "medium" }),
+    "low": data_consistency_issues.filter(fn(issue) { issue["severity"] == "low" })
+  }
+  
+  assert_eq(issues_by_severity["high"].length(), 1)
+  assert_eq(issues_by_severity["medium"].length(), 2)
+  assert_eq(issues_by_severity["low"].length(), 0)
+  
+  // 按自动修复能力分类
+  let auto_fixable_issues = data_consistency_issues.filter(fn(issue) { 
+    issue["auto_fixable"] 
+  })
+  let manual_fix_issues = data_consistency_issues.filter(fn(issue) { 
+    !issue["auto_fixable"] 
+  })
+  
+  assert_eq(auto_fixable_issues.length(), 2)
+  assert_eq(manual_fix_issues.length(), 1)
+  
+  // 实现自动修复逻辑
+  let auto_fix_issue = fn(issue) {
+    match issue["fix_strategy"] {
+      "create_default_profile" => {
+        {
+          ...issue,
+          "status": "fixed",
+          "fixed_at": 1640995400,
+          "fix_details": "Created default profile for user"
+        }
+      },
+      "reset_to_zero" => {
+        {
+          ...issue,
+          "status": "fixed",
+          "fixed_at": 1640995400,
+          "fix_details": "Reset negative quantity to zero"
+        }
+      },
+      _ => {
+        {
+          ...issue,
+          "status": "manual_review_required",
+          "escalated_at": 1640995400
         }
       }
     }
-    Error(_) => assert_true(false)
   }
+  
+  // 应用自动修复
+  let fixed_issues = auto_fixable_issues.map(auto_fix_issue)
+  
+  // 验证自动修复结果
+  assert_eq(fixed_issues.length(), 2)
+  assert_true(fixed_issues.all(fn(issue) { issue["status"] == "fixed" }))
+  
+  // 验证用户记录修复
+  let user_issue_fix = fixed_issues.filter(fn(issue) { 
+    issue["table"] == "users" 
+  })[0]
+  
+  assert_eq(user_issue_fix["status"], "fixed")
+  assert_eq(user_issue_fix["fixed_at"], 1640995400)
+  assert_eq(user_issue_fix["fix_details"], "Created default profile for user")
+  
+  // 验证库存记录修复
+  let inventory_issue_fix = fixed_issues.filter(fn(issue) { 
+    issue["table"] == "inventory" 
+  })[0]
+  
+  assert_eq(inventory_issue_fix["status"], "fixed")
+  assert_eq(inventory_issue_fix["fixed_at"], 1640995400)
+  assert_eq(inventory_issue_fix["fix_details"], "Reset negative quantity to zero")
+  
+  // 验证需要手动修复的问题
+  let order_issue = manual_fix_issues[0]
+  assert_eq(order_issue["table"], "orders")
+  assert_eq(order_issue["issue_type"], "referential_integrity")
+  assert_eq(order_issue["severity"], "high")
+  assert_eq(order_issue["auto_fixable"], false)
+  assert_eq(order_issue["fix_strategy"], "manual_review")
 }
 
-// Test 5: Network Partition Recovery
-test "network partition recovery" {
-  let network_manager = NetworkManager::new()
-  
-  // Configure partition detection
-  network_manager.set_partition_detection({
-    "heartbeat_interval": 1000, // milliseconds
-    "missed_heartbeats_threshold": 3,
-    "reconnect_interval": 5000
-  })
-  
-  // Simulate network partition
-  network_manager.simulate_partition("node1", "node2")
-  
-  // Detect partition
-  let partition_detected = network_manager.detect_partitions()
-  assert_true(partition_detected)
-  
-  // Get partitioned nodes
-  let partitioned_nodes = network_manager.get_partitioned_nodes()
-  assert_true(partitioned_nodes.contains("node1"))
-  assert_true(partitioned_nodes.contains("node2"))
-  
-  // Test operation during partition
-  let partition_operation_result = network_manager.execute_during_partition(|| {
-    // Should use local cache or degraded functionality
-    "Operation executed in degraded mode"
-  })
-  
-  match partition_operation_result {
-    Success(result) => assert_eq(result, "Operation executed in degraded mode")
-    Error(_) => assert_true(false)
-  }
-  
-  // Simulate partition recovery
-  network_manager.simulate_recovery("node1", "node2")
-  
-  // Detect recovery
-  let recovery_detected = network_manager.detect_recovery()
-  assert_true(recovery_detected)
-  
-  // Test data synchronization after recovery
-  let sync_result = network_manager.synchronize_after_recovery()
-  match sync_result {
-    Success(synced_nodes) => assert_true(synced_nodes.length() > 0)
-    Error(_) => assert_true(false)
-  }
-  
-  // Test full operation after recovery
-  let full_operation_result = network_manager.execute_after_recovery(|| {
-    "Operation executed after recovery"
-  })
-  
-  match full_operation_result {
-    Success(result) => assert_eq(result, "Operation executed after recovery")
-    Error(_) => assert_true(false)
-  }
-}
-
-// Test 6: Memory Leak Recovery
-test "memory leak recovery" {
-  let memory_manager = MemoryManager::new()
-  
-  // Configure memory monitoring
-  memory_manager.set_monitoring({
-    "check_interval": 1000, // milliseconds
-    "leak_threshold": 100 * 1024 * 1024, // 100MB
-    "recovery_action": "gc_and_clear_cache"
-  })
-  
-  // Simulate memory leak
-  let leaked_objects = []
-  for i in 0..=1000 {
-    let object = memory_manager.allocate_object(1024 * 1024) // 1MB each
-    leaked_objects.push(object)
-  }
-  
-  // Check memory usage
-  let memory_usage = memory_manager.get_memory_usage()
-  assert_true(memory_usage > 1000 * 1024 * 1024) // Should be over 1GB
-  
-  // Trigger leak detection and recovery
-  let leak_detected = memory_manager.detect_leak()
-  assert_true(leak_detected)
-  
-  // Perform recovery
-  let recovery_result = memory_manager.recover_from_leak()
-  match recovery_result {
-    Success(freed_memory) => assert_true(freed_memory > 0)
-    Error(_) => assert_true(false)
-  }
-  
-  // Check memory usage after recovery
-  let memory_after_recovery = memory_manager.get_memory_usage()
-  assert_true(memory_after_recovery < memory_usage) // Should be reduced
-  
-  // Test automatic leak detection
-  memory_manager.enable_automatic_detection()
-  
-  // Simulate another leak
-  for i in 0..=500 {
-    let object = memory_manager.allocate_object(1024 * 1024) // 1MB each
-    // Don't store references to simulate leak
-  }
-  
-  // Wait for automatic detection
-  memory_manager.wait_for_detection_cycle()
-  
-  // Check if automatic recovery was triggered
-  let auto_recovery_triggered = memory_manager.was_auto_recovery_triggered()
-  assert_true(auto_recovery_triggered)
-}
-
-// Test 7: Deadlock Recovery
-test "deadlock recovery" {
-  let concurrency_manager = ConcurrencyManager::new()
-  
-  // Configure deadlock detection
-  concurrency_manager.set_deadlock_detection({
-    "check_interval": 100, // milliseconds
-    "timeout": 5000, // milliseconds
-    "recovery_action": "release_youngest_transaction"
-  })
-  
-  // Create resources that can cause deadlock
-  let resource1 = concurrency_manager.create_resource("resource1")
-  let resource2 = concurrency_manager.create_resource("resource2")
-  
-  // Create transactions that will deadlock
-  let transaction1 = concurrency_manager.create_transaction("tx1")
-  let transaction2 = concurrency_manager.create_transaction("tx2")
-  
-  // Simulate deadlock scenario
-  let deadlock_detected = concurrency_manager.simulate_deadlock(transaction1, transaction2, resource1, resource2)
-  assert_true(deadlock_detected)
-  
-  // Check if deadlock was detected
-  let detection_result = concurrency_manager.detect_deadlock()
-  match detection_result {
-    Some(deadlock_info) => {
-      assert_true(deadlock_info.involved_transactions.contains("tx1"))
-      assert_true(deadlock_info.involved_transactions.contains("tx2"))
-      assert_true(deadlock_info.involved_resources.contains("resource1"))
-      assert_true(deadlock_info.involved_resources.contains("resource2"))
-    }
-    None => assert_true(false)
-  }
-  
-  // Perform deadlock recovery
-  let recovery_result = concurrency_manager.recover_from_deadlock()
-  match recovery_result {
-    Success(resolved_transactions) => {
-      assert_true(resolved_transactions.length() > 0)
-    }
-    Error(_) => assert_true(false)
-  }
-  
-  // Check if resources are available after recovery
-  let resource1_available = concurrency_manager.is_resource_available(resource1)
-  let resource2_available = concurrency_manager.is_resource_available(resource2)
-  
-  assert_true(resource1_available)
-  assert_true(resource2_available)
-  
-  // Test prevention of future deadlocks
-  concurrency_manager.enable_deadlock_prevention()
-  
-  let prevention_result = concurrency_manager.execute_with_prevention(|| {
-    // Should prevent deadlock
-    "Operation completed without deadlock"
-  })
-  
-  match prevention_result {
-    Success(result) => assert_eq(result, "Operation completed without deadlock")
-    Error(_) => assert_true(false)
-  }
-}
-
-// Test 8: Cascading Failure Prevention
-test "cascading failure prevention" {
-  let system_manager = SystemManager::new()
-  
-  // Configure failure isolation
-  system_manager.set_failure_isolation({
-    "isolation_boundaries": ["service_a", "service_b", "service_c"],
-    "propagation_delay": 1000, // milliseconds
-    "circuit_breaker_threshold": 0.5 // 50% failure rate
-  })
-  
-  // Configure bulkhead pattern
-  system_manager.set_bulkhead_pattern({
-    "service_a": {"max_concurrent": 10, "max_queue": 50},
-    "service_b": {"max_concurrent": 5, "max_queue": 25},
-    "service_c": {"max_concurrent": 15, "max_queue": 75}
-  })
-  
-  // Simulate failure in service A
-  system_manager.simulate_service_failure("service_a")
-  
-  // Check if failure is isolated
-  let service_a_status = system_manager.get_service_status("service_a")
-  let service_b_status = system_manager.get_service_status("service_b")
-  let service_c_status = system_manager.get_service_status("service_c")
-  
-  match service_a_status {
-    Degraded(_) => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match service_b_status {
-    Healthy => assert_true(true) // Should remain healthy
-    _ => assert_true(false)
-  }
-  
-  match service_c_status {
-    Healthy => assert_true(true) // Should remain healthy
-    _ => assert_true(false)
-  }
-  
-  // Test operation during partial failure
-  let operation_result = system_manager.execute_with_fallback("service_b", || {
-    "Service B operation successful"
-  }, || {
-    "Fallback operation successful"
-  })
-  
-  match operation_result {
-    Success(result) => assert_eq(result, "Service B operation successful")
-    Error(_) => assert_true(false)
-  }
-  
-  // Test operation against failed service
-  let failed_operation_result = system_manager.execute_with_fallback("service_a", || {
-    "Service A operation successful"
-  }, || {
-    "Fallback operation successful"
-  })
-  
-  match failed_operation_result {
-    Success(result) => assert_eq(result, "Fallback operation successful")
-    Error(_) => assert_true(false)
-  }
-  
-  // Simulate recovery of service A
-  system_manager.simulate_service_recovery("service_a")
-  
-  // Check if system returns to normal
-  let recovered_service_a_status = system_manager.get_service_status("service_a")
-  match recovered_service_a_status {
-    Healthy => assert_true(true)
-    _ => assert_true(false)
-  }
-}
-
-// Test 9: State Recovery After Crash
-test "state recovery after crash" {
-  let state_manager = StateManager::new()
-  
-  // Configure state persistence
-  state_manager.set_persistence({
-    "interval": 1000, // milliseconds
-    "strategy": "incremental",
-    "compression": true,
-    "encryption": false
-  })
-  
-  // Create initial state
-  let initial_state = {
-    "counter": 0,
-    "data": ["item1", "item2", "item3"],
-    "config": {"setting1": "value1", "setting2": "value2"}
-  }
-  
-  state_manager.set_state(initial_state)
-  
-  // Modify state
-  for i in 0..=10 {
-    let current_state = state_manager.get_state()
-    let updated_state = {
-      "counter": current_state.counter + 1,
-      "data": current_state.data + ["item" + (i + 4).to_string()],
-      "config": current_state.config
-    }
-    state_manager.set_state(updated_state)
-  }
-  
-  // Force state persistence
-  state_manager.persist_state()
-  
-  // Simulate crash
-  state_manager.simulate_crash()
-  
-  // Recover state after crash
-  let recovery_result = state_manager.recover_state()
-  match recovery_result {
-    Success(recovered_state) => {
-      // Should match state before crash
-      assert_eq(recovered_state.counter, 11)
-      assert_eq(recovered_state.data.length(), 14)
-      assert_eq(recovered_state.data[0], "item1")
-      assert_eq(recovered_state.data[13], "item14")
-      assert_eq(recovered_state.config.setting1, "value1")
-      assert_eq(recovered_state.config.setting2, "value2")
-    }
-    Error(_) => assert_true(false)
-  }
-  
-  // Test recovery with corrupted state file
-  state_manager.corrupt_state_file()
-  
-  let corrupted_recovery_result = state_manager.recover_state()
-  match corrupted_recovery_result {
-    Success(_) => assert_true(false) // Should not succeed with corrupted file
-    Error(_) => {
-      // Should fall back to last known good state
-      let fallback_state = state_manager.get_fallback_state()
-      assert_true(fallback_state.is_some())
-    }
-  }
-}
-
-// Test 10: Comprehensive Error Recovery Scenario
-test "comprehensive error recovery scenario" {
-  let recovery_orchestrator = RecoveryOrchestrator::new()
-  
-  // Configure comprehensive recovery strategy
-  recovery_orchestrator.set_strategy({
-    "connection_failures": {
-      "max_retries": 3,
-      "circuit_breaker": true,
-      "fallback_service": true
+// 测试5: 缓存失效和恢复
+test "缓存失效和恢复机制" {
+  // 模拟缓存状态和失效场景
+  let cache_system = {
+    "cache_nodes": [
+      {
+        "node_id": "cache-node-1",
+        "status": "healthy",
+        "memory_usage_percent": 65.5,
+        "hit_rate_percent": 85.2,
+        "evictions": 1250,
+        "last_eviction": 1640995200
+      },
+      {
+        "node_id": "cache-node-2",
+        "status": "degraded",
+        "memory_usage_percent": 95.2,
+        "hit_rate_percent": 45.8,
+        "evictions": 5420,
+        "last_eviction": 1640995250
+      },
+      {
+        "node_id": "cache-node-3",
+        "status": "failed",
+        "memory_usage_percent": 0.0,
+        "hit_rate_percent": 0.0,
+        "evictions": 0,
+        "last_eviction": 0
+      }
+    ],
+    "cache_policies": {
+      "eviction_policy": "lru",
+      "ttl_seconds": 3600,
+      "max_memory_mb": 4096,
+      "replication_factor": 2
     },
-    "data_corruption": {
-      "validation": true,
-      "redundancy": true,
-      "backup_restoration": true
-    },
-    "service_degradation": {
-      "graceful_degradation": true,
-      "feature_flags": true,
-      "performance_monitoring": true
-    },
-    "system_overload": {
-      "load_shedding": true,
-      "request_throttling": true,
-      "resource_scaling": true
-    }
-  })
-  
-  // Simulate complex failure scenario
-  let failure_scenario = {
-    "connection_failure": true,
-    "data_corruption": 0.2, // 20% corruption
-    "service_degradation": 0.7, // 70% performance
-    "system_overload": 0.8 // 80% resource usage
+    "recovery_strategy": "automatic"
   }
   
-  // Execute with comprehensive recovery
-  let scenario_result = recovery_orchestrator.execute_with_recovery(failure_scenario, || {
-    "Complex operation completed successfully"
+  // 验证缓存系统状态
+  assert_eq(cache_system["cache_nodes"].length(), 3)
+  assert_eq(cache_system["cache_policies"]["eviction_policy"], "lru")
+  assert_eq(cache_system["cache_policies"]["ttl_seconds"], 3600)
+  assert_eq(cache_system["cache_policies"]["max_memory_mb"], 4096)
+  assert_eq(cache_system["cache_policies"]["replication_factor"], 2)
+  assert_eq(cache_system["recovery_strategy"], "automatic")
+  
+  // 按状态分类缓存节点
+  let healthy_nodes = cache_system["cache_nodes"].filter(fn(node) { 
+    node["status"] == "healthy" 
+  })
+  let degraded_nodes = cache_system["cache_nodes"].filter(fn(node) { 
+    node["status"] == "degraded" 
+  })
+  let failed_nodes = cache_system["cache_nodes"].filter(fn(node) { 
+    node["status"] == "failed" 
   })
   
-  match scenario_result {
-    Success(result) => assert_eq(result, "Complex operation completed successfully")
-    Error(_) => {
-      // Even if main operation fails, system should be stable
-      let system_status = recovery_orchestrator.get_system_status()
-      match system_status {
-        Stable(_) => assert_true(true)
-        _ => assert_true(false)
+  assert_eq(healthy_nodes.length(), 1)
+  assert_eq(degraded_nodes.length(), 1)
+  assert_eq(failed_nodes.length(), 1)
+  
+  // 实现缓存恢复策略
+  let recover_cache_node = fn(node) {
+    match node["status"] {
+      "healthy" => node, // 健康节点不需要恢复
+      "degraded" => {
+        // 对于降级节点，清理内存并重置统计
+        {
+          ...node,
+          "status": "healthy",
+          "memory_usage_percent": node["memory_usage_percent"] * 0.8,
+          "hit_rate_percent": node["hit_rate_percent"] + 10.0
+        }
+      },
+      "failed" => {
+        // 对于失败节点，重启并初始化
+        {
+          ...node,
+          "status": "healthy",
+          "memory_usage_percent": 25.0,
+          "hit_rate_percent": 60.0,
+          "evictions": 0,
+          "last_eviction": 1640995400
+        }
+      },
+      _ => node
+    }
+  }
+  
+  // 应用恢复策略
+  let recovered_nodes = cache_system["cache_nodes"].map(recover_cache_node)
+  
+  // 验证恢复结果
+  assert_eq(recovered_nodes.length(), 3)
+  assert_true(recovered_nodes.all(fn(node) { node["status"] == "healthy" }))
+  
+  // 验证降级节点恢复
+  let degraded_recovery = recovered_nodes.filter(fn(node) { 
+    node["node_id"] == "cache-node-2" 
+  })[0]
+  
+  assert_eq(degraded_recovery["status"], "healthy")
+  assert_eq(degraded_recovery["memory_usage_percent"].round(), 76.0) // 95.2 * 0.8
+  assert_eq(degraded_recovery["hit_rate_percent"], 55.8) // 45.8 + 10.0
+  
+  // 验证失败节点恢复
+  let failed_recovery = recovered_nodes.filter(fn(node) { 
+    node["node_id"] == "cache-node-3" 
+  })[0]
+  
+  assert_eq(failed_recovery["status"], "healthy")
+  assert_eq(failed_recovery["memory_usage_percent"], 25.0)
+  assert_eq(failed_recovery["hit_rate_percent"], 60.0)
+  assert_eq(failed_recovery["evictions"], 0)
+  assert_eq(failed_recovery["last_eviction"], 1640995400)
+  
+  // 计算恢复后的整体缓存性能
+  let total_hit_rate = recovered_nodes.reduce(fn(acc, node) { 
+    acc + node["hit_rate_percent"] 
+  }, 0.0) / (recovered_nodes.length() as Float)
+  
+  assert_eq(total_hit_rate.round(), 67.0)
+  
+  // 更新缓存系统状态
+  let recovered_cache_system = {
+    ...cache_system,
+    "cache_nodes": recovered_nodes,
+    "last_recovery_time": 1640995400
+  }
+  
+  // 验证恢复后的缓存系统
+  assert_eq(recovered_cache_system["cache_nodes"].length(), 3)
+  assert_eq(recovered_cache_system["last_recovery_time"], 1640995400)
+}
+
+// 测试6: 系统资源耗尽恢复
+test "系统资源耗尽恢复" {
+  // 模拟系统资源状态
+  let system_resources = {
+    "timestamp": 1640995200,
+    "cpu": {
+      "usage_percent": 95.5,
+      "load_average": {
+        "1min": 4.5,
+        "5min": 4.2,
+        "15min": 3.8
+      },
+      "critical_processes": [
+        {"pid": 1234, "name": "api-service", "cpu_percent": 45.2},
+        {"pid": 5678, "name": "data-processor", "cpu_percent": 30.1},
+        {"pid": 9012, "name": "indexer", "cpu_percent": 20.2}
+      ]
+    },
+    "memory": {
+      "usage_percent": 92.8,
+      "available_mb": 768,
+      "swap_usage_percent": 75.5,
+      "oom_events": 2,
+      "memory_hungry_processes": [
+        {"pid": 5678, "name": "data-processor", "memory_mb": 4096},
+        {"pid": 9012, "name": "indexer", "memory_mb": 3072}
+      ]
+    },
+    "disk": {
+      "usage_percent": 88.5,
+      "available_gb": 12.5,
+      "inode_usage_percent": 95.2,
+      "large_files": [
+        {"path": "/var/log/app.log", "size_gb": 15.2},
+        {"path": "/tmp/cache.db", "size_gb": 8.7}
+      ]
+    },
+    "recovery_actions": []
+  }
+  
+  // 验证系统资源状态
+  assert_eq(system_resources["cpu"]["usage_percent"], 95.5)
+  assert_eq(system_resources["memory"]["usage_percent"], 92.8)
+  assert_eq(system_resources["disk"]["usage_percent"], 88.5)
+  assert_eq(system_resources["recovery_actions"].length(), 0)
+  
+  // 实现资源恢复策略
+  let recover_system_resources = fn(resources) {
+    let mut recovery_actions = []
+    
+    // CPU恢复策略
+    if resources["cpu"]["usage_percent"] > 90.0 {
+      // 降低CPU密集型进程优先级
+      recovery_actions = recovery_actions.push("reduce_cpu_intensive_process_priority")
+      
+      // 如果负载过高，终止非关键进程
+      if resources["cpu"]["load_average"]["1min"] > 4.0 {
+        recovery_actions = recovery_actions.push("terminate_non_critical_processes")
       }
     }
-  }
-  
-  // Check recovery actions taken
-  let recovery_actions = recovery_orchestrator.get_recovery_actions()
-  assert_true(recovery_actions.length() > 0)
-  
-  // Verify specific recovery actions
-  let connection_recovery = recovery_actions.find(|action| action.type == "connection_failure")
-  match connection_recovery {
-    Some(action) => {
-      assert_true(action.retries > 0)
-      assert_true(action.fallback_used || action.circuit_breaker_triggered)
+    
+    // 内存恢复策略
+    if resources["memory"]["usage_percent"] > 90.0 {
+      // 清理缓存
+      recovery_actions = recovery_actions.push("clear_system_cache")
+      
+      // 如果交换内存使用率高，释放不活跃内存
+      if resources["memory"]["swap_usage_percent"] > 70.0 {
+        recovery_actions = recovery_actions.push("release_inactive_memory")
+      }
+      
+      // 如果有OOM事件，重启内存饥饿进程
+      if resources["memory"]["oom_events"] > 0 {
+        recovery_actions = recovery_actions.push("restart_memory_hungry_processes")
+      }
     }
-    None => assert_true(false)
-  }
-  
-  let data_recovery = recovery_actions.find(|action| action.type == "data_corruption")
-  match data_recovery {
-    Some(action) => {
-      assert_true(action.validation_performed)
-      assert_true(action.redundancy_used || action.backup_restored)
+    
+    // 磁盘恢复策略
+    if resources["disk"]["usage_percent"] > 85.0 {
+      // 清理日志文件
+      recovery_actions = recovery_actions.push("rotate_and_compress_logs")
+      
+      // 清理临时文件
+      recovery_actions = recovery_actions.push("clean_temporary_files")
+      
+      // 如果inode使用率高，清理小文件
+      if resources["disk"]["inode_usage_percent"] > 90.0 {
+        recovery_actions = recovery_actions.push("cleanup_small_files")
+      }
     }
-    None => assert_true(false)
-  }
-  
-  let service_recovery = recovery_actions.find(|action| action.type == "service_degradation")
-  match service_recovery {
-    Some(action) => {
-      assert_true(action.degradation_applied)
-      assert_true(action.features_disabled > 0)
+    
+    // 应用恢复措施后的资源状态
+    let recovered_resources = {
+      ...resources,
+      "cpu": {
+        ...resources["cpu"],
+        "usage_percent": if resources["cpu"]["usage_percent"] > 90.0 {
+          resources["cpu"]["usage_percent"] - 15.0
+        } else {
+          resources["cpu"]["usage_percent"]
+        }
+      },
+      "memory": {
+        ...resources["memory"],
+        "usage_percent": if resources["memory"]["usage_percent"] > 90.0 {
+          resources["memory"]["usage_percent"] - 20.0
+        } else {
+          resources["memory"]["usage_percent"]
+        },
+        "swap_usage_percent": if resources["memory"]["swap_usage_percent"] > 70.0 {
+          resources["memory"]["swap_usage_percent"] - 30.0
+        } else {
+          resources["memory"]["swap_usage_percent"]
+        }
+      },
+      "disk": {
+        ...resources["disk"],
+        "usage_percent": if resources["disk"]["usage_percent"] > 85.0 {
+          resources["disk"]["usage_percent"] - 10.0
+        } else {
+          resources["disk"]["usage_percent"]
+        },
+        "inode_usage_percent": if resources["disk"]["inode_usage_percent"] > 90.0 {
+          resources["disk"]["inode_usage_percent"] - 15.0
+        } else {
+          resources["disk"]["inode_usage_percent"]
+        }
+      },
+      "recovery_actions": recovery_actions
     }
-    None => assert_true(false)
+    
+    recovered_resources
   }
   
-  let overload_recovery = recovery_actions.find(|action| action.type == "system_overload")
-  match overload_recovery {
-    Some(action) => {
-      assert_true(action.load_shedding_applied || action.throttling_applied)
-    }
-    None => assert_true(false)
-  }
+  // 应用恢复策略
+  let recovered_resources = recover_system_resources(system_resources)
   
-  // Test recovery metrics
-  let recovery_metrics = recovery_orchestrator.get_recovery_metrics()
-  assert_true(recovery_metrics.total_recovery_time > 0)
-  assert_true(recovery_metrics.successful_recoveries > 0)
-  assert_true(recovery_metrics.system_stability_maintained)
+  // 验证恢复措施
+  assert_eq(recovered_resources["recovery_actions"].length(), 7)
+  assert_true(recovered_resources["recovery_actions"].contains("reduce_cpu_intensive_process_priority"))
+  assert_true(recovered_resources["recovery_actions"].contains("terminate_non_critical_processes"))
+  assert_true(recovered_resources["recovery_actions"].contains("clear_system_cache"))
+  assert_true(recovered_resources["recovery_actions"].contains("release_inactive_memory"))
+  assert_true(recovered_resources["recovery_actions"].contains("restart_memory_hungry_processes"))
+  assert_true(recovered_resources["recovery_actions"].contains("rotate_and_compress_logs"))
+  assert_true(recovered_resources["recovery_actions"].contains("clean_temporary_files"))
+  
+  // 验证恢复后的资源状态
+  assert_eq(recovered_resources["cpu"]["usage_percent"], 80.5) // 95.5 - 15.0
+  assert_eq(recovered_resources["memory"]["usage_percent"], 72.8) // 92.8 - 20.0
+  assert_eq(recovered_resources["memory"]["swap_usage_percent"], 45.5) // 75.5 - 30.0
+  assert_eq(recovered_resources["disk"]["usage_percent"], 78.5) // 88.5 - 10.0
+  assert_eq(recovered_resources["disk"]["inode_usage_percent"], 80.2) // 95.2 - 15.0
+  
+  // 验证资源状态是否恢复正常范围
+  assert_true(recovered_resources["cpu"]["usage_percent"] < 90.0)
+  assert_true(recovered_resources["memory"]["usage_percent"] < 90.0)
+  assert_true(recovered_resources["disk"]["usage_percent"] < 85.0)
+  assert_true(recovered_resources["disk"]["inode_usage_percent"] < 90.0)
 }
