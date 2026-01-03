@@ -1,63 +1,238 @@
-// Azimuth New MoonBit Test Cases
-// This file contains additional test cases for the Azimuth telemetry system
+// Azimuth 新增MoonBit测试用例
+// 专注于遥测系统的核心功能和高级特性
 
-// Test 1: Timestamp and Date Formatting
-test "timestamp and date formatting operations" {
-  // Test timestamp creation and formatting
-  let timestamp = 1735689600000000000L // 2025-01-01 00:00:00 UTC
-  let formatted_date = "2025-01-01T00:00:00Z"
-  
-  // Test timestamp operations
-  assert_true(timestamp > 0L)
-  assert_eq(formatted_date.length(), 20)
-  assert_true(formatted_date.contains("2025-01-01"))
-  assert_true(formatted_date.contains("T00:00:00Z"))
-  
-  // Test date parsing simulation
-  let date_parts = formatted_date.split("T")
-  assert_eq(date_parts.length(), 2)
-  assert_eq(date_parts[0], "2025-01-01")
-  assert_eq(date_parts[1], "00:00:00Z")
-  
-  // Test time zone operations
-  let utc_time = "00:00:00Z"
-  let local_time = "08:00:00+08:00"
-  
-  assert_true(utc_time.contains("Z"))
-  assert_true(local_time.contains("+08:00"))
-  assert_eq(utc_time.length(), 8)
-  assert_eq(local_time.length(), 14)
-}
-
-// Test 2: Data Compression and Decompression
-test "data compression and decompression operations" {
-  // Test compression ratio calculation
-  let original_data = "azimuth telemetry data compression test"
-  let compressed_data = "azimuth:telemetry:data:compression:test"
-  
-  let original_size = original_data.length()
-  let compressed_size = compressed_data.length()
-  
-  assert_eq(original_size, 39)
-  assert_eq(compressed_size, 39)
-  
-  // Test compression efficiency
-  let compression_ratio = (compressed_size.to_float() / original_size.to_float()) * 100.0
-  assert_true(compression_ratio > 0.0)
-  assert_true(compression_ratio <= 100.0)
-  
-  // Test batch compression
-  let data_batch = ["data1", "data2", "data3", "data4", "data5"]
-  let compressed_batch = []
-  
-  for data in data_batch {
-    let compressed = data + ":compressed"
-    compressed_batch = compressed_batch.push(compressed)
+// 测试1: 遥测数据编码和解码
+test "遥测数据编码和解码功能" {
+  // 定义遥测数据类型
+  type TelemetryData {
+    trace_id: String
+    span_id: String
+    parent_span_id: Option[String]
+    operation_name: String
+    start_time: Int
+    end_time: Int
+    attributes: Array[(String, String)]
+    status: String
   }
   
-  assert_eq(compressed_batch.length(), 5)
-  assert_true(compressed_batch[0].contains(":compressed"))
-  assert_eq(compressed_batch[4], "data5:compressed")
+  // 创建编码器
+  let encode_telemetry = fn(data: TelemetryData) -> String {
+    let attr_str = data.attributes.map(fn(attr) {
+      let (key, value) = attr
+      key + ":" + value
+    }).join(",")
+    
+    let parent_str = match data.parent_span_id {
+      Some(id) => id
+      None => ""
+    }
+    
+    data.trace_id + "|" + data.span_id + "|" + parent_str + "|" + 
+    data.operation_name + "|" + data.start_time.to_string() + "|" + 
+    data.end_time.to_string() + "|" + attr_str + "|" + data.status
+  }
+  
+  // 创建解码器
+  let decode_telemetry = fn(encoded: String) -> Option[TelemetryData] {
+    let parts = encoded.split("|")
+    if parts.length() != 8 {
+      None
+    } else {
+      let trace_id = parts[0]
+      let span_id = parts[1]
+      let parent_span_id = if parts[2] == "" { None } else { Some(parts[2]) }
+      let operation_name = parts[3]
+      let start_time = parts[4].to_int()
+      let end_time = parts[5].to_int()
+      
+      let attr_parts = parts[6].split(",")
+      let attributes = attr_parts.filter(fn(p) { p != "" }).map(fn(p) {
+        let kv = p.split(":")
+        if kv.length() == 2 {
+          (kv[0], kv[1])
+        } else {
+          ("", "")
+        }
+      })
+      
+      let status = parts[7]
+      
+      Some({
+        trace_id,
+        span_id,
+        parent_span_id,
+        operation_name,
+        start_time,
+        end_time,
+        attributes,
+        status
+      })
+    }
+  }
+  
+  // 测试数据
+  let test_data = {
+    trace_id: "trace-12345",
+    span_id: "span-67890",
+    parent_span_id: Some("span-parent"),
+    operation_name: "database.query",
+    start_time: 1640995200000,
+    end_time: 1640995200500,
+    attributes: [
+      ("db.type", "postgresql"),
+      ("db.statement", "SELECT * FROM users"),
+      ("service.name", "api-service")
+    ],
+    status: "ok"
+  }
+  
+  // 测试编码
+  let encoded = encode_telemetry(test_data)
+  assert_true(encoded.contains("trace-12345"))
+  assert_true(encoded.contains("span-67890"))
+  assert_true(encoded.contains("database.query"))
+  
+  // 测试解码
+  let decoded = decode_telemetry(encoded)
+  assert_true(decoded.is_some())
+  
+  match decoded {
+    Some(data) => {
+      assert_eq(data.trace_id, test_data.trace_id)
+      assert_eq(data.span_id, test_data.span_id)
+      assert_eq(data.operation_name, test_data.operation_name)
+      assert_eq(data.start_time, test_data.start_time)
+      assert_eq(data.end_time, test_data.end_time)
+      assert_eq(data.status, test_data.status)
+      assert_eq(data.attributes.length(), 3)
+    }
+    None => assert_true(false)
+  }
+}
+
+// 测试2: 时间序列数据处理
+test "时间序列数据处理和聚合" {
+  // 定义时间序列点
+  type TimeSeriesPoint {
+    timestamp: Int
+    value: Float
+    tags: Array[(String, String)]
+  }
+  
+  // 定义时间窗口
+  type TimeWindow {
+    start_time: Int
+    end_time: Int
+  }
+  
+  // 创建时间序列点
+  let create_point = fn(timestamp: Int, value: Float, tags: Array[(String, String)]) -> TimeSeriesPoint {
+    { timestamp, value, tags }
+  }
+  
+  // 按时间窗口过滤数据点
+  let filter_by_window = fn(points: Array[TimeSeriesPoint], window: TimeWindow) -> Array[TimeSeriesPoint] {
+    points.filter(fn(point) {
+      point.timestamp >= window.start_time && point.timestamp <= window.end_time
+    })
+  }
+  
+  // 计算移动平均
+  let moving_average = fn(points: Array[TimeSeriesPoint], window_size: Int) -> Array[TimeSeriesPoint] {
+    if points.length() < window_size || window_size <= 0 {
+      []
+    } else {
+      let mut result = []
+      let mut i = 0
+      while i <= points.length() - window_size {
+        let window_points = points.slice(i, i + window_size)
+        let sum = window_points.reduce(fn(acc, p) { acc + p.value }, 0.0)
+        let avg = sum / (window_size as Float)
+        let center_point = points[i + window_size / 2]
+        result = result.push({
+          timestamp: center_point.timestamp,
+          value: avg,
+          tags: center_point.tags
+        })
+        i = i + 1
+      }
+      result
+    }
+  }
+  
+  // 按标签分组
+  let group_by_tags = fn(points: Array[TimeSeriesPoint], tag_keys: Array[String]) -> Map[String, Array[TimeSeriesPoint]] {
+    let mut groups = Map::empty()
+    
+    for point in points {
+      let key_parts = tag_keys.map(fn(key) {
+        match point.tags.find(fn(tag) { tag.0 == key }) {
+          Some((_, value)) => value
+          None => "unknown"
+        }
+      })
+      let group_key = key_parts.join("|")
+      
+      let group_points = match Map::get(groups, group_key) {
+        Some(pts) => pts
+        None => []
+      }
+      
+      let updated_group = group_points.push(point)
+      groups = Map::insert(groups, group_key, updated_group)
+    }
+    
+    groups
+  }
+  
+  // 创建测试数据
+  let test_points = [
+    create_point(1640995200000, 10.5, [("service", "api"), ("env", "prod")]),
+    create_point(1640995201000, 12.3, [("service", "api"), ("env", "prod")]),
+    create_point(1640995202000, 11.8, [("service", "api"), ("env", "prod")]),
+    create_point(1640995203000, 15.2, [("service", "web"), ("env", "prod")]),
+    create_point(1640995204000, 14.7, [("service", "web"), ("env", "prod")]),
+    create_point(1640995205000, 9.5, [("service", "api"), ("env", "dev")]),
+    create_point(1640995206000, 8.9, [("service", "api"), ("env", "dev")])
+  ]
+  
+  // 测试时间窗口过滤
+  let window = { start_time: 1640995201000, end_time: 1640995204000 }
+  let filtered_points = filter_by_window(test_points, window)
+  assert_eq(filtered_points.length(), 4)
+  
+  // 测试移动平均
+  let avg_points = moving_average(test_points, 3)
+  assert_eq(avg_points.length(), 5)
+  
+  // 验证第一个移动平均值
+  let first_avg = avg_points[0]
+  let expected_avg = (10.5 + 12.3 + 11.8) / 3.0
+  assert_eq(first_avg.value.round(), expected_avg.round())
+  
+  // 测试按标签分组
+  let grouped = group_by_tags(test_points, ["service", "env"])
+  
+  // 验证API生产环境组
+  let api_prod_points = match Map::get(grouped, "api|prod") {
+    Some(points) => points
+    None => []
+  }
+  assert_eq(api_prod_points.length(), 3)
+  
+  // 验证Web生产环境组
+  let web_prod_points = match Map::get(grouped, "web|prod") {
+    Some(points) => points
+    None => []
+  }
+  assert_eq(web_prod_points.length(), 2)
+  
+  // 验证API开发环境组
+  let api_dev_points = match Map::get(grouped, "api|dev") {
+    Some(points) => points
+    None => []
+  }
+  assert_eq(api_dev_points.length(), 2)
 }
 
 // Test 3: Network Request and Response Processing
