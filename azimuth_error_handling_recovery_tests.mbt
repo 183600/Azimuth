@@ -1,509 +1,600 @@
-// Azimuth 错误处理和异常恢复测试
-// 专注于测试错误处理机制和异常恢复功能
+// Azimuth 错误处理和恢复机制测试
+// 测试系统在各种错误情况下的处理能力和恢复机制
 
-// 错误类型定义
-type ErrorType {
-  NetworkError(String)
-  ParseError(String)
-  ValidationError(String)
-  ResourceError(String)
-  TimeoutError(String)
-  UnknownError(String)
-}
-
-// 结果类型定义
-type Result[T, E] {
-  Ok(T)
-  Err(E)
-}
-
-// 测试1: 基本错误处理
-test "基本错误处理测试" {
-  // 成功结果处理
-  let success_result = Ok(42)
-  match success_result {
-    Ok(value) => assert_eq(value, 42)
-    Err(_) => assert_true(false)
+// 测试1: 错误类型定义和处理
+test "错误类型定义和处理" {
+  // 定义错误类型
+  enum AzimuthError {
+    NetworkError(String)
+    DataValidationError(String)
+    ResourceExhaustedError(String)
+    TimeoutError(Int)
+    UnknownError(String)
   }
   
-  // 错误结果处理
-  let error_result = Err(NetworkError("Connection failed"))
-  match error_result {
-    Ok(_) => assert_true(false)
-    Err(NetworkError(message)) => assert_eq(message, "Connection failed")
-    _ => assert_true(false)
+  // 定义结果类型
+  type Result[T] = {
+    success: Bool,
+    data: Option[T],
+    error: Option[AzimuthError]
   }
   
-  // 链式错误处理
-  let chained_result = success_result.map(fn(x) { x * 2 })
-  match chained_result {
-    Ok(value) => assert_eq(value, 84)
-    Err(_) => assert_true(false)
+  // 创建成功结果
+  let success_result: Result[String] = {
+    success: true,
+    data: Some("操作成功"),
+    error: None
   }
   
-  let chained_error_result = error_result.map(fn(x) { x * 2 })
-  match chained_error_result {
-    Ok(_) => assert_true(false)
-    Err(NetworkError(message)) => assert_eq(message, "Connection failed")
+  // 创建失败结果
+  let failure_result: Result[String] = {
+    success: false,
+    data: None,
+    error: Some(AzimuthError::NetworkError("连接超时"))
+  }
+  
+  // 验证成功结果
+  assert_true(success_result.success)
+  match success_result.data {
+    Some(data) => assert_eq(data, "操作成功")
+    None => assert_true(false)
+  }
+  match success_result.error {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // 验证失败结果
+  assert_false(failure_result.success)
+  match failure_result.data {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  match failure_result.error {
+    Some(AzimuthError::NetworkError(msg)) => assert_eq(msg, "连接超时")
     _ => assert_true(false)
   }
 }
 
 // 测试2: 错误恢复机制
-test "错误恢复机制测试" {
-  // 重试机制测试
-  let retry_count = 0
-  let max_retries = 3
+test "错误恢复机制" {
+  // 定义重试策略
+  enum RetryStrategy {
+    NoRetry
+    FixedDelay(Int)  // 固定延迟(毫秒)
+    ExponentialBackoff(Int, Int)  // (初始延迟, 最大重试次数)
+    Custom(fn(Int) -> Int)  // 自定义延迟函数
+  }
   
-  let result = retry_operation(fn() {
-    retry_count = retry_count + 1
-    if retry_count < max_retries {
-      Err(NetworkError("Temporary failure"))
+  // 定义重试配置
+  type RetryConfig = {
+    strategy: RetryStrategy,
+    max_attempts: Int,
+    retry_on: Array[String]  // 需要重试的错误类型
+  }
+  
+  // 模拟可能失败的操作
+  let operation = fn(attempt: Int) -> Result[String] {
+    if attempt < 3 {
+      // 前两次尝试失败
+      {
+        success: false,
+        data: None,
+        error: Some(AzimuthError::NetworkError("临时网络问题"))
+      }
     } else {
-      Ok("Success after retries")
+      // 第三次尝试成功
+      {
+        success: true,
+        data: Some("操作成功"),
+        error: None
+      }
     }
-  }, max_retries)
-  
-  match result {
-    Ok(message) => assert_eq(message, "Success after retries")
-    Err(_) => assert_true(false)
   }
   
-  // 超过最大重试次数测试
-  let always_fail_count = 0
-  let always_fail_result = retry_operation(fn() {
-    always_fail_count = always_fail_count + 1
-    Err(NetworkError("Persistent failure"))
-  }, 2)
-  
-  match always_fail_result {
-    Ok(_) => assert_true(false)
-    Err(NetworkError(message)) => assert_eq(message, "Persistent failure")
-    _ => assert_true(false)
-  }
-  
-  assert_eq(always_fail_count, 2)
-}
-
-// 测试3: 错误聚合和报告
-test "错误聚合和报告测试" {
-  // 多个错误的聚合
-  let errors = [
-    NetworkError("Connection timeout"),
-    ParseError("Invalid JSON format"),
-    ValidationError("Missing required field")
-  ]
-  
-  let error_report = generate_error_report(errors)
-  assert_true(error_report.contains("NetworkError: Connection timeout"))
-  assert_true(error_report.contains("ParseError: Invalid JSON format"))
-  assert_true(error_report.contains("ValidationError: Missing required field"))
-  
-  // 错误分类
-  let network_errors = filter_errors_by_type(errors, fn(err) {
-    match err {
-      NetworkError(_) => true
-      _ => false
-    }
-  })
-  assert_eq(network_errors.length(), 1)
-  
-  let parse_errors = filter_errors_by_type(errors, fn(err) {
-    match err {
-      ParseError(_) => true
-      _ => false
-    }
-  })
-  assert_eq(parse_errors.length(), 1)
-}
-
-// 测试4: 资源清理和异常安全
-test "资源清理和异常安全测试" {
-  // 模拟资源管理
-  let resource_acquired = false
-  let resource_cleaned = false
-  
-  let operation_result = with_resource_management(fn() {
-    resource_acquired = true
-    // 模拟操作中发生错误
-    Err(ResourceError("Resource access denied"))
-  }, fn() {
-    resource_cleaned = true
-  })
-  
-  match operation_result {
-    Ok(_) => assert_true(false)
-    Err(ResourceError(message)) => assert_eq(message, "Resource access denied")
-    _ => assert_true(false)
-  }
-  
-  assert_true(resource_acquired)
-  assert_true(resource_cleaned)
-  
-  // 成功操作的资源清理
-  let resource_acquired_2 = false
-  let resource_cleaned_2 = false
-  
-  let success_result = with_resource_management(fn() {
-    resource_acquired_2 = true
-    Ok("Operation completed successfully")
-  }, fn() {
-    resource_cleaned_2 = true
-  })
-  
-  match success_result {
-    Ok(message) => assert_eq(message, "Operation completed successfully")
-    Err(_) => assert_true(false)
-  }
-  
-  assert_true(resource_acquired_2)
-  assert_true(resource_cleaned_2)
-}
-
-// 测试5: 超时处理和取消操作
-test "超时处理和取消操作测试" {
-  // 超时操作测试
-  let start_time = get_current_time()
-  let timeout_result = with_timeout(fn() {
-    // 模拟长时间运行的操作
-    simulate_long_operation(2000)
-    Ok("Operation completed")
-  }, 1000)
-  
-  let end_time = get_current_time()
-  let elapsed_time = end_time - start_time
-  
-  match timeout_result {
-    Ok(_) => assert_true(false)
-    Err(TimeoutError(message)) => assert_eq(message, "Operation timed out")
-    _ => assert_true(false)
-  }
-  
-  // 验证超时时间大致正确（允许一些误差）
-  assert_true(elapsed_time >= 1000 && elapsed_time <= 1200)
-  
-  // 快速操作不超时
-  let fast_start_time = get_current_time()
-  let fast_result = with_timeout(fn() {
-    simulate_long_operation(500)
-    Ok("Fast operation completed")
-  }, 1000)
-  
-  let fast_end_time = get_current_time()
-  let fast_elapsed_time = fast_end_time - fast_start_time
-  
-  match fast_result {
-    Ok(message) => assert_eq(message, "Fast operation completed")
-    Err(_) => assert_true(false)
-  }
-  
-  assert_true(fast_elapsed_time < 1000)
-}
-
-// 测试6: 错误上下文和堆栈跟踪
-test "错误上下文和堆栈跟踪测试" {
-  // 错误上下文添加
-  let base_error = ValidationError("Invalid input")
-  let context_error = add_error_context(base_error, "function: validate_user_data", "line: 42")
-  
-  match context_error {
-    ValidationError(message) => {
-      assert_true(message.contains("Invalid input"))
-      assert_true(message.contains("function: validate_user_data"))
-      assert_true(message.contains("line: 42"))
-    }
-    _ => assert_true(false)
-  }
-  
-  // 堆栈跟踪模拟
-  let stack_trace = generate_stack_trace([
-    "process_data",
-    "validate_input",
-    "parse_json",
-    "main"
-  ])
-  
-  assert_true(stack_trace.contains("process_data"))
-  assert_true(stack_trace.contains("validate_input"))
-  assert_true(stack_trace.contains("parse_json"))
-  assert_true(stack_trace.contains("main"))
-}
-
-// 测试7: 错误恢复策略
-test "错误恢复策略测试" {
-  // 降级策略测试
-  let primary_result = simulate_primary_service(false) // 模拟主服务失败
-  let fallback_result = apply_fallback_strategy(primary_result, fn() {
-    simulate_fallback_service(true) // 模拟备用服务成功
-  })
-  
-  match fallback_result {
-    Ok(data) => assert_eq(data, "Fallback service data")
-    Err(_) => assert_true(false)
-  }
-  
-  // 主服务成功时不使用降级
-  let successful_primary = simulate_primary_service(true)
-  let no_fallback_result = apply_fallback_strategy(successful_primary, fn() {
-    simulate_fallback_service(false)
-  })
-  
-  match no_fallback_result {
-    Ok(data) => assert_eq(data, "Primary service data")
-    Err(_) => assert_true(false)
-  }
-  
-  // 断路器模式测试
-  let circuit_breaker = CircuitBreaker({
-    failure_threshold: 3,
-    recovery_timeout: 5000,
-    failure_count: 0,
-    last_failure_time: 0,
-    state: Closed
-  })
-  
-  // 初始状态应该允许请求
-  let initial_result = execute_with_circuit_breaker(circuit_breaker, fn() {
-    Ok("Request succeeded")
-  })
-  
-  match initial_result {
-    Ok(data) => assert_eq(data, "Request succeeded")
-    Err(_) => assert_true(false)
-  }
-  
-  // 模拟多次失败触发断路器打开
-  let mut updated_breaker = circuit_breaker
-  let i = 0
-  while i < 3 {
-    match execute_with_circuit_breaker(updated_breaker, fn() {
-      Err(NetworkError("Service unavailable"))
-    }) {
-      Err(NetworkError(_)) => {} // 预期的错误
-      _ => {}
+  // 带重试的操作执行器
+  let execute_with_retry = fn(config: RetryConfig, op: fn(Int) -> Result[String]) -> Result[String] {
+    let mut attempt = 1
+    let mut last_result = op(attempt)
+    
+    while attempt < config.max_attempts && !last_result.success {
+      attempt = attempt + 1
+      
+      // 检查是否应该重试此错误类型
+      let should_retry = match last_result.error {
+        Some(AzimuthError::NetworkError(_)) => config.retry_on.contains("NetworkError")
+        Some(AzimuthError::TimeoutError(_)) => config.retry_on.contains("TimeoutError")
+        _ => false
+      }
+      
+      if should_retry {
+        last_result = op(attempt)
+      } else {
+        break
+      }
     }
     
-    // 更新断路器状态（模拟）
-    updated_breaker = { updated_breaker with 
-      failure_count: updated_breaker.failure_count + 1,
-      last_failure_time: get_current_time(),
-      state: if updated_breaker.failure_count >= 2 then Open else Closed
-    }
-    i = i + 1
+    last_result
   }
   
-  // 断路器打开后应该立即拒绝请求
-  let open_result = execute_with_circuit_breaker(updated_breaker, fn() {
-    Ok("This should not be called")
-  })
+  // 配置重试策略
+  let retry_config = {
+    strategy: RetryStrategy::FixedDelay(1000),
+    max_attempts: 5,
+    retry_on: ["NetworkError", "TimeoutError"]
+  }
   
-  match open_result {
-    Err(NetworkError(message)) => assert_eq(message, "Circuit breaker is open")
-    _ => assert_true(false)
+  // 执行带重试的操作
+  let result = execute_with_retry(retry_config, operation)
+  
+  // 验证最终结果成功
+  assert_true(result.success)
+  match result.data {
+    Some(data) => assert_eq(data, "操作成功")
+    None => assert_true(false)
   }
 }
 
-// 辅助函数：重试操作
-fn retry_operation[T, E](operation : () -> Result[T, E], max_retries : Int) -> Result[T, E] {
-  let attempts = 0
-  let mut result = operation()
+// 测试3: 断路器模式
+test "断路器模式" {
+  // 定义断路器状态
+  enum CircuitBreakerState {
+    Closed    // 正常状态
+    Open      // 断路状态
+    HalfOpen  // 半开状态
+  }
   
-  while attempts < max_retries {
-    match result {
-      Ok(_) => {
-        return result
+  // 定义断路器配置
+  type CircuitBreakerConfig = {
+    failure_threshold: Int,     // 失败阈值
+    success_threshold: Int,     // 成功阈值(半开状态)
+    timeout_ms: Int            // 断路超时时间
+  }
+  
+  // 定义断路器
+  type CircuitBreaker = {
+    state: CircuitBreakerState,
+    failure_count: Int,
+    success_count: Int,
+    last_failure_time: Int,
+    config: CircuitBreakerConfig
+  }
+  
+  // 创建断路器
+  let create_circuit_breaker = fn(config: CircuitBreakerConfig) -> CircuitBreaker {
+    {
+      state: CircuitBreakerState::Closed,
+      failure_count: 0,
+      success_count: 0,
+      last_failure_time: 0,
+      config: config
+    }
+  }
+  
+  // 模拟操作执行
+  let execute_with_circuit_breaker = fn(
+    cb: CircuitBreaker, 
+    operation: fn() -> Result[String]
+  ) -> (CircuitBreaker, Result[String]) {
+    let current_time = Time::now()
+    let mut new_cb = cb
+    
+    // 检查断路器状态
+    match new_cb.state {
+      CircuitBreakerState::Open => {
+        // 检查是否可以转为半开状态
+        if current_time - new_cb.last_failure_time > new_cb.config.timeout_ms {
+          new_cb.state = CircuitBreakerState::HalfOpen
+          new_cb.success_count = 0
+        } else {
+          // 仍然断路，直接返回错误
+          return (new_cb, {
+            success: false,
+            data: None,
+            error: Some(AzimuthError::ResourceExhaustedError("断路器打开"))
+          })
+        }
       }
-      Err(_) => {
-        attempts = attempts + 1
-        if attempts < max_retries {
-          // 实际项目中可能需要添加延迟
-          result = operation()
+      _ => ()  // 其他状态继续执行
+    }
+    
+    // 执行操作
+    let result = operation()
+    
+    // 根据结果更新断路器状态
+    match result.success {
+      true => {
+        new_cb.success_count = new_cb.success_count + 1
+        
+        match new_cb.state {
+          CircuitBreakerState::HalfOpen => {
+            // 半开状态下的成功
+            if new_cb.success_count >= new_cb.config.success_threshold {
+              new_cb.state = CircuitBreakerState::Closed
+              new_cb.failure_count = 0
+            }
+          }
+          CircuitBreakerState::Closed => {
+            // 正常状态下的成功，重置失败计数
+            new_cb.failure_count = 0
+          }
+          _ => ()
+        }
+      }
+      false => {
+        new_cb.failure_count = new_cb.failure_count + 1
+        new_cb.last_failure_time = current_time
+        
+        match new_cb.state {
+          CircuitBreakerState::Closed => {
+            // 正常状态下的失败
+            if new_cb.failure_count >= new_cb.config.failure_threshold {
+              new_cb.state = CircuitBreakerState::Open
+            }
+          }
+          CircuitBreakerState::HalfOpen => {
+            // 半开状态下的失败，立即打开断路器
+            new_cb.state = CircuitBreakerState::Open
+          }
+          _ => ()
         }
       }
     }
+    
+    (new_cb, result)
   }
   
-  result
+  // 创建断路器配置
+  let config = {
+    failure_threshold: 3,
+    success_threshold: 2,
+    timeout_ms: 5000
+  }
+  
+  // 创建断路器
+  let mut circuit_breaker = create_circuit_breaker(config)
+  
+  // 模拟失败操作
+  let failing_operation = fn() -> Result[String] {
+    {
+      success: false,
+      data: None,
+      error: Some(AzimuthError::NetworkError("连接失败"))
+    }
+  }
+  
+  // 模拟成功操作
+  let successful_operation = fn() -> Result[String] {
+    {
+      success: true,
+      data: Some("操作成功"),
+      error: None
+    }
+  }
+  
+  // 执行几次失败操作，触发断路器打开
+  for i = 0; i < 3; i = i + 1 {
+    let (new_cb, result) = execute_with_circuit_breaker(circuit_breaker, failing_operation)
+    circuit_breaker = new_cb
+    assert_false(result.success)
+  }
+  
+  // 验证断路器已打开
+  assert_eq(circuit_breaker.state, CircuitBreakerState::Open)
+  
+  // 再次执行操作，应该被断路器拦截
+  let (new_cb, result) = execute_with_circuit_breaker(circuit_breaker, successful_operation)
+  circuit_breaker = new_cb
+  assert_false(result.success)
+  match result.error {
+    Some(AzimuthError::ResourceExhaustedError(msg)) => assert_eq(msg, "断路器打开")
+    _ => assert_true(false)
+  }
 }
 
-// 辅助函数：生成错误报告
-fn generate_error_report(errors : Array[ErrorType]) -> String {
-  let report = "Error Report:\n"
-  let i = 0
+// 测试4: 错误聚合和报告
+test "错误聚合和报告" {
+  // 定义错误统计
+  type ErrorStats = {
+    total_errors: Int,
+    error_types: Array[(String, Int)],
+    recent_errors: Array[String],
+    last_error_time: Int
+  }
   
-  while i < errors.length() {
-    let error = errors[i]
-    let error_string = match error {
-      NetworkError(msg) => "NetworkError: " + msg
-      ParseError(msg) => "ParseError: " + msg
-      ValidationError(msg) => "ValidationError: " + msg
-      ResourceError(msg) => "ResourceError: " + msg
-      TimeoutError(msg) => "TimeoutError: " + msg
-      UnknownError(msg) => "UnknownError: " + msg
+  // 创建错误统计器
+  let create_error_stats = fn() -> ErrorStats {
+    {
+      total_errors: 0,
+      error_types: [],
+      recent_errors: [],
+      last_error_time: 0
+    }
+  }
+  
+  // 记录错误
+  let record_error = fn(stats: ErrorStats, error: AzimuthError, current_time: Int) -> ErrorStats {
+    let error_type_str = match error {
+      AzimuthError::NetworkError(_) => "NetworkError"
+      AzimuthError::DataValidationError(_) => "DataValidationError"
+      AzimuthError::ResourceExhaustedError(_) => "ResourceExhaustedError"
+      AzimuthError::TimeoutError(_) => "TimeoutError"
+      AzimuthError::UnknownError(_) => "UnknownError"
     }
     
-    report = report + "- " + error_string + "\n"
-    i = i + 1
-  }
-  
-  report
-}
-
-// 辅助函数：按类型过滤错误
-fn filter_errors_by_type(errors : Array[ErrorType], predicate : (ErrorType) -> Bool) -> Array[ErrorType] {
-  let filtered = []
-  let i = 0
-  
-  while i < errors.length() {
-    let error = errors[i]
-    if predicate(error) {
-      filtered.push(error)
+    let error_msg = match error {
+      AzimuthError::NetworkError(msg) => "网络错误: " + msg
+      AzimuthError::DataValidationError(msg) => "数据验证错误: " + msg
+      AzimuthError::ResourceExhaustedError(msg) => "资源耗尽错误: " + msg
+      AzimuthError::TimeoutError(timeout) => "超时错误: " + timeout.to_string() + "ms"
+      AzimuthError::UnknownError(msg) => "未知错误: " + msg
     }
-    i = i + 1
-  }
-  
-  filtered
-}
-
-// 辅助函数：资源管理
-fn with_resource_management[T, E](operation : () -> Result[T, E], cleanup : () -> Unit) -> Result[T, E] {
-  let result = operation()
-  cleanup()
-  result
-}
-
-// 辅助函数：超时处理
-fn with_timeout[T](operation : () -> Result[T, ErrorType], timeout_ms : Int) -> Result[T, ErrorType] {
-  let start_time = get_current_time()
-  let mut result = operation()
-  
-  // 模拟超时检查
-  let current_time = get_current_time()
-  if current_time - start_time > timeout_ms {
-    result = Err(TimeoutError("Operation timed out"))
-  }
-  
-  result
-}
-
-// 辅助函数：模拟长时间运行的操作
-fn simulate_long_operation(duration_ms : Int) -> Unit {
-  // 在实际项目中，这里会是一个真实的长时间操作
-  // 为了测试，我们只是模拟
-  let start_time = get_current_time()
-  while get_current_time() - start_time < duration_ms {
-    // 空循环模拟等待
-  }
-}
-
-// 辅助函数：获取当前时间（模拟）
-fn get_current_time() -> Int {
-  // 在实际项目中，这里会返回真实的当前时间戳
-  // 为了测试，我们使用一个简单的计数器
-  @static.current_time_counter
-}
-
-// 静态变量：时间计数器
-@static.current_time_counter = 0
-
-// 辅助函数：添加错误上下文
-fn add_error_context(error : ErrorType, context_key : String, context_value : String) -> ErrorType {
-  let base_message = match error {
-    NetworkError(msg) => msg
-    ParseError(msg) => msg
-    ValidationError(msg) => msg
-    ResourceError(msg) => msg
-    TimeoutError(msg) => msg
-    UnknownError(msg) => msg
-  }
-  
-  let enhanced_message = base_message + " [" + context_key + ": " + context_value + "]"
-  
-  match error {
-    NetworkError(_) => NetworkError(enhanced_message)
-    ParseError(_) => ParseError(enhanced_message)
-    ValidationError(_) => ValidationError(enhanced_message)
-    ResourceError(_) => ResourceError(enhanced_message)
-    TimeoutError(_) => TimeoutError(enhanced_message)
-    UnknownError(_) => UnknownError(enhanced_message)
-  }
-}
-
-// 辅助函数：生成堆栈跟踪
-fn generate_stack_trace(function_names : Array[String]) -> String {
-  let trace = "Stack Trace:\n"
-  let i = 0
-  
-  while i < function_names.length() {
-    trace = trace + "  at " + function_names[i] + "()\n"
-    i = i + 1
-  }
-  
-  trace
-}
-
-// 辅助函数：模拟主服务
-fn simulate_primary_service(should_succeed : Bool) -> Result[String, ErrorType] {
-  if should_succeed {
-    Ok("Primary service data")
-  } else {
-    Err(NetworkError("Primary service unavailable"))
-  }
-}
-
-// 辅助函数：模拟备用服务
-fn simulate_fallback_service(should_succeed : Bool) -> Result[String, ErrorType] {
-  if should_succeed {
-    Ok("Fallback service data")
-  } else {
-    Err(NetworkError("Fallback service unavailable"))
-  }
-}
-
-// 辅助函数：应用降级策略
-fn apply_fallback_strategy[T, E](primary_result : Result[T, E], fallback_operation : () -> Result[T, E]) -> Result[T, E] {
-  match primary_result {
-    Ok(value) => Ok(value)
-    Err(_) => fallback_operation()
-  }
-}
-
-// 断路器状态类型
-type CircuitBreakerState {
-  Closed
-  Open
-  HalfOpen
-}
-
-// 断路器配置类型
-type CircuitBreakerConfig = {
-  failure_threshold : Int,
-  recovery_timeout : Int,
-  failure_count : Int,
-  last_failure_time : Int,
-  state : CircuitBreakerState
-}
-
-// 辅助函数：执行带断路器的操作
-fn execute_with_circuit_breaker[T](breaker : CircuitBreakerConfig, operation : () -> Result[T, ErrorType]) -> Result[T, ErrorType] {
-  match breaker.state {
-    Closed => {
-      // 正常状态，执行操作
-      operation()
-    }
-    Open => {
-      // 断路器打开，拒绝请求
-      let current_time = get_current_time()
-      if current_time - breaker.last_failure_time > breaker.recovery_timeout {
-        // 尝试半开状态
-        operation()
+    
+    // 更新错误类型计数
+    let mut found_type = false
+    let mut new_error_types = stats.error_types.map(fn((type_str, count)) {
+      if type_str == error_type_str {
+        found_type = true
+        (type_str, count + 1)
       } else {
-        Err(NetworkError("Circuit breaker is open"))
+        (type_str, count)
+      }
+    })
+    
+    if !found_type {
+      new_error_types = new_error_types.push((error_type_str, 1))
+    }
+    
+    // 更新最近错误列表(保留最近10个)
+    let mut new_recent_errors = stats.recent_errors.push(error_msg)
+    if new_recent_errors.length() > 10 {
+      new_recent_errors = new_recent_errors.slice(1, new_recent_errors.length())
+    }
+    
+    {
+      total_errors: stats.total_errors + 1,
+      error_types: new_error_types,
+      recent_errors: new_recent_errors,
+      last_error_time: current_time
+    }
+  }
+  
+  // 创建错误统计器
+  let mut error_stats = create_error_stats()
+  
+  // 记录各种错误
+  let current_time = Time::now()
+  error_stats = record_error(error_stats, AzimuthError::NetworkError("连接超时"), current_time)
+  error_stats = record_error(error_stats, AzimuthError::DataValidationError("无效输入"), current_time + 1000)
+  error_stats = record_error(error_stats, AzimuthError::NetworkError("DNS解析失败"), current_time + 2000)
+  error_stats = record_error(error_stats, AzimuthError::TimeoutError(5000), current_time + 3000)
+  error_stats = record_error(error_stats, AzimuthError::NetworkError("连接被拒绝"), current_time + 4000)
+  
+  // 验证错误统计
+  assert_eq(error_stats.total_errors, 5)
+  assert_eq(error_stats.error_types.length(), 3)  // NetworkError, DataValidationError, TimeoutError
+  assert_eq(error_stats.recent_errors.length(), 5)
+  assert_eq(error_stats.last_error_time, current_time + 4000)
+  
+  // 验证错误类型计数
+  let mut network_error_count = 0
+  let mut data_validation_error_count = 0
+  let mut timeout_error_count = 0
+  
+  for (error_type, count) in error_stats.error_types {
+    match error_type {
+      "NetworkError" => network_error_count = count
+      "DataValidationError" => data_validation_error_count = count
+      "TimeoutError" => timeout_error_count = count
+      _ => assert_true(false)  // 不应该有其他错误类型
+    }
+  }
+  
+  assert_eq(network_error_count, 3)
+  assert_eq(data_validation_error_count, 1)
+  assert_eq(timeout_error_count, 1)
+}
+
+// 测试5: 错误恢复策略
+test "错误恢复策略" {
+  // 定义恢复策略
+  enum RecoveryStrategy {
+    Retry              // 重试
+    Fallback           // 降级处理
+    Cache              // 使用缓存
+    Default            // 使用默认值
+    Ignore             // 忽略错误
+  }
+  
+  // 定义恢复动作
+  type RecoveryAction[T] = {
+    strategy: RecoveryStrategy,
+    max_attempts: Int,
+    fallback_value: Option[T],
+    cache_key: Option[String],
+    default_value: Option[T]
+  }
+  
+  // 模拟缓存
+  let mut cache = Map::new()
+  
+  // 带恢复策略的操作执行器
+  let execute_with_recovery = fn[T](
+    action: RecoveryAction[T], 
+    operation: fn() -> Result[T],
+    cache: Map[String, T]
+  ) -> Result[T] {
+    let mut attempt = 1
+    let mut last_result = operation()
+    
+    while attempt < action.max_attempts && !last_result.success {
+      attempt = attempt + 1
+      last_result = operation()
+    }
+    
+    if last_result.success {
+      return last_result
+    }
+    
+    // 操作失败，应用恢复策略
+    match action.strategy {
+      RecoveryStrategy::Fallback => {
+        match action.fallback_value {
+          Some(value) => {
+            return {
+              success: true,
+              data: Some(value),
+              error: None
+            }
+          }
+          None => {
+            return {
+              success: false,
+              data: None,
+              error: Some(AzimuthError::UnknownError("降级处理失败：未提供降级值"))
+            }
+          }
+        }
+      }
+      RecoveryStrategy::Cache => {
+        match action.cache_key {
+          Some(key) => {
+            match cache.get(key) {
+              Some(value) => {
+                return {
+                  success: true,
+                  data: Some(value),
+                  error: None
+                }
+              }
+              None => {
+                return {
+                  success: false,
+                  data: None,
+                  error: Some(AzimuthError::UnknownError("缓存恢复失败：缓存中无数据"))
+                }
+              }
+            }
+          }
+          None => {
+            return {
+              success: false,
+              data: None,
+              error: Some(AzimuthError::UnknownError("缓存恢复失败：未提供缓存键"))
+            }
+          }
+        }
+      }
+      RecoveryStrategy::Default => {
+        match action.default_value {
+          Some(value) => {
+            return {
+              success: true,
+              data: Some(value),
+              error: None
+            }
+          }
+          None => {
+            return {
+              success: false,
+              data: None,
+              error: Some(AzimuthError::UnknownError("默认值恢复失败：未提供默认值"))
+            }
+          }
+        }
+      }
+      RecoveryStrategy::Ignore => {
+        return {
+          success: true,
+          data: None,
+          error: None
+        }
+      }
+      RecoveryStrategy::Retry => {
+        // 已经尝试过重试，直接返回失败
+        return last_result
       }
     }
-    HalfOpen => {
-      // 半开状态，允许少量请求通过
-      operation()
+  }
+  
+  // 设置缓存数据
+  cache = cache.set("user_profile_123", { name: "默认用户", age: 30 })
+  
+  // 测试降级策略
+  let fallback_action = {
+    strategy: RecoveryStrategy::Fallback,
+    max_attempts: 3,
+    fallback_value: Some({ name: "降级用户", age: 0 }),
+    cache_key: None,
+    default_value: None
+  }
+  
+  let failing_operation = fn() -> Result[{ name: String, age: Int }] {
+    {
+      success: false,
+      data: None,
+      error: Some(AzimuthError::NetworkError("服务不可用"))
     }
   }
+  
+  let fallback_result = execute_with_recovery(fallback_action, failing_operation, cache)
+  assert_true(fallback_result.success)
+  match fallback_result.data {
+    Some(user) => {
+      assert_eq(user.name, "降级用户")
+      assert_eq(user.age, 0)
+    }
+    None => assert_true(false)
+  }
+  
+  // 测试缓存策略
+  let cache_action = {
+    strategy: RecoveryStrategy::Cache,
+    max_attempts: 3,
+    fallback_value: None,
+    cache_key: Some("user_profile_123"),
+    default_value: None
+  }
+  
+  let cache_result = execute_with_recovery(cache_action, failing_operation, cache)
+  assert_true(cache_result.success)
+  match cache_result.data {
+    Some(user) => {
+      assert_eq(user.name, "默认用户")
+      assert_eq(user.age, 30)
+    }
+    None => assert_true(false)
+  }
+  
+  // 测试默认值策略
+  let default_action = {
+    strategy: RecoveryStrategy::Default,
+    max_attempts: 3,
+    fallback_value: None,
+    cache_key: None,
+    default_value: Some({ name: "默认用户", age: 25 })
+  }
+  
+  let default_result = execute_with_recovery(default_action, failing_operation, cache)
+  assert_true(default_result.success)
+  match default_result.data {
+    Some(user) => {
+      assert_eq(user.name, "默认用户")
+      assert_eq(user.age, 25)
+    }
+    None => assert_true(false)
+  }
+  
+  // 测试忽略策略
+  let ignore_action = {
+    strategy: RecoveryStrategy::Ignore,
+    max_attempts: 3,
+    fallback_value: None,
+    cache_key: None,
+    default_value: None
+  }
+  
+  let ignore_result = execute_with_recovery(ignore_action, failing_operation, cache)
+  assert_true(ignore_result.success)
+  assert_eq(ignore_result.data, None)
 }

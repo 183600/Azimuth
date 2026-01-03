@@ -1,830 +1,708 @@
-// Azimuth 高并发场景下的线程安全测试
-// 专注于测试遥测系统在高并发环境下的线程安全性和数据一致性
+// Azimuth 并发安全性和线程安全测试
+// 测试系统在并发环境下的安全性和数据一致性
 
-// 测试1: 并发计数器原子性验证
-test "并发计数器原子性验证" {
-  // 定义线程安全计数器数据结构
+// 测试1: 并发计数器安全操作
+test "并发计数器安全操作" {
+  // 定义线程安全的计数器
   type AtomicCounter = {
-    counter_id: String,
     value: Int,
-    operations: Array[CounterOperation],
-    lock_count: Int,
-    max_concurrent_operations: Int
-  }
-  
-  type CounterOperation = {
-    operation_id: String,
-    operation_type: String,  // "increment", "decrement", "read"
-    thread_id: String,
-    timestamp: Int,
-    old_value: Int,
-    new_value: Int,
-    is_atomic: Bool
+    lock: Bool
   }
   
   // 创建原子计数器
-  let create_atomic_counter = fn(counter_id: String, initial_value: Int) -> AtomicCounter {
+  let create_counter = fn(initial_value: Int) -> AtomicCounter {
     {
-      counter_id: counter_id,
       value: initial_value,
-      operations: [],
-      lock_count: 0,
-      max_concurrent_operations: 0
+      lock: false
     }
   }
   
   // 原子递增操作
-  let atomic_increment = fn(counter: AtomicCounter, thread_id: String) -> AtomicCounter {
-    let operation_id = "op-" + (counter.operations.length() as String)
-    let old_value = counter.value
-    let new_value = old_value + 1
-    
-    let operation = {
-      operation_id: operation_id,
-      operation_type: "increment",
-      thread_id: thread_id,
-      timestamp: Time::now(),
-      old_value: old_value,
-      new_value: new_value,
-      is_atomic: true
+  let atomic_increment = fn(counter: AtomicCounter) -> AtomicCounter {
+    // 模拟获取锁
+    if counter.lock {
+      // 如果锁已被获取，返回原计数器(简化实现)
+      return counter
     }
     
+    // 获取锁，更新值，释放锁
     {
-      ...counter,
-      value: new_value,
-      operations: counter.operations.push(operation),
-      max_concurrent_operations: counter.max_concurrent_operations + 1
+      value: counter.value + 1,
+      lock: false
     }
   }
   
   // 原子递减操作
-  let atomic_decrement = fn(counter: AtomicCounter, thread_id: String) -> AtomicCounter {
-    let operation_id = "op-" + (counter.operations.length() as String)
-    let old_value = counter.value
-    let new_value = old_value - 1
-    
-    let operation = {
-      operation_id: operation_id,
-      operation_type: "decrement",
-      thread_id: thread_id,
-      timestamp: Time::now(),
-      old_value: old_value,
-      new_value: new_value,
-      is_atomic: true
+  let atomic_decrement = fn(counter: AtomicCounter) -> AtomicCounter {
+    // 模拟获取锁
+    if counter.lock {
+      // 如果锁已被获取，返回原计数器(简化实现)
+      return counter
     }
     
+    // 获取锁，更新值，释放锁
     {
-      ...counter,
-      value: new_value,
-      operations: counter.operations.push(operation),
-      max_concurrent_operations: counter.max_concurrent_operations + 1
+      value: counter.value - 1,
+      lock: false
     }
   }
   
-  // 验证原子性
-  let verify_atomicity = fn(counter: AtomicCounter) -> Bool {
-    // 检查所有操作都是原子的
-    let all_atomic = counter.operations.all(fn(op) { op.is_atomic })
-    
-    // 检查操作序列的一致性
-    let mut expected_value = counter.operations[0].old_value
-    
-    for operation in counter.operations {
-      match operation.operation_type {
-        "increment" => {
-          expected_value = expected_value + 1
-          if operation.new_value != expected_value {
-            return false
-          }
-        }
-        "decrement" => {
-          expected_value = expected_value - 1
-          if operation.new_value != expected_value {
-            return false
-          }
-        }
-        _ => ()
-      }
-    }
-    
-    // 检查最终值
-    expected_value == counter.value && all_atomic
+  // 创建计数器
+  let mut counter = create_counter(0)
+  
+  // 模拟并发递增操作
+  for i = 0; i < 100; i = i + 1 {
+    counter = atomic_increment(counter)
   }
   
-  // 测试并发原子操作
-  let initial_counter = create_atomic_counter("counter-1", 0)
+  // 验证最终值
+  assert_eq(counter.value, 100)
   
-  // 模拟多线程并发操作
-  let mut counter1 = initial_counter
-  counter1 = atomic_increment(counter1, "thread-1")
-  counter1 = atomic_increment(counter1, "thread-2")
-  counter1 = atomic_decrement(counter1, "thread-3")
-  counter1 = atomic_increment(counter1, "thread-1")
-  counter1 = atomic_decrement(counter1, "thread-2")
-  counter1 = atomic_increment(counter1, "thread-3")
-  
-  // 验证最终结果
-  assert_eq(counter1.value, 2)  // 0 +1 +1 -1 +1 -1 +1 = 2
-  assert_eq(counter1.operations.length(), 6)
-  assert_true(verify_atomicity(counter1))
-  
-  // 测试大量并发操作
-  let mut counter2 = create_atomic_counter("counter-2", 100)
-  for i in 0..1000 {
-    let thread_id = "thread-" + ((i % 10) as String)
-    if i % 2 == 0 {
-      counter2 = atomic_increment(counter2, thread_id)
-    } else {
-      counter2 = atomic_decrement(counter2, thread_id)
-    }
+  // 模拟并发递减操作
+  for i = 0; i < 50; i = i + 1 {
+    counter = atomic_decrement(counter)
   }
   
-  // 验证大量操作的结果
-  assert_eq(counter2.value, 100)  // 应该回到初始值
-  assert_eq(counter2.operations.length(), 1000)
-  assert_true(verify_atomicity(counter2))
+  // 验证最终值
+  assert_eq(counter.value, 50)
 }
 
-// 测试2: 并发集合操作的线程安全性
-test "并发集合操作的线程安全性" {
-  // 定义线程安全集合数据结构
-  type ThreadSafeMap = {
-    map_id: String,
-    data: Map[String, String],
-    operations: Array[MapOperation],
-    readers: Int,
-    writers: Int,
-    read_write_lock: Bool
+// 测试2: 并发集合安全操作
+test "并发集合安全操作" {
+  // 定义线程安全的集合
+  type ConcurrentSet[T] = {
+    items: Array[T],
+    lock: Bool
   }
   
-  type MapOperation = {
-    operation_id: String,
-    operation_type: String,  // "put", "get", "remove", "clear"
-    thread_id: String,
-    timestamp: Int,
-    key: String,
-    value: Option[String],
-    success: Bool,
-    concurrent_readers: Int,
-    concurrent_writers: Int
-  }
-  
-  // 创建线程安全映射
-  let create_thread_safe_map = fn(map_id: String) -> ThreadSafeMap {
+  // 创建并发集合
+  let create_concurrent_set = fn() -> ConcurrentSet[String] {
     {
-      map_id: map_id,
-      data: Map::new(),
-      operations: [],
-      readers: 0,
-      writers: 0,
-      read_write_lock: false
-    }
-  }
-  
-  // 线程安全的put操作
-  let thread_safe_put = fn(map: ThreadSafeMap, key: String, value: String, thread_id: String) -> ThreadSafeMap {
-    // 模拟获取写锁
-    if map.readers > 0 || map.writers > 0 || map.read_write_lock {
-      // 如果有其他读写操作，记录失败
-      let operation = {
-        operation_id: "op-" + (map.operations.length() as String),
-        operation_type: "put",
-        thread_id: thread_id,
-        timestamp: Time::now(),
-        key: key,
-        value: Some(value),
-        success: false,
-        concurrent_readers: map.readers,
-        concurrent_writers: map.writers
-      }
-      
-      return {
-        ...map,
-        operations: map.operations.push(operation)
-      }
-    }
-    
-    // 获取写锁
-    let locked_map = { ...map, writers: 1, read_write_lock: true }
-    
-    // 执行操作
-    let updated_data = map.data.set(key, value)
-    
-    // 记录操作
-    let operation = {
-      operation_id: "op-" + (map.operations.length() as String),
-      operation_type: "put",
-      thread_id: thread_id,
-      timestamp: Time::now(),
-      key: key,
-      value: Some(value),
-      success: true,
-      concurrent_readers: 0,
-      concurrent_writers: 1
-    }
-    
-    // 释放写锁
-    {
-      ...locked_map,
-      data: updated_data,
-      operations: map.operations.push(operation),
-      writers: 0,
-      read_write_lock: false
-    }
-  }
-  
-  // 线程安全的get操作
-  let thread_safe_get = fn(map: ThreadSafeMap, key: String, thread_id: String) -> (ThreadSafeMap, Option[String]) {
-    // 模拟获取读锁
-    if map.writers > 0 || map.read_write_lock {
-      // 如果有写操作，记录失败
-      let operation = {
-        operation_id: "op-" + (map.operations.length() as String),
-        operation_type: "get",
-        thread_id: thread_id,
-        timestamp: Time::now(),
-        key: key,
-        value: None,
-        success: false,
-        concurrent_readers: map.readers,
-        concurrent_writers: map.writers
-      }
-      
-      return ({
-        ...map,
-        operations: map.operations.push(operation)
-      }, None)
-    }
-    
-    // 获取读锁
-    let locked_map = { ...map, readers: map.readers + 1 }
-    
-    // 执行操作
-    let value = map.data.get(key)
-    
-    // 记录操作
-    let operation = {
-      operation_id: "op-" + (map.operations.length() as String),
-      operation_type: "get",
-      thread_id: thread_id,
-      timestamp: Time::now(),
-      key: key,
-      value: value,
-      success: true,
-      concurrent_readers: locked_map.readers,
-      concurrent_writers: 0
-    }
-    
-    // 释放读锁
-    let final_map = {
-      ...locked_map,
-      operations: map.operations.push(operation),
-      readers: locked_map.readers - 1
-    }
-    
-    (final_map, value)
-  }
-  
-  // 验证线程安全性
-  let verify_thread_safety = fn(map: ThreadSafeMap) -> Bool {
-    // 检查是否有并发读写冲突
-    let has_read_write_conflict = map.operations.any(fn(op) {
-      !op.success && (op.concurrent_readers > 0 && op.concurrent_writers > 0)
-    })
-    
-    // 检查写操作是否独占
-    let write_operations = map.operations.filter(fn(op) { 
-      op.operation_type == "put" && op.success 
-    })
-    
-    let all_writes_exclusive = write_operations.all(fn(op) {
-      op.concurrent_readers == 0 && op.concurrent_writers == 1
-    })
-    
-    // 检查数据一致性
-    let mut data_consistency = true
-    for operation in map.operations {
-      if operation.operation_type == "put" && operation.success {
-        match map.data.get(operation.key) {
-          Some(stored_value) => {
-            match operation.value {
-              Some(expected_value) => {
-                if stored_value != expected_value {
-                  data_consistency = false
-                }
-              }
-              None => ()
-            }
-          }
-          None => {
-            if operation.value.is_some() {
-              data_consistency = false
-            }
-          }
-        }
-      }
-    }
-    
-    !has_read_write_conflict && all_writes_exclusive && data_consistency
-  }
-  
-  // 测试线程安全操作
-  let initial_map = create_thread_safe_map("map-1")
-  
-  // 执行一系列并发操作
-  let (map1, _) = thread_safe_get(initial_map, "key1", "thread-1")
-  let map2 = thread_safe_put(map1, "key1", "value1", "thread-2")
-  let (map3, value1) = thread_safe_get(map2, "key1", "thread-3")
-  let map4 = thread_safe_put(map3, "key2", "value2", "thread-1")
-  let (map5, value2) = thread_safe_get(map4, "key2", "thread-2")
-  
-  // 验证操作结果
-  assert_eq(value1, Some("value1"))
-  assert_eq(value2, Some("value2"))
-  assert_true(verify_thread_safety(map5))
-  
-  // 测试大量并发操作
-  let mut map6 = create_thread_safe_map("map-2")
-  for i in 0..100 {
-    let key = "key-" + (i as String)
-    let value = "value-" + (i as String)
-    let thread_id = "thread-" + ((i % 5) as String)
-    map6 = thread_safe_put(map6, key, value, thread_id)
-  }
-  
-  // 验证所有数据都正确存储
-  for i in 0..100 {
-    let key = "key-" + (i as String)
-    let expected_value = "value-" + (i as String)
-    let thread_id = "thread-" + ((i % 5) as String)
-    let (map7, actual_value) = thread_safe_get(map6, key, thread_id)
-    map6 = map7
-    assert_eq(actual_value, Some(expected_value))
-  }
-  
-  assert_true(verify_thread_safety(map6))
-}
-
-// 测试3: 并发队列操作的线程安全性
-test "并发队列操作的线程安全性" {
-  // 定义线程安全队列数据结构
-  type ThreadSafeQueue = {
-    queue_id: String,
-    items: Array[String],
-    operations: Array[QueueOperation],
-    producers: Int,
-    consumers: Int,
-    max_size: Int,
-    current_size: Int
-  }
-  
-  type QueueOperation = {
-    operation_id: String,
-    operation_type: String,  // "enqueue", "dequeue", "peek"
-    thread_id: String,
-    timestamp: Int,
-    item: Option[String>,
-    success: Bool,
-    queue_size_before: Int,
-    queue_size_after: Int
-  }
-  
-  // 创建线程安全队列
-  let create_thread_safe_queue = fn(queue_id: String, max_size: Int) -> ThreadSafeQueue {
-    {
-      queue_id: queue_id,
       items: [],
-      operations: [],
-      producers: 0,
-      consumers: 0,
-      max_size: max_size,
-      current_size: 0
+      lock: false
+    }
+  }
+  
+  // 线程安全的添加操作
+  let safe_add = fn(set: ConcurrentSet[String], item: String) -> ConcurrentSet[String] {
+    // 模拟获取锁
+    if set.lock {
+      return set
+    }
+    
+    // 检查项是否已存在
+    let exists = set.items.any(fn(existing) { existing == item })
+    
+    if exists {
+      return set
+    }
+    
+    // 添加新项
+    {
+      items: set.items.push(item),
+      lock: false
+    }
+  }
+  
+  // 线程安全的移除操作
+  let safe_remove = fn(set: ConcurrentSet[String], item: String) -> ConcurrentSet[String] {
+    // 模拟获取锁
+    if set.lock {
+      return set
+    }
+    
+    // 移除项
+    {
+      items: set.items.filter(fn(existing) { existing != item }),
+      lock: false
+    }
+  }
+  
+  // 线程安全的包含检查
+  let safe_contains = fn(set: ConcurrentSet[String], item: String) -> Bool {
+    // 模拟获取锁(读操作可以并发)
+    set.items.any(fn(existing) { existing == item })
+  }
+  
+  // 创建并发集合
+  let mut concurrent_set = create_concurrent_set()
+  
+  // 添加多个项
+  let items_to_add = ["item1", "item2", "item3", "item4", "item5"]
+  for item in items_to_add {
+    concurrent_set = safe_add(concurrent_set, item)
+  }
+  
+  // 验证所有项都已添加
+  assert_eq(concurrent_set.items.length(), 5)
+  for item in items_to_add {
+    assert_true(safe_contains(concurrent_set, item))
+  }
+  
+  // 尝试添加重复项
+  let original_length = concurrent_set.items.length()
+  concurrent_set = safe_add(concurrent_set, "item2")  // 已存在的项
+  assert_eq(concurrent_set.items.length(), original_length)  // 长度不应变化
+  
+  // 移除项
+  concurrent_set = safe_remove(concurrent_set, "item3")
+  assert_eq(concurrent_set.items.length(), 4)
+  assert_false(safe_contains(concurrent_set, "item3"))
+  assert_true(safe_contains(concurrent_set, "item1"))
+  assert_true(safe_contains(concurrent_set, "item2"))
+}
+
+// 测试3: 并发映射安全操作
+test "并发映射安全操作" {
+  // 定义线程安全的映射
+  type ConcurrentMap[K, V] = {
+    entries: Array[(K, V)>,
+    lock: Bool
+  }
+  
+  // 创建并发映射
+  let create_concurrent_map = fn() -> ConcurrentMap[String, Int] {
+    {
+      entries: [],
+      lock: false
+    }
+  }
+  
+  // 线程安全的设置操作
+  let safe_set = fn(map: ConcurrentMap[String, Int], key: String, value: Int) -> ConcurrentMap[String, Int] {
+    // 模拟获取锁
+    if map.lock {
+      return map
+    }
+    
+    // 检查键是否已存在
+    let exists = map.entries.any(fn((k, _)) { k == key })
+    
+    if exists {
+      // 更新现有键
+      let new_entries = map.entries.map(fn((k, v)) {
+        if k == key { (k, value) } else { (k, v) }
+      })
+      {
+        entries: new_entries,
+        lock: false
+      }
+    } else {
+      // 添加新键值对
+      {
+        entries: map.entries.push((key, value)),
+        lock: false
+      }
+    }
+  }
+  
+  // 线程安全的获取操作
+  let safe_get = fn(map: ConcurrentMap[String, Int], key: String) -> Option[Int] {
+    // 模拟获取锁(读操作可以并发)
+    for (k, v) in map.entries {
+      if k == key {
+        return Some(v)
+      }
+    }
+    None
+  }
+  
+  // 线程安全的删除操作
+  let safe_delete = fn(map: ConcurrentMap[String, Int], key: String) -> ConcurrentMap[String, Int] {
+    // 模拟获取锁
+    if map.lock {
+      return map
+    }
+    
+    {
+      entries: map.entries.filter(fn((k, _)) { k != key }),
+      lock: false
+    }
+  }
+  
+  // 创建并发映射
+  let mut concurrent_map = create_concurrent_map()
+  
+  // 设置多个键值对
+  concurrent_map = safe_set(concurrent_map, "key1", 100)
+  concurrent_map = safe_set(concurrent_map, "key2", 200)
+  concurrent_map = safe_set(concurrent_map, "key3", 300)
+  
+  // 验证键值对
+  assert_eq(concurrent_map.entries.length(), 3)
+  assert_eq(safe_get(concurrent_map, "key1"), Some(100))
+  assert_eq(safe_get(concurrent_map, "key2"), Some(200))
+  assert_eq(safe_get(concurrent_map, "key3"), Some(300))
+  assert_eq(safe_get(concurrent_map, "key4"), None)
+  
+  // 更新现有键
+  concurrent_map = safe_set(concurrent_map, "key2", 250)
+  assert_eq(concurrent_map.entries.length(), 3)  // 长度不应变化
+  assert_eq(safe_get(concurrent_map, "key2"), Some(250))
+  
+  // 删除键
+  concurrent_map = safe_delete(concurrent_map, "key1")
+  assert_eq(concurrent_map.entries.length(), 2)
+  assert_eq(safe_get(concurrent_map, "key1"), None)
+  assert_eq(safe_get(concurrent_map, "key2"), Some(250))
+  assert_eq(safe_get(concurrent_map, "key3"), Some(300))
+}
+
+// 测试4: 并发队列安全操作
+test "并发队列安全操作" {
+  // 定义线程安全的队列
+  type ConcurrentQueue[T] = {
+    items: Array[T>,
+    head: Int,
+    tail: Int,
+    lock: Bool
+  }
+  
+  // 创建并发队列
+  let create_concurrent_queue = fn(capacity: Int) -> ConcurrentQueue[String] {
+    {
+      items: Array::with_capacity(capacity),
+      head: 0,
+      tail: 0,
+      lock: false
     }
   }
   
   // 线程安全的入队操作
-  let thread_safe_enqueue = fn(queue: ThreadSafeQueue, item: String, thread_id: String) -> ThreadSafeQueue {
-    // 检查队列是否已满
-    if queue.current_size >= queue.max_size {
-      let operation = {
-        operation_id: "op-" + (queue.operations.length() as String),
-        operation_type: "enqueue",
-        thread_id: thread_id,
-        timestamp: Time::now(),
-        item: Some(item),
-        success: false,
-        queue_size_before: queue.current_size,
-        queue_size_after: queue.current_size
-      }
-      
-      return {
-        ...queue,
-        operations: queue.operations.push(operation)
-      }
+  let safe_enqueue = fn(queue: ConcurrentQueue[String], item: String) -> ConcurrentQueue[String] {
+    // 模拟获取锁
+    if queue.lock {
+      return queue
     }
     
-    // 执行入队操作
-    let updated_items = queue.items.push(item)
-    
-    // 记录操作
-    let operation = {
-      operation_id: "op-" + (queue.operations.length() as String),
-      operation_type: "enqueue",
-      thread_id: thread_id,
-      timestamp: Time::now(),
-      item: Some(item),
-      success: true,
-      queue_size_before: queue.current_size,
-      queue_size_after: queue.current_size + 1
+    // 检查队列是否已满(简化实现)
+    if queue.items.length() >= 100 {  // 假设最大容量为100
+      return queue
     }
     
+    // 添加项到队列尾部
     {
-      ...queue,
-      items: updated_items,
-      operations: queue.operations.push(operation),
-      current_size: queue.current_size + 1
+      items: queue.items.push(item),
+      head: queue.head,
+      tail: queue.tail + 1,
+      lock: false
     }
   }
   
   // 线程安全的出队操作
-  let thread_safe_dequeue = fn(queue: ThreadSafeQueue, thread_id: String) -> (ThreadSafeQueue, Option[String]) {
+  let safe_dequeue = fn(queue: ConcurrentQueue[String>) -> (ConcurrentQueue[String], Option[String]) {
+    // 模拟获取锁
+    if queue.lock {
+      return (queue, None)
+    }
+    
     // 检查队列是否为空
-    if queue.current_size == 0 {
-      let operation = {
-        operation_id: "op-" + (queue.operations.length() as String),
-        operation_type: "dequeue",
-        thread_id: thread_id,
-        timestamp: Time::now(),
-        item: None,
-        success: false,
-        queue_size_before: 0,
-        queue_size_after: 0
-      }
-      
-      return ({
-        ...queue,
-        operations: queue.operations.push(operation)
-      }, None)
+    if queue.items.length() == 0 {
+      return (queue, None)
     }
     
-    // 执行出队操作
+    // 移除队列头部项
     let item = queue.items[0]
-    let updated_items = queue.items.slice(1, queue.items.length())
+    let new_items = queue.items.slice(1, queue.items.length())
     
-    // 记录操作
-    let operation = {
-      operation_id: "op-" + (queue.operations.length() as String),
-      operation_type: "dequeue",
-      thread_id: thread_id,
-      timestamp: Time::now(),
-      item: Some(item),
-      success: true,
-      queue_size_before: queue.current_size,
-      queue_size_after: queue.current_size - 1
-    }
-    
-    let updated_queue = {
-      ...queue,
-      items: updated_items,
-      operations: queue.operations.push(operation),
-      current_size: queue.current_size - 1
-    }
-    
-    (updated_queue, Some(item))
+    ({
+      items: new_items,
+      head: queue.head + 1,
+      tail: queue.tail,
+      lock: false
+    }, Some(item))
   }
   
-  // 验证队列线程安全性
-  let verify_queue_thread_safety = fn(queue: ThreadSafeQueue) -> Bool {
-    // 检查队列大小一致性
-    let size_consistent = queue.current_size == queue.items.length()
-    
-    // 检查操作记录的一致性
-    let mut calculated_size = 0
-    for operation in queue.operations {
-      if operation.success {
-        match operation.operation_type {
-          "enqueue" => calculated_size = calculated_size + 1
-          "dequeue" => calculated_size = calculated_size - 1
-          _ => ()
-        }
-      }
-    }
-    
-    let operation_consistency = calculated_size == queue.current_size
-    
-    // 检查边界条件
-    let no_overflow = queue.operations.all(fn(op) {
-      if op.operation_type == "enqueue" && op.success {
-        op.queue_size_before < queue.max_size
-      } else {
-        true
-      }
-    })
-    
-    let no_underflow = queue.operations.all(fn(op) {
-      if op.operation_type == "dequeue" && op.success {
-        op.queue_size_before > 0
-      } else {
-        true
-      }
-    })
-    
-    size_consistent && operation_consistency && no_overflow && no_underflow
+  // 创建并发队列
+  let mut queue = create_concurrent_queue(10)
+  
+  // 入队多个项
+  let items_to_enqueue = ["item1", "item2", "item3", "item4", "item5"]
+  for item in items_to_enqueue {
+    queue = safe_enqueue(queue, item)
   }
   
-  // 测试线程安全队列操作
-  let initial_queue = create_thread_safe_queue("queue-1", 10)
+  // 验证队列长度
+  assert_eq(queue.items.length(), 5)
   
-  // 执行入队操作
-  let queue1 = thread_safe_enqueue(initial_queue, "item1", "producer-1")
-  let queue2 = thread_safe_enqueue(queue1, "item2", "producer-2")
-  let queue3 = thread_safe_enqueue(queue2, "item3", "producer-1")
+  // 出队所有项并验证顺序
+  let mut dequeued_items = []
+  for i = 0; i < 5; i = i + 1 {
+    let (new_queue, item) = safe_dequeue(queue)
+    queue = new_queue
+    match item {
+      Some(value) => dequeued_items = dequeued_items.push(value)
+      None => assert_true(false)  // 不应该为空
+    }
+  }
   
-  // 执行出队操作
-  let (queue4, item1) = thread_safe_dequeue(queue3, "consumer-1")
-  let (queue5, item2) = thread_safe_dequeue(queue4, "consumer-2")
+  // 验证出队顺序与入队顺序一致
+  assert_eq(dequeued_items, items_to_enqueue)
   
-  // 验证操作结果
-  assert_eq(item1, Some("item1"))
-  assert_eq(item2, Some("item2"))
-  assert_eq(queue5.current_size, 1)
-  assert_true(verify_queue_thread_safety(queue5))
+  // 验证队列现在为空
+  assert_eq(queue.items.length(), 0)
   
-  // 测试队列满的情况
-  let mut queue6 = create_thread_safe_queue("queue-2", 3)
-  queue6 = thread_safe_enqueue(queue6, "item1", "producer-1")
-  queue6 = thread_safe_enqueue(queue6, "item2", "producer-2")
-  queue6 = thread_safe_enqueue(queue6, "item3", "producer-1")
-  
-  // 尝试向满队列入队
-  let queue7 = thread_safe_enqueue(queue6, "item4", "producer-2")
-  
-  // 验证队列满时的行为
-  assert_eq(queue7.current_size, 3)  // 大小不应该改变
-  let last_operation = queue7.operations[queue7.operations.length() - 1]
-  assert_eq(last_operation.operation_type, "enqueue")
-  assert_false(last_operation.success)  // 应该失败
-  
-  // 测试空队列的出队
-  let empty_queue = create_thread_safe_queue("queue-3", 5)
-  let (queue8, empty_item) = thread_safe_dequeue(empty_queue, "consumer-1")
-  
-  // 验证空队列出队的行为
-  assert_eq(empty_item, None)  // 应该返回None
-  assert_eq(queue8.current_size, 0)  // 大小不应该改变
-  let empty_operation = queue8.operations[queue8.operations.length() - 1]
-  assert_eq(empty_operation.operation_type, "dequeue")
-  assert_false(empty_operation.success)  // 应该失败
+  // 尝试从空队列出队
+  let (new_queue, item) = safe_dequeue(queue)
+  queue = new_queue
+  assert_eq(item, None)
 }
 
-// 测试4: 并发条件变量的同步机制
-test "并发条件变量的同步机制" {
-  // 定义条件变量同步数据结构
-  type ConditionVariable = {
-    cv_id: String,
-    waiting_threads: Array[String],
-    signaled_threads: Array[String],
-    condition_state: Bool,
-    operations: Array[CVOperation],
-    max_waiting_threads: Int
+// 测试5: 并发资源池管理
+test "并发资源池管理" {
+  // 定义资源
+  type Resource = {
+    id: String,
+    in_use: Bool,
+    created_at: Int
   }
   
-  type CVOperation = {
-    operation_id: String,
-    operation_type: String,  // "wait", "signal", "broadcast"
-    thread_id: String,
-    timestamp: Int,
-    condition_value: Bool,
-    success: Bool,
-    waiting_count: Int
+  // 定义资源池
+  type ResourcePool = {
+    resources: Array[Resource>,
+    max_size: Int,
+    lock: Bool
   }
   
-  // 创建条件变量
-  let create_condition_variable = fn(cv_id: String, max_waiting: Int) -> ConditionVariable {
+  // 创建资源池
+  let create_resource_pool = fn(max_size: Int) -> ResourcePool {
     {
-      cv_id: cv_id,
-      waiting_threads: [],
-      signaled_threads: [],
-      condition_state: false,
-      operations: [],
-      max_waiting_threads: max_waiting
+      resources: [],
+      max_size: max_size,
+      lock: false
     }
   }
   
-  // 等待条件变量
-  let condition_wait = fn(cv: ConditionVariable, thread_id: String) -> ConditionVariable {
-    // 检查等待线程数量限制
-    if cv.waiting_threads.length() >= cv.max_waiting_threads {
-      let operation = {
-        operation_id: "op-" + (cv.operations.length() as String),
-        operation_type: "wait",
-        thread_id: thread_id,
-        timestamp: Time::now(),
-        condition_value: cv.condition_state,
-        success: false,
-        waiting_count: cv.waiting_threads.length()
+  // 创建资源
+  let create_resource = fn(id: String) -> Resource {
+    {
+      id: id,
+      in_use: false,
+      created_at: Time::now()
+    }
+  }
+  
+  // 从池中获取资源
+  let acquire_resource = fn(pool: ResourcePool) -> (ResourcePool, Option[Resource]) {
+    // 模拟获取锁
+    if pool.lock {
+      return (pool, None)
+    }
+    
+    // 查找可用资源
+    for resource in pool.resources {
+      if !resource.in_use {
+        // 标记资源为使用中
+        let updated_resources = pool.resources.map(fn(r) {
+          if r.id == resource.id {
+            { id: r.id, in_use: true, created_at: r.created_at }
+          } else {
+            r
+          }
+        })
+        
+        return ({
+          resources: updated_resources,
+          max_size: pool.max_size,
+          lock: false
+        }, Some(resource))
       }
+    }
+    
+    // 没有可用资源，检查是否可以创建新资源
+    if pool.resources.length() < pool.max_size {
+      let new_resource = create_resource("resource-" + pool.resources.length().to_string())
+      let updated_resource = { id: new_resource.id, in_use: true, created_at: new_resource.created_at }
       
-      return {
-        ...cv,
-        operations: cv.operations.push(operation)
-      }
+      return ({
+        resources: pool.resources.push(updated_resource),
+        max_size: pool.max_size,
+        lock: false
+      }, Some(updated_resource))
     }
     
-    // 如果条件已经满足，直接返回
-    if cv.condition_state {
-      let operation = {
-        operation_id: "op-" + (cv.operations.length() as String),
-        operation_type: "wait",
-        thread_id: thread_id,
-        timestamp: Time::now(),
-        condition_value: cv.condition_state,
-        success: true,
-        waiting_count: cv.waiting_threads.length()
-      }
-      
-      return {
-        ...cv,
-        operations: cv.operations.push(operation),
-        signaled_threads: cv.signaled_threads.push(thread_id)
-      }
-    }
-    
-    // 添加到等待列表
-    let updated_waiting = cv.waiting_threads.push(thread_id)
-    
-    let operation = {
-      operation_id: "op-" + (cv.operations.length() as String),
-      operation_type: "wait",
-      thread_id: thread_id,
-      timestamp: Time::now(),
-      condition_value: cv.condition_state,
-      success: true,
-      waiting_count: updated_waiting.length()
-    }
-    
-    {
-      ...cv,
-      waiting_threads: updated_waiting,
-      operations: cv.operations.push(operation)
-    }
+    // 无法获取资源
+    (pool, None)
   }
   
-  // 发信号给条件变量
-  let condition_signal = fn(cv: ConditionVariable, thread_id: String) -> ConditionVariable {
-    // 如果没有等待线程，设置条件状态
-    if cv.waiting_threads.length() == 0 {
-      let operation = {
-        operation_id: "op-" + (cv.operations.length() as String),
-        operation_type: "signal",
-        thread_id: thread_id,
-        timestamp: Time::now(),
-        condition_value: true,
-        success: true,
-        waiting_count: 0
+  // 释放资源回池中
+  let release_resource = fn(pool: ResourcePool, resource_id: String) -> ResourcePool {
+    // 模拟获取锁
+    if pool.lock {
+      return pool
+    }
+    
+    // 查找资源并标记为未使用
+    let updated_resources = pool.resources.map(fn(r) {
+      if r.id == resource_id {
+        { id: r.id, in_use: false, created_at: r.created_at }
+      } else {
+        r
       }
-      
-      return {
-        ...cv,
-        condition_state: true,
-        operations: cv.operations.push(operation)
-      }
-    }
-    
-    // 唤醒一个等待线程
-    let waiting_thread = cv.waiting_threads[0]
-    let updated_waiting = cv.waiting_threads.slice(1, cv.waiting_threads.length())
-    let updated_signaled = cv.signaled_threads.push(waiting_thread)
-    
-    let operation = {
-      operation_id: "op-" + (cv.operations.length() as String),
-      operation_type: "signal",
-      thread_id: thread_id,
-      timestamp: Time::now(),
-      condition_value: true,
-      success: true,
-      waiting_count: updated_waiting.length()
-    }
-    
-    {
-      ...cv,
-      waiting_threads: updated_waiting,
-      signaled_threads: updated_signaled,
-      condition_state: updated_waiting.length() > 0,
-      operations: cv.operations.push(operation)
-    }
-  }
-  
-  // 广播信号给所有等待线程
-  let condition_broadcast = fn(cv: ConditionVariable, thread_id: String) -> ConditionVariable {
-    // 唤醒所有等待线程
-    let updated_signaled = cv.signaled.concat(cv.waiting_threads)
-    
-    let operation = {
-      operation_id: "op-" + (cv.operations.length() as String),
-      operation_type: "broadcast",
-      thread_id: thread_id,
-      timestamp: Time::now(),
-      condition_value: true,
-      success: true,
-      waiting_count: 0
-    }
-    
-    {
-      ...cv,
-      waiting_threads: [],
-      signaled_threads: updated_signaled,
-      condition_state: false,
-      operations: cv.operations.push(operation)
-    }
-  }
-  
-  // 验证条件变量同步机制
-  let verify_condition_sync = fn(cv: ConditionVariable) -> Bool {
-    // 检查没有线程同时在等待和已唤醒列表中
-    let no_duplicate_threads = cv.waiting_threads.all(fn(waiting_thread) {
-      !cv.signaled_threads.contains(waiting_thread)
     })
     
-    // 检查等待线程数量不超过限制
-    let within_limit = cv.waiting_threads.length() <= cv.max_waiting_threads
-    
-    // 检查操作序列的一致性
-    let mut waiting_count = 0
-    for operation in cv.operations {
-      match operation.operation_type {
-        "wait" => {
-          if operation.success {
-            waiting_count = waiting_count + 1
-          }
-        }
-        "signal" => {
-          if operation.success && waiting_count > 0 {
-            waiting_count = waiting_count - 1
-          }
-        }
-        "broadcast" => {
-          if operation.success {
-            waiting_count = 0
-          }
-        }
-        _ => ()
-      }
+    {
+      resources: updated_resources,
+      max_size: pool.max_size,
+      lock: false
     }
-    
-    let final_waiting_consistent = waiting_count == cv.waiting_threads.length()
-    
-    no_duplicate_threads && within_limit && final_waiting_consistent
   }
   
-  // 测试条件变量同步
-  let initial_cv = create_condition_variable("cv-1", 5)
+  // 创建资源池
+  let mut pool = create_resource_pool(3)
   
-  // 线程等待条件
-  let cv1 = condition_wait(initial_cv, "thread-1")
-  let cv2 = condition_wait(cv1, "thread-2")
-  let cv3 = condition_wait(cv2, "thread-3")
+  // 获取资源
+  let (new_pool1, resource1) = acquire_resource(pool)
+  pool = new_pool1
+  match resource1 {
+    Some(r) => {
+      assert_eq(r.id, "resource-0")
+      assert_true(r.in_use)
+    }
+    None => assert_true(false)
+  }
   
-  // 验证等待状态
-  assert_eq(cv3.waiting_threads.length(), 3)
-  assert_eq(cv3.signaled_threads.length(), 0)
+  // 获取更多资源
+  let (new_pool2, resource2) = acquire_resource(pool)
+  pool = new_pool2
+  match resource2 {
+    Some(r) => {
+      assert_eq(r.id, "resource-1")
+      assert_true(r.in_use)
+    }
+    None => assert_true(false)
+  }
   
-  // 发信号唤醒一个线程
-  let cv4 = condition_signal(cv3, "signaler-1")
+  let (new_pool3, resource3) = acquire_resource(pool)
+  pool = new_pool3
+  match resource3 {
+    Some(r) => {
+      assert_eq(r.id, "resource-2")
+      assert_true(r.in_use)
+    }
+    None => assert_true(false)
+  }
   
-  // 验证信号结果
-  assert_eq(cv4.waiting_threads.length(), 2)
-  assert_eq(cv4.signaled_threads.length(), 1)
-  assert_true(cv4.signaled_threads.contains("thread-1"))
+  // 验证池中有3个资源，都在使用中
+  assert_eq(pool.resources.length(), 3)
+  assert_true(pool.resources.all(fn(r) { r.in_use }))
   
-  // 广播唤醒所有线程
-  let cv5 = condition_broadcast(cv4, "signaler-2")
+  // 尝试获取更多资源(应该失败，因为池已满)
+  let (new_pool4, resource4) = acquire_resource(pool)
+  pool = new_pool4
+  assert_eq(resource4, None)
   
-  // 验证广播结果
-  assert_eq(cv5.waiting_threads.length(), 0)
-  assert_eq(cv5.signaled_threads.length(), 3)
-  assert_true(verify_condition_sync(cv5))
+  // 释放一个资源
+  pool = release_resource(pool, "resource-1")
   
-  // 测试条件满足时的等待
-  let cv6 = condition_signal(cv5, "signaler-3")
-  let cv7 = condition_wait(cv6, "thread-4")
+  // 验证资源已释放
+  let resource1_released = pool.resources.find(fn(r) { r.id == "resource-1" })
+  match resource1_released {
+    Some(r) => assert_false(r.in_use)
+    None => assert_true(false)
+  }
   
-  // 验证条件满足时的等待行为
-  assert_eq(cv7.waiting_threads.length(), 0)
-  assert_eq(cv7.signaled_threads.length(), 4)
-  assert_true(cv7.signaled_threads.contains("thread-4"))
+  // 再次尝试获取资源(应该成功，获取到已释放的资源)
+  let (new_pool5, resource5) = acquire_resource(pool)
+  pool = new_pool5
+  match resource5 {
+    Some(r) => assert_eq(r.id, "resource-1")  // 应该是之前释放的资源
+    None => assert_true(false)
+  }
   
-  // 测试等待线程数量限制
-  let mut cv8 = create_condition_variable("cv-2", 2)
-  cv8 = condition_wait(cv8, "thread-1")
-  cv8 = condition_wait(cv8, "thread-2")
-  cv8 = condition_wait(cv8, "thread-3")  // 应该失败
+  // 验证池中仍然有3个资源
+  assert_eq(pool.resources.length(), 3)
+}
+
+// 测试6: 并发任务执行和同步
+test "并发任务执行和同步" {
+  // 定义任务状态
+  enum TaskStatus {
+    Pending
+    Running
+    Completed
+    Failed
+  }
   
-  // 验证限制
-  assert_eq(cv8.waiting_threads.length(), 2)
-  let last_operation = cv8.operations[cv8.operations.length() - 1]
-  assert_eq(last_operation.operation_type, "wait")
-  assert_false(last_operation.success)  // 应该失败
+  // 定义任务
+  type Task = {
+    id: String,
+    status: TaskStatus,
+    result: Option[String],
+    error: Option[String]
+  }
   
-  assert_true(verify_condition_sync(cv8))
+  // 定义任务执行器
+  type TaskExecutor = {
+    tasks: Array[Task>,
+    max_concurrent: Int,
+    running_count: Int,
+    lock: Bool
+  }
+  
+  // 创建任务执行器
+  let create_task_executor = fn(max_concurrent: Int) -> TaskExecutor {
+    {
+      tasks: [],
+      max_concurrent: max_concurrent,
+      running_count: 0,
+      lock: false
+    }
+  }
+  
+  // 创建任务
+  let create_task = fn(id: String) -> Task {
+    {
+      id: id,
+      status: TaskStatus::Pending,
+      result: None,
+      error: None
+    }
+  }
+  
+  // 提交任务
+  let submit_task = fn(executor: TaskExecutor, task: Task) -> TaskExecutor {
+    // 模拟获取锁
+    if executor.lock {
+      return executor
+    }
+    
+    {
+      tasks: executor.tasks.push(task),
+      max_concurrent: executor.max_concurrent,
+      running_count: executor.running_count,
+      lock: false
+    }
+  }
+  
+  // 执行任务(简化实现)
+  let execute_tasks = fn(executor: TaskExecutor) -> TaskExecutor {
+    // 模拟获取锁
+    if executor.lock {
+      return executor
+    }
+    
+    // 计算可以启动的任务数
+    let pending_tasks = executor.tasks.filter(fn(t) {
+      match t.status {
+        TaskStatus::Pending => true
+        _ => false
+      }
+    })
+    
+    let available_slots = executor.max_concurrent - executor.running_count
+    let tasks_to_start = if available_slots > 0 {
+      pending_tasks.take(available_slots)
+    } else {
+      []
+    }
+    
+    // 更新任务状态
+    let mut updated_tasks = executor.tasks
+    let mut new_running_count = executor.running_count
+    
+    for task in tasks_to_start {
+      // 模拟任务执行
+      let task_result = "result-" + task.id
+      let updated_task = {
+        id: task.id,
+        status: TaskStatus::Completed,
+        result: Some(task_result),
+        error: None
+      }
+      
+      // 替换任务
+      updated_tasks = updated_tasks.map(fn(t) {
+        if t.id == task.id {
+          updated_task
+        } else {
+          t
+        }
+      })
+      
+      new_running_count = new_running_count - 1  // 任务已完成
+    }
+    
+    {
+      tasks: updated_tasks,
+      max_concurrent: executor.max_concurrent,
+      running_count: new_running_count,
+      lock: false
+    }
+  }
+  
+  // 创建任务执行器
+  let mut executor = create_task_executor(2)
+  
+  // 提交多个任务
+  let task1 = create_task("task1")
+  let task2 = create_task("task2")
+  let task3 = create_task("task3")
+  let task4 = create_task("task4")
+  
+  executor = submit_task(executor, task1)
+  executor = submit_task(executor, task2)
+  executor = submit_task(executor, task3)
+  executor = submit_task(executor, task4)
+  
+  // 验证任务已提交
+  assert_eq(executor.tasks.length(), 4)
+  assert_true(executor.tasks.all(fn(t) {
+    match t.status {
+      TaskStatus::Pending => true
+      _ => false
+    }
+  }))
+  
+  // 执行任务
+  executor = execute_tasks(executor)
+  
+  // 验证任务执行结果
+  let completed_tasks = executor.tasks.filter(fn(t) {
+    match t.status {
+      TaskStatus::Completed => true
+      _ => false
+    }
+  })
+  
+  let pending_tasks = executor.tasks.filter(fn(t) {
+    match t.status {
+      TaskStatus::Pending => true
+      _ => false
+    }
+  })
+  
+  // 由于最大并发数为2，应该有2个任务完成，2个任务仍在等待
+  assert_eq(completed_tasks.length(), 2)
+  assert_eq(pending_tasks.length(), 2)
+  
+  // 再次执行任务
+  executor = execute_tasks(executor)
+  
+  // 验证所有任务都已完成
+  let all_completed = executor.tasks.all(fn(t) {
+    match t.status {
+      TaskStatus::Completed => true
+      _ => false
+    }
+  })
+  
+  assert_true(all_completed)
+  
+  // 验证任务结果
+  let task1_result = executor.tasks.find(fn(t) { t.id == "task1" })
+  match task1_result {
+    Some(t) => {
+      match t.status {
+        TaskStatus::Completed => {
+          match t.result {
+            Some(result) => assert_eq(result, "result-task1")
+            None => assert_true(false)
+          }
+        }
+        _ => assert_true(false)
+      }
+    }
+    None => assert_true(false)
+  }
 }
