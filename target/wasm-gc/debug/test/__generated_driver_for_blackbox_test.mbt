@@ -324,15 +324,33 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_realtime_stream_integrity_comprehensive_tests.mbt": {
   },
+  "azimuth_premium_time_series_analysis_tests.mbt": {
+  },
+  "azimuth_premium_serialization_tests.mbt": {
+  },
+  "azimuth_premium_resource_management_tests.mbt": {
+  },
   "azimuth_premium_quality_tests.mbt": {
   },
   "azimuth_premium_quality_test_cases.mbt": {
   },
   "azimuth_premium_quality_enhanced_tests.mbt": {
   },
+  "azimuth_premium_performance_optimization_tests.mbt": {
+  },
+  "azimuth_premium_error_recovery_tests.mbt": {
+  },
+  "azimuth_premium_distributed_tracing_tests.mbt": {
+  },
+  "azimuth_premium_data_consistency_tests.mbt": {
+  },
   "azimuth_premium_data_compression_tests.mbt": {
   },
+  "azimuth_premium_concurrent_processing_tests.mbt": {
+  },
   "azimuth_premium_comprehensive_test_suite.mbt": {
+  },
+  "azimuth_premium_advanced_telemetry_tests.mbt": {
   },
   "azimuth_practical_telemetry_tests.mbt": {
   },
