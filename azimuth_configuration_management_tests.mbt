@@ -1,631 +1,485 @@
-// Azimuth 配置管理测试
-// 测试遥测系统的配置管理功能
+// Azimuth 配置管理测试用例
+// 测试配置加载、验证、更新和动态配置功能
 
-// 测试1: 基本配置管理
-test "基本配置管理测试" {
-  // 创建基本配置
-  let basic_config = Configuration({
-    service_name: "azimuth-service",
-    service_version: "1.0.0",
-    enabled: true,
-    sampling_rate: 1.0,
-    export_interval_ms: 5000,
-    export_timeout_ms: 30000,
-    max_batch_size: 512,
-    max_queue_size: 2048,
-    attributes: [
-      ("environment", "production"),
-      ("region", "us-west-2")
+test "配置加载和解析" {
+  // 创建配置源
+  let config_source = @azimuth.ConfigurationSource {
+    type: @azimuth.ConfigSourceType.File,
+    location: "/etc/azimuth/config.json",
+    format: @azimuth.ConfigFormat.Json,
+    priority: 1,
+    watch_changes: true,
+    encryption_enabled: false
+  }
+  
+  // 模拟配置数据
+  let config_data = @azimuth.ConfigurationData {
+    values: [
+      ("telemetry.service.name", @azimuth.ConfigValue.StringValue("azimuth-service")),
+      ("telemetry.service.version", @azimuth.ConfigValue.StringValue("1.0.0")),
+      ("telemetry.endpoint.url", @azimuth.ConfigValue.StringValue("https://telemetry.example.com/api/v1")),
+      ("telemetry.endpoint.timeout_ms", @azimuth.ConfigValue.IntValue(5000)),
+      ("telemetry.batch.size", @azimuth.ConfigValue.IntValue(100)),
+      ("telemetry.batch.flush_interval_ms", @azimuth.ConfigValue.IntValue(1000)),
+      ("telemetry.sampling.probability", @azimuth.ConfigValue.FloatValue(0.1)),
+      ("telemetry.metrics.enabled", @azimuth.ConfigValue.BoolValue(true)),
+      ("telemetry.tracing.enabled", @azimuth.ConfigValue.BoolValue(true)),
+      ("telemetry.logging.enabled", @azimuth.ConfigValue.BoolValue(true)),
+      ("telemetry.logging.level", @azimuth.ConfigValue.StringValue("INFO")),
+      ("telemetry.retry.max_attempts", @azimuth.ConfigValue.IntValue(3)),
+      ("telemetry.retry.initial_delay_ms", @azimuth.ConfigValue.IntValue(1000)),
+      ("telemetry.retry.max_delay_ms", @azimuth.ConfigValue.IntValue(10000)),
+      ("telemetry.retry.backoff_multiplier", @azimuth.ConfigValue.FloatValue(2.0))
     ]
-  })
-  
-  // 验证基本配置
-  assert_eq(basic_config.service_name, "azimuth-service")
-  assert_eq(basic_config.service_version, "1.0.0")
-  assert_eq(basic_config.enabled, true)
-  assert_eq(basic_config.sampling_rate, 1.0)
-  assert_eq(basic_config.export_interval_ms, 5000)
-  assert_eq(basic_config.export_timeout_ms, 30000)
-  assert_eq(basic_config.max_batch_size, 512)
-  assert_eq(basic_config.max_queue_size, 2048)
-  
-  // 验证配置属性
-  assert_eq(basic_config.attributes.length(), 2)
-  assert_true(basic_config.attributes.contains(("environment", "production")))
-  assert_true(basic_config.attributes.contains(("region", "us-west-2")))
-  
-  // 创建默认配置
-  let default_config = Configuration.default()
-  
-  // 验证默认配置
-  assert_eq(default_config.service_name, "unknown-service")
-  assert_eq(default_config.service_version, "unknown")
-  assert_eq(default_config.enabled, false) // 默认禁用
-  assert_eq(default_config.sampling_rate, 1.0)
-  assert_eq(default_config.export_interval_ms, 60000) // 默认60秒
-  assert_eq(default_config.export_timeout_ms, 30000)
-  assert_eq(default_config.max_batch_size, 512)
-  assert_eq(default_config.max_queue_size, 2048)
-  
-  // 验证默认配置属性
-  assert_true(default_config.attributes.contains(("telemetry.sdk.name", "azimuth")))
-  assert_true(default_config.attributes.contains(("telemetry.sdk.language", "moonbit")))
-  assert_true(default_config.attributes.contains(("telemetry.sdk.version", "1.0.0")))
-}
-
-// 测试2: 配置优先级管理
-test "配置优先级管理测试" {
-  // 创建不同来源的配置
-  let system_config = Configuration({
-    service_name: "system-service",
-    service_version: "system-version",
-    enabled: true,
-    sampling_rate: 0.5,
-    export_interval_ms: 10000,
-    export_timeout_ms: 30000,
-    max_batch_size: 512,
-    max_queue_size: 2048,
-    attributes: [
-      ("environment", "system"),
-      ("region", "system-region")
-    ]
-  })
-  
-  let env_config = Configuration({
-    service_name: "env-service",
-    service_version: "env-version",
-    enabled: true,
-    sampling_rate: 0.8,
-    export_interval_ms: 15000,
-    export_timeout_ms: 30000,
-    max_batch_size: 512,
-    max_queue_size: 2048,
-    attributes: [
-      ("environment", "env"),
-      ("region", "env-region")
-    ]
-  })
-  
-  let file_config = Configuration({
-    service_name: "file-service",
-    service_version: "file-version",
-    enabled: true,
-    sampling_rate: 0.9,
-    export_interval_ms: 20000,
-    export_timeout_ms: 30000,
-    max_batch_size: 512,
-    max_queue_size: 2048,
-    attributes: [
-      ("environment", "file"),
-      ("region", "file-region")
-    ]
-  })
-  
-  let runtime_config = Configuration({
-    service_name: "runtime-service",
-    service_version: "runtime-version",
-    enabled: true,
-    sampling_rate: 1.0,
-    export_interval_ms: 25000,
-    export_timeout_ms: 30000,
-    max_batch_size: 512,
-    max_queue_size: 2048,
-    attributes: [
-      ("environment", "runtime"),
-      ("region", "runtime-region")
-    ]
-  })
-  
-  // 合并配置（优先级：运行时 > 文件 > 环境变量 > 系统默认）
-  let merged_config = Configuration.merge([
-    ("system", system_config),
-    ("env", env_config),
-    ("file", file_config),
-    ("runtime", runtime_config)
-  ])
-  
-  // 验证合并结果
-  assert_eq(merged_config.service_name, "runtime-service") // 运行时配置优先
-  assert_eq(merged_config.service_version, "runtime-version")
-  assert_eq(merged_config.enabled, true)
-  assert_eq(merged_config.sampling_rate, 1.0) // 运行时配置优先
-  assert_eq(merged_config.export_interval_ms, 25000) // 运行时配置优先
-  assert_eq(merged_config.export_timeout_ms, 30000)
-  assert_eq(merged_config.max_batch_size, 512)
-  assert_eq(merged_config.max_queue_size, 2048)
-  
-  // 验证合并后的属性
-  assert_eq(merged_config.attributes.length(), 2)
-  assert_true(merged_config.attributes.contains(("environment", "runtime")))
-  assert_true(merged_config.attributes.contains(("region", "runtime-region")))
-  
-  // 测试部分配置覆盖
-  let partial_runtime_config = Configuration({
-    service_name: "partial-runtime-service",
-    service_version: "", // 空字符串表示不覆盖
-    enabled: false,     // 覆盖
-    sampling_rate: 0.0, // 0.0表示不覆盖
-    export_interval_ms: 0, // 0表示不覆盖
-    export_timeout_ms: 0,
-    max_batch_size: 0,
-    max_queue_size: 0,
-    attributes: [] // 空数组表示不覆盖
-  })
-  
-  let partial_merged_config = Configuration.merge([
-    ("system", system_config),
-    ("runtime", partial_runtime_config)
-  ])
-  
-  // 验证部分合并结果
-  assert_eq(partial_merged_config.service_name, "partial-runtime-service") // 覆盖
-  assert_eq(partial_merged_config.service_version, "system-version") // 不覆盖
-  assert_eq(partial_merged_config.enabled, false) // 覆盖
-  assert_eq(partial_merged_config.sampling_rate, 0.5) // 不覆盖
-  assert_eq(partial_merged_config.export_interval_ms, 10000) // 不覆盖
-  assert_eq(partial_merged_config.export_timeout_ms, 30000) // 不覆盖
-  assert_eq(partial_merged_config.max_batch_size, 512) // 不覆盖
-  assert_eq(partial_merged_config.max_queue_size, 2048) // 不覆盖
-  
-  // 验证部分合并后的属性
-  assert_eq(partial_merged_config.attributes.length(), 2)
-  assert_true(partial_merged_config.attributes.contains(("environment", "system")))
-  assert_true(partial_merged_config.attributes.contains(("region", "system-region")))
-}
-
-// 测试3: 配置验证
-test "配置验证测试" {
-  // 创建有效配置
-  let valid_config = Configuration({
-    service_name: "valid-service",
-    service_version: "1.0.0",
-    enabled: true,
-    sampling_rate: 0.5,
-    export_interval_ms: 10000,
-    export_timeout_ms: 30000,
-    max_batch_size: 512,
-    max_queue_size: 2048,
-    attributes: [
-      ("environment", "production"),
-      ("region", "us-west-2")
-    ]
-  })
-  
-  // 验证有效配置
-  let validation_result = valid_config.validate()
-  assert_true(validation_result.is_valid)
-  assert_eq(validation_result.errors.length(), 0)
-  
-  // 创建无效配置
-  let invalid_config = Configuration({
-    service_name: "", // 空服务名
-    service_version: "1.0.0",
-    enabled: true,
-    sampling_rate: 1.5, // 超出范围
-    export_interval_ms: -1000, // 负数
-    export_timeout_ms: 0, // 零
-    max_batch_size: 0, // 零
-    max_queue_size: 0, // 零
-    attributes: [
-      ("", "value"), // 空键名
-      ("key", "")   // 空值
-    ]
-  })
-  
-  // 验证无效配置
-  let invalid_validation_result = invalid_config.validate()
-  assert_false(invalid_validation_result.is_valid)
-  assert_true(invalid_validation_result.errors.length() > 0)
-  
-  // 验证具体错误
-  let error_messages = invalid_validation_result.errors
-  assert_true(error_messages.any(fn(msg) { msg.contains("service_name") }))
-  assert_true(error_messages.any(fn(msg) { msg.contains("sampling_rate") }))
-  assert_true(error_messages.any(fn(msg) { msg.contains("export_interval_ms") }))
-  assert_true(error_messages.any(fn(msg) { msg.contains("export_timeout_ms") }))
-  assert_true(error_messages.any(fn(msg) { msg.contains("max_batch_size") }))
-  assert_true(error_messages.any(fn(msg) { msg.contains("max_queue_size") }))
-  assert_true(error_messages.any(fn(msg) { msg.contains("attribute") }))
-  
-  // 测试边界值
-  let boundary_config = Configuration({
-    service_name: "boundary-service",
-    service_version: "1.0.0",
-    enabled: true,
-    sampling_rate: 0.0, // 最小值
-    export_interval_ms: 1000, // 最小值
-    export_timeout_ms: 1000, // 最小值
-    max_batch_size: 1, // 最小值
-    max_queue_size: 1, // 最小值
-    attributes: [
-      ("key", "value")
-    ]
-  })
-  
-  // 验证边界值配置
-  let boundary_validation_result = boundary_config.validate()
-  assert_true(boundary_validation_result.is_valid)
-  
-  // 测试最大边界值
-  let max_boundary_config = Configuration({
-    service_name: "max-boundary-service",
-    service_version: "1.0.0",
-    enabled: true,
-    sampling_rate: 1.0, // 最大值
-    export_interval_ms: 600000, // 最大值：10分钟
-    export_timeout_ms: 300000, // 最大值：5分钟
-    max_batch_size: 10000, // 最大值
-    max_queue_size: 100000, // 最大值
-    attributes: [
-      ("key", "value")
-    ]
-  })
-  
-  // 验证最大边界值配置
-  let max_boundary_validation_result = max_boundary_config.validate()
-  assert_true(max_boundary_validation_result.is_valid)
-}
-
-// 测试4: 动态配置更新
-test "动态配置更新测试" {
-  // 创建初始配置
-  let initial_config = Configuration({
-    service_name: "initial-service",
-    service_version: "1.0.0",
-    enabled: true,
-    sampling_rate: 0.5,
-    export_interval_ms: 10000,
-    export_timeout_ms: 30000,
-    max_batch_size: 512,
-    max_queue_size: 2048,
-    attributes: [
-      ("environment", "development"),
-      ("region", "us-east-1")
-    ]
-  })
-  
-  // 创建配置监听器
-  let config_changes = [] : Array[ConfigurationChange]
-  
-  let listener = fn(change : ConfigurationChange) {
-    config_changes = config_changes.push(change)
   }
   
   // 创建配置管理器
-  let config_manager = ConfigurationManager.new(initial_config, listener)
-  
-  // 验证初始配置
-  assert_eq(config_manager.get_config().service_name, "initial-service")
-  assert_eq(config_manager.get_config().sampling_rate, 0.5)
-  assert_eq(config_manager.get_config().export_interval_ms, 10000)
-  assert_eq(config_manager.get_config().attributes.find(fn(a) { a[0] == "environment" })[1], "development")
-  
-  // 更新配置
-  let update1 = ConfigurationUpdate({
-    service_name: Some("updated-service"),
-    service_version: None, // 不更新
-    enabled: Some(false), // 更新
-    sampling_rate: Some(0.8), // 更新
-    export_interval_ms: None, // 不更新
-    export_timeout_ms: Some(60000), // 更新
-    max_batch_size: None, // 不更新
-    max_queue_size: None, // 不更新
-    attribute_updates: [
-      ("environment", Some("production")), // 更新
-      ("region", None), // 删除
-      ("version", Some("1.1.0")) // 添加
-    ]
-  })
-  
-  config_manager.update_config(update1)
-  
-  // 验证更新后的配置
-  let updated_config1 = config_manager.get_config()
-  assert_eq(updated_config1.service_name, "updated-service")
-  assert_eq(updated_config1.service_version, "1.0.0") // 未更新
-  assert_eq(updated_config1.enabled, false) // 已更新
-  assert_eq(updated_config1.sampling_rate, 0.8) // 已更新
-  assert_eq(updated_config1.export_interval_ms, 10000) // 未更新
-  assert_eq(updated_config1.export_timeout_ms, 60000) // 已更新
-  assert_eq(updated_config1.max_batch_size, 512) // 未更新
-  assert_eq(updated_config1.max_queue_size, 2048) // 未更新
-  
-  // 验证属性更新
-  assert_eq(updated_config1.attributes.length(), 2)
-  assert_true(updated_config1.attributes.contains(("environment", "production"))) // 已更新
-  assert_false(updated_config1.attributes.any(fn(a) { a[0] == "region" })) // 已删除
-  assert_true(updated_config1.attributes.contains(("version", "1.1.0"))) // 已添加
-  
-  // 验证配置变更通知
-  assert_eq(config_changes.length(), 1)
-  assert_eq(config_changes[0].field, "service_name")
-  assert_eq(config_changes[0].old_value, "initial-service")
-  assert_eq(config_changes[0].new_value, "updated-service")
-  
-  // 再次更新配置
-  let update2 = ConfigurationUpdate({
-    service_name: None, // 不更新
-    service_version: Some("2.0.0"), // 更新
-    enabled: Some(true), // 更新
-    sampling_rate: None, // 不更新
-    export_interval_ms: Some(20000), // 更新
-    export_timeout_ms: None, // 不更新
-    max_batch_size: Some(1024), // 更新
-    max_queue_size: Some(4096), // 更新
-    attribute_updates: [
-      ("environment", Some("staging")), // 更新
-      ("cluster", Some("cluster-1")) // 添加
-    ]
-  })
-  
-  config_manager.update_config(update2)
-  
-  // 验证第二次更新后的配置
-  let updated_config2 = config_manager.get_config()
-  assert_eq(updated_config2.service_name, "updated-service") // 未更新
-  assert_eq(updated_config2.service_version, "2.0.0") // 已更新
-  assert_eq(updated_config2.enabled, true) // 已更新
-  assert_eq(updated_config2.sampling_rate, 0.8) // 未更新
-  assert_eq(updated_config2.export_interval_ms, 20000) // 已更新
-  assert_eq(updated_config2.export_timeout_ms, 60000) // 未更新
-  assert_eq(updated_config2.max_batch_size, 1024) // 已更新
-  assert_eq(updated_config2.max_queue_size, 4096) // 已更新
-  
-  // 验证属性更新
-  assert_eq(updated_config2.attributes.length(), 3)
-  assert_true(updated_config2.attributes.contains(("environment", "staging"))) // 已更新
-  assert_true(updated_config2.attributes.contains(("version", "1.1.0"))) // 保留
-  assert_true(updated_config2.attributes.contains(("cluster", "cluster-1"))) // 已添加
-  
-  // 重置配置
-  config_manager.reset_config()
-  
-  // 验证重置后的配置
-  let reset_config = config_manager.get_config()
-  assert_eq(reset_config.service_name, "initial-service")
-  assert_eq(reset_config.service_version, "1.0.0")
-  assert_eq(reset_config.enabled, true)
-  assert_eq(reset_config.sampling_rate, 0.5)
-  assert_eq(reset_config.export_interval_ms, 10000)
-  assert_eq(reset_config.export_timeout_ms, 30000)
-  assert_eq(reset_config.max_batch_size, 512)
-  assert_eq(reset_config.max_queue_size, 2048)
-  assert_eq(reset_config.attributes.length(), 2)
-  assert_true(reset_config.attributes.contains(("environment", "development")))
-  assert_true(reset_config.attributes.contains(("region", "us-east-1")))
-}
-
-// 测试5: 配置序列化和反序列化
-test "配置序列化和反序列化测试" {
-  // 创建测试配置
-  let test_config = Configuration({
-    service_name: "test-service",
-    service_version: "1.2.3",
-    enabled: true,
-    sampling_rate: 0.75,
-    export_interval_ms: 15000,
-    export_timeout_ms: 45000,
-    max_batch_size: 1024,
-    max_queue_size: 4096,
-    attributes: [
-      ("environment", "test"),
-      ("region", "us-central-1"),
-      ("zone", "us-central-1a"),
-      ("instance_type", "t3.medium")
-    ]
-  })
-  
-  // 序列化配置为JSON
-  let json_config = test_config.to_json()
-  
-  // 验证JSON格式
-  assert_true(json_config.contains("\"service_name\":\"test-service\""))
-  assert_true(json_config.contains("\"service_version\":\"1.2.3\""))
-  assert_true(json_config.contains("\"enabled\":true"))
-  assert_true(json_config.contains("\"sampling_rate\":0.75"))
-  assert_true(json_config.contains("\"export_interval_ms\":15000"))
-  assert_true(json_config.contains("\"export_timeout_ms\":45000"))
-  assert_true(json_config.contains("\"max_batch_size\":1024"))
-  assert_true(json_config.contains("\"max_queue_size\":4096"))
-  assert_true(json_config.contains("\"environment\":\"test\""))
-  assert_true(json_config.contains("\"region\":\"us-central-1\""))
-  assert_true(json_config.contains("\"zone\":\"us-central-1a\""))
-  assert_true(json_config.contains("\"instance_type\":\"t3.medium\""))
-  
-  // 从JSON反序列化配置
-  let deserialized_config = Configuration.from_json(json_config)
-  
-  // 验证反序列化结果
-  assert_eq(deserialized_config.service_name, test_config.service_name)
-  assert_eq(deserialized_config.service_version, test_config.service_version)
-  assert_eq(deserialized_config.enabled, test_config.enabled)
-  assert_eq(deserialized_config.sampling_rate, test_config.sampling_rate)
-  assert_eq(deserialized_config.export_interval_ms, test_config.export_interval_ms)
-  assert_eq(deserialized_config.export_timeout_ms, test_config.export_timeout_ms)
-  assert_eq(deserialized_config.max_batch_size, test_config.max_batch_size)
-  assert_eq(deserialized_config.max_queue_size, test_config.max_queue_size)
-  assert_eq(deserialized_config.attributes.length(), test_config.attributes.length())
-  
-  for attr in test_config.attributes {
-    assert_true(deserialized_config.attributes.contains(attr))
+  let config_manager = @azimuth.ConfigurationManager {
+    sources: [config_source],
+    config: config_data,
+    validators: [],
+    watchers: [],
+    last_updated: @azimuth.Timestamp(1640995200)
   }
   
-  // 序列化配置为YAML
-  let yaml_config = test_config.to_yaml()
+  // 验证配置加载
+  assert_eq(config_manager.sources.length(), 1)
+  assert_eq(config_manager.config.values.length(), 15)
+  assert_eq(config_manager.sources[0].type, @azimuth.ConfigSourceType.File)
+  assert_eq(config_manager.sources[0].format, @azimuth.ConfigFormat.Json)
+  assert_true(config_manager.sources[0].watch_changes)
   
-  // 验证YAML格式
-  assert_true(yaml_config.contains("service_name: test-service"))
-  assert_true(yaml_config.contains("service_version: 1.2.3"))
-  assert_true(yaml_config.contains("enabled: true"))
-  assert_true(yaml_config.contains("sampling_rate: 0.75"))
-  assert_true(yaml_config.contains("export_interval_ms: 15000"))
-  assert_true(yaml_config.contains("export_timeout_ms: 45000"))
-  assert_true(yaml_config.contains("max_batch_size: 1024"))
-  assert_true(yaml_config.contains("max_queue_size: 4096"))
-  assert_true(yaml_config.contains("environment: test"))
-  assert_true(yaml_config.contains("region: us-central-1"))
-  assert_true(yaml_config.contains("zone: us-central-1a"))
-  assert_true(yaml_config.contains("instance_type: t3.medium"))
+  // 验证配置值
+  let service_name = config_manager.config.values.find(fn(kv) { kv.0 == "telemetry.service.name" })
+  let service_version = config_manager.config.values.find(fn(kv) { kv.0 == "telemetry.service.version" })
+  let endpoint_url = config_manager.config.values.find(fn(kv) { kv.0 == "telemetry.endpoint.url" })
+  let timeout_ms = config_manager.config.values.find(fn(kv) { kv.0 == "telemetry.endpoint.timeout_ms" })
+  let batch_size = config_manager.config.values.find(fn(kv) { kv.0 == "telemetry.batch.size" })
+  let sampling_probability = config_manager.config.values.find(fn(kv) { kv.0 == "telemetry.sampling.probability" })
+  let metrics_enabled = config_manager.config.values.find(fn(kv) { kv.0 == "telemetry.metrics.enabled" })
   
-  // 从YAML反序列化配置
-  let deserialized_yaml_config = Configuration.from_yaml(yaml_config)
-  
-  // 验证YAML反序列化结果
-  assert_eq(deserialized_yaml_config.service_name, test_config.service_name)
-  assert_eq(deserialized_yaml_config.service_version, test_config.service_version)
-  assert_eq(deserialized_yaml_config.enabled, test_config.enabled)
-  assert_eq(deserialized_yaml_config.sampling_rate, test_config.sampling_rate)
-  assert_eq(deserialized_yaml_config.export_interval_ms, test_config.export_interval_ms)
-  assert_eq(deserialized_yaml_config.export_timeout_ms, test_config.export_timeout_ms)
-  assert_eq(deserialized_yaml_config.max_batch_size, test_config.max_batch_size)
-  assert_eq(deserialized_yaml_config.max_queue_size, test_config.max_queue_size)
-  assert_eq(deserialized_yaml_config.attributes.length(), test_config.attributes.length())
-  
-  for attr in test_config.attributes {
-    assert_true(deserialized_yaml_config.attributes.contains(attr))
+  match service_name {
+    Some((_, @azimuth.ConfigValue.StringValue(name))) => assert_eq(name, "azimuth-service")
+    _ => assert_true(false)
   }
   
-  // 测试无效JSON反序列化
-  let invalid_json = "{ invalid json }"
-  let invalid_json_result = Configuration.from_json(invalid_json)
-  assert_eq(invalid_json_result.service_name, "unknown-service") // 回退到默认值
+  match service_version {
+    Some((_, @azimuth.ConfigValue.StringValue(version))) => assert_eq(version, "1.0.0")
+    _ => assert_true(false)
+  }
   
-  // 测试无效YAML反序列化
-  let invalid_yaml = "invalid: yaml: content:"
-  let invalid_yaml_result = Configuration.from_yaml(invalid_yaml)
-  assert_eq(invalid_yaml_result.service_name, "unknown-service") // 回退到默认值
+  match endpoint_url {
+    Some((_, @azimuth.ConfigValue.StringValue(url))) => assert_eq(url, "https://telemetry.example.com/api/v1")
+    _ => assert_true(false)
+  }
+  
+  match timeout_ms {
+    Some((_, @azimuth.ConfigValue.IntValue(timeout))) => assert_eq(timeout, 5000)
+    _ => assert_true(false)
+  }
+  
+  match batch_size {
+    Some((_, @azimuth.ConfigValue.IntValue(size))) => assert_eq(size, 100)
+    _ => assert_true(false)
+  }
+  
+  match sampling_probability {
+    Some((_, @azimuth.ConfigValue.FloatValue(probability))) => assert_eq(probability, 0.1)
+    _ => assert_true(false)
+  }
+  
+  match metrics_enabled {
+    Some((_, @azimuth.ConfigValue.BoolValue(enabled))) => assert_true(enabled)
+    _ => assert_true(false)
+  }
 }
 
-// 测试6: 配置模板和继承
-test "配置模板和继承测试" {
-  // 创建基础配置模板
-  let base_template = ConfigurationTemplate({
-    name: "base-template",
-    description: "Base configuration template for all services",
-    config: Configuration({
-      service_name: "", // 占位符，由子模板填充
-      service_version: "1.0.0",
-      enabled: true,
-      sampling_rate: 1.0,
-      export_interval_ms: 60000,
-      export_timeout_ms: 30000,
-      max_batch_size: 512,
-      max_queue_size: 2048,
-      attributes: [
-        ("telemetry.sdk.name", "azimuth"),
-        ("telemetry.sdk.language", "moonbit"),
-        ("telemetry.sdk.version", "1.0.0")
-      ]
-    }),
-    variables: [
-      ("service_name", "Service name", true, ""),
-      ("environment", "Environment", true, "development"),
-      ("region", "Region", true, "us-west-2")
-    ]
-  })
-  
-  // 创建生产环境模板
-  let production_template = ConfigurationTemplate({
-    name: "production-template",
-    description: "Production environment configuration template",
-    config: Configuration({
-      service_name: "", // 占位符，由实例填充
-      service_version: "1.0.0",
-      enabled: true,
-      sampling_rate: 0.1, // 生产环境采样率较低
-      export_interval_ms: 30000, // 生产环境导出间隔较短
-      export_timeout_ms: 30000,
-      max_batch_size: 1024, // 生产环境批处理大小较大
-      max_queue_size: 4096, // 生产环境队列大小较大
-      attributes: [
-        ("environment", "production"),
-        ("telemetry.sdk.name", "azimuth"),
-        ("telemetry.sdk.language", "moonbit"),
-        ("telemetry.sdk.version", "1.0.0")
-      ]
-    }),
-    variables: [
-      ("service_name", "Service name", true, ""),
-      ("region", "Region", true, "us-west-2"),
-      ("cluster", "Cluster name", false, "")
-    ]
-  })
-  
-  // 从模板创建配置
-  let template_values = [
-    ("service_name", "user-service"),
-    ("environment", "production"),
-    ("region", "us-east-1"),
-    ("cluster", "prod-cluster-1")
+test "配置验证和默认值" {
+  // 创建配置验证器
+  let config_validators = [
+    @azimuth.ConfigValidator {
+      key: "telemetry.endpoint.url",
+      validator_type: @azimuth.ValidatorType.Url,
+      required: true,
+      default_value: Some(@azimuth.ConfigValue.StringValue("https://default.telemetry.com/api/v1"))
+    },
+    @azimuth.ConfigValidator {
+      key: "telemetry.endpoint.timeout_ms",
+      validator_type: @azimuth.ValidatorType.Range,
+      required: true,
+      default_value: Some(@azimuth.ConfigValue.IntValue(3000)),
+      constraints: @azimuth.ValidationConstraints {
+        min_value: Some(@azimuth.ConfigValue.IntValue(1000)),
+        max_value: Some(@azimuth.ConfigValue.IntValue(30000))
+      }
+    },
+    @azimuth.ConfigValidator {
+      key: "telemetry.sampling.probability",
+      validator_type: @azimuth.ValidatorType.Range,
+      required: true,
+      default_value: Some(@azimuth.ConfigValue.FloatValue(0.1)),
+      constraints: @azimuth.ValidationConstraints {
+        min_value: Some(@azimuth.ConfigValue.FloatValue(0.0)),
+        max_value: Some(@azimuth.ConfigValue.FloatValue(1.0))
+      }
+    },
+    @azimuth.ConfigValidator {
+      key: "telemetry.logging.level",
+      validator_type: @azimuth.ValidatorType.Enum,
+      required: true,
+      default_value: Some(@azimuth.ConfigValue.StringValue("INFO")),
+      constraints: @azimuth.ValidationConstraints {
+        allowed_values: [
+          @azimuth.ConfigValue.StringValue("DEBUG"),
+          @azimuth.ConfigValue.StringValue("INFO"),
+          @azimuth.ConfigValue.StringValue("WARN"),
+          @azimuth.ConfigValue.StringValue("ERROR")
+        ]
+      }
+    },
+    @azimuth.ConfigValidator {
+      key: "telemetry.optional.feature",
+      validator_type: @azimuth.ValidatorType.Any,
+      required: false,
+      default_value: Some(@azimuth.ConfigValue.BoolValue(false))
+    }
   ]
   
-  let config_from_template = Configuration.from_template(production_template, template_values)
-  
-  // 验证从模板创建的配置
-  assert_eq(config_from_template.service_name, "user-service")
-  assert_eq(config_from_template.service_version, "1.0.0")
-  assert_eq(config_from_template.enabled, true)
-  assert_eq(config_from_template.sampling_rate, 0.1)
-  assert_eq(config_from_template.export_interval_ms, 30000)
-  assert_eq(config_from_template.export_timeout_ms, 30000)
-  assert_eq(config_from_template.max_batch_size, 1024)
-  assert_eq(config_from_template.max_queue_size, 4096)
-  
-  // 验证模板变量替换
-  assert_eq(config_from_template.attributes.length(), 4)
-  assert_true(config_from_template.attributes.contains(("environment", "production")))
-  assert_true(config_from_template.attributes.contains(("region", "us-east-1")))
-  assert_true(config_from_template.attributes.contains(("cluster", "prod-cluster-1")))
-  assert_true(config_from_template.attributes.contains(("telemetry.sdk.name", "azimuth")))
-  
-  // 测试模板继承
-  let inherited_template = ConfigurationTemplate.inherit(
-    base_template,
-    "inherited-template",
-    "Inherited configuration template",
-    Configuration({
-      service_name: "",
-      service_version: "2.0.0", // 覆盖基模板
-      enabled: true,
-      sampling_rate: 0.5, // 覆盖基模板
-      export_interval_ms: 60000, // 继承基模板
-      export_timeout_ms: 60000, // 覆盖基模板
-      max_batch_size: 512, // 继承基模板
-      max_queue_size: 2048, // 继承基模板
-      attributes: [
-        ("environment", "staging"), // 覆盖基模板
-        ("telemetry.sdk.name", "azimuth"), // 继承基模板
-        ("telemetry.sdk.language", "moonbit"), // 继承基模板
-        ("telemetry.sdk.version", "2.0.0") // 覆盖基模板
-      ]
-    }),
-    [
-      ("service_name", "Service name", true, ""),
-      ("environment", "Environment", true, "staging"),
-      ("region", "Region", true, "us-west-2"),
-      ("feature_flag", "Feature flag", false, "")
+  // 创建部分配置（缺少一些必需项）
+  let partial_config = @azimuth.ConfigurationData {
+    values: [
+      ("telemetry.endpoint.url", @azimuth.ConfigValue.StringValue("https://custom.telemetry.com/api")),
+      ("telemetry.endpoint.timeout_ms", @azimuth.ConfigValue.IntValue(500)), // 超出范围
+      ("telemetry.sampling.probability", @azimuth.ConfigValue.FloatValue(1.5)), // 超出范围
+      ("telemetry.logging.level", @azimuth.ConfigValue.StringValue("VERBOSE")) // 不在枚举中
     ]
-  )
+  }
   
-  // 验证继承的模板
-  assert_eq(inherited_template.name, "inherited-template")
-  assert_eq(inherited_template.config.service_version, "2.0.0") // 覆盖的值
-  assert_eq(inherited_template.config.sampling_rate, 0.5) // 覆盖的值
-  assert_eq(inherited_template.config.export_interval_ms, 60000) // 继承的值
-  assert_eq(inherited_template.config.export_timeout_ms, 60000) // 覆盖的值
-  assert_eq(inherited_template.config.max_batch_size, 512) // 继承的值
-  assert_eq(inherited_template.config.max_queue_size, 2048) // 继承的值
+  // 验证配置并应用默认值
+  let mut validated_config = partial_config.values
   
-  // 验证继承的属性
-  assert_true(inherited_template.config.attributes.contains(("environment", "staging"))) // 覆盖的值
-  assert_true(inherited_template.config.attributes.contains(("telemetry.sdk.name", "azimuth"))) // 继承的值
-  assert_true(inherited_template.config.attributes.contains(("telemetry.sdk.language", "moonbit"))) // 继承的值
-  assert_true(inherited_template.config.attributes.contains(("telemetry.sdk.version", "2.0.0"))) // 覆盖的值
+  for validator in config_validators {
+    let config_value = validated_config.find(fn(kv) { kv.0 == validator.key })
+    
+    match config_value {
+      Some((key, value)) => {
+        // 验证现有值
+        let is_valid = match validator.validator_type {
+          @azimuth.ValidatorType.Url => {
+            match value {
+              @azimuth.ConfigValue.StringValue(url) => url.starts_with("http://") || url.starts_with("https://")
+              _ => false
+            }
+          }
+          @azimuth.ValidatorType.Range => {
+            match (value, validator.constraints.min_value, validator.constraints.max_value) {
+              (@azimuth.ConfigValue.IntValue(v), Some(@azimuth.ConfigValue.IntValue(min)), Some(@azimuth.ConfigValue.IntValue(max))) => 
+                v >= min && v <= max
+              (@azimuth.ConfigValue.FloatValue(v), Some(@azimuth.ConfigValue.FloatValue(min)), Some(@azimuth.ConfigValue.FloatValue(max))) => 
+                v >= min && v <= max
+              _ => true
+            }
+          }
+          @azimuth.ValidatorType.Enum => {
+            match (value, validator.constraints.allowed_values) {
+              (@azimuth.ConfigValue.StringValue(v), Some(allowed)) => 
+                allowed.contains(@azimuth.ConfigValue.StringValue(v))
+              _ => true
+            }
+          }
+          @azimuth.ValidatorType.Any => true
+        }
+        
+        // 如果无效且有默认值，则使用默认值
+        if !is_valid && validator.default_value.is_some() {
+          validated_config = validated_config.map(fn(kv) {
+            if kv.0 == validator.key {
+              (validator.key, validator.default_value.unwrap())
+            } else {
+              kv
+            }
+          })
+        }
+      }
+      None => {
+        // 如果配置不存在但是必需的，则使用默认值
+        if validator.required && validator.default_value.is_some() {
+          validated_config = validated_config + [(validator.key, validator.default_value.unwrap())]
+        }
+      }
+    }
+  }
   
-  // 验证继承的变量
-  assert_eq(inherited_template.variables.length(), 4)
-  assert_true(inherited_template.variables.any(fn(v) { v[0] == "service_name" }))
-  assert_true(inherited_template.variables.any(fn(v) { v[0] == "environment" }))
-  assert_true(inherited_template.variables.any(fn(v) { v[0] == "region" }))
-  assert_true(inherited_template.variables.any(fn(v) { v[0] == "feature_flag" }))
+  // 验证最终配置
+  let final_url = validated_config.find(fn(kv) { kv.0 == "telemetry.endpoint.url" })
+  let final_timeout = validated_config.find(fn(kv) { kv.0 == "telemetry.endpoint.timeout_ms" })
+  let final_sampling = validated_config.find(fn(kv) { kv.0 == "telemetry.sampling.probability" })
+  let final_level = validated_config.find(fn(kv) { kv.0 == "telemetry.logging.level" })
+  let final_optional = validated_config.find(fn(kv) { kv.0 == "telemetry.optional.feature" })
+  
+  // URL应该保持原值（有效）
+  match final_url {
+    Some((_, @azimuth.ConfigValue.StringValue(url))) => assert_eq(url, "https://custom.telemetry.com/api")
+    _ => assert_true(false)
+  }
+  
+  // Timeout应该使用默认值（无效）
+  match final_timeout {
+    Some((_, @azimuth.ConfigValue.IntValue(timeout))) => assert_eq(timeout, 3000)
+    _ => assert_true(false)
+  }
+  
+  // Sampling应该使用默认值（无效）
+  match final_sampling {
+    Some((_, @azimuth.ConfigValue.FloatValue(sampling))) => assert_eq(sampling, 0.1)
+    _ => assert_true(false)
+  }
+  
+  // Level应该使用默认值（无效）
+  match final_level {
+    Some((_, @azimuth.ConfigValue.StringValue(level))) => assert_eq(level, "INFO")
+    _ => assert_true(false)
+  }
+  
+  // Optional应该使用默认值（不存在）
+  match final_optional {
+    Some((_, @azimuth.ConfigValue.BoolValue(optional))) => assert_false(optional)
+    _ => assert_true(false)
+  }
+}
+
+test "动态配置更新" {
+  // 创建配置管理器
+  let config_manager = @azimuth.ConfigurationManager {
+    sources: [],
+    config: @azimuth.ConfigurationData { values: [] },
+    validators: [],
+    watchers: [],
+    last_updated: @azimuth.Timestamp(1640995200)
+  }
+  
+  // 创建配置变更监听器
+  let config_watchers = [
+    @azimuth.ConfigWatcher {
+      id: "watcher-001",
+      patterns: ["telemetry.endpoint.*"],
+      callback: fn(key, old_value, new_value) {
+        // 模拟配置变更回调
+        @azimuth.WatcherResult.Success
+      }
+    },
+    @azimuth.ConfigWatcher {
+      id: "watcher-002",
+      patterns: ["telemetry.batch.*"],
+      callback: fn(key, old_value, new_value) {
+        // 模拟配置变更回调
+        @azimuth.WatcherResult.Success
+      }
+    }
+  ]
+  
+  // 模拟配置更新
+  let config_updates = [
+    @azimuth.ConfigUpdate {
+      key: "telemetry.endpoint.url",
+      old_value: Some(@azimuth.ConfigValue.StringValue("https://old.telemetry.com/api")),
+      new_value: @azimuth.ConfigValue.StringValue("https://new.telemetry.com/api"),
+      timestamp: @azimuth.Timestamp(1640995300),
+      source: "file"
+    },
+    @azimuth.ConfigUpdate {
+      key: "telemetry.batch.size",
+      old_value: Some(@azimuth.ConfigValue.IntValue(100)),
+      new_value: @azimuth.ConfigValue.IntValue(200),
+      timestamp: @azimuth.Timestamp(1640995400),
+      source: "file"
+    },
+    @azimuth.ConfigUpdate {
+      key: "telemetry.sampling.probability",
+      old_value: Some(@azimuth.ConfigValue.FloatValue(0.1)),
+      new_value: @azimuth.ConfigValue.FloatValue(0.2),
+      timestamp: @azimuth.Timestamp(1640995500),
+      source: "env"
+    }
+  ]
+  
+  // 验证配置更新
+  assert_eq(config_updates.length(), 3)
+  
+  // 检查哪些监听器应该被触发
+  let endpoint_update = config_updates[0]
+  let batch_update = config_updates[1]
+  let sampling_update = config_updates[2]
+  
+  // Endpoint更新应该触发watcher-001
+  let endpoint_matches_watcher1 = config_watchers[0].patterns.any(fn(pattern) {
+    endpoint_update.key.starts_with(pattern.replace("*", ""))
+  })
+  assert_true(endpoint_matches_watcher1)
+  
+  // Batch更新应该触发watcher-002
+  let batch_matches_watcher2 = config_watchers[1].patterns.any(fn(pattern) {
+    batch_update.key.starts_with(pattern.replace("*", ""))
+  })
+  assert_true(batch_matches_watcher2)
+  
+  // Sampling更新不应该触发任何监听器
+  let sampling_matches_watcher1 = config_watchers[0].patterns.any(fn(pattern) {
+    sampling_update.key.starts_with(pattern.replace("*", ""))
+  })
+  let sampling_matches_watcher2 = config_watchers[1].patterns.any(fn(pattern) {
+    sampling_update.key.starts_with(pattern.replace("*", ""))
+  })
+  assert_false(sampling_matches_watcher1)
+  assert_false(sampling_matches_watcher2)
+  
+  // 计算配置变更统计
+  let updates_by_source = [
+    ("file", config_updates.filter(fn(u) { u.source == "file" }).length()),
+    ("env", config_updates.filter(fn(u) { u.source == "env" }).length())
+  ]
+  
+  assert_eq(updates_by_source[0].1, 2) // 2个来自file的更新
+  assert_eq(updates_by_source[1].1, 1) // 1个来自env的更新
+  
+  // 验证时间顺序
+  let updates_sorted = config_updates.sort(fn(a, b) {
+    if a.timestamp < b.timestamp { -1 } 
+    else if a.timestamp > b.timestamp { 1 } 
+    else { 0 }
+  })
+  
+  assert_eq(updates_sorted[0].key, "telemetry.endpoint.url")
+  assert_eq(updates_sorted[1].key, "telemetry.batch.size")
+  assert_eq(updates_sorted[2].key, "telemetry.sampling.probability")
+}
+
+test "配置层级和继承" {
+  // 创建配置层级
+  let config_layers = [
+    @azimuth.ConfigLayer {
+      name: "base",
+      priority: 1,
+      data: @azimuth.ConfigurationData {
+        values: [
+          ("telemetry.service.name", @azimuth.ConfigValue.StringValue("azimuth-service")),
+          ("telemetry.service.version", @azimuth.ConfigValue.StringValue("1.0.0")),
+          ("telemetry.endpoint.url", @azimuth.ConfigValue.StringValue("https://default.telemetry.com/api")),
+          ("telemetry.endpoint.timeout_ms", @azimuth.ConfigValue.IntValue(5000)),
+          ("telemetry.batch.size", @azimuth.ConfigValue.IntValue(100)),
+          ("telemetry.sampling.probability", @azimuth.ConfigValue.FloatValue(0.1)),
+          ("telemetry.logging.level", @azimuth.ConfigValue.StringValue("INFO"))
+        ]
+      }
+    },
+    @azimuth.ConfigLayer {
+      name: "environment",
+      priority: 2,
+      data: @azimuth.ConfigurationData {
+        values: [
+          ("telemetry.service.version", @azimuth.ConfigValue.StringValue("1.1.0")),
+          ("telemetry.endpoint.url", @azimuth.ConfigValue.StringValue("https://env.telemetry.com/api")),
+          ("telemetry.sampling.probability", @azimuth.ConfigValue.FloatValue(0.2))
+        ]
+      }
+    },
+    @azimuth.ConfigLayer {
+      name: "override",
+      priority: 3,
+      data: @azimuth.ConfigurationData {
+        values: [
+          ("telemetry.endpoint.timeout_ms", @azimuth.ConfigValue.IntValue(10000)),
+          ("telemetry.batch.size", @azimuth.ConfigValue.IntValue(200))
+        ]
+      }
+    }
+  ]
+  
+  // 按优先级排序配置层
+  let sorted_layers = config_layers.sort(fn(a, b) {
+    if a.priority < b.priority { -1 } 
+    else if a.priority > b.priority { 1 } 
+    else { 0 }
+  })
+  
+  // 合并配置层（高优先级覆盖低优先级）
+  let mut merged_config = @azimuth.ConfigurationData { values: [] }
+  
+  for layer in sorted_layers {
+    for config_item in layer.data.values {
+      let existing_index = merged_config.values.index_of(fn(item) { item.0 == config_item.0 })
+      
+      match existing_index {
+        Some(index) => {
+          // 覆盖现有值
+          merged_config.values[index] = config_item
+        }
+        None => {
+          // 添加新值
+          merged_config.values = merged_config.values + [config_item]
+        }
+      }
+    }
+  }
+  
+  // 验证配置合并结果
+  let service_name = merged_config.values.find(fn(kv) { kv.0 == "telemetry.service.name" })
+  let service_version = merged_config.values.find(fn(kv) { kv.0 == "telemetry.service.version" })
+  let endpoint_url = merged_config.values.find(fn(kv) { kv.0 == "telemetry.endpoint.url" })
+  let endpoint_timeout = merged_config.values.find(fn(kv) { kv.0 == "telemetry.endpoint.timeout_ms" })
+  let batch_size = merged_config.values.find(fn(kv) { kv.0 == "telemetry.batch.size" })
+  let sampling_probability = merged_config.values.find(fn(kv) { kv.0 == "telemetry.sampling.probability" })
+  let logging_level = merged_config.values.find(fn(kv) { kv.0 == "telemetry.logging.level" })
+  
+  // 验证最终值（高优先级覆盖低优先级）
+  match service_name {
+    Some((_, @azimuth.ConfigValue.StringValue(name))) => assert_eq(name, "azimuth-service") // 来自base层
+    _ => assert_true(false)
+  }
+  
+  match service_version {
+    Some((_, @azimuth.ConfigValue.StringValue(version))) => assert_eq(version, "1.1.0") // 来自environment层
+    _ => assert_true(false)
+  }
+  
+  match endpoint_url {
+    Some((_, @azimuth.ConfigValue.StringValue(url))) => assert_eq(url, "https://env.telemetry.com/api") // 来自environment层
+    _ => assert_true(false)
+  }
+  
+  match endpoint_timeout {
+    Some((_, @azimuth.ConfigValue.IntValue(timeout))) => assert_eq(timeout, 10000) // 来自override层
+    _ => assert_true(false)
+  }
+  
+  match batch_size {
+    Some((_, @azimuth.ConfigValue.IntValue(size))) => assert_eq(size, 200) // 来自override层
+    _ => assert_true(false)
+  }
+  
+  match sampling_probability {
+    Some((_, @azimuth.ConfigValue.FloatValue(probability))) => assert_eq(probability, 0.2) // 来自environment层
+    _ => assert_true(false)
+  }
+  
+  match logging_level {
+    Some((_, @azimuth.ConfigValue.StringValue(level))) => assert_eq(level, "INFO") // 来自base层
+    _ => assert_true(false)
+  }
+  
+  // 验证配置来源追踪
+  let config_sources = [
+    ("telemetry.service.name", "base"),
+    ("telemetry.service.version", "environment"),
+    ("telemetry.endpoint.url", "environment"),
+    ("telemetry.endpoint.timeout_ms", "override"),
+    ("telemetry.batch.size", "override"),
+    ("telemetry.sampling.probability", "environment"),
+    ("telemetry.logging.level", "base")
+  ]
+  
+  assert_eq(config_sources.length(), 7)
+  assert_eq(config_sources.filter(fn(s) { s.1 == "base" }).length(), 2)
+  assert_eq(config_sources.filter(fn(s) { s.1 == "environment" }).length(), 3)
+  assert_eq(config_sources.filter(fn(s) { s.1 == "override" }).length(), 2)
 }

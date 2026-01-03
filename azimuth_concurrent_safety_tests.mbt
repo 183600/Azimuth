@@ -1,828 +1,560 @@
-// Azimuth Concurrent Safety Tests
-// This file contains test cases for concurrent safety and thread safety
+// Azimuth 并发安全测试用例
+// 测试并发环境下的线程安全和数据一致性
 
-// Test 1: Thread-Safe Counter Operations
-test "thread-safe counter operations" {
-  // Simulate atomic counter operations
-  let atomic_counter = 0
-  
-  let atomic_increment = fn(counter) {
-    // Simulate atomic increment
-    counter + 1
+test "并发指标收集安全性" {
+  // 创建并发安全的指标收集器
+  let metrics_collector = @azimuth.ConcurrentMetricsCollector {
+    metrics: @azimuth.ConcurrentMap.new(),
+    counters: @azimuth.AtomicCounter.new(0),
+    gauges: @azimuth.AtomicReference.new(@azimuth.Map.new()),
+    histograms: @azimuth.AtomicReference.new(@azimuth.Map.new()),
+    lock: @azimuth.Mutex.new()
   }
   
-  let atomic_decrement = fn(counter) {
-    // Simulate atomic decrement
-    counter - 1
-  }
+  // 模拟多个线程并发更新指标
+  let thread_count = 10
+  let operations_per_thread = 100
   
-  let atomic_add = fn(counter, value) {
-    // Simulate atomic add
-    counter + value
-  }
-  
-  // Test atomic operations
-  let counter1 = atomic_increment(atomic_counter)
-  assert_eq(counter1, 1)
-  
-  let counter2 = atomic_increment(counter1)
-  assert_eq(counter2, 2)
-  
-  let counter3 = atomic_decrement(counter2)
-  assert_eq(counter3, 1)
-  
-  let counter4 = atomic_add(counter3, 5)
-  assert_eq(counter4, 6)
-  
-  // Test concurrent counter simulation
-  let simulate_concurrent_increments = fn(initial_count, num_threads, increments_per_thread) {
-    // Simulate concurrent increments
-    initial_count + (num_threads * increments_per_thread)
-  }
-  
-  let concurrent_result = simulate_concurrent_increments(0, 10, 5)
-  assert_eq(concurrent_result, 50)
-}
-
-// Test 2: Thread-Safe Data Structures
-test "thread-safe data structures" {
-  // Test thread-safe array operations
-  let thread_safe_array = []
-  
-  let thread_safe_push = fn(array, item) {
-    // Simulate thread-safe push
-    array.push(item)
-  }
-  
-  let thread_safe_get = fn(array, index) {
-    // Simulate thread-safe get with bounds checking
-    if index >= 0 && index < array.length() {
-      Some(array[index])
-    } else {
-      None
-    }
-  }
-  
-  // Test operations
-  let array1 = thread_safe_push(thread_safe_array, "item1")
-  let array2 = thread_safe_push(array1, "item2")
-  let array3 = thread_safe_push(array2, "item3")
-  
-  assert_eq(array3.length(), 3)
-  
-  match thread_safe_get(array3, 0) {
-    None => assert_true(false)
-    Some(item) => assert_eq(item, "item1")
-  }
-  
-  match thread_safe_get(array3, 2) {
-    None => assert_true(false)
-    Some(item) => assert_eq(item, "item3")
-  }
-  
-  match thread_safe_get(array3, 5) {
-    None => assert_true(true)
-    Some(_) => assert_true(false)
-  }
-  
-  // Test thread-safe map operations
-  let thread_safe_map = {}
-  
-  let thread_safe_put = fn(map, key, value) {
-    // Simulate thread-safe put
-    map.with(key, value)
-  }
-  
-  let thread_safe_get_map = fn(map, key) {
-    // Simulate thread-safe get
-    match map.get(key) {
-      None => None
-      Some(value) => Some(value)
-    }
-  }
-  
-  let map1 = thread_safe_put(thread_safe_map, "key1", "value1")
-  let map2 = thread_safe_put(map1, "key2", "value2")
-  
-  match thread_safe_get_map(map2, "key1") {
-    None => assert_true(false)
-    Some(value) => assert_eq(value, "value1")
-  }
-  
-  match thread_safe_get_map(map2, "key3") {
-    None => assert_true(true)
-    Some(_) => assert_true(false)
-  }
-}
-
-// Test 3: Lock and Mutex Simulation
-test "lock and mutex simulation" {
-  // Simulate mutex lock
-  let create_mutex = fn(initial_value) {
-    { value = initial_value, locked = false }
-  }
-  
-  let acquire_lock = fn(mutex) {
-    if mutex.locked {
-      { mutex = mutex, acquired = false }
-    } else {
-      { mutex = { value = mutex.value, locked = true }, acquired = true }
-    }
-  }
-  
-  let release_lock = fn(mutex) {
-    { value = mutex.value, locked = false }
-  }
-  
-  let with_lock = fn(mutex, operation) {
-    let lock_result = acquire_lock(mutex)
-    if lock_result.acquired {
-      let result = operation(lock_result.mutex.value)
-      let released_mutex = release_lock(lock_result.mutex)
-      { result = result, mutex = released_mutex, success = true }
-    } else {
-      { result = None, mutex = mutex, success = false }
-    }
-  }
-  
-  // Test mutex operations
-  let mutex = create_mutex(42)
-  
-  let operation_result = with_lock(mutex, fn(value) {
-    value * 2
-  })
-  
-  assert_true(operation_result.success)
-  match operation_result.result {
-    None => assert_true(false)
-    Some(result) => assert_eq(result, 84)
-  }
-  assert_false(operation_result.mutex.locked)
-  
-  // Test with locked mutex
-  let locked_mutex = { value = 100, locked = true }
-  let failed_operation = with_lock(locked_mutex, fn(value) {
-    value * 2
-  })
-  
-  assert_false(failed_operation.success)
-  match failed_operation.result {
-    None => assert_true(true)
-    Some(_) => assert_true(false)
-  }
-}
-
-// Test 4: Read-Write Lock Simulation
-test "read-write lock simulation" {
-  // Simulate read-write lock
-  let create_rwlock = fn(initial_value) {
-    { value = initial_value, readers = 0, writer = false }
-  }
-  
-  let acquire_read_lock = fn(rwlock) {
-    if rwlock.writer {
-      { rwlock = rwlock, acquired = false }
-    } else {
-      { rwlock = { value = rwlock.value, readers = rwlock.readers + 1, writer = false }, acquired = true }
-    }
-  }
-  
-  let release_read_lock = fn(rwlock) {
-    { value = rwlock.value, readers = rwlock.readers - 1, writer = false }
-  }
-  
-  let acquire_write_lock = fn(rwlock) {
-    if rwlock.writer || rwlock.readers > 0 {
-      { rwlock = rwlock, acquired = false }
-    } else {
-      { rwlock = { value = rwlock.value, readers = 0, writer = true }, acquired = true }
-    }
-  }
-  
-  let release_write_lock = fn(rwlock) {
-    { value = rwlock.value, readers = 0, writer = false }
-  }
-  
-  let with_read_lock = fn(rwlock, operation) {
-    let lock_result = acquire_read_lock(rwlock)
-    if lock_result.acquired {
-      let result = operation(lock_result.rwlock.value)
-      let released_rwlock = release_read_lock(lock_result.rwlock)
-      { result = result, rwlock = released_rwlock, success = true }
-    } else {
-      { result = None, rwlock = rwlock, success = false }
-    }
-  }
-  
-  let with_write_lock = fn(rwlock, operation) {
-    let lock_result = acquire_write_lock(rwlock)
-    if lock_result.acquired {
-      let new_value = operation(lock_result.rwlock.value)
-      let updated_rwlock = { value = new_value, readers = 0, writer = true }
-      let released_rwlock = release_write_lock(updated_rwlock)
-      { result = new_value, rwlock = released_rwlock, success = true }
-    } else {
-      { result = None, rwlock = rwlock, success = false }
-    }
-  }
-  
-  // Test read-write lock operations
-  let rwlock = create_rwlock("initial_value")
-  
-  // Test read operations
-  let read_result = with_read_lock(rwlock, fn(value) {
-    value.length()
-  })
-  
-  assert_true(read_result.success)
-  match read_result.result {
-    None => assert_true(false)
-    Some(result) => assert_eq(result, 13)  // "initial_value".length()
-  }
-  
-  // Test write operations
-  let write_result = with_write_lock(rwlock, fn(value) {
-    value + "_modified"
-  })
-  
-  assert_true(write_result.success)
-  match write_result.result {
-    None => assert_true(false)
-    Some(result) => assert_eq(result, "initial_value_modified")
-  }
-  
-  // Test concurrent readers
-  let rwlock_with_readers = { value = "test", readers = 3, writer = false }
-  let failed_write = with_write_lock(rwlock_with_readers, fn(value) {
-    value + "_failed"
-  })
-  
-  assert_false(failed_write.success)
-  match failed_write.result {
-    None => assert_true(true)
-    Some(_) => assert_true(false)
-  }
-  
-  // Test with active writer
-  let rwlock_with_writer = { value = "test", readers = 0, writer = true }
-  let failed_read = with_read_lock(rwlock_with_writer, fn(value) {
-    value.length()
-  })
-  
-  assert_false(failed_read.success)
-  match failed_read.result {
-    None => assert_true(true)
-    Some(_) => assert_true(false)
-  }
-}
-
-// Test 5: Concurrent Queue Simulation
-test "concurrent queue simulation" {
-  // Simulate thread-safe queue
-  let create_queue = fn() {
-    { items = [], head = 0, tail = 0 }
-  }
-  
-  let enqueue = fn(queue, item) {
-    // Simulate thread-safe enqueue
-    { items = queue.items.push(item), head = queue.head, tail = queue.tail + 1 }
-  }
-  
-  let dequeue = fn(queue) {
-    // Simulate thread-safe dequeue
-    if queue.head < queue.tail {
-      let item = queue.items[queue.head]
-      { queue = { items = queue.items, head = queue.head + 1, tail = queue.tail }, item = Some(item) }
-    } else {
-      { queue = queue, item = None }
-    }
-  }
-  
-  let is_empty = fn(queue) {
-    queue.head >= queue.tail
-  }
-  
-  // Test queue operations
-  let queue = create_queue()
-  assert_true(is_empty(queue))
-  
-  let queue1 = enqueue(queue, "item1")
-  let queue2 = enqueue(queue1, "item2")
-  let queue3 = enqueue(queue2, "item3")
-  
-  assert_false(is_empty(queue3))
-  
-  let dequeue_result1 = dequeue(queue3)
-  match dequeue_result1.item {
-    None => assert_true(false)
-    Some(item) => assert_eq(item, "item1")
-  }
-  assert_false(is_empty(dequeue_result1.queue))
-  
-  let dequeue_result2 = dequeue(dequeue_result1.queue)
-  match dequeue_result2.item {
-    None => assert_true(false)
-    Some(item) => assert_eq(item, "item2")
-  }
-  assert_false(is_empty(dequeue_result2.queue))
-  
-  let dequeue_result3 = dequeue(dequeue_result2.queue)
-  match dequeue_result3.item {
-    None => assert_true(false)
-    Some(item) => assert_eq(item, "item3")
-  }
-  assert_true(is_empty(dequeue_result3.queue))
-  
-  let dequeue_result4 = dequeue(dequeue_result3.queue)
-  match dequeue_result4.item {
-    None => assert_true(true)
-    Some(_) => assert_true(false)
-  }
-}
-
-// Test 6: Concurrent Resource Pool
-test "concurrent resource pool" {
-  // Simulate thread-safe resource pool
-  let create_concurrent_pool = fn(resources) {
-    { available = resources, in_use = [] }
-  }
-  
-  let acquire_resource = fn(pool) {
-    // Simulate thread-safe resource acquisition
-    if pool.available.length() > 0 {
-      let resource = pool.available[0]
-      let remaining = pool.available.slice(1)
-      { 
-        pool = { 
-          available = remaining, 
-          in_use = pool.in_use.push(resource) 
-        }, 
-        resource = Some(resource) 
+  // 线程1: 更新计数器
+  let counter_updates = (0..thread_count).map(fn(thread_id) {
+    (0..operations_per_thread).map(fn(op_id) {
+      @azimuth.CounterUpdate {
+        name: "requests.total",
+        value: 1,
+        attributes: @azimuth.Attributes {
+          values: [
+            ("thread_id", @azimuth.StringValue(thread_id.to_string())),
+            ("operation", @azimuth.StringValue("update"))
+          ]
+        },
+        timestamp: @azimuth.Timestamp.now()
       }
-    } else {
-      { pool = pool, resource = None }
-    }
-  }
-  
-  let release_resource = fn(pool, resource) {
-    // Simulate thread-safe resource release
-    let new_in_use = []
-    for item in pool.in_use {
-      if item != resource {
-        new_in_use = new_in_use.push(item)
-      }
-    }
-    { 
-      available = pool.available.push(resource), 
-      in_use = new_in_use 
-    }
-  }
-  
-  // Test pool operations
-  let initial_resources = ["resource1", "resource2", "resource3"]
-  let pool = create_concurrent_pool(initial_resources)
-  
-  assert_eq(pool.available.length(), 3)
-  assert_eq(pool.in_use.length(), 0)
-  
-  // Acquire resources
-  let acquire_result1 = acquire_resource(pool)
-  match acquire_result1.resource {
-    None => assert_true(false)
-    Some(resource) => assert_eq(resource, "resource1")
-  }
-  assert_eq(acquire_result1.pool.available.length(), 2)
-  assert_eq(acquire_result1.pool.in_use.length(), 1)
-  
-  let acquire_result2 = acquire_resource(acquire_result1.pool)
-  match acquire_result2.resource {
-    None => assert_true(false)
-    Some(resource) => assert_eq(resource, "resource2")
-  }
-  assert_eq(acquire_result2.pool.available.length(), 1)
-  assert_eq(acquire_result2.pool.in_use.length(), 2)
-  
-  // Release resources
-  let released_pool1 = release_resource(acquire_result2.pool, "resource1")
-  assert_eq(released_pool1.available.length(), 2)
-  assert_eq(released_pool1.in_use.length(), 1)
-  
-  let released_pool2 = release_resource(released_pool1, "resource2")
-  assert_eq(released_pool2.available.length(), 3)
-  assert_eq(released_pool2.in_use.length(), 0)
-  
-  // Test resource exhaustion
-  let acquire_result3 = acquire_resource(released_pool2)
-  let acquire_result4 = acquire_resource(acquire_result3.pool)
-  let acquire_result5 = acquire_resource(acquire_result4.pool)
-  let acquire_result6 = acquire_resource(acquire_result5.pool)
-  
-  match acquire_result6.resource {
-    None => assert_true(true)  // Should be exhausted
-    Some(_) => assert_true(false)
-  }
-  assert_eq(acquire_result6.pool.available.length(), 0)
-  assert_eq(acquire_result6.pool.in_use.length(), 3)
-}
-
-// Test 7: Concurrent Metrics Collection
-test "concurrent metrics collection" {
-  // Simulate thread-safe metrics collection
-  let create_metrics_collector = fn() {
-    { counters = {}, gauges = {}, histograms = {} }
-  }
-  
-  let record_counter = fn(collector, name, value) {
-    // Simulate thread-safe counter recording
-    let current = match collector.counters.get(name) {
-      None => 0
-      Some(val) => val
-    }
-    let new_counters = collector.counters.with(name, current + value)
-    { counters = new_counters, gauges = collector.gauges, histograms = collector.histograms }
-  }
-  
-  let set_gauge = fn(collector, name, value) {
-    // Simulate thread-safe gauge setting
-    let new_gauges = collector.gauges.with(name, value)
-    { counters = collector.counters, gauges = new_gauges, histograms = collector.histograms }
-  }
-  
-  let get_counter = fn(collector, name) {
-    // Simulate thread-safe counter reading
-    match collector.counters.get(name) {
-      None => 0
-      Some(val) => val
-    }
-  }
-  
-  let get_gauge = fn(collector, name) {
-    // Simulate thread-safe gauge reading
-    match collector.gauges.get(name) {
-      None => 0.0
-      Some(val) => val
-    }
-  }
-  
-  // Test metrics collection
-  let collector = create_metrics_collector()
-  
-  let collector1 = record_counter(collector, "http.requests", 1)
-  let collector2 = record_counter(collector1, "http.requests", 1)
-  let collector3 = record_counter(collector2, "http.requests", 1)
-  
-  assert_eq(get_counter(collector3, "http.requests"), 3)
-  assert_eq(get_counter(collector3, "http.errors"), 0)
-  
-  let collector4 = set_gauge(collector3, "memory.usage", 1024.0)
-  let collector5 = set_gauge(collector4, "memory.usage", 2048.0)
-  
-  assert_eq(get_gauge(collector5, "memory.usage"), 2048.0)
-  assert_eq(get_gauge(collector5, "cpu.usage"), 0.0)
-  
-  // Test concurrent operations simulation
-  let simulate_concurrent_counter_updates = fn(initial_collector, metric_name, num_threads, increments_per_thread) {
-    // Simulate concurrent counter updates
-    let mut result_collector = initial_collector
-    for i in 0..<num_threads {
-      for j in 0..<increments_per_thread {
-        result_collector = record_counter(result_collector, metric_name, 1)
-      }
-    }
-    result_collector
-  }
-  
-  let concurrent_collector = simulate_concurrent_counter_updates(collector5, "concurrent.counter", 5, 10)
-  assert_eq(get_counter(concurrent_collector, "concurrent.counter"), 50)
-}
-
-// Test 8: Concurrent Span Operations
-test "concurrent span operations" {
-  // Simulate thread-safe span operations
-  let create_span_manager = fn() {
-    { active_spans = {}, next_span_id = 1 }
-  }
-  
-  let create_span = fn(manager, name, trace_id) {
-    // Simulate thread-safe span creation
-    let span_id = "span-" + manager.next_span_id.to_string()
-    let span = Span({
-      name = name,
-      kind = Server,
-      recording = true,
-      span_context = SpanContext({
-        trace_id = trace_id,
-        span_id = span_id,
-        sampled = true,
-        trace_state = ""
-      })
     })
-    let new_active_spans = manager.active_spans.with(span_id, span)
-    { 
-      active_spans = new_active_spans, 
-      next_span_id = manager.next_span_id + 1 
-    }
-  }
+  }).flatten()
   
-  let finish_span = fn(manager, span_id) {
-    // Simulate thread-safe span finishing
-    let new_active_spans = {}
-    for (id, span) in manager.active_spans {
-      if id != span_id {
-        new_active_spans = new_active_spans.with(id, span)
+  // 线程2: 更新仪表盘
+  let gauge_updates = (0..thread_count).map(fn(thread_id) {
+    (0..operations_per_thread).map(fn(op_id) {
+      @azimuth.GaugeUpdate {
+        name: "memory.usage",
+        value: thread_id.to_float() * 10.0 + op_id.to_float(),
+        attributes: @azimuth.Attributes {
+          values: [
+            ("thread_id", @azimuth.StringValue(thread_id.to_string())),
+            ("operation", @azimuth.StringValue("gauge"))
+          ]
+        },
+        timestamp: @azimuth.Timestamp.now()
       }
-    }
-    { active_spans = new_active_spans, next_span_id = manager.next_span_id }
-  }
+    })
+  }).flatten()
   
-  let get_active_span = fn(manager, span_id) {
-    // Simulate thread-safe span retrieval
-    match manager.active_spans.get(span_id) {
-      None => None
-      Some(span) => Some(span)
-    }
-  }
-  
-  let get_active_span_count = fn(manager) {
-    manager.active_spans.length()
-  }
-  
-  // Test span operations
-  let manager = create_span_manager()
-  assert_eq(get_active_span_count(manager), 0)
-  
-  let manager1 = create_span(manager, "span1", "trace-123")
-  assert_eq(get_active_span_count(manager1), 1)
-  
-  let manager2 = create_span(manager1, "span2", "trace-123")
-  assert_eq(get_active_span_count(manager2), 2)
-  
-  let manager3 = create_span(manager2, "span3", "trace-456")
-  assert_eq(get_active_span_count(manager3), 3)
-  
-  match get_active_span(manager3, "span-1") {
-    None => assert_true(false)
-    Some(span) => assert_eq(span.name, "span1")
-  }
-  
-  match get_active_span(manager3, "span-3") {
-    None => assert_true(false)
-    Some(span) => assert_eq(span.name, "span3")
-  }
-  
-  match get_active_span(manager3, "span-99") {
-    None => assert_true(true)
-    Some(_) => assert_true(false)
-  }
-  
-  let manager4 = finish_span(manager3, "span-2")
-  assert_eq(get_active_span_count(manager4), 2)
-  
-  match get_active_span(manager4, "span-2") {
-    None => assert_true(true)
-    Some(_) => assert_true(false)
-  }
-  
-  // Test concurrent span creation simulation
-  let simulate_concurrent_span_creation = fn(initial_manager, trace_id, num_threads, spans_per_thread) {
-    // Simulate concurrent span creation
-    let mut result_manager = initial_manager
-    for i in 0..<num_threads {
-      for j in 0..<spans_per_thread {
-        let span_name = "concurrent-span-" + i.to_string() + "-" + j.to_string()
-        result_manager = create_span(result_manager, span_name, trace_id)
+  // 线程3: 更新直方图
+  let histogram_updates = (0..thread_count).map(fn(thread_id) {
+    (0..operations_per_thread).map(fn(op_id) {
+      @azimuth.HistogramUpdate {
+        name: "response.time",
+        value: (thread_id * 100 + op_id).to_float(),
+        attributes: @azimuth.Attributes {
+          values: [
+            ("thread_id", @azimuth.StringValue(thread_id.to_string())),
+            ("operation", @azimuth.StringValue("histogram"))
+          ]
+        },
+        timestamp: @azimuth.Timestamp.now()
       }
+    })
+  }).flatten()
+  
+  // 验证更新数量
+  assert_eq(counter_updates.length(), thread_count * operations_per_thread)
+  assert_eq(gauge_updates.length(), thread_count * operations_per_thread)
+  assert_eq(histogram_updates.length(), thread_count * operations_per_thread)
+  
+  // 模拟并发处理计数器更新
+  let total_counter_value = counter_updates.reduce(fn(acc, update) {
+    acc + update.value
+  }, 0)
+  assert_eq(total_counter_value, thread_count * operations_per_thread)
+  
+  // 模拟并发处理仪表盘更新（最后一个值应该保留）
+  let gauge_groups = gauge_updates.group_by(fn(update) { update.name })
+  let final_gauge_values = gauge_groups.map_fn((name, updates) => {
+    let last_update = updates[updates.length() - 1]
+    (name, last_update.value)
+  })
+  
+  // 验证仪表盘最终值
+  match final_gauge_values.find(fn(pair) { pair.0 == "memory.usage" }) {
+    Some((_, value)) => {
+      // 最后一个更新应该来自最后一个线程的最后一个操作
+      let expected_value = (thread_count - 1).to_float() * 10.0 + (operations_per_thread - 1).to_float()
+      assert_eq(value, expected_value)
     }
-    result_manager
+    None => assert_true(false)
   }
   
-  let concurrent_manager = simulate_concurrent_span_creation(manager4, "concurrent-trace", 3, 5)
-  assert_eq(get_active_span_count(concurrent_manager), 17)  // 2 remaining + 15 new
-}
-
-// Test 9: Concurrent Context Propagation
-test "concurrent context propagation" {
-  // Simulate thread-safe context propagation
-  let create_context = fn(trace_id, baggage) {
-    { trace_id = trace_id, baggage = baggage }
-  }
+  // 模拟并发处理直方图更新
+  let histogram_groups = histogram_updates.group_by(fn(update) { update.name })
+  let histogram_data = histogram_groups.map_fn((name, updates) => {
+    let values = updates.map(fn(update) { update.value })
+    let count = values.length()
+    let sum = values.reduce(fn(acc, value) { acc + value }, 0.0)
+    let avg = sum / count.to_float()
+    
+    // 计算分位数
+    let sorted_values = values.sort(fn(a, b) { if a < b { -1 } else if a > b { 1 } else { 0 } })
+    let p50 = sorted_values[sorted_values.length() / 2]
+    let p95 = sorted_values[(sorted_values.length() * 95 / 100).min(sorted_values.length() - 1)]
+    let p99 = sorted_values[(sorted_values.length() * 99 / 100).min(sorted_values.length() - 1)]
+    
+    (name, @azimuth.HistogramData {
+      count: count,
+      sum: sum,
+      avg: avg,
+      p50: p50,
+      p95: p95,
+      p99: p99
+    })
+  })
   
-  let add_baggage_item = fn(context, key, value) {
-    // Simulate thread-safe baggage addition
-    let new_baggage = context.baggage.with(key, value)
-    { trace_id = context.trace_id, baggage = new_baggage }
-  }
-  
-  let get_baggage_item = fn(context, key) {
-    // Simulate thread-safe baggage retrieval
-    match context.baggage.get(key) {
-      None => None
-      Some(value) => Some(value)
+  // 验证直方图统计
+  match histogram_data.find_fn((name, _) { name == "response.time" }) {
+    Some((_, data)) => {
+      assert_eq(data.count, thread_count * operations_per_thread)
+      assert_eq(data.avg, (thread_count * operations_per_thread - 1).to_float() / 2.0) // 平均值应该是中间值
+      assert_eq(data.p50, (thread_count * operations_per_thread / 2).to_float())
     }
-  }
-  
-  let copy_context = fn(context) {
-    // Simulate thread-safe context copying
-    { trace_id = context.trace_id, baggage = context.baggage }
-  }
-  
-  // Test context operations
-  let initial_baggage = {}
-  let context = create_context("trace-123", initial_baggage)
-  
-  let context1 = add_baggage_item(context, "user.id", "12345")
-  let context2 = add_baggage_item(context1, "request.id", "req-67890")
-  let context3 = add_baggage_item(context2, "session.id", "sess-abc")
-  
-  match get_baggage_item(context3, "user.id") {
     None => assert_true(false)
-    Some(value) => assert_eq(value, "12345")
-  }
-  
-  match get_baggage_item(context3, "request.id") {
-    None => assert_true(false)
-    Some(value) => assert_eq(value, "req-67890")
-  }
-  
-  match get_baggage_item(context3, "session.id") {
-    None => assert_true(false)
-    Some(value) => assert_eq(value, "sess-abc")
-  }
-  
-  match get_baggage_item(context3, "nonexistent") {
-    None => assert_true(true)
-    Some(_) => assert_true(false)
-  }
-  
-  // Test context isolation
-  let context_copy = copy_context(context3)
-  let context4 = add_baggage_item(context_copy, "new.item", "new.value")
-  
-  // Original context should not have the new item
-  match get_baggage_item(context3, "new.item") {
-    None => assert_true(true)
-    Some(_) => assert_true(false)
-  }
-  
-  // Copied context should have the new item
-  match get_baggage_item(context4, "new.item") {
-    None => assert_true(false)
-    Some(value) => assert_eq(value, "new.value")
-  }
-  
-  // Test concurrent context modification simulation
-  let simulate_concurrent_context_modification = fn(initial_context, num_threads, items_per_thread) {
-    // Simulate concurrent context modifications
-    let mut result_context = initial_context
-    for i in 0..<num_threads {
-      for j in 0..<items_per_thread {
-        let key = "thread-" + i.to_string() + "-item-" + j.to_string()
-        let value = "value-" + i.to_string() + "-" + j.to_string()
-        result_context = add_baggage_item(result_context, key, value)
-      }
-    }
-    result_context
-  }
-  
-  let concurrent_context = simulate_concurrent_context_modification(context3, 3, 4)
-  
-  // Check that original items are still present
-  match get_baggage_item(concurrent_context, "user.id") {
-    None => assert_true(false)
-    Some(value) => assert_eq(value, "12345")
-  }
-  
-  // Check that new items are present
-  match get_baggage_item(concurrent_context, "thread-1-item-2") {
-    None => assert_true(false)
-    Some(value) => assert_eq(value, "value-1-2")
   }
 }
 
-// Test 10: Race Condition Prevention
-test "race condition prevention" {
-  // Simulate race condition scenarios and prevention
+test "并发追踪上下文传播安全性" {
+  // 创建线程安全的追踪上下文管理器
+  let context_manager = @azimuth.ConcurrentContextManager {
+    active_contexts: @azimuth.ConcurrentMap.new(),
+    context_propagator: @azimuth.ThreadSafeContextPropagator.new(),
+    lock: @azimuth.RwLock.new()
+  }
   
-  // Test 1: Check-then-act race condition
-  let shared_resource = { value = 0, in_use = false }
-  
-  let unsafe_increment = fn(resource) {
-    // Unsafe: check-then-act
-    if !resource.in_use {
-      let updated_resource = { value = resource.value + 1, in_use = true }
-      // Simulate some work
-      updated_resource
-    } else {
-      resource
+  // 创建根追踪上下文
+  let root_context = @azimuth.TraceContext {
+    trace_id: @azimuth.TraceId("1234567890abcdef1234567890abcdef"),
+    span_id: @azimuth.SpanId("1111111111111111"),
+    sampled: true,
+    baggage: @azimuth.Baggage {
+      entries: [
+        ("user.id", "user-123"),
+        ("request.id", "req-456"),
+        ("session.id", "sess-789")
+      ]
     }
   }
   
-  let safe_increment = fn(resource) {
-    // Safe: atomic operation
-    { value = resource.value + 1, in_use = resource.in_use }
+  // 模拟并发创建子Span
+  let concurrent_spans = (0..8).map(fn(thread_id) {
+    let child_span_id = @azimuth.SpanId((2000000000000000 + thread_id).to_string())
+    @azimuth.Span {
+      context: @azimuth.TraceContext {
+        trace_id: root_context.trace_id,
+        span_id: child_span_id,
+        sampled: root_context.sampleed,
+        baggage: root_context.baggage
+      },
+      parent_span_id: Some(root_context.span_id),
+      name: "concurrent.operation." + thread_id.to_string(),
+      kind: @azimuth.SpanKind.Internal,
+      start_time: @azimuth.Timestamp.now(),
+      end_time: Some(@azimuth.Timestamp.now() + 1000),
+      status: @azimuth.SpanStatus.Ok,
+      attributes: @azimuth.Attributes {
+        values: [
+          ("thread.id", @azimuth.StringValue(thread_id.to_string())),
+          ("worker.type", @azimuth.StringValue("concurrent"))
+        ]
+      },
+      events: [],
+      links: []
+    }
+  })
+  
+  // 验证并发Span创建
+  assert_eq(concurrent_spans.length(), 8)
+  
+  // 验证所有Span共享相同的TraceId
+  for span in concurrent_spans {
+    assert_eq(span.context.trace_id, root_context.trace_id)
+    assert_eq(span.context.sampled, root_context.sampleed)
+    assert_eq(span.context.baggage.entries.length(), root_context.baggage.entries.length())
   }
   
-  // Test safe operation
-  let resource1 = safe_increment(shared_resource)
-  assert_eq(resource1.value, 1)
+  // 验证每个Span都有唯一的SpanId
+  let span_ids = concurrent_spans.map(fn(span) { span.context.span_id })
+  let unique_span_ids = span_ids.unique()
+  assert_eq(unique_span_ids.length(), span_ids.length())
   
-  let resource2 = safe_increment(resource1)
-  assert_eq(resource2.value, 2)
-  
-  // Test 2: Lost update race condition
-  let counter = { value = 0 }
-  
-  let unsafe_update = fn(counter, increment) {
-    // Unsafe: read-modify-write
-    let current = counter.value
-    let new_value = current + increment
-    { value = new_value }
-  }
-  
-  let safe_update = fn(counter, increment) {
-    // Safe: atomic update
-    { value = counter.value + increment }
-  }
-  
-  // Test safe update
-  let counter1 = safe_update(counter, 5)
-  assert_eq(counter1.value, 5)
-  
-  let counter2 = safe_update(counter1, 3)
-  assert_eq(counter2.value, 8)
-  
-  // Test 3: ABA problem prevention
-  let node = { value = "A", next = None }
-  
-  let unsafe_compare_and_swap = fn(node, expected, new_value) {
-    // Unsafe: vulnerable to ABA problem
-    if node.value == expected {
-      { value = new_value, next = node.next }
-    } else {
-      node
+  // 验证父子关系
+  for span in concurrent_spans {
+    match span.parent_span_id {
+      Some(id) => assert_eq(id, root_context.span_id)
+      None => assert_true(false)
     }
   }
   
-  let safe_compare_and_swap = fn(node, expected, new_value, version) {
-    // Safe: includes version check
-    if node.value == expected && version == 1 {
-      { value = new_value, next = node.next, version = version + 1 }
+  // 模拟并发Baggage更新
+  let updated_spans = concurrent_spans.map_fn(span => {
+    let updated_baggage = @azimuth.Baggage {
+      entries: span.context.baggage.entries + [
+        ("thread.local.data", "value-" + span.attributes.values[0].1.to_string())
+      ]
+    }
+    
+    @azimuth.Span {
+      context: @azimuth.TraceContext {
+        trace_id: span.context.trace_id,
+        span_id: span.context.span_id,
+        sampled: span.context.sampleed,
+        baggage: updated_baggage
+      },
+      parent_span_id: span.parent_span_id,
+      name: span.name,
+      kind: span.kind,
+      start_time: span.start_time,
+      end_time: span.end_time,
+      status: span.status,
+      attributes: span.attributes,
+      events: span.events,
+      links: span.links
+    }
+  })
+  
+  // 验证Baggage更新
+  for span in updated_spans {
+    assert_eq(span.context.baggage.entries.length(), 4) // 原来的3个 + 新增的1个
+    
+    // 验证原有的Baggage项仍然存在
+    let user_id = span.context.baggage.entries.find_fn(entry => entry.0 == "user.id")
+    let request_id = span.context.baggage.entries.find_fn(entry => entry.0 == "request.id")
+    let session_id = span.context.baggage.entries.find_fn(entry => entry.0 == "session.id")
+    let thread_data = span.context.baggage.entries.find_fn(entry => entry.0 == "thread.local.data")
+    
+    assert_true(user_id.is_some())
+    assert_true(request_id.is_some())
+    assert_true(session_id.is_some())
+    assert_true(thread_data.is_some())
+  }
+  
+  // 验证每个Span都有唯一的线程本地数据
+  let thread_data_values = updated_spans.map(fn(span) {
+    match span.context.baggage.entries.find_fn(entry => entry.0 == "thread.local.data") {
+      Some((_, value)) => value
+      None => ""
+    }
+  })
+  let unique_thread_data = thread_data_values.unique()
+  assert_eq(unique_thread_data.length(), thread_data_values.length())
+}
+
+test "并发日志记录安全性" {
+  // 创建线程安全的日志记录器
+  let logger = @azimuth.ConcurrentLogger {
+    buffer: @azimuth.ConcurrentRingBuffer.new(10000),
+    writers: @azimuth.AtomicReference.new(@azimuth.List.new()),
+    min_level: @azimuth.LogSeverity.Info,
+    lock: @azimuth.Mutex.new()
+  }
+  
+  // 模拟并发日志记录
+  let thread_count = 5
+  let logs_per_thread = 200
+  
+  let concurrent_logs = (0..thread_count).map(fn(thread_id) {
+    (0..logs_per_thread).map(fn(log_id) {
+      let severity = match log_id % 5 {
+        0 => @azimuth.LogSeverity.Trace
+        1 => @azimuth.LogSeverity.Debug
+        2 => @azimuth.LogSeverity.Info
+        3 => @azimuth.LogSeverity.Warn
+        4 => @azimuth.LogSeverity.Error
+        _ => @azimuth.LogSeverity.Info
+      }
+      
+      @azimuth.LogRecord {
+        timestamp: @azimuth.Timestamp.now(),
+        severity: severity,
+        body: @azimuth.StringValue("Log message from thread " + thread_id.to_string() + " #" + log_id.to_string()),
+        resource: @azimuth.Resource {
+          attributes: @azimuth.Attributes {
+            values: [
+              ("service.name", @azimuth.StringValue("azimuth-service")),
+              ("service.version", @azimuth.StringValue("1.0.0")),
+              ("thread.id", @azimuth.StringValue(thread_id.to_string()))
+            ]
+          }
+        },
+        instrumentation_scope: @azimuth.InstrumentationScope {
+          name: "azimuth.concurrent.logger",
+          version: "1.0.0"
+        },
+        attributes: @azimuth.Attributes {
+          values: [
+            ("log.id", @azimuth.StringValue((thread_id * logs_per_thread + log_id).to_string())),
+            ("thread.pool", @azimuth.StringValue("worker"))
+          ]
+        },
+        trace_id: None,
+        span_id: None,
+        flags: 0
+      }
+    })
+  }).flatten()
+  
+  // 验证日志数量
+  assert_eq(concurrent_logs.length(), thread_count * logs_per_thread)
+  
+  // 按严重性分组日志
+  let logs_by_severity = concurrent_logs.group_by(fn(log) { log.severity })
+  
+  // 验证每种严重性的日志数量
+  let trace_logs = logs_by_severity.get(@azimuth.LogSeverity.Trace).unwrap_or(@azimuth.List.new())
+  let debug_logs = logs_by_severity.get(@azimuth.LogSeverity.Debug).unwrap_or(@azimuth.List.new())
+  let info_logs = logs_by_severity.get(@azimuth.LogSeverity.Info).unwrap_or(@azimuth.List.new())
+  let warn_logs = logs_by_severity.get(@azimuth.LogSeverity.Warn).unwrap_or(@azimuth.List.new())
+  let error_logs = logs_by_severity.get(@azimuth.LogSeverity.Error).unwrap_or(@azimuth.List.new())
+  
+  // 每种严重性应该有大约相同数量的日志
+  assert_eq(trace_logs.length(), thread_count * logs_per_thread / 5)
+  assert_eq(debug_logs.length(), thread_count * logs_per_thread / 5)
+  assert_eq(info_logs.length(), thread_count * logs_per_thread / 5)
+  assert_eq(warn_logs.length(), thread_count * logs_per_thread / 5)
+  assert_eq(error_logs.length(), thread_count * logs_per_thread / 5)
+  
+  // 按线程ID分组日志
+  let logs_by_thread = concurrent_logs.group_by(fn(log) {
+    match log.resource.attributes.values.find_fn(attr => attr.0 == "thread.id") {
+      Some((_, @azimuth.StringValue(thread_id))) => thread_id
+      _ => "unknown"
+    }
+  })
+  
+  // 验证每个线程的日志数量
+  for thread_id in (0..thread_count) {
+    let thread_logs = logs_by_thread.get(thread_id.to_string()).unwrap_or(@azimuth.List.new())
+    assert_eq(thread_logs.length(), logs_per_thread)
+  }
+  
+  // 验证日志ID的唯一性
+  let log_ids = concurrent_logs.map(fn(log) {
+    match log.attributes.values.find_fn(attr => attr.0 == "log.id") {
+      Some((_, @azimuth.StringValue(log_id))) => log_id
+      _ => ""
+    }
+  })
+  let unique_log_ids = log_ids.unique()
+  assert_eq(unique_log_ids.length(), log_ids.length())
+  
+  // 模拟并发日志处理（按时间戳排序）
+  let sorted_logs = concurrent_logs.sort(fn(a, b) {
+    if a.timestamp < b.timestamp { -1 } 
+    else if a.timestamp > b.timestamp { 1 } 
+    else { 0 }
+  })
+  
+  // 验证排序结果
+  for i in (1..sorted_logs.length()) {
+    assert_true(sorted_logs[i-1].timestamp <= sorted_logs[i].timestamp)
+  }
+  
+  // 模拟并发日志过滤（按最小级别）
+  let filtered_logs = concurrent_logs.filter(fn(log) {
+    match log.severity {
+      @azimuth.LogSeverity.Trace => false
+      @azimuth.LogSeverity.Debug => false
+      @azimuth.LogSeverity.Info => true
+      @azimuth.LogSeverity.Warn => true
+      @azimuth.LogSeverity.Error => true
+      @azimuth.LogSeverity.Fatal => true
+    }
+  })
+  
+  // 验证过滤结果（应该排除Trace和Debug级别的日志）
+  assert_eq(filtered_logs.length(), thread_count * logs_per_thread * 3 / 5)
+}
+
+test "并发资源管理安全性" {
+  // 创建线程安全的资源池
+  let resource_pool = @azimuth.ConcurrentResourcePool {
+    resources: @azimuth.ConcurrentQueue.new(),
+    allocated_resources: @azimuth.AtomicCounter.new(0),
+    total_resources: @azimuth.AtomicCounter.new(0),
+    max_resources: 20,
+    min_resources: 5,
+    condition: @azimuth.ConditionVariable.new(),
+    mutex: @azimuth.Mutex.new()
+  }
+  
+  // 初始化资源池
+  let initial_resources = (0..10).map(fn(i) {
+    @azimuth.PooledResource {
+      id: "resource-" + i.to_string(),
+      type: "database.connection",
+      created_at: @azimuth.Timestamp.now(),
+      last_used: @azimuth.Timestamp.now(),
+      in_use: false,
+      use_count: 0
+    }
+  })
+  
+  // 模拟并发资源分配
+  let thread_count = 15
+  let allocation_requests = (0..thread_count).map(fn(thread_id) {
+    @azimuth.ResourceAllocationRequest {
+      request_id: "req-" + thread_id.to_string(),
+      resource_type: "database.connection",
+      timeout_ms: 5000,
+      thread_id: thread_id,
+      timestamp: @azimuth.Timestamp.now()
+    }
+  })
+  
+  // 模拟资源分配过程
+  let mut allocation_results = @azimuth.List.new()
+  let mut available_resources = initial_resources
+  
+  for request in allocation_requests {
+    if available_resources.length() > 0 {
+      // 分配资源
+      let resource = available_resources[0]
+      available_resources = available_resources.slice(1, available_resources.length())
+      
+      let allocated_resource = @azimuth.PooledResource {
+        id: resource.id,
+        type: resource.type,
+        created_at: resource.created_at,
+        last_used: request.timestamp,
+        in_use: true,
+        use_count: resource.use_count + 1
+      }
+      
+      allocation_results = allocation_results + [@azimuth.ResourceAllocationResult {
+        request_id: request.request_id,
+        success: true,
+        resource: Some(allocated_resource),
+        wait_time_ms: 0,
+        timestamp: request.timestamp
+      }]
     } else {
-      { value = node.value, next = node.next, version = version }
+      // 资源不足
+      allocation_results = allocation_results + [@azimuth.ResourceAllocationResult {
+        request_id: request.request_id,
+        success: false,
+        resource: None,
+        wait_time_ms: request.timeout_ms,
+        timestamp: request.timestamp
+      }]
     }
   }
   
-  // Test safe CAS
-  let node1 = { value = "A", next = None, version = 1 }
-  let node2 = safe_compare_and_swap(node1, "A", "B", 1)
-  assert_eq(node2.value, "B")
-  assert_eq(node2.version, 2)
+  // 验证分配结果
+  let successful_allocations = allocation_results.filter(fn(result) { result.success })
+  let failed_allocations = allocation_results.filter(fn(result) { !result.success })
   
-  let node3 = safe_compare_and_swap(node2, "A", "C", 1)  // Should fail
-  assert_eq(node3.value, "B")  // Should remain unchanged
-  assert_eq(node3.version, 2)  // Should remain unchanged
+  assert_eq(successful_allocations.length(), 10) // 只有10个资源可用
+  assert_eq(failed_allocations.length(), 5) // 5个请求失败
   
-  // Test 4: Deadlock prevention
-  let create_ordered_locks = fn() {
-    { lock1 = { id = 1, locked = false }, lock2 = { id = 2, locked = false } }
-  }
-  
-  let acquire_ordered = fn(locks, lock_id) {
-    // Always acquire locks in the same order to prevent deadlock
-    if lock_id == 1 && !locks.lock1.locked {
-      { lock1 = { id = 1, locked = true }, lock2 = locks.lock2 }
-    } else if lock_id == 2 && !locks.lock1.locked && !locks.lock2.locked {
-      { lock1 = locks.lock1, lock2 = { id = 2, locked = true } }
-    } else {
-      locks
+  // 验证分配的资源
+  for allocation in successful_allocations {
+    assert_true(allocation.resource.is_some())
+    match allocation.resource {
+      Some(resource) => {
+        assert_true(resource.in_use)
+        assert_eq(resource.use_count, 1) // 每个资源只使用一次
+      }
+      None => assert_true(false)
     }
   }
   
-  let release_ordered = fn(locks, lock_id) {
-    if lock_id == 1 {
-      { lock1 = { id = 1, locked = false }, lock2 = locks.lock2 }
-    } else if lock_id == 2 {
-      { lock1 = locks.lock1, lock2 = { id = 2, locked = false } }
-    } else {
-      locks
+  // 模拟并发资源释放
+  let release_requests = successful_allocations.map(fn(allocation) {
+    match allocation.resource {
+      Some(resource) => {
+        @azimuth.ResourceReleaseRequest {
+          resource_id: resource.id,
+          thread_id: allocation.request_id.split("-")[1].to_int(),
+          timestamp: @azimuth.Timestamp.now()
+        }
+      }
+      None => {
+        @azimuth.ResourceReleaseRequest {
+          resource_id: "",
+          thread_id: 0,
+          timestamp: @azimuth.Timestamp.now()
+        }
+      }
+    }
+  })
+  
+  // 模拟资源释放过程
+  let mut release_results = @azimuth.List.new()
+  let mut released_resources = @azimuth.List.new()
+  
+  for request in release_requests {
+    let resource = successful_allocations.find_fn(allocation => {
+      match allocation.resource {
+        Some(r) => r.id == request.resource_id
+        None => false
+      }
+    })
+    
+    match resource {
+      Some(allocation) => {
+      match allocation.resource {
+        Some(r) => {
+          let released_resource = @azimuth.PooledResource {
+            id: r.id,
+            type: r.type,
+            created_at: r.created_at,
+            last_used: request.timestamp,
+            in_use: false,
+            use_count: r.use_count
+          }
+          
+          released_resources = released_resources + [released_resource]
+          release_results = release_results + [@azimuth.ResourceReleaseResult {
+            request_id: request.resource_id,
+            success: true,
+            timestamp: request.timestamp
+          }]
+        }
+        None => {
+          release_results = release_results + [@azimuth.ResourceReleaseResult {
+            request_id: request.resource_id,
+            success: false,
+            timestamp: request.timestamp
+          }]
+        }
+      }
+    }
+    None => {
+      release_results = release_results + [@azimuth.ResourceReleaseResult {
+        request_id: request.resource_id,
+        success: false,
+        timestamp: request.timestamp
+      }]
     }
   }
   
-  // Test ordered lock acquisition
-  let locks = create_ordered_locks()
-  let locks1 = acquire_ordered(locks, 1)
-  assert_true(locks1.lock1.locked)
-  assert_false(locks1.lock2.locked)
+  // 验证释放结果
+  let successful_releases = release_results.filter(fn(result) { result.success })
+  assert_eq(successful_releases.length(), 10) // 所有分配的资源都应该成功释放
+  assert_eq(released_resources.length(), 10)
   
-  let locks2 = acquire_ordered(locks1, 2)
-  assert_true(locks2.lock1.locked)
-  assert_true(locks2.lock2.locked)
+  // 验证释放的资源状态
+  for resource in released_resources {
+    assert_false(resource.in_use)
+    assert_eq(resource.use_count, 1) // 使用次数保持不变
+  }
   
-  let locks3 = release_ordered(locks2, 1)
-  assert_false(locks3.lock1.locked)
-  assert_true(locks3.lock2.locked)
-  
-  let locks4 = release_ordered(locks3, 2)
-  assert_false(locks4.lock1.locked)
-  assert_false(locks4.lock2.locked)
+  // 验证资源池状态
+  assert_eq(released_resources.length(), initial_resources.length()) // 所有资源都释放回池中
 }
