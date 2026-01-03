@@ -586,6 +586,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_memory_leak_detection_resource_cleanup_tests.mbt": {
   },
+  "azimuth_machine_learning_integration_tests.mbt": {
+  },
   "azimuth_logging_telemetry_tests.mbt": {
   },
   "azimuth_logging_correlation_tests.mbt": {
@@ -713,6 +715,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_error_boundary_handling_tests.mbt": {
   },
   "azimuth_error_boundary_condition_tests.mbt": {
+  },
+  "azimuth_environmental_monitoring_tests.mbt": {
   },
   "azimuth_enhanced_test_suite.mbt": {
   },
