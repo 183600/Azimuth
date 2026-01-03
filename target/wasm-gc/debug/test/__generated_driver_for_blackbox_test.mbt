@@ -100,6 +100,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_time_series_data_analysis_tests.mbt": {
   },
+  "azimuth_time_series_data_analysis_high_quality_tests.mbt": {
+  },
   "azimuth_time_series_data_aggregation_tests.mbt": {
   },
   "azimuth_time_series_compression_tests.mbt": {
@@ -168,6 +170,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_telemetry_data_quality_assurance_tests.mbt": {
   },
+  "azimuth_telemetry_data_quality_assurance_high_quality_tests.mbt": {
+  },
   "azimuth_telemetry_data_processing_tests.mbt": {
   },
   "azimuth_telemetry_data_persistence_tests.mbt": {
@@ -181,6 +185,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_telemetry_data_filtering_transformation_tests.mbt": {
   },
   "azimuth_telemetry_data_compression_optimization_tests.mbt": {
+  },
+  "azimuth_telemetry_data_compression_high_quality_tests.mbt": {
   },
   "azimuth_telemetry_data_compression_advanced_tests.mbt": {
   },
@@ -284,6 +290,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_serialization_deserialization_tests.mbt": {
   },
+  "azimuth_serialization_deserialization_integrity_tests.mbt": {
+  },
   "azimuth_serialization_deserialization_enhanced_tests.mbt": {
   },
   "azimuth_serialization_deserialization_advanced_tests.mbt": {
@@ -357,6 +365,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_realtime_stream_telemetry_tests.mbt": {
   },
   "azimuth_realtime_stream_processing_tests.mbt": {
+  },
+  "azimuth_realtime_stream_processing_high_quality_tests.mbt": {
   },
   "azimuth_realtime_stream_processing_advanced_tests.mbt": {
   },
@@ -462,6 +472,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_performance_benchmark_tests.mbt": {
   },
+  "azimuth_performance_benchmark_resource_tests.mbt": {
+  },
   "azimuth_performance_benchmark_resource_limits_tests.mbt": {
   },
   "azimuth_performance_benchmark_comprehensive_tests.mbt": {
@@ -559,6 +571,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_multi_tenant_isolation_tests.mbt": {
   },
   "azimuth_multi_tenant_isolation_security_tests.mbt": {
+  },
+  "azimuth_multi_tenant_isolation_high_quality_tests.mbt": {
   },
   "azimuth_multi_tenant_isolation_comprehensive_tests.mbt": {
   },
@@ -738,6 +752,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_exception_boundary_recovery_tests.mbt": {
   },
+  "azimuth_exception_boundary_handling_recovery_tests.mbt": {
+  },
   "azimuth_event_handling_comprehensive_tests.mbt": {
   },
   "azimuth_essential_tests.mbt": {
@@ -747,6 +763,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_error_recovery_resilience_tests.mbt": {
   },
   "azimuth_error_recovery_mechanism_tests.mbt": {
+  },
+  "azimuth_error_recovery_mechanism_high_quality_tests.mbt": {
   },
   "azimuth_error_recovery_enhanced_tests.mbt": {
   },
@@ -868,7 +886,11 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_distributed_tracing_context_propagation_tests.mbt": {
   },
+  "azimuth_distributed_tracing_consistency_validation_tests.mbt": {
+  },
   "azimuth_distributed_tracing_consistency_tests.mbt": {
+  },
+  "azimuth_distributed_tracing_consistency_high_quality_tests.mbt": {
   },
   "azimuth_distributed_tracing_consistency_enhanced_tests.mbt": {
   },
@@ -1205,6 +1227,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_additional_advanced_features_tests.mbt": {
   },
   "azimuth_adaptive_sampling_strategy_tests.mbt": {
+  },
+  "azimuth_adaptive_sampling_strategy_high_quality_tests.mbt": {
   },
   "azimuth_adaptive_performance_tuning_tests.mbt": {
   },
