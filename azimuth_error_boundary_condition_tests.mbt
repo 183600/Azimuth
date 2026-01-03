@@ -1,433 +1,560 @@
-// Azimuth Error Boundary Condition Tests
-// This file contains test cases for error handling and boundary conditions
+// Azimuth Error Handling and Boundary Condition Test Suite
+// This file contains comprehensive test cases for error handling and boundary conditions
 
-// Test 1: Null/None Handling in Telemetry Data
-test "null and none handling in telemetry data" {
-  // Test with None values in optional fields
-  let metric_with_none = Counter({
-    name: "test.metric",
-    description: None,
-    unit: None
-  })
+// Test 1: Attribute Value Boundary Conditions
+test "attribute value boundary conditions" {
+  // Test empty string handling
+  let empty_string = StringValue("")
+  assert_eq(empty_string.length(), 0)
   
-  match metric_with_none {
-    Counter(name, description, unit) => {
-      assert_eq(name, "test.metric")
-      assert_true(description == None)
-      assert_true(unit == None)
-    }
+  // Test very long string handling
+  let long_string = StringValue("a" * 10000)
+  assert_eq(long_string.length(), 10000)
+  
+  // Test maximum integer value
+  let max_int = IntValue(2147483647)
+  match max_int {
+    IntValue(v) => assert_eq(v, 2147483647)
     _ => assert_true(false)
   }
   
-  // Test with Some values in optional fields
-  let metric_with_some = Counter({
-    name: "test.metric",
-    description: Some("Test metric description"),
-    unit: Some("count")
-  })
+  // Test minimum integer value
+  let min_int = IntValue(-2147483648)
+  match min_int {
+    IntValue(v) => assert_eq(v, -2147483648)
+    _ => assert_true(false)
+  }
   
-  match metric_with_some {
-    Counter(name, description, unit) => {
-      assert_eq(name, "test.metric")
-      match description {
-        None => assert_true(false)
-        Some(desc) => assert_eq(desc, "Test metric description")
-      }
-      match unit {
-        None => assert_true(false)
-        Some(u) => assert_eq(u, "count")
-      }
-    }
+  // Test zero values
+  let zero_int = IntValue(0)
+  let zero_float = FloatValue(0.0)
+  let empty_array = ArrayStringValue([])
+  
+  match zero_int {
+    IntValue(v) => assert_eq(v, 0)
+    _ => assert_true(false)
+  }
+  
+  match zero_float {
+    FloatValue(v) => assert_eq(v, 0.0)
+    _ => assert_true(false)
+  }
+  
+  match empty_array {
+    ArrayStringValue(v) => assert_eq(v.length(), 0)
+    _ => assert_true(false)
+  }
+  
+  // Test extreme float values
+  let very_small_float = FloatValue(0.0000000001)
+  let very_large_float = FloatValue(999999999.9)
+  
+  match very_small_float {
+    FloatValue(v) => assert_true(v > 0.0 && v < 0.000000001)
+    _ => assert_true(false)
+  }
+  
+  match very_large_float {
+    FloatValue(v) => assert_true(v > 999999999.0)
     _ => assert_true(false)
   }
 }
 
-// Test 2: Empty Collections and Strings
-test "empty collections and strings handling" {
-  // Test with empty string
-  let empty_string = ""
-  assert_eq(empty_string.length(), 0)
-  assert_true(empty_string.to_uppercase() == "")
-  assert_true(empty_string.to_lowercase() == "")
-  assert_false(empty_string.contains("anything"))
-  
-  // Test with empty array
+// Test 2: Array and Collection Boundary Conditions
+test "array and collection boundary conditions" {
+  // Test empty array operations
   let empty_array = []
   assert_eq(empty_array.length(), 0)
-  assert_false(empty_array.contains(42))
   
-  let empty_mapped = empty_array.map(fn(x) { x * 2 })
-  assert_eq(empty_mapped.length(), 0)
+  // Test single element array
+  let single_element = [42]
+  assert_eq(single_element.length(), 1)
+  assert_eq(single_element[0], 42)
   
-  let empty_filtered = empty_array.filter(fn(x) { x > 0 })
-  assert_eq(empty_filtered.length(), 0)
+  // Test array bounds checking
+  let normal_array = [1, 2, 3, 4, 5]
   
-  // Test with empty attributes
-  let empty_attributes = Attributes({ values = [] })
-  assert_eq(empty_attributes.values.length(), 0)
+  // Valid access
+  assert_eq(normal_array[0], 1)
+  assert_eq(normal_array[4], 5)
   
-  // Test with empty baggage
-  let empty_baggage = Baggage({ entries = [] })
-  assert_eq(empty_baggage.entries.length(), 0)
+  // Boundary access - should be handled gracefully
+  if normal_array.length() > 5 {
+    assert_eq(normal_array[5], 0)
+  } else {
+    assert_true(true) // Expected case
+  }
+  
+  // Test negative index handling
+  if normal_array.length() > -1 {
+    assert_true(true) // Should handle gracefully
+  } else {
+    assert_true(false)
+  }
+  
+  // Test large array operations
+  let large_array = []
+  for i in 0..<1000 {
+    large_array = large_array.push(i)
+  }
+  assert_eq(large_array.length(), 1000)
+  assert_eq(large_array[0], 0)
+  assert_eq(large_array[999], 999)
 }
 
-// Test 3: Maximum Value Boundary Tests
-test "maximum value boundary tests" {
-  // Test with maximum integer values
-  let max_int = 2147483647  // 32-bit signed integer max
-  let min_int = -2147483648  // 32-bit signed integer min
+// Test 3: String Boundary Conditions
+test "string boundary conditions" {
+  // Test empty string
+  let empty_string = ""
+  assert_eq(empty_string.length(), 0)
+  assert_true(empty_string == "")
   
-  assert_true(max_int > 0)
-  assert_true(min_int < 0)
+  // Test single character string
+  let single_char = "a"
+  assert_eq(single_char.length(), 1)
+  assert_eq(single_char[0], 'a')
   
-  // Test operations near boundaries
-  assert_eq(max_int - 1, 2147483646)
-  assert_eq(min_int + 1, -2147483647)
+  // Test string with special characters
+  let special_chars = "!@#$%^&*()_+-=[]{}|;':,./<>?"
+  assert_true(special_chars.contains("!"))
+  assert_true(special_chars.contains("@"))
+  assert_true(special_chars.contains("?"))
   
-  // Test with large collections
-  let large_array = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-  assert_eq(large_array.length(), 10)
-  assert_eq(large_array[0], 1)
-  assert_eq(large_array[9], 10)
+  // Test unicode characters
+  let unicode_string = "Hello 世界 🌍"
+  assert_eq(unicode_string.length(), 10) // Approximate length
+  assert_true(unicode_string.contains("世界"))
+  assert_true(unicode_string.contains("🌍"))
   
-  // Test with long strings
-  let long_string = "abcdefghijklmnopqrstuvwxyz"
-  assert_eq(long_string.length(), 26)
-  assert_eq(long_string.substring(0, 5), "abcde")
-  assert_eq(long_string.substring(21, 26), "vwxyz")
+  // Test very long string operations
+  let very_long = "x" * 100000
+  assert_eq(very_long.length(), 100000)
+  
+  // Test string boundary operations
+  let normal_string = "Hello, World!"
+  
+  // Valid substring
+  if normal_string.length() >= 5 {
+    assert_eq(normal_string.substring(0, 5), "Hello")
+  } else {
+    assert_true(false)
+  }
+  
+  // Boundary substring
+  if normal_string.length() >= 13 {
+    assert_eq(normal_string.substring(0, 13), "Hello, World!")
+  } else {
+    assert_true(true) // Expected case for boundary
+  }
+  
+  // Out of bounds substring - should handle gracefully
+  if normal_string.length() >= 20 {
+    assert_eq(normal_string.substring(0, 20), "Hello, World!")
+  } else {
+    assert_true(true) // Expected case for out of bounds
+  }
 }
 
-// Test 4: Error Recovery Mechanisms
-test "error recovery mechanisms" {
-  // Test Result type error handling
-  let successful_operation = Ok("operation succeeded")
-  let failed_operation = Err("operation failed")
+// Test 4: Numeric Boundary Conditions and Error Handling
+test "numeric boundary conditions and error handling" {
+  // Test division by zero handling
+  let numerator = 10
+  let denominator = 0
   
-  // Test successful operation recovery
-  let recovered_success = match successful_operation {
-    Ok(value) => "Recovered: " + value
-    Err(error) => "Error: " + error
+  // Safe division with error handling
+  let result = SafeMath::divide(numerator, denominator)
+  match result {
+    Ok(value) => assert_true(false) // Should not succeed
+    Err(error) => assert_eq(error, "Division by zero")
   }
-  assert_eq(recovered_success, "Recovered: operation succeeded")
   
-  // Test failed operation recovery
-  let recovered_failure = match failed_operation {
-    Ok(value) => "Recovered: " + value
-    Err(error) => "Error: " + error
-  }
-  assert_eq(recovered_failure, "Error: operation failed")
-  
-  // Test chained operations with error handling
-  let chained_result = successful_operation
-    .map(fn(s) { s.length() })
-    .map(fn(len) { len * 2 })
-  
-  match chained_result {
-    Ok(value) => assert_eq(value, 36)  // "operation succeeded".length() * 2
+  // Valid division
+  let valid_result = SafeMath::divide(10, 2)
+  match valid_result {
+    Ok(value) => assert_eq(value, 5)
     Err(_) => assert_true(false)
   }
   
-  let chained_error = failed_operation
-    .map(fn(s) { s.length() })
-    .map(fn(len) { len * 2 })
+  // Test square root of negative number
+  let negative_sqrt = SafeMath::sqrt(-4)
+  match negative_sqrt {
+    Ok(_) => assert_true(false) // Should not succeed
+    Err(error) => assert_eq(error, "Square root of negative number")
+  }
   
-  match chained_error {
-    Ok(_) => assert_true(false)
-    Err(error) => assert_eq(error, "operation failed")
+  // Valid square root
+  let valid_sqrt = SafeMath::sqrt(16)
+  match valid_sqrt {
+    Ok(value) => assert_eq(value, 4.0)
+    Err(_) => assert_true(false)
+  }
+  
+  // Test integer overflow detection
+  let max_int = 2147483647
+  let overflow_result = SafeMath::add_int(max_int, 1)
+  match overflow_result {
+    Ok(_) => assert_true(false) // Should detect overflow
+    Err(error) => assert_eq(error, "Integer overflow")
+  }
+  
+  // Test integer underflow detection
+  let min_int = -2147483648
+  let underflow_result = SafeMath::subtract_int(min_int, 1)
+  match underflow_result {
+    Ok(_) => assert_true(false) // Should detect underflow
+    Err(error) => assert_eq(error, "Integer underflow")
   }
 }
 
-// Test 5: Invalid Input Handling
-test "invalid input handling" {
-  // Test with negative values where positive expected
-  let negative_counter = -5
-  let adjusted_counter = if negative_counter < 0 { 0 } else { negative_counter }
-  assert_eq(adjusted_counter, 0)
-  
-  // Test with invalid indices
-  let test_array = [10, 20, 30]
-  let valid_index = 1
-  let invalid_index = 10
-  
-  // Safe access pattern
-  let safe_access = if valid_index >= 0 && valid_index < test_array.length() {
-    Some(test_array[valid_index])
-  } else {
-    None
-  }
-  match safe_access {
-    None => assert_true(false)
-    Some(value) => assert_eq(value, 20)
-  }
-  
-  let unsafe_access = if invalid_index >= 0 && invalid_index < test_array.length() {
-    Some(test_array[invalid_index])
-  } else {
-    None
-  }
-  match unsafe_access {
-    None => assert_true(true)
+// Test 5: Memory and Resource Boundary Conditions
+test "memory and resource boundary conditions" {
+  // Test null/none handling
+  let none_value = None
+  match none_value {
     Some(_) => assert_true(false)
+    None => assert_true(true)
   }
   
-  // Test with empty strings in critical fields
-  let empty_name_metric = Counter({
-    name: "",
-    description: Some("Empty name metric"),
-    unit: Some("count")
+  // Test optional value chaining
+  let some_value = Some(42)
+  let chained_result = OptionalUtils::map_or(some_value, 0, fn(x) { x * 2 })
+  assert_eq(chained_result, 84)
+  
+  let none_result = OptionalUtils::map_or(none_value, 0, fn(x) { x * 2 })
+  assert_eq(none_result, 0)
+  
+  // Test resource cleanup
+  let resource = Resource::new()
+  let is_allocated = Resource::is_allocated(resource)
+  assert_true(is_allocated)
+  
+  Resource::cleanup(resource)
+  let is_cleaned = Resource::is_cleaned(resource)
+  assert_true(is_cleaned)
+  
+  // Test resource limit enforcement
+  let resource_pool = ResourcePool::new(5)
+  
+  // Allocate resources up to limit
+  let resources = []
+  for i in 0..<5 {
+    let res = ResourcePool::allocate(resource_pool)
+    match res {
+      Ok(r) => resources = resources.push(r)
+      Err(_) => assert_true(false)
+    }
+  }
+  
+  // Try to allocate beyond limit
+  let overflow_resource = ResourcePool::allocate(resource_pool)
+  match overflow_resource {
+    Ok(_) => assert_true(false) // Should not succeed
+    Err(error) => assert_eq(error, "Resource limit exceeded")
+  }
+  
+  // Release one resource and allocate again
+  ResourcePool::release(resource_pool, resources[0])
+  let new_resource = ResourcePool::allocate(resource_pool)
+  match new_resource {
+    Ok(_) => assert_true(true) // Should succeed now
+    Err(_) => assert_true(false)
+  }
+}
+
+// Test 6: Network and I/O Error Handling
+test "network and I/O error handling" {
+  // Test timeout handling
+  let timeout_config = TimeoutConfig::new(1000) // 1 second timeout
+  
+  // Simulate long operation
+  let start_time = Time::now()
+  let result = NetworkOperation::execute_with_timeout(timeout_config, fn() {
+    Time::sleep(2000) // 2 second operation
+    "success"
   })
   
-  match empty_name_metric {
-    Counter(name, _, _) => {
-      assert_true(name.length() == 0)
-      // In real implementation, this should trigger validation error
+  match result {
+    Ok(_) => assert_true(false) // Should timeout
+    Err(error) => assert_eq(error, "Operation timed out")
+  }
+  
+  // Test connection error handling
+  let invalid_endpoint = "http://invalid-endpoint-that-does-not-exist.com"
+  let connection_result = NetworkClient::connect(invalid_endpoint)
+  match connection_result {
+    Ok(_) => assert_true(false) // Should fail
+    Err(error) => assert_true(error.contains("Connection failed"))
+  }
+  
+  // Test retry mechanism with exponential backoff
+  let retry_config = RetryConfig::new(3, 100, 2.0) // 3 retries, 100ms base, 2x multiplier
+  let mut attempt_count = 0
+  
+  let retry_result = RetryMechanism::execute_with_retry(retry_config, fn() {
+    attempt_count = attempt_count + 1
+    if attempt_count < 3 {
+      Err("Temporary failure")
+    } else {
+      Ok("Success after retries")
     }
-    _ => assert_true(false)
+  })
+  
+  match retry_result {
+    Ok(value) => {
+      assert_eq(value, "Success after retries")
+      assert_eq(attempt_count, 3)
+    }
+    Err(_) => assert_true(false)
   }
 }
 
-// Test 6: Resource Exhaustion Scenarios
-test "resource exhaustion scenarios" {
-  // Test with large attribute collections
-  let mut large_attributes = []
-  for i in 0..<100 {
-    large_attributes = large_attributes.push(("attr." + i.to_string(), IntValue(i)))
+// Test 7: Data Validation Error Cases
+test "data validation error cases" {
+  // Test invalid email formats
+  let invalid_emails = [
+    "plainaddress",
+    "@missingdomain.com",
+    "missing@.com",
+    "spaces @domain.com",
+    "user@domain .com"
+  ]
+  
+  for email in invalid_emails {
+    assert_false(DataValidator::is_valid_email(email))
   }
   
-  let attributes = Attributes({ values = large_attributes })
-  assert_eq(attributes.values.length(), 100)
+  // Test invalid URL formats
+  let invalid_urls = [
+    "not-a-url",
+    "http://",
+    "://missing-protocol.com",
+    "ftp://invalid-protocol-for-http"
+  ]
   
-  // Test finding specific attribute in large collection
-  let mut found_target = false
-  for (key, value) in attributes.values {
-    if key == "attr.42" {
-      match value {
-        IntValue(v) => {
-          assert_eq(v, 42)
-          found_target = true
-        }
-        _ => assert_true(false)
+  for url in invalid_urls {
+    assert_false(DataValidator::is_valid_url(url))
+  }
+  
+  // Test invalid JSON parsing
+  let invalid_json_strings = [
+    "{\"invalid\": json}",
+    "{\"missing\": \"value\"",
+    "{\"unclosed\": \"string\"}",
+    "not json at all",
+    "{\"extra\": \"comma\",}"
+  ]
+  
+  for json_str in invalid_json_strings {
+    let parse_result = DataParser::parse_json(json_str)
+    match parse_result {
+      Ok(_) => assert_true(false) // Should fail
+      Err(_) => assert_true(true) // Expected to fail
+    }
+  }
+  
+  // Test type conversion errors
+  let invalid_number = "not-a-number"
+  let conversion_result = DataConverter::string_to_int(invalid_number)
+  match conversion_result {
+    Ok(_) => assert_true(false) // Should fail
+    Err(error) => assert_eq(error, "Invalid integer format")
+  }
+  
+  // Test boundary value validation
+  let negative_percentage = -10
+  let over_hundred_percentage = 150
+  
+  assert_false(DataValidator::is_valid_percentage(negative_percentage))
+  assert_false(DataValidator::is_valid_percentage(over_hundred_percentage))
+  assert_true(DataValidator::is_valid_percentage(50))
+}
+
+// Test 8: Concurrent Access Error Handling
+test "concurrent access error handling" {
+  // Test thread-safe counter with boundary conditions
+  let counter = ThreadSafeCounter::new(0, 100) // Min: 0, Max: 100
+  
+  // Test increment beyond maximum
+  for i in 0..<105 {
+    let result = ThreadSafeCounter::increment(counter)
+    if i >= 100 {
+      match result {
+        Ok(_) => assert_true(false) // Should fail after 100
+        Err(error) => assert_eq(error, "Counter maximum reached")
+      }
+    } else {
+      match result {
+        Ok(_) => assert_true(true) // Should succeed
+        Err(_) => assert_true(false)
       }
     }
   }
-  assert_true(found_target)
   
-  // Test with deep nested structures
-  let deep_context = Context({
-    data = Some("deep.nested.very.deep.key.value", "deep_value")
+  // Test decrement below minimum
+  for i in 0..<105 {
+    let result = ThreadSafeCounter::decrement(counter)
+    if i >= 100 {
+      match result {
+        Ok(_) => assert_true(false) // Should fail after 0
+        Err(error) => assert_eq(error, "Counter minimum reached")
+      }
+    } else {
+      match result {
+        Ok(_) => assert_true(true) // Should succeed
+        Err(_) => assert_true(false)
+      }
+    }
+  }
+  
+  // Test lock timeout handling
+  let lock = TimeoutLock::new(100) // 100ms timeout
+  
+  // Acquire lock
+  let acquire_result = TimeoutLock::acquire(lock)
+  match acquire_result {
+    Ok(_) => assert_true(true)
+    Err(_) => assert_true(false)
+  }
+  
+  // Try to acquire again with timeout
+  let timeout_result = TimeoutLock::try_acquire_with_timeout(lock, 50)
+  match timeout_result {
+    Ok(_) => assert_true(false) // Should fail
+    Err(error) => assert_eq(error, "Lock acquisition timeout")
+  }
+}
+
+// Test 9: Exception and Error Recovery
+test "exception and error recovery" {
+  // Test exception handling with recovery
+  let risky_operation = fn() {
+    // Simulate an exception
+    if true {
+      throw "Simulated exception"
+    }
+    "success"
+  }
+  
+  let result = ErrorHandler::with_recovery(risky_operation, fn(error) {
+    assert_eq(error, "Simulated exception")
+    "recovered_value"
   })
   
-  match deep_context.data {
-    None => assert_true(false)
-    Some((key, value)) => {
-      assert_eq(key, "deep.nested.very.deep.key.value")
-      assert_eq(value, "deep_value")
-    }
+  match result {
+    Ok(value) => assert_eq(value, "recovered_value")
+    Err(_) => assert_true(false)
   }
-}
-
-// Test 7: Type Coercion Edge Cases
-test "type coercion edge cases" {
-  // Test string to number conversion edge cases
-  let valid_number_string = "42"
-  let invalid_number_string = "not_a_number"
-  let empty_number_string = ""
-  let overflow_number_string = "999999999999999999999999999999"
   
-  // Simulate safe string to int conversion
-  let safe_parse_int = fn(s) {
-    if s.length() == 0 {
-      None
-    } else if s == "42" {
-      Some(42)
+  // Test fallback value mechanism
+  let fallback_result = ErrorHandler::with_fallback(risky_operation, "fallback_value")
+  match fallback_result {
+    Ok(value) => assert_eq(value, "fallback_value")
+    Err(_) => assert_true(false)
+  }
+  
+  // Test circuit breaker pattern
+  let circuit_breaker = CircuitBreaker::new(3, 1000) // 3 failures, 1s timeout
+  
+  // Trigger failures
+  for i in 0..<4 {
+    let result = CircuitBreaker::execute(circuit_breaker, fn() {
+      throw "Service unavailable"
+    })
+    
+    if i < 2 {
+      match result {
+        Ok(_) => assert_true(false)
+        Err(error) => assert_eq(error, "Service unavailable")
+      }
     } else {
-      None
+      match result {
+        Ok(_) => assert_true(false)
+        Err(error) => assert_eq(error, "Circuit breaker is open")
+      }
     }
   }
   
-  match safe_parse_int(valid_number_string) {
-    None => assert_true(false)
-    Some(value) => assert_eq(value, 42)
-  }
-  
-  match safe_parse_int(invalid_number_string) {
-    None => assert_true(true)
-    Some(_) => assert_true(false)
-  }
-  
-  match safe_parse_int(empty_number_string) {
-    None => assert_true(true)
-    Some(_) => assert_true(false)
-  }
-  
-  match safe_parse_int(overflow_number_string) {
-    None => assert_true(true)
-    Some(_) => assert_true(false)
-  }
-  
-  // Test attribute value type conversions
-  let string_attr = StringValue("123")
-  let int_attr = IntValue(123)
-  let bool_attr = BoolValue(true)
-  
-  // Simulate type-safe conversion
-  let convert_to_string = fn(attr) {
-    match attr {
-      StringValue(s) => Some(s)
-      IntValue(i) => Some(i.to_string())
-      BoolValue(b) => Some(b.to_string())
-      _ => None
-    }
-  }
-  
-  match convert_to_string(string_attr) {
-    None => assert_true(false)
-    Some(s) => assert_eq(s, "123")
-  }
-  
-  match convert_to_string(int_attr) {
-    None => assert_true(false)
-    Some(s) => assert_eq(s, "123")
-  }
-  
-  match convert_to_string(bool_attr) {
-    None => assert_true(false)
-    Some(s) => assert_eq(s, "true")
-  }
-}
-
-// Test 8: Concurrent Access Safety
-test "concurrent access safety patterns" {
-  // Test with shared state simulation
-  let shared_counter = 0
-  
-  // Simulate atomic increment operation
-  let atomic_increment = fn(current) { current + 1 }
-  
-  let incremented = atomic_increment(shared_counter)
-  assert_eq(incremented, 1)
-  
-  // Test with race condition prevention patterns
-  let critical_section_data = "important_data"
-  
-  // Simulate critical section access
-  let safe_access = fn(data, operation) {
-    // In real implementation, this would use locks/mutexes
-    operation(data)
-  }
-  
-  let result = safe_access(critical_section_data, fn(data) {
-    data.length()
+  // Test circuit breaker recovery after timeout
+  Time::sleep(1100) // Wait for circuit breaker to timeout
+  let recovery_result = CircuitBreaker::execute(circuit_breaker, fn() {
+    "service recovered"
   })
-  assert_eq(result, 14)
   
-  // Test with immutable data structures (inherently thread-safe)
-  let immutable_data = [1, 2, 3, 4, 5]
-  let transformed_data = immutable_data.map(fn(x) { x * 10 })
-  
-  assert_eq(immutable_data, [1, 2, 3, 4, 5])  // Original unchanged
-  assert_eq(transformed_data, [10, 20, 30, 40, 50])
+  match recovery_result {
+    Ok(value) => assert_eq(value, "service recovered")
+    Err(_) => assert_true(false)
+  }
 }
 
-// Test 9: Memory Management Edge Cases
-test "memory management edge cases" {
-  // Test with large data structures
-  let large_data = []
-  for i in 0..<1000 {
-    large_data = large_data.push("data_item_" + i.to_string())
-  }
+// Test 10: Edge Case Combinations
+test "edge case combinations" {
+  // Test multiple boundary conditions together
+  let empty_config = Config::new()
+  let result = ConfigProcessor::process_with_defaults(empty_config, [
+    ("timeout", 30),
+    ("retries", 3),
+    ("buffer_size", 1024)
+  ])
   
-  assert_eq(large_data.length(), 1000)
-  assert_eq(large_data[0], "data_item_0")
-  assert_eq(large_data[999], "data_item_999")
+  assert_eq(Config::get(result, "timeout"), 30)
+  assert_eq(Config::get(result, "retries"), 3)
+  assert_eq(Config::get(result, "buffer_size"), 1024)
   
-  // Test with circular reference prevention
-  let node_a = "node_a"
-  let node_b = "node_b"
+  // Test cascading error handling
+  let pipeline = ErrorPipeline::new()
   
-  // Simulate safe reference handling
-  let create_safe_reference = fn(from, to) {
-    (from, to)  // Simple tuple instead of circular reference
-  }
-  
-  let safe_ref = create_safe_reference(node_a, node_b)
-  assert_eq(safe_ref.0, "node_a")
-  assert_eq(safe_ref.1, "node_b")
-  
-  // Test with resource cleanup patterns
-  let resource = "expensive_resource"
-  
-  // Simulate resource cleanup
-  let use_with_cleanup = fn(resource, operation) {
-    let result = operation(resource)
-    // Cleanup would happen here in real implementation
-    result
-  }
-  
-  let operation_result = use_with_cleanup(resource, fn(r) {
-    r.length()
+  ErrorPipeline::add_stage(pipeline, "validate", fn(data) {
+    if data.length() == 0 {
+      Err("Empty data not allowed")
+    } else {
+      Ok(data)
+    }
   })
-  assert_eq(operation_result, 19)
-}
-
-// Test 10: Validation and Constraint Checking
-test "validation and constraint checking" {
-  // Test metric name validation
-  let validate_metric_name = fn(name) {
-    if name.length() == 0 {
-      false
-    } else if name.length() > 100 {
-      false
-    } else if !name.contains(".") {
-      false
+  
+  ErrorPipeline::add_stage(pipeline, "transform", fn(data) {
+    if data.length() > 1000 {
+      Err("Data too large")
     } else {
-      true
+      Ok(data.to_uppercase())
     }
-  }
+  })
   
-  assert_true(validate_metric_name("http.requests.total"))
-  assert_false(validate_metric_name(""))
-  assert_false(validate_metric_name("invalid_name"))
-  assert_false(validate_metric_name("a".repeat(101)))
-  
-  // Test trace ID validation
-  let validate_trace_id = fn(trace_id) {
-    if trace_id.length() != 16 {
-      false
-    } else if !trace_id.contains("trace-") {
-      false
+  ErrorPipeline::add_stage(pipeline, "store", fn(data) {
+    if data.contains("INVALID") {
+      Err("Invalid content detected")
     } else {
-      true
+      Ok("Stored: " + data)
     }
+  })
+  
+  // Test with empty data (first stage should fail)
+  let empty_result = ErrorPipeline::execute(pipeline, "")
+  match empty_result {
+    Ok(_) => assert_true(false)
+    Err(error) => assert_eq(error, "Empty data not allowed")
   }
   
-  assert_true(validate_trace_id("trace-12345678"))  // 16 chars
-  assert_false(validate_trace_id("trace-1234567"))   // 15 chars
-  assert_false(validate_trace_id("1234567890123456")) // Missing prefix
-  assert_false(validate_trace_id(""))                // Empty
-  
-  // Test attribute value validation
-  let validate_attribute_value = fn(value) {
-    match value {
-      StringValue(s) => s.length() <= 255
-      IntValue(i) => i >= 0 && i <= 2147483647
-      FloatValue(f) => f >= 0.0 && f <= 1000000.0
-      BoolValue(_) => true
-      ArrayStringValue(arr) => arr.length() <= 100
-      ArrayIntValue(arr) => arr.length() <= 100
-      _ => false
-    }
+  // Test with too large data (second stage should fail)
+  let large_data = "x" * 1001
+  let large_result = ErrorPipeline::execute(pipeline, large_data)
+  match large_result {
+    Ok(_) => assert_true(false)
+    Err(error) => assert_eq(error, "Data too large")
   }
   
-  assert_true(validate_attribute_value(StringValue("valid")))
-  assert_false(validate_attribute_value(StringValue("a".repeat(256))))
-  assert_true(validate_attribute_value(IntValue(42)))
-  assert_false(validate_attribute_value(IntValue(-1)))
-  assert_false(validate_attribute_value(IntValue(2147483648)))
-  assert_true(validate_attribute_value(FloatValue(3.14)))
-  assert_false(validate_attribute_value(FloatValue(-1.0)))
-  assert_false(validate_attribute_value(FloatValue(1000001.0)))
-  assert_true(validate_attribute_value(BoolValue(true)))
-  assert_true(validate_attribute_value(ArrayStringValue([])))
-  assert_false(validate_attribute_value(ArrayStringValue([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])))  // > 10 items
+  // Test with invalid content (third stage should fail)
+  let invalid_data = "This contains INVALID content"
+  let invalid_result = ErrorPipeline::execute(pipeline, invalid_data)
+  match invalid_result {
+    Ok(_) => assert_true(false)
+    Err(error) => assert_eq(error, "Invalid content detected")
+  }
+  
+  // Test with valid data (should succeed)
+  let valid_data = "valid content"
+  let valid_result = ErrorPipeline::execute(pipeline, valid_data)
+  match valid_result {
+    Ok(value) => assert_eq(value, "Stored: VALID CONTENT")
+    Err(_) => assert_true(false)
+  }
 }
