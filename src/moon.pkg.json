@@ -10,6 +10,8 @@
   },
   "test": {
     "test": [
+        "../azimuth_simple_high_quality_tests.mbt",
+        "../azimuth_high_quality_test_suite.mbt",
         "../azimuth_quality_enhanced_test_suite.mbt",
         "../azimuth_additional_high_quality_test_cases.mbt",
         "../azimuth_enhanced_test/azimuth_additional_high_quality_test_cases.mbt",

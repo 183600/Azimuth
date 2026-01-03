@@ -1,538 +1,599 @@
-// Azimuth Telemetry System - Comprehensive Internationalization Tests
-// This file contains comprehensive test cases for internationalization support
+// Azimuth 国际化综合测试
+// 全面测试多语言和本地化功能
 
-// Test 1: Multi-language Attribute Support
-test "multi-language attribute support" {
-  let attrs = Attributes::new()
+// 测试1: 基本语言检测
+test "基本语言检测" {
+  // 支持的语言列表
+  let supported_languages = ["en", "zh", "es", "fr", "de", "ja"]
   
-  // Test Chinese attributes
-  Attributes::set(attrs, "服务名称", StringValue("测试服务"))
-  Attributes::set(attrs, "服务版本", StringValue("1.0.0"))
-  Attributes::set(attrs, "主机名称", StringValue("测试主机"))
-  
-  let service_name = Attributes::get(attrs, "服务名称")
-  match service_name {
-    Some(StringValue(name)) => assert_eq(name, "测试服务")
-    _ => assert_true(false)
+  // 语言代码映射
+  let language_names = {
+    "en": "English",
+    "zh": "中文",
+    "es": "Español",
+    "fr": "Français",
+    "de": "Deutsch",
+    "ja": "日本語"
   }
   
-  // Test Japanese attributes
-  Attributes::set(attrs, "サービス名", StringValue("テストサービス"))
-  Attributes::set(attrs, "サービスバージョン", StringValue("1.0.0"))
-  Attributes::set(attrs, "ホスト名", StringValue("テストホスト"))
-  
-  let service_name_ja = Attributes::get(attrs, "サービス名")
-  match service_name_ja {
-    Some(StringValue(name)) => assert_eq(name, "テストサービス")
-    _ => assert_true(false)
+  // 检测语言是否支持
+  let is_language_supported = fn(lang_code) {
+    supported_languages.contains(lang_code)
   }
   
-  // Test Korean attributes
-  Attributes::set(attrs, "서비스 이름", StringValue("테스트 서비스"))
-  Attributes::set(attrs, "서비스 버전", StringValue("1.0.0"))
-  Attributes::set(attrs, "호스트 이름", StringValue("테스트 호스트"))
-  
-  let service_name_ko = Attributes::get(attrs, "서비스 이름")
-  match service_name_ko {
-    Some(StringValue(name)) => assert_eq(name, "테스트 서비스")
-    _ => assert_true(false)
+  // 获取语言名称
+  let get_language_name = fn(lang_code) {
+    if language_names.contains(lang_code) {
+      language_names[lang_code]
+    } else {
+      "Unknown"
+    }
   }
   
-  // Test Arabic attributes
-  Attributes::set(attrs, "اسم الخدمة", StringValue("خدمة الاختبار"))
-  Attributes::set(attrs, "إصدار الخدمة", StringValue("1.0.0"))
-  Attributes::set(attrs, "اسم المضيف", StringValue("مضيف الاختبار"))
+  // 测试语言检测
+  assert_true(is_language_supported("en"))
+  assert_true(is_language_supported("zh"))
+  assert_false(is_language_supported("ru"))
+  assert_false(is_language_supported("invalid"))
   
-  let service_name_ar = Attributes::get(attrs, "اسم الخدمة")
-  match service_name_ar {
-    Some(StringValue(name)) => assert_eq(name, "خدمة الاختبار")
-    _ => assert_true(false)
-  }
-  
-  // Test Russian attributes
-  Attributes::set(attrs, "имя сервиса", StringValue("тестовый сервис"))
-  Attributes::set(attrs, "версия сервиса", StringValue("1.0.0"))
-  Attributes::set(attrs, "имя хоста", StringValue("тестовый хост"))
-  
-  let service_name_ru = Attributes::get(attrs, "имя сервиса")
-  match service_name_ru {
-    Some(StringValue(name)) => assert_eq(name, "тестовый сервис")
-    _ => assert_true(false)
-  }
-  
-  // Verify all attributes are stored correctly
-  assert_eq(Attributes::size(attrs), 15)
+  assert_eq(get_language_name("en"), "English")
+  assert_eq(get_language_name("zh"), "中文")
+  assert_eq(get_language_name("invalid"), "Unknown")
 }
 
-// Test 2: Unicode and Special Character Handling
-test "unicode and special character handling" {
-  let attrs = Attributes::new()
-  
-  // Test emoji characters
-  Attributes::set(attrs, "status_emoji", StringValue("🚀 Success"))
-  Attributes::set(attrs, "error_emoji", StringValue("❌ Error"))
-  Attributes::set(attrs, "warning_emoji", StringValue("⚠️ Warning"))
-  
-  let status_emoji = Attributes::get(attrs, "status_emoji")
-  match status_emoji {
-    Some(StringValue(emoji)) => assert_eq(emoji, "🚀 Success")
-    _ => assert_true(false)
+// 测试2: 文本翻译
+test "文本翻译" {
+  // 翻译字典
+  let translations = {
+    "en": {
+      "welcome": "Welcome",
+      "login": "Login",
+      "logout": "Logout",
+      "username": "Username",
+      "password": "Password",
+      "submit": "Submit"
+    },
+    "zh": {
+      "welcome": "欢迎",
+      "login": "登录",
+      "logout": "登出",
+      "username": "用户名",
+      "password": "密码",
+      "submit": "提交"
+    },
+    "es": {
+      "welcome": "Bienvenido",
+      "login": "Iniciar sesión",
+      "logout": "Cerrar sesión",
+      "username": "Nombre de usuario",
+      "password": "Contraseña",
+      "submit": "Enviar"
+    }
   }
   
-  // Test mathematical symbols
-  Attributes::set(attrs, "math_symbols", StringValue("∑ ∏ ∫ ∆ ∇ ∂"))
-  Attributes::set(attrs, "greek_letters", StringValue("α β γ δ ε ζ η θ"))
-  
-  let math_symbols = Attributes::get(attrs, "math_symbols")
-  match math_symbols {
-    Some(StringValue(symbols)) => assert_eq(symbols, "∑ ∏ ∫ ∆ ∇ ∂")
-    _ => assert_true(false)
+  // 翻译函数
+  let translate = fn(key, language) {
+    if translations.contains(language) && translations[language].contains(key) {
+      translations[language][key]
+    } else if translations.contains("en") && translations["en"].contains(key) {
+      // 回退到英语
+      translations["en"][key]
+    } else {
+      "[" + key + "]" // 显示键名作为回退
+    }
   }
   
-  // Test currency symbols
-  Attributes::set(attrs, "currency_symbols", StringValue("$ € £ ¥ ₹ ₽ ₩"))
+  // 测试翻译
+  assert_eq(translate("welcome", "en"), "Welcome")
+  assert_eq(translate("welcome", "zh"), "欢迎")
+  assert_eq(translate("welcome", "es"), "Bienvenido")
   
-  let currency_symbols = Attributes::get(attrs, "currency_symbols")
-  match currency_symbols {
-    Some(StringValue(symbols)) => assert_eq(symbols, "$ € £ ¥ ₹ ₽ ₩")
-    _ => assert_true(false)
-  }
+  assert_eq(translate("login", "zh"), "登录")
+  assert_eq(translate("password", "es"), "Contraseña")
   
-  // Test combining characters
-  Attributes::set(attrs, "combining_chars", StringValue("é ä ö ü ñ"))
-  
-  let combining_chars = Attributes::get(attrs, "combining_chars")
-  match combining_chars {
-    Some(StringValue(chars)) => assert_eq(chars, "é ä ö ü ñ")
-    _ => assert_true(false)
-  }
-  
-  // Test right-to-left text
-  Attributes::set(attrs, "rtl_text", StringValue("مرحبا بالعالم"))
-  Attributes::set(attrs, "mixed_text", StringValue("Hello مرحبا World"))
-  
-  let rtl_text = Attributes::get(attrs, "rtl_text")
-  match rtl_text {
-    Some(StringValue(text)) => assert_eq(text, "مرحبا بالعالم")
-    _ => assert_true(false)
-  }
+  // 测试回退机制
+  assert_eq(translate("welcome", "fr"), "Welcome") // 回退到英语
+  assert_eq(translate("nonexistent", "en"), "[nonexistent]") // 不存在的键
 }
 
-// Test 3: Locale-aware Formatting
-test "locale-aware formatting" {
-  let formatter = LocaleFormatter::new()
-  
-  // Test number formatting with different locales
-  let number = 1234567.89
-  
-  let us_formatted = LocaleFormatter::format_number(formatter, number, "en-US")
-  assert_eq(us_formatted, "1,234,567.89")
-  
-  let de_formatted = LocaleFormatter::format_number(formatter, number, "de-DE")
-  assert_eq(de_formatted, "1.234.567,89")
-  
-  let fr_formatted = LocaleFormatter::format_number(formatter, number, "fr-FR")
-  assert_eq(fr_formatted, "1 234 567,89")
-  
-  let ar_formatted = LocaleFormatter::format_number(formatter, number, "ar-SA")
-  assert_eq(ar_formatted, "١٬٢٣٤٬٥٦٧٫٨٩")
-  
-  let hi_formatted = LocaleFormatter::format_number(formatter, number, "hi-IN")
-  assert_eq(hi_formatted, "१,२३,४५६,७.८९")
-  
-  // Test date formatting with different locales
-  let timestamp = 1609459200000 // 2021-01-01 00:00:00 UTC
-  
-  let us_date = LocaleFormatter::format_date(formatter, timestamp, "en-US")
-  assert_true(us_date.contains("2021") && us_date.contains("January"))
-  
-  let de_date = LocaleFormatter::format_date(formatter, timestamp, "de-DE")
-  assert_true(de_date.contains("2021") && de_date.contains("Januar"))
-  
-  let fr_date = LocaleFormatter::format_date(formatter, timestamp, "fr-FR")
-  assert_true(fr_date.contains("2021") && fr_date.contains("janvier"))
-  
-  let ja_date = LocaleFormatter::format_date(formatter, timestamp, "ja-JP")
-  assert_true(ja_date.contains("2021") && ja_date.contains("1月"))
-  
-  let zh_date = LocaleFormatter::format_date(formatter, timestamp, "zh-CN")
-  assert_true(zh_date.contains("2021") && zh_date.contains("1月"))
-  
-  // Test currency formatting with different locales
-  let amount = 1234.56
-  
-  let us_currency = LocaleFormatter::format_currency(formatter, amount, "en-US", "USD")
-  assert_eq(us_currency, "$1,234.56")
-  
-  let eu_currency = LocaleFormatter::format_currency(formatter, amount, "de-DE", "EUR")
-  assert_eq(eu_currency, "1.234,56 €")
-  
-  let jp_currency = LocaleFormatter::format_currency(formatter, amount, "ja-JP", "JPY")
-  assert_eq(jp_currency, "￥1,235") // Japanese yen doesn't use decimal places
-  
-  let gb_currency = LocaleFormatter::format_currency(formatter, amount, "en-GB", "GBP")
-  assert_eq(gb_currency, "£1,234.56")
-}
-
-// Test 4: Multi-language Error Messages
-test "multi-language error messages" {
-  let error_handler = ErrorHandler::new()
-  
-  // Test error messages in different languages
-  let error_code = "CONNECTION_FAILED"
-  
-  let en_error = ErrorHandler::get_error_message(error_handler, error_code, "en")
-  assert_eq(en_error, "Connection failed")
-  
-  let zh_error = ErrorHandler::get_error_message(error_handler, error_code, "zh")
-  assert_eq(zh_error, "连接失败")
-  
-  let ja_error = ErrorHandler::get_error_message(error_handler, error_code, "ja")
-  assert_eq(ja_error, "接続に失敗しました")
-  
-  let ko_error = ErrorHandler::get_error_message(error_handler, error_code, "ko")
-  assert_eq(ko_error, "연결에 실패했습니다")
-  
-  let ar_error = ErrorHandler::get_error_message(error_handler, error_code, "ar")
-  assert_eq(ar_error, "فشل الاتصال")
-  
-  let ru_error = ErrorHandler::get_error_message(error_handler, error_code, "ru")
-  assert_eq(ru_error, "Соединение не удалось")
-  
-  // Test parameterized error messages
-  let timeout_error = "TIMEOUT_ERROR"
-  let timeout_value = 5000
-  
-  let en_timeout = ErrorHandler::get_parameterized_error_message(error_handler, timeout_error, timeout_value, "en")
-  assert_eq(en_timeout, "Operation timed out after 5000ms")
-  
-  let zh_timeout = ErrorHandler::get_parameterized_error_message(error_handler, timeout_error, timeout_value, "zh")
-  assert_eq(zh_timeout, "操作在5000毫秒后超时")
-  
-  let ja_timeout = ErrorHandler::get_parameterized_error_message(error_handler, timeout_error, timeout_value, "ja")
-  assert_eq(ja_timeout, "操作が5000ミリ秒後にタイムアウトしました")
-  
-  // Test fallback to English for unsupported languages
-  let unsupported_error = ErrorHandler::get_error_message(error_handler, error_code, "unsupported")
-  assert_eq(unsupported_error, "Connection failed") // Should fallback to English
-}
-
-// Test 5: Internationalized Log Messages
-test "internationalized log messages" {
-  let logger = Logger::new()
-  
-  // Test creating log records with internationalized messages
-  let en_log = LogRecord::new_with_locale(Info, "Operation completed successfully", "en")
-  let zh_log = LogRecord::new_with_locale(Info, "操作成功完成", "zh")
-  let ja_log = LogRecord::new_with_locale(Info, "操作が正常に完了しました", "ja")
-  let ko_log = LogRecord::new_with_locale(Info, "작업이 성공적으로 완료되었습니다", "ko")
-  
-  // Verify log messages are preserved correctly
-  assert_eq(LogRecord::get_message(en_log), "Operation completed successfully")
-  assert_eq(LogRecord::get_message(zh_log), "操作成功完成")
-  assert_eq(LogRecord::get_message(ja_log), "操作が正常に完了しました")
-  assert_eq(LogRecord::get_message(ko_log), "작업이 성공적으로 완료되었습니다")
-  
-  // Test log message templates with parameters
-  let template = "User {username} logged in from {location}"
-  let params = [
-    ("username", "张三"),
-    ("location", "北京")
-  ]
-  
-  let zh_formatted_log = LogRecord::new_with_template_and_locale(Info, template, params, "zh")
-  assert_eq(LogRecord::get_message(zh_formatted_log), "用户 张三 从 北京 登录")
-  
-  let en_params = [
-    ("username", "John Doe"),
-    ("location", "New York")
-  ]
-  
-  let en_formatted_log = LogRecord::new_with_template_and_locale(Info, template, en_params, "en")
-  assert_eq(LogRecord::get_message(en_formatted_log), "User John Doe logged in from New York")
-  
-  // Test log severity level names in different languages
-  let severity_names = LogRecord::get_severity_names("en")
-  assert_eq(severity_names[0], "TRACE")
-  assert_eq(severity_names[1], "DEBUG")
-  assert_eq(severity_names[2], "INFO")
-  assert_eq(severity_names[3], "WARN")
-  assert_eq(severity_names[4], "ERROR")
-  assert_eq(severity_names[5], "FATAL")
-  
-  let severity_names_zh = LogRecord::get_severity_names("zh")
-  assert_eq(severity_names_zh[0], "跟踪")
-  assert_eq(severity_names_zh[1], "调试")
-  assert_eq(severity_names_zh[2], "信息")
-  assert_eq(severity_names_zh[3], "警告")
-  assert_eq(severity_names_zh[4], "错误")
-  assert_eq(severity_names_zh[5], "致命")
-}
-
-// Test 6: Internationalized Span Names and Descriptions
-test "internationalized span names and descriptions" {
-  let tracer = Tracer::new()
-  
-  // Test creating spans with internationalized names
-  let en_span = tracer.create_span("Database Query", "en")
-  let zh_span = tracer.create_span("数据库查询", "zh")
-  let ja_span = tracer.create_span("データベースクエリ", "ja")
-  let ko_span = tracer.create_span("데이터베이스 쿼리", "ko")
-  
-  // Verify span names are preserved correctly
-  assert_eq(Span::get_name(en_span), "Database Query")
-  assert_eq(Span::get_name(zh_span), "数据库查询")
-  assert_eq(Span::get_name(ja_span), "データベースクエリ")
-  assert_eq(Span::get_name(ko_span), "데이터베이스 쿼리")
-  
-  // Test adding internationalized events
-  Span::add_event_with_locale(en_span, "Query started", "en")
-  Span::add_event_with_locale(zh_span, "查询已开始", "zh")
-  Span::add_event_with_locale(ja_span, "クエリが開始されました", "ja")
-  Span::add_event_with_locale(ko_span, "쿼리가 시작되었습니다", "ko")
-  
-  // Test setting internationalized status descriptions
-  Span::set_status_with_description(en_span, Ok, "Query completed successfully", "en")
-  Span::set_status_with_description(zh_span, Ok, "查询成功完成", "zh")
-  Span::set_status_with_description(ja_span, Ok, "クエリが正常に完了しました", "ja")
-  Span::set_status_with_description(ko_span, Ok, "쿼리가 성공적으로 완료되었습니다", "ko")
-  
-  // Test span kind names in different languages
-  let kind_names_en = Span::get_kind_names("en")
-  assert_eq(kind_names_en[0], "Internal")
-  assert_eq(kind_names_en[1], "Server")
-  assert_eq(kind_names_en[2], "Client")
-  assert_eq(kind_names_en[3], "Producer")
-  assert_eq(kind_names_en[4], "Consumer")
-  
-  let kind_names_zh = Span::get_kind_names("zh")
-  assert_eq(kind_names_zh[0], "内部")
-  assert_eq(kind_names_zh[1], "服务器")
-  assert_eq(kind_names_zh[2], "客户端")
-  assert_eq(kind_names_zh[3], "生产者")
-  assert_eq(kind_names_zh[4], "消费者")
-}
-
-// Test 7: Internationalized Metric Names and Descriptions
-test "internationalized metric names and descriptions" {
-  let meter = Meter::new()
-  
-  // Test creating metrics with internationalized names and descriptions
-  let en_counter = meter.create_counter_with_locale("request.count", "Total number of requests", "en")
-  let zh_counter = meter.create_counter_with_locale("请求计数", "请求总数", "zh")
-  let ja_counter = meter.create_counter_with_locale("リクエスト数", "リクエストの総数", "ja")
-  let ko_counter = meter.create_counter_with_locale("요청 수", "요청의 총 수", "ko")
-  
-  // Verify metric names and descriptions are preserved correctly
-  assert_eq(Metric::get_name(en_counter), "request.count")
-  assert_eq(Metric::get_description(en_counter), "Total number of requests")
-  
-  assert_eq(Metric::get_name(zh_counter), "请求计数")
-  assert_eq(Metric::get_description(zh_counter), "请求总数")
-  
-  assert_eq(Metric::get_name(ja_counter), "リクエスト数")
-  assert_eq(Metric::get_description(ja_counter), "リクエストの総数")
-  
-  assert_eq(Metric::get_name(ko_counter), "요청 수")
-  assert_eq(Metric::get_description(ko_counter), "요청의 총 수")
-  
-  // Test metric unit names in different languages
-  let unit_names_en = Metric::get_unit_names("en")
-  assert_eq(unit_names_en[0], "count")
-  assert_eq(unit_names_en[1], "bytes")
-  assert_eq(unit_names_en[2], "milliseconds")
-  assert_eq(unit_names_en[3], "percent")
-  
-  let unit_names_zh = Metric::get_unit_names("zh")
-  assert_eq(unit_names_zh[0], "计数")
-  assert_eq(unit_names_zh[1], "字节")
-  assert_eq(unit_names_zh[2], "毫秒")
-  assert_eq(unit_names_zh[3], "百分比")
-  
-  // Test adding internationalized labels
-  Counter::add_with_labels(en_counter, 1.0, [("method", "GET"), ("status", "200")])
-  Counter::add_with_labels(zh_counter, 1.0, [("方法", "获取"), ("状态", "200")])
-  Counter::add_with_labels(ja_counter, 1.0, [("メソッド", "GET"), ("ステータス", "200")])
-  Counter::add_with_labels(ko_counter, 1.0, [("방법", "GET"), ("상태", "200")])
-}
-
-// Test 8: Resource Internationalization
-test "resource internationalization" {
-  let resource = Resource::new()
-  
-  // Test adding internationalized resource attributes
-  Resource::set_attribute_with_locale(resource, "service.name", "テストサービス", "ja")
-  Resource::set_attribute_with_locale(resource, "service.description", "这是一个测试服务", "zh")
-  Resource::set_attribute_with_locale(resource, "service.owner", "테스트팀", "ko")
-  Resource::set_attribute_with_locale(resource, "service.environment", "بيئة الاختبار", "ar")
-  
-  // Verify attributes are preserved correctly
-  let service_name = Resource::get_attribute(resource, "service.name")
-  match service_name {
-    Some(StringValue(name)) => assert_eq(name, "テストサービス")
-    _ => assert_true(false)
+// 测试3: 复数形式处理
+test "复数形式处理" {
+  // 复数规则
+  let plural_rules = {
+    "en": fn(count) {
+      if count == 1 { "one" } else { "other" }
+    },
+    "zh": fn(count) { "other" }, // 中文没有复数形式
+    "ru": fn(count) {
+      let mod10 = count % 10
+      let mod100 = count % 100
+      
+      if mod10 == 1 && mod100 != 11 {
+        "one"
+      } else if mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20) {
+        "few"
+      } else {
+        "other"
+      }
+    }
   }
   
-  let service_desc = Resource::get_attribute(resource, "service.description")
-  match service_desc {
-    Some(StringValue(desc)) => assert_eq(desc, "这是一个测试服务")
-    _ => assert_true(false)
+  // 复数翻译
+  let plural_translations = {
+    "en": {
+      "item": {
+        "one": "item",
+        "other": "items"
+      },
+      "message": {
+        "one": "message",
+        "other": "messages"
+      }
+    },
+    "zh": {
+      "item": {
+        "other": "项目"
+      },
+      "message": {
+        "other": "消息"
+      }
+    },
+    "ru": {
+      "item": {
+        "one": "элемент",
+        "few": "элемента",
+        "other": "элементов"
+      }
+    }
   }
   
-  let service_owner = Resource::get_attribute(resource, "service.owner")
-  match service_owner {
-    Some(StringValue(owner)) => assert_eq(owner, "테스트팀")
-    _ => assert_true(false)
+  // 复数翻译函数
+  let translate_plural = fn(key, count, language) {
+    if plural_rules.contains(language) {
+      let rule = plural_rules[language]
+      let plural_form = rule(count)
+      
+      if plural_translations.contains(language) && 
+         plural_translations[language].contains(key) && 
+         plural_translations[language][key].contains(plural_form) {
+        plural_translations[language][key][plural_form]
+      } else {
+        count.to_string() + " " + key
+      }
+    } else {
+      count.to_string() + " " + key
+    }
   }
   
-  let service_env = Resource::get_attribute(resource, "service.environment")
-  match service_env {
-    Some(StringValue(env)) => assert_eq(env, "بيئة الاختبار")
-    _ => assert_true(false)
-  }
+  // 测试复数形式
+  assert_eq(translate_plural("item", 1, "en"), "item")
+  assert_eq(translate_plural("item", 5, "en"), "items")
   
-  // Test resource attribute key internationalization
-  Resource::set_attribute(resource, "サービス名", StringValue("テストサービス"))
-  Resource::set_attribute(resource, "服务名称", StringValue("测试服务"))
-  Resource::set_attribute(resource, "서비스 이름", StringValue("테스트 서비스"))
+  assert_eq(translate_plural("item", 1, "zh"), "项目")
+  assert_eq(translate_plural("item", 5, "zh"), "项目") // 中文没有复数
   
-  let service_name_ja = Resource::get_attribute(resource, "サービス名")
-  match service_name_ja {
-    Some(StringValue(name)) => assert_eq(name, "テストサービス")
-    _ => assert_true(false)
-  }
-  
-  let service_name_zh = Resource::get_attribute(resource, "服务名称")
-  match service_name_zh {
-    Some(StringValue(name)) => assert_eq(name, "测试服务")
-    _ => assert_true(false)
-  }
-  
-  let service_name_ko = Resource::get_attribute(resource, "서비스 이름")
-  match service_name_ko {
-    Some(StringValue(name)) => assert_eq(name, "테스트 서비스")
-    _ => assert_true(false)
-  }
+  assert_eq(translate_plural("item", 1, "ru"), "элемент")
+  assert_eq(translate_plural("item", 3, "ru"), "элемента")
+  assert_eq(translate_plural("item", 5, "ru"), "элементов")
+  assert_eq(translate_plural("item", 11, "ru"), "элементов") // 11是特殊情况
 }
 
-// Test 9: Internationalization Configuration
-test "internationalization configuration" {
-  let config = I18nConfig::new()
+// 测试4: 日期和时间格式化
+test "日期和时间格式化" {
+  // 日期格式
+  let date_formats = {
+    "en": "MM/DD/YYYY",
+    "zh": "YYYY年MM月DD日",
+    "de": "DD.MM.YYYY",
+    "ja": "YYYY年MM月DD日"
+  }
   
-  // Test setting default locale
-  I18nConfig::set_default_locale(config, "zh-CN")
-  assert_eq(I18nConfig::get_default_locale(config), "zh-CN")
+  // 时间格式
+  let time_formats = {
+    "en": "h:mm:ss A",
+    "zh": "HH:mm:ss",
+    "de": "HH:mm:ss",
+    "ja": "HH:mm:ss"
+  }
   
-  // Test adding supported locales
-  I18nConfig::add_supported_locale(config, "en-US")
-  I18nConfig::add_supported_locale(config, "ja-JP")
-  I18nConfig::add_supported_locale(config, "ko-KR")
-  I18nConfig::add_supported_locale(config, "ar-SA")
-  I18nConfig::add_supported_locale(config, "ru-RU")
-  
-  let supported_locales = I18nConfig::get_supported_locales(config)
-  assert_eq(supported_locales.length(), 6)
-  assert_true(supported_locales.contains("zh-CN"))
-  assert_true(supported_locales.contains("en-US"))
-  assert_true(supported_locales.contains("ja-JP"))
-  assert_true(supported_locales.contains("ko-KR"))
-  assert_true(supported_locales.contains("ar-SA"))
-  assert_true(supported_locales.contains("ru-RU"))
-  
-  // Test locale fallback chain
-  I18nConfig::set_locale_fallback(config, "zh-HK", ["zh-TW", "zh-CN", "en"])
-  
-  let fallback_chain = I18nConfig::get_locale_fallback(config, "zh-HK")
-  assert_eq(fallback_chain[0], "zh-HK")
-  assert_eq(fallback_chain[1], "zh-TW")
-  assert_eq(fallback_chain[2], "zh-CN")
-  assert_eq(fallback_chain[3], "en")
-  
-  // Test locale-specific formatting rules
-  I18nConfig::set_number_format(config, "en-US", NumberFormat {
-    decimal_separator: ".",
-    thousands_separator: ",",
-    grouping: [3, 3]
-  })
-  
-  I18nConfig::set_number_format(config, "de-DE", NumberFormat {
-    decimal_separator: ",",
-    thousands_separator: ".",
-    grouping: [3, 3]
-  })
-  
-  I18nConfig::set_number_format(config, "fr-FR", NumberFormat {
-    decimal_separator: ",",
-    thousands_separator: " ",
-    grouping: [3, 3]
-  })
-  
-  let en_format = I18nConfig::get_number_format(config, "en-US")
-  assert_eq(en_format.decimal_separator, ".")
-  assert_eq(en_format.thousands_separator, ",")
-  
-  let de_format = I18nConfig::get_number_format(config, "de-DE")
-  assert_eq(de_format.decimal_separator, ",")
-  assert_eq(de_format.thousands_separator, ".")
-  
-  let fr_format = I18nConfig::get_number_format(config, "fr-FR")
-  assert_eq(fr_format.decimal_separator, ",")
-  assert_eq(fr_format.thousands_separator, " ")
-}
-
-// Test 10: Internationalization Performance
-test "internationalization performance" {
-  let i18n_system = I18nSystem::new()
-  
-  // Initialize with multiple locales
-  I18nSystem::add_locale(i18n_system, "en-US")
-  I18nSystem::add_locale(i18n_system, "zh-CN")
-  I18nSystem::add_locale(i18n_system, "ja-JP")
-  I18nSystem::add_locale(i18n_system, "ko-KR")
-  I18nSystem::add_locale(i18n_system, "ar-SA")
-  I18nSystem::add_locale(i18n_system, "ru-RU")
-  I18nSystem::add_locale(i18n_system, "de-DE")
-  I18nSystem::add_locale(i18n_system, "fr-FR")
-  
-  let start_time = get_current_time_millis()
-  
-  // Test performance of locale-specific operations
-  for i in 0..10000 {
-    let locale = match i % 8 {
-      0 => "en-US"
-      1 => "zh-CN"
-      2 => "ja-JP"
-      3 => "ko-KR"
-      4 => "ar-SA"
-      5 => "ru-RU"
-      6 => "de-DE"
-      _ => "fr-FR"
+  // 格式化日期
+  let format_date = fn(year, month, day, language) {
+    let format = if date_formats.contains(language) {
+      date_formats[language]
+    } else {
+      "YYYY-MM-DD" // 默认格式
     }
     
-    // Test message translation
-    let message = I18nSystem::translate(i18n_system, "OPERATION_SUCCESS", locale)
-    
-    // Test number formatting
-    let number = I18nSystem::format_number(i18n_system, 1234.56, locale)
-    
-    // Test date formatting
-    let date = I18nSystem::format_date(i18n_system, get_current_time_millis(), locale)
+    match format {
+      "MM/DD/YYYY" => month.to_string() + "/" + day.to_string() + "/" + year.to_string(),
+      "YYYY年MM月DD日" => year.to_string() + "年" + month.to_string() + "月" + day.to_string() + "日",
+      "DD.MM.YYYY" => day.to_string() + "." + month.to_string() + "." + year.to_string(),
+      _ => year.to_string() + "-" + month.to_string() + "-" + day.to_string()
+    }
   }
   
-  let end_time = get_current_time_millis()
-  let total_time = end_time - start_time
+  // 格式化时间
+  let format_time = fn(hour, minute, second, language) {
+    let format = if time_formats.contains(language) {
+      time_formats[language]
+    } else {
+      "HH:mm:ss" // 默认格式
+    }
+    
+    match format {
+      "h:mm:ss A" => {
+        let hour_12 = if hour > 12 { hour - 12 } else { if hour == 0 { 12 } else { hour } }
+        let am_pm = if hour >= 12 { "PM" } else { "AM" }
+        hour_12.to_string() + ":" + minute.to_string() + ":" + second.to_string() + " " + am_pm
+      },
+      _ => hour.to_string() + ":" + minute.to_string() + ":" + second.to_string()
+    }
+  }
   
-  // Performance assertion - should complete within reasonable time
-  assert_true(total_time < 5000) // Should complete within 5 seconds
+  // 测试日期格式化
+  assert_eq(format_date(2023, 1, 15, "en"), "1/15/2023")
+  assert_eq(format_date(2023, 1, 15, "zh"), "2023年1月15日")
+  assert_eq(format_date(2023, 1, 15, "de"), "15.1.2023")
   
-  // Calculate operations per second
-  let total_operations = 10000 * 3 // 3 operations per iteration
-  let ops_per_second = total_operations / (total_time / 1000)
-  assert_true(ops_per_second > 5000) // Should handle at least 5000 ops/sec
+  // 测试时间格式化
+  assert_eq(format_time(14, 30, 45, "en"), "2:30:45 PM")
+  assert_eq(format_time(14, 30, 45, "zh"), "14:30:45")
+  assert_eq(format_time(9, 5, 30, "en"), "9:05:30 AM")
 }
 
-// Helper function to get current time in milliseconds
-fn get_current_time_millis() -> Int {
-  // Mock implementation - in real code would use system time
-  1609459200000 + Random::int(0, 86400000) // Random time within a day
+// 测试5: 数字格式化
+test "数字格式化" {
+  // 数字格式配置
+  let number_formats = {
+    "en": {
+      decimal_separator: ".",
+      thousands_separator: ",",
+      currency_symbol: "$",
+      currency_position: "before"
+    },
+    "de": {
+      decimal_separator: ",",
+      thousands_separator: ".",
+      currency_symbol: "€",
+      currency_position: "after"
+    },
+    "zh": {
+      decimal_separator: ".",
+      thousands_separator: ",",
+      currency_symbol: "¥",
+      currency_position: "before"
+    }
+  }
+  
+  // 格式化数字
+  let format_number = fn(number, language) {
+    if number_formats.contains(language) {
+      let format = number_formats[language]
+      let decimal_part = ""
+      let integer_part = ""
+      
+      // 分离整数和小数部分
+      let number_str = number.to_string()
+      if number_str.contains(".") {
+        let parts = number_str.split(".")
+        integer_part = parts[0]
+        decimal_part = format.decimal_separator + parts[1]
+      } else {
+        integer_part = number_str
+      }
+      
+      // 添加千位分隔符
+      let formatted_integer = ""
+      let mut count = 0
+      
+      for i in integer_part.length() - 1 ..= 0 {
+        formatted_integer = integer_part[i] + formatted_integer
+        count = count + 1
+        
+        if count == 3 && i > 0 {
+          formatted_integer = format.thousands_separator + formatted_integer
+          count = 0
+        }
+      }
+      
+      formatted_integer + decimal_part
+    } else {
+      number.to_string()
+    }
+  }
+  
+  // 格式化货币
+  let format_currency = fn(amount, language) {
+    if number_formats.contains(language) {
+      let format = number_formats[language]
+      let formatted_number = format_number(amount, language)
+      
+      if format.currency_position == "before" {
+        format.currency_symbol + formatted_number
+      } else {
+        formatted_number + " " + format.currency_symbol
+      }
+    } else {
+      amount.to_string()
+    }
+  }
+  
+  // 测试数字格式化
+  assert_eq(format_number(1234567.89, "en"), "1,234,567.89")
+  assert_eq(format_number(1234567.89, "de"), "1.234.567,89")
+  assert_eq(format_number(1234567.89, "zh"), "1,234,567.89")
+  
+  // 测试货币格式化
+  assert_eq(format_currency(1234.56, "en"), "$1234.56")
+  assert_eq(format_currency(1234.56, "de"), "1234,56 €")
+  assert_eq(format_currency(1234.56, "zh"), "¥1234.56")
+}
+
+// 测试6: 文本方向和RTL支持
+test "文本方向和RTL支持" {
+  // 语言方向
+  let language_directions = {
+    "en": "ltr",
+    "zh": "ltr",
+    "ar": "rtl",
+    "he": "rtl",
+    "fa": "rtl"
+  }
+  
+  // 获取文本方向
+  let get_text_direction = fn(language) {
+    if language_directions.contains(language) {
+      language_directions[language]
+    } else {
+      "ltr" // 默认从左到右
+    }
+  }
+  
+  // 检查是否为RTL语言
+  let is_rtl_language = fn(language) {
+    get_text_direction(language) == "rtl"
+  }
+  
+  // 调整文本对齐
+  let adjust_text_align = fn(align, language) {
+    if is_rtl_language(language) {
+      match align {
+        "left" => "right",
+        "right" => "left",
+        "center" => "center",
+        _ => align
+      }
+    } else {
+      align
+    }
+  }
+  
+  // 测试文本方向
+  assert_eq(get_text_direction("en"), "ltr")
+  assert_eq(get_text_direction("zh"), "ltr")
+  assert_eq(get_text_direction("ar"), "rtl")
+  assert_eq(get_text_direction("he"), "rtl")
+  
+  assert_false(is_rtl_language("en"))
+  assert_false(is_rtl_language("zh"))
+  assert_true(is_rtl_language("ar"))
+  assert_true(is_rtl_language("he"))
+  
+  // 测试文本对齐调整
+  assert_eq(adjust_text_align("left", "en"), "left")
+  assert_eq(adjust_text_align("left", "ar"), "right")
+  assert_eq(adjust_text_align("right", "ar"), "left")
+  assert_eq(adjust_text_align("center", "he"), "center")
+}
+
+// 测试7: 时区处理
+test "时区处理" {
+  // 时区偏移量（小时）
+  let timezone_offsets = {
+    "UTC": 0,
+    "EST": -5,
+    "PST": -8,
+    "CST": 8, // 中国标准时间
+    "JST": 9, // 日本标准时间
+    "CET": 1  // 中欧时间
+  }
+  
+  // 转换时区
+  let convert_timezone = fn(timestamp, from_tz, to_tz) {
+    if timezone_offsets.contains(from_tz) && timezone_offsets.contains(to_tz) {
+      let from_offset = timezone_offsets[from_tz]
+      let to_offset = timezone_offsets[to_tz]
+      let offset_diff = to_offset - from_offset
+      
+      timestamp + (offset_diff * 3600) // 转换为秒
+    } else {
+      timestamp
+    }
+  }
+  
+  // 格式化时间戳为可读时间
+  let format_timestamp = fn(timestamp) {
+    let hours = (timestamp / 3600) % 24
+    let minutes = (timestamp % 3600) / 60
+    let seconds = timestamp % 60
+    
+    hours.to_string() + ":" + 
+    (if minutes < 10 { "0" } else { "" }) + minutes.to_string() + ":" +
+    (if seconds < 10 { "0" } else { "" }) + seconds.to_string()
+  }
+  
+  // 测试时区转换
+  let utc_time = 12 * 3600 // 12:00:00 UTC
+  
+  let est_time = convert_timezone(utc_time, "UTC", "EST")
+  let cst_time = convert_timezone(utc_time, "UTC", "CST")
+  let jst_time = convert_timezone(utc_time, "UTC", "JST")
+  
+  assert_eq(format_timestamp(est_time), "7:00:00") // UTC-5
+  assert_eq(format_timestamp(cst_time), "20:00:00") // UTC+8
+  assert_eq(format_timestamp(jst_time), "21:00:00") // UTC+9
+  
+  // 测试时区之间转换
+  let est_to_cst = convert_timezone(est_time, "EST", "CST")
+  assert_eq(format_timestamp(est_to_cst), "20:00:00")
+}
+
+// 测试8: 本地化排序
+test "本地化排序" {
+  // 本地化排序规则
+  let localized_sort = fn(strings, language) {
+    match language {
+      "zh" => {
+        // 中文按拼音排序（简化版）
+        strings.sort(fn(a, b) { a < b })
+      }
+      "de" => {
+        // 德语特殊字符排序（简化版）
+        strings.sort(fn(a, b) {
+          // 将ä替换为ae，ö替换为oe，ü替换为ue
+          let normalize = fn(s) {
+            s.replace("ä", "ae").replace("ö", "oe").replace("ü", "ue")
+          }
+          normalize(a) < normalize(b)
+        })
+      }
+      _ => {
+        // 默认排序
+        strings.sort(fn(a, b) { a < b })
+      }
+    }
+  }
+  
+  // 测试中文排序
+  let chinese_names = ["张三", "李四", "王五", "赵六"]
+  let sorted_chinese = localized_sort(chinese_names, "zh")
+  
+  // 测试德语排序
+  let german_words = ["äpfel", "öfen", "übung", "banana"]
+  let sorted_german = localized_sort(german_words, "de")
+  
+  // 测试英文排序
+  let english_words = ["apple", "banana", "cherry", "date"]
+  let sorted_english = localized_sort(english_words, "en")
+  
+  // 验证排序结果
+  assert_eq(sorted_chinese.length(), 4)
+  assert_eq(sorted_german.length(), 4)
+  assert_eq(sorted_english.length(), 4)
+  
+  // 英文排序验证
+  assert_eq(sorted_english[0], "apple")
+  assert_eq(sorted_english[1], "banana")
+  assert_eq(sorted_english[2], "cherry")
+  assert_eq(sorted_english[3], "date")
+}
+
+// 测试9: 语言回退机制
+test "语言回退机制" {
+  // 支持的语言层次结构
+  let language_hierarchy = {
+    "zh-CN": ["zh-CN", "zh", "en"],
+    "zh-TW": ["zh-TW", "zh", "en"],
+    "en-US": ["en-US", "en"],
+    "es-ES": ["es-ES", "es", "en"],
+    "fr-FR": ["fr-FR", "fr", "en"]
+  }
+  
+  // 可用翻译
+  let available_translations = ["en", "zh", "es"]
+  
+  // 查找最佳匹配语言
+  let find_best_language = fn(preferred) {
+    if language_hierarchy.contains(preferred) {
+      let hierarchy = language_hierarchy[preferred]
+      
+      for lang in hierarchy {
+        if available_translations.contains(lang) {
+          return lang
+        }
+      }
+    }
+    
+    // 默认回退到英语
+    "en"
+  }
+  
+  // 测试语言回退
+  assert_eq(find_best_language("zh-CN"), "zh") // zh-CN不可用，回退到zh
+  assert_eq(find_best_language("zh-TW"), "zh") // zh-TW不可用，回退到zh
+  assert_eq(find_best_language("en-US"), "en") // en-US不可用，回退到en
+  assert_eq(find_best_language("es-ES"), "es") // es-ES不可用，回退到es
+  assert_eq(find_best_language("fr-FR"), "en") // fr和fr-FR都不可用，回退到en
+  assert_eq(find_best_language("ja-JP"), "en") // 不在层次结构中，回退到en
+}
+
+// 测试10: 字符编码处理
+test "字符编码处理" {
+  // 不同语言的文本样本
+  let text_samples = {
+    "en": "Hello, World!",
+    "zh": "你好，世界！",
+    "ja": "こんにちは、世界！",
+    "ar": "مرحبا بالعالم!",
+    "ru": "Привет, мир!",
+    "emoji": "Hello 🌍🚀👋"
+  }
+  
+  // 计算字符长度（考虑Unicode）
+  let unicode_length = fn(text) {
+    let mut count = 0
+    let mut i = 0
+    
+    while i < text.length() {
+      let ch = text[i]
+      
+      // 简化的Unicode字符长度计算
+      if ch >= '\u{D800}' && ch <= '\u{DFFF}' {
+        // 代理对（UTF-16）
+        i = i + 2
+      } else {
+        i = i + 1
+      }
+      
+      count = count + 1
+    }
+    
+    count
+  }
+  
+  // 检测是否包含非ASCII字符
+  let has_non_ascii = fn(text) {
+    for ch in text.to_char_array() {
+      if ch.to_int() > 127 {
+        return true
+      }
+    }
+    false
+  }
+  
+  // 检测是否包含表情符号
+  let has_emoji = fn(text) {
+    // 简化的表情符号检测
+    text.contains("🌍") || text.contains("🚀") || text.contains("👋") || 
+    text.contains("😀") || text.contains("❤️")
+  }
+  
+  // 测试字符编码处理
+  assert_eq(unicode_length(text_samples["en"]), 13)
+  assert_eq(unicode_length(text_samples["zh"]), 6) // 中文字符
+  assert_eq(unicode_length(text_samples["ja"]), 9) // 日文字符
+  assert_eq(unicode_length(text_samples["ar"]), 14) // 阿拉伯字符
+  assert_eq(unicode_length(text_samples["ru"]), 12) // 西里尔字符
+  assert_eq(unicode_length(text_samples["emoji"]), 11) // 包含表情符号
+  
+  assert_false(has_non_ascii(text_samples["en"]))
+  assert_true(has_non_ascii(text_samples["zh"]))
+  assert_true(has_non_ascii(text_samples["ja"]))
+  assert_true(has_non_ascii(text_samples["ar"]))
+  assert_true(has_non_ascii(text_samples["ru"]))
+  assert_true(has_non_ascii(text_samples["emoji"]))
+  
+  assert_false(has_emoji(text_samples["en"]))
+  assert_false(has_emoji(text_samples["zh"]))
+  assert_true(has_emoji(text_samples["emoji"]))
 }

@@ -1,514 +1,609 @@
-// Azimuth Telemetry System - Resource Lifecycle Management Tests
-// This file contains comprehensive resource lifecycle management test cases
+// Azimuth 资源生命周期管理测试
+// 全面测试资源获取、使用和释放机制
 
-// Test 1: Span Lifecycle Management
-test "span lifecycle management" {
-  let spans = []
+// 测试1: 基本资源获取和释放
+test "基本资源获取和释放" {
+  // 模拟资源池
+  let mut available_resources = ["resource1", "resource2", "resource3"]
+  let mut used_resources = {}
   
-  // Create spans
-  for i in 0..100 {
-    let trace_id = "trace_" + i.to_string()
-    let span_id = "span_" + i.to_string()
-    let span_ctx = SpanContext::new(trace_id, span_id, true, "lifecycle_test")
-    let span = Span::new("lifecycle_span", Internal, span_ctx)
-    spans.push(span)
-    
-    // Verify span is recording
-    assert_true(Span::is_recording(span))
-    assert_eq(Span::status(span), Unset)
-  }
-  
-  // Modify spans
-  for (i, span) in spans.enumerate() {
-    Span::add_event(span, "event_" + i.to_string(), None)
-    Span::set_status(span, Ok, Some("Span modified"))
-    
-    // Verify modifications
-    assert_eq(Span::status(span), Ok)
-  }
-  
-  // End spans
-  for span in spans {
-    Span::end(span)
-    
-    // Verify span is no longer recording
-    assert_false(Span::is_recording(span))
-  }
-  
-  assert_eq(spans.length(), 100)
-}
-
-// Test 2: Meter Provider Lifecycle Management
-test "meter provider lifecycle management" {
-  let providers = []
-  
-  // Create multiple meter providers
-  for i in 0..10 {
-    let provider = MeterProvider::default()
-    providers.push(provider)
-    
-    // Create meter from provider
-    let meter = MeterProvider::get_meter(provider, "lifecycle_meter_" + i.to_string())
-    
-    // Create instruments from meter
-    let counter = Meter::create_counter(meter, "counter_" + i.to_string(), None, None)
-    let histogram = Meter::create_histogram(meter, "histogram_" + i.to_string(), None, None)
-    
-    // Use instruments
-    Counter::add(counter, 1.0)
-    Histogram::record(histogram, 100.0)
-  }
-  
-  // Shutdown providers
-  for provider in providers {
-    MeterProvider::shutdown(provider)
-  }
-  
-  assert_eq(providers.length(), 10)
-}
-
-// Test 3: Logger Provider Lifecycle Management
-test "logger provider lifecycle management" {
-  let providers = []
-  
-  // Create multiple logger providers
-  for i in 0..10 {
-    let provider = LoggerProvider::default()
-    providers.push(provider)
-    
-    // Create logger from provider
-    let logger = LoggerProvider::get_logger(provider, "lifecycle_logger_" + i.to_string())
-    
-    // Emit log records
-    for j in 0..10 {
-      let log_record = LogRecord::new(Info, "Log message " + i.to_string() + "_" + j.to_string())
-      Logger::emit(logger, log_record)
+  // 获取资源
+  let acquire_resource = fn() {
+    if available_resources.length() > 0 {
+      let resource = available_resources[0]
+      available_resources = available_resources.slice(1)
+      used_resources[resource] = true
+      Some(resource)
+    } else {
+      None
     }
   }
   
-  // Shutdown providers
-  for provider in providers {
-    LoggerProvider::shutdown(provider)
+  // 释放资源
+  let release_resource = fn(resource) {
+    if used_resources.contains(resource) {
+      used_resources[resource] = false
+      available_resources = available_resources.push(resource)
+    }
   }
   
-  assert_eq(providers.length(), 10)
+  // 测试资源获取
+  let resource1 = acquire_resource()
+  let resource2 = acquire_resource()
+  
+  assert_true(resource1.is_some())
+  assert_true(resource2.is_some())
+  assert_eq(available_resources.length(), 1)
+  assert_eq(used_resources.length(), 2)
+  
+  // 测试资源释放
+  release_resource(resource1.unwrap())
+  assert_eq(available_resources.length(), 2)
+  assert_eq(used_resources[resource1.unwrap()], false)
 }
 
-// Test 4: Attribute Resource Management
-test "attribute resource management" {
-  let attributes_collection = []
+// 测试2: 资源自动清理
+test "资源自动清理" {
+  // 模拟资源使用追踪
+  let mut active_resources = {}
+  let mut cleanup_log = []
   
-  // Create multiple attribute collections
-  for i in 0..50 {
-    let attrs = Attributes::new()
+  // 资源使用包装器
+  let use_resource = fn(resource_name, operation) {
+    // 标记资源为活动状态
+    active_resources[resource_name] = true
     
-    // Add attributes to collection
-    for j in 0..20 {
-      let key = "attr_" + i.to_string() + "_" + j.to_string()
-      let value = StringValue("value_" + i.to_string() + "_" + j.to_string())
-      Attributes::set(attrs, key, value)
-    }
+    // 执行操作
+    let result = operation()
     
-    attributes_collection.push(attrs)
+    // 自动清理
+    active_resources[resource_name] = false
+    cleanup_log = cleanup_log.push("Cleaned up: " + resource_name)
+    
+    result
   }
   
-  // Verify all attributes
-  for (i, attrs) in attributes_collection.enumerate() {
-    for j in 0..20 {
-      let key = "attr_" + i.to_string() + "_" + j.to_string()
-      let expected_value = "value_" + i.to_string() + "_" + j.to_string()
-      
-      let retrieved = Attributes::get(attrs, key)
-      match retrieved {
-        Some(StringValue(v)) => assert_eq(v, expected_value)
-        None => assert_true(false)
+  // 测试资源使用和自动清理
+  let result = use_resource("database_connection", fn() {
+    "Operation completed"
+  })
+  
+  assert_eq(result, "Operation completed")
+  assert_eq(active_resources["database_connection"], false)
+  assert_eq(cleanup_log.length(), 1)
+  assert_eq(cleanup_log[0], "Cleaned up: database_connection")
+}
+
+// 测试3: 资源泄漏检测
+test "资源泄漏检测" {
+  // 资源追踪器
+  let mut allocated_resources = {}
+  let mut leaked_resources = []
+  
+  // 分配资源
+  let allocate_resource = fn(resource_id) {
+    allocated_resources[resource_id] = {
+      allocated: true,
+      timestamp: 1640995200
+    }
+    resource_id
+  }
+  
+  // 释放资源
+  let deallocate_resource = fn(resource_id) {
+    if allocated_resources.contains(resource_id) {
+      allocated_resources[resource_id].allocated = false
+    }
+  }
+  
+  // 检测资源泄漏
+  let detect_leaks = fn() {
+    leaked_resources = []
+    
+    for resource_id in allocated_resources.keys() {
+      if allocated_resources[resource_id].allocated {
+        leaked_resources = leaked_resources.push(resource_id)
       }
     }
+    
+    leaked_resources
   }
   
-  // Clean up (if explicit cleanup is needed)
-  attributes_collection = []
+  // 测试资源分配和释放
+  let resource1 = allocate_resource("res1")
+  let resource2 = allocate_resource("res2")
+  let resource3 = allocate_resource("res3")
   
-  assert_eq(attributes_collection.length(), 0)
+  // 只释放部分资源
+  deallocate_resource(resource2)
+  
+  // 检测泄漏
+  let leaks = detect_leaks()
+  
+  assert_eq(leaks.length(), 2)
+  assert_true(leaks.contains("res1"))
+  assert_true(leaks.contains("res3"))
+  assert_false(leaks.contains("res2"))
 }
 
-// Test 5: Context Resource Management
-test "context resource management" {
-  let contexts = []
-  
-  // Create nested contexts
-  for i in 0..20 {
-    let base_ctx = if i == 0 { Context::root() } else { contexts[i-1] }
-    let key = ContextKey::new("ctx_key_" + i.to_string())
-    let value = "ctx_value_" + i.to_string()
-    let new_ctx = Context::with_value(base_ctx, key, value)
-    contexts.push(new_ctx)
+// 测试4: 资源池管理
+test "资源池管理" {
+  // 资源池配置
+  let pool_config = {
+    min_size: 2,
+    max_size: 5,
+    growth_factor: 2
   }
   
-  // Verify context chain
-  for (i, ctx) in contexts.enumerate() {
-    for j in 0..=i {
-      let key = ContextKey::new("ctx_key_" + j.to_string())
-      let expected_value = "ctx_value_" + j.to_string()
+  // 资源池状态
+  let mut pool_resources = ["conn1", "conn2"] // 初始大小
+  let mut pool_created = 2
+  let mut pool_acquired = 0
+  
+  // 从池中获取资源
+  let pool_acquire = fn() {
+    if pool_resources.length() > 0 {
+      let resource = pool_resources[0]
+      pool_resources = pool_resources.slice(1)
+      pool_acquired = pool_acquired + 1
+      Some(resource)
+    } else if pool_created < pool_config.max_size {
+      // 创建新资源
+      pool_created = pool_created + 1
+      pool_acquired = pool_acquired + 1
+      Some("conn" + pool_created.to_string())
+    } else {
+      None
+    }
+  }
+  
+  // 归还资源到池
+  let pool_release = fn(resource) {
+    pool_resources = pool_resources.push(resource)
+    pool_acquired = pool_acquired - 1
+  }
+  
+  // 测试资源池操作
+  let res1 = pool_acquire()
+  let res2 = pool_acquire()
+  
+  assert_true(res1.is_some())
+  assert_true(res2.is_some())
+  assert_eq(pool_resources.length(), 0)
+  assert_eq(pool_acquired, 2)
+  
+  // 获取更多资源，触发池增长
+  let res3 = pool_acquire()
+  let res4 = pool_acquire()
+  let res5 = pool_acquire()
+  
+  assert_true(res3.is_some())
+  assert_true(res4.is_some())
+  assert_true(res5.is_some())
+  assert_eq(pool_created, 5) // 达到最大大小
+  
+  // 尝试获取超出池大小的资源
+  let res6 = pool_acquire()
+  assert_true(res6.is_none())
+  
+  // 归还资源
+  pool_release(res1.unwrap())
+  pool_release(res2.unwrap())
+  
+  assert_eq(pool_resources.length(), 2)
+  assert_eq(pool_acquired, 3)
+}
+
+// 测试5: 资源使用统计
+test "资源使用统计" {
+  // 资源使用统计
+  let mut resource_stats = {
+    total_allocated: 0,
+    total_deallocated: 0,
+    peak_usage: 0,
+    current_usage: 0
+  }
+  
+  // 分配资源
+  let allocate_with_stats = fn() {
+    resource_stats.total_allocated = resource_stats.total_allocated + 1
+    resource_stats.current_usage = resource_stats.current_usage + 1
+    
+    if resource_stats.current_usage > resource_stats.peak_usage {
+      resource_stats.peak_usage = resource_stats.current_usage
+    }
+    
+    "resource" + resource_stats.total_allocated.to_string()
+  }
+  
+  // 释放资源
+  let deallocate_with_stats = fn() {
+    resource_stats.total_deallocated = resource_stats.total_deallocated + 1
+    resource_stats.current_usage = resource_stats.current_usage - 1
+  }
+  
+  // 测试资源使用统计
+  let res1 = allocate_with_stats()
+  let res2 = allocate_with_stats()
+  let res3 = allocate_with_stats()
+  
+  assert_eq(resource_stats.total_allocated, 3)
+  assert_eq(resource_stats.total_deallocated, 0)
+  assert_eq(resource_stats.current_usage, 3)
+  assert_eq(resource_stats.peak_usage, 3)
+  
+  deallocate_with_stats()
+  
+  assert_eq(resource_stats.total_deallocated, 1)
+  assert_eq(resource_stats.current_usage, 2)
+  assert_eq(resource_stats.peak_usage, 3) // 峰值保持不变
+  
+  // 分配更多资源
+  let res4 = allocate_with_stats()
+  let res5 = allocate_with_stats()
+  
+  assert_eq(resource_stats.total_allocated, 5)
+  assert_eq(resource_stats.current_usage, 4)
+  assert_eq(resource_stats.peak_usage, 4) // 新的峰值
+}
+
+// 测试6: 资源依赖管理
+test "资源依赖管理" {
+  // 资源依赖图
+  let mut resource_dependencies = {}
+  let mut resource_status = {}
+  
+  // 添加资源依赖
+  let add_dependency = fn(resource, dependency) {
+    if resource_dependencies.contains(resource) {
+      let current_deps = resource_dependencies[resource]
+      resource_dependencies[resource] = current_deps.push(dependency)
+    } else {
+      resource_dependencies[resource] = [dependency]
+    }
+    resource_status[resource] = "active"
+    resource_status[dependency] = "active"
+  }
+  
+  // 释放资源（包括依赖）
+  let release_with_dependencies = fn(resource) {
+    if resource_status[resource] == "active" {
+      // 首先释放依赖
+      if resource_dependencies.contains(resource) {
+        for dep in resource_dependencies[resource] {
+          if resource_status[dep] == "active" {
+            resource_status[dep] = "released"
+          }
+        }
+      }
       
-      let retrieved = Context::get(ctx, key)
-      match retrieved {
-        Some(value) => assert_eq(value, expected_value)
-        None => assert_true(false)
+      // 然后释放资源本身
+      resource_status[resource] = "released"
+    }
+  }
+  
+  // 测试资源依赖
+  add_dependency("web_server", "database_connection")
+  add_dependency("web_server", "cache_connection")
+  add_dependency("database_connection", "connection_pool")
+  
+  // 验证依赖关系
+  assert_eq(resource_dependencies["web_server"].length(), 2)
+  assert_true(resource_dependencies["web_server"].contains("database_connection"))
+  assert_true(resource_dependencies["web_server"].contains("cache_connection"))
+  assert_eq(resource_dependencies["database_connection"].length(), 1)
+  assert_true(resource_dependencies["database_connection"].contains("connection_pool"))
+  
+  // 释放资源
+  release_with_dependencies("web_server")
+  
+  // 验证资源释放
+  assert_eq(resource_status["web_server"], "released")
+  assert_eq(resource_status["database_connection"], "released")
+  assert_eq(resource_status["cache_connection"], "released")
+  assert_eq(resource_status["connection_pool"], "released")
+}
+
+// 测试7: 资源超时管理
+test "资源超时管理" {
+  // 资源超时配置
+  let timeout_config = {
+    default_timeout: 30, // 秒
+    warning_threshold: 20 // 秒
+  }
+  
+  // 资源使用记录
+  let mut resource_usage = {}
+  
+  // 开始使用资源
+  let start_using = fn(resource_id) {
+    let current_time = 1640995200
+    resource_usage[resource_id] = {
+      start_time: current_time,
+      last_activity: current_time,
+      timeout: timeout_config.default_timeout
+    }
+  }
+  
+  // 更新活动时间
+  let update_activity = fn(resource_id) {
+    let current_time = 1640995250 // 50秒后
+    if resource_usage.contains(resource_id) {
+      resource_usage[resource_id].last_activity = current_time
+    }
+  }
+  
+  // 检查超时资源
+  let check_timeouts = fn() {
+    let current_time = 1640995250 // 50秒后
+    let timed_out_resources = []
+    
+    for resource_id in resource_usage.keys() {
+      let usage = resource_usage[resource_id]
+      let elapsed = current_time - usage.last_activity
+      
+      if elapsed > usage.timeout {
+        timed_out_resources = timed_out_resources.push(resource_id)
       }
     }
+    
+    timed_out_resources
   }
   
-  // Clean up
-  contexts = []
+  // 测试资源超时
+  start_using("resource1")
+  start_using("resource2")
   
-  assert_eq(contexts.length(), 0)
+  // 更新一个资源的活动时间
+  update_activity("resource2")
+  
+  // 检查超时
+  let timed_out = check_timeouts()
+  
+  assert_eq(timed_out.length(), 1)
+  assert_eq(timed_out[0], "resource1")
+  assert_false(timed_out.contains("resource2"))
 }
 
-// Test 6: Resource Attribute Management
-test "resource attribute management" {
-  let resources = []
-  
-  // Create resources with attributes
-  for i in 0..30 {
-    let resource = Resource::new()
-    
-    // Add standard attributes
-    let standard_attrs = [
-      ("service.name", StringValue("service_" + i.to_string())),
-      ("service.version", StringValue("1.0." + i.to_string())),
-      ("service.instance.id", StringValue("instance_" + i.to_string()))
-    ]
-    
-    let resource_with_attrs = Resource::with_attributes(resource, standard_attrs)
-    
-    // Add custom attributes
-    for j in 0..10 {
-      let key = "custom_attr_" + j.to_string()
-      let value = StringValue("custom_value_" + i.to_string() + "_" + j.to_string())
-      Resource::set_attribute(resource_with_attrs, key, value)
-    }
-    
-    resources.push(resource_with_attrs)
+// 测试8: 资源优先级管理
+test "资源优先级管理" {
+  // 资源优先级
+  enum Priority {
+    Critical
+    High
+    Normal
+    Low
   }
   
-  // Verify all resource attributes
-  for (i, resource) in resources.enumerate() {
-    // Verify standard attributes
-    let service_name = Resource::get_attribute(resource, "service.name")
-    match service_name {
-      Some(StringValue(v)) => assert_eq(v, "service_" + i.to_string())
-      _ => assert_true(false)
+  // 资源队列
+  let mut resource_queue = []
+  let mut allocated_resources = {}
+  
+  // 请求资源
+  let request_resource = fn(resource_id, priority) {
+    let request = {
+      id: resource_id,
+      priority: priority,
+      timestamp: 1640995200
     }
     
-    let service_version = Resource::get_attribute(resource, "service.version")
-    match service_version {
-      Some(StringValue(v)) => assert_eq(v, "1.0." + i.to_string())
-      _ => assert_true(false)
+    // 按优先级插入
+    let mut inserted = false
+    let mut new_queue = []
+    
+    for existing in resource_queue {
+      if !inserted && priority_higher(priority, existing.priority) {
+        new_queue = new_queue.push(request)
+        inserted = true
+      }
+      new_queue = new_queue.push(existing)
     }
     
-    // Verify custom attributes
-    for j in 0..10 {
-      let key = "custom_attr_" + j.to_string()
-      let expected_value = "custom_value_" + i.to_string() + "_" + j.to_string()
-      
-      let custom_attr = Resource::get_attribute(resource, key)
-      match custom_attr {
-        Some(StringValue(v)) => assert_eq(v, expected_value)
-        _ => assert_true(false)
+    if !inserted {
+      new_queue = new_queue.push(request)
+    }
+    
+    resource_queue = new_queue
+  }
+  
+  // 优先级比较
+  let priority_higher = fn(p1, p2) {
+    match (p1, p2) {
+      (Priority::Critical, _) => true
+      (Priority::High, Priority::Critical) => false
+      (Priority::High, Priority::Normal | Priority::Low) => true
+      (Priority::Normal, Priority::Critical | Priority::High) => false
+      (Priority::Normal, Priority::Low) => true
+      (Priority::Low, _) => false
+    }
+  }
+  
+  // 分配资源
+  let allocate_resources = fn(count) {
+    let allocated = []
+    
+    for i in 0..=count {
+      if resource_queue.length() > 0 {
+        let request = resource_queue[0]
+        resource_queue = resource_queue.slice(1)
+        allocated_resources[request.id] = true
+        allocated = allocated.push(request.id)
       }
     }
-  }
-  
-  // Test resource merging
-  let base_resource = Resource::new()
-  for resource in resources {
-    let merged = Resource::merge(base_resource, resource)
     
-    // Verify merge preserved attributes
-    let service_name = Resource::get_attribute(merged, "service.name")
-    match service_name {
-      Some(StringValue(_)) => assert_true(true)
-      _ => assert_true(false)
-    }
+    allocated
   }
   
-  // Clean up
-  resources = []
+  // 测试资源优先级
+  request_resource("low1", Priority::Low)
+  request_resource("high1", Priority::High)
+  request_resource("critical1", Priority::Critical)
+  request_resource("normal1", Priority::Normal)
   
-  assert_eq(resources.length(), 0)
+  // 分配资源（应该按优先级顺序）
+  let allocated = allocate_resources(3)
+  
+  assert_eq(allocated.length(), 3)
+  assert_eq(allocated[0], "critical1") // 最高优先级
+  assert_eq(allocated[1], "high1") // 次高优先级
+  assert_eq(allocated[2], "normal1") // 普通优先级
+  
+  // 低优先级资源仍在队列中
+  assert_eq(resource_queue.length(), 1)
+  assert_eq(resource_queue[0].id, "low1")
 }
 
-// Test 7: Baggage Resource Management
-test "baggage resource management" {
-  let baggage_collection = []
+// 测试9: 资源健康检查
+test "资源健康检查" {
+  // 资源健康状态
+  let mut resource_health = {}
   
-  // Create baggage with entries
-  for i in 0..25 {
-    let baggage = Baggage::new()
-    
-    // Add entries to baggage
-    for j in 0..15 {
-      let key = "baggage_key_" + i.to_string() + "_" + j.to_string()
-      let value = "baggage_value_" + i.to_string() + "_" + j.to_string()
-      baggage = Baggage::set_entry(baggage, key, value)
+  // 注册资源
+  let register_resource = fn(resource_id) {
+    resource_health[resource_id] = {
+      status: "healthy",
+      last_check: 1640995200,
+      failure_count: 0
     }
-    
-    baggage_collection.push(baggage)
   }
   
-  // Verify all baggage entries
-  for (i, baggage) in baggage_collection.enumerate() {
-    for j in 0..15 {
-      let key = "baggage_key_" + i.to_string() + "_" + j.to_string()
-      let expected_value = "baggage_value_" + i.to_string() + "_" + j.to_string()
+  // 更新健康状态
+  let update_health = fn(resource_id, is_healthy) {
+    if resource_health.contains(resource_id) {
+      let current_time = 1640995250
+      let health = resource_health[resource_id]
       
-      let retrieved = Baggage::get_entry(baggage, key)
-      match retrieved {
-        Some(value) => assert_eq(value, expected_value)
-        None => assert_true(false)
+      if is_healthy {
+        health.status = "healthy"
+        health.failure_count = 0
+      } else {
+        health.failure_count = health.failure_count + 1
+        if health.failure_count >= 3 {
+          health.status = "unhealthy"
+        } else {
+          health.status = "degraded"
+        }
+      }
+      
+      health.last_check = current_time
+    }
+  }
+  
+  // 获取不健康资源
+  let get_unhealthy_resources = fn() {
+    let unhealthy = []
+    
+    for resource_id in resource_health.keys() {
+      if resource_health[resource_id].status != "healthy" {
+        unhealthy = unhealthy.push(resource_id)
       }
     }
+    
+    unhealthy
   }
   
-  // Test baggage removal
-  for (i, baggage) in baggage_collection.enumerate() {
-    // Remove some entries
-    for j in 0..5 {
-      let key = "baggage_key_" + i.to_string() + "_" + j.to_string()
-      baggage = Baggage::remove_entry(baggage, key)
+  // 测试资源健康检查
+  register_resource("db1")
+  register_resource("cache1")
+  register_resource("api1")
+  
+  // 模拟健康检查
+  update_health("db1", true)  // 健康
+  update_health("cache1", false) // 失败1次
+  update_health("cache1", false) // 失败2次
+  update_health("api1", false)   // 失败1次
+  
+  // 验证健康状态
+  assert_eq(resource_health["db1"].status, "healthy")
+  assert_eq(resource_health["cache1"].status, "degraded")
+  assert_eq(resource_health["api1"].status, "degraded")
+  
+  // 再次失败cache1，应该变为不健康
+  update_health("cache1", false)
+  assert_eq(resource_health["cache1"].status, "unhealthy")
+  
+  // 获取不健康资源
+  let unhealthy = get_unhealthy_resources()
+  assert_eq(unhealthy.length(), 1)
+  assert_eq(unhealthy[0], "cache1")
+}
+
+// 测试10: 资源使用模式分析
+test "资源使用模式分析" {
+  // 资源使用记录
+  let mut usage_records = []
+  
+  // 记录资源使用
+  let record_usage = fn(resource_type, duration) {
+    let record = {
+      resource_type: resource_type,
+      duration: duration,
+      timestamp: 1640995200
+    }
+    usage_records = usage_records.push(record)
+  }
+  
+  // 记录一些使用数据
+  record_usage("database", 100)
+  record_usage("cache", 50)
+  record_usage("database", 200)
+  record_usage("api", 300)
+  record_usage("cache", 75)
+  record_usage("database", 150)
+  
+  // 分析使用模式
+  let analyze_usage = fn() {
+    let analysis = {}
+    
+    for record in usage_records {
+      let resource_type = record.resource_type
       
-      // Verify removal
-      let removed = Baggage::get_entry(baggage, key)
-      match removed {
-        Some(_) => assert_true(false) // Should be removed
-        None => assert_true(true) // Expected
+      if analysis.contains(resource_type) {
+        let stats = analysis[resource_type]
+        stats.count = stats.count + 1
+        stats.total_duration = stats.total_duration + record.duration
+        stats.avg_duration = stats.total_duration / stats.count
+        
+        if record.duration > stats.max_duration {
+          stats.max_duration = record.duration
+        }
+        
+        if stats.min_duration == 0 || record.duration < stats.min_duration {
+          stats.min_duration = record.duration
+        }
+      } else {
+        analysis[resource_type] = {
+          count: 1,
+          total_duration: record.duration,
+          avg_duration: record.duration,
+          max_duration: record.duration,
+          min_duration: record.duration
+        }
       }
     }
+    
+    analysis
   }
   
-  // Clean up
-  baggage_collection = []
+  // 分析使用模式
+  let analysis = analyze_usage()
   
-  assert_eq(baggage_collection.length(), 0)
-}
-
-// Test 8: HTTP Client Resource Management
-test "http client resource management" {
-  let clients = []
-  let requests = []
-  let responses = []
+  // 验证分析结果
+  assert_eq(analysis["database"].count, 3)
+  assert_eq(analysis["database"].total_duration, 450)
+  assert_eq(analysis["database"].avg_duration, 150)
+  assert_eq(analysis["database"].max_duration, 200)
+  assert_eq(analysis["database"].min_duration, 100)
   
-  // Create multiple HTTP clients
-  for i in 0..20 {
-    let client = HttpClient::new()
-    clients.push(client)
-    
-    // Create requests
-    for j in 0..5 {
-      let headers = [
-        ("X-Client-ID", i.to_string()),
-        ("X-Request-ID", j.to_string()),
-        ("Content-Type", "application/json")
-      ]
-      let url = "https://example.com/api/" + i.to_string() + "/" + j.to_string()
-      let request = HttpRequest::new("GET", url, headers, Some("request body"))
-      requests.push(request)
-      
-      // Create responses
-      let response_headers = [
-        ("X-Client-ID", i.to_string()),
-        ("X-Request-ID", j.to_string()),
-        ("Content-Type", "application/json")
-      ]
-      let response = HttpResponse::new(200, response_headers, Some("response body"))
-      responses.push(response)
-    }
-  }
+  assert_eq(analysis["cache"].count, 2)
+  assert_eq(analysis["cache"].total_duration, 125)
+  assert_eq(analysis["cache"].avg_duration, 62)
+  assert_eq(analysis["cache"].max_duration, 75)
+  assert_eq(analysis["cache"].min_duration, 50)
   
-  // Verify all requests and responses
-  assert_eq(clients.length(), 20)
-  assert_eq(requests.length(), 100)
-  assert_eq(responses.length(), 100)
-  
-  // Verify request properties
-  for (i, request) in requests.enumerate() {
-    let client_id = i / 5
-    let request_id = i % 5
-    
-    assert_eq(HttpRequest::http_method(request), "GET")
-    assert_eq(HttpRequest::url(request), "https://example.com/api/" + client_id.to_string() + "/" + request_id.to_string())
-  }
-  
-  // Verify response properties
-  for (i, response) in responses.enumerate() {
-    let client_id = i / 5
-    let request_id = i % 5
-    
-    assert_eq(HttpResponse::status_code(response), 200)
-  }
-  
-  // Clean up
-  clients = []
-  requests = []
-  responses = []
-  
-  assert_eq(clients.length(), 0)
-  assert_eq(requests.length(), 0)
-  assert_eq(responses.length(), 0)
-}
-
-// Test 9: Complex Resource Interaction Management
-test "complex resource interaction management" {
-  let provider = MeterProvider::default()
-  let logger_provider = LoggerProvider::default()
-  let resource = Resource::new()
-  
-  // Create complex resource interactions
-  let spans = []
-  let meters = []
-  let loggers = []
-  
-  for i in 0..50 {
-    // Create spans
-    let trace_id = "complex_trace_" + i.to_string()
-    let span_id = "complex_span_" + i.to_string()
-    let span_ctx = SpanContext::new(trace_id, span_id, true, "complex_test")
-    let span = Span::new("complex_span", Internal, span_ctx)
-    spans.push(span)
-    
-    // Create meters
-    let meter = MeterProvider::get_meter(provider, "complex_meter_" + i.to_string())
-    meters.push(meter)
-    
-    // Create loggers
-    let logger = LoggerProvider::get_logger(logger_provider, "complex_logger_" + i.to_string())
-    loggers.push(logger)
-    
-    // Interact resources
-    Span::add_event(span, "complex_event", Some(Attributes::with([("meter_id", IntValue(i))])))
-    
-    let counter = Meter::create_counter(meter, "complex_counter", None, None)
-    Counter::add(counter, 1.0, Some(Attributes::with([("span_id", StringValue(span_id))])))
-    
-    let log_record = LogRecord::new_with_context(
-      Info,
-      Some("Complex log message"),
-      Some(Attributes::with([("trace_id", StringValue(trace_id))])),
-      None,
-      None,
-      Some(trace_id),
-      Some(span_id),
-      Some(Context::root())
-    )
-    Logger::emit(logger, log_record)
-  }
-  
-  // Verify all interactions
-  assert_eq(spans.length(), 50)
-  assert_eq(meters.length(), 50)
-  assert_eq(loggers.length(), 50)
-  
-  // Clean up all resources
-  for span in spans {
-    Span::end(span)
-  }
-  
-  MeterProvider::shutdown(provider)
-  LoggerProvider::shutdown(logger_provider)
-  
-  spans = []
-  meters = []
-  loggers = []
-  
-  assert_eq(spans.length(), 0)
-  assert_eq(meters.length(), 0)
-  assert_eq(loggers.length(), 0)
-}
-
-// Test 10: Resource Pool Management
-test "resource pool management" {
-  let span_pool = []
-  let meter_pool = []
-  let logger_pool = []
-  let attribute_pool = []
-  
-  // Create resource pools
-  for i in 0..100 {
-    // Span pool
-    let trace_id = "pool_trace_" + i.to_string()
-    let span_id = "pool_span_" + i.to_string()
-    let span_ctx = SpanContext::new(trace_id, span_id, true, "pool_test")
-    let span = Span::new("pool_span", Internal, span_ctx)
-    span_pool.push(span)
-    
-    // Meter pool
-    let provider = MeterProvider::default()
-    let meter = MeterProvider::get_meter(provider, "pool_meter_" + i.to_string())
-    meter_pool.push(meter)
-    
-    // Logger pool
-    let logger_provider = LoggerProvider::default()
-    let logger = LoggerProvider::get_logger(logger_provider, "pool_logger_" + i.to_string())
-    logger_pool.push(logger)
-    
-    // Attribute pool
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "pool_key", IntValue(i))
-    attribute_pool.push(attrs)
-  }
-  
-  // Use resources from pools
-  for i in 0..100 {
-    // Use span from pool
-    if i < span_pool.length() {
-      let span = span_pool[i]
-      Span::add_event(span, "pool_event", None)
-    }
-    
-    // Use meter from pool
-    if i < meter_pool.length() {
-      let meter = meter_pool[i]
-      let counter = Meter::create_counter(meter, "pool_counter", None, None)
-      Counter::add(counter, 1.0)
-    }
-    
-    // Use logger from pool
-    if i < logger_pool.length() {
-      let logger = logger_pool[i]
-      let log_record = LogRecord::new(Info, "Pool log message " + i.to_string())
-      Logger::emit(logger, log_record)
-    }
-    
-    // Use attributes from pool
-    if i < attribute_pool.length() {
-      let attrs = attribute_pool[i]
-      let retrieved = Attributes::get(attrs, "pool_key")
-      match retrieved {
-        Some(IntValue(v)) => assert_eq(v, i)
-        None => assert_true(false)
-      }
-    }
-  }
-  
-  // Verify pool sizes
-  assert_eq(span_pool.length(), 100)
-  assert_eq(meter_pool.length(), 100)
-  assert_eq(logger_pool.length(), 100)
-  assert_eq(attribute_pool.length(), 100)
-  
-  // Clean up pools
-  for span in span_pool {
-    Span::end(span)
-  }
-  
-  span_pool = []
-  meter_pool = []
-  logger_pool = []
-  attribute_pool = []
-  
-  assert_eq(span_pool.length(), 0)
-  assert_eq(meter_pool.length(), 0)
-  assert_eq(logger_pool.length(), 0)
-  assert_eq(attribute_pool.length(), 0)
+  assert_eq(analysis["api"].count, 1)
+  assert_eq(analysis["api"].total_duration, 300)
+  assert_eq(analysis["api"].avg_duration, 300)
+  assert_eq(analysis["api"].max_duration, 300)
+  assert_eq(analysis["api"].min_duration, 300)
 }

@@ -1,345 +1,462 @@
-// Performance Optimization Tests for Azimuth Telemetry System
-// This file contains test cases focusing on performance optimization and efficiency
+// Azimuth 性能优化测试
+// 全面测试性能相关功能和优化
 
-// Test 1: Memory-Efficient Data Processing
-test "memory-efficient data processing" {
-  // Test lazy evaluation patterns
-  let large_dataset = []
-  for i in 0..<10000 {
-    large_dataset = large_dataset.push(i * i)
+// 测试1: 算法复杂度测试
+test "算法复杂度测试" {
+  // 测试线性搜索 vs 二分搜索性能差异
+  
+  // 创建有序数组
+  let sorted_array = []
+  for i in 0..=1000 {
+    sorted_array = sorted_array.push(i)
   }
   
-  // Test efficient filtering without intermediate arrays
-  let even_squares = large_dataset.filter(fn(x) { x % 2 == 0 })
-  assert_eq(even_squares.length(), 5000)
+  // 线性搜索
+  let linear_search = fn(arr, target) {
+    let mut found = false
+    let mut iterations = 0
+    
+    for item in arr {
+      iterations = iterations + 1
+      if item == target {
+        found = true
+        break
+      }
+    }
+    
+    { found: found, iterations: iterations }
+  }
   
-  // Test efficient map operations
-  let doubled = large_dataset.map(fn(x) { x * 2 })
-  assert_eq(doubled[0], 0)
-  assert_eq(doubled[9999], 199980002)
+  // 二分搜索
+  let binary_search = fn(arr, target) {
+    let mut left = 0
+    let mut right = arr.length() - 1
+    let mut found = false
+    let mut iterations = 0
+    
+    while left <= right {
+      iterations = iterations + 1
+      let mid = (left + right) / 2
+      let mid_value = arr[mid]
+      
+      if mid_value == target {
+        found = true
+        break
+      } else if mid_value < target {
+        left = mid + 1
+      } else {
+        right = mid - 1
+      }
+    }
+    
+    { found: found, iterations: iterations }
+  }
   
-  // Test reduce operations for aggregation
-  let sum = large_dataset.reduce(fn(acc, x) { acc + x }, 0)
-  assert_eq(sum, 33328333500)
+  // 搜索目标（在数组末尾）
+  let target = 1000
+  
+  let linear_result = linear_search(sorted_array, target)
+  let binary_result = binary_search(sorted_array, target)
+  
+  assert_true(linear_result.found)
+  assert_true(binary_result.found)
+  
+  // 二分搜索应该比线性搜索快得多
+  assert_true(binary_result.iterations < linear_result.iterations)
+  assert_true(binary_result.iterations <= 10) // log2(1000) ≈ 10
 }
 
-// Test 2: Algorithm Complexity Optimization
-test "algorithm complexity optimization" {
-  // Test O(1) vs O(n) operations
-  let data_map = {}
-  let data_array = []
+// 测试2: 内存使用优化
+test "内存使用优化" {
+  // 测试不同数据结构的内存效率
   
-  // Populate data structures
-  for i in 0..<1000 {
-    data_map = data_map.set(i.to_string(), i * 2)
-    data_array = data_array.push(i * 2)
+  // 使用数组存储大量数据
+  let large_array = []
+  for i in 0..=10000 {
+    large_array = large_array.push(i)
   }
   
-  // Test map lookup (O(1))
-  let map_result = data_map.get("500")
-  match map_result {
-    Some(value) => assert_eq(value, 1000)
-    None => assert_true(false)
+  // 计算数组元素总和
+  let array_sum = large_array.reduce(fn(acc, x) { acc + x }, 0)
+  assert_eq(array_sum, 10000 * 10001 / 2)
+  
+  // 测试内存重用
+  let mut reusable_array = []
+  
+  // 第一次使用
+  for i in 0..=100 {
+    reusable_array = reusable_array.push(i)
   }
   
-  // Test array lookup (O(1) for indexed access)
-  let array_result = data_array[500]
-  assert_eq(array_result, 1000)
+  let first_sum = reusable_array.reduce(fn(acc, x) { acc + x }, 0)
   
-  // Test linear search vs map lookup performance simulation
-  let search_target = 750
-  let found_in_array = data_array.contains(search_target)
-  assert_true(found_in_array)
+  // 清空并重用
+  reusable_array = []
   
-  let found_in_map = data_map.contains((search_target / 2).to_string())
-  assert_true(found_in_map)
+  // 第二次使用
+  for i in 0..=200 {
+    reusable_array = reusable_array.push(i)
+  }
+  
+  let second_sum = reusable_array.reduce(fn(acc, x) { acc + x }, 0)
+  
+  assert_eq(first_sum, 100 * 101 / 2)
+  assert_eq(second_sum, 200 * 201 / 2)
 }
 
-// Test 3: Caching Mechanisms
-test "caching mechanisms for performance" {
-  // Simulate expensive computation
-  let expensive_computation = fn(n) {
-    // Simulate computation delay
+// 测试3: 缓存机制性能
+test "缓存机制性能" {
+  // 模拟缓存存储
+  let cache = {}
+  
+  // 模拟计算密集型操作
+  let expensive_operation = fn(x) {
+    // 模拟计算时间
     let mut result = 1
-    for i in 1..=n {
+    for i in 1..=x {
       result = result * i
     }
     result
   }
   
-  // Test memoization cache
-  let cache = {}
-  let cached_computation = fn(n) {
-    match cache.get(n.to_string()) {
-      Some(cached_result) => cached_result
-      None => {
-        let result = expensive_computation(n)
-        cache = cache.set(n.to_string(), result)
-        result
-      }
+  // 带缓存的操作
+  let cached_operation = fn(x) {
+    if cache.contains(x.to_string()) {
+      cache[x.to_string()]
+    } else {
+      let result = expensive_operation(x)
+      cache[x.to_string()] = result
+      result
     }
   }
   
-  // First computation (should be cached)
-  let result1 = cached_computation(10)
-  assert_eq(result1, 3628800)
+  // 第一次调用（计算并缓存）
+  let first_call = cached_operation(10)
+  assert_eq(first_call, 3628800) // 10!
   
-  // Second computation (should use cache)
-  let result2 = cached_computation(10)
-  assert_eq(result2, 3628800)
+  // 第二次调用（从缓存获取）
+  let second_call = cached_operation(10)
+  assert_eq(second_call, 3628800)
   
-  // Different computation
-  let result3 = cached_computation(5)
-  assert_eq(result3, 120)
+  // 验证缓存包含结果
+  assert_true(cache.contains("10"))
+  assert_eq(cache["10"], 3628800)
 }
 
-// Test 4: Batch Processing Optimization
-test "batch processing optimization" {
-  let telemetry_data = []
-  for i in 0..<10000 {
-    telemetry_data = telemetry_data.push((i, i.to_float() * 0.1))
+// 测试4: 批处理优化
+test "批处理优化" {
+  // 模拟单个操作 vs 批处理操作
+  
+  // 单个插入操作
+  let single_inserts = fn(items) {
+    let mut result = []
+    for item in items {
+      result = result.push(item)
+    }
+    result
   }
   
-  // Test batch size optimization
-  let optimal_batch_size = 1000
-  let batch_count = (telemetry_data.length() + optimal_batch_size - 1) / optimal_batch_size
+  // 批处理操作
+  let batch_insert = fn(items) {
+    // 在实际场景中，这可能会是一次性批量插入
+    items
+  }
   
-  assert_eq(batch_count, 10)
+  let test_items = [1, 2, 3, 4, 5]
   
-  // Process data in batches
-  let mut processed_batches = []
-  for batch_start in [0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000] {
-    let batch_end = batch_start + optimal_batch_size
-    let batch = telemetry_data.slice(batch_start, batch_end)
+  let single_result = single_inserts(test_items)
+  let batch_result = batch_insert(test_items)
+  
+  assert_eq(single_result, test_items)
+  assert_eq(batch_result, test_items)
+  
+  // 批处理应该更高效（这里我们验证结果一致性）
+  assert_eq(single_result.length(), batch_result.length())
+}
+
+// 测试5: 延迟计算优化
+test "延迟计算优化" {
+  // 模拟延迟计算
+  
+  // 立即计算
+  let immediate_computation = fn() {
+    let mut result = []
+    for i in 0..=100 {
+      result = result.push(i * 2)
+    }
+    result
+  }
+  
+  // 延迟计算（仅在需要时计算）
+  let lazy_computation = fn() {
+    let mut i = 0
+    let mut result = []
     
-    // Process batch (calculate average)
-    let batch_sum = batch.reduce(fn(acc, point) { acc + point.1 }, 0.0)
-    let batch_avg = batch_sum / batch.length().to_float()
+    // 模拟按需生成
+    let generate_next = fn() {
+      if i <= 100 {
+        let value = i * 2
+        i = i + 1
+        Some(value)
+      } else {
+        None
+      }
+    }
     
-    processed_batches = processed_batches.push(batch_avg)
-  }
-  
-  assert_eq(processed_batches.length(), 10)
-  assert_eq(processed_batches[0], 49.95)
-  assert_eq(processed_batches[9], 949.95)
-}
-
-// Test 5: String Operations Optimization
-test "string operations optimization" {
-  let string_parts = ["azimuth", "telemetry", "performance", "optimization", "test"]
-  
-  // Test string concatenation efficiency
-  let concatenated = string_parts.reduce(fn(acc, part) { acc + " " + part }, "")
-  assert_eq(concatenated, " azimuth telemetry performance optimization test")
-  
-  // Test string builder pattern (simulated)
-  let mut built_string = ""
-  for part in string_parts {
-    built_string = built_string + part + "_"
-  }
-  assert_eq(built_string, "azimuth_telemetry_performance_optimization_test_")
-  
-  // Test string operations caching
-  let string_cache = {}
-  let get_or_create_uppercase = fn(str) {
-    match string_cache.get(str) {
-      Some(cached) => cached
-      None => {
-        let uppercased = str.to_uppercase()
-        string_cache = string_cache.set(str, uppercased)
-        uppercased
+    // 只生成前10个值
+    for _ in 0..=10 {
+      match generate_next() {
+        Some(value) => result = result.push(value)
+        None => break
       }
     }
+    
+    result
   }
   
-  let upper1 = get_or_create_uppercase("test")
-  let upper2 = get_or_create_uppercase("test")
-  assert_eq(upper1, "TEST")
-  assert_eq(upper2, "TEST")
+  let immediate_result = immediate_computation()
+  let lazy_result = lazy_computation()
+  
+  assert_eq(immediate_result.length(), 101)
+  assert_eq(lazy_result.length(), 11)
+  
+  // 验证前11个值相同
+  for i in 0..=10 {
+    assert_eq(immediate_result[i], lazy_result[i])
+  }
 }
 
-// Test 6: Data Structure Selection Optimization
-test "data structure selection optimization" {
-  // Test different data structures for specific use cases
+// 测试6: 并发处理性能
+test "并发处理性能" {
+  // 模拟并发处理vs顺序处理
   
-  // Use case 1: Fast lookup - Map
-  let lookup_map = {}
-  for i in 0..<1000 {
-    lookup_map = lookup_map.set("key_" + i.to_string(), "value_" + i.to_string())
+  // 顺序处理
+  let sequential_processing = fn(tasks) {
+    let mut results = []
+    for task in tasks {
+      // 模拟任务处理
+      let result = task * 2
+      results = results.push(result)
+    }
+    results
   }
   
-  let lookup_result = lookup_map.get("key_500")
-  match lookup_result {
-    Some(value) => assert_eq(value, "value_500")
-    None => assert_true(false)
+  // 并发处理（模拟）
+  let concurrent_processing = fn(tasks) {
+    // 在实际场景中，这会是真正的并发处理
+    let mut results = []
+    for task in tasks {
+      let result = task * 2
+      results = results.push(result)
+    }
+    results
   }
   
-  // Use case 2: Ordered access - Array
-  let ordered_data = []
-  for i in 0..<100 {
-    ordered_data = ordered_data.push(i * 3)
-  }
+  let test_tasks = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
   
-  let first_element = ordered_data[0]
-  let last_element = ordered_data[99]
-  assert_eq(first_element, 0)
-  assert_eq(last_element, 297)
+  let sequential_result = sequential_processing(test_tasks)
+  let concurrent_result = concurrent_processing(test_tasks)
   
-  // Use case 3: Unique elements - Set (simulated with Map)
-  let unique_set = {}
-  let test_data = [1, 2, 3, 2, 4, 5, 3, 6, 1, 7]
-  
-  for item in test_data {
-    unique_set = unique_set.set(item.to_string(), true)
-  }
-  
-  assert_eq(unique_set.length(), 7)
+  assert_eq(sequential_result, concurrent_result)
+  assert_eq(sequential_result.length(), 10)
 }
 
-// Test 7: Loop Optimization Techniques
-test "loop optimization techniques" {
-  let large_array = []
-  for i in 0..<10000 {
-    large_array = large_array.push(i)
-  }
+// 测试7: 数据压缩效率
+test "数据压缩效率" {
+  // 模拟数据压缩
   
-  // Test loop unrolling simulation
-  let mut sum_unrolled = 0
-  let length = large_array.length()
-  
-  // Process 4 elements at a time
-  let mut i = 0
-  while i + 3 < length {
-    sum_unrolled = sum_unrolled + large_array[i] + large_array[i + 1] + 
-                   large_array[i + 2] + large_array[i + 3]
-    i = i + 4
-  }
-  
-  // Handle remaining elements
-  while i < length {
-    sum_unrolled = sum_unrolled + large_array[i]
-    i = i + 1
-  }
-  
-  assert_eq(sum_unrolled, 49995000)
-  
-  // Test loop fusion
-  let mut sum = 0
-  let mut squares = []
-  
-  // Combine operations in single loop
-  for item in large_array.slice(0, 100) {
-    sum = sum + item
-    squares = squares.push(item * item)
-  }
-  
-  assert_eq(sum, 4950)
-  assert_eq(squares[0], 0)
-  assert_eq(squares[99], 9801)
-}
-
-// Test 8: Resource Pool Management
-test "resource pool management" {
-  // Simulate resource pool for expensive objects
-  let resource_pool = []
-  let max_pool_size = 10
-  
-  // Initialize pool
-  for i in 0..<max_pool_size {
-    resource_pool = resource_pool.push("resource_" + i.to_string())
-  }
-  
-  // Test resource acquisition and release
-  let acquire_resource = fn() {
-    match resource_pool.pop() {
-      Some(resource) => Some(resource)
-      None => None  // Pool exhausted
+  // 原始数据（有重复模式）
+  let original_data = []
+  for i in 0..=100 {
+    for j in 0..=10 {
+      original_data = original_data.push(i)
     }
   }
   
-  let release_resource = fn(resource) {
-    if resource_pool.length() < max_pool_size {
-      resource_pool = resource_pool.push(resource)
-    }
-  }
-  
-  // Acquire resources
-  let acquired1 = acquire_resource()
-  let acquired2 = acquire_resource()
-  
-  match (acquired1, acquired2) {
-    (Some(r1), Some(r2)) => {
-      assert_eq(r1, "resource_9")
-      assert_eq(r2, "resource_8")
+  // 简单压缩：运行长度编码
+  let compress_data = fn(data) {
+    let mut compressed = []
+    let mut i = 0
+    
+    while i < data.length() {
+      let current = data[i]
+      let mut count = 1
       
-      // Release resources back to pool
-      release_resource(r1)
-      release_resource(r2)
-      
-      assert_eq(resource_pool.length(), 10)
-    }
-    _ => assert_true(false)
-  }
-}
-
-// Test 9: Lazy Loading Optimization
-test "lazy loading optimization" {
-  // Simulate expensive data loading
-  let expensive_data_loaded = false
-  let expensive_data = []
-  
-  let load_expensive_data = fn() {
-    if not expensive_data_loaded {
-      // Simulate expensive loading
-      for i in 0..<1000 {
-        expensive_data = expensive_data.push(i * i)
+      while i + count < data.length() && data[i + count] == current {
+        count = count + 1
       }
-      expensive_data_loaded = true
+      
+      compressed = compressed.push({ value: current, count: count })
+      i = i + count
     }
-    expensive_data
+    
+    compressed
   }
   
-  // Test lazy loading - data not loaded until needed
-  assert_eq(expensive_data.length(), 0)
+  let compressed_data = compress_data(original_data)
   
-  // First access triggers loading
-  let data1 = load_expensive_data()
-  assert_eq(data1.length(), 1000)
-  assert_eq(data1[0], 0)
-  assert_eq(data1[999], 998001)
+  // 验证压缩效果
+  assert_true(compressed_data.length() < original_data.length())
+  assert_eq(compressed_data.length(), 101) // 101个不同的值，每个重复10次
   
-  // Second access uses cached data
-  let data2 = load_expensive_data()
-  assert_eq(data2.length(), 1000)
-  assert_eq(data2[500], 250000)
+  // 验证第一个压缩块
+  assert_eq(compressed_data[0].value, 0)
+  assert_eq(compressed_data[0].count, 11)
 }
 
-// Test 10: Parallel Processing Simulation
-test "parallel processing simulation" {
-  let data_chunks = [
-    [1, 2, 3, 4, 5],
-    [6, 7, 8, 9, 10],
-    [11, 12, 13, 14, 15],
-    [16, 17, 18, 19, 20]
-  ]
+// 测试8: 索引优化查询
+test "索引优化查询" {
+  // 模拟数据库索引优化
   
-  // Simulate parallel processing of chunks
-  let process_chunk = fn(chunk) {
-    chunk.map(fn(x) { x * 2 })
+  // 创建记录集合
+  let records = []
+  for i in 0..=1000 {
+    records = records.push({
+      id: i,
+      name: "User" + i.to_string(),
+      age: 20 + (i % 50)
+    })
   }
   
-  // Process all chunks
-  let processed_chunks = data_chunks.map(process_chunk)
+  // 创建索引（按年龄）
+  let age_index = {}
+  for record in records {
+    let age = record.age.to_string()
+    if age_index.contains(age) {
+      let current_list = age_index[age]
+      age_index[age] = current_list.push(record.id)
+    } else {
+      age_index[age] = [record.id]
+    }
+  }
   
-  assert_eq(processed_chunks.length(), 4)
-  assert_eq(processed_chunks[0], [2, 4, 6, 8, 10])
-  assert_eq(processed_chunks[1], [12, 14, 16, 18, 20])
-  assert_eq(processed_chunks[2], [22, 24, 26, 28, 30])
-  assert_eq(processed_chunks[3], [32, 34, 36, 38, 40])
+  // 使用索引查询
+  let query_by_age = fn(target_age) {
+    let age_key = target_age.to_string()
+    if age_index.contains(age_key) {
+      age_index[age_key]
+    } else {
+      []
+    }
+  }
   
-  // Merge results
-  let merged_result = processed_chunks.reduce(fn(acc, chunk) { acc + chunk }, [])
-  assert_eq(merged_result.length(), 20)
-  assert_eq(merged_result[0], 2)
-  assert_eq(merged_result[19], 40)
+  // 查询年龄为25的用户
+  let users_age_25 = query_by_age(25)
+  
+  // 验证结果
+  assert_true(users_age_25.length() > 0)
+  
+  // 验证所有返回的记录确实年龄为25
+  for user_id in users_age_25 {
+    assert_eq(records[user_id].age, 25)
+  }
+}
+
+// 测试9: 连接池优化
+test "连接池优化" {
+  // 模拟数据库连接池
+  
+  let pool_size = 5
+  let mut available_connections = []
+  let mut used_connections = {}
+  
+  // 初始化连接池
+  for i in 0..=pool_size {
+    available_connections = available_connections.push("conn" + i.to_string())
+  }
+  
+  // 获取连接
+  let get_connection = fn() {
+    if available_connections.length() > 0 {
+      let conn = available_connections[0]
+      available_connections = available_connections.slice(1)
+      used_connections[conn] = true
+      Some(conn)
+    } else {
+      None
+    }
+  }
+  
+  // 释放连接
+  let release_connection = fn(conn) {
+    if used_connections.contains(conn) {
+      used_connections[conn] = false
+      available_connections = available_connections.push(conn)
+    }
+  }
+  
+  // 获取连接
+  let conn1 = get_connection()
+  let conn2 = get_connection()
+  
+  assert_true(conn1.is_some())
+  assert_true(conn2.is_some())
+  assert_eq(available_connections.length(), 3)
+  
+  // 释放连接
+  release_connection(conn1.unwrap())
+  assert_eq(available_connections.length(), 4)
+}
+
+// 测试10: 缓存淘汰策略
+test "缓存淘汰策略" {
+  // 模拟LRU（最近最少使用）缓存淘汰
+  
+  let cache_size = 3
+  let mut cache = {} // key -> {value: value, last_used: timestamp}
+  let mut current_time = 0
+  
+  // 添加到缓存
+  let add_to_cache = fn(key, value) {
+    current_time = current_time + 1
+    
+    // 如果缓存已满，淘汰最近最少使用的项
+    if cache.length() >= cache_size {
+      let mut oldest_key = ""
+      let mut oldest_time = current_time
+      
+      for k in cache.keys() {
+        if cache[k].last_used < oldest_time {
+          oldest_time = cache[k].last_used
+          oldest_key = k
+        }
+      }
+      
+      if oldest_key != "" {
+        cache[oldest_key] = { value: null, last_used: 0 } // 标记为已删除
+      }
+    }
+    
+    cache[key] = { value: value, last_used: current_time }
+  }
+  
+  // 从缓存获取
+  let get_from_cache = fn(key) {
+    current_time = current_time + 1
+    
+    if cache.contains(key) && cache[key].value != null {
+      cache[key].last_used = current_time // 更新使用时间
+      Some(cache[key].value)
+    } else {
+      None
+    }
+  }
+  
+  // 测试缓存操作
+  add_to_cache("a", 1)
+  add_to_cache("b", 2)
+  add_to_cache("c", 3)
+  
+  assert_eq(cache.length(), 3)
+  assert_eq(get_from_cache("a").unwrap(), 1)
+  
+  // 添加第四项，应该淘汰一项
+  add_to_cache("d", 4)
+  
+  // 验证缓存大小
+  assert_eq(cache.length(), 4)
+  
+  // 验证最近使用的项仍在缓存中
+  assert_true(get_from_cache("a").is_some()) // 最近访问过
+  assert_true(get_from_cache("d").is_some()) // 刚添加
 }

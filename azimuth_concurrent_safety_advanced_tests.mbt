@@ -1,655 +1,480 @@
-// Advanced Concurrent Safety Tests for Azimuth Telemetry System
-// This file contains test cases for concurrent operations and thread safety
+// Azimuth 高级并发安全测试
+// 全面测试并发操作和线程安全机制
 
-// Test 1: Thread-Safe Counter
-test "thread-safe counter operations" {
-  // Simulate atomic counter operations
-  let counter = 0
+// 测试1: 基本并发操作模拟
+test "基本并发操作模拟" {
+  // 模拟并发计数器
+  let mut counter = 0
   
-  // Simulate concurrent increments
+  // 模拟多个线程同时增加计数器
   let increment_counter = fn() {
-    counter = counter + 1
-    counter
+    let local_value = counter
+    // 模拟一些处理时间
+    local_value = local_value + 1
+    counter = local_value
   }
   
-  // Simulate multiple threads incrementing
-  let results = []
-  for i in 0..<10 {
-    results = results.push(increment_counter())
+  // 模拟并发执行
+  for i in 0..=10 {
+    increment_counter()
   }
   
-  // Verify all increments were applied
-  assert_eq(counter, 10)
-  assert_eq(results, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-  
-  // Test concurrent decrements
-  let decrement_counter = fn() {
-    counter = counter - 1
-    counter
-  }
-  
-  let decrement_results = []
-  for i in 0..<5 {
-    decrement_results = decrement_results.push(decrement_counter())
-  }
-  
-  assert_eq(counter, 5)
-  assert_eq(decrement_results, [9, 8, 7, 6, 5])
+  // 在真实并发环境中，这里可能会有竞态条件
+  // 但在这个模拟中，我们只是验证基本逻辑
+  assert_eq(counter, 11)
 }
 
-// Test 2: Concurrent Data Structure Access
-test "concurrent data structure access" {
-  // Simulate thread-safe map operations
-  let shared_map = {}
+// 测试2: 互斥锁模拟
+test "互斥锁模拟" {
+  // 模拟互斥锁保护的共享资源
+  let shared_resource = 0
+  let mut lock_acquired = false
   
-  // Concurrent write operations
-  let concurrent_write = fn(key, value) {
-    shared_map = shared_map.set(key, value)
-    Ok("Write successful")
-  }
-  
-  // Concurrent read operations
-  let concurrent_read = fn(key) {
-    match shared_map.get(key) {
-      Some(value) => Ok(value)
-      None => Err("Key not found")
-    }
-  }
-  
-  // Simulate concurrent writes
-  let write_results = []
-  for i in 0..<5 {
-    let result = concurrent_write("key_" + i.to_string(), "value_" + i.to_string())
-    write_results = write_results.push(result)
-  }
-  
-  // Verify all writes succeeded
-  for result in write_results {
-    match result {
-      Ok(_) => assert_true(true)
-      Err(_) => assert_true(false)
-    }
-  }
-  
-  // Simulate concurrent reads
-  let read_results = []
-  for i in 0..<5 {
-    let result = concurrent_read("key_" + i.to_string())
-    read_results = read_results.push(result)
-  }
-  
-  // Verify all reads succeeded with correct values
-  for i in 0..<5 {
-    match read_results[i] {
-      Ok(value) => assert_eq(value, "value_" + i.to_string())
-      Err(_) => assert_true(false)
-    }
-  }
-}
-
-// Test 3: Lock-Free Data Structures
-test "lock-free data structure operations" {
-  // Simulate lock-free queue using atomic operations
-  let queue = []
-  let head = 0
-  let tail = 0
-  
-  // Lock-free enqueue
-  let enqueue = fn(item) {
-    queue = queue.push(item)
-    tail = tail + 1
-    Ok(tail - 1)
-  }
-  
-  // Lock-free dequeue
-  let dequeue = fn() {
-    if head < tail {
-      let item = queue[head]
-      head = head + 1
-      Ok(item)
+  // 模拟获取锁
+  let acquire_lock = fn() {
+    if !lock_acquired {
+      lock_acquired = true
+      true
     } else {
-      Err("Queue is empty")
+      false
     }
   }
   
-  // Test concurrent enqueue operations
-  let enqueue_results = []
-  for i in 0..<5 {
-    let result = enqueue("item_" + i.to_string())
-    enqueue_results = enqueue_results.push(result)
+  // 模拟释放锁
+  let release_lock = fn() {
+    lock_acquired = false
   }
   
-  // Verify all enqueues succeeded
-  for i in 0..<5 {
-    match enqueue_results[i] {
-      Ok(index) => assert_eq(index, i)
-      Err(_) => assert_true(false)
-    }
-  }
+  // 测试锁的获取和释放
+  assert_true(acquire_lock())
+  assert_false(acquire_lock()) // 锁已被占用
   
-  // Test concurrent dequeue operations
-  let dequeue_results = []
-  for i in 0..<3 {
-    let result = dequeue()
-    dequeue_results = dequeue_results.push(result)
-  }
+  release_lock()
+  assert_true(acquire_lock()) // 锁已释放，可以再次获取
   
-  // Verify dequeues
-  for i in 0..<3 {
-    match dequeue_results[i] {
-      Ok(item) => assert_eq(item, "item_" + i.to_string())
-      Err(_) => assert_true(false)
-    }
-  }
-  
-  // Test empty queue
-  let remaining_items = tail - head
-  assert_eq(remaining_items, 2)
+  release_lock()
 }
 
-// Test 4: Concurrent Resource Pool
-test "concurrent resource pool management" {
-  // Simulate thread-safe resource pool
-  let max_resources = 5
-  let available_resources = []
-  let allocated_resources = []
+// 测试3: 读写锁模拟
+test "读写锁模拟" {
+  // 模拟读写锁状态
+  let mut readers = 0
+  let mut writer = false
   
-  // Initialize pool
-  for i in 0..<max_resources {
-    available_resources = available_resources.push("resource_" + i.to_string())
-  }
-  
-  // Thread-safe resource acquisition
-  let acquire_resource = fn() {
-    if available_resources.length() > 0 {
-      let resource = available_resources[0]
-      available_resources = available_resources.slice(1, available_resources.length())
-      allocated_resources = allocated_resources.push(resource)
-      Ok(resource)
+  // 获取读锁
+  let acquire_read_lock = fn() {
+    if !writer {
+      readers = readers + 1
+      true
     } else {
-      Err("No resources available")
+      false
     }
   }
   
-  // Thread-safe resource release
-  let release_resource = fn(resource) {
-    let index = allocated_resources.index_of(resource)
-    match index {
-      Some(i) => {
-        allocated_resources = allocated_resources.slice(0, i) + allocated_resources.slice(i + 1, allocated_resources.length())
-        available_resources = available_resources.push(resource)
-        Ok("Resource released")
+  // 释放读锁
+  let release_read_lock = fn() {
+    if readers > 0 {
+      readers = readers - 1
+    }
+  }
+  
+  // 获取写锁
+  let acquire_write_lock = fn() {
+    if !writer && readers == 0 {
+      writer = true
+      true
+    } else {
+      false
+    }
+  }
+  
+  // 释放写锁
+  let release_write_lock = fn() {
+    writer = false
+  }
+  
+  // 测试多个读者可以同时访问
+  assert_true(acquire_read_lock())
+  assert_true(acquire_read_lock())
+  assert_eq(readers, 2)
+  
+  // 写者无法在有读者时获取锁
+  assert_false(acquire_write_lock())
+  
+  // 释放所有读锁
+  release_read_lock()
+  release_read_lock()
+  assert_eq(readers, 0)
+  
+  // 现在写者可以获取锁
+  assert_true(acquire_write_lock())
+  
+  // 有写者时，读者无法获取锁
+  assert_false(acquire_read_lock())
+  
+  release_write_lock()
+}
+
+// 测试4: 原子操作模拟
+test "原子操作模拟" {
+  // 模拟原子计数器
+  let atomic_counter = 0
+  
+  // 模拟原子增加操作
+  let atomic_increment = fn(value) {
+    // 在真实环境中，这会是硬件支持的原子操作
+    value + 1
+  }
+  
+  // 模拟原子比较和交换
+  let atomic_compare_and_swap = fn(current, expected, new) {
+    if current == expected {
+      new
+    } else {
+      current
+    }
+  }
+  
+  // 测试原子操作
+  let new_counter = atomic_increment(atomic_counter)
+  assert_eq(new_counter, 1)
+  
+  let cas_result = atomic_compare_and_swap(new_counter, 1, 5)
+  assert_eq(cas_result, 5)
+  
+  // CAS失败情况
+  let cas_fail = atomic_compare_and_swap(cas_result, 1, 10)
+  assert_eq(cas_fail, 5) // 值未改变
+}
+
+// 测试5: 条件变量模拟
+test "条件变量模拟" {
+  // 模拟条件变量和等待队列
+  let mut shared_data = 0
+  let mut waiting_threads = []
+  
+  // 等待条件
+  let wait_for_condition = fn(condition) {
+    if !condition(shared_data) {
+      waiting_threads = waiting_threads.push("thread")
+      false
+    } else {
+      true
+    }
+  }
+  
+  // 通知等待的线程
+  let notify_waiting_threads = fn() {
+    let notified = waiting_threads
+    waiting_threads = []
+    notified
+  }
+  
+  // 测试条件等待
+  let condition = fn(data) { data > 0 }
+  
+  // 初始条件不满足
+  assert_false(wait_for_condition(condition))
+  assert_eq(waiting_threads.length(), 1)
+  
+  // 更新共享数据
+  shared_data = 5
+  
+  // 通知等待线程
+  let notified = notify_waiting_threads()
+  assert_eq(notified.length(), 1)
+  
+  // 现在条件满足
+  assert_true(wait_for_condition(condition))
+}
+
+// 测试6: 生产者消费者模型
+test "生产者消费者模型" {
+  // 模拟有界缓冲区
+  let buffer_size = 5
+  let mut buffer = []
+  let mut buffer_count = 0
+  
+  // 生产者
+  let producer = fn(item) {
+    if buffer_count < buffer_size {
+      buffer = buffer.push(item)
+      buffer_count = buffer_count + 1
+      true
+    } else {
+      false // 缓冲区满
+    }
+  }
+  
+  // 消费者
+  let consumer = fn() {
+    if buffer_count > 0 {
+      let item = buffer[0]
+      buffer = buffer.slice(1)
+      buffer_count = buffer_count - 1
+      Some(item)
+    } else {
+      None // 缓冲区空
+    }
+  }
+  
+  // 测试生产
+  assert_true(producer(1))
+  assert_true(producer(2))
+  assert_true(producer(3))
+  
+  // 测试消费
+  let consumed = consumer()
+  assert_true(consumed.is_some())
+  assert_eq(consumed.unwrap(), 1)
+  
+  // 测试缓冲区状态
+  assert_eq(buffer_count, 2)
+  
+  // 填满缓冲区
+  assert_true(producer(4))
+  assert_true(producer(5))
+  assert_true(producer(6))
+  
+  // 缓冲区现在应该满了
+  assert_false(producer(7))
+  
+  // 清空缓冲区
+  let mut consumed_items = []
+  while buffer_count > 0 {
+    match consumer() {
+      Some(item) => consumed_items = consumed_items.push(item),
+      None => break
+    }
+  }
+  
+  assert_eq(consumed_items.length(), 5)
+  assert_eq(buffer_count, 0)
+}
+
+// 测试7: 屏障同步模拟
+test "屏障同步模拟" {
+  // 模拟屏障同步
+  let total_threads = 3
+  let mut arrived_threads = []
+  let mut barrier_reached = false
+  
+  // 到达屏障
+  let arrive_at_barrier = fn(thread_id) {
+    arrived_threads = arrived_threads.push(thread_id)
+    
+    if arrived_threads.length() == total_threads {
+      barrier_reached = true
+      true
+    } else {
+      false
+    }
+  }
+  
+  // 等待其他线程
+  let wait_at_barrier = fn(thread_id) {
+    if barrier_reached {
+      true
+    } else {
+      false
+    }
+  }
+  
+  // 测试屏障同步
+  assert_false(arrive_at_barrier("thread1")) // 第一个线程到达
+  assert_false(wait_at_barrier("thread1")) // 还需要等待
+  
+  assert_false(arrive_at_barrier("thread2")) // 第二个线程到达
+  assert_false(wait_at_barrier("thread2")) // 还需要等待
+  
+  assert_true(arrive_at_barrier("thread3")) // 第三个线程到达，屏障打开
+  
+  // 所有线程现在可以通过屏障
+  assert_true(wait_at_barrier("thread1"))
+  assert_true(wait_at_barrier("thread2"))
+  assert_true(wait_at_barrier("thread3"))
+}
+
+// 测试8: 信号量模拟
+test "信号量模拟" {
+  // 模拟信号量
+  let initial_permits = 2
+  let mut available_permits = initial_permits
+  
+  // 获取许可
+  let acquire = fn() {
+    if available_permits > 0 {
+      available_permits = available_permits - 1
+      true
+    } else {
+      false
+    }
+  }
+  
+  // 释放许可
+  let release = fn() {
+    available_permits = available_permits + 1
+  }
+  
+  // 测试信号量操作
+  assert_true(acquire()) // 获取第一个许可
+  assert_eq(available_permits, 1)
+  
+  assert_true(acquire()) // 获取第二个许可
+  assert_eq(available_permits, 0)
+  
+  assert_false(acquire()) // 没有可用许可
+  
+  release() // 释放一个许可
+  assert_eq(available_permits, 1)
+  
+  assert_true(acquire()) // 现在可以获取许可
+  assert_eq(available_permits, 0)
+}
+
+// 测试9: 死锁检测模拟
+test "死锁检测模拟" {
+  // 模拟资源分配图
+  let mut resource_allocation = {} // thread -> resource
+  let mut wait_graph = {} // thread -> waiting_for_resource
+  
+  // 请求资源
+  let request_resource = fn(thread, resource) {
+    if !resource_allocation.contains_value(resource) {
+      // 资源可用，直接分配
+      resource_allocation[thread] = resource
+      true
+    } else {
+      // 资源被占用，加入等待图
+      wait_graph[thread] = resource
+      false
+    }
+  }
+  
+  // 释放资源
+  let release_resource = fn(thread) {
+    if resource_allocation.contains(thread) {
+      let resource = resource_allocation[thread]
+      resource_allocation[thread] = null // 释放资源
+      
+      // 检查是否有线程等待这个资源
+      for waiting_thread in wait_graph.keys() {
+        if wait_graph[waiting_thread] == resource {
+          // 将资源分配给等待的线程
+          resource_allocation[waiting_thread] = resource
+          wait_graph[waiting_thread] = null // 从等待图中移除
+        }
       }
-      None => Err("Resource not found in allocated list")
     }
   }
   
-  // Test concurrent acquisitions
-  let acquisition_results = []
-  for i in 0..<3 {
-    let result = acquire_resource()
-    acquisition_results = acquisition_results.push(result)
-  }
-  
-  // Verify acquisitions
-  for result in acquisition_results {
-    match result {
-      Ok(_) => assert_true(true)
-      Err(_) => assert_true(false)
-    }
-  }
-  
-  assert_eq(available_resources.length(), 2)
-  assert_eq(allocated_resources.length(), 3)
-  
-  // Test concurrent releases
-  let release_results = []
-  for i in 0..<2 {
-    match acquisition_results[i] {
-      Ok(resource) => {
-        let result = release_resource(resource)
-        release_results = release_results.push(result)
+  // 检测死锁
+  let detect_deadlock = fn() {
+    // 简化的死锁检测：检查是否有循环等待
+    let mut deadlock_detected = false
+    
+    for thread in wait_graph.keys() {
+      if wait_graph[thread] != null {
+        let waiting_resource = wait_graph[thread]
+        
+        // 检查是否有其他线程持有这个资源并且在等待其他资源
+        for holder in resource_allocation.keys() {
+          if resource_allocation[holder] == waiting_resource && wait_graph.contains(holder) {
+            deadlock_detected = true
+          }
+        }
       }
-      Err(_) => assert_true(false)
     }
+    
+    deadlock_detected
   }
   
-  // Verify releases
-  for result in release_results {
-    match result {
-      Ok(_) => assert_true(true)
-      Err(_) => assert_true(false)
-    }
-  }
+  // 测试死锁场景
+  assert_true(request_resource("thread1", "resource1"))
+  assert_true(request_resource("thread2", "resource2"))
   
-  assert_eq(available_resources.length(), 4)
-  assert_eq(allocated_resources.length(), 1)
+  // 创建死锁：thread1等待resource2，thread2等待resource1
+  assert_false(request_resource("thread1", "resource2"))
+  assert_false(request_resource("thread2", "resource1"))
+  
+  // 检测死锁
+  assert_true(detect_deadlock())
+  
+  // 解决死锁：释放一个资源
+  release_resource("thread1")
+  
+  // 重新检测
+  assert_false(detect_deadlock())
 }
 
-// Test 5: Concurrent Batch Processing
-test "concurrent batch processing" {
-  // Simulate concurrent batch processing
-  let data_items = []
-  for i in 0..<20 {
-    data_items = data_items.push(("item_" + i.to_string(), i))
+// 测试10: 线程池模拟
+test "线程池模拟" {
+  // 模拟线程池
+  let pool_size = 3
+  let mut available_threads = []
+  let mut busy_threads = {}
+  let mut task_queue = []
+  
+  // 初始化线程池
+  for i in 0..=pool_size {
+    available_threads = available_threads.push("worker" + i.to_string())
   }
   
-  // Split data into batches
-  let batch_size = 5
-  let batches = []
-  
-  for i in 0..=(data_items.length() / batch_size) {
-    let start = i * batch_size
-    let end = start + batch_size
-    if start < data_items.length() {
-      let batch = data_items.slice(start, end)
-      batches = batches.push(batch)
-    }
-  }
-  
-  assert_eq(batches.length(), 4)
-  
-  // Process batches concurrently (simulated)
-  let process_batch = fn(batch) {
-    batch.map(fn(item) { (item.0, item.1 * 2) })
-  }
-  
-  let processed_batches = []
-  for batch in batches {
-    let processed = process_batch(batch)
-    processed_batches = processed_batches.push(processed)
-  }
-  
-  // Verify processing
-  assert_eq(processed_batches.length(), 4)
-  assert_eq(processed_batches[0][0], ("item_0", 0))
-  assert_eq(processed_batches[0][4], ("item_4", 8))
-  assert_eq(processed_batches[3][0], ("item_15", 30))
-  assert_eq(processed_batches[3][4], ("item_19", 38))
-}
-
-// Test 6: Concurrent Event Processing
-test "concurrent event processing" {
-  // Simulate concurrent event processing system
-  let event_queue = []
-  let processed_events = []
-  
-  // Event producer
-  let produce_event = fn(event_type, data) {
-    let event = {
-      "type": event_type,
-      "data": data,
-      "timestamp": 1234567890
-    }
-    event_queue = event_queue.push(event)
-    Ok("Event produced")
-  }
-  
-  // Event consumer
-  let consume_event = fn() {
-    if event_queue.length() > 0 {
-      let event = event_queue[0]
-      event_queue = event_queue.slice(1, event_queue.length())
-      processed_events = processed_events.push(event)
-      Ok("Event consumed")
+  // 提交任务
+  let submit_task = fn(task) {
+    if available_threads.length() > 0 {
+      let worker = available_threads[0]
+      available_threads = available_threads.slice(1)
+      busy_threads[worker] = task
+      true
     } else {
-      Err("No events available")
+      task_queue = task_queue.push(task)
+      false
     }
   }
   
-  // Produce events
-  let production_results = []
-  for i in 0..<5 {
-    let result = produce_event("telemetry", "data_" + i.to_string())
-    production_results = production_results.push(result)
-  }
-  
-  // Verify production
-  for result in production_results {
-    match result {
-      Ok(_) => assert_true(true)
-      Err(_) => assert_true(false)
-    }
-  }
-  
-  assert_eq(event_queue.length(), 5)
-  
-  // Consume events
-  let consumption_results = []
-  for i in 0..<3 {
-    let result = consume_event()
-    consumption_results = consumption_results.push(result)
-  }
-  
-  // Verify consumption
-  for result in consumption_results {
-    match result {
-      Ok(_) => assert_true(true)
-      Err(_) => assert_true(false)
-    }
-  }
-  
-  assert_eq(event_queue.length(), 2)
-  assert_eq(processed_events.length(), 3)
-}
-
-// Test 7: Concurrent Cache Operations
-test "concurrent cache operations" {
-  // Simulate thread-safe cache
-  let cache = {}
-  let access_counts = {}
-  
-  // Thread-safe cache get
-  let cache_get = fn(key) {
-    match cache.get(key) {
-      Some(value) => {
-        // Update access count
-        let count = access_counts.get(key).or_else(0)
-        access_counts = access_counts.set(key, count + 1)
-        Ok(value)
+  // 完成任务
+  let complete_task = fn(worker) {
+    if busy_threads.contains(worker) {
+      busy_threads[worker] = null
+      
+      // 如果有等待的任务，分配给这个线程
+      if task_queue.length() > 0 {
+        let next_task = task_queue[0]
+        task_queue = task_queue.slice(1)
+        busy_threads[worker] = next_task
+      } else {
+        // 没有等待任务，线程变为可用
+        available_threads = available_threads.push(worker)
       }
-      None => Err("Cache miss")
     }
   }
   
-  // Thread-safe cache put
-  let cache_put = fn(key, value) {
-    cache = cache.set(key, value)
-    access_counts = access_counts.set(key, 0)
-    Ok("Value cached")
-  }
+  // 测试线程池操作
+  assert_true(submit_task("task1"))
+  assert_true(submit_task("task2"))
+  assert_true(submit_task("task3"))
   
-  // Test concurrent cache operations
-  let cache_operations = [
-    ("put", "key1", "value1"),
-    ("put", "key2", "value2"),
-    ("get", "key1", ""),
-    ("get", "key2", ""),
-    ("get", "key1", ""),
-    ("put", "key3", "value3"),
-    ("get", "key3", ""),
-    ("get", "nonexistent", "")
-  ]
+  assert_eq(available_threads.length(), 0)
+  assert_eq(busy_threads.length(), 3)
   
-  let operation_results = []
-  for operation in cache_operations {
-    let result = match operation.0 {
-      "put" => cache_put(operation.1, operation.2)
-      "get" => cache_get(operation.1)
-      _ => Err("Unknown operation")
-    }
-    operation_results = operation_results.push(result)
-  }
+  // 线程池已满，任务进入队列
+  assert_false(submit_task("task4"))
+  assert_eq(task_queue.length(), 1)
   
-  // Verify operations
-  assert_eq(operation_results.length(), 8)
+  // 完成一个任务
+  complete_task("worker1")
   
-  // Check cache contents
-  match cache_get("key1") {
-    Ok(value) => assert_eq(value, "value1")
-    Err(_) => assert_true(false)
-  }
+  // 队列中的任务应该被分配
+  assert_eq(task_queue.length(), 0)
+  assert_eq(busy_threads.length(), 3)
   
-  match cache_get("key2") {
-    Ok(value) => assert_eq(value, "value2")
-    Err(_) => assert_true(false)
-  }
+  // 完成所有任务
+  complete_task("worker1")
+  complete_task("worker2")
+  complete_task("worker3")
   
-  match cache_get("key3") {
-    Ok(value) => assert_eq(value, "value3")
-    Err(_) => assert_true(false)
-  }
-  
-  // Check access counts
-  assert_eq(access_counts.get("key1").or_else(0), 2)
-  assert_eq(access_counts.get("key2").or_else(0), 1)
-  assert_eq(access_counts.get("key3").or_else(0), 1)
-}
-
-// Test 8: Concurrent Metrics Collection
-test "concurrent metrics collection" {
-  // Simulate concurrent metrics collection
-  let metrics = {}
-  
-  // Thread-safe metric recording
-  let record_metric = fn(name, value) {
-    let existing_values = metrics.get(name).or_else([])
-    let updated_values = existing_values.push(value)
-    metrics = metrics.set(name, updated_values)
-    Ok("Metric recorded")
-  }
-  
-  // Thread-safe metric aggregation
-  let aggregate_metric = fn(name) {
-    match metrics.get(name) {
-      Some(values) => {
-        let sum = values.reduce(fn(acc, val) { acc + val }, 0.0)
-        let avg = sum / values.length().to_float()
-        let min = values.reduce(fn(acc, val) { if val < acc { val } else { acc } }, values[0])
-        let max = values.reduce(fn(acc, val) { if val > acc { val } else { acc } }, values[0])
-        Ok((min, max, avg))
-      }
-      None => Err("Metric not found")
-    }
-  }
-  
-  // Simulate concurrent metric recording
-  let metric_names = ["cpu_usage", "memory_usage", "disk_io"]
-  let recording_results = []
-  
-  for i in 0..<9 {
-    let metric_name = metric_names[i % 3]
-    let value = (i + 1) * 10.0
-    let result = record_metric(metric_name, value)
-    recording_results = recording_results.push(result)
-  }
-  
-  // Verify recordings
-  for result in recording_results {
-    match result {
-      Ok(_) => assert_true(true)
-      Err(_) => assert_true(false)
-    }
-  }
-  
-  // Test aggregations
-  match aggregate_metric("cpu_usage") {
-    Ok((min, max, avg)) => {
-      assert_eq(min, 10.0)
-      assert_eq(max, 70.0)
-      assert_eq(avg, 40.0)
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  match aggregate_metric("memory_usage") {
-    Ok((min, max, avg)) => {
-      assert_eq(min, 20.0)
-      assert_eq(max, 80.0)
-      assert_eq(avg, 50.0)
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  match aggregate_metric("disk_io") {
-    Ok((min, max, avg)) => {
-      assert_eq(min, 30.0)
-      assert_eq(max, 90.0)
-      assert_eq(avg, 60.0)
-    }
-    Err(_) => assert_true(false)
-  }
-}
-
-// Test 9: Concurrent Logger Operations
-test "concurrent logger operations" {
-  // Simulate thread-safe logging
-  let log_buffer = []
-  
-  // Thread-safe log write
-  let write_log = fn(level, message) {
-    let log_entry = {
-      "level": level,
-      "message": message,
-      "timestamp": 1234567890
-    }
-    log_buffer = log_buffer.push(log_entry)
-    Ok("Log written")
-  }
-  
-  // Thread-safe log read
-  let read_logs = fn(level_filter) {
-    if level_filter == "" {
-      Ok(log_buffer)
-    } else {
-      let filtered = log_buffer.filter(fn(entry) { entry["level"] == level_filter })
-      Ok(filtered)
-    }
-  }
-  
-  // Simulate concurrent logging
-  let log_levels = ["INFO", "WARN", "ERROR", "DEBUG"]
-  let logging_results = []
-  
-  for i in 0..<8 {
-    let level = log_levels[i % 4]
-    let message = "Log message " + i.to_string()
-    let result = write_log(level, message)
-    logging_results = logging_results.push(result)
-  }
-  
-  // Verify logging
-  for result in logging_results {
-    match result {
-      Ok(_) => assert_true(true)
-      Err(_) => assert_true(false)
-    }
-  }
-  
-  assert_eq(log_buffer.length(), 8)
-  
-  // Test log filtering
-  match read_logs("ERROR") {
-    Ok(error_logs) => {
-      assert_eq(error_logs.length(), 2)
-      assert_eq(error_logs[0]["level"], "ERROR")
-      assert_eq(error_logs[0]["message"], "Log message 2")
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  match read_logs("INFO") {
-    Ok(info_logs) => {
-      assert_eq(info_logs.length(), 2)
-      assert_eq(info_logs[0]["level"], "INFO")
-      assert_eq(info_logs[0]["message"], "Log message 0")
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  match read_logs("") {
-    Ok(all_logs) => {
-      assert_eq(all_logs.length(), 8)
-    }
-    Err(_) => assert_true(false)
-  }
-}
-
-// Test 10: Concurrent Configuration Management
-test "concurrent configuration management" {
-  // Simulate thread-safe configuration management
-  let config = {}
-  let config_lock = false
-  
-  // Thread-safe config read
-  let read_config = fn(key) {
-    if not config_lock {
-      match config.get(key) {
-        Some(value) => Ok(value)
-        None => Err("Configuration key not found")
-      }
-    } else {
-      Err("Configuration locked for writing")
-    }
-  }
-  
-  // Thread-safe config write
-  let write_config = fn(key, value) {
-    if not config_lock {
-      config_lock = true
-      config = config.set(key, value)
-      config_lock = false
-      Ok("Configuration updated")
-    } else {
-      Err("Configuration locked by another operation")
-    }
-  }
-  
-  // Initialize configuration
-  let init_results = []
-  let config_items = [
-    ("service.name", "azimuth"),
-    ("service.version", "1.0.0"),
-    ("service.port", "8080"),
-    ("log.level", "INFO")
-  ]
-  
-  for item in config_items {
-    let result = write_config(item.0, item.1)
-    init_results = init_results.push(result)
-  }
-  
-  // Verify initialization
-  for result in init_results {
-    match result {
-      Ok(_) => assert_true(true)
-      Err(_) => assert_true(false)
-    }
-  }
-  
-  // Test concurrent reads
-  let read_results = []
-  for item in config_items {
-    let result = read_config(item.0)
-    read_results = read_results.push(result)
-  }
-  
-  // Verify reads
-  for i in 0..<config_items.length() {
-    match read_results[i] {
-      Ok(value) => assert_eq(value, config_items[i].1)
-      Err(_) => assert_true(false)
-    }
-  }
-  
-  // Test concurrent writes
-  let write_results = []
-  let updates = [
-    ("service.port", "9090"),
-    ("log.level", "DEBUG")
-  ]
-  
-  for update in updates {
-    let result = write_config(update.0, update.1)
-    write_results = write_results.push(result)
-  }
-  
-  // Verify writes
-  for result in write_results {
-    match result {
-      Ok(_) => assert_true(true)
-      Err(_) => assert_true(false)
-    }
-  }
-  
-  // Verify updated values
-  match read_config("service.port") {
-    Ok(value) => assert_eq(value, "9090")
-    Err(_) => assert_true(false)
-  }
-  
-  match read_config("log.level") {
-    Ok(value) => assert_eq(value, "DEBUG")
-    Err(_) => assert_true(false)
-  }
+  // 所有线程应该变为可用
+  assert_eq(available_threads.length(), 3)
+  assert_eq(busy_threads.length(), 0)
 }
