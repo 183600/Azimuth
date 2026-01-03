@@ -80,6 +80,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_type_system_tests.mbt": {
   },
+  "azimuth_type_system_functional_programming_tests.mbt": {
+  },
   "azimuth_timestamp_timezone_tests.mbt": {
   },
   "azimuth_timestamp_operations_tests.mbt": {
