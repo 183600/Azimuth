@@ -1,1057 +1,750 @@
-// Azimuth 跨平台兼容性测试
-// 专注于测试不同平台和操作系统之间的兼容性
+// Azimuth 跨平台兼容性测试用例
+// 测试遥测系统在不同平台和环境下的兼容性
 
-// 平台类型定义
-type Platform {
-  Windows
-  MacOS
-  Linux
-  Android
-  IOS
-  WebAssembly
-  Unknown
-}
-
-// 架构类型定义
-type Architecture {
-  X86
-  X64
-  ARM32
-  ARM64
-  UnknownArch
-}
-
-// 测试1: 平台检测
-test "平台检测测试" {
-  // 获取当前平台
-  let current_platform = detect_current_platform()
-  let current_arch = detect_current_architecture()
+test "多操作系统兼容性验证" {
+  // 创建平台检测器
+  let platform_detector = PlatformDetector::new()
   
-  // 验证平台检测结果
-  match current_platform {
-    Windows => {
-      assert_true(check_windows_specific_features())
-    }
-    MacOS => {
-      assert_true(check_macos_specific_features())
-    }
-    Linux => {
-      assert_true(check_linux_specific_features())
-    }
-    Android => {
-      assert_true(check_android_specific_features())
-    }
-    IOS => {
-      assert_true(check_ios_specific_features())
-    }
-    WebAssembly => {
-      assert_true(check_webassembly_specific_features())
-    }
-    Unknown => {
-      // 未知平台应该至少有一些基本功能
-      assert_true(check_basic_cross_platform_features())
-    }
-  }
+  // 测试支持的操作系统
+  let supported_platforms = [
+    PlatformInfo::new("Windows", "10.0", "x86_64"),
+    PlatformInfo::new("Windows", "11.0", "x86_64"),
+    PlatformInfo::new("Linux", "5.15", "x86_64"),
+    PlatformInfo::new("Linux", "5.15", "arm64"),
+    PlatformInfo::new("macOS", "12.0", "x86_64"),
+    PlatformInfo::new("macOS", "13.0", "arm64"),
+    PlatformInfo::new("FreeBSD", "13.0", "x86_64"),
+    PlatformInfo::new("OpenBSD", "7.0", "x86_64")
+  ]
   
-  // 验证架构检测结果
-  match current_arch {
-    X86 => {
-      assert_true(check_x86_specific_features())
-    }
-    X64 => {
-      assert_true(check_x64_specific_features())
-    }
-    ARM32 => {
-      assert_true(check_arm32_specific_features())
-    }
-    ARM64 => {
-      assert_true(check_arm64_specific_features())
-    }
-    UnknownArch => {
-      // 未知架构应该至少有一些基本功能
-      assert_true(check_basic_cross_platform_features())
-    }
-  }
-}
-
-// 测试2: 文件路径处理
-test "文件路径处理测试" {
-  // 测试不同平台的路径分隔符
-  let path_separator = get_path_separator()
-  
-  // 构建跨平台路径
-  let path_components = ["home", "user", "documents", "file.txt"]
-  let constructed_path = build_path(path_components)
-  
-  // 验证路径构建
-  assert_true(constructed_path.contains("home"))
-  assert_true(constructed_path.contains("user"))
-  assert_true(constructed_path.contains("documents"))
-  assert_true(constructed_path.contains("file.txt"))
-  
-  // 验证路径分隔符
-  match current_platform {
-    Windows => {
-      assert_eq(path_separator, "\\")
-      assert_true(constructed_path.contains("\\"))
-    }
-    _ => {
-      assert_eq(path_separator, "/")
-      assert_true(constructed_path.contains("/"))
-    }
-  }
-  
-  // 测试路径规范化
-  let messy_path = "home//user/./documents/../documents/file.txt"
-  let normalized_path = normalize_path(messy_path)
-  
-  // 验证路径规范化结果
-  assert_false(normalized_path.contains("//"))
-  assert_false(normalized_path.contains("/./"))
-  assert_false(normalized_path.contains("/../"))
-  
-  // 测试路径解析
-  let parsed_components = parse_path(constructed_path)
-  assert_eq(parsed_components.length(), path_components.length())
-  
-  let i = 0
-  while i < path_components.length() {
-    assert_eq(parsed_components[i], path_components[i])
-    i = i + 1
-  }
-}
-
-// 测试3: 字符编码处理
-test "字符编码处理测试" {
-  // 测试UTF-8编码
-  let unicode_text = "测试中文 🌟 Test English 🚀 Тест русский"
-  let encoded_bytes = encode_to_utf8(unicode_text)
-  let decoded_text = decode_from_utf8(encoded_bytes)
-  
-  assert_eq(unicode_text, decoded_text)
-  
-  // 测试不同编码之间的转换
-  let utf16_bytes = encode_to_utf16(unicode_text)
-  let utf16_decoded = decode_from_utf16(utf16_bytes)
-  
-  assert_eq(unicode_text, utf16_decoded)
-  
-  // 测试BOM处理
-  let text_with_bom = add_utf8_bom(unicode_text)
-  let bom_detected = has_utf8_bom(text_with_bom)
-  assert_true(bom_detected)
-  
-  let text_without_bom = remove_utf8_bom(text_with_bom)
-  let bom_removed = !has_utf8_bom(text_without_bom)
-  assert_true(bom_removed)
-  assert_eq(text_without_bom, unicode_text)
-}
-
-// 测试4: 时间和日期处理
-test "时间和日期处理测试" {
-  // 获取当前时间
-  let current_time = get_current_timestamp()
-  assert_true(current_time > 0)
-  
-  // 时间格式化
-  let formatted_time = format_timestamp(current_time, "YYYY-MM-DD HH:mm:ss")
-  assert_true(formatted_time.length() > 0)
-  
-  // 时间解析
-  let parsed_time = parse_timestamp(formatted_time, "YYYY-MM-DD HH:mm:ss")
-  match parsed_time {
-    Some(timestamp) => {
-      // 允许一些时间差异（秒级）
-      let time_diff = current_time - timestamp
-      assert_true(time_diff >= 0 && time_diff < 60)
-    }
-    None => assert_true(false)
-  }
-  
-  // 时区处理
-  let local_time = convert_to_local_time(current_time)
-  let utc_time = convert_to_utc_time(local_time)
-  
-  // 验证时区转换
-  let time_diff = current_time - utc_time
-  assert_true(time_diff >= 0 && time_diff < 86400) // 不超过一天
-  
-  // 不同平台的时间格式测试
-  let platform_specific_format = get_platform_time_format()
-  let platform_formatted = format_timestamp(current_time, platform_specific_format)
-  assert_true(platform_formatted.length() > 0)
-}
-
-// 测试5: 网络通信兼容性
-test "网络通信兼容性测试" {
-  // 测试不同平台的网络API
-  let network_apis = get_available_network_apis()
-  assert_true(network_apis.length() > 0)
-  
-  // 测试HTTP请求
-  let test_url = "https://httpbin.org/get"
-  let http_result = make_http_request("GET", test_url, [])
-  
-  match http_result {
-    Ok(response) => {
-      assert_true(response.status_code >= 200 && response.status_code < 300)
-      assert_true(response.body.length() > 0)
-    }
-    Err(error) => {
-      // 在某些测试环境中，网络请求可能失败，这是可以接受的
-      assert_true(error.contains("network") || error.contains("connection"))
-    }
-  }
-  
-  // 测试SSL/TLS支持
-  let ssl_support = check_ssl_support()
-  assert_true(ssl_support)
-  
-  // 测试代理设置
-  let proxy_config = get_proxy_configuration()
-  match proxy_config {
-    Some(config) => {
-      assert_true(config.host.length() > 0)
-      assert_true(config.port > 0)
-    }
-    None => {
-      // 没有代理配置也是正常的
-    }
-  }
-}
-
-// 测试6: 系统API兼容性
-test "系统API兼容性测试" {
-  // 测试环境变量访问
-  let path_env = get_environment_variable("PATH")
-  match path_env {
-    Some(path) => {
-      assert_true(path.length() > 0)
-    }
-    None => {
-      // 在某些平台上，PATH可能不存在，但这不太可能
-    }
-  }
-  
-  // 测试系统信息获取
-  let system_info = get_system_information()
-  assert_true(system_info.os_name.length() > 0)
-  assert_true(system_info.os_version.length() > 0)
-  assert_true(system_info.hostname.length() > 0)
-  
-  // 测试临时目录
-  let temp_dir = get_temporary_directory()
-  assert_true(temp_dir.length() > 0)
-  assert_true(directory_exists(temp_dir))
-  
-  // 测试用户目录
-  let user_dir = get_user_directory()
-  assert_true(user_dir.length() > 0)
-  assert_true(directory_exists(user_dir))
-  
-  // 测试系统资源限制
-  let resource_limits = get_resource_limits()
-  assert_true(resource_limits.max_memory > 0)
-  assert_true(resource_limits.max_file_descriptors > 0)
-}
-
-// 测试7: WebAssembly兼容性
-test "WebAssembly兼容性测试" {
-  let is_wasm = is_running_in_webassembly()
-  
-  if is_wasm {
-    // WebAssembly特定测试
-    assert_true(check_wasm_memory_operations())
-    assert_true(check_wasm_import_functions())
-    assert_true(check_wasm_export_functions())
-    assert_true(check_browser_apis())
-  } else {
-    // 非WebAssembly环境测试
-    assert_true(check_native_file_operations())
-    assert_true(check_native_network_operations())
-    assert_true(check_native_system_operations())
-  }
-  
-  // 跨平台API测试
-  let cross_platform_api = get_cross_platform_api()
-  let api_result = cross_platform_api.test_function("test_parameter")
-  
-  match api_result {
-    Ok(result) => {
-      assert_eq(result, "test_parameter_processed")
-    }
-    Err(error) => {
-      assert_true(false)
-    }
-  }
-}
-
-// 测试8: 包管理兼容性
-test "包管理兼容性测试" {
-  // 测试包路径解析
-  let package_path = resolve_package_path("moonbitlang/core")
-  assert_true(package_path.length() > 0)
-  
-  // 测试依赖解析
-  let dependencies = get_package_dependencies()
-  assert_true(dependencies.length() > 0)
-  
-  // 验证核心依赖存在
-  let has_core_dependency = dependencies.contains("moonbitlang/core")
-  assert_true(has_core_dependency)
-  
-  // 测试包版本兼容性
-  let version_info = get_package_version("moonbitlang/core")
-  match version_info {
-    Some(version) => {
-      assert_true(version.length() > 0)
-      assert_true(is_valid_version_format(version))
-    }
-    None => {
-      // 在某些环境中可能无法获取版本信息
-    }
-  }
-}
-
-// 辅助函数：检测当前平台
-fn detect_current_platform() -> Platform {
-  // 简化的平台检测
-  // 在实际项目中，会使用更复杂的检测逻辑
-  let os_name = get_environment_variable("OS")
-  
-  match os_name {
-    Some(os) => {
-      if os.contains("Windows") {
-        Windows
-      } else if os.contains("Darwin") {
-        MacOS
-      } else if os.contains("Linux") {
-        Linux
-      } else if os.contains("Android") {
-        Android
-      } else {
-        Unknown
-      }
-    }
-    None => {
-      // 默认假设为Linux
-      Linux
-    }
-  }
-}
-
-// 辅助函数：检测当前架构
-fn detect_current_architecture() -> Architecture {
-  // 简化的架构检测
-  let arch_name = get_environment_variable("ARCH")
-  
-  match arch_name {
-    Some(arch) => {
-      if arch.contains("x86") || arch.contains("i386") {
-        X86
-      } else if arch.contains("x64") || arch.contains("amd64") {
-        X64
-      } else if arch.contains("arm32") || arch.contains("armv7") {
-        ARM32
-      } else if arch.contains("arm64") || arch.contains("aarch64") {
-        ARM64
-      } else {
-        UnknownArch
-      }
-    }
-    None => {
-      // 默认假设为X64
-      X64
-    }
-  }
-}
-
-// 辅助函数：检查Windows特定功能
-fn check_windows_specific_features() -> Bool {
-  // 检查Windows特定功能
-  let has_windows_registry = check_windows_registry_access()
-  let has_windows_services = check_windows_services_access()
-  let has_windows_dlls = check_windows_dll_access()
-  
-  has_windows_registry || has_windows_services || has_windows_dlls
-}
-
-// 辅助函数：检查MacOS特定功能
-fn check_macos_specific_features() -> Bool {
-  // 检查MacOS特定功能
-  let has_macos_bundles = check_macos_bundle_access()
-  let has_macos_keychain = check_macos_keychain_access()
-  let has_macos_notifications = check_macos_notification_center()
-  
-  has_macos_bundles || has_macos_keychain || has_macos_notifications
-}
-
-// 辅助函数：检查Linux特定功能
-fn check_linux_specific_features() -> Bool {
-  // 检查Linux特定功能
-  let has_linux_proc = check_linux_proc_access()
-  let has_linux_sys = check_linux_sys_access()
-  let has_linux_permissions = check_linux_permission_model()
-  
-  has_linux_proc || has_linux_sys || has_linux_permissions
-}
-
-// 辅助函数：检查Android特定功能
-fn check_android_specific_features() -> Bool {
-  // 检查Android特定功能
-  let has_android_intents = check_android_intent_system()
-  let has_android_content = check_android_content_providers()
-  let has_android_services = check_android_services()
-  
-  has_android_intents || has_android_content || has_android_services
-}
-
-// 辅助函数：检查iOS特定功能
-fn check_ios_specific_features() -> Bool {
-  // 检查iOS特定功能
-  let has_ios_notifications = check_ios_notification_center()
-  let has_ios_keychain = check_ios_keychain_access()
-  let has_ios_app_store = check_ios_app_store_integration()
-  
-  has_ios_notifications || has_ios_keychain || has_ios_app_store
-}
-
-// 辅助函数：检查WebAssembly特定功能
-fn check_webassembly_specific_features() -> Bool {
-  // 检查WebAssembly特定功能
-  let has_wasm_memory = check_wasm_memory_model()
-  let has_wasm_imports = check_wasm_import_exports()
-  let has_browser_apis = check_browser_web_apis()
-  
-  has_wasm_memory || has_wasm_imports || has_browser_apis
-}
-
-// 辅助函数：检查基本跨平台功能
-fn check_basic_cross_platform_features() -> Bool {
-  // 检查所有平台都应该具备的基本功能
-  let has_basic_math = check_basic_math_operations()
-  let has_basic_strings = check_basic_string_operations()
-  let has_basic_collections = check_basic_collection_operations()
-  
-  has_basic_math && has_basic_strings && has_basic_collections
-}
-
-// 辅助函数：检查x86特定功能
-fn check_x86_specific_features() -> Bool {
-  // 检查x86特定功能
-  check_x86_instruction_set() && check_x86_alignment()
-}
-
-// 辅助函数：检查x64特定功能
-fn check_x64_specific_features() -> Bool {
-  // 检查x64特定功能
-  check_x64_instruction_set() && check_x64_alignment()
-}
-
-// 辅助函数：检查ARM32特定功能
-fn check_arm32_specific_features() -> Bool {
-  // 检查ARM32特定功能
-  check_arm32_instruction_set() && check_arm32_alignment()
-}
-
-// 辅助函数：检查ARM64特定功能
-fn check_arm64_specific_features() -> Bool {
-  // 检查ARM64特定功能
-  check_arm64_instruction_set() && check_arm64_alignment()
-}
-
-// 辅助函数：获取路径分隔符
-fn get_path_separator() -> String {
-  match detect_current_platform() {
-    Windows => "\\"
-    _ => "/"
-  }
-}
-
-// 辅助函数：构建路径
-fn build_path(components : Array[String]) -> String {
-  let separator = get_path_separator()
-  let path = ""
-  let i = 0
-  
-  while i < components.length() {
-    if i > 0 {
-      path = path + separator
-    }
-    path = path + components[i]
-    i = i + 1
-  }
-  
-  path
-}
-
-// 辅助函数：规范化路径
-fn normalize_path(path : String) -> String {
-  let separator = get_path_separator()
-  let components = parse_path(path)
-  let normalized_components = []
-  let i = 0
-  
-  while i < components.length() {
-    let component = components[i]
+  // 为每个平台创建遥测提供者并验证兼容性
+  for platform in supported_platforms {
+    PlatformDetector::set_current_platform(platform_detector, platform)
     
-    if component == "." {
-      // 忽略当前目录
-    } else if component == ".." {
-      // 返回上级目录
-      if normalized_components.length() > 0 {
-        normalized_components.pop()
-      }
-    } else if component.length() > 0 {
-      // 添加有效组件
-      normalized_components.push(component)
+    // 创建平台特定的配置
+    let config = TelemetryConfiguration::new()
+    TelemetryConfiguration::adapt_to_platform(config, platform)
+    
+    // 验证配置适配
+    assert_true(TelemetryConfiguration::is_platform_adapted(config), 
+      "配置应该适配到 " + platform.os_name + " 平台")
+    
+    // 创建遥测提供者
+    let provider_result = TracerProvider::builder()
+      .with_config(config)
+      .with_platform_detector(platform_detector)
+      .build()
+    
+    assert_true(provider_result.success, 
+      "应该能够在 " + platform.os_name + " " + platform.version + " 上创建遥测提供者")
+    
+    let tracer_provider = provider_result.provider
+    let tracer = TracerProvider::get_tracer(tracer_provider, "platform.compatibility.test")
+    
+    // 测试基本功能
+    let span = Tracer::start_span(tracer, "platform.test.span")
+    Span::set_attribute(span, "platform.os", platform.os_name)
+    Span::set_attribute(span, "platform.version", platform.version)
+    Span::set_attribute(span, "platform.arch", platform.architecture)
+    
+    // 测试平台特定的功能
+    if platform.os_name == "Windows" {
+      Span::set_attribute(span, "windows.feature", "event.log")
+      assert_true(PlatformFeatures::supports_windows_event_log(platform), 
+        "Windows平台应该支持事件日志")
+    } else if platform.os_name == "Linux" {
+      Span::set_attribute(span, "linux.feature", "syslog")
+      assert_true(PlatformFeatures::supports_syslog(platform), 
+        "Linux平台应该支持syslog")
+    } else if platform.os_name == "macOS" {
+      Span::set_attribute(span, "macos.feature", "osx.log")
+      assert_true(PlatformFeatures::supports_osx_log(platform), 
+        "macOS平台应该支持OS X日志")
     }
     
-    i = i + 1
-  }
-  
-  build_path(normalized_components)
-}
-
-// 辅助函数：解析路径
-fn parse_path(path : String) -> Array[String] {
-  let separator = get_path_separator()
-  let components = path.split(separator)
-  let filtered = []
-  
-  for component in components {
-    if component.length() > 0 {
-      filtered.push(component)
-    }
-  }
-  
-  filtered
-}
-
-// 辅助函数：编码为UTF-8
-fn encode_to_utf8(text : String) -> Array[Byte] {
-  // 简化的UTF-8编码
-  let bytes = []
-  let i = 0
-  
-  while i < text.length() {
-    let char_code = text.char_code_at(i)
+    Span::end(span)
     
-    if char_code < 128 {
-      // ASCII字符
-      bytes.push(char_code as Byte)
-    } else if char_code < 2048 {
-      // 双字节UTF-8
-      bytes.push(192 + (char_code / 64) as Byte)
-      bytes.push(128 + (char_code % 64) as Byte)
+    // 验证导出功能
+    let exported_spans = TracerProvider::get_exported_spans(tracer_provider)
+    assert_true(exported_spans.length() > 0, 
+      "在 " + platform.os_name + " 上应该能够导出span")
+  }
+  
+  // 验证跨平台数据一致性
+  let cross_platform_validator = CrossPlatformValidator::new()
+  let platform_data = PlatformDetector::get_all_platform_data(platform_detector)
+  
+  let consistency_result = CrossPlatformValidator::validate_data_consistency(
+    cross_platform_validator, platform_data)
+  
+  assert_true(consistency_result.is_consistent, "跨平台数据应该保持一致")
+  assert_true(consistency_result.inconsistencies.length() == 0, 
+    "不应该有跨平台数据不一致")
+  
+  assert_true(true)
+}
+
+test "不同CPU架构兼容性测试" {
+  // 测试不同CPU架构的兼容性
+  let architectures = [
+    ArchitectureInfo::new("x86_64", "little", 64),
+    ArchitectureInfo::new("arm64", "little", 64),
+    ArchitectureInfo::new("arm32", "little", 32),
+    ArchitectureInfo::new("riscv64", "little", 64),
+    ArchitectureInfo::new("ppc64", "big", 64),
+    ArchitectureInfo::new("s390x", "big", 64)
+  ]
+  
+  for arch in architectures {
+    // 创建架构特定的测试环境
+    let arch_test_env = ArchitectureTestEnvironment::new(arch)
+    
+    // 测试数据类型大小一致性
+    let type_sizes = ArchitectureTestEnvironment::get_type_sizes(arch_test_env)
+    assert_eq(type_sizes.int_size, 4, "int类型应该在所有架构上都是4字节")
+    assert_eq(type_sizes.long_size, if arch.bits == 64 { 8 } else { 4 }, 
+      "long类型大小应该与架构位数匹配")
+    assert_eq(type_sizes.pointer_size, arch.bits / 8, 
+      "指针大小应该与架构位数匹配")
+    
+    // 测试字节序处理
+    let test_value = 0x12345678
+    let little_endian_bytes = ByteOrder::to_little_endian(test_value)
+    let big_endian_bytes = ByteOrder::to_big_endian(test_value)
+    
+    if arch.endianness == "little" {
+      assert_eq(ByteOrder::from_little_endian(little_endian_bytes), test_value, 
+        "小端架构应该正确处理小端字节序")
     } else {
-      // 三字节UTF-8（简化处理）
-      bytes.push(224 + (char_code / 4096) as Byte)
-      bytes.push(128 + ((char_code / 64) % 64) as Byte)
-      bytes.push(128 + (char_code % 64) as Byte)
+      assert_eq(ByteOrder::from_big_endian(big_endian_bytes), test_value, 
+        "大端架构应该正确处理大端字节序")
     }
     
-    i = i + 1
+    // 测试序列化兼容性
+    let serializer = CrossArchSerializer::new(arch)
+    
+    let test_data = TestData::new(
+      42, 
+      3.14159, 
+      "test string", 
+      [1, 2, 3, 4, 5]
+    )
+    
+    let serialized = CrossArchSerializer::serialize(serializer, test_data)
+    assert_true(serialized.success, "应该能够在 " + arch.name + " 架构上序列化数据")
+    
+    // 测试反序列化兼容性
+    let deserialized = CrossArchSerializer::deserialize(serializer, serialized.data)
+    assert_true(deserialized.success, "应该能够在 " + arch.name + " 架构上反序列化数据")
+    
+    // 验证数据完整性
+    let original_data = deserialized.data
+    assert_eq(original_data.int_field, test_data.int_field, "整数字段应该在跨架构后保持一致")
+    assert_true((original_data.float_field - test_data.float_field).abs() < 0.0001, 
+      "浮点字段应该在跨架构后保持一致")
+    assert_eq(original_data.string_field, test_data.string_field, "字符串字段应该在跨架构后保持一致")
+    
+    // 测试遥测数据兼容性
+    let tracer_provider = TracerProvider::builder()
+      .with_architecture(arch)
+      .build()
+    
+    let tracer = TracerProvider::get_tracer(tracer_provider, "arch.compatibility.test")
+    
+    let span = Tracer::start_span(tracer, "arch.test.span")
+    Span::set_attribute(span, "architecture", arch.name)
+    Span::set_attribute(span, "endianness", arch.endianness)
+    Span::set_attribute(span, "bits", arch.bits.to_string())
+    
+    // 添加架构特定的度量
+    let meter_provider = MeterProvider::builder()
+      .with_architecture(arch)
+      .build()
+    
+    let meter = MeterProvider::get_meter(meter_provider, "arch.test.meter")
+    let counter = Meter::create_counter(meter, "arch.test.counter")
+    
+    Counter::add_with_attributes(counter, 1.0, [
+      ("architecture", arch.name),
+      ("endianness", arch.endianness),
+      ("bits", arch.bits.to_string())
+    ])
+    
+    Span::end(span)
+    
+    // 验证导出的数据
+    let exported_spans = TracerProvider::get_exported_spans(tracer_provider)
+    assert_true(exported_spans.length() > 0, 
+      "应该能够在 " + arch.name + " 架构上导出遥测数据")
   }
   
-  bytes
+  // 验证跨架构数据一致性
+  let arch_validator = CrossArchitectureValidator::new()
+  let consistency_report = CrossArchitectureValidator::validate_consistency(arch_validator)
+  
+  assert_true(consistency_report.overall_consistent, "跨架构数据应该保持一致")
+  assert_true(consistency_report.inconsistencies.length() == 0, 
+    "不应该有跨架构数据不一致")
+  
+  assert_true(true)
 }
 
-// 辅助函数：从UTF-8解码
-fn decode_from_utf8(bytes : Array[Byte]) -> String {
-  // 简化的UTF-8解码
-  let chars = []
-  let i = 0
+test "WebAssembly平台兼容性" {
+  // 测试WebAssembly平台兼容性
+  let wasm_platform = PlatformInfo::new("WebAssembly", "1.0", "wasm32")
+  let wasm_detector = WasmPlatformDetector::new()
   
-  while i < bytes.length() {
-    let byte = bytes[i]
+  // 验证WebAssembly环境检测
+  assert_true(WasmPlatformDetector::is_wasm_environment(wasm_detector), 
+    "应该正确检测WebAssembly环境")
+  
+  // 创建WebAssembly特定的配置
+  let wasm_config = TelemetryConfiguration::new()
+  TelemetryConfiguration::adapt_to_wasm(wasm_config)
+  
+  // 验证WebAssembly配置适配
+  assert_true(TelemetryConfiguration::is_wasm_adapted(wasm_config), 
+    "配置应该适配到WebAssembly平台")
+  
+  // 测试WebAssembly特定的限制
+  assert_true(TelemetryConfiguration::get_max_memory_usage(wasm_config) <= 512 * 1024 * 1024, 
+    "WebAssembly平台应该有内存使用限制")
+  assert_true(TelemetryConfiguration::get_batch_size(wasm_config) <= 100, 
+    "WebAssembly平台应该有批处理大小限制")
+  
+  // 创建WebAssembly遥测提供者
+  let wasm_provider_result = TracerProvider::builder()
+    .with_config(wasm_config)
+    .with_wasm_detector(wasm_detector)
+    .build()
+  
+  assert_true(wasm_provider_result.success, 
+    "应该能够在WebAssembly平台上创建遥测提供者")
+  
+  let wasm_tracer_provider = wasm_provider_result.provider
+  let wasm_tracer = TracerProvider::get_tracer(wasm_tracer_provider, "wasm.compatibility.test")
+  
+  // 测试基本遥测功能
+  let wasm_span = Tracer::start_span(wasm_tracer, "wasm.test.span")
+  Span::set_attribute(wasm_span, "platform", "WebAssembly")
+  Span::set_attribute(wasm_span, "browser", BrowserDetector::get_browser_name())
+  Span::set_attribute(wasm_span, "javascript.version", JSRuntime::get_version())
+  
+  // 测试WebAssembly特定的功能
+  if WasmPlatformDetector::supports_browser_api(wasm_detector) {
+    Span::set_attribute(wasm_span, "browser.api", "supported")
     
-    if byte < 128 {
-      // ASCII字符
-      chars.push(char_from_code(byte as Int))
-      i = i + 1
-    } else if byte >= 192 && byte < 224 && i + 1 < bytes.length() {
-      // 双字节UTF-8
-      let char_code = ((byte - 192) * 64 + (bytes[i + 1] - 128)) as Int
-      chars.push(char_from_code(char_code))
-      i = i + 2
-    } else if byte >= 224 && i + 2 < bytes.length() {
-      // 三字节UTF-8（简化处理）
-      let char_code = ((byte - 224) * 4096 + (bytes[i + 1] - 128) * 64 + (bytes[i + 2] - 128)) as Int
-      chars.push(char_from_code(char_code))
-      i = i + 3
-    } else {
-      // 无效UTF-8，使用替换字符
-      chars.push('?')
-      i = i + 1
+    // 测试浏览器API集成
+    let browser_integration = WasmBrowserIntegration::new()
+    let page_load_time = WasmBrowserIntegration::get_page_load_time(browser_integration)
+    Span::set_attribute(wasm_span, "page.load.time", page_load_time.to_string())
+    
+    let memory_usage = WasmBrowserIntegration::get_memory_usage(browser_integration)
+    Span::set_attribute(wasm_span, "memory.usage", memory_usage.to_string())
+  }
+  
+  // 测试JavaScript互操作
+  let js_interop = WasmJSInterop::new()
+  let js_result = WasmJSInterop::call_function(js_interop, "console.log", ["WASM telemetry test"])
+  assert_true(js_result.success, "应该能够调用JavaScript函数")
+  
+  // 测试WebAssembly存储
+  let wasm_storage = WasmStorage::new()
+  let storage_result = WasmStorage::store_telemetry_data(wasm_storage, "test.key", "test.value")
+  assert_true(storage_result.success, "应该能够在WebAssembly存储中保存数据")
+  
+  let retrieved_data = WasmStorage::retrieve_telemetry_data(wasm_storage, "test.key")
+  assert_eq(retrieved_data, "test.value", "应该能够从WebAssembly存储中检索数据")
+  
+  Span::end(wasm_span)
+  
+  // 测试WebAssembly性能特征
+  let wasm_performance = WasmPerformanceProfiler::new()
+  WasmPerformanceProfiler::start_profiling(wasm_performance)
+  
+  // 执行一些遥测操作
+  for i = 0; i < 100; i = i + 1 {
+    let perf_span = Tracer::start_span(wasm_tracer, "performance.span." + i.to_string())
+    Span::set_attribute(perf_span, "iteration", i.to_string())
+    Span::end(perf_span)
+  }
+  
+  WasmPerformanceProfiler::stop_profiling(wasm_performance)
+  let perf_report = WasmPerformanceProfiler::get_report(wasm_performance)
+  
+  // 验证性能指标
+  assert_true(perf_report.average_span_creation_time < 10.0, 
+    "WebAssembly上的span创建时间应该合理")
+  assert_true(perf_report.memory_efficiency_score > 0.7, 
+    "WebAssembly应该有良好的内存效率")
+  
+  // 验证导出的数据
+  let wasm_exported_spans = TracerProvider::get_exported_spans(wasm_tracer_provider)
+  assert_true(wasm_exported_spans.length() > 0, 
+    "应该能够在WebAssembly平台上导出span")
+  
+  // 测试WebAssembly与其他平台的数据兼容性
+  let compatibility_validator = WasmCompatibilityValidator::new()
+  let compatibility_result = WasmCompatibilityValidator::validate_cross_platform_data(
+    compatibility_validator, wasm_exported_spans)
+  
+  assert_true(compatibility_result.is_compatible, 
+    "WebAssembly数据应该与其他平台兼容")
+  
+  assert_true(true)
+}
+
+test "移动平台兼容性测试" {
+  // 测试移动平台兼容性
+  let mobile_platforms = [
+    MobilePlatformInfo::new("Android", "13", "arm64", "Java"),
+    MobilePlatformInfo::new("Android", "12", "arm64", "Kotlin"),
+    MobilePlatformInfo::new("iOS", "16.0", "arm64", "Swift"),
+    MobilePlatformInfo::new("iOS", "15.0", "arm64", "Objective-C")
+  ]
+  
+  for mobile_platform in mobile_platforms {
+    // 创建移动平台特定的配置
+    let mobile_config = TelemetryConfiguration::new()
+    TelemetryConfiguration::adapt_to_mobile(mobile_config, mobile_platform)
+    
+    // 验证移动平台配置适配
+    assert_true(TelemetryConfiguration::is_mobile_adapted(mobile_config), 
+      "配置应该适配到 " + mobile_platform.os_name + " 平台")
+    
+    // 测试移动平台特定的限制
+    assert_true(TelemetryConfiguration::get_battery_optimization_enabled(mobile_config), 
+      "移动平台应该启用电池优化")
+    assert_true(TelemetryConfiguration::get_network_adaptation_enabled(mobile_config), 
+      "移动平台应该启用网络自适应")
+    
+    // 创建移动平台遥测提供者
+    let mobile_provider_result = TracerProvider::builder()
+      .with_config(mobile_config)
+      .with_mobile_platform(mobile_platform)
+      .build()
+    
+    assert_true(mobile_provider_result.success, 
+      "应该能够在 " + mobile_platform.os_name + " 上创建遥测提供者")
+    
+    let mobile_tracer_provider = mobile_provider_result.provider
+    let mobile_tracer = TracerProvider::get_tracer(mobile_tracer_provider, "mobile.compatibility.test")
+    
+    // 测试移动平台特定的功能
+    let mobile_span = Tracer::start_span(mobile_tracer, "mobile.test.span")
+    Span::set_attribute(mobile_span, "platform", mobile_platform.os_name)
+    Span::set_attribute(mobile_span, "version", mobile_platform.version)
+    Span::set_attribute(mobile_span, "architecture", mobile_platform.architecture)
+    Span::set_attribute(mobile_span, "runtime", mobile_platform.runtime)
+    
+    // 测试移动设备信息收集
+    if mobile_platform.os_name == "Android" {
+      let android_info = AndroidDeviceInfo::collect()
+      Span::set_attribute(mobile_span, "device.model", android_info.model)
+      Span::set_attribute(mobile_span, "device.manufacturer", android_info.manufacturer)
+      Span::set_attribute(mobile_span, "os.version", android_info.os_version)
+      Span::set_attribute(mobile_span, "app.version", android_info.app_version)
+      
+      // 测试Android特定的遥测功能
+      let android_telemetry = AndroidTelemetryIntegration::new()
+      let battery_level = AndroidTelemetryIntegration::get_battery_level(android_telemetry)
+      Span::set_attribute(mobile_span, "battery.level", battery_level.to_string())
+      
+      let network_type = AndroidTelemetryIntegration::get_network_type(android_telemetry)
+      Span::set_attribute(mobile_span, "network.type", network_type)
+      
+    } else if mobile_platform.os_name == "iOS" {
+      let ios_info = IosDeviceInfo::collect()
+      Span::set_attribute(mobile_span, "device.model", ios_info.model)
+      Span::set_attribute(mobile_span, "device.name", ios_info.name)
+      Span::set_attribute(mobile_span, "os.version", ios_info.os_version)
+      Span::set_attribute(mobile_span, "app.version", ios_info.app_version)
+      
+      // 测试iOS特定的遥测功能
+      let ios_telemetry = IosTelemetryIntegration::new()
+      let battery_level = IosTelemetryIntegration::get_battery_level(ios_telemetry)
+      Span::set_attribute(mobile_span, "battery.level", battery_level.to_string())
+      
+      let network_type = IosTelemetryIntegration::get_network_type(ios_telemetry)
+      Span::set_attribute(mobile_span, "network.type", network_type)
     }
-  }
-  
-  String.from_array(chars)
-}
-
-// 辅助函数：编码为UTF-16
-fn encode_to_utf16(text : String) -> Array[Byte] {
-  // 简化的UTF-16编码
-  let bytes = []
-  let i = 0
-  
-  while i < text.length() {
-    let char_code = text.char_code_at(i)
     
-    // 小端序
-    bytes.push((char_code % 256) as Byte)
-    bytes.push((char_code / 256) as Byte)
+    // 测试移动网络适应性
+    let mobile_network = MobileNetworkAdaptation::new()
+    MobileNetworkAdaptation::adapt_to_network_conditions(mobile_network)
     
-    i = i + 1
-  }
-  
-  bytes
-}
-
-// 辅助函数：从UTF-16解码
-fn decode_from_utf16(bytes : Array[Byte]) -> String {
-  // 简化的UTF-16解码
-  let chars = []
-  let i = 0
-  
-  while i + 1 < bytes.length() {
-    let low_byte = bytes[i]
-    let high_byte = bytes[i + 1]
-    let char_code = (high_byte * 256 + low_byte) as Int
+    let network_quality = MobileNetworkAdaptation::get_network_quality(mobile_network)
+    Span::set_attribute(mobile_span, "network.quality", network_quality.to_string())
     
-    chars.push(char_from_code(char_code))
-    i = i + 2
+    let adaptation_strategy = MobileNetworkAdaptation::get_adaptation_strategy(mobile_network)
+    Span::set_attribute(mobile_span, "adaptation.strategy", adaptation_strategy)
+    
+    // 测试移动电池优化
+    let mobile_battery = MobileBatteryOptimization::new()
+    MobileBatteryOptimization::optimize_for_battery(mobile_battery)
+    
+    let battery_optimization_level = MobileBatteryOptimization::get_optimization_level(mobile_battery)
+    Span::set_attribute(mobile_span, "battery.optimization.level", battery_optimization_level.to_string())
+    
+    // 测试移动存储限制
+    let mobile_storage = MobileStorageManager::new()
+    let storage_usage = MobileStorageManager::get_storage_usage(mobile_storage)
+    Span::set_attribute(mobile_span, "storage.usage", storage_usage.to_string())
+    
+    // 在存储受限时测试数据压缩
+    if storage_usage > 80.0 {
+      MobileStorageManager::enable_compression(mobile_storage, true)
+      assert_true(MobileStorageManager::is_compression_enabled(mobile_storage), 
+        "存储使用率高时应该启用压缩")
+    }
+    
+    Span::end(mobile_span)
+    
+    // 验证导出的数据
+    let mobile_exported_spans = TracerProvider::get_exported_spans(mobile_tracer_provider)
+    assert_true(mobile_exported_spans.length() > 0, 
+      "应该能够在 " + mobile_platform.os_name + " 上导出span")
+    
+    // 验证移动平台特定属性存在
+    let exported_span = mobile_exported_spans[0]
+    assert_true(Span::has_attribute(exported_span, "platform"), 
+      "导出的span应该包含平台信息")
+    assert_true(Span::has_attribute(exported_span, "network.quality"), 
+      "导出的span应该包含网络质量信息")
   }
   
-  String.from_array(chars)
-}
-
-// 辅助函数：添加UTF-8 BOM
-fn add_utf8_bom(text : String) -> String {
-  let bom = [0xEF, 0xBB, 0xBF]
-  let bom_text = String.from_utf8_bytes(bom)
-  bom_text + text
-}
-
-// 辅助函数：检查是否有UTF-8 BOM
-fn has_utf8_bom(text : String) -> Bool {
-  if text.length() >= 3 {
-    let bom = text.substring(0, 3)
-    let bom_bytes = bom.to_utf8_bytes()
-    bom_bytes.length() == 3 && 
-    bom_bytes[0] == 0xEF && 
-    bom_bytes[1] == 0xBB && 
-    bom_bytes[2] == 0xBF
-  } else {
-    false
-  }
-}
-
-// 辅助函数：移除UTF-8 BOM
-fn remove_utf8_bom(text : String) -> String {
-  if has_utf8_bom(text) {
-    text.substring(3, text.length() - 3)
-  } else {
-    text
-  }
-}
-
-// 辅助函数：获取当前时间戳
-fn get_current_timestamp() -> Int {
-  // 简化的时间戳获取
-  @static.timestamp_counter
-}
-
-// 静态变量：时间戳计数器
-@static.timestamp_counter = 1640995200 // 2022-01-01 00:00:00 UTC
-
-// 辅助函数：格式化时间戳
-fn format_timestamp(timestamp : Int, format : String) -> String {
-  // 简化的时间格式化
-  // 在实际项目中，会使用更复杂的时间格式化库
-  let date = Date.from_timestamp(timestamp)
-  date.format(format)
-}
-
-// 辅助函数：解析时间戳
-fn parse_timestamp(time_string : String, format : String) -> Option[Int] {
-  // 简化的时间解析
-  // 在实际项目中，会使用更复杂的时间解析库
-  match Date.parse(time_string, format) {
-    Some(date) => Some(date.to_timestamp())
-    None => None
-  }
-}
-
-// 辅助函数：转换为本地时间
-fn convert_to_local_time(timestamp : Int) -> Int {
-  // 简化的时区转换
-  // 在实际项目中，会考虑系统的时区设置
-  timestamp + get_timezone_offset()
-}
-
-// 辅助函数：转换为UTC时间
-fn convert_to_utc_time(local_timestamp : Int) -> Int {
-  // 简化的时区转换
-  local_timestamp - get_timezone_offset()
-}
-
-// 辅助函数：获取时区偏移
-fn get_timezone_offset() -> Int {
-  // 简化的时区偏移（假设为UTC+8）
-  8 * 3600 // 8小时，以秒为单位
-}
-
-// 辅助函数：获取平台时间格式
-fn get_platform_time_format() -> String {
-  match detect_current_platform() {
-    Windows => "MM/DD/YYYY HH:mm:ss"
-    _ => "DD/MM/YYYY HH:mm:ss"
-  }
-}
-
-// HTTP响应类型
-type HttpResponse = {
-  status_code : Int,
-  headers : Array[(String, String)],
-  body : String
-}
-
-// 辅助函数：获取可用的网络API
-fn get_available_network_apis() -> Array[String] {
-  match detect_current_platform() {
-    WebAssembly => ["fetch", "websocket", "webrtc"]
-    Windows => ["winhttp", "winsock", "websocket"]
-    MacOS => ["cfsocket", "nsurl", "websocket"]
-    Linux => ["posix-socket", "libcurl", "websocket"]
-    Android => ["java-net", "okhttp", "websocket"]
-    IOS => ["nsurl", "cfsocket", "websocket"]
-    _ => ["unknown"]
-  }
-}
-
-// 辅助函数：发起HTTP请求
-fn make_http_request(method : String, url : String, headers : Array[(String, String)]) -> Result[HttpResponse, String] {
-  // 简化的HTTP请求实现
-  // 在实际项目中，会使用平台的HTTP API
+  // 测试跨移动平台数据一致性
+  let mobile_validator = CrossMobilePlatformValidator::new()
+  let mobile_consistency_report = CrossMobilePlatformValidator::validate_consistency(mobile_validator)
   
-  if is_running_in_webassembly() {
-    // WebAssembly环境使用fetch API
-    make_wasm_http_request(method, url, headers)
-  } else {
-    // 原生环境使用系统HTTP库
-    make_native_http_request(method, url, headers)
-  }
-}
-
-// 辅助函数：WebAssembly HTTP请求
-fn make_wasm_http_request(method : String, url : String, headers : Array[(String, String)]) -> Result[HttpResponse, String] {
-  // 简化的WebAssembly HTTP请求
-  // 在实际项目中，会使用fetch API
+  assert_true(mobile_consistency_report.overall_consistent, "跨移动平台数据应该保持一致")
+  assert_true(mobile_consistency_report.inconsistencies.length() == 0, 
+    "不应该有跨移动平台数据不一致")
   
-  if url.contains("httpbin.org") {
-    Ok({
-      status_code: 200,
-      headers: [("Content-Type", "application/json")],
-      body: "{\"args\":{},\"headers\":{},\"origin\":\"0.0.0.0\",\"url\":\"" + url + "\"}"
-    })
-  } else {
-    Err("Network error in WebAssembly environment")
-  }
+  assert_true(true)
 }
 
-// 辅助函数：原生HTTP请求
-fn make_native_http_request(method : String, url : String, headers : Array[(String, String)]) -> Result[HttpResponse, String] {
-  // 简化的原生HTTP请求
-  // 在实际项目中，会使用系统HTTP库
+test "容器和虚拟化环境兼容性" {
+  // 测试容器和虚拟化环境兼容性
+  let virtualization_environments = [
+    VirtualizationInfo::new("Docker", "20.10", "container"),
+    VirtualizationInfo::new("Kubernetes", "1.24", "orchestration"),
+    VirtualizationInfo::new("VMware", "7.0", "virtual-machine"),
+    VirtualizationInfo::new("Hyper-V", "10.0", "virtual-machine"),
+    VirtualizationInfo::new("KVM", "5.15", "virtual-machine")
+  ]
   
-  if url.contains("httpbin.org") {
-    Ok({
-      status_code: 200,
-      headers: [("Content-Type", "application/json")],
-      body: "{\"args\":{},\"headers\":{},\"origin\":\"0.0.0.0\",\"url\":\"" + url + "\"}"
-    })
-  } else {
-    Err("Network error in native environment")
+  for virt_env in virtualization_environments {
+    // 创建虚拟化环境检测器
+    let virt_detector = VirtualizationDetector::new()
+    VirtualizationDetector::set_environment(virt_detector, virt_env)
+    
+    // 验证虚拟化环境检测
+    assert_true(VirtualizationDetector::is_virtualized(virt_detector), 
+      "应该正确检测虚拟化环境")
+    assert_eq(VirtualizationDetector::get_virtualization_type(virt_detector), virt_env.type, 
+      "应该正确识别虚拟化类型")
+    
+    // 创建虚拟化环境特定的配置
+    let virt_config = TelemetryConfiguration::new()
+    TelemetryConfiguration::adapt_to_virtualization(virt_config, virt_env)
+    
+    // 验证虚拟化配置适配
+    assert_true(TelemetryConfiguration::is_virtualization_adapted(virt_config), 
+      "配置应该适配到 " + virt_env.name + " 环境")
+    
+    // 测试虚拟化环境特定的功能
+    if virt_env.type == "container" {
+      assert_true(TelemetryConfiguration::get_container_mode_enabled(virt_config), 
+        "容器环境应该启用容器模式")
+      
+      // 测试容器特定的资源限制
+      let container_resources = ContainerResourceMonitor::new()
+      let cpu_limit = ContainerResourceMonitor::get_cpu_limit(container_resources)
+      let memory_limit = ContainerResourceMonitor::get_memory_limit(container_resources)
+      
+      assert_true(cpu_limit > 0, "容器应该有CPU限制")
+      assert_true(memory_limit > 0, "容器应该有内存限制")
+      
+    } else if virt_env.type == "orchestration" {
+      assert_true(TelemetryConfiguration::get_kubernetes_enabled(virt_config), 
+        "Kubernetes环境应该启用Kubernetes支持")
+      
+      // 测试Kubernetes特定的功能
+      let k8s_integration = KubernetesIntegration::new()
+      let pod_name = KubernetesIntegration::get_pod_name(k8s_integration)
+      let namespace = KubernetesIntegration::get_namespace(k8s_integration)
+      let node_name = KubernetesIntegration::get_node_name(k8s_integration)
+      
+      assert_true(pod_name.length() > 0, "应该能够获取Pod名称")
+      assert_true(namespace.length() > 0, "应该能够获取命名空间")
+      assert_true(node_name.length() > 0, "应该能够获取节点名称")
+      
+    } else if virt_env.type == "virtual-machine" {
+      assert_true(TelemetryConfiguration::get_vm_optimization_enabled(virt_config), 
+        "虚拟机环境应该启用VM优化")
+      
+      // 测试虚拟机特定的功能
+      let vm_info = VMInfoCollector::new()
+      let vm_type = VMInfoCollector::get_vm_type(vm_info)
+      let hypervisor = VMInfoCollector::get_hypervisor(vm_info)
+      
+      assert_true(vm_type.length() > 0, "应该能够获取虚拟机类型")
+      assert_true(hypervisor.length() > 0, "应该能够获取虚拟机监控程序信息")
+    }
+    
+    // 创建虚拟化环境遥测提供者
+    let virt_provider_result = TracerProvider::builder()
+      .with_config(virt_config)
+      .with_virtualization_detector(virt_detector)
+      .build()
+    
+    assert_true(virt_provider_result.success, 
+      "应该能够在 " + virt_env.name + " 环境中创建遥测提供者")
+    
+    let virt_tracer_provider = virt_provider_result.provider
+    let virt_tracer = TracerProvider::get_tracer(virt_tracer_provider, "virtualization.compatibility.test")
+    
+    // 测试虚拟化环境特定的遥测功能
+    let virt_span = Tracer::start_span(virt_tracer, "virtualization.test.span")
+    Span::set_attribute(virt_span, "virtualization.type", virt_env.type)
+    Span::set_attribute(virt_span, "virtualization.name", virt_env.name)
+    Span::set_attribute(virt_span, "virtualization.version", virt_env.version)
+    
+    // 添加虚拟化环境特定的属性
+    if virt_env.type == "container" {
+      let container_info = ContainerInfoCollector::collect()
+      Span::set_attribute(virt_span, "container.id", container_info.id)
+      Span::set_attribute(virt_span, "container.name", container_info.name)
+      Span::set_attribute(virt_span, "container.image", container_info.image)
+      
+    } else if virt_env.type == "orchestration" {
+      let k8s_info = KubernetesInfoCollector::collect()
+      Span::set_attribute(virt_span, "pod.name", k8s_info.pod_name)
+      Span::set_attribute(virt_span, "pod.namespace", k8s_info.namespace)
+      Span::set_attribute(virt_span, "pod.uid", k8s_info.pod_uid)
+      Span::set_attribute(virt_span, "service.account", k8s_info.service_account)
+      
+    } else if virt_env.type == "virtual-machine" {
+      let vm_info = VMInfoCollector::collect()
+      Span::set_attribute(virt_span, "vm.id", vm_info.id)
+      Span::set_attribute(virt_span, "vm.name", vm_info.name)
+      Span::set_attribute(virt_span, "hypervisor", vm_info.hypervisor)
+    }
+    
+    // 测试虚拟化环境中的资源监控
+    let resource_monitor = VirtualizationResourceMonitor::new()
+    let cpu_usage = VirtualizationResourceMonitor::get_cpu_usage(resource_monitor)
+    let memory_usage = VirtualizationResourceMonitor::get_memory_usage(resource_monitor)
+    let disk_usage = VirtualizationResourceMonitor::get_disk_usage(resource_monitor)
+    let network_usage = VirtualizationResourceMonitor::get_network_usage(resource_monitor)
+    
+    Span::set_attribute(virt_span, "resource.cpu.usage", cpu_usage.to_string())
+    Span::set_attribute(virt_span, "resource.memory.usage", memory_usage.to_string())
+    Span::set_attribute(virt_span, "resource.disk.usage", disk_usage.to_string())
+    Span::set_attribute(virt_span, "resource.network.usage", network_usage.to_string())
+    
+    // 测试虚拟化环境中的网络拓扑发现
+    if virt_env.type == "orchestration" {
+      let topology_discoverer = KubernetesTopologyDiscoverer::new()
+      let service_topology = KubernetesTopologyDiscoverer::discover_service_topology(topology_discoverer)
+      
+      Span::set_attribute(virt_span, "topology.services.count", service_topology.services.length().to_string())
+      Span::set_attribute(virt_span, "topology.pods.count", service_topology.pods.length().to_string())
+      Span::set_attribute(virt_span, "topology.namespaces.count", service_topology.namespaces.length().to_string())
+    }
+    
+    Span::end(virt_span)
+    
+    // 验证导出的数据
+    let virt_exported_spans = TracerProvider::get_exported_spans(virt_tracer_provider)
+    assert_true(virt_exported_spans.length() > 0, 
+      "应该能够在 " + virt_env.name + " 环境中导出span")
+    
+    // 验证虚拟化环境特定属性存在
+    let exported_span = virt_exported_spans[0]
+    assert_true(Span::has_attribute(exported_span, "virtualization.type"), 
+      "导出的span应该包含虚拟化类型信息")
+    assert_true(Span::has_attribute(exported_span, "resource.cpu.usage"), 
+      "导出的span应该包含资源使用信息")
   }
+  
+  // 测试跨虚拟化环境数据一致性
+  let virt_validator = CrossVirtualizationValidator::new()
+  let virt_consistency_report = CrossVirtualizationValidator::validate_consistency(virt_validator)
+  
+  assert_true(virt_consistency_report.overall_consistent, "跨虚拟化环境数据应该保持一致")
+  assert_true(virt_consistency_report.inconsistencies.length() == 0, 
+    "不应该有跨虚拟化环境数据不一致")
+  
+  assert_true(true)
 }
 
-// 辅助函数：检查SSL支持
-fn check_ssl_support() -> Bool {
-  // 简化的SSL支持检查
-  match detect_current_platform() {
-    WebAssembly => true // 浏览器通常支持SSL
-    _ => true // 假设所有平台都支持SSL
-  }
-}
-
-// 代理配置类型
-type ProxyConfig = {
-  host : String,
-  port : Int,
-  username : Option[String],
-  password : Option[String]
-}
-
-// 辅助函数：获取代理配置
-fn get_proxy_configuration() -> Option[ProxyConfig] {
-  // 简化的代理配置获取
-  match get_environment_variable("HTTP_PROXY") {
-    Some(proxy_url) => parse_proxy_url(proxy_url)
-    None => None
-  }
-}
-
-// 辅助函数：解析代理URL
-fn parse_proxy_url(url : String) -> Option[ProxyConfig] {
-  // 简化的代理URL解析
-  if url.contains("://") {
-    let parts = url.split("://")
-    if parts.length() == 2 {
-      let host_port = parts[1]
-      match host_port.index_of(":") {
-        Some(colon_index) => {
-          let host = host_port.substring(0, colon_index)
-          let port_str = host_port.substring(colon_index + 1, host_port.length() - colon_index - 1)
-          
-          match Int.parse(port_str) {
-            Some(port) => Some({
-              host: host,
-              port: port,
-              username: None,
-              password: None
-            })
-            None => None
-          }
+test "边缘计算设备兼容性" {
+  // 测试边缘计算设备兼容性
+  let edge_devices = [
+    EdgeDeviceInfo::new("Raspberry Pi", "4B", "arm64", "Linux", "1GB"),
+    EdgeDeviceInfo::new("NVIDIA Jetson", "Nano", "arm64", "Linux", "4GB"),
+    EdgeDeviceInfo::new("Intel NUC", "i7", "x86_64", "Linux", "16GB"),
+    EdgeDeviceInfo::new("AWS Snowball", "Edge", "x86_64", "Linux", "32GB"),
+    EdgeDeviceInfo::new("Custom IoT", "ESP32", "xtensa", "FreeRTOS", "512KB")
+  ]
+  
+  for edge_device in edge_devices {
+    // 创建边缘设备特定的配置
+    let edge_config = TelemetryConfiguration::new()
+    TelemetryConfiguration::adapt_to_edge_device(edge_config, edge_device)
+    
+    // 验证边缘设备配置适配
+    assert_true(TelemetryConfiguration::is_edge_adapted(edge_config), 
+      "配置应该适配到 " + edge_device.model + " 设备")
+    
+    // 测试边缘设备特定的限制
+    assert_true(TelemetryConfiguration::get_offline_mode_enabled(edge_config), 
+      "边缘设备应该启用离线模式")
+    assert_true(TelemetryConfiguration::get_local_storage_enabled(edge_config), 
+      "边缘设备应该启用本地存储")
+    
+    // 根据设备资源调整配置
+    let memory_mb = EdgeDeviceInfo::parse_memory(edge_device.memory)
+    if memory_mb < 1024 { // 小于1GB
+      assert_true(TelemetryConfiguration::get_batch_size(edge_config) <= 10, 
+        "低内存设备应该使用小的批处理大小")
+      assert_true(TelemetryConfiguration::get_max_buffer_size(edge_config) <= 1000, 
+        "低内存设备应该使用小的缓冲区大小")
+    }
+    
+    // 创建边缘设备遥测提供者
+    let edge_provider_result = TracerProvider::builder()
+      .with_config(edge_config)
+      .with_edge_device(edge_device)
+      .build()
+    
+    assert_true(edge_provider_result.success, 
+      "应该能够在 " + edge_device.model + " 设备上创建遥测提供者")
+    
+    let edge_tracer_provider = edge_provider_result.provider
+    let edge_tracer = TracerProvider::get_tracer(edge_tracer_provider, "edge.compatibility.test")
+    
+    // 测试边缘设备特定的功能
+    let edge_span = Tracer::start_span(edge_tracer, "edge.test.span")
+    Span::set_attribute(edge_span, "device.model", edge_device.model)
+    Span::set_attribute(edge_span, "device.architecture", edge_device.architecture)
+    Span::set_attribute(edge_span, "device.os", edge_device.os)
+    Span::set_attribute(edge_span, "device.memory", edge_device.memory)
+    
+    // 测试边缘设备传感器集成
+    let sensor_manager = EdgeSensorManager::new()
+    let available_sensors = EdgeSensorManager::get_available_sensors(sensor_manager)
+    
+    for sensor in available_sensors {
+      match sensor.type {
+        "temperature" => {
+          let temperature = EdgeSensorManager::read_temperature(sensor_manager, sensor.id)
+          Span::set_attribute(edge_span, "sensor.temperature", temperature.to_string())
         }
-        None => None
-      }
-    } else {
-      None
-    }
-  } else {
-    None
-  }
-}
-
-// 辅助函数：获取环境变量
-fn get_environment_variable(name : String) -> Option[String] {
-  // 简化的环境变量获取
-  match name {
-    "PATH" => Some("/usr/bin:/bin")
-    "OS" => Some("Linux")
-    "ARCH" => Some("x64")
-    _ => None
-  }
-}
-
-// 系统信息类型
-type SystemInfo = {
-  os_name : String,
-  os_version : String,
-  hostname : String,
-  architecture : String
-}
-
-// 辅助函数：获取系统信息
-fn get_system_information() -> SystemInfo {
-  // 简化的系统信息获取
-  {
-    os_name: "Linux",
-    os_version: "5.15.0",
-    hostname: "test-host",
-    architecture: "x64"
-  }
-}
-
-// 辅助函数：获取临时目录
-fn get_temporary_directory() -> String {
-  match detect_current_platform() {
-    Windows => "C:\\Temp"
-    _ => "/tmp"
-  }
-}
-
-// 辅助函数：检查目录是否存在
-fn directory_exists(path : String) -> Bool {
-  // 简化的目录存在检查
-  match path {
-    "/tmp" => true
-    "C:\\Temp" => true
-    "/home/user" => true
-    _ => false
-  }
-}
-
-// 辅助函数：获取用户目录
-fn get_user_directory() -> String {
-  match detect_current_platform() {
-    Windows => "C:\\Users\\TestUser"
-    _ => "/home/testuser"
-  }
-}
-
-// 资源限制类型
-type ResourceLimits = {
-  max_memory : Int,
-  max_file_descriptors : Int,
-  max_processes : Int
-}
-
-// 辅助函数：获取资源限制
-fn get_resource_limits() -> ResourceLimits {
-  // 简化的资源限制获取
-  {
-    max_memory: 1024 * 1024 * 1024, // 1GB
-    max_file_descriptors: 1024,
-    max_processes: 256
-  }
-}
-
-// 辅助函数：检查是否在WebAssembly中运行
-fn is_running_in_webassembly() -> Bool {
-  // 简化的WebAssembly检测
-  match get_environment_variable("WASM") {
-    Some(_) => true
-    None => false
-  }
-}
-
-// 辅助函数：检查WebAssembly内存操作
-fn check_wasm_memory_operations() -> Bool {
-  // 简化的WebAssembly内存操作检查
-  true
-}
-
-// 辅助函数：检查WebAssembly导入函数
-fn check_wasm_import_functions() -> Bool {
-  // 简化的WebAssembly导入函数检查
-  true
-}
-
-// 辅助函数：检查WebAssembly导出函数
-fn check_wasm_export_functions() -> Bool {
-  // 简化的WebAssembly导出函数检查
-  true
-}
-
-// 辅助函数：检查浏览器API
-fn check_browser_apis() -> Bool {
-  // 简化的浏览器API检查
-  true
-}
-
-// 辅助函数：检查原生文件操作
-fn check_native_file_operations() -> Bool {
-  // 简化的原生文件操作检查
-  true
-}
-
-// 辅助函数：检查原生网络操作
-fn check_native_network_operations() -> Bool {
-  // 简化的原生网络操作检查
-  true
-}
-
-// 辅助函数：检查原生系统操作
-fn check_native_system_operations() -> Bool {
-  // 简化的原生系统操作检查
-  true
-}
-
-// 跨平台API类型
-type CrossPlatformAPI = {
-  test_function : (String) -> Result[String, String]
-}
-
-// 辅助函数：获取跨平台API
-fn get_cross_platform_api() -> CrossPlatformAPI {
-  // 简化的跨平台API
-  {
-    test_function: fn(param) { Ok(param + "_processed") }
-  }
-}
-
-// 辅助函数：解析包路径
-fn resolve_package_path(package : String) -> String {
-  // 简化的包路径解析
-  "/packages/" + package
-}
-
-// 辅助函数：获取包依赖
-fn get_package_dependencies() -> Array[String] {
-  // 简化的包依赖获取
-  ["moonbitlang/core", "moonbitlang/assertion"]
-}
-
-// 辅助函数：获取包版本
-fn get_package_version(package : String) -> Option[String] {
-  // 简化的包版本获取
-  match package {
-    "moonbitlang/core" => Some("0.1.0")
-    "moonbitlang/assertion" => Some("0.1.0")
-    _ => None
-  }
-}
-
-// 辅助函数：检查版本格式是否有效
-fn is_valid_version_format(version : String) -> Bool {
-  // 简化的版本格式检查
-  let parts = version.split(".")
-  if parts.length() == 3 {
-    let major = parts[0]
-    let minor = parts[1]
-    let patch = parts[2]
-    
-    match Int.parse(major) {
-      Some(_) => {
-        match Int.parse(minor) {
-          Some(_) => {
-            match Int.parse(patch) {
-              Some(_) => true
-              None => false
-            }
-          }
-          None => false
+        "humidity" => {
+          let humidity = EdgeSensorManager::read_humidity(sensor_manager, sensor.id)
+          Span::set_attribute(edge_span, "sensor.humidity", humidity.to_string())
         }
+        "pressure" => {
+          let pressure = EdgeSensorManager::read_pressure(sensor_manager, sensor.id)
+          Span::set_attribute(edge_span, "sensor.pressure", pressure.to_string())
+        }
+        "light" => {
+          let light = EdgeSensorManager::read_light(sensor_manager, sensor.id)
+          Span::set_attribute(edge_span, "sensor.light", light.to_string())
+        }
+        _ => {}
       }
-      None => false
     }
-  } else {
-    false
+    
+    // 测试边缘网络连接性
+    let edge_network = EdgeNetworkManager::new()
+    let connection_status = EdgeNetworkManager::get_connection_status(edge_network)
+    Span::set_attribute(edge_span, "network.status", connection_status.status)
+    Span::set_attribute(edge_span, "network.type", connection_status.type)
+    Span::set_attribute(edge_span, "network.strength", connection_status.signal_strength.to_string())
+    
+    // 测试边缘设备电源管理
+    let power_manager = EdgePowerManager::new()
+    let battery_level = EdgePowerManager::get_battery_level(power_manager)
+    let power_source = EdgePowerManager::get_power_source(power_manager)
+    
+    Span::set_attribute(edge_span, "power.battery.level", battery_level.to_string())
+    Span::set_attribute(edge_span, "power.source", power_source)
+    
+    // 测试边缘存储管理
+    let storage_manager = EdgeStorageManager::new()
+    let storage_usage = EdgeStorageManager::get_storage_usage(storage_manager)
+    Span::set_attribute(edge_span, "storage.usage", storage_usage.to_string())
+    
+    // 在存储空间不足时测试数据清理
+    if storage_usage > 90.0 {
+      EdgeStorageManager::cleanup_old_data(storage_manager)
+      let new_storage_usage = EdgeStorageManager::get_storage_usage(storage_manager)
+      assert_true(new_storage_usage < storage_usage, "存储清理应该减少使用率")
+    }
+    
+    // 测试边缘计算特定功能
+    let edge_computing = EdgeComputingManager::new()
+    
+    // 测试本地数据处理
+    let local_data = "edge sensor data"
+    let processed_data = EdgeComputingManager::process_locally(edge_computing, local_data)
+    assert_true(processed_data.length() > 0, "应该能够在边缘设备上本地处理数据")
+    
+    Span::set_attribute(edge_span, "local.processing.enabled", "true")
+    Span::set_attribute(edge_span, "local.processing.data.size", processed_data.length().to_string())
+    
+    // 测试离线数据缓存
+    if connection_status.status == "offline" {
+      let offline_cache = EdgeOfflineCache::new()
+      EdgeOfflineCache::store_data(offline_cache, processed_data)
+      
+      let cached_data = EdgeOfflineCache::retrieve_data(offline_cache)
+      assert_eq(cached_data, processed_data, "离线缓存应该正确存储和检索数据")
+      
+      Span::set_attribute(edge_span, "offline.cache.enabled", "true")
+      Span::set_attribute(edge_span, "offline.cache.size", cached_data.length().to_string())
+    }
+    
+    // 测试边缘设备同步策略
+    let sync_manager = EdgeSyncManager::new()
+    let sync_strategy = EdgeSyncManager::get_sync_strategy(sync_manager)
+    Span::set_attribute(edge_span, "sync.strategy", sync_strategy)
+    
+    // 根据网络状况调整同步策略
+    if connection_status.status == "online" && connection_status.signal_strength > 0.7 {
+      EdgeSyncManager::set_sync_strategy(sync_manager, "immediate")
+    } else if connection_status.status == "online" {
+      EdgeSyncManager::set_sync_strategy(sync_manager, "batch")
+    } else {
+      EdgeSyncManager::set_sync_strategy(sync_manager, "offline")
+    }
+    
+    Span::end(edge_span)
+    
+    // 验证导出的数据
+    let edge_exported_spans = TracerProvider::get_exported_spans(edge_tracer_provider)
+    assert_true(edge_exported_spans.length() > 0, 
+      "应该能够在 " + edge_device.model + " 设备上导出span")
+    
+    // 验证边缘设备特定属性存在
+    let exported_span = edge_exported_spans[0]
+    assert_true(Span::has_attribute(exported_span, "device.model"), 
+      "导出的span应该包含设备型号信息")
+    assert_true(Span::has_attribute(exported_span, "network.status"), 
+      "导出的span应该包含网络状态信息")
   }
+  
+  // 测试跨边缘设备数据一致性
+  let edge_validator = CrossEdgeDeviceValidator::new()
+  let edge_consistency_report = CrossEdgeDeviceValidator::validate_consistency(edge_validator)
+  
+  assert_true(edge_consistency_report.overall_consistent, "跨边缘设备数据应该保持一致")
+  assert_true(edge_consistency_report.inconsistencies.length() == 0, 
+    "不应该有跨边缘设备数据不一致")
+  
+  assert_true(true)
 }
-
-// 以下是一些未实现的平台特定检查函数的占位符
-// 在实际项目中，这些函数会包含具体的平台检查逻辑
-
-fn check_windows_registry_access() -> Bool { false }
-fn check_windows_services_access() -> Bool { false }
-fn check_windows_dll_access() -> Bool { false }
-fn check_macos_bundle_access() -> Bool { false }
-fn check_macos_keychain_access() -> Bool { false }
-fn check_macos_notification_center() -> Bool { false }
-fn check_linux_proc_access() -> Bool { false }
-fn check_linux_sys_access() -> Bool { false }
-fn check_linux_permission_model() -> Bool { false }
-fn check_android_intent_system() -> Bool { false }
-fn check_android_content_providers() -> Bool { false }
-fn check_android_services() -> Bool { false }
-fn check_ios_notification_center() -> Bool { false }
-fn check_ios_keychain_access() -> Bool { false }
-fn check_ios_app_store_integration() -> Bool { false }
-fn check_wasm_memory_model() -> Bool { false }
-fn check_wasm_import_exports() -> Bool { false }
-fn check_browser_web_apis() -> Bool { false }
-fn check_basic_math_operations() -> Bool { true }
-fn check_basic_string_operations() -> Bool { true }
-fn check_basic_collection_operations() -> Bool { true }
-fn check_x86_instruction_set() -> Bool { false }
-fn check_x86_alignment() -> Bool { false }
-fn check_x64_instruction_set() -> Bool { false }
-fn check_x64_alignment() -> Bool { false }
-fn check_arm32_instruction_set() -> Bool { false }
-fn check_arm32_alignment() -> Bool { false }
-fn check_arm64_instruction_set() -> Bool { false }
-fn check_arm64_alignment() -> Bool { false }
