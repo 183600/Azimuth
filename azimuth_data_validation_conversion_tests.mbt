@@ -1,313 +1,429 @@
-// Azimuth Data Validation and Conversion Tests
-// This file contains test cases for data validation and type conversion
+// Azimuth Data Validation and Conversion Test Suite
+// This file contains test cases for data validation and conversion functionality
 
-// Test 1: String to Numeric Conversion
-test "string to numeric conversion validation" {
-  let valid_int_str = "42"
-  let valid_float_str = "3.14"
-  let invalid_int_str = "not_a_number"
-  let empty_str = ""
+// Test 1: Basic Type Validation
+test "basic type validation" {
+  // Test string validation
+  let string_validator = Validator::string()
+  assert_true(Validator::validate(string_validator, "test"))
+  assert_false(Validator::validate(string_validator, 123))
+  assert_false(Validator::validate(string_validator, true))
   
-  // Test valid integer conversion
-  match valid_int_str.to_int() {
-    Some(value) => assert_eq(value, 42)
-    None => assert_true(false)
-  }
+  // Test numeric validation
+  let int_validator = Validator::int()
+  assert_true(Validator::validate(int_validator, 42))
+  assert_false(Validator::validate(int_validator, "42"))
+  assert_false(Validator::validate(int_validator, 3.14))
   
-  // Test valid float conversion
-  match valid_float_str.to_float() {
-    Some(value) => assert_eq(value, 3.14)
-    None => assert_true(false)
-  }
+  let float_validator = Validator::float()
+  assert_true(Validator::validate(float_validator, 3.14))
+  assert_true(Validator::validate(float_validator, 42)) // Int should be valid for float
+  assert_false(Validator::validate(float_validator, "3.14"))
   
-  // Test invalid integer conversion
-  match invalid_int_str.to_int() {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  // Test empty string conversion
-  match empty_str.to_int() {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
+  // Test boolean validation
+  let bool_validator = Validator::bool()
+  assert_true(Validator::validate(bool_validator, true))
+  assert_false(Validator::validate(bool_validator, "true"))
+  assert_false(Validator::validate(bool_validator, 1))
 }
 
-// Test 2: Attribute Value Type Conversion
-test "attribute value type conversion" {
-  let string_attr = StringValue("123")
-  let int_attr = IntValue(456)
-  let float_attr = FloatValue(7.89)
-  let bool_attr = BoolValue(true)
+// Test 2: String Validation Rules
+test "string validation rules" {
+  // Test length validation
+  let length_validator = Validator::string().min_length(3).max_length(10)
+  assert_true(Validator::validate(length_validator, "test"))
+  assert_false(Validator::validate(length_validator, "ab")) // Too short
+  assert_false(Validator::validate(length_validator, "very_long_string")) // Too long
   
-  // Test string to int conversion
-  match string_attr.to_int() {
-    Some(value) => assert_eq(value, 123)
-    None => assert_true(false)
-  }
+  // Test pattern validation
+  let email_validator = Validator::string().pattern(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+  assert_true(Validator::validate(email_validator, "test@example.com"))
+  assert_false(Validator::validate(email_validator, "invalid-email"))
+  assert_false(Validator::validate(email_validator, "test@"))
   
-  // Test int to string conversion
-  assert_eq(int_attr.to_string(), "456")
+  // Test whitelist validation
+  let whitelist_validator = Validator::string().whitelist(["admin", "user", "guest"])
+  assert_true(Validator::validate(whitelist_validator, "admin"))
+  assert_false(Validator::validate(whitelist_validator, "superuser"))
   
-  // Test float to string conversion
-  let float_str = float_attr.to_string()
-  assert_true(float_str.contains("7.89"))
-  
-  // Test bool to string conversion
-  assert_eq(bool_attr.to_string(), "true")
+  // Test blacklist validation
+  let blacklist_validator = Validator::string().blacklist(["password", "123456", "admin"])
+  assert_true(Validator::validate(blacklist_validator, "valid_password"))
+  assert_false(Validator::validate(blacklist_validator, "password"))
 }
 
-// Test 3: Data Range Validation
-test "data range validation" {
-  let valid_port = 8080
-  let invalid_port_low = -1
-  let invalid_port_high = 65536
+// Test 3: Numeric Validation Rules
+test "numeric validation rules" {
+  // Test range validation
+  let range_validator = Validator::int().range(1, 100)
+  assert_true(Validator::validate(range_validator, 50))
+  assert_false(Validator::validate(range_validator, 0)) // Below range
+  assert_false(Validator::validate(range_validator, 101)) // Above range
   
-  // Test valid port range
-  assert_true(is_valid_port(valid_port))
-  assert_false(is_valid_port(invalid_port_low))
-  assert_false(is_valid_port(invalid_port_high))
+  // Test positive/negative validation
+  let positive_validator = Validator::float().positive()
+  assert_true(Validator::validate(positive_validator, 3.14))
+  assert_false(Validator::validate(positive_validator, -1.0))
+  assert_false(Validator::validate(positive_validator, 0.0))
   
-  // Test percentage validation
-  assert_true(is_valid_percentage(0.0))
-  assert_true(is_valid_percentage(50.5))
-  assert_true(is_valid_percentage(100.0))
-  assert_false(is_valid_percentage(-1.0))
-  assert_false(is_valid_percentage(101.0))
+  let non_negative_validator = Validator::int().non_negative()
+  assert_true(Validator::validate(non_negative_validator, 0))
+  assert_true(Validator::validate(non_negative_validator, 42))
+  assert_false(Validator::validate(non_negative_validator, -1))
   
-  // Test timestamp validation
-  let valid_timestamp = 1640995200L // Valid Unix timestamp
-  let invalid_timestamp = -1L
-  assert_true(is_valid_timestamp(valid_timestamp))
-  assert_false(is_valid_timestamp(invalid_timestamp))
+  // Test precision validation
+  let precision_validator = Validator::float().precision(2)
+  assert_true(Validator::validate(precision_validator, 3.14))
+  assert_false(Validator::validate(precision_validator, 3.141)) // Too many decimal places
 }
 
-// Test 4: Email and URL Validation
-test "email and url validation" {
-  let valid_emails = [
-    "test@example.com",
-    "user.name+tag@domain.co.uk",
-    "user123@test-domain.com"
-  ]
-  let invalid_emails = [
-    "invalid-email",
-    "@domain.com",
-    "user@",
-    "user..name@domain.com"
-  ]
-  
-  for email in valid_emails {
-    assert_true(is_valid_email(email))
-  }
-  
-  for email in invalid_emails {
-    assert_false(is_valid_email(email))
-  }
-  
-  // Test URL validation
-  let valid_urls = [
-    "https://example.com",
-    "http://test.domain.org/path",
-    "ftp://files.server.net"
-  ]
-  let invalid_urls = [
-    "not-a-url",
-    "http://",
-    "://missing-protocol.com"
-  ]
-  
-  for url in valid_urls {
-    assert_true(is_valid_url(url))
-  }
-  
-  for url in invalid_urls {
-    assert_false(is_valid_url(url))
-  }
-}
-
-// Test 5: JSON Data Validation
-test "json data validation" {
-  let valid_json = "{\"name\":\"test\",\"value\":42,\"active\":true}"
-  let invalid_json = "{\"name\":\"test\",\"value\":42,\"active\":}"
-  let empty_json = "{}"
-  let malformed_json = "{not json}"
-  
-  // Test valid JSON parsing
-  match parse_json(valid_json) {
-    Some(obj) => {
-      assert_true(has_key(obj, "name"))
-      assert_true(has_key(obj, "value"))
-      assert_true(has_key(obj, "active"))
-    }
-    None => assert_true(false)
-  }
-  
-  // Test invalid JSON parsing
-  match parse_json(invalid_json) {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  // Test empty JSON parsing
-  match parse_json(empty_json) {
-    Some(obj) => assert_eq(keys(obj).length(), 0)
-    None => assert_true(false)
-  }
-  
-  // Test malformed JSON parsing
-  match parse_json(malformed_json) {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-}
-
-// Test 6: Array and Collection Validation
+// Test 4: Array and Collection Validation
 test "array and collection validation" {
-  let non_empty_array = [1, 2, 3, 4, 5]
-  let empty_array = []
-  let string_array = ["a", "b", "c"]
-  let mixed_array = [1, "two", 3.0, true]
-  
   // Test array validation
-  assert_true(is_non_empty_array(non_empty_array))
-  assert_false(is_non_empty_array(empty_array))
+  let array_validator = Validator::array(Validator::string()).min_items(1).max_items(5)
+  assert_true(Validator::validate(array_validator, ["a", "b", "c"]))
+  assert_false(Validator::validate(array_validator, [])) // Too few items
+  assert_false(Validator::validate(array_validator, ["a", "b", "c", "d", "e", "f"])) // Too many items
+  assert_false(Validator::validate(array_validator, [1, 2, 3])) // Wrong item type
   
-  // Test homogeneous array validation
-  assert_true(is_homogeneous_array(string_array))
-  assert_false(is_homogeneous_array(mixed_array))
+  // Test unique items validation
+  let unique_validator = Validator::array(Validator::int()).unique()
+  assert_true(Validator::validate(unique_validator, [1, 2, 3, 4]))
+  assert_false(Validator::validate(unique_validator, [1, 2, 2, 3])) // Duplicate items
   
-  // Test array size validation
-  assert_true(is_array_size_within_range(non_empty_array, 1, 10))
-  assert_false(is_array_size_within_range(non_empty_array, 10, 20))
+  // Test nested validation
+  let nested_validator = Validator::array(
+    Validator::object([
+      ("name", Validator::string().required()),
+      ("age", Validator::int().range(0, 150))
+    ])
+  )
   
-  // Test array contains validation
-  assert_true(array_contains(non_empty_array, 3))
-  assert_false(array_contains(non_empty_array, 10))
+  let valid_nested = [
+    [("name", "Alice"), ("age", 25)],
+    [("name", "Bob"), ("age", 30)]
+  ]
+  assert_true(Validator::validate(nested_validator, valid_nested))
+  
+  let invalid_nested = [
+    [("name", "Charlie")], // Missing age
+    [("name", "David"), ("age", 200)] // Age out of range
+  ]
+  assert_false(Validator::validate(nested_validator, invalid_nested))
 }
 
-// Test 7: Date and Time Validation
-test "date and time validation" {
-  let valid_date = "2023-01-01"
-  let invalid_date = "2023-13-01"
-  let invalid_format = "01-01-2023"
-  let valid_time = "12:30:45"
-  let invalid_time = "25:30:45"
+// Test 5: Object Validation
+test "object validation" {
+  // Test object schema validation
+  let user_validator = Validator::object([
+    ("username", Validator::string().min_length(3).required()),
+    ("email", Validator::string().pattern(r"^[^@]+@[^@]+\.[^@]+$").required()),
+    ("age", Validator::int().range(13, 120)),
+    ("is_active", Validator::bool().default(true))
+  ])
   
-  // Test date validation
-  assert_true(is_valid_date(valid_date))
-  assert_false(is_valid_date(invalid_date))
-  assert_false(is_valid_date(invalid_format))
+  let valid_user = [
+    ("username", "john_doe"),
+    ("email", "john@example.com"),
+    ("age", 25)
+  ]
+  assert_true(Validator::validate(user_validator, valid_user))
   
-  // Test time validation
-  assert_true(is_valid_time(valid_time))
-  assert_false(is_valid_time(invalid_time))
+  // Test missing required field
+  let missing_required = [
+    ("email", "jane@example.com"),
+    ("age", 30)
+    // Missing username
+  ]
+  assert_false(Validator::validate(user_validator, missing_required))
   
-  // Test datetime validation
-  let valid_datetime = "2023-01-01T12:30:45Z"
-  let invalid_datetime = "2023-01-01T25:30:45Z"
-  assert_true(is_valid_datetime(valid_datetime))
-  assert_false(is_valid_datetime(invalid_datetime))
-}
-
-// Test 8: Hex and Base64 Validation
-test "hex and base64 validation" {
-  let valid_hex = "0a1b2c3d4e5f"
-  let invalid_hex = "0x1b2c3d4g5f" // Contains 'x' and 'g'
-  let odd_length_hex = "abc"
+  // Test invalid field values
+  let invalid_values = [
+    ("username", "ab"), // Too short
+    ("email", "invalid-email"), // Invalid format
+    ("age", 10) // Below range
+  ]
+  assert_false(Validator::validate(user_validator, invalid_values))
   
-  // Test hex validation
-  assert_true(is_valid_hex(valid_hex))
-  assert_false(is_valid_hex(invalid_hex))
-  assert_false(is_valid_hex(odd_length_hex))
+  // Test additional properties
+  let strict_validator = user_validator.strict()
+  let with_extra_props = [
+    ("username", "test_user"),
+    ("email", "test@example.com"),
+    ("age", 25),
+    ("extra_field", "should_not_be_allowed")
+  ]
+  assert_false(Validator::validate(strict_validator, with_extra_props))
   
-  // Test base64 validation
-  let valid_base64 = "SGVsbG8gV29ybGQ="
-  let invalid_base64 = "Hello@World"
-  let empty_base64 = ""
+  let lenient_validator = user_validator.lenient()
+  assert_true(Validator::validate(lenient_validator, with_extra_props))
+}
+
+// Test 6: Custom Validation Rules
+test "custom validation rules" {
+  // Test custom function validator
+  let even_validator = Validator::int().custom(fn(value) {
+    match value {
+      Int(n) => n % 2 == 0
+      _ => false
+    }
+  }, "Value must be even")
   
-  assert_true(is_valid_base64(valid_base64))
-  assert_false(is_valid_base64(invalid_base64))
-  assert_false(is_valid_base64(empty_base64))
+  assert_true(Validator::validate(even_validator, 4))
+  assert_false(Validator::validate(even_validator, 5))
+  
+  // Test conditional validation
+  let conditional_validator = Validator::object([
+    ("type", Validator::string().required()),
+    ("value", Validator::string().when(
+      fn(obj) { match obj.get("type") { Some(StringValue("email")) => true, _ => false } },
+      Validator::string().pattern(r"^[^@]+@[^@]+\.[^@]+$")
+    ).when(
+      fn(obj) { match obj.get("type") { Some(StringValue("phone")) => true, _ => false } },
+      Validator::string().pattern(r"^\+?[\d\s\-\(\)]+$")
+    ))
+  ])
+  
+  let email_obj = [
+    ("type", "email"),
+    ("value", "test@example.com")
+  ]
+  assert_true(Validator::validate(conditional_validator, email_obj))
+  
+  let phone_obj = [
+    ("type", "phone"),
+    ("value", "+1 (555) 123-4567")
+  ]
+  assert_true(Validator::validate(conditional_validator, phone_obj))
+  
+  let invalid_email = [
+    ("type", "email"),
+    ("value", "not-an-email")
+  ]
+  assert_false(Validator::validate(conditional_validator, invalid_email))
 }
 
-// Helper functions (simplified implementations)
-fn is_valid_port(port : Int) -> Bool {
-  port >= 0 && port <= 65535
-}
-
-fn is_valid_percentage(value : Float) -> Bool {
-  value >= 0.0 && value <= 100.0
-}
-
-fn is_valid_timestamp(timestamp : Long) -> Bool {
-  timestamp > 0L
-}
-
-fn is_valid_email(email : String) -> Bool {
-  email.contains("@") && email.contains(".") && email.length() > 5
-}
-
-fn is_valid_url(url : String) -> Bool {
-  (url.starts_with("http://") || url.starts_with("https://") || url.starts_with("ftp://")) 
-  && url.contains(".") && url.length() > 10
-}
-
-fn parse_json(json_str : String) -> Option[Map[String, Any]] {
-  // Simplified JSON parsing - in real implementation would use proper JSON parser
-  if json_str.contains("{") && json_str.contains("}") {
-    Some(Map::new())
-  } else {
-    None
+// Test 7: Data Type Conversion
+test "data type conversion" {
+  // Test string to numeric conversion
+  match Converter::to_int("42") {
+    Ok(42) => assert_true(true)
+    Err(_) => assert_true(false)
+  }
+  
+  match Converter::to_int("not_a_number") {
+    Ok(_) => assert_true(false)
+    Err(_) => assert_true(true)
+  }
+  
+  match Converter::to_float("3.14") {
+    Ok(3.14) => assert_true(true)
+    Err(_) => assert_true(false)
+  }
+  
+  // Test numeric to string conversion
+  assert_eq(Converter::to_string(42), "42")
+  assert_eq(Converter::to_string(3.14), "3.14")
+  assert_eq(Converter::to_string(true), "true")
+  
+  // Test boolean conversion
+  match Converter::to_bool("true") {
+    Ok(true) => assert_true(true)
+    Err(_) => assert_true(false)
+  }
+  
+  match Converter::to_bool("false") {
+    Ok(false) => assert_true(true)
+    Err(_) => assert_true(false)
+  }
+  
+  match Converter::to_bool("1") {
+    Ok(true) => assert_true(true)
+    Err(_) => assert_true(false)
+  }
+  
+  match Converter::to_bool("0") {
+    Ok(false) => assert_true(true)
+    Err(_) => assert_true(false)
+  }
+  
+  // Test array conversion
+  match Converter::to_array("[1, 2, 3]") {
+    Ok(arr) => assert_eq(arr, [1, 2, 3])
+    Err(_) => assert_true(false)
+  }
+  
+  match Converter::to_array("a,b,c") {
+    Ok(arr) => assert_eq(arr, ["a", "b", "c"])
+    Err(_) => assert_true(false)
   }
 }
 
-fn has_key(obj : Map[String, Any], key : String) -> Bool {
-  // Simplified implementation
-  true
+// Test 8: Data Sanitization
+test "data sanitization" {
+  // Test HTML sanitization
+  let html_input = "<script>alert('xss')</script><p>Safe content</p>"
+  let sanitized_html = Sanitizer::html(html_input)
+  assert_false(sanitized_html.contains("<script>"))
+  assert_true(sanitized_html.contains("<p>Safe content</p>"))
+  
+  // Test SQL injection sanitization
+  let sql_input = "'; DROP TABLE users; --"
+  let sanitized_sql = Sanitizer::sql(sql_input)
+  assert_false(sanitized_sql.contains("DROP TABLE"))
+  
+  // Test string sanitization
+  let dirty_string = "Hello\u0000World\u001fTest"
+  let clean_string = Sanitizer::string(dirty_string)
+  assert_false(clean_string.contains("\u0000"))
+  assert_false(clean_string.contains("\u001f"))
+  
+  // Test phone number normalization
+  let phone1 = "+1 (555) 123-4567"
+  let phone2 = "555.123.4567"
+  let phone3 = "5551234567"
+  
+  assert_eq(Sanitizer::phone(phone1), "15551234567")
+  assert_eq(Sanitizer::phone(phone2), "5551234567")
+  assert_eq(Sanitizer::phone(phone3), "5551234567")
+  
+  // Test email normalization
+  let email1 = "Test.Example@DOMAIN.COM"
+  let email2 = "test@example+tag.com"
+  
+  assert_eq(Sanitizer::email(email1), "test.example@domain.com")
+  assert_eq(Sanitizer::email(email2), "test@example.com") // Removes tag
 }
 
-fn keys(obj : Map[String, Any]) -> Array[String] {
-  // Simplified implementation
-  []
+// Test 9: Data Transformation
+test "data transformation" {
+  // Test case transformation
+  assert_eq(Transformer::to_upper_case("hello"), "HELLO")
+  assert_eq(Transformer::to_lower_case("WORLD"), "world")
+  assert_eq(Transformer::to_title_case("hello world"), "Hello World")
+  assert_eq(Transformer::to_camel_case("hello_world_test"), "helloWorldTest")
+  assert_eq(Transformer::to_snake_case("helloWorldTest"), "hello_world_test")
+  
+  // Test whitespace transformation
+  assert_eq(Transformer::trim("  hello world  "), "hello world")
+  assert_eq(Transformer::collapse_whitespace("hello    world"), "hello world")
+  assert_eq(Transformer::remove_whitespace("helloworld"), "helloworld")
+  
+  // Test data masking
+  assert_eq(Transformer::mask_email("test@example.com"), "t***@example.com")
+  assert_eq(Transformer::mask_phone("1234567890"), "123***7890")
+  assert_eq(Transformer::mask_credit_card("1234567890123456"), "1234********3456")
+  
+  // Test data formatting
+  assert_eq(Transformer::format_currency(1234.56, "USD"), "$1,234.56")
+  assert_eq(Transformer::format_percentage(0.1234, 2), "12.34%")
+  assert_eq(Transformer::format_number(1234567.89, "en-US"), "1,234,567.89")
+  
+  // Test date/time transformation
+  let timestamp = 1640995200000L // 2022-01-01 00:00:00 UTC
+  assert_eq(Transformer::format_date(timestamp, "YYYY-MM-DD"), "2022-01-01")
+  assert_eq(Transformer::format_time(timestamp, "HH:mm:ss"), "00:00:00")
+  assert_eq(Transformer::format_datetime(timestamp, "YYYY-MM-DD HH:mm:ss"), "2022-01-01 00:00:00")
 }
 
-fn is_non_empty_array(arr : Array[Any]) -> Bool {
-  arr.length() > 0
-}
-
-fn is_homogeneous_array(arr : Array[Any]) -> Bool {
-  // Simplified implementation - would check type consistency
-  true
-}
-
-fn is_array_size_within_range(arr : Array[Any], min : Int, max : Int) -> Bool {
-  arr.length() >= min && arr.length() <= max
-}
-
-fn array_contains(arr : Array[Any], value : Any) -> Bool {
-  // Simplified implementation
-  false
-}
-
-fn is_valid_date(date_str : String) -> Bool {
-  date_str.length() == 10 && date_str.contains("-") && 
-  !date_str.contains("-13") && !date_str.contains("-32")
-}
-
-fn is_valid_time(time_str : String) -> Bool {
-  time_str.length() == 8 && time_str.contains(":") && 
-  !time_str.contains("24:") && !time_str.contains("60:")
-}
-
-fn is_valid_datetime(datetime_str : String) -> Bool {
-  datetime_str.contains("T") && datetime_str.contains("Z") && 
-  datetime_str.length() > 15
-}
-
-fn is_valid_hex(hex_str : String) -> Bool {
-  hex_str.length() > 0 && hex_str.length() % 2 == 0
-}
-
-fn is_valid_base64(base64_str : String) -> Bool {
-  base64_str.length() > 0 && base64_str.length() % 4 == 0
+// Test 10: Validation and Conversion Pipeline
+test "validation and conversion pipeline" {
+  // Create a pipeline for user registration data
+  let registration_pipeline = Pipeline::new()
+    .add_step(PipelineStep::trim_strings())
+    .add_step(PipelineStep::normalize_emails())
+    .add_step(PipelineStep::validate(
+      Validator::object([
+        ("username", Validator::string().min_length(3).max_length(20).required()),
+        ("email", Validator::string().pattern(r"^[^@]+@[^@]+\.[^@]+$").required()),
+        ("age", Validator::int().range(13, 120).required()),
+        ("password", Validator::string().min_length(8).required())
+      ])
+    ))
+    .add_step(PipelineStep::sanitize_html())
+    .add_step(PipelineStep::hash_passwords())
+  
+  // Test valid input
+  let valid_input = [
+    ("username", "  john_doe  "),
+    ("email", "  JOHN.DOE@EXAMPLE.COM  "),
+    ("age", "25"),
+    ("password", "securepassword123")
+  ]
+  
+  match Pipeline::process(registration_pipeline, valid_input) {
+    Ok(result) => {
+      assert_eq(result.get("username"), Some(StringValue("john_doe")))
+      assert_eq(result.get("email"), Some(StringValue("john.doe@example.com")))
+      assert_eq(result.get("age"), Some(IntValue(25)))
+      // Password should be hashed
+      match result.get("password") {
+        Some(StringValue(hashed)) => assert_neq(hashed, "securepassword123")
+        _ => assert_true(false)
+      }
+    }
+    Err(errors) => assert_true(false, "Valid input should not fail: " + errors.join(", "))
+  }
+  
+  // Test invalid input
+  let invalid_input = [
+    ("username", "ab"), // Too short
+    ("email", "invalid-email"), // Invalid format
+    ("age", "10"), // Below range
+    ("password", "short") // Too short
+  ]
+  
+  match Pipeline::process(registration_pipeline, invalid_input) {
+    Ok(_) => assert_true(false, "Invalid input should fail")
+    Err(errors) => {
+      assert_true(errors.length() >= 4) // Should have multiple validation errors
+    }
+  }
+  
+  // Test conditional pipeline
+  let conditional_pipeline = Pipeline::new()
+    .add_step(PipelineStep::validate(
+      Validator::object([
+        ("user_type", Validator::string().whitelist(["admin", "user"]).required()),
+        ("permissions", Validator::array(Validator::string()))
+      ])
+    ))
+    .add_step(PipelineStep::when(
+      fn(data) { match data.get("user_type") { Some(StringValue("admin")) => true, _ => false } },
+      PipelineStep::validate(
+        Validator::object([
+          ("permissions", Validator::array(Validator::string()).min_items(1).required())
+        ])
+      )
+    ))
+  
+  // Test admin user with permissions
+  let admin_with_perms = [
+    ("user_type", "admin"),
+    ("permissions", ["read", "write", "delete"])
+  ]
+  match Pipeline::process(conditional_pipeline, admin_with_perms) {
+    Ok(_) => assert_true(true)
+    Err(_) => assert_true(false)
+  }
+  
+  // Test admin user without permissions (should fail)
+  let admin_no_perms = [
+    ("user_type", "admin"),
+    ("permissions", [])
+  ]
+  match Pipeline::process(conditional_pipeline, admin_no_perms) {
+    Ok(_) => assert_true(false)
+    Err(_) => assert_true(true)
+  }
+  
+  // Test regular user (permissions not required)
+  let regular_user = [
+    ("user_type", "user"),
+    ("permissions", [])
+  ]
+  match Pipeline::process(conditional_pipeline, regular_user) {
+    Ok(_) => assert_true(true)
+    Err(_) => assert_true(false)
+  }
 }
