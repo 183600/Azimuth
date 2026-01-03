@@ -682,6 +682,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_edge_iot_telemetry_tests.mbt": {
   },
+  "azimuth_edge_iot_telemetry_enhanced_tests.mbt": {
+  },
   "azimuth_edge_computing_telemetry_tests.mbt": {
   },
   "azimuth_edge_computing_iot_tests.mbt": {
