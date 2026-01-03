@@ -804,11 +804,17 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_high_quality_serialization_tests.mbt": {
   },
+  "azimuth_high_quality_resource_merge_tests.mbt": {
+  },
+  "azimuth_high_quality_propagator_tests.mbt": {
+  },
   "azimuth_high_quality_performance_resource_tests.mbt": {
   },
   "azimuth_high_quality_moonbit_tests.mbt": {
   },
   "azimuth_high_quality_metrics_aggregation_tests.mbt": {
+  },
+  "azimuth_high_quality_log_record_context_tests.mbt": {
   },
   "azimuth_high_quality_internationalization_tests.mbt": {
   },
