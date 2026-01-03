@@ -5055,6 +5055,18 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_617a696d7574685f616e6f6d616c795f646574656374696f6e5f616c657274696e675f74657374732e6d6274_8, ["alerting aggregation and grouping"]),
     9: (__test_617a696d7574685f616e6f6d616c795f646574656374696f6e5f616c657274696e675f74657374732e6d6274_9, ["alerting performance and load testing"]),
   },
+  "azimuth_ai_ml_telemetry_tests.mbt": {
+    0: (__test_617a696d7574685f61695f6d6c5f74656c656d657472795f74657374732e6d6274_0, ["AI model performance telemetry"]),
+    1: (__test_617a696d7574685f61695f6d6c5f74656c656d657472795f74657374732e6d6274_1, ["deep learning training telemetry"]),
+    2: (__test_617a696d7574685f61695f6d6c5f74656c656d657472795f74657374732e6d6274_2, ["reinforcement learning telemetry"]),
+    3: (__test_617a696d7574685f61695f6d6c5f74656c656d657472795f74657374732e6d6274_3, ["natural language processing telemetry"]),
+    4: (__test_617a696d7574685f61695f6d6c5f74656c656d657472795f74657374732e6d6274_4, ["computer vision telemetry"]),
+    5: (__test_617a696d7574685f61695f6d6c5f74656c656d657472795f74657374732e6d6274_5, ["machine learning pipeline telemetry"]),
+    6: (__test_617a696d7574685f61695f6d6c5f74656c656d657472795f74657374732e6d6274_6, ["model explainability telemetry"]),
+    7: (__test_617a696d7574685f61695f6d6c5f74656c656d657472795f74657374732e6d6274_7, ["model version management telemetry"]),
+    8: (__test_617a696d7574685f61695f6d6c5f74656c656d657472795f74657374732e6d6274_8, ["automated machine learning telemetry"]),
+    9: (__test_617a696d7574685f61695f6d6c5f74656c656d657472795f74657374732e6d6274_9, ["edge AI telemetry"]),
+  },
   "azimuth_advanced_time_series_tests.mbt": {
     0: (__test_617a696d7574685f616476616e6365645f74696d655f7365726965735f74657374732e6d6274_0, ["high-frequency time series data stream processing"]),
     1: (__test_617a696d7574685f616476616e6365645f74696d655f7365726965735f74657374732e6d6274_1, ["time series pattern recognition and anomaly detection"]),
