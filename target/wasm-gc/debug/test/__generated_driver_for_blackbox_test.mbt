@@ -740,6 +740,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_high_quality_edge_case_tests.mbt": {
   },
+  "azimuth_high_quality_data_processing_tests.mbt": {
+  },
   "azimuth_high_quality_cross_service_tests.mbt": {
   },
   "azimuth_high_quality_concurrent_safety_tests.mbt": {

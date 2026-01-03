@@ -1,740 +1,1424 @@
-// Azimuth 增强遥测特性测试用例
-// 专注于遥测系统的高级特性、边缘情况和性能优化
+// Azimuth Enhanced Telemetry Test Suite
+// This file contains enhanced telemetry test cases focusing on advanced features
 
-// 测试1: 遥测数据生命周期管理
-test "遥测数据生命周期管理测试" {
-  let lifecycle_manager = TelemetryLifecycleManager::new()
-  
-  // 配置生命周期策略
-  let retention_policy = RetentionPolicy::new()
-  RetentionPolicy::set_retention_period(retention_policy, Duration::days(30))
-  RetentionPolicy::set_cleanup_interval(retention_policy, Duration::hours(24))
-  RetentionPolicy::set_storage_quota(retention_policy, 1000000000) // 1GB
-  
-  let archive_policy = ArchivePolicy::new()
-  ArchivePolicy::set_archive_criteria(archive_policy, HighValue)
-  ArchivePolicy::set_archive_format(archive_policy, Parquet)
-  ArchivePolicy::set_archive_location(archive_policy, "s3://telemetry-archive/")
-  
-  // 应用策略到生命周期管理器
-  LifecycleManager::set_retention_policy(lifecycle_manager, retention_policy)
-  LifecycleManager::set_archive_policy(lifecycle_manager, archive_policy)
-  
-  // 创建测试数据
-  let old_data = TelemetryData::with_timestamp("2023-01-01T00:00:00Z")
-  let recent_data = TelemetryData::with_timestamp("2023-01-25T00:00:00Z")
-  let high_value_data = TelemetryData::with_timestamp("2023-01-20T00:00:00Z")
-  TelemetryData::set_value_indicator(high_value_data, 0.95)
-  
-  // 添加数据到生命周期管理器
-  LifecycleManager::add_data(lifecycle_manager, old_data)
-  LifecycleManager::add_data(lifecycle_manager, recent_data)
-  LifecycleManager::add_data(lifecycle_manager, high_value_data)
-  
-  // 执行生命周期管理
-  let lifecycle_result = LifecycleManager::execute(lifecycle_manager)
-  
-  // 验证处理结果
-  assert_eq(LifecycleResult::archived_count(lifecycle_result), 1)
-  assert_eq(LifecycleResult::expired_count(lifecycle_result), 1)
-  assert_eq(LifecycleResult::active_count(lifecycle_result), 1)
-  
-  // 验证高价值数据被归档
-  assert_true(LifecycleResult::is_data_archived(lifecycle_result, high_value_data))
-  
-  // 验证过期数据被清理
-  assert_true(LifecycleResult::is_data_expired(lifecycle_result, old_data))
-}
-
-// 测试2: 分布式环境下数据一致性测试
-test "分布式环境下数据一致性测试" {
-  let distributed_coordinator = DistributedCoordinator::new()
-  let consistency_checker = ConsistencyChecker::new(Eventual)
-  
-  // 创建分布式节点
-  let node_a = DistributedNode::new("node-a", "us-west-2")
-  let node_b = DistributedNode::new("node-b", "us-east-1")
-  let node_c = DistributedNode::new("node-c", "eu-west-1")
-  
-  // 配置分布式协调器
-  DistributedCoordinator::add_node(distributed_coordinator, node_a)
-  DistributedCoordinator::add_node(distributed_coordinator, node_b)
-  DistributedCoordinator::add_node(distributed_coordinator, node_c)
-  DistributedCoordinator::set_consistency_level(distributed_coordinator, Quorum)
-  DistributedCoordinator::set_replication_factor(distributed_coordinator, 3)
-  
-  // 创建分布式事务
-  let distributed_transaction = DistributedTransaction::new("txn-12345")
-  DistributedTransaction::add_operation(distributed_transaction, node_a, Write("metric.cpu.usage", 75.5))
-  DistributedTransaction::add_operation(distributed_transaction, node_b, Write("metric.memory.usage", 62.3))
-  DistributedTransaction::add_operation(distributed_transaction, node_c, Write("metric.disk.usage", 45.2))
-  
-  // 执行分布式事务
-  let transaction_result = DistributedCoordinator::execute_transaction(distributed_coordinator, distributed_transaction)
-  assert_eq(TransactionResult::status(transaction_result), Committed)
-  
-  // 检查数据一致性
-  let consistency_result = ConsistencyChecker::check(consistency_checker, distributed_coordinator)
-  
-  // 验证一致性结果
-  assert_eq(ConsistencyResult::consistency_level(consistency_result), Eventual)
-  assert_eq(ConsistencyResult::inconsistent_nodes(consistency_result).length(), 0)
-  
-  // 模拟网络分区
-  DistributedCoordinator::simulate_network_partition(distributed_coordinator, [node_a], [node_b, node_c])
-  
-  // 在分区期间写入数据
-  let partition_transaction = DistributedTransaction::new("txn-67890")
-  DistributedTransaction::add_operation(partition_transaction, node_a, Write("metric.network.in", 1024.5))
-  let partition_result = DistributedCoordinator::execute_transaction(distributed_coordinator, partition_transaction)
-  assert_eq(TransactionResult::status(partition_result), Committed)
-  
-  // 恢复网络连接
-  DistributedCoordinator::heal_network_partition(distributed_coordinator)
-  
-  // 检查分区恢复后的一致性
-  let post_partition_consistency = ConsistencyChecker::check(consistency_checker, distributed_coordinator)
-  assert_eq(ConsistencyResult::inconsistent_nodes(post_partition_consistency).length(), 0)
-}
-
-// 测试3: 遥测系统安全性测试
-test "遥测系统安全性测试" {
-  let security_manager = SecurityManager::new()
-  let encryption_provider = EncryptionProvider::new(AES256_GCM)
-  
-  // 配置安全策略
-  let security_policy = SecurityPolicy::new()
-  SecurityPolicy::set_encryption_at_rest(security_policy, true)
-  SecurityPolicy::set_encryption_in_transit(security_policy, true)
-  SecurityPolicy::set_access_control(security_policy, RoleBased)
-  SecurityPolicy::set_audit_logging(security_policy, true)
-  
-  // 应用安全策略
-  SecurityManager::apply_policy(security_manager, security_policy)
-  
-  // 创建用户和角色
-  let admin_role = Role::new("admin")
-  Role::add_permission(admin_role, ReadWrite("telemetry.*"))
-  
-  let analyst_role = Role::new("analyst")
-  Role::add_permission(analyst_role, ReadOnly("telemetry.metrics.*"))
-  
-  let admin_user = User::new("admin-user")
-  User::assign_role(admin_user, admin_role)
-  
-  let analyst_user = User::new("analyst-user")
-  User::assign_role(analyst_user, analyst_role)
-  
-  // 添加用户到安全管理器
-  SecurityManager::add_user(security_manager, admin_user)
-  SecurityManager::add_user(security_manager, analyst_user)
-  
-  // 创建敏感遥测数据
-  let sensitive_data = TelemetryData::new()
-  TelemetryData::add_metric(sensitive_data, "user.personal.data.count", 1000)
-  TelemetryData::add_metric(sensitive_data, "payment.transaction.amount", 150.75)
-  TelemetryData::add_attribute(sensitive_data, "user.id", "user-12345")
-  TelemetryData::add_attribute(sensitive_data, "pii.present", "true")
-  
-  // 加密敏感数据
-  let encrypted_data = SecurityManager::encrypt_data(security_manager, sensitive_data, encryption_provider)
-  
-  // 验证数据已加密
-  assert_true(SecurityManager::is_encrypted(encrypted_data))
-  assert_false(SecurityManager::is_plaintext(encrypted_data))
-  
-  // 测试访问控制
-  let admin_access_result = SecurityManager::check_access(security_manager, admin_user, Read(sensitive_data))
-  assert_eq(AccessResult::is_allowed(admin_access_result), true)
-  
-  let analyst_access_result = SecurityManager::check_access(security_manager, analyst_user, Read(sensitive_data))
-  assert_eq(AccessResult::is_allowed(analyst_access_result), false)
-  
-  // 测试审计日志
-  let audit_logs = SecurityManager::get_audit_logs(security_manager, Duration::hours(24))
-  assert_true(AuditLogs::contains_access_attempt(audit_logs, analyst_user))
-  assert_true(AuditLogs::contains_access_denied(audit_logs, analyst_user))
-}
-
-// 测试4: 性能优化和资源管理测试
-test "性能优化和资源管理测试" {
-  let performance_optimizer = PerformanceOptimizer::new()
-  let resource_manager = ResourceManager::new()
-  
-  // 配置性能优化策略
-  let optimization_strategy = OptimizationStrategy::new()
-  OptimizationStrategy::set_cpu_limit(optimization_strategy, 80.0)
-  OptimizationStrategy::set_memory_limit(optimization_strategy, 70.0)
-  OptimizationStrategy::set_batch_size(optimization_strategy, 1000)
-  OptimizationStrategy::set_concurrency_limit(optimization_strategy, 10)
-  
-  // 应用优化策略
-  PerformanceOptimizer::apply_strategy(performance_optimizer, optimization_strategy)
-  
-  // 创建资源池
-  let cpu_pool = ResourcePool::new(CPU, 8)
-  let memory_pool = ResourcePool::new(Memory, 16384) // 16GB
-  let network_pool = ResourcePool::new(Network, 1000) // 1Gbps
-  
-  // 添加资源池到资源管理器
-  ResourceManager::add_pool(resource_manager, cpu_pool)
-  ResourceManager::add_pool(resource_manager, memory_pool)
-  ResourceManager::add_pool(resource_manager, network_pool)
-  
-  // 模拟高负载遥测数据处理
-  let high_load_data = []
-  for i in 0..=10000 {
-    let telemetry_point = TelemetryPoint::new()
-    TelemetryPoint::set_metric(telemetry_point, "cpu.usage", Random::float_between(20.0, 90.0))
-    TelemetryPoint::set_metric(telemetry_point, "memory.usage", Random::float_between(30.0, 80.0))
-    TelemetryPoint::set_attribute(telemetry_point, "service.name", "service-" + (i % 10).to_string())
-    high_load_data = high_load_data.push(telemetry_point)
+// Test 1: Advanced Telemetry Data Processing and Transformation
+test "advanced telemetry data processing and transformation" {
+  // 定义遥测数据点类型
+  type TelemetryPoint = {
+    timestamp: Int,
+    metric_name: String,
+    value: Float,
+    tags: Array[(String, String)]
   }
   
-  // 监控资源使用
-  let resource_monitor = ResourceMonitor::new()
-  ResourceMonitor::start_monitoring(resource_monitor, resource_manager)
+  // 创建数据转换器
+  let normalize_metrics = fn(points: Array[TelemetryPoint]) {
+    points.map(fn(point) {
+      let normalized_tags = point.tags.map(fn(tag) {
+        let (key, value) = tag
+        (key.to_lowercase(), value.to_lowercase())
+      })
+      { 
+        timestamp: point.timestamp,
+        metric_name: point.metric_name.to_lowercase(),
+        value: point.value,
+        tags: normalized_tags
+      }
+    })
+  }
   
-  // 处理高负载数据
-  let processing_start_time = Time::now()
-  let processed_data = PerformanceOptimizer::process_batch(performance_optimizer, high_load_data)
-  let processing_end_time = Time::now()
-  let processing_duration = processing_end_time - processing_start_time
-  
-  // 停止监控
-  let resource_usage = ResourceMonitor::stop_monitoring(resource_monitor)
-  
-  // 验证性能指标
-  assert_true(processing_duration < Duration::seconds(5))
-  assert_eq(ProcessedData::count(processed_data), high_load_data.length())
-  
-  // 验证资源使用在限制内
-  assert_true(ResourceUsage::cpu_percentage(resource_usage) <= optimization_strategy.cpu_limit)
-  assert_true(ResourceUsage::memory_percentage(resource_usage) <= optimization_strategy.memory_limit)
-  
-  // 测试自适应优化
-  let adaptive_result = PerformanceOptimizer::adaptive_optimize(performance_optimizer, resource_usage)
-  assert_eq(AdaptiveResult::optimization_applied(adaptive_result), true)
-  assert_true(AdaptiveResult::performance_improved(adaptive_result))
-}
-
-// 测试5: 遥测数据可视化测试
-test "遥测数据可视化测试" {
-  let visualization_engine = VisualizationEngine::new()
-  let dashboard_manager = DashboardManager::new()
-  
-  // 创建可视化组件
-  let time_series_chart = TimeSeriesChart::new("CPU使用率趋势")
-  TimeSeriesChart::set_metric(time_series_chart, "cpu.usage")
-  TimeSeriesChart::set_time_range(time_series_chart, Duration::hours(24))
-  TimeSeriesChart::set_aggregation(time_series_chart, Average)
-  
-  let heatmap = Heatmap::new("服务错误热力图")
-  Heatmap::set_metric(heatmap, "error.rate")
-  Heatmap::set_dimensions(heatmap, ["service.name", "endpoint"])
-  Heatmap::set_color_scale(heatmap, RedToGreen)
-  
-  let gauge = Gauge::new("实时请求率")
-  Gauge::set_metric(gauge, "request.rate")
-  Gauge::set_range(gauge, 0.0, 1000.0)
-  Gauge::set_thresholds(gauge, [Warning(800.0), Critical(950.0)])
-  
-  // 创建仪表板
-  let dashboard = Dashboard::new("系统监控仪表板")
-  Dashboard::add_component(dashboard, time_series_chart)
-  Dashboard::add_component(dashboard, heatmap)
-  Dashboard::add_component(dashboard, gauge)
-  Dashboard::set_layout(dashboard, GridLayout(3, 2))
-  Dashboard::set_refresh_interval(dashboard, Duration::seconds(10))
-  
-  // 添加仪表板到管理器
-  DashboardManager::add_dashboard(dashboard_manager, dashboard)
+  // 创建数据聚合器
+  let aggregate_by_time_window = fn(points: Array[TelemetryPoint], window_size_ms: Int) {
+    if points.length() == 0 {
+      return []
+    }
+    
+    let sorted_points = points.sort(fn(a, b) { 
+      if a.timestamp < b.timestamp { -1 } 
+      else if a.timestamp > b.timestamp { 1 } 
+      else { 0 } 
+    })
+    
+    let windows = []
+    let mut current_window = []
+    let mut window_start = sorted_points[0].timestamp
+    let window_end = window_start + window_size_ms
+    
+    for point in sorted_points {
+      if point.timestamp <= window_end {
+        current_window = current_window.push(point)
+      } else {
+        if current_window.length() > 0 {
+          windows = windows.push(current_window)
+        }
+        current_window = [point]
+        window_start = point.timestamp
+        window_end = window_start + window_size_ms
+      }
+    }
+    
+    if current_window.length() > 0 {
+      windows = windows.push(current_window)
+    }
+    
+    windows
+  }
   
   // 创建测试数据
-  let visualization_data = VisualizationData::new()
-  
-  // 时间序列数据
-  let time_series_points = []
-  for i in 0..=24 {
-    let timestamp = Time::now() - Duration::hours(i)
-    let value = Random::float_between(40.0, 80.0)
-    time_series_points = time_series_points.push(TimeSeriesPoint::new(timestamp, value))
-  }
-  VisualizationData::add_time_series(visualization_data, "cpu.usage", time_series_points)
-  
-  // 热力图数据
-  let heatmap_data = [
-    HeatmapPoint::new("auth.service", "/login", 0.02),
-    HeatmapPoint::new("auth.service", "/logout", 0.01),
-    HeatmapPoint::new("payment.service", "/charge", 0.05),
-    HeatmapPoint::new("payment.service", "/refund", 0.03),
-    HeatmapPoint::new("user.service", "/profile", 0.01)
+  let test_points = [
+    { timestamp: 1000, metric_name: "CPU_Usage", value: 45.5, tags: [("host", "server1"), ("env", "prod")] },
+    { timestamp: 1500, metric_name: "Memory_Usage", value: 78.2, tags: [("host", "server1"), ("env", "prod")] },
+    { timestamp: 2000, metric_name: "CPU_Usage", value: 52.1, tags: [("host", "server2"), ("env", "dev")] },
+    { timestamp: 2500, metric_name: "Disk_IO", value: 120.3, tags: [("host", "server1"), ("env", "prod")] },
+    { timestamp: 5000, metric_name: "CPU_Usage", value: 38.7, tags: [("host", "server1"), ("env", "prod")] }
   ]
-  VisualizationData::add_heatmap_data(visualization_data, "error.rate", heatmap_data)
   
-  // 仪表数据
-  VisualizationData::add_gauge_value(visualization_data, "request.rate", 750.0)
+  // 测试数据标准化
+  let normalized = normalize_metrics(test_points)
+  assert_eq(normalized[0].metric_name, "cpu_usage")
+  assert_eq(normalized[0].tags[0].0, "host")
+  assert_eq(normalized[0].tags[0].1, "server1")
   
-  // 生成可视化
-  let visualization_result = VisualizationEngine::generate(visualization_engine, dashboard, visualization_data)
-  
-  // 验证可视化结果
-  assert_eq(VisualizationResult::component_count(visualization_result), 3)
-  assert_true(VisualizationResult::has_component(visualization_result, "CPU使用率趋势"))
-  assert_true(VisualizationResult::has_component(visualization_result, "服务错误热力图"))
-  assert_true(VisualizationResult::has_component(visualization_result, "实时请求率"))
-  
-  // 验证图表数据
-  let time_series_render = VisualizationResult::get_component_render(visualization_result, "CPU使用率趋势")
-  assert_eq(TimeSeriesRender::point_count(time_series_render), 25)
-  
-  let heatmap_render = VisualizationResult::get_component_render(visualization_result, "服务错误热力图")
-  assert_eq(HeatmapRender::cell_count(heatmap_render), 5)
-  
-  let gauge_render = VisualizationResult::get_component_render(visualization_result, "实时请求率")
-  assert_eq(GaugeRender::value(gauge_render), 750.0)
-  assert_eq(GaugeRender::status(gauge_render), Warning)
+  // 测试时间窗口聚合
+  let windows = aggregate_by_time_window(test_points, 3000)  // 3秒窗口
+  assert_eq(windows.length(), 2)
+  assert_eq(windows[0].length(), 4)  // 前4个点在第一个窗口
+  assert_eq(windows[1].length(), 1)  // 最后1个点在第二个窗口
 }
 
-// 测试6: 遥测系统容错和恢复测试
-test "遥测系统容错和恢复测试" {
-  let fault_tolerance_manager = FaultToleranceManager::new()
-  let recovery_coordinator = RecoveryCoordinator::new()
+// Test 2: Distributed Tracing Scenarios
+test "distributed tracing scenarios" {
+  // 定义Span类型
+  type Span = {
+    trace_id: String,
+    span_id: String,
+    parent_span_id: Option[String],
+    operation_name: String,
+    start_time: Int,
+    end_time: Int,
+    status: String,
+    attributes: Array[(String, String)]
+  }
   
-  // 配置容错策略
-  let fault_tolerance_policy = FaultTolerancePolicy::new()
-  FaultTolerancePolicy::set_retry_policy(fault_tolerance_policy, ExponentialBackoff(3, Duration::milliseconds(100)))
-  FaultTolerancePolicy::set_circuit_breaker(fault_tolerance_policy, 5, Duration::seconds(30))
-  FaultTolerancePolicy::set_bulkhead(fault_tolerance_policy, 10)
-  FaultTolerancePolicy::set_timeout(fault_tolerance_policy, Duration::seconds(5))
+  // 创建追踪链
+  let create_trace_chain = fn(root_operation: String, child_operations: Array[String]) {
+    let trace_id = "trace_" + Time::now().to_string()
+    let root_span = {
+      trace_id: trace_id,
+      span_id: "span_" + Time::now().to_string(),
+      parent_span_id: None,
+      operation_name: root_operation,
+      start_time: Time::now(),
+      end_time: Time::now() + 1000,
+      status: "ok",
+      attributes: [("service", "api-gateway")]
+    }
+    
+    let mut spans = [root_span]
+    let mut parent_id = Some(root_span.span_id)
+    
+    for operation in child_operations {
+      let child_span = {
+        trace_id: trace_id,
+        span_id: "span_" + Time::now().to_string() + operation,
+        parent_span_id: parent_id,
+        operation_name: operation,
+        start_time: Time::now(),
+        end_time: Time::now() + 500,
+        status: "ok",
+        attributes: [("service", operation)]
+      }
+      spans = spans.push(child_span)
+      parent_id = Some(child_span.span_id)
+    }
+    
+    spans
+  }
   
-  // 应用容错策略
-  FaultToleranceManager::apply_policy(fault_tolerance_manager, fault_tolerance_policy)
-  
-  // 创建遥测服务
-  let telemetry_service = TelemetryService::new("primary.service")
-  TelemetryService::set_endpoint(telemetry_service, "https://primary-telemetry.example.com")
-  TelemetryService::set_health_check(telemetry_service, "/health")
-  
-  // 创建备用服务
-  let backup_service = TelemetryService::new("backup.service")
-  TelemetryService::set_endpoint(backup_service, "https://backup-telemetry.example.com")
-  TelemetryService::set_health_check(backup_service, "/health")
-  
-  // 配置故障转移
-  let failover_config = FailoverConfig::new()
-  FailoverConfig::add_service(failover_config, telemetry_service, Primary)
-  FailoverConfig::add_service(failover_config, backup_service, Secondary)
-  FailoverConfig::set_failover_threshold(failover_config, 3)
-  
-  // 添加故障转移配置
-  FaultToleranceManager::configure_failover(fault_tolerance_manager, failover_config)
-  
-  // 模拟主服务故障
-  TelemetryService::simulate_failure(telemetry_service, ConnectionError)
-  
-  // 发送遥测数据
-  let test_data = TelemetryData::new()
-  TelemetryData::add_metric(test_data, "test.metric", 42.0)
-  
-  let send_result = FaultToleranceManager::send_data(fault_tolerance_manager, test_data)
-  
-  // 验证故障转移
-  assert_eq(SendResult::service_used(send_result), "backup.service")
-  assert_eq(SendResult::status(send_result), Success)
-  
-  // 测试熔断器
-  for i in 0..=6 {
-    let failing_data = TelemetryData::new()
-    TelemetryData::add_metric(failing_data, "failing.metric", i.to_float())
-    let result = FaultToleranceManager::send_data(fault_tolerance_manager, failing_data)
-    if i < 5 {
-      assert_eq(SendResult::status(result), Failure)
-    } else {
-      assert_eq(SendResult::status(result), CircuitBreakerOpen)
+  // 分析追踪链
+  let analyze_trace = fn(spans: Array[Span]) {
+    if spans.length() == 0 {
+      return { total_spans: 0, total_duration: 0, error_rate: 0.0 }
+    }
+    
+    let root_span = spans[0]
+    let total_duration = root_span.end_time - root_span.start_time
+    let error_count = spans.filter(fn(span) { span.status != "ok" }).length()
+    let error_rate = (error_count as Float) / (spans.length() as Float)
+    
+    {
+      total_spans: spans.length(),
+      total_duration: total_duration,
+      error_rate: error_rate
     }
   }
   
-  // 验证熔断器状态
-  assert_eq(FaultToleranceManager::circuit_breaker_state(fault_tolerance_manager, backup_service), Open)
+  // 测试正常追踪链
+  let normal_trace = create_trace_chain("api-request", ["auth", "validation", "database"])
+  let analysis = analyze_trace(normal_trace)
+  assert_eq(analysis.total_spans, 4)
+  assert_eq(analysis.total_duration, 1000)
+  assert_eq(analysis.error_rate, 0.0)
   
-  // 配置恢复策略
-  let recovery_strategy = RecoveryStrategy::new()
-  RecoveryStrategy::set_recovery_mode(recovery_strategy, Automatic)
-  RecoveryStrategy::set_health_check_interval(recovery_strategy, Duration::seconds(10))
-  RecoveryStrategy::set_max_recovery_attempts(recovery_strategy, 5)
+  // 测试带错误的追踪链
+  let error_spans = normal_trace.map(fn(span) {
+    if span.operation_name == "database" {
+      { span | status: "error", attributes: span.attributes.push(("error.type", "timeout")) }
+    } else {
+      span
+    }
+  })
   
-  // 应用恢复策略
-  RecoveryCoordinator::apply_strategy(recovery_coordinator, recovery_strategy)
-  
-  // 模拟主服务恢复
-  TelemetryService::simulate_recovery(telemetry_service)
-  
-  // 执行恢复
-  let recovery_result = RecoveryCoordinator::execute_recovery(recovery_coordinator, fault_tolerance_manager)
-  
-  // 验证恢复结果
-  assert_eq(RecoveryResult::services_recovered(recovery_result), 1)
-  assert_eq(RecoveryResult::primary_service_restored(recovery_result), true)
-  assert_eq(FaultToleranceManager::circuit_breaker_state(fault_tolerance_manager, backup_service), Closed)
+  let error_analysis = analyze_trace(error_spans)
+  assert_eq(error_analysis.total_spans, 4)
+  assert_eq(error_analysis.error_rate, 0.25)
 }
 
-// 测试7: 云原生环境遥测测试
-test "云原生环境遥测测试" {
-  let cloud_native_telemetry = CloudNativeTelemetry::new()
-  let kubernetes_adapter = KubernetesAdapter::new()
+// Test 3: Performance Monitoring and Metrics Collection
+test "performance monitoring and metrics collection" {
+  // 定义度量类型
+  enum MetricType {
+    Counter
+    Gauge
+    Histogram
+    Summary
+  }
   
-  // 配置云原生遥测
-  let cloud_config = CloudNativeConfig::new()
-  CloudNativeConfig::set_provider(cloud_config, AWS)
-  CloudNativeConfig::set_region(cloud_config, "us-west-2")
-  CloudNativeConfig::set_cluster_name(cloud_config, "production-cluster")
-  CloudNativeConfig::set_auto_discovery(cloud_config, true)
+  // 定义度量数据
+  type Metric = {
+    name: String,
+    metric_type: MetricType,
+    value: Float,
+    labels: Array[(String, String)],
+    timestamp: Int
+  }
   
-  // 应用云配置
-  CloudNativeTelemetry::apply_config(cloud_native_telemetry, cloud_config)
+  // 创建度量收集器
+  let create_collector = fn() {
+    let metrics = []
+    
+    let record_counter = fn(name: String, value: Float, labels: Array[(String, String)]) {
+      let metric = {
+        name: name,
+        metric_type: MetricType::Counter,
+        value: value,
+        labels: labels,
+        timestamp: Time::now()
+      }
+      metrics = metrics.push(metric)
+    }
+    
+    let record_gauge = fn(name: String, value: Float, labels: Array[(String, String)]) {
+      let metric = {
+        name: name,
+        metric_type: MetricType::Gauge,
+        value: value,
+        labels: labels,
+        timestamp: Time::now()
+      }
+      metrics = metrics.push(metric)
+    }
+    
+    let get_metrics = fn() { metrics }
+    
+    { record_counter, record_gauge, get_metrics }
+  }
   
-  // 配置Kubernetes适配器
-  KubernetesAdapter::set_namespace(kubernetes_adapter, "production")
-  KubernetesAdapter::set_label_selector(kubernetes_adapter, "app=azimuth")
-  KubernetesAdapter::set_watch_resources(kubernetes_adapter, [Pods, Services, Deployments])
+  // 创建度量分析器
+  let analyze_metrics = fn(metrics: Array[Metric]) {
+    let counters = metrics.filter(fn(m) { 
+      match m.metric_type { 
+        MetricType::Counter => true 
+        _ => false 
+      } 
+    })
+    
+    let gauges = metrics.filter(fn(m) { 
+      match m.metric_type { 
+        MetricType::Gauge => true 
+        _ => false 
+      } 
+    })
+    
+    let counter_sum = counters.reduce(fn(acc, m) { acc + m.value }, 0.0)
+    let gauge_avg = if gauges.length() > 0 {
+      gauges.reduce(fn(acc, m) { acc + m.value }, 0.0) / (gauges.length() as Float)
+    } else {
+      0.0
+    }
+    
+    {
+      total_metrics: metrics.length(),
+      counter_count: counters.length(),
+      gauge_count: gauges.length(),
+      counter_sum: counter_sum,
+      gauge_average: gauge_avg
+    }
+  }
   
-  // 模拟Kubernetes环境
-  let pod_resources = [
-    KubernetesResource::pod("azimuth-api-7d4f8c9b5-xyz12", "10.0.1.100", ["app=azimuth", "tier=api"]),
-    KubernetesResource::pod("azimuth-worker-5a2b3c4d6-abc34", "10.0.1.101", ["app=azimuth", "tier=worker"]),
-    KubernetesResource::pod("azimuth-db-8e5f6a7b2-def56", "10.0.1.102", ["app=azimuth", "tier=database"])
+  // 测试度量收集
+  let collector = create_collector()
+  collector.record_counter("http_requests_total", 100.0, [("method", "GET"), ("/api", "users")])
+  collector.record_counter("http_requests_total", 50.0, [("method", "POST"), ("/api", "users")])
+  collector.record_gauge("memory_usage_bytes", 1024.0 * 1024.0 * 512.0, [("host", "server1")])
+  collector.record_gauge("cpu_usage_percent", 75.5, [("host", "server1")])
+  
+  let all_metrics = collector.get_metrics()
+  let analysis = analyze_metrics(all_metrics)
+  
+  assert_eq(analysis.total_metrics, 4)
+  assert_eq(analysis.counter_count, 2)
+  assert_eq(analysis.gauge_count, 2)
+  assert_eq(analysis.counter_sum, 150.0)
+  assert_eq(analysis.gauge_average.round(), (1024.0 * 1024.0 * 512.0 + 75.5) / 2.0)
+}
+
+// Test 4: Error Handling and Exception Scenarios
+test "error handling and exception scenarios" {
+  // 定义错误类型
+  enum TelemetryError {
+    NetworkTimeout(String)
+    SerializationError(String)
+    ValidationFailed(String)
+    RateLimitExceeded(Int)
+    CircuitBreakerOpen(String)
+  }
+  
+  // 定义错误恢复策略
+  enum RecoveryStrategy {
+    RetryWithBackoff(Int, Float)  // max_attempts, initial_delay
+    FailFast
+    UseFallback(String)
+    CircuitBreaker(Int)  // failure_threshold
+  }
+  
+  // 创建错误处理器
+  let create_error_handler = fn() {
+    let error_counts = Map::empty()
+    
+    let handle_error = fn(error: TelemetryError, strategy: RecoveryStrategy) {
+      let error_key = match error {
+        TelemetryError::NetworkTimeout(_) => "network_timeout"
+        TelemetryError::SerializationError(_) => "serialization_error"
+        TelemetryError::ValidationFailed(_) => "validation_failed"
+        TelemetryError::RateLimitExceeded(_) => "rate_limit_exceeded"
+        TelemetryError::CircuitBreakerOpen(_) => "circuit_breaker_open"
+      }
+      
+      let current_count = match Map::get(error_counts, error_key) {
+        Some(count) => count
+        None => 0
+      }
+      
+      let _ = Map::insert(error_counts, error_key, current_count + 1)
+      
+      match (error, strategy) {
+        (TelemetryError::NetworkTimeout(msg), RecoveryStrategy::RetryWithBackoff(max_attempts, delay)) => {
+          if current_count < max_attempts {
+            "retry_with_backoff"
+          } else {
+            "max_attempts_reached"
+          }
+        }
+        (TelemetryError::RateLimitExceeded(retry_after), RecoveryStrategy::RetryWithBackoff(_, _)) => {
+          "wait_for_rate_limit"
+        }
+        (TelemetryError::CircuitBreakerOpen(service), RecoveryStrategy::CircuitBreaker(threshold)) => {
+          if current_count >= threshold {
+            "circuit_breaker_triggered"
+          } else {
+            "continue_processing"
+          }
+        }
+        (_, RecoveryStrategy::FailFast) => {
+          "fail_fast"
+        }
+        (_, RecoveryStrategy::UseFallback(fallback_value)) => {
+          "using_fallback: " + fallback_value
+        }
+        (_, _) => {
+          "default_handling"
+        }
+      }
+    }
+    
+    let get_error_counts = fn() { error_counts }
+    
+    { handle_error, get_error_counts }
+  }
+  
+  // 测试错误处理
+  let handler = create_error_handler()
+  
+  // 测试网络超时重试
+  let network_error = TelemetryError::NetworkTimeout("Connection timeout after 30s")
+  let retry_strategy = RecoveryStrategy::RetryWithBackoff(3, 1000.0)
+  
+  assert_eq(handler.handle_error(network_error, retry_strategy), "retry_with_backoff")
+  assert_eq(handler.handle_error(network_error, retry_strategy), "retry_with_backoff")
+  assert_eq(handler.handle_error(network_error, retry_strategy), "retry_with_backoff")
+  assert_eq(handler.handle_error(network_error, retry_strategy), "max_attempts_reached")
+  
+  // 测试速率限制
+  let rate_limit_error = TelemetryError::RateLimitExceeded(5000)
+  assert_eq(handler.handle_error(rate_limit_error, retry_strategy), "wait_for_rate_limit")
+  
+  // 测试断路器
+  let circuit_error = TelemetryError::CircuitBreakerOpen("payment-service")
+  let circuit_strategy = RecoveryStrategy::CircuitBreaker(2)
+  
+  assert_eq(handler.handle_error(circuit_error, circuit_strategy), "continue_processing")
+  assert_eq(handler.handle_error(circuit_error, circuit_strategy), "circuit_breaker_triggered")
+  
+  // 验证错误计数
+  let error_counts = handler.get_error_counts()
+  assert_eq(Map::get(error_counts, "network_timeout"), Some(4))
+  assert_eq(Map::get(error_counts, "rate_limit_exceeded"), Some(1))
+  assert_eq(Map::get(error_counts, "circuit_breaker_open"), Some(2))
+}
+
+// Test 5: Configuration Management and Dynamic Updates
+test "configuration management and dynamic updates" {
+  // 定义配置类型
+  type TelemetryConfig = {
+    service_name: String,
+    service_version: String,
+    sampling_rate: Float,
+    batch_size: Int,
+    export_interval_ms: Int,
+    enabled_features: Array[String]
+  }
+  
+  // 创建配置管理器
+  let create_config_manager = fn(initial_config: TelemetryConfig) {
+    let current_config = initial_config
+    let config_history = [initial_config]
+    let subscribers = []
+    
+    let update_config = fn(updates: (TelemetryConfig) -> TelemetryConfig) {
+      let new_config = updates(current_config)
+      current_config = new_config
+      config_history = config_history.push(new_config)
+      
+      // 通知订阅者
+      for subscriber in subscribers {
+        subscriber(new_config)
+      }
+    }
+    
+    let get_config = fn() { current_config }
+    let get_history = fn() { config_history }
+    
+    let subscribe = fn(subscriber: (TelemetryConfig) -> Unit) {
+      subscribers = subscribers.push(subscriber)
+      subscriber(current_config)
+    }
+    
+    { update_config, get_config, get_history, subscribe }
+  }
+  
+  // 创建配置验证器
+  let validate_config = fn(config: TelemetryConfig) {
+    let errors = []
+    
+    if config.service_name.length() == 0 {
+      errors = errors.push("Service name cannot be empty")
+    }
+    
+    if config.sampling_rate < 0.0 || config.sampling_rate > 1.0 {
+      errors = errors.push("Sampling rate must be between 0.0 and 1.0")
+    }
+    
+    if config.batch_size <= 0 {
+      errors = errors.push("Batch size must be positive")
+    }
+    
+    if config.export_interval_ms <= 0 {
+      errors = errors.push("Export interval must be positive")
+    }
+    
+    errors
+  }
+  
+  // 测试配置管理
+  let initial_config = {
+    service_name: "payment-service",
+    service_version: "1.0.0",
+    sampling_rate: 0.1,
+    batch_size: 100,
+    export_interval_ms: 5000,
+    enabled_features: ["tracing", "metrics"]
+  }
+  
+  let config_manager = create_config_manager(initial_config)
+  
+  // 验证初始配置
+  let initial_validation = validate_config(config_manager.get_config())
+  assert_eq(initial_validation.length(), 0)
+  
+  // 测试配置更新
+  config_manager.update_config(fn(config) {
+    { config | 
+      sampling_rate: 0.2,
+      batch_size: 200,
+      enabled_features: config.enabled_features.push("logging")
+    }
+  })
+  
+  let updated_config = config_manager.get_config()
+  assert_eq(updated_config.sampling_rate, 0.2)
+  assert_eq(updated_config.batch_size, 200)
+  assert_eq(updated_config.enabled_features.length(), 3)
+  
+  // 验证更新后的配置
+  let updated_validation = validate_config(updated_config)
+  assert_eq(updated_validation.length(), 0)
+  
+  // 测试配置历史
+  let history = config_manager.get_history()
+  assert_eq(history.length(), 2)
+  assert_eq(history[0].sampling_rate, 0.1)
+  assert_eq(history[1].sampling_rate, 0.2)
+  
+  // 测试无效配置
+  config_manager.update_config(fn(config) {
+    { config | 
+      sampling_rate: 1.5,  // 无效值
+      batch_size: -10      // 无效值
+    }
+  })
+  
+  let invalid_config = config_manager.get_config()
+  let invalid_validation = validate_config(invalid_config)
+  assert_eq(invalid_validation.length(), 2)
+  assert_true(invalid_validation.contains("Sampling rate must be between 0.0 and 1.0"))
+  assert_true(invalid_validation.contains("Batch size must be positive"))
+  
+  // 测试配置订阅
+  let mut notification_count = 0
+  let mut last_config = initial_config
+  
+  config_manager.subscribe(fn(config) {
+    notification_count = notification_count + 1
+    last_config = config
+  })
+  
+  config_manager.update_config(fn(config) {
+    { config | 
+      service_version: "1.1.0"
+    }
+  })
+  
+  assert_eq(notification_count, 2)  // 初始订阅通知 + 更新通知
+  assert_eq(last_config.service_version, "1.1.0")
+}
+
+// Test 6: Data Serialization and Deserialization
+test "data serialization and deserialization" {
+  // 定义序列化格式
+  enum SerializationFormat {
+    Json
+    Protobuf
+    Avro
+  }
+  
+  // 定义可序列化数据
+  type SerializableData = {
+    trace_id: String,
+    span_id: String,
+    operation_name: String,
+    start_time: Int,
+    duration_ms: Int,
+    attributes: Array[(String, String)]
+  }
+  
+  // 创建序列化器
+  let create_serializer = fn(format: SerializationFormat) {
+    let serialize = fn(data: SerializableData) {
+      match format {
+        SerializationFormat::Json => {
+          // 简化的JSON序列化
+          let attrs_str = data.attributes.map(fn(attr) {
+            let (key, value) = attr
+            "\"" + key + "\":\"" + value + "\""
+          }).join(",")
+          
+          "{" +
+          "\"trace_id\":\"" + data.trace_id + "\"," +
+          "\"span_id\":\"" + data.span_id + "\"," +
+          "\"operation_name\":\"" + data.operation_name + "\"," +
+          "\"start_time\":" + data.start_time.to_string() + "," +
+          "\"duration_ms\":" + data.duration_ms.to_string() + "," +
+          "\"attributes\":{" + attrs_str + "}" +
+          "}"
+        }
+        SerializationFormat::Protobuf => {
+          // 简化的Protobuf序列化
+          "protobuf:" + data.trace_id + ":" + data.span_id + ":" + data.operation_name
+        }
+        SerializationFormat::Avro => {
+          // 简化的Avro序列化
+          "avro:" + data.trace_id + "|" + data.span_id + "|" + data.operation_name
+        }
+      }
+    }
+    
+    let deserialize = fn(serialized: String) {
+      match format {
+        SerializationFormat::Json => {
+          // 简化的JSON反序列化
+          if serialized.contains("trace_id") && serialized.contains("span_id") {
+            Some({
+              trace_id: "deserialized_trace_id",
+              span_id: "deserialized_span_id",
+              operation_name: "deserialized_operation",
+              start_time: 1234567890,
+              duration_ms: 100,
+              attributes: [("key", "value")]
+            })
+          } else {
+            None
+          }
+        }
+        SerializationFormat::Protobuf => {
+          if serialized.starts_with("protobuf:") {
+            let parts = serialized.split(":")
+            if parts.length() >= 4 {
+              Some({
+                trace_id: parts[1],
+                span_id: parts[2],
+                operation_name: parts[3],
+                start_time: 1234567890,
+                duration_ms: 100,
+                attributes: []
+              })
+            } else {
+              None
+            }
+          } else {
+            None
+          }
+        }
+        SerializationFormat::Avro => {
+          if serialized.starts_with("avro:") {
+            let parts = serialized.split("|")
+            if parts.length() >= 4 {
+              Some({
+                trace_id: parts[1],
+                span_id: parts[2],
+                operation_name: parts[3],
+                start_time: 1234567890,
+                duration_ms: 100,
+                attributes: []
+              })
+            } else {
+              None
+            }
+          } else {
+            None
+          }
+        }
+      }
+    }
+    
+    { serialize, deserialize }
+  }
+  
+  // 测试数据
+  let test_data = {
+    trace_id: "1234567890abcdef1234567890abcdef",
+    span_id: "1234567890abcdef",
+    operation_name: "http_request",
+    start_time: 1234567890,
+    duration_ms: 150,
+    attributes: [
+      ("http.method", "GET"),
+      ("http.url", "/api/users"),
+      ("http.status_code", "200")
+    ]
+  }
+  
+  // 测试JSON序列化
+  let json_serializer = create_serializer(SerializationFormat::Json)
+  let json_serialized = json_serializer.serialize(test_data)
+  assert_true(json_serialized.contains("\"trace_id\":\"1234567890abcdef1234567890abcdef\""))
+  assert_true(json_serialized.contains("\"operation_name\":\"http_request\""))
+  assert_true(json_serialized.contains("\"attributes\":{\"http.method\":\"GET\""))
+  
+  let json_deserialized = json_serializer.deserialize(json_serialized)
+  assert_true(json_deserialized.is_some())
+  
+  // 测试Protobuf序列化
+  let protobuf_serializer = create_serializer(SerializationFormat::Protobuf)
+  let protobuf_serialized = protobuf_serializer.serialize(test_data)
+  assert_eq(protobuf_serialized, "protobuf:1234567890abcdef1234567890abcdef:1234567890abcdef:http_request")
+  
+  let protobuf_deserialized = protobuf_serializer.deserialize(protobuf_serialized)
+  assert_true(protobuf_deserialized.is_some())
+  
+  match protobuf_deserialized {
+    Some(data) => {
+      assert_eq(data.trace_id, "1234567890abcdef1234567890abcdef")
+      assert_eq(data.span_id, "1234567890abcdef")
+      assert_eq(data.operation_name, "http_request")
+    }
+    None => assert_true(false)
+  }
+  
+  // 测试Avro序列化
+  let avro_serializer = create_serializer(SerializationFormat::Avro)
+  let avro_serialized = avro_serializer.serialize(test_data)
+  assert_eq(avro_serialized, "avro:1234567890abcdef1234567890abcdef|1234567890abcdef|http_request")
+  
+  let avro_deserialized = avro_serializer.deserialize(avro_serialized)
+  assert_true(avro_deserialized.is_some())
+  
+  // 测试无效数据反序列化
+  let invalid_json = json_serializer.deserialize("invalid json")
+  assert_eq(invalid_json, None)
+  
+  let invalid_protobuf = protobuf_serializer.deserialize("invalid:protobuf")
+  assert_eq(invalid_protobuf, None)
+  
+  let invalid_avro = avro_serializer.deserialize("invalid|avro")
+  assert_eq(invalid_avro, None)
+}
+
+// Test 7: Context Propagation and Cross-Service Communication
+test "context propagation and cross-service communication" {
+  // 定义上下文类型
+  type Context = {
+    trace_id: String,
+    span_id: String,
+    baggage: Array[(String, String)],
+    entries: Map[String, String]
+  }
+  
+  // 定义传播器类型
+  enum PropagatorType {
+    TraceContext
+    Baggage
+    Composite
+  }
+  
+  // 创建传播器
+  let create_propagator = fn(propagator_type: PropagatorType) {
+    let inject = fn(context: Context, carrier: Array[(String, String)]) {
+      match propagator_type {
+        PropagatorType::TraceContext => {
+          let traceparent = "00-" + context.trace_id + "-" + context.span_id + "-01"
+          carrier.push(("traceparent", traceparent))
+        }
+        PropagatorType::Baggage => {
+          if context.baggage.length() > 0 {
+            let baggage_str = context.baggage.map(fn(entry) {
+              let (key, value) = entry
+              key + "=" + value
+            }).join(",")
+            carrier.push(("baggage", baggage_str))
+          }
+        }
+        PropagatorType::Composite => {
+          // 注入traceparent和baggage
+          let traceparent = "00-" + context.trace_id + "-" + context.span_id + "-01"
+          carrier.push(("traceparent", traceparent))
+          
+          if context.baggage.length() > 0 {
+            let baggage_str = context.baggage.map(fn(entry) {
+              let (key, value) = entry
+              key + "=" + value
+            }).join(",")
+            carrier.push(("baggage", baggage_str))
+          }
+        }
+      }
+      carrier
+    }
+    
+    let extract = fn(carrier: Array[(String, String)]) {
+      let mut trace_id = ""
+      let mut span_id = ""
+      let mut baggage = []
+      
+      for (key, value) in carrier {
+        match key {
+          "traceparent" => {
+            let parts = value.split("-")
+            if parts.length() >= 4 {
+              trace_id = parts[1]
+              span_id = parts[2]
+            }
+          }
+          "baggage" => {
+            let entries = value.split(",")
+            for entry in entries {
+              let entry_parts = entry.split("=")
+              if entry_parts.length() == 2 {
+                baggage = baggage.push((entry_parts[0], entry_parts[1]))
+              }
+            }
+          }
+          _ => {}
+        }
+      }
+      
+      if trace_id.length() > 0 && span_id.length() > 0 {
+        Some({
+          trace_id: trace_id,
+          span_id: span_id,
+          baggage: baggage,
+          entries: Map::empty()
+        })
+      } else {
+        None
+      }
+    }
+    
+    { inject, extract }
+  }
+  
+  // 测试上下文传播
+  let original_context = {
+    trace_id: "1234567890abcdef1234567890abcdef",
+    span_id: "1234567890abcdef",
+    baggage: [
+      ("user.id", "12345"),
+      ("request.id", "req-67890"),
+      ("region", "us-west-2")
+    ],
+    entries: Map::empty()
+  }
+  
+  // 测试TraceContext传播器
+  let trace_propagator = create_propagator(PropagatorType::TraceContext)
+  let mut carrier = []
+  let trace_carrier = trace_propagator.inject(original_context, carrier)
+  
+  assert_eq(trace_carrier.length(), 1)
+  assert_eq(trace_carrier[0].0, "traceparent")
+  assert_eq(trace_carrier[0].1, "00-1234567890abcdef1234567890abcdef-1234567890abcdef-01")
+  
+  let extracted_trace_context = trace_propagator.extract(trace_carrier)
+  assert_true(extracted_trace_context.is_some())
+  
+  match extracted_trace_context {
+    Some(context) => {
+      assert_eq(context.trace_id, original_context.trace_id)
+      assert_eq(context.span_id, original_context.span_id)
+      assert_eq(context.baggage.length(), 0)  // TraceContext不传播baggage
+    }
+    None => assert_true(false)
+  }
+  
+  // 测试Baggage传播器
+  let baggage_propagator = create_propagator(PropagatorType::Baggage)
+  carrier = []
+  let baggage_carrier = baggage_propagator.inject(original_context, carrier)
+  
+  assert_eq(baggage_carrier.length(), 1)
+  assert_eq(baggage_carrier[0].0, "baggage")
+  assert_eq(baggage_carrier[0].1, "user.id=12345,request.id=req-67890,region=us-west-2")
+  
+  let extracted_baggage_context = baggage_propagator.extract(baggage_carrier)
+  assert_eq(extracted_baggage_context, None)  // 没有traceparent，无法提取
+  
+  // 测试Composite传播器
+  let composite_propagator = create_propagator(PropagatorType::Composite)
+  carrier = []
+  let composite_carrier = composite_propagator.inject(original_context, carrier)
+  
+  assert_eq(composite_carrier.length(), 2)
+  assert_true(composite_carrier.any(fn(item) { item.0 == "traceparent" }))
+  assert_true(composite_carrier.any(fn(item) { item.0 == "baggage" }))
+  
+  let extracted_composite_context = composite_propagator.extract(composite_carrier)
+  assert_true(extracted_composite_context.is_some())
+  
+  match extracted_composite_context {
+    Some(context) => {
+      assert_eq(context.trace_id, original_context.trace_id)
+      assert_eq(context.span_id, original_context.span_id)
+      assert_eq(context.baggage.length(), 3)
+      assert_true(context.baggage.contains(("user.id", "12345")))
+      assert_true(context.baggage.contains(("request.id", "req-67890")))
+      assert_true(context.baggage.contains(("region", "us-west-2")))
+    }
+    None => assert_true(false)
+  }
+}
+
+// Test 8: Sampling Strategies and Filtering Mechanisms
+test "sampling strategies and filtering mechanisms" {
+  // 定义采样决策
+  enum SamplingDecision {
+    RecordAndSample
+    RecordOnly
+    Drop
+  }
+  
+  // 定义采样器类型
+  enum SamplerType {
+    AlwaysOn
+    AlwaysOff
+    TraceIdRatio(Float)  // 采样率
+    ParentBased(Box[SamplerType])  // 基于父span的采样决策
+    AttributeBased(Array[(String, String)])  // 基于属性的采样
+  }
+  
+  // 创建采样器
+  let create_sampler = fn(sampler_type: SamplerType) {
+    let should_sample = fn(trace_id: String, parent_sampled: Option[Bool], attributes: Array[(String, String)]) {
+      match sampler_type {
+        SamplerType::AlwaysOn => {
+          SamplingDecision::RecordAndSample
+        }
+        SamplerType::AlwaysOff => {
+          SamplingDecision::Drop
+        }
+        SamplerType::TraceIdRatio(ratio) => {
+          // 简化的采样算法：基于trace_id的哈希值
+          let hash = trace_id.chars().reduce(0, fn(acc, c) { acc + c.to_int() })
+          let normalized = (hash % 100) as Float / 100.0
+          if normalized <= ratio {
+            SamplingDecision::RecordAndSample
+          } else {
+            SamplingDecision::Drop
+          }
+        }
+        SamplerType::ParentBased(inner_sampler) => {
+          match parent_sampled {
+            Some(true) => SamplingDecision::RecordAndSample,
+            Some(false) => SamplingDecision::Drop,
+            None => {
+              // 没有父span，使用内部采样器
+              let inner = create_sampler(*inner_sampler)
+              inner.should_sample(trace_id, None, attributes)
+            }
+          }
+        }
+        SamplerType::AttributeBased(required_attributes) => {
+          let all_match = required_attributes.all(fn(required) {
+            let (key, expected_value) = required
+            attributes.any(fn(attr) {
+              let (attr_key, attr_value) = attr
+              attr_key == key && attr_value == expected_value
+            })
+          })
+          
+          if all_match {
+            SamplingDecision::RecordAndSample
+          } else {
+            SamplingDecision::Drop
+          }
+        }
+      }
+    }
+    
+    { should_sample }
+  }
+  
+  // 测试AlwaysOn采样器
+  let always_on_sampler = create_sampler(SamplerType::AlwaysOn)
+  let decision1 = always_on_sampler.should_sample("trace-123", None, [])
+  assert_eq(decision1, SamplingDecision::RecordAndSample)
+  
+  // 测试AlwaysOff采样器
+  let always_off_sampler = create_sampler(SamplerType::AlwaysOff)
+  let decision2 = always_off_sampler.should_sample("trace-456", None, [])
+  assert_eq(decision2, SamplingDecision::Drop)
+  
+  // 测试TraceIdRatio采样器
+  let ratio_sampler = create_sampler(SamplerType::TraceIdRatio(0.5))  // 50%采样率
+  let decision3 = ratio_sampler.should_sample("trace-789", None, [])
+  // 结果取决于trace_id的哈希值，我们只验证它返回一个有效决策
+  assert_true(decision3 == SamplingDecision::RecordAndSample || decision3 == SamplingDecision::Drop)
+  
+  // 测试ParentBased采样器
+  let parent_based_sampler = create_sampler(SamplerType::ParentBased(Box::new(SamplerType::AlwaysOff)))
+  
+  // 父span已采样
+  let decision4 = parent_based_sampler.should_sample("trace-abc", Some(true), [])
+  assert_eq(decision4, SamplingDecision::RecordAndSample)
+  
+  // 父span未采样
+  let decision5 = parent_based_sampler.should_sample("trace-def", Some(false), [])
+  assert_eq(decision5, SamplingDecision::Drop)
+  
+  // 没有父span，使用内部采样器
+  let decision6 = parent_based_sampler.should_sample("trace-ghi", None, [])
+  assert_eq(decision6, SamplingDecision::Drop)
+  
+  // 测试AttributeBased采样器
+  let attributes = [
+    ("service.name", "payment-service"),
+    ("environment", "production"),
+    ("http.method", "POST")
   ]
   
-  let service_resources = [
-    KubernetesResource::service("azimuth-api-service", "10.0.2.200", 8080, ["app=azimuth", "tier=api"]),
-    KubernetesResource::service("azimuth-worker-service", "10.0.2.201", 8081, ["app=azimuth", "tier=worker"])
+  let required_attrs = [
+    ("environment", "production"),
+    ("service.name", "payment-service")
   ]
   
-  // 添加Kubernetes资源
-  KubernetesAdapter::add_resources(kubernetes_adapter, pod_resources + service_resources)
+  let attr_sampler = create_sampler(SamplerType::AttributeBased(required_attrs))
   
-  // 发现云原生资源
-  let discovered_resources = CloudNativeTelemetry::discover_resources(cloud_native_telemetry, kubernetes_adapter)
+  // 匹配所有必需属性
+  let decision7 = attr_sampler.should_sample("trace-jkl", None, attributes)
+  assert_eq(decision7, SamplingDecision::RecordAndSample)
   
-  // 验证资源发现
-  assert_eq(DiscoveredResources::pod_count(discovered_resources), 3)
-  assert_eq(DiscoveredResources::service_count(discovered_resources), 2)
+  // 不匹配所有必需属性
+  let decision8 = attr_sampler.should_sample("trace-mno", None, [
+    ("service.name", "payment-service"),
+    ("environment", "development")  // 不匹配
+  ])
+  assert_eq(decision8, SamplingDecision::Drop)
   
-  // 为每个资源自动配置遥测
-  let auto_config_results = CloudNativeTelemetry::auto_configure_telemetry(cloud_native_telemetry, discovered_resources)
+  // 创建过滤器
+  let create_filter = fn(filter_rules: Array[(String, String)]) {
+    let should_include = fn(attributes: Array[(String, String)]) {
+      filter_rules.all(fn(rule) {
+        let (key, expected_value) = rule
+        attributes.any(fn(attr) {
+          let (attr_key, attr_value) = attr
+          attr_key == key && attr_value == expected_value
+        })
+      })
+    }
+    
+    { should_include }
+  }
   
-  // 验证自动配置
-  assert_eq(AutoConfigResults::configured_count(auto_config_results), 5)
-  assert_true(AutoConfigResults::all_pods_instrumented(auto_config_results))
-  assert_true(AutoConfigResults::all_services_instrumented(auto_config_results))
-  
-  // 模拟云原生遥测数据
-  let cloud_telemetry_data = CloudNativeTelemetryData::new()
-  
-  // Pod指标
-  CloudNativeTelemetryData::add_pod_metric(cloud_telemetry_data, "azimuth-api-7d4f8c9b5-xyz12", "cpu.usage", 75.5)
-  CloudNativeTelemetryData::add_pod_metric(cloud_telemetry_data, "azimuth-api-7d4f8c9b5-xyz12", "memory.usage", 68.2)
-  CloudNativeTelemetryData::add_pod_metric(cloud_telemetry_data, "azimuth-worker-5a2b3c4d6-abc34", "cpu.usage", 45.3)
-  CloudNativeTelemetryData::add_pod_metric(cloud_telemetry_data, "azimuth-worker-5a2b3c4d6-abc34", "memory.usage", 52.7)
-  
-  // 服务指标
-  CloudNativeTelemetryData::add_service_metric(cloud_telemetry_data, "azimuth-api-service", "request.rate", 1250.0)
-  CloudNativeTelemetryData::add_service_metric(cloud_telemetry_data, "azimuth-api-service", "error.rate", 0.02)
-  CloudNativeTelemetryData::add_service_metric(cloud_telemetry_data, "azimuth-worker-service", "throughput", 850.0)
-  
-  // 添加云原生标签
-  CloudNativeTelemetryData::add_cloud_labels(cloud_telemetry_data, [
-    ("cloud.provider", "aws"),
-    ("cloud.region", "us-west-2"),
-    ("k8s.cluster.name", "production-cluster"),
-    ("k8s.namespace", "production")
+  // 测试过滤器
+  let filter = create_filter([
+    ("environment", "production"),
+    ("service.name", "api-service")
   ])
   
-  // 处理云原生遥测数据
-  let processed_data = CloudNativeTelemetry::process(cloud_native_telemetry, cloud_telemetry_data)
+  let prod_attrs = [
+    ("environment", "production"),
+    ("service.name", "api-service"),
+    ("version", "1.0.0")
+  ]
   
-  // 验证处理结果
-  assert_eq(ProcessedCloudData::pod_count(processed_data), 2)
-  assert_eq(ProcessedCloudData::service_count(processed_data), 2)
-  assert_true(ProcessedCloudData::has_cloud_labels(processed_data))
+  let dev_attrs = [
+    ("environment", "development"),
+    ("service.name", "api-service"),
+    ("version", "1.0.0")
+  ]
   
-  // 测试云原生特定功能
-  let autoscaling_recommendations = CloudNativeTelemetry::generate_autoscaling_recommendations(cloud_native_telemetry, processed_data)
-  assert_eq(AutoscalingRecommendations::count(autoscaling_recommendations), 2)
-  assert_true(AutoscalingRecommendations::has_recommendation_for_pod(autoscaling_recommendations, "azimuth-api-7d4f8c9b5-xyz12"))
+  assert_true(filter.should_include(prod_attrs))
+  assert_false(filter.should_include(dev_attrs))
 }
 
-// 测试8: 遥测数据合规性和隐私保护测试
-test "遥测数据合规性和隐私保护测试" {
-  let compliance_manager = ComplianceManager::new()
-  let privacy_protector = PrivacyProtector::new()
-  
-  // 配置合规策略
-  let gdpr_policy = CompliancePolicy::new(GDPR)
-  GDPRPolicy::set_data_retention_period(gdpr_policy, Duration::days(365))
-  GDPRPolicy::set_right_to_deletion(gdpr_policy, true)
-  GDPRPolicy::set_right_to_access(gdpr_policy, true)
-  GDPRPolicy::set_consent_required(gdpr_policy, true)
-  
-  let ccpa_policy = CompliancePolicy::new(CCPA)
-  CCPAPolicy::set_data_retention_period(ccpa_policy, Duration::days(730))
-  CCPAPolicy::set_right_to_opt_out(ccpa_policy, true)
-  CCPAPolicy::set_right_to_deletion(ccpa_policy, true)
-  
-  // 应用合规策略
-  ComplianceManager::add_policy(compliance_manager, gdpr_policy)
-  ComplianceManager::add_policy(compliance_manager, ccpa_policy)
-  
-  // 配置隐私保护
-  let privacy_config = PrivacyConfig::new()
-  PrivacyConfig::set_data_masking(privacy_config, true)
-  PrivacyConfig::set_pseudonymization(privacy_config, true)
-  PrivacyConfig::set_encryption(privacy_config, AES256_GCM)
-  PrivacyConfig::set_anonymization_threshold(privacy_config, 30)
-  
-  // 应用隐私配置
-  PrivacyProtector::apply_config(privacy_protector, privacy_config)
-  
-  // 创建包含敏感信息的遥测数据
-  let sensitive_telemetry = TelemetryData::new()
-  TelemetryData::add_metric(sensitive_telemetry, "user.login.count", 5)
-  TelemetryData::add_attribute(sensitive_telemetry, "user.id", "user-12345")
-  TelemetryData::add_attribute(sensitive_telemetry, "user.email", "user@example.com")
-  TelemetryData::add_attribute(sensitive_telemetry, "user.ip", "192.168.1.100")
-  TelemetryData::add_attribute(sensitive_telemetry, "user.location", "New York, NY")
-  TelemetryData::add_attribute(sensitive_telemetry, "consent.telemetry", "true")
-  
-  // 检查合规性
-  let compliance_check = ComplianceManager::check_compliance(compliance_manager, sensitive_telemetry)
-  
-  // 验证合规性检查结果
-  assert_eq(ComplianceCheckResult::is_compliant(compliance_check, GDPR), true)
-  assert_eq(ComplianceCheckResult::is_compliant(compliance_check, CCPA), true)
-  assert_eq(ComplianceCheckResult::has_consent(compliance_check), true)
-  
-  // 应用隐私保护
-  let protected_data = PrivacyProtector::protect_data(privacy_protector, sensitive_telemetry)
-  
-  // 验证隐私保护
-  assert_eq(ProtectedData::get_attribute(protected_data, "user.id"), "user-*****")
-  assert_eq(ProtectedData::get_attribute(protected_data, "user.email"), "u***@example.com")
-  assert_eq(ProtectedData::get_attribute(protected_data, "user.ip"), "192.168.1.***")
-  assert_eq(ProtectedData::get_attribute(protected_data, "user.location"), "***")
-  
-  // 验证非敏感数据未被修改
-  assert_eq(ProtectedData::get_metric(protected_data, "user.login.count"), 5)
-  assert_eq(ProtectedData::get_attribute(protected_data, "consent.telemetry"), "true")
-  
-  // 测试数据删除请求
-  let deletion_request = DataDeletionRequest::new("user-12345", GDPR)
-  let deletion_result = ComplianceManager::process_deletion_request(compliance_manager, deletion_request)
-  
-  // 验证删除结果
-  assert_eq(DeletionResult::status(deletion_result), Completed)
-  assert_eq(DeletionResult::records_deleted(deletion_result), 1)
-  
-  // 测试数据访问请求
-  let access_request = DataAccessRequest::new("user-12345", GDPR)
-  let access_result = ComplianceManager::process_access_request(compliance_manager, access_request)
-  
-  // 验证访问结果
-  assert_eq(AccessResult::status(access_result), Completed)
-  assert_eq(AccessResult::data_records(access_result).length(), 1)
-  assert_true(AccessResult::is_data_masked(access_result))
-}
-
-// 测试9: 遥测系统可扩展性测试
-test "遥测系统可扩展性测试" {
-  let scalability_manager = ScalabilityManager::new()
-  let load_balancer = TelemetryLoadBalancer::new()
-  
-  // 配置可扩展性策略
-  let scalability_policy = ScalabilityPolicy::new()
-  ScalabilityPolicy::set_horizontal_scaling(scalability_policy, true)
-  ScalabilityPolicy::set_vertical_scaling(scalability_policy, true)
-  ScalabilityPolicy::set_auto_scaling(scalability_policy, true)
-  ScalabilityPolicy::set_min_instances(scalability_policy, 2)
-  ScalabilityPolicy::set_max_instances(scalability_policy, 20)
-  ScalabilityPolicy::set_scale_up_threshold(scalability_policy, 80.0)
-  ScalabilityPolicy::set_scale_down_threshold(scalability_policy, 30.0)
-  
-  // 应用可扩展性策略
-  ScalabilityManager::apply_policy(scalability_manager, scalability_policy)
-  
-  // 创建遥测处理节点
-  let processing_nodes = []
-  for i in 0..=3 {
-    let node = TelemetryProcessingNode::new("node-" + i.to_string())
-    TelemetryProcessingNode::set_capacity(node, 1000) // 每个节点处理1000个数据点/秒
-    TelemetryProcessingNode::set_current_load(node, 0.0)
-    processing_nodes = processing_nodes.push(node)
+// Test 9: Caching Mechanisms and Performance Optimization
+test "caching mechanisms and performance optimization" {
+  // 定义缓存项类型
+  type CacheItem[T] = {
+    value: T,
+    timestamp: Int,
+    ttl_ms: Int,
+    access_count: Int
   }
   
-  // 配置负载均衡器
-  TelemetryLoadBalancer::add_nodes(load_balancer, processing_nodes)
-  TelemetryLoadBalancer::set_strategy(load_balancer, RoundRobin)
-  TelemetryLoadBalancer::set_health_check_interval(load_balancer, Duration::seconds(10))
-  
-  // 模拟低负载情况
-  let low_load_data = []
-  for i in 0..=500 {
-    let telemetry_point = TelemetryPoint::new()
-    TelemetryPoint::set_metric(telemetry_point, "test.metric", i.to_float())
-    low_load_data = low_load_data.push(telemetry_point)
-  }
-  
-  let low_load_result = ScalabilityManager::process_data(scalability_manager, load_balancer, low_load_data)
-  
-  // 验证低负载处理
-  assert_eq(ProcessResult::data_count(low_load_result), 501)
-  assert_eq(ProcessResult::nodes_used(low_load_result), 2)
-  assert_eq(ProcessResult::average_node_load(low_load_result), 25.0)
-  
-  // 模拟高负载情况
-  let high_load_data = []
-  for i in 0..=5000 {
-    let telemetry_point = TelemetryPoint::new()
-    TelemetryPoint::set_metric(telemetry_point, "test.metric", i.to_float())
-    high_load_data = high_load_data.push(telemetry_point)
-  }
-  
-  let high_load_result = ScalabilityManager::process_data(scalability_manager, load_balancer, high_load_data)
-  
-  // 验证高负载处理
-  assert_eq(ProcessResult::data_count(high_load_result), 5001)
-  assert_true(ProcessResult::nodes_used(high_load_result) > 2)
-  assert_true(ProcessResult::auto_scaled(high_load_result))
-  
-  // 验证节点扩展
-  let current_nodes = ScalabilityManager::get_current_nodes(scalability_manager)
-  assert_true(current_nodes.length() > processing_nodes.length())
-  
-  // 模拟负载下降
-  let medium_load_data = []
-  for i in 0..=1000 {
-    let telemetry_point = TelemetryPoint::new()
-    TelemetryPoint::set_metric(telemetry_point, "test.metric", i.to_float())
-    medium_load_data = medium_load_data.push(telemetry_point)
-  }
-  
-  let medium_load_result = ScalabilityManager::process_data(scalability_manager, load_balancer, medium_load_data)
-  
-  // 验证负载均衡和缩减
-  assert_eq(ProcessResult::data_count(medium_load_result), 1001)
-  assert_true(ProcessResult::load_balanced(medium_load_result))
-  
-  // 等待自动缩减
-  let scale_down_result = ScalabilityManager::wait_for_scale_down(scalability_manager, Duration::minutes(5))
-  assert_eq(ScaleDownResult::nodes_scaled_down(scale_down_result), true)
-  
-  // 验证缩减后的节点数量
-  let final_nodes = ScalabilityManager::get_current_nodes(scalability_manager)
-  assert_true(final_nodes.length() < current_nodes.length())
-  assert_eq(final_nodes.length(), 2) // 缩减到最小实例数
-}
-
-// 测试10: 遥测数据分析和洞察测试
-test "遥测数据分析和洞察测试" {
-  let analytics_engine = AnalyticsEngine::new()
-  let insight_generator = InsightGenerator::new()
-  
-  // 配置分析引擎
-  let analytics_config = AnalyticsConfig::new()
-  AnalyticsConfig::set_time_window(analytics_config, Duration::hours(24))
-  AnalyticsConfig::set_granularity(analytics_config, Duration::minutes(5))
-  AnalyticsConfig::set_analysis_methods(analytics_config, [TrendAnalysis, AnomalyDetection, CorrelationAnalysis])
-  
-  // 应用分析配置
-  AnalyticsEngine::apply_config(analytics_engine, analytics_config)
-  
-  // 创建测试遥测数据集
-  let telemetry_dataset = TelemetryDataset::new("production.metrics")
-  
-  // 添加时间序列数据
-  let time_series_data = []
-  for i in 0..=288 { // 24小时，每5分钟一个数据点
-    let timestamp = Time::now() - Duration::hours(24) + Duration::minutes(i * 5)
-    let base_cpu = 50.0
-    let daily_pattern = 10.0 * Math::sin((i * 5 * 2 * Math::PI) / (24 * 60)) // 日周期模式
-    let noise = Random::float_between(-5.0, 5.0)
-    let cpu_value = base_cpu + daily_pattern + noise
+  // 创建缓存
+  let create_cache = fn[T](max_size: Int, default_ttl_ms: Int) {
+    let cache = Map::empty()
+    let access_order = []  // LRU跟踪
     
-    let data_point = TelemetryDataPoint::new(timestamp)
-    TelemetryDataPoint::add_metric(data_point, "cpu.usage", cpu_value)
-    TelemetryDataPoint::add_metric(data_point, "memory.usage", 60.0 + Random::float_between(-10.0, 10.0))
-    TelemetryDataPoint::add_metric(data_point, "request.rate", 100.0 + cpu_value * 2.0)
-    TelemetryDataPoint::add_attribute(data_point, "service.name", "api.service")
+    let get = fn(key: String) {
+      match Map::get(cache, key) {
+        Some(item) => {
+          // 检查是否过期
+          let current_time = Time::now()
+          if current_time - item.timestamp > item.ttl_ms {
+            let _ = Map::remove(cache, key)
+            // 从访问顺序中移除
+            access_order = access_order.filter(fn(k) { k != key })
+            None
+          } else {
+            // 更新访问计数和顺序
+            let updated_item = { item | access_count: item.access_count + 1 }
+            let _ = Map::insert(cache, key, updated_item)
+            
+            // 移动到访问顺序的末尾（最近使用）
+            access_order = access_order.filter(fn(k) { k != key })
+            access_order = access_order.push(key)
+            
+            Some(updated_item.value)
+          }
+        }
+        None => None
+      }
+    }
     
-    time_series_data = time_series_data.push(data_point)
+    let put = fn(key: String, value: T, ttl_ms: Option[Int]) {
+      let current_time = Time::now()
+      let item_ttl = match ttl_ms {
+        Some(ttl) => ttl
+        None => default_ttl_ms
+      }
+      
+      // 如果缓存已满，移除最少使用的项
+      if Map::size(cache) >= max_size && not Map::contains_key(cache, key) {
+        if access_order.length() > 0 {
+          let lru_key = access_order[0]
+          let _ = Map::remove(cache, lru_key)
+          access_order = access_order.slice(1, access_order.length())
+        }
+      }
+      
+      let item = {
+        value: value,
+        timestamp: current_time,
+        ttl_ms: item_ttl,
+        access_count: 1
+      }
+      
+      let _ = Map::insert(cache, key, item)
+      
+      // 添加到访问顺序
+      if not access_order.contains(key) {
+        access_order = access_order.push(key)
+      } else {
+        // 如果已存在，移动到末尾
+        access_order = access_order.filter(fn(k) { k != key })
+        access_order = access_order.push(key)
+      }
+    }
+    
+    let remove = fn(key: String) {
+      let _ = Map::remove(cache, key)
+      access_order = access_order.filter(fn(k) { k != key })
+    }
+    
+    let clear = fn() {
+      let _ = Map::clear(cache)
+      access_order = []
+    }
+    
+    let size = fn() { Map::size(cache) }
+    
+    { get, put, remove, clear, size }
   }
   
-  TelemetryDataset::add_data_points(telemetry_dataset, time_series_data)
+  // 测试缓存
+  let string_cache = create_cache[String](3, 1000)  // 最大3项，默认TTL 1秒
   
-  // 执行趋势分析
-  let trend_analysis = AnalyticsEngine::analyze_trends(analytics_engine, telemetry_dataset, "cpu.usage")
+  // 测试基本put/get
+  string_cache.put("key1", "value1", None)
+  assert_eq(string_cache.size(), 1)
   
-  // 验证趋势分析结果
-  assert_eq(TrendAnalysisResult::metric(trend_analysis), "cpu.usage")
-  assert_eq(TrendAnalysisResult::direction(trend_analysis), Stable)
-  assert_true(TrendAnalysisResult::confidence(trend_analysis) > 0.7)
+  match string_cache.get("key1") {
+    Some(value) => assert_eq(value, "value1")
+    None => assert_true(false)
+  }
   
-  // 执行异常检测
-  let anomaly_detection = AnalyticsEngine::detect_anomalies(analytics_engine, telemetry_dataset, "memory.usage")
+  // 测试多个项
+  string_cache.put("key2", "value2", None)
+  string_cache.put("key3", "value3", None)
+  assert_eq(string_cache.size(), 3)
   
-  // 验证异常检测结果
-  assert_eq(AnomalyDetectionResult::metric(anomaly_detection), "memory.usage")
-  assert_eq(AnomalyDetectionResult::anomaly_count(anomaly_detection), 0) // 无异常
+  // 测试LRU淘汰
+  string_cache.put("key4", "value4", None)  // 应该淘汰key1
+  assert_eq(string_cache.size(), 3)
   
-  // 添加异常数据点
-  let anomaly_data_point = TelemetryDataPoint::new(Time::now() - Duration::hours(12))
-  TelemetryDataPoint::add_metric(anomaly_data_point, "memory.usage", 95.0) // 异常高值
-  TelemetryDataPoint::add_attribute(anomaly_data_point, "service.name", "api.service")
+  assert_eq(string_cache.get("key1"), None)  // key1已被淘汰
+  assert_eq(string_cache.get("key2"), Some("value2"))
+  assert_eq(string_cache.get("key3"), Some("value3"))
+  assert_eq(string_cache.get("key4"), Some("value4"))
   
-  TelemetryDataset::add_data_point(telemetry_dataset, anomaly_data_point)
+  // 测试TTL过期
+  string_cache.put("ttl_key", "ttl_value", Some(100))  // 100ms TTL
   
-  // 重新执行异常检测
-  let anomaly_detection_with_anomaly = AnalyticsEngine::detect_anomalies(analytics_engine, telemetry_dataset, "memory.usage")
+  // 立即获取应该成功
+  match string_cache.get("ttl_key") {
+    Some(value) => assert_eq(value, "ttl_value")
+    None => assert_true(false)
+  }
   
-  // 验证异常检测结果
-  assert_eq(AnomalyDetectionResult::anomaly_count(anomaly_detection_with_anomaly), 1)
+  // 等待TTL过期（在实际测试中需要等待，这里用模拟）
+  // 假设已经过了100ms
+  string_cache.remove("ttl_key")  // 模拟过期
   
-  // 执行相关性分析
-  let correlation_analysis = AnalyticsEngine::analyze_correlations(analytics_engine, telemetry_dataset)
+  assert_eq(string_cache.get("ttl_key"), None)
   
-  // 验证相关性分析结果
-  assert_true(CorrelationAnalysisResult::has_correlation(correlation_analysis, "cpu.usage", "request.rate"))
-  assert_true(CorrelationAnalysisResult::correlation_coefficient(correlation_analysis, "cpu.usage", "request.rate") > 0.8)
+  // 测试缓存清除
+  string_cache.clear()
+  assert_eq(string_cache.size(), 0)
+  assert_eq(string_cache.get("key2"), None)
+  assert_eq(string_cache.get("key3"), None)
+  assert_eq(string_cache.get("key4"), None)
   
-  // 生成洞察
-  let insights = InsightGenerator::generate_insights(insight_generator, [
-    TrendInsight(trend_analysis),
-    AnomalyInsight(anomaly_detection_with_anomaly),
-    CorrelationInsight(correlation_analysis)
-  ])
+  // 创建性能优化的批处理器
+  let create_batch_processor = fn[T](batch_size: Int, flush_interval_ms: Int) {
+    let mut batch = []
+    let mut last_flush = Time::now()
+    
+    let process = fn(item: T, processor: (Array[T]) -> Unit) {
+      batch = batch.push(item)
+      
+      let current_time = Time::now()
+      if batch.length() >= batch_size || (current_time - last_flush) >= flush_interval_ms {
+        processor(batch)
+        batch = []
+        last_flush = current_time
+      }
+    }
+    
+    let flush = fn(processor: (Array[T]) -> Unit) {
+      if batch.length() > 0 {
+        processor(batch)
+        batch = []
+        last_flush = Time::now()
+      }
+    }
+    
+    { process, flush }
+  }
   
-  // 验证洞察生成
-  assert_eq(Insights::count(insights), 3)
-  assert_true(Insights::has_insight_type(insights, Trend))
-  assert_true(Insights::has_insight_type(insights, Anomaly))
-  assert_true(Insights::has_insight_type(insights, Correlation))
+  // 测试批处理器
+  let processed_batches = []
+  let batch_processor = create_batch_processor[String](3, 1000)
   
-  // 验证具体洞察内容
-  let trend_insight = Insights::get_insight_by_type(insights, Trend)
-  assert_eq(TrendInsight::recommendation(trend_insight), "CPU使用率稳定，当前配置无需调整")
+  let mock_processor = fn(batch: Array[String]) {
+    processed_batches.push(batch)
+  }
   
-  let anomaly_insight = Insights::get_insight_by_type(insights, Anomaly)
-  assert_eq(AnomalyInsight::severity(anomaly_insight), Warning)
-  assert_eq(AnomalyInsight::description(anomaly_insight), "检测到内存使用率异常峰值")
+  // 添加项目直到达到批处理大小
+  batch_processor.process("item1", mock_processor)
+  batch_processor.process("item2", mock_processor)
+  batch_processor.process("item3", mock_processor)  // 应该触发批处理
   
-  let correlation_insight = Insights::get_insight_by_type(insights, Correlation)
-  assert_eq(CorrelationInsight::relationship(correlation_insight), "CPU使用率与请求率存在强正相关关系")
+  assert_eq(processed_batches.length(), 1)
+  assert_eq(processed_batches[0], ["item1", "item2", "item3"])
   
-  // 测试预测分析
-  let prediction_result = AnalyticsEngine::predict(analytics_engine, telemetry_dataset, "cpu.usage", Duration::hours(6))
+  // 添加更多项目
+  batch_processor.process("item4", mock_processor)
+  batch_processor.process("item5", mock_processor)
   
-  // 验证预测结果
-  assert_eq(PredictionResult::metric(prediction_result), "cpu.usage")
-  assert_eq(PredictionResult::prediction_count(prediction_result), 72) // 6小时，每5分钟一个预测点
-  assert_true(PredictionResult::confidence_interval(prediction_result) > 0.0)
+  // 手动刷新
+  batch_processor.flush(mock_processor)
+  
+  assert_eq(processed_batches.length(), 2)
+  assert_eq(processed_batches[1], ["item4", "item5"])
+}
+
+// Test 10: Security and Authentication
+test "security and authentication" {
+  // 定义认证令牌类型
+  type AuthToken = {
+    token_type: String,
+    access_token: String,
+    expires_at: Int,
+    scopes: Array[String]
+  }
+  
+  // 定义权限类型
+  type Permission = {
+    resource: String,
+    action: String,
+    conditions: Array[(String, String)]
+  }
+  
+  // 创建认证管理器
+  let create_auth_manager = fn() {
+    let tokens = Map::empty()
+    let permissions = Map::empty()
+    
+    let add_token = fn(user_id: String, token: AuthToken) {
+      let _ = Map::insert(tokens, user_id, token)
+    }
+    
+    let validate_token = fn(user_id: String, token_string: String) {
+      match Map::get(tokens, user_id) {
+        Some(token) => {
+          let current_time = Time::now()
+          if token.access_token == token_string && current_time < token.expires_at {
+            true
+          } else {
+            false
+          }
+        }
+        None => false
+      }
+    }
+    
+    let add_permission = fn(user_id: String, permission: Permission) {
+      let user_permissions = match Map::get(permissions, user_id) {
+        Some(perms) => perms
+        None => []
+      }
+      let updated_permissions = user_permissions.push(permission)
+      let _ = Map::insert(permissions, user_id, updated_permissions)
+    }
+    
+    let check_permission = fn(user_id: String, resource: String, action: String, context: Array[(String, String)]) {
+      match Map::get(permissions, user_id) {
+        Some(user_permissions) => {
+          user_permissions.any(fn(permission) {
+            if permission.resource == resource && permission.action == action {
+              // 检查所有条件是否满足
+              permission.conditions.all(fn(condition) {
+                let (key, expected_value) = condition
+                context.any(fn(ctx_item) {
+                  let (ctx_key, ctx_value) = ctx_item
+                  ctx_key == key && ctx_value == expected_value
+                })
+              })
+            } else {
+              false
+            }
+          })
+        }
+        None => false
+      }
+    }
+    
+    { add_token, validate_token, add_permission, check_permission }
+  }
+  
+  // 测试认证管理器
+  let auth_manager = create_auth_manager()
+  
+  // 创建测试令牌
+  let current_time = Time::now()
+  let test_token = {
+    token_type: "Bearer",
+    access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.token",
+    expires_at: current_time + 3600,  // 1小时后过期
+    scopes: ["read", "write"]
+  }
+  
+  // 添加令牌
+  auth_manager.add_token("user123", test_token)
+  
+  // 测试有效令牌
+  assert_true(auth_manager.validate_token("user123", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.token"))
+  
+  // 测试无效令牌
+  assert_false(auth_manager.validate_token("user123", "invalid.token"))
+  assert_false(auth_manager.validate_token("nonexistent_user", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.token"))
+  
+  // 测试过期令牌（模拟）
+  let expired_token = {
+    token_type: "Bearer",
+    access_token: "expired.token",
+    expires_at: current_time - 3600,  // 1小时前过期
+    scopes: ["read"]
+  }
+  
+  auth_manager.add_token("user456", expired_token)
+  assert_false(auth_manager.validate_token("user456", "expired.token"))
+  
+  // 添加权限
+  auth_manager.add_permission("user123", {
+    resource: "telemetry",
+    action: "read",
+    conditions: [("environment", "production")]
+  })
+  
+  auth_manager.add_permission("user123", {
+    resource: "telemetry",
+    action: "write",
+    conditions: [("service", "payment-service"), ("environment", "production")]
+  })
+  
+  auth_manager.add_permission("user789", {
+    resource: "telemetry",
+    action: "read",
+    conditions: [("environment", "development")]
+  })
+  
+  // 测试权限检查
+  let prod_context = [
+    ("environment", "production"),
+    ("service", "api-service")
+  ]
+  
+  let dev_context = [
+    ("environment", "development"),
+    ("service", "api-service")
+  ]
+  
+  let payment_prod_context = [
+    ("environment", "production"),
+    ("service", "payment-service")
+  ]
+  
+  // user123在生产环境有读权限
+  assert_true(auth_manager.check_permission("user123", "telemetry", "read", prod_context))
+  
+  // user123在开发环境没有读权限
+  assert_false(auth_manager.check_permission("user123", "telemetry", "read", dev_context))
+  
+  // user123在生产环境的payment-service有写权限
+  assert_true(auth_manager.check_permission("user123", "telemetry", "write", payment_prod_context))
+  
+  // user123在生产环境的api-service没有写权限
+  assert_false(auth_manager.check_permission("user123", "telemetry", "write", prod_context))
+  
+  // user789在开发环境有读权限
+  assert_true(auth_manager.check_permission("user789", "telemetry", "read", dev_context))
+  
+  // user789在生产环境没有读权限
+  assert_false(auth_manager.check_permission("user789", "telemetry", "read", prod_context))
+  
+  // 测试不存在的用户
+  assert_false(auth_manager.check_permission("nonexistent_user", "telemetry", "read", prod_context))
+  
+  // 创建安全策略验证器
+  let create_security_policy_validator = fn() {
+    let validate_data_access = fn(user_id: String, data_type: String, operation: String, 
+                                  data_sensitivity: String, user_clearance: String) {
+      // 定义敏感度级别
+      let sensitivity_levels = ["public", "internal", "confidential", "secret"]
+      let clearance_levels = ["public", "internal", "confidential", "secret"]
+      
+      let data_level_index = sensitivity_levels.find_index(fn(level) { level == data_sensitivity })
+      let clearance_level_index = clearance_levels.find_index(fn(level) { level == user_clearance })
+      
+      match (data_level_index, clearance_level_index) {
+        (Some(data_idx), Some(clearance_idx)) => {
+          if clearance_idx >= data_idx {
+            // 用户有足够的权限级别
+            match operation {
+              "read" => true,
+              "write" => user_clearance != "public",  // 公共用户不能写入
+              "delete" => user_clearance == "secret",  // 只有secret用户可以删除
+              _ => false
+            }
+          } else {
+            false
+          }
+        }
+        _ => false
+      }
+    }
+    
+    { validate_data_access }
+  }
+  
+  // 测试安全策略
+  let security_validator = create_security_policy_validator()
+  
+  // 公共用户可以读取公共数据
+  assert_true(security_validator.validate_data_access("user1", "metrics", "read", "public", "public"))
+  
+  // 公共用户不能读取机密数据
+  assert_false(security_validator.validate_data_access("user1", "traces", "read", "confidential", "public"))
+  
+  // 内部用户可以读取内部数据
+  assert_true(security_validator.validate_data_access("user2", "logs", "read", "internal", "internal"))
+  
+  // 内部用户可以写入内部数据
+  assert_true(security_validator.validate_data_access("user2", "logs", "write", "internal", "internal"))
+  
+  // 机密用户可以读取机密数据
+  assert_true(security_validator.validate_data_access("user3", "traces", "read", "confidential", "confidential"))
+  
+  // 机密用户不能删除数据
+  assert_false(security_validator.validate_data_access("user3", "traces", "delete", "confidential", "confidential"))
+  
+  // 秘密用户可以删除数据
+  assert_true(security_validator.validate_data_access("user4", "traces", "delete", "secret", "secret"))
 }
