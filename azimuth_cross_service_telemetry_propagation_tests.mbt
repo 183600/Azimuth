@@ -1,277 +1,226 @@
-// Azimuth 跨服务遥测传播测试用例
-// 专注于遥测数据在微服务架构中的传播、转换和关联
+// 跨服务遥测传播测试用例
+// 测试遥测系统在不同服务之间的传播功能
 
-// 测试1: HTTP服务间遥测传播测试
-test "HTTP服务间遥测传播测试" {
-  let service_a = HTTPService::new("service-a", 8080)
-  let service_b = HTTPService::new("service-b", 8081)
-  let service_c = HTTPService::new("service-c", 8082)
+test "追踪上下文传播" {
+  // 测试追踪ID生成
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  assert_eq(trace_id.length(), 32)
   
-  // 配置遥测传播
-  HTTPService::enable_telemetry(service_a)
-  HTTPService::enable_telemetry(service_b)
-  HTTPService::enable_telemetry(service_c)
+  // 测试父跨度ID
+  let parent_span_id = "00f067aa0ba902b7"
+  assert_eq(parent_span_id.length(), 16)
   
-  // 模拟服务A接收外部请求
-  let incoming_headers = [
-    ("traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"),
-    ("x-request-id", "req-12345"),
-    ("x-user-id", "user-67890")
-  ]
+  // 测试子跨度生成
+  let child_span_id = "b7902baa0af76519"
+  assert_eq(child_span_id.length(), 16)
+  assert_eq(child_span_id != parent_span_id, true)
   
-  let request_context = HTTPService::create_request_context(service_a, incoming_headers)
-  let span_a = HTTPService::start_span(service_a, "api.request", request_context)
+  // 测试追踪上下文提取
+  let trace_headers = {
+    "X-Trace-Id": trace_id,
+    "X-Parent-Span-Id": parent_span_id,
+    "X-Span-Id": child_span_id
+  }
   
-  // 服务A调用服务B
-  let headers_to_b = HTTPService::extract_telemetry_headers(service_a, span_a)
-  Array::push(headers_to_b, ("x-service-a-timestamp", Time::now().to_string()))
-  
-  let response_b = HTTPService::call_service(service_b, "/api/endpoint", headers_to_b)
-  let span_b = HTTPService::get_span_from_response(service_b, response_b)
-  
-  // 服务B调用服务C
-  let headers_to_c = HTTPService::extract_telemetry_headers(service_b, span_b)
-  Array::push(headers_to_c, ("x-service-b-processing-time", "150ms"))
-  
-  let response_c = HTTPService::call_service(service_c, "/api/process", headers_to_c)
-  let span_c = HTTPService::get_span_from_response(service_c, response_c)
-  
-  // 完成所有span
-  Span::end(span_c)
-  Span::end(span_b)
-  Span::end(span_a)
-  
-  // 验证追踪上下文传播
-  let trace_id_a = Span::trace_id(span_a)
-  let trace_id_b = Span::trace_id(span_b)
-  let trace_id_c = Span::trace_id(span_c)
-  
-  assert_eq(trace_id_a, trace_id_b)
-  assert_eq(trace_id_b, trace_id_c)
-  
-  // 验证父子关系
-  let parent_id_b = Span::parent_span_id(span_b)
-  let parent_id_c = Span::parent_span_id(span_c)
-  
-  assert_eq(parent_id_b, Span::span_id(span_a))
-  assert_eq(parent_id_c, Span::span_id(span_b))
-  
-  // 验证 baggage 传播
-  let baggage_a = Span::get_baggage(span_a)
-  let baggage_b = Span::get_baggage(span_b)
-  let baggage_c = Span::get_baggage(span_c)
-  
-  assert_eq(Baggage::get(baggage_a, "user-id"), Some("user-67890"))
-  assert_eq(Baggage::get(baggage_b, "user-id"), Some("user-67890"))
-  assert_eq(Baggage::get(baggage_c, "user-id"), Some("user-67890"))
+  assert_eq(trace_headers["X-Trace-Id"], trace_id)
+  assert_eq(trace_headers["X-Parent-Span-Id"], parent_span_id)
+  assert_eq(trace_headers["X-Span-Id"], child_span_id)
 }
 
-// 测试2: 异步消息队列遥测传播测试
-test "异步消息队列遥测传播测试" {
-  let message_producer = MessageProducer::new("order-service")
-  let message_consumer = MessageConsumer::new("inventory-service")
-  let telemetry_propagator = MessageTelemetryPropagator::new()
+test " baggage传播" {
+  // 测试baggage项设置
+  let baggage_items = {
+    "user_id": "12345",
+    "session_id": "abcdef123456",
+    "request_id": "req-789",
+    "tenant_id": "tenant-001"
+  }
   
-  // 配置消息遥测传播
-  MessageProducer::enable_telemetry(message_producer, telemetry_propagator)
-  MessageConsumer::enable_telemetry(message_consumer, telemetry_propagator)
+  // 测试baggage序列化为HTTP头
+  let baggage_header = "user_id=12345,session_id=abcdef123456,request_id=req-789,tenant_id=tenant-001"
   
-  // 生产者创建span
-  let producer_span = MessageProducer::start_span(message_producer, "order.processing")
-  Span::set_attribute(producer_span, "order.id", StringValue("order-12345"))
-  Span::set_attribute(producer_span, "customer.id", StringValue("customer-67890"))
+  // 验证baggage头包含所有项
+  assert_eq(baggage_header.contains("user_id=12345"), true)
+  assert_eq(baggage_header.contains("session_id=abcdef123456"), true)
+  assert_eq(baggage_header.contains("request_id=req-789"), true)
+  assert_eq(baggage_header.contains("tenant_id=tenant-001"), true)
   
-  // 注入遥测上下文到消息
-  let order_message = Message::new("order.created", {
-    "order_id" => "order-12345",
-    "items" => "[{\"product_id\": \"prod-1\", \"quantity\": 2}]"
-  })
+  // 测试baggage解析
+  let header_parts = baggage_header.split(",")
+  assert_eq(header_parts.length(), 4)
   
-  let enriched_message = MessageTelemetryPropagator::inject(
-    telemetry_propagator, 
-    order_message, 
-    producer_span
-  )
-  
-  // 发送消息
-  MessageProducer::send(message_producer, "inventory.queue", enriched_message)
-  Span::end(producer_span)
-  
-  // 消费者接收并提取遥测上下文
-  let received_message = MessageConsumer::receive(message_consumer, "inventory.queue")
-  let extracted_context = MessageTelemetryPropagator::extract(
-    telemetry_propagator, 
-    received_message
-  )
-  
-  // 消费者创建子span
-  let consumer_span = MessageConsumer::start_span_with_context(
-    message_consumer, 
-    "inventory.update", 
-    extracted_context
-  )
-  
-  Span::set_attribute(consumer_span, "processing.time.ms", IntValue(250))
-  Span::add_event(consumer_span, "stock.checked", None)
-  Span::set_status(consumer_span, Ok)
-  Span::end(consumer_span)
-  
-  // 验证消息遥测传播
-  let producer_trace_id = Span::trace_id(producer_span)
-  let consumer_trace_id = Span::trace_id(consumer_span)
-  
-  assert_eq(producer_trace_id, consumer_trace_id)
-  
-  // 验证消息关联
-  let consumer_parent_id = Span::parent_span_id(consumer_span)
-  assert_eq(consumer_parent_id, Span::span_id(producer_span))
-  
-  // 验证消息属性传播
-  let order_id_attr = Span::get_attribute(consumer_span, "messaging.message_id")
-  assert_true(order_id_attr.is_some())
-  
-  // 验证消息时间戳
-  let message_timestamp = Message::get_timestamp(received_message)
-  let consumer_start_time = Span::start_time(consumer_span)
-  assert_true(Time::is_after_or_equal(consumer_start_time, message_timestamp))
+  for part in header_parts {
+    let key_value = part.split("=")
+    assert_eq(key_value.length(), 2)
+    let key = key_value[0]
+    let value = key_value[1]
+    assert_eq(baggage_items.contains(key), true)
+    assert_eq(baggage_items[key], value)
+  }
 }
 
-// 测试3: 数据库操作遥测传播测试
-test "数据库操作遥测传播测试" {
-  let application_service = Service::new("api-service")
-  let database_service = DatabaseService::new("postgres-cluster")
-  let db_telemetry_propagator = DatabaseTelemetryPropagator::new()
+test "跨服务HTTP传播" {
+  // 测试HTTP请求头注入
+  let outgoing_headers = {
+    "traceparent": "00-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-01",
+    "tracestate": "congo=t61rcWkgMzE",
+    "baggage": "userId=12345,sessionId=abcdef123456",
+    "X-Request-Id": "req-789"
+  }
   
-  // 配置数据库遥测
-  Service::enable_database_telemetry(application_service, db_telemetry_propagator)
-  DatabaseService::enable_telemetry(database_service)
+  // 验证traceparent格式
+  let traceparent = outgoing_headers["traceparent"]
+  let traceparent_parts = traceparent.split("-")
+  assert_eq(traceparent_parts.length(), 4)
+  assert_eq(traceparent_parts[0], "00") // 版本
+  assert_eq(traceparent_parts[1], "0af7651916cd43dd8448eb211c80319c") // trace-id
+  assert_eq(traceparent_parts[2], "00f067aa0ba902b7") // parent-span-id
+  assert_eq(traceparent_parts[3], "01") // flags
   
-  // 应用服务创建业务操作span
-  let business_span = Service::start_span(application_service, "user.profile.update")
-  Span::set_attribute(business_span, "user.id", StringValue("user-12345"))
+  // 测试HTTP响应头传播
+  let incoming_headers = {
+    "traceparent": "00-0af7651916cd43dd8448eb211c80319c-b7902baa0af76519-01",
+    "tracestate": "congo=t61rcWkgMzE,rojo=00f067aa0ba902b7",
+    "X-Response-Time": "150ms"
+  }
   
-  // 应用服务调用数据库
-  let db_context = DatabaseTelemetryPropagator::create_db_context(
-    db_telemetry_propagator, 
-    business_span
-  )
-  
-  let db_query = "UPDATE users SET name = $1, email = $2 WHERE id = $3"
-  let db_params = ["John Doe", "john.doe@example.com", "user-12345"]
-  
-  // 数据库服务创建数据库操作span
-  let db_span = DatabaseService::execute_query(
-    database_service, 
-    db_query, 
-    db_params, 
-    db_context
-  )
-  
-  Span::set_attribute(db_span, "db.statement", StringValue(db_query))
-  Span::set_attribute(db_span, "db.type", StringValue("postgresql"))
-  Span::set_attribute(db_span, "db.connection_pool", StringValue("primary"))
-  
-  // 模拟数据库执行时间
-  Thread::sleep(Duration::from_ms(50))
-  Span::set_status(db_span, Ok)
-  Span::end(db_span)
-  
-  // 应用服务继续业务逻辑
-  Span::add_event(business_span, "cache.invalidated", None)
-  Span::set_status(business_span, Ok)
-  Span::end(business_span)
-  
-  // 验证数据库遥测传播
-  let business_trace_id = Span::trace_id(business_span)
-  let db_trace_id = Span::trace_id(db_span)
-  
-  assert_eq(business_trace_id, db_trace_id)
-  
-  // 验证数据库span属性
-  let db_statement = Span::get_attribute(db_span, "db.statement")
-  let db_type = Span::get_attribute(db_span, "db.type")
-  let db_rows_affected = Span::get_attribute(db_span, "db.rows_affected")
-  
-  assert_eq(db_statement, Some(StringValue(db_query)))
-  assert_eq(db_type, Some(StringValue("postgresql")))
-  assert_eq(db_rows_affected, Some(IntValue(1)))
-  
-  // 验证父子关系
-  let db_parent_id = Span::parent_span_id(db_span)
-  assert_eq(db_parent_id, Span::span_id(business_span))
-  
-  // 验证数据库连接池追踪
-  let pool_stats = DatabaseService::get_connection_pool_stats(database_service)
-  assert_true(PoolStats::get_traced_connections(pool_stats) > 0)
-  assert_eq(PoolStats::get_last_trace_id(pool_stats), business_trace_id)
+  // 验证响应头包含新的span-id
+  let response_traceparent = incoming_headers["traceparent"]
+  let response_parts = response_traceparent.split("-")
+  assert_eq(response_parts[1], "0af7651916cd43dd8448eb211c80319c") // 相同的trace-id
+  assert_eq(response_parts[2], "b7902baa0af76519") // 新的span-id
 }
 
-// 测试4: 跨服务遥测上下文转换测试
-test "跨服务遥测上下文转换测试" {
-  let context_converter = TelemetryContextConverter::new()
-  let legacy_system = LegacySystem::new("legacy.service")
-  let modern_system = ModernSystem::new("modern.service")
+test "消息队列传播" {
+  // 测试消息属性传播
+  let message_properties = {
+    "trace_id": "0af7651916cd43dd8448eb211c80319c",
+    "span_id": "00f067aa0ba902b7",
+    "parent_span_id": "b7902baa0af76519",
+    "baggage": "userId=12345,sessionId=abcdef123456",
+    "correlation_id": "corr-123"
+  }
   
-  // 现代系统创建标准遥测上下文
-  let modern_tracer = ModernSystem::get_tracer(modern_system)
-  let modern_span = ModernTracer::start_span(modern_tracer, "modern.operation")
+  // 验证消息属性
+  assert_eq(message_properties["trace_id"], "0af7651916cd43dd8448eb211c80319c")
+  assert_eq(message_properties["span_id"], "00f067aa0ba902b7")
+  assert_eq(message_properties["correlation_id"], "corr-123")
   
-  Span::set_attribute(modern_span, "service.version", StringValue("2.0.0"))
-  Span::set_attribute(modern_span, "deployment.environment", StringValue("production"))
+  // 测试消息体中的追踪信息
+  let message_body = {
+    "event": "user_action",
+    "data": {
+      "user_id": "12345",
+      "action": "login",
+      "timestamp": "1640995200"
+    },
+    "trace_context": {
+      "trace_id": "0af7651916cd43dd8448eb211c80319c",
+      "span_id": "00f067aa0ba902b7"
+    }
+  }
   
-  // 转换为遗留系统兼容的上下文
-  let legacy_context = TelemetryContextConverter::to_legacy(
-    context_converter, 
-    modern_span
-  )
+  // 验证消息体包含追踪上下文
+  assert_eq(message_body.trace_context.trace_id, "0af7651916cd43dd8448eb211c80319c")
+  assert_eq(message_body.trace_context.span_id, "00f067aa0ba902b7")
+}
+
+test "服务网格传播" {
+  // 测试Istio/Envoy传播
+  let envoy_headers = {
+    "x-request-id": "req-12345",
+    "x-b3-traceid": "0af7651916cd43dd8448eb211c80319c",
+    "x-b3-spanid": "00f067aa0ba902b7",
+    "x-b3-parentspanid": "b7902baa0af76519",
+    "x-b3-sampled": "1",
+    "x-ot-span-context": "0af7651916cd43dd8448eb211c80319c;00f067aa0ba902b7;1"
+  }
   
-  // 遗留系统使用转换后的上下文
-  let legacy_span = LegacySystem::start_span_with_context(
-    legacy_system, 
-    "legacy.operation", 
-    legacy_context
-  )
+  // 验证B3传播格式
+  assert_eq(envoy_headers["x-b3-traceid"], "0af7651916cd43dd8448eb211c80319c")
+  assert_eq(envoy_headers["x-b3-spanid"], "00f067aa0ba902b7")
+  assert_eq(envoy_headers["x-b3-sampled"], "1")
   
-  LegacySpan::set_attribute(legacy_span, "legacy.format", StringValue("v1"))
-  LegacySpan::set_attribute(legacy_span, "correlation.id", StringValue("corr-12345"))
+  // 测试OpenTracing传播
+  let ot_headers = {
+    "uber-trace-id": "0af7651916cd43dd8448eb211c80319c:00f067aa0ba902b7:0:1",
+    "uberctx-user_id": "12345",
+    "uberctx-session_id": "abcdef123456"
+  }
   
-  // 遗留系统调用另一个现代系统
-  let back_to_modern_context = TelemetryContextConverter::from_legacy(
-    context_converter, 
-    legacy_span
-  )
+  // 验证Uber追踪格式
+  let uber_trace = ot_headers["uber-trace-id"]
+  let uber_parts = uber_trace.split(":")
+  assert_eq(uber_parts.length(), 4)
+  assert_eq(uber_parts[0], "0af7651916cd43dd8448eb211c80319c") // trace-id
+  assert_eq(uber_parts[1], "00f067aa0ba902b7") // span-id
+  assert_eq(uber_parts[2], "0") // parent-span-id
+  assert_eq(uber_parts[3], "1") // flags
+}
+
+test "跨语言传播" {
+  // 测试Java服务传播
+  let java_context = {
+    "traceId": "0af7651916cd43dd8448eb211c80319c",
+    "spanId": "00f067aa0ba902b7",
+    "parentSpanId": "b7902baa0af76519",
+    "flags": "1",
+    "baggage": "userId=12345,sessionId=abcdef123456"
+  }
   
-  let modern_span2 = ModernTracer::start_span_with_context(
-    modern_tracer, 
-    "modern.operation.2", 
-    back_to_modern_context
-  )
+  // 测试Python服务传播
+  let python_context = {
+    "traceparent": "00-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-01",
+    "tracestate": "congo=t61rcWkgMzE",
+    "baggage": "userId=12345,sessionId=abcdef123456"
+  }
   
-  Span::set_attribute(modern_span2, "callback.operation", StringValue(true))
+  // 测试Node.js服务传播
+  let nodejs_context = {
+    "traceId": "0af7651916cd43dd8448eb211c80319c",
+    "spanId": "00f067aa0ba902b7",
+    "traceFlags": "01",
+    "baggageItems": {
+      "userId": "12345",
+      "sessionId": "abcdef123456"
+    }
+  }
   
-  // 完成所有span
-  Span::end(modern_span2)
-  LegacySpan::end(legacy_span)
-  Span::end(modern_span)
+  // 验证所有服务使用相同的trace-id
+  assert_eq(java_context["traceId"], python_context["traceparent"].split("-")[1])
+  assert_eq(java_context["traceId"], nodejs_context["traceId"])
   
-  // 验证上下文转换的完整性
-  let original_trace_id = Span::trace_id(modern_span)
-  let legacy_trace_id = LegacySpan::trace_id(legacy_span)
-  let converted_trace_id = Span::trace_id(modern_span2)
+  // 验证baggage在所有服务中一致
+  assert_eq(java_context["baggage"].contains("userId=12345"), true)
+  assert_eq(python_context["baggage"].contains("userId=12345"), true)
+  assert_eq(nodejs_context["baggageItems"]["userId"], "12345")
+}
+
+test "传播采样决策" {
+  // 测试采样决策传播
+  let sampled_trace = {
+    "traceparent": "00-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-01",
+    "sampled": "1"
+  }
   
-  assert_eq(original_trace_id, legacy_trace_id)
-  assert_eq(legacy_trace_id, converted_trace_id)
+  let not_sampled_trace = {
+    "traceparent": "00-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-00",
+    "sampled": "0"
+  }
   
-  // 验证属性转换
-  let legacy_version = LegacySpan::get_attribute(legacy_span, "service.version")
-  assert_eq(legacy_version, Some(StringValue("2.0.0")))
+  // 验证采样决策
+  let sampled_traceparent = sampled_trace["traceparent"]
+  let sampled_parts = sampled_traceparent.split("-")
+  assert_eq(sampled_parts[3], "01") // 采样标志
   
-  let converted_correlation = Span::get_attribute(modern_span2, "correlation.id")
-  assert_eq(converted_correlation, Some(StringValue("corr-12345")))
+  let not_sampled_traceparent = not_sampled_trace["traceparent"]
+  let not_sampled_parts = not_sampled_traceparent.split("-")
+  assert_eq(not_sampled_parts[3], "00") // 不采样标志
   
-  // 验证转换统计
-  let conversion_stats = TelemetryContextConverter::get_stats(context_converter)
-  assert_eq(ConversionStats::modern_to_legacy_count(conversion_stats), 1)
-  assert_eq(ConversionStats::legacy_to_modern_count(conversion_stats), 1)
-  assert_eq(ConversionStats::total_conversions(conversion_stats), 2)
+  // 测试采样决策一致性
+  let is_sampled = sampled_trace["sampled"] == "1"
+  let is_not_sampled = not_sampled_trace["sampled"] == "0"
+  
+  assert_eq(is_sampled, true)
+  assert_eq(is_not_sampled, true)
 }

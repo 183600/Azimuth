@@ -434,6 +434,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_memory_leak_detection_tests.mbt": {
   },
+  "azimuth_logging_aggregation_tests.mbt": {
+  },
   "azimuth_log_trace_correlation_tests.mbt": {
   },
   "azimuth_log_severity_comprehensive_tests.mbt": {
@@ -648,6 +650,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_data_compression_transmission_tests.mbt": {
   },
+  "azimuth_data_compression_tests.mbt": {
+  },
   "azimuth_data_compression_optimization_tests.mbt": {
   },
   "azimuth_dashboard_realtime_update_tests.mbt": {
@@ -707,6 +711,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_context_propagation_comprehensive_tests.mbt": {
   },
   "azimuth_context_propagation_boundary_tests.mbt": {
+  },
+  "azimuth_configuration_validation_tests.mbt": {
   },
   "azimuth_configuration_validation_defaults_tests.mbt": {
   },
@@ -775,6 +781,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_boundary_condition_error_handling_tests.mbt": {
   },
   "azimuth_boundary_condition_comprehensive_tests.mbt": {
+  },
+  "azimuth_batch_processing_tests.mbt": {
   },
   "azimuth_basic_moonbit_tests.mbt": {
   },
