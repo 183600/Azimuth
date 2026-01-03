@@ -1170,6 +1170,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_caching_mechanism_tests.mbt": {
   },
+  "azimuth_caching_mechanism_strategy_tests.mbt": {
+  },
   "azimuth_boundary_error_handling_tests.mbt": {
   },
   "azimuth_boundary_edge_case_tests.mbt": {

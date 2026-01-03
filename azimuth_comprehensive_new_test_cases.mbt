@@ -1,563 +1,466 @@
 // Azimuth Comprehensive New Test Cases
-// 综合新测试用例，涵盖基础语言特性和Azimuth项目特定功能
+// 综合新测试用例集合
 
-// Test 1: 异步操作和并发测试
-test "async operations and concurrency" {
-  // 模拟异步操作
-  let async_task = @azimuth.AsyncTask {
-    task_id : "task-12345",
-    status : @azimuth.TaskStatus::Running,
-    progress : 0.65,
-    result : None,
-    error : None,
-    created_at : 1640995200000L,
-    updated_at : 1640995200300L
+// 测试1: 数据类型转换
+test "数据类型转换测试" {
+  // 字符串到数字转换
+  let str_num = "123"
+  let converted_num = Int::from_string(str_num)
+  match converted_num {
+    Some(num) => assert_eq(num, 123)
+    None => assert_true(false)
   }
   
-  // 验证异步任务状态
-  match async_task.status {
-    @azimuth.TaskStatus::Running => assert_true(true)
-    _ => assert_true(false)
+  // 数字到字符串转换
+  let num = 456
+  let converted_str = Int::to_string(num)
+  assert_eq(converted_str, "456")
+  
+  // 布尔值到字符串转换
+  let bool_val = true
+  let bool_str = Bool::to_string(bool_val)
+  assert_eq(bool_str, "true")
+  
+  // 字符串到布尔值转换
+  let str_bool = "false"
+  let converted_bool = Bool::from_string(str_bool)
+  match converted_bool {
+    Some(b) => assert_eq(b, false)
+    None => assert_true(false)
   }
   
-  assert_eq(async_task.progress, 0.65)
-  assert_true(async_task.updated_at > async_task.created_at)
-  
-  // 模拟任务完成
-  let completed_task = { async_task |
-    status : @azimuth.TaskStatus::Completed,
-    progress : 1.0,
-    result : Some(@azimuth.StringValue("Operation completed successfully")),
-    updated_at : 1640995200500L
-  }
-  
-  match completed_task.status {
-    @azimuth.TaskStatus::Completed => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match completed_task.result {
-    Some(@azimuth.StringValue(msg)) => assert_eq(msg, "Operation completed successfully")
-    _ => assert_true(false)
+  // 浮点数转换
+  let float_str = "3.14"
+  let converted_float = Float::from_string(float_str)
+  match converted_float {
+    Some(f) => assert_true(Float::abs(f - 3.14) < 0.001)
+    None => assert_true(false)
   }
 }
 
-// Test 2: 数据验证和转换测试
-test "data validation and type conversion" {
-  // 测试字符串到数值的转换
-  let valid_number_str = "42.5"
-  let invalid_number_str = "not_a_number"
+// 测试2: 错误处理
+test "错误处理机制测试" {
+  // 创建错误类型
+  type Error {
+    NetworkError(String)
+    ValidationError(String)
+    SystemError(String)
+  }
   
-  let valid_conversion = @azimuth.string_to_float(valid_number_str)
-  let invalid_conversion = @azimuth.string_to_float(invalid_number_str)
+  // 错误处理函数
+  let process_data = fn(data : String) -> Result(String, Error) {
+    if data.length() == 0 {
+      Err(ValidationError("数据不能为空"))
+    } else if data.length() > 100 {
+      Err(NetworkError("数据过长"))
+    } else {
+      Ok(data.uppercase())
+    }
+  }
   
-  match valid_conversion {
-    Ok(value) => assert_eq(value, 42.5)
+  // 测试正常情况
+  let valid_data = "test"
+  let result1 = process_data(valid_data)
+  match result1 {
+    Ok(processed) => assert_eq(processed, "TEST")
     Err(_) => assert_true(false)
   }
   
-  match invalid_conversion {
+  // 测试空数据错误
+  let empty_data = ""
+  let result2 = process_data(empty_data)
+  match result2 {
     Ok(_) => assert_true(false)
-    Err(_) => assert_true(true)
+    Err(ValidationError(msg)) => assert_eq(msg, "数据不能为空")
+    Err(_) => assert_true(false)
   }
   
-  // 测试数据验证规则
-  let email_validator = @azimuth.RegexValidator {
-    pattern : "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
-    error_message : "Invalid email format"
+  // 测试数据过长错误
+  let long_data = "a" * 101
+  let result3 = process_data(long_data)
+  match result3 {
+    Ok(_) => assert_true(false)
+    Err(NetworkError(msg)) => assert_eq(msg, "数据过长")
+    Err(_) => assert_true(false)
   }
-  
-  let valid_email = "user@example.com"
-  let invalid_email = "invalid_email"
-  
-  assert_true(@azimuth.validate_string(email_validator, valid_email))
-  assert_false(@azimuth.validate_string(email_validator, invalid_email))
-  
-  // 测试属性值类型转换
-  let int_attr = @azimuth.IntValue(42)
-  let float_attr = @azimuth.FloatValue(3.14)
-  let string_attr = @azimuth.StringValue("test")
-  
-  let converted_int = @azimuth.convert_attribute_to_string(int_attr)
-  let converted_float = @azimuth.convert_attribute_to_string(float_attr)
-  let converted_string = @azimuth.convert_attribute_to_string(string_attr)
-  
-  assert_eq(converted_int, "42")
-  assert_eq(converted_float, "3.14")
-  assert_eq(converted_string, "test")
 }
 
-// Test 3: 缓存机制测试
-test "caching mechanisms and performance" {
-  // 创建缓存实例
-  let cache = @azimuth.Cache {
-    max_size : 100,
-    current_size : 0,
-    entries : [],
-    hit_count : 0,
-    miss_count : 0,
-    eviction_policy : @azimuth.EvictionPolicy::LRU
+// 测试3: 性能测试
+test "性能基准测试" {
+  // 创建性能计时器
+  let start_time = Time::now()
+  
+  // 执行计算密集型操作
+  let mut result = 0
+  for i = 0; i < 10000; i = i + 1 {
+    result = result + i * i
   }
   
-  // 测试缓存为空时的行为
-  assert_eq(cache.current_size, 0)
-  assert_eq(cache.hit_count, 0)
-  assert_eq(cache.miss_count, 0)
+  let end_time = Time::now()
+  let duration = Time::difference(end_time, start_time)
   
-  // 添加缓存项
-  let updated_cache = @azimuth.cache_put(cache, "key1", @azimuth.StringValue("value1"))
-  assert_eq(updated_cache.current_size, 1)
+  // 验证计算结果
+  assert_eq(result, 333283335000)
   
-  // 测试缓存命中
-  let (cache_with_hit, result) = @azimuth.cache_get(updated_cache, "key1")
-  match result {
-    Some(@azimuth.StringValue(value)) => assert_eq(value, "value1")
-    _ => assert_true(false)
+  // 验证性能（应在合理时间内完成）
+  assert_true(duration < 5000) // 小于5秒
+  
+  // 测试内存分配性能
+  let mem_start = Memory::allocated()
+  let large_array = Array::create(10000, 0)
+  for i = 0; i < 10000; i = i + 1 {
+    large_array[i] = i
   }
-  assert_eq(cache_with_hit.hit_count, 1)
+  let mem_end = Memory::allocated()
+  let mem_used = mem_end - mem_start
   
-  // 测试缓存未命中
-  let (cache_with_miss, miss_result) = @azimuth.cache_get(cache_with_hit, "nonexistent_key")
-  match miss_result {
-    None => assert_true(true)
-    _ => assert_true(false)
-  }
-  assert_eq(cache_with_miss.miss_count, 1)
-  
-  // 测试缓存淘汰策略
-  let filled_cache = @azimuth.fill_cache(cache_with_miss, 150) // 超过最大容量
-  assert_true(filled_cache.current_size <= cache.max_size)
+  // 验证内存使用合理
+  assert_true(mem_used > 0)
+  assert_true(mem_used < 1000000) // 小于1MB
 }
 
-// Test 4: 网络通信测试
-test "network communication and HTTP operations" {
-  // 模拟HTTP请求
-  let http_request = @azimuth.HttpRequest {
-    method : @azimuth.HttpMethod::Post,
-    url : "https://api.example.com/telemetry",
-    headers : [
-      ("Content-Type", "application/json"),
-      ("Authorization", "Bearer token123")
-    ],
-    body : Some(@azimuth.StringValue("{\"trace_id\":\"12345\",\"span_id\":\"67890\"}")),
-    timeout_ms : 5000
+// 测试4: 资源管理
+test "资源管理测试" {
+  // 创建资源池
+  let resource_pool = ResourcePool::create(5)
+  
+  // 获取资源
+  let resource1 = ResourcePool::acquire(resource_pool)
+  assert_true(Resource::is_valid(resource1))
+  
+  let resource2 = ResourcePool::acquire(resource_pool)
+  assert_true(Resource::is_valid(resource2))
+  
+  // 测试资源限制
+  let mut resources = []
+  for i = 0; i < 7; i = i + 1 {
+    let resource = ResourcePool::acquire(resource_pool)
+    resources.push(resource)
   }
   
-  // 验证请求结构
-  match http_request.method {
-    @azimuth.HttpMethod::Post => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  assert_eq(http_request.url, "https://api.example.com/telemetry")
-  assert_eq(http_request.headers.length(), 2)
-  
-  // 模拟HTTP响应
-  let http_response = @azimuth.HttpResponse {
-    status_code : 200,
-    headers : [
-      ("Content-Type", "application/json"),
-      ("X-Request-ID", "req-12345")
-    ],
-    body : Some(@azimuth.StringValue("{\"status\":\"success\",\"id\":\"resp-67890\"}")),
-    duration_ms : 150
-  }
-  
-  // 验证响应结构
-  assert_eq(http_response.status_code, 200)
-  assert_eq(http_response.headers.length(), 2)
-  assert_eq(http_response.duration_ms, 150)
-  
-  match http_response.body {
-    Some(@azimuth.StringValue(response_body)) => {
-      assert_true(response_body.contains("success"))
-      assert_true(response_body.contains("resp-67890"))
+  // 验证只有5个有效资源
+  let mut valid_count = 0
+  for resource in resources {
+    if Resource::is_valid(resource) {
+      valid_count = valid_count + 1
     }
-    _ => assert_true(false)
   }
+  assert_eq(valid_count, 5)
+  
+  // 释放资源
+  ResourcePool::release(resource_pool, resource1)
+  ResourcePool::release(resource_pool, resource2)
+  
+  // 验证资源可以被重新获取
+  let resource3 = ResourcePool::acquire(resource_pool)
+  assert_true(Resource::is_valid(resource3))
 }
 
-// Test 5: 数据库集成测试
-test "database integration and query operations" {
-  // 模拟数据库连接
-  let db_connection = @azimuth.DatabaseConnection {
-    connection_string : "postgresql://user:password@localhost:5432/telemetry",
-    status : @azimuth.ConnectionStatus::Connected,
-    pool_size : 10,
-    active_connections : 3,
-    last_activity : 1640995200000L
-  }
+// 测试5: 配置管理
+test "配置管理测试" {
+  // 创建配置管理器
+  let config_manager = ConfigManager::create()
   
-  // 验证连接状态
-  match db_connection.status {
-    @azimuth.ConnectionStatus::Connected => assert_true(true)
-    _ => assert_true(false)
-  }
+  // 设置配置项
+  ConfigManager::set(config_manager, "server.port", "8080")
+  ConfigManager::set(config_manager, "server.host", "localhost")
+  ConfigManager::set(config_manager, "database.url", "mongodb://localhost:27017")
+  ConfigManager::set(config_manager, "database.timeout", "30")
   
-  assert_true(db_connection.active_connections <= db_connection.pool_size)
-  
-  // 模拟SQL查询
-  let sql_query = @azimuth.SqlQuery {
-    query : "SELECT trace_id, span_id, operation_name FROM spans WHERE timestamp > $1",
-    parameters : [
-      @azimuth.TimestampValue(1640995200000L)
-    ],
-    query_type : @azimuth.QueryType::Select
-  }
-  
-  // 验证查询结构
-  assert_eq(sql_query.query_type, @azimuth.QueryType::Select)
-  assert_eq(sql_query.parameters.length(), 1)
-  
-  // 模拟查询结果
-  let query_result = @azimuth.QueryResult {
-    rows : [
-      [
-        @azimuth.StringValue("trace-12345"),
-        @azimuth.StringValue("span-67890"),
-        @azimuth.StringValue("http.request")
-      ],
-      [
-        @azimuth.StringValue("trace-54321"),
-        @azimuth.StringValue("span-09876"),
-        @azimuth.StringValue("database.query")
-      ]
-    ],
-    affected_rows : 0,
-    execution_time_ms : 25
-  }
-  
-  // 验证查询结果
-  assert_eq(query_result.rows.length(), 2)
-  assert_eq(query_result.execution_time_ms, 25)
-  
-  // 验证第一行数据
-  let first_row = query_result.rows[0]
-  assert_eq(first_row.length(), 3)
-  match first_row[0] {
-    @azimuth.StringValue(trace_id) => assert_eq(trace_id, "trace-12345")
-    _ => assert_true(false)
-  }
-}
-
-// Test 6: 安全和认证测试
-test "security mechanisms and authentication" {
-  // 模拟认证令牌
-  let auth_token = @azimuth.AuthToken {
-    token : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    token_type : @azimuth.TokenType::JWT,
-    expires_at : 1640995200000L,
-    issued_at : 1640995200000L - 3600000L, // 1小时前签发
-    scopes : ["read:telemetry", "write:telemetry"],
-    user_id : "user-12345"
-  }
-  
-  // 验证令牌结构
-  match auth_token.token_type {
-    @azimuth.TokenType::JWT => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  assert_eq(auth_token.scopes.length(), 2)
-  assert_true(auth_token.scopes.contains("read:telemetry"))
-  
-  // 检查令牌是否过期
-  let current_time = 1640995100000L // 比过期时间早100秒
-  let is_expired = current_time > auth_token.expires_at
-  assert_false(is_expired)
-  
-  // 模拟权限检查
-  let required_scope = "read:telemetry"
-  let has_permission = auth_token.scopes.contains(required_scope)
-  assert_true(has_permission)
-  
-  // 测试API密钥认证
-  let api_key = @azimuth.ApiKey {
-    key_id : "key-12345",
-    key_secret : "secret-67890",
-    permissions : ["telemetry:read", "metrics:read"],
-    rate_limit : 1000,
-    current_usage : 250
-  }
-  
-  // 验证API密钥
-  assert_eq(api_key.key_id, "key-12345")
-  assert_true(api_key.current_usage < api_key.rate_limit)
-  
-  // 检查权限
-  let required_permission = "telemetry:read"
-  let has_api_permission = api_key.permissions.contains(required_permission)
-  assert_true(has_api_permission)
-}
-
-// Test 7: 时间序列数据处理测试
-test "time series data processing and analysis" {
-  // 创建时间序列数据点
-  let time_series_points = [
-    @azimuth.TimeSeriesPoint {
-      timestamp : 1640995200000L,
-      value : @azimuth.FloatValue(10.5),
-      labels : [("metric.name", "cpu.usage"), ("host", "server1")]
-    },
-    @azimuth.TimeSeriesPoint {
-      timestamp : 1640995200600L, // 1分钟后
-      value : @azimuth.FloatValue(12.3),
-      labels : [("metric.name", "cpu.usage"), ("host", "server1")]
-    },
-    @azimuth.TimeSeriesPoint {
-      timestamp : 1640995201200L, // 2分钟后
-      value : @azimuth.FloatValue(11.8),
-      labels : [("metric.name", "cpu.usage"), ("host", "server1")]
-    }
-  ]
-  
-  // 验证时间序列数据
-  assert_eq(time_series_points.length(), 3)
-  
-  // 验证时间戳递增
-  for i in 1..time_series_points.length() {
-    assert_true(time_series_points[i].timestamp > time_series_points[i-1].timestamp)
-  }
-  
-  // 计算平均值
-  let sum = time_series_points.reduce(fn(acc, point) {
-    match point.value {
-      @azimuth.FloatValue(v) => acc + v
-      _ => acc
-    }
-  }, 0.0)
-  let average = sum / (time_series_points.length() as Float)
-  
-  assert_true(abs(average - 11.533333333333333) < 0.0001)
-  
-  // 查找最大值和最小值
-  let values = time_series_points.map(fn(point) {
-    match point.value {
-      @azimuth.FloatValue(v) => v
-      _ => 0.0
-    }
-  })
-  
-  let max_value = values.reduce(fn(acc, v) { if v > acc { v } else { acc } }, values[0])
-  let min_value = values.reduce(fn(acc, v) { if v < acc { v } else { acc } }, values[0])
-  
-  assert_eq(max_value, 12.3)
-  assert_eq(min_value, 10.5)
-  
-  // 测试时间序列聚合
-  let aggregated_series = @azimuth.aggregate_time_series(
-    time_series_points,
-    @azimuth.AggregationType::Average,
-    60000L // 1分钟间隔
-  )
-  
-  assert_true(aggregated_series.length() <= time_series_points.length())
-}
-
-// Test 8: 自定义指标和仪表板测试
-test "custom metrics and dashboard functionality" {
-  // 创建自定义指标
-  let custom_metric = @azimuth.CustomMetric {
-    name : "user.login.count",
-    display_name : "User Login Count",
-    description : "Number of user logins",
-    unit : "count",
-    metric_type : @azimuth.MetricType::Counter,
-    tags : ["authentication", "user"],
-    created_at : 1640995200000L,
-    updated_at : 1640995200000L
-  }
-  
-  // 验证自定义指标
-  assert_eq(custom_metric.name, "user.login.count")
-  assert_eq(custom_metric.display_name, "User Login Count")
-  match custom_metric.metric_type {
-    @azimuth.MetricType::Counter => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  assert_eq(custom_metric.tags.length(), 2)
-  assert_true(custom_metric.tags.contains("authentication"))
-  
-  // 创建仪表板
-  let dashboard = @azimuth.Dashboard {
-    id : "dashboard-12345",
-    name : "Application Performance Dashboard",
-    description : "Overview of application performance metrics",
-    panels : [
-      @azimuth.DashboardPanel {
-        id : "panel-1",
-        title : "Request Rate",
-        type : @azimuth.PanelType::Graph,
-        metrics : ["http.requests.rate"],
-        position : (0, 0, 6, 4) // x, y, width, height
-      },
-      @azimuth.DashboardPanel {
-        id : "panel-2",
-        title : "Error Rate",
-        type : @azimuth.PanelType::SingleStat,
-        metrics : ["http.errors.rate"],
-        position : (6, 0, 6, 4)
-      }
-    ],
-    time_range : @azimuth.TimeRange {
-      start : 1640995200000L,
-      end : 1640995260000L // 10分钟范围
-    },
-    refresh_interval : 30000 // 30秒刷新
-  }
-  
-  // 验证仪表板
-  assert_eq(dashboard.name, "Application Performance Dashboard")
-  assert_eq(dashboard.panels.length(), 2)
-  
-  // 验证面板
-  let first_panel = dashboard.panels[0]
-  assert_eq(first_panel.title, "Request Rate")
-  match first_panel.type {
-    @azimuth.PanelType::Graph => assert_true(true)
-    _ => assert_true(false)
-  }
-  assert_eq(first_panel.position, (0, 0, 6, 4))
-  
-  // 验证时间范围
-  assert_eq(dashboard.time_range.end - dashboard.time_range.start, 600000L) // 10分钟
-}
-
-// Test 9: 跨平台兼容性测试
-test "cross-platform compatibility" {
-  // 模拟不同平台的环境信息
-  let linux_env = @azimuth.Environment {
-    platform : @azimuth.Platform::Linux,
-    architecture : @azimuth.Architecture::X64,
-    version : "Ubuntu 20.04",
-    memory_mb : 8192,
-    cpu_cores : 4,
-    available_features : ["async", "networking", "filesystem"]
-  }
-  
-  let windows_env = @azimuth.Environment {
-    platform : @azimuth.Platform::Windows,
-    architecture : @azimuth.Architecture::X64,
-    version : "Windows 10",
-    memory_mb : 16384,
-    cpu_cores : 8,
-    available_features : ["async", "networking", "filesystem", "registry"]
-  }
-  
-  // 验证Linux环境
-  match linux_env.platform {
-    @azimuth.Platform::Linux => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  assert_eq(linux_env.architecture, @azimuth.Architecture::X64)
-  assert_eq(linux_env.memory_mb, 8192)
-  assert_eq(linux_env.cpu_cores, 4)
-  
-  // 验证Windows环境
-  match windows_env.platform {
-    @azimuth.Platform::Windows => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  assert_eq(windows_env.memory_mb, 16384)
-  assert_eq(windows_env.cpu_cores, 8)
-  
-  // 测试平台特定功能
-  let linux_features = @azimuth.get_platform_features(linux_env.platform)
-  let windows_features = @azimuth.get_platform_features(windows_env.platform)
-  
-  assert_true(linux_features.contains("async"))
-  assert_true(linux_features.contains("networking"))
-  
-  assert_true(windows_features.contains("async"))
-  assert_true(windows_features.contains("registry"))
-  
-  // 测试跨平台兼容的路径处理
-  let unix_path = "/home/user/data/telemetry.json"
-  let windows_path = "C:\\Users\\user\\data\\telemetry.json"
-  
-  let normalized_unix = @azimuth.normalize_path(unix_path, @azimuth.Platform::Linux)
-  let normalized_windows = @azimuth.normalize_path(windows_path, @azimuth.Platform::Windows)
-  
-  assert_eq(normalized_unix, "/home/user/data/telemetry.json")
-  assert_eq(normalized_windows, "C:\\Users\\user\\data\\telemetry.json")
-}
-
-// Test 10: 国际化和本地化测试
-test "internationalization and localization" {
-  // 创建本地化资源
-  let en_resources = @azimuth.LocalizationResources {
-    locale : "en-US",
-    resources : [
-      ("telemetry.title", "Telemetry Dashboard"),
-      ("telemetry.description", "Monitor application performance and health"),
-      ("button.save", "Save"),
-      ("button.cancel", "Cancel"),
-      ("error.connection", "Connection failed"),
-      ("metric.cpu", "CPU Usage"),
-      ("metric.memory", "Memory Usage")
-    ]
-  }
-  
-  let zh_resources = @azimuth.LocalizationResources {
-    locale : "zh-CN",
-    resources : [
-      ("telemetry.title", "遥测仪表板"),
-      ("telemetry.description", "监控应用程序性能和健康状况"),
-      ("button.save", "保存"),
-      ("button.cancel", "取消"),
-      ("error.connection", "连接失败"),
-      ("metric.cpu", "CPU使用率"),
-      ("metric.memory", "内存使用率")
-    ]
-  }
-  
-  // 验证英文资源
-  assert_eq(en_resources.locale, "en-US")
-  assert_eq(en_resources.resources.length(), 7)
-  
-  let en_title = @azimuth.get_localized_string(en_resources, "telemetry.title")
-  match en_title {
-    Some(title) => assert_eq(title, "Telemetry Dashboard")
+  // 获取配置项
+  let port = ConfigManager::get(config_manager, "server.port")
+  match port {
+    Some(value) => assert_eq(value, "8080")
     None => assert_true(false)
   }
   
-  // 验证中文资源
-  assert_eq(zh_resources.locale, "zh-CN")
-  
-  let zh_title = @azimuth.get_localized_string(zh_resources, "telemetry.title")
-  match zh_title {
-    Some(title) => assert_eq(title, "遥测仪表板")
+  let host = ConfigManager::get(config_manager, "server.host")
+  match host {
+    Some(value) => assert_eq(value, "localhost")
     None => assert_true(false)
   }
   
-  // 测试缺失的资源键
-  let missing_key = @azimuth.get_localized_string(en_resources, "nonexistent.key")
-  match missing_key {
-    None => assert_true(true)
+  // 测试不存在的配置项
+  let non_existent = ConfigManager::get(config_manager, "non.existent.key")
+  match non_existent {
     Some(_) => assert_true(false)
+    None => assert_true(true)
   }
   
-  // 测试数字和日期格式化
-  let number = 1234.56
-  let en_formatted_number = @azimuth.format_number(number, "en-US")
-  let zh_formatted_number = @azimuth.format_number(number, "zh-CN")
+  // 测试配置更新
+  ConfigManager::set(config_manager, "server.port", "9090")
+  let updated_port = ConfigManager::get(config_manager, "server.port")
+  match updated_port {
+    Some(value) => assert_eq(value, "9090")
+    None => assert_true(false)
+  }
   
-  assert_eq(en_formatted_number, "1,234.56")
-  assert_eq(zh_formatted_number, "1,234.56") // 中文也使用相同的数字格式
+  // 测试配置删除
+  ConfigManager::delete(config_manager, "database.timeout")
+  let deleted_config = ConfigManager::get(config_manager, "database.timeout")
+  match deleted_config {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+}
+
+// 测试6: 国际化支持
+test "国际化支持测试" {
+  // 创建国际化管理器
+  let i18n = I18nManager::create()
   
-  // 测试日期格式化
-  let timestamp = 1640995200000L // 2022-01-01 00:00:00 UTC
-  let en_formatted_date = @azimuth.format_date(timestamp, "en-US")
-  let zh_formatted_date = @azimuth.format_date(timestamp, "zh-CN")
+  // 添加不同语言的翻译
+  I18nManager::add_translation(i18n, "en", "welcome.message", "Welcome to Azimuth")
+  I18nManager::add_translation(i18n, "zh", "welcome.message", "欢迎使用Azimuth")
+  I18nManager::add_translation(i18n, "es", "welcome.message", "Bienvenido a Azimuth")
+  I18nManager::add_translation(i18n, "fr", "welcome.message", "Bienvenue à Azimuth")
   
-  assert_true(en_formatted_date.contains("2022"))
-  assert_true(en_formatted_date.contains("01"))
-  assert_true(en_formatted_date.contains("01"))
+  // 测试英文翻译
+  let en_translation = I18nManager::translate(i18n, "en", "welcome.message")
+  match en_translation {
+    Some(text) => assert_eq(text, "Welcome to Azimuth")
+    None => assert_true(false)
+  }
   
-  assert_true(zh_formatted_date.contains("2022"))
-  assert_true(zh_formatted_date.contains("01"))
-  assert_true(zh_formatted_date.contains("01"))
+  // 测试中文翻译
+  let zh_translation = I18nManager::translate(i18n, "zh", "welcome.message")
+  match zh_translation {
+    Some(text) => assert_eq(text, "欢迎使用Azimuth")
+    None => assert_true(false)
+  }
+  
+  // 测试西班牙语翻译
+  let es_translation = I18nManager::translate(i18n, "es", "welcome.message")
+  match es_translation {
+    Some(text) => assert_eq(text, "Bienvenido a Azimuth")
+    None => assert_true(false)
+  }
+  
+  // 测试法语翻译
+  let fr_translation = I18nManager::translate(i18n, "fr", "welcome.message")
+  match fr_translation {
+    Some(text) => assert_eq(text, "Bienvenue à Azimuth")
+    None => assert_true(false)
+  }
+  
+  // 测试不存在的翻译
+  let non_existent = I18nManager::translate(i18n, "de", "welcome.message")
+  match non_existent {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // 测试不存在的键
+  let non_existent_key = I18nManager::translate(i18n, "en", "non.existent.key")
+  match non_existent_key {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+}
+
+// 测试7: 安全性测试
+test "安全性功能测试" {
+  // 创建安全管理器
+  let security = SecurityManager::create()
+  
+  // 测试密码哈希
+  let password = "secure_password_123"
+  let hashed_password = SecurityManager::hash_password(security, password)
+  assert_true(hashed_password.length() > 0)
+  assert_true(hashed_password != password)
+  
+  // 测试密码验证
+  let is_valid = SecurityManager::verify_password(security, password, hashed_password)
+  assert_true(is_valid)
+  
+  // 测试错误密码验证
+  let is_invalid = SecurityManager::verify_password(security, "wrong_password", hashed_password)
+  assert_false(is_invalid)
+  
+  // 测试令牌生成
+  let token_data = "user_id:12345,role:admin"
+  let token = SecurityManager::generate_token(security, token_data)
+  assert_true(token.length() > 0)
+  
+  // 测试令牌验证
+  let is_token_valid = SecurityManager::verify_token(security, token, token_data)
+  assert_true(is_token_valid)
+  
+  // 测试令牌篡改检测
+  let tampered_token = token + "tampered"
+  let is_tampered_valid = SecurityManager::verify_token(security, tampered_token, token_data)
+  assert_false(is_tampered_valid)
+  
+  // 测试数据加密
+  let sensitive_data = "confidential information"
+  let encrypted_data = SecurityManager::encrypt(security, sensitive_data)
+  assert_true(encrypted_data != sensitive_data)
+  
+  // 测试数据解密
+  let decrypted_data = SecurityManager::decrypt(security, encrypted_data)
+  assert_eq(decrypted_data, sensitive_data)
+}
+
+// 测试8: 并发处理
+test "并发处理测试" {
+  // 创建并发管理器
+  let concurrency = ConcurrencyManager::create()
+  
+  // 创建共享计数器
+  let counter = AtomicCounter::create(0)
+  
+  // 启动多个并发任务
+  let tasks = []
+  for i = 0; i < 10; i = i + 1 {
+    let task = ConcurrencyManager::spawn(concurrency, fn() {
+      for j = 0; j < 100; j = j + 1 {
+        AtomicCounter::increment(counter)
+      }
+    })
+    tasks.push(task)
+  }
+  
+  // 等待所有任务完成
+  for task in tasks {
+    ConcurrencyManager::join(concurrency, task)
+  }
+  
+  // 验证最终计数
+  let final_count = AtomicCounter::get(counter)
+  assert_eq(final_count, 1000)
+  
+  // 测试互斥锁
+  let mutex = Mutex::create()
+  let protected_data = Ref::create(0)
+  
+  let mutex_tasks = []
+  for i = 0; i < 5; i = i + 1 {
+    let task = ConcurrencyManager::spawn(concurrency, fn() {
+      Mutex::lock(mutex)
+      let current = Ref::get(protected_data)
+      Ref::set(protected_data, current + 1)
+      Mutex::unlock(mutex)
+    })
+    mutex_tasks.push(task)
+  }
+  
+  // 等待所有任务完成
+  for task in mutex_tasks {
+    ConcurrencyManager::join(concurrency, task)
+  }
+  
+  // 验证互斥锁保护的数据
+  let protected_value = Ref::get(protected_data)
+  assert_eq(protected_value, 5)
+}
+
+// 测试9: 时间序列操作
+test "时间序列操作测试" {
+  // 创建时间序列管理器
+  let time_series = TimeSeriesManager::create()
+  
+  // 添加时间序列数据点
+  let current_time = Time::now()
+  TimeSeriesManager::add_point(time_series, "cpu.usage", current_time, 45.5)
+  TimeSeriesManager::add_point(time_series, "cpu.usage", Time::add_seconds(current_time, 1), 50.2)
+  TimeSeriesManager::add_point(time_series, "cpu.usage", Time::add_seconds(current_time, 2), 48.7)
+  TimeSeriesManager::add_point(time_series, "cpu.usage", Time::add_seconds(current_time, 3), 52.1)
+  TimeSeriesManager::add_point(time_series, "cpu.usage", Time::add_seconds(current_time, 4), 49.8)
+  
+  // 测试数据点查询
+  let points = TimeSeriesManager::get_points(time_series, "cpu.usage", current_time, Time::add_seconds(current_time, 4))
+  assert_eq(points.length(), 5)
+  
+  // 测试时间范围查询
+  let start_time = Time::add_seconds(current_time, 1)
+  let end_time = Time::add_seconds(current_time, 3)
+  let range_points = TimeSeriesManager::get_points(time_series, "cpu.usage", start_time, end_time)
+  assert_eq(range_points.length(), 3)
+  
+  // 测试聚合计算
+  let avg_value = TimeSeriesManager::average(time_series, "cpu.usage", current_time, Time::add_seconds(current_time, 4))
+  match avg_value {
+    Some(value) => assert_true(Float::abs(value - 49.26) < 0.1)
+    None => assert_true(false)
+  }
+  
+  let max_value = TimeSeriesManager::maximum(time_series, "cpu.usage", current_time, Time::add_seconds(current_time, 4))
+  match max_value {
+    Some(value) => assert_eq(value, 52.1)
+    None => assert_true(false)
+  }
+  
+  let min_value = TimeSeriesManager::minimum(time_series, "cpu.usage", current_time, Time::add_seconds(current_time, 4))
+  match min_value {
+    Some(value) => assert_eq(value, 45.5)
+    None => assert_true(false)
+  }
+  
+  // 测试数据点删除
+  TimeSeriesManager::delete_points_before(time_series, "cpu.usage", Time::add_seconds(current_time, 2))
+  let remaining_points = TimeSeriesManager::get_points(time_series, "cpu.usage", current_time, Time::add_seconds(current_time, 10))
+  assert_eq(remaining_points.length(), 3)
+}
+
+// 测试10: 缓存机制
+test "缓存机制测试" {
+  // 创建缓存管理器
+  let cache = CacheManager::create(100) // 最大100项
+  
+  // 测试缓存存储
+  CacheManager::set(cache, "key1", "value1")
+  CacheManager::set(cache, "key2", "value2")
+  CacheManager::set(cache, "key3", "value3")
+  
+  // 测试缓存获取
+  let value1 = CacheManager::get(cache, "key1")
+  match value1 {
+    Some(v) => assert_eq(v, "value1")
+    None => assert_true(false)
+  }
+  
+  let value2 = CacheManager::get(cache, "key2")
+  match value2 {
+    Some(v) => assert_eq(v, "value2")
+    None => assert_true(false)
+  }
+  
+  // 测试不存在的键
+  let non_existent = CacheManager::get(cache, "non_existent_key")
+  match non_existent {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // 测试缓存更新
+  CacheManager::set(cache, "key1", "new_value1")
+  let updated_value1 = CacheManager::get(cache, "key1")
+  match updated_value1 {
+    Some(v) => assert_eq(v, "new_value1")
+    None => assert_true(false)
+  }
+  
+  // 测试缓存删除
+  CacheManager::delete(cache, "key2")
+  let deleted_value = CacheManager::get(cache, "key2")
+  match deleted_value {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // 测试缓存大小限制
+  for i = 0; i < 150; i = i + 1 {
+    let key = "key_" + Int::to_string(i)
+    let value = "value_" + Int::to_string(i)
+    CacheManager::set(cache, key, value)
+  }
+  
+  // 验证缓存大小不超过限制
+  let cache_size = CacheManager::size(cache)
+  assert_true(cache_size <= 100)
+  
+  // 测试缓存清空
+  CacheManager::clear(cache)
+  let cleared_size = CacheManager::size(cache)
+  assert_eq(cleared_size, 0)
 }
