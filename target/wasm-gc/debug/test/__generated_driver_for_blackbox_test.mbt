@@ -854,6 +854,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_error_boundary_recovery_enhanced_tests.mbt": {
   },
+  "azimuth_error_boundary_recovery_comprehensive_tests.mbt": {
+  },
   "azimuth_error_boundary_handling_tests.mbt": {
   },
   "azimuth_error_boundary_condition_tests.mbt": {
@@ -1155,6 +1157,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_concurrency_control_tests.mbt": {
   },
   "azimuth_concise_telemetry_tests.mbt": {
+  },
+  "azimuth_compression_transmission_tests.mbt": {
   },
   "azimuth_compression_decompression_tests.mbt": {
   },
