@@ -73,6 +73,7 @@
         "../azimuth_data_validation_conversion_tests.mbt",
         "../azimuth_network_communication_tests.mbt",
         "../azimuth_caching_mechanism_tests.mbt",
-        "../azimuth_internationalization_support_tests.mbt"]
+        "../azimuth_internationalization_support_tests.mbt",
+        "../azimuth_high_quality_advanced_tests.mbt"]
   }
 }

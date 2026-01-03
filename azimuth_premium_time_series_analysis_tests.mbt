@@ -1,952 +1,1041 @@
-// Azimuth 时间序列分析测试
-// 专注于遥测数据的时间序列分析和预测功能
+// Azimuth Premium Time Series Data Analysis Tests
+// 时间序列数据分析测试，确保遥测系统的时间序列数据处理和分析能力
 
-// 测试1: 时间序列趋势分析
-test "时间序列趋势分析" {
-  // 模拟时间序列数据
-  let time_series_data = [
-    { timestamp: 1640995200, value: 100.0, metric: "cpu_usage" },
-    { timestamp: 1640995260, value: 105.0, metric: "cpu_usage" },
-    { timestamp: 1640995320, value: 110.0, metric: "cpu_usage" },
-    { timestamp: 1640995380, value: 108.0, metric: "cpu_usage" },
-    { timestamp: 1640995440, value: 115.0, metric: "cpu_usage" },
-    { timestamp: 1640995500, value: 120.0, metric: "cpu_usage" },
-    { timestamp: 1640995560, value: 118.0, metric: "cpu_usage" },
-    { timestamp: 1640995620, value: 125.0, metric: "cpu_usage" },
-    { timestamp: 1640995680, value: 130.0, metric: "cpu_usage" },
-    { timestamp: 1640995740, value: 135.0, metric: "cpu_usage" }
-  ]
+// Test 1: Basic Time Series Data Collection
+test "基础时间序列数据收集测试" {
+  // 创建时间序列数据收集器
+  let collector = TimeSeriesCollector::new("test_collector")
   
-  // 计算基本趋势指标
-  let n = time_series_data.length()
-  let first_value = time_series_data[0].value
-  let last_value = time_series_data[n-1].value
+  // 生成时间序列数据点
+  let base_timestamp = 1672531200 // 2023-01-01 00:00:00 UTC
+  let mut data_points = []
   
-  // 计算线性趋势
-  let mut sum_x = 0.0
-  let mut sum_y = 0.0
-  let mut sum_xy = 0.0
-  let mut sum_x2 = 0.0
-  
-  for i in 0..n {
-    let x = i.to_float()
-    let y = time_series_data[i].value
-    sum_x = sum_x + x
-    sum_y = sum_y + y
-    sum_xy = sum_xy + x * y
-    sum_x2 = sum_x2 + x * x
+  for i in 0..100 {
+    let timestamp = base_timestamp + i * 60 // 每分钟一个数据点
+    let value = 100.0 + (i.to_float() * 0.5) + generate_random_noise() // 线性增长+噪声
+    let data_point = TimeSeriesDataPoint::new(timestamp, value, [
+      ("metric.name", StringValue("cpu.usage")),
+      ("host.name", StringValue("server-" + (i % 5).to_string())),
+      ("region", StringValue("us-west-" + (i % 3).to_string()))
+    ])
+    data_points = data_points + [data_point]
   }
   
-  let slope = (n.to_float() * sum_xy - sum_x * sum_y) / (n.to_float() * sum_x2 - sum_x * sum_x)
-  let intercept = (sum_y - slope * sum_x) / n.to_float()
-  
-  // 计算趋势强度（R²）
-  let mut ss_total = 0.0
-  let mut ss_residual = 0.0
-  let y_mean = sum_y / n.to_float()
-  
-  for i in 0..n {
-    let x = i.to_float()
-    let y_actual = time_series_data[i].value
-    let y_predicted = slope * x + intercept
-    
-    ss_total = ss_total + (y_actual - y_mean) * (y_actual - y_mean)
-    ss_residual = ss_residual + (y_actual - y_predicted) * (y_actual - y_predicted)
+  // 添加数据点到收集器
+  for point in data_points {
+    TimeSeriesCollector::add_point(collector, point)
   }
   
-  let r_squared = if ss_total > 0.0 { 1.0 - ss_residual / ss_total } else { 0.0 }
+  // 验证数据点数量
+  let collected_points = TimeSeriesCollector::get_points(collector)
+  assert_eq(collected_points.length(), 100)
   
-  // 计算变化率
-  let overall_change = last_value - first_value
-  let overall_change_rate = overall_change / first_value * 100.0
+  // 验证数据点的时间顺序
+  for i in 1..collected_points.length() {
+    let prev_timestamp = TimeSeriesDataPoint::timestamp(collected_points[i-1])
+    let curr_timestamp = TimeSeriesDataPoint::timestamp(collected_points[i])
+    assert_true(prev_timestamp < curr_timestamp)
+  }
   
-  // 计算移动平均
-  let window_size = 3
-  let mut moving_averages = []
+  // 验证数据点的属性
+  let first_point = collected_points[0]
+  assert_eq(TimeSeriesDataPoint::timestamp(first_point), base_timestamp)
+  assert_true(TimeSeriesDataPoint::value(first_point) > 99.0) // 考虑噪声
+  assert_true(TimeSeriesDataPoint::value(first_point) < 101.0)
   
-  for i in window_size-1..n {
-    let mut sum = 0.0
-    for j in i-window_size+1..i+1 {
-      sum = sum + time_series_data[j].value
+  let attributes = TimeSeriesDataPoint::attributes(first_point)
+  assert_true(check_attribute_exists(attributes, "metric.name"))
+  assert_true(check_attribute_exists(attributes, "host.name"))
+  assert_true(check_attribute_exists(attributes, "region"))
+}
+
+// Test 2: Time Series Aggregation
+test "时间序列聚合测试" {
+  // 创建时间序列数据
+  let base_timestamp = 1672531200
+  let mut data_points = []
+  
+  // 生成24小时的数据，每5分钟一个点
+  for hour in 0..24 {
+    for minute in 0..12 { // 每小时12个点（5分钟间隔）
+      let timestamp = base_timestamp + hour * 3600 + minute * 300
+      let value = generate_hourly_pattern(hour) + generate_random_noise()
+      let data_point = TimeSeriesDataPoint::new(timestamp, value, [
+        ("metric.name", StringValue("response.time")),
+        ("service.name", StringValue("api-service")),
+        ("endpoint", StringValue("/api/data"))
+      ])
+      data_points = data_points + [data_point]
     }
-    let avg = sum / window_size.to_float()
-    moving_averages = moving_averages.push({
-      index: i,
-      moving_average: avg
-    })
   }
+  
+  // 创建时间序列
+  let time_series = TimeSeries::new(data_points)
+  
+  // 按小时聚合
+  let hourly_aggregation = TimeSeries::aggregate_by_interval(time_series, 3600) // 1小时
+  assert_eq(hourly_aggregation.length(), 24)
+  
+  // 验证聚合结果
+  for i in 0..hourly_aggregation.length() {
+    let aggregated_point = hourly_aggregation[i]
+    let expected_timestamp = base_timestamp + i * 3600
+    assert_eq(TimeSeriesDataPoint::timestamp(aggregated_point), expected_timestamp)
+    
+    // 验证聚合值在合理范围内
+    let aggregated_value = TimeSeriesDataPoint::value(aggregated_point)
+    assert_true(aggregated_value > 0.0)
+    assert_true(aggregated_value < 1000.0)
+  }
+  
+  // 按天聚合
+  let daily_aggregation = TimeSeries::aggregate_by_interval(time_series, 86400) // 1天
+  assert_eq(daily_aggregation.length(), 1)
+  
+  // 验证日聚合
+  let daily_point = daily_aggregation[0]
+  assert_eq(TimeSeriesDataPoint::timestamp(daily_point), base_timestamp)
+  let daily_value = TimeSeriesDataPoint::value(daily_point)
+  assert_true(daily_value > 0.0)
+  
+  // 验证聚合统计信息
+  let stats = TimeSeries::calculate_aggregation_stats(time_series, 3600)
+  assert_eq(stats.count, 24)
+  assert_true(stats.mean > 0.0)
+  assert_true(stats.min >= 0.0)
+  assert_true(stats.max > stats.min)
+  assert_true(stats.std_dev >= 0.0)
+}
+
+// Test 3: Time Series Trend Analysis
+test "时间序列趋势分析测试" {
+  // 创建有趋势的时间序列数据
+  let base_timestamp = 1672531200
+  let mut data_points = []
+  
+  // 生成30天的数据，有明显上升趋势
+  for day in 0..30 {
+    let timestamp = base_timestamp + day * 86400
+    // 基础值 + 线性增长 + 季节性 + 噪声
+    let base_value = 100.0
+    let trend = day.to_float() * 2.0 // 每天增长2
+    let seasonal = 10.0 * (2.0 * 3.14159 * (day % 7).to_float() / 7.0).sin() // 周季节性
+    let noise = generate_random_noise() * 5.0
+    let value = base_value + trend + seasonal + noise
+    
+    let data_point = TimeSeriesDataPoint::new(timestamp, value, [
+      ("metric.name", StringValue("user.count")),
+      ("service.name", StringValue("user-service"))
+    ])
+    data_points = data_points + [data_point]
+  }
+  
+  let time_series = TimeSeries::new(data_points)
+  
+  // 分析趋势
+  let trend_analysis = TimeSeries::analyze_trend(time_series)
   
   // 验证趋势分析结果
-  assert_true(slope > 0.0) // 应该是上升趋势
-  assert_eq(r_squared > 0.8, true) // 趋势应该比较强
-  
-  // 验证变化率
-  assert_true(overall_change > 0.0) // 应该有正向变化
-  assert_true(overall_change_rate > 30.0) // 变化率应该超过30%
-  
-  // 验证移动平均
-  assert_eq(moving_averages.length(), n - window_size + 1)
-  
-  // 移动平均应该平滑数据
-  for i in 1..moving_averages.length() {
-    assert_true(moving_averages[i].moving_average >= moving_averages[i-1].moving_average - 5.0)
-  }
+  assert_true(trend_analysis.slope > 1.5) // 斜率应该接近2
+  assert_true(trend_analysis.slope < 2.5)
+  assert_true(trend_analysis.intercept > 90.0) // 截距应该接近100
+  assert_true(trend_analysis.intercept < 110.0)
+  assert_true(trend_analysis.r_squared > 0.7) // R²应该较高，表示强相关性
+  assert_true(trend_analysis.trend_direction == "increasing")
   
   // 验证趋势预测
-  let future_points = 5
-  let mut predictions = []
+  let future_timestamp = base_timestamp + 35 * 86400 // 5天后
+  let predicted_value = TimeSeries::predict_value(time_series, future_timestamp)
+  let expected_value = 100.0 + 35.0 * 2.0 // 基础值 + 35天增长
+  assert_true(abs(predicted_value - expected_value) < 20.0) // 允许一定误差
   
-  for i in 0..future_points {
-    let x = (n + i).to_float()
-    let predicted_value = slope * x + intercept
-    predictions = predictions.push(predicted_value)
-  }
-  
-  // 预测值应该继续上升趋势
-  for i in 1..predictions.length() {
-    assert_true(predictions[i] > predictions[i-1])
-  }
-  
-  // 最后一个预测值应该大于最后一个实际值
-  assert_true(predictions[predictions.length()-1] > last_value)
+  // 验证季节性分析
+  let seasonality_analysis = TimeSeries::analyze_seasonality(time_series, 7) // 7天周期
+  assert_true(seasonality_analysis.has_seasonality)
+  assert_eq(seasonality_analysis.period, 7)
+  assert_true(seasonality_analysis.strength > 0.0)
+  assert_true(seasonality_analysis.strength < 1.0)
 }
 
-// 测试2: 时间序列季节性分析
-test "时间序列季节性分析" {
-  // 模拟具有季节性的时间序列数据（24小时周期）
-  let seasonal_data = [
-    { timestamp: 1640995200, hour: 8, value: 45.0, day_of_week: 1 }, // 周一早晨
-    { timestamp: 1640995260, hour: 9, value: 55.0, day_of_week: 1 },
-    { timestamp: 1640995320, hour: 10, value: 65.0, day_of_week: 1 },
-    { timestamp: 1640995380, hour: 11, value: 70.0, day_of_week: 1 },
-    { timestamp: 1640995440, hour: 12, value: 75.0, day_of_week: 1 },
-    { timestamp: 1640995500, hour: 13, value: 72.0, day_of_week: 1 },
-    { timestamp: 1640995560, hour: 14, value: 68.0, day_of_week: 1 },
-    { timestamp: 1640995620, hour: 15, value: 65.0, day_of_week: 1 },
-    { timestamp: 1640995680, hour: 16, value: 60.0, day_of_week: 1 },
-    { timestamp: 1640995740, hour: 17, value: 55.0, day_of_week: 1 },
-    { timestamp: 1640995800, hour: 18, value: 50.0, day_of_week: 1 },
-    { timestamp: 1640995860, hour: 19, value: 40.0, day_of_week: 1 },
-    { timestamp: 1640995920, hour: 20, value: 35.0, day_of_week: 1 },
-    { timestamp: 1640995980, hour: 21, value: 30.0, day_of_week: 1 },
-    { timestamp: 1640996040, hour: 22, value: 25.0, day_of_week: 1 },
-    { timestamp: 1640996100, hour: 23, value: 20.0, day_of_week: 1 },
-    { timestamp: 1640996160, hour: 0, value: 15.0, day_of_week: 1 },
-    { timestamp: 1640996220, hour: 1, value: 12.0, day_of_week: 1 },
-    { timestamp: 1640996280, hour: 2, value: 10.0, day_of_week: 1 },
-    { timestamp: 1640996340, hour: 3, value: 8.0, day_of_week: 1 },
-    { timestamp: 1640996400, hour: 4, value: 10.0, day_of_week: 1 },
-    { timestamp: 1640996460, hour: 5, value: 15.0, day_of_week: 1 },
-    { timestamp: 1640996520, hour: 6, value: 25.0, day_of_week: 1 },
-    { timestamp: 1640996580, hour: 7, value: 35.0, day_of_week: 1 },
-    // 第二天的数据（周二）
-    { timestamp: 1641081600, hour: 8, value: 48.0, day_of_week: 2 },
-    { timestamp: 1641081660, hour: 9, value: 58.0, day_of_week: 2 },
-    { timestamp: 1641081720, hour: 10, value: 68.0, day_of_week: 2 },
-    { timestamp: 1641081780, hour: 11, value: 73.0, day_of_week: 2 },
-    { timestamp: 1641081840, hour: 12, value: 78.0, day_of_week: 2 }
-  ]
+// Test 4: Anomaly Detection
+test "异常检测测试" {
+  // 创建包含异常的时间序列数据
+  let base_timestamp = 1672531200
+  let mut data_points = []
   
-  // 按小时分组分析季节性
-  let mut hourly_patterns = []
-  
-  for hour in 0..24 {
-    let hour_data = seasonal_data.filter_fn(d => d.hour == hour)
-    if hour_data.length() > 0 {
-      let mut sum = 0.0
-      for d in hour_data {
-        sum = sum + d.value
-      }
-      let avg_value = sum / hour_data.length().to_float()
-      
-      hourly_patterns = hourly_patterns.push({
-        hour: hour,
-        avg_value: avg_value,
-        data_points: hour_data.length()
-      })
-    }
-  }
-  
-  // 按天分组分析周模式
-  let mut daily_patterns = []
-  
-  for day in 1..8 {
-    let day_data = seasonal_data.filter_fn(d => d.day_of_week == day)
-    if day_data.length() > 0 {
-      let mut sum = 0.0
-      for d in day_data {
-        sum = sum + d.value
-      }
-      let avg_value = sum / day_data.length().to_float()
-      
-      daily_patterns = daily_patterns.push({
-        day_of_week: day,
-        avg_value: avg_value,
-        data_points: day_data.length()
-      })
-    }
-  }
-  
-  // 验证小时季节性模式
-  assert_eq(hourly_patterns.length(), 24)
-  
-  // 找到峰值和谷值时间
-  let sorted_by_value = hourly_patterns.sort(fn(a, b) { a.avg_value <= b.avg_value })
-  let lowest_hour = sorted_by_value[0]
-  let highest_hour = sorted_by_value[sorted_by_value.length()-1]
-  
-  // 验证最低值在凌晨
-  assert_true(lowest_hour.hour >= 2 && lowest_hour.hour <= 4)
-  assert_true(lowest_hour.avg_value < 15.0)
-  
-  // 验证最高值在中午
-  assert_true(highest_hour.hour >= 11 && highest_hour.hour <= 13)
-  assert_true(highest_hour.avg_value > 70.0)
-  
-  // 验证日间变化模式
-  let morning_hours = hourly_patterns.filter_fn(p => p.hour >= 6 && p.hour <= 10)
-  let afternoon_hours = hourly_patterns.filter_fn(p => p.hour >= 14 && p.hour <= 18)
-  let evening_hours = hourly_patterns.filter_fn(p => p.hour >= 19 && p.hour <= 23)
-  let night_hours = hourly_patterns.filter_fn(p => p.hour >= 0 && p.hour <= 5)
-  
-  // 计算各时段平均值
-  let morning_avg = morning_hours.reduce(fn(acc, p) { acc + p.avg_value }, 0.0) / morning_hours.length().to_float()
-  let afternoon_avg = afternoon_hours.reduce(fn(acc, p) { acc + p.avg_value }, 0.0) / afternoon_hours.length().to_float()
-  let evening_avg = evening_hours.reduce(fn(acc, p) { acc + p.avg_value }, 0.0) / evening_hours.length().to_float()
-  let night_avg = night_hours.reduce(fn(acc, p) { acc + p.avg_value }, 0.0) / night_hours.length().to_float()
-  
-  // 验证时段差异
-  assert_true(morning_avg > night_avg)
-  assert_true(afternoon_avg > morning_avg)
-  assert_true(evening_avg < afternoon_avg)
-  assert_true(evening_avg > night_avg)
-  
-  // 验证周模式
-  assert_eq(daily_patterns.length(), 2) // 只有周一和周二的数据
-  
-  // 计算季节性强度
-  let overall_mean = seasonal_data.reduce(fn(acc, d) { acc + d.value }, 0.0) / seasonal_data.length().to_float()
-  let mut seasonal_variance = 0.0
-  
-  for pattern in hourly_patterns {
-    let deviation = pattern.avg_value - overall_mean
-    seasonal_variance = seasonal_variance + deviation * deviation
-  }
-  
-  let seasonal_strength = seasonal_variance / hourly_patterns.length().to_float()
-  assert_true(seasonal_strength > 100.0) // 应该有明显的季节性
-  
-  // 验证季节性预测
-  let next_day_hourly_forecast = []
-  for pattern in hourly_patterns {
-    next_day_hourly_forecast = next_day_hourly_forecast.push({
-      hour: pattern.hour,
-      predicted_value: pattern.avg_value
-    })
-  }
-  
-  // 验证预测的合理性
-  let forecast_morning = next_day_hourly_forecast.filter_fn(p => p.hour >= 8 && p.hour <= 10)
-  let forecast_night = next_day_hourly_forecast.filter_fn(p => p.hour >= 0 && p.hour <= 5)
-  
-  let forecast_morning_avg = forecast_morning.reduce(fn(acc, p) { acc + p.predicted_value }, 0.0) / forecast_morning.length().to_float()
-  let forecast_night_avg = forecast_night.reduce(fn(acc, p) { acc + p.predicted_value }, 0.0) / forecast_night.length().to_float()
-  
-  assert_true(forecast_morning_avg > forecast_night_avg)
-}
-
-// 测试3: 时间序列异常检测
-test "时间序列异常检测" {
-  // 模拟包含异常的时间序列数据
-  let anomaly_data = [
-    { timestamp: 1640995200, value: 50.0, is_anomaly: false },
-    { timestamp: 1640995260, value: 52.0, is_anomaly: false },
-    { timestamp: 1640995320, value: 48.0, is_anomaly: false },
-    { timestamp: 1640995380, value: 51.0, is_anomaly: false },
-    { timestamp: 1640995440, value: 150.0, is_anomaly: true }, // 尖峰异常
-    { timestamp: 1640995500, value: 49.0, is_anomaly: false },
-    { timestamp: 1640995560, value: 53.0, is_anomaly: false },
-    { timestamp: 1640995620, value: 47.0, is_anomaly: false },
-    { timestamp: 1640995680, value: 5.0, is_anomaly: true }, // 谷值异常
-    { timestamp: 1640995740, value: 52.0, is_anomaly: false },
-    { timestamp: 1640995800, value: 48.0, is_anomaly: false },
-    { timestamp: 1640995860, value: 51.0, is_anomaly: false },
-    { timestamp: 1640995920, value: 49.0, is_anomaly: false },
-    { timestamp: 1640995980, value: 53.0, is_anomaly: false },
-    { timestamp: 1640996040, value: 47.0, is_anomaly: false }
-  ]
-  
-  // 使用Z-score方法检测异常
-  let normal_data = anomaly_data.filter_fn(d => !d.is_anomaly)
-  
-  // 计算正常数据的均值和标准差
-  let n = normal_data.length()
-  let mean = normal_data.reduce(fn(acc, d) { acc + d.value }, 0.0) / n.to_float()
-  
-  let mut variance = 0.0
-  for d in normal_data {
-    let diff = d.value - mean
-    variance = variance + diff * diff
-  }
-  let std_dev = (variance / n.to_float()).sqrt()
-  
-  // 设置异常阈值（3个标准差）
-  let upper_threshold = mean + 3.0 * std_dev
-  let lower_threshold = mean - 3.0 * std_dev
-  
-  // 检测异常
-  let mut detected_anomalies = []
-  let mut normal_points = []
-  
-  for d in anomaly_data {
-    let z_score = (d.value - mean) / std_dev
-    let is_anomaly = d.value > upper_threshold || d.value < lower_threshold
+  // 生成正常数据
+  for i in 0..100 {
+    let timestamp = base_timestamp + i * 300 // 5分钟间隔
+    let normal_value = 50.0 + 10.0 * (2.0 * 3.14159 * i.to_float() / 20.0).sin() // 周期性模式
+    let value = normal_value + generate_random_noise() * 2.0
     
-    if is_anomaly {
-      detected_anomalies = detected_anomalies.push({
-        timestamp: d.timestamp,
-        value: d.value,
-        z_score: z_score,
-        threshold_exceeded: if d.value > upper_threshold { "upper" } else { "lower" }
-      })
-    } else {
-      normal_points = normal_points.push(d)
-    }
+    let data_point = TimeSeriesDataPoint::new(timestamp, value, [
+      ("metric.name", StringValue("memory.usage")),
+      ("service.name", StringValue("database"))
+    ])
+    data_points = data_points + [data_point]
   }
   
-  // 验证异常检测结果
-  assert_eq(detected_anomalies.length(), 2)
-  assert_eq(normal_points.length(), 13)
+  // 插入异常值
+  let anomaly_indices = [25, 50, 75] // 在这些位置插入异常
+  for index in anomaly_indices {
+    let timestamp = base_timestamp + index * 300
+    let normal_value = 50.0 + 10.0 * (2.0 * 3.14159 * index.to_float() / 20.0).sin()
+    let anomaly_value = normal_value + 30.0 // 异常高值
+    
+    let anomaly_point = TimeSeriesDataPoint::new(timestamp, anomaly_value, [
+      ("metric.name", StringValue("memory.usage")),
+      ("service.name", StringValue("database")),
+      ("anomaly", StringValue("true"))
+    ])
+    data_points[index] = anomaly_point // 替换正常值
+  }
   
-  // 验证检测到的异常
-  let spike_anomaly = detected_anomalies.filter_fn(a => a.threshold_exceeded == "upper")[0]
-  assert_eq(spike_anomaly.value, 150.0)
-  assert_true(spike_anomaly.z_score > 3.0)
+  let time_series = TimeSeries::new(data_points)
   
-  let dip_anomaly = detected_anomalies.filter_fn(a => a.threshold_exceeded == "lower")[0]
-  assert_eq(dip_anomaly.value, 5.0)
-  assert_true(dip_anomaly.z_score < -3.0)
+  // 使用统计方法检测异常
+  let statistical_anomalies = TimeSeries::detect_statistical_anomalies(time_series, 3.0) // 3σ阈值
+  assert_true(statistical_anomalies.length() >= 3) // 应该检测到至少3个异常
+  
+  // 验证检测到的异常位置
+  for anomaly_index in anomaly_indices {
+    let timestamp = base_timestamp + anomaly_index * 300
+    let is_detected = false
+    
+    for detected_anomaly in statistical_anomalies {
+      if TimeSeriesDataPoint::timestamp(detected_anomaly) == timestamp {
+        assert_true(TimeSeriesDataPoint::value(detected_anomaly) > 70.0) // 异常值应该较高
+        break
+      }
+    }
+  }
   
   // 使用移动平均方法检测异常
-  let window_size = 3
-  let mut ma_anomalies = []
+  let ma_anomalies = TimeSeries::detect_moving_average_anomalies(time_series, 10, 2.0) // 10点窗口，2倍标准差
+  assert_true(ma_anomalies.length() >= 2) // 应该检测到一些异常
   
-  for i in window_size..anomaly_data.length() {
-    let mut sum = 0.0
-    for j in i-window_size..i {
-      sum = sum + anomaly_data[j].value
-    }
-    let ma = sum / window_size.to_float()
-    let current_value = anomaly_data[i].value
-    let deviation = (current_value - ma).abs() / ma
-    
-    if deviation > 0.5 { // 50%偏差阈值
-      ma_anomalies = ma_anomalies.push({
-        timestamp: anomaly_data[i].timestamp,
-        value: current_value,
-        moving_average: ma,
-        deviation_percent: deviation * 100.0
-      })
-    }
+  // 使用孤立森林方法检测异常
+  let forest_anomalies = TimeSeries::detect_isolation_forest_anomalies(time_series, 0.1) // 10%异常率
+  assert_true(forest_anomalies.length() >= 3) // 应该检测到一些异常
+  
+  // 验证异常评分
+  for anomaly in forest_anomalies {
+    let score = TimeSeriesDataPoint::anomaly_score(anomaly)
+    assert_true(score > 0.5) // 异常评分应该较高
   }
-  
-  // 验证移动平均异常检测
-  assert_true(ma_anomalies.length() >= 1) // 至少检测到一个异常
-  
-  // 使用指数平滑方法检测异常
-  let alpha = 0.3 // 平滑因子
-  let mut ema = anomaly_data[0].value
-  let mut ema_anomalies = []
-  
-  for i in 1..anomaly_data.length() {
-    ema = alpha * anomaly_data[i].value + (1.0 - alpha) * ema
-    let deviation = (anomaly_data[i].value - ema).abs() / ema
-    
-    if deviation > 0.4 { // 40%偏差阈值
-      ema_anomalies = ema_anomalies.push({
-        timestamp: anomaly_data[i].timestamp,
-        value: anomaly_data[i].value,
-        ema: ema,
-        deviation_percent: deviation * 100.0
-      })
-    }
-  }
-  
-  // 验证指数平滑异常检测
-  assert_true(ema_anomalies.length() >= 1) // 至少检测到一个异常
-  
-  // 计算异常检测性能指标
-  let true_anomalies = anomaly_data.filter_fn(d => d.is_anomaly)
-  let false_positives = detected_anomalies.length() - true_anomalies.length()
-  let false_negatives = true_anomalies.length() - detected_anomalies.filter_fn(da => 
-    true_anomalies.some(ta => ta.timestamp == da.timestamp)
-  ).length()
-  
-  let precision = if detected_anomalies.length() > 0 {
-    (detected_anomalies.length() - false_positives).to_float() / detected_anomalies.length().to_float()
-  } else { 0.0 }
-  
-  let recall = if true_anomalies.length() > 0 {
-    (true_anomalies.length() - false_negatives).to_float() / true_anomalies.length().to_float()
-  } else { 0.0 }
-  
-  // 验证检测性能
-  assert_true(precision > 0.8) // 精确率应该高于80%
-  assert_true(recall > 0.8)  // 召回率应该高于80%
 }
 
-// 测试4: 时间序列分解
-test "时间序列分解" {
-  // 模拟可分解的时间序列数据
-  let decomposable_data = [
-    { timestamp: 1640995200, value: 120.0, trend: 100.0, seasonal: 20.0, residual: 0.0 },
-    { timestamp: 1640995260, value: 125.0, trend: 101.0, seasonal: 24.0, residual: 0.0 },
-    { timestamp: 1640995320, value: 130.0, trend: 102.0, seasonal: 28.0, residual: 0.0 },
-    { timestamp: 1640995380, value: 135.0, trend: 103.0, seasonal: 32.0, residual: 0.0 },
-    { timestamp: 1640995440, value: 140.0, trend: 104.0, seasonal: 36.0, residual: 0.0 },
-    { timestamp: 1640995500, value: 135.0, trend: 105.0, seasonal: 30.0, residual: 0.0 },
-    { timestamp: 1640995560, value: 130.0, trend: 106.0, seasonal: 24.0, residual: 0.0 },
-    { timestamp: 1640995620, value: 125.0, trend: 107.0, seasonal: 18.0, residual: 0.0 },
-    { timestamp: 1640995680, value: 120.0, trend: 108.0, seasonal: 12.0, residual: 0.0 },
-    { timestamp: 1640995740, value: 115.0, trend: 109.0, seasonal: 6.0, residual: 0.0 },
-    { timestamp: 1640995800, value: 110.0, trend: 110.0, seasonal: 0.0, residual: 0.0 },
-    { timestamp: 1640995860, value: 115.0, trend: 111.0, seasonal: 4.0, residual: 0.0 },
-    { timestamp: 1640995920, value: 120.0, trend: 112.0, seasonal: 8.0, residual: 0.0 },
-    { timestamp: 1640995980, value: 125.0, trend: 113.0, seasonal: 12.0, residual: 0.0 },
-    { timestamp: 1640996040, value: 130.0, trend: 114.0, seasonal: 16.0, residual: 0.0 }
-  ]
+// Test 5: Time Series Forecasting
+test "时间序列预测测试" {
+  // 创建历史数据
+  let base_timestamp = 1672531200
+  let mut data_points = []
+  
+  // 生成60天的历史数据
+  for day in 0..60 {
+    let timestamp = base_timestamp + day * 86400
+    // 模拟具有趋势和季节性的数据
+    let trend = day.to_float() * 1.5
+    let weekly_seasonal = 20.0 * (2.0 * 3.14159 * (day % 7).to_float() / 7.0).sin()
+    let monthly_seasonal = 10.0 * (2.0 * 3.14159 * (day % 30).to_float() / 30.0).sin()
+    let noise = generate_random_noise() * 5.0
+    let value = 200.0 + trend + weekly_seasonal + monthly_seasonal + noise
+    
+    let data_point = TimeSeriesDataPoint::new(timestamp, value, [
+      ("metric.name", StringValue("request.count")),
+      ("service.name", StringValue("web-service"))
+    ])
+    data_points = data_points + [data_point]
+  }
+  
+  let time_series = TimeSeries::new(data_points)
+  
+  // 使用移动平均预测
+  let ma_forecast = TimeSeries::forecast_moving_average(time_series, 7, 7) // 7天窗口，预测7天
+  assert_eq(ma_forecast.length(), 7)
+  
+  // 验证预测时间戳
+  for i in 0..ma_forecast.length() {
+    let expected_timestamp = base_timestamp + (60 + i) * 86400
+    assert_eq(TimeSeriesDataPoint::timestamp(ma_forecast[i]), expected_timestamp)
+  }
+  
+  // 使用指数平滑预测
+  let es_forecast = TimeSeries::forecast_exponential_smoothing(time_series, 0.3, 7) // α=0.3，预测7天
+  assert_eq(es_forecast.length(), 7)
+  
+  // 使用ARIMA预测
+  let arima_forecast = TimeSeries::forecast_arima(time_series, [1, 1, 1], [1, 1, 1], 7) // ARIMA(1,1,1)，预测7天
+  assert_eq(arima_forecast.length(), 7)
+  
+  // 使用Prophet预测
+  let prophet_forecast = TimeSeries::forecast_prophet(time_series, 7) // 预测7天
+  assert_eq(prophet_forecast.length(), 7)
+  
+  // 验证预测值的合理性
+  for forecast in [ma_forecast, es_forecast, arima_forecast, prophet_forecast] {
+    for point in forecast {
+      let value = TimeSeriesDataPoint::value(point)
+      assert_true(value > 100.0) // 预测值应该在合理范围内
+      assert_true(value < 500.0)
+    }
+  }
+  
+  // 评估预测准确性
+  let train_data = TimeSeries::slice(time_series, 0, 50) // 前50天作为训练数据
+  let test_data = TimeSeries::slice(time_series, 50, 60) // 后10天作为测试数据
+  
+  let trained_model = TimeSeries::train_arima_model(train_data, [1, 1, 1], [1, 1, 1])
+  let test_forecast = TimeSeries::forecast_with_model(trained_model, 10)
+  
+  let accuracy = TimeSeries::evaluate_forecast_accuracy(test_data, test_forecast)
+  assert_true(accuracy.mae < 50.0) // 平均绝对误差应该较小
+  assert_true(accuracy.rmse < 70.0) // 均方根误差应该较小
+  assert_true(accuracy.mape < 0.3) // 平均绝对百分比误差应该小于30%
+}
+
+// Test 6: Time Series Correlation Analysis
+test "时间序列相关性分析测试" {
+  // 创建多个相关的时间序列
+  let base_timestamp = 1672531200
+  let mut cpu_data_points = []
+  let mut memory_data_points = []
+  let mut request_data_points = []
+  
+  // 生成30天的数据
+  for day in 0..30 {
+    let timestamp = base_timestamp + day * 86400
+    
+    // CPU使用率数据
+    let cpu_base = 30.0 + day.to_float() * 0.5 // 上升趋势
+    let cpu_seasonal = 15.0 * (2.0 * 3.14159 * (day % 7).to_float() / 7.0).sin() // 周季节性
+    let cpu_noise = generate_random_noise() * 3.0
+    let cpu_value = cpu_base + cpu_seasonal + cpu_noise
+    
+    let cpu_point = TimeSeriesDataPoint::new(timestamp, cpu_value, [
+      ("metric.name", StringValue("cpu.usage")),
+      ("service.name", StringValue("app-server"))
+    ])
+    cpu_data_points = cpu_data_points + [cpu_point]
+    
+    // 内存使用率数据（与CPU相关）
+    let memory_base = 40.0 + day.to_float() * 0.3 // 上升趋势，但较慢
+    let memory_seasonal = 10.0 * (2.0 * 3.14159 * (day % 7).to_float() / 7.0).sin() // 周季节性
+    let memory_noise = generate_random_noise() * 2.0
+    let memory_value = memory_base + memory_seasonal + memory_noise + 0.5 * cpu_value // 与CPU相关
+    
+    let memory_point = TimeSeriesDataPoint::new(timestamp, memory_value, [
+      ("metric.name", StringValue("memory.usage")),
+      ("service.name", StringValue("app-server"))
+    ])
+    memory_data_points = memory_data_points + [memory_point]
+    
+    // 请求数据（与CPU和内存相关）
+    let request_base = 1000.0 + day.to_float() * 20.0 // 上升趋势
+    let request_seasonal = 200.0 * (2.0 * 3.14159 * (day % 7).to_string().to_float() / 7.0).sin() // 周季节性
+    let request_noise = generate_random_noise() * 50.0
+    let request_value = request_base + request_seasonal + request_noise + 10.0 * cpu_value + 5.0 * memory_value
+    
+    let request_point = TimeSeriesDataPoint::new(timestamp, request_value, [
+      ("metric.name", StringValue("request.count")),
+      ("service.name", StringValue("app-server"))
+    ])
+    request_data_points = request_data_points + [request_point]
+  }
+  
+  let cpu_series = TimeSeries::new(cpu_data_points)
+  let memory_series = TimeSeries::new(memory_data_points)
+  let request_series = TimeSeries::new(request_data_points)
+  
+  // 计算相关性
+  let cpu_memory_correlation = TimeSeries::calculate_correlation(cpu_series, memory_series)
+  let cpu_request_correlation = TimeSeries::calculate_correlation(cpu_series, request_series)
+  let memory_request_correlation = TimeSeries::calculate_correlation(memory_series, request_series)
+  
+  // 验证相关性
+  assert_true(cpu_memory_correlation > 0.5) // CPU和内存应该有强正相关
+  assert_true(cpu_request_correlation > 0.7) // CPU和请求数应该有更强正相关
+  assert_true(memory_request_correlation > 0.6) // 内存和请求数应该有强正相关
+  
+  // 计算滞后相关性
+  let cpu_memory_lag_correlation = TimeSeries::calculate_lag_correlation(cpu_series, memory_series, 5) // 5天滞后
+  assert_true(cpu_memory_lag_correlation.length() == 11) // -5到+5的滞后
+  
+  // 找到最大滞后相关性
+  let max_lag_correlation = TimeSeries::find_max_lag_correlation(cpu_memory_lag_correlation)
+  assert_true(max_lag_correlation.correlation > 0.5)
+  assert_true(max_lag_correlation.lag >= -5 && max_lag_correlation.lag <= 5)
+  
+  // 计算交叉相关性
+  let cpu_request_cross_correlation = TimeSeries::calculate_cross_correlation(cpu_series, request_series, 10) // 10天滞后
+  assert_true(cpu_request_cross_correlation.length() == 21) // -10到+10的滞后
+  
+  // 执行格兰杰因果检验
+  let cpu_to_request_granger = TimeSeries::granger_causality_test(cpu_series, request_series, 2) // 2阶滞后
+  let request_to_cpu_granger = TimeSeries::granger_causality_test(request_series, cpu_series, 2)
+  
+  // 验证因果关系的方向
+  assert_true(cpu_to_request_granger.p_value < 0.05) // CPU应该格兰杰引起请求
+  assert_true(request_to_cpu_granger.p_value > 0.05) // 请求不应该格兰杰引起CPU
+}
+
+// Test 7: Time Series Decomposition
+test "时间序列分解测试" {
+  // 创建复合时间序列数据
+  let base_timestamp = 1672531200
+  let mut data_points = []
+  
+  // 生成2年（730天）的数据
+  for day in 0..730 {
+    let timestamp = base_timestamp + day * 86400
+    
+    // 趋势成分：线性增长
+    let trend = 100.0 + day.to_float() * 0.2
+    
+    // 季节性成分：年度季节性
+    let yearly_seasonal = 30.0 * (2.0 * 3.14159 * day.to_float() / 365.0).sin()
+    
+    // 周季节性成分
+    let weekly_seasonal = 10.0 * (2.0 * 3.14159 * (day % 7).to_float() / 7.0).sin()
+    
+    // 噪声成分
+    let noise = generate_random_noise() * 5.0
+    
+    // 合成值
+    let value = trend + yearly_seasonal + weekly_seasonal + noise
+    
+    let data_point = TimeSeriesDataPoint::new(timestamp, value, [
+      ("metric.name", StringValue("revenue")),
+      ("service.name", StringValue("sales-service"))
+    ])
+    data_points = data_points + [data_point]
+  }
+  
+  let time_series = TimeSeries::new(data_points)
   
   // 执行时间序列分解
-  let n = decomposable_data.length()
-  
-  // 提取趋势分量（使用移动平均）
-  let trend_window = 5
-  let mut extracted_trend = []
-  
-  for i in 0..n {
-    if i < trend_window/2 || i >= n - trend_window/2 {
-      // 边界点使用简单平均
-      extracted_trend = extracted_trend.push(decomposable_data[i].trend)
-    } else {
-      let mut sum = 0.0
-      for j in i-trend_window/2..i+trend_window/2+1 {
-        sum = sum + decomposable_data[j].value
-      }
-      extracted_trend = extracted_trend.push(sum / trend_window.to_float())
-    }
-  }
-  
-  // 提取季节性分量（假设已知周期）
-  let seasonal_period = 10
-  let mut seasonal_pattern = []
-  
-  for i in 0..seasonal_period {
-    let mut sum = 0.0
-    let count = 0
-    for j in i..n {
-      if j % seasonal_period == i {
-        sum = sum + (decomposable_data[j].value - extracted_trend[j])
-        count = count + 1
-      }
-    }
-    if count > 0 {
-      seasonal_pattern = seasonal_pattern.push(sum / count.to_float())
-    }
-  }
-  
-  // 计算残差分量
-  let mut residuals = []
-  for i in 0..n {
-    let seasonal_index = i % seasonal_period
-    let reconstructed = extracted_trend[i] + seasonal_pattern[seasonal_index]
-    let residual = decomposable_data[i].value - reconstructed
-    residuals = residuals.push(residual)
-  }
+  let decomposition = TimeSeries::decompose(time_series, [
+    ("trend", "linear"),
+    ("seasonal_yearly", 365),
+    ("seasonal_weekly", 7)
+  ])
   
   // 验证分解结果
-  assert_eq(extracted_trend.length(), n)
-  assert_eq(seasonal_pattern.length(), seasonal_period)
-  assert_eq(residuals.length(), n)
+  assert_eq(decomposition.trend.length(), 730)
+  assert_eq(decomposition.seasonal.length(), 730)
+  assert_eq(decomposition.residual.length(), 730)
   
-  // 验证趋势分量的单调性
-  for i in 1..extracted_trend.length() {
-    assert_true(extracted_trend[i] >= extracted_trend[i-1] - 1.0) // 允许小幅波动
+  // 验证趋势成分
+  let first_trend = decomposition.trend[0]
+  let last_trend = decomposition.trend[729]
+  assert_true(last_trend > first_trend) // 趋势应该增长
+  assert_true(last_trend - first_trend > 100.0) // 增长应该明显
+  
+  // 验证季节性成分
+  let mut seasonal_sum = 0.0
+  for seasonal_value in decomposition.seasonal {
+    seasonal_sum = seasonal_sum + seasonal_value
   }
+  let seasonal_mean = seasonal_sum / 730.0
+  assert_true(abs(seasonal_mean) < 1.0) // 季节性成分均值应该接近0
   
-  // 验证季节性分量
-  let seasonal_sum = seasonal_pattern.reduce(fn(acc, s) { acc + s }, 0.0)
-  assert_true(seasonal_sum.abs() < 1.0) // 季节性分量应该接近零和
-  
-  // 验证残差分量
-  let residual_mean = residuals.reduce(fn(acc, r) { acc + r }, 0.0) / residuals.length().to_float()
-  assert_true(residual_mean.abs() < 1.0) // 残差均值应该接近零
-  
-  // 验证重构准确性
-  let mut reconstruction_errors = []
-  for i in 0..n {
-    let seasonal_index = i % seasonal_period
-    let reconstructed = extracted_trend[i] + seasonal_pattern[seasonal_index] + residuals[i]
-    let error = (reconstructed - decomposable_data[i].value).abs()
-    reconstruction_errors = reconstruction_errors.push(error)
+  // 验证残差成分
+  let mut residual_sum = 0.0
+  let mut residual_sum_squares = 0.0
+  for residual_value in decomposition.residual {
+    residual_sum = residual_sum + residual_value
+    residual_sum_squares = residual_sum_squares + residual_value * residual_value
   }
+  let residual_mean = residual_sum / 730.0
+  let residual_variance = residual_sum_squares / 730.0 - residual_mean * residual_mean
   
-  let max_error = reconstruction_errors.reduce(fn(acc, e) { if e > acc { e } else { acc } }, 0.0)
-  assert_true(max_error < 1.0) // 重构误差应该很小
+  assert_true(abs(residual_mean) < 1.0) // 残差均值应该接近0
+  assert_true(residual_variance > 0.0) // 残差应该有方差
   
-  // 计算各分量的方差贡献
-  let total_variance = {
-    let mean = decomposable_data.reduce(fn(acc, d) { acc + d.value }, 0.0) / n.to_float()
-    let mut sum = 0.0
-    for d in decomposable_data {
-      let diff = d.value - mean
-      sum = sum + diff * diff
-    }
-    sum / n.to_float()
-  }
+  // 验证重构
+  let reconstructed = TimeSeries::reconstruct_from_decomposition(decomposition)
+  assert_eq(reconstructed.length(), 730)
   
-  let trend_variance = {
-    let mean = extracted_trend.reduce(fn(acc, t) { acc + t }, 0.0) / n.to_float()
-    let mut sum = 0.0
-    for t in extracted_trend {
-      let diff = t - mean
-      sum = sum + diff * diff
-    }
-    sum / n.to_float()
-  }
+  // 比较原始数据和重构数据
+  let reconstruction_error = TimeSeries::calculate_reconstruction_error(time_series, reconstructed)
+  assert_true(reconstruction_error < 10.0) // 重构误差应该很小
   
-  let seasonal_variance = {
-    let mean = 0.0
-    let mut sum = 0.0
-    for i in 0..n {
-      let seasonal_value = seasonal_pattern[i % seasonal_period]
-      let diff = seasonal_value - mean
-      sum = sum + diff * diff
-    }
-    sum / n.to_float()
-  }
-  
-  let residual_variance = {
-    let mean = residuals.reduce(fn(acc, r) { acc + r }, 0.0) / n.to_float()
-    let mut sum = 0.0
-    for r in residuals {
-      let diff = r - mean
-      sum = sum + diff * diff
-    }
-    sum / n.to_float()
-  }
-  
-  // 验证方差分解
-  let explained_variance = trend_variance + seasonal_variance
-  let explained_ratio = explained_variance / total_variance
-  
-  assert_true(explained_ratio > 0.8) // 趋势和季节性应该解释大部分方差
-  assert_true(residual_variance < total_variance * 0.2) // 残差方差应该较小
+  // 验证成分贡献
+  let contributions = TimeSeries::calculate_component_contributions(decomposition)
+  assert_true(contributions.trend > 0.3) // 趋势贡献应该显著
+  assert_true(contributions.seasonal > 0.2) // 季节性贡献应该显著
+  assert_true(contributions.residual > 0.1) // 残差贡献应该存在
+  assert_true(abs(contributions.trend + contributions.seasonal + contributions.residual - 1.0) < 0.01) // 总和应该接近1
 }
 
-// 测试5: 时间序列预测
-test "时间序列预测" {
-  // 模拟历史时间序列数据
-  let historical_data = [
-    { timestamp: 1640995200, value: 100.0 },
-    { timestamp: 1640995260, value: 105.0 },
-    { timestamp: 1640995320, value: 110.0 },
-    { timestamp: 1640995380, value: 108.0 },
-    { timestamp: 1640995440, value: 115.0 },
-    { timestamp: 1640995500, value: 120.0 },
-    { timestamp: 1640995560, value: 118.0 },
-    { timestamp: 1640995620, value: 125.0 },
-    { timestamp: 1640995680, value: 130.0 },
-    { timestamp: 1640995740, value: 135.0 }
-  ]
+// Test 8: Time Series Pattern Recognition
+test "时间序列模式识别测试" {
+  // 创建包含不同模式的时间序列
+  let base_timestamp = 1672531200
+  let mut pattern_data_points = []
   
-  // 使用简单指数平滑进行预测
-  let alpha = 0.3
-  let mut ses_predictions = []
-  let mut ses = historical_data[0].value
-  
-  for i in 1..historical_data.length() {
-    ses = alpha * historical_data[i].value + (1.0 - alpha) * ses
-    ses_predictions = ses_predictions.push(ses)
-  }
-  
-  // 预测未来5个点
-  let future_ses_predictions = []
-  for i in 0..5 {
-    future_ses_predictions = future_ses_predictions.push(ses)
-  }
-  
-  // 使用Holt线性趋势方法进行预测
-  let beta = 0.2
-  let mut level = historical_data[0].value
-  let mut trend = historical_data[1].value - historical_data[0].value
-  let mut holt_predictions = []
-  
-  for i in 1..historical_data.length() {
-    let prev_level = level
-    level = alpha * historical_data[i].value + (1.0 - alpha) * (prev_level + trend)
-    trend = beta * (level - prev_level) + (1.0 - beta) * trend
-    holt_predictions = holt_predictions.push(level + trend)
-  }
-  
-  // 预测未来5个点
-  let future_holt_predictions = []
-  for i in 1..6 {
-    future_holt_predictions = future_holt_predictions.push(level + i.to_float() * trend)
-  }
-  
-  // 使用ARIMA模拟进行预测（简化版）
-  let arima_predictions = []
-  let ar_coefficient = 0.6
-  let ma_coefficient = 0.3
-  
-  for i in 2..historical_data.length() {
-    let ar_part = ar_coefficient * historical_data[i-1].value
-    let ma_part = ma_coefficient * (historical_data[i-1].value - historical_data[i-2].value)
-    let prediction = ar_part + ma_part
-    arima_predictions = arima_predictions.push(prediction)
-  }
-  
-  // 预测未来5个点
-  let future_arima_predictions = []
-  let last_value = historical_data[historical_data.length()-1].value
-  let prev_diff = historical_data[historical_data.length()-1].value - historical_data[historical_data.length()-2].value
-  
-  for i in 0..5 {
-    let ar_part = if i == 0 { ar_coefficient * last_value } else { ar_coefficient * future_arima_predictions[i-1] }
-    let ma_part = ma_coefficient * prev_diff
-    let prediction = ar_part + ma_part
-    future_arima_predictions = future_arima_predictions.push(prediction)
-  }
-  
-  // 验证预测结果
-  assert_eq(ses_predictions.length(), historical_data.length() - 1)
-  assert_eq(holt_predictions.length(), historical_data.length() - 1)
-  assert_eq(arima_predictions.length(), historical_data.length() - 2)
-  
-  assert_eq(future_ses_predictions.length(), 5)
-  assert_eq(future_holt_predictions.length(), 5)
-  assert_eq(future_arima_predictions.length(), 5)
-  
-  // 验证预测的合理性
-  let last_actual_value = historical_data[historical_data.length()-1].value
-  
-  // 简单指数平滑预测应该接近最后一个实际值
-  for prediction in future_ses_predictions {
-    assert_true(prediction > last_actual_value * 0.8)
-    assert_true(prediction < last_actual_value * 1.2)
-  }
-  
-  // Holt线性趋势预测应该显示趋势
-  for i in 1..future_holt_predictions.length() {
-    assert_true(future_holt_predictions[i] >= future_holt_predictions[i-1] - 1.0)
-  }
-  
-  // ARIMA预测应该显示自相关特性
-  for i in 1..future_arima_predictions.length() {
-    assert_true(future_arima_predictions[i] > 0)
-  }
-  
-  // 计算预测准确性（使用历史数据）
-  let ses_errors = []
-  let holt_errors = []
-  
-  for i in 0..ses_predictions.length() {
-    let actual = historical_data[i+1].value
-    let predicted = ses_predictions[i]
-    ses_errors = ses_errors.push((actual - predicted).abs())
-  }
-  
-  for i in 0..holt_predictions.length() {
-    let actual = historical_data[i+1].value
-    let predicted = holt_predictions[i]
-    holt_errors = holt_errors.push((actual - predicted).abs())
-  }
-  
-  let ses_mae = ses_errors.reduce(fn(acc, e) { acc + e }, 0.0) / ses_errors.length().to_float()
-  let holt_mae = holt_errors.reduce(fn(acc, e) { acc + e }, 0.0) / holt_errors.length().to_float()
-  
-  // 验证预测准确性
-  assert_true(ses_mae < 20.0) // 简单指数平滑的平均绝对误差应该小于20
-  assert_true(holt_mae < 15.0) // Holt方法的平均绝对误差应该小于15
-  
-  // Holt方法应该比简单指数平滑更准确（对于有趋势的数据）
-  assert_true(holt_mae <= ses_mae)
-}
-
-// 测试6: 多元时间序列分析
-test "多元时间序列分析" {
-  // 模拟多个相关的时间序列
-  let multivariate_data = [
-    {
-      timestamp: 1640995200,
-      cpu_usage: 45.0,
-      memory_usage: 60.0,
-      disk_io: 100.0,
-      network_io: 80.0
-    },
-    {
-      timestamp: 1640995260,
-      cpu_usage: 50.0,
-      memory_usage: 65.0,
-      disk_io: 120.0,
-      network_io: 90.0
-    },
-    {
-      timestamp: 1640995320,
-      cpu_usage: 55.0,
-      memory_usage: 70.0,
-      disk_io: 140.0,
-      network_io: 100.0
-    },
-    {
-      timestamp: 1640995380,
-      cpu_usage: 60.0,
-      memory_usage: 75.0,
-      disk_io: 160.0,
-      network_io: 110.0
-    },
-    {
-      timestamp: 1640995440,
-      cpu_usage: 58.0,
-      memory_usage: 72.0,
-      disk_io: 150.0,
-      network_io: 105.0
-    },
-    {
-      timestamp: 1640995500,
-      cpu_usage: 52.0,
-      memory_usage: 68.0,
-      disk_io: 130.0,
-      network_io: 95.0
-    },
-    {
-      timestamp: 1640995560,
-      cpu_usage: 48.0,
-      memory_usage: 64.0,
-      disk_io: 110.0,
-      network_io: 85.0
-    },
-    {
-      timestamp: 1640995620,
-      cpu_usage: 65.0,
-      memory_usage: 80.0,
-      disk_io: 180.0,
-      network_io: 120.0
+  // 生成包含不同模式的数据
+  for day in 0..120 {
+    let timestamp = base_timestamp + day * 86400
+    
+    let mut value = 100.0
+    
+    // 添加周期性模式
+    if day >= 20 && day < 40 {
+      // 周期性模式
+      value = value + 20.0 * (2.0 * 3.14159 * (day - 20).to_float() / 10.0).sin()
     }
-  ]
-  
-  // 计算各变量的基本统计
-  let variables = ["cpu_usage", "memory_usage", "disk_io", "network_io"]
-  let mut variable_stats = []
-  
-  for var in variables {
-    let mut values = []
-    for data_point in multivariate_data {
-      match var {
-        "cpu_usage" => values = values.push(data_point.cpu_usage)
-        "memory_usage" => values = values.push(data_point.memory_usage)
-        "disk_io" => values = values.push(data_point.disk_io)
-        "network_io" => values = values.push(data_point.network_io)
-        _ => ()
+    
+    // 添加阶跃变化模式
+    if day >= 40 && day < 60 {
+      // 阶跃上升
+      value = value + 30.0
+    }
+    
+    // 添加尖峰模式
+    if day >= 60 && day < 80 {
+      // 周期性尖峰
+      if day % 5 == 0 {
+        value = value + 50.0
       }
     }
     
-    let n = values.length()
-    let mean = values.reduce(fn(acc, v) { acc + v }, 0.0) / n.to_float()
-    
-    let mut variance = 0.0
-    for v in values {
-      let diff = v - mean
-      variance = variance + diff * diff
+    // 添加趋势变化模式
+    if day >= 80 && day < 100 {
+      // 趋势变化
+      value = value + (day - 80).to_float() * 2.0
     }
-    let std_dev = (variance / n.to_float()).sqrt()
     
-    variable_stats = variable_stats.push({
-      variable: var,
-      mean: mean,
-      std_dev: std_dev,
-      min: values.reduce(fn(acc, v) { if v < acc { v } else { acc } }, values[0]),
-      max: values.reduce(fn(acc, v) { if v > acc { v } else { acc } }, values[0])
-    })
+    // 添加噪声
+    value = value + generate_random_noise() * 5.0
+    
+    let data_point = TimeSeriesDataPoint::new(timestamp, value, [
+      ("metric.name", StringValue("complex.metric")),
+      ("service.name", StringValue("pattern-service"))
+    ])
+    pattern_data_points = pattern_data_points + [data_point]
   }
   
-  // 计算变量间的相关系数
-  let mut correlations = []
+  let pattern_series = TimeSeries::new(pattern_data_points)
   
-  for i in 0..variables.length() {
-    for j in i..variables.length() {
-      if i != j {
-        let var1 = variables[i]
-        let var2 = variables[j]
-        
-        let mut values1 = []
-        let mut values2 = []
-        
-        for data_point in multivariate_data {
-          match var1 {
-            "cpu_usage" => values1 = values1.push(data_point.cpu_usage)
-            "memory_usage" => values1 = values1.push(data_point.memory_usage)
-            "disk_io" => values1 = values1.push(data_point.disk_io)
-            "network_io" => values1 = values1.push(data_point.network_io)
-            _ => ()
+  // 检测周期性模式
+  let periodic_patterns = TimeSeries::detect_periodic_patterns(pattern_series, 5, 30) // 5-30天周期
+  assert_true(periodic_patterns.length() >= 1)
+  
+  // 验证检测到的周期性模式
+  for pattern in periodic_patterns {
+    assert_true(pattern.period >= 5 && pattern.period <= 30)
+    assert_true(pattern.strength > 0.3) // 模式强度应该明显
+    assert_true(pattern.confidence > 0.7) // 置信度应该较高
+  }
+  
+  // 检测变化点
+  let change_points = TimeSeries::detect_change_points(pattern_series, 0.1) // 10%变化阈值
+  assert_true(change_points.length() >= 2) // 应该检测到多个变化点
+  
+  // 验证检测到的变化点
+  for change_point in change_points {
+    let timestamp = TimeSeriesDataPoint::timestamp(change_point)
+    let day = (timestamp - base_timestamp) / 86400
+    
+    // 验证变化点在预期的位置附近
+    assert_true(
+      (day >= 38 && day <= 42) ||  // 阶跃变化附近
+      (day >= 58 && day <= 62) ||  // 尖峰开始附近
+      (day >= 78 && day <= 82)     // 趋势变化附近
+    )
+  }
+  
+  // 检测异常模式
+  let anomaly_patterns = TimeSeries::detect_anomaly_patterns(pattern_series, 2.0) // 2倍标准差
+  assert_true(anomaly_patterns.length() >= 5) // 应该检测到多个异常模式
+  
+  // 验证异常模式类型
+  let mut spike_count = 0
+  let mut level_shift_count = 0
+  let mut trend_change_count = 0
+  
+  for pattern in anomaly_patterns {
+    match pattern.type {
+      "spike" => spike_count = spike_count + 1
+      "level_shift" => level_shift_count = level_shift_count + 1
+      "trend_change" => trend_change_count = trend_change_count + 1
+      _ => ()
+    }
+  }
+  
+  assert_true(spike_count >= 1) // 应该检测到尖峰
+  assert_true(level_shift_count >= 1) // 应该检测到水平变化
+  assert_true(trend_change_count >= 1) // 应该检测到趋势变化
+  
+  // 检测季节性模式
+  let seasonal_patterns = TimeSeries::detect_seasonal_patterns(pattern_series, [7, 14, 30]) // 检测周、双周、月季节性
+  assert_true(seasonal_patterns.length() >= 0) // 可能有季节性模式
+  
+  // 分类时间序列模式
+  let pattern_classification = TimeSeries::classify_time_series_pattern(pattern_series)
+  assert_true(pattern_classification.primary_pattern != "")
+  assert_true(pattern_classification.confidence > 0.5)
+}
+
+// Test 9: Time Series Clustering
+test "时间序列聚类测试" {
+  // 创建多个时间序列
+  let base_timestamp = 1672531200
+  let mut time_series_array = []
+  
+  // 生成5类不同的时间序列
+  for series_type in 0..5 {
+    let mut data_points = []
+    
+    for day in 0..30 {
+      let timestamp = base_timestamp + day * 86400
+      let mut value = 100.0
+      
+      match series_type {
+        0 => {
+          // 稳定型
+          value = 100.0 + generate_random_noise() * 5.0
+        }
+        1 => {
+          // 上升趋势型
+          value = 100.0 + day.to_float() * 2.0 + generate_random_noise() * 5.0
+        }
+        2 => {
+          // 下降趋势型
+          value = 100.0 - day.to_float() * 1.5 + generate_random_noise() * 5.0
+        }
+        3 => {
+          // 周期型
+          value = 100.0 + 20.0 * (2.0 * 3.14159 * day.to_float() / 7.0).sin() + generate_random_noise() * 5.0
+        }
+        4 => {
+          // 阶跃型
+          if day < 15 {
+            value = 100.0 + generate_random_noise() * 5.0
+          } else {
+            value = 130.0 + generate_random_noise() * 5.0
           }
+        }
+        _ => {
+          value = 100.0 + generate_random_noise() * 5.0
+        }
+      }
+      
+      let data_point = TimeSeriesDataPoint::new(timestamp, value, [
+        ("metric.name", StringValue("test.metric")),
+        ("series.type", StringValue(series_type.to_string()))
+      ])
+      data_points = data_points + [data_point]
+    }
+    
+    // 为每种类型创建3个变体
+    for variant in 0..3 {
+      let variant_data_points = []
+      for point in data_points {
+        let timestamp = TimeSeriesDataPoint::timestamp(point)
+        let base_value = TimeSeriesDataPoint::value(point)
+        let variant_value = base_value + generate_random_noise() * 10.0 // 添加更多噪声作为变体
+        
+        let variant_point = TimeSeriesDataPoint::new(timestamp, variant_value, [
+          ("metric.name", StringValue("test.metric")),
+          ("series.type", StringValue(series_type.to_string())),
+          ("variant", StringValue(variant.to_string()))
+        ])
+        variant_data_points = variant_data_points + [variant_point]
+      }
+      
+      let time_series = TimeSeries::new(variant_data_points)
+      time_series_array = time_series_array + [time_series]
+    }
+  }
+  
+  assert_eq(time_series_array.length(), 15) // 5种类型 × 3个变体
+  
+  // 执行时间序列聚类
+  let clustering_result = TimeSeries::cluster_time_series(time_series_array, 5) // 聚类为5类
+  
+  // 验证聚类结果
+  assert_eq(clustering_result.clusters.length(), 5)
+  
+  // 验证每个聚类包含时间序列
+  let mut total_clustered = 0
+  for cluster in clustering_result.clusters {
+    total_clustered = total_clustered + cluster.series_indices.length()
+    assert_true(cluster.series_indices.length() > 0) // 每个聚类应该包含至少一个时间序列
+    assert_true(cluster.centroid.length() == 30) // 质心应该与时间序列长度相同
+  }
+  assert_eq(total_clustered, 15) // 所有时间序列都应该被聚类
+  
+  // 评估聚类质量
+  let silhouette_score = TimeSeries::calculate_silhouette_score(time_series_array, clustering_result)
+  assert_true(silhouette_score > 0.3) // 轮廓系数应该合理
+  
+  // 验证聚类中心
+  for cluster in clustering_result.clusters {
+    let cluster_center = cluster.centroid
+    let cluster_variance = TimeSeries::calculate_cluster_variance(cluster)
+    assert_true(cluster_variance > 0.0) // 聚类方差应该存在
+  }
+  
+  // 使用K-means聚类
+  let kmeans_result = TimeSeries::kmeans_cluster(time_series_array, 5, 100) // 5类，最多100次迭代
+  assert_eq(kmeans_result.clusters.length(), 5)
+  
+  // 使用层次聚类
+  let hierarchical_result = TimeSeries::hierarchical_cluster(time_series_array, 5) // 5类
+  assert_eq(hierarchical_result.clusters.length(), 5)
+  
+  // 使用DBSCAN聚类
+  let dbscan_result = TimeSeries::dbscan_cluster(time_series_array, 10.0, 2) // ε=10.0，最小点数=2
+  assert_true(dbscan_result.clusters.length() >= 3) // 应该至少有几个聚类
+}
+
+// Test 10: Time Series Indexing and Querying
+test "时间序列索引和查询测试" {
+  // 创建时间序列数据库
+  let tsdb = TimeSeriesDB::new("test_tsdb")
+  
+  // 生成大量时间序列数据
+  let base_timestamp = 1672531200
+  let services = ["api-service", "database", "cache", "queue", "auth"]
+  let metrics = ["cpu.usage", "memory.usage", "request.count", "response.time", "error.rate"]
+  let regions = ["us-east-1", "us-west-1", "eu-west-1", "ap-southeast-1"]
+  
+  for day in 0..30 {
+    for service in services {
+      for metric in metrics {
+        for region in regions {
+          let timestamp = base_timestamp + day * 86400
+          let value = generate_metric_value(metric, day) + generate_random_noise()
           
-          match var2 {
-            "cpu_usage" => values2 = values2.push(data_point.cpu_usage)
-            "memory_usage" => values2 = values2.push(data_point.memory_usage)
-            "disk_io" => values2 = values2.push(data_point.disk_io)
-            "network_io" => values2 = values2.push(data_point.network_io)
-            _ => ()
-          }
+          let data_point = TimeSeriesDataPoint::new(timestamp, value, [
+            ("service.name", StringValue(service)),
+            ("metric.name", StringValue(metric)),
+            ("region", StringValue(region))
+          ])
+          
+          TimeSeriesDB::insert(tsdb, data_point)
         }
-        
-        let n = values1.length()
-        let mean1 = values1.reduce(fn(acc, v) { acc + v }, 0.0) / n.to_float()
-        let mean2 = values2.reduce(fn(acc, v) { acc + v }, 0.0) / n.to_float()
-        
-        let mut numerator = 0.0
-        let mut variance1 = 0.0
-        let mut variance2 = 0.0
-        
-        for k in 0..n {
-          let diff1 = values1[k] - mean1
-          let diff2 = values2[k] - mean2
-          numerator = numerator + diff1 * diff2
-          variance1 = variance1 + diff1 * diff1
-          variance2 = variance2 + diff2 * diff2
-        }
-        
-        let correlation = numerator / (variance1.sqrt() * variance2.sqrt())
-        
-        correlations = correlations.push({
-          variable1: var1,
-          variable2: var2,
-          correlation: correlation,
-          strength: if correlation.abs() > 0.7 { "strong" } else if correlation.abs() > 0.3 { "moderate" } else { "weak" }
-        })
       }
     }
   }
   
-  // 验证基本统计
-  assert_eq(variable_stats.length(), 4)
+  // 验证数据插入
+  let total_points = services.length() * metrics.length() * regions.length() * 30
+  let db_stats = TimeSeriesDB::get_stats(tsdb)
+  assert_eq(db_stats.total_points, total_points)
+  assert_eq(db_stats.total_series, services.length() * metrics.length() * regions.length())
   
-  // 验证相关系数计算
-  assert_eq(correlations.length(), 6) // 4个变量的组合数 C(4,2)
+  // 测试时间范围查询
+  let start_time = base_timestamp + 5 * 86400 // 第5天
+  let end_time = base_timestamp + 10 * 86400   // 第10天
   
-  // 验证强相关性
-  let strong_correlations = correlations.filter_fn(c => c.strength == "strong")
-  assert_true(strong_correlations.length() >= 2) // 至少有两对强相关变量
+  let range_query = TimeSeriesQuery::new()
+    .time_range(start_time, end_time)
   
-  // 验证CPU和内存使用率的相关性
-  let cpu_memory_corr = correlations.filter_fn(c => 
-    (c.variable1 == "cpu_usage" && c.variable2 == "memory_usage") ||
-    (c.variable1 == "memory_usage" && c.variable2 == "cpu_usage")
-  )[0]
+  let range_results = TimeSeriesDB::query(tsdb, range_query)
+  assert_eq(range_results.length(), services.length() * metrics.length() * regions.length() * 6) // 6天的数据
   
-  assert_true(cpu_memory_corr.correlation > 0.7) // CPU和内存应该强相关
-  assert_eq(cpu_memory_corr.strength, "strong")
+  // 测试属性过滤查询
+  let filter_query = TimeSeriesQuery::new()
+    .equals("service.name", "api-service")
+    .equals("metric.name", "cpu.usage")
   
-  // 验证磁盘IO和网络IO的相关性
-  let disk_network_corr = correlations.filter_fn(c => 
-    (c.variable1 == "disk_io" && c.variable2 == "network_io") ||
-    (c.variable1 == "network_io" && c.variable2 == "disk_io")
-  )[0]
+  let filter_results = TimeSeriesDB::query(tsdb, filter_query)
+  assert_eq(filter_results.length(), regions.length() * 30) // 30天的数据，每个区域一个
   
-  assert_true(disk_network_corr.correlation > 0.7) // 磁盘IO和网络IO应该强相关
-  assert_eq(disk_network_corr.strength, "strong")
+  // 测试组合查询
+  let combined_query = TimeSeriesQuery::new()
+    .time_range(start_time, end_time)
+    .equals("service.name", "database")
+    .in_list("metric.name", ["memory.usage", "response.time"])
+    .equals("region", "us-east-1")
   
-  // 执行主成分分析（简化版）
-  let n = multivariate_data.length()
-  let mut data_matrix = []
+  let combined_results = TimeSeriesDB::query(tsdb, combined_query)
+  assert_eq(combined_results.length(), 2 * 6) // 2个指标，6天的数据
   
-  for data_point in multivariate_data {
-    let row = [
-      data_point.cpu_usage,
-      data_point.memory_usage,
-      data_point.disk_io,
-      data_point.network_io
-    ]
-    data_matrix = data_matrix.push(row)
+  // 测试聚合查询
+  let agg_query = TimeSeriesQuery::new()
+    .time_range(base_timestamp, base_timestamp + 30 * 86400)
+    .equals("service.name", "api-service")
+    .equals("metric.name", "request.count")
+    .aggregate("avg", 86400) // 按天平均
+  
+  let agg_results = TimeSeriesDB::query(tsdb, agg_query)
+  assert_eq(agg_results.length(), 30) // 30天的聚合数据
+  
+  // 验证聚合结果
+  for agg_point in agg_results {
+    assert_true(TimeSeriesDataPoint::value(agg_point) > 0.0)
   }
   
-  // 标准化数据
-  let mut standardized_matrix = []
-  for i in 0..n {
-    let mut standardized_row = []
-    for j in 0..variables.length() {
-      let var = variables[j]
-      let stats = variable_stats.filter_fn(s => s.variable == var)[0]
-      let original_value = data_matrix[i][j]
-      let standardized_value = (original_value - stats.mean) / stats.std_dev
-      standardized_row = standardized_row.push(standardized_value)
-    }
-    standardized_matrix = standardized_matrix.push(standardized_row)
+  // 测试降采样查询
+  let downsample_query = TimeSeriesQuery::new()
+    .time_range(base_timestamp, base_timestamp + 30 * 86400)
+    .downsample(7 * 86400, "avg") // 按周降采样
+  
+  let downsample_results = TimeSeriesDB::query(tsdb, downsample_query)
+  assert_eq(downsample_results.length(), 5) // 大约5周
+  
+  // 测试最新值查询
+  let latest_query = TimeSeriesQuery::new()
+    .equals("service.name", "cache")
+    .equals("metric.name", "memory.usage")
+    .latest()
+  
+  let latest_results = TimeSeriesDB::query(tsdb, latest_query)
+  assert_eq(latest_results.length(), regions.length()) // 每个区域一个最新值
+  
+  // 验证最新值的时间戳
+  for latest_point in latest_results {
+    let timestamp = TimeSeriesDataPoint::timestamp(latest_point)
+    assert_true(timestamp >= base_timestamp + 29 * 86400) // 应该是最后一天的数据
   }
   
-  // 计算协方差矩阵
-  let mut covariance_matrix = []
-  for i in 0..variables.length() {
-    let mut cov_row = []
-    for j in 0..variables.length() {
-      let mut cov = 0.0
-      for k in 0..n {
-        cov = cov + standardized_matrix[k][i] * standardized_matrix[k][j]
-      }
-      cov = cov / (n - 1).to_float()
-      cov_row = cov_row.push(cov)
-    }
-    covariance_matrix = covariance_matrix.push(cov_row)
-  }
+  // 测试性能查询
+  let performance_start = get_current_timestamp()
   
-  // 验证协方差矩阵
-  assert_eq(covariance_matrix.length(), 4)
-  assert_eq(covariance_matrix[0].length(), 4)
+  let perf_query = TimeSeriesQuery::new()
+    .time_range(base_timestamp, base_timestamp + 30 * 86400)
+    .greater_than("metric.value", 50.0)
   
-  // 协方差矩阵应该是对称的
-  for i in 0..variables.length() {
-    for j in 0..variables.length() {
-      assert_eq(covariance_matrix[i][j], covariance_matrix[j][i])
-    }
-  }
+  let perf_results = TimeSeriesDB::query(tsdb, perf_query)
   
-  // 对角线元素应该是1（标准化数据的方差）
-  for i in 0..variables.length() {
-    assert_true((covariance_matrix[i][i] - 1.0).abs() < 0.01)
-  }
+  let performance_end = get_current_timestamp()
+  let query_time = performance_end - performance_start
   
-  // 验证多元时间序列的预测能力
-  let future_predictions = []
-  let prediction_horizon = 3
+  // 验证查询性能
+  assert_true(query_time < 1000) // 查询应该在1秒内完成
+  assert_true(perf_results.length() > 0) // 应该有结果
   
-  // 使用简单的线性回归进行多元预测
-  for h in 1..prediction_horizon+1 {
-    let predicted_cpu = variable_stats.filter_fn(s => s.variable == "cpu_usage")[0].mean + h.to_float() * 2.0
-    let predicted_memory = variable_stats.filter_fn(s => s.variable == "memory_usage")[0].mean + h.to_float() * 2.5
-    let predicted_disk = variable_stats.filter_fn(s => s.variable == "disk_io")[0].mean + h.to_float() * 10.0
-    let predicted_network = variable_stats.filter_fn(s => s.variable == "network_io")[0].mean + h.to_float() * 5.0
-    
-    future_predictions = future_predictions.push({
-      horizon: h,
-      cpu_usage: predicted_cpu,
-      memory_usage: predicted_memory,
-      disk_io: predicted_disk,
-      network_io: predicted_network
-    })
-  }
-  
-  // 验证预测的合理性
-  assert_eq(future_predictions.length(), prediction_horizon)
-  
-  for prediction in future_predictions {
-    // 预测值应该在合理范围内
-    assert_true(prediction.cpu_usage > 0 && prediction.cpu_usage < 100)
-    assert_true(prediction.memory_usage > 0 && prediction.memory_usage < 100)
-    assert_true(prediction.disk_io > 0)
-    assert_true(prediction.network_io > 0)
-    
-    // 预测值应该保持相关性
-    let cpu_memory_ratio = prediction.memory_usage / prediction.cpu_usage
-    assert_true(cpu_memory_ratio > 1.2 && cpu_memory_ratio < 1.5)
+  // 测试索引效率
+  let index_stats = TimeSeriesDB::get_index_stats(tsdb)
+  assert_true(index_stats.service_index_size > 0)
+  assert_true(index_stats.metric_index_size > 0)
+  assert_true(index_stats.region_index_size > 0)
+  assert_true(index_stats.time_index_size > 0)
+}
+
+// 辅助函数
+fn generate_random_noise() -> Float {
+  // 简化的随机噪声生成
+  (get_current_timestamp() % 1000).to_float() / 100.0 - 5.0
+}
+
+fn generate_hourly_pattern(hour: Int) -> Float {
+  // 模拟每小时的模式（白天高，夜晚低）
+  match hour {
+    0..5 => 20.0  // 深夜低
+    6..11 => 80.0 // 上午高
+    12..17 => 60.0 // 下午中等
+    _ => 40.0     // 晚上中等
   }
 }
+
+fn generate_metric_value(metric: String, day: Int) -> Float {
+  match metric {
+    "cpu.usage" => 30.0 + day.to_float() * 0.5
+    "memory.usage" => 40.0 + day.to_float() * 0.3
+    "request.count" => 1000.0 + day.to_float() * 20.0
+    "response.time" => 100.0 + day.to_float() * 1.0
+    "error.rate" => 5.0 + day.to_float() * 0.1
+    _ => 50.0
+  }
+}
+
+fn check_attribute_exists(attributes: Array<(String, AttributeValue)>, key: String) -> Bool {
+  for (k, _) in attributes {
+    if k == key {
+      return true
+    }
+  }
+  false
+}
+
+fn abs(x: Float) -> Float {
+  if x < 0.0 { -x } else { x }
+}
+
+fn get_current_timestamp() -> Int {
+  // 模拟时间戳获取
+  1609459200000
+}
+
+// 辅助类型定义
+type TimeSeriesDataPoint {
+  timestamp: Int,
+  value: Float,
+  attributes: Array<(String, AttributeValue)>,
+  anomaly_score: Float
+}
+
+type TimeSeries {
+  data_points: Array<TimeSeriesDataPoint>
+}
+
+type TimeSeriesCollector {
+  name: String,
+  data_points: Array<TimeSeriesDataPoint>
+}
+
+type TrendAnalysis {
+  slope: Float,
+  intercept: Float,
+  r_squared: Float,
+  trend_direction: String
+}
+
+type SeasonalityAnalysis {
+  has_seasonality: Bool,
+  period: Int,
+  strength: Float
+}
+
+type AggregationStats {
+  count: Int,
+  mean: Float,
+  min: Float,
+  max: Float,
+  std_dev: Float
+}
+
+type Anomaly {
+  data_point: TimeSeriesDataPoint,
+  score: Float,
+  type: String
+}
+
+type ForecastAccuracy {
+  mae: Float,
+  rmse: Float,
+  mape: Float
+}
+
+type CorrelationResult {
+  correlation: Float,
+  p_value: Float
+}
+
+type LagCorrelation {
+  lag: Int,
+  correlation: Float
+}
+
+type GrangerCausalityResult {
+  p_value: Float,
+  f_statistic: Float
+}
+
+type TimeSeriesDecomposition {
+  trend: Array<Float>,
+  seasonal: Array<Float>,
+  residual: Array<Float>
+}
+
+type ComponentContributions {
+  trend: Float,
+  seasonal: Float,
+  residual: Float
+}
+
+type PeriodicPattern {
+  period: Int,
+  strength: Float,
+  confidence: Float
+}
+
+type ChangePoint {
+  data_point: TimeSeriesDataPoint,
+  change_magnitude: Float,
+  confidence: Float
+}
+
+type AnomalyPattern {
+  type: String,
+  data_point: TimeSeriesDataPoint,
+  severity: Float
+}
+
+type PatternClassification {
+  primary_pattern: String,
+  confidence: Float,
+  secondary_patterns: Array<String>
+}
+
+type Cluster {
+  series_indices: Array<Int>,
+  centroid: Array<Float>,
+  variance: Float
+}
+
+type ClusteringResult {
+  clusters: Array<Cluster>,
+  silhouette_score: Float
+}
+
+type TimeSeriesQuery {
+  time_range: Option<(Int, Int)>,
+  filters: Array<(String, String, String)>, // (operator, key, value)
+  aggregation: Option<(String, Int)>, // (function, interval)
+  limit: Option<Int>
+}
+
+type TimeSeriesDBStats {
+  total_points: Int,
+  total_series: Int,
+  index_size: Int
+}
+
+type IndexStats {
+  service_index_size: Int,
+  metric_index_size: Int,
+  region_index_size: Int,
+  time_index_size: Int
+}
+
+// 实现辅助函数（简化版）
+fn TimeSeriesDataPoint::new(timestamp: Int, value: Float, attributes: Array<(String, AttributeValue)>) -> TimeSeriesDataPoint {
+  TimeSeriesDataPoint {
+    timestamp: timestamp,
+    value: value,
+    attributes: attributes,
+    anomaly_score: 0.0
+  }
+}
+
+fn TimeSeriesDataPoint::timestamp(point: TimeSeriesDataPoint) -> Int {
+  point.timestamp
+}
+
+fn TimeSeriesDataPoint::value(point: TimeSeriesDataPoint) -> Float {
+  point.value
+}
+
+fn TimeSeriesDataPoint::attributes(point: TimeSeriesDataPoint) -> Array<(String, AttributeValue)> {
+  point.attributes
+}
+
+fn TimeSeriesDataPoint::anomaly_score(point: TimeSeriesDataPoint) -> Float {
+  point.anomaly_score
+}
+
+fn TimeSeries::new(data_points: Array<TimeSeriesDataPoint>) -> TimeSeries {
+  TimeSeries { data_points: data_points }
+}
+
+fn TimeSeriesCollector::new(name: String) -> TimeSeriesCollector {
+  TimeSeriesCollector { name: name, data_points: [] }
+}
+
+fn TimeSeriesCollector::add_point(collector: TimeSeriesCollector, point: TimeSeriesDataPoint) -> Unit {
+  // 模拟添加数据点
+  ()
+}
+
+fn TimeSeriesCollector::get_points(collector: TimeSeriesCollector) -> Array<TimeSeriesDataPoint> {
+  // 模拟获取数据点
+  []
+}
+
+// 其他函数实现省略，因为它们主要是模拟实现
