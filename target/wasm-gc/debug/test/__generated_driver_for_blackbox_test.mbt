@@ -114,17 +114,25 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_telemetry_resource_optimization_tests.mbt": {
   },
+  "azimuth_telemetry_resource_management_tests.mbt": {
+  },
   "azimuth_telemetry_privacy_protection_tests.mbt": {
+  },
+  "azimuth_telemetry_performance_benchmark_tests.mbt": {
   },
   "azimuth_telemetry_network_transmission_tests.mbt": {
   },
   "azimuth_telemetry_multidimensional_analysis_tests.mbt": {
+  },
+  "azimuth_telemetry_metrics_aggregation_tests.mbt": {
   },
   "azimuth_telemetry_machine_learning_integration_tests.mbt": {
   },
   "azimuth_telemetry_focused_tests.mbt": {
   },
   "azimuth_telemetry_event_driven_architecture_tests.mbt": {
+  },
+  "azimuth_telemetry_error_handling_tests.mbt": {
   },
   "azimuth_telemetry_dynamic_configuration_tests.mbt": {
   },
@@ -133,6 +141,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_telemetry_data_validation_tests.mbt": {
   },
   "azimuth_telemetry_data_types_focused_tests.mbt": {
+  },
+  "azimuth_telemetry_data_serialization_tests.mbt": {
   },
   "azimuth_telemetry_data_quality_validation_tests.mbt": {
   },
@@ -151,6 +161,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_telemetry_data_compression_optimization_tests.mbt": {
   },
   "azimuth_telemetry_data_compression_advanced_tests.mbt": {
+  },
+  "azimuth_telemetry_data_collection_tests.mbt": {
   },
   "azimuth_telemetry_data_aggregation_tests.mbt": {
   },
@@ -784,6 +796,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_batch_processing_tests.mbt": {
   },
+  "azimuth_basic_telemetry_test_cases.mbt": {
+  },
   "azimuth_basic_moonbit_tests.mbt": {
   },
   "azimuth_basic_moonbit_language_tests.mbt": {
@@ -805,6 +819,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_advanced_time_series_tests.mbt": {
   },
   "azimuth_advanced_time_series_operations_tests.mbt": {
+  },
+  "azimuth_advanced_telemetry_test_cases.mbt": {
   },
   "azimuth_advanced_telemetry_system_tests.mbt": {
   },
