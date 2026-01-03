@@ -1,75 +1,83 @@
-// Azimuth Time Series Data Processing Test Suite
-// This file contains comprehensive test cases for time series data processing
+// Azimuth Time Series Data Processing Tests
+// This file contains test cases for time series data processing
 
-// Test 1: Basic Time Series Operations
-test "basic time series operations" {
-  type TimeSeriesPoint {
-    timestamp : Int
-    value : Float
+// Test 1: Basic Time Series Data Structure
+test "basic time series data structure" {
+  // Define time series point structure
+  let create_time_series_point = fn(timestamp, value, tags) {
+    { timestamp = timestamp, value = value, tags = tags }
   }
   
-  type TimeSeries {
-    name : String
-    points : Array[TimeSeriesPoint]
+  // Define time series structure
+  let create_time_series = fn(name, points) {
+    { name = name, points = points, metadata = {} }
   }
   
-  let create_time_series = fn(name) {
-    { name: name, points: [] }
+  // Test creating time series points
+  let point1 = create_time_series_point(1640995200000, 42.5, { "service": "api", "env": "prod" })
+  let point2 = create_time_series_point(1640995260000, 38.2, { "service": "api", "env": "prod" })
+  let point3 = create_time_series_point(1640995320000, 45.1, { "service": "api", "env": "prod" })
+  
+  assert_eq(point1.timestamp, 1640995200000)
+  assert_eq(point1.value, 42.5)
+  assert_eq(point1.tags["service"], "api")
+  assert_eq(point1.tags["env"], "prod")
+  
+  // Test creating time series
+  let time_series = create_time_series("response_time_ms", [point1, point2, point3])
+  assert_eq(time_series.name, "response_time_ms")
+  assert_eq(time_series.points.length(), 3)
+  assert_eq(time_series.points[0].value, 42.5)
+  assert_eq(time_series.points[1].value, 38.2)
+  assert_eq(time_series.points[2].value, 45.1)
+  
+  // Test empty time series
+  let empty_time_series = create_time_series("empty_metric", [])
+  assert_eq(empty_time_series.name, "empty_metric")
+  assert_eq(empty_time_series.points.length(), 0)
+}
+
+// Test 2: Time Series Aggregation
+test "time series aggregation" {
+  // Create test time series points
+  let create_points = fn() {
+    [
+      { timestamp = 1640995200000, value = 10.0, tags = {} },
+      { timestamp = 1640995260000, value = 20.0, tags = {} },
+      { timestamp = 1640995320000, value = 30.0, tags = {} },
+      { timestamp = 1640995380000, value = 40.0, tags = {} },
+      { timestamp = 1640995440000, value = 50.0, tags = {} }
+    ]
   }
   
-  let add_point = fn(series, timestamp, value) {
-    let point = { timestamp: timestamp, value: value }
-    { name: series.name, points: series.points @ [point] }
-  }
+  let points = create_points()
   
-  let get_value_at = fn(series, timestamp) {
-    for point in series.points {
-      if point.timestamp == timestamp {
-        return Some(point.value)
-      }
+  // Test sum aggregation
+  let sum_aggregation = fn(points) {
+    let mut sum = 0.0
+    for point in points {
+      sum = sum + point.value
     }
-    None
+    sum
   }
   
-  let get_values_in_range = fn(series, start_time, end_time) {
-    let mut result = []
-    
-    for point in series.points {
-      if point.timestamp >= start_time and point.timestamp <= end_time {
-        result = result @ [point]
-      }
-    }
-    
-    result
-  }
+  let sum_result = sum_aggregation(points)
+  assert_eq(sum_result, 150.0)
   
-  let calculate_average = fn(points) {
+  // Test average aggregation
+  let avg_aggregation = fn(points) {
     if points.length() == 0 {
       0.0
     } else {
-      let mut sum = 0.0
-      for point in points {
-        sum = sum + point.value
-      }
-      sum / points.length().to_float()
+      sum_aggregation(points) / points.length().to_float()
     }
   }
   
-  let calculate_max = fn(points) {
-    if points.length() == 0 {
-      0.0
-    } else {
-      let mut max = points[0].value
-      for point in points {
-        if point.value > max {
-          max = point.value
-        }
-      }
-      max
-    }
-  }
+  let avg_result = avg_aggregation(points)
+  assert_eq(avg_result, 30.0)
   
-  let calculate_min = fn(points) {
+  // Test min aggregation
+  let min_aggregation = fn(points) {
     if points.length() == 0 {
       0.0
     } else {
@@ -83,218 +91,260 @@ test "basic time series operations" {
     }
   }
   
-  // Test time series creation and operations
-  let series = create_time_series("temperature")
+  let min_result = min_aggregation(points)
+  assert_eq(min_result, 10.0)
   
-  // Add points
-  let series1 = add_point(add_point(add_point(series, 1000, 20.5), 2000, 21.0), 3000, 20.8)
-  let series2 = add_point(add_point(add_point(series1, 4000, 22.1), 5000, 21.9), 6000, 21.5)
-  
-  assert_eq(series2.points.length(), 6)
-  
-  // Test value retrieval
-  match get_value_at(series2, 2000) {
-    Some(value) => assert_eq(value, 21.0)
-    None => assert_true(false)
+  // Test max aggregation
+  let max_aggregation = fn(points) {
+    if points.length() == 0 {
+      0.0
+    } else {
+      let mut max = points[0].value
+      for point in points {
+        if point.value > max {
+          max = point.value
+        }
+      }
+      max
+    }
   }
   
-  match get_value_at(series2, 2500) {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
+  let max_result = max_aggregation(points)
+  assert_eq(max_result, 50.0)
+  
+  // Test count aggregation
+  let count_aggregation = fn(points) {
+    points.length()
   }
   
-  // Test range queries
-  let range_points = get_values_in_range(series2, 2000, 5000)
-  assert_eq(range_points.length(), 4)
+  let count_result = count_aggregation(points)
+  assert_eq(count_result, 5)
   
-  // Test statistical calculations
-  let average = calculate_average(series2.points)
-  let max = calculate_max(series2.points)
-  let min = calculate_min(series2.points)
-  
-  assert_true(average > 21.0 and average < 22.0)
-  assert_eq(max, 22.1)
-  assert_eq(min, 20.5)
-  
-  let range_average = calculate_average(range_points)
-  assert_true(range_average > 21.0 and range_average < 22.0)
+  // Test empty points
+  let empty_points = []
+  assert_eq(sum_aggregation(empty_points), 0.0)
+  assert_eq(avg_aggregation(empty_points), 0.0)
+  assert_eq(min_aggregation(empty_points), 0.0)
+  assert_eq(max_aggregation(empty_points), 0.0)
+  assert_eq(count_aggregation(empty_points), 0)
 }
 
-// Test 2: Time Series Aggregation
-test "time series aggregation" {
-  type TimeSeriesPoint {
-    timestamp : Int
-    value : Float
+// Test 3: Time Series Windowing
+test "time series windowing" {
+  // Create test time series points with 1-minute intervals
+  let create_time_series_points = fn() {
+    [
+      { timestamp = 1640995200000, value = 10.0, tags = {} },  // 2022-01-01 00:00:00
+      { timestamp = 1640995260000, value = 20.0, tags = {} },  // 2022-01-01 00:01:00
+      { timestamp = 1640995320000, value = 30.0, tags = {} },  // 2022-01-01 00:02:00
+      { timestamp = 1640995380000, value = 40.0, tags = {} },  // 2022-01-01 00:03:00
+      { timestamp = 1640995440000, value = 50.0, tags = {} },  // 2022-01-01 00:04:00
+      { timestamp = 1640995500000, value = 60.0, tags = {} },  // 2022-01-01 00:05:00
+      { timestamp = 1640995560000, value = 70.0, tags = {} },  // 2022-01-01 00:06:00
+      { timestamp = 1640995620000, value = 80.0, tags = {} },  // 2022-01-01 00:07:00
+      { timestamp = 1640995680000, value = 90.0, tags = {} },  // 2022-01-01 00:08:00
+      { timestamp = 1640995740000, value = 100.0, tags = {} }  // 2022-01-01 00:09:00
+    ]
   }
   
-  type TimeSeries {
-    name : String
-    points : Array[TimeSeriesPoint]
-  }
+  let points = create_time_series_points()
   
-  let create_time_series = fn(name) {
-    { name: name, points: [] }
-  }
-  
-  let add_point = fn(series, timestamp, value) {
-    let point = { timestamp: timestamp, value: value }
-    { name: series.name, points: series.points @ [point] }
-  }
-  
-  let aggregate_by_interval = fn(series, interval) {
-    if series.points.length() == 0 {
-      series
-    } else {
-      let mut aggregated_points = []
-      let mut current_interval_start = (series.points[0].timestamp / interval) * interval
-      let mut interval_values = []
-      
-      for point in series.points {
-        let point_interval = (point.timestamp / interval) * interval
-        
-        if point_interval == current_interval_start {
-          interval_values = interval_values @ [point.value]
-        } else {
-          // Process previous interval
-          if interval_values.length() > 0 {
-            let mut sum = 0.0
-            for value in interval_values {
-              sum = sum + value
-            }
-            let average = sum / interval_values.length().to_float()
-            
-            aggregated_points = aggregated_points @ [{
-              timestamp: current_interval_start,
-              value: average
-            }]
-          }
-          
-          // Start new interval
-          current_interval_start = point_interval
-          interval_values = [point.value]
-        }
+  // Test time windowing
+  let time_window = fn(points, start_time, end_time) {
+    let mut windowed_points = []
+    for point in points {
+      if point.timestamp >= start_time && point.timestamp < end_time {
+        windowed_points = windowed_points.push(point)
       }
-      
-      // Process last interval
-      if interval_values.length() > 0 {
-        let mut sum = 0.0
-        for value in interval_values {
-          sum = sum + value
-        }
-        let average = sum / interval_values.length().to_float()
-        
-        aggregated_points = aggregated_points @ [{
-          timestamp: current_interval_start,
-          value: average
-        }]
-      }
-      
-      { name: series.name, points: aggregated_points }
     }
+    windowed_points
   }
   
-  let downsample = fn(series, factor) {
-    if series.points.length() == 0 {
-      series
-    } else {
-      let mut downsampled_points = []
-      
-      for i in 0..series.points.length() {
-        if i % factor == 0 {
-          downsampled_points = downsampled_points @ [series.points[i]]
-        }
-      }
-      
-      { name: series.name, points: downsampled_points }
+  // Test 5-minute window
+  let window1 = time_window(points, 1640995200000, 1640995500000)  // 00:00:00 to 00:05:00
+  assert_eq(window1.length(), 5)
+  assert_eq(window1[0].value, 10.0)  // 00:00:00
+  assert_eq(window1[4].value, 50.0)  // 00:04:00
+  
+  // Test another 5-minute window
+  let window2 = time_window(points, 1640995500000, 1640995800000)  // 00:05:00 to 00:10:00
+  assert_eq(window2.length(), 5)
+  assert_eq(window2[0].value, 60.0)  // 00:05:00
+  assert_eq(window2[4].value, 100.0) // 00:09:00
+  
+  // Test 3-minute window
+  let window3 = time_window(points, 1640995320000, 1640995500000)  // 00:02:00 to 00:05:00
+  assert_eq(window3.length(), 3)
+  assert_eq(window3[0].value, 30.0)  // 00:02:00
+  assert_eq(window3[2].value, 50.0)  // 00:04:00
+  
+  // Test empty window
+  let empty_window = time_window(points, 1640996000000, 1640996100000)  // 00:10:00 to 00:11:00
+  assert_eq(empty_window.length(), 0)
+  
+  // Test sliding windows
+  let sliding_windows = fn(points, window_size_ms, step_ms) {
+    let mut windows = []
+    if points.length() == 0 {
+      return windows
     }
-  }
-  
-  let calculate_moving_average = fn(series, window_size) {
-    if series.points.length() < window_size {
-      series
-    } else {
-      let mut moving_averages = []
-      
-      for i in window_size - 1..series.points.length() {
-        let mut sum = 0.0
-        for j in i - window_size + 1..i {
-          sum = sum + series.points[j].value
-        }
-        let average = sum / window_size.to_float()
-        
-        moving_averages = moving_averages @ [{
-          timestamp: series.points[i].timestamp,
-          value: average
-        }]
+    
+    let start_time = points[0].timestamp
+    let end_time = points[points.length() - 1].timestamp
+    
+    let mut current_start = start_time
+    while current_start + window_size_ms <= end_time {
+      let window = time_window(points, current_start, current_start + window_size_ms)
+      if window.length() > 0 {
+        windows = windows.push(window)
       }
-      
-      { name: series.name + "_ma", points: moving_averages }
+      current_start = current_start + step_ms
     }
+    
+    windows
   }
   
-  // Create test time series with 1-minute intervals
-  let series = create_time_series("cpu_usage")
+  // Test 3-minute sliding windows with 1-minute step
+  let sliding = sliding_windows(points, 180000, 60000)  // 3-minute window, 1-minute step
+  assert_eq(sliding.length(), 8)  // Should have 8 windows
   
-  let mut filled_series = series
-  for i in 0..60 {
-    filled_series = add_point(filled_series, i * 60, 50.0 + (i % 10).to_float())  // 50-59 pattern
-  }
+  assert_eq(sliding[0].length(), 3)  // 00:00:00 to 00:03:00
+  assert_eq(sliding[0][0].value, 10.0)
+  assert_eq(sliding[0][2].value, 40.0)
   
-  assert_eq(filled_series.points.length(), 60)
+  assert_eq(sliding[1].length(), 4)  // 00:01:00 to 00:04:00
+  assert_eq(sliding[1][0].value, 20.0)
+  assert_eq(sliding[1][3].value, 50.0)
   
-  // Test aggregation by 5-minute intervals
-  let aggregated = aggregate_by_interval(filled_series, 300)  // 5 minutes = 300 seconds
-  assert_eq(aggregated.points.length(), 12)  // 60 points / 5-minute intervals
-  
-  // Verify first aggregated point (average of first 5 points: 50, 51, 52, 53, 54)
-  assert_true(aggregated.points[0].value > 51.0 and aggregated.points[0].value < 53.0)
-  
-  // Test downsampling
-  let downsampled = downsample(filled_series, 10)  // Keep every 10th point
-  assert_eq(downsampled.points.length(), 6)
-  
-  // Verify downsampled points
-  assert_eq(downsampled.points[0].timestamp, 0)
-  assert_eq(downsampled.points[0].value, 50.0)
-  assert_eq(downsampled.points[1].timestamp, 600)
-  assert_eq(downsampled.points[1].value, 60.0)
-  
-  // Test moving average
-  let ma_series = calculate_moving_average(filled_series, 5)
-  assert_eq(ma_series.points.length(), 56)  // 60 - 5 + 1
-  
-  // Verify first moving average point
-  let expected_first_ma = (50.0 + 51.0 + 52.0 + 53.0 + 54.0) / 5.0
-  assert_eq(ma_series.points[0].value, expected_first_ma)
+  assert_eq(sliding[7].length(), 3)  // 00:07:00 to 00:10:00
+  assert_eq(sliding[7][0].value, 80.0)
+  assert_eq(sliding[7][2].value, 100.0)
 }
 
-// Test 3: Time Series Resampling
-test "time series resampling" {
-  type TimeSeriesPoint {
-    timestamp : Int
-    value : Float
+// Test 4: Time Series Downsampling
+test "time series downsampling" {
+  // Create high-frequency time series points (every 10 seconds)
+  let create_high_frequency_points = fn() {
+    [
+      { timestamp = 1640995200000, value = 10.0, tags = {} },  // 00:00:00
+      { timestamp = 1640995210000, value = 12.0, tags = {} },  // 00:00:10
+      { timestamp = 1640995220000, value = 14.0, tags = {} },  // 00:00:20
+      { timestamp = 1640995230000, value = 16.0, tags = {} },  // 00:00:30
+      { timestamp = 1640995240000, value = 18.0, tags = {} },  // 00:00:40
+      { timestamp = 1640995250000, value = 20.0, tags = {} },  // 00:00:50
+      { timestamp = 1640995260000, value = 22.0, tags = {} },  // 00:01:00
+      { timestamp = 1640995270000, value = 24.0, tags = {} },  // 00:01:10
+      { timestamp = 1640995280000, value = 26.0, tags = {} },  // 00:01:20
+      { timestamp = 1640995290000, value = 28.0, tags = {} },  // 00:01:30
+      { timestamp = 1640995300000, value = 30.0, tags = {} },  // 00:01:40
+      { timestamp = 1640995310000, value = 32.0, tags = {} }   // 00:01:50
+    ]
   }
   
-  type TimeSeries {
-    name : String
-    points : Array[TimeSeriesPoint]
+  let high_freq_points = create_high_frequency_points()
+  
+  // Test downsampling with average aggregation
+  let downsample = fn(points, interval_ms, aggregation_fn) {
+    if points.length() == 0 {
+      return []
+    }
+    
+    let mut downsampled_points = []
+    let mut current_window_start = points[0].timestamp
+    let mut current_window_end = current_window_start + interval_ms
+    let mut window_points = []
+    
+    for point in points {
+      if point.timestamp >= current_window_start && point.timestamp < current_window_end {
+        window_points = window_points.push(point)
+      } else {
+        // Process current window
+        if window_points.length() > 0 {
+          let aggregated_value = aggregation_fn(window_points)
+          let window_timestamp = current_window_start + (interval_ms / 2)  // Center of window
+          downsampled_points = downsampled_points.push({
+            timestamp = window_timestamp,
+            value = aggregated_value,
+            tags = {}
+          })
+        }
+        
+        // Start new window
+        current_window_start = current_window_end
+        current_window_end = current_window_start + interval_ms
+        window_points = [point]
+      }
+    }
+    
+    // Process last window
+    if window_points.length() > 0 {
+      let aggregated_value = aggregation_fn(window_points)
+      let window_timestamp = current_window_start + (interval_ms / 2)
+      downsampled_points = downsampled_points.push({
+        timestamp = window_timestamp,
+        value = aggregated_value,
+        tags = {}
+      })
+    }
+    
+    downsampled_points
   }
   
-  let create_time_series = fn(name) {
-    { name: name, points: [] }
+  // Test average downsampling to 1-minute intervals
+  let avg_downsampled = downsample(high_freq_points, 60000, avg_aggregation)
+  assert_eq(avg_downsampled.length(), 2)
+  
+  assert_eq(avg_downsampled[0].timestamp, 1640995230000)  // 00:00:30 (center of first minute)
+  assert_eq(avg_downsampled[0].value, 15.0)  // Average of 10, 12, 14, 16, 18, 20
+  
+  assert_eq(avg_downsampled[1].timestamp, 1640995290000)  // 00:01:30 (center of second minute)
+  assert_eq(avg_downsampled[1].value, 27.0)  // Average of 22, 24, 26, 28, 30, 32
+  
+  // Test max downsampling to 1-minute intervals
+  let max_downsampled = downsample(high_freq_points, 60000, max_aggregation)
+  assert_eq(max_downsampled.length(), 2)
+  
+  assert_eq(max_downsampled[0].timestamp, 1640995230000)
+  assert_eq(max_downsampled[0].value, 20.0)  // Max of first minute
+  
+  assert_eq(max_downsampled[1].timestamp, 1640995290000)
+  assert_eq(max_downsampled[1].value, 32.0)  // Max of second minute
+  
+  // Test min downsampling to 1-minute intervals
+  let min_downsampled = downsample(high_freq_points, 60000, min_aggregation)
+  assert_eq(min_downsampled.length(), 2)
+  
+  assert_eq(min_downsampled[0].timestamp, 1640995230000)
+  assert_eq(min_downsampled[0].value, 10.0)  // Min of first minute
+  
+  assert_eq(min_downsampled[1].timestamp, 1640995290000)
+  assert_eq(min_downsampled[1].value, 22.0)  // Min of second minute
+}
+
+// Test 5: Time Series Interpolation
+test "time series interpolation" {
+  // Create time series with missing points
+  let create_sparse_points = fn() {
+    [
+      { timestamp = 1640995200000, value = 10.0, tags = {} },  // 00:00:00
+      { timestamp = 1640995300000, value = 20.0, tags = {} },  // 00:01:40
+      { timestamp = 1640995400000, value = 30.0, tags = {} }   // 00:03:20
+    ]
   }
   
-  let add_point = fn(series, timestamp, value) {
-    let point = { timestamp: timestamp, value: value }
-    { name: series.name, points: series.points @ [point] }
-  }
+  let sparse_points = create_sparse_points()
   
-  let linear_interpolate = fn(series, target_timestamp) {
-    // Find the two points to interpolate between
+  // Test linear interpolation
+  let linear_interpolate = fn(points, target_timestamp) {
+    if points.length() < 2 {
+      return None
+    }
+    
+    // Find the points surrounding the target timestamp
     let mut before_point = None
     let mut after_point = None
     
-    for point in series.points {
+    for point in points {
       if point.timestamp <= target_timestamp {
         before_point = Some(point)
       } else {
@@ -305,1550 +355,852 @@ test "time series resampling" {
     
     match (before_point, after_point) {
       (Some(before), Some(after)) => {
-        // Linear interpolation
-        let ratio = (target_timestamp - before.timestamp).to_float() / (after.timestamp - before.timestamp).to_float()
-        let interpolated_value = before.value + ratio * (after.value - before.value)
-        Some(interpolated_value)
-      }
-      (Some(point), None) => Some(point.value),  // Exact match or after last point
-      (None, Some(point)) => Some(point.value),  // Before first point
-      (None, None) => None
-    }
-  }
-  
-  let resample = fn(series, new_interval) {
-    if series.points.length() < 2 {
-      series
-    } else {
-      let start_time = series.points[0].timestamp
-      let end_time = series.points[series.points.length() - 1].timestamp
-      
-      let mut resampled_points = []
-      let mut current_time = start_time
-      
-      while current_time <= end_time {
-        match linear_interpolate(series, current_time) {
-          Some(value) => {
-            resampled_points = resampled_points @ [{
-              timestamp: current_time,
-              value: value
-            }]
-          }
-          None => ()
-        }
-        
-        current_time = current_time + new_interval
-      }
-      
-      { name: series.name + "_resampled", points: resampled_points }
-    }
-  }
-  
-  let fill_missing = fn(series, method) {
-    if series.points.length() == 0 {
-      series
-    } else {
-      let mut filled_points = []
-      
-      for i in 0..series.points.length() {
-        filled_points = filled_points @ [series.points[i]]
-        
-        // Check if there's a gap to the next point
-        if i < series.points.length() - 1 {
-          let current_time = series.points[i].timestamp
-          let next_time = series.points[i + 1].timestamp
-          let expected_interval = if i > 0 {
-            series.points[i].timestamp - series.points[i - 1].timestamp
-          } else {
-            next_time - current_time
-          }
-          
-          if next_time - current_time > expected_interval {
-            // Fill missing points
-            let mut fill_time = current_time + expected_interval
-            
-            while fill_time < next_time {
-              let fill_value = match method {
-                "forward" => series.points[i].value,
-                "backward" => series.points[i + 1].value,
-                "linear" => {
-                  match linear_interpolate(series, fill_time) {
-                    Some(value) => value,
-                    None => series.points[i].value
-                  }
-                }
-                _ => series.points[i].value
-              }
-              
-              filled_points = filled_points @ [{
-                timestamp: fill_time,
-                value: fill_value
-              }]
-              
-              fill_time = fill_time + expected_interval
-            }
-          }
+        if before.timestamp == target_timestamp {
+          Some(before.value)
+        } else if after.timestamp == target_timestamp {
+          Some(after.value)
+        } else {
+          let time_diff = after.timestamp - before.timestamp
+          let target_offset = target_timestamp - before.timestamp
+          let ratio = target_offset.to_float() / time_diff.to_float()
+          Some(before.value + (after.value - before.value) * ratio)
         }
       }
-      
-      { name: series.name + "_filled", points: filled_points }
+      _ => None
     }
   }
   
-  // Create test time series with irregular intervals
-  let series = create_time_series("irregular")
-  let series1 = add_point(add_point(add_point(series, 1000, 10.0), 1500, 20.0), 2500, 30.0)
-  let series2 = add_point(add_point(add_point(series1, 3000, 40.0), 4500, 50.0), 5500, 60.0)
-  
-  assert_eq(series2.points.length(), 6)
-  
-  // Test linear interpolation
-  match linear_interpolate(series2, 1250) {
-    Some(value) => {
-      // Should be halfway between 10.0 and 20.0
-      assert_true(value > 14.0 and value < 16.0)
-    }
+  // Test interpolation at different points
+  match linear_interpolate(sparse_points, 1640995250000) {  // 00:00:50
     None => assert_true(false)
+    Some(value) => assert_eq(value, 15.0)  // 10 + (20-10) * (50/100)
   }
   
-  match linear_interpolate(series2, 2000) {
-    Some(value) => {
-      // Should be between 20.0 and 30.0
-      assert_true(value > 24.0 and value < 26.0)
-    }
+  match linear_interpolate(sparse_points, 1640995350000) {  // 00:02:30
     None => assert_true(false)
+    Some(value) => assert_eq(value, 25.0)  // 20 + (30-20) * (50/100)
   }
   
-  // Test resampling to regular intervals
-  let resampled = resample(series2, 1000)  // 1000-second intervals
-  assert_eq(resampled.points.length(), 5)  // From 1000 to 5000
+  match linear_interpolate(sparse_points, 1640995200000) {  // Exactly at first point
+    None => assert_true(false)
+    Some(value) => assert_eq(value, 10.0)
+  }
   
-  // Verify resampled points
-  assert_eq(resampled.points[0].timestamp, 1000)
-  assert_eq(resampled.points[0].value, 10.0)
+  match linear_interpolate(sparse_points, 1640995400000) {  // Exactly at last point
+    None => assert_true(false)
+    Some(value) => assert_eq(value, 30.0)
+  }
   
-  assert_eq(resampled.points[1].timestamp, 2000)
-  assert_true(resampled.points[1].value > 24.0 and resampled.points[1].value < 26.0)
+  match linear_interpolate(sparse_points, 1640995150000) {  // Before first point
+    None => assert_true(true)
+    Some(_) => assert_true(false)
+  }
   
-  // Test filling missing values
-  let series_with_gaps = create_time_series("gaps")
-  let series_with_gaps1 = add_point(add_point(add_point(series_with_gaps, 1000, 10.0), 2000, 20.0), 5000, 30.0)
+  match linear_interpolate(sparse_points, 1640995450000) {  // After last point
+    None => assert_true(true)
+    Some(_) => assert_true(false)
+  }
   
-  let filled_forward = fill_missing(series_with_gaps1, "forward")
-  assert_eq(filled_forward.points.length(), 4)  // Original 3 + 1 filled
+  // Test regular time series generation with interpolation
+  let generate_regular_series = fn(sparse_points, interval_ms) {
+    if sparse_points.length() < 2 {
+      return sparse_points
+    }
+    
+    let start_time = sparse_points[0].timestamp
+    let end_time = sparse_points[sparse_points.length() - 1].timestamp
+    
+    let mut regular_points = []
+    let mut current_time = start_time
+    
+    while current_time <= end_time {
+      match linear_interpolate(sparse_points, current_time) {
+        None => {}  // Skip if can't interpolate
+        Some(value) => {
+          regular_points = regular_points.push({
+            timestamp = current_time,
+            value = value,
+            tags = {}
+          })
+        }
+      }
+      current_time = current_time + interval_ms
+    }
+    
+    regular_points
+  }
   
-  // Verify filled point
-  assert_eq(filled_forward.points[2].timestamp, 3000)
-  assert_eq(filled_forward.points[2].value, 20.0)  // Forward fill
+  // Generate regular series with 30-second intervals
+  let regular_series = generate_regular_series(sparse_points, 30000)
+  assert_eq(regular_series.length(), 7)  // Should have 7 points
   
-  let filled_backward = fill_missing(series_with_gaps1, "backward")
-  assert_eq(filled_backward.points[2].timestamp, 3000)
-  assert_eq(filled_backward.points[2].value, 30.0)  // Backward fill
+  assert_eq(regular_series[0].timestamp, 1640995200000)  // 00:00:00
+  assert_eq(regular_series[0].value, 10.0)
   
-  let filled_linear = fill_missing(series_with_gaps1, "linear")
-  assert_eq(filled_linear.points[2].timestamp, 3000)
-  assert_true(filled_linear.points[2].value > 20.0 and filled_linear.points[2].value < 30.0)  // Linear interpolation
+  assert_eq(regular_series[1].timestamp, 1640995230000)  // 00:00:30
+  assert_eq(regular_series[1].value, 15.0)
+  
+  assert_eq(regular_series[2].timestamp, 1640995260000)  // 00:01:00
+  assert_eq(regular_series[2].value, 17.0)  // 10 + (20-10) * (60/100)
+  
+  assert_eq(regular_series[3].timestamp, 1640995290000)  // 00:01:30
+  assert_eq(regular_series[3].value, 19.0)  // 10 + (20-10) * (90/100)
+  
+  assert_eq(regular_series[4].timestamp, 1640995320000)  // 00:02:00
+  assert_eq(regular_series[4].value, 22.0)  // 20 + (30-20) * (20/100)
+  
+  assert_eq(regular_series[5].timestamp, 1640995350000)  // 00:02:30
+  assert_eq(regular_series[5].value, 25.0)
+  
+  assert_eq(regular_series[6].timestamp, 1640995380000)  // 00:03:00
+  assert_eq(regular_series[6].value, 28.0)  // 20 + (30-20) * (80/100)
 }
 
-// Test 4: Time Series Anomaly Detection
+// Test 6: Time Series Trend Analysis
+test "time series trend analysis" {
+  // Create time series with different trends
+  let create_trend_points = fn() {
+    [
+      { timestamp = 1640995200000, value = 10.0, tags = {} },  // 00:00:00
+      { timestamp = 1640995260000, value = 15.0, tags = {} },  // 00:01:00
+      { timestamp = 1640995320000, value = 20.0, tags = {} },  // 00:02:00
+      { timestamp = 1640995380000, value = 25.0, tags = {} },  // 00:03:00
+      { timestamp = 1640995440000, value = 30.0, tags = {} },  // 00:04:00
+      { timestamp = 1640995500000, value = 28.0, tags = {} },  // 00:05:00
+      { timestamp = 1640995560000, value = 26.0, tags = {} },  // 00:06:00
+      { timestamp = 1640995620000, value = 24.0, tags = {} },  // 00:07:00
+      { timestamp = 1640995680000, value = 22.0, tags = {} },  // 00:08:00
+      { timestamp = 1640995740000, value = 20.0, tags = {} }   // 00:09:00
+    ]
+  }
+  
+  let trend_points = create_trend_points()
+  
+  // Test simple trend analysis
+  let calculate_trend = fn(points) {
+    if points.length() < 2 {
+      return { slope = 0.0, direction = "stable" }
+    }
+    
+    let first_point = points[0]
+    let last_point = points[points.length() - 1]
+    
+    let time_diff = last_point.timestamp - first_point.timestamp
+    let value_diff = last_point.value - first_point.value
+    
+    let slope = value_diff / time_diff.to_float()
+    
+    let direction = if slope > 0.001 {
+      "increasing"
+    } else if slope < -0.001 {
+      "decreasing"
+    } else {
+      "stable"
+    }
+    
+    { slope = slope, direction = direction }
+  }
+  
+  // Test overall trend
+  let overall_trend = calculate_trend(trend_points)
+  assert_true(overall_trend.direction == "stable")  // Starts at 10, ends at 20, but with variation
+  
+  // Test trend on first half (increasing)
+  let first_half = trend_points.slice(0, 5)
+  let first_half_trend = calculate_trend(first_half)
+  assert_true(first_half_trend.direction == "increasing")
+  assert_true(first_half_trend.slope > 0)
+  
+  // Test trend on second half (decreasing)
+  let second_half = trend_points.slice(5)
+  let second_half_trend = calculate_trend(second_half)
+  assert_true(second_half_trend.direction == "decreasing")
+  assert_true(second_half_trend.slope < 0)
+  
+  // Test moving average
+  let moving_average = fn(points, window_size) {
+    if points.length() < window_size {
+      return []
+    }
+    
+    let mut ma_points = []
+    for i in window_size - 1 ..< points.length() {
+      let window_start = i - (window_size - 1)
+      let window = points.slice(window_start, i + 1)
+      let avg = avg_aggregation(window)
+      
+      ma_points = ma_points.push({
+        timestamp = points[i].timestamp,
+        value = avg,
+        tags = {}
+      })
+    }
+    
+    ma_points
+  }
+  
+  // Test 3-point moving average
+  let ma3 = moving_average(trend_points, 3)
+  assert_eq(ma3.length(), 8)  // 10 - 3 + 1 = 8
+  
+  assert_eq(ma3[0].value, 15.0)  // (10 + 15 + 20) / 3
+  assert_eq(ma3[1].value, 20.0)  // (15 + 20 + 25) / 3
+  assert_eq(ma3[2].value, 25.0)  // (20 + 25 + 30) / 3
+  assert_eq(ma3[3].value, 27.67)  // (25 + 30 + 28) / 3
+  assert_eq(ma3[7].value, 22.0)  // (24 + 22 + 20) / 3
+  
+  // Test rate of change
+  let rate_of_change = fn(points) {
+    if points.length() < 2 {
+      return []
+    }
+    
+    let mut roc_points = []
+    for i in 1 ..< points.length() {
+      let prev_point = points[i - 1]
+      let curr_point = points[i]
+      
+      let time_diff = curr_point.timestamp - prev_point.timestamp
+      let value_diff = curr_point.value - prev_point.value
+      let rate = value_diff / time_diff.to_float()
+      
+      roc_points = roc_points.push({
+        timestamp = curr_point.timestamp,
+        value = rate,
+        tags = {}
+      })
+    }
+    
+    roc_points
+  }
+  
+  let roc = rate_of_change(trend_points)
+  assert_eq(roc.length(), 9)
+  
+  assert_eq(roc[0].value, 0.00083)  // (15-10) / 6000
+  assert_eq(roc[1].value, 0.00083)  // (20-15) / 6000
+  assert_eq(roc[2].value, 0.00083)  // (25-20) / 6000
+  assert_eq(roc[3].value, 0.00083)  // (30-25) / 6000
+  assert_eq(roc[4].value, -0.00033) // (28-30) / 6000
+  assert_eq(roc[5].value, -0.00033) // (26-28) / 6000
+  assert_eq(roc[6].value, -0.00033) // (24-26) / 6000
+  assert_eq(roc[7].value, -0.00033) // (22-24) / 6000
+  assert_eq(roc[8].value, -0.00033) // (20-22) / 6000
+}
+
+// Test 7: Time Series Anomaly Detection
 test "time series anomaly detection" {
-  type TimeSeriesPoint {
-    timestamp : Int
-    value : Float
+  // Create time series with anomalies
+  let create_anomaly_points = fn() {
+    [
+      { timestamp = 1640995200000, value = 10.0, tags = {} },  // 00:00:00
+      { timestamp = 1640995260000, value = 12.0, tags = {} },  // 00:01:00
+      { timestamp = 1640995320000, value = 11.0, tags = {} },  // 00:02:00
+      { timestamp = 1640995380000, value = 13.0, tags = {} },  // 00:03:00
+      { timestamp = 1640995440000, value = 50.0, tags = {} },  // 00:04:00 - ANOMALY
+      { timestamp = 1640995500000, value = 10.0, tags = {} },  // 00:05:00
+      { timestamp = 1640995560000, value = 12.0, tags = {} },  // 00:06:00
+      { timestamp = 1640995620000, value = 11.0, tags = {} },  // 00:07:00
+      { timestamp = 1640995680000, value = 13.0, tags = {} },  // 00:08:00
+      { timestamp = 1640995740000, value = 12.0, tags = {} }   // 00:09:00
+    ]
   }
   
-  type TimeSeries {
-    name : String
-    points : Array[TimeSeriesPoint]
-  }
+  let anomaly_points = create_anomaly_points()
   
-  type Anomaly {
-    timestamp : Int
-    value : Float
-    expected_value : Float
-    score : Float
-    type : String  // "spike", "drop", "trend"
-  }
-  
-  let create_time_series = fn(name) {
-    { name: name, points: [] }
-  }
-  
-  let add_point = fn(series, timestamp, value) {
-    let point = { timestamp: timestamp, value: value }
-    { name: series.name, points: series.points @ [point] }
-  }
-  
-  let calculate_moving_average = fn(points, index, window_size) {
-    if index < window_size - 1 {
-      0.0
-    } else {
-      let mut sum = 0.0
-      for i in index - window_size + 1..index {
-        sum = sum + points[i].value
-      }
-      sum / window_size.to_float()
+  // Test statistical anomaly detection
+  let detect_statistical_anomalies = fn(points, threshold) {
+    if points.length() < 3 {
+      return []
     }
-  }
-  
-  let calculate_moving_std = fn(points, index, window_size) {
-    if index < window_size - 1 {
-      0.0
-    } else {
-      let average = calculate_moving_average(points, index, window_size)
-      let mut sum_squares = 0.0
-      
-      for i in index - window_size + 1..index {
-        let diff = points[i].value - average
-        sum_squares = sum_squares + diff * diff
-      }
-      
-      (sum_squares / window_size.to_float()).sqrt()
-    }
-  }
-  
-  let detect_anomalies = fn(series, window_size, threshold) {
-    let mut anomalies = []
     
-    for i in 0..series.points.length() {
-      if i >= window_size {
-        let average = calculate_moving_average(series.points, i - 1, window_size)
-        let std = calculate_moving_std(series.points, i - 1, window_size)
-        let current_value = series.points[i].value
-        
-        if std > 0.0 {
-          let z_score = (current_value - average) / std
-          
-          if z_score.abs() > threshold {
-            let anomaly_type = if z_score > 0 {
-              "spike"
-            } else {
-              "drop"
-            }
-            
-            anomalies = anomalies @ [{
-              timestamp: series.points[i].timestamp,
-              value: current_value,
-              expected_value: average,
-              score: z_score.abs(),
-              type: anomaly_type
-            }]
-          }
-        }
+    // Calculate mean and standard deviation
+    let mean = avg_aggregation(points)
+    
+    let mut variance_sum = 0.0
+    for point in points {
+      let diff = point.value - mean
+      variance_sum = variance_sum + (diff * diff)
+    }
+    let std_dev = (variance_sum / points.length().to_float()).sqrt()
+    
+    // Detect anomalies
+    let mut anomalies = []
+    for point in points {
+      let z_score = (point.value - mean) / std_dev
+      if z_score.abs() > threshold {
+        anomalies = anomalies.push({
+          point = point,
+          z_score = z_score,
+          reason = "Statistical anomaly: z-score = " + z_score.to_string()
+        })
       }
     }
     
     anomalies
   }
   
-  let detect_trend_anomalies = fn(series, window_size, trend_threshold) {
+  // Test with 2.0 threshold (2 standard deviations)
+  let statistical_anomalies = detect_statistical_anomalies(anomaly_points, 2.0)
+  assert_eq(statistical_anomalies.length(), 1)
+  assert_eq(statistical_anomalies[0].point.timestamp, 1640995440000)
+  assert_eq(statistical_anomalies[0].point.value, 50.0)
+  assert_true(statistical_anomalies[0].z_score > 2.0)
+  
+  // Test moving average anomaly detection
+  let detect_ma_anomalies = fn(points, window_size, threshold) {
+    if points.length() < window_size + 1 {
+      return []
+    }
+    
     let mut anomalies = []
     
-    for i in window_size..series.points.length() {
-      // Calculate trend over window
-      let first_value = series.points[i - window_size].value
-      let last_value = series.points[i].value
-      let trend = (last_value - first_value) / window_size.to_float()
+    for i in window_size ..< points.length() {
+      let window_start = i - window_size
+      let window = points.slice(window_start, i)
+      let current_point = points[i]
       
-      if trend.abs() > trend_threshold {
-        anomalies = anomalies @ [{
-          timestamp: series.points[i].timestamp,
-          value: last_value,
-          expected_value: first_value,
-          score: trend.abs(),
-          type: "trend"
-        }]
+      let ma = avg_aggregation(window)
+      let deviation = (current_point.value - ma).abs()
+      let relative_deviation = deviation / ma
+      
+      if relative_deviation > threshold {
+        anomalies = anomalies.push({
+          point = current_point,
+          moving_average = ma,
+          relative_deviation = relative_deviation,
+          reason = "Moving average anomaly: deviation = " + relative_deviation.to_string()
+        })
       }
     }
     
     anomalies
   }
   
-  // Create test time series with normal data and anomalies
-  let series = create_time_series("test")
+  // Test with 3-point window and 100% threshold
+  let ma_anomalies = detect_ma_anomalies(anomaly_points, 3, 1.0)
+  assert_eq(ma_anomalies.length(), 1)
+  assert_eq(ma_anomalies[0].point.timestamp, 1640995440000)
+  assert_eq(ma_anomalies[0].point.value, 50.0)
+  assert_true(ma_anomalies[0].relative_deviation > 1.0)
   
-  // Add normal data (values around 50)
-  let mut normal_series = series
-  for i in 0..20 {
-    normal_series = add_point(normal_series, i * 100, 50.0 + (i % 5).to_float() - 2.0)
+  // Test neighboring points anomaly detection
+  let detect_neighbor_anomalies = fn(points, threshold) {
+    if points.length() < 3 {
+      return []
+    }
+    
+    let mut anomalies = []
+    
+    for i in 1 ..< points.length() - 1 {
+      let prev_point = points[i - 1]
+      let curr_point = points[i]
+      let next_point = points[i + 1]
+      
+      let neighbor_avg = (prev_point.value + next_point.value) / 2.0
+      let deviation = (curr_point.value - neighbor_avg).abs()
+      let relative_deviation = deviation / neighbor_avg
+      
+      if relative_deviation > threshold {
+        anomalies = anomalies.push({
+          point = curr_point,
+          neighbor_average = neighbor_avg,
+          relative_deviation = relative_deviation,
+          reason = "Neighbor anomaly: deviation = " + relative_deviation.to_string()
+        })
+      }
+    }
+    
+    anomalies
   }
   
-  // Add a spike anomaly
-  let series_with_spike = add_point(normal_series, 2000, 80.0)
-  
-  // Add more normal data
-  let mut more_normal_series = series_with_spike
-  for i in 21..40 {
-    more_normal_series = add_point(more_normal_series, i * 100, 50.0 + (i % 5).to_float() - 2.0)
-  }
-  
-  // Add a drop anomaly
-  let series_with_drop = add_point(more_normal_series, 4000, 20.0)
-  
-  // Add more normal data
-  let mut final_normal_series = series_with_drop
-  for i in 41..60 {
-    final_normal_series = add_point(final_normal_series, i * 100, 50.0 + (i % 5).to_float() - 2.0)
-  }
-  
-  // Add a trend anomaly
-  let series_with_trend = add_point(final_normal_series, 6000, 70.0)
-  
-  assert_eq(series_with_trend.points.length(), 61)
-  
-  // Test anomaly detection
-  let anomalies = detect_anomalies(series_with_trend, 10, 2.0)
-  
-  assert_eq(anomalies.length(), 2)  // Should detect spike and drop
-  
-  // Verify spike anomaly
-  assert_eq(anomalies[0].type, "spike")
-  assert_eq(anomalies[0].timestamp, 2000)
-  assert_eq(anomalies[0].value, 80.0)
-  assert_true(anomalies[0].score > 2.0)
-  
-  // Verify drop anomaly
-  assert_eq(anomalies[1].type, "drop")
-  assert_eq(anomalies[1].timestamp, 4000)
-  assert_eq(anomalies[1].value, 20.0)
-  assert_true(anomalies[1].score > 2.0)
-  
-  // Test trend anomaly detection
-  let trend_anomalies = detect_trend_anomalies(series_with_trend, 10, 1.0)
-  
-  assert_eq(trend_anomalies.length(), 1)  // Should detect trend anomaly
-  
-  // Verify trend anomaly
-  assert_eq(trend_anomalies[0].type, "trend")
-  assert_eq(trend_anomalies[0].timestamp, 6000)
-  assert_eq(trend_anomalies[0].value, 70.0)
-  assert_true(trend_anomalies[0].score > 1.0)
+  // Test with 100% threshold
+  let neighbor_anomalies = detect_neighbor_anomalies(anomaly_points, 1.0)
+  assert_eq(neighbor_anomalies.length(), 1)
+  assert_eq(neighbor_anomalies[0].point.timestamp, 1640995440000)
+  assert_eq(neighbor_anomalies[0].point.value, 50.0)
+  assert_true(neighbor_anomalies[0].relative_deviation > 1.0)
 }
 
-// Test 5: Time Series Forecasting
+// Test 8: Time Series Forecasting
 test "time series forecasting" {
-  type TimeSeriesPoint {
-    timestamp : Int
-    value : Float
+  // Create time series for forecasting
+  let create_forecast_points = fn() {
+    [
+      { timestamp = 1640995200000, value = 10.0, tags = {} },  // 00:00:00
+      { timestamp = 1640995260000, value = 12.0, tags = {} },  // 00:01:00
+      { timestamp = 1640995320000, value = 14.0, tags = {} },  // 00:02:00
+      { timestamp = 1640995380000, value = 16.0, tags = {} },  // 00:03:00
+      { timestamp = 1640995440000, value = 18.0, tags = {} },  // 00:04:00
+      { timestamp = 1640995500000, value = 20.0, tags = {} }   // 00:05:00
+    ]
   }
   
-  type TimeSeries {
-    name : String
-    points : Array[TimeSeriesPoint]
-  }
+  let forecast_points = create_forecast_points()
   
-  type Forecast {
-    timestamp : Int
-    value : Float
-    confidence_lower : Float
-    confidence_upper : Float
-  }
-  
-  let create_time_series = fn(name) {
-    { name: name, points: [] }
-  }
-  
-  let add_point = fn(series, timestamp, value) {
-    let point = { timestamp: timestamp, value: value }
-    { name: series.name, points: series.points @ [point] }
-  }
-  
-  let simple_moving_average_forecast = fn(series, periods) {
-    if series.points.length() == 0 {
-      []
-    } else {
-      let mut forecasts = []
-      let last_timestamp = series.points[series.points.length() - 1].timestamp
-      
-      // Calculate SMA from last 10 points
-      let window_size = if series.points.length() < 10 {
-        series.points.length()
-      } else {
-        10
-      }
-      
-      let mut sum = 0.0
-      for i in series.points.length() - window_size..series.points.length() {
-        sum = sum + series.points[i].value
-      }
-      let sma = sum / window_size.to_float()
-      
-      // Generate forecasts
-      for i in 1..periods + 1 {
-        forecasts = forecasts @ [{
-          timestamp: last_timestamp + i * 100,
-          value: sma,
-          confidence_lower: sma * 0.9,
-          confidence_upper: sma * 1.1
-        }]
-      }
-      
-      forecasts
+  // Test linear forecasting
+  let linear_forecast = fn(points, num_steps) {
+    if points.length() < 2 {
+      return []
     }
-  }
-  
-  let linear_regression_forecast = fn(series, periods) {
-    if series.points.length() < 2 {
-      []
-    } else {
-      let mut forecasts = []
-      let last_timestamp = series.points[series.points.length() - 1].timestamp
-      
-      // Calculate linear regression
-      let n = series.points.length().to_float()
-      let mut sum_x = 0.0
-      let mut sum_y = 0.0
-      let mut sum_xy = 0.0
-      let mut sum_x2 = 0.0
-      
-      for i in 0..series.points.length() {
-        let x = i.to_float()
-        let y = series.points[i].value
-        
-        sum_x = sum_x + x
-        sum_y = sum_y + y
-        sum_xy = sum_xy + x * y
-        sum_x2 = sum_x2 + x * x
-      }
-      
-      let slope = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x * sum_x)
-      let intercept = (sum_y - slope * sum_x) / n
-      
-      // Calculate standard error for confidence intervals
-      let mut sum_squared_errors = 0.0
-      for i in 0..series.points.length() {
-        let x = i.to_float()
-        let predicted = slope * x + intercept
-        let error = series.points[i].value - predicted
-        sum_squared_errors = sum_squared_errors + error * error
-      }
-      
-      let mse = sum_squared_errors / n
-      let std_error = mse.sqrt()
-      
-      // Generate forecasts
-      for i in 1..periods + 1 {
-        let x = (series.points.length() + i - 1).to_float()
-        let predicted_value = slope * x + intercept
-        
-        forecasts = forecasts @ [{
-          timestamp: last_timestamp + i * 100,
-          value: predicted_value,
-          confidence_lower: predicted_value - 1.96 * std_error,
-          confidence_upper: predicted_value + 1.96 * std_error
-        }]
-      }
-      
-      forecasts
-    }
-  }
-  
-  let seasonal_naive_forecast = fn(series, periods, season_length) {
-    if series.points.length() < season_length {
-      []
-    } else {
-      let mut forecasts = []
-      let last_timestamp = series.points[series.points.length() - 1].timestamp
-      
-      // Generate forecasts using seasonal pattern
-      for i in 1..periods + 1 {
-        let seasonal_index = (series.points.length() - season_length + i - 1) % season_length
-        let seasonal_value = series.points[seasonal_index].value
-        
-        forecasts = forecasts @ [{
-          timestamp: last_timestamp + i * 100,
-          value: seasonal_value,
-          confidence_lower: seasonal_value * 0.8,
-          confidence_upper: seasonal_value * 1.2
-        }]
-      }
-      
-      forecasts
-    }
-  }
-  
-  // Create test time series with trend and seasonality
-  let series = create_time_series("test")
-  
-  let mut trend_seasonal_series = series
-  for i in 0..50 {
-    // Trend: 0.5 per period
-    // Seasonality: sine wave with period 10
-    let trend = 0.5 * i.to_float()
-    let seasonality = 5.0 * ((2.0 * 3.14159 * i.to_float() / 10.0).sin())
-    let value = 100.0 + trend + seasonality
     
-    trend_seasonal_series = add_point(trend_seasonal_series, i * 100, value)
+    let first_point = points[0]
+    let last_point = points[points.length() - 1]
+    
+    let time_diff = last_point.timestamp - first_point.timestamp
+    let value_diff = last_point.value - first_point.value
+    let slope = value_diff / time_diff.to_float()
+    
+    let interval = if points.length() > 1 {
+      points[1].timestamp - points[0].timestamp
+    } else {
+      60000  // Default to 1 minute
+    }
+    
+    let mut forecast_points = []
+    for i in 1 ..= num_steps {
+      let future_timestamp = last_point.timestamp + (interval * i)
+      let future_value = last_point.value + (slope * (interval * i).to_float())
+      
+      forecast_points = forecast_points.push({
+        timestamp = future_timestamp,
+        value = future_value,
+        tags = { "forecast" = "true" }
+      })
+    }
+    
+    forecast_points
   }
   
-  assert_eq(trend_seasonal_series.points.length(), 50)
+  // Test 3-step linear forecast
+  let linear_forecast_points = linear_forecast(forecast_points, 3)
+  assert_eq(linear_forecast_points.length(), 3)
   
-  // Test SMA forecast
-  let sma_forecasts = simple_moving_average_forecast(trend_seasonal_series, 5)
-  assert_eq(sma_forecasts.length(), 5)
+  assert_eq(linear_forecast_points[0].timestamp, 1640995560000)  // 00:06:00
+  assert_eq(linear_forecast_points[0].value, 22.0)              // 20 + 2
   
-  // Verify SMA forecast structure
-  for forecast in sma_forecasts {
-    assert_true(forecast.confidence_lower < forecast.value)
-    assert_true(forecast.confidence_upper > forecast.value)
+  assert_eq(linear_forecast_points[1].timestamp, 1640995620000)  // 00:07:00
+  assert_eq(linear_forecast_points[1].value, 24.0)              // 20 + 4
+  
+  assert_eq(linear_forecast_points[2].timestamp, 1640995680000)  // 00:08:00
+  assert_eq(linear_forecast_points[2].value, 26.0)              // 20 + 6
+  
+  // Test seasonal naive forecasting
+  let seasonal_naive_forecast = fn(points, season_length, num_steps) {
+    if points.length() < season_length {
+      return []
+    }
+    
+    let interval = if points.length() > 1 {
+      points[1].timestamp - points[0].timestamp
+    } else {
+      60000  // Default to 1 minute
+    }
+    
+    let mut forecast_points = []
+    for i in 1 ..= num_steps {
+      let future_timestamp = points[points.length() - 1].timestamp + (interval * i)
+      let seasonal_index = (points.length() - season_length + i - 1) % season_length
+      let future_value = points[seasonal_index].value
+      
+      forecast_points = forecast_points.push({
+        timestamp = future_timestamp,
+        value = future_value,
+        tags = { "forecast" = "true", "method" = "seasonal_naive" }
+      })
+    }
+    
+    forecast_points
   }
   
-  // Test linear regression forecast
-  let lr_forecasts = linear_regression_forecast(trend_seasonal_series, 5)
-  assert_eq(lr_forecasts.length(), 5)
+  // Create seasonal data
+  let create_seasonal_points = fn() {
+    [
+      { timestamp = 1640995200000, value = 10.0, tags = {} },  // 00:00:00
+      { timestamp = 1640995260000, value = 20.0, tags = {} },  // 00:01:00
+      { timestamp = 1640995320000, value = 30.0, tags = {} },  // 00:02:00
+      { timestamp = 1640995380000, value = 10.0, tags = {} },  // 00:03:00
+      { timestamp = 1640995440000, value = 20.0, tags = {} },  // 00:04:00
+      { timestamp = 1640995500000, value = 30.0, tags = {} }   // 00:05:00
+    ]
+  }
   
-  // Verify LR forecast shows upward trend
-  assert_true(lr_forecasts[4].value > lr_forecasts[0].value)
+  let seasonal_points = create_seasonal_points()
   
-  // Test seasonal naive forecast
-  let seasonal_forecasts = seasonal_naive_forecast(trend_seasonal_series, 5, 10)
-  assert_eq(seasonal_forecasts.length(), 5)
+  // Test seasonal naive forecast with season length of 3
+  let seasonal_forecast_points = seasonal_naive_forecast(seasonal_points, 3, 3)
+  assert_eq(seasonal_forecast_points.length(), 3)
   
-  // Verify seasonal forecast pattern
-  // The first forecast should be similar to the point 10 periods ago
-  let expected_seasonal_value = trend_seasonal_series.points[40].value
-  assert_true((seasonal_forecasts[0].value - expected_seasonal_value).abs() < 0.1)
+  assert_eq(seasonal_forecast_points[0].timestamp, 1640995560000)  // 00:06:00
+  assert_eq(seasonal_forecast_points[0].value, 10.0)              // Same as point 3
+  
+  assert_eq(seasonal_forecast_points[1].timestamp, 1640995620000)  // 00:07:00
+  assert_eq(seasonal_forecast_points[1].value, 20.0)              // Same as point 4
+  
+  assert_eq(seasonal_forecast_points[2].timestamp, 1640995680000)  // 00:08:00
+  assert_eq(seasonal_forecast_points[2].value, 30.0)              // Same as point 5
+  
+  // Test moving average forecasting
+  let ma_forecast = fn(points, window_size, num_steps) {
+    if points.length() < window_size {
+      return []
+    }
+    
+    let interval = if points.length() > 1 {
+      points[1].timestamp - points[0].timestamp
+    } else {
+      60000  // Default to 1 minute
+    }
+    
+    // Calculate the last moving average
+    let window_start = points.length() - window_size
+    let window = points.slice(window_start)
+    let last_ma = avg_aggregation(window)
+    
+    let mut forecast_points = []
+    for i in 1 ..= num_steps {
+      let future_timestamp = points[points.length() - 1].timestamp + (interval * i)
+      
+      forecast_points = forecast_points.push({
+        timestamp = future_timestamp,
+        value = last_ma,
+        tags = { "forecast" = "true", "method" = "moving_average" }
+      })
+    }
+    
+    forecast_points
+  }
+  
+  // Test 3-step moving average forecast with window size of 3
+  let ma_forecast_points = ma_forecast(forecast_points, 3, 3)
+  assert_eq(ma_forecast_points.length(), 3)
+  
+  assert_eq(ma_forecast_points[0].timestamp, 1640995560000)  // 00:06:00
+  assert_eq(ma_forecast_points[0].value, 18.0)              // Average of last 3 points (16, 18, 20)
+  
+  assert_eq(ma_forecast_points[1].timestamp, 1640995620000)  // 00:07:00
+  assert_eq(ma_forecast_points[1].value, 18.0)              // Same MA
+  
+  assert_eq(ma_forecast_points[2].timestamp, 1640995680000)  // 00:08:00
+  assert_eq(ma_forecast_points[2].value, 18.0)              // Same MA
 }
 
-// Test 6: Time Series Compression
+// Test 9: Time Series Compression
 test "time series compression" {
-  type TimeSeriesPoint {
-    timestamp : Int
-    value : Float
+  // Create time series for compression
+  let create_compression_points = fn() {
+    [
+      { timestamp = 1640995200000, value = 10.0, tags = {} },  // 00:00:00
+      { timestamp = 1640995260000, value = 10.1, tags = {} },  // 00:01:00
+      { timestamp = 1640995320000, value = 10.2, tags = {} },  // 00:02:00
+      { timestamp = 1640995380000, value = 15.0, tags = {} },  // 00:03:00
+      { timestamp = 1640995440000, value = 15.1, tags = {} },  // 00:04:00
+      { timestamp = 1640995500000, value = 15.2, tags = {} },  // 00:05:00
+      { timestamp = 1640995560000, value = 20.0, tags = {} },  // 00:06:00
+      { timestamp = 1640995620000, value = 20.1, tags = {} },  // 00:07:00
+      { timestamp = 1640995680000, value = 20.2, tags = {} },  // 00:08:00
+      { timestamp = 1640995740000, value = 20.3, tags = {} }   // 00:09:00
+    ]
   }
   
-  type TimeSeries {
-    name : String
-    points : Array[TimeSeriesPoint]
-  }
+  let compression_points = create_compression_points()
   
-  let create_time_series = fn(name) {
-    { name: name, points: [] }
-  }
-  
-  let add_point = fn(series, timestamp, value) {
-    let point = { timestamp: timestamp, value: value }
-    { name: series.name, points: series.points @ [point] }
-  }
-  
-  let delta_encode = fn(series) {
-    if series.points.length() == 0 {
-      series
-    } else {
-      let mut encoded_points = [series.points[0]]
-      
-      for i in 1..series.points.length() {
-        let prev_point = series.points[i - 1]
-        let current_point = series.points[i]
-        
-        let delta_timestamp = current_point.timestamp - prev_point.timestamp
-        let delta_value = current_point.value - prev_point.value
-        
-        encoded_points = encoded_points @ [{
-          timestamp: delta_timestamp,
-          value: delta_value
-        }]
-      }
-      
-      { name: series.name + "_delta", points: encoded_points }
-    }
-  }
-  
-  let delta_decode = fn(encoded_series) {
-    if encoded_series.points.length() == 0 {
-      encoded_series
-    } else {
-      let mut decoded_points = [encoded_series.points[0]]
-      
-      for i in 1..encoded_series.points.length() {
-        let prev_point = decoded_points[i - 1]
-        let delta_point = encoded_series.points[i]
-        
-        decoded_points = decoded_points @ [{
-          timestamp: prev_point.timestamp + delta_point.timestamp,
-          value: prev_point.value + delta_point.value
-        }]
-      }
-      
-      { name: encoded_series.name + "_decoded", points: decoded_points }
-    }
-  }
-  
-  let swing_compression = fn(series, threshold) {
-    if series.points.length() < 3 {
-      series
-    } else {
-      let mut compressed_points = [series.points[0]]
-      
-      for i in 1..series.points.length() - 1 {
-        let prev_point = compressed_points[compressed_points.length() - 1]
-        let current_point = series.points[i]
-        let next_point = series.points[i + 1]
-        
-        // Calculate deviation from straight line between prev and next
-        let line_value = prev_point.value + (next_point.value - prev_point.value) * 
-                        ((current_point.timestamp - prev_point.timestamp).to_float() / 
-                         (next_point.timestamp - prev_point.timestamp).to_float())
-        
-        let deviation = (current_point.value - line_value).abs()
-        
-        if deviation > threshold {
-          compressed_points = compressed_points @ [current_point]
-        }
-      }
-      
-      // Always include the last point
-      compressed_points = compressed_points @ [series.points[series.points.length() - 1]]
-      
-      { name: series.name + "_compressed", points: compressed_points }
-    }
-  }
-  
-  let calculate_compression_ratio = fn(original, compressed) {
-    original.points.length().to_float() / compressed.points.length().to_float()
-  }
-  
-  let calculate_max_error = fn(original, compressed) {
-    let mut max_error = 0.0
-    
-    for orig_point in original.points {
-      // Find closest point in compressed series
-      let mut closest_point = compressed.points[0]
-      let mut min_time_diff = (orig_point.timestamp - closest_point.timestamp).abs()
-      
-      for comp_point in compressed.points {
-        let time_diff = (orig_point.timestamp - comp_point.timestamp).abs()
-        if time_diff < min_time_diff {
-          min_time_diff = time_diff
-          closest_point = comp_point
-        }
-      }
-      
-      let error = (orig_point.value - closest_point.value).abs()
-      if error > max_error {
-        max_error = error
-      }
+  // Test delta encoding compression
+  let delta_encode = fn(points) {
+    if points.length() == 0 {
+      return []
     }
     
-    max_error
+    let mut encoded_points = []
+    let mut prev_timestamp = points[0].timestamp
+    let mut prev_value = points[0].value
+    
+    // First point is stored as-is
+    encoded_points = encoded_points.push({
+      timestamp = points[0].timestamp,
+      value = points[0].value,
+      tags = points[0].tags
+    })
+    
+    // Subsequent points are stored as deltas
+    for i in 1 ..< points.length() {
+      let point = points[i]
+      let timestamp_delta = point.timestamp - prev_timestamp
+      let value_delta = point.value - prev_value
+      
+      encoded_points = encoded_points.push({
+        timestamp = timestamp_delta,
+        value = value_delta,
+        tags = point.tags
+      })
+      
+      prev_timestamp = point.timestamp
+      prev_value = point.value
+    }
+    
+    encoded_points
   }
   
-  // Create test time series
-  let series = create_time_series("test")
+  let delta_encoded = delta_encode(compression_points)
+  assert_eq(delta_encoded.length(), 10)
   
-  let mut filled_series = series
-  for i in 0..100 {
-    // Create a relatively smooth time series with small variations
-    let base_value = 50.0 + 0.1 * i.to_float()
-    let noise = (i % 7).to_float() - 3.0  // Small noise
-    filled_series = add_point(filled_series, i * 10, base_value + noise)
-  }
-  
-  assert_eq(filled_series.points.length(), 100)
-  
-  // Test delta encoding
-  let encoded = delta_encode(filled_series)
-  assert_eq(encoded.points.length(), 100)
-  
-  // First point should be the same
-  assert_eq(encoded.points[0].timestamp, filled_series.points[0].timestamp)
-  assert_eq(encoded.points[0].value, filled_series.points[0].value)
+  // First point should be unchanged
+  assert_eq(delta_encoded[0].timestamp, 1640995200000)
+  assert_eq(delta_encoded[0].value, 10.0)
   
   // Subsequent points should be deltas
-  assert_eq(encoded.points[1].timestamp, 10)  // Time delta
-  assert_true(encoded.points[1].value < 1.0)   // Small value delta
+  assert_eq(delta_encoded[1].timestamp, 6000)   // 1 minute delta
+  assert_eq(delta_encoded[1].value, 0.1)       // 0.1 value delta
+  
+  assert_eq(delta_encoded[2].timestamp, 6000)   // 1 minute delta
+  assert_eq(delta_encoded[2].value, 0.1)       // 0.1 value delta
+  
+  assert_eq(delta_encoded[3].timestamp, 6000)   // 1 minute delta
+  assert_eq(delta_encoded[3].value, 4.8)       // 4.8 value delta
   
   // Test delta decoding
-  let decoded = delta_decode(encoded)
-  assert_eq(decoded.points.length(), 100)
+  let delta_decode = fn(encoded_points) {
+    if encoded_points.length() == 0 {
+      return []
+    }
+    
+    let mut decoded_points = []
+    let mut prev_timestamp = encoded_points[0].timestamp
+    let mut prev_value = encoded_points[0].value
+    
+    // First point is as-is
+    decoded_points = decoded_points.push({
+      timestamp = encoded_points[0].timestamp,
+      value = encoded_points[0].value,
+      tags = encoded_points[0].tags
+    })
+    
+    // Subsequent points are reconstructed from deltas
+    for i in 1 ..< encoded_points.length() {
+      let encoded_point = encoded_points[i]
+      let timestamp = prev_timestamp + encoded_point.timestamp
+      let value = prev_value + encoded_point.value
+      
+      decoded_points = decoded_points.push({
+        timestamp = timestamp,
+        value = value,
+        tags = encoded_point.tags
+      })
+      
+      prev_timestamp = timestamp
+      prev_value = value
+    }
+    
+    decoded_points
+  }
+  
+  let delta_decoded = delta_decode(delta_encoded)
+  assert_eq(delta_decoded.length(), 10)
   
   // Verify decoded points match original
-  for i in 0..filled_series.points.length() {
-    assert_eq(decoded.points[i].timestamp, filled_series.points[i].timestamp)
-    assert_true((decoded.points[i].value - filled_series.points[i].value).abs() < 0.001)
+  for i in 0 ..< compression_points.length() {
+    assert_eq(delta_decoded[i].timestamp, compression_points[i].timestamp)
+    assert_eq(delta_decoded[i].value, compression_points[i].value)
   }
   
-  // Test swing compression
-  let compressed = swing_compression(filled_series, 1.0)
-  assert_true(compressed.points.length() < filled_series.points.length())
-  
-  // Calculate compression ratio
-  let compression_ratio = calculate_compression_ratio(filled_series, compressed)
-  assert_true(compression_ratio > 1.0)
-  
-  // Calculate maximum error
-  let max_error = calculate_max_error(filled_series, compressed)
-  assert_true(max_error <= 1.0)  // Should be within our threshold
-  
-  // Test with different threshold
-  let highly_compressed = swing_compression(filled_series, 5.0)
-  let high_compression_ratio = calculate_compression_ratio(filled_series, highly_compressed)
-  let high_max_error = calculate_max_error(filled_series, highly_compressed)
-  
-  assert_true(high_compression_ratio > compression_ratio)
-  assert_true(high_max_error > max_error)
-}
-
-// Test 7: Time Series Pattern Matching
-test "time series pattern matching" {
-  type TimeSeriesPoint {
-    timestamp : Int
-    value : Float
-  }
-  
-  type TimeSeries {
-    name : String
-    points : Array[TimeSeriesPoint]
-  }
-  
-  type PatternMatch {
-    start_index : Int
-    end_index : Int
-    score : Float
-    pattern_name : String
-  }
-  
-  let create_time_series = fn(name) {
-    { name: name, points: [] }
-  }
-  
-  let add_point = fn(series, timestamp, value) {
-    let point = { timestamp: timestamp, value: value }
-    { name: series.name, points: series.points @ [point] }
-  }
-  
-  let normalize_series = fn(series) {
-    if series.points.length() == 0 {
-      series
-    } else {
-      // Find min and max values
-      let mut min_value = series.points[0].value
-      let mut max_value = series.points[0].value
+  // Test swing door compression (simplified)
+  let swing_door_compress = fn(points, threshold) {
+    if points.length() < 3 {
+      return points
+    }
+    
+    let mut compressed = []
+    compressed = compressed.push(points[0])  // Always include first point
+    
+    let mut start_idx = 0
+    let mut end_idx = 1
+    
+    while end_idx < points.length() {
+      let start_point = points[start_idx]
+      let end_point = points[end_idx]
       
-      for point in series.points {
-        if point.value < min_value {
-          min_value = point.value
-        }
-        if point.value > max_value {
-          max_value = point.value
-        }
-      }
+      // Check if all points between start and end are within threshold
+      let mut all_within_threshold = true
+      let slope = (end_point.value - start_point.value) / (end_point.timestamp - start_point.timestamp).to_float()
       
-      let range = max_value - min_value
-      
-      if range == 0.0 {
-        series
-      } else {
-        let mut normalized_points = []
+      for i in start_idx + 1 ..< end_idx {
+        let point = points[i]
+        let expected_value = start_point.value + slope * (point.timestamp - start_point.timestamp).to_float()
+        let deviation = (point.value - expected_value).abs()
         
-        for point in series.points {
-          let normalized_value = (point.value - min_value) / range
-          normalized_points = normalized_points @ [{
-            timestamp: point.timestamp,
-            value: normalized_value
-          }]
-        }
-        
-        { name: series.name + "_normalized", points: normalized_points }
-      }
-    }
-  }
-  
-  let calculate_similarity = fn(series1, series2, start1, start2, length) {
-    if start1 + length > series1.points.length() or start2 + length > series2.points.length() {
-      0.0
-    } else {
-      let mut sum_squared_diff = 0.0
-      
-      for i in 0..length {
-        let diff = series1.points[start1 + i].value - series2.points[start2 + i].value
-        sum_squared_diff = sum_squared_diff + diff * diff
-      }
-      
-      let mse = sum_squared_diff / length.to_float()
-      1.0 / (1.0 + mse)  // Convert to similarity score (0 to 1)
-    }
-  }
-  
-  let find_pattern_matches = fn(series, pattern, min_similarity) {
-    let matches = []
-    
-    // Normalize both series
-    let normalized_series = normalize_series(series)
-    let normalized_pattern = normalize_series(pattern)
-    
-    // Slide pattern across series
-    for i in 0..normalized_series.points.length() - normalized_pattern.points.length() + 1 {
-      let similarity = calculate_similarity(
-        normalized_series, 
-        normalized_pattern, 
-        i, 
-        0, 
-        normalized_pattern.points.length()
-      )
-      
-      if similarity >= min_similarity {
-        matches = matches @ [{
-          start_index: i,
-          end_index: i + normalized_pattern.points.length() - 1,
-          score: similarity,
-          pattern_name: pattern.name
-        }]
-      }
-    }
-    
-    matches
-  }
-  
-  let detect_peaks = fn(series, threshold, window_size) {
-    let peaks = []
-    
-    for i in window_size..series.points.length() - window_size {
-      let current_value = series.points[i].value
-      
-      // Check if current point is a peak
-      let mut is_peak = true
-      
-      for j in i - window_size..i + window_size + 1 {
-        if j != i and series.points[j].value >= current_value {
-          is_peak = false
+        if deviation > threshold {
+          all_within_threshold = false
           break
         }
       }
       
-      if is_peak and current_value >= threshold {
-        peaks = peaks @ [i]
+      if all_within_threshold && end_idx < points.length() - 1 {
+        end_idx = end_idx + 1
+      } else {
+        compressed = compressed.push(points[end_idx])
+        start_idx = end_idx
+        end_idx = end_idx + 1
       }
     }
     
-    peaks
+    compressed
   }
   
-  // Create test time series
-  let series = create_time_series("test")
+  // Test swing door compression with threshold of 0.5
+  let swing_compressed = swing_door_compress(compression_points, 0.5)
+  assert_eq(swing_compressed.length(), 4)  // Should reduce from 10 to 4 points
   
-  // Create a series with various patterns
-  let mut pattern_series = series
+  assert_eq(swing_compressed[0].timestamp, 1640995200000)  // First point
+  assert_eq(swing_compressed[0].value, 10.0)
   
-  // Add baseline
-  for i in 0..30 {
-    pattern_series = add_point(pattern_series, i * 10, 10.0)
-  }
+  assert_eq(swing_compressed[1].timestamp, 1640995380000)  // Around where value changes significantly
+  assert_eq(swing_compressed[1].value, 15.0)
   
-  // Add a peak pattern
-  for i in 30..40 {
-    let peak_value = 10.0 + 10.0 * ((i - 30).to_float() / 5.0).sin()
-    pattern_series = add_point(pattern_series, i * 10, peak_value)
-  }
+  assert_eq(swing_compressed[2].timestamp, 1640995560000)  // Around where value changes significantly
+  assert_eq(swing_compressed[2].value, 20.0)
   
-  // Add baseline again
-  for i in 40..60 {
-    pattern_series = add_point(pattern_series, i * 10, 10.0)
-  }
-  
-  // Add another peak pattern
-  for i in 60..70 {
-    let peak_value = 10.0 + 10.0 * ((i - 60).to_float() / 5.0).sin()
-    pattern_series = add_point(pattern_series, i * 10, peak_value)
-  }
-  
-  // Add baseline again
-  for i in 70..100 {
-    pattern_series = add_point(pattern_series, i * 10, 10.0)
-  }
-  
-  assert_eq(pattern_series.points.length(), 100)
-  
-  // Create a pattern to match (the peak pattern)
-  let peak_pattern = create_time_series("peak")
-  for i in 0..10 {
-    let peak_value = 10.0 + 10.0 * (i.to_float() / 5.0).sin()
-    peak_pattern = add_point(peak_pattern, i * 10, peak_value)
-  }
-  
-  // Test pattern matching
-  let matches = find_pattern_matches(pattern_series, peak_pattern, 0.8)
-  
-  assert_eq(matches.length(), 2)  // Should find two peak patterns
-  
-  // Verify first match
-  assert_eq(matches[0].start_index, 30)
-  assert_eq(matches[0].end_index, 39)
-  assert_eq(matches[0].pattern_name, "peak")
-  assert_true(matches[0].score >= 0.8)
-  
-  // Verify second match
-  assert_eq(matches[1].start_index, 60)
-  assert_eq(matches[1].end_index, 69)
-  assert_eq(matches[1].pattern_name, "peak")
-  assert_true(matches[1].score >= 0.8)
-  
-  // Test peak detection
-  let peaks = detect_peaks(pattern_series, 15.0, 2)
-  
-  assert_eq(peaks.length(), 2)  // Should detect two peaks
-  
-  // Verify peak positions
-  assert_eq(peaks[0], 35)  // Middle of first peak
-  assert_eq(peaks[1], 65)  // Middle of second peak
+  assert_eq(swing_compressed[3].timestamp, 1640995740000)  // Last point
+  assert_eq(swing_compressed[3].value, 20.3)
 }
 
-// Test 8: Time Series Correlation Analysis
-test "time series correlation analysis" {
-  type TimeSeriesPoint {
-    timestamp : Int
-    value : Float
+// Test 10: Time Series Query and Filtering
+test "time series query and filtering" {
+  // Create time series with different tags
+  let create_tagged_points = fn() {
+    [
+      { timestamp = 1640995200000, value = 10.0, tags = { "service": "api", "env": "prod", "region": "us-east" } },
+      { timestamp = 1640995260000, value = 12.0, tags = { "service": "api", "env": "prod", "region": "us-east" } },
+      { timestamp = 1640995320000, value = 15.0, tags = { "service": "web", "env": "prod", "region": "us-east" } },
+      { timestamp = 1640995380000, value = 18.0, tags = { "service": "web", "env": "prod", "region": "us-east" } },
+      { timestamp = 1640995440000, value = 20.0, tags = { "service": "api", "env": "dev", "region": "us-west" } },
+      { timestamp = 1640995500000, value = 22.0, tags = { "service": "api", "env": "dev", "region": "us-west" } },
+      { timestamp = 1640995560000, value = 25.0, tags = { "service": "web", "env": "dev", "region": "us-west" } },
+      { timestamp = 1640995620000, value = 28.0, tags = { "service": "web", "env": "dev", "region": "us-west" } }
+    ]
   }
   
-  type TimeSeries {
-    name : String
-    points : Array[TimeSeriesPoint]
-  }
+  let tagged_points = create_tagged_points()
   
-  let create_time_series = fn(name) {
-    { name: name, points: [] }
-  }
-  
-  let add_point = fn(series, timestamp, value) {
-    let point = { timestamp: timestamp, value: value }
-    { name: series.name, points: series.points @ [point] }
-  }
-  
-  let align_series = fn(series1, series2) {
-    // Find common timestamps and align values
-    let mut aligned1 = []
-    let mut aligned2 = []
+  // Test tag-based filtering
+  let filter_by_tags = fn(points, tag_filters) {
+    let mut filtered_points = []
     
-    for point1 in series1.points {
-      for point2 in series2.points {
-        if point1.timestamp == point2.timestamp {
-          aligned1 = aligned1 @ [point1.value]
-          aligned2 = aligned2 @ [point2.value]
+    for point in points {
+      let mut matches_all = true
+      
+      for (tag_key, tag_value) in tag_filters {
+        if !point.tags.contains(tag_key) || point.tags[tag_key] != tag_value {
+          matches_all = false
           break
         }
       }
-    }
-    
-    (aligned1, aligned2)
-  }
-  
-  let calculate_correlation = fn(values1, values2) {
-    if values1.length() != values2.length() or values1.length() == 0 {
-      0.0
-    } else {
-      let n = values1.length().to_float()
       
-      // Calculate means
-      let mut sum1 = 0.0
-      let mut sum2 = 0.0
-      
-      for i in 0..values1.length() {
-        sum1 = sum1 + values1[i]
-        sum2 = sum2 + values2[i]
-      }
-      
-      let mean1 = sum1 / n
-      let mean2 = sum2 / n
-      
-      // Calculate correlation coefficient
-      let mut sum_xy = 0.0
-      let mut sum_x2 = 0.0
-      let mut sum_y2 = 0.0
-      
-      for i in 0..values1.length() {
-        let x = values1[i] - mean1
-        let y = values2[i] - mean2
-        
-        sum_xy = sum_xy + x * y
-        sum_x2 = sum_x2 + x * x
-        sum_y2 = sum_y2 + y * y
-      }
-      
-      if sum_x2 == 0.0 or sum_y2 == 0.0 {
-        0.0
-      } else {
-        sum_xy / (sum_x2 * sum_y2).sqrt()
-      }
-    }
-  }
-  
-  let calculate_cross_correlation = fn(series1, series2, max_lag) {
-    let (values1, values2) = align_series(series1, series2)
-    let correlations = []
-    
-    for lag in -max_lag..max_lag + 1 {
-      let mut shifted_values2 = []
-      
-      if lag >= 0 {
-        // Positive lag: shift series2 forward
-        for i in 0..values2.length() {
-          if i + lag < values1.length() {
-            shifted_values2 = shifted_values2 @ [values2[i]]
-          }
-        }
-        
-        // Trim values1 to match
-        let mut trimmed_values1 = []
-        for i in lag..values1.length() {
-          trimmed_values1 = trimmed_values1 @ [values1[i]]
-        }
-        
-        let correlation = calculate_correlation(trimmed_values1, shifted_values2)
-        correlations = correlations @ [(lag, correlation)]
-      } else {
-        // Negative lag: shift series2 backward
-        for i in (-lag)..values2.length() {
-          shifted_values2 = shifted_values2 @ [values2[i]]
-        }
-        
-        // Trim values1 to match
-        let mut trimmed_values1 = []
-        for i in 0..values1.length() + lag {
-          trimmed_values1 = trimmed_values1 @ [values1[i]]
-        }
-        
-        let correlation = calculate_correlation(trimmed_values1, shifted_values2)
-        correlations = correlations @ [(lag, correlation)]
+      if matches_all {
+        filtered_points = filtered_points.push(point)
       }
     }
     
-    correlations
+    filtered_points
   }
   
-  let find_best_lag = fn(cross_correlations) {
-    let mut best_lag = 0
-    let mut best_correlation = 0.0
+  // Test filtering by service
+  let api_points = filter_by_tags(tagged_points, { "service": "api" })
+  assert_eq(api_points.length(), 4)
+  assert_eq(api_points[0].tags["service"], "api")
+  assert_eq(api_points[1].tags["service"], "api")
+  assert_eq(api_points[2].tags["service"], "api")
+  assert_eq(api_points[3].tags["service"], "api")
+  
+  // Test filtering by environment
+  let prod_points = filter_by_tags(tagged_points, { "env": "prod" })
+  assert_eq(prod_points.length(), 4)
+  assert_eq(prod_points[0].tags["env"], "prod")
+  assert_eq(prod_points[1].tags["env"], "prod")
+  assert_eq(prod_points[2].tags["env"], "prod")
+  assert_eq(prod_points[3].tags["env"], "prod")
+  
+  // Test filtering by multiple tags
+  let api_prod_points = filter_by_tags(tagged_points, { "service": "api", "env": "prod" })
+  assert_eq(api_prod_points.length(), 2)
+  assert_eq(api_prod_points[0].tags["service"], "api")
+  assert_eq(api_prod_points[0].tags["env"], "prod")
+  assert_eq(api_prod_points[1].tags["service"], "api")
+  assert_eq(api_prod_points[1].tags["env"], "prod")
+  
+  // Test value-based filtering
+  let filter_by_value = fn(points, min_value, max_value) {
+    let mut filtered_points = []
     
-    for (lag, correlation) in cross_correlations {
-      if correlation.abs() > best_correlation.abs() {
-        best_lag = lag
-        best_correlation = correlation
+    for point in points {
+      if point.value >= min_value && point.value <= max_value {
+        filtered_points = filtered_points.push(point)
       }
     }
     
-    (best_lag, best_correlation)
+    filtered_points
   }
   
-  // Create test time series
-  let series1 = create_time_series("series1")
-  let series2 = create_time_series("series2")
-  let series3 = create_time_series("series3")
+  // Test filtering by value range
+  let mid_range_points = filter_by_value(tagged_points, 15.0, 25.0)
+  assert_eq(mid_range_points.length(), 4)
+  assert_eq(mid_range_points[0].value, 15.0)
+  assert_eq(mid_range_points[1].value, 18.0)
+  assert_eq(mid_range_points[2].value, 20.0)
+  assert_eq(mid_range_points[3].value, 22.0)
   
-  // Create correlated series (series2 follows series1 with a lag)
-  let mut correlated_series1 = series1
-  let mut correlated_series2 = series2
-  
-  for i in 0..50 {
-    let value1 = 10.0 + 5.0 * ((2.0 * 3.14159 * i.to_float() / 20.0).sin())
-    correlated_series1 = add_point(correlated_series1, i * 10, value1)
+  // Test time-based filtering
+  let filter_by_time = fn(points, start_time, end_time) {
+    let mut filtered_points = []
     
-    // Series2 follows series1 with a lag of 3
-    if i >= 3 {
-      let lagged_value1 = 10.0 + 5.0 * ((2.0 * 3.14159 * (i - 3).to_float() / 20.0).sin())
-      correlated_series2 = add_point(correlated_series2, i * 10, lagged_value1)
-    }
-  }
-  
-  // Create uncorrelated series (series3)
-  let mut uncorrelated_series = series3
-  for i in 0..50 {
-    let random_value = 10.0 + (i % 7).to_float() - 3.0
-    uncorrelated_series = add_point(uncorrelated_series, i * 10, random_value)
-  }
-  
-  // Test correlation between series1 and series2
-  let (values1, values2) = align_series(correlated_series1, correlated_series2)
-  let correlation = calculate_correlation(values1, values2)
-  
-  assert_true(correlation > 0.8)  // Should be highly correlated
-  
-  // Test correlation between series1 and series3
-  let (values1_3, values3) = align_series(correlated_series1, uncorrelated_series)
-  let correlation_1_3 = calculate_correlation(values1_3, values3)
-  
-  assert_true(correlation_1_3.abs() < 0.5)  // Should be weakly correlated
-  
-  // Test cross-correlation
-  let cross_correlations = calculate_cross_correlation(correlated_series1, correlated_series2, 10)
-  
-  assert_eq(cross_correlations.length(), 21)  // From -10 to 10
-  
-  // Find best lag
-  let (best_lag, best_correlation) = find_best_lag(cross_correlations)
-  
-  assert_eq(best_lag, 3)  // Should detect the lag of 3
-  assert_true(best_correlation > 0.8)
-}
-
-// Test 9: Time Series Decomposition
-test "time series decomposition" {
-  type TimeSeriesPoint {
-    timestamp : Int
-    value : Float
-  }
-  
-  type TimeSeries {
-    name : String
-    points : Array[TimeSeriesPoint]
-  }
-  
-  type Decomposition {
-    trend : Array[Float]
-    seasonal : Array[Float]
-    residual : Array[Float]
-  }
-  
-  let create_time_series = fn(name) {
-    { name: name, points: [] }
-  }
-  
-  let add_point = fn(series, timestamp, value) {
-    let point = { timestamp: timestamp, value: value }
-    { name: series.name, points: series.points @ [point] }
-  }
-  
-  let calculate_moving_average = fn(values, window) {
-    if values.length() < window {
-      values
-    } else {
-      let mut result = []
-      
-      for i in 0..values.length() {
-        if i < window / 2 or i >= values.length() - window / 2 {
-          // Use smaller window at edges
-          let edge_window = if i < window / 2 {
-            i + window / 2 + 1
-          } else {
-            values.length() - i + window / 2
-          }
-          
-          let mut sum = 0.0
-          let start = if i < window / 2 {
-            0
-          } else {
-            i - window / 2
-          }
-          
-          let end = if i >= values.length() - window / 2 {
-            values.length()
-          } else {
-            i + window / 2 + 1
-          }
-          
-          for j in start..end {
-            sum = sum + values[j]
-          }
-          
-          result = result @ [sum / (end - start).to_float()]
-        } else {
-          // Use full window
-          let mut sum = 0.0
-          for j in i - window / 2..i + window / 2 + 1 {
-            sum = sum + values[j]
-          }
-          
-          result = result @ [sum / window.to_float()]
-        }
-      }
-      
-      result
-    }
-  }
-  
-  let classical_decomposition = fn(series, period) {
-    if series.points.length() < period * 2 {
-      // Not enough data for decomposition
-      let values = []
-      for point in series.points {
-        values = values @ [point.value]
-      }
-      
-      {
-        trend: values,
-        seasonal: [],
-        residual: []
-      }
-    } else {
-      // Extract values
-      let mut values = []
-      for point in series.points {
-        values = values @ [point.value]
-      }
-      
-      // Calculate trend using moving average
-      let trend = calculate_moving_average(values, period)
-      
-      // Calculate detrended series
-      let mut detrended = []
-      for i in 0..values.length() {
-        if i < trend.length() {
-          detrended = detrended @ [values[i] - trend[i]]
-        } else {
-          detrended = detrended @ [0.0]
-        }
-      }
-      
-      // Calculate seasonal components
-      let mut seasonal = []
-      for i in 0..period {
-        let mut seasonal_sum = 0.0
-        let mut seasonal_count = 0
-        
-        for j in i..detrended.length() {
-          if j % period == i {
-            seasonal_sum = seasonal_sum + detrended[j]
-            seasonal_count = seasonal_count + 1
-          }
-        }
-        
-        if seasonal_count > 0 {
-          seasonal = seasonal @ [seasonal_sum / seasonal_count]
-        } else {
-          seasonal = seasonal @ [0.0]
-        }
-      }
-      
-      // Normalize seasonal components
-      let mut seasonal_sum = 0.0
-      for s in seasonal {
-        seasonal_sum = seasonal_sum + s
-      }
-      let seasonal_mean = seasonal_sum / period.to_float()
-      
-      let mut normalized_seasonal = []
-      for s in seasonal {
-        normalized_seasonal = normalized_seasonal @ [s - seasonal_mean]
-      }
-      
-      // Calculate residual
-      let mut residual = []
-      for i in 0..values.length() {
-        if i < trend.length() {
-          let seasonal_component = normalized_seasonal[i % period]
-          residual = residual @ [values[i] - trend[i] - seasonal_component]
-        } else {
-          residual = residual @ [0.0]
-        }
-      }
-      
-      {
-        trend: trend,
-        seasonal: normalized_seasonal,
-        residual: residual
-      }
-    }
-  }
-  
-  let reconstruct_from_decomposition = fn(decomposition, period) {
-    let mut reconstructed = []
-    
-    for i in 0..decomposition.trend.length() {
-      let seasonal_component = if i < decomposition.seasonal.length() {
-        decomposition.seasonal[i % period]
-      } else {
-        0.0
-      }
-      
-      let residual_component = if i < decomposition.residual.length() {
-        decomposition.residual[i]
-      } else {
-        0.0
-      }
-      
-      reconstructed = reconstructed @ [decomposition.trend[i] + seasonal_component + residual_component]
-    }
-    
-    reconstructed
-  }
-  
-  // Create test time series with trend and seasonality
-  let series = create_time_series("test")
-  
-  let mut trend_seasonal_series = series
-  for i in 0..100 {
-    // Trend: 0.5 per period
-    // Seasonality: sine wave with period 12
-    let trend = 0.5 * i.to_float()
-    let seasonality = 10.0 * ((2.0 * 3.14159 * i.to_float() / 12.0).sin())
-    let noise = (i % 7).to_float() - 3.0  // Random noise
-    
-    let value = 100.0 + trend + seasonality + noise
-    trend_seasonal_series = add_point(trend_seasonal_series, i * 10, value)
-  }
-  
-  assert_eq(trend_seasonal_series.points.length(), 100)
-  
-  // Test decomposition
-  let decomposition = classical_decomposition(trend_seasonal_series, 12)
-  
-  assert_eq(decomposition.trend.length(), 100)
-  assert_eq(decomposition.seasonal.length(), 12)
-  assert_eq(decomposition.residual.length(), 100)
-  
-  // Verify trend is increasing
-  assert_true(decomposition.trend[50] > decomposition.trend[0])
-  
-  // Verify seasonal components sum to approximately zero
-  let mut seasonal_sum = 0.0
-  for s in decomposition.seasonal {
-    seasonal_sum = seasonal_sum + s
-  }
-  assert_true(seasonal_sum.abs() < 0.1)
-  
-  // Test reconstruction
-  let reconstructed = reconstruct_from_decomposition(decomposition, 12)
-  
-  assert_eq(reconstructed.length(), 100)
-  
-  // Verify reconstruction is close to original
-  let mut max_error = 0.0
-  for i in 0..trend_seasonal_series.points.length() {
-    let error = (reconstructed[i] - trend_seasonal_series.points[i].value).abs()
-    if error > max_error {
-      max_error = error
-    }
-  }
-  
-  assert_true(max_error < 1.0)  // Reconstruction should be close to original
-}
-
-// Test 10: Time Series Window Operations
-test "time series window operations" {
-  type TimeSeriesPoint {
-    timestamp : Int
-    value : Float
-  }
-  
-  type TimeSeries {
-    name : String
-    points : Array[TimeSeriesPoint]
-  }
-  
-  type WindowResult {
-    timestamp : Int
-    value : Float
-    window_start : Int
-    window_end : Int
-  }
-  
-  let create_time_series = fn(name) {
-    { name: name, points: [] }
-  }
-  
-  let add_point = fn(series, timestamp, value) {
-    let point = { timestamp: timestamp, value: value }
-    { name: series.name, points: series.points @ [point] }
-  }
-  
-  let apply_window_function = fn(series, window_size, operation) {
-    let mut results = []
-    
-    for i in window_size - 1..series.points.length() {
-      let window_start = i - window_size + 1
-      let window_end = i
-      
-      let mut window_values = []
-      for j in window_start..window_end + 1 {
-        window_values = window_values @ [series.points[j].value]
-      }
-      
-      let result_value = match operation {
-        "sum" => {
-          let mut sum = 0.0
-          for value in window_values {
-            sum = sum + value
-          }
-          sum
-        }
-        "mean" => {
-          let mut sum = 0.0
-          for value in window_values {
-            sum = sum + value
-          }
-          sum / window_values.length().to_float()
-        }
-        "min" => {
-          let mut min = window_values[0]
-          for value in window_values {
-            if value < min {
-              min = value
-            }
-          }
-          min
-        }
-        "max" => {
-          let mut max = window_values[0]
-          for value in window_values {
-            if value > max {
-              max = value
-            }
-          }
-          max
-        }
-        "std" => {
-          let mut sum = 0.0
-          for value in window_values {
-            sum = sum + value
-          }
-          let mean = sum / window_values.length().to_float()
-          
-          let mut sum_squares = 0.0
-          for value in window_values {
-            let diff = value - mean
-            sum_squares = sum_squares + diff * diff
-          }
-          
-          (sum_squares / window_values.length().to_float()).sqrt()
-        }
-        _ => 0.0
-      }
-      
-      results = results @ [{
-        timestamp: series.points[i].timestamp,
-        value: result_value,
-        window_start: window_start,
-        window_end: window_end
-      }]
-    }
-    
-    results
-  }
-  
-  let rolling_aggregate = fn(series, window_size, aggregation_fn) {
-    let mut results = []
-    let mut window_sum = 0.0
-    let mut window_count = 0
-    
-    for i in 0..series.points.length() {
-      // Add current value to window
-      window_sum = window_sum + series.points[i].value
-      window_count = window_count + 1
-      
-      // Remove values outside the window
-      if window_count > window_size {
-        let remove_index = i - window_size
-        window_sum = window_sum - series.points[remove_index].value
-        window_count = window_count - 1
-      }
-      
-      // Apply aggregation if window is full
-      if window_count == window_size {
-        let aggregated_value = aggregation_fn(window_sum, window_count)
-        results = results @ [{
-          timestamp: series.points[i].timestamp,
-          value: aggregated_value,
-          window_start: i - window_size + 1,
-          window_end: i
-        }]
+    for point in points {
+      if point.timestamp >= start_time && point.timestamp < end_time {
+        filtered_points = filtered_points.push(point)
       }
     }
     
-    results
+    filtered_points
   }
   
-  let expanding_window = fn(series, operation) {
-    let mut results = []
+  // Test filtering by time range
+  let time_filtered_points = filter_by_time(tagged_points, 1640995300000, 1640995550000)
+  assert_eq(time_filtered_points.length(), 3)
+  assert_eq(time_filtered_points[0].timestamp, 1640995320000)
+  assert_eq(time_filtered_points[1].timestamp, 1640995380000)
+  assert_eq(time_filtered_points[2].timestamp, 1640995440000)
+  
+  // Test complex query with multiple filters
+  let complex_query = fn(points, tag_filters, value_range, time_range) {
+    let mut filtered_points = points
     
-    for i in 0..series.points.length() {
-      let mut window_values = []
-      for j in 0..i + 1 {
-        window_values = window_values @ [series.points[j].value]
-      }
-      
-      let result_value = match operation {
-        "sum" => {
-          let mut sum = 0.0
-          for value in window_values {
-            sum = sum + value
-          }
-          sum
-        }
-        "mean" => {
-          let mut sum = 0.0
-          for value in window_values {
-            sum = sum + value
-          }
-          sum / window_values.length().to_float()
-        }
-        "cummax" => {
-          let mut max = window_values[0]
-          for value in window_values {
-            if value > max {
-              max = value
-            }
-          }
-          max
-        }
-        "cummin" => {
-          let mut min = window_values[0]
-          for value in window_values {
-            if value < min {
-              min = value
-            }
-          }
-          min
-        }
-        _ => 0.0
-      }
-      
-      results = results @ [{
-        timestamp: series.points[i].timestamp,
-        value: result_value,
-        window_start: 0,
-        window_end: i
-      }]
+    // Apply tag filters
+    if tag_filters.length() > 0 {
+      filtered_points = filter_by_tags(filtered_points, tag_filters)
     }
     
-    results
+    // Apply value filter
+    if value_range.length() == 2 {
+      filtered_points = filter_by_value(filtered_points, value_range[0], value_range[1])
+    }
+    
+    // Apply time filter
+    if time_range.length() == 2 {
+      filtered_points = filter_by_time(filtered_points, time_range[0], time_range[1])
+    }
+    
+    filtered_points
   }
   
-  // Create test time series
-  let series = create_time_series("test")
+  // Test complex query
+  let complex_result = complex_query(
+    tagged_points,
+    { "service": "web" },
+    [20.0, 30.0],
+    [1640995500000, 1640995700000]
+  )
   
-  let mut filled_series = series
-  for i in 0..20 {
-    filled_series = add_point(filled_series, i * 10, (i * i).to_float())  // Squares: 0, 1, 4, 9, 16, ...
-  }
-  
-  assert_eq(filled_series.points.length(), 20)
-  
-  // Test window function with mean
-  let mean_results = apply_window_function(filled_series, 5, "mean")
-  assert_eq(mean_results.length(), 16)  // 20 - 5 + 1
-  
-  // Verify first mean result (average of first 5 values: 0, 1, 4, 9, 16)
-  let expected_first_mean = (0.0 + 1.0 + 4.0 + 9.0 + 16.0) / 5.0
-  assert_eq(mean_results[0].value, expected_first_mean)
-  
-  // Test window function with max
-  let max_results = apply_window_function(filled_series, 3, "max")
-  assert_eq(max_results.length(), 18)  // 20 - 3 + 1
-  
-  // Verify first max result (max of 0, 1, 4)
-  assert_eq(max_results[0].value, 4.0)
-  
-  // Test rolling aggregate
-  let sum_aggregate = fn(sum, count) { sum }
-  let rolling_sum_results = rolling_aggregate(filled_series, 4, sum_aggregate)
-  assert_eq(rolling_sum_results.length(), 17)  // 20 - 4 + 1
-  
-  // Verify first rolling sum (sum of first 4 values: 0, 1, 4, 9)
-  assert_eq(rolling_sum_results[0].value, 14.0)
-  
-  // Test expanding window
-  let expanding_sum_results = expanding_window(filled_series, "sum")
-  assert_eq(expanding_sum_results.length(), 20)
-  
-  // Verify first few expanding sums
-  assert_eq(expanding_sum_results[0].value, 0.0)  // Sum of [0]
-  assert_eq(expanding_sum_results[1].value, 1.0)  // Sum of [0, 1]
-  assert_eq(expanding_sum_results[2].value, 5.0)  // Sum of [0, 1, 4]
-  assert_eq(expanding_sum_results[3].value, 14.0) // Sum of [0, 1, 4, 9]
-  
-  // Test expanding window with cummax
-  let expanding_cummax_results = expanding_window(filled_series, "cummax")
-  assert_eq(expanding_cummax_results[0].value, 0.0)  // Max of [0]
-  assert_eq(expanding_cummax_results[1].value, 1.0)  // Max of [0, 1]
-  assert_eq(expanding_cummax_results[2].value, 4.0)  // Max of [0, 1, 4]
-  assert_eq(expanding_cummax_results[3].value, 9.0)  // Max of [0, 1, 4, 9]
+  assert_eq(complex_result.length(), 2)
+  assert_eq(complex_result[0].tags["service"], "web")
+  assert_eq(complex_result[0].value, 25.0)
+  assert_eq(complex_result[1].tags["service"], "web")
+  assert_eq(complex_result[1].value, 28.0)
 }

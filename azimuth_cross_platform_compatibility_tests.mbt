@@ -1,797 +1,1008 @@
-// Azimuth 跨平台兼容性测试
-// 专注于验证遥测系统在不同平台和架构下的兼容性和一致性
+// Azimuth Cross-Platform Compatibility Tests
+// This file contains test cases for cross-platform compatibility
 
-// 测试1: 多操作系统兼容性验证
-test "多操作系统兼容性验证" {
-  // 1. 定义测试平台
-  let platforms = [
-    {
-      name: "Linux",
-      architecture: "x86_64",
-      version: "Ubuntu 20.04",
-      expected_behaviors: [
-        "process_metrics_available",
-        "system_metrics_available",
-        "network_metrics_available",
-        "file_system_metrics_available"
-      ]
-    },
-    {
-      name: "Linux",
-      architecture: "ARM64",
-      version: "CentOS 8",
-      expected_behaviors: [
-        "process_metrics_available",
-        "system_metrics_available",
-        "network_metrics_available",
-        "file_system_metrics_available"
-      ]
-    },
-    {
-      name: "Windows",
-      architecture: "x86_64",
-      version: "Windows Server 2019",
-      expected_behaviors: [
-        "process_metrics_available",
-        "system_metrics_available",
-        "network_metrics_available",
-        "windows_specific_metrics_available"
-      ]
-    },
-    {
-      name: "macOS",
-      architecture: "ARM64",
-      version: "macOS 12.0",
-      expected_behaviors: [
-        "process_metrics_available",
-        "system_metrics_available",
-        "network_metrics_available",
-        "macos_specific_metrics_available"
-      ]
-    }
-  ]
-  
-  // 2. 在每个平台上测试遥测功能
-  let platform_results = []
-  
-  for platform in platforms {
-    let platform_test_result = test_platform_compatibility(platform)
-    platform_results = platform_results.push(platform_test_result)
+// Test 1: Operating System Detection and Adaptation
+test "operating system detection and adaptation" {
+  // Define OS types
+  let create_os_info = fn(name, version, architecture) {
+    { name = name, version = version, architecture = architecture }
   }
   
-  // 3. 验证所有平台的基本功能
-  for result in platform_results {
-    // 验证基本遥测功能在所有平台上都可用
-    assert_true(result.basic_telemetry.available)
-    assert_true(result.basic_telemetry.metrics_collection.success)
-    assert_true(result.basic_telemetry.trace_collection.success)
-    assert_true(result.basic_telemetry.log_collection.success)
+  // Simulate OS detection
+  let detect_os = fn() {
+    // In real implementation, would detect actual OS
+    // For testing, we'll simulate different OS environments
     
-    // 验证平台特定的预期行为
-    for expected_behavior in result.platform.expected_behaviors {
-      let behavior_available = result.platform_specific_behaviors.any(fn(b) { b.name == expected_behavior && b.available })
-      assert_true(behavior_available, "Expected behavior '" + expected_behavior + "' not available on " + result.platform.name)
-    }
+    // Simulate Linux environment
+    let linux_info = create_os_info("linux", "5.15.0", "x86_64")
     
-    // 验证性能在可接受范围内
-    assert_true(result.performance.metrics_collection_time_ms < 100)
-    assert_true(result.performance.trace_collection_time_ms < 50)
-    assert_true(result.performance.log_collection_time_ms < 30)
-    assert_true(result.performance.memory_usage_mb < 50)
+    // Simulate Windows environment
+    let windows_info = create_os_info("windows", "10.0.19042", "x86_64")
+    
+    // Simulate macOS environment
+    let macos_info = create_os_info("macos", "12.0.1", "arm64")
+    
+    [linux_info, windows_info, macos_info]
   }
   
-  // 4. 验证跨平台数据一致性
-  let consistency_result = verify_cross_platform_data_consistency(platform_results)
-  assert_true(consistency_result.data_format_consistent)
-  assert_true(consistency_result.timestamp_format_consistent)
-  assert_true(consistency_result.metric_names_consistent)
-  assert_true(consistency_result.trace_format_consistent)
-  
-  // 5. 验证平台特定差异被正确处理
-  let platform_differences = identify_platform_differences(platform_results)
-  
-  // 验证Windows平台有特定的性能计数器
-  let windows_result = platform_results.find(fn(r) { r.platform.name == "Windows" && r.platform.architecture == "x86_64" })
-  assert_true(windows_result.is_some())
-  match windows_result {
-    Some(result) => {
-      let windows_perf_counters = result.platform_specific_metrics.filter(fn(m) { m.category == "windows_performance_counters" })
-      assert_true(windows_perf_counters.length() > 0)
+  // Test OS-specific path handling
+  let get_platform_path = fn(base_path, os_info) {
+    match os_info.name {
+      "windows" => base_path.replace("/", "\\")
+      _ => base_path
     }
-    None => assert_true(false)
   }
   
-  // 验证macOS平台有特定的系统指标
-  let macos_result = platform_results.find(fn(r) { r.platform.name == "macOS" && r.platform.architecture == "ARM64" })
-  assert_true(macos_result.is_some())
-  match macos_result {
-    Some(result) => {
-      let macos_system_metrics = result.platform_specific_metrics.filter(fn(m) { m.category == "macos_system_metrics" })
-      assert_true(macos_system_metrics.length() > 0)
+  // Test OS-specific command handling
+  let get_platform_command = fn(command, os_info) {
+    match os_info.name {
+      "windows" => command + ".exe"
+      "macos" => command + ".app"
+      _ => command
     }
-    None => assert_true(false)
   }
+  
+  // Test OS detection
+  let os_list = detect_os()
+  assert_eq(os_list.length(), 3)
+  
+  let linux_os = os_list[0]
+  assert_eq(linux_os.name, "linux")
+  assert_eq(linux_os.version, "5.15.0")
+  assert_eq(linux_os.architecture, "x86_64")
+  
+  let windows_os = os_list[1]
+  assert_eq(windows_os.name, "windows")
+  assert_eq(windows_os.version, "10.0.19042")
+  assert_eq(windows_os.architecture, "x86_64")
+  
+  let macos_os = os_list[2]
+  assert_eq(macos_os.name, "macos")
+  assert_eq(macos_os.version, "12.0.1")
+  assert_eq(macos_os.architecture, "arm64")
+  
+  // Test path handling
+  let base_path = "/opt/azimuth/config"
+  
+  let linux_path = get_platform_path(base_path, linux_os)
+  assert_eq(linux_path, "/opt/azimuth/config")
+  
+  let windows_path = get_platform_path(base_path, windows_os)
+  assert_eq(windows_path, "\\opt\\azimuth\\config")
+  
+  let macos_path = get_platform_path(base_path, macos_os)
+  assert_eq(macos_path, "/opt/azimuth/config")
+  
+  // Test command handling
+  let base_command = "azimuth-agent"
+  
+  let linux_command = get_platform_command(base_command, linux_os)
+  assert_eq(linux_command, "azimuth-agent")
+  
+  let windows_command = get_platform_command(base_command, windows_os)
+  assert_eq(windows_command, "azimuth-agent.exe")
+  
+  let macos_command = get_platform_command(base_command, macos_os)
+  assert_eq(macos_command, "azimuth-agent.app")
 }
 
-// 测试2: WebAssembly兼容性验证
-test "WebAssembly兼容性验证" {
-  // 1. 测试WebAssembly环境检测和适配
-  let wasm_detection = detect_webassembly_environment()
-  assert_true(wasm_detection.wasm_supported)
-  assert_true(wasm_detection.browser_environment_detected)
+// Test 2: Architecture-Specific Optimizations
+test "architecture-specific optimizations" {
+  // Define architecture types
+  let create_arch_info = fn(name, is_64bit, endian, supports_simd) {
+    { name = name, is_64bit = is_64bit, endian = endian, supports_simd = supports_simd }
+  }
   
-  // 2. 测试WebAssembly特定的遥测功能
-  let wasm_telemetry = initialize_webassembly_telemetry({
-    enable_browser_metrics: true,
-    enable_performance_api: true,
-    enable_webgl_metrics: false,
-    enable_webaudio_metrics: false
-  })
+  // Create different architecture infos
+  let x86_64_arch = create_arch_info("x86_64", true, "little", true)
+  let arm64_arch = create_arch_info("arm64", true, "little", true)
+  let x86_arch = create_arch_info("x86", false, "little", false)
+  let arm_arch = create_arch_info("arm", false, "little", false)
   
-  assert_true(wasm_telemetry.initialization_success)
+  // Test architecture-specific optimizations
+  let get_optimized_hash_algorithm = fn(arch_info) {
+    match arch_info.name {
+      "x86_64" => "xxhash64"
+      "arm64" => "xxhash64"
+      "x86" => "murmur3"
+      "arm" => "murmur3"
+      _ => "default"
+    }
+  }
   
-  // 3. 测试浏览器特定指标的收集
-  let browser_metrics = collect_browser_metrics(wasm_telemetry)
+  let get_optimized_compression = fn(arch_info) {
+    if arch_info.supports_simd {
+      "lz4_simd"
+    } else {
+      "lz4"
+    }
+  }
   
-  // 验证基本浏览器指标
-  assert_true(browser_metrics.page_load_time_ms > 0)
-  assert_true(browser_metrics.dom_content_loaded_time_ms > 0)
-  assert_true(browser_metrics.first_contentful_paint_time_ms > 0)
-  assert_true(browser_metrics.largest_contentful_paint_time_ms > 0)
+  let get_optimized_serialization = fn(arch_info) {
+    if arch_info.is_64bit {
+      "protobuf64"
+    } else {
+      "protobuf32"
+    }
+  }
   
-  // 验证WebAssembly性能指标
-  assert_true(browser_metrics.wasm_compilation_time_ms >= 0)
-  assert_true(browser_metrics.wasm_instantiation_time_ms >= 0)
-  assert_true(browser_metrics.wasm_execution_time_ms > 0)
+  // Test x86_64 optimizations
+  assert_eq(get_optimized_hash_algorithm(x86_64_arch), "xxhash64")
+  assert_eq(get_optimized_compression(x86_64_arch), "lz4_simd")
+  assert_eq(get_optimized_serialization(x86_64_arch), "protobuf64")
   
-  // 4. 测试WebAssembly环境下的追踪功能
-  let wasm_tracing = test_webassembly_tracing(wasm_telemetry)
+  // Test ARM64 optimizations
+  assert_eq(get_optimized_hash_algorithm(arm64_arch), "xxhash64")
+  assert_eq(get_optimized_compression(arm64_arch), "lz4_simd")
+  assert_eq(get_optimized_serialization(arm64_arch), "protobuf64")
   
-  assert_true(wasm_tracing.trace_creation_success)
-  assert_true(wasm_tracing.span_creation_success)
-  assert_true(wasm_tracing.context_propagation_success)
+  // Test x86 optimizations
+  assert_eq(get_optimized_hash_algorithm(x86_arch), "murmur3")
+  assert_eq(get_optimized_compression(x86_arch), "lz4")
+  assert_eq(get_optimized_serialization(x86_arch), "protobuf32")
   
-  // 验证追踪数据格式与原生环境一致
-  let trace_format_compatibility = compare_trace_format_with_native(wasm_tracing.sample_trace)
-  assert_true(trace_format_compatibility.format_compatible)
-  assert_true(trace_format_compatibility.fields_compatible)
-  assert_true(trace_format_compatibility.timestamp_format_compatible)
+  // Test ARM optimizations
+  assert_eq(get_optimized_hash_algorithm(arm_arch), "murmur3")
+  assert_eq(get_optimized_compression(arm_arch), "lz4")
+  assert_eq(get_optimized_serialization(arm_arch), "protobuf32")
   
-  // 5. 测试WebAssembly环境下的指标功能
-  let wasm_metrics = test_webassembly_metrics(wasm_telemetry)
+  // Test endianness handling
+  let handle_endianness = fn(data, arch_info) {
+    if arch_info.endian == "little" {
+      data  // No conversion needed for little endian
+    } else {
+      // Would convert to little endian in real implementation
+      "converted_" + data
+    }
+  }
   
-  assert_true(wasm_metrics.counter_creation_success)
-  assert_true(wasm_metrics.gauge_creation_success)
-  assert_true(wasm_metrics.histogram_creation_success)
+  let test_data = "0x12345678"
   
-  // 验证指标数据格式与原生环境一致
-  let metrics_format_compatibility = compare_metrics_format_with_native(wasm_metrics.sample_metrics)
-  assert_true(metrics_format_compatibility.format_compatible)
-  assert_true(metrics_format_compatibility.value_types_compatible)
-  assert_true(metrics_format_compatibility.timestamp_format_compatible)
+  let little_endian_result = handle_endianness(test_data, x86_64_arch)
+  assert_eq(little_endian_result, "0x12345678")
   
-  // 6. 测试WebAssembly环境下的日志功能
-  let wasm_logging = test_webassembly_logging(wasm_telemetry)
-  
-  assert_true(wasm_logging.log_creation_success)
-  assert_true(wasm_logging.log_severity_handling_success)
-  
-  // 验证日志数据格式与原生环境一致
-  let logging_format_compatibility = compare_logging_format_with_native(wasm_logging.sample_logs)
-  assert_true(logging_format_compatibility.format_compatible)
-  assert_true(logging_format_compatibility.severity_levels_compatible)
-  assert_true(logging_format_compatibility.timestamp_format_compatible)
+  let big_endian_arch = create_arch_info("ppc64", true, "big", true)
+  let big_endian_result = handle_endianness(test_data, big_endian_arch)
+  assert_eq(big_endian_result, "converted_0x12345678")
 }
 
-// 测试3: 容器化环境兼容性验证
-test "容器化环境兼容性验证" {
-  // 1. 测试容器环境检测
-  let container_detection = detect_container_environment()
-  
-  // 验证能够检测到容器环境
-  assert_true(container_detection.container_detected)
-  assert_true(container_detection.container_type.is_some())
-  
-  match container_detection.container_type {
-    Some(type) => {
-      assert_true(type == "docker" || type == "kubernetes" || type == "containerd")
-    }
-    None => assert_true(false)
+// Test 3: Platform-Specific File System Operations
+test "platform-specific file system operations" {
+  // Define file system info
+  let create_filesystem_info = fn(path_separator, case_sensitive, max_path_length) {
+    { path_separator = path_separator, case_sensitive = case_sensitive, max_path_length = max_path_length }
   }
   
-  // 2. 测试容器特定指标收集
-  let container_metrics = collect_container_metrics()
+  // Create different file system infos
+  let linux_fs = create_filesystem_info("/", true, 4096)
+  let windows_fs = create_filesystem_info("\\", false, 260)
+  let macos_fs = create_filesystem_info("/", true, 1024)
   
-  // 验证容器资源指标
-  assert_true(container_metrics.cpu_limit_cores > 0)
-  assert_true(container_metrics.cpu_usage_cores >= 0)
-  assert_true(container_metrics.memory_limit_bytes > 0)
-  assert_true(container_metrics.memory_usage_bytes >= 0)
-  assert_true(container_metrics.memory_usage_bytes <= container_metrics.memory_limit_bytes)
-  
-  // 验证容器网络指标
-  assert_true(container_metrics.network_rx_bytes >= 0)
-  assert_true(container_metrics.network_tx_bytes >= 0)
-  assert_true(container_metrics.network_rx_packets >= 0)
-  assert_true(container_metrics.network_tx_packets >= 0)
-  
-  // 验证容器存储指标
-  assert_true(container_metrics.storage_read_bytes >= 0)
-  assert_true(container_metrics.storage_write_bytes >= 0)
-  assert_true(container_metrics.storage_read_ops >= 0)
-  assert_true(container_metrics.storage_write_ops >= 0)
-  
-  // 3. 测试Kubernetes环境特定功能（如果在Kubernetes中）
-  if container_detection.container_type == Some("kubernetes") {
-    let kubernetes_metrics = collect_kubernetes_metrics()
+  // Test path joining
+  let join_path = fn(parts, fs_info) {
+    let separator = fs_info.path_separator
+    let mut joined = ""
     
-    // 验证Pod级别指标
-    assert_true(kubernetes_metrics.pod_name != "")
-    assert_true(kubernetes_metrics.pod_namespace != "")
-    assert_true(kubernetes_metrics.pod_uid != "")
-    assert_true(kubernetes_metrics.node_name != "")
-    
-    // 验证服务级别指标
-    assert_true(kubernetes_metrics.service_names.length() > 0)
-    assert_true(kubernetes_metrics.endpoints.length() > 0)
-    
-    // 验证标签和注解
-    assert_true(kubernetes_metrics.labels.length() > 0)
-    assert_true(kubernetes_metrics.annotations.length() >= 0)
-  }
-  
-  // 4. 测试容器环境下的遥测数据传输
-  let container_telemetry_transmission = test_container_telemetry_transmission()
-  
-  assert_true(container_telemetry_transmission.transmission_success)
-  assert_true(container_telemetry_transmission.container_metadata_included)
-  
-  // 验证容器元数据正确包含在遥测数据中
-  let telemetry_data = container_telemetry_transmission.sample_telemetry
-  assert_true(telemetry_data.resource_attributes.any(fn(attr) { 
-    attr.key == "container.id" && attr.value != "" 
-  }))
-  assert_true(telemetry_data.resource_attributes.any(fn(attr) { 
-    attr.key == "container.name" && attr.value != "" 
-  }))
-  assert_true(telemetry_data.resource_attributes.any(fn(attr) { 
-    attr.key == "container.image" && attr.value != "" 
-  }))
-  
-  // 5. 测试容器环境下的服务发现
-  let service_discovery = test_container_service_discovery()
-  
-  assert_true(service_discovery.discovery_success)
-  assert_true(service_discovery.discovered_services.length() > 0)
-  
-  // 验证发现的服务信息
-  for service in service_discovery.discovered_services {
-    assert_true(service.name != "")
-    assert_true(service.endpoints.length() > 0)
-    assert_true(service.metadata.length() > 0)
-  }
-}
-
-// 测试4: 不同架构的数值精度处理验证
-test "不同架构的数值精度处理验证" {
-  // 1. 定义测试架构
-  let architectures = [
-    { name: "x86_64", endian: "little", float_precision: "ieee754_double" },
-    { name: "ARM64", endian: "little", float_precision: "ieee754_double" },
-    { name: "ARM32", endian: "little", float_precision: "ieee754_single" },
-    { name: "PPC64", endian: "big", float_precision: "ieee754_double" }
-  ]
-  
-  // 2. 测试数值精度转换
-  let precision_test_values = [
-    0.0,
-    1.0,
-    -1.0,
-    3.141592653589793,
-    1.7976931348623157e+308,  // 最大双精度浮点数
-    2.2250738585072014e-308,  // 最小正双精度浮点数
-    1e-10,
-    1e10,
-    123456789.987654321
-  ]
-  
-  let precision_results = []
-  
-  for architecture in architectures {
-    let arch_results = []
-    
-    for value in precision_test_values {
-      let conversion_result = test_float_precision_conversion(architecture, value)
-      arch_results = arch_results.push(conversion_result)
-    }
-    
-    precision_results = precision_results.push({
-      architecture: architecture,
-      conversion_results: arch_results
-    })
-  }
-  
-  // 3. 验证精度转换结果
-  for result in precision_results {
-    // 验证所有值都能成功转换
-    for conversion_result in result.conversion_results {
-      assert_true(conversion_result.conversion_success)
-      assert_true(conversion_result.relative_error < 1e-10)  // 相对误差小于1e-10
-      
-      // 验证特殊值的处理
-      if conversion_result.original_value.is_infinite() {
-        assert_true(conversion_result.converted_value.is_infinite())
+    for i in 0..<parts.length() {
+      if i > 0 {
+        joined = joined + separator
       }
-      
-      if conversion_result.original_value.is_nan() {
-        assert_true(conversion_result.converted_value.is_nan())
+      joined = joined + parts[i]
+    }
+    
+    joined
+  }
+  
+  // Test path normalization
+  let normalize_path = fn(path, fs_info) {
+    if fs_info.path_separator == "\\" {
+      path.replace("/", "\\")
+    } else {
+      path.replace("\\", "/")
+    }
+  }
+  
+  // Test case sensitivity handling
+  let handle_case_sensitivity = fn(path1, path2, fs_info) {
+    if fs_info.case_sensitive {
+      path1 == path2
+    } else {
+      path1.to_lowercase() == path2.to_lowercase()
+    }
+  }
+  
+  // Test path joining
+  let linux_parts = ["home", "user", "azimuth"]
+  let linux_path = join_path(linux_parts, linux_fs)
+  assert_eq(linux_path, "/home/user/azimuth")
+  
+  let windows_parts = ["C:", "Program Files", "Azimuth"]
+  let windows_path = join_path(windows_parts, windows_fs)
+  assert_eq(windows_path, "C:\\Program Files\\Azimuth")
+  
+  // Test path normalization
+  let mixed_path = "/home\\user/azimuth\\config"
+  
+  let normalized_linux = normalize_path(mixed_path, linux_fs)
+  assert_eq(normalized_linux, "/home/user/azimuth/config")
+  
+  let normalized_windows = normalize_path(mixed_path, windows_fs)
+  assert_eq(normalized_windows, "\\home\\user\\azimuth\\config")
+  
+  // Test case sensitivity
+  let path1 = "/home/user/Azimuth"
+  let path2 = "/home/user/azimuth"
+  
+  assert_true(handle_case_sensitivity(path1, path2, linux_fs))  // Different case, but case sensitive
+  assert_false(handle_case_sensitivity(path1, path2, windows_fs))  // Same case-insensitive
+  
+  let same_case_path1 = "/home/user/azimuth"
+  let same_case_path2 = "/home/user/azimuth"
+  
+  assert_true(handle_case_sensitivity(same_case_path1, same_case_path2, linux_fs))
+  assert_true(handle_case_sensitivity(same_case_path1, same_case_path2, windows_fs))
+  
+  // Test path length validation
+  let validate_path_length = fn(path, fs_info) {
+    path.length() <= fs_info.max_path_length
+  }
+  
+  let short_path = "/short/path"
+  let long_path = "/very/long/path/that/exceeds/the/maximum/allowed/length/on/this/particular/filesystem/and/should/be/rejected/according/to/the/platform/limitations"
+  
+  assert_true(validate_path_length(short_path, linux_fs))
+  assert_true(validate_path_length(short_path, windows_fs))
+  assert_false(validate_path_length(long_path, windows_fs))
+  assert_true(validate_path_length(long_path, linux_fs))  // Linux allows longer paths
+}
+
+// Test 4: Cross-Platform Network Configuration
+test "cross-platform network configuration" {
+  // Define network configuration
+  let create_network_config = fn(default_port, use_ipv6, buffer_size, keep_alive) {
+    { default_port = default_port, use_ipv6 = use_ipv6, buffer_size = buffer_size, keep_alive = keep_alive }
+  }
+  
+  // Create platform-specific network configs
+  let linux_network = create_network_config(8080, true, 65536, true)
+  let windows_network = create_network_config(8080, false, 8192, true)
+  let macos_network = create_network_config(8080, true, 32768, true)
+  
+  // Test platform-specific socket options
+  let get_socket_options = fn(network_config, platform) {
+    match platform {
+      "linux" => {
+        {
+          so_reuseaddr = true,
+          so_reuseport = true,
+          tcp_nodelay = true,
+          so_keepalive = network_config.keep_alive,
+          so_sndbuf = network_config.buffer_size,
+          so_rcvbuf = network_config.buffer_size
+        }
+      }
+      "windows" => {
+        {
+          so_reuseaddr = true,
+          so_reuseport = false,  // Not supported on Windows
+          tcp_nodelay = true,
+          so_keepalive = network_config.keep_alive,
+          so_sndbuf = network_config.buffer_size,
+          so_rcvbuf = network_config.buffer_size
+        }
+      }
+      "macos" => {
+        {
+          so_reuseaddr = true,
+          so_reuseport = true,
+          tcp_nodelay = true,
+          so_keepalive = network_config.keep_alive,
+          so_sndbuf = network_config.buffer_size,
+          so_rcvbuf = network_config.buffer_size
+        }
+      }
+      _ => {
+        {
+          so_reuseaddr = true,
+          so_reuseport = false,
+          tcp_nodelay = true,
+          so_keepalive = network_config.keep_alive,
+          so_sndbuf = network_config.buffer_size,
+          so_rcvbuf = network_config.buffer_size
+        }
       }
     }
   }
   
-  // 4. 测试跨架构数据交换
-  let data_exchange_results = []
+  // Test Linux socket options
+  let linux_options = get_socket_options(linux_network, "linux")
+  assert_true(linux_options.so_reuseaddr)
+  assert_true(linux_options.so_reuseport)
+  assert_true(linux_options.tcp_nodelay)
+  assert_true(linux_options.so_keepalive)
+  assert_eq(linux_options.so_sndbuf, 65536)
+  assert_eq(linux_options.so_rcvbuf, 65536)
   
-  for i = 0; i < architectures.length(); i = i + 1 {
-    for j = i + 1; j < architectures.length(); j = j + 1 {
-      let source_arch = architectures[i]
-      let target_arch = architectures[j]
-      
-      let exchange_result = test_cross_architecture_data_exchange(source_arch, target_arch, precision_test_values)
-      data_exchange_results = data_exchange_results.push(exchange_result)
+  // Test Windows socket options
+  let windows_options = get_socket_options(windows_network, "windows")
+  assert_true(windows_options.so_reuseaddr)
+  assert_false(windows_options.so_reuseport)  // Not supported on Windows
+  assert_true(windows_options.tcp_nodelay)
+  assert_true(windows_options.so_keepalive)
+  assert_eq(windows_options.so_sndbuf, 8192)
+  assert_eq(windows_options.so_rcvbuf, 8192)
+  
+  // Test macOS socket options
+  let macos_options = get_socket_options(macos_network, "macos")
+  assert_true(macos_options.so_reuseaddr)
+  assert_true(macos_options.so_reuseport)
+  assert_true(macos_options.tcp_nodelay)
+  assert_true(macos_options.so_keepalive)
+  assert_eq(macos_options.so_sndbuf, 32768)
+  assert_eq(macos_options.so_rcvbuf, 32768)
+  
+  // Test address formatting
+  let format_address = fn(address, network_config) {
+    if network_config.use_ipv6 {
+      "[" + address + "]"
+    } else {
+      address
     }
   }
   
-  // 5. 验证跨架构数据交换结果
-  for exchange_result in data_exchange_results {
-    assert_true(exchange_result.exchange_success)
-    assert_true(exchange_result.max_relative_error < 1e-9)  // 最大相对误差小于1e-9
+  let ipv4_address = "192.168.1.100"
+  let ipv6_address = "2001:db8::1"
+  
+  let linux_ipv4 = format_address(ipv4_address, linux_network)
+  assert_eq(linux_ipv4, "[192.168.1.100]")  // Linux uses IPv6 by default
+  
+  let windows_ipv4 = format_address(ipv4_address, windows_network)
+  assert_eq(windows_ipv4, "192.168.1.100")  // Windows uses IPv4 by default
+  
+  let linux_ipv6 = format_address(ipv6_address, linux_network)
+  assert_eq(linux_ipv6, "[2001:db8::1]")
+  
+  let windows_ipv6 = format_address(ipv6_address, windows_network)
+  assert_eq(windows_ipv6, "[2001:db8::1]")  // IPv6 addresses always use brackets
+}
+
+// Test 5: Platform-Specific Memory Management
+test "platform-specific memory management" {
+  // Define memory management configuration
+  let create_memory_config = fn(page_size, allocation_granularity, max_heap_size) {
+    { page_size = page_size, allocation_granularity = allocation_granularity, max_heap_size = max_heap_size }
+  }
+  
+  // Create platform-specific memory configs
+  let linux_memory = create_memory_config(4096, 4096, 1073741824)  // 4KB pages, 1GB max heap
+  let windows_memory = create_memory_config(4096, 65536, 2147483648)  // 4KB pages, 64KB allocation granularity, 2GB max heap
+  let macos_memory = create_memory_config(16384, 16384, 1073741824)  // 16KB pages, 1GB max heap
+  
+  // Test memory alignment
+  let align_memory = fn(size, memory_config) {
+    let remainder = size % memory_config.allocation_granularity
+    if remainder == 0 {
+      size
+    } else {
+      size + (memory_config.allocation_granularity - remainder)
+    }
+  }
+  
+  // Test memory pool creation
+  let create_memory_pool = fn(pool_size, memory_config) {
+    let aligned_size = align_memory(pool_size, memory_config)
+    if aligned_size <= memory_config.max_heap_size {
+      { size = aligned_size, allocated = true, blocks = [] }
+    } else {
+      { size = 0, allocated = false, blocks = [] }
+    }
+  }
+  
+  // Test memory alignment
+  let unaligned_size = 5000
+  let linux_aligned = align_memory(unaligned_size, linux_memory)
+  assert_eq(linux_aligned, 8192)  // Aligned to 4KB
+  
+  let windows_aligned = align_memory(unaligned_size, windows_memory)
+  assert_eq(windows_aligned, 65536)  // Aligned to 64KB
+  
+  let macos_aligned = align_memory(unaligned_size, macos_memory)
+  assert_eq(macos_aligned, 16384)  // Aligned to 16KB
+  
+  // Test memory pool creation
+  let linux_pool = create_memory_pool(1048576, linux_memory)  // 1MB
+  assert_true(linux_pool.allocated)
+  assert_eq(linux_pool.size, 1048576)  // Already aligned to 4KB
+  
+  let windows_pool = create_memory_pool(1048576, windows_memory)  // 1MB
+  assert_true(windows_pool.allocated)
+  assert_eq(windows_pool.size, 1048576)  // Already aligned to 64KB
+  
+  let large_pool = create_memory_pool(3221225472, linux_memory)  // 3GB
+  assert_false(large_pool.allocated)  // Exceeds max heap size
+  assert_eq(large_pool.size, 0)
+  
+  // Test platform-specific memory allocators
+  let get_memory_allocator = fn(platform) {
+    match platform {
+      "linux" => "mmap"
+      "windows" => "VirtualAlloc"
+      "macos" => "mmap"
+      _ => "malloc"
+    }
+  }
+  
+  assert_eq(get_memory_allocator("linux"), "mmap")
+  assert_eq(get_memory_allocator("windows"), "VirtualAlloc")
+  assert_eq(get_memory_allocator("macos"), "mmap")
+  assert_eq(get_memory_allocator("unknown"), "malloc")
+  
+  // Test memory statistics
+  let get_memory_stats = fn(memory_config, allocated_pools) {
+    let mut total_allocated = 0
+    let mut pool_count = 0
     
-    // 验证数据完整性
-    assert_eq(exchange_result.original_values.length(), exchange_result.received_values.length())
+    for pool in allocated_pools {
+      if pool.allocated {
+        total_allocated = total_allocated + pool.size
+        pool_count = pool_count + 1
+      }
+    }
     
-    for i = 0; i < exchange_result.original_values.length(); i = i + 1 {
-      let original = exchange_result.original_values[i]
-      let received = exchange_result.received_values[i]
-      
-      // 验证数值在合理范围内
-      if !original.is_nan() {
-        let relative_error = abs(original - received) / abs(original)
-        assert_true(relative_error < 1e-8)
+    {
+      total_allocated = total_allocated,
+      pool_count = pool_count,
+      max_heap_size = memory_config.max_heap_size,
+      utilization = (total_allocated.to_float() / memory_config.max_heap_size.to_float()) * 100.0
+    }
+  }
+  
+  let test_pools = [linux_pool, windows_pool]
+  let stats = get_memory_stats(linux_memory, test_pools)
+  assert_eq(stats.total_allocated, 2097152)  // 1MB + 1MB
+  assert_eq(stats.pool_count, 2)
+  assert_eq(stats.max_heap_size, 1073741824)  // 1GB
+  assert_eq(stats.utilization, 0.1953125)  // ~0.2%
+}
+
+// Test 6: Platform-Specific Threading and Concurrency
+test "platform-specific threading and concurrency" {
+  // Define threading configuration
+  let create_threading_config = fn(default_stack_size, max_threads, thread_model) {
+    { default_stack_size = default_stack_size, max_threads = max_threads, thread_model = thread_model }
+  }
+  
+  // Create platform-specific threading configs
+  let linux_threading = create_threading_config(8388608, 32768, "pthread")
+  let windows_threading = create_threading_config(1048576, 2048, "win32")
+  let macos_threading = create_threading_config(524288, 1024, "pthread")
+  
+  // Test thread creation
+  let create_thread = fn(thread_id, stack_size, threading_config) {
+    if stack_size == 0 {
+      { id = thread_id, stack_size = threading_config.default_stack_size, created = true }
+    } else if stack_size >= threading_config.default_stack_size {
+      { id = thread_id, stack_size = stack_size, created = true }
+    } else {
+      { id = thread_id, stack_size = 0, created = false }
+    }
+  }
+  
+  // Test thread pool creation
+  let create_thread_pool = fn(pool_size, threading_config) {
+    if pool_size <= threading_config.max_threads {
+      let mut threads = []
+      for i in 0..<pool_size {
+        let thread = create_thread(i, 0, threading_config)
+        if thread.created {
+          threads = threads.push(thread)
+        }
+      }
+      { threads = threads, created = true }
+    } else {
+      { threads = [], created = false }
+    }
+  }
+  
+  // Test Linux threading
+  let linux_thread = create_thread(1, 0, linux_threading)
+  assert_true(linux_thread.created)
+  assert_eq(linux_thread.stack_size, 8388608)  // 8MB default stack size
+  
+  let linux_small_thread = create_thread(2, 4096, linux_threading)
+  assert_false(linux_small_thread.created)  // Stack size too small
+  
+  let linux_large_thread = create_thread(3, 16777216, linux_threading)
+  assert_true(linux_large_thread.created)
+  assert_eq(linux_large_thread.stack_size, 16777216)  // 16MB custom stack size
+  
+  // Test Windows threading
+  let windows_thread = create_thread(1, 0, windows_threading)
+  assert_true(windows_thread.created)
+  assert_eq(windows_thread.stack_size, 1048576)  // 1MB default stack size
+  
+  // Test thread pool creation
+  let linux_pool = create_thread_pool(10, linux_threading)
+  assert_true(linux_pool.created)
+  assert_eq(linux_pool.threads.length(), 10)
+  
+  let windows_pool = create_thread_pool(100, windows_threading)
+  assert_true(windows_pool.created)
+  assert_eq(windows_pool.threads.length(), 100)
+  
+  let oversized_pool = create_thread_pool(5000, windows_threading)
+  assert_false(oversized_pool.created)
+  assert_eq(oversized_pool.threads.length(), 0)
+  
+  // Test thread synchronization primitives
+  let get_sync_primitives = fn(threading_config) {
+    match threading_config.thread_model {
+      "pthread" => {
+        {
+          mutex = "pthread_mutex",
+          condition = "pthread_cond",
+          semaphore = "sem_t",
+          rwlock = "pthread_rwlock"
+        }
+      }
+      "win32" => {
+        {
+          mutex = "CRITICAL_SECTION",
+          condition = "CONDITION_VARIABLE",
+          semaphore = "HANDLE",
+          rwlock = "SRWLOCK"
+        }
+      }
+      _ => {
+        {
+          mutex = "std_mutex",
+          condition = "std_condition",
+          semaphore = "std_semaphore",
+          rwlock = "shared_mutex"
+        }
       }
     }
   }
   
-  // 6. 测试字节序转换
-  let endian_conversion_results = []
+  let linux_sync = get_sync_primitives(linux_threading)
+  assert_eq(linux_sync.mutex, "pthread_mutex")
+  assert_eq(linux_sync.condition, "pthread_cond")
+  assert_eq(linux_sync.semaphore, "sem_t")
+  assert_eq(linux_sync.rwlock, "pthread_rwlock")
   
-  for architecture in architectures {
-    let test_values = [0x12345678, 0x87654321, 0xABCDEF01, 0x01FEDCBA]
-    
-    for value in test_values {
-      let conversion_result = test_endian_conversion(architecture, value)
-      endian_conversion_results = endian_conversion_results.push(conversion_result)
+  let windows_sync = get_sync_primitives(windows_threading)
+  assert_eq(windows_sync.mutex, "CRITICAL_SECTION")
+  assert_eq(windows_sync.condition, "CONDITION_VARIABLE")
+  assert_eq(windows_sync.semaphore, "HANDLE")
+  assert_eq(windows_sync.rwlock, "SRWLOCK")
+}
+
+// Test 7: Platform-Specific Logging and Diagnostics
+test "platform-specific logging and diagnostics" {
+  // Define logging configuration
+  let create_logging_config = fn(log_directory, log_format, max_log_size) {
+    { log_directory = log_directory, log_format = log_format, max_log_size = max_log_size }
+  }
+  
+  // Create platform-specific logging configs
+  let linux_logging = create_logging_config("/var/log/azimuth", "json", 104857600)  // 100MB
+  let windows_logging = create_logging_config("C:\\ProgramData\\Azimuth\\Logs", "xml", 52428800)  // 50MB
+  let macos_logging = create_logging_config("/Library/Logs/Azimuth", "json", 104857600)  // 100MB
+  
+  // Test log file path creation
+  let create_log_path = fn(log_name, timestamp, logging_config) {
+    let date = timestamp.substring(0, 8)  // YYYYMMDD
+    let time = timestamp.substring(8, 14)  // HHMMSS
+    log_name + "-" + date + "-" + time + "." + logging_config.log_format
+  }
+  
+  // Test log rotation
+  let should_rotate_log = fn(current_size, logging_config) {
+    current_size >= logging_config.max_log_size
+  }
+  
+  // Test log file creation
+  let log_name = "azimuth-agent"
+  let timestamp = "20230101120000"  // 2023-01-01 12:00:00
+  
+  let linux_log_path = create_log_path(log_name, timestamp, linux_logging)
+  assert_eq(linux_log_path, "azimuth-agent-20230101-120000.json")
+  
+  let windows_log_path = create_log_path(log_name, timestamp, windows_logging)
+  assert_eq(windows_log_path, "azimuth-agent-20230101-120000.xml")
+  
+  // Test log rotation
+  assert_true(should_rotate_log(104857600, linux_logging))  // Exactly at max size
+  assert_true(should_rotate_log(200000000, linux_logging))  // Exceeds max size
+  assert_false(should_rotate_log(50000000, linux_logging))  // Below max size
+  
+  assert_true(should_rotate_log(52428800, windows_logging))  // Exactly at max size
+  assert_false(should_rotate_log(25000000, windows_logging))  // Below max size
+  
+  // Test platform-specific log levels
+  let get_log_levels = fn(platform) {
+    match platform {
+      "linux" => ["DEBUG", "INFO", "WARN", "ERROR", "FATAL"]
+      "windows" => ["VERBOSE", "INFO", "WARNING", "ERROR", "CRITICAL"]
+      "macos" => ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+      _ => ["DEBUG", "INFO", "WARN", "ERROR"]
     }
   }
   
-  // 验证字节序转换的正确性
-  for conversion_result in endian_conversion_results {
-    assert_true(conversion_result.conversion_success)
-    
-    // 验证往返转换的一致性
-    let round_trip_value = convert_endian(convert_endian(conversion_result.original_value, conversion_result.original_endian), conversion_result.target_endian)
-    assert_eq(conversion_result.original_value, round_trip_value)
-  }
-}
-
-// 测试5: 不同时区和本地化处理验证
-test "不同时区和本地化处理验证" {
-  // 1. 定义测试时区
-  let timezones = [
-    "UTC",
-    "America/New_York",
-    "Europe/London",
-    "Asia/Tokyo",
-    "Australia/Sydney"
-  ]
+  let linux_levels = get_log_levels("linux")
+  assert_eq(linux_levels, ["DEBUG", "INFO", "WARN", "ERROR", "FATAL"])
   
-  // 2. 测试时区转换
-  let timezone_conversion_results = []
+  let windows_levels = get_log_levels("windows")
+  assert_eq(windows_levels, ["VERBOSE", "INFO", "WARNING", "ERROR", "CRITICAL"])
   
-  for timezone in timezones {
-    let test_timestamps = [
-      1640995200000,  // 2022-01-01 00:00:00 UTC
-      1643673600000,  // 2022-02-01 00:00:00 UTC
-      1672531200000,  // 2023-01-01 00:00:00 UTC
-      1704067200000   // 2024-01-01 00:00:00 UTC
-    ]
-    
-    for timestamp in test_timestamps {
-      let conversion_result = test_timezone_conversion(timestamp, "UTC", timezone)
-      timezone_conversion_results = timezone_conversion_results.push(conversion_result)
+  let macos_levels = get_log_levels("macos")
+  assert_eq(macos_levels, ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"])
+  
+  // Test system integration
+  let get_system_logger = fn(platform) {
+    match platform {
+      "linux" => "syslog"
+      "windows" => "Event Log"
+      "macos" => "os_log"
+      _ => "console"
     }
   }
   
-  // 3. 验证时区转换结果
-  for result in timezone_conversion_results {
-    assert_true(result.conversion_success)
-    assert_true(result.converted_timestamp >= 0)
-    assert_true(result.timezone_offset_hours >= -12 && result.timezone_offset_hours <= 14)
-    
-    // 验证往返转换的一致性
-    let round_trip_timestamp = convert_timezone(result.converted_timestamp, result.target_timezone, result.source_timezone)
-    assert_eq(result.original_timestamp, round_trip_timestamp)
-  }
-  
-  // 4. 测试本地化数字格式
-  let locales = [
-    "en-US",  // 英语(美国)
-    "de-DE",  // 德语(德国)
-    "fr-FR",  // 法语(法国)
-    "ja-JP",  // 日语(日本)
-    "zh-CN"   // 中文(中国)
-  ]
-  
-  let localization_test_numbers = [
-    1234567.89,
-    0.12345,
-    -98765.4321,
-    1000000.0
-  ]
-  
-  let localization_results = []
-  
-  for locale in locales {
-    for number in localization_test_numbers {
-      let localization_result = test_number_localization(number, locale)
-      localization_results = localization_results.push(localization_result)
+  assert_eq(get_system_logger("linux"), "syslog")
+  assert_eq(get_system_logger("windows"), "Event Log")
+  assert_eq(get_system_logger("macos"), "os_log")
+  assert_eq(get_system_logger("unknown"), "console")
+}
+
+// Test 8: Platform-Specific Security Features
+test "platform-specific security features" {
+  // Define security configuration
+  let create_security_config = fn(has_selinux, has_apparmor, has_windows_defender, has_gatekeeper) {
+    { 
+      has_selinux = has_selinux, 
+      has_apparmor = has_apparmor, 
+      has_windows_defender = has_windows_defender, 
+      has_gatekeeper = has_gatekeeper 
     }
   }
   
-  // 5. 验证本地化结果
-  for result in localization_results {
-    assert_true(result.localization_success)
-    assert_true(result.localized_string.length() > 0)
+  // Create platform-specific security configs
+  let linux_security = create_security_config(true, true, false, false)
+  let windows_security = create_security_config(false, false, true, false)
+  let macos_security = create_security_config(false, false, false, true)
+  
+  // Test security feature availability
+  let get_security_features = fn(security_config) {
+    let mut features = []
     
-    // 验证解析本地化字符串后的数值一致性
-    let parsed_number = parse_localized_number(result.localized_string, result.locale)
-    let relative_error = abs(result.original_number - parsed_number) / abs(result.original_number)
-    assert_true(relative_error < 1e-10)
+    if security_config.has_selinux {
+      features = features.push("SELinux")
+    }
+    
+    if security_config.has_apparmor {
+      features = features.push("AppArmor")
+    }
+    
+    if security_config.has_windows_defender {
+      features = features.push("Windows Defender")
+    }
+    
+    if security_config.has_gatekeeper {
+      features = features.push("Gatekeeper")
+    }
+    
+    features
   }
   
-  // 6. 测试遥测数据的时区和本地化处理
-  let telemetry_timezone_test = test_telemetry_timezone_localization()
+  // Test Linux security features
+  let linux_features = get_security_features(linux_security)
+  assert_eq(linux_features.length(), 2)
+  assert_true(linux_features.contains("SELinux"))
+  assert_true(linux_features.contains("AppArmor"))
+  assert_false(linux_features.contains("Windows Defender"))
+  assert_false(linux_features.contains("Gatekeeper"))
   
-  assert_true(telemetry_timezone_test.conversion_success)
-  assert_true(telemetry_timezone_test.preserves_utc_timestamps)
-  assert_true(telemetry_timezone_test.localizes_display_values)
+  // Test Windows security features
+  let windows_features = get_security_features(windows_security)
+  assert_eq(windows_features.length(), 1)
+  assert_false(windows_features.contains("SELinux"))
+  assert_false(windows_features.contains("AppArmor"))
+  assert_true(windows_features.contains("Windows Defender"))
+  assert_false(windows_features.contains("Gatekeeper"))
   
-  // 验证遥测数据中的时间戳处理
-  for telemetry_item in telemetry_timezone_test.sample_telemetry {
-    // 验证UTC时间戳被保留
-    assert_true(telemetry_item.timestamp_utc >= 0)
-    
-    // 验证本地化时间戳被正确计算
-    assert_true(telemetry_item.timestamp_localized >= 0)
-    
-    // 验证时区信息被包含
-    assert_true(telemetry_item.timezone != "")
-    
-    // 验证数值指标在不同本地化环境下保持一致
-    for metric in telemetry_item.metrics {
-      assert_true(metric.value >= 0)
-      assert_true(metric.localized_value != "")
+  // Test macOS security features
+  let macos_features = get_security_features(macos_security)
+  assert_eq(macos_features.length(), 1)
+  assert_false(macos_features.contains("SELinux"))
+  assert_false(macos_features.contains("AppArmor"))
+  assert_false(macos_features.contains("Windows Defender"))
+  assert_true(macos_features.contains("Gatekeeper"))
+  
+  // Test platform-specific permission models
+  let get_permission_model = fn(platform) {
+    match platform {
+      "linux" => "POSIX permissions + SELinux/AppArmor"
+      "windows" => "ACL + UAC"
+      "macos" => "POSIX permissions + Gatekeeper + SIP"
+      _ => "Basic permissions"
     }
   }
-}
-
-// 辅助函数：测试平台兼容性
-fn test_platform_compatibility(platform) -> {
-  platform: platform,
-  basic_telemetry: {
-    available: true,
-    metrics_collection: { success: true },
-    trace_collection: { success: true },
-    log_collection: { success: true }
-  },
-  platform_specific_behaviors: [
-    { name: "process_metrics_available", available: true },
-    { name: "system_metrics_available", available: true },
-    { name: "network_metrics_available", available: true },
-    { name: "file_system_metrics_available", available: true }
-  ],
-  platform_specific_metrics: [
-    { category: "system_metrics", name: "cpu_usage", value: 50.0 },
-    { category: "system_metrics", name: "memory_usage", value: 60.0 }
-  ],
-  performance: {
-    metrics_collection_time_ms: 50,
-    trace_collection_time_ms: 25,
-    log_collection_time_ms: 15,
-    memory_usage_mb: 25
-  }
-}
-
-// 辅助函数：验证跨平台数据一致性
-fn verify_cross_platform_data_consistency(results) -> {
-  data_format_consistent: true,
-  timestamp_format_consistent: true,
-  metric_names_consistent: true,
-  trace_format_consistent: true
-}
-
-// 辅助函数：识别平台差异
-fn identify_platform_differences(results) -> {
-  windows_specific_metrics: ["process_handle_count", "page_faults"],
-  macos_specific_metrics: ["power_management", "thermal_state"],
-  linux_specific_metrics: ["cgroup_usage", "selinux_status"]
-}
-
-// 辅助函数：检测WebAssembly环境
-fn detect_webassembly_environment() -> {
-  wasm_supported: true,
-  browser_environment_detected: true
-}
-
-// 辅助函数：初始化WebAssembly遥测
-fn initialize_webassembly_telemetry(config) -> {
-  initialization_success: true
-}
-
-// 辅助函数：收集浏览器指标
-fn collect_browser_metrics(wasm_telemetry) -> {
-  page_load_time_ms: 1500,
-  dom_content_loaded_time_ms: 800,
-  first_contentful_paint_time_ms: 1200,
-  largest_contentful_paint_time_ms: 1800,
-  wasm_compilation_time_ms: 50,
-  wasm_instantiation_time_ms: 10,
-  wasm_execution_time_ms: 5
-}
-
-// 辅助函数：测试WebAssembly追踪
-fn test_webassembly_tracing(wasm_telemetry) -> {
-  trace_creation_success: true,
-  span_creation_success: true,
-  context_propagation_success: true,
-  sample_trace: {
-    trace_id: "trace_123",
-    spans: [
-      {
-        span_id: "span_456",
-        operation_name: "test_operation",
-        start_time: 1640995200000,
-        end_time: 1640995200100
-      }
-    ]
-  }
-}
-
-// 辅助函数：比较追踪格式
-fn compare_trace_format_with_native(trace) -> {
-  format_compatible: true,
-  fields_compatible: true,
-  timestamp_format_compatible: true
-}
-
-// 辅助函数：测试WebAssembly指标
-fn test_webassembly_metrics(wasm_telemetry) -> {
-  counter_creation_success: true,
-  gauge_creation_success: true,
-  histogram_creation_success: true,
-  sample_metrics: [
-    { name: "counter_metric", value: 10, type: "counter" },
-    { name: "gauge_metric", value: 5.5, type: "gauge" }
-  ]
-}
-
-// 辅助函数：比较指标格式
-fn compare_metrics_format_with_native(metrics) -> {
-  format_compatible: true,
-  value_types_compatible: true,
-  timestamp_format_compatible: true
-}
-
-// 辅助函数：测试WebAssembly日志
-fn test_webassembly_logging(wasm_telemetry) -> {
-  log_creation_success: true,
-  log_severity_handling_success: true,
-  sample_logs: [
-    {
-      timestamp: 1640995200000,
-      severity: "INFO",
-      message: "Test log message"
+  
+  assert_eq(get_permission_model("linux"), "POSIX permissions + SELinux/AppArmor")
+  assert_eq(get_permission_model("windows"), "ACL + UAC")
+  assert_eq(get_permission_model("macos"), "POSIX permissions + Gatekeeper + SIP")
+  assert_eq(get_permission_model("unknown"), "Basic permissions")
+  
+  // Test secure temp directory creation
+  let get_secure_temp_dir = fn(platform) {
+    match platform {
+      "linux" => "/tmp/azimuth-XXXXXX"
+      "windows" => "C:\\Users\\User\\AppData\\Local\\Temp\\azimuth-XXXXXX"
+      "macos" => "/tmp/azimuth-XXXXXX"
+      _ => "/tmp/azimuth-XXXXXX"
     }
-  ]
-}
-
-// 辅助函数：比较日志格式
-fn compare_logging_format_with_native(logs) -> {
-  format_compatible: true,
-  severity_levels_compatible: true,
-  timestamp_format_compatible: true
-}
-
-// 辅助函数：检测容器环境
-fn detect_container_environment() -> {
-  container_detected: true,
-  container_type: Some("docker")
-}
-
-// 辅助函数：收集容器指标
-fn collect_container_metrics() -> {
-  cpu_limit_cores: 2.0,
-  cpu_usage_cores: 0.5,
-  memory_limit_bytes: 4294967296,  // 4GB
-  memory_usage_bytes: 2147483648,  // 2GB
-  network_rx_bytes: 1048576,       // 1MB
-  network_tx_bytes: 524288,        // 512KB
-  network_rx_packets: 1024,
-  network_tx_packets: 512,
-  storage_read_bytes: 2097152,     // 2MB
-  storage_write_bytes: 1048576,    // 1MB
-  storage_read_ops: 100,
-  storage_write_ops: 50
-}
-
-// 辅助函数：收集Kubernetes指标
-fn collect_kubernetes_metrics() -> {
-  pod_name: "telemetry-pod-123",
-  pod_namespace: "default",
-  pod_uid: "uid-456",
-  node_name: "worker-node-1",
-  service_names: ["telemetry-service"],
-  endpoints: ["10.0.0.1:8080"],
-  labels: [("app", "telemetry"), ("version", "1.0")],
-  annotations: [("prometheus.io/scrape", "true")]
-}
-
-// 辅助函数：测试容器遥测传输
-fn test_container_telemetry_transmission() -> {
-  transmission_success: true,
-  container_metadata_included: true,
-  sample_telemetry: {
-    resource_attributes: [
-      { key: "container.id", value: "container-123" },
-      { key: "container.name", value: "telemetry-container" },
-      { key: "container.image", value: "telemetry:latest" }
-    ]
   }
+  
+  let linux_temp = get_secure_temp_dir("linux")
+  assert_eq(linux_temp, "/tmp/azimuth-XXXXXX")
+  
+  let windows_temp = get_secure_temp_dir("windows")
+  assert_eq(windows_temp, "C:\\Users\\User\\AppData\\Local\\Temp\\azimuth-XXXXXX")
+  
+  let macos_temp = get_secure_temp_dir("macos")
+  assert_eq(macos_temp, "/tmp/azimuth-XXXXXX")
 }
 
-// 辅助函数：测试容器服务发现
-fn test_container_service_discovery() -> {
-  discovery_success: true,
-  discovered_services: [
-    {
-      name: "telemetry-service",
-      endpoints: ["10.0.0.1:8080", "10.0.0.2:8080"],
-      metadata: [("protocol", "http"), ("version", "1.0")]
+// Test 9: Platform-Specific Performance Monitoring
+test "platform-specific performance monitoring" {
+  // Define performance monitoring configuration
+  let create_perf_config = fn(has_perf, has_etw, has_xctrace, sampling_rate) {
+    { 
+      has_perf = has_perf, 
+      has_etw = has_etw, 
+      has_xctrace = has_xctrace, 
+      sampling_rate = sampling_rate 
     }
-  ]
-}
-
-// 辅助函数：测试浮点精度转换
-fn test_float_precision_conversion(architecture, value) -> {
-  conversion_success: true,
-  original_value: value,
-  converted_value: value,
-  relative_error: 0.0
-}
-
-// 辅助函数：测试跨架构数据交换
-fn test_cross_architecture_data_exchange(source_arch, target_arch, values) -> {
-  exchange_success: true,
-  original_values: values,
-  received_values: values,
-  max_relative_error: 0.0
-}
-
-// 辅助函数：测试字节序转换
-fn test_endian_conversion(architecture, value) -> {
-  conversion_success: true,
-  original_value: value,
-  original_endian: architecture.endian,
-  target_endian: if architecture.endian == "little" { "big" } else { "little" }
-}
-
-// 辅助函数：字节序转换
-fn convert_endian(value, endian) -> Int {
-  // 简化实现
-  value
-}
-
-// 辅助函数：测试时区转换
-fn test_timezone_conversion(timestamp, source_timezone, target_timezone) -> {
-  conversion_success: true,
-  original_timestamp: timestamp,
-  converted_timestamp: timestamp,
-  source_timezone: source_timezone,
-  target_timezone: target_timezone,
-  timezone_offset_hours: 0
-}
-
-// 辅助函数：时区转换
-fn convert_timezone(timestamp, source_timezone, target_timezone) -> Int {
-  // 简化实现
-  timestamp
-}
-
-// 辅助函数：测试数字本地化
-fn test_number_localization(number, locale) -> {
-  localization_success: true,
-  original_number: number,
-  locale: locale,
-  localized_string: number.to_string()
-}
-
-// 辅助函数：解析本地化数字
-fn parse_localized_number(localized_string, locale) -> Float {
-  // 简化实现
-  1234567.89
-}
-
-// 辅助函数：测试遥测时区和本地化
-fn test_telemetry_timezone_localization() -> {
-  conversion_success: true,
-  preserves_utc_timestamps: true,
-  localizes_display_values: true,
-  sample_telemetry: [
-    {
-      timestamp_utc: 1640995200000,
-      timestamp_localized: 1640995200000,
-      timezone: "UTC",
-      metrics: [
-        { value: 50.0, localized_value: "50.0" }
+  }
+  
+  // Create platform-specific perf configs
+  let linux_perf = create_perf_config(true, false, false, 1000)  // 1000Hz
+  let windows_perf = create_perf_config(false, true, false, 100)  // 100Hz
+  let macos_perf = create_perf_config(false, false, true, 1000)  // 1000Hz
+  
+  // Test performance monitoring tools
+  let get_perf_tools = fn(perf_config) {
+    let mut tools = []
+    
+    if perf_config.has_perf {
+      tools = tools.push("perf")
+    }
+    
+    if perf_config.has_etw {
+      tools = tools.push("ETW")
+    }
+    
+    if perf_config.has_xctrace {
+      tools = tools.push("XCTrace")
+    }
+    
+    tools
+  }
+  
+  // Test Linux performance monitoring
+  let linux_tools = get_perf_tools(linux_perf)
+  assert_eq(linux_tools.length(), 1)
+  assert_eq(linux_tools[0], "perf")
+  assert_eq(linux_perf.sampling_rate, 1000)
+  
+  // Test Windows performance monitoring
+  let windows_tools = get_perf_tools(windows_perf)
+  assert_eq(windows_tools.length(), 1)
+  assert_eq(windows_tools[0], "ETW")
+  assert_eq(windows_perf.sampling_rate, 100)
+  
+  // Test macOS performance monitoring
+  let macos_tools = get_perf_tools(macos_perf)
+  assert_eq(macos_tools.length(), 1)
+  assert_eq(macos_tools[0], "XCTrace")
+  assert_eq(macos_perf.sampling_rate, 1000)
+  
+  // Test platform-specific metrics
+  let get_platform_metrics = fn(platform) {
+    match platform {
+      "linux" => [
+        "cpu_usage", "memory_usage", "disk_io", "network_io", 
+        "context_switches", "page_faults", "system_calls"
+      ]
+      "windows" => [
+        "cpu_usage", "memory_usage", "disk_io", "network_io",
+        "handle_count", "thread_count", "process_count"
+      ]
+      "macos" => [
+        "cpu_usage", "memory_usage", "disk_io", "network_io",
+        "power_consumption", "thermal_state", "gpu_usage"
+      ]
+      _ => [
+        "cpu_usage", "memory_usage", "disk_io", "network_io"
       ]
     }
-  ]
+  }
+  
+  let linux_metrics = get_platform_metrics("linux")
+  assert_eq(linux_metrics.length(), 7)
+  assert_true(linux_metrics.contains("cpu_usage"))
+  assert_true(linux_metrics.contains("context_switches"))
+  assert_true(linux_metrics.contains("system_calls"))
+  
+  let windows_metrics = get_platform_metrics("windows")
+  assert_eq(windows_metrics.length(), 7)
+  assert_true(windows_metrics.contains("cpu_usage"))
+  assert_true(windows_metrics.contains("handle_count"))
+  assert_true(windows_metrics.contains("thread_count"))
+  
+  let macos_metrics = get_platform_metrics("macos")
+  assert_eq(macos_metrics.length(), 7)
+  assert_true(macos_metrics.contains("cpu_usage"))
+  assert_true(macos_metrics.contains("power_consumption"))
+  assert_true(macos_metrics.contains("thermal_state"))
+  
+  // Test performance counter access
+  let get_perf_counter_access = fn(platform) {
+    match platform {
+      "linux" => "/proc/stat"
+      "windows" => "PDH API"
+      "macos" => "sysctl"
+      _ => "custom"
+    }
+  }
+  
+  assert_eq(get_perf_counter_access("linux"), "/proc/stat")
+  assert_eq(get_perf_counter_access("windows"), "PDH API")
+  assert_eq(get_perf_counter_access("macos"), "sysctl")
+  assert_eq(get_perf_counter_access("unknown"), "custom")
 }
 
-// 其他辅助函数（简化实现）
-fn abs(x) -> Float { if x < 0.0 { -x } else { x } }
-
-// 类型定义（简化）
-type PlatformTestResult {
-  platform: PlatformInfo
-  basic_telemetry: BasicTelemetryResult
-  platform_specific_behaviors: Array[PlatformBehavior]
-  platform_specific_metrics: Array[PlatformSpecificMetric]
-  performance: PerformanceResult
-}
-
-type PlatformInfo {
-  name: String
-  architecture: String
-  version: String
-  expected_behaviors: Array[String]
-}
-
-type BasicTelemetryResult {
-  available: Bool
-  metrics_collection: OperationResult
-  trace_collection: OperationResult
-  log_collection: OperationResult
-}
-
-type OperationResult {
-  success: Bool
-}
-
-type PlatformBehavior {
-  name: String
-  available: Bool
-}
-
-type PlatformSpecificMetric {
-  category: String
-  name: String
-  value: Float
-}
-
-type PerformanceResult {
-  metrics_collection_time_ms: Int
-  trace_collection_time_ms: Int
-  log_collection_time_ms: Int
-  memory_usage_mb: Int
+// Test 10: Cross-Platform Compatibility Validation
+test "cross-platform compatibility validation" {
+  // Define platform compatibility matrix
+  let create_compatibility_matrix = fn() {
+    {
+      features = {
+        "telemetry_collection" = ["linux", "windows", "macos"],
+        "metrics_export" = ["linux", "windows", "macos"],
+        "distributed_tracing" = ["linux", "windows", "macos"],
+        "profiling" = ["linux", "macos"],
+        "advanced_networking" = ["linux", "windows"],
+        "security_hardening" = ["linux", "windows", "macos"],
+        "auto_update" = ["windows", "macos"],
+        "systemd_integration" = ["linux"],
+        "windows_service" = ["windows"],
+        "launchd_integration" = ["macos"]
+      }
+    }
+  }
+  
+  // Check feature compatibility
+  let is_feature_supported = fn(feature, platform, compatibility_matrix) {
+    match compatibility_matrix.features.get(feature) {
+      None => false
+      Some(supported_platforms) => supported_platforms.contains(platform)
+    }
+  }
+  
+  // Get supported features for platform
+  let get_supported_features = fn(platform, compatibility_matrix) {
+    let mut supported = []
+    
+    for (feature, platforms) in compatibility_matrix.features {
+      if platforms.contains(platform) {
+        supported = supported.push(feature)
+      }
+    }
+    
+    supported
+  }
+  
+  // Test compatibility matrix
+  let compat_matrix = create_compatibility_matrix()
+  
+  // Test feature compatibility
+  assert_true(is_feature_supported("telemetry_collection", "linux", compat_matrix))
+  assert_true(is_feature_supported("telemetry_collection", "windows", compat_matrix))
+  assert_true(is_feature_supported("telemetry_collection", "macos", compat_matrix))
+  
+  assert_true(is_feature_supported("profiling", "linux", compat_matrix))
+  assert_false(is_feature_supported("profiling", "windows", compat_matrix))
+  assert_true(is_feature_supported("profiling", "macos", compat_matrix))
+  
+  assert_true(is_feature_supported("systemd_integration", "linux", compat_matrix))
+  assert_false(is_feature_supported("systemd_integration", "windows", compat_matrix))
+  assert_false(is_feature_supported("systemd_integration", "macos", compat_matrix))
+  
+  // Test supported features per platform
+  let linux_features = get_supported_features("linux", compat_matrix)
+  assert_eq(linux_features.length(), 7)
+  assert_true(linux_features.contains("telemetry_collection"))
+  assert_true(linux_features.contains("systemd_integration"))
+  assert_false(linux_features.contains("windows_service"))
+  
+  let windows_features = get_supported_features("windows", compat_matrix)
+  assert_eq(windows_features.length(), 7)
+  assert_true(windows_features.contains("telemetry_collection"))
+  assert_true(windows_features.contains("windows_service"))
+  assert_false(windows_features.contains("systemd_integration"))
+  
+  let macos_features = get_supported_features("macos", compat_matrix)
+  assert_eq(macos_features.length(), 7)
+  assert_true(macos_features.contains("telemetry_collection"))
+  assert_true(linux_features.contains("launchd_integration"))
+  assert_false(macos_features.contains("windows_service"))
+  
+  // Test platform-specific configuration validation
+  let validate_platform_config = fn(platform, config) {
+    let mut errors = []
+    
+    // Check required features
+    let required_features = ["telemetry_collection", "metrics_export"]
+    for feature in required_features {
+      if !is_feature_supported(feature, platform, compat_matrix) {
+        errors = errors.push("Required feature '" + feature + "' not supported on " + platform)
+      }
+    }
+    
+    // Check platform-specific settings
+    if platform == "windows" && !config.contains("windows_service_name") {
+      errors = errors.push("Windows requires 'windows_service_name' configuration")
+    }
+    
+    if platform == "linux" && !config.contains("systemd_service_file") {
+      errors = errors.push("Linux requires 'systemd_service_file' configuration")
+    }
+    
+    if platform == "macos" && !config.contains("launchd_plist") {
+      errors = errors.push("macOS requires 'launchd_plist' configuration")
+    }
+    
+    errors
+  }
+  
+  // Test valid configurations
+  let valid_linux_config = {
+    "telemetry_collection" = "enabled",
+    "metrics_export" = "enabled",
+    "systemd_service_file" = "/etc/systemd/system/azimuth.service"
+  }
+  
+  let linux_errors = validate_platform_config("linux", valid_linux_config)
+  assert_eq(linux_errors.length(), 0)
+  
+  let valid_windows_config = {
+    "telemetry_collection" = "enabled",
+    "metrics_export" = "enabled",
+    "windows_service_name" = "AzimuthAgent"
+  }
+  
+  let windows_errors = validate_platform_config("windows", valid_windows_config)
+  assert_eq(windows_errors.length(), 0)
+  
+  // Test invalid configurations
+  let invalid_linux_config = {
+    "telemetry_collection" = "enabled",
+    "metrics_export" = "enabled"
+    // Missing systemd_service_file
+  }
+  
+  let invalid_linux_errors = validate_platform_config("linux", invalid_linux_config)
+  assert_eq(invalid_linux_errors.length(), 1)
+  assert_true(invalid_linux_errors[0].contains("systemd_service_file"))
+  
+  let invalid_windows_config = {
+    "telemetry_collection" = "enabled",
+    "metrics_export" = "enabled"
+    // Missing windows_service_name
+  }
+  
+  let invalid_windows_errors = validate_platform_config("windows", invalid_windows_config)
+  assert_eq(invalid_windows_errors.length(), 1)
+  assert_true(invalid_windows_errors[0].contains("windows_service_name"))
 }

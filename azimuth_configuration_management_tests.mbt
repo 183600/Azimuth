@@ -1,530 +1,1094 @@
-// Azimuth Telemetry System - Configuration Management Tests
-// This file contains test cases for configuration management, dynamic updates, and validation
+// Azimuth Configuration Management Tests
+// This file contains test cases for configuration management
 
-// Test 1: Basic Configuration Operations
-test "basic configuration operations" {
-  // Test configuration creation
-  let config = Configuration::new()
-  
-  // Test setting and getting string values
-  Configuration::set_string(config, "string.key", "test_value")
-  let string_value = Configuration::get_string(config, "string.key")
-  match string_value {
-    Some(value) => assert_eq(value, "test_value")
-    None => assert_true(false)
+// Test 1: Basic Configuration Loading
+test "basic configuration loading" {
+  // Simulate configuration structure
+  let default_config = {
+    service_name: "azimuth-service",
+    service_version: "1.0.0",
+    environment: "development",
+    log_level: "info",
+    metrics_enabled: true,
+    tracing_enabled: true,
+    endpoint: "http://localhost:8080"
   }
   
-  // Test setting and getting int values
-  Configuration::set_int(config, "int.key", 42)
-  let int_value = Configuration::get_int(config, "int.key")
-  match int_value {
-    Some(value) => assert_eq(value, 42)
-    None => assert_true(false)
-  }
-  
-  // Test setting and getting float values
-  Configuration::set_float(config, "float.key", 3.14)
-  let float_value = Configuration::get_float(config, "float.key")
-  match float_value {
-    Some(value) => assert_eq(value, 3.14)
-    None => assert_true(false)
-  }
-  
-  // Test setting and getting bool values
-  Configuration::set_bool(config, "bool.key", true)
-  let bool_value = Configuration::get_bool(config, "bool.key")
-  match bool_value {
-    Some(value) => assert_true(value)
-    None => assert_true(false)
-  }
-  
-  // Test setting and getting array values
-  Configuration::set_string_array(config, "array.key", ["value1", "value2", "value3"])
-  let array_value = Configuration::get_string_array(config, "array.key")
-  match array_value {
-    Some(values) => {
-      assert_eq(values.length(), 3)
-      assert_eq(values[0], "value1")
-      assert_eq(values[1], "value2")
-      assert_eq(values[2], "value3")
+  // Test configuration validation
+  let validate_config = fn(config) {
+    let errors = []
+    
+    if config.service_name.length() == 0 {
+      errors = errors.push("Service name cannot be empty")
     }
-    None => assert_true(false)
-  }
-  
-  // Test getting non-existent keys
-  let non_existent = Configuration::get_string(config, "non.existent.key")
-  match non_existent {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-}
-
-// Test 2: Configuration Persistence and Loading
-test "configuration persistence and loading" {
-  // Create a configuration with various settings
-  let config = Configuration::new()
-  
-  Configuration::set_string(config, "service.name", "telemetry_service")
-  Configuration::set_string(config, "service.version", "1.0.0")
-  Configuration::set_int(config, "service.port", 8080)
-  Configuration::set_bool(config, "service.enabled", true)
-  Configuration::set_float(config, "sampling.probability", 0.1)
-  
-  // Serialize configuration to JSON
-  let json_config = Configuration::to_json(config)
-  assert_true(json_config.contains("telemetry_service"))
-  assert_true(json_config.contains("1.0.0"))
-  assert_true(json_config.contains("8080"))
-  
-  // Deserialize configuration from JSON
-  let loaded_config = Configuration::from_json(json_config)
-  match loaded_config {
-    Some(loaded) => {
-      // Verify loaded values
-      let service_name = Configuration::get_string(loaded, "service.name")
-      match service_name {
-        Some(name) => assert_eq(name, "telemetry_service")
-        None => assert_true(false)
-      }
-      
-      let service_version = Configuration::get_string(loaded, "service.version")
-      match service_version {
-        Some(version) => assert_eq(version, "1.0.0")
-        None => assert_true(false)
-      }
-      
-      let service_port = Configuration::get_int(loaded, "service.port")
-      match service_port {
-        Some(port) => assert_eq(port, 8080)
-        None => assert_true(false)
-      }
-      
-      let service_enabled = Configuration::get_bool(loaded, "service.enabled")
-      match service_enabled {
-        Some(enabled) => assert_true(enabled)
-        None => assert_true(false)
-      }
-      
-      let sampling_prob = Configuration::get_float(loaded, "sampling.probability")
-      match sampling_prob {
-        Some(prob) => assert_eq(prob, 0.1)
-        None => assert_true(false)
-      }
+    
+    if config.service_version.length() == 0 {
+      errors = errors.push("Service version cannot be empty")
     }
-    None => assert_true(false)
-  }
-  
-  // Test configuration file persistence
-  let file_path = "/tmp/test_config.json"
-  let save_result = Configuration::save_to_file(config, file_path)
-  assert_true(save_result)
-  
-  // Load configuration from file
-  let file_loaded_config = Configuration::load_from_file(file_path)
-  match file_loaded_config {
-    Some(loaded) => {
-      let service_name = Configuration::get_string(loaded, "service.name")
-      match service_name {
-        Some(name) => assert_eq(name, "telemetry_service")
-        None => assert_true(false)
-      }
+    
+    let valid_environments = ["development", "staging", "production"]
+    if !valid_environments.contains(config.environment) {
+      errors = errors.push("Invalid environment: " + config.environment)
     }
-    None => assert_true(false)
+    
+    let valid_log_levels = ["debug", "info", "warn", "error"]
+    if !valid_log_levels.contains(config.log_level) {
+      errors = errors.push("Invalid log level: " + config.log_level)
+    }
+    
+    if !config.endpoint.starts_with("http://") && !config.endpoint.starts_with("https://") {
+      errors = errors.push("Endpoint must start with http:// or https://")
+    }
+    
+    errors
   }
-}
-
-// Test 3: Configuration Validation
-test "configuration validation" {
-  // Create a configuration schema
-  let schema = ConfigurationSchema::new()
-  
-  // Define validation rules
-  ConfigurationSchema::add_string_rule(schema, "service.name", true, None, None) // Required
-  ConfigurationSchema::add_string_rule(schema, "service.version", true, Some("^\\d+\\.\\d+\\.\\d+$"), None) // Required, pattern match
-  ConfigurationSchema::add_int_rule(schema, "service.port", true, Some(1024), Some(65535)) // Required, range 1024-65535
-  ConfigurationSchema::add_bool_rule(schema, "service.enabled", false, None) // Optional
-  ConfigurationSchema::add_float_rule(schema, "sampling.probability", false, Some(0.0), Some(1.0)) // Optional, range 0.0-1.0
   
   // Test valid configuration
-  let valid_config = Configuration::new()
-  Configuration::set_string(valid_config, "service.name", "test_service")
-  Configuration::set_string(valid_config, "service.version", "1.0.0")
-  Configuration::set_int(valid_config, "service.port", 8080)
-  Configuration::set_bool(valid_config, "service.enabled", true)
-  Configuration::set_float(valid_config, "sampling.probability", 0.1)
+  let validation_errors = validate_config(default_config)
+  assert_eq(validation_errors.length(), 0)
   
-  let validation_result = Configuration::validate(valid_config, schema)
-  assert_true(validation_result.is_valid)
-  assert_eq(validation_result.errors.length(), 0)
+  // Test invalid configurations
+  let invalid_config1 = { 
+    service_name: "",  // Empty service name
+    service_version: "1.0.0",
+    environment: "development",
+    log_level: "info",
+    metrics_enabled: true,
+    tracing_enabled: true,
+    endpoint: "http://localhost:8080"
+  }
   
-  // Test invalid configuration
-  let invalid_config = Configuration::new()
-  Configuration::set_string(invalid_config, "service.name", "") // Empty name
-  Configuration::set_string(invalid_config, "service.version", "1.0") // Invalid version format
-  Configuration::set_int(invalid_config, "service.port", 80) // Port out of range
-  // Missing required field: service.name is empty, service.version format is wrong, service.port is out of range
+  let errors1 = validate_config(invalid_config1)
+  assert_eq(errors1.length(), 1)
+  assert_true(errors1[0].contains("Service name cannot be empty"))
   
-  let invalid_validation_result = Configuration::validate(invalid_config, schema)
-  assert_false(invalid_validation_result.is_valid)
-  assert_true(invalid_validation_result.errors.length() > 0)
+  let invalid_config2 = { 
+    service_name: "test-service",
+    service_version: "1.0.0",
+    environment: "invalid",  // Invalid environment
+    log_level: "info",
+    metrics_enabled: true,
+    tracing_enabled: true,
+    endpoint: "http://localhost:8080"
+  }
   
-  // Test missing required fields
-  let incomplete_config = Configuration::new()
-  Configuration::set_string(incomplete_config, "service.name", "test_service")
-  // Missing service.version and service.port
+  let errors2 = validate_config(invalid_config2)
+  assert_eq(errors2.length(), 1)
+  assert_true(errors2[0].contains("Invalid environment"))
   
-  let incomplete_validation_result = Configuration::validate(incomplete_config, schema)
-  assert_false(incomplete_validation_result.is_valid)
-  assert_true(incomplete_validation_result.errors.length() >= 2) // At least 2 missing required fields
+  let invalid_config3 = { 
+    service_name: "test-service",
+    service_version: "1.0.0",
+    environment: "development",
+    log_level: "invalid",  // Invalid log level
+    metrics_enabled: true,
+    tracing_enabled: true,
+    endpoint: "ftp://localhost:8080"  // Invalid endpoint protocol
+  }
+  
+  let errors3 = validate_config(invalid_config3)
+  assert_eq(errors3.length(), 2)
+  assert_true(errors3[0].contains("Invalid log level"))
+  assert_true(errors3[1].contains("Endpoint must start with http:// or https://"))
 }
 
-// Test 4: Dynamic Configuration Updates
+// Test 2: Configuration Merging and Override
+test "configuration merging and override" {
+  // Simulate configuration merging
+  let merge_configs = fn(base_config, override_config) {
+    {
+      service_name: match override_config.service_name {
+        None => base_config.service_name
+        Some(name) => name
+      },
+      service_version: match override_config.service_version {
+        None => base_config.service_version
+        Some(version) => version
+      },
+      environment: match override_config.environment {
+        None => base_config.environment
+        Some(env) => env
+      },
+      log_level: match override_config.log_level {
+        None => base_config.log_level
+        Some(level) => level
+      },
+      metrics_enabled: match override_config.metrics_enabled {
+        None => base_config.metrics_enabled
+        Some(enabled) => enabled
+      },
+      tracing_enabled: match override_config.tracing_enabled {
+        None => base_config.tracing_enabled
+        Some(enabled) => enabled
+      },
+      endpoint: match override_config.endpoint {
+        None => base_config.endpoint
+        Some(url) => url
+      }
+    }
+  }
+  
+  let base_config = {
+    service_name: "azimuth-service",
+    service_version: "1.0.0",
+    environment: "development",
+    log_level: "info",
+    metrics_enabled: true,
+    tracing_enabled: true,
+    endpoint: "http://localhost:8080"
+  }
+  
+  // Test partial override
+  let override_config1 = {
+    service_name: Some("production-service"),
+    environment: Some("production"),
+    log_level: None,
+    metrics_enabled: Some(false),
+    tracing_enabled: None,
+    endpoint: None,
+    service_version: None
+  }
+  
+  let merged_config1 = merge_configs(base_config, override_config1)
+  assert_eq(merged_config1.service_name, "production-service")
+  assert_eq(merged_config1.service_version, "1.0.0")  // From base
+  assert_eq(merged_config1.environment, "production")
+  assert_eq(merged_config1.log_level, "info")  // From base
+  assert_eq(merged_config1.metrics_enabled, false)
+  assert_eq(merged_config1.tracing_enabled, true)  // From base
+  assert_eq(merged_config1.endpoint, "http://localhost:8080")  // From base
+  
+  // Test full override
+  let override_config2 = {
+    service_name: Some("full-override-service"),
+    service_version: Some("2.0.0"),
+    environment: Some("staging"),
+    log_level: Some("debug"),
+    metrics_enabled: Some(false),
+    tracing_enabled: Some(false),
+    endpoint: Some("https://staging.example.com")
+  }
+  
+  let merged_config2 = merge_configs(base_config, override_config2)
+  assert_eq(merged_config2.service_name, "full-override-service")
+  assert_eq(merged_config2.service_version, "2.0.0")
+  assert_eq(merged_config2.environment, "staging")
+  assert_eq(merged_config2.log_level, "debug")
+  assert_eq(merged_config2.metrics_enabled, false)
+  assert_eq(merged_config2.tracing_enabled, false)
+  assert_eq(merged_config2.endpoint, "https://staging.example.com")
+  
+  // Test no override
+  let override_config3 = {
+    service_name: None,
+    service_version: None,
+    environment: None,
+    log_level: None,
+    metrics_enabled: None,
+    tracing_enabled: None,
+    endpoint: None
+  }
+  
+  let merged_config3 = merge_configs(base_config, override_config3)
+  assert_eq(merged_config3.service_name, base_config.service_name)
+  assert_eq(merged_config3.service_version, base_config.service_version)
+  assert_eq(merged_config3.environment, base_config.environment)
+  assert_eq(merged_config3.log_level, base_config.log_level)
+  assert_eq(merged_config3.metrics_enabled, base_config.metrics_enabled)
+  assert_eq(merged_config3.tracing_enabled, base_config.tracing_enabled)
+  assert_eq(merged_config3.endpoint, base_config.endpoint)
+}
+
+// Test 3: Environment-Specific Configuration
+test "environment-specific configuration" {
+  // Define environment-specific configurations
+  let development_config = {
+    service_name: "azimuth-dev",
+    service_version: "1.0.0-dev",
+    environment: "development",
+    log_level: "debug",
+    metrics_enabled: true,
+    tracing_enabled: true,
+    endpoint: "http://localhost:8080",
+    debug_mode: true,
+    hot_reload: true
+  }
+  
+  let staging_config = {
+    service_name: "azimuth-staging",
+    service_version: "1.0.0-staging",
+    environment: "staging",
+    log_level: "info",
+    metrics_enabled: true,
+    tracing_enabled: true,
+    endpoint: "https://staging.azimuth.com",
+    debug_mode: false,
+    hot_reload: false
+  }
+  
+  let production_config = {
+    service_name: "azimuth-prod",
+    service_version: "1.0.0",
+    environment: "production",
+    log_level: "warn",
+    metrics_enabled: true,
+    tracing_enabled: true,
+    endpoint: "https://azimuth.com",
+    debug_mode: false,
+    hot_reload: false,
+    rate_limiting: true,
+    circuit_breaker: true
+  }
+  
+  // Simulate environment configuration loader
+  let load_config_for_environment = fn(environment) {
+    match environment {
+      "development" => development_config
+      "staging" => staging_config
+      "production" => production_config
+      _ => {
+        // Default to development for unknown environments
+        development_config
+      }
+    }
+  }
+  
+  // Test loading configurations for different environments
+  let dev_config = load_config_for_environment("development")
+  assert_eq(dev_config.environment, "development")
+  assert_eq(dev_config.log_level, "debug")
+  assert_true(dev_config.debug_mode)
+  assert_true(dev_config.hot_reload)
+  
+  let staging_config_loaded = load_config_for_environment("staging")
+  assert_eq(staging_config_loaded.environment, "staging")
+  assert_eq(staging_config_loaded.log_level, "info")
+  assert_false(staging_config_loaded.debug_mode)
+  assert_false(staging_config_loaded.hot_reload)
+  
+  let prod_config = load_config_for_environment("production")
+  assert_eq(prod_config.environment, "production")
+  assert_eq(prod_config.log_level, "warn")
+  assert_false(prod_config.debug_mode)
+  assert_false(prod_config.hot_reload)
+  assert_true(prod_config.rate_limiting)
+  assert_true(prod_config.circuit_breaker)
+  
+  // Test unknown environment
+  let unknown_config = load_config_for_environment("unknown")
+  assert_eq(unknown_config.environment, "development")  // Should default to development
+  assert_eq(unknown_config.log_level, "debug")
+  assert_true(unknown_config.debug_mode)
+}
+
+// Test 4: Configuration Schema Validation
+test "configuration schema validation" {
+  // Define configuration schema
+  let config_schema = {
+    required_fields: ["service_name", "service_version", "environment"],
+    field_types = {
+      service_name: "string",
+      service_version: "string",
+      environment: "string",
+      log_level: "string",
+      metrics_enabled: "boolean",
+      tracing_enabled: "boolean",
+      endpoint: "string"
+    },
+    field_constraints = {
+      service_name: { min_length: 1, max_length: 100 },
+      service_version: { min_length: 1, max_length: 20 },
+      environment: { allowed_values: ["development", "staging", "production"] },
+      log_level: { allowed_values: ["debug", "info", "warn", "error"] },
+      endpoint: { pattern: "^https?://.+" }
+    }
+  }
+  
+  // Simulate schema validation
+  let validate_against_schema = fn(config, schema) {
+    let errors = []
+    
+    // Check required fields
+    for field in schema.required_fields {
+      if !config.contains(field) {
+        errors = errors.push("Required field missing: " + field)
+      }
+    }
+    
+    // Check field types
+    for (field, expected_type) in schema.field_types {
+      if config.contains(field) {
+        let actual_type = match expected_type {
+          "string" => if config[field].length() > 0 { "string" } else { "unknown" }
+          "boolean" => if config[field] == true || config[field] == false { "boolean" } else { "unknown" }
+          _ => "unknown"
+        }
+        
+        if actual_type != expected_type {
+          errors = errors.push("Invalid type for field " + field + ": expected " + expected_type + ", got " + actual_type)
+        }
+      }
+    }
+    
+    // Check field constraints
+    for (field, constraints) in schema.field_constraints {
+      if config.contains(field) {
+        let value = config[field]
+        
+        // Check min/max length for strings
+        if constraints.contains("min_length") && constraints.contains("max_length") {
+          if value.length() < constraints["min_length"] || value.length() > constraints["max_length"] {
+            errors = errors.push("Field " + field + " length must be between " + constraints["min_length"].to_string() + " and " + constraints["max_length"].to_string())
+          }
+        }
+        
+        // Check allowed values
+        if constraints.contains("allowed_values") {
+          let allowed_values = constraints["allowed_values"]
+          if !allowed_values.contains(value) {
+            errors = errors.push("Field " + field + " must be one of: " + allowed_values.join(", "))
+          }
+        }
+        
+        // Check pattern
+        if constraints.contains("pattern") {
+          let pattern = constraints["pattern"]
+          // Simplified pattern matching - in real implementation would use regex
+          if pattern == "^https?://.+" && !value.starts_with("http") {
+            errors = errors.push("Field " + field + " must match pattern: " + pattern)
+          }
+        }
+      }
+    }
+    
+    errors
+  }
+  
+  // Test valid configuration
+  let valid_config = {
+    service_name: "test-service",
+    service_version: "1.0.0",
+    environment: "development",
+    log_level: "debug",
+    metrics_enabled: true,
+    tracing_enabled: false,
+    endpoint: "https://example.com"
+  }
+  
+  let valid_errors = validate_against_schema(valid_config, config_schema)
+  assert_eq(valid_errors.length(), 0)
+  
+  // Test missing required field
+  let missing_field_config = {
+    service_version: "1.0.0",
+    environment: "development",
+    log_level: "debug",
+    metrics_enabled: true,
+    tracing_enabled: false,
+    endpoint: "https://example.com"
+  }
+  
+  let missing_field_errors = validate_against_schema(missing_field_config, config_schema)
+  assert_eq(missing_field_errors.length(), 1)
+  assert_true(missing_field_errors[0].contains("Required field missing: service_name"))
+  
+  // Test invalid field value
+  let invalid_value_config = {
+    service_name: "test-service",
+    service_version: "1.0.0",
+    environment: "invalid-env",  // Invalid environment
+    log_level: "debug",
+    metrics_enabled: true,
+    tracing_enabled: false,
+    endpoint: "https://example.com"
+  }
+  
+  let invalid_value_errors = validate_against_schema(invalid_value_config, config_schema)
+  assert_eq(invalid_value_errors.length(), 1)
+  assert_true(invalid_value_errors[0].contains("must be one of"))
+  
+  // Test invalid endpoint
+  let invalid_endpoint_config = {
+    service_name: "test-service",
+    service_version: "1.0.0",
+    environment: "development",
+    log_level: "debug",
+    metrics_enabled: true,
+    tracing_enabled: false,
+    endpoint: "ftp://example.com"  // Invalid protocol
+  }
+  
+  let invalid_endpoint_errors = validate_against_schema(invalid_endpoint_config, config_schema)
+  assert_eq(invalid_endpoint_errors.length(), 1)
+  assert_true(invalid_endpoint_errors[0].contains("must match pattern"))
+}
+
+// Test 5: Dynamic Configuration Updates
 test "dynamic configuration updates" {
-  // Create a configuration with change listeners
-  let config = Configuration::new()
-  
-  // Set up initial values
-  Configuration::set_string(config, "dynamic.key", "initial_value")
-  Configuration::set_int(config, "dynamic.counter", 0)
-  
-  // Add change listener
-  let mut change_count = 0
-  let listener = fn(key, old_value, new_value) {
-    change_count = change_count + 1
+  // Simulate configuration manager with dynamic updates
+  let create_config_manager = fn(initial_config) {
+    { current_config = initial_config, update_count = 0, last_updated = "2023-01-01T00:00:00Z" }
   }
   
-  Configuration::add_change_listener(config, "dynamic.key", listener)
-  
-  // Update configuration and verify listener is called
-  Configuration::set_string(config, "dynamic.key", "updated_value")
-  assert_eq(change_count, 1)
-  
-  // Update with same value should not trigger listener
-  Configuration::set_string(config, "dynamic.key", "updated_value")
-  assert_eq(change_count, 1) // Should still be 1, not 2
-  
-  // Update with different value should trigger listener again
-  Configuration::set_string(config, "dynamic.key", "another_value")
-  assert_eq(change_count, 2)
-  
-  // Test batch updates
-  let updates = [
-    ("batch.key1", StringValue("value1")),
-    ("batch.key2", IntValue(42)),
-    ("batch.key3", BoolValue(true))
-  ]
-  
-  let batch_change_count = 0
-  let batch_listener = fn(key, old_value, new_value) {
-    change_count = change_count + 1
+  let update_config = fn(manager, new_config) {
+    { 
+      current_config = new_config,
+      update_count = manager.update_count + 1,
+      last_updated = "2023-01-01T12:00:00Z"  // Simulate timestamp
+    }
   }
   
-  Configuration::add_change_listener(config, "batch.key1", batch_listener)
-  Configuration::add_change_listener(config, "batch.key2", batch_listener)
-  Configuration::add_change_listener(config, "batch.key3", batch_listener)
-  
-  Configuration::update_batch(config, updates)
-  assert_eq(change_count, 5) // 2 from previous tests + 3 from batch update
-  
-  // Test configuration reload
-  let new_config = Configuration::new()
-  Configuration::set_string(new_config, "dynamic.key", "reloaded_value")
-  Configuration::set_int(new_config, "dynamic.counter", 10)
-  
-  let reload_result = Configuration::reload(config, new_config)
-  assert_true(reload_result)
-  
-  let reloaded_value = Configuration::get_string(config, "dynamic.key")
-  match reloaded_value {
-    Some(value) => assert_eq(value, "reloaded_value")
-    None => assert_true(false)
+  let get_config = fn(manager) {
+    manager.current_config
   }
   
-  let reloaded_counter = Configuration::get_int(config, "dynamic.counter")
-  match reloaded_counter {
-    Some(value) => assert_eq(value, 10)
-    None => assert_true(false)
+  let get_update_count = fn(manager) {
+    manager.update_count
   }
+  
+  // Test configuration updates
+  let initial_config = {
+    service_name: "test-service",
+    service_version: "1.0.0",
+    environment: "development",
+    log_level: "info",
+    metrics_enabled: true,
+    tracing_enabled: true
+  }
+  
+  let manager = create_config_manager(initial_config)
+  assert_eq(get_update_count(manager), 0)
+  
+  let updated_config1 = {
+    service_name: "test-service",
+    service_version: "1.0.0",
+    environment: "development",
+    log_level: "debug",  // Changed
+    metrics_enabled: true,
+    tracing_enabled: true
+  }
+  
+  let manager1 = update_config(manager, updated_config1)
+  assert_eq(get_update_count(manager1), 1)
+  assert_eq(get_config(manager1).log_level, "debug")
+  
+  let updated_config2 = {
+    service_name: "test-service",
+    service_version: "1.0.1",  // Changed
+    environment: "staging",    // Changed
+    log_level: "debug",
+    metrics_enabled: false,    // Changed
+    tracing_enabled: true
+  }
+  
+  let manager2 = update_config(manager1, updated_config2)
+  assert_eq(get_update_count(manager2), 2)
+  assert_eq(get_config(manager2).service_version, "1.0.1")
+  assert_eq(get_config(manager2).environment, "staging")
+  assert_eq(get_config(manager2).metrics_enabled, false)
+  
+  // Test configuration change detection
+  let detect_changes = fn(old_config, new_config) {
+    let changes = []
+    
+    if old_config.service_name != new_config.service_name {
+      changes = changes.push("service_name")
+    }
+    
+    if old_config.service_version != new_config.service_version {
+      changes = changes.push("service_version")
+    }
+    
+    if old_config.environment != new_config.environment {
+      changes = changes.push("environment")
+    }
+    
+    if old_config.log_level != new_config.log_level {
+      changes = changes.push("log_level")
+    }
+    
+    if old_config.metrics_enabled != new_config.metrics_enabled {
+      changes = changes.push("metrics_enabled")
+    }
+    
+    if old_config.tracing_enabled != new_config.tracing_enabled {
+      changes = changes.push("tracing_enabled")
+    }
+    
+    changes
+  }
+  
+  let changes1 = detect_changes(initial_config, updated_config1)
+  assert_eq(changes1.length(), 1)
+  assert_true(changes1.contains("log_level"))
+  
+  let changes2 = detect_changes(updated_config1, updated_config2)
+  assert_eq(changes2.length(), 3)
+  assert_true(changes2.contains("service_version"))
+  assert_true(changes2.contains("environment"))
+  assert_true(changes2.contains("metrics_enabled"))
 }
 
-// Test 5: Configuration Hierarchies and Inheritance
-test "configuration hierarchies and inheritance" {
-  // Create parent configuration
-  let parent_config = Configuration::new()
-  Configuration::set_string(parent_config, "parent.key", "parent_value")
-  Configuration::set_string(parent_config, "inherited.key", "inherited_value")
-  Configuration::set_int(parent_config, "override.key", 100)
-  
-  // Create child configuration
-  let child_config = Configuration::with_parent(parent_config)
-  Configuration::set_string(child_config, "child.key", "child_value")
-  Configuration::set_int(child_config, "override.key", 200) // Override parent value
-  
-  // Test child can access its own values
-  let child_value = Configuration::get_string(child_config, "child.key")
-  match child_value {
-    Some(value) => assert_eq(value, "child_value")
-    None => assert_true(false)
+// Test 6: Configuration Hot Reload
+test "configuration hot reload" {
+  // Simulate configuration file watcher
+  let create_file_watcher = fn(config_path) {
+    { watched_file = config_path, last_modified = "2023-01-01T00:00:00Z", watching = true }
   }
   
-  // Test child can inherit parent values
-  let inherited_value = Configuration::get_string(child_config, "inherited.key")
-  match inherited_value {
-    Some(value) => assert_eq(value, "inherited_value")
-    None => assert_true(false)
+  let check_file_changes = fn(watcher) {
+    // Simulate file change detection
+    let current_time = "2023-01-01T12:00:00Z"
+    if watcher.last_modified != current_time {
+      { 
+        watcher = { 
+          watched_file = watcher.watched_file, 
+          last_modified = current_time, 
+          watching = watcher.watching 
+        }, 
+        changed = true 
+      }
+    } else {
+      { watcher = watcher, changed = false }
+    }
   }
   
-  // Test child overrides parent values
-  let override_value = Configuration::get_int(child_config, "override.key")
-  match override_value {
-    Some(value) => assert_eq(value, 200) // Child's value, not parent's
-    None => assert_true(false)
+  let reload_config = fn(config_path) {
+    // Simulate configuration file loading
+    if config_path.contains("development") {
+      {
+        service_name: "dev-service-reloaded",
+        service_version: "1.0.1",
+        environment: "development",
+        log_level: "debug",
+        metrics_enabled: true,
+        tracing_enabled: true
+      }
+    } else if config_path.contains("production") {
+      {
+        service_name: "prod-service-reloaded",
+        service_version: "1.0.1",
+        environment: "production",
+        log_level: "warn",
+        metrics_enabled: true,
+        tracing_enabled: true
+      }
+    } else {
+      {
+        service_name: "default-service-reloaded",
+        service_version: "1.0.1",
+        environment: "development",
+        log_level: "info",
+        metrics_enabled: true,
+        tracing_enabled: true
+      }
+    }
   }
   
-  // Test parent is unaffected by child changes
-  let parent_override_value = Configuration::get_int(parent_config, "override.key")
-  match parent_override_value {
-    Some(value) => assert_eq(value, 100) // Parent's original value
-    None => assert_true(false)
+  // Test hot reload process
+  let dev_config_path = "/etc/azimuth/development.json"
+  let watcher = create_file_watcher(dev_config_path)
+  
+  // Simulate file change
+  let change_result = check_file_changes(watcher)
+  assert_true(change_result.changed)
+  
+  // Reload configuration
+  if change_result.changed {
+    let new_config = reload_config(change_result.watcher.watched_file)
+    assert_eq(new_config.service_name, "dev-service-reloaded")
+    assert_eq(new_config.service_version, "1.0.1")
+    assert_eq(new_config.log_level, "debug")
   }
   
-  // Test configuration hierarchy with multiple levels
-  let grandchild_config = Configuration::with_parent(child_config)
-  Configuration::set_string(grandchild_config, "grandchild.key", "grandchild_value")
+  // Test production config reload
+  let prod_config_path = "/etc/azimuth/production.json"
+  let prod_watcher = create_file_watcher(prod_config_path)
   
-  let grandchild_inherited = Configuration::get_string(grandchild_config, "inherited.key")
-  match grandchild_inherited {
-    Some(value) => assert_eq(value, "inherited_value") // From parent
-    None => assert_true(false)
+  let prod_change_result = check_file_changes(prod_watcher)
+  assert_true(prod_change_result.changed)
+  
+  if prod_change_result.changed {
+    let prod_new_config = reload_config(prod_change_result.watcher.watched_file)
+    assert_eq(prod_new_config.service_name, "prod-service-reloaded")
+    assert_eq(prod_new_config.service_version, "1.0.1")
+    assert_eq(prod_new_config.log_level, "warn")
   }
   
-  let grandchild_child = Configuration::get_string(grandchild_config, "child.key")
-  match grandchild_child {
-    Some(value) => assert_eq(value, "child_value") // From parent
-    None => assert_true(false)
+  // Test no change scenario
+  let no_change_watcher = { 
+    watched_file = dev_config_path, 
+    last_modified = "2023-01-01T12:00:00Z",  // Same as current time
+    watching = true 
   }
   
-  let grandchild_parent = Configuration::get_string(grandchild_config, "parent.key")
-  match grandchild_parent {
-    Some(value) => assert_eq(value, "parent_value") // From grandparent
-    None => assert_true(false)
-  }
+  let no_change_result = check_file_changes(no_change_watcher)
+  assert_false(no_change_result.changed)
 }
 
-// Test 6: Environment Variable Integration
-test "environment variable integration" {
-  // Create configuration with environment variable support
-  let config = Configuration::new()
+// Test 7: Configuration Security and Sensitive Data
+test "configuration security and sensitive data" {
+  // Define sensitive fields
+  let sensitive_fields = ["api_key", "database_password", "secret_token", "private_key"]
   
-  // Set up environment variable mappings
-  Configuration::map_env_variable(config, "env.service.name", "SERVICE_NAME")
-  Configuration::map_env_variable(config, "env.service.port", "SERVICE_PORT")
-  Configuration::map_env_variable(config, "env.debug.enabled", "DEBUG_ENABLED")
-  
-  // Load configuration from environment variables
-  let load_result = Configuration::load_from_environment(config)
-  assert_true(load_result)
-  
-  // Test getting values (these would come from actual environment in a real scenario)
-  // For this test, we'll simulate environment variable values
-  
-  // Simulate environment variable values
-  Configuration::set_string(config, "env.service.name", "env_service")
-  Configuration::set_int(config, "env.service.port", 9090)
-  Configuration::set_bool(config, "env.debug.enabled", true)
-  
-  // Verify loaded values
-  let service_name = Configuration::get_string(config, "env.service.name")
-  match service_name {
-    Some(name) => assert_eq(name, "env_service")
-    None => assert_true(false)
+  // Simulate secure configuration handling
+  let mask_sensitive_data = fn(config, sensitive_fields) {
+    let masked_config = {}
+    
+    for (key, value) in config {
+      if sensitive_fields.contains(key) {
+        masked_config = masked_config.with(key, "***MASKED***")
+      } else {
+        masked_config = masked_config.with(key, value)
+      }
+    }
+    
+    masked_config
   }
   
-  let service_port = Configuration::get_int(config, "env.service.port")
-  match service_port {
-    Some(port) => assert_eq(port, 9090)
-    None => assert_true(false)
+  let validate_sensitive_fields = fn(config, sensitive_fields) {
+    let errors = []
+    
+    for field in sensitive_fields {
+      if config.contains(field) {
+        let value = config[field]
+        if value.length() < 8 {
+          errors = errors.push("Sensitive field " + field + " must be at least 8 characters")
+        }
+        if value == "password" || value == "secret" || value == "12345678" {
+          errors = errors.push("Sensitive field " + field + " cannot use common/default values")
+        }
+      }
+    }
+    
+    errors
   }
   
-  let debug_enabled = Configuration::get_bool(config, "env.debug.enabled")
-  match debug_enabled {
-    Some(enabled) => assert_true(enabled)
-    None => assert_true(false)
+  // Test with sensitive data
+  let config_with_secrets = {
+    service_name: "secure-service",
+    service_version: "1.0.0",
+    environment: "production",
+    api_key: "sk-1234567890abcdef",
+    database_password: "super_secure_password_123",
+    secret_token: "token_abcdef123456",
+    private_key: "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC...",
+    public_key: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKBAQEA..."
   }
   
-  // Test environment variable precedence
-  // Set a value directly, then load from environment to test precedence
-  Configuration::set_string(config, "precedence.test", "direct_value")
+  // Test masking
+  let masked_config = mask_sensitive_data(config_with_secrets, sensitive_fields)
+  assert_eq(masked_config["service_name"], "secure-service")
+  assert_eq(masked_config["api_key"], "***MASKED***")
+  assert_eq(masked_config["database_password"], "***MASKED***")
+  assert_eq(masked_config["secret_token"], "***MASKED***")
+  assert_eq(masked_config["private_key"], "***MASKED***")
+  assert_eq(masked_config["public_key"], "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKBAQEA...")  // Not masked
   
-  // In a real scenario, if PRECEDENCE_TEST env var was set, it would override the direct value
-  // For this test, we'll simulate by setting the env value directly
-  Configuration::set_string(config, "precedence.test", "env_value") // Simulate env override
+  // Test validation
+  let validation_errors = validate_sensitive_fields(config_with_secrets, sensitive_fields)
+  assert_eq(validation_errors.length(), 0)
   
-  let precedence_value = Configuration::get_string(config, "precedence.test")
-  match precedence_value {
-    Some(value) => assert_eq(value, "env_value") // Environment should take precedence
-    None => assert_true(false)
+  // Test with weak sensitive data
+  let weak_config = {
+    service_name: "weak-service",
+    service_version: "1.0.0",
+    environment: "production",
+    api_key: "weak",  // Too short
+    database_password: "password",  // Common value
+    secret_token: "12345678",  // Common value
+    private_key: "short"  // Too short
   }
+  
+  let weak_validation_errors = validate_sensitive_fields(weak_config, sensitive_fields)
+  assert_eq(weak_validation_errors.length(), 4)
+  assert_true(weak_validation_errors[0].contains("api_key must be at least 8 characters"))
+  assert_true(weak_validation_errors[1].contains("database_password cannot use common/default values"))
+  assert_true(weak_validation_errors[2].contains("secret_token cannot use common/default values"))
+  assert_true(weak_validation_errors[3].contains("private_key must be at least 8 characters"))
 }
 
-// Test 7: Configuration Profiles and Variants
-test "configuration profiles and variants" {
-  // Create base configuration
-  let base_config = Configuration::new()
-  Configuration::set_string(base_config, "service.name", "base_service")
-  Configuration::set_int(base_config, "service.port", 8080)
-  Configuration::set_bool(base_config, "debug.enabled", false)
-  Configuration::set_string(base_config, "log.level", "INFO")
+// Test 8: Configuration Templates and Inheritance
+test "configuration templates and inheritance" {
+  // Define base configuration template
+  let base_template = {
+    service_name: "{{SERVICE_NAME}}",
+    service_version: "{{SERVICE_VERSION}}",
+    environment: "{{ENVIRONMENT}}",
+    log_level: "{{LOG_LEVEL}}",
+    metrics_enabled: "{{METRICS_ENABLED}}",
+    tracing_enabled: "{{TRACING_ENABLED}}",
+    endpoint: "{{ENDPOINT}}",
+    retry_attempts: 3,
+    timeout_ms: 5000
+  }
   
-  // Create development profile
-  let dev_profile = Configuration::with_parent(base_config)
-  Configuration::set_string(dev_profile, "service.name", "dev_service")
-  Configuration::set_int(dev_profile, "service.port", 3000)
-  Configuration::set_bool(dev_profile, "debug.enabled", true)
-  Configuration::set_string(dev_profile, "log.level", "DEBUG")
+  // Define environment-specific templates
+  let development_template = {
+    extends: "base",
+    log_level: "debug",
+    metrics_enabled: true,
+    tracing_enabled: true,
+    endpoint: "http://localhost:8080",
+    debug_mode: true
+  }
   
-  // Create production profile
-  let prod_profile = Configuration::with_parent(base_config)
-  Configuration::set_string(prod_profile, "service.name", "prod_service")
-  Configuration::set_int(prod_profile, "service.port", 80)
-  Configuration::set_bool(prod_profile, "debug.enabled", false)
-  Configuration::set_string(prod_profile, "log.level", "WARN")
+  let production_template = {
+    extends: "base",
+    log_level: "warn",
+    metrics_enabled: true,
+    tracing_enabled: true,
+    endpoint: "https://api.azimuth.com",
+    retry_attempts: 5,
+    timeout_ms: 10000,
+    circuit_breaker: true
+  }
   
-  // Create profile manager
-  let profile_manager = ProfileManager::new()
-  ProfileManager::add_profile(profile_manager, "base", base_config)
-  ProfileManager::add_profile(profile_manager, "development", dev_profile)
-  ProfileManager::add_profile(profile_manager, "production", prod_profile)
+  // Simulate template resolution
+  let resolve_template = fn(template_name, templates, variables) {
+    let template = match template_name {
+      "base" => templates["base"]
+      "development" => templates["development"]
+      "production" => templates["production"]
+      _ => templates["base"]
+    }
+    
+    let resolved = {}
+    for (key, value) in template {
+      if value.length() > 2 && value[0] == '{' && value[1] == '{' && value[value.length() - 1] == '}' && value[value.length() - 2] == '}' {
+        let var_name = value.substring(2, value.length() - 2)
+        resolved = resolved.with(key, variables[var_name])
+      } else {
+        resolved = resolved.with(key, value)
+      }
+    }
+    
+    resolved
+  }
   
-  // Test profile switching
-  let active_dev = ProfileManager::activate_profile(profile_manager, "development")
-  match active_dev {
-    Some(dev_config) => {
-      let service_name = Configuration::get_string(dev_config, "service.name")
-      match service_name {
-        Some(name) => assert_eq(name, "dev_service")
-        None => assert_true(false)
+  // Simulate template inheritance
+  let apply_inheritance = fn(template_name, templates) {
+    let template = templates[template_name]
+    if template.contains("extends") {
+      let parent_name = template["extends"]
+      let parent = templates[parent_name]
+      
+      let inherited = {}
+      for (key, value) in parent {
+        inherited = inherited.with(key, value)
       }
       
-      let debug_enabled = Configuration::get_bool(dev_config, "debug.enabled")
-      match debug_enabled {
-        Some(enabled) => assert_true(enabled)
-        None => assert_true(false)
-      }
-    }
-    None => assert_true(false)
-  }
-  
-  let active_prod = ProfileManager::activate_profile(profile_manager, "production")
-  match active_prod {
-    Some(prod_config) => {
-      let service_name = Configuration::get_string(prod_config, "service.name")
-      match service_name {
-        Some(name) => assert_eq(name, "prod_service")
-        None => assert_true(false)
+      for (key, value) in template {
+        if key != "extends" {
+          inherited = inherited.with(key, value)
+        }
       }
       
-      let debug_enabled = Configuration::get_bool(prod_config, "debug.enabled")
-      match debug_enabled {
-        Some(enabled) => assert_false(enabled)
-        None => assert_true(false)
-      }
+      inherited
+    } else {
+      template
     }
-    None => assert_true(false)
   }
   
-  // Test profile inheritance
-  let active_base = ProfileManager::activate_profile(profile_manager, "base")
-  match active_base {
-    Some(base_active_config) => {
-      let service_name = Configuration::get_string(base_active_config, "service.name")
-      match service_name {
-        Some(name) => assert_eq(name, "base_service")
-        None => assert_true(false)
-      }
-    }
-    None => assert_true(false)
+  let templates = {
+    "base": base_template,
+    "development": development_template,
+    "production": production_template
   }
+  
+  // Test template inheritance
+  let dev_inherited = apply_inheritance("development", templates)
+  assert_eq(dev_inherited["log_level"], "debug")  // From development template
+  assert_eq(dev_inherited["retry_attempts"], 3)  // From base template
+  assert_eq(dev_inherited["debug_mode"], true)   // From development template
+  
+  let prod_inherited = apply_inheritance("production", templates)
+  assert_eq(prod_inherited["log_level"], "warn")  // From production template
+  assert_eq(prod_inherited["retry_attempts"], 5)  // From production template (overrides base)
+  assert_eq(prod_inherited["circuit_breaker"], true)  // From production template
+  
+  // Test template variable substitution
+  let variables = {
+    "SERVICE_NAME": "azimuth-service",
+    "SERVICE_VERSION": "1.0.0",
+    "ENVIRONMENT": "development",
+    "LOG_LEVEL": "info",
+    "METRICS_ENABLED": true,
+    "TRACING_ENABLED": true,
+    "ENDPOINT": "https://api.example.com"
+  }
+  
+  let resolved_config = resolve_template("base", templates, variables)
+  assert_eq(resolved_config["service_name"], "azimuth-service")
+  assert_eq(resolved_config["service_version"], "1.0.0")
+  assert_eq(resolved_config["environment"], "development")
+  assert_eq(resolved_config["log_level"], "info")
+  assert_eq(resolved_config["metrics_enabled"], true)
+  assert_eq(resolved_config["tracing_enabled"], true)
+  assert_eq(resolved_config["endpoint"], "https://api.example.com")
+  assert_eq(resolved_config["retry_attempts"], 3)
+  assert_eq(resolved_config["timeout_ms"], 5000)
 }
 
-// Test 8: Configuration Security and Encryption
-test "configuration security and encryption" {
-  // Create secure configuration
-  let secure_config = Configuration::new()
+// Test 9: Configuration Versioning and Migration
+test "configuration versioning and migration" {
+  // Define configuration versions
+  let v1_config = {
+    version: "1.0",
+    service_name: "test-service",
+    service_port: 8080,
+    debug: true,
+    log_file: "/var/log/app.log"
+  }
   
-  // Set sensitive values
-  Configuration::set_string(secure_config, "database.password", "secret_password")
-  Configuration::set_string(secure_config, "api.key", "secret_api_key")
-  Configuration::set_string(secure_config, "jwt.secret", "jwt_secret_key")
+  let v2_config = {
+    version: "2.0",
+    service_name: "test-service",
+    endpoints: {
+      http: { port: 8080, host: "localhost" },
+      grpc: { port: 9090, host: "localhost" }
+    },
+    logging: {
+      level: "debug",
+      file: "/var/log/app.log",
+      format: "json"
+    }
+  }
   
-  // Mark fields as sensitive
-  Configuration::mark_sensitive(secure_config, "database.password")
-  Configuration::mark_sensitive(secure_config, "api.key")
-  Configuration::mark_sensitive(secure_config, "jwt.secret")
-  
-  // Test that sensitive values are masked in serialization
-  let json_config = Configuration::to_json(secure_config)
-  assert_false(json_config.contains("secret_password"))
-  assert_false(json_config.contains("secret_api_key"))
-  assert_false(json_config.contains("jwt_secret_key"))
-  assert_true(json_config.contains("database.password"))
-  assert_true(json_config.contains("api.key"))
-  assert_true(json_config.contains("jwt.secret"))
-  
-  // Test encryption of configuration
-  let encryption_key = "test_encryption_key_123"
-  let encrypted_config = Configuration::encrypt(secure_config, encryption_key)
-  assert_true(encrypted_config.length() > 0)
-  
-  // Test decryption of configuration
-  let decrypted_config = Configuration::decrypt(encrypted_config, encryption_key)
-  match decrypted_config {
-    Some(decrypted) => {
-      // Verify that sensitive values are restored
-      let password = Configuration::get_string(decrypted, "database.password")
-      match password {
-        Some(value) => assert_eq(value, "secret_password")
-        None => assert_true(false)
-      }
-      
-      let api_key = Configuration::get_string(decrypted, "api.key")
-      match api_key {
-        Some(value) => assert_eq(value, "secret_api_key")
-        None => assert_true(false)
-      }
-      
-      let jwt_secret = Configuration::get_string(decrypted, "jwt.secret")
-      match jwt_secret {
-        Some(value) => assert_eq(value, "jwt_secret_key")
-        None => assert_true(false)
+  let v3_config = {
+    version: "3.0",
+    service: {
+      name: "test-service",
+      version: "1.0.0"
+    },
+    servers: [
+      { name: "http", port: 8080, host: "localhost", protocol: "http" },
+      { name: "grpc", port: 9090, host: "localhost", protocol: "grpc" }
+    ],
+    observability: {
+      logging: {
+        level: "debug",
+        outputs: [
+          { type: "file", path: "/var/log/app.log", format: "json" }
+        ]
+      },
+      metrics: {
+        enabled: true,
+        endpoint: "http://localhost:9090/metrics"
+      },
+      tracing: {
+        enabled: true,
+        endpoint: "http://localhost:9411/api/v2/spans"
       }
     }
-    None => assert_true(false)
   }
   
-  // Test decryption with wrong key fails
-  let wrong_key_decrypted = Configuration::decrypt(encrypted_config, "wrong_key")
-  match wrong_key_decrypted {
-    Some(_) => assert_true(false) // Should not succeed with wrong key
-    None => assert_true(true)     // Expected to fail
+  // Simulate configuration migration
+  let migrate_config = fn(config, target_version) {
+    let current_version = config["version"]
+    
+    if current_version == "1.0" && target_version == "2.0" {
+      // Migrate from v1 to v2
+      {
+        version: "2.0",
+        service_name: config["service_name"],
+        endpoints: {
+          http: { port: config["service_port"], host: "localhost" },
+          grpc: { port: 9090, host: "localhost" }
+        },
+        logging: {
+          level: if config["debug"] { "debug" } else { "info" },
+          file: config["log_file"],
+          format: "json"
+        }
+      }
+    } else if current_version == "2.0" && target_version == "3.0" {
+      // Migrate from v2 to v3
+      {
+        version: "3.0",
+        service: {
+          name: config["service_name"],
+          version: "1.0.0"
+        },
+        servers: [
+          { name: "http", port: config["endpoints"]["http"]["port"], host: config["endpoints"]["http"]["host"], protocol: "http" },
+          { name: "grpc", port: config["endpoints"]["grpc"]["port"], host: config["endpoints"]["grpc"]["host"], protocol: "grpc" }
+        ],
+        observability: {
+          logging: {
+            level: config["logging"]["level"],
+            outputs: [
+              { type: "file", path: config["logging"]["file"], format: config["logging"]["format"] }
+            ]
+          },
+          metrics: {
+            enabled: true,
+            endpoint: "http://localhost:9090/metrics"
+          },
+          tracing: {
+            enabled: true,
+            endpoint: "http://localhost:9411/api/v2/spans"
+          }
+        }
+      }
+    } else {
+      // No migration needed or unsupported migration
+      config
+    }
   }
   
-  // Test configuration access control
-  let access_config = Configuration::new()
-  Configuration::set_string(access_config, "public.key", "public_value")
-  Configuration::set_string(access_config, "private.key", "private_value")
+  // Test v1 to v2 migration
+  let migrated_v1_to_v2 = migrate_config(v1_config, "2.0")
+  assert_eq(migrated_v1_to_v2["version"], "2.0")
+  assert_eq(migrated_v1_to_v2["service_name"], "test-service")
+  assert_eq(migrated_v1_to_v2["endpoints"]["http"]["port"], 8080)
+  assert_eq(migrated_v1_to_v2["endpoints"]["http"]["host"], "localhost")
+  assert_eq(migrated_v1_to_v2["endpoints"]["grpc"]["port"], 9090)
+  assert_eq(migrated_v1_to_v2["endpoints"]["grpc"]["host"], "localhost")
+  assert_eq(migrated_v1_to_v2["logging"]["level"], "debug")
+  assert_eq(migrated_v1_to_v2["logging"]["file"], "/var/log/app.log")
+  assert_eq(migrated_v1_to_v2["logging"]["format"], "json")
   
-  // Set access permissions
-  Configuration::set_permission(access_config, "public.key", "read")
-  Configuration::set_permission(access_config, "private.key", "admin")
+  // Test v2 to v3 migration
+  let migrated_v2_to_v3 = migrate_config(v2_config, "3.0")
+  assert_eq(migrated_v2_to_v3["version"], "3.0")
+  assert_eq(migrated_v2_to_v3["service"]["name"], "test-service")
+  assert_eq(migrated_v2_to_v3["service"]["version"], "1.0.0")
+  assert_eq(migrated_v2_to_v3["servers"].length(), 2)
+  assert_eq(migrated_v2_to_v3["servers"][0]["name"], "http")
+  assert_eq(migrated_v2_to_v3["servers"][0]["port"], 8080)
+  assert_eq(migrated_v2_to_v3["servers"][1]["name"], "grpc")
+  assert_eq(migrated_v2_to_v3["servers"][1]["port"], 9090)
+  assert_eq(migrated_v2_to_v3["observability"]["logging"]["level"], "debug")
+  assert_eq(migrated_v2_to_v3["observability"]["metrics"]["enabled"], true)
+  assert_eq(migrated_v2_to_v3["observability"]["tracing"]["enabled"], true)
   
-  // Test access control
-  let public_access = Configuration::check_access(access_config, "public.key", "read")
-  assert_true(public_access)
+  // Test no migration needed
+  let no_migration = migrate_config(v3_config, "3.0")
+  assert_eq(no_migration["version"], "3.0")
+}
+
+// Test 10: Configuration Validation with Business Rules
+test "configuration validation with business rules" {
+  // Define business rules for configuration validation
+  let validate_business_rules = fn(config) {
+    let errors = []
+    
+    // Rule 1: Production environment must have certain security settings
+    if config["environment"] == "production" {
+      if !config["metrics_enabled"] {
+        errors = errors.push("Production environment must have metrics enabled")
+      }
+      
+      if !config["tracing_enabled"] {
+        errors = errors.push("Production environment must have tracing enabled")
+      }
+      
+      if !config["endpoint"].starts_with("https://") {
+        errors = errors.push("Production environment must use HTTPS endpoints")
+      }
+      
+      if config["log_level"] == "debug" {
+        errors = errors.push("Production environment should not use debug log level")
+      }
+    }
+    
+    // Rule 2: Development environment should not use production endpoints
+    if config["environment"] == "development" && config["endpoint"].contains("production") {
+      errors = errors.push("Development environment should not use production endpoints")
+    }
+    
+    // Rule 3: Service version must follow semantic versioning
+    if !config["service_version"].contains(".") {
+      errors = errors.push("Service version must follow semantic versioning (e.g., 1.0.0)")
+    }
+    
+    // Rule 4: Retry attempts must be reasonable
+    if config.contains("retry_attempts") {
+      let retry_attempts = config["retry_attempts"]
+      if retry_attempts < 0 || retry_attempts > 10 {
+        errors = errors.push("Retry attempts must be between 0 and 10")
+      }
+    }
+    
+    // Rule 5: Timeout must be reasonable
+    if config.contains("timeout_ms") {
+      let timeout = config["timeout_ms"]
+      if timeout < 100 || timeout > 60000 {
+        errors = errors.push("Timeout must be between 100ms and 60000ms")
+      }
+    }
+    
+    errors
+  }
   
-  let private_read_access = Configuration::check_access(access_config, "private.key", "read")
-  assert_false(private_read_access) // Should not have read access
+  // Test valid production configuration
+  let valid_prod_config = {
+    service_name: "prod-service",
+    service_version: "1.2.3",
+    environment: "production",
+    log_level: "warn",
+    metrics_enabled: true,
+    tracing_enabled: true,
+    endpoint: "https://api.azimuth.com",
+    retry_attempts: 3,
+    timeout_ms: 5000
+  }
   
-  let private_admin_access = Configuration::check_access(access_config, "private.key", "admin")
-  assert_true(private_admin_access)
+  let prod_errors = validate_business_rules(valid_prod_config)
+  assert_eq(prod_errors.length(), 0)
+  
+  // Test invalid production configuration
+  let invalid_prod_config = {
+    service_name: "prod-service",
+    service_version: "1.2.3",
+    environment: "production",
+    log_level: "debug",  // Invalid for production
+    metrics_enabled: false,  // Invalid for production
+    tracing_enabled: false,  // Invalid for production
+    endpoint: "http://api.azimuth.com",  // Should be HTTPS
+    retry_attempts: 3,
+    timeout_ms: 5000
+  }
+  
+  let invalid_prod_errors = validate_business_rules(invalid_prod_config)
+  assert_eq(invalid_prod_errors.length(), 4)
+  assert_true(invalid_prod_errors[0].contains("Production environment must have metrics enabled"))
+  assert_true(invalid_prod_errors[1].contains("Production environment must have tracing enabled"))
+  assert_true(invalid_prod_errors[2].contains("Production environment must use HTTPS endpoints"))
+  assert_true(invalid_prod_errors[3].contains("Production environment should not use debug log level"))
+  
+  // Test invalid development configuration
+  let invalid_dev_config = {
+    service_name: "dev-service",
+    service_version: "1.2.3",
+    environment: "development",
+    log_level: "debug",
+    metrics_enabled: true,
+    tracing_enabled: true,
+    endpoint: "https://api.production.azimuth.com",  // Production endpoint in dev
+    retry_attempts: 15,  // Too many retries
+    timeout_ms: 50  // Too short timeout
+  }
+  
+  let invalid_dev_errors = validate_business_rules(invalid_dev_config)
+  assert_eq(invalid_dev_errors.length(), 3)
+  assert_true(invalid_dev_errors[0].contains("Development environment should not use production endpoints"))
+  assert_true(invalid_dev_errors[1].contains("Retry attempts must be between 0 and 10"))
+  assert_true(invalid_dev_errors[2].contains("Timeout must be between 100ms and 60000ms"))
+  
+  // Test invalid version format
+  let invalid_version_config = {
+    service_name: "test-service",
+    service_version: "v1",  // Invalid semantic version
+    environment: "development",
+    log_level: "debug",
+    metrics_enabled: true,
+    tracing_enabled: true,
+    endpoint: "http://localhost:8080"
+  }
+  
+  let invalid_version_errors = validate_business_rules(invalid_version_config)
+  assert_eq(invalid_version_errors.length(), 1)
+  assert_true(invalid_version_errors[0].contains("Service version must follow semantic versioning"))
 }

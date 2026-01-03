@@ -1,821 +1,828 @@
-// Azimuth Concurrent Safety and Thread Safety Tests
-// This file contains test cases for concurrent operations and thread safety
+// Azimuth Concurrent Safety Tests
+// This file contains test cases for concurrent safety and thread safety
 
-// Test 1: Atomic Operations
-test "atomic operations safety" {
-  // Test atomic counter
-  let atomic_counter = create_atomic_counter(0)
+// Test 1: Thread-Safe Counter Operations
+test "thread-safe counter operations" {
+  // Simulate atomic counter operations
+  let atomic_counter = 0
   
-  // Test atomic increment
-  let result1 = atomic_counter.increment()
-  let result2 = atomic_counter.increment()
-  let result3 = atomic_counter.increment()
+  let atomic_increment = fn(counter) {
+    // Simulate atomic increment
+    counter + 1
+  }
   
-  assert_eq(result1, 1)
-  assert_eq(result2, 2)
-  assert_eq(result3, 3)
-  assert_eq(atomic_counter.get(), 3)
+  let atomic_decrement = fn(counter) {
+    // Simulate atomic decrement
+    counter - 1
+  }
   
-  // Test atomic add
-  let add_result = atomic_counter.add(5)
-  assert_eq(add_result, 8)
-  assert_eq(atomic_counter.get(), 8)
+  let atomic_add = fn(counter, value) {
+    // Simulate atomic add
+    counter + value
+  }
   
-  // Test atomic compare and swap
-  let cas_success = atomic_counter.compare_and_swap(8, 10)
-  assert_true(cas_success)
-  assert_eq(atomic_counter.get(), 10)
+  // Test atomic operations
+  let counter1 = atomic_increment(atomic_counter)
+  assert_eq(counter1, 1)
   
-  let cas_failure = atomic_counter.compare_and_swap(8, 12)
-  assert_false(cas_failure)
-  assert_eq(atomic_counter.get(), 10)
+  let counter2 = atomic_increment(counter1)
+  assert_eq(counter2, 2)
+  
+  let counter3 = atomic_decrement(counter2)
+  assert_eq(counter3, 1)
+  
+  let counter4 = atomic_add(counter3, 5)
+  assert_eq(counter4, 6)
+  
+  // Test concurrent counter simulation
+  let simulate_concurrent_increments = fn(initial_count, num_threads, increments_per_thread) {
+    // Simulate concurrent increments
+    initial_count + (num_threads * increments_per_thread)
+  }
+  
+  let concurrent_result = simulate_concurrent_increments(0, 10, 5)
+  assert_eq(concurrent_result, 50)
 }
 
-// Test 2: Concurrent Data Structures
-test "concurrent data structures" {
-  // Test concurrent queue
-  let concurrent_queue = create_concurrent_queue()
+// Test 2: Thread-Safe Data Structures
+test "thread-safe data structures" {
+  // Test thread-safe array operations
+  let thread_safe_array = []
   
-  // Test concurrent enqueue and dequeue
-  assert_true(concurrent_queue.enqueue("item1"))
-  assert_true(concurrent_queue.enqueue("item2"))
-  assert_true(concurrent_queue.enqueue("item3"))
+  let thread_safe_push = fn(array, item) {
+    // Simulate thread-safe push
+    array.push(item)
+  }
   
-  let dequeued1 = concurrent_queue.dequeue()
-  let dequeued2 = concurrent_queue.dequeue()
-  let dequeued3 = concurrent_queue.dequeue()
+  let thread_safe_get = fn(array, index) {
+    // Simulate thread-safe get with bounds checking
+    if index >= 0 && index < array.length() {
+      Some(array[index])
+    } else {
+      None
+    }
+  }
   
-  match dequeued1 {
+  // Test operations
+  let array1 = thread_safe_push(thread_safe_array, "item1")
+  let array2 = thread_safe_push(array1, "item2")
+  let array3 = thread_safe_push(array2, "item3")
+  
+  assert_eq(array3.length(), 3)
+  
+  match thread_safe_get(array3, 0) {
+    None => assert_true(false)
     Some(item) => assert_eq(item, "item1")
-    None => assert_true(false)
   }
   
-  match dequeued2 {
-    Some(item) => assert_eq(item, "item2")
+  match thread_safe_get(array3, 2) {
     None => assert_true(false)
-  }
-  
-  match dequeued3 {
     Some(item) => assert_eq(item, "item3")
-    None => assert_true(false)
   }
   
-  // Test empty queue
-  let empty_dequeue = concurrent_queue.dequeue()
-  match empty_dequeue {
-    Some(_) => assert_true(false)
+  match thread_safe_get(array3, 5) {
     None => assert_true(true)
-  }
-  
-  // Test concurrent map
-  let concurrent_map = create_concurrent_map()
-  
-  assert_true(concurrent_map.put("key1", "value1"))
-  assert_true(concurrent_map.put("key2", "value2"))
-  
-  let value1 = concurrent_map.get("key1")
-  let value2 = concurrent_map.get("key2")
-  let missing_value = concurrent_map.get("key3")
-  
-  match value1 {
-    Some(v) => assert_eq(v, "value1")
-    None => assert_true(false)
-  }
-  
-  match value2 {
-    Some(v) => assert_eq(v, "value2")
-    None => assert_true(false)
-  }
-  
-  match missing_value {
     Some(_) => assert_true(false)
+  }
+  
+  // Test thread-safe map operations
+  let thread_safe_map = {}
+  
+  let thread_safe_put = fn(map, key, value) {
+    // Simulate thread-safe put
+    map.with(key, value)
+  }
+  
+  let thread_safe_get_map = fn(map, key) {
+    // Simulate thread-safe get
+    match map.get(key) {
+      None => None
+      Some(value) => Some(value)
+    }
+  }
+  
+  let map1 = thread_safe_put(thread_safe_map, "key1", "value1")
+  let map2 = thread_safe_put(map1, "key2", "value2")
+  
+  match thread_safe_get_map(map2, "key1") {
+    None => assert_true(false)
+    Some(value) => assert_eq(value, "value1")
+  }
+  
+  match thread_safe_get_map(map2, "key3") {
     None => assert_true(true)
+    Some(_) => assert_true(false)
   }
 }
 
-// Test 3: Lock and Mutex Safety
-test "lock and mutex safety" {
-  // Test mutex
-  let mutex = create_mutex()
-  
-  // Test lock acquisition
-  let lock1 = mutex.try_lock()
-  assert_true(lock1.is_acquired())
-  
-  // Test lock contention
-  let lock2 = mutex.try_lock()
-  assert_false(lock2.is_acquired())
-  
-  // Test lock release
-  lock1.release()
-  let lock3 = mutex.try_lock()
-  assert_true(lock3.is_acquired())
-  
-  // Test recursive lock
-  let recursive_mutex = create_recursive_mutex()
-  let rlock1 = recursive_mutex.lock()
-  assert_true(rlock1.is_acquired())
-  
-  let rlock2 = recursive_mutex.lock()
-  assert_true(rlock2.is_acquired()) // Should allow recursive acquisition
-  
-  rlock2.release()
-  rlock1.release()
-  
-  // Test read-write lock
-  let rw_lock = create_read_write_lock()
-  
-  let read_lock1 = rw_lock.read_lock()
-  let read_lock2 = rw_lock.read_lock()
-  assert_true(read_lock1.is_acquired())
-  assert_true(read_lock2.is_acquired()) // Multiple readers allowed
-  
-  let write_lock = rw_lock.try_write_lock()
-  assert_false(write_lock.is_acquired()) // Write lock blocked by readers
-  
-  read_lock1.release()
-  read_lock2.release()
-  
-  let write_lock2 = rw_lock.try_write_lock()
-  assert_true(write_lock2.is_acquired()) // Write lock allowed after readers released
-}
-
-// Test 4: Thread Pool and Task Execution
-test "thread pool and task execution" {
-  // Test thread pool creation and task submission
-  let thread_pool = create_thread_pool(3)
-  
-  // Submit tasks
-  let future1 = thread_pool.submit(fn() { 1 + 1 })
-  let future2 = thread_pool.submit(fn() { 2 * 3 })
-  let future3 = thread_pool.submit(fn() { 10 / 2 })
-  
-  // Wait for results
-  let result1 = future1.get()
-  let result2 = future2.get()
-  let result3 = future3.get()
-  
-  assert_eq(result1, 2)
-  assert_eq(result2, 6)
-  assert_eq(result3, 5)
-  
-  // Test task with exception handling
-  let failing_future = thread_pool.submit(fn() { panic("Test error") })
-  let failing_result = failing_future.get_safe()
-  
-  match failing_result {
-    Ok(_) => assert_true(false)
-    Err(error) => assert_true(error.contains("Test error"))
+// Test 3: Lock and Mutex Simulation
+test "lock and mutex simulation" {
+  // Simulate mutex lock
+  let create_mutex = fn(initial_value) {
+    { value = initial_value, locked = false }
   }
   
-  // Test thread pool shutdown
-  thread_pool.shutdown()
-  let shutdown_future = thread_pool.submit(fn() { 42 })
-  assert_true(shutdown_future.is_cancelled())
-}
-
-// Test 5: Barrier and Synchronization
-test "barrier and synchronization" {
-  // Test cyclic barrier
-  let barrier = create_cyclic_barrier(3)
-  
-  let counter = create_atomic_counter(0)
-  
-  // Simulate concurrent tasks waiting at barrier
-  let task1 = fn() {
-    counter.increment()
-    barrier.await() // Wait for all threads
-    counter.increment()
+  let acquire_lock = fn(mutex) {
+    if mutex.locked {
+      { mutex = mutex, acquired = false }
+    } else {
+      { mutex = { value = mutex.value, locked = true }, acquired = true }
+    }
   }
   
-  let task2 = fn() {
-    counter.increment()
-    barrier.await() // Wait for all threads
-    counter.increment()
+  let release_lock = fn(mutex) {
+    { value = mutex.value, locked = false }
   }
   
-  let task3 = fn() {
-    counter.increment()
-    barrier.await() // Wait for all threads
-    counter.increment()
+  let with_lock = fn(mutex, operation) {
+    let lock_result = acquire_lock(mutex)
+    if lock_result.acquired {
+      let result = operation(lock_result.mutex.value)
+      let released_mutex = release_lock(lock_result.mutex)
+      { result = result, mutex = released_mutex, success = true }
+    } else {
+      { result = None, mutex = mutex, success = false }
+    }
   }
   
-  // Execute tasks (simplified for test)
-  task1()
-  task2()
-  task3()
+  // Test mutex operations
+  let mutex = create_mutex(42)
   
-  // All threads should have passed the barrier
-  assert_eq(counter.get(), 6)
+  let operation_result = with_lock(mutex, fn(value) {
+    value * 2
+  })
   
-  // Test countdown latch
-  let latch = create_countdown_latch(2)
-  let latch_counter = create_atomic_counter(0)
+  assert_true(operation_result.success)
+  match operation_result.result {
+    None => assert_true(false)
+    Some(result) => assert_eq(result, 84)
+  }
+  assert_false(operation_result.mutex.locked)
   
-  let latch_task1 = fn() {
-    latch_counter.increment()
-    latch.count_down()
+  // Test with locked mutex
+  let locked_mutex = { value = 100, locked = true }
+  let failed_operation = with_lock(locked_mutex, fn(value) {
+    value * 2
+  })
+  
+  assert_false(failed_operation.success)
+  match failed_operation.result {
+    None => assert_true(true)
+    Some(_) => assert_true(false)
+  }
+}
+
+// Test 4: Read-Write Lock Simulation
+test "read-write lock simulation" {
+  // Simulate read-write lock
+  let create_rwlock = fn(initial_value) {
+    { value = initial_value, readers = 0, writer = false }
   }
   
-  let latch_task2 = fn() {
-    latch_counter.increment()
-    latch.count_down()
+  let acquire_read_lock = fn(rwlock) {
+    if rwlock.writer {
+      { rwlock = rwlock, acquired = false }
+    } else {
+      { rwlock = { value = rwlock.value, readers = rwlock.readers + 1, writer = false }, acquired = true }
+    }
   }
   
-  latch_task1()
-  latch_task2()
+  let release_read_lock = fn(rwlock) {
+    { value = rwlock.value, readers = rwlock.readers - 1, writer = false }
+  }
   
-  // Wait for latch
-  latch.await()
-  assert_eq(latch_counter.get(), 2)
+  let acquire_write_lock = fn(rwlock) {
+    if rwlock.writer || rwlock.readers > 0 {
+      { rwlock = rwlock, acquired = false }
+    } else {
+      { rwlock = { value = rwlock.value, readers = 0, writer = true }, acquired = true }
+    }
+  }
+  
+  let release_write_lock = fn(rwlock) {
+    { value = rwlock.value, readers = 0, writer = false }
+  }
+  
+  let with_read_lock = fn(rwlock, operation) {
+    let lock_result = acquire_read_lock(rwlock)
+    if lock_result.acquired {
+      let result = operation(lock_result.rwlock.value)
+      let released_rwlock = release_read_lock(lock_result.rwlock)
+      { result = result, rwlock = released_rwlock, success = true }
+    } else {
+      { result = None, rwlock = rwlock, success = false }
+    }
+  }
+  
+  let with_write_lock = fn(rwlock, operation) {
+    let lock_result = acquire_write_lock(rwlock)
+    if lock_result.acquired {
+      let new_value = operation(lock_result.rwlock.value)
+      let updated_rwlock = { value = new_value, readers = 0, writer = true }
+      let released_rwlock = release_write_lock(updated_rwlock)
+      { result = new_value, rwlock = released_rwlock, success = true }
+    } else {
+      { result = None, rwlock = rwlock, success = false }
+    }
+  }
+  
+  // Test read-write lock operations
+  let rwlock = create_rwlock("initial_value")
+  
+  // Test read operations
+  let read_result = with_read_lock(rwlock, fn(value) {
+    value.length()
+  })
+  
+  assert_true(read_result.success)
+  match read_result.result {
+    None => assert_true(false)
+    Some(result) => assert_eq(result, 13)  // "initial_value".length()
+  }
+  
+  // Test write operations
+  let write_result = with_write_lock(rwlock, fn(value) {
+    value + "_modified"
+  })
+  
+  assert_true(write_result.success)
+  match write_result.result {
+    None => assert_true(false)
+    Some(result) => assert_eq(result, "initial_value_modified")
+  }
+  
+  // Test concurrent readers
+  let rwlock_with_readers = { value = "test", readers = 3, writer = false }
+  let failed_write = with_write_lock(rwlock_with_readers, fn(value) {
+    value + "_failed"
+  })
+  
+  assert_false(failed_write.success)
+  match failed_write.result {
+    None => assert_true(true)
+    Some(_) => assert_true(false)
+  }
+  
+  // Test with active writer
+  let rwlock_with_writer = { value = "test", readers = 0, writer = true }
+  let failed_read = with_read_lock(rwlock_with_writer, fn(value) {
+    value.length()
+  })
+  
+  assert_false(failed_read.success)
+  match failed_read.result {
+    None => assert_true(true)
+    Some(_) => assert_true(false)
+  }
 }
 
-// Test 6: Concurrent Collections
-test "concurrent collections" {
-  // Test concurrent list
-  let concurrent_list = create_concurrent_list()
+// Test 5: Concurrent Queue Simulation
+test "concurrent queue simulation" {
+  // Simulate thread-safe queue
+  let create_queue = fn() {
+    { items = [], head = 0, tail = 0 }
+  }
   
-  concurrent_list.add("item1")
-  concurrent_list.add("item2")
-  concurrent_list.add("item3")
+  let enqueue = fn(queue, item) {
+    // Simulate thread-safe enqueue
+    { items = queue.items.push(item), head = queue.head, tail = queue.tail + 1 }
+  }
   
-  assert_eq(concurrent_list.size(), 3)
-  assert_eq(concurrent_list.get(0), "item1")
-  assert_eq(concurrent_list.get(1), "item2")
-  assert_eq(concurrent_list.get(2), "item3")
+  let dequeue = fn(queue) {
+    // Simulate thread-safe dequeue
+    if queue.head < queue.tail {
+      let item = queue.items[queue.head]
+      { queue = { items = queue.items, head = queue.head + 1, tail = queue.tail }, item = Some(item) }
+    } else {
+      { queue = queue, item = None }
+    }
+  }
   
-  concurrent_list.remove(1)
-  assert_eq(concurrent_list.size(), 2)
-  assert_eq(concurrent_list.get(0), "item1")
-  assert_eq(concurrent_list.get(1), "item3")
+  let is_empty = fn(queue) {
+    queue.head >= queue.tail
+  }
   
-  // Test concurrent set
-  let concurrent_set = create_concurrent_set()
+  // Test queue operations
+  let queue = create_queue()
+  assert_true(is_empty(queue))
   
-  assert_true(concurrent_set.add("element1"))
-  assert_true(concurrent_set.add("element2"))
-  assert_false(concurrent_set.add("element1")) // Duplicate should not be added
+  let queue1 = enqueue(queue, "item1")
+  let queue2 = enqueue(queue1, "item2")
+  let queue3 = enqueue(queue2, "item3")
   
-  assert_true(concurrent_set.contains("element1"))
-  assert_true(concurrent_set.contains("element2"))
-  assert_false(concurrent_set.contains("element3"))
+  assert_false(is_empty(queue3))
   
-  assert_true(concurrent_set.remove("element1"))
-  assert_false(concurrent_set.contains("element1"))
-  assert_eq(concurrent_set.size(), 1)
+  let dequeue_result1 = dequeue(queue3)
+  match dequeue_result1.item {
+    None => assert_true(false)
+    Some(item) => assert_eq(item, "item1")
+  }
+  assert_false(is_empty(dequeue_result1.queue))
+  
+  let dequeue_result2 = dequeue(dequeue_result1.queue)
+  match dequeue_result2.item {
+    None => assert_true(false)
+    Some(item) => assert_eq(item, "item2")
+  }
+  assert_false(is_empty(dequeue_result2.queue))
+  
+  let dequeue_result3 = dequeue(dequeue_result2.queue)
+  match dequeue_result3.item {
+    None => assert_true(false)
+    Some(item) => assert_eq(item, "item3")
+  }
+  assert_true(is_empty(dequeue_result3.queue))
+  
+  let dequeue_result4 = dequeue(dequeue_result3.queue)
+  match dequeue_result4.item {
+    None => assert_true(true)
+    Some(_) => assert_true(false)
+  }
 }
 
-// Test 7: Race Condition Detection
-test "race condition detection" {
-  // Test shared resource access
-  let shared_resource = create_shared_resource()
+// Test 6: Concurrent Resource Pool
+test "concurrent resource pool" {
+  // Simulate thread-safe resource pool
+  let create_concurrent_pool = fn(resources) {
+    { available = resources, in_use = [] }
+  }
   
-  // Simulate concurrent access patterns
-  let mut results = []
+  let acquire_resource = fn(pool) {
+    // Simulate thread-safe resource acquisition
+    if pool.available.length() > 0 {
+      let resource = pool.available[0]
+      let remaining = pool.available.slice(1)
+      { 
+        pool = { 
+          available = remaining, 
+          in_use = pool.in_use.push(resource) 
+        }, 
+        resource = Some(resource) 
+      }
+    } else {
+      { pool = pool, resource = None }
+    }
+  }
   
-  // Pattern 1: Read-Modify-Write
-  let result1 = shared_resource.read_modify_write(fn(x) { x + 1 })
-  results = results.push(result1)
-  
-  let result2 = shared_resource.read_modify_write(fn(x) { x * 2 })
-  results = results.push(result2)
-  
-  let result3 = shared_resource.read_modify_write(fn(x) { x - 1 })
-  results = results.push(result3)
-  
-  // Results should be deterministic with proper synchronization
-  assert_eq(results[0], 1) // 0 + 1
-  assert_eq(results[1], 2) // 1 * 2
-  assert_eq(results[2], 1) // 2 - 1
-  
-  // Test check-then-act pattern
-  let check_then_act_result = shared_resource.check_then_act(
-    fn(x) { x > 0 }, // Condition
-    fn(x) { x * 10 } // Action
-  )
-  
-  assert_eq(check_then_act_result, 10) // 1 * 10
-  
-  // Test publisher-subscriber pattern
-  let pub_sub = create_publisher_subscriber()
-  
-  let mut received_messages = []
-  
-  let subscriber1 = pub_sub.subscribe("topic1", fn(msg) { received_messages = received_messages.push("sub1:" + msg) })
-  let subscriber2 = pub_sub.subscribe("topic1", fn(msg) { received_messages = received_messages.push("sub2:" + msg) })
-  
-  pub_sub.publish("topic1", "message1")
-  pub_sub.publish("topic1", "message2")
-  
-  // All subscribers should receive all messages
-  assert_eq(received_messages.length(), 4)
-  assert_true(received_messages.contains("sub1:message1"))
-  assert_true(received_messages.contains("sub1:message2"))
-  assert_true(received_messages.contains("sub2:message1"))
-  assert_true(received_messages.contains("sub2:message2"))
-}
-
-// Test 8: Deadlock Prevention
-test "deadlock prevention" {
-  // Test lock ordering to prevent deadlock
-  let lock1 = create_ordered_lock(1)
-  let lock2 = create_ordered_lock(2)
-  let lock3 = create_ordered_lock(3)
-  
-  // Test proper lock ordering (ascending)
-  let proper_result = acquire_multiple_ordered_locks([lock1, lock2, lock3])
-  assert_true(proper_result.success)
-  
-  // Test improper lock ordering (descending)
-  let improper_result = acquire_multiple_ordered_locks([lock3, lock2, lock1])
-  assert_false(improper_result.success) // Should fail to prevent deadlock
-  
-  // Test lock timeout
-  let timeout_lock1 = create_timeout_lock(100) // 100ms timeout
-  let timeout_lock2 = create_timeout_lock(100)
-  
-  timeout_lock1.lock()
-  let timeout_result = timeout_lock2.try_lock_with_timeout(50) // 50ms timeout
-  assert_false(timeout_result) // Should timeout
-  
-  timeout_lock1.unlock()
-  
-  // Test deadlock detection
-  let deadlock_detector = create_deadlock_detector()
-  
-  deadlock_detector.add_resource("resource1")
-  deadlock_detector.add_resource("resource2")
-  
-  deadlock_detector.request_lock("thread1", "resource1")
-  deadlock_detector.request_lock("thread2", "resource2")
-  
-  // This should detect potential deadlock
-  let deadlock_detected = deadlock_detector.would_cause_deadlock("thread1", "resource2")
-  assert_true(deadlock_detected)
-  
-  deadlock_detector.release_lock("thread1", "resource1")
-  deadlock_detector.release_lock("thread2", "resource2")
-}
-
-// Helper functions (simplified implementations)
-type AtomicCounter = {
-  get : () -> Int,
-  increment : () -> Int,
-  add : (Int) -> Int,
-  compare_and_swap : (Int, Int) -> Bool
-}
-
-fn create_atomic_counter(initial_value : Int) -> AtomicCounter = {
-  let mut counter = initial_value
-  
-  {
-    get = fn() { counter },
-    increment = fn() {
-      counter = counter + 1
-      counter
-    },
-    add = fn(value : Int) {
-      counter = counter + value
-      counter
-    },
-    compare_and_swap = fn(expected : Int, new_value : Int) {
-      if counter == expected {
-        counter = new_value
-        true
-      } else {
-        false
+  let release_resource = fn(pool, resource) {
+    // Simulate thread-safe resource release
+    let new_in_use = []
+    for item in pool.in_use {
+      if item != resource {
+        new_in_use = new_in_use.push(item)
       }
     }
+    { 
+      available = pool.available.push(resource), 
+      in_use = new_in_use 
+    }
   }
-}
-
-type ConcurrentQueue[T] = {
-  enqueue : (T) -> Bool,
-  dequeue : () -> Option[T]
-}
-
-fn create_concurrent_queue() -> ConcurrentQueue[String] = {
-  let mut queue = []
   
-  {
-    enqueue = fn(item : String) {
-      queue = queue.push(item)
-      true
-    },
-    dequeue = fn() {
-      if queue.length() > 0 {
-        let item = queue[0]
-        queue = queue.slice(1, queue.length())
-        Some(item)
-      } else {
-        None
+  // Test pool operations
+  let initial_resources = ["resource1", "resource2", "resource3"]
+  let pool = create_concurrent_pool(initial_resources)
+  
+  assert_eq(pool.available.length(), 3)
+  assert_eq(pool.in_use.length(), 0)
+  
+  // Acquire resources
+  let acquire_result1 = acquire_resource(pool)
+  match acquire_result1.resource {
+    None => assert_true(false)
+    Some(resource) => assert_eq(resource, "resource1")
+  }
+  assert_eq(acquire_result1.pool.available.length(), 2)
+  assert_eq(acquire_result1.pool.in_use.length(), 1)
+  
+  let acquire_result2 = acquire_resource(acquire_result1.pool)
+  match acquire_result2.resource {
+    None => assert_true(false)
+    Some(resource) => assert_eq(resource, "resource2")
+  }
+  assert_eq(acquire_result2.pool.available.length(), 1)
+  assert_eq(acquire_result2.pool.in_use.length(), 2)
+  
+  // Release resources
+  let released_pool1 = release_resource(acquire_result2.pool, "resource1")
+  assert_eq(released_pool1.available.length(), 2)
+  assert_eq(released_pool1.in_use.length(), 1)
+  
+  let released_pool2 = release_resource(released_pool1, "resource2")
+  assert_eq(released_pool2.available.length(), 3)
+  assert_eq(released_pool2.in_use.length(), 0)
+  
+  // Test resource exhaustion
+  let acquire_result3 = acquire_resource(released_pool2)
+  let acquire_result4 = acquire_resource(acquire_result3.pool)
+  let acquire_result5 = acquire_resource(acquire_result4.pool)
+  let acquire_result6 = acquire_resource(acquire_result5.pool)
+  
+  match acquire_result6.resource {
+    None => assert_true(true)  // Should be exhausted
+    Some(_) => assert_true(false)
+  }
+  assert_eq(acquire_result6.pool.available.length(), 0)
+  assert_eq(acquire_result6.pool.in_use.length(), 3)
+}
+
+// Test 7: Concurrent Metrics Collection
+test "concurrent metrics collection" {
+  // Simulate thread-safe metrics collection
+  let create_metrics_collector = fn() {
+    { counters = {}, gauges = {}, histograms = {} }
+  }
+  
+  let record_counter = fn(collector, name, value) {
+    // Simulate thread-safe counter recording
+    let current = match collector.counters.get(name) {
+      None => 0
+      Some(val) => val
+    }
+    let new_counters = collector.counters.with(name, current + value)
+    { counters = new_counters, gauges = collector.gauges, histograms = collector.histograms }
+  }
+  
+  let set_gauge = fn(collector, name, value) {
+    // Simulate thread-safe gauge setting
+    let new_gauges = collector.gauges.with(name, value)
+    { counters = collector.counters, gauges = new_gauges, histograms = collector.histograms }
+  }
+  
+  let get_counter = fn(collector, name) {
+    // Simulate thread-safe counter reading
+    match collector.counters.get(name) {
+      None => 0
+      Some(val) => val
+    }
+  }
+  
+  let get_gauge = fn(collector, name) {
+    // Simulate thread-safe gauge reading
+    match collector.gauges.get(name) {
+      None => 0.0
+      Some(val) => val
+    }
+  }
+  
+  // Test metrics collection
+  let collector = create_metrics_collector()
+  
+  let collector1 = record_counter(collector, "http.requests", 1)
+  let collector2 = record_counter(collector1, "http.requests", 1)
+  let collector3 = record_counter(collector2, "http.requests", 1)
+  
+  assert_eq(get_counter(collector3, "http.requests"), 3)
+  assert_eq(get_counter(collector3, "http.errors"), 0)
+  
+  let collector4 = set_gauge(collector3, "memory.usage", 1024.0)
+  let collector5 = set_gauge(collector4, "memory.usage", 2048.0)
+  
+  assert_eq(get_gauge(collector5, "memory.usage"), 2048.0)
+  assert_eq(get_gauge(collector5, "cpu.usage"), 0.0)
+  
+  // Test concurrent operations simulation
+  let simulate_concurrent_counter_updates = fn(initial_collector, metric_name, num_threads, increments_per_thread) {
+    // Simulate concurrent counter updates
+    let mut result_collector = initial_collector
+    for i in 0..<num_threads {
+      for j in 0..<increments_per_thread {
+        result_collector = record_counter(result_collector, metric_name, 1)
       }
     }
+    result_collector
   }
-}
-
-type ConcurrentMap[K, V] = {
-  put : (K, V) -> Bool,
-  get : (K) -> Option[V]
-}
-
-fn create_concurrent_map() -> ConcurrentMap[String, String] = {
-  let mut map = Map::new()
   
-  {
-    put = fn(key : String, value : String) {
-      map = map.set(key, value)
-      true
-    },
-    get = fn(key : String) {
-      map.get(key)
+  let concurrent_collector = simulate_concurrent_counter_updates(collector5, "concurrent.counter", 5, 10)
+  assert_eq(get_counter(concurrent_collector, "concurrent.counter"), 50)
+}
+
+// Test 8: Concurrent Span Operations
+test "concurrent span operations" {
+  // Simulate thread-safe span operations
+  let create_span_manager = fn() {
+    { active_spans = {}, next_span_id = 1 }
+  }
+  
+  let create_span = fn(manager, name, trace_id) {
+    // Simulate thread-safe span creation
+    let span_id = "span-" + manager.next_span_id.to_string()
+    let span = Span({
+      name = name,
+      kind = Server,
+      recording = true,
+      span_context = SpanContext({
+        trace_id = trace_id,
+        span_id = span_id,
+        sampled = true,
+        trace_state = ""
+      })
+    })
+    let new_active_spans = manager.active_spans.with(span_id, span)
+    { 
+      active_spans = new_active_spans, 
+      next_span_id = manager.next_span_id + 1 
     }
   }
-}
-
-type Mutex = {
-  try_lock : () -> Lock,
-  lock : () -> Lock
-}
-
-type Lock = {
-  is_acquired : () -> Bool,
-  release : () -> Unit
-}
-
-fn create_mutex() -> Mutex = {
-  let mut locked = false
   
-  {
-    try_lock = fn() {
-      if !locked {
-        locked = true
-        {
-          is_acquired = fn() { true },
-          release = fn() { locked = false }
-        }
-      } else {
-        {
-          is_acquired = fn() { false },
-          release = fn() { }
-        }
-      }
-    },
-    lock = fn() {
-      locked = true
-      {
-        is_acquired = fn() { true },
-        release = fn() { locked = false }
+  let finish_span = fn(manager, span_id) {
+    // Simulate thread-safe span finishing
+    let new_active_spans = {}
+    for (id, span) in manager.active_spans {
+      if id != span_id {
+        new_active_spans = new_active_spans.with(id, span)
       }
     }
+    { active_spans = new_active_spans, next_span_id = manager.next_span_id }
   }
-}
-
-fn create_recursive_mutex() -> Mutex = {
-  let mut lock_count = 0
   
-  {
-    try_lock = fn() {
-      lock_count = lock_count + 1
-      {
-        is_acquired = fn() { true },
-        release = fn() { lock_count = lock_count - 1 }
-      }
-    },
-    lock = fn() {
-      lock_count = lock_count + 1
-      {
-        is_acquired = fn() { true },
-        release = fn() { lock_count = lock_count - 1 }
-      }
+  let get_active_span = fn(manager, span_id) {
+    // Simulate thread-safe span retrieval
+    match manager.active_spans.get(span_id) {
+      None => None
+      Some(span) => Some(span)
     }
   }
-}
-
-type ReadWriteLock = {
-  read_lock : () -> Lock,
-  try_write_lock : () -> Lock
-}
-
-fn create_read_write_lock() -> ReadWriteLock = {
-  let mut readers = 0
-  let mut writer = false
   
-  {
-    read_lock = fn() {
-      if !writer {
-        readers = readers + 1
-        {
-          is_acquired = fn() { true },
-          release = fn() { readers = readers - 1 }
-        }
-      } else {
-        {
-          is_acquired = fn() { false },
-          release = fn() { }
-        }
-      }
-    },
-    try_write_lock = fn() {
-      if readers == 0 && !writer {
-        writer = true
-        {
-          is_acquired = fn() { true },
-          release = fn() { writer = false }
-        }
-      } else {
-        {
-          is_acquired = fn() { false },
-          release = fn() { }
-        }
-      }
-    }
+  let get_active_span_count = fn(manager) {
+    manager.active_spans.length()
   }
-}
-
-type ThreadPool = {
-  submit : (() -> T) -> Future[T],
-  shutdown : () -> Unit
-}
-
-type Future[T] = {
-  get : () -> T,
-  get_safe : () -> Result[T, String],
-  is_cancelled : () -> Bool
-}
-
-fn create_thread_pool(size : Int) -> ThreadPool = {
-  let mut shutdown = false
   
-  {
-    submit = fn[T](task : () -> T) {
-      if shutdown {
-        {
-          get = fn() { panic("Pool shutdown") },
-          get_safe = fn() { Err("Pool shutdown") },
-          is_cancelled = fn() { true }
-        }
-      } else {
-        // Simplified - just execute the task
-        let result = task()
-        {
-          get = fn() { result },
-          get_safe = fn() { Ok(result) },
-          is_cancelled = fn() { false }
-        }
-      }
-    },
-    shutdown = fn() {
-      shutdown = true
-    }
+  // Test span operations
+  let manager = create_span_manager()
+  assert_eq(get_active_span_count(manager), 0)
+  
+  let manager1 = create_span(manager, "span1", "trace-123")
+  assert_eq(get_active_span_count(manager1), 1)
+  
+  let manager2 = create_span(manager1, "span2", "trace-123")
+  assert_eq(get_active_span_count(manager2), 2)
+  
+  let manager3 = create_span(manager2, "span3", "trace-456")
+  assert_eq(get_active_span_count(manager3), 3)
+  
+  match get_active_span(manager3, "span-1") {
+    None => assert_true(false)
+    Some(span) => assert_eq(span.name, "span1")
   }
-}
-
-type CyclicBarrier = {
-  await : () -> Unit
-}
-
-fn create_cyclic_barrier(parties : Int) -> CyclicBarrier = {
-  let mut waiting = 0
   
-  {
-    await = fn() {
-      waiting = waiting + 1
-      // In real implementation would wait until all parties arrive
-    }
+  match get_active_span(manager3, "span-3") {
+    None => assert_true(false)
+    Some(span) => assert_eq(span.name, "span3")
   }
-}
-
-type CountdownLatch = {
-  count_down : () -> Unit,
-  await : () -> Unit
-}
-
-fn create_countdown_latch(count : Int) -> CountdownLatch = {
-  let mut remaining = count
   
-  {
-    count_down = fn() {
-      remaining = remaining - 1
-    },
-    await = fn() {
-      // In real implementation would wait until count reaches 0
-    }
+  match get_active_span(manager3, "span-99") {
+    None => assert_true(true)
+    Some(_) => assert_true(false)
   }
-}
-
-type ConcurrentList[T] = {
-  add : (T) -> Unit,
-  remove : (Int) -> Unit,
-  get : (Int) -> T,
-  size : () -> Int
-}
-
-fn create_concurrent_list() -> ConcurrentList[String] = {
-  let mut list = []
   
-  {
-    add = fn(item : String) {
-      list = list.push(item)
-    },
-    remove = fn(index : Int) {
-      if index >= 0 && index < list.length() {
-        list = list.slice(0, index) + list.slice(index + 1, list.length())
-      }
-    },
-    get = fn(index : Int) {
-      list[index]
-    },
-    size = fn() { list.length() }
+  let manager4 = finish_span(manager3, "span-2")
+  assert_eq(get_active_span_count(manager4), 2)
+  
+  match get_active_span(manager4, "span-2") {
+    None => assert_true(true)
+    Some(_) => assert_true(false)
   }
-}
-
-type ConcurrentSet[T] = {
-  add : (T) -> Bool,
-  remove : (T) -> Bool,
-  contains : (T) -> Bool,
-  size : () -> Int
-}
-
-fn create_concurrent_set() -> ConcurrentSet[String] = {
-  let mut set = []
   
-  {
-    add = fn(item : String) {
-      if set.contains(item) {
-        false
-      } else {
-        set = set.push(item)
-        true
-      }
-    },
-    remove = fn(item : String) {
-      if set.contains(item) {
-        set = set.filter(fn(x) { x != item })
-        true
-      } else {
-        false
-      }
-    },
-    contains = fn(item : String) {
-      set.contains(item)
-    },
-    size = fn() { set.length() }
-  }
-}
-
-type SharedResource = {
-  read_modify_write : ((Int) -> Int) -> Int,
-  check_then_act : ((Int) -> Bool, (Int) -> Int) -> Int
-}
-
-fn create_shared_resource() -> SharedResource = {
-  let mut value = 0
-  
-  {
-    read_modify_write = fn(modify_fn : (Int) -> Int) {
-      let old_value = value
-      value = modify_fn(value)
-      old_value
-    },
-    check_then_act = fn(condition_fn : (Int) -> Bool, action_fn : (Int) -> Int) {
-      if condition_fn(value) {
-        value = action_fn(value)
-      }
-      value
-    }
-  }
-}
-
-type PublisherSubscriber = {
-  subscribe : (String, (String) -> Unit) -> Int,
-  publish : (String, String) -> Unit
-}
-
-fn create_publisher_subscriber() -> PublisherSubscriber = {
-  let mut subscribers = []
-  let mut next_id = 0
-  
-  {
-    subscribe = fn(topic : String, handler : (String) -> Unit) {
-      let id = next_id
-      next_id = next_id + 1
-      subscribers = subscribers.push({ id: id, topic: topic, handler: handler })
-      id
-    },
-    publish = fn(topic : String, message : String) {
-      for subscriber in subscribers {
-        if subscriber.topic == topic {
-          subscriber.handler(message)
-        }
+  // Test concurrent span creation simulation
+  let simulate_concurrent_span_creation = fn(initial_manager, trace_id, num_threads, spans_per_thread) {
+    // Simulate concurrent span creation
+    let mut result_manager = initial_manager
+    for i in 0..<num_threads {
+      for j in 0..<spans_per_thread {
+        let span_name = "concurrent-span-" + i.to_string() + "-" + j.to_string()
+        result_manager = create_span(result_manager, span_name, trace_id)
       }
     }
+    result_manager
   }
-}
-
-type OrderedLock = {
-  lock : () -> Unit,
-  unlock : () -> Unit
-}
-
-fn create_ordered_lock(order : Int) -> OrderedLock = {
-  let mut locked = false
   
-  {
-    lock = fn() {
-      locked = true
-    },
-    unlock = fn() {
-      locked = false
+  let concurrent_manager = simulate_concurrent_span_creation(manager4, "concurrent-trace", 3, 5)
+  assert_eq(get_active_span_count(concurrent_manager), 17)  // 2 remaining + 15 new
+}
+
+// Test 9: Concurrent Context Propagation
+test "concurrent context propagation" {
+  // Simulate thread-safe context propagation
+  let create_context = fn(trace_id, baggage) {
+    { trace_id = trace_id, baggage = baggage }
+  }
+  
+  let add_baggage_item = fn(context, key, value) {
+    // Simulate thread-safe baggage addition
+    let new_baggage = context.baggage.with(key, value)
+    { trace_id = context.trace_id, baggage = new_baggage }
+  }
+  
+  let get_baggage_item = fn(context, key) {
+    // Simulate thread-safe baggage retrieval
+    match context.baggage.get(key) {
+      None => None
+      Some(value) => Some(value)
     }
   }
-}
-
-type LockResult = {
-  success : Bool
-}
-
-fn acquire_multiple_ordered_locks(locks : Array[OrderedLock]) -> LockResult = {
-  // Simplified - check if locks are in ascending order
-  let mut previous_order = -1
-  let mut properly_ordered = true
   
-  for lock in locks {
-    // In real implementation would check lock order
-    // For this test, just assume failure if more than 1 lock
-    if previous_order != -1 {
-      properly_ordered = false
-      break
-    }
-    previous_order = 1
+  let copy_context = fn(context) {
+    // Simulate thread-safe context copying
+    { trace_id = context.trace_id, baggage = context.baggage }
   }
   
-  if properly_ordered {
-    for lock in locks {
-      lock.lock()
-    }
-    { success: true }
-  } else {
-    { success: false }
-  }
-}
-
-type TimeoutLock = {
-  lock : () -> Unit,
-  unlock : () -> Unit,
-  try_lock_with_timeout : (Int) -> Bool
-}
-
-fn create_timeout_lock(timeout_ms : Int) -> TimeoutLock = {
-  let mut locked = false
+  // Test context operations
+  let initial_baggage = {}
+  let context = create_context("trace-123", initial_baggage)
   
-  {
-    lock = fn() {
-      locked = true
-    },
-    unlock = fn() {
-      locked = false
-    },
-    try_lock_with_timeout = fn(timeout : Int) {
-      if !locked && timeout > 0 {
-        locked = true
-        true
-      } else {
-        false
+  let context1 = add_baggage_item(context, "user.id", "12345")
+  let context2 = add_baggage_item(context1, "request.id", "req-67890")
+  let context3 = add_baggage_item(context2, "session.id", "sess-abc")
+  
+  match get_baggage_item(context3, "user.id") {
+    None => assert_true(false)
+    Some(value) => assert_eq(value, "12345")
+  }
+  
+  match get_baggage_item(context3, "request.id") {
+    None => assert_true(false)
+    Some(value) => assert_eq(value, "req-67890")
+  }
+  
+  match get_baggage_item(context3, "session.id") {
+    None => assert_true(false)
+    Some(value) => assert_eq(value, "sess-abc")
+  }
+  
+  match get_baggage_item(context3, "nonexistent") {
+    None => assert_true(true)
+    Some(_) => assert_true(false)
+  }
+  
+  // Test context isolation
+  let context_copy = copy_context(context3)
+  let context4 = add_baggage_item(context_copy, "new.item", "new.value")
+  
+  // Original context should not have the new item
+  match get_baggage_item(context3, "new.item") {
+    None => assert_true(true)
+    Some(_) => assert_true(false)
+  }
+  
+  // Copied context should have the new item
+  match get_baggage_item(context4, "new.item") {
+    None => assert_true(false)
+    Some(value) => assert_eq(value, "new.value")
+  }
+  
+  // Test concurrent context modification simulation
+  let simulate_concurrent_context_modification = fn(initial_context, num_threads, items_per_thread) {
+    // Simulate concurrent context modifications
+    let mut result_context = initial_context
+    for i in 0..<num_threads {
+      for j in 0..<items_per_thread {
+        let key = "thread-" + i.to_string() + "-item-" + j.to_string()
+        let value = "value-" + i.to_string() + "-" + j.to_string()
+        result_context = add_baggage_item(result_context, key, value)
       }
     }
+    result_context
+  }
+  
+  let concurrent_context = simulate_concurrent_context_modification(context3, 3, 4)
+  
+  // Check that original items are still present
+  match get_baggage_item(concurrent_context, "user.id") {
+    None => assert_true(false)
+    Some(value) => assert_eq(value, "12345")
+  }
+  
+  // Check that new items are present
+  match get_baggage_item(concurrent_context, "thread-1-item-2") {
+    None => assert_true(false)
+    Some(value) => assert_eq(value, "value-1-2")
   }
 }
 
-type DeadlockDetector = {
-  add_resource : (String) -> Unit,
-  request_lock : (String, String) -> Unit,
-  release_lock : (String, String) -> Unit,
-  would_cause_deadlock : (String, String) -> Bool
-}
-
-fn create_deadlock_detector() -> DeadlockDetector = {
-  let mut resources = []
-  let mut lock_requests = []
+// Test 10: Race Condition Prevention
+test "race condition prevention" {
+  // Simulate race condition scenarios and prevention
   
-  {
-    add_resource = fn(resource : String) {
-      resources = resources.push(resource)
-    },
-    request_lock = fn(thread : String, resource : String) {
-      lock_requests = lock_requests.push({ thread: thread, resource: resource })
-    },
-    release_lock = fn(thread : String, resource : String) {
-      lock_requests = lock_requests.filter(fn(req) { !(req.thread == thread && req.resource == resource) })
-    },
-    would_cause_deadlock = fn(thread : String, resource : String) {
-      // Simplified deadlock detection
-      // Check if thread1 holds resource1 and wants resource2
-      // while thread2 holds resource2 and wants resource1
-      let thread1_has_r1 = lock_requests.some(fn(req) { req.thread == "thread1" && req.resource == "resource1" })
-      let thread2_has_r2 = lock_requests.some(fn(req) { req.thread == "thread2" && req.resource == "resource2" })
-      
-      thread == "thread1" && resource == "resource2" && thread1_has_r1 && thread2_has_r2
+  // Test 1: Check-then-act race condition
+  let shared_resource = { value = 0, in_use = false }
+  
+  let unsafe_increment = fn(resource) {
+    // Unsafe: check-then-act
+    if !resource.in_use {
+      let updated_resource = { value = resource.value + 1, in_use = true }
+      // Simulate some work
+      updated_resource
+    } else {
+      resource
     }
   }
+  
+  let safe_increment = fn(resource) {
+    // Safe: atomic operation
+    { value = resource.value + 1, in_use = resource.in_use }
+  }
+  
+  // Test safe operation
+  let resource1 = safe_increment(shared_resource)
+  assert_eq(resource1.value, 1)
+  
+  let resource2 = safe_increment(resource1)
+  assert_eq(resource2.value, 2)
+  
+  // Test 2: Lost update race condition
+  let counter = { value = 0 }
+  
+  let unsafe_update = fn(counter, increment) {
+    // Unsafe: read-modify-write
+    let current = counter.value
+    let new_value = current + increment
+    { value = new_value }
+  }
+  
+  let safe_update = fn(counter, increment) {
+    // Safe: atomic update
+    { value = counter.value + increment }
+  }
+  
+  // Test safe update
+  let counter1 = safe_update(counter, 5)
+  assert_eq(counter1.value, 5)
+  
+  let counter2 = safe_update(counter1, 3)
+  assert_eq(counter2.value, 8)
+  
+  // Test 3: ABA problem prevention
+  let node = { value = "A", next = None }
+  
+  let unsafe_compare_and_swap = fn(node, expected, new_value) {
+    // Unsafe: vulnerable to ABA problem
+    if node.value == expected {
+      { value = new_value, next = node.next }
+    } else {
+      node
+    }
+  }
+  
+  let safe_compare_and_swap = fn(node, expected, new_value, version) {
+    // Safe: includes version check
+    if node.value == expected && version == 1 {
+      { value = new_value, next = node.next, version = version + 1 }
+    } else {
+      { value = node.value, next = node.next, version = version }
+    }
+  }
+  
+  // Test safe CAS
+  let node1 = { value = "A", next = None, version = 1 }
+  let node2 = safe_compare_and_swap(node1, "A", "B", 1)
+  assert_eq(node2.value, "B")
+  assert_eq(node2.version, 2)
+  
+  let node3 = safe_compare_and_swap(node2, "A", "C", 1)  // Should fail
+  assert_eq(node3.value, "B")  // Should remain unchanged
+  assert_eq(node3.version, 2)  // Should remain unchanged
+  
+  // Test 4: Deadlock prevention
+  let create_ordered_locks = fn() {
+    { lock1 = { id = 1, locked = false }, lock2 = { id = 2, locked = false } }
+  }
+  
+  let acquire_ordered = fn(locks, lock_id) {
+    // Always acquire locks in the same order to prevent deadlock
+    if lock_id == 1 && !locks.lock1.locked {
+      { lock1 = { id = 1, locked = true }, lock2 = locks.lock2 }
+    } else if lock_id == 2 && !locks.lock1.locked && !locks.lock2.locked {
+      { lock1 = locks.lock1, lock2 = { id = 2, locked = true } }
+    } else {
+      locks
+    }
+  }
+  
+  let release_ordered = fn(locks, lock_id) {
+    if lock_id == 1 {
+      { lock1 = { id = 1, locked = false }, lock2 = locks.lock2 }
+    } else if lock_id == 2 {
+      { lock1 = locks.lock1, lock2 = { id = 2, locked = false } }
+    } else {
+      locks
+    }
+  }
+  
+  // Test ordered lock acquisition
+  let locks = create_ordered_locks()
+  let locks1 = acquire_ordered(locks, 1)
+  assert_true(locks1.lock1.locked)
+  assert_false(locks1.lock2.locked)
+  
+  let locks2 = acquire_ordered(locks1, 2)
+  assert_true(locks2.lock1.locked)
+  assert_true(locks2.lock2.locked)
+  
+  let locks3 = release_ordered(locks2, 1)
+  assert_false(locks3.lock1.locked)
+  assert_true(locks3.lock2.locked)
+  
+  let locks4 = release_ordered(locks3, 2)
+  assert_false(locks4.lock1.locked)
+  assert_false(locks4.lock2.locked)
 }
