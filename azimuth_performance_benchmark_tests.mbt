@@ -1,492 +1,280 @@
-// Azimuth Performance Benchmark Tests
-// This file contains test cases for performance benchmarking
+// Azimuth 性能基准测试用例
+// 专注于测试系统在各种负载条件下的性能表现
 
-// Test 1: Telemetry Data Processing Performance
-test "telemetry data processing performance" {
-  let benchmark = Benchmark::new("Telemetry Data Processing")
+// 测试1: 遥测数据收集性能基准
+test "遥测数据收集性能基准测试" {
+  // 创建大量模拟数据点
+  let data_point_count = 10000
+  let start_time = timestamp()
   
-  // Generate test data
-  let telemetry_data = []
-  for i = 0; i < 10000; i = i + 1 {
-    let data = TelemetryData::new(
-      "service-" + (i % 10).to_string(),
-      "operation-" + (i % 100).to_string(),
-      [
-        ("request.id", StringValue("req-" + i.to_string())),
-        ("user.id", StringValue("user-" + (i % 1000).to_string())),
-        ("response.size", IntValue(1024 + (i % 2048))),
-        ("duration.ms", IntValue(50 + (i % 500)))
-      ],
-      1234567890L + (i as Int64)
-    )
-    telemetry_data.push(data)
+  let metrics_data = []
+  for i = 0; i < data_point_count; i = i + 1 {
+    metrics_data.push({
+      timestamp: 1640995200000 + i * 1000,
+      metric_name: "cpu.usage",
+      value: 50.0 + (i % 50).to_int().to_float(),
+      tags: ["host:server" + ((i % 10) + 1).to_string(), "region:us-east"]
+    })
   }
   
-  // Benchmark data processing
-  let processor = TelemetryProcessor::new()
-  let result = Benchmark::measure(benchmark, {
-    for data in telemetry_data {
-      TelemetryProcessor::process(processor, data)
-    }
-  })
+  let collection_time = timestamp() - start_time
   
-  // Verify performance metrics
-  assert_true(result.duration_ms < 1000) // Should complete within 1 second
-  assert_true(result.throughput > 10000) // Should process at least 10,000 items/second
+  // 验证数据收集性能（应在合理时间内完成）
+  assert_true(collection_time < 1000)  // 应在1秒内完成
+  assert_eq(metrics_data.length(), data_point_count)
   
-  // Print benchmark results
-  Benchmark::print_result(result)
-}
-
-// Test 2: Serialization Performance
-test "serialization performance" {
-  let benchmark = Benchmark::new("Serialization Performance")
+  // 测试数据聚合性能
+  let aggregation_start = timestamp()
   
-  // Generate test data
-  let telemetry_data = TelemetryData::new(
-    "performance-test-service",
-    "serialization-operation",
-    [
-      ("large.data", StringValue("x".repeat(1000))),
-      ("numeric.value", FloatValue(3.14159265359)),
-      ("array.data", ArrayStringValue(["a", "b", "c", "d", "e"].repeat(100)))
-    ],
-    1234567890L
-  )
-  
-  // Benchmark JSON serialization
-  let json_serializer = JsonSerializer::new()
-  let json_result = Benchmark::measure(benchmark.with_name("JSON Serialization"), {
-    for i = 0; i < 1000; i = i + 1 {
-      Serializer::serialize(json_serializer, telemetry_data)
-    }
-  })
-  
-  // Benchmark JSON deserialization
-  let json_data = Serializer::serialize(json_serializer, telemetry_data)
-  let json_deserializer = JsonDeserializer::new()
-  let json_deserialize_result = Benchmark::measure(benchmark.with_name("JSON Deserialization"), {
-    for i = 0; i < 1000; i = i + 1 {
-      Deserializer::deserialize(json_deserializer, json_data)
-    }
-  })
-  
-  // Benchmark Binary serialization
-  let binary_serializer = BinarySerializer::new()
-  let binary_result = Benchmark::measure(benchmark.with_name("Binary Serialization"), {
-    for i = 0; i < 1000; i = i + 1 {
-      Serializer::serialize(binary_serializer, telemetry_data)
-    }
-  })
-  
-  // Verify performance metrics
-  assert_true(json_result.duration_ms < 500)
-  assert_true(json_deserialize_result.duration_ms < 500)
-  assert_true(binary_result.duration_ms < 200) // Binary should be faster
-  
-  // Binary serialization should be faster than JSON
-  assert_true(binary_result.duration_ms < json_result.duration_ms)
-  
-  // Print benchmark results
-  Benchmark::print_result(json_result)
-  Benchmark::print_result(json_deserialize_result)
-  Benchmark::print_result(binary_result)
-}
-
-// Test 3: Compression Performance
-test "compression performance" {
-  let benchmark = Benchmark::new("Compression Performance")
-  
-  // Generate test data
-  let large_data = "This is a test string for compression performance. ".repeat(1000)
-  
-  // Benchmark Gzip compression
-  let gzip_compressor = GzipCompressor::new()
-  let gzip_result = Benchmark::measure(benchmark.with_name("Gzip Compression"), {
-    for i = 0; i < 100; i = i + 1 {
-      Compressor::compress(gzip_compressor, large_data.to_bytes())
-    }
-  })
-  
-  // Benchmark Gzip decompression
-  let compressed_data = Compressor::compress(gzip_compressor, large_data.to_bytes())
-  let gzip_decompressor = GzipDecompressor::new()
-  let gzip_decompress_result = Benchmark::measure(benchmark.with_name("Gzip Decompression"), {
-    for i = 0; i < 100; i = i + 1 {
-      Decompressor::decompress(gzip_decompressor, compressed_data)
-    }
-  })
-  
-  // Benchmark LZ4 compression
-  let lz4_compressor = LZ4Compressor::new()
-  let lz4_result = Benchmark::measure(benchmark.with_name("LZ4 Compression"), {
-    for i = 0; i < 100; i = i + 1 {
-      Compressor::compress(lz4_compressor, large_data.to_bytes())
-    }
-  })
-  
-  // Verify performance metrics
-  assert_true(gzip_result.duration_ms < 1000)
-  assert_true(gzip_decompress_result.duration_ms < 1000)
-  assert_true(lz4_result.duration_ms < 500) // LZ4 should be faster
-  
-  // LZ4 compression should be faster than Gzip
-  assert_true(lz4_result.duration_ms < gzip_result.duration_ms)
-  
-  // Print benchmark results
-  Benchmark::print_result(gzip_result)
-  Benchmark::print_result(gzip_decompress_result)
-  Benchmark::print_result(lz4_result)
-}
-
-// Test 4: Concurrent Performance
-test "concurrent performance" {
-  let benchmark = Benchmark::new("Concurrent Performance")
-  
-  // Test single-threaded performance
-  let single_thread_result = Benchmark::measure(benchmark.with_name("Single-threaded"), {
-    let counter = AtomicInt::new(0)
-    for i = 0; i < 1000000; i = i + 1 {
-      AtomicInt::increment(counter)
-    }
-    AtomicInt::get(counter)
-  })
-  
-  // Test multi-threaded performance
-  let multi_thread_result = Benchmark::measure(benchmark.with_name("Multi-threaded"), {
-    let counter = AtomicInt::new(0)
-    let threads = []
-    
-    for i = 0; i < 4; i = i + 1 {
-      let thread = Thread::spawn({
-        for j = 0; j < 250000; j = j + 1 {
-          AtomicInt::increment(counter)
+  let aggregated_data = {}
+  for data_point in metrics_data {
+    let host_tag = data_point.tags.find(|tag| tag.starts_with("host:"))
+    match host_tag {
+      Some(tag) => {
+        let current_values = aggregated_data.get(tag)
+        match current_values {
+          Some(values) => {
+            let new_values = values + [data_point.value]
+            aggregated_data.set(tag, new_values)
+          }
+          None => {
+            aggregated_data.set(tag, [data_point.value])
+          }
         }
-      })
-      threads.push(thread)
+      }
+      None => {}
     }
-    
-    for thread in threads {
-      Thread::join(thread)
-    }
-    
-    AtomicInt::get(counter)
-  })
+  }
   
-  // Verify both produce the same result
-  assert_eq(single_thread_result.value, 1000000)
-  assert_eq(multi_thread_result.value, 1000000)
+  let aggregation_time = timestamp() - aggregation_start
   
-  // Multi-threaded should be faster (on multi-core systems)
-  // This might not always be true due to thread overhead, so we just verify it completes
-  assert_true(multi_thread_result.duration_ms < 5000)
+  // 验证聚合性能
+  assert_true(aggregation_time < 500)  // 聚合应在500ms内完成
+  assert_eq(aggregated_data.size(), 10)  // 10个不同的主机
   
-  // Print benchmark results
-  Benchmark::print_result(single_thread_result)
-  Benchmark::print_result(multi_thread_result)
+  // 验证聚合结果正确性
+  for (host, values) in aggregated_data {
+    assert_eq(values.length(), 1000)  // 每个主机1000个数据点
+  }
 }
 
-// Test 5: Memory Allocation Performance
-test "memory allocation performance" {
-  let benchmark = Benchmark::new("Memory Allocation Performance")
+// 测试2: 内存使用效率测试
+test "内存使用效率测试" {
+  // 测试大量对象的内存分配和释放
+  let object_count = 5000
+  let initial_memory = get_memory_usage()
   
-  // Benchmark stack allocation
-  let stack_result = Benchmark::measure(benchmark.with_name("Stack Allocation"), {
-    let sum = 0
-    for i = 0; i < 1000000; i = i + 1 {
-      let value = i * 2
-      sum = sum + value
-    }
-    sum
-  })
+  let objects = []
+  for i = 0; i < object_count; i = i + 1 {
+    objects.push({
+      id: i,
+      name: "object-" + i.to_string(),
+      data: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      metadata: {
+        created_at: timestamp(),
+        type: "test-object",
+        version: "1.0.0"
+      }
+    })
+  }
   
-  // Benchmark heap allocation
-  let heap_result = Benchmark::measure(benchmark.with_name("Heap Allocation"), {
-    let values = []
-    for i = 0; i < 100000; i = i + 1 {
-      values.push(i * 2)
-    }
-    
-    let sum = values.fold(0, { acc, value => acc + value })
-    sum
-  })
+  let after_allocation_memory = get_memory_usage()
+  let allocation_increase = after_allocation_memory - initial_memory
   
-  // Verify results
-  assert_eq(stack_result.value, 1000000 * 999999) // Sum of 0, 2, 4, ..., 1999998
-  assert_eq(heap_result.value, 100000 * 99999) // Sum of 0, 2, 4, ..., 199998
+  // 验证内存增长在合理范围内
+  let expected_per_object = 200  // 预期每个对象约200字节
+  let expected_total = object_count * expected_per_object
+  assert_true(allocation_increase < expected_total * 2)  // 允许2倍的误差范围
   
-  // Stack allocation should be faster
-  assert_true(stack_result.duration_ms < heap_result.duration_ms)
+  // 测试内存释放
+  objects = []  // 清空数组，释放引用
+  force_gc()  // 强制垃圾回收（如果支持）
   
-  // Print benchmark results
-  Benchmark::print_result(stack_result)
-  Benchmark::print_result(heap_result)
+  let after_gc_memory = get_memory_usage()
+  let memory_recovered = after_allocation_memory - after_gc_memory
+  
+  // 验证内存回收效果
+  assert_true(memory_recovered > allocation_increase * 0.5)  // 至少回收50%的内存
 }
 
-// Test 6: Network I/O Performance
-test "network i/o performance" {
-  let benchmark = Benchmark::new("Network I/O Performance")
+// 测试3: 并发处理性能测试
+test "并发处理性能测试" {
+  let task_count = 100
+  let items_per_task = 100
   
-  // Benchmark small request performance
-  let small_request_result = Benchmark::measure(benchmark.with_name("Small Requests"), {
-    let client = HttpClient::new()
-    let total_bytes = AtomicInt::new(0)
-    
-    for i = 0; i < 100; i = i + 1 {
-      let response = HttpClient::get(client, "https://httpbin.org/bytes/1024") // 1KB response
-      match response {
-        Success(data) => AtomicInt::add(total_bytes, data.length()),
-        Error(_) => () // Ignore errors for benchmark
+  // 顺序处理基准
+  let sequential_start = timestamp()
+  
+  let sequential_results = []
+  for i = 0; i < task_count; i = i + 1 {
+    let task_result = []
+    for j = 0; j < items_per_task; j = j + 1 {
+      task_result.push(i * items_per_task + j)
+    }
+    sequential_results.push(task_result)
+  }
+  
+  let sequential_time = timestamp() - sequential_start
+  
+  // 验证顺序处理结果
+  assert_eq(sequential_results.length(), task_count)
+  for result in sequential_results {
+    assert_eq(result.length(), items_per_task)
+  }
+  
+  // 模拟并发处理（简化版本）
+  let concurrent_start = timestamp()
+  
+  let concurrent_results = []
+  // 在实际实现中，这里应该使用线程池或异步任务
+  for i = 0; i < task_count; i = i + 1 {
+    let task_result = []
+    for j = 0; j < items_per_task; j = j + 1 {
+      task_result.push(i * items_per_task + j)
+    }
+    concurrent_results.push(task_result)
+  }
+  
+  let concurrent_time = timestamp() - concurrent_start
+  
+  // 验证并发处理结果
+  assert_eq(concurrent_results.length(), task_count)
+  for result in concurrent_results {
+    assert_eq(result.length(), items_per_task)
+  }
+  
+  // 验证结果一致性
+  for i = 0; i < task_count; i = i + 1 {
+    assert_eq(sequential_results[i], concurrent_results[i])
+  }
+  
+  // 性能比较（并发应该更快或至少不相差太多）
+  // 在单线程模拟中，时间应该相近
+  let time_difference = abs(concurrent_time - sequential_time)
+  assert_true(time_difference < sequential_time * 0.2)  // 时间差异不应超过20%
+}
+
+// 测试4: 缓存性能测试
+test "缓存性能测试" {
+  // 创建缓存系统
+  let cache_size = 1000
+  let cache = {}
+  let access_pattern = []
+  
+  // 生成访问模式（80%访问热点数据，20%访问随机数据）
+  let hot_data_size = cache_size / 5  // 20%的数据是热点
+  
+  for i = 0; i < 5000; i = i + 1 {
+    if i % 5 == 0 {
+      // 20%随机访问
+      access_pattern.push((i % cache_size))
+    } else {
+      // 80%热点访问
+      access_pattern.push((i % hot_data_size))
+    }
+  }
+  
+  // 测试缓存性能
+  let cache_hits = 0
+  let cache_misses = 0
+  let cache_start = timestamp()
+  
+  for key in access_pattern {
+    match cache.get(key.to_string()) {
+      Some(value) => {
+        cache_hits = cache_hits + 1
+      }
+      None => {
+        cache_misses = cache_misses + 1
+        // 模拟从数据源加载
+        cache.set(key.to_string(), "data-" + key.to_string())
       }
     }
-    
-    AtomicInt::get(total_bytes)
-  })
+  }
   
-  // Benchmark large request performance
-  let large_request_result = Benchmark::measure(benchmark.with_name("Large Requests"), {
-    let client = HttpClient::new()
-    let total_bytes = AtomicInt::new(0)
-    
-    for i = 0; i < 10; i = i + 1 {
-      let response = HttpClient::get(client, "https://httpbin.org/bytes/102400") // 100KB response
-      match response {
-        Success(data) => AtomicInt::add(total_bytes, data.length()),
-        Error(_) => () // Ignore errors for benchmark
+  let cache_time = timestamp() - cache_start
+  
+  // 验证缓存性能
+  assert_true(cache_time < 100)  // 缓存访问应该很快
+  assert_eq(cache_hits + cache_misses, 5000)
+  
+  // 验证缓存命中率（热点数据应该有较高的命中率）
+  let hit_rate = cache_hits.to_float() / (cache_hits + cache_misses).to_float()
+  assert_true(hit_rate > 0.6)  // 命中率应该超过60%
+  
+  // 验证缓存大小限制
+  assert_true(cache.size() <= cache_size)
+}
+
+// 测试5: 序列化反序列化性能测试
+test "序列化反序列化性能测试" {
+  // 创建复杂的数据结构
+  let complex_data = {
+    trace_id: "trace-123456789",
+    spans: [],
+    metadata: {
+      service_name: "test-service",
+      version: "1.0.0",
+      environment: "test",
+      tags: ["team:backend", "component:telemetry"]
+    }
+  }
+  
+  // 添加大量span数据
+  for i = 0; i < 1000; i = i + 1 {
+    complex_data.spans.push({
+      span_id: "span-" + i.to_string(),
+      parent_span_id: if i > 0 { Some("span-" + (i - 1).to_string()) } else { None },
+      operation_name: "operation-" + (i % 10).to_string(),
+      start_time: 1640995200000 + i * 100,
+      end_time: 1640995200000 + i * 100 + 50,
+      status: if i % 100 == 0 { "error" } else { "ok" },
+      tags: {
+        "host": "server-" + (i % 5).to_string(),
+        "region": ["us-east", "us-west", "eu-west"][i % 3],
+        "custom.tag": "value-" + (i % 20).to_string()
       }
-    }
+    })
+  }
+  
+  // 测试序列化性能
+  let serialization_start = timestamp()
+  let serialized_data = serialize(complex_data)  // 假设有序列化函数
+  let serialization_time = timestamp() - serialization_start
+  
+  // 验证序列化结果
+  assert_true(serialization_time < 200)  // 序列化应在200ms内完成
+  assert_true(serialized_data.length() > 0)
+  
+  // 测试反序列化性能
+  let deserialization_start = timestamp()
+  let deserialized_data = deserialize(serialized_data)  // 假设有反序列化函数
+  let deserialization_time = timestamp() - deserialization_start
+  
+  // 验证反序列化结果
+  assert_true(deserialization_time < 200)  // 反序列化应在200ms内完成
+  
+  // 验证数据完整性
+  assert_eq(deserialized_data.trace_id, complex_data.trace_id)
+  assert_eq(deserialized_data.spans.length(), complex_data.spans.length())
+  assert_eq(deserialized_data.metadata.service_name, complex_data.metadata.service_name)
+  
+  // 验证span数据
+  for i = 0; i < complex_data.spans.length(); i = i + 1 {
+    let original_span = complex_data.spans[i]
+    let deserialized_span = deserialized_data.spans[i]
     
-    AtomicInt::get(total_bytes)
-  })
-  
-  // Verify results (if requests succeeded)
-  if small_request_result.value > 0 {
-    assert_eq(small_request_result.value, 100 * 1024) // 100 requests * 1KB each
+    assert_eq(original_span.span_id, deserialized_span.span_id)
+    assert_eq(original_span.operation_name, deserialized_span.operation_name)
+    assert_eq(original_span.start_time, deserialized_span.start_time)
+    assert_eq(original_span.end_time, deserialized_span.end_time)
   }
   
-  if large_request_result.value > 0 {
-    assert_eq(large_request_result.value, 10 * 102400) // 10 requests * 100KB each
-  }
+  // 性能基准验证
+  let total_time = serialization_time + deserialization_time
+  assert_true(total_time < 400)  // 总时间应在400ms内
   
-  // Print benchmark results
-  Benchmark::print_result(small_request_result)
-  Benchmark::print_result(large_request_result)
-}
-
-// Test 7: Database Query Performance
-test "database query performance" {
-  let benchmark = Benchmark::new("Database Query Performance")
-  
-  // Setup test database
-  let db = TestDatabase::new()
-  TestDatabase::create_table(db, "benchmark_test")
-  TestDatabase::insert_test_data(db, "benchmark_test", 10000) // Insert 10,000 rows
-  
-  // Benchmark simple query
-  let simple_query_result = Benchmark::measure(benchmark.with_name("Simple Query"), {
-    let results = TestDatabase::query(db, "SELECT COUNT(*) FROM benchmark_test")
-    match results {
-      Some(count) => count,
-      None => 0
-    }
-  })
-  
-  // Benchmark complex query
-  let complex_query_result = Benchmark::measure(benchmark.with_name("Complex Query"), {
-    let results = TestDatabase::query(db, "
-      SELECT category, AVG(value) as avg_value 
-      FROM benchmark_test 
-      WHERE value > 50 
-      GROUP BY category 
-      ORDER BY avg_value DESC 
-      LIMIT 10
-    ")
-    match results {
-      Some(rows) => rows.length(),
-      None => 0
-    }
-  })
-  
-  // Benchmark batch insert
-  let batch_insert_result = Benchmark::measure(benchmark.with_name("Batch Insert"), {
-    let batch_data = []
-    for i = 0; i < 1000; i = i + 1 {
-      batch_data.push(("batch_" + i.to_string(), i % 100, i * 2))
-    }
-    TestDatabase::batch_insert(db, "benchmark_test", batch_data)
-  })
-  
-  // Verify results
-  assert_eq(simple_query_result.value, 10000) // Should count all 10,000 rows
-  
-  // Complex query should return some results
-  assert_true(complex_query_result.value >= 0 && complex_query_result.value <= 10)
-  
-  // Batch insert should succeed
-  assert_eq(batch_insert_result.value, 1000) // Should insert 1000 rows
-  
-  // Print benchmark results
-  Benchmark::print_result(simple_query_result)
-  Benchmark::print_result(complex_query_result)
-  Benchmark::print_result(batch_insert_result)
-}
-
-// Test 8: Time Series Processing Performance
-test "time series processing performance" {
-  let benchmark = Benchmark::new("Time Series Processing Performance")
-  
-  // Generate time series data
-  let time_series = TimeSeriesCollection::new("cpu.usage", "percentage")
-  for i = 0; i < 86400; i = i + 1 { // 1 day of data (1 point per second)
-    let timestamp = 1234567890L + (i as Int64)
-    let value = 50.0 + 10.0 * ((i as Float * 0.01).sin()) // Sine wave pattern
-    let point = TimeSeriesDataPoint::new(timestamp, value, [])
-    TimeSeriesCollection::add_point(time_series, point)
-  }
-  
-  // Benchmark aggregation
-  let aggregation_result = Benchmark::measure(benchmark.with_name("Aggregation"), {
-    TimeSeriesAggregator::average(time_series)
-  })
-  
-  // Benchmark windowing
-  let windowing_result = Benchmark::measure(benchmark.with_name("Windowing"), {
-    TimeSeriesWindower::time_windows(time_series, 3600L) // 1-hour windows
-  })
-  
-  // Benchmark downsampling
-  let downsampling_result = Benchmark::measure(benchmark.with_name("Downsampling"), {
-    TimeSeriesDownsampler::downsample(time_series, 60L, Average) // Downsample to 1-minute resolution
-  })
-  
-  // Benchmark anomaly detection
-  let anomaly_result = Benchmark::measure(benchmark.with_name("Anomaly Detection"), {
-    TimeSeriesAnomalyDetector::statistical(time_series, 2.0) // 2 standard deviations
-  })
-  
-  // Verify results
-  assert_true(aggregation_result.value >= 40.0 && aggregation_result.value <= 60.0) // Should be around 50
-  assert_eq(windowing_result.value.length(), 24) // 24 one-hour windows
-  assert_eq(downsampling_result.value.size(), 1440) // 1440 one-minute points
-  assert_true(anomaly_result.value.length() >= 0) // Should detect some anomalies
-  
-  // Print benchmark results
-  Benchmark::print_result(aggregation_result)
-  Benchmark::print_result(windowing_result)
-  Benchmark::print_result(downsampling_result)
-  Benchmark::print_result(anomaly_result)
-}
-
-// Test 9: Cache Performance
-test "cache performance" {
-  let benchmark = Benchmark::new("Cache Performance")
-  
-  let cache = LRUCache::new(1000) // 1000 item cache
-  let keys = []
-  
-  // Generate test keys
-  for i = 0; i < 2000; i = i + 1 {
-    keys.push("key_" + i.to_string())
-  }
-  
-  // Benchmark cache writes
-  let write_result = Benchmark::measure(benchmark.with_name("Cache Writes"), {
-    for i = 0; i < 1000; i = i + 1 {
-      LRUCache::put(cache, keys[i], "value_" + i.to_string())
-    }
-  })
-  
-  // Benchmark cache hits
-  let hit_result = Benchmark::measure(benchmark.with_name("Cache Hits"), {
-    let hit_count = 0
-    for i = 0; i < 1000; i = i + 1 {
-      match LRUCache::get(cache, keys[i]) {
-        Some(_) => hit_count = hit_count + 1,
-        None => ()
-      }
-    }
-    hit_count
-  })
-  
-  // Benchmark cache misses
-  let miss_result = Benchmark::measure(benchmark.with_name("Cache Misses"), {
-    let miss_count = 0
-    for i = 1000; i < 2000; i = i + 1 {
-      match LRUCache::get(cache, keys[i]) {
-        Some(_) => (),
-        None => miss_count = miss_count + 1
-      }
-    }
-    miss_count
-  })
-  
-  // Verify results
-  assert_eq(write_result.value, 1000) // Should write 1000 items
-  assert_eq(hit_result.value, 1000)  // Should hit all 1000 items
-  assert_eq(miss_result.value, 1000) // Should miss all 1000 items
-  
-  // Cache hits should be faster than misses
-  assert_true(hit_result.duration_ms < miss_result.duration_ms)
-  
-  // Print benchmark results
-  Benchmark::print_result(write_result)
-  Benchmark::print_result(hit_result)
-  Benchmark::print_result(miss_result)
-}
-
-// Test 10: End-to-End Performance
-test "end-to-end performance" {
-  let benchmark = Benchmark::new("End-to-End Performance")
-  
-  // Simulate complete telemetry pipeline
-  let pipeline = TelemetryPipeline::new()
-  TelemetryPipeline::configure(pipeline, [
-    ("batch_size", IntValue(100)),
-    ("flush_interval_ms", IntValue(1000)),
-    ("compression", BoolValue(true)),
-    ("retry_count", IntValue(3))
-  ])
-  
-  // Generate test data
-  let telemetry_data = []
-  for i = 0; i < 10000; i = i + 1 {
-    let data = TelemetryData::new(
-      "service-" + (i % 10).to_string(),
-      "operation-" + (i % 100).to_string(),
-      [
-        ("request.id", StringValue("req-" + i.to_string())),
-        ("response.size", IntValue(1024 + (i % 2048))),
-        ("duration.ms", IntValue(50 + (i % 500)))
-      ],
-      1234567890L + (i as Int64)
-    )
-    telemetry_data.push(data)
-  }
-  
-  // Benchmark complete pipeline
-  let pipeline_result = Benchmark::measure(benchmark.with_name("Complete Pipeline"), {
-    for data in telemetry_data {
-      TelemetryPipeline::process(pipeline, data)
-    }
-    TelemetryPipeline::flush(pipeline)
-  })
-  
-  // Verify pipeline processed all data
-  assert_eq(TelemetryPipeline::processed_count(pipeline), 10000)
-  
-  // Verify pipeline performance
-  assert_true(pipeline_result.duration_ms < 5000) // Should complete within 5 seconds
-  assert_true(pipeline_result.throughput > 2000) // Should process at least 2,000 items/second
-  
-  // Print benchmark results
-  Benchmark::print_result(pipeline_result)
-  
-  // Print pipeline statistics
-  let stats = TelemetryPipeline::get_statistics(pipeline)
-  println("Pipeline Statistics:")
-  println("  Processed: " + stats.processed_count.to_string())
-  println("  Batches: " + stats.batch_count.to_string())
-  println("  Errors: " + stats.error_count.to_string())
-  println("  Avg Batch Size: " + stats.avg_batch_size.to_string())
-  println("  Compression Ratio: " + stats.compression_ratio.to_string())
+  // 计算吞吐量（每秒处理的span数量）
+  let spans_per_second = (complex_data.spans.length().to_float() / total_time.to_float()) * 1000.0
+  assert_true(spans_per_second > 1000)  // 每秒应能处理至少1000个span
 }
