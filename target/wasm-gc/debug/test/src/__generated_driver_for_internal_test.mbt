@@ -104,6 +104,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     7: (__test_617a696d7574685f7370616e5f6c6966656379636c655f74657374732e6d6274_7, ["父子跨度关系"]),
     8: (__test_617a696d7574685f7370616e5f6c6966656379636c655f74657374732e6d6274_8, ["跨度边界条件测试"]),
   },
+  "azimuth_simple_new_test_cases.mbt": {
+    0: (__test_617a696d7574685f73696d706c655f6e65775f746573745f63617365732e6d6274_0, ["basic arithmetic and numeric operations"]),
+    1: (__test_617a696d7574685f73696d706c655f6e65775f746573745f63617365732e6d6274_1, ["string manipulation and operations"]),
+    2: (__test_617a696d7574685f73696d706c655f6e65775f746573745f63617365732e6d6274_2, ["array operations and manipulations"]),
+    3: (__test_617a696d7574685f73696d706c655f6e65775f746573745f63617365732e6d6274_3, ["boolean logic and conditional operations"]),
+    4: (__test_617a696d7574685f73696d706c655f6e65775f746573745f63617365732e6d6274_4, ["option type handling"]),
+    5: (__test_617a696d7574685f73696d706c655f6e65775f746573745f63617365732e6d6274_5, ["loop and iteration operations"]),
+    6: (__test_617a696d7574685f73696d706c655f6e65775f746573745f63617365732e6d6274_6, ["function definitions and calls"]),
+    7: (__test_617a696d7574685f73696d706c655f6e65775f746573745f63617365732e6d6274_7, ["pattern matching"]),
+  },
   "azimuth_simple_integration_tests.mbt": {
     0: (__test_617a696d7574685f73696d706c655f696e746567726174696f6e5f74657374732e6d6274_0, ["字符串操作测试"]),
     1: (__test_617a696d7574685f73696d706c655f696e746567726174696f6e5f74657374732e6d6274_1, ["数组操作测试"]),
@@ -415,6 +425,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_617a696d7574685f636f6d70726568656e736976655f646174615f70726f63657373696e675f74657374732e6d6274_6, ["telemetry anomaly detection"]),
     7: (__test_617a696d7574685f636f6d70726568656e736976655f646174615f70726f63657373696e675f74657374732e6d6274_7, ["data retention and cleanup"]),
   },
+  "azimuth_basic_test_cases.mbt": {
+    0: (__test_617a696d7574685f62617369635f746573745f63617365732e6d6274_0, ["basic arithmetic operations"]),
+    1: (__test_617a696d7574685f62617369635f746573745f63617365732e6d6274_1, ["boolean logic operations"]),
+    2: (__test_617a696d7574685f62617369635f746573745f63617365732e6d6274_2, ["simple numeric comparisons"]),
+    3: (__test_617a696d7574685f62617369635f746573745f63617365732e6d6274_3, ["string concatenation"]),
+    4: (__test_617a696d7574685f62617369635f746573745f63617365732e6d6274_4, ["array operations"]),
+    5: (__test_617a696d7574685f62617369635f746573745f63617365732e6d6274_5, ["option type handling"]),
+    6: (__test_617a696d7574685f62617369635f746573745f63617365732e6d6274_6, ["conditional expressions"]),
+    7: (__test_617a696d7574685f62617369635f746573745f63617365732e6d6274_7, ["loop operations"]),
+  },
   "azimuth_basic_language_tests.mbt": {
     0: (__test_617a696d7574685f62617369635f6c616e67756167655f74657374732e6d6274_0, ["numeric operations"]),
     1: (__test_617a696d7574685f62617369635f6c616e67756167655f74657374732e6d6274_1, ["string operations"]),
@@ -483,6 +503,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     7: (__test_617a696d7574685f6164646974696f6e616c5f74657374732e6d6274_7, ["type conversion operations"]),
     8: (__test_617a696d7574685f6164646974696f6e616c5f74657374732e6d6274_8, ["error handling and edge cases"]),
     9: (__test_617a696d7574685f6164646974696f6e616c5f74657374732e6d6274_9, ["complex data structure operations"]),
+  },
+  "azimuth_additional_simple_test_cases.mbt": {
+    0: (__test_617a696d7574685f6164646974696f6e616c5f73696d706c655f746573745f63617365732e6d6274_0, ["advanced arithmetic operations"]),
+    1: (__test_617a696d7574685f6164646974696f6e616c5f73696d706c655f746573745f63617365732e6d6274_1, ["string operations and comparisons"]),
+    2: (__test_617a696d7574685f6164646974696f6e616c5f73696d706c655f746573745f63617365732e6d6274_2, ["array manipulations"]),
+    3: (__test_617a696d7574685f6164646974696f6e616c5f73696d706c655f746573745f63617365732e6d6274_3, ["boolean logic and conditional expressions"]),
+    4: (__test_617a696d7574685f6164646974696f6e616c5f73696d706c655f746573745f63617365732e6d6274_4, ["option type handling"]),
+    5: (__test_617a696d7574685f6164646974696f6e616c5f73696d706c655f746573745f63617365732e6d6274_5, ["loop operations"]),
+    6: (__test_617a696d7574685f6164646974696f6e616c5f73696d706c655f746573745f63617365732e6d6274_6, ["function definitions and calls"]),
+    7: (__test_617a696d7574685f6164646974696f6e616c5f73696d706c655f746573745f63617365732e6d6274_7, ["pattern matching with different types"]),
   },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED

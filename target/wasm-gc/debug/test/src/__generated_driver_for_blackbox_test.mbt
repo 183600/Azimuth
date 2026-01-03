@@ -65,6 +65,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_span_lifecycle_tests.mbt": {
   },
+  "azimuth_simple_new_test_cases.mbt": {
+  },
   "azimuth_simple_integration_tests.mbt": {
   },
   "azimuth_simple_additional_tests.mbt": {
@@ -119,6 +121,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_comprehensive_data_processing_tests.mbt": {
   },
+  "azimuth_basic_test_cases.mbt": {
+  },
   "azimuth_basic_language_tests.mbt": {
   },
   "azimuth_attributes_operations_tests.mbt": {
@@ -130,6 +134,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_advanced_feature_tests.mbt": {
   },
   "azimuth_additional_tests.mbt": {
+  },
+  "azimuth_additional_simple_test_cases.mbt": {
   },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
