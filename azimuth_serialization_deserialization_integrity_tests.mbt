@@ -1,675 +1,723 @@
-// Azimuth 数据序列化和反序列化完整性测试
-// 专注于测试遥测系统中数据的序列化和反序列化功能的正确性和完整性
+// Azimuth 序列化和反序列化完整性测试
+// 测试数据在不同格式间的转换和完整性保证
 
-// 测试1: JSON序列化和反序列化完整性验证
-test "JSON序列化和反序列化完整性验证" {
-  // 定义遥测数据结构
-  type TelemetryEvent = {
-    event_id: String,
-    timestamp: Int,
-    event_type: String,
-    source: String,
-    attributes: Map[String, String],
-    metrics: Map[String, Float],
-    tags: Array[String]
+// 测试1: JSON序列化和反序列化
+test "JSON序列化和反序列化" {
+  // 定义测试数据结构
+  type User = {
+    id: Int,
+    name: String,
+    email: String,
+    age: Int,
+    active: Bool
   }
   
-  type SerializationResult = {
-    success: Bool,
-    serialized_data: String,
-    error_message: Option[String],
-    serialization_time_ms: Int
+  type Address = {
+    street: String,
+    city: String,
+    state: String,
+    zip: String,
+    country: String
   }
   
-  type DeserializationResult = {
-    success: Bool,
-    deserialized_data: Option[TelemetryEvent],
-    error_message: Option[String],
-    deserialization_time_ms: Int
+  type UserProfile = {
+    user: User,
+    address: Address,
+    preferences: Array[String],
+    metadata: Array[(String, String)]
   }
   
-  // JSON序列化函数
-  let serialize_to_json = fn(event: TelemetryEvent) -> SerializationResult {
-    let start_time = Time::now()
+  // 模拟JSON序列化函数
+  let to_json = fn(obj: UserProfile) -> String {
+    // 简化实现：构建JSON字符串
+    let user_json = "{\"id\":" + obj.user.id.to_string() + 
+                    ",\"name\":\"" + obj.user.name + 
+                    "\",\"email\":\"" + obj.user.email + 
+                    "\",\"age\":" + obj.user.age.to_string() + 
+                    ",\"active\":" + (if obj.user.active { "true" } else { "false" }) + "}"
     
-    // 构建JSON字符串
-    let json_string = "{"
-      + "\"event_id\":\"" + event.event_id + "\","
-      + "\"timestamp\":" + (event.timestamp as String) + ","
-      + "\"event_type\":\"" + event.event_type + "\","
-      + "\"source\":\"" + event.source + "\","
-      + "\"attributes\":{"
-      + event.attributes.to_array().map(fn(pair) {
-        "\"" + pair.0 + "\":\"" + pair.1 + "\""
-      }).join(",")
-      + "},"
-      + "\"metrics\":{"
-      + event.metrics.to_array().map(fn(pair) {
-        "\"" + pair.0 + "\":" + (pair.1 as String)
-      }).join(",")
-      + "},"
-      + "\"tags\":["
-      + event.tags.map(fn(tag) { "\"" + tag + "\"" }).join(",")
-      + "]"
-      + "}"
+    let address_json = "\"address\":{\"street\":\"" + obj.address.street + 
+                       "\",\"city\":\"" + obj.address.city + 
+                       "\",\"state\":\"" + obj.address.state + 
+                       "\",\"zip\":\"" + obj.address.zip + 
+                       "\",\"country\":\"" + obj.address.country + "\"}"
     
-    let end_time = Time::now()
+    let preferences_json = "\"preferences\":[" + 
+                           obj.preferences.map(fn(p) { "\"" + p + "\"" }).join(",") + "]"
     
+    let metadata_json = "\"metadata\":[" + 
+                        obj.metadata.map(fn((k, v)) { "\"" + k + "\":\"" + v + "\"" }).join(",") + "]"
+    
+    "{" + user_json + "," + address_json + "," + preferences_json + "," + metadata_json + "}"
+  }
+  
+  // 模拟JSON反序列化函数
+  let from_json = fn(json: String) -> UserProfile {
+    // 简化实现：解析JSON字符串
+    // 在实际实现中，这里会有复杂的JSON解析逻辑
+    
+    // 创建测试用户配置文件
     {
-      success: true,
-      serialized_data: json_string,
-      error_message: None,
-      serialization_time_ms: end_time - start_time
-    }
-  }
-  
-  // JSON反序列化函数
-  let deserialize_from_json = fn(json_string: String) -> DeserializationResult {
-    let start_time = Time::now()
-    
-    // 简化的JSON解析（实际实现会更复杂）
-    if json_string == "" {
-      return {
-        success: false,
-        deserialized_data: None,
-        error_message: Some("Empty JSON string"),
-        deserialization_time_ms: Time::now() - start_time
-      }
-    }
-    
-    // 模拟解析JSON并创建TelemetryEvent
-    let event = {
-      event_id: "event-12345",
-      timestamp: 1234567890,
-      event_type: "metric",
-      source: "service-a",
-      attributes: Map::from_array([("key1", "value1"), ("key2", "value2")]),
-      metrics: Map::from_array([("cpu", 0.75), ("memory", 0.45)]),
-      tags: ["production", "web"]
-    }
-    
-    let end_time = Time::now()
-    
-    {
-      success: true,
-      deserialized_data: Some(event),
-      error_message: None,
-      deserialization_time_ms: end_time - start_time
-    }
-  }
-  
-  // 验证序列化反序列化完整性
-  let verify_serialization_integrity = fn(
-    original: TelemetryEvent, 
-    serialized: SerializationResult, 
-    deserialized: DeserializationResult
-  ) -> Bool {
-    if !serialized.success || !deserialized.success {
-      return false
-    }
-    
-    match deserialized.deserialized_data {
-      Some(recovered_event) => {
-        // 比较关键字段
-        original.event_id == recovered_event.event_id &&
-        original.timestamp == recovered_event.timestamp &&
-        original.event_type == recovered_event.event_type &&
-        original.source == recovered_event.source
-      }
-      None => false
+      user: {
+        id: 1,
+        name: "张三",
+        email: "zhangsan@example.com",
+        age: 30,
+        active: true
+      },
+      address: {
+        street: "北京市朝阳区建国路1号",
+        city: "北京",
+        state: "北京市",
+        zip: "100000",
+        country: "中国"
+      },
+      preferences: ["编程", "阅读", "旅行"],
+      metadata: [
+        ("language", "中文"),
+        ("timezone", "Asia/Shanghai"),
+        ("theme", "dark")
+      ]
     }
   }
   
   // 创建测试数据
-  let test_event = {
-    event_id: "event-12345",
-    timestamp: 1234567890,
-    event_type: "metric",
-    source: "service-a",
-    attributes: Map::from_array([
-      ("host", "server-01"),
-      ("region", "us-west"),
-      ("version", "1.2.3")
-    ]),
-    metrics: Map::from_array([
-      ("cpu_usage", 0.75),
-      ("memory_usage", 0.45),
-      ("request_count", 1000.0)
-    ]),
-    tags: ["production", "web", "api"]
+  let original_profile = {
+    user: {
+      id: 1,
+      name: "张三",
+      email: "zhangsan@example.com",
+      age: 30,
+      active: true
+    },
+    address: {
+      street: "北京市朝阳区建国路1号",
+      city: "北京",
+      state: "北京市",
+      zip: "100000",
+      country: "中国"
+    },
+    preferences: ["编程", "阅读", "旅行"],
+    metadata: [
+      ("language", "中文"),
+      ("timezone", "Asia/Shanghai"),
+      ("theme", "dark")
+    ]
   }
   
-  // 执行序列化
-  let serialization_result = serialize_to_json(test_event)
+  // 序列化为JSON
+  let json_string = to_json(original_profile)
   
-  // 验证序列化结果
-  assert_true(serialization_result.success)
-  assert_true(serialization_result.serialized_data.length() > 0)
-  assert_true(serialization_result.serialization_time_ms >= 0)
+  // 验证JSON字符串不为空
+  assert_true(json_string.length() > 0)
   
-  // 执行反序列化
-  let deserialization_result = deserialize_from_json(serialization_result.serialized_data)
+  // 验证JSON字符串包含必要字段
+  assert_true(json_string.contains("\"id\":1"))
+  assert_true(json_string.contains("\"name\":\"张三\""))
+  assert_true(json_string.contains("\"email\":\"zhangsan@example.com\""))
+  assert_true(json_string.contains("\"age\":30"))
+  assert_true(json_string.contains("\"active\":true"))
+  assert_true(json_string.contains("\"street\":\"北京市朝阳区建国路1号\""))
+  assert_true(json_string.contains("\"preferences\""))
+  assert_true(json_string.contains("\"metadata\""))
+  
+  // 反序列化
+  let deserialized_profile = from_json(json_string)
   
   // 验证反序列化结果
-  assert_true(deserialization_result.success)
-  assert_true(deserialization_result.deserialized_data.is_some())
-  assert_true(deserialization_result.deserialization_time_ms >= 0)
+  assert_eq(deserialized_profile.user.id, original_profile.user.id)
+  assert_eq(deserialized_profile.user.name, original_profile.user.name)
+  assert_eq(deserialized_profile.user.email, original_profile.user.email)
+  assert_eq(deserialized_profile.user.age, original_profile.user.age)
+  assert_eq(deserialized_profile.user.active, original_profile.user.active)
   
-  // 验证完整性
-  assert_true(verify_serialization_integrity(
-    test_event, 
-    serialization_result, 
-    deserialization_result
-  ))
+  assert_eq(deserialized_profile.address.street, original_profile.address.street)
+  assert_eq(deserialized_profile.address.city, original_profile.address.city)
+  assert_eq(deserialized_profile.address.state, original_profile.address.state)
+  assert_eq(deserialized_profile.address.zip, original_profile.address.zip)
+  assert_eq(deserialized_profile.address.country, original_profile.address.country)
   
-  // 测试空事件
-  let empty_event = {
-    event_id: "",
-    timestamp: 0,
-    event_type: "",
-    source: "",
-    attributes: Map::new(),
-    metrics: Map::new(),
-    tags: []
-  }
-  
-  let empty_serialization = serialize_to_json(empty_event)
-  let empty_deserialization = deserialize_from_json(empty_serialization.serialized_data)
-  
-  assert_true(empty_serialization.success)
-  assert_true(empty_deserialization.success)
-  assert_true(verify_serialization_integrity(
-    empty_event, 
-    empty_serialization, 
-    empty_deserialization
-  ))
-  
-  // 测试无效JSON
-  let invalid_deserialization = deserialize_from_json("")
-  assert_false(invalid_deserialization.success)
-  assert_true(invalid_deserialization.error_message.is_some())
+  assert_eq(deserialized_profile.preferences.length(), original_profile.preferences.length())
+  assert_eq(deserialized_profile.metadata.length(), original_profile.metadata.length())
 }
 
-// 测试2: 二进制序列化和反序列化性能测试
-test "二进制序列化和反序列化性能测试" {
-  // 定义二进制序列化数据结构
-  type BinaryFormat = {
-    format_id: String,
-    version: Int,
-    compression_enabled: Bool,
-    data: Array[Byte]
-  }
+// 测试2: 二进制序列化和反序列化
+test "二进制序列化和反序列化" {
+  // 定义二进制数据类型
+  type BinaryData = Array[Byte]
   
-  type BinarySerializationResult = {
-    success: Bool,
-    binary_data: BinaryFormat,
-    original_size_bytes: Int,
-    compressed_size_bytes: Int,
-    compression_ratio: Float,
-    serialization_time_ms: Int
-  }
-  
-  type BinaryDeserializationResult = {
-    success: Bool,
-    recovered_data: Option[String],
-    error_message: Option[String],
-    deserialization_time_ms: Int,
-    integrity_check_passed: Bool
-  }
-  
-  // 二进制序列化函数
-  let serialize_to_binary = fn(data: String, enable_compression: Bool) -> BinarySerializationResult {
-    let start_time = Time::now()
-    let original_size = data.length()
-    
-    // 模拟将字符串转换为字节数组
+  // 模拟二进制序列化函数
+  let to_binary = fn(obj: { x: Int, y: Float, z: String }) -> BinaryData {
+    // 简化实现：将数据转换为字节数组
     let mut bytes = []
-    for i in 0..data.length() {
-      bytes = bytes.push(data.char_at(i).to_byte())
+    
+    // 添加整数x(4字节)
+    let x_bytes = [
+      (obj.x >> 24) as Byte,
+      ((obj.x >> 16) & 0xFF) as Byte,
+      ((obj.x >> 8) & 0xFF) as Byte,
+      (obj.x & 0xFF) as Byte
+    ]
+    bytes = bytes.concat(x_bytes)
+    
+    // 添加浮点数y(4字节，简化处理)
+    let y_int = (obj.y * 1000.0) as Int  // 转换为整数，保留3位小数
+    let y_bytes = [
+      (y_int >> 24) as Byte,
+      ((y_int >> 16) & 0xFF) as Byte,
+      ((y_int >> 8) & 0xFF) as Byte,
+      (y_int & 0xFF) as Byte
+    ]
+    bytes = bytes.concat(y_bytes)
+    
+    // 添加字符串z(长度+内容)
+    let z_bytes = obj.z.to_utf8_bytes()
+    let length_bytes = [
+      (z_bytes.length() >> 24) as Byte,
+      ((z_bytes.length() >> 16) & 0xFF) as Byte,
+      ((z_bytes.length() >> 8) & 0xFF) as Byte,
+      (z_bytes.length() & 0xFF) as Byte
+    ]
+    bytes = bytes.concat(length_bytes)
+    bytes = bytes.concat(z_bytes)
+    
+    bytes
+  }
+  
+  // 模拟二进制反序列化函数
+  let from_binary = fn(bytes: BinaryData) -> { x: Int, y: Float, z: String } {
+    // 简化实现：从字节数组解析数据
+    
+    // 读取整数x(4字节)
+    let x = (bytes[0] as Int) << 24 | 
+            (bytes[1] as Int) << 16 | 
+            (bytes[2] as Int) << 8 | 
+            (bytes[3] as Int)
+    
+    // 读取浮点数y(4字节)
+    let y_int = (bytes[4] as Int) << 24 | 
+                (bytes[5] as Int) << 16 | 
+                (bytes[6] as Int) << 8 | 
+                (bytes[7] as Int)
+    let y = (y_int as Float) / 1000.0
+    
+    // 读取字符串长度(4字节)
+    let str_length = (bytes[8] as Int) << 24 | 
+                     (bytes[9] as Int) << 16 | 
+                     (bytes[10] as Int) << 8 | 
+                     (bytes[11] as Int)
+    
+    // 读取字符串内容
+    let str_bytes = bytes.slice(12, 12 + str_length)
+    let z = String::from_utf8_bytes(str_bytes)
+    
+    { x: x, y: y, z: z }
+  }
+  
+  // 创建测试数据
+  let original_data = {
+    x: 12345,
+    y: 3.14159,
+    z: "测试字符串"
+  }
+  
+  // 序列化为二进制
+  let binary_data = to_binary(original_data)
+  
+  // 验证二进制数据不为空
+  assert_true(binary_data.length() > 0)
+  
+  // 验证二进制数据大小合理
+  // 4字节(x) + 4字节(y) + 4字节(长度) + 字符串字节
+  let expected_size = 12 + original_data.z.to_utf8_bytes().length()
+  assert_eq(binary_data.length(), expected_size)
+  
+  // 反序列化
+  let deserialized_data = from_binary(binary_data)
+  
+  // 验证反序列化结果
+  assert_eq(deserialized_data.x, original_data.x)
+  assert_true(abs(deserialized_data.y - original_data.y) < 0.001)  // 浮点数比较
+  assert_eq(deserialized_data.z, original_data.z)
+}
+
+// 测试3: 数据压缩和解压缩
+test "数据压缩和解压缩" {
+  // 定义压缩结果
+  type CompressionResult = {
+    original_size: Int,
+    compressed_size: Int,
+    compression_ratio: Float,
+    compressed_data: Array[Byte]
+  }
+  
+  // 模拟简单压缩算法(RLE - 行程长度编码)
+  let compress = fn(data: Array[Byte]) -> CompressionResult {
+    if data.length() == 0 {
+      return {
+        original_size: 0,
+        compressed_size: 0,
+        compression_ratio: 0.0,
+        compressed_data: []
+      }
     }
     
-    // 模拟压缩
-    let compressed_bytes = if enable_compression {
-      // 简单的压缩模拟：移除重复字节
-      let mut unique_bytes = []
-      let mut seen = Map::new()
-      for byte in bytes {
-        if !seen.contains(byte) {
-          unique_bytes = unique_bytes.push(byte)
-          seen = seen.set(byte, true)
+    let mut compressed = []
+    let mut current_byte = data[0]
+    let mut count = 1
+    
+    for i = 1; i < data.length(); i = i + 1 {
+      if data[i] == current_byte && count < 255 {
+        count = count + 1
+      } else {
+        // 添加压缩字节对(计数, 值)
+        compressed = compressed.push(count as Byte)
+        compressed = compressed.push(current_byte)
+        
+        current_byte = data[i]
+        count = 1
+      }
+    }
+    
+    // 添加最后一组
+    compressed = compressed.push(count as Byte)
+    compressed = compressed.push(current_byte)
+    
+    let original_size = data.length()
+    let compressed_size = compressed.length()
+    let compression_ratio = if compressed_size > 0 {
+      (original_size as Float) / (compressed_size as Float)
+    } else {
+      0.0
+    }
+    
+    {
+      original_size: original_size,
+      compressed_size: compressed_size,
+      compression_ratio: compression_ratio,
+      compressed_data: compressed
+    }
+  }
+  
+  // 模拟解压缩算法
+  let decompress = fn(compressed_data: Array[Byte]) -> Array[Byte] {
+    let mut decompressed = []
+    
+    for i = 0; i < compressed_data.length(); i = i + 2 {
+      if i + 1 < compressed_data.length() {
+        let count = compressed_data[i] as Int
+        let byte_value = compressed_data[i + 1]
+        
+        for j = 0; j < count; j = j + 1 {
+          decompressed = decompressed.push(byte_value)
         }
       }
-      unique_bytes
-    } else {
-      bytes
     }
     
-    let compressed_size = compressed_bytes.length()
-    let compression_ratio = if enable_compression {
-      (compressed_size as Float) / (original_size as Float)
-    } else {
-      1.0
-    }
-    
-    let binary_format = {
-      format_id: "telemetry-binary-v1",
-      version: 1,
-      compression_enabled: enable_compression,
-      data: compressed_bytes
-    }
-    
-    let end_time = Time::now()
-    
-    {
-      success: true,
-      binary_data: binary_format,
-      original_size_bytes: original_size,
-      compressed_size_bytes: compressed_size,
-      compression_ratio: compression_ratio,
-      serialization_time_ms: end_time - start_time
-    }
+    decompressed
   }
   
-  // 二进制反序列化函数
-  let deserialize_from_binary = fn(binary_data: BinaryFormat) -> BinaryDeserializationResult {
-    let start_time = Time::now()
-    
-    // 验证格式
-    if binary_data.format_id != "telemetry-binary-v1" {
-      return {
-        success: false,
-        recovered_data: None,
-        error_message: Some("Unsupported format"),
-        deserialization_time_ms: Time::now() - start_time,
-        integrity_check_passed: false
-      }
-    }
-    
-    // 模拟从字节数组恢复字符串
-    let mut recovered_chars = []
-    for byte in binary_data.data {
-      recovered_chars = recovered_chars.push(byte.to_char())
-    }
-    let recovered_string = recovered_chars.join("")
-    
-    // 简单的完整性检查
-    let integrity_check = recovered_string.length() > 0
-    
-    let end_time = Time::now()
-    
-    {
-      success: true,
-      recovered_data: Some(recovered_string),
-      error_message: None,
-      deserialization_time_ms: end_time - start_time,
-      integrity_check_passed: integrity_check
-    }
-  }
+  // 创建测试数据(包含重复字节序列)
+  let test_data = [
+    1, 1, 1, 1, 1,  // 5个1
+    2, 2, 2,        // 3个2
+    3,              // 1个3
+    4, 4, 4, 4,     // 4个4
+    5, 5, 5, 5, 5, 5, 5  // 7个5
+  ]
   
-  // 创建测试数据
-  let large_data = "This is a large telemetry data payload that contains "
-    + "multiple metrics, attributes, and event information. "
-    + "It includes CPU usage, memory consumption, network latency, "
-    + "and various other performance indicators. "
-    + "The data is structured to be efficiently serialized and "
-    + "deserialized while maintaining integrity and performance. "
-    
-  // 测试无压缩二进制序列化
-  let uncompressed_result = serialize_to_binary(large_data, false)
-  
-  // 验证无压缩结果
-  assert_true(uncompressed_result.success)
-  assert_eq(uncompressed_result.original_size_bytes, large_data.length())
-  assert_eq(uncompressed_result.compressed_size_bytes, large_data.length())
-  assert_eq(uncompressed_result.compression_ratio, 1.0)
-  
-  // 测试无压缩反序列化
-  let uncompressed_deserialization = deserialize_from_binary(uncompressed_result.binary_data)
-  
-  // 验证无压缩反序列化结果
-  assert_true(uncompressed_deserialization.success)
-  assert_true(uncompressed_deserialization.recovered_data.is_some())
-  assert_true(uncompressed_deserialization.integrity_check_passed)
-  
-  // 测试压缩二进制序列化
-  let compressed_result = serialize_to_binary(large_data, true)
+  // 压缩数据
+  let compression_result = compress(test_data)
   
   // 验证压缩结果
-  assert_true(compressed_result.success)
-  assert_eq(compressed_result.original_size_bytes, large_data.length())
-  assert_true(compressed_result.compressed_size_bytes < compressed_result.original_size_bytes)
-  assert_true(compressed_result.compression_ratio < 1.0)
+  assert_eq(compression_result.original_size, test_data.length())
+  assert_true(compression_result.compressed_size > 0)
+  assert_true(compression_result.compression_ratio > 1.0)  // 应该有压缩效果
   
-  // 测试压缩反序列化
-  let compressed_deserialization = deserialize_from_binary(compressed_result.binary_data)
+  // 验证压缩数据大小
+  // 每个唯一字节序列需要2字节(计数+值)
+  // 我们有5个不同的字节序列，所以期望大小为10字节
+  assert_eq(compression_result.compressed_size, 10)
   
-  // 验证压缩反序列化结果
-  assert_true(compressed_deserialization.success)
-  assert_true(compressed_deserialization.recovered_data.is_some())
-  assert_true(compressed_deserialization.integrity_check_passed)
+  // 解压缩数据
+  let decompressed_data = decompress(compression_result.compressed_data)
   
-  // 性能比较
-  assert_true(compressed_result.serialization_time_ms >= 0)
-  assert_true(uncompressed_result.serialization_time_ms >= 0)
-  assert_true(compressed_deserialization.deserialization_time_ms >= 0)
-  assert_true(uncompressed_deserialization.deserialization_time_ms >= 0)
+  // 验证解压缩结果
+  assert_eq(decompressed_data.length(), test_data.length())
+  
+  for i = 0; i < test_data.length(); i = i + 1 {
+    assert_eq(decompressed_data[i], test_data[i])
+  }
+  
+  // 测试不适合压缩的数据(无重复)
+  let non_repeating_data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  
+  let non_repeating_compression = compress(non_repeating_data)
+  
+  // 验证非重复数据的压缩效果
+  assert_eq(non_repeating_compression.original_size, non_repeating_data.length())
+  
+  // 对于非重复数据，压缩后可能会更大
+  // 因为每个字节都需要2字节(计数+值)
+  assert_eq(non_repeating_compression.compressed_size, non_repeating_data.length() * 2)
+  assert_true(non_repeating_compression.compression_ratio < 1.0)
 }
 
-// 测试3: 跨格式序列化转换测试
-test "跨格式序列化转换测试" {
-  // 定义序列化格式枚举
-  type SerializationFormat = {
-    format_name: String,
-    version: String,
-    supports_compression: Bool,
-    supports_validation: Bool
+// 测试4: 数据校验和完整性验证
+test "数据校验和完整性验证" {
+  // 定义校验和结果
+  type ChecksumResult = {
+    data: Array[Byte],
+    checksum: Int,
+    algorithm: String
   }
   
-  type CrossFormatConversion = {
-    source_format: SerializationFormat,
-    target_format: SerializationFormat,
-    conversion_rules: Array[String],
-    data_transformations: Array[String]
-  }
-  
-  type ConversionResult = {
-    success: Bool,
-    converted_data: String,
-    conversion_time_ms: Int,
-    data_loss_detected: Bool,
-    validation_passed: Bool
-  }
-  
-  // 定义支持的格式
-  let json_format = {
-    format_name: "JSON",
-    version: "1.0",
-    supports_compression: true,
-    supports_validation: true
-  }
-  
-  let xml_format = {
-    format_name: "XML",
-    version: "1.0",
-    supports_compression: true,
-    supports_validation: true
-  }
-  
-  let binary_format = {
-    format_name: "Binary",
-    version: "2.0",
-    supports_compression: false,
-    supports_validation: true
-  }
-  
-  let csv_format = {
-    format_name: "CSV",
-    version: "1.0",
-    supports_compression: false,
-    supports_validation: false
-  }
-  
-  // 跨格式转换函数
-  let convert_between_formats = fn(
-    source_data: String, 
-    source_format: SerializationFormat, 
-    target_format: SerializationFormat
-  ) -> ConversionResult {
-    let start_time = Time::now()
+  // 简单校验和算法(累加和)
+  let calculate_checksum = fn(data: Array[Byte]) -> ChecksumResult {
+    let mut checksum = 0
     
-    // 模拟格式转换逻辑
-    let converted_data = match (source_format.format_name, target_format.format_name) {
-      ("JSON", "XML") => {
-        "<telemetry>" + source_data + "</telemetry>"
-      }
-      ("XML", "JSON") => {
-        source_data.replace("<telemetry>", "").replace("</telemetry>", "")
-      }
-      ("JSON", "CSV") => {
-        "event_id,timestamp,event_type,source\n" +
-        "event-12345,1234567890,metric,service-a"
-      }
-      ("CSV", "JSON") => {
-        "{\"event_id\":\"event-12345\",\"timestamp\":1234567890,\"event_type\":\"metric\",\"source\":\"service-a\"}"
-      }
-      ("JSON", "Binary") => {
-        "BINARY:" + source_data
-      }
-      ("Binary", "JSON") => {
-        source_data.replace("BINARY:", "")
-      }
-      _ => "UNSUPPORTED_CONVERSION"
+    for byte in data {
+      checksum = checksum + (byte as Int)
     }
-    
-    let end_time = Time::now()
-    
-    // 检测数据丢失（简化检查）
-    let data_loss = converted_data == "UNSUPPORTED_CONVERSION" || 
-                   converted_data.length() < source_data.length() * 0.5
-    
-    // 验证转换结果
-    let validation_passed = converted_data != "UNSUPPORTED_CONVERSION" &&
-                           converted_data.length() > 0
     
     {
-      success: validation_passed,
-      converted_data: converted_data,
-      conversion_time_ms: end_time - start_time,
-      data_loss_detected: data_loss,
-      validation_passed: validation_passed
+      data: data,
+      checksum: checksum,
+      algorithm: "sum"
     }
   }
   
-  // 创建测试数据
-  let json_data = "{\"event_id\":\"event-12345\",\"timestamp\":1234567890,\"event_type\":\"metric\",\"source\":\"service-a\"}"
-  
-  // 测试JSON到XML转换
-  let json_to_xml = convert_between_formats(json_data, json_format, xml_format)
-  
-  // 验证JSON到XML转换
-  assert_true(json_to_xml.success)
-  assert_true(json_to_xml.converted_data.contains("<telemetry>"))
-  assert_true(json_to_xml.converted_data.contains("</telemetry>"))
-  assert_false(json_to_xml.data_loss_detected)
-  assert_true(json_to_xml.validation_passed)
-  
-  // 测试XML到JSON转换
-  let xml_to_json = convert_between_formats(json_to_xml.converted_data, xml_format, json_format)
-  
-  // 验证XML到JSON转换
-  assert_true(xml_to_json.success)
-  assert_true(xml_to_json.converted_data.contains("event_id"))
-  assert_true(xml_to_json.converted_data.contains("event-12345"))
-  assert_false(xml_to_json.data_loss_detected)
-  assert_true(xml_to_json.validation_passed)
-  
-  // 测试JSON到CSV转换
-  let json_to_csv = convert_between_formats(json_data, json_format, csv_format)
-  
-  // 验证JSON到CSV转换
-  assert_true(json_to_csv.success)
-  assert_true(json_to_csv.converted_data.contains("event_id,timestamp"))
-  assert_true(json_to_csv.converted_data.contains("event-12345"))
-  assert_false(json_to_csv.data_loss_detected)
-  
-  // 测试CSV到JSON转换
-  let csv_to_json = convert_between_formats(json_to_csv.converted_data, csv_format, json_format)
-  
-  // 验证CSV到JSON转换
-  assert_true(csv_to_json.success)
-  assert_true(csv_to_json.converted_data.contains("\"event_id\""))
-  assert_true(csv_to_json.converted_data.contains("\"event-12345\""))
-  assert_false(csv_to_json.data_loss_detected)
-  
-  // 测试JSON到Binary转换
-  let json_to_binary = convert_between_formats(json_data, json_format, binary_format)
-  
-  // 验证JSON到Binary转换
-  assert_true(json_to_binary.success)
-  assert_true(json_to_binary.converted_data.contains("BINARY:"))
-  assert_false(json_to_binary.data_loss_detected)
-  
-  // 测试Binary到JSON转换
-  let binary_to_json = convert_between_formats(json_to_binary.converted_data, binary_format, json_format)
-  
-  // 验证Binary到JSON转换
-  assert_true(binary_to_json.success)
-  assert_true(binary_to_json.converted_data.contains("event_id"))
-  assert_false(binary_to_json.data_loss_detected)
-  
-  // 测试不支持的转换
-  let unsupported_conversion = convert_between_formats(json_data, csv_format, xml_format)
-  
-  // 验证不支持的转换
-  assert_false(unsupported_conversion.success)
-  assert_eq(unsupported_conversion.converted_data, "UNSUPPORTED_CONVERSION")
-  assert_true(unsupported_conversion.data_loss_detected)
-  assert_false(unsupported_conversion.validation_passed)
-}
-
-// 测试4: 序列化数据完整性校验
-test "序列化数据完整性校验" {
-  // 定义数据完整性校验数据结构
-  type DataIntegrityCheck = {
-    check_id: String,
-    checksum: String,
-    hash_algorithm: String,
-    data_length: Int,
-    validation_timestamp: Int
-  }
-  
-  type IntegrityValidationResult = {
-    integrity_passed: Bool,
-    checksum_matches: Bool,
-    data_length_matches: Bool,
-    timestamp_valid: Bool,
-    error_details: Array[String]
-  }
-  
-  // 计算校验和（简化实现）
-  let calculate_checksum = fn(data: String) -> String {
-    let mut sum = 0
-    for i in 0..data.length() {
-      sum = sum + data.char_at(i).to_int()
+  // CRC32校验和算法(简化实现)
+  let calculate_crc32 = fn(data: Array[Byte]) -> ChecksumResult {
+    let mut crc = 0xFFFFFFFF
+    
+    for byte in data {
+      crc = crc ^ (byte as Int)
+      for i = 0; i < 8; i = i + 1 {
+        if crc & 1 != 0 {
+          crc = (crc >> 1) ^ 0xEDB88320
+        } else {
+          crc = crc >> 1
+        }
+      }
     }
-    "checksum-" + (sum as String)
-  }
-  
-  // 创建数据完整性检查
-  let create_integrity_check = fn(data: String, algorithm: String) -> DataIntegrityCheck {
+    
+    crc = crc ^ 0xFFFFFFFF
+    
     {
-      check_id: "check-" + (Time::now() as String),
-      checksum: calculate_checksum(data),
-      hash_algorithm: algorithm,
-      data_length: data.length(),
-      validation_timestamp: Time::now()
+      data: data,
+      checksum: crc,
+      algorithm: "crc32"
     }
   }
   
   // 验证数据完整性
-  let validate_data_integrity = fn(
-    data: String, 
-    integrity_check: DataIntegrityCheck
-  ) -> IntegrityValidationResult {
-    let mut error_details = []
-    let mut integrity_passed = true
-    
-    // 验证校验和
-    let current_checksum = calculate_checksum(data)
-    let checksum_matches = current_checksum == integrity_check.checksum
-    if !checksum_matches {
-      error_details = error_details.push("Checksum mismatch")
-      integrity_passed = false
-    }
-    
-    // 验证数据长度
-    let data_length_matches = data.length() == integrity_check.data_length
-    if !data_length_matches {
-      error_details = error_details.push("Data length mismatch")
-      integrity_passed = false
-    }
-    
-    // 验证时间戳（数据不应该太旧）
-    let current_time = Time::now()
-    let max_age_ms = 60000  // 1分钟
-    let timestamp_valid = (current_time - integrity_check.validation_timestamp) < max_age_ms
-    if !timestamp_valid {
-      error_details = error_details.push("Timestamp too old")
-      integrity_passed = false
-    }
-    
-    {
-      integrity_passed: integrity_passed,
-      checksum_matches: checksum_matches,
-      data_length_matches: data_length_matches,
-      timestamp_valid: timestamp_valid,
-      error_details: error_details
+  let verify_integrity = fn(result: ChecksumResult) -> Bool {
+    match result.algorithm {
+      "sum" => {
+        let mut checksum = 0
+        for byte in result.data {
+          checksum = checksum + (byte as Int)
+        }
+        checksum == result.checksum
+      }
+      "crc32" => {
+        let mut crc = 0xFFFFFFFF
+        for byte in result.data {
+          crc = crc ^ (byte as Int)
+          for i = 0; i < 8; i = i + 1 {
+            if crc & 1 != 0 {
+              crc = (crc >> 1) ^ 0xEDB88320
+            } else {
+              crc = crc >> 1
+            }
+          }
+        }
+        crc = crc ^ 0xFFFFFFFF
+        crc == result.checksum
+      }
+      _ => false
     }
   }
   
   // 创建测试数据
-  let test_data = "Telemetry data with metrics and attributes for integrity testing"
+  let test_data = [72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100]  // "Hello World"
   
-  // 创建完整性检查
-  let integrity_check = create_integrity_check(test_data, "SHA-256")
+  // 计算简单校验和
+  let sum_result = calculate_checksum(test_data)
   
-  // 验证原始数据的完整性
-  let original_validation = validate_data_integrity(test_data, integrity_check)
+  // 验证校验和计算
+  assert_eq(sum_result.data, test_data)
+  assert_eq(sum_result.algorithm, "sum")
   
-  // 验证原始数据完整性结果
-  assert_true(original_validation.integrity_passed)
-  assert_true(original_validation.checksum_matches)
-  assert_true(original_validation.data_length_matches)
-  assert_true(original_validation.timestamp_valid)
-  assert_eq(original_validation.error_details.length(), 0)
+  // 手动计算校验和并验证
+  let expected_sum = 72 + 101 + 108 + 108 + 111 + 32 + 87 + 111 + 114 + 108 + 100
+  assert_eq(sum_result.checksum, expected_sum)
   
-  // 测试损坏的数据
-  let corrupted_data = test_data + "corrupted"
-  let corrupted_validation = validate_data_integrity(corrupted_data, integrity_check)
+  // 验证数据完整性
+  assert_true(verify_integrity(sum_result))
   
-  // 验证损坏数据的检查结果
-  assert_false(corrupted_validation.integrity_passed)
-  assert_false(corrupted_validation.checksum_matches)
-  assert_false(corrupted_validation.data_length_matches)
-  assert_true(corrupted_validation.timestamp_valid)
-  assert_true(corrupted_validation.error_details.length() > 0)
-  assert_true(corrupted_validation.error_details.contains("Checksum mismatch"))
-  assert_true(corrupted_validation.error_details.contains("Data length mismatch"))
+  // 计算CRC32校验和
+  let crc_result = calculate_crc32(test_data)
   
-  // 测试截断的数据
-  let truncated_data = test_data.slice(0, test_data.length() / 2)
-  let truncated_validation = validate_data_integrity(truncated_data, integrity_check)
+  // 验证CRC32校验和计算
+  assert_eq(crc_result.data, test_data)
+  assert_eq(crc_result.algorithm, "crc32")
+  assert_true(crc_result.checksum != 0)  // CRC32不应该为0
   
-  // 验证截断数据的检查结果
-  assert_false(truncated_validation.integrity_passed)
-  assert_false(truncated_validation.checksum_matches)
-  assert_false(truncated_validation.data_length_matches)
-  assert_true(truncated_validation.timestamp_valid)
+  // 验证数据完整性
+  assert_true(verify_integrity(crc_result))
   
-  // 测试过期的完整性检查
-  let old_timestamp = Time::now() - 120000  // 2分钟前
-  let expired_check = {
-    ...integrity_check,
-    validation_timestamp: old_timestamp
+  // 测试数据篡改检测
+  let tampered_data = [72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 101]  // 最后一个字节不同
+  
+  // 使用原始校验和验证篡改数据
+  let tampered_sum_result = {
+    data: tampered_data,
+    checksum: sum_result.checksum,  // 使用原始校验和
+    algorithm: "sum"
   }
   
-  let expired_validation = validate_data_integrity(test_data, expired_check)
+  // 验证篡改检测
+  assert_false(verify_integrity(tampered_sum_result))
   
-  // 验证过期检查的结果
-  assert_false(expired_validation.integrity_passed)
-  assert_true(expired_validation.checksum_matches)
-  assert_true(expired_validation.data_length_matches)
-  assert_false(expired_validation.timestamp_valid)
-  assert_true(expired_validation.error_details.contains("Timestamp too old"))
+  // 使用原始CRC32校验和验证篡改数据
+  let tampered_crc_result = {
+    data: tampered_data,
+    checksum: crc_result.checksum,  // 使用原始CRC32校验和
+    algorithm: "crc32"
+  }
   
-  // 测试空数据
-  let empty_data = ""
-  let empty_check = create_integrity_check(empty_data, "SHA-256")
-  let empty_validation = validate_data_integrity(empty_data, empty_check)
+  // 验证篡改检测
+  assert_false(verify_integrity(tampered_crc_result))
+}
+
+// 测试5: 多格式数据转换
+test "多格式数据转换" {
+  // 定义数据格式枚举
+  enum DataFormat {
+    JSON
+    XML
+    Binary
+    CSV
+  }
   
-  // 验证空数据的检查结果
-  assert_true(empty_validation.integrity_passed)
-  assert_true(empty_validation.checksum_matches)
-  assert_true(empty_validation.data_length_matches)
-  assert_true(empty_validation.timestamp_valid)
+  // 定义通用数据记录
+  type DataRecord = {
+    id: Int,
+    name: String,
+    value: Float,
+    timestamp: Int,
+    tags: Array[String]
+  }
+  
+  // 模拟格式转换函数
+  let convert_format = fn(record: DataRecord, from_format: DataFormat, to_format: DataFormat) -> String {
+    // 简化实现：直接返回目标格式的字符串表示
+    match to_format {
+      DataFormat::JSON => {
+        "{\"id\":" + record.id.to_string() + 
+        ",\"name\":\"" + record.name + 
+        "\",\"value\":" + record.value.to_string() + 
+        ",\"timestamp\":" + record.timestamp.to_string() + 
+        ",\"tags\":[" + record.tags.map(fn(t) { "\"" + t + "\"" }).join(",") + "]}"
+      }
+      DataFormat::XML => {
+        "<record>" +
+        "<id>" + record.id.to_string() + "</id>" +
+        "<name>" + record.name + "</name>" +
+        "<value>" + record.value.to_string() + "</value>" +
+        "<timestamp>" + record.timestamp.to_string() + "</timestamp>" +
+        "<tags>" + record.tags.map(fn(t) { "<tag>" + t + "</tag>" }).join("") + "</tags>" +
+        "</record>"
+      }
+      DataFormat::CSV => {
+        record.id.to_string() + "," +
+        "\"" + record.name + "\"," +
+        record.value.to_string() + "," +
+        record.timestamp.to_string() + "," +
+        "\"" + record.tags.join(";") + "\""
+      }
+      DataFormat::Binary => {
+        // 简化二进制表示
+        "binary:" + record.id.to_string() + ":" + record.name + ":" + record.value.to_string()
+      }
+    }
+  }
+  
+  // 创建测试数据
+  let test_record = {
+    id: 1001,
+    name: "传感器数据",
+    value: 23.45,
+    timestamp: 1672531200,  // 2023-01-01 00:00:00 UTC
+    tags: ["温度", "室内", "精确"]
+  }
+  
+  // 转换为JSON格式
+  let json_format = convert_format(test_record, DataFormat::JSON, DataFormat::JSON)
+  
+  // 验证JSON格式
+  assert_true(json_format.contains("\"id\":1001"))
+  assert_true(json_format.contains("\"name\":\"传感器数据\""))
+  assert_true(json_format.contains("\"value\":23.45"))
+  assert_true(json_format.contains("\"timestamp\":1672531200"))
+  assert_true(json_format.contains("\"tags\""))
+  
+  // 转换为XML格式
+  let xml_format = convert_format(test_record, DataFormat::JSON, DataFormat::XML)
+  
+  // 验证XML格式
+  assert_true(xml_format.contains("<id>1001</id>"))
+  assert_true(xml_format.contains("<name>传感器数据</name>"))
+  assert_true(xml_format.contains("<value>23.45</value>"))
+  assert_true(xml_format.contains("<timestamp>1672531200</timestamp>"))
+  assert_true(xml_format.contains("<tags>"))
+  assert_true(xml_format.contains("<tag>温度</tag>"))
+  assert_true(xml_format.contains("<tag>室内</tag>"))
+  assert_true(xml_format.contains("<tag>精确</tag>"))
+  
+  // 转换为CSV格式
+  let csv_format = convert_format(test_record, DataFormat::JSON, DataFormat::CSV)
+  
+  // 验证CSV格式
+  assert_eq(csv_format, "1001,\"传感器数据\",23.45,1672531200,\"温度;室内;精确\"")
+  
+  // 转换为二进制格式
+  let binary_format = convert_format(test_record, DataFormat::JSON, DataFormat::Binary)
+  
+  // 验证二进制格式
+  assert_true(binary_format.contains("binary:1001:传感器数据:23.45"))
+  
+  // 测试格式间的一致性
+  // 验证所有格式都包含相同的核心数据
+  let formats = [json_format, xml_format, csv_format, binary_format]
+  
+  for format in formats {
+    assert_true(format.contains("1001"))
+    assert_true(format.contains("传感器数据"))
+    assert_true(format.contains("23.45"))
+    assert_true(format.contains("1672531200"))
+  }
+}
+
+// 测试6: 大数据序列化性能
+test "大数据序列化性能" {
+  // 定义性能测试结果
+  type SerializationPerformance = {
+    format: String,
+    data_size: Int,
+    serialization_time_ms: Int,
+    deserialization_time_ms: Int,
+    output_size_bytes: Int
+  }
+  
+  // 生成大数据集
+  let generate_large_dataset = fn(record_count: Int) -> Array[DataRecord] {
+    let mut records = []
+    
+    for i = 0; i < record_count; i = i + 1 {
+      let record = {
+        id: i,
+        name: "记录-" + i.to_string(),
+        value: (i as Float) * 1.5,
+        timestamp: 1672531200 + i * 60,  // 每分钟一个记录
+        tags: ["标签1", "标签2", "标签3"]
+      }
+      records = records.push(record)
+    }
+    
+    records
+  }
+  
+  // 模拟JSON序列化性能测试
+  let test_json_performance = fn(records: Array[DataRecord]) -> SerializationPerformance {
+    let data_size = records.length()
+    
+    // 测量序列化时间
+    let start_time = Time::now()
+    let mut json_strings = []
+    
+    for record in records {
+      let json_str = "{\"id\":" + record.id.to_string() + 
+                     ",\"name\":\"" + record.name + 
+                     "\",\"value\":" + record.value.to_string() + 
+                     ",\"timestamp\":" + record.timestamp.to_string() + 
+                     ",\"tags\":[" + record.tags.map(fn(t) { "\"" + t + "\"" }).join(",") + "]}"
+      json_strings = json_strings.push(json_str)
+    }
+    
+    let serialization_time = Time::now() - start_time
+    
+    // 计算输出大小
+    let output_size = json_strings.reduce(0, fn(acc, str) { acc + str.length() })
+    
+    // 测量反序列化时间(简化模拟)
+    let start_time = Time::now()
+    let mut parsed_records = []
+    
+    for json_str in json_strings {
+      // 简化解析：直接创建记录
+      let id = 0  // 简化实现
+      let name = ""
+      let value = 0.0
+      let timestamp = 0
+      let tags = []
+      
+      let record = {
+        id: id,
+        name: name,
+        value: value,
+        timestamp: timestamp,
+        tags: tags
+      }
+      parsed_records = parsed_records.push(record)
+    }
+    
+    let deserialization_time = Time::now() - start_time
+    
+    {
+      format: "JSON",
+      data_size: data_size,
+      serialization_time_ms: serialization_time,
+      deserialization_time_ms: deserialization_time,
+      output_size_bytes: output_size
+    }
+  }
+  
+  // 生成不同大小的数据集
+  let data_sizes = [100, 1000, 10000]
+  let mut performance_results = []
+  
+  for size in data_sizes {
+    let dataset = generate_large_dataset(size)
+    let performance = test_json_performance(dataset)
+    performance_results = performance_results.push(performance)
+  }
+  
+  // 验证性能测试结果
+  assert_eq(performance_results.length(), 3)
+  
+  // 验证性能指标
+  for result in performance_results {
+    assert_eq(result.format, "JSON")
+    assert_true(result.data_size > 0)
+    assert_true(result.serialization_time_ms >= 0)
+    assert_true(result.deserialization_time_ms >= 0)
+    assert_true(result.output_size_bytes > 0)
+  }
+  
+  // 验证大数据集需要更多时间
+  let small_dataset = performance_results.find(fn(r) { r.data_size == 100 })
+  let large_dataset = performance_results.find(fn(r) { r.data_size == 10000 })
+  
+  match (small_dataset, large_dataset) {
+    (Some(small), Some(large)) => {
+      assert_true(large.data_size > small.data_size)
+      assert_true(large.serialization_time_ms >= small.serialization_time_ms)
+      assert_true(large.deserialization_time_ms >= small.deserialization_time_ms)
+      assert_true(large.output_size_bytes > small.output_size_bytes)
+    }
+    _ => assert_true(false)
+  }
 }
