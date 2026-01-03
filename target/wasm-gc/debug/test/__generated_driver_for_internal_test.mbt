@@ -3161,6 +3161,18 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_617a696d7574685f66726573685f74656c656d657472795f74657374732e6d6274_8, ["configuration management"]),
     9: (__test_617a696d7574685f66726573685f74656c656d657472795f74657374732e6d6274_9, ["cross-service communication"]),
   },
+  "azimuth_focused_telemetry_tests.mbt": {
+    0: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_0, ["telemetry span creation and basic properties"]),
+    1: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_1, ["telemetry attribute handling"]),
+    2: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_2, ["telemetry metric type validation"]),
+    3: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_3, ["telemetry context propagation"]),
+    4: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_4, ["telemetry sampling strategy"]),
+    5: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_5, ["telemetry event timestamp handling"]),
+    6: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_6, ["telemetry error handling and recovery"]),
+    7: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_7, ["telemetry data serialization format"]),
+    8: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_8, ["telemetry performance metrics calculation"]),
+    9: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_9, ["telemetry resource management"]),
+  },
   "azimuth_focused_telemetry_edge_cases.mbt": {
     0: (__test_617a696d7574685f666f63757365645f74656c656d657472795f656467655f63617365732e6d6274_0, ["高频度量数据处理的性能边界"]),
     1: (__test_617a696d7574685f666f63757365645f74656c656d657472795f656467655f63617365732e6d6274_1, ["大量属性内存管理"]),
