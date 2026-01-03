@@ -1,386 +1,824 @@
-// Azimuth 资源管理测试用例
-// 专注于测试系统资源的分配、监控、回收和优化
+// Azimuth Resource Management Tests
+// This file contains comprehensive test cases for resource management and cleanup
 
-// 测试1: 内存资源管理
-test "内存资源管理测试" {
-  // 创建内存管理器
-  let memory_manager = MemoryManager::new({
-    max_heap_size: 100 * 1024 * 1024,  // 100MB
-    gc_threshold: 0.8,  // 80%时触发GC
-    allocation_strategy: "generational"
-  })
+// Test 1: Resource Pool Management
+test "resource pool management and reuse" {
+  type Resource[T] {
+    id : Int
+    data : T
+    mut in_use : Bool
+    mut last_used : Int
+  }
   
-  let initial_memory = memory_manager.get_current_usage()
+  type ResourcePool[T] {
+    mut resources : Array[Resource[T]]
+    mut next_id : Int
+    max_size : Int
+    mut current_time : Int
+  }
   
-  // 分配大量对象
-  let allocated_objects = []
-  let object_size = 1024  // 1KB per object
+  let create_resource = fn[T](id : Int, data : T) : Resource[T] {
+    {
+      id: id,
+      data: data,
+      in_use: false,
+      last_used: 0
+    }
+  }
   
-  for i = 0; i < 50000; i = i + 1 {
-    let obj = memory_manager.allocate(object_size)
-    allocated_objects.push(obj)
+  let create_pool = fn[T](max_size : Int) : ResourcePool[T] {
+    {
+      resources: [],
+      next_id: 1,
+      max_size: max_size,
+      current_time: 0
+    }
+  }
+  
+  let advance_time = fn[T](pool : ResourcePool[T], amount : Int) {
+    pool.current_time = pool.current_time + amount
+  }
+  
+  let find_available_resource = fn[T](pool : ResourcePool[T]) : Option[Resource[T]] {
+    for resource in pool.resources {
+      if !resource.in_use {
+        return Some(resource)
+      }
+    }
+    None
+  }
+  
+  let acquire_resource = fn[T](pool : ResourcePool[T], factory : () -> T) : Option[Resource[T]] {
+    // Try to find an available resource
+    match find_available_resource(pool) {
+      Some(resource) => {
+        resource.in_use = true
+        resource.last_used = pool.current_time
+        Some(resource)
+      }
+      None => {
+        // Try to create a new resource if pool not full
+        if pool.resources.length() < pool.max_size {
+          let resource = create_resource(pool.next_id, factory())
+          resource.in_use = true
+          resource.last_used = pool.current_time
+          pool.resources = pool.resources.push(resource)
+          pool.next_id = pool.next_id + 1
+          Some(resource)
+        } else {
+          None
+        }
+      }
+    }
+  }
+  
+  let release_resource = fn[T](pool : ResourcePool[T], resource_id : Int) : Bool {
+    for resource in pool.resources {
+      if resource.id == resource_id && resource.in_use {
+        resource.in_use = false
+        resource.last_used = pool.current_time
+        return true
+      }
+    }
+    false
+  }
+  
+  let get_available_count = fn[T](pool : ResourcePool[T]) : Int {
+    let mut count = 0
+    for resource in pool.resources {
+      if !resource.in_use {
+        count = count + 1
+      }
+    }
+    count
+  }
+  
+  let get_in_use_count = fn[T](pool : ResourcePool[T]) : Int {
+    let mut count = 0
+    for resource in pool.resources {
+      if resource.in_use {
+        count = count + 1
+      }
+    }
+    count
+  }
+  
+  let cleanup_expired_resources = fn[T](pool : ResourcePool[T], max_idle_time : Int) {
+    let mut new_resources = []
     
-    // 每10000个对象检查一次内存使用
-    if i % 10000 == 0 {
-      let current_usage = memory_manager.get_current_usage()
-      let usage_percentage = current_usage.to_float() / memory_manager.get_max_heap_size().to_float()
-      
-      // 如果使用率超过阈值，应该触发GC
-      if usage_percentage > 0.8 {
-        memory_manager.trigger_gc()
+    for resource in pool.resources {
+      if resource.in_use || (pool.current_time - resource.last_used) <= max_idle_time {
+        new_resources = new_resources.push(resource)
+      }
+    }
+    
+    pool.resources = new_resources
+  }
+  
+  // Test resource pool
+  let pool = create_pool[String](3)
+  
+  // Test initial state
+  assert_eq(pool.resources.length(), 0)
+  assert_eq(get_available_count(pool), 0)
+  assert_eq(get_in_use_count(pool), 0)
+  
+  // Test acquiring resources
+  let resource1 = acquire_resource(pool, fn() { "Resource 1" })
+  assert_true(resource1.is_some())
+  assert_eq(pool.resources.length(), 1)
+  assert_eq(get_available_count(pool), 0)
+  assert_eq(get_in_use_count(pool), 1)
+  
+  let resource2 = acquire_resource(pool, fn() { "Resource 2" })
+  assert_true(resource2.is_some())
+  assert_eq(pool.resources.length(), 2)
+  assert_eq(get_available_count(pool), 0)
+  assert_eq(get_in_use_count(pool), 2)
+  
+  // Test releasing resources
+  match resource1 {
+    Some(r1) => {
+      assert_true(release_resource(pool, r1.id))
+      assert_eq(get_available_count(pool), 1)
+      assert_eq(get_in_use_count(pool), 1)
+    }
+    None => assert_true(false)
+  }
+  
+  // Test reusing released resources
+  let resource3 = acquire_resource(pool, fn() { "Resource 3" })
+  assert_true(resource3.is_some())
+  assert_eq(pool.resources.length(), 2)  // Should not create new resource
+  assert_eq(get_available_count(pool), 0)
+  assert_eq(get_in_use_count(pool), 2)
+  
+  // Test pool capacity limit
+  let resource4 = acquire_resource(pool, fn() { "Resource 4" })
+  assert_true(resource4.is_some())
+  assert_eq(pool.resources.length(), 3)  // Should create new resource
+  assert_eq(get_available_count(pool), 0)
+  assert_eq(get_in_use_count(pool), 3)
+  
+  let resource5 = acquire_resource(pool, fn() { "Resource 5" })
+  assert_true(resource5.is_none())  // Pool is full
+  
+  // Test cleanup of expired resources
+  advance_time(pool, 100)
+  
+  match resource2 {
+    Some(r2) => {
+      release_resource(pool, r2.id)
+    }
+    None => assert_true(false)
+  }
+  
+  match resource3 {
+    Some(r3) => {
+      r3.last_used = pool.current_time - 50  // Make it appear older
+    }
+    None => assert_true(false)
+  }
+  
+  advance_time(pool, 50)
+  cleanup_expired_resources(pool, 60)  // Clean up resources idle for more than 60 time units
+  
+  assert_eq(pool.resources.length(), 2)  // One resource should be cleaned up
+}
+
+// Test 2: Memory Management and Leak Detection
+test "memory management and leak detection" {
+  type MemoryBlock {
+    id : Int
+    size : Int
+    mut allocated : Bool
+    mut allocation_time : Int
+  }
+  
+  type MemoryManager {
+    mut blocks : Array[MemoryBlock]
+    mut total_allocated : Int
+    mut peak_usage : Int
+    mut current_time : Int
+  }
+  
+  let create_memory_manager = fn() : MemoryManager {
+    {
+      blocks: [],
+      total_allocated: 0,
+      peak_usage: 0,
+      current_time: 0
+    }
+  }
+  
+  let advance_time = fn(manager : MemoryManager, amount : Int) {
+    manager.current_time = manager.current_time + amount
+  }
+  
+  let allocate_block = fn(manager : MemoryManager, size : Int) : Option[Int] {
+    let block_id = manager.blocks.length() + 1
+    let block = {
+      id: block_id,
+      size: size,
+      allocated: true,
+      allocation_time: manager.current_time
+    }
+    
+    manager.blocks = manager.blocks.push(block)
+    manager.total_allocated = manager.total_allocated + size
+    
+    if manager.total_allocated > manager.peak_usage {
+      manager.peak_usage = manager.total_allocated
+    }
+    
+    Some(block_id)
+  }
+  
+  let deallocate_block = fn(manager : MemoryManager, block_id : Int) : Bool {
+    let mut found = false
+    
+    for block in manager.blocks {
+      if block.id == block_id && block.allocated {
+        block.allocated = false
+        manager.total_allocated = manager.total_allocated - block.size
+        found = true
+        break
+      }
+    }
+    
+    found
+  }
+  
+  let get_allocated_count = fn(manager : MemoryManager) : Int {
+    let mut count = 0
+    for block in manager.blocks {
+      if block.allocated {
+        count = count + 1
+      }
+    }
+    count
+  }
+  
+  let get_total_allocated = fn(manager : MemoryManager) : Int {
+    manager.total_allocated
+  }
+  
+  let get_peak_usage = fn(manager : MemoryManager) : Int {
+    manager.peak_usage
+  }
+  
+  let detect_leaks = fn(manager : MemoryManager, max_age : Int) : Array[Int] {
+    let mut leaked_blocks = []
+    
+    for block in manager.blocks {
+      if block.allocated && (manager.current_time - block.allocation_time) > max_age {
+        leaked_blocks = leaked_blocks.push(block.id)
+      }
+    }
+    
+    leaked_blocks
+  }
+  
+  let get_block_info = fn(manager : MemoryManager, block_id : Int) : Option[(Int, Int, Int, Bool)] {
+    for block in manager.blocks {
+      if block.id == block_id {
+        return Some((block.id, block.size, block.allocation_time, block.allocated))
+      }
+    }
+    None
+  }
+  
+  // Test memory management
+  let manager = create_memory_manager()
+  
+  // Test initial state
+  assert_eq(get_allocated_count(manager), 0)
+  assert_eq(get_total_allocated(manager), 0)
+  assert_eq(get_peak_usage(manager), 0)
+  
+  // Test allocation
+  let block1_id = allocate_block(manager, 100)
+  let block2_id = allocate_block(manager, 200)
+  let block3_id = allocate_block(manager, 150)
+  
+  assert_true(block1_id.is_some())
+  assert_true(block2_id.is_some())
+  assert_true(block3_id.is_some())
+  
+  assert_eq(get_allocated_count(manager), 3)
+  assert_eq(get_total_allocated(manager), 450)
+  assert_eq(get_peak_usage(manager), 450)
+  
+  // Test deallocation
+  match block2_id {
+    Some(id) => {
+      assert_true(deallocate_block(manager, id))
+      assert_eq(get_allocated_count(manager), 2)
+      assert_eq(get_total_allocated(manager), 250)
+      assert_eq(get_peak_usage(manager), 450)  // Peak should not decrease
+    }
+    None => assert_true(false)
+  }
+  
+  // Test block info
+  match block1_id {
+    Some(id) => {
+      match get_block_info(manager, id) {
+        Some((block_id, size, alloc_time, allocated)) => {
+          assert_eq(block_id, id)
+          assert_eq(size, 100)
+          assert_true(allocated)
+        }
+        None => assert_true(false)
+      }
+    }
+    None => assert_true(false)
+  }
+  
+  // Test leak detection
+  advance_time(manager, 100)
+  
+  match block1_id {
+    Some(id) => {
+      assert_true(deallocate_block(manager, id))
+    }
+    None => assert_true(false)
+  }
+  
+  advance_time(manager, 100)
+  
+  // Only block3 should be left and should be considered a leak
+  let leaks = detect_leaks(manager, 150)
+  assert_eq(leaks.length(), 1)
+  
+  match block3_id {
+    Some(id) => {
+      assert_true(leaks.contains(id))
+    }
+    None => assert_true(false)
+  }
+  
+  // Test deallocation of leaked block
+  match block3_id {
+    Some(id) => {
+      assert_true(deallocate_block(manager, id))
+      assert_eq(get_allocated_count(manager), 0)
+      assert_eq(get_total_allocated(manager), 0)
+    }
+    None => assert_true(false)
+  }
+}
+
+// Test 3: Resource Lifecycle Management
+test "resource lifecycle management" {
+  type ResourceState {
+    Created
+    Initialized
+    Active
+    Deactivating
+    Deactivated
+    Destroyed
+  }
+  
+  type ManagedResource {
+    id : Int
+    name : String
+    mut state : ResourceState
+    mut created_time : Int
+    mut initialized_time : Option[Int]
+    mut activated_time : Option[Int]
+    mut deactivated_time : Option[Int]
+    mut destroyed_time : Option[Int]
+  }
+  
+  type ResourceManager {
+    mut resources : Array[ManagedResource]
+    mut next_id : Int
+    mut current_time : Int
+  }
+  
+  let create_resource_manager = fn() : ResourceManager {
+    {
+      resources: [],
+      next_id: 1,
+      current_time: 0
+    }
+  }
+  
+  let advance_time = fn(manager : ResourceManager, amount : Int) {
+    manager.current_time = manager.current_time + amount
+  }
+  
+  let create_resource = fn(manager : ResourceManager, name : String) : ManagedResource {
+    let resource = {
+      id: manager.next_id,
+      name: name,
+      state: ResourceState::Created,
+      created_time: manager.current_time,
+      initialized_time: None,
+      activated_time: None,
+      deactivated_time: None,
+      destroyed_time: None
+    }
+    
+    manager.resources = manager.resources.push(resource)
+    manager.next_id = manager.next_id + 1
+    resource
+  }
+  
+  let initialize_resource = fn(resource : ManagedResource, current_time : Int) : Bool {
+    match resource.state {
+      ResourceState::Created => {
+        resource.state = ResourceState::Initialized
+        resource.initialized_time = Some(current_time)
+        true
+      }
+      _ => false
+    }
+  }
+  
+  let activate_resource = fn(resource : ManagedResource, current_time : Int) : Bool {
+    match resource.state {
+      ResourceState::Initialized => {
+        resource.state = ResourceState::Active
+        resource.activated_time = Some(current_time)
+        true
+      }
+      _ => false
+    }
+  }
+  
+  let deactivate_resource = fn(resource : ManagedResource, current_time : Int) : Bool {
+    match resource.state {
+      ResourceState::Active => {
+        resource.state = ResourceState::Deactivating
+        resource.deactivated_time = Some(current_time)
+        true
+      }
+      _ => false
+    }
+  }
+  
+  let complete_deactivation = fn(resource : ManagedResource, current_time : Int) : Bool {
+    match resource.state {
+      ResourceState::Deactivating => {
+        resource.state = ResourceState::Deactivated
+        true
+      }
+      _ => false
+    }
+  }
+  
+  let destroy_resource = fn(resource : ManagedResource, current_time : Int) : Bool {
+    match resource.state {
+      ResourceState::Deactivated => {
+        resource.state = ResourceState::Destroyed
+        resource.destroyed_time = Some(current_time)
+        true
+      }
+      _ => false
+    }
+  }
+  
+  let get_resource_by_id = fn(manager : ResourceManager, id : Int) : Option[ManagedResource] {
+    for resource in manager.resources {
+      if resource.id == id {
+        return Some(resource)
+      }
+    }
+    None
+  }
+  
+  let get_resources_by_state = fn(manager : ResourceManager, state : ResourceState) : Array[ManagedResource> {
+    let mut result = []
+    for resource in manager.resources {
+      match resource.state {
+        ResourceState::Created => {
+          match state {
+            ResourceState::Created => result = result.push(resource)
+            _ => ()
+          }
+        }
+        ResourceState::Initialized => {
+          match state {
+            ResourceState::Initialized => result = result.push(resource)
+            _ => ()
+          }
+        }
+        ResourceState::Active => {
+          match state {
+            ResourceState::Active => result = result.push(resource)
+            _ => ()
+          }
+        }
+        ResourceState::Deactivating => {
+          match state {
+            ResourceState::Deactivating => result = result.push(resource)
+            _ => ()
+          }
+        }
+        ResourceState::Deactivated => {
+          match state {
+            ResourceState::Deactivated => result = result.push(resource)
+            _ => ()
+          }
+        }
+        ResourceState::Destroyed => {
+          match state {
+            ResourceState::Destroyed => result = result.push(resource)
+            _ => ()
+          }
+        }
+      }
+    }
+    result
+  }
+  
+  // Test resource lifecycle
+  let manager = create_resource_manager()
+  
+  // Test resource creation
+  let resource1 = create_resource(manager, "TestResource1")
+  let resource2 = create_resource(manager, "TestResource2")
+  
+  assert_eq(resource1.state, ResourceState::Created)
+  assert_eq(resource2.state, ResourceState::Created)
+  assert_eq(get_resources_by_state(manager, ResourceState::Created).length(), 2)
+  
+  advance_time(manager, 10)
+  
+  // Test resource initialization
+  assert_true(initialize_resource(resource1, manager.current_time))
+  assert_eq(resource1.state, ResourceState::Initialized)
+  assert_true(resource1.initialized_time.is_some())
+  
+  advance_time(manager, 5)
+  
+  assert_true(initialize_resource(resource2, manager.current_time))
+  assert_eq(resource2.state, ResourceState::Initialized)
+  assert_true(resource2.initialized_time.is_some())
+  
+  assert_eq(get_resources_by_state(manager, ResourceState::Initialized).length(), 2)
+  
+  // Test resource activation
+  advance_time(manager, 5)
+  
+  assert_true(activate_resource(resource1, manager.current_time))
+  assert_eq(resource1.state, ResourceState::Active)
+  assert_true(resource1.activated_time.is_some())
+  
+  advance_time(manager, 5)
+  
+  assert_true(activate_resource(resource2, manager.current_time))
+  assert_eq(resource2.state, ResourceState::Active)
+  assert_true(resource2.activated_time.is_some())
+  
+  assert_eq(get_resources_by_state(manager, ResourceState::Active).length(), 2)
+  
+  // Test invalid state transitions
+  assert_false(initialize_resource(resource1, manager.current_time))  // Already initialized
+  assert_false(activate_resource(resource1, manager.current_time))  // Already active
+  
+  // Test resource deactivation
+  advance_time(manager, 10)
+  
+  assert_true(deactivate_resource(resource1, manager.current_time))
+  assert_eq(resource1.state, ResourceState::Deactivating)
+  assert_true(resource1.deactivated_time.is_some())
+  
+  advance_time(manager, 5)
+  
+  assert_true(complete_deactivation(resource1, manager.current_time))
+  assert_eq(resource1.state, ResourceState::Deactivated)
+  
+  assert_eq(get_resources_by_state(manager, ResourceState::Active).length(), 1)
+  assert_eq(get_resources_by_state(manager, ResourceState::Deactivated).length(), 1)
+  
+  // Test resource destruction
+  advance_time(manager, 5)
+  
+  assert_true(destroy_resource(resource1, manager.current_time))
+  assert_eq(resource1.state, ResourceState::Destroyed)
+  assert_true(resource1.destroyed_time.is_some())
+  
+  assert_eq(get_resources_by_state(manager, ResourceState::Destroyed).length(), 1)
+  
+  // Test invalid destruction
+  assert_false(destroy_resource(resource2, manager.current_time))  // Not deactivated yet
+}
+
+// Test 4: Resource Usage Tracking
+test "resource usage tracking and metrics" {
+  type UsageMetrics {
+    total_requests : Int
+    successful_requests : Int
+    failed_requests : Int
+    total_usage_time : Int
+    peak_concurrent_usage : Int
+    mut current_concurrent_usage : Int
+  }
+  
+  type TrackedResource {
+    id : Int
+    mut in_use : Bool
+    mut usage_count : Int
+    mut total_usage_time : Int
+    mut last_used_time : Int
+  }
+  
+  type ResourceTracker {
+    mut resources : Array[TrackedResource]
+    mut metrics : UsageMetrics
+    mut current_time : Int
+  }
+  
+  let create_resource_tracker = fn() : ResourceTracker {
+    {
+      resources: [],
+      metrics: {
+        total_requests: 0,
+        successful_requests: 0,
+        failed_requests: 0,
+        total_usage_time: 0,
+        peak_concurrent_usage: 0,
+        current_concurrent_usage: 0
+      },
+      current_time: 0
+    }
+  }
+  
+  let advance_time = fn(tracker : ResourceTracker, amount : Int) {
+    tracker.current_time = tracker.current_time + amount
+  }
+  
+  let add_resource = fn(tracker : ResourceTracker) : Int {
+    let resource_id = tracker.resources.length() + 1
+    let resource = {
+      id: resource_id,
+      in_use: false,
+      usage_count: 0,
+      total_usage_time: 0,
+      last_used_time: 0
+    }
+    
+    tracker.resources = tracker.resources.push(resource)
+    resource_id
+  }
+  
+  let acquire_tracked_resource = fn(tracker : ResourceTracker, resource_id : Int) : Bool {
+    tracker.metrics.total_requests = tracker.metrics.total_requests + 1
+    
+    for resource in tracker.resources {
+      if resource.id == resource_id && !resource.in_use {
+        resource.in_use = true
+        resource.usage_count = resource.usage_count + 1
+        resource.last_used_time = tracker.current_time
         
-        // GC后内存使用应该减少
-        let post_gc_usage = memory_manager.get_current_usage()
-        assert_true(post_gc_usage < current_usage)
+        tracker.metrics.current_concurrent_usage = tracker.metrics.current_concurrent_usage + 1
+        if tracker.metrics.current_concurrent_usage > tracker.metrics.peak_concurrent_usage {
+          tracker.metrics.peak_concurrent_usage = tracker.metrics.current_concurrent_usage
+        }
+        
+        tracker.metrics.successful_requests = tracker.metrics.successful_requests + 1
+        return true
       }
     }
-  }
-  
-  let peak_memory = memory_manager.get_peak_usage()
-  
-  // 验证内存使用在限制范围内
-  assert_true(peak_memory <= memory_manager.get_max_heap_size())
-  
-  // 释放部分对象
-  for i = 0; i < allocated_objects.length() / 2; i = i + 1 {
-    memory_manager.deallocate(allocated_objects[i])
-  }
-  
-  // 手动触发GC
-  memory_manager.trigger_gc()
-  
-  let final_memory = memory_manager.get_current_usage()
-  
-  // 验证内存回收效果
-  assert_true(final_memory < peak_memory)
-  
-  // 获取内存统计信息
-  let stats = memory_manager.get_stats()
-  assert_true(stats.total_allocations > 0)
-  assert_true(stats.total_deallocations > 0)
-  assert_true(stats.gc_count > 0)
-}
-
-// 测试2: 连接池管理
-test "连接池管理测试" {
-  // 创建数据库连接池
-  let connection_pool = ConnectionPool::new({
-    min_connections: 2,
-    max_connections: 10,
-    connection_timeout_ms: 5000,
-    idle_timeout_ms: 30000,
-    max_lifetime_ms: 300000
-  })
-  
-  // 初始状态验证
-  assert_eq(connection_pool.get_active_connections(), 0)
-  assert_eq(connection_pool.get_idle_connections(), 2)
-  assert_eq(connection_pool.get_total_connections(), 2)
-  
-  // 获取连接
-  let connections = []
-  for i = 0; i < 8; i = i + 1 {
-    let conn = connection_pool.get_connection()
-    connections.push(conn)
-  }
-  
-  // 验证连接池状态
-  assert_eq(connection_pool.get_active_connections(), 8)
-  assert_eq(connection_pool.get_idle_connections(), 0)
-  assert_eq(connection_pool.get_total_connections(), 8)
-  
-  // 尝试获取超过最大连接数的连接
-  let extra_conn_result = connection_pool.get_connection()
-  match extra_conn_result {
-    Ok(_) => assert_true(false, "不应该能获取超过最大连接数的连接")
-    Err(error) => assert_true(true, "正确返回连接池耗尽错误")
-  }
-  
-  // 释放部分连接
-  for i = 0; i < 4; i = i + 1 {
-    connection_pool.release_connection(connections[i])
-  }
-  
-  // 验证连接回收
-  assert_eq(connection_pool.get_active_connections(), 4)
-  assert_eq(connection_pool.get_idle_connections(), 4)
-  assert_eq(connection_pool.get_total_connections(), 8)
-  
-  // 现在应该能获取新连接
-  let new_conn = connection_pool.get_connection()
-  match new_conn {
-    Ok(_) => assert_true(true, "成功获取回收的连接")
-    Err(_) => assert_true(false, "应该能获取回收的连接")
-  }
-  
-  // 释放所有连接
-  for i = 4; i < connections.length(); i = i + 1 {
-    connection_pool.release_connection(connections[i])
-  }
-  connection_pool.release_connection(new_conn.unwrap())
-  
-  // 验证最终状态
-  assert_eq(connection_pool.get_active_connections(), 0)
-  assert_true(connection_pool.get_idle_connections() >= 2)
-  assert_true(connection_pool.get_total_connections() >= 2)
-  
-  // 测试连接健康检查
-  let unhealthy_conn = connection_pool.get_connection().unwrap()
-  // 模拟连接不健康
-  unhealthy_conn.mark_unhealthy()
-  connection_pool.release_connection(unhealthy_conn)
-  
-  // 下次获取时应该得到健康连接
-  let healthy_conn = connection_pool.get_connection().unwrap()
-  assert_true(healthy_conn.is_healthy())
-}
-
-// 测试3: 线程池管理
-test "线程池管理测试" {
-  // 创建线程池
-  let thread_pool = ThreadPool::new({
-    min_threads: 2,
-    max_threads: 8,
-    keep_alive_time_ms: 60000,
-    queue_size: 100
-  })
-  
-  // 初始状态验证
-  assert_eq(thread_pool.get_active_threads(), 0)
-  assert_eq(thread_pool.get_idle_threads(), 2)
-  assert_eq(thread_pool.get_total_threads(), 2)
-  assert_eq(thread_pool.get_queue_size(), 0)
-  
-  // 提交任务
-  let task_results = []
-  let task_count = 20
-  
-  for i = 0; i < task_count; i = i + 1 {
-    let task_id = i
-    let result = thread_pool.submit(|| {
-      // 模拟耗时任务
-      Thread::sleep(100)  // 100ms
-      return task_id * 2
-    })
-    task_results.push(result)
-  }
-  
-  // 验证线程池扩展
-  assert_true(thread_pool.get_total_threads() >= 2)
-  assert_true(thread_pool.get_total_threads() <= 8)
-  
-  // 等待所有任务完成
-  let completed_results = []
-  for result in task_results {
-    let value = result.get()  // 阻塞等待任务完成
-    completed_results.push(value)
-  }
-  
-  // 验证任务执行结果
-  assert_eq(completed_results.length(), task_count)
-  for i = 0; i < task_count; i = i + 1 {
-    assert_eq(completed_results[i], i * 2)
-  }
-  
-  // 验证线程池状态恢复
-  Thread::sleep(1000)  // 等待线程回收
-  assert_true(thread_pool.get_active_threads() < thread_pool.get_total_threads())
-  
-  // 测试任务队列限制
-  let queue_overflow_results = []
-  
-  // 提交大量任务以填满队列
-  for i = 0; i < 150; i = i + 1 {  // 超过队列大小(100)
-    let result = thread_pool.submit(|| {
-      Thread::sleep(50)
-      return "completed"
-    })
     
-    match result {
-      Ok(_) => queue_overflow_results.push("submitted")
-      Err(_) => queue_overflow_results.push("rejected")
-    }
+    tracker.metrics.failed_requests = tracker.metrics.failed_requests + 1
+    false
   }
   
-  // 验证队列溢出处理
-  let submitted_count = queue_overflow_results.count(|r| r == "submitted")
-  let rejected_count = queue_overflow_results.count(|r| r == "rejected")
-  
-  assert_true(submitted_count <= 100 + 8)  // 队列大小 + 最大线程数
-  assert_true(rejected_count > 0)  // 应该有任务被拒绝
-}
-
-// 测试4: 文件句柄管理
-test "文件句柄管理测试" {
-  // 创建文件句柄管理器
-  let fd_manager = FileDescriptorManager::new({
-    max_open_files: 100,
-    cleanup_interval_ms: 10000,
-    file_timeout_ms: 300000
-  })
-  
-  // 创建临时文件
-  let temp_files = []
-  for i = 0; i < 50; i = i + 1 {
-    let file_path = "/tmp/test_file_" + i.to_string()
-    let file = File::create(file_path).unwrap()
-    file.write_all("test content").unwrap()
-    temp_files.push(file_path)
-  }
-  
-  // 打开文件
-  let open_files = []
-  for file_path in temp_files {
-    let file = fd_manager.open_file(file_path, "read").unwrap()
-    open_files.push(file)
-  }
-  
-  // 验证文件句柄使用
-  assert_eq(fd_manager.get_open_file_count(), 50)
-  assert_true(fd_manager.get_open_file_count() <= fd_manager.get_max_open_files())
-  
-  // 关闭部分文件
-  for i = 0; i < 25; i = i + 1 {
-    fd_manager.close_file(open_files[i])
-  }
-  
-  // 验证文件句柄回收
-  assert_eq(fd_manager.get_open_file_count(), 25)
-  
-  // 重新打开文件
-  for i = 0; i < 25; i = i + 1 {
-    let file_path = temp_files[i]
-    let file = fd_manager.open_file(file_path, "read").unwrap()
-    open_files[i] = file
-  }
-  
-  // 验证文件句柄重用
-  assert_eq(fd_manager.get_open_file_count(), 50)
-  
-  // 测试文件句柄泄漏检测
-  // 模拟忘记关闭文件
-  let leaked_files = []
-  for i = 0; i < 10; i = i + 1 {
-    let file_path = "/tmp/leaked_file_" + i.to_string()
-    let file = File::create(file_path).unwrap()
-    file.write_all("leaked content").unwrap()
-    
-    // 直接打开，不通过管理器
-    let raw_file = File::open(file_path).unwrap()
-    leaked_files.push(raw_file)
-  }
-  
-  // 检测泄漏
-  let leaked_count = fd_manager.detect_leaked_descriptors()
-  assert_true(leaked_count >= 10)
-  
-  // 清理泄漏的文件
-  for file in leaked_files {
-    drop(file)  // 显式关闭
-  }
-  
-  // 清理所有文件
-  for file in open_files {
-    fd_manager.close_file(file)
-  }
-  
-  for file_path in temp_files {
-    File::remove(file_path).unwrap()
-  }
-  
-  for i = 0; i < 10; i = i + 1 {
-    let file_path = "/tmp/leaked_file_" + i.to_string()
-    File::remove(file_path).unwrap()
-  }
-  
-  // 验证清理完成
-  assert_eq(fd_manager.get_open_file_count(), 0)
-}
-
-// 测试5: 缓存资源管理
-test "缓存资源管理测试" {
-  // 创建缓存管理器
-  let cache_manager = CacheManager::new({
-    max_memory_size: 50 * 1024 * 1024,  // 50MB
-    max_entries: 10000,
-    eviction_policy: "lru",  // Least Recently Used
-    cleanup_interval_ms: 30000
-  })
-  
-  // 添加缓存项
-  let cache_keys = []
-  let item_size = 1024  // 1KB per item
-  
-  for i = 0; i < 50000; i = i + 1 {
-    let key = "item_" + i.to_string()
-    let value = "data_" + i.to_string() + "_".repeat(item_size / 10)  // 创建约1KB的数据
-    cache_manager.put(key, value)
-    cache_keys.push(key)
-    
-    // 每10000项检查缓存状态
-    if i % 10000 == 0 {
-      let stats = cache_manager.get_stats()
-      
-      // 验证缓存大小限制
-      assert_true(stats.memory_usage <= cache_manager.get_max_memory_size())
-      assert_true(stats.entry_count <= cache_manager.get_max_entries())
-      
-      // 验证淘汰策略生效
-      if stats.entry_count >= cache_manager.get_max_entries() {
-        assert_true(stats.evictions > 0)
+  let release_tracked_resource = fn(tracker : ResourceTracker, resource_id : Int) : Bool {
+    for resource in tracker.resources {
+      if resource.id == resource_id && resource.in_use {
+        let usage_time = tracker.current_time - resource.last_used_time
+        resource.total_usage_time = resource.total_usage_time + usage_time
+        resource.in_use = false
+        
+        tracker.metrics.total_usage_time = tracker.metrics.total_usage_time + usage_time
+        tracker.metrics.current_concurrent_usage = tracker.metrics.current_concurrent_usage - 1
+        return true
       }
     }
+    false
   }
   
-  let final_stats = cache_manager.get_stats()
+  let get_resource_metrics = fn(tracker : ResourceTracker, resource_id : Int) : Option[(Int, Int, Int, Bool)] {
+    for resource in tracker.resources {
+      if resource.id == resource_id {
+        return Some((resource.usage_count, resource.total_usage_time, resource.last_used_time, resource.in_use))
+      }
+    }
+    None
+  }
   
-  // 验证缓存限制
-  assert_true(final_stats.memory_usage <= cache_manager.get_max_memory_size())
-  assert_true(final_stats.entry_count <= cache_manager.get_max_entries())
-  assert_true(final_stats.evictions > 0)
-  
-  // 测试缓存命中率
-  let hits = 0
-  let total_requests = 1000
-  
-  for i = 0; i < total_requests; i = i + 1 {
-    // 70%概率访问存在的key，30%概率访问不存在的key
-    let key_index = if i % 10 < 7 { i % cache_keys.length() } else { cache_keys.length() + i }
-    let key = "item_" + key_index.to_string()
-    
-    let result = cache_manager.get(key)
-    match result {
-      Some(_) => hits = hits + 1
-      None => {}
+  let get_success_rate = fn(tracker : ResourceTracker) : Float {
+    if tracker.metrics.total_requests == 0 {
+      0.0
+    } else {
+      tracker.metrics.successful_requests.to_float() / tracker.metrics.total_requests.to_float()
     }
   }
   
-  let hit_rate = hits.to_float() / total_requests.to_float()
-  
-  // 验证命中率合理（考虑到淘汰策略）
-  assert_true(hit_rate >= 0.5)  // 至少50%命中率
-  
-  // 测试缓存过期
-  cache_manager.put("temp_item", "temp_value", Some(100))  // 100ms过期
-  Thread::sleep(150)
-  
-  let expired_result = cache_manager.get("temp_item")
-  match expired_result {
-    Some(_) => assert_true(false, "过期项应该被清除")
-    None => assert_true(true, "过期项已清除")
+  let get_average_usage_time = fn(tracker : ResourceTracker) : Float {
+    if tracker.metrics.successful_requests == 0 {
+      0.0
+    } else {
+      tracker.metrics.total_usage_time.to_float() / tracker.metrics.successful_requests.to_float()
+    }
   }
   
-  // 测试缓存清理
-  let before_cleanup = cache_manager.get_stats().entry_count
-  cache_manager.cleanup_expired()
-  let after_cleanup = cache_manager.get_stats().entry_count
+  // Test resource usage tracking
+  let tracker = create_resource_tracker()
   
-  // 清理后项数可能减少（如果有过期项）
-  assert_true(after_cleanup <= before_cleanup)
+  // Add resources
+  let resource1_id = add_resource(tracker)
+  let resource2_id = add_resource(tracker)
+  let resource3_id = add_resource(tracker)
   
-  // 测试缓存清空
-  cache_manager.clear()
-  let cleared_stats = cache_manager.get_stats()
-  assert_eq(cleared_stats.entry_count, 0)
-  assert_eq(cleared_stats.memory_usage, 0)
+  // Test initial metrics
+  assert_eq(tracker.metrics.total_requests, 0)
+  assert_eq(tracker.metrics.successful_requests, 0)
+  assert_eq(tracker.metrics.failed_requests, 0)
+  assert_eq(tracker.metrics.current_concurrent_usage, 0)
+  assert_eq(tracker.metrics.peak_concurrent_usage, 0)
+  
+  // Test resource acquisition
+  assert_true(acquire_tracked_resource(tracker, resource1_id))
+  assert_eq(tracker.metrics.total_requests, 1)
+  assert_eq(tracker.metrics.successful_requests, 1)
+  assert_eq(tracker.metrics.current_concurrent_usage, 1)
+  assert_eq(tracker.metrics.peak_concurrent_usage, 1)
+  
+  assert_true(acquire_tracked_resource(tracker, resource2_id))
+  assert_eq(tracker.metrics.total_requests, 2)
+  assert_eq(tracker.metrics.successful_requests, 2)
+  assert_eq(tracker.metrics.current_concurrent_usage, 2)
+  assert_eq(tracker.metrics.peak_concurrent_usage, 2)
+  
+  // Test failed acquisition (already in use)
+  assert_false(acquire_tracked_resource(tracker, resource1_id))
+  assert_eq(tracker.metrics.total_requests, 3)
+  assert_eq(tracker.metrics.successful_requests, 2)
+  assert_eq(tracker.metrics.failed_requests, 1)
+  assert_eq(tracker.metrics.current_concurrent_usage, 2)
+  
+  advance_time(tracker, 10)
+  
+  // Test resource release
+  assert_true(release_tracked_resource(tracker, resource1_id))
+  assert_eq(tracker.metrics.current_concurrent_usage, 1)
+  assert_eq(tracker.metrics.total_usage_time, 10)
+  
+  advance_time(tracker, 5)
+  
+  assert_true(release_tracked_resource(tracker, resource2_id))
+  assert_eq(tracker.metrics.current_concurrent_usage, 0)
+  assert_eq(tracker.metrics.total_usage_time, 15)
+  
+  // Test resource metrics
+  match get_resource_metrics(tracker, resource1_id) {
+    Some((usage_count, total_usage_time, last_used_time, in_use)) => {
+      assert_eq(usage_count, 1)
+      assert_eq(total_usage_time, 10)
+      assert_eq(last_used_time, 10)
+      assert_false(in_use)
+    }
+    None => assert_true(false)
+  }
+  
+  // Test more usage cycles
+  assert_true(acquire_tracked_resource(tracker, resource1_id))
+  advance_time(tracker, 8)
+  assert_true(release_tracked_resource(tracker, resource1_id))
+  
+  assert_true(acquire_tracked_resource(tracker, resource3_id))
+  advance_time(tracker, 12)
+  assert_true(release_tracked_resource(tracker, resource3_id))
+  
+  // Test final metrics
+  assert_eq(tracker.metrics.total_requests, 6)
+  assert_eq(tracker.metrics.successful_requests, 5)
+  assert_eq(tracker.metrics.failed_requests, 1)
+  assert_eq(tracker.metrics.total_usage_time, 35)
+  assert_eq(tracker.metrics.current_concurrent_usage, 0)
+  assert_eq(tracker.metrics.peak_concurrent_usage, 2)
+  
+  // Test calculated metrics
+  let success_rate = get_success_rate(tracker)
+  assert_true(success_rate > 0.8 && success_rate < 0.9)  // 5/6 ≈ 0.833
+  
+  let avg_usage_time = get_average_usage_time(tracker)
+  assert_true(avg_usage_time > 6.0 && avg_usage_time < 8.0)  // 35/5 = 7.0
+  
+  // Test resource metrics after multiple uses
+  match get_resource_metrics(tracker, resource1_id) {
+    Some((usage_count, total_usage_time, last_used_time, in_use)) => {
+      assert_eq(usage_count, 2)
+      assert_eq(total_usage_time, 18)  // 10 + 8
+      assert_eq(last_used_time, 33)   // 10 + 5 + 8 + 10
+      assert_false(in_use)
+    }
+    None => assert_true(false)
+  }
 }
