@@ -72,7 +72,7 @@ test "time series data processing and aggregation" {
 
 // Test 3: Concurrent Telemetry Operations
 test "concurrent telemetry operations simulation" {
-  let telemetry_buffer = []
+  let mut telemetry_buffer = []
   
   // Simulate concurrent telemetry data collection
   let operations = [
@@ -164,7 +164,7 @@ test "telemetry data filtering and querying" {
 
 // Test 6: Telemetry Resource Management
 test "telemetry resource management and cleanup" {
-  let resource_pool = []
+  let mut resource_pool = []
   let max_resources = 5
   
   // Allocate resources
