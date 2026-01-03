@@ -800,6 +800,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_memory_management_resource_cleanup_tests.mbt": {
   },
+  "azimuth_memory_leak_protection_tests.mbt": {
+  },
   "azimuth_memory_leak_protection_resource_cleanup_tests.mbt": {
   },
   "azimuth_memory_leak_protection_comprehensive_tests.mbt": {
@@ -1159,6 +1161,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_data_validation_enhanced_tests.mbt": {
   },
   "azimuth_data_validation_conversion_tests.mbt": {
+  },
+  "azimuth_data_validation_comprehensive_tests.mbt": {
   },
   "azimuth_data_structures_operations_tests.mbt": {
   },
