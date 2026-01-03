@@ -1,334 +1,602 @@
 // Azimuth Telemetry System - Distributed Tracing Consistency Tests
 // This file contains comprehensive test cases for distributed tracing consistency
 
-// Test 1: Cross-Service Trace Propagation Consistency
-test "cross-service trace propagation consistency" {
-  // Create initial trace context
+// Test 1: Trace Context Consistency Across Services
+test "trace context consistency across services" {
+  // Create a distributed trace with multiple services
   let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let initial_span_id = "b7ad6b7169203331"
-  let parent_ctx = SpanContext::new(trace_id, initial_span_id, true, "service_A")
   
-  // Service A creates child span
-  let service_a_span = Span::new("service_A_operation", Server, parent_ctx)
-  Span::add_event(service_a_span, "service_A_start", None)
+  // Service A: Entry point
+  let tracer_a = TracerProvider::get_tracer("service_a")
+  let root_span = Tracer::start_span(tracer_a, "http_request")
+  let root_span_ctx = Span::span_context(root_span)
   
-  // Service A calls Service B - propagate context
-  let service_b_span_id = "c8ad6b7169203332"
-  let service_b_ctx = SpanContext::new(trace_id, service_b_span_id, true, "service_B")
-  Span::set_parent(service_b_ctx, service_a_span)
+  // Verify root span context
+  assert_eq(SpanContext::trace_id(root_span_ctx), trace_id)
+  assert_true(SpanContext::is_valid(root_span_ctx))
+  assert_true(SpanContext::is_sampled(root_span_ctx))
   
-  let service_b_span = Span::new("service_B_operation", Server, service_b_ctx)
-  Span::add_event(service_b_span, "service_B_start", None)
+  // Service B: First downstream service
+  let tracer_b = TracerProvider::get_tracer("service_b")
+  let span_b = Tracer::start_span_with_context(tracer_b, "process_data", root_span_ctx)
+  let span_b_ctx = Span::span_context(span_b)
   
-  // Service B calls Service C - propagate context
-  let service_c_span_id = "d9ad6b7169203333"
-  let service_c_ctx = SpanContext::new(trace_id, service_c_span_id, true, "service_C")
-  Span::set_parent(service_c_ctx, service_b_span)
+  // Verify Service B span context
+  assert_eq(SpanContext::trace_id(span_b_ctx), trace_id)
+  assert_eq(SpanContext::trace_id(span_b_ctx), SpanContext::trace_id(root_span_ctx))
+  assert_true(SpanContext::is_valid(span_b_ctx))
+  assert_true(SpanContext::is_sampled(span_b_ctx))
   
-  let service_c_span = Span::new("service_C_operation", Server, service_c_ctx)
-  Span::add_event(service_c_span, "service_C_start", None)
+  // Verify parent-child relationship
+  assert_eq(Span::parent_span_id(span_b), Some(SpanContext::span_id(root_span_ctx)))
   
-  // End spans in reverse order
-  Span::end(service_c_span)
-  Span::end(service_b_span)
-  Span::end(service_a_span)
+  // Service C: Second downstream service
+  let tracer_c = TracerProvider::get_tracer("service_c")
+  let span_c = Tracer::start_span_with_context(tracer_c, "store_data", span_b_ctx)
+  let span_c_ctx = Span::span_context(span_c)
   
-  // Verify trace consistency across services
-  assert_eq(SpanContext::trace_id(parent_ctx), trace_id)
-  assert_eq(SpanContext::trace_id(service_b_ctx), trace_id)
-  assert_eq(SpanContext::trace_id(service_c_ctx), trace_id)
+  // Verify Service C span context
+  assert_eq(SpanContext::trace_id(span_c_ctx), trace_id)
+  assert_eq(SpanContext::trace_id(span_c_ctx), SpanContext::trace_id(root_span_ctx))
+  assert_true(SpanContext::is_valid(span_c_ctx))
+  assert_true(SpanContext::is_sampled(span_c_ctx))
   
-  // Verify parent-child relationships
-  let service_a_parent = Span::parent(service_a_span)
-  match service_a_parent {
-    Some(parent) => assert_eq(SpanContext::span_id(parent), initial_span_id)
-    None => assert_true(false)
-  }
+  // Verify parent-child relationship
+  assert_eq(Span::parent_span_id(span_c), Some(SpanContext::span_id(span_b_ctx)))
   
-  let service_b_parent = Span::parent(service_b_span)
-  match service_b_parent {
-    Some(parent) => assert_eq(SpanContext::span_id(parent), service_b_span_id)
-    None => assert_true(false)
-  }
+  // Service D: Parallel service called by B
+  let tracer_d = TracerProvider::get_tracer("service_d")
+  let span_d = Tracer::start_span_with_context(tracer_d, "validate_data", span_b_ctx)
+  let span_d_ctx = Span::span_context(span_d)
   
-  let service_c_parent = Span::parent(service_c_span)
-  match service_c_parent {
-    Some(parent) => assert_eq(SpanContext::span_id(parent), service_c_span_id)
-    None => assert_true(false)
-  }
+  // Verify Service D span context
+  assert_eq(SpanContext::trace_id(span_d_ctx), trace_id)
+  assert_eq(SpanContext::trace_id(span_d_ctx), SpanContext::trace_id(root_span_ctx))
+  assert_true(SpanContext::is_valid(span_d_ctx))
+  assert_true(SpanContext::is_sampled(span_d_ctx))
+  
+  // Verify parent-child relationship
+  assert_eq(Span::parent_span_id(span_d), Some(SpanContext::span_id(span_b_ctx)))
+  
+  // End all spans
+  Span::end(span_c)
+  Span::end(span_d)
+  Span::end(span_b)
+  Span::end(root_span)
+  
+  // Verify trace consistency
+  let trace_consistency_checker = TraceConsistencyChecker::new()
+  let spans = [root_span, span_b, span_c, span_d]
+  let consistency_result = TraceConsistencyChecker::verify_trace_consistency(trace_consistency_checker, spans)
+  
+  assert_true(ConsistencyResult::is_consistent(consistency_result))
+  assert_eq(ConsistencyResult::trace_id(consistency_result), trace_id)
+  assert_eq(ConsistencyResult::span_count(consistency_result), 4)
 }
 
-// Test 2: Trace Context Header Propagation
-test "trace context header propagation" {
+// Test 2: Baggage Propagation Consistency
+test "baggage propagation consistency" {
+  // Create initial baggage
+  let initial_baggage = Baggage::new()
+  let baggage_with_user = Baggage::set_entry(initial_baggage, "user_id", "user123")
+  let baggage_with_session = Baggage::set_entry(baggage_with_user, "session_id", "session456")
+  let final_baggage = Baggage::set_entry(baggage_with_session, "request_id", "req789")
+  
   // Create trace context
-  let trace_id = "1af7651916cd43dd8448eb211c80319d"
-  let span_id = "e7ad6b7169203334"
-  let span_ctx = SpanContext::new(trace_id, span_id, true, "origin_service")
+  let trace_id = "b7ad6b7169203331c8768e8b8a6b7b7b"
+  let span_ctx = SpanContext::new(trace_id, "span123", true, "test_state")
   
-  // Extract trace headers
-  let traceparent_header = TracePropagator::extract_traceparent(span_ctx)
-  let tracestate_header = TracePropagator::extract_tracestate(span_ctx)
+  // Create context with baggage
+  let ctx = Context::with_value(Context::root(), ContextKey::new("span_context"), span_ctx)
+  let ctx_with_baggage = Context::with_value(ctx, ContextKey::new("baggage"), final_baggage)
   
-  // Verify traceparent header format
-  match traceparent_header {
-    Some(header) => {
-      let parts = String::split(header, "-")
-      assert_eq(parts.length(), 4)
-      assert_eq(parts[0], "00") // version
-      assert_eq(parts[1], trace_id)
-      assert_eq(parts[2], span_id)
-      assert_eq(parts[3], "01") // trace-flags (sampled)
+  // Service A: Extract baggage
+  let baggage_a = Context::get(ctx_with_baggage, ContextKey::new("baggage"))
+  match baggage_a {
+    Some(baggage) => {
+      let user_id = Baggage::get_entry(baggage, "user_id")
+      let session_id = Baggage::get_entry(baggage, "session_id")
+      let request_id = Baggage::get_entry(baggage, "request_id")
+      
+      match (user_id, session_id, request_id) {
+        (Some("user123"), Some("session456"), Some("req789")) => assert_true(true)
+        _ => assert_true(false)
+      }
     }
     None => assert_true(false)
   }
   
-  // Simulate HTTP request with trace headers
-  let headers = [
-    ("traceparent", traceparent_header.unwrap()),
-    ("tracestate", tracestate_header.unwrap_or("")),
-    ("X-Request-ID", "req-12345")
+  // Service B: Add new baggage entry
+  let baggage_b = match baggage_a {
+    Some(baggage) => Baggage::set_entry(baggage, "service_b_data", "b_data")
+    None => assert_true(false); Baggage::new()
+  }
+  
+  // Service C: Add another baggage entry
+  let baggage_c = Baggage::set_entry(baggage_b, "service_c_data", "c_data")
+  
+  // Verify baggage propagation consistency
+  let baggage_consistency_checker = BaggageConsistencyChecker::new()
+  let baggage_chain = [final_baggage, baggage_b, baggage_c]
+  let consistency_result = BaggageConsistencyChecker::verify_baggage_consistency(baggage_consistency_checker, baggage_chain)
+  
+  assert_true(BaggageConsistencyResult::is_consistent(consistency_result))
+  
+  // Verify all original entries are preserved
+  let final_baggage_in_c = baggage_c
+  let user_id_c = Baggage::get_entry(final_baggage_in_c, "user_id")
+  let session_id_c = Baggage::get_entry(final_baggage_in_c, "session_id")
+  let request_id_c = Baggage::get_entry(final_baggage_in_c, "request_id")
+  
+  match (user_id_c, session_id_c, request_id_c) {
+    (Some("user123"), Some("session456"), Some("req789")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // Verify new entries are added
+  let service_b_data = Baggage::get_entry(final_baggage_in_c, "service_b_data")
+  let service_c_data = Baggage::get_entry(final_baggage_in_c, "service_c_data")
+  
+  match (service_b_data, service_c_data) {
+    (Some("b_data"), Some("c_data")) => assert_true(true)
+    _ => assert_true(false)
+  }
+}
+
+// Test 3: Sampling Decision Consistency
+test "sampling decision consistency" {
+  // Create a trace with sampling decisions
+  let trace_id = "c8768e8b8a6b7b7b0af7651916cd43dd"
+  
+  // Test with sampling enabled
+  let sampler = TraceIdRatioBasedSampler::new(1.0) // 100% sampling
+  let sampling_decision = Sampler::should_sample(sampler, trace_id, "test_operation", None)
+  
+  match sampling_decision {
+    SamplingDecision::RecordAndSample => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // Create root span with sampling decision
+  let tracer = TracerProvider::get_tracer("sampling_test")
+  let root_span = Tracer::start_span_with_sampling(tracer, "root_operation", None, sampling_decision)
+  let root_span_ctx = Span::span_context(root_span)
+  
+  // Verify sampling decision is applied
+  assert_true(SpanContext::is_sampled(root_span_ctx))
+  
+  // Create child spans - they should inherit sampling decision
+  let child_span1 = Tracer::start_span_with_context(tracer, "child_operation_1", root_span_ctx)
+  let child_span1_ctx = Span::span_context(child_span1)
+  
+  let child_span2 = Tracer::start_span_with_context(tracer, "child_operation_2", root_span_ctx)
+  let child_span2_ctx = Span::span_context(child_span2)
+  
+  // Verify child spans inherit sampling decision
+  assert_true(SpanContext::is_sampled(child_span1_ctx))
+  assert_true(SpanContext::is_sampled(child_span2_ctx))
+  
+  // Test with sampling disabled
+  let no_sampler = TraceIdRatioBasedSampler::new(0.0) // 0% sampling
+  let no_sampling_decision = Sampler::should_sample(no_sampler, trace_id + "_nosample", "test_operation", None)
+  
+  match no_sampling_decision {
+    SamplingDecision::Drop => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // Create root span with no sampling
+  let root_span_no_sample = Tracer::start_span_with_sampling(tracer, "root_operation_no_sample", None, no_sampling_decision)
+  let root_span_no_sample_ctx = Span::span_context(root_span_no_sample)
+  
+  // Verify no sampling decision is applied
+  assert_false(SpanContext::is_sampled(root_span_no_sample_ctx))
+  
+  // Create child spans - they should inherit no sampling decision
+  let child_span_no_sample = Tracer::start_span_with_context(tracer, "child_operation_no_sample", root_span_no_sample_ctx)
+  let child_span_no_sample_ctx = Span::span_context(child_span_no_sample)
+  
+  // Verify child spans inherit no sampling decision
+  assert_false(SpanContext::is_sampled(child_span_no_sample_ctx))
+  
+  // Verify sampling consistency
+  let sampling_consistency_checker = SamplingConsistencyChecker::new()
+  let sampled_spans = [root_span, child_span1, child_span2]
+  let unsampled_spans = [root_span_no_sample, child_span_no_sample]
+  
+  let sampled_consistency = SamplingConsistencyChecker::verify_sampling_consistency(
+    sampling_consistency_checker, 
+    sampled_spans, 
+    true
+  )
+  assert_true(SamplingConsistencyResult::is_consistent(sampled_consistency))
+  
+  let unsampled_consistency = SamplingConsistencyChecker::verify_sampling_consistency(
+    sampling_consistency_checker, 
+    unsampled_spans, 
+    false
+  )
+  assert_true(SamplingConsistencyResult::is_consistent(unsampled_consistency))
+}
+
+// Test 4: Trace State Consistency
+test "trace state consistency" {
+  // Create a trace with trace state
+  let trace_id = "d8448eb211c80319c0af7651916cd43dd"
+  let initial_trace_state = "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE"
+  
+  // Create root span with trace state
+  let span_ctx = SpanContext::new(trace_id, "span123", true, initial_trace_state)
+  let tracer = TracerProvider::get_tracer("trace_state_test")
+  let root_span = Tracer::start_span_with_context(tracer, "root_operation", span_ctx)
+  
+  // Verify initial trace state
+  let root_span_ctx = Span::span_context(root_span)
+  assert_eq(SpanContext::trace_state(root_span_ctx), initial_trace_state)
+  
+  // Service A: Add to trace state
+  let updated_trace_state_a = TraceStateBuilder::from_string(initial_trace_state)
+    .add("vendor1", "value1")
+    .build()
+  
+  let span_ctx_a = SpanContext::new(trace_id, "span456", true, updated_trace_state_a)
+  let span_a = Tracer::start_span_with_context(tracer, "service_a_operation", span_ctx_a)
+  
+  // Verify updated trace state
+  let span_a_ctx = Span::span_context(span_a)
+  assert_true(TraceState::contains_key(SpanContext::trace_state(span_a_ctx), "vendor1"))
+  assert_eq(TraceState::get_value(SpanContext::trace_state(span_a_ctx), "vendor1"), Some("value1"))
+  
+  // Service B: Add more to trace state
+  let updated_trace_state_b = TraceStateBuilder::from_string(updated_trace_state_a)
+    .add("vendor2", "value2")
+    .update("rojo", "00f067aa0ba902b8") // Update existing entry
+    .build()
+  
+  let span_ctx_b = SpanContext::new(trace_id, "span789", true, updated_trace_state_b)
+  let span_b = Tracer::start_span_with_context(tracer, "service_b_operation", span_ctx_b)
+  
+  // Verify further updated trace state
+  let span_b_ctx = Span::span_context(span_b)
+  assert_true(TraceState::contains_key(SpanContext::trace_state(span_b_ctx), "vendor1"))
+  assert_true(TraceState::contains_key(SpanContext::trace_state(span_b_ctx), "vendor2"))
+  assert_eq(TraceState::get_value(SpanContext::trace_state(span_b_ctx), "rojo"), Some("00f067aa0ba902b8"))
+  
+  // Service C: Remove from trace state
+  let updated_trace_state_c = TraceStateBuilder::from_string(updated_trace_state_b)
+    .remove("congo")
+    .build()
+  
+  let span_ctx_c = SpanContext::new(trace_id, "span101112", true, updated_trace_state_c)
+  let span_c = Tracer::start_span_with_context(tracer, "service_c_operation", span_ctx_c)
+  
+  // Verify trace state after removal
+  let span_c_ctx = Span::span_context(span_c)
+  assert_false(TraceState::contains_key(SpanContext::trace_state(span_c_ctx), "congo"))
+  assert_true(TraceState::contains_key(SpanContext::trace_state(span_c_ctx), "vendor1"))
+  assert_true(TraceState::contains_key(SpanContext::trace_state(span_c_ctx), "vendor2"))
+  
+  // Verify trace state consistency
+  let trace_state_consistency_checker = TraceStateConsistencyChecker::new()
+  let trace_states = [
+    initial_trace_state,
+    updated_trace_state_a,
+    updated_trace_state_b,
+    updated_trace_state_c
   ]
   
-  // Extract context from headers at destination service
-  let extracted_ctx = TracePropagator::extract(headers)
+  let consistency_result = TraceStateConsistencyChecker::verify_trace_state_consistency(
+    trace_state_consistency_checker, 
+    trace_states
+  )
+  
+  assert_true(TraceStateConsistencyResult::is_consistent(consistency_result))
+  
+  // Verify trace state evolution rules
+  assert_true(TraceStateConsistencyResult::preserves_original_entries(consistency_result))
+  assert_true(TraceStateConsistencyResult::respects_entry_limits(consistency_result))
+}
+
+// Test 5: Cross-Protocol Trace Propagation Consistency
+test "cross-protocol trace propagation consistency" {
+  // Create a trace context
+  let trace_id = "e8b8a6b7b7b0af7651916cd43dd8448e"
+  let span_id = "b7ad6b7169203331"
+  let span_ctx = SpanContext::new(trace_id, span_id, true, "vendor1=value1")
+  
+  // Test HTTP/HTTPS header propagation
+  let http_propagator = HttpTraceContextPropagator::new()
+  let http_headers = []
+  
+  // Inject trace context into HTTP headers
+  HttpTraceContextPropagator::inject(http_propagator, span_ctx, http_headers)
+  
+  // Verify required headers are present
+  let trace_parent = HttpHeader::get(http_headers, "traceparent")
+  let trace_state = HttpHeader::get(http_headers, "tracestate")
+  
+  match trace_parent {
+    Some(header_value) => {
+      // traceparent format: version-trace_id-parent_id-flags
+      assert_true(header_value.contains(trace_id))
+      assert_true(header_value.contains(span_id))
+    }
+    None => assert_true(false)
+  }
+  
+  match trace_state {
+    Some(header_value) => {
+      assert_eq(header_value, "vendor1=value1")
+    }
+    None => assert_true(false)
+  }
+  
+  // Extract trace context from HTTP headers
+  let extracted_span_ctx = HttpTraceContextPropagator::extract(http_propagator, http_headers)
   
   // Verify extracted context matches original
-  assert_eq(SpanContext::trace_id(extracted_ctx), trace_id)
-  assert_eq(SpanContext::span_id(extracted_ctx), span_id)
-  assert_true(SpanContext::is_sampled(extracted_ctx))
+  assert_eq(SpanContext::trace_id(extracted_span_ctx), trace_id)
+  assert_eq(SpanContext::span_id(extracted_span_ctx), span_id)
+  assert_true(SpanContext::is_sampled(extracted_span_ctx))
+  assert_eq(SpanContext::trace_state(extracted_span_ctx), "vendor1=value1")
   
-  // Create child span from extracted context
-  let child_span_id = "f7ad6b7169203335"
-  let child_ctx = SpanContext::new(trace_id, child_span_id, true, "destination_service")
-  Span::set_parent(child_ctx, extracted_ctx)
+  // Test gRPC metadata propagation
+  let grpc_propagator = GrpcTraceContextPropagator::new()
+  let grpc_metadata = []
   
-  let child_span = Span::new("destination_operation", Server, child_ctx)
+  // Inject trace context into gRPC metadata
+  GrpcTraceContextPropagator::inject(grpc_propagator, span_ctx, grpc_metadata)
   
-  // Verify parent relationship
-  let child_parent = Span::parent(child_span)
-  match child_parent {
-    Some(parent) => assert_eq(SpanContext::span_id(parent), span_id)
+  // Verify required metadata is present
+  let grpc_trace_parent = GrpcMetadata::get(grpc_metadata, "grpc-trace-bin")
+  
+  match grpc_trace_parent {
+    Some(metadata_value) => {
+      // gRPC uses binary format, so we just verify it's present
+      assert_true(metadata_value.length() > 0)
+    }
     None => assert_true(false)
   }
   
-  Span::end(child_span)
-}
-
-// Test 3: Distributed Transaction Trace Consistency
-test "distributed transaction trace consistency" {
-  // Initialize distributed transaction
-  let transaction_id = "txn_1234567890"
-  let trace_id = "2af7651916cd43dd8448eb211c80319e"
+  // Extract trace context from gRPC metadata
+  let extracted_grpc_span_ctx = GrpcTraceContextPropagator::extract(grpc_propagator, grpc_metadata)
   
-  // Transaction coordinator span
-  let coordinator_span_id = "g7ad6b7169203336"
-  let coordinator_ctx = SpanContext::new(trace_id, coordinator_span_id, true, "transaction_coordinator")
-  let coordinator_span = Span::new("coordinate_transaction", Server, coordinator_ctx)
+  // Verify extracted context matches original
+  assert_eq(SpanContext::trace_id(extracted_grpc_span_ctx), trace_id)
+  assert_eq(SpanContext::span_id(extracted_grpc_span_ctx), span_id)
+  assert_true(SpanContext::is_sampled(extracted_grpc_span_ctx))
   
-  // Add transaction attributes
-  let txn_attrs = [
-    ("transaction.id", StringValue(transaction_id)),
-    ("transaction.type", StringValue("distributed")),
-    ("transaction.participant_count", IntValue(3))
+  // Test AMQP message properties propagation
+  let amqp_propagator = AmqpTraceContextPropagator::new()
+  let amqp_properties = []
+  
+  // Inject trace context into AMQP properties
+  AmqpTraceContextPropagator::inject(amqp_propagator, span_ctx, amqp_properties)
+  
+  // Verify required properties are present
+  let amqp_trace_parent = AmqpProperty::get(amqp_properties, "traceparent")
+  let amqp_trace_state = AmqpProperty::get(amqp_properties, "tracestate")
+  
+  match amqp_trace_parent {
+    Some(property_value) => {
+      assert_true(property_value.contains(trace_id))
+      assert_true(property_value.contains(span_id))
+    }
+    None => assert_true(false)
+  }
+  
+  // Extract trace context from AMQP properties
+  let extracted_amqp_span_ctx = AmqpTraceContextPropagator::extract(amqp_propagator, amqp_properties)
+  
+  // Verify extracted context matches original
+  assert_eq(SpanContext::trace_id(extracted_amqp_span_ctx), trace_id)
+  assert_eq(SpanContext::span_id(extracted_amqp_span_ctx), span_id)
+  assert_true(SpanContext::is_sampled(extracted_amqp_span_ctx))
+  
+  // Verify cross-protocol consistency
+  let cross_protocol_checker = CrossProtocolConsistencyChecker::new()
+  let propagated_contexts = [
+    extracted_span_ctx,
+    extracted_grpc_span_ctx,
+    extracted_amqp_span_ctx
   ]
   
-  for (key, value) in txn_attrs {
-    Span::set_attribute(coordinator_span, key, value)
-  }
+  let consistency_result = CrossProtocolConsistencyChecker::verify_cross_protocol_consistency(
+    cross_protocol_checker, 
+    propagated_contexts
+  )
   
-  // Participant 1 - Inventory Service
-  let inventory_span_id = "h7ad6b7169203337"
-  let inventory_ctx = SpanContext::new(trace_id, inventory_span_id, true, "inventory_service")
-  Span::set_parent(inventory_ctx, coordinator_span)
-  
-  let inventory_span = Span::new("reserve_inventory", Server, inventory_ctx)
-  Span::set_attribute(inventory_span, "transaction.id", StringValue(transaction_id))
-  Span::set_attribute(inventory_span, "service.operation", StringValue("reserve"))
-  Span::add_event(inventory_span, "inventory_reserved", None)
-  Span::set_status(inventory_span, Ok, Some("Items reserved successfully"))
-  Span::end(inventory_span)
-  
-  // Participant 2 - Payment Service
-  let payment_span_id = "i7ad6b7169203338"
-  let payment_ctx = SpanContext::new(trace_id, payment_span_id, true, "payment_service")
-  Span::set_parent(payment_ctx, coordinator_span)
-  
-  let payment_span = Span::new("process_payment", Server, payment_ctx)
-  Span::set_attribute(payment_span, "transaction.id", StringValue(transaction_id))
-  Span::set_attribute(payment_span, "service.operation", StringValue("charge"))
-  Span::set_attribute(payment_span, "payment.amount", FloatValue(99.99))
-  Span::add_event(payment_span, "payment_processed", None)
-  Span::set_status(payment_span, Ok, Some("Payment processed successfully"))
-  Span::end(payment_span)
-  
-  // Participant 3 - Shipping Service
-  let shipping_span_id = "j7ad6b7169203339"
-  let shipping_ctx = SpanContext::new(trace_id, shipping_span_id, true, "shipping_service")
-  Span::set_parent(shipping_ctx, coordinator_span)
-  
-  let shipping_span = Span::new("schedule_shipping", Server, shipping_ctx)
-  Span::set_attribute(shipping_span, "transaction.id", StringValue(transaction_id))
-  Span::set_attribute(shipping_span, "service.operation", StringValue("schedule"))
-  Span::add_event(shipping_span, "shipping_scheduled", None)
-  Span::set_status(shipping_span, Ok, Some("Shipping scheduled successfully"))
-  Span::end(shipping_span)
-  
-  // Complete transaction
-  Span::add_event(coordinator_span, "all_participants_completed", None)
-  Span::set_status(coordinator_span, Ok, Some("Transaction completed successfully"))
-  Span::end(coordinator_span)
-  
-  // Verify transaction consistency
-  let transaction_spans = [inventory_span, payment_span, shipping_span, coordinator_span]
-  
-  for span in transaction_spans {
-    let span_trace_id = Span::span_context(span) |> SpanContext::trace_id
-    assert_eq(span_trace_id, trace_id)
-    
-    // Verify transaction ID is present in all spans
-    let txn_id_attr = Span::get_attribute(span, "transaction.id")
-    match txn_id_attr {
-      Some(StringValue(id)) => assert_eq(id, transaction_id)
-      _ => assert_true(false)
-    }
-  }
-  
-  // Verify transaction trace tree structure
-  let trace_tree = TraceTreeBuilder::build_from_spans(transaction_spans)
-  assert_eq(TraceTreeBuilder::root_span_id(trace_tree), coordinator_span_id)
-  assert_eq(TraceTreeBuilder::child_count(trace_tree, coordinator_span_id), 3)
+  assert_true(CrossProtocolConsistencyResult::is_consistent(consistency_result))
+  assert_eq(CrossProtocolConsistencyResult::common_trace_id(consistency_result), trace_id)
 }
 
-// Test 4: Async Operation Trace Consistency
-test "async operation trace consistency" {
-  // Create parent span for async operation
-  let trace_id = "3af7651916cd43dd8448eb211c80319f"
-  let parent_span_id = "k7ad6b716920333a"
-  let parent_ctx = SpanContext::new(trace_id, parent_span_id, true, "async_service")
-  let parent_span = Span::new("async_workflow", Server, parent_ctx)
+// Test 6: Distributed Clock Skew Handling
+test "distributed clock skew handling" {
+  // Create a trace with multiple services
+  let trace_id = "f1916cd43dd8448eb211c80319c0af76"
+  let tracer = TracerProvider::get_tracer("clock_skew_test")
   
-  // Start multiple async operations
-  let async_operations = ["process_data", "send_notification", "update_cache"]
-  let async_span_ids = ["l7ad6b716920333b", "m7ad6b716920333c", "n7ad6b716920333d"]
-  let async_spans = []
+  // Service A: Start with timestamp 1000
+  let span_a = Tracer::start_span_with_timestamp(tracer, "service_a_operation", None, 1000L)
+  Span::add_event_with_timestamp(span_a, "start_event", Some([]), 1005L)
+  Span::add_event_with_timestamp(span_a, "end_event", Some([]), 1015L)
   
-  // Create async spans
-  for i in 0..=async_operations.length() - 1 {
-    let operation = async_operations[i]
-    let span_id = async_span_ids[i]
-    let service_name = "async_worker_" + Int::to_string(i)
-    
-    let async_ctx = SpanContext::new(trace_id, span_id, true, service_name)
-    Span::set_parent(async_ctx, parent_span)
-    
-    let async_span = Span::new(operation, Server, async_ctx)
-    Span::set_attribute(async_span, "async.operation", StringValue(operation))
-    Span::set_attribute(async_span, "async.worker_id", IntValue(i))
-    
-    async_spans.push(async_span)
-  }
+  // Service B: Start with timestamp 990 (10ms behind Service A)
+  let span_b_ctx = SpanContext::new(trace_id, "span_b", true, "")
+  let span_b = Tracer::start_span_with_timestamp(tracer, "service_b_operation", Some(span_b_ctx), 990L)
+  Span::add_event_with_timestamp(span_b, "start_event", Some([]), 995L)
+  Span::add_event_with_timestamp(span_b, "end_event", Some([]), 1005L)
   
-  // Simulate async operations completing in different order
-  Span::set_status(async_spans[1], Ok, Some("Notification sent")) // completes second
-  Span::end(async_spans[1])
+  // Service C: Start with timestamp 1020 (20ms ahead of Service A)
+  let span_c_ctx = SpanContext::new(trace_id, "span_c", true, "")
+  let span_c = Tracer::start_span_with_timestamp(tracer, "service_c_operation", Some(span_c_ctx), 1020L)
+  Span::add_event_with_timestamp(span_c, "start_event", Some([]), 1025L)
+  Span::add_event_with_timestamp(span_c, "end_event", Some([]), 1035L)
   
-  Span::set_status(async_spans[2], Ok, Some("Cache updated")) // completes third
-  Span::end(async_spans[2])
+  // Service D: Start with timestamp 980 (20ms behind Service A)
+  let span_d_ctx = SpanContext::new(trace_id, "span_d", true, "")
+  let span_d = Tracer::start_span_with_timestamp(tracer, "service_d_operation", Some(span_d_ctx), 980L)
+  Span::add_event_with_timestamp(span_d, "start_event", Some([]), 985L)
+  Span::add_event_with_timestamp(span_d, "end_event", Some([]), 995L)
   
-  Span::set_status(async_spans[0], Ok, Some("Data processed")) // completes first
-  Span::end(async_spans[0])
+  // End all spans
+  Span::end_with_timestamp(span_a, 1020L)
+  Span::end_with_timestamp(span_b, 1010L)
+  Span::end_with_timestamp(span_c, 1040L)
+  Span::end_with_timestamp(span_d, 1000L)
   
-  // Complete parent span
-  Span::add_event(parent_span, "all_async_operations_completed", None)
-  Span::set_status(parent_span, Ok, Some("Async workflow completed"))
-  Span::end(parent_span)
+  // Analyze clock skew
+  let clock_skew_analyzer = ClockSkewAnalyzer::new()
+  let spans = [span_a, span_b, span_c, span_d]
+  let skew_analysis = ClockSkewAnalyzer::analyze_clock_skew(clock_skew_analyzer, spans)
   
-  // Verify async trace consistency
-  assert_eq(SpanContext::trace_id(parent_ctx), trace_id)
+  // Verify clock skew analysis
+  assert_true(ClockSkewAnalysis::has_skew(skew_analysis))
+  assert_eq(ClockSkewAnalysis::max_skew_ms(skew_analysis), 40) // 1020 - 980 = 40ms
+  assert_eq(ClockSkewAnalysis::min_timestamp(skew_analysis), 980L)
+  assert_eq(ClockSkewAnalysis::max_timestamp(skew_analysis), 1040L)
   
-  for async_span in async_spans {
-    let async_span_ctx = Span::span_context(async_span)
-    assert_eq(SpanContext::trace_id(async_span_ctx), trace_id)
-    
-    // Verify parent relationship
-    let async_parent = Span::parent(async_span)
-    match async_parent {
-      Some(parent) => assert_eq(SpanContext::span_id(parent), parent_span_id)
-      None => assert_true(false)
+  // Apply clock skew correction
+  let corrected_spans = ClockSkewAnalyzer::apply_clock_correction(clock_skew_analyzer, spans, 1000L)
+  
+  // Verify corrected timestamps
+  let corrected_span_a = corrected_spans[0]
+  let corrected_span_b = corrected_spans[1]
+  let corrected_span_c = corrected_spans[2]
+  let corrected_span_d = corrected_spans[3]
+  
+  // All spans should now be normalized around the reference timestamp (1000L)
+  assert_eq(Span::start_time(corrected_span_a), 1000L)
+  assert_eq(Span::start_time(corrected_span_b), 1010L) // 990 + 20ms correction
+  assert_eq(Span::start_time(corrected_span_c), 1000L) // 1020 - 20ms correction
+  assert_eq(Span::start_time(corrected_span_d), 1020L) // 980 + 40ms correction
+  
+  // Verify corrected events
+  let corrected_events_a = Span::events(corrected_span_a)
+  let corrected_events_b = Span::events(corrected_span_b)
+  
+  match (corrected_events_a[0], corrected_events_a[1]) {
+    (Event(_, _, timestamp1), Event(_, _, timestamp2)) => {
+      assert_eq(timestamp1, 1005L)
+      assert_eq(timestamp2, 1015L)
     }
+    _ => assert_true(false)
   }
   
-  // Verify trace timeline consistency
-  let trace_timeline = TraceTimeline::build_from_spans([parent_span] + async_spans)
-  assert_true(TraceTimeline::is_chronologically_consistent(trace_timeline))
+  match (corrected_events_b[0], corrected_events_b[1]) {
+    (Event(_, _, timestamp1), Event(_, _, timestamp2)) => {
+      assert_eq(timestamp1, 1015L) // 995 + 20ms correction
+      assert_eq(timestamp2, 1025L) // 1005 + 20ms correction
+    }
+    _ => assert_true(false)
+  }
+  
+  // Verify temporal consistency after correction
+  let temporal_consistency_checker = TemporalConsistencyChecker::new()
+  let consistency_result = TemporalConsistencyChecker::verify_temporal_consistency(
+    temporal_consistency_checker, 
+    corrected_spans
+  )
+  
+  assert_true(TemporalConsistencyResult::is_consistent(consistency_result))
 }
 
-// Test 5: Trace Sampling Consistency
-test "trace sampling consistency" {
-  // Test consistent sampling decisions across services
-  let trace_id = "4af7651916cd43dd8448eb211c8031a0"
+// Test 7: Trace Integrity Validation
+test "trace integrity validation" {
+  // Create a complex distributed trace
+  let trace_id = "g211c80319c0af7651916cd43dd8448e"
+  let tracer = TracerProvider::get_tracer("trace_integrity_test")
   
-  // Service A makes sampling decision
-  let sampler = TraceIdRatioBasedSampler::new(0.5) // 50% sampling rate
-  let sampling_decision = Sampler::should_sample(sampler, trace_id, "service_A_operation")
+  // Create a hierarchical trace structure
+  let root_span = Tracer::start_span(tracer, "root_operation")
+  let root_span_ctx = Span::span_context(root_span)
   
-  let service_a_span_id = "o7ad6b716920333e"
-  let service_a_ctx = SpanContext::new(trace_id, service_a_span_id, sampling_decision, "service_A")
-  let service_a_span = Span::new("service_A_operation", Server, service_a_ctx)
+  // Level 1 spans
+  let span_1 = Tracer::start_span_with_context(tracer, "operation_1", root_span_ctx)
+  let span_2 = Tracer::start_span_with_context(tracer, "operation_2", root_span_ctx)
+  let span_3 = Tracer::start_span_with_context(tracer, "operation_3", root_span_ctx)
   
-  // Service B respects sampling decision
-  let service_b_span_id = "p7ad6b716920333f"
-  let service_b_ctx = SpanContext::new(trace_id, service_b_span_id, sampling_decision, "service_B")
-  Span::set_parent(service_b_ctx, service_a_span)
+  // Level 2 spans
+  let span_1_1 = Tracer::start_span_with_context(tracer, "operation_1_1", Span::span_context(span_1))
+  let span_1_2 = Tracer::start_span_with_context(tracer, "operation_1_2", Span::span_context(span_1))
+  let span_2_1 = Tracer::start_span_with_context(tracer, "operation_2_1", Span::span_context(span_2))
+  let span_3_1 = Tracer::start_span_with_context(tracer, "operation_3_1", Span::span_context(span_3))
+  let span_3_2 = Tracer::start_span_with_context(tracer, "operation_3_2", Span::span_context(span_3))
   
-  let service_b_span = Span::new("service_B_operation", Server, service_b_ctx)
+  // Level 3 spans
+  let span_1_1_1 = Tracer::start_span_with_context(tracer, "operation_1_1_1", Span::span_context(span_1_1))
+  let span_3_2_1 = Tracer::start_span_with_context(tracer, "operation_3_2_1", Span::span_context(span_3_2))
   
-  // Service C respects sampling decision
-  let service_c_span_id = "q7ad6b7169203340"
-  let service_c_ctx = SpanContext::new(trace_id, service_c_span_id, sampling_decision, "service_C")
-  Span::set_parent(service_c_ctx, service_b_span)
+  // Add attributes to establish relationships
+  Span::set_attribute(root_span, "trace.level", IntValue(0))
+  Span::set_attribute(span_1, "trace.level", IntValue(1))
+  Span::set_attribute(span_2, "trace.level", IntValue(1))
+  Span::set_attribute(span_3, "trace.level", IntValue(1))
+  Span::set_attribute(span_1_1, "trace.level", IntValue(2))
+  Span::set_attribute(span_1_2, "trace.level", IntValue(2))
+  Span::set_attribute(span_2_1, "trace.level", IntValue(2))
+  Span::set_attribute(span_3_1, "trace.level", IntValue(2))
+  Span::set_attribute(span_3_2, "trace.level", IntValue(2))
+  Span::set_attribute(span_1_1_1, "trace.level", IntValue(3))
+  Span::set_attribute(span_3_2_1, "trace.level", IntValue(3))
   
-  let service_c_span = Span::new("service_C_operation", Server, service_c_ctx)
+  // End spans in reverse order (LIFO)
+  Span::end(span_1_1_1)
+  Span::end(span_3_2_1)
+  Span::end(span_1_1)
+  Span::end(span_1_2)
+  Span::end(span_2_1)
+  Span::end(span_3_1)
+  Span::end(span_3_2)
+  Span::end(span_1)
+  Span::end(span_2)
+  Span::end(span_3)
+  Span::end(root_span)
   
-  // Verify consistent sampling across all spans
-  assert_eq(SpanContext::is_sampled(service_a_ctx), sampling_decision)
-  assert_eq(SpanContext::is_sampled(service_b_ctx), sampling_decision)
-  assert_eq(SpanContext::is_sampled(service_c_ctx), sampling_decision)
+  // Collect all spans
+  let all_spans = [
+    root_span, span_1, span_2, span_3,
+    span_1_1, span_1_2, span_2_1, span_3_1, span_3_2,
+    span_1_1_1, span_3_2_1
+  ]
   
-  // Verify trace sampling metadata
-  if sampling_decision {
-    // All spans should be recorded if sampled
-    assert_true(Span::is_recording(service_a_span))
-    assert_true(Span::is_recording(service_b_span))
-    assert_true(Span::is_recording(service_c_span))
-  } else {
-    // All spans should not be recorded if not sampled
-    assert_false(Span::is_recording(service_a_span))
-    assert_false(Span::is_recording(service_b_span))
-    assert_false(Span::is_recording(service_c_span))
-  }
+  // Verify trace integrity
+  let trace_integrity_validator = TraceIntegrityValidator::new()
+  let integrity_result = TraceIntegrityValidator::validate_trace_integrity(
+    trace_integrity_validator, 
+    all_spans
+  )
   
-  // End spans
-  Span::end(service_c_span)
-  Span::end(service_b_span)
-  Span::end(service_a_span)
+  // Verify trace structure integrity
+  assert_true(TraceIntegrityResult::has_valid_structure(integrity_result))
+  assert_eq(TraceIntegrityResult::span_count(integrity_result), 11)
+  assert_eq(TraceIntegrityResult::max_depth(integrity_result), 3)
+  assert_eq(TraceIntegrityResult::root_span_count(integrity_result), 1)
   
-  // Verify trace sampling consistency in trace exporter
-  let exported_trace = TraceExporter::collect_trace(trace_id)
-  match exported_trace {
-    Some(trace) => {
-      if sampling_decision {
-        assert_true(trace.spans.length() > 0)
-      } else {
-        assert_eq(trace.spans.length(), 0)
-      }
-    }
-    None => {
-      if sampling_decision {
-        assert_true(false) // Should have exported trace if sampled
-      } else {
-        assert_true(true) // No export expected if not sampled
-      }
-    }
-  }
+  // Verify parent-child relationships
+  assert_true(TraceIntegrityResult::has_valid_parent_child_relationships(integrity_result))
+  
+  // Verify trace ID consistency
+  assert_true(TraceIntegrityResult::has_consistent_trace_id(integrity_result))
+  
+  // Verify no cycles in trace graph
+  assert_true(TraceIntegrityResult::has_no_cycles(integrity_result))
+  
+  // Verify all spans are reachable from root
+  assert_true(TraceIntegrityResult::all_spans_reachable_from_root(integrity_result))
+  
+  // Create a trace with integrity issues for negative testing
+  let invalid_span = Tracer::start_span(tracer, "invalid_span")
+  Span::set_attribute(invalid_span, "trace.level", IntValue(1))
+  // Don't set proper parent relationship - this creates an orphan span
+  
+  let spans_with_issues = Array::append(all_spans, [invalid_span])
+  let invalid_integrity_result = TraceIntegrityValidator::validate_trace_integrity(
+    trace_integrity_validator, 
+    spans_with_issues
+  )
+  
+  // Should detect integrity issues
+  assert_false(TraceIntegrityResult::has_valid_structure(invalid_integrity_result))
+  assert_true(TraceIntegrityResult::has_orphan_spans(invalid_integrity_result))
 }
