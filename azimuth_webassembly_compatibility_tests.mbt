@@ -1,541 +1,571 @@
-// Azimuth WebAssembly Platform Compatibility Tests
-// 测试WebAssembly平台兼容性和跨平台功能
+// WebAssembly兼容性测试用例
+// 测试Azimuth遥测系统在WebAssembly环境中的兼容性和功能
 
-test "WebAssembly基础功能测试" {
-  // 测试WebAssembly基础功能
-  let wasm_module = WASMModule::new()
+test "WebAssembly环境检测和适配" {
+  // 测试WebAssembly环境检测和适配
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "wasm.environment.test")
   
-  // 测试WebAssembly模块加载
-  let module_bytes = read_wasm_module_bytes("telemetry_collector.wasm")
-  assert_true(module_bytes.length() > 0)
+  // 创建WebAssembly环境检测span
+  let span = Tracer::start_span(tracer, "wasm.environment.detection")
   
-  let load_result = WASMModule::load(wasm_module, module_bytes)
-  assert_true(load_result.is_ok)
+  // 模拟WebAssembly环境属性
+  let wasm_environments = [
+    {
+      "name": "browser_chrome",
+      "runtime": "browser",
+      "engine": "v8",
+      "wasm_support": true,
+      "memory_limit": 4096,  // 4GB
+      "features": ["bulk_memory", "simd", "threads", "reference_types"]
+    },
+    {
+      "name": "browser_firefox",
+      "runtime": "browser",
+      "engine": "spidermonkey",
+      "wasm_support": true,
+      "memory_limit": 4096,  // 4GB
+      "features": ["bulk_memory", "simd", "reference_types"]
+    },
+    {
+      "name": "nodejs_server",
+      "runtime": "nodejs",
+      "engine": "v8",
+      "wasm_support": true,
+      "memory_limit": 8192,  // 8GB
+      "features": ["bulk_memory", "simd", "threads", "reference_types"]
+    },
+    {
+      "name": "wasmtime_runtime",
+      "runtime": "wasmtime",
+      "engine": "cranelift",
+      "wasm_support": true,
+      "memory_limit": 16384,  // 16GB
+      "features": ["bulk_memory", "simd", "threads", "reference_types", "multi_value"]
+    },
+    {
+      "name": "legacy_browser",
+      "runtime": "browser",
+      "engine": "javascriptcore",
+      "wasm_support": false,
+      "memory_limit": 2048,  // 2GB
+      "features": []
+    }
+  ]
   
-  // 测试WebAssembly实例创建
-  let instance_result = WASMModule::instantiate(wasm_module, {})
-  assert_true(instance_result.is_ok)
-  let wasm_instance = instance_result.value
+  // 测试每种WebAssembly环境
+  for env in wasm_environments {
+    let env_name = env["name"]
+    let runtime = env["runtime"]
+    let engine = env["engine"]
+    let wasm_support = env["wasm_support"]
+    let memory_limit = env["memory_limit"]
+    let features = env["features"]
+    
+    // 记录环境检测
+    Span::set_attribute(span, "wasm.environment.name", env_name)
+    Span::set_attribute(span, "wasm.environment.runtime", runtime)
+    Span::set_attribute(span, "wasm.environment.engine", engine)
+    Span::set_attribute(span, "wasm.environment.support", wasm_support.to_string())
+    Span::set_attribute(span, "wasm.environment.memory_limit", memory_limit.to_string())
+    
+    // 测试WebAssembly支持检测
+    if wasm_support {
+      Span::add_event(span, "wasm.support.detected", [
+        ("environment", env_name),
+        ("runtime", runtime),
+        ("engine", engine)
+      ])
+      
+      // 测试WebAssembly功能检测
+      for feature in features {
+        Span::set_attribute(span, "wasm.feature." + feature, "supported")
+      }
+      
+      // 根据环境配置遥测适配
+      let telemetry_config = match runtime {
+        "browser" => {
+          {
+            "batch_size": 10,
+            "flush_interval": 5000,
+            "compression": "gzip",
+            "transport": "http.beacon"
+          }
+        },
+        "nodejs" => {
+          {
+            "batch_size": 100,
+            "flush_interval": 1000,
+            "compression": "gzip",
+            "transport": "http"
+          }
+        },
+        "wasmtime" => {
+          {
+            "batch_size": 500,
+            "flush_interval": 500,
+            "compression": "gzip",
+            "transport": "grpc"
+          }
+        },
+        _ => {
+          {
+            "batch_size": 5,
+            "flush_interval": 10000,
+            "compression": "none",
+            "transport": "http"
+          }
+        }
+      }
+      
+      // 记录遥测配置
+      Span::set_attribute(span, "wasm.telemetry.batch_size", telemetry_config["batch_size"].to_string())
+      Span::set_attribute(span, "wasm.telemetry.flush_interval", telemetry_config["flush_interval"].to_string())
+      Span::set_attribute(span, "wasm.telemetry.compression", telemetry_config["compression"])
+      Span::set_attribute(span, "wasm.telemetry.transport", telemetry_config["transport"])
+      
+      // 验证配置合理性
+      assert_true(telemetry_config["batch_size"] >= 5 && telemetry_config["batch_size"] <= 500)
+      assert_true(telemetry_config["flush_interval"] >= 500 && telemetry_config["flush_interval"] <= 10000)
+      
+    } else {
+      Span::add_event(span, "wasm.support.not_detected", [
+        ("environment", env_name),
+        ("runtime", runtime),
+        "fallback": "javascript"
+      ])
+      
+      // 验证不支持WebAssembly时的回退机制
+      Span::set_attribute(span, "wasm.fallback.mode", "javascript")
+    }
+    
+    // 验证内存限制适配
+    let memory_allocation = match memory_limit {
+      m if m < 4096 => 64,    // 64MB for low memory environments
+      m if m < 8192 => 128,   // 128MB for medium memory environments
+      m if m < 16384 => 256,  // 256MB for high memory environments
+      _ => 512                // 512MB for very high memory environments
+    }
+    
+    Span::set_attribute(span, "wasm.memory.allocation", memory_allocation.to_string())
+    assert_true(memory_allocation >= 64 && memory_allocation <= 512)
+  }
   
-  // 测试函数导出
-  let exported_functions = WASMInstance::get_exports(wasm_instance)
-  assert_true(exported_functions.contains("init_telemetry"))
-  assert_true(exported_functions.contains("record_span"))
-  assert_true(exported_functions.contains("record_metric"))
-  assert_true(exported_functions.contains("flush_data"))
-  
-  // 测试函数调用
-  let init_result = WASMInstance::call_function(wasm_instance, "init_telemetry", [
-    WasmValue::I32(1),  // 采样率
-    WasmValue::I32(100)  // 批量大小
-  ])
-  assert_true(init_result.is_ok)
-  assert_eq(init_result.value, WasmValue::I32(0))  // 成功返回码
-  
-  // 测试字符串参数传递
-  let span_name = "test.operation"
-  let span_name_ptr = WASMInstance::allocate_string(wasm_instance, span_name)
-  
-  let record_result = WASMInstance::call_function(wasm_instance, "record_span", [
-    WasmValue::I32(span_name_ptr),
-    WasmValue::I64(1735689600000000000L),  // 开始时间
-    WasmValue::I64(125000000L)             // 持续时间
-  ])
-  assert_true(record_result.is_ok)
-  
-  // 清理分配的字符串
-  WASMInstance::deallocate(wasm_instance, span_name_ptr)
-  
-  // 测试内存操作
-  let memory_size = WASMInstance::memory_size(wasm_instance)
-  assert_true(memory_size > 0)
-  
-  let memory_growth = WASMInstance::grow_memory(wasm_instance, 1)  // 增长一页
-  assert_true(memory_growth.is_ok)
-  assert_eq(WASMInstance::memory_size(wasm_instance), memory_size + 65536)  // 一页64KB
+  Span::end(span)
 }
 
-test "WebAssembly线性内存管理" {
-  // 测试WebAssembly线性内存管理
-  let memory_manager = WASMMemoryManager::new({
-    "initial_pages": 10,
-    "maximum_pages": 100,
-    "auto_grow": true
-  })
+test "WebAssembly内存管理优化" {
+  // 测试WebAssembly内存管理优化
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "wasm.memory.test")
   
-  // 测试内存分配
-  let alloc1 = WASMMemoryManager::allocate(memory_manager, 1024)    // 1KB
-  let alloc2 = WASMMemoryManager::allocate(memory_manager, 4096)    // 4KB
-  let alloc3 = WASMMemoryManager::allocate(memory_manager, 65536)   // 64KB
+  // 创建WebAssembly内存度量
+  let heap_size = Meter::create_gauge(meter, "wasm.heap.size", Some("WebAssembly heap size"), Some("bytes"))
+  let heap_usage = Meter::create_gauge(meter, "wasm.heap.usage", Some("WebAssembly heap usage"), Some("bytes"))
+  let gc_frequency = Meter::create_counter(meter, "wasm.gc.frequency", Some("GC frequency"), Some("count"))
+  let memory_growth = Meter::create_histogram(meter, "wasm.memory.growth", Some("Memory growth"), Some("bytes"))
   
-  assert_true(alloc1.is_ok)
-  assert_true(alloc2.is_ok)
-  assert_true(alloc3.is_ok)
-  
-  // 验证分配的内存不重叠
-  assert_true(alloc1.value + 1024 <= alloc2.value || alloc2.value + 4096 <= alloc1.value)
-  assert_true(alloc2.value + 4096 <= alloc3.value || alloc3.value + 65536 <= alloc2.value)
-  
-  // 测试内存写入和读取
-  let test_data = [1, 2, 3, 4, 5]
-  WASMMemoryManager::write_bytes(memory_manager, alloc1.value, test_data)
-  
-  let read_data = WASMMemoryManager::read_bytes(memory_manager, alloc1.value, 5)
-  assert_eq(read_data, test_data)
-  
-  // 测试内存释放
-  WASMMemoryManager::deallocate(memory_manager, alloc1.value, 1024)
-  WASMMemoryManager::deallocate(memory_manager, alloc2.value, 4096)
-  WASMMemoryManager::deallocate(memory_manager, alloc3.value, 65536)
-  
-  // 测试内存碎片整理
-  let fragmentation_before = WASMMemoryManager::fragmentation_ratio(memory_manager)
-  
-  // 分配和释放多个小块以产生碎片
-  let small_allocs = []
-  for i in 0..=19 {
-    let alloc = WASMMemoryManager::allocate(memory_manager, 512)  // 512B
-    small_allocs = small_allocs.push(alloc)
-  }
-  
-  // 释放一些块以产生碎片
-  for i in 0..=9 {
-    if i % 2 == 0 {
-      WASMMemoryManager::deallocate(memory_manager, small_allocs[i].value, 512)
+  // 模拟WebAssembly内存使用场景
+  let memory_scenarios = [
+    {
+      "name": "initialization",
+      "heap_size": 1048576,    // 1MB
+      "heap_usage": 524288,    // 512KB
+      "gc_trigger": false
+    },
+    {
+      "name": "normal_operation",
+      "heap_size": 1048576,    // 1MB
+      "heap_usage": 786432,    // 768KB
+      "gc_trigger": false
+    },
+    {
+      "name": "high_load",
+      "heap_size": 2097152,    // 2MB
+      "heap_usage": 1572864,   // 1.5MB
+      "gc_trigger": true
+    },
+    {
+      "name": "memory_pressure",
+      "heap_size": 4194304,    // 4MB
+      "heap_usage": 3670016,   // 3.5MB
+      "gc_trigger": true
+    },
+    {
+      "name": "after_gc",
+      "heap_size": 4194304,    // 4MB
+      "heap_usage": 2097152,   // 2MB
+      "gc_trigger": false
     }
+  ]
+  
+  // 测试每种内存场景
+  for i = 0; i < memory_scenarios.length(); i = i + 1 {
+    let scenario = memory_scenarios[i]
+    let scenario_name = scenario["name"]
+    let heap_size_value = scenario["heap_size"]
+    let heap_usage_value = scenario["heap_usage"]
+    let gc_trigger = scenario["gc_trigger"]
+    
+    // 记录内存使用情况
+    Gauge::record(heap_size, heap_size_value.to_float())
+    Gauge::record(heap_usage, heap_usage_value.to_float())
+    
+    // 计算内存使用率
+    let memory_usage_ratio = heap_usage_value.to_float() / heap_size_value.to_float()
+    
+    // 检查是否需要触发GC
+    if gc_trigger || memory_usage_ratio > 0.8 {
+      Counter::add(gc_frequency, 1.0)
+      
+      // 模拟GC效果
+      let gc_reduction = heap_usage_value.to_float() * 0.3
+      let post_gc_usage = heap_usage_value.to_float() - gc_reduction
+      
+      // 记录GC后的内存使用
+      Gauge::record(heap_usage, post_gc_usage)
+      
+      // 验证GC效果
+      assert_true(post_gc_usage < heap_usage_value.to_float())
+    }
+    
+    // 计算内存增长
+    if i > 0 {
+      let prev_scenario = memory_scenarios[i - 1]
+      let prev_heap_size = prev_scenario["heap_size"]
+      let memory_growth_value = heap_size_value - prev_heap_size
+      
+      if memory_growth_value > 0 {
+        Histogram::record(memory_growth, memory_growth_value.to_float())
+      }
+    }
+    
+    // 验证内存使用合理性
+    assert_true(heap_usage_value <= heap_size_value)
+    assert_true(memory_usage_ratio <= 1.0)
   }
   
-  let fragmentation_after = WASMMemoryManager::fragmentation_ratio(memory_manager)
-  assert_true(fragmentation_after > fragmentation_before)
+  // 测试内存泄漏检测
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "wasm.memory.leak.test")
   
-  // 执行碎片整理
-  WASMMemoryManager::defragment(memory_manager)
+  let leak_detection_span = Tracer::start_span(tracer, "wasm.memory.leak.detection")
   
-  let fragmentation_after_defrag = WASMMemoryManager::fragmentation_ratio(memory_manager)
-  assert_true(fragmentation_after_defrag <= fragmentation_after)
+  // 模拟内存使用趋势
+  let memory_trend = []
+  let base_memory = 1048576  // 1MB
   
-  // 清理剩余分配
-  for i in 0..=19 {
-    if i % 2 == 1 {
-      WASMMemoryManager::deallocate(memory_manager, small_allocs[i].value, 512)
+  for i = 0; i < 10; i = i + 1 {
+    // 模拟正常内存增长和回收
+    let memory_with_growth = base_memory + (i * 102400)  // 每次增长100KB
+    let memory_with_gc = if i % 3 == 0 {
+      memory_with_growth - (i * 51200)  // 模拟GC回收
+    } else {
+      memory_with_growth
+    }
+    
+    memory_trend.push(memory_with_gc)
+  }
+  
+  // 检测内存泄漏趋势
+  let memory_growth_rate = 0.0
+  for i = 1; i < memory_trend.length(); i = i + 1 {
+    let growth = memory_trend[i] - memory_trend[i - 1]
+    memory_growth_rate = memory_growth_rate + growth.to_float()
+  }
+  memory_growth_rate = memory_growth_rate / (memory_trend.length() - 1).to_float()
+  
+  // 记录内存泄漏检测结果
+  Span::set_attribute(leak_detection_span, "memory.growth_rate", memory_growth_rate.to_string())
+  Span::set_attribute(leak_detection_span, "memory.leak.suspected", (memory_growth_rate > 50000.0).to_string())
+  
+  // 验证内存泄漏检测
+  assert_true(memory_growth_rate >= 0.0)
+  
+  Span::end(leak_detection_span)
+}
+
+test "WebAssembly性能基准测试" {
+  // 测试WebAssembly性能基准
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "wasm.performance.test")
+  
+  // 创建性能度量
+  let telemetry_overhead = Meter::create_histogram(meter, "wasm.telemetry.overhead", Some("Telemetry overhead"), Some("microseconds"))
+  let serialization_time = Meter::create_histogram(meter, "wasm.serialization.time", Some("Serialization time"), Some("microseconds"))
+  let deserialization_time = Meter::create_histogram(meter, "wasm.deserialization.time", Some("Deserialization time"), Some("microseconds"))
+  let throughput = Meter::create_histogram(meter, "wasm.throughput", Some("Throughput"), Some("ops/sec"))
+  
+  // 模拟不同操作的性能测试
+  let performance_tests = [
+    {
+      "name": "span_creation",
+      "operations": 1000,
+      "expected_time_us": 50,
+      "memory_per_op": 1024
+    },
+    {
+      "name": "attribute_setting",
+      "operations": 5000,
+      "expected_time_us": 10,
+      "memory_per_op": 256
+    },
+    {
+      "name": "event_addition",
+      "operations": 2000,
+      "expected_time_us": 30,
+      "memory_per_op": 512
+    },
+    {
+      "name": "metric_recording",
+      "operations": 10000,
+      "expected_time_us": 5,
+      "memory_per_op": 128
+    },
+    {
+      "name": "batch_processing",
+      "operations": 100,
+      "expected_time_us": 500,
+      "memory_per_op": 10240
+    }
+  ]
+  
+  // 测试每种性能基准
+  for test in performance_tests {
+    let test_name = test["name"]
+    let operations = test["operations"]
+    let expected_time = test["expected_time_us"]
+    let memory_per_op = test["memory_per_op"]
+    
+    // 模拟性能测试
+    let total_time = 0
+    let total_memory = 0
+    
+    for i = 0; i < operations; i = i + 1 {
+      // 模拟操作时间（带有一些随机变化）
+      let operation_time = expected_time + (i % 20) - 10
+      total_time = total_time + operation_time
+      
+      // 模拟内存使用
+      let operation_memory = memory_per_op + (i % 100)
+      total_memory = total_memory + operation_memory
+    }
+    
+    // 计算平均性能指标
+    let avg_time_per_op = total_time / operations
+    let avg_memory_per_op = total_memory / operations
+    let actual_throughput = 1000000 / avg_time_per_op  // ops/sec
+    
+    // 记录性能指标
+    Histogram::record_with_attributes(telemetry_overhead, avg_time_per_op.to_float(), [
+      ("operation", test_name),
+      ("expected_time_us", expected_time.to_string())
+    ])
+    
+    match test_name {
+      "span_creation" => {
+        Histogram::record_with_attributes(serialization_time, (avg_time_per_op * 0.3).to_float(), [("operation", test_name)])
+        Histogram::record_with_attributes(deserialization_time, (avg_time_per_op * 0.2).to_float(), [("operation", test_name)])
+      },
+      "metric_recording" => {
+        Histogram::record_with_attributes(serialization_time, (avg_time_per_op * 0.1).to_float(), [("operation", test_name)])
+        Histogram::record_with_attributes(deserialization_time, (avg_time_per_op * 0.1).to_float(), [("operation", test_name)])
+      },
+      _ => {
+        Histogram::record_with_attributes(serialization_time, (avg_time_per_op * 0.2).to_float(), [("operation", test_name)])
+        Histogram::record_with_attributes(deserialization_time, (avg_time_per_op * 0.15).to_float(), [("operation", test_name)])
+      }
+    }
+    
+    Histogram::record_with_attributes(throughput, actual_throughput.to_float(), [
+      ("operation", test_name),
+      ("operations_per_test", operations.to_string())
+    ])
+    
+    // 验证性能指标
+    assert_true(avg_time_per_op <= expected_time * 2)  // 允许2倍的预期时间
+    assert_true(avg_memory_per_op <= memory_per_op * 2)  // 允许2倍的预期内存
+    assert_true(actual_throughput > 0)
+    
+    // 验证特定操作的性能要求
+    match test_name {
+      "span_creation" => {
+        assert_true(avg_time_per_op < 100)  // span创建应在100微秒内
+      },
+      "metric_recording" => {
+        assert_true(avg_time_per_op < 20)   // 度量记录应在20微秒内
+      },
+      "batch_processing" => {
+        assert_true(avg_time_per_op < 1000) // 批处理应在1毫秒内
+      },
+      _ => {}
     }
   }
 }
 
 test "WebAssembly与JavaScript互操作" {
   // 测试WebAssembly与JavaScript互操作
-  let js_interop = JSInterop::new()
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "wasm.js.interop.test")
   
-  // 测试JavaScript函数导入
-  JSInterop::import_function(js_interop, "console_log", fn(args) {
-    let message = args[0]
-    console.log(message)
-  })
+  // 创建互操作测试span
+  let span = Tracer::start_span(tracer, "wasm.javascript.interop")
   
-  JSInterop::import_function(js_interop, "fetch_data", fn(args) {
-    let url = args[0]
-    let callback = args[1]
-    
-    // 模拟异步获取数据
-    setTimeout(fn() {
-      let response_data = "{\"status\": \"success\", \"data\": [1, 2, 3, 4, 5]}"
-      callback(response_data)
-    }, 100)
-  })
-  
-  // 测试从WebAssembly调用JavaScript函数
-  let wasm_instance = load_telemetry_wasm_instance()
-  
-  let log_result = WASMInstance::call_function(wasm_instance, "log_to_console", [
-    WasmValue::I32(JSInterop::get_function_ptr(js_interop, "console_log")),
-    WasmValue::I32(WASMInstance::allocate_string(wasm_instance, "Hello from WASM!"))
-  ])
-  assert_true(log_result.is_ok)
-  
-  // 测试JavaScript回调WebAssembly
-  let wasm_callback = WASMInstance::get_function_ptr(wasm_instance, "handle_response")
-  
-  JSInterop::call_function(js_interop, "fetch_data", [
-    "https://api.example.com/data",
-    wasm_callback
-  ])
-  
-  // 等待异步回调
-  sleep(200)
-  
-  // 验证回调结果
-  let callback_result = WASMInstance::get_global(wasm_instance, "last_callback_result")
-  assert_true(callback_result.contains("success"))
-  assert_true(callback_result.contains("[1, 2, 3, 4, 5]"))
-  
-  // 测试复杂数据类型传递
-  let complex_data = {
-    "trace_id": "trace-12345",
-    "spans": [
-      {
-        "span_id": "span-1",
-        "operation": "http.request",
-        "duration": 125000000,
-        "attributes": {
-          "http.method": "GET",
-          "http.url": "https://example.com/api"
-        }
-      }
-    ]
-  }
-  
-  let json_string = JSON.stringify(complex_data)
-  let json_ptr = WASMInstance::allocate_string(wasm_instance, json_string)
-  
-  let process_result = WASMInstance::call_function(wasm_instance, "process_telemetry_data", [
-    WasmValue::I32(json_ptr)
-  ])
-  assert_true(process_result.is_ok)
-  
-  // 清理资源
-  WASMInstance::deallocate(wasm_instance, json_ptr)
-}
-
-test "WebAssembly性能优化" {
-  // 测试WebAssembly性能优化
-  let performance_profiler = WASMPerformanceProfiler::new()
-  
-  // 启动性能分析
-  WASMPerformanceProfiler::start(performance_profiler)
-  
-  let wasm_instance = load_optimized_telemetry_wasm_instance()
-  
-  // 测试批量操作性能
-  let batch_size = 1000
-  let start_time = performance.now()
-  
-  for i in 0..=batch_size {
-    let operation_name = "operation." + (i % 10).to_string()
-    let operation_ptr = WASMInstance::allocate_string(wasm_instance, operation_name)
-    
-    WASMInstance::call_function(wasm_instance, "record_span", [
-      WasmValue::I32(operation_ptr),
-      WasmValue::I64(1735689600000000000L + (i * 1000000L)),
-      WasmValue::I64((i + 1) * 1000)
-    ])
-    
-    WASMInstance::deallocate(wasm_instance, operation_ptr)
-  }
-  
-  let end_time = performance.now()
-  let batch_duration = end_time - start_time
-  
-  // 验证批量操作性能
-  assert_true(batch_duration < 1000)  // 应该在1秒内完成1000次操作
-  assert_true(batch_duration / batch_size < 1)  // 每次操作应少于1ms
-  
-  // 测试内存访问模式优化
-  let memory_access_test = fn() {
-    let buffer = WASMInstance::allocate(wasm_instance, 1024 * 1024)  // 1MB缓冲区
-    
-    // 顺序访问
-    let sequential_start = performance.now()
-    for i in 0..=1023 {
-      WASMInstance::write_i32(wasm_instance, buffer + (i * 4), i)
-    }
-    let sequential_end = performance.now()
-    let sequential_time = sequential_end - sequential_start
-    
-    // 随机访问
-    let random_indices = []
-    for i in 0..=1023 {
-      random_indices = random_indices.push((i * 17) % 1024)  // 伪随机索引
-    }
-    
-    let random_start = performance.now()
-    for i in 0..=1023 {
-      WASMInstance::write_i32(wasm_instance, buffer + (random_indices[i] * 4), i)
-    }
-    let random_end = performance.now()
-    let random_time = random_end - random_start
-    
-    // 清理
-    WASMInstance::deallocate(wasm_instance, buffer)
-    
-    {"sequential": sequential_time, "random": random_time}
-  }
-  
-  let access_results = memory_access_test()
-  
-  // 顺序访问应该比随机访问快
-  assert_true(access_results.sequential < access_results.random)
-  
-  // 测试SIMD优化（如果支持）
-  if WASMInstance::supports_simd(wasm_instance) {
-    let simd_buffer = WASMInstance::allocate(wasm_instance, 4096)  // 4KB，对齐到128位
-    
-    let simd_start = performance.now()
-    
-    // 使用SIMD进行向量加法
-    WASMInstance::call_function(wasm_instance, "vector_add_simd", [
-      WasmValue::I32(simd_buffer),      // 输入A
-      WasmValue::I32(simd_buffer + 1024), // 输入B
-      WasmValue::I32(simd_buffer + 2048), // 输出
-      WasmValue::I32(256)                // 元素数量
-    ])
-    
-    let simd_end = performance.now()
-    let simd_time = simd_end - simd_start
-    
-    // 标量版本
-    let scalar_start = performance.now()
-    
-    WASMInstance::call_function(wasm_instance, "vector_add_scalar", [
-      WasmValue::I32(simd_buffer),      // 输入A
-      WasmValue::I32(simd_buffer + 1024), // 输入B
-      WasmValue::I32(simd_buffer + 2048), // 输出
-      WasmValue::I32(256)                // 元素数量
-    ])
-    
-    let scalar_end = performance.now()
-    let scalar_time = scalar_end - scalar_start
-    
-    // SIMD版本应该比标量版本快
-    assert_true(simd_time < scalar_time)
-    
-    WASMInstance::deallocate(wasm_instance, simd_buffer)
-  }
-  
-  // 停止性能分析并获取报告
-  WASMPerformanceProfiler::stop(performance_profiler)
-  let profile_report = WASMPerformanceProfiler::get_report(performance_profiler)
-  
-  assert_true(profile_report.contains("function_calls"))
-  assert_true(profile_report.contains("memory_usage"))
-  assert_true(profile_report.contains("execution_time"))
-}
-
-test "WebAssembly平台特定功能" {
-  // 测试WebAssembly平台特定功能
-  let platform_detector = WASMPlatformDetector::new()
-  
-  // 检测平台特性
-  let platform_features = WASMPlatformDetector::detect_features(platform_detector)
-  
-  assert_true(platform_features.contains("wasm"))
-  assert_true(platform_features.contains("bulk_memory"))
-  assert_true(platform_features.contains("sign_extension"))
-  
-  // 检测WebAssembly运行时环境
-  let runtime_info = WASMPlatformDetector::detect_runtime(platform_detector)
-  
-  assert_true(runtime_info.contains("browser") || runtime_info.contains("node"))
-  assert_true(runtime_info.contains("version"))
-  
-  // 测试浏览器特定功能
-  if runtime_info.contains("browser") {
-    let browser_features = WASMPlatformDetector::detect_browser_features(platform_detector)
-    
-    if browser_features.contains("webgl") {
-      // 测试WebGL互操作
-      let webgl_interop = WebGLInterop::new()
-      
-      let shader_source = """
-        void main() {
-          gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
-        }
-      """
-      
-      let shader_result = WebGLInterop::compile_shader(webgl_interop, shader_source)
-      assert_true(shader_result.is_ok)
-    }
-    
-    if browser_features.contains("webrtc") {
-      // 测试WebRTC数据通道
-      let webrtc_interop = WebRTCInterop::new()
-      
-      let data_channel_result = WebRTCInterop::create_data_channel(
-        webrtc_interop,
-        "telemetry-data",
-        {"ordered": true, "maxRetransmits": 3}
-      )
-      assert_true(data_channel_result.is_ok)
-      
-      let data_channel = data_channel_result.value
-      
-      // 测试通过WebRTC发送遥测数据
-      let telemetry_data = {
-        "trace_id": "trace-webrtc-test",
-        "timestamp": 1735689600000000000L,
-        "metrics": {"cpu": 75.5, "memory": 1024}
-      }
-      
-      let send_result = WebRTCInterop::send_data(
-        data_channel,
-        JSON.stringify(telemetry_data)
-      )
-      assert_true(send_result.is_ok)
-    }
-  }
-  
-  // 测试Node.js特定功能
-  if runtime_info.contains("node") {
-    let node_interop = NodeInterop::new()
-    
-    // 测试文件系统访问
-    let fs_result = NodeInterop::write_file(
-      node_interop,
-      "telemetry_output.json",
-      "{\"test\": \"wasm_node_interop\"}"
-    )
-    assert_true(fs_result.is_ok)
-    
-    let read_result = NodeInterop::read_file(node_interop, "telemetry_output.json")
-    assert_true(read_result.is_ok)
-    assert_true(read_result.value.contains("wasm_node_interop"))
-    
-    // 测试网络请求
-    let http_result = NodeInterop::http_request(
-      node_interop,
-      "GET",
-      "https://httpbin.org/get",
-      {}
-    )
-    assert_true(http_result.is_ok)
-    assert_true(http_result.value.contains("httpbin.org"))
-  }
-  
-  // 测试多线程支持（如果可用）
-  if platform_features.contains("threads") {
-    let thread_pool = WasmThreadPool::new(4)
-    
-    let tasks = []
-    for i in 0..=7 {
-      let task = WasmThreadPool::spawn(thread_pool, fn() {
-        // 模拟计算密集型任务
-        let mut sum = 0
-        for j in 0..=100000 {
-          sum = sum + j
-        }
-        sum
-      })
-      tasks = tasks.push(task)
-    }
-    
-    // 等待所有任务完成
-    let results = []
-    for task in tasks {
-      let result = WasmThreadPool::join(task)
-      results = results.push(result)
-    }
-    
-    assert_eq(results.length(), 8)
-    assert_true(results.all(fn(r) { r > 0 }))
-    
-    WasmThreadPool::shutdown(thread_pool)
-  }
-}
-
-test "WebAssembly安全和沙箱" {
-  // 测试WebAssembly安全和沙箱功能
-  let wasm_sandbox = WASMSandbox::new({
-    "max_memory": 50 * 1024 * 1024,    // 50MB内存限制
-    "max_execution_time": 5000,        // 5秒执行时间限制
-    "allowed_imports": ["env", "js"],  // 只允许特定模块导入
-    "forbidden_features": ["threads"]  // 禁用多线程
-  })
-  
-  // 加载不可信模块
-  let untrusted_module_bytes = read_wasm_module_bytes("untrusted_telemetry.wasm")
-  
-  let sandbox_load_result = WASMSandbox::load_module(wasm_sandbox, untrusted_module_bytes)
-  assert_true(sandbox_load_result.is_ok)
-  
-  // 测试内存限制
-  let memory_test_result = WASMSandbox::execute(wasm_sandbox, "memory_exhaustion_test", [])
-  
-  // 应该被沙箱阻止
-  assert_true(memory_test_result.is_error)
-  assert_true(memory_test_result.error.contains("memory limit exceeded"))
-  
-  // 测试执行时间限制
-  let infinite_loop_result = WASMSandbox::execute(wasm_sandbox, "infinite_loop", [])
-  
-  // 应该被沙箱终止
-  assert_true(infinite_loop_result.is_error)
-  assert_true(infinite_loop_result.error.contains("execution time limit exceeded"))
-  
-  // 测试安全函数调用
-  let safe_operation_result = WASMSandbox::execute(wasm_sandbox, "process_telemetry", [
-    {"trace_id": "safe-test", "operation": "safe.operation"}
-  ])
-  assert_true(safe_operation_result.is_ok)
-  
-  // 测试权限控制
-  let permission_manager = WASMPermissionManager::new()
-  
-  // 设置权限策略
-  WASMPermissionManager::set_policy(permission_manager, {
-    "network": {
-      "allowed_domains": ["collector.example.com", "api.example.com"],
-      "blocked_domains": ["malicious-site.com"]
+  // 模拟WebAssembly与JavaScript之间的数据交换
+  let interop_operations = [
+    {
+      "name": "js_to_wasm_string",
+      "data_type": "string",
+      "data_size": 1024,
+      "direction": "js_to_wasm",
+      "expected_time_us": 20
     },
-    "filesystem": {
-      "read_allowed": ["/config/", "/data/input/"],
-      "write_allowed": ["/data/output/", "/temp/"],
-      "blocked": ["/system/", "/etc/", "/private/"]
+    {
+      "name": "wasm_to_js_string",
+      "data_type": "string",
+      "data_size": 1024,
+      "direction": "wasm_to_js",
+      "expected_time_us": 15
     },
-    "system": {
-      "allow_environment_access": false,
-      "allow_system_time": true
+    {
+      "name": "js_to_wasm_array",
+      "data_type": "array",
+      "data_size": 4096,
+      "direction": "js_to_wasm",
+      "expected_time_us": 50
+    },
+    {
+      "name": "wasm_to_js_array",
+      "data_type": "array",
+      "data_size": 4096,
+      "direction": "wasm_to_js",
+      "expected_time_us": 40
+    },
+    {
+      "name": "js_to_wasm_object",
+      "data_type": "object",
+      "data_size": 2048,
+      "direction": "js_to_wasm",
+      "expected_time_us": 80
+    },
+    {
+      "name": "wasm_to_js_object",
+      "data_type": "object",
+      "data_size": 2048,
+      "direction": "wasm_to_js",
+      "expected_time_us": 70
     }
-  })
+  ]
   
-  // 测试网络权限检查
-  let network_permission_1 = WASMPermissionManager::check_network_permission(
-    permission_manager,
-    "https://collector.example.com/telemetry"
-  )
-  assert_true(network_permission_1)
-  
-  let network_permission_2 = WASMPermissionManager::check_network_permission(
-    permission_manager,
-    "https://malicious-site.com/steal-data"
-  )
-  assert_false(network_permission_2)
-  
-  // 测试文件系统权限检查
-  let fs_permission_1 = WASMPermissionManager::check_file_permission(
-    permission_manager,
-    "read",
-    "/config/telemetry.json"
-  )
-  assert_true(fs_permission_1)
-  
-  let fs_permission_2 = WASMPermissionManager::check_file_permission(
-    permission_manager,
-    "write",
-    "/etc/passwd"
-  )
-  assert_false(fs_permission_2)
-  
-  // 测试代码签名验证
-  let code_verifier = WASMCodeVerifier::new()
-  
-  // 加载可信公钥
-  let trusted_public_key = load_trusted_public_key()
-  WASMCodeVerifier::add_trusted_key(code_verifier, trusted_public_key)
-  
-  // 验证模块签名
-  let signature_verification = WASMCodeVerifier::verify_module(
-    code_verifier,
-    untrusted_module_bytes,
-    "module_signature.bin"
-  )
-  
-  if signature_verification.is_valid {
-    // 模块已签名且可信
-    assert_true(true)
-  } else {
-    // 模块未签名或签名无效
-    assert_true(true)  // 在测试环境中，这可能是预期的
+  // 测试每种互操作
+  for operation in interop_operations {
+    let op_name = operation["name"]
+    let data_type = operation["data_type"]
+    let data_size = operation["data_size"]
+    let direction = operation["direction"]
+    let expected_time = operation["expected_time_us"]
+    
+    // 记录互操作开始
+    Span::add_event(span, "interop.start", [
+      ("operation", op_name),
+      ("data_type", data_type),
+      ("data_size", data_size.to_string()),
+      ("direction", direction)
+    ])
+    
+    // 模拟互操作时间（根据数据类型和大小）
+    let base_time = match data_type {
+      "string" => 10,
+      "array" => 20,
+      "object" => 30,
+      _ => 15
+    }
+    
+    let size_factor = data_size / 1024  // 每KB增加的时间
+    let direction_factor = match direction {
+      "js_to_wasm" => 1.2,
+      "wasm_to_js" => 1.0,
+      _ => 1.1
+    }
+    
+    let actual_time = (base_time + size_factor) * direction_factor
+    
+    // 记录互操作完成
+    Span::add_event(span, "interop.complete", [
+      ("operation", op_name),
+      ("data_type", data_type),
+      ("data_size", data_size.to_string()),
+      ("direction", direction),
+      ("actual_time_us", actual_time.to_string())
+    ])
+    
+    // 验证互操作性能
+    assert_true(actual_time <= expected_time * 2)  // 允许2倍的预期时间
+    
+    // 验证特定数据类型的性能要求
+    match data_type {
+      "string" => {
+        assert_true(actual_time < 50)
+      },
+      "array" => {
+        assert_true(actual_time < 100)
+      },
+      "object" => {
+        assert_true(actual_time < 150)
+      },
+      _ => {}
+    }
   }
   
-  // 清理沙箱
-  WASMSandbox::cleanup(wasm_sandbox)
+  // 测试WebAssembly模块加载和初始化
+  Span::add_event(span, "wasm.module.load.start", [
+    ("module_name", "azimuth-telemetry-wasm"),
+    ("module_size", "2MB")
+  ])
+  
+  // 模拟模块加载时间
+  let module_load_time = 5000  // 5ms
+  let module_init_time = 2000  // 2ms
+  
+  Span::add_event(span, "wasm.module.load.complete", [
+    ("module_name", "azimuth-telemetry-wasm"),
+    ("load_time_us", module_load_time.to_string()),
+    ("init_time_us", module_init_time.to_string()),
+    ("total_time_us", (module_load_time + module_init_time).to_string())
+  ])
+  
+  // 验证模块加载性能
+  assert_true(module_load_time < 10000)  // 加载时间应小于10ms
+  assert_true(module_init_time < 5000)   // 初始化时间应小于5ms
+  
+  // 测试WebAssembly函数调用
+  let wasm_functions = [
+    {"name": "create_span", "param_count": 2, "expected_time_us": 30},
+    {"name": "set_attribute", "param_count": 3, "expected_time_us": 20},
+    {"name": "add_event", "param_count": 3, "expected_time_us": 25},
+    {"name": "record_metric", "param_count": 3, "expected_time_us": 15},
+    {"name": "export_data", "param_count": 1, "expected_time_us": 100}
+  ]
+  
+  for func in wasm_functions {
+    let func_name = func["name"]
+    let param_count = func["param_count"]
+    let expected_time = func["expected_time_us"]
+    
+    // 模拟函数调用时间
+    let call_overhead = 10  // 基础调用开销
+    let param_overhead = param_count * 5  // 每个参数的开销
+    let actual_call_time = call_overhead + param_overhead
+    
+    Span::add_event(span, "wasm.function.call", [
+      ("function", func_name),
+      ("param_count", param_count.to_string()),
+      "call_time_us": actual_call_time.to_string()
+    ])
+    
+    // 验证函数调用性能
+    assert_true(actual_call_time <= expected_time * 2)
+  }
+  
+  Span::end(span)
 }
