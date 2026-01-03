@@ -1,333 +1,236 @@
-// Azimuth Telemetry Aggregation and Analysis Tests
-// 遥测数据聚合和分析测试用例 - 专注于数据聚合、统计分析和趋势检测
+// Azimuth Telemetry Data Aggregation and Analysis Tests
+// 专注于遥测数据聚合、分析和统计操作的高级测试用例
 
-// Test 1: 多维度数据聚合
-test "multi-dimensional data aggregation" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "aggregation_meter")
-  let counter = Meter::create_counter(meter, "request_count", Some("Request count"), Some("requests"))
-  
-  // 创建多维度属性数据
-  let services = ["auth", "payment", "inventory", "notification"]
-  let endpoints = ["login", "checkout", "update", "send"]
-  let regions = ["us-east", "us-west", "eu-central", "ap-southeast"]
-  
-  // 生成测试数据
-  for i in 0..<100 {
-    let service_idx = i % services.length()
-    let endpoint_idx = (i / 4) % endpoints.length()
-    let region_idx = (i / 16) % regions.length()
-    
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "service.name", StringValue(services[service_idx]))
-    Attributes::set(attrs, "endpoint.name", StringValue(endpoints[endpoint_idx]))
-    Attributes::set(attrs, "deployment.region", StringValue(regions[region_idx]))
-    Attributes::set(attrs, "http.status_code", IntValue(200 + (i % 5) * 100))
-    
-    Counter::add(counter, 1.0, Some(attrs))
-  }
-  
-  // 测试多维度聚合
-  let aggregator = MultiDimensionalAggregator::new(counter)
-  let dimensions = ["service.name", "endpoint.name"]
-  let aggregated_data = Aggregator::group_by(aggregator, dimensions)
-  
-  assert_true(aggregated_data.length() > 0)
-  assert_true(aggregated_data.length() <= services.length() * endpoints.length())
-  
-  // 验证聚合结果
-  for (key, value) in aggregated_data {
-    assert_true(value > 0.0)
-    assert_true(key.contains("service.name"))
-    assert_true(key.contains("endpoint.name"))
-  }
-}
-
-// Test 2: 时间窗口统计分析
-test "time window statistical analysis" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "stats_meter")
-  let histogram = Meter::create_histogram(meter, "response_time", Some("Response time"), Some("ms"))
-  
-  // 生成时间序列数据
-  let base_time = Time::now()
-  let response_times = [120.0, 150.0, 180.0, 200.0, 90.0, 110.0, 160.0, 140.0, 130.0, 170.0]
-  
-  for i in 0..<response_times.length() {
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "service.name", StringValue("api_service"))
-    Attributes::set(attrs, "endpoint.name", StringValue("process_data"))
-    
-    // 模拟时间间隔
-    let timestamp = base_time + i * 100
-    Histogram::record_with_timestamp(histogram, response_times[i], Some(attrs), timestamp)
-  }
-  
-  // 测试时间窗口统计
-  let analyzer = TimeWindowAnalyzer::new(histogram)
-  let window_size = 500 // 500ms窗口
-  let stats = Analyzer::get_window_statistics(analyzer, base_time, base_time + window_size * 2)
-  
-  match stats {
-    Some(window_stats) => {
-      assert_true(window_stats.count > 0)
-      assert_true(window_stats.min >= 90.0)
-      assert_true(window_stats.max <= 200.0)
-      assert_true(window_stats.average > 100.0 && window_stats.average < 200.0)
-      assert_true(window_stats.percentile_95 > 150.0)
-      assert_true(window_stats.percentile_99 >= 180.0)
-    }
-    None => assert_true(false)
-  }
-}
-
-// Test 3: 趋势分析和异常检测
-test "trend analysis and anomaly detection" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "trend_meter")
-  let gauge = Meter::create_gauge(meter, "cpu_usage", Some("CPU usage"), Some("percent"))
-  
-  // 生成带有趋势和异常的数据
-  let base_time = Time::now()
-  let normal_values = [30.0, 32.0, 31.0, 33.0, 35.0, 34.0, 36.0, 38.0, 37.0, 39.0]
-  let anomaly_values = [85.0, 90.0, 88.0] // 异常值
-  
-  // 记录正常值
-  for i in 0..<normal_values.length() {
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "host.name", StringValue("server-01"))
-    Attributes::set(attrs, "metric.type", StringValue("system"))
-    
-    Gauge::set(gauge, normal_values[i], Some(attrs))
-  }
-  
-  // 记录异常值
-  for i in 0..<anomaly_values.length() {
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "host.name", StringValue("server-01"))
-    Attributes::set(attrs, "metric.type", StringValue("system"))
-    
-    let timestamp = base_time + (normal_values.length() + i) * 1000
-    Gauge::set_with_timestamp(gauge, anomaly_values[i], Some(attrs), timestamp)
-  }
-  
-  // 测试趋势分析
-  let trend_analyzer = TrendAnalyzer::new(gauge)
-  let trend = Analyzer::detect_trend(trend_analyzer, base_time, base_time + 20000)
-  
-  match trend {
-    Some(trend_result) => {
-      assert_true(trend_result.direction == "increasing")
-      assert_true(trend_result.strength > 0.5)
-      assert_true(trend_result.confidence > 0.8)
-    }
-    None => assert_true(false)
-  }
-  
-  // 测试异常检测
-  let anomaly_detector = AnomalyDetector::new(gauge)
-  let anomalies = Detector::find_anomalies(anomaly_detector, base_time, base_time + 20000)
-  
-  assert_true(anomalies.length() >= 3)
-  for anomaly in anomalies {
-    assert_true(anomaly.value > 80.0)
-    assert_true(anomaly.severity == "high")
-    assert_true(anomaly.confidence > 0.9)
-  }
-}
-
-// Test 4: 百分位数和直方图分析
-test "percentile and histogram analysis" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "percentile_meter")
-  let histogram = Meter::create_histogram(meter, "latency", Some("Latency"), Some("ms"))
-  
-  // 生成符合正态分布的测试数据
-  let latencies = [
-    10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0, 55.0,
-    60.0, 65.0, 70.0, 75.0, 80.0, 85.0, 90.0, 95.0, 100.0, 105.0,
-    110.0, 115.0, 120.0, 125.0, 130.0, 135.0, 140.0, 145.0, 150.0, 200.0,
-    250.0, 300.0 // 一些异常高值
+test "遥测数据时间窗口聚合测试" {
+  // 创建时间序列数据点
+  let data_points = [
+    (1000, 10.5),  // (timestamp, value)
+    (2000, 15.2),
+    (3000, 12.8),
+    (4000, 18.3),
+    (5000, 14.7),
+    (6000, 16.9),
+    (7000, 13.4),
+    (8000, 19.1)
   ]
   
-  for latency in latencies {
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "service.name", StringValue("web_service"))
-    Attributes::set(attrs, "operation.name", StringValue("database_query"))
-    
-    Histogram::record(histogram, latency, Some(attrs))
-  }
+  // 测试按时间窗口聚合（2秒窗口）
+  let time_windows = azimuth::aggregate_by_time_window(data_points, 2000)
   
-  // 测试百分位数计算
-  let percentile_calculator = PercentileCalculator::new(histogram)
-  let p50 = Calculator::percentile(percentile_calculator, 50.0)
-  let p90 = Calculator::percentile(percentile_calculator, 90.0)
-  let p95 = Calculator::percentile(percentile_calculator, 95.0)
-  let p99 = Calculator::percentile(percentile_calculator, 99.0)
+  // 验证窗口数量
+  assert_eq(time_windows.length(), 4)
   
-  assert_true(p50 >= 70.0 && p50 <= 80.0)
-  assert_true(p90 >= 140.0 && p90 <= 160.0)
-  assert_true(p95 >= 180.0 && p95 <= 220.0)
-  assert_true(p99 >= 250.0)
+  // 验证第一个窗口 (1000-3000)
+  let window1 = time_windows[0]
+  assert_eq(window1.start_time, 1000)
+  assert_eq(window1.end_time, 3000)
+  assert_eq(window1.count, 3)
+  assert_true(window1.avg > 12.0 && window1.avg < 13.0)
   
-  // 测试直方图分布
-  let distribution = Calculator::get_distribution(percentile_calculator, 10) // 10个桶
-  assert_true(distribution.length() == 10)
-  
-  let mut total_count = 0
-  for bucket in distribution {
-    total_count = total_count + bucket.count
-  }
-  assert_true(total_count == latencies.length())
+  // 验证最后一个窗口 (7000-9000)
+  let window4 = time_windows[3]
+  assert_eq(window4.start_time, 7000)
+  assert_eq(window4.end_time, 9000)
+  assert_eq(window4.count, 2)
+  assert_true(window4.avg > 16.0 && window4.avg < 17.0)
 }
 
-// Test 5: 相关性分析
-test "correlation analysis between metrics" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "correlation_meter")
+test "遥测指标百分位数计算测试" {
+  // 创建响应时间数据集
+  let response_times = [
+    10, 15, 23, 42, 67, 89, 95, 120, 145, 167,
+    189, 210, 245, 267, 289, 310, 345, 367, 389, 410,
+    445, 467, 489, 510, 545, 567, 589, 610, 645, 667,
+    689, 710, 745, 767, 789, 810, 845, 867, 889, 910,
+    945, 967, 989, 1010, 1045, 1067, 1089, 1110, 1145, 1167
+  ]
   
-  let request_counter = Meter::create_counter(meter, "requests", Some("Request count"), Some("requests"))
-  let error_counter = Meter::create_counter(meter, "errors", Some("Error count"), Some("errors"))
-  let response_time_histogram = Meter::create_histogram(meter, "response_time", Some("Response time"), Some("ms"))
+  // 计算百分位数
+  let p50 = azimuth::calculate_percentile(response_times, 50.0)
+  let p90 = azimuth::calculate_percentile(response_times, 90.0)
+  let p95 = azimuth::calculate_percentile(response_times, 95.0)
+  let p99 = azimuth::calculate_percentile(response_times, 99.0)
   
-  // 生成相关的测试数据
-  let base_requests = 100
-  let base_errors = 5
-  let base_response_time = 50.0
-  
-  for i in 0..<50 {
-    let request_factor = 1.0 + (i.to_float() / 50.0) // 请求量递增
-    let error_factor = 1.0 + (i.to_float() / 25.0) // 错误率增长更快
-    let response_time_factor = 1.0 + (i.to_float() / 40.0) // 响应时间也增长
-    
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "service.name", StringValue("api_gateway"))
-    Attributes::set(attrs, "load.level", StringValue("increasing"))
-    
-    Counter::add(request_counter, base_requests.to_float() * request_factor, Some(attrs))
-    Counter::add(error_counter, base_errors.to_float() * error_factor, Some(attrs))
-    Histogram::record(response_time_histogram, base_response_time * response_time_factor, Some(attrs))
-  }
-  
-  // 测试相关性分析
-  let correlation_analyzer = CorrelationAnalyzer::new()
-  Analyzer::add_metric(correlation_analyzer, "requests", request_counter)
-  Analyzer::add_metric(correlation_analyzer, "errors", error_counter)
-  Analyzer::add_metric(correlation_analyzer, "response_time", response_time_histogram)
-  
-  let request_error_corr = Analyzer::calculate_correlation(correlation_analyzer, "requests", "errors")
-  let request_time_corr = Analyzer::calculate_correlation(correlation_analyzer, "requests", "response_time")
-  let error_time_corr = Analyzer::calculate_correlation(correlation_analyzer, "errors", "response_time")
-  
-  // 请求量和错误量应该有强正相关
-  assert_true(request_error_corr > 0.8)
-  // 请求量和响应时间应该有正相关
-  assert_true(request_time_corr > 0.7)
-  // 错误量和响应时间应该有强正相关
-  assert_true(error_time_corr > 0.8)
+  // 验证百分位数
+  assert_true(p50 > 400 && p50 < 500)  // 中位数应该在400-500之间
+  assert_true(p90 > 1000 && p90 < 1100)  // 90%应该在1000-1100之间
+  assert_true(p95 > 1100 && p95 < 1200)  // 95%应该在1100-1200之间
+  assert_true(p99 > 1150 && p99 < 1200)  // 99%应该在1150-1200之间
 }
 
-// Test 6: 预测分析
-test "predictive analysis and forecasting" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "prediction_meter")
-  let gauge = Meter::create_gauge(meter, "memory_usage", Some("Memory usage"), Some("MB"))
+test "遥测数据异常检测测试" {
+  // 创建包含异常值的数据集
+  let normal_data = [
+    10.2, 11.5, 9.8, 10.7, 11.2, 10.9, 10.3, 11.1, 
+    10.6, 10.4, 11.3, 10.8, 10.1, 11.4, 10.5
+  ]
   
-  // 生成带有趋势的时间序列数据
-  let base_time = Time::now()
-  let base_usage = 1000.0
-  let growth_rate = 10.0 // 每小时增长10MB
+  // 添加异常值
+  let data_with_outliers = normal_data + [45.2, 0.1, 38.7]
   
-  for i in 0..<24 { // 24小时数据
-    let usage = base_usage + (i.to_float() * growth_rate)
-    // 添加一些随机波动
-    let noise = (i % 3 - 1).to_float() * 5.0
-    let final_usage = usage + noise
-    
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "host.name", StringValue("app-server-01"))
-    Attributes::set(attrs, "metric.type", StringValue("resource"))
-    
-    let timestamp = base_time + i * 3600000 // 每小时一个数据点
-    Gauge::set_with_timestamp(gauge, final_usage, Some(attrs), timestamp)
+  // 使用IQR方法检测异常值
+  let outliers = azimuth::detect_outliers_iqr(data_with_outliers)
+  
+  // 验证异常值检测
+  assert_eq(outliers.length(), 3)
+  assert_true(outliers.contains(45.2))
+  assert_true(outliers.contains(0.1))
+  assert_true(outliers.contains(38.7))
+  
+  // 验证正常值不被标记为异常
+  for value in normal_data {
+    assert_false(outliers.contains(value))
   }
+}
+
+test "遥测数据趋势分析测试" {
+  // 创建时间序列数据（上升趋势）
+  let increasing_data = [
+    (1000, 10.0), (2000, 12.5), (3000, 15.2), (4000, 18.1),
+    (5000, 21.3), (6000, 24.8), (7000, 28.5), (8000, 32.4)
+  ]
   
-  // 测试预测分析
-  let predictor = PredictiveAnalyzer::new(gauge)
-  let forecast_hours = 6
-  let forecast = Predictor::forecast(predictor, base_time + 24 * 3600000, forecast_hours)
+  // 计算趋势
+  let increasing_trend = azimuth::calculate_trend(increasing_data)
+  assert_true(increasing_trend.slope > 0.0)
+  assert_true(increasing_trend.correlation > 0.9)
   
-  assert_true(forecast.length() == forecast_hours)
+  // 创建时间序列数据（下降趋势）
+  let decreasing_data = [
+    (1000, 50.0), (2000, 42.5), (3000, 35.2), (4000, 28.1),
+    (5000, 21.3), (6000, 14.8), (7000, 8.5), (8000, 2.4)
+  ]
   
-  // 验证预测趋势
-  let mut last_value = 0.0
-  for prediction in forecast {
-    assert_true(prediction.value > base_usage)
-    assert_true(prediction.confidence > 0.5)
-    
-    if last_value > 0.0 {
-      assert_true(prediction.value >= last_value) // 预测值应该递增
+  let decreasing_trend = azimuth::calculate_trend(decreasing_data)
+  assert_true(decreasing_trend.slope < 0.0)
+  assert_true(decreasing_trend.correlation < -0.9)
+  
+  // 创建时间序列数据（平稳趋势）
+  let stable_data = [
+    (1000, 20.0), (2000, 20.5), (3000, 19.8), (4000, 20.2),
+    (5000, 20.1), (6000, 19.9), (7000, 20.3), (8000, 20.0)
+  ]
+  
+  let stable_trend = azimuth::calculate_trend(stable_data)
+  assert_true(stable_trend.slope > -0.1 && stable_trend.slope < 0.1)
+  assert_true(stable_trend.correlation > -0.3 && stable_trend.correlation < 0.3)
+}
+
+test "遥测数据多维聚合测试" {
+  // 创建多维遥测数据
+  let multi_dimensional_data = [
+    ("service-A", "endpoint-1", "success", 100),
+    ("service-A", "endpoint-1", "error", 5),
+    ("service-A", "endpoint-2", "success", 200),
+    ("service-A", "endpoint-2", "error", 10),
+    ("service-B", "endpoint-1", "success", 150),
+    ("service-B", "endpoint-1", "error", 8),
+    ("service-B", "endpoint-2", "success", 120),
+    ("service-B", "endpoint-2", "error", 3)
+  ]
+  
+  // 按服务名称聚合
+  let service_aggregation = azimuth::aggregate_by_dimension(multi_dimensional_data, 0)
+  assert_eq(service_aggregation.length(), 2)
+  
+  let service_a = service_aggregation.find(fn(item) { item.key == "service-A" })
+  match service_a {
+    Some(result) => {
+      assert_eq(result.total_count, 315)  // 100+5+200+10
+      assert_eq(result.success_count, 300)  // 100+200
+      assert_eq(result.error_count, 15)  // 5+10
     }
-    last_value = prediction.value
+    None => assert_true(false)
   }
   
-  // 验证预测准确性（使用历史数据）
-  let accuracy = Predictor::backtest_accuracy(predictor, 12) // 使用12小时数据进行回测
-  assert_true(accuracy > 0.7) // 准确率应该大于70%
+  // 按端点聚合
+  let endpoint_aggregation = azimuth::aggregate_by_dimension(multi_dimensional_data, 1)
+  assert_eq(endpoint_aggregation.length(), 2)
+  
+  let endpoint1 = endpoint_aggregation.find(fn(item) { item.key == "endpoint-1" })
+  match endpoint1 {
+    Some(result) => {
+      assert_eq(result.total_count, 263)  // 100+5+150+8
+      assert_eq(result.success_count, 250)  // 100+150
+      assert_eq(result.error_count, 13)  // 5+8
+    }
+    None => assert_true(false)
+  }
+  
+  // 按状态聚合
+  let status_aggregation = azimuth::aggregate_by_dimension(multi_dimensional_data, 2)
+  assert_eq(status_aggregation.length(), 2)
+  
+  let success_status = status_aggregation.find(fn(item) { item.key == "success" })
+  match success_status {
+    Some(result) => {
+      assert_eq(result.total_count, 570)  // 100+200+150+120
+      assert_eq(result.success_count, 570)
+      assert_eq(result.error_count, 0)
+    }
+    None => assert_true(false)
+  }
 }
 
-// Test 7: 自适应阈值分析
-test "adaptive threshold analysis" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "threshold_meter")
-  let gauge = Meter::create_gauge(meter, "queue_size", Some("Queue size"), Some("items"))
+test "遥测数据实时滑动窗口统计测试" {
+  // 创建时间序列数据流
+  let data_stream = [
+    (1000, 10), (1500, 15), (2000, 12), (2500, 18), (3000, 14),
+    (3500, 20), (4000, 16), (4500, 22), (5000, 19), (5500, 25)
+  ]
   
-  // 生成带有周期性模式的数据
-  let base_time = Time::now()
-  let base_size = 50
-  let peak_size = 200
-  let cycle_length = 24 // 24小时周期
+  // 使用滑动窗口计算实时统计
+  let window_size = 2000  // 2秒窗口
+  let sliding_stats = azimuth::calculate_sliding_window_stats(data_stream, window_size)
   
-  for i in 0..<72 { // 3天的数据
-    let cycle_position = i % cycle_length
-    let is_peak_time = cycle_position >= 8 && cycle_position <= 16 // 工作时间高峰
-    
-    let expected_size = if is_peak_time { peak_size } else { base_size }
-    // 添加随机波动
-    let noise = (i % 7 - 3).to_float() * 10.0
-    let final_size = expected_size.to_float() + noise
-    
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "queue.name", StringValue("task_queue"))
-    Attributes::set(attrs, "environment", StringValue("production"))
-    
-    let timestamp = base_time + i * 3600000 // 每小时一个数据点
-    Gauge::set_with_timestamp(gauge, final_size, Some(attrs), timestamp)
-  }
+  // 验证滑动窗口统计结果
+  assert_eq(sliding_stats.length(), data_stream.length())
   
-  // 测试自适应阈值
-  let threshold_analyzer = AdaptiveThresholdAnalyzer::new(gauge)
-  let learning_period = 48 * 3600000 // 前48小时用于学习
+  // 验证第一个窗口（只有一个数据点）
+  let first_stat = sliding_stats[0]
+  assert_eq(first_stat.count, 1)
+  assert_eq(first_stat.sum, 10)
+  assert_eq(first_stat.avg, 10.0)
+  assert_eq(first_stat.min, 10)
+  assert_eq(first_stat.max, 10)
   
-  let thresholds = Analyzer::learn_thresholds(threshold_analyzer, base_time, base_time + learning_period)
-  assert_true(thresholds.length() > 0)
+  // 验证中间窗口（多个数据点）
+  let middle_stat = sliding_stats[4]  // 时间点3000
+  assert_eq(middle_stat.count, 3)  // 2000, 2500, 3000的数据点
+  assert_eq(middle_stat.sum, 44)  // 12+18+14
+  assert_eq(middle_stat.avg, 44.0 / 3.0)
+  assert_eq(middle_stat.min, 12)
+  assert_eq(middle_stat.max, 18)
   
-  // 验证阈值合理性
-  for threshold in thresholds {
-    assert_true(threshold.lower > 0)
-    assert_true(threshold.upper > threshold.lower)
-    assert_true(threshold.confidence > 0.5)
-  }
+  // 验证最后一个窗口
+  let last_stat = sliding_stats[9]
+  assert_eq(last_stat.count, 4)  // 3500, 4000, 4500, 5000的数据点
+  assert_eq(last_stat.sum, 77)  // 20+16+22+19
+  assert_eq(last_stat.avg, 77.0 / 4.0)
+  assert_eq(last_stat.min, 16)
+  assert_eq(last_stat.max, 22)
+}
+
+test "遥测数据相关性分析测试" {
+  // 创建两个相关的数据集
+  let cpu_usage = [10, 15, 20, 25, 30, 35, 40, 45, 50, 55]
+  let memory_usage = [100, 150, 200, 250, 300, 350, 400, 450, 500, 550]
   
-  // 测试异常检测
-  let test_period_start = base_time + learning_period
-  let test_period_end = test_period_start + 24 * 3600000
-  let violations = Analyzer::detect_threshold_violations(threshold_analyzer, test_period_start, test_period_end)
+  // 计算相关性
+  let correlation = azimuth::calculate_correlation(cpu_usage, memory_usage)
+  assert_true(correlation > 0.99)  // 强正相关
   
-  // 应该检测到一些违规（高峰期超过阈值）
-  assert_true(violations.length() > 0)
-  for violation in violations {
-    assert_true(violation.severity >= "medium")
-    assert_true(violation.confidence > 0.7)
-  }
+  // 创建负相关的数据集
+  let response_time = [100, 90, 80, 70, 60, 50, 40, 30, 20, 10]
+  let throughput = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+  
+  let negative_correlation = azimuth::calculate_correlation(response_time, throughput)
+  assert_true(negative_correlation < -0.99)  // 强负相关
+  
+  // 创建无关的数据集
+  let random_data1 = [10, 25, 15, 30, 20, 35, 18, 40, 22, 45]
+  let random_data2 = [100, 80, 120, 90, 110, 85, 115, 95, 105, 88]
+  
+  let no_correlation = azimuth::calculate_correlation(random_data1, random_data2)
+  assert_true(no_correlation > -0.3 && no_correlation < 0.3)  // 几乎无相关性
 }

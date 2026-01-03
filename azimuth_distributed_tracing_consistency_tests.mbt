@@ -1,333 +1,336 @@
-// Azimuth 分布式追踪一致性测试
-// 专注于验证分布式系统中追踪数据的一致性和完整性
+// Azimuth Distributed Tracing Consistency Tests
+// 专注于分布式追踪系统中数据一致性和完整性的高级测试用例
 
-// 测试1: 跨服务追踪链完整性验证
-test "跨服务追踪链完整性验证" {
-  // 模拟分布式请求链
-  let trace_chain = [
-    {
-      "trace_id": "trace-001",
-      "span_id": "span-001",
-      "parent_span_id": "",
-      "service_name": "api-gateway",
-      "operation_name": "handle_request",
-      "start_time": 1640995200000,
-      "end_time": 1640995200150,
-      "status": "success",
-      "tags": {"http.method": "GET", "http.url": "/api/users"}
+test "跨服务追踪ID一致性验证测试" {
+  // 模拟分布式追踪场景
+  let trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
+  
+  // 服务A的根span
+  let root_span = azimuth::Span {
+    span_context: azimuth::SpanContext {
+      trace_id: trace_id,
+      span_id: "b7ad6b7169203331",
+      parent_span_id: None,
+      sampled: true,
+      trace_state: ""
     },
-    {
-      "trace_id": "trace-001",
-      "span_id": "span-002",
-      "parent_span_id": "span-001",
-      "service_name": "auth-service",
-      "operation_name": "validate_token",
-      "start_time": 1640995200100,
-      "end_time": 1640995200180,
-      "status": "success",
-      "tags": {"token.type": "jwt"}
+    operation_name: "user.request",
+    start_time: 1634567890123,
+    end_time: 1634567890456,
+    status: azimuth::SpanStatus::Ok,
+    attributes: []
+  }
+  
+  // 服务B的子span
+  let service_b_span = azimuth::Span {
+    span_context: azimuth::SpanContext {
+      trace_id: trace_id,  // 必须与根span相同
+      span_id: "00f067aa0ba902b7",
+      parent_span_id: Some("b7ad6b7169203331"),  // 指向父span
+      sampled: true,
+      trace_state: ""
     },
-    {
-      "trace_id": "trace-001",
-      "span_id": "span-003",
-      "parent_span_id": "span-001",
-      "service_name": "user-service",
-      "operation_name": "get_user_data",
-      "start_time": 1640995200120,
-      "end_time": 1640995200220,
-      "status": "success",
-      "tags": {"user.id": "12345"}
+    operation_name: "database.query",
+    start_time: 1634567890150,
+    end_time: 1634567890200,
+    status: azimuth::SpanStatus::Ok,
+    attributes: []
+  }
+  
+  // 服务C的子span
+  let service_c_span = azimuth::Span {
+    span_context: azimuth::SpanContext {
+      trace_id: trace_id,  // 必须与根span相同
+      span_id: "b2c5d6e7f8a9b0c1",
+      parent_span_id: Some("b7ad6b7169203331"),  // 指向父span
+      sampled: true,
+      trace_state: ""
     },
-    {
-      "trace_id": "trace-001",
-      "span_id": "span-004",
-      "parent_span_id": "span-003",
-      "service_name": "database",
-      "operation_name": "query_user",
-      "start_time": 1640995200150,
-      "end_time": 1640995200200,
-      "status": "success",
-      "tags": {"db.table": "users"}
+    operation_name: "cache.get",
+    start_time: 1634567890180,
+    end_time: 1634567890190,
+    status: azimuth::SpanStatus::Ok,
+    attributes: []
+  }
+  
+  // 验证追踪ID一致性
+  assert_eq(root_span.span_context.trace_id, trace_id)
+  assert_eq(service_b_span.span_context.trace_id, trace_id)
+  assert_eq(service_c_span.span_context.trace_id, trace_id)
+  
+  // 验证父子关系
+  match service_b_span.span_context.parent_span_id {
+    Some(parent_id) => assert_eq(parent_id, root_span.span_context.span_id)
+    None => assert_true(false)
+  }
+  
+  match service_c_span.span_context.parent_span_id {
+    Some(parent_id) => assert_eq(parent_id, root_span.span_context.span_id)
+    None => assert_true(false)
+  }
+  
+  // 验证时间顺序
+  assert_true(root_span.start_time <= service_b_span.start_time)
+  assert_true(root_span.start_time <= service_c_span.start_time)
+  assert_true(service_b_span.end_time <= root_span.end_time)
+  assert_true(service_c_span.end_time <= root_span.end_time)
+}
+
+test "分布式追踪时间戳一致性验证测试" {
+  // 创建分布式追踪链
+  let trace_start_time = 1634567890000
+  
+  let spans = [
+    azimuth::Span {
+      span_context: azimuth::SpanContext {
+        trace_id: "trace123",
+        span_id: "span1",
+        parent_span_id: None,
+        sampled: true,
+        trace_state: ""
+      },
+      operation_name: "service.a.entry",
+      start_time: trace_start_time,
+      end_time: trace_start_time + 100,
+      status: azimuth::SpanStatus::Ok,
+      attributes: []
+    },
+    azimuth::Span {
+      span_context: azimuth::SpanContext {
+        trace_id: "trace123",
+        span_id: "span2",
+        parent_span_id: Some("span1"),
+        sampled: true,
+        trace_state: ""
+      },
+      operation_name: "service.b.process",
+      start_time: trace_start_time + 20,
+      end_time: trace_start_time + 80,
+      status: azimuth::SpanStatus::Ok,
+      attributes: []
+    },
+    azimuth::Span {
+      span_context: azimuth::SpanContext {
+        trace_id: "trace123",
+        span_id: "span3",
+        parent_span_id: Some("span2"),
+        sampled: true,
+        trace_state: ""
+      },
+      operation_name: "service.c.database",
+      start_time: trace_start_time + 30,
+      end_time: trace_start_time + 70,
+      status: azimuth::SpanStatus::Ok,
+      attributes: []
     }
   ]
   
-  // 验证trace_id一致性
-  let root_trace_id = trace_chain[0]["trace_id"]
-  for i = 0; i < trace_chain.length(); i = i + 1 {
-    assert_eq(trace_chain[i]["trace_id"], root_trace_id)
+  // 验证时间戳一致性
+  let root_span = spans[0]
+  let child_span1 = spans[1]
+  let child_span2 = spans[2]
+  
+  // 子span必须在父span的时间范围内
+  assert_true(root_span.start_time <= child_span1.start_time)
+  assert_true(child_span1.end_time <= root_span.end_time)
+  
+  assert_true(child_span1.start_time <= child_span2.start_time)
+  assert_true(child_span2.end_time <= child_span1.end_time)
+  
+  // 验证持续时间合理性
+  let root_duration = root_span.end_time - root_span.start_time
+  let child1_duration = child_span1.end_time - child_span1.start_time
+  let child2_duration = child_span2.end_time - child_span2.start_time
+  
+  assert_eq(root_duration, 100)
+  assert_eq(child1_duration, 60)
+  assert_eq(child2_duration, 40)
+  
+  // 子span持续时间不应超过父span
+  assert_true(child1_duration <= root_duration)
+  assert_true(child2_duration <= child1_duration)
+}
+
+test "分布式追踪上下文传播一致性测试" {
+  // 模拟跨服务上下文传播
+  let original_context = azimuth::Context {
+    trace_id: "4bf92f3577b34da6a3ce929d0e0e4736",
+    span_id: "b7ad6b7169203331",
+    baggage: [
+      ("user.id", "12345"),
+      ("request.id", "req-67890"),
+      ("session.id", "sess-abcde")
+    ],
+    trace_flags: "01"
   }
   
-  // 验证span_id唯一性
-  let span_ids = []
-  for i = 0; i < trace_chain.length(); i = i + 1 {
-    let span_id = trace_chain[i]["span_id"]
-    assert_false(span_ids.contains(span_id))
-    span_ids.push(span_id)
-  }
+  // 服务A注入上下文到HTTP头
+  let injected_headers = azimuth::inject_context_to_headers(original_context)
   
-  // 验证父子关系
-  assert_eq(trace_chain[1]["parent_span_id"], trace_chain[0]["span_id"])
-  assert_eq(trace_chain[2]["parent_span_id"], trace_chain[0]["span_id"])
-  assert_eq(trace_chain[3]["parent_span_id"], trace_chain[2]["span_id"])
+  // 验证注入的头部
+  assert_true(injected_headers.contains_key("traceparent"))
+  assert_true(injected_headers.contains_key("tracestate"))
+  assert_true(injected_headers.contains_key("baggage"))
   
-  // 验证时间顺序
-  for i = 0; i < trace_chain.length(); i = i + 1 {
-    let start_time = trace_chain[i]["start_time"].to_int()
-    let end_time = trace_chain[i]["end_time"].to_int()
-    assert_true(start_time < end_time)
+  // 服务B从HTTP头提取上下文
+  let extracted_context = azimuth::extract_context_from_headers(injected_headers)
+  
+  // 验证上下文一致性
+  assert_eq(extracted_context.trace_id, original_context.trace_id)
+  assert_eq(extracted_context.span_id, original_context.span_id)
+  assert_eq(extracted_context.trace_flags, original_context.trace_flags)
+  
+  // 验证baggage传播
+  assert_eq(extracted_context.baggage.length(), original_context.baggage.length())
+  
+  for baggage_item in original_context.baggage {
+    let (key, value) = baggage_item
+    let extracted_value = extracted_context.baggage.find(fn(item) { item.0 == key })
+    match extracted_value {
+      Some((_, v)) => assert_eq(v, value)
+      None => assert_true(false)
+    }
   }
 }
 
-// 测试2: 追踪上下文传播验证
-test "追踪上下文传播验证" {
-  // 模拟上下文传播过程
-  let context_propagation = {
-    "original_context": {
-      "trace_id": "trace-002",
-      "span_id": "span-001",
-      "baggage_items": {
-        "user.id": "67890",
-        "request.id": "req-12345",
-        "session.id": "sess-67890"
-      }
+test "分布式追踪采样一致性验证测试" {
+  // 测试采样决策在分布式系统中的传播
+  let trace_id = "trace123456"
+  
+  // 根决策：采样
+  let sampled_context = azimuth::SamplingDecision {
+    trace_id: trace_id,
+    sampled: true,
+    decision_reason: "probability_based",
+    sample_rate: 0.1
+  }
+  
+  // 验证子服务遵循采样决策
+  let service_a_decision = azimuth::make_sampling_decision(trace_id, sampled_context)
+  assert_true(service_a_decision.sampled)
+  assert_eq(service_a_decision.decision_reason, "parent_decision")
+  
+  let service_b_decision = azimuth::make_sampling_decision(trace_id, service_a_decision)
+  assert_true(service_b_decision.sampled)
+  assert_eq(service_b_decision.decision_reason, "parent_decision")
+  
+  // 根决策：不采样
+  let not_sampled_context = azimuth::SamplingDecision {
+    trace_id: trace_id + "nosample",
+    sampled: false,
+    decision_reason: "probability_based",
+    sample_rate: 0.1
+  }
+  
+  let service_c_decision = azimuth::make_sampling_decision(trace_id + "nosample", not_sampled_context)
+  assert_false(service_c_decision.sampled)
+  assert_eq(service_c_decision.decision_reason, "parent_decision")
+  
+  // 验证采样一致性
+  let all_spans = [
+    azimuth::create_span("root", sampled_context),
+    azimuth::create_span("service.a", service_a_decision),
+    azimuth::create_span("service.b", service_b_decision)
+  ]
+  
+  for span in all_spans {
+    assert_eq(span.span_context.sampled, sampled_context.sampled)
+  }
+}
+
+test "分布式追踪属性传播一致性测试" {
+  // 测试关键属性在分布式追踪中的传播
+  let root_attributes = [
+    ("service.name", "user-service"),
+    ("service.version", "1.2.3"),
+    ("deployment.environment", "production"),
+    ("host.name", "host-01"),
+    ("user.id", "12345"),
+    ("request.method", "GET"),
+    ("request.path", "/api/users/12345")
+  ]
+  
+  // 创建根span
+  let root_span = azimuth::Span {
+    span_context: azimuth::SpanContext {
+      trace_id: "trace123",
+      span_id: "span1",
+      parent_span_id: None,
+      sampled: true,
+      trace_state: ""
     },
-    "propagated_contexts": [
-      {
-        "service": "service-a",
-        "trace_id": "trace-002",
-        "span_id": "span-002",
-        "parent_span_id": "span-001",
-        "baggage_items": {
-          "user.id": "67890",
-          "request.id": "req-12345",
-          "session.id": "sess-67890"
-        }
-      },
-      {
-        "service": "service-b",
-        "trace_id": "trace-002", 
-        "span_id": "span-003",
-        "parent_span_id": "span-002",
-        "baggage_items": {
-          "user.id": "67890",
-          "request.id": "req-12345",
-          "session.id": "sess-67890"
-        }
-      }
-    ]
+    operation_name: "user.get",
+    start_time: 1634567890000,
+    end_time: 1634567890100,
+    status: azimuth::SpanStatus::Ok,
+    attributes: root_attributes
   }
   
-  let original = context_propagation["original_context"]
+  // 创建子span，继承关键属性
+  let child_span = azimuth::create_child_span(root_span, "database.query")
   
-  // 验证trace_id传播
-  for i = 0; i < context_propagation["propagated_contexts"].length(); i = i + 1 {
-    let propagated = context_propagation["propagated_contexts"][i]
-    assert_eq(propagated["trace_id"], original["trace_id"])
-  }
+  // 验证关键属性传播
+  let inherited_keys = ["service.name", "service.version", "deployment.environment", "user.id"]
   
-  // 验证baggage items传播
-  let original_baggage = original["baggage_items"]
-  for i = 0; i < context_propagation["propagated_contexts"].length(); i = i + 1 {
-    let propagated_baggage = context_propagation["propagated_contexts"][i]["baggage_items"]
-    assert_eq(propagated_baggage["user.id"], original_baggage["user.id"])
-    assert_eq(propagated_baggage["request.id"], original_baggage["request.id"])
-    assert_eq(propagated_baggage["session.id"], original_baggage["session.id"])
-  }
-}
-
-// 测试3: 分布式事务追踪一致性
-test "分布式事务追踪一致性" {
-  // 模拟分布式事务
-  let distributed_transaction = {
-    "transaction_id": "tx-001",
-    "trace_id": "trace-003",
-    "operations": [
-      {
-        "operation_id": "op-001",
-        "service": "order-service",
-        "action": "create_order",
-        "status": "success",
-        "timestamp": 1640995200000,
-        "data": {"order_id": "order-12345", "amount": 100.0}
-      },
-      {
-        "operation_id": "op-002",
-        "service": "payment-service",
-        "action": "process_payment",
-        "status": "success",
-        "timestamp": 1640995200100,
-        "data": {"payment_id": "pay-67890", "amount": 100.0}
-      },
-      {
-        "operation_id": "op-003",
-        "service": "inventory-service",
-        "action": "reserve_items",
-        "status": "success",
-        "timestamp": 1640995200200,
-        "data": {"items": ["item-1", "item-2"], "quantity": 2}
-      },
-      {
-        "operation_id": "op-004",
-        "service": "notification-service",
-        "action": "send_confirmation",
-        "status": "success",
-        "timestamp": 1640995200300,
-        "data": {"notification_id": "notif-11111"}
-      }
-    ]
-  }
-  
-  // 验证事务ID一致性
-  let tx_id = distributed_transaction["transaction_id"]
-  let trace_id = distributed_transaction["trace_id"]
-  
-  // 验证操作时间顺序
-  let operations = distributed_transaction["operations"]
-  for i = 1; i < operations.length(); i = i + 1 {
-    let prev_time = operations[i-1]["timestamp"].to_int()
-    let current_time = operations[i]["timestamp"].to_int()
-    assert_true(current_time >= prev_time)
-  }
-  
-  // 验证所有操作都成功
-  for i = 0; i < operations.length(); i = i + 1 {
-    assert_eq(operations[i]["status"], "success")
-  }
-  
-  // 验证金额一致性
-  let order_amount = operations[0]["data"]["amount"].to_float()
-  let payment_amount = operations[1]["data"]["amount"].to_float()
-  assert_eq(order_amount, payment_amount)
-}
-
-// 测试4: 异步操作追踪一致性
-test "异步操作追踪一致性" {
-  // 模拟异步操作链
-  let async_operations = {
-    "initiator": {
-      "trace_id": "trace-004",
-      "span_id": "span-001",
-      "service": "web-server",
-      "operation": "async_upload",
-      "start_time": 1640995200000
-    },
-    "async_chain": [
-      {
-        "trace_id": "trace-004",
-        "span_id": "span-002",
-        "parent_span_id": "span-001",
-        "service": "file-service",
-        "operation": "process_file",
-        "start_time": 1640995200200,
-        "status": "processing"
-      },
-      {
-        "trace_id": "trace-004",
-        "span_id": "span-003",
-        "parent_span_id": "span-002",
-        "service": "thumbnail-service",
-        "operation": "generate_thumbnails",
-        "start_time": 1640995200400,
-        "status": "processing"
-      },
-      {
-        "trace_id": "trace-004",
-        "span_id": "span-004",
-        "parent_span_id": "span-002",
-        "service": "storage-service",
-        "operation": "store_file",
-        "start_time": 1640995200450,
-        "status": "completed"
-      }
-    ]
-  }
-  
-  // 验证trace_id一致性
-  assert_eq(async_operations["initiator"]["trace_id"], "trace-004")
-  for i = 0; i < async_operations["async_chain"].length(); i = i + 1 {
-    assert_eq(async_operations["async_chain"][i]["trace_id"], "trace-004")
-  }
-  
-  // 验证时间顺序（异步操作可能在主操作之后开始）
-  let initiator_start = async_operations["initiator"]["start_time"].to_int()
-  for i = 0; i < async_operations["async_chain"].length(); i = i + 1 {
-    let async_start = async_operations["async_chain"][i]["start_time"].to_int()
-    assert_true(async_start >= initiator_start)
-  }
-  
-  // 验证父子关系
-  assert_eq(async_operations["async_chain"][0]["parent_span_id"], async_operations["initiator"]["span_id"])
-  assert_eq(async_operations["async_chain"][1]["parent_span_id"], async_operations["async_chain"][0]["span_id"])
-  assert_eq(async_operations["async_chain"][2]["parent_span_id"], async_operations["async_chain"][0]["span_id"])
-}
-
-// 测试5: 跨区域追踪一致性
-test "跨区域追踪一致性" {
-  // 模拟跨区域部署的追踪
-  let cross_region_trace = {
-    "trace_id": "trace-005",
-    "regions": [
-      {
-        "region": "us-east-1",
-        "spans": [
-          {
-            "span_id": "span-001",
-            "service": "api-gateway",
-            "operation": "route_request",
-            "start_time": 1640995200000,
-            "end_time": 1640995200100
-          }
-        ]
-      },
-      {
-        "region": "eu-west-1",
-        "spans": [
-          {
-            "span_id": "span-002",
-            "parent_span_id": "span-001",
-            "service": "user-service",
-            "operation": "get_user",
-            "start_time": 1640995200150,
-            "end_time": 1640995200250
-          }
-        ]
-      },
-      {
-        "region": "ap-southeast-1",
-        "spans": [
-          {
-            "span_id": "span-003",
-            "parent_span_id": "span-002",
-            "service": "cache-service",
-            "operation": "get_cache",
-            "start_time": 1640995200300,
-            "end_time": 1640995200320
-          }
-        ]
-      }
-    ]
-  }
-  
-  // 验证跨区域trace_id一致性
-  assert_eq(cross_region_trace["trace_id"], "trace-005")
-  for i = 0; i < cross_region_trace["regions"].length(); i = i + 1 {
-    let region_spans = cross_region_trace["regions"][i]["spans"]
-    for j = 0; j < region_spans.length(); j = j + 1 {
-      // 这里假设每个span都包含trace_id
-      // 实际实现中可能需要从上下文获取
+  for key in inherited_keys {
+    let root_value = root_span.attributes.find(fn(attr) { attr.0 == key })
+    let child_value = child_span.attributes.find(fn(attr) { attr.0 == key })
+    
+    match (root_value, child_value) {
+      (Some((_, root_val)), Some((_, child_val))) => assert_eq(root_val, child_val)
+      _ => assert_true(false)
     }
   }
   
-  // 验证跨区域时间顺序（考虑网络延迟）
-  let region_times = []
-  for i = 0; i < cross_region_trace["regions"].length(); i = i + 1 {
-    let spans = cross_region_trace["regions"][i]["spans"]
-    if (spans.length() > 0) {
-      region_times.push(spans[0]["start_time"].to_int())
-    }
+  // 验证子span的独有属性
+  let child_specific = child_span.attributes.find(fn(attr) { attr.0 == "db.operation" })
+  match child_specific {
+    Some((_, value)) => assert_eq(value, "SELECT")
+    None => assert_true(false)
+  }
+}
+
+test "分布式追踪错误传播一致性测试" {
+  // 测试错误信息在分布式追踪中的传播
+  let error_span = azimuth::Span {
+    span_context: azimuth::SpanContext {
+      trace_id: "error-trace",
+      span_id: "error-span",
+      parent_span_id: None,
+      sampled: true,
+      trace_state: ""
+    },
+    operation_name: "failing.operation",
+    start_time: 1634567890000,
+    end_time: 1634567890050,
+    status: azimuth::SpanStatus::Error,
+    attributes: [
+      ("error.type", "DatabaseConnectionError"),
+      ("error.message", "Connection timeout after 30 seconds"),
+      ("error.stack", "db.connect() -> timeout"),
+      ("error.code", "DB_CONN_TIMEOUT")
+    ]
   }
   
-  for i = 1; i < region_times.length(); i = i + 1 {
-    assert_true(region_times[i] >= region_times[i-1])
+  // 创建子span，继承错误信息
+  let child_error_span = azimuth::create_child_span(error_span, "error.recovery")
+  
+  // 验证错误状态传播
+  match child_error_span.status {
+    azimuth::SpanStatus::Error => assert_true(true)
+    _ => assert_true(false)
   }
+  
+  // 验证错误属性传播
+  let error_type = child_error_span.attributes.find(fn(attr) { attr.0 == "error.type" })
+  match error_type {
+    Some((_, value)) => assert_eq(value, "DatabaseConnectionError")
+    None => assert_true(false)
+  }
+  
+  // 验证错误链完整性
+  let error_chain = azimuth::build_error_chain([error_span, child_error_span])
+  assert_eq(error_chain.length(), 2)
+  assert_eq(error_chain[0].operation_name, "failing.operation")
+  assert_eq(error_chain[1].operation_name, "error.recovery")
 }

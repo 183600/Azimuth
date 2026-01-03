@@ -60,6 +60,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "simple_syntax_test.mbt": {
     0: (__test_73696d706c655f73796e7461785f746573742e6d6274_0, ["simple syntax validation"]),
   },
+  "azimuth_webassembly_platform_compatibility_tests.mbt": {
+  },
   "azimuth_webassembly_platform_compatibility_comprehensive_tests.mbt": {
   },
   "azimuth_webassembly_compatibility_tests.mbt": {
@@ -374,6 +376,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_premium_concurrent_processing_tests.mbt": {
   },
+  "azimuth_premium_comprehensive_tests.mbt": {
+  },
   "azimuth_premium_comprehensive_test_suite.mbt": {
   },
   "azimuth_premium_boundary_error_handling_tests.mbt": {
@@ -405,6 +409,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_performance_monitoring_tests.mbt": {
   },
   "azimuth_performance_focused_tests.mbt": {
+  },
+  "azimuth_performance_concurrent_safety_tests.mbt": {
   },
   "azimuth_performance_boundary_tests.mbt": {
   },
@@ -521,6 +527,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_memory_management_resource_cleanup_tests.mbt": {
   },
   "azimuth_memory_leak_detection_tests.mbt": {
+  },
+  "azimuth_memory_leak_detection_resource_cleanup_tests.mbt": {
   },
   "azimuth_logging_telemetry_tests.mbt": {
   },
@@ -895,6 +903,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_clock_random_functionality_tests.mbt": {
   },
   "azimuth_caching_mechanism_tests.mbt": {
+  },
+  "azimuth_boundary_error_handling_tests.mbt": {
   },
   "azimuth_boundary_edge_case_tests.mbt": {
   },
