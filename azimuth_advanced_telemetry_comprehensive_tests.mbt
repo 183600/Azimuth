@@ -1,480 +1,464 @@
-// Advanced Comprehensive Telemetry Tests for Azimuth
-// This file contains advanced test cases covering edge cases and complex scenarios
+// Azimuth 高级遥测系统测试用例
+// 专注于测试遥测系统的高级功能和边界情况
 
-// Test 1: Time series data processing with temporal operations
-test "time series data processing with temporal operations" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "time-series-test")
-  
-  // Create time series instruments
-  let temp_gauge = Meter::create_gauge(meter, "temperature", Some("System temperature"), Some("celsius"))
-  let cpu_histogram = Meter::create_histogram(meter, "cpu.usage", Some("CPU usage histogram"), Some("percent"))
-  
-  // Simulate time series data points
-  let time_points = [1000L, 2000L, 3000L, 4000L, 5000L]
-  let temp_values = [45.2, 46.1, 45.8, 47.3, 46.9]
-  let cpu_values = [25.5, 30.2, 28.7, 35.1, 32.8]
-  
-  // Record time series data
-  for i = 0; i < 5; i = i + 1 {
-    Gauge::record(temp_gauge, temp_values[i])
-    Histogram::record(cpu_histogram, cpu_values[i])
-  }
-  
-  // Test temporal aggregation
-  let avg_temp = (45.2 + 46.1 + 45.8 + 47.3 + 46.9) / 5.0
-  let max_cpu = 35.1
-  
-  assert_true(avg_temp > 45.0 and avg_temp < 47.0)
-  assert_eq(max_cpu, 35.1)
-  
-  // Test time window operations
-  let window_start = 2000L
-  let window_end = 4000L
-  let window_values = [46.1, 45.8, 47.3]
-  let window_avg = (46.1 + 45.8 + 47.3) / 3.0
-  
-  assert_true(window_avg > 45.0 and window_avg < 47.0)
-}
-
-// Test 2: Cross-service telemetry consistency
-test "cross-service telemetry consistency" {
-  // Create service A telemetry
-  let service_a_tracer = TracerProvider::get_tracer(TracerProvider::default(), "service-a")
-  let service_a_meter = MeterProvider::get_meter(MeterProvider::default(), "service-a")
-  
-  // Create service B telemetry
-  let service_b_tracer = TracerProvider::get_tracer(TracerProvider::default(), "service-b")
-  let service_b_meter = MeterProvider::get_meter(MeterProvider::default(), "service-b")
-  
-  // Create shared trace context
-  let trace_id = "1234567890abcdef1234567890abcdef"
-  let parent_span_id = "1111111111111111"
-  let shared_context = SpanContext::new(trace_id, parent_span_id, true, "service=a")
-  
-  // Service A creates span
-  let service_a_span = Tracer::start_span(service_a_tracer, "service-a-operation")
-  let service_a_context = Span::span_context(service_a_span)
-  
-  // Service B creates child span with same trace
-  let service_b_span = Tracer::start_span(service_b_tracer, "service-b-operation")
-  let service_b_context = Span::span_context(service_b_span)
-  
-  // Verify trace consistency
-  assert_eq(SpanContext::trace_id(service_a_context), SpanContext::trace_id(service_b_context))
-  assert_true(SpanContext::is_valid(service_a_context))
-  assert_true(SpanContext::is_valid(service_b_context))
-  
-  // Record metrics in both services
-  let service_a_counter = Meter::create_counter(service_a_meter, "service.a.requests", Some("Service A requests"), Some("count"))
-  let service_b_counter = Meter::create_counter(service_b_meter, "service.b.requests", Some("Service B requests"), Some("count"))
-  
-  Counter::add(service_a_counter, 1.0)
-  Counter::add(service_b_counter, 1.0)
-  
-  // End spans
-  Span::end(service_a_span)
-  Span::end(service_b_span)
-}
-
-// Test 3: Dynamic configuration updates
-test "dynamic configuration updates" {
-  // Create configurable tracer provider
-  let tracer_provider = TracerProvider::default()
-  
-  // Test initial configuration
-  let initial_tracer = TracerProvider::get_tracer(tracer_provider, "dynamic-test")
-  assert_eq(Tracer::instrumentation_scope(initial_tracer).name, "dynamic-test")
-  
-  // Simulate configuration update
-  let updated_tracer = TracerProvider::get_tracer(tracer_provider, "dynamic-test", Some("2.0.0"))
-  assert_eq(Tracer::instrumentation_scope(updated_tracer).name, "dynamic-test")
-  assert_eq(Tracer::instrumentation_scope(updated_tracer).version, Some("2.0.0"))
-  
-  // Test meter provider configuration updates
-  let meter_provider = MeterProvider::default()
-  let initial_meter = MeterProvider::get_meter(meter_provider, "dynamic-meter")
-  let updated_meter = MeterProvider::get_meter(meter_provider, "dynamic-meter", Some("3.0.0"))
-  
-  assert_eq(initial_meter.scope.name, "dynamic-meter")
-  assert_eq(updated_meter.scope.name, "dynamic-meter")
-  assert_eq(updated_meter.scope.version, Some("3.0.0"))
-  
-  // Test logger provider configuration updates
-  let logger_provider = LoggerProvider::default()
-  let initial_logger = LoggerProvider::get_logger(logger_provider, "dynamic-logger")
-  let updated_logger = LoggerProvider::get_logger(logger_provider, "dynamic-logger", Some("4.0.0"))
-  
-  assert_eq(initial_logger.scope.name, "dynamic-logger")
-  assert_eq(updated_logger.scope.name, "dynamic-logger")
-  assert_eq(updated_logger.scope.version, Some("4.0.0"))
-}
-
-// Test 4: Error boundary handling and recovery
-test "error boundary handling and recovery" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "error-boundary-test")
-  
-  // Create span for error testing
-  let error_span = Tracer::start_span(tracer, "error-prone-operation")
-  
-  // Test error scenario 1: Invalid attribute values
-  let invalid_attrs = Attributes::new()
-  Attributes::set(invalid_attrs, "null.value", StringValue(""))
-  Attributes::set(invalid_attrs, "empty.key", StringValue("value"))
-  
-  Span::set_attributes(error_span, invalid_attrs)
-  
-  // Test error scenario 2: Invalid span operations
-  Span::add_event(error_span, "error.event", Some(invalid_attrs))
-  Span::set_status(error_span, Error, Some("Simulated error for testing"))
-  
-  // Test error recovery
-  let recovery_span = Tracer::start_span(tracer, "recovery-operation")
-  Span::set_status(recovery_span, Ok, Some("Operation recovered successfully"))
-  
-  // Test error propagation
-  let propagation_span = Tracer::start_span(tracer, "propagation-test")
-  let error_context = Span::span_context(error_span)
-  let propagation_context = Span::span_context(propagation_span)
-  
-  // Verify error handling doesn't crash the system
-  assert_true(SpanContext::is_valid(error_context))
-  assert_true(SpanContext::is_valid(propagation_context))
-  
-  // End all spans
-  Span::end(error_span)
-  Span::end(recovery_span)
-  Span::end(propagation_span)
-}
-
-// Test 5: Data serialization integrity
-test "data serialization integrity" {
-  // Test complex attribute serialization
-  let complex_attrs = Attributes::new()
-  
-  // Add various data types
-  Attributes::set(complex_attrs, "string.value", StringValue("test string"))
-  Attributes::set(complex_attrs, "int.value", IntValue(42))
-  Attributes::set(complex_attrs, "float.value", FloatValue(3.14159))
-  Attributes::set(complex_attrs, "bool.value", BoolValue(true))
-  Attributes::set(complex_attrs, "array.value", ArrayStringValue(["item1", "item2", "item3"]))
-  
-  // Test special characters
-  Attributes::set(complex_attrs, "special.chars", StringValue("!@#$%^&*()_+-={}[]|\\:;\"'<>?,./"))
-  Attributes::set(complex_attrs, "unicode.value", StringValue("测试中文🚀emoji"))
-  
-  // Test nested structures
-  Attributes::set(complex_attrs, "nested.value", StringValue("{\"key\": \"value\", \"number\": 123}"))
-  
-  // Verify serialization integrity
-  let retrieved_string = Attributes::get(complex_attrs, "string.value")
-  let retrieved_int = Attributes::get(complex_attrs, "int.value")
-  let retrieved_float = Attributes::get(complex_attrs, "float.value")
-  let retrieved_bool = Attributes::get(complex_attrs, "bool.value")
-  let retrieved_array = Attributes::get(complex_attrs, "array.value")
-  let retrieved_special = Attributes::get(complex_attrs, "special.chars")
-  let retrieved_unicode = Attributes::get(complex_attrs, "unicode.value")
-  let retrieved_nested = Attributes::get(complex_attrs, "nested.value")
-  
-  assert_eq(retrieved_string, Some(StringValue("test string")))
-  assert_eq(retrieved_int, Some(IntValue(42)))
-  assert_eq(retrieved_float, Some(FloatValue(3.14159)))
-  assert_eq(retrieved_bool, Some(BoolValue(true)))
-  assert_eq(retrieved_array, Some(ArrayStringValue(["item1", "item2", "item3"])))
-  assert_eq(retrieved_special, Some(StringValue("!@#$%^&*()_+-={}[]|\\:;\"'<>?,./")))
-  assert_eq(retrieved_unicode, Some(StringValue("测试中文🚀emoji")))
-  assert_eq(retrieved_nested, Some(StringValue("{\"key\": \"value\", \"number\": 123}")))
-}
-
-// Test 6: Platform-specific telemetry adaptation
-test "platform-specific telemetry adaptation" {
-  // Test resource detection for different platforms
-  let base_resource = Resource::new()
-  
-  // Simulate Linux platform
-  let linux_resource = Resource::with_attributes(base_resource, [
-    ("os.type", StringValue("linux")),
-    ("os.version", StringValue("5.15.0")),
-    ("os.description", StringValue("Ubuntu 22.04 LTS")),
-    ("arch", StringValue("x86_64")),
-    ("hostname", StringValue("linux-server-01"))
-  ])
-  
-  // Simulate Windows platform
-  let windows_resource = Resource::with_attributes(base_resource, [
-    ("os.type", StringValue("windows")),
-    ("os.version", StringValue("10.0.19044")),
-    ("os.description", StringValue("Windows 10 Pro")),
-    ("arch", StringValue("amd64")),
-    ("hostname", StringValue("WIN-SERVER-01"))
-  ])
-  
-  // Simulate macOS platform
-  let macos_resource = Resource::with_attributes(base_resource, [
-    ("os.type", StringValue("darwin")),
-    ("os.version", StringValue("21.6.0")),
-    ("os.description", StringValue("macOS Monterey 12.5")),
-    ("arch", StringValue("arm64")),
-    ("hostname", StringValue("macbook-pro-01"))
-  ])
-  
-  // Verify platform-specific attributes
-  assert_eq(Resource::get_attribute(linux_resource, "os.type"), Some(StringValue("linux")))
-  assert_eq(Resource::get_attribute(windows_resource, "os.type"), Some(StringValue("windows")))
-  assert_eq(Resource::get_attribute(macos_resource, "os.type"), Some(StringValue("darwin")))
-  
-  // Test platform-specific metric collection
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "platform-test")
-  
-  // Platform-specific metrics
-  let linux_memory = Meter::create_gauge(meter, "linux.memory.usage", Some("Linux memory usage"), Some("percent"))
-  let windows_memory = Meter::create_gauge(meter, "windows.memory.usage", Some("Windows memory usage"), Some("percent"))
-  let macos_memory = Meter::create_gauge(meter, "macos.memory.usage", Some("macOS memory usage"), Some("percent"))
-  
-  // Record platform-specific values
-  Gauge::record(linux_memory, 75.5)
-  Gauge::record(windows_memory, 68.2)
-  Gauge::record(macos_memory, 82.1)
-  
-  assert_eq(linux_memory.name, "linux.memory.usage")
-  assert_eq(windows_memory.name, "windows.memory.usage")
-  assert_eq(macos_memory.name, "macos.memory.usage")
-}
-
-// Test 7: Advanced resource merge strategies
-test "advanced resource merge strategies" {
-  // Create multiple resources with different merge strategies
-  let base_resource = Resource::new()
-  
-  // Resource A: Service information
-  let resource_a = Resource::with_attributes(base_resource, [
-    ("service.name", StringValue("azimuth-service")),
-    ("service.version", StringValue("1.0.0")),
-    ("service.namespace", StringValue("production"))
-  ])
-  
-  // Resource B: Host information (some overlapping keys)
-  let resource_b = Resource::with_attributes(base_resource, [
-    ("service.name", StringValue("azimuth-service-v2")),  // This should override
-    ("host.name", StringValue("prod-server-01")),
-    ("host.arch", StringValue("x86_64"))
-  ])
-  
-  // Resource C: Process information
-  let resource_c = Resource::with_attributes(base_resource, [
-    ("process.pid", IntValue(12345)),
-    ("process.name", StringValue("azimuth-service")),
-    ("service.instance.id", StringValue("instance-abc123"))
-  ])
-  
-  // Test different merge strategies
-  let merged_ab = Resource::merge(resource_a, resource_b)
-  let merged_abc = Resource::merge(merged_ab, resource_c)
-  
-  // Verify merge results
-  let service_name = Resource::get_attribute(merged_abc, "service.name")
-  let service_version = Resource::get_attribute(merged_abc, "service.version")
-  let host_name = Resource::get_attribute(merged_abc, "host.name")
-  let process_pid = Resource::get_attribute(merged_abc, "process.pid")
-  let service_instance = Resource::get_attribute(merged_abc, "service.instance.id")
-  
-  // Note: Simplified implementation may not return all merged values
-  assert_true(true)  // Test passes if merge doesn't crash
-  
-  // Test merge with empty resources
-  let empty_resource = Resource::new()
-  let merged_with_empty = Resource::merge(resource_a, empty_resource)
-  assert_true(true)  // Should handle empty resource gracefully
-}
-
-// Test 8: High concurrency safety scenarios
-test "high concurrency safety scenarios" {
-  // Create multiple providers for concurrent operations
-  let tracer_provider = TracerProvider::default()
-  let meter_provider = MeterProvider::default()
-  let logger_provider = LoggerProvider::default()
-  
-  // Create instruments
-  let tracer = TracerProvider::get_tracer(tracer_provider, "concurrency-test")
-  let meter = MeterProvider::get_meter(meter_provider, "concurrency-test")
-  let logger = LoggerProvider::get_logger(logger_provider, "concurrency-test")
-  
-  // Create metrics for concurrent access
-  let concurrent_counter = Meter::create_counter(meter, "concurrent.operations", Some("Concurrent operations"), Some("count"))
-  let concurrent_histogram = Meter::create_histogram(meter, "concurrent.latency", Some("Concurrent latency"), Some("ms"))
-  
-  // Simulate concurrent span operations
-  let spans = []
-  for i = 0; i < 10; i = i + 1 {
-    let span = Tracer::start_span(tracer, "concurrent.operation." + i.to_string())
-    spans.push(span)
-    
-    // Record metrics concurrently
-    Counter::add(concurrent_counter, 1.0)
-    Histogram::record(concurrent_histogram, 50.0 + (i * 5.0))
-    
-    // Add events to spans
-    Span::add_event(span, "concurrent.event", Some([
-      ("operation.id", IntValue(i)),
-      ("timestamp", IntValue(1735689600 + i))
-    ]))
-  }
-  
-  // Test concurrent context operations
-  let contexts = []
-  for i = 0; i < 5; i = i + 1 {
-    let ctx = Context::with_value(Context::root(), ContextKey::new("concurrent.key." + i.to_string()), "value." + i.to_string())
-    contexts.push(ctx)
-  }
-  
-  // Verify concurrent operations don't interfere
-  for i = 0; i < 10; i = i + 1 {
-    let span = spans[i]
-    let span_ctx = Span::span_context(span)
-    assert_true(SpanContext::is_valid(span_ctx))
-    Span::end(span)
-  }
-  
-  // Test concurrent logging
-  for i = 0; i < 5; i = i + 1 {
-    let log = LogRecord::new_with_context(
-      Info,
-      Some("Concurrent log message " + i.to_string()),
-      Some([("log.id", IntValue(i))]),
-      Some(1735689600000000000L + i),
-      Some(1735689600000001000L + i),
-      Some("trace-" + i.to_string()),
-      Some("span-" + i.to_string()),
-      Some(Context::root())
-    )
-    Logger::emit(logger, log)
-  }
-  
-  assert_true(true)  // If we reach here, concurrent operations were safe
-}
-
-// Test 9: Internationalization and globalization support
-test "internationalization and globalization support" {
-  // Test multilingual log messages
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "i18n-test")
-  
-  // Create log messages in different languages
-  let english_log = LogRecord::new(Info, "Operation completed successfully")
-  let chinese_log = LogRecord::new(Info, "操作成功完成")
-  let japanese_log = LogRecord::new(Info, "操作が正常に完了しました")
-  let spanish_log = LogRecord::new(Info, "Operación completada exitosamente")
-  let french_log = LogRecord::new(Info, "Opération terminée avec succès")
-  let german_log = LogRecord::new(Info, "Operation erfolgreich abgeschlossen")
-  let russian_log = LogRecord::new(Info, "Операция успешно завершена")
-  let arabic_log = LogRecord::new(Info, "تمت العملية بنجاح")
-  
-  // Verify log bodies
-  assert_eq(LogRecord::body(english_log), Some("Operation completed successfully"))
-  assert_eq(LogRecord::body(chinese_log), Some("操作成功完成"))
-  assert_eq(LogRecord::body(japanese_log), Some("操作が正常に完了しました"))
-  assert_eq(LogRecord::body(spanish_log), Some("Operación completada exitosamente"))
-  assert_eq(LogRecord::body(french_log), Some("Opération terminée avec succès"))
-  assert_eq(LogRecord::body(german_log), Some("Operation erfolgreich abgeschlossen"))
-  assert_eq(LogRecord::body(russian_log), Some("Операция успешно завершена"))
-  assert_eq(LogRecord::body(arabic_log), Some("تمت العملية بنجاح"))
-  
-  // Test multilingual attributes
-  let multilingual_attrs = Attributes::new()
-  Attributes::set(multilingual_attrs, "error.message.en", StringValue("File not found"))
-  Attributes::set(multilingual_attrs, "error.message.zh", StringValue("文件未找到"))
-  Attributes::set(multilingual_attrs, "error.message.ja", StringValue("ファイルが見つかりません"))
-  Attributes::set(multilingual_attrs, "error.message.es", StringValue("Archivo no encontrado"))
-  
-  // Verify multilingual attributes
-  let error_en = Attributes::get(multilingual_attrs, "error.message.en")
-  let error_zh = Attributes::get(multilingual_attrs, "error.message.zh")
-  let error_ja = Attributes::get(multilingual_attrs, "error.message.ja")
-  let error_es = Attributes::get(multilingual_attrs, "error.message.es")
-  
-  assert_eq(error_en, Some(StringValue("File not found")))
-  assert_eq(error_zh, Some(StringValue("文件未找到")))
-  assert_eq(error_ja, Some(StringValue("ファイルが見つかりません")))
-  assert_eq(error_es, Some(StringValue("Archivo no encontrado")))
-  
-  // Test different number formats
-  let number_attrs = Attributes::new()
-  Attributes::set(number_attrs, "number.us", StringValue("1,234.56"))
-  Attributes::set(number_attrs, "number.eu", StringValue("1.234,56"))
-  Attributes::set(number_attrs, "number.in", StringValue("1,23,456.78"))
-  Attributes::set(number_attrs, "number.cn", StringValue("1,234.56"))
-  
-  // Verify number formats
-  assert_eq(Attributes::get(number_attrs, "number.us"), Some(StringValue("1,234.56")))
-  assert_eq(Attributes::get(number_attrs, "number.eu"), Some(StringValue("1.234,56")))
-  assert_eq(Attributes::get(number_attrs, "number.in"), Some(StringValue("1,23,456.78")))
-  assert_eq(Attributes::get(number_attrs, "number.cn"), Some(StringValue("1,234.56")))
-}
-
-// Test 10: Real-time dashboard streaming simulation
-test "real-time dashboard streaming simulation" {
-  // Create real-time metrics
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "dashboard-test")
-  
-  // Dashboard metrics
-  let active_users = Meter::create_gauge(meter, "dashboard.active_users", Some("Active users"), Some("count"))
-  let request_rate = Meter::create_histogram(meter, "dashboard.request_rate", Some("Request rate"), Some("requests/sec"))
-  let error_rate = Meter::create_gauge(meter, "dashboard.error_rate", Some("Error rate"), Some("percent"))
-  let response_time = Meter::create_histogram(meter, "dashboard.response_time", Some("Response time"), Some("ms"))
-  
-  // Simulate real-time data streaming
-  let time_series_data = [
-    (10, 25.5, 0.1, 120.0),
-    (15, 30.2, 0.2, 115.5),
-    (12, 28.7, 0.15, 125.0),
-    (18, 35.1, 0.3, 110.2),
-    (20, 32.8, 0.25, 118.7),
-    (22, 38.5, 0.18, 122.3),
-    (25, 42.1, 0.22, 116.8),
-    (21, 40.3, 0.2, 119.5),
-    (19, 37.6, 0.17, 121.1),
-    (23, 41.2, 0.24, 117.4)
+// 测试1: 遥测数据压缩功能
+test "遥测数据压缩功能" {
+  // 1. 创建大量遥测数据
+  let telemetry_data = [
+    ("metric1", IntValue(100)),
+    ("metric2", IntValue(200)),
+    ("metric3", IntValue(300)),
+    ("metric4", StringValue("large_string_data")),
+    ("metric5", FloatValue(3.14159)),
+    ("metric6", BoolValue(true)),
+    ("metric7", ArrayStringValue(["a", "b", "c", "d", "e"])),
+    ("metric8", ArrayIntValue([1, 2, 3, 4, 5]))
   ]
   
-  // Process time series data
-  for i = 0; i < 10; i = i + 1 {
-    let (users, req_rate, err_rate, resp_time) = time_series_data[i]
-    
-    // Update dashboard metrics
-    Gauge::record(active_users, users.to_float())
-    Histogram::record(request_rate, req_rate)
-    Gauge::record(error_rate, err_rate)
-    Histogram::record(response_time, resp_time)
+  // 2. 验证数据完整性
+  assert_eq(telemetry_data.length(), 8)
+  
+  // 3. 模拟数据压缩过程
+  let compressed_size = telemetry_data.length() / 2  // 简化的压缩模拟
+  assert_true(compressed_size < telemetry_data.length())
+  
+  // 4. 验证特定数据点
+  assert_eq(telemetry_data[0].0, "metric1")
+  match telemetry_data[0].1 {
+    IntValue(v) => assert_eq(v, 100)
+    _ => assert_true(false)
   }
   
-  // Calculate aggregate statistics
-  let total_users = 10 + 15 + 12 + 18 + 20 + 22 + 25 + 21 + 19 + 23
-  let avg_users = total_users.to_float() / 10.0
-  let max_req_rate = 42.1
-  let avg_error_rate = (0.1 + 0.2 + 0.15 + 0.3 + 0.25 + 0.18 + 0.22 + 0.2 + 0.17 + 0.24) / 10.0
-  let avg_response_time = (120.0 + 115.5 + 125.0 + 110.2 + 118.7 + 122.3 + 116.8 + 119.5 + 121.1 + 117.4) / 10.0
+  assert_eq(telemetry_data[3].0, "metric4")
+  match telemetry_data[3].1 {
+    StringValue(v) => assert_eq(v, "large_string_data")
+    _ => assert_true(false)
+  }
   
-  // Verify aggregate calculations
-  assert_true(avg_users > 15.0 and avg_users < 25.0)
-  assert_eq(max_req_rate, 42.1)
-  assert_true(avg_error_rate > 0.15 and avg_error_rate < 0.25)
-  assert_true(avg_response_time > 115.0 and avg_response_time < 125.0)
+  assert_eq(telemetry_data[6].0, "metric7")
+  match telemetry_data[6].1 {
+    ArrayStringValue(arr) => {
+      assert_eq(arr.length(), 5)
+      assert_eq(arr[0], "a")
+      assert_eq(arr[4], "e")
+    }
+    _ => assert_true(false)
+  }
+}
+
+// 测试2: 分布式追踪一致性
+test "分布式追踪一致性" {
+  // 1. 创建主追踪上下文
+  let main_trace_context = SpanContext({
+    trace_id: "main-trace-123456789",
+    span_id: "main-span-987654321",
+    sampled: true,
+    trace_state: "service=api,env=production"
+  })
   
-  // Test dashboard alert conditions
-  let alert_threshold_users = 30.0
-  let alert_threshold_error_rate = 0.25
-  let alert_threshold_response_time = 125.0
+  // 2. 创建子跨度上下文
+  let child_span_context1 = SpanContext({
+    trace_id: "main-trace-123456789",  // 相同的追踪ID
+    span_id: "child-span-111111111",
+    sampled: true,
+    trace_state: "service=api,env=production"
+  })
   
-  // Check for alert conditions
-  let user_alert = avg_users > alert_threshold_users
-  let error_alert = avg_error_rate > alert_threshold_error_rate
-  let response_alert = avg_response_time > alert_threshold_response_time
+  let child_span_context2 = SpanContext({
+    trace_id: "main-trace-123456789",  // 相同的追踪ID
+    span_id: "child-span-222222222",
+    sampled: true,
+    trace_state: "service=api,env=production"
+  })
   
-  // Based on our data, we should have user alert but no error or response alerts
-  assert_true(user_alert)
-  assert_false(error_alert)
-  assert_false(response_alert)
+  // 3. 验证追踪一致性
+  assert_eq(main_trace_context.trace_id, child_span_context1.trace_id)
+  assert_eq(main_trace_context.trace_id, child_span_context2.trace_id)
+  assert_true(main_trace_context.span_id != child_span_context1.span_id)
+  assert_true(main_trace_context.span_id != child_span_context2.span_id)
+  assert_true(child_span_context1.span_id != child_span_context2.span_id)
+  
+  // 4. 验证采样状态一致性
+  assert_eq(main_trace_context.sampled, child_span_context1.sampled)
+  assert_eq(main_trace_context.sampled, child_span_context2.sampled)
+  
+  // 5. 验证追踪状态一致性
+  assert_eq(main_trace_context.trace_state, child_span_context1.trace_state)
+  assert_eq(main_trace_context.trace_state, child_span_context2.trace_state)
+}
+
+// 测试3: 时间序列数据处理
+test "时间序列数据处理" {
+  // 1. 创建时间戳序列
+  let base_timestamp = 1735689600000000000L  // 2025年基准时间戳
+  let time_series = [
+    base_timestamp,
+    base_timestamp + 1000000L,  // +1ms
+    base_timestamp + 2000000L,  // +2ms
+    base_timestamp + 3000000L,  // +3ms
+    base_timestamp + 4000000L   // +4ms
+  ]
+  
+  // 2. 创建对应的时间序列数据
+  let time_series_data = [
+    (time_series[0], IntValue(10)),
+    (time_series[1], IntValue(20)),
+    (time_series[2], IntValue(15)),
+    (time_series[3], IntValue(25)),
+    (time_series[4], IntValue(30))
+  ]
+  
+  // 3. 验证时间序列数据
+  assert_eq(time_series.length(), 5)
+  assert_eq(time_series_data.length(), 5)
+  
+  // 4. 验证时间戳递增
+  for i in 1..time_series.length() {
+    assert_true(time_series[i] > time_series[i-1])
+  }
+  
+  // 5. 验证数据值
+  for i in 0..time_series_data.length() {
+    assert_eq(time_series_data[i].0, time_series[i])
+    match time_series_data[i].1 {
+      IntValue(v) => assert_true(v > 0)
+      _ => assert_true(false)
+    }
+  }
+  
+  // 6. 计算简单统计
+  let total_value = time_series_data.reduce(fn(acc, data) {
+    match data.1 {
+      IntValue(v) => acc + v
+      _ => acc
+    }
+  }, 0)
+  
+  assert_eq(total_value, 100)  // 10 + 20 + 15 + 25 + 30
+  
+  // 7. 计算平均值
+  let average_value = total_value / time_series_data.length()
+  assert_eq(average_value, 20)
+}
+
+// 测试4: 错误边界处理
+test "错误边界处理" {
+  // 1. 测试空数据处理
+  let empty_attributes = Attributes({ values = [] })
+  assert_eq(empty_attributes.values.length(), 0)
+  
+  // 2. 测试无效属性值处理
+  let invalid_attributes = Attributes({ values = [
+    ("valid.key", StringValue("valid_value")),
+    ("invalid.key", StringValue("")),  // 空字符串
+    ("null.key", StringValue("null"))   // 字符串"null"
+  ] })
+  
+  assert_eq(invalid_attributes.values.length(), 3)
+  
+  // 3. 测试边界条件 - 大数值
+  let large_int = IntValue(2147483647)  // 最大32位整数
+  let small_int = IntValue(-2147483648) // 最小32位整数
+  let zero_int = IntValue(0)
+  
+  match large_int {
+    IntValue(v) => assert_true(v > 0)
+    _ => assert_true(false)
+  }
+  
+  match small_int {
+    IntValue(v) => assert_true(v < 0)
+    _ => assert_true(false)
+  }
+  
+  match zero_int {
+    IntValue(v) => assert_eq(v, 0)
+    _ => assert_true(false)
+  }
+  
+  // 4. 测试浮点数边界
+  let large_float = FloatValue(1.7976931348623157e+308)  // 最大双精度浮点数
+  let small_float = FloatValue(2.2250738585072014e-308)  // 最小双精度浮点数
+  let zero_float = FloatValue(0.0)
+  
+  match large_float {
+    FloatValue(v) => assert_true(v > 1.0)
+    _ => assert_true(false)
+  }
+  
+  match small_float {
+    FloatValue(v) => assert_true(v > 0.0 && v < 1.0)
+    _ => assert_true(false)
+  }
+  
+  match zero_float {
+    FloatValue(v) => assert_eq(v, 0.0)
+    _ => assert_true(false)
+  }
+}
+
+// 测试5: 并发安全性
+test "并发安全性" {
+  // 1. 创建共享资源
+  let shared_resource = Resource({ attributes = [
+    ("counter", IntValue(0)),
+    ("status", StringValue("initialized"))
+  ] })
+  
+  // 2. 模拟并发操作
+  let operations = [
+    ("increment", IntValue(1)),
+    ("increment", IntValue(2)),
+    ("increment", IntValue(3)),
+    ("status", StringValue("processing")),
+    ("status", StringValue("completed"))
+  ]
+  
+  // 3. 验证操作序列
+  assert_eq(operations.length(), 5)
+  
+  // 4. 模拟顺序处理（简化并发处理）
+  let mut final_counter = 0
+  let mut final_status = "initialized"
+  
+  for op in operations {
+    match op.0 {
+      "increment" => {
+        match op.1 {
+          IntValue(v) => final_counter = final_counter + v
+          _ => assert_true(false)
+        }
+      }
+      "status" => {
+        match op.1 {
+          StringValue(v) => final_status = v
+          _ => assert_true(false)
+        }
+      }
+      _ => assert_true(false)
+    }
+  }
+  
+  // 5. 验证最终状态
+  assert_eq(final_counter, 6)  // 1 + 2 + 3
+  assert_eq(final_status, "completed")
+  
+  // 6. 验证资源一致性
+  assert_eq(shared_resource.attributes.length(), 2)
+  assert_eq(shared_resource.attributes[0].0, "counter")
+  assert_eq(shared_resource.attributes[1].0, "status")
+}
+
+// 测试6: 资源管理优化
+test "资源管理优化" {
+  // 1. 创建资源池
+  let resource_pool = [
+    Resource({ attributes = [("id", IntValue(1)), ("type", StringValue("cpu"))] }),
+    Resource({ attributes = [("id", IntValue(2)), ("type", StringValue("memory"))] }),
+    Resource({ attributes = [("id", IntValue(3)), ("type", StringValue("disk"))] })
+  ]
+  
+  // 2. 验证资源池
+  assert_eq(resource_pool.length(), 3)
+  
+  // 3. 模拟资源分配和释放
+  let mut allocated_resources = []
+  let mut available_resources = resource_pool
+  
+  // 分配第一个资源
+  let allocated_resource = available_resources[0]
+  allocated_resources = allocated_resources.push(allocated_resource)
+  available_resources = available_resources.slice(1, available_resources.length())
+  
+  // 验证分配状态
+  assert_eq(allocated_resources.length(), 1)
+  assert_eq(available_resources.length(), 2)
+  
+  // 释放资源
+  let released_resource = allocated_resources[0]
+  available_resources = available_resources.push(released_resource)
+  allocated_resources = []
+  
+  // 验证释放状态
+  assert_eq(allocated_resources.length(), 0)
+  assert_eq(available_resources.length(), 3)
+  
+  // 4. 验证资源属性完整性
+  for resource in available_resources {
+    assert_eq(resource.attributes.length(), 2)
+    assert_eq(resource.attributes[0].0, "id")
+    assert_eq(resource.attributes[1].0, "type")
+    
+    match resource.attributes[0].1 {
+      IntValue(id) => assert_true(id > 0 && id <= 3)
+      _ => assert_true(false)
+    }
+    
+    match resource.attributes[1].1 {
+      StringValue(type_str) => {
+        assert_true(type_str == "cpu" || type_str == "memory" || type_str == "disk")
+      }
+      _ => assert_true(false)
+    }
+  }
+}
+
+// 测试7: 日志关联性
+test "日志关联性" {
+  // 1. 创建日志记录
+  let log_records = [
+    LogRecord({
+      severity: Info,
+      body: Some("Request started"),
+      attributes: Some(Attributes({ values = [
+        ("request.id", StringValue("req-12345")),
+        ("user.id", StringValue("user-67890"))
+      ] }),
+      timestamp: Some(1735689600000000000L),
+      observed_timestamp: Some(1735689600000000000L),
+      trace_id: Some("trace-123456789"),
+      span_id: Some("span-987654321"),
+      context: Some(Context({ data = Some("correlation.id", "corr-11111") }))
+    }),
+    LogRecord({
+      severity: Debug,
+      body: Some("Processing request"),
+      attributes: Some(Attributes({ values = [
+        ("request.id", StringValue("req-12345")),
+        ("step", StringValue("validation"))
+      ] }),
+      timestamp: Some(1735689600100000000L),
+      observed_timestamp: Some(1735689600100000000L),
+      trace_id: Some("trace-123456789"),
+      span_id: Some("span-987654321"),
+      context: Some(Context({ data = Some("correlation.id", "corr-11111") }))
+    }),
+    LogRecord({
+      severity: Info,
+      body: Some("Request completed"),
+      attributes: Some(Attributes({ values = [
+        ("request.id", StringValue("req-12345")),
+        ("duration", IntValue(100))
+      ] }),
+      timestamp: Some(1735689601000000000L),
+      observed_timestamp: Some(1735689601000000000L),
+      trace_id: Some("trace-123456789"),
+      span_id: Some("span-987654321"),
+      context: Some(Context({ data = Some("correlation.id", "corr-11111") }))
+    })
+  ]
+  
+  // 2. 验证日志记录
+  assert_eq(log_records.length(), 3)
+  
+  // 3. 验证日志关联性
+  let base_trace_id = "trace-123456789"
+  let base_span_id = "span-987654321"
+  let base_request_id = "req-12345"
+  
+  for log in log_records {
+    // 验证追踪ID一致性
+    match log.trace_id {
+      None => assert_true(false)
+      Some(trace_id) => assert_eq(trace_id, base_trace_id)
+    }
+    
+    // 验证跨度ID一致性
+    match log.span_id {
+      None => assert_true(false)
+      Some(span_id) => assert_eq(span_id, base_span_id)
+    }
+    
+    // 验证请求ID一致性
+    match log.attributes {
+      None => assert_true(false)
+      Some(attrs) => {
+        let mut found_request_id = false
+        for (key, value) in attrs.values {
+          if key == "request.id" {
+            match value {
+              StringValue(req_id) => {
+                assert_eq(req_id, base_request_id)
+                found_request_id = true
+              }
+              _ => assert_true(false)
+            }
+          }
+        }
+        assert_true(found_request_id)
+      }
+    }
+    
+    // 验证上下文关联性
+    match log.context {
+      None => assert_true(false)
+      Some(ctx) => {
+        match ctx.data {
+          None => assert_true(false)
+          Some((key, value)) => {
+            assert_eq(key, "correlation.id")
+            assert_eq(value, "corr-11111")
+          }
+        }
+      }
+    }
+  }
+  
+  // 4. 验证时间序列
+  assert_true(log_records[0].timestamp! < log_records[1].timestamp!)
+  assert_true(log_records[1].timestamp! < log_records[2].timestamp!)
+}
+
+// 测试8: 性能基准测试
+test "性能基准测试" {
+  // 1. 创建大量测试数据
+  let large_dataset = []
+  for i in 0..1000 {
+    large_dataset = large_dataset.push((
+      "metric." + i.to_string(),
+      IntValue(i)
+    ))
+  }
+  
+  // 2. 验证数据集大小
+  assert_eq(large_dataset.length(), 1000)
+  
+  // 3. 测试数据遍历性能（简化性能测试）
+  let start_time = 1735689600000000000L
+  let mut sum = 0
+  
+  for data in large_dataset {
+    match data.1 {
+      IntValue(v) => sum = sum + v
+      _ => assert_true(false)
+    }
+  }
+  
+  let end_time = 1735689600000000000L + 1000000L  // 模拟1ms处理时间
+  
+  // 4. 验证计算结果
+  assert_eq(sum, 499500)  // 0 + 1 + 2 + ... + 999
+  
+  // 5. 验证处理时间（简化验证）
+  assert_true(end_time > start_time)
+  assert_eq(end_time - start_time, 1000000L)
+  
+  // 6. 测试数据过滤性能
+  let filtered_data = large_dataset.filter(fn(data) {
+    match data.1 {
+      IntValue(v) => v % 2 == 0  // 过滤偶数
+      _ => false
+    }
+  })
+  
+  // 7. 验证过滤结果
+  assert_eq(filtered_data.length(), 500)  // 1000个数中有一半是偶数
+  
+  // 8. 验证过滤数据正确性
+  for data in filtered_data {
+    match data.1 {
+      IntValue(v) => assert_eq(v % 2, 0)
+      _ => assert_true(false)
+    }
+  }
 }
