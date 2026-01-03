@@ -89,6 +89,7 @@
         "../azimuth_moonbit_language_features_tests.mbt",
         "../azimuth_new_comprehensive_test_cases.mbt",
         "../azimuth_high_quality_comprehensive_tests.mbt",
-        "../azimuth_specialized_advanced_test_cases.mbt"]
+        "../azimuth_specialized_advanced_test_cases.mbt",
+        "azimuth_advanced_high_quality_security_tests.mbt"]
   }
 }
