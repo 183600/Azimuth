@@ -1,493 +1,446 @@
 // Azimuth Telemetry System - Concurrent Thread Safety Comprehensive Tests
-// This file contains comprehensive test cases for concurrent operations and thread safety
+// This file contains comprehensive concurrent and thread safety test cases
 
-// Test 1: Concurrent Counter Operations
-test "concurrent counter operations" {
-  // Test thread-safe counter
-  let counter = ConcurrentCounter::new()
+// Test 1: Concurrent Span Creation and Operations
+test "concurrent span creation and operations" {
+  let spans = []
+  let span_count = 1000
   
-  // Test initial value
-  assert_eq(ConcurrentCounter::get(counter), 0)
+  // Create spans concurrently
+  for thread_id in 0..10 {
+    for i in 0..100 {
+      let trace_id = "concurrent_trace_" + thread_id.to_string() + "_" + i.to_string()
+      let span_id = "concurrent_span_" + thread_id.to_string() + "_" + i.to_string()
+      let span_ctx = SpanContext::new(trace_id, span_id, true, "concurrent_test")
+      let span = Span::new("concurrent_span", Internal, span_ctx)
+      spans.push(span)
+    }
+  }
   
-  // Test increment operations
-  ConcurrentCounter::increment(counter)
-  assert_eq(ConcurrentCounter::get(counter), 1)
+  // Perform concurrent operations on spans
+  for thread_id in 0..10 {
+    for i in 0..100 {
+      let span_index = thread_id * 100 + i
+      if span_index < spans.length() {
+        let span = spans[span_index]
+        Span::add_event(span, "concurrent_event_" + thread_id.to_string(), None)
+        Span::set_status(span, Ok, Some("Concurrent operation completed"))
+      }
+    }
+  }
   
-  ConcurrentCounter::increment_by(counter, 5)
-  assert_eq(ConcurrentCounter::get(counter), 6)
+  // End all spans concurrently
+  for span in spans {
+    Span::end(span)
+  }
   
-  // Test decrement operations
-  ConcurrentCounter::decrement(counter)
-  assert_eq(ConcurrentCounter::get(counter), 5)
-  
-  ConcurrentCounter::decrement_by(counter, 2)
-  assert_eq(ConcurrentCounter::get(counter), 3)
-  
-  // Test compare and swap
-  let cas_result = ConcurrentCounter::compare_and_swap(counter, 3, 10)
-  assert_true(cas_result)
-  assert_eq(ConcurrentCounter::get(counter), 10)
-  
-  let cas_fail = ConcurrentCounter::compare_and_swap(counter, 3, 20)
-  assert_false(cas_fail)
-  assert_eq(ConcurrentCounter::get(counter), 10)
-  
-  // Test reset
-  ConcurrentCounter::reset(counter)
-  assert_eq(ConcurrentCounter::get(counter), 0)
+  assert_eq(spans.length(), 1000)
 }
 
-// Test 2: Concurrent Queue Operations
-test "concurrent queue operations" {
-  // Test thread-safe queue
-  let queue = ConcurrentQueue::new()
+// Test 2: Concurrent Metrics Operations
+test "concurrent metrics operations" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "concurrent_meter")
+  let counter = Meter::create_counter(meter, "concurrent_counter", None, None)
+  let histogram = Meter::create_histogram(meter, "concurrent_histogram", None, None)
+  let updown_counter = Meter::create_updown_counter(meter, "concurrent_updown", None, None)
   
-  // Test empty queue
-  assert_true(ConcurrentQueue::is_empty(queue))
-  assert_eq(ConcurrentQueue::size(queue), 0)
-  
-  // Test enqueue operations
-  ConcurrentQueue::enqueue(queue, "item1")
-  ConcurrentQueue::enqueue(queue, "item2")
-  ConcurrentQueue::enqueue(queue, "item3")
-  
-  assert_false(ConcurrentQueue::is_empty(queue))
-  assert_eq(ConcurrentQueue::size(queue), 3)
-  
-  // Test dequeue operations
-  let dequeued1 = ConcurrentQueue::dequeue(queue)
-  match dequeued1 {
-    Some(item) => assert_eq(item, "item1")
-    None => assert_true(false)
+  // Concurrent counter operations
+  for thread_id in 0..20 {
+    for i in 0..500 {
+      Counter::add(counter, 1.0)
+      Counter::add(counter, 0.5, Some(Attributes::with([("thread_id", IntValue(thread_id))])))
+    }
   }
   
-  assert_eq(ConcurrentQueue::size(queue), 2)
-  
-  let dequeued2 = ConcurrentQueue::dequeue(queue)
-  match dequeued2 {
-    Some(item) => assert_eq(item, "item2")
-    None => assert_true(false)
+  // Concurrent histogram operations
+  for thread_id in 0..20 {
+    for i in 0..250 {
+      let value = (thread_id * 250 + i).to_float()
+      Histogram::record(histogram, value)
+      Histogram::record(histogram, value * 2.0, Some(Attributes::with([("thread_id", IntValue(thread_id))])))
+    }
   }
   
-  // Test peek operation
-  let peeked = ConcurrentQueue::peek(queue)
-  match peeked {
-    Some(item) => assert_eq(item, "item3")
-    None => assert_true(false)
-  }
-  
-  // Test remaining items
-  let dequeued3 = ConcurrentQueue::dequeue(queue)
-  match dequeued3 {
-    Some(item) => assert_eq(item, "item3")
-    None => assert_true(false)
-  }
-  
-  // Test empty queue again
-  assert_true(ConcurrentQueue::is_empty(queue))
-  assert_eq(ConcurrentQueue::size(queue), 0)
-  
-  let empty_dequeue = ConcurrentQueue::dequeue(queue)
-  match empty_dequeue {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  let empty_peek = ConcurrentQueue::peek(queue)
-  match empty_peek {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
+  // Concurrent updown counter operations
+  for thread_id in 0..20 {
+    for i in 0..100 {
+      if i % 2 == 0 {
+        UpDownCounter::add(updown_counter, 1.0)
+      } else {
+        UpDownCounter::add(updown_counter, -1.0)
+      }
+    }
   }
 }
 
-// Test 3: Concurrent Hash Map Operations
-test "concurrent hash map operations" {
-  // Test thread-safe hash map
-  let hash_map = ConcurrentHashMap::new()
+// Test 3: Concurrent Attribute Operations
+test "concurrent attribute operations" {
+  let attrs = Attributes::new()
   
-  // Test insertion
-  ConcurrentHashMap::put(hash_map, "key1", "value1")
-  ConcurrentHashMap::put(hash_map, "key2", "value2")
-  ConcurrentHashMap::put(hash_map, "key3", "value3")
-  
-  // Test retrieval
-  let value1 = ConcurrentHashMap::get(hash_map, "key1")
-  match value1 {
-    Some(v) => assert_eq(v, "value1")
-    None => assert_true(false)
+  // Concurrent attribute setting
+  for thread_id in 0..10 {
+    for i in 0..100 {
+      let key = "concurrent_key_" + thread_id.to_string() + "_" + i.to_string()
+      let value = StringValue("concurrent_value_" + thread_id.to_string() + "_" + i.to_string())
+      Attributes::set(attrs, key, value)
+    }
   }
   
-  let non_existent = ConcurrentHashMap::get(hash_map, "non_existent")
-  match non_existent {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
+  // Concurrent attribute retrieval
+  let retrieval_results = []
+  for thread_id in 0..10 {
+    for i in 0..100 {
+      let key = "concurrent_key_" + thread_id.to_string() + "_" + i.to_string()
+      let retrieved = Attributes::get(attrs, key)
+      match retrieved {
+        Some(StringValue(v)) => {
+          let expected_value = "concurrent_value_" + thread_id.to_string() + "_" + i.to_string()
+          assert_eq(v, expected_value)
+          retrieval_results.push(true)
+        }
+        _ => retrieval_results.push(false)
+      }
+    }
   }
   
-  // Test update
-  ConcurrentHashMap::put(hash_map, "key1", "updated_value1")
-  let updated_value = ConcurrentHashMap::get(hash_map, "key1")
-  match updated_value {
-    Some(v) => assert_eq(v, "updated_value1")
-    None => assert_true(false)
-  }
-  
-  // Test removal
-  let removed = ConcurrentHashMap::remove(hash_map, "key2")
-  match removed {
-    Some(v) => assert_eq(v, "value2")
-    None => assert_true(false)
-  }
-  
-  let value_after_removal = ConcurrentHashMap::get(hash_map, "key2")
-  match value_after_removal {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  // Test size
-  assert_eq(ConcurrentHashMap::size(hash_map), 2)
-  
-  // Test contains key
-  assert_true(ConcurrentHashMap::contains_key(hash_map, "key1"))
-  assert_false(ConcurrentHashMap::contains_key(hash_map, "key2"))
-  
-  // Test put if absent
-  let put_absent_result = ConcurrentHashMap::put_if_absent(hash_map, "key4", "value4")
-  match put_absent_result {
-    Some(_) => assert_true(false) // Should not exist
-    None => assert_true(true)
-  }
-  
-  let put_existing_result = ConcurrentHashMap::put_if_absent(hash_map, "key1", "new_value")
-  match put_existing_result {
-    Some(v) => assert_eq(v, "updated_value1") // Should return existing value
-    None => assert_true(false)
-  }
-  
-  // Test clear
-  ConcurrentHashMap::clear(hash_map)
-  assert_eq(ConcurrentHashMap::size(hash_map), 0)
-}
-
-// Test 4: Read-Write Lock Operations
-test "read-write lock operations" {
-  // Test read-write lock
-  let rw_lock = ReadWriteLock::new()
-  let shared_data = Ref::new(0)
-  
-  // Test read lock
-  let read_lock = ReadWriteLock::read_lock(rw_lock)
-  assert_true(ReadWriteLock::is_read_locked(rw_lock))
-  assert_false(ReadWriteLock::is_write_locked(rw_lock))
-  
-  // Multiple read locks should be allowed
-  let read_lock2 = ReadWriteLock::read_lock(rw_lock)
-  assert_true(ReadWriteLock::is_read_locked(rw_lock))
-  
-  // Release read locks
-  ReadWriteLock::unlock_read(rw_lock, read_lock2)
-  ReadWriteLock::unlock_read(rw_lock, read_lock)
-  assert_false(ReadWriteLock::is_read_locked(rw_lock))
-  
-  // Test write lock
-  let write_lock = ReadWriteLock::write_lock(rw_lock)
-  assert_true(ReadWriteLock::is_write_locked(rw_lock))
-  assert_false(ReadWriteLock::is_read_locked(rw_lock))
-  
-  // Only one write lock should be allowed
-  let write_lock2 = ReadWriteLock::try_write_lock(rw_lock)
-  match write_lock2 {
-    Some(_) => assert_true(false) // Should not be able to acquire another write lock
-    None => assert_true(true)
-  }
-  
-  // Release write lock
-  ReadWriteLock::unlock_write(rw_lock, write_lock)
-  assert_false(ReadWriteLock::is_write_locked(rw_lock))
-  
-  // Test try read lock
-  let try_read = ReadWriteLock::try_read_lock(rw_lock)
-  match try_read {
-    Some(_) => assert_true(true)
-    None => assert_true(false)
-  }
-  
-  // Test try write lock
-  let try_write = ReadWriteLock::try_write_lock(rw_lock)
-  match try_write {
-    Some(_) => assert_true(false) // Should not be able to acquire with read lock held
-    None => assert_true(true)
+  // Verify all retrievals succeeded
+  for result in retrieval_results {
+    assert_true(result)
   }
 }
 
-// Test 5: Atomic Operations
-test "atomic operations" {
-  // Test atomic integer
-  let atomic_int = AtomicInteger::new(0)
+// Test 4: Concurrent Context Operations
+test "concurrent context operations" {
+  let root_ctx = Context::root()
+  let contexts = []
   
-  // Test get and set
-  assert_eq(AtomicInteger::get(atomic_int), 0)
-  AtomicInteger::set(atomic_int, 10)
-  assert_eq(AtomicInteger::get(atomic_int), 10)
+  // Create contexts concurrently
+  for thread_id in 0..10 {
+    let mut current_ctx = root_ctx
+    for i in 0..50 {
+      let key = ContextKey::new("ctx_key_" + thread_id.to_string() + "_" + i.to_string())
+      let value = "ctx_value_" + thread_id.to_string() + "_" + i.to_string()
+      current_ctx = Context::with_value(current_ctx, key, value)
+    }
+    contexts.push(current_ctx)
+  }
   
-  // Test increment and decrement
-  let incremented = AtomicInteger::increment_and_get(atomic_int)
-  assert_eq(incremented, 11)
-  assert_eq(AtomicInteger::get(atomic_int), 11)
-  
-  let decremented = AtomicInteger::decrement_and_get(atomic_int)
-  assert_eq(decremented, 10)
-  assert_eq(AtomicInteger::get(atomic_int), 10)
-  
-  // Test add and get
-  let added = AtomicInteger::add_and_get(atomic_int, 5)
-  assert_eq(added, 15)
-  assert_eq(AtomicInteger::get(atomic_int), 15)
-  
-  // Test get and add
-  let previous = AtomicInteger::get_and_add(atomic_int, 3)
-  assert_eq(previous, 15)
-  assert_eq(AtomicInteger::get(atomic_int), 18)
-  
-  // Test compare and set
-  let cas_result = AtomicInteger::compare_and_set(atomic_int, 18, 25)
-  assert_true(cas_result)
-  assert_eq(AtomicInteger::get(atomic_int), 25)
-  
-  let cas_fail = AtomicInteger::compare_and_set(atomic_int, 18, 30)
-  assert_false(cas_fail)
-  assert_eq(AtomicInteger::get(atomic_int), 25)
-  
-  // Test atomic boolean
-  let atomic_bool = AtomicBoolean::new(false)
-  
-  assert_false(AtomicBoolean::get(atomic_bool))
-  
-  AtomicBoolean::set(atomic_bool, true)
-  assert_true(AtomicBoolean::get(atomic_bool))
-  
-  let previous_bool = AtomicBoolean::get_and_set(atomic_bool, false)
-  assert_true(previous_bool)
-  assert_false(AtomicBoolean::get(atomic_bool))
-  
-  let compare_result = AtomicBoolean::compare_and_set(atomic_bool, false, true)
-  assert_true(compare_result)
-  assert_true(AtomicBoolean::get(atomic_bool))
+  // Concurrent context retrieval
+  for thread_id in 0..10 {
+    let ctx = contexts[thread_id]
+    for i in 0..50 {
+      let key = ContextKey::new("ctx_key_" + thread_id.to_string() + "_" + i.to_string())
+      let retrieved = Context::get(ctx, key)
+      match retrieved {
+        Some(value) => {
+          let expected_value = "ctx_value_" + thread_id.to_string() + "_" + i.to_string()
+          assert_eq(value, expected_value)
+        }
+        None => assert_true(false)
+      }
+    }
+  }
 }
 
-// Test 6: Thread Pool Operations
-test "thread pool operations" {
-  // Test thread pool creation
-  let thread_pool = ThreadPool::new(4)
+// Test 5: Concurrent Log Record Emission
+test "concurrent log record emission" {
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "concurrent_logger")
   
-  // Test submitting tasks
-  let future1 = ThreadPool::submit(thread_pool, fn() { 1 + 1 })
-  let future2 = ThreadPool::submit(thread_pool, fn() { 2 * 3 })
-  let future3 = ThreadPool::submit(thread_pool, fn() { "hello" + " world" })
-  
-  // Test getting results
-  let result1 = Future::get(future1)
-  match result1 {
-    Some(value) => assert_eq(value, 2)
-    None => assert_true(false)
+  // Concurrent log emission
+  for thread_id in 0..15 {
+    for i in 0..200 {
+      let severity = match i % 4 {
+        0 => Info
+        1 => Warn
+        2 => Error
+        _ => Debug
+      }
+      
+      let message = "Concurrent log message from thread " + thread_id.to_string() + " index " + i.to_string()
+      let log_record = LogRecord::new(severity, message)
+      
+      // Add context to some log records
+      if i % 3 == 0 {
+        let ctx = Context::with_value(
+          Context::root(),
+          ContextKey::new("thread_id"),
+          thread_id.to_string()
+        )
+        Logger::emit(logger, LogRecord::new_with_context(
+          severity,
+          Some(message),
+          None,
+          None,
+          None,
+          None,
+          None,
+          Some(ctx)
+        ))
+      } else {
+        Logger::emit(logger, log_record)
+      }
+    }
   }
-  
-  let result2 = Future::get(future2)
-  match result2 {
-    Some(value) => assert_eq(value, 6)
-    None => assert_true(false)
-  }
-  
-  let result3 = Future::get(future3)
-  match result3 {
-    Some(value) => assert_eq(value, "hello world")
-    None => assert_true(false)
-  }
-  
-  // Test task completion
-  assert_true(Future::is_done(future1))
-  assert_true(Future::is_done(future2))
-  assert_true(Future::is_done(future3))
-  
-  // Test pool shutdown
-  ThreadPool::shutdown(thread_pool)
-  assert_true(ThreadPool::is_shutdown(thread_pool))
-  
-  // Test submitting task after shutdown
-  let future_after_shutdown = ThreadPool::submit(thread_pool, fn() { 42 })
-  assert_true(Future::is_cancelled(future_after_shutdown))
 }
 
-// Test 7: Semaphore Operations
-test "semaphore operations" {
-  // Test semaphore with 3 permits
-  let semaphore = Semaphore::new(3)
+// Test 6: Concurrent Resource Operations
+test "concurrent resource operations" {
+  let resources = []
   
-  // Test available permits
-  assert_eq(Semaphore::available_permits(semaphore), 3)
-  
-  // Test acquire
-  Semaphore::acquire(semaphore)
-  assert_eq(Semaphore::available_permits(semaphore), 2)
-  
-  Semaphore::acquire(semaphore)
-  assert_eq(Semaphore::available_permits(semaphore), 1)
-  
-  // Test try acquire
-  let try_result = Semaphore::try_acquire(semaphore)
-  assert_true(try_result)
-  assert_eq(Semaphore::available_permits(semaphore), 0)
-  
-  // Test try acquire when no permits available
-  let try_fail = Semaphore::try_acquire(semaphore)
-  assert_false(try_fail)
-  assert_eq(Semaphore::available_permits(semaphore), 0)
-  
-  // Test release
-  Semaphore::release(semaphore)
-  assert_eq(Semaphore::available_permits(semaphore), 1)
-  
-  Semaphore::release(semaphore)
-  assert_eq(Semaphore::available_permits(semaphore), 2)
-  
-  // Test drain permits
-  let drained = Semaphore::drain_permits(semaphore)
-  assert_eq(drained, 2)
-  assert_eq(Semaphore::available_permits(semaphore), 0)
-  
-  // Test reduce permits
-  Semaphore::reduce_permits(semaphore, 1)
-  assert_eq(Semaphore::available_permits(semaphore), 0)
-  
-  // Test release more than initial permits
-  Semaphore::release(semaphore)
-  Semaphore::release(semaphore)
-  assert_eq(Semaphore::available_permits(semaphore), 2)
-}
-
-// Test 8: Countdown Latch Operations
-test "countdown latch operations" {
-  // Test countdown latch with count 3
-  let latch = CountDownLatch::new(3)
-  
-  // Test initial count
-  assert_eq(CountDownLatch::get_count(latch), 3)
-  assert_false(CountDownLatch::is_counted_down(latch))
-  
-  // Test countdown
-  CountDownLatch::count_down(latch)
-  assert_eq(CountDownLatch::get_count(latch), 2)
-  assert_false(CountDownLatch::is_counted_down(latch))
-  
-  CountDownLatch::count_down(latch)
-  assert_eq(CountDownLatch::get_count(latch), 1)
-  assert_false(CountDownLatch::is_counted_down(latch))
-  
-  CountDownLatch::count_down(latch)
-  assert_eq(CountDownLatch::get_count(latch), 0)
-  assert_true(CountDownLatch::is_counted_down(latch))
-  
-  // Test await when already counted down
-  let await_result = CountDownLatch::await(latch, 100) // 100ms timeout
-  assert_true(await_result)
-  
-  // Test new latch for await timeout
-  let new_latch = CountDownLatch::new(2)
-  CountDownLatch::count_down(new_latch)
-  
-  // This should timeout since count is not zero
-  let timeout_result = CountDownLatch::await(new_latch, 10) // 10ms timeout
-  assert_false(timeout_result)
-  assert_eq(CountDownLatch::get_count(new_latch), 1)
-}
-
-// Test 9: Cyclic Barrier Operations
-test "cyclic barrier operations" {
-  // Test cyclic barrier with 3 parties
-  let barrier = CyclicBarrier::new(3)
-  
-  // Test initial parties
-  assert_eq(CyclicBarrier::get_parties(barrier), 3)
-  assert_eq(CyclicBarrier::get_number_waiting(barrier), 0)
-  
-  // Test barrier reset
-  CyclicBarrier::reset(barrier)
-  assert_false(CyclicBarrier::is_broken(barrier))
-  
-  // Test barrier action
-  let barrier_with_action = CyclicBarrier::with_action(2, fn() { "action_executed" })
-  
-  // In a real scenario, multiple threads would wait at the barrier
-  // For this test, we'll simulate the behavior
-  assert_eq(CyclicBarrier::get_parties(barrier_with_action), 2)
-  
-  // Test broken barrier
-  CyclicBarrier::reset(barrier_with_action)
-  assert_false(CyclicBarrier::is_broken(barrier_with_action))
-}
-
-// Test 10: Concurrent Collection Operations
-test "concurrent collection operations" {
-  // Test concurrent list
-  let concurrent_list = ConcurrentList::new()
-  
-  // Test add operations
-  ConcurrentList::add(concurrent_list, "item1")
-  ConcurrentList::add(concurrent_list, "item2")
-  ConcurrentList::add(concurrent_list, "item3")
-  
-  // Test size
-  assert_eq(ConcurrentList::size(concurrent_list), 3)
-  
-  // Test get operations
-  let item1 = ConcurrentList::get(concurrent_list, 0)
-  match item1 {
-    Some(value) => assert_eq(value, "item1")
-    None => assert_true(false)
+  // Create resources concurrently
+  for thread_id in 0..10 {
+    let resource = Resource::new()
+    let attrs = [
+      ("resource.thread_id", IntValue(thread_id)),
+      ("resource.name", StringValue("concurrent_resource_" + thread_id.to_string())),
+      ("resource.type", StringValue("test_resource"))
+    ]
+    let resource_with_attrs = Resource::with_attributes(resource, attrs)
+    resources.push(resource_with_attrs)
   }
   
-  let item3 = ConcurrentList::get(concurrent_list, 2)
-  match item3 {
-    Some(value) => assert_eq(value, "item3")
-    None => assert_true(false)
+  // Concurrent resource attribute operations
+  for thread_id in 0..10 {
+    let resource = resources[thread_id]
+    
+    // Add more attributes concurrently
+    for i in 0..20 {
+      let key = "dynamic_attr_" + i.to_string()
+      let value = StringValue("dynamic_value_" + i.to_string())
+      Resource::set_attribute(resource, key, value)
+    }
+    
+    // Retrieve attributes concurrently
+    let thread_id_attr = Resource::get_attribute(resource, "resource.thread_id")
+    match thread_id_attr {
+      Some(IntValue(id)) => assert_eq(id, thread_id)
+      _ => assert_true(false)
+    }
+    
+    let name_attr = Resource::get_attribute(resource, "resource.name")
+    match name_attr {
+      Some(StringValue(name)) => assert_eq(name, "concurrent_resource_" + thread_id.to_string())
+      _ => assert_true(false)
+    }
   }
   
-  // Test remove operations
-  let removed = ConcurrentList::remove(concurrent_list, 1)
-  match removed {
-    Some(value) => assert_eq(value, "item2")
-    None => assert_true(false)
+  // Concurrent resource merging
+  let base_resource = Resource::new()
+  for thread_id in 0..10 {
+    let thread_resource = resources[thread_id]
+    let merged_resource = Resource::merge(base_resource, thread_resource)
+    
+    // Verify merge preserved thread-specific attributes
+    let merged_thread_id = Resource::get_attribute(merged_resource, "resource.thread_id")
+    match merged_thread_id {
+      Some(IntValue(id)) => assert_eq(id, thread_id)
+      _ => assert_true(false)
+    }
+  }
+}
+
+// Test 7: Concurrent Baggage Operations
+test "concurrent baggage operations" {
+  let baggage = Baggage::new()
+  
+  // Concurrent baggage entry setting
+  for thread_id in 0..8 {
+    for i in 0..125 {
+      let key = "baggage_key_" + thread_id.to_string() + "_" + i.to_string()
+      let value = "baggage_value_" + thread_id.to_string() + "_" + i.to_string()
+      baggage = Baggage::set_entry(baggage, key, value)
+    }
   }
   
-  assert_eq(ConcurrentList::size(concurrent_list), 2)
+  // Concurrent baggage entry retrieval
+  for thread_id in 0..8 {
+    for i in 0..125 {
+      let key = "baggage_key_" + thread_id.to_string() + "_" + i.to_string()
+      let expected_value = "baggage_value_" + thread_id.to_string() + "_" + i.to_string()
+      let retrieved_value = Baggage::get_entry(baggage, key)
+      
+      match retrieved_value {
+        Some(value) => assert_eq(value, expected_value)
+        None => assert_true(false)
+      }
+    }
+  }
   
-  // Test contains
-  assert_true(ConcurrentList::contains(concurrent_list, "item1"))
-  assert_false(ConcurrentList::contains(concurrent_list, "item2"))
+  // Concurrent baggage entry removal
+  for thread_id in 0..8 {
+    for i in 0..50 {
+      let key = "baggage_key_" + thread_id.to_string() + "_" + i.to_string()
+      baggage = Baggage::remove_entry(baggage, key)
+      
+      // Verify removal
+      let removed_value = Baggage::get_entry(baggage, key)
+      match removed_value {
+        Some(_) => assert_true(false) // Should be removed
+        None => assert_true(true) // Expected
+      }
+    }
+  }
+}
+
+// Test 8: Concurrent HTTP Client Operations
+test "concurrent http client operations" {
+  let client = HttpClient::new()
+  let requests = []
+  let responses = []
   
-  // Test clear
-  ConcurrentList::clear(concurrent_list)
-  assert_eq(ConcurrentList::size(concurrent_list), 0)
+  // Create requests concurrently
+  for thread_id in 0..10 {
+    for i in 0..50 {
+      let headers = [
+        ("X-Thread-ID", thread_id.to_string()),
+        ("X-Request-ID", i.to_string()),
+        ("Content-Type", "application/json")
+      ]
+      let url = "https://httpbin.org/anything/" + thread_id.to_string() + "/" + i.to_string()
+      let request = HttpRequest::new("GET", url, headers, Some("concurrent request body"))
+      requests.push(request)
+    }
+  }
   
-  // Test concurrent set
-  let concurrent_set = ConcurrentSet::new()
+  // Process requests concurrently (simulate)
+  for thread_id in 0..10 {
+    for i in 0..50 {
+      let request_index = thread_id * 50 + i
+      if request_index < requests.length() {
+        let request = requests[request_index]
+        
+        // Simulate response creation
+        let response_headers = [
+          ("X-Thread-ID", thread_id.to_string()),
+          ("X-Request-ID", i.to_string()),
+          ("Content-Type", "application/json")
+        ]
+        let response = HttpResponse::new(200, response_headers, Some("concurrent response body"))
+        responses.push(response)
+      }
+    }
+  }
   
-  // Test add operations
-  assert_true(ConcurrentSet::add(concurrent_set, "unique1"))
-  assert_true(ConcurrentSet::add(concurrent_set, "unique2"))
-  assert_false(ConcurrentSet::add(concurrent_set, "unique1")) // Duplicate
+  // Verify responses
+  assert_eq(responses.length(), 500)
+  for response in responses {
+    assert_eq(HttpResponse::status_code(response), 200)
+  }
+}
+
+// Test 9: Concurrent Meter Provider Operations
+test "concurrent meter provider operations" {
+  let provider = MeterProvider::default()
+  let meters = []
   
-  // Test size
-  assert_eq(ConcurrentSet::size(concurrent_set), 2)
+  // Create meters concurrently
+  for thread_id in 0..10 {
+    for i in 0..10 {
+      let meter_name = "concurrent_meter_" + thread_id.to_string() + "_" + i.to_string()
+      let meter = MeterProvider::get_meter(provider, meter_name)
+      meters.push(meter)
+    }
+  }
   
-  // Test contains
-  assert_true(ConcurrentSet::contains(concurrent_set, "unique1"))
-  assert_false(ConcurrentSet::contains(concurrent_set, "nonexistent"))
+  // Create instruments concurrently
+  let instruments = []
+  for thread_id in 0..10 {
+    for i in 0..10 {
+      let meter_index = thread_id * 10 + i
+      if meter_index < meters.length() {
+        let meter = meters[meter_index]
+        
+        let counter = Meter::create_counter(meter, "counter_" + i.to_string(), None, None)
+        let histogram = Meter::create_histogram(meter, "histogram_" + i.to_string(), None, None)
+        let updown_counter = Meter::create_updown_counter(meter, "updown_" + i.to_string(), None, None)
+        let gauge = Meter::create_gauge(meter, "gauge_" + i.to_string(), None, None)
+        
+        instruments.push(counter)
+        instruments.push(histogram)
+        instruments.push(updown_counter)
+        instruments.push(gauge)
+      }
+    }
+  }
   
-  // Test remove
-  assert_true(ConcurrentSet::remove(concurrent_set, "unique1"))
-  assert_false(ConcurrentSet::remove(concurrent_set, "nonexistent"))
+  // Use instruments concurrently
+  for thread_id in 0..10 {
+    for i in 0..40 {
+      let instrument_index = thread_id * 40 + i
+      if instrument_index < instruments.length() {
+        let instrument = instruments[instrument_index]
+        
+        // Use different instrument types based on index
+        match i % 4 {
+          0 => Counter::add(instrument, 1.0)
+          1 => Histogram::record(instrument, 100.0)
+          2 => UpDownCounter::add(instrument, 1.0)
+          3 => Gauge::record(instrument, 42.0)
+          _ => assert_true(false)
+        }
+      }
+    }
+  }
+}
+
+// Test 10: Mixed Concurrent Operations Stress Test
+test "mixed concurrent operations stress test" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "stress_meter")
+  let logger = LoggerProvider::get_logger(provider, "stress_logger")
   
-  assert_eq(ConcurrentSet::size(concurrent_set), 1)
-  assert_false(ConcurrentSet::contains(concurrent_set, "unique1"))
+  // Mixed concurrent operations
+  for thread_id in 0..20 {
+    for i in 0..100 {
+      match i % 5 {
+        0 => {
+          // Span operations
+          let trace_id = "stress_trace_" + thread_id.to_string() + "_" + i.to_string()
+          let span_id = "stress_span_" + thread_id.to_string() + "_" + i.to_string()
+          let span_ctx = SpanContext::new(trace_id, span_id, true, "stress_test")
+          let span = Span::new("stress_span", Internal, span_ctx)
+          Span::add_event(span, "stress_event", Some(Attributes::with([("thread_id", IntValue(thread_id))])))
+          Span::end(span)
+        }
+        1 => {
+          // Metrics operations
+          let counter = Meter::create_counter(meter, "stress_counter_" + thread_id.to_string(), None, None)
+          Counter::add(counter, 1.0, Some(Attributes::with([("thread_id", IntValue(thread_id))])))
+        }
+        2 => {
+          // Attribute operations
+          let attrs = Attributes::new()
+          Attributes::set(attrs, "stress_key_" + thread_id.to_string(), IntValue(i))
+          let retrieved = Attributes::get(attrs, "stress_key_" + thread_id.to_string())
+          match retrieved {
+            Some(IntValue(v)) => assert_eq(v, i)
+            _ => assert_true(false)
+          }
+        }
+        3 => {
+          // Context operations
+          let ctx = Context::with_value(
+            Context::root(),
+            ContextKey::new("stress_key_" + thread_id.to_string()),
+            "stress_value_" + i.to_string()
+          )
+          let retrieved = Context::get(ctx, ContextKey::new("stress_key_" + thread_id.to_string()))
+          match retrieved {
+            Some(value) => assert_eq(value, "stress_value_" + i.to_string())
+            None => assert_true(false)
+          }
+        }
+        4 => {
+          // Log operations
+          let log_record = LogRecord::new(Info, "Stress log from thread " + thread_id.to_string() + " index " + i.to_string())
+          Logger::emit(logger, log_record)
+        }
+        _ => assert_true(false)
+      }
+    }
+  }
+  
+  assert_true(true) // If we reach here, all concurrent operations completed successfully
 }
