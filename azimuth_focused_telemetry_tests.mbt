@@ -1,9 +1,6 @@
 // Azimuth Focused Telemetry Test Suite
 // High-quality test cases for core Azimuth telemetry functionality
 
-// Import the azimuth telemetry module
-import "azimuth/azimuth"
-
 // Test 1: Core Attributes Operations
 test "core attributes operations" {
   let attrs = azimuth::Attributes::new()

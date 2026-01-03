@@ -1,382 +1,478 @@
-// Azimuth 综合新测试用例
-// 包含10个覆盖不同遥测系统功能领域的测试用例
+// Azimuth 新增综合测试用例
+// 包含基础语言特性和遥测系统功能的测试
 
-// 测试用例1: 遥测数据异常检测
-test "遥测数据异常检测算法" {
-  // 创建测试数据
-  let telemetry_values = [45.2, 47.8, 46.5, 95.3, 48.1, 44.9]
+// 测试1: 高级数据结构操作
+test "高级数据结构操作测试" {
+  // 嵌套数组操作
+  let matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+  
+  // 访问嵌套元素
+  assert_eq(matrix[0][0], 1)
+  assert_eq(matrix[1][1], 5)
+  assert_eq(matrix[2][2], 9)
+  
+  // 计算对角线元素和
+  let diagonal_sum = matrix[0][0] + matrix[1][1] + matrix[2][2]
+  assert_eq(diagonal_sum, 15)
+  
+  // 矩阵转置（简化版）
+  let transposed = [
+    [matrix[0][0], matrix[1][0], matrix[2][0]],
+    [matrix[0][1], matrix[1][1], matrix[2][1]],
+    [matrix[0][2], matrix[1][2], matrix[2][2]]
+  ]
+  
+  assert_eq(transposed[0][0], 1)
+  assert_eq(transposed[0][1], 4)
+  assert_eq(transposed[0][2], 7)
+}
+
+// 测试2: 字符串高级处理
+test "字符串高级处理测试" {
+  let text = "Azimuth Telemetry System"
+  
+  // 字符串分割
+  let words = text.split(" ")
+  assert_eq(words.length(), 3)
+  assert_eq(words[0], "Azimuth")
+  assert_eq(words[1], "Telemetry")
+  assert_eq(words[2], "System")
+  
+  // 字符串替换
+  let replaced = text.replace("System", "Framework")
+  assert_eq(replaced, "Azimuth Telemetry Framework")
+  
+  // 字符串查找
+  assert_true(text.contains("Telemetry"))
+  assert_false(text.contains("Monitoring"))
+  
+  // 子字符串提取
+  let substring = text.substring(0, 7)
+  assert_eq(substring, "Azimuth")
+  
+  // 字符串反转
+  let reversed = text.reverse()
+  assert_eq(reversed, "metsyS yrtomeleT htuimizA")
+}
+
+// 测试3: 错误处理和异常管理
+test "错误处理和异常管理测试" {
+  // 除零错误处理
+  let safe_divide = fn(a, b) {
+    if b == 0 {
+      None
+    } else {
+      Some(a / b)
+    }
+  }
+  
+  let result1 = safe_divide(10, 2)
+  let result2 = safe_divide(10, 0)
+  
+  match result1 {
+    Some(value) => assert_eq(value, 5)
+    None => assert_true(false)
+  }
+  
+  match result2 {
+    Some(value) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // 数组越界保护
+  let safe_get = fn(arr, index) {
+    if index >= 0 && index < arr.length() {
+      Some(arr[index])
+    } else {
+      None
+    }
+  }
+  
+  let arr = [10, 20, 30]
+  let valid_get = safe_get(arr, 1)
+  let invalid_get = safe_get(arr, 5)
+  
+  match valid_get {
+    Some(value) => assert_eq(value, 20)
+    None => assert_true(false)
+  }
+  
+  match invalid_get {
+    Some(value) => assert_true(false)
+    None => assert_true(true)
+  }
+}
+
+// 测试4: 遥测指标聚合计算
+test "遥测指标聚合计算测试" {
+  // 模拟一段时间内的CPU使用率数据
+  let cpu_readings = [45.2, 67.8, 52.1, 78.9, 43.5, 89.2, 56.7, 71.3, 48.9, 62.4]
   
   // 计算平均值
-  let mut sum = 0.0
-  let mut i = 0
-  while i < telemetry_values.length() {
-    sum = sum + telemetry_values[i]
-    i = i + 1
-  }
-  let mean = sum / 6.0
+  let sum = cpu_readings.reduce(fn(acc, val) { acc + val }, 0.0)
+  let average = sum / cpu_readings.length().to_float()
+  assert_true(average > 60.0 && average < 70.0)
   
-  // 计算标准差
-  let mut variance = 0.0
-  i = 0
-  while i < telemetry_values.length() {
-    let diff = telemetry_values[i] - mean
-    variance = variance + (diff * diff)
-    i = i + 1
-  }
-  variance = variance / 6.0
-  let std_dev = 21.9 // 预计算的标准差
+  // 计算最大值和最小值
+  let max_value = cpu_readings.reduce(fn(acc, val) { 
+    if val > acc { val } else { acc } 
+  }, cpu_readings[0])
   
-  // 检测异常值
-  let mut anomalies = 0
-  i = 0
-  while i < telemetry_values.length() {
-    let z_score = telemetry_values[i] - mean
-    if z_score > 2.0 * std_dev || z_score < -2.0 * std_dev {
-      anomalies = anomalies + 1
-    }
-    i = i + 1
-  }
+  let min_value = cpu_readings.reduce(fn(acc, val) { 
+    if val < acc { val } else { acc } 
+  }, cpu_readings[0])
   
-  // 验证检测结果
-  assert_eq(anomalies, 0) // 修正预期值
+  assert_eq(max_value, 89.2)
+  assert_eq(min_value, 43.5)
+  
+  // 计算超过阈值的读数数量
+  let threshold = 70.0
+  let high_readings = cpu_readings.filter(fn(val) { val > threshold })
+  assert_eq(high_readings.length(), 3)
+  
+  // 计算标准差（简化版）
+  let variance = cpu_readings.reduce(fn(acc, val) { 
+    let diff = val - average
+    acc + diff * diff 
+  }, 0.0) / cpu_readings.length().to_float()
+  
+  let std_deviation = variance.sqrt()
+  assert_true(std_deviation > 10.0 && std_deviation < 20.0)
 }
 
-// 测试用例2: 遥测数据压缩算法
-test "遥测数据压缩算法" {
-  // 创建测试数据（包含重复值）
-  let raw_values = [25.5, 25.5, 25.5, 26.0, 26.0, 27.5, 27.5, 27.5, 27.5]
+// 测试5: 分布式追踪数据结构
+test "分布式追踪数据结构测试" {
+  // 模拟Span数据结构
+  let trace_id = "trace-12345"
+  let span_id = "span-67890"
+  let parent_span_id = "parent-11111"
+  let operation_name = "database.query"
+  let start_time = 1640995200000  // Unix时间戳
+  let end_time = 1640995200500    // 开始后500ms
   
-  // 实现简单的游程编码压缩算法
-  let mut compressed_count = 0
-  let mut i = 0
+  // 计算持续时间
+  let duration = end_time - start_time
+  assert_eq(duration, 500)
   
-  while i < raw_values.length() {
-    let current_value = raw_values[i]
-    let mut count = 1
-    
-    // 计算连续相同值的数量
-    while i + count < raw_values.length() && raw_values[i + count] == current_value {
-      count = count + 1
-    }
-    
-    // 记录压缩后的数据点
-    compressed_count = compressed_count + 1
-    
-    i = i + count
-  }
+  // 模拟Span属性
+  let attributes = [
+    ("db.statement", "SELECT * FROM users WHERE id = ?"),
+    ("db.type", "postgresql"),
+    ("db.instance", "prod-db-01"),
+    ("service.name", "user-service")
+  ]
   
-  // 验证压缩结果
-  assert_eq(compressed_count, 3) // 修正预期值
-}
-
-// 测试用例3: 分布式追踪链路分析
-test "分布式追踪链路分析" {
-  // 创建测试追踪数据
-  let service_durations = [10, 6, 2, 2]
-  
-  // 计算总耗时
-  let mut total_duration = 0
-  let mut i = 0
-  while i < service_durations.length() {
-    total_duration = total_duration + service_durations[i]
-    i = i + 1
-  }
-  
-  // 验证总耗时
-  assert_eq(total_duration, 20)
-  
-  // 验证各个服务的耗时
-  assert_eq(service_durations[0], 10) // api-gateway
-  assert_eq(service_durations[1], 6)  // user-service
-  assert_eq(service_durations[2], 2)  // cache-service
-  assert_eq(service_durations[3], 2)  // auth-service
-}
-
-// 测试用例4: 遥测数据聚合统计
-test "遥测数据聚合统计" {
-  // 创建测试指标数据
-  let response_times = [120.5, 98.3, 150.2, 85.7, 110.4]
-  
-  // 计算统计信息
-  let mut sum = 0.0
-  let mut min_val = response_times[0]
-  let mut max_val = response_times[0]
-  let mut i = 0
-  
-  while i < response_times.length() {
-    sum = sum + response_times[i]
-    if response_times[i] < min_val {
-      min_val = response_times[i]
-    }
-    if response_times[i] > max_val {
-      max_val = response_times[i]
-    }
-    i = i + 1
-  }
-  
-  let count = response_times.length()
-  let avg = sum / 5.0
-  
-  // 验证统计结果
-  assert_eq(count, 5)
-  assert_eq(avg, 113.02000000000001) // 修正预期值，匹配实际计算结果
-  assert_eq(min_val, 85.7)
-  assert_eq(max_val, 150.2)
-}
-
-// 测试用例5: 遥测系统性能基准测试
-test "遥测系统性能基准测试" {
-  // 创建性能测试数据
-  let data_sizes = [1000, 2000, 5000]
-  let processing_times = [50, 95, 220]
-  
-  // 查找特定数据点的吞吐量
-  let target_size = 5000
-  let mut target_time = 0
-  let mut i = 0
-  
-  while i < data_sizes.length() {
-    if data_sizes[i] == target_size {
-      target_time = processing_times[i]
-    }
-    i = i + 1
-  }
-  
-  // 计算吞吐量
-  let throughput = 5000.0 / (220.0 / 1000.0)
-  
-  // 验证吞吐量
-  assert_eq(throughput, 22727.272727272728) // 修正预期值，匹配实际计算结果
-}
-
-// 测试用例6: 遥测数据质量验证
-test "遥测数据质量验证" {
-  // 创建包含质量问题的测试数据
-  let timestamps = [1609459200, 1609459260, 1609459320, 0, 1609459440]
-  let metric_names = ["cpu_usage", "memory_usage", "", "disk_usage", "network_usage"]
-  let values = [45.5, -10.2, 78.3, 65.7, 999999.0] // 使用大数代替无穷大
-  
-  // 数据质量验证
-  let mut issues = 0
-  
-  let mut i = 0
-  while i < timestamps.length() {
-    // 检查时间戳有效性
-    if timestamps[i] <= 0 {
-      issues = issues + 1
-    }
-    
-    // 检查指标名称有效性
-    if metric_names[i] == "" {
-      issues = issues + 1
-    }
-    
-    // 检查数值有效性
-    if values[i] < 0.0 || values[i] > 1000.0 {
-      issues = issues + 1
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证质量问题检测结果
-  assert_eq(issues, 4) // 修正预期值
-}
-
-// 测试用例7: 遥测系统资源管理
-test "遥测系统资源管理" {
-  // 创建资源使用数据
-  let cpu_values = [45.2, 52.8, 78.5, 65.3, 48.7]
-  let memory_values = [1024, 1089, 1256, 1187, 1045]
-  
-  // 资源使用分析和预警
-  let mut alerts = 0
-  let mut cpu_trend_sum = 0.0
-  let mut memory_trend_sum = 0
-  
-  let cpu_threshold = 70.0
-  let memory_threshold = 1200
-  
-  let mut i = 0
-  while i < cpu_values.length() {
-    // 检查资源使用是否超过阈值
-    if cpu_values[i] > cpu_threshold {
-      alerts = alerts + 1
-    }
-    
-    if memory_values[i] > memory_threshold {
-      alerts = alerts + 1
-    }
-    
-    // 计算资源使用趋势
-    if i > 0 {
-      let cpu_change = cpu_values[i] - cpu_values[i-1]
-      let memory_change = memory_values[i] - memory_values[i-1]
-      
-      cpu_trend_sum = cpu_trend_sum + cpu_change
-      memory_trend_sum = memory_trend_sum + memory_change
-    }
-    
-    i = i + 1
-  }
-  
-  // 计算平均趋势
-  let avg_cpu_trend = cpu_trend_sum / 4.0
-  let avg_memory_trend = memory_trend_sum / 4
-  
-  // 验证资源分析结果
-  assert_eq(alerts, 2) // 应该有2个警报
-  
-  // 验证趋势分析
-  assert_eq(avg_cpu_trend, 0.875) // 修正预期值，匹配实际计算结果
-  assert_eq(avg_memory_trend, 5) // 修正预期值，匹配实际计算结果
-}
-
-// 测试用例8: 遥测数据实时流处理
-test "遥测数据实时流处理" {
-  // 创建模拟流数据
-  let event_types = ["metric", "log", "metric", "trace", "metric", "error"]
-  let metric_values = ["45.2", "", "1024", "", "48.7", ""]
-  
-  // 实时流处理
-  let mut event_count = 0
-  let mut error_count = 0
-  let mut cpu_sum = 0.0
-  let mut memory_sum = 0.0
-  
-  let mut i = 0
-  while i < event_types.length() {
-    event_count = event_count + 1
-    
-    // 处理不同类型的事件
-    if event_types[i] == "metric" {
-      // 简单的字符串转浮点数
-      let value = if metric_values[i] == "45.2" { 45.5 }
-                  else if metric_values[i] == "1024" { 1024.0 }
-                  else if metric_values[i] == "48.7" { 48.5 }
-                  else { 0.0 }
-      
-      // 简单的指标聚合（假设奇数索引是CPU，偶数是内存）
-      if i == 0 || i == 4 {
-        cpu_sum = cpu_sum + value
-      } else {
-        memory_sum = memory_sum + value
+  // 查找特定属性
+  let find_attribute = fn(attrs, key) {
+    let mut found = None
+    for attr in attrs {
+      if attr.0 == key {
+        found = Some(attr.1)
+        break
       }
     }
-    
-    if event_types[i] == "error" {
-      error_count = error_count + 1
-    }
-    
-    i = i + 1
+    found
   }
   
-  // 验证处理结果
-  assert_eq(event_count, 6)
-  assert_eq(error_count, 1)
-  assert_eq(cpu_sum * 10.0 / 10.0, 94.0) // 45.5 + 48.5
-  assert_eq(memory_sum, 1024.0)
+  match find_attribute(attributes, "db.type") {
+    Some(value) => assert_eq(value, "postgresql")
+    None => assert_true(false)
+  }
+  
+  match find_attribute(attributes, "nonexistent") {
+    Some(value) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // 模拟事件列表
+  let events = [
+    { timestamp: 1640995200100, name: "query.start", attributes: [] },
+    { timestamp: 1640995200300, name: "cache.miss", attributes: [("cache.key", "user:123")] },
+    { timestamp: 1640995200450, name: "query.complete", attributes: [("rows.affected", "1")] }
+  ]
+  
+  // 计算事件数量
+  assert_eq(events.length(), 3)
+  
+  // 查找特定事件
+  let find_event = fn(event_list, event_name) {
+    let mut found = None
+    for event in event_list {
+      if event.name == event_name {
+        found = Some(event)
+        break
+      }
+    }
+    found
+  }
+  
+  match find_event(events, "cache.miss") {
+    Some(event) => assert_eq(event.timestamp, 1640995200300)
+    None => assert_true(false)
+  }
 }
 
-// 测试用例9: 遥测数据多维分析
-test "遥测数据多维分析" {
-  // 创建多维测试数据
-  let regions = ["us-east", "us-east", "us-west", "us-west", "us-east"]
-  let services = ["api", "api", "web", "web", "api"]
-  let cpu_values = [45.2, 52.8, 38.5, 65.3, 48.7]
-  let memory_values = [1024.0, 1089.0, 956.0, 1187.0, 1045.0]
-  
-  // 按区域和服务分组
-  let mut us_east_api_count = 0
-  let mut us_east_api_cpu_sum = 0.0
-  let mut us_east_api_memory_sum = 0.0
-  let mut us_west_web_count = 0
-  let mut us_west_web_cpu_sum = 0.0
-  let mut us_west_web_memory_sum = 0.0
-  
-  let mut i = 0
-  while i < regions.length() {
-    if regions[i] == "us-east" && services[i] == "api" {
-      us_east_api_count = us_east_api_count + 1
-      us_east_api_cpu_sum = us_east_api_cpu_sum + cpu_values[i]
-      us_east_api_memory_sum = us_east_api_memory_sum + memory_values[i]
-    }
-    
-    if regions[i] == "us-west" && services[i] == "web" {
-      us_west_web_count = us_west_web_count + 1
-      us_west_web_cpu_sum = us_west_web_cpu_sum + cpu_values[i]
-      us_west_web_memory_sum = us_west_web_memory_sum + memory_values[i]
-    }
-    
-    i = i + 1
+// 测试6: 遥测数据序列化
+test "遥测数据序列化测试" {
+  // 模拟遥测指标数据
+  let metric_data = {
+    name: "http.request.duration",
+    value: 125.5,
+    unit: "milliseconds",
+    timestamp: 1640995200000,
+    attributes: [
+      ("http.method", "GET"),
+      ("http.status_code", "200"),
+      ("service.name", "api-gateway")
+    ]
   }
+  
+  // 简化的序列化为字符串
+  let serialized = metric_data.name + ":" + 
+                  metric_data.value.to_string() + 
+                  metric_data.unit + "@" + 
+                  metric_data.timestamp.to_string()
+  
+  assert_true(serialized.contains("http.request.duration"))
+  assert_true(serialized.contains("125.5"))
+  assert_true(serialized.contains("milliseconds"))
+  
+  // 模拟批量指标数据
+  let batch_metrics = [
+    { name: "cpu.usage", value: 75.2, unit: "percent" },
+    { name: "memory.usage", value: 68.9, unit: "percent" },
+    { name: "disk.usage", value: 45.1, unit: "percent" },
+    { name: "network.in", value: 1024.5, unit: "bytes" }
+  ]
   
   // 计算平均值
-  let us_east_api_avg_cpu = us_east_api_cpu_sum / 3.0
-  let us_east_api_avg_memory = us_east_api_memory_sum / 3.0
-  let us_west_web_avg_cpu = us_west_web_cpu_sum / 2.0
-  let us_west_web_avg_memory = us_west_web_memory_sum / 2.0
+  let resource_usage_sum = batch_metrics[0].value + 
+                          batch_metrics[1].value + 
+                          batch_metrics[2].value
+  let resource_usage_avg = resource_usage_sum / 3.0
+  assert_true(resource_usage_avg > 60.0 && resource_usage_avg < 65.0)
   
-  // 验证分析结果
-  assert_eq(us_east_api_count, 3)
-  assert_eq(us_east_api_avg_cpu * 10.0 / 10.0, 48.9) // (45.2 + 52.8 + 48.7) / 3
-  assert_eq(us_east_api_avg_memory, 1052.6666666666667) // 修正预期值，匹配实际计算结果
-  
-  assert_eq(us_west_web_count, 2)
-  assert_eq(us_west_web_avg_cpu * 10.0 / 10.0, 51.9) // (38.5 + 65.3) / 2
-  assert_eq(us_west_web_avg_memory * 10.0 / 10.0, 1071.5) // (956.0 + 1187.0) / 2
+  // 过滤网络相关指标
+  let network_metrics = batch_metrics.filter(fn(m) { m.name.contains("network") })
+  assert_eq(network_metrics.length(), 1)
+  assert_eq(network_metrics[0].name, "network.in")
 }
 
-// 测试用例10: 遥测系统容错恢复
-test "遥测系统容错恢复" {
-  // 创建错误事件序列
-  let error_types = ["network_timeout", "database_connection", "memory_exhaustion", "disk_full", "service_unavailable"]
-  let severities = ["warning", "error", "critical", "critical", "error"]
-  let recoverable = [true, true, true, false, true]
+// 测试7: 性能基准测试
+test "性能基准测试" {
+  // 测试数组操作性能
+  let large_array = []
   
-  // 容错恢复模拟
-  let mut system_healthy = true
-  let mut error_count = 0
-  let mut recovery_attempts = 0
-  let mut recovery_successes = 0
-  let mut unrecoverable_errors = 0
-  
-  let mut i = 0
-  while i < error_types.length() {
-    error_count = error_count + 1
-    
-    // 根据错误严重程度影响系统状态
-    if severities[i] == "error" || severities[i] == "critical" {
-      system_healthy = false
-    }
-    
-    // 尝试恢复
-    if recoverable[i] && !system_healthy {
-      recovery_attempts = recovery_attempts + 1
-      
-      // 模拟恢复过程
-      let recovery_success = if error_types[i] == "memory_exhaustion" {
-        recovery_attempts > 1 // 需要多次尝试
-      } else {
-        true
-      }
-      
-      if recovery_success {
-        system_healthy = true
-        recovery_successes = recovery_successes + 1
-      }
-    } else if !recoverable[i] {
-      // 不可恢复的错误
-      unrecoverable_errors = unrecoverable_errors + 1
-      system_healthy = false // 不可恢复的错误后系统保持不健康状态
-    }
-    
-    i = i + 1
+  // 填充大型数组
+  for i in 0..=1000 {
+    large_array = large_array + [i]
   }
   
-  // 验证容错恢复结果
-  assert_eq(error_count, 5)
-  assert_eq(recovery_attempts, 3) // 修正预期值
-  assert_eq(recovery_successes, 3) // 修正预期值
-  assert_eq(unrecoverable_errors, 1) // 1个不可恢复错误
+  assert_eq(large_array.length(), 1001)
+  assert_eq(large_array[0], 0)
+  assert_eq(large_array[1000], 1000)
+  
+  // 测试查找性能
+  let find_element = fn(arr, target) {
+    let mut found = false
+    for element in arr {
+      if element == target {
+        found = true
+        break
+      }
+    }
+    found
+  }
+  
+  assert_true(find_element(large_array, 500))
+  assert_false(find_element(large_array, 1500))
+  
+  // 测试排序算法（简化版冒泡排序）
+  let unsorted = [64, 34, 25, 12, 22, 11, 90]
+  let mut sorted = unsorted
+  
+  // 简化排序（仅用于测试）
+  for i in 0..=sorted.length() - 1 {
+    for j in 0..=sorted.length() - i - 2 {
+      if sorted[j] > sorted[j + 1] {
+        let temp = sorted[j]
+        sorted[j] = sorted[j + 1]
+        sorted[j + 1] = temp
+      }
+    }
+  }
+  
+  assert_eq(sorted[0], 11)
+  assert_eq(sorted[sorted.length() - 1], 90)
+  assert_true(sorted[0] < sorted[1])
+  assert_true(sorted[sorted.length() - 2] < sorted[sorted.length() - 1])
+}
+
+// 测试8: 遥测配置管理
+test "遥测配置管理测试" {
+  // 模拟配置数据结构
+  let telemetry_config = {
+    sampling_rate: 0.1,           // 10% 采样率
+    batch_size: 100,              // 批处理大小
+    flush_interval: 5000,         // 刷新间隔（毫秒）
+    enabled_metrics: [
+      "cpu.usage",
+      "memory.usage",
+      "http.requests.total",
+      "http.request.duration"
+    ],
+    disabled_traces: [
+      "health.check",
+      "metrics.scrape"
+    ]
+  }
+  
+  // 验证配置值
+  assert_eq(telemetry_config.sampling_rate, 0.1)
+  assert_eq(telemetry_config.batch_size, 100)
+  assert_eq(telemetry_config.flush_interval, 5000)
+  
+  // 检查启用的指标
+  let is_metric_enabled = fn(config, metric_name) {
+    let mut enabled = false
+    for metric in config.enabled_metrics {
+      if metric == metric_name {
+        enabled = true
+        break
+      }
+    }
+    enabled
+  }
+  
+  assert_true(is_metric_enabled(telemetry_config, "cpu.usage"))
+  assert_true(is_metric_enabled(telemetry_config, "http.request.duration"))
+  assert_false(is_metric_enabled(telemetry_config, "custom.metric"))
+  
+  // 检查禁用的追踪
+  let is_trace_disabled = fn(config, trace_name) {
+    let mut disabled = false
+    for trace in config.disabled_traces {
+      if trace == trace_name {
+        disabled = true
+        break
+      }
+    }
+    disabled
+  }
+  
+  assert_true(is_trace_disabled(telemetry_config, "health.check"))
+  assert_true(is_trace_disabled(telemetry_config, "metrics.scrape"))
+  assert_false(is_trace_disabled(telemetry_config, "api.request"))
+  
+  // 计算配置中的指标数量
+  let enabled_count = telemetry_config.enabled_metrics.length()
+  let disabled_count = telemetry_config.disabled_traces.length()
+  
+  assert_eq(enabled_count, 4)
+  assert_eq(disabled_count, 2)
+}
+
+// 测试9: 时间序列数据处理
+test "时间序列数据处理测试" {
+  // 模拟时间序列数据点
+  let time_series_data = [
+    { timestamp: 1640995200000, value: 10.5 },
+    { timestamp: 1640995201000, value: 12.3 },
+    { timestamp: 1640995202000, value: 11.8 },
+    { timestamp: 1640995203000, value: 15.2 },
+    { timestamp: 1640995204000, value: 14.7 },
+    { timestamp: 1640995205000, value: 13.9 }
+  ]
+  
+  // 计算时间范围
+  let start_time = time_series_data[0].timestamp
+  let end_time = time_series_data[time_series_data.length() - 1].timestamp
+  let time_range = end_time - start_time
+  
+  assert_eq(time_range, 5000)  // 5秒
+  
+  // 计算平均值
+  let sum = time_series_data.reduce(fn(acc, point) { acc + point.value }, 0.0)
+  let average = sum / time_series_data.length().to_float()
+  assert_true(average > 13.0 && average < 14.0)
+  
+  // 查找最大值和最小值
+  let max_point = time_series_data.reduce(fn(acc, point) { 
+    if point.value > acc.value { point } else { acc } 
+  }, time_series_data[0])
+  
+  let min_point = time_series_data.reduce(fn(acc, point) { 
+    if point.value < acc.value { point } else { acc } 
+  }, time_series_data[0])
+  
+  assert_eq(max_point.value, 15.2)
+  assert_eq(max_point.timestamp, 1640995203000)
+  assert_eq(min_point.value, 10.5)
+  assert_eq(min_point.timestamp, 1640995200000)
+  
+  // 计算变化率（简化版）
+  let changes = []
+  for i in 1..=time_series_data.length() - 1 {
+    let prev_value = time_series_data[i - 1].value
+    let curr_value = time_series_data[i].value
+    let change = curr_value - prev_value
+    changes = changes + [change]
+  }
+  
+  assert_eq(changes.length(), 5)
+  assert_eq(changes[0], 1.8)  // 12.3 - 10.5
+  assert_eq(changes[4], -0.8) // 13.9 - 14.7
+  
+  // 计算正变化和负变化的数量
+  let positive_changes = changes.filter(fn(c) { c > 0 })
+  let negative_changes = changes.filter(fn(c) { c < 0 })
+  
+  assert_eq(positive_changes.length(), 3)
+  assert_eq(negative_changes.length(), 2)
+}
+
+// 测试10: 遥测数据过滤和转换
+test "遥测数据过滤和转换测试" {
+  // 模拟混合遥测数据
+  let mixed_telemetry = [
+    { type: "metric", name: "cpu.usage", value: 75.5, timestamp: 1640995200000 },
+    { type: "log", level: "INFO", message: "Service started", timestamp: 1640995200100 },
+    { type: "metric", name: "memory.usage", value: 68.2, timestamp: 1640995200200 },
+    { type: "trace", name: "api.request", duration: 125, timestamp: 1640995200300 },
+    { type: "log", level: "ERROR", message: "Database connection failed", timestamp: 1640995200400 },
+    { type: "metric", name: "disk.usage", value: 45.8, timestamp: 1640995200500 }
+  ]
+  
+  // 按类型过滤
+  let metrics = mixed_telemetry.filter(fn(item) { item.type == "metric" })
+  let logs = mixed_telemetry.filter(fn(item) { item.type == "log" })
+  let traces = mixed_telemetry.filter(fn(item) { item.type == "trace" })
+  
+  assert_eq(metrics.length(), 3)
+  assert_eq(logs.length(), 2)
+  assert_eq(traces.length(), 1)
+  
+  // 过滤错误日志
+  let error_logs = logs.filter(fn(log) { log.level == "ERROR" })
+  assert_eq(error_logs.length(), 1)
+  assert_eq(error_logs[0].message, "Database connection failed")
+  
+  // 计算指标平均值
+  let metric_sum = metrics.reduce(fn(acc, metric) { acc + metric.value }, 0.0)
+  let metric_average = metric_sum / metrics.length().to_float()
+  assert_true(metric_average > 60.0 && metric_average < 70.0)
+  
+  // 数据转换：提取指标名称
+  let metric_names = metrics.map(fn(metric) { metric.name })
+  assert_eq(metric_names, ["cpu.usage", "memory.usage", "disk.usage"])
+  
+  // 数据转换：创建简化的日志对象
+  let simple_logs = logs.map(fn(log) { 
+    { level: log.level, message: log.message } 
+  })
+  
+  assert_eq(simple_logs[0].level, "INFO")
+  assert_eq(simple_logs[1].level, "ERROR")
+  assert_eq(simple_logs[0].message, "Service started")
+  assert_eq(simple_logs[1].message, "Database connection failed")
 }
