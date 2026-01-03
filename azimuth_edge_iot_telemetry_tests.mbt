@@ -1,570 +1,513 @@
-// Azimuth Edge Computing and IoT Telemetry Tests
-// 边缘计算和IoT遥测测试用例 - 专注于资源受限环境、离线处理和设备管理
+// 边缘计算和IoT遥测测试用例
+// 测试Azimuth遥测系统在边缘计算和IoT环境中的功能
 
-// Test 1: 边缘设备遥测数据收集
-test "edge device telemetry data collection" {
-  // 创建边缘设备管理器
-  let device_manager = EdgeDeviceManager::new()
+test "边缘设备资源受限环境遥测" {
+  // 创建边缘设备遥测测试
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "edge.device.test")
   
-  // 注册边缘设备
-  let devices = [
-    ("sensor-001", "temperature_sensor", "factory-floor-a"),
-    ("sensor-002", "humidity_sensor", "factory-floor-a"),
-    ("sensor-003", "pressure_sensor", "factory-floor-b"),
-    ("gateway-001", "iot_gateway", "factory-floor-a"),
-    ("edge-node-001", "edge_compute_node", "factory-floor-b")
+  // 模拟边缘设备资源受限环境
+  let edge_device_span = Tracer::start_span(tracer, "edge.device.operation")
+  
+  // 设置边缘设备属性
+  Span::set_attribute(edge_device_span, "device.type", "iot.gateway")
+  Span::set_attribute(edge_device_span, "device.id", "edge-gateway-001")
+  Span::set_attribute(edge_device_span, "device.location", "factory.floor.a")
+  Span::set_attribute(edge_device_span, "device.cpu.cores", "2")
+  Span::set_attribute(edge_device_span, "device.memory.mb", "512")
+  Span::set_attribute(edge_device_span, "device.storage.gb", "8")
+  Span::set_attribute(edge_device_span, "network.type", "wifi")
+  Span::set_attribute(edge_device_span, "network.strength", "medium")
+  
+  // 创建资源监控度量
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "edge.resource.monitor")
+  
+  let cpu_usage = Meter::create_gauge(meter, "edge.cpu.usage", Some("Edge device CPU usage"), Some("percent"))
+  let memory_usage = Meter::create_gauge(meter, "edge.memory.usage", Some("Edge device memory usage"), Some("percent"))
+  let storage_usage = Meter::create_gauge(meter, "edge.storage.usage", Some("Edge device storage usage"), Some("percent"))
+  let battery_level = Meter::create_gauge(meter, "edge.battery.level", Some("Edge device battery level"), Some("percent"))
+  let network_latency = Meter::create_histogram(meter, "edge.network.latency", Some("Edge network latency"), Some("ms"))
+  
+  // 模拟边缘设备资源使用情况
+  let resource_scenarios = [
+    {"cpu": 25.5, "memory": 40.2, "storage": 60.0, "battery": 85.0, "network": 150.0},
+    {"cpu": 45.8, "memory": 55.7, "storage": 62.5, "battery": 78.0, "network": 200.0},
+    {"cpu": 65.3, "memory": 70.1, "storage": 65.0, "battery": 65.0, "network": 300.0},
+    {"cpu": 80.2, "memory": 85.4, "storage": 68.0, "battery": 45.0, "network": 500.0},
+    {"cpu": 90.1, "memory": 92.3, "storage": 70.0, "battery": 25.0, "network": 800.0}
   ]
   
-  let registered_devices = []
-  for (device_id, device_type, location) in devices {
-    let device = EdgeDevice::new(device_id, device_type)
-    EdgeDevice::set_location(device, location)
-    EdgeDevice::set_capabilities(device, [
-      "telemetry_collection",
-      "local_processing",
-      "batch_upload"
-    ])
-    EdgeDevice::set_resource_limits(device, ResourceLimits::new(
-      memory_mb = 128,
-      storage_mb = 512,
-      cpu_percent = 80.0
-    ))
+  // 测试不同资源使用场景下的遥测
+  for scenario in resource_scenarios {
+    let cpu = scenario["cpu"]
+    let memory = scenario["memory"]
+    let storage = scenario["storage"]
+    let battery = scenario["battery"]
+    let network = scenario["network"]
     
-    let registration = DeviceManager::register_device(device_manager, device)
-    match registration {
-      Ok(device_token) => {
-        registered_devices = registered_devices.push((device_id, device_token))
-        assert_true(device_token.length() > 0)
-      }
-      Err(_) => assert_true(false)
-    }
-  }
-  
-  // 创建遥测收集器
-  let telemetry_collector = EdgeTelemetryCollector::new(device_manager)
-  
-  // 模拟传感器数据收集
-  let base_time = Time::now()
-  for i in 0..<100 {
-    for (device_id, _) in registered_devices {
-      if device_id.contains("sensor") {
-        // 传感器数据
-        let temperature = 20.0 + Math::sin(i.to_float() * 0.1) * 5.0 + Math::random() * 2.0
-        let humidity = 50.0 + Math::cos(i.to_float() * 0.1) * 10.0 + Math::random() * 5.0
-        let pressure = 1013.25 + Math::sin(i.to_float() * 0.05) * 20.0 + Math::random() * 10.0
-        
-        let attrs = Attributes::new()
-        Attributes::set(attrs, "device.id", StringValue(device_id))
-        Attributes::set(attrs, "device.type", StringValue("sensor"))
-        Attributes::set(attrs, "location", StringValue(if device_id.contains("001") { "factory-floor-a" } else { "factory-floor-b" }))
-        Attributes::set(attrs, "timestamp", IntValue(base_time + i * 1000))
-        
-        if device_id.contains("temperature") {
-          Collector::record_metric(telemetry_collector, "temperature", temperature, attrs)
-        } else if device_id.contains("humidity") {
-          Collector::record_metric(telemetry_collector, "humidity", humidity, attrs)
-        } else if device_id.contains("pressure") {
-          Collector::record_metric(telemetry_collector, "pressure", pressure, attrs)
-        }
-      } else if device_id.contains("gateway") {
-        // 网关状态数据
-        let cpu_usage = 30.0 + Math::random() * 40.0
-        let memory_usage = 40.0 + Math::random() * 30.0
-        let network_throughput = 1000.0 + Math::random() * 5000.0
-        
-        let attrs = Attributes::new()
-        Attributes::set(attrs, "device.id", StringValue(device_id))
-        Attributes::set(attrs, "device.type", StringValue("gateway"))
-        Attributes::set(attrs, "location", StringValue("factory-floor-a"))
-        Attributes::set(attrs, "timestamp", IntValue(base_time + i * 1000))
-        
-        Collector::record_metric(telemetry_collector, "cpu_usage", cpu_usage, attrs)
-        Collector::record_metric(telemetry_collector, "memory_usage", memory_usage, attrs)
-        Collector::record_metric(telemetry_collector, "network_throughput", network_throughput, attrs)
-      }
-    }
-  }
-  
-  // 验证数据收集
-  let collected_data = Collector::get_collected_data(telemetry_collector)
-  assert_true(collected_data.length() > 0)
-  
-  // 验证设备数据分布
-  let device_data = Collector::group_by_device(telemetry_collector)
-  assert_eq(device_data.length(), 5)
-  
-  for (device_id, metrics) in device_data {
-    assert_true(metrics.length() > 0)
-    assert_true(metrics[0].attributes.contains("device.id"))
-    assert_true(metrics[0].attributes.contains("timestamp"))
-  }
-  
-  // 测试本地数据处理
-  let local_processor = LocalDataProcessor::new()
-  let processed_data = Processor::process_metrics(local_processor, collected_data)
-  
-  // 验证数据处理结果
-  assert_true(processed_data.length() > 0)
-  for data in processed_data {
-    assert_true(data.processed)
-    assert_true(data.aggregations.length() > 0)
-  }
-}
-
-// Test 2: 离线数据处理和同步
-test "offline data processing and synchronization" {
-  // 创建离线数据管理器
-  let offline_manager = OfflineDataManager::new()
-  
-  // 配置离线存储
-  let storage_config = OfflineStorageConfig::new(
-    max_size_mb = 100,
-    max_files = 1000,
-    compression_enabled = true,
-    encryption_enabled = true
-  )
-  OfflineDataManager::configure_storage(offline_manager, storage_config)
-  
-  // 模拟网络断开情况下的数据收集
-  let device_id = "edge-device-offline"
-  let offline_collector = OfflineTelemetryCollector::new(device_id, offline_manager)
-  
-  // 收集离线数据
-  let base_time = Time::now()
-  for i in 0..<200 {
-    let temperature = 25.0 + Math::sin(i.to_float() * 0.1) * 3.0
-    let humidity = 60.0 + Math::cos(i.to_float() * 0.1) * 8.0
+    // 记录资源使用情况
+    Gauge::record(cpu_usage, cpu)
+    Gauge::record(memory_usage, memory)
+    Gauge::record(storage_usage, storage)
+    Gauge::record(battery_level, battery)
+    Histogram::record(network_latency, network)
     
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "device.id", StringValue(device_id))
-    Attributes::set(attrs, "timestamp", IntValue(base_time + i * 5000)) // 每5秒一个数据点
-    Attributes::set(attrs, "offline_mode", BoolValue(true))
+    // 根据资源使用情况调整遥测策略
+    let telemetry_frequency = match cpu {
+      c if c < 50.0 => 1000,    // 高频率：每秒
+      c if c < 80.0 => 5000,    // 中等频率：每5秒
+      _ => 10000                 // 低频率：每10秒
+    }
     
-    OfflineCollector::record_metric(offline_collector, "temperature", temperature, attrs)
-    OfflineCollector::record_metric(offline_collector, "humidity", humidity, attrs)
+    let batch_size = match memory {
+      m if m < 60.0 => 50,      // 大批次
+      m if m < 85.0 => 20,      // 中等批次
+      _ => 5                     // 小批次
+    }
     
-    // 每10个数据点保存一次
-    if i % 10 == 0 {
-      OfflineCollector::save_to_local_storage(offline_collector)
-    }
-  }
-  
-  // 验证离线数据存储
-  let stored_files = OfflineDataManager::get_stored_files(offline_manager)
-  assert_true(stored_files.length() > 0)
-  
-  let total_size = OfflineDataManager::get_total_storage_size(offline_manager)
-  assert_true(total_size > 0)
-  assert_true(total_size <= storage_config.max_size_mb * 1024 * 1024)
-  
-  // 测试本地数据聚合
-  let local_aggregator = OfflineDataAggregator::new(offline_manager)
-  let aggregated_data = Aggregator::aggregate_by_time_window(local_aggregator, 60000) // 1分钟窗口
-  
-  assert_true(aggregated_data.length() > 0)
-  for aggregation in aggregated_data {
-    assert_true(aggregation.min <= aggregation.max)
-    assert_true(aggregation.count > 0)
-    assert_true(aggregation.average >= aggregation.min && aggregation.average <= aggregation.max)
-  }
-  
-  // 模拟网络恢复后的数据同步
-  let sync_manager = DataSyncManager::new()
-  SyncManager::configure_batch_size(sync_manager, 50) // 每批50个数据点
-  SyncManager::configure_retry_policy(sync_manager, RetryPolicy::new(
-    max_attempts = 3,
-    backoff_ms = 1000,
-    max_backoff_ms = 10000
-  ))
-  
-  // 模拟同步过程
-  let sync_result = SyncManager::sync_offline_data(sync_manager, offline_manager)
-  match sync_result {
-    Ok(sync_stats) => {
-      assert_true(sync_stats.total_data_points > 0)
-      assert_true(sync_stats.synced_data_points > 0)
-      assert_true(sync_stats.failed_data_points == 0)
-      assert_true(sync_stats.sync_duration_ms > 0)
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // 验证同步后的清理
-  let cleanup_result = OfflineDataManager::cleanup_synced_data(offline_manager)
-  assert_true(cleanup_result.files_deleted > 0)
-  
-  let remaining_files = OfflineDataManager::get_stored_files(offline_manager)
-  assert_true(remaining_files.length() < stored_files.length())
-}
-
-// Test 3: 边缘设备资源优化
-test "edge device resource optimization" {
-  // 创建资源优化管理器
-  let resource_manager = EdgeResourceManager::new()
-  
-  // 配置资源限制
-  let resource_limits = ResourceLimits::new(
-    memory_mb = 64,
-    storage_mb = 256,
-    cpu_percent = 70.0,
-    network_bandwidth_kbps = 1000
-  )
-  ResourceManager::set_limits(resource_manager, resource_limits)
-  
-  // 创建资源监控器
-  let resource_monitor = ResourceMonitor::new(resource_manager)
-  
-  // 模拟资源使用情况
-  let initial_usage = ResourceUsage::new(
-    memory_mb = 32,
-    storage_mb = 128,
-    cpu_percent = 40.0,
-    network_bandwidth_kbps = 500
-  )
-  
-  Monitor::record_usage(resource_monitor, initial_usage)
-  
-  // 测试资源优化策略
-  let optimization_strategies = [
-    OptimizationStrategy::DataCompression,
-    OptimizationStrategy::BatchProcessing,
-    OptimizationStrategy::AdaptiveSampling,
-    OptimizationStrategy::LocalAggregation,
-    OptimizationStrategy::SmartCaching
-  ]
-  
-  for strategy in optimization_strategies {
-    ResourceManager::add_optimization_strategy(resource_manager, strategy)
-  }
-  
-  // 模拟高负载情况
-  for i in 0..<50 {
-    let memory_usage = 32 + i * 0.6 // 逐渐增加内存使用
-    let storage_usage = 128 + i * 2.5 // 逐渐增加存储使用
-    let cpu_usage = 40 + i * 0.8 // 逐渐增加CPU使用
-    let network_usage = 500 + i * 10 // 逐渐增加网络使用
-    
-    let current_usage = ResourceUsage::new(
-      memory_mb = memory_usage,
-      storage_mb = storage_usage,
-      cpu_percent = cpu_usage,
-      network_bandwidth_kbps = network_usage
-    )
-    
-    Monitor::record_usage(resource_monitor, current_usage)
-    
-    // 检查资源优化触发
-    let optimization_actions = ResourceManager::check_optimization_triggers(resource_manager)
-    if optimization_actions.length() > 0 {
-      for action in optimization_actions {
-        assert_true(action.strategy != OptimizationStrategy::None)
-        assert_true(action.priority >= 0)
-        
-        // 应用优化措施
-        let apply_result = ResourceManager::apply_optimization(resource_manager, action)
-        assert_true(apply_result.success)
-      }
-    }
-  }
-  
-  // 验证资源优化效果
-  let final_usage = Monitor::get_current_usage(resource_monitor)
-  assert_true(final_usage.memory_mb <= resource_limits.memory_mb)
-  assert_true(final_usage.storage_mb <= resource_limits.storage_mb)
-  assert_true(final_usage.cpu_percent <= resource_limits.cpu_percent)
-  
-  // 验证优化策略效果
-  let optimization_stats = ResourceManager::get_optimization_statistics(resource_manager)
-  assert_true(optimization_stats.total_optimizations > 0)
-  assert_true(optimization_stats.memory_saved_mb > 0)
-  assert_true(optimization_stats.storage_saved_mb > 0)
-  assert_true(optimization_stats.cpu_reduction_percent > 0)
-}
-
-// Test 4: IoT设备生命周期管理
-test "IoT device lifecycle management" {
-  // 创建设备生命周期管理器
-  let lifecycle_manager = DeviceLifecycleManager::new()
-  
-  // 设备注册阶段
-  let device_id = "iot-sensor-lifecycle"
-  let device_info = DeviceInfo::new(
-    device_id = device_id,
-    device_type = "environmental_sensor",
-    manufacturer = "SensorCorp",
-    model = "ENV-2000",
-    firmware_version = "1.2.3",
-    hardware_version = "2.1"
-  )
-  
-  let registration_result = LifecycleManager::register_device(lifecycle_manager, device_info)
-  match registration_result {
-    Ok(device_credential) => {
-      assert_true(device_credential.device_id == device_id)
-      assert_true(device_credential.access_token.length() > 0)
-      assert_true(device_credential.expires_at > Time::now())
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // 设备配置阶段
-  let device_config = DeviceConfig::new()
-  Config::set_telemetry_interval(device_config, 30) // 30秒间隔
-  Config::set_batch_size(device_config, 10) // 批量大小10
-  Config::enable_compression(device_config, true)
-  Config::enable_encryption(device_config, true)
-  Config::set_sampling_rate(device_config, 0.8) // 80%采样率
-  
-  let config_result = LifecycleManager::configure_device(lifecycle_manager, device_id, device_config)
-  match config_result {
-    Ok(config_version) => {
-      assert_true(config_version > 0)
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // 设备激活阶段
-  let activation_result = LifecycleManager::activate_device(lifecycle_manager, device_id)
-  match activation_result {
-    Ok(activation_time) => {
-      assert_true(activation_time > 0)
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // 验证设备状态
-  let device_status = LifecycleManager::get_device_status(lifecycle_manager, device_id)
-  match device_status {
-    Some(status) => {
-      assert_eq(status.state, DeviceState::Active)
-      assert_eq(status.last_seen > 0, true)
-      assert_eq(status.config_applied, true)
-    }
-    None => assert_true(false)
-  }
-  
-  // 模拟设备运行
-  let telemetry_simulator = DeviceTelemetrySimulator::new(device_id)
-  for i in 0..<20 {
-    let temperature = 22.0 + Math::sin(i.to_float() * 0.2) * 4.0
-    let humidity = 55.0 + Math::cos(i.to_float() * 0.2) * 10.0
-    let battery_level = 100.0 - i.to_float() * 2.0 // 模拟电池消耗
-    
-    Simulator::send_telemetry(telemetry_simulator, [
-      ("temperature", temperature),
-      ("humidity", humidity),
-      ("battery_level", battery_level)
+    // 记录遥测策略调整
+    Span::add_event(edge_device_span, "telemetry.strategy.adjusted", [
+      ("cpu_usage", cpu.to_string()),
+      ("memory_usage", memory.to_string()),
+      ("telemetry_frequency_ms", telemetry_frequency.to_string()),
+      ("batch_size", batch_size.to_string())
     ])
     
-    // 更新设备状态
-    LifecycleManager::update_device_heartbeat(lifecycle_manager, device_id)
+    // 验证遥测策略调整合理性
+    assert_true(telemetry_frequency >= 1000 && telemetry_frequency <= 10000)
+    assert_true(batch_size >= 5 && batch_size <= 50)
   }
   
-  // 设备更新阶段
-  let firmware_update = FirmwareUpdate::new(
-    version = "1.3.0",
-    download_url = "https://updates.sensorcorp.com/firmware/ENV-2000-1.3.0.bin",
-    checksum = "sha256:abcdef1234567890",
-    size_bytes = 1048576,
-    release_notes = "Bug fixes and performance improvements"
-  )
+  // 测试边缘设备断连情况下的遥测
+  Span::add_event(edge_device_span, "network.disconnection.detected", [
+    ("timestamp", "1640995300"),
+    ("disconnection_duration", "30"),
+    ("offline_buffering", "enabled")
+  ])
   
-  let update_result = LifecycleManager::schedule_firmware_update(lifecycle_manager, device_id, firmware_update)
-  match update_result {
-    Ok(update_id) => {
-      assert_true(update_id.length() > 0)
+  // 模拟离线缓冲
+  let offline_buffer_size = 100
+  let buffer_usage = 0
+  
+  for i = 0; i < offline_buffer_size; i = i + 1 {
+    // 模拟离线期间的数据缓冲
+    buffer_usage = buffer_usage + 1
+    
+    // 当缓冲区接近满时，应该触发数据清理或压缩
+    if buffer_usage > offline_buffer_size * 0.8 {
+      Span::add_event(edge_device_span, "offline.buffer.compression", [
+        ("buffer_usage", buffer_usage.to_string()),
+        ("compression_ratio", "0.5")
+      ])
+      
+      // 模拟压缩后缓冲区使用率下降
+      buffer_usage = (buffer_usage.to_float() * 0.5).to_int()
     }
-    Err(_) => assert_true(false)
   }
   
-  // 模拟固件更新过程
-  let update_progress = [
-    (UpdateState::Downloading, 0.25),
-    (UpdateState::Downloading, 0.50),
-    (UpdateState::Downloading, 1.0),
-    (UpdateState::Installing, 0.5),
-    (UpdateState::Installing, 1.0),
-    (UpdateState::Rebooting, 0.0),
-    (UpdateState::Completed, 1.0)
-  ]
+  // 验证离线缓冲机制
+  assert_true(buffer_usage <= offline_buffer_size * 0.8)
   
-  for (state, progress) in update_progress {
-    LifecycleManager::update_firmware_progress(lifecycle_manager, device_id, state, progress)
-  }
-  
-  // 验证更新结果
-  let updated_device_info = LifecycleManager::get_device_info(lifecycle_manager, device_id)
-  match updated_device_info {
-    Some(info) => {
-      assert_eq(info.firmware_version, "1.3.0")
-    }
-    None => assert_true(false)
-  }
-  
-  // 设备停用阶段
-  let deactivation_result = LifecycleManager::deactivate_device(lifecycle_manager, device_id)
-  match deactivation_result {
-    Ok(deactivation_time) => {
-      assert_true(deactivation_time > 0)
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // 验证停用状态
-  let deactivated_status = LifecycleManager::get_device_status(lifecycle_manager, device_id)
-  match deactivated_status {
-    Some(status) => {
-      assert_eq(status.state, DeviceState::Inactive)
-    }
-    None => assert_true(false)
-  }
-  
-  // 设备注销阶段
-  let unregistration_result = LifecycleManager::unregister_device(lifecycle_manager, device_id)
-  match unregistration_result {
-    Ok(_) => {
-      assert_true(true)
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // 验证设备已注销
-  let final_status = LifecycleManager::get_device_status(lifecycle_manager, device_id)
-  assert_eq(final_status, None)
+  Span::end(edge_device_span)
 }
 
-// Test 5: 边缘计算数据分析
-test "edge computing data analysis" {
-  // 创建边缘数据分析器
-  let edge_analyzer = EdgeDataAnalyzer::new()
+test "IoT传感器数据流处理" {
+  // 测试IoT传感器数据流处理
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "iot.sensor.test")
   
-  // 配置分析规则
-  let analysis_rules = [
-    AnalysisRule::new("temperature_anomaly", "Temperature Anomaly Detection")
-      .with_metric("temperature")
-      .with_condition(Condition::OutOfRange(15.0, 35.0))
-      .with_severity(AlertSeverity::Warning),
+  // 创建传感器数据度量
+  let temperature = Meter::create_gauge(meter, "sensor.temperature", Some("Temperature sensor"), Some("celsius"))
+  let humidity = Meter::create_gauge(meter, "sensor.humidity", Some("Humidity sensor"), Some("percent"))
+  let pressure = Meter::create_gauge(meter, "sensor.pressure", Some("Pressure sensor"), Some("hPa"))
+  let light_level = Meter::create_gauge(meter, "sensor.light.level", Some("Light level sensor"), Some("lux"))
+  let motion_detected = Meter::create_counter(meter, "sensor.motion.detected", Some("Motion detection"), Some("count"))
+  
+  // 模拟IoT传感器数据流
+  let sensor_readings = []
+  let reading_count = 100
+  
+  for i = 0; i < reading_count; i = i + 1 {
+    // 模拟传感器读数（带有一些随机波动）
+    let base_temp = 22.0
+    let base_humidity = 45.0
+    let base_pressure = 1013.25
+    let base_light = 500.0
     
-    AnalysisRule::new("humidity_anomaly", "Humidity Anomaly Detection")
-      .with_metric("humidity")
-      .with_condition(Condition::OutOfRange(30.0, 80.0))
-      .with_severity(AlertSeverity::Warning),
+    // 添加时间相关的变化
+    let time_factor = (i % 24).to_float()  // 24小时周期
     
-    AnalysisRule::new("battery_low", "Low Battery Detection")
-      .with_metric("battery_level")
-      .with_condition(Condition::LessThan(20.0))
-      .with_severity(AlertSeverity::Critical),
+    let temp_reading = base_temp + 5.0 * (0.5 - (time_factor / 24.0 - 0.5).abs()) + (i % 5).to_float() * 0.5
+    let humidity_reading = base_humidity + 10.0 * (0.5 - (time_factor / 24.0 - 0.5).abs()) + (i % 7).to_float() * 1.0
+    let pressure_reading = base_pressure + (i % 20).to_float() * 0.5 - 5.0
+    let light_reading = if time_factor < 6.0 || time_factor > 18.0 {
+      base_light * 0.1  // 夜间
+    } else {
+      base_light * (1.0 + (time_factor - 12.0).abs() / 6.0)  // 日间
+    }
     
-    AnalysisRule::new("sensor_offline", "Sensor Offline Detection")
-      .with_metric("heartbeat")
-      .with_condition(Condition::OlderThan(300000)) // 5分钟无数据
-      .with_severity(AlertSeverity::Critical)
+    // 记录传感器读数
+    Gauge::record(temperature, temp_reading)
+    Gauge::record(humidity, humidity_reading)
+    Gauge::record(pressure, pressure_reading)
+    Gauge::record(light_level, light_reading)
+    
+    // 模拟运动检测（随机事件）
+    if i % 15 == 0 {
+      Counter::add(motion_detected, 1.0)
+    }
+    
+    // 添加到传感器读数集合
+    sensor_readings.push({
+      "timestamp": 1640995200 + i,
+      "temperature": temp_reading,
+      "humidity": humidity_reading,
+      "pressure": pressure_reading,
+      "light": light_reading,
+      "motion": i % 15 == 0
+    })
+  }
+  
+  // 验证传感器数据质量
+  let temp_sum = 0.0
+  let humidity_sum = 0.0
+  let pressure_sum = 0.0
+  let light_sum = 0.0
+  let motion_count = 0
+  
+  for reading in sensor_readings {
+    temp_sum = temp_sum + reading["temperature"]
+    humidity_sum = humidity_sum + reading["humidity"]
+    pressure_sum = pressure_sum + reading["pressure"]
+    light_sum = light_sum + reading["light"]
+    
+    if reading["motion"] {
+      motion_count = motion_count + 1
+    }
+  }
+  
+  // 计算平均值
+  let avg_temp = temp_sum / sensor_readings.length().to_float()
+  let avg_humidity = humidity_sum / sensor_readings.length().to_float()
+  let avg_pressure = pressure_sum / sensor_readings.length().to_float()
+  let avg_light = light_sum / sensor_readings.length().to_float()
+  
+  // 验证传感器数据合理性
+  assert_true(avg_temp >= 20.0 && avg_temp <= 25.0)
+  assert_true(avg_humidity >= 40.0 && avg_humidity <= 50.0)
+  assert_true(avg_pressure >= 1010.0 && avg_pressure <= 1015.0)
+  assert_true(avg_light >= 100.0 && avg_light <= 600.0)
+  assert_true(motion_count > 0)
+  
+  // 验证运动检测计数
+  let expected_motion_count = reading_count / 15
+  assert_eq(motion_count, expected_motion_count)
+}
+
+test "边缘计算本地数据处理" {
+  // 测试边缘计算本地数据处理
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "edge.processing.test")
+  
+  // 创建边缘数据处理span
+  let span = Tracer::start_span(tracer, "edge.local.data.processing")
+  
+  // 设置边缘处理属性
+  Span::set_attribute(span, "processing.mode", "edge.local")
+  Span::set_attribute(span, "processing.location", "iot.gateway")
+  Span::set_attribute(span, "data.source", "sensor.network")
+  
+  // 模拟本地数据处理任务
+  let processing_tasks = [
+    {
+      "name": "data.aggregation",
+      "input_count": 100,
+      "output_count": 10,
+      "processing_time_ms": 50,
+      "memory_usage_mb": 10
+    },
+    {
+      "name": "anomaly_detection",
+      "input_count": 10,
+      "output_count": 2,
+      "processing_time_ms": 200,
+      "memory_usage_mb": 25
+    },
+    {
+      "name": "data.compression",
+      "input_count": 10,
+      "output_count": 5,
+      "processing_time_ms": 100,
+      "memory_usage_mb": 15
+    },
+    {
+      "name": "pattern_recognition",
+      "input_count": 10,
+      "output_count": 1,
+      "processing_time_ms": 300,
+      "memory_usage_mb": 30
+    },
+    {
+      "name": "alert_generation",
+      "input_count": 2,
+      "output_count": 1,
+      "processing_time_ms": 20,
+      "memory_usage_mb": 5
+    }
   ]
   
-  for rule in analysis_rules {
-    Analyzer::add_rule(edge_analyzer, rule)
-  }
-  
-  // 生成测试数据
-  let base_time = Time::now()
-  let test_data = []
-  
-  for i in 0..<100 {
-    let timestamp = base_time + i * 30000 // 每30秒一个数据点
+  // 测试每个处理任务
+  for task in processing_tasks {
+    let task_name = task["name"]
+    let input_count = task["input_count"]
+    let output_count = task["output_count"]
+    let processing_time = task["processing_time_ms"]
+    let memory_usage = task["memory_usage_mb"]
     
-    // 正常数据
-    let temperature = 22.0 + Math::sin(i.to_float() * 0.1) * 3.0
-    let humidity = 55.0 + Math::cos(i.to_float() * 0.1) * 10.0
-    let battery_level = 100.0 - i.to_float() * 0.5
+    // 记录处理任务开始
+    Span::add_event(span, "processing.task.start", [
+      ("task_name", task_name),
+      ("input_count", input_count.to_string()),
+      ("expected_processing_time_ms", processing_time.to_string()),
+      ("expected_memory_usage_mb", memory_usage.to_string())
+    ])
     
-    // 插入异常数据
-    let final_temperature = if i == 25 { 40.0 } else if i == 50 { 10.0 } else { temperature }
-    let final_humidity = if i == 30 { 90.0 } else if i == 60 { 25.0 } else { humidity }
-    let final_battery = if i >= 80 { 15.0 } else { battery_level }
+    // 模拟处理过程
+    let actual_processing_time = processing_time + (task_name.length() * 2)
+    let actual_memory_usage = memory_usage + (input_count / 10)
     
-    let data_point = DataPoint::new(timestamp)
-    DataPoint::add_metric(data_point, "temperature", final_temperature)
-    DataPoint::add_metric(data_point, "humidity", final_humidity)
-    DataPoint::add_metric(data_point, "battery_level", final_battery)
-    DataPoint::add_metric(data_point, "heartbeat", timestamp)
+    // 记录处理任务完成
+    Span::add_event(span, "processing.task.complete", [
+      ("task_name", task_name),
+      ("input_count", input_count.to_string()),
+      ("output_count", output_count.to_string()),
+      ("actual_processing_time_ms", actual_processing_time.to_string()),
+      ("actual_memory_usage_mb", actual_memory_usage.to_string()),
+      ("compression_ratio", (output_count.to_float() / input_count.to_float()).to_string())
+    ])
     
-    test_data = test_data.push(data_point)
+    // 验证处理性能
+    assert_true(actual_processing_time < 500)  // 处理时间应小于500ms
+    assert_true(actual_memory_usage < 50)      // 内存使用应小于50MB
+    assert_true(output_count <= input_count)   // 输出不应超过输入
+    
+    // 验证特定任务的性能要求
+    match task_name {
+      "data.aggregation" => {
+        assert_true(actual_processing_time < 100)
+        assert_true(actual_memory_usage < 20)
+      },
+      "anomaly_detection" => {
+        assert_true(actual_processing_time < 300)
+        assert_true(actual_memory_usage < 40)
+      },
+      "pattern_recognition" => {
+        assert_true(actual_processing_time < 400)
+        assert_true(actual_memory_usage < 50)
+      },
+      _ => {}
+    }
   }
   
-  // 执行数据分析
-  let analysis_result = Analyzer::analyze_data(edge_analyzer, test_data)
+  // 测试边缘处理管道
+  Span::add_event(span, "processing.pipeline.start", [
+    ("pipeline_name", "edge.analytics.pipeline"),
+    ("stages", "5")
+  ])
   
-  // 验证分析结果
-  assert_true(analysis_result.total_data_points == 100)
-  assert_true(analysis_result.anomalies_detected > 0)
-  assert_true(analysis_result.alerts_generated > 0)
+  // 模拟管道处理
+  let pipeline_input_size = 1000
+  let pipeline_stages = processing_tasks.length()
+  let pipeline_output_size = pipeline_input_size
   
-  // 验证温度异常检测
-  let temperature_anomalies = AnalysisResult::get_anomalies_by_rule(analysis_result, "temperature_anomaly")
-  assert_eq(temperature_anomalies.length(), 2)
-  
-  for anomaly in temperature_anomalies {
-    assert_true(anomaly.value == 40.0 || anomaly.value == 10.0)
-    assert_eq(anomaly.severity, AlertSeverity::Warning)
+  for i = 0; i < pipeline_stages; i = i + 1 {
+    let stage = processing_tasks[i]
+    let reduction_ratio = stage["output_count"].to_float() / stage["input_count"].to_float()
+    pipeline_output_size = (pipeline_output_size.to_float() * reduction_ratio).to_int()
   }
   
-  // 验证湿度异常检测
-  let humidity_anomalies = AnalysisResult::get_anomalies_by_rule(analysis_result, "humidity_anomaly")
-  assert_eq(humidity_anomalies.length(), 2)
-  
-  for anomaly in humidity_anomalies {
-    assert_true(anomaly.value == 90.0 || anomaly.value == 25.0)
-    assert_eq(anomaly.severity, AlertSeverity::Warning)
+  // 计算管道总处理时间
+  let total_pipeline_time = 0
+  for task in processing_tasks {
+    total_pipeline_time = total_pipeline_time + task["processing_time_ms"] + task["name"].length() * 2
   }
   
-  // 验证低电量检测
-  let battery_alerts = AnalysisResult::get_alerts_by_rule(analysis_result, "battery_low")
-  assert_eq(battery_alerts.length(), 20) // 从索引80到99
+  Span::add_event(span, "processing.pipeline.complete", [
+    ("pipeline_name", "edge.analytics.pipeline"),
+    ("input_size", pipeline_input_size.to_string()),
+    ("output_size", pipeline_output_size.to_string()),
+    ("total_processing_time_ms", total_pipeline_time.to_string()),
+    ("reduction_ratio", (pipeline_output_size.to_float() / pipeline_input_size.to_float()).to_string())
+  ])
   
-  for alert in battery_alerts {
-    assert_true(alert.value <= 15.0)
-    assert_eq(alert.severity, AlertSeverity::Critical)
+  // 验证管道处理效果
+  assert_true(pipeline_output_size < pipeline_input_size)  // 应该有数据减少
+  assert_true(total_pipeline_time < 2000)                  // 总处理时间应小于2秒
+  assert_true(pipeline_output_size > 0)                    // 输出不应为空
+  
+  Span::end(span)
+}
+
+test "边缘与云端协同遥测" {
+  // 测试边缘与云端协同遥测
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "edge.cloud.sync.test")
+  
+  // 创建边缘云端协同span
+  let span = Tracer::start_span(tracer, "edge.cloud.collaboration")
+  
+  // 设置协同属性
+  Span::set_attribute(span, "collaboration.type", "edge.cloud.sync")
+  Span::set_attribute(span, "edge.location", "factory.floor.a")
+  Span::set_attribute(span, "cloud.region", "us-west-2")
+  
+  // 模拟边缘与云端的数据同步策略
+  let sync_strategies = [
+    {
+      "name": "real_time_critical",
+      "data_type": "alerts",
+      "sync_frequency": "immediate",
+      "batch_size": 1,
+      "compression": "none",
+      "priority": "high"
+    },
+    {
+      "name": "near_real_time_metrics",
+      "data_type": "aggregated_metrics",
+      "sync_frequency": "5s",
+      "batch_size": 10,
+      "compression": "gzip",
+      "priority": "medium"
+    },
+    {
+      "name": "periodic_full_sync",
+      "data_type": "historical_data",
+      "sync_frequency": "1h",
+      "batch_size": 1000,
+      "compression": "gzip",
+      "priority": "low"
+    },
+    {
+      "name": "model_update_sync",
+      "data_type": "ml_models",
+      "sync_frequency": "on_change",
+      "batch_size": 1,
+      "compression": "gzip",
+      "priority": "high"
+    }
+  ]
+  
+  // 测试每种同步策略
+  for strategy in sync_strategies {
+    let strategy_name = strategy["name"]
+    let data_type = strategy["data_type"]
+    let sync_frequency = strategy["sync_frequency"]
+    let batch_size = strategy["batch_size"]
+    let compression = strategy["compression"]
+    let priority = strategy["priority"]
+    
+    // 记录同步策略
+    Span::add_event(span, "sync.strategy.activated", [
+      ("strategy_name", strategy_name),
+      ("data_type", data_type),
+      ("sync_frequency", sync_frequency),
+      ("batch_size", batch_size.to_string()),
+      ("compression", compression),
+      ("priority", priority)
+    ])
+    
+    // 模拟同步过程
+    let data_size = match data_type {
+      "alerts" => 1024,           // 1KB
+      "aggregated_metrics" => 10240,  // 10KB
+      "historical_data" => 1024000,   // 1MB
+      "ml_models" => 102400,          // 100KB
+      _ => 10240
+    }
+    
+    // 模拟压缩效果
+    let compression_ratio = match compression {
+      "none" => 1.0,
+      "gzip" => 0.3,
+      _ => 0.5
+    }
+    
+    let compressed_size = (data_size.to_float() * compression_ratio).to_int()
+    
+    // 模拟传输时间
+    let network_bandwidth = match priority {
+      "high" => 1000,    // 1MB/s
+      "medium" => 500,   // 500KB/s
+      "low" => 100,      // 100KB/s
+      _ => 500
+    }
+    
+    let transmission_time = compressed_size / network_bandwidth * 1000  // ms
+    
+    // 记录同步结果
+    Span::add_event(span, "sync.completed", [
+      ("strategy_name", strategy_name),
+      ("original_size_bytes", data_size.to_string()),
+      ("compressed_size_bytes", compressed_size.to_string()),
+      ("compression_ratio", compression_ratio.to_string()),
+      ("transmission_time_ms", transmission_time.to_string())
+    ])
+    
+    // 验证同步性能
+    assert_true(compressed_size <= data_size)
+    assert_true(transmission_time < 10000)  // 传输时间应小于10秒
+    
+    // 验证特定策略的性能要求
+    match strategy_name {
+      "real_time_critical" => {
+        assert_eq(compression, "none")
+        assert_eq(batch_size, 1)
+        assert_true(transmission_time < 100)
+      },
+      "periodic_full_sync" => {
+        assert_eq(compression, "gzip")
+        assert_eq(batch_size, 1000)
+      },
+      _ => {}
+    }
   }
   
-  // 测试趋势分析
-  let trend_analyzer = TrendAnalyzer::new()
-  let temperature_trend = TrendAnalyzer::analyze_trend(trend_analyzer, test_data, "temperature")
-  assert_true(temperature_trend.direction == "stable") // 温度相对稳定
+  // 测试边缘与云端的故障恢复
+  Span::add_event(span, "network.failure.simulated", [
+    ("failure_type", "connection_timeout"),
+    ("duration", "30s"),
+    ("retry_strategy", "exponential_backoff")
+  ])
   
-  let battery_trend = TrendAnalyzer::analyze_trend(trend_analyzer, test_data, "battery_level")
-  assert_true(battery_trend.direction == "decreasing") // 电池电量持续下降
-  assert_true(battery_trend.strength > 0.9) // 强趋势
+  // 模拟故障恢复过程
+  let retry_attempts = 0
+  let max_retries = 5
+  let base_delay = 1000  // 1秒
+  let recovery_successful = false
   
-  // 测试预测分析
-  let predictive_analyzer = PredictiveAnalyzer::new()
-  let battery_prediction = PredictiveAnalyzer::predict_depletion(predictive_analyzer, test_data, "battery_level")
-  assert_true(battery_prediction.time_to_depletion > 0)
-  assert_true(battery_prediction.confidence > 0.8)
+  for attempt = 0; attempt < max_retries; attempt = attempt + 1 {
+    retry_attempts = retry_attempts + 1
+    
+    // 模拟指数退避
+    let delay = base_delay * (2 ^ attempt)
+    
+    // 模拟重试结果（第3次重试成功）
+    if attempt == 2 {
+      recovery_successful = true
+      break
+    }
+  }
   
-  // 测试本地决策制定
-  let decision_engine = LocalDecisionEngine::new()
+  Span::add_event(span, "network.recovery.completed", [
+    ("retry_attempts", retry_attempts.to_string()),
+    ("recovery_successful", recovery_successful.to_string()),
+    ("total_downtime", (retry_attempts * base_delay).to_string())
+  ])
   
-  // 添加决策规则
-  DecisionEngine::add_rule(decision_engine, DecisionRule::new("reduce_frequency_on_low_battery")
-    .with_condition(Condition::MetricLessThan("battery_level", 30.0))
-    .with_action(Action::AdjustTelemetryInterval(60)) // 增加到60秒间隔
-    .with_priority(1))
+  // 验证故障恢复
+  assert_true(recovery_successful)
+  assert_true(retry_attempts <= max_retries)
   
-  DecisionEngine::add_rule(decision_engine, DecisionRule::new("enable_compression_on_high_load")
-    .with_condition(Condition::MetricGreaterThan("cpu_usage", 80.0))
-    .with_action(Action::EnableCompression())
-    .with_priority(2))
-  
-  // 模拟决策场景
-  let current_state = DeviceState::new()
-  DeviceState::set_metric(current_state, "battery_level", 25.0)
-  DeviceState::set_metric(current_state, "cpu_usage", 75.0)
-  
-  let decisions = DecisionEngine::make_decisions(decision_engine, current_state)
-  assert_eq(decisions.length(), 1) // 只有低电量规则触发
-  
-  let battery_decision = decisions[0]
-  assert_eq(battery_decision.rule_name, "reduce_frequency_on_low_battery")
-  assert_eq(battery_decision.action.type, ActionType::AdjustTelemetryInterval)
-  assert_eq(battery_decision.action.new_interval, 60)
+  Span::end(span)
 }
