@@ -1,571 +1,691 @@
-// WebAssembly兼容性测试用例
-// 测试Azimuth遥测系统在WebAssembly环境中的兼容性和功能
+// Azimuth Telemetry System - WebAssembly Compatibility Tests
+// This file contains test cases for WebAssembly compatibility functionality
 
-test "WebAssembly环境检测和适配" {
-  // 测试WebAssembly环境检测和适配
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "wasm.environment.test")
+// Test 1: WASM Module Loading and Initialization
+test "wasm module loading and initialization" {
+  // Create WASM module loader
+  let module_loader = WasmModuleLoader::new()
   
-  // 创建WebAssembly环境检测span
-  let span = Tracer::start_span(tracer, "wasm.environment.detection")
+  // Verify loader is initialized
+  assert_true(WasmModuleLoader::is_initialized(module_loader))
   
-  // 模拟WebAssembly环境属性
-  let wasm_environments = [
-    {
-      "name": "browser_chrome",
-      "runtime": "browser",
-      "engine": "v8",
-      "wasm_support": true,
-      "memory_limit": 4096,  // 4GB
-      "features": ["bulk_memory", "simd", "threads", "reference_types"]
-    },
-    {
-      "name": "browser_firefox",
-      "runtime": "browser",
-      "engine": "spidermonkey",
-      "wasm_support": true,
-      "memory_limit": 4096,  // 4GB
-      "features": ["bulk_memory", "simd", "reference_types"]
-    },
-    {
-      "name": "nodejs_server",
-      "runtime": "nodejs",
-      "engine": "v8",
-      "wasm_support": true,
-      "memory_limit": 8192,  // 8GB
-      "features": ["bulk_memory", "simd", "threads", "reference_types"]
-    },
-    {
-      "name": "wasmtime_runtime",
-      "runtime": "wasmtime",
-      "engine": "cranelift",
-      "wasm_support": true,
-      "memory_limit": 16384,  // 16GB
-      "features": ["bulk_memory", "simd", "threads", "reference_types", "multi_value"]
-    },
-    {
-      "name": "legacy_browser",
-      "runtime": "browser",
-      "engine": "javascriptcore",
-      "wasm_support": false,
-      "memory_limit": 2048,  // 2GB
-      "features": []
-    }
-  ]
+  // Load telemetry module (simulated)
+  let telemetry_module = WasmModuleLoader::load_module(module_loader, "telemetry_core.wasm")
   
-  // 测试每种WebAssembly环境
-  for env in wasm_environments {
-    let env_name = env["name"]
-    let runtime = env["runtime"]
-    let engine = env["engine"]
-    let wasm_support = env["wasm_support"]
-    let memory_limit = env["memory_limit"]
-    let features = env["features"]
-    
-    // 记录环境检测
-    Span::set_attribute(span, "wasm.environment.name", env_name)
-    Span::set_attribute(span, "wasm.environment.runtime", runtime)
-    Span::set_attribute(span, "wasm.environment.engine", engine)
-    Span::set_attribute(span, "wasm.environment.support", wasm_support.to_string())
-    Span::set_attribute(span, "wasm.environment.memory_limit", memory_limit.to_string())
-    
-    // 测试WebAssembly支持检测
-    if wasm_support {
-      Span::add_event(span, "wasm.support.detected", [
-        ("environment", env_name),
-        ("runtime", runtime),
-        ("engine", engine)
-      ])
-      
-      // 测试WebAssembly功能检测
-      for feature in features {
-        Span::set_attribute(span, "wasm.feature." + feature, "supported")
+  // Verify module was loaded
+  assert_true(WasmModule::is_valid(telemetry_module))
+  assert_eq(WasmModule::name(telemetry_module), "telemetry_core.wasm")
+  
+  // Get module exports
+  let exports = WasmModule::get_exports(telemetry_module)
+  
+  // Verify expected exports are available
+  assert_true(Array::contains(exports, "init_telemetry"))
+  assert_true(Array::contains(exports, "record_metric"))
+  assert_true(Array::contains(exports, "flush_metrics"))
+  assert_true(Array::contains(exports, "shutdown_telemetry"))
+  
+  // Initialize module with configuration
+  let config = WasmConfig::new([
+    ("max_metrics", "1000"),
+    ("flush_interval_ms", "5000"),
+    ("enable_compression", "true")
+  ])
+  
+  let init_result = WasmModule::initialize(telemetry_module, config)
+  
+  // Verify initialization succeeded
+  assert_true(WasmInitResult::is_success(init_result))
+  
+  // Get module memory usage
+  let memory_usage = WasmModule::get_memory_usage(telemetry_module)
+  assert_true(memory_usage > 0)
+  
+  // Test module instance creation
+  let module_instance = WasmModule::create_instance(telemetry_module)
+  
+  // Verify instance was created
+  assert_true(WasmInstance::is_valid(module_instance))
+  assert_eq(WasmInstance::module_name(module_instance), "telemetry_core.wasm")
+  
+  // Test function invocation
+  let function_result = WasmInstance::invoke_function(
+    module_instance,
+    "get_version",
+    []
+  )
+  
+  // Verify function result
+  match function_result {
+    WasmResult::String(version) => assert_true(version.length() > 0)
+    _ => assert_true(false)
+  }
+  
+  // Clean up module and instance
+  WasmInstance::destroy(module_instance)
+  WasmModule::destroy(telemetry_module)
+}
+
+// Test 2: JavaScript-WASM Interoperability
+test "javascript wasm interoperability" {
+  // Create JS-WASM bridge
+  let js_wasm_bridge = JsWasmBridge::new()
+  
+  // Register JavaScript functions to be called from WASM
+  let js_functions = [
+    ("console_log", \args => {
+      // Simulate console.log
+      true
+    }),
+    ("fetch_data", \args => {
+      // Simulate fetch API
+      match args[0] {
+        WasmValue::String(url) => WasmValue::String("response_data")
+        _ => WasmValue::Null
       }
-      
-      // 根据环境配置遥测适配
-      let telemetry_config = match runtime {
-        "browser" => {
-          {
-            "batch_size": 10,
-            "flush_interval": 5000,
-            "compression": "gzip",
-            "transport": "http.beacon"
-          }
-        },
-        "nodejs" => {
-          {
-            "batch_size": 100,
-            "flush_interval": 1000,
-            "compression": "gzip",
-            "transport": "http"
-          }
-        },
-        "wasmtime" => {
-          {
-            "batch_size": 500,
-            "flush_interval": 500,
-            "compression": "gzip",
-            "transport": "grpc"
-          }
-        },
-        _ => {
-          {
-            "batch_size": 5,
-            "flush_interval": 10000,
-            "compression": "none",
-            "transport": "http"
-          }
+    }),
+    ("set_timeout", \args => {
+      // Simulate setTimeout
+      match args[0] {
+        WasmValue::Function(callback) => {
+          // Simulate callback execution
+          WasmValue::Number(12345) // Timer ID
         }
+        _ => WasmValue::Null
       }
-      
-      // 记录遥测配置
-      Span::set_attribute(span, "wasm.telemetry.batch_size", telemetry_config["batch_size"].to_string())
-      Span::set_attribute(span, "wasm.telemetry.flush_interval", telemetry_config["flush_interval"].to_string())
-      Span::set_attribute(span, "wasm.telemetry.compression", telemetry_config["compression"])
-      Span::set_attribute(span, "wasm.telemetry.transport", telemetry_config["transport"])
-      
-      // 验证配置合理性
-      assert_true(telemetry_config["batch_size"] >= 5 && telemetry_config["batch_size"] <= 500)
-      assert_true(telemetry_config["flush_interval"] >= 500 && telemetry_config["flush_interval"] <= 10000)
-      
-    } else {
-      Span::add_event(span, "wasm.support.not_detected", [
-        ("environment", env_name),
-        ("runtime", runtime),
-        "fallback": "javascript"
-      ])
-      
-      // 验证不支持WebAssembly时的回退机制
-      Span::set_attribute(span, "wasm.fallback.mode", "javascript")
-    }
-    
-    // 验证内存限制适配
-    let memory_allocation = match memory_limit {
-      m if m < 4096 => 64,    // 64MB for low memory environments
-      m if m < 8192 => 128,   // 128MB for medium memory environments
-      m if m < 16384 => 256,  // 256MB for high memory environments
-      _ => 512                // 512MB for very high memory environments
-    }
-    
-    Span::set_attribute(span, "wasm.memory.allocation", memory_allocation.to_string())
-    assert_true(memory_allocation >= 64 && memory_allocation <= 512)
-  }
-  
-  Span::end(span)
-}
-
-test "WebAssembly内存管理优化" {
-  // 测试WebAssembly内存管理优化
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "wasm.memory.test")
-  
-  // 创建WebAssembly内存度量
-  let heap_size = Meter::create_gauge(meter, "wasm.heap.size", Some("WebAssembly heap size"), Some("bytes"))
-  let heap_usage = Meter::create_gauge(meter, "wasm.heap.usage", Some("WebAssembly heap usage"), Some("bytes"))
-  let gc_frequency = Meter::create_counter(meter, "wasm.gc.frequency", Some("GC frequency"), Some("count"))
-  let memory_growth = Meter::create_histogram(meter, "wasm.memory.growth", Some("Memory growth"), Some("bytes"))
-  
-  // 模拟WebAssembly内存使用场景
-  let memory_scenarios = [
-    {
-      "name": "initialization",
-      "heap_size": 1048576,    // 1MB
-      "heap_usage": 524288,    // 512KB
-      "gc_trigger": false
-    },
-    {
-      "name": "normal_operation",
-      "heap_size": 1048576,    // 1MB
-      "heap_usage": 786432,    // 768KB
-      "gc_trigger": false
-    },
-    {
-      "name": "high_load",
-      "heap_size": 2097152,    // 2MB
-      "heap_usage": 1572864,   // 1.5MB
-      "gc_trigger": true
-    },
-    {
-      "name": "memory_pressure",
-      "heap_size": 4194304,    // 4MB
-      "heap_usage": 3670016,   // 3.5MB
-      "gc_trigger": true
-    },
-    {
-      "name": "after_gc",
-      "heap_size": 4194304,    // 4MB
-      "heap_usage": 2097152,   // 2MB
-      "gc_trigger": false
-    }
+    })
   ]
   
-  // 测试每种内存场景
-  for i = 0; i < memory_scenarios.length(); i = i + 1 {
-    let scenario = memory_scenarios[i]
-    let scenario_name = scenario["name"]
-    let heap_size_value = scenario["heap_size"]
-    let heap_usage_value = scenario["heap_usage"]
-    let gc_trigger = scenario["gc_trigger"]
-    
-    // 记录内存使用情况
-    Gauge::record(heap_size, heap_size_value.to_float())
-    Gauge::record(heap_usage, heap_usage_value.to_float())
-    
-    // 计算内存使用率
-    let memory_usage_ratio = heap_usage_value.to_float() / heap_size_value.to_float()
-    
-    // 检查是否需要触发GC
-    if gc_trigger || memory_usage_ratio > 0.8 {
-      Counter::add(gc_frequency, 1.0)
-      
-      // 模拟GC效果
-      let gc_reduction = heap_usage_value.to_float() * 0.3
-      let post_gc_usage = heap_usage_value.to_float() - gc_reduction
-      
-      // 记录GC后的内存使用
-      Gauge::record(heap_usage, post_gc_usage)
-      
-      // 验证GC效果
-      assert_true(post_gc_usage < heap_usage_value.to_float())
-    }
-    
-    // 计算内存增长
-    if i > 0 {
-      let prev_scenario = memory_scenarios[i - 1]
-      let prev_heap_size = prev_scenario["heap_size"]
-      let memory_growth_value = heap_size_value - prev_heap_size
-      
-      if memory_growth_value > 0 {
-        Histogram::record(memory_growth, memory_growth_value.to_float())
-      }
-    }
-    
-    // 验证内存使用合理性
-    assert_true(heap_usage_value <= heap_size_value)
-    assert_true(memory_usage_ratio <= 1.0)
+  let bridge_with_functions = JsWasmBridge::register_functions(js_wasm_bridge, js_functions)
+  
+  // Verify functions were registered
+  assert_eq(JsWasmBridge::function_count(bridge_with_functions), 3)
+  
+  // Create WASM module with JavaScript imports
+  let wasm_module = WasmModule::new_with_imports(
+    "telemetry_js.wasm",
+    [
+      ("env", "console_log"),
+      ("env", "fetch_data"),
+      ("env", "set_timeout")
+    ]
+  )
+  
+  // Initialize module with bridge
+  let initialized_module = JsWasmBridge::initialize_module(bridge_with_functions, wasm_module)
+  
+  // Verify module was initialized
+  assert_true(WasmModule::is_initialized(initialized_module))
+  
+  // Test calling JavaScript from WASM
+  let js_call_result = WasmModule::call_javascript_function(
+    initialized_module,
+    "console_log",
+    [WasmValue::String("Hello from WASM!")]
+  )
+  
+  // Verify JavaScript call succeeded
+  match js_call_result {
+    WasmResult::Boolean(success) => assert_true(success)
+    _ => assert_true(false)
   }
   
-  // 测试内存泄漏检测
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "wasm.memory.leak.test")
+  // Test calling WASM from JavaScript
+  let wasm_function_result = JsWasmBridge::call_wasm_function(
+    initialized_module,
+    "process_telemetry_data",
+    [WasmValue::String("test_data")]
+  )
   
-  let leak_detection_span = Tracer::start_span(tracer, "wasm.memory.leak.detection")
-  
-  // 模拟内存使用趋势
-  let memory_trend = []
-  let base_memory = 1048576  // 1MB
-  
-  for i = 0; i < 10; i = i + 1 {
-    // 模拟正常内存增长和回收
-    let memory_with_growth = base_memory + (i * 102400)  // 每次增长100KB
-    let memory_with_gc = if i % 3 == 0 {
-      memory_with_growth - (i * 51200)  // 模拟GC回收
-    } else {
-      memory_with_growth
-    }
-    
-    memory_trend.push(memory_with_gc)
+  // Verify WASM call succeeded
+  match wasm_function_result {
+    WasmResult::Number(result) => assert_true(result >= 0)
+    _ => assert_true(false)
   }
   
-  // 检测内存泄漏趋势
-  let memory_growth_rate = 0.0
-  for i = 1; i < memory_trend.length(); i = i + 1 {
-    let growth = memory_trend[i] - memory_trend[i - 1]
-    memory_growth_rate = memory_growth_rate + growth.to_float()
+  // Test data type conversion
+  let conversion_test = JsWasmBridge::test_type_conversion(initialized_module)
+  
+  // Verify type conversions work correctly
+  assert_true(TypeConversionTest::string_to_wasm(conversion_test))
+  assert_true(TypeConversionTest::number_to_wasm(conversion_test))
+  assert_true(TypeConversionTest::boolean_to_wasm(conversion_test))
+  assert_true(TypeConversionTest::array_to_wasm(conversion_test))
+  assert_true(TypeConversionTest::object_to_wasm(conversion_test))
+  
+  // Test memory sharing
+  let shared_memory = JsWasmBridge::create_shared_memory(initialized_module, 1024) // 1KB
+  assert_true(SharedMemory::is_valid(shared_memory))
+  
+  // Write data from JavaScript
+  let write_result = SharedMemory::write_string(shared_memory, 0, "Hello from JavaScript!")
+  assert_true(write_result)
+  
+  // Read data from WASM
+  let read_result = WasmModule::read_shared_memory_string(initialized_module, shared_memory, 0, 26)
+  match read_result {
+    WasmResult::String(data) => assert_eq(data, "Hello from JavaScript!")
+    _ => assert_true(false)
   }
-  memory_growth_rate = memory_growth_rate / (memory_trend.length() - 1).to_float()
   
-  // 记录内存泄漏检测结果
-  Span::set_attribute(leak_detection_span, "memory.growth_rate", memory_growth_rate.to_string())
-  Span::set_attribute(leak_detection_span, "memory.leak.suspected", (memory_growth_rate > 50000.0).to_string())
-  
-  // 验证内存泄漏检测
-  assert_true(memory_growth_rate >= 0.0)
-  
-  Span::end(leak_detection_span)
+  // Clean up
+  SharedMemory::destroy(shared_memory)
+  WasmModule::destroy(initialized_module)
 }
 
-test "WebAssembly性能基准测试" {
-  // 测试WebAssembly性能基准
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "wasm.performance.test")
+// Test 3: Browser Environment Detection and Adaptation
+test "browser environment detection and adaptation" {
+  // Create browser environment detector
+  let env_detector = BrowserEnvironmentDetector::new()
   
-  // 创建性能度量
-  let telemetry_overhead = Meter::create_histogram(meter, "wasm.telemetry.overhead", Some("Telemetry overhead"), Some("microseconds"))
-  let serialization_time = Meter::create_histogram(meter, "wasm.serialization.time", Some("Serialization time"), Some("microseconds"))
-  let deserialization_time = Meter::create_histogram(meter, "wasm.deserialization.time", Some("Deserialization time"), Some("microseconds"))
-  let throughput = Meter::create_histogram(meter, "wasm.throughput", Some("Throughput"), Some("ops/sec"))
+  // Test environment detection
+  let browser_info = BrowserEnvironmentDetector::detect(env_detector)
   
-  // 模拟不同操作的性能测试
-  let performance_tests = [
-    {
-      "name": "span_creation",
-      "operations": 1000,
-      "expected_time_us": 50,
-      "memory_per_op": 1024
-    },
-    {
-      "name": "attribute_setting",
-      "operations": 5000,
-      "expected_time_us": 10,
-      "memory_per_op": 256
-    },
-    {
-      "name": "event_addition",
-      "operations": 2000,
-      "expected_time_us": 30,
-      "memory_per_op": 512
-    },
-    {
-      "name": "metric_recording",
-      "operations": 10000,
-      "expected_time_us": 5,
-      "memory_per_op": 128
-    },
-    {
-      "name": "batch_processing",
-      "operations": 100,
-      "expected_time_us": 500,
-      "memory_per_op": 10240
-    }
-  ]
+  // Verify browser information
+  assert_true(BrowserInfo::browser_name(browser_info).length() > 0)
+  assert_true(BrowserInfo::browser_version(browser_info).length() > 0)
+  assert_true(BrowserInfo::platform(browser_info).length() > 0)
   
-  // 测试每种性能基准
-  for test in performance_tests {
-    let test_name = test["name"]
-    let operations = test["operations"]
-    let expected_time = test["expected_time_us"]
-    let memory_per_op = test["memory_per_op"]
-    
-    // 模拟性能测试
-    let total_time = 0
-    let total_memory = 0
-    
-    for i = 0; i < operations; i = i + 1 {
-      // 模拟操作时间（带有一些随机变化）
-      let operation_time = expected_time + (i % 20) - 10
-      total_time = total_time + operation_time
-      
-      // 模拟内存使用
-      let operation_memory = memory_per_op + (i % 100)
-      total_memory = total_memory + operation_memory
-    }
-    
-    // 计算平均性能指标
-    let avg_time_per_op = total_time / operations
-    let avg_memory_per_op = total_memory / operations
-    let actual_throughput = 1000000 / avg_time_per_op  // ops/sec
-    
-    // 记录性能指标
-    Histogram::record_with_attributes(telemetry_overhead, avg_time_per_op.to_float(), [
-      ("operation", test_name),
-      ("expected_time_us", expected_time.to_string())
-    ])
-    
-    match test_name {
-      "span_creation" => {
-        Histogram::record_with_attributes(serialization_time, (avg_time_per_op * 0.3).to_float(), [("operation", test_name)])
-        Histogram::record_with_attributes(deserialization_time, (avg_time_per_op * 0.2).to_float(), [("operation", test_name)])
-      },
-      "metric_recording" => {
-        Histogram::record_with_attributes(serialization_time, (avg_time_per_op * 0.1).to_float(), [("operation", test_name)])
-        Histogram::record_with_attributes(deserialization_time, (avg_time_per_op * 0.1).to_float(), [("operation", test_name)])
-      },
-      _ => {
-        Histogram::record_with_attributes(serialization_time, (avg_time_per_op * 0.2).to_float(), [("operation", test_name)])
-        Histogram::record_with_attributes(deserialization_time, (avg_time_per_op * 0.15).to_float(), [("operation", test_name)])
-      }
-    }
-    
-    Histogram::record_with_attributes(throughput, actual_throughput.to_float(), [
-      ("operation", test_name),
-      ("operations_per_test", operations.to_string())
-    ])
-    
-    // 验证性能指标
-    assert_true(avg_time_per_op <= expected_time * 2)  // 允许2倍的预期时间
-    assert_true(avg_memory_per_op <= memory_per_op * 2)  // 允许2倍的预期内存
-    assert_true(actual_throughput > 0)
-    
-    // 验证特定操作的性能要求
-    match test_name {
-      "span_creation" => {
-        assert_true(avg_time_per_op < 100)  // span创建应在100微秒内
-      },
-      "metric_recording" => {
-        assert_true(avg_time_per_op < 20)   // 度量记录应在20微秒内
-      },
-      "batch_processing" => {
-        assert_true(avg_time_per_op < 1000) // 批处理应在1毫秒内
-      },
-      _ => {}
-    }
-  }
-}
-
-test "WebAssembly与JavaScript互操作" {
-  // 测试WebAssembly与JavaScript互操作
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "wasm.js.interop.test")
+  // Test feature detection
+  let features = BrowserEnvironmentDetector::detect_features(env_detector)
   
-  // 创建互操作测试span
-  let span = Tracer::start_span(tracer, "wasm.javascript.interop")
+  // Verify feature detection results
+  assert_true(BrowserFeatures::has_webassembly(features))
+  assert_true(BrowserFeatures::has_sharedarraybuffer(features))
+  assert_true(BrowserFeatures::has_atomics(features))
   
-  // 模拟WebAssembly与JavaScript之间的数据交换
-  let interop_operations = [
-    {
-      "name": "js_to_wasm_string",
-      "data_type": "string",
-      "data_size": 1024,
-      "direction": "js_to_wasm",
-      "expected_time_us": 20
-    },
-    {
-      "name": "wasm_to_js_string",
-      "data_type": "string",
-      "data_size": 1024,
-      "direction": "wasm_to_js",
-      "expected_time_us": 15
-    },
-    {
-      "name": "js_to_wasm_array",
-      "data_type": "array",
-      "data_size": 4096,
-      "direction": "js_to_wasm",
-      "expected_time_us": 50
-    },
-    {
-      "name": "wasm_to_js_array",
-      "data_type": "array",
-      "data_size": 4096,
-      "direction": "wasm_to_js",
-      "expected_time_us": 40
-    },
-    {
-      "name": "js_to_wasm_object",
-      "data_type": "object",
-      "data_size": 2048,
-      "direction": "js_to_wasm",
-      "expected_time_us": 80
-    },
-    {
-      "name": "wasm_to_js_object",
-      "data_type": "object",
-      "data_size": 2048,
-      "direction": "wasm_to_js",
-      "expected_time_us": 70
-    }
-  ]
+  // Test capability adaptation
+  let adapter = BrowserCapabilityAdapter::new()
   
-  // 测试每种互操作
-  for operation in interop_operations {
-    let op_name = operation["name"]
-    let data_type = operation["data_type"]
-    let data_size = operation["data_size"]
-    let direction = operation["direction"]
-    let expected_time = operation["expected_time_us"]
-    
-    // 记录互操作开始
-    Span::add_event(span, "interop.start", [
-      ("operation", op_name),
-      ("data_type", data_type),
-      ("data_size", data_size.to_string()),
-      ("direction", direction)
-    ])
-    
-    // 模拟互操作时间（根据数据类型和大小）
-    let base_time = match data_type {
-      "string" => 10,
-      "array" => 20,
-      "object" => 30,
-      _ => 15
-    }
-    
-    let size_factor = data_size / 1024  // 每KB增加的时间
-    let direction_factor = match direction {
-      "js_to_wasm" => 1.2,
-      "wasm_to_js" => 1.0,
-      _ => 1.1
-    }
-    
-    let actual_time = (base_time + size_factor) * direction_factor
-    
-    // 记录互操作完成
-    Span::add_event(span, "interop.complete", [
-      ("operation", op_name),
-      ("data_type", data_type),
-      ("data_size", data_size.to_string()),
-      ("direction", direction),
-      ("actual_time_us", actual_time.to_string())
-    ])
-    
-    // 验证互操作性能
-    assert_true(actual_time <= expected_time * 2)  // 允许2倍的预期时间
-    
-    // 验证特定数据类型的性能要求
-    match data_type {
-      "string" => {
-        assert_true(actual_time < 50)
-      },
-      "array" => {
-        assert_true(actual_time < 100)
-      },
-      "object" => {
-        assert_true(actual_time < 150)
-      },
-      _ => {}
-    }
-  }
-  
-  // 测试WebAssembly模块加载和初始化
-  Span::add_event(span, "wasm.module.load.start", [
-    ("module_name", "azimuth-telemetry-wasm"),
-    ("module_size", "2MB")
+  // Adapt telemetry configuration based on browser capabilities
+  let base_config = TelemetryConfig::new([
+    ("enable_shared_memory", "true"),
+    ("enable_concurrent_processing", "true"),
+    ("enable_wasm_optimizations", "true"),
+    ("compression_algorithm", "gzip")
   ])
   
-  // 模拟模块加载时间
-  let module_load_time = 5000  // 5ms
-  let module_init_time = 2000  // 2ms
+  let adapted_config = BrowserCapabilityAdapter::adapt_config(adapter, base_config, features)
   
-  Span::add_event(span, "wasm.module.load.complete", [
-    ("module_name", "azimuth-telemetry-wasm"),
-    ("load_time_us", module_load_time.to_string()),
-    ("init_time_us", module_init_time.to_string()),
-    ("total_time_us", (module_load_time + module_init_time).to_string())
-  ])
-  
-  // 验证模块加载性能
-  assert_true(module_load_time < 10000)  // 加载时间应小于10ms
-  assert_true(module_init_time < 5000)   // 初始化时间应小于5ms
-  
-  // 测试WebAssembly函数调用
-  let wasm_functions = [
-    {"name": "create_span", "param_count": 2, "expected_time_us": 30},
-    {"name": "set_attribute", "param_count": 3, "expected_time_us": 20},
-    {"name": "add_event", "param_count": 3, "expected_time_us": 25},
-    {"name": "record_metric", "param_count": 3, "expected_time_us": 15},
-    {"name": "export_data", "param_count": 1, "expected_time_us": 100}
-  ]
-  
-  for func in wasm_functions {
-    let func_name = func["name"]
-    let param_count = func["param_count"]
-    let expected_time = func["expected_time_us"]
-    
-    // 模拟函数调用时间
-    let call_overhead = 10  // 基础调用开销
-    let param_overhead = param_count * 5  // 每个参数的开销
-    let actual_call_time = call_overhead + param_overhead
-    
-    Span::add_event(span, "wasm.function.call", [
-      ("function", func_name),
-      ("param_count", param_count.to_string()),
-      "call_time_us": actual_call_time.to_string()
-    ])
-    
-    // 验证函数调用性能
-    assert_true(actual_call_time <= expected_time * 2)
+  // Verify configuration was adapted
+  if BrowserFeatures::has_sharedarraybuffer(features) {
+    match TelemetryConfig::get(adapted_config, "enable_shared_memory") {
+      Some(value) => assert_eq(value, "true")
+      None => assert_true(false)
+    }
+  } else {
+    match TelemetryConfig::get(adapted_config, "enable_shared_memory") {
+      Some(value) => assert_eq(value, "false")
+      None => assert_true(false)
+    }
   }
   
-  Span::end(span)
+  if BrowserFeatures::has_atomics(features) {
+    match TelemetryConfig::get(adapted_config, "enable_concurrent_processing") {
+      Some(value) => assert_eq(value, "true")
+      None => assert_true(false)
+    }
+  } else {
+    match TelemetryConfig::get(adapted_config, "enable_concurrent_processing") {
+      Some(value) => assert_eq(value, "false")
+      None => assert_true(false)
+    }
+  }
+  
+  // Test performance optimization
+  let performance_optimizer = BrowserPerformanceOptimizer::new()
+  
+  // Optimize telemetry operations for current browser
+  let optimized_operations = BrowserPerformanceOptimizer::optimize_operations(
+    performance_optimizer,
+    ["batch_processing", "compression", "serialization"],
+    features
+  )
+  
+  // Verify optimizations were applied
+  assert_eq(OptimizedOperations::count(optimized_operations), 3)
+  
+  // Test memory management adaptation
+  let memory_adapter = BrowserMemoryAdapter::new()
+  
+  // Adapt memory management for browser constraints
+  let memory_config = BrowserMemoryAdapter::adapt_memory_management(
+    memory_adapter,
+    1024 * 1024, // 1MB target
+    features
+  )
+  
+  // Verify memory configuration
+  assert_true(MemoryConfig::max_heap_size(memory_config) <= 1024 * 1024)
+  assert_true(MemoryConfig::uses_gc_optimization(memory_config))
+  
+  // Test fallback mechanisms
+  let fallback_manager = BrowserFallbackManager::new()
+  
+  // Test fallback for missing features
+  if !BrowserFeatures::has_webassembly(features) {
+    let fallback_result = BrowserFallbackManager::activate_fallback(
+      fallback_manager,
+      "webassembly",
+      "javascript"
+    )
+    
+    assert_true(FallbackResult::is_success(fallback_result))
+    assert_eq(FallbackResult::fallback_type(fallback_result), "javascript")
+  }
+  
+  // Test polyfill loading
+  let polyfill_loader = BrowserPolyfillLoader::new()
+  
+  // Load required polyfills
+  let polyfill_result = BrowserPolyfillLoader::load_polyfills(
+    polyfill_loader,
+    ["sharedarraybuffer", "atomics"]
+  )
+  
+  // Verify polyfills were loaded
+  assert_true(PolyfillResult::is_success(polyfill_result))
+  assert_eq(PolyfillResult::loaded_count(polyfill_result), 2)
+}
+
+// Test 4: WASM Performance Optimization
+test "wasm performance optimization" {
+  // Create WASM performance optimizer
+  let optimizer = WasmPerformanceOptimizer::new()
+  
+  // Create telemetry module
+  let telemetry_module = WasmModule::new("telemetry_optimized.wasm")
+  
+  // Test memory optimization
+  let memory_optimizer = WasmMemoryOptimizer::new()
+  
+  // Optimize memory layout
+  let optimized_memory = WasmMemoryOptimizer::optimize_memory_layout(
+    memory_optimizer,
+    telemetry_module,
+    [
+      ("metrics_buffer", "linear"),
+      ("config_data", "static"),
+      ("temporary_data", "stack")
+    ]
+  )
+  
+  // Verify memory optimization
+  assert_true(MemoryOptimizationResult::is_success(optimized_memory))
+  assert_true(MemoryOptimizationResult::memory_reduction(optimized_memory) > 0)
+  
+  // Test function optimization
+  let function_optimizer = WasmFunctionOptimizer::new()
+  
+  // Optimize frequently called functions
+  let optimized_functions = WasmFunctionOptimizer::optimize_functions(
+    function_optimizer,
+    telemetry_module,
+    [
+      ("record_metric", "inline"),
+      ("aggregate_metrics", "loop_unroll"),
+      ("serialize_data", "vectorize")
+    ]
+  )
+  
+  // Verify function optimization
+  assert_true(FunctionOptimizationResult::is_success(optimized_functions))
+  assert_true(FunctionOptimizationResult::performance_improvement(optimized_functions) > 0)
+  
+  // Test compilation optimization
+  let compilation_optimizer = WasmCompilationOptimizer::new()
+  
+  // Optimize compilation settings
+  let optimized_compilation = WasmCompilationOptimizer::optimize_compilation(
+    compilation_optimizer,
+    telemetry_module,
+    [
+      ("optimization_level", "3"),
+      ("enable_simd", "true"),
+      ("enable_bulk_memory", "true")
+    ]
+  )
+  
+  // Verify compilation optimization
+  assert_true(CompilationOptimizationResult::is_success(optimized_compilation))
+  
+  // Test runtime optimization
+  let runtime_optimizer = WasmRuntimeOptimizer::new()
+  
+  // Optimize runtime performance
+  let runtime_profile = WasmRuntimeOptimizer::profile_runtime(runtime_optimizer, telemetry_module)
+  
+  // Identify performance bottlenecks
+  let bottlenecks = WasmRuntimeOptimizer::identify_bottlenecks(runtime_optimizer, runtime_profile)
+  
+  // Apply optimizations based on profiling
+  if bottlenecks.length() > 0 {
+    let bottleneck_optimization = WasmRuntimeOptimizer::optimize_bottlenecks(
+      runtime_optimizer,
+      telemetry_module,
+      bottlenecks
+    )
+    
+    assert_true(BottleneckOptimizationResult::is_success(benchmark_optimization))
+  }
+  
+  // Test benchmarking
+  let benchmark = WasmBenchmark::new()
+  
+  // Benchmark telemetry operations
+  let benchmark_results = WasmBenchmark::benchmark_operations(
+    benchmark,
+    telemetry_module,
+    [
+      ("record_metric", 1000),    // 1000 iterations
+      ("aggregate_metrics", 100), // 100 iterations
+      ("serialize_data", 500)     // 500 iterations
+    ]
+  )
+  
+  // Verify benchmark results
+  assert_true(BenchmarkResults::has_results(benchmark_results))
+  
+  let metric_benchmark = BenchmarkResults::get_result(benchmark_results, "record_metric")
+  match metric_benchmark {
+    Some(result) => {
+      assert_true(BenchmarkResult::iterations(result) == 1000)
+      assert_true(BenchmarkResult::average_time(result) > 0)
+      assert_true(BenchmarkResult::min_time(result) > 0)
+      assert_true(BenchmarkResult::max_time(result) >= BenchmarkResult::min_time(result))
+    }
+    None => assert_true(false)
+  }
+  
+  // Compare with JavaScript implementation
+  let js_benchmark = JavaScriptBenchmark::new()
+  
+  let js_benchmark_results = JavaScriptBenchmark::benchmark_operations(
+    js_benchmark,
+    [
+      ("record_metric", 1000),
+      ("aggregate_metrics", 100),
+      ("serialize_data", 500)
+    ]
+  )
+  
+  // Compare performance
+  let performance_comparison = WasmBenchmark::compare_with_javascript(
+    benchmark_results,
+    js_benchmark_results
+  )
+  
+  // Verify WASM performance advantage
+  assert_true(PerformanceComparison::wasm_is_faster(performance_comparison))
+  assert_true(PerformanceComparison::speedup_factor(performance_comparison) > 1.0)
+  
+  // Clean up
+  WasmModule::destroy(telemetry_module)
+}
+
+// Test 5: WASM Security and Sandboxing
+test "wasm security and sandboxing" {
+  // Create WASM security manager
+  let security_manager = WasmSecurityManager::new()
+  
+  // Create sandboxed environment
+  let sandbox = WasmSandbox::new()
+  
+  // Configure sandbox restrictions
+  let restricted_sandbox = WasmSandbox::configure_restrictions(
+    sandbox,
+    [
+      ("max_memory", 1024 * 1024), // 1MB max
+      ("max_execution_time_ms", 5000), // 5 seconds max
+      ("allow_network_access", "false"),
+      ("allow_file_system_access", "false"),
+      ("allowed_imports", ["env", "telemetry"])
+    ]
+  )
+  
+  // Verify sandbox configuration
+  assert_eq(SandboxConfig::max_memory(restricted_sandbox), 1024 * 1024)
+  assert_eq(SandboxConfig::max_execution_time(restricted_sandbox), 5000)
+  assert_false(SandboxConfig::allows_network_access(restricted_sandbox))
+  assert_false(SandboxConfig::allows_file_system_access(restricted_sandbox))
+  
+  // Load telemetry module in sandbox
+  let sandboxed_module = WasmSandbox::load_module(restricted_sandbox, "telemetry_secure.wasm")
+  
+  // Verify module was loaded in sandbox
+  assert_true(SandboxedModule::is_valid(sandboxed_module))
+  assert_true(SandboxedModule::is_sandboxed(sandboxed_module))
+  
+  // Test security policy enforcement
+  let security_policy = WasmSecurityPolicy::new([
+    SecurityRule::deny_network_access(),
+    SecurityRule::deny_file_system_access(),
+    SecurityRule::limit_memory_usage(1024 * 1024),
+    SecurityRule::limit_execution_time(5000),
+    SecurityRule::allow_specific_imports(["env", "telemetry"])
+  ])
+  
+  let policy_enforcer = WasmSecurityPolicyEnforcer::new(security_policy)
+  
+  // Test policy violations
+  let network_access_result = WasmSecurityPolicyEnforcer::check_operation(
+    policy_enforcer,
+    "network_access",
+    []
+  )
+  
+  assert_false(SecurityCheckResult::is_allowed(network_access_result))
+  assert_eq(SecurityCheckResult::violation_type(network_access_result), "network_access_denied")
+  
+  let memory_usage_result = WasmSecurityPolicyEnforcer::check_operation(
+    policy_enforcer,
+    "memory_usage",
+    [512 * 1024] // 512KB, within limit
+  )
+  
+  assert_true(SecurityCheckResult::is_allowed(memory_usage_result))
+  
+  let excessive_memory_result = WasmSecurityPolicyEnforcer::check_operation(
+    policy_enforcer,
+    "memory_usage",
+    [2 * 1024 * 1024] // 2MB, exceeds limit
+  )
+  
+  assert_false(SecurityCheckResult::is_allowed(excessive_memory_result))
+  assert_eq(SecurityCheckResult::violation_type(excessive_memory_result), "memory_limit_exceeded")
+  
+  // Test code validation
+  let code_validator = WasmCodeValidator::new()
+  
+  // Validate telemetry module code
+  let validation_result = WasmCodeValidator::validate_module(code_validator, sandboxed_module)
+  
+  // Verify validation results
+  assert_true(ValidationResult::is_valid(validation_result))
+  assert_false(ValidationResult::has_security_issues(validation_result))
+  
+  // Test with malicious module
+  let malicious_module = WasmSandbox::load_module(restricted_sandbox, "malicious.wasm")
+  
+  let malicious_validation_result = WasmCodeValidator::validate_module(code_validator, malicious_module)
+  
+  // Verify security issues are detected
+  assert_false(ValidationResult::is_valid(malicious_validation_result))
+  assert_true(ValidationResult::has_security_issues(malicious_validation_result))
+  
+  let security_issues = ValidationResult::get_security_issues(malicious_validation_result)
+  assert_true(security_issues.length() > 0)
+  
+  // Test resource monitoring
+  let resource_monitor = WasmResourceMonitor::new()
+  
+  // Start monitoring sandboxed module
+  let monitoring_session = WasmResourceMonitor::start_monitoring(resource_monitor, sandboxed_module)
+  
+  // Execute some operations
+  SandboxModule::execute_function(sandboxed_module, "process_metrics", [])
+  
+  // Get resource usage
+  let resource_usage = WasmResourceMonitor::get_current_usage(monitoring_session)
+  
+  // Verify resource monitoring
+  assert_true(ResourceUsage::memory_usage(resource_usage) > 0)
+  assert_true(ResourceUsage::execution_time(resource_usage) > 0)
+  assert_true(ResourceUsage::function_calls(resource_usage) > 0)
+  
+  // Test security event logging
+  let security_logger = WasmSecurityLogger::new()
+  
+  // Log security events
+  WasmSecurityLogger::log_event(security_logger, "module_loaded", sandboxed_module)
+  WasmSecurityLogger::log_event(security_logger, "policy_violation", network_access_result)
+  
+  // Get security events
+  let security_events = WasmSecurityLogger::get_events(security_logger)
+  
+  // Verify security events were logged
+  assert_eq(security_events.length(), 2)
+  
+  let module_loaded_event = security_events[0]
+  assert_eq(SecurityEvent::event_type(module_loaded_event), "module_loaded")
+  
+  let policy_violation_event = security_events[1]
+  assert_eq(SecurityEvent::event_type(policy_violation_event), "policy_violation")
+  
+  // Clean up
+  WasmResourceMonitor::stop_monitoring(monitoring_session)
+  WasmSandbox::destroy(restricted_sandbox)
+}
+
+// Test 6: Cross-Platform WASM Compatibility
+test "cross platform wasm compatibility" {
+  // Create platform compatibility manager
+  let compatibility_manager = WasmPlatformCompatibilityManager::new()
+  
+  // Detect current platform
+  let platform_info = WasmPlatformCompatibilityManager::detect_platform(compatibility_manager)
+  
+  // Verify platform detection
+  assert_true(PlatformInfo::platform_name(platform_info).length() > 0)
+  assert_true(PlatformInfo::architecture(platform_info).length() > 0)
+  
+  // Test platform-specific optimizations
+  let platform_optimizer = WasmPlatformOptimizer::new()
+  
+  // Apply platform-specific optimizations
+  let optimized_module = WasmPlatformOptimizer::optimize_for_platform(
+    platform_optimizer,
+    "telemetry.wasm",
+    platform_info
+  )
+  
+  // Verify platform optimizations
+  assert_true(PlatformOptimizationResult::is_success(optimized_module))
+  
+  // Test feature detection across platforms
+  let feature_detector = WasmPlatformFeatureDetector::new()
+  
+  // Detect platform features
+  let platform_features = WasmPlatformFeatureDetector::detect_features(feature_detector, platform_info)
+  
+  // Verify feature detection
+  assert_true(PlatformFeatures::has_webassembly(platform_features))
+  assert_true(PlatformFeatures::has_simd(platform_features))
+  assert_true(PlatformFeatures::has_bulk_memory(platform_features))
+  
+  // Test cross-platform module loading
+  let module_loader = WasmCrossPlatformModuleLoader::new()
+  
+  // Load module with platform-specific adaptations
+  let cross_platform_module = WasmCrossPlatformModuleLoader::load_with_adaptations(
+    module_loader,
+    "telemetry.wasm",
+    platform_info
+  )
+  
+  // Verify module was loaded with adaptations
+  assert_true(CrossPlatformModule::is_valid(cross_platform_module))
+  assert_true(CrossPlatformModule::has_platform_adaptations(cross_platform_module))
+  
+  // Test ABI compatibility
+  let abi_checker = WasmAbiChecker::new()
+  
+  // Check ABI compatibility
+  let abi_compatibility = WasmAbiChecker::check_compatibility(
+    abi_checker,
+    cross_platform_module,
+    platform_info
+  )
+  
+  // Verify ABI compatibility
+  assert_true(AbiCompatibilityResult::is_compatible(abi_compatibility))
+  
+  // Test runtime compatibility
+  let runtime_checker = WasmRuntimeCompatibilityChecker::new()
+  
+  // Check runtime compatibility
+  let runtime_compatibility = WasmRuntimeCompatibilityChecker::check_compatibility(
+    runtime_checker,
+    cross_platform_module,
+    platform_info
+  )
+  
+  // Verify runtime compatibility
+  assert_true(RuntimeCompatibilityResult::is_compatible(runtime_compatibility))
+  
+  // Test multi-platform module creation
+  let multi_platform_builder = WasmMultiPlatformBuilder::new()
+  
+  // Build module for multiple platforms
+  let platforms = [
+    PlatformInfo::new("windows", "x86_64"),
+    PlatformInfo::new("linux", "x86_64"),
+    PlatformInfo::new("macos", "x86_64"),
+    PlatformInfo::new("linux", "arm64")
+  ]
+  
+  let multi_platform_module = WasmMultiPlatformBuilder::build_for_platforms(
+    multi_platform_builder,
+    "telemetry.wasm",
+    platforms
+  )
+  
+  // Verify multi-platform module
+  assert_true(MultiPlatformModule::is_valid(multi_platform_module))
+  assert_eq(MultiPlatformModule::platform_count(multi_platform_module), 4)
+  
+  // Test platform-specific feature fallback
+  let fallback_manager = WasmPlatformFallbackManager::new()
+  
+  // Create fallbacks for unsupported features
+  let fallback_config = WasmPlatformFallbackManager::create_fallbacks(
+    fallback_manager,
+    platform_features,
+    [
+      ("simd", "scalar"),
+      ("bulk_memory", "individual_ops"),
+      ("threads", "sequential")
+    ]
+  )
+  
+  // Verify fallback configuration
+  assert_true(FallbackConfig::has_fallback_for(fallback_config, "simd"))
+  assert_eq(FallbackConfig::get_fallback(fallback_config, "simd"), "scalar")
+  
+  // Test platform-specific testing
+  let platform_tester = WasmPlatformTester::new()
+  
+  // Run platform-specific tests
+  let test_results = WasmPlatformTester::run_platform_tests(
+    platform_tester,
+    cross_platform_module,
+    platform_info
+  )
+  
+  // Verify test results
+  assert_true(PlatformTestResults::all_passed(test_results))
+  
+  // Clean up
+  WasmCrossPlatformModuleLoader::destroy(cross_platform_module)
+  WasmMultiPlatformModule::destroy(multi_platform_module)
 }
