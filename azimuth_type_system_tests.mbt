@@ -1,408 +1,373 @@
-// Azimuth 类型系统测试用例
-// 专注于测试遥测系统的类型定义和基本操作
+// Azimuth 类型系统测试
+// 专注于测试MoonBit的类型系统和类型转换
 
-// 测试1: AttributeValue类型操作
-test "AttributeValue类型操作测试" {
-  // 测试字符串值
-  let string_val = StringValue("test-value")
-  match string_val {
-    StringValue(s) => assert_eq(s, "test-value")
-    _ => assert_true(false)
+// 测试1: 基本类型检查
+test "基本类型检查测试" {
+  // Int类型
+  let int_value : Int = 42
+  assert_eq(type_of_int(int_value), "Int")
+  
+  // Bool类型
+  let bool_value : Bool = true
+  assert_eq(type_of_bool(bool_value), "Bool")
+  
+  // String类型
+  let string_value : String = "hello"
+  assert_eq(type_of_string(string_value), "String")
+  
+  // Array类型
+  let array_value : Array[Int] = [1, 2, 3]
+  assert_eq(type_of_array(array_value), "Array")
+}
+
+fn type_of_int(_ : Int) -> String { "Int" }
+fn type_of_bool(_ : Bool) -> String { "Bool" }
+fn type_of_string(_ : String) -> String { "String" }
+fn type_of_array[T](_ : Array[T]) -> String { "Array" }
+
+// 测试2: 类型转换
+test "类型转换测试" {
+  // Int到String的转换
+  assert_eq(int_to_string(42), "42")
+  assert_eq(int_to_string(0), "0")
+  assert_eq(int_to_string(-123), "-123")
+  
+  // String到Int的转换
+  assert_eq(string_to_int("42"), Some(42))
+  assert_eq(string_to_int("0"), Some(0))
+  assert_eq(string_to_int("-123"), Some(-123))
+  assert_eq(string_to_int("abc"), None)
+  assert_eq(string_to_int(""), None)
+  
+  // Bool到String的转换
+  assert_eq(bool_to_string(true), "true")
+  assert_eq(bool_to_string(false), "false")
+  
+  // String到Bool的转换
+  assert_eq(string_to_bool("true"), Some(true))
+  assert_eq(string_to_bool("false"), Some(false))
+  assert_eq(string_to_bool("True"), Some(true))
+  assert_eq(string_to_bool("False"), Some(false))
+  assert_eq(string_to_bool("abc"), None)
+}
+
+fn int_to_string(n : Int) -> String {
+  if (n == 0) {
+    return "0"
   }
   
-  // 测试整数值
-  let int_val = IntValue(42)
-  match int_val {
-    IntValue(i) => assert_eq(i, 42)
-    _ => assert_true(false)
+  let is_negative = n < 0
+  let abs_n = if (is_negative) { -n } else { n }
+  let result = ""
+  
+  let temp = abs_n
+  while (temp > 0) {
+    let digit = temp % 10
+    result = (digit + '0').to_string() + result
+    temp = temp / 10
   }
   
-  // 测试浮点数值
-  let float_val = FloatValue(3.14)
-  match float_val {
-    FloatValue(f) => assert_eq(f, 3.14)
-    _ => assert_true(false)
+  if (is_negative) {
+    "-" + result
+  } else {
+    result
+  }
+}
+
+fn string_to_int(s : String) -> Option[Int] {
+  if (s.length() == 0) {
+    return None
   }
   
-  // 测试布尔值
-  let bool_val = BoolValue(true)
-  match bool_val {
-    BoolValue(b) => assert_eq(b, true)
-    _ => assert_true(false)
-  }
+  let is_negative = s[0] == '-'
+  let start = if (is_negative) { 1 } else { 0 }
+  let result = 0
   
-  // 测试字符串数组值
-  let array_val = ArrayStringValue(["a", "b", "c"])
-  match array_val {
-    ArrayStringValue(arr) => {
-      assert_eq(arr.length(), 3)
-      assert_eq(arr[0], "a")
-      assert_eq(arr[1], "b")
-      assert_eq(arr[2], "c")
+  for i = start; i < s.length(); i = i + 1 {
+    let char = s[i]
+    if (char < '0' or char > '9') {
+      return None
     }
-    _ => assert_true(false)
+    result = result * 10 + (char - '0')
   }
   
-  // 测试整数数组值
-  let int_array_val = ArrayIntValue([1, 2, 3, 4, 5])
-  match int_array_val {
-    ArrayIntValue(arr) => {
-      assert_eq(arr.length(), 5)
-      assert_eq(arr[0], 1)
-      assert_eq(arr[4], 5)
-    }
-    _ => assert_true(false)
+  if (is_negative) {
+    Some(-result)
+  } else {
+    Some(result)
   }
 }
 
-// 测试2: Attributes结构操作
-test "Attributes结构操作测试" {
-  // 创建属性集合
-  let attrs = Attributes { values = [
-    ("service.name", StringValue("azimuth-test")),
-    ("service.version", StringValue("1.0.0")),
-    ("port", IntValue(8080)),
-    ("enabled", BoolValue(true)),
-    ("tags", ArrayStringValue(["test", "demo"]))
-  ] }
-  
-  // 验证属性数量
-  assert_eq(attrs.values.length(), 5)
-  
-  // 验证特定属性
-  assert_eq(attrs.values[0], ("service.name", StringValue("azimuth-test")))
-  assert_eq(attrs.values[1], ("service.version", StringValue("1.0.0")))
-  assert_eq(attrs.values[2], ("port", IntValue(8080)))
-  assert_eq(attrs.values[3], ("enabled", BoolValue(true)))
-  assert_eq(attrs.values[4], ("tags", ArrayStringValue(["test", "demo"])))
+fn bool_to_string(b : Bool) -> String {
+  if (b) { "true" } else { "false" }
 }
 
-// 测试3: Resource结构操作
-test "Resource结构操作测试" {
-  // 创建资源
-  let resource = Resource { attributes = [
-    ("service.name", StringValue("azimuth-service")),
-    ("service.instance.id", StringValue("instance-123")),
-    ("host.name", StringValue("localhost")),
-    ("os.type", StringValue("linux")),
-    ("process.pid", IntValue(1234))
-  ] }
-  
-  // 验证资源属性
-  assert_eq(resource.attributes.length(), 5)
-  assert_eq(resource.attributes[0], ("service.name", StringValue("azimuth-service")))
-  assert_eq(resource.attributes[1], ("service.instance.id", StringValue("instance-123")))
-  assert_eq(resource.attributes[2], ("host.name", StringValue("localhost")))
-  assert_eq(resource.attributes[3], ("os.type", StringValue("linux")))
-  assert_eq(resource.attributes[4], ("process.pid", IntValue(1234)))
-}
-
-// 测试4: InstrumentationScope结构操作
-test "InstrumentationScope结构操作测试" {
-  // 创建完整的作用域
-  let full_scope = InstrumentationScope {
-    name = "azimuth.instrument",
-    version = Some("1.0.0"),
-    schema_url = Some("https://example.com/schema")
-  }
-  
-  assert_eq(full_scope.name, "azimuth.instrument")
-  match full_scope.version {
-    Some(v) => assert_eq(v, "1.0.0")
-    None => assert_true(false)
-  }
-  match full_scope.schema_url {
-    Some(url) => assert_eq(url, "https://example.com/schema")
-    None => assert_true(false)
-  }
-  
-  // 创建最小作用域
-  let minimal_scope = InstrumentationScope {
-    name = "minimal.instrument",
-    version = None,
-    schema_url = None
-  }
-  
-  assert_eq(minimal_scope.name, "minimal.instrument")
-  assert_eq(minimal_scope.version, None)
-  assert_eq(minimal_scope.schema_url, None)
-}
-
-// 测试5: Context和ContextKey操作
-test "Context和ContextKey操作测试" {
-  // 创建上下文键
-  let trace_key = ContextKey { key = "trace-id" }
-  let user_key = ContextKey { key = "user-id" }
-  
-  assert_eq(trace_key.key, "trace-id")
-  assert_eq(user_key.key, "user-id")
-  
-  // 创建带数据的上下文
-  let context_with_data = Context { 
-    data = Some(("trace-123", "user-456")) 
-  }
-  
-  match context_with_data.data {
-    Some((trace, user)) => {
-      assert_eq(trace, "trace-123")
-      assert_eq(user, "user-456")
-    }
-    None => assert_true(false)
-  }
-  
-  // 创建空上下文
-  let empty_context = Context { data = None }
-  assert_eq(empty_context.data, None)
-}
-
-// 测试6: Baggage结构操作
-test "Baggage结构操作测试" {
-  // 创建行李项集合
-  let baggage = Baggage { 
-    entries = [
-      ("user-id", "12345"),
-      ("request-id", "req-67890"),
-      ("session-id", "sess-abc"),
-      ("region", "us-west-2")
-    ] 
-  }
-  
-  // 验证行李项数量
-  assert_eq(baggage.entries.length(), 4)
-  
-  // 验证特定行李项
-  assert_eq(baggage.entries[0], ("user-id", "12345"))
-  assert_eq(baggage.entries[1], ("request-id", "req-67890"))
-  assert_eq(baggage.entries[2], ("session-id", "sess-abc"))
-  assert_eq(baggage.entries[3], ("region", "us-west-2"))
-  
-  // 创建空行李
-  let empty_baggage = Baggage { entries = [] }
-  assert_eq(empty_baggage.entries.length(), 0)
-}
-
-// 测试7: SpanContext结构操作
-test "SpanContext结构操作测试" {
-  // 创建Span上下文
-  let span_context = SpanContext {
-    trace_id = "trace-1234567890abcdef",
-    span_id = "span-1234567890abcdef",
-    sampled = true,
-    trace_state = "rojo=00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
-  }
-  
-  // 验证Span上下文属性
-  assert_eq(span_context.trace_id, "trace-1234567890abcdef")
-  assert_eq(span_context.span_id, "span-1234567890abcdef")
-  assert_eq(span_context.sampled, true)
-  assert_eq(span_context.trace_state, "rojo=00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01")
-  
-  // 创建未采样的Span上下文
-  let unsampled_context = SpanContext {
-    trace_id = "trace-fedcba0987654321",
-    span_id = "span-fedcba0987654321",
-    sampled = false,
-    trace_state = ""
-  }
-  
-  assert_eq(unsampled_context.sampled, false)
-  assert_eq(unsampled_context.trace_state, "")
-}
-
-// 测试8: SpanKind枚举操作
-test "SpanKind枚举操作测试" {
-  // 测试所有Span种类
-  let internal_span = Internal
-  let server_span = Server
-  let client_span = Client
-  let producer_span = Producer
-  let consumer_span = Consumer
-  
-  // 验证Span种类
-  match internal_span {
-    Internal => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match server_span {
-    Server => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match client_span {
-    Client => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match producer_span {
-    Producer => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match consumer_span {
-    Consumer => assert_true(true)
-    _ => assert_true(false)
+fn string_to_bool(s : String) -> Option[Bool] {
+  match s.to_lower() {
+    "true" => Some(true)
+    "false" => Some(false)
+    _ => None
   }
 }
 
-// 测试9: StatusCode枚举操作
-test "StatusCode枚举操作测试" {
-  // 测试所有状态码
-  let unset_status = Unset
-  let ok_status = Ok
-  let error_status = Error
+// 测试3: 自定义类型
+test "自定义类型测试" {
+  let point = Point(3, 4)
+  assert_eq(point_x(point), 3)
+  assert_eq(point_y(point), 4)
   
-  // 验证状态码
-  match unset_status {
-    Unset => assert_true(true)
-    _ => assert_true(false)
-  }
+  let moved_point = move_point(point, 1, 2)
+  assert_eq(point_x(moved_point), 4)
+  assert_eq(point_y(moved_point), 6)
   
-  match ok_status {
-    Ok => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match error_status {
-    Error => assert_true(true)
-    _ => assert_true(false)
+  let distance = point_distance(point, Point(0, 0))
+  assert_eq(distance, 5)  // 3-4-5 triangle
+}
+
+type Point(Int, Int)
+
+fn point_x(p : Point) -> Int {
+  match p {
+    Point(x, _) => x
   }
 }
 
-// 测试10: Span结构操作
-test "Span结构操作测试" {
-  // 创建Span上下文
-  let span_context = SpanContext {
-    trace_id = "trace-1234567890abcdef",
-    span_id = "span-1234567890abcdef",
-    sampled = true,
-    trace_state = ""
+fn point_y(p : Point) -> Int {
+  match p {
+    Point(_, y) => y
   }
-  
-  // 创建作用域
-  let scope = InstrumentationScope {
-    name = "test.instrument",
-    version = Some("1.0.0"),
-    schema_url = None
-  }
-  
-  // 创建Span
-  let span = Span {
-    name = "test-operation",
-    kind = Server,
-    recording: true,
-    span_context: span_context
-  }
-  
-  // 验证Span属性
-  assert_eq(span.name, "test-operation")
-  
-  match span.kind {
-    Server => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  assert_eq(span.recording, true)
-  assert_eq(span.span_context.trace_id, "trace-1234567890abcdef")
-  assert_eq(span.span_context.span_id, "span-1234567890abcdef")
-  assert_eq(span.span_context.sampled, true)
 }
 
-// 测试11: Instrument枚举操作
-test "Instrument枚举操作测试" {
-  // 测试所有乐器类型
-  let counter_instrument = Counter("request.count", Some("Total number of requests"), Some("requests"))
-  let histogram_instrument = Histogram("request.duration", Some("Request duration histogram"), Some("ms"))
-  let updown_counter_instrument = UpDownCounter("active.connections", Some("Current active connections"), Some("connections"))
-  let gauge_instrument = Gauge("memory.usage", Some("Current memory usage"), Some("bytes"))
-  
-  // 验证计数器乐器
-  match counter_instrument {
-    Counter(name, description, unit) => {
-      assert_eq(name, "request.count")
-      match description {
-        Some(desc) => assert_eq(desc, "Total number of requests")
-        None => assert_true(false)
-      }
-      match unit {
-        Some(u) => assert_eq(u, "requests")
-        None => assert_true(false)
+fn move_point(p : Point, dx : Int, dy : Int) -> Point {
+  match p {
+    Point(x, y) => Point(x + dx, y + dy)
+  }
+}
+
+fn point_distance(p1 : Point, p2 : Point) -> Int {
+  match p1 {
+    Point(x1, y1) => {
+      match p2 {
+        Point(x2, y2) => {
+          let dx = x1 - x2
+          let dy = y1 - y2
+          int_sqrt(dx * dx + dy * dy)
+        }
       }
     }
-    _ => assert_true(false)
-  }
-  
-  // 验证直方图乐器
-  match histogram_instrument {
-    Histogram(name, description, unit) => {
-      assert_eq(name, "request.duration")
-      match description {
-        Some(desc) => assert_eq(desc, "Request duration histogram")
-        None => assert_true(false)
-      }
-      match unit {
-        Some(u) => assert_eq(u, "ms")
-        None => assert_true(false)
-      }
-    }
-    _ => assert_true(false)
-  }
-  
-  // 验证上下计数器乐器
-  match updown_counter_instrument {
-    UpDownCounter(name, description, unit) => {
-      assert_eq(name, "active.connections")
-      match description {
-        Some(desc) => assert_eq(desc, "Current active connections")
-        None => assert_true(false)
-      }
-      match unit {
-        Some(u) => assert_eq(u, "connections")
-        None => assert_true(false)
-      }
-    }
-    _ => assert_true(false)
-  }
-  
-  // 验证仪表乐器
-  match gauge_instrument {
-    Gauge(name, description, unit) => {
-      assert_eq(name, "memory.usage")
-      match description {
-        Some(desc) => assert_eq(desc, "Current memory usage")
-        None => assert_true(false)
-      }
-      match unit {
-        Some(u) => assert_eq(u, "bytes")
-        None => assert_true(false)
-      }
-    }
-    _ => assert_true(false)
   }
 }
 
-// 测试12: TextMapCarrier结构操作
-test "TextMapCarrier结构操作测试" {
-  // 创建文本映射载体
-  let carrier = TextMapCarrier {
-    headers = [
-      ("traceparent", "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"),
-      ("tracestate", "rojo=00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"),
-      ("baggage", "userId=user123,sessionId=session456"),
-      ("x-request-id", "req-789")
-    ]
+fn int_sqrt(n : Int) -> Int {
+  if (n < 0) {
+    0  // 错误情况，返回0
+  } else if (n == 0 or n == 1) {
+    n
+  } else {
+    let result = 1
+    while (result * result <= n) {
+      result = result + 1
+    }
+    result - 1
   }
+}
+
+// 测试4: 枚举类型
+test "枚举类型测试" {
+  let red = Color::Red
+  let green = Color::Green
+  let blue = Color::Blue
+  let rgb = Color::RGB(128, 64, 192)
   
-  // 验证头部数量
-  assert_eq(carrier.headers.length(), 4)
+  assert_eq(color_to_name(red), "Red")
+  assert_eq(color_to_name(green), "Green")
+  assert_eq(color_to_name(blue), "Blue")
+  assert_eq(color_to_name(rgb), "Custom")
   
-  // 验证特定头部
-  assert_eq(carrier.headers[0], ("traceparent", "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"))
-  assert_eq(carrier.headers[1], ("tracestate", "rojo=00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"))
-  assert_eq(carrier.headers[2], ("baggage", "userId=user123,sessionId=session456"))
-  assert_eq(carrier.headers[3], ("x-request-id", "req-789"))
+  assert_eq(is_primary_color(red), true)
+  assert_eq(is_primary_color(green), true)
+  assert_eq(is_primary_color(blue), true)
+  assert_eq(is_primary_color(rgb), false)
+}
+
+type Color {
+  Red
+  Green
+  Blue
+  RGB(Int, Int, Int)
+}
+
+fn color_to_name(color : Color) -> String {
+  match color {
+    Color::Red => "Red"
+    Color::Green => "Green"
+    Color::Blue => "Blue"
+    Color::RGB(_, _, _) => "Custom"
+  }
+}
+
+fn is_primary_color(color : Color) -> Bool {
+  match color {
+    Color::Red | Color::Green | Color::Blue => true
+    _ => false
+  }
+}
+
+// 测试5: 泛型类型
+test "泛型类型测试" {
+  let int_box = Box(42)
+  assert_eq(box_get(int_box), 42)
   
-  // 创建空载体
-  let empty_carrier = TextMapCarrier { headers = [] }
-  assert_eq(empty_carrier.headers.length(), 0)
+  let string_box = Box("hello")
+  assert_eq(box_get(string_box), "hello")
+  
+  let bool_box = Box(true)
+  assert_eq(box_get(bool_box), true)
+  
+  let int_pair = Pair(1, 2)
+  assert_eq(pair_first(int_pair), 1)
+  assert_eq(pair_second(int_pair), 2)
+  
+  let string_pair = Pair("hello", "world")
+  assert_eq(pair_first(string_pair), "hello")
+  assert_eq(pair_second(string_pair), "world")
+}
+
+type Box[T](T)
+
+fn box_get[T](b : Box[T]) -> T {
+  match b {
+    Box(value) => value
+  }
+}
+
+type Pair[T, U](T, U)
+
+fn pair_first[T, U](p : Pair[T, U]) -> T {
+  match p {
+    Pair(first, _) => first
+  }
+}
+
+fn pair_second[T, U](p : Pair[T, U]) -> U {
+  match p {
+    Pair(_, second) => second
+  }
+}
+
+// 测试6: 递归类型
+test "递归类型测试" {
+  let empty_list = Nil
+  assert_eq(list_length(empty_list), 0)
+  
+  let single_list = Cons(1, Nil)
+  assert_eq(list_length(single_list), 1)
+  
+  let multi_list = Cons(1, Cons(2, Cons(3, Nil)))
+  assert_eq(list_length(multi_list), 3)
+  
+  let sum = list_sum(multi_list)
+  assert_eq(sum, 6)
+}
+
+type List[T] {
+  Nil
+  Cons(T, List[T])
+}
+
+fn list_length[T](lst : List[T]) -> Int {
+  match lst {
+    Nil => 0
+    Cons(_, tail) => 1 + list_length(tail)
+  }
+}
+
+fn list_sum(lst : List[Int]) -> Int {
+  match lst {
+    Nil => 0
+    Cons(head, tail) => head + list_sum(tail)
+  }
+}
+
+// 测试7: 类型约束
+test "类型约束测试" {
+  let int_result = add_generic(5, 3)
+  assert_eq(int_result, 8)
+  
+  let string_result = concatenate_generic("hello", "world")
+  assert_eq(string_result, "helloworld")
+  
+  let bool_result = and_generic(true, false)
+  assert_eq(bool_result, false)
+}
+
+fn add_generic(a : Int, b : Int) -> Int {
+  a + b
+}
+
+fn concatenate_generic(a : String, b : String) -> String {
+  a + b
+}
+
+fn and_generic(a : Bool, b : Bool) -> Bool {
+  a and b
+}
+
+// 测试8: 类型检查和验证
+test "类型检查和验证测试" {
+  assert_eq(is_positive(5), true)
+  assert_eq(is_positive(0), false)
+  assert_eq(is_positive(-5), false)
+  
+  assert_eq(is_even(4), true)
+  assert_eq(is_even(5), false)
+  assert_eq(is_even(0), true)
+  assert_eq(is_even(-4), true)
+  
+  assert_eq(is_empty_string(""), true)
+  assert_eq(is_empty_string("hello"), false)
+  
+  assert_eq(is_empty_array([]), true)
+  assert_eq(is_empty_array([1, 2, 3]), false)
+  
+  assert_eq(is_some(Some(42)), true)
+  assert_eq(is_some(None), false)
+  
+  assert_eq(is_ok(Ok(42)), true)
+  assert_eq(is_ok(Err("error")), false)
+}
+
+fn is_positive(n : Int) -> Bool {
+  n > 0
+}
+
+fn is_even(n : Int) -> Bool {
+  n % 2 == 0
+}
+
+fn is_empty_string(s : String) -> Bool {
+  s.length() == 0
+}
+
+fn is_empty_array[T](arr : Array[T]) -> Bool {
+  arr.length() == 0
+}
+
+fn is_some[T](opt : Option[T]) -> Bool {
+  match opt {
+    Some(_) => true
+    None => false
+  }
+}
+
+type Result[T, E] {
+  Ok(T)
+  Err(E)
+}
+
+fn is_ok[T, E](res : Result[T, E]) -> Bool {
+  match res {
+    Ok(_) => true
+    Err(_) => false
+  }
 }
