@@ -5,7 +5,11 @@
   "target": "wasm-gc",
   "source": ["."],
   "deps": {
-    "moonbitlang/core/assertion": "*"
+    "moonbitlang/core/assertion": "*",
+    "moonbitlang/core/builtin": "*",
+    "moonbitlang/core/string": "*",
+    "moonbitlang/core/array": "*",
+    "moonbitlang/core/int": "*"
   },
   "test": {
     "test": [

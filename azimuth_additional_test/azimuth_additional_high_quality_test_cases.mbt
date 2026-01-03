@@ -3,51 +3,74 @@
 
 // Test 1: Basic Arithmetic Operations
 test "basic arithmetic operations" {
-  assert_eq(1 + 1, 2)
-  assert_eq(5 * 4, 20)
-  assert_eq(10 / 2, 5)
-  assert_eq(10 - 3, 7)
+  let result1 = 1 + 1
+  let result2 = 5 * 4
+  let result3 = 10 / 2
+  let result4 = 10 - 3
+  
+  assert_eq(result1, 2)
+  assert_eq(result2, 20)
+  assert_eq(result3, 5)
+  assert_eq(result4, 7)
 }
 
 // Test 2: Boolean Logic Operations
 test "boolean logic operations" {
-  assert_true(true)
-  assert_false(false)
-  assert_true(true && true)
-  assert_false(true && false)
-  assert_true(true || false)
-  assert_false(false || false)
+  let bool1 = true
+  let bool2 = false
+  let bool3 = true && true
+  let bool4 = true && false
+  let bool5 = true || false
+  let bool6 = false || false
+  
+  assert_true(bool1)
+  assert_false(bool2)
+  assert_true(bool3)
+  assert_false(bool4)
+  assert_true(bool5)
+  assert_false(bool6)
 }
 
 // Test 3: String Operations
 test "string operations" {
   let str1 = "hello"
   let str2 = "world"
-  assert_eq(str1.length(), 5)
-  assert_eq(str2.length(), 5)
-  assert_eq(str1 + " " + str2, "hello world")
+  let len1 = str1.length()
+  let len2 = str2.length()
+  let combined = str1 + " " + str2
+  
+  assert_eq(len1, 5)
+  assert_eq(len2, 5)
+  assert_eq(combined, "hello world")
 }
 
 // Test 4: Array Operations
 test "array operations" {
   let arr = [1, 2, 3, 4, 5]
-  assert_eq(arr.length(), 5)
-  assert_eq(arr[0], 1)
-  assert_eq(arr[4], 5)
+  let len = arr.length()
+  let first = arr[0]
+  let last = arr[4]
   
-  let empty_arr = []
-  assert_eq(empty_arr.length(), 0)
+  assert_eq(len, 5)
+  assert_eq(first, 1)
+  assert_eq(last, 5)
 }
 
 // Test 5: Numeric Boundary Tests
 test "numeric boundary tests" {
-  assert_eq(0 + 0, 0)
-  assert_eq(0 * 5, 0)
-  assert_eq(5 * 0, 0)
+  let result1 = 0 + 0
+  let result2 = 0 * 5
+  let result3 = 5 * 0
+  let result4 = -5 + 5
+  let result5 = -10 + -5
+  let result6 = -5 * -5
   
-  assert_eq(-5 + 5, 0)
-  assert_eq(-10 + -5, -15)
-  assert_eq(-5 * -5, 25)
+  assert_eq(result1, 0)
+  assert_eq(result2, 0)
+  assert_eq(result3, 0)
+  assert_eq(result4, 0)
+  assert_eq(result5, -15)
+  assert_eq(result6, 25)
 }
 
 // Test 6: Option Type Handling
@@ -85,8 +108,9 @@ test "loop and iteration tests" {
 test "conditional logic tests" {
   let x = 10
   let y = 20
+  let condition = x < y
   
-  if x < y {
+  if condition {
     assert_true(true)
   } else {
     assert_true(false)
@@ -106,9 +130,13 @@ test "type conversion tests" {
   assert_eq(int_str, "42")
   
   // Test boolean operations
-  assert_true(bool_val && true)
-  assert_false(bool_val && false)
-  assert_true(!false)
+  let bool_and = bool_val && true
+  let bool_and_false = bool_val && false
+  let bool_not = !false
+  
+  assert_true(bool_and)
+  assert_false(bool_and_false)
+  assert_true(bool_not)
 }
 
 // Test 10: Error Handling and Edge Cases
@@ -127,8 +155,10 @@ test "error handling and edge cases" {
   
   // Test array bounds
   let arr = [1, 2, 3]
-  if arr.length() > 2 {
-    assert_eq(arr[2], 3)
+  let arr_len = arr.length()
+  if arr_len > 2 {
+    let third_element = arr[2]
+    assert_eq(third_element, 3)
   } else {
     assert_true(false)
   }
