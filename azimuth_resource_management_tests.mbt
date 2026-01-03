@@ -1,585 +1,462 @@
-// Resource Management Tests for Azimuth Telemetry System
-// This file contains tests for resource lifecycle and management
+// Azimuth Telemetry System - Resource Management Tests
+// This file contains test cases for resource management functionality
 
-test "resource creation and cleanup" {
-  let resource = Resource::new()
+// Test 1: Memory Resource Management
+test "memory resource management" {
+  let memory_manager = MemoryManager::new()
   
-  // Verify initial state
-  let initial_attr = Resource::get_attribute(resource, "any.key")
-  assert_eq(initial_attr, None)
+  // Test memory pool allocation
+  let memory_pool = memory_manager.create_pool(1024 * 1024) // 1MB pool
+  assert_eq(memory_pool.total_size, 1024 * 1024)
+  assert_eq(memory_pool.used_size, 0)
+  assert_eq(memory_pool.free_size, 1024 * 1024)
   
-  // Add attributes
-  let attrs = [
-    ("service.name", StringValue("test-service")),
-    ("service.version", StringValue("1.0.0")),
-    ("service.instance.id", StringValue("instance-123"))
-  ]
+  // Test memory allocation from pool
+  let block1 = memory_manager.allocate(memory_pool, 1024) // 1KB
+  let block2 = memory_manager.allocate(memory_pool, 2048) // 2KB
   
-  let resource_with_attrs = Resource::with_attributes(resource, attrs)
+  assert_eq(memory_pool.used_size, 3072)
+  assert_eq(memory_pool.free_size, 1024 * 1024 - 3072)
+  assert_eq(memory_pool.allocated_blocks, 2)
   
-  // Verify attributes are set
-  let service_name = Resource::get_attribute(resource_with_attrs, "service.name")
-  let service_version = Resource::get_attribute(resource_with_attrs, "service.version")
-  let instance_id = Resource::get_attribute(resource_with_attrs, "service.instance.id")
+  // Test memory deallocation
+  memory_manager.deallocate(memory_pool, block1)
   
-  match service_name {
-    Some(StringValue(s)) => assert_eq(s, "test-service")
-    _ => assert_true(false)
+  assert_eq(memory_pool.used_size, 2048)
+  assert_eq(memory_pool.free_size, 1024 * 1024 - 2048)
+  assert_eq(memory_pool.allocated_blocks, 1)
+  
+  // Test memory fragmentation detection
+  let fragmentation_info = memory_manager.analyze_fragmentation(memory_pool)
+  assert_true(fragmentation_info.fragmentation_ratio >= 0.0)
+  assert_true(fragmentation_info.fragmentation_ratio <= 1.0)
+  assert_true(fragmentation_info.largest_free_block > 0)
+  
+  // Test memory pool compaction
+  if fragmentation_info.fragmentation_ratio > 0.5 {
+    memory_manager.compact_pool(memory_pool)
+    let compacted_info = memory_manager.analyze_fragmentation(memory_pool)
+    assert_true(compacted_info.fragmentation_ratio < fragmentation_info.fragmentation_ratio)
   }
   
-  match service_version {
-    Some(StringValue(s)) => assert_eq(s, "1.0.0")
-    _ => assert_true(false)
-  }
-  
-  match instance_id {
-    Some(StringValue(s)) => assert_eq(s, "instance-123")
-    _ => assert_true(false)
-  }
-  
-  // Simulate resource cleanup by creating a new empty resource
-  let cleaned_resource = Resource::new()
-  let cleaned_attr = Resource::get_attribute(cleaned_resource, "service.name")
-  assert_eq(cleaned_attr, None)
+  // Test memory usage monitoring
+  let usage_stats = memory_manager.get_usage_stats(memory_pool)
+  assert_eq(usage_stats.peak_usage, 3072)
+  assert_eq(usage_stats.current_usage, 2048)
+  assert_true(usage_stats.allocation_count > 0)
+  assert_true(usage_stats.deallocation_count > 0)
 }
 
-test "resource attribute management" {
-  let resource = Resource::new()
+// Test 2: Connection Resource Management
+test "connection resource management" {
+  let connection_manager = ConnectionManager::new()
   
-  // Add initial attributes
-  let initial_attrs = [
-    ("initial.key1", StringValue("initial.value1")),
-    ("initial.key2", IntValue(42)),
-    ("initial.key3", BoolValue(true))
-  ]
+  // Test connection pool creation
+  let pool_config = ConnectionPoolConfig::new()
+    .with_max_connections(10)
+    .with_min_connections(2)
+    .with_connection_timeout(30000) // 30 seconds
+    .with_idle_timeout(600000)      // 10 minutes
   
-  let resource_with_initial = Resource::with_attributes(resource, initial_attrs)
+  let connection_pool = connection_manager.create_pool("database", pool_config)
+  assert_eq(connection_pool.max_connections, 10)
+  assert_eq(connection_pool.min_connections, 2)
+  assert_eq(connection_pool.active_connections, 0)
+  assert_eq(connection_pool.idle_connections, 0)
   
-  // Verify initial attributes
-  let value1 = Resource::get_attribute(resource_with_initial, "initial.key1")
-  let value2 = Resource::get_attribute(resource_with_initial, "initial.key2")
-  let value3 = Resource::get_attribute(resource_with_initial, "initial.key3")
+  // Test connection acquisition
+  let conn1 = connection_manager.acquire_connection(connection_pool)
+  let conn2 = connection_manager.acquire_connection(connection_pool)
   
-  match value1 {
-    Some(StringValue(s)) => assert_eq(s, "initial.value1")
-    _ => assert_true(false)
-  }
+  assert_eq(connection_pool.active_connections, 2)
+  assert_eq(connection_pool.idle_connections, 0)
+  assert_true(conn1.is_valid())
+  assert_true(conn2.is_valid())
   
-  match value2 {
-    Some(IntValue(i)) => assert_eq(i, 42)
-    _ => assert_true(false)
-  }
+  // Test connection release
+  connection_manager.release_connection(connection_pool, conn1)
   
-  match value3 {
-    Some(BoolValue(b)) => assert_true(b)
-    _ => assert_true(false)
-  }
+  assert_eq(connection_pool.active_connections, 1)
+  assert_eq(connection_pool.idle_connections, 1)
   
-  // Add additional attributes
-  let additional_attrs = [
-    ("additional.key1", StringValue("additional.value1")),
-    ("additional.key2", FloatValue(3.14))
-  ]
+  // Test connection validation
+  let invalid_conn = connection_manager.create_invalid_connection()
+  assert_false(connection_manager.validate_connection(invalid_conn))
   
-  let resource_with_additional = Resource::with_attributes(resource_with_initial, additional_attrs)
+  // Test connection health check
+  let health_status = connection_manager.check_pool_health(connection_pool)
+  assert_true(health_status.is_healthy)
+  assert_eq(health_status.active_connections, 1)
+  assert_eq(health_status.idle_connections, 1)
+  assert_eq(health_status.total_connections, 2)
   
-  // Verify all attributes are present
-  let initial_value1 = Resource::get_attribute(resource_with_additional, "initial.key1")
-  let additional_value1 = Resource::get_attribute(resource_with_additional, "additional.key1")
+  // Test connection pool scaling
+  connection_manager.scale_pool(connection_pool, 5) // Scale to 5 connections
+  assert_eq(connection_pool.max_connections, 5)
   
-  match initial_value1 {
-    Some(StringValue(s)) => assert_eq(s, "initial.value1")
-    _ => assert_true(false)
-  }
-  
-  match additional_value1 {
-    Some(StringValue(s)) => assert_eq(s, "additional.value1")
-    _ => assert_true(false)
-  }
+  // Test connection pool metrics
+  let pool_metrics = connection_manager.get_pool_metrics(connection_pool)
+  assert_true(pool_metrics.total_acquisitions >= 2)
+  assert_true(pool_metrics.total_releases >= 1)
+  assert_true(pool_metrics.peak_connections >= 2)
+  assert_true(pool_metrics.avg_connection_lifetime > 0)
 }
 
-test "resource merging strategies" {
-  let base_resource = Resource::new()
-  let override_resource = Resource::new()
+// Test 3: Thread Resource Management
+test "thread resource management" {
+  let thread_manager = ThreadManager::new()
   
-  // Set base attributes
-  let base_attrs = [
-    ("base.key1", StringValue("base.value1")),
-    ("base.key2", StringValue("base.value2")),
-    ("shared.key", StringValue("base.shared.value"))
-  ]
+  // Test thread pool creation
+  let thread_pool = thread_manager.create_pool(4) // 4 worker threads
+  assert_eq(thread_pool.worker_count, 4)
+  assert_eq(thread_pool.active_tasks, 0)
+  assert_eq(thread_pool.completed_tasks, 0)
   
-  let base_with_attrs = Resource::with_attributes(base_resource, base_attrs)
+  // Test task submission
+  let task1 = Task::new("task1", fn() { "result1" })
+  let task2 = Task::new("task2", fn() { "result2" })
+  let task3 = Task::new("task3", fn() { "result3" })
   
-  // Set override attributes
-  let override_attrs = [
-    ("override.key1", StringValue("override.value1")),
-    ("override.key2", StringValue("override.value2")),
-    ("shared.key", StringValue("override.shared.value"))
-  ]
+  let future1 = thread_manager.submit_task(thread_pool, task1)
+  let future2 = thread_manager.submit_task(thread_pool, task2)
+  let future3 = thread_manager.submit_task(thread_pool, task3)
   
-  let override_with_attrs = Resource::with_attributes(override_resource, override_attrs)
+  // Test task execution
+  let result1 = thread_manager.get_result(future1)
+  let result2 = thread_manager.get_result(future2)
+  let result3 = thread_manager.get_result(future3)
   
-  // Merge resources
-  let merged = Resource::merge(base_with_attrs, override_with_attrs)
+  assert_eq(result1, "result1")
+  assert_eq(result2, "result2")
+  assert_eq(result3, "result3")
   
-  // Verify merge results
-  let base_key1 = Resource::get_attribute(merged, "base.key1")
-  let base_key2 = Resource::get_attribute(merged, "base.key2")
-  let override_key1 = Resource::get_attribute(merged, "override.key1")
-  let override_key2 = Resource::get_attribute(merged, "override.key2")
-  let shared_key = Resource::get_attribute(merged, "shared.key")
+  // Test thread pool statistics
+  let pool_stats = thread_manager.get_pool_stats(thread_pool)
+  assert_eq(pool_stats.completed_tasks, 3)
+  assert_true(pool_stats.avg_task_time > 0)
+  assert_true(pool_stats.thread_utilization > 0.0)
+  assert_true(pool_stats.thread_utilization <= 1.0)
   
-  // In simplified implementation, override resource takes precedence
-  match base_key1 {
-    Some(StringValue(s)) => assert_eq(s, "base.value1")  // Might be None in simplified implementation
-    _ => assert_true(true)  // Accept None in simplified implementation
-  }
+  // Test thread pool scaling
+  thread_manager.scale_pool(thread_pool, 8) // Scale to 8 threads
+  assert_eq(thread_pool.worker_count, 8)
   
-  match override_key1 {
-    Some(StringValue(s)) => assert_eq(s, "override.value1")
-    _ => assert_true(false)
-  }
+  // Test thread pool shutdown
+  thread_manager.shutdown_pool(thread_pool)
+  assert_true(thread_pool.is_shutdown)
   
-  match shared_key {
-    Some(StringValue(s)) => assert_eq(s, "override.shared.value")  // Override should win
-    _ => assert_true(false)
-  }
+  // Test thread resource cleanup
+  let cleanup_result = thread_manager.cleanup_resources()
+  assert_true(cleanup_result.success)
+  assert_eq(cleanup_result.cleaned_pools, 1)
+  assert_eq(cleanup_result.freed_threads, 8)
 }
 
-test "resource inheritance" {
-  let parent_resource = Resource::new()
-  let child_resource = Resource::new()
+// Test 4: File Resource Management
+test "file resource management" {
+  let file_manager = FileManager::new()
   
-  // Set parent attributes
-  let parent_attrs = [
-    ("parent.key1", StringValue("parent.value1")),
-    ("parent.key2", StringValue("parent.value2")),
-    ("inherited.key", StringValue("inherited.value"))
-  ]
+  // Test file handle pool creation
+  let file_pool = file_manager.create_handle_pool(100) // 100 file handles
+  assert_eq(file_pool.max_handles, 100)
+  assert_eq(file_pool.active_handles, 0)
+  assert_eq(file_pool.idle_handles, 0)
   
-  let parent_with_attrs = Resource::with_attributes(parent_resource, parent_attrs)
+  // Test file handle acquisition
+  let temp_file = "/tmp/test_file.txt"
+  let file_content = "Test file content for resource management"
   
-  // Set child attributes
-  let child_attrs = [
-    ("child.key1", StringValue("child.value1")),
-    ("child.key2", StringValue("child.value2")),
-    ("inherited.key", StringValue("child.overridden.value"))
-  ]
+  let handle1 = file_manager.open_file(temp_file, "w")
+  let handle2 = file_manager.open_file(temp_file, "r")
   
-  let child_with_attrs = Resource::with_attributes(child_resource, child_attrs)
+  assert_eq(file_pool.active_handles, 2)
+  assert_true(file_manager.is_handle_valid(handle1))
+  assert_true(file_manager.is_handle_valid(handle2))
   
-  // Simulate inheritance by merging
-  let inherited = Resource::merge(parent_with_attrs, child_with_attrs)
+  // Test file operations
+  let write_result = file_manager.write_file(handle1, file_content)
+  assert_true(write_result.success)
+  assert_eq(write_result.bytes_written, file_content.length())
   
-  // Verify inheritance
-  let parent_key1 = Resource::get_attribute(inherited, "parent.key1")
-  let child_key1 = Resource::get_attribute(inherited, "child.key1")
-  let inherited_key = Resource::get_attribute(inherited, "inherited.key")
+  let read_result = file_manager.read_file(handle2, file_content.length())
+  assert_true(read_result.success)
+  assert_eq(read_result.content, file_content)
   
-  match parent_key1 {
-    Some(StringValue(s)) => assert_eq(s, "parent.value1")  // Might be None in simplified implementation
-    _ => assert_true(true)  // Accept None in simplified implementation
-  }
+  // Test file handle release
+  file_manager.close_file(handle1)
+  file_manager.close_file(handle2)
   
-  match child_key1 {
-    Some(StringValue(s)) => assert_eq(s, "child.value1")
-    _ => assert_true(false)
-  }
+  assert_eq(file_pool.active_handles, 0)
+  assert_eq(file_pool.idle_handles, 2)
   
-  match inherited_key {
-    Some(StringValue(s)) => assert_eq(s, "child.overridden.value")  // Child should override
-    _ => assert_true(false)
-  }
+  // Test file resource monitoring
+  let resource_monitor = file_manager.get_resource_monitor()
+  let file_stats = resource_monitor.get_file_statistics()
+  
+  assert_true(file_stats.total_files_opened >= 2)
+  assert_true(file_stats.total_files_closed >= 2)
+  assert_true(file_stats.total_bytes_written >= file_content.length())
+  assert_true(file_stats.total_bytes_read >= file_content.length())
+  
+  // Test file cleanup
+  let cleanup_result = file_manager.cleanup_temp_files()
+  assert_true(cleanup_result.success)
+  assert_true(cleanup_result.files_deleted >= 1)
 }
 
-test "resource lifecycle management" {
-  // Test resource creation phase
-  let created_resource = Resource::new()
-  assert_true(true)  // Resource created successfully
+// Test 5: Cache Resource Management
+test "cache resource management" {
+  let cache_manager = CacheManager::new()
   
-  // Test resource configuration phase
-  let config_attrs = [
-    ("lifecycle.phase", StringValue("configured")),
-    ("config.timestamp", StringValue("1234567890"))
-  ]
+  // Test cache creation with resource limits
+  let cache_config = CacheConfig::new()
+    .with_max_memory(10 * 1024 * 1024) // 10MB
+    .with_max_entries(10000)
+    .with_ttl(3600000) // 1 hour
+    .with_cleanup_interval(600000) // 10 minutes
   
-  let configured_resource = Resource::with_attributes(created_resource, config_attrs)
-  let phase = Resource::get_attribute(configured_resource, "lifecycle.phase")
+  let cache = cache_manager.create_cache("test_cache", cache_config)
+  assert_eq(cache.max_memory, 10 * 1024 * 1024)
+  assert_eq(cache.max_entries, 10000)
+  assert_eq(cache.current_entries, 0)
+  assert_eq(cache.current_memory, 0)
   
-  match phase {
-    Some(StringValue(s)) => assert_eq(s, "configured")
-    _ => assert_true(false)
-  }
-  
-  // Test resource active phase
-  let active_attrs = [
-    ("lifecycle.phase", StringValue("active")),
-    ("active.timestamp", StringValue("1234567891"))
-  ]
-  
-  let active_resource = Resource::with_attributes(configured_resource, active_attrs)
-  let active_phase = Resource::get_attribute(active_resource, "lifecycle.phase")
-  
-  match active_phase {
-    Some(StringValue(s)) => assert_eq(s, "active")
-    _ => assert_true(false)
-  }
-  
-  // Test resource cleanup phase
-  let cleanup_attrs = [
-    ("lifecycle.phase", StringValue("cleanup")),
-    ("cleanup.timestamp", StringValue("1234567892"))
-  ]
-  
-  let cleanup_resource = Resource::with_attributes(active_resource, cleanup_attrs)
-  let cleanup_phase = Resource::get_attribute(cleanup_resource, "lifecycle.phase")
-  
-  match cleanup_phase {
-    Some(StringValue(s)) => assert_eq(s, "cleanup")
-    _ => assert_true(false)
-  }
-  
-  // Test resource termination phase
-  let terminated_resource = Resource::new()
-  let terminated_phase = Resource::get_attribute(terminated_resource, "lifecycle.phase")
-  
-  assert_eq(terminated_phase, None)  // Should be empty after termination
-}
-
-test "resource memory management" {
-  // Create multiple resources to test memory usage
-  let mut resources = []
-  
+  // Test cache entry insertion
+  let large_value = "x".repeat(1024) // 1KB value
   for i in 0..=100 {
-    let resource = Resource::new()
-    let attrs = [
-      ("resource.id", StringValue("resource-" + i.to_string())),
-      ("resource.index", IntValue(i)),
-      ("resource.data", StringValue("data-" + i.to_string()))
-    ]
-    
-    let resource_with_attrs = Resource::with_attributes(resource, attrs)
-    resources = resources.push(resource_with_attrs)
+    let key = "key_" + i.to_string()
+    cache_manager.put(cache, key, large_value)
   }
   
-  // Verify all resources are created correctly
-  for i in 0..=100 {
-    let resource = resources[i]
-    let resource_id = Resource::get_attribute(resource, "resource.id")
-    let resource_index = Resource::get_attribute(resource, "resource.index")
-    
-    match resource_id {
-      Some(StringValue(s)) => assert_eq(s, "resource-" + i.to_string())
-      _ => assert_true(false)
-    }
-    
-    match resource_index {
-      Some(IntValue(idx)) => assert_eq(idx, i)
-      _ => assert_true(false)
-    }
+  assert_eq(cache.current_entries, 101)
+  assert_eq(cache.current_memory, 101 * 1024)
+  
+  // Test cache eviction when memory limit reached
+  for i in 0..=10000 {
+    let key = "large_key_" + i.to_string()
+    let value = "x".repeat(1024) // 1KB value
+    cache_manager.put(cache, key, value)
   }
   
-  // Simulate resource cleanup
-  resources = []
+  assert_true(cache.current_entries <= cache.max_entries)
+  assert_true(cache.current_memory <= cache.max_memory)
   
-  // Verify cleanup (in real implementation, would check memory usage)
-  assert_eq(resources.length(), 0)
+  // Test cache resource monitoring
+  let cache_monitor = cache_manager.get_resource_monitor()
+  let cache_stats = cache_monitor.get_cache_statistics(cache)
+  
+  assert_true(cache_stats.put_operations > 0)
+  assert_true(cache_stats.get_operations >= 0)
+  assert_true(cache_stats.evictions > 0)
+  assert_true(cache_stats.hit_ratio >= 0.0)
+  assert_true(cache_stats.hit_ratio <= 1.0)
+  
+  // Test cache cleanup
+  let cleanup_result = cache_manager.cleanup_expired_entries(cache)
+  assert_true(cleanup_result.success)
+  assert_true(cleanup_result.entries_cleaned >= 0)
 }
 
-test "resource attribute limits" {
-  let resource = Resource::new()
+// Test 6: Resource Pool Management
+test "resource pool management" {
+  let resource_pool_manager = ResourcePoolManager::new()
   
-  // Test with many attributes
-  let mut attrs = []
+  // Test generic resource pool creation
+  let pool_config = ResourcePoolConfig::new()
+    .with_max_size(50)
+    .with_min_size(5)
+    .with_acquire_timeout(5000) // 5 seconds
+    .with_idle_timeout(300000)  // 5 minutes
+  
+  let resource_pool = resource_pool_manager.create_pool("generic_resources", pool_config)
+  assert_eq(resource_pool.max_size, 50)
+  assert_eq(resource_pool.min_size, 5)
+  assert_eq(resource_pool.current_size, 0)
+  assert_eq(resource_pool.available_resources, 0)
+  
+  // Test resource creation and acquisition
+  let resource_factory = fn() -> Resource {
+    Resource::new("test_resource", Random::generate_id())
+  }
+  
+  let resource1 = resource_pool_manager.acquire(resource_pool, resource_factory)
+  let resource2 = resource_pool_manager.acquire(resource_pool, resource_factory)
+  let resource3 = resource_pool_manager.acquire(resource_pool, resource_factory)
+  
+  assert_eq(resource_pool.current_size, 3)
+  assert_eq(resource_pool.available_resources, 0)
+  assert_true(resource1.is_valid())
+  assert_true(resource2.is_valid())
+  assert_true(resource3.is_valid())
+  
+  // Test resource release
+  resource_pool_manager.release(resource_pool, resource1)
+  
+  assert_eq(resource_pool.current_size, 3)
+  assert_eq(resource_pool.available_resources, 1)
+  
+  // Test resource validation
+  let validator = fn(resource: Resource) -> Bool {
+    resource.type == "test_resource" && resource.id.length() > 0
+  }
+  
+  let is_valid = resource_pool_manager.validate_resource(resource2, validator)
+  assert_true(is_valid)
+  
+  // Test resource pool metrics
+  let pool_metrics = resource_pool_manager.get_pool_metrics(resource_pool)
+  assert_true(pool_metrics.total_acquisitions >= 3)
+  assert_true(pool_metrics.total_releases >= 1)
+  assert_true(pool_metrics.peak_size >= 3)
+  assert_true(pool_metrics.avg_wait_time >= 0)
+  
+  // Test resource pool scaling
+  resource_pool_manager.scale_pool(resource_pool, 20)
+  assert_eq(resource_pool.max_size, 20)
+  
+  // Test resource pool cleanup
+  let cleanup_result = resource_pool_manager.cleanup_pool(resource_pool)
+  assert_true(cleanup_result.success)
+  assert_true(cleanup_result.resources_cleaned >= 0)
+}
+
+// Test 7: Resource Leak Detection
+test "resource leak detection" {
+  let leak_detector = ResourceLeakDetector::new()
+  
+  // Test memory leak detection
+  leak_detector.start_monitoring("memory")
+  
+  // Simulate potential memory leak
+  let mut leaky_data = []
   for i in 0..=1000 {
-    attrs = attrs.push(("limit.key." + i.to_string(), StringValue("limit.value." + i.to_string())))
+    leaky_data = leaky_data.push([i, i+1, i+2, i+3, i+4])
   }
   
-  let resource_with_many_attrs = Resource::with_attributes(resource, attrs)
+  let memory_leak_report = leak_detector.stop_monitoring("memory")
+  assert_true(memory_leak_report.resources_allocated > 0)
+  assert_true(memory_leak_report.resources_released >= 0)
+  assert_true(memory_leak_report.potential_leaks >= 0)
   
-  // Verify some attributes
-  let first_attr = Resource::get_attribute(resource_with_many_attrs, "limit.key.0")
-  let middle_attr = Resource::get_attribute(resource_with_many_attrs, "limit.key.500")
-  let last_attr = Resource::get_attribute(resource_with_many_attrs, "limit.key.1000")
+  // Test connection leak detection
+  leak_detector.start_monitoring("connections")
   
-  match first_attr {
-    Some(StringValue(s)) => assert_eq(s, "limit.value.0")
-    _ => assert_true(false)
-  }
+  // Simulate connection acquisition without release
+  let connection_manager = ConnectionManager::new()
+  let pool_config = ConnectionPoolConfig::new().with_max_connections(10)
+  let connection_pool = connection_manager.create_pool("test_db", pool_config)
   
-  match middle_attr {
-    Some(StringValue(s)) => assert_eq(s, "limit.value.500")
-    _ => assert_true(false)
-  }
+  let conn1 = connection_manager.acquire_connection(connection_pool)
+  let conn2 = connection_manager.acquire_connection(connection_pool)
+  // Don't release connections to simulate leak
   
-  match last_attr {
-    Some(StringValue(s)) => assert_eq(s, "limit.value.1000")
-    _ => assert_true(false)
-  }
+  let connection_leak_report = leak_detector.stop_monitoring("connections")
+  assert_true(connection_leak_report.resources_allocated >= 2)
+  assert_true(connection_leak_report.resources_released >= 0)
+  assert_true(connection_leak_report.potential_leaks >= 2)
   
-  // Test with very long attribute values
-  let long_value = "x" * 10000
-  let long_attrs = [
-    ("long.key", StringValue(long_value))
-  ]
+  // Test file handle leak detection
+  leak_detector.start_monitoring("file_handles")
   
-  let resource_with_long_value = Resource::with_attributes(resource, long_attrs)
-  let long_attr = Resource::get_attribute(resource_with_long_value, "long.key")
+  // Simulate file handle acquisition without release
+  let file_manager = FileManager::new()
+  let handle1 = file_manager.open_file("/tmp/test1.txt", "w")
+  let handle2 = file_manager.open_file("/tmp/test2.txt", "w")
+  // Don't close handles to simulate leak
   
-  match long_attr {
-    Some(StringValue(s)) => assert_eq(s.length(), 10000)
-    _ => assert_true(false)
-  }
-}
-
-test "resource type management" {
-  // Create different types of resources
-  let service_resource = Resource::new()
-  let host_resource = Resource::new()
-  let process_resource = Resource::new()
-  let telemetry_resource = Resource::new()
+  let file_leak_report = leak_detector.stop_monitoring("file_handles")
+  assert_true(file_leak_report.resources_allocated >= 2)
+  assert_true(file_leak_report.resources_released >= 0)
+  assert_true(file_leak_report.potential_leaks >= 2)
   
-  // Set service attributes
-  let service_attrs = [
-    ("service.name", StringValue("test-service")),
-    ("service.version", StringValue("1.0.0")),
-    ("service.instance.id", StringValue("instance-123"))
-  ]
+  // Test comprehensive leak report
+  let comprehensive_report = leak_detector.generate_comprehensive_report()
+  assert_true(comprehensive_report.total_resources_tracked > 0)
+  assert_true(comprehensive_report.total_potential_leaks > 0)
+  assert_true(comprehensive_report.resource_types.length() >= 3)
   
-  let service_with_attrs = Resource::with_attributes(service_resource, service_attrs)
+  // Test leak prevention recommendations
+  let recommendations = leak_detector.get_leak_prevention_recommendations()
+  assert_true(recommendations.length() > 0)
   
-  // Set host attributes
-  let host_attrs = [
-    ("host.name", StringValue("test-host")),
-    ("host.type", StringValue("virtual")),
-    ("host.arch", StringValue("x86_64"))
-  ]
-  
-  let host_with_attrs = Resource::with_attributes(host_resource, host_attrs)
-  
-  // Set process attributes
-  let process_attrs = [
-    ("process.pid", IntValue(12345)),
-    ("process.executable.name", StringValue("test-app")),
-    ("process.command_line", StringValue("test-app --option"))
-  ]
-  
-  let process_with_attrs = Resource::with_attributes(process_resource, process_attrs)
-  
-  // Set telemetry attributes
-  let telemetry_attrs = [
-    ("telemetry.sdk.name", StringValue("azimuth")),
-    ("telemetry.sdk.version", StringValue("0.1.0")),
-    ("telemetry.sdk.language", StringValue("moonbit"))
-  ]
-  
-  let telemetry_with_attrs = Resource::with_attributes(telemetry_resource, telemetry_attrs)
-  
-  // Verify each resource type
-  let service_name = Resource::get_attribute(service_with_attrs, "service.name")
-  let host_name = Resource::get_attribute(host_with_attrs, "host.name")
-  let process_pid = Resource::get_attribute(process_with_attrs, "process.pid")
-  let sdk_name = Resource::get_attribute(telemetry_with_attrs, "telemetry.sdk.name")
-  
-  match service_name {
-    Some(StringValue(s)) => assert_eq(s, "test-service")
-    _ => assert_true(false)
-  }
-  
-  match host_name {
-    Some(StringValue(s)) => assert_eq(s, "test-host")
-    _ => assert_true(false)
-  }
-  
-  match process_pid {
-    Some(IntValue(pid)) => assert_eq(pid, 12345)
-    _ => assert_true(false)
-  }
-  
-  match sdk_name {
-    Some(StringValue(s)) => assert_eq(s, "azimuth")
-    _ => assert_true(false)
-  }
-  
-  // Merge all resources into a single resource
-  let merged1 = Resource::merge(service_with_attrs, host_with_attrs)
-  let merged2 = Resource::merge(merged1, process_with_attrs)
-  let final_merged = Resource::merge(merged2, telemetry_with_attrs)
-  
-  // Verify final merged resource contains all attributes
-  let final_service_name = Resource::get_attribute(final_merged, "service.name")
-  let final_host_name = Resource::get_attribute(final_merged, "host.name")
-  let final_process_pid = Resource::get_attribute(final_merged, "process.pid")
-  let final_sdk_name = Resource::get_attribute(final_merged, "telemetry.sdk.name")
-  
-  match final_service_name {
-    Some(StringValue(s)) => assert_eq(s, "test-service")
-    _ => assert_true(false)
-  }
-  
-  match final_host_name {
-    Some(StringValue(s)) => assert_eq(s, "test-host")
-    _ => assert_true(false)
-  }
-  
-  match final_process_pid {
-    Some(IntValue(pid)) => assert_eq(pid, 12345)
-    _ => assert_true(false)
-  }
-  
-  match final_sdk_name {
-    Some(StringValue(s)) => assert_eq(s, "azimuth")
-    _ => assert_true(false)
+  let memory_rec = recommendations.find(fn(r) { r.resource_type == "memory" })
+  match memory_rec {
+    Some(rec) => {
+      assert_true(rec.recommendation.contains("memory"))
+      assert_true(rec.severity >= Low)
+    }
+    None => assert_true(false)
   }
 }
 
-test "resource state management" {
-  let resource = Resource::new()
+// Test 8: Resource Quota Management
+test "resource quota management" {
+  let quota_manager = ResourceQuotaManager::new()
   
-  // Initial state
-  let state_attrs = [
-    ("resource.state", StringValue("initialized")),
-    ("state.timestamp", StringValue("1234567890"))
-  ]
+  // Test quota definition
+  let memory_quota = ResourceQuota::new("memory", 100 * 1024 * 1024) // 100MB
+  let connection_quota = ResourceQuota::new("connections", 50)
+  let file_handle_quota = ResourceQuota::new("file_handles", 200)
   
-  let initialized_resource = Resource::with_attributes(resource, state_attrs)
-  let current_state = Resource::get_attribute(initialized_resource, "resource.state")
+  quota_manager.set_quota("memory", memory_quota)
+  quota_manager.set_quota("connections", connection_quota)
+  quota_manager.set_quota("file_handles", file_handle_quota)
   
-  match current_state {
-    Some(StringValue(s)) => assert_eq(s, "initialized")
-    _ => assert_true(false)
+  // Test quota checking
+  let memory_check = quota_manager.check_quota("memory", 50 * 1024 * 1024) // 50MB
+  assert_true(memory_check.allowed)
+  assert_eq(memory_check.remaining, 50 * 1024 * 1024)
+  
+  let memory_exceeded = quota_manager.check_quota("memory", 150 * 1024 * 1024) // 150MB
+  assert_false(memory_exceeded.allowed)
+  assert_eq(memory_exceeded.remaining, 100 * 1024 * 1024)
+  
+  // Test quota reservation
+  let reservation1 = quota_manager.reserve("connections", 10)
+  assert_true(reservation1.success)
+  assert_eq(reservation1.reserved_amount, 10)
+  
+  let reservation2 = quota_manager.reserve("connections", 45)
+  assert_false(reservation2.success)
+  assert_eq(reservation2.reserved_amount, 0)
+  
+  // Test quota release
+  let release_result = quota_manager.release("connections", reservation1.reservation_id, 5)
+  assert_true(release_result.success)
+  
+  // Test quota monitoring
+  let quota_monitor = quota_manager.get_quota_monitor()
+  let quota_stats = quota_monitor.get_quota_statistics()
+  
+  assert_true(quota_stats["memory"].usage > 0)
+  assert_true(quota_stats["memory"].utilization >= 0.0)
+  assert_true(quota_stats["memory"].utilization <= 1.0)
+  
+  assert_true(quota_stats["connections"].usage > 0)
+  assert_true(quota_stats["connections"].utilization >= 0.0)
+  assert_true(quota_stats["connections"].utilization <= 1.0)
+  
+  // Test quota alerts
+  let alert_manager = quota_manager.get_alert_manager()
+  alert_manager.set_threshold("memory", 0.8) // 80% threshold
+  
+  // Simulate high memory usage
+  quota_manager.reserve("memory", 85 * 1024 * 1024) // 85MB
+  
+  let alerts = alert_manager.check_thresholds()
+  assert_true(alerts.length() > 0)
+  
+  let memory_alert = alerts.find(fn(a) { a.resource_type == "memory" })
+  match memory_alert {
+    Some(alert) => {
+      assert_true(alert.threshold_exceeded)
+      assert_true(alert.current_utilization > 0.8)
+    }
+    None => assert_true(false)
   }
   
-  // Transition to configured state
-  let configured_attrs = [
-    ("resource.state", StringValue("configured")),
-    ("state.timestamp", StringValue("1234567891")),
-    ("config.source", StringValue("file"))
-  ]
-  
-  let configured_resource = Resource::with_attributes(initialized_resource, configured_attrs)
-  let configured_state = Resource::get_attribute(configured_resource, "resource.state")
-  let config_source = Resource::get_attribute(configured_resource, "config.source")
-  
-  match configured_state {
-    Some(StringValue(s)) => assert_eq(s, "configured")
-    _ => assert_true(false)
-  }
-  
-  match config_source {
-    Some(StringValue(s)) => assert_eq(s, "file")
-    _ => assert_true(false)
-  }
-  
-  // Transition to active state
-  let active_attrs = [
-    ("resource.state", StringValue("active")),
-    ("state.timestamp", StringValue("1234567892")),
-    ("active.connections", IntValue(10))
-  ]
-  
-  let active_resource = Resource::with_attributes(configured_resource, active_attrs)
-  let active_state = Resource::get_attribute(active_resource, "resource.state")
-  let active_connections = Resource::get_attribute(active_resource, "active.connections")
-  
-  match active_state {
-    Some(StringValue(s)) => assert_eq(s, "active")
-    _ => assert_true(false)
-  }
-  
-  match active_connections {
-    Some(IntValue(conns)) => assert_eq(conns, 10)
-    _ => assert_true(false)
-  }
-  
-  // Transition to stopped state
-  let stopped_attrs = [
-    ("resource.state", StringValue("stopped")),
-    ("state.timestamp", StringValue("1234567893")),
-    ("stop.reason", StringValue("shutdown"))
-  ]
-  
-  let stopped_resource = Resource::with_attributes(active_resource, stopped_attrs)
-  let stopped_state = Resource::get_attribute(stopped_resource, "resource.state")
-  let stop_reason = Resource::get_attribute(stopped_resource, "stop.reason")
-  
-  match stopped_state {
-    Some(StringValue(s)) => assert_eq(s, "stopped")
-    _ => assert_true(false)
-  }
-  
-  match stop_reason {
-    Some(StringValue(s)) => assert_eq(s, "shutdown")
-    _ => assert_true(false)
-  }
-}
-
-test "resource optimization" {
-  // Test resource optimization with duplicate keys
-  let resource = Resource::new()
-  
-  // Add attributes with duplicate keys
-  let attrs1 = [
-    ("duplicate.key", StringValue("value1")),
-    ("unique.key1", StringValue("unique1"))
-  ]
-  
-  let resource1 = Resource::with_attributes(resource, attrs1)
-  
-  let attrs2 = [
-    ("duplicate.key", StringValue("value2")),
-    ("unique.key2", StringValue("unique2"))
-  ]
-  
-  let resource2 = Resource::with_attributes(resource1, attrs2)
-  
-  // Verify optimization (last value should win)
-  let duplicate_value = Resource::get_attribute(resource2, "duplicate.key")
-  let unique1_value = Resource::get_attribute(resource2, "unique.key1")
-  let unique2_value = Resource::get_attribute(resource2, "unique.key2")
-  
-  match duplicate_value {
-    Some(StringValue(s)) => assert_eq(s, "value2")  // Last value should win
-    _ => assert_true(false)
-  }
-  
-  match unique1_value {
-    Some(StringValue(s)) => assert_eq(s, "unique1")
-    _ => assert_true(false)
-  }
-  
-  match unique2_value {
-    Some(StringValue(s)) => assert_eq(s, "unique2")
-    _ => assert_true(false)
-  }
-  
-  // Test resource optimization with empty values
-  let resource3 = Resource::new()
-  let empty_attrs = [
-    ("empty.key", StringValue("")),
-    ("null.key", StringValue("null")),
-    ("valid.key", StringValue("valid"))
-  ]
-  
-  let resource_with_empty = Resource::with_attributes(resource3, empty_attrs)
-  
-  let empty_value = Resource::get_attribute(resource_with_empty, "empty.key")
-  let null_value = Resource::get_attribute(resource_with_empty, "null.key")
-  let valid_value = Resource::get_attribute(resource_with_empty, "valid.key")
-  
-  match empty_value {
-    Some(StringValue(s)) => assert_eq(s, "")
-    _ => assert_true(false)
-  }
-  
-  match null_value {
-    Some(StringValue(s)) => assert_eq(s, "null")
-    _ => assert_true(false)
-  }
-  
-  match valid_value {
-    Some(StringValue(s)) => assert_eq(s, "valid")
-    _ => assert_true(false)
-  }
+  // Test quota adjustment
+  let adjustment_result = quota_manager.adjust_quota("memory", 200 * 1024 * 1024) // Increase to 200MB
+  assert_true(adjustment_result.success)
+  assert_eq(quota_manager.get_quota("memory").limit, 200 * 1024 * 1024)
 }
