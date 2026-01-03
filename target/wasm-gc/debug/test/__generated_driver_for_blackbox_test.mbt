@@ -880,6 +880,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_dashboard_realtime_update_tests.mbt": {
   },
+  "azimuth_cutting_edge_performance_tests.mbt": {
+  },
   "azimuth_custom_telemetry_integration_tests.mbt": {
   },
   "azimuth_custom_telemetry_enhancement_tests.mbt": {

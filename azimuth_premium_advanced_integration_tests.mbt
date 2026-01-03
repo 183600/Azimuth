@@ -1,693 +1,491 @@
 // Azimuth Premium Advanced Integration Tests
-// 高级集成测试用例 - 专注于复杂系统间的集成和边界条件
+// 高级集成测试用例，测试系统各组件间的协同工作
 
-// Test 1: 多层服务架构集成测试
-test "multi-tier service architecture integration" {
-  // 创建多层服务架构
-  let frontend_service = Service::new("frontend", "v1.2.0")
-  let backend_service = Service::new("backend", "v2.1.0")
-  let database_service = Service::new("database", "v3.0.1")
+test "distributed tracing end-to-end workflow" {
+  // 创建根span
+  let root_span = @azimuth.create_span("user.registration")
+  assert_eq(root_span.operation_name, "user.registration")
+  assert_true(root_span.trace_id.length() == 32)
+  assert_true(root_span.span_id.length() == 16)
+  assert_true(root_span.start_time > 0)
   
-  // 配置服务间通信
-  let service_mesh = ServiceMesh::new()
-  ServiceMesh::register_service(service_mesh, frontend_service)
-  ServiceMesh::register_service(service_mesh, backend_service)
-  ServiceMesh::register_service(service_mesh, database_service)
+  // 添加属性
+  @azimuth.set_span_attribute(root_span, "user.id", "12345")
+  @azimuth.set_span_attribute(root_span, "user.email", "test@example.com")
+  @azimuth.set_span_attribute(root_span, "registration.source", "web")
   
-  // 创建遥测上下文
-  let trace_context = TraceContext::create_root("integration_test")
+  // 创建子span - 数据库操作
+  let db_span = @azimuth.create_child_span(root_span, "database.insert_user")
+  @azimuth.set_span_attribute(db_span, "db.system", "postgresql")
+  @azimuth.set_span_attribute(db_span, "db.statement", "INSERT INTO users (id, email) VALUES ($1, $2)")
+  @azimuth.add_span_event(db_span, "query.start", @azimuth.timestamp_now())
   
-  // 模拟请求流程：frontend -> backend -> database
-  let frontend_span = TraceContext::create_span(trace_context, "frontend_request")
-  Span::set_attribute(frontend_span, "http.method", "GET")
-  Span::set_attribute(frontend_span, "http.url", "/api/users")
+  // 模拟数据库操作耗时
+  @azimuth.sleep(50)
   
-  let backend_span = TraceContext::create_child_span(trace_context, frontend_span, "backend_processing")
-  Span::set_attribute(backend_span, "service.name", "backend")
-  Span::set_attribute(backend_span, "operation.type", "query")
+  @azimuth.add_span_event(db_span, "query.complete", @azimuth.timestamp_now())
+  @azimuth.set_span_attribute(db_span, "db.rows_affected", 1)
+  @azimuth.finish_span(db_span)
   
-  let database_span = TraceContext::create_child_span(trace_context, backend_span, "database_query")
-  Span::set_attribute(database_span, "db.statement", "SELECT * FROM users")
-  Span::set_attribute(database_span, "db.type", "postgresql")
+  // 创建子span - 缓存操作
+  let cache_span = @azimuth.create_child_span(root_span, "cache.set_user")
+  @azimuth.set_span_attribute(cache_span, "cache.system", "redis")
+  @azimuth.set_span_attribute(cache_span, "cache.key", "user:12345")
+  @azimuth.add_span_event(cache_span, "cache.write.start", @azimuth.timestamp_now())
   
-  // 验证跨度关系
-  assert_true(Span::is_parent_of(frontend_span, backend_span))
-  assert_true(Span::is_parent_of(backend_span, database_span))
-  assert_eq(Span::get_trace_id(frontend_span), Span::get_trace_id(database_span))
+  // 模拟缓存操作耗时
+  @azimuth.sleep(10)
   
-  // 测试服务间遥测传播
-  let propagation_headers = ServiceMesh::extract_headers(service_mesh, frontend_span)
-  let extracted_context = ServiceMesh::inject_context(service_mesh, propagation_headers)
-  assert_true(TraceContext::is_valid(extracted_context))
+  @azimuth.add_span_event(cache_span, "cache.write.complete", @azimuth.timestamp_now())
+  @azimuth.set_span_status(cache_span, @azimuth.SpanStatus::Ok)
+  @azimuth.finish_span(cache_span)
   
-  // 测试服务依赖图
-  let dependency_graph = ServiceMesh::build_dependency_graph(service_mesh)
-  assert_true(DependencyGraph::has_path(dependency_graph, "frontend", "database"))
-  assert_eq(DependencyGraph::get_path_length(dependency_graph, "frontend", "database"), 2)
+  // 创建子span - 消息队列操作
+  let mq_span = @azimuth.create_child_span(root_span, "message_queue.publish_welcome")
+  @azimuth.set_span_attribute(mq_span, "messaging.system", "rabbitmq")
+  @azimuth.set_span_attribute(mq_span, "messaging.destination", "welcome.email")
+  @azimuth.add_span_event(mq_span, "message.publish.start", @azimuth.timestamp_now())
+  
+  // 模拟消息发布耗时
+  @azimuth.sleep(20)
+  
+  @azimuth.add_span_event(mq_span, "message.publish.complete", @azimuth.timestamp_now())
+  @azimuth.set_span_status(mq_span, @azimuth.SpanStatus::Ok)
+  @azimuth.finish_span(mq_span)
+  
+  // 完成根span
+  @azimuth.add_span_event(root_span, "registration.complete", @azimuth.timestamp_now())
+  @azimuth.set_span_status(root_span, @azimuth.SpanStatus::Ok)
+  @azimuth.finish_span(root_span)
+  
+  // 验证span关系
+  assert_eq(db_span.trace_id, root_span.trace_id)
+  assert_eq(cache_span.trace_id, root_span.trace_id)
+  assert_eq(mq_span.trace_id, root_span.trace_id)
+  
+  assert_eq(db_span.parent_span_id, Some(root_span.span_id))
+  assert_eq(cache_span.parent_span_id, Some(root_span.span_id))
+  assert_eq(mq_span.parent_span_id, Some(root_span.span_id))
+  
+  // 验证span持续时间
+  assert_true(db_span.duration >= 50)
+  assert_true(cache_span.duration >= 10)
+  assert_true(mq_span.duration >= 20)
+  assert_true(root_span.duration >= 80)
 }
 
-// Test 2: 混合云环境遥测集成
-test "hybrid cloud environment telemetry integration" {
-  // 创建混合云环境配置
-  let cloud_config = HybridCloudConfig::new()
-  HybridCloudConfig::add_region(cloud_config, "aws-us-east-1", CloudProvider::AWS)
-  HybridCloudConfig::add_region(cloud_config, "azure-west-europe", CloudProvider::AZURE)
-  HybridCloudConfig::add_region(cloud_config, "gcp-asia-east", CloudProvider::GCP)
-  HybridCloudConfig::add_on_premise(cloud_config, "datacenter-1", "192.168.1.0/24")
-  
-  // 创建跨云遥测聚合器
-  let aggregator = CrossCloudTelemetryAggregator::new(cloud_config)
-  
-  // 模拟各区域的遥测数据
-  let aws_metrics = generate_cloud_metrics("aws-us-east-1", 1000)
-  let azure_metrics = generate_cloud_metrics("azure-west-europe", 800)
-  let gcp_metrics = generate_cloud_metrics("gcp-asia-east", 600)
-  let onprem_metrics = generate_onprem_metrics("datacenter-1", 400)
-  
-  // 聚合遥测数据
-  CrossCloudTelemetryAggregator::add_metrics(aggregator, aws_metrics)
-  CrossCloudTelemetryAggregator::add_metrics(aggregator, azure_metrics)
-  CrossCloudTelemetryAggregator::add_metrics(aggregator, gcp_metrics)
-  CrossCloudTelemetryAggregator::add_metrics(aggregator, onprem_metrics)
-  
-  // 验证跨云数据一致性
-  let aggregated_metrics = CrossCloudTelemetryAggregator::get_aggregated_metrics(aggregator)
-  assert_true(MetricCollection::is_consistent(across_regions, aggregated_metrics))
-  
-  // 测试云间延迟分析
-  let latency_matrix = CrossCloudTelemetryAggregator::analyze_latency(aggregator)
-  assert_true(LatencyMatrix::has_complete_data(latency_matrix))
-  assert_true(LatencyMatrix::get_average_latency(latency_matrix, "aws-us-east-1", "azure-west-europe") > 0)
-  
-  // 测试故障转移场景
-  let failover_scenario = FailoverScenario::new("aws-us-east-1", "azure-west-europe")
-  let failover_result = CrossCloudTelemetryAggregator::simulate_failover(aggregator, failover_scenario)
-  assert_true(FailoverResult::is_successful(failover_result))
-  assert_true(FailoverResult::get_data_loss_percentage(failover_result) < 5.0)
-}
-
-// Test 3: 高级数据流管道集成
-test "advanced data pipeline integration" {
-  // 创建多阶段数据管道
-  let pipeline = DataPipeline::new("telemetry_processing_pipeline")
-  
-  // 配置管道阶段
-  let ingestion_stage = PipelineStage::new("data_ingestion", StageType::INPUT)
-  let validation_stage = PipelineStage::new("data_validation", StageType::PROCESS)
-  let enrichment_stage = PipelineStage::new("data_enrichment", StageType::ENRICH)
-  let aggregation_stage = PipelineStage::new("data_aggregation", StageType::AGGREGATE)
-  let export_stage = PipelineStage::new("data_export", StageType::OUTPUT)
-  
-  DataPipeline::add_stage(pipeline, ingestion_stage)
-  DataPipeline::add_stage(pipeline, validation_stage)
-  DataPipeline::add_stage(pipeline, enrichment_stage)
-  DataPipeline::add_stage(pipeline, aggregation_stage)
-  DataPipeline::add_stage(pipeline, export_stage)
-  
-  // 创建测试数据流
-  let telemetry_stream = TelemetryStream::new()
-  for i in 0..<1000 {
-    let data_point = TelemetryDataPoint::new()
-    TelemetryDataPoint::set_metric(data_point, "response_time", 100.0 + i.to_float() * 0.1)
-    TelemetryDataPoint::set_attribute(data_point, "service", "auth_service")
-    TelemetryDataPoint::set_timestamp(data_point, Time::now() - i * 1000)
-    TelemetryStream::add_point(telemetry_stream, data_point)
+test "metrics collection and aggregation pipeline" {
+  // 创建指标收集器
+  let metrics_collector = @azimuth.MetricsCollector {
+    buffer_size : 1000,
+    flush_interval_ms : 5000,
+    aggregation_window_ms : 60000
   }
   
-  // 执行管道处理
-  let processing_result = DataPipeline::process_stream(pipeline, telemetry_stream)
-  assert_true(PipelineResult::is_successful(processing_result))
-  
-  // 验证各阶段处理结果
-  let stage_results = PipelineResult::get_stage_results(processing_result)
-  assert_eq(stage_results.length(), 5)
-  
-  for stage_result in stage_results {
-    assert_true(StageResult::is_successful(stage_result))
-    assert_true(StageResult::get_processed_count(stage_result) > 0)
-  }
-  
-  // 测试管道监控
-  let pipeline_metrics = DataPipeline::get_metrics(pipeline)
-  assert_true(PipelineMetrics::get_throughput(pipeline_metrics) > 0)
-  assert_true(PipelineMetrics::get_error_rate(pipeline_metrics) < 0.01) // 小于1%错误率
-  assert_true(PipelineMetrics::get_average_latency(pipeline_metrics) < 1000) // 小于1秒
-}
-
-// Test 4: 微服务网格遥测集成
-test "microservice mesh telemetry integration" {
-  // 创建微服务网格
-  let service_mesh = MicroserviceMesh::new("production_mesh")
-  
-  // 注册微服务
-  let services = [
-    ("api-gateway", "v1.3.2", 3),
-    ("auth-service", "v2.1.0", 5),
-    ("user-service", "v1.8.1", 4),
-    ("order-service", "v2.3.0", 6),
-    ("payment-service", "v1.5.2", 3),
-    ("notification-service", "v1.2.1", 2)
-  ]
-  
-  for (name, version, instances) in services {
-    for i in 0..<instances {
-      let service_instance = ServiceInstance::new(name, version, name + "-" + i.to_string())
-      MicroserviceMesh::register_instance(service_mesh, service_instance)
-    }
-  }
-  
-  // 配置服务间通信规则
-  let communication_rules = [
-    ("api-gateway", "auth-service", true),
-    ("api-gateway", "user-service", true),
-    ("api-gateway", "order-service", true),
-    ("order-service", "payment-service", true),
-    ("order-service", "user-service", true),
-    ("order-service", "notification-service", true)
-  ]
-  
-  for (source, target, allowed) in communication_rules {
-    MicroserviceMesh::set_communication_rule(service_mesh, source, target, allowed)
-  }
-  
-  // 模拟服务间调用
-  let call_traces = simulate_service_calls(service_mesh, 1000)
-  
-  // 验证遥测数据收集
-  let mesh_telemetry = MicroserviceMesh::collect_telemetry(service_mesh)
-  assert_true(MeshTelemetry::has_complete_coverage(mesh_telemetry))
-  
-  // 分析服务间依赖
-  let service_dependencies = MicroserviceMesh::analyze_dependencies(service_mesh, call_traces)
-  assert_true(ServiceDependencies::is_consistent_with_rules(service_dependencies, communication_rules))
-  
-  // 测试服务网格健康状况
-  let health_status = MicroserviceMesh::get_health_status(service_mesh)
-  assert_true(HealthStatus::is_healthy(health_status))
-  assert_true(HealthStatus::get_service_availability(health_status) > 0.99) // 99%可用性
-}
-
-// Test 5: 边缘计算遥测集成
-test "edge computing telemetry integration" {
-  // 创建边缘计算环境
-  let edge_environment = EdgeEnvironment::new("factory_edge")
-  
-  // 配置边缘节点
-  let edge_nodes = [
-    EdgeNode::new("edge-node-1", "production-line-1", "192.168.1.10"),
-    EdgeNode::new("edge-node-2", "production-line-2", "192.168.1.11"),
-    EdgeNode::new("edge-node-3", "quality-control", "192.168.1.12"),
-    EdgeNode::new("edge-node-4", "packaging", "192.168.1.13")
-  ]
-  
-  for node in edge_nodes {
-    EdgeEnvironment::add_node(edge_environment, node)
-  }
-  
-  // 配置边缘遥测收集器
-  let edge_collector = EdgeTelemetryCollector::new(edge_environment)
-  EdgeTelemetryCollector::set_collection_interval(edge_collector, 1000) // 1秒间隔
-  EdgeTelemetryCollector::enable_batch_processing(edge_collector, 100) // 批量大小100
-  
-  // 模拟边缘设备遥测数据
-  let device_telemetry = generate_edge_device_telemetry(edge_nodes, 500)
-  
-  // 收集边缘遥测数据
-  for telemetry in device_telemetry {
-    EdgeTelemetryCollector::add_telemetry(edge_collector, telemetry)
-  }
-  
-  // 测试边缘数据处理
-  let processed_data = EdgeTelemetryCollector::process_batch(edge_collector)
-  assert_true(ProcessedData::is_valid(processed_data))
-  assert_eq(ProcessedData::get_count(processed_data), 500)
-  
-  // 测试边缘到云端数据同步
-  let cloud_sync = CloudSync::new("cloud-endpoint")
-  let sync_result = CloudSync::sync_telemetry(cloud_sync, processed_data)
-  assert_true(SyncResult::is_successful(sync_result))
-  assert_true(SyncResult::get_synced_count(sync_result) >= 490) // 至少98%的数据成功同步
-  
-  // 测试边缘分析能力
-  let edge_analytics = EdgeAnalytics::new()
-  let analytics_result = EdgeAnalytics::analyze_realtime(edge_analytics, processed_data)
-  assert_true(AnalyticsResult::has_insights(analytics_result))
-  assert_true(AnalyticsResult::get_anomaly_count(analytics_result) >= 0)
-}
-
-// Test 6: 多租户遥测隔离测试
-test "multi-tenant telemetry isolation" {
-  // 创建多租户环境
-  let tenant_environment = MultiTenantEnvironment::new()
-  
-  // 注册租户
-  let tenants = [
-    Tenant::new("tenant-1", "Acme Corp", "premium"),
-    Tenant::new("tenant-2", "Beta Inc", "standard"),
-    Tenant::new("tenant-3", "Gamma Ltd", "basic"),
-    Tenant::new("tenant-4", "Delta LLC", "premium")
-  ]
-  
-  for tenant in tenants {
-    MultiTenantEnvironment::add_tenant(tenant_environment, tenant)
-  }
-  
-  // 为每个租户创建遥测数据
-  let tenant_telemetry = []
-  for tenant in tenants {
-    let tenant_id = Tenant::get_id(tenant)
-    let telemetry = generate_tenant_telemetry(tenant_id, 200)
-    tenant_telemetry.push((tenant_id, telemetry))
-  }
-  
-  // 测试租户数据隔离
-  for (tenant_id, telemetry) in tenant_telemetry {
-    let tenant_collector = MultiTenantEnvironment::get_collector(tenant_environment, tenant_id)
-    TenantCollector::add_telemetry(tenant_collector, telemetry)
-    
-    // 验证数据只能被租户自己访问
-    let collected_data = TenantCollector::get_data(tenant_collector)
-    assert_eq(CollectedData::get_tenant_id(collected_data), tenant_id)
-    assert_eq(CollectedData::get_count(collected_data), 200)
-    
-    // 尝试跨租户访问（应该失败）
-    let other_tenants = tenants.filter(fn(t) { Tenant::get_id(t) != tenant_id })
-    for other_tenant in other_tenants {
-      let other_tenant_id = Tenant::get_id(other_tenant)
-      let cross_access = TenantCollector::try_access_data(tenant_collector, other_tenant_id)
-      assert_false(cross_access)
-    }
-  }
-  
-  // 测试租户资源限制
-  for tenant in tenants {
-    let tenant_id = Tenant::get_id(tenant)
-    let tier = Tenant::get_tier(tenant)
-    let resource_limits = MultiTenantEnvironment::get_resource_limits(tenant_environment, tier)
-    
-    let tenant_collector = MultiTenantEnvironment::get_collector(tenant_environment, tenant_id)
-    let current_usage = TenantCollector::get_resource_usage(tenant_collector)
-    
-    assert_true(ResourceUsage::is_within_limits(current_usage, resource_limits))
-  }
-  
-  // 测试租户数据聚合
-  let aggregated_data = MultiTenantEnvironment::aggregate_tenant_data(tenant_environment)
-  assert_true(AggregatedData::maintains_isolation(aggregated_data))
-  assert_eq(AggregatedData::get_tenant_count(aggregated_data), tenants.length())
-}
-
-// Test 7: 实时流处理集成
-test "real-time stream processing integration" {
-  // 创建实时流处理环境
-  let stream_processor = RealTimeStreamProcessor::new()
-  
-  // 配置流处理拓扑
-  let topology = StreamTopology::new("telemetry_topology")
-  
-  // 添加数据源
-  let kafka_source = KafkaStreamSource::new("telemetry-topic", "telemetry-group")
-  StreamTopology::add_source(topology, kafka_source)
-  
-  // 添加处理节点
-  let filter_node = FilterNode::new("valid_data_filter", fn(data) { 
-    TelemetryData::is_valid(data) 
-  })
-  let transform_node = TransformNode::new("data_enricher", fn(data) { 
-    enrich_telemetry_data(data) 
-  })
-  let aggregate_node = AggregateNode::new("time_window_aggregator", TimeWindow::new(60000)) // 1分钟窗口
-  
-  StreamTopology::add_node(topology, filter_node)
-  StreamTopology::add_node(topology, transform_node)
-  StreamTopology::add_node(topology, aggregate_node)
-  
-  // 添加数据汇
-  let elasticsearch_sink = ElasticsearchSink::new("telemetry-index")
-  StreamTopology::add_sink(topology, elasticsearch_sink)
-  
-  // 连接拓扑
-  StreamTopology::connect(topology, kafka_source, filter_node)
-  StreamTopology::connect(topology, filter_node, transform_node)
-  StreamTopology::connect(topology, transform_node, aggregate_node)
-  StreamTopology::connect(topology, aggregate_node, elasticsearch_sink)
-  
-  // 启动流处理
-  let processing_job = RealTimeStreamProcessor::start_job(stream_processor, topology)
-  assert_true(ProcessingJob::is_running(processing_job))
-  
-  // 生成测试流数据
-  let test_stream_data = generate_stream_telemetry(1000)
-  for data in test_stream_data {
-    RealTimeStreamProcessor::process_data(stream_processor, data)
-  }
-  
-  // 等待处理完成
-  RealTimeStreamProcessor::flush(stream_processor)
-  
-  // 验证处理结果
-  let processing_metrics = RealTimeStreamProcessor::get_metrics(stream_processor)
-  assert_true(ProcessingMetrics::get_processed_count(processing_metrics) >= 950) // 至少95%的数据被处理
-  assert_true(ProcessingMetrics::get_error_rate(processing_metrics) < 0.05) // 错误率小于5%
-  
-  // 验证聚合结果
-  let aggregated_results = RealTimeStreamProcessor::get_aggregated_results(stream_processor)
-  assert_true(AggregatedResults::has_time_windows(aggregated_results))
-  assert_true(AggregatedResults::get_window_count(aggregated_results) > 0)
-  
-  // 停止流处理作业
-  RealTimeStreamProcessor::stop_job(stream_processor, processing_job)
-  assert_false(ProcessingJob::is_running(processing_job))
-}
-
-// Test 8: 分布式追踪集成
-test "distributed tracing integration" {
-  // 创建分布式追踪环境
-  let tracing_system = DistributedTracingSystem::new()
-  
-  // 配置追踪采样策略
-  let sampling_strategy = AdaptiveSamplingStrategy::new()
-  AdaptiveSamplingStrategy::set_base_rate(sampling_strategy, 0.1) // 10%基础采样率
-  AdaptiveSamplingStrategy::set_error_sampling_rate(sampling_strategy, 1.0) // 100%错误采样
-  AdaptiveSamplingStrategy::set_high_latency_threshold(sampling_strategy, 1000) // 1秒高延迟阈值
-  
-  DistributedTracingSystem::set_sampling_strategy(tracing_system, sampling_strategy)
-  
-  // 创建服务追踪器
-  let service_tracers = []
-  let services = ["api-gateway", "auth-service", "user-service", "order-service"]
-  
-  for service in services {
-    let tracer = DistributedTracingSystem::create_tracer(tracing_system, service)
-    service_tracers.push((service, tracer))
-  }
-  
-  // 模拟分布式请求
-  let distributed_requests = simulate_distributed_requests(service_tracers, 500)
-  
-  // 验证追踪完整性
-  for request in distributed_requests {
-    let trace_id = DistributedRequest::get_trace_id(request)
-    let trace = DistributedTracingSystem::get_trace(tracing_system, trace_id)
-    
-    assert_true(Trace::is_complete(trace))
-    assert_true(Trace::has_root_span(trace))
-    assert_true(Trace::span_count(trace) >= services.length() - 1) // 至少包含所有服务的跨度
-  }
-  
-  // 分析追踪性能
-  let tracing_metrics = DistributedTracingSystem::get_metrics(tracing_system)
-  assert_true(TracingMetrics::get_trace_count(tracing_metrics) == distributed_requests.length())
-  assert_true(TracingMetrics::get_average_span_count(tracing_metrics) >= services.length() - 1)
-  assert_true(TracingMetrics::get_sampling_efficiency(tracing_metrics) > 0.8) // 80%采样效率
-  
-  // 测试追踪数据分析
-  let trace_analysis = DistributedTracingSystem::analyze_traces(tracing_system)
-  assert_true(TraceAnalysis::has_service_map(trace_analysis))
-  assert_true(TraceAnalysis::has_performance_insights(trace_analysis))
-  assert_true(TraceAnalysis::get_critical_path_count(trace_analysis) > 0)
-}
-
-// Test 9: 混合数据源集成
-test "hybrid data source integration" {
-  // 创建混合数据源环境
-  let hybrid_environment = HybridDataSourceEnvironment::new()
-  
-  // 配置不同类型的数据源
-  let relational_db = RelationalDataSource::new("postgresql", "localhost:5432", "telemetry_db")
-  let nosql_db = NoSQLDataSource::new("mongodb", "localhost:27017", "telemetry_collection")
-  let time_series_db = TimeSeriesDataSource::new("influxdb", "localhost:8086", "telemetry_bucket")
-  let message_queue = MessageQueueDataSource::new("kafka", "localhost:9092", "telemetry_topic")
-  let object_storage = ObjectStorageDataSource::new("s3", "telemetry-bucket", "logs/")
-  
-  HybridDataSourceEnvironment::add_source(hybrid_environment, relational_db)
-  HybridDataSourceEnvironment::add_source(hybrid_environment, nosql_db)
-  HybridDataSourceEnvironment::add_source(hybrid_environment, time_series_db)
-  HybridDataSourceEnvironment::add_source(hybrid_environment, message_queue)
-  HybridDataSourceEnvironment::add_source(hybrid_environment, object_storage)
-  
-  // 创建数据源协调器
-  let coordinator = DataSourceCoordinator::new(hybrid_environment)
-  
-  // 生成混合测试数据
-  let test_data = generate_hybrid_test_data(300)
-  
-  // 分发数据到不同数据源
-  for data in test_data {
-    let target_source = determine_target_source(data)
-    DataSourceCoordinator::store_data(coordinator, target_source, data)
-  }
-  
-  // 测试跨数据源查询
-  let complex_query = ComplexQuery::new()
-  ComplexQuery::add_filter(complex_query, "timestamp", ">", "2023-01-01T00:00:00Z")
-  ComplexQuery::add_filter(complex_query, "service", "IN", ["api-gateway", "auth-service"])
-  ComplexQuery::add_aggregation(complex_query, "AVG(response_time)")
-  ComplexQuery::add_grouping(complex_query, "service")
-  
-  let query_result = DataSourceCoordinator::execute_query(coordinator, complex_query)
-  assert_true(QueryResult::is_successful(query_result))
-  assert_true(QueryResult::has_data(query_result))
-  
-  // 验证数据一致性
-  let consistency_check = DataSourceCoordinator::check_consistency(coordinator)
-  assert_true(ConsistencyCheck::is_consistent(consistency_check))
-  
-  // 测试数据源故障转移
-  let failover_scenario = FailoverScenario::new("postgresql", "mongodb")
-  let failover_result = DataSourceCoordinator::test_failover(coordinator, failover_scenario)
-  assert_true(FailoverResult::is_successful(failover_result))
-  assert_true(FailoverResult::get_data_availability(failover_result) > 0.95) // 95%数据可用性
-}
-
-// Test 10: 高级分析集成
-test "advanced analytics integration" {
-  // 创建高级分析环境
-  let analytics_environment = AdvancedAnalyticsEnvironment::new()
-  
-  // 配置分析引擎
-  let statistical_engine = StatisticalAnalysisEngine::new()
-  let ml_engine = MachineLearningEngine::new()
-  let anomaly_detection_engine = AnomalyDetectionEngine::new()
-  let predictive_engine = PredictiveAnalyticsEngine::new()
-  
-  AdvancedAnalyticsEnvironment::add_engine(analytics_environment, statistical_engine)
-  AdvancedAnalyticsEnvironment::add_engine(analytics_environment, ml_engine)
-  AdvancedAnalyticsEnvironment::add_engine(analytics_environment, anomaly_detection_engine)
-  AdvancedAnalyticsEnvironment::add_engine(analytics_environment, predictive_engine)
-  
-  // 生成分析测试数据
-  let historical_data = generate_historical_telemetry(10000) // 10K历史数据点
-  let realtime_data = generate_realtime_telemetry(1000) // 1K实时数据点
-  
-  // 执行统计分析
-  let statistical_analysis = AdvancedAnalyticsEnvironment::run_analysis(
-    analytics_environment, 
-    "statistical", 
-    historical_data
-  )
-  assert_true(StatisticalAnalysis::has_significant_results(statistical_analysis))
-  assert_true(StatisticalAnalysis::get_confidence_level(statistical_analysis) > 0.95)
-  
-  // 执行机器学习分析
-  let ml_analysis = AdvancedAnalyticsEnvironment::run_analysis(
-    analytics_environment, 
-    "machine_learning", 
-    historical_data
-  )
-  assert_true(MLAnalysis::has_trained_model(ml_analysis))
-  assert_true(MLAnalysis::get_model_accuracy(ml_analysis) > 0.8) // 80%准确率
-  
-  // 执行异常检测
-  let anomaly_analysis = AdvancedAnalyticsEnvironment::run_analysis(
-    analytics_environment, 
-    "anomaly_detection", 
-    realtime_data
-  )
-  assert_true(AnomalyAnalysis::has_detected_anomalies(anomaly_analysis))
-  assert_true(AnomalyAnalysis::get_anomaly_count(anomaly_analysis) >= 0)
-  
-  // 执行预测分析
-  let predictive_analysis = AdvancedAnalyticsEnvironment::run_analysis(
-    analytics_environment, 
-    "predictive", 
-    historical_data
-  )
-  assert_true(PredictiveAnalysis::has_predictions(predictive_analysis))
-  assert_true(PredictiveAnalysis::get_prediction_horizon(predictive_analysis) > 0)
-  
-  // 测试分析结果集成
-  let integrated_insights = AdvancedAnalyticsEnvironment::integrate_insights(analytics_environment, [
-    statistical_analysis,
-    ml_analysis,
-    anomaly_analysis,
-    predictive_analysis
+  // 添加计数器指标
+  let request_counter = @azimuth.create_counter("http.requests.total", [
+    ("method", @azimuth.StringValue("GET")),
+    ("endpoint", @azimuth.StringValue("/api/users"))
   ])
-  assert_true(IntegratedInsights::is_comprehensive(integrated_insights))
-  assert_true(IntegratedInsights::has_actionable_recommendations(integrated_insights))
   
-  // 测试分析性能
-  let analytics_metrics = AdvancedAnalyticsEnvironment::get_metrics(analytics_environment)
-  assert_true(AnalyticsMetrics::get_analysis_latency(analytics_metrics) < 30000) // 小于30秒
-  assert_true(AnalyticsMetrics::get_resource_efficiency(analytics_metrics) > 0.7) // 70%资源效率
-}
-
-// 辅助函数实现
-
-// 生成云指标数据
-fn generate_cloud_metrics(region: String, count: Int) -> MetricCollection {
-  let metrics = MetricCollection::new(region)
-  for i in 0..<count {
-    let metric = Metric::new("cpu_usage", 50.0 + Random::float() * 50.0)
-    MetricCollection::add_metric(metrics, metric)
+  // 记录请求计数
+  for i in 1..=100 {
+    @azimuth.counter_add(request_counter, 1, [
+      ("status_code", @azimuth.IntValue(if i % 10 == 0 { 500 } else { 200 }))
+    ])
   }
-  metrics
-}
-
-// 生成本地指标数据
-fn generate_onprem_metrics(datacenter: String, count: Int) -> MetricCollection {
-  let metrics = MetricCollection::new(datacenter)
-  for i in 0..<count {
-    let metric = Metric::new("memory_usage", 60.0 + Random::float() * 30.0)
-    MetricCollection::add_metric(metrics, metric)
+  
+  // 添加直方图指标
+  let response_time_histogram = @azimuth.create_histogram("http.request.duration", [
+    ("method", @azimuth.StringValue("GET")),
+    ("endpoint", @azimuth.StringValue("/api/users"))
+  ])
+  
+  // 记录响应时间
+  for i in 1..=100 {
+    let duration = if i % 4 == 0 { 500.0 } 
+                   else if i % 3 == 0 { 200.0 } 
+                   else if i % 2 == 0 { 100.0 } 
+                   else { 50.0 }
+    @azimuth.histogram_record(response_time_histogram, duration, [
+      ("status_code", @azimuth.IntValue(if i % 10 == 0 { 500 } else { 200 }))
+    ])
   }
-  metrics
-}
-
-// 模拟服务调用
-fn simulate_service_calls(service_mesh: MicroserviceMesh, count: Int) -> Array[CallTrace] {
-  let traces = []
-  for i in 0..<count {
-    let trace = CallTrace::new()
-    CallTrace::set_service(trace, "service-" + (i % 6).to_string())
-    CallTrace::set_operation(trace, "operation-" + (i % 10).to_string())
-    CallTrace::set_duration(trace, 100 + Random::int() % 1000)
-    traces.push(trace)
-  }
-  traces
-}
-
-// 生成边缘设备遥测数据
-fn generate_edge_device_telemetry(nodes: Array[EdgeNode], count: Int) -> Array[EdgeTelemetry] {
-  let telemetry_data = []
-  for i in 0..<count {
-    let node = nodes[i % nodes.length()]
-    let telemetry = EdgeTelemetry::new(EdgeNode::get_id(node))
-    EdgeTelemetry::set_metric(telemetry, "temperature", 20.0 + Random::float() * 60.0)
-    EdgeTelemetry::set_metric(telemetry, "humidity", 30.0 + Random::float() * 40.0)
-    telemetry_data.push(telemetry)
-  }
-  telemetry_data
-}
-
-// 生成租户遥测数据
-fn generate_tenant_telemetry(tenant_id: String, count: Int) -> TenantTelemetry {
-  let telemetry = TenantTelemetry::new(tenant_id)
-  for i in 0..<count {
-    let data_point = TelemetryDataPoint::new()
-    TelemetryDataPoint::set_metric(data_point, "request_count", Random::int() % 1000)
-    TelemetryDataPoint::set_metric(data_point, "response_time", 50.0 + Random::float() * 200.0)
-    TenantTelemetry::add_data_point(telemetry, data_point)
-  }
-  telemetry
-}
-
-// 丰富遥测数据
-fn enrich_telemetry_data(data: TelemetryData) -> TelemetryData {
-  TelemetryData::add_attribute(data, "enriched_at", Time::now().to_string())
-  TelemetryData::add_attribute(data, "processing_node", "node-" + Random::int().to_string())
-  data
-}
-
-// 生成流遥测数据
-fn generate_stream_telemetry(count: Int) -> Array[StreamTelemetryData] {
-  let stream_data = []
-  for i in 0..<count {
-    let data = StreamTelemetryData::new()
-    StreamTelemetryData::set_key(data, "key-" + i.to_string())
-    StreamTelemetryData::set_value(data, Random::float() * 100.0)
-    StreamTelemetryData::set_timestamp(data, Time::now() - i * 1000)
-    stream_data.push(data)
-  }
-  stream_data
-}
-
-// 模拟分布式请求
-fn simulate_distributed_requests(service_tracers: Array[(String, Tracer)], count: Int) -> Array[DistributedRequest] {
-  let requests = []
-  for i in 0..<count {
-    let request = DistributedRequest::new()
-    let trace_id = "trace-" + i.to_string()
-    
-    for (service, tracer) in service_tracers {
-      if Random::float() > 0.3 { // 70%概率调用该服务
-        let span = Tracer::start_span(tracer, service + "_operation")
-        Span::set_trace_id(span, trace_id)
-        Span::set_duration(span, 50 + Random::int() % 500)
-        DistributedRequest::add_span(request, span)
+  
+  // 添加仪表指标
+  let active_connections_gauge = @azimuth.create_gauge("http.connections.active", [
+    ("server", @azimuth.StringValue("api-server-01"))
+  ])
+  
+  // 记录活跃连接数变化
+  @azimuth.gauge_set(active_connections_gauge, 50, [])
+  @azimuth.gauge_set(active_connections_gauge, 75, [])
+  @azimuth.gauge_set(active_connections_gauge, 60, [])
+  @azimuth.gauge_set(active_connections_gauge, 45, [])
+  
+  // 获取聚合指标
+  let aggregated_metrics = metrics_collector.get_aggregated_metrics()
+  assert_true(aggregated_metrics.length() >= 3)
+  
+  // 验证计数器指标
+  let counter_metric = aggregated_metrics.find(fn(m) { m.name == "http.requests.total" })
+  match counter_metric {
+    Some(metric) => {
+      match metric.value {
+        @azimuth.MetricValue::Counter(count) => assert_eq(count, 100)
+        _ => assert_true(false)
       }
     }
-    
-    requests.push(request)
-  }
-  requests
-}
-
-// 生成混合测试数据
-fn generate_hybrid_test_data(count: Int) -> Array[HybridTestData] {
-  let test_data = []
-  for i in 0..<count {
-    let data = HybridTestData::new()
-    HybridTestData::set_id(data, "id-" + i.to_string())
-    HybridTestData::set_timestamp(data, Time::now() - i * 60000) // 每分钟一个数据点
-    HybridTestData::set_service(data, "service-" + (i % 5).to_string())
-    HybridTestData::set_metric(data, "response_time", 50.0 + Random::float() * 150.0)
-    test_data.push(data)
-  }
-  test_data
-}
-
-// 确定目标数据源
-fn determine_target_source(data: HybridTestData) -> String {
-  let service = HybridTestData::get_service(data)
-  match service {
-    "service-0" => "relational_db"
-    "service-1" => "nosql_db"
-    "service-2" => "time_series_db"
-    "service-3" => "message_queue"
-    _ => "object_storage"
-  }
-}
-
-// 生成历史遥测数据
-fn generate_historical_telemetry(count: Int) -> Array[HistoricalTelemetryData] {
-  let historical_data = []
-  let base_time = Time::now() - count * 3600000 // 每小时一个数据点
-  
-  for i in 0..<count {
-    let data = HistoricalTelemetryData::new()
-    HistoricalTelemetryData::set_timestamp(data, base_time + i * 3600000)
-    HistoricalTelemetryData::set_metric(data, "cpu_usage", 30.0 + Random::float() * 40.0)
-    HistoricalTelemetryData::set_metric(data, "memory_usage", 40.0 + Random::float() * 30.0)
-    HistoricalTelemetryData::set_service(data, "service-" + (i % 5).to_string())
-    historical_data.push(data)
+    None => assert_true(false)
   }
   
-  historical_data
-}
-
-// 生成实时遥测数据
-fn generate_realtime_telemetry(count: Int) -> Array[RealtimeTelemetryData] {
-  let realtime_data = []
-  
-  for i in 0..<count {
-    let data = RealtimeTelemetryData::new()
-    RealtimeTelemetryData::set_timestamp(data, Time::now() - i * 1000) // 每秒一个数据点
-    RealtimeTelemetryData::set_metric(data, "request_rate", 10.0 + Random::float() * 90.0)
-    RealtimeTelemetryData::set_metric(data, "error_rate", Random::float() * 5.0)
-    RealtimeTelemetryData::set_service(data, "service-" + (i % 5).to_string())
-    realtime_data.push(data)
+  // 验证直方图指标
+  let histogram_metric = aggregated_metrics.find(fn(m) { m.name == "http.request.duration" })
+  match histogram_metric {
+    Some(metric) => {
+      match metric.value {
+        @azimuth.MetricValue::Histogram(h) => {
+          assert_eq(h.count, 100)
+          assert_true(h.sum > 0.0)
+          assert_true(h.buckets.length() > 0)
+        }
+        _ => assert_true(false)
+      }
+    }
+    None => assert_true(false)
   }
   
-  realtime_data
+  // 验证仪表指标
+  let gauge_metric = aggregated_metrics.find(fn(m) { m.name == "http.connections.active" })
+  match gauge_metric {
+    Some(metric) => {
+      match metric.value {
+        @azimuth.MetricValue::Gauge(value) => assert_eq(value, 45)
+        _ => assert_true(false)
+      }
+    }
+    None => assert_true(false)
+  }
+}
+
+test "log correlation with tracing context" {
+  // 创建span上下文
+  let span_context = @azimuth.SpanContext {
+    trace_id : "1234567890abcdef1234567890abcdef",
+    span_id : "1234567890abcdef",
+    sampled : true,
+    trace_state : "key1=value1,key2=value2"
+  }
+  
+  // 创建日志记录器
+  let logger = @azimuth.create_logger("user.service")
+  @azimuth.set_logger_attribute(logger, "service.version", "1.0.0")
+  @azimuth.set_logger_attribute(logger, "service.instance.id", "instance-123")
+  
+  // 设置日志上下文
+  @azimuth.set_logger_context(logger, span_context)
+  
+  // 记录不同级别的日志
+  @azimuth.log_debug(logger, "Starting user registration process", [
+    ("user.id", "12345"),
+    ("user.email", "test@example.com")
+  ])
+  
+  @azimuth.log_info(logger, "User validation successful", [
+    ("user.id", "12345"),
+    ("validation.result", "success")
+  ])
+  
+  @azimuth.log_warn(logger, "User profile incomplete", [
+    ("user.id", "12345"),
+    ("missing.fields", "phone,address")
+  ])
+  
+  @azimuth.log_error(logger, "Database connection failed", [
+    ("error.code", "DB_CONN_ERROR"),
+    ("error.message", "Connection timeout after 30 seconds"),
+    ("retry.count", "3")
+  ])
+  
+  // 获取日志记录
+  let log_records = @azimuth.get_logger_records(logger)
+  assert_eq(log_records.length(), 4)
+  
+  // 验证日志记录与trace上下文的关联
+  for record in log_records {
+    assert_eq(record.trace_id, Some("1234567890abcdef1234567890abcdef"))
+    assert_eq(record.span_id, Some("1234567890abcdef"))
+    assert_eq(record.service_name, "user.service")
+    assert_eq(record.service_version, Some("1.0.0"))
+    assert_eq(record.service_instance_id, Some("instance-123"))
+  }
+  
+  // 验证日志级别
+  assert_eq(log_records[0].level, @azimuth.LogLevel::Debug)
+  assert_eq(log_records[1].level, @azimuth.LogLevel::Info)
+  assert_eq(log_records[2].level, @azimuth.LogLevel::Warn)
+  assert_eq(log_records[3].level, @azimuth.LogLevel::Error)
+  
+  // 验证日志属性
+  let debug_record = log_records[0]
+  assert_eq(debug_record.message, "Starting user registration process")
+  assert_eq(debug_record.attributes.find(fn(a) { a.0 == "user.id" }).unwrap().1, @azimuth.StringValue("12345"))
+  
+  let error_record = log_records[3]
+  assert_eq(error_record.message, "Database connection failed")
+  assert_eq(error_record.attributes.find(fn(a) { a.0 == "error.code" }).unwrap().1, @azimuth.StringValue("DB_CONN_ERROR"))
+}
+
+test "cross-service context propagation" {
+  // 创建服务A的span上下文
+  let service_a_context = @azimuth.SpanContext {
+    trace_id : "1234567890abcdef1234567890abcdef",
+    span_id : "1111111111111111",
+    sampled : true,
+    trace_state : "key1=value1,key2=value2"
+  }
+  
+  // 创建服务A的span
+  let service_a_span = @azimuth.create_span_with_context("service.a.operation", service_a_context)
+  @azimuth.set_span_attribute(service_a_span, "service.name", "service-a")
+  @azimuth.set_span_attribute(service_a_span, "service.version", "1.0.0")
+  
+  // 创建baggage
+  let baggage = @azimuth.Baggage {
+    entries : [
+      ("user.id", "12345"),
+      ("request.id", "req-67890"),
+      ("region", "us-west-2"),
+      ("tenant.id", "tenant-001")
+    ]
+  }
+  
+  // 创建跨服务传播器
+  let propagator = @azimuth.CrossServicePropagator {
+    injectors : [@azimuth.TraceContextInjector, @azimuth.BaggageInjector],
+    extractors : [@azimuth.TraceContextExtractor, @azimuth.BaggageExtractor]
+  }
+  
+  // 服务A向服务B传播上下文
+  let service_b_carrier = @azimuth.TextMapCarrier { headers : [] }
+  propagator.inject(service_a_span, service_b_carrier)
+  propagator.inject_baggage(baggage, service_b_carrier)
+  
+  // 验证注入的headers
+  assert_true(service_b_carrier.headers.length() >= 2)
+  assert_true(service_b_carrier.headers.any(fn(h) { h.0 == "traceparent" }))
+  assert_true(service_b_carrier.headers.any(fn(h) { h.0 == "baggage" }))
+  
+  // 服务B提取上下文
+  let service_b_context = propagator.extract(service_b_carrier)
+  match service_b_context {
+    Some(ctx) => {
+      assert_eq(ctx.trace_id, service_a_context.trace_id)
+      assert_eq(ctx.sampled, true)
+      assert_eq(ctx.trace_state, "key1=value1,key2=value2")
+    }
+    None => assert_true(false)
+  }
+  
+  let service_b_baggage = propagator.extract_baggage(service_b_carrier)
+  match service_b_baggage {
+    Some(b) => {
+      assert_eq(b.entries.length(), 4)
+      assert_true(b.entries.any(fn(e) { e.0 == "user.id" && e.1 == "12345" }))
+      assert_true(b.entries.any(fn(e) { e.0 == "request.id" && e.1 == "req-67890" }))
+      assert_true(b.entries.any(fn(e) { e.0 == "region" && e.1 == "us-west-2" }))
+      assert_true(b.entries.any(fn(e) { e.0 == "tenant.id" && e.1 == "tenant-001" }))
+    }
+    None => assert_true(false)
+  }
+  
+  // 服务B创建span
+  let service_b_span = @azimuth.create_span_with_context("service.b.operation", service_b_context.unwrap())
+  @azimuth.set_span_attribute(service_b_span, "service.name", "service-b")
+  @azimuth.set_span_attribute(service_b_span, "service.version", "2.0.0")
+  
+  // 服务B向服务C传播上下文
+  let service_c_carrier = @azimuth.TextMapCarrier { headers : [] }
+  propagator.inject(service_b_span, service_c_carrier)
+  propagator.inject_baggage(service_b_baggage.unwrap(), service_c_carrier)
+  
+  // 服务C提取上下文
+  let service_c_context = propagator.extract(service_c_carrier)
+  match service_c_context {
+    Some(ctx) => {
+      assert_eq(ctx.trace_id, service_a_context.trace_id)
+      assert_eq(ctx.sampled, true)
+    }
+    None => assert_true(false)
+  }
+  
+  // 验证跨服务上下文传播链
+  assert_eq(service_a_span.trace_id, service_b_span.trace_id)
+  assert_eq(service_b_context.unwrap().trace_id, service_c_context.unwrap().trace_id)
+  
+  // 验证span父子关系
+  assert_eq(service_b_span.parent_span_id, Some(service_a_span.span_id))
+}
+
+test "resource utilization monitoring" {
+  // 创建资源监控器
+  let resource_monitor = @azimuth.ResourceMonitor {
+    collection_interval_ms : 1000,
+    retention_period_ms : 300000, // 5分钟
+    metrics : [
+      @azimuth.ResourceMetric::CPU,
+      @azimuth.ResourceMetric::Memory,
+      @azimuth.ResourceMetric::Disk,
+      @azimuth.ResourceMetric::Network
+    ]
+  }
+  
+  // 启动资源监控
+  @azimuth.start_resource_monitoring(resource_monitor)
+  
+  // 模拟工作负载
+  @azimuth.sleep(2000)
+  
+  // 获取CPU使用率
+  let cpu_usage = @azimuth.get_cpu_usage(resource_monitor)
+  assert_true(cpu_usage >= 0.0 && cpu_usage <= 100.0)
+  
+  // 获取内存使用率
+  let memory_usage = @azimuth.get_memory_usage(resource_monitor)
+  assert_true(memory_usage >= 0.0 && memory_usage <= 100.0)
+  
+  // 获取磁盘使用率
+  let disk_usage = @azimuth.get_disk_usage(resource_monitor)
+  assert_true(disk_usage >= 0.0 && disk_usage <= 100.0)
+  
+  // 获取网络使用统计
+  let network_stats = @azimuth.get_network_stats(resource_monitor)
+  assert_true(network_stats.bytes_sent >= 0)
+  assert_true(network_stats.bytes_received >= 0)
+  assert_true(network_stats.packets_sent >= 0)
+  assert_true(network_stats.packets_received >= 0)
+  
+  // 获取历史资源使用数据
+  let resource_history = @azimuth.get_resource_history(resource_monitor)
+  assert_true(resource_history.length() >= 1)
+  
+  // 验证历史数据的时间顺序
+  for i in 1..<resource_history.length() {
+    assert_true(resource_history[i].timestamp >= resource_history[i-1].timestamp)
+  }
+  
+  // 计算平均资源使用率
+  let avg_cpu = @azimuth.calculate_average_cpu_usage(resource_history)
+  let avg_memory = @azimuth.calculate_average_memory_usage(resource_history)
+  
+  assert_true(avg_cpu >= 0.0 && avg_cpu <= 100.0)
+  assert_true(avg_memory >= 0.0 && avg_memory <= 100.0)
+  
+  // 检测资源使用异常
+  let anomalies = @azimuth.detect_resource_anomalies(resource_history)
+  assert_true(anomalies.length() >= 0)
+  
+  // 停止资源监控
+  @azimuth.stop_resource_monitoring(resource_monitor)
+}
+
+test "distributed transaction tracing" {
+  // 创建分布式事务追踪器
+  let transaction_tracer = @azimuth.DistributedTransactionTracer {
+    transaction_timeout_ms : 30000,
+    participant_timeout_ms : 10000,
+    retry_policy : @azimuth.RetryPolicy {
+      max_retries : 3,
+      backoff_strategy : @azimuth.BackoffStrategy::Exponential,
+      initial_delay_ms : 1000
+    }
+  }
+  
+  // 开始分布式事务
+  let transaction = transaction_tracer.begin_transaction("order.processing")
+  assert_eq(transaction.transaction_id, transaction.trace_id)
+  assert_eq(transaction.status, @azimuth.TransactionStatus::Active)
+  assert_true(transaction.start_time > 0)
+  
+  // 添加参与者 - 订单服务
+  let order_participant = transaction_tracer.add_participant(transaction, "order.service")
+  assert_eq(order_participant.transaction_id, transaction.transaction_id)
+  assert_eq(order_participant.service_name, "order.service")
+  assert_eq(order_participant.status, @azimuth.ParticipantStatus::Preparing)
+  
+  // 添加参与者 - 库存服务
+  let inventory_participant = transaction_tracer.add_participant(transaction, "inventory.service")
+  assert_eq(inventory_participant.transaction_id, transaction.transaction_id)
+  assert_eq(inventory_participant.service_name, "inventory.service")
+  assert_eq(inventory_participant.status, @azimuth.ParticipantStatus::Preparing)
+  
+  // 添加参与者 - 支付服务
+  let payment_participant = transaction_tracer.add_participant(transaction, "payment.service")
+  assert_eq(payment_participant.transaction_id, transaction.transaction_id)
+  assert_eq(payment_participant.service_name, "payment.service")
+  assert_eq(payment_participant.status, @azimuth.ParticipantStatus::Preparing)
+  
+  // 订单服务准备阶段
+  @azimuth.add_participant_event(order_participant, "prepare.start")
+  @azimuth.sleep(50)
+  @azimuth.add_participant_event(order_participant, "prepare.complete")
+  transaction_tracer.set_participant_status(order_participant, @azimuth.ParticipantStatus::Prepared)
+  
+  // 库存服务准备阶段
+  @azimuth.add_participant_event(inventory_participant, "prepare.start")
+  @azimuth.sleep(100)
+  @azimuth.add_participant_event(inventory_participant, "prepare.complete")
+  transaction_tracer.set_participant_status(inventory_participant, @azimuth.ParticipantStatus::Prepared)
+  
+  // 支付服务准备阶段
+  @azimuth.add_participant_event(payment_participant, "prepare.start")
+  @azimuth.sleep(80)
+  @azimuth.add_participant_event(payment_participant, "prepare.complete")
+  transaction_tracer.set_participant_status(payment_participant, @azimuth.ParticipantStatus::Prepared)
+  
+  // 检查所有参与者是否已准备就绪
+  let all_prepared = transaction_tracer.check_all_participants_prepared(transaction)
+  assert_true(all_prepared)
+  
+  // 提交阶段
+  transaction_tracer.set_transaction_status(transaction, @azimuth.TransactionStatus::Committing)
+  
+  // 订单服务提交
+  @azimuth.add_participant_event(order_participant, "commit.start")
+  @azimuth.sleep(30)
+  @azimuth.add_participant_event(order_participant, "commit.complete")
+  transaction_tracer.set_participant_status(order_participant, @azimuth.ParticipantStatus::Committed)
+  
+  // 库存服务提交
+  @azimuth.add_participant_event(inventory_participant, "commit.start")
+  @azimuth.sleep(40)
+  @azimuth.add_participant_event(inventory_participant, "commit.complete")
+  transaction_tracer.set_participant_status(inventory_participant, @azimuth.ParticipantStatus::Committed)
+  
+  // 支付服务提交
+  @azimuth.add_participant_event(payment_participant, "commit.start")
+  @azimuth.sleep(35)
+  @azimuth.add_participant_event(payment_participant, "commit.complete")
+  transaction_tracer.set_participant_status(payment_participant, @azimuth.ParticipantStatus::Committed)
+  
+  // 完成事务
+  transaction_tracer.set_transaction_status(transaction, @azimuth.TransactionStatus::Committed)
+  transaction_tracer.end_transaction(transaction)
+  
+  // 验证事务状态
+  assert_eq(transaction.status, @azimuth.TransactionStatus::Committed)
+  assert_true(transaction.end_time > transaction.start_time)
+  assert_true(transaction.duration > 0)
+  
+  // 验证参与者状态
+  assert_eq(order_participant.status, @azimuth.ParticipantStatus::Committed)
+  assert_eq(inventory_participant.status, @azimuth.ParticipantStatus::Committed)
+  assert_eq(payment_participant.status, @azimuth.ParticipantStatus::Committed)
+  
+  // 获取事务执行报告
+  let report = transaction_tracer.generate_transaction_report(transaction)
+  assert_true(report.contains("transaction_id"))
+  assert_true(report.contains("status"))
+  assert_true(report.contains("participants"))
+  assert_true(report.contains("duration"))
 }
