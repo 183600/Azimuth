@@ -1,514 +1,543 @@
-// Azimuth Error Handling and Boundary Condition Tests
-// This file contains comprehensive test cases for error handling and boundary conditions
+// Error Handling and Boundary Tests for Azimuth Telemetry System
+// This file contains test cases for error handling and boundary conditions
 
-// Test 1: Null and Empty Input Handling
-test "null and empty input handling" {
-  let telemetry_system = TelemetrySystem::new()
+// Import necessary modules
+// In a real implementation, these would be actual imports
+// import "azimuth/telemetry"
+
+test "attribute value boundary conditions" {
+  // Test attribute values at boundary conditions
+  let attrs = azimuth::Attributes::new()
   
-  // Test null/empty trace ID
-  let result1 = TelemetrySystem::create_span(telemetry_system, "", "test_span")
-  match result1 {
-    Ok(_) => assert_true(false) // Should fail with empty trace ID
-    Err(error) => assert_eq(error.code, "INVALID_TRACE_ID")
+  // Test empty string
+  azimuth::Attributes::set(attrs, "empty.string", azimuth::StringValue(""))
+  let empty_string_result = azimuth::Attributes::get(attrs, "empty.string")
+  match empty_string_result {
+    Some(azimuth::StringValue(v)) => assert_eq(v, "")
+    _ => assert_true(false)
   }
   
-  // Test null/empty span name
-  let result2 = TelemetrySystem::create_span(telemetry_system, "valid_trace_id", "")
-  match result2 {
-    Ok(_) => assert_true(false) // Should fail with empty span name
-    Err(error) => assert_eq(error.code, "INVALID_SPAN_NAME")
+  // Test very long string
+  let long_string = "a".repeat(10000)
+  azimuth::Attributes::set(attrs, "long.string", azimuth::StringValue(long_string))
+  let long_string_result = azimuth::Attributes::get(attrs, "long.string")
+  match long_string_result {
+    Some(azimuth::StringValue(v)) => assert_eq(v, long_string)
+    _ => assert_true(false)
   }
   
-  // Test null attributes
-  let result3 = TelemetrySystem::set_attributes(telemetry_system, "valid_span_id", null)
-  match result3 {
-    Ok(_) => assert_true(false) // Should fail with null attributes
-    Err(error) => assert_eq(error.code, "NULL_ATTRIBUTES")
+  // Test integer boundary values
+  azimuth::Attributes::set(attrs, "max.int", azimuth::IntValue(2147483647))
+  azimuth::Attributes::set(attrs, "min.int", azimuth::IntValue(-2147483648))
+  azimuth::Attributes::set(attrs, "zero.int", azimuth::IntValue(0))
+  
+  let max_int_result = azimuth::Attributes::get(attrs, "max.int")
+  let min_int_result = azimuth::Attributes::get(attrs, "min.int")
+  let zero_int_result = azimuth::Attributes::get(attrs, "zero.int")
+  
+  match max_int_result {
+    Some(azimuth::IntValue(v)) => assert_eq(v, 2147483647)
+    _ => assert_true(false)
   }
   
-  // Test empty attribute key
-  let attrs = Attributes::new()
-  Attributes::set(attrs, "", "value")
-  let result4 = TelemetrySystem::set_attributes(telemetry_system, "valid_span_id", attrs)
-  match result4 {
-    Ok(_) => assert_true(false) // Should fail with empty attribute key
-    Err(error) => assert_eq(error.code, "EMPTY_ATTRIBUTE_KEY")
+  match min_int_result {
+    Some(azimuth::IntValue(v)) => assert_eq(v, -2147483648)
+    _ => assert_true(false)
   }
   
-  // Test valid operations
-  let valid_span = TelemetrySystem::create_span(telemetry_system, "trace_123", "span_456")
-  match valid_span {
-    Ok(span_id) => assert_true(span_id.length() > 0)
-    Err(_) => assert_true(false)
+  match zero_int_result {
+    Some(azimuth::IntValue(v)) => assert_eq(v, 0)
+    _ => assert_true(false)
+  }
+  
+  // Test float boundary values
+  azimuth::Attributes::set(attrs, "max.float", azimuth::FloatValue(1.7976931348623157e+308))
+  azimuth::Attributes::set(attrs, "min.float", azimuth::FloatValue(-1.7976931348623157e+308))
+  azimuth::Attributes::set(attrs, "zero.float", azimuth::FloatValue(0.0))
+  azimuth::Attributes::set(attrs, "inf.float", azimuth::FloatValue(1.0/0.0))
+  azimuth::Attributes::set(attrs, "neg.inf.float", azimuth::FloatValue(-1.0/0.0))
+  azimuth::Attributes::set(attrs, "nan.float", azimuth::FloatValue(0.0/0.0))
+  
+  let max_float_result = azimuth::Attributes::get(attrs, "max.float")
+  let min_float_result = azimuth::Attributes::get(attrs, "min.float")
+  let zero_float_result = azimuth::Attributes::get(attrs, "zero.float")
+  let inf_float_result = azimuth::Attributes::get(attrs, "inf.float")
+  let neg_inf_float_result = azimuth::Attributes::get(attrs, "neg.inf.float")
+  let nan_float_result = azimuth::Attributes::get(attrs, "nan.float")
+  
+  match max_float_result {
+    Some(azimuth::FloatValue(v)) => assert_eq(v, 1.7976931348623157e+308)
+    _ => assert_true(false)
+  }
+  
+  match min_float_result {
+    Some(azimuth::FloatValue(v)) => assert_eq(v, -1.7976931348623157e+308)
+    _ => assert_true(false)
+  }
+  
+  match zero_float_result {
+    Some(azimuth::FloatValue(v)) => assert_eq(v, 0.0)
+    _ => assert_true(false)
+  }
+  
+  match inf_float_result {
+    Some(azimuth::FloatValue(v)) => assert_true(v.is_infinite() && v > 0.0)
+    _ => assert_true(false)
+  }
+  
+  match neg_inf_float_result {
+    Some(azimuth::FloatValue(v)) => assert_true(v.is_infinite() && v < 0.0)
+    _ => assert_true(false)
+  }
+  
+  match nan_float_result {
+    Some(azimuth::FloatValue(v)) => assert_true(v.is_nan())
+    _ => assert_true(false)
+  }
+  
+  // Test boolean values
+  azimuth::Attributes::set(attrs, "true.bool", azimuth::BoolValue(true))
+  azimuth::Attributes::set(attrs, "false.bool", azimuth::BoolValue(false))
+  
+  let true_bool_result = azimuth::Attributes::get(attrs, "true.bool")
+  let false_bool_result = azimuth::Attributes::get(attrs, "false.bool")
+  
+  match true_bool_result {
+    Some(azimuth::BoolValue(v)) => assert_eq(v, true)
+    _ => assert_true(false)
+  }
+  
+  match false_bool_result {
+    Some(azimuth::BoolValue(v)) => assert_eq(v, false)
+    _ => assert_true(false)
+  }
+  
+  // Test empty arrays
+  azimuth::Attributes::set(attrs, "empty.string.array", azimuth::ArrayStringValue([]))
+  azimuth::Attributes::set(attrs, "empty.int.array", azimuth::ArrayIntValue([]))
+  
+  let empty_string_array_result = azimuth::Attributes::get(attrs, "empty.string.array")
+  let empty_int_array_result = azimuth::Attributes::get(attrs, "empty.int.array")
+  
+  match empty_string_array_result {
+    Some(azimuth::ArrayStringValue(v)) => assert_eq(v.length(), 0)
+    _ => assert_true(false)
+  }
+  
+  match empty_int_array_result {
+    Some(azimuth::ArrayIntValue(v)) => assert_eq(v.length(), 0)
+    _ => assert_true(false)
   }
 }
 
-// Test 2: Boundary Value Testing
-test "boundary value testing" {
-  let boundary_tester = BoundaryTester::new()
+test "context boundary conditions" {
+  // Test context at boundary conditions
+  let root_ctx = azimuth::Context::root()
   
-  // Test string length boundaries
-  let min_string = BoundaryTester::min_string(boundary_tester, 1) // 1 character
-  let max_string = BoundaryTester::max_string(boundary_tester, 255) // 255 characters
-  let over_max_string = BoundaryTester::max_string(boundary_tester, 256) // 256 characters
-  
-  // Test minimum boundary
-  let result1 = TelemetrySystem::validate_string(min_string, 1, 255)
-  assert_true(result1.is_valid)
-  
-  // Test maximum boundary
-  let result2 = TelemetrySystem::validate_string(max_string, 1, 255)
-  assert_true(result2.is_valid)
-  
-  // Test beyond maximum boundary
-  let result3 = TelemetrySystem::validate_string(over_max_string, 1, 255)
-  assert_false(result3.is_valid)
-  assert_eq(result3.error_code, "STRING_TOO_LONG")
-  
-  // Test numeric boundaries
-  let min_int = Int::min_value()
-  let max_int = Int::max_value()
-  let zero = 0
-  let negative_one = -1
-  let positive_one = 1
-  
-  // Test int boundaries
-  assert_true(TelemetrySystem::validate_int_range(min_int, min_int, max_int))
-  assert_true(TelemetrySystem::validate_int_range(max_int, min_int, max_int))
-  assert_true(TelemetrySystem::validate_int_range(zero, min_int, max_int))
-  assert_false(TelemetrySystem::validate_int_range(min_int - 1, min_int, max_int))
-  assert_false(TelemetrySystem::validate_int_range(max_int + 1, min_int, max_int))
-  
-  // Test float boundaries
-  let min_float = Float::min_value()
-  let max_float = Float::max_value()
-  let inf = Float::infinity()
-  let neg_inf = Float::neg_infinity()
-  let nan = Float::nan()
-  
-  assert_true(TelemetrySystem::validate_float_range(min_float, min_float, max_float))
-  assert_true(TelemetrySystem::validate_float_range(max_float, min_float, max_float))
-  assert_false(TelemetrySystem::validate_float_range(inf, min_float, max_float))
-  assert_false(TelemetrySystem::validate_float_range(neg_inf, min_float, max_float))
-  assert_false(TelemetrySystem::validate_float_range(nan, min_float, max_float))
-}
-
-// Test 3: Resource Exhaustion Scenarios
-test "resource exhaustion scenarios" {
-  let resource_manager = ResourceManager::new()
-  
-  // Set resource limits
-  ResourceManager::set_limit(resource_manager, "max_spans", 100)
-  ResourceManager::set_limit(resource_manager, "max_attributes", 1000)
-  ResourceManager::set_limit(resource_manager, "max_events", 500)
-  
-  // Test span exhaustion
-  let span_ids = []
-  let mut exhaustion_error = false
-  
-  for i in 0..=150 {
-    let result = ResourceManager::create_span(resource_manager, "span_" + i.to_string())
-    match result {
-      Ok(span_id) => span_ids.push(span_id)
-      Err(error) => {
-        if i >= 100 {
-          exhaustion_error = true
-          assert_eq(error.code, "SPAN_LIMIT_EXCEEDED")
-        }
-      }
-    }
+  // Test empty key
+  let empty_key = azimuth::ContextKey::new("")
+  let ctx_with_empty_key = azimuth::Context::with_value(root_ctx, empty_key, "empty.key.value")
+  let empty_key_result = azimuth::Context::get(ctx_with_empty_key, empty_key)
+  match empty_key_result {
+    Some(v) => assert_eq(v, "empty.key.value")
+    None => assert_true(false)
   }
   
-  assert_true(exhaustion_error)
-  assert_eq(span_ids.length(), 100)
-  
-  // Test attribute exhaustion
-  let first_span = span_ids[0]
-  let mut attr_exhaustion = false
-  
-  for i in 0..=1200 {
-    let result = ResourceManager::add_attribute(resource_manager, first_span, "attr_" + i.to_string(), "value_" + i.to_string())
-    if not(result) && i >= 1000 {
-      attr_exhaustion = true
-    }
+  // Test very long key
+  let long_key = azimuth::ContextKey::new("a".repeat(1000))
+  let ctx_with_long_key = azimuth::Context::with_value(root_ctx, long_key, "long.key.value")
+  let long_key_result = azimuth::Context::get(ctx_with_long_key, long_key)
+  match long_key_result {
+    Some(v) => assert_eq(v, "long.key.value")
+    None => assert_true(false)
   }
   
-  assert_true(attr_exhaustion)
+  // Test empty value
+  let empty_value_key = azimuth::ContextKey::new("empty.value.key")
+  let ctx_with_empty_value = azimuth::Context::with_value(root_ctx, empty_value_key, "")
+  let empty_value_result = azimuth::Context::get(ctx_with_empty_value, empty_value_key)
+  match empty_value_result {
+    Some(v) => assert_eq(v, "")
+    None => assert_true(false)
+  }
   
-  // Test recovery after cleanup
-  ResourceManager::cleanup_spans(resource_manager, 50) // Remove 50 spans
+  // Test very long value
+  let long_value_key = azimuth::ContextKey::new("long.value.key")
+  let long_value = "a".repeat(10000)
+  let ctx_with_long_value = azimuth::Context::with_value(root_ctx, long_value_key, long_value)
+  let long_value_result = azimuth::Context::get(ctx_with_long_value, long_value_key)
+  match long_value_result {
+    Some(v) => assert_eq(v, long_value)
+    None => assert_true(false)
+  }
   
-  let recovery_result = ResourceManager::create_span(resource_manager, "recovery_span")
-  match recovery_result {
-    Ok(_) => assert_true(true) // Should succeed after cleanup
-    Err(_) => assert_true(false)
+  // Test special characters in key and value
+  let special_chars_key = azimuth::ContextKey::new("special.chars.key.!@#$%^&*()")
+  let special_chars_value = "special.chars.value.!@#$%^&*()"
+  let ctx_with_special_chars = azimuth::Context::with_value(root_ctx, special_chars_key, special_chars_value)
+  let special_chars_result = azimuth::Context::get(ctx_with_special_chars, special_chars_key)
+  match special_chars_result {
+    Some(v) => assert_eq(v, special_chars_value)
+    None => assert_true(false)
+  }
+  
+  // Test Unicode characters in key and value
+  let unicode_key = azimuth::ContextKey::new("unicode.key.测试")
+  let unicode_value = "unicode.value.测试"
+  let ctx_with_unicode = azimuth::Context::with_value(root_ctx, unicode_key, unicode_value)
+  let unicode_result = azimuth::Context::get(ctx_with_unicode, unicode_key)
+  match unicode_result {
+    Some(v) => assert_eq(v, unicode_value)
+    None => assert_true(false)
   }
 }
 
-// Test 4: Network Failure Simulation
-test "network failure simulation" {
-  let network_simulator = NetworkSimulator::new()
+test "span context boundary conditions" {
+  // Test span context at boundary conditions
+  // Test empty trace ID
+  let empty_trace_id = ""
+  let span_id = "1234567890123456"
+  let empty_trace_span_context = azimuth::SpanContext::new(empty_trace_id, span_id, true, "")
+  assert_false(azimuth::SpanContext::is_valid(empty_trace_span_context))
   
-  // Test connection timeout
-  NetworkSimulator::set_condition(network_simulator, "connection_timeout", true)
+  // Test empty span ID
+  let trace_id = "12345678901234567890123456789012"
+  let empty_span_id = ""
+  let empty_span_span_context = azimuth::SpanContext::new(trace_id, empty_span_id, true, "")
+  assert_false(azimuth::SpanContext::is_valid(empty_span_span_context))
   
-  let telemetry_client = TelemetryClient::new("https://example.com/telemetry")
-  let result1 = telemetry_client.send_data("test_data")
-  match result1 {
-    Ok(_) => assert_true(false) // Should fail due to timeout
-    Err(error) => assert_eq(error.code, "CONNECTION_TIMEOUT")
-  }
+  // Test valid trace and span IDs
+  let valid_span_context = azimuth::SpanContext::new(trace_id, span_id, true, "")
+  assert_true(azimuth::SpanContext::is_valid(valid_span_context))
   
-  // Test connection refused
-  NetworkSimulator::set_condition(network_simulator, "connection_refused", true)
-  NetworkSimulator::set_condition(network_simulator, "connection_timeout", false)
+  // Test sampling flag
+  let sampled_span_context = azimuth::SpanContext::new(trace_id, span_id, true, "")
+  let not_sampled_span_context = azimuth::SpanContext::new(trace_id, span_id, false, "")
   
-  let result2 = telemetry_client.send_data("test_data")
-  match result2 {
-    Ok(_) => assert_true(false) // Should fail due to connection refused
-    Err(error) => assert_eq(error.code, "CONNECTION_REFUSED")
-  }
+  assert_true(azimuth::SpanContext::is_sampled(sampled_span_context))
+  assert_false(azimuth::SpanContext::is_sampled(not_sampled_span_context))
   
-  // Test network partition
-  NetworkSimulator::set_condition(network_simulator, "network_partition", true)
-  NetworkSimulator::set_condition(network_simulator, "connection_refused", false)
+  // Test trace state
+  let empty_trace_state_span_context = azimuth::SpanContext::new(trace_id, span_id, true, "")
+  let non_empty_trace_state_span_context = azimuth::SpanContext::new(trace_id, span_id, true, "key1=value1,key2=value2")
   
-  let result3 = telemetry_client.send_batch(["data1", "data2", "data3"])
-  match result3 {
-    Ok(_) => assert_true(false) // Should fail due to network partition
-    Err(error) => assert_eq(error.code, "NETWORK_PARTITION")
-  }
-  
-  // Test retry mechanism
-  NetworkSimulator::set_condition(network_simulator, "flaky_network", true)
-  NetworkSimulator::set_condition(network_simulator, "network_partition", false)
-  NetworkSimulator::set_success_rate(network_simulator, 0.3) // 30% success rate
-  
-  telemetry_client.set_retry_policy(RetryPolicy::exponential_backoff(3, 1000L))
-  let result4 = telemetry_client.send_data("important_data")
-  
-  // Should eventually succeed with retries
-  match result4 {
-    Ok(_) => assert_true(true)
-    Err(error) => {
-      // May still fail after all retries, which is acceptable
-      assert_eq(error.code, "MAX_RETRIES_EXCEEDED")
-    }
-  }
+  assert_eq(azimuth::SpanContext::trace_state(empty_trace_state_span_context), "")
+  assert_eq(azimuth::SpanContext::trace_state(non_empty_trace_state_span_context), "key1=value1,key2=value2")
 }
 
-// Test 5: Data Corruption Detection
-test "data corruption detection" {
-  let corruption_detector = CorruptionDetector::new()
+test "metric boundary conditions" {
+  // Test metrics at boundary conditions
+  let provider = azimuth::MeterProvider::noop()
+  let meter = azimuth::MeterProvider::get_meter(provider, "boundary.test.meter")
   
-  // Test valid data
-  let valid_data = "{\"trace_id\":\"abc123\",\"span_id\":\"def456\",\"timestamp\":1234567890}"
-  let result1 = CorruptionDetector::validate(corruption_detector, valid_data)
-  assert_true(result1.is_valid)
+  // Test counter with boundary values
+  let counter = azimuth::Meter::create_counter(meter, "boundary.test.counter")
   
-  // Test corrupted JSON
-  let corrupted_json = "{\"trace_id\":\"abc123\",\"span_id\":\"def456\",\"timestamp\":1234567890"
-  let result2 = CorruptionDetector::validate(corruption_detector, corrupted_json)
-  assert_false(result2.is_valid)
-  assert_eq(result2.error_code, "INVALID_JSON")
+  // Test with zero
+  azimuth::Counter::add(counter, 0.0)
   
-  // Test missing required fields
-  let incomplete_data = "{\"trace_id\":\"abc123\"}"
-  let result3 = CorruptionDetector::validate(corruption_detector, incomplete_data)
-  assert_false(result3.is_valid)
-  assert_eq(result3.error_code, "MISSING_REQUIRED_FIELDS")
+  // Test with maximum finite value
+  azimuth::Counter::add(counter, 1.7976931348623157e+308)
   
-  // Test invalid field types
-  let invalid_types = "{\"trace_id\":123,\"span_id\":\"def456\",\"timestamp\":\"not_a_number\"}"
-  let result4 = CorruptionDetector::validate(corruption_detector, invalid_types)
-  assert_false(result4.is_valid)
-  assert_eq(result4.error_code, "INVALID_FIELD_TYPES")
+  // Test with minimum finite value
+  azimuth::Counter::add(counter, -1.7976931348623157e+308)
   
-  // Test checksum validation
-  let data_with_checksum = CorruptionDetector::add_checksum(corruption_detector, valid_data)
-  let result5 = CorruptionDetector::validate_checksum(corruption_detector, data_with_checksum)
-  assert_true(result5.is_valid)
+  // Test with infinity
+  azimuth::Counter::add(counter, 1.0/0.0)
   
-  // Test corrupted checksum
-  let corrupted_checksum = data_with_checksum.substring(0, data_with_checksum.length() - 1) + "X"
-  let result6 = CorruptionDetector::validate_checksum(corruption_detector, corrupted_checksum)
-  assert_false(result6.is_valid)
-  assert_eq(result6.error_code, "CHECKSUM_MISMATCH")
+  // Test with negative infinity
+  azimuth::Counter::add(counter, -1.0/0.0)
+  
+  // Test histogram with boundary values
+  let histogram = azimuth::Meter::create_histogram(meter, "boundary.test.histogram")
+  
+  // Test with zero
+  azimuth::Histogram::record(histogram, 0.0)
+  
+  // Test with maximum finite value
+  azimuth::Histogram::record(histogram, 1.7976931348623157e+308)
+  
+  // Test with minimum finite value
+  azimuth::Histogram::record(histogram, -1.7976931348623157e+308)
+  
+  // Test with infinity
+  azimuth::Histogram::record(histogram, 1.0/0.0)
+  
+  // Test with negative infinity
+  azimuth::Histogram::record(histogram, -1.0/0.0)
+  
+  // Test updown counter with boundary values
+  let updown_counter = azimuth::Meter::create_updown_counter(meter, "boundary.test.updown_counter")
+  
+  // Test with zero
+  azimuth::UpDownCounter::add(updown_counter, 0.0)
+  
+  // Test with maximum finite value
+  azimuth::UpDownCounter::add(updown_counter, 1.7976931348623157e+308)
+  
+  // Test with minimum finite value
+  azimuth::UpDownCounter::add(updown_counter, -1.7976931348623157e+308)
+  
+  // Test with infinity
+  azimuth::UpDownCounter::add(updown_counter, 1.0/0.0)
+  
+  // Test with negative infinity
+  azimuth::UpDownCounter::add(updown_counter, -1.0/0.0)
+  
+  // Test gauge with boundary values
+  let gauge = azimuth::Meter::create_gauge(meter, "boundary.test.gauge")
+  
+  // Test with zero
+  azimuth::Gauge::record(gauge, 0.0)
+  
+  // Test with maximum finite value
+  azimuth::Gauge::record(gauge, 1.7976931348623157e+308)
+  
+  // Test with minimum finite value
+  azimuth::Gauge::record(gauge, -1.7976931348623157e+308)
+  
+  // Test with infinity
+  azimuth::Gauge::record(gauge, 1.0/0.0)
+  
+  // Test with negative infinity
+  azimuth::Gauge::record(gauge, -1.0/0.0)
 }
 
-// Test 6: Concurrent Error Handling
-test "concurrent error handling" {
-  let concurrent_handler = ConcurrentErrorHandler::new()
+test "log record boundary conditions" {
+  // Test log records at boundary conditions
+  let provider = azimuth::LoggerProvider::noop()
+  let logger = azimuth::LoggerProvider::get_logger(provider, "boundary.test.logger")
   
-  // Test concurrent access to error-prone resources
-  let tasks = []
-  for i in 0..=10 {
-    let task = ConcurrentErrorHandler::spawn_task(concurrent_handler, || => {
-      // Simulate error-prone operation
-      let result = ErrorProneOperation::execute(i)
-      match result {
-        Ok(value) => value
-        Err(error) => {
-          ConcurrentErrorHandler::report_error(concurrent_handler, error)
-          0
-        }
-      }
-    })
-    tasks.push(task)
+  // Test with empty body
+  let empty_body_log = azimuth::LogRecord::new(azimuth::Info, "")
+  let empty_body_result = azimuth::LogRecord::body(empty_body_log)
+  match empty_body_result {
+    Some(body) => assert_eq(body, "")
+    None => assert_true(false)
   }
   
-  // Wait for all tasks to complete
-  let results = []
-  for task in tasks {
-    let result = ConcurrentErrorHandler::wait_for_task(concurrent_handler, task)
-    results.push(result)
+  // Test with very long body
+  let long_body = "a".repeat(10000)
+  let long_body_log = azimuth::LogRecord::new(azimuth::Info, long_body)
+  let long_body_result = azimuth::LogRecord::body(long_body_log)
+  match long_body_result {
+    Some(body) => assert_eq(body, long_body)
+    None => assert_true(false)
   }
   
-  // Verify error handling
-  let error_report = ConcurrentErrorHandler::get_error_report(concurrent_handler)
-  assert_true(error_report.total_errors > 0)
-  assert_true(error_report.handled_errors == error_report.total_errors)
-  
-  // Verify no deadlocks occurred
-  assert_true(error_report.deadlock_count == 0)
-  
-  // Verify error isolation
-  for error in error_report.errors {
-    assert_true(error.task_id >= 0 && error.task_id <= 10)
-    assert_true(error.timestamp > 0)
-    assert_true(error.error_code.length() > 0)
+  // Test with special characters in body
+  let special_chars_body = "Special characters: !@#$%^&*(){}[]|\\:;\"'<>?,./"
+  let special_chars_log = azimuth::LogRecord::new(azimuth::Info, special_chars_body)
+  let special_chars_result = azimuth::LogRecord::body(special_chars_log)
+  match special_chars_result {
+    Some(body) => assert_eq(body, special_chars_body)
+    None => assert_true(false)
   }
+  
+  // Test with Unicode characters in body
+  let unicode_body = "Unicode characters: 测试 🚀 🌟"
+  let unicode_log = azimuth::LogRecord::new(azimuth::Info, unicode_body)
+  let unicode_result = azimuth::LogRecord::body(unicode_log)
+  match unicode_result {
+    Some(body) => assert_eq(body, unicode_body)
+    None => assert_true(false)
+  }
+  
+  // Test all severity levels
+  let trace_log = azimuth::LogRecord::new(azimuth::Trace, "Trace message")
+  let debug_log = azimuth::LogRecord::new(azimuth::Debug, "Debug message")
+  let info_log = azimuth::LogRecord::new(azimuth::Info, "Info message")
+  let warn_log = azimuth::LogRecord::new(azimuth::Warn, "Warn message")
+  let error_log = azimuth::LogRecord::new(azimuth::Error, "Error message")
+  let fatal_log = azimuth::LogRecord::new(azimuth::Fatal, "Fatal message")
+  
+  assert_eq(azimuth::LogRecord::severity_number(trace_log), azimuth::Trace)
+  assert_eq(azimuth::LogRecord::severity_number(debug_log), azimuth::Debug)
+  assert_eq(azimuth::LogRecord::severity_number(info_log), azimuth::Info)
+  assert_eq(azimuth::LogRecord::severity_number(warn_log), azimuth::Warn)
+  assert_eq(azimuth::LogRecord::severity_number(error_log), azimuth::Error)
+  assert_eq(azimuth::LogRecord::severity_number(fatal_log), azimuth::Fatal)
 }
 
-// Test 7: Graceful Degradation
-test "graceful degradation" {
-  let degradation_manager = DegradationManager::new()
+test "resource boundary conditions" {
+  // Test resources at boundary conditions
+  // Test with empty attributes
+  let empty_resource = azimuth::Resource::{ attributes: [] }
+  assert_eq(empty_resource.attributes.length(), 0)
   
-  // Configure degradation levels
-  DegradationManager::add_level(degradation_manager, "full", 1.0)
-  DegradationManager::add_level(degradation_manager, "reduced", 0.7)
-  DegradationManager::add_level(degradation_manager, "minimal", 0.3)
-  DegradationManager::add_level(degradation_manager, "emergency", 0.1)
-  
-  // Test full functionality
-  DegradationManager::set_level(degradation_manager, "full")
-  let result1 = TelemetrySystem::collect_metrics(degradation_manager, "detailed")
-  match result1 {
-    Ok(metrics) => assert_true(metrics.contains("detailed_metrics"))
-    Err(_) => assert_true(false)
+  // Test with a large number of attributes
+  let many_attrs = []
+  for i = 0; i < 1000; i = i + 1 {
+    let key = "many.attrs.key." + i.to_string()
+    let value = azimuth::StringValue("many.attrs.value." + i.to_string())
+    many_attrs.push((key, value))
   }
   
-  // Test reduced functionality
-  DegradationManager::set_level(degradation_manager, "reduced")
-  let result2 = TelemetrySystem::collect_metrics(degradation_manager, "detailed")
-  match result2 {
-    Ok(metrics) => assert_true(metrics.contains("basic_metrics"))
-    Err(_) => assert_true(false)
-  }
+  let many_attrs_resource = azimuth::Resource::{ attributes: many_attrs }
+  assert_eq(many_attrs_resource.attributes.length(), 1000)
   
-  // Test minimal functionality
-  DegradationManager::set_level(degradation_manager, "minimal")
-  let result3 = TelemetrySystem::collect_metrics(degradation_manager, "detailed")
-  match result3 {
-    Ok(metrics) => assert_true(metrics.contains("essential_metrics"))
-    Err(_) => assert_true(false)
-  }
+  // Test with empty attribute keys
+  let empty_key_attrs = [
+    ("", azimuth::StringValue("empty.key.value")),
+    ("non.empty.key", azimuth::StringValue("non.empty.key.value"))
+  ]
   
-  // Test emergency mode
-  DegradationManager::set_level(degradation_manager, "emergency")
-  let result4 = TelemetrySystem::collect_metrics(degradation_manager, "detailed")
-  match result4 {
-    Ok(metrics) => assert_true(metrics.contains("critical_metrics"))
-    Err(_) => assert_true(false)
-  }
+  let empty_key_resource = azimuth::Resource::{ attributes: empty_key_attrs }
+  assert_eq(empty_key_resource.attributes.length(), 2)
   
-  // Test automatic degradation based on system health
-  DegradationManager::enable_auto_degradation(degradation_manager, true)
+  // Test with very long attribute keys
+  let long_key = "a".repeat(1000)
+  let long_key_attrs = [
+    (long_key, azimuth::StringValue("long.key.value"))
+  ]
   
-  // Simulate system stress
-  SystemMonitor::set_cpu_usage(90.0) // High CPU usage
-  SystemMonitor::set_memory_usage(85.0) // High memory usage
+  let long_key_resource = azimuth::Resource::{ attributes: long_key_attrs }
+  assert_eq(long_key_resource.attributes.length(), 1)
   
-  let current_level = DegradationManager::get_current_level(degradation_manager)
-  assert_true(current_level == "reduced" || current_level == "minimal")
+  // Test with empty attribute values
+  let empty_value_attrs = [
+    ("empty.value.key", azimuth::StringValue("")),
+    ("non.empty.value.key", azimuth::StringValue("non.empty.value"))
+  ]
+  
+  let empty_value_resource = azimuth::Resource::{ attributes: empty_value_attrs }
+  assert_eq(empty_value_resource.attributes.length(), 2)
+  
+  // Test with very long attribute values
+  let long_value = "a".repeat(10000)
+  let long_value_attrs = [
+    ("long.value.key", azimuth::StringValue(long_value))
+  ]
+  
+  let long_value_resource = azimuth::Resource::{ attributes: long_value_attrs }
+  assert_eq(long_value_resource.attributes.length(), 1)
 }
 
-// Test 8: Recovery Mechanisms
-test "recovery mechanisms" {
-  let recovery_manager = RecoveryManager::new()
+test "baggage boundary conditions" {
+  // Test baggage at boundary conditions
+  // Test with empty entries
+  let empty_baggage = azimuth::Baggage::{ entries: [] }
+  assert_eq(empty_baggage.entries.length(), 0)
   
-  // Test automatic recovery from transient failures
-  let transient_failure = TransientFailure::new(3, 1000L) // Fail 3 times with 1s intervals
-  
-  let mut attempt_count = 0
-  let result = RecoveryManager::execute_with_retry(recovery_manager, || => {
-    attempt_count = attempt_count + 1
-    if attempt_count <= 3 {
-      Err(Error::new("TRANSIENT_ERROR", "Simulated transient failure"))
-    } else {
-      Ok("success")
-    }
-  }, RetryPolicy::fixed_delay(5, 500L))
-  
-  match result {
-    Ok(value) => assert_eq(value, "success")
-    Err(_) => assert_true(false)
+  // Test with a large number of entries
+  let many_entries = []
+  for i = 0; i < 1000; i = i + 1 {
+    let key = "many.entries.key." + i.to_string()
+    let value = "many.entries.value." + i.to_string()
+    many_entries.push((key, value))
   }
   
-  assert_eq(attempt_count, 4) // 3 failures + 1 success
+  let many_entries_baggage = azimuth::Baggage::{ entries: many_entries }
+  assert_eq(many_entries_baggage.entries.length(), 1000)
   
-  // Test circuit breaker pattern
-  let circuit_breaker = CircuitBreaker::new(5, 10000L) // 5 failures, 10s timeout
+  // Test with empty entry keys
+  let empty_key_entries = [
+    ("", "empty.key.value"),
+    ("non.empty.key", "non.empty.key.value")
+  ]
   
-  // Trigger circuit breaker
-  for i in 0..=6 {
-    let result = CircuitBreaker::execute(circuit_breaker, || => {
-      Err(Error::new("SERVICE_UNAVAILABLE", "Service down"))
-    })
-    
-    if i < 5 {
-      match result {
-        Ok(_) => assert_true(false)
-        Err(error) => assert_eq(error.code, "SERVICE_UNAVAILABLE")
-      }
-    } else {
-      match result {
-        Ok(_) => assert_true(false)
-        Err(error) => assert_eq(error.code, "CIRCUIT_BREAKER_OPEN")
-      }
-    }
-  }
+  let empty_key_baggage = azimuth::Baggage::{ entries: empty_key_entries }
+  assert_eq(empty_key_baggage.entries.length(), 2)
   
-  // Test circuit breaker recovery after timeout
-  Time::sleep(11000L) // Wait for circuit breaker to timeout
+  // Test with very long entry keys
+  let long_key = "a".repeat(1000)
+  let long_key_entries = [
+    (long_key, "long.key.value")
+  ]
   
-  let recovery_result = CircuitBreaker::execute(circuit_breaker, || => {
-    Ok("recovered")
-  })
+  let long_key_baggage = azimuth::Baggage::{ entries: long_key_entries }
+  assert_eq(long_key_baggage.entries.length(), 1)
   
-  match recovery_result {
-    Ok(value) => assert_eq(value, "recovered")
-    Err(_) => assert_true(false)
-  }
+  // Test with empty entry values
+  let empty_value_entries = [
+    ("empty.value.key", ""),
+    ("non.empty.value.key", "non.empty.value")
+  ]
   
-  // Test fallback mechanism
-  let fallback_manager = FallbackManager::new()
+  let empty_value_baggage = azimuth::Baggage::{ entries: empty_value_entries }
+  assert_eq(empty_value_baggage.entries.length(), 2)
   
-  FallbackManager::add_fallback(fallback_manager, "primary", || => {
-    Err(Error::new("PRIMARY_FAILED", "Primary service unavailable"))
-  })
+  // Test with very long entry values
+  let long_value = "a".repeat(10000)
+  let long_value_entries = [
+    ("long.value.key", long_value)
+  ]
   
-  FallbackManager::add_fallback(fallback_manager, "secondary", || => {
-    Ok("fallback_result")
-  })
-  
-  let fallback_result = FallbackManager::execute_with_fallback(fallback_manager, ["primary", "secondary"])
-  match fallback_result {
-    Ok(value) => assert_eq(value, "fallback_result")
-    Err(_) => assert_true(false)
-  }
+  let long_value_baggage = azimuth::Baggage::{ entries: long_value_entries }
+  assert_eq(long_value_baggage.entries.length(), 1)
 }
 
-// Test 9: Edge Case Input Validation
-test "edge case input validation" {
-  let validator = InputValidator::new()
+test "instrumentation scope boundary conditions" {
+  // Test instrumentation scopes at boundary conditions
+  // Test with empty name
+  let empty_name_scope = azimuth::InstrumentationScope::{ 
+    name: "", 
+    version: Some("1.0.0"), 
+    schema_url: Some("https://example.com/schema") 
+  }
+  assert_eq(empty_name_scope.name, "")
   
-  // Test special characters in strings
-  let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
-  let result1 = validator.validate_string(special_chars)
-  assert_true(result1.is_valid)
+  // Test with very long name
+  let long_name = "a".repeat(1000)
+  let long_name_scope = azimuth::InstrumentationScope::{ 
+    name: long_name, 
+    version: Some("1.0.0"), 
+    schema_url: Some("https://example.com/schema") 
+  }
+  assert_eq(long_name_scope.name, long_name)
   
-  // Test Unicode characters
-  let unicode_string = "测试🚀📊télémetrie"
-  let result2 = validator.validate_string(unicode_string)
-  assert_true(result2.is_valid)
-  
-  // Test extremely long strings
-  let very_long_string = "a".repeat(1000000) // 1 million characters
-  let result3 = validator.validate_string(very_long_string)
-  assert_false(result3.is_valid)
-  assert_eq(result3.error_code, "STRING_TOO_LONG")
-  
-  // Test numeric edge cases
-  let very_large_number = 999999999999999999
-  let very_small_number = -999999999999999999
-  let very_precise_float = 0.0000000000000001
-  
-  assert_true(validator.validate_int(very_large_number))
-  assert_true(validator.validate_int(very_small_number))
-  assert_true(validator.validate_float(very_precise_float))
-  
-  // Test array edge cases
-  let empty_array = []
-  let very_large_array = Array::new(100000)
-  
-  assert_true(validator.validate_array(empty_array))
-  assert_false(validator.validate_array(very_large_array))
-  
-  // Test nested structure depth
-  let shallow_structure = create_nested_structure(3)
-  let deep_structure = create_nested_structure(100)
-  
-  assert_true(validator.validate_structure_depth(shallow_structure, 10))
-  assert_false(validator.validate_structure_depth(deep_structure, 10))
-}
-
-// Test 10: Error Reporting and Logging
-test "error reporting and logging" {
-  let error_reporter = ErrorReporter::new()
-  
-  // Test error reporting
-  let test_error = Error::new("TEST_ERROR", "This is a test error")
-  ErrorReporter::report(error_reporter, test_error, [
-    ("context", "test_case"),
-    ("severity", "low"),
-    ("component", "telemetry_system")
-  ])
-  
-  // Test error aggregation
-  for i in 0..=10 {
-    let error = Error::new("REPEATED_ERROR", "Repeated error " + i.to_string())
-    ErrorReporter::report(error_reporter, error, [
-      ("category", "repeated"),
-      ("iteration", i.to_string())
-    ])
+  // Test with empty version
+  let empty_version_scope = azimuth::InstrumentationScope::{ 
+    name: "test.scope", 
+    version: Some(""), 
+    schema_url: Some("https://example.com/schema") 
+  }
+  match empty_version_scope.version {
+    Some(v) => assert_eq(v, "")
+    None => assert_true(false)
   }
   
-  // Test error statistics
-  let stats = ErrorReporter::get_statistics(error_reporter)
-  assert_eq(stats.total_errors, 11)
-  assert_eq(stats.unique_errors, 2)
-  assert_true(stats.error_counts.contains_key("REPEATED_ERROR"))
-  assert_eq(stats.error_counts.get("REPEATED_ERROR"), 10)
-  
-  // Test error filtering
-  let filtered_errors = ErrorReporter::filter_errors(error_reporter, |error| {
-    error.code == "REPEATED_ERROR"
-  })
-  assert_eq(filtered_errors.length(), 10)
-  
-  // Test error export
-  let exported_errors = ErrorReporter::export_json(error_reporter)
-  assert_true(exported_errors.contains("TEST_ERROR"))
-  assert_true(exported_errors.contains("REPEATED_ERROR"))
-  
-  // Test error logging
-  let logger = ErrorLogger::new("error_test.log")
-  ErrorLogger::log_error(logger, test_error, LogLevel::Error)
-  ErrorLogger::log_warning(logger, "This is a warning")
-  ErrorLogger::log_info(logger, "This is info")
-  
-  let log_content = ErrorLogger::read_logs(logger)
-  assert_true(log_content.contains("ERROR"))
-  assert_true(log_content.contains("WARNING"))
-  assert_true(log_content.contains("INFO"))
-}
-
-// Helper functions
-fn create_nested_structure(depth : Int) -> NestedStructure {
-  if depth <= 0 {
-    NestedStructure::leaf("leaf")
-  } else {
-    NestedStructure::node(create_nested_structure(depth - 1))
+  // Test with very long version
+  let long_version = "a".repeat(1000)
+  let long_version_scope = azimuth::InstrumentationScope::{ 
+    name: "test.scope", 
+    version: Some(long_version), 
+    schema_url: Some("https://example.com/schema") 
   }
+  match long_version_scope.version {
+    Some(v) => assert_eq(v, long_version)
+    None => assert_true(false)
+  }
+  
+  // Test with empty schema URL
+  let empty_schema_url_scope = azimuth::InstrumentationScope::{ 
+    name: "test.scope", 
+    version: Some("1.0.0"), 
+    schema_url: Some("") 
+  }
+  match empty_schema_url_scope.schema_url {
+    Some(v) => assert_eq(v, "")
+    None => assert_true(false)
+  }
+  
+  // Test with very long schema URL
+  let long_schema_url = "https://example.com/" + "a".repeat(1000)
+  let long_schema_url_scope = azimuth::InstrumentationScope::{ 
+    name: "test.scope", 
+    version: Some("1.0.0"), 
+    schema_url: Some(long_schema_url) 
+  }
+  match long_schema_url_scope.schema_url {
+    Some(v) => assert_eq(v, long_schema_url)
+    None => assert_true(false)
+  }
+  
+  // Test with None version and schema URL
+  let none_version_schema_url_scope = azimuth::InstrumentationScope::{ 
+    name: "test.scope", 
+    version: None, 
+    schema_url: None 
+  }
+  assert_eq(none_version_schema_url_scope.version, None)
+  assert_eq(none_version_schema_url_scope.schema_url, None)
 }
