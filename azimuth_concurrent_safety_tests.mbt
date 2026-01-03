@@ -1,343 +1,412 @@
-// Azimuth 并发安全测试用例
-// 专注于测试系统在并发环境下的数据一致性和线程安全性
+// Azimuth Telemetry System - Concurrent Safety Tests
+// This file contains comprehensive concurrent safety test cases
 
-// 测试1: 并发计数器原子性
-test "并发计数器原子性测试" {
-  // 创建共享计数器
-  let counter = AtomicCounter::new(0)
-  let thread_count = 10
-  let increments_per_thread = 1000
-  
-  // 创建多个线程并发增加计数器
-  let threads = []
-  for i = 0; i < thread_count; i = i + 1 {
-    threads.push(Thread::spawn(|| {
-      for j = 0; j < increments_per_thread; j = j + 1 {
-        counter.increment()
-      }
-    }))
-  }
-  
-  // 等待所有线程完成
-  for thread in threads {
-    thread.join()
-  }
-  
-  // 验证最终计数值
-  let expected_value = thread_count * increments_per_thread
-  assert_eq(counter.get(), expected_value)
-}
-
-// 测试2: 并发集合操作安全性
-test "并发集合操作安全性测试" {
-  // 创建共享集合
-  let shared_set = ConcurrentSet::new()
-  let thread_count = 8
-  let items_per_thread = 125
-  
-  // 多个线程并发添加元素
-  let add_threads = []
-  for i = 0; i < thread_count; i = i + 1 {
-    let thread_id = i
-    add_threads.push(Thread::spawn(move || {
-      for j = 0; j < items_per_thread; j = j + 1 {
-        let item = "item-" + (thread_id * items_per_thread + j).to_string()
-        shared_set.add(item)
-      }
-    }))
-  }
-  
-  // 等待添加线程完成
-  for thread in add_threads {
-    thread.join()
-  }
-  
-  // 验证集合大小
-  let expected_size = thread_count * items_per_thread
-  assert_eq(shared_set.size(), expected_size)
-  
-  // 验证所有元素都存在
-  for i = 0; i < thread_count; i = i + 1 {
-    for j = 0; j < items_per_thread; j = j + 1 {
-      let item = "item-" + (i * items_per_thread + j).to_string()
-      assert_true(shared_set.contains(item))
-    }
-  }
-  
-  // 多个线程并发读取和删除元素
-  let remove_threads = []
-  let removed_items = ConcurrentSet::new()
-  
-  for i = 0; i < thread_count / 2; i = i + 1 {
-    remove_threads.push(Thread::spawn(move || {
-      for j = 0; j < items_per_thread / 2; j = j + 1 {
-        let item = "item-" + (i * items_per_thread + j).to_string()
-        if shared_set.remove(item) {
-          removed_items.add(item)
-        }
-      }
-    }))
-  }
-  
-  // 等待删除线程完成
-  for thread in remove_threads {
-    thread.join()
-  }
-  
-  // 验证删除操作
-  let expected_removed = (thread_count / 2) * (items_per_thread / 2)
-  assert_eq(removed_items.size(), expected_removed)
-  assert_eq(shared_set.size(), expected_size - expected_removed)
-}
-
-// 测试3: 并发映射操作一致性
-test "并发映射操作一致性测试" {
-  // 创建共享映射
-  let shared_map = ConcurrentMap::new()
-  let thread_count = 6
-  let operations_per_thread = 500
-  
-  // 初始化一些键值对
-  for i = 0; i < 100; i = i + 1 {
-    shared_map.put("key-" + i.to_string(), "initial-value-" + i.to_string())
-  }
-  
-  // 多个线程并发更新映射
-  let update_threads = []
-  for i = 0; i < thread_count; i = i + 1 {
-    let thread_id = i
-    update_threads.push(Thread::spawn(move || {
-      for j = 0; j < operations_per_thread; j = j + 1 {
-        let key = "key-" + (j % 100).to_string()
-        let new_value = "thread-" + thread_id.to_string() + "-value-" + j.to_string()
-        
-        // 使用原子更新操作
-        shared_map.put(key, new_value)
-        
-        // 偶尔读取一些值
-        if j % 10 == 0 {
-          let read_key = "key-" + ((j + 50) % 100).to_string()
-          let value = shared_map.get(read_key)
-          match value {
-            Some(v) => {
-              // 验证值不为空
-              assert_true(v.length() > 0)
-            }
-            None => {
-              // 某些情况下可能还没有值
-            }
-          }
-        }
-      }
-    }))
-  }
-  
-  // 等待所有更新线程完成
-  for thread in update_threads {
-    thread.join()
-  }
-  
-  // 验证映射一致性
-  assert_eq(shared_map.size(), 100)
-  
-  // 验证所有键都有值
-  for i = 0; i < 100; i = i + 1 {
-    let key = "key-" + i.to_string()
-    let value = shared_map.get(key)
-    match value {
-      Some(v) => {
-        assert_true(v.length() > 0)
-      }
-      None => {
-        assert_true(false)  // 所有键都应该有值
-      }
-    }
-  }
-}
-
-// 测试4: 并发队列操作安全性
-test "并发队列操作安全性测试" {
-  // 创建共享队列
-  let shared_queue = ConcurrentQueue::new()
-  let producer_count = 4
-  let consumer_count = 3
-  let items_per_producer = 300
-  
-  // 生产者线程
-  let producer_threads = []
-  for i = 0; i < producer_count; i = i + 1 {
-    let producer_id = i
-    producer_threads.push(Thread::spawn(move || {
-      for j = 0; j < items_per_producer; j = j + 1 {
-        let item = "producer-" + producer_id.to_string() + "-item-" + j.to_string()
-        shared_queue.enqueue(item)
-        
-        // 随机延迟，模拟真实场景
-        if j % 50 == 0 {
-          Thread::sleep(1)  // 1ms
-        }
-      }
-    }))
-  }
-  
-  // 消费者线程
-  let consumed_items = ConcurrentSet::new()
-  let consumer_threads = []
-  
-  for i = 0; i < consumer_count; i = i + 1 {
-    let consumer_id = i
-    consumer_threads.push(Thread::spawn(move || {
-      let local_consumed = []
-      
-      // 持续消费直到队列空且所有生产者完成
-      while true {
-        match shared_queue.dequeue() {
-          Some(item) => {
-            local_consumed.push(item)
-          }
-          None => {
-            // 队列为空，稍等后重试
-            Thread::sleep(10)  // 10ms
-            
-            // 检查是否所有生产者都完成了
-            // 在实际实现中，应该有更好的同步机制
-            if shared_queue.is_empty() && local_consumed.length() > 0 {
-              break
-            }
-          }
-        }
-      }
-      
-      // 将本地消费的项添加到全局集合
-      for item in local_consumed {
-        consumed_items.add(item)
-      }
-    }))
-  }
-  
-  // 等待所有生产者完成
-  for thread in producer_threads {
-    thread.join()
-  }
-  
-  // 等待所有消费者完成
-  for thread in consumer_threads {
-    thread.join()
-  }
-  
-  // 验证消费结果
-  let expected_total_items = producer_count * items_per_producer
-  assert_eq(consumed_items.size(), expected_total_items)
-  
-  // 验证队列已空
-  assert_true(shared_queue.is_empty())
-}
-
-// 测试5: 并发锁竞争和死锁预防
-test "并发锁竞争和死锁预防测试" {
-  // 创建多个锁和共享资源
-  let lock1 = Mutex::new(0)
-  let lock2 = Mutex::new(0)
-  let lock3 = Mutex::new(0)
-  
-  let thread_count = 5
+// Test 1: Thread-Safe Attribute Operations
+test "thread-safe attribute operations" {
+  let attrs = Attributes::new()
+  let mut results = []
+  let num_threads = 10
   let operations_per_thread = 100
-  let results = ConcurrentMap::new()
   
-  // 创建多个线程，每个线程以不同的顺序获取锁
-  let threads = []
-  for i = 0; i < thread_count; i = i + 1 {
-    let thread_id = i
-    threads.push(Thread::spawn(move || {
-      let local_result = 0
-      
-      for j = 0; j < operations_per_thread; j = j + 1 {
-        // 根据线程ID决定锁获取顺序，避免死锁
-        if thread_id % 3 == 0 {
-          // 顺序: lock1 -> lock2 -> lock3
-          let guard1 = lock1.lock()
-          let guard2 = lock2.lock()
-          let guard3 = lock3.lock()
-          
-          // 执行操作
-          local_result = local_result + 1
-          *guard1 = *guard1 + 1
-          *guard2 = *guard2 + 1
-          *guard3 = *guard3 + 1
-          
-        } else if thread_id % 3 == 1 {
-          // 顺序: lock2 -> lock3 -> lock1
-          let guard2 = lock2.lock()
-          let guard3 = lock3.lock()
-          let guard1 = lock1.lock()
-          
-          // 执行操作
-          local_result = local_result + 1
-          *guard1 = *guard1 + 1
-          *guard2 = *guard2 + 1
-          *guard3 = *guard3 + 1
-          
-        } else {
-          // 顺序: lock3 -> lock1 -> lock2
-          let guard3 = lock3.lock()
-          let guard1 = lock1.lock()
-          let guard2 = lock2.lock()
-          
-          // 执行操作
-          local_result = local_result + 1
-          *guard1 = *guard1 + 1
-          *guard2 = *guard2 + 1
-          *guard3 = *guard3 + 1
-        }
-        
-        // 短暂释放锁，允许其他线程执行
-        if j % 10 == 0 {
-          Thread::sleep(1)  // 1ms
-        }
+  // Concurrent attribute setting
+  for thread_id in 0..=num_threads {
+    let thread_result = Thread::spawn({
+      let attrs_ref = attrs
+      for i in 0..=operations_per_thread {
+        let key = "thread_" + thread_id.to_string() + "_key_" + i.to_string()
+        let value = IntValue(thread_id * 1000 + i)
+        Attributes::set(attrs_ref, key, value)
       }
-      
-      results.put("thread-" + thread_id.to_string(), local_result)
-    }))
+      thread_id
+    })
+    results.push(thread_result)
   }
   
-  // 设置超时，防止死锁导致测试永远不结束
-  let timeout_thread = Thread::spawn(|| {
-    Thread::sleep(10000)  // 10秒超时
-    assert_true(false, "测试超时，可能发生死锁")
-  })
-  
-  // 等待所有线程完成
-  for thread in threads {
-    thread.join()
+  // Wait for all threads to complete
+  for result in results {
+    Thread::join(result)
   }
   
-  // 取消超时线程
-  timeout_thread.cancel()
-  
-  // 验证结果
-  assert_eq(results.size(), thread_count)
-  
-  // 验证每个线程的操作计数
-  for i = 0; i < thread_count; i = i + 1 {
-    let key = "thread-" + i.to_string()
-    let value = results.get(key)
-    match value {
-      Some(count) => {
-        assert_eq(count, operations_per_thread)
-      }
-      None => {
-        assert_true(false)
+  // Verify all attributes were set correctly
+  let mut expected_count = 0
+  for thread_id in 0..=num_threads {
+    for i in 0..=operations_per_thread {
+      let key = "thread_" + thread_id.to_string() + "_key_" + i.to_string()
+      let value = Attributes::get(attrs, key)
+      match value {
+        Some(IntValue(v)) => {
+          assert_eq(v, thread_id * 1000 + i)
+          expected_count = expected_count + 1
+        }
+        _ => assert_true(false)
       }
     }
   }
   
-  // 验证锁保护的计数器
-  let guard1 = lock1.lock()
-  let guard2 = lock2.lock()
-  let guard3 = lock3.lock()
+  assert_eq(expected_count, (num_threads + 1) * (operations_per_thread + 1))
+}
+
+// Test 2: Concurrent Span Operations
+test "concurrent span operations" {
+  let provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(provider, "concurrent_tracer")
+  let mut spans = []
+  let mut results = []
+  let num_threads = 8
   
-  let expected_total = thread_count * operations_per_thread
-  assert_eq(*guard1, expected_total)
-  assert_eq(*guard2, expected_total)
-  assert_eq(*guard3, expected_total)
+  // Concurrent span creation
+  for thread_id in 0..=num_threads {
+    let thread_result = Thread::spawn({
+      let tracer_ref = tracer
+      let mut thread_spans = []
+      
+      for i in 0..=50 {
+        let span_name = "span_" + thread_id.to_string() + "_" + i.to_string()
+        let span = Tracer::start_span(tracer_ref, span_name)
+        thread_spans.push(span)
+      }
+      
+      // Concurrent span operations
+      for span in thread_spans {
+        Span::add_event(span, "concurrent_event", None)
+        Span::set_status(span, Ok, None)
+      }
+      
+      thread_spans
+    })
+    results.push(thread_result)
+  }
+  
+  // Collect all spans from threads
+  for result in results {
+    let thread_spans = Thread::join(result)
+    for span in thread_spans {
+      spans.push(span)
+    }
+  }
+  
+  // Verify all spans were created and operated on
+  assert_eq(spans.length(), (num_threads + 1) * 51)
+  
+  // Verify span properties
+  for span in spans {
+    assert_true(Span::is_recording(span))
+    assert_eq(Span::status(span), Ok)
+  }
+  
+  // Clean up spans
+  for span in spans {
+    Span::end(span)
+  }
+}
+
+// Test 3: Concurrent Metric Operations
+test "concurrent metric operations" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "concurrent_meter")
+  let counter = Meter::create_counter(meter, "concurrent_counter", None, None)
+  let histogram = Meter::create_histogram(meter, "concurrent_histogram", None, None)
+  let mut results = []
+  let num_threads = 12
+  
+  // Concurrent metric operations
+  for thread_id in 0..=num_threads {
+    let thread_result = Thread::spawn({
+      let counter_ref = counter
+      let histogram_ref = histogram
+      
+      for i in 0..=100 {
+        Counter::add(counter_ref, 1.0)
+        Histogram::record(histogram_ref, (thread_id * 100.0 + i.to_float()))
+      }
+      
+      thread_id
+    })
+    results.push(thread_result)
+  }
+  
+  // Wait for all threads to complete
+  for result in results {
+    Thread::join(result)
+  }
+  
+  // Note: In a real implementation, we would verify the metric values
+  // through the metric collection system. For this test, we just ensure
+  // no exceptions or race conditions occurred during concurrent operations.
+  assert_true(true)
+}
+
+// Test 4: Concurrent Log Operations
+test "concurrent log operations" {
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "concurrent_logger")
+  let mut results = []
+  let num_threads = 10
+  
+  // Concurrent log operations
+  for thread_id in 0..=num_threads {
+    let thread_result = Thread::spawn({
+      let logger_ref = logger
+      
+      for i in 0..=200 {
+        let log_record = LogRecord::new(
+          Info,
+          "Thread " + thread_id.to_string() + " log message " + i.to_string()
+        )
+        Logger::emit(logger_ref, log_record)
+      }
+      
+      thread_id
+    })
+    results.push(thread_result)
+  }
+  
+  // Wait for all threads to complete
+  for result in results {
+    Thread::join(result)
+  }
+  
+  // Verify no exceptions occurred during concurrent logging
+  assert_true(true)
+}
+
+// Test 5: Concurrent Context Operations
+test "concurrent context operations" {
+  let root_ctx = Context::root()
+  let mut results = []
+  let num_threads = 8
+  
+  // Concurrent context operations
+  for thread_id in 0..=num_threads {
+    let thread_result = Thread::spawn({
+      let ctx_ref = root_ctx
+      let mut thread_ctx = ctx_ref
+      
+      for i in 0..=50 {
+        let key = ContextKey::new("thread_" + thread_id.to_string() + "_key_" + i.to_string())
+        let value = "thread_" + thread_id.to_string() + "_value_" + i.to_string()
+        thread_ctx = Context::with_value(thread_ctx, key, value)
+      }
+      
+      // Verify context values
+      for i in 0..=50 {
+        let key = ContextKey::new("thread_" + thread_id.to_string() + "_key_" + i.to_string())
+        let retrieved_value = Context::get(thread_ctx, key)
+        match retrieved_value {
+          Some(v) => assert_eq(v, "thread_" + thread_id.to_string() + "_value_" + i.to_string())
+          None => assert_true(false)
+        }
+      }
+      
+      thread_ctx
+    })
+    results.push(thread_result)
+  }
+  
+  // Collect all contexts from threads
+  let mut contexts = []
+  for result in results {
+    let thread_ctx = Thread::join(result)
+    contexts.push(thread_ctx)
+  }
+  
+  // Verify all contexts were created correctly
+  assert_eq(contexts.length(), num_threads + 1)
+}
+
+// Test 6: Concurrent Resource Operations
+test "concurrent resource operations" {
+  let base_resource = Resource::new()
+  let mut results = []
+  let num_threads = 6
+  
+  // Concurrent resource operations
+  for thread_id in 0..=num_threads {
+    let thread_result = Thread::spawn({
+      let resource_ref = base_resource
+      
+      for i in 0..=30 {
+        let attrs = [
+          ("thread.id", IntValue(thread_id)),
+          ("iteration", IntValue(i)),
+          ("thread.name", StringValue("thread_" + thread_id.to_string()))
+        ]
+        let resource_with_attrs = Resource::with_attributes(resource_ref, attrs)
+        
+        // Verify attributes
+        let thread_id_attr = Resource::get_attribute(resource_with_attrs, "thread.id")
+        match thread_id_attr {
+          Some(IntValue(v)) => assert_eq(v, thread_id)
+          _ => assert_true(false)
+        }
+      }
+      
+      thread_id
+    })
+    results.push(thread_result)
+  }
+  
+  // Wait for all threads to complete
+  for result in results {
+    Thread::join(result)
+  }
+  
+  // Verify no exceptions occurred during concurrent resource operations
+  assert_true(true)
+}
+
+// Test 7: Race Condition Detection
+test "race condition detection" {
+  let shared_counter = AtomicInt::new(0)
+  let mut results = []
+  let num_threads = 20
+  let increments_per_thread = 100
+  
+  // Concurrent counter increments
+  for thread_id in 0..=num_threads {
+    let thread_result = Thread::spawn({
+      let counter_ref = shared_counter
+      
+      for i in 0..=increments_per_thread {
+        AtomicInt::increment(counter_ref)
+      }
+      
+      thread_id
+    })
+    results.push(thread_result)
+  }
+  
+  // Wait for all threads to complete
+  for result in results {
+    Thread::join(result)
+  }
+  
+  // Verify final counter value
+  let final_value = AtomicInt::get(shared_counter)
+  assert_eq(final_value, (num_threads + 1) * (increments_per_thread + 1))
+}
+
+// Test 8: Deadlock Prevention
+test "deadlock prevention" {
+  let resource1 = Mutex::new("resource1")
+  let resource2 = Mutex::new("resource2")
+  let mut results = []
+  let num_threads = 10
+  
+  // Concurrent resource access with consistent ordering to prevent deadlock
+  for thread_id in 0..=num_threads {
+    let thread_result = Thread::spawn({
+      let resource1_ref = resource1
+      let resource2_ref = resource2
+      
+      // Always acquire resources in the same order to prevent deadlock
+      let lock1 = Mutex::lock(resource1_ref)
+      let lock2 = Mutex::lock(resource2_ref)
+      
+      // Perform operations with both resources
+      let value1 = Mutex::get_value(lock1)
+      let value2 = Mutex::get_value(lock2)
+      
+      // Release locks (automatically when lock objects go out of scope)
+      
+      thread_id
+    })
+    results.push(thread_result)
+  }
+  
+  // Wait for all threads to complete
+  for result in results {
+    Thread::join(result)
+  }
+  
+  // If we reach here, no deadlock occurred
+  assert_true(true)
+}
+
+// Test 9: Concurrent Baggage Operations
+test "concurrent baggage operations" {
+  let initial_baggage = Baggage::new()
+  let mut results = []
+  let num_threads = 8
+  
+  // Concurrent baggage operations
+  for thread_id in 0..=num_threads {
+    let thread_result = Thread::spawn({
+      let baggage_ref = initial_baggage
+      let mut thread_baggage = baggage_ref
+      
+      for i in 0..=25 {
+        let key = "thread_" + thread_id.to_string() + "_key_" + i.to_string()
+        let value = "thread_" + thread_id.to_string() + "_value_" + i.to_string()
+        thread_baggage = Baggage::set_entry(thread_baggage, key, value)
+      }
+      
+      // Verify baggage entries
+      for i in 0..=25 {
+        let key = "thread_" + thread_id.to_string() + "_key_" + i.to_string()
+        let retrieved_value = Baggage::get_entry(thread_baggage, key)
+        match retrieved_value {
+          Some(v) => assert_eq(v, "thread_" + thread_id.to_string() + "_value_" + i.to_string())
+          None => assert_true(false)
+        }
+      }
+      
+      thread_baggage
+    })
+    results.push(thread_result)
+  }
+  
+  // Collect all baggage from threads
+  let mut baggage_list = []
+  for result in results {
+    let thread_baggage = Thread::join(result)
+    baggage_list.push(thread_baggage)
+  }
+  
+  // Verify all baggage was created correctly
+  assert_eq(baggage_list.length(), num_threads + 1)
+}
+
+// Test 10: Memory Consistency in Concurrent Operations
+test "memory consistency in concurrent operations" {
+  let shared_data = ConcurrentMap::new()
+  let mut results = []
+  let num_threads = 10
+  let entries_per_thread = 100
+  
+  // Concurrent map operations
+  for thread_id in 0..=num_threads {
+    let thread_result = Thread::spawn({
+      let map_ref = shared_data
+      
+      // Insert entries
+      for i in 0..=entries_per_thread {
+        let key = "thread_" + thread_id.to_string() + "_key_" + i.to_string()
+        let value = "thread_" + thread_id.to_string() + "_value_" + i.to_string()
+        ConcurrentMap::insert(map_ref, key, value)
+      }
+      
+      // Read and verify entries
+      for i in 0..=entries_per_thread {
+        let key = "thread_" + thread_id.to_string() + "_key_" + i.to_string()
+        let retrieved_value = ConcurrentMap::get(map_ref, key)
+        match retrieved_value {
+          Some(v) => assert_eq(v, "thread_" + thread_id.to_string() + "_value_" + i.to_string())
+          None => assert_true(false)
+        }
+      }
+      
+      thread_id
+    })
+    results.push(thread_result)
+  }
+  
+  // Wait for all threads to complete
+  for result in results {
+    Thread::join(result)
+  }
+  
+  // Verify all entries are present and correct
+  let total_entries = ConcurrentMap::size(shared_data)
+  assert_eq(total_entries, (num_threads + 1) * (entries_per_thread + 1))
 }

@@ -1,1009 +1,896 @@
-// Azimuth Configuration Management and Dynamic Update Tests
-// 配置管理和动态更新测试用例，专注于配置的加载、验证、更新和热重载功能
+// Azimuth Telemetry System - Configuration Management Tests
+// This file contains test cases for configuration management functionality
 
-// Test 1: 基础配置加载和验证测试
-test "基础配置加载和验证测试" {
-  // 模拟配置数据源
-  let config_data = [
-    ("server.port", "8080"),
-    ("server.host", "localhost"),
-    ("database.url", "jdbc:postgresql://localhost:5432/azimuth"),
-    ("database.pool_size", "10"),
-    ("logging.level", "INFO"),
-    ("feature.enabled", "true"),
-    ("cache.ttl", "300")
-  ]
+// Test 1: Configuration Loading and Parsing
+test "configuration loading and parsing" {
+  let config_manager = ConfigurationManager::new()
   
-  // 配置验证规则
-  let validation_rules = [
-    ("server.port", "int", "1", "65535"),
-    ("server.host", "string", "", ""),
-    ("database.url", "string", "", ""),
-    ("database.pool_size", "int", "1", "100"),
-    ("logging.level", "enum", "DEBUG,INFO,WARN,ERROR", ""),
-    ("feature.enabled", "bool", "", ""),
-    ("cache.ttl", "int", "0", "3600")
-  ]
-  
-  // 查找配置值
-  fn get_config_value(config : Array[(String, String)], key : String) -> Option[String] {
-    for (k, v) in config {
-      if k == key {
-        return Some(v)
-      }
-    }
-    return None
-  }
-  
-  // 查找验证规则
-  fn get_validation_rule(rules : Array[(String, String, String, String)], key : String) -> Option[(String, String, String)] {
-    for (k, type_, min_val, max_val) in rules {
-      if k == key {
-        return Some((type_, min_val, max_val))
-      }
-    }
-    return None
-  }
-  
-  // 验证配置值
-  fn validate_config_value(value : String, rule : (String, String, String)) -> Bool {
-    let (type_, min_val, max_val) = rule
-    
-    match type_ {
-      "int" => {
-        match value.parse_int() {
-          Some(int_val) => {
-            let min = min_val.parse_int()
-            let max = max_val.parse_int()
-            match (min, max) {
-              (Some(min_v), Some(max_v)) => int_val >= min_v && int_val <= max_v
-              _ => true
-            }
-          }
-          None => false
-        }
-      }
-      "bool" => {
-        value == "true" || value == "false"
-      }
-      "enum" => {
-        let allowed_values = min_val.split(",")
-        for allowed in allowed_values {
-          if allowed.trim() == value {
-            return true
-          }
-        }
-        return false
-      }
-      "string" => {
-        true // 字符串类型总是有效
-      }
-      _ => false
+  // Test JSON configuration loading
+  let json_config = """
+  {
+    "service": {
+      "name": "azimuth-telemetry",
+      "version": "1.0.0",
+      "port": 8080,
+      "host": "localhost"
+    },
+    "database": {
+      "connection_string": "postgresql://localhost:5432/azimuth",
+      "max_connections": 10,
+      "timeout": 30000
+    },
+    "logging": {
+      "level": "info",
+      "format": "json",
+      "output": "console"
     }
   }
+  """
   
-  // 加载和验证配置
-  let mut validated_config = []
-  let mut validation_errors = []
+  let config_result = config_manager.load_from_string(json_config, "json")
+  assert_true(config_result.is_success)
   
-  for (key, value) in config_data {
-    match get_validation_rule(validation_rules, key) {
-      Some(rule) => {
-        if validate_config_value(value, rule) {
-          validated_config = validated_config + [(key, value)]
+  let config = config_result.config
+  assert_eq(config.get("service.name"), Some("azimuth-telemetry"))
+  assert_eq(config.get("service.version"), Some("1.0.0"))
+  assert_eq(config.get("service.port"), Some("8080"))
+  assert_eq(config.get("database.max_connections"), Some("10"))
+  
+  // Test YAML configuration loading
+  let yaml_config = """
+  service:
+    name: azimuth-telemetry
+    version: "1.0.0"
+    port: 8080
+    host: localhost
+  telemetry:
+    enabled: true
+    sampling_rate: 0.1
+    export_interval: 60000
+  """
+  
+  let yaml_result = config_manager.load_from_string(yaml_config, "yaml")
+  assert_true(yaml_result.is_success)
+  
+  let yaml_config_obj = yaml_result.config
+  assert_eq(yaml_config_obj.get("service.name"), Some("azimuth-telemetry"))
+  assert_eq(yaml_config_obj.get("telemetry.enabled"), Some("true"))
+  assert_eq(yaml_config_obj.get("telemetry.sampling_rate"), Some("0.1"))
+  
+  // Test TOML configuration loading
+  let toml_config = """
+  [service]
+  name = "azimuth-telemetry"
+  version = "1.0.0"
+  
+  [database]
+  connection_string = "postgresql://localhost:5432/azimuth"
+  max_connections = 10
+  
+  [cache]
+  enabled = true
+  ttl = 3600
+  """
+  
+  let toml_result = config_manager.load_from_string(toml_config, "toml")
+  assert_true(toml_result.is_success)
+  
+  let toml_config_obj = toml_result.config
+  assert_eq(toml_config_obj.get("service.name"), Some("azimuth-telemetry"))
+  assert_eq(toml_config_obj.get("cache.enabled"), Some("true"))
+  assert_eq(toml_config_obj.get("cache.ttl"), Some("3600"))
+}
+
+// Test 2: Configuration Validation
+test "configuration validation" {
+  let config_manager = ConfigurationManager::new()
+  
+  // Define validation schema
+  let validation_schema = ValidationSchema::new()
+    .add_required_field("service.name", StringType)
+    .add_required_field("service.port", IntegerType)
+    .add_optional_field("service.host", StringType, "localhost")
+    .add_required_field("database.connection_string", StringType)
+    .add_optional_field("database.max_connections", IntegerType, 5)
+    .add_range_constraint("service.port", 1, 65535)
+    .add_range_constraint("database.max_connections", 1, 100)
+  
+  config_manager.set_validation_schema(validation_schema)
+  
+  // Test valid configuration
+  let valid_config = """
+  {
+    "service": {
+      "name": "azimuth-telemetry",
+      "port": 8080,
+      "host": "localhost"
+    },
+    "database": {
+      "connection_string": "postgresql://localhost:5432/azimuth",
+      "max_connections": 10
+    }
+  }
+  """
+  
+  let valid_result = config_manager.validate_config(valid_config)
+  assert_true(valid_result.is_valid)
+  assert_eq(valid_result.errors.length(), 0)
+  
+  // Test invalid configuration (missing required fields)
+  let invalid_config1 = """
+  {
+    "service": {
+      "port": 8080
+    },
+    "database": {
+      "max_connections": 10
+    }
+  }
+  """
+  
+  let invalid_result1 = config_manager.validate_config(invalid_config1)
+  assert_false(invalid_result1.is_valid)
+  assert_true(invalid_result1.errors.length() >= 2)
+  assert_true(invalid_result1.errors.any(fn(e) { e.contains("service.name") }))
+  assert_true(invalid_result1.errors.any(fn(e) { e.contains("database.connection_string") }))
+  
+  // Test invalid configuration (out of range values)
+  let invalid_config2 = """
+  {
+    "service": {
+      "name": "azimuth-telemetry",
+      "port": 70000,
+      "host": "localhost"
+    },
+    "database": {
+      "connection_string": "postgresql://localhost:5432/azimuth",
+      "max_connections": 150
+    }
+  }
+  """
+  
+  let invalid_result2 = config_manager.validate_config(invalid_config2)
+  assert_false(invalid_result2.is_valid)
+  assert_true(invalid_result2.errors.length() >= 2)
+  assert_true(invalid_result2.errors.any(fn(e) { e.contains("service.port") && e.contains("range") }))
+  assert_true(invalid_result2.errors.any(fn(e) { e.contains("database.max_connections") && e.contains("range") }))
+  
+  // Test custom validation rules
+  let custom_validator = fn(key: String, value: String) -> Result[Bool, String] {
+    match key {
+      "service.name" => {
+        if value.length() >= 3 && value.length() <= 50 {
+          Ok(true)
         } else {
-          validation_errors = validation_errors + [("Invalid value for " + key, value)]
+          Err("Service name must be between 3 and 50 characters")
         }
       }
-      None => {
-        validation_errors = validation_errors + [("No validation rule for " + key, value)]
-      }
-    }
-  }
-  
-  // 验证配置加载结果
-  assert_eq(validated_config.length(), 7)
-  assert_eq(validation_errors.length(), 0)
-  
-  // 验证具体配置值
-  let server_port = get_config_value(validated_config, "server.port")
-  match server_port {
-    Some(port) => assert_eq(port, "8080")
-    None => assert_true(false)
-  }
-  
-  let logging_level = get_config_value(validated_config, "logging.level")
-  match logging_level {
-    Some(level) => assert_eq(level, "INFO")
-    None => assert_true(false)
-  }
-  
-  let feature_enabled = get_config_value(validated_config, "feature.enabled")
-  match feature_enabled {
-    Some(enabled) => assert_eq(enabled, "true")
-    None => assert_true(false)
-  }
-}
-
-// Test 2: 配置层次结构和继承测试
-test "配置层次结构和继承测试" {
-  // 默认配置
-  let default_config = [
-    ("server.port", "8080"),
-    ("server.host", "0.0.0.0"),
-    ("logging.level", "INFO"),
-    ("database.pool_size", "10"),
-    ("cache.enabled", "true")
-  ]
-  
-  // 环境特定配置
-  let environment_config = [
-    ("server.host", "localhost"),
-    ("logging.level", "DEBUG"),
-    ("database.pool_size", "20")
-  ]
-  
-  // 应用特定配置
-  let application_config = [
-    ("server.port", "9090"),
-    ("cache.enabled", "false")
-  ]
-  
-  // 合并配置（优先级：应用 > 环境 > 默认）
-  fn merge_configs(base : Array[(String, String)], override : Array[(String, String)]) -> Array[(String, String)] {
-    let mut merged = []
-    let override_keys = []
-    
-    // 首先收集所有覆盖配置的键
-    for (key, _) in override {
-      override_keys = override_keys + [key]
-    }
-    
-    // 添加基础配置中未被覆盖的项
-    for (key, value) in base {
-      if !override_keys.contains(key) {
-        merged = merged + [(key, value)]
-      }
-    }
-    
-    // 添加覆盖配置
-    for (key, value) in override {
-      merged = merged + [(key, value)]
-    }
-    
-    merged
-  }
-  
-  // 逐步合并配置
-  let env_merged = merge_configs(default_config, environment_config)
-  let final_config = merge_configs(env_merged, application_config)
-  
-  // 验证配置合并结果
-  assert_eq(final_config.length(), 5)
-  
-  // 验证应用配置覆盖
-  let server_port = get_config_value(final_config, "server.port")
-  match server_port {
-    Some(port) => assert_eq(port, "9090") // 来自应用配置
-    None => assert_true(false)
-  }
-  
-  let cache_enabled = get_config_value(final_config, "cache.enabled")
-  match cache_enabled {
-    Some(enabled) => assert_eq(enabled, "false") // 来自应用配置
-    None => assert_true(false)
-  }
-  
-  // 验证环境配置覆盖
-  let server_host = get_config_value(final_config, "server.host")
-  match server_host {
-    Some(host) => assert_eq(host, "localhost") // 来自环境配置
-    None => assert_true(false)
-  }
-  
-  let logging_level = get_config_value(final_config, "logging.level")
-  match logging_level {
-    Some(level) => assert_eq(level, "DEBUG") // 来自环境配置
-    None => assert_true(false)
-  }
-  
-  let database_pool_size = get_config_value(final_config, "database.pool_size")
-  match database_pool_size {
-    Some(pool_size) => assert_eq(pool_size, "20") // 来自环境配置
-    None => assert_true(false)
-  }
-  
-  // 辅助函数
-  fn get_config_value(config : Array[(String, String)], key : String) -> Option[String] {
-    for (k, v) in config {
-      if k == key {
-        return Some(v)
-      }
-    }
-    return None
-  }
-}
-
-// Test 3: 配置热重载测试
-test "配置热重载测试" {
-  // 初始配置
-  let mut current_config = [
-    ("server.port", "8080"),
-    ("logging.level", "INFO"),
-    ("feature.enabled", "true"),
-    ("cache.size", "100")
-  ]
-  
-  // 配置变更历史
-  let mut config_history = []
-  
-  // 应用配置变更
-  fn apply_config_change(config : Array[(String, String)], key : String, new_value : String) -> Array[(String, String)] {
-    let mut updated = []
-    let found = false
-    
-    for (k, v) in config {
-      if k == key {
-        updated = updated + [(k, new_value)]
-        found = true
-      } else {
-        updated = updated + [(k, v)]
-      }
-    }
-    
-    if !found {
-      updated = updated + [(key, new_value)]
-    }
-    
-    updated
-  }
-  
-  // 检查配置是否需要重启服务
-  fn requires_restart(key : String, old_value : String, new_value : String) -> Bool {
-    match key {
-      "server.port" => true // 端口变更需要重启
-      "database.url" => true // 数据库连接变更需要重启
-      _ => false // 其他配置可以热重载
-    }
-  }
-  
-  // 记录配置变更
-  fn record_config_change(history : Array[(String, String, String, Int64)], key : String, old_value : String, new_value : String, timestamp : Int64) -> Array[(String, String, String, Int64)] {
-    history + [(key, old_value, new_value, timestamp)]
-  }
-  
-  // 模拟配置变更
-  let mut timestamp = 1000L
-  
-  // 变更1：日志级别（不需要重启）
-  let old_logging_level = get_config_value(current_config, "logging.level")
-  match old_logging_level {
-    Some(level) => {
-      current_config = apply_config_change(current_config, "logging.level", "DEBUG")
-      config_history = record_config_change(config_history, "logging.level", level, "DEBUG", timestamp)
-      
-      let needs_restart = requires_restart("logging.level", level, "DEBUG")
-      assert_false(needs_restart)
-    }
-    None => assert_true(false)
-  }
-  
-  timestamp = timestamp + 100L
-  
-  // 变更2：缓存大小（不需要重启）
-  let old_cache_size = get_config_value(current_config, "cache.size")
-  match old_cache_size {
-    Some(size) => {
-      current_config = apply_config_change(current_config, "cache.size", "200")
-      config_history = record_config_change(config_history, "cache.size", size, "200", timestamp)
-      
-      let needs_restart = requires_restart("cache.size", size, "200")
-      assert_false(needs_restart)
-    }
-    None => assert_true(false)
-  }
-  
-  timestamp = timestamp + 100L
-  
-  // 变更3：服务器端口（需要重启）
-  let old_server_port = get_config_value(current_config, "server.port")
-  match old_server_port {
-    Some(port) => {
-      current_config = apply_config_change(current_config, "server.port", "9090")
-      config_history = record_config_change(config_history, "server.port", port, "9090", timestamp)
-      
-      let needs_restart = requires_restart("server.port", port, "9090")
-      assert_true(needs_restart)
-    }
-    None => assert_true(false)
-  }
-  
-  // 验证最终配置状态
-  let final_logging_level = get_config_value(current_config, "logging.level")
-  match final_logging_level {
-    Some(level) => assert_eq(level, "DEBUG")
-    None => assert_true(false)
-  }
-  
-  let final_cache_size = get_config_value(current_config, "cache.size")
-  match final_cache_size {
-    Some(size) => assert_eq(size, "200")
-    None => assert_true(false)
-  }
-  
-  let final_server_port = get_config_value(current_config, "server.port")
-  match final_server_port {
-    Some(port) => assert_eq(port, "9090")
-    None => assert_true(false)
-  }
-  
-  // 验证配置变更历史
-  assert_eq(config_history.length(), 3)
-  assert_eq(config_history[0], ("logging.level", "INFO", "DEBUG", 1000L))
-  assert_eq(config_history[1], ("cache.size", "100", "200", 1100L))
-  assert_eq(config_history[2], ("server.port", "8080", "9090", 1200L))
-  
-  // 辅助函数
-  fn get_config_value(config : Array[(String, String)], key : String) -> Option[String] {
-    for (k, v) in config {
-      if k == key {
-        return Some(v)
-      }
-    }
-    return None
-  }
-}
-
-// Test 4: 配置版本控制和回滚测试
-test "配置版本控制和回滚测试" {
-  // 配置版本管理
-  let mut config_versions = []
-  let mut current_version = 0
-  
-  // 创建配置版本
-  fn create_version(config : Array[(String, String)], version : Int, description : String) -> (Int, Array[(String, String)], String) {
-    (version, config, description)
-  }
-  
-  // 保存配置版本
-  fn save_version(versions : Array[(Int, Array[(String, String)], String)], version_data : (Int, Array[(String, String)], String)) -> Array[(Int, Array[(String, String)], String)] {
-    versions + [version_data]
-  }
-  
-  // 回滚到指定版本
-  fn rollback_to_version(versions : Array[(Int, Array[(String, String)], String)], target_version : Int) -> Option[Array[(String, String)]] {
-    for (version, config, description) in versions {
-      if version == target_version {
-        return Some(config)
-      }
-    }
-    return None
-  }
-  
-  // 初始配置（版本0）
-  let initial_config = [
-    ("server.port", "8080"),
-    ("logging.level", "INFO"),
-    ("feature.enabled", "true"),
-    ("cache.size", "100")
-  ]
-  
-  let initial_version = create_version(initial_config, current_version, "Initial configuration")
-  config_versions = save_version(config_versions, initial_version)
-  current_version = current_version + 1
-  
-  // 版本1：启用调试模式
-  let version1_config = [
-    ("server.port", "8080"),
-    ("logging.level", "DEBUG"),
-    ("feature.enabled", "true"),
-    ("cache.size", "100")
-  ]
-  
-  let version1 = create_version(version1_config, current_version, "Enable debug logging")
-  config_versions = save_version(config_versions, version1)
-  current_version = current_version + 1
-  
-  // 版本2：增加缓存大小
-  let version2_config = [
-    ("server.port", "8080"),
-    ("logging.level", "DEBUG"),
-    ("feature.enabled", "true"),
-    ("cache.size", "200")
-  ]
-  
-  let version2 = create_version(version2_config, current_version, "Increase cache size")
-  config_versions = save_version(config_versions, version2)
-  current_version = current_version + 1
-  
-  // 版本3：更改端口和禁用功能
-  let version3_config = [
-    ("server.port", "9090"),
-    ("logging.level", "INFO"),
-    ("feature.enabled", "false"),
-    ("cache.size", "200")
-  ]
-  
-  let version3 = create_version(version3_config, current_version, "Change port and disable feature")
-  config_versions = save_version(config_versions, version3)
-  
-  // 当前配置是版本3
-  let mut current_config = version3_config
-  
-  // 验证当前配置
-  let current_port = get_config_value(current_config, "server.port")
-  match current_port {
-    Some(port) => assert_eq(port, "9090")
-    None => assert_true(false)
-  }
-  
-  let current_feature = get_config_value(current_config, "feature.enabled")
-  match current_feature {
-    Some(feature) => assert_eq(feature, "false")
-    None => assert_true(false)
-  }
-  
-  // 回滚到版本2
-  match rollback_to_version(config_versions, 2) {
-    Some(rollback_config) => {
-      current_config = rollback_config
-      
-      // 验证回滚结果
-      let rollback_port = get_config_value(current_config, "server.port")
-      match rollback_port {
-        Some(port) => assert_eq(port, "8080")
-        None => assert_true(false)
-      }
-      
-      let rollback_cache = get_config_value(current_config, "cache.size")
-      match rollback_cache {
-        Some(cache) => assert_eq(cache, "200")
-        None => assert_true(false)
-      }
-      
-      let rollback_feature = get_config_value(current_config, "feature.enabled")
-      match rollback_feature {
-        Some(feature) => assert_eq(feature, "true")
-        None => assert_true(false)
-      }
-    }
-    None => assert_true(false)
-  }
-  
-  // 再次回滚到版本0
-  match rollback_to_version(config_versions, 0) {
-    Some(rollback_config) => {
-      current_config = rollback_config
-      
-      // 验证回滚结果
-      let rollback_port = get_config_value(current_config, "server.port")
-      match rollback_port {
-        Some(port) => assert_eq(port, "8080")
-        None => assert_true(false)
-      }
-      
-      let rollback_cache = get_config_value(current_config, "cache.size")
-      match rollback_cache {
-        Some(cache) => assert_eq(cache, "100")
-        None => assert_true(false)
-      }
-      
-      let rollback_feature = get_config_value(current_config, "feature.enabled")
-      match rollback_feature {
-        Some(feature) => assert_eq(feature, "true")
-        None => assert_true(false)
-      }
-    }
-    None => assert_true(false)
-  }
-  
-  // 验证版本历史完整性
-  assert_eq(config_versions.length(), 4)
-  assert_eq(config_versions[0], (0, initial_config, "Initial configuration"))
-  assert_eq(config_versions[1], (1, version1_config, "Enable debug logging"))
-  assert_eq(config_versions[2], (2, version2_config, "Increase cache size"))
-  assert_eq(config_versions[3], (3, version3_config, "Change port and disable feature"))
-  
-  // 辅助函数
-  fn get_config_value(config : Array[(String, String)], key : String) -> Option[String] {
-    for (k, v) in config {
-      if k == key {
-        return Some(v)
-      }
-    }
-    return None
-  }
-}
-
-// Test 5: 配置敏感信息保护测试
-test "配置敏感信息保护测试" {
-  // 敏感配置键列表
-  let sensitive_keys = [
-    "database.password",
-    "api.secret.key",
-    "encryption.key",
-    "auth.token"
-  ]
-  
-  // 原始配置（包含敏感信息）
-  let raw_config = [
-    ("server.port", "8080"),
-    ("database.url", "jdbc:postgresql://localhost:5432/azimuth"),
-    ("database.password", "super_secret_password"),
-    ("database.username", "azimuth_user"),
-    ("api.secret.key", "api_key_123456789"),
-    ("logging.level", "INFO"),
-    ("encryption.key", "encryption_secret_987654321"),
-    ("cache.enabled", "true"),
-    ("auth.token", "auth_token_abcdef123456")
-  ]
-  
-  // 检查是否为敏感键
-  fn is_sensitive_key(key : String, sensitive_list : Array[String]) -> Bool {
-    for sensitive in sensitive_list {
-      if key == sensitive {
-        return true
-      }
-    }
-    return false
-  }
-  
-  // 掩码敏感值
-  fn mask_sensitive_value(value : String) -> String {
-    if value.length() <= 4 {
-      return "****"
-    } else {
-      let prefix = value.slice(0, 2)
-      let suffix = value.slice(value.length() - 2, value.length())
-      return prefix + "****" + suffix
-    }
-  }
-  
-  // 创建安全配置（敏感信息被掩码）
-  fn create_secure_config(config : Array[(String, String)], sensitive_list : Array[String]) -> Array[(String, String)] {
-    let mut secure = []
-    for (key, value) in config {
-      if is_sensitive_key(key, sensitive_list) {
-        secure = secure + [(key, mask_sensitive_value(value))]
-      } else {
-        secure = secure + [(key, value)]
-      }
-    }
-    secure
-  }
-  
-  // 获取配置值（可以从原始配置或安全配置）
-  fn get_config_value(config : Array[(String, String)], key : String) -> Option[String] {
-    for (k, v) in config {
-      if k == key {
-        return Some(v)
-      }
-    }
-    return None
-  }
-  
-  // 创建安全配置
-  let secure_config = create_secure_config(raw_config, sensitive_keys)
-  
-  // 验证敏感信息被正确掩码
-  let db_password = get_config_value(secure_config, "database.password")
-  match db_password {
-    Some(password) => assert_eq(password, "su****rd")
-    None => assert_true(false)
-  }
-  
-  let api_key = get_config_value(secure_config, "api.secret.key")
-  match api_key {
-    Some(key) => assert_eq(key, "ap****89")
-    None => assert_true(false)
-  }
-  
-  let encryption_key = get_config_value(secure_config, "encryption.key")
-  match encryption_key {
-    Some(key) => assert_eq(key, "en****21")
-    None => assert_true(false)
-  }
-  
-  let auth_token = get_config_value(secure_config, "auth.token")
-  match auth_token {
-    Some(token) => assert_eq(token, "au****56")
-    None => assert_true(false)
-  }
-  
-  // 验证非敏感信息未被掩码
-  let server_port = get_config_value(secure_config, "server.port")
-  match server_port {
-    Some(port) => assert_eq(port, "8080")
-    None => assert_true(false)
-  }
-  
-  let db_username = get_config_value(secure_config, "database.username")
-  match db_username {
-    Some(username) => assert_eq(username, "azimuth_user")
-    None => assert_true(false)
-  }
-  
-  // 验证配置完整性
-  assert_eq(secure_config.length(), raw_config.length())
-  
-  // 测试短敏感值掩码
-  let short_sensitive_config = [
-    ("short.key", "123")
-  ]
-  
-  let short_secure_config = create_secure_config(short_sensitive_config, ["short.key"])
-  let short_value = get_config_value(short_secure_config, "short.key")
-  match short_value {
-    Some(value) => assert_eq(value, "****")
-    None => assert_true(false)
-  }
-}
-
-// Test 6: 配置依赖关系验证测试
-test "配置依赖关系验证测试" {
-  // 配置依赖规则
-  let dependency_rules = [
-    ("database.ssl.enabled", "database.ssl.cert_path"), // 如果启用SSL，必须提供证书路径
-    ("cache.enabled", "cache.size"), // 如果启用缓存，必须设置缓存大小
-    ("auth.enabled", "auth.provider"), // 如果启用认证，必须指定认证提供者
-    ("metrics.enabled", "metrics.port") // 如果启用指标，必须指定指标端口
-  ]
-  
-  // 当前配置
-  let current_config = [
-    ("database.ssl.enabled", "true"),
-    ("database.ssl.cert_path", "/path/to/cert.pem"),
-    ("cache.enabled", "true"),
-    ("cache.size", "1000"),
-    ("auth.enabled", "true"),
-    ("auth.provider", "oauth2"),
-    ("metrics.enabled", "true"),
-    ("metrics.port", "9090"),
-    ("logging.level", "INFO")
-  ]
-  
-  // 获取配置值
-  fn get_config_value(config : Array[(String, String)], key : String) -> Option[String] {
-    for (k, v) in config {
-      if k == key {
-        return Some(v)
-      }
-    }
-    return None
-  }
-  
-  // 检查布尔值
-  fn is_true(value : Option[String]) -> Bool {
-    match value {
-      Some(v) => v == "true"
-      None => false
-    }
-  }
-  
-  // 验证配置依赖关系
-  fn validate_dependencies(config : Array[(String, String)], rules : Array[(String, String)]) -> Array[String] {
-    let mut errors = []
-    
-    for (dependent_key, dependency_key) in rules {
-      let dependent_value = get_config_value(config, dependent_key)
-      
-      if is_true(dependent_value) {
-        let dependency_value = get_config_value(config, dependency_key)
-        match dependency_value {
-          Some(_) => () // 依赖项存在，验证通过
-          None => {
-            errors = errors + [(dependent_key + " requires " + dependency_key)]
-          }
+      "database.connection_string" => {
+        if value.contains("postgresql://") || value.contains("mysql://") {
+          Ok(true)
+        } else {
+          Err("Database connection string must be a valid URL")
         }
       }
+      _ => Ok(true)
     }
-    
-    errors
   }
   
-  // 验证当前配置
-  let validation_errors = validate_dependencies(current_config, dependency_rules)
-  assert_eq(validation_errors.length(), 0) // 当前配置应该满足所有依赖关系
+  config_manager.add_custom_validator(custom_validator)
   
-  // 创建违反依赖关系的配置
-  let invalid_config = [
-    ("database.ssl.enabled", "true"),
-    // 缺少 database.ssl.cert_path
-    ("cache.enabled", "true"),
-    ("cache.size", "1000"),
-    ("auth.enabled", "true"),
-    // 缺少 auth.provider
-    ("metrics.enabled", "true"),
-    ("metrics.port", "9090"),
-    ("logging.level", "INFO")
-  ]
+  let custom_invalid_config = """
+  {
+    "service": {
+      "name": "ab",
+      "port": 8080
+    },
+    "database": {
+      "connection_string": "invalid_connection_string",
+      "max_connections": 10
+    }
+  }
+  """
   
-  // 验证无效配置
-  let invalid_errors = validate_dependencies(invalid_config, dependency_rules)
-  assert_eq(invalid_errors.length(), 2)
-  assert_true(invalid_errors.contains("database.ssl.enabled requires database.ssl.cert_path"))
-  assert_true(invalid_errors.contains("auth.enabled requires auth.provider"))
-  
-  // 测试部分禁用配置
-  let partial_config = [
-    ("database.ssl.enabled", "false"), // SSL禁用，不需要证书路径
-    ("cache.enabled", "true"),
-    ("cache.size", "1000"),
-    ("auth.enabled", "false"), // 认证禁用，不需要提供者
-    ("metrics.enabled", "false"), // 指标禁用，不需要端口
-    ("logging.level", "INFO")
-  ]
-  
-  // 验证部分配置
-  let partial_errors = validate_dependencies(partial_config, dependency_rules)
-  assert_eq(partial_errors.length(), 0) // 禁用的功能不需要依赖项
+  let custom_invalid_result = config_manager.validate_config(custom_invalid_config)
+  assert_false(custom_invalid_result.is_valid)
+  assert_true(custom_invalid_result.errors.any(fn(e) { e.contains("Service name must be between 3 and 50 characters") }))
+  assert_true(custom_invalid_result.errors.any(fn(e) { e.contains("Database connection string must be a valid URL") }))
 }
 
-// Test 7: 配置模板和变量替换测试
-test "配置模板和变量替换测试" {
-  // 环境变量
-  let environment_variables = [
-    ("ENV", "production"),
-    ("HOST", "prod-server-01"),
-    ("PORT", "8080"),
-    ("DB_HOST", "prod-db.company.com"),
-    ("API_KEY", "prod-api-key-12345")
-  ]
+// Test 3: Configuration Merging and Inheritance
+test "configuration merging and inheritance" {
+  let config_manager = ConfigurationManager::new()
   
-  // 配置模板（包含变量占位符）
-  let config_templates = [
-    ("server.name", "${HOST}-${ENV}"),
-    ("server.port", "${PORT}"),
-    ("database.url", "postgresql://${DB_HOST}:5432/azimuth_${ENV}"),
-    ("api.endpoint", "https://api.company.com/${ENV}"),
-    ("api.key", "${API_KEY}"),
-    ("log.file", "/var/log/azimuth/${ENV}/app.log")
-  ]
-  
-  // 获取环境变量值
-  fn get_env_value(env_vars : Array[(String, String)], key : String) -> Option[String] {
-    for (k, v) in env_vars {
-      if k == key {
-        return Some(v)
-      }
+  // Define base configuration
+  let base_config = """
+  {
+    "service": {
+      "name": "azimuth-telemetry",
+      "version": "1.0.0",
+      "port": 8080,
+      "host": "localhost"
+    },
+    "database": {
+      "connection_string": "postgresql://localhost:5432/azimuth",
+      "max_connections": 10,
+      "timeout": 30000
+    },
+    "logging": {
+      "level": "info",
+      "format": "json"
     }
-    return None
   }
+  """
   
-  // 替换模板中的变量
-  fn replace_variables(template : String, env_vars : Array[(String, String)]) -> String {
-    let mut result = template
-    let mut start_index = 0
-    
-    // 查找所有 ${...} 模式
-    while start_index < result.length() {
-      let start_pos = result.index_of("${", start_index)
-      match start_pos {
-        Some(pos) => {
-          let end_pos = result.index_of("}", pos)
-          match end_pos {
-            Some(end) => {
-              let var_name = result.slice(pos + 2, end)
-              match get_env_value(env_vars, var_name) {
-                Some(value) => {
-                  let prefix = result.slice(0, pos)
-                  let suffix = result.slice(end + 1, result.length())
-                  result = prefix + value + suffix
-                  start_index = pos + value.length()
-                }
-                None => {
-                  // 变量未找到，保持原样
-                  start_index = end + 1
-                }
-              }
-            }
-            None => {
-              break // 没有匹配的结束括号
-            }
-          }
-        }
-        None => {
-          break // 没有更多的变量
-        }
-      }
+  // Define environment-specific configuration
+  let env_config = """
+  {
+    "service": {
+      "port": 9090,
+      "host": "0.0.0.0"
+    },
+    "database": {
+      "connection_string": "postgresql://prod-db:5432/azimuth",
+      "max_connections": 20
+    },
+    "logging": {
+      "level": "debug"
     }
-    
-    result
   }
+  """
   
-  // 处理所有配置模板
-  let mut resolved_config = []
-  for (key, template) in config_templates {
-    let resolved_value = replace_variables(template, environment_variables)
-    resolved_config = resolved_config + [(key, resolved_value)]
+  // Load base configuration
+  let base_result = config_manager.load_from_string(base_config, "json")
+  assert_true(base_result.is_success)
+  let base_config_obj = base_result.config
+  
+  // Load environment configuration
+  let env_result = config_manager.load_from_string(env_config, "json")
+  assert_true(env_result.is_success)
+  let env_config_obj = env_result.config
+  
+  // Merge configurations
+  let merged_config = config_manager.merge_configs(base_config_obj, env_config_obj)
+  
+  // Verify merged configuration
+  assert_eq(merged_config.get("service.name"), Some("azimuth-telemetry")) // From base
+  assert_eq(merged_config.get("service.version"), Some("1.0.0")) // From base
+  assert_eq(merged_config.get("service.port"), Some("9090")) // From env (override)
+  assert_eq(merged_config.get("service.host"), Some("0.0.0.0")) // From env (override)
+  assert_eq(merged_config.get("database.connection_string"), Some("postgresql://prod-db:5432/azimuth")) // From env (override)
+  assert_eq(merged_config.get("database.max_connections"), Some("20")) // From env (override)
+  assert_eq(merged_config.get("database.timeout"), Some("30000")) // From base
+  assert_eq(merged_config.get("logging.level"), Some("debug")) // From env (override)
+  assert_eq(merged_config.get("logging.format"), Some("json")) // From base
+  
+  // Test configuration inheritance with multiple levels
+  let production_config = """
+  {
+    "service": {
+      "port": 80
+    },
+    "database": {
+      "connection_string": "postgresql://prod-cluster:5432/azimuth"
+    }
   }
+  """
   
-  // 验证解析后的配置
-  // 注意：由于MoonBit可能没有内置的字符串查找和替换方法，这里使用简化实现
+  let prod_result = config_manager.load_from_string(production_config, "json")
+  assert_true(prod_result.is_success)
+  let prod_config_obj = prod_result.config
   
-  // 模拟解析结果（在实际实现中，上述函数会正确处理变量替换）
-  let expected_config = [
-    ("server.name", "prod-server-01-production"),
-    ("server.port", "8080"),
-    ("database.url", "postgresql://prod-db.company.com:5432/azimuth_production"),
-    ("api.endpoint", "https://api.company.com/production"),
-    ("api.key", "prod-api-key-12345"),
-    ("log.file", "/var/log/azimuth/production/app.log")
-  ]
+  // Create inheritance chain: base -> env -> prod
+  let inherited_config = config_manager.inherit_configs([base_config_obj, env_config_obj, prod_config_obj])
   
-  // 由于字符串操作可能受限，我们验证模板和变量的基本功能
-  assert_eq(config_templates.length(), 6)
-  assert_eq(environment_variables.length(), 5)
+  // Verify inherited configuration
+  assert_eq(inherited_config.get("service.name"), Some("azimuth-telemetry")) // From base
+  assert_eq(inherited_config.get("service.version"), Some("1.0.0")) // From base
+  assert_eq(inherited_config.get("service.port"), Some("80")) // From prod (final override)
+  assert_eq(inherited_config.get("service.host"), Some("0.0.0.0")) // From env
+  assert_eq(inherited_config.get("database.connection_string"), Some("postgresql://prod-cluster:5432/azimuth")) // From prod (final override)
+  assert_eq(inherited_config.get("database.max_connections"), Some("20")) // From env
+  assert_eq(inherited_config.get("database.timeout"), Some("30000")) // From base
+}
+
+// Test 4: Configuration Environment Variables and Substitution
+test "configuration environment variables and substitution" {
+  let config_manager = ConfigurationManager::new()
   
-  // 验证变量提取
-  let env_value = get_env_value(environment_variables, "ENV")
-  match env_value {
-    Some(value) => assert_eq(value, "production")
+  // Set environment variables
+  Environment::set_var("AZIMUTH_SERVICE_PORT", "9090")
+  Environment::set_var("AZIMUTH_DB_HOST", "prod-db.example.com")
+  Environment::set_var("AZIMUTH_DB_PASSWORD", "secret123")
+  Environment::set_var("AZIMUTH_LOG_LEVEL", "debug")
+  
+  // Test configuration with environment variable substitution
+  let config_with_env_vars = """
+  {
+    "service": {
+      "name": "azimuth-telemetry",
+      "port": "${AZIMUTH_SERVICE_PORT}",
+      "host": "0.0.0.0"
+    },
+    "database": {
+      "connection_string": "postgresql://${AZIMUTH_DB_HOST}:5432/azimuth?password=${AZIMUTH_DB_PASSWORD}",
+      "max_connections": 10
+    },
+    "logging": {
+      "level": "${AZIMUTH_LOG_LEVEL}",
+      "format": "json"
+    }
+  }
+  """
+  
+  let result = config_manager.load_from_string(config_with_env_vars, "json")
+  assert_true(result.is_success)
+  
+  let resolved_config = result.config
+  assert_eq(resolved_config.get("service.port"), Some("9090"))
+  assert_eq(resolved_config.get("database.connection_string"), Some("postgresql://prod-db.example.com:5432/azimuth?password=secret123"))
+  assert_eq(resolved_config.get("logging.level"), Some("debug"))
+  
+  // Test configuration with default values for missing environment variables
+  let config_with_defaults = """
+  {
+    "service": {
+      "name": "azimuth-telemetry",
+      "port": "${AZIMUTH_SERVICE_PORT:8080}",
+      "host": "${AZIMUTH_SERVICE_HOST:localhost}"
+    },
+    "feature_flags": {
+      "enable_metrics": "${AZIMUTH_ENABLE_METRICS:false}",
+      "enable_tracing": "${AZIMUTH_ENABLE_TRACING:true}"
+    }
+  }
+  """
+  
+  // Unset some environment variables to test defaults
+  Environment::unset_var("AZIMUTH_SERVICE_HOST")
+  Environment::unset_var("AZIMUTH_ENABLE_METRICS")
+  
+  let default_result = config_manager.load_from_string(config_with_defaults, "json")
+  assert_true(default_result.is_success)
+  
+  let default_config = default_result.config
+  assert_eq(default_config.get("service.port"), Some("9090")) // From env var
+  assert_eq(default_config.get("service.host"), Some("localhost")) // From default value
+  assert_eq(default_config.get("feature_flags.enable_metrics"), Some("false")) // From default value
+  assert_eq(default_config.get("feature_flags.enable_tracing"), Some("true")) // From env var
+  
+  // Test configuration with computed values
+  let config_with_computed = """
+  {
+    "service": {
+      "name": "azimuth-telemetry",
+      "base_url": "http://${AZIMUTH_SERVICE_HOST:localhost}:${AZIMUTH_SERVICE_PORT:8080}",
+      "full_name": "${service.name}-${service.version:1.0.0}"
+    }
+  }
+  """
+  
+  let computed_result = config_manager.load_from_string(config_with_computed, "json")
+  assert_true(computed_result.is_success)
+  
+  let computed_config = computed_result.config
+  assert_eq(computed_config.get("service.base_url"), Some("http://localhost:9090"))
+  assert_eq(computed_config.get("service.full_name"), Some("azimuth-telemetry-1.0.0"))
+}
+
+// Test 5: Configuration Hot Reload and Watch
+test "configuration hot reload and watch" {
+  let config_manager = ConfigurationManager::new()
+  
+  // Create temporary configuration file
+  let temp_config_file = "/tmp/azimuth_config.json"
+  let initial_config = """
+  {
+    "service": {
+      "name": "azimuth-telemetry",
+      "port": 8080
+    },
+    "feature_flags": {
+      "enable_metrics": true,
+      "enable_tracing": false
+    }
+  }
+  """
+  
+  File::write_string(temp_config_file, initial_config)
+  
+  // Load initial configuration
+  let initial_result = config_manager.load_from_file(temp_config_file)
+  assert_true(initial_result.is_success)
+  
+  let initial_config_obj = initial_result.config
+  assert_eq(initial_config_obj.get("service.port"), Some("8080"))
+  assert_eq(initial_config_obj.get("feature_flags.enable_tracing"), Some("false"))
+  
+  // Set up configuration watcher
+  let watcher = config_manager.create_watcher(temp_config_file)
+  let mut reload_count = 0
+  let mut last_config = initial_config_obj
+  
+  watcher.on_reload(fn(config: Configuration) {
+    reload_count = reload_count + 1
+    last_config = config
+  })
+  
+  // Start watching
+  watcher.start()
+  
+  // Modify configuration file
+  let updated_config = """
+  {
+    "service": {
+      "name": "azimuth-telemetry",
+      "port": 9090
+    },
+    "feature_flags": {
+      "enable_metrics": true,
+      "enable_tracing": true
+    }
+  }
+  """
+  
+  File::write_string(temp_config_file, updated_config)
+  
+  // Wait for reload (simulate)
+  Thread::sleep(100) // 100ms
+  
+  // Verify configuration was reloaded
+  assert_eq(reload_count, 1)
+  assert_eq(last_config.get("service.port"), Some("9090"))
+  assert_eq(last_config.get("feature_flags.enable_tracing"), Some("true"))
+  
+  // Test configuration validation on reload
+  let validation_schema = ValidationSchema::new()
+    .add_required_field("service.name", StringType)
+    .add_range_constraint("service.port", 1, 65535)
+  
+  config_manager.set_validation_schema(validation_schema)
+  
+  // Try to write invalid configuration
+  let invalid_config = """
+  {
+    "service": {
+      "port": 70000
+    },
+    "feature_flags": {
+      "enable_metrics": true,
+      "enable_tracing": true
+    }
+  }
+  """
+  
+  File::write_string(temp_config_file, invalid_config)
+  Thread::sleep(100) // 100ms
+  
+  // Configuration should not be reloaded due to validation error
+  assert_eq(reload_count, 1) // Still 1, not incremented
+  assert_eq(last_config.get("service.port"), Some("9090")) // Still the old valid config
+  
+  // Test reload error handling
+  let reload_errors = watcher.get_reload_errors()
+  assert_true(reload_errors.length() > 0)
+  assert_true(reload_errors.any(fn(e) { e.contains("validation") || e.contains("service.name") }))
+  
+  // Stop watching
+  watcher.stop()
+  
+  // Clean up
+  File::delete(temp_config_file)
+}
+
+// Test 6: Configuration Encryption and Security
+test "configuration encryption and security" {
+  let config_manager = ConfigurationManager::new()
+  
+  // Test configuration encryption
+  let sensitive_config = """
+  {
+    "database": {
+      "connection_string": "postgresql://user:password123@localhost:5432/azimuth",
+      "ssl_cert": "-----BEGIN CERTIFICATE-----\nMIIC...-----END CERTIFICATE-----"
+    },
+    "api_keys": {
+      "payment_provider": "sk_live_1234567890abcdef",
+      "analytics": "ga_secret_9876543210fedcba"
+    }
+  }
+  """
+  
+  // Create encryption key
+  let encryption_key = EncryptionKey::generate()
+  
+  // Encrypt sensitive configuration
+  let encrypted_config = config_manager.encrypt_config(sensitive_config, encryption_key)
+  assert_true(encrypted_config.encrypted)
+  assert_true(encrypted_config.data != sensitive_config)
+  assert_true(encrypted_config.iv.length() > 0)
+  assert_true(encrypted_config.tag.length() > 0)
+  
+  // Decrypt configuration
+  let decrypted_config = config_manager.decrypt_config(encrypted_config, encryption_key)
+  assert_eq(decrypted_config, sensitive_config)
+  
+  // Test configuration with encrypted fields
+  let config_with_encrypted_fields = """
+  {
+    "service": {
+      "name": "azimuth-telemetry"
+    },
+    "database": {
+      "connection_string": "encrypted:eyJlbmNyeXB0ZWQiOnsiYWxnb3JpdGhtIjoiQUVTLUdDTSIsIml2IjoiYWJjZGVmIiwiY2lwaGVydGV4dCI6Inh5eiJ9fQ=="
+    },
+    "api_keys": {
+      "payment_provider": "encrypted:eyJlbmNyeXB0ZWQiOnsiYWxnb3JpdGhtIjoiQUVTLUdDTSIsIml2IjoiZmVkaWJhIiwiY2lwaGVydGV4dCI6InF3ZXIifX0="
+    }
+  }
+  """
+  
+  let encrypted_fields_result = config_manager.load_from_string(config_with_encrypted_fields, "json")
+  assert_true(encrypted_fields_result.is_success)
+  
+  // Decrypt fields on access
+  let decrypted_connection_string = config_manager.get_decrypted(encrypted_fields_result.config, "database.connection_string", encryption_key)
+  assert_eq(decrypted_connection_string, Some("postgresql://user:password123@localhost:5432/azimuth"))
+  
+  let decrypted_api_key = config_manager.get_decrypted(encrypted_fields_result.config, "api_keys.payment_provider", encryption_key)
+  assert_eq(decrypted_api_key, Some("sk_live_1234567890abcdef"))
+  
+  // Test configuration access control
+  let access_manager = config_manager.get_access_manager()
+  
+  // Define access policies
+  access_manager.add_policy("database.connection_string", ["admin", "db_admin"])
+  access_manager.add_policy("api_keys.payment_provider", ["admin", "payment_admin"])
+  access_manager.add_policy("service.name", ["*"]) // Public access
+  
+  // Test access control
+  let admin_access = access_manager.check_access("admin", "database.connection_string")
+  assert_true(admin_access)
+  
+  let user_access = access_manager.check_access("user", "database.connection_string")
+  assert_false(user_access)
+  
+  let public_access = access_manager.check_access("any_user", "service.name")
+  assert_true(public_access)
+  
+  // Test configuration audit log
+  let audit_logger = config_manager.get_audit_logger()
+  
+  // Log configuration access
+  audit_logger.log_access("admin", "database.connection_string", "read", true)
+  audit_logger.log_access("user", "database.connection_string", "read", false)
+  audit_logger.log_access("admin", "api_keys.payment_provider", "write", true)
+  
+  // Get audit log
+  let audit_log = audit_logger.get_audit_log()
+  assert_true(audit_log.length() >= 3)
+  
+  let admin_read = audit_log.find(fn(e) { e.user == "admin" && e.resource == "database.connection_string" && e.action == "read" })
+  match admin_read {
+    Some(entry) => {
+      assert_true(entry.success)
+      assert_true(entry.timestamp > 0)
+    }
     None => assert_true(false)
   }
   
-  // 验证模板格式
-  for (key, template) in config_templates {
-    assert_true(template.contains("${"))
-    assert_true(template.contains("}"))
+  let user_denied = audit_log.find(fn(e) { e.user == "user" && e.resource == "database.connection_string" && e.action == "read" })
+  match user_denied {
+    Some(entry) => {
+      assert_false(entry.success)
+      assert_true(entry.timestamp > 0)
+    }
+    None => assert_true(false)
   }
 }
 
-// Test 8: 配置变更通知和订阅测试
-test "配置变更通知和订阅测试" {
-  // 配置变更通知系统
-  let mut config_subscribers = []
-  let mut change_notifications = []
+// Test 7: Configuration Versioning and Rollback
+test "configuration versioning and rollback" {
+  let config_manager = ConfigurationManager::new()
   
-  // 订阅者信息
-  // (id, callback_function, subscribed_keys)
+  // Enable configuration versioning
+  let versioning_config = VersioningConfig::new()
+    .with_max_versions(10)
+    .with_auto_versioning(true)
+    .with_version_metadata(true)
   
-  // 配置变更事件
-  // (key, old_value, new_value, timestamp)
+  config_manager.enable_versioning(versioning_config)
   
-  // 添加订阅者
-  fn add_subscriber(subscribers : Array[(String, String, Array[String])], id : String, callback : String, keys : Array[String]) -> Array[(String, String, Array[String])] {
-    subscribers + [(id, callback, keys)]
-  }
-  
-  // 通知配置变更
-  fn notify_config_change(subscribers : Array[(String, String, Array[String])], notifications : Array[(String, String, String, Int64)], key : String, old_value : String, new_value : String, timestamp : Int64) -> Array[(String, String, String, Int64)] {
-    let mut updated_notifications = notifications
-    
-    for (id, callback, subscribed_keys) in subscribers {
-      if subscribed_keys.contains(key) {
-        let notification = (key, old_value, new_value, timestamp)
-        updated_notifications = updated_notifications + [notification]
-      }
+  // Create initial configuration
+  let v1_config = """
+  {
+    "service": {
+      "name": "azimuth-telemetry",
+      "version": "1.0.0",
+      "port": 8080
+    },
+    "feature_flags": {
+      "enable_metrics": true,
+      "enable_tracing": false
     }
-    
-    updated_notifications
   }
+  """
   
-  // 当前配置
-  let mut current_config = [
-    ("server.port", "8080"),
-    ("logging.level", "INFO"),
-    ("cache.enabled", "true"),
-    ("database.pool_size", "10")
-  ]
+  let v1_result = config_manager.load_from_string(v1_config, "json")
+  assert_true(v1_result.is_success)
+  assert_eq(v1_result.version, 1)
   
-  // 添加订阅者
-  config_subscribers = add_subscriber(config_subscribers, "subscriber1", "handle_server_change", ["server.port"])
-  config_subscribers = add_subscriber(config_subscribers, "subscriber2", "handle_logging_change", ["logging.level"])
-  config_subscribers = add_subscriber(config_subscribers, "subscriber3", "handle_cache_change", ["cache.enabled"])
-  config_subscribers = add_subscriber(config_subscribers, "subscriber4", "handle_all_changes", ["server.port", "logging.level", "cache.enabled", "database.pool_size"])
-  
-  // 获取配置值
-  fn get_config_value(config : Array[(String, String)], key : String) -> Option[String] {
-    for (k, v) in config {
-      if k == key {
-        return Some(v)
-      }
+  // Update configuration
+  let v2_config = """
+  {
+    "service": {
+      "name": "azimuth-telemetry",
+      "version": "1.1.0",
+      "port": 9090
+    },
+    "feature_flags": {
+      "enable_metrics": true,
+      "enable_tracing": true
     }
-    return None
   }
+  """
   
-  // 更新配置值
-  fn update_config_value(config : Array[(String, String)], key : String, new_value : String) -> Array[(String, String)] {
-    let mut updated = []
-    let found = false
-    
-    for (k, v) in config {
-      if k == key {
-        updated = updated + [(k, new_value)]
-        found = true
-      } else {
-        updated = updated + [(k, v)]
-      }
+  let v2_result = config_manager.load_from_string(v2_config, "json")
+  assert_true(v2_result.is_success)
+  assert_eq(v2_result.version, 2)
+  
+  // Update configuration again
+  let v3_config = """
+  {
+    "service": {
+      "name": "azimuth-telemetry",
+      "version": "1.2.0",
+      "port": 9090
+    },
+    "feature_flags": {
+      "enable_metrics": false,
+      "enable_tracing": true
     }
-    
-    if !found {
-      updated = updated + [(key, new_value)]
-    }
-    
-    updated
   }
+  """
   
-  // 模拟配置变更
-  let mut timestamp = 1000L
+  let v3_result = config_manager.load_from_string(v3_config, "json")
+  assert_true(v3_result.is_success)
+  assert_eq(v3_result.version, 3)
   
-  // 变更1：服务器端口
-  let old_port = get_config_value(current_config, "server.port")
-  match old_port {
-    Some(port) => {
-      current_config = update_config_value(current_config, "server.port", "9090")
-      change_notifications = notify_config_change(config_subscribers, change_notifications, "server.port", port, "9090", timestamp)
+  // Test version history
+  let version_history = config_manager.get_version_history()
+  assert_eq(version_history.length(), 3)
+  
+  let v1_entry = version_history.find(fn(v) { v.version == 1 })
+  match v1_entry {
+    Some(entry) => {
+      assert_eq(entry.config.get("service.version"), Some("1.0.0"))
+      assert_eq(entry.config.get("service.port"), Some("8080"))
+      assert_true(entry.timestamp > 0)
     }
     None => assert_true(false)
   }
   
-  timestamp = timestamp + 100L
-  
-  // 变更2：日志级别
-  let old_logging = get_config_value(current_config, "logging.level")
-  match old_logging {
-    Some(level) => {
-      current_config = update_config_value(current_config, "logging.level", "DEBUG")
-      change_notifications = notify_config_change(config_subscribers, change_notifications, "logging.level", level, "DEBUG", timestamp)
+  let v2_entry = version_history.find(fn(v) { v.version == 2 })
+  match v2_entry {
+    Some(entry) => {
+      assert_eq(entry.config.get("service.version"), Some("1.1.0"))
+      assert_eq(entry.config.get("service.port"), Some("9090"))
+      assert_true(entry.timestamp > 0)
     }
     None => assert_true(false)
   }
   
-  timestamp = timestamp + 100L
+  // Test rollback to previous version
+  let rollback_result = config_manager.rollback_to_version(1)
+  assert_true(rollback_result.is_success)
   
-  // 变更3：缓存状态
-  let old_cache = get_config_value(current_config, "cache.enabled")
-  match old_cache {
-    Some(cache) => {
-      current_config = update_config_value(current_config, "cache.enabled", "false")
-      change_notifications = notify_config_change(config_subscribers, change_notifications, "cache.enabled", cache, "false", timestamp)
+  let current_config = config_manager.get_current_config()
+  assert_eq(current_config.get("service.version"), Some("1.0.0"))
+  assert_eq(current_config.get("service.port"), Some("8080"))
+  assert_eq(current_config.get("feature_flags.enable_tracing"), Some("false"))
+  
+  // Test version comparison
+  let diff = config_manager.compare_versions(1, 2)
+  assert_true(diff.changes.length() > 0)
+  
+  let port_change = diff.changes.find(fn(c) { c.path == "service.port" })
+  match port_change {
+    Some(change) => {
+      assert_eq(change.old_value, "8080")
+      assert_eq(change.new_value, "9090")
+      assert_eq(change.change_type, Modified)
     }
     None => assert_true(false)
   }
   
-  // 验证通知结果
-  // subscriber1 应该收到 1 个通知（server.port）
-  // subscriber2 应该收到 1 个通知（logging.level）
-  // subscriber3 应该收到 1 个通知（cache.enabled）
-  // subscriber4 应该收到 3 个通知（所有变更）
+  let tracing_change = diff.changes.find(fn(c) { c.path == "feature_flags.enable_tracing" })
+  match tracing_change {
+    Some(change) => {
+      assert_eq(change.old_value, "false")
+      assert_eq(change.new_value, "true")
+      assert_eq(change.change_type, Modified)
+    }
+    None => assert_true(false)
+  }
   
-  assert_eq(change_notifications.length(), 5) // 总共5个通知
+  // Test version tagging
+  let tag_result = config_manager.tag_version(2, "stable")
+  assert_true(tag_result.is_success)
   
-  // 验证具体通知内容
-  let port_notifications = []
-  let logging_notifications = []
-  let cache_notifications = []
+  let tagged_version = config_manager.get_tagged_version("stable")
+  match tagged_version {
+    Some(version) => assert_eq(version, 2)
+    None => assert_true(false)
+  }
   
-  for (key, old_value, new_value, ts) in change_notifications {
-    match key {
-      "server.port" => port_notifications = port_notifications + [(key, old_value, new_value, ts)]
-      "logging.level" => logging_notifications = logging_notifications + [(key, old_value, new_value, ts)]
-      "cache.enabled" => cache_notifications = cache_notifications + [(key, old_value, new_value, ts)]
-      _ => () // 其他键
+  // Test version cleanup
+  for i in 0..=8 {
+    let temp_config = """
+    {
+      "service": {
+        "name": "azimuth-telemetry",
+        "version": "1.""" + i.to_string() + """.0"
+      }
+    }
+    """
+    config_manager.load_from_string(temp_config, "json")
+  }
+  
+  let cleanup_result = config_manager.cleanup_old_versions()
+  assert_true(cleanup_result.success)
+  assert_true(cleanup_result.deleted_versions > 0)
+  
+  let updated_history = config_manager.get_version_history()
+  assert_true(updated_history.length() <= 10) // Should be at most max_versions
+}
+
+// Test 8: Configuration Templates and Generation
+test "configuration templates and generation" {
+  let config_manager = ConfigurationManager::new()
+  
+  // Define configuration template
+  let template = """
+  {
+    "service": {
+      "name": "{{service_name}}",
+      "version": "{{service_version}}",
+      "port": {{service_port}},
+      "host": "{{service_host}}"
+    },
+    "database": {
+      "connection_string": "postgresql://{{db_host}}:{{db_port}}/{{db_name}}",
+      "max_connections": {{db_max_connections}},
+      "timeout": {{db_timeout}}
+    },
+    "logging": {
+      "level": "{{log_level}}",
+      "format": "{{log_format}}",
+      "output": "{{log_output}}"
     }
   }
+  """
   
-  assert_eq(port_notifications.length(), 2) // subscriber1 和 subscriber4
-  assert_eq(logging_notifications.length(), 2) // subscriber2 和 subscriber4
-  assert_eq(cache_notifications.length(), 1) // 只有 subscriber4
+  // Define template variables
+  let variables = TemplateVariables::new()
+    .add("service_name", "azimuth-telemetry")
+    .add("service_version", "1.0.0")
+    .add("service_port", 8080)
+    .add("service_host", "localhost")
+    .add("db_host", "localhost")
+    .add("db_port", 5432)
+    .add("db_name", "azimuth")
+    .add("db_max_connections", 10)
+    .add("db_timeout", 30000)
+    .add("log_level", "info")
+    .add("log_format", "json")
+    .add("log_output", "console")
   
-  // 验证通知内容
-  for (key, old_value, new_value, ts) in port_notifications {
-    assert_eq(key, "server.port")
-    assert_eq(old_value, "8080")
-    assert_eq(new_value, "9090")
+  // Generate configuration from template
+  let generated_config = config_manager.generate_from_template(template, variables)
+  
+  // Verify generated configuration
+  assert_eq(generated_config.get("service.name"), Some("azimuth-telemetry"))
+  assert_eq(generated_config.get("service.version"), Some("1.0.0"))
+  assert_eq(generated_config.get("service.port"), Some("8080"))
+  assert_eq(generated_config.get("database.connection_string"), Some("postgresql://localhost:5432/azimuth"))
+  assert_eq(generated_config.get("database.max_connections"), Some("10"))
+  assert_eq(generated_config.get("logging.level"), Some("info"))
+  
+  // Test template with conditional sections
+  let conditional_template = """
+  {
+    "service": {
+      "name": "{{service_name}}",
+      "port": {{service_port}}
+      {{#if enable_ssl}}
+      ,"ssl": {
+        "enabled": true,
+        "cert_path": "{{ssl_cert_path}}",
+        "key_path": "{{ssl_key_path}}"
+      }
+      {{/if}}
+    },
+    "features": {
+      {{#each features}}
+      "{{name}}": {{enabled}}
+      {{#unless @last}},{{/unless}}
+      {{/each}}
+    }
   }
+  """
   
-  for (key, old_value, new_value, ts) in logging_notifications {
-    assert_eq(key, "logging.level")
-    assert_eq(old_value, "INFO")
-    assert_eq(new_value, "DEBUG")
-  }
+  let conditional_variables = TemplateVariables::new()
+    .add("service_name", "azimuth-telemetry")
+    .add("service_port", 8443)
+    .add("enable_ssl", true)
+    .add("ssl_cert_path", "/etc/ssl/certs/server.crt")
+    .add("ssl_key_path", "/etc/ssl/private/server.key")
+    .add("features", [
+      {"name": "metrics", "enabled": true},
+      {"name": "tracing", "enabled": false},
+      {"name": "logging", "enabled": true}
+    ])
   
-  for (key, old_value, new_value, ts) in cache_notifications {
-    assert_eq(key, "cache.enabled")
-    assert_eq(old_value, "true")
-    assert_eq(new_value, "false")
+  let conditional_config = config_manager.generate_from_template(conditional_template, conditional_variables)
+  
+  // Verify conditional sections
+  assert_eq(conditional_config.get("service.name"), Some("azimuth-telemetry"))
+  assert_eq(conditional_config.get("service.port"), Some("8443"))
+  assert_eq(conditional_config.get("service.ssl.enabled"), Some("true"))
+  assert_eq(conditional_config.get("service.ssl.cert_path"), Some("/etc/ssl/certs/server.crt"))
+  assert_eq(conditional_config.get("features.metrics"), Some("true"))
+  assert_eq(conditional_config.get("features.tracing"), Some("false"))
+  assert_eq(conditional_config.get("features.logging"), Some("true"))
+  
+  // Test template validation
+  let template_validator = TemplateValidator::new()
+    .add_required_variable("service_name", StringType)
+    .add_required_variable("service_port", IntegerType)
+    .add_optional_variable("service_host", StringType, "localhost")
+    .add_range_constraint("service_port", 1, 65535)
+  
+  let incomplete_variables = TemplateVariables::new()
+    .add("service_name", "azimuth-telemetry")
+    // Missing service_port
+  
+  let validation_result = template_validator.validate(template, incomplete_variables)
+  assert_false(validation_result.is_valid)
+  assert_true(validation_result.errors.any(fn(e) { e.contains("service_port") && e.contains("required") }))
+  
+  // Test template inheritance
+  let base_template = """
+  {
+    "service": {
+      "name": "{{service_name}}",
+      "version": "{{service_version}}"
+    },
+    "database": {
+      "host": "{{db_host}}",
+      "port": {{db_port}}
+    }
   }
+  """
+  
+  let child_template = """
+  {{>base}}
+  ,"logging": {
+    "level": "{{log_level}}"
+  }
+  """
+  
+  let inheritance_variables = TemplateVariables::new()
+    .add("service_name", "azimuth-telemetry")
+    .add("service_version", "1.0.0")
+    .add("db_host", "localhost")
+    .add("db_port", 5432)
+    .add("log_level", "info")
+  
+  let inherited_config = config_manager.generate_from_template_with_inheritance(child_template, inheritance_variables)
+  
+  // Verify inherited configuration
+  assert_eq(inherited_config.get("service.name"), Some("azimuth-telemetry"))
+  assert_eq(inherited_config.get("service.version"), Some("1.0.0"))
+  assert_eq(inherited_config.get("database.host"), Some("localhost"))
+  assert_eq(inherited_config.get("database.port"), Some("5432"))
+  assert_eq(inherited_config.get("logging.level"), Some("info"))
 }
