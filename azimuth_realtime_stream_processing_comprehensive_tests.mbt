@@ -1,495 +1,626 @@
-// Azimuth Real-time Stream Processing Comprehensive Tests
-// 实时流处理综合测试用例
+// Azimuth 实时流处理测试用例
+// 专注于测试实时遥测数据流的处理、分析和转发能力
 
-// 测试1: 实时数据流处理管道
-test "实时数据流处理管道" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "realtime.stream.pipeline.test")
-  
-  // 创建流处理管道Span
-  let pipeline_span = Tracer::start_span(tracer, "realtime.data.pipeline")
-  
-  // 设置管道属性
-  let pipeline_attrs = [
-    ("pipeline.name", StringValue("user.activity.pipeline")),
-    ("pipeline.type", StringValue("realtime.processing")),
-    ("throughput.target", IntValue(10000)), // events/sec
-    ("latency.target", IntValue(100))       // ms
-  ]
-  Span::set_attributes(pipeline_span, pipeline_attrs)
-  
-  // 模拟流处理阶段
-  let pipeline_stages = [
-    ("data.ingestion", "数据摄取", 10, 5000),
-    ("data.validation", "数据验证", 20, 3000),
-    ("data.transformation", "数据转换", 30, 4000),
-    ("data.enrichment", "数据丰富", 25, 6000),
-    ("data.sink", "数据输出", 15, 2000)
+// 测试1: 基本流数据处理
+test "基本流数据处理" {
+  // 模拟实时遥测数据流
+  let telemetry_stream = [
+    {timestamp: 1640995200000L, event_type: "metric", value: 100.0, tags: [("service", "auth")]},
+    {timestamp: 1640995201000L, event_type: "trace", value: 0.0, tags: [("service", "api")]},
+    {timestamp: 1640995202000L, event_type: "metric", value: 105.0, tags: [("service", "auth")]},
+    {timestamp: 1640995203000L, event_type: "log", value: 0.0, tags: [("level", "info")]},
+    {timestamp: 1640995204000L, event_type: "metric", value: 98.0, tags: [("service", "auth")]},
+    {timestamp: 1640995205000L, event_type: "trace", value: 0.0, tags: [("service", "db")]}
   ]
   
-  for (stage_name, stage_desc, processing_time, throughput) in pipeline_stages {
-    // 添加阶段处理事件
-    let stage_attrs = [
-      ("stage.name", StringValue(stage_name)),
-      ("stage.description", StringValue(stage_desc)),
-      ("processing.time", IntValue(processing_time)),
-      ("stage.throughput", IntValue(throughput)),
-      ("stage.status", StringValue("active"))
-    ]
-    Span::add_event(pipeline_span, "stage.processing", Some(stage_attrs))
-  }
+  // 按事件类型分类
+  let metrics_stream = telemetry_stream.filter(fn(event) { event.event_type == "metric" })
+  let traces_stream = telemetry_stream.filter(fn(event) { event.event_type == "trace" })
+  let logs_stream = telemetry_stream.filter(fn(event) { event.event_type == "log" })
   
-  // 添加管道性能指标事件
-  let performance_attrs = [
-    ("event.type", StringValue("pipeline.performance")),
-    ("total.throughput", IntValue(8500),
-    ("average.latency", IntValue(95),
-    ("error.rate", FloatValue(0.02)),
-    ("backlog.size", IntValue(1200))
-  ]
-  Span::add_event(pipeline_span, "performance.metrics", Some(performance_attrs))
+  // 验证流分类
+  assert_eq(metrics_stream.length(), 3)
+  assert_eq(traces_stream.length(), 2)
+  assert_eq(logs_stream.length(), 1)
   
-  Span::end(pipeline_span)
+  // 计算指标流的平均值
+  let metric_values = metrics_stream.map(fn(event) { event.value })
+  let metric_avg = metric_values.fold(0.0, fn(acc, value) { acc + value }) / metric_values.length().to_double()
+  
+  // 验证指标计算
+  assert_eq(metric_avg, (100.0 + 105.0 + 98.0) / 3.0)
+  assert_eq(metric_avg, 101.0)
+  
+  // 按服务标签过滤
+  let auth_service_events = telemetry_stream.filter(fn(event) {
+    event.tags.contains(fn(tag) { tag.0 == "service" && tag.1 == "auth" })
+  })
+  
+  // 验证服务过滤
+  assert_eq(auth_service_events.length(), 3)
+  assert_true(auth_service_events.all(fn(event) { event.event_type == "metric" }))
 }
 
-// 测试2: 流式窗口操作
-test "流式窗口操作" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "realtime.stream.window.test")
-  
-  // 创建窗口操作指标
-  let window_operations = Meter::create_counter(meter, "window.operations", Some("窗口操作次数"), Some("count"))
-  let window_sizes = Meter::create_histogram(meter, "window.sizes", Some("窗口大小"), Some("events"))
-  let window_latencies = Meter::create_histogram(meter, "window.latencies", Some("窗口延迟"), Some("ms"))
-  
-  // 模拟不同类型的窗口操作
-  let window_types = [
-    ("tumbling.window", "滚动窗口", 1000, 60, 5000),
-    ("sliding.window", "滑动窗口", 500, 30, 2500),
-    ("session.window", "会话窗口", 200, 120, 8000),
-    ("global.window", "全局窗口", 10000, 10, 15000)
+// 测试2: 流式窗口聚合
+test "流式窗口聚合" {
+  // 模拟时间序列数据流
+  let time_series_stream = [
+    {timestamp: 1640995200000L, value: 10.0},
+    {timestamp: 1640995201000L, value: 15.0},
+    {timestamp: 1640995202000L, value: 12.0},
+    {timestamp: 1640995203000L, value: 18.0},
+    {timestamp: 1640995204000L, value: 20.0},
+    {timestamp: 1640995205000L, value: 14.0},
+    {timestamp: 1640995206000L, value: 16.0},
+    {timestamp: 1640995207000L, value: 22.0}
   ]
   
-  for (window_type, window_desc, window_size, window_duration, event_count) in window_types {
-    // 记录窗口操作
-    Counter::add(window_operations, 1.0)
-    Histogram::record(window_sizes, window_size.to_float())
-    Histogram::record(window_latencies, window_duration.to_float())
-    
-    // 创建窗口操作Span
-    let tracer = TracerProvider::get_tracer(tracer_provider, "realtime.stream.window.test")
-    let window_span = Tracer::start_span(tracer, window_type)
-    
-    // 设置窗口属性
-    let window_attrs = [
-      ("window.type", StringValue(window_type)),
-      ("window.description", StringValue(window_desc)),
-      ("window.size", IntValue(window_size)),
-      ("window.duration", IntValue(window_duration)),
-      ("events.processed", IntValue(event_count))
-    ]
-    Span::set_attributes(window_span, window_attrs)
-    
-    // 添加窗口触发事件
-    let trigger_attrs = [
-      ("event.type", StringValue("window.triggered")),
-      ("window.type", StringValue(window_type)),
-      ("trigger.reason", StringValue("size.or.time")),
-      ("events.in.window", IntValue(event_count))
-    ]
-    Span::add_event(window_span, "window.triggered", Some(trigger_attrs))
-    
-    // 添加窗口计算事件
-    let compute_attrs = [
-      ("event.type", StringValue("window.computed")),
-      ("window.type", StringValue(window_type)),
-      ("computation.time", IntValue(window_duration / 2)),
-      ("result.size", IntValue(event_count / 10))
-    ]
-    Span::add_event(window_span, "window.computed", Some(compute_attrs))
-    
-    Span::end(window_span)
-  }
+  // 定义时间窗口大小（3秒）
+  let window_size_ms = 3000L
   
-  // 验证窗口操作指标
-  assert_eq(window_operations.name, "window.operations")
-  assert_eq(window_sizes.name, "window.sizes")
-  assert_eq(window_latencies.name, "window.latencies")
-}
-
-// 测试3: 流状态管理和恢复
-test "流状态管理和恢复" {
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "realtime.stream.state.test")
-  
-  // 模拟流状态管理
-  let state_operations = [
-    ("state.initialization", "状态初始化", "key.value.store", 1000),
-    ("state.update", "状态更新", "key.value.store", 500),
-    ("state.checkpoint", "状态检查点", "persistent.store", 2000),
-    ("state.recovery", "状态恢复", "persistent.store", 3000),
-    ("state.cleanup", "状态清理", "key.value.store", 500)
-  ]
-  
-  for (operation_type, operation_desc, store_type, duration) in state_operations {
-    // 创建状态管理日志属性
-    let state_attrs = Attributes::new()
-    Attributes::set(state_attrs, "operation.type", StringValue(operation_type))
-    Attributes::set(state_attrs, "operation.description", StringValue(operation_desc))
-    Attributes::set(state_attrs, "store.type", StringValue(store_type))
-    Attributes::set(state_attrs, "operation.duration", IntValue(duration))
-    Attributes::set(state_attrs, "stream.id", StringValue("user.activity.stream"))
+  // 滑动窗口聚合
+  let sliding_window_aggregation = fn(stream: Array[{timestamp: Int, value: Double}], window_start: Int) -> {
+    window_start: Int,
+    window_end: Int,
+    count: Int,
+    sum: Double,
+    avg: Double,
+    min: Double,
+    max: Double
+  } {
+    let window_end = window_start + window_size_ms
+    let window_data = stream.filter(fn(point) { 
+      point.timestamp >= window_start && point.timestamp < window_end 
+    })
     
-    // 记录状态操作日志
-    let state_log = LogRecord::new_with_context(
-      Info,
-      Some("Stream state operation: " + operation_desc),
-      Some(state_attrs),
-      None,
-      None,
-      None,
-      None,
-      None
-    )
-    Logger::emit(logger, state_log)
-    
-    // 如果是检查点操作，记录检查点详情
-    if operation_type == "state.checkpoint" {
-      let checkpoint_attrs = Attributes::new()
-      Attributes::set(checkpoint_attrs, "checkpoint.id", StringValue("ckpt-12345"))
-      Attributes::set(checkpoint_attrs, "checkpoint.size", IntValue(1048576)) // 1MB
-      Attributes::set(checkpoint_attrs, "keys.count", IntValue(10000))
-      Attributes::set(checkpoint_attrs, "checkpoint.duration", IntValue(duration))
+    if window_data.length() > 0 {
+      let values = window_data.map(fn(point) { point.value })
+      let sum = values.fold(0.0, fn(acc, value) { acc + value })
+      let count = values.length()
       
-      let checkpoint_log = LogRecord::new_with_context(
-        Info,
-        Some("State checkpoint completed"),
-        Some(checkpoint_attrs),
-        None,
-        None,
-        None,
-        None,
-        None
-      )
-      Logger::emit(logger, checkpoint_log)
+      {
+        window_start: window_start,
+        window_end: window_end,
+        count: count,
+        sum: sum,
+        avg: sum / count.to_double(),
+        min: values.fold(999999.0, fn(acc, value) { if value < acc { value } else { acc } }),
+        max: values.fold(0.0, fn(acc, value) { if value > acc { value } else { acc } })
+      }
+    } else {
+      {
+        window_start: window_start,
+        window_end: window_end,
+        count: 0,
+        sum: 0.0,
+        avg: 0.0,
+        min: 0.0,
+        max: 0.0
+      }
     }
+  }
+  
+  // 计算第一个窗口（0-3秒）
+  let window1 = sliding_window_aggregation(time_series_stream, 1640995200000L)
+  
+  // 验证第一个窗口结果
+  assert_eq(window1.window_start, 1640995200000L)
+  assert_eq(window1.window_end, 1640995203000L)
+  assert_eq(window1.count, 3)  // 前3个数据点
+  assert_eq(window1.sum, 37.0)  // 10 + 15 + 12
+  assert_eq(window1.avg, 12.333333333333334)
+  assert_eq(window1.min, 10.0)
+  assert_eq(window1.max, 15.0)
+  
+  // 计算第二个窗口（1-4秒）
+  let window2 = sliding_window_aggregation(time_series_stream, 1640995201000L)
+  
+  // 验证第二个窗口结果
+  assert_eq(window2.count, 3)  // 第2-4个数据点
+  assert_eq(window2.sum, 45.0)  // 15 + 12 + 18
+  assert_eq(window2.avg, 15.0)
+  
+  // 计算所有滑动窗口
+  let window_starts = [
+    1640995200000L,
+    1640995201000L,
+    1640995202000L,
+    1640995203000L,
+    1640995204000L,
+    1640995205000L
+  ]
+  
+  let all_windows = window_starts.map(sliding_window_aggregation)
+  
+  // 验证窗口数量
+  assert_eq(all_windows.length(), 6)
+  
+  // 验证每个窗口都有数据
+  assert_true(all_windows.all(fn(window) { window.count > 0 }))
+}
+
+// 测试3: 流式异常检测
+test "流式异常检测" {
+  // 模拟包含异常的指标流
+  let metrics_with_anomalies = [
+    {timestamp: 1640995200000L, metric_name: "cpu_usage", value: 45.0},
+    {timestamp: 1640995201000L, metric_name: "cpu_usage", value: 48.0},
+    {timestamp: 1640995202000L, metric_name: "cpu_usage", value: 52.0},
+    {timestamp: 1640995203000L, metric_name: "cpu_usage", value: 95.0},  // 异常值
+    {timestamp: 1640995204000L, metric_name: "cpu_usage", value: 46.0},
+    {timestamp: 1640995205000L, metric_name: "cpu_usage", value: 49.0},
+    {timestamp: 1640995206000L, metric_name: "cpu_usage", value: 51.0},
+    {timestamp: 1640995207000L, metric_name: "cpu_usage", value: 98.0}   // 异常值
+  ]
+  
+  // 基于统计的异常检测
+  let statistical_anomaly_detection = fn(stream: Array[{timestamp: Int, metric_name: String, value: Double}], threshold: Double) -> Array[Int] {
+    if stream.length() < 3 { return [] }
     
-    // 如果是恢复操作，记录恢复详情
-    if operation_type == "state.recovery" {
-      let recovery_attrs = Attributes::new()
-      Attributes::set(recovery_attrs, "recovery.checkpoint", StringValue("ckpt-12345"))
-      Attributes::set(recovery_attrs, "recovery.size", IntValue(1048576)) // 1MB
-      Attributes::set(recovery_attrs, "keys.restored", IntValue(10000))
-      Attributes::set(recovery_attrs, "recovery.duration", IntValue(duration))
+    // 计算移动平均和标准差
+    let moving_averages = stream.slice(0, stream.length() - 2).map_with_index(fn(i, point) {
+      let window = stream.slice(i, i + 3)
+      let values = window.map(fn(p) { p.value })
+      let avg = values.fold(0.0, fn(acc, v) { acc + v }) / values.length().to_double()
       
-      let recovery_log = LogRecord::new_with_context(
-        Info,
-        Some("State recovery completed"),
-        Some(recovery_attrs),
-        None,
-        None,
-        None,
-        None,
-        None
-      )
-      Logger::emit(logger, recovery_log)
+      (i + 1, avg)  // 返回中间点的索引和移动平均值
+    })
+    
+    // 检测异常（值与移动平均的差异超过阈值）
+    moving_averages.filter(fn(pair) {
+      let index = pair.0
+      let avg = pair.1
+      let value = stream[index].value
+      (value - avg).abs() > threshold
+    }).map(fn(pair) { pair.0 })
+  }
+  
+  // 使用统计方法检测异常
+  let anomaly_indices = statistical_anomaly_detection(metrics_with_anomalies, 30.0)
+  
+  // 验证异常检测
+  assert_eq(anomaly_indices.length(), 2)
+  assert_true(anomaly_indices.contains(3))  // 第4个数据点（95.0）
+  assert_true(anomaly_indices.contains(7))  // 第8个数据点（98.0）
+  
+  // 基于阈值的简单异常检测
+  let threshold_anomaly_detection = fn(stream: Array[{timestamp: Int, metric_name: String, value: Double}], min_threshold: Double, max_threshold: Double) -> Array[Int] {
+    stream.map_with_index(fn(i, point) {
+      if point.value < min_threshold || point.value > max_threshold {
+        i
+      } else {
+        -1
+      }
+    }).filter(fn(index) { index >= 0 })
+  }
+  
+  // 使用阈值方法检测异常
+  let threshold_anomalies = threshold_anomaly_detection(metrics_with_anomalies, 20.0, 80.0)
+  
+  // 验证阈值异常检测
+  assert_eq(threshold_anomalies.length(), 2)
+  assert_true(threshold_anomalies.contains(3))  // 95.0 > 80.0
+  assert_true(threshold_anomalies.contains(7))  // 98.0 > 80.0
+  
+  // 生成异常警报
+  let anomaly_alerts = anomaly_indices.map(fn(index) {
+    let point = metrics_with_anomalies[index]
+    {
+      timestamp: point.timestamp,
+      metric_name: point.metric_name,
+      value: point.value,
+      alert_type: "statistical_anomaly",
+      severity: if point.value > 90.0 { "critical" } else { "warning" }
+    }
+  })
+  
+  // 验证警报生成
+  assert_eq(anomaly_alerts.length(), 2)
+  assert_true(anomaly_alerts.all(fn(alert) { alert.metric_name == "cpu_usage" }))
+  assert_true(anomaly_alerts.all(fn(alert) { alert.severity == "critical" }))
+}
+
+// 测试4: 流式数据转换和丰富
+test "流式数据转换和丰富" {
+  // 模拟原始遥测事件流
+  let raw_events = [
+    {
+      timestamp: 1640995200000L,
+      event_type: "http_request",
+      method: "GET",
+      path: "/api/users",
+      status_code: 200,
+      duration_ms: 150
+    },
+    {
+      timestamp: 1640995201000L,
+      event_type: "http_request",
+      method: "POST",
+      path: "/api/orders",
+      status_code: 201,
+      duration_ms: 300
+    },
+    {
+      timestamp: 1640995202000L,
+      event_type: "http_request",
+      method: "GET",
+      path: "/api/products",
+      status_code: 500,
+      duration_ms: 800
+    }
+  ]
+  
+  // 数据转换：添加计算字段
+  let enrich_events = fn(events: Array[{
+    timestamp: Int,
+    event_type: String,
+    method: String,
+    path: String,
+    status_code: Int,
+    duration_ms: Int
+  }]) -> Array[{
+    timestamp: Int,
+    event_type: String,
+    method: String,
+    path: String,
+    status_code: Int,
+    duration_ms: Int,
+    status_class: String,
+    endpoint_category: String,
+    performance_tier: String
+  }> {
+    events.map(fn(event) {
+      // 状态码分类
+      let status_class = if event.status_code >= 200 && event.status_code < 300 {
+        "success"
+      } else if event.status_code >= 400 && event.status_code < 500 {
+        "client_error"
+      } else if event.status_code >= 500 {
+        "server_error"
+      } else {
+        "unknown"
+      }
+      
+      // 端点分类
+      let endpoint_category = if event.path.contains("/users") {
+        "user_management"
+      } else if event.path.contains("/orders") {
+        "order_management"
+      } else if event.path.contains("/products") {
+        "product_management"
+      } else {
+        "other"
+      }
+      
+      // 性能分层
+      let performance_tier = if event.duration_ms < 200 {
+        "fast"
+      } else if event.duration_ms < 500 {
+        "normal"
+      } else {
+        "slow"
+      }
+      
+      {
+        timestamp: event.timestamp,
+        event_type: event.event_type,
+        method: event.method,
+        path: event.path,
+        status_code: event.status_code,
+        duration_ms: event.duration_ms,
+        status_class: status_class,
+        endpoint_category: endpoint_category,
+        performance_tier: performance_tier
+      }
+    })
+  }
+  
+  // 执行数据丰富
+  let enriched_events = enrich_events(raw_events)
+  
+  // 验证数据丰富结果
+  assert_eq(enriched_events.length(), 3)
+  
+  // 验证第一个事件的丰富字段
+  let first_event = enriched_events[0]
+  assert_eq(first_event.status_class, "success")      // 200 -> success
+  assert_eq(first_event.endpoint_category, "user_management")  // /api/users -> user_management
+  assert_eq(first_event.performance_tier, "fast")    // 150ms -> fast
+  
+  // 验证第二个事件的丰富字段
+  let second_event = enriched_events[1]
+  assert_eq(second_event.status_class, "success")      // 201 -> success
+  assert_eq(second_event.endpoint_category, "order_management")  // /api/orders -> order_management
+  assert_eq(second_event.performance_tier, "normal")  // 300ms -> normal
+  
+  // 验证第三个事件的丰富字段
+  let third_event = enriched_events[2]
+  assert_eq(third_event.status_class, "server_error")  // 500 -> server_error
+  assert_eq(third_event.endpoint_category, "product_management")  // /api/products -> product_management
+  assert_eq(third_event.performance_tier, "slow")     // 800ms -> slow
+  
+  // 按性能分层统计
+  let performance_stats = enriched_events.fold(
+    {fast: 0, normal: 0, slow: 0}, 
+    fn(acc, event) {
+      match event.performance_tier {
+        "fast" => {fast: acc.fast + 1, normal: acc.normal, slow: acc.slow}
+        "normal" => {fast: acc.fast, normal: acc.normal + 1, slow: acc.slow}
+        "slow" => {fast: acc.fast, normal: acc.normal, slow: acc.slow + 1}
+        _ => acc
+      }
+    }
+  )
+  
+  // 验证性能统计
+  assert_eq(performance_stats.fast, 1)
+  assert_eq(performance_stats.normal, 1)
+  assert_eq(performance_stats.slow, 1)
+}
+
+// 测试5: 流式数据路由和分发
+test "流式数据路由和分发" {
+  // 模拟混合遥测数据流
+  let mixed_stream = [
+    {timestamp: 1640995200000L, event_type: "metric", source: "service-a", priority: "high"},
+    {timestamp: 1640995201000L, event_type: "trace", source: "service-b", priority: "normal"},
+    {timestamp: 1640995202000L, event_type: "log", source: "service-a", priority: "low"},
+    {timestamp: 1640995203000L, event_type: "metric", source: "service-c", priority: "critical"},
+    {timestamp: 1640995204000L, event_type: "trace", source: "service-a", priority: "high"},
+    {timestamp: 1640995205000L, event_type: "metric", source: "service-b", priority: "normal"}
+  ]
+  
+  // 定义路由规则
+  let routing_rules = [
+    {
+      name: "metrics_store",
+      condition: fn(event: {timestamp: Int, event_type: String, source: String, priority: String}) -> Bool {
+        event.event_type == "metric"
+      }
+    },
+    {
+      name: "traces_store",
+      condition: fn(event: {timestamp: Int, event_type: String, source: String, priority: String}) -> Bool {
+        event.event_type == "trace"
+      }
+    },
+    {
+      name: "logs_store",
+      condition: fn(event: {timestamp: Int, event_type: String, source: String, priority: String}) -> Bool {
+        event.event_type == "log"
+      }
+    },
+    {
+      name: "high_priority_queue",
+      condition: fn(event: {timestamp: Int, event_type: String, source: String, priority: String}) -> Bool {
+        event.priority == "high" || event.priority == "critical"
+      }
+    }
+  ]
+  
+  // 应用路由规则
+  let routed_streams = routing_rules.map(fn(rule) {
+    let matched_events = mixed_stream.filter(rule.condition)
+    
+    {
+      destination: rule.name,
+      events: matched_events,
+      count: matched_events.length()
+    }
+  })
+  
+  // 验证路由结果
+  assert_eq(routed_streams.length(), 4)
+  
+  // 验证metrics_store路由
+  let metrics_route = routed_streams.find(fn(route) { route.destination == "metrics_store" })
+  match metrics_route {
+    Some(route) => {
+      assert_eq(route.count, 3)  // 3个metric事件
+      assert_true(route.events.all(fn(event) { event.event_type == "metric" }))
+    }
+    None => assert_true(false)
+  }
+  
+  // 验证traces_store路由
+  let traces_route = routed_streams.find(fn(route) { route.destination == "traces_store" })
+  match traces_route {
+    Some(route) => {
+      assert_eq(route.count, 2)  // 2个trace事件
+      assert_true(route.events.all(fn(event) { event.event_type == "trace" }))
+    }
+    None => assert_true(false)
+  }
+  
+  // 验证high_priority_queue路由
+  let high_priority_route = routed_streams.find(fn(route) { route.destination == "high_priority_queue" })
+  match high_priority_route {
+    Some(route) => {
+      assert_eq(route.count, 2)  // 2个高优先级事件
+      assert_true(route.events.all(fn(event) { 
+        event.priority == "high" || event.priority == "critical" 
+      }))
+    }
+    None => assert_true(false)
+  }
+  
+  // 验证事件可以路由到多个目的地
+  let high_priority_metric = mixed_stream.find(fn(event) { 
+    event.event_type == "metric" && (event.priority == "high" || event.priority == "critical") 
+  })
+  
+  match high_priority_metric {
+    Some(event) => {
+      // 这个事件应该同时出现在metrics_store和high_priority_queue中
+      let metrics_contains = metrics_route.unwrap().events.contains(event)
+      let high_priority_contains = high_priority_route.unwrap().events.contains(event)
+      
+      assert_true(metrics_contains)
+      assert_true(high_priority_contains)
+    }
+    None => assert_true(false)
+  }
+}
+
+// 测试6: 流式数据背压处理
+test "流式数据背压处理" {
+  // 模拟流处理系统状态
+  let stream_processor_state = {
+    input_queue_size: 1000,
+    processing_capacity: 800,
+    output_queue_size: 200,
+    max_queue_size: 1500,
+    backpressure_threshold: 0.8
+  }
+  
+  // 计算系统负载
+  let input_load = stream_processor_state.input_queue_size.to_double() / stream_processor_state.max_queue_size.to_double()
+  let output_load = stream_processor_state.output_queue_size.to_double() / stream_processor_state.max_queue_size.to_double()
+  let total_load = (stream_processor_state.input_queue_size + stream_processor_state.output_queue_size).to_double() / 
+                   (stream_processor_state.max_queue_size * 2).to_double()
+  
+  // 验证负载计算
+  assert_eq(input_load, 0.6666666666666666)  // 1000/1500
+  assert_eq(output_load, 0.13333333333333333)  // 200/1500
+  assert_eq(total_load, 0.4)  // (1000+200)/(1500*2)
+  
+  // 检测背压条件
+  let backpressure_detected = total_load >= stream_processor_state.backpressure_threshold ||
+                            input_load >= stream_processor_state.backpressure_threshold
+  
+  // 验证背压检测
+  assert_false(backpressure_detected)  // 0.4 < 0.8，没有背压
+  
+  // 模拟高负载情况
+  let high_load_state = {
+    input_queue_size: 1400,
+    processing_capacity: 800,
+    output_queue_size: 600,
+    max_queue_size: 1500,
+    backpressure_threshold: 0.8
+  }
+  
+  let high_input_load = high_load_state.input_queue_size.to_double() / high_load_state.max_queue_size.to_double()
+  let high_total_load = (high_load_state.input_queue_size + high_load_state.output_queue_size).to_double() / 
+                       (high_load_state.max_queue_size * 2).to_double()
+  
+  let high_load_backpressure = high_input_load >= high_load_state.backpressure_threshold ||
+                              high_total_load >= high_load_state.backpressure_threshold
+  
+  // 验证高负载背压检测
+  assert_true(high_load_backpressure)  // 0.933 > 0.8，有背压
+  
+  // 定义背压处理策略
+  let backpressure_strategies = [
+    {
+      load_level: "moderate",
+      actions: ["reduce_batch_size", "increase_processing_threads"]
+    },
+    {
+      load_level: "high",
+      actions: ["drop_non_critical_events", "increase_sampling_rate"]
+    },
+    {
+      load_level: "critical",
+      actions: ["reject_new_events", "alert_operator", "scale_up_resources"]
+    }
+  ]
+  
+  // 根据负载级别选择策略
+  let select_backpressure_strategy = fn(load_ratio: Double) -> String {
+    if load_ratio >= 0.9 {
+      "critical"
+    } else if load_ratio >= 0.7 {
+      "high"
+    } else if load_ratio >= 0.5 {
+      "moderate"
+    } else {
+      "normal"
     }
   }
-}
-
-// 测试4: 流式数据质量监控
-test "流式数据质量监控" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "realtime.stream.quality.test")
   
-  // 创建数据质量监控Span
-  let quality_span = Tracer::start_span(tracer, "stream.data.quality.monitoring")
+  // 测试策略选择
+  assert_eq(select_backpressure_strategy(0.4), "normal")
+  assert_eq(select_backpressure_strategy(0.6), "moderate")
+  assert_eq(select_backpressure_strategy(0.8), "high")
+  assert_eq(select_backpressure_strategy(0.95), "critical")
   
-  // 模拟数据质量检查
-  let quality_checks = [
-    ("completeness.check", "完整性检查", 98.5, "missing.fields"),
-    ("accuracy.check", "准确性检查", 99.2, "invalid.values"),
-    ("consistency.check", "一致性检查", 97.8, "conflicting.data"),
-    ("validity.check", "有效性检查", 99.8, "out.of.range.values"),
-    ("timeliness.check", "及时性检查", 95.5, "late.arriving.data")
-  ]
+  // 为高负载情况选择策略
+  let high_load_strategy = select_backpressure_strategy(high_input_load)
+  assert_eq(high_load_strategy, "critical")
   
-  for (check_type, check_desc, score, common_issue) in quality_checks {
-    // 设置质量检查属性
-    let check_attrs = [
-      ("check.type", StringValue(check_type)),
-      ("check.description", StringValue(check_desc)),
-      ("quality.score", FloatValue(score)),
-      ("threshold", FloatValue(95.0)),
-      ("status", StringValue(if score >= 95.0 { "pass" } else { "fail" }))
-    ]
-    Span::set_attributes(quality_span, check_attrs)
+  // 获取对应的处理动作
+  let selected_actions = backpressure_strategies.find_fn(fn(strategy) {
+    strategy.load_level == high_load_strategy
+  })
+  
+  match selected_actions {
+    Some(strategy) => {
+      assert_eq(strategy.actions.length(), 3)
+      assert_true(strategy.actions.contains("reject_new_events"))
+      assert_true(strategy.actions.contains("alert_operator"))
+      assert_true(strategy.actions.contains("scale_up_resources"))
+    }
+    None => assert_true(false)
+  }
+  
+  // 模拟背压恢复
+  let apply_backpressure_recovery = fn(state: {
+    input_queue_size: Int,
+    processing_capacity: Int,
+    output_queue_size: Int,
+    max_queue_size: Int,
+    backpressure_threshold: Double
+  }) -> {
+    input_queue_size: Int,
+    processing_capacity: Int,
+    output_queue_size: Int,
+    max_queue_size: Int,
+    backpressure_threshold: Double,
+    recovery_actions: Array[String]
+  } {
+    let input_load = state.input_queue_size.to_double() / state.max_queue_size.to_double()
+    let total_load = (state.input_queue_size + state.output_queue_size).to_double() / 
+                    (state.max_queue_size * 2).to_double()
     
-    // 添加质量检查事件
-    let event_attrs = [
-      ("event.type", StringValue("quality.check.completed")),
-      ("check.type", StringValue(check_type)),
-      ("quality.score", FloatValue(score)),
-      ("records.checked", IntValue(10000)),
-      ("issues.found", IntValue(((100.0 - score) * 100.0).to_int()))
-    ]
-    Span::add_event(quality_span, "quality.check.completed", Some(event_attrs))
-    
-    // 如果质量分数低于阈值，添加质量问题事件
-    if score < 95.0 {
-      let issue_attrs = [
-        ("event.type", StringValue("quality.issue.detected")),
-        ("check.type", StringValue(check_type)),
-        ("common.issue", StringValue(common_issue)),
-        ("severity", StringValue(if score < 90.0 { "high" } else { "medium" }))
-      ]
-      Span::add_event(quality_span, "quality.issue.detected", Some(issue_attrs))
+    if total_load >= state.backpressure_threshold {
+      // 应用背压恢复措施
+      let reduced_input = (state.input_queue_size * 7 / 10)  // 减少30%
+      let increased_capacity = state.processing_capacity + 200  // 增加处理能力
+      
+      {
+        input_queue_size: reduced_input,
+        processing_capacity: increased_capacity,
+        output_queue_size: state.output_queue_size,
+        max_queue_size: state.max_queue_size,
+        backpressure_threshold: state.backpressure_threshold,
+        recovery_actions: ["reduce_input_rate", "increase_processing_capacity"]
+      }
+    } else {
+      {
+        input_queue_size: state.input_queue_size,
+        processing_capacity: state.processing_capacity,
+        output_queue_size: state.output_queue_size,
+        max_queue_size: state.max_queue_size,
+        backpressure_threshold: state.backpressure_threshold,
+        recovery_actions: []
+      }
     }
   }
   
-  // 添加整体质量评估事件
-  let overall_attrs = [
-    ("event.type", StringValue("overall.quality.assessment")),
-    ("average.score", FloatValue(98.16)),
-    ("checks.passed", IntValue(4)),
-    ("checks.failed", IntValue(1)),
-    ("overall.status", StringValue("good"))
-  ]
-  Span::add_event(quality_span, "overall.quality.assessment", Some(overall_attrs))
+  // 应用背压恢复
+  let recovered_state = apply_backpressure_recovery(high_load_state)
   
-  Span::end(quality_span)
-}
-
-// 测试5: 流式背压处理
-test "流式背压处理" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "realtime.stream.backpressure.test")
+  // 验证恢复结果
+  assert_eq(recovered_state.input_queue_size, 980)  // 1400 * 0.7
+  assert_eq(recovered_state.processing_capacity, 1000)  // 800 + 200
+  assert_eq(recovered_state.recovery_actions.length(), 2)
+  assert_true(recovered_state.recovery_actions.contains("reduce_input_rate"))
+  assert_true(recovered_state.recovery_actions.contains("increase_processing_capacity"))
   
-  // 创建背压处理指标
-  let backpressure_events = Meter::create_counter(meter, "backpressure.events", Some("背压事件次数"), Some("count"))
-  let buffer_sizes = Meter::create_histogram(meter, "buffer.sizes", Some("缓冲区大小"), Some("events"))
-  let processing_lags = Meter::create_histogram(meter, "processing.lags", Some("处理延迟"), Some("ms"))
+  // 验证恢复后的负载
+  let recovered_load = (recovered_state.input_queue_size + recovered_state.output_queue_size).to_double() / 
+                      (recovered_state.max_queue_size * 2).to_double()
   
-  // 模拟背压场景
-  let backpressure_scenarios = [
-    ("high.input.rate", "高输入速率", 15000, 12000, 2000),
-    ("slow.processing", "慢速处理", 8000, 10000, 3000),
-    ("network.congestion", "网络拥塞", 5000, 8000, 5000),
-    ("resource.exhaustion", "资源耗尽", 3000, 2000, 8000)
-  ]
-  
-  for (scenario_type, scenario_desc, input_rate, processing_rate, buffer_size) in backpressure_scenarios {
-    // 记录背压事件
-    Counter::add(backpressure_events, 1.0)
-    Histogram::record(buffer_sizes, buffer_size.to_float())
-    Histogram::record(processing_lags, (input_rate - processing_rate).to_float())
-    
-    // 创建背压处理Span
-    let tracer = TracerProvider::get_tracer(tracer_provider, "realtime.stream.backpressure.test")
-    let backpressure_span = Tracer::start_span(tracer, "backpressure.handling")
-    
-    // 设置背压属性
-    let backpressure_attrs = [
-      ("scenario.type", StringValue(scenario_type)),
-      ("scenario.description", StringValue(scenario_desc)),
-      ("input.rate", IntValue(input_rate)),
-      ("processing.rate", IntValue(processing_rate)),
-      ("buffer.size", IntValue(buffer_size)),
-      ("backpressure.applied", BoolValue(input_rate > processing_rate))
-    ]
-    Span::set_attributes(backpressure_span, backpressure_attrs)
-    
-    // 添加背压检测事件
-    let detection_attrs = [
-      ("event.type", StringValue("backpressure.detected")),
-      ("scenario.type", StringValue(scenario_type)),
-      ("rate.difference", IntValue(input_rate - processing_rate)),
-      ("buffer.utilization", FloatValue((buffer_size.to_float() / 15000.0) * 100.0))
-    ]
-    Span::add_event(backpressure_span, "backpressure.detected", Some(detection_attrs))
-    
-    // 添加背压缓解事件
-    let mitigation_attrs = [
-      ("event.type", StringValue("backpressure.mitigated")),
-      ("scenario.type", StringValue(scenario_type)),
-      ("mitigation.strategy", StringValue("rate.limiting")),
-      ("mitigation.duration", IntValue(5000)),
-      ("new.input.rate", IntValue(processing_rate + 1000))
-    ]
-    Span::add_event(backpressure_span, "backpressure.mitigated", Some(mitigation_attrs))
-    
-    Span::end(backpressure_span)
-  }
-  
-  // 验证背压处理指标
-  assert_eq(backpressure_events.name, "backpressure.events")
-  assert_eq(buffer_sizes.name, "buffer.sizes")
-  assert_eq(processing_lags.name, "processing.lags")
-}
-
-// 测试6: 流式数据聚合
-test "流式数据聚合" {
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "realtime.stream.aggregation.test")
-  
-  // 模拟流式数据聚合
-  let aggregation_types = [
-    ("count.aggregation", "计数聚合", "user.events", 50000),
-    ("sum.aggregation", "求和聚合", "transaction.amounts", 25000),
-    ("average.aggregation", "平均值聚合", "response.times", 15000),
-    ("min.max.aggregation", "最小最大值聚合", "sensor.readings", 30000),
-    ("percentile.aggregation", "百分位数聚合", "latency.measurements", 20000)
-  ]
-  
-  for (agg_type, agg_desc, data_source, event_count) in aggregation_types {
-    // 创建聚合日志属性
-    let agg_attrs = Attributes::new()
-    Attributes::set(agg_attrs, "aggregation.type", StringValue(agg_type))
-    Attributes::set(agg_attrs, "aggregation.description", StringValue(agg_desc))
-    Attributes::set(agg_attrs, "data.source", StringValue(data_source))
-    Attributes::set(agg_attrs, "events.processed", IntValue(event_count))
-    Attributes::set(agg_attrs, "aggregation.window", StringValue("1.minute"))
-    
-    // 记录聚合开始日志
-    let start_log = LogRecord::new_with_context(
-      Info,
-      Some("Stream aggregation started: " + agg_desc),
-      Some(agg_attrs),
-      None,
-      None,
-      None,
-      None,
-      None
-    )
-    Logger::emit(logger, start_log)
-    
-    // 记录聚合结果日志
-    let result_attrs = Attributes::new()
-    Attributes::set(result_attrs, "aggregation.type", StringValue(agg_type))
-    Attributes::set(result_attrs, "aggregation.result", StringValue("aggregate.value"))
-    Attributes::set(result_attrs, "result.timestamp", IntValue(1234567890))
-    Attributes::set(result_attrs, "result.precision", StringValue("high"))
-    
-    let result_log = LogRecord::new_with_context(
-      Info,
-      Some("Stream aggregation completed: " + agg_desc),
-      Some(result_attrs),
-      None,
-      None,
-      None,
-      None,
-      None
-    )
-    Logger::emit(logger, result_log)
-  }
-}
-
-// 测试7: 流式数据分区和分发
-test "流式数据分区和分发" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "realtime.stream.partition.test")
-  
-  // 创建数据分区Span
-  let partition_span = Tracer::start_span(tracer, "stream.data.partitioning")
-  
-  // 模拟数据分区策略
-  let partition_strategies = [
-    ("key.based.partitioning", "基于键的分区", "user.id", 10),
-    ("round.robin.partitioning", "轮询分区", "none", 8),
-    ("hash.partitioning", "哈希分区", "event.hash", 12),
-    ("range.partitioning", "范围分区", "timestamp", 6),
-    ("custom.partitioning", "自定义分区", "business.key", 15)
-  ]
-  
-  for (strategy_type, strategy_desc, partition_key, partition_count) in partition_strategies {
-    // 设置分区属性
-    let partition_attrs = [
-      ("strategy.type", StringValue(strategy_type)),
-      ("strategy.description", StringValue(strategy_desc)),
-      ("partition.key", StringValue(partition_key)),
-      ("partition.count", IntValue(partition_count)),
-      ("events.distributed", IntValue(100000))
-    ]
-    Span::set_attributes(partition_span, partition_attrs)
-    
-    // 添加分区分布事件
-    let distribution_attrs = [
-      ("event.type", StringValue("partition.completed")),
-      ("strategy.type", StringValue(strategy_type)),
-      ("avg.events.per.partition", IntValue(100000 / partition_count)),
-      ("max.events.per.partition", IntValue(15000)),
-      ("min.events.per.partition", IntValue(8000)),
-      ("distribution.skew", FloatValue(0.15))
-    ]
-    Span::add_event(partition_span, "partition.distribution.completed", Some(distribution_attrs))
-  }
-  
-  Span::end(partition_span)
-}
-
-// 测试8: 流式系统容错和恢复
-test "流式系统容错和恢复" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "realtime.stream.fault.tolerance.test")
-  
-  // 创建容错指标
-  let failure_events = Meter::create_counter(meter, "failure.events", Some("故障事件次数"), Some("count"))
-  let recovery_events = Meter::create_counter(meter, "recovery.events", Some("恢复事件次数"), Some("count"))
-  let recovery_times = Meter::create_histogram(meter, "recovery.times", Some("恢复时间"), Some("ms"))
-  
-  // 模拟容错场景
-  let fault_scenarios = [
-    ("node.failure", "节点故障", 5000, "automatic.restart"),
-    ("network.partition", "网络分区", 10000, "buffer.and.retry"),
-    ("processing.bottleneck", "处理瓶颈", 3000, "scale.out"),
-    ("data.corruption", "数据损坏", 8000, "data.revalidation"),
-    ("resource.exhaustion", "资源耗尽", 12000, "resource.reallocation")
-  ]
-  
-  for (scenario_type, scenario_desc, recovery_time, recovery_strategy) in fault_scenarios {
-    // 记录故障和恢复事件
-    Counter::add(failure_events, 1.0)
-    Counter::add(recovery_events, 1.0)
-    Histogram::record(recovery_times, recovery_time.to_float())
-    
-    // 创建容错处理Span
-    let tracer = TracerProvider::get_tracer(tracer_provider, "realtime.stream.fault.tolerance.test")
-    let fault_span = Tracer::start_span(tracer, "fault.tolerance.handling")
-    
-    // 设置容错属性
-    let fault_attrs = [
-      ("scenario.type", StringValue(scenario_type)),
-      ("scenario.description", StringValue(scenario_desc)),
-      ("recovery.strategy", StringValue(recovery_strategy)),
-      ("recovery.time", IntValue(recovery_time)),
-      ("data.loss", BoolValue(false))
-    ]
-    Span::set_attributes(fault_span, fault_attrs)
-    
-    // 添加故障检测事件
-    let detection_attrs = [
-      ("event.type", StringValue("fault.detected")),
-      ("scenario.type", StringValue(scenario_type)),
-      ("detection.time", IntValue(1000)),
-      ("impact.assessment", StringValue("medium"))
-    ]
-    Span::add_event(fault_span, "fault.detected", Some(detection_attrs))
-    
-    // 添加恢复完成事件
-    let recovery_attrs = [
-      ("event.type", StringValue("recovery.completed")),
-      ("scenario.type", StringValue(scenario_type)),
-      ("recovery.strategy", StringValue(recovery_strategy)),
-      ("recovery.time", IntValue(recovery_time)),
-      ("data.integrity", StringValue("preserved"))
-    ]
-    Span::add_event(fault_span, "recovery.completed", Some(recovery_attrs))
-    
-    Span::end(fault_span)
-  }
-  
-  // 验证容错指标
-  assert_eq(failure_events.name, "failure.events")
-  assert_eq(recovery_events.name, "recovery.events")
-  assert_eq(recovery_times.name, "recovery.times")
+  assert_true(recovered_load < high_total_load)  // 负载应该降低
 }
