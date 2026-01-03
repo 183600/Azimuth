@@ -1,342 +1,550 @@
-// Azimuth 高级遥测特性测试用例
-// 专注于遥测系统的高级功能和特性测试
+// Azimuth Telemetry System - Advanced Telemetry Features Tests
+// This file contains test cases for advanced telemetry features
 
-// 测试1: 时间序列数据分析
-test "时间序列数据分析测试" {
-  let time_series_provider = TimeSeriesProvider::new()
-  let analyzer = TimeSeriesProvider::get_analyzer(time_series_provider, "metrics.analyzer")
+// Test 1: Distributed Tracing with Context Propagation
+test "distributed tracing with context propagation" {
+  // Create root span context
+  let trace_id = "1234567890abcdef1234567890abcdef"
+  let root_span_id = "1111111111111111"
+  let root_context = SpanContext::new(trace_id, root_span_id, true, "root")
   
-  // 创建时间序列数据
-  let metric_data = [
-    TimeSeriesPoint::new("2023-01-01T00:00:00Z", 100.0),
-    TimeSeriesPoint::new("2023-01-01T01:00:00Z", 120.0),
-    TimeSeriesPoint::new("2023-01-01T02:00:00Z", 95.0),
-    TimeSeriesPoint::new("2023-01-01T03:00:00Z", 110.0),
-    TimeSeriesPoint::new("2023-01-01T04:00:00Z", 130.0)
-  ]
-  
-  // 执行趋势分析
-  let trend_result = TimeSeriesAnalyzer::calculate_trend(analyzer, metric_data)
-  assert_eq(TimeSeriesResult::direction(trend_result), Upward)
-  assert_true(TimeSeriesResult::slope(trend_result) > 0.0)
-  
-  // 执行季节性分析
-  let seasonality_result = TimeSeriesAnalyzer::detect_seasonality(analyzer, metric_data)
-  assert_eq(TimeSeriesResult::has_seasonality(seasonality_result), false)
-  
-  // 执行异常点检测
-  let anomalies = TimeSeriesAnalyzer::detect_anomalies(analyzer, metric_data)
-  assert_eq(TimeSeriesAnomalies::count(anomalies), 0)
-}
-
-// 测试2: 异常检测和告警机制
-test "异常检测和告警机制测试" {
-  let alert_manager = AlertManager::new()
-  let anomaly_detector = AnomalyDetector::new(ThresholdBased)
-  
-  // 创建指标数据
-  let normal_metrics = [10.0, 12.0, 11.0, 9.0, 10.5]
-  let abnormal_metrics = [10.0, 12.0, 35.0, 11.0, 10.5]
-  
-  // 配置异常检测器
-  AnomalyDetector::set_threshold(anomaly_detector, 20.0)
-  AnomalyDetector::set_method(anomaly_detector, Statistical)
-  
-  // 检测正常数据
-  let normal_result = AnomalyDetector::analyze(anomaly_detector, normal_metrics)
-  assert_eq(AnomalyResult::is_anomaly(normal_result), false)
-  
-  // 检测异常数据
-  let abnormal_result = AnomalyDetector::analyze(anomaly_detector, abnormal_metrics)
-  assert_eq(AnomalyResult::is_anomaly(abnormal_result), true)
-  
-  // 配置告警规则
-  let alert_rule = AlertRule::new("high.error.rate")
-  AlertRule::set_condition(alert_rule, GreaterThan(0.1))
-  AlertRule::set_duration(alert_rule, Duration::minutes(5))
-  AlertRule::set_severity(alert_rule, Critical)
-  
-  // 添加告警规则到管理器
-  AlertManager::add_rule(alert_manager, alert_rule)
-  
-  // 检查告警状态
-  let alert_status = AlertManager::evaluate_rules(alert_manager, [("error.rate", 0.15)])
-  assert_eq(AlertStatus::triggered_count(alert_status), 1)
-}
-
-// 测试3: 数据压缩和传输优化
-test "数据压缩和传输优化测试" {
-  let compression_engine = CompressionEngine::new(Gzip)
-  let transmission_optimizer = TransmissionOptimizer::new()
-  
-  // 创建测试数据
-  let telemetry_data = TelemetryData::new()
-  TelemetryData::add_metric(telemetry_data, "cpu.usage", 75.5)
-  TelemetryData::add_metric(telemetry_data, "memory.usage", 62.3)
-  TelemetryData::add_span(telemetry_data, Span::new("api.request", Server, SpanContext::new("trace-123", "span-456", true, "")))
-  TelemetryData::add_log(telemetry_data, LogRecord::new(Info, "Processing completed"))
-  
-  // 序列化数据
-  let serialized_data = TelemetryData::serialize(telemetry_data)
-  let original_size = serialized_data.length()
-  
-  // 压缩数据
-  let compressed_data = CompressionEngine::compress(compression_engine, serialized_data)
-  let compressed_size = compressed_data.length()
-  
-  // 验证压缩效果
-  assert_true(compressed_size < original_size)
-  assert_eq(CompressionEngine::algorithm(compression_engine), Gzip)
-  
-  // 解压缩数据
-  let decompressed_data = CompressionEngine::decompress(compression_engine, compressed_data)
-  
-  // 验证解压缩结果
-  assert_eq(decompressed_data, serialized_data)
-  
-  // 配置传输优化
-  TransmissionOptimizer::set_batch_size(transmission_optimizer, 100)
-  TransmissionOptimizer::set_compression_threshold(transmission_optimizer, 1024)
-  TransmissionOptimizer::set_retry_policy(transmission_optimizer, ExponentialBackoff)
-  
-  // 优化传输
-  let optimized_transmission = TransmissionOptimizer::optimize(transmission_optimizer, compressed_data)
-  assert_true(TransmissionOptimizer::is_optimized(optimized_transmission))
-}
-
-// 测试4: 跨服务一致性保证
-test "跨服务一致性保证测试" {
-  let consistency_manager = ConsistencyManager::new()
-  
-  // 创建服务A的上下文
-  let service_a_context = ServiceContext::new("service-a")
-  ServiceContext::add_trace(service_a_context, "trace-123", "span-a-1")
-  ServiceContext::add_baggage(service_a_context, "user.id", "user-456")
-  ServiceContext::add_baggage(service_a_context, "request.id", "req-789")
-  
-  // 创建服务B的上下文
-  let service_b_context = ServiceContext::new("service-b")
-  ServiceContext::add_trace(service_b_context, "trace-123", "span-b-1")
-  ServiceContext::add_baggage(service_b_context, "user.id", "user-456")
-  ServiceContext::add_baggage(service_b_context, "request.id", "req-789")
-  
-  // 创建服务C的上下文（不一致）
-  let service_c_context = ServiceContext::new("service-c")
-  ServiceContext::add_trace(service_c_context, "trace-123", "span-c-1")
-  ServiceContext::add_baggage(service_c_context, "user.id", "user-999") // 不一致的用户ID
-  ServiceContext::add_baggage(service_c_context, "request.id", "req-789")
-  
-  // 添加上下文到一致性管理器
-  ConsistencyManager::add_context(consistency_manager, service_a_context)
-  ConsistencyManager::add_context(consistency_manager, service_b_context)
-  ConsistencyManager::add_context(consistency_manager, service_c_context)
-  
-  // 检查一致性
-  let consistency_result = ConsistencyManager::check_consistency(consistency_manager)
-  assert_eq(ConsistencyResult::is_consistent(consistency_result), false)
-  assert_eq(ConsistencyResult::inconsistent_fields(consistency_result), ["user.id"])
-  
-  // 修复不一致性
-  let repair_strategy = ConsistencyRepairStrategy::new(MajorityVote)
-  let repaired_contexts = ConsistencyManager::repair_inconsistency(consistency_manager, repair_strategy)
-  
-  // 验证修复结果
-  assert_eq(ServiceContext::get_baggage(repaired_contexts[0], "user.id"), ServiceContext::get_baggage(repaired_contexts[1], "user.id"))
-  assert_eq(ServiceContext::get_baggage(repaired_contexts[1], "user.id"), ServiceContext::get_baggage(repaired_contexts[2], "user.id"))
-}
-
-// 测试5: 自适应采样策略
-test "自适应采样策略测试" {
-  let adaptive_sampler = AdaptiveSampler::new()
-  
-  // 配置自适应采样器
-  AdaptiveSampler::set_base_rate(adaptive_sampler, 0.1)
-  AdaptiveSampler::set_max_rate(adaptive_sampler, 1.0)
-  AdaptiveSampler::set_min_rate(adaptive_sampler, 0.01)
-  AdaptiveSampler::set_adjustment_factor(adaptive_sampler, 0.2)
-  
-  // 创建测试场景
-  let low_load_scenario = SamplingScenario::new("low.load")
-  SamplingScenario::set_request_rate(low_load_scenario, 100)
-  SamplingScenario::set_error_rate(low_load_scenario, 0.01)
-  
-  let high_load_scenario = SamplingScenario::new("high.load")
-  SamplingScenario::set_request_rate(high_load_scenario, 10000)
-  SamplingScenario::set_error_rate(high_load_scenario, 0.05)
-  
-  // 测试低负载场景下的采样率
-  let low_load_rate = AdaptiveSampler::calculate_sampling_rate(adaptive_sampler, low_load_scenario)
-  assert_true(low_load_rate > 0.1)
-  
-  // 测试高负载场景下的采样率
-  let high_load_rate = AdaptiveSampler::calculate_sampling_rate(adaptive_sampler, high_load_scenario)
-  assert_true(high_load_rate < 0.1)
-  
-  // 测试采样决策
-  let low_load_decision = AdaptiveSampler::should_sample(adaptive_sampler, SpanContext::new("trace-1", "span-1", true, ""))
-  let high_load_decision = AdaptiveSampler::should_sample(adaptive_sampler, SpanContext::new("trace-2", "span-2", true, ""))
-  
-  // 验证采样决策基于采样率
-  assert_eq(SamplingDecision::is_sampled(low_load_decision), true)
-  // 高负载下的采样决策可能为false，取决于随机性
-}
-
-// 测试6: 边缘计算和IoT遥测
-test "边缘计算和IoT遥测测试" {
-  let edge_telemetry = EdgeTelemetryProvider::new()
-  let iot_device = IoTDevice::new("device-001", "temperature.sensor")
-  
-  // 配置边缘遥测
-  EdgeTelemetryProvider::set_buffer_size(edge_telemetry, 1000)
-  EdgeTelemetryProvider::set_batch_interval(edge_telemetry, Duration::seconds(30))
-  EdgeTelemetryProvider::set_compression(edge_telemetry, true)
-  
-  // 配置IoT设备
-  IoTDevice::set_sampling_rate(iot_device, Duration::seconds(5))
-  IoTDevice::set_data_format(iot_device, JSON)
-  IoTDevice::set_connectivity(iot_device, Intermittent)
-  
-  // 模拟IoT数据生成
-  let telemetry_data = IoTDevice::generate_telemetry(iot_device)
-  IoTTelemetryData::add_sensor_reading(telemetry_data, "temperature", 25.5)
-  IoTTelemetryData::add_sensor_reading(telemetry_data, "humidity", 60.2)
-  IoTTelemetryData::add_sensor_reading(telemetry_data, "battery", 85.0)
-  IoTTelemetryData::add_device_info(telemetry_data, "firmware.version", "1.2.3")
-  IoTTelemetryData::add_device_info(telemetry_data, "signal.strength", -65)
-  
-  // 处理边缘遥测数据
-  let processed_data = EdgeTelemetryProvider::process(edge_telemetry, telemetry_data)
-  
-  // 验证数据处理
-  assert_eq(EdgeTelemetryData::device_id(processed_data), "device-001")
-  assert_eq(EdgeTelemetryData::sensor_count(processed_data), 3)
-  assert_eq(EdgeTelemetryData::is_compressed(processed_data), true)
-  
-  // 测试离线数据缓存
-  EdgeTelemetryProvider::simulate_offline_mode(edge_telemetry)
-  let cached_data_count = EdgeTelemetryProvider::cached_data_count(edge_telemetry)
-  assert_true(cached_data_count > 0)
-  
-  // 测试重连后的数据同步
-  EdgeTelemetryProvider::simulate_reconnection(edge_telemetry)
-  let sync_result = EdgeTelemetryProvider::sync_cached_data(edge_telemetry)
-  assert_eq(SyncResult::success_count(sync_result), cached_data_count)
-}
-
-// 测试7: 实时流处理和监控
-test "实时流处理和监控测试" {
-  let stream_processor = StreamProcessor::new()
-  let real_time_monitor = RealTimeMonitor::new()
-  
-  // 配置流处理器
-  StreamProcessor::set_window_size(stream_processor, Duration::seconds(60))
-  StreamProcessor::set_watermark(stream_processor, Duration::seconds(5))
-  StreamProcessor::set_parallelism(stream_processor, 4)
-  
-  // 配置实时监控
-  RealTimeMonitor::set_alert_threshold(real_time_monitor, "error.rate", 0.05)
-  RealTimeMonitor::set_alert_threshold(real_time_monitor, "latency.p99", 0.5)
-  RealTimeMonitor::set_dashboard_update_interval(real_time_monitor, Duration::seconds(1))
-  
-  // 创建测试流数据
-  let stream_events = [
-    StreamEvent::new("2023-01-01T12:00:00Z", "request.start", [("endpoint", "/api/users")]),
-    StreamEvent::new("2023-01-01T12:00:01Z", "request.end", [("endpoint", "/api/users"), ("duration", "0.1")]),
-    StreamEvent::new("2023-01-01T12:00:02Z", "error", [("error.type", "timeout"), ("endpoint", "/api/orders")]),
-    StreamEvent::new("2023-01-01T12:00:03Z", "request.start", [("endpoint", "/api/products")]),
-    StreamEvent::new("2023-01-01T12:00:04Z", "request.end", [("endpoint", "/api/products"), ("duration", "0.8")])
-  ]
-  
-  // 处理流数据
-  let processed_stream = StreamProcessor::process(stream_processor, stream_events)
-  
-  // 验证流处理结果
-  assert_eq(StreamResult::event_count(processed_stream), 5)
-  assert_eq(StreamResult::error_count(processed_stream), 1)
-  assert_true(StreamResult::average_latency(processed_stream) > 0.0)
-  
-  // 实时监控分析
-  let monitoring_result = RealTimeMonitor::analyze(real_time_monitor, processed_stream)
-  
-  // 验证监控结果
-  assert_eq(MonitoringResult::is_alert_triggered(monitoring_result, "error.rate"), false)
-  assert_eq(MonitoringResult::is_alert_triggered(monitoring_result, "latency.p99"), true)
-  
-  // 测试实时仪表板更新
-  let dashboard_data = RealTimeMonitor::get_dashboard_data(real_time_monitor)
-  assert_true(DashboardData::is_real_time(dashboard_data))
-  assert_eq(DashboardData::update_frequency(dashboard_data), 1.0)
-}
-
-// 测试8: 多维度属性查询
-test "多维度属性查询测试" {
-  let attribute_store = AttributeStore::new()
-  let query_engine = MultiDimensionalQueryEngine::new()
-  
-  // 创建测试属性数据
-  let span_attributes = [
-    ("service.name", "payment.service"),
-    ("service.version", "1.2.3"),
-    ("http.method", "POST"),
-    ("http.status_code", "200"),
-    ("user.region", "us-west-2"),
-    ("user.tier", "premium"),
-    ("operation.type", "transaction")
-  ]
-  
-  let metric_attributes = [
-    ("metric.name", "transaction.amount"),
-    ("metric.type", "histogram"),
-    ("unit", "usd"),
-    ("le", "100.0"),
-    ("service.name", "payment.service"),
-    ("service.version", "1.2.3")
-  ]
-  
-  let log_attributes = [
-    ("log.level", "info"),
-    ("logger.name", "payment.processor"),
-    ("message", "Transaction completed successfully"),
-    ("transaction.id", "txn-12345"),
-    ("service.name", "payment.service")
-  ]
-  
-  // 添加属性到存储
-  AttributeStore::add_attributes(attribute_store, "span-1", span_attributes)
-  AttributeStore::add_attributes(attribute_store, "metric-1", metric_attributes)
-  AttributeStore::add_attributes(attribute_store, "log-1", log_attributes)
-  
-  // 创建多维度查询
-  let query = MultiDimensionalQuery::new()
-  MultiDimensionalQuery::add_filter(query, Equals("service.name", "payment.service"))
-  MultiDimensionalQuery::add_filter(query, Equals("service.version", "1.2.3"))
-  MultiDimensionalQuery::add_dimension(query, "user.region")
-  MultiDimensionalQuery::add_dimension(query, "user.tier")
-  MultiDimensionalQuery::add_aggregation(query, Count, "operation.type")
-  
-  // 执行查询
-  let query_result = QueryEngine::execute(query_engine, attribute_store, query)
-  
-  // 验证查询结果
-  assert_eq(QueryResult::match_count(query_result), 3)
-  assert_true(QueryResult::contains_dimension(query_result, "user.region"))
-  assert_true(QueryResult::contains_dimension(query_result, "user.tier"))
-  
-  // 测试复杂查询
-  let complex_query = MultiDimensionalQuery::new()
-  MultiDimensionalQuery::add_filter(complex_query, Or([
-    Equals("http.method", "POST"),
-    Equals("log.level", "info")
+  // Create root span
+  let root_span = Span::new("root_operation", Server, root_context)
+  Span::add_event(root_span, "operation_started", Some([
+    ("operation.type", StringValue("distributed")),
+    ("service.name", StringValue("auth_service"))
   ]))
-  MultiDimensionalQuery::add_filter(complex_query, Not(Equals("http.status_code", "500")))
-  MultiDimensionalQuery::add_dimension(complex_query, "service.name")
-  MultiDimensionalQuery::add_aggregation(complex_query, Average, "transaction.amount")
   
-  let complex_result = QueryEngine::execute(query_engine, attribute_store, complex_query)
-  assert_eq(QueryResult::match_count(complex_result), 2)
+  // Create child span with context propagation
+  let child_span_id = "2222222222222222"
+  let child_context = SpanContext::new(trace_id, child_span_id, true, "child")
+  let child_span = Span::new("user_validation", Internal, child_context)
+  Span::set_parent(child_span, root_span)
   
-  // 测试性能优化查询
-  let optimized_query = QueryEngine::optimize(query_engine, complex_query)
-  assert_true(Query::is_optimized(optimized_query))
-  assert_eq(Query::optimization_applied(optimized_query), IndexScan)
+  // Add attributes and events to child span
+  Span::add_event(child_span, "validation_started", Some([
+    ("user.id", StringValue("user123")),
+    ("validation.type", StringValue("authentication"))
+  ]))
+  
+  // Create grandchild span
+  let grandchild_span_id = "3333333333333333"
+  let grandchild_context = SpanContext::new(trace_id, grandchild_span_id, true, "grandchild")
+  let grandchild_span = Span::new("database_query", Client, grandchild_context)
+  Span::set_parent(grandchild_span, child_span)
+  
+  Span::add_event(grandchild_span, "query_executed", Some([
+    ("db.statement", StringValue("SELECT * FROM users WHERE id = ?")),
+    ("db.type", StringValue("postgresql"))
+  ]))
+  
+  // End spans in reverse order
+  Span::end(grandchild_span)
+  Span::end(child_span)
+  Span::end(root_span)
+  
+  // Verify trace consistency
+  assert_eq(SpanContext::trace_id(root_context), trace_id)
+  assert_eq(SpanContext::trace_id(child_context), trace_id)
+  assert_eq(SpanContext::trace_id(grandchild_context), trace_id)
+}
+
+// Test 2: Metrics Aggregation and Percentiles
+test "metrics aggregation and percentiles" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "performance_meter")
+  
+  // Create histogram for response times
+  let response_time_histogram = Meter::create_histogram(
+    meter, 
+    "http.server.response_time", 
+    Some("HTTP server response time"), 
+    Some("ms")
+  )
+  
+  // Record various response times
+  let response_times = [10, 25, 50, 75, 100, 150, 200, 300, 500, 1000]
+  for time in response_times {
+    Histogram::record(response_time_histogram, time.to_float(), Some(Attributes::new()))
+  }
+  
+  // Create counter for requests
+  let request_counter = Meter::create_counter(
+    meter,
+    "http.server.requests",
+    Some("Total HTTP requests"),
+    Some("count")
+  )
+  
+  // Record requests with different status codes
+  Counter::add(request_counter, 80.0, Some(Attributes::with([("status.code", StringValue("200"))])))
+  Counter::add(request_counter, 15.0, Some(Attributes::with([("status.code", StringValue("404"))])))
+  Counter::add(request_counter, 5.0, Some(Attributes::with([("status.code", StringValue("500"))])))
+  
+  // Create gauge for active connections
+  let active_connections_gauge = Meter::create_gauge(
+    meter,
+    "http.server.active_connections",
+    Some("Active HTTP connections"),
+    Some("connections")
+  )
+  
+  // Set gauge values
+  Gauge::set(active_connections_gauge, 25.0)
+  Gauge::set(active_connections_gauge, 30.0)
+  Gauge::set(active_connections_gauge, 15.0)
+  
+  // Verify metric instruments
+  let histogram_instrument = Histogram::as_instrument(response_time_histogram)
+  assert_eq(Instrument::name(histogram_instrument), "http.server.response_time")
+  
+  let counter_instrument = Counter::as_instrument(request_counter)
+  assert_eq(Instrument::name(counter_instrument), "http.server.requests")
+  
+  let gauge_instrument = Gauge::as_instrument(active_connections_gauge)
+  assert_eq(Instrument::name(gauge_instrument), "http.server.active_connections")
+}
+
+// Test 3: Advanced Logging with Correlation
+test "advanced logging with correlation" {
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "correlation_logger")
+  
+  // Create context with correlation ID
+  let correlation_id = "req-123456789"
+  let context = Context::with_value(
+    Context::root(),
+    ContextKey::new("correlation_id"),
+    correlation_id
+  )
+  
+  // Create log record with correlation
+  let log_record = LogRecord::new_with_context(
+    Info,
+    Some("Processing user request"),
+    Some(Attributes::with([
+      ("user.id", StringValue("user123")),
+      ("request.path", StringValue("/api/users")),
+      ("request.method", StringValue("GET"))
+    ])),
+    Some(1640995200000L), // timestamp
+    Some(1640995200100L), // observed timestamp
+    Some("1234567890abcdef1234567890abcdef"), // trace ID
+    Some("1111111111111111"), // span ID
+    Some(context)
+  )
+  
+  // Emit log record
+  Logger::emit(logger, log_record)
+  
+  // Create error log record
+  let error_log_record = LogRecord::new_with_context(
+    Error,
+    Some("Database connection failed"),
+    Some(Attributes::with([
+      ("error.type", StringValue("ConnectionError")),
+      ("error.message", StringValue("Connection timeout")),
+      ("db.host", StringValue("db.example.com")),
+      ("db.port", IntValue(5432))
+    ])),
+    Some(1640995200200L),
+    Some(1640995200250L),
+    Some("1234567890abcdef1234567890abcdef"),
+    Some("2222222222222222"),
+    Some(context)
+  )
+  
+  Logger::emit(logger, error_log_record)
+  
+  // Verify log records
+  assert_eq(LogRecord::severity_number(log_record), Info)
+  assert_eq(LogRecord::severity_number(error_log_record), Error)
+  assert_eq(LogRecord::trace_id(log_record), Some("1234567890abcdef1234567890abcdef"))
+  assert_eq(LogRecord::span_id(log_record), Some("1111111111111111"))
+}
+
+// Test 4: Baggage Propagation Across Services
+test "baggage propagation across services" {
+  // Create initial baggage
+  let baggage = Baggage::new()
+  
+  // Add baggage entries
+  let baggage_with_user = Baggage::set_entry(baggage, "user.id", "user123")
+  let baggage_with_session = Baggage::set_entry(baggage_with_user, "session.id", "sess456")
+  let baggage_with_tenant = Baggage::set_entry(baggage_with_session, "tenant.id", "tenant789")
+  
+  // Simulate service boundary crossing
+  let service1_baggage = baggage_with_tenant
+  
+  // Service 1 adds its own baggage
+  let service1_enhanced = Baggage::set_entry(service1_baggage, "service1.version", "1.2.3")
+  
+  // Service 2 receives and adds baggage
+  let service2_baggage = service1_enhanced
+  let service2_enhanced = Baggage::set_entry(service2_baggage, "service2.region", "us-west-2")
+  
+  // Service 3 receives and adds baggage
+  let service3_baggage = service2_enhanced
+  let service3_enhanced = Baggage::set_entry(service3_baggage, "service3.instance", "i-1234567890abcdef")
+  
+  // Verify baggage propagation
+  let user_id = Baggage::get_entry(service3_enhanced, "user.id")
+  match user_id {
+    Some(id) => assert_eq(id, "user123")
+    None => assert_true(false)
+  }
+  
+  let session_id = Baggage::get_entry(service3_enhanced, "session.id")
+  match session_id {
+    Some(id) => assert_eq(id, "sess456")
+    None => assert_true(false)
+  }
+  
+  let service1_version = Baggage::get_entry(service3_enhanced, "service1.version")
+  match service1_version {
+    Some(version) => assert_eq(version, "1.2.3")
+    None => assert_true(false)
+  }
+  
+  // Test baggage removal
+  let final_baggage = Baggage::remove_entry(service3_enhanced, "session.id")
+  let removed_session = Baggage::get_entry(final_baggage, "session.id")
+  match removed_session {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+}
+
+// Test 5: Resource Detection and Merging
+test "resource detection and merging" {
+  // Create base resource with service information
+  let base_resource = Resource::with_attributes(Resource::new(), [
+    ("service.name", StringValue("payment_service")),
+    ("service.version", StringValue("2.1.0")),
+    ("service.instance.id", StringValue("payment-123"))
+  ])
+  
+  // Create resource with host information
+  let host_resource = Resource::with_attributes(Resource::new(), [
+    ("host.name", StringValue("prod-web-01")),
+    ("host.type", StringValue("c5.large")),
+    ("host.image.id", StringValue("ami-12345678"))
+  ])
+  
+  // Create resource with telemetry information
+  let telemetry_resource = Resource::with_attributes(Resource::new(), [
+    ("telemetry.sdk.name", StringValue("azimuth")),
+    ("telemetry.sdk.version", StringValue("1.0.0")),
+    ("telemetry.sdk.language", StringValue("moonbit"))
+  ])
+  
+  // Merge resources
+  let merged_resource = Resource::merge(
+    Resource::merge(base_resource, host_resource),
+    telemetry_resource
+  )
+  
+  // Verify merged attributes
+  let service_name = Resource::get_attribute(merged_resource, "service.name")
+  match service_name {
+    Some(StringValue(name)) => assert_eq(name, "payment_service")
+    _ => assert_true(false)
+  }
+  
+  let host_name = Resource::get_attribute(merged_resource, "host.name")
+  match host_name {
+    Some(StringValue(name)) => assert_eq(name, "prod-web-01")
+    _ => assert_true(false)
+  }
+  
+  let sdk_name = Resource::get_attribute(merged_resource, "telemetry.sdk.name")
+  match sdk_name {
+    Some(StringValue(name)) => assert_eq(name, "azimuth")
+    _ => assert_true(false)
+  }
+  
+  // Test resource override
+  let override_resource = Resource::with_attributes(Resource::new(), [
+    ("service.version", StringValue("2.1.1")) // Newer version
+  ])
+  
+  let final_resource = Resource::merge(merged_resource, override_resource)
+  let updated_version = Resource::get_attribute(final_resource, "service.version")
+  match updated_version {
+    Some(StringValue(version)) => assert_eq(version, "2.1.1")
+    _ => assert_true(false)
+  }
+}
+
+// Test 6: Span Links for Causal Relationships
+test "span links for causal relationships" {
+  // Create parent span
+  let parent_context = SpanContext::new("trace123", "span111", true, "parent")
+  let parent_span = Span::new("parent_operation", Server, parent_context)
+  
+  // Create concurrent child spans
+  let child1_context = SpanContext::new("trace123", "span222", true, "child1")
+  let child1_span = Span::new("concurrent_operation_1", Internal, child1_context)
+  
+  let child2_context = SpanContext::new("trace123", "span333", true, "child2")
+  let child2_span = Span::new("concurrent_operation_2", Internal, child2_context)
+  
+  // Create a span that links to both concurrent operations
+  let linking_context = SpanContext::new("trace123", "span444", true, "linking")
+  let linking_span = Span::new("aggregation_operation", Internal, linking_context)
+  
+  // Add links from the aggregation span to the concurrent operations
+  Span::add_link(linking_span, child1_context, Some(Attributes::with([
+    ("link.type", StringValue("follows_from")),
+    ("operation", StringValue("concurrent_operation_1"))
+  ])))
+  
+  Span::add_link(linking_span, child2_context, Some(Attributes::with([
+    ("link.type", StringValue("follows_from")),
+    ("operation", StringValue("concurrent_operation_2"))
+  ])))
+  
+  // Add events to indicate processing
+  Span::add_event(linking_span, "aggregation_started", Some([
+    ("input.count", IntValue(2))
+  ]))
+  
+  // End all spans
+  Span::end(child1_span)
+  Span::end(child2_span)
+  Span::add_event(linking_span, "aggregation_completed", Some([
+    ("result.status", StringValue("success"))
+  ]))
+  Span::end(linking_span)
+  Span::end(parent_span)
+  
+  // Verify span relationships
+  assert_eq(Span::name(parent_span), "parent_operation")
+  assert_eq(Span::name(child1_span), "concurrent_operation_1")
+  assert_eq(Span::name(child2_span), "concurrent_operation_2")
+  assert_eq(Span::name(linking_span), "aggregation_operation")
+}
+
+// Test 7: Sampling Strategies
+test "sampling strategies" {
+  // Test parent-based sampling
+  let parent_context = SpanContext::new("trace123", "span111", true, "parent")
+  let parent_span = Span::new("parent_operation", Server, parent_context)
+  
+  let child_context = SpanContext::new("trace123", "span222", true, "child")
+  let child_span = Span::new("child_operation", Internal, child_context)
+  
+  // Child should be sampled if parent is sampled
+  assert_true(SpanContext::is_sampled(parent_context))
+  assert_true(SpanContext::is_sampled(child_context))
+  
+  // Test trace ID ratio sampling
+  let trace_id_ratio_sampler = TraceIdRatioBasedSampler::new(0.5) // 50% sampling
+  
+  let sampled_trace = "1234567890abcdef1234567890abcdef" // Should be sampled
+  let not_sampled_trace = "fedcba0987654321fedcba0987654321" // Should not be sampled
+  
+  let sampled_context = SpanContext::new(sampled_trace, "span333", true, "sampled")
+  let not_sampled_context = SpanContext::new(not_sampled_trace, "span444", false, "not_sampled")
+  
+  assert_true(SpanContext::is_sampled(sampled_context))
+  assert_false(SpanContext::is_sampled(not_sampled_context))
+  
+  // Test always-on sampler
+  let always_on_sampler = AlwaysOnSampler::new()
+  let always_on_context = SpanContext::new("trace456", "span555", true, "always_on")
+  assert_true(SpanContext::is_sampled(always_on_context))
+  
+  // Test always-off sampler
+  let always_off_sampler = AlwaysOffSampler::new()
+  let always_off_context = SpanContext::new("trace789", "span666", false, "always_off")
+  assert_false(SpanContext::is_sampled(always_off_context))
+}
+
+// Test 8: Custom Instrumentation
+test "custom instrumentation" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "custom_instrumentation")
+  
+  // Create custom counter with custom attributes
+  let custom_counter = Meter::create_counter(
+    meter,
+    "custom.business.metric",
+    Some("Custom business metric"),
+    Some("operations")
+  )
+  
+  // Record custom metrics with business context
+  Counter::add(custom_counter, 1.0, Some(Attributes::with([
+    ("business.unit", StringValue("payments")),
+    ("operation.type", StringValue("refund")),
+    ("currency", StringValue("USD")),
+    ("amount.category", StringValue("small"))
+  ])))
+  
+  Counter::add(custom_counter, 1.0, Some(Attributes::with([
+    ("business.unit", StringValue("payments")),
+    ("operation.type", StringValue("charge")),
+    ("currency", StringValue("EUR")),
+    ("amount.category", StringValue("large"))
+  ])))
+  
+  // Create custom histogram for business timing
+  let business_histogram = Meter::create_histogram(
+    meter,
+    "business.operation.duration",
+    Some("Business operation duration"),
+    Some("ms")
+  )
+  
+  // Record business operation durations
+  Histogram::record(business_histogram, 150.0, Some(Attributes::with([
+    ("operation.name", StringValue("payment_processing")),
+    ("payment.method", StringValue("credit_card"))
+  ])))
+  
+  Histogram::record(business_histogram, 85.0, Some(Attributes::with([
+    ("operation.name", StringValue("payment_processing")),
+    ("payment.method", StringValue("paypal"))
+  ])))
+  
+  // Create custom gauge for resource utilization
+  let resource_gauge = Meter::create_gauge(
+    meter,
+    "resource.utilization.percentage",
+    Some("Resource utilization percentage"),
+    Some("%")
+  )
+  
+  // Set resource utilization values
+  Gauge::set(resource_gauge, 75.5, Some(Attributes::with([
+    ("resource.type", StringValue("cpu")),
+    ("instance.id", StringValue("i-1234567890abcdef"))
+  ])))
+  
+  Gauge::set(resource_gauge, 60.2, Some(Attributes::with([
+    ("resource.type", StringValue("memory")),
+    ("instance.id", StringValue("i-1234567890abcdef"))
+  ])))
+}
+
+// Test 9: Span Status and Error Handling
+test "span status and error handling" {
+  // Create span for successful operation
+  let success_context = SpanContext::new("trace123", "span111", true, "success")
+  let success_span = Span::new("successful_operation", Server, success_context)
+  
+  // Set success status
+  Span::set_status(success_span, Ok, Some("Operation completed successfully"))
+  Span::add_event(success_span, "operation_completed", Some([
+    ("result.status", StringValue("success"))
+  ]))
+  Span::end(success_span)
+  
+  // Create span for failed operation
+  let error_context = SpanContext::new("trace123", "span222", true, "error")
+  let error_span = Span::new("failed_operation", Server, error_context)
+  
+  // Record error
+  Span::record_error(error_span, "Database connection failed", Some(Attributes::with([
+    ("error.type", StringValue("ConnectionError")),
+    ("error.code", StringValue("DB_CONN_FAILED"))
+  ])))
+  
+  // Set error status
+  Span::set_status(error_span, Error, Some("Operation failed due to database error"))
+  Span::add_event(error_span, "operation_failed", Some([
+    ("error.message", StringValue("Database connection failed"))
+  ]))
+  Span::end(error_span)
+  
+  // Verify span status
+  assert_eq(Span::status(success_span), Ok)
+  assert_eq(Span::status(error_span), Error)
+  
+  // Create span with exception
+  let exception_context = SpanContext::new("trace123", "span333", true, "exception")
+  let exception_span = Span::new("exception_operation", Server, exception_context)
+  
+  // Record exception
+  Span::record_exception(
+    exception_span,
+    "NullPointerException",
+    Some("Attempted to access null reference"),
+    Some([
+      ("stack_trace", StringValue("at com.example.Service.process(Service.java:123)")),
+      ("exception.type", StringValue("RuntimeException"))
+    ])
+  )
+  
+  Span::set_status(exception_span, Error, Some("Unhandled exception"))
+  Span::end(exception_span)
+  
+  assert_eq(Span::status(exception_span), Error)
+}
+
+// Test 10: Context Propagation with Custom Propagators
+test "context propagation with custom propagators" {
+  // Create custom propagator
+  let custom_propagator = CustomPropagator::new()
+  
+  // Create context with trace information
+  let trace_context = SpanContext::new("trace123", "span111", true, "custom")
+  let context = Context::with_value(
+    Context::root(),
+    ContextKey::new("trace_context"),
+    trace_context
+  )
+  
+  // Inject context into carrier
+  let carrier = {}
+  let injected_carrier = Propagator::inject(custom_propagator, context, carrier)
+  
+  // Verify injected headers
+  let trace_header = Carrier::get(injected_carrier, "x-trace-id")
+  match trace_header {
+    Some(header) => assert_eq(header, "trace123")
+    None => assert_true(false)
+  }
+  
+  let span_header = Carrier::get(injected_carrier, "x-span-id")
+  match span_header {
+    Some(header) => assert_eq(header, "span111")
+    None => assert_true(false)
+  }
+  
+  let sampled_header = Carrier::get(injected_carrier, "x-sampled")
+  match sampled_header {
+    Some(header) => assert_eq(header, "true")
+    None => assert_true(false)
+  }
+  
+  // Extract context from carrier
+  let extracted_context = Propagator::extract(custom_propagator, injected_carrier)
+  let extracted_trace_context = Context::get(extracted_context, ContextKey::new("trace_context"))
+  
+  match extracted_trace_context {
+    Some(ctx) => {
+      assert_eq(SpanContext::trace_id(ctx), "trace123")
+      assert_eq(SpanContext::span_id(ctx), "span111")
+      assert_true(SpanContext::is_sampled(ctx))
+    }
+    None => assert_true(false)
+  }
+  
+  // Test baggage propagation
+  let baggage_context = Baggage::set_entry(Baggage::new(), "user.id", "user123")
+  let context_with_baggage = Context::with_value(
+    extracted_context,
+    ContextKey::new("baggage"),
+    baggage_context
+  )
+  
+  let carrier_with_baggage = Propagator::inject(custom_propagator, context_with_baggage, {})
+  let baggage_header = Carrier::get(carrier_with_baggage, "x-baggage")
+  
+  match baggage_header {
+    Some(header) => assert_true(header.contains("user.id=user123"))
+    None => assert_true(false)
+  }
 }
