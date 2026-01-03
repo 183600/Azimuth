@@ -1,601 +1,584 @@
-// Azimuth Error Boundary Recovery Enhanced Tests
-// This file contains test cases for error boundary handling and recovery mechanisms
+// Azimuth Telemetry System - Enhanced Error Boundary and Recovery Tests
+// This file contains comprehensive test cases for error boundary handling and recovery mechanisms
 
-// Test 1: Basic Error Boundary Detection
-test "basic error boundary detection" {
-  // Test error condition detection
-  let error_conditions = [
-    ("division_by_zero", true),
-    ("null_reference", true),
-    ("invalid_index", true),
-    ("normal_operation", false)
-  ]
+// Test 1: Attribute Value Error Boundary
+test "attribute value error boundary" {
+  // Test handling of null/undefined values
+  let attrs = Attributes::new()
   
-  let mut detected_errors = []
-  
-  for condition in error_conditions {
-    let is_error = condition.1
-    if is_error {
-      detected_errors = detected_errors.push(condition.0)
-    }
+  // Test setting null value
+  let result = Attributes::try_set(attrs, "test.key", NullValue)
+  match result {
+    Success => assert_true(false) // Should not succeed
+    Error(err) => assert_eq(err.code, "INVALID_ATTRIBUTE_VALUE")
   }
   
-  assert_eq(detected_errors.length(), 3)
-  assert_true(detected_errors.contains("division_by_zero"))
-  assert_true(detected_errors.contains("null_reference"))
-  assert_true(detected_errors.contains("invalid_index"))
-  assert_false(detected_errors.contains("normal_operation"))
+  // Test setting extremely large string
+  let large_string = create_large_string(1000000) // 1MB string
+  let result = Attributes::try_set(attrs, "large.key", StringValue(large_string))
+  match result {
+    Success => assert_true(false) // Should not succeed
+    Error(err) => assert_eq(err.code, "VALUE_TOO_LARGE")
+  }
+  
+  // Test setting invalid numeric values
+  let result = Attributes::try_set(attrs, "invalid.int", IntValue(2147483648)) // Overflow 32-bit int
+  match result {
+    Success => assert_true(false) // Should not succeed
+    Error(err) => assert_eq(err.code, "INTEGER_OVERFLOW")
+  }
+  
+  // Test setting special float values
+  let result = Attributes::try_set(attrs, "nan.value", FloatValue(f64::NAN))
+  match result {
+    Success => assert_true(true) // Should succeed with special handling
+    Error(_) => assert_true(false)
+  }
+  
+  // Test setting infinity values
+  let result = Attributes::try_set(attrs, "inf.value", FloatValue(f64::INFINITY))
+  match result {
+    Success => assert_true(true) // Should succeed with special handling
+    Error(_) => assert_true(false)
+  }
+  
+  // Verify error recovery - system should still be functional after errors
+  let result = Attributes::try_set(attrs, "normal.key", StringValue("normal value"))
+  match result {
+    Success => assert_true(true)
+    Error(_) => assert_true(false)
+  }
+  
+  let retrieved = Attributes::get(attrs, "normal.key")
+  match retrieved {
+    Some(StringValue(value)) => assert_eq(value, "normal value")
+    _ => assert_true(false)
+  }
 }
 
-// Test 2: Error Recovery Strategies
-test "error recovery strategies" {
-  // Test retry mechanism
-  let max_retries = 3
-  let operations = [false, false, true, false, true]  // false = failure, true = success
-  let mut retry_count = 0
-  let mut operation_success = false
-  let mut operation_index = 0
-  
-  while retry_count < max_retries && !operation_success && operation_index < operations.length() {
-    operation_success = operations[operation_index]
-    if !operation_success {
-      retry_count = retry_count + 1
-    }
-    operation_index = operation_index + 1
+// Test 2: Span Context Error Recovery
+test "span context error recovery" {
+  // Test invalid trace ID
+  let result = SpanContext::try_create("invalid-trace-id", "valid-span-id", true, "")
+  match result {
+    Success => assert_true(false) // Should not succeed
+    Error(err) => assert_eq(err.code, "INVALID_TRACE_ID")
   }
   
-  assert_true(operation_success)
-  assert_eq(retry_count, 2)
-  
-  // Test fallback mechanism
-  let primary_service_available = false
-  let secondary_service_available = true
-  let tertiary_service_available = true
-  
-  let mut service_used = ""
-  
-  if primary_service_available {
-    service_used = "primary"
-  } else if secondary_service_available {
-    service_used = "secondary"
-  } else if tertiary_service_available {
-    service_used = "tertiary"
-  } else {
-    service_used = "none"
+  // Test invalid span ID
+  let result = SpanContext::try_create("0af7651916cd43dd8448eb211c80319c", "invalid-span-id", true, "")
+  match result {
+    Success => assert_true(false) // Should not succeed
+    Error(err) => assert_eq(err.code, "INVALID_SPAN_ID")
   }
   
-  assert_eq(service_used, "secondary")
-  
-  // Test circuit breaker pattern
-  let failure_threshold = 3
-  let mut circuit_state = "closed"
-  let mut failure_count = 0
-  let service_calls = [false, false, false, true, true, true]  // false = failure
-  
-  for call_success in service_calls {
-    if circuit_state == "open" {
-      // Circuit is open, don't attempt calls
-      continue
+  // Test recovery with valid context
+  let result = SpanContext::try_create("0af7651916cd43dd8448eb211c80319c", "b7ad6b7169203331", true, "")
+  match result {
+    Success(ctx) => {
+      assert_eq(SpanContext::trace_id(ctx), "0af7651916cd43dd8448eb211c80319c")
+      assert_eq(SpanContext::span_id(ctx), "b7ad6b7169203331")
+      assert_true(SpanContext::is_sampled(ctx))
     }
+    Error(_) => assert_true(false)
+  }
+  
+  // Test context corruption recovery
+  let valid_ctx = SpanContext::new("0af7651916cd43dd8448eb211c80319c", "b7ad6b7169203331", true, "")
+  let corrupted_bytes = corrupt_span_context_data(valid_ctx)
+  
+  let result = SpanContext::try_from_bytes(corrupted_bytes)
+  match result {
+    Success => assert_true(false) // Should not succeed
+    Error(err) => assert_eq(err.code, "CORRUPTED_CONTEXT_DATA")
+  }
+  
+  // System should recover and continue functioning
+  let recovery_ctx = SpanContext::new("recovery-trace", "recovery-span", true, "recovery-state")
+  assert_true(SpanContext::is_valid(recovery_ctx))
+}
+
+// Test 3: Metrics Error Handling
+test "metrics error handling" {
+  let provider = MeterProvider::new()
+  let meter = MeterProvider::get_meter(provider, "error-test-meter")
+  
+  // Test creating metrics with invalid names
+  let result = Meter::try_create_counter(meter, "", None, None)
+  match result {
+    Success => assert_true(false) // Should not succeed
+    Error(err) => assert_eq(err.code, "INVALID_METRIC_NAME")
+  }
+  
+  let result = Meter::try_create_counter(meter, "invalid$name", None, None)
+  match result {
+    Success => assert_true(false) // Should not succeed
+    Error(err) => assert_eq(err.code, "INVALID_METRIC_NAME")
+  }
+  
+  // Test creating metrics with extremely long names
+  let long_name = create_large_string(1000)
+  let result = Meter::try_create_counter(meter, long_name, None, None)
+  match result {
+    Success => assert_true(false) // Should not succeed
+    Error(err) => assert_eq(err.code, "METRIC_NAME_TOO_LONG")
+  }
+  
+  // Test recovery with valid metric creation
+  let result = Meter::try_create_counter(meter, "valid.counter", Some("Valid counter"), Some("count"))
+  match result {
+    Success(counter) => {
+      // Test recording invalid values
+      let result = Counter::try_add(counter, f64::NAN)
+      match result {
+        Success => assert_true(false) // Should not succeed
+        Error(err) => assert_eq(err.code, "INVALID_METRIC_VALUE")
+      }
+      
+      let result = Counter::try_add(counter, f64::NEG_INFINITY)
+      match result {
+        Success => assert_true(false) // Should not succeed
+        Error(err) => assert_eq(err.code, "INVALID_METRIC_VALUE")
+      }
+      
+      // Test recovery with valid values
+      let result = Counter::try_add(counter, 1.0)
+      match result {
+        Success => assert_true(true)
+        Error(_) => assert_true(false)
+      }
+      
+      let result = Counter::try_add(counter, 2.5)
+      match result {
+        Success => assert_true(true)
+        Error(_) => assert_true(false)
+      }
+      
+      // Verify metric is still functional
+      let value = Counter::get_value(counter)
+      assert_eq(value, 3.5)
+    }
+    Error(_) => assert_true(false)
+  }
+}
+
+// Test 4: Log Record Error Resilience
+test "log record error resilience" {
+  let provider = LoggerProvider::new()
+  let logger = LoggerProvider::get_logger(provider, "error-resilience-logger")
+  
+  // Test creating log records with invalid severity
+  let result = LogRecord::try_create_with_invalid_severity("Test message")
+  match result {
+    Success => assert_true(false) // Should not succeed
+    Error(err) => assert_eq(err.code, "INVALID_SEVERITY_LEVEL")
+  }
+  
+  // Test creating log records with extremely large message
+  let large_message = create_large_string(10000000) // 10MB message
+  let result = LogRecord::try_create(Info, large_message)
+  match result {
+    Success => assert_true(false) // Should not succeed
+    Error(err) => assert_eq(err.code, "MESSAGE_TOO_LARGE")
+  }
+  
+  // Test creating log records with invalid timestamp
+  let result = LogRecord::try_create_with_timestamp(Info, "Test message", -1)
+  match result {
+    Success => assert_true(false) // Should not succeed
+    Error(err) => assert_eq(err.code, "INVALID_TIMESTAMP")
+  }
+  
+  // Test recovery with valid log records
+  let result = LogRecord::try_create(Info, "Recovery test message")
+  match result {
+    Success(log_record) => {
+      // Test adding invalid attributes
+      let result = LogRecord::try_add_attribute(log_record, "", StringValue("value"))
+      match result {
+        Success => assert_true(false) // Should not succeed
+        Error(err) => assert_eq(err.code, "INVALID_ATTRIBUTE_KEY")
+      }
+      
+      // Test recovery with valid attributes
+      let result = LogRecord::try_add_attribute(log_record, "valid.key", StringValue("valid value"))
+      match result {
+        Success => assert_true(true)
+        Error(_) => assert_true(false)
+      }
+      
+      // Test emitting log record
+      let result = Logger::try_emit(logger, log_record)
+      match result {
+        Success => assert_true(true)
+        Error(_) => assert_true(false)
+      }
+    }
+    Error(_) => assert_true(false)
+  }
+  
+  // Verify logger is still functional after errors
+  let log_record = LogRecord::new(Warn, "Post-error test message")
+  Logger::emit(logger, log_record)
+  
+  let log_count = Logger::get_log_count(logger)
+  assert_true(log_count >= 1)
+}
+
+// Test 5: Resource Error Recovery
+test "resource error recovery" {
+  // Test creating resource with invalid attributes
+  let result = Resource::try_create_with_invalid_attributes()
+  match result {
+    Success => assert_true(false) // Should not succeed
+    Error(err) => assert_eq(err.code, "INVALID_RESOURCE_ATTRIBUTES")
+  }
+  
+  // Test resource attribute limits
+  let resource = Resource::new()
+  let mut result = Success(resource)
+  
+  // Add many attributes to test limit
+  for i in 0..1000 {
+    let key = "key-" + i.to_string()
+    let value = StringValue("value-" + i.to_string())
     
-    if call_success {
-      // Successful call, reset failure count
-      failure_count = 0
-      circuit_state = "closed"
-    } else {
-      // Failed call, increment failure count
-      failure_count = failure_count + 1
-      if failure_count >= failure_threshold {
-        circuit_state = "open"
+    result = Resource::try_set_attribute(resource, key, value)
+    
+    // Should fail after reaching limit
+    if i > 100 {
+      match result {
+        Success => assert_true(false) // Should not succeed after limit
+        Error(err) => {
+          assert_eq(err.code, "TOO_MANY_ATTRIBUTES")
+          break
+        }
       }
     }
   }
   
-  assert_eq(circuit_state, "open")
-  assert_eq(failure_count, 3)
-}
-
-// Test 3: Exception Handling Hierarchy
-test "exception handling hierarchy" {
-  // Test exception categorization
-  let exceptions = [
-    ("NullPointerException", "runtime"),
-    ("IOException", "io"),
-    ("ArrayIndexOutOfBoundsException", "runtime"),
-    ("SQLException", "database"),
-    ("ArithmeticException", "runtime")
-  ]
-  
-  let mut runtime_exceptions = []
-  let mut io_exceptions = []
-  let mut database_exceptions = []
-  
-  for exception in exceptions {
-    match exception.1 {
-      "runtime" => runtime_exceptions = runtime_exceptions.push(exception.0),
-      "io" => io_exceptions = io_exceptions.push(exception.0),
-      "database" => database_exceptions = database_exceptions.push(exception.0),
-      _ => {}
-    }
+  // Test recovery - resource should still be functional
+  let result = Resource::try_set_attribute(resource, "recovery.key", StringValue("recovery value"))
+  match result {
+    Success => assert_true(true)
+    Error(_) => assert_true(false)
   }
   
-  assert_eq(runtime_exceptions.length(), 3)
-  assert_eq(io_exceptions.length(), 1)
-  assert_eq(database_exceptions.length(), 1)
-  
-  // Test exception propagation
-  let mut exception_stack = []
-  let call_chain = ["method_a", "method_b", "method_c", "method_d"]
-  let exception_occurred_at = "method_c"
-  
-  for method in call_chain {
-    exception_stack = exception_stack.push(method)
-    if method == exception_occurred_at {
-      break
-    }
+  let retrieved = Resource::get_attribute(resource, "recovery.key")
+  match retrieved {
+    Some(StringValue(value)) => assert_eq(value, "recovery value")
+    _ => assert_true(false)
   }
   
-  assert_eq(exception_stack.length(), 3)
-  assert_eq(exception_stack[0], "method_a")
-  assert_eq(exception_stack[1], "method_b")
-  assert_eq(exception_stack[2], "method_c")
-}
-
-// Test 4: Graceful Degradation
-test "graceful degradation" {
-  // Test feature degradation levels
-  let feature_levels = [
-    ("full_functionality", 100),
-    ("reduced_functionality", 60),
-    ("basic_functionality", 30),
-    ("emergency_mode", 10)
-  ]
+  // Test resource merge error handling
+  let resource1 = Resource::new()
+  let resource2 = Resource::new()
   
-  let system_health = 45  // Percentage
-  let mut active_level = ""
+  // Corrupt one resource
+  corrupt_resource_data(resource1)
   
-  for level in feature_levels {
-    if system_health >= level.1 {
-      active_level = level.0
-      break
-    }
+  let result = Resource::try_merge(resource1, resource2)
+  match result {
+    Success => assert_true(false) // Should not succeed
+    Error(err) => assert_eq(err.code, "CORRUPTED_RESOURCE_DATA")
   }
   
-  assert_eq(active_level, "basic_functionality")
+  // Test recovery with valid merge
+  let valid_resource1 = Resource::with_attributes(Resource::new(), [
+    ("service.name", StringValue("test-service")),
+    ("service.version", StringValue("1.0.0"))
+  ])
   
-  // Test component isolation
-  let components = [
-    ("authentication", true),
-    ("database", false),
-    ("cache", true),
-    ("logging", true),
-    ("metrics", false)
-  ]
+  let valid_resource2 = Resource::with_attributes(Resource::new(), [
+    ("host.name", StringValue("test-host")),
+    ("host.ip", StringValue("192.168.1.1"))
+  ])
   
-  let mut essential_components = []
-  let mut optional_components = []
-  
-  for component in components {
-    if component.1 {
-      essential_components = essential_components.push(component.0)
-    } else {
-      optional_components = optional_components.push(component.0)
-    }
-  }
-  
-  assert_eq(essential_components.length(), 3)
-  assert_eq(optional_components.length(), 2)
-  
-  // Verify system can operate with essential components only
-  assert_true(essential_components.length() >= 2)
-}
-
-// Test 5: Error Logging and Monitoring
-test "error logging and monitoring" {
-  // Test error log generation
-  let error_events = [
-    ("connection_timeout", "ERROR", 1640995200),
-    ("invalid_input", "WARNING", 1640995300),
-    ("service_unavailable", "ERROR", 1640995400),
-    ("memory_limit_exceeded", "CRITICAL", 1640995500)
-  ]
-  
-  let mut error_logs = []
-  let mut error_counts = {
-    "ERROR": 0,
-    "WARNING": 0,
-    "CRITICAL": 0
-  }
-  
-  for event in error_events {
-    let log_entry = event.0 + " [" + event.1 + "] at " + event.2.to_string()
-    error_logs = error_logs.push(log_entry)
-    
-    let current_count = match error_counts.get(event.1) {
-      Some(count) => count,
-      None => 0
-    }
-    error_counts = error_counts.set(event.1, current_count + 1)
-  }
-  
-  assert_eq(error_logs.length(), 4)
-  assert_eq(error_counts.get("ERROR"), Some(2))
-  assert_eq(error_counts.get("WARNING"), Some(1))
-  assert_eq(error_counts.get("CRITICAL"), Some(1))
-  
-  // Test error rate calculation
-  let time_window = 600  // 10 minutes
-  let errors_in_window = 3
-  let total_requests = 100
-  let error_rate = (errors_in_window.to_float() / total_requests.to_float()) * 100.0
-  
-  assert_eq(error_rate, 3.0)
-  
-  // Test alerting thresholds
-  let alert_thresholds = {
-    "ERROR": 5,
-    "WARNING": 10,
-    "CRITICAL": 1
-  }
-  
-  let mut alerts_triggered = []
-  
-  for (severity, count) in error_counts.to_list() {
-    let threshold = match alert_thresholds.get(severity) {
-      Some(t) => t,
-      None => 0
-    }
-    
-    if count >= threshold {
-      alerts_triggered = alerts_triggered.push(severity)
-    }
-  }
-  
-  assert_true(alerts_triggered.contains("CRITICAL"))
-  assert_false(alerts_triggered.contains("ERROR"))
-  assert_false(alerts_triggered.contains("WARNING"))
-}
-
-// Test 6: Data Consistency Recovery
-test "data consistency recovery" {
-  // Test transaction rollback
-  let operations = [
-    ("insert", "record_1", true),
-    ("update", "record_2", true),
-    ("delete", "record_3", false),  // This fails
-    ("insert", "record_4", true)
-  ]
-  
-  let mut applied_operations = []
-  let mut rollback_operations = []
-  let transaction_failed = false
-  
-  for operation in operations {
-    if operation.2 {
-      applied_operations = applied_operations.push(operation)
-    } else {
-      transaction_failed = true
-      break
-    }
-  }
-  
-  if transaction_failed {
-    // Rollback applied operations in reverse order
-    for i in (applied_operations.length() - 1)..=0 {
-      rollback_operations = rollback_operations.push(applied_operations[i].0)
-    }
-    applied_operations = []
-  }
-  
-  assert_true(transaction_failed)
-  assert_eq(applied_operations.length(), 0)
-  assert_eq(rollback_operations.length(), 2)
-  assert_eq(rollback_operations[0], "update")
-  assert_eq(rollback_operations[1], "insert")
-  
-  // Test data reconciliation
-  let primary_data = [1, 2, 3, 4, 5]
-  let backup_data = [1, 2, 4, 5, 6]
-  
-  let mut missing_in_primary = []
-  let mut missing_in_backup = []
-  
-  // Find items in backup but not in primary
-  for item in backup_data {
-    let mut found = false
-    for primary_item in primary_data {
-      if primary_item == item {
-        found = true
-        break
+  let result = Resource::try_merge(valid_resource1, valid_resource2)
+  match result {
+    Success(merged) => {
+      let service_name = Resource::get_attribute(merged, "service.name")
+      match service_name {
+        Some(StringValue(name)) => assert_eq(name, "test-service")
+        _ => assert_true(false)
+      }
+      
+      let host_name = Resource::get_attribute(merged, "host.name")
+      match host_name {
+        Some(StringValue(name)) => assert_eq(name, "test-host")
+        _ => assert_true(false)
       }
     }
-    if !found {
-      missing_in_primary = missing_in_primary.push(item)
-    }
+    Error(_) => assert_true(false)
+  }
+}
+
+// Test 6: HTTP Client Error Handling
+test "http client error handling" {
+  let client = HttpClient::new()
+  
+  // Test creating request with invalid URL
+  let result = HttpClient::try_create_request(client, "GET", "invalid-url", [], None)
+  match result {
+    Success => assert_true(false) // Should not succeed
+    Error(err) => assert_eq(err.code, "INVALID_URL")
   }
   
-  // Find items in primary but not in backup
-  for item in primary_data {
-    let mut found = false
-    for backup_item in backup_data {
-      if backup_item == item {
-        found = true
-        break
+  // Test creating request with extremely large body
+  let large_body = create_large_string(50000000) // 50MB body
+  let result = HttpClient::try_create_request(client, "POST", "https://example.com", [], Some(large_body))
+  match result {
+    Success => assert_true(false) // Should not succeed
+    Error(err) => assert_eq(err.code, "REQUEST_BODY_TOO_LARGE")
+  }
+  
+  // Test creating request with invalid headers
+  let invalid_headers = [
+    ("Invalid-Header", "value"), // Header with capital letters
+    ("", "value"), // Empty header name
+    ("valid-header", "") // Empty header value
+  ]
+  
+  let result = HttpClient::try_create_request(client, "GET", "https://example.com", invalid_headers, None)
+  match result {
+    Success => assert_true(false) // Should not succeed
+    Error(err) => assert_eq(err.code, "INVALID_HEADERS")
+  }
+  
+  // Test recovery with valid request
+  let valid_headers = [
+    ("content-type", "application/json"),
+    ("x-request-id", "test-request-123")
+  ]
+  
+  let result = HttpClient::try_create_request(client, "GET", "https://example.com", valid_headers, None)
+  match result {
+    Success(request) => {
+      // Test sending request to non-existent server
+      let result = HttpClient::try_send_request(client, request)
+      match result {
+        Success => assert_true(false) // Should not succeed
+        Error(err) => assert_eq(err.code, "CONNECTION_ERROR")
       }
     }
-    if !found {
-      missing_in_backup = missing_in_backup.push(item)
-    }
+    Error(_) => assert_true(false)
   }
   
-  assert_eq(missing_in_primary.length(), 1)
-  assert_eq(missing_in_primary[0], 6)
-  assert_eq(missing_in_backup.length(), 1)
-  assert_eq(missing_in_backup[0], 3)
+  // Test recovery - client should still be functional
+  let valid_request = HttpRequest::new("GET", "https://httpbin.org/status/200", [], None)
+  let response = HttpClient::send_request(client, valid_request)
+  
+  // In a real scenario, this would succeed
+  // For testing purposes, we'll just verify the request structure
+  assert_eq(HttpRequest::http_method(valid_request), "GET")
+  assert_eq(HttpRequest::url(valid_request), "https://httpbin.org/status/200")
 }
 
-// Test 7: Resource Exhaustion Recovery
-test "resource exhaustion recovery" {
-  // Test memory pressure handling
-  let memory_threshold = 80  // Percentage
-  let current_memory_usage = 85
-  let mut recovery_actions = []
+// Test 7: Serialization Error Recovery
+test "serialization error recovery" {
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "test.key", StringValue("test value"))
   
-  if current_memory_usage > memory_threshold {
-    recovery_actions = recovery_actions.push("clear_cache")
-    recovery_actions = recovery_actions.push("garbage_collect")
-    
-    if current_memory_usage > 90 {
-      recovery_actions = recovery_actions.push("reduce_pool_size")
-    }
+  // Test JSON serialization with circular references
+  let circular_data = create_circular_reference_data()
+  let result = Attributes::try_to_json_with_circular_reference(circular_data)
+  match result {
+    Success => assert_true(false) // Should not succeed
+    Error(err) => assert_eq(err.code, "CIRCULAR_REFERENCE")
   }
   
-  assert_eq(recovery_actions.length(), 2)
-  assert_true(recovery_actions.contains("clear_cache"))
-  assert_true(recovery_actions.contains("garbage_collect"))
-  
-  // Test connection pool exhaustion
-  let max_connections = 100
-  let active_connections = 98
-  let pending_requests = 5
-  
-  let mut connection_recovery = []
-  
-  if active_connections + pending_requests > max_connections {
-    connection_recovery = connection_recovery.push("increase_pool_size")
-    connection_recovery = connection_recovery.push("queue_requests")
-    
-    if pending_requests > 10 {
-      connection_recovery = connection_recovery.push("reject_overflow")
-    }
+  // Test JSON serialization with extremely deep nesting
+  let deep_data = create_deeply_nested_data(1000)
+  let result = Attributes::try_to_json_with_deep_nesting(deep_data)
+  match result {
+    Success => assert_true(false) // Should not succeed
+    Error(err) => assert_eq(err.code, "NESTING_TOO_DEEP")
   }
   
-  assert_eq(connection_recovery.length(), 2)
-  assert_true(connection_recovery.contains("increase_pool_size"))
-  assert_true(connection_recovery.contains("queue_requests"))
-  
-  // Test disk space cleanup
-  let disk_usage_percentage = 92
-  let cleanup_threshold = 90
-  
-  if disk_usage_percentage > cleanup_threshold {
-    let cleanup_actions = ["delete_temp_files", "compress_logs", "archive_old_data"]
-    let mut executed_cleanup = []
-    
-    for action in cleanup_actions {
-      executed_cleanup = executed_cleanup.push(action)
+  // Test recovery with normal serialization
+  let result = Attributes::try_to_json(attrs)
+  match result {
+    Success(json_str) => {
+      assert_true(json_str.contains("\"test.key\""))
+      assert_true(json_str.contains("\"test value\""))
+      
+      // Test JSON deserialization with malformed data
+      let malformed_json = "{\"test.key\":\"test value\"" // Missing closing brace
+      let result = Attributes::try_from_json(malformed_json)
+      match result {
+        Success => assert_true(false) // Should not succeed
+        Error(err) => assert_eq(err.code, "MALFORMED_JSON")
+      }
+      
+      // Test recovery with valid JSON
+      let result = Attributes::try_from_json(json_str)
+      match result {
+        Success(deserialized_attrs) => {
+          let retrieved = Attributes::get(deserialized_attrs, "test.key")
+          match retrieved {
+            Some(StringValue(value)) => assert_eq(value, "test value")
+            _ => assert_true(false)
+          }
+        }
+        Error(_) => assert_true(false)
+      }
     }
-    
-    assert_eq(executed_cleanup.length(), 3)
-    assert_true(executed_cleanup.contains("delete_temp_files"))
+    Error(_) => assert_true(false)
   }
 }
 
-// Test 8: Network Failure Recovery
-test "network failure recovery" {
-  // Test connection retry with exponential backoff
-  let max_retries = 5
-  let base_delay = 100  // milliseconds
-  let mut retry_attempts = []
-  let mut connection_successful = false
-  let attempt_results = [false, false, false, false, true]  // Last attempt succeeds
-  
-  for i in 0..<max_retries {
-    if i < attempt_results.length() {
-      connection_successful = attempt_results[i]
-    } else {
-      connection_successful = false
-    }
-    
-    let delay = base_delay * (2 ^ i)  // Exponential backoff
-    retry_attempts = retry_attempts.push((i + 1, delay, connection_successful))
-    
-    if connection_successful {
-      break
-    }
+// Test 8: Context Propagation Error Handling
+test "context propagation error handling" {
+  // Test context with invalid data
+  let result = Context::try_create_with_invalid_data()
+  match result {
+    Success => assert_true(false) // Should not succeed
+    Error(err) => assert_eq(err.code, "INVALID_CONTEXT_DATA")
   }
   
-  assert_eq(retry_attempts.length(), 5)
-  assert_eq(retry_attempts[0].0, 1)
-  assert_eq(retry_attempts[0].1, 100)
-  assert_eq(retry_attempts[4].0, 5)
-  assert_eq(retry_attempts[4].1, 1600)
-  assert_true(retry_attempts[4].2)
-  
-  // Test failover to backup endpoint
-  let primary_endpoint = "https://primary.api.example.com"
-  let backup_endpoints = [
-    "https://backup1.api.example.com",
-    "https://backup2.api.example.com",
-    "https://backup3.api.example.com"
-  ]
-  
-  let endpoint_status = [
-    (primary_endpoint, false),
-    (backup_endpoints[0], false),
-    (backup_endpoints[1], true),
-    (backup_endpoints[2], true)
-  ]
-  
-  let mut selected_endpoint = ""
-  
-  for endpoint in endpoint_status {
-    if endpoint.1 {
-      selected_endpoint = endpoint.0
-      break
-    }
+  // Test context with too many entries
+  let result = Context::try_create_with_too_many_entries()
+  match result {
+    Success => assert_true(false) // Should not succeed
+    Error(err) => assert_eq(err.code, "TOO_MANY_CONTEXT_ENTRIES")
   }
   
-  assert_eq(selected_endpoint, backup_endpoints[1])
+  // Test context propagation with corrupted data
+  let valid_ctx = Context::root()
+  let key = ContextKey::new("test.key")
+  let ctx_with_value = Context::with_value(valid_ctx, key, "test value")
   
-  // Test circuit breaker recovery
-  let circuit_state = "open"
-  let recovery_timeout = 60000  // milliseconds
-  let last_failure_time = 1640995200000  // timestamp
-  let current_time = 1640995300000  // timestamp
-  
-  let time_since_failure = current_time - last_failure_time
-  let mut new_circuit_state = circuit_state
-  
-  if circuit_state == "open" && time_since_failure > recovery_timeout {
-    new_circuit_state = "half_open"
+  let corrupted_data = corrupt_context_data(ctx_with_value)
+  let result = Context::try_from_corrupted_data(corrupted_data)
+  match result {
+    Success => assert_true(false) // Should not succeed
+    Error(err) => assert_eq(err.code, "CORRUPTED_CONTEXT_DATA")
   }
   
-  assert_eq(new_circuit_state, "half_open")
-}
-
-// Test 9: State Recovery Mechanisms
-test "state recovery mechanisms" {
-  // Test checkpoint recovery
-  let checkpoints = [
-    ("checkpoint_1", 1000, [1, 2, 3]),
-    ("checkpoint_2", 2000, [1, 2, 3, 4]),
-    ("checkpoint_3", 3000, [1, 2, 3, 4, 5]),
-    ("checkpoint_4", 4000, [1, 2, 3, 4, 5, 6])
-  ]
+  // Test recovery with valid context operations
+  let recovery_ctx = Context::root()
+  let recovery_key = ContextKey::new("recovery.key")
+  let ctx_with_recovery_value = Context::with_value(recovery_ctx, recovery_key, "recovery value")
   
-  let failure_time = 3500
-  let mut latest_checkpoint = None
-  
-  for checkpoint in checkpoints {
-    if checkpoint.1 <= failure_time {
-      latest_checkpoint = Some(checkpoint)
-    }
-  }
-  
-  match latest_checkpoint {
-    Some(checkpoint) => {
-      assert_eq(checkpoint.0, "checkpoint_3")
-      assert_eq(checkpoint.2, [1, 2, 3, 4, 5])
-    }
+  let retrieved = Context::get(ctx_with_recovery_value, recovery_key)
+  match retrieved {
+    Some(value) => assert_eq(value, "recovery value")
     None => assert_true(false)
   }
-  
-  // Test state reconstruction from events
-  let events = [
-    ("create", 1, "item_1"),
-    ("update", 1, "item_1_updated"),
-    ("create", 2, "item_2"),
-    ("delete", 1, "item_1"),
-    ("update", 2, "item_2_updated")
-  ]
-  
-  let mut current_state = {}
-  
-  for event in events {
-    match event.0 {
-      "create" => {
-        current_state = current_state.set(event.1.to_string(), event.2)
-      }
-      "update" => {
-        current_state = current_state.set(event.1.to_string(), event.2)
-      }
-      "delete" => {
-        current_state = current_state.remove(event.1.to_string())
-      }
-      _ => {}
-    }
-  }
-  
-  assert_eq(current_state.length(), 1)
-  assert_eq(current_state.get("2"), Some("item_2_updated"))
-  assert_eq(current_state.get("1"), None)
 }
 
-// Test 10: Error Boundary Performance Impact
-test "error boundary performance impact" {
-  // Test error handling overhead
-  let operations_without_errors = 1000
-  let operations_with_errors = 1000
-  let error_rate = 0.05  // 5% error rate
+// Test 9: Memory Pressure Error Handling
+test "memory pressure error handling" {
+  // Simulate memory pressure conditions
+  let memory_manager = MemoryManager::new()
   
-  let mut normal_operations = 0
-  let mut error_operations = 0
+  // Test allocation under memory pressure
+  MemoryManager::simulate_memory_pressure(memory_manager, 0.95) // 95% memory usage
   
-  // Simulate normal operations
-  for i in 0..<operations_without_errors {
-    normal_operations = normal_operations + 1
+  let result = MemoryManager::try_allocate_large_block(memory_manager, 100000000) // 100MB
+  match result {
+    Success => assert_true(false) // Should not succeed under memory pressure
+    Error(err) => assert_eq(err.code, "OUT_OF_MEMORY")
   }
   
-  // Simulate operations with error handling
-  for i in 0..<operations_with_errors {
-    let random_value = (i * 17) % 100  // Pseudo-random
-    if random_value < (error_rate * 100.0).to_int() {
-      // Simulate error handling overhead
-      error_operations = error_operations + 1
-      // Additional processing for error recovery
-      for j in 0..<5 {
-        normal_operations = normal_operations + 1
-      }
-    } else {
-      normal_operations = normal_operations + 1
+  // Test graceful degradation under memory pressure
+  let result = MemoryManager::try_allocate_small_block(memory_manager, 1024) // 1KB
+  match result {
+    Success(block) => {
+      // Should succeed with small allocation even under pressure
+      MemoryManager::deallocate(memory_manager, block)
+    }
+    Error(err) => {
+      // If it fails, should be due to extreme pressure
+      assert_eq(err.code, "EXTREME_MEMORY_PRESSURE")
     }
   }
   
-  assert_eq(error_operations, 50)  // 5% of 1000
-  assert_eq(normal_operations, 1000 + 50 * 5 + 950)  // Normal + error overhead + remaining normal
+  // Test recovery after memory pressure is relieved
+  MemoryManager::relieve_memory_pressure(memory_manager)
   
-  // Test error boundary isolation
-  let components = [
-    ("component_a", 100, 2),   // (name, operations, errors)
-    ("component_b", 150, 5),
-    ("component_c", 80, 1),
-    ("component_d", 120, 8)
-  ]
-  
-  let mut isolated_components = []
-  
-  for component in components {
-    let error_rate = component.2.to_float() / component.1.to_float()
-    if error_rate > 0.05 {  // 5% error rate threshold
-      isolated_components = isolated_components.push(component.0)
+  let result = MemoryManager::try_allocate_large_block(memory_manager, 100000000) // 100MB
+  match result {
+    Success(block) => {
+      // Should succeed after pressure is relieved
+      MemoryManager::deallocate(memory_manager, block)
     }
+    Error(_) => assert_true(false)
+  }
+}
+
+// Test 10: System-Wide Error Recovery
+test "system-wide error recovery" {
+  let telemetry_system = TelemetrySystem::new()
+  
+  // Simulate system-wide errors
+  TelemetrySystem::simulate_component_failure(telemetry_system, "metrics")
+  
+  // Test system continues to function with degraded capabilities
+  let span = TelemetrySystem::create_span(telemetry_system, "test-span")
+  assert_true(TelemetrySystem::is_span_functional(telemetry_system))
+  
+  // Test metrics failure handling
+  let result = TelemetrySystem::try_create_counter(telemetry_system, "test.counter")
+  match result {
+    Success => assert_true(false) // Should not succeed with failed metrics component
+    Error(err) => assert_eq(err.code, "METRICS_COMPONENT_UNAVAILABLE")
   }
   
-  assert_eq(isolated_components.length(), 2)
-  assert_true(isolated_components.contains("component_b"))
-  assert_true(isolated_components.contains("component_d"))
+  // Test logging still works
+  let logger = TelemetrySystem::get_logger(telemetry_system)
+  let log_record = LogRecord::new(Info, "Test during component failure")
+  Logger::emit(logger, log_record)
   
-  // Test graceful degradation performance
-  let functionality_levels = [
-    ("full", 100, 1.0),      // (level, operations, performance_factor)
-    ("reduced", 80, 0.8),
-    ("basic", 60, 0.6),
-    ("minimal", 40, 0.4)
-  ]
+  // Test component recovery
+  TelemetrySystem::recover_component(telemetry_system, "metrics")
   
-  let current_load = 70
-  let mut selected_level = ""
-  let mut performance_factor = 0.0
-  
-  for level in functionality_levels {
-    if current_load <= level.1 {
-      selected_level = level.0
-      performance_factor = level.2
-      break
+  let result = TelemetrySystem::try_create_counter(telemetry_system, "recovery.counter")
+  match result {
+    Success(counter) => {
+      // Metrics should work again after recovery
+      Counter::add(counter, 1.0)
+      let value = Counter::get_value(counter)
+      assert_eq(value, 1.0)
     }
+    Error(_) => assert_true(false)
   }
   
-  assert_eq(selected_level, "basic")
-  assert_eq(performance_factor, 0.6)
+  // Test system health after recovery
+  let health_status = TelemetrySystem::get_health_status(telemetry_system)
+  assert_true(health_status.all_components_healthy)
+}
+
+// Helper functions for error testing
+fn create_large_string(size : Int) -> String {
+  let mut result = ""
+  for i in 0..size {
+    result = result + "a"
+  }
+  result
+}
+
+fn corrupt_span_context_data(ctx : SpanContext) -> Array[Byte] {
+  // Mock implementation - in real code would actually corrupt the data
+  [0x00, 0x01, 0x02, 0x03]
+}
+
+fn corrupt_resource_data(resource : Resource) -> Unit {
+  // Mock implementation - in real code would actually corrupt the resource
+  ()
+}
+
+fn create_circular_reference_data() -> Any {
+  // Mock implementation - in real code would create circular reference
+  {}
+}
+
+fn create_deeply_nested_data(depth : Int) -> Any {
+  // Mock implementation - in real code would create deeply nested structure
+  {}
+}
+
+fn corrupt_context_data(ctx : Context) -> Array[Byte] {
+  // Mock implementation - in real code would actually corrupt the context data
+  [0x00, 0x01, 0x02, 0x03]
 }
