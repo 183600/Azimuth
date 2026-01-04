@@ -1,622 +1,818 @@
 // Azimuth Premium Performance Optimization Tests
-// 高级性能优化测试用例，专注于遥测系统的性能瓶颈和优化策略
+// This file contains comprehensive test cases for performance optimization and benchmarking
 
-// 测试 1: 批处理性能优化
-test "batch processing performance optimization" {
-  // 定义批处理配置
-  type BatchConfig = {
-    max_batch_size: Int,
-    max_wait_time_ms: Int,
-    compression_threshold: Int
-  }
-  
-  // 创建动态批处理器
-  let create_batch_processor = fn(config: BatchConfig) {
-    let mut batch = []
-    let mut last_flush = 0
-    let mut total_items = 0
-    let mut total_batches = 0
-    
-    // 处理单个项目
-    let process_item = fn(item: String, current_time: Int) {
-      batch = batch.push(item)
-      total_items = total_items + 1
-      
-      // 检查是否需要刷新批次
-      let should_flush = batch.length() >= config.max_batch_size || 
-                        (current_time - last_flush) >= config.max_wait_time_ms
-      
-      if should_flush {
-        total_batches = total_batches + 1
-        let batch_size = batch.length()
-        
-        // 模拟压缩决策
-        let should_compress = batch_size >= config.compression_threshold
-        
-        batch = []
-        last_flush = current_time
-        
-        (total_batches, batch_size, should_compress)
-      } else {
-        (total_batches, 0, false)
-      }
-    }
-    
-    process_item
-  }
-  
-  // 测试配置
-  let config = {
-    max_batch_size: 100,
-    max_wait_time_ms: 5000,
-    compression_threshold: 50
-  }
-  
-  let batch_processor = create_batch_processor(config)
-  
-  // 模拟数据处理
-  let mut current_time = 1000
-  let mut total_batches_processed = 0
-  let mut max_batch_size_seen = 0
-  let mut compression_used_count = 0
-  
-  // 处理250个项目，时间间隔100ms
-  for i in 1..=250 {
-    let item = "item_" + i.to_string()
-    let (batches, batch_size, compressed) = batch_processor(item, current_time)
-    
-    total_batches_processed = batches
-    max_batch_size_seen = max_batch_size_seen.max(batch_size)
-    if compressed { compression_used_count = compression_used_count + 1 }
-    
-    current_time = current_time + 100
-  }
-  
-  // 验证批处理效果
-  assert_true(total_batches_processed >= 2)  // 至少应该有2个批次
-  assert_true(max_batch_size_seen <= config.max_batch_size)  // 批次大小不超过限制
-  assert_true(compression_used_count > 0)  // 应该使用了压缩
-  
-  // 最后一次刷新
-  let (final_batches, _, final_compressed) = batch_processor("", current_time + 10000)
-  assert_true(final_batches > total_batches_processed)
-}
-
-// 测试 2: 内存池管理优化
-test "memory pool management optimization" {
-  // 定义内存池
+// Test 1: Memory Pool Allocation Optimization
+test "memory pool allocation optimization" {
+  // Define memory pool structure
   type MemoryPool = {
-    small_objects: Array[String],
-    medium_objects: Array[String],
-    large_objects: Array[String],
-    small_allocated: Int,
-    medium_allocated: Int,
-    large_allocated: Int
+    pool_size: Int,
+    allocated_blocks: Int,
+    free_blocks: Array[Int],
+    used_blocks: Array[Int],
+    allocation_count: Int,
+    deallocation_count: Int
   }
   
-  // 创建内存池
-  let create_memory_pool = fn() {
+  // Create memory pool
+  let create_memory_pool = fn(size: Int) {
     {
-      small_objects: [],
-      medium_objects: [],
-      large_objects: [],
-      small_allocated: 0,
-      medium_allocated: 0,
-      large_allocated: 0
+      pool_size: size,
+      allocated_blocks: 0,
+      free_blocks: (0..size).to_array(),
+      used_blocks: [],
+      allocation_count: 0,
+      deallocation_count: 0
     }
   }
   
-  // 分配对象
-  let allocate = fn(pool: MemoryPool, size: Int) {
-    match size {
-      s if s <= 100 => {
-        if pool.small_objects.length() > 0 {
-          let obj = pool.small_objects[0]
-          let remaining = pool.small_objects.slice(1)
-          ({
-            small_objects: remaining,
-            medium_objects: pool.medium_objects,
-            large_objects: pool.large_objects,
-            small_allocated: pool.small_allocated + 1,
-            medium_allocated: pool.medium_allocated,
-            large_allocated: pool.large_allocated
-          }, obj)
-        } else {
-          ({
-            small_objects: pool.small_objects,
-            medium_objects: pool.medium_objects,
-            large_objects: pool.large_objects,
-            small_allocated: pool.small_allocated + 1,
-            medium_allocated: pool.medium_allocated,
-            large_allocated: pool.large_allocated
-          }, "small_obj_" + pool.small_allocated.to_string())
-        }
-      }
-      m if m > 100 && m <= 1000 => {
-        if pool.medium_objects.length() > 0 {
-          let obj = pool.medium_objects[0]
-          let remaining = pool.medium_objects.slice(1)
-          ({
-            small_objects: pool.small_objects,
-            medium_objects: remaining,
-            large_objects: pool.large_objects,
-            small_allocated: pool.small_allocated,
-            medium_allocated: pool.medium_allocated + 1,
-            large_allocated: pool.large_allocated
-          }, obj)
-        } else {
-          ({
-            small_objects: pool.small_objects,
-            medium_objects: pool.medium_objects,
-            large_objects: pool.large_objects,
-            small_allocated: pool.small_allocated,
-            medium_allocated: pool.medium_allocated + 1,
-            large_allocated: pool.large_allocated
-          }, "medium_obj_" + pool.medium_allocated.to_string())
-        }
-      }
-      l => {
-        if pool.large_objects.length() > 0 {
-          let obj = pool.large_objects[0]
-          let remaining = pool.large_objects.slice(1)
-          ({
-            small_objects: pool.small_objects,
-            medium_objects: pool.medium_objects,
-            large_objects: remaining,
-            small_allocated: pool.small_allocated,
-            medium_allocated: pool.medium_allocated,
-            large_allocated: pool.large_allocated + 1
-          }, obj)
-        } else {
-          ({
-            small_objects: pool.small_objects,
-            medium_objects: pool.medium_objects,
-            large_objects: pool.large_objects,
-            small_allocated: pool.small_allocated,
-            medium_allocated: pool.medium_allocated,
-            large_allocated: pool.large_allocated + 1
-          }, "large_obj_" + pool.large_allocated.to_string())
-        }
-      }
+  // Allocate block from pool
+  let allocate_block = fn(pool: MemoryPool) {
+    if pool.free_blocks.length() > 0 {
+      let block_id = pool.free_blocks[0]
+      let updated_free = pool.free_blocks.slice(1, pool.free_blocks.length())
+      let updated_used = pool.used_blocks.push(block_id)
+      
+      ({
+        pool_size: pool.pool_size,
+        allocated_blocks: pool.allocated_blocks + 1,
+        free_blocks: updated_free,
+        used_blocks: updated_used,
+        allocation_count: pool.allocation_count + 1,
+        deallocation_count: pool.deallocation_count
+      }, Some(block_id))
+    } else {
+      (pool, None)
     }
   }
   
-  // 释放对象
-  let deallocate = fn(pool: MemoryPool, obj: String, size: Int) {
-    match size {
-      s if s <= 100 => {
-        ({
-          small_objects: pool.small_objects.push(obj),
-          medium_objects: pool.medium_objects,
-          large_objects: pool.large_objects,
-          small_allocated: pool.small_allocated,
-          medium_allocated: pool.medium_allocated,
-          large_allocated: pool.large_allocated
-        }, ())
-      }
-      m if m > 100 && m <= 1000 => {
-        ({
-          small_objects: pool.small_objects,
-          medium_objects: pool.medium_objects.push(obj),
-          large_objects: pool.large_objects,
-          small_allocated: pool.small_allocated,
-          medium_allocated: pool.medium_allocated,
-          large_allocated: pool.large_allocated
-        }, ())
-      }
-      l => {
-        ({
-          small_objects: pool.small_objects,
-          medium_objects: pool.medium_objects,
-          large_objects: pool.large_objects.push(obj),
-          small_allocated: pool.small_allocated,
-          medium_allocated: pool.medium_allocated,
-          large_allocated: pool.large_allocated
-        }, ())
-      }
+  // Deallocate block to pool
+  let deallocate_block = fn(pool: MemoryPool, block_id: Int) {
+    if pool.used_blocks.contains(block_id) {
+      let updated_used = pool.used_blocks.filter(fn(id) { id != block_id })
+      let updated_free = pool.free_blocks.push(block_id)
+      
+      ({
+        pool_size: pool.pool_size,
+        allocated_blocks: pool.allocated_blocks - 1,
+        free_blocks: updated_free,
+        used_blocks: updated_used,
+        allocation_count: pool.allocation_count,
+        deallocation_count: pool.deallocation_count + 1
+      }, true)
+    } else {
+      (pool, false)
     }
   }
   
-  // 测试内存池
-  let mut pool = create_memory_pool()
-  let allocated_objects = []
+  // Test memory pool creation
+  let pool = create_memory_pool(100)
+  assert_eq(pool.pool_size, 100)
+  assert_eq(pool.free_blocks.length(), 100)
+  assert_eq(pool.used_blocks.length(), 0)
+  assert_eq(pool.allocation_count, 0)
+  assert_eq(pool.deallocation_count, 0)
   
-  // 分配各种大小的对象
-  let sizes = [50, 150, 1200, 80, 500, 2000, 30, 800]
-  for size in sizes {
-    let (new_pool, obj) = allocate(pool, size)
-    pool = new_pool
-    allocated_objects = allocated_objects.push((obj, size))
+  // Test block allocation
+  let (pool1, block1) = allocate_block(pool)
+  match block1 {
+    Some(id) => {
+      assert_eq(id, 0)
+      assert_eq(pool1.free_blocks.length(), 99)
+      assert_eq(pool1.used_blocks.length(), 1)
+      assert_eq(pool1.allocation_count, 1)
+    }
+    None => assert_true(false)
   }
   
-  // 验证分配计数
-  assert_eq(pool.small_allocated, 2)  // 50, 80, 30 -> 3个小的
-  assert_eq(pool.medium_allocated, 3)  // 150, 500, 800 -> 3个中的
-  assert_eq(pool.large_allocated, 2)  // 1200, 2000 -> 2个大的
+  // Test multiple allocations
+  let (pool2, block2) = allocate_block(pool1)
+  let (pool3, block3) = allocate_block(pool2)
+  let (pool4, block4) = allocate_block(pool3)
   
-  // 释放一半的对象
-  let half_count = allocated_objects.length() / 2
-  for i in 0..half_count {
-    let (obj, size) = allocated_objects[i]
-    let (new_pool, _) = deallocate(pool, obj, size)
-    pool = new_pool
+  match block2 {
+    Some(id) => assert_eq(id, 1)
+    None => assert_true(false)
   }
   
-  // 验证释放后的池状态
-  assert_true(pool.small_objects.length() + pool.medium_objects.length() + pool.large_objects.length() >= half_count)
+  match block3 {
+    Some(id) => assert_eq(id, 2)
+    None => assert_true(false)
+  }
   
-  // 再次分配对象，应该重用已释放的对象
-  let (new_pool, reused_obj) = allocate(pool, 50)
-  pool = new_pool
+  match block4 {
+    Some(id) => assert_eq(id, 3)
+    None => assert_true(false)
+  }
   
-  // 由于我们释放了一个小对象，应该可以重用
-  assert_true(pool.small_objects.length() < allocated_objects.length() / 2)
+  assert_eq(pool4.used_blocks.length(), 4)
+  assert_eq(pool4.free_blocks.length(), 96)
+  assert_eq(pool4.allocation_count, 4)
+  
+  // Test block deallocation
+  let (pool5, dealloc_result1) = deallocate_block(pool4, 1)
+  assert_true(dealloc_result1)
+  assert_eq(pool5.used_blocks.length(), 3)
+  assert_eq(pool5.free_blocks.length(), 97)
+  assert_eq(pool5.deallocation_count, 1)
+  
+  // Test deallocation of non-existent block
+  let (pool6, dealloc_result2) = deallocate_block(pool5, 99)
+  assert_false(dealloc_result2)
+  assert_eq(pool6.used_blocks.length(), 3)
+  assert_eq(pool6.free_blocks.length(), 97)
+  assert_eq(pool6.deallocation_count, 1)  // No change
+  
+  // Test pool exhaustion
+  let mut exhausted_pool = pool6
+  let mut allocated_ids = []
+  
+  // Allocate remaining blocks
+  for i in 0..96 {
+    let (new_pool, block_id) = allocate_block(exhausted_pool)
+    match block_id {
+      Some(id) => {
+        exhausted_pool = new_pool
+        allocated_ids = allocated_ids.push(id)
+      }
+      None => assert_true(false)
+    }
+  }
+  
+  assert_eq(exhausted_pool.free_blocks.length(), 0)
+  assert_eq(exhausted_pool.used_blocks.length(), 99)
+  
+  // Try to allocate from exhausted pool
+  let (final_pool, no_block) = allocate_block(exhausted_pool)
+  match no_block {
+    None => assert_true(true)
+    Some(_) => assert_true(false)
+  }
+  
+  assert_eq(final_pool.free_blocks.length(), 0)
+  assert_eq(final_pool.used_blocks.length(), 99)
 }
 
-// 测试 3: 智能采样策略性能
-test "intelligent sampling strategy performance" {
-  // 定义采样决策器
-  type SamplingDecision = {
-    should_sample: Bool,
-    sample_rate: Float,
-    reason: String
-  }
-  
-  // 创建自适应采样器
-  let create_adaptive_sampler = fn(base_rate: Float, max_rate: Float, min_rate: Float) {
-    let mut current_rate = base_rate
-    let mut sample_count = 0
-    let mut total_count = 0
-    let mut error_count = 0
-    
-    let sample = fn(trace_id: String, has_error: Bool, priority: Int) {
-      total_count = total_count + 1
-      if has_error { error_count = error_count + 1 }
-      
-      // 基于错误率调整采样率
-      let error_rate = if total_count > 0 { (error_count as Float) / (total_count as Float) } else { 0.0 }
-      
-      // 错误率高时提高采样率
-      if error_rate > 0.1 && current_rate < max_rate {
-        current_rate = (current_rate * 1.5).min(max_rate)
-      } else if error_rate < 0.01 && current_rate > min_rate {
-        current_rate = (current_rate * 0.8).max(min_rate)
-      }
-      
-      // 高优先级总是采样
-      let should_sample = priority >= 8 || 
-                         (priority >= 5 && trace_id.to_int() % 1000 < (current_rate * 1000.0).to_int()) ||
-                         (priority < 5 && trace_id.to_int() % 10000 < (current_rate * 10000.0).to_int())
-      
-      if should_sample {
-        sample_count = sample_count + 1
-      }
-      
-      {
-        should_sample,
-        sample_rate: current_rate,
-        reason: if priority >= 8 { "high_priority" } 
-                else if has_error { "error_detected" }
-                else { "adaptive_sampling" }
-      }
-    }
-    
-    sample
-  }
-  
-  // 测试自适应采样器
-  let sampler = create_adaptive_sampler(0.1, 0.5, 0.01)
-  
-  let mut sampled_count = 0
-  let mut high_priority_sampled = 0
-  let mut error_sampled = 0
-  let mut adaptive_sampled = 0
-  
-  // 模拟1000个追踪
-  for i in 1..=1000 {
-    let trace_id = "trace_" + i.to_string()
-    let has_error = i % 10 == 0  // 10%的错误率
-    let priority = if i % 50 == 0 { 9 }  // 2%高优先级
-                  else if i % 20 == 0 { 6 }  // 5%中优先级
-                  else { 3 }  // 93%低优先级
-    
-    let decision = sampler(trace_id, has_error, priority)
-    
-    if decision.should_sample {
-      sampled_count = sampled_count + 1
-      
-      if decision.reason == "high_priority" {
-        high_priority_sampled = high_priority_sampled + 1
-      } else if decision.reason == "error_detected" {
-        error_sampled = error_sampled + 1
-      } else {
-        adaptive_sampled = adaptive_sampled + 1
-      }
-    }
-  }
-  
-  // 验证采样效果
-  assert_true(high_priority_sampled >= 15)  // 高优先级应该大部分被采样
-  assert_true(error_sampled >= 8)  // 错误追踪应该有较高采样率
-  assert_true(sampled_count > 50)  // 总采样数应该合理
-  assert_true(sampled_count < 500)  // 但不应该过高
-  
-  // 验证采样率在合理范围内
-  let actual_rate = (sampled_count as Float) / 1000.0
-  assert_true(actual_rate >= 0.05)  // 至少5%
-  assert_true(actual_rate <= 0.3)   // 但不超过30%
-}
-
-// 测试 4: 预计算和缓存优化
-test "precomputation and caching optimization" {
-  // 定义缓存项
-  type CacheItem[T] = {
+// Test 2: Cache Performance Optimization
+test "cache performance optimization" {
+  // Define cache entry structure
+  type CacheEntry[T] = {
+    key: String,
     value: T,
-    computed_at: Int,
     access_count: Int,
-    last_accessed: Int
+    last_accessed: Int,
+    size: Int
   }
   
-  // 创建LRU缓存
-  let create_lru_cache = fn(max_size: Int, ttl_ms: Int) {
-    let mut cache = Map::empty()
-    let mut access_order = []
-    
-    let get = fn(key: String, compute_fn: () -> T, current_time: Int) {
-      match Map::get(cache, key) {
-        Some(item) => {
-          // 检查是否过期
-          if current_time - item.computed_at > ttl_ms {
-            // 过期，重新计算
-            let new_value = compute_fn()
-            let new_item = {
-              value: new_value,
-              computed_at: current_time,
-              access_count: item.access_count + 1,
-              last_accessed: current_time
-            }
-            
-            let _ = Map::insert(cache, key, new_item)
-            
-            // 更新访问顺序
-            access_order = access_order.filter(fn(k) { k != key }).push(key)
-            
-            new_value
-          } else {
-            // 未过期，更新访问信息
-            let updated_item = {
-              value: item.value,
-              computed_at: item.computed_at,
-              access_count: item.access_count + 1,
-              last_accessed: current_time
-            }
-            
-            let _ = Map::insert(cache, key, updated_item)
-            
-            // 更新访问顺序
-            access_order = access_order.filter(fn(k) { k != key }).push(key)
-            
-            item.value
-          }
+  // Define cache structure
+  type Cache[T] = {
+    max_size: Int,
+    current_size: Int,
+    entries: Array[CacheEntry[T]],
+    hit_count: Int,
+    miss_count: Int,
+    eviction_count: Int
+  }
+  
+  // Create cache
+  let create_cache = fn(max_size: Int) {
+    {
+      max_size,
+      current_size: 0,
+      entries: [],
+      hit_count: 0,
+      miss_count: 0,
+      eviction_count: 0
+    }
+  }
+  
+  // Get value from cache
+  let get = fn(cache: Cache[T], key: String, current_time: Int) {
+    match cache.entries.find_index(fn(entry) { entry.key == key }) {
+      Some(index) => {
+        let entry = cache.entries[index]
+        let updated_entry = { 
+          entry | 
+          access_count: entry.access_count + 1,
+          last_accessed: current_time
         }
-        None => {
-          // 缓存中没有，计算新值
-          let new_value = compute_fn()
-          let new_item = {
-            value: new_value,
-            computed_at: current_time,
+        let updated_entries = cache.entries.update(index, updated_entry)
+        
+        ({
+          max_size: cache.max_size,
+          current_size: cache.current_size,
+          entries: updated_entries,
+          hit_count: cache.hit_count + 1,
+          miss_count: cache.miss_count,
+          eviction_count: cache.eviction_count
+        }, Some(updated_entry.value))
+      }
+      None => {
+        ({
+          max_size: cache.max_size,
+          current_size: cache.current_size,
+          entries: cache.entries,
+          hit_count: cache.hit_count,
+          miss_count: cache.miss_count + 1,
+          eviction_count: cache.eviction_count
+        }, None)
+      }
+    }
+  }
+  
+  // Put value in cache
+  let put = fn(cache: Cache[T], key: String, value: T, size: Int, current_time: Int) {
+    match cache.entries.find_index(fn(entry) { entry.key == key }) {
+      Some(index) => {
+        // Update existing entry
+        let old_entry = cache.entries[index]
+        let new_entry = {
+          key,
+          value,
+          access_count: old_entry.access_count + 1,
+          last_accessed: current_time,
+          size
+        }
+        let updated_entries = cache.entries.update(index, new_entry)
+        let size_diff = size - old_entry.size
+        
+        ({
+          max_size: cache.max_size,
+          current_size: cache.current_size + size_diff,
+          entries: updated_entries,
+          hit_count: cache.hit_count,
+          miss_count: cache.miss_count,
+          eviction_count: cache.eviction_count
+        }, true)
+      }
+      None => {
+        // Add new entry
+        if cache.current_size + size <= cache.max_size {
+          let new_entry = {
+            key,
+            value,
             access_count: 1,
-            last_accessed: current_time
+            last_accessed: current_time,
+            size
+          }
+          let updated_entries = cache.entries.push(new_entry)
+          
+          ({
+            max_size: cache.max_size,
+            current_size: cache.current_size + size,
+            entries: updated_entries,
+            hit_count: cache.hit_count,
+            miss_count: cache.miss_count,
+            eviction_count: cache.eviction_count
+          }, true)
+        } else {
+          // Need to evict entries (LRU strategy)
+          let sorted_entries = cache.entries.sort_by(fn(a, b) { 
+            if a.last_accessed < b.last_accessed { -1 } 
+            else if a.last_accessed > b.last_accessed { 1 } 
+            else { 0 }
+          })
+          
+          let mut evicted_count = 0
+          let mut freed_size = 0
+          let mut remaining_entries = cache.entries
+          
+          while cache.current_size + size - freed_size > cache.max_size && evicted_count < sorted_entries.length() {
+            let lru_entry = sorted_entries[evicted_count]
+            freed_size = freed_size + lru_entry.size
+            remaining_entries = remaining_entries.filter(fn(entry) { entry.key != lru_entry.key })
+            evicted_count = evicted_count + 1
           }
           
-          // 检查缓存大小
-          if cache.size() >= max_size {
-            // 移除最久未访问的项
-            let oldest_key = access_order[0]
-            let _ = Map::remove(cache, oldest_key)
-            access_order = access_order.slice(1)
+          if cache.current_size + size - freed_size <= cache.max_size {
+            let new_entry = {
+              key,
+              value,
+              access_count: 1,
+              last_accessed: current_time,
+              size
+            }
+            let updated_entries = remaining_entries.push(new_entry)
+            
+            ({
+              max_size: cache.max_size,
+              current_size: cache.current_size + size - freed_size,
+              entries: updated_entries,
+              hit_count: cache.hit_count,
+              miss_count: cache.miss_count,
+              eviction_count: cache.eviction_count + evicted_count
+            }, true)
+          } else {
+            // Still not enough space
+            ({
+              max_size: cache.max_size,
+              current_size: cache.current_size,
+              entries: cache.entries,
+              hit_count: cache.hit_count,
+              miss_count: cache.miss_count,
+              eviction_count: cache.eviction_count
+            }, false)
           }
-          
-          let _ = Map::insert(cache, key, new_item)
-          access_order = access_order.push(key)
-          
-          new_value
         }
       }
     }
-    
-    get
   }
   
-  // 测试缓存
-  let cache = create_lru_cache(5, 1000)  // 最多5项，1秒TTL
-  let mut current_time = 1000
+  // Test cache creation
+  let cache = create_cache(1000)
+  assert_eq(cache.max_size, 1000)
+  assert_eq(cache.current_size, 0)
+  assert_eq(cache.entries.length(), 0)
+  assert_eq(cache.hit_count, 0)
+  assert_eq(cache.miss_count, 0)
   
-  // 昂贵的计算函数
-  let expensive_computation = fn(x: Int) {
-    // 模拟计算时间
-    x * x * x + x * x + x
+  // Test cache miss
+  let (cache1, result1) = get(cache, "key1", 1640995200)
+  match result1 {
+    None => {
+      assert_eq(cache1.miss_count, 1)
+      assert_eq(cache1.hit_count, 0)
+    }
+    Some(_) => assert_true(false)
   }
   
-  // 第一次访问，应该计算
-  let result1 = cache("key1", fn() { expensive_computation(10) }, current_time)
-  assert_eq(result1, 1110)  // 10^3 + 10^2 + 10 = 1000 + 100 + 10 = 1110
+  // Test cache put
+  let (cache2, put_result1) = put(cache1, "key1", "value1", 100, 1640995200)
+  assert_true(put_result1)
+  assert_eq(cache2.current_size, 100)
+  assert_eq(cache2.entries.length(), 1)
   
-  // 第二次访问，应该从缓存获取
-  let result2 = cache("key1", fn() { expensive_computation(10) }, current_time + 100)
-  assert_eq(result2, 1110)
+  // Test cache hit
+  let (cache3, result2) = get(cache2, "key1", 1640995300)
+  match result2 {
+    Some(value) => {
+      assert_eq(value, "value1")
+      assert_eq(cache3.hit_count, 1)
+      assert_eq(cache3.miss_count, 1)
+    }
+    None => assert_true(false)
+  }
   
-  // 添加更多项
-  let result3 = cache("key2", fn() { expensive_computation(20) }, current_time + 200)
-  assert_eq(result3, 8420)  // 20^3 + 20^2 + 20 = 8000 + 400 + 20 = 8420
+  // Test multiple cache entries
+  let (cache4, _) = put(cache3, "key2", "value2", 200, 1640995400)
+  let (cache5, _) = put(cache4, "key3", "value3", 300, 1640995500)
+  let (cache6, _) = put(cache5, "key4", "value4", 400, 1640995600)
   
-  let result4 = cache("key3", fn() { expensive_computation(30) }, current_time + 300)
-  assert_eq(result4, 27930)  // 30^3 + 30^2 + 30 = 27000 + 900 + 30 = 27930
+  assert_eq(cache6.current_size, 1000)
+  assert_eq(cache6.entries.length(), 4)
   
-  let result5 = cache("key4", fn() { expensive_computation(40) }, current_time + 400)
-  assert_eq(result5, 65640)  // 40^3 + 40^2 + 40 = 64000 + 1600 + 40 = 65640
+  // Test cache eviction
+  let (cache7, put_result2) = put(cache6, "key5", "value5", 100, 1640995700)
+  assert_true(put_result2)
+  assert_eq(cache7.current_size, 900)  // 1000 + 100 - 200 (evicted key2)
+  assert_eq(cache7.entries.length(), 4)
+  assert_eq(cache7.eviction_count, 1)
   
-  let result6 = cache("key5", fn() { expensive_computation(50) }, current_time + 500)
-  assert_eq(result6, 127550)  // 50^3 + 50^2 + 50 = 125000 + 2500 + 50 = 127550
+  // Verify LRU eviction
+  let (cache8, result3) = get(cache7, "key2", 1640995800)
+  match result3 {
+    None => assert_true(true)  // key2 should be evicted
+    Some(_) => assert_true(false)
+  }
   
-  // 缓存已满，添加新项应该移除最旧的
-  let result7 = cache("key6", fn() { expensive_computation(60) }, current_time + 600)
-  assert_eq(result7, 219660)  // 60^3 + 60^2 + 60 = 216000 + 3600 + 60 = 219660
-  
-  // 访问已过期的项
-  let result8 = cache("key2", fn() { expensive_computation(20) }, current_time + 1500)
-  assert_eq(result8, 8420)  // 应该重新计算，但结果相同
-  
-  // 测试TTL过期
-  let result9 = cache("key1", fn() { expensive_computation(15) }, current_time + 2500)
-  assert_eq(result9, 3690)  // 15^3 + 15^2 + 15 = 3375 + 225 + 15 = 3615，但这里用新的计算函数
+  // Verify non-evicted entries are still accessible
+  let (cache9, result4) = get(cache8, "key1", 1640995900)
+  match result4 {
+    Some(value) => assert_eq(value, "value1")
+    None => assert_true(false)
+  }
 }
 
-// 测试 5: 并发处理优化
-test "concurrent processing optimization" {
-  // 定义工作项
-  type WorkItem = {
-    id: Int,
+// Test 3: Batch Processing Optimization
+test "batch processing optimization" {
+  // Define batch configuration
+  type BatchConfig = {
+    batch_size: Int,
+    max_wait_time_ms: Int,
+    processing_timeout_ms: Int
+  }
+  
+  // Define batch item
+  type BatchItem = {
+    id: String,
     data: String,
-    priority: Int
+    timestamp: Int,
+    processed: Bool
   }
   
-  // 定义工作结果
-  type WorkResult = {
-    id: Int,
-    result: String,
-    processing_time: Int
+  // Define batch processor
+  type BatchProcessor = {
+    config: BatchConfig,
+    pending_items: Array[BatchItem],
+    processed_items: Array[BatchItem],
+    batch_count: Int,
+    total_items: Int,
+    total_processing_time_ms: Int
   }
   
-  // 创建工作池处理器
-  let create_worker_pool = fn(worker_count: Int) {
-    let mut workers = []
-    let mut work_queue = []
-    let mut results = []
-    
-    // 初始化工作线程
-    for i in 0..worker_count {
-      workers = workers.push({
-        id: i,
-        busy: false,
-        current_work: None
+  // Create batch processor
+  let create_batch_processor = fn(batch_size: Int, max_wait_time_ms: Int, processing_timeout_ms: Int) {
+    {
+      config: {
+        batch_size,
+        max_wait_time_ms,
+        processing_timeout_ms
+      },
+      pending_items: [],
+      processed_items: [],
+      batch_count: 0,
+      total_items: 0,
+      total_processing_time_ms: 0
+    }
+  }
+  
+  // Add item to batch
+  let add_item = fn(processor: BatchProcessor, item: BatchItem) {
+    {
+      config: processor.config,
+      pending_items: processor.pending_items.push(item),
+      processed_items: processor.processed_items,
+      batch_count: processor.batch_count,
+      total_items: processor.total_items + 1,
+      total_processing_time_ms: processor.total_processing_time_ms
+    }
+  }
+  
+  // Process batch
+  let process_batch = fn(processor: BatchProcessor, current_time: Int) {
+    if processor.pending_items.length() >= processor.config.batch_size {
+      let batch_to_process = processor.pending_items.slice(0, processor.config.batch_size)
+      let remaining_pending = processor.pending_items.slice(processor.config.batch_size, processor.pending_items.length())
+      
+      let processed_batch = batch_to_process.map(fn(item) { 
+        { item | processed: true } 
       })
+      
+      let all_processed = processor.processed_items.concat(processed_batch)
+      let processing_time = processor.config.processing_timeout_ms
+      
+      ({
+        config: processor.config,
+        pending_items: remaining_pending,
+        processed_items: all_processed,
+        batch_count: processor.batch_count + 1,
+        total_items: processor.total_items,
+        total_processing_time_ms: processor.total_processing_time_ms + processing_time
+      }, true)
+    } else {
+      (processor, false)
     }
-    
-    // 分配工作
-    let assign_work = fn(item: WorkItem) {
-      // 找到空闲的工作线程
-      match workers.find_index(fn(w) { not w.busy }) {
-        Some(index) => {
-          let worker = workers[index]
-          let updated_worker = {
-            id: worker.id,
-            busy: true,
-            current_work: Some(item)
-          }
-          workers[index] = updated_worker
-          
-          // 模拟处理工作
-          let processing_time = 100 + item.data.length() * 10
-          let result = {
-            id: item.id,
-            result: "processed_" + item.data,
-            processing_time
-          }
-          
-          results = results.push(result)
-          
-          // 标记工作线程为空闲
-          let worker = workers[index]
-          let updated_worker = {
-            id: worker.id,
-            busy: false,
-            current_work: None
-          }
-          workers[index] = updated_worker
-          
-          true
-        }
-        None => {
-          // 没有空闲工作线程，加入队列
-          work_queue = work_queue.push(item)
-          false
-        }
-      }
-    }
-    
-    // 处理队列中的工作
-    let process_queue = fn() {
-      let mut processed = 0
-      while work_queue.length() > 0 {
-        let item = work_queue[0]
-        work_queue = work_queue.slice(1)
+  }
+  
+  // Process by timeout
+  let process_by_timeout = fn(processor: BatchProcessor, current_time: Int) {
+    if processor.pending_items.length() > 0 {
+      let oldest_item = processor.pending_items[0]
+      if current_time - oldest_item.timestamp >= processor.config.max_wait_time_ms {
+        let batch_to_process = processor.pending_items
+        let processed_batch = batch_to_process.map(fn(item) { 
+          { item | processed: true } 
+        })
         
-        if assign_work(item) {
-          processed = processed + 1
+        let all_processed = processor.processed_items.concat(processed_batch)
+        let processing_time = processor.config.processing_timeout_ms
+        
+        ({
+          config: processor.config,
+          pending_items: [],
+          processed_items: all_processed,
+          batch_count: processor.batch_count + 1,
+          total_items: processor.total_items,
+          total_processing_time_ms: processor.total_processing_time_ms + processing_time
+        }, true)
+      } else {
+        (processor, false)
+      }
+    } else {
+      (processor, false)
+    }
+  }
+  
+  // Test batch processor creation
+  let processor = create_batch_processor(5, 1000, 100)
+  assert_eq(processor.config.batch_size, 5)
+  assert_eq(processor.config.max_wait_time_ms, 1000)
+  assert_eq(processor.config.processing_timeout_ms, 100)
+  assert_eq(processor.pending_items.length(), 0)
+  assert_eq(processor.processed_items.length(), 0)
+  
+  // Test adding items
+  let item1 = { id: "item1", data: "data1", timestamp: 1640995200000, processed: false }
+  let item2 = { id: "item2", data: "data2", timestamp: 1640995200100, processed: false }
+  let item3 = { id: "item3", data: "data3", timestamp: 1640995200200, processed: false }
+  let item4 = { id: "item4", data: "data4", timestamp: 1640995200300, processed: false }
+  let item5 = { id: "item5", data: "data5", timestamp: 1640995200400, processed: false }
+  
+  let processor1 = add_item(processor, item1)
+  let processor2 = add_item(processor1, item2)
+  let processor3 = add_item(processor2, item3)
+  let processor4 = add_item(processor3, item4)
+  let processor5 = add_item(processor4, item5)
+  
+  assert_eq(processor5.pending_items.length(), 5)
+  assert_eq(processor5.total_items, 5)
+  
+  // Test batch processing by size
+  let (processor6, processed1) = process_batch(processor5, 1640995200500)
+  assert_true(processed1)
+  assert_eq(processor6.pending_items.length(), 0)
+  assert_eq(processor6.processed_items.length(), 5)
+  assert_eq(processor6.batch_count, 1)
+  assert_eq(processor6.total_processing_time_ms, 100)
+  
+  // Verify all items are processed
+  for item in processor6.processed_items {
+    assert_true(item.processed)
+  }
+  
+  // Test timeout-based processing
+  let item6 = { id: "item6", data: "data6", timestamp: 1640995201000, processed: false }
+  let item7 = { id: "item7", data: "data7", timestamp: 1640995201100, processed: false }
+  
+  let processor7 = add_item(processor6, item6)
+  let processor8 = add_item(processor7, item7)
+  
+  assert_eq(processor8.pending_items.length(), 2)
+  
+  // Try processing by size (should not process yet)
+  let (processor9, processed2) = process_batch(processor8, 1640995201200)
+  assert_false(processed2)
+  assert_eq(processor9.pending_items.length(), 2)
+  
+  // Process by timeout
+  let (processor10, processed3) = process_by_timeout(processor9, 1640995202500)  // 1500ms after first item
+  assert_true(processed3)
+  assert_eq(processor10.pending_items.length(), 0)
+  assert_eq(processor10.processed_items.length(), 7)
+  assert_eq(processor10.batch_count, 2)
+  
+  // Test processing efficiency
+  let avg_processing_time = processor10.total_processing_time_ms.to_float() / processor10.batch_count.to_float()
+  assert_eq(avg_processing_time, 100.0)
+  
+  let items_per_batch = processor10.total_items.to_float() / processor10.batch_count.to_float()
+  assert_eq(items_per_batch, 3.5)
+}
+
+// Test 4: Connection Pool Optimization
+test "connection pool optimization" {
+  // Define connection structure
+  type Connection = {
+    id: String,
+    created_at: Int,
+    last_used: Int,
+    in_use: Bool,
+    use_count: Int
+  }
+  
+  // Define connection pool
+  type ConnectionPool = {
+    max_connections: Int,
+    min_connections: Int,
+    connections: Array[Connection],
+    created_count: Int,
+    destroyed_count: Int,
+    hit_count: Int,
+    miss_count: Int
+  }
+  
+  // Create connection pool
+  let create_connection_pool = fn(min_connections: Int, max_connections: Int) {
+    let initial_connections = (0..min_connections).map(fn(i) {
+      {
+        id: "conn-" + i.to_string(),
+        created_at: 1640995200000,
+        last_used: 1640995200000,
+        in_use: false,
+        use_count: 0
+      }
+    })
+    
+    {
+      max_connections,
+      min_connections,
+      connections: initial_connections,
+      created_count: min_connections,
+      destroyed_count: 0,
+      hit_count: 0,
+      miss_count: 0
+    }
+  }
+  
+  // Get connection from pool
+  let get_connection = fn(pool: ConnectionPool, current_time: Int) {
+    match pool.connections.find_index(fn(conn) { !conn.in_use }) {
+      Some(index) => {
+        let conn = pool.connections[index]
+        let updated_conn = {
+          id: conn.id,
+          created_at: conn.created_at,
+          last_used: current_time,
+          in_use: true,
+          use_count: conn.use_count + 1
+        }
+        let updated_connections = pool.connections.update(index, updated_conn)
+        
+        ({
+          max_connections: pool.max_connections,
+          min_connections: pool.min_connections,
+          connections: updated_connections,
+          created_count: pool.created_count,
+          destroyed_count: pool.destroyed_count,
+          hit_count: pool.hit_count + 1,
+          miss_count: pool.miss_count
+        }, Some(updated_conn.id))
+      }
+      None => {
+        if pool.connections.length() < pool.max_connections {
+          let new_conn = {
+            id: "conn-" + pool.created_count.to_string(),
+            created_at: current_time,
+            last_used: current_time,
+            in_use: true,
+            use_count: 1
+          }
+          let updated_connections = pool.connections.push(new_conn)
+          
+          ({
+            max_connections: pool.max_connections,
+            min_connections: pool.min_connections,
+            connections: updated_connections,
+            created_count: pool.created_count + 1,
+            destroyed_count: pool.destroyed_count,
+            hit_count: pool.hit_count,
+            miss_count: pool.miss_count + 1
+          }, Some(new_conn.id))
         } else {
-          // 没有空闲工作线程，停止处理
-          work_queue = [item] + work_queue
-          break
+          // Pool exhausted
+          ({
+            max_connections: pool.max_connections,
+            min_connections: pool.min_connections,
+            connections: pool.connections,
+            created_count: pool.created_count,
+            destroyed_count: pool.destroyed_count,
+            hit_count: pool.hit_count,
+            miss_count: pool.miss_count + 1
+          }, None)
         }
       }
-      processed
+    }
+  }
+  
+  // Release connection back to pool
+  let release_connection = fn(pool: ConnectionPool, connection_id: String, current_time: Int) {
+    match pool.connections.find_index(fn(conn) { conn.id == connection_id }) {
+      Some(index) => {
+        let conn = pool.connections[index]
+        if conn.in_use {
+          let updated_conn = {
+            id: conn.id,
+            created_at: conn.created_at,
+            last_used: current_time,
+            in_use: false,
+            use_count: conn.use_count
+          }
+          let updated_connections = pool.connections.update(index, updated_conn)
+          
+          ({
+            max_connections: pool.max_connections,
+            min_connections: pool.min_connections,
+            connections: updated_connections,
+            created_count: pool.created_count,
+            destroyed_count: pool.destroyed_count,
+            hit_count: pool.hit_count,
+            miss_count: pool.miss_count
+          }, true)
+        } else {
+          // Connection already released
+          (pool, false)
+        }
+      }
+      None => {
+        // Connection not found
+        (pool, false)
+      }
+    }
+  }
+  
+  // Cleanup idle connections
+  let cleanup_idle_connections = fn(pool: ConnectionPool, current_time: Int, idle_timeout_ms: Int) {
+    let mut updated_pool = pool
+    let mut cleaned_count = 0
+    
+    // Don't clean below minimum connections
+    if updated_pool.connections.length() > updated_pool.min_connections {
+      let idle_connections = updated_pool.connections.filter(fn(conn) { 
+        !conn.in_use && (current_time - conn.last_used) > idle_timeout_ms 
+      })
+      
+      let connections_to_keep = updated_pool.connections.length() - idle_connections.length()
+      let min_to_remove = updated_pool.connections.length() - updated_pool.min_connections
+      
+      if idle_connections.length() > 0 && connections_to_keep >= updated_pool.min_connections {
+        let remove_count = if idle_connections.length() > min_to_remove { min_to_remove } else { idle_connections.length() }
+        let connections_to_remove = idle_connections.slice(0, remove_count)
+        
+        updated_pool = {
+          max_connections: updated_pool.max_connections,
+          min_connections: updated_pool.min_connections,
+          connections: updated_pool.connections.filter(fn(conn) { 
+            !connections_to_remove.any(fn(remove_conn) { remove_conn.id == conn.id })
+          }),
+          created_count: updated_pool.created_count,
+          destroyed_count: updated_pool.destroyed_count + remove_count,
+          hit_count: updated_pool.hit_count,
+          miss_count: updated_pool.miss_count
+        }
+        
+        cleaned_count = remove_count
+      }
     }
     
-    (assign_work, process_queue, fn() { results })
+    (updated_pool, cleaned_count)
   }
   
-  // 测试工作池
-  let (assign_work, process_queue, get_results) = create_worker_pool(3)
+  // Test connection pool creation
+  let pool = create_connection_pool(2, 5)
+  assert_eq(pool.min_connections, 2)
+  assert_eq(pool.max_connections, 5)
+  assert_eq(pool.connections.length(), 2)
+  assert_eq(pool.created_count, 2)
+  assert_eq(pool.destroyed_count, 0)
   
-  // 创建工作项
-  let work_items = [
-    { id: 1, data: "short", priority: 1 },
-    { id: 2, data: "medium_length", priority: 2 },
-    { id: 3, data: "very_long_data_item", priority: 3 },
-    { id: 4, data: "tiny", priority: 1 },
-    { id: 5, data: "another_medium_item", priority: 2 },
-    { id: 6, data: "extra_long_data_item_for_testing", priority: 3 },
-    { id: 7, data: "small", priority: 1 },
-    { id: 8, data: "medium_data", priority: 2 }
-  ]
-  
-  // 按优先级排序
-  let sorted_items = work_items.sort(fn(a, b) { 
-    if a.priority > b.priority { -1 } 
-    else if a.priority < b.priority { 1 } 
-    else { 0 } 
-  })
-  
-  // 分配工作
-  for item in sorted_items {
-    assign_work(item)
-  }
-  
-  // 处理剩余队列
-  let queue_processed = process_queue()
-  
-  // 获取结果
-  let results = get_results()
-  
-  // 验证结果
-  assert_eq(results.length(), 8)  // 所有工作项都应该被处理
-  assert_true(queue_processed >= 0)  // 应该处理了一些队列项
-  
-  // 验证高优先级项先被处理
-  let high_priority_results = results.filter(fn(r) { r.id == 3 || r.id == 6 })
-  assert_true(high_priority_results.length() == 2)
-  
-  // 验证处理时间与数据长度相关
-  let long_data_result = results.find(fn(r) { r.id == 3 })
-  match long_data_result {
-    Some(result) => assert_true(result.processing_time > 200)
+  // Test getting connection (hit)
+  let (pool1, conn1_id) = get_connection(pool, 1640995201000)
+  match conn1_id {
+    Some(id) => {
+      assert_eq(id, "conn-0")
+      assert_eq(pool1.hit_count, 1)
+      assert_eq(pool1.miss_count, 0)
+    }
     None => assert_true(false)
   }
   
-  let short_data_result = results.find(fn(r) { r.id == 1 })
-  match short_data_result {
-    Some(result) => assert_true(result.processing_time < 200)
+  // Test getting another connection (hit)
+  let (pool2, conn2_id) = get_connection(pool1, 1640995201100)
+  match conn2_id {
+    Some(id) => {
+      assert_eq(id, "conn-1")
+      assert_eq(pool2.hit_count, 2)
+      assert_eq(pool2.miss_count, 0)
+    }
     None => assert_true(false)
   }
+  
+  // Test getting connection when pool is full (miss)
+  let (pool3, conn3_id) = get_connection(pool2, 1640995201200)
+  match conn3_id {
+    Some(id) => {
+      assert_eq(id, "conn-2")
+      assert_eq(pool3.hit_count, 2)
+      assert_eq(pool3.miss_count, 1)
+      assert_eq(pool3.created_count, 3)
+    }
+    None => assert_true(false)
+  }
+  
+  // Test releasing connection
+  let (pool4, release_result1) = release_connection(pool3, "conn-0", 1640995201300)
+  assert_true(release_result1)
+  
+  // Test getting released connection (hit)
+  let (pool5, conn4_id) = get_connection(pool4, 1640995201400)
+  match conn4_id {
+    Some(id) => {
+      assert_eq(id, "conn-0")
+      assert_eq(pool5.hit_count, 3)
+      assert_eq(pool5.miss_count, 1)
+    }
+    None => assert_true(false)
+  }
+  
+  // Test pool exhaustion
+  let (pool6, conn5_id) = get_connection(pool5, 1640995201500)
+  let (pool7, conn6_id) = get_connection(pool6, 1640995201600)
+  
+  match conn5_id {
+    Some(_) => assert_true(true)
+    None => assert_true(false)
+  }
+  
+  match conn6_id {
+    None => assert_true(true)  // Should be None, pool exhausted
+    Some(_) => assert_true(false)
+  }
+  
+  assert_eq(pool7.connections.length(), 5)  // Max connections reached
+  assert_eq(pool7.miss_count, 3)  // 3 misses (conn-2, conn-3, conn-4, and exhausted)
+  
+  // Test cleanup idle connections
+  let (pool8, cleaned_count) = cleanup_idle_connections(pool7, 1640995300000, 10000)  // 3 hours later
+  assert_eq(cleaned_count, 2)  // Should clean 2 connections, keeping min 2
+  assert_eq(pool8.connections.length(), 3)  // 5 - 2 = 3 (min connections)
+  assert_eq(pool8.destroyed_count, 2)
 }

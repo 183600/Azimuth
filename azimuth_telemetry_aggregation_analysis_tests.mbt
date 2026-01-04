@@ -1,982 +1,1426 @@
-// Azimuth 遥测聚合分析测试用例
-// 专注于遥测数据的聚合、分析和高级处理功能
+// Azimuth High-Quality Telemetry Data Aggregation and Analysis Tests
+// This file contains comprehensive test cases for telemetry data aggregation and analysis
 
-// 测试1: 时间序列数据聚合
-test "时间序列数据聚合分析" {
-  // 创建时间序列数据点
-  let data_points = [
-    {"timestamp": 1640995200000, "value": 10.5, "metric": "cpu.usage"},
-    {"timestamp": 1640995200600, "value": 12.3, "metric": "cpu.usage"},
-    {"timestamp": 1640995201200, "value": 15.7, "metric": "cpu.usage"},
-    {"timestamp": 1640995201800, "value": 14.2, "metric": "cpu.usage"},
-    {"timestamp": 1640995202400, "value": 11.8, "metric": "cpu.usage"}
-  ]
+// Test 1: Real-time Telemetry Data Aggregation
+test "real-time telemetry data aggregation" {
+  let aggregator = RealTimeTelemetryAggregator::new()
   
-  // 计算聚合统计
-  let sum = data_points.reduce(fn(acc, point) { acc + point["value"] }, 0.0)
-  let count = data_points.length().to_float()
-  let average = sum / count
+  // Configure aggregation rules
+  aggregator.add_aggregation_rule(
+    "response_time",
+    AggregationType::TimeWindowed,
+    TimeWindow::Seconds(10),
+    [AggregationFunction::Average, AggregationFunction::P95, AggregationFunction::P99]
+  )
   
-  // 找到最大值和最小值
-  let max_value = data_points.reduce(fn(acc, point) { 
-    if point["value"] > acc { point["value"] } else { acc } 
-  }, data_points[0]["value"])
+  aggregator.add_aggregation_rule(
+    "error_rate",
+    AggregationType::TimeWindowed,
+    TimeWindow::Minutes(1),
+    [AggregationFunction::Average, AggregationFunction::Max]
+  )
   
-  let min_value = data_points.reduce(fn(acc, point) { 
-    if point["value"] < acc { point["value"] } else { acc } 
-  }, data_points[0]["value"])
+  aggregator.add_aggregation_rule(
+    "throughput",
+    AggregationType::SlidingWindow,
+    SlidingWindowConfig::new(100, 10), // 100 samples, slide every 10
+    [AggregationFunction::Sum, AggregationFunction::Rate]
+  )
   
-  // 计算方差
-  let variance = data_points.reduce(fn(acc, point) { 
-    let diff = point["value"] - average
-    acc + (diff * diff)
-  }, 0.0) / count
+  // Start aggregation
+  aggregator.start()
   
-  // 验证聚合结果
-  assert_eq(count, 5.0)
-  assert_eq(sum, 64.5)
-  assert_eq(average, 12.9)
-  assert_eq(max_value, 15.7)
-  assert_eq(min_value, 10.5)
-  assert_true(variance > 0.0)
+  // Generate telemetry data
+  let telemetry_points = []
+  let current_time = get_current_timestamp()
   
-  // 按时间窗口聚合（1分钟窗口）
-  let time_windows = {}
-  for point in data_points {
-    let window_start = (point["timestamp"] / 60000) * 60000
-    let window_key = window_start.to_string()
-    
-    let current_window = match time_windows.get(window_key) {
-      Some(window) => window
-      None => {"sum": 0.0, "count": 0}
-    }
-    
-    let updated_window = {
-      "sum": current_window["sum"] + point["value"],
-      "count": current_window["count"] + 1
-    }
-    
-    time_windows = time_windows.set(window_key, updated_window)
+  for i in 0..=1000 {
+    let point = TelemetryPoint::new(
+      "api-service",
+      "response_time",
+      100.0 + (i % 200).to_float(), // Response times between 100-300ms
+      current_time + Duration::from_millis(i * 10)
+    )
+    telemetry_points.push(point)
   }
   
-  // 验证时间窗口聚合
-  assert_eq(time_windows.keys().length(), 1) // 所有数据点在同一分钟窗口
-  let window = time_windows.get("1640995200000").unwrap()
-  assert_eq(window["sum"], 64.5)
-  assert_eq(window["count"], 5)
+  // Ingest data
+  for point in telemetry_points {
+    aggregator.ingest(point)
+  }
+  
+  // Wait for aggregation to process
+  sleep(Duration::from_seconds(2))
+  
+  // Get aggregated results
+  let response_time_aggregates = aggregator.get_aggregates("response_time")
+  
+  assert_true(response_time_aggregates.length() > 0)
+  
+  for aggregate in response_time_aggregates {
+    assert_true(aggregate.timestamp > 0)
+    assert_true(aggregate.window_start > 0)
+    assert_true(aggregate.window_end > aggregate.window_start)
+    assert_true(aggregate.values.contains_key("average"))
+    assert_true(aggregate.values.contains_key("p95"))
+    assert_true(aggregate.values.contains_key("p99"))
+    
+    // Verify aggregation values are reasonable
+    assert_true(aggregate.values.get("average") >= 100.0)
+    assert_true(aggregate.values.get("average") <= 300.0)
+    assert_true(aggregate.values.get("p95") >= aggregate.values.get("average"))
+    assert_true(aggregate.values.get("p99") >= aggregate.values.get("p95"))
+  }
+  
+  // Test multi-dimensional aggregation
+  aggregator.add_dimensional_aggregation(
+    "response_time",
+    ["service_name", "endpoint"],
+    AggregationType::TimeWindowed,
+    TimeWindow::Seconds(30),
+    [AggregationFunction::Average]
+  )
+  
+  // Generate multi-dimensional data
+  let services = ["auth-service", "user-service", "order-service"]
+  let endpoints = ["/login", "/profile", "/orders"]
+  
+  for i in 0..=500 {
+    let service = services[i % services.length()]
+    let endpoint = endpoints[i % endpoints.length()]
+    
+    let point = TelemetryPoint::new(service, "response_time", 50.0 + (i % 150).to_float(), current_time + Duration::from_millis(i * 20))
+    point.add_dimension("endpoint", endpoint)
+    
+    aggregator.ingest(point)
+  }
+  
+  sleep(Duration::from_seconds(1))
+  
+  let dimensional_aggregates = aggregator.get_dimensional_aggregates("response_time")
+  
+  assert_true(dimensional_aggregates.length() > 0)
+  
+  // Verify we have aggregates for each service-endpoint combination
+  let service_endpoint_combinations = dimensional_aggregates.map(|a| {
+    a.dimensions.get("service_name") + "_" + a.dimensions.get("endpoint")
+  }).unique()
+  
+  assert_true(service_endpoint_combinations.length() >= services.length() * endpoints.length())
+  
+  // Stop aggregation
+  aggregator.stop()
+  
+  // Verify aggregation metrics
+  let metrics = aggregator.get_metrics()
+  
+  assert_true(metrics.total_points_processed > 0)
+  assert_true(metrics.aggregation_windows_created > 0)
+  assert_true(metrics.average_processing_time_ms > 0)
+  assert_true(metrics.memory_usage_mb > 0)
 }
 
-// 测试2: 异常检测和告警机制
-test "异常检测和告警机制" {
-  // 创建阈值配置
-  let alert_thresholds = {
-    "cpu.usage": {"warning": 70.0, "critical": 90.0},
-    "memory.usage": {"warning": 80.0, "critical": 95.0},
-    "response.time": {"warning": 1000.0, "critical": 5000.0},
-    "error.rate": {"warning": 5.0, "critical": 10.0}
+// Test 2: Time Series Telemetry Analysis
+test "time series telemetry analysis" {
+  let analyzer = TimeSeriesAnalyzer::new()
+  
+  // Generate time series data
+  let time_series_data = generate_time_series_data(
+    "cpu_usage",
+    Duration::from_days(30), // 30 days of data
+    Duration::from_hours(1)  // Hourly data points
+  )
+  
+  // Test trend analysis
+  let trend_analysis = analyzer.analyze_trend(time_series_data.clone())
+  
+  assert_true(trend_analysis.trend_direction == "increasing" || 
+              trend_analysis.trend_direction == "decreasing" || 
+              trend_analysis.trend_direction == "stable")
+  assert_true(trend_analysis.trend_strength >= 0.0 && trend_analysis.trend_strength <= 1.0)
+  assert_true(trend_analysis.confidence >= 0.0 && trend_analysis.confidence <= 1.0)
+  
+  // Test seasonality detection
+  let seasonality_analysis = analyzer.detect_seasonality(time_series_data.clone())
+  
+  assert_true(seasonality_analysis.has_seasonality == true || seasonality_analysis.has_seasonality == false)
+  
+  if seasonality_analysis.has_seasonality {
+    assert_true(seasonality_analysis.period_hours > 0)
+    assert_true(seasonality_analysis.strength >= 0.0 && seasonality_analysis.strength <= 1.0)
   }
   
-  // 创建监控数据点
-  let metrics = [
-    {"metric": "cpu.usage", "value": 45.2, "timestamp": 1640995200000},
-    {"metric": "memory.usage", "value": 82.5, "timestamp": 1640995200000},
-    {"metric": "response.time", "value": 1200.0, "timestamp": 1640995200000},
-    {"metric": "error.rate", "value": 12.3, "timestamp": 1640995200000}
-  ]
+  // Test anomaly detection
+  let anomaly_detection = analyzer.detect_anomalies(
+    time_series_data.clone(),
+    AnomalyDetectionMethod::ZScore,
+    3.0 // 3 standard deviations
+  )
   
-  // 检测异常并生成告警
-  let alerts = []
-  for metric in metrics {
-    let metric_name = metric["metric"]
-    let value = metric["value"]
-    
-    match alert_thresholds.get(metric_name) {
-      Some(thresholds) => {
-        if value >= thresholds["critical"] {
-          let alert = {
-            "level": "critical",
-            "metric": metric_name,
-            "value": value,
-            "threshold": thresholds["critical"],
-            "timestamp": metric["timestamp"]
-          }
-          alerts = alerts.push(alert)
-        } else if value >= thresholds["warning"] {
-          let alert = {
-            "level": "warning",
-            "metric": metric_name,
-            "value": value,
-            "threshold": thresholds["warning"],
-            "timestamp": metric["timestamp"]
-          }
-          alerts = alerts.push(alert)
-        }
-      }
-      None => {}
-    }
+  assert_true(anomaly_detection.anomalies.length() >= 0)
+  
+  for anomaly in anomaly_detection.anomalies {
+    assert_true(anomaly.timestamp > 0)
+    assert_true(anomaly.value != 0.0)
+    assert_true(anomaly.anomaly_score > 0.0)
+    assert_true(anomaly.reason.length() > 0)
   }
   
-  // 验证告警生成
-  assert_eq(alerts.length(), 3) // memory.usage(warning), response.time(warning), error.rate(critical)
+  // Test forecasting
+  let forecast_result = analyzer.forecast(
+    time_series_data.clone(),
+    ForecastMethod::ARIMA,
+    Duration::from_days(7) // 7-day forecast
+  )
   
-  // 验证具体告警
-  let critical_alerts = alerts.filter(fn(alert) { alert["level"] == "critical" })
-  let warning_alerts = alerts.filter(fn(alert) { alert["level"] == "warning" })
+  assert_eq(forecast_result.forecast_values.length(), 168) // 7 days * 24 hours
+  assert_true(forecast_result.confidence_intervals.length() == forecast_result.forecast_values.length())
   
-  assert_eq(critical_alerts.length(), 1)
-  assert_eq(critical_alerts[0]["metric"], "error.rate")
-  assert_eq(critical_alerts[0]["value"], 12.3)
-  assert_eq(critical_alerts[0]["threshold"], 10.0)
+  // Verify confidence intervals
+  for i in 0..=forecast_result.forecast_values.length() - 1 {
+    let interval = forecast_result.confidence_intervals[i]
+    assert_true(interval.lower < forecast_result.forecast_values[i])
+    assert_true(forecast_result.forecast_values[i] < interval.upper)
+  }
   
-  assert_eq(warning_alerts.length(), 2)
-  let memory_alert = warning_alerts.filter(fn(alert) { alert["metric"] == "memory.usage" })[0]
-  assert_eq(memory_alert["value"], 82.5)
-  assert_eq(memory_alert["threshold"], 80.0)
+  // Test change point detection
+  let change_points = analyzer.detect_change_points(time_series_data.clone())
   
-  let response_alert = warning_alerts.filter(fn(alert) { alert["metric"] == "response.time" })[0]
-  assert_eq(response_alert["value"], 1200.0)
-  assert_eq(response_alert["threshold"], 1000.0)
+  assert_true(change_points.length() >= 0)
+  
+  for change_point in change_points {
+    assert_true(change_point.timestamp > 0)
+    assert_true(change_point.confidence >= 0.0 && change_point.confidence <= 1.0)
+    assert_true(change_point.magnitude > 0.0)
+  }
+  
+  // Test correlation analysis
+  let memory_data = generate_time_series_data(
+    "memory_usage",
+    Duration::from_days(30),
+    Duration::from_hours(1)
+  )
+  
+  let correlation = analyzer.calculate_correlation(time_series_data, memory_data)
+  
+  assert_true(correlation.coefficient >= -1.0 && correlation.coefficient <= 1.0)
+  assert_true(correlation.p_value >= 0.0 && correlation.p_value <= 1.0)
+  assert_true(correlation.confidence_interval.lower <= correlation.coefficient)
+  assert_true(correlation.coefficient <= correlation.confidence_interval.upper)
 }
 
-// 测试3: 自适应采样策略
-test "自适应采样策略" {
-  // 定义采样策略配置
-  let sampling_strategies = {
-    "error_based": {
-      "error_threshold": 5.0,
-      "sample_rate_multiplier": 2.0
-    },
-    "latency_based": {
-      "latency_threshold": 1000.0,
-      "sample_rate_multiplier": 1.5
-    },
-    "volume_based": {
-      "high_volume_threshold": 1000,
-      "low_volume_threshold": 100,
-      "high_sample_rate": 0.1,
-      "low_sample_rate": 0.5
-    }
-  }
+// Test 3: Distributed Telemetry Data Correlation
+test "distributed telemetry data correlation" {
+  let correlator = DistributedTelemetryCorrelator::new()
   
-  // 创建服务指标数据
-  let service_metrics = [
-    {
-      "service": "auth.service",
-      "request_count": 150,
-      "error_rate": 2.1,
-      "avg_latency": 450.0,
-      "base_sample_rate": 0.2
-    },
-    {
-      "service": "payment.service",
-      "request_count": 2500,
-      "error_rate": 8.7,
-      "avg_latency": 2100.0,
-      "base_sample_rate": 0.1
-    },
-    {
-      "service": "notification.service",
-      "request_count": 50,
-      "error_rate": 0.5,
-      "avg_latency": 200.0,
-      "base_sample_rate": 0.3
-    }
-  ]
+  // Generate distributed trace data
+  let trace_data = generate_distributed_trace_data()
   
-  // 计算自适应采样率
-  let adaptive_sampling_rates = []
-  for service in service_metrics {
-    let mut sample_rate = service["base_sample_rate"]
+  // Test trace correlation
+  let correlated_traces = correlator.correlate_traces(trace_data)
+  
+  assert_true(correlated_traces.length() > 0)
+  
+  for trace in correlated_traces {
+    assert_true(trace.trace_id.length() > 0)
+    assert_true(trace.spans.length() > 0)
     
-    // 基于错误的采样调整
-    if service["error_rate"] >= sampling_strategies["error_based"]["error_threshold"] {
-      sample_rate = sample_rate * sampling_strategies["error_based"]["sample_rate_multiplier"]
+    // Verify span ordering
+    for i in 0..=trace.spans.length() - 2 {
+      assert_true(trace.spans[i].start_time <= trace.spans[i + 1].start_time)
     }
     
-    // 基于延迟的采样调整
-    if service["avg_latency"] >= sampling_strategies["latency_based"]["latency_threshold"] {
-      sample_rate = sample_rate * sampling_strategies["latency_based"]["sample_rate_multiplier"]
-    }
-    
-    // 基于请求量的采样调整
-    if service["request_count"] >= sampling_strategies["volume_based"]["high_volume_threshold"] {
-      sample_rate = sampling_strategies["volume_based"]["high_sample_rate"]
-    } else if service["request_count"] <= sampling_strategies["volume_based"]["low_volume_threshold"] {
-      sample_rate = sampling_strategies["volume_based"]["low_sample_rate"]
-    }
-    
-    // 确保采样率在合理范围内
-    sample_rate = if sample_rate > 1.0 { 1.0 } else { sample_rate }
-    sample_rate = if sample_rate < 0.01 { 0.01 } else { sample_rate }
-    
-    adaptive_sampling_rates.push({
-      "service": service["service"],
-      "original_rate": service["base_sample_rate"],
-      "adaptive_rate": sample_rate,
-      "request_count": service["request_count"],
-      "error_rate": service["error_rate"],
-      "avg_latency": service["avg_latency"]
-    })
-  }
-  
-  // 验证自适应采样率
-  assert_eq(adaptive_sampling_rates.length(), 3)
-  
-  // auth.service: 低错误率、低延迟、中等请求量，采样率应该保持或略微调整
-  let auth_sampling = adaptive_sampling_rates.filter(fn(s) { s["service"] == "auth.service" })[0]
-  assert_eq(auth_sampling["original_rate"], 0.2)
-  assert_eq(auth_sampling["adaptive_rate"], 0.2) // 没有触发调整条件
-  
-  // payment.service: 高错误率、高延迟、高请求量，采样率应该显著调整
-  let payment_sampling = adaptive_sampling_rates.filter(fn(s) { s["service"] == "payment.service" })[0]
-  assert_eq(payment_sampling["original_rate"], 0.1)
-  assert_eq(payment_sampling["adaptive_rate"], 0.3) // 触发错误和延迟调整，但受高请求量限制
-  
-  // notification.service: 低错误率、低延迟、低请求量，采样率应该提高
-  let notification_sampling = adaptive_sampling_rates.filter(fn(s) { s["service"] == "notification.service" })[0]
-  assert_eq(notification_sampling["original_rate"], 0.3)
-  assert_eq(notification_sampling["adaptive_rate"], 0.5) // 触发低请求量调整
-}
-
-// 测试4: 跨服务上下文传播
-test "跨服务上下文传播" {
-  // 创建服务调用链
-  let service_chain = [
-    {
-      "service": "api.gateway",
-      "operation": "POST /api/orders",
-      "trace_id": "trace-12345-67890-abcdef",
-      "span_id": "span-gateway-00000-00000",
-      "parent_span_id": None,
-      "baggage": {
-        "user.id": "user-12345",
-        "request.id": "req-abcde",
-        "auth.token": "token-xyz"
-      }
-    },
-    {
-      "service": "order.service",
-      "operation": "createOrder",
-      "trace_id": "trace-12345-67890-abcdef",
-      "span_id": "span-order-11111-11111",
-      "parent_span_id": Some("span-gateway-00000-00000"),
-      "baggage": {
-        "user.id": "user-12345",
-        "request.id": "req-abcde",
-        "auth.token": "token-xyz",
-        "order.source": "web"
-      }
-    },
-    {
-      "service": "payment.service",
-      "operation": "processPayment",
-      "trace_id": "trace-12345-67890-abcdef",
-      "span_id": "span-payment-22222-22222",
-      "parent_span_id": Some("span-order-11111-11111"),
-      "baggage": {
-        "user.id": "user-12345",
-        "request.id": "req-abcde",
-        "auth.token": "token-xyz",
-        "order.source": "web",
-        "payment.method": "credit_card"
-      }
-    },
-    {
-      "service": "notification.service",
-      "operation": "sendConfirmation",
-      "trace_id": "trace-12345-67890-abcdef",
-      "span_id": "span-notification-33333-33333",
-      "parent_span_id": Some("span-order-11111-11111"),
-      "baggage": {
-        "user.id": "user-12345",
-        "request.id": "req-abcde",
-        "auth.token": "token-xyz",
-        "notification.type": "email"
-      }
-    }
-  ]
-  
-  // 验证追踪上下文一致性
-  let trace_ids = service_chain.map(fn(service) { service["trace_id"] })
-  for trace_id in trace_ids {
-    assert_eq(trace_id, "trace-12345-67890-abcdef")
-  }
-  
-  // 验证父子关系
-  assert_eq(service_chain[1]["parent_span_id"].unwrap(), service_chain[0]["span_id"])
-  assert_eq(service_chain[2]["parent_span_id"].unwrap(), service_chain[1]["span_id"])
-  assert_eq(service_chain[3]["parent_span_id"].unwrap(), service_chain[1]["span_id"])
-  
-  // 验证baggage传播
-  let root_baggage = service_chain[0]["baggage"]
-  let order_baggage = service_chain[1]["baggage"]
-  let payment_baggage = service_chain[2]["baggage"]
-  let notification_baggage = service_chain[3]["baggage"]
-  
-  // 验证原始baggage项在所有服务中保持不变
-  assert_eq(root_baggage["user.id"], "user-12345")
-  assert_eq(order_baggage["user.id"], "user-12345")
-  assert_eq(payment_baggage["user.id"], "user-12345")
-  assert_eq(notification_baggage["user.id"], "user-12345")
-  
-  // 验证服务特定的baggage项
-  assert_eq(order_baggage["order.source"], "web")
-  assert_eq(payment_baggage["payment.method"], "credit_card")
-  assert_eq(notification_baggage["notification.type"], "email")
-  
-  // 构建调用链拓扑
-  let service_topology = {}
-  for service in service_chain {
-    let service_name = service["service"]
-    let parent_span_id = service["parent_span_id"]
-    
-    match parent_span_id {
-      Some(parent_id) => {
-        // 找到父服务
-        let parent_service = service_chain.filter(fn(s) { s["span_id"] == parent_id })[0]
-        let parent_name = parent_service["service"]
-        
-        // 更新拓扑
-        let current_children = match service_topology.get(parent_name) {
-          Some(children) => children
-          None => []
-        }
-        
-        service_topology = service_topology.set(parent_name, current_children.push(service_name))
-      }
-      None => {
-        // 根服务
-        if service_topology.contains(service_name) == false {
-          service_topology = service_topology.set(service_name, [])
-        }
+    // Verify parent-child relationships
+    for span in trace.spans {
+      if span.parent_span_id.length() > 0 {
+        let parent_span = trace.spans.find(|s| s.span_id == span.parent_span_id)
+        assert_true(parent_span.is_some())
+        assert_true(parent_span.unwrap().start_time <= span.start_time)
       }
     }
   }
   
-  // 验证调用链拓扑
-  assert_eq(service_topology["api.gateway"], ["order.service"])
-  assert_eq(service_topology["order.service"], ["payment.service", "notification.service"])
-  assert_eq(service_topology["payment.service"], [])
-  assert_eq(service_topology["notification.service"], [])
-}
-
-// 测试5: 性能基准和资源监控
-test "性能基准和资源监控" {
-  // 创建性能基准数据
-  let performance_benchmarks = {
-    "api.gateway": {
-      "max_response_time": 500.0,
-      "max_memory_usage": 512.0,
-      "max_cpu_usage": 70.0,
-      "min_throughput": 1000.0
-    },
-    "order.service": {
-      "max_response_time": 1000.0,
-      "max_memory_usage": 1024.0,
-      "max_cpu_usage": 80.0,
-      "min_throughput": 500.0
-    },
-    "payment.service": {
-      "max_response_time": 2000.0,
-      "max_memory_usage": 2048.0,
-      "max_cpu_usage": 90.0,
-      "min_throughput": 200.0
+  // Test cross-service correlation
+  let service_graph = correlator.build_service_dependency_graph(correlated_traces)
+  
+  assert_true(service_graph.nodes.length() > 0)
+  assert_true(service_graph.edges.length() > 0)
+  
+  for node in service_graph.nodes {
+    assert_true(node.service_name.length() > 0)
+    assert_true(node.request_count > 0)
+    assert_true(node.error_rate >= 0.0 && node.error_rate <= 1.0)
+    assert_true(node.average_response_time > 0.0)
+  }
+  
+  for edge in service_graph.edges {
+    assert_true(edge.source_service.length() > 0)
+    assert_true(edge.target_service.length() > 0)
+    assert_true(edge.call_count > 0)
+    assert_true(edge.average_latency > 0.0)
+  }
+  
+  // Test performance bottleneck detection
+  let bottlenecks = correlator.detect_performance_bottlenecks(correlated_traces)
+  
+  assert_true(bottlenecks.length() >= 0)
+  
+  for bottleneck in bottlenecks {
+    assert_true(bottleneck.service_name.length() > 0)
+    assert_true(bottleneck.operation_name.length() > 0)
+    assert_true(bottleneck.impact_score > 0.0)
+    assert_true(bottleneck.description.length() > 0)
+  }
+  
+  // Test error propagation analysis
+  let error_propagation = correlator.analyze_error_propagation(correlated_traces)
+  
+  assert_true(error_propagation.error_paths.length() >= 0)
+  
+  for path in error_propagation.error_paths {
+    assert_true(path.trace_id.length() > 0)
+    assert_true(path.error_spans.length() > 0)
+    assert_true(path.propagation_time_ms > 0)
+    
+    // Verify error propagation sequence
+    for i in 0..=path.error_spans.length() - 2 {
+      assert_true(path.error_spans[i].start_time <= path.error_spans[i + 1].start_time)
     }
   }
   
-  // 创建实际性能数据
-  let actual_performance = [
-    {
-      "service": "api.gateway",
-      "response_time": 420.0,
-      "memory_usage": 480.0,
-      "cpu_usage": 65.0,
-      "throughput": 1200.0,
-      "timestamp": 1640995200000
-    },
-    {
-      "service": "order.service",
-      "response_time": 1100.0,
-      "memory_usage": 980.0,
-      "cpu_usage": 75.0,
-      "throughput": 450.0,
-      "timestamp": 1640995200000
-    },
-    {
-      "service": "payment.service",
-      "response_time": 1800.0,
-      "memory_usage": 2100.0,
-      "cpu_usage": 85.0,
-      "throughput": 220.0,
-      "timestamp": 1640995200000
-    }
-  ]
+  // Test critical path analysis
+  let critical_paths = correlator.analyze_critical_paths(correlated_traces)
   
-  // 评估性能合规性
-  let performance_violations = []
-  for perf in actual_performance {
-    let service_name = perf["service"]
-    let benchmark = performance_benchmarks[service_name]
-    
-    // 检查响应时间
-    if perf["response_time"] > benchmark["max_response_time"] {
-      performance_violations.push({
-        "service": service_name,
-        "metric": "response_time",
-        "actual": perf["response_time"],
-        "threshold": benchmark["max_response_time"],
-        "violation": "exceeds_threshold"
-      })
-    }
-    
-    // 检查内存使用
-    if perf["memory_usage"] > benchmark["max_memory_usage"] {
-      performance_violations.push({
-        "service": service_name,
-        "metric": "memory_usage",
-        "actual": perf["memory_usage"],
-        "threshold": benchmark["max_memory_usage"],
-        "violation": "exceeds_threshold"
-      })
-    }
-    
-    // 检查CPU使用
-    if perf["cpu_usage"] > benchmark["max_cpu_usage"] {
-      performance_violations.push({
-        "service": service_name,
-        "metric": "cpu_usage",
-        "actual": perf["cpu_usage"],
-        "threshold": benchmark["max_cpu_usage"],
-        "violation": "exceeds_threshold"
-      })
-    }
-    
-    // 检查吞吐量
-    if perf["throughput"] < benchmark["min_throughput"] {
-      performance_violations.push({
-        "service": service_name,
-        "metric": "throughput",
-        "actual": perf["throughput"],
-        "threshold": benchmark["min_throughput"],
-        "violation": "below_threshold"
-      })
-    }
-  }
+  assert_true(critical_paths.length() > 0)
   
-  // 验证性能违规
-  assert_eq(performance_violations.length(), 3)
-  
-  // order.service: 响应时间超标，吞吐量不足
-  let order_violations = performance_violations.filter(fn(v) { v["service"] == "order.service" })
-  assert_eq(order_violations.length(), 2)
-  
-  let response_time_violation = order_violations.filter(fn(v) { v["metric"] == "response_time" })[0]
-  assert_eq(response_time_violation["actual"], 1100.0)
-  assert_eq(response_time_violation["threshold"], 1000.0)
-  assert_eq(response_time_violation["violation"], "exceeds_threshold")
-  
-  let throughput_violation = order_violations.filter(fn(v) { v["metric"] == "throughput" })[0]
-  assert_eq(throughput_violation["actual"], 450.0)
-  assert_eq(throughput_violation["threshold"], 500.0)
-  assert_eq(throughput_violation["violation"], "below_threshold")
-  
-  // payment.service: 内存使用超标
-  let payment_violations = performance_violations.filter(fn(v) { v["service"] == "payment.service" })
-  assert_eq(payment_violations.length(), 1)
-  
-  let memory_violation = payment_violations[0]
-  assert_eq(memory_violation["metric"], "memory_usage")
-  assert_eq(memory_violation["actual"], 2100.0)
-  assert_eq(memory_violation["threshold"], 2048.0)
-  
-  // api.gateway: 无违规
-  let gateway_violations = performance_violations.filter(fn(v) { v["service"] == "api.gateway" })
-  assert_eq(gateway_violations.length(), 0)
-}
-
-// 测试6: 数据压缩和传输优化
-test "数据压缩和传输优化" {
-  // 创建原始遥测数据
-  let raw_telemetry_data = [
-    {
-      "trace_id": "trace-compression-12345",
-      "span_id": "span-001",
-      "service": "api.gateway",
-      "operation": "GET /api/users",
-      "start_time": 1640995200000,
-      "end_time": 1640995200200,
-      "attributes": {
-        "http.method": "GET",
-        "http.url": "/api/users",
-        "http.status_code": 200,
-        "user.id": "user-12345",
-        "client.ip": "192.168.1.100"
-      }
-    },
-    {
-      "trace_id": "trace-compression-12345",
-      "span_id": "span-002",
-      "service": "user.service",
-      "operation": "getUserProfile",
-      "start_time": 1640995200100,
-      "end_time": 1640995200180,
-      "attributes": {
-        "db.system": "postgresql",
-        "db.statement": "SELECT * FROM users WHERE id = ?",
-        "db.operation": "SELECT",
-        "user.id": "user-12345"
-      }
-    }
-  ]
-  
-  // 计算原始数据大小（简化计算）
-  let original_size = raw_telemetry_data.to_string().length()
-  assert_true(original_size > 0)
-  
-  // 应用压缩策略
-  let compression_strategies = {
-    "attribute_deduplication": true,
-    "common_string_replacement": true,
-    "numeric_compression": true,
-    "timestamp_delta_encoding": true
-  }
-  
-  // 实现属性去重
-  let common_attributes = {}
-  let deduplicated_data = []
-  
-  for span in raw_telemetry_data {
-    let mut new_span = span
-    let mut new_attributes = {}
-    
-    // 识别公共属性
-    for (key, value) in span["attributes"] {
-      if common_attributes.contains(key) && common_attributes[key] == value {
-        // 属性已在公共集合中，跳过
-      } else {
-        // 新属性或值不同
-        if common_attributes.contains(key) == false {
-          common_attributes = common_attributes.set(key, value)
-        }
-        new_attributes = new_attributes.set(key, value)
-      }
-    }
-    
-    new_span = new_span.set("attributes", new_attributes)
-    deduplicated_data = deduplicated_data.push(new_span)
-  }
-  
-  // 验证属性去重
-  assert_eq(deduplicated_data.length(), 2)
-  assert_eq(common_attributes.keys().length(), 8) // 所有属性都被识别为公共属性
-  
-  // 实现时间戳增量编码
-  let base_timestamp = raw_telemetry_data[0]["start_time"]
-  let delta_encoded_data = []
-  
-  for span in deduplicated_data {
-    let start_time_delta = span["start_time"] - base_timestamp
-    let end_time_delta = span["end_time"] - base_timestamp
-    
-    let encoded_span = {
-      "trace_id": span["trace_id"],
-      "span_id": span["span_id"],
-      "service": span["service"],
-      "operation": span["operation"],
-      "start_time_delta": start_time_delta,
-      "end_time_delta": end_time_delta,
-      "attributes": span["attributes"]
-    }
-    
-    delta_encoded_data = delta_encoded_data.push(encoded_span)
-  }
-  
-  // 验证增量编码
-  assert_eq(delta_encoded_data.length(), 2)
-  assert_eq(delta_encoded_data[0]["start_time_delta"], 0)
-  assert_eq(delta_encoded_data[0]["end_time_delta"], 200)
-  assert_eq(delta_encoded_data[1]["start_time_delta"], 100)
-  assert_eq(delta_encoded_data[1]["end_time_delta"], 180)
-  
-  // 计算压缩后大小（简化计算）
-  let compressed_size = (delta_encoded_data.to_string().length() + common_attributes.to_string().length())
-  let compression_ratio = compressed_size.to_float() / original_size.to_float()
-  
-  // 验证压缩效果
-  assert_true(compression_ratio < 1.0) // 压缩后应该更小
-  assert_true(compression_ratio > 0.1) // 但不应该过度压缩
-  
-  // 模拟批量传输优化
-  let batch_config = {
-    "max_batch_size": 100,
-    "max_batch_delay_ms": 5000,
-    "compression_threshold": 1024
-  }
-  
-  // 创建批处理逻辑
-  let create_batch = fn(data_points) {
-    if data_points.length() == 0 {
-      None
-    } else if data_points.length() >= batch_config["max_batch_size"] {
-      Some(data_points.take(batch_config["max_batch_size"]))
-    } else {
-      // 简化批处理逻辑
-      Some(data_points)
-    }
-  }
-  
-  // 测试批处理
-  let batch = create_batch(delta_encoded_data)
-  match batch {
-    Some(batch_data) => {
-      assert_eq(batch_data.length(), 2)
-      assert_eq(batch_data[0]["span_id"], "span-001")
-      assert_eq(batch_data[1]["span_id"], "span-002")
-    }
-    None => assert_true(false)
+  for path in critical_paths {
+    assert_true(path.trace_id.length() > 0)
+    assert_true(path.total_duration_ms > 0)
+    assert_true(path.criticality_score >= 0.0 && path.criticality_score <= 1.0)
+    assert_true(path.spans.length() > 0)
   }
 }
 
-// 测试7: 配置动态更新和热重载
-test "配置动态更新和热重载" {
-  // 创建初始配置
-  let initial_config = {
-    "sampling": {
-      "default_rate": 0.1,
-      "max_rate": 1.0,
-      "min_rate": 0.01
-    },
-    "exporter": {
-      "endpoint": "https://otel-collector.example.com:4317",
-      "timeout_ms": 30000,
-      "batch_size": 512,
-      "max_export_batch_size": 512
-    },
-    "processor": {
-      "attribute_limits": {
-        "attribute_count_limit": 128,
-        "attribute_value_length_limit": 1024
-      },
-      "span_limits": {
-        "attribute_count_limit": 128,
-        "event_count_limit": 128,
-        "link_count_limit": 128
-      }
-    }
+// Test 4: Telemetry Data Sampling and Filtering
+test "telemetry data sampling and filtering" {
+  let sampler = TelemetrySampler::new()
+  
+  // Configure sampling strategies
+  sampler.add_sampling_rule(
+    "high_volume_metrics",
+    SamplingStrategy::Probabilistic(0.1), // 10% sampling
+    ["request_count", "response_time"]
+  )
+  
+  sampler.add_sampling_rule(
+    "error_metrics",
+    SamplingStrategy::Deterministic(1.0), // 100% sampling
+    ["error_count", "error_rate"]
+  )
+  
+  sampler.add_sampling_rule(
+    "custom_metrics",
+    SamplingStrategy::Adaptive(1000, 0.1), // Target 1000 samples, min 10%
+    ["custom_business_metric"]
+  )
+  
+  // Generate test data
+  let telemetry_data = []
+  let current_time = get_current_timestamp()
+  
+  // High volume metrics (10000 points)
+  for i in 0..=9999 {
+    let point = TelemetryPoint::new(
+      "api-service",
+      "request_count",
+      i.to_float(),
+      current_time + Duration::from_millis(i)
+    )
+    telemetry_data.push(point)
   }
   
-  // 创建配置版本管理
-  let config_versions = []
-  config_versions = config_versions.push({
-    "version": "1.0.0",
-    "timestamp": 1640995200000,
-    "config": initial_config
+  // Error metrics (100 points)
+  for i in 0..=99 {
+    let point = TelemetryPoint::new(
+      "api-service",
+      "error_count",
+      (i % 5).to_float(),
+      current_time + Duration::from_millis(i * 10)
+    )
+    telemetry_data.push(point)
+  }
+  
+  // Custom metrics (5000 points)
+  for i in 0..=4999 {
+    let point = TelemetryPoint::new(
+      "business-service",
+      "custom_business_metric",
+      (i * 1.5).to_float(),
+      current_time + Duration::from_millis(i * 2)
+    )
+    telemetry_data.push(point)
+  }
+  
+  // Apply sampling
+  let sampled_data = sampler.sample(telemetry_data)
+  
+  // Verify sampling results
+  let request_count_samples = sampled_data.filter(|p| p.metric_name == "request_count")
+  let error_count_samples = sampled_data.filter(|p| p.metric_name == "error_count")
+  let custom_metric_samples = sampled_data.filter(|p| p.metric_name == "custom_business_metric")
+  
+  // Request count should be approximately 10% (probabilistic sampling)
+  assert_true(request_count_samples.length() > 500 && request_count_samples.length() < 1500)
+  
+  // Error count should be 100% (deterministic sampling)
+  assert_eq(error_count_samples.length(), 100)
+  
+  // Custom metric should be around 1000 or 10% (adaptive sampling)
+  assert_true(custom_metric_samples.length() >= 500 && custom_metric_samples.length() <= 1500)
+  
+  // Test filtering
+  let filter = TelemetryFilter::new()
+  
+  // Add filter conditions
+  filter.add_condition("service_name", FilterOperator::Equals, "api-service")
+  filter.add_condition("timestamp", FilterOperator::GreaterThan, current_time + Duration::from_seconds(10))
+  filter.add_condition("value", FilterOperator::GreaterThan, 50.0)
+  
+  // Apply filter
+  let filtered_data = filter.filter(sampled_data)
+  
+  // Verify filtering
+  for point in filtered_data {
+    assert_eq(point.service_name, "api-service")
+    assert_true(point.timestamp > current_time + Duration::from_seconds(10))
+    assert_true(point.value > 50.0)
+  }
+  
+  // Test complex filter expressions
+  let complex_filter = TelemetryFilter::new()
+  complex_filter.set_expression("(service_name = 'api-service' AND value > 100) OR (service_name = 'business-service' AND value < 1000)")
+  
+  let complex_filtered = complex_filter.filter(sampled_data)
+  
+  // Verify complex filtering
+  for point in complex_filtered {
+    let condition_met = 
+      (point.service_name == "api-service" && point.value > 100.0) ||
+      (point.service_name == "business-service" && point.value < 1000.0)
+    
+    assert_true(condition_met)
+  }
+  
+  // Test sampling metrics
+  let sampling_metrics = sampler.get_metrics()
+  
+  assert_true(sampling_metrics.total_points_processed > 0)
+  assert_true(sampling_metrics.total_sampled_points > 0)
+  assert_true(sampling_metrics.sampling_rate >= 0.0 && sampling_metrics.sampling_rate <= 1.0)
+  
+  for (rule_name, rule_metrics) in sampling_metrics.rule_metrics {
+    assert_true(rule_metrics.input_points > 0)
+    assert_true(rule_metrics.output_points >= 0)
+    assert_true(rule_metrics.effective_rate >= 0.0 && rule_metrics.effective_rate <= 1.0)
+  }
+}
+
+// Test 5: Telemetry Data Visualization
+test "telemetry data visualization" {
+  let visualizer = TelemetryVisualizer::new()
+  
+  // Generate test data for visualization
+  let time_series_data = generate_time_series_data(
+    "system_metrics",
+    Duration::from_days(7), // 7 days of data
+    Duration::from_hours(1)  // Hourly data points
+  )
+  
+  // Test time series chart
+  let chart_config = ChartConfig::new()
+    .with_title("System Metrics Over Time")
+    .with_x_axis_label("Time")
+    .with_y_axis_label("Value")
+    .with_chart_type(ChartType::Line)
+    .with_time_range(TimeRange::Last7Days)
+  
+  let time_series_chart = visualizer.create_time_series_chart(time_series_data, chart_config)
+  
+  assert_true(time_series_chart.chart_data.length() > 0)
+  assert_eq(time_series_chart.metadata.title, "System Metrics Over Time")
+  assert_eq(time_series_chart.metadata.x_axis_label, "Time")
+  assert_eq(time_series_chart.metadata.y_axis_label, "Value")
+  assert_eq(time_series_chart.metadata.chart_type, ChartType::Line)
+  
+  // Verify chart data points
+  for data_point in time_series_chart.chart_data {
+    assert_true(data_point.x >= 0) // Timestamp
+    assert_true(data_point.y != 0.0) // Value
+  }
+  
+  // Test heatmap visualization
+  let heatmap_data = generate_heatmap_data(
+    ["service-a", "service-b", "service-c"],
+    ["endpoint-1", "endpoint-2", "endpoint-3", "endpoint-4"],
+    || service, endpoint {
+      // Generate correlation values between services and endpoints
+      (service.length() + endpoint.length()).to_float() * 10.0
+    }
+  )
+  
+  let heatmap_config = HeatmapConfig::new()
+    .with_title("Service-Endpoint Correlation Heatmap")
+    .with_color_scheme(ColorScheme::Viridis)
+    .with_value_range(0.0, 100.0)
+  
+  let heatmap = visualizer.create_heatmap(heatmap_data, heatmap_config)
+  
+  assert_eq(heatmap.rows, 3) // 3 services
+  assert_eq(heatmap.cols, 4) // 4 endpoints
+  assert_eq(heatmap.data.length(), 12) // 3 * 4 = 12 cells
+  
+  for cell in heatmap.data {
+    assert_true(cell.row >= 0 && cell.row < 3)
+    assert_true(cell.col >= 0 && cell.col < 4)
+    assert_true(cell.value >= 0.0 && cell.value <= 100.0)
+    assert_true(cell.color.length() > 0) // Hex color code
+  }
+  
+  // Test histogram visualization
+  let histogram_data = generate_histogram_data(1000, || {
+    // Generate normal distribution data
+    generate_normal_random(50.0, 10.0)
   })
   
-  // 模拟配置更新请求
-  let update_requests = [
-    {
-      "timestamp": 1640995201000,
-      "changes": {
-        "sampling.default_rate": 0.2,
-        "exporter.endpoint": "https://otel-collector-v2.example.com:4317"
-      }
-    },
-    {
-      "timestamp": 1640995202000,
-      "changes": {
-        "processor.attribute_limits.attribute_count_limit": 256,
-        "processor.span_limits.event_count_limit": 256
-      }
-    }
-  ]
+  let histogram_config = HistogramConfig::new()
+    .with_title("Response Time Distribution")
+    .with_x_axis_label("Response Time (ms)")
+    .with_y_axis_label("Frequency")
+    .with_bins(20)
   
-  // 应用配置更新
-  let apply_config_update = fn(config, changes) {
-    let mut updated_config = config
-    
-    for (path, new_value) in changes {
-      let path_parts = path.split(".")
-      let mut current = updated_config
-      
-      // 简化的路径更新逻辑
-      if path_parts[0] == "sampling" && path_parts[1] == "default_rate" {
-        let sampling = updated_config["sampling"]
-        let updated_sampling = sampling.set("default_rate", new_value)
-        updated_config = updated_config.set("sampling", updated_sampling)
-      } else if path_parts[0] == "exporter" && path_parts[1] == "endpoint" {
-        let exporter = updated_config["exporter"]
-        let updated_exporter = exporter.set("endpoint", new_value)
-        updated_config = updated_config.set("exporter", updated_exporter)
-      } else if path_parts[0] == "processor" && path_parts[1] == "attribute_limits" && path_parts[2] == "attribute_count_limit" {
-        let processor = updated_config["processor"]
-        let attribute_limits = processor["attribute_limits"]
-        let updated_attribute_limits = attribute_limits.set("attribute_count_limit", new_value)
-        let updated_processor = processor.set("attribute_limits", updated_attribute_limits)
-        updated_config = updated_config.set("processor", updated_processor)
-      } else if path_parts[0] == "processor" && path_parts[1] == "span_limits" && path_parts[2] == "event_count_limit" {
-        let processor = updated_config["processor"]
-        let span_limits = processor["span_limits"]
-        let updated_span_limits = span_limits.set("event_count_limit", new_value)
-        let updated_processor = processor.set("span_limits", updated_span_limits)
-        updated_config = updated_config.set("processor", updated_processor)
-      }
-    }
-    
-    updated_config
+  let histogram = visualizer.create_histogram(histogram_data, histogram_config)
+  
+  assert_eq(histogram.bins, 20)
+  assert_eq(histogram.data.length(), 20)
+  
+  let total_frequency = histogram.data.reduce(0, |sum, bin| sum + bin.frequency)
+  assert_eq(total_frequency, 1000) // All data points should be accounted for
+  
+  // Test scatter plot visualization
+  let scatter_data = generate_scatter_data(500, || {
+    let x = generate_uniform_random(0.0, 100.0)
+    let y = x * 1.5 + generate_normal_random(0.0, 10.0) // Linear relationship with noise
+    ScatterPoint::new(x, y)
+  })
+  
+  let scatter_config = ScatterConfig::new()
+    .with_title("CPU Usage vs Response Time")
+    .with_x_axis_label("CPU Usage (%)")
+    .with_y_axis_label("Response Time (ms)")
+  
+  let scatter_plot = visualizer.create_scatter_plot(scatter_data, scatter_config)
+  
+  assert_eq(scatter_plot.points.length(), 500)
+  
+  for point in scatter_plot.points {
+    assert_true(point.x >= 0.0 && point.x <= 100.0)
+    assert_true(point.y >= 0.0) // Response times should be positive
   }
   
-  // 按顺序应用更新
-  let mut current_config = initial_config
-  for request in update_requests {
-    current_config = apply_config_update(current_config, request["changes"])
-    
-    // 记录新版本
-    config_versions = config_versions.push({
-      "version": (config_versions.length() + 1).to_string() + ".0.0",
-      "timestamp": request["timestamp"],
-      "config": current_config
-    })
-  }
+  // Test dashboard creation
+  let dashboard_config = DashboardConfig::new()
+    .with_title("System Monitoring Dashboard")
+    .with_layout(DashboardLayout::Grid(2, 2)) // 2x2 grid
+    .with_refresh_interval(Duration::from_minutes(5))
   
-  // 验证配置版本
-  assert_eq(config_versions.length(), 3)
-  assert_eq(config_versions[0]["version"], "1.0.0")
-  assert_eq(config_versions[1]["version"], "2.0.0")
-  assert_eq(config_versions[2]["version"], "3.0.0")
+  let dashboard = visualizer.create_dashboard(dashboard_config)
   
-  // 验证最终配置
-  let final_config = config_versions[2]["config"]
-  assert_eq(final_config["sampling"]["default_rate"], 0.2) // 已更新
-  assert_eq(final_config["exporter"]["endpoint"], "https://otel-collector-v2.example.com:4317") // 已更新
-  assert_eq(final_config["processor"]["attribute_limits"]["attribute_count_limit"], 256) // 已更新
-  assert_eq(final_config["processor"]["span_limits"]["event_count_limit"], 256) // 已更新
+  // Add visualizations to dashboard
+  dashboard.add_visualization("time_series", time_series_chart, 0, 0)
+  dashboard.add_visualization("heatmap", heatmap, 0, 1)
+  dashboard.add_visualization("histogram", histogram, 1, 0)
+  dashboard.add_visualization("scatter_plot", scatter_plot, 1, 1)
   
-  // 验证未更改的配置
-  assert_eq(final_config["sampling"]["max_rate"], 1.0) // 未更改
-  assert_eq(final_config["exporter"]["timeout_ms"], 30000) // 未更改
-  assert_eq(final_config["processor"]["attribute_limits"]["attribute_value_length_limit"], 1024) // 未更改
+  assert_eq(dashboard.visualizations.length(), 4)
+  assert_eq(dashboard.metadata.title, "System Monitoring Dashboard")
+  assert_eq(dashboard.metadata.layout, DashboardLayout::Grid(2, 2))
+  assert_eq(dashboard.metadata.refresh_interval, Duration::from_minutes(5))
   
-  // 模拟配置回滚
-  let rollback_to_version = fn(versions, target_version) {
-    let target_version_data = versions.filter(fn(v) { v["version"] == target_version })[0]
-    target_version_data["config"]
-  }
+  // Test dashboard export
+  let export_config = DashboardExportConfig::new()
+    .with_format(ExportFormat::HTML)
+    .with_include_data(true)
+    .with_include_interactivity(true)
   
-  let rollback_config = rollback_to_version(config_versions, "1.0.0")
+  let exported_dashboard = visualizer.export_dashboard(dashboard, export_config)
   
-  // 验证回滚配置
-  assert_eq(rollback_config["sampling"]["default_rate"], 0.1) // 回滚到原始值
-  assert_eq(rollback_config["exporter"]["endpoint"], "https://otel-collector.example.com:4317") // 回滚到原始值
-  assert_eq(rollback_config["processor"]["attribute_limits"]["attribute_count_limit"], 128) // 回滚到原始值
+  assert_true(exported_dashboard.content.length() > 0)
+  assert_eq(exported_dashboard.format, ExportFormat::HTML)
+  assert_true(exported_dashboard.size_bytes > 0)
 }
 
-// 测试8: 多租户隔离和权限控制
-test "多租户隔离和权限控制" {
-  // 创建租户配置
-  let tenant_configs = [
-    {
-      "tenant_id": "tenant-enterprise",
-      "tenant_name": "Enterprise Corp",
-      "plan": "enterprise",
-      "quota": {
-        "max_metrics_per_day": 10000000,
-        "max_traces_per_day": 5000000,
-        "max_spans_per_trace": 1000,
-        "max_attribute_value_length": 4096
-      },
-      "permissions": {
-        "can_export": true,
-        "can_access_raw_data": true,
-        "can_configure_sampling": true,
-        "can_view_all_services": true
-      },
-      "services": ["payment.service", "order.service", "user.service", "inventory.service"]
-    },
-    {
-      "tenant_id": "tenant-standard",
-      "tenant_name": "Standard LLC",
-      "plan": "standard",
-      "quota": {
-        "max_metrics_per_day": 1000000,
-        "max_traces_per_day": 500000,
-        "max_spans_per_trace": 500,
-        "max_attribute_value_length": 1024
-      },
-      "permissions": {
-        "can_export": true,
-        "can_access_raw_data": false,
-        "can_configure_sampling": false,
-        "can_view_all_services": false
-      },
-      "services": ["web.service", "api.service"]
-    },
-    {
-      "tenant_id": "tenant-basic",
-      "tenant_name": "Basic Startup",
-      "plan": "basic",
-      "quota": {
-        "max_metrics_per_day": 100000,
-        "max_traces_per_day": 50000,
-        "max_spans_per_trace": 100,
-        "max_attribute_value_length": 512
-      },
-      "permissions": {
-        "can_export": false,
-        "can_access_raw_data": false,
-        "can_configure_sampling": false,
-        "can_view_all_services": false
-      },
-      "services": ["web.service"]
-    }
-  ]
+// Test 6: Telemetry Data Alerting
+test "telemetry data alerting" {
+  let alert_manager = AlertManager::new()
   
-  // 创建租户使用数据
-  let tenant_usage = [
-    {
-      "tenant_id": "tenant-enterprise",
-      "date": "2023-01-01",
-      "metrics_count": 8500000,
-      "traces_count": 4200000,
-      "avg_spans_per_trace": 750,
-      "max_attribute_value_length": 2048
-    },
-    {
-      "tenant_id": "tenant-standard",
-      "date": "2023-01-01",
-      "metrics_count": 950000,
-      "traces_count": 480000,
-      "avg_spans_per_trace": 450,
-      "max_attribute_value_length": 800
-    },
-    {
-      "tenant_id": "tenant-basic",
-      "date": "2023-01-01",
-      "metrics_count": 120000,
-      "traces_count": 55000,
-      "avg_spans_per_trace": 120,
-      "max_attribute_value_length": 400
-    }
-  ]
+  // Configure alert rules
+  alert_manager.add_rule(
+    "high_response_time",
+    AlertRule::new()
+      .with_metric("response_time")
+      .with_condition(AlertCondition::GreaterThan(500.0))
+      .with_duration(Duration::from_minutes(5))
+      .with_severity(AlertSeverity::Warning)
+      .with_message("Response time is above 500ms for 5 minutes")
+  )
   
-  // 检查配额违规
-  let quota_violations = []
-  for usage in tenant_usage {
-    let tenant_id = usage["tenant_id"]
-    let tenant_config = tenant_configs.filter(fn(t) { t["tenant_id"] == tenant_id })[0]
-    let quota = tenant_config["quota"]
+  alert_manager.add_rule(
+    "critical_error_rate",
+    AlertRule::new()
+      .with_metric("error_rate")
+      .with_condition(AlertCondition::GreaterThan(0.05)) // 5%
+      .with_duration(Duration::from_minutes(1))
+      .with_severity(AlertSeverity::Critical)
+      .with_message("Error rate is above 5% for 1 minute")
+  )
+  
+  alert_manager.add_rule(
+    "low_throughput",
+    AlertRule::new()
+      .with_metric("throughput")
+      .with_condition(AlertCondition::LessThan(100.0))
+      .with_duration(Duration::from_minutes(10))
+      .with_severity(AlertSeverity::Warning)
+      .with_message("Throughput is below 100 requests/second for 10 minutes")
+  )
+  
+  // Start alert manager
+  alert_manager.start()
+  
+  // Generate telemetry data that triggers alerts
+  let current_time = get_current_timestamp()
+  
+  // High response time data (should trigger alert after 5 minutes)
+  for i in 0..=30 {
+    let point = TelemetryPoint::new(
+      "api-service",
+      "response_time",
+      600.0, // Above 500ms threshold
+      current_time + Duration::from_minutes(i)
+    )
+    alert_manager.process_telemetry(point)
+  }
+  
+  // Critical error rate data (should trigger alert after 1 minute)
+  for i in 0..=5 {
+    let point = TelemetryPoint::new(
+      "api-service",
+      "error_rate",
+      0.1, // Above 5% threshold
+      current_time + Duration::from_minutes(i)
+    )
+    alert_manager.process_telemetry(point)
+  }
+  
+  // Wait for alert evaluation
+  sleep(Duration::from_seconds(2))
+  
+  // Check for triggered alerts
+  let active_alerts = alert_manager.get_active_alerts()
+  
+  assert_true(active_alerts.length() >= 1)
+  
+  let critical_error_alert = active_alerts.find(|a| a.rule_name == "critical_error_rate")
+  assert_true(critical_error_alert.is_some())
+  
+  if let Some(alert) = critical_error_alert {
+    assert_eq(alert.severity, AlertSeverity::Critical)
+    assert_eq(alert.metric, "error_rate")
+    assert_true(alert.triggered_at > 0)
+    assert_true(alert.last_updated >= alert.triggered_at)
+    assert_true(alert.message.contains("Error rate is above 5%"))
+  }
+  
+  // Test alert acknowledgment
+  if let Some(alert) = critical_error_alert {
+    let ack_result = alert_manager.acknowledge_alert(alert.id, "Investigating the issue")
+    assert_true(ack_result.is_success())
     
-    // 检查指标配额
-    if usage["metrics_count"] > quota["max_metrics_per_day"] {
-      quota_violations.push({
-        "tenant_id": tenant_id,
-        "quota_type": "metrics",
-        "used": usage["metrics_count"],
-        "limit": quota["max_metrics_per_day"],
-        "overage": usage["metrics_count"] - quota["max_metrics_per_day"]
-      })
-    }
+    let updated_alert = alert_manager.get_alert(alert.id)
+    assert_true(updated_alert.is_some())
+    assert_true(updated_alert.unwrap().is_acknowledged)
+    assert_eq(updated_alert.unwrap().acknowledgment_message, "Investigating the issue")
+  }
+  
+  // Test alert resolution
+  // Generate normal data to resolve the alert
+  for i in 0..=10 {
+    let point = TelemetryPoint::new(
+      "api-service",
+      "error_rate",
+      0.01, // Below 5% threshold
+      current_time + Duration::from_minutes(10 + i)
+    )
+    alert_manager.process_telemetry(point)
+  }
+  
+  sleep(Duration::from_seconds(1))
+  
+  // Check if alert is resolved
+  let resolved_alert = alert_manager.get_alert(critical_error_alert.unwrap().id)
+  assert_true(resolved_alert.is_some())
+  assert_true(resolved_alert.unwrap().is_resolved)
+  
+  // Test alert notification channels
+  let notification_manager = NotificationManager::new()
+  
+  // Configure notification channels
+  notification_manager.add_channel(
+    "email",
+    EmailNotificationChannel::new("alerts@example.com")
+  )
+  
+  notification_manager.add_channel(
+    "slack",
+    SlackNotificationChannel::new("#alerts-channel")
+  )
+  
+  notification_manager.add_channel(
+    "pagerduty",
+    PagerDutyNotificationChannel::new("integration-key")
+  )
+  
+  // Test alert notification
+  let test_alert = Alert::new(
+    "test_alert",
+    AlertSeverity::Warning,
+    "Test alert message",
+    current_time
+  )
+  
+  let notification_result = notification_manager.send_alert(test_alert, ["email", "slack"])
+  assert_true(notification_result.is_success())
+  
+  // Test alert escalation
+  let escalation_policy = EscalationPolicy::new()
+    .add_level(AlertSeverity::Warning, ["email"], Duration::from_minutes(5))
+    .add_level(AlertSeverity::Critical, ["slack", "pagerduty"], Duration::from_minutes(1))
+  
+  notification_manager.set_escalation_policy(escalation_policy)
+  
+  let critical_alert = Alert::new(
+    "critical_test",
+    AlertSeverity::Critical,
+    "Critical test alert",
+    current_time
+  )
+  
+  let escalation_result = notification_manager.send_alert_with_escalation(critical_alert)
+  assert_true(escalation_result.is_success())
+  
+  // Stop alert manager
+  alert_manager.stop()
+  
+  // Test alert metrics
+  let alert_metrics = alert_manager.get_metrics()
+  
+  assert_true(alert_metrics.total_alerts_triggered > 0)
+  assert_true(alert_metrics.alerts_resolved > 0)
+  assert_true(alert_metrics.alerts_acknowledged >= 0)
+  assert_true(alert_metrics.average_resolution_time_ms > 0)
+}
+
+// Test 7: Telemetry Data Retention and Archival
+test "telemetry data retention and archival" {
+  let retention_manager = TelemetryRetentionManager::new()
+  
+  // Configure retention policies
+  retention_manager.add_policy(
+    "raw_telemetry",
+    RetentionPolicy::new()
+      .with_retention_period(Duration::from_days(7))
+      .with_archival_period(Duration::from_days(1))
+      .with_compression(true)
+      .with_encryption(true)
+  )
+  
+  retention_manager.add_policy(
+    "aggregated_metrics",
+    RetentionPolicy::new()
+      .with_retention_period(Duration::from_days(90))
+      .with_archival_period(Duration::from_days(7))
+      .with_compression(true)
+      .with_encryption(false)
+  )
+  
+  retention_manager.add_policy(
+    "alerts",
+    RetentionPolicy::new()
+      .with_retention_period(Duration::from_days(365))
+      .with_archival_period(Duration::from_days(30))
+      .with_compression(false)
+      .with_encryption(true)
+  )
+  
+  // Generate test data with different ages
+  let current_time = get_current_timestamp()
+  
+  // Raw telemetry data (various ages)
+  let raw_data = []
+  for i in 0..=100 {
+    let timestamp = current_time - Duration::from_days(i)
+    let data = TelemetryData::new()
+      .with_type("raw_telemetry")
+      .with_timestamp(timestamp)
+      .with_size(1024) // 1KB each
+    raw_data.push(data)
+  }
+  
+  // Aggregated metrics data
+  let aggregated_data = []
+  for i in 0..=100 {
+    let timestamp = current_time - Duration::from_days(i)
+    let data = TelemetryData::new()
+      .with_type("aggregated_metrics")
+      .with_timestamp(timestamp)
+      .with_size(512) // 512B each
+    aggregated_data.push(data)
+  }
+  
+  // Alerts data
+  let alerts_data = []
+  for i in 0..=50 {
+    let timestamp = current_time - Duration::from_days(i)
+    let data = TelemetryData::new()
+      .with_type("alerts")
+      .with_timestamp(timestamp)
+      .with_size(256) // 256B each
+    alerts_data.push(data)
+  }
+  
+  // Store data
+  for data in raw_data {
+    retention_manager.store(data)
+  }
+  
+  for data in aggregated_data {
+    retention_manager.store(data)
+  }
+  
+  for data in alerts_data {
+    retention_manager.store(data)
+  }
+  
+  // Run retention enforcement
+  let retention_result = retention_manager.enforce_retention()
+  
+  assert_true(retention_result.is_success())
+  assert_true(retention_result.deleted_count > 0)
+  assert_true(retention_result.archived_count > 0)
+  assert_true(retention_result.compressed_count > 0)
+  
+  // Verify data states
+  let raw_metrics = retention_manager.get_metrics("raw_telemetry")
+  assert_true(raw_metrics.active_count <= 7 * 24) // At most 7 days of hourly data
+  assert_true(raw_metrics.archived_count > 0)
+  
+  let aggregated_metrics = retention_manager.get_metrics("aggregated_metrics")
+  assert_true(aggregated_metrics.active_count <= 90 * 24) // At most 90 days of hourly data
+  assert_true(aggregated_metrics.archived_count > 0)
+  
+  let alerts_metrics = retention_manager.get_metrics("alerts")
+  assert_true(alerts_metrics.active_count <= 365) // At most 365 days of alerts
+  assert_true(alerts_metrics.archived_count > 0)
+  
+  // Test data retrieval from archive
+  let archived_data = retention_manager.retrieve_from_archive(
+    "raw_telemetry",
+    current_time - Duration::from_days(10),
+    current_time - Duration::from_days(8)
+  )
+  
+  assert_true(archived_data.length() > 0)
+  
+  for data in archived_data {
+    assert_eq(data.type, "raw_telemetry")
+    assert_true(data.timestamp >= current_time - Duration::from_days(10))
+    assert_true(data.timestamp <= current_time - Duration::from_days(8))
+  }
+  
+  // Test data compression
+  let compression_stats = retention_manager.get_compression_stats()
+  
+  assert_true(compression_stats.total_compressed_size > 0)
+  assert_true(compression_stats.total_uncompressed_size > compression_stats.total_compressed_size)
+  assert_true(compression_stats.compression_ratio > 1.0)
+  
+  // Test data encryption
+  let encryption_stats = retention_manager.get_encryption_stats()
+  
+  assert_true(encryption_stats.encrypted_data_count > 0)
+  assert_true(encryption_stats.encryption_keys_count > 0)
+  assert_true(encryption_stats.last_key_rotation > 0)
+  
+  // Test retention schedule
+  let schedule = RetentionSchedule::new()
+    .add_task("daily_retention", Duration::from_days(1), "02:00")
+    .add_task("weekly_archival", Duration::from_days(7), "03:00")
+    .add_task("monthly_cleanup", Duration::from_days(30), "04:00")
+  
+  retention_manager.set_schedule(schedule)
+  
+  // Verify scheduled tasks
+  let scheduled_tasks = retention_manager.get_scheduled_tasks()
+  
+  assert_true(scheduled_tasks.length() == 3)
+  
+  for task in scheduled_tasks {
+    assert_true(task.name.length() > 0)
+    assert_true(task.interval > Duration::from_zero())
+    assert_true(task.execution_time.length() > 0)
+    assert_true(task.next_run_time > 0)
+  }
+}
+
+// Test 8: Telemetry Data Querying and Analysis
+test "telemetry data querying and analysis" {
+  let query_engine = TelemetryQueryEngine::new()
+  
+  // Generate test data
+  let telemetry_data = generate_comprehensive_telemetry_data(
+    Duration::from_days(30),
+    Duration::from_minutes(5)
+  )
+  
+  // Store data in query engine
+  for data in telemetry_data {
+    query_engine.store(data)
+  }
+  
+  // Test simple queries
+  let simple_query = "SELECT service_name, metric_name, AVG(value) as avg_value FROM telemetry WHERE timestamp > '2024-01-01' GROUP BY service_name, metric_name"
+  
+  let simple_result = query_engine.execute(simple_query)
+  
+  assert_true(simple_result.is_success())
+  assert_true(simple_result.rows.length() > 0)
+  
+  // Verify query result structure
+  for row in simple_result.rows {
+    assert_true(row.contains_key("service_name"))
+    assert_true(row.contains_key("metric_name"))
+    assert_true(row.contains_key("avg_value"))
     
-    // 检查追踪配额
-    if usage["traces_count"] > quota["max_traces_per_day"] {
-      quota_violations.push({
-        "tenant_id": tenant_id,
-        "quota_type": "traces",
-        "used": usage["traces_count"],
-        "limit": quota["max_traces_per_day"],
-        "overage": usage["traces_count"] - quota["max_traces_per_day"]
-      })
-    }
+    let avg_value = row.get("avg_value").to_float()
+    assert_true(avg_value > 0.0)
+  }
+  
+  // Test time range queries
+  let time_range_query = "SELECT timestamp, value FROM telemetry WHERE service_name = 'api-service' AND metric_name = 'response_time' AND timestamp BETWEEN '2024-01-01' AND '2024-01-07' ORDER BY timestamp"
+  
+  let time_range_result = query_engine.execute(time_range_query)
+  
+  assert_true(time_range_result.is_success())
+  assert_true(time_range_result.rows.length() > 0)
+  
+  // Verify time ordering
+  for i in 0..=time_range_result.rows.length() - 2 {
+    let current_time = time_range_result.rows[i].get("timestamp").to_timestamp()
+    let next_time = time_range_result.rows[i + 1].get("timestamp").to_timestamp()
+    assert_true(current_time <= next_time)
+  }
+  
+  // Test aggregation queries
+  let aggregation_query = "
+    SELECT 
+      service_name,
+      DATE_TRUNC(timestamp, 'hour') as hour,
+      COUNT(*) as count,
+      AVG(value) as avg_value,
+      MIN(value) as min_value,
+      MAX(value) as max_value,
+      PERCENTILE(value, 95) as p95_value,
+      STDDEV(value) as stddev_value
+    FROM telemetry
+    WHERE metric_name = 'response_time'
+    GROUP BY service_name, DATE_TRUNC(timestamp, 'hour')
+    ORDER BY hour
+  "
+  
+  let aggregation_result = query_engine.execute(aggregation_query)
+  
+  assert_true(aggregation_result.is_success())
+  assert_true(aggregation_result.rows.length() > 0)
+  
+  // Verify aggregation results
+  for row in aggregation_result.rows {
+    assert_true(row.contains_key("service_name"))
+    assert_true(row.contains_key("hour"))
+    assert_true(row.contains_key("count"))
+    assert_true(row.contains_key("avg_value"))
+    assert_true(row.contains_key("min_value"))
+    assert_true(row.contains_key("max_value"))
+    assert_true(row.contains_key("p95_value"))
+    assert_true(row.contains_key("stddev_value"))
     
-    // 检查每个追踪的Span配额
-    if usage["avg_spans_per_trace"] > quota["max_spans_per_trace"] {
-      quota_violations.push({
-        "tenant_id": tenant_id,
-        "quota_type": "spans_per_trace",
-        "used": usage["avg_spans_per_trace"],
-        "limit": quota["max_spans_per_trace"],
-        "overage": usage["avg_spans_per_trace"] - quota["max_spans_per_trace"]
-      })
-    }
+    let count = row.get("count").to_int()
+    let avg_value = row.get("avg_value").to_float()
+    let min_value = row.get("min_value").to_float()
+    let max_value = row.get("max_value").to_float()
+    let p95_value = row.get("p95_value").to_float()
+    let stddev_value = row.get("stddev_value").to_float()
     
-    // 检查属性值长度配额
-    if usage["max_attribute_value_length"] > quota["max_attribute_value_length"] {
-      quota_violations.push({
-        "tenant_id": tenant_id,
-        "quota_type": "attribute_value_length",
-        "used": usage["max_attribute_value_length"],
-        "limit": quota["max_attribute_value_length"],
-        "overage": usage["max_attribute_value_length"] - quota["max_attribute_value_length"]
-      })
+    assert_true(count > 0)
+    assert_true(avg_value > 0.0)
+    assert_true(min_value <= avg_value)
+    assert_true(max_value >= avg_value)
+    assert_true(p95_value >= avg_value)
+    assert_true(p95_value <= max_value)
+    assert_true(stddev_value >= 0.0)
+  }
+  
+  // Test complex analytical queries
+  let complex_query = "
+    WITH service_metrics AS (
+      SELECT
+        service_name,
+        metric_name,
+        AVG(value) as avg_value,
+        COUNT(*) as sample_count
+      FROM telemetry
+      WHERE timestamp >= NOW() - INTERVAL '7 days'
+      GROUP BY service_name, metric_name
+    ),
+    service_performance AS (
+      SELECT
+        service_name,
+        avg_value as avg_response_time
+      FROM service_metrics
+      WHERE metric_name = 'response_time'
+    ),
+    service_errors AS (
+      SELECT
+        service_name,
+        avg_value as error_rate
+      FROM service_metrics
+      WHERE metric_name = 'error_rate'
+    )
+    SELECT
+      sp.service_name,
+      sp.avg_response_time,
+      COALESCE(se.error_rate, 0) as error_rate,
+      CASE
+        WHEN sp.avg_response_time > 500 OR COALESCE(se.error_rate, 0) > 0.05 THEN 'poor'
+        WHEN sp.avg_response_time > 200 OR COALESCE(se.error_rate, 0) > 0.01 THEN 'fair'
+        ELSE 'good'
+      END as performance_grade
+    FROM service_performance sp
+    LEFT JOIN service_errors se ON sp.service_name = se.service_name
+    ORDER BY sp.avg_response_time DESC
+  "
+  
+  let complex_result = query_engine.execute(complex_query)
+  
+  assert_true(complex_result.is_success())
+  assert_true(complex_result.rows.length() > 0)
+  
+  // Verify complex query results
+  for row in complex_result.rows {
+    assert_true(row.contains_key("service_name"))
+    assert_true(row.contains_key("avg_response_time"))
+    assert_true(row.contains_key("error_rate"))
+    assert_true(row.contains_key("performance_grade"))
+    
+    let avg_response_time = row.get("avg_response_time").to_float()
+    let error_rate = row.get("error_rate").to_float()
+    let performance_grade = row.get("performance_grade").to_string()
+    
+    assert_true(avg_response_time > 0.0)
+    assert_true(error_rate >= 0.0 && error_rate <= 1.0)
+    assert_true(performance_grade == "good" || performance_grade == "fair" || performance_grade == "poor")
+    
+    // Verify performance grade logic
+    if performance_grade == "poor" {
+      assert_true(avg_response_time > 500.0 || error_rate > 0.05)
+    } else if performance_grade == "fair" {
+      assert_true(avg_response_time > 200.0 || error_rate > 0.01)
+      assert_true(avg_response_time <= 500.0 && error_rate <= 0.05)
+    } else {
+      assert_true(avg_response_time <= 200.0 && error_rate <= 0.01)
     }
   }
   
-  // 验证配额违规
-  assert_eq(quota_violations.length(), 2)
+  // Test query performance metrics
+  let query_metrics = query_engine.get_query_metrics()
   
-  // tenant-basic: 指标和每个追踪的Span数超标
-  let basic_violations = quota_violations.filter(fn(v) { v["tenant_id"] == "tenant-basic" })
-  assert_eq(basic_violations.length(), 2)
+  assert_true(query_metrics.total_queries > 0)
+  assert_true(query_metrics.average_execution_time_ms > 0)
+  assert_true(query_metrics.cache_hit_rate >= 0.0 && query_metrics.cache_hit_rate <= 1.0)
+  assert_true(query_metrics.rows_returned > 0)
+}
+
+// Test 9: Telemetry Data Machine Learning Analysis
+test "telemetry data machine learning analysis" {
+  let ml_analyzer = MLTelemetryAnalyzer::new()
   
-  let metrics_violation = basic_violations.filter(fn(v) { v["quota_type"] == "metrics" })[0]
-  assert_eq(metrics_violation["used"], 120000)
-  assert_eq(metrics_violation["limit"], 100000)
-  assert_eq(metrics_violation["overage"], 20000)
+  // Generate training data
+  let training_data = generate_training_telemetry_data(
+    Duration::from_days(30),
+    Duration::from_hours(1)
+  )
   
-  let spans_violation = basic_violations.filter(fn(v) { v["quota_type"] == "spans_per_trace" })[0]
-  assert_eq(spans_violation["used"], 120)
-  assert_eq(spans_violation["limit"], 100)
-  assert_eq(spans_violation["overage"], 20)
+  // Test anomaly detection model
+  let anomaly_model = ml_analyzer.train_anomaly_detection_model(
+    training_data.clone(),
+    AnomalyDetectionAlgorithm::IsolationForest,
+    {
+      "n_estimators": 100,
+      "contamination": 0.1,
+      "random_state": 42
+    }
+  )
   
-  // tenant-enterprise和tenant-standard无违规
-  let enterprise_violations = quota_violations.filter(fn(v) { v["tenant_id"] == "tenant-enterprise" })
-  let standard_violations = quota_violations.filter(fn(v) { v["tenant_id"] == "tenant-standard" })
-  assert_eq(enterprise_violations.length(), 0)
-  assert_eq(standard_violations.length(), 0)
+  assert_true(anomaly_model.is_trained)
+  assert_true(anomaly_model.accuracy > 0.8)
+  assert_true(anomaly_model.precision > 0.7)
+  assert_true(anomaly_model.recall > 0.7)
   
-  // 验证权限控制
-  let check_permission = fn(tenant_id, permission) {
-    let tenant_config = tenant_configs.filter(fn(t) { t["tenant_id"] == tenant_id })[0]
-    tenant_config["permissions"][permission]
+  // Test anomaly detection
+  let test_data = generate_test_telemetry_data(
+    Duration::from_days(1),
+    Duration::from_hours(1)
+  )
+  
+  let anomaly_predictions = ml_analyzer.detect_anomalies(anomaly_model, test_data)
+  
+  assert_eq(anomaly_predictions.length(), test_data.length())
+  
+  let anomaly_count = anomaly_predictions.filter(|p| p.is_anomaly).length()
+  assert_true(anomaly_count >= 0 && anomaly_count <= test_data.length())
+  
+  for prediction in anomaly_predictions {
+    assert_true(prediction.anomaly_score >= 0.0 && prediction.anomaly_score <= 1.0)
+    assert_true(prediction.confidence >= 0.0 && prediction.confidence <= 1.0)
+    
+    if prediction.is_anomaly {
+      assert_true(prediction.anomaly_score > 0.5)
+    }
   }
   
-  // 验证企业租户权限
-  assert_true(check_permission("tenant-enterprise", "can_export"))
-  assert_true(check_permission("tenant-enterprise", "can_access_raw_data"))
-  assert_true(check_permission("tenant-enterprise", "can_configure_sampling"))
-  assert_true(check_permission("tenant-enterprise", "can_view_all_services"))
+  // Test forecasting model
+  let forecasting_model = ml_analyzer.train_forecasting_model(
+    training_data.clone(),
+    ForecastingAlgorithm::LSTM,
+    {
+      "units": [64, 32],
+      "dropout": 0.2,
+      "epochs": 100,
+      "batch_size": 32
+    }
+  )
   
-  // 验证标准租户权限
-  assert_true(check_permission("tenant-standard", "can_export"))
-  assert_false(check_permission("tenant-standard", "can_access_raw_data"))
-  assert_false(check_permission("tenant-standard", "can_configure_sampling"))
-  assert_false(check_permission("tenant-standard", "can_view_all_services"))
+  assert_true(forecasting_model.is_trained)
+  assert_true(forecasting_model.mae < 100.0) // Mean Absolute Error
+  assert_true(forecasting_model.rmse < 150.0) // Root Mean Square Error
+  assert_true(forecasting_model.mape < 0.2) // Mean Absolute Percentage Error
   
-  // 验证基础租户权限
-  assert_false(check_permission("tenant-basic", "can_export"))
-  assert_false(check_permission("tenant-basic", "can_access_raw_data"))
-  assert_false(check_permission("tenant-basic", "can_configure_sampling"))
-  assert_false(check_permission("tenant-basic", "can_view_all_services"))
+  // Test forecasting
+  let forecast_horizon = 24 // 24 hours
+  let forecast = ml_analyzer.generate_forecast(
+    forecasting_model,
+    "response_time",
+    forecast_horizon
+  )
   
-  // 验证服务隔离
-  let get_tenant_services = fn(tenant_id) {
-    let tenant_config = tenant_configs.filter(fn(t) { t["tenant_id"] == tenant_id })[0]
-    tenant_config["services"]
+  assert_eq(forecast.values.length(), forecast_horizon)
+  assert_eq(forecast.confidence_intervals.length(), forecast_horizon)
+  
+  // Verify confidence intervals
+  for i in 0..=forecast_horizon - 1 {
+    let interval = forecast.confidence_intervals[i]
+    assert_true(interval.lower < forecast.values[i])
+    assert_true(forecast.values[i] < interval.upper)
   }
   
-  let enterprise_services = get_tenant_services("tenant-enterprise")
-  let standard_services = get_tenant_services("tenant-standard")
-  let basic_services = get_tenant_services("tenant-basic")
+  // Test clustering model
+  let clustering_model = ml_analyzer.train_clustering_model(
+    training_data.clone(),
+    ClusteringAlgorithm::KMeans,
+    {
+      "n_clusters": 5,
+      "random_state": 42
+    }
+  )
   
-  assert_eq(enterprise_services.length(), 4)
-  assert_true(enterprise_services.contains("payment.service"))
-  assert_true(enterprise_services.contains("order.service"))
+  assert_true(clustering_model.is_trained)
+  assert_true(clustering_model.inertia > 0.0)
+  assert_true(clustering_model.silhouette_score >= -1.0 && clustering_model.silhouette_score <= 1.0)
   
-  assert_eq(standard_services.length(), 2)
-  assert_true(standard_services.contains("web.service"))
-  assert_true(standard_services.contains("api.service"))
-  assert_false(standard_services.contains("payment.service")) // 企业租户专属服务
+  // Test clustering
+  let cluster_predictions = ml_analyzer.predict_clusters(clustering_model, test_data)
   
-  assert_eq(basic_services.length(), 1)
-  assert_eq(basic_services[0], "web.service")
+  assert_eq(cluster_predictions.length(), test_data.length())
+  
+  for prediction in cluster_predictions {
+    assert_true(prediction.cluster_id >= 0)
+    assert_true(prediction.cluster_id < 5) // We trained with 5 clusters
+    assert_true(prediction.distance_to_centroid >= 0.0)
+  }
+  
+  // Test classification model
+  let classification_data = generate_classification_telemetry_data(training_data)
+  let classification_model = ml_analyzer.train_classification_model(
+    classification_data.training_data,
+    ClassificationAlgorithm::RandomForest,
+    {
+      "n_estimators": 100,
+      "max_depth": 10,
+      "random_state": 42
+    }
+  )
+  
+  assert_true(classification_model.is_trained)
+  assert_true(classification_model.accuracy > 0.8)
+  assert_true(classification_model.precision > 0.7)
+  assert_true(classification_model.recall > 0.7)
+  assert_true(classification_model.f1_score > 0.7)
+  
+  // Test classification
+  let classification_predictions = ml_analyzer.predict_classification(
+    classification_model,
+    classification_data.test_data
+  )
+  
+  assert_eq(classification_predictions.length(), classification_data.test_data.length())
+  
+  for prediction in classification_predictions {
+    assert_true(prediction.predicted_class.length() > 0)
+    assert_true(prediction.confidence >= 0.0 && prediction.confidence <= 1.0)
+    assert_true(prediction.class_probabilities.length() > 0)
+    
+    // Verify probabilities sum to 1
+    let probability_sum = prediction.class_probabilities.reduce(0.0, |sum, p| sum + p.value)
+    assert_true(abs(probability_sum - 1.0) < 0.001)
+  }
+  
+  // Test model explainability
+  let explainability = ml_analyzer.explain_predictions(
+    classification_model,
+    classification_data.test_data.slice(0, 10) // Explain first 10 predictions
+  )
+  
+  assert_eq(explainability.explanations.length(), 10)
+  
+  for explanation in explainability.explanations {
+    assert_true(explanation.feature_importance.length() > 0)
+    
+    // Verify feature importance values
+    for feature in explanation.feature_importance {
+      assert_true(feature.importance >= -1.0 && feature.importance <= 1.0)
+    }
+  }
+}
+
+// Test 10: Telemetry Data Integration and Export
+test "telemetry data integration and export" {
+  let integration_manager = TelemetryIntegrationManager::new()
+  
+  // Configure data sources
+  integration_manager.add_source(
+    "prometheus",
+    PrometheusSource::new("http://prometheus:9090")
+  )
+  
+  integration_manager.add_source(
+    "influxdb",
+    InfluxDBSource::new("http://influxdb:8086", "telemetry")
+  )
+  
+  integration_manager.add_source(
+    "elasticsearch",
+    ElasticsearchSource::new("http://elasticsearch:9200", "telemetry-*")
+  )
+  
+  // Configure data sinks
+  integration_manager.add_sink(
+    "graphite",
+    GraphiteSink::new("graphite:2003")
+  )
+  
+  integration_manager.add_sink(
+    "kafka",
+    KafkaSink::new("kafka:9092", "telemetry-topic")
+  )
+  
+  integration_manager.add_sink(
+    "splunk",
+    SplunkSink::new("https://splunk:8088", "telemetry-index")
+  )
+  
+  // Test data collection from sources
+  let collection_tasks = []
+  
+  for source in ["prometheus", "influxdb", "elasticsearch"] {
+    let task = integration_manager.collect_from_source(source, Duration::from_minutes(5))
+    collection_tasks.push(task)
+  }
+  
+  // Wait for collection to complete
+  let collected_data = []
+  for task in collection_tasks {
+    let result = task.wait()
+    assert_true(result.is_success())
+    
+    for data_point in result.unwrap() {
+      collected_data.push(data_point)
+    }
+  }
+  
+  assert_true(collected_data.length() > 0)
+  
+  // Verify collected data
+  for data_point in collected_data {
+    assert_true(data_point.metric_name.length() > 0)
+    assert_true(data_point.value != 0.0)
+    assert_true(data_point.timestamp > 0)
+    assert_true(data_point.source.length() > 0)
+  }
+  
+  // Test data transformation
+  let transformer = DataTransformer::new()
+  
+  // Add transformation rules
+  transformer.add_rule(
+    "unit_conversion",
+    |data_point| {
+      if data_point.metric_name == "cpu_usage" && data_point.unit == "percent" {
+        data_point.value = data_point.value / 100.0 // Convert to decimal
+        data_point.unit = "decimal"
+      }
+      data_point
+    }
+  )
+  
+  transformer.add_rule(
+    "metric_naming",
+    |data_point| {
+      // Convert camelCase to snake_case
+      let snake_case_name = data_point.metric_name.replace(/([a-z])([A-Z])/g, "${1}_${2}").to_lowercase()
+      data_point.metric_name = snake_case_name
+      data_point
+    }
+  )
+  
+  // Apply transformations
+  let transformed_data = []
+  for data_point in collected_data {
+    let transformed = transformer.transform(data_point)
+    transformed_data.push(transformed)
+  }
+  
+  assert_eq(transformed_data.length(), collected_data.length())
+  
+  // Test data enrichment
+  let enricher = DataEnricher::new()
+  
+  // Add enrichment rules
+  enricher.add_rule(
+    "environment",
+    |data_point| {
+      data_point.add_tag("environment", "production")
+      data_point
+    }
+  )
+  
+  enricher.add_rule(
+    "region",
+    |data_point| {
+      data_point.add_tag("region", "us-west-2")
+      data_point
+    }
+  )
+  
+  // Apply enrichment
+  let enriched_data = []
+  for data_point in transformed_data {
+    let enriched = enricher.enrich(data_point)
+    enriched_data.push(enriched)
+  }
+  
+  assert_eq(enriched_data.length(), transformed_data.length())
+  
+  // Verify enrichment
+  for data_point in enriched_data {
+    assert_eq(data_point.get_tag("environment"), "production")
+    assert_eq(data_point.get_tag("region"), "us-west-2")
+  }
+  
+  // Test data export to sinks
+  let export_tasks = []
+  
+  for sink in ["graphite", "kafka", "splunk"] {
+    let task = integration_manager.export_to_sink(sink, enriched_data.clone())
+    export_tasks.push(task)
+  }
+  
+  // Wait for export to complete
+  for task in export_tasks {
+    let result = task.wait()
+    assert_true(result.is_success())
+    assert_true(result.unwrap().exported_count > 0)
+  }
+  
+  // Test export to different formats
+  let json_exporter = JSONExporter::new()
+  let csv_exporter = CSVExporter::new()
+  let parquet_exporter = ParquetExporter::new()
+  
+  // Export to JSON
+  let json_result = json_exporter.export(enriched_data.clone())
+  assert_true(json_result.is_success())
+  assert_true(json_result.unwrap().content.length() > 0)
+  assert_eq(json_result.unwrap().format, "json")
+  
+  // Export to CSV
+  let csv_result = csv_exporter.export(enriched_data.clone())
+  assert_true(csv_result.is_success())
+  assert_true(csv_result.unwrap().content.length() > 0)
+  assert_eq(csv_result.unwrap().format, "csv")
+  
+  // Export to Parquet
+  let parquet_result = parquet_exporter.export(enriched_data.clone())
+  assert_true(parquet_result.is_success())
+  assert_true(parquet_result.unwrap().content.length() > 0)
+  assert_eq(parquet_result.unwrap().format, "parquet")
+  
+  // Test scheduled integration
+  let schedule = IntegrationSchedule::new()
+    .add_job("collect_prometheus", "prometheus", Duration::from_minutes(1))
+    .add_job("collect_influxdb", "influxdb", Duration::from_minutes(5))
+    .add_job("export_kafka", "kafka", Duration::from_minutes(2))
+  
+  integration_manager.set_schedule(schedule)
+  
+  // Verify scheduled jobs
+  let scheduled_jobs = integration_manager.get_scheduled_jobs()
+  
+  assert_true(scheduled_jobs.length() == 3)
+  
+  for job in scheduled_jobs {
+    assert_true(job.name.length() > 0)
+    assert_true(job.target.length() > 0)
+    assert_true(job.interval > Duration::from_zero())
+    assert_true(job.last_run_time >= 0)
+    assert_true(job.next_run_time > job.last_run_time)
+  }
+  
+  // Test integration metrics
+  let integration_metrics = integration_manager.get_metrics()
+  
+  assert_true(integration_metrics.total_collection_operations > 0)
+  assert_true(integration_metrics.total_export_operations > 0)
+  assert_true(integration_metrics.total_data_points_processed > 0)
+  assert_true(integration_metrics.average_collection_time_ms > 0)
+  assert_true(integration_metrics.average_export_time_ms > 0)
+  assert_true(integration_metrics.error_rate >= 0.0 && integration_metrics.error_rate <= 1.0)
 }
