@@ -101,5 +101,6 @@
             "../azimuth_distributed_tracing_consistency_tests.mbt",
             "../azimuth_realtime_analytics_engine_tests.mbt",
             "../azimuth_security_privacy_enhanced_tests.mbt",
-            "../azimuth_performance_optimization_tests.mbt"]  }
+            "../azimuth_performance_optimization_tests.mbt",
+            "../azimuth_premium_quality_test_cases.mbt"]  }
 }
