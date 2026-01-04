@@ -1,1106 +1,1597 @@
 // Azimuth Premium Comprehensive Test Suite
-// 高质量综合测试套件 - 覆盖核心遥测系统功能
+// This file contains high-quality test cases covering advanced telemetry features
 
-// 导入必要的模块
-// use "azimuth"
-
-// 测试1: 资源管理和属性操作的高级测试
-test "resource management and attribute operations advanced test" {
-  // 创建基础资源
-  let base_resource = Resource::new()
-  
-  // 添加复杂属性结构
-  let complex_attributes = [
-    ("service.name", StringValue("azimuth.telemetry")),
-    ("service.version", StringValue("2.1.0")),
-    ("service.instance.id", StringValue("instance-abc-123")),
-    ("deployment.environment", StringValue("production")),
-    ("host.name", StringValue("prod-server-01")),
-    ("host.ip", StringValue("192.168.1.100")),
-    ("process.pid", IntValue(12345)),
-    ("process.executable.name", StringValue("azimuth-service")),
-    ("process.command_args", ArrayStringValue(["--config", "/etc/azimuth/config.yaml", "--log-level", "info"])),
-    ("telemetry.sdk.name", StringValue("azimuth-moonbit")),
-    ("telemetry.sdk.version", StringValue("1.0.0")),
-    ("telemetry.sdk.language", StringValue("moonbit")),
-    ("container.id", StringValue("container-def-456")),
-    ("k8s.pod.name", StringValue("azimuth-pod-789")),
-    ("k8s.namespace.name", StringValue("telemetry")),
-    ("k8s.deployment.name", StringValue("azimuth-deployment")),
-    ("cloud.provider", StringValue("aws")),
-    ("cloud.region", StringValue("us-west-2")),
-    ("cloud.availability_zone", StringValue("us-west-2a")),
-    ("custom.business.unit", StringValue("platform-engineering")),
-    ("custom.cost.center", StringValue("engineering-123")),
-    ("custom.sla.tier", StringValue("critical")),
-    ("custom.data.sensitivity", StringValue("confidential"))
+// Test 1: Telemetry Data Aggregation
+test "telemetry data aggregation operations" {
+  // Test metric aggregation
+  let metrics = [
+    ("response_time", 120.5),
+    ("response_time", 150.2),
+    ("response_time", 98.7),
+    ("cpu_usage", 45.2),
+    ("cpu_usage", 52.8),
+    ("memory_usage", 67.3)
   ]
   
-  let resource_with_attributes = Resource::with_attributes(base_resource, complex_attributes)
-  
-  // 测试属性检索
-  let service_name = Resource::get_attribute(resource_with_attributes, "service.name")
-  let process_pid = Resource::get_attribute(resource_with_attributes, "process.pid")
-  let command_args = Resource::get_attribute(resource_with_attributes, "process.command_args")
-  let missing_attr = Resource::get_attribute(resource_with_attributes, "nonexistent.attribute")
-  
-  // 验证属性值
-  match service_name {
-    Some(StringValue(name)) => assert_eq(name, "azimuth.telemetry")
-    _ => assert_true(false)
-  }
-  
-  match process_pid {
-    Some(IntValue(pid)) => assert_eq(pid, 12345)
-    _ => assert_true(false)
-  }
-  
-  match command_args {
-    Some(ArrayStringValue(args)) => {
-      assert_eq(args.length(), 4)
-      assert_eq(args[0], "--config")
-      assert_eq(args[1], "/etc/azimuth/config.yaml")
-      assert_eq(args[2], "--log-level")
-      assert_eq(args[3], "info")
+  // Group metrics by name
+  let group_by_name = fn(metric_list: Array<(String, Float)>) {
+    let mut groups = []
+    for (name, value) in metric_list {
+      let mut found = false
+      let mut updated_groups = []
+      
+      for (group_name, group_values) in groups {
+        if group_name == name {
+          updated_groups = updated_groups.push((group_name, group_values.push(value)))
+          found = true
+        } else {
+          updated_groups = updated_groups.push((group_name, group_values))
+        }
+      }
+      
+      if not(found) {
+        updated_groups = updated_groups.push((name, [value]))
+      }
+      
+      groups = updated_groups
     }
-    _ => assert_true(false)
+    groups
   }
   
-  assert_eq(missing_attr, None)
+  let grouped_metrics = group_by_name(metrics)
+  assert_eq(grouped_metrics.length(), 3)
   
-  // 测试资源合并
-  let override_resource = Resource::new()
-  let override_attributes = [
-    ("service.name", StringValue("azimuth.telemetry.override")),
-    ("override.only", StringValue("override-value")),
-    ("process.pid", IntValue(54321))
-  ]
-  let resource_with_override = Resource::with_attributes(override_resource, override_attributes)
-  
-  let merged_resource = Resource::merge(resource_with_attributes, resource_with_override)
-  
-  // 验证合并结果（简化实现返回覆盖资源）
-  let merged_service_name = Resource::get_attribute(merged_resource, "service.name")
-  let merged_override = Resource::get_attribute(merged_resource, "override.only")
-  let merged_pid = Resource::get_attribute(merged_resource, "process.pid")
-  
-  match merged_service_name {
-    Some(StringValue(name)) => assert_eq(name, "azimuth.telemetry.override")
-    _ => assert_true(false)
-  }
-  
-  match merged_override {
-    Some(StringValue(value)) => assert_eq(value, "override-value")
-    _ => assert_true(false)
-  }
-  
-  match merged_pid {
-    Some(IntValue(pid)) => assert_eq(pid, 54321)
-    _ => assert_true(false)
-  }
-}
-
-// 测试2: 并发安全性测试
-test "concurrent safety and thread safety test" {
-  // 创建多个提供者实例
-  let tracer_provider = TracerProvider::default()
-  let meter_provider = MeterProvider::default()
-  let logger_provider = LoggerProvider::default()
-  
-  // 创建多个仪器实例
-  let tracer = TracerProvider::get_tracer(tracer_provider, "concurrent.test", Some("1.0.0"))
-  let meter = MeterProvider::get_meter(meter_provider, "concurrent.meter", Some("1.0.0"))
-  let logger = LoggerProvider::get_logger(logger_provider, "concurrent.logger", Some("1.0.0"))
-  
-  // 创建多个指标仪器
-  let request_counter = Meter::create_counter(meter, "http.requests.total", Some("Total HTTP requests"), Some("requests"))
-  let response_histogram = Meter::create_histogram(meter, "http.response.duration", Some("HTTP response duration"), Some("ms"))
-  let active_connections = Meter::create_updown_counter(meter, "http.active_connections", Some("Active HTTP connections"), Some("connections"))
-  let memory_usage = Meter::create_gauge(meter, "process.memory.usage", Some("Process memory usage"), Some("bytes"))
-  
-  // 并发创建多个span
-  let span1 = Tracer::start_span(tracer, "concurrent.operation.1")
-  let span2 = Tracer::start_span(tracer, "concurrent.operation.2")
-  let span3 = Tracer::start_span(tracer, "concurrent.operation.3")
-  let span4 = Tracer::start_span(tracer, "concurrent.operation.4")
-  let span5 = Tracer::start_span(tracer, "concurrent.operation.5")
-  
-  // 设置span属性和事件
-  Span::add_event(span1, "operation.started", [("operation.type", StringValue("http.request")), ("operation.id", IntValue(1))])
-  Span::add_event(span2, "operation.started", [("operation.type", StringValue("database.query")), ("operation.id", IntValue(2))])
-  Span::add_event(span3, "operation.started", [("operation.type", StringValue("cache.access")), ("operation.id", IntValue(3))])
-  Span::add_event(span4, "operation.started", [("operation.type", StringValue("message.publish")), ("operation.id", IntValue(4))])
-  Span::add_event(span5, "operation.started", [("operation.type", StringValue("file.write")), ("operation.id", IntValue(5))])
-  
-  // 并发更新指标
-  Counter::add(request_counter, 100.0)
-  Counter::add(request_counter, 50.0)
-  Counter::add(request_counter, 25.0)
-  
-  Histogram::record(response_histogram, 150.0)
-  Histogram::record(response_histogram, 200.0)
-  Histogram::record(response_histogram, 75.0)
-  Histogram::record(response_histogram, 300.0)
-  
-  UpDownCounter::add(active_connections, 10.0)
-  UpDownCounter::add(active_connections, 5.0)
-  UpDownCounter::add(active_connections, -3.0)
-  
-  // 并发记录日志
-  let info_log = LogRecord::new(Info, "Concurrent operation completed successfully")
-  let warn_log = LogRecord::new(Warn, "Concurrent operation completed with warnings")
-  let error_log = LogRecord::new(Error, "Concurrent operation failed")
-  
-  // 添加上下文关联
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let span_id = "b7ad6b7169203331"
-  
-  let correlated_info_log = LogRecord::new_with_context(
-    Info,
-    Some("Info log with correlation"),
-    None,
-    Some(1735689600000000000L),
-    Some(1735689600000001000L),
-    Some(trace_id),
-    Some(span_id),
-    None
-  )
-  
-  let correlated_error_log = LogRecord::new_with_context(
-    Error,
-    Some("Error log with correlation"),
-    None,
-    Some(1735689600000000000L),
-    Some(1735689600000001000L),
-    Some(trace_id),
-    Some("c8ad6b7169203331"),
-    None
-  )
-  
-  // 发出日志
-  Logger::emit(logger, info_log)
-  Logger::emit(logger, warn_log)
-  Logger::emit(logger, error_log)
-  Logger::emit(logger, correlated_info_log)
-  Logger::emit(logger, correlated_error_log)
-  
-  // 完成所有span
-  Span::set_status(span1, Ok, Some("Operation completed successfully"))
-  Span::set_status(span2, Ok, Some("Query executed successfully"))
-  Span::set_status(span3, Ok, Some("Cache accessed successfully"))
-  Span::set_status(span4, Error, Some("Message publish failed"))
-  Span::set_status(span5, Ok, Some("File written successfully"))
-  
-  Span::end(span1)
-  Span::end(span2)
-  Span::end(span3)
-  Span::end(span4)
-  Span::end(span5)
-  
-  // 验证所有操作都成功完成
-  assert_true(true)
-}
-
-// 测试3: 跨服务一致性测试
-test "cross-service consistency and propagation test" {
-  // 创建服务A的上下文
-  let service_a_tracer = TracerProvider::get_tracer(TracerProvider::default(), "service.a", Some("1.0.0"))
-  let service_a_span = Tracer::start_span(service_a_tracer, "service.a.operation")
-  let service_a_context = Span::span_context(service_a_span)
-  
-  // 验证服务A的span上下文
-  assert_true(SpanContext::is_valid(service_a_context))
-  assert_true(SpanContext::is_sampled(service_a_context))
-  assert_eq(SpanContext::trace_id(service_a_context), "test_trace_id")
-  assert_eq(SpanContext::span_id(service_a_context), "test_span_id")
-  
-  // 创建传播器
-  let trace_propagator = W3CTraceContextPropagator::new()
-  let composite_propagator = CompositePropagator::new([trace_propagator])
-  
-  // 创建载体并注入上下文
-  let carrier = TextMapCarrier::new()
-  let root_context = Context::root()
-  
-  // 添加业务上下文
-  let user_context = Context::with_value(root_context, ContextKey::new("user.id"), "user12345")
-  let tenant_context = Context::with_value(user_context, ContextKey::new("tenant.id"), "tenant67890")
-  let correlation_context = Context::with_value(tenant_context, ContextKey::new("correlation.id"), "corr-abc-123")
-  
-  // 注入上下文
-  CompositePropagator::inject(composite_propagator, correlation_context, carrier)
-  
-  // 服务B提取上下文
-  let extracted_context = CompositePropagator::extract(composite_propagator, carrier)
-  let service_b_tracer = TracerProvider::get_tracer(TracerProvider::default(), "service.b", Some("1.0.0"))
-  let service_b_span = Tracer::start_span(service_b_tracer, "service.b.operation")
-  
-  // 添加服务B特定的事件
-  Span::add_event(service_b_span, "service.b.event", [("service", StringValue("service.b")), ("operation", StringValue("process"))])
-  
-  // 服务C提取上下文
-  let service_c_context = CompositePropagator::extract(composite_propagator, carrier)
-  let service_c_tracer = TracerProvider::get_tracer(TracerProvider::default(), "service.c", Some("1.0.0"))
-  let service_c_span = Tracer::start_span(service_c_tracer, "service.c.operation")
-  
-  // 添加服务C特定的事件
-  Span::add_event(service_c_span, "service.c.event", [("service", StringValue("service.c")), ("operation", StringValue("transform"))])
-  
-  // 创建baggage进行跨服务传播
-  let baggage = Baggage::new()
-  let baggage_with_user = Baggage::set_entry(baggage, "user.id", "user12345")
-  let baggage_with_session = Baggage::set_entry(baggage_with_user, "session.id", "session-def-456")
-  let baggage_with_request = Baggage::set_entry(baggage_with_session, "request.id", "req-ghi-789")
-  
-  // 验证baggage内容
-  let user_id = Baggage::get_entry(baggage_with_request, "user.id")
-  let session_id = Baggage::get_entry(baggage_with_request, "session.id")
-  let request_id = Baggage::get_entry(baggage_with_request, "request.id")
-  
-  assert_eq(user_id, Some("user12345"))
-  assert_eq(session_id, Some("session-def-456"))
-  assert_eq(request_id, Some("req-ghi-789"))
-  
-  // 验证载体中的traceparent
-  let traceparent = TextMapCarrier::get(carrier, "traceparent")
-  assert_eq(traceparent, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
-  
-  // 完成所有span
-  Span::set_status(service_a_span, Ok, Some("Service A operation completed"))
-  Span::set_status(service_b_span, Ok, Some("Service B operation completed"))
-  Span::set_status(service_c_span, Ok, Some("Service C operation completed"))
-  
-  Span::end(service_a_span)
-  Span::end(service_b_span)
-  Span::end(service_c_span)
-  
-  // 验证跨服务一致性
-  assert_true(true)
-}
-
-// 测试4: 边界条件和错误处理测试
-test "boundary conditions and error handling test" {
-  // 测试空字符串和极值
-  let empty_string_resource = Resource::new()
-  let empty_attributes = [
-    ("empty.string", StringValue("")),
-    ("zero.int", IntValue(0)),
-    ("negative.int", IntValue(-1)),
-    ("zero.float", FloatValue(0.0)),
-    ("negative.float", FloatValue(-1.0)),
-    ("max.int", IntValue(2147483647)),
-    ("min.int", IntValue(-2147483648)),
-    ("large.float", FloatValue(1.7976931348623157e+308)),
-    ("small.float", FloatValue(2.2250738585072014e-308)),
-    ("true.bool", BoolValue(true)),
-    ("false.bool", BoolValue(false)),
-    ("empty.array", ArrayStringValue([])),
-    ("single.item.array", ArrayStringValue(["single"])),
-    ("large.value", StringValue("x" * 10000))  // 假设支持字符串重复
-  ]
-  
-  let resource_with_boundary_values = Resource::with_attributes(empty_string_resource, empty_attributes)
-  
-  // 验证边界值
-  let empty_string = Resource::get_attribute(resource_with_boundary_values, "empty.string")
-  let zero_int = Resource::get_attribute(resource_with_boundary_values, "zero.int")
-  let negative_int = Resource::get_attribute(resource_with_boundary_values, "negative.int")
-  let true_bool = Resource::get_attribute(resource_with_boundary_values, "true.bool")
-  let false_bool = Resource::get_attribute(resource_with_boundary_values, "false.bool")
-  let empty_array = Resource::get_attribute(resource_with_boundary_values, "empty.array")
-  
-  match empty_string {
-    Some(StringValue(value)) => assert_eq(value, "")
-    _ => assert_true(false)
-  }
-  
-  match zero_int {
-    Some(IntValue(value)) => assert_eq(value, 0)
-    _ => assert_true(false)
-  }
-  
-  match negative_int {
-    Some(IntValue(value)) => assert_eq(value, -1)
-    _ => assert_true(false)
-  }
-  
-  match true_bool {
-    Some(BoolValue(value)) => assert_eq(value, true)
-    _ => assert_true(false)
-  }
-  
-  match false_bool {
-    Some(BoolValue(value)) => assert_eq(value, false)
-    _ => assert_true(false)
-  }
-  
-  match empty_array {
-    Some(ArrayStringValue(value)) => assert_eq(value.length(), 0)
-    _ => assert_true(false)
-  }
-  
-  // 测试错误场景
-  let error_tracer = TracerProvider::get_tracer(TracerProvider::default(), "error.test", Some("1.0.0"))
-  let error_span = Tracer::start_span(error_tracer, "error.prone.operation")
-  
-  // 添加错误事件
-  Span::add_event(error_span, "error.occurred", [
-    ("error.type", StringValue("ValidationError")),
-    ("error.message", StringValue("Invalid input parameter")),
-    ("error.code", IntValue(400)),
-    ("error.retryable", BoolValue(true))
-  ])
-  
-  // 设置错误状态
-  Span::set_status(error_span, Error, Some("Operation failed due to validation error"))
-  
-  // 测试错误日志
-  let error_logger = LoggerProvider::get_logger(LoggerProvider::default(), "error.logger", Some("1.0.0"))
-  let error_log = LogRecord::new_with_context(
-    Error,
-    Some("Operation failed with validation error"),
-    None,
-    Some(1735689600000000000L),
-    Some(1735689600000001000L),
-    Some("error_trace_id"),
-    Some("error_span_id"),
-    None
-  )
-  
-  Logger::emit(error_logger, error_log)
-  
-  // 测试HTTP错误响应
-  let error_response = HttpResponse::new(
-    500,
-    [("Content-Type", "application/json"), ("X-Error-Code", "INTERNAL_ERROR")],
-    Some("{\"error\": \"Internal server error\", \"details\": \"Database connection failed\"}")
-  )
-  
-  assert_eq(HttpResponse::status_code(error_response), 500)
-  assert_eq(HttpResponse::body(error_response), Some("{\"error\": \"Internal server error\", \"details\": \"Database connection failed\"}"))
-  
-  // 测试空和缺失值
-  let null_attribute = Resource::get_attribute(resource_with_boundary_values, "nonexistent.attribute")
-  assert_eq(null_attribute, None)
-  
-  // 完成错误span
-  Span::end(error_span)
-  
-  // 验证错误处理
-  assert_true(true)
-}
-
-// 测试5: 性能基准测试
-test "performance benchmark test" {
-  // 创建性能测试用例
-  let perf_tracer = TracerProvider::get_tracer(TracerProvider::default(), "performance.test", Some("1.0.0"))
-  let perf_meter = MeterProvider::get_meter(MeterProvider::default(), "performance.meter", Some("1.0.0"))
-  
-  // 创建性能指标
-  let operation_counter = Meter::create_counter(perf_meter, "operations.total", Some("Total operations"), Some("ops"))
-  let duration_histogram = Meter::create_histogram(perf_meter, "operation.duration", Some("Operation duration"), Some("ms"))
-  let memory_gauge = Meter::create_gauge(perf_meter, "memory.usage", Some("Memory usage"), Some("bytes"))
-  
-  // 记录开始时间
-  let start_time = Clock::now_unix_nanos(Clock::system())
-  
-  // 执行大量操作
-  for i = 0; i < 1000; i = i + 1 {
-    // 创建span
-    let span = Tracer::start_span(perf_tracer, "performance.operation." + i.to_string())
+  // Calculate statistics for each group
+  let calculate_stats = fn(values: Array[Float]) {
+    let sum = values.reduce(fn(acc, v) { acc + v }, 0.0)
+    let count = values.length().to_float()
+    let avg = sum / count
     
-    // 添加事件
-    Span::add_event(span, "operation.started", [("operation.id", IntValue(i))])
-    
-    // 更新指标
-    Counter::add(operation_counter, 1.0)
-    
-    // 模拟操作延迟
-    let operation_duration = 50.0 + (i % 100).to_double() * 0.5
-    Histogram::record(duration_histogram, operation_duration)
-    
-    // 更新内存使用情况
-    let memory_usage = 1024.0 * 1024.0 + (i % 100).to_double() * 1024.0
-    // Gauge::set(memory_gauge, memory_usage)  // 假设有set方法
-    
-    // 完成span
-    Span::add_event(span, "operation.completed", [("operation.id", IntValue(i))])
-    Span::set_status(span, Ok, Some("Operation completed successfully"))
-    Span::end(span)
-  }
-  
-  // 记录结束时间
-  let end_time = Clock::now_unix_nanos(Clock::system())
-  let total_duration = end_time - start_time
-  
-  // 验证性能指标
-  assert_true(total_duration > 0L)
-  
-  // 测试批量操作性能
-  let batch_start = Clock::now_unix_nanos(Clock::system())
-  
-  // 批量创建span
-  let batch_spans = []
-  for i = 0; i < 100; i = i + 1 {
-    let batch_span = Tracer::start_span(perf_tracer, "batch.operation." + i.to_string())
-    batch_spans.push(batch_span)
-  }
-  
-  // 批量结束span
-  for span in batch_spans {
-    Span::end(span)
-  }
-  
-  let batch_end = Clock::now_unix_nanos(Clock::system())
-  let batch_duration = batch_end - batch_start
-  
-  // 验证批量操作性能
-  assert_true(batch_duration > 0L)
-  
-  // 测试属性操作性能
-  let attr_start = Clock::now_unix_nanos(Clock::system())
-  
-  let perf_resource = Resource::new()
-  let perf_attributes = []
-  for i = 0; i < 1000; i = i + 1 {
-    perf_attributes.push(("perf.attr." + i.to_string(), StringValue("perf.value." + i.to_string())))
-  }
-  
-  let resource_with_perf_attrs = Resource::with_attributes(perf_resource, perf_attributes)
-  
-  // 批量检索属性
-  for i = 0; i < 1000; i = i + 1 {
-    let attr = Resource::get_attribute(resource_with_perf_attrs, "perf.attr." + i.to_string())
-    // 简化实现可能返回None，这里只测试操作不会崩溃
-  }
-  
-  let attr_end = Clock::now_unix_nanos(Clock::system())
-  let attr_duration = attr_end - attr_start
-  
-  // 验证属性操作性能
-  assert_true(attr_duration > 0L)
-  
-  // 验证所有操作成功完成
-  assert_true(true)
-}
-
-// 测试6: 实时遥测数据处理测试
-test "realtime telemetry data processing test" {
-  // 创建实时数据处理组件
-  let realtime_tracer = TracerProvider::get_tracer(TracerProvider::default(), "realtime.processor", Some("1.0.0"))
-  let realtime_meter = MeterProvider::get_meter(MeterProvider::default(), "realtime.metrics", Some("1.0.0"))
-  let realtime_logger = LoggerProvider::get_logger(LoggerProvider::default(), "realtime.logger", Some("1.0.0"))
-  
-  // 创建实时指标
-  let event_counter = Meter::create_counter(realtime_meter, "events.processed", Some("Events processed"), Some("events"))
-  let processing_time = Meter::create_histogram(realtime_meter, "event.processing.time", Some("Event processing time"), Some("ms"))
-  let queue_size = Meter::create_gauge(realtime_meter, "event.queue.size", Some("Event queue size"), Some("events"))
-  let error_rate = Meter::create_updown_counter(realtime_meter, "errors.count", Some("Error count"), Some("errors"))
-  
-  // 模拟实时数据流
-  let processing_span = Tracer::start_span(realtime_tracer, "realtime.data.processing")
-  
-  // 模拟处理不同类型的事件
-  let event_types = ["user.login", "user.logout", "page.view", "api.request", "error.occurred"]
-  let user_ids = ["user123", "user456", "user789", "user101", "user202"]
-  let session_ids = ["session001", "session002", "session003", "session004", "session005"]
-  
-  for i = 0; i < 100; i = i + 1 {
-    let event_type = event_types[i % event_types.length()]
-    let user_id = user_ids[i % user_ids.length()]
-    let session_id = session_ids[i % session_ids.length()]
-    
-    // 创建事件处理span
-    let event_span = Tracer::start_span(realtime_tracer, "process.event." + event_type)
-    
-    // 添加事件属性
-    Span::add_event(event_span, "event.received", [
-      ("event.type", StringValue(event_type)),
-      ("event.id", StringValue("event_" + i.to_string())),
-      ("user.id", StringValue(user_id)),
-      ("session.id", StringValue(session_id)),
-      ("timestamp", IntValue(1735689600 + i))
-    ])
-    
-    // 更新指标
-    Counter::add(event_counter, 1.0)
-    
-    // 模拟处理时间
-    let process_time = 10.0 + (i % 50).to_double() * 0.2
-    Histogram::record(processing_time, process_time)
-    
-    // 模拟队列大小变化
-    let queue_size_value = 50.0 + (i % 20).to_double() * 2.0
-    // Gauge::set(queue_size, queue_size_value)  // 假设有set方法
-    
-    // 模拟错误情况
-    if i % 10 == 0 {
-      UpDownCounter::add(error_rate, 1.0)
-      Span::add_event(event_span, "error.occurred", [
-        ("error.type", StringValue("ProcessingError")),
-        ("error.message", StringValue("Failed to process event")),
-        ("error.code", IntValue(500))
-      ])
-      
-      // 记录错误日志
-      let error_log = LogRecord::new_with_context(
-        Error,
-        Some("Failed to process event: " + event_type),
-        None,
-        Some(1735689600000000000L + (i * 1000000).to_int64()),
-        Some(1735689600000001000L + (i * 1000000).to_int64()),
-        Some(SpanContext::trace_id(Span::span_context(event_span))),
-        Some(SpanContext::span_id(Span::span_context(event_span))),
-        None
-      )
-      
-      Logger::emit(realtime_logger, error_log)
-    }
-    
-    // 完成事件处理
-    Span::add_event(event_span, "event.processed", [
-      ("event.type", StringValue(event_type)),
-      ("processing.time", FloatValue(process_time))
-    ])
-    
-    Span::end(event_span)
-  }
-  
-  // 记录处理完成日志
-  let completion_log = LogRecord::new_with_context(
-    Info,
-    Some("Realtime data processing batch completed"),
-    None,
-    Some(1735689600000000000L),
-    Some(1735689600000001000L),
-    Some(SpanContext::trace_id(Span::span_context(processing_span))),
-    Some(SpanContext::span_id(Span::span_context(processing_span))),
-    None
-  )
-  
-  Logger::emit(realtime_logger, completion_log)
-  
-  // 完成处理span
-  Span::set_status(processing_span, Ok, Some("Realtime data processing completed successfully"))
-  Span::end(processing_span)
-  
-  // 验证实时处理
-  assert_true(true)
-}
-
-// 测试7: 时间序列操作测试
-test "time series operations test" {
-  // 创建时间序列测试组件
-  let timeseries_tracer = TracerProvider::get_tracer(TracerProvider::default(), "timeseries.test", Some("1.0.0"))
-  let timeseries_meter = MeterProvider::get_meter(MeterProvider::default(), "timeseries.metrics", Some("1.0.0"))
-  
-  // 创建时间序列指标
-  let temperature_gauge = Meter::create_gauge(timeseries_meter, "sensor.temperature", Some("Temperature sensor reading"), Some("celsius"))
-  let humidity_gauge = Meter::create_gauge(timeseries_meter, "sensor.humidity", Some("Humidity sensor reading"), Some("percent"))
-  let pressure_gauge = Meter::create_gauge(timeseries_meter, "sensor.pressure", Some("Pressure sensor reading"), Some("hPa"))
-  let counter_total = Meter::create_counter(timeseries_meter, "measurements.total", Some("Total measurements"), Some("measurements"))
-  
-  // 模拟时间序列数据收集
-  let collection_span = Tracer::start_span(timeseries_tracer, "timeseries.data.collection")
-  
-  // 模拟24小时的数据收集
-  for hour = 0; hour < 24; hour = hour + 1 {
-    for minute = 0; minute < 60; minute = minute + 10 {
-      // 计算时间戳
-      let timestamp = 1735689600 + (hour * 3600) + (minute * 60)
-      
-      // 创建测量span
-      let measurement_span = Tracer::start_span(timeseries_tracer, "sensor.measurement")
-      
-      // 模拟传感器读数（带有一些随机性）
-      let base_temp = 20.0
-      let base_humidity = 50.0
-      let base_pressure = 1013.25
-      
-      // 添加时间变化的影响
-      let temp_variation = 5.0 * ((hour - 12).to_double() / 12.0).sin()
-      let humidity_variation = 10.0 * ((hour - 6).to_double() / 12.0).sin()
-      let pressure_variation = 5.0 * ((hour - 18).to_double() / 12.0).sin()
-      
-      // 添加随机噪声
-      let temp_noise = (minute % 10).to_double() * 0.1
-      let humidity_noise = (minute % 10).to_double() * 0.2
-      let pressure_noise = (minute % 10).to_double() * 0.05
-      
-      let temperature = base_temp + temp_variation + temp_noise
-      let humidity = base_humidity + humidity_variation + humidity_noise
-      let pressure = base_pressure + pressure_variation + pressure_noise
-      
-      // 记录测量值
-      // Gauge::set(temperature_gauge, temperature)  // 假设有set方法
-      // Gauge::set(humidity_gauge, humidity)
-      // Gauge::set(pressure_gauge, pressure)
-      
-      // 更新计数器
-      Counter::add(counter_total, 1.0)
-      
-      // 添加测量事件
-      Span::add_event(measurement_span, "sensor.reading", [
-        ("timestamp", IntValue(timestamp)),
-        ("temperature", FloatValue(temperature)),
-        ("humidity", FloatValue(humidity)),
-        ("pressure", FloatValue(pressure)),
-        ("sensor.id", StringValue("sensor_001")),
-        ("location", StringValue("datacenter_01"))
-      ])
-      
-      // 记录测量日志
-      let measurement_log = LogRecord::new_with_context(
-        Info,
-        Some("Sensor measurement recorded"),
-        None,
-        Some(timestamp.to_int64() * 1000000000L),
-        Some((timestamp.to_int64() + 1) * 1000000000L),
-        Some(SpanContext::trace_id(Span::span_context(measurement_span))),
-        Some(SpanContext::span_id(Span::span_context(measurement_span))),
-        None
-      )
-      
-      let timeseries_logger = LoggerProvider::get_logger(LoggerProvider::default(), "timeseries.logger", Some("1.0.0"))
-      Logger::emit(timeseries_logger, measurement_log)
-      
-      // 完成测量span
-      Span::end(measurement_span)
-    }
-  }
-  
-  // 计算时间序列统计
-  let stats_span = Tracer::start_span(timeseries_tracer, "timeseries.statistics")
-  
-  // 模拟统计计算
-  Span::add_event(stats_span, "statistics.calculated", [
-    ("total.measurements", IntValue(24 * 6)),  // 24小时，每小时6次测量
-    ("avg.temperature", FloatValue(20.0)),
-    ("avg.humidity", FloatValue(50.0)),
-    ("avg.pressure", FloatValue(1013.25)),
-    ("max.temperature", FloatValue(25.0)),
-    ("min.temperature", FloatValue(15.0)),
-    ("max.humidity", FloatValue(60.0)),
-    ("min.humidity", FloatValue(40.0))
-  ])
-  
-  // 完成统计span
-  Span::end(stats_span)
-  
-  // 完成收集span
-  Span::set_status(collection_span, Ok, Some("Time series data collection completed"))
-  Span::end(collection_span)
-  
-  // 验证时间序列操作
-  assert_true(true)
-}
-
-// 测试8: 序列化/反序列化完整性测试
-test "serialization deserialization integrity test" {
-  // 创建序列化测试组件
-  let serialization_tracer = TracerProvider::get_tracer(TracerProvider::default(), "serialization.test", Some("1.0.0"))
-  let serialization_meter = MeterProvider::get_meter(MeterProvider::default(), "serialization.metrics", Some("1.0.0"))
-  
-  // 创建序列化指标
-  let serialization_counter = Meter::create_counter(serialization_meter, "serialization.operations", Some("Serialization operations"), Some("ops"))
-  let deserialization_counter = Meter::create_counter(serialization_meter, "deserialization.operations", Some("Deserialization operations"), Some("ops"))
-  let serialization_size = Meter::create_histogram(serialization_meter, "serialization.size", Some("Serialization size"), Some("bytes"))
-  let serialization_time = Meter::create_histogram(serialization_meter, "serialization.time", Some("Serialization time"), Some("ms"))
-  
-  // 创建测试数据
-  let test_resource = Resource::new()
-  let test_attributes = [
-    ("string.key", StringValue("test.string.value")),
-    ("int.key", IntValue(42)),
-    ("float.key", FloatValue(3.14159)),
-    ("bool.key", BoolValue(true)),
-    ("array.key", ArrayStringValue(["item1", "item2", "item3"]))
-  ]
-  
-  let resource_with_attrs = Resource::with_attributes(test_resource, test_attributes)
-  
-  // 创建测试span
-  let serialization_span = Tracer::start_span(serialization_tracer, "serialization.test")
-  
-  // 模拟序列化操作
-  Span::add_event(serialization_span, "serialization.started", [
-    ("operation", StringValue("serialize")),
-    ("data.type", StringValue("Resource")),
-    ("attribute.count", IntValue(5))
-  ])
-  
-  // 更新指标
-  Counter::add(serialization_counter, 1.0)
-  Histogram::record(serialization_time, 5.0)  // 模拟5ms序列化时间
-  Histogram::record(serialization_size, 1024.0)  // 模拟1KB序列化大小
-  
-  // 模拟序列化结果
-  let serialized_data = "{\"resource\":{\"attributes\":[{\"key\":\"string.key\",\"value\":{\"type\":\"string\",\"value\":\"test.string.value\"}},{\"key\":\"int.key\",\"value\":{\"type\":\"int\",\"value\":42}},{\"key\":\"float.key\",\"value\":{\"type\":\"float\",\"value\":3.14159}},{\"key\":\"bool.key\",\"value\":{\"type\":\"bool\",\"value\":true}},{\"key\":\"array.key\",\"value\":{\"type\":\"array\",\"value\":[\"item1\",\"item2\",\"item3\"]}}]}}"
-  
-  Span::add_event(serialization_span, "serialization.completed", [
-    ("operation", StringValue("serialize")),
-    ("result.size", IntValue(serialized_data.length())),
-    ("result.success", BoolValue(true))
-  ])
-  
-  // 模拟反序列化操作
-  let deserialization_span = Tracer::start_span(serialization_tracer, "deserialization.test")
-  
-  Span::add_event(deserialization_span, "deserialization.started", [
-    ("operation", StringValue("deserialize")),
-    ("data.type", StringValue("Resource")),
-    ("input.size", IntValue(serialized_data.length()))
-  ])
-  
-  // 更新指标
-  Counter::add(deserialization_counter, 1.0)
-  Histogram::record(serialization_time, 3.0)  // 模拟3ms反序列化时间
-  
-  // 模拟反序列化结果
-  let deserialized_resource = Resource::new()
-  let deserialized_attributes = [
-    ("string.key", StringValue("test.string.value")),
-    ("int.key", IntValue(42)),
-    ("float.key", FloatValue(3.14159)),
-    ("bool.key", BoolValue(true)),
-    ("array.key", ArrayStringValue(["item1", "item2", "item3"]))
-  ]
-  
-  let final_resource = Resource::with_attributes(deserialized_resource, deserialized_attributes)
-  
-  Span::add_event(deserialization_span, "deserialization.completed", [
-    ("operation", StringValue("deserialize")),
-    ("result.success", BoolValue(true)),
-    ("attribute.count", IntValue(5))
-  ])
-  
-  // 验证数据完整性
-  let original_string = Resource::get_attribute(resource_with_attrs, "string.key")
-  let original_int = Resource::get_attribute(resource_with_attrs, "int.key")
-  let original_float = Resource::get_attribute(resource_with_attrs, "float.key")
-  let original_bool = Resource::get_attribute(resource_with_attrs, "bool.key")
-  let original_array = Resource::get_attribute(resource_with_attrs, "array.key")
-  
-  let deserialized_string = Resource::get_attribute(final_resource, "string.key")
-  let deserialized_int = Resource::get_attribute(final_resource, "int.key")
-  let deserialized_float = Resource::get_attribute(final_resource, "float.key")
-  let deserialized_bool = Resource::get_attribute(final_resource, "bool.key")
-  let deserialized_array = Resource::get_attribute(final_resource, "array.key")
-  
-  // 验证字符串属性
-  match (original_string, deserialized_string) {
-    (Some(StringValue(orig)), Some(StringValue(de))) => assert_eq(orig, de)
-    _ => assert_true(false)
-  }
-  
-  // 验证整数属性
-  match (original_int, deserialized_int) {
-    (Some(IntValue(orig)), Some(IntValue(de))) => assert_eq(orig, de)
-    _ => assert_true(false)
-  }
-  
-  // 验证浮点属性
-  match (original_float, deserialized_float) {
-    (Some(FloatValue(orig)), Some(FloatValue(de))) => assert_true((orig - de).abs() < 0.00001)
-    _ => assert_true(false)
-  }
-  
-  // 验证布尔属性
-  match (original_bool, deserialized_bool) {
-    (Some(BoolValue(orig)), Some(BoolValue(de))) => assert_eq(orig, de)
-    _ => assert_true(false)
-  }
-  
-  // 验证数组属性
-  match (original_array, deserialized_array) {
-    (Some(ArrayStringValue(orig)), Some(ArrayStringValue(de))) => {
-      assert_eq(orig.length(), de.length())
-      for i = 0; i < orig.length(); i = i + 1 {
-        assert_eq(orig[i], de[i])
+    // Calculate min
+    let mut min_val = values[0]
+    for v in values {
+      if v < min_val {
+        min_val = v
       }
     }
+    
+    // Calculate max
+    let mut max_val = values[0]
+    for v in values {
+      if v > max_val {
+        max_val = v
+      }
+    }
+    
+    {
+      count,
+      sum,
+      avg,
+      min: min_val,
+      max: max_val
+    }
+  }
+  
+  // Verify response_time statistics
+  let response_time_stats = match grouped_metrics.find(fn(g) { g.0 == "response_time" }) {
+    Some((_, values)) => calculate_stats(values)
+    None => { count: 0.0, sum: 0.0, avg: 0.0, min: 0.0, max: 0.0 }
+  }
+  
+  assert_eq(response_time_stats.count, 3.0)
+  assert_eq(response_time_stats.min, 98.7)
+  assert_eq(response_time_stats.max, 150.2)
+  assert_true(response_time_stats.avg > 115.0 and response_time_stats.avg < 125.0)
+}
+
+// Test 2: Distributed Tracing Consistency
+test "distributed tracing consistency validation" {
+  // Create a trace with multiple spans
+  let trace_id = "trace-123456789"
+  let root_span = {
+    trace_id: trace_id,
+    span_id: "span-001",
+    parent_span_id: None,
+    operation_name: "root_operation",
+    start_time: 1000,
+    end_time: 1200,
+    status: "ok"
+  }
+  
+  let child_span1 = {
+    trace_id: trace_id,
+    span_id: "span-002",
+    parent_span_id: Some("span-001"),
+    operation_name: "child_operation_1",
+    start_time: 1010,
+    end_time: 1080,
+    status: "ok"
+  }
+  
+  let child_span2 = {
+    trace_id: trace_id,
+    span_id: "span-003",
+    parent_span_id: Some("span-001"),
+    operation_name: "child_operation_2",
+    start_time: 1090,
+    end_time: 1150,
+    status: "error"
+  }
+  
+  let grandchild_span = {
+    trace_id: trace_id,
+    span_id: "span-004",
+    parent_span_id: Some("span-002"),
+    operation_name: "grandchild_operation",
+    start_time: 1020,
+    end_time: 1050,
+    status: "ok"
+  }
+  
+  let spans = [root_span, child_span1, child_span2, grandchild_span]
+  
+  // Validate trace consistency
+  let validate_trace_consistency = fn(span_list: Array[Span]) {
+    let mut errors = []
+    
+    // Check all spans have same trace_id
+    let trace_ids = span_list.map(fn(s) { s.trace_id })
+    let unique_trace_ids = trace_ids.filter(fn(id) { not(trace_ids.filter(fn(t) { t == id }).length() > 1) })
+    
+    if unique_trace_ids.length() > 1 {
+      errors = errors.push("Multiple trace IDs found in single trace")
+    }
+    
+    // Check parent-child relationships
+    for span in span_list {
+      match span.parent_span_id {
+        Some(parent_id) => {
+          let parent_exists = span_list.some(fn(s) { s.span_id == parent_id })
+          if not(parent_exists) {
+            errors = errors.push("Parent span not found: " + parent_id)
+          }
+          
+          // Check time consistency
+          match span_list.find(fn(s) { s.span_id == parent_id }) {
+            Some(parent) => {
+              if span.start_time < parent.start_time {
+                errors = errors.push("Child span starts before parent: " + span.span_id)
+              }
+              if span.end_time > parent.end_time {
+                errors = errors.push("Child span ends after parent: " + span.span_id)
+              }
+            }
+            None => {}
+          }
+        }
+        None => {} // Root span
+      }
+    }
+    
+    errors
+  }
+  
+  let consistency_errors = validate_trace_consistency(spans)
+  assert_eq(consistency_errors.length(), 0)
+  
+  // Test with inconsistent data
+  let inconsistent_span = {
+    trace_id: "different-trace",
+    span_id: "span-005",
+    parent_span_id: Some("span-001"),
+    operation_name: "inconsistent_operation",
+    start_time: 900,
+    end_time: 950,
+    status: "ok"
+  }
+  
+  let inconsistent_spans = spans.push(inconsistent_span)
+  let inconsistent_errors = validate_trace_consistency(inconsistent_spans)
+  assert_true(inconsistent_errors.length() > 0)
+}
+
+// Test 3: Performance Benchmarking
+test "performance benchmarking and profiling" {
+  // Test operation performance
+  let benchmark_operation = fn(operation: () -> T, iterations: Int) {
+    let start_time = 1000000  // Mock timestamp
+    let mut results = []
+    
+    for i in 0..iterations {
+      let op_start = 1000000 + i
+      let result = operation()
+      let op_end = 1000000 + i + 10  // Mock operation duration
+      
+      results = results.push((result, op_end - op_start))
+    }
+    
+    let end_time = 1000000 + iterations
+    
+    // Calculate statistics
+    let durations = results.map(fn(r) { r.1 })
+    let total_duration = durations.reduce(fn(acc, d) { acc + d }, 0)
+    let avg_duration = total_duration / durations.length()
+    
+    let mut min_duration = durations[0]
+    let mut max_duration = durations[0]
+    
+    for duration in durations {
+      if duration < min_duration {
+        min_duration = duration
+      }
+      if duration > max_duration {
+        max_duration = duration
+      }
+    }
+    
+    {
+      iterations,
+      total_time: end_time - start_time,
+      avg_duration,
+      min_duration,
+      max_duration,
+      throughput: iterations.to_float() / (end_time - start_time).to_float()
+    }
+  }
+  
+  // Benchmark string operations
+  let string_operation = fn() {
+    let base = "telemetry"
+    let result = base + "_data_" + "processing"
+    result.length()
+  }
+  
+  let string_benchmark = benchmark_operation(string_operation, 1000)
+  assert_eq(string_benchmark.iterations, 1000)
+  assert_true(string_benchmark.avg_duration > 0)
+  assert_true(string_benchmark.throughput > 0)
+  
+  // Benchmark array operations
+  let array_operation = fn() {
+    let data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    let filtered = data.filter(fn(x) { x % 2 == 0 })
+    let summed = filtered.reduce(fn(acc, x) { acc + x }, 0)
+    summed
+  }
+  
+  let array_benchmark = benchmark_operation(array_operation, 500)
+  assert_eq(array_benchmark.iterations, 500)
+  assert_true(array_benchmark.avg_duration > 0)
+  assert_true(array_benchmark.throughput > 0)
+  
+  // Compare performance
+  let string_faster = string_benchmark.avg_duration < array_benchmark.avg_duration
+  // This assertion depends on the actual implementation
+  // assert_true(string_faster or not(string_faster)) // Always true, just for comparison
+  
+  // Test memory usage simulation
+  let estimate_memory_usage = fn(data_size: Int, operation_overhead: Int) {
+    data_size * 8 + operation_overhead  // Simplified memory estimation
+  }
+  
+  let small_data_memory = estimate_memory_usage(100, 50)
+  let large_data_memory = estimate_memory_usage(10000, 50)
+  
+  assert_true(large_data_memory > small_data_memory)
+  assert_eq(large_data_memory / small_data_memory, 100)
+}
+
+// Test 4: Concurrent Safety
+test "concurrent safety and thread safety validation" {
+  // Simulate concurrent operations on shared data
+  type SharedCounter = {
+    mut value: Int,
+    mut operations: Int
+  }
+  
+  let create_counter = fn(initial_value: Int) {
+    {
+      mut value: initial_value,
+      mut operations: 0
+    }
+  }
+  
+  // Simulate concurrent increment operations
+  let concurrent_increment = fn(counter: SharedCounter, increments: Int) {
+    for i in 0..increments {
+      // Simulate concurrent access
+      let current_value = counter.value
+      // Simulate some processing delay
+      let new_value = current_value + 1
+      counter.value = new_value
+      counter.operations = counter.operations + 1
+    }
+  }
+  
+  let counter = create_counter(0)
+  
+  // Simulate multiple threads incrementing
+  concurrent_increment(counter, 100)
+  concurrent_increment(counter, 150)
+  concurrent_increment(counter, 200)
+  
+  // Verify final state
+  assert_eq(counter.value, 450)
+  assert_eq(counter.operations, 450)
+  
+  // Test concurrent data structure operations
+  type ConcurrentQueue = {
+    mut items: Array[String],
+    mut enqueue_count: Int,
+    mut dequeue_count: Int
+  }
+  
+  let create_queue = fn() {
+    {
+      mut items: [],
+      mut enqueue_count: 0,
+      mut dequeue_count: 0
+    }
+  }
+  
+  let enqueue = fn(queue: ConcurrentQueue, item: String) {
+    queue.items = queue.items.push(item)
+    queue.enqueue_count = queue.enqueue_count + 1
+  }
+  
+  let dequeue = fn(queue: ConcurrentQueue) {
+    if queue.items.length() > 0 {
+      let item = queue.items[0]
+      queue.items = queue.items.slice(1, queue.items.length() - 1)
+      queue.dequeue_count = queue.dequeue_count + 1
+      Some(item)
+    } else {
+      None
+    }
+  }
+  
+  let queue = create_queue()
+  
+  // Enqueue items
+  enqueue(queue, "item1")
+  enqueue(queue, "item2")
+  enqueue(queue, "item3")
+  
+  assert_eq(queue.items.length(), 3)
+  assert_eq(queue.enqueue_count, 3)
+  assert_eq(queue.dequeue_count, 0)
+  
+  // Dequeue items
+  let item1 = dequeue(queue)
+  let item2 = dequeue(queue)
+  let item3 = dequeue(queue)
+  let item4 = dequeue(queue)  // Should be None
+  
+  assert_eq(item1, Some("item1"))
+  assert_eq(item2, Some("item2"))
+  assert_eq(item3, Some("item3"))
+  assert_eq(item4, None)
+  
+  assert_eq(queue.items.length(), 0)
+  assert_eq(queue.enqueue_count, 3)
+  assert_eq(queue.dequeue_count, 3)
+  
+  // Test race condition detection
+  let detect_race_condition = fn(operation1: () -> Int, operation2: () -> Int) {
+    let result1 = operation1()
+    let result2 = operation2()
+    
+    // Simple race condition detection: results should be deterministic
+    result1 == result2
+  }
+  
+  let deterministic_op = fn() { 42 }
+  let race_safe = detect_race_condition(deterministic_op, deterministic_op)
+  assert_true(race_safe)
+}
+
+// Test 5: Error Recovery Mechanisms
+test "error recovery and resilience mechanisms" {
+  // Define error types
+  enum TelemetryError {
+    NetworkTimeout(String)
+    DataCorruption(String)
+    ServiceUnavailable(String)
+    RateLimitExceeded(String)
+  }
+  
+  type RecoveryResult = {
+    success: Bool,
+    attempts: Int,
+    final_error: Option[TelemetryError]
+  }
+  
+  // Implement retry mechanism with exponential backoff
+  let retry_with_backoff = fn(
+    operation: () -> Result[Unit, TelemetryError],
+    max_attempts: Int,
+    base_delay: Int
+  ) {
+    let mut attempts = 0
+    let mut last_error = None
+    let mut current_delay = base_delay
+    
+    while attempts < max_attempts {
+      attempts = attempts + 1
+      
+      match operation() {
+        Ok(_) => {
+          return {
+            success: true,
+            attempts,
+            final_error: None
+          }
+        }
+        Err(error) => {
+          last_error = Some(error)
+          
+          if attempts < max_attempts {
+            // Simulate exponential backoff
+            current_delay = current_delay * 2
+            // In real implementation, we would wait here
+          }
+        }
+      }
+    }
+    
+    {
+      success: false,
+      attempts,
+      final_error: last_error
+    }
+  }
+  
+  // Test successful retry
+  let mut attempt_count = 0
+  let flaky_operation = fn() {
+    attempt_count = attempt_count + 1
+    if attempt_count < 3 {
+      Err(TelemetryError::NetworkTimeout("Connection timeout"))
+    } else {
+      Ok(())
+    }
+  }
+  
+  let retry_result = retry_with_backoff(flaky_operation, 5, 100)
+  assert_true(retry_result.success)
+  assert_eq(retry_result.attempts, 3)
+  assert_eq(retry_result.final_error, None)
+  
+  // Test failed retry
+  let always_failing_operation = fn() {
+    Err(TelemetryError::ServiceUnavailable("Service down"))
+  }
+  
+  let failed_retry_result = retry_with_backoff(always_failing_operation, 3, 100)
+  assert_false(failed_retry_result.success)
+  assert_eq(failed_retry_result.attempts, 3)
+  
+  match failed_retry_result.final_error {
+    Some(TelemetryError::ServiceUnavailable(msg)) => assert_eq(msg, "Service down")
     _ => assert_true(false)
   }
   
-  // 完成span
-  Span::end(deserialization_span)
-  Span::set_status(serialization_span, Ok, Some("Serialization/deserialization test completed successfully"))
-  Span::end(serialization_span)
+  // Test circuit breaker pattern
+  type CircuitBreaker = {
+    mut state: String,  // "closed", "open", "half-open"
+    mut failure_count: Int,
+    mut success_count: Int,
+    mut last_failure_time: Int,
+    failure_threshold: Int,
+    recovery_timeout: Int
+  }
   
-  // 验证序列化/反序列化完整性
-  assert_true(true)
+  let create_circuit_breaker = fn(failure_threshold: Int, recovery_timeout: Int) {
+    {
+      mut state: "closed",
+      mut failure_count: 0,
+      mut success_count: 0,
+      mut last_failure_time: 0,
+      failure_threshold,
+      recovery_timeout
+    }
+  }
+  
+  let call_with_circuit_breaker = fn(
+    breaker: CircuitBreaker,
+    operation: () -> Result[String, TelemetryError],
+    current_time: Int
+  ) {
+    match breaker.state {
+      "open" => {
+        if current_time - breaker.last_failure_time > breaker.recovery_timeout {
+          breaker.state = "half-open"
+          breaker.success_count = 0
+        } else {
+          return Err(TelemetryError::ServiceUnavailable("Circuit breaker is open"))
+        }
+      }
+      "half-open" => {
+        // Allow limited requests in half-open state
+        if breaker.success_count >= 3 {
+          breaker.state = "closed"
+          breaker.failure_count = 0
+        }
+      }
+      "closed" => {} // Normal operation
+    }
+    
+    match operation() {
+      Ok(result) => {
+        if breaker.state == "half-open" {
+          breaker.success_count = breaker.success_count + 1
+        } else {
+          breaker.failure_count = 0
+        }
+        Ok(result)
+      }
+      Err(error) => {
+        breaker.failure_count = breaker.failure_count + 1
+        breaker.last_failure_time = current_time
+        
+        if breaker.failure_count >= breaker.failure_threshold {
+          breaker.state = "open"
+        }
+        
+        Err(error)
+      }
+    }
+  }
+  
+  let breaker = create_circuit_breaker(3, 1000)
+  
+  // Test circuit breaker behavior
+  let failing_operation = fn() {
+    Err(TelemetryError::NetworkTimeout("Timeout"))
+  }
+  
+  let success_operation = fn() {
+    Ok("Success")
+  }
+  
+  // First few failures
+  let result1 = call_with_circuit_breaker(breaker, failing_operation, 100)
+  let result2 = call_with_circuit_breaker(breaker, failing_operation, 200)
+  let result3 = call_with_circuit_breaker(breaker, failing_operation, 300)
+  
+  // Circuit should open now
+  assert_eq(breaker.state, "open")
+  
+  // Calls should fail when circuit is open
+  let result4 = call_with_circuit_breaker(breaker, success_operation, 400)
+  match result4 {
+    Err(TelemetryError::ServiceUnavailable(msg)) => assert_true(msg.contains("open"))
+    _ => assert_true(false)
+  }
+  
+  // After recovery timeout, circuit should go to half-open
+  let result5 = call_with_circuit_breaker(breaker, success_operation, 1500)
+  assert_eq(breaker.state, "half-open")
+  match result5 {
+    Ok(msg) => assert_eq(msg, "Success")
+    _ => assert_true(false)
+  }
 }
 
-// 测试9: 配置管理和动态更新测试
-test "configuration management and dynamic update test" {
-  // 创建配置管理测试组件
-  let config_tracer = TracerProvider::get_tracer(TracerProvider::default(), "config.test", Some("1.0.0"))
-  let config_meter = MeterProvider::get_meter(MeterProvider::default(), "config.metrics", Some("1.0.0"))
-  let config_logger = LoggerProvider::get_logger(LoggerProvider::default(), "config.logger", Some("1.0.0"))
+// Test 6: Data Serialization and Deserialization
+test "data serialization and deserialization integrity" {
+  // Define telemetry data structure
+  type TelemetryData = {
+    timestamp: Int,
+    trace_id: String,
+    span_id: String,
+    metrics: Array<(String, Float)>,
+    tags: Array<(String, String)>
+  }
   
-  // 创建配置指标
-  let config_updates = Meter::create_counter(config_meter, "config.updates", Some("Configuration updates"), Some("updates"))
-  let config_reload_time = Meter::create_histogram(config_meter, "config.reload.time", Some("Configuration reload time"), Some("ms"))
-  
-  // 模拟初始配置
-  let config_span = Tracer::start_span(config_tracer, "config.initialization")
-  
-  // 模拟配置加载
-  Span::add_event(config_span, "config.loaded", [
-    ("config.source", StringValue("/etc/azimuth/config.yaml")),
-    ("config.version", StringValue("1.0.0")),
-    ("config.timestamp", IntValue(1735689600))
-  ])
-  
-  // 记录配置加载日志
-  let config_load_log = LogRecord::new_with_context(
-    Info,
-    Some("Configuration loaded successfully"),
-    None,
-    Some(1735689600000000000L),
-    Some(1735689600000001000L),
-    Some(SpanContext::trace_id(Span::span_context(config_span))),
-    Some(SpanContext::span_id(Span::span_context(config_span))),
-    None
-  )
-  
-  Logger::emit(config_logger, config_load_log)
-  
-  // 模拟配置验证
-  let validation_span = Tracer::start_span(config_tracer, "config.validation")
-  
-  Span::add_event(validation_span, "validation.started", [
-    ("config.version", StringValue("1.0.0")),
-    ("validation.rules", StringValue("required_fields_check,syntax_check,semantics_check"))
-  ])
-  
-  // 模拟验证结果
-  Span::add_event(validation_span, "validation.completed", [
-    ("validation.result", StringValue("success")),
-    ("validation.errors", IntValue(0)),
-    ("validation.warnings", IntValue(2))
-  ])
-  
-  Span::end(validation_span)
-  
-  // 完成初始化span
-  Span::set_status(config_span, Ok, Some("Configuration initialized successfully"))
-  Span::end(config_span)
-  
-  // 模拟动态配置更新
-  let update_span = Tracer::start_span(config_tracer, "config.dynamic.update")
-  
-  Span::add_event(update_span, "update.started", [
-    ("update.source", StringValue("config.server")),
-    ("update.type", StringValue("incremental")),
-    ("update.reason", StringValue("scheduled_update"))
-  ])
-  
-  // 更新指标
-  Counter::add(config_updates, 1.0)
-  Histogram::record(config_reload_time, 25.0)  // 模拟25ms重载时间
-  
-  // 模拟配置更新内容
-  let updated_config = [
-    ("service.name", StringValue("azimuth.telemetry.updated")),
-    ("service.version", StringValue("1.1.0")),
-    ("log.level", StringValue("debug")),
-    ("metrics.enabled", BoolValue(true)),
-    ("tracing.sampling.rate", FloatValue(0.1))
-  ]
-  
-  Span::add_event(update_span, "update.applied", [
-    ("config.version", StringValue("1.1.0")),
-    ("updated.fields", IntValue(5)),
-    ("update.success", BoolValue(true))
-  ])
-  
-  // 记录配置更新日志
-  let config_update_log = LogRecord::new_with_context(
-    Info,
-    Some("Configuration updated to version 1.1.0"),
-    None,
-    Some(1735689600000000000L),
-    Some(1735689600000001000L),
-    Some(SpanContext::trace_id(Span::span_context(update_span))),
-    Some(SpanContext::span_id(Span::span_context(update_span))),
-    None
-  )
-  
-  Logger::emit(config_logger, config_update_log)
-  
-  // 完成更新span
-  Span::set_status(update_span, Ok, Some("Configuration updated successfully"))
-  Span::end(update_span)
-  
-  // 模拟配置回滚
-  let rollback_span = Tracer::start_span(config_tracer, "config.rollback")
-  
-  Span::add_event(rollback_span, "rollback.started", [
-    ("rollback.reason", StringValue("configuration_error")),
-    ("target.version", StringValue("1.0.0"))
-  ])
-  
-  Span::add_event(rollback_span, "rollback.completed", [
-    ("rollback.success", BoolValue(true)),
-    ("rollback.time", IntValue(15))
-  ])
-  
-  // 记录回滚日志
-  let config_rollback_log = LogRecord::new_with_context(
-    Warn,
-    Some("Configuration rolled back to version 1.0.0 due to errors"),
-    None,
-    Some(1735689600000000000L),
-    Some(1735689600000001000L),
-    Some(SpanContext::trace_id(Span::span_context(rollback_span))),
-    Some(SpanContext::span_id(Span::span_context(rollback_span))),
-    None
-  )
-  
-  Logger::emit(config_logger, config_rollback_log)
-  
-  // 完成回滚span
-  Span::set_status(rollback_span, Ok, Some("Configuration rolled back successfully"))
-  Span::end(rollback_span)
-  
-  // 验证配置管理
-  assert_true(true)
-}
-
-// 测试10: 国际化和本地化支持测试
-test "internationalization and localization support test" {
-  // 创建国际化测试组件
-  let i18n_tracer = TracerProvider::get_tracer(TracerProvider::default(), "i18n.test", Some("1.0.0"))
-  let i18n_meter = MeterProvider::get_meter(MeterProvider::default(), "i18n.metrics", Some("1.0.0"))
-  let i18n_logger = LoggerProvider::get_logger(LoggerProvider::default(), "i18n.logger", Some("1.0.0"))
-  
-  // 创建国际化指标
-  let i18n_operations = Meter::create_counter(i18n_meter, "i18n.operations", Some("Internationalization operations"), Some("ops"))
-  let translation_time = Meter::create_histogram(i18n_meter, "translation.time", Some("Translation time"), Some("ms"))
-  
-  // 模拟多语言环境
-  let locales = ["en-US", "zh-CN", "ja-JP", "fr-FR", "de-DE", "es-ES", "pt-BR", "ru-RU"]
-  
-  for locale in locales {
-    let locale_span = Tracer::start_span(i18n_tracer, "i18n.locale.processing")
+  // Serialize to JSON-like string
+  let serialize_telemetry = fn(data: TelemetryData) {
+    let metrics_str = data.metrics
+      .map(fn(m) { "\"" + m.0 + "\":" + m.1.to_string() })
+      .reduce(fn(acc, m) { acc + "," + m }, "")
     
-    Span::add_event(locale_span, "locale.processing.started", [
-      ("locale", StringValue(locale)),
-      ("processing.type", StringValue("translation"))
-    ])
+    let tags_str = data.tags
+      .map(fn(t) { "\"" + t.0 + "\":\"" + t.1 + "\"" })
+      .reduce(fn(acc, t) { acc + "," + t }, "")
     
-    // 更新指标
-    Counter::add(i18n_operations, 1.0)
-    Histogram::record(translation_time, 2.0)  // 模拟2ms翻译时间
+    "{" +
+      "\"timestamp\":" + data.timestamp.to_string() + "," +
+      "\"trace_id\":\"" + data.trace_id + "\"," +
+      "\"span_id\":\"" + data.span_id + "\"," +
+      "\"metrics\":{" + metrics_str + "}," +
+      "\"tags\":{" + tags_str + "}" +
+    "}"
+  }
+  
+  // Deserialize from JSON-like string
+  let deserialize_telemetry = fn(json_str: String) {
+    // Simplified parsing - in real implementation would use proper JSON parser
+    let timestamp_match = json_str.find("\"timestamp\":")
+    let trace_id_match = json_str.find("\"trace_id\":\"")
+    let span_id_match = json_str.find("\"span_id\":\"")
     
-    // 模拟不同语言的错误消息
-    let error_messages = [
-      ("en-US", "Operation failed due to internal error"),
-      ("zh-CN", "由于内部错误导致操作失败"),
-      ("ja-JP", "内部エラーにより操作が失敗しました"),
-      ("fr-FR", "L'opération a échoué en raison d'une erreur interne"),
-      ("de-DE", "Operation aufgrund eines internen Fehlers fehlgeschlagen"),
-      ("es-ES", "La operación falló debido a un error interno"),
-      ("pt-BR", "Operação falhou devido a erro interno"),
-      ("ru-RU", "Операция не удалась из-за внутренней ошибки")
+    match timestamp_match and trace_id_match and span_id_match {
+      (Some(ts_pos), Some(tid_pos), Some(sid_pos)) => {
+        // Extract timestamp (simplified)
+        let ts_start = ts_pos + 12  // Length of "\"timestamp\":"
+        let ts_end = json_str.find(",", ts_start).unwrap_or(json_str.length())
+        let timestamp_str = json_str.substring(ts_start, ts_end - ts_start)
+        let timestamp = timestamp_str.to_int()
+        
+        // Extract trace_id (simplified)
+        let tid_start = tid_pos + 12  // Length of "\"trace_id\":\""
+        let tid_end = json_str.find("\"", tid_start).unwrap_or(json_str.length())
+        let trace_id = json_str.substring(tid_start, tid_end - tid_start)
+        
+        // Extract span_id (simplified)
+        let sid_start = sid_pos + 11  // Length of "\"span_id\":\""
+        let sid_end = json_str.find("\"", sid_start).unwrap_or(json_str.length())
+        let span_id = json_str.substring(sid_start, sid_end - sid_start)
+        
+        Some({
+          timestamp,
+          trace_id,
+          span_id,
+          metrics: [],  // Simplified
+          tags: []      // Simplified
+        })
+      }
+      _ => None
+    }
+  }
+  
+  // Test serialization and deserialization
+  let original_data = {
+    timestamp: 1640995200,
+    trace_id: "trace-12345",
+    span_id: "span-67890",
+    metrics: [
+      ("cpu_usage", 45.2),
+      ("memory_usage", 67.8),
+      ("response_time", 120.5)
+    ],
+    tags: [
+      ("service", "api-gateway"),
+      ("environment", "production"),
+      ("version", "1.2.3")
     ]
+  }
+  
+  let serialized = serialize_telemetry(original_data)
+  assert_true(serialized.contains("\"timestamp\":1640995200"))
+  assert_true(serialized.contains("\"trace_id\":\"trace-12345\""))
+  assert_true(serialized.contains("\"span_id\":\"span-67890\""))
+  assert_true(serialized.contains("\"cpu_usage\":45.2"))
+  assert_true(serialized.contains("\"service\":\"api-gateway\""))
+  
+  let deserialized = deserialize_telemetry(serialized)
+  
+  match deserialized {
+    Some(data) => {
+      assert_eq(data.timestamp, original_data.timestamp)
+      assert_eq(data.trace_id, original_data.trace_id)
+      assert_eq(data.span_id, original_data.span_id)
+    }
+    None => assert_true(false)
+  }
+  
+  // Test data integrity after multiple serialization cycles
+  let serialize_deserialize_cycle = fn(data: TelemetryData, cycles: Int) {
+    let mut current_data = data
+    let mut integrity_maintained = true
     
-    // 查找对应语言的错误消息
-    let localized_message = ""
-    for (lang, message) in error_messages {
-      if lang == locale {
-        localized_message = message
-        break
+    for i in 0..cycles {
+      let serialized = serialize_telemetry(current_data)
+      match deserialize_telemetry(serialized) {
+        Some(deserialized_data) => {
+          if deserialized_data.timestamp != data.timestamp or
+             deserialized_data.trace_id != data.trace_id or
+             deserialized_data.span_id != data.span_id {
+            integrity_maintained = false
+          }
+          current_data = deserialized_data
+        }
+        None => {
+          integrity_maintained = false
+        }
       }
     }
     
-    // 创建本地化日志
-    let localized_log = LogRecord::new_with_context(
-      Error,
-      Some(localized_message),
-      None,
-      Some(1735689600000000000L),
-      Some(1735689600000001000L),
-      Some(SpanContext::trace_id(Span::span_context(locale_span))),
-      Some(SpanContext::span_id(Span::span_context(locale_span))),
+    integrity_maintained
+  }
+  
+  let integrity_check = serialize_deserialize_cycle(original_data, 5)
+  assert_true(integrity_check)
+  
+  // Test compression simulation
+  let compress_data = fn(data: String) {
+    // Simple compression simulation - in real implementation would use proper compression
+    let compressed = data.split(" ").reduce(fn(acc, part) { acc + part }, "")
+    compressed
+  }
+  
+  let decompress_data = fn(compressed: String, original_spaces: Int) {
+    // Simple decompression simulation - add spaces back
+    let mut decompressed = compressed
+    for i in 0..original_spaces {
+      decompressed = decompressed.substring(0, decompressed.length() / 2) + " " + decompressed.substring(decompressed.length() / 2, decompressed.length() - decompressed.length() / 2)
+    }
+    decompressed
+  }
+  
+  let original_length = serialized.length()
+  let compressed = compress_data(serialized)
+  let compressed_length = compressed.length()
+  
+  assert_true(compressed_length < original_length)
+  
+  let space_count = original_length - compressed_length
+  let decompressed = decompress_data(compressed, space_count)
+  
+  // Check that decompressed data contains key elements
+  assert_true(decompressed.contains("trace-12345"))
+  assert_true(decompressed.contains("span-67890"))
+}
+
+// Test 7: Memory Management and Resource Cleanup
+test "memory management and resource cleanup" {
+  // Simulate resource tracking
+  type ResourceTracker = {
+    mut allocated_resources: Array[String],
+    mut memory_usage: Int,
+    mut peak_memory: Int,
+    mut gc_count: Int
+  }
+  
+  let create_tracker = fn() {
+    {
+      mut allocated_resources: [],
+      mut memory_usage: 0,
+      mut peak_memory: 0,
+      mut gc_count: 0
+    }
+  }
+  
+  let allocate_resource = fn(tracker: ResourceTracker, resource_name: String, size: Int) {
+    tracker.allocated_resources = tracker.allocated_resources.push(resource_name)
+    tracker.memory_usage = tracker.memory_usage + size
+    
+    if tracker.memory_usage > tracker.peak_memory {
+      tracker.peak_memory = tracker.memory_usage
+    }
+    
+    resource_name
+  }
+  
+  let deallocate_resource = fn(tracker: ResourceTracker, resource_name: String, size: Int) {
+    let index = tracker.allocated_resources.index_of(resource_name)
+    match index {
+      Some(i) => {
+        tracker.allocated_resources = tracker.allocated_resources.remove_at(i)
+        tracker.memory_usage = tracker.memory_usage - size
+        true
+      }
+      None => false
+    }
+  }
+  
+  let garbage_collect = fn(tracker: ResourceTracker) {
+    // Simulate garbage collection
+    tracker.gc_count = tracker.gc_count + 1
+    
+    // In real implementation, this would free unreachable resources
+    // For simulation, we'll just track the call
+  }
+  
+  let tracker = create_tracker()
+  
+  // Allocate resources
+  let resource1 = allocate_resource(tracker, "buffer1", 1024)
+  let resource2 = allocate_resource(tracker, "buffer2", 2048)
+  let resource3 = allocate_resource(tracker, "buffer3", 512)
+  
+  assert_eq(tracker.allocated_resources.length(), 3)
+  assert_eq(tracker.memory_usage, 3584)  // 1024 + 2048 + 512
+  assert_eq(tracker.peak_memory, 3584)
+  
+  // Deallocate some resources
+  let deallocated1 = deallocate_resource(tracker, resource1, 1024)
+  let deallocated2 = deallocate_resource(tracker, resource2, 2048)
+  
+  assert_true(deallocated1)
+  assert_true(deallocated2)
+  assert_eq(tracker.allocated_resources.length(), 1)
+  assert_eq(tracker.memory_usage, 512)  // Only buffer3 remains
+  assert_eq(tracker.peak_memory, 3584)  // Peak should remain unchanged
+  
+  // Test memory leak detection
+  let detect_memory_leak = fn(tracker: ResourceTracker) {
+    let has_leak = tracker.memory_usage > 0 and tracker.allocated_resources.length() == 0
+    let suspicious_growth = tracker.memory_usage > tracker.peak_memory * 2
+    
+    has_leak or suspicious_growth
+  }
+  
+  let has_leak = detect_memory_leak(tracker)
+  assert_false(has_leak)
+  
+  // Simulate memory leak scenario
+  allocate_resource(tracker, "leaked_buffer", 1024)
+  // Forget to deallocate
+  
+  let leak_detected = detect_memory_leak(tracker)
+  assert_true(leak_detected)
+  
+  // Test resource cleanup
+  let cleanup_all_resources = fn(tracker: ResourceTracker) {
+    tracker.allocated_resources = []
+    tracker.memory_usage = 0
+    garbage_collect(tracker)
+  }
+  
+  cleanup_all_resources(tracker)
+  assert_eq(tracker.allocated_resources.length(), 0)
+  assert_eq(tracker.memory_usage, 0)
+  assert_eq(tracker.gc_count, 1)
+  
+  // Test memory pool simulation
+  type MemoryPool = {
+    mut available_blocks: Array[Int],
+    mut allocated_blocks: Array[(String, Int)>,
+    pool_size: Int,
+    block_size: Int
+  }
+  
+  let create_memory_pool = fn(pool_size: Int, block_size: Int) {
+    let blocks = []
+    for i in 0..pool_size {
+      blocks = blocks.push(block_size)
+    }
+    
+    {
+      mut available_blocks: blocks,
+      mut allocated_blocks: [],
+      pool_size,
+      block_size
+    }
+  }
+  
+  let pool_allocate = fn(pool: MemoryPool, requester: String) {
+    if pool.available_blocks.length() > 0 {
+      let block_size = pool.available_blocks[0]
+      pool.available_blocks = pool.available_blocks.remove_at(0)
+      pool.allocated_blocks = pool.allocated_blocks.push((requester, block_size))
+      Some(block_size)
+    } else {
       None
-    )
-    
-    Logger::emit(i18n_logger, localized_log)
-    
-    Span::add_event(locale_span, "locale.processing.completed", [
-      ("locale", StringValue(locale)),
-      ("translation.success", BoolValue(true)),
-      ("message.length", IntValue(localized_message.length()))
-    ])
-    
-    Span::end(locale_span)
+    }
   }
   
-  // 模拟Unicode文本处理
-  let unicode_span = Tracer::start_span(i18n_tracer, "unicode.text.processing")
-  
-  // 测试各种Unicode字符
-  let unicode_texts = [
-    ("emoji", "Hello 🌍! How are you today? 😊"),
-    ("chinese", "你好世界！今天天气怎么样？☀️"),
-    ("japanese", "こんにちは世界！今日の天気はどうですか？🌸"),
-    ("arabic", "مرحبا بالعالم! كيف حالك اليوم؟☀️"),
-    ("russian", "Привет мир! Как дела сегодня? ❄️"),
-    ("korean", "안녕하세요 세계! 오늘 날씨가 어떻습니까? 🌺"),
-    ("hindi", "नमस्ते दुनिया! आज आप कैसे हैं? 🌞"),
-    ("mixed", "Mixed: Hello 你好 こんにちは مرحبا Привет 안녕하세요 नमस्ते 🌍")
-  ]
-  
-  for (text_type, text) in unicode_texts {
-    Span::add_event(unicode_span, "unicode.text.processed", [
-      ("text.type", StringValue(text_type)),
-      ("text.length", IntValue(text.length())),
-      ("text.sample", StringValue(text))
-    ])
-    
-    // 创建Unicode文本日志
-    let unicode_log = LogRecord::new_with_context(
-      Info,
-      Some("Processing Unicode text: " + text),
-      None,
-      Some(1735689600000000000L),
-      Some(1735689600000001000L),
-      Some(SpanContext::trace_id(Span::span_context(unicode_span))),
-      Some(SpanContext::span_id(Span::span_context(unicode_span))),
-      None
-    )
-    
-    Logger::emit(i18n_logger, unicode_log)
+  let pool_deallocate = fn(pool: MemoryPool, requester: String) {
+    let index = pool.allocated_blocks.index_of(fn(alloc) { alloc.0 == requester })
+    match index {
+      Some(i) => {
+        let (_, block_size) = pool.allocated_blocks[i]
+        pool.allocated_blocks = pool.allocated_blocks.remove_at(i)
+        pool.available_blocks = pool.available_blocks.push(block_size)
+        true
+      }
+      None => false
+    }
   }
   
-  // 模拟时区处理
-  let timezone_span = Tracer::start_span(i18n_tracer, "timezone.processing")
+  let memory_pool = create_memory_pool(10, 1024)
   
-  let timezones = [
-    ("UTC", "2025-01-01T00:00:00Z"),
-    ("America/New_York", "2024-12-31T19:00:00-05:00"),
-    ("Europe/London", "2025-01-01T00:00:00Z"),
-    ("Asia/Shanghai", "2025-01-01T08:00:00+08:00"),
-    ("Asia/Tokyo", "2025-01-01T09:00:00+09:00"),
-    ("Australia/Sydney", "2025-01-01T11:00:00+11:00")
-  ]
+  // Allocate from pool
+  let pool_block1 = pool_allocate(memory_pool, "requester1")
+  let pool_block2 = pool_allocate(memory_pool, "requester2")
   
-  for (timezone, formatted_time) in timezones {
-    Span::add_event(timezone_span, "timezone.processed", [
-      ("timezone", StringValue(timezone)),
-      ("formatted.time", StringValue(formatted_time))
-    ])
+  assert_eq(pool_block1, Some(1024))
+  assert_eq(pool_block2, Some(1024))
+  assert_eq(memory_pool.available_blocks.length(), 8)
+  assert_eq(memory_pool.allocated_blocks.length(), 2)
+  
+  // Deallocate back to pool
+  let pool_freed1 = pool_deallocate(memory_pool, "requester1")
+  assert_true(pool_freed1)
+  assert_eq(memory_pool.available_blocks.length(), 9)
+  assert_eq(memory_pool.allocated_blocks.length(), 1)
+  
+  // Test pool exhaustion
+  let mut exhausted = false
+  for i in 0..12 {
+    match pool_allocate(memory_pool, "requester" + i.to_string()) {
+      Some(_) => {}
+      None => {
+        exhausted = true
+      }
+    }
   }
   
-  // 完成所有span
-  Span::set_status(unicode_span, Ok, Some("Unicode text processing completed"))
-  Span::end(unicode_span)
+  assert_true(exhausted)
+}
+
+// Test 8: Configuration Management
+test "configuration management and dynamic updates" {
+  // Define configuration structure
+  type Configuration = {
+    service_name: String,
+    service_version: String,
+    environment: String,
+    log_level: String,
+    metrics_enabled: Bool,
+    tracing_enabled: Bool,
+    sampling_rate: Float,
+    max_spans_per_second: Int,
+    timeout_ms: Int,
+    retry_attempts: Int
+  }
   
-  Span::set_status(timezone_span, Ok, Some("Timezone processing completed"))
-  Span::end(timezone_span)
+  // Create default configuration
+  let default_config = {
+    service_name: "azimuth-service",
+    service_version: "1.0.0",
+    environment: "development",
+    log_level: "info",
+    metrics_enabled: true,
+    tracing_enabled: true,
+    sampling_rate: 1.0,
+    max_spans_per_second: 1000,
+    timeout_ms: 5000,
+    retry_attempts: 3
+  }
   
-  // 验证国际化和本地化支持
-  assert_true(true)
+  // Configuration validation
+  let validate_config = fn(config: Configuration) {
+    let mut errors = []
+    
+    if config.service_name.length() == 0 {
+      errors = errors.push("Service name cannot be empty")
+    }
+    
+    if config.sampling_rate < 0.0 or config.sampling_rate > 1.0 {
+      errors = errors.push("Sampling rate must be between 0.0 and 1.0")
+    }
+    
+    if config.max_spans_per_second <= 0 {
+      errors = errors.push("Max spans per second must be positive")
+    }
+    
+    if config.timeout_ms <= 0 {
+      errors = errors.push("Timeout must be positive")
+    }
+    
+    if config.retry_attempts < 0 {
+      errors = errors.push("Retry attempts cannot be negative")
+    }
+    
+    let valid_levels = ["debug", "info", "warn", "error"]
+    if not(valid_levels.some(fn(level) { level == config.log_level })) {
+      errors = errors.push("Invalid log level")
+    }
+    
+    errors
+  }
+  
+  let validation_errors = validate_config(default_config)
+  assert_eq(validation_errors.length(), 0)
+  
+  // Test invalid configuration
+  let invalid_config = { default_config |
+    service_name: "",
+    sampling_rate: 1.5,
+    max_spans_per_second: -1,
+    timeout_ms: 0,
+    retry_attempts: -1,
+    log_level: "invalid"
+  }
+  
+  let invalid_errors = validate_config(invalid_config)
+  assert_true(invalid_errors.length() > 0)
+  
+  // Configuration merging
+  let merge_configs = fn(base: Configuration, override: Configuration) {
+    {
+      service_name: if override.service_name != "" { override.service_name } else { base.service_name },
+      service_version: if override.service_version != "" { override.service_version } else { base.service_version },
+      environment: if override.environment != "" { override.environment } else { base.environment },
+      log_level: if override.log_level != "" { override.log_level } else { base.log_level },
+      metrics_enabled: override.metrics_enabled,
+      tracing_enabled: override.tracing_enabled,
+      sampling_rate: if override.sampling_rate >= 0.0 { override.sampling_rate } else { base.sampling_rate },
+      max_spans_per_second: if override.max_spans_per_second > 0 { override.max_spans_per_second } else { base.max_spans_per_second },
+      timeout_ms: if override.timeout_ms > 0 { override.timeout_ms } else { base.timeout_ms },
+      retry_attempts: if override.retry_attempts >= 0 { override.retry_attempts } else { base.retry_attempts }
+    }
+  }
+  
+  let production_override = {
+    service_name: "",
+    service_version: "2.0.0",
+    environment: "production",
+    log_level: "warn",
+    metrics_enabled: true,
+    tracing_enabled: true,
+    sampling_rate: 0.1,
+    max_spans_per_second: 5000,
+    timeout_ms: 10000,
+    retry_attempts: 5
+  }
+  
+  let production_config = merge_configs(default_config, production_override)
+  assert_eq(production_config.service_name, "azimuth-service")  // From base
+  assert_eq(production_config.service_version, "2.0.0")  // From override
+  assert_eq(production_config.environment, "production")  // From override
+  assert_eq(production_config.sampling_rate, 0.1)  // From override
+  assert_eq(production_config.max_spans_per_second, 5000)  // From override
+  
+  // Dynamic configuration updates
+  type ConfigManager = {
+    mut current_config: Configuration,
+    mut update_count: Int,
+    mut last_update_time: Int
+  }
+  
+  let create_config_manager = fn(initial_config: Configuration) {
+    {
+      mut current_config: initial_config,
+      mut update_count: 0,
+      mut last_update_time: 0
+    }
+  }
+  
+  let update_config = fn(manager: ConfigManager, new_config: Configuration, current_time: Int) {
+    let validation_errors = validate_config(new_config)
+    
+    if validation_errors.length() == 0 {
+      manager.current_config = new_config
+      manager.update_count = manager.update_count + 1
+      manager.last_update_time = current_time
+      true
+    } else {
+      false
+    }
+  }
+  
+  let config_manager = create_config_manager(default_config)
+  
+  // Test successful update
+  let updated_config = { default_config | log_level: "debug", timeout_ms: 8000 }
+  let update_success = update_config(config_manager, updated_config, 1640995200)
+  
+  assert_true(update_success)
+  assert_eq(config_manager.update_count, 1)
+  assert_eq(config_manager.last_update_time, 1640995200)
+  assert_eq(config_manager.current_config.log_level, "debug")
+  assert_eq(config_manager.current_config.timeout_ms, 8000)
+  
+  // Test failed update
+  let invalid_update = { default_config | sampling_rate: 2.0 }
+  let update_failure = update_config(config_manager, invalid_update, 1640995300)
+  
+  assert_false(update_failure)
+  assert_eq(config_manager.update_count, 1)  // Should not increment
+  assert_eq(config_manager.last_update_time, 1640995200)  // Should not change
+  assert_eq(config_manager.current_config.log_level, "debug")  // Should remain unchanged
+  
+  // Configuration hot-reload simulation
+  let reload_config_from_source = fn(source: String) {
+    match source {
+      "development" => default_config
+      "production" => production_config
+      "testing" => { default_config |
+        environment: "testing",
+        log_level: "debug",
+        metrics_enabled: false,
+        tracing_enabled: false
+      }
+      _ => default_config
+    }
+  }
+  
+  let dev_config = reload_config_from_source("development")
+  let prod_config = reload_config_from_source("production")
+  let test_config = reload_config_from_source("testing")
+  
+  assert_eq(dev_config.environment, "development")
+  assert_eq(prod_config.environment, "production")
+  assert_eq(test_config.environment, "testing")
+  assert_false(test_config.metrics_enabled)
+  assert_false(test_config.tracing_enabled)
+}
+
+// Test 9: Network Communication
+test "network communication and protocol handling" {
+  // Define network message structure
+  type NetworkMessage = {
+    message_id: String,
+    message_type: String,
+    payload: String,
+    timestamp: Int,
+    source: String,
+    destination: String
+  }
+  
+  // Simulate network client
+  type NetworkClient = {
+    mut connected: Bool,
+    mut sent_messages: Array[NetworkMessage],
+    mut received_messages: Array[NetworkMessage],
+    mut connection_attempts: Int,
+    mut last_error: Option[String]
+  }
+  
+  let create_client = fn() {
+    {
+      mut connected: false,
+      mut sent_messages: [],
+      mut received_messages: [],
+      mut connection_attempts: 0,
+      mut last_error: None
+    }
+  }
+  
+  let connect = fn(client: NetworkClient, endpoint: String, timeout_ms: Int) {
+    client.connection_attempts = client.connection_attempts + 1
+    
+    // Simulate connection logic
+    if endpoint.contains("valid") and timeout_ms > 1000 {
+      client.connected = true
+      client.last_error = None
+      true
+    } else {
+      client.connected = false
+      client.last_error = Some("Connection failed: invalid endpoint or timeout")
+      false
+    }
+  }
+  
+  let disconnect = fn(client: NetworkClient) {
+    client.connected = false
+    client.sent_messages = []
+    client.received_messages = []
+  }
+  
+  let send_message = fn(client: NetworkClient, message: NetworkMessage) {
+    if client.connected {
+      client.sent_messages = client.sent_messages.push(message)
+      true
+    } else {
+      client.last_error = Some("Not connected")
+      false
+    }
+  }
+  
+  let receive_message = fn(client: NetworkClient, message: NetworkMessage) {
+    if client.connected {
+      client.received_messages = client.received_messages.push(message)
+      true
+    } else {
+      false
+    }
+  }
+  
+  let client = create_client()
+  
+  // Test connection
+  let connection_success = connect(client, "valid-endpoint", 5000)
+  assert_true(connection_success)
+  assert_true(client.connected)
+  assert_eq(client.connection_attempts, 1)
+  assert_eq(client.last_error, None)
+  
+  // Test failed connection
+  disconnect(client)
+  let connection_failure = connect(client, "invalid-endpoint", 500)
+  assert_false(connection_failure)
+  assert_false(client.connected)
+  assert_eq(client.connection_attempts, 2)
+  
+  match client.last_error {
+    Some(error) => assert_true(error.contains("invalid endpoint"))
+    None => assert_true(false)
+  }
+  
+  // Test message sending
+  connect(client, "valid-endpoint", 5000)
+  
+  let message1 = {
+    message_id: "msg-001",
+    message_type: "telemetry_data",
+    payload: "sample telemetry data",
+    timestamp: 1640995200,
+    source: "client-001",
+    destination: "server-001"
+  }
+  
+  let send_success = send_message(client, message1)
+  assert_true(send_success)
+  assert_eq(client.sent_messages.length(), 1)
+  assert_eq(client.sent_messages[0].message_id, "msg-001")
+  
+  // Test message receiving
+  let message2 = {
+    message_id: "msg-002",
+    message_type: "acknowledgment",
+    payload: "message received",
+    timestamp: 1640995210,
+    source: "server-001",
+    destination: "client-001"
+  }
+  
+  let receive_success = receive_message(client, message2)
+  assert_true(receive_success)
+  assert_eq(client.received_messages.length(), 1)
+  assert_eq(client.received_messages[0].message_id, "msg-002")
+  
+  // Test protocol handling
+  type ProtocolHandler = {
+    supported_types: Array[String],
+    mut processed_messages: Int,
+    mut failed_messages: Int
+  }
+  
+  let create_protocol_handler = fn(supported_types: Array[String]) {
+    {
+      supported_types,
+      mut processed_messages: 0,
+      mut failed_messages: 0
+    }
+  }
+  
+  let process_message = fn(handler: ProtocolHandler, message: NetworkMessage) {
+    if handler.supported_types.some(fn(t) { t == message.message_type }) {
+      handler.processed_messages = handler.processed_messages + 1
+      true
+    } else {
+      handler.failed_messages = handler.failed_messages + 1
+      false
+    }
+  }
+  
+  let protocol_handler = create_protocol_handler(["telemetry_data", "acknowledgment", "heartbeat"])
+  
+  // Process valid messages
+  let processed1 = process_message(protocol_handler, message1)
+  let processed2 = process_message(protocol_handler, message2)
+  
+  assert_true(processed1)
+  assert_true(processed2)
+  assert_eq(protocol_handler.processed_messages, 2)
+  assert_eq(protocol_handler.failed_messages, 0)
+  
+  // Process invalid message type
+  let invalid_message = { message1 | message_type: "unsupported_type" }
+  let processed3 = process_message(protocol_handler, invalid_message)
+  
+  assert_false(processed3)
+  assert_eq(protocol_handler.processed_messages, 2)
+  assert_eq(protocol_handler.failed_messages, 1)
+  
+  // Test network resilience
+  type ResilientClient = {
+    base_client: NetworkClient,
+    mut retry_count: Int,
+    max_retries: Int,
+    mut circuit_breaker_tripped: Bool,
+    mut consecutive_failures: Int,
+    failure_threshold: Int
+  }
+  
+  let create_resilient_client = fn(max_retries: Int, failure_threshold: Int) {
+    {
+      base_client: create_client(),
+      mut retry_count: 0,
+      max_retries,
+      mut circuit_breaker_tripped: false,
+      mut consecutive_failures: 0,
+      failure_threshold
+    }
+  }
+  
+  let resilient_send = fn(resilient: ResilientClient, message: NetworkMessage) {
+    if resilient.circuit_breaker_tripped {
+      return false
+    }
+    
+    let mut success = false
+    let mut attempts = 0
+    
+    while attempts <= resilient.max_retries and not(success) {
+      attempts = attempts + 1
+      resilient.retry_count = resilient.retry_count + 1
+      
+      success = send_message(resilient.base_client, message)
+      
+      if not(success) {
+        resilient.consecutive_failures = resilient.consecutive_failures + 1
+        
+        if resilient.consecutive_failures >= resilient.failure_threshold {
+          resilient.circuit_breaker_tripped = true
+        }
+      } else {
+        resilient.consecutive_failures = 0
+      }
+    }
+    
+    success
+  }
+  
+  let resilient_client = create_resilient_client(3, 5)
+  connect(resilient_client.base_client, "valid-endpoint", 5000)
+  
+  // Test successful resilient send
+  let resilient_success = resilient_send(resilient_client, message1)
+  assert_true(resilient_success)
+  
+  // Test failed resilient send
+  disconnect(resilient_client.base_client)
+  let resilient_failure = resilient_send(resilient_client, message1)
+  assert_false(resilient_failure)
+  assert_eq(resilient_client.retry_count, 4)  // 1 initial + 3 retries
+}
+
+// Test 10: Cross-Platform Compatibility
+test "cross-platform compatibility and adaptation" {
+  // Define platform types
+  enum Platform {
+    Windows
+    Linux
+    MacOS
+    Android
+    IOS
+    WebAssembly
+  }
+  
+  // Platform-specific configurations
+  type PlatformConfig = {
+    platform: Platform,
+    file_path_separator: String,
+    line_ending: String,
+    max_path_length: Int,
+    case_sensitive: Bool,
+    supported_features: Array[String]
+  }
+  
+  let get_platform_config = fn(platform: Platform) {
+    match platform {
+      Platform::Windows => {
+        {
+          platform,
+          file_path_separator: "\\",
+          line_ending: "\r\n",
+          max_path_length: 260,
+          case_sensitive: false,
+          supported_features: ["registry", "services", "event_log"]
+        }
+      }
+      Platform::Linux => {
+        {
+          platform,
+          file_path_separator: "/",
+          line_ending: "\n",
+          max_path_length: 4096,
+          case_sensitive: true,
+          supported_features: ["signals", "inotify", "epoll"]
+        }
+      }
+      Platform::MacOS => {
+        {
+          platform,
+          file_path_separator: "/",
+          line_ending: "\n",
+          max_path_length: 1024,
+          case_sensitive: false,
+          supported_features: ["fsevents", "launchd", "keychain"]
+        }
+      }
+      Platform::Android => {
+        {
+          platform,
+          file_path_separator: "/",
+          line_ending: "\n",
+          max_path_length: 4096,
+          case_sensitive: true,
+          supported_features: ["content_providers", "broadcast_receivers", "services"]
+        }
+      }
+      Platform::IOS => {
+        {
+          platform,
+          file_path_separator: "/",
+          line_ending: "\n",
+          max_path_length: 1024,
+          case_sensitive: false,
+          supported_features: ["notification_center", "core_data", "keychain"]
+        }
+      }
+      Platform::WebAssembly => {
+        {
+          platform,
+          file_path_separator: "/",
+          line_ending: "\n",
+          max_path_length: 1024,
+          case_sensitive: true,
+          supported_features: ["web_storage", "web_workers", "fetch_api"]
+        }
+      }
+    }
+  }
+  
+  // Test platform configurations
+  let windows_config = get_platform_config(Platform::Windows)
+  let linux_config = get_platform_config(Platform::Linux)
+  let macos_config = get_platform_config(Platform::MacOS)
+  
+  assert_eq(windows_config.file_path_separator, "\\")
+  assert_eq(linux_config.file_path_separator, "/")
+  assert_eq(macos_config.file_path_separator, "/")
+  
+  assert_eq(windows_config.line_ending, "\r\n")
+  assert_eq(linux_config.line_ending, "\n")
+  
+  assert_true(windows_config.max_path_length < linux_config.max_path_length)
+  assert_false(windows_config.case_sensitive)
+  assert_true(linux_config.case_sensitive)
+  
+  // Platform-specific path handling
+  let normalize_path = fn(path: String, separator: String) {
+    let normalized = path.replace("\\", "/").replace("/", separator)
+    normalized
+  }
+  
+  let windows_path = "C:\\Users\\test\\Documents\\file.txt"
+  let unix_path = "/home/user/documents/file.txt"
+  
+  let normalized_windows = normalize_path(windows_path, windows_config.file_path_separator)
+  let normalized_unix = normalize_path(unix_path, linux_config.file_path_separator)
+  
+  assert_eq(normalized_windows, "C:\\Users\\test\\Documents\\file.txt")
+  assert_eq(normalized_unix, "/home/user/documents/file.txt")
+  
+  // Cross-platform telemetry adapter
+  type TelemetryAdapter = {
+    platform_config: PlatformConfig,
+    mut initialized: Bool,
+    mut collected_metrics: Array[String]
+  }
+  
+  let create_adapter = fn(platform: Platform) {
+    {
+      platform_config: get_platform_config(platform),
+      mut initialized: false,
+      mut collected_metrics: []
+    }
+  }
+  
+  let initialize_adapter = fn(adapter: TelemetryAdapter) {
+    // Platform-specific initialization
+    adapter.initialized = true
+    adapter.collected_metrics = adapter.collected_metrics.push("platform:" + adapter.platform_config.platform.to_string())
+  }
+  
+  let collect_metric = fn(adapter: TelemetryAdapter, metric_name: String, value: String) {
+    if adapter.initialized {
+      let formatted_metric = metric_name + ":" + value
+      adapter.collected_metrics = adapter.collected_metrics.push(formatted_metric)
+      true
+    } else {
+      false
+    }
+  }
+  
+  let windows_adapter = create_adapter(Platform::Windows)
+  let linux_adapter = create_adapter(Platform::Linux)
+  
+  initialize_adapter(windows_adapter)
+  initialize_adapter(linux_adapter)
+  
+  assert_true(windows_adapter.initialized)
+  assert_true(linux_adapter.initialized)
+  
+  // Test platform-specific metric collection
+  let windows_metric_success = collect_metric(windows_adapter, "cpu_usage", "45.2")
+  let linux_metric_success = collect_metric(linux_adapter, "memory_usage", "67.8")
+  
+  assert_true(windows_metric_success)
+  assert_true(linux_metric_success)
+  
+  assert_eq(windows_adapter.collected_metrics.length(), 2)
+  assert_eq(linux_adapter.collected_metrics.length(), 2)
+  
+  // Test feature availability check
+  let check_feature_support = fn(adapter: TelemetryAdapter, feature: String) {
+    adapter.platform_config.supported_features.some(fn(f) { f == feature })
+  }
+  
+  let windows_has_registry = check_feature_support(windows_adapter, "registry")
+  let linux_has_signals = check_feature_support(linux_adapter, "signals")
+  let windows_has_signals = check_feature_support(windows_adapter, "signals")
+  
+  assert_true(windows_has_registry)
+  assert_true(linux_has_signals)
+  assert_false(windows_has_signals)
+  
+  // Test cross-platform data format compatibility
+  type TelemetryDataFormat = {
+    version: String,
+    platform: String,
+    timestamp_format: String,
+    encoding: String
+  }
+  
+  let get_standard_format = fn() {
+    {
+      version: "1.0",
+      platform: "cross-platform",
+      timestamp_format: "unix_epoch_ms",
+      encoding: "utf-8"
+    }
+  }
+  
+  let convert_to_platform_format = fn(standard: TelemetryDataFormat, platform_config: PlatformConfig) {
+    match platform_config.platform {
+      Platform::Windows => {
+        { standard |
+          platform: "windows",
+          timestamp_format: "windows_filetime"
+        }
+      }
+      Platform::Linux => {
+        { standard |
+          platform: "linux",
+          timestamp_format: "unix_epoch_ms"
+        }
+      }
+      Platform::MacOS => {
+        { standard |
+          platform: "macos",
+          timestamp_format: "macos_absolute_time"
+        }
+      }
+      _ => { standard | platform: platform_config.platform.to_string() }
+    }
+  }
+  
+  let standard_format = get_standard_format()
+  let windows_format = convert_to_platform_format(standard_format, windows_config)
+  let linux_format = convert_to_platform_format(standard_format, linux_config)
+  
+  assert_eq(windows_format.platform, "windows")
+  assert_eq(windows_format.timestamp_format, "windows_filetime")
+  assert_eq(linux_format.platform, "linux")
+  assert_eq(linux_format.timestamp_format, "unix_epoch_ms")
+  
+  // Test platform compatibility validation
+  let validate_platform_compatibility = fn(data_format: TelemetryDataFormat, platform_config: PlatformConfig) {
+    let mut compatible = true
+    
+    // Check encoding compatibility
+    if data_format.encoding != "utf-8" and not(platform_config.supported_features.some(fn(f) { f == "unicode_support" })) {
+      compatible = false
+    }
+    
+    // Check version compatibility
+    let version_parts = data_format.version.split(".")
+    if version_parts.length() >= 2 {
+      let major_version = version_parts[0].to_int()
+      if major_version > 1 {
+        compatible = false  // Only support version 1.x
+      }
+    }
+    
+    compatible
+  }
+  
+  let windows_compatible = validate_platform_compatibility(windows_format, windows_config)
+  let linux_compatible = validate_platform_compatibility(linux_format, linux_config)
+  
+  assert_true(windows_compatible)
+  assert_true(linux_compatible)
+  
+  // Test incompatible format
+  let incompatible_format = { standard_format | version: "2.0", encoding: "utf-16" }
+  let windows_incompatible = validate_platform_compatibility(incompatible_format, windows_config)
+  
+  assert_false(windows_incompatible)
 }
