@@ -1160,6 +1160,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_essential_tests.mbt": {
   },
+  "azimuth_essential_feature_tests.mbt": {
+  },
   "azimuth_error_recovery_tests.mbt": {
   },
   "azimuth_error_recovery_resilience_tests.mbt": {
