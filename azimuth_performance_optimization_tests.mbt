@@ -1,507 +1,311 @@
-// Azimuth 性能优化测试用例
-// 测试系统性能优化和效率改进功能
+// Azimuth Telemetry System - Performance Optimization Tests
+// This file contains comprehensive test cases for performance optimization functionality
 
-// 测试1: 内存使用优化
-test "内存使用优化" {
-  // 创建大量数据对象
-  let large_dataset = []
-  for i in 0..10000 {
-    large_dataset = large_dataset.push((
-      "item." + i.to_string(),
-      StructValue({
-        fields = [
-          ("id", IntValue(i)),
-          ("name", StringValue("Item " + i.to_string())),
-          ("value", FloatValue(i * 1.5)),
-          ("active", BoolValue(i % 2 == 0))
-        ]
-      })
-    ))
-  }
+// Test 1: Memory Pool Management
+test "memory pool management" {
+  let pool = MemoryPool::new(1000) // Pool with 1000 objects
   
-  // 验证数据集大小
-  assert_eq(large_dataset.length(), 10000)
+  // Test object allocation from pool
+  let obj1 = MemoryPool::allocate(pool)
+  let obj2 = MemoryPool::allocate(pool)
+  let obj3 = MemoryPool::allocate(pool)
   
-  // 测试内存高效遍历
-  let mut sum = 0
-  let start_time = get_current_timestamp()
+  assert_true(MemoryPool::is_from_pool(pool, obj1))
+  assert_true(MemoryPool::is_from_pool(pool, obj2))
+  assert_true(MemoryPool::is_from_pool(pool, obj3))
   
-  for item in large_dataset {
-    match item.1 {
-      StructValue(struct) => {
-        for field in struct.fields {
-          if field.0 == "value" {
-            match field.1 {
-              FloatValue(v) => sum = sum + int(v)
-              _ => assert_true(false)
-            }
-          }
-        }
-      }
-      _ => assert_true(false)
-    }
-  }
+  // Test object deallocation back to pool
+  MemoryPool::deallocate(pool, obj1)
+  MemoryPool::deallocate(pool, obj2)
   
-  let end_time = get_current_timestamp()
-  let processing_time = end_time - start_time
+  // Test pool statistics
+  let stats = MemoryPool::get_stats(pool)
+  assert_eq(stats.total_allocated, 3)
+  assert_eq(stats.total_deallocated, 2)
+  assert_eq(stats.current_in_use, 1)
+  assert_eq(stats.pool_size, 1000)
   
-  // 验证计算结果
-  assert_eq(sum, 74992500)  // 0 + 1.5 + 3 + 4.5 + ... + 14998.5 的整数部分
+  // Test reallocation from pool
+  let obj4 = MemoryPool::allocate(pool)
+  let obj5 = MemoryPool::allocate(pool)
   
-  // 验证处理时间在合理范围内（简化验证）
-  assert_true(processing_time > 0)
-  assert_true(processing_time < 1000000000L)  // 小于1秒
+  // Verify that deallocated objects are reused
+  assert_true(MemoryPool::is_from_pool(pool, obj4))
+  assert_true(MemoryPool::is_from_pool(pool, obj5))
   
-  // 测试内存释放
-  let cleared_dataset = []
-  assert_eq(cleared_dataset.length(), 0)
+  // Cleanup
+  MemoryPool::deallocate(pool, obj3)
+  MemoryPool::deallocate(pool, obj4)
+  MemoryPool::deallocate(pool, obj5)
 }
 
-// 测试2: 数据处理流水线优化
-test "数据处理流水线优化" {
-  // 创建原始数据
-  let raw_data = []
-  for i in 0..5000 {
-    raw_data = raw_data.push((
-      i,
-      "data_" + i.to_string(),
-      i * 2.5,
-      i % 3 == 0
-    ))
+// Test 2: Lazy Initialization
+test "lazy initialization" {
+  let lazy_resource = LazyResource::new(fn() {
+    // Simulate expensive resource creation
+    Resource::with_attributes(Resource::new(), [
+      ("expensive.attribute", StringValue("expensive_value")),
+      ("creation.time", IntValue(1234567890))
+    ])
+  })
+  
+  // Resource should not be initialized yet
+  assert_false(LazyResource::is_initialized(lazy_resource))
+  
+  // Access the resource for the first time
+  let resource1 = LazyResource::get(lazy_resource)
+  
+  // Now it should be initialized
+  assert_true(LazyResource::is_initialized(lazy_resource))
+  
+  // Access again, should return the same instance
+  let resource2 = LazyResource::get(lazy_resource)
+  
+  // Verify they are the same instance
+  assert_true(Resource::is_same_instance(resource1, resource2))
+  
+  // Verify resource attributes
+  let attr = Resource::get_attribute(resource1, "expensive.attribute")
+  match attr {
+    Some(StringValue(value)) => assert_eq(value, "expensive_value")
+    _ => assert_true(false)
   }
-  
-  // 优化处理流水线
-  let processed_data = raw_data
-    .filter(fn(item) { item.0 % 10 == 0 })  // 过滤：只保留10的倍数
-    .map(fn(item) { (  // 转换：修改数据结构
-      "processed_" + item.1,
-      item.2 * 1.1,
-      item.3 && (item.0 % 20 == 0)
-    )})
-    .filter(fn(item) { item.2 })  // 过滤：只保留active为true的
-    .map(fn(item) { (  // 转换：最终格式
-      item.0,
-      int(item.1),
-      item.2
-    )})
-  
-  // 验证处理结果
-  assert_eq(processed_data.length(), 250)  // 5000/10 = 500, 500/2 = 250
-  
-  // 验证数据正确性
-  for item in processed_data {
-    // 验证名称前缀
-    assert_true(item.0.contains("processed_"))
-    
-    // 验证数值计算
-    let original_num = item.0.slice(10, item.0.length()).to_int()
-    assert_eq(item.1, int(original_num * 2.5 * 1.1))
-    
-    // 验证布尔值
-    assert_true(item.2)
-  }
-  
-  // 测试性能基准
-  let pipeline_start = get_current_timestamp()
-  
-  let benchmark_result = raw_data
-    .filter(fn(item) { item.0 % 5 == 0 })
-    .map(fn(item) { (item.1, item.2) })
-    .reduce(fn(acc, item) { acc + int(item.2) }, 0)
-  
-  let pipeline_end = get_current_timestamp()
-  let pipeline_time = pipeline_end - pipeline_start
-  
-  // 验证基准结果
-  assert_eq(benchmark_result, 31237500)  // 简化计算结果
-  
-  // 验证流水线性能
-  assert_true(pipeline_time > 0)
-  assert_true(pipeline_time < 500000000L)  // 小于500ms
 }
 
-// 测试3: 缓存机制优化
-test "缓存机制优化" {
-  // 创建缓存系统
-  let cache = Cache::new(1000)  // 最大1000项
-  let mut cache_hits = 0
-  let mut cache_misses = 0
+// Test 3: Batching Operations
+test "batching operations" {
+  let processor = TelemetryProcessor::new()
+  let batch_size = 100
   
-  // 测试数据
-  let test_keys = []
-  for i in 0..100 {
-    test_keys = test_keys.push("key_" + i.to_string())
+  // Create a large number of telemetry data points
+  let data_points = []
+  for i in 0..=1000 {
+    data_points.push(TelemetryData::new("metric1", i.to_float(), "count", 1234567890L + i.to_long()))
   }
   
-  // 第一轮：缓存未命中，填充缓存
-  for key in test_keys {
-    if Cache::contains(cache, key) {
-      cache_hits = cache_hits + 1
-    } else {
-      cache_misses = cache_misses + 1
-      let value = "value_for_" + key
-      Cache::set(cache, key, value)
-    }
+  // Process without batching (baseline)
+  let start_time = Performance::current_time_millis()
+  for data in data_points {
+    TelemetryProcessor::process_single(processor, data)
   }
+  let baseline_time = Performance::current_time_millis() - start_time
   
-  // 验证第一轮结果
-  assert_eq(cache_hits, 0)
-  assert_eq(cache_misses, 100)
-  assert_eq(Cache::size(cache), 100)
-  
-  // 第二轮：缓存命中
-  cache_hits = 0
-  cache_misses = 0
-  
-  for key in test_keys {
-    if Cache::contains(cache, key) {
-      cache_hits = cache_hits + 1
-      let cached_value = Cache::get(cache, key)
-      match cached_value {
-        Some(v) => assert_eq(v, "value_for_" + key)
-        None => assert_true(false)
-      }
-    } else {
-      cache_misses = cache_misses + 1
-    }
+  // Process with batching
+  let start_time = Performance::current_time_millis()
+  let batches = TelemetryProcessor::create_batches(processor, data_points, batch_size)
+  for batch in batches {
+    TelemetryProcessor::process_batch(processor, batch)
   }
+  let batched_time = Performance::current_time_millis() - start_time
   
-  // 验证第二轮结果
-  assert_eq(cache_hits, 100)
-  assert_eq(cache_misses, 0)
+  // Batched processing should be faster
+  assert_true(batched_time <= baseline_time)
   
-  // 测试缓存淘汰策略
-  let overflow_keys = []
-  for i in 100..1200 {
-    overflow_keys = overflow_keys.push("overflow_key_" + i.to_string())
-  }
-  
-  // 添加超过缓存容量的键
-  for key in overflow_keys {
-    Cache::set(cache, key, "overflow_value")
-  }
-  
-  // 验证缓存大小不超过限制
-  assert_true(Cache::size(cache) <= 1000)
-  
-  // 验证原始键可能被淘汰
-  let mut original_keys_found = 0
-  for key in test_keys {
-    if Cache::contains(cache, key) {
-      original_keys_found = original_keys_found + 1
-    }
-  }
-  
-  // 至少应该有一些原始键被淘汰
-  assert_true(original_keys_found < 100)
-  
-  // 验证新键存在
-  let mut new_keys_found = 0
-  for key in overflow_keys.slice(0, 100) {
-    if Cache::contains(cache, key) {
-      new_keys_found = new_keys_found + 1
-    }
-  }
-  
-  assert_true(new_keys_found > 0)
+  // Verify that all data was processed
+  let total_processed = batches.fold_left(0, fn(acc, batch) { acc + batch.length() })
+  assert_eq(total_processed, data_points.length())
 }
 
-// 测试4: 并发处理优化
-test "并发处理优化" {
-  // 创建大量任务
-  let tasks = []
-  for i in 0..1000 {
-    tasks = tasks.push(Task({
-      id: i,
-      data: "task_data_" + i.to_string(),
-      priority: i % 5,
-      complexity: i % 3
-    }))
+// Test 4: Caching Mechanism
+test "caching mechanism" {
+  let cache = Cache::new(100) // Cache with 100 entries max
+  
+  // Test cache miss
+  let result1 = Cache::get_or_compute(cache, "key1", fn() {
+    // Simulate expensive computation
+    Thread::sleep(10) // 10ms delay
+    "computed_value1"
+  })
+  assert_eq(result1, "computed_value1")
+  
+  // Test cache hit (should be faster)
+  let start_time = Performance::current_time_millis()
+  let result2 = Cache::get_or_compute(cache, "key1", fn() {
+    // This should not be called due to cache hit
+    "should_not_be_called"
+  })
+  let cache_hit_time = Performance::current_time_millis() - start_time
+  assert_eq(result2, "computed_value1")
+  assert_true(cache_hit_time < 5) // Should be much faster than 10ms
+  
+  // Test cache capacity
+  for i in 0..=150 {
+    Cache::get_or_compute(cache, "key" + i.to_string(), fn() { "value" + i.to_string() })
   }
   
-  // 按优先级分组
-  let priority_groups = tasks.group_by(fn(task) { task.priority })
+  // Cache should not exceed capacity
+  let cache_stats = Cache::get_stats(cache)
+  assert_true(cache_stats.size <= 100)
   
-  // 验证分组结果
-  assert_eq(priority_groups.size(), 5)
-  
-  for priority in 0..5 {
-    let group = priority_groups.get(priority)
-    match group {
-      Some(tasks) => {
-        // 验证组内所有任务都有相同优先级
-        for task in tasks {
-          assert_eq(task.priority, priority)
-        }
-      }
-      None => assert_true(false)
-    }
+  // Test eviction policy (LRU)
+  let evicted_result = Cache::get(cache, "key0")
+  match evicted_result {
+    Some(_) => assert_true(false) // Should be evicted
+    None => assert_true(true)
   }
   
-  // 模拟并发处理
-  let processed_tasks = []
-  let start_time = get_current_timestamp()
-  
-  // 按优先级顺序处理
-  for priority in 0..5 {
-    let group = priority_groups.get(priority)
-    match group {
-      Some(tasks) => {
-        for task in tasks {
-          // 模拟任务处理
-          let processed_task = ProcessedTask({
-            id: task.id,
-            result: "processed_" + task.data,
-            processing_time: task.complexity * 100,
-            timestamp: get_current_timestamp()
-          })
-          processed_tasks = processed_tasks.push(processed_task)
-        }
-      }
-      None => assert_true(false)
-    }
+  // Recent entries should still be cached
+  let recent_result = Cache::get(cache, "key150")
+  match recent_result {
+    Some(value) => assert_eq(value, "value150")
+    None => assert_true(false)
   }
-  
-  let end_time = get_current_timestamp()
-  let total_processing_time = end_time - start_time
-  
-  // 验证处理结果
-  assert_eq(processed_tasks.length(), 1000)
-  
-  // 验证任务按优先级处理
-  let mut last_priority = -1
-  for task in processed_tasks {
-    let task_priority = task.id % 5
-    assert_true(task_priority >= last_priority)
-    last_priority = task_priority
-  }
-  
-  // 验证处理时间合理
-  assert_true(total_processing_time > 0)
-  assert_true(total_processing_time < 2000000000L)  // 小于2秒
 }
 
-// 测试5: 数据压缩优化
-test "数据压缩优化" {
-  // 创建重复性数据（适合压缩）
-  let repetitive_data = []
-  for i in 0..1000 {
-    repetitive_data = repetitive_data.push((
-      "category_" + (i % 10).to_string(),  // 只有10种不同类别
-      "type_" + (i % 5).to_string(),       // 只有5种不同类型
-      "source_system",                     // 固定值
-      "2025-01-01",                        // 固定日期
-      i                                    // 唯一ID
-    ))
+// Test 5: Parallel Processing
+test "parallel processing" {
+  let processor = TelemetryProcessor::new()
+  let num_threads = 4
+  
+  // Create a large number of telemetry data points
+  let data_points = []
+  for i in 0..=1000 {
+    data_points.push(TelemetryData::new("metric1", i.to_float(), "count", 1234567890L + i.to_long()))
   }
   
-  // 测试压缩前的数据大小
-  let original_size = calculate_data_size(repetitive_data)
-  
-  // 压缩数据
-  let compressed_data = compress_data(repetitive_data)
-  let compressed_size = compressed_data.length()
-  
-  // 验证压缩效果
-  assert_true(compressed_size < original_size)
-  let compression_ratio = (original_size - compressed_size) * 100 / original_size
-  assert_true(compression_ratio > 20)  // 至少20%的压缩率
-  
-  // 解压缩数据
-  let decompressed_data = decompress_data(compressed_data)
-  
-  // 验证解压缩后的数据完整性
-  assert_eq(decompressed_data.length(), repetitive_data.length())
-  
-  for i in 0..decompressed_data.length() {
-    assert_eq(decompressed_data[i].0, repetitive_data[i].0)
-    assert_eq(decompressed_data[i].1, repetitive_data[i].1)
-    assert_eq(decompressed_data[i].2, repetitive_data[i].2)
-    assert_eq(decompressed_data[i].3, repetitive_data[i].3)
-    assert_eq(decompressed_data[i].4, repetitive_data[i].4)
+  // Process sequentially (baseline)
+  let start_time = Performance::current_time_millis()
+  let sequential_results = []
+  for data in data_points {
+    sequential_results.push(TelemetryProcessor::process_single(processor, data))
   }
+  let sequential_time = Performance::current_time_millis() - start_time
   
-  // 测试压缩性能
-  let compression_start = get_current_timestamp()
-  let large_dataset = []
+  // Process in parallel
+  let start_time = Performance::current_time_millis()
+  let parallel_results = TelemetryProcessor::process_parallel(processor, data_points, num_threads)
+  let parallel_time = Performance::current_time_millis() - start_time
   
-  for i in 0..5000 {
-    large_dataset = large_dataset.push((
-      "metric_" + (i % 50).to_string(),
-      "sensor_" + (i % 20).to_string(),
-      "location_" + (i % 10).to_string(),
-      "device_type_" + (i % 5).to_string(),
-      i * 1.5,
-      i % 2 == 0
-    ))
+  // Parallel processing should be faster (on multi-core systems)
+  // Note: This might not always be faster due to overhead, but should be comparable
+  assert_true(parallel_time <= sequential_time * 1.2) // Allow 20% overhead
+  
+  // Verify results are the same
+  assert_eq(parallel_results.length(), sequential_results.length())
+  for i in 0..=parallel_results.length() - 1 {
+    assert_eq(parallel_results[i].metric_name, sequential_results[i].metric_name)
+    assert_eq(parallel_results[i].value, sequential_results[i].value)
   }
-  
-  let compressed_large = compress_data(large_dataset)
-  let compression_end = get_current_timestamp()
-  let compression_time = compression_end - compression_start
-  
-  // 验证压缩性能
-  assert_true(compression_time > 0)
-  assert_true(compression_time < 1000000000L)  // 小于1秒
-  
-  // 验证大数据集压缩效果
-  assert_true(compressed_large.length() < calculate_data_size(large_dataset))
 }
 
-// 测试6: 算法优化
-test "算法优化" {
-  // 创建测试数据
-  let numbers = []
-  for i in 0..10000 {
-    numbers = numbers.push(i * 3 + 7)
-  }
+// Test 6: Resource Pooling
+test "resource pooling" {
+  let pool = ResourcePool::new(10, fn() {
+    // Simulate expensive resource creation
+    ExpensiveResource::new()
+  })
   
-  // 测试查找算法优化
-  let search_target = 15007  // 应该存在于数组中
-  let missing_target = 15008  // 不应该存在于数组中
+  // Test resource checkout
+  let resource1 = ResourcePool::checkout(pool)
+  let resource2 = ResourcePool::checkout(pool)
+  let resource3 = ResourcePool::checkout(pool)
   
-  // 线性搜索
-  let linear_start = get_current_timestamp()
-  let mut linear_found = false
-  for num in numbers {
-    if num == search_target {
-      linear_found = true
-      break
-    }
-  }
-  let linear_end = get_current_timestamp()
-  let linear_time = linear_end - linear_start
+  assert_true(ResourcePool::is_from_pool(pool, resource1))
+  assert_true(ResourcePool::is_from_pool(pool, resource2))
+  assert_true(ResourcePool::is_from_pool(pool, resource3))
   
-  assert_true(linear_found)
+  // Test pool statistics
+  let stats = ResourcePool::get_stats(pool)
+  assert_eq(stats.created_count, 3)
+  assert_eq(stats.checked_out_count, 3)
+  assert_eq(stats.available_count, 7)
   
-  // 二分搜索（要求数组已排序）
-  let sorted_numbers = numbers.sort(fn(a, b) { a - b })
-  let binary_start = get_current_timestamp()
-  let binary_found = binary_search(sorted_numbers, search_target)
-  let binary_end = get_current_timestamp()
-  let binary_time = binary_end - binary_start
+  // Test resource checkin
+  ResourcePool::checkin(pool, resource1)
+  ResourcePool::checkin(pool, resource2)
   
-  assert_true(binary_found)
+  // Update stats
+  let stats = ResourcePool::get_stats(pool)
+  assert_eq(stats.checked_out_count, 1)
+  assert_eq(stats.available_count, 9)
   
-  // 验证二分搜索更快
-  assert_true(binary_time < linear_time)
+  // Test resource reuse
+  let resource4 = ResourcePool::checkout(pool)
+  let resource5 = ResourcePool::checkout(pool)
   
-  // 测试缺失元素搜索
-  let linear_missing = linear_search(numbers, missing_target)
-  let binary_missing = binary_search(sorted_numbers, missing_target)
+  // Should reuse previously checked-in resources
+  assert_true(ExpensiveResource::is_same_instance(resource4, resource1))
+  assert_true(ExpensiveResource::is_same_instance(resource5, resource2))
   
-  assert_false(linear_missing)
-  assert_false(binary_missing)
-  
-  // 测试排序算法优化
-  let unsorted_data = []
-  for i in 0..5000 {
-    unsorted_data = unsorted_data.push((5000 - i) * 2)  // 逆序数据
-  }
-  
-  // 测试快速排序
-  let quick_sort_start = get_current_timestamp()
-  let quick_sorted = quick_sort(unsorted_data)
-  let quick_sort_end = get_current_timestamp()
-  let quick_sort_time = quick_sort_end - quick_sort_start
-  
-  // 验证排序正确性
-  assert_true(is_sorted(quick_sorted))
-  
-  // 测试归并排序
-  let merge_sort_start = get_current_timestamp()
-  let merge_sorted = merge_sort(unsorted_data)
-  let merge_sort_end = get_current_timestamp()
-  let merge_sort_time = merge_sort_end - merge_sort_start
-  
-  // 验证排序正确性
-  assert_true(is_sorted(merge_sorted))
-  
-  // 验证两种排序结果一致
-  assert_eq(quick_sorted.length(), merge_sorted.length())
-  for i in 0..quick_sorted.length() {
-    assert_eq(quick_sorted[i], merge_sorted[i])
-  }
-  
-  // 测试聚合算法优化
-  let aggregation_start = get_current_timestamp()
-  let sum = numbers.reduce(fn(acc, x) { acc + x }, 0)
-  let average = sum / numbers.length()
-  let max = numbers.reduce(fn(acc, x) { if x > acc { x } else { acc } }, numbers[0])
-  let min = numbers.reduce(fn(acc, x) { if x < acc { x } else { acc } }, numbers[0])
-  let aggregation_end = get_current_timestamp()
-  let aggregation_time = aggregation_end - aggregation_start
-  
-  // 验证聚合结果
-  assert_eq(sum, 150015000)
-  assert_eq(average, 15001)
-  assert_eq(max, 29999)
-  assert_eq(min, 7)
-  
-  // 验证聚合性能
-  assert_true(aggregation_time > 0)
-  assert_true(aggregation_time < 100000000L)  // 小于100ms
+  // Cleanup
+  ResourcePool::checkin(pool, resource3)
+  ResourcePool::checkin(pool, resource4)
+  ResourcePool::checkin(pool, resource5)
 }
 
-// 测试7: 批处理优化
-test "批处理优化" {
-  // 创建大量小任务
-  let small_tasks = []
-  for i in 0..10000 {
-    small_tasks = small_tasks.push((
-      "task_" + i.to_string(),
-      i % 100,
-      i * 1.25
-    ))
+// Test 7: Adaptive Sampling
+test "adaptive sampling" {
+  let sampler = AdaptiveSampler::new(0.1) // Start with 10% sampling rate
+  
+  // Create telemetry data with varying importance
+  let high_priority_data = TelemetryData::with_attributes("error_count", 1.0, "count", 1234567890L, [
+    ("priority", "high"),
+    ("error.type", "critical")
+  ])
+  
+  let normal_priority_data = TelemetryData::with_attributes("request_count", 100.0, "count", 1234567890L, [
+    ("priority", "normal")
+  ])
+  
+  let low_priority_data = TelemetryData::with_attributes("debug_info", 1.0, "count", 1234567890L, [
+    ("priority", "low")
+  ])
+  
+  // Test sampling decisions
+  assert_true(AdaptiveSampler::should_sample(sampler, high_priority_data)) // High priority should always be sampled
+  assert_true(AdaptiveSampler::should_sample(sampler, normal_priority_data)) // Normal priority based on rate
+  assert_false(AdaptiveSampler::should_sample(sampler, low_priority_data)) // Low priority rarely sampled
+  
+  // Test adaptive rate adjustment
+  for i in 0..=1000 {
+    sampler = AdaptiveSampler::adjust_rate(sampler, normal_priority_data, true) // Provide feedback
   }
   
-  // 单个处理方式
-  let single_start = get_current_timestamp()
-  let mut single_results = []
+  // After many positive feedbacks, sampling rate should increase
+  let adjusted_rate = AdaptiveSampler::get_current_rate(sampler)
+  assert_true(adjusted_rate > 0.1)
   
-  for task in small_tasks {
-    let result = process_single_task(task)
-    single_results = single_results.push(result)
+  // Test negative feedback
+  for i in 0..=1000 {
+    sampler = AdaptiveSampler::adjust_rate(sampler, normal_priority_data, false)
   }
   
-  let single_end = get_current_timestamp()
-  let single_time = single_end - single_start
+  // After many negative feedbacks, sampling rate should decrease
+  let adjusted_rate = AdaptiveSampler::get_current_rate(sampler)
+  assert_true(adjusted_rate < 0.1)
+}
+
+// Test 8: Performance Profiling
+test "performance profiling" {
+  let profiler = Profiler::new()
   
-  // 批处理方式
-  let batch_start = get_current_timestamp()
-  let batch_results = process_batch_tasks(small_tasks, 100)  // 每批100个任务
-  let batch_end = get_current_timestamp()
-  let batch_time = batch_end - batch_start
+  // Start profiling
+  Profiler::start(profiler)
   
-  // 验证批处理更高效
-  assert_true(batch_time < single_time)
-  
-  // 验证结果一致性
-  assert_eq(single_results.length(), batch_results.length())
-  
-  // 验证批处理结果正确性
-  for i in 0..batch_results.length() {
-    assert_eq(single_results[i].task_id, batch_results[i].task_id)
-    assert_eq(single_results[i].category, batch_results[i].category)
-    assert_eq(single_results[i].result, batch_results[i].result)
+  // Perform some operations
+  let resource = Resource::new()
+  for i in 0..=100 {
+    Resource::with_attributes(resource, [("test.attr" + i.to_string(), StringValue("test.value" + i.to_string()))])
   }
   
-  // 测试不同批大小的影响
-  let batch_sizes = [10, 50, 100, 500, 1000]
-  let batch_times = []
+  // Stop profiling
+  let profile = Profiler::stop(profiler)
   
-  for size in batch_sizes {
-    let size_start = get_current_timestamp()
-    let size_results = process_batch_tasks(small_tasks, size)
-    let size_end = get_current_timestamp()
-    let size_time = size_end - size_start
-    
-    batch_times = batch_times.push((size, size_time))
-    assert_eq(size_results.length(), single_results.length())
+  // Analyze profile
+  assert_true(ProfilerProfile::total_time(profile) > 0)
+  assert_true(ProfilerProfile::operation_count(profile) > 0)
+  
+  // Get hottest operations
+  let hot_operations = ProfilerProfile::get_hottest_operations(profile, 5)
+  assert_true(hot_operations.length() <= 5)
+  
+  // Verify that operations are ordered by time spent
+  for i in 0..=hot_operations.length() - 2 {
+    assert_true(hot_operations[i].time_spent >= hot_operations[i + 1].time_spent)
   }
   
-  // 验证批大小对性能的影响
-  assert_true(batch_times[0].1 > batch_times[1].1)  // 10 > 50
-  assert_true(batch_times[1].1 > batch_times[2].1)  // 50 > 100
-  // 注意：超过某个点后，批大小增加可能不会带来性能提升
+  // Get memory usage
+  let memory_usage = ProfilerProfile::get_memory_usage(profile)
+  assert_true(memory_usage.peak_usage > 0)
+  assert_true(memory_usage.average_usage > 0)
 }

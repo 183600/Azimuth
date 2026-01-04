@@ -1,224 +1,273 @@
 // Azimuth Telemetry System - Data Processing Tests
-// This file contains test cases for telemetry data processing functionality
+// This file contains comprehensive test cases for telemetry data processing functionality
 
-// Test 1: Telemetry Data Collection
-test "telemetry data collection" {
-  let provider = TelemetryProvider::new()
-  let tracer = TelemetryProvider::get_tracer(provider, "data_processing_tracer")
-  
-  // Test span creation for data collection
-  let span = Tracer::start_span(tracer, "data_collection")
-  Span::set_attribute(span, "data.source", StringValue("sensor"))
-  Span::set_attribute(span, "data.type", StringValue("temperature"))
-  Span::set_attribute(span, "data.value", FloatValue(23.5))
-  
-  // Test data point collection
-  let data_point = DataPoint::new(1234567890L, 23.5, "celsius")
-  assert_eq(DataPoint::timestamp(data_point), 1234567890L)
-  assert_eq(DataPoint::value(data_point), 23.5)
-  assert_eq(DataPoint::unit(data_point), "celsius")
-  
-  // Test batch data collection
-  let data_points = [
-    DataPoint::new(1234567890L, 23.5, "celsius"),
-    DataPoint::new(1234567891L, 24.0, "celsius"),
-    DataPoint::new(1234567892L, 23.8, "celsius")
-  ]
-  let batch = DataBatch::new(data_points)
-  assert_eq(DataBatch::size(batch), 3)
-  
-  Span::end(span)
-}
-
-// Test 2: Telemetry Data Aggregation
+// Test 1: Telemetry Data Aggregation
 test "telemetry data aggregation" {
+  let processor = TelemetryProcessor::new()
+  
+  // Create sample telemetry data
   let data_points = [
-    DataPoint::new(1234567890L, 10.0, "units"),
-    DataPoint::new(1234567891L, 20.0, "units"),
-    DataPoint::new(1234567892L, 30.0, "units"),
-    DataPoint::new(1234567893L, 40.0, "units"),
-    DataPoint::new(1234567894L, 50.0, "units")
+    TelemetryData::new("metric1", 10.5, "ms", 1234567890L),
+    TelemetryData::new("metric1", 15.3, "ms", 1234567891L),
+    TelemetryData::new("metric1", 12.7, "ms", 1234567892L),
+    TelemetryData::new("metric2", 100.0, "count", 1234567890L),
+    TelemetryData::new("metric2", 150.0, "count", 1234567891L)
   ]
   
-  // Test average calculation
-  let avg = DataAggregator::average(data_points)
-  assert_eq(avg, 30.0)
+  // Process and aggregate data
+  let aggregated_data = TelemetryProcessor::aggregate(processor, data_points, "metric1")
   
-  // Test min calculation
-  let min = DataAggregator::min(data_points)
-  assert_eq(min, 10.0)
+  // Verify aggregation results
+  assert_eq(aggregated_data.count, 3)
+  assert_eq(aggregated_data.min_value, 10.5)
+  assert_eq(aggregated_data.max_value, 15.3)
+  assert_eq(aggregated_data.avg_value, 12.833333333333334)
+  assert_eq(aggregated_data.sum_value, 38.5)
   
-  // Test max calculation
-  let max = DataAggregator::max(data_points)
-  assert_eq(max, 50.0)
-  
-  // Test sum calculation
-  let sum = DataAggregator::sum(data_points)
-  assert_eq(sum, 150.0)
-  
-  // Test percentile calculation
-  let p50 = DataAggregator::percentile(data_points, 50.0)
-  assert_eq(p50, 30.0)
-  
-  let p90 = DataAggregator::percentile(data_points, 90.0)
-  assert_eq(p90, 50.0)
+  // Test with different metric
+  let aggregated_data2 = TelemetryProcessor::aggregate(processor, data_points, "metric2")
+  assert_eq(aggregated_data2.count, 2)
+  assert_eq(aggregated_data2.min_value, 100.0)
+  assert_eq(aggregated_data2.max_value, 150.0)
+  assert_eq(aggregated_data2.avg_value, 125.0)
+  assert_eq(aggregated_data2.sum_value, 250.0)
 }
 
-// Test 3: Telemetry Data Filtering
+// Test 2: Telemetry Data Filtering
 test "telemetry data filtering" {
+  let processor = TelemetryProcessor::new()
+  
+  // Create sample telemetry data with various attributes
   let data_points = [
-    DataPoint::new(1234567890L, 10.0, "temperature"),
-    DataPoint::new(1234567891L, 20.0, "humidity"),
-    DataPoint::new(1234567892L, 30.0, "temperature"),
-    DataPoint::new(1234567893L, 40.0, "pressure"),
-    DataPoint::new(1234567894L, 50.0, "temperature")
+    TelemetryData::with_attributes("metric1", 10.5, "ms", 1234567890L, [
+      ("service", "auth"),
+      ("environment", "production")
+    ]),
+    TelemetryData::with_attributes("metric1", 15.3, "ms", 1234567891L, [
+      ("service", "payment"),
+      ("environment", "staging")
+    ]),
+    TelemetryData::with_attributes("metric1", 12.7, "ms", 1234567892L, [
+      ("service", "auth"),
+      ("environment", "production")
+    ]),
+    TelemetryData::with_attributes("metric2", 100.0, "count", 1234567890L, [
+      ("service", "user"),
+      ("environment", "production")
+    ])
   ]
   
-  // Test filtering by unit
-  let temp_points = DataFilter::by_unit(data_points, "temperature")
-  assert_eq(temp_points.length(), 3)
+  // Filter by service name
+  let auth_service_data = TelemetryProcessor::filter_by_attribute(processor, data_points, "service", "auth")
+  assert_eq(auth_service_data.length(), 2)
   
-  // Test filtering by value range
-  let range_points = DataFilter::by_value_range(data_points, 15.0, 45.0)
-  assert_eq(range_points.length(), 3)
+  // Filter by environment
+  let production_data = TelemetryProcessor::filter_by_attribute(processor, data_points, "environment", "production")
+  assert_eq(production_data.length(), 3)
   
-  // Test filtering by time range
+  // Filter by multiple attributes
+  let auth_production_data = TelemetryProcessor::filter_by_multiple_attributes(processor, data_points, [
+    ("service", "auth"),
+    ("environment", "production")
+  ])
+  assert_eq(auth_production_data.length(), 2)
+  
+  // Filter by time range
   let start_time = 1234567891L
-  let end_time = 1234567893L
-  let time_points = DataFilter::by_time_range(data_points, start_time, end_time)
-  assert_eq(time_points.length(), 3)
-  
-  // Test chaining filters
-  let filtered_points = DataFilter::by_unit(data_points, "temperature")
-  let final_points = DataFilter::by_value_range(filtered_points, 20.0, 60.0)
-  assert_eq(final_points.length(), 2)
+  let end_time = 1234567892L
+  let time_filtered_data = TelemetryProcessor::filter_by_time_range(processor, data_points, start_time, end_time)
+  assert_eq(time_filtered_data.length(), 2)
 }
 
-// Test 4: Telemetry Data Transformation
+// Test 3: Telemetry Data Transformation
 test "telemetry data transformation" {
+  let processor = TelemetryProcessor::new()
+  
+  // Create sample telemetry data
   let data_points = [
-    DataPoint::new(1234567890L, 100.0, "celsius"),
-    DataPoint::new(1234567891L, 200.0, "celsius"),
-    DataPoint::new(1234567892L, 300.0, "celsius")
+    TelemetryData::new("response_time_ms", 1500, "ms", 1234567890L),
+    TelemetryData::new("response_time_ms", 2000, "ms", 1234567891L),
+    TelemetryData::new("response_time_ms", 1200, "ms", 1234567892L)
   ]
   
-  // Test unit conversion
-  let fahrenheit_points = DataTransformer::convert_units(data_points, "celsius", "fahrenheit")
-  assert_eq(fahrenheit_points.length(), 3)
-  assert_eq(DataPoint::value(fahrenheit_points[0]), 212.0) // 100°C = 212°F
+  // Transform unit from ms to seconds
+  let transformed_data = TelemetryProcessor::transform_unit(processor, data_points, "ms", "s", 0.001)
+  assert_eq(transformed_data[0].value, 1.5)
+  assert_eq(transformed_data[0].unit, "s")
+  assert_eq(transformed_data[1].value, 2.0)
+  assert_eq(transformed_data[1].unit, "s")
+  assert_eq(transformed_data[2].value, 1.2)
+  assert_eq(transformed_data[2].unit, "s")
   
-  // Test scaling transformation
-  let scaled_points = DataTransformer::scale(data_points, 0.1)
-  assert_eq(DataPoint::value(scaled_points[0]), 10.0)
+  // Transform metric name
+  let renamed_data = TelemetryProcessor::transform_metric_name(processor, data_points, "response_time_ms", "response_time_seconds")
+  assert_eq(renamed_data[0].metric_name, "response_time_seconds")
+  assert_eq(renamed_data[1].metric_name, "response_time_seconds")
+  assert_eq(renamed_data[2].metric_name, "response_time_seconds")
   
-  // Test offset transformation
-  let offset_points = DataTransformer::offset(data_points, 273.15)
-  assert_eq(DataPoint::value(offset_points[0]), 373.15)
+  // Apply custom transformation function
+  let normalized_data = TelemetryProcessor::apply_transformation(processor, data_points, fn(data) {
+    TelemetryData::new(data.metric_name, data.value / 1000.0, "s", data.timestamp)
+  })
+  assert_eq(normalized_data[0].value, 1.5)
+  assert_eq(normalized_data[0].unit, "s")
+}
+
+// Test 4: Telemetry Data Sampling
+test "telemetry data sampling" {
+  let processor = TelemetryProcessor::new()
   
-  // Test custom transformation
-  let custom_transform = fn(value: Double) -> Double { value * value }
-  let custom_points = DataTransformer::apply(data_points, custom_transform)
-  assert_eq(DataPoint::value(custom_points[0]), 10000.0)
+  // Create sample telemetry data
+  let data_points = []
+  for i in 0..=100 {
+    data_points.push(TelemetryData::new("metric1", i.to_float(), "count", 1234567890L + i.to_long()))
+  }
+  
+  // Test uniform sampling
+  let uniform_sample = TelemetryProcessor::uniform_sample(processor, data_points, 10)
+  assert_eq(uniform_sample.length(), 10)
+  
+  // Test time-based sampling
+  let time_sample = TelemetryProcessor::time_based_sample(processor, data_points, 10)
+  assert_eq(time_sample.length(), 11) // Should include both start and end points
+  
+  // Test reservoir sampling
+  let reservoir_sample = TelemetryProcessor::reservoir_sample(processor, data_points, 5)
+  assert_eq(reservoir_sample.length(), 5)
+  
+  // Test stratified sampling
+  let strata = [
+    ("low", 0.0..=33.0),
+    ("medium", 34.0..=66.0),
+    ("high", 67.0..=100.0)
+  ]
+  let stratified_sample = TelemetryProcessor::stratified_sample(processor, data_points, strata, 2)
+  assert_eq(stratified_sample.length(), 6) // 2 from each stratum
 }
 
 // Test 5: Telemetry Data Validation
 test "telemetry data validation" {
-  let valid_point = DataPoint::new(1234567890L, 25.0, "celsius")
-  let invalid_point1 = DataPoint::new(-1L, 25.0, "celsius") // Invalid timestamp
-  let invalid_point2 = DataPoint::new(1234567890L, Double::infinity, "celsius") // Invalid value
-  let invalid_point3 = DataPoint::new(1234567890L, 25.0, "") // Invalid unit
+  let processor = TelemetryProcessor::new()
   
-  // Test individual validation
-  assert_true(DataValidator::is_valid(valid_point))
-  assert_false(DataValidator::is_valid(invalid_point1))
-  assert_false(DataValidator::is_valid(invalid_point2))
-  assert_false(DataValidator::is_valid(invalid_point3))
+  // Create valid telemetry data
+  let valid_data = TelemetryData::new("metric1", 10.5, "ms", 1234567890L)
+  
+  // Create invalid telemetry data
+  let invalid_data_name = TelemetryData::new("", 10.5, "ms", 1234567890L)
+  let invalid_data_value = TelemetryData::new("metric1", (-1.0).sqrt(), "ms", 1234567890L) // NaN
+  let invalid_data_unit = TelemetryData::new("metric1", 10.5, "", 1234567890L)
+  let invalid_data_timestamp = TelemetryData::new("metric1", 10.5, "ms", -1L)
+  
+  // Test validation
+  assert_true(TelemetryProcessor::is_valid(processor, valid_data))
+  assert_false(TelemetryProcessor::is_valid(processor, invalid_data_name))
+  assert_false(TelemetryProcessor::is_valid(processor, invalid_data_value))
+  assert_false(TelemetryProcessor::is_valid(processor, invalid_data_unit))
+  assert_false(TelemetryProcessor::is_valid(processor, invalid_data_timestamp))
   
   // Test batch validation
-  let mixed_points = [valid_point, invalid_point1, valid_point, invalid_point2]
-  let validation_result = DataValidator::validate_batch(mixed_points)
-  
-  assert_eq(validation_result.total_count, 4)
-  assert_eq(validation_result.valid_count, 2)
-  assert_eq(validation_result.invalid_count, 2)
-  
-  // Test validation with custom rules
-  let temp_validator = DataValidator::with_rule(fn(point: DataPoint) -> Bool {
-    DataPoint::unit(point) == "celsius" && 
-    DataPoint::value(point) >= -273.15 && 
-    DataPoint::value(point) <= 1000.0
-  })
-  
-  let valid_temp = DataPoint::new(1234567890L, 25.0, "celsius")
-  let invalid_temp = DataPoint::new(1234567890L, -300.0, "celsius")
-  
-  assert_true(temp_validator(valid_temp))
-  assert_false(temp_validator(invalid_temp))
+  let mixed_data = [valid_data, invalid_data_name, invalid_data_value]
+  let validation_results = TelemetryProcessor::validate_batch(processor, mixed_data)
+  assert_eq(validation_results.valid_count, 1)
+  assert_eq(validation_results.invalid_count, 2)
+  assert_eq(validation_results.validation_errors.length(), 2)
 }
 
 // Test 6: Telemetry Data Compression
 test "telemetry data compression" {
-  let data_points = [
-    DataPoint::new(1234567890L, 10.0, "units"),
-    DataPoint::new(1234567891L, 10.1, "units"),
-    DataPoint::new(1234567892L, 10.2, "units"),
-    DataPoint::new(1234567893L, 10.3, "units"),
-    DataPoint::new(1234567894L, 10.4, "units")
-  ]
+  let processor = TelemetryProcessor::new()
   
-  // Test time-series compression
-  let compressed_data = DataCompressor::compress_time_series(data_points, 0.1)
-  assert_true(compressed_data.compressed_size < data_points.length())
+  // Create sample telemetry data
+  let data_points = []
+  for i in 0..=1000 {
+    data_points.push(TelemetryData::new("metric1", i.to_float(), "count", 1234567890L + i.to_long()))
+  }
   
-  // Test delta compression
-  let delta_compressed = DataCompressor::compress_delta(data_points)
-  assert_true(delta_compressed.compressed_size < data_points.length())
+  // Test compression
+  let compressed_data = TelemetryProcessor::compress(processor, data_points)
+  assert_true(compressed_data.size < data_points.length() * 50) // Expect some compression
   
   // Test decompression
-  let decompressed_points = DataCompressor::decompress(compressed_data)
-  assert_eq(decompressed_points.length(), data_points.length())
+  let decompressed_data = TelemetryProcessor::decompress(processor, compressed_data)
+  assert_eq(decompressed_data.length(), data_points.length())
   
-  // Verify data integrity after decompression
-  for i in 0..data_points.length() {
-    assert_eq(
-      DataPoint::value(decompressed_points[i]),
-      DataPoint::value(data_points[i])
-    )
+  // Verify data integrity
+  for i in 0..=data_points.length() - 1 {
+    assert_eq(decompressed_data[i].metric_name, data_points[i].metric_name)
+    assert_eq(decompressed_data[i].value, data_points[i].value)
+    assert_eq(decompressed_data[i].unit, data_points[i].unit)
+    assert_eq(decompressed_data[i].timestamp, data_points[i].timestamp)
   }
 }
 
 // Test 7: Telemetry Data Export
 test "telemetry data export" {
+  let processor = TelemetryProcessor::new()
+  
+  // Create sample telemetry data
   let data_points = [
-    DataPoint::new(1234567890L, 25.0, "celsius"),
-    DataPoint::new(1234567891L, 60.0, "humidity"),
-    DataPoint::new(1234567892L, 1013.25, "pressure")
+    TelemetryData::new("metric1", 10.5, "ms", 1234567890L),
+    TelemetryData::new("metric2", 100.0, "count", 1234567891L),
+    TelemetryData::new("metric3", 0.95, "ratio", 1234567892L)
   ]
   
   // Test JSON export
-  let json_exporter = DataExporter::json()
-  let json_data = json_exporter.export(data_points)
-  assert_true(json_data.length() > 0)
-  assert_true(json_data.contains("celsius"))
-  assert_true(json_data.contains("humidity"))
+  let json_export = TelemetryProcessor::export_to_json(processor, data_points)
+  assert_true(json_export.contains("\"metric_name\":\"metric1\""))
+  assert_true(json_export.contains("\"value\":10.5"))
+  assert_true(json_export.contains("\"unit\":\"ms\""))
   
   // Test CSV export
-  let csv_exporter = DataExporter::csv()
-  let csv_data = csv_exporter.export(data_points)
-  assert_true(csv_data.length() > 0)
-  assert_true(csv_data.contains("timestamp,value,unit"))
+  let csv_export = TelemetryProcessor::export_to_csv(processor, data_points)
+  assert_true(csv_export.contains("metric_name,value,unit,timestamp"))
+  assert_true(csv_export.contains("metric1,10.5,ms,1234567890"))
   
   // Test custom format export
-  let custom_exporter = DataExporter::custom(fn(points: Array[DataPoint]) -> String {
-    let mut result = "DATA_EXPORT:\n"
-    for point in points {
-      result = result + "T:" + DataPoint::timestamp(point).to_string() + 
-                      " V:" + DataPoint::value(point).to_string() + 
-                      " U:" + DataPoint::unit(point) + "\n"
-    }
-    result
-  })
-  let custom_data = custom_exporter.export(data_points)
-  assert_true(custom_data.contains("DATA_EXPORT"))
-  assert_true(custom_data.contains("T:1234567890"))
+  let custom_export = TelemetryProcessor::export_to_custom_format(processor, data_points, "{metric}={value}{unit}@{timestamp}")
+  assert_true(custom_export.contains("metric1=10.5ms@1234567890"))
+  assert_true(custom_export.contains("metric2=100.0count@1234567891"))
+}
+
+// Test 8: Telemetry Data Enrichment
+test "telemetry data enrichment" {
+  let processor = TelemetryProcessor::new()
+  
+  // Create sample telemetry data
+  let data_points = [
+    TelemetryData::with_attributes("response_time", 150.0, "ms", 1234567890L, [
+      ("service", "auth"),
+      ("endpoint", "/login")
+    ]),
+    TelemetryData::with_attributes("response_time", 200.0, "ms", 1234567891L, [
+      ("service", "payment"),
+      ("endpoint", "/process")
+    ])
+  ]
+  
+  // Enrich with computed attributes
+  let enriched_data = TelemetryProcessor::enrich_with_computed_attributes(processor, data_points, [
+    ("response_category", fn(data) {
+      if data.value < 100.0 { "fast" } 
+      else if data.value < 200.0 { "normal" } 
+      else { "slow" }
+    }),
+    ("hour_of_day", fn(data) {
+      ((data.timestamp / 3600) % 24).to_string()
+    })
+  ])
+  
+  // Verify enrichment
+  assert_eq(enriched_data[0].get_attribute("response_category"), Some("normal"))
+  assert_eq(enriched_data[1].get_attribute("response_category"), Some("normal"))
+  
+  // Enrich with external data
+  let external_data = [
+    ("auth", "service_owner", "team-a"),
+    ("payment", "service_owner", "team-b")
+  ]
+  let further_enriched_data = TelemetryProcessor::enrich_with_external_data(processor, enriched_data, external_data, "service")
+  
+  // Verify external enrichment
+  assert_eq(further_enriched_data[0].get_attribute("service_owner"), Some("team-a"))
+  assert_eq(further_enriched_data[1].get_attribute("service_owner"), Some("team-b"))
 }

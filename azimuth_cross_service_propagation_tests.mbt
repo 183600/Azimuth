@@ -1,453 +1,444 @@
-// Azimuth 跨服务传播测试用例
-// 专注于测试跨微服务架构中的上下文传播和数据一致性
+// Azimuth Telemetry System - Cross-Service Propagation Tests
+// This file contains comprehensive test cases for cross-service propagation functionality
 
-// 测试1: 追踪上下文跨服务传播
-test "追踪上下文跨服务传播测试" {
-  // 创建初始追踪上下文
-  let initial_context = TraceContext::new({
-    trace_id: "trace-123456789",
-    span_id: "root-span-001",
-    baggage: {
-      "user.id": "user-12345",
-      "request.id": "req-abcdef",
-      "session.id": "sess-xyz789",
-      "tenant.id": "tenant-001"
-    }
-  })
+// Test 1: Trace Context Propagation
+test "trace context propagation" {
+  // Create initial trace context
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_id = "b7ad6b7169203331"
+  let parent_span = SpanContext::new(trace_id, span_id, true, "")
   
-  // 模拟服务链：Gateway -> Auth -> User -> Database
-  let gateway_service = Service::new("gateway", initial_context)
+  // Create propagator
+  let propagator = TraceContextPropagator::new()
   
-  // Gateway处理请求，创建子span
-  let gateway_span = gateway_service.create_span("http.request", {
-    operation_name: "process.user.request",
-    tags: {
-      "http.method": "GET",
-      "http.url": "/api/users/12345",
-      "user.agent": "Mozilla/5.0"
-    }
-  })
+  // Inject context into carrier
+  let carrier = TextMapCarrier::new()
+  propagator.inject(parent_span, carrier)
   
-  // Gateway调用Auth服务
-  let auth_context = gateway_service.propagate_context_to("auth-service", gateway_span)
-  let auth_service = Service::new("auth-service", auth_context)
-  
-  let auth_span = auth_service.create_span("authenticate", {
-    operation_name: "verify.user.token",
-    tags: {
-      "auth.method": "jwt",
-      "token.version": "v2"
-    }
-  })
-  
-  // Auth服务调用User服务
-  let user_context = auth_service.propagate_context_to("user-service", auth_span)
-  let user_service = Service::new("user-service", user_context)
-  
-  let user_span = user_service.create_span("get.user.profile", {
-    operation_name: "fetch.user.data",
-    tags: {
-      "user.id": "12345",
-      "data.fields": "profile,preferences"
-    }
-  })
-  
-  // User服务调用Database
-  let db_context = user_service.propagate_context_to("database", user_span)
-  let db_service = Service::new("database", db_context)
-  
-  let db_span = db_service.create_span("sql.query", {
-    operation_name: "select.user.profile",
-    tags: {
-      "db.statement": "SELECT * FROM users WHERE id = ?",
-      "db.type": "postgresql"
-    }
-  })
-  
-  // 验证追踪ID一致性
-  assert_eq(gateway_service.get_trace_id(), "trace-123456789")
-  assert_eq(auth_service.get_trace_id(), "trace-123456789")
-  assert_eq(user_service.get_trace_id(), "trace-123456789")
-  assert_eq(db_service.get_trace_id(), "trace-123456789")
-  
-  // 验证父子关系
-  assert_eq(auth_span.parent_span_id, Some(gateway_span.span_id))
-  assert_eq(user_span.parent_span_id, Some(auth_span.span_id))
-  assert_eq(db_span.parent_span_id, Some(user_span.span_id))
-  
-  // 验证baggage传播
-  assert_true(db_service.has_baggage("user.id"))
-  assert_true(db_service.has_baggage("request.id"))
-  assert_true(db_service.has_baggage("session.id"))
-  assert_true(db_service.has_baggage("tenant.id"))
-  
-  assert_eq(db_service.get_baggage("user.id"), Some("user-12345"))
-  assert_eq(db_service.get_baggage("request.id"), Some("req-abcdef"))
-  assert_eq(db_service.get_baggage("session.id"), Some("sess-xyz789"))
-  assert_eq(db_service.get_baggage("tenant.id"), Some("tenant-001"))
-}
-
-// 测试2: 错误上下文跨服务传播
-test "错误上下文跨服务传播测试" {
-  // 创建初始上下文
-  let initial_context = TraceContext::new({
-    trace_id: "trace-error-001",
-    span_id: "root-error-span",
-    baggage: {
-      "request.id": "req-error-001",
-      "user.id": "user-99999"
-    }
-  })
-  
-  let order_service = Service::new("order-service", initial_context)
-  
-  // Order服务尝试创建订单
-  let order_span = order_service.create_span("create.order", {
-    operation_name: "process.new.order",
-    tags: {
-      "order.amount": "99.99",
-      "product.id": "prod-12345"
-    }
-  })
-  
-  // Order服务调用Payment服务
-  let payment_context = order_service.propagate_context_to("payment-service", order_span)
-  let payment_service = Service::new("payment-service", payment_context)
-  
-  let payment_span = payment_service.create_span("process.payment", {
-    operation_name: "charge.credit.card",
-    tags: {
-      "payment.method": "credit_card",
-      "card.type": "visa"
-    }
-  })
-  
-  // Payment服务调用第三方支付网关（模拟失败）
-  let gateway_context = payment_service.propagate_context_to("payment-gateway", payment_span)
-  let gateway_service = Service::new("payment-gateway", gateway_context)
-  
-  let gateway_span = gateway_service.create_span("gateway.request", {
-    operation_name: "call.external.payment",
-    tags: {
-      "gateway.provider": "stripe",
-      "api.version": "v3"
-    }
-  })
-  
-  // 模拟支付网关错误
-  let payment_error = ServiceError::new({
-    error_code: "PAYMENT_DECLINED",
-    error_message: "Insufficient funds",
-    error_details: {
-      "decline_reason": "insufficient_funds",
-      "card_last4": "1234",
-      "available_balance": "25.50"
-    }
-  })
-  
-  gateway_span.record_error(payment_error)
-  
-  // 错误传播回Payment服务
-  let propagated_error = payment_service.handle_error_from("payment-gateway", payment_error)
-  payment_span.record_error(propagated_error)
-  
-  // 错误传播回Order服务
-  let final_error = order_service.handle_error_from("payment-service", propagated_error)
-  order_span.record_error(final_error)
-  
-  // 验证错误上下文传播
-  assert_true(gateway_span.has_error())
-  assert_true(payment_span.has_error())
-  assert_true(order_span.has_error())
-  
-  // 验证错误信息完整性
-  let gateway_error = gateway_span.get_error()
-  match gateway_error {
-    Some(error) => {
-      assert_eq(error.error_code, "PAYMENT_DECLINED")
-      assert_eq(error.error_message, "Insufficient funds")
+  // Verify injected headers
+  let trace_header = TextMapCarrier::get(carrier, "traceparent")
+  match trace_header {
+    Some(header) => {
+      assert_true(header.contains("00-" + trace_id))
+      assert_true(header.contains("-" + span_id))
+      assert_true(header.contains("-01"))
     }
     None => assert_true(false)
   }
   
-  // 验证错误链路
-  let order_error = order_span.get_error()
-  match order_error {
-    Some(error) => {
-      assert_eq(error.error_code, "PAYMENT_DECLINED")
-      assert_true(error.error_details.contains_key("source_service"))
-      assert_eq(error.error_details.get("source_service"), Some("payment-service"))
+  let state_header = TextMapCarrier::get(carrier, "tracestate")
+  match state_header {
+    Some(_) => assert_true(true)
+    None => assert_true(true) // Optional header
+  }
+  
+  // Extract context from carrier
+  let extracted_span = propagator.extract(carrier)
+  
+  // Verify extracted context matches original
+  assert_eq(SpanContext::trace_id(extracted_span), trace_id)
+  assert_eq(SpanContext::span_id(extracted_span), span_id)
+  assert_true(SpanContext::is_sampled(extracted_span))
+}
+
+// Test 2: Baggage Propagation
+test "baggage propagation" {
+  // Create baggage with entries
+  let baggage = Baggage::new()
+  let updated_baggage = Baggage::set_entry(baggage, "user.id", "12345")
+  let updated_baggage = Baggage::set_entry(updated_baggage, "session.id", "abcdef")
+  let updated_baggage = Baggage::set_entry(updated_baggage, "request.id", "req-123")
+  
+  // Create propagator
+  let propagator = BaggagePropagator::new()
+  
+  // Inject baggage into carrier
+  let carrier = TextMapCarrier::new()
+  propagator.inject(updated_baggage, carrier)
+  
+  // Verify injected baggage header
+  let baggage_header = TextMapCarrier::get(carrier, "baggage")
+  match baggage_header {
+    Some(header) => {
+      assert_true(header.contains("user.id=12345"))
+      assert_true(header.contains("session.id=abcdef"))
+      assert_true(header.contains("request.id=req-123"))
+    }
+    None => assert_true(false)
+  }
+  
+  // Extract baggage from carrier
+  let extracted_baggage = propagator.extract(carrier)
+  
+  // Verify extracted baggage entries
+  let user_id = Baggage::get_entry(extracted_baggage, "user.id")
+  match user_id {
+    Some(value) => assert_eq(value, "12345")
+    None => assert_true(false)
+  }
+  
+  let session_id = Baggage::get_entry(extracted_baggage, "session.id")
+  match session_id {
+    Some(value) => assert_eq(value, "abcdef")
+    None => assert_true(false)
+  }
+  
+  let request_id = Baggage::get_entry(extracted_baggage, "request.id")
+  match request_id {
+    Some(value) => assert_eq(value, "req-123")
+    None => assert_true(false)
+  }
+}
+
+// Test 3: Correlation Context Propagation
+test "correlation context propagation" {
+  // Create correlation context
+  let correlation_context = CorrelationContext::new()
+  let updated_context = CorrelationContext::set_value(correlation_context, "correlation.id", "corr-12345")
+  let updated_context = CorrelationContext::set_value(updated_context, "business.transaction", "order-processing")
+  let updated_context = CorrelationContext::set_value(updated_context, "tenant.id", "tenant-001")
+  
+  // Create propagator
+  let propagator = CorrelationContextPropagator::new()
+  
+  // Inject context into carrier
+  let carrier = TextMapCarrier::new()
+  propagator.inject(updated_context, carrier)
+  
+  // Verify injected correlation headers
+  let correlation_header = TextMapCarrier::get(carrier, "correlation-context")
+  match correlation_header {
+    Some(header) => {
+      assert_true(header.contains("correlation.id=corr-12345"))
+      assert_true(header.contains("business.transaction=order-processing"))
+      assert_true(header.contains("tenant.id=tenant-001"))
+    }
+    None => assert_true(false)
+  }
+  
+  // Extract context from carrier
+  let extracted_context = propagator.extract(carrier)
+  
+  // Verify extracted context values
+  let correlation_id = CorrelationContext::get_value(extracted_context, "correlation.id")
+  match correlation_id {
+    Some(value) => assert_eq(value, "corr-12345")
+    None => assert_true(false)
+  }
+  
+  let business_transaction = CorrelationContext::get_value(extracted_context, "business.transaction")
+  match business_transaction {
+    Some(value) => assert_eq(value, "order-processing")
+    None => assert_true(false)
+  }
+  
+  let tenant_id = CorrelationContext::get_value(extracted_context, "tenant.id")
+  match tenant_id {
+    Some(value) => assert_eq(value, "tenant-001")
+    None => assert_true(false)
+  }
+}
+
+// Test 4: Composite Propagation
+test "composite propagation" {
+  // Create trace context
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_id = "b7ad6b7169203331"
+  let span_context = SpanContext::new(trace_id, span_id, true, "")
+  
+  // Create baggage
+  let baggage = Baggage::new()
+  let baggage = Baggage::set_entry(baggage, "user.id", "12345")
+  
+  // Create correlation context
+  let correlation_context = CorrelationContext::new()
+  let correlation_context = CorrelationContext::set_value(correlation_context, "correlation.id", "corr-12345")
+  
+  // Create composite propagator
+  let composite_propagator = CompositePropagator::new([
+    TraceContextPropagator::new(),
+    BaggagePropagator::new(),
+    CorrelationContextPropagator::new()
+  ])
+  
+  // Create context with all components
+  let context = Context::with_value(Context::root(), ContextKey::new("span_context"), span_context)
+  let context = Context::with_value(context, ContextKey::new("baggage"), baggage)
+  let context = Context::with_value(context, ContextKey::new("correlation_context"), correlation_context)
+  
+  // Inject all contexts into carrier
+  let carrier = TextMapCarrier::new()
+  composite_propagator.inject(context, carrier)
+  
+  // Verify all headers were injected
+  assert_true(TextMapCarrier::contains_key(carrier, "traceparent"))
+  assert_true(TextMapCarrier::contains_key(carrier, "baggage"))
+  assert_true(TextMapCarrier::contains_key(carrier, "correlation-context"))
+  
+  // Extract all contexts from carrier
+  let extracted_context = composite_propagator.extract(carrier)
+  
+  // Verify trace context was extracted
+  let extracted_span = Context::get_value(extracted_context, ContextKey::new("span_context"))
+  match extracted_span {
+    Some(span_ctx) => {
+      assert_eq(SpanContext::trace_id(span_ctx), trace_id)
+      assert_eq(SpanContext::span_id(span_ctx), span_id)
+    }
+    None => assert_true(false)
+  }
+  
+  // Verify baggage was extracted
+  let extracted_baggage = Context::get_value(extracted_context, ContextKey::new("baggage"))
+  match extracted_baggage {
+    Some(bag) => {
+      let user_id = Baggage::get_entry(bag, "user.id")
+      match user_id {
+        Some(value) => assert_eq(value, "12345")
+        None => assert_true(false)
+      }
+    }
+    None => assert_true(false)
+  }
+  
+  // Verify correlation context was extracted
+  let extracted_correlation = Context::get_value(extracted_context, ContextKey::new("correlation_context"))
+  match extracted_correlation {
+    Some(correlation) => {
+      let correlation_id = CorrelationContext::get_value(correlation, "correlation.id")
+      match correlation_id {
+        Some(value) => assert_eq(value, "corr-12345")
+        None => assert_true(false)
+      }
     }
     None => assert_true(false)
   }
 }
 
-// 测试3: 跨服务采样决策传播
-test "跨服务采样决策传播测试" {
-  // 创建采样策略
-  let sampling_strategy = SamplingStrategy::new({
-    default_rate: 0.1,  // 10%默认采样率
-    service_specific: {
-      "critical-service": 1.0,  // 100%采样
-      "debug-service": 0.5      // 50%采样
+// Test 5: HTTP Header Propagation
+test "http header propagation" {
+  // Create trace context
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_id = "b7ad6b7169203331"
+  let span_context = SpanContext::new(trace_id, span_id, true, "")
+  
+  // Create baggage
+  let baggage = Baggage::new()
+  let baggage = Baggage::set_entry(baggage, "user.id", "12345")
+  
+  // Create HTTP headers carrier
+  let http_headers = HttpHeaders::new()
+  
+  // Create propagator
+  let propagator = CompositePropagator::new([
+    TraceContextPropagator::new(),
+    BaggagePropagator::new()
+  ])
+  
+  // Create context
+  let context = Context::with_value(Context::root(), ContextKey::new("span_context"), span_context)
+  let context = Context::with_value(context, ContextKey::new("baggage"), baggage)
+  
+  // Inject into HTTP headers
+  propagator.inject(context, http_headers)
+  
+  // Verify HTTP headers
+  assert_true(HttpHeaders::contains(http_headers, "traceparent"))
+  assert_true(HttpHeaders::contains(http_headers, "baggage"))
+  
+  let trace_header = HttpHeaders::get(http_headers, "traceparent")
+  match trace_header {
+    Some(header) => {
+      assert_true(header.contains("00-" + trace_id))
+      assert_true(header.contains("-" + span_id))
     }
-  })
-  
-  // 测试场景1：未采样的请求
-  let unsampled_trace_id = "trace-unsampled-001"
-  let unsampled_context = TraceContext::new({
-    trace_id: unsampled_trace_id,
-    span_id: "root-unsampled",
-    baggage: {},
-    sampled: false
-  })
-  
-  let web_service = Service::new("web-service", unsampled_context)
-  
-  // 验证未采样决策传播
-  let api_context = web_service.propagate_context_to("api-service", web_service.current_span())
-  assert_false(api_context.sampled)
-  
-  let api_service = Service::new("api-service", api_context)
-  let db_context = api_service.propagate_context_to("database", api_service.current_span())
-  assert_false(db_context.sampled)
-  
-  // 测试场景2：已采样的请求
-  let sampled_trace_id = "trace-sampled-001"
-  let sampled_context = TraceContext::new({
-    trace_id: sampled_trace_id,
-    span_id: "root-sampled",
-    baggage: {},
-    sampled: true
-  })
-  
-  let web_service2 = Service::new("web-service", sampled_context)
-  
-  // 验证采样决策传播
-  let api_context2 = web_service2.propagate_context_to("api-service", web_service2.current_span())
-  assert_true(api_context2.sampled)
-  
-  let api_service2 = Service::new("api-service", api_context2)
-  let db_context2 = api_service2.propagate_context_to("database", api_service2.current_span())
-  assert_true(db_context2.sampled)
-  
-  // 测试场景3：服务特定采样率
-  let critical_trace_id = "trace-critical-001"
-  let critical_context = TraceContext::new({
-    trace_id: critical_trace_id,
-    span_id: "root-critical",
-    baggage: {},
-    sampled: None  // 未明确指定采样决策
-  })
-  
-  let critical_service = Service::new("critical-service", critical_context)
-  
-  // 应用服务特定采样策略
-  let sampling_decision = sampling_strategy.should_sample("critical-service", critical_trace_id)
-  assert_true(sampling_decision)
-  
-  critical_service.set_sampling_decision(sampling_decision)
-  
-  // 验证采样决策传播
-  let downstream_context = critical_service.propagate_context_to("downstream-service", critical_service.current_span())
-  assert_true(downstream_context.sampled)
-}
-
-// 测试4: 跨服务元数据传播
-test "跨服务元数据传播测试" {
-  // 创建初始元数据
-  let initial_metadata = ServiceMetadata::new({
-    service_name: "gateway",
-    version: "1.2.3",
-    environment: "production",
-    region: "us-east-1",
-    deployment: {
-      pod_name: "gateway-7f8d9c2b",
-      namespace: "frontend",
-      cluster: "prod-cluster-01"
-    },
-    business_context: {
-      tenant_id: "tenant-123",
-      organization_id: "org-456",
-      product_line: "ecommerce"
-    }
-  })
-  
-  let gateway_service = Service::with_metadata("gateway", initial_metadata)
-  
-  // 添加运行时元数据
-  gateway_service.add_runtime_metadata({
-    "request.start_time": "2023-01-01T12:00:00Z",
-    "client.ip": "192.168.1.100",
-    "client.geo": "US-NY"
-  })
-  
-  // 传播到下游服务
-  let auth_metadata = gateway_service.propagate_metadata_to("auth-service")
-  let auth_service = Service::with_metadata("auth-service", auth_metadata)
-  
-  // Auth服务添加自己的元数据
-  auth_service.add_runtime_metadata({
-    "auth.method": "jwt",
-    "token.issuer": "auth-service",
-    "token.expiry": "2023-01-01T12:30:00Z"
-  })
-  
-  // 继续传播
-  let user_metadata = auth_service.propagate_metadata_to("user-service")
-  let user_service = Service::with_metadata("user-service", user_metadata)
-  
-  user_service.add_runtime_metadata({
-    "user.id": "user-789",
-    "user.tier": "premium",
-    "feature.flags": "new_dashboard,advanced_analytics"
-  })
-  
-  // 验证元数据传播
-  // 验证初始元数据保留
-  assert_eq(user_service.get_metadata("environment"), Some("production"))
-  assert_eq(user_service.get_metadata("region"), Some("us-east-1"))
-  assert_eq(user_service.get_metadata("tenant_id"), Some("tenant-123"))
-  assert_eq(user_service.get_metadata("organization_id"), Some("org-456"))
-  
-  // 验证上游服务元数据
-  assert_eq(user_service.get_metadata("auth.method"), Some("jwt"))
-  assert_eq(user_service.get_metadata("token.issuer"), Some("auth-service"))
-  
-  // 验证客户端上下文
-  assert_eq(user_service.get_metadata("client.ip"), Some("192.168.1.100"))
-  assert_eq(user_service.get_metadata("client.geo"), Some("US-NY"))
-  
-  // 验证当前服务元数据
-  assert_eq(user_service.get_metadata("user.id"), Some("user-789"))
-  assert_eq(user_service.get_metadata("user.tier"), Some("premium"))
-}
-
-// 测试5: 跨服务链路追踪完整性
-test "跨服务链路追踪完整性测试" {
-  // 创建复杂的微服务调用链
-  let trace_collector = TraceCollector::new()
-  
-  // 初始请求
-  let initial_context = TraceContext::new({
-    trace_id: "trace-complex-001",
-    span_id: "entry-point",
-    baggage: {
-      "request.id": "req-complex-001",
-      "user.id": "user-complex",
-      "session.id": "sess-complex"
-    }
-  })
-  
-  let entry_service = Service::new("entry-service", initial_context)
-  let entry_span = entry_service.create_span("http.request", {
-    operation_name: "process.complex.request",
-    tags: {
-      "http.method": "POST",
-      "http.url": "/api/complex/workflow"
-    }
-  })
-  
-  trace_collector.add_span(entry_span)
-  
-  // 并行调用多个服务
-  let parallel_calls = [
-    ("auth-service", "authenticate"),
-    ("config-service", "get.configuration"),
-    ("validation-service", "validate.request")
-  ]
-  
-  let parallel_spans = []
-  for (service_name, operation) in parallel_calls {
-    let context = entry_service.propagate_context_to(service_name, entry_span)
-    let service = Service::new(service_name, context)
-    let span = service.create_span(operation, {
-      operation_name: operation,
-      tags: {
-        "service.name": service_name,
-        "operation.type": "parallel"
-      }
-    })
-    
-    trace_collector.add_span(span)
-    parallel_spans.push(span)
+    None => assert_true(false)
   }
   
-  // 串行调用
-  let sequential_calls = [
-    ("business-service", "process.business.logic"),
-    ("data-service", "fetch.required.data"),
-    ("notification-service", "send.notifications")
-  ]
-  
-  let last_span = entry_span
-  for (service_name, operation) in sequential_calls {
-    let context = entry_service.propagate_context_to(service_name, last_span)
-    let service = Service::new(service_name, context)
-    let span = service.create_span(operation, {
-      operation_name: operation,
-      tags: {
-        "service.name": service_name,
-        "operation.type": "sequential"
-      }
-    })
-    
-    trace_collector.add_span(span)
-    last_span = span
+  let baggage_header = HttpHeaders::get(http_headers, "baggage")
+  match baggage_header {
+    Some(header) => assert_true(header.contains("user.id=12345"))
+    None => assert_true(false)
   }
   
-  // 验证追踪完整性
-  let trace = trace_collector.get_trace("trace-complex-001")
-  match trace {
-    Some(collected_trace) => {
-      // 验证span数量
-      assert_eq(collected_trace.spans.length(), 7)  // 1 entry + 3 parallel + 3 sequential
-      
-      // 验证根span
-      let root_span = collected_trace.spans.find(|span| span.span_id == "entry-point")
-      match root_span {
-        Some(span) => {
-          assert_eq(span.operation_name, "process.complex.request")
-          assert_eq(span.parent_span_id, None)
-        }
+  // Extract from HTTP headers
+  let extracted_context = propagator.extract(http_headers)
+  
+  // Verify extraction
+  let extracted_span = Context::get_value(extracted_context, ContextKey::new("span_context"))
+  match extracted_span {
+    Some(span_ctx) => {
+      assert_eq(SpanContext::trace_id(span_ctx), trace_id)
+      assert_eq(SpanContext::span_id(span_ctx), span_id)
+    }
+    None => assert_true(false)
+  }
+}
+
+// Test 6: Message Queue Propagation
+test "message queue propagation" {
+  // Create trace context
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_id = "b7ad6b7169203331"
+  let span_context = SpanContext::new(trace_id, span_id, true, "")
+  
+  // Create baggage
+  let baggage = Baggage::new()
+  let baggage = Baggage::set_entry(baggage, "user.id", "12345")
+  
+  // Create message properties carrier
+  let message_properties = MessageProperties::new()
+  
+  // Create propagator
+  let propagator = CompositePropagator::new([
+    TraceContextPropagator::new(),
+    BaggagePropagator::new()
+  ])
+  
+  // Create context
+  let context = Context::with_value(Context::root(), ContextKey::new("span_context"), span_context)
+  let context = Context::with_value(context, ContextKey::new("baggage"), baggage)
+  
+  // Inject into message properties
+  propagator.inject(context, message_properties)
+  
+  // Verify message properties
+  assert_true(MessageProperties::contains_key(message_properties, "traceparent"))
+  assert_true(MessageProperties::contains_key(message_properties, "baggage"))
+  
+  let trace_prop = MessageProperties::get(message_properties, "traceparent")
+  match trace_prop {
+    Some(prop) => {
+      assert_true(prop.contains("00-" + trace_id))
+      assert_true(prop.contains("-" + span_id))
+    }
+    None => assert_true(false)
+  }
+  
+  let baggage_prop = MessageProperties::get(message_properties, "baggage")
+  match baggage_prop {
+    Some(prop) => assert_true(prop.contains("user.id=12345"))
+    None => assert_true(false)
+  }
+  
+  // Extract from message properties
+  let extracted_context = propagator.extract(message_properties)
+  
+  // Verify extraction
+  let extracted_span = Context::get_value(extracted_context, ContextKey::new("span_context"))
+  match extracted_span {
+    Some(span_ctx) => {
+      assert_eq(SpanContext::trace_id(span_ctx), trace_id)
+      assert_eq(SpanContext::span_id(span_ctx), span_id)
+    }
+    None => assert_true(false)
+  }
+}
+
+// Test 7: Cross-Service Trace Continuity
+test "cross-service trace continuity" {
+  // Service A: Create initial span
+  let service_a_tracer = TracerProvider::get_tracer("service-a")
+  let root_span = Tracer::start_span(service_a_tracer, "root-operation")
+  let root_context = Span::span_context(root_span)
+  
+  // Propagate context to Service B
+  let carrier = TextMapCarrier::new()
+  let propagator = TraceContextPropagator::new()
+  propagator.inject(root_context, carrier)
+  
+  // Service B: Extract context and create child span
+  let extracted_context = propagator.extract(carrier)
+  let service_b_tracer = TracerProvider::get_tracer("service-b")
+  let child_span = Tracer::start_span_with_context(service_b_tracer, "child-operation", extracted_context)
+  let child_context = Span::span_context(child_span)
+  
+  // Verify trace continuity
+  assert_eq(SpanContext::trace_id(root_context), SpanContext::trace_id(child_context))
+  assert_neq(SpanContext::span_id(root_context), SpanContext::span_id(child_context))
+  
+  // Propagate context to Service C
+  let carrier2 = TextMapCarrier::new()
+  propagator.inject(child_context, carrier2)
+  
+  // Service C: Extract context and create grandchild span
+  let extracted_context2 = propagator.extract(carrier2)
+  let service_c_tracer = TracerProvider::get_tracer("service-c")
+  let grandchild_span = Tracer::start_span_with_context(service_c_tracer, "grandchild-operation", extracted_context2)
+  let grandchild_context = Span::span_context(grandchild_span)
+  
+  // Verify trace continuity across all services
+  assert_eq(SpanContext::trace_id(root_context), SpanContext::trace_id(grandchild_context))
+  assert_neq(SpanContext::span_id(root_context), SpanContext::span_id(grandchild_context))
+  assert_neq(SpanContext::span_id(child_context), SpanContext::span_id(grandchild_context))
+  
+  // End all spans
+  Span::end(grandchild_span)
+  Span::end(child_span)
+  Span::end(root_span)
+}
+
+// Test 8: Propagation with Custom Headers
+test "propagation with custom headers" {
+  // Create custom propagator
+  let custom_propagator = CustomPropagator::new("x-custom-trace", "x-custom-baggage")
+  
+  // Create trace context
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_id = "b7ad6b7169203331"
+  let span_context = SpanContext::new(trace_id, span_id, true, "")
+  
+  // Create baggage
+  let baggage = Baggage::new()
+  let baggage = Baggage::set_entry(baggage, "custom.key", "custom.value")
+  
+  // Create context
+  let context = Context::with_value(Context::root(), ContextKey::new("span_context"), span_context)
+  let context = Context::with_value(context, ContextKey::new("baggage"), baggage)
+  
+  // Inject with custom headers
+  let carrier = TextMapCarrier::new()
+  custom_propagator.inject(context, carrier)
+  
+  // Verify custom headers
+  assert_true(TextMapCarrier::contains_key(carrier, "x-custom-trace"))
+  assert_true(TextMapCarrier::contains_key(carrier, "x-custom-baggage"))
+  
+  let custom_trace = TextMapCarrier::get(carrier, "x-custom-trace")
+  match custom_trace {
+    Some(header) => {
+      assert_true(header.contains(trace_id))
+      assert_true(header.contains(span_id))
+    }
+    None => assert_true(false)
+  }
+  
+  let custom_baggage = TextMapCarrier::get(carrier, "x-custom-baggage")
+  match custom_baggage {
+    Some(header) => assert_true(header.contains("custom.key=custom.value"))
+    None => assert_true(false)
+  }
+  
+  // Extract with custom headers
+  let extracted_context = custom_propagator.extract(carrier)
+  
+  // Verify extraction
+  let extracted_span = Context::get_value(extracted_context, ContextKey::new("span_context"))
+  match extracted_span {
+    Some(span_ctx) => {
+      assert_eq(SpanContext::trace_id(span_ctx), trace_id)
+      assert_eq(SpanContext::span_id(span_ctx), span_id)
+    }
+    None => assert_true(false)
+  }
+  
+  let extracted_baggage = Context::get_value(extracted_context, ContextKey::new("baggage"))
+  match extracted_baggage {
+    Some(bag) => {
+      let custom_value = Baggage::get_entry(bag, "custom.key")
+      match custom_value {
+        Some(value) => assert_eq(value, "custom.value")
         None => assert_true(false)
-      }
-      
-      // 验证并行span的父级都是entry span
-      let parallel_auth_span = collected_trace.spans.find(|span| 
-        span.service_name == "auth-service" && span.operation_name == "authenticate"
-      )
-      match parallel_auth_span {
-        Some(span) => assert_eq(span.parent_span_id, Some("entry-point"))
-        None => assert_true(false)
-      }
-      
-      // 验证串行调用的链式关系
-      let business_span = collected_trace.spans.find(|span| 
-        span.service_name == "business-service"
-      )
-      let data_span = collected_trace.spans.find(|span| 
-        span.service_name == "data-service"
-      )
-      
-      match (business_span, data_span) {
-        (Some(business), Some(data)) => {
-          assert_eq(business.parent_span_id, Some("entry-point"))
-          assert_eq(data.parent_span_id, Some(business.span_id))
-        }
-        _ => assert_true(false)
-      }
-      
-      // 验证所有span的trace_id一致
-      for span in collected_trace.spans {
-        assert_eq(span.trace_id, "trace-complex-001")
-      }
-      
-      // 验证baggage在所有span中传播
-      for span in collected_trace.spans {
-        assert_true(span.baggage.contains_key("request.id"))
-        assert_true(span.baggage.contains_key("user.id"))
-        assert_true(span.baggage.contains_key("session.id"))
       }
     }
     None => assert_true(false)

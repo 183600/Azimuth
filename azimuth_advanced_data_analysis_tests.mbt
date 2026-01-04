@@ -1,253 +1,477 @@
-// Advanced Data Analysis Tests for Azimuth Telemetry System
-// This file contains test cases for advanced data analysis functionality
+// Azimuth Telemetry System - Advanced Data Analysis Tests
+// This file contains comprehensive test cases for advanced data analysis functionality
 
-// Test 1: Statistical Analysis Functions
-test "statistical analysis functions" {
-  let data_points = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
-  
-  // Test mean calculation
-  let mean_value = DataAnalysis::calculate_mean(data_points)
-  assert_eq(mean_value, 5.5)
-  
-  // Test median calculation
-  let median_value = DataAnalysis::calculate_median(data_points)
-  assert_eq(median_value, 5.5)
-  
-  // Test standard deviation
-  let std_dev = DataAnalysis::calculate_std_deviation(data_points)
-  assert_true(std_dev > 3.0 && std_dev < 3.1)
-  
-  // Test variance
-  let variance = DataAnalysis::calculate_variance(data_points)
-  assert_true(variance > 8.0 && variance < 9.0)
-}
-
-// Test 2: Time Series Analysis
+// Test 1: Time Series Analysis
 test "time series analysis" {
-  let time_series_data = [
-    (1000L, 10.0),
-    (2000L, 15.0),
-    (3000L, 12.0),
-    (4000L, 18.0),
-    (5000L, 22.0)
-  ]
+  // Create time series data
+  let time_series_data = []
+  let base_time = 1234567890L
+  let base_value = 100.0
   
-  // Test trend analysis
-  let trend = TimeSeriesAnalysis::calculate_trend(time_series_data)
-  assert_true(trend > 0.0) // Positive trend
-  
-  // Test moving average
-  let moving_avg = TimeSeriesAnalysis::calculate_moving_average(time_series_data, 3)
-  assert_eq(moving_avg.length(), 3)
-  
-  // Test seasonal decomposition
-  let seasonal_result = TimeSeriesAnalysis::seasonal_decomposition(time_series_data)
-  match seasonal_result {
-    Some(result) => {
-      assert_true(result.trend.length() > 0)
-      assert_true(result.seasonal.length() > 0)
-      assert_true(result.residual.length() > 0)
-    }
-    None => assert_true(false)
+  // Generate data with trend and seasonality
+  for i in 0..=100 {
+    let trend = i.to_float() * 0.5
+    let seasonal = 10.0 * Float::sin(2.0 * Float::pi() * i.to_float() / 12.0) // Monthly seasonality
+    let noise = Random::float() * 5.0 - 2.5 // Random noise
+    let value = base_value + trend + seasonal + noise
+    
+    time_series_data.push(TimeSeriesData::new(
+      base_time + i * 86400L, // Daily data
+      value,
+      "metric_value"
+    ))
   }
+  
+  // Create time series analyzer
+  let analyzer = TimeSeriesAnalyzer::new(time_series_data)
+  
+  // Detect trend
+  let trend_result = TimeSeriesAnalyzer::detect_trend(analyzer)
+  assert_eq(trend_result.direction, TrendDirection::Increasing)
+  assert_true(trend_result.slope > 0.4) // Should be close to 0.5
+  assert_true(trend_result.confidence > 0.8) // High confidence
+  
+  // Detect seasonality
+  let seasonality_result = TimeSeriesAnalyzer::detect_seasonality(analyzer)
+  assert_true(seasonality_result.is_seasonal)
+  assert_eq(seasonality_result.period, 12) // Monthly period
+  assert_true(seasonality_result.strength > 0.5) // Moderate to strong seasonality
+  
+  // Forecast next 10 values
+  let forecast = TimeSeriesAnalyzer::forecast(analyzer, 10)
+  assert_eq(forecast.values.length(), 10)
+  
+  // Verify forecast is reasonable (should continue increasing trend)
+  for i in 0..=9 {
+    assert_true(forecast.values[i] > base_value + (100 + i).to_float() * 0.4)
+  }
+  
+  // Verify forecast confidence intervals
+  for i in 0..=9 {
+    assert_true(forecast.upper_bounds[i] > forecast.values[i])
+    assert_true(forecast.lower_bounds[i] < forecast.values[i])
+  }
+  
+  // Detect anomalies in time series
+  let anomalies = TimeSeriesAnalyzer::detect_anomalies(analyzer, 2.0) // 2 standard deviations
+  assert_true(anomalies.length() > 0) // Should detect some anomalies due to noise
 }
 
-// Test 3: Anomaly Detection
-test "anomaly detection algorithms" {
-  let normal_data = [10.0, 12.0, 11.0, 13.0, 9.0, 14.0, 10.0, 12.0, 11.0, 13.0]
-  let anomalous_data = [10.0, 12.0, 11.0, 50.0, 9.0, 14.0, 10.0, 12.0, 11.0, 13.0]
+// Test 2: Statistical Analysis
+test "statistical analysis" {
+  // Create sample data
+  let sample_data = [
+    23.5, 25.1, 22.8, 26.3, 24.9, 21.7, 27.2, 25.8, 23.2, 24.5,
+    26.1, 22.9, 25.4, 23.8, 24.2, 25.7, 23.1, 26.5, 24.7, 22.4,
+    25.3, 23.9, 24.8, 26.2, 23.6, 25.0, 22.6, 24.4, 25.9, 23.3
+  ]
   
-  // Test z-score anomaly detection
-  let normal_z_scores = AnomalyDetection::z_score_analysis(normal_data)
-  let anomalous_z_scores = AnomalyDetection::z_score_analysis(anomalous_data)
+  // Create statistical analyzer
+  let analyzer = StatisticalAnalyzer::new(sample_data)
   
-  assert_true(normal_z_scores.max() < 3.0)
-  assert_true(anomalous_z_scores.max() > 3.0)
+  // Calculate basic statistics
+  let stats = StatisticalAnalyzer::basic_statistics(analyzer)
   
-  // Test isolation forest anomaly detection
-  let normal_if_scores = AnomalyDetection::isolation_forest(normal_data)
-  let anomalous_if_scores = AnomalyDetection::isolation_forest(anomalous_data)
+  assert_eq(stats.count, 30)
+  assert_eq(stats.min, 21.7)
+  assert_eq(stats.max, 27.2)
+  assert_true(Float::abs(stats.mean - 24.5) < 0.1)
+  assert_true(Float::abs(stats.median - 24.5) < 0.1)
+  assert_true(stats.standard_deviation > 1.0)
+  assert_true(stats.standard_deviation < 2.0)
   
-  assert_true(normal_if_scores.average() < anomalous_if_scores.average())
+  // Calculate percentiles
+  let p25 = StatisticalAnalyzer::percentile(analyzer, 25)
+  let p75 = StatisticalAnalyzer::percentile(analyzer, 75)
+  let p90 = StatisticalAnalyzer::percentile(analyzer, 90)
   
-  // Test DBSCAN clustering for anomaly detection
-  let clusters = AnomalyDetection::dbscan_clustering(anomalous_data, 2.0, 2)
-  assert_true(clusters.length() >= 1)
+  assert_true(p25 < stats.median)
+  assert_true(p75 > stats.median)
+  assert_true(p90 > p75)
+  
+  // Test normality
+  let normality_test = StatisticalAnalyzer::test_normality(analyzer)
+  assert_true(normality_test.p_value > 0.05) // Should not reject normality
+  
+  // Calculate confidence interval
+  let confidence_interval = StatisticalAnalyzer::confidence_interval(analyzer, 0.95)
+  assert_true(confidence_interval.lower < stats.mean)
+  assert_true(confidence_interval.upper > stats.mean)
+  assert_true(confidence_interval.upper - confidence_interval.lower > 0)
+  
+  // Compare with another sample
+  let comparison_data = [
+    28.5, 29.1, 27.8, 30.3, 28.9, 26.7, 31.2, 29.8, 27.2, 28.5
+  ]
+  
+  let comparison_analyzer = StatisticalAnalyzer::new(comparison_data)
+  let t_test = StatisticalAnalyzer::t_test(analyzer, comparison_analyzer)
+  
+  assert_true(t_test.p_value < 0.05) // Should reject null hypothesis of equal means
+  assert_true(t_test.mean_difference > 3.0) // Means should differ significantly
 }
 
-// Test 4: Correlation Analysis
+// Test 3: Correlation Analysis
 test "correlation analysis" {
-  let data_series_1 = [1.0, 2.0, 3.0, 4.0, 5.0]
-  let data_series_2 = [2.0, 4.0, 6.0, 8.0, 10.0] // Perfect positive correlation
-  let data_series_3 = [5.0, 4.0, 3.0, 2.0, 1.0] // Perfect negative correlation
-  let data_series_4 = [3.0, 1.0, 4.0, 1.0, 5.0] // Low correlation
+  // Create correlated data
+  let data_points = []
+  for i in 0..=50 {
+    let x = i.to_float()
+    let y = 2.5 * x + 10.0 + (Random::float() * 10.0 - 5.0) // Linear relationship with noise
+    let z = 30.0 - 1.5 * x + (Random::float() * 8.0 - 4.0) // Negative correlation with x
+    
+    data_points.push(DataPoint::new(x, y, z))
+  }
   
-  // Test Pearson correlation
-  let pos_correlation = CorrelationAnalysis::pearson_correlation(data_series_1, data_series_2)
-  assert_true(pos_correlation > 0.99)
+  // Create correlation analyzer
+  let analyzer = CorrelationAnalyzer::new(data_points)
   
-  let neg_correlation = CorrelationAnalysis::pearson_correlation(data_series_1, data_series_3)
-  assert_true(neg_correlation < -0.99)
+  // Calculate Pearson correlation coefficients
+  let xy_correlation = CorrelationAnalyzer::pearson(analyzer, "x", "y")
+  let xz_correlation = CorrelationAnalyzer::pearson(analyzer, "x", "z")
+  let yz_correlation = CorrelationAnalyzer::pearson(analyzer, "y", "z")
   
-  let low_correlation = CorrelationAnalysis::pearson_correlation(data_series_1, data_series_4)
-  assert_true(low_correlation > -0.5 && low_correlation < 0.5)
+  assert_true(xy_correlation > 0.9) // Strong positive correlation
+  assert_true(xz_correlation < -0.9) // Strong negative correlation
+  assert_true(Float::abs(yz_correlation) < 0.5) // Weak correlation between y and z
   
-  // Test Spearman correlation
-  let spearman_pos = CorrelationAnalysis::spearman_correlation(data_series_1, data_series_2)
-  assert_true(spearman_pos > 0.99)
+  // Calculate Spearman rank correlation
+  let xy_spearman = CorrelationAnalyzer::spearman(analyzer, "x", "y")
+  let xz_spearman = CorrelationAnalyzer::spearman(analyzer, "x", "z")
+  
+  assert_true(xy_spearman > 0.9) // Strong positive correlation
+  assert_true(xz_spearman < -0.9) // Strong negative correlation
+  
+  // Test significance of correlations
+  let xy_significance = CorrelationAnalyzer::test_significance(analyzer, "x", "y")
+  let xz_significance = CorrelationAnalyzer::test_significance(analyzer, "x", "z")
+  
+  assert_true(xy_significance.p_value < 0.001) // Highly significant
+  assert_true(xz_significance.p_value < 0.001) // Highly significant
+  
+  // Create correlation matrix
+  let correlation_matrix = CorrelationAnalyzer::correlation_matrix(analyzer)
+  assert_eq(correlation_matrix.size, 3) // 3 variables
+  
+  assert_eq(correlation_matrix[("x", "y")], xy_correlation)
+  assert_eq(correlation_matrix[("y", "x")], xy_correlation) // Symmetric
+  assert_eq(correlation_matrix[("x", "z")], xz_correlation)
+  assert_eq(correlation_matrix[("z", "x")], xz_correlation) // Symmetric
+  assert_eq(correlation_matrix[("y", "z")], yz_correlation)
+  assert_eq(correlation_matrix[("z", "y")], yz_correlation) // Symmetric
 }
 
-// Test 5: Pattern Recognition
-test "pattern recognition algorithms" {
-  let pattern_data = [
-    [1.0, 2.0, 3.0, 4.0, 5.0],
-    [2.0, 3.0, 4.0, 5.0, 6.0],
-    [1.1, 2.1, 3.1, 4.1, 5.1],
-    [10.0, 20.0, 30.0, 40.0, 50.0]
-  ]
+// Test 4: Cluster Analysis
+test "cluster analysis" {
+  // Create clustered data
+  let cluster_data = []
   
-  // Test pattern similarity
-  let similarity_1 = PatternRecognition::calculate_similarity(pattern_data[0], pattern_data[1])
-  let similarity_2 = PatternRecognition::calculate_similarity(pattern_data[0], pattern_data[2])
-  let similarity_3 = PatternRecognition::calculate_similarity(pattern_data[0], pattern_data[3])
+  // Cluster 1: Centered around (10, 10)
+  for i in 0..=20 {
+    let x = 10.0 + Random::float() * 4.0 - 2.0
+    let y = 10.0 + Random::float() * 4.0 - 2.0
+    cluster_data.push(Point::new(x, y))
+  }
   
-  assert_true(similarity_2 > similarity_1)
-  assert_true(similarity_1 > similarity_3)
+  // Cluster 2: Centered around (20, 20)
+  for i in 0..=20 {
+    let x = 20.0 + Random::float() * 4.0 - 2.0
+    let y = 20.0 + Random::float() * 4.0 - 2.0
+    cluster_data.push(Point::new(x, y))
+  }
   
-  // Test pattern clustering
-  let clusters = PatternRecognition::cluster_patterns(pattern_data, 2)
-  assert_eq(clusters.length(), 2)
+  // Cluster 3: Centered around (10, 20)
+  for i in 0..=20 {
+    let x = 10.0 + Random::float() * 4.0 - 2.0
+    let y = 20.0 + Random::float() * 4.0 - 2.0
+    cluster_data.push(Point::new(x, y))
+  }
   
-  // Test sequence pattern detection
-  let sequence = [1.0, 2.0, 3.0, 2.0, 3.0, 4.0, 3.0, 4.0, 5.0]
-  let patterns = PatternRecognition::detect_repeating_patterns(sequence, 3)
-  assert_true(patterns.length() > 0)
+  // Create cluster analyzer
+  let analyzer = ClusterAnalyzer::new(cluster_data)
+  
+  // Determine optimal number of clusters using elbow method
+  let optimal_k = ClusterAnalyzer::optimal_clusters(analyzer, 2, 6)
+  assert_eq(optimal_k, 3) // Should detect 3 clusters
+  
+  // Perform K-means clustering
+  let kmeans_result = ClusterAnalyzer::kmeans(analyzer, 3)
+  assert_eq(kmeans_result.clusters.length(), 3)
+  
+  // Verify each point is assigned to a cluster
+  let total_assigned = kmeans_result.clusters.fold_left(0, fn(acc, cluster) { acc + cluster.points.length() })
+  assert_eq(total_assigned, cluster_data.length())
+  
+  // Verify cluster centers are reasonable
+  let centers = kmeans_result.centers
+  assert_true(centers.any(fn(center) { 
+    Float::abs(center.x - 10.0) < 2.0 && Float::abs(center.y - 10.0) < 2.0 
+  }))
+  assert_true(centers.any(fn(center) { 
+    Float::abs(center.x - 20.0) < 2.0 && Float::abs(center.y - 20.0) < 2.0 
+  }))
+  assert_true(centers.any(fn(center) { 
+    Float::abs(center.x - 10.0) < 2.0 && Float::abs(center.y - 20.0) < 2.0 
+  }))
+  
+  // Calculate cluster quality metrics
+  let silhouette_score = ClusterAnalyzer::silhouette_score(kmeans_result)
+  assert_true(silhouette_score > 0.5) // Good clustering
+  
+  // Test hierarchical clustering
+  let hierarchical_result = ClusterAnalyzer::hierarchical(analyzer, 3)
+  assert_eq(hierarchical_result.clusters.length(), 3)
+  
+  // Compare results
+  let similarity = ClusterAnalyzer::compare_clusterings(kmeans_result, hierarchical_result)
+  assert_true(similarity > 0.8) // Should be similar
 }
 
-// Test 6: Data Aggregation and Grouping
-test "data aggregation and grouping" {
-  let raw_data = [
-    ("group1", 10.0),
-    ("group2", 20.0),
-    ("group1", 15.0),
-    ("group3", 30.0),
-    ("group2", 25.0),
-    ("group1", 12.0)
-  ]
+// Test 5: Dimensionality Reduction
+test "dimensionality reduction" {
+  // Create high-dimensional data
+  let high_dim_data = []
+  for i in 0..=50 {
+    // Create data with underlying 2D structure
+    let x1 = i.to_float() / 10.0
+    let x2 = Float::sin(x1)
+    
+    // Create 10 dimensions with linear combinations of x1 and x2 plus noise
+    let dimensions = []
+    for j in 0..=9 {
+      let coeff1 = Random::float() * 2.0
+      let coeff2 = Random::float() * 2.0
+      let noise = Random::float() * 0.1 - 0.05
+      let value = coeff1 * x1 + coeff2 * x2 + noise
+      dimensions.push(value)
+    }
+    
+    high_dim_data.push(HighDimPoint::new(dimensions))
+  }
   
-  // Test grouping by key
-  let grouped_data = DataAggregation::group_by(raw_data, lambda { (key, _) => key })
-  assert_eq(grouped_data.length(), 3)
-  assert_true(grouped_data.contains_key("group1"))
-  assert_true(grouped_data.contains_key("group2"))
-  assert_true(grouped_data.contains_key("group3"))
+  // Create dimensionality reducer
+  let reducer = DimensionalityReducer::new(high_dim_data)
   
-  // Test aggregation functions
-  let sum_by_group = DataAggregation::aggregate_by(raw_data, lambda { (key, value) => key }, lambda { values => values.sum() })
-  assert_eq(sum_by_group.get("group1"), Some(37.0))
-  assert_eq(sum_by_group.get("group2"), Some(45.0))
-  assert_eq(sum_by_group.get("group3"), Some(30.0))
+  // Apply PCA
+  let pca_result = DimensionalityReducer::pca(reducer, 2) // Reduce to 2 dimensions
   
-  let avg_by_group = DataAggregation::aggregate_by(raw_data, lambda { (key, value) => key }, lambda { values => values.sum() / values.length().to_float() })
-  assert_eq(avg_by_group.get("group1"), Some(12.333333333333334))
+  assert_eq(pca_result.reduced_data.length(), high_dim_data.length())
+  assert_eq(pca_result.reduced_data[0].dimensions.length(), 2)
+  
+  // Verify explained variance
+  assert_true(pca_result.explained_variance[0] > 0.5) // First component should explain most variance
+  assert_true(pca_result.explained_variance[1] > 0.2) // Second component should explain significant variance
+  assert_true(pca_result.explained_variance.sum() > 0.7) // Combined should explain most variance
+  
+  // Apply t-SNE
+  let tsne_result = DimensionalityReducer::tsne(reducer, 2)
+  
+  assert_eq(tsne_result.reduced_data.length(), high_dim_data.length())
+  assert_eq(tsne_result.reduced_data[0].dimensions.length(), 2)
+  
+  // Verify t-SNE preserves local structure
+  let original_distances = DimensionalityReducer::calculate_pairwise_distances(high_dim_data)
+  let reduced_distances = DimensionalityReducer::calculate_pairwise_distances(tsne_result.reduced_data)
+  
+  // Calculate correlation between distance matrices
+  let distance_correlation = CorrelationAnalyzer::pearson_distances(original_distances, reduced_distances)
+  assert_true(distance_correlation > 0.5) // Should preserve some structure
+  
+  // Apply UMAP
+  let umap_result = DimensionalityReducer::umap(reducer, 2)
+  
+  assert_eq(umap_result.reduced_data.length(), high_dim_data.length())
+  assert_eq(umap_result.reduced_data[0].dimensions.length(), 2)
 }
 
-// Test 7: Data Filtering and Transformation
-test "data filtering and transformation" {
-  let sample_data = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+// Test 6: Pattern Recognition
+test "pattern recognition" {
+  // Create data with patterns
+  let pattern_data = []
   
-  // Test filtering
-  let filtered_data = DataTransformation::filter(sample_data, lambda { x => x > 5.0 })
-  assert_eq(filtered_data, [6.0, 7.0, 8.0, 9.0, 10.0])
+  // Sinusoidal pattern
+  for i in 0..=20 {
+    let value = 10.0 * Float::sin(2.0 * Float::pi() * i.to_float() / 10.0)
+    pattern_data.push(TimeSeriesData::new(1234567890L + i.to_long(), value, "sinusoidal"))
+  }
   
-  // Test mapping
-  let mapped_data = DataTransformation::map(sample_data, lambda { x => x * 2.0 })
-  assert_eq(mapped_data, [2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0])
+  // Linear trend pattern
+  for i in 0..=20 {
+    let value = 5.0 + i.to_float() * 0.5
+    pattern_data.push(TimeSeriesData::new(1234567911L + i.to_long(), value, "linear"))
+  }
   
-  // Test reduction
-  let sum = DataTransformation::reduce(sample_data, 0.0, lambda { acc, x => acc + x })
-  assert_eq(sum, 55.0)
+  // Step function pattern
+  for i in 0..=20 {
+    let value = if i < 10 { 15.0 } else { 25.0 }
+    pattern_data.push(TimeSeriesData::new(1234567932L + i.to_long(), value, "step"))
+  }
   
-  // Test windowing
-  let windows = DataTransformation::sliding_window(sample_data, 3)
-  assert_eq(windows.length(), 8)
-  assert_eq(windows[0], [1.0, 2.0, 3.0])
-  assert_eq(windows[7], [8.0, 9.0, 10.0])
-}
-
-// Test 8: Predictive Analytics
-test "predictive analytics models" {
+  // Create pattern recognizer
+  let recognizer = PatternRecognizer::new()
+  
+  // Train recognizer with known patterns
   let training_data = [
-    (1.0, 2.0),
-    (2.0, 4.0),
-    (3.0, 6.0),
-    (4.0, 8.0),
-    (5.0, 10.0)
+    ("sinusoidal", pattern_data.slice(0, 21)),
+    ("linear", pattern_data.slice(21, 42)),
+    ("step", pattern_data.slice(42, 63))
   ]
   
-  // Test linear regression
-  let regression_model = PredictiveAnalytics::linear_regression(training_data)
-  let prediction = PredictiveAnalytics::predict(regression_model, 6.0)
-  assert_true(prediction > 11.5 && prediction < 12.5)
+  PatternRecognizer::train(recognizer, training_data)
   
-  // Test polynomial regression
-  let poly_model = PredictiveAnalytics::polynomial_regression(training_data, 2)
-  let poly_prediction = PredictiveAnalytics::predict(poly_model, 6.0)
-  assert_true(poly_prediction > 11.5 && poly_prediction < 12.5)
+  // Test pattern recognition
+  let test_sinusoidal = []
+  for i in 0..=15 {
+    let value = 10.0 * Float::sin(2.0 * Float::pi() * i.to_float() / 10.0) + (Random::float() * 2.0 - 1.0)
+    test_sinusoidal.push(TimeSeriesData::new(1234568000L + i.to_long(), value, "test"))
+  }
   
-  // Test model evaluation
-  let r_squared = PredictiveAnalytics::evaluate_model(regression_model, training_data)
-  assert_true(r_squared > 0.99)
+  let recognized_pattern = PatternRecognizer::recognize(recognizer, test_sinusoidal)
+  assert_eq(recognized_pattern.pattern_type, "sinusoidal")
+  assert_true(recognized_pattern.confidence > 0.7)
+  
+  // Test with noisy data
+  let noisy_linear = []
+  for i in 0..=15 {
+    let value = 5.0 + i.to_float() * 0.5 + (Random::float() * 4.0 - 2.0)
+    noisy_linear.push(TimeSeriesData::new(1234568016L + i.to_long(), value, "test"))
+  }
+  
+  let recognized_pattern2 = PatternRecognizer::recognize(recognizer, noisy_linear)
+  assert_eq(recognized_pattern2.pattern_type, "linear")
+  assert_true(recognized_pattern2.confidence > 0.5) // Lower confidence due to noise
+  
+  // Test anomaly detection based on pattern recognition
+  let anomaly_data = []
+  for i in 0..=15 {
+    let value = if i == 10 { 50.0 } else { 10.0 * Float::sin(2.0 * Float::pi() * i.to_float() / 10.0) }
+    anomaly_data.push(TimeSeriesData::new(1234568032L + i.to_long(), value, "test"))
+  }
+  
+  let anomalies = PatternRecognizer::detect_anomalies(recognizer, anomaly_data)
+  assert_true(anomalies.length() > 0)
+  assert_true(anomalies.any(fn(anomaly) { anomaly.timestamp == 1234568042L })) // Should detect the anomaly
 }
 
-// Test 9: Data Quality Assessment
-test "data quality assessment" {
-  let clean_data = [1.0, 2.0, 3.0, 4.0, 5.0]
-  let noisy_data = [1.0, 2.0, null, 4.0, 5.0]
-  let outlier_data = [1.0, 2.0, 3.0, 4.0, 50.0]
+// Test 7: Predictive Modeling
+test "predictive modeling" {
+  // Create training data
+  let training_data = []
+  for i in 0..=100 {
+    let x1 = Random::float() * 10.0
+    let x2 = Random::float() * 10.0
+    let y = 2.5 * x1 - 1.5 * x2 + 3.0 + (Random::float() * 2.0 - 1.0) // Linear relationship with noise
+    
+    training_data.push(TrainingExample::new([x1, x2], y))
+  }
   
-  // Test completeness check
-  let completeness_score = DataQuality::check_completeness(clean_data)
-  assert_eq(completeness_score, 1.0)
+  // Create predictive model
+  let model = PredictiveModel::new(ModelType::LinearRegression)
   
-  let noisy_completeness = DataQuality::check_completeness(noisy_data)
-  assert_true(noisy_completeness < 1.0 && noisy_completeness > 0.0)
+  // Train model
+  let training_result = PredictiveModel::train(model, training_data)
+  assert_true(training_result.success)
+  assert_true(training_result.error < 1.0) // Low training error
   
-  // Test outlier detection
-  let outlier_score = DataQuality::detect_outliers(outlier_data)
-  assert_true(outlier_score > 0.0)
+  // Test model on validation data
+  let validation_data = []
+  for i in 0..=20 {
+    let x1 = Random::float() * 10.0
+    let x2 = Random::float() * 10.0
+    let y = 2.5 * x1 - 1.5 * x2 + 3.0 // True relationship without noise
+    
+    validation_data.push(ValidationExample::new([x1, x2], y))
+  }
   
-  // Test consistency check
-  let consistency_score = DataQuality::check_consistency(clean_data)
-  assert_true(consistency_score > 0.8)
+  let validation_result = PredictiveModel::validate(model, validation_data)
+  assert_true(validation_result.mean_squared_error < 2.0) // Low validation error
+  assert_true(validation_result.r_squared > 0.8) // Good fit
+  
+  // Test individual predictions
+  let test_features = [5.0, 3.0]
+  let prediction = PredictiveModel::predict(model, test_features)
+  let expected = 2.5 * 5.0 - 1.5 * 3.0 + 3.0 // 12.5 - 4.5 + 3.0 = 11.0
+  assert_true(Float::abs(prediction - expected) < 1.0) // Should be close to expected
+  
+  // Test with different model type
+  let polynomial_model = PredictiveModel::new(ModelType::PolynomialRegression)
+  let poly_training_result = PredictiveModel::train(polynomial_model, training_data)
+  assert_true(poly_training_result.success)
+  
+  let poly_validation_result = PredictiveModel::validate(polynomial_model, validation_data)
+  assert_true(poly_validation_result.mean_squared_error < 2.0)
+  
+  // Compare models
+  let model_comparison = PredictiveModel::compare([model, polynomial_model], validation_data)
+  assert_true(model_comparison.length() == 2)
+  assert_true(model_comparison[0].model_type == ModelType::LinearRegression)
+  assert_true(model_comparison[1].model_type == ModelType::PolynomialRegression)
 }
 
-// Test 10: Advanced Data Visualization Preparation
-test "data visualization preparation" {
-  let viz_data = [
-    ("category1", 10.0),
-    ("category2", 20.0),
-    ("category3", 15.0),
-    ("category4", 25.0),
-    ("category5", 18.0)
-  ]
+// Test 8: Multivariate Analysis
+test "multivariate analysis" {
+  // Create multivariate data
+  let multivariate_data = []
+  for i in 0..=100 {
+    // Generate correlated variables
+    let x1 = Random::float() * 10.0
+    let x2 = 2.0 * x1 + Random::float() * 2.0 - 1.0 // Correlated with x1
+    let x3 = 15.0 - x1 + Random::float() * 3.0 - 1.5 // Negatively correlated with x1
+    let x4 = Random::float() * 8.0 + 5.0 // Independent variable
+    
+    multivariate_data.push(MultivariatePoint::new([x1, x2, x3, x4]))
+  }
   
-  // Test histogram data preparation
-  let histogram_data = DataVisualization::prepare_histogram_data(viz_data, 5)
-  assert_eq(histogram_data.length(), 5)
+  // Create multivariate analyzer
+  let analyzer = MultivariateAnalyzer::new(multivariate_data)
   
-  // Test pie chart data preparation
-  let pie_data = DataVisualization::prepare_pie_chart_data(viz_data)
-  assert_eq(pie_data.length(), 5)
+  // Calculate covariance matrix
+  let covariance_matrix = MultivariateAnalyzer::covariance_matrix(analyzer)
+  assert_eq(covariance_matrix.size, 4) // 4x4 matrix
   
-  let total_percentage = pie_data.map(lambda { (_, percentage) => percentage }).sum()
-  assert_true(total_percentage > 99.0 && total_percentage < 101.0)
+  // Verify expected correlations
+  assert_true(covariance_matrix[(0, 1)] > 0) // x1 and x2 positively correlated
+  assert_true(covariance_matrix[(0, 2)] < 0) // x1 and x3 negatively correlated
+  assert_true(Float::abs(covariance_matrix[(0, 3)]) < 1.0) // x1 and x4 weakly correlated
   
-  // Test time series visualization data
-  let time_viz_data = DataVisualization::prepare_time_series_data([
-    (1000L, 10.0),
-    (2000L, 20.0),
-    (3000L, 15.0)
-  ])
-  assert_eq(time_viz_data.length(), 3)
+  // Perform principal component analysis
+  let pca_result = MultivariateAnalyzer::pca(analyzer)
+  
+  assert_eq(pca_result.components.length(), 4) // 4 principal components
+  assert_eq(pca_result.explained_variance.length(), 4)
+  
+  // Verify first component explains most variance
+  assert_true(pca_result.explained_variance[0] > pca_result.explained_variance[1])
+  assert_true(pca_result.explained_variance[1] > pca_result.explained_variance[2])
+  assert_true(pca_result.explained_variance[2] > pca_result.explained_variance[3])
+  
+  // Calculate factor loadings
+  let factor_loadings = MultivariateAnalyzer::factor_loadings(analyzer, 2) // 2 factors
+  assert_eq(factor_loadings.size, 4) // 4 variables
+  assert_eq(factor_loadings[0].length(), 2) // 2 factors per variable
+  
+  // Perform factor analysis
+  let factor_analysis = MultivariateAnalyzer::factor_analysis(analyzer, 2)
+  assert_eq(factor_analysis.loadings.length(), 4) // 4 variables
+  assert_eq(factor_analysis.loadings[0].length(), 2) // 2 factors
+  
+  // Test discriminant analysis
+  let class_labels = []
+  for i in 0..=50 {
+    class_labels.push("class_a")
+  }
+  for i in 0..=50 {
+    class_labels.push("class_b")
+  }
+  
+  let discriminant_result = MultivariateAnalyzer::discriminant_analysis(analyzer, class_labels)
+  assert_true(discriminant_result.accuracy > 0.7) // Should achieve reasonable accuracy
+  
+  // Test canonical correlation analysis
+  let variables_x = [0, 1] // First two variables
+  let variables_y = [2, 3] // Last two variables
+  
+  let cca_result = MultivariateAnalyzer::canonical_correlation(analyzer, variables_x, variables_y)
+  assert_eq(cca_result.correlations.length(), 2) // 2 canonical correlations
+  assert_true(cca_result.correlations[0] >= cca_result.correlations[1]) // First should be largest
 }

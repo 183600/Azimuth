@@ -1,351 +1,422 @@
-// Azimuth Real-time Stream Processing Tests
-// 实时流处理测试套件
+// Azimuth Telemetry System - Real-time Stream Processing Tests
+// This file contains comprehensive test cases for real-time stream processing functionality
 
-// Test 1: 实时数据流窗口聚合
-test "real-time stream window aggregation" {
-  // 模拟实时数据流
-  let data_stream = [
-    (1000, 10.5), (1005, 12.3), (1010, 11.8), (1015, 13.2),
-    (1020, 14.1), (1025, 15.6), (1030, 14.9), (1035, 16.2)
-  ]
+// Test 1: Stream Creation and Basic Operations
+test "stream creation and basic operations" {
+  // Create a stream
+  let stream = Stream::new("telemetry_stream", 1000) // Buffer size of 1000
   
-  // 定义窗口大小（10秒）
-  let window_size = 10
+  // Verify stream properties
+  assert_eq(Stream::name(stream), "telemetry_stream")
+  assert_eq(Stream::capacity(stream), 1000)
+  assert_eq(Stream::size(stream), 0)
+  assert_true(Stream::is_empty(stream))
+  assert_false(Stream::is_full(stream))
   
-  // 按时间窗口分组数据
-  let windows = []
-  let mut current_window_start = data_stream[0].0
-  let mut current_window_data = []
+  // Add telemetry data to stream
+  let data1 = TelemetryData::new("metric1", 10.5, "ms", 1234567890L)
+  let data2 = TelemetryData::new("metric2", 20.3, "count", 1234567891L)
+  let data3 = TelemetryData::new("metric3", 30.7, "ratio", 1234567892L)
   
-  for data_point in data_stream {
-    if data_point.0 - current_window_start >= window_size {
-      // 处理当前窗口
-      if current_window_data.length() > 0 {
-        let window_avg = current_window_data.reduce(fn(acc, val) { acc + val }, 0.0) / current_window_data.length().to_decimal()
-        windows = windows.push((current_window_start, current_window_start + window_size, window_avg))
-      }
-      
-      // 开始新窗口
-      current_window_start = data_point.0
-      current_window_data = [data_point.1]
-    } else {
-      current_window_data = current_window_data.push(data_point.1)
-    }
+  assert_true(Stream::push(stream, data1))
+  assert_true(Stream::push(stream, data2))
+  assert_true(Stream::push(stream, data3))
+  
+  // Verify stream state after adding data
+  assert_eq(Stream::size(stream), 3)
+  assert_false(Stream::is_empty(stream))
+  assert_false(Stream::is_full(stream))
+  
+  // Peek at data without removing
+  let peeked_data = Stream::peek(stream)
+  match peeked_data {
+    Some(data) => assert_eq(data.metric_name, "metric1")
+    None => assert_true(false)
   }
   
-  // 处理最后一个窗口
-  if current_window_data.length() > 0 {
-    let window_avg = current_window_data.reduce(fn(acc, val) { acc + val }, 0.0) / current_window_data.length().to_decimal()
-    windows = windows.push((current_window_start, current_window_start + window_size, window_avg))
+  // Verify size hasn't changed after peek
+  assert_eq(Stream::size(stream), 3)
+  
+  // Pop data from stream
+  let popped_data = Stream::pop(stream)
+  match popped_data {
+    Some(data) => assert_eq(data.metric_name, "metric1")
+    None => assert_true(false)
   }
   
-  assert_eq(windows.length(), 2)
-  assert_eq(windows[0].0, 1000)
-  assert_eq(windows[0].1, 1010)
-  assert_true(windows[0].2 > 11.0 && windows[0].2 < 12.0)
+  // Verify size decreased after pop
+  assert_eq(Stream::size(stream), 2)
   
-  assert_eq(windows[1].0, 1010)
-  assert_eq(windows[1].1, 1020)
-  assert_true(windows[1].2 > 14.0 && windows[1].2 < 16.0)
+  // Peek again to see next item
+  let peeked_data = Stream::peek(stream)
+  match peeked_data {
+    Some(data) => assert_eq(data.metric_name, "metric2")
+    None => assert_true(false)
+  }
 }
 
-// Test 2: 滑动窗口计算
-test "sliding window computation" {
-  let metrics = [5.2, 6.1, 7.3, 8.4, 9.2, 10.1, 11.5, 12.3]
-  let window_size = 3
+// Test 2: Stream Windowing Operations
+test "stream windowing operations" {
+  // Create a stream
+  let stream = Stream::new("windowed_stream", 100)
   
-  // 计算滑动窗口平均值
-  let sliding_averages = []
-  for i in 0..=(metrics.length() - window_size) {
-    let window_data = metrics.slice(i, i + window_size)
-    let avg = window_data.reduce(fn(acc, val) { acc + val }, 0.0) / window_size.to_decimal()
-    sliding_averages = sliding_averages.push(avg)
+  // Add telemetry data with different timestamps
+  let base_time = 1234567890L
+  for i in 0..=10 {
+    let data = TelemetryData::new("metric", i.to_float(), "count", base_time + i * 100L)
+    Stream::push(stream, data)
   }
   
-  assert_eq(sliding_averages.length(), 6)
-  assert_eq(sliding_averages[0], (5.2 + 6.1 + 7.3) / 3.0)
-  assert_eq(sliding_averages[1], (6.1 + 7.3 + 8.4) / 3.0)
-  assert_eq(sliding_averages[5], (10.1 + 11.5 + 12.3) / 3.0)
+  // Create time-based window (1 second)
+  let time_window = StreamWindow::time_based(1000L) // 1 second window
+  
+  // Get data in the first window
+  let window1_data = Stream::get_window(stream, time_window, base_time)
+  assert_eq(window1_data.length(), 10) // Should include all data points within 1 second
+  
+  // Get data in a smaller window (500ms)
+  let small_window = StreamWindow::time_based(500L) // 500ms window
+  let window2_data = Stream::get_window(stream, small_window, base_time)
+  assert_eq(window2_data.length(), 5) // Should include first 5 data points
+  
+  // Create count-based window
+  let count_window = StreamWindow::count_based(5) // 5 items window
+  let window3_data = Stream::get_window(stream, count_window, base_time)
+  assert_eq(window3_data.length(), 5) // Should include first 5 data points
+  
+  // Create sliding window
+  let sliding_window = StreamWindow::sliding(3, 1000L) // 3 items, 1 second slide
+  let window4_data = Stream::get_window(stream, sliding_window, base_time + 200L)
+  assert_eq(window4_data.length(), 3) // Should include 3 items starting from index 2
 }
 
-// Test 3: 实时数据过滤和转换
-test "real-time data filtering and transformation" {
-  let sensor_data = [
-    ("temp_sensor_1", 25.5, 1001),
-    ("humidity_sensor_1", 65.2, 1002),
-    ("temp_sensor_2", -999.0, 1003), // 异常值
-    ("pressure_sensor_1", 1013.25, 1004),
-    ("temp_sensor_1", 26.1, 1005),
-    ("temp_sensor_3", 125.0, 1006) // 超出正常范围
-  ]
+// Test 3: Stream Filtering and Transformation
+test "stream filtering and transformation" {
+  // Create a stream
+  let stream = Stream::new("filter_transform_stream", 100)
   
-  // 过滤有效数据并转换温度单位
-  let valid_temps = sensor_data
-    .filter(fn(data) {
-      data.0.contains("temp_sensor") && 
-      data.1 >= -50.0 && 
-      data.1 <= 100.0
-    })
-    .map(fn(data) {
-      let celsius = data.1
-      let fahrenheit = celsius * 9.0 / 5.0 + 32.0
-      (data.0, celsius, fahrenheit, data.2)
-    })
+  // Add telemetry data with various metrics
+  Stream::push(stream, TelemetryData::new("cpu_usage", 75.5, "percent", 1234567890L))
+  Stream::push(stream, TelemetryData::new("memory_usage", 60.2, "percent", 1234567891L))
+  Stream::push(stream, TelemetryData::new("disk_usage", 45.8, "percent", 1234567892L))
+  Stream::push(stream, TelemetryData::new("network_latency", 25.3, "ms", 1234567893L))
+  Stream::push(stream, TelemetryData::new("error_rate", 0.05, "ratio", 1234567894L))
   
-  assert_eq(valid_temps.length(), 2)
-  assert_eq(valid_temps[0].0, "temp_sensor_1")
-  assert_eq(valid_temps[0].1, 25.5)
-  assert_eq(valid_temps[0].2, 77.9)
-  assert_eq(valid_temps[1].0, "temp_sensor_1")
-  assert_eq(valid_temps[1].1, 26.1)
-  assert_eq(valid_temps[1].2, 78.98)
-}
-
-// Test 4: 实时异常检测
-test "real-time anomaly detection" {
-  let metrics_stream = [10.2, 10.5, 10.8, 11.1, 10.9, 11.2, 15.8, 11.3, 10.7, 11.0]
-  
-  // 使用简单统计方法检测异常（超过3个标准差）
-  let mean = metrics_stream.reduce(fn(acc, val) { acc + val }, 0.0) / metrics_stream.length().to_decimal()
-  
-  let variance = metrics_stream
-    .map(fn(val) { (val - mean) * (val - mean) })
-    .reduce(fn(acc, val) { acc + val }, 0.0) / metrics_stream.length().to_decimal()
-  
-  let std_dev = @lib.sqrt(variance)
-  let threshold = 3.0 * std_dev
-  
-  let anomalies = metrics_stream.filter(fn(val) {
-    @lib.abs(val - mean) > threshold
+  // Filter by metric name
+  let filtered_stream1 = Stream::filter(stream, fn(data) {
+    data.metric_name.contains("usage")
   })
   
-  assert_eq(anomalies.length(), 1)
-  assert_eq(anomalies[0], 15.8)
-}
-
-// Test 5: 流式数据聚合统计
-test "streaming data aggregation statistics" {
-  let event_stream = [
-    ("page_view", "user_1", 1000),
-    ("click", "user_2", 1001),
-    ("page_view", "user_3", 1002),
-    ("page_view", "user_1", 1003),
-    ("click", "user_4", 1004),
-    ("purchase", "user_2", 1005),
-    ("page_view", "user_5", 1006),
-    ("click", "user_1", 1007)
-  ]
+  let filtered_data1 = Stream::collect(filtered_stream1)
+  assert_eq(filtered_data1.length(), 3) // cpu_usage, memory_usage, disk_usage
   
-  // 按事件类型聚合
-  let event_counts = {}
-  for event in event_stream {
-    let event_type = event.0
-    let current_count = event_counts[event_type] ?? 0
-    event_counts[event_type] = current_count + 1
-  }
-  
-  // 按用户聚合
-  let user_activity = {}
-  for event in event_stream {
-    let user_id = event.1
-    let current_count = user_activity[user_id] ?? 0
-    user_activity[user_id] = current_count + 1
-  }
-  
-  assert_eq(event_counts["page_view"], 4)
-  assert_eq(event_counts["click"], 3)
-  assert_eq(event_counts["purchase"], 1)
-  
-  assert_eq(user_activity["user_1"], 3)
-  assert_eq(user_activity["user_2"], 2)
-  assert_eq(user_activity["user_3"], 1)
-  assert_eq(user_activity["user_4"], 1)
-  assert_eq(user_activity["user_5"], 1)
-}
-
-// Test 6: 实时数据去重
-test "real-time data deduplication" {
-  let duplicate_stream = [
-    ("event_1", 1000, "data_1"),
-    ("event_2", 1001, "data_2"),
-    ("event_1", 1000, "data_1"), // 重复
-    ("event_3", 1002, "data_3"),
-    ("event_2", 1001, "data_2"), // 重复
-    ("event_4", 1003, "data_4"),
-    ("event_5", 1004, "data_5")
-  ]
-  
-  // 去重处理
-  let seen_events = {}
-  let deduplicated = []
-  
-  for event in duplicate_stream {
-    let event_key = event.0 + "_" + event.1.to_string()
-    if not(seen_events[event_key] ?? false) {
-      seen_events[event_key] = true
-      deduplicated = deduplicated.push(event)
-    }
-  }
-  
-  assert_eq(deduplicated.length(), 5)
-  assert_eq(deduplicated[0].0, "event_1")
-  assert_eq(deduplicated[1].0, "event_2")
-  assert_eq(deduplicated[2].0, "event_3")
-  assert_eq(deduplicated[3].0, "event_4")
-  assert_eq(deduplicated[4].0, "event_5")
-}
-
-// Test 7: 实时数据质量监控
-test "real-time data quality monitoring" {
-  let quality_metrics = [
-    ("completeness", 0.95),
-    ("accuracy", 0.98),
-    ("timeliness", 0.92),
-    ("consistency", 0.97),
-    ("validity", 0.94)
-  ]
-  
-  // 计算综合质量分数
-  let total_score = quality_metrics.reduce(fn(acc, metric) { acc + metric.1 }, 0.0)
-  let avg_quality = total_score / quality_metrics.length().to_decimal()
-  
-  // 检查是否达到质量阈值
-  let quality_threshold = 0.95
-  let meets_quality_standard = avg_quality >= quality_threshold
-  
-  // 找出低于标准的指标
-  let below_standard = quality_metrics.filter(fn(metric) {
-    metric.1 < quality_threshold
+  // Filter by value
+  let filtered_stream2 = Stream::filter(stream, fn(data) {
+    data.value > 50.0
   })
   
-  assert_eq(below_standard.length(), 2)
-  assert_eq(below_standard[0].0, "timeliness")
-  assert_eq(below_standard[1].0, "validity")
-  assert_false(meets_quality_standard)
-  assert_true(avg_quality > 0.93 && avg_quality < 0.96)
+  let filtered_data2 = Stream::collect(filtered_stream2)
+  assert_eq(filtered_data2.length(), 2) // cpu_usage, memory_usage
+  
+  // Transform data
+  let transformed_stream = Stream::map(stream, fn(data) {
+    TelemetryData::new(
+      "transformed_" + data.metric_name,
+      data.value * 2.0,
+      data.unit,
+      data.timestamp
+    )
+  })
+  
+  let transformed_data = Stream::collect(transformed_stream)
+  assert_eq(transformed_data.length(), 5)
+  assert_eq(transformed_data[0].metric_name, "transformed_cpu_usage")
+  assert_eq(transformed_data[0].value, 151.0) // 75.5 * 2
+  
+  // Chain filter and transform
+  let chained_stream = Stream::filter(stream, fn(data) {
+    data.unit == "percent"
+  }).map(fn(data) {
+    TelemetryData::new(
+      data.metric_name + "_normalized",
+      data.value / 100.0,
+      "ratio",
+      data.timestamp
+    )
+  })
+  
+  let chained_data = Stream::collect(chained_stream)
+  assert_eq(chained_data.length(), 3)
+  assert_eq(chained_data[0].metric_name, "cpu_usage_normalized")
+  assert_eq(chained_data[0].value, 0.755) // 75.5 / 100
+  assert_eq(chained_data[0].unit, "ratio")
 }
 
-// Test 8: 实时数据流背压处理
-test "real-time stream backpressure handling" {
-  let producer_rate = 1000 // 每秒产生的消息数
-  let consumer_rate = 800   // 每秒消费的消息数
-  let buffer_size = 5000    // 缓冲区大小
+// Test 4: Stream Aggregation
+test "stream aggregation" {
+  // Create a stream
+  let stream = Stream::new("aggregation_stream", 100)
   
-  // 模拟背压情况
-  let time_duration = 10 // 秒
-  let total_produced = producer_rate * time_duration
-  let total_consumed = consumer_rate * time_duration
-  let backlog = total_produced - total_consumed
-  
-  // 检查是否会超过缓冲区容量
-  let exceeds_buffer = backlog > buffer_size
-  
-  // 计算需要的背压策略
-  let required_throttling = if exceeds_buffer {
-    let excess_rate = backlog.to_decimal() / time_duration.to_decimal()
-    Some(excess_rate)
-  } else {
-    None
+  // Add telemetry data
+  for i in 0..=10 {
+    let data = TelemetryData::new("metric", (i * 10).to_float(), "count", 1234567890L + i.to_long())
+    Stream::push(stream, data)
   }
   
-  assert_eq(total_produced, 10000)
-  assert_eq(total_consumed, 8000)
-  assert_eq(backlog, 2000)
-  assert_false(exceeds_buffer)
-  assert_eq(required_throttling, None)
+  // Count aggregation
+  let count = Stream::count(stream)
+  assert_eq(count, 11)
+  
+  // Sum aggregation
+  let sum = Stream::sum(stream, fn(data) { data.value })
+  assert_eq(sum, 550.0) // Sum of 0, 10, 20, ..., 100
+  
+  // Average aggregation
+  let avg = Stream::average(stream, fn(data) { data.value })
+  assert_eq(avg, 50.0) // 550 / 11
+  
+  // Min aggregation
+  let min = Stream::min(stream, fn(data) { data.value })
+  assert_eq(min, 0.0)
+  
+  // Max aggregation
+  let max = Stream::max(stream, fn(data) { data.value })
+  assert_eq(max, 100.0)
+  
+  // Group by metric name aggregation
+  let stream2 = Stream::new("multi_metric_stream", 100)
+  Stream::push(stream2, TelemetryData::new("cpu", 50.0, "percent", 1234567890L))
+  Stream::push(stream2, TelemetryData::new("memory", 60.0, "percent", 1234567891L))
+  Stream::push(stream2, TelemetryData::new("cpu", 70.0, "percent", 1234567892L))
+  Stream::push(stream2, TelemetryData::new("memory", 80.0, "percent", 1234567893L))
+  
+  let grouped = Stream::group_by(stream2, fn(data) { data.metric_name })
+  let cpu_group = grouped["cpu"]
+  let memory_group = grouped["memory"]
+  
+  assert_eq(cpu_group.length(), 2)
+  assert_eq(memory_group.length(), 2)
+  
+  let cpu_avg = Stream::average_values(cpu_group)
+  assert_eq(cpu_avg, 60.0) // (50 + 70) / 2
+  
+  let memory_avg = Stream::average_values(memory_group)
+  assert_eq(memory_avg, 70.0) // (60 + 80) / 2
 }
 
-// Test 9: 实时数据流连接操作
-test "real-time stream join operations" {
-  let stream_a = [
-    ("order_1", "product_1", 1001),
-    ("order_2", "product_2", 1002),
-    ("order_3", "product_1", 1003)
-  ]
+// Test 5: Stream Join Operations
+test "stream join operations" {
+  // Create two streams
+  let stream1 = Stream::new("join_stream1", 100)
+  let stream2 = Stream::new("join_stream2", 100)
   
-  let stream_b = [
-    ("product_1", "Widget", 25.99),
-    ("product_2", "Gadget", 15.99),
-    ("product_3", "Thingamajig", 35.99)
-  ]
+  // Add data to stream1
+  Stream::push(stream1, TelemetryData::with_attributes("metric1", 10.0, "count", 1234567890L, [
+    ("join_key", "key1"),
+    ("source", "stream1")
+  ]))
+  Stream::push(stream1, TelemetryData::with_attributes("metric2", 20.0, "count", 1234567891L, [
+    ("join_key", "key2"),
+    ("source", "stream1")
+  ]))
+  Stream::push(stream1, TelemetryData::with_attributes("metric3", 30.0, "count", 1234567892L, [
+    ("join_key", "key3"),
+    ("source", "stream1")
+  ]))
   
-  // 基于产品ID进行流连接
-  let joined_stream = []
-  for order in stream_a {
-    for product in stream_b {
-      if order.1 == product.0 {
-        joined_stream = joined_stream.push((
-          order.0, order.1, order.2, 
-          product.1, product.2
-        ))
-      }
+  // Add data to stream2
+  Stream::push(stream2, TelemetryData::with_attributes("metricA", 100.0, "count", 1234567890L, [
+    ("join_key", "key1"),
+    ("source", "stream2")
+  ]))
+  Stream::push(stream2, TelemetryData::with_attributes("metricB", 200.0, "count", 1234567891L, [
+    ("join_key", "key2"),
+    ("source", "stream2")
+  ]))
+  Stream::push(stream2, TelemetryData::with_attributes("metricC", 300.0, "count", 1234567893L, [
+    ("join_key", "key4"),
+    ("source", "stream2")
+  ]))
+  
+  // Inner join on join_key
+  let inner_joined = Stream::inner_join(
+    stream1,
+    stream2,
+    fn(data1) { TelemetryData::get_attribute(data1, "join_key") },
+    fn(data2) { TelemetryData::get_attribute(data2, "join_key") }
+  )
+  
+  let inner_joined_data = Stream::collect(inner_joined)
+  assert_eq(inner_joined_data.length(), 2) // key1 and key2 should match
+  
+  // Left join on join_key
+  let left_joined = Stream::left_join(
+    stream1,
+    stream2,
+    fn(data1) { TelemetryData::get_attribute(data1, "join_key") },
+    fn(data2) { TelemetryData::get_attribute(data2, "join_key") }
+  )
+  
+  let left_joined_data = Stream::collect(left_joined)
+  assert_eq(left_joined_data.length(), 3) // All from stream1, with matching from stream2 where available
+  
+  // Time-based join (within 1 second)
+  let time_joined = Stream::time_based_join(
+    stream1,
+    stream2,
+    1000L, // 1 second window
+    fn(data1) { TelemetryData::get_attribute(data1, "join_key") },
+    fn(data2) { TelemetryData::get_attribute(data2, "join_key") }
+  )
+  
+  let time_joined_data = Stream::collect(time_joined)
+  assert_eq(time_joined_data.length(), 2) // key1 and key2 have matching timestamps
+}
+
+// Test 6: Stream Processing with Backpressure
+test "stream processing with backpressure" {
+  // Create a stream with small buffer to test backpressure
+  let stream = Stream::new("backpressure_stream", 5) // Small buffer
+  
+  // Create a processor that processes slowly
+  let processor = StreamProcessor::new(stream)
+  
+  // Start processing in background
+  let processing_thread = Thread::spawn(fn() {
+    StreamProcessor::process(processor, fn(data) {
+      Thread::sleep(100) // Simulate slow processing
+      TelemetryData::new(
+        "processed_" + data.metric_name,
+        data.value * 2.0,
+        data.unit,
+        data.timestamp
+      )
+    })
+  })
+  
+  // Try to add more data than buffer can hold
+  let mut push_success_count = 0
+  for i in 0..=10 {
+    let data = TelemetryData::new("metric" + i.to_string(), i.to_float(), "count", 1234567890L + i.to_long())
+    if Stream::push_with_timeout(stream, data, 50) { // 50ms timeout
+      push_success_count = push_success_count + 1
     }
   }
   
-  assert_eq(joined_stream.length(), 3)
-  assert_eq(joined_stream[0].0, "order_1")
-  assert_eq(joined_stream[0].1, "product_1")
-  assert_eq(joined_stream[0].3, "Widget")
-  assert_eq(joined_stream[0].4, 25.99)
+  // Some pushes should fail due to backpressure
+  assert_true(push_success_count < 10)
+  assert_true(push_success_count <= 5) // Buffer size
   
-  assert_eq(joined_stream[1].0, "order_2")
-  assert_eq(joined_stream[1].1, "product_2")
-  assert_eq(joined_stream[1].3, "Gadget")
-  assert_eq(joined_stream[1].4, 15.99)
-}
-
-// Test 10: 实时数据流状态管理
-test "real-time stream state management" {
-  let state_events = [
-    ("user_1", "login", 1000),
-    ("user_2", "login", 1001),
-    ("user_1", "view_page", 1002),
-    ("user_3", "login", 1003),
-    ("user_1", "add_to_cart", 1004),
-    ("user_2", "logout", 1005),
-    ("user_1", "purchase", 1006),
-    ("user_3", "view_page", 1007)
-  ]
+  // Wait for processing to complete
+  Thread::sleep(2000) // Wait for processing to catch up
   
-  // 维护用户会话状态
-  let user_sessions = {}
-  
-  for event in state_events {
-    let user_id = event.0
-    let action = event.1
-    let timestamp = event.2
-    
-    let current_session = user_sessions[user_id] ?? {
-      "login_time": 0,
-      "last_activity": 0,
-      "actions": [],
-      "is_active": false
-    }
-    
-    match action {
-      "login" => {
-        current_session["login_time"] = timestamp
-        current_session["is_active"] = true
-      }
-      "logout" => {
-        current_session["is_active"] = false
-      }
-      _ => {
-        if current_session["is_active"] {
-          let actions = current_session["actions"] as Array
-          current_session["actions"] = actions.push(action)
-        }
-      }
-    }
-    
-    current_session["last_activity"] = timestamp
-    user_sessions[user_id] = current_session
+  // Now we should be able to push more data
+  for i in 0..=4 {
+    let data = TelemetryData::new("metric_after" + i.to_string(), i.to_float(), "count", 1234567900L + i.to_long())
+    assert_true(Stream::push_with_timeout(stream, data, 50))
   }
   
-  // 验证会话状态
-  assert_eq(user_sessions["user_1"]["is_active"], true)
-  assert_eq(user_sessions["user_1"]["actions"].length(), 3)
-  assert_eq(user_sessions["user_2"]["is_active"], false)
-  assert_eq(user_sessions["user_3"]["is_active"], true)
-  assert_eq(user_sessions["user_3"]["actions"].length(), 1)
+  // Stop processing
+  StreamProcessor::stop(processor)
+  Thread::join(processing_thread)
+}
+
+// Test 7: Stream Anomaly Detection
+test "stream anomaly detection" {
+  // Create a stream
+  let stream = Stream::new("anomaly_stream", 100)
+  
+  // Add normal telemetry data
+  for i in 0..=20 {
+    let data = TelemetryData::new("response_time", 50.0 + (Random::float() * 10.0 - 5.0), "ms", 1234567890L + i.to_long())
+    Stream::push(stream, data)
+  }
+  
+  // Add anomaly data
+  Stream::push(stream, TelemetryData::new("response_time", 200.0, "ms", 1234567911L)) // High value anomaly
+  Stream::push(stream, TelemetryData::new("response_time", 5.0, "ms", 1234567912L))   // Low value anomaly
+  
+  // Create anomaly detector
+  let detector = AnomalyDetector::new(AnomalyDetectionMethod::Statistical)
+  
+  // Configure detector
+  AnomalyDetector::set_threshold(detector, 2.0) // 2 standard deviations
+  AnomalyDetector::set_window_size(detector, 10) // Use last 10 data points
+  
+  // Process stream for anomalies
+  let anomalies = Stream::detect_anomalies(stream, detector)
+  
+  // Should detect the anomalies
+  assert_true(anomalies.length() >= 2)
+  
+  // Verify anomalies are the high and low values
+  assert_true(anomalies.any(fn(anomaly) { anomaly.value > 150.0 })) // High anomaly
+  assert_true(anomalies.any(fn(anomaly) { anomaly.value < 20.0 }))  // Low anomaly
+  
+  // Test with different detection method
+  let ml_detector = AnomalyDetector::new(AnomalyDetectionMethod::MachineLearning)
+  AnomalyDetector::train(ml_detector, stream) // Train on existing data
+  
+  // Add more data including anomalies
+  Stream::push(stream, TelemetryData::new("response_time", 55.0, "ms", 1234567913L))
+  Stream::push(stream, TelemetryData::new("response_time", 300.0, "ms", 1234567914L)) // Another anomaly
+  
+  let ml_anomalies = Stream::detect_anomalies(stream, ml_detector)
+  assert_true(ml_anomalies.length() >= 1)
+}
+
+// Test 8: Stream Persistence and Recovery
+test "stream persistence and recovery" {
+  // Create a stream
+  let stream = Stream::new("persistent_stream", 100)
+  
+  // Add telemetry data
+  for i in 0..=10 {
+    let data = TelemetryData::new("metric", i.to_float(), "count", 1234567890L + i.to_long())
+    Stream::push(stream, data)
+  }
+  
+  // Persist stream to storage
+  let storage = InMemoryStorage::new()
+  let result = Stream::persist(stream, storage)
+  assert_true(result)
+  
+  // Verify stream was persisted
+  assert_true(Storage::contains(storage, "persistent_stream"))
+  
+  // Create new stream and recover from storage
+  let recovered_stream = Stream::recover("persistent_stream", storage)
+  
+  // Verify recovered stream has same data
+  assert_eq(Stream::name(recovered_stream), "persistent_stream")
+  assert_eq(Stream::size(recovered_stream), 11)
+  
+  // Verify data integrity
+  let recovered_data = Stream::collect(recovered_stream)
+  for i in 0..=10 {
+    assert_eq(recovered_data[i].metric_name, "metric")
+    assert_eq(recovered_data[i].value, i.to_float())
+    assert_eq(recovered_data[i].unit, "count")
+    assert_eq(recovered_data[i].timestamp, 1234567890L + i.to_long())
+  }
+  
+  // Test incremental persistence
+  for i in 11..=15 {
+    let data = TelemetryData::new("metric", i.to_float(), "count", 1234567890L + i.to_long())
+    Stream::push(stream, data)
+  }
+  
+  // Persist incrementally
+  let result = Stream::persist_incremental(stream, storage)
+  assert_true(result)
+  
+  // Recover again
+  let recovered_stream2 = Stream::recover("persistent_stream", storage)
+  assert_eq(Stream::size(recovered_stream2), 16)
+  
+  // Verify new data was added
+  let recovered_data2 = Stream::collect(recovered_stream2)
+  for i in 11..=15 {
+    assert_eq(recovered_data2[i].value, i.to_float())
+  }
 }

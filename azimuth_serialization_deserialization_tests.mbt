@@ -1,677 +1,386 @@
 // Azimuth Telemetry System - Serialization and Deserialization Tests
-// This file contains test cases for serialization and deserialization functionality
+// This file contains comprehensive test cases for serialization and deserialization functionality
 
 // Test 1: JSON Serialization and Deserialization
 test "json serialization and deserialization" {
-  let serializer = JsonSerializer::new()
-  
-  // Test basic data types
-  let test_data = TestData::new(
-    "test_string",
-    42,
-    3.14,
-    true,
-    [1, 2, 3, 4, 5],
-    {"key1": "value1", "key2": "value2"}
-  )
+  // Create test telemetry data
+  let telemetry_data = TelemetryData::with_attributes("response_time", 150.5, "ms", 1234567890L, [
+    ("service", "auth"),
+    ("endpoint", "/login"),
+    ("status", "success")
+  ])
   
   // Serialize to JSON
-  let json_result = serializer.serialize(test_data)
-  assert_true(json_result.is_success)
+  let json_str = JsonSerializer::serialize(telemetry_data)
   
-  let json_string = json_result.data
-  assert_true(json_string.contains("test_string"))
-  assert_true(json_string.contains("42"))
-  assert_true(json_string.contains("3.14"))
-  assert_true(json_string.contains("true"))
+  // Verify JSON contains expected fields
+  assert_true(json_str.contains("\"metric_name\":\"response_time\""))
+  assert_true(json_str.contains("\"value\":150.5"))
+  assert_true(json_str.contains("\"unit\":\"ms\""))
+  assert_true(json_str.contains("\"timestamp\":1234567890"))
+  assert_true(json_str.contains("\"service\":\"auth\""))
+  assert_true(json_str.contains("\"endpoint\":\"/login\""))
+  assert_true(json_str.contains("\"status\":\"success\""))
   
   // Deserialize from JSON
-  let deserialize_result = serializer.deserialize(json_string)
-  assert_true(deserialize_result.is_success)
+  let deserialized_data = JsonSerializer::deserialize(json_str)
   
-  let deserialized_data = deserialize_result.data
-  assert_eq(deserialized_data.string_field, "test_string")
-  assert_eq(deserialized_data.int_field, 42)
-  assert_eq(deserialized_data.float_field, 3.14)
-  assert_eq(deserialized_data.bool_field, true)
-  assert_eq(deserialized_data.array_field, [1, 2, 3, 4, 5])
-  assert_eq(deserialized_data.map_field, {"key1": "value1", "key2": "value2"})
+  // Verify deserialized data matches original
+  assert_eq(deserialized_data.metric_name, telemetry_data.metric_name)
+  assert_eq(deserialized_data.value, telemetry_data.value)
+  assert_eq(deserialized_data.unit, telemetry_data.unit)
+  assert_eq(deserialized_data.timestamp, telemetry_data.timestamp)
   
-  // Test nested objects
-  let nested_data = NestedData::new(
-    test_data,
-    InnerData::new("inner_value", 100)
-  )
-  
-  let nested_json_result = serializer.serialize(nested_data)
-  assert_true(nested_json_result.is_success)
-  
-  let nested_deserialize_result = serializer.deserialize(nested_json_result.data)
-  assert_true(nested_deserialize_result.is_success)
-  
-  let nested_deserialized = nested_deserialize_result.data
-  assert_eq(nested_deserialized.inner_data.string_field, "inner_value")
-  assert_eq(nested_deserialized.inner_data.int_field, 100)
-  assert_eq(nested_deserialized.outer_data.string_field, "test_string")
-  
-  // Test optional fields
-  let optional_data = OptionalData::new(
-    Some("optional_value"),
-    None,
-    Some(42)
-  )
-  
-  let optional_json_result = serializer.serialize(optional_data)
-  assert_true(optional_json_result.is_success)
-  
-  let optional_deserialize_result = serializer.deserialize(optional_json_result.data)
-  assert_true(optional_deserialize_result.is_success)
-  
-  let optional_deserialized = optional_deserialize_result.data
-  match optional_deserialized.optional_string {
-    Some(value) => assert_eq(value, "optional_value")
-    None => assert_true(false)
+  // Verify attributes were preserved
+  let service_attr = TelemetryData::get_attribute(deserialized_data, "service")
+  match service_attr {
+    Some(StringValue(value)) => assert_eq(value, "auth")
+    _ => assert_true(false)
   }
-  match optional_deserialized.missing_field {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
+  
+  let endpoint_attr = TelemetryData::get_attribute(deserialized_data, "endpoint")
+  match endpoint_attr {
+    Some(StringValue(value)) => assert_eq(value, "/login")
+    _ => assert_true(false)
   }
-  match optional_deserialized.optional_int {
-    Some(value) => assert_eq(value, 42)
-    None => assert_true(false)
+  
+  let status_attr = TelemetryData::get_attribute(deserialized_data, "status")
+  match status_attr {
+    Some(StringValue(value)) => assert_eq(value, "success")
+    _ => assert_true(false)
   }
 }
 
-// Test 2: Protocol Buffers Serialization
-test "protocol buffers serialization" {
-  let protobuf_serializer = ProtobufSerializer::new()
+// Test 2: Binary Serialization and Deserialization
+test "binary serialization and deserialization" {
+  // Create test telemetry data
+  let telemetry_data = TelemetryData::with_attributes("cpu_usage", 75.2, "percent", 1234567890L, [
+    ("host", "server-01"),
+    ("region", "us-west-1"),
+    ("environment", "production")
+  ])
   
-  // Test telemetry data serialization
-  let telemetry_data = TelemetryData::new(
-    "trace-123",
-    "span-456",
-    1234567890L,
-    "operation_name",
-    [{"key": "service.name", "value": "test_service"}],
-    [{"name": "event1", "timestamp": 1234567891L}]
-  )
+  // Serialize to binary
+  let binary_data = BinarySerializer::serialize(telemetry_data)
   
-  // Serialize to protobuf
-  let protobuf_result = protobuf_serializer.serialize(telemetry_data)
-  assert_true(protobuf_result.is_success)
+  // Verify binary data is not empty
+  assert_true(binary_data.length() > 0)
   
-  let protobuf_bytes = protobuf_result.data
-  assert_true(protobuf_bytes.length() > 0)
+  // Deserialize from binary
+  let deserialized_data = BinarySerializer::deserialize(binary_data)
   
-  // Deserialize from protobuf
-  let deserialize_result = protobuf_serializer.deserialize(protobuf_bytes)
-  assert_true(deserialize_result.is_success)
+  // Verify deserialized data matches original
+  assert_eq(deserialized_data.metric_name, telemetry_data.metric_name)
+  assert_eq(deserialized_data.value, telemetry_data.value)
+  assert_eq(deserialized_data.unit, telemetry_data.unit)
+  assert_eq(deserialized_data.timestamp, telemetry_data.timestamp)
   
-  let deserialized_data = deserialize_result.data
-  assert_eq(deserialized_data.trace_id, "trace-123")
-  assert_eq(deserialized_data.span_id, "span-456")
-  assert_eq(deserialized_data.timestamp, 1234567890L)
-  assert_eq(deserialized_data.operation_name, "operation_name")
-  assert_eq(deserialized_data.attributes.length(), 1)
-  assert_eq(deserialized_data.events.length(), 1)
+  // Verify attributes were preserved
+  let host_attr = TelemetryData::get_attribute(deserialized_data, "host")
+  match host_attr {
+    Some(StringValue(value)) => assert_eq(value, "server-01")
+    _ => assert_true(false)
+  }
   
-  // Test batch serialization
-  let batch_data = [
-    TelemetryData::new("trace-1", "span-1", 1000L, "op1", [], []),
-    TelemetryData::new("trace-2", "span-2", 2000L, "op2", [], []),
-    TelemetryData::new("trace-3", "span-3", 3000L, "op3", [], [])
+  let region_attr = TelemetryData::get_attribute(deserialized_data, "region")
+  match region_attr {
+    Some(StringValue(value)) => assert_eq(value, "us-west-1")
+    _ => assert_true(false)
+  }
+  
+  let env_attr = TelemetryData::get_attribute(deserialized_data, "environment")
+  match env_attr {
+    Some(StringValue(value)) => assert_eq(value, "production")
+    _ => assert_true(false)
+  }
+}
+
+// Test 3: Protocol Buffers Serialization and Deserialization
+test "protocol buffers serialization and deserialization" {
+  // Create test telemetry data
+  let telemetry_data = TelemetryData::with_attributes("memory_usage", 1024.0, "MB", 1234567890L, [
+    ("process", "azimuth-telemetry"),
+    ("pid", "12345"),
+    ("container", "app-container-01")
+  ])
+  
+  // Serialize to Protocol Buffers
+  let proto_data = ProtobufSerializer::serialize(telemetry_data)
+  
+  // Verify proto data is not empty
+  assert_true(proto_data.length() > 0)
+  
+  // Deserialize from Protocol Buffers
+  let deserialized_data = ProtobufSerializer::deserialize(proto_data)
+  
+  // Verify deserialized data matches original
+  assert_eq(deserialized_data.metric_name, telemetry_data.metric_name)
+  assert_eq(deserialized_data.value, telemetry_data.value)
+  assert_eq(deserialized_data.unit, telemetry_data.unit)
+  assert_eq(deserialized_data.timestamp, telemetry_data.timestamp)
+  
+  // Verify attributes were preserved
+  let process_attr = TelemetryData::get_attribute(deserialized_data, "process")
+  match process_attr {
+    Some(StringValue(value)) => assert_eq(value, "azimuth-telemetry")
+    _ => assert_true(false)
+  }
+  
+  let pid_attr = TelemetryData::get_attribute(deserialized_data, "pid")
+  match pid_attr {
+    Some(StringValue(value)) => assert_eq(value, "12345")
+    _ => assert_true(false)
+  }
+  
+  let container_attr = TelemetryData::get_attribute(deserialized_data, "container")
+  match container_attr {
+    Some(StringValue(value)) => assert_eq(value, "app-container-01")
+    _ => assert_true(false)
+  }
+}
+
+// Test 4: Batch Serialization and Deserialization
+test "batch serialization and deserialization" {
+  // Create multiple telemetry data points
+  let telemetry_data_points = [
+    TelemetryData::new("metric1", 10.5, "ms", 1234567890L),
+    TelemetryData::new("metric2", 100.0, "count", 1234567891L),
+    TelemetryData::new("metric3", 0.95, "ratio", 1234567892L),
+    TelemetryData::new("metric4", 42.0, "bytes", 1234567893L),
+    TelemetryData::new("metric5", 3.14, "pi", 1234567894L)
   ]
   
-  let batch_result = protobuf_serializer.serialize_batch(batch_data)
-  assert_true(batch_result.is_success)
+  // Serialize batch to JSON
+  let batch_json = JsonSerializer::serialize_batch(telemetry_data_points)
   
-  let batch_deserialize_result = protobuf_serializer.deserialize_batch(batch_result.data)
-  assert_true(batch_deserialize_result.is_success)
+  // Verify JSON contains all metrics
+  assert_true(batch_json.contains("\"metric_name\":\"metric1\""))
+  assert_true(batch_json.contains("\"metric_name\":\"metric2\""))
+  assert_true(batch_json.contains("\"metric_name\":\"metric3\""))
+  assert_true(batch_json.contains("\"metric_name\":\"metric4\""))
+  assert_true(batch_json.contains("\"metric_name\":\"metric5\""))
   
-  let deserialized_batch = batch_deserialize_result.data
-  assert_eq(deserialized_batch.length(), 3)
-  assert_eq(deserialized_batch[0].trace_id, "trace-1")
-  assert_eq(deserialized_batch[1].trace_id, "trace-2")
-  assert_eq(deserialized_batch[2].trace_id, "trace-3")
+  // Deserialize batch from JSON
+  let deserialized_batch = JsonSerializer::deserialize_batch(batch_json)
   
-  // Test schema evolution compatibility
-  let v1_data = TelemetryDataV1::new("trace-123", "span-456", 1234567890L)
-  let v1_result = protobuf_serializer.serialize_v1(v1_data)
-  assert_true(v1_result.is_success)
+  // Verify all data points were deserialized
+  assert_eq(deserialized_batch.length(), telemetry_data_points.length())
   
-  // Deserialize V1 data with V2 schema (backward compatibility)
-  let v2_deserialize_result = protobuf_serializer.deserialize_v2(v1_result.data)
-  assert_true(v2_deserialize_result.is_success)
-  
-  let v2_data = v2_deserialize_result.data
-  assert_eq(v2_data.trace_id, "trace-123")
-  assert_eq(v2_data.span_id, "span-456")
-  assert_eq(v2_data.timestamp, 1234567890L)
-  assert_eq(v2_data.operation_name, "") // Default value for new field
+  // Verify each data point matches original
+  for i in 0..=telemetry_data_points.length() - 1 {
+    assert_eq(deserialized_batch[i].metric_name, telemetry_data_points[i].metric_name)
+    assert_eq(deserialized_batch[i].value, telemetry_data_points[i].value)
+    assert_eq(deserialized_batch[i].unit, telemetry_data_points[i].unit)
+    assert_eq(deserialized_batch[i].timestamp, telemetry_data_points[i].timestamp)
+  }
 }
 
-// Test 3: MessagePack Serialization
-test "messagepack serialization" {
-  let msgpack_serializer = MessagePackSerializer::new()
+// Test 5: Cross-Format Conversion
+test "cross-format conversion" {
+  // Create test telemetry data
+  let telemetry_data = TelemetryData::with_attributes("network_latency", 25.7, "ms", 1234567890L, [
+    ("source", "client-01"),
+    ("destination", "api-server"),
+    ("protocol", "HTTP/2")
+  ])
   
-  // Test complex data structure
-  let complex_data = ComplexData::new(
-    "test_id",
-    12345,
-    [1.1, 2.2, 3.3, 4.4, 5.5],
-    {
-      "nested_map": {
-        "inner_key": "inner_value",
-        "number": 42
-      },
-      "array_in_map": ["a", "b", "c"]
-    },
-    Some(OptionalField::new("optional_value"))
-  )
+  // Serialize to JSON
+  let json_data = JsonSerializer::serialize(telemetry_data)
   
-  // Serialize to MessagePack
-  let msgpack_result = msgpack_serializer.serialize(complex_data)
-  assert_true(msgpack_result.is_success)
+  // Convert JSON to binary
+  let binary_data = FormatConverter::json_to_binary(json_data)
   
-  let msgpack_bytes = msgpack_result.data
-  assert_true(msgpack_bytes.length() > 0)
+  // Convert binary to Protocol Buffers
+  let proto_data = FormatConverter::binary_to_protobuf(binary_data)
   
-  // Verify MessagePack format
-  assert_eq(msgpack_bytes[0], 0x82) // FixMap with 2 elements (example)
+  // Deserialize from Protocol Buffers
+  let deserialized_data = ProtobufSerializer::deserialize(proto_data)
   
-  // Deserialize from MessagePack
-  let deserialize_result = msgpack_serializer.deserialize(msgpack_bytes)
-  assert_true(deserialize_result.is_success)
+  // Verify final data matches original
+  assert_eq(deserialized_data.metric_name, telemetry_data.metric_name)
+  assert_eq(deserialized_data.value, telemetry_data.value)
+  assert_eq(deserialized_data.unit, telemetry_data.unit)
+  assert_eq(deserialized_data.timestamp, telemetry_data.timestamp)
   
-  let deserialized_data = deserialize_result.data
-  assert_eq(deserialized_data.id, "test_id")
-  assert_eq(deserialized_data.number, 12345)
-  assert_eq(deserialized_data.float_array, [1.1, 2.2, 3.3, 4.4, 5.5])
-  assert_eq(deserialized_data.nested_map["nested_map"]["inner_key"], "inner_value")
-  assert_eq(deserialized_data.nested_map["nested_map"]["number"], 42)
-  assert_eq(deserialized_data.nested_map["array_in_map"], ["a", "b", "c"])
-  
-  match deserialized_data.optional_field {
-    Some(field) => assert_eq(field.value, "optional_value")
-    None => assert_true(false)
+  // Verify attributes were preserved through all conversions
+  let source_attr = TelemetryData::get_attribute(deserialized_data, "source")
+  match source_attr {
+    Some(StringValue(value)) => assert_eq(value, "client-01")
+    _ => assert_true(false)
   }
   
-  // Test streaming serialization
-  let stream_data = [
-    StreamData::new("item1", 1),
-    StreamData::new("item2", 2),
-    StreamData::new("item3", 3)
-  ]
+  let dest_attr = TelemetryData::get_attribute(deserialized_data, "destination")
+  match dest_attr {
+    Some(StringValue(value)) => assert_eq(value, "api-server")
+    _ => assert_true(false)
+  }
   
-  let stream_result = msgpack_serializer.serialize_stream(stream_data)
-  assert_true(stream_result.is_success)
-  
-  let stream_deserialize_result = msgpack_serializer.deserialize_stream(stream_result.data)
-  assert_true(stream_deserialize_result.is_success)
-  
-  let deserialized_stream = stream_deserialize_result.data
-  assert_eq(deserialized_stream.length(), 3)
-  assert_eq(deserialized_stream[0].name, "item1")
-  assert_eq(deserialized_stream[0].value, 1)
-  assert_eq(deserialized_stream[1].name, "item2")
-  assert_eq(deserialized_stream[1].value, 2)
-  assert_eq(deserialized_stream[2].name, "item3")
-  assert_eq(deserialized_stream[2].value, 3)
+  let protocol_attr = TelemetryData::get_attribute(deserialized_data, "protocol")
+  match protocol_attr {
+    Some(StringValue(value)) => assert_eq(value, "HTTP/2")
+    _ => assert_true(false)
+  }
 }
 
-// Test 4: XML Serialization and Deserialization
-test "xml serialization and deserialization" {
-  let xml_serializer = XmlSerializer::new()
+// Test 6: Schema Validation and Evolution
+test "schema validation and evolution" {
+  // Create schema validator
+  let schema_validator = SchemaValidator::new()
   
-  // Test telemetry data with XML-specific considerations
-  let xml_data = XmlTelemetryData::new(
-    "trace-123",
-    "span-456",
-    1234567890L,
-    "operation_name",
-    [
-      XmlAttribute::new("service.name", "test_service"),
-      XmlAttribute::new("service.version", "1.0.0")
-    ],
-    [
-      XmlEvent::new("start_event", 1234567891L, [
-        XmlAttribute::new("event_type", "lifecycle")
-      ])
-    ]
-  )
+  // Define schema for telemetry data
+  let schema = Schema::new("TelemetryData", [
+    Field::new("metric_name", FieldType::String, true),
+    Field::new("value", FieldType::Float, true),
+    Field::new("unit", FieldType::String, true),
+    Field::new("timestamp", FieldType::Long, true),
+    Field::new("attributes", FieldType::Map(String, AttributeValue), false)
+  ])
   
-  // Serialize to XML
-  let xml_result = xml_serializer.serialize(xml_data)
-  assert_true(xml_result.is_success)
+  // Register schema
+  SchemaValidator::register_schema(schema_validator, "TelemetryData", schema)
   
-  let xml_string = xml_result.data
-  assert_true(xml_string.contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"))
-  assert_true(xml_string.contains("<TelemetryData"))
-  assert_true(xml_string.contains("<traceId>trace-123</traceId>"))
-  assert_true(xml_string.contains("<spanId>span-456</spanId>"))
-  assert_true(xml_string.contains("<operationName>operation_name</operationName>"))
-  assert_true(xml_string.contains("<attributes>"))
-  assert_true(xml_string.contains("<events>"))
+  // Create valid telemetry data
+  let valid_data = TelemetryData::new("valid_metric", 42.0, "count", 1234567890L)
   
-  // Deserialize from XML
-  let deserialize_result = xml_serializer.deserialize(xml_string)
-  assert_true(deserialize_result.is_success)
+  // Serialize valid data
+  let valid_json = JsonSerializer::serialize(valid_data)
   
-  let deserialized_data = deserialize_result.data
-  assert_eq(deserialized_data.trace_id, "trace-123")
-  assert_eq(deserialized_data.span_id, "span-456")
-  assert_eq(deserialized_data.operation_name, "operation_name")
-  assert_eq(deserialized_data.attributes.length(), 2)
-  assert_eq(deserialized_data.events.length(), 1)
-  
-  // Test XML with namespaces
-  let namespaced_data = NamespacedData::new(
-    "xmlns:telemetry=\"http://example.com/telemetry\"",
-    "telemetry:span",
-    [
-      XmlNamespaceAttribute::new("telemetry:service", "test-service")
-    ]
-  )
-  
-  let namespaced_result = xml_serializer.serialize(namespaced_data)
-  assert_true(namespaced_result.is_success)
-  
-  let namespaced_xml = namespaced_result.data
-  assert_true(namespaced_xml.contains("xmlns:telemetry"))
-  assert_true(namespaced_xml.contains("telemetry:span"))
-  assert_true(namespaced_xml.contains("telemetry:service"))
-  
-  let namespaced_deserialize_result = xml_serializer.deserialize(namespaced_xml)
-  assert_true(namespaced_deserialize_result.is_success)
-  
-  let namespaced_deserialized = namespaced_deserialize_result.data
-  assert_eq(namespaced_deserialized.namespace, "xmlns:telemetry=\"http://example.com/telemetry\"")
-  assert_eq(namespaced_deserialized.root_element, "telemetry:span")
-  
-  // Test XML schema validation
-  let xml_schema = """
-  <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-    <xs:element name="TelemetryData">
-      <xs:complexType>
-        <xs:sequence>
-          <xs:element name="traceId" type="xs:string"/>
-          <xs:element name="spanId" type="xs:string"/>
-          <xs:element name="timestamp" type="xs:long"/>
-          <xs:element name="operationName" type="xs:string"/>
-        </xs:sequence>
-      </xs:complexType>
-    </xs:element>
-  </xs:schema>
-  """
-  
-  let validation_result = xml_serializer.validate_against_schema(xml_string, xml_schema)
+  // Validate against schema
+  let validation_result = SchemaValidator::validate(schema_validator, "TelemetryData", valid_json)
   assert_true(validation_result.is_valid)
   
-  // Test invalid XML
-  let invalid_xml = "<TelemetryData><traceId>trace-123</spanId></TelemetryData>"
-  let invalid_result = xml_serializer.deserialize(invalid_xml)
-  assert_false(invalid_result.is_success)
-  assert_true(invalid_result.error_message.contains("XML parsing error"))
+  // Create invalid telemetry data (missing required field)
+  let invalid_json = "{\"metric_name\":\"invalid_metric\",\"value\":42.0}" // Missing unit and timestamp
+  
+  // Validate against schema
+  let validation_result = SchemaValidator::validate(schema_validator, "TelemetryData", invalid_json)
+  assert_false(validation_result.is_valid)
+  assert_true(validation_result.errors.length() > 0)
+  
+  // Test schema evolution (add new optional field)
+  let evolved_schema = Schema::new("TelemetryData", [
+    Field::new("metric_name", FieldType::String, true),
+    Field::new("value", FieldType::Float, true),
+    Field::new("unit", FieldType::String, true),
+    Field::new("timestamp", FieldType::Long, true),
+    Field::new("attributes", FieldType::Map(String, AttributeValue), false),
+    Field::new("metadata", FieldType::Map(String, String), false) // New optional field
+  ])
+  
+  // Register evolved schema
+  SchemaValidator::register_schema(schema_validator, "TelemetryData_v2", evolved_schema)
+  
+  // Old data should still be valid against new schema
+  let validation_result = SchemaValidator::validate(schema_validator, "TelemetryData_v2", valid_json)
+  assert_true(validation_result.is_valid)
+  
+  // New data with additional field should also be valid
+  let new_data_json = "{\"metric_name\":\"new_metric\",\"value\":42.0,\"unit\":\"count\",\"timestamp\":1234567890,\"metadata\":{\"version\":\"1.0\"}}"
+  let validation_result = SchemaValidator::validate(schema_validator, "TelemetryData_v2", new_data_json)
+  assert_true(validation_result.is_valid)
 }
 
-// Test 5: Custom Serialization Formats
-test "custom serialization formats" {
-  let custom_serializer = CustomSerializer::new()
-  
-  // Register custom serializers for specific types
-  custom_serializer.register_serializer("TelemetryData", CustomTelemetrySerializer::new())
-  custom_serializer.register_serializer("MetricData", CustomMetricSerializer::new())
-  
-  // Test custom telemetry data serialization
-  let telemetry_data = TelemetryData::new(
-    "trace-123",
-    "span-456",
-    1234567890L,
-    "operation_name",
-    [],
-    []
-  )
-  
-  let custom_result = custom_serializer.serialize(telemetry_data)
-  assert_true(custom_result.is_success)
-  
-  let custom_format = custom_result.data
-  assert_true(custom_format.contains("TELEMETRY|"))
-  assert_true(custom_format.contains("trace-123"))
-  assert_true(custom_format.contains("span-456"))
-  assert_true(custom_format.contains("1234567890"))
-  
-  // Deserialize using custom format
-  let custom_deserialize_result = custom_serializer.deserialize(custom_format)
-  assert_true(custom_deserialize_result.is_success)
-  
-  let custom_deserialized = custom_deserialize_result.data
-  assert_eq(custom_deserialized.trace_id, "trace-123")
-  assert_eq(custom_deserialized.span_id, "span-456")
-  assert_eq(custom_deserialized.timestamp, 1234567890L)
-  
-  // Test compression in serialization
-  let compression_serializer = CompressionSerializer::new()
-  
-  let large_data = LargeData::new("x".repeat(10000)) // 10KB string
-  
-  let compressed_result = compression_serializer.serialize(large_data)
-  assert_true(compressed_result.is_success)
-  
-  let compressed_data = compressed_result.data
-  assert_true(compressed_data.length() < 10000) // Should be compressed
-  
-  let decompress_result = compression_serializer.deserialize(compressed_data)
-  assert_true(decompress_result.is_success)
-  
-  let decompressed_data = decompress_result.data
-  assert_eq(decompressed_data.content, "x".repeat(10000))
-  
-  // Test encryption in serialization
-  let encryption_serializer = EncryptionSerializer::new("secret_key_123")
-  
-  let sensitive_data = SensitiveData::new(
-    "user123",
-    "password456",
-    "api_key_789"
-  )
-  
-  let encrypted_result = encryption_serializer.serialize(sensitive_data)
-  assert_true(encrypted_result.is_success)
-  
-  let encrypted_data = encrypted_result.data
-  assert_false(encrypted_data.contains("user123"))
-  assert_false(encrypted_data.contains("password456"))
-  assert_false(encrypted_data.contains("api_key_789"))
-  
-  let decrypt_result = encryption_serializer.deserialize(encrypted_data)
-  assert_true(decrypt_result.is_success)
-  
-  let decrypted_data = decrypt_result.data
-  assert_eq(decrypted_data.user_id, "user123")
-  assert_eq(decrypted_data.password, "password456")
-  assert_eq(decrypted_data.api_key, "api_key_789")
-}
-
-// Test 6: Serialization Performance and Optimization
-test "serialization performance and optimization" {
-  let performance_tester = SerializationPerformanceTester::new()
-  
-  // Test large dataset serialization performance
-  let large_dataset = generate_large_telemetry_dataset(10000) // 10,000 records
-  
-  let json_performance = performance_tester.test_json_serialization(large_dataset)
-  assert_true(json_performance.serialization_time > 0)
-  assert_true(json_performance.deserialization_time > 0)
-  assert_true(json_performance.serialized_size > 0)
-  
-  let protobuf_performance = performance_tester.test_protobuf_serialization(large_dataset)
-  assert_true(protobuf_performance.serialization_time > 0)
-  assert_true(protobuf_performance.deserialization_time > 0)
-  assert_true(protobuf_performance.serialized_size > 0)
-  
-  let msgpack_performance = performance_tester.test_msgpack_serialization(large_dataset)
-  assert_true(msgpack_performance.serialization_time > 0)
-  assert_true(msgpack_performance.deserialization_time > 0)
-  assert_true(msgpack_performance.serialized_size > 0)
-  
-  // Compare performance
-  assert_true(protobuf_performance.serialized_size < json_performance.serialized_size)
-  assert_true(msgpack_performance.serialized_size < json_performance.serialized_size)
-  
-  // Test serialization with memory pooling
-  let pooled_serializer = PooledSerializer::new(100) // 100 object pool
-  
-  let pooled_performance = performance_tester.test_pooled_serialization(pooled_serializer, large_dataset)
-  assert_true(pooled_performance.serialization_time > 0)
-  assert_true(pooled_performance.pool_hits > 0)
-  assert_true(pooled_performance.pool_misses >= 0)
-  
-  // Test streaming serialization for large data
-  let streaming_serializer = StreamingSerializer::new()
-  
-  let streaming_performance = performance_tester.test_streaming_serialization(streaming_serializer, large_dataset)
-  assert_true(streaming_performance.serialization_time > 0)
-  assert_true(streaming_performance.peak_memory_usage < json_performance.peak_memory_usage)
-  
-  // Test serialization optimization techniques
-  let optimizer = SerializationOptimizer::new()
-  
-  let optimization_suggestions = optimizer.analyze_serialization_performance(large_dataset)
-  assert_true(optimization_suggestions.length() > 0)
-  
-  let field_suggestion = optimization_suggestions.find(fn(s) { s.type == "field_optimization" })
-  match field_suggestion {
-    Some(suggestion) => {
-      assert_true(suggestion.fields_to_optimize.length() > 0)
-      assert_true(suggestion.estimated_size_reduction > 0)
-    }
-    None => assert_true(false)
-  }
-  
-  // Apply optimizations
-  let optimized_serializer = optimizer.create_optimized_serializer(large_dataset)
-  let optimized_performance = performance_tester.test_optimized_serialization(optimized_serializer, large_dataset)
-  
-  assert_true(optimized_performance.serialized_size < json_performance.serialized_size)
-  assert_true(optimized_performance.serialization_time <= json_performance.serialization_time * 1.1) // Allow 10% overhead
-}
-
-// Test 7: Serialization Error Handling and Recovery
-test "serialization error handling and recovery" {
-  let error_handler = SerializationErrorHandler::new()
-  
-  // Test malformed JSON handling
-  let malformed_json = "{\"trace_id\": \"trace-123\", \"span_id\": \"span-456\", \"timestamp\": 1234567890"
-  
-  let json_error_result = error_handler.handle_json_deserialization_error(malformed_json)
-  assert_true(json_error_result.is_error)
-  assert_true(json_error_result.error_message.contains("JSON"))
-  assert_true(json_error_result.recovery_suggestions.length() > 0)
-  
-  // Test corrupted protobuf handling
-  let corrupted_protobuf = [0x08, 0x96, 0x01, 0x12, 0x04, 0x74] // Truncated protobuf
-  
-  let protobuf_error_result = error_handler.handle_protobuf_deserialization_error(corrupted_protobuf)
-  assert_true(protobuf_error_result.is_error)
-  assert_true(protobuf_error_result.error_message.contains("protobuf"))
-  assert_true(protobuf_error_result.recovery_suggestions.length() > 0)
-  
-  // Test schema mismatch handling
-  let v1_data = "{\"version\": 1, \"trace_id\": \"trace-123\"}"
-  let v2_schema = "{\"required\": [\"version\", \"trace_id\", \"span_id\"]}"
-  
-  let schema_error_result = error_handler.handle_schema_mismatch_error(v1_data, v2_schema)
-  assert_true(schema_error_result.is_error)
-  assert_true(schema_error_result.error_message.contains("schema"))
-  assert_true(schema_error_result.missing_fields.contains("span_id"))
-  
-  // Test data corruption detection
-  let original_data = TelemetryData::new("trace-123", "span-456", 1234567890L, "operation", [], [])
-  let serializer = JsonSerializer::new()
-  
-  let serialized_result = serializer.serialize(original_data)
-  assert_true(serialized_result.is_success)
-  
-  // Corrupt the serialized data
-  let corrupted_data = corrupt_serialized_data(serialized_result.data)
-  
-  let corruption_result = error_handler.detect_data_corruption(corrupted_data, "json")
-  assert_true(corruption_result.is_corrupted)
-  assert_true(corruption_result.corruption_score > 0.5)
-  
-  // Test data recovery strategies
-  let recovery_strategies = error_handler.get_recovery_strategies(corruption_result)
-  assert_true(recovery_strategies.length() > 0)
-  
-  let best_strategy = recovery_strategies[0]
-  assert_true(best_strategy.success_rate > 0.0)
-  assert_true(best_strategy.applicable_data_types.contains("json"))
-  
-  // Apply recovery strategy
-  let recovery_result = error_handler.apply_recovery_strategy(best_strategy, corrupted_data)
-  if recovery_result.success {
-    let recovered_data = recovery_result.recovered_data
-    assert_true(recovered_data.length() > 0)
-  }
-  
-  // Test fallback serialization
-  let fallback_serializer = FallbackSerializer::new()
-  
-  let fallback_result = fallback_serializer.serialize_with_fallback(original_data)
-  assert_true(fallback_result.is_success)
-  assert_true(fallback_result.primary_format_used || fallback_result.fallback_format_used)
-  
-  // Test partial data recovery
-  let partial_data = "{\"trace_id\": \"trace-123\", \"span_id\": null, \"timestamp\": 1234567890}"
-  let partial_result = error_handler.handle_partial_data(partial_data)
-  assert_true(partial_result.is_partial)
-  assert_true(partial_result.available_fields.contains("trace_id"))
-  assert_true(partial_result.missing_fields.contains("span_id"))
-}
-
-// Test 8: Cross-Format Serialization Compatibility
-test "cross-format serialization compatibility" {
-  let format_converter = FormatConverter::new()
-  
-  // Test JSON to Protobuf conversion
-  let json_data = """
-  {
-    "trace_id": "trace-123",
-    "span_id": "span-456",
-    "timestamp": 1234567890,
-    "operation_name": "test_operation",
-    "attributes": [
-      {"key": "service.name", "value": "test_service"}
-    ],
-    "events": [
-      {"name": "start_event", "timestamp": 1234567891}
-    ]
-  }
-  """
-  
-  let json_to_protobuf_result = format_converter.convert(json_data, "json", "protobuf")
-  assert_true(json_to_protobuf_result.is_success)
-  
-  let protobuf_data = json_to_protobuf_result.data
-  assert_true(protobuf_data.length() > 0)
-  
-  // Verify converted data
-  let protobuf_deserializer = ProtobufSerializer::new()
-  let verify_result = protobuf_deserializer.deserialize(protobuf_data)
-  assert_true(verify_result.is_success)
-  
-  let verified_data = verify_result.data
-  assert_eq(verified_data.trace_id, "trace-123")
-  assert_eq(verified_data.span_id, "span-456")
-  
-  // Test Protobuf to XML conversion
-  let protobuf_to_xml_result = format_converter.convert(protobuf_data, "protobuf", "xml")
-  assert_true(protobuf_to_xml_result.is_success)
-  
-  let xml_data = protobuf_to_xml_result.data
-  assert_true(xml_data.contains("<?xml"))
-  assert_true(xml_data.contains("<traceId>trace-123</traceId>"))
-  assert_true(xml_data.contains("<spanId>span-456</spanId>"))
-  
-  // Test XML to MessagePack conversion
-  let xml_to_msgpack_result = format_converter.convert(xml_data, "xml", "msgpack")
-  assert_true(xml_to_msgpack_result.is_success)
-  
-  let msgpack_data = xml_to_msgpack_result.data
-  assert_true(msgpack_data.length() > 0)
-  
-  // Verify round-trip conversion
-  let msgpack_to_json_result = format_converter.convert(msgpack_data, "msgpack", "json")
-  assert_true(msgpack_to_json_result.is_success)
-  
-  let final_json = msgpack_to_json_result.data
-  let final_data = JsonSerializer::new().deserialize(final_json).data
-  
-  assert_eq(final_data.trace_id, "trace-123")
-  assert_eq(final_data.span_id, "span-456")
-  assert_eq(final_data.operation_name, "test_operation")
-  
-  // Test format compatibility matrix
-  let compatibility_matrix = format_converter.get_compatibility_matrix()
-  assert_true(compatibility_matrix.is_compatible("json", "protobuf"))
-  assert_true(compatibility_matrix.is_compatible("protobuf", "xml"))
-  assert_true(compatibility_matrix.is_compatible("xml", "msgpack"))
-  assert_true(compatibility_matrix.is_compatible("msgpack", "json"))
-  
-  // Test data loss detection during conversion
-  let rich_data = RichData::new(
-    "trace-123",
-    "span-456",
-    1234567890L,
-    "operation",
-    {
-      "complex_attribute": {
-        "nested": {
-          "deep": {
-            "value": "deep_value"
-          }
-        }
-      }
-    },
-    [
-      Event::new("event1", 1234567891L, {
-        "event_data": {
-          "details": {
-            "info": "detailed_info"
-          }
-        }
-      })
-    ]
-  )
-  
-  let data_loss_detector = DataLossDetector::new()
-  
-  let json_to_protobuf_loss = data_loss_detector.detect_data_loss(rich_data, "json", "protobuf")
-  assert_true(json_to_protobuf_loss.has_data_loss)
-  assert_true(json_to_protobuf_loss.lost_fields.length() > 0)
-  
-  // Test format-specific optimizations
-  let optimizer = FormatOptimizer::new()
-  
-  let json_optimizations = optimizer.get_optimizations_for_format("json")
-  assert_true(json_optimizations.length() > 0)
-  
-  let protobuf_optimizations = optimizer.get_optimizations_for_format("protobuf")
-  assert_true(protobuf_optimizations.length() > 0)
-  
-  // Apply optimizations
-  let optimized_json = optimizer.optimize_for_format(rich_data, "json")
-  assert_true(optimized_json.optimized)
-  assert_true(optimized_json.size_reduction > 0)
-  
-  let optimized_protobuf = optimizer.optimize_for_format(rich_data, "protobuf")
-  assert_true(optimized_protobuf.optimized)
-  assert_true(optimized_protobuf.size_reduction > 0)
-}
-
-// Helper function to generate large telemetry dataset
-fn generate_large_telemetry_dataset(count: Int) -> Array[TelemetryData] {
-  let dataset = []
-  for i in 0..count {
-    let data = TelemetryData::new(
-      "trace-" + i.to_string(),
-      "span-" + i.to_string(),
+// Test 7: Compression and Decompression
+test "compression and decompression" {
+  // Create large telemetry data batch
+  let large_batch = []
+  for i in 0..=1000 {
+    large_batch.push(TelemetryData::with_attributes(
+      "metric_" + i.to_string(),
+      i.to_float(),
+      "unit",
       1234567890L + i.to_long(),
-      "operation_" + i.to_string(),
-      [],
-      []
-    )
-    dataset = dataset.push(data)
+      [
+        ("attr1", "value1_" + i.to_string()),
+        ("attr2", "value2_" + i.to_string()),
+        ("attr3", "value3_" + i.to_string())
+      ]
+    ))
   }
-  dataset
+  
+  // Serialize batch to JSON
+  let json_data = JsonSerializer::serialize_batch(large_batch)
+  
+  // Compress JSON data
+  let compressed_data = CompressionUtil::compress(json_data, CompressionAlgorithm::Gzip)
+  
+  // Verify compressed data is smaller
+  assert_true(compressed_data.length() < json_data.length())
+  
+  // Decompress data
+  let decompressed_json = CompressionUtil::decompress(compressed_data, CompressionAlgorithm::Gzip)
+  
+  // Verify decompressed data matches original
+  assert_eq(decompressed_json, json_data)
+  
+  // Deserialize decompressed data
+  let deserialized_batch = JsonSerializer::deserialize_batch(decompressed_json)
+  
+  // Verify all data points were preserved
+  assert_eq(deserialized_batch.length(), large_batch.length())
+  
+  for i in 0..=large_batch.length() - 1 {
+    assert_eq(deserialized_batch[i].metric_name, large_batch[i].metric_name)
+    assert_eq(deserialized_batch[i].value, large_batch[i].value)
+    assert_eq(deserialized_batch[i].unit, large_batch[i].unit)
+    assert_eq(deserialized_batch[i].timestamp, large_batch[i].timestamp)
+  }
 }
 
-// Helper function to corrupt serialized data
-fn corrupt_serialized_data(data: String) -> String {
-  if data.length() > 10 {
-    data.substring(0, data.length() - 5) + "CORRUPT"
-  } else {
-    data + "CORRUPT"
+// Test 8: Error Handling in Serialization
+test "error handling in serialization" {
+  // Test serialization of null/invalid data
+  let invalid_data = TelemetryData::new("", 0.0, "", 0L) // All fields empty/zero
+  
+  // Attempt to serialize
+  let result = JsonSerializer::try_serialize(invalid_data)
+  
+  match result {
+    Ok(_) => assert_true(false) // Should fail
+    Err(error) => assert_eq(error.message, "Invalid telemetry data: empty metric name")
+  }
+  
+  // Test deserialization of malformed JSON
+  let malformed_json = "{\"metric_name\":\"test\",\"value\":not_a_number,\"unit\":\"ms\",\"timestamp\":1234567890}"
+  
+  let result = JsonSerializer::try_deserialize(malformed_json)
+  
+  match result {
+    Ok(_) => assert_true(false) // Should fail
+    Err(error) => assert_eq(error.message, "Invalid JSON: cannot parse value as number")
+  }
+  
+  // Test deserialization of incomplete JSON
+  let incomplete_json = "{\"metric_name\":\"test\",\"value\":42.0" // Missing closing braces and fields
+  
+  let result = JsonSerializer::try_deserialize(incomplete_json)
+  
+  match result {
+    Ok(_) => assert_true(false) // Should fail
+    Err(error) => assert_eq(error.message, "Invalid JSON: unexpected end of input")
+  }
+  
+  // Test handling of unknown fields during deserialization
+  let json_with_unknown_fields = "{\"metric_name\":\"test\",\"value\":42.0,\"unit\":\"ms\",\"timestamp\":1234567890,\"unknown_field\":\"unknown_value\"}"
+  
+  // Should succeed with warning
+  let result = JsonSerializer::try_deserialize_with_options(json_with_unknown_fields, DeserializationOptions::new().with_strict(false))
+  
+  match result {
+    Ok(data) => {
+      assert_eq(data.metric_name, "test")
+      assert_eq(data.value, 42.0)
+      assert_eq(data.unit, "ms")
+      assert_eq(data.timestamp, 1234567890L)
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  // Should fail in strict mode
+  let result = JsonSerializer::try_deserialize_with_options(json_with_unknown_fields, DeserializationOptions::new().with_strict(true))
+  
+  match result {
+    Ok(_) => assert_true(false) // Should fail
+    Err(error) => assert_eq(error.message, "Unknown field: unknown_field")
   }
 }
