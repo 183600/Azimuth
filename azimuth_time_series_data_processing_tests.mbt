@@ -1,68 +1,68 @@
 // Azimuth Telemetry System - Time Series Data Processing Tests
-// This file contains test cases for time series data processing functionality
+// This file contains comprehensive test cases for time series data processing functionality
 
-// Test 1: Time Series Data Point Creation
-test "time series data point creation" {
-  // Create a basic time series data point
-  let timestamp = 1640995200000L  // 2022-01-01 00:00:00 UTC
+// Test 1: Time Series Point Creation
+test "time series point creation" {
+  // Create time series point with timestamp and value
+  let timestamp = 1234567890L
   let value = 42.5
-  let data_point = TimeSeriesDataPoint::new(timestamp, value)
+  let point = TimeSeriesPoint::new(timestamp, value)
   
-  assert_eq(TimeSeriesDataPoint::timestamp(data_point), timestamp)
-  assert_eq(TimeSeriesDataPoint::value(data_point), value)
+  assert_eq(TimeSeriesPoint::timestamp(point), timestamp)
+  assert_eq(TimeSeriesPoint::value(point), value)
   
-  // Create a data point with attributes
-  let attrs = [
-    ("source", StringValue("sensor-1")),
-    ("unit", StringValue("celsius"))
-  ]
-  let data_point_with_attrs = TimeSeriesDataPoint::with_attributes(timestamp, value, attrs)
+  // Create time series point with attributes
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "unit", StringValue("celsius"))
+  Attributes::set(attrs, "location", StringValue("server-room-1"))
   
-  assert_eq(TimeSeriesDataPoint::timestamp(data_point_with_attrs), timestamp)
-  assert_eq(TimeSeriesDataPoint::value(data_point_with_attrs), value)
+  let point_with_attrs = TimeSeriesPoint::new_with_attributes(timestamp, value, attrs)
+  assert_eq(TimeSeriesPoint::timestamp(point_with_attrs), timestamp)
+  assert_eq(TimeSeriesPoint::value(point_with_attrs), value)
   
-  let source_attr = TimeSeriesDataPoint::get_attribute(data_point_with_attrs, "source")
-  match source_attr {
-    Some(StringValue(source)) => assert_eq(source, "sensor-1")
-    _ => assert_true(false)
+  let point_attrs = TimeSeriesPoint::attributes(point_with_attrs)
+  match point_attrs {
+    Some(a) => {
+      match Attributes::get(a, "unit") {
+        Some(StringValue(unit)) => assert_eq(unit, "celsius")
+        _ => assert_true(false)
+      }
+    }
+    None => assert_true(false)
   }
 }
 
-// Test 2: Time Series Creation and Basic Operations
-test "time series creation and basic operations" {
+// Test 2: Time Series Creation and Management
+test "time series creation and management" {
   // Create a new time series
-  let series_name = "temperature-readings"
-  let time_series = TimeSeries::new(series_name)
+  let series_name = "cpu.temperature"
+  let series = TimeSeries::new(series_name)
   
-  assert_eq(TimeSeries::name(time_series), series_name)
-  assert_eq(TimeSeries::length(time_series), 0)
+  assert_eq(TimeSeries::name(series), series_name)
+  assert_eq(TimeSeries::length(series), 0)
   
-  // Add data points to the time series
-  let point1 = TimeSeriesDataPoint::new(1640995200000L, 20.5)
-  let point2 = TimeSeriesDataPoint::new(1640995260000L, 21.0)
-  let point3 = TimeSeriesDataPoint::new(1640995320000L, 20.8)
+  // Add points to the time series
+  let point1 = TimeSeriesPoint::new(1000L, 25.5)
+  let point2 = TimeSeriesPoint::new(2000L, 26.0)
+  let point3 = TimeSeriesPoint::new(3000L, 25.8)
   
-  let updated_series = TimeSeries::add_point(time_series, point1)
-  let updated_series = TimeSeries::add_point(updated_series, point2)
-  let updated_series = TimeSeries::add_point(updated_series, point3)
+  let series_with_points = TimeSeries::add_point(TimeSeries::add_point(
+    TimeSeries::add_point(series, point1), point2), point3)
   
-  assert_eq(TimeSeries::length(updated_series), 3)
+  assert_eq(TimeSeries::length(series_with_points), 3)
   
-  // Test getting data points by index
-  let retrieved_point1 = TimeSeries::get_point(updated_series, 0)
+  // Get points by index
+  let retrieved_point1 = TimeSeries::get_point(series_with_points, 0)
   match retrieved_point1 {
-    Some(point) => assert_eq(TimeSeriesDataPoint::value(point), 20.5)
-    None => assert_true(false)
-  }
-  
-  let retrieved_point3 = TimeSeries::get_point(updated_series, 2)
-  match retrieved_point3 {
-    Some(point) => assert_eq(TimeSeriesDataPoint::value(point), 20.8)
+    Some(p) => {
+      assert_eq(TimeSeriesPoint::timestamp(p), 1000L)
+      assert_eq(TimeSeriesPoint::value(p), 25.5)
+    }
     None => assert_true(false)
   }
   
   // Test getting non-existent point
-  let non_existent = TimeSeries::get_point(updated_series, 10)
+  let non_existent = TimeSeries::get_point(series_with_points, 10)
   match non_existent {
     Some(_) => assert_true(false)
     None => assert_true(true)
@@ -71,50 +71,48 @@ test "time series creation and basic operations" {
 
 // Test 3: Time Series Aggregation Operations
 test "time series aggregation operations" {
-  // Create a time series with multiple data points
-  let time_series = TimeSeries::new("test-series")
-  
-  // Add data points with known values for aggregation testing
+  // Create time series with test data
+  let series = TimeSeries::new("test.series")
   let points = [
-    TimeSeriesDataPoint::new(1640995200000L, 10.0),
-    TimeSeriesDataPoint::new(1640995260000L, 20.0),
-    TimeSeriesDataPoint::new(1640995320000L, 30.0),
-    TimeSeriesDataPoint::new(1640995380000L, 40.0),
-    TimeSeriesDataPoint::new(1640995440000L, 50.0)
+    TimeSeriesPoint::new(1000L, 10.0),
+    TimeSeriesPoint::new(2000L, 20.0),
+    TimeSeriesPoint::new(3000L, 30.0),
+    TimeSeriesPoint::new(4000L, 40.0),
+    TimeSeriesPoint::new(5000L, 50.0)
   ]
   
-  let updated_series = TimeSeries::from_array(points)
+  let populated_series = TimeSeries::from_points("test.series", points)
   
   // Test average calculation
-  let average = TimeSeries::average(updated_series)
+  let average = TimeSeries::average(populated_series)
   match average {
     Some(avg) => assert_eq(avg, 30.0)
     None => assert_true(false)
   }
   
+  // Test sum calculation
+  let sum = TimeSeries::sum(populated_series)
+  match sum {
+    Some(s) => assert_eq(s, 150.0)
+    None => assert_true(false)
+  }
+  
   // Test min calculation
-  let min = TimeSeries::min(updated_series)
+  let min = TimeSeries::min(populated_series)
   match min {
-    Some(min_val) => assert_eq(min_val, 10.0)
+    Some(m) => assert_eq(m, 10.0)
     None => assert_true(false)
   }
   
   // Test max calculation
-  let max = TimeSeries::max(updated_series)
+  let max = TimeSeries::max(populated_series)
   match max {
-    Some(max_val) => assert_eq(max_val, 50.0)
+    Some(m) => assert_eq(m, 50.0)
     None => assert_true(false)
   }
   
-  // Test sum calculation
-  let sum = TimeSeries::sum(updated_series)
-  match sum {
-    Some(sum_val) => assert_eq(sum_val, 150.0)
-    None => assert_true(false)
-  }
-  
-  // Test empty series aggregation
-  let empty_series = TimeSeries::new("empty-series")
+  // Test with empty series
+  let empty_series = TimeSeries::new("empty.series")
   let empty_average = TimeSeries::average(empty_series)
   match empty_average {
     Some(_) => assert_true(false)
@@ -122,235 +120,322 @@ test "time series aggregation operations" {
   }
 }
 
-// Test 4: Time Series Range Queries
-test "time series range queries" {
-  // Create a time series with data points spanning a time range
+// Test 4: Time Series Windowing Operations
+test "time series windowing operations" {
+  // Create time series with test data
   let points = [
-    TimeSeriesDataPoint::new(1640995200000L, 10.0),  // 2022-01-01 00:00:00
-    TimeSeriesDataPoint::new(1640995260000L, 20.0),  // 2022-01-01 00:01:00
-    TimeSeriesDataPoint::new(1640995320000L, 30.0),  // 2022-01-01 00:02:00
-    TimeSeriesDataPoint::new(1640995380000L, 40.0),  // 2022-01-01 00:03:00
-    TimeSeriesDataPoint::new(1640995440000L, 50.0)   // 2022-01-01 00:04:00
+    TimeSeriesPoint::new(1000L, 10.0),
+    TimeSeriesPoint::new(1500L, 15.0),
+    TimeSeriesPoint::new(2000L, 20.0),
+    TimeSeriesPoint::new(2500L, 25.0),
+    TimeSeriesPoint::new(3000L, 30.0),
+    TimeSeriesPoint::new(3500L, 35.0),
+    TimeSeriesPoint::new(4000L, 40.0)
   ]
   
-  let time_series = TimeSeries::from_array(points)
+  let series = TimeSeries::from_points("window.test", points)
   
-  // Query for a specific time range
-  let start_time = 1640995260000L  // 2022-01-01 00:01:00
-  let end_time = 1640995380000L    // 2022-01-01 00:03:00
+  // Test time-based windowing
+  let windows = TimeSeries::time_windows(series, 1000L) // 1 second windows
+  assert_eq(windows.length(), 4)
   
-  let range_series = TimeSeries::get_range(time_series, start_time, end_time)
+  // First window should contain points at 1000L and 1500L
+  let first_window = windows[0]
+  assert_eq(TimeSeries::length(first_window), 2)
   
-  // Should include points at 00:01:00, 00:02:00, and 00:03:00
-  assert_eq(TimeSeries::length(range_series), 3)
+  // Test sliding window
+  let sliding_windows = TimeSeries::sliding_windows(series, 3)
+  assert_eq(sliding_windows.length(), 5) // 7 points - 3 size + 1
   
-  let first_point = TimeSeries::get_point(range_series, 0)
+  // First sliding window should contain first 3 points
+  let first_sliding = sliding_windows[0]
+  assert_eq(TimeSeries::length(first_sliding), 3)
+  
+  let first_point = TimeSeries::get_point(first_sliding, 0)
   match first_point {
-    Some(point) => {
-      assert_eq(TimeSeriesDataPoint::timestamp(point), 1640995260000L)
-      assert_eq(TimeSeriesDataPoint::value(point), 20.0)
-    }
+    Some(p) => assert_eq(TimeSeriesPoint::timestamp(p), 1000L)
     None => assert_true(false)
   }
-  
-  let last_point = TimeSeries::get_point(range_series, 2)
-  match last_point {
-    Some(point) => {
-      assert_eq(TimeSeriesDataPoint::timestamp(point), 1640995380000L)
-      assert_eq(TimeSeriesDataPoint::value(point), 40.0)
-    }
-    None => assert_true(false)
-  }
-  
-  // Test empty range query
-  let future_start = 1640996000000L  // Future time
-  let future_end = 1640996100000L
-  let empty_range = TimeSeries::get_range(time_series, future_start, future_end)
-  assert_eq(TimeSeries::length(empty_range), 0)
 }
 
-// Test 5: Time Series Resampling
-test "time series resampling" {
-  // Create a time series with data points at 1-minute intervals
+// Test 5: Time Series Resampling Operations
+test "time series resampling operations" {
+  // Create time series with irregular intervals
   let points = [
-    TimeSeriesDataPoint::new(1640995200000L, 10.0),  // 00:00:00
-    TimeSeriesDataPoint::new(1640995260000L, 20.0),  // 00:01:00
-    TimeSeriesDataPoint::new(1640995320000L, 30.0),  // 00:02:00
-    TimeSeriesDataPoint::new(1640995380000L, 40.0),  // 00:03:00
-    TimeSeriesDataPoint::new(1640995440000L, 50.0),  // 00:04:00
-    TimeSeriesDataPoint::new(1640995500000L, 60.0)   // 00:05:00
+    TimeSeriesPoint::new(1000L, 10.0),
+    TimeSeriesPoint::new(1300L, 13.0),
+    TimeSeriesPoint::new(1800L, 18.0),
+    TimeSeriesPoint::new(2200L, 22.0),
+    TimeSeriesPoint::new(2800L, 28.0)
   ]
   
-  let time_series = TimeSeries::from_array(points)
+  let series = TimeSeries::from_points("resample.test", points)
   
-  // Resample to 2-minute intervals using average
-  let resampled_series = TimeSeries::resample(time_series, 120000L, AggregationMethod::Average)
+  // Test upsampling (linear interpolation)
+  let upsampled = TimeSeries::upsample_linear(series, 500L)
+  assert_eq(TimeSeries::length(upsampled), 7)
   
-  // Should have points at 00:00:00, 00:02:00, 00:04:00
-  assert_eq(TimeSeries::length(resampled_series), 3)
-  
-  // Check first resampled point (average of 00:00:00 and 00:01:00)
-  let first_point = TimeSeries::get_point(resampled_series, 0)
-  match first_point {
-    Some(point) => {
-      assert_eq(TimeSeriesDataPoint::timestamp(point), 1640995200000L)
-      assert_eq(TimeSeriesDataPoint::value(point), 15.0)  // (10 + 20) / 2
+  // Check interpolated point at 1500L
+  let interpolated = TimeSeries::point_at_time(upsampled, 1500L)
+  match interpolated {
+    Some(p) => {
+      // Should be approximately 15.0 (between 13.0 at 1300L and 18.0 at 1800L)
+      let value = TimeSeriesPoint::value(p)
+      assert_true(value > 14.0 && value < 16.0)
     }
     None => assert_true(false)
   }
   
-  // Check second resampled point (average of 00:02:00 and 00:03:00)
-  let second_point = TimeSeries::get_point(resampled_series, 1)
-  match second_point {
-    Some(point) => {
-      assert_eq(TimeSeriesDataPoint::timestamp(point), 1640995320000L)
-      assert_eq(TimeSeriesDataPoint::value(point), 35.0)  // (30 + 40) / 2
-    }
-    None => assert_true(false)
-  }
+  // Test downsampling (averaging)
+  let downsampled = TimeSeries::downsample_average(series, 1000L)
+  assert_eq(TimeSeries::length(downsampled), 3)
   
-  // Check third resampled point (average of 00:04:00 and 00:05:00)
-  let third_point = TimeSeries::get_point(resampled_series, 2)
-  match third_point {
-    Some(point) => {
-      assert_eq(TimeSeriesDataPoint::timestamp(point), 1640995440000L)
-      assert_eq(TimeSeriesDataPoint::value(point), 55.0)  // (50 + 60) / 2
-    }
+  // First downsampled point should average points at 1000L and 1300L
+  let first_downsampled = TimeSeries::get_point(downsampled, 0)
+  match first_downsampled {
+    Some(p) => assert_eq(TimeSeriesPoint::value(p), 11.5) // (10.0 + 13.0) / 2
     None => assert_true(false)
   }
 }
 
-// Test 6: Time Series Window Operations
-test "time series window operations" {
-  // Create a time series with data points
+// Test 6: Time Series Filtering Operations
+test "time series filtering operations" {
+  // Create time series with test data
   let points = [
-    TimeSeriesDataPoint::new(1640995200000L, 10.0),
-    TimeSeriesDataPoint::new(1640995260000L, 20.0),
-    TimeSeriesDataPoint::new(1640995320000L, 30.0),
-    TimeSeriesDataPoint::new(1640995380000L, 40.0),
-    TimeSeriesDataPoint::new(1640995440000L, 50.0)
+    TimeSeriesPoint::new(1000L, 10.0),
+    TimeSeriesPoint::new(2000L, 20.0),
+    TimeSeriesPoint::new(3000L, 30.0),
+    TimeSeriesPoint::new(4000L, 40.0),
+    TimeSeriesPoint::new(5000L, 50.0)
   ]
   
-  let time_series = TimeSeries::from_array(points)
+  let series = TimeSeries::from_points("filter.test", points)
   
-  // Apply a moving average with window size of 3
-  let smoothed_series = TimeSeries::moving_average(time_series, 3)
+  // Test time range filtering
+  let filtered = TimeSeries::filter_by_time_range(series, 2000L, 4000L)
+  assert_eq(TimeSeries::length(filtered), 3)
   
-  // The first two points should be None (not enough data for window)
-  assert_eq(TimeSeries::length(smoothed_series), 5)
-  
-  // Check third point (average of first 3 points)
-  let third_point = TimeSeries::get_point(smoothed_series, 2)
-  match third_point {
-    Some(point) => assert_eq(TimeSeriesDataPoint::value(point), 20.0)  // (10 + 20 + 30) / 3
+  let first_filtered = TimeSeries::get_point(filtered, 0)
+  match first_filtered {
+    Some(p) => assert_eq(TimeSeriesPoint::timestamp(p), 2000L)
     None => assert_true(false)
   }
   
-  // Check fourth point (average of points 2-4)
-  let fourth_point = TimeSeries::get_point(smoothed_series, 3)
-  match fourth_point {
-    Some(point) => assert_eq(TimeSeriesDataPoint::value(point), 30.0)  // (20 + 30 + 40) / 3
+  // Test value range filtering
+  let value_filtered = TimeSeries::filter_by_value_range(series, 15.0, 45.0)
+  assert_eq(TimeSeries::length(value_filtered), 3)
+  
+  let first_value_filtered = TimeSeries::get_point(value_filtered, 0)
+  match first_value_filtered {
+    Some(p) => assert_eq(TimeSeriesPoint::value(p), 20.0)
     None => assert_true(false)
   }
   
-  // Check fifth point (average of points 3-5)
-  let fifth_point = TimeSeries::get_point(smoothed_series, 4)
-  match fifth_point {
-    Some(point) => assert_eq(TimeSeriesDataPoint::value(point), 40.0)  // (30 + 40 + 50) / 3
+  // Test custom predicate filtering
+  let predicate_filtered = TimeSeries::filter_by_predicate(series, fn(point) {
+    TimeSeriesPoint::value(point) > 25.0
+  })
+  assert_eq(TimeSeries::length(predicate_filtered), 3)
+}
+
+// Test 7: Time Series Derivative Operations
+test "time series derivative operations" {
+  // Create time series with test data
+  let points = [
+    TimeSeriesPoint::new(1000L, 10.0),
+    TimeSeriesPoint::new(2000L, 20.0),
+    TimeSeriesPoint::new(3000L, 30.0),
+    TimeSeriesPoint::new(4000L, 40.0),
+    TimeSeriesPoint::new(5000L, 50.0)
+  ]
+  
+  let series = TimeSeries::from_points("derivative.test", points)
+  
+  // Test first derivative (rate of change)
+  let derivative = TimeSeries::first_derivative(series)
+  assert_eq(TimeSeries::length(derivative), 4)
+  
+  // First derivative point should be (20.0 - 10.0) / (2000L - 1000L) = 0.01
+  let first_derivative_point = TimeSeries::get_point(derivative, 0)
+  match first_derivative_point {
+    Some(p) => assert_eq(TimeSeriesPoint::value(p), 0.01)
+    None => assert_true(false)
+  }
+  
+  // Test second derivative (acceleration)
+  let second_derivative = TimeSeries::second_derivative(series)
+  assert_eq(TimeSeries::length(second_derivative), 3)
+  
+  // For linear data, second derivative should be approximately 0
+  let second_derivative_point = TimeSeries::get_point(second_derivative, 0)
+  match second_derivative_point {
+    Some(p) => {
+      let value = TimeSeriesPoint::value(p)
+      assert_true(value > -0.001 && value < 0.001)
+    }
     None => assert_true(false)
   }
 }
 
-// Test 7: Time Series Metadata Operations
-test "time series metadata operations" {
-  // Create a time series with metadata
-  let time_series = TimeSeries::new("test-series")
-  
-  // Set metadata
-  let metadata = [
-    ("description", StringValue("Test time series for unit testing")),
-    ("unit", StringValue("celsius")),
-    ("source", StringValue("sensor-1"))
+// Test 8: Time Series Anomaly Detection
+test "time series anomaly detection" {
+  // Create time series with normal data and one anomaly
+  let points = [
+    TimeSeriesPoint::new(1000L, 10.0),
+    TimeSeriesPoint::new(2000L, 12.0),
+    TimeSeriesPoint::new(3000L, 11.0),
+    TimeSeriesPoint::new(4000L, 100.0), // Anomaly
+    TimeSeriesPoint::new(5000L, 13.0),
+    TimeSeriesPoint::new(6000L, 10.5)
   ]
   
-  let series_with_metadata = TimeSeries::with_metadata(time_series, metadata)
+  let series = TimeSeries::from_points("anomaly.test", points)
   
-  // Test getting metadata
-  let description = TimeSeries::get_metadata(series_with_metadata, "description")
-  match description {
-    Some(StringValue(desc)) => assert_eq(desc, "Test time series for unit testing")
-    _ => assert_true(false)
+  // Test statistical anomaly detection (z-score)
+  let anomalies = TimeSeries::detect_anomalies_zscore(series, 2.0)
+  assert_eq(anomalies.length(), 1)
+  
+  let anomaly_point = anomalies[0]
+  assert_eq(TimeSeriesPoint::timestamp(anomaly_point), 4000L)
+  assert_eq(TimeSeriesPoint::value(anomaly_point), 100.0)
+  
+  // Test moving average anomaly detection
+  let ma_anomalies = TimeSeries::detect_anomalies_moving_average(series, 2, 3.0)
+  assert_eq(ma_anomalies.length(), 1)
+  
+  // Test with series without anomalies
+  let normal_points = [
+    TimeSeriesPoint::new(1000L, 10.0),
+    TimeSeriesPoint::new(2000L, 12.0),
+    TimeSeriesPoint::new(3000L, 11.0),
+    TimeSeriesPoint::new(4000L, 13.0),
+    TimeSeriesPoint::new(5000L, 12.5)
+  ]
+  
+  let normal_series = TimeSeries::from_points("normal.test", normal_points)
+  let normal_anomalies = TimeSeries::detect_anomalies_zscore(normal_series, 2.0)
+  assert_eq(normal_anomalies.length(), 0)
+}
+
+// Test 9: Time Series Forecasting
+test "time series forecasting" {
+  // Create time series with trend data
+  let points = [
+    TimeSeriesPoint::new(1000L, 10.0),
+    TimeSeriesPoint::new(2000L, 12.0),
+    TimeSeriesPoint::new(3000L, 14.0),
+    TimeSeriesPoint::new(4000L, 16.0),
+    TimeSeriesPoint::new(5000L, 18.0)
+  ]
+  
+  let series = TimeSeries::from_points("forecast.test", points)
+  
+  // Test linear regression forecasting
+  let forecast = TimeSeries::forecast_linear(series, 2)
+  assert_eq(forecast.length(), 2)
+  
+  // First forecast point should be at 6000L with value approximately 20.0
+  let first_forecast = forecast[0]
+  assert_eq(TimeSeriesPoint::timestamp(first_forecast), 6000L)
+  let forecast_value = TimeSeriesPoint::value(first_forecast)
+  assert_true(forecast_value > 19.0 && forecast_value < 21.0)
+  
+  // Second forecast point should be at 7000L with value approximately 22.0
+  let second_forecast = forecast[1]
+  assert_eq(TimeSeriesPoint::timestamp(second_forecast), 7000L)
+  let second_forecast_value = TimeSeriesPoint::value(second_forecast)
+  assert_true(second_forecast_value > 21.0 && second_forecast_value < 23.0)
+  
+  // Test moving average forecasting
+  let ma_forecast = TimeSeries::forecast_moving_average(series, 3, 1)
+  assert_eq(ma_forecast.length(), 1)
+  
+  let ma_forecast_point = ma_forecast[0]
+  assert_eq(TimeSeriesPoint::timestamp(ma_forecast_point), 6000L)
+  let ma_forecast_value = TimeSeriesPoint::value(ma_forecast_point)
+  assert_true(ma_forecast_value > 15.0 && ma_forecast_value < 17.0)
+}
+
+// Test 10: Time Series Correlation Analysis
+test "time series correlation analysis" {
+  // Create two correlated time series
+  let points1 = [
+    TimeSeriesPoint::new(1000L, 10.0),
+    TimeSeriesPoint::new(2000L, 20.0),
+    TimeSeriesPoint::new(3000L, 30.0),
+    TimeSeriesPoint::new(4000L, 40.0),
+    TimeSeriesPoint::new(5000L, 50.0)
+  ]
+  
+  let points2 = [
+    TimeSeriesPoint::new(1000L, 15.0),
+    TimeSeriesPoint::new(2000L, 25.0),
+    TimeSeriesPoint::new(3000L, 35.0),
+    TimeSeriesPoint::new(4000L, 45.0),
+    TimeSeriesPoint::new(5000L, 55.0)
+  ]
+  
+  let series1 = TimeSeries::from_points("correlation.test1", points1)
+  let series2 = TimeSeries::from_points("correlation.test2", points2)
+  
+  // Test correlation coefficient calculation
+  let correlation = TimeSeries::correlation(series1, series2)
+  match correlation {
+    Some(corr) => {
+      // Should be close to 1.0 for perfectly correlated series
+      assert_true(corr > 0.99)
+    }
+    None => assert_true(false)
   }
   
-  let unit = TimeSeries::get_metadata(series_with_metadata, "unit")
-  match unit {
-    Some(StringValue(u)) => assert_eq(u, "celsius")
-    _ => assert_true(false)
+  // Test with negatively correlated series
+  let points3 = [
+    TimeSeriesPoint::new(1000L, 50.0),
+    TimeSeriesPoint::new(2000L, 40.0),
+    TimeSeriesPoint::new(3000L, 30.0),
+    TimeSeriesPoint::new(4000L, 20.0),
+    TimeSeriesPoint::new(5000L, 10.0)
+  ]
+  
+  let series3 = TimeSeries::from_points("correlation.test3", points3)
+  let negative_correlation = TimeSeries::correlation(series1, series3)
+  match negative_correlation {
+    Some(corr) => {
+      // Should be close to -1.0 for perfectly negatively correlated series
+      assert_true(corr < -0.99)
+    }
+    None => assert_true(false)
   }
   
-  // Test updating metadata
-  let updated_series = TimeSeries::set_metadata(series_with_metadata, "unit", StringValue("fahrenheit"))
-  let updated_unit = TimeSeries::get_metadata(updated_series, "unit")
-  match updated_unit {
-    Some(StringValue(u)) => assert_eq(u, "fahrenheit")
-    _ => assert_true(false)
+  // Test with uncorrelated series
+  let points4 = [
+    TimeSeriesPoint::new(1000L, 10.0),
+    TimeSeriesPoint::new(2000L, 50.0),
+    TimeSeriesPoint::new(3000L, 20.0),
+    TimeSeriesPoint::new(4000L, 60.0),
+    TimeSeriesPoint::new(5000L, 30.0)
+  ]
+  
+  let series4 = TimeSeries::from_points("correlation.test4", points4)
+  let uncorrelated = TimeSeries::correlation(series1, series4)
+  match uncorrelated {
+    Some(corr) => {
+      // Should be close to 0 for uncorrelated series
+      assert_true(corr > -0.5 && corr < 0.5)
+    }
+    None => assert_true(false)
   }
   
-  // Test getting non-existent metadata
-  let non_existent = TimeSeries::get_metadata(updated_series, "non-existent")
-  match non_existent {
+  // Test with series of different lengths
+  let short_points = [
+    TimeSeriesPoint::new(1000L, 10.0),
+    TimeSeriesPoint::new(2000L, 20.0)
+  ]
+  
+  let short_series = TimeSeries::from_points("correlation.short", short_points)
+  let different_length = TimeSeries::correlation(series1, short_series)
+  match different_length {
     Some(_) => assert_true(false)
     None => assert_true(true)
-  }
-}
-
-// Test 8: Time Series Serialization and Deserialization
-test "time series serialization and deserialization" {
-  // Create a time series with data points and metadata
-  let points = [
-    TimeSeriesDataPoint::new(1640995200000L, 10.0),
-    TimeSeriesDataPoint::new(1640995260000L, 20.0),
-    TimeSeriesDataPoint::new(1640995320000L, 30.0)
-  ]
-  
-  let metadata = [
-    ("description", StringValue("Test time series")),
-    ("unit", StringValue("celsius"))
-  ]
-  
-  let original_series = TimeSeries::with_metadata(TimeSeries::from_array(points), metadata)
-  
-  // Serialize to JSON
-  let json_data = TimeSeries::to_json(original_series)
-  assert_true(json_data.length() > 0)
-  
-  // Deserialize from JSON
-  let deserialized_series = TimeSeries::from_json(json_data)
-  
-  // Verify the deserialized series matches the original
-  assert_eq(TimeSeries::name(deserialized_series), TimeSeries::name(original_series))
-  assert_eq(TimeSeries::length(deserialized_series), TimeSeries::length(original_series))
-  
-  // Check data points
-  for i in 0..TimeSeries::length(deserialized_series) {
-    let original_point = TimeSeries::get_point(original_series, i)
-    let deserialized_point = TimeSeries::get_point(deserialized_series, i)
-    
-    match (original_point, deserialized_point) {
-      (Some(orig), Some(deser)) => {
-        assert_eq(TimeSeriesDataPoint::timestamp(orig), TimeSeriesDataPoint::timestamp(deser))
-        assert_eq(TimeSeriesDataPoint::value(orig), TimeSeriesDataPoint::value(deser))
-      }
-      _ => assert_true(false)
-    }
-  }
-  
-  // Check metadata
-  let original_desc = TimeSeries::get_metadata(original_series, "description")
-  let deserialized_desc = TimeSeries::get_metadata(deserialized_series, "description")
-  
-  match (original_desc, deserialized_desc) {
-    (Some(StringValue(orig)), Some(StringValue(deser))) => assert_eq(orig, deser)
-    _ => assert_true(false)
   }
 }

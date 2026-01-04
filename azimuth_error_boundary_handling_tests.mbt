@@ -1,350 +1,503 @@
-// Azimuth Error Boundary Handling Tests
-// This file contains high-quality test cases for error boundary handling
+// Azimuth Telemetry System - Error Boundary Handling Tests
+// This file contains comprehensive test cases for error boundary handling and recovery
 
-// Test 1: Graceful Handling of Invalid Telemetry Data
-test "graceful handling of invalid telemetry data" {
-  // Test case 1: Invalid trace ID format
-  let invalid_trace_ctx = SpanContext::new("", "valid_span_id", true, "test_state")
-  assert_false(SpanContext::is_valid(invalid_trace_ctx))
+// Test 1: Invalid Span Context Handling
+test "invalid span context handling" {
+  // Test with empty trace ID
+  let empty_trace_ctx = SpanContext::new("", "span123", true, "")
+  assert_false(SpanContext::is_valid(empty_trace_ctx))
   
-  // Test case 2: Invalid span ID format
-  let invalid_span_ctx = SpanContext::new("valid_trace_id", "", true, "test_state")
-  assert_false(SpanContext::is_valid(invalid_span_ctx))
+  // Test with empty span ID
+  let empty_span_ctx = SpanContext::new("trace123", "", true, "")
+  assert_false(SpanContext::is_valid(empty_span_ctx))
   
-  // Test case 3: Malformed attribute values
-  let attrs = Attributes::new()
+  // Test with both empty
+  let both_empty_ctx = SpanContext::new("", "", false, "")
+  assert_false(SpanContext::is_valid(both_empty_ctx))
   
-  // Test with extremely long attribute key
-  let long_key = "a".repeat(1000) // 1000 character key
-  Attributes::set(attrs, long_key, StringValue("test_value"))
+  // Test creating span with invalid context
+  let invalid_span = Span::new("test-operation", Internal, both_empty_ctx)
+  assert_false(Span::is_recording(invalid_span))
   
-  // Should handle gracefully without crashing
-  let retrieved_value = Attributes::get(attrs, long_key)
-  match retrieved_value {
-    Some(StringValue(value)) => assert_eq(value, "test_value")
-    _ => assert_true(false)
-  }
-  
-  // Test case 4: Numeric overflow in attribute values
-  let max_int = 2147483647
-  Attributes::set(attrs, "max_int", IntValue(max_int))
-  
-  // Should handle gracefully
-  let max_int_value = Attributes::get(attrs, "max_int")
-  match max_int_value {
-    Some(IntValue(value)) => assert_eq(value, max_int)
-    _ => assert_true(false)
-  }
-  
-  // Test case 5: Invalid float values
-  let nan_value = FloatValue(0.0 / 0.0) // NaN
-  Attributes::set(attrs, "nan_value", nan_value)
-  
-  // Should handle NaN gracefully
-  let nan_retrieved = Attributes::get(attrs, "nan_value")
-  match nan_retrieved {
-    Some(FloatValue(value)) => assert_true(Float::is_nan(value))
-    _ => assert_true(false)
-  }
-  
-  let inf_value = FloatValue(1.0 / 0.0) // Infinity
-  Attributes::set(attrs, "inf_value", inf_value)
-  
-  // Should handle infinity gracefully
-  let inf_retrieved = Attributes::get(attrs, "inf_value")
-  match inf_retrieved {
-    Some(FloatValue(value)) => assert_true(Float::is_infinite(value))
-    _ => assert_true(false)
-  }
-}
-
-// Test 2: Network Error Recovery Mechanisms
-test "network error recovery mechanisms" {
-  // Simulate network error scenarios
-  
-  // Test case 1: Connection timeout
-  let client = HttpClient::new()
-  let timeout_config = TimeoutConfig::new(1.0) // 1 second timeout
-  
-  let request = HttpRequest::new("GET", "https://httpbin.org/delay/10", [], None)
-  let response = HttpClient::execute_with_timeout(client, request, timeout_config)
-  
-  match response {
-    Ok(resp) => assert_true(false) // Should not succeed
-    Err(TimeoutError) => assert_true(true) // Expected timeout error
-    Err(_) => assert_true(false) // Unexpected error type
-  }
-  
-  // Test case 2: Connection refused
-  let refused_request = HttpRequest::new("GET", "http://localhost:99999/nonexistent", [], None)
-  let refused_response = HttpClient::execute(client, refused_request)
-  
-  match refused_response {
-    Ok(resp) => assert_true(false) // Should not succeed
-    Err(ConnectionError) => assert_true(true) // Expected connection error
-    Err(_) => assert_true(false) // Unexpected error type
-  }
-  
-  // Test case 3: Retry mechanism with exponential backoff
-  let retry_config = RetryConfig::new(3, 0.1, 2.0) // 3 retries, 0.1s initial, 2x backoff
-  let flaky_request = HttpRequest::new("GET", "https://httpbin.org/status/500", [], None)
-  
-  let retry_response = HttpClient::execute_with_retry(client, flaky_request, retry_config)
-  
-  // Should attempt retries and ultimately fail
-  match retry_response {
-    Ok(resp) => assert_true(false) // Should not succeed with 500 status
-    Err(RetryExhausted) => assert_true(true) // Expected retry exhaustion
-    Err(_) => assert_true(false) // Unexpected error type
-  }
-  
-  // Test case 4: Circuit breaker pattern
-  let circuit_breaker = CircuitBreaker::new(5, 10000) // 5 failures, 10s timeout
-  
-  // Simulate multiple failures
-  for i in 0..=5 {
-    let failing_request = HttpRequest::new("GET", "https://httpbin.org/status/500", [], None)
-    let response = CircuitBreaker::execute(circuit_breaker, failing_request, () => {
-      HttpClient::execute(client, failing_request)
-    })
-    
-    if i < 5 {
-      // First 5 attempts should try the request
-      match response {
-        Ok(resp) => assert_true(false) // Should not succeed
-        Err(_) => assert_true(true) // Expected error
-      }
-    } else {
-      // 6th attempt should be blocked by circuit breaker
-      match response {
-        Ok(resp) => assert_true(false) // Should not succeed
-        Err(CircuitBreakerOpen) => assert_true(true) // Expected circuit breaker open
-        Err(_) => assert_true(false) // Unexpected error type
-      }
-    }
-  }
-}
-
-// Test 3: Resource Exhaustion Handling
-test "resource exhaustion handling" {
-  // Test handling of resource exhaustion scenarios
-  
-  // Test case 1: Memory pressure handling
-  let initial_memory = Memory::available()
-  
-  // Simulate memory pressure by allocating large objects
-  let mut large_objects = []
-  
+  // Test error handling when using invalid span
   try {
-    for i in 0..=100 {
-      let large_object = Array::make(1000000, i) // 1M integers
-      large_objects = Array::append(large_objects, large_object)
-    }
+    Span::add_event(invalid_span, "test-event", None)
     assert_true(false) // Should not reach here
   } catch {
-    OutOfMemoryError => assert_true(true) // Expected memory error
-    _ => assert_true(false) // Unexpected error type
+    TelemetryError::InvalidSpanContext => assert_true(true)
+    _ => assert_true(false)
+  }
+}
+
+// Test 2: Null/None Attribute Value Handling
+test "null none attribute value handling" {
+  let attrs = Attributes::new()
+  
+  // Test setting null attribute value
+  try {
+    Attributes::set(attrs, "null.attr", NullValue)
+    assert_true(true) // Should succeed
+  } catch {
+    _ => assert_true(false)
   }
   
-  // Test case 2: File descriptor exhaustion
-  let mut file_handles = []
+  // Test getting null attribute value
+  let null_result = Attributes::get(attrs, "null.attr")
+  match null_result {
+    Some(NullValue) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // Test getting non-existent attribute
+  let non_existent = Attributes::get(attrs, "non.existent")
+  match non_existent {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // Test operations on attributes with null values
+  try {
+    let string_attr = Attributes::get_as_string(attrs, "null.attr")
+    match string_attr {
+      Some(_) => assert_true(false) // Null should not convert to string
+      None => assert_true(true)
+    }
+  } catch {
+    TelemetryError::InvalidAttributeType => assert_true(true)
+    _ => assert_true(false)
+  }
+}
+
+// Test 3: Time Series Data Boundary Conditions
+test "time series data boundary conditions" {
+  // Test empty time series
+  let empty_series = TimeSeries::new("empty.series")
+  assert_eq(TimeSeries::length(empty_series), 0)
+  
+  let empty_average = TimeSeries::average(empty_series)
+  match empty_average {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // Test time series with single point
+  let single_point = TimeSeriesPoint::new(1000L, 42.0)
+  let single_series = TimeSeries::from_points("single.series", [single_point])
+  
+  let single_average = TimeSeries::average(single_series)
+  match single_average {
+    Some(avg) => assert_eq(avg, 42.0)
+    None => assert_true(false)
+  }
+  
+  // Test time series with duplicate timestamps
+  let duplicate_points = [
+    TimeSeriesPoint::new(1000L, 10.0),
+    TimeSeriesPoint::new(1000L, 20.0),
+    TimeSeriesPoint::new(2000L, 30.0)
+  ]
+  let duplicate_series = TimeSeries::from_points("duplicate.series", duplicate_points)
+  
+  // Should handle duplicates gracefully
+  let duplicate_average = TimeSeries::average(duplicate_series)
+  match duplicate_average {
+    Some(avg) => assert_eq(avg, 20.0) // (10 + 20 + 30) / 3
+    None => assert_true(false)
+  }
+  
+  // Test time series with invalid timestamps
+  let invalid_points = [
+    TimeSeriesPoint::new(-1000L, 10.0), // Negative timestamp
+    TimeSeriesPoint::new(0L, 20.0),      // Zero timestamp
+    TimeSeriesPoint::new(1000L, 30.0)    // Valid timestamp
+  ]
+  let invalid_series = TimeSeries::from_points("invalid.series", invalid_points)
+  
+  // Should handle invalid timestamps
+  let invalid_average = TimeSeries::average(invalid_series)
+  match invalid_average {
+    Some(avg) => assert_eq(avg, 20.0) // (10 + 20 + 30) / 3
+    None => assert_true(false)
+  }
+}
+
+// Test 4: Metric Instrument Error Handling
+test "metric instrument error handling" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "test_meter")
+  
+  // Test creating counter with invalid name
+  try {
+    let invalid_counter = Meter::create_counter(meter, "", Some("Invalid counter"), None)
+    assert_true(false) // Should not reach here
+  } catch {
+    TelemetryError::InvalidInstrumentName => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // Test creating histogram with invalid name
+  try {
+    let invalid_histogram = Meter::create_histogram(meter, "", Some("Invalid histogram"), None)
+    assert_true(false) // Should not reach here
+  } catch {
+    TelemetryError::InvalidInstrumentName => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // Test valid instrument creation
+  let valid_counter = Meter::create_counter(meter, "valid_counter", None, None)
+  assert_true(valid_counter != nil)
+  
+  // Test recording negative values on counter
+  try {
+    Counter::add(valid_counter, -5.0)
+    assert_true(false) // Should not reach here
+  } catch {
+    TelemetryError::InvalidCounterValue => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // Test recording NaN values on histogram
+  let valid_histogram = Meter::create_histogram(meter, "valid_histogram", None, None)
+  try {
+    Histogram::record(valid_histogram, NaN)
+    assert_true(false) // Should not reach here
+  } catch {
+    TelemetryError::InvalidHistogramValue => assert_true(true)
+    _ => assert_true(false)
+  }
+}
+
+// Test 5: Log Record Error Handling
+test "log record error handling" {
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "test_logger")
+  
+  // Test creating log record with invalid severity
+  try {
+    let invalid_log = LogRecord::new(999, "Invalid severity")
+    assert_true(false) // Should not reach here
+  } catch {
+    TelemetryError::InvalidLogSeverity => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // Test creating log record with empty message
+  let empty_message_log = LogRecord::new(Info, "")
+  assert_eq(LogRecord::severity_number(empty_message_log), Info)
+  match LogRecord::body(empty_message_log) {
+    Some(body) => assert_eq(body, "")
+    None => assert_true(false)
+  }
+  
+  // Test creating log record with null message
+  let null_message_log = LogRecord::new(Info, null)
+  assert_eq(LogRecord::severity_number(null_message_log), Info)
+  match LogRecord::body(null_message_log) {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // Test emitting log with invalid logger
+  let invalid_logger = nil
+  try {
+    Logger::emit(invalid_logger, empty_message_log)
+    assert_true(false) // Should not reach here
+  } catch {
+    TelemetryError::InvalidLogger => assert_true(true)
+    _ => assert_true(false)
+  }
+}
+
+// Test 6: Context Propagation Error Handling
+test "context propagation error handling" {
+  // Test context with null key
+  let root_ctx = Context::root()
+  try {
+    let null_key_ctx = Context::with_value(root_ctx, null, "test_value")
+    assert_true(false) // Should not reach here
+  } catch {
+    TelemetryError::InvalidContextKey => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // Test context with null value
+  let valid_key = ContextKey::new("test_key")
+  let null_value_ctx = Context::with_value(root_ctx, valid_key, null)
+  
+  // Should handle null value gracefully
+  let retrieved_value = Context::get(null_value_ctx, valid_key)
+  match retrieved_value {
+    Some(value) => assert_eq(value, null)
+    None => assert_true(false)
+  }
+  
+  // Test getting value with null key
+  try {
+    let null_result = Context::get(root_ctx, null)
+    assert_true(false) // Should not reach here
+  } catch {
+    TelemetryError::InvalidContextKey => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // Test getting value from null context
+  try {
+    let null_context_result = Context::get(null, valid_key)
+    assert_true(false) // Should not reach here
+  } catch {
+    TelemetryError::InvalidContext => assert_true(true)
+    _ => assert_true(false)
+  }
+}
+
+// Test 7: Resource Error Handling
+test "resource error handling" {
+  // Test creating resource with invalid attributes
+  try {
+    let invalid_attrs = [
+      ("", StringValue("empty key")),  // Empty key
+      ("valid.key", StringValue("valid value"))
+    ]
+    let invalid_resource = Resource::with_attributes(Resource::new(), invalid_attrs)
+    assert_true(false) // Should not reach here
+  } catch {
+    TelemetryError::InvalidResourceAttribute => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // Test merging null resources
+  try {
+    let merged_resource = Resource::merge(null, null)
+    assert_true(false) // Should not reach here
+  } catch {
+    TelemetryError::InvalidResource => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // Test getting attribute from null resource
+  try {
+    let attr_result = Resource::get_attribute(null, "test.attr")
+    assert_true(false) // Should not reach here
+  } catch {
+    TelemetryError::InvalidResource => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // Test resource with null attribute value
+  let valid_attrs = [
+    ("valid.key", NullValue),
+    ("another.key", StringValue("valid value"))
+  ]
+  let resource_with_null = Resource::with_attributes(Resource::new(), valid_attrs)
+  
+  let null_attr_result = Resource::get_attribute(resource_with_null, "valid.key")
+  match null_attr_result {
+    Some(NullValue) => assert_true(true)
+    _ => assert_true(false)
+  }
+}
+
+// Test 8: HTTP Client Error Handling
+test "http client error handling" {
+  // Test creating request with invalid URL
+  try {
+    let invalid_request = HttpRequest::new("GET", "invalid-url", [], None)
+    assert_true(false) // Should not reach here
+  } catch {
+    TelemetryError::InvalidUrl => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // Test creating request with invalid method
+  try {
+    let invalid_method_request = HttpRequest::new("INVALID", "https://example.com", [], None)
+    assert_true(false) // Should not reach here
+  } catch {
+    TelemetryError::InvalidHttpMethod => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // Test creating response with invalid status code
+  try {
+    let invalid_response = HttpResponse::new(-1, [], None)
+    assert_true(false) // Should not reach here
+  } catch {
+    TelemetryError::InvalidHttpStatusCode => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // Test creating response with status code too high
+  try {
+    let high_status_response = HttpResponse::new(1000, [], None)
+    assert_true(false) // Should not reach here
+  } catch {
+    TelemetryError::InvalidHttpStatusCode => assert_true(true)
+    _ => assert_true(false)
+  }
+}
+
+// Test 9: Baggage Error Handling
+test "baggage error handling" {
+  let baggage = Baggage::new()
+  
+  // Test setting baggage with empty key
+  try {
+    let empty_key_baggage = Baggage::set_entry(baggage, "", "value")
+    assert_true(false) // Should not reach here
+  } catch {
+    TelemetryError::InvalidBaggageEntry => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // Test setting baggage with null key
+  try {
+    let null_key_baggage = Baggage::set_entry(baggage, null, "value")
+    assert_true(false) // Should not reach here
+  } catch {
+    TelemetryError::InvalidBaggageEntry => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // Test setting baggage with null value
+  let valid_key = "test.key"
+  let null_value_baggage = Baggage::set_entry(baggage, valid_key, null)
+  
+  // Should handle null value gracefully
+  let null_value_result = Baggage::get_entry(null_value_baggage, valid_key)
+  match null_value_result {
+    Some(value) => assert_eq(value, null)
+    None => assert_true(false)
+  }
+  
+  // Test getting baggage with empty key
+  try {
+    let empty_key_result = Baggage::get_entry(baggage, "")
+    assert_true(false) // Should not reach here
+  } catch {
+    TelemetryError::InvalidBaggageEntry => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // Test removing baggage with empty key
+  try {
+    let empty_key_removal = Baggage::remove_entry(baggage, "")
+    assert_true(false) // Should not reach here
+  } catch {
+    TelemetryError::InvalidBaggageEntry => assert_true(true)
+    _ => assert_true(false)
+  }
+}
+
+// Test 10: System Resource Exhaustion Recovery
+test "system resource exhaustion recovery" {
+  // Test handling of memory pressure
+  let initial_memory = Performance::current_memory_usage()
+  
+  // Simulate memory pressure by creating many objects
+  let large_objects = []
+  let recovery_triggered = false
+  
+  try {
+    for i in 0..=100000 {
+      let large_string = "x".repeat(10000) // 10KB string
+      large_objects.push(large_string)
+      
+      // Check memory pressure periodically
+      if i % 10000 == 0 {
+        let current_memory = Performance::current_memory_usage()
+        let memory_increase = current_memory - initial_memory
+        
+        // Simulate recovery mechanism when memory is high
+        if memory_increase > 1000000 { // 1MB increase
+          // Clear some objects to recover memory
+          large_objects = large_objects.slice(0, large_objects.length() / 2)
+          recovery_triggered = true
+        }
+      }
+    }
+  } catch {
+    TelemetryError::OutOfMemory => {
+      assert_true(true) // Expected to catch OOM error
+      recovery_triggered = true
+    }
+    _ => assert_true(false)
+  }
+  
+  assert_true(recovery_triggered)
+  
+  // Test handling of file descriptor exhaustion
+  let file_handles = []
+  let fd_recovery_triggered = false
   
   try {
     for i in 0..=1000 {
-      let file = File::open("/tmp/test_file_" + i.to_string(), "w")
-      file_handles = Array::append(file_handles, file)
+      // Simulate opening file handles
+      let handle = FileSystem::open_file("test_file_" + i.to_string())
+      file_handles.push(handle)
+      
+      // Check file descriptor limit
+      if i % 100 == 0 {
+        let fd_count = FileSystem::open_file_handle_count()
+        
+        // Simulate recovery mechanism when FD count is high
+        if fd_count > 500 {
+          // Close some handles to recover
+          for j in 0..=50 {
+            if j < file_handles.length() {
+              FileSystem::close_file(file_handles[j])
+            }
+          }
+          fd_recovery_triggered = true
+        }
+      }
     }
-    // May or may not fail depending on system limits
-    assert_true(true) // Either succeeds or fails gracefully
   } catch {
-    FileDescriptorExhausted => assert_true(true) // Expected file descriptor error
-    _ => assert_true(false) // Unexpected error type
+    TelemetryError::FileDescriptorExhaustion => {
+      assert_true(true) // Expected to catch FD exhaustion error
+      fd_recovery_triggered = true
+    }
+    _ => assert_true(false)
   }
   
-  // Clean up file handles
-  for file in file_handles {
-    File::close(file)
-  }
+  assert_true(fd_recovery_triggered)
   
-  // Test case 3: Thread pool exhaustion
+  // Test handling of thread pool exhaustion
   let thread_pool = ThreadPool::new(10) // Max 10 threads
-  
-  let mut futures = []
-  
-  // Submit more tasks than threads
-  for i in 0..=20 {
-    let future = ThreadPool::submit(thread_pool, () => {
-      // Simulate work
-      Time::sleep(0.1)
-      i
-    })
-    futures = Array::append(futures, future)
-  }
-  
-  // Should handle gracefully by queuing tasks
-  let mut results = []
-  
-  for future in futures {
-    let result = Future::get(future, 1.0) // 1 second timeout
-    match result {
-      Ok(value) => results = Array::append(results, value)
-      Err(TimeoutError) => assert_true(false) // Should not timeout
-      Err(_) => assert_true(false) // Unexpected error
-    }
-  }
-  
-  // Verify all tasks completed
-  assert_eq(results.length(), 20)
-  assert_eq(Array::sum(results), Array::sum(0..=20 - 1))
-}
-
-// Test 4: Telemetry System Resilience
-test "telemetry system resilience" {
-  // Test telemetry system resilience under various failure conditions
-  
-  // Test case 1: Provider failure handling
-  let provider = TelemetryProvider::new()
-  
-  // Simulate provider failure
-  TelemetryProvider::simulate_failure(provider)
-  
-  // Should handle gracefully with fallback
-  let span_ctx = SpanContext::new("test_trace", "test_span", true, "test_state")
-  let span = Span::new("resilience_test", Internal, span_ctx)
-  
-  // Should not crash even with failed provider
-  Span::add_event(span, "test_event", None)
-  Span::end(span)
-  
-  // Test case 2: Batch export failure handling
-  let exporter = BatchExporter::new(100, 5.0) // 100 items, 5s timeout
-  
-  // Simulate export failure
-  Exporter::simulate_failure(exporter)
-  
-  // Should handle gracefully with retry
-  let mut spans = []
-  
-  for i in 0..=50 {
-    let span_ctx = SpanContext::new("batch_test_trace", "batch_test_span_" + i.to_string(), true, "test_state")
-    let span = Span::new("batch_test_span", Internal, span_ctx)
-    spans = Array::append(spans, span)
-  }
-  
-  let export_result = BatchExporter::export(exporter, spans)
-  
-  match export_result {
-    Ok(_) => assert_true(true) // May succeed if fallback works
-    Err(RetryableError) => assert_true(true) // Expected retryable error
-    Err(_) => assert_true(false) // Unexpected error type
-  }
-  
-  // Test case 3: Sampling decision failure
-  let sampler = Sampler::new(TraceIdRatio(0.1)) // 10% sampling
-  
-  // Simulate sampler failure
-  Sampler::simulate_failure(sampler)
-  
-  // Should default to a safe decision
-  let sampling_decision = Sampler::should_sample(sampler, "test_trace", "test_span", [])
-  
-  // Should default to not sampling on failure
-  match sampling_decision {
-    Drop => assert_true(true) // Expected safe default
-    RecordAndSample => assert_true(false) // Should not sample on failure
-    RecordOnly => assert_true(false) // Should not record on failure
-  }
-}
-
-// Test 5: Exception Boundary Propagation
-test "exception boundary propagation" {
-  // Test that exceptions are properly contained within boundaries
-  
-  // Test case 1: Span exception handling
-  let span_ctx = SpanContext::new("exception_test_trace", "exception_test_span", true, "test_state")
-  let span = Span::new("exception_test_span", Internal, span_ctx)
+  let thread_recovery_triggered = false
   
   try {
-    // Simulate an exception within span operations
-    Span::add_event(span, "before_exception", None)
-    
-    // Simulate exception
-    throw TestException("Simulated exception for testing")
-    
-    // Should not reach here
-    Span::add_event(span, "after_exception", None)
-    assert_true(false)
-  } catch {
-    TestException(message) => {
-      // Exception should be caught and recorded
-      assert_eq(message, "Simulated exception for testing")
+    let tasks = []
+    for i in 0..=100 {
+      let task = ThreadPool::submit(thread_pool, fn() {
+        // Simulate some work
+        Thread::sleep(100)
+      })
+      tasks.push(task)
       
-      // Span should still be usable after exception
-      Span::add_event(span, "exception_caught", Some([
-        ("exception.message", StringValue(message)),
-        ("exception.type", StringValue("TestException"))
-      ]))
-      
-      // Should be able to end span normally
-      Span::end(span)
-      assert_true(true)
+      // Check thread pool capacity
+      if i % 20 == 0 {
+        let active_threads = ThreadPool::active_thread_count(thread_pool)
+        
+        // Simulate recovery mechanism when thread pool is full
+        if active_threads >= 10 {
+          // Wait for some tasks to complete
+          for j in 0..=5 {
+            if j < tasks.length() {
+              ThreadPool::wait_for_task(tasks[j])
+            }
+          }
+          thread_recovery_triggered = true
+        }
+      }
     }
-    _ => assert_true(false) // Unexpected exception type
+  } catch {
+    TelemetryError::ThreadPoolExhaustion => {
+      assert_true(true) // Expected to catch thread pool exhaustion error
+      thread_recovery_triggered = true
+    }
+    _ => assert_true(false)
   }
   
-  // Test case 2: Metric exception handling
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "exception_test_meter")
-  let counter = Meter::create_counter(meter, "exception_test_counter", None, None)
-  
-  try {
-    // Simulate exception during metric operation
-    Counter::add(counter, 1.0)
-    
-    // Simulate exception
-    throw MetricException("Simulated metric exception")
-    
-    // Should not reach here
-    Counter::add(counter, 1.0)
-    assert_true(false)
-  } catch {
-    MetricException(message) => {
-      // Exception should be caught
-      assert_eq(message, "Simulated metric exception")
-      
-      // Counter should still be usable after exception
-      Counter::add(counter, 1.0)
-      assert_true(true)
-    }
-    _ => assert_true(false) // Unexpected exception type
-  }
-  
-  // Test case 3: Logger exception handling
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "exception_test_logger")
-  
-  try {
-    // Simulate exception during logging
-    let log_record = LogRecord::new(Info, "Before exception")
-    Logger::emit(logger, log_record)
-    
-    // Simulate exception
-    throw LogException("Simulated log exception")
-    
-    // Should not reach here
-    let log_record_after = LogRecord::new(Info, "After exception")
-    Logger::emit(logger, log_record_after)
-    assert_true(false)
-  } catch {
-    LogException(message) => {
-      // Exception should be caught
-      assert_eq(message, "Simulated log exception")
-      
-      // Logger should still be usable after exception
-      let log_record_recovery = LogRecord::new(Info, "Exception caught and recovered")
-      Logger::emit(logger, log_record_recovery)
-      assert_true(true)
-    }
-    _ => assert_true(false) // Unexpected exception type
-  }
+  assert_true(thread_recovery_triggered)
 }

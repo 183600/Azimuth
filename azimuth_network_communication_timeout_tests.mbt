@@ -1,522 +1,512 @@
-// Azimuth Telemetry System - Network Communication Timeout Handling Tests
-// This file contains test cases for network communication timeout handling functionality
+// Azimuth Telemetry System - Network Communication and Timeout Handling Tests
+// This file contains comprehensive test cases for network communication and timeout handling
 
-// Test 1: Basic Connection Timeout
-test "basic connection timeout" {
-  // Create a network client with timeout settings
-  let client = NetworkClient::new()
-  NetworkClient::set_connection_timeout(client, 5000)  // 5 seconds
-  NetworkClient::set_read_timeout(client, 10000)       // 10 seconds
-  NetworkClient::set_write_timeout(client, 10000)      // 10 seconds
-  
-  // Attempt to connect to a non-existent server
-  let connection_result = NetworkClient::connect(client, "http://non-existent-server-12345.com", 80)
-  
-  // Verify connection times out
-  match connection_result {
-    Ok(_) => assert_true(false)  // Should not succeed
-    Err(error) => {
-      assert_eq(NetworkError::get_type(error), NetworkErrorType::ConnectionTimeout)
-    }
-  }
-  
-  // Attempt to connect to a valid server but with very short timeout
-  NetworkClient::set_connection_timeout(client, 1)  // 1 millisecond
-  let short_timeout_result = NetworkClient::connect(client, "https://google.com", 443)
-  
-  // Verify connection times out due to short timeout
-  match short_timeout_result {
-    Ok(_) => assert_true(false)  // Should not succeed
-    Err(error) => {
-      assert_eq(NetworkError::get_type(error), NetworkErrorType::ConnectionTimeout)
-    }
-  }
-}
-
-// Test 2: Read Timeout Handling
-test "read timeout handling" {
-  // Create a mock server that responds slowly
-  let server = MockServer::new()
-  MockServer::set_response_delay(server, 15000)  // 15 second delay
-  MockServer::start(server, 8080)
-  
-  // Create a client with short read timeout
-  let client = NetworkClient::new()
-  NetworkClient::set_read_timeout(client, 5000)  // 5 seconds
-  
-  // Connect to the mock server
-  let connection_result = NetworkClient::connect(client, "http://localhost", 8080)
-  
-  match connection_result {
-    Ok(connection) => {
-      // Attempt to read data with timeout
-      let read_result = NetworkClient::read(connection, 1024)
-      
-      // Verify read times out
-      match read_result {
-        Ok(_) => assert_true(false)  // Should not succeed
-        Err(error) => {
-          assert_eq(NetworkError::get_type(error), NetworkErrorType::ReadTimeout)
-        }
-      }
-      
-      NetworkClient::disconnect(connection)
-    }
-    Err(_) => assert_true(false)  // Connection should succeed
-  }
-  
-  MockServer::stop(server)
-}
-
-// Test 3: Write Timeout Handling
-test "write timeout handling" {
-  // Create a mock server that accepts data slowly
-  let server = MockServer::new()
-  MockServer::set_write_delay(server, 15000)  // 15 second delay
-  MockServer::start(server, 8081)
-  
-  // Create a client with short write timeout
-  let client = NetworkClient::new()
-  NetworkClient::set_write_timeout(client, 5000)  // 5 seconds
-  
-  // Connect to the mock server
-  let connection_result = NetworkClient::connect(client, "http://localhost", 8081)
-  
-  match connection_result {
-    Ok(connection) => {
-      // Create large data to write
-      let large_data = "x" * 1024 * 1024  // 1MB of data
-      
-      // Attempt to write data with timeout
-      let write_result = NetworkClient::write(connection, large_data)
-      
-      // Verify write times out
-      match write_result {
-        Ok(_) => assert_true(false)  // Should not succeed
-        Err(error) => {
-          assert_eq(NetworkError::get_type(error), NetworkErrorType::WriteTimeout)
-        }
-      }
-      
-      NetworkClient::disconnect(connection)
-    }
-    Err(_) => assert_true(false)  // Connection should succeed
-  }
-  
-  MockServer::stop(server)
-}
-
-// Test 4: HTTP Request Timeout
-test "http request timeout" {
-  // Create a mock HTTP server that responds slowly
-  let http_server = MockHttpServer::new()
-  MockHttpServer::set_response_delay(http_server, 15000)  // 15 second delay
-  MockHttpServer::set_response(http_server, HttpResponse::new(200, [], Some("Response")))
-  MockHttpServer::start(http_server, 8082)
-  
-  // Create an HTTP client with timeout settings
+// Test 1: HTTP Client Request Handling
+test "http client request handling" {
   let http_client = HttpClient::new()
-  HttpClient::set_request_timeout(http_client, 5000)  // 5 seconds
+  let request_count = 100
   
-  // Create an HTTP request
-  let request = HttpRequest::new("GET", "http://localhost:8082/api/test", [], None)
-  
-  // Send request with timeout
-  let response_result = HttpClient::send(http_client, request)
-  
-  // Verify request times out
-  match response_result {
-    Ok(_) => assert_true(false)  // Should not succeed
-    Err(error) => {
-      assert_eq(HttpError::get_type(error), HttpErrorType::RequestTimeout)
-    }
-  }
-  
-  MockHttpServer::stop(http_server)
-}
-
-// Test 5: Exponential Backoff Retry with Timeout
-test "exponential backoff retry with timeout" {
-  // Create a mock server that fails initially
-  let server = MockServer::new()
-  MockServer::set_failure_count(server, 3)  // Fail first 3 attempts
-  MockServer::start(server, 8083)
-  
-  // Create a client with retry configuration
-  let client = NetworkClient::new()
-  NetworkClient::set_connection_timeout(client, 2000)  // 2 seconds
-  NetworkClient::enable_retry(client, true)
-  NetworkClient::set_max_retries(client, 5)
-  NetworkClient::set_retry_strategy(client, RetryStrategy::ExponentialBackoff)
-  NetworkClient::set_base_delay(client, 1000)  // 1 second base delay
-  
-  // Attempt to connect with retry
-  let connection_result = NetworkClient::connect_with_retry(client, "http://localhost", 8083)
-  
-  // Verify connection eventually succeeds after retries
-  match connection_result {
-    Ok(connection) => {
-      NetworkClient::disconnect(connection)
-    }
-    Err(error) => {
-      // If it fails, verify it's not a timeout error
-      assert_not_eq(NetworkError::get_type(error), NetworkErrorType::ConnectionTimeout)
-    }
-  }
-  
-  // Test with server that never responds
-  let unresponsive_server = MockServer::new()
-  MockServer::set_response_delay(unresponsive_server, 100000)  // 100 second delay
-  MockServer::start(unresponsive_server, 8084)
-  
-  // Attempt to connect with retry to unresponsive server
-  let unresponsive_result = NetworkClient::connect_with_retry(client, "http://localhost", 8084)
-  
-  // Verify connection fails due to timeout
-  match unresponsive_result {
-    Ok(_) => assert_true(false)  // Should not succeed
-    Err(error) => {
-      assert_eq(NetworkError::get_type(error), NetworkErrorType::ConnectionTimeout)
-    }
-  }
-  
-  MockServer::stop(server)
-  MockServer::stop(unresponsive_server)
-}
-
-// Test 6: Timeout with Circuit Breaker
-test "timeout with circuit breaker" {
-  // Create a circuit breaker
-  let circuit_breaker = CircuitBreaker::new()
-  CircuitBreaker::set_failure_threshold(circuit_breaker, 3)
-  CircuitBreaker::set_timeout(circuit_breaker, 30000)  // 30 seconds
-  CircuitBreaker::set_reset_timeout(circuit_breaker, 60000)  // 60 seconds
-  
-  // Create a mock server that times out
-  let server = MockServer::new()
-  MockServer::set_response_delay(server, 15000)  // 15 second delay
-  MockServer::start(server, 8085)
-  
-  // Create a client with short timeout
-  let client = NetworkClient::new()
-  NetworkClient::set_connection_timeout(client, 5000)  // 5 seconds
-  
-  // Execute operations through circuit breaker
-  for i in 0..4 {
-    let operation_result = CircuitBreaker::execute(circuit_breaker, || {
-      NetworkClient::connect(client, "http://localhost", 8085)
-    })
+  // Test multiple HTTP requests
+  for i in 0..=request_count {
+    let url = "https://httpbin.org/get"
+    let headers = [
+      ("Content-Type", "application/json"),
+      ("User-Agent", "Azimuth-Telemetry/1.0"),
+      ("Request-ID", "req-" + i.to_string())
+    ]
+    let request = HttpRequest::new("GET", url, headers, None)
     
-    match operation_result {
-      Ok(_) => assert_true(false)  // Should not succeed due to timeout
-      Err(error) => {
-        // First 3 should be timeout errors, 4th should be circuit breaker open
-        if i < 3 {
-          match error {
-            NetworkError(err) => assert_eq(NetworkError::get_type(err), NetworkErrorType::ConnectionTimeout)
-            CircuitBreakerError(_) => assert_true(false)  // Should not be circuit breaker error yet
-          }
-        } else {
-          match error {
-            NetworkError(_) => assert_true(false)  // Should not be network error anymore
-            CircuitBreakerError(cb_err) => assert_eq(CircuitBreakerError::get_type(cb_err), CircuitBreakerErrorType::Open)
-          }
+    // Send request
+    let response = HttpClient::send_request(http_client, request)
+    
+    // Verify response
+    assert_eq(HttpResponse::status_code(response), 200)
+    
+    let response_headers = HttpResponse::headers(response)
+    assert_true(response_headers.length() > 0)
+    
+    match HttpResponse::body(response) {
+      Some(body) => assert_true(body.length() > 0)
+      None => assert_true(false)
+    }
+  }
+}
+
+// Test 2: HTTP Client Timeout Handling
+test "http client timeout handling" {
+  let http_client = HttpClient::new()
+  
+  // Set short timeout
+  HttpClient::set_timeout(http_client, 100) // 100ms timeout
+  
+  // Test request to a slow server
+  let slow_url = "https://httpbin.org/delay/5" // 5 second delay
+  let request = HttpRequest::new("GET", slow_url, [], None)
+  
+  let start_time = Time::current_time_millis()
+  let response = HttpClient::send_request(http_client, request)
+  let end_time = Time::current_time_millis()
+  let duration = end_time - start_time
+  
+  // Should timeout before 5 seconds
+  assert_true(duration < 5000)
+  assert_true(duration >= 100) // Should wait at least the timeout period
+  
+  // Response should indicate timeout
+  assert_eq(HttpResponse::status_code(response), 408) // Request Timeout
+  
+  // Test with longer timeout
+  HttpClient::set_timeout(http_client, 10000) // 10 seconds
+  
+  let start_time2 = Time::current_time_millis()
+  let response2 = HttpClient::send_request(http_client, request)
+  let end_time2 = Time::current_time_millis()
+  let duration2 = end_time2 - start_time2
+  
+  // Should complete within 10 seconds
+  assert_true(duration2 < 10000)
+  assert_true(duration2 >= 5000) // Should wait for the 5 second delay
+  
+  // Response should be successful
+  assert_eq(HttpResponse::status_code(response2), 200)
+}
+
+// Test 3: HTTP Client Retry Logic
+test "http client retry logic" {
+  let http_client = HttpClient::new()
+  
+  // Configure retry settings
+  HttpClient::set_max_retries(http_client, 3)
+  HttpClient::set_retry_delay(http_client, 100) // 100ms between retries
+  
+  // Test request to a non-existent endpoint (will fail)
+  let failing_url = "https://httpbin.org/status/500" // 500 Internal Server Error
+  let request = HttpRequest::new("GET", failing_url, [], None)
+  
+  let start_time = Time::current_time_millis()
+  let response = HttpClient::send_request(http_client, request)
+  let end_time = Time::current_time_millis()
+  let duration = end_time - start_time
+  
+  // Should retry 3 times (1 initial + 3 retries = 4 total attempts)
+  // Each attempt should take some time, so total should be > 300ms (3 * 100ms retry delay)
+  assert_true(duration >= 300)
+  
+  // Response should still indicate failure
+  assert_eq(HttpResponse::status_code(response), 500)
+  
+  // Test with successful retry scenario
+  // First few requests fail, then succeed
+  let attempt_count = 0
+  let mock_server = MockServer::new()
+  MockServer::set_response_sequence(mock_server, [
+    (500, "Internal Server Error"),
+    (500, "Internal Server Error"),
+    (200, "Success")
+  ])
+  
+  let retry_url = "http://localhost:" + MockServer::get_port(mock_server).to_string()
+  let retry_request = HttpRequest::new("GET", retry_url, [], None)
+  
+  let retry_response = HttpClient::send_request(http_client, retry_request)
+  
+  // Should eventually succeed after retries
+  assert_eq(HttpResponse::status_code(retry_response), 200)
+  
+  MockServer::shutdown(mock_server)
+}
+
+// Test 4: WebSocket Connection Handling
+test "websocket connection handling" {
+  let websocket_client = WebSocketClient::new()
+  
+  // Connect to WebSocket server
+  let ws_url = "wss://echo.websocket.org"
+  let connection = WebSocketClient::connect(websocket_client, ws_url)
+  
+  assert_true(WebSocketClient::is_connected(connection))
+  
+  // Send messages
+  let messages = [
+    "Hello WebSocket",
+    "Telemetry data",
+    "Test message 1",
+    "Test message 2"
+  ]
+  
+  for message in messages {
+    WebSocketClient::send_text(connection, message)
+    
+    // Wait for echo response
+    let response = WebSocketClient::receive_text(connection, 5000) // 5 second timeout
+    match response {
+      Some(text) => assert_eq(text, message)
+      None => assert_true(false)
+    }
+  }
+  
+  // Test binary message
+  let binary_data = [0x48, 0x65, 0x6c, 0x6c, 0x6f] // "Hello" in ASCII
+  WebSocketClient::send_binary(connection, binary_data)
+  
+  let binary_response = WebSocketClient::receive_binary(connection, 5000)
+  match binary_response {
+    Some(data) => assert_eq(data, binary_data)
+    None => assert_true(false)
+  }
+  
+  // Close connection
+  WebSocketClient::close(connection)
+  assert_false(WebSocketClient::is_connected(connection))
+}
+
+// Test 5: WebSocket Connection Timeout and Reconnection
+test "websocket connection timeout and reconnection" {
+  let websocket_client = WebSocketClient::new()
+  
+  // Set connection timeout
+  WebSocketClient::set_connection_timeout(websocket_client, 1000) // 1 second
+  
+  // Test connection to non-existent server (should timeout)
+  let start_time = Time::current_time_millis()
+  let connection = WebSocketClient::connect(websocket_client, "ws://localhost:9999") // Non-existent port
+  let end_time = Time::current_time_millis()
+  let duration = end_time - start_time
+  
+  // Should timeout after 1 second
+  assert_true(duration >= 1000)
+  assert_true(duration < 2000) // Should not wait much longer than timeout
+  
+  // Connection should be null/failed
+  assert_true(connection == nil)
+  
+  // Test reconnection logic
+  WebSocketClient::set_auto_reconnect(websocket_client, true)
+  WebSocketClient::set_max_reconnect_attempts(websocket_client, 3)
+  WebSocketClient::set_reconnect_delay(websocket_client, 500) // 500ms between attempts
+  
+  // Create a mock server that starts after a delay
+  let mock_server = MockWebSocketServer::new()
+  MockWebSocketServer::start_delayed(mock_server, 2000) // Start after 2 seconds
+  
+  // Try to connect (should fail initially, then succeed after server starts)
+  let start_time2 = Time::current_time_millis()
+  let reconnection = WebSocketClient::connect(websocket_client, "ws://localhost:8080")
+  let end_time2 = Time::current_time_millis()
+  let duration2 = end_time2 - start_time2
+  
+  // Should take about 2 seconds for server to start + connection time
+  assert_true(duration2 >= 2000)
+  assert_true(duration2 < 4000)
+  
+  // Connection should eventually succeed
+  assert_true(reconnection != nil)
+  assert_true(WebSocketClient::is_connected(reconnection))
+  
+  WebSocketClient::close(reconnection)
+  MockWebSocketServer::shutdown(mock_server)
+}
+
+// Test 6: Network Request Telemetry
+test "network request telemetry" {
+  let telemetry_tracer = Tracer::new("network_telemetry_tracer")
+  let telemetry_meter = Meter::new("network_telemetry_meter")
+  let telemetry_logger = Logger::new("network_telemetry_logger")
+  
+  let http_client = HttpClient::new_with_telemetry(telemetry_tracer, telemetry_meter, telemetry_logger)
+  let request_counter = Meter::get_counter(telemetry_meter, "http_requests_total")
+  let response_time_histogram = Meter::get_histogram(telemetry_meter, "http_response_time_seconds")
+  
+  // Create network span
+  let span = Tracer::start_span(telemetry_tracer, "http_request")
+  
+  // Make HTTP request
+  let request = HttpRequest::new("GET", "https://httpbin.org/get", [], None)
+  let response = HttpClient::send_request(http_client, request)
+  
+  // End span
+  Span::end(span)
+  
+  // Verify metrics were recorded
+  assert_true(Counter::value(request_counter) > 0)
+  assert_true(Histogram::count(response_time_histogram) > 0)
+  
+  // Verify span was created with correct attributes
+  let spans = Tracer::get_spans(telemetry_tracer)
+  assert_true(spans.length() > 0)
+  
+  let network_span = spans[spans.length() - 1] // Last span
+  assert_eq(Span::name(network_span), "http_request")
+  
+  let url_attr = Span::get_attribute(network_span, "http.url")
+  match url_attr {
+    Some(StringValue(url)) => assert_eq(url, "https://httpbin.org/get")
+    _ => assert_true(false)
+  }
+  
+  let status_attr = Span::get_attribute(network_span, "http.status_code")
+  match status_attr {
+    Some(IntValue(status)) => assert_eq(status, 200)
+    _ => assert_true(false)
+  }
+  
+  // Verify log entries were created
+  let logs = Logger::get_logs(telemetry_logger)
+  assert_true(logs.length() > 0)
+  
+  // Check for request log
+  let request_log = logs[logs.length() - 2] // Second to last log
+  match LogRecord::body(request_log) {
+    Some(message) => assert_true(message.contains("HTTP request started"))
+    None => assert_true(false)
+  }
+  
+  // Check for response log
+  let response_log = logs[logs.length() - 1] // Last log
+  match LogRecord::body(response_log) {
+    Some(message) => assert_true(message.contains("HTTP request completed"))
+    None => assert_true(false)
+  }
+}
+
+// Test 7: Network Error Handling and Recovery
+test "network error handling and recovery" {
+  let http_client = HttpClient::new()
+  let error_handler = NetworkErrorHandler::new()
+  
+  // Configure error handling
+  NetworkErrorHandler::set_retry_strategy(error_handler, RetryStrategy::ExponentialBackoff)
+  NetworkErrorHandler::set_max_retries(error_handler, 5)
+  NetworkErrorHandler::set_base_delay(error_handler, 100) // 100ms base delay
+  NetworkErrorHandler::set_max_delay(error_handler, 5000) // 5 second max delay
+  
+  // Test connection error
+  let connection_request = HttpRequest::new("GET", "http://non-existent-domain-12345.com", [], None)
+  
+  let start_time = Time::current_time_millis()
+  let response = HttpClient::send_request_with_error_handler(http_client, connection_request, error_handler)
+  let end_time = Time::current_time_millis()
+  let duration = end_time - start_time
+  
+  // Should retry with exponential backoff
+  // Total time should be approximately: 100 + 200 + 400 + 800 + 1600 = 3100ms
+  assert_true(duration >= 3000)
+  assert_true(duration < 5000)
+  
+  // Response should indicate connection error
+  assert_eq(HttpResponse::status_code(response), 0) // Connection failed
+  
+  // Test DNS resolution error
+  let dns_request = HttpRequest::new("GET", "http://invalid-domain-with-special-chars-!@#$%.com", [], None)
+  
+  let dns_response = HttpClient::send_request_with_error_handler(http_client, dns_request, error_handler)
+  
+  // Response should indicate DNS error
+  assert_eq(HttpResponse::status_code(dns_response), 0) // DNS resolution failed
+  
+  // Test SSL/TLS error
+  let ssl_request = HttpRequest::new("GET", "https://expired.badssl.com", [], None)
+  
+  let ssl_response = HttpClient::send_request_with_error_handler(http_client, ssl_request, error_handler)
+  
+  // Response should indicate SSL error
+  assert_eq(HttpResponse::status_code(ssl_response), 0) // SSL verification failed
+  
+  // Verify error statistics
+  let error_stats = NetworkErrorHandler::get_error_statistics(error_handler)
+  assert_true(error_stats.connection_errors > 0)
+  assert_true(error_stats.dns_errors > 0)
+  assert_true(error_stats.ssl_errors > 0)
+}
+
+// Test 8: Concurrent Network Requests
+test "concurrent network requests" {
+  let http_client = HttpClient::new()
+  let concurrent_limit = 50
+  let requests_per_batch = 20
+  
+  // Configure concurrent request limits
+  HttpClient::set_max_concurrent_requests(http_client, concurrent_limit)
+  
+  let batches = 5
+  let all_responses = ConcurrentCollection::new()
+  let errors = ConcurrentCounter::new()
+  
+  // Create multiple batches of concurrent requests
+  for batch in 0..=batches {
+    let batch_responses = ConcurrentCollection::new()
+    
+    // Create concurrent requests in this batch
+    let threads = []
+    for i in 0..=requests_per_batch {
+      let thread = Thread::spawn(fn() {
+        try {
+          let url = "https://httpbin.org/get?batch=" + batch.to_string() + "&request=" + i.to_string()
+          let request = HttpRequest::new("GET", url, [], None)
+          let response = HttpClient::send_request(http_client, request)
+          ConcurrentCollection::add(batch_responses, response)
+        } catch {
+          _ => ConcurrentCounter::increment(errors)
         }
-      }
+      })
+      threads.push(thread)
+    }
+    
+    // Wait for all requests in this batch to complete
+    for thread in threads {
+      Thread::join(thread)
+    }
+    
+    // Add batch responses to overall collection
+    let batch_responses_array = ConcurrentCollection::to_array(batch_responses)
+    for response in batch_responses_array {
+      ConcurrentCollection::add(all_responses, response)
     }
   }
   
-  // Verify circuit breaker is open
-  assert_true(CircuitBreaker::is_open(circuit_breaker))
+  // Verify all requests completed
+  let total_expected = batches * requests_per_batch
+  let total_responses = ConcurrentCollection::size(all_responses)
+  let total_errors = ConcurrentCounter::value(errors)
   
-  MockServer::stop(server)
+  assert_eq(total_responses + total_errors, total_expected)
+  
+  // Verify responses are successful
+  let responses_array = ConcurrentCollection::to_array(all_responses)
+  for response in responses_array {
+    assert_eq(HttpResponse::status_code(response), 200)
+  }
+  
+  // Verify concurrent limit was respected
+  let max_concurrent = HttpClient::get_max_concurrent_reached(http_client)
+  assert_true(max_concurrent <= concurrent_limit)
 }
 
-// Test 7: Adaptive Timeout Adjustment
-test "adaptive timeout adjustment" {
-  // Create an adaptive timeout manager
-  let timeout_manager = AdaptiveTimeoutManager::new()
+// Test 9: Network Request Cancellation
+test "network request cancellation" {
+  let http_client = HttpClient::new()
   
-  // Configure adaptive settings
-  AdaptiveTimeoutManager::set_base_timeout(timeout_manager, 5000)  // 5 seconds base
-  AdaptiveTimeoutManager::set_max_timeout(timeout_manager, 30000)  // 30 seconds max
-  AdaptiveTimeoutManager::set_min_timeout(timeout_manager, 1000)   // 1 second min
-  AdaptiveTimeoutManager::enable_adaptation(timeout_manager, true)
+  // Test cancellation of slow request
+  let slow_url = "https://httpbin.org/delay/10" // 10 second delay
+  let slow_request = HttpRequest::new("GET", slow_url, [], None)
   
-  // Create mock servers with different response times
-  let fast_server = MockServer::new()
-  MockServer::set_response_delay(fast_server, 1000)  // 1 second response
-  MockServer::start(fast_server, 8086)
+  let start_time = Time::current_time_millis()
   
-  let slow_server = MockServer::new()
-  MockServer::set_response_delay(slow_server, 8000)  // 8 second response
-  MockServer::start(slow_server, 8087)
+  // Start request in background
+  let request_handle = HttpClient::send_request_async(http_client, slow_request)
   
-  let client = NetworkClient::new()
+  // Wait a bit then cancel
+  Thread::sleep(500) // 500ms
+  HttpClient::cancel_request(http_client, request_handle)
   
-  // Test with fast server - timeout should decrease
-  for i in 0..5 {
-    let timeout = AdaptiveTimeoutManager::get_connection_timeout(timeout_manager)
-    NetworkClient::set_connection_timeout(client, timeout)
-    
-    let result = NetworkClient::connect(client, "http://localhost", 8086)
-    
-    match result {
-      Ok(connection) => {
-        NetworkClient::disconnect(connection)
-        AdaptiveTimeoutManager::record_success(timeout_manager, timeout)
-      }
-      Err(_) => assert_true(false)  // Should succeed
-    }
+  let response = HttpClient::wait_for_request(http_client, request_handle)
+  let end_time = Time::current_time_millis()
+  let duration = end_time - start_time
+  
+  // Should be cancelled quickly (much less than 10 seconds)
+  assert_true(duration < 2000)
+  
+  // Response should indicate cancellation
+  assert_eq(HttpResponse::status_code(response), 499) // Client Closed Request
+  
+  // Test cancellation of multiple requests
+  let cancellation_handles = []
+  
+  for i in 0..=10 {
+    let url = "https://httpbin.org/delay/" + (i + 5).to_string() // 5-15 second delays
+    let request = HttpRequest::new("GET", url, [], None)
+    let handle = HttpClient::send_request_async(http_client, request)
+    cancellation_handles.push(handle)
   }
   
-  // Verify timeout decreased after successful operations
-  let decreased_timeout = AdaptiveTimeoutManager::get_connection_timeout(timeout_manager)
-  assert_true(decreased_timeout < 5000)  // Should be less than initial
-  
-  // Test with slow server - timeout should increase
-  for i in 0..3 {
-    let timeout = AdaptiveTimeoutManager::get_connection_timeout(timeout_manager)
-    NetworkClient::set_connection_timeout(client, timeout)
-    
-    let result = NetworkClient::connect(client, "http://localhost", 8087)
-    
-    match result {
-      Ok(connection) => {
-        NetworkClient::disconnect(connection)
-        AdaptiveTimeoutManager::record_success(timeout_manager, timeout)
-      }
-      Err(error) => {
-        if NetworkError::get_type(error) == NetworkErrorType::ConnectionTimeout {
-          AdaptiveTimeoutManager::record_timeout(timeout_manager, timeout)
-        }
-      }
-    }
+  // Cancel all requests
+  for handle in cancellation_handles {
+    HttpClient::cancel_request(http_client, handle)
   }
   
-  // Verify timeout increased after timeouts
-  let increased_timeout = AdaptiveTimeoutManager::get_connection_timeout(timeout_manager)
-  assert_true(increased_timeout > decreased_timeout)  // Should be greater than after fast operations
+  // Wait for all requests to complete/cancel
+  let start_time2 = Time::current_time_millis()
+  let cancelled_responses = []
+  for handle in cancellation_handles {
+    let response = HttpClient::wait_for_request(http_client, handle)
+    cancelled_responses.push(response)
+  }
+  let end_time2 = Time::current_time_millis()
+  let duration2 = end_time2 - start_time2
   
-  MockServer::stop(fast_server)
-  MockServer::stop(slow_server)
+  // All should be cancelled quickly
+  assert_true(duration2 < 2000)
+  
+  // All responses should indicate cancellation
+  for response in cancelled_responses {
+    assert_eq(HttpResponse::status_code(response), 499) // Client Closed Request
+  }
 }
 
-// Test 8: Timeout with Connection Pooling
-test "timeout with connection pooling" {
-  // Create a connection pool
-  let pool = ConnectionPool::new()
-  ConnectionPool::set_max_connections(pool, 5)
-  ConnectionPool::set_connection_timeout(pool, 5000)  // 5 seconds
-  ConnectionPool::set_idle_timeout(pool, 30000)       // 30 seconds
+// Test 10: Network Request Chunking and Streaming
+test "network request chunking and streaming" {
+  let http_client = HttpClient::new()
   
-  // Create a mock server
-  let server = MockServer::new()
-  MockServer::start(server, 8088)
+  // Test chunked response handling
+  let chunked_url = "https://httpbin.org/stream-bytes/1024" // 1024 bytes in chunks
+  let chunked_request = HttpRequest::new("GET", chunked_url, [], None)
   
-  // Acquire connections from pool
-  let connections = []
+  let response = HttpClient::send_request(http_client, chunked_request)
   
-  for i in 0..5 {
-    let connection_result = ConnectionPool::acquire_connection(pool, "http://localhost", 8088)
-    
-    match connection_result {
-      Ok(connection) => {
-        connections.push(connection)
-      }
-      Err(_) => assert_true(false)  // Should succeed
+  assert_eq(HttpResponse::status_code(response), 200)
+  
+  // Verify response was received in chunks
+  let chunk_count = HttpResponse::get_chunk_count(response)
+  assert_true(chunk_count > 1)
+  
+  let total_size = HttpResponse::get_total_size(response)
+  assert_eq(total_size, 1024)
+  
+  // Test streaming large response
+  let large_url = "https://httpbin.org/stream-bytes/100000" // 100KB in chunks
+  let large_request = HttpRequest::new("GET", large_url, [], None)
+  
+  let large_response = HttpClient::send_request(http_client, large_request)
+  
+  assert_eq(HttpResponse::status_code(large_response), 200)
+  
+  let large_chunk_count = HttpResponse::get_chunk_count(large_response)
+  let large_total_size = HttpResponse::get_total_size(large_response)
+  
+  assert_eq(large_total_size, 100000)
+  assert_true(large_chunk_count > 1)
+  
+  // Test streaming request body
+  let stream_data = "x".repeat(50000) // 50KB of data
+  let stream_request = HttpRequest::new("POST", "https://httpbin.org/post", [], Some(stream_data))
+  
+  let stream_response = HttpClient::send_request(http_client, stream_request)
+  
+  assert_eq(HttpResponse::status_code(stream_response), 200)
+  
+  match HttpResponse::body(stream_response) {
+    Some(body) => {
+      // Verify our data was received
+      assert_true(body.contains("\"data\": \"" + stream_data + "\""))
     }
+    None => assert_true(false)
   }
   
-  // Pool should be exhausted
-  assert_eq(ConnectionPool::available_connections(pool), 0)
-  assert_eq(ConnectionPool::active_connections(pool), 5)
+  // Test progress tracking
+  let progress_tracker = ProgressTracker::new()
   
-  // Attempt to acquire another connection with timeout
-  let timeout_result = ConnectionPool::acquire_connection_with_timeout(pool, "http://localhost", 8088, 2000)  // 2 seconds
+  let progress_url = "https://httpbin.org/stream-bytes/50000" // 50KB
+  let progress_request = HttpRequest::new("GET", progress_url, [], None)
   
-  // Verify acquisition times out
-  match timeout_result {
-    Ok(_) => assert_true(false)  // Should not succeed
-    Err(error) => {
-      assert_eq(ConnectionPoolError::get_type(error), ConnectionPoolErrorType::AcquisitionTimeout)
-    }
-  }
+  let progress_response = HttpClient::send_request_with_progress(http_client, progress_request, progress_tracker)
   
-  // Release a connection
-  ConnectionPool::release_connection(pool, connections[0])
+  // Verify progress was tracked
+  let progress_updates = ProgressTracker::get_updates(progress_tracker)
+  assert_true(progress_updates.length() > 1)
   
-  // Verify connection is available
-  assert_eq(ConnectionPool::available_connections(pool), 1)
-  
-  // Should be able to acquire connection now
-  let retry_result = ConnectionPool::acquire_connection(pool, "http://localhost", 8088)
-  
-  match retry_result {
-    Ok(_) => assert_true(true)   // Should succeed
-    Err(_) => assert_true(false)  // Should not fail
-  }
-  
-  // Clean up remaining connections
-  for i in 1..connections.length() {
-    ConnectionPool::release_connection(pool, connections[i])
-  }
-  
-  MockServer::stop(server)
-}
-
-// Test 9: Timeout Metrics and Monitoring
-test "timeout metrics and monitoring" {
-  // Create a timeout monitor
-  let monitor = TimeoutMonitor::new()
-  
-  // Start monitoring
-  TimeoutMonitor::start(monitor)
-  
-  // Create mock servers with different behaviors
-  let fast_server = MockServer::new()
-  MockServer::start(fast_server, 8089)
-  
-  let slow_server = MockServer::new()
-  MockServer::set_response_delay(slow_server, 10000)  // 10 second delay
-  MockServer::start(slow_server, 8090)
-  
-  let client = NetworkClient::new()
-  NetworkClient::set_connection_timeout(client, 5000)  // 5 seconds
-  
-  // Perform operations with monitoring
-  for i in 0..10 {
-    TimeoutMonitor::begin_operation(monitor, "operation-" + i.to_string())
-    
-    let result = if i % 2 == 0 {
-      NetworkClient::connect(client, "http://localhost", 8089)  // Fast server
-    } else {
-      NetworkClient::connect(client, "http://localhost", 8090)  // Slow server
-    }
-    
-    match result {
-      Ok(connection) => {
-        TimeoutMonitor::record_success(monitor, "operation-" + i.to_string())
-        NetworkClient::disconnect(connection)
-      }
-      Err(error) => {
-        if NetworkError::get_type(error) == NetworkErrorType::ConnectionTimeout {
-          TimeoutMonitor::record_timeout(monitor, "operation-" + i.to_string())
-        } else {
-          TimeoutMonitor::record_error(monitor, "operation-" + i.to_string(), error)
-        }
-      }
-    }
-    
-    TimeoutMonitor::end_operation(monitor, "operation-" + i.to_string())
-  }
-  
-  // Get timeout metrics
-  let metrics = TimeoutMonitor::get_metrics(monitor)
-  
-  // Verify metrics
-  assert_eq(TimeoutMetrics::get_total_operations(metrics), 10)
-  assert_eq(TimeoutMetrics::get_successful_operations(metrics), 5)  // Fast server operations
-  assert_eq(TimeoutMetrics::get_timeout_operations(metrics), 5)   // Slow server operations
-  
-  // Verify timeout rate
-  let timeout_rate = TimeoutMetrics::get_timeout_rate(metrics)
-  assert_eq(timeout_rate, 0.5)  // 50% timeout rate
-  
-  // Verify average operation time
-  let avg_time = TimeoutMetrics::get_average_operation_time(metrics)
-  assert_true(avg_time > 0)
-  
-  // Get operation-specific metrics
-  let operation_metrics = TimeoutMonitor::get_operation_metrics(monitor)
-  assert_eq(operation_metrics.size(), 10)
-  
-  for (operation_name, op_metrics) in operation_metrics {
-    assert_true(TimeoutOperationMetrics::get_duration(op_metrics) >= 0)
-    
-    if operation_name.contains("even") {
-      assert_eq(TimeoutOperationMetrics::get_result(op_metrics), OperationResult::Success)
-    } else {
-      assert_eq(TimeoutOperationMetrics::get_result(op_metrics), OperationResult::Timeout)
-    }
-  }
-  
-  // Stop monitoring
-  TimeoutMonitor::stop(monitor)
-  
-  MockServer::stop(fast_server)
-  MockServer::stop(slow_server)
-}
-
-// Test 10: Timeout Configuration Management
-test "timeout configuration management" {
-  // Create a timeout configuration manager
-  let config_manager = TimeoutConfigManager::new()
-  
-  // Set default timeouts
-  TimeoutConfigManager::set_default_connection_timeout(config_manager, 5000)   // 5 seconds
-  TimeoutConfigManager::set_default_read_timeout(config_manager, 10000)       // 10 seconds
-  TimeoutConfigManager::set_default_write_timeout(config_manager, 10000)      // 10 seconds
-  TimeoutConfigManager::set_default_request_timeout(config_manager, 15000)    // 15 seconds
-  
-  // Create host-specific configurations
-  TimeoutConfigManager::set_host_timeout(config_manager, "fast-api.example.com", 2000)   // 2 seconds
-  TimeoutConfigManager::set_host_timeout(config_manager, "slow-api.example.com", 30000)  // 30 seconds
-  
-  // Create operation-specific configurations
-  TimeoutConfigManager::set_operation_timeout(config_manager, "health-check", 1000)      // 1 second
-  TimeoutConfigManager::set_operation_timeout(config_manager, "bulk-data-upload", 60000)  // 60 seconds
-  
-  // Test configuration resolution
-  let client1 = NetworkClient::new()
-  TimeoutConfigManager::configure_client(config_manager, client1, "fast-api.example.com", "health-check")
-  
-  // Verify client has appropriate timeouts (should use most specific: operation > host > default)
-  assert_eq(NetworkClient::get_connection_timeout(client1), 1000)  // Operation timeout
-  
-  let client2 = NetworkClient::new()
-  TimeoutConfigManager::configure_client(config_manager, client2, "fast-api.example.com", "data-processing")
-  
-  // Verify client uses host-specific timeout
-  assert_eq(NetworkClient::get_connection_timeout(client2), 2000)  // Host timeout
-  
-  let client3 = NetworkClient::new()
-  TimeoutConfigManager::configure_client(config_manager, client3, "unknown.example.com", "unknown-operation")
-  
-  // Verify client uses default timeout
-  assert_eq(NetworkClient::get_connection_timeout(client3), 5000)  // Default timeout
-  
-  // Test configuration persistence
-  let config_data = TimeoutConfigManager::serialize_config(config_manager)
-  assert_true(config_data.length() > 0)
-  
-  let new_config_manager = TimeoutConfigManager::deserialize_config(config_data)
-  
-  // Verify configuration was loaded correctly
-  assert_eq(
-    TimeoutConfigManager::get_default_connection_timeout(new_config_manager),
-    TimeoutConfigManager::get_default_connection_timeout(config_manager)
-  )
-  
-  assert_eq(
-    TimeoutConfigManager::get_host_timeout(new_config_manager, "fast-api.example.com"),
-    TimeoutConfigManager::get_host_timeout(config_manager, "fast-api.example.com")
-  )
-  
-  assert_eq(
-    TimeoutConfigManager::get_operation_timeout(new_config_manager, "health-check"),
-    TimeoutConfigManager::get_operation_timeout(config_manager, "health-check")
-  )
-  
-  // Test configuration validation
-  let validation_result = TimeoutConfigManager::validate_config(config_manager)
-  assert_true(TimeoutConfigManager::is_valid(validation_result))
-  
-  // Test invalid configuration
-  TimeoutConfigManager::set_default_connection_timeout(config_manager, -1000)  // Invalid negative timeout
-  let invalid_validation_result = TimeoutConfigManager::validate_config(config_manager)
-  assert_false(TimeoutConfigManager::is_valid(invalid_validation_result))
-  
-  let errors = TimeoutConfigManager::get_validation_errors(invalid_validation_result)
-  assert_true(errors.length() > 0)
+  // Check final progress
+  let final_progress = progress_updates[progress_updates.length() - 1]
+  assert_eq(final_progress.bytes_transferred, 50000)
+  assert_eq(final_progress.total_bytes, 50000)
+  assert_eq(final_progress.percentage, 100.0)
 }
