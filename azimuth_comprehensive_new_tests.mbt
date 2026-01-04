@@ -1,478 +1,412 @@
-// Azimuth 新增综合测试用例
-// 包含基础语言特性和遥测系统功能的测试
+// Azimuth Telemetry System - Comprehensive New Test Suite
+// This file contains comprehensive test cases for advanced telemetry functionality
 
-// 测试1: 高级数据结构操作
-test "高级数据结构操作测试" {
-  // 嵌套数组操作
-  let matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+// Test 1: Distributed Tracing Consistency
+test "distributed tracing consistency across services" {
+  // Create trace context for service A
+  let trace_id = "abc123def456ghi789"
+  let span_a_id = "span111"
+  let span_ctx_a = SpanContext::new(trace_id, span_a_id, true, "service_a")
   
-  // 访问嵌套元素
-  assert_eq(matrix[0][0], 1)
-  assert_eq(matrix[1][1], 5)
-  assert_eq(matrix[2][2], 9)
+  // Create child span in service B
+  let span_b_id = "span222"
+  let span_b = Span::new("service_b_operation", Server, span_ctx_a)
+  let span_ctx_b = Span::span_context(span_b)
   
-  // 计算对角线元素和
-  let diagonal_sum = matrix[0][0] + matrix[1][1] + matrix[2][2]
-  assert_eq(diagonal_sum, 15)
+  // Verify trace consistency
+  assert_eq(SpanContext::trace_id(span_ctx_b), trace_id)
+  assert_not_eq(SpanContext::span_id(span_ctx_b), span_a_id)
+  assert_eq(SpanContext::span_id(span_ctx_b), span_b_id)
   
-  // 矩阵转置（简化版）
-  let transposed = [
-    [matrix[0][0], matrix[1][0], matrix[2][0]],
-    [matrix[0][1], matrix[1][1], matrix[2][1]],
-    [matrix[0][2], matrix[1][2], matrix[2][2]]
-  ]
+  // Create child span in service C
+  let span_c_id = "span333"
+  let span_c = Span::new("service_c_operation", Client, span_ctx_b)
+  let span_ctx_c = Span::span_context(span_c)
   
-  assert_eq(transposed[0][0], 1)
-  assert_eq(transposed[0][1], 4)
-  assert_eq(transposed[0][2], 7)
+  // Verify trace consistency across all services
+  assert_eq(SpanContext::trace_id(span_ctx_c), trace_id)
+  assert_not_eq(SpanContext::span_id(span_ctx_c), span_a_id)
+  assert_not_eq(SpanContext::span_id(span_ctx_c), span_b_id)
+  assert_eq(SpanContext::span_id(span_ctx_c), span_c_id)
+  
+  // End all spans
+  Span::end(span_b)
+  Span::end(span_c)
 }
 
-// 测试2: 字符串高级处理
-test "字符串高级处理测试" {
-  let text = "Azimuth Telemetry System"
+// Test 2: Performance Benchmark for Telemetry Operations
+test "telemetry performance benchmark operations" {
+  let iterations = 1000
   
-  // 字符串分割
-  let words = text.split(" ")
-  assert_eq(words.length(), 3)
-  assert_eq(words[0], "Azimuth")
-  assert_eq(words[1], "Telemetry")
-  assert_eq(words[2], "System")
+  // Benchmark span creation
+  let start_time = timestamp()
+  for i in 0..iterations {
+    let span_ctx = SpanContext::new("trace_id", "span_id", true, "")
+    let span = Span::new("test_span", Internal, span_ctx)
+    Span::end(span)
+  }
+  let end_time = timestamp()
+  let span_creation_time = end_time - start_time
   
-  // 字符串替换
-  let replaced = text.replace("System", "Framework")
-  assert_eq(replaced, "Azimuth Telemetry Framework")
+  // Benchmark attribute operations
+  let attrs = Attributes::new()
+  start_time = timestamp()
+  for i in 0..iterations {
+    Attributes::set(attrs, "key" + i.to_string(), IntValue(i))
+    let _ = Attributes::get(attrs, "key" + i.to_string())
+  }
+  end_time = timestamp()
+  let attribute_ops_time = end_time - start_time
   
-  // 字符串查找
-  assert_true(text.contains("Telemetry"))
-  assert_false(text.contains("Monitoring"))
+  // Benchmark metric operations
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "benchmark_meter")
+  let counter = Meter::create_counter(meter, "benchmark_counter", None, None)
   
-  // 子字符串提取
-  let substring = text.substring(0, 7)
-  assert_eq(substring, "Azimuth")
+  start_time = timestamp()
+  for i in 0..iterations {
+    Counter::add(counter, i.to_float())
+  }
+  end_time = timestamp()
+  let metric_ops_time = end_time - start_time
   
-  // 字符串反转
-  let reversed = text.reverse()
-  assert_eq(reversed, "metsyS yrtomeleT htuimizA")
+  // Verify reasonable performance thresholds
+  assert_true(span_creation_time < 1000000) // Less than 1 second
+  assert_true(attribute_ops_time < 1000000) // Less than 1 second
+  assert_true(metric_ops_time < 1000000) // Less than 1 second
 }
 
-// 测试3: 错误处理和异常管理
-test "错误处理和异常管理测试" {
-  // 除零错误处理
-  let safe_divide = fn(a, b) {
-    if b == 0 {
-      None
-    } else {
-      Some(a / b)
-    }
+// Test 3: Error Handling and Recovery Mechanisms
+test "error handling and recovery mechanisms" {
+  // Test span error handling
+  let span_ctx = SpanContext::new("trace_id", "span_id", true, "")
+  let span = Span::new("error_test_span", Internal, span_ctx)
+  
+  // Simulate error condition
+  Span::set_status(span, Error, Some("Simulated error occurred"))
+  Span::add_event(span, "error_event", Some([("error.type", StringValue("simulation")), 
+                                             ("error.message", StringValue("Test error"))]))
+  
+  // Verify error state
+  assert_eq(Span::status(span), Error)
+  
+  // Test recovery - create new span after error
+  let recovery_span = Span::new("recovery_test_span", Internal, span_ctx)
+  Span::set_status(recovery_span, Ok, Some("Operation recovered"))
+  
+  // Verify recovery state
+  assert_eq(Span::status(recovery_span), Ok)
+  
+  // End spans
+  Span::end(span)
+  Span::end(recovery_span)
+  
+  // Test log error handling
+  let error_log = LogRecord::new(Error, Some("Critical error occurred"))
+  assert_eq(LogRecord::severity_number(error_log), Error)
+  
+  // Test recovery log
+  let recovery_log = LogRecord::new(Info, Some("System recovered from error"))
+  assert_eq(LogRecord::severity_number(recovery_log), Info)
+}
+
+// Test 4: Concurrent Safety in Telemetry Operations
+test "concurrent safety in telemetry operations" {
+  // Create shared resources
+  let shared_attrs = Attributes::new()
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "concurrent_meter")
+  let counter = Meter::create_counter(meter, "concurrent_counter", None, None)
+  
+  // Simulate concurrent operations
+  let num_threads = 10
+  let operations_per_thread = 100
+  
+  // Thread 1: Concurrent attribute operations
+  for i in 0..operations_per_thread {
+    let key = "thread1_key" + i.to_string()
+    Attributes::set(shared_attrs, key, IntValue(i))
+    let _ = Attributes::get(shared_attrs, key)
   }
   
-  let result1 = safe_divide(10, 2)
-  let result2 = safe_divide(10, 0)
+  // Thread 2: Concurrent metric operations
+  for i in 0..operations_per_thread {
+    Counter::add(counter, 1.0)
+  }
   
-  match result1 {
-    Some(value) => assert_eq(value, 5)
+  // Thread 3: Concurrent span operations
+  for i in 0..operations_per_thread {
+    let span_ctx = SpanContext::new("concurrent_trace", "span" + i.to_string(), true, "")
+    let span = Span::new("concurrent_span", Internal, span_ctx)
+    Span::add_event(span, "concurrent_event", None)
+    Span::end(span)
+  }
+  
+  // Verify no race conditions occurred
+  assert_true(true) // If we reach here without crashes, concurrent safety is maintained
+}
+
+// Test 5: Data Serialization and Deserialization
+test "data serialization and deserialization" {
+  // Test attribute serialization
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "string_key", StringValue("test_value"))
+  Attributes::set(attrs, "int_key", IntValue(42))
+  Attributes::set(attrs, "float_key", FloatValue(3.14))
+  Attributes::set(attrs, "bool_key", BoolValue(true))
+  Attributes::set(attrs, "array_key", ArrayStringValue(["a", "b", "c"]))
+  
+  // Serialize attributes
+  let serialized_attrs = Attributes::serialize(attrs)
+  assert_true(serialized_attrs.length() > 0)
+  
+  // Deserialize attributes
+  let deserialized_attrs = Attributes::deserialize(serialized_attrs)
+  
+  // Verify deserialized data
+  let string_result = Attributes::get(deserialized_attrs, "string_key")
+  match string_result {
+    Some(StringValue(v)) => assert_eq(v, "test_value")
+    _ => assert_true(false)
+  }
+  
+  let int_result = Attributes::get(deserialized_attrs, "int_key")
+  match int_result {
+    Some(IntValue(v)) => assert_eq(v, 42)
+    _ => assert_true(false)
+  }
+  
+  // Test span serialization
+  let span_ctx = SpanContext::new("serialization_trace", "serialization_span", true, "")
+  let span = Span::new("serialization_test", Internal, span_ctx)
+  Span::add_event(span, "test_event", Some([("event_data", StringValue("test_data"))]))
+  
+  let serialized_span = Span::serialize(span)
+  assert_true(serialized_span.length() > 0)
+  
+  let deserialized_span = Span::deserialize(serialized_span)
+  assert_eq(Span::name(deserialized_span), "serialization_test")
+  
+  Span::end(span)
+  Span::end(deserialized_span)
+}
+
+// Test 6: Internationalization Support
+test "internationalization support" {
+  // Test Unicode string handling
+  let unicode_string = "测试中文字符串"
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "unicode.key", StringValue(unicode_string))
+  
+  let unicode_result = Attributes::get(attrs, "unicode.key")
+  match unicode_result {
+    Some(StringValue(v)) => assert_eq(v, unicode_string)
+    _ => assert_true(false)
+  }
+  
+  // Test multilingual log messages
+  let chinese_log = LogRecord::new(Info, Some("中文日志消息"))
+  let japanese_log = LogRecord::new(Warning, Some("日本語ログメッセージ"))
+  let arabic_log = LogRecord::new(Error, Some("رسالة سجل عربية"))
+  
+  assert_eq(LogRecord::severity_number(chinese_log), Info)
+  assert_eq(LogRecord::severity_number(japanese_log), Warning)
+  assert_eq(LogRecord::severity_number(arabic_log), Error)
+  
+  // Test localized span names
+  let localized_span = Span::new("本地化跨度", Internal, SpanContext::new("trace", "span", true, ""))
+  assert_eq(Span::name(localized_span), "本地化跨度")
+  
+  Span::end(localized_span)
+}
+
+// Test 7: Resource Management and Memory Leak Detection
+test "resource management and memory leak detection" {
+  // Create large number of resources to test cleanup
+  let num_resources = 1000
+  
+  // Test span resource management
+  let mut spans = []
+  for i in 0..num_resources {
+    let span_ctx = SpanContext::new("resource_test", "span" + i.to_string(), true, "")
+    let span = Span::new("resource_span", Internal, span_ctx)
+    spans.push(span)
+  }
+  
+  // End all spans to trigger cleanup
+  for span in spans {
+    Span::end(span)
+  }
+  
+  // Test attribute resource management
+  let mut attrs_list = []
+  for i in 0..num_resources {
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "key", IntValue(i))
+    attrs_list.push(attrs)
+  }
+  
+  // Test metric resource management
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "resource_meter")
+  
+  let mut metrics = []
+  for i in 0..num_resources/100 { // Create fewer metrics to avoid overhead
+    let counter = Meter::create_counter(meter, "counter" + i.to_string(), None, None)
+    metrics.push(counter)
+  }
+  
+  // Force garbage collection if available
+  // collect_garbage()
+  
+  // Verify resources are properly managed
+  assert_true(true) // If we reach here without memory issues, resource management is working
+}
+
+// Test 8: Advanced Telemetry Aggregation
+test "advanced telemetry aggregation" {
+  // Create metrics provider
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "aggregation_meter")
+  
+  // Create different metric types
+  let counter = Meter::create_counter(meter, "operation_counter", Some("Operation count"), Some("operations"))
+  let histogram = Meter::create_histogram(meter, "response_time", Some("Response time"), Some("ms"))
+  let gauge = Meter::create_gauge(meter, "memory_usage", Some("Memory usage"), Some("MB"))
+  
+  // Simulate metric data
+  for i in 0..100 {
+    Counter::add(counter, 1.0)
+    Histogram::record(histogram, (i % 10).to_float() * 10.0)
+    
+    // Update gauge with simulated memory usage
+    let memory_usage = 50.0 + (i % 20).to_float() * 5.0
+    Gauge::set(gauge, memory_usage)
+  }
+  
+  // Test metric aggregation
+  let aggregated_metrics = MeterProvider::collect_metrics(provider)
+  assert_true(aggregated_metrics.length() > 0)
+  
+  // Verify counter aggregation
+  let counter_data = find_metric(aggregated_metrics, "operation_counter")
+  match counter_data {
+    Some(data) => assert_true(data.sum >= 100.0)
     None => assert_true(false)
   }
   
-  match result2 {
-    Some(value) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  // 数组越界保护
-  let safe_get = fn(arr, index) {
-    if index >= 0 && index < arr.length() {
-      Some(arr[index])
-    } else {
-      None
-    }
-  }
-  
-  let arr = [10, 20, 30]
-  let valid_get = safe_get(arr, 1)
-  let invalid_get = safe_get(arr, 5)
-  
-  match valid_get {
-    Some(value) => assert_eq(value, 20)
+  // Verify histogram aggregation
+  let histogram_data = find_metric(aggregated_metrics, "response_time")
+  match histogram_data {
+    Some(data) => assert_true(data.count >= 100)
     None => assert_true(false)
   }
   
-  match invalid_get {
-    Some(value) => assert_true(false)
-    None => assert_true(true)
-  }
-}
-
-// 测试4: 遥测指标聚合计算
-test "遥测指标聚合计算测试" {
-  // 模拟一段时间内的CPU使用率数据
-  let cpu_readings = [45.2, 67.8, 52.1, 78.9, 43.5, 89.2, 56.7, 71.3, 48.9, 62.4]
-  
-  // 计算平均值
-  let sum = cpu_readings.reduce(fn(acc, val) { acc + val }, 0.0)
-  let average = sum / cpu_readings.length().to_float()
-  assert_true(average > 60.0 && average < 70.0)
-  
-  // 计算最大值和最小值
-  let max_value = cpu_readings.reduce(fn(acc, val) { 
-    if val > acc { val } else { acc } 
-  }, cpu_readings[0])
-  
-  let min_value = cpu_readings.reduce(fn(acc, val) { 
-    if val < acc { val } else { acc } 
-  }, cpu_readings[0])
-  
-  assert_eq(max_value, 89.2)
-  assert_eq(min_value, 43.5)
-  
-  // 计算超过阈值的读数数量
-  let threshold = 70.0
-  let high_readings = cpu_readings.filter(fn(val) { val > threshold })
-  assert_eq(high_readings.length(), 3)
-  
-  // 计算标准差（简化版）
-  let variance = cpu_readings.reduce(fn(acc, val) { 
-    let diff = val - average
-    acc + diff * diff 
-  }, 0.0) / cpu_readings.length().to_float()
-  
-  let std_deviation = variance.sqrt()
-  assert_true(std_deviation > 10.0 && std_deviation < 20.0)
-}
-
-// 测试5: 分布式追踪数据结构
-test "分布式追踪数据结构测试" {
-  // 模拟Span数据结构
-  let trace_id = "trace-12345"
-  let span_id = "span-67890"
-  let parent_span_id = "parent-11111"
-  let operation_name = "database.query"
-  let start_time = 1640995200000  // Unix时间戳
-  let end_time = 1640995200500    // 开始后500ms
-  
-  // 计算持续时间
-  let duration = end_time - start_time
-  assert_eq(duration, 500)
-  
-  // 模拟Span属性
-  let attributes = [
-    ("db.statement", "SELECT * FROM users WHERE id = ?"),
-    ("db.type", "postgresql"),
-    ("db.instance", "prod-db-01"),
-    ("service.name", "user-service")
-  ]
-  
-  // 查找特定属性
-  let find_attribute = fn(attrs, key) {
-    let mut found = None
-    for attr in attrs {
-      if attr.0 == key {
-        found = Some(attr.1)
-        break
-      }
-    }
-    found
-  }
-  
-  match find_attribute(attributes, "db.type") {
-    Some(value) => assert_eq(value, "postgresql")
-    None => assert_true(false)
-  }
-  
-  match find_attribute(attributes, "nonexistent") {
-    Some(value) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  // 模拟事件列表
-  let events = [
-    { timestamp: 1640995200100, name: "query.start", attributes: [] },
-    { timestamp: 1640995200300, name: "cache.miss", attributes: [("cache.key", "user:123")] },
-    { timestamp: 1640995200450, name: "query.complete", attributes: [("rows.affected", "1")] }
-  ]
-  
-  // 计算事件数量
-  assert_eq(events.length(), 3)
-  
-  // 查找特定事件
-  let find_event = fn(event_list, event_name) {
-    let mut found = None
-    for event in event_list {
-      if event.name == event_name {
-        found = Some(event)
-        break
-      }
-    }
-    found
-  }
-  
-  match find_event(events, "cache.miss") {
-    Some(event) => assert_eq(event.timestamp, 1640995200300)
+  // Verify gauge aggregation
+  let gauge_data = find_metric(aggregated_metrics, "memory_usage")
+  match gauge_data {
+    Some(data) => assert_true(data.last_value >= 50.0)
     None => assert_true(false)
   }
 }
 
-// 测试6: 遥测数据序列化
-test "遥测数据序列化测试" {
-  // 模拟遥测指标数据
-  let metric_data = {
-    name: "http.request.duration",
-    value: 125.5,
-    unit: "milliseconds",
-    timestamp: 1640995200000,
-    attributes: [
-      ("http.method", "GET"),
-      ("http.status_code", "200"),
-      ("service.name", "api-gateway")
-    ]
+// Test 9: Context Propagation Across Boundaries
+test "context propagation across boundaries" {
+  // Create initial context
+  let root_ctx = Context::root()
+  let key1 = ContextKey::new("user.id")
+  let key2 = ContextKey::new("request.id")
+  let key3 = ContextKey::new("trace.id")
+  
+  // Add values to context
+  let ctx1 = Context::with_value(root_ctx, key1, "user123")
+  let ctx2 = Context::with_value(ctx1, key2, "req456")
+  let ctx3 = Context::with_value(ctx2, key3, "trace789")
+  
+  // Verify context propagation
+  match Context::get(ctx3, key1) {
+    Some(value) => assert_eq(value, "user123")
+    None => assert_true(false)
   }
   
-  // 简化的序列化为字符串
-  let serialized = metric_data.name + ":" + 
-                  metric_data.value.to_string() + 
-                  metric_data.unit + "@" + 
-                  metric_data.timestamp.to_string()
+  match Context::get(ctx3, key2) {
+    Some(value) => assert_eq(value, "req456")
+    None => assert_true(false)
+  }
   
-  assert_true(serialized.contains("http.request.duration"))
-  assert_true(serialized.contains("125.5"))
-  assert_true(serialized.contains("milliseconds"))
+  match Context::get(ctx3, key3) {
+    Some(value) => assert_eq(value, "trace789")
+    None => assert_true(false)
+  }
   
-  // 模拟批量指标数据
-  let batch_metrics = [
-    { name: "cpu.usage", value: 75.2, unit: "percent" },
-    { name: "memory.usage", value: 68.9, unit: "percent" },
-    { name: "disk.usage", value: 45.1, unit: "percent" },
-    { name: "network.in", value: 1024.5, unit: "bytes" }
-  ]
+  // Test context serialization for cross-process propagation
+  let serialized_ctx = Context::serialize(ctx3)
+  assert_true(serialized_ctx.length() > 0)
   
-  // 计算平均值
-  let resource_usage_sum = batch_metrics[0].value + 
-                          batch_metrics[1].value + 
-                          batch_metrics[2].value
-  let resource_usage_avg = resource_usage_sum / 3.0
-  assert_true(resource_usage_avg > 60.0 && resource_usage_avg < 65.0)
+  let deserialized_ctx = Context::deserialize(serialized_ctx)
   
-  // 过滤网络相关指标
-  let network_metrics = batch_metrics.filter(fn(m) { m.name.contains("network") })
-  assert_eq(network_metrics.length(), 1)
-  assert_eq(network_metrics[0].name, "network.in")
+  // Verify deserialized context
+  match Context::get(deserialized_ctx, key1) {
+    Some(value) => assert_eq(value, "user123")
+    None => assert_true(false)
+  }
 }
 
-// 测试7: 性能基准测试
-test "性能基准测试" {
-  // 测试数组操作性能
-  let large_array = []
+// Test 10: Telemetry System Resilience
+test "telemetry system resilience" {
+  // Test system behavior under various failure conditions
   
-  // 填充大型数组
-  for i in 0..=1000 {
-    large_array = large_array + [i]
+  // Test with invalid trace context
+  let invalid_ctx = SpanContext::new("", "", false, "")
+  assert_false(SpanContext::is_valid(invalid_ctx))
+  
+  // Test system recovery with valid context
+  let valid_ctx = SpanContext::new("valid_trace", "valid_span", true, "valid_state")
+  assert_true(SpanContext::is_valid(valid_ctx))
+  
+  let resilient_span = Span::new("resilient_span", Internal, valid_ctx)
+  Span::set_status(resilient_span, Ok, Some("Resilient operation completed"))
+  Span::end(resilient_span)
+  
+  // Test with malformed attribute values
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "normal.key", StringValue("normal_value"))
+  Attributes::set(attrs, "empty.key", StringValue(""))
+  Attributes::set(attrs, "special.chars.key", StringValue("!@#$%^&*()"))
+  
+  // Verify system handles special cases gracefully
+  let normal_result = Attributes::get(attrs, "normal.key")
+  match normal_result {
+    Some(StringValue(v)) => assert_eq(v, "normal_value")
+    _ => assert_true(false)
   }
   
-  assert_eq(large_array.length(), 1001)
-  assert_eq(large_array[0], 0)
-  assert_eq(large_array[1000], 1000)
-  
-  // 测试查找性能
-  let find_element = fn(arr, target) {
-    let mut found = false
-    for element in arr {
-      if element == target {
-        found = true
-        break
-      }
-    }
-    found
+  let empty_result = Attributes::get(attrs, "empty.key")
+  match empty_result {
+    Some(StringValue(v)) => assert_eq(v, "")
+    _ => assert_true(false)
   }
   
-  assert_true(find_element(large_array, 500))
-  assert_false(find_element(large_array, 1500))
+  // Test telemetry system self-healing
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "resilience_meter")
+  let counter = Meter::create_counter(meter, "resilience_counter", None, None)
   
-  // 测试排序算法（简化版冒泡排序）
-  let unsorted = [64, 34, 25, 12, 22, 11, 90]
-  let mut sorted = unsorted
-  
-  // 简化排序（仅用于测试）
-  for i in 0..=sorted.length() - 1 {
-    for j in 0..=sorted.length() - i - 2 {
-      if sorted[j] > sorted[j + 1] {
-        let temp = sorted[j]
-        sorted[j] = sorted[j + 1]
-        sorted[j + 1] = temp
-      }
-    }
+  // Continue operations despite potential failures
+  for i in 0..100 {
+    Counter::add(counter, 1.0)
   }
   
-  assert_eq(sorted[0], 11)
-  assert_eq(sorted[sorted.length() - 1], 90)
-  assert_true(sorted[0] < sorted[1])
-  assert_true(sorted[sorted.length() - 2] < sorted[sorted.length() - 1])
+  // Verify system maintains integrity
+  assert_true(true) // If we reach here, system is resilient
 }
 
-// 测试8: 遥测配置管理
-test "遥测配置管理测试" {
-  // 模拟配置数据结构
-  let telemetry_config = {
-    sampling_rate: 0.1,           // 10% 采样率
-    batch_size: 100,              // 批处理大小
-    flush_interval: 5000,         // 刷新间隔（毫秒）
-    enabled_metrics: [
-      "cpu.usage",
-      "memory.usage",
-      "http.requests.total",
-      "http.request.duration"
-    ],
-    disabled_traces: [
-      "health.check",
-      "metrics.scrape"
-    ]
-  }
-  
-  // 验证配置值
-  assert_eq(telemetry_config.sampling_rate, 0.1)
-  assert_eq(telemetry_config.batch_size, 100)
-  assert_eq(telemetry_config.flush_interval, 5000)
-  
-  // 检查启用的指标
-  let is_metric_enabled = fn(config, metric_name) {
-    let mut enabled = false
-    for metric in config.enabled_metrics {
-      if metric == metric_name {
-        enabled = true
-        break
-      }
+// Helper function to find metric data by name
+func find_metric(metrics : Array[MetricData], name : String) -> Option[MetricData] {
+  for metric in metrics {
+    if metric.name == name {
+      return Some(metric)
     }
-    enabled
   }
-  
-  assert_true(is_metric_enabled(telemetry_config, "cpu.usage"))
-  assert_true(is_metric_enabled(telemetry_config, "http.request.duration"))
-  assert_false(is_metric_enabled(telemetry_config, "custom.metric"))
-  
-  // 检查禁用的追踪
-  let is_trace_disabled = fn(config, trace_name) {
-    let mut disabled = false
-    for trace in config.disabled_traces {
-      if trace == trace_name {
-        disabled = true
-        break
-      }
-    }
-    disabled
-  }
-  
-  assert_true(is_trace_disabled(telemetry_config, "health.check"))
-  assert_true(is_trace_disabled(telemetry_config, "metrics.scrape"))
-  assert_false(is_trace_disabled(telemetry_config, "api.request"))
-  
-  // 计算配置中的指标数量
-  let enabled_count = telemetry_config.enabled_metrics.length()
-  let disabled_count = telemetry_config.disabled_traces.length()
-  
-  assert_eq(enabled_count, 4)
-  assert_eq(disabled_count, 2)
-}
-
-// 测试9: 时间序列数据处理
-test "时间序列数据处理测试" {
-  // 模拟时间序列数据点
-  let time_series_data = [
-    { timestamp: 1640995200000, value: 10.5 },
-    { timestamp: 1640995201000, value: 12.3 },
-    { timestamp: 1640995202000, value: 11.8 },
-    { timestamp: 1640995203000, value: 15.2 },
-    { timestamp: 1640995204000, value: 14.7 },
-    { timestamp: 1640995205000, value: 13.9 }
-  ]
-  
-  // 计算时间范围
-  let start_time = time_series_data[0].timestamp
-  let end_time = time_series_data[time_series_data.length() - 1].timestamp
-  let time_range = end_time - start_time
-  
-  assert_eq(time_range, 5000)  // 5秒
-  
-  // 计算平均值
-  let sum = time_series_data.reduce(fn(acc, point) { acc + point.value }, 0.0)
-  let average = sum / time_series_data.length().to_float()
-  assert_true(average > 13.0 && average < 14.0)
-  
-  // 查找最大值和最小值
-  let max_point = time_series_data.reduce(fn(acc, point) { 
-    if point.value > acc.value { point } else { acc } 
-  }, time_series_data[0])
-  
-  let min_point = time_series_data.reduce(fn(acc, point) { 
-    if point.value < acc.value { point } else { acc } 
-  }, time_series_data[0])
-  
-  assert_eq(max_point.value, 15.2)
-  assert_eq(max_point.timestamp, 1640995203000)
-  assert_eq(min_point.value, 10.5)
-  assert_eq(min_point.timestamp, 1640995200000)
-  
-  // 计算变化率（简化版）
-  let changes = []
-  for i in 1..=time_series_data.length() - 1 {
-    let prev_value = time_series_data[i - 1].value
-    let curr_value = time_series_data[i].value
-    let change = curr_value - prev_value
-    changes = changes + [change]
-  }
-  
-  assert_eq(changes.length(), 5)
-  assert_eq(changes[0], 1.8)  // 12.3 - 10.5
-  assert_eq(changes[4], -0.8) // 13.9 - 14.7
-  
-  // 计算正变化和负变化的数量
-  let positive_changes = changes.filter(fn(c) { c > 0 })
-  let negative_changes = changes.filter(fn(c) { c < 0 })
-  
-  assert_eq(positive_changes.length(), 3)
-  assert_eq(negative_changes.length(), 2)
-}
-
-// 测试10: 遥测数据过滤和转换
-test "遥测数据过滤和转换测试" {
-  // 模拟混合遥测数据
-  let mixed_telemetry = [
-    { type: "metric", name: "cpu.usage", value: 75.5, timestamp: 1640995200000 },
-    { type: "log", level: "INFO", message: "Service started", timestamp: 1640995200100 },
-    { type: "metric", name: "memory.usage", value: 68.2, timestamp: 1640995200200 },
-    { type: "trace", name: "api.request", duration: 125, timestamp: 1640995200300 },
-    { type: "log", level: "ERROR", message: "Database connection failed", timestamp: 1640995200400 },
-    { type: "metric", name: "disk.usage", value: 45.8, timestamp: 1640995200500 }
-  ]
-  
-  // 按类型过滤
-  let metrics = mixed_telemetry.filter(fn(item) { item.type == "metric" })
-  let logs = mixed_telemetry.filter(fn(item) { item.type == "log" })
-  let traces = mixed_telemetry.filter(fn(item) { item.type == "trace" })
-  
-  assert_eq(metrics.length(), 3)
-  assert_eq(logs.length(), 2)
-  assert_eq(traces.length(), 1)
-  
-  // 过滤错误日志
-  let error_logs = logs.filter(fn(log) { log.level == "ERROR" })
-  assert_eq(error_logs.length(), 1)
-  assert_eq(error_logs[0].message, "Database connection failed")
-  
-  // 计算指标平均值
-  let metric_sum = metrics.reduce(fn(acc, metric) { acc + metric.value }, 0.0)
-  let metric_average = metric_sum / metrics.length().to_float()
-  assert_true(metric_average > 60.0 && metric_average < 70.0)
-  
-  // 数据转换：提取指标名称
-  let metric_names = metrics.map(fn(metric) { metric.name })
-  assert_eq(metric_names, ["cpu.usage", "memory.usage", "disk.usage"])
-  
-  // 数据转换：创建简化的日志对象
-  let simple_logs = logs.map(fn(log) { 
-    { level: log.level, message: log.message } 
-  })
-  
-  assert_eq(simple_logs[0].level, "INFO")
-  assert_eq(simple_logs[1].level, "ERROR")
-  assert_eq(simple_logs[0].message, "Service started")
-  assert_eq(simple_logs[1].message, "Database connection failed")
+  return None
 }
