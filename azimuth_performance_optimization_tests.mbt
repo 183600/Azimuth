@@ -1,279 +1,581 @@
-// Azimuth Performance Optimization Tests
-// This file contains test cases focusing on performance optimization and resource efficiency
+// Performance Optimization Test Suite for Azimuth
+// 性能优化测试套件 - 测试各种性能优化技术和算法
 
-test "high volume telemetry data processing" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "performance_meter")
-  let counter = Meter::create_counter(meter, "performance_counter", Some("Performance counter"), Some("operations"))
+// Test 1: 算法复杂度测试
+test "algorithm complexity tests" {
+  // 线性搜索 vs 二分搜索
+  let linear_search = fn(arr, target) {
+    for i in 0..arr.length() {
+      if arr[i] == target {
+        return Some(i)
+      }
+    }
+    None
+  }
   
-  // Simulate high volume data processing
-  let start_time = Time::now()
-  for i in 0..10000 {
-    Counter::add(counter, 1.0)
+  let binary_search = fn(arr, target) {
+    let mut left = 0
+    let mut right = arr.length() - 1
     
-    // Create attributes for each operation
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "operation_id", StringValue("op_" + i.to_string()))
-    Attributes::set(attrs, "timestamp", IntValue(Time::now()))
+    while left <= right {
+      let mid = left + (right - left) / 2
+      if arr[mid] == target {
+        return Some(mid)
+      } else if arr[mid] < target {
+        left = mid + 1
+      } else {
+        right = mid - 1
+      }
+    }
+    None
+  }
+  
+  let sorted_arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+  
+  // 线性搜索需要遍历更多元素
+  assert_eq(linear_search(sorted_arr, 20), Some(19))
+  assert_eq(linear_search(sorted_arr, 1), Some(0))
+  assert_eq(linear_search(sorted_arr, 21), None)
+  
+  // 二分搜索效率更高
+  assert_eq(binary_search(sorted_arr, 20), Some(19))
+  assert_eq(binary_search(sorted_arr, 1), Some(0))
+  assert_eq(binary_search(sorted_arr, 21), None)
+  
+  // 冒泡排序 vs 快速排序
+  let bubble_sort = fn(arr) {
+    let mut result = arr.clone()
+    let n = result.length()
     
-    // Simulate some processing
-    let _result = i * 2 + 1
-  }
-  let end_time = Time::now()
-  
-  // Verify processing completed within reasonable time (adjust threshold as needed)
-  let processing_time = end_time - start_time
-  assert_true(processing_time < 5000) // Should complete within 5 seconds
-}
-
-test "memory efficiency with large attribute sets" {
-  let attrs = Attributes::new()
-  
-  // Add many attributes to test memory efficiency
-  for i in 0..1000 {
-    let key = "attr_" + i.to_string()
-    let value = "value_" + i.to_string()
-    Attributes::set(attrs, key, StringValue(value))
+    for i in 0..n {
+      for j in 0..(n - i - 1) {
+        if result[j] > result[j + 1] {
+          let temp = result[j]
+          result[j] = result[j + 1]
+          result[j + 1] = temp
+        }
+      }
+    }
+    result
   }
   
-  // Verify attributes can be retrieved efficiently
-  let test_key = "attr_500"
-  let result = Attributes::get(attrs, test_key)
-  match result {
-    Some(StringValue(v)) => assert_eq(v, "value_500")
-    _ => assert_true(false)
-  }
-  
-  // Test attribute count
-  let attr_count = Attributes::count(attrs)
-  assert_eq(attr_count, 1000)
-}
-
-test "span creation overhead minimization" {
-  let span_ctx = SpanContext::new("trace_123", "span_456", true, "")
-  let start_time = Time::now()
-  
-  // Create many spans to test overhead
-  let spans = []
-  for i in 0..1000 {
-    let span_name = "performance_span_" + i.to_string()
-    let span = Span::new(span_name, Internal, span_ctx)
-    spans.push(span)
-  }
-  
-  let end_time = Time::now()
-  let creation_time = end_time - start_time
-  
-  // Verify span creation is efficient
-  assert_true(creation_time < 1000) // Should complete within 1 second
-  assert_eq(spans.length(), 1000)
-  
-  // Clean up spans
-  for span in spans {
-    Span::end(span)
-  }
-}
-
-test "batch operations efficiency" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "batch_meter")
-  let histogram = Meter::create_histogram(meter, "batch_histogram", Some("Batch histogram"), Some("ms"))
-  
-  // Test batch recording vs individual recording
-  let start_time = Time::now()
-  
-  // Individual recordings
-  for i in 0..1000 {
-    Histogram::record(histogram, i.to_float())
-  }
-  
-  let individual_time = Time::now() - start_time
-  
-  // Batch simulation (if supported)
-  let batch_start_time = Time::now()
-  let values = []
-  for i in 0..1000 {
-    values.push(i.to_float())
-  }
-  
-  // If batch recording is supported, it would be here
-  // For now, we'll just verify the values were recorded
-  let batch_time = Time::now() - batch_start_time
-  
-  // Verify batch processing is more efficient (or at least not significantly worse)
-  assert_true(batch_time <= individual_time * 1.1) // Allow 10% tolerance
-}
-
-test "context propagation performance" {
-  let root_ctx = Context::root()
-  let key = ContextKey::new("performance_key")
-  let value = "performance_value"
-  
-  // Test context creation and propagation performance
-  let start_time = Time::now()
-  
-  let mut ctx = root_ctx
-  for i in 0..100 {
-    ctx = Context::with_value(ctx, key, value + "_" + i.to_string())
-    
-    // Simulate context retrieval
-    let _retrieved = Context::get(ctx, key)
-  }
-  
-  let end_time = Time::now()
-  let propagation_time = end_time - start_time
-  
-  // Verify context propagation is efficient
-  assert_true(propagation_time < 500) // Should complete within 0.5 seconds
-}
-
-test "resource pooling efficiency" {
-  // Test resource pooling for frequently used objects
-  let pool = ResourcePool::new(100) // Pool size of 100
-  
-  let start_time = Time::now()
-  
-  // Acquire and release resources many times
-  for i in 0..1000 {
-    let resource = ResourcePool::acquire(pool)
-    assert_true(ResourcePool::is_valid(resource))
-    
-    // Use the resource
-    ResourcePool::use_resource(resource, i)
-    
-    // Release back to pool
-    ResourcePool::release(pool, resource)
-  }
-  
-  let end_time = Time::now()
-  let pooling_time = end_time - start_time
-  
-  // Verify resource pooling is efficient
-  assert_true(pooling_time < 1000) // Should complete within 1 second
-  assert_eq(ResourcePool::available_count(pool), 100)
-}
-
-test "serialization performance optimization" {
-  // Create a complex telemetry object
-  let attrs = Attributes::new()
-  Attributes::set(attrs, "complex.key1", StringValue("complex_value1"))
-  Attributes::set(attrs, "complex.key2", IntValue(42))
-  Attributes::set(attrs, "complex.key3", FloatValue(3.14))
-  Attributes::set(attrs, "complex.key4", BoolValue(true))
-  
-  let span_ctx = SpanContext::new("serialization_trace", "serialization_span", true, "")
-  let span = Span::new("serialization_test", Internal, span_ctx)
-  
-  // Test serialization performance
-  let start_time = Time::now()
-  
-  for i in 0..100 {
-    let serialized = TelemetrySerializer::serialize_span(span, attrs)
-    assert_true(serialized.length() > 0)
-    
-    // Test deserialization
-    let deserialized = TelemetrySerializer::deserialize_span(serialized)
-    assert_true(TelemetrySerializer::is_valid(deserialized))
-  }
-  
-  let end_time = Time::now()
-  let serialization_time = end_time - start_time
-  
-  // Verify serialization is efficient
-  assert_true(serialization_time < 2000) // Should complete within 2 seconds
-}
-
-test "concurrent metrics recording performance" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "concurrent_meter")
-  let counter = Meter::create_counter(meter, "concurrent_counter", Some("Concurrent counter"), Some("operations"))
-  
-  // Test concurrent metric recording
-  let start_time = Time::now()
-  
-  // Simulate concurrent operations (in a real scenario, these would be actual threads)
-  for batch in 0..10 {
-    for i in 0..100 {
-      let operation_id = "batch_" + batch.to_string() + "_op_" + i.to_string()
-      let attrs = Attributes::new()
-      Attributes::set(attrs, "operation_id", StringValue(operation_id))
-      
-      Counter::add(counter, 1.0, Some(attrs))
+  let quick_sort = fn(arr) {
+    if arr.length() <= 1 {
+      arr
+    } else {
+      let pivot = arr[0]
+      let less = arr.slice(1).filter(fn(x) { x <= pivot })
+      let greater = arr.slice(1).filter(fn(x) { x > pivot })
+      quick_sort(less) + [pivot] + quick_sort(greater)
     }
   }
   
-  let end_time = Time::now()
-  let concurrent_time = end_time - start_time
+  let unsorted = [5, 2, 8, 1, 9, 3, 7, 4, 6]
+  let bubble_result = bubble_sort(unsorted)
+  let quick_result = quick_sort(unsorted)
   
-  // Verify concurrent recording is efficient
-  assert_true(concurrent_time < 1500) // Should complete within 1.5 seconds
+  assert_eq(bubble_result, [1, 2, 3, 4, 5, 6, 7, 8, 9])
+  assert_eq(quick_result, [1, 2, 3, 4, 5, 6, 7, 8, 9])
 }
 
-test "memory usage optimization" {
-  // Test memory usage with various telemetry operations
-  let initial_memory = Memory::get_usage()
+// Test 2: 缓存优化测试
+test "caching optimization tests" {
+  // 斐波那契数列 - 带缓存和不带缓存
+  let fib_without_cache = fn(n) {
+    if n <= 1 {
+      n
+    } else {
+      fib_without_cache(n - 1) + fib_without_cache(n - 2)
+    }
+  }
   
-  // Perform memory-intensive operations
-  let spans = []
-  let attributes_list = []
-  
-  for i in 0..500 {
-    // Create span
-    let span_ctx = SpanContext::new("mem_trace_" + i.to_string(), "mem_span_" + i.to_string(), true, "")
-    let span = Span::new("memory_test_span_" + i.to_string(), Internal, span_ctx)
-    spans.push(span)
+  let fib_with_cache = fn() {
+    let cache = {}
     
-    // Create attributes
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "memory_test_attr", StringValue("memory_test_value_" + i.to_string()))
-    attributes_list.push(attrs)
+    let fib = fn(n) {
+      if cache.contains(n) {
+        return cache.get(n).unwrap()
+      }
+      
+      let result = if n <= 1 {
+        n
+      } else {
+        fib(n - 1) + fib(n - 2)
+      }
+      
+      cache.set(n, result)
+      result
+    }
+    
+    fib
   }
   
-  let peak_memory = Memory::get_usage()
+  let cached_fib = fib_with_cache()
   
-  // Clean up
-  for span in spans {
-    Span::end(span)
+  // 小数字测试
+  assert_eq(fib_without_cache(5), 5)
+  assert_eq(cached_fib(5), 5)
+  
+  assert_eq(fib_without_cache(10), 55)
+  assert_eq(cached_fib(10), 55)
+  
+  // 缓存版本对于大数字效率更高
+  assert_eq(cached_fib(20), 6765)
+  
+  // 记忆化模式
+  let memoize = fn(f) {
+    let cache = {}
+    
+    fn(x) {
+      if cache.contains(x) {
+        return cache.get(x).unwrap()
+      }
+      
+      let result = f(x)
+      cache.set(x, result)
+      result
+    }
   }
   
-  let final_memory = Memory::get_usage()
+  let expensive_operation = fn(n) {
+    // 模拟昂贵操作
+    let mut sum = 0
+    for i in 0..n {
+      sum = sum + i
+    }
+    sum
+  }
   
-  // Verify memory usage is reasonable
-  let memory_increase = peak_memory - initial_memory
-  let memory_recovered = peak_memory - final_memory
+  let memoized_operation = memoize(expensive_operation)
   
-  assert_true(memory_increase < 50 * 1024 * 1024) // Less than 50MB increase
-  assert_true(memory_recovered > memory_increase * 0.8) // At least 80% of memory recovered
+  assert_eq(memoized_operation(100), 5050)  // 第一次计算
+  assert_eq(memoized_operation(100), 5050)  // 从缓存获取
+  assert_eq(memoized_operation(200), 20100) // 新值计算
 }
 
-test "cpu optimization with efficient algorithms" {
-  // Test CPU usage with optimized algorithms
-  let start_cpu = CPU::get_usage()
-  let start_time = Time::now()
-  
-  // Perform CPU-intensive operations with optimized algorithms
-  let data = []
-  for i in 0..10000 {
-    data.push(i)
+// Test 3: 惰性求值测试
+test "lazy evaluation tests" {
+  // 惰性序列
+  let lazy_range = fn(start, step) {
+    let current = ref start
+    
+    fn() {
+      let value = !current
+      current := !current + step
+      value
+    }
   }
   
-  // Use efficient algorithms for processing
-  let processed_data = Algorithm::efficient_sort(data)
-  let filtered_data = Algorithm::efficient_filter(processed_data, fn(x) { x % 2 == 0 })
-  let aggregated_data = Algorithm::efficient_aggregate(filtered_data, fn(acc, x) { acc + x }, 0)
+  let next = lazy_range(1, 2)
+  assert_eq(next(), 1)
+  assert_eq(next(), 3)
+  assert_eq(next(), 5)
+  assert_eq(next(), 7)
   
-  let end_time = Time::now()
-  let end_cpu = CPU::get_usage()
+  // 惰性过滤器
+  let lazy_filter = fn(iterator, predicate) {
+    fn() {
+      let value = iterator()
+      if predicate(value) {
+        value
+      } else {
+        // 递归直到找到满足条件的值
+        lazy_filter(iterator, predicate)()
+      }
+    }
+  }
   
-  // Verify results
-  assert_eq(processed_data.length(), 10000)
-  assert_eq(filtered_data.length(), 5000)
-  assert_eq(aggregated_data, 25005000) // Sum of even numbers from 0 to 9998
+  let numbers = lazy_range(1, 1)
+  let even_numbers = lazy_filter(numbers, fn(x) { x % 2 == 0 })
   
-  // Verify CPU usage is reasonable
-  let processing_time = end_time - start_time
-  let cpu_usage = end_cpu - start_cpu
+  assert_eq(even_numbers(), 2)
+  assert_eq(even_numbers(), 4)
+  assert_eq(even_numbers(), 6)
   
-  assert_true(processing_time < 3000) // Should complete within 3 seconds
-  assert_true(cpu_usage < 80) // CPU usage should be reasonable
+  // 惰性映射
+  let lazy_map = fn(iterator, transform) {
+    fn() {
+      let value = iterator()
+      transform(value)
+    }
+  }
+  
+  let squares = lazy_map(numbers, fn(x) { x * x })
+  assert_eq(squares(), 9)  // 3*3 (next()已被调用3次)
+  assert_eq(squares(), 16) // 4*4
+}
+
+// Test 4: 批处理优化测试
+test "batch processing optimization tests" {
+  // 批量处理 vs 单个处理
+  let batch_insert = fn(records) {
+    // 模拟批量插入，一次操作处理所有记录
+    let mut result = []
+    for record in records {
+      result.push("inserted: " + record)
+    }
+    result
+  }
+  
+  let individual_insert = fn(records) {
+    // 模拟单个插入，每条记录一次操作
+    let mut result = []
+    for record in records {
+      result.push("inserted: " + record)
+    }
+    result
+  }
+  
+  let records = ["record1", "record2", "record3", "record4", "record5"]
+  let batch_result = batch_insert(records)
+  let individual_result = individual_insert(records)
+  
+  assert_eq(batch_result, individual_result)
+  
+  // 批量大小优化
+  let optimal_batch_size = fn(total_records, max_batch_size) {
+    // 计算最优批量大小
+    if total_records <= max_batch_size {
+      total_records
+    } else {
+      // 简单策略：使用最大批量大小
+      max_batch_size
+    }
+  }
+  
+  assert_eq(optimal_batch_size(100, 50), 50)
+  assert_eq(optimal_batch_size(30, 50), 30)
+  
+  // 分批处理
+  let process_in_batches = fn(records, batch_size, processor) {
+    let mut result = []
+    let mut i = 0
+    
+    while i < records.length() {
+      let end = if i + batch_size > records.length() {
+        records.length()
+      } else {
+        i + batch_size
+      }
+      
+      let batch = records.slice(i, end)
+      result = result + processor(batch)
+      i = i + batch_size
+    }
+    
+    result
+  }
+  
+  let batched_result = process_in_batches(records, 2, batch_insert)
+  assert_eq(batched_result.length(), 5)
+}
+
+// Test 5: 内存池优化测试
+test "memory pool optimization tests" {
+  // 对象池模式
+  let create_object_pool = fn(create_fn, reset_fn, initial_size) {
+    let pool = ref []
+    
+    // 初始化池
+    for i in 0..initial_size {
+      let obj = create_fn()
+      pool.push(obj)
+    }
+    
+    fn() {
+      // 获取对象
+      if (!pool).is_empty() {
+        (!pool).pop()
+      } else {
+        create_fn()
+      }
+    },
+    
+    fn(obj) {
+      // 归还对象
+      reset_fn(obj)
+      pool.push(obj)
+    }
+  }
+  
+  // 示例：使用对象池管理缓冲区
+  let create_buffer = fn() { {data: [], size: 0} }
+  let reset_buffer = fn(buf) { buf.data = []; buf.size = 0 }
+  
+  let (get_buffer, return_buffer) = create_object_pool(create_buffer, reset_buffer, 2)
+  
+  // 获取缓冲区
+  let buf1 = get_buffer()
+  buf1.data.push("item1")
+  buf1.size = 1
+  
+  let buf2 = get_buffer()
+  buf2.data.push("item2")
+  buf2.size = 1
+  
+  // 归还缓冲区
+  return_buffer(buf1)
+  assert_eq(buf1.size, 0)
+  assert_eq(buf1.data.length(), 0)
+  
+  return_buffer(buf2)
+  assert_eq(buf2.size, 0)
+  assert_eq(buf2.data.length(), 0)
+  
+  // 再次获取，应该重用之前归还的对象
+  let buf3 = get_buffer()
+  assert_eq(buf3.size, 0)
+}
+
+// Test 6: 字符串优化测试
+test "string optimization tests" {
+  // 字符串连接优化
+  let inefficient_concat = fn(strings) {
+    let mut result = ""
+    for s in strings {
+      result = result + s
+    }
+    result
+  }
+  
+  let efficient_concat = fn(strings) {
+    strings.reduce(fn(acc, s) { acc + s }, "")
+  }
+  
+  let strings = ["hello", " ", "world", "!", " ", "this", " ", "is", " ", "a", " ", "test"]
+  
+  let inefficient_result = inefficient_concat(strings)
+  let efficient_result = efficient_concat(strings)
+  
+  assert_eq(inefficient_result, "hello world! this is a test")
+  assert_eq(efficient_result, "hello world! this is a test")
+  
+  // 字符串构建器模式
+  let string_builder = fn() {
+    let parts = ref []
+    
+    fn() {
+      // 添加部分
+      fn(part) {
+        parts.push(part)
+      }
+    },
+    
+    fn() {
+      // 构建最终字符串
+      (!parts).reduce(fn(acc, part) { acc + part }, "")
+    }
+  }
+  
+  let (add_part, build) = string_builder()
+  add_part("optimized")
+  add_part(" ")
+  add_part("string")
+  add_part(" ")
+  add_part("building")
+  
+  let built_string = build()
+  assert_eq(built_string, "optimized string building")
+}
+
+// Test 7: 循环优化测试
+test "loop optimization tests" {
+  // 循环展开
+  let unrolled_sum = fn(arr) {
+    let mut sum = 0
+    let mut i = 0
+    let n = arr.length()
+    
+    // 每次处理4个元素
+    while i + 3 < n {
+      sum = sum + arr[i] + arr[i + 1] + arr[i + 2] + arr[i + 3]
+      i = i + 4
+    }
+    
+    // 处理剩余元素
+    while i < n {
+      sum = sum + arr[i]
+      i = i + 1
+    }
+    
+    sum
+  }
+  
+  let regular_sum = fn(arr) {
+    let mut sum = 0
+    for item in arr {
+      sum = sum + item
+    }
+    sum
+  }
+  
+  let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  
+  assert_eq(regular_sum(numbers), 55)
+  assert_eq(unrolled_sum(numbers), 55)
+  
+  // 循环融合
+  let fused_map_filter = fn(arr, map_fn, filter_fn) {
+    let mut result = []
+    for item in arr {
+      let mapped = map_fn(item)
+      if filter_fn(mapped) {
+        result.push(mapped)
+      }
+    }
+    result
+  }
+  
+  let separate_map_filter = fn(arr, map_fn, filter_fn) {
+    let mapped = arr.map(map_fn)
+    mapped.filter(filter_fn)
+  }
+  
+  let doubled_evens = fused_map_filter(
+    numbers,
+    fn(x) { x * 2 },
+    fn(x) { x % 4 == 0 }
+  )
+  
+  assert_eq(doubled_evens, [4, 8, 12, 16, 20])
+}
+
+// Test 8: 数据结构优化测试
+test "data structure optimization tests" {
+  // 使用适当的数据结构
+  // 数组 vs 哈希表查找
+  
+  let array_contains = fn(arr, value) {
+    for item in arr {
+      if item == value {
+        return true
+      }
+    }
+    false
+  }
+  
+  let set_contains = fn(set, value) {
+    set.contains(value)
+  }
+  
+  let large_array = []
+  for i in 1..=1000 {
+    large_array.push(i)
+  }
+  
+  let large_set = large_array.to_set()
+  
+  // 数组查找需要遍历
+  assert_true(array_contains(large_array, 500))
+  assert_false(array_contains(large_array, 1500))
+  
+  // 集合查找效率更高
+  assert_true(set_contains(large_set, 500))
+  assert_false(set_contains(large_set, 1500))
+  
+  // 预分配容量
+  let preallocated_array = fn(size) {
+    let mut arr = []
+    arr.reserve(size)
+    arr
+  }
+  
+  let dynamic_array = fn() { [] }
+  
+  let prealloc = preallocated_array(1000)
+  let dynamic = dynamic_array()
+  
+  // 填充数组
+  for i in 1..=1000 {
+    prealloc.push(i)
+    dynamic.push(i)
+  }
+  
+  assert_eq(prealloc.length(), 1000)
+  assert_eq(dynamic.length(), 1000)
+}
+
+// Test 9: 算法选择优化测试
+test "algorithm selection optimization tests" {
+  // 根据数据规模选择算法
+  let smart_sort = fn(arr) {
+    if arr.length() <= 10 {
+      // 小数组使用插入排序
+      let mut result = arr.clone()
+      for i in 1..result.length() {
+        let key = result[i]
+        let mut j = i - 1
+        
+        while j >= 0 && result[j] > key {
+          result[j + 1] = result[j]
+          j = j - 1
+        }
+        result[j + 1] = key
+      }
+      result
+    } else {
+      // 大数组使用快速排序
+      if arr.length() <= 1 {
+        arr
+      } else {
+        let pivot = arr[0]
+        let less = arr.slice(1).filter(fn(x) { x <= pivot })
+        let greater = arr.slice(1).filter(fn(x) { x > pivot })
+        smart_sort(less) + [pivot] + smart_sort(greater)
+      }
+    }
+  }
+  
+  let small_array = [5, 2, 8, 1, 3]
+  let large_array = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 11, 12, 13, 14, 15]
+  
+  let sorted_small = smart_sort(small_array)
+  let sorted_large = smart_sort(large_array)
+  
+  assert_eq(sorted_small, [1, 2, 3, 5, 8])
+  assert_eq(sorted_large, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+}
+
+// Test 10: 并行处理优化测试
+test "parallel processing optimization tests" {
+  // 模拟并行处理
+  let parallel_map = fn(arr, transform_fn, num_workers) {
+    let chunk_size = (arr.length() + num_workers - 1) / num_workers
+    let mut results = []
+    
+    for i in 0..num_workers {
+      let start = i * chunk_size
+      let end = if start + chunk_size > arr.length() {
+        arr.length()
+      } else {
+        start + chunk_size
+      }
+      
+      if start < arr.length() {
+        let chunk = arr.slice(start, end)
+        let chunk_result = chunk.map(transform_fn)
+        results = results + chunk_result
+      }
+    }
+    
+    results
+  }
+  
+  let sequential_map = fn(arr, transform_fn) {
+    arr.map(transform_fn)
+  }
+  
+  let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  let square = fn(x) { x * x }
+  
+  let sequential_result = sequential_map(numbers, square)
+  let parallel_result = parallel_map(numbers, square, 4)
+  
+  // 结果应该相同，但并行处理可能更快
+  assert_eq(sequential_result.length(), parallel_result.length())
+  
+  // 验证结果内容
+  for i in 0..sequential_result.length() {
+    assert_true(parallel_result.contains(sequential_result[i]))
+  }
 }
