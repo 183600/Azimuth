@@ -1,983 +1,1424 @@
-// Azimuth Comprehensive Configuration Management Tests
-// This file contains comprehensive test cases for configuration management
+// Azimuth 配置管理综合测试用例
+// 专注于遥测系统的配置管理功能，包括配置加载、验证、热更新、环境变量处理等
 
-// Test 1: Basic Configuration Loading and Access
-test "basic configuration loading and access" {
-  let config_manager = ConfigurationManager::new()
+// 测试1: 配置文件加载和解析
+test "配置文件加载和解析测试" {
+  // 创建配置管理器
+  let config_manager = ConfigManager::new()
   
-  // Load configuration from different sources
-  config_manager.load_from_file("config.json")
-  config_manager.load_from_environment()
-  config_manager.load_from_command_line()
-  
-  // Test string configuration values
-  let app_name = config_manager.get_string("app.name")
-  match app_name {
-    Some(name) => assert_eq(name, "Azimuth")
-    None => assert_true(false)
-  }
-  
-  let app_version = config_manager.get_string("app.version")
-  match app_version {
-    Some(version) => assert_eq(version, "1.0.0")
-    None => assert_true(false)
-  }
-  
-  // Test integer configuration values
-  let server_port = config_manager.get_int("server.port")
-  match server_port {
-    Some(port) => assert_eq(port, 8080)
-    None => assert_true(false)
-  }
-  
-  let max_connections = config_manager.get_int("server.max_connections")
-  match max_connections {
-    Some(connections) => assert_eq(connections, 100)
-    None => assert_true(false)
-  }
-  
-  // Test boolean configuration values
-  let debug_mode = config_manager.get_bool("debug.enabled")
-  match debug_mode {
-    Some(debug) => assert_true(debug)
-    None => assert_true(false)
-  }
-  
-  let production_mode = config_manager.get_bool("app.production")
-  match production_mode {
-    Some(production) => assert_false(production)
-    None => assert_true(false)
-  }
-  
-  // Test float configuration values
-  let timeout = config_manager.get_float("server.timeout")
-  match timeout {
-    Some(t) => assert_eq(t, 30.5)
-    None => assert_true(false)
-  }
-  
-  // Test array configuration values
-  let allowed_hosts = config_manager.get_string_array("security.allowed_hosts")
-  match allowed_hosts {
-    Some(hosts) => {
-      assert_eq(hosts.length(), 3)
-      assert_eq(hosts[0], "localhost")
-      assert_eq(hosts[1], "127.0.0.1")
-      assert_eq(hosts[2], "::1")
+  // 测试JSON配置加载
+  let json_config_test = fn() {
+    let json_config = {
+      "telemetry": {
+        "enabled": true,
+        "sampling_rate": 0.1,
+        "export_interval": 5000,
+        "max_batch_size": 100
+      },
+      "tracing": {
+        "service_name": "test-service",
+        "service_version": "1.0.0",
+        "exporter": {
+          "type": "jaeger",
+          "endpoint": "http://localhost:14268/api/traces"
+        }
+      },
+      "metrics": {
+        "enabled": true,
+        "port": 9090,
+        "path": "/metrics"
+      }
     }
-    None => assert_true(false)
-  }
-}
-
-// Test 2: Configuration Hierarchy and Override
-test "configuration hierarchy and override" {
-  let config_manager = ConfigurationManager::new()
-  
-  // Set up configuration hierarchy: defaults < file < environment < command line
-  config_manager.set_default("database.host", "localhost")
-  config_manager.set_default("database.port", 5432)
-  config_manager.set_default("database.name", "azimuth_db")
-  
-  // Load from file (overrides defaults)
-  config_manager.load_from_file("database_config.json")
-  
-  // Override with environment variables
-  config_manager.set_environment("DATABASE_HOST", "db.example.com")
-  config_manager.set_environment("DATABASE_PORT", "5433")
-  
-  // Override with command line arguments
-  config_manager.set_command_line("--database-name", "production_db")
-  
-  // Verify hierarchy
-  let db_host = config_manager.get_string("database.host")
-  match db_host {
-    Some(host) => assert_eq(host, "db.example.com")  // From environment
-    None => assert_true(false)
-  }
-  
-  let db_port = config_manager.get_int("database.port")
-  match db_port {
-    Some(port) => assert_eq(port, 5433)  // From environment
-    None => assert_true(false)
-  }
-  
-  let db_name = config_manager.get_string("database.name")
-  match db_name {
-    Some(name) => assert_eq(name, "production_db")  // From command line
-    None => assert_true(false)
-  }
-  
-  // Test nested configuration access
-  let nested_value = config_manager.get_string("database.connection.pool.size")
-  match nested_value {
-    Some(value) => assert_eq(value, "10")
-    None => assert_true(false)
-  }
-}
-
-// Test 3: Configuration Validation
-test "configuration validation" {
-  let config_manager = ConfigurationManager::new()
-  
-  // Set up validation rules
-  config_manager.add_validation_rule("server.port", ValidationRule::int_range(1, 65535))
-  config_manager.add_validation_rule("database.host", ValidationRule::non_empty_string())
-  config_manager.add_validation_rule("app.name", ValidationRule::regex_match("^[a-zA-Z][a-zA-Z0-9_]*$"))
-  config_manager.add_validation_rule("security.ssl.enabled", ValidationRule::boolean())
-  config_manager.add_validation_rule("cache.ttl", ValidationRule::float_range(0.0, 3600.0))
-  
-  // Load valid configuration
-  config_manager.set_value("server.port", 8080)
-  config_manager.set_value("database.host", "localhost")
-  config_manager.set_value("app.name", "Azimuth")
-  config_manager.set_value("security.ssl.enabled", true)
-  config_manager.set_value("cache.ttl", 300.5)
-  
-  // Validate configuration
-  let validation_result = config_manager.validate()
-  assert_true(validation_result.is_valid)
-  assert_eq(validation_result.errors.length(), 0)
-  
-  // Test invalid configuration
-  config_manager.set_value("server.port", 70000)  // Invalid port
-  config_manager.set_value("database.host", "")   // Empty host
-  config_manager.set_value("app.name", "123Invalid")  // Invalid name
-  config_manager.set_value("security.ssl.enabled", "not_a_boolean")  // Invalid boolean
-  config_manager.set_value("cache.ttl", -10.0)    // Invalid TTL
-  
-  // Validate invalid configuration
-  let invalid_validation_result = config_manager.validate()
-  assert_false(invalid_validation_result.is_valid)
-  assert_eq(invalid_validation_result.errors.length(), 5)
-  
-  // Verify specific error messages
-  assert_true(invalid_validation_result.errors[0].contains("server.port"))
-  assert_true(invalid_validation_result.errors[1].contains("database.host"))
-  assert_true(invalid_validation_result.errors[2].contains("app.name"))
-  assert_true(invalid_validation_result.errors[3].contains("security.ssl.enabled"))
-  assert_true(invalid_validation_result.errors[4].contains("cache.ttl"))
-}
-
-// Test 4: Dynamic Configuration Updates
-test "dynamic configuration updates" {
-  let config_manager = ConfigurationManager::new()
-  
-  // Set initial configuration
-  config_manager.set_value("feature.flags.new_ui", true)
-  config_manager.set_value("feature.flags.experimental_api", false)
-  config_manager.set_value("performance.max_workers", 4)
-  config_manager.set_value("logging.level", "INFO")
-  
-  // Register configuration change listeners
-  let ui_flag_changed = AtomicBoolean(false)
-  let api_flag_changed = AtomicBoolean(false)
-  let workers_changed = AtomicBoolean(false)
-  let log_level_changed = AtomicBoolean(false)
-  
-  config_manager.add_change_listener("feature.flags.new_ui", fn(old_value, new_value) {
-    if old_value != new_value {
-      ui_flag_changed.set(true)
-    }
-  })
-  
-  config_manager.add_change_listener("feature.flags.experimental_api", fn(old_value, new_value) {
-    if old_value != new_value {
-      api_flag_changed.set(true)
-    }
-  })
-  
-  config_manager.add_change_listener("performance.max_workers", fn(old_value, new_value) {
-    if old_value != new_value {
-      workers_changed.set(true)
-    }
-  })
-  
-  config_manager.add_change_listener("logging.level", fn(old_value, new_value) {
-    if old_value != new_value {
-      log_level_changed.set(true)
-    }
-  })
-  
-  // Update configuration values
-  config_manager.update_value("feature.flags.new_ui", false)
-  config_manager.update_value("feature.flags.experimental_api", true)
-  config_manager.update_value("performance.max_workers", 8)
-  config_manager.update_value("logging.level", "DEBUG")
-  
-  // Verify change listeners were triggered
-  assert_true(ui_flag_changed.get())
-  assert_true(api_flag_changed.get())
-  assert_true(workers_changed.get())
-  assert_true(log_level_changed.get())
-  
-  // Verify updated values
-  let new_ui_flag = config_manager.get_bool("feature.flags.new_ui")
-  match new_ui_flag {
-    Some(flag) => assert_false(flag)
-    None => assert_true(false)
-  }
-  
-  let api_flag = config_manager.get_bool("feature.flags.experimental_api")
-  match api_flag {
-    Some(flag) => assert_true(flag)
-    None => assert_true(false)
-  }
-  
-  let max_workers = config_manager.get_int("performance.max_workers")
-  match max_workers {
-    Some(workers) => assert_eq(workers, 8)
-    None => assert_true(false)
-  }
-  
-  let log_level = config_manager.get_string("logging.level")
-  match log_level {
-    Some(level) => assert_eq(level, "DEBUG")
-    None => assert_true(false)
-  }
-}
-
-// Test 5: Configuration Profiles and Environments
-test "configuration profiles and environments" {
-  let config_manager = ConfigurationManager::new()
-  
-  // Load base configuration
-  config_manager.load_from_file("base_config.json")
-  
-  // Load development profile
-  config_manager.load_profile("development")
-  
-  // Verify development-specific values
-  let dev_db_host = config_manager.get_string("database.host")
-  match dev_db_host {
-    Some(host) => assert_eq(host, "localhost")
-    None => assert_true(false)
-  }
-  
-  let dev_log_level = config_manager.get_string("logging.level")
-  match dev_log_level {
-    Some(level) => assert_eq(level, "DEBUG")
-    None => assert_true(false)
-  }
-  
-  let dev_debug = config_manager.get_bool("debug.enabled")
-  match dev_debug {
-    Some(debug) => assert_true(debug)
-    None => assert_true(false)
-  }
-  
-  // Switch to production profile
-  config_manager.load_profile("production")
-  
-  // Verify production-specific values
-  let prod_db_host = config_manager.get_string("database.host")
-  match prod_db_host {
-    Some(host) => assert_eq(host, "prod-db.example.com")
-    None => assert_true(false)
-  }
-  
-  let prod_log_level = config_manager.get_string("logging.level")
-  match prod_log_level {
-    Some(level) => assert_eq(level, "ERROR")
-    None => assert_true(false)
-  }
-  
-  let prod_debug = config_manager.get_bool("debug.enabled")
-  match prod_debug {
-    Some(debug) => assert_false(debug)
-    None => assert_true(false)
-  }
-  
-  // Test profile inheritance
-  let app_name = config_manager.get_string("app.name")
-  match app_name {
-    Some(name) => assert_eq(name, "Azimuth")  // Should be inherited from base
-    None => assert_true(false)
-  }
-  
-  // Test profile-specific overrides
-  let prod_ssl_enabled = config_manager.get_bool("security.ssl.enabled")
-  match prod_ssl_enabled {
-    Some(enabled) => assert_true(enabled)
-    None => assert_true(false)
-  }
-}
-
-// Test 6: Configuration Encryption and Security
-test "configuration encryption and security" {
-  let config_manager = ConfigurationManager::new()
-  
-  // Set up encryption
-  let encryption_key = "my_secret_key_12345"
-  config_manager.set_encryption_key(encryption_key)
-  
-  // Store sensitive configuration values
-  config_manager.set_encrypted_value("database.password", "secret_password")
-  config_manager.set_encrypted_value("api.secret_key", "api_key_12345")
-  config_manager.set_encrypted_value("jwt.secret", "jwt_secret_key")
-  
-  // Verify encrypted values are stored (not in plain text)
-  let raw_db_password = config_manager.get_raw_value("database.password")
-  assert_ne(raw_db_password, "secret_password")
-  assert_true(raw_db_password.contains("encrypted:"))
-  
-  // Verify decrypted values can be retrieved
-  let db_password = config_manager.get_decrypted_string("database.password")
-  match db_password {
-    Some(password) => assert_eq(password, "secret_password")
-    None => assert_true(false)
-  }
-  
-  let api_key = config_manager.get_decrypted_string("api.secret_key")
-  match api_key {
-    Some(key) => assert_eq(key, "api_key_12345")
-    None => assert_true(false)
-  }
-  
-  let jwt_secret = config_manager.get_decrypted_string("jwt.secret")
-  match jwt_secret {
-    Some(secret) => assert_eq(secret, "jwt_secret_key")
-    None => assert_true(false)
-  }
-  
-  // Test configuration access control
-  config_manager.set_access_control("admin.credentials", ["admin", "superuser"])
-  config_manager.set_access_control("database.password", ["db_admin", "admin"])
-  config_manager.set_access_control("api.secret_key", ["api_admin", "admin"])
-  
-  // Test access with different user roles
-  let admin_access = config_manager.check_access("admin.credentials", "admin")
-  assert_true(admin_access)
-  
-  let user_access = config_manager.check_access("admin.credentials", "user")
-  assert_false(user_access)
-  
-  let db_admin_access = config_manager.check_access("database.password", "db_admin")
-  assert_true(db_admin_access)
-  
-  // Test secure configuration export
-  let secure_export = config_manager.export_secure()
-  assert_true(secure_export.contains("database.password=encrypted:"))
-  assert_true(secure_export.contains("api.secret_key=encrypted:"))
-  assert_false(secure_export.contains("secret_password"))
-  assert_false(secure_export.contains("api_key_12345"))
-}
-
-// Test 7: Configuration Backup and Restore
-test "configuration backup and restore" {
-  let config_manager = ConfigurationManager::new()
-  
-  // Set up initial configuration
-  config_manager.set_value("app.name", "Azimuth")
-  config_manager.set_value("app.version", "1.0.0")
-  config_manager.set_value("server.port", 8080)
-  config_manager.set_value("database.host", "localhost")
-  config_manager.set_value("database.port", 5432)
-  config_manager.set_value("debug.enabled", true)
-  
-  // Create backup
-  let backup_id = config_manager.create_backup()
-  assert_true(backup_id.length() > 0)
-  
-  // Modify configuration
-  config_manager.set_value("app.version", "2.0.0")
-  config_manager.set_value("server.port", 9090)
-  config_manager.set_value("database.host", "remote.db.example.com")
-  config_manager.set_value("debug.enabled", false)
-  
-  // Verify modified values
-  let modified_version = config_manager.get_string("app.version")
-  match modified_version {
-    Some(version) => assert_eq(version, "2.0.0")
-    None => assert_true(false)
-  }
-  
-  // Restore from backup
-  config_manager.restore_from_backup(backup_id)
-  
-  // Verify restored values
-  let restored_version = config_manager.get_string("app.version")
-  match restored_version {
-    Some(version) => assert_eq(version, "1.0.0")
-    None => assert_true(false)
-  }
-  
-  let restored_port = config_manager.get_int("server.port")
-  match restored_port {
-    Some(port) => assert_eq(port, 8080)
-    None => assert_true(false)
-  }
-  
-  let restored_host = config_manager.get_string("database.host")
-  match restored_host {
-    Some(host) => assert_eq(host, "localhost")
-    None => assert_true(false)
-  }
-  
-  let restored_debug = config_manager.get_bool("debug.enabled")
-  match restored_debug {
-    Some(debug) => assert_true(debug)
-    None => assert_true(false)
-  }
-  
-  // Test backup listing and deletion
-  let backups = config_manager.list_backups()
-  assert_true(backups.length() >= 1)
-  assert_true(backups.contains(backup_id))
-  
-  // Delete backup
-  config_manager.delete_backup(backup_id)
-  
-  // Verify backup is deleted
-  let backups_after_delete = config_manager.list_backups()
-  assert_false(backups_after_delete.contains(backup_id))
-}
-
-// Test 8: Configuration Templates and Inheritance
-test "configuration templates and inheritance" {
-  let config_manager = ConfigurationManager::new()
-  
-  // Create base template
-  let base_template = ConfigurationTemplate::new("base")
-  base_template.set_value("app.name", "Azimuth")
-  base_template.set_value("app.version", "1.0.0")
-  base_template.set_value("server.port", 8080)
-  base_template.set_value("server.host", "0.0.0.0")
-  base_template.set_value("logging.level", "INFO")
-  
-  // Create service template that inherits from base
-  let service_template = ConfigurationTemplate::new("service")
-  service_template.inherit_from(base_template)
-  service_template.set_value("service.name", "telemetry_service")
-  service_template.set_value("service.version", "1.0.0")
-  service_template.set_value("service.port", 8081)
-  service_template.override_value("logging.level", "DEBUG")  // Override base value
-  
-  // Create environment-specific template
-  let prod_template = ConfigurationTemplate::new("production")
-  prod_template.inherit_from(service_template)
-  prod_template.set_value("environment", "production")
-  prod_template.override_value("server.host", "prod.example.com")
-  prod_template.override_value("logging.level", "ERROR")
-  prod_template.set_value("database.host", "prod.db.example.com")
-  
-  // Apply template to configuration manager
-  config_manager.apply_template(prod_template)
-  
-  // Verify inherited values
-  let app_name = config_manager.get_string("app.name")
-  match app_name {
-    Some(name) => assert_eq(name, "Azimuth")  // From base template
-    None => assert_true(false)
-  }
-  
-  let service_name = config_manager.get_string("service.name")
-  match service_name {
-    Some(name) => assert_eq(name, "telemetry_service")  // From service template
-    None => assert_true(false)
-  }
-  
-  // Verify overridden values
-  let server_host = config_manager.get_string("server.host")
-  match server_host {
-    Some(host) => assert_eq(host, "prod.example.com")  // Overridden in prod template
-    None => assert_true(false)
-  }
-  
-  let log_level = config_manager.get_string("logging.level")
-  match log_level {
-    Some(level) => assert_eq(level, "ERROR")  // Overridden in prod template
-    None => assert_true(false)
-  }
-  
-  // Verify environment-specific values
-  let environment = config_manager.get_string("environment")
-  match environment {
-    Some(env) => assert_eq(env, "production")  // Only in prod template
-    None => assert_true(false)
-  }
-  
-  let db_host = config_manager.get_string("database.host")
-  match db_host {
-    Some(host) => assert_eq(host, "prod.db.example.com")  // Only in prod template
-    None => assert_true(false)
-  }
-  
-  // Test template merging
-  let override_template = ConfigurationTemplate::new("override")
-  override_template.set_value("app.name", "CustomAzimuth")  // Override
-  override_template.set_value("new.feature", "enabled")    // Add new
-  override_template.set_value("service.port", 9090)        // Override
-  
-  config_manager.merge_template(override_template)
-  
-  // Verify merged values
-  let merged_app_name = config_manager.get_string("app.name")
-  match merged_app_name {
-    Some(name) => assert_eq(name, "CustomAzimuth")  // Overridden
-    None => assert_true(false)
-  }
-  
-  let new_feature = config_manager.get_string("new.feature")
-  match new_feature {
-    Some(feature) => assert_eq(feature, "enabled")  // New value added
-    None => assert_true(false)
-  }
-  
-  let merged_service_port = config_manager.get_int("service.port")
-  match merged_service_port {
-    Some(port) => assert_eq(port, 9090)  // Overridden
-    None => assert_true(false)
-  }
-}
-
-// Helper classes and functions for configuration management testing
-class ConfigurationManager {
-  config_values : Map[String, Any]
-  validation_rules : Map[String, ValidationRule]
-  change_listeners : Map[String, (Any, Any) -> Unit]
-  encrypted_values : Map[String, String]
-  access_controls : Map[String, Array[String]]
-  backups : Map[String, Map[String, Any]]
-  encryption_key : String
-  
-  new() {
-    config_values = {}
-    validation_rules = {}
-    change_listeners = {}
-    encrypted_values = {}
-    access_controls = {}
-    backups = {}
-    encryption_key = ""
     
-    // Set up default values for testing
-    config_values = config_values.set("app.name", "Azimuth")
-    config_values = config_values.set("app.version", "1.0.0")
-    config_values = config_values.set("server.port", 8080)
-    config_values = config_values.set("server.max_connections", 100)
-    config_values = config_values.set("server.timeout", 30.5)
-    config_values = config_values.set("debug.enabled", true)
-    config_values = config_values.set("app.production", false)
-    config_values = config_values.set("security.allowed_hosts", ["localhost", "127.0.0.1", "::1"])
-  }
-  
-  load_from_file(filename : String) -> Unit {
-    // Simplified implementation for testing
-    if filename == "config.json" {
-      config_values = config_values.set("app.name", "Azimuth")
-      config_values = config_values.set("app.version", "1.0.0")
-    } else if filename == "database_config.json" {
-      config_values = config_values.set("database.host", "db.example.com")
-      config_values = config_values.set("database.port", 5433)
-      config_values = config_values.set("database.connection.pool.size", "10")
-    } else if filename == "base_config.json" {
-      config_values = config_values.set("app.name", "Azimuth")
-      config_values = config_values.set("security.ssl.enabled", false)
-    }
-  }
-  
-  load_from_environment() -> Unit {
-    // Simplified implementation for testing
-    config_values = config_values.set("database.host", "db.example.com")
-    config_values = config_values.set("database.port", 5433)
-  }
-  
-  load_from_command_line() -> Unit {
-    // Simplified implementation for testing
-    config_values = config_values.set("database.name", "production_db")
-  }
-  
-  get_string(key : String) -> Option[String] {
-    match config_values.get(key) {
-      Some(value) => {
-        match value {
-          String(s) => Some(s)
-          _ => None
-        }
+    let config_result = config_manager.load_from_json(json_config.to_string())
+    
+    // 验证配置加载成功
+    assert_true(config_result.is_ok())
+    
+    match config_result {
+      Ok(config) => {
+        // 验证遥测配置
+        assert_true(config.telemetry.enabled)
+        assert_eq(config.telemetry.sampling_rate, 0.1)
+        assert_eq(config.telemetry.export_interval, 5000)
+        assert_eq(config.telemetry.max_batch_size, 100)
+        
+        // 验证追踪配置
+        assert_eq(config.tracing.service_name, "test-service")
+        assert_eq(config.tracing.service_version, "1.0.0")
+        assert_eq(config.tracing.exporter.type, "jaeger")
+        assert_eq(config.tracing.exporter.endpoint, "http://localhost:14268/api/traces")
+        
+        // 验证指标配置
+        assert_true(config.metrics.enabled)
+        assert_eq(config.metrics.port, 9090)
+        assert_eq(config.metrics.path, "/metrics")
       }
-      None => None
+      Err(_) => assert_true(false)
     }
   }
   
-  get_int(key : String) -> Option[Int] {
-    match config_values.get(key) {
-      Some(value) => {
-        match value {
-          Int(i) => Some(i)
-          _ => None
-        }
+  json_config_test()
+  
+  // 测试YAML配置加载
+  let yaml_config_test = fn() {
+    let yaml_config = "
+telemetry:
+  enabled: true
+  sampling_rate: 0.2
+  export_interval: 10000
+  max_batch_size: 200
+tracing:
+  service_name: yaml-test-service
+  service_version: 2.0.0
+  exporter:
+    type: zipkin
+    endpoint: http://localhost:9411/api/v2/spans
+metrics:
+  enabled: false
+  port: 8080
+  path: /custom-metrics
+"
+    
+    let config_result = config_manager.load_from_yaml(yaml_config)
+    
+    // 验证配置加载成功
+    assert_true(config_result.is_ok())
+    
+    match config_result {
+      Ok(config) => {
+        // 验证YAML特定配置
+        assert_eq(config.telemetry.sampling_rate, 0.2)
+        assert_eq(config.telemetry.export_interval, 10000)
+        assert_eq(config.telemetry.max_batch_size, 200)
+        assert_eq(config.tracing.service_name, "yaml-test-service")
+        assert_eq(config.tracing.service_version, "2.0.0")
+        assert_eq(config.tracing.exporter.type, "zipkin")
+        assert_eq(config.tracing.exporter.endpoint, "http://localhost:9411/api/v2/spans")
+        assert_false(config.metrics.enabled)
+        assert_eq(config.metrics.port, 8080)
+        assert_eq(config.metrics.path, "/custom-metrics")
       }
-      None => None
+      Err(_) => assert_true(false)
     }
   }
   
-  get_bool(key : String) -> Option[Bool] {
-    match config_values.get(key) {
-      Some(value) => {
-        match value {
-          Bool(b) => Some(b)
-          _ => None
-        }
+  yaml_config_test()
+  
+  // 测试TOML配置加载
+  let toml_config_test = fn() {
+    let toml_config = "
+[telemetry]
+enabled = true
+sampling_rate = 0.15
+export_interval = 7500
+max_batch_size = 150
+
+[tracing]
+service_name = \"toml-test-service\"
+service_version = \"1.5.0\"
+
+[tracing.exporter]
+type = \"otlp\"
+endpoint = \"http://localhost:4317\"
+
+[metrics]
+enabled = true
+port = 9091
+path = \"/toml-metrics\"
+"
+    
+    let config_result = config_manager.load_from_toml(toml_config)
+    
+    // 验证配置加载成功
+    assert_true(config_result.is_ok())
+    
+    match config_result {
+      Ok(config) => {
+        // 验证TOML特定配置
+        assert_eq(config.telemetry.sampling_rate, 0.15)
+        assert_eq(config.telemetry.export_interval, 7500)
+        assert_eq(config.telemetry.max_batch_size, 150)
+        assert_eq(config.tracing.service_name, "toml-test-service")
+        assert_eq(config.tracing.service_version, "1.5.0")
+        assert_eq(config.tracing.exporter.type, "otlp")
+        assert_eq(config.tracing.exporter.endpoint, "http://localhost:4317")
+        assert_eq(config.metrics.port, 9091)
+        assert_eq(config.metrics.path, "/toml-metrics")
       }
-      None => None
+      Err(_) => assert_true(false)
     }
   }
   
-  get_float(key : String) -> Option[Float] {
-    match config_values.get(key) {
-      Some(value) => {
-        match value {
-          Float(f) => Some(f)
-          _ => None
-        }
+  toml_config_test()
+  
+  // 测试配置文件不存在的情况
+  let missing_file_test = fn() {
+    let config_result = config_manager.load_from_file("/nonexistent/config.json")
+    
+    // 应该返回错误
+    assert_true(config_result.is_err())
+    
+    match config_result {
+      Err(error) => assert_eq(error.error_type, "file_not_found"),
+      Ok(_) => assert_true(false)
+    }
+  }
+  
+  missing_file_test()
+  
+  // 测试无效配置格式
+  let invalid_format_test = fn() {
+    let invalid_json = "{ invalid json format }"
+    let config_result = config_manager.load_from_json(invalid_json)
+    
+    // 应该返回解析错误
+    assert_true(config_result.is_err())
+    
+    match config_result {
+      Err(error) => assert_eq(error.error_type, "parse_error"),
+      Ok(_) => assert_true(false)
+    }
+  }
+  
+  invalid_format_test()
+}
+
+// 测试2: 配置验证和默认值
+test "配置验证和默认值测试" {
+  // 创建配置验证器
+  let config_validator = ConfigValidator::new()
+  
+  // 测试有效配置验证
+  let valid_config_test = fn() {
+    let valid_config = {
+      "telemetry": {
+        "enabled": true,
+        "sampling_rate": 0.5,
+        "export_interval": 5000,
+        "max_batch_size": 100
+      },
+      "tracing": {
+        "service_name": "valid-service",
+        "service_version": "1.0.0"
+      },
+      "metrics": {
+        "enabled": true,
+        "port": 9090
       }
-      None => None
+    }
+    
+    let validation_result = config_validator.validate(valid_config)
+    
+    // 验证应该成功
+    assert_true(validation_result.is_valid)
+    assert_eq(validation_result.errors.length(), 0)
+  }
+  
+  valid_config_test()
+  
+  // 测试无效配置验证
+  let invalid_config_test = fn() {
+    let invalid_config = {
+      "telemetry": {
+        "enabled": true,
+        "sampling_rate": 1.5,  // 超出范围 [0.0, 1.0]
+        "export_interval": -1000,  // 负数
+        "max_batch_size": 0  // 不能为0
+      },
+      "tracing": {
+        "service_name": "",  // 空字符串
+        "service_version": "1.0.0"
+      },
+      "metrics": {
+        "enabled": true,
+        "port": 99999  // 超出有效端口范围
+      }
+    }
+    
+    let validation_result = config_validator.validate(invalid_config)
+    
+    // 验证应该失败
+    assert_false(validation_result.is_valid)
+    assert_true(validation_result.errors.length() > 0)
+    
+    // 验证具体错误
+    let error_messages = validation_result.errors.map(fn(e) { e.message })
+    assert_true(error_messages.any(fn(m) { m.contains("sampling_rate") }))
+    assert_true(error_messages.any(fn(m) { m.contains("export_interval") }))
+    assert_true(error_messages.any(fn(m) { m.contains("max_batch_size") }))
+    assert_true(error_messages.any(fn(m) { m.contains("service_name") }))
+    assert_true(error_messages.any(fn(m) { m.contains("port") }))
+  }
+  
+  invalid_config_test()
+  
+  // 测试默认值应用
+  let defaults_test = fn() {
+    let partial_config = {
+      "telemetry": {
+        "enabled": true
+        // 缺少其他字段
+      },
+      "tracing": {
+        "service_name": "partial-service"
+        // 缺少service_version
+      }
+      // 缺少metrics配置
+    }
+    
+    let config_with_defaults = config_validator.apply_defaults(partial_config)
+    
+    // 验证默认值被正确应用
+    assert_eq(config_with_defaults.telemetry.enabled, true)
+    assert_eq(config_with_defaults.telemetry.sampling_rate, 0.1)  // 默认值
+    assert_eq(config_with_defaults.telemetry.export_interval, 60000)  // 默认值
+    assert_eq(config_with_defaults.telemetry.max_batch_size, 512)  // 默认值
+    
+    assert_eq(config_with_defaults.tracing.service_name, "partial-service")
+    assert_eq(config_with_defaults.tracing.service_version, "1.0.0")  // 默认值
+    
+    assert_true(config_with_defaults.metrics.enabled)  // 默认值
+    assert_eq(config_with_defaults.metrics.port, 9090)  // 默认值
+    assert_eq(config_with_defaults.metrics.path, "/metrics")  // 默认值
+  }
+  
+  defaults_test()
+  
+  // 测试配置类型验证
+  let type_validation_test = fn() {
+    let wrong_type_config = {
+      "telemetry": {
+        "enabled": "true",  // 应该是布尔值
+        "sampling_rate": "0.5",  // 应该是数字
+        "export_interval": 5000,
+        "max_batch_size": 100
+      },
+      "tracing": {
+        "service_name": 123,  // 应该是字符串
+        "service_version": "1.0.0"
+      }
+    }
+    
+    let validation_result = config_validator.validate(wrong_type_config)
+    
+    // 验证应该失败
+    assert_false(validation_result.is_valid)
+    
+    // 验证类型错误
+    let type_errors = validation_result.errors.filter(fn(e) { e.error_type == "type_mismatch" })
+    assert_true(type_errors.length() >= 2)
+  }
+  
+  type_validation_test()
+}
+
+// 测试3: 环境变量配置
+test "环境变量配置测试" {
+  // 创建环境配置管理器
+  let env_config_manager = EnvConfigManager::new()
+  
+  // 设置测试环境变量
+  env_config_manager.set_env_var("AZIMUTH_TELEMETRY_ENABLED", "true")
+  env_config_manager.set_env_var("AZIMUTH_TELEMETRY_SAMPLING_RATE", "0.25")
+  env_config_manager.set_env_var("AZIMUTH_TELEMETRY_EXPORT_INTERVAL", "7500")
+  env_config_manager.set_env_var("AZIMUTH_TRACING_SERVICE_NAME", "env-test-service")
+  env_config_manager.set_env_var("AZIMUTH_TRACING_SERVICE_VERSION", "2.1.0")
+  env_config_manager.set_env_var("AZIMUTH_METRICS_ENABLED", "false")
+  env_config_manager.set_env_var("AZIMUTH_METRICS_PORT", "9091")
+  
+  // 测试环境变量加载
+  let env_loading_test = fn() {
+    let config_result = env_config_manager.load_from_env()
+    
+    // 验证环境变量加载成功
+    assert_true(config_result.is_ok())
+    
+    match config_result {
+      Ok(config) => {
+        // 验证环境变量配置
+        assert_true(config.telemetry.enabled)
+        assert_eq(config.telemetry.sampling_rate, 0.25)
+        assert_eq(config.telemetry.export_interval, 7500)
+        assert_eq(config.tracing.service_name, "env-test-service")
+        assert_eq(config.tracing.service_version, "2.1.0")
+        assert_false(config.metrics.enabled)
+        assert_eq(config.metrics.port, 9091)
+        
+        // 验证未设置的环境变量使用默认值
+        assert_eq(config.telemetry.max_batch_size, 512)  // 默认值
+        assert_eq(config.metrics.path, "/metrics")  // 默认值
+      }
+      Err(_) => assert_true(false)
     }
   }
   
-  get_string_array(key : String) -> Option[Array[String]] {
-    match config_values.get(key) {
-      Some(value) => {
-        match value {
-          Array(arr) => {
-            let string_array = []
-            for i = 0; i < arr.length(); i = i + 1 {
-              match arr[i] {
-                String(s) => string_array = string_array.push(s)
-                _ => return None
-              }
-            }
-            return Some(string_array)
+  env_loading_test()
+  
+  // 测试环境变量优先级
+  let priority_test = fn() {
+    // 创建基础配置
+    let base_config = {
+      "telemetry": {
+        "enabled": false,
+        "sampling_rate": 0.1,
+        "export_interval": 5000,
+        "max_batch_size": 100
+      },
+      "tracing": {
+        "service_name": "base-service",
+        "service_version": "1.0.0"
+      },
+      "metrics": {
+        "enabled": true,
+        "port": 9090,
+        "path": "/metrics"
+      }
+    }
+    
+    // 设置覆盖环境变量
+    env_config_manager.set_env_var("AZIMUTH_TELEMETRY_ENABLED", "true")
+    env_config_manager.set_env_var("AZIMUTH_TELEMETRY_SAMPLING_RATE", "0.3")
+    env_config_manager.set_env_var("AZIMUTH_TRACING_SERVICE_NAME", "env-override-service")
+    env_config_manager.set_env_var("AZIMUTH_METRICS_PORT", "9095")
+    
+    let merged_config = env_config_manager.merge_with_env(base_config)
+    
+    // 验证环境变量覆盖了基础配置
+    assert_true(merged_config.telemetry.enabled)  // 环境变量覆盖
+    assert_eq(merged_config.telemetry.sampling_rate, 0.3)  // 环境变量覆盖
+    assert_eq(merged_config.telemetry.export_interval, 5000)  // 基础配置保持
+    assert_eq(merged_config.telemetry.max_batch_size, 100)  // 基础配置保持
+    
+    assert_eq(merged_config.tracing.service_name, "env-override-service")  // 环境变量覆盖
+    assert_eq(merged_config.tracing.service_version, "1.0.0")  // 基础配置保持
+    
+    assert_true(merged_config.metrics.enabled)  // 基础配置保持
+    assert_eq(merged_config.metrics.port, 9095)  // 环境变量覆盖
+    assert_eq(merged_config.metrics.path, "/metrics")  // 基础配置保持
+  }
+  
+  priority_test()
+  
+  // 测试环境变量类型转换
+  let type_conversion_test = fn() {
+    // 设置各种类型的环境变量
+    env_config_manager.set_env_var("AZIMUTH_TEST_BOOL", "true")
+    env_config_manager.set_env_var("AZIMUTH_TEST_INT", "12345")
+    env_config_manager.set_env_var("AZIMUTH_TEST_FLOAT", "1.23")
+    env_config_manager.set_env_var("AZIMUTH_TEST_STRING", "test-value")
+    
+    // 测试类型转换
+    let bool_value = env_config_manager.get_env_as_bool("AZIMUTH_TEST_BOOL")
+    let int_value = env_config_manager.get_env_as_int("AZIMUTH_TEST_INT")
+    let float_value = env_config_manager.get_env_as_float("AZIMUTH_TEST_FLOAT")
+    let string_value = env_config_manager.get_env_as_string("AZIMUTH_TEST_STRING")
+    
+    // 验证类型转换
+    assert_eq(bool_value, Some(true))
+    assert_eq(int_value, Some(12345))
+    assert_eq(float_value, Some(1.23))
+    assert_eq(string_value, Some("test-value"))
+    
+    // 测试无效类型转换
+    let invalid_bool = env_config_manager.get_env_as_bool("AZIMUTH_TEST_INT")  // 数字转布尔
+    let invalid_int = env_config_manager.get_env_as_int("AZIMUTH_TEST_STRING")  // 字符串转整数
+    
+    // 无效转换应该返回None或默认值
+    assert_eq(invalid_bool, None)
+    assert_eq(invalid_int, None)
+  }
+  
+  type_conversion_test()
+  
+  // 测试环境变量前缀过滤
+  let prefix_filter_test = fn() {
+    // 设置不同前缀的环境变量
+    env_config_manager.set_env_var("AZIMUTH_TELEMETRY_ENABLED", "true")
+    env_config_manager.set_env_var("AZIMUTH_TRACING_SERVICE_NAME", "azimuth-service")
+    env_config_manager.set_env_var("OTHER_CONFIG_VALUE", "other")
+    env_config_manager.set_env_var("AZIMUTH_OTHER_VALUE", "azimuth-other")
+    
+    // 获取特定前缀的环境变量
+    let azimuth_vars = env_config_manager.get_env_vars_with_prefix("AZIMUTH_")
+    
+    // 验证过滤结果
+    assert_eq(azimuth_vars.length(), 3)
+    assert_true(azimuth_vars.contains(("AZIMUTH_TELEMETRY_ENABLED", "true")))
+    assert_true(azimuth_vars.contains(("AZIMUTH_TRACING_SERVICE_NAME", "azimuth-service")))
+    assert_true(azimuth_vars.contains(("AZIMUTH_OTHER_VALUE", "azimuth-other")))
+    assert_false(azimuth_vars.contains(("OTHER_CONFIG_VALUE", "other")))
+  }
+  
+  prefix_filter_test()
+}
+
+// 测试4: 配置热更新
+test "配置热更新测试" {
+  // 创建热更新管理器
+  let hot_update_manager = HotUpdateManager::new()
+  
+  // 初始配置
+  let initial_config = {
+    "telemetry": {
+      "enabled": true,
+      "sampling_rate": 0.1,
+      "export_interval": 5000,
+      "max_batch_size": 100
+    },
+    "tracing": {
+      "service_name": "initial-service",
+      "service_version": "1.0.0"
+    },
+    "metrics": {
+      "enabled": true,
+      "port": 9090,
+      "path": "/metrics"
+    }
+  }
+  
+  hot_update_manager.set_initial_config(initial_config)
+  
+  // 测试配置热更新
+  let hot_update_test = fn() {
+    // 配置更新监听器
+    let update_events = []
+    let listener = fn(event) {
+      update_events = update_events.push(event)
+    }
+    
+    hot_update_manager.add_update_listener(listener)
+    
+    // 更新配置
+    let updated_config = {
+      "telemetry": {
+        "enabled": true,
+        "sampling_rate": 0.2,  // 更新
+        "export_interval": 10000,  // 更新
+        "max_batch_size": 100  // 保持不变
+      },
+      "tracing": {
+        "service_name": "updated-service",  // 更新
+        "service_version": "1.0.0"  // 保持不变
+      },
+      "metrics": {
+        "enabled": false,  // 更新
+        "port": 9090,  // 保持不变
+        "path": "/metrics"  // 保持不变
+      }
+    }
+    
+    let update_result = hot_update_manager.update_config(updated_config)
+    
+    // 验证更新成功
+    assert_true(update_result.success)
+    
+    // 验证更新事件
+    assert_eq(update_events.length(), 1)
+    assert_eq(update_events[0].type, "config_updated")
+    assert_true(update_events[0].changes.length() > 0)
+    
+    // 验证具体变更
+    let changes = update_events[0].changes
+    assert_true(changes.contains(("telemetry.sampling_rate", "0.1", "0.2")))
+    assert_true(changes.contains(("telemetry.export_interval", "5000", "10000")))
+    assert_true(changes.contains(("tracing.service_name", "initial-service", "updated-service")))
+    assert_true(changes.contains(("metrics.enabled", "true", "false")))
+    
+    // 验证当前配置
+    let current_config = hot_update_manager.get_current_config()
+    assert_eq(current_config.telemetry.sampling_rate, 0.2)
+    assert_eq(current_config.telemetry.export_interval, 10000)
+    assert_eq(current_config.tracing.service_name, "updated-service")
+    assert_false(current_config.metrics.enabled)
+  }
+  
+  hot_update_test()
+  
+  // 测试配置回滚
+  let rollback_test = fn() {
+    // 获取当前配置作为备份
+    let backup_config = hot_update_manager.get_current_config()
+    
+    // 应用无效配置
+    let invalid_config = {
+      "telemetry": {
+        "enabled": true,
+        "sampling_rate": 1.5,  // 无效值
+        "export_interval": 5000,
+        "max_batch_size": 100
+      },
+      "tracing": {
+        "service_name": "invalid-service",
+        "service_version": "1.0.0"
+      },
+      "metrics": {
+        "enabled": true,
+        "port": 9090,
+        "path": "/metrics"
+      }
+    }
+    
+    let update_result = hot_update_manager.update_config(invalid_config)
+    
+    // 更新应该失败
+    assert_false(update_result.success)
+    assert_true(update_result.error_message.contains("validation"))
+    
+    // 验证配置未改变
+    let current_config = hot_update_manager.get_current_config()
+    assert_eq(current_config.telemetry.sampling_rate, 0.2)  // 应该保持之前的值
+    assert_eq(current_config.tracing.service_name, "updated-service")  // 应该保持之前的值
+    
+    // 测试手动回滚
+    let rollback_result = hot_update_manager.rollback_to_backup(backup_config)
+    
+    // 验证回滚成功
+    assert_true(rollback_result.success)
+    
+    let rolled_back_config = hot_update_manager.get_current_config()
+    assert_eq(rolled_back_config.telemetry.sampling_rate, 0.1)  // 回滚到备份值
+    assert_eq(rolled_back_config.tracing.service_name, "initial-service")  // 回滚到备份值
+  }
+  
+  rollback_test()
+  
+  // 测试配置文件监控
+  let file_watching_test = fn() {
+    // 创建临时配置文件
+    let temp_config_file = "/tmp/azimuth_test_config.json"
+    let initial_file_content = {
+      "telemetry": {
+        "enabled": true,
+        "sampling_rate": 0.1,
+        "export_interval": 5000,
+        "max_batch_size": 100
+      },
+      "tracing": {
+        "service_name": "file-service",
+        "service_version": "1.0.0"
+      }
+    }
+    
+    write_file(temp_config_file, initial_file_content.to_string())
+    
+    // 启用文件监控
+    let file_update_events = []
+    let file_listener = fn(event) {
+      file_update_events = file_update_events.push(event)
+    }
+    
+    hot_update_manager.enable_file_watching(temp_config_file, file_listener)
+    
+    // 修改配置文件
+    let updated_file_content = {
+      "telemetry": {
+        "enabled": true,
+        "sampling_rate": 0.3,  // 更新
+        "export_interval": 8000,  // 更新
+        "max_batch_size": 100
+      },
+      "tracing": {
+        "service_name": "file-updated-service",  // 更新
+        "service_version": "1.0.0"
+      }
+    }
+    
+    write_file(temp_config_file, updated_file_content.to_string())
+    
+    // 等待文件监控检测到变更
+    Time::sleep(1100)
+    
+    // 验证文件更新事件
+    assert_true(file_update_events.length() > 0)
+    
+    let latest_event = file_update_events[file_update_events.length() - 1]
+    assert_eq(latest_event.type, "file_updated")
+    assert_eq(latest_event.file_path, temp_config_file)
+    
+    // 验证配置已更新
+    let current_config = hot_update_manager.get_current_config()
+    assert_eq(current_config.telemetry.sampling_rate, 0.3)
+    assert_eq(current_config.telemetry.export_interval, 8000)
+    assert_eq(current_config.tracing.service_name, "file-updated-service")
+    
+    // 清理临时文件
+    delete_file(temp_config_file)
+  }
+  
+  file_watching_test()
+  
+  // 测试部分配置更新
+  let partial_update_test = fn() {
+    // 只更新部分配置
+    let partial_update = {
+      "telemetry": {
+        "sampling_rate": 0.4  // 只更新这一个字段
+      }
+    }
+    
+    let update_result = hot_update_manager.update_partial(partial_update)
+    
+    // 验证部分更新成功
+    assert_true(update_result.success)
+    
+    // 验证只有指定字段被更新
+    let current_config = hot_update_manager.get_current_config()
+    assert_eq(current_config.telemetry.sampling_rate, 0.4)  // 已更新
+    assert_eq(current_config.telemetry.export_interval, 8000)  // 保持不变
+    assert_eq(current_config.telemetry.max_batch_size, 100)  // 保持不变
+    assert_eq(current_config.tracing.service_name, "file-updated-service")  // 保持不变
+  }
+  
+  partial_update_test()
+}
+
+// 测试5: 配置模板和继承
+test "配置模板和继承测试" {
+  // 创建配置模板管理器
+  let template_manager = ConfigTemplateManager::new()
+  
+  // 定义基础模板
+  let base_template = {
+    "telemetry": {
+      "enabled": true,
+      "sampling_rate": 0.1,
+      "export_interval": 5000,
+      "max_batch_size": 100
+    },
+    "tracing": {
+      "service_version": "1.0.0",
+      "exporter": {
+        "type": "jaeger",
+        "timeout": 30000
+      }
+    },
+    "metrics": {
+      "enabled": true,
+      "port": 9090,
+      "path": "/metrics"
+    }
+  }
+  
+  template_manager.add_template("base", base_template)
+  
+  // 定义开发环境模板
+  let dev_template = {
+    "extends": "base",
+    "telemetry": {
+      "sampling_rate": 0.5,  // 覆盖基础模板
+      "export_interval": 10000  // 覆盖基础模板
+    },
+    "tracing": {
+      "service_name": "dev-service",
+      "exporter": {
+        "endpoint": "http://dev-jaeger:14268/api/traces"  // 覆盖基础模板的exporter.endpoint
+      }
+    },
+    "logging": {  // 新增配置
+      "level": "debug",
+      "console": true
+    }
+  }
+  
+  template_manager.add_template("development", dev_template)
+  
+  // 定义生产环境模板
+  let prod_template = {
+    "extends": "base",
+    "telemetry": {
+      "sampling_rate": 0.01,  // 覆盖基础模板
+      "max_batch_size": 1000  // 覆盖基础模板
+    },
+    "tracing": {
+      "service_name": "prod-service",
+      "exporter": {
+        "type": "otlp",  // 覆盖基础模板
+        "endpoint": "http://prod-collector:4317"
+      }
+    },
+    "security": {  // 新增配置
+      "enabled": true,
+      "encryption": true
+    }
+  }
+  
+  template_manager.add_template("production", prod_template)
+  
+  // 测试模板继承
+  let template_inheritance_test = fn() {
+    // 渲染开发环境配置
+    let dev_config_result = template_manager.render_template("development")
+    
+    assert_true(dev_config_result.is_ok())
+    
+    match dev_config_result {
+      Ok(dev_config) => {
+        // 验证继承的基础配置
+        assert_true(dev_config.telemetry.enabled)  // 从base继承
+        assert_eq(dev_config.telemetry.max_batch_size, 100)  // 从base继承
+        
+        // 验证覆盖的配置
+        assert_eq(dev_config.telemetry.sampling_rate, 0.5)  // development覆盖
+        assert_eq(dev_config.telemetry.export_interval, 10000)  // development覆盖
+        
+        // 验证嵌套覆盖
+        assert_eq(dev_config.tracing.service_version, "1.0.0")  // 从base继承
+        assert_eq(dev_config.tracing.exporter.type, "jaeger")  // 从base继承
+        assert_eq(dev_config.tracing.exporter.timeout, 30000)  // 从base继承
+        assert_eq(dev_config.tracing.exporter.endpoint, "http://dev-jaeger:14268/api/traces")  // development覆盖
+        
+        // 验证新增配置
+        assert_eq(dev_config.tracing.service_name, "dev-service")  // development新增
+        assert_eq(dev_config.logging.level, "debug")  // development新增
+        assert_true(dev_config.logging.console)  // development新增
+        
+        // 验证继承的metrics配置
+        assert_true(dev_config.metrics.enabled)  // 从base继承
+        assert_eq(dev_config.metrics.port, 9090)  // 从base继承
+        assert_eq(dev_config.metrics.path, "/metrics")  // 从base继承
+      }
+      Err(_) => assert_true(false)
+    }
+    
+    // 渲染生产环境配置
+    let prod_config_result = template_manager.render_template("production")
+    
+    assert_true(prod_config_result.is_ok())
+    
+    match prod_config_result {
+      Ok(prod_config) => {
+        // 验证继承的基础配置
+        assert_true(prod_config.telemetry.enabled)  // 从base继承
+        assert_eq(prod_config.telemetry.export_interval, 5000)  // 从base继承
+        
+        // 验证覆盖的配置
+        assert_eq(prod_config.telemetry.sampling_rate, 0.01)  // production覆盖
+        assert_eq(prod_config.telemetry.max_batch_size, 1000)  // production覆盖
+        
+        // 验证嵌套覆盖
+        assert_eq(prod_config.tracing.service_version, "1.0.0")  // 从base继承
+        assert_eq(prod_config.tracing.exporter.timeout, 30000)  // 从base继承
+        assert_eq(prod_config.tracing.exporter.type, "otlp")  // production覆盖
+        assert_eq(prod_config.tracing.exporter.endpoint, "http://prod-collector:4317")  // production覆盖
+        
+        // 验证新增配置
+        assert_eq(prod_config.tracing.service_name, "prod-service")  // production新增
+        assert_true(prod_config.security.enabled)  // production新增
+        assert_true(prod_config.security.encryption)  // production新增
+      }
+      Err(_) => assert_true(false)
+    }
+  }
+  
+  template_inheritance_test()
+  
+  // 测试多级继承
+  let multi_level_inheritance_test = fn() {
+    // 定义测试环境模板，继承自开发环境
+    let test_template = {
+      "extends": "development",
+      "telemetry": {
+        "sampling_rate": 0.8  // 覆盖development的配置
+      },
+      "tracing": {
+        "service_name": "test-service"  // 覆盖development的配置
+      },
+      "features": {  // 新增配置
+        "experimental": true,
+        "debug_mode": true
+      }
+    }
+    
+    template_manager.add_template("testing", test_template)
+    
+    // 渲染测试环境配置
+    let test_config_result = template_manager.render_template("testing")
+    
+    assert_true(test_config_result.is_ok())
+    
+    match test_config_result {
+      Ok(test_config) => {
+        // 验证多级继承链：base -> development -> testing
+        
+        // 从base继承
+        assert_eq(test_config.telemetry.max_batch_size, 100)
+        assert_eq(test_config.tracing.exporter.timeout, 30000)
+        
+        // 从development继承
+        assert_eq(test_config.telemetry.export_interval, 10000)
+        assert_eq(test_config.tracing.exporter.endpoint, "http://dev-jaeger:14268/api/traces")
+        assert_eq(test_config.logging.level, "debug")
+        
+        // testing覆盖
+        assert_eq(test_config.telemetry.sampling_rate, 0.8)
+        assert_eq(test_config.tracing.service_name, "test-service")
+        
+        // testing新增
+        assert_true(test_config.features.experimental)
+        assert_true(test_config.features.debug_mode)
+      }
+      Err(_) => assert_true(false)
+    }
+  }
+  
+  multi_level_inheritance_test()
+  
+  // 测试模板变量替换
+  let variable_substitution_test = fn() {
+    // 定义带变量的模板
+    let variable_template = {
+      "telemetry": {
+        "enabled": true,
+        "sampling_rate": "${SAMPLING_RATE}",
+        "export_interval": "${EXPORT_INTERVAL}"
+      },
+      "tracing": {
+        "service_name": "${SERVICE_NAME}",
+        "service_version": "${SERVICE_VERSION}",
+        "exporter": {
+          "endpoint": "http://${COLLECTOR_HOST}:${COLLECTOR_PORT}/api/traces"
+        }
+      },
+      "metrics": {
+        "port": "${METRICS_PORT}"
+      }
+    }
+    
+    template_manager.add_template("variable", variable_template)
+    
+    // 定义变量
+    let variables = @{
+      "SAMPLING_RATE": "0.3",
+      "EXPORT_INTERVAL": "7500",
+      "SERVICE_NAME": "variable-service",
+      "SERVICE_VERSION": "2.0.0",
+      "COLLECTOR_HOST": "collector.example.com",
+      "COLLECTOR_PORT": "14268",
+      "METRICS_PORT": "9095"
+    }
+    
+    // 渲染带变量的模板
+    let rendered_result = template_manager.render_template_with_variables("variable", variables)
+    
+    assert_true(rendered_result.is_ok())
+    
+    match rendered_result {
+      Ok(rendered_config) => {
+        // 验证变量替换
+        assert_eq(rendered_config.telemetry.sampling_rate, "0.3")
+        assert_eq(rendered_config.telemetry.export_interval, "7500")
+        assert_eq(rendered_config.tracing.service_name, "variable-service")
+        assert_eq(rendered_config.tracing.service_version, "2.0.0")
+        assert_eq(rendered_config.tracing.exporter.endpoint, "http://collector.example.com:14268/api/traces")
+        assert_eq(rendered_config.metrics.port, "9095")
+      }
+      Err(_) => assert_true(false)
+    }
+  }
+  
+  variable_substitution_test()
+  
+  // 测试模板验证
+  let template_validation_test = fn() {
+    // 定义无效模板（循环继承）
+    let invalid_template1 = {
+      "extends": "invalid2"
+    }
+    
+    let invalid_template2 = {
+      "extends": "invalid1"
+    }
+    
+    template_manager.add_template("invalid1", invalid_template1)
+    template_manager.add_template("invalid2", invalid_template2)
+    
+    // 尝试渲染循环继承的模板
+    let invalid_result = template_manager.render_template("invalid1")
+    
+    // 应该失败
+    assert_true(invalid_result.is_err())
+    
+    match invalid_result {
+      Err(error) => assert_true(error.message.contains("circular")),
+      Ok(_) => assert_true(false)
+    }
+    
+    // 定义继承不存在的模板
+    let orphan_template = {
+      "extends": "nonexistent_template"
+    }
+    
+    template_manager.add_template("orphan", orphan_template)
+    
+    let orphan_result = template_manager.render_template("orphan")
+    
+    // 应该失败
+    assert_true(orphan_result.is_err())
+    
+    match orphan_result {
+      Err(error) => assert_true(error.message.contains("not found")),
+      Ok(_) => assert_true(false)
+    }
+  }
+  
+  template_validation_test()
+}
+
+// 测试6: 配置加密和安全
+test "配置加密和安全测试" {
+  // 创建配置安全管理器
+  let security_manager = ConfigSecurityManager::new()
+  
+  // 生成加密密钥
+  let encryption_key = security_manager.generate_encryption_key()
+  assert_true(encryption_key.length() > 0)
+  
+  // 测试配置值加密
+  let encryption_test = fn() {
+    let sensitive_values = [
+      "database_password",
+      "api_key_12345",
+      "secret_token_abcde",
+      "private_key_value"
+    ]
+    
+    let encrypted_values = []
+    
+    // 加密敏感值
+    for value in sensitive_values {
+      let encrypted = security_manager.encrypt_value(value, encryption_key)
+      assert_true(encrypted.is_ok())
+      
+      match encrypted {
+        Ok(encrypted_value) => {
+          assert_true(encrypted_value.length() > 0)
+          assert_ne(encrypted_value, value)  // 加密后应该不同
+          encrypted_values = encrypted_values.push((value, encrypted_value))
+        }
+        Err(_) => assert_true(false)
+      }
+    }
+    
+    // 解密并验证
+    for (original, encrypted) in encrypted_values {
+      let decrypted = security_manager.decrypt_value(encrypted, encryption_key)
+      assert_true(decrypted.is_ok())
+      
+      match decrypted {
+        Ok(decrypted_value) => assert_eq(decrypted_value, original),
+        Err(_) => assert_true(false)
+      }
+    }
+  }
+  
+  encryption_test()
+  
+  // 测试配置文件加密
+  let file_encryption_test = fn() {
+    let sensitive_config = {
+      "database": {
+        "host": "localhost",
+        "port": 5432,
+        "username": "admin",
+        "password": "secret_password_123"
+      },
+      "api": {
+        "key": "api_key_abcdef123456",
+        "secret": "api_secret_xyz789"
+      },
+      "public_config": {
+        "service_name": "test-service",
+        "version": "1.0.0"
+      }
+    }
+    
+    // 指定需要加密的字段
+    let encrypted_fields = [
+      "database.password",
+      "api.key",
+      "api.secret"
+    ]
+    
+    // 加密配置文件
+    let encrypted_config_result = security_manager.encrypt_config_file(
+      sensitive_config, 
+      encrypted_fields, 
+      encryption_key
+    )
+    
+    assert_true(encrypted_config_result.is_ok())
+    
+    match encrypted_config_result {
+      Ok(encrypted_config) => {
+        // 验证敏感字段已加密
+        assert_eq(encrypted_config.database.host, "localhost")  // 未加密
+        assert_eq(encrypted_config.database.port, 5432)  // 未加密
+        assert_eq(encrypted_config.database.username, "admin")  // 未加密
+        assert_ne(encrypted_config.database.password, "secret_password_123")  // 已加密
+        assert_ne(encrypted_config.api.key, "api_key_abcdef123456")  // 已加密
+        assert_ne(encrypted_config.api.secret, "api_secret_xyz789")  // 已加密
+        assert_eq(encrypted_config.public_config.service_name, "test-service")  // 未加密
+        
+        // 解密配置文件
+        let decrypted_config_result = security_manager.decrypt_config_file(
+          encrypted_config,
+          encrypted_fields,
+          encryption_key
+        )
+        
+        assert_true(decrypted_config_result.is_ok())
+        
+        match decrypted_config_result {
+          Ok(decrypted_config) => {
+            // 验证解密后的配置与原始配置相同
+            assert_eq(decrypted_config.database.password, "secret_password_123")
+            assert_eq(decrypted_config.api.key, "api_key_abcdef123456")
+            assert_eq(decrypted_config.api.secret, "api_secret_xyz789")
+            assert_eq(decrypted_config.public_config.service_name, "test-service")
           }
-          _ => None
+          Err(_) => assert_true(false)
         }
       }
-      None => None
+      Err(_) => assert_true(false)
     }
   }
   
-  set_default(key : String, value : Any) -> Unit {
-    if !config_values.contains_key(key) {
-      config_values = config_values.set(key, value)
-    }
-  }
+  file_encryption_test()
   
-  set_environment(key : String, value : String) -> Unit {
-    // Simplified implementation for testing
-    if key == "DATABASE_HOST" {
-      config_values = config_values.set("database.host", value)
-    } else if key == "DATABASE_PORT" {
-      config_values = config_values.set("database.port", value.parse_int().unwrap_or(5432))
-    }
-  }
-  
-  set_command_line(key : String, value : String) -> Unit {
-    // Simplified implementation for testing
-    if key == "--database-name" {
-      config_values = config_values.set("database.name", value)
-    }
-  }
-  
-  set_value(key : String, value : Any) -> Unit {
-    config_values = config_values.set(key, value)
-  }
-  
-  add_validation_rule(key : String, rule : ValidationRule) -> Unit {
-    validation_rules = validation_rules.set(key, rule)
-  }
-  
-  validate() -> ValidationResult {
-    let errors = []
+  // 测试配置访问控制
+  let access_control_test = fn() {
+    let access_manager = ConfigAccessManager::new()
     
-    for (key, rule) in validation_rules {
-      match config_values.get(key) {
-        Some(value) => {
-          if !rule.validate(value) {
-            errors = errors.push("Validation failed for key: " + key)
+    // 定义角色和权限
+    access_manager.add_role("admin", ["read", "write", "delete", "encrypt", "decrypt"])
+    access_manager.add_role("operator", ["read", "write"])
+    access_manager.add_role("viewer", ["read"])
+    
+    // 定义用户和角色
+    access_manager.add_user("admin_user", "admin")
+    access_manager.add_user("operator_user", "operator")
+    access_manager.add_user("viewer_user", "viewer")
+    
+    // 测试管理员权限
+    assert_true(access_manager.check_permission("admin_user", "read"))
+    assert_true(access_manager.check_permission("admin_user", "write"))
+    assert_true(access_manager.check_permission("admin_user", "delete"))
+    assert_true(access_manager.check_permission("admin_user", "encrypt"))
+    assert_true(access_manager.check_permission("admin_user", "decrypt"))
+    
+    // 测试操作员权限
+    assert_true(access_manager.check_permission("operator_user", "read"))
+    assert_true(access_manager.check_permission("operator_user", "write"))
+    assert_false(access_manager.check_permission("operator_user", "delete"))
+    assert_false(access_manager.check_permission("operator_user", "encrypt"))
+    assert_false(access_manager.check_permission("operator_user", "decrypt"))
+    
+    // 测试查看者权限
+    assert_true(access_manager.check_permission("viewer_user", "read"))
+    assert_false(access_manager.check_permission("viewer_user", "write"))
+    assert_false(access_manager.check_permission("viewer_user", "delete"))
+    assert_false(access_manager.check_permission("viewer_user", "encrypt"))
+    assert_false(access_manager.check_permission("viewer_user", "decrypt"))
+    
+    // 测试不存在的用户
+    assert_false(access_manager.check_permission("nonexistent_user", "read"))
+  }
+  
+  access_control_test()
+  
+  // 测试配置审计日志
+  let audit_log_test = fn() {
+    let audit_logger = ConfigAuditLogger::new()
+    
+    // 记录配置访问
+    audit_logger.log_access("operator_user", "read", "telemetry.sampling_rate", "0.1")
+    audit_logger.log_access("operator_user", "read", "tracing.service_name", "test-service")
+    
+    // 记录配置修改
+    audit_logger.log_modification("operator_user", "write", "telemetry.sampling_rate", "0.1", "0.2")
+    audit_logger.log_modification("admin_user", "write", "metrics.enabled", "true", "false")
+    
+    // 记录敏感操作
+    audit_logger.log_sensitive_operation("admin_user", "encrypt", "database.password")
+    audit_logger.log_sensitive_operation("admin_user", "decrypt", "api.key")
+    
+    // 获取审计日志
+    let audit_logs = audit_logger.get_audit_logs()
+    
+    // 验证审计日志
+    assert_eq(audit_logs.length(), 6)
+    
+    // 验证访问日志
+    let access_logs = audit_logs.filter(fn(log) { log.operation_type == "access" })
+    assert_eq(access_logs.length(), 2)
+    assert_eq(access_logs[0].user, "operator_user")
+    assert_eq(access_logs[0].action, "read")
+    assert_eq(access_logs[0].config_key, "telemetry.sampling_rate")
+    
+    // 验证修改日志
+    let modification_logs = audit_logs.filter(fn(log) { log.operation_type == "modification" })
+    assert_eq(modification_logs.length(), 2)
+    assert_eq(modification_logs[0].user, "operator_user")
+    assert_eq(modification_logs[0].action, "write")
+    assert_eq(modification_logs[0].old_value, "0.1")
+    assert_eq(modification_logs[0].new_value, "0.2")
+    
+    // 验证敏感操作日志
+    let sensitive_logs = audit_logs.filter(fn(log) { log.operation_type == "sensitive" })
+    assert_eq(sensitive_logs.length(), 2)
+    assert_eq(sensitive_logs[0].user, "admin_user")
+    assert_eq(sensitive_logs[0].action, "encrypt")
+    assert_eq(sensitive_logs[0].config_key, "database.password")
+  }
+  
+  audit_log_test()
+}
+
+// 测试7: 配置版本管理
+test "配置版本管理测试" {
+  // 创建配置版本管理器
+  let version_manager = ConfigVersionManager::new()
+  
+  // 初始配置版本
+  let v1_config = {
+    "telemetry": {
+      "enabled": true,
+      "sampling_rate": 0.1,
+      "export_interval": 5000
+    },
+    "tracing": {
+      "service_name": "versioned-service",
+      "service_version": "1.0.0"
+    }
+  }
+  
+  // 创建第一个版本
+  let v1_result = version_manager.create_version("1.0.0", v1_config, "Initial configuration")
+  
+  assert_true(v1_result.is_ok())
+  
+  match v1_result {
+    Ok(version_info) => {
+      assert_eq(version_info.version, "1.0.0")
+      assert_eq(version_info.description, "Initial configuration")
+      assert_true(version_info.timestamp > 0)
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  // 测试版本历史
+  let version_history_test = fn() {
+    // 创建更多版本
+    let v2_config = {
+      "telemetry": {
+        "enabled": true,
+        "sampling_rate": 0.2,  // 更新
+        "export_interval": 5000
+      },
+      "tracing": {
+        "service_name": "versioned-service",
+        "service_version": "1.0.0"
+      }
+    }
+    
+    let v2_result = version_manager.create_version("1.1.0", v2_config, "Updated sampling rate")
+    assert_true(v2_result.is_ok())
+    
+    let v3_config = {
+      "telemetry": {
+        "enabled": true,
+        "sampling_rate": 0.2,
+        "export_interval": 10000  // 更新
+      },
+      "tracing": {
+        "service_name": "versioned-service-v2",  // 更新
+        "service_version": "1.0.0"
+      }
+    }
+    
+    let v3_result = version_manager.create_version("1.2.0", v3_config, "Updated export interval and service name")
+    assert_true(v3_result.is_ok())
+    
+    // 获取版本历史
+    let history = version_manager.get_version_history()
+    
+    // 验证版本历史
+    assert_eq(history.length(), 3)
+    assert_eq(history[0].version, "1.0.0")
+    assert_eq(history[1].version, "1.1.0")
+    assert_eq(history[2].version, "1.2.0")
+    
+    // 验证时间戳递增
+    assert_true(history[0].timestamp <= history[1].timestamp)
+    assert_true(history[1].timestamp <= history[2].timestamp)
+  }
+  
+  version_history_test()
+  
+  // 测试版本比较
+  let version_comparison_test = fn() {
+    // 测试版本比较
+    assert_true(version_manager.compare_versions("1.2.0", "1.1.0") > 0)
+    assert_true(version_manager.compare_versions("1.1.0", "1.2.0") < 0)
+    assert_eq(version_manager.compare_versions("1.1.0", "1.1.0"), 0)
+    
+    // 测试复杂版本比较
+    assert_true(version_manager.compare_versions("2.0.0", "1.9.9") > 0)
+    assert_true(version_manager.compare_versions("1.0.1", "1.0.0") > 0)
+    assert_true(version_manager.compare_versions("1.0.0", "1.0.1") < 0)
+    
+    // 测试预发布版本
+    assert_true(version_manager.compare_versions("1.0.0", "1.0.0-alpha") > 0)
+    assert_true(version_manager.compare_versions("1.0.0-alpha", "1.0.0-beta") < 0)
+    assert_true(version_manager.compare_versions("1.0.0-beta", "1.0.0") < 0)
+  }
+  
+  version_comparison_test()
+  
+  // 测试版本回滚
+  let version_rollback_test = fn() {
+    // 获取最新版本配置
+    let latest_config = version_manager.get_latest_version()
+    assert_eq(latest_config.version, "1.2.0")
+    assert_eq(latest_config.config.tracing.service_name, "versioned-service-v2")
+    
+    // 回滚到特定版本
+    let rollback_result = version_manager.rollback_to_version("1.1.0")
+    
+    assert_true(rollback_result.is_ok())
+    
+    // 验证回滚后的当前版本
+    let current_version = version_manager.get_current_version()
+    assert_eq(current_version.version, "1.1.0")
+    assert_eq(current_version.config.telemetry.sampling_rate, 0.2)
+    assert_eq(current_version.config.tracing.service_name, "versioned-service")
+    
+    // 创建新版本（基于回滚的版本）
+    let v4_config = {
+      "telemetry": {
+        "enabled": true,
+        "sampling_rate": 0.15,  // 新值
+        "export_interval": 10000  // 保持回滚版本的值
+      },
+      "tracing": {
+        "service_name": "versioned-service",
+        "service_version": "1.0.0"
+      }
+    }
+    
+    let v4_result = version_manager.create_version("1.2.1", v4_config, "New version after rollback")
+    assert_true(v4_result.is_ok())
+    
+    // 验证新版本成为当前版本
+    let new_current = version_manager.get_current_version()
+    assert_eq(new_current.version, "1.2.1")
+    assert_eq(new_current.config.telemetry.sampling_rate, 0.15)
+  }
+  
+  version_rollback_test()
+  
+  // 测试版本差异比较
+  let version_diff_test = fn() {
+    // 比较两个版本的差异
+    let diff_result = version_manager.compare_versions("1.0.0", "1.2.0")
+    
+    assert_true(diff_result.is_ok())
+    
+    match diff_result {
+      Ok(diff) => {
+        // 验证差异报告
+        assert_eq(diff.from_version, "1.0.0")
+        assert_eq(diff.to_version, "1.2.0")
+        
+        // 验证变更列表
+        let changes = diff.changes
+        
+        // 应该有telemetry.sampling_rate的变更
+        let sampling_rate_change = changes.find(fn(c) { c.path == "telemetry.sampling_rate" })
+        assert_true(sampling_rate_change.is_some())
+        match sampling_rate_change {
+          Some(change) => {
+            assert_eq(change.old_value, "0.1")
+            assert_eq(change.new_value, "0.2")
+            assert_eq(change.change_type, "updated")
           }
+          None => assert_true(false)
         }
-        None => {
-          errors = errors.push("Missing required key: " + key)
-        }
-      }
-    }
-    
-    return ValidationResult::new(errors.length() == 0, errors)
-  }
-  
-  add_change_listener(key : String, listener : (Any, Any) -> Unit) -> Unit {
-    change_listeners = change_listeners.set(key, listener)
-  }
-  
-  update_value(key : String, new_value : Any) -> Unit {
-    let old_value = config_values.get(key).unwrap_or(null)
-    config_values = config_values.set(key, new_value)
-    
-    match change_listeners.get(key) {
-      Some(listener) => listener(old_value, new_value)
-      None => {}
-    }
-  }
-  
-  load_profile(profile : String) -> Unit {
-    // Simplified implementation for testing
-    if profile == "development" {
-      config_values = config_values.set("database.host", "localhost")
-      config_values = config_values.set("logging.level", "DEBUG")
-      config_values = config_values.set("debug.enabled", true)
-    } else if profile == "production" {
-      config_values = config_values.set("database.host", "prod-db.example.com")
-      config_values = config_values.set("logging.level", "ERROR")
-      config_values = config_values.set("debug.enabled", false)
-      config_values = config_values.set("security.ssl.enabled", true)
-    }
-  }
-  
-  set_encryption_key(key : String) -> Unit {
-    encryption_key = key
-  }
-  
-  set_encrypted_value(key : String, value : String) -> Unit {
-    let encrypted = "encrypted:" + simple_encrypt(value, encryption_key)
-    encrypted_values = encrypted_values.set(key, encrypted)
-    config_values = config_values.set(key, encrypted)
-  }
-  
-  get_raw_value(key : String) -> String {
-    match config_values.get(key) {
-      Some(value) => {
-        match value {
-          String(s) => s
-          _ => ""
-        }
-      }
-      None => ""
-    }
-  }
-  
-  get_decrypted_string(key : String) -> Option[String] {
-    match encrypted_values.get(key) {
-      Some(encrypted) => {
-        if encrypted.contains("encrypted:") {
-          let decrypted = simple_decrypt(encrypted.substring(10), encryption_key)
-          return Some(decrypted)
-        }
-        return None
-      }
-      None => None
-    }
-  }
-  
-  set_access_control(key : String, roles : Array[String]) -> Unit {
-    access_controls = access_controls.set(key, roles)
-  }
-  
-  check_access(key : String, role : String) -> Bool {
-    match access_controls.get(key) {
-      Some(roles) => {
-        for i = 0; i < roles.length(); i = i + 1 {
-          if roles[i] == role {
-            return true
+        
+        // 应该有telemetry.export_interval的变更
+        let export_interval_change = changes.find(fn(c) { c.path == "telemetry.export_interval" })
+        assert_true(export_interval_change.is_some())
+        match export_interval_change {
+          Some(change) => {
+            assert_eq(change.old_value, "5000")
+            assert_eq(change.new_value, "10000")
+            assert_eq(change.change_type, "updated")
           }
+          None => assert_true(false)
         }
-        return false
-      }
-      None => true  // No access control means everyone has access
-    }
-  }
-  
-  export_secure() -> String {
-    let result = ""
-    
-    for (key, value) in config_values {
-      match value {
-        String(s) => {
-          if encrypted_values.contains_key(key) {
-            result = result + key + "=" + s + "\n"
+        
+        // 应该有tracing.service_name的变更
+        let service_name_change = changes.find(fn(c) { c.path == "tracing.service_name" })
+        assert_true(service_name_change.is_some())
+        match service_name_change {
+          Some(change) => {
+            assert_eq(change.old_value, "versioned-service")
+            assert_eq(change.new_value, "versioned-service-v2")
+            assert_eq(change.change_type, "updated")
           }
+          None => assert_true(false)
         }
-        _ => {}
       }
+      Err(_) => assert_true(false)
     }
+  }
+  
+  version_diff_test()
+  
+  // 测试版本标签
+  let version_tagging_test = fn() {
+    // 添加版本标签
+    let tag_result1 = version_manager.add_tag("1.0.0", "stable")
+    assert_true(tag_result1.is_ok())
     
-    return result
-  }
-  
-  create_backup() -> String {
-    let backup_id = "backup_" + UUID::generate().to_string()
-    backups = backups.set(backup_id, config_values)
-    return backup_id
-  }
-  
-  restore_from_backup(backup_id : String) -> Unit {
-    match backups.get(backup_id) {
-      Some(backup_config) => {
-        config_values = backup_config
-      }
-      None => {}
-    }
-  }
-  
-  list_backups() -> Array[String] {
-    let result = []
-    for (id, _) in backups {
-      result = result.push(id)
-    }
-    return result
-  }
-  
-  delete_backup(backup_id : String) -> Unit {
-    backups = backups.remove(backup_id)
-  }
-  
-  apply_template(template : ConfigurationTemplate) -> Unit {
-    let template_config = template.get_all_values()
+    let tag_result2 = version_manager.add_tag("1.2.0", "production")
+    assert_true(tag_result2.is_ok())
     
-    for (key, value) in template_config {
-      config_values = config_values.set(key, value)
-    }
-  }
-  
-  merge_template(template : ConfigurationTemplate) -> Unit {
-    let template_config = template.get_all_values()
+    let tag_result3 = version_manager.add_tag("1.2.1", "latest")
+    assert_true(tag_result3.is_ok())
     
-    for (key, value) in template_config {
-      config_values = config_values.set(key, value)
-    }
-  }
-}
-
-class ConfigurationTemplate {
-  name : String
-  values : Map[String, Any]
-  
-  new(name : String) {
-    name = name
-    values = {}
-  }
-  
-  set_value(key : String, value : Any) -> Unit {
-    values = values.set(key, value)
-  }
-  
-  inherit_from(parent : ConfigurationTemplate) -> Unit {
-    let parent_values = parent.get_all_values()
+    // 通过标签查找版本
+    let stable_version = version_manager.find_version_by_tag("stable")
+    assert_true(stable_version.is_some())
+    assert_eq(stable_version.unwrap().version, "1.0.0")
     
-    for (key, value) in parent_values {
-      if !values.contains_key(key) {
-        values = values.set(key, value)
-      }
-    }
+    let production_version = version_manager.find_version_by_tag("production")
+    assert_true(production_version.is_some())
+    assert_eq(production_version.unwrap().version, "1.2.0")
+    
+    let latest_version = version_manager.find_version_by_tag("latest")
+    assert_true(latest_version.is_some())
+    assert_eq(latest_version.unwrap().version, "1.2.1")
+    
+    // 获取所有标签
+    let all_tags = version_manager.get_all_tags()
+    assert_eq(all_tags.length(), 3)
+    assert_true(all_tags.contains(("1.0.0", "stable")))
+    assert_true(all_tags.contains(("1.2.0", "production")))
+    assert_true(all_tags.contains(("1.2.1", "latest")))
+    
+    // 移除标签
+    let remove_result = version_manager.remove_tag("1.2.0", "production")
+    assert_true(remove_result.is_ok())
+    
+    // 验证标签已移除
+    let removed_version = version_manager.find_version_by_tag("production")
+    assert_true(removed_version.is_none())
+    
+    let updated_tags = version_manager.get_all_tags()
+    assert_eq(updated_tags.length(), 2)
   }
   
-  override_value(key : String, value : Any) -> Unit {
-    values = values.set(key, value)
-  }
-  
-  get_all_values() -> Map[String, Any] {
-    return values
-  }
-}
-
-class ValidationRule {
-  validator : (Any) -> Bool
-  
-  new(validator : (Any) -> Bool) {
-    validator = validator
-  }
-  
-  validate(value : Any) -> Bool {
-    return validator(value)
-  }
-  
-  static int_range(min : Int, max : Int) -> ValidationRule {
-    return ValidationRule::new(fn(value) {
-      match value {
-        Int(i) => i >= min && i <= max
-        _ => false
-      }
-    })
-  }
-  
-  static non_empty_string() -> ValidationRule {
-    return ValidationRule::new(fn(value) {
-      match value {
-        String(s) => s.length() > 0
-        _ => false
-      }
-    })
-  }
-  
-  static regex_match(pattern : String) -> ValidationRule {
-    return ValidationRule::new(fn(value) {
-      match value {
-        String(s) => s.matches(pattern)
-        _ => false
-      }
-    })
-  }
-  
-  static boolean() -> ValidationRule {
-    return ValidationRule::new(fn(value) {
-      match value {
-        Bool(_) => true
-        _ => false
-      }
-    })
-  }
-  
-  static float_range(min : Float, max : Float) -> ValidationRule {
-    return ValidationRule::new(fn(value) {
-      match value {
-        Float(f) => f >= min && f <= max
-        _ => false
-      }
-    })
-  }
-}
-
-class ValidationResult {
-  is_valid : Bool
-  errors : Array[String]
-  
-  new(is_valid : Bool, errors : Array[String]) {
-    is_valid = is_valid
-    errors = errors
-  }
-}
-
-class AtomicBoolean {
-  value : Bool
-  
-  new(initial_value : Bool) {
-    value = initial_value
-  }
-  
-  set(new_value : Bool) -> Unit {
-    value = new_value
-  }
-  
-  get() -> Bool {
-    return value
-  }
-}
-
-// Helper functions for encryption/decryption (simplified for testing)
-func simple_encrypt(text : String, key : String) -> String {
-  // Simplified encryption for testing
-  return "encrypted_" + text + "_with_" + key
-}
-
-func simple_decrypt(encrypted_text : String, key : String) -> String {
-  // Simplified decryption for testing
-  if encrypted_text.contains("_with_" + key) {
-    return encrypted_text.substring(9, encrypted_text.length() - key.length() - 6)
-  }
-  return ""
-}
-
-// Simplified UUID implementation
-class UUID {
-  static generate() -> String {
-    return "12345678-1234-1234-1234-123456789abc"
-  }
+  version_tagging_test()
 }

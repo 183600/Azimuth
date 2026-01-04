@@ -1,601 +1,618 @@
-// Azimuth 性能优化测试用例
-// 测试遥测系统的性能优化特性，确保在各种负载下的高效表现
+// Azimuth Performance Optimization Test Suite
+// This file contains comprehensive test cases for performance optimization scenarios
 
-test "属性操作性能优化测试" {
-  // 测试批量属性操作的性能
+// Test 1: High-Volume Span Creation Performance
+test "high-volume span creation performance" {
+  let provider = TelemetryProvider::new()
+  let tracer = TelemetryProvider::get_tracer(provider, "performance_test_tracer")
+  let span_count = 10000
   
-  // 创建大量属性的优化方法：预分配数组
-  let start_time = get_current_time_millis()
+  // Measure span creation performance
+  let start_time = Time::now()
   
-  // 方法1：逐个添加属性（非优化）
-  let mut attrs1 = azimuth::Attributes { values: [] }
-  for i in 0..1000 {
-    attrs1.values = attrs1.values + [
-      ("key_" + i.to_string(), azimuth::AttributeValue::StringValue("value_" + i.to_string()))
-    ]
+  let mut spans = []
+  for i in 0..span_count {
+    let span_name = "perf_span_" + i.to_string()
+    let span = Tracer::start_span(tracer, span_name)
+    spans = spans.push(span)
   }
   
-  let time1 = get_current_time_millis() - start_time
+  let creation_time = Time::now() - start_time
   
-  // 方法2：批量构建属性（优化）
-  let start_time2 = get_current_time_millis()
+  // Measure span ending performance
+  let end_start_time = Time::now()
   
-  let mut attr_pairs = []
-  for i in 0..1000 {
-    attr_pairs = attr_pairs + [
-      ("key_" + i.to_string(), azimuth::AttributeValue::StringValue("value_" + i.to_string()))
-    ]
-  }
-  let attrs2 = azimuth::Attributes { values: attr_pairs }
-  
-  let time2 = get_current_time_millis() - start_time2
-  
-  // 验证结果一致性
-  assert_eq(attrs1.values.length(), attrs2.values.length())
-  assert_eq(attrs1.values.length(), 1000)
-  
-  // 验证数据完整性
-  match attrs1.values[0] {
-    (key, azimuth::AttributeValue::StringValue(value)) => {
-      assert_eq(key, "key_0")
-      assert_eq(value, "value_0")
-    }
-    _ => assert_true(false)
+  for span in spans {
+    Span::end(span)
   }
   
-  match attrs2.values[999] {
-    (key, azimuth::AttributeValue::StringValue(value)) => {
-      assert_eq(key, "key_999")
-      assert_eq(value, "value_999")
-    }
-    _ => assert_true(false)
-  }
+  let end_time = Time::now() - end_start_time
   
-  // 性能断言：批量操作应该更快
-  // 注意：实际性能差异可能因环境而异
-  assert_true(time1 < 5000) // 非优化方法应该在5秒内完成
-  assert_true(time2 < 3000) // 优化方法应该在3秒内完成
+  // Force export
+  TelemetryProvider::force_flush(provider)
+  
+  // Verify all spans were created and exported
+  let collected_spans = TelemetryProvider::get_collected_spans(provider)
+  assert_eq(collected_spans.length(), span_count)
+  
+  // Performance assertions (adjust thresholds based on environment)
+  let creation_rate = span_count.to_float() / creation_time.to_seconds()
+  let end_rate = span_count.to_float() / end_time.to_seconds()
+  
+  // Should be able to create at least 1000 spans per second
+  assert_true(creation_rate > 1000.0)
+  assert_true(end_rate > 1000.0)
+  
+  // Log performance metrics
+  let meter = TelemetryProvider::get_meter(provider, "performance_metrics")
+  let creation_rate_gauge = Meter::create_gauge(meter, "span_creation_rate")
+  let end_rate_gauge = Meter::create_gauge(meter, "span_end_rate")
+  
+  Gauge::set(creation_rate_gauge, creation_rate)
+  Gauge::set(end_rate_gauge, end_rate)
 }
 
-test "属性查找性能优化测试" {
-  // 测试属性查找的性能优化
+// Test 2: Batch Processing Performance
+test "batch processing performance" {
+  // Configure batch processing with different sizes
+  let batch_sizes = [10, 50, 100, 500, 1000]
+  let operations_per_batch = 1000
   
-  // 创建大型属性集合
-  let mut large_attrs = azimuth::Attributes { values: [] }
-  for i in 0..1000 {
-    large_attrs.values = large_attrs.values + [
-      ("prefix.key_" + i.to_string(), azimuth::AttributeValue::StringValue("value_" + i.to_string()))
-    ]
+  for batch_size in batch_sizes {
+    let batch_config = {
+      max_batch_size: batch_size,
+      max_export_timeout_ms: 5000,
+      scheduled_delay_ms: 100
+    }
+    
+    let provider = TelemetryProvider::with_batch_config(batch_config)
+    let tracer = TelemetryProvider::get_tracer(provider, "batch_perf_tracer")
+    
+    // Measure batch processing performance
+    let start_time = Time::now()
+    
+    for i in 0..operations_per_batch {
+      let span = Tracer::start_span(tracer, "batch_span_" + i.to_string())
+      Span::end(span)
+    }
+    
+    // Force batch export
+    TelemetryProvider::force_flush(provider)
+    
+    let total_time = Time::now() - start_time
+    let throughput = operations_per_batch.to_float() / total_time.to_seconds()
+    
+    // Verify all spans were exported
+    let spans = TelemetryProvider::get_collected_spans(provider)
+    assert_eq(spans.length(), operations_per_batch)
+    
+    // Log performance metrics
+    let meter = TelemetryProvider::get_meter(provider, "batch_performance")
+    let throughput_gauge = Meter::create_gauge(meter, "batch_throughput")
+    Gauge::set(throughput_gauge, throughput)
+    
+    // Larger batch sizes should generally provide better throughput
+    if batch_size > 10 {
+      assert_true(throughput > 100.0) // At least 100 operations per second
+    }
+  }
+}
+
+// Test 3: Memory Usage Optimization
+test "memory usage optimization" {
+  let provider = TelemetryProvider::new()
+  let tracer = TelemetryProvider::get_tracer(provider, "memory_test_tracer")
+  
+  // Measure memory usage before creating spans
+  let initial_memory = Memory::get_usage()
+  
+  // Create a large number of spans
+  let span_count = 5000
+  let mut spans = []
+  
+  for i in 0..span_count {
+    let span = Tracer::start_span(tracer, "memory_span_" + i.to_string())
+    
+    // Add some attributes to increase memory usage
+    Span::add_attribute(span, "iteration", i.to_string())
+    Span::add_attribute(span, "data", "x".repeat(100)) // 100 character string
+    
+    spans = spans.push(span)
   }
   
-  // 方法1：线性查找（非优化）
-  let start_time1 = get_current_time_millis()
+  let peak_memory = Memory::get_usage()
   
-  let mut found_count1 = 0
-  for (key, value) in large_attrs.values {
-    if key == "prefix.key_500" {
-      match value {
-        azimuth::AttributeValue::StringValue(v) => {
-          assert_eq(v, "value_500")
-          found_count1 = found_count1 + 1
-        }
-        _ => assert_true(false)
+  // End all spans
+  for span in spans {
+    Span::end(span)
+  }
+  
+  // Force export and cleanup
+  TelemetryProvider::force_flush(provider)
+  
+  // Measure memory after cleanup
+  let final_memory = Memory::get_usage()
+  
+  // Verify memory usage is reasonable
+  let memory_per_span = (peak_memory - initial_memory) / span_count
+  assert_true(memory_per_span < 10000) // Less than 10KB per span
+  
+  // Memory should be released after export
+  let memory_released = peak_memory - final_memory
+  let release_percentage = memory_released.to_float() / (peak_memory - initial_memory).to_float()
+  assert_true(release_percentage > 0.8) // At least 80% of memory should be released
+  
+  // Log memory metrics
+  let meter = TelemetryProvider::get_meter(provider, "memory_metrics")
+  let memory_gauge = Meter::create_gauge(meter, "memory_per_span")
+  let release_gauge = Meter::create_gauge(meter, "memory_release_percentage")
+  
+  Gauge::set(memory_gauge, memory_per_span.to_float())
+  Gauge::set(release_gauge, release_percentage * 100.0)
+}
+
+// Test 4: Attribute Processing Performance
+test "attribute processing performance" {
+  let provider = TelemetryProvider::new()
+  let tracer = TelemetryProvider::get_tracer(provider, "attribute_test_tracer")
+  
+  // Test different attribute counts
+  let attribute_counts = [1, 5, 10, 25, 50, 100]
+  
+  for attr_count in attribute_counts {
+    let span = Tracer::start_span(tracer, "attribute_test_span")
+    
+    // Measure attribute addition performance
+    let start_time = Time::now()
+    
+    for i in 0..attr_count {
+      let key = "attr_" + i.to_string()
+      let value = "value_" + i.to_string()
+      Span::add_attribute(span, key, value)
+    }
+    
+    let add_time = Time::now() - start_time
+    
+    // Measure attribute retrieval performance
+    let retrieval_start_time = Time::now()
+    
+    for i in 0..attr_count {
+      let key = "attr_" + i.to_string()
+      let _value = Span::get_attribute(span, key)
+    }
+    
+    let retrieval_time = Time::now() - retrieval_start_time
+    
+    Span::end(span)
+    
+    // Performance should be reasonable even with many attributes
+    let add_rate = attr_count.to_float() / add_time.to_seconds()
+    let retrieval_rate = attr_count.to_float() / retrieval_time.to_seconds()
+    
+    assert_true(add_rate > 1000.0) // At least 1000 attributes per second
+    assert_true(retrieval_rate > 5000.0) // At least 5000 attribute retrievals per second
+    
+    // Log performance metrics
+    let meter = TelemetryProvider::get_meter(provider, "attribute_performance")
+    let add_rate_gauge = Meter::create_gauge(meter, "attribute_add_rate")
+    let retrieval_rate_gauge = Meter::create_gauge(meter, "attribute_retrieval_rate")
+    
+    Gauge::set(add_rate_gauge, add_rate)
+    Gauge::set(retrieval_rate_gauge, retrieval_rate)
+  }
+}
+
+// Test 5: Metric Aggregation Performance
+test "metric aggregation performance" {
+  let provider = TelemetryProvider::new()
+  let meter = TelemetryProvider::get_meter(provider, "aggregation_test_meter")
+  
+  // Create metrics
+  let counter = Meter::create_counter(meter, "performance_counter")
+  let histogram = Meter::create_histogram(meter, "performance_histogram")
+  
+  // Test different data volumes
+  let data_volumes = [100, 1000, 5000, 10000]
+  
+  for volume in data_volumes {
+    // Measure counter performance
+    let counter_start_time = Time::now()
+    
+    for i in 0..volume {
+      let attrs = Attributes::new()
+      Attributes::set(attrs, "iteration", i.to_string())
+      Counter::add(counter, 1.0, Some(attrs))
+    }
+    
+    let counter_time = Time::now() - counter_start_time
+    
+    // Measure histogram performance
+    let histogram_start_time = Time::now()
+    
+    for i in 0..volume {
+      let attrs = Attributes::new()
+      Attributes::set(attrs, "iteration", i.to_string())
+      Histogram::record(histogram, i.to_float(), Some(attrs))
+    }
+    
+    let histogram_time = Time::now() - histogram_start_time
+    
+    // Force export
+    TelemetryProvider::force_flush(provider)
+    
+    // Verify metrics were recorded
+    let metrics = TelemetryProvider::get_collected_metrics(provider)
+    let counter_metrics = metrics.filter(fn(m) { m.name == "performance_counter" })
+    let histogram_metrics = metrics.filter(fn(m) { m.name == "performance_histogram" })
+    
+    assert_eq(counter_metrics.length(), volume)
+    assert_eq(histogram_metrics.length(), volume)
+    
+    // Performance assertions
+    let counter_rate = volume.to_float() / counter_time.to_seconds()
+    let histogram_rate = volume.to_float() / histogram_time.to_seconds()
+    
+    assert_true(counter_rate > 1000.0) // At least 1000 counter operations per second
+    assert_true(histogram_rate > 1000.0) // At least 1000 histogram operations per second
+    
+    // Log performance metrics
+    let perf_meter = TelemetryProvider::get_meter(provider, "performance_metrics")
+    let counter_rate_gauge = Meter::create_gauge(perf_meter, "counter_operation_rate")
+    let histogram_rate_gauge = Meter::create_gauge(perf_meter, "histogram_operation_rate")
+    
+    Gauge::set(counter_rate_gauge, counter_rate)
+    Gauge::set(histogram_rate_gauge, histogram_rate)
+  }
+}
+
+// Test 6: Sampling Performance Impact
+test "sampling performance impact" {
+  // Test different sampling rates
+  let sampling_rates = [0.1, 0.5, 0.9, 1.0]
+  let operation_count = 1000
+  
+  for rate in sampling_rates {
+    let sampling_config = {
+      sampling_enabled: true,
+      sampling_rate: rate,
+      max_spans_per_second: 10000
+    }
+    
+    let provider = TelemetryProvider::with_config(sampling_config)
+    let tracer = TelemetryProvider::get_tracer(provider, "sampling_test_tracer")
+    
+    // Measure performance with sampling
+    let start_time = Time::now()
+    
+    let mut sampled_count = 0
+    for i in 0..operation_count {
+      let span = Tracer::start_span(tracer, "sampling_span_" + i.to_string())
+      if Span::is_sampled(span) {
+        sampled_count = sampled_count + 1
       }
+      Span::end(span)
     }
+    
+    let total_time = Time::now() - start_time
+    let throughput = operation_count.to_float() / total_time.to_seconds()
+    
+    // Force export
+    TelemetryProvider::force_flush(provider)
+    
+    // Verify sampling worked correctly
+    let spans = TelemetryProvider::get_collected_spans(provider)
+    assert_eq(spans.length(), sampled_count)
+    
+    // Verify sampling rate is approximately correct
+    let actual_rate = sampled_count.to_float() / operation_count.to_float()
+    assert_true((actual_rate - rate).abs() < 0.1) // Within 10% of expected rate
+    
+    // Performance should not be significantly impacted by sampling
+    assert_true(throughput > 1000.0) // At least 1000 operations per second
+    
+    // Log performance metrics
+    let meter = TelemetryProvider::get_meter(provider, "sampling_performance")
+    let throughput_gauge = Meter::create_gauge(meter, "sampling_throughput")
+    let actual_rate_gauge = Meter::create_gauge(meter, "actual_sampling_rate")
+    
+    Gauge::set(throughput_gauge, throughput)
+    Gauge::set(actual_rate_gauge, actual_rate * 100.0)
   }
-  
-  let time1 = get_current_time_millis() - start_time1
-  
-  // 方法2：索引查找（优化）
-  let start_time2 = get_current_time_millis()
-  
-  let mut found_count2 = 0
-  let target_index = 500 // 假设我们知道目标索引
-  if target_index < large_attrs.values.length() {
-    let (key, value) = large_attrs.values[target_index]
-    if key == "prefix.key_500" {
-      match value {
-        azimuth::AttributeValue::StringValue(v) => {
-          assert_eq(v, "value_500")
-          found_count2 = found_count2 + 1
-        }
-        _ => assert_true(false)
-      }
-    }
-  }
-  
-  let time2 = get_current_time_millis() - start_time2
-  
-  // 验证结果一致性
-  assert_eq(found_count1, found_count2)
-  assert_eq(found_count1, 1)
-  
-  // 性能断言：索引查找应该更快
-  assert_true(time1 < 1000) // 线性查找应该在1秒内完成
-  assert_true(time2 < 100) // 索引查找应该在100毫秒内完成
 }
 
-test "字符串操作性能优化测试" {
-  // 测试字符串操作的性能优化
+// Test 7: Concurrent Processing Performance
+test "concurrent processing performance" {
+  let provider = TelemetryProvider::new()
+  let tracer = TelemetryProvider::get_tracer(provider, "concurrent_test_tracer")
+  let thread_counts = [1, 2, 4, 8, 16]
+  let operations_per_thread = 500
   
-  // 创建大量字符串
-  let mut string_list = []
-  for i in 0..1000 {
-    string_list = string_list + ["string_value_" + i.to_string()]
-  }
-  
-  // 方法1：逐个字符串拼接（非优化）
-  let start_time1 = get_current_time_millis()
-  
-  let mut concatenated1 = ""
-  for str in string_list {
-    concatenated1 = concatenated1 + str + ","
-  }
-  
-  let time1 = get_current_time_millis() - start_time1
-  
-  // 方法2：预分配容量拼接（优化）
-  let start_time2 = get_current_time_millis()
-  
-  let mut concatenated2 = ""
-  let mut first = true
-  for str in string_list {
-    if first {
-      concatenated2 = str
-      first = false
-    } else {
-      concatenated2 = concatenated2 + "," + str
-    }
-  }
-  
-  let time2 = get_current_time_millis() - start_time2
-  
-  // 验证结果一致性
-  assert_not_eq(concatenated1.length(), 0)
-  assert_not_eq(concatenated2.length(), 0)
-  assert_eq(concatenated1, concatenated2)
-  
-  // 验证包含特定字符串
-  assert_true(concatenated1.contains("string_value_0"))
-  assert_true(concatenated1.contains("string_value_999"))
-  
-  // 性能断言
-  assert_true(time1 < 5000) // 非优化方法应该在5秒内完成
-  assert_true(time2 < 3000) // 优化方法应该在3秒内完成
-}
-
-test "内存使用优化测试" {
-  // 测试内存使用的优化策略
-  
-  // 方法1：创建多个小对象（非优化）
-  let start_time1 = get_current_time_millis()
-  
-  let mut small_objects = []
-  for i in 0..1000 {
-    let small_obj = azimuth::Attributes {
-      values: [
-        ("key1", azimuth::AttributeValue::StringValue("value1_" + i.to_string())),
-        ("key2", azimuth::AttributeValue::IntValue(i))
-      ]
-    }
-    small_objects = small_objects + [small_obj]
-  }
-  
-  let time1 = get_current_time_millis() - start_time1
-  
-  // 方法2：创建一个大对象（优化）
-  let start_time2 = get_current_time_millis()
-  
-  let mut large_values = []
-  for i in 0..1000 {
-    large_values = large_values + [
-      ("key1_" + i.to_string(), azimuth::AttributeValue::StringValue("value1_" + i.to_string())),
-      ("key2_" + i.to_string(), azimuth::AttributeValue::IntValue(i))
-    ]
-  }
-  let large_object = azimuth::Attributes { values: large_values }
-  
-  let time2 = get_current_time_millis() - start_time2
-  
-  // 验证结果一致性
-  assert_eq(small_objects.length(), 1000)
-  assert_eq(large_object.values.length(), 2000) // 每个小对象有2个属性，1000个对象共2000个属性
-  
-  // 验证数据完整性
-  match small_objects[0].values[0] {
-    (key, azimuth::AttributeValue::StringValue(value)) => {
-      assert_eq(key, "key1")
-      assert_eq(value, "value1_0")
-    }
-    _ => assert_true(false)
-  }
-  
-  match large_object.values[0] {
-    (key, azimuth::AttributeValue::StringValue(value)) => {
-      assert_eq(key, "key1_0")
-      assert_eq(value, "value1_0")
-    }
-    _ => assert_true(false)
-  }
-  
-  // 性能断言
-  assert_true(time1 < 5000) // 非优化方法应该在5秒内完成
-  assert_true(time2 < 3000) // 优化方法应该在3秒内完成
-}
-
-test "缓存机制性能测试" {
-  // 测试缓存机制的性能提升
-  
-  // 模拟昂贵的计算操作
-  fn expensive_computation(input : Int) -> String {
-    // 模拟耗时操作
-    let mut result = ""
-    for i in 0..100 {
-      result = result + input.to_string()
-    }
-    result
-  }
-  
-  // 创建缓存（使用数组模拟）
-  let mut cache = []
-  
-  // 测试数据
-  let test_inputs = [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2]
-  
-  // 方法1：无缓存，每次都计算
-  let start_time1 = get_current_time_millis()
-  
-  let mut results1 = []
-  for input in test_inputs {
-    let result = expensive_computation(input)
-    results1 = results1 + [result]
-  }
-  
-  let time1 = get_current_time_millis() - start_time1
-  
-  // 方法2：使用缓存
-  let start_time2 = get_current_time_millis()
-  
-  let mut results2 = []
-  for input in test_inputs {
-    // 检查缓存
-    let mut cached_result = None
-    for (cached_input, cached_value) in cache {
-      if cached_input == input {
-        cached_result = Some(cached_value)
-        break
+  for thread_count in thread_counts {
+    // Measure concurrent processing performance
+    let start_time = Time::now()
+    
+    // Simulate concurrent operations
+    let mut spans = []
+    for thread_id in 0..thread_count {
+      for op_id in 0..operations_per_thread {
+        let span_name = "concurrent_span_" + thread_id.to_string() + "_" + op_id.to_string()
+        let span = Tracer::start_span(tracer, span_name)
+        Span::add_attribute(span, "thread_id", thread_id.to_string())
+        Span::add_attribute(span, "operation_id", op_id.to_string())
+        spans = spans.push(span)
       }
     }
     
-    match cached_result {
-      Some(value) => {
-        results2 = results2 + [value]
-      }
-      None => {
-        let result = expensive_computation(input)
-        cache = cache + [(input, result)]
-        results2 = results2 + [result]
-      }
+    // End all spans
+    for span in spans {
+      Span::end(span)
     }
+    
+    let total_time = Time::now() - start_time
+    let total_operations = thread_count * operations_per_thread
+    let throughput = total_operations.to_float() / total_time.to_seconds()
+    
+    // Force export
+    TelemetryProvider::force_flush(provider)
+    
+    // Verify all spans were processed
+    let collected_spans = TelemetryProvider::get_collected_spans(provider)
+    assert_eq(collected_spans.length(), total_operations)
+    
+    // Performance should scale reasonably with thread count
+    assert_true(throughput > 500.0) // At least 500 operations per second
+    
+    // Log performance metrics
+    let meter = TelemetryProvider::get_meter(provider, "concurrent_performance")
+    let throughput_gauge = Meter::create_gauge(meter, "concurrent_throughput")
+    let thread_count_gauge = Meter::create_gauge(meter, "thread_count")
+    
+    Gauge::set(throughput_gauge, throughput)
+    Gauge::set(thread_count_gauge, thread_count.to_float())
   }
-  
-  let time2 = get_current_time_millis() - start_time2
-  
-  // 验证结果一致性
-  assert_eq(results1.length(), results2.length())
-  for i in 0..results1.length() {
-    assert_eq(results1[i], results2[i])
-  }
-  
-  // 验证缓存效果
-  assert_true(cache.length() <= 3) // 最多应该有3个不同的输入值
-  
-  // 性能断言：缓存应该显著提升性能
-  assert_true(time1 < 10000) // 无缓存方法应该在10秒内完成
-  assert_true(time2 < 5000) // 缓存方法应该在5秒内完成
 }
 
-test "批量操作性能优化测试" {
-  // 测试批量操作的性能优化
+// Test 8: Serialization Performance
+test "serialization performance" {
+  let provider = TelemetryProvider::new()
+  let tracer = TelemetryProvider::get_tracer(provider, "serialization_test_tracer")
   
-  // 创建大量数据
-  let mut source_data = []
-  for i in 0..1000 {
-    source_data = source_data + [
-      azimuth::AttributeValue::StringValue("source_value_" + i.to_string())
-    ]
-  }
-  
-  // 方法1：逐个转换（非优化）
-  let start_time1 = get_current_time_millis()
-  
-  let mut converted1 = []
-  for value in source_data {
-    match value {
-      azimuth::AttributeValue::StringValue(s) => {
-        let converted = azimuth::AttributeValue::StringValue("converted_" + s)
-        converted1 = converted1 + [converted]
-      }
-      _ => assert_true(false)
-    }
-  }
-  
-  let time1 = get_current_time_millis() - start_time1
-  
-  // 方法2：批量转换（优化）
-  let start_time2 = get_current_time_millis()
-  
-  let mut converted2 = []
-  converted2 = source_data.map fn(value) {
-    match value {
-      azimuth::AttributeValue::StringValue(s) => {
-        azimuth::AttributeValue::StringValue("converted_" + s)
-      }
-      _ => azimuth::AttributeValue::StringValue("error")
-    }
-  }
-  
-  let time2 = get_current_time_millis() - start_time2
-  
-  // 验证结果一致性
-  assert_eq(converted1.length(), converted2.length())
-  assert_eq(converted1.length(), 1000)
-  
-  // 验证转换结果
-  match converted1[0] {
-    azimuth::AttributeValue::StringValue(s) => {
-      assert_eq(s, "converted_source_value_0")
-    }
-    _ => assert_true(false)
-  }
-  
-  match converted2[999] {
-    azimuth::AttributeValue::StringValue(s) => {
-      assert_eq(s, "converted_source_value_999")
-    }
-    _ => assert_true(false)
-  }
-  
-  // 性能断言：批量操作应该更快
-  assert_true(time1 < 5000) // 非优化方法应该在5秒内完成
-  assert_true(time2 < 3000) // 优化方法应该在3秒内完成
-}
-
-test "延迟计算性能优化测试" {
-  // 测试延迟计算的性能优化
-  
-  // 创建大量数据
-  let mut data = []
-  for i in 0..1000 {
-    data = data + [i]
-  }
-  
-  // 昂贵的计算函数
-  fn expensive_transform(value : Int) -> String {
-    // 模拟耗时操作
-    let mut result = ""
-    for i in 0..50 {
-      result = result + (value * i).to_string()
-    }
-    result
-  }
-  
-  // 方法1：立即计算所有值（非优化）
-  let start_time1 = get_current_time_millis()
-  
-  let mut computed1 = []
-  for value in data {
-    let result = expensive_transform(value)
-    computed1 = computed1 + [result]
-  }
-  
-  let time1 = get_current_time_millis() - start_time1
-  
-  // 方法2：延迟计算（优化）- 只计算需要的值
-  let start_time2 = get_current_time_millis()
-  
-  // 假设我们只需要前10个值
-  let mut computed2 = []
-  for i in 0..10 {
-    if i < data.length() {
-      let value = data[i]
-      let result = expensive_transform(value)
-      computed2 = computed2 + [result]
-    }
-  }
-  
-  let time2 = get_current_time_millis() - start_time2
-  
-  // 验证计算结果
-  assert_eq(computed1.length(), 1000)
-  assert_eq(computed2.length(), 10)
-  
-  // 验证前10个值的一致性
-  for i in 0..10 {
-    assert_eq(computed1[i], computed2[i])
-  }
-  
-  // 性能断言：延迟计算应该显著提升性能
-  assert_true(time1 < 10000) // 立即计算应该在10秒内完成
-  assert_true(time2 < 1000) // 延迟计算应该在1秒内完成
-}
-
-test "数据结构选择性能优化测试" {
-  // 测试不同数据结构的性能差异
-  
-  // 创建测试数据
-  let test_keys = ["key1", "key2", "key3", "key4", "key5"]
-  let test_values = [
-    azimuth::AttributeValue::StringValue("value1"),
-    azimuth::AttributeValue::StringValue("value2"),
-    azimuth::AttributeValue::StringValue("value3"),
-    azimuth::AttributeValue::StringValue("value4"),
-    azimuth::AttributeValue::StringValue("value5")
+  // Create spans with varying complexity
+  let span_complexities = [
+    { name: "simple_span", attr_count: 5, event_count: 0 },
+    { name: "medium_span", attr_count: 20, event_count: 5 },
+    { name: "complex_span", attr_count: 50, event_count: 20 }
   ]
   
-  // 数据结构1：数组存储（适合小数据集）
-  let start_time1 = get_current_time_millis()
-  
-  let mut array_data = []
-  for i in 0..test_keys.length() {
-    array_data = array_data + [(test_keys[i], test_values[i])]
-  }
-  
-  // 查找操作
-  let mut found_count1 = 0
-  for key in test_keys {
-    for (data_key, data_value) in array_data {
-      if data_key == key {
-        match data_value {
-          azimuth::AttributeValue::StringValue(v) => {
-            assert_true(v.starts_with("value"))
-            found_count1 = found_count1 + 1
-          }
-          _ => assert_true(false)
-        }
-        break
-      }
-    }
-  }
-  
-  let time1 = get_current_time_millis() - start_time1
-  
-  // 数据结构2：属性集合（适合结构化数据）
-  let start_time2 = get_current_time_millis()
-  
-  let mut attrs_data = azimuth::Attributes { values: [] }
-  for i in 0..test_keys.length() {
-    attrs_data.values = attrs_data.values + [(test_keys[i], test_values[i])]
-  }
-  
-  // 查找操作
-  let mut found_count2 = 0
-  for key in test_keys {
-    for (data_key, data_value) in attrs_data.values {
-      if data_key == key {
-        match data_value {
-          azimuth::AttributeValue::StringValue(v) => {
-            assert_true(v.starts_with("value"))
-            found_count2 = found_count2 + 1
-          }
-          _ => assert_true(false)
-        }
-        break
-      }
-    }
-  }
-  
-  let time2 = get_current_time_millis() - start_time2
-  
-  // 验证结果一致性
-  assert_eq(found_count1, found_count2)
-  assert_eq(found_count1, 5) // 应该找到所有5个键
-  
-  // 验证数据完整性
-  assert_eq(array_data.length(), 5)
-  assert_eq(attrs_data.values.length(), 5)
-  
-  // 性能断言：对于小数据集，两种方法性能应该相近
-  assert_true(time1 < 1000) // 数组方法应该在1秒内完成
-  assert_true(time2 < 1000) // 属性集合方法应该在1秒内完成
-}
-
-test "资源池化性能优化测试" {
-  // 测试资源池化的性能优化
-  
-  // 创建资源池（使用数组模拟）
-  let mut resource_pool = []
-  
-  // 预分配资源
-  for i in 0..10 {
-    let resource = azimuth::Attributes {
-      values: [
-        ("pool.id", azimuth::AttributeValue::IntValue(i)),
-        ("pool.status", azimuth::AttributeValue::StringValue("available"))
-      ]
-    }
-    resource_pool = resource_pool + [resource]
-  }
-  
-  // 模拟资源使用模式
-  let operations = [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2]
-  
-  // 方法1：每次创建新资源（非优化）
-  let start_time1 = get_current_time_millis()
-  
-  let mut created_resources = []
-  for op in operations {
-    let new_resource = azimuth::Attributes {
-      values: [
-        ("operation.id", azimuth::AttributeValue::IntValue(op)),
-        ("resource.status", azimuth::AttributeValue::StringValue("active"))
-      ]
-    }
-    created_resources = created_resources + [new_resource]
-  }
-  
-  let time1 = get_current_time_millis() - start_time1
-  
-  // 方法2：使用资源池（优化）
-  let start_time2 = get_current_time_millis()
-  
-  let mut pooled_resources = []
-  for op in operations {
-    // 从池中获取资源
-    let mut pooled_resource = None
-    if resource_pool.length() > 0 {
-      pooled_resource = Some(resource_pool[0])
-      // 模拟移除已使用的资源
-      resource_pool = []
-      for i in 1..resource_pool.length() {
-        resource_pool = resource_pool + [resource_pool[i]]
-      }
+  for complexity in span_complexities {
+    let span = Tracer::start_span(tracer, complexity.name)
+    
+    // Add attributes
+    for i in 0..complexity.attr_count {
+      let key = "attr_" + i.to_string()
+      let value = "value_" + i.to_string()
+      Span::add_attribute(span, key, value)
     }
     
-    match pooled_resource {
-      Some(resource) => {
-        // 重用资源
-        let reused_resource = azimuth::Attributes {
-          values: [
-            ("pool.id", resource.values[0].1), // 保留池ID
-            ("operation.id", azimuth::AttributeValue::IntValue(op)), // 更新操作ID
-            ("resource.status", azimuth::AttributeValue::StringValue("reused"))
-          ]
-        }
-        pooled_resources = pooled_resources + [reused_resource]
-        
-        // 将资源返回池中
-        resource_pool = resource_pool + [resource]
+    // Add events
+    for i in 0..complexity.event_count {
+      let event_name = "event_" + i.to_string()
+      Span::add_event(span, event_name, Some([
+        ("event_attr", "event_value_" + i.to_string())
+      ]))
+    }
+    
+    // Measure serialization performance
+    let serialization_start_time = Time::now()
+    
+    let serialized = Span::serialize(span)
+    
+    let serialization_time = Time::now() - serialization_start_time
+    
+    // Measure deserialization performance
+    let deserialization_start_time = Time::now()
+    
+    let deserialized = Span::deserialize(serialized)
+    
+    let deserialization_time = Time::now() - deserialization_start_time
+    
+    Span::end(span)
+    
+    // Verify serialization/deserialization worked
+    assert_true(deserialized.is_some())
+    
+    // Performance assertions
+    let serialization_size = serialized.length()
+    let serialization_rate = serialization_size.to_float() / serialization_time.to_seconds()
+    let deserialization_rate = serialization_size.to_float() / deserialization_time.to_seconds()
+    
+    assert_true(serialization_rate > 1000.0) // At least 1KB per second
+    assert_true(deserialization_rate > 1000.0) // At least 1KB per second
+    
+    // Log performance metrics
+    let meter = TelemetryProvider::get_meter(provider, "serialization_performance")
+    let size_gauge = Meter::create_gauge(meter, "serialized_size")
+    let serialization_rate_gauge = Meter::create_gauge(meter, "serialization_rate")
+    let deserialization_rate_gauge = Meter::create_gauge(meter, "deserialization_rate")
+    
+    Gauge::set(size_gauge, serialization_size.to_float())
+    Gauge::set(serialization_rate_gauge, serialization_rate)
+    Gauge::set(deserialization_rate_gauge, deserialization_rate)
+  }
+}
+
+// Test 9: Resource Cleanup Performance
+test "resource cleanup performance" {
+  let provider = TelemetryProvider::new()
+  let tracer = TelemetryProvider::get_tracer(provider, "cleanup_test_tracer")
+  
+  // Create a large number of spans
+  let span_count = 5000
+  let mut spans = []
+  
+  for i in 0..span_count {
+    let span = Tracer::start_span(tracer, "cleanup_span_" + i.to_string())
+    Span::add_attribute(span, "iteration", i.to_string())
+    spans = spans.push(span)
+  }
+  
+  // Measure memory usage before cleanup
+  let pre_cleanup_memory = Memory::get_usage()
+  
+  // Measure cleanup performance
+  let cleanup_start_time = Time::now()
+  
+  // End all spans and force cleanup
+  for span in spans {
+    Span::end(span)
+  }
+  
+  TelemetryProvider::force_flush(provider)
+  TelemetryProvider::cleanup(provider)
+  
+  let cleanup_time = Time::now() - cleanup_start_time
+  
+  // Measure memory usage after cleanup
+  let post_cleanup_memory = Memory::get_usage()
+  
+  // Verify cleanup performance
+  let cleanup_rate = span_count.to_float() / cleanup_time.to_seconds()
+  assert_true(cleanup_rate > 100.0) // At least 100 spans cleaned up per second
+  
+  // Verify memory was released
+  let memory_released = pre_cleanup_memory - post_cleanup_memory
+  let release_percentage = memory_released.to_float() / pre_cleanup_memory.to_float()
+  assert_true(release_percentage > 0.7) // At least 70% of memory should be released
+  
+  // Log performance metrics
+  let meter = TelemetryProvider::get_meter(provider, "cleanup_performance")
+  let cleanup_rate_gauge = Meter::create_gauge(meter, "cleanup_rate")
+  let memory_release_gauge = Meter::create_gauge(meter, "memory_release_percentage")
+  
+  Gauge::set(cleanup_rate_gauge, cleanup_rate)
+  Gauge::set(memory_release_gauge, release_percentage * 100.0)
+}
+
+// Test 10: End-to-End Performance Benchmark
+test "end-to-end performance benchmark" {
+  let provider = TelemetryProvider::new()
+  let tracer = TelemetryProvider::get_tracer(provider, "benchmark_tracer")
+  let meter = TelemetryProvider::get_meter(provider, "benchmark_meter")
+  let logger = TelemetryProvider::get_logger(provider, "benchmark_logger")
+  
+  // Create metrics for benchmarking
+  let span_counter = Meter::create_counter(meter, "spans_created")
+  let metric_counter = Meter::create_counter(meter, "metrics_created")
+  let log_counter = Meter::create_counter(meter, "logs_created")
+  let end_to_end_timer = Meter::create_histogram(meter, "end_to_end_duration")
+  
+  // Benchmark configuration
+  let benchmark_iterations = 100
+  let spans_per_iteration = 50
+  let metrics_per_iteration = 20
+  let logs_per_iteration = 10
+  
+  // Run benchmark
+  let benchmark_start_time = Time::now()
+  
+  for iteration in 0..benchmark_iterations {
+    let iteration_start_time = Time::now()
+    
+    // Create spans
+    for i in 0..spans_per_iteration {
+      let span = Tracer::start_span(tracer, "benchmark_span_" + i.to_string())
+      Span::add_attribute(span, "iteration", iteration.to_string())
+      Span::add_attribute(span, "span_index", i.to_string())
+      
+      // Add events to some spans
+      if i % 5 == 0 {
+        Span::add_event(span, "benchmark_event", Some([
+          ("event_iteration", iteration.to_string()),
+          ("event_span_index", i.to_string())
+        ]))
       }
-      None => {
-        // 池中没有可用资源，创建新资源
-        let new_resource = azimuth::Attributes {
-          values: [
-            ("operation.id", azimuth::AttributeValue::IntValue(op)),
-            ("resource.status", azimuth::AttributeValue::StringValue("new"))
-          ]
-        }
-        pooled_resources = pooled_resources + [new_resource]
+      
+      Span::end(span)
+      Counter::add(span_counter, 1.0)
+    }
+    
+    // Create metrics
+    for i in 0..metrics_per_iteration {
+      let attrs = Attributes::new()
+      Attributes::set(attrs, "iteration", iteration.to_string())
+      Attributes::set(attrs, "metric_index", i.to_string())
+      
+      Counter::add(span_counter, 1.0, Some(attrs))
+      Histogram::record(end_to_end_timer, (iteration * 10 + i).to_float(), Some(attrs))
+    }
+    
+    // Create logs
+    for i in 0..logs_per_iteration {
+      let severity = match i % 4 {
+        0 => Debug
+        1 => Info
+        2 => Warning
+        _ => Error
       }
+      
+      let log_record = Logger::create_log_record(logger, severity, "Benchmark log " + i.to_string())
+      LogRecord::add_attribute(log_record, "iteration", iteration.to_string())
+      LogRecord::add_attribute(log_record, "log_index", i.to_string())
+      
+      Logger::emit(logger, log_record)
+      Counter::add(log_counter, 1.0)
+    }
+    
+    let iteration_time = Time::now() - iteration_start_time
+    Histogram::record(end_to_end_timer, iteration_time.to_milliseconds().to_float())
+    
+    // Force export every 10 iterations
+    if iteration % 10 == 0 {
+      TelemetryProvider::force_flush(provider)
     }
   }
   
-  let time2 = get_current_time_millis() - start_time2
+  // Final export
+  TelemetryProvider::force_flush(provider)
   
-  // 验证结果
-  assert_eq(created_resources.length(), pooled_resources.length())
-  assert_eq(created_resources.length(), 20)
+  let benchmark_total_time = Time::now() - benchmark_start_time
   
-  // 验证资源池状态
-  assert_true(resource_pool.length() >= 0) // 池中应该有资源
+  // Verify all telemetry data was created
+  let spans = TelemetryProvider::get_collected_spans(provider)
+  let metrics = TelemetryProvider::get_collected_metrics(provider)
+  let logs = TelemetryProvider::get_collected_logs(provider)
   
-  // 性能断言：资源池化应该提升性能
-  assert_true(time1 < 5000) // 非优化方法应该在5秒内完成
-  assert_true(time2 < 3000) // 优化方法应该在3秒内完成
-}
-
-// 辅助函数：获取当前时间（毫秒）
-fn get_current_time_millis() -> Int {
-  // 模拟时间戳，实际应该使用系统时间API
-  1609459200000 // 2021-01-01 00:00:00 UTC
+  assert_eq(spans.length(), benchmark_iterations * spans_per_iteration)
+  assert_true(metrics.length() >= benchmark_iterations * metrics_per_iteration) // May include internal metrics
+  assert_eq(logs.length(), benchmark_iterations * logs_per_iteration)
+  
+  // Calculate overall performance metrics
+  let total_operations = benchmark_iterations * (spans_per_iteration + metrics_per_iteration + logs_per_iteration)
+  let overall_throughput = total_operations.to_float() / benchmark_total_time.to_seconds()
+  
+  // Performance assertions
+  assert_true(overall_throughput > 100.0) // At least 100 operations per second overall
+  
+  // Log performance metrics
+  let perf_meter = TelemetryProvider::get_meter(provider, "benchmark_metrics")
+  let throughput_gauge = Meter::create_gauge(perf_meter, "overall_throughput")
+  let total_time_gauge = Meter::create_gauge(perf_meter, "total_benchmark_time")
+  let total_operations_gauge = Meter::create_gauge(perf_meter, "total_operations")
+  
+  Gauge::set(throughput_gauge, overall_throughput)
+  Gauge::set(total_time_gauge, benchmark_total_time.to_milliseconds().to_float())
+  Gauge::set(total_operations_gauge, total_operations.to_float())
+  
+  // Calculate average times for each operation type
+  let avg_span_time = benchmark_total_time.to_milliseconds().to_float() / (benchmark_iterations * spans_per_iteration).to_float()
+  let avg_metric_time = benchmark_total_time.to_milliseconds().to_float() / (benchmark_iterations * metrics_per_iteration).to_float()
+  let avg_log_time = benchmark_total_time.to_milliseconds().to_float() / (benchmark_iterations * logs_per_iteration).to_float()
+  
+  let span_time_gauge = Meter::create_gauge(perf_meter, "avg_span_time_ms")
+  let metric_time_gauge = Meter::create_gauge(perf_meter, "avg_metric_time_ms")
+  let log_time_gauge = Meter::create_gauge(perf_meter, "avg_log_time_ms")
+  
+  Gauge::set(span_time_gauge, avg_span_time)
+  Gauge::set(metric_time_gauge, avg_metric_time)
+  Gauge::set(log_time_gauge, avg_log_time)
 }

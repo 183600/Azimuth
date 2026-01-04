@@ -1,735 +1,643 @@
-// Azimuth Telemetry System - Advanced Distributed Tracing Consistency Tests
-// This file contains comprehensive test cases for distributed tracing consistency across services
+// Azimuth 分布式追踪一致性高级测试用例
+// 专注于分布式系统中追踪数据的一致性、完整性和跨服务传播
 
-// Test 1: Trace Context Propagation
-test "trace context propagation across services" {
-  // Create initial trace context
-  let trace_id = "trace_1234567890"
-  let parent_span_id = "span_parent_001"
-  let parent_ctx = SpanContext::new(trace_id, parent_span_id, true, "initial_state")
+// 测试1: 追踪上下文传播一致性
+test "追踪上下文传播一致性测试" {
+  // 创建根追踪上下文
+  let root_context = TraceContext::new("trace-consistency-123", "root-span-456", true, "user.id=12345,session.id=session-789")
   
-  // Service 1: Create child span
-  let service1_span = Span::new("service1_operation", Server, parent_ctx)
-  Span::add_attribute(service1_span, "service.name", StringValue("service1"))
-  Span::add_attribute(service1_span, "operation.type", StringValue("data_processing"))
+  // 创建传播器
+  let propagator = W3CTraceContextPropagator::new()
   
-  let service1_ctx = Span::span_context(service1_span)
-  let service1_span_id = SpanContext::span_id(service1_ctx)
+  // 服务A：API网关
+  let carrier_a = TextMapCarrier::new()
+  DistributedTracer::inject_context(propagator, root_context, carrier_a)
   
-  // Verify trace ID is consistent
-  assert_eq(SpanContext::trace_id(service1_ctx), trace_id)
-  assert_true(SpanContext::is_sampled(service1_ctx))
-  
-  // Service 2: Create child span from service1 context
-  let service2_span = Span::new("service2_operation", Client, service1_ctx)
-  Span::add_attribute(service2_span, "service.name", StringValue("service2"))
-  Span::add_attribute(service2_span, "operation.type", StringValue("data_validation"))
-  
-  let service2_ctx = Span::span_context(service2_span)
-  let service2_span_id = SpanContext::span_id(service2_ctx)
-  
-  // Verify trace ID consistency across services
-  assert_eq(SpanContext::trace_id(service2_ctx), trace_id)
-  assert_eq(SpanContext::trace_id(service2_ctx), SpanContext::trace_id(service1_ctx))
-  
-  // Service 3: Create another child span
-  let service3_span = Span::new("service3_operation", Internal, service2_ctx)
-  Span::add_attribute(service3_span, "service.name", StringValue("service3"))
-  Span::add_attribute(service3_span, "operation.type", StringValue("data_storage"))
-  
-  let service3_ctx = Span::span_context(service3_span)
-  
-  // Verify trace ID consistency across all services
-  assert_eq(SpanContext::trace_id(service3_ctx), trace_id)
-  assert_eq(SpanContext::trace_id(service3_ctx), SpanContext::trace_id(service1_ctx))
-  assert_eq(SpanContext::trace_id(service3_ctx), SpanContext::trace_id(service2_ctx))
-  
-  // Verify all spans have different span IDs but same trace ID
-  assert_not_eq(parent_span_id, service1_span_id)
-  assert_not_eq(service1_span_id, service2_span_id)
-  assert_not_eq(service2_span_id, SpanContext::span_id(service3_ctx))
-  
-  assert_eq(SpanContext::trace_id(parent_ctx), trace_id)
-  assert_eq(SpanContext::trace_id(service1_ctx), trace_id)
-  assert_eq(SpanContext::trace_id(service2_ctx), trace_id)
-  assert_eq(SpanContext::trace_id(service3_ctx), trace_id)
-}
-
-// Test 2: Baggage Propagation Consistency
-test "baggage propagation consistency across services" {
-  // Create initial baggage
-  let initial_baggage = Baggage::new()
-  let baggage_with_user = Baggage::set_entry(initial_baggage, "user.id", "user123")
-  let baggage_with_request = Baggage::set_entry(baggage_with_user, "request.id", "req456")
-  let final_baggage = Baggage::set_entry(baggage_with_request, "session.id", "session789")
-  
-  // Service 1: Receive and add baggage
-  let service1_baggage = Baggage::set_entry(final_baggage, "service1.timestamp", "1234567890")
-  
-  // Verify original baggage entries are preserved
-  let user_id = Baggage::get_entry(service1_baggage, "user.id")
-  match user_id {
-    Some(value) => assert_eq(value, "user123")
+  // 验证注入的追踪头
+  let trace_header = carrier_a.get("traceparent")
+  assert_true(trace_header != None)
+  match trace_header {
+    Some(header) => {
+      assert_true(header.contains("trace-consistency-123"))
+      assert_true(header.contains("root-span-456"))
+    }
     None => assert_true(false)
   }
   
-  let request_id = Baggage::get_entry(service1_baggage, "request.id")
-  match request_id {
-    Some(value) => assert_eq(value, "req456")
+  let baggage_header = carrier_a.get("baggage")
+  assert_true(baggage_header != None)
+  match baggage_header {
+    Some(header) => {
+      assert_true(header.contains("user.id=12345"))
+      assert_true(header.contains("session.id=session-789"))
+    }
     None => assert_true(false)
   }
   
-  let session_id = Baggage::get_entry(service1_baggage, "session.id")
-  match session_id {
-    Some(value) => assert_eq(value, "session789")
-    None => assert_true(false)
+  // 服务B：业务逻辑服务
+  let extracted_context_b = DistributedTracer::extract_context(propagator, carrier_a)
+  assert_eq(extracted_context_b.trace_id, root_context.trace_id)
+  assert_eq(extracted_context_b.is_sampled, root_context.is_sampled)
+  
+  // 创建子span
+  let child_context_b = DistributedTracer::create_child_context(extracted_context_b, "child-span-b-111")
+  assert_eq(child_context_b.trace_id, root_context.trace_id)
+  assert_ne(child_context_b.span_id, root_context.span_id)
+  
+  // 服务B传递给服务C
+  let carrier_b = TextMapCarrier::new()
+  DistributedTracer::inject_context(propagator, child_context_b, carrier_b)
+  
+  // 服务C：数据服务
+  let extracted_context_c = DistributedTracer::extract_context(propagator, carrier_b)
+  assert_eq(extracted_context_c.trace_id, root_context.trace_id)
+  
+  // 验证追踪链一致性
+  let trace_chain = [root_context, child_context_b, extracted_context_c]
+  for context in trace_chain {
+    assert_eq(context.trace_id, "trace-consistency-123")
+    assert_eq(context.is_sampled, true)
   }
   
-  // Service 2: Receive and add baggage
-  let service2_baggage = Baggage::set_entry(service1_baggage, "service2.operation", "validate")
+  // 验证span ID唯一性
+  let span_ids = [root_context.span_id, child_context_b.span_id, extracted_context_c.span_id]
+  let unique_span_ids = span_ids.to_set()
+  assert_eq(unique_span_ids.length(), 3)  // 所有span ID应该唯一
+}
+
+// 测试2: 跨服务追踪完整性
+test "跨服务追踪完整性测试" {
+  // 创建分布式追踪管理器
+  let tracer = DistributedTracer::new()
   
-  // Verify all previous entries are still present
-  let service1_timestamp = Baggage::get_entry(service2_baggage, "service1.timestamp")
-  match service1_timestamp {
-    Some(value) => assert_eq(value, "1234567890")
-    None => assert_true(false)
-  }
+  // 模拟完整的请求链路
+  let trace_id = "trace-integrity-789"
   
-  // Service 3: Receive baggage
-  let service3_baggage = service2_baggage
+  // 1. API网关
+  let gateway_span = tracer.create_span("api.gateway", trace_id, "gateway-span-1")
+  Span::set_attribute(gateway_span, "service.name", StringValue("api.gateway"))
+  Span::set_attribute(gateway_span, "http.method", StringValue("POST"))
+  Span::set_attribute(gateway_span, "http.url", StringValue("/api/v1/process"))
   
-  // Verify complete baggage chain
-  let chain_user_id = Baggage::get_entry(service3_baggage, "user.id")
-  match chain_user_id {
-    Some(value) => assert_eq(value, "user123")
-    None => assert_true(false)
-  }
+  // 2. 认证服务
+  let auth_context = tracer.create_child_context(gateway_span.context, "auth-span-1")
+  let auth_span = tracer.create_span_with_context("auth.service", auth_context)
+  Span::set_attribute(auth_span, "service.name", StringValue("auth.service"))
+  Span::set_attribute(auth_span, "auth.method", StringValue("jwt"))
+  Span::set_attribute(auth_span, "auth.result", StringValue("success"))
   
-  let chain_service2_operation = Baggage::get_entry(service3_baggage, "service2.operation")
-  match chain_service2_operation {
-    Some(value) => assert_eq(value, "validate")
-    None => assert_true(false)
+  // 3. 业务逻辑服务
+  let business_context = tracer.create_child_context(gateway_span.context, "business-span-1")
+  let business_span = tracer.create_span_with_context("business.service", business_context)
+  Span::set_attribute(business_span, "service.name", StringValue("business.service"))
+  Span::set_attribute(business_span, "operation.type", StringValue("data_processing"))
+  
+  // 4. 数据库服务
+  let db_context = tracer.create_child_context(business_span.context, "db-span-1")
+  let db_span = tracer.create_span_with_context("database.service", db_context)
+  Span::set_attribute(db_span, "service.name", StringValue("database.service"))
+  Span::set_attribute(db_span, "db.type", StringValue("postgresql"))
+  Span::set_attribute(db_span, "db.statement", StringValue("SELECT * FROM orders"))
+  
+  // 5. 缓存服务
+  let cache_context = tracer.create_child_context(business_span.context, "cache-span-1")
+  let cache_span = tracer.create_span_with_context("cache.service", cache_context)
+  Span::set_attribute(cache_span, "service.name", StringValue("cache.service"))
+  Span::set_attribute(cache_span, "cache.operation", StringValue("GET"))
+  Span::set_attribute(cache_span, "cache.key", StringValue("user:12345"))
+  
+  // 6. 通知服务
+  let notification_context = tracer.create_child_context(gateway_span.context, "notification-span-1")
+  let notification_span = tracer.create_span_with_context("notification.service", notification_context)
+  Span::set_attribute(notification_span, "service.name", StringValue("notification.service"))
+  Span::set_attribute(notification_span, "notification.type", StringValue("email"))
+  Span::set_attribute(notification_span, "notification.recipient", StringValue("user@example.com"))
+  
+  // 构建追踪树
+  let trace_tree = tracer.build_trace_tree(trace_id)
+  
+  // 验证追踪完整性
+  assert_eq(trace_tree.trace_id, trace_id)
+  assert_eq(trace_tree.spans.length(), 6)
+  
+  // 验证服务分布
+  let services = trace_tree.spans.map(fn(s) { 
+    match Span::get_attribute(s, "service.name") {
+      Some(StringValue(name)) => name
+      _ => ""
+    }
+  }).to_set()
+  
+  assert_true(services.contains("api.gateway"))
+  assert_true(services.contains("auth.service"))
+  assert_true(services.contains("business.service"))
+  assert_true(services.contains("database.service"))
+  assert_true(services.contains("cache.service"))
+  assert_true(services.contains("notification.service"))
+  
+  // 验证父子关系
+  let gateway_children = tracer.get_child_spans(gateway_span.span_id)
+  assert_eq(gateway_children.length(), 3)  // auth, business, notification
+  
+  let business_children = tracer.get_child_spans(business_span.span_id)
+  assert_eq(business_children.length(), 2)  // database, cache
+  
+  // 验证追踪时间顺序
+  let sorted_spans = trace_tree.spans.sort_by(fn(a, b) { a.start_time - b.start_time })
+  for i in 1..sorted_spans.length() - 1 {
+    assert_true(sorted_spans[i].start_time >= sorted_spans[i-1].start_time)
   }
 }
 
-// Test 3: Cross-Service Event Correlation
-test "cross-service event correlation" {
-  // Create trace context
-  let trace_id = "correlation_trace_001"
-  let trace_ctx = SpanContext::new(trace_id, "root_span", true, "")
+// 测试3: 追踪数据一致性验证
+test "追踪数据一致性验证测试" {
+  // 创建一致性验证器
+  let validator = TraceConsistencyValidator::new()
   
-  // Service 1: Create span and events
-  let service1_span = Span::new("service1_main", Server, trace_ctx)
-  Span::add_event(service1_span, "request_received", Some([
-    ("timestamp", IntValue(1000)),
-    ("client.id", StringValue("client123"))
-  ]))
-  Span::add_event(service1_span, "processing_started", Some([
-    ("timestamp", IntValue(1100)),
-    ("operation.type", StringValue("data_transform"))
-  ]))
+  // 设置验证规则
+  validator.add_rule("trace_id_consistency", fn(trace) {
+    let trace_ids = trace.spans.map(fn(s) { s.context.trace_id })
+    let unique_ids = trace_ids.to_set()
+    unique_ids.length() == 1
+  })
   
-  // Service 2: Create child span and correlated events
-  let service2_span = Span::new("service2_process", Client, Span::span_context(service1_span))
-  Span::add_event(service2_span, "data_received", Some([
-    ("timestamp", IntValue(1200)),
-    ("source.service", StringValue("service1"))
-  ]))
-  Span::add_event(service2_span, "validation_started", Some([
-    ("timestamp", IntValue(1250)),
-    ("validation.type", StringValue("schema_check"))
-  ]))
-  
-  // Service 3: Create child span and final events
-  let service3_span = Span::new("service3_store", Internal, Span::span_context(service2_span))
-  Span::add_event(service3_span, "storage_started", Some([
-    ("timestamp", IntValue(1300)),
-    ("storage.type", StringValue("database"))
-  ]))
-  Span::add_event(service3_span, "operation_completed", Some([
-    ("timestamp", IntValue(1400)),
-    ("result.status", StringValue("success"))
-  ]))
-  
-  // Verify trace ID consistency across all spans and events
-  assert_eq(SpanContext::trace_id(Span::span_context(service1_span)), trace_id)
-  assert_eq(SpanContext::trace_id(Span::span_context(service2_span)), trace_id)
-  assert_eq(SpanContext::trace_id(Span::span_context(service3_span)), trace_id)
-  
-  // Verify event timestamp ordering
-  let service1_events = Span::events(service1_span)
-  let service2_events = Span::events(service2_span)
-  let service3_events = Span::events(service3_span)
-  
-  assert_eq(service1_events.length(), 2)
-  assert_eq(service2_events.length(), 2)
-  assert_eq(service3_events.length(), 2)
-  
-  // Extract timestamps for verification
-  let s1_e1_timestamp = Event::get_attribute(service1_events[0], "timestamp")
-  let s1_e2_timestamp = Event::get_attribute(service1_events[1], "timestamp")
-  let s2_e1_timestamp = Event::get_attribute(service2_events[0], "timestamp")
-  let s2_e2_timestamp = Event::get_attribute(service2_events[1], "timestamp")
-  let s3_e1_timestamp = Event::get_attribute(service3_events[0], "timestamp")
-  let s3_e2_timestamp = Event::get_attribute(service3_events[1], "timestamp")
-  
-  match (s1_e1_timestamp, s1_e2_timestamp, s2_e1_timestamp, s2_e2_timestamp, s3_e1_timestamp, s3_e2_timestamp) {
-    (Some(IntValue(t1)), Some(IntValue(t2)), Some(IntValue(t3)), Some(IntValue(t4)), Some(IntValue(t5)), Some(IntValue(t6))) => {
-      assert_true(t1 < t2)  // Service 1 events ordering
-      assert_true(t2 < t3)  // Cross-service ordering
-      assert_true(t3 < t4)  // Service 2 events ordering
-      assert_true(t4 < t5)  // Cross-service ordering
-      assert_true(t5 < t6)  // Service 3 events ordering
-    }
-    _ => assert_true(false)
-  }
-}
-
-// Test 4: Distributed Transaction Consistency
-test "distributed transaction consistency" {
-  // Create transaction context
-  let transaction_id = "txn_1234567890"
-  let trace_ctx = SpanContext::new("trace_txn_001", "txn_root", true, "")
-  
-  // Transaction coordinator span
-  let coordinator_span = Span::new("transaction_coordinator", Server, trace_ctx)
-  Span::add_attribute(coordinator_span, "transaction.id", StringValue(transaction_id))
-  Span::add_attribute(coordinator_span, "transaction.type", StringValue("two_phase_commit"))
-  
-  // Service 1: Prepare phase
-  let service1_prepare_span = Span::new("service1_prepare", Client, Span::span_context(coordinator_span))
-  Span::add_attribute(service1_prepare_span, "transaction.id", StringValue(transaction_id))
-  Span::add_attribute(service1_prepare_span, "phase", StringValue("prepare"))
-  Span::add_attribute(service1_prepare_span, "service", StringValue("inventory"))
-  Span::set_status(service1_prepare_span, Ok, Some("Prepared successfully"))
-  
-  // Service 2: Prepare phase
-  let service2_prepare_span = Span::new("service2_prepare", Client, Span::span_context(coordinator_span))
-  Span::add_attribute(service2_prepare_span, "transaction.id", StringValue(transaction_id))
-  Span::add_attribute(service2_prepare_span, "phase", StringValue("prepare"))
-  Span::add_attribute(service2_prepare_span, "service", StringValue("payment"))
-  Span::set_status(service2_prepare_span, Ok, Some("Prepared successfully"))
-  
-  // Service 3: Prepare phase
-  let service3_prepare_span = Span::new("service3_prepare", Client, Span::span_context(coordinator_span))
-  Span::add_attribute(service3_prepare_span, "transaction.id", StringValue(transaction_id))
-  Span::add_attribute(service3_prepare_span, "phase", StringValue("prepare"))
-  Span::add_attribute(service3_prepare_span, "service", StringValue("notification"))
-  Span::set_status(service3_prepare_span, Ok, Some("Prepared successfully"))
-  
-  // Commit phase
-  let commit_span = Span::new("transaction_commit", Internal, Span::span_context(coordinator_span))
-  Span::add_attribute(commit_span, "transaction.id", StringValue(transaction_id))
-  Span::add_attribute(commit_span, "phase", StringValue("commit"))
-  
-  // Service 1: Commit phase
-  let service1_commit_span = Span::new("service1_commit", Client, Span::span_context(commit_span))
-  Span::add_attribute(service1_commit_span, "transaction.id", StringValue(transaction_id))
-  Span::add_attribute(service1_commit_span, "phase", StringValue("commit"))
-  Span::add_attribute(service1_commit_span, "service", StringValue("inventory"))
-  Span::set_status(service1_commit_span, Ok, Some("Committed successfully"))
-  
-  // Verify transaction ID consistency across all spans
-  let all_spans = [
-    coordinator_span,
-    service1_prepare_span,
-    service2_prepare_span,
-    service3_prepare_span,
-    commit_span,
-    service1_commit_span
-  ]
-  
-  for span in all_spans {
-    let txn_id = Span::get_attribute(span, "transaction.id")
-    match txn_id {
-      Some(StringValue(id)) => assert_eq(id, transaction_id)
-      _ => assert_true(false)
-    }
-    
-    // Verify all spans belong to the same trace
-    let span_ctx = Span::span_context(span)
-    assert_eq(SpanContext::trace_id(span_ctx), "trace_txn_001")
-  }
-  
-  // Verify phase consistency
-  let prepare_spans = [service1_prepare_span, service2_prepare_span, service3_prepare_span]
-  for span in prepare_spans {
-    let phase = Span::get_attribute(span, "phase")
-    match phase {
-      Some(StringValue(p)) => assert_eq(p, "prepare")
-      _ => assert_true(false)
-    }
-  }
-  
-  // Verify commit status
-  assert_eq(Span::status(service1_commit_span), Ok)
-}
-
-// Test 5: Error Propagation Consistency
-test "error propagation consistency across services" {
-  // Create trace context
-  let trace_ctx = SpanContext::new("error_trace_001", "error_root", true, "")
-  
-  // Service 1: Generate error
-  let service1_span = Span::new("service1_operation", Server, trace_ctx)
-  Span::add_event(service1_span, "operation_started", Some([("timestamp", IntValue(1000))]))
-  Span::set_status(service1_span, Error, Some("Database connection failed"))
-  Span::add_event(service1_span, "error_occurred", Some([
-    ("error.type", StringValue("database_error")),
-    ("error.code", IntValue(500)),
-    ("timestamp", IntValue(1100))
-  ]))
-  
-  // Service 2: Propagate error
-  let service2_span = Span::new("service2_operation", Client, Span::span_context(service1_span))
-  Span::add_event(service2_span, "error_received", Some([
-    ("source.service", StringValue("service1")),
-    ("error.type", StringValue("database_error")),
-    ("timestamp", IntValue(1200))
-  ]))
-  Span::set_status(service2_span, Error, Some("Upstream service error"))
-  Span::add_event(service2_span, "error_propagated", Some([
-    ("error.type", StringValue("propagated_error")),
-    ("timestamp", IntValue(1250))
-  ]))
-  
-  // Service 3: Handle propagated error
-  let service3_span = Span::new("service3_operation", Internal, Span::span_context(service2_span))
-  Span::add_event(service3_span, "error_handling_started", Some([
-    ("source.service", StringValue("service2")),
-    ("timestamp", IntValue(1300))
-  ]))
-  Span::add_event(service3_span, "error_handled", Some([
-    ("handling.strategy", StringValue("circuit_breaker")),
-    ("timestamp", IntValue(1350))
-  ]))
-  Span::set_status(service3_span, Error, Some("Error handled with circuit breaker"))
-  
-  // Verify error propagation chain
-  assert_eq(Span::status(service1_span), Error)
-  assert_eq(Span::status(service2_span), Error)
-  assert_eq(Span::status(service3_span), Error)
-  
-  // Verify trace ID consistency in error scenarios
-  assert_eq(SpanContext::trace_id(Span::span_context(service1_span)), "error_trace_001")
-  assert_eq(SpanContext::trace_id(Span::span_context(service2_span)), "error_trace_001")
-  assert_eq(SpanContext::trace_id(Span::span_context(service3_span)), "error_trace_001")
-  
-  // Verify error context preservation
-  let service1_error = Span::get_attribute(service1_span, "error.type")
-  match service1_error {
-    Some(StringValue(error_type)) => assert_eq(error_type, "database_error")
-    _ => assert_true(false)
-  }
-  
-  let service2_error_source = Span::get_attribute(service2_span, "source.service")
-  match service2_error_source {
-    Some(StringValue(source)) => assert_eq(source, "service1")
-    _ => assert_true(false)
-  }
-  
-  let service3_handling = Span::get_attribute(service3_span, "handling.strategy")
-  match service3_handling {
-    Some(StringValue(strategy)) => assert_eq(strategy, "circuit_breaker")
-    _ => assert_true(false)
-  }
-}
-
-// Test 6: Sampling Decision Consistency
-test "sampling decision consistency across distributed trace" {
-  // Create sampled trace context
-  let sampled_trace_ctx = SpanContext::new("sampled_trace_001", "sampled_root", true, "")
-  
-  // Service 1: Create child span
-  let service1_sampled_span = Span::new("service1_sampled", Server, sampled_trace_ctx)
-  
-  // Service 2: Create child span
-  let service2_sampled_span = Span::new("service2_sampled", Client, Span::span_context(service1_sampled_span))
-  
-  // Service 3: Create child span
-  let service3_sampled_span = Span::new("service3_sampled", Internal, Span::span_context(service2_sampled_span))
-  
-  // Verify sampling decision is consistent across all spans
-  assert_true(SpanContext::is_sampled(Span::span_context(service1_sampled_span)))
-  assert_true(SpanContext::is_sampled(Span::span_context(service2_sampled_span)))
-  assert_true(SpanContext::is_sampled(Span::span_context(service3_sampled_span)))
-  
-  // Create non-sampled trace context
-  let non_sampled_trace_ctx = SpanContext::new("non_sampled_trace_001", "non_sampled_root", false, "")
-  
-  // Service 1: Create child span
-  let service1_non_sampled_span = Span::new("service1_non_sampled", Server, non_sampled_trace_ctx)
-  
-  // Service 2: Create child span
-  let service2_non_sampled_span = Span::new("service2_non_sampled", Client, Span::span_context(service1_non_sampled_span))
-  
-  // Service 3: Create child span
-  let service3_non_sampled_span = Span::new("service3_non_sampled", Internal, Span::span_context(service2_non_sampled_span))
-  
-  // Verify non-sampling decision is consistent across all spans
-  assert_false(SpanContext::is_sampled(Span::span_context(service1_non_sampled_span)))
-  assert_false(SpanContext::is_sampled(Span::span_context(service2_non_sampled_span)))
-  assert_false(SpanContext::is_sampled(Span::span_context(service3_non_sampled_span)))
-  
-  // Verify trace ID consistency is maintained regardless of sampling decision
-  assert_eq(SpanContext::trace_id(Span::span_context(service1_sampled_span)), "sampled_trace_001")
-  assert_eq(SpanContext::trace_id(Span::span_context(service2_sampled_span)), "sampled_trace_001")
-  assert_eq(SpanContext::trace_id(Span::span_context(service3_sampled_span)), "sampled_trace_001")
-  
-  assert_eq(SpanContext::trace_id(Span::span_context(service1_non_sampled_span)), "non_sampled_trace_001")
-  assert_eq(SpanContext::trace_id(Span::span_context(service2_non_sampled_span)), "non_sampled_trace_001")
-  assert_eq(SpanContext::trace_id(Span::span_context(service3_non_sampled_span)), "non_sampled_trace_001")
-}
-
-// Test 7: Resource Consistency Across Services
-test "resource consistency across services" {
-  // Define common resource attributes
-  let common_attrs = [
-    ("service.namespace", StringValue("production")),
-    ("service.version", StringValue("1.2.3")),
-    ("deployment.environment", StringValue("prod"))
-  ]
-  
-  // Service 1: Create resource with common and specific attributes
-  let service1_specific_attrs = [
-    ("service.name", StringValue("user-service")),
-    ("service.instance.id", StringValue("user-service-001")),
-    ("host.name", StringValue("host-user-001"))
-  ]
-  let service1_resource = Resource::with_attributes(Resource::new(), common_attrs + service1_specific_attrs)
-  
-  // Service 2: Create resource with common and specific attributes
-  let service2_specific_attrs = [
-    ("service.name", StringValue("order-service")),
-    ("service.instance.id", StringValue("order-service-001")),
-    ("host.name", StringValue("host-order-001"))
-  ]
-  let service2_resource = Resource::with_attributes(Resource::new(), common_attrs + service2_specific_attrs)
-  
-  // Service 3: Create resource with common and specific attributes
-  let service3_specific_attrs = [
-    ("service.name", StringValue("payment-service")),
-    ("service.instance.id", StringValue("payment-service-001")),
-    ("host.name", StringValue("host-payment-001"))
-  ]
-  let service3_resource = Resource::with_attributes(Resource::new(), common_attrs + service3_specific_attrs)
-  
-  // Verify common attributes are consistent across all services
-  for resource in [service1_resource, service2_resource, service3_resource] {
-    let namespace = Resource::get_attribute(resource, "service.namespace")
-    match namespace {
-      Some(StringValue(ns)) => assert_eq(ns, "production")
-      _ => assert_true(false)
-    }
-    
-    let version = Resource::get_attribute(resource, "service.version")
-    match version {
-      Some(StringValue(v)) => assert_eq(v, "1.2.3")
-      _ => assert_true(false)
-    }
-    
-    let environment = Resource::get_attribute(resource, "deployment.environment")
-    match environment {
-      Some(StringValue(env)) => assert_eq(env, "prod")
-      _ => assert_true(false)
-    }
-  }
-  
-  // Verify service-specific attributes are unique per service
-  let service1_name = Resource::get_attribute(service1_resource, "service.name")
-  match service1_name {
-    Some(StringValue(name)) => assert_eq(name, "user-service")
-    _ => assert_true(false)
-  }
-  
-  let service2_name = Resource::get_attribute(service2_resource, "service.name")
-  match service2_name {
-    Some(StringValue(name)) => assert_eq(name, "order-service")
-    _ => assert_true(false)
-  }
-  
-  let service3_name = Resource::get_attribute(service3_resource, "service.name")
-  match service3_name {
-    Some(StringValue(name)) => assert_eq(name, "payment-service")
-    _ => assert_true(false)
-  }
-}
-
-// Test 8: Cross-Service Metric Correlation
-test "cross-service metric correlation" {
-  // Create trace context for correlated operations
-  let trace_ctx = SpanContext::new("metric_correlation_trace_001", "metric_root", true, "")
-  
-  // Service 1: Create metrics and span
-  let provider1 = MeterProvider::default()
-  let meter1 = MeterProvider::get_meter(provider1, "service1-meter")
-  let service1_counter = Meter::create_counter(meter1, "operations_total", Some("Total operations"), Some("count"))
-  let service1_span = Span::new("service1_operation", Server, trace_ctx)
-  
-  // Record metrics with trace correlation
-  Counter::add(service1_counter, 1.0, Some([
-    ("service.name", StringValue("service1")),
-    ("trace.id", StringValue("metric_correlation_trace_001")),
-    ("operation.type", StringValue("process"))
-  ]))
-  
-  // Service 2: Create metrics and span
-  let provider2 = MeterProvider::default()
-  let meter2 = MeterProvider::get_meter(provider2, "service2-meter")
-  let service2_counter = Meter::create_counter(meter2, "operations_total", Some("Total operations"), Some("count"))
-  let service2_span = Span::new("service2_operation", Client, Span::span_context(service1_span))
-  
-  // Record metrics with trace correlation
-  Counter::add(service2_counter, 1.0, Some([
-    ("service.name", StringValue("service2")),
-    ("trace.id", StringValue("metric_correlation_trace_001")),
-    ("operation.type", StringValue("validate"))
-  ]))
-  
-  // Service 3: Create metrics and span
-  let provider3 = MeterProvider::default()
-  let meter3 = MeterProvider::get_meter(provider3, "service3-meter")
-  let service3_counter = Meter::create_counter(meter3, "operations_total", Some("Total operations"), Some("count"))
-  let service3_span = Span::new("service3_operation", Internal, Span::span_context(service2_span))
-  
-  // Record metrics with trace correlation
-  Counter::add(service3_counter, 1.0, Some([
-    ("service.name", StringValue("service3")),
-    ("trace.id", StringValue("metric_correlation_trace_001")),
-    ("operation.type", StringValue("store"))
-  ]))
-  
-  // Collect metrics from all services
-  let metrics1 = Meter::collect(meter1)
-  let metrics2 = Meter::collect(meter2)
-  let metrics3 = Meter::collect(meter3)
-  
-  // Verify trace ID correlation in metrics
-  let verify_trace_correlation = fn(metrics: MetricData) {
-    let metric_list = MetricData::metrics(metrics)
-    for metric in metric_list {
-      if Metric::name(metric) == "operations_total" {
-        match Metric::data(metric) {
-          CounterData(points) => {
-            for point in points {
-              let attrs = DataPoint::attributes(point)
-              let trace_id = Attributes::get(attrs, "trace.id")
-              match trace_id {
-                Some(StringValue(id)) => assert_eq(id, "metric_correlation_trace_001")
-                _ => assert_true(false)
-              }
-            }
-          }
-          _ => assert_true(false)
+  validator.add_rule("parent_child_consistency", fn(trace) {
+    for span in trace.spans {
+      if span.parent_span_id != "" {
+        let parent_exists = trace.spans.any(fn(s) { s.span_id == span.parent_span_id })
+        if not parent_exists {
+          return false
         }
+      }
+    }
+    true
+  })
+  
+  validator.add_rule("time_consistency", fn(trace) {
+    for span in trace.spans {
+      if span.end_time > 0 and span.start_time > 0 {
+        if span.end_time < span.start_time {
+          return false
+        }
+      }
+    }
+    true
+  })
+  
+  // 创建一致的追踪数据
+  let consistent_trace = create_consistent_trace("consistent-trace-123")
+  let validation_result = validator.validate(consistent_trace)
+  
+  // 验证一致性检查通过
+  assert_true(validation_result.is_valid)
+  assert_eq(validation_result.errors.length(), 0)
+  
+  // 创建不一致的追踪数据
+  let inconsistent_trace = create_inconsistent_trace("inconsistent-trace-456")
+  let inconsistent_validation = validator.validate(inconsistent_trace)
+  
+  // 验证检测到不一致
+  assert_false(inconsistent_validation.is_valid)
+  assert_true(inconsistent_validation.errors.length() > 0)
+  
+  // 验证具体错误
+  let trace_id_errors = inconsistent_validation.errors.filter(fn(e) { e.rule == "trace_id_consistency" })
+  assert_true(trace_id_errors.length() > 0)
+  
+  let time_errors = inconsistent_validation.errors.filter(fn(e) { e.rule == "time_consistency" })
+  assert_true(time_errors.length() > 0)
+}
+
+// 测试4: 跨服务采样一致性
+test "跨服务采样一致性测试" {
+  // 创建采样管理器
+  let sampling_manager = DistributedSamplingManager::new()
+  
+  // 设置统一的采样策略
+  let uniform_sampler = Sampler::probability(0.1)  // 10%采样率
+  sampling_manager.set_global_sampler(uniform_sampler)
+  
+  // 创建服务特定的采样策略
+  let critical_service_sampler = Sampler::attribute_based([
+    ("service.name", "payment.service"),
+    ("transaction.amount", ">1000")
+  ])
+  sampling_manager.set_service_sampler("payment.service", critical_service_sampler)
+  
+  // 模拟跨服务请求
+  let trace_id = "sampling-consistency-789"
+  
+  // 服务A：普通服务
+  let service_a_context = TraceContext::new(trace_id, "service-a-span", false, "")
+  let service_a_sampled = sampling_manager.should_sample("service.a", service_a_context)
+  
+  // 服务B：关键服务（小额交易）
+  let service_b_context = TraceContext::new(trace_id, "service-b-span", false, "")
+  let service_b_span = Span::new("payment.process", Server, service_b_context)
+  Span::set_attribute(service_b_span, "service.name", StringValue("payment.service"))
+  Span::set_attribute(service_b_span, "transaction.amount", IntValue(500))  // 小于1000
+  let service_b_sampled = sampling_manager.should_sample("payment.service", service_b_context)
+  
+  // 服务C：关键服务（大额交易）
+  let service_c_context = TraceContext::new(trace_id, "service-c-span", false, "")
+  let service_c_span = Span::new("payment.process", Server, service_c_context)
+  Span::set_attribute(service_c_span, "service.name", StringValue("payment.service"))
+  Span::set_attribute(service_c_span, "transaction.amount", IntValue(1500))  // 大于1000
+  let service_c_sampled = sampling_manager.should_sample("payment.service", service_c_context)
+  
+  // 验证采样一致性
+  // 普通服务应该遵循全局采样策略
+  assert_true(service_a_sampled == true or service_a_sampled == false)  // 结果可能是true或false
+  
+  // 关键服务小额交易应该遵循全局采样策略
+  assert_true(service_b_sampled == true or service_b_sampled == false)
+  
+  // 关键服务大额交易应该总是被采样
+  assert_true(service_c_sampled)
+  
+  // 测试采样决策传播
+  let sampling_decisions = [
+    ("service.a", service_a_sampled),
+    ("payment.service", service_b_sampled),
+    ("payment.service", service_c_sampled)
+  ]
+  
+  let consistent_sampling = sampling_manager.validate_consistency(trace_id, sampling_decisions)
+  
+  // 验证采样一致性（关键服务的大额交易应该被采样，其他服务可能遵循概率采样）
+  assert_true(consistent_sampling.overall_consistency)
+  assert_true(consistent_sampling.critical_services_sampled)
+}
+
+// 测试5: 追踪数据恢复与修复
+test "追踪数据恢复与修复测试" {
+  // 创建数据恢复管理器
+  let recovery_manager = TraceRecoveryManager::new()
+  
+  // 模拟不完整的追踪数据
+  let incomplete_trace = create_incomplete_trace("incomplete-trace-123")
+  
+  // 检测数据缺失
+  let missing_data = recovery_manager.detect_missing_data(incomplete_trace)
+  assert_true(missing_data.length() > 0)
+  
+  // 验证检测到的缺失项
+  let missing_spans = missing_data.filter(fn(m) { m.type == "missing_span" })
+  assert_true(missing_spans.length() > 0)
+  
+  let missing_attributes = missing_data.filter(fn(m) { m.type == "missing_attribute" })
+  assert_true(missing_attributes.length() > 0)
+  
+  // 尝试数据恢复
+  let recovery_options = recovery_manager.generate_recovery_options(missing_data)
+  assert_true(recovery_options.length() > 0)
+  
+  // 应用恢复策略
+  let recovered_trace = recovery_manager.apply_recovery(incomplete_trace, recovery_options)
+  
+  // 验证恢复结果
+  let recovered_missing_data = recovery_manager.detect_missing_data(recovered_trace)
+  assert_true(recovered_missing_data.length() < missing_data.length())
+  
+  // 验证数据完整性
+  let integrity_check = recovery_manager.verify_integrity(recovered_trace)
+  assert_true(integrity_check.completeness_score > 0.8)  // 至少80%完整性
+  assert_true(integrity_check.consistency_score > 0.9)   // 至少90%一致性
+}
+
+// 测试6: 分布式追踪性能一致性
+test "分布式追踪性能一致性测试" {
+  // 创建性能测试管理器
+  let performance_tester = TracingPerformanceTester::new()
+  
+  // 设置性能基准
+  let baseline_metrics = performance_tester.establish_baseline({
+    span_count: 1000,
+    attribute_count: 10,
+    depth: 5,
+    concurrent_services: 10
+  })
+  
+  // 测试不同负载下的性能一致性
+  let load_tests = [
+    { name: "低负载", spans: 100, services: 3, depth: 3 },
+    { name: "中负载", spans: 1000, services: 10, depth: 5 },
+    { name: "高负载", spans: 10000, services: 50, depth: 10 }
+  ]
+  
+  let performance_results = []
+  for test in load_tests {
+    let result = performance_tester.run_performance_test(test)
+    performance_results = performance_results.push(result)
+  }
+  
+  // 验证性能一致性
+  for result in performance_results {
+    // 验证延迟一致性
+    assert_true(result.avg_latency < baseline_metrics.avg_latency * 2.0)
+    assert_true(result.p99_latency < baseline_metrics.p99_latency * 2.0)
+    
+    // 验证吞吐量一致性
+    assert_true(result.throughput > baseline_metrics.throughput * 0.5)
+    
+    // 验证错误率一致性
+    assert_true(result.error_rate < 0.01)  // 错误率应该低于1%
+  }
+  
+  // 验证性能趋势一致性
+  let latency_trend = performance_tester.analyze_latency_trend(performance_results)
+  assert_true(latency_trend.is_consistent)
+  
+  let throughput_trend = performance_tester.analyze_throughput_trend(performance_results)
+  assert_true(throughput_trend.is_consistent)
+}
+
+// 测试7: 跨版本兼容性测试
+test "跨版本兼容性测试" {
+  // 创建版本兼容性管理器
+  let compatibility_manager = VersionCompatibilityManager::new()
+  
+  // 定义支持的版本
+  let supported_versions = ["1.0.0", "1.1.0", "1.2.0", "2.0.0"]
+  compatibility_manager.set_supported_versions(supported_versions)
+  
+  // 创建不同版本的追踪数据
+  let v1_trace = create_versioned_trace("v1-trace", "1.0.0")
+  let v2_trace = create_versioned_trace("v2-trace", "2.0.0")
+  
+  // 测试向前兼容性
+  let forward_compatibility = compatibility_manager.test_forward_compatibility(v1_trace, "2.0.0")
+  assert_true(forward_compatibility.is_compatible)
+  
+  // 测试向后兼容性
+  let backward_compatibility = compatibility_manager.test_backward_compatibility(v2_trace, "1.0.0")
+  assert_true(backward_compatibility.is_compatible)
+  
+  // 测试版本转换
+  let converted_trace = compatibility_manager.convert_version(v1_trace, "1.0.0", "2.0.0")
+  assert_eq(converted_trace.version, "2.0.0")
+  assert_eq(converted_trace.trace_id, v1_trace.trace_id)
+  
+  // 验证转换后的数据完整性
+  let integrity_check = compatibility_manager.verify_conversion_integrity(v1_trace, converted_trace)
+  assert_true(integrity_check.preserves_core_data)
+  assert_true(integrity_check.maintains_relationships)
+}
+
+// 测试8: 追踪数据安全性一致性
+test "追踪数据安全性一致性测试" {
+  // 创建安全管理器
+  let security_manager = TracingSecurityManager::new()
+  
+  // 设置安全策略
+  security_manager.set_data_privacy_policy({
+    encrypt_pii: true,
+    mask_sensitive_data: true,
+    retention_period: 30  // 30天
+  })
+  
+  security_manager.set_access_control_policy({
+    require_authentication: true,
+    role_based_access: true,
+    audit_logging: true
+  })
+  
+  // 创建包含敏感数据的追踪
+  let sensitive_trace = create_sensitive_trace("sensitive-trace-123")
+  
+  // 应用安全策略
+  let secured_trace = security_manager.apply_security_policies(sensitive_trace)
+  
+  // 验证敏感数据被正确处理
+  for span in secured_trace.spans {
+    // 检查PII数据是否被加密
+    let pii_attributes = span.attributes.filter(fn(attr) { 
+      attr.key.contains("email") or attr.key.contains("phone") or attr.key.contains("ssn")
+    })
+    
+    for attr in pii_attributes {
+      match attr.value {
+        StringValue(value) => {
+          assert_false(value.contains("@"))  // 邮箱应该被加密或掩码
+          assert_false(value.contains("-"))  // 电话号码应该被加密或掩码
+        }
+        _ => ()
       }
     }
   }
   
-  verify_trace_correlation(metrics1)
-  verify_trace_correlation(metrics2)
-  verify_trace_correlation(metrics3)
+  // 验证访问控制
+  let access_result = security_manager.check_access(secured_trace, "analyst", "read")
+  assert_true(access_result.granted)
   
-  // Verify trace ID consistency in spans
-  assert_eq(SpanContext::trace_id(Span::span_context(service1_span)), "metric_correlation_trace_001")
-  assert_eq(SpanContext::trace_id(Span::span_context(service2_span)), "metric_correlation_trace_001")
-  assert_eq(SpanContext::trace_id(Span::span_context(service3_span)), "metric_correlation_trace_001")
+  let admin_access = security_manager.check_access(secured_trace, "admin", "write")
+  assert_true(admin_access.granted)
+  
+  let unauthorized_access = security_manager.check_access(secured_trace, "unauthorized", "read")
+  assert_false(unauthorized_access.granted)
 }
 
-// Test 9: Context Propagation with HTTP Headers
-test "context propagation with http headers" {
-  // Create initial context
-  let trace_ctx = SpanContext::new("http_propagation_trace_001", "http_root", true, "")
-  let baggage = Baggage::new()
-  let baggage_with_data = Baggage::set_entry(baggage, "user.id", "user123")
+// 测试9: 多区域追踪一致性
+test "多区域追踪一致性测试" {
+  // 创建多区域追踪管理器
+  let multi_region_manager = MultiRegionTracingManager::new()
   
-  // Inject context into HTTP headers
-  let headers = []
-  let headers_with_trace = TextMapPropagator::inject_trace_context(headers, trace_ctx)
-  let headers_with_baggage = TextMapPropagator::inject_baggage(headers_with_trace, baggage_with_data)
+  // 配置区域
+  let regions = [
+    { name: "us-east-1", timezone: "UTC-5" },
+    { name: "us-west-2", timezone: "UTC-8" },
+    { name: "eu-west-1", timezone: "UTC+0" },
+    { name: "ap-southeast-1", timezone: "UTC+8" }
+  ]
   
-  // Service 1: Extract context from headers
-  let extracted_ctx1 = TextMapPropagator::extract_trace_context(headers_with_baggage)
-  let extracted_baggage1 = TextMapPropagator::extract_baggage(headers_with_baggage)
-  
-  // Verify extracted context
-  assert_eq(SpanContext::trace_id(extracted_ctx1), "http_propagation_trace_001")
-  assert_true(SpanContext::is_sampled(extracted_ctx1))
-  
-  let extracted_user_id = Baggage::get_entry(extracted_baggage1, "user.id")
-  match extracted_user_id {
-    Some(value) => assert_eq(value, "user123")
-    None => assert_true(false)
+  for region in regions {
+    multi_region_manager.add_region(region)
   }
   
-  // Service 1: Create child span and add baggage
-  let service1_span = Span::new("service1_http", Server, extracted_ctx1)
-  let service1_baggage = Baggage::set_entry(extracted_baggage1, "service1.timestamp", "1234567890")
+  // 模拟跨区域请求
+  let trace_id = "multi-region-trace-456"
   
-  // Inject updated context for next service
-  let headers_for_service2 = TextMapPropagator::inject_trace_context(headers, Span::span_context(service1_span))
-  let headers_for_service2_with_baggage = TextMapPropagator::inject_baggage(headers_for_service2, service1_baggage)
-  
-  // Service 2: Extract context from headers
-  let extracted_ctx2 = TextMapPropagator::extract_trace_context(headers_for_service2_with_baggage)
-  let extracted_baggage2 = TextMapPropagator::extract_baggage(headers_for_service2_with_baggage)
-  
-  // Verify context propagation consistency
-  assert_eq(SpanContext::trace_id(extracted_ctx2), "http_propagation_trace_001")
-  assert_eq(SpanContext::trace_id(extracted_ctx2), SpanContext::trace_id(extracted_ctx1))
-  
-  // Verify baggage propagation
-  let user_id_at_service2 = Baggage::get_entry(extracted_baggage2, "user.id")
-  match user_id_at_service2 {
-    Some(value) => assert_eq(value, "user123")
-    None => assert_true(false)
+  // 各区域创建span
+  let region_spans = []
+  for region in regions {
+    let span = multi_region_manager.create_span_in_region(
+      "cross.region.operation", 
+      trace_id, 
+      "span-" + region.name,
+      region.name
+    )
+    Span::set_attribute(span, "service.name", StringValue("service." + region.name))
+    Span::set_attribute(span, "region", StringValue(region.name))
+    region_spans = region_spans.push(span)
   }
   
-  let service1_timestamp_at_service2 = Baggage::get_entry(extracted_baggage2, "service1.timestamp")
-  match service1_timestamp_at_service2 {
-    Some(value) => assert_eq(value, "1234567890")
-    None => assert_true(false)
+  // 构建多区域追踪树
+  let multi_region_trace = multi_region_manager.build_multi_region_trace(trace_id)
+  
+  // 验证跨区域一致性
+  assert_eq(multi_region_trace.spans.length(), regions.length)
+  
+  // 验证时间戳处理
+  let normalized_timestamps = multi_region_manager.normalize_timestamps(multi_region_trace)
+  for span in normalized_timestamps.spans {
+    assert_true(span.start_time > 0)
+    assert_true(span.region_timezone != "")
   }
   
-  // Service 2: Create child span and add baggage
-  let service2_span = Span::new("service2_http", Client, extracted_ctx2)
-  let service2_baggage = Baggage::set_entry(extracted_baggage2, "service2.operation", "process_data")
+  // 验证时钟偏移处理
+  let clock_offsets = multi_region_manager.calculate_clock_offsets(multi_region_trace)
+  assert_eq(clock_offsets.length(), regions.length)
   
-  // Inject for final service
-  let headers_for_service3 = TextMapPropagator::inject_trace_context(headers, Span::span_context(service2_span))
-  let headers_for_service3_with_baggage = TextMapPropagator::inject_baggage(headers_for_service3, service2_baggage)
-  
-  // Service 3: Extract context from headers
-  let extracted_ctx3 = TextMapPropagator::extract_trace_context(headers_for_service3_with_baggage)
-  let extracted_baggage3 = TextMapPropagator::extract_baggage(headers_for_service3_with_baggage)
-  
-  // Verify end-to-end context propagation
-  assert_eq(SpanContext::trace_id(extracted_ctx3), "http_propagation_trace_001")
-  assert_eq(SpanContext::trace_id(extracted_ctx3), SpanContext::trace_id(extracted_ctx1))
-  assert_eq(SpanContext::trace_id(extracted_ctx3), SpanContext::trace_id(extracted_ctx2))
-  
-  // Verify complete baggage propagation
-  let final_user_id = Baggage::get_entry(extracted_baggage3, "user.id")
-  match final_user_id {
-    Some(value) => assert_eq(value, "user123")
-    None => assert_true(false)
-  }
-  
-  let final_service1_timestamp = Baggage::get_entry(extracted_baggage3, "service1.timestamp")
-  match final_service1_timestamp {
-    Some(value) => assert_eq(value, "1234567890")
-    None => assert_true(false)
-  }
-  
-  let final_service2_operation = Baggage::get_entry(extracted_baggage3, "service2.operation")
-  match final_service2_operation {
-    Some(value) => assert_eq(value, "process_data")
-    None => assert_true(false)
+  // 验证时间顺序一致性
+  let time_ordered_spans = multi_region_manager.order_by_time(normalized_timestamps)
+  for i in 1..time_ordered_spans.length() - 1 {
+    assert_true(time_ordered_spans[i].start_time >= time_ordered_spans[i-1].start_time)
   }
 }
 
-// Test 10: Distributed Trace Integrity
-test "distributed trace integrity" {
-  // Create complex distributed trace
-  let root_trace_id = "integrity_trace_001"
-  let root_ctx = SpanContext::new(root_trace_id, "root_span", true, "")
+// 测试10: 追踪数据质量评估
+test "追踪数据质量评估测试" {
+  // 创建数据质量评估器
+  let quality_assessor = TraceDataQualityAssessor::new()
   
-  // Gateway service
-  let gateway_span = Span::new("gateway_request", Server, root_ctx)
-  Span::add_attribute(gateway_span, "service.name", StringValue("api-gateway"))
-  Span::add_attribute(gateway_span, "http.method", StringValue("POST"))
-  Span::add_attribute(gateway_span, "http.url", StringValue("/api/v1/process"))
+  // 设置质量标准
+  quality_assessor.set_quality_standards({
+    completeness_threshold: 0.95,  // 95%完整性
+    consistency_threshold: 0.98,   // 98%一致性
+    accuracy_threshold: 0.99,      // 99%准确性
+    timeliness_threshold: 5000     // 5秒内完成
+  })
   
-  // Auth service
-  let auth_span = Span::new("auth_check", Client, Span::span_context(gateway_span))
-  Span::add_attribute(auth_span, "service.name", StringValue("auth-service"))
-  Span::add_attribute(auth_span, "auth.method", StringValue("jwt"))
-  Span::set_status(auth_span, Ok, Some("Authentication successful"))
-  
-  // Business logic service
-  let business_span = Span::new("business_logic", Client, Span::span_context(gateway_span))
-  Span::add_attribute(business_span, "service.name", StringValue("business-service"))
-  Span::add_attribute(business_span, "operation.type", StringValue("data_processing"))
-  
-  // Data service (child of business service)
-  let data_span = Span::new("data_access", Client, Span::span_context(business_span))
-  Span::add_attribute(data_span, "service.name", StringValue("data-service"))
-  Span::add_attribute(data_span, "database.type", StringValue("postgresql"))
-  Span::add_attribute(data_span, "operation.type", StringValue("query"))
-  
-  // Cache service (child of business service)
-  let cache_span = Span::new("cache_access", Client, Span::span_context(business_span))
-  Span::add_attribute(cache_span, "service.name", StringValue("cache-service"))
-  Span::add_attribute(cache_span, "cache.type", StringValue("redis"))
-  Span::add_attribute(cache_span, "operation.type", StringValue("get"))
-  
-  // Notification service (child of gateway service)
-  let notification_span = Span::new("send_notification", Client, Span::span_context(gateway_span))
-  Span::add_attribute(notification_span, "service.name", StringValue("notification-service"))
-  Span::add_attribute(notification_span, "notification.type", StringValue("email"))
-  
-  // Collect all spans for integrity verification
-  let all_spans = [
-    gateway_span,
-    auth_span,
-    business_span,
-    data_span,
-    cache_span,
-    notification_span
+  // 创建测试追踪数据集
+  let test_traces = [
+    create_high_quality_trace("high-quality-1"),
+    create_medium_quality_trace("medium-quality-1"),
+    create_low_quality_trace("low-quality-1")
   ]
   
-  // Verify trace ID consistency across all spans
-  for span in all_spans {
-    let span_ctx = Span::span_context(span)
-    assert_eq(SpanContext::trace_id(span_ctx), root_trace_id)
-    assert_true(SpanContext::is_valid(span_ctx))
-    assert_true(SpanContext::is_sampled(span_ctx))
+  // 评估数据质量
+  let quality_reports = []
+  for trace in test_traces {
+    let report = quality_assessor.assess_quality(trace)
+    quality_reports = quality_reports.push(report)
   }
   
-  // Verify parent-child relationships
-  assert_eq(SpanContext::span_id(Span::span_context(auth_span)), "auth_check")
-  assert_eq(SpanContext::span_id(Span::span_context(business_span)), "business_logic")
-  assert_eq(SpanContext::span_id(Span::span_context(data_span)), "data_access")
-  assert_eq(SpanContext::span_id(Span::span_context(cache_span)), "cache_access")
-  assert_eq(SpanContext::span_id(Span::span_context(notification_span)), "send_notification")
+  // 验证质量评估结果
+  let high_quality_report = quality_reports[0]
+  assert_true(high_quality_report.overall_score > 0.9)
+  assert_true(high_quality_report.completeness_score > 0.95)
+  assert_true(high_quality_report.consistency_score > 0.98)
   
-  // Verify span hierarchy integrity
-  let gateway_span_id = SpanContext::span_id(Span::span_context(gateway_span))
-  let business_span_id = SpanContext::span_id(Span::span_context(business_span))
-  let data_span_id = SpanContext::span_id(Span::span_context(data_span))
+  let medium_quality_report = quality_reports[1]
+  assert_true(medium_quality_report.overall_score > 0.7 and medium_quality_report.overall_score < 0.9)
   
-  // All spans should have unique span IDs
-  let span_ids = [
-    gateway_span_id,
-    SpanContext::span_id(Span::span_context(auth_span)),
-    business_span_id,
-    data_span_id,
-    SpanContext::span_id(Span::span_context(cache_span)),
-    SpanContext::span_id(Span::span_context(notification_span))
-  ]
+  let low_quality_report = quality_reports[2]
+  assert_true(low_quality_report.overall_score < 0.7)
+  assert_true(low_quality_report.issues.length() > 0)
   
-  // Verify all span IDs are unique
-  for i in 0..span_ids.length() {
-    for j in i+1..span_ids.length() {
-      assert_not_eq(span_ids[i], span_ids[j])
-    }
+  // 生成改进建议
+  let improvement_suggestions = quality_assessor.generate_improvement_suggestions(quality_reports)
+  assert_true(improvement_suggestions.length() > 0)
+  
+  // 验证建议的实用性
+  let has_completeness_suggestion = improvement_suggestions.any(fn(s) { 
+    s.category == "completeness" and s.priority == "high"
+  })
+  assert_true(has_completeness_suggestion)
+}
+
+// 辅助函数：创建一致的追踪数据
+fn create_consistent_trace(trace_id : String) -> Trace {
+  let tracer = DistributedTracer::new()
+  let root_span = tracer.create_span("root.operation", trace_id, "root-span")
+  let child_span = tracer.create_child_span("child.operation", root_span)
+  
+  tracer.build_trace_tree(trace_id)
+}
+
+// 辅助函数：创建不一致的追踪数据
+fn create_inconsistent_trace(trace_id : String) -> Trace {
+  let tracer = DistributedTracer::new()
+  let root_span = tracer.create_span("root.operation", trace_id, "root-span")
+  let child_span = tracer.create_child_span("child.operation", root_span)
+  
+  // 故意创建不一致
+  child_span.context.trace_id = "different-trace-id"
+  child_span.end_time = child_span.start_time - 1000  // 结束时间早于开始时间
+  
+  tracer.build_trace_tree(trace_id)
+}
+
+// 辅助函数：创建不完整的追踪数据
+fn create_incomplete_trace(trace_id : String) -> Trace {
+  let tracer = DistributedTracer::new()
+  let root_span = tracer.create_span("root.operation", trace_id, "root-span")
+  // 故意不创建子span，造成数据缺失
+  
+  tracer.build_trace_tree(trace_id)
+}
+
+// 辅助函数：创建版本化追踪数据
+fn create_versioned_trace(trace_id : String, version : String) -> VersionedTrace {
+  let tracer = DistributedTracer::new()
+  let span = tracer.create_span("versioned.operation", trace_id, "versioned-span")
+  
+  {
+    trace_id: trace_id,
+    version: version,
+    spans: [span],
+    metadata: [("schema_version", version)]
   }
+}
+
+// 辅助函数：创建包含敏感数据的追踪
+fn create_sensitive_trace(trace_id : String) -> Trace {
+  let tracer = DistributedTracer::new()
+  let span = tracer.create_span("sensitive.operation", trace_id, "sensitive-span")
   
-  // Verify service name consistency
-  let service_names = [
-    ("api-gateway", gateway_span),
-    ("auth-service", auth_span),
-    ("business-service", business_span),
-    ("data-service", data_span),
-    ("cache-service", cache_span),
-    ("notification-service", notification_span)
-  ]
+  Span::set_attribute(span, "user.email", StringValue("user@example.com"))
+  Span::set_attribute(span, "user.phone", StringValue("555-123-4567"))
+  Span::set_attribute(span, "user.ssn", StringValue("123-45-6789"))
+  Span::set_attribute(span, "credit.card", StringValue("4111-1111-1111-1111"))
   
-  for (expected_name, span) in service_names {
-    let service_name = Span::get_attribute(span, "service.name")
-    match service_name {
-      Some(StringValue(name)) => assert_eq(name, expected_name)
-      _ => assert_true(false)
-    }
-  }
+  tracer.build_trace_tree(trace_id)
+}
+
+// 辅助函数：创建高质量追踪数据
+fn create_high_quality_trace(trace_id : String) -> Trace {
+  let tracer = DistributedTracer::new()
+  let root_span = tracer.create_span("high.quality.operation", trace_id, "hq-root")
+  
+  Span::set_attribute(root_span, "service.name", StringValue("high.quality.service"))
+  Span::set_attribute(root_span, "service.version", StringValue("1.0.0"))
+  Span::set_attribute(root_span, "host.name", StringValue("prod-host-01"))
+  
+  let child_span = tracer.create_child_span("child.operation", root_span)
+  Span::set_attribute(child_span, "service.name", StringValue("high.quality.service"))
+  Span::set_attribute(child_span, "operation.type", StringValue("business_logic"))
+  
+  tracer.build_trace_tree(trace_id)
+}
+
+// 辅助函数：创建中等质量追踪数据
+fn create_medium_quality_trace(trace_id : String) -> Trace {
+  let tracer = DistributedTracer::new()
+  let root_span = tracer.create_span("medium.quality.operation", trace_id, "mq-root")
+  
+  Span::set_attribute(root_span, "service.name", StringValue("medium.quality.service"))
+  // 缺少一些属性
+  
+  tracer.build_trace_tree(trace_id)
+}
+
+// 辅助函数：创建低质量追踪数据
+fn create_low_quality_trace(trace_id : String) -> Trace {
+  let tracer = DistributedTracer::new()
+  let root_span = tracer.create_span("low.quality.operation", trace_id, "lq-root")
+  
+  // 缺少关键属性，时间戳可能不准确
+  root_span.start_time = 0
+  root_span.end_time = 0
+  
+  tracer.build_trace_tree(trace_id)
 }
