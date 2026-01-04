@@ -7790,18 +7790,6 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_617a696d7574685f636f6d70726568656e736976655f73797374656d5f74657374732e6d6274_8, ["cross-service integration"]),
     9: (__test_617a696d7574685f636f6d70726568656e736976655f73797374656d5f74657374732e6d6274_9, ["resource limits and recovery"]),
   },
-  "azimuth_comprehensive_new_tests.mbt": {
-    0: (__test_617a696d7574685f636f6d70726568656e736976655f6e65775f74657374732e6d6274_0, ["attributes creation and manipulation"]),
-    1: (__test_617a696d7574685f636f6d70726568656e736976655f6e65775f74657374732e6d6274_1, ["span lifecycle operations"]),
-    2: (__test_617a696d7574685f636f6d70726568656e736976655f6e65775f74657374732e6d6274_2, ["metrics creation and operations"]),
-    3: (__test_617a696d7574685f636f6d70726568656e736976655f6e65775f74657374732e6d6274_3, ["log record creation and operations"]),
-    4: (__test_617a696d7574685f636f6d70726568656e736976655f6e65775f74657374732e6d6274_4, ["context propagation operations"]),
-    5: (__test_617a696d7574685f636f6d70726568656e736976655f6e65775f74657374732e6d6274_5, ["resource creation and operations"]),
-    6: (__test_617a696d7574685f636f6d70726568656e736976655f6e65775f74657374732e6d6274_6, ["propagator injection and extraction"]),
-    7: (__test_617a696d7574685f636f6d70726568656e736976655f6e65775f74657374732e6d6274_7, ["http client request and response"]),
-    8: (__test_617a696d7574685f636f6d70726568656e736976655f6e65775f74657374732e6d6274_8, ["boundary conditions and edge cases"]),
-    9: (__test_617a696d7574685f636f6d70726568656e736976655f6e65775f74657374732e6d6274_9, ["logger creation and operations"]),
-  },
   "azimuth_comprehensive_new_test_suite.mbt": {
     0: (__test_617a696d7574685f636f6d70726568656e736976655f6e65775f746573745f73756974652e6d6274_0, ["data serialization and deserialization"]),
     1: (__test_617a696d7574685f636f6d70726568656e736976655f6e65775f746573745f73756974652e6d6274_1, ["time series data processing"]),
