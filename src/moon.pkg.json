@@ -112,5 +112,6 @@
         "../azimuth_concurrent_safety_thread_comprehensive_tests.mbt",
         "../azimuth_memory_management_resource_cleanup_comprehensive_tests.mbt",
         "../azimuth_internationalization_comprehensive_support_tests.mbt",
-        "../azimuth_realtime_stream_processing_comprehensive_tests.mbt"]  }
+        "../azimuth_realtime_stream_processing_comprehensive_tests.mbt",
+        "azimuth_high_quality_comprehensive_tests.mbt"]  }
 }
