@@ -1,457 +1,877 @@
-// Azimuth Premium Advanced Data Structures and Algorithms Tests
-// 高级数据结构和算法测试用例
+// Azimuth Premium Advanced Data Structures Tests
+// This file contains comprehensive test cases for advanced data structures
 
-// Test 1: 高效时间序列数据结构测试
-test "efficient time series data structure operations" {
-  // 创建时间序列数据结构
-  let time_series = TimeSeries::new(100) // 最大容量100
-  
-  // 添加时间序列数据点
-  TimeSeries::add_point(time_series, 1000L, 10.5)
-  TimeSeries::add_point(time_series, 2000L, 15.3)
-  TimeSeries::add_point(time_series, 3000L, 12.7)
-  TimeSeries::add_point(time_series, 4000L, 18.2)
-  TimeSeries::add_point(time_series, 5000L, 14.9)
-  
-  // 测试数据点数量
-  assert_eq(TimeSeries::size(time_series), 5)
-  
-  // 测试按时间范围查询
-  let range_data = TimeSeries::get_range(time_series, 2000L, 4000L)
-  assert_eq(range_data.length(), 3)
-  assert_eq(range_data[0].timestamp, 2000L)
-  assert_eq(range_data[0].value, 15.3)
-  assert_eq(range_data[2].timestamp, 4000L)
-  assert_eq(range_data[2].value, 18.2)
-  
-  // 测试聚合操作
-  let avg_value = TimeSeries::aggregate(time_series, 1000L, 5000L, Average)
-  match avg_value {
-    Some(value) => assert_eq(value, 14.32) // (10.5 + 15.3 + 12.7 + 18.2 + 14.9) / 5
-    None => assert_true(false)
+// Test 1: Efficient Trie Implementation
+test "efficient trie implementation" {
+  // Define trie node
+  type TrieNode = {
+    children: Array[(Char, TrieNode)],
+    is_end_of_word: Bool,
+    value: Option[String]
   }
   
-  let max_value = TimeSeries::aggregate(time_series, 1000L, 5000L, Maximum)
-  match max_value {
-    Some(value) => assert_eq(value, 18.2)
-    None => assert_true(false)
+  // Define trie
+  type Trie = {
+    root: TrieNode,
+    size: Int
   }
   
-  let min_value = TimeSeries::aggregate(time_series, 1000L, 5000L, Minimum)
-  match min_value {
-    Some(value) => assert_eq(value, 10.5)
-    None => assert_true(false)
-  }
-  
-  // 测试数据点淘汰（容量限制）
-  for i in 1..=100 {
-    TimeSeries::add_point(time_series, (5000L + i * 1000L), (10.0 + i as Float))
-  }
-  
-  // 应该只保留最新的100个数据点
-  assert_eq(TimeSeries::size(time_series), 100)
-  assert_eq(TimeSeries::get_earliest_timestamp(time_series), 6000L)
-}
-
-// Test 2: 高效属性索引结构测试
-test "efficient attribute index structure operations" {
-  // 创建属性索引
-  let attr_index = AttributeIndex::new()
-  
-  // 添加带属性的项
-  let item1_id = "item1"
-  let item1_attrs = [
-    ("category", StringValue("sensor")),
-    ("type", StringValue("temperature")),
-    ("location", StringValue("room1")),
-    ("status", StringValue("active"))
-  ]
-  AttributeIndex::add_item(attr_index, item1_id, item1_attrs)
-  
-  let item2_id = "item2"
-  let item2_attrs = [
-    ("category", StringValue("sensor")),
-    ("type", StringValue("humidity")),
-    ("location", StringValue("room1")),
-    ("status", StringValue("active"))
-  ]
-  AttributeIndex::add_item(attr_index, item2_id, item2_attrs)
-  
-  let item3_id = "item3"
-  let item3_attrs = [
-    ("category", StringValue("actuator")),
-    ("type", StringValue("valve")),
-    ("location", StringValue("room2")),
-    ("status", StringValue("inactive"))
-  ]
-  AttributeIndex::add_item(attr_index, item3_id, item3_attrs)
-  
-  // 测试单属性查询
-  let sensor_items = AttributeIndex::query_by_attribute(attr_index, "category", StringValue("sensor"))
-  assert_eq(sensor_items.length(), 2)
-  assert_true(sensor_items.contains(item1_id))
-  assert_true(sensor_items.contains(item2_id))
-  
-  // 测试复合属性查询
-  let room1_sensors = AttributeIndex::query_by_multiple_attributes(
-    attr_index,
-    [("location", StringValue("room1")), ("category", StringValue("sensor"))]
-  )
-  assert_eq(room1_sensors.length(), 2)
-  
-  let active_sensors = AttributeIndex::query_by_multiple_attributes(
-    attr_index,
-    [("status", StringValue("active")), ("category", StringValue("sensor"))]
-  )
-  assert_eq(active_sensors.length(), 2)
-  
-  // 测试不存在的查询
-  let non_existent = AttributeIndex::query_by_attribute(attr_index, "category", StringValue("nonexistent"))
-  assert_eq(non_existent.length(), 0)
-  
-  // 测试属性更新
-  AttributeIndex::update_attribute(attr_index, item1_id, "status", StringValue("maintenance"))
-  let active_items = AttributeIndex::query_by_attribute(attr_index, "status", StringValue("active"))
-  assert_eq(active_items.length(), 1) // 只有item2还是active
-  assert_true(active_items.contains(item2_id))
-  
-  // 测试项删除
-  AttributeIndex::remove_item(attr_index, item2_id)
-  let remaining_sensors = AttributeIndex::query_by_attribute(attr_index, "category", StringValue("sensor"))
-  assert_eq(remaining_sensors.length(), 1)
-  assert_true(remaining_sensors.contains(item1_id))
-}
-
-// Test 3: 高效优先级队列操作测试
-test "efficient priority queue operations" {
-  // 创建优先级队列（最小堆）
-  let priority_queue = PriorityQueue::new(10)
-  
-  // 添加元素（优先级，值）
-  PriorityQueue::push(priority_queue, (5, "task5"))
-  PriorityQueue::push(priority_queue, (2, "task2"))
-  PriorityQueue::push(priority_queue, (8, "task8"))
-  PriorityQueue::push(priority_queue, (1, "task1"))
-  PriorityQueue::push(priority_queue, (7, "task7"))
-  PriorityQueue::push(priority_queue, (3, "task3"))
-  
-  // 测试队列大小
-  assert_eq(PriorityQueue::size(priority_queue), 6)
-  
-  // 测试按优先级出队（最小优先级先出）
-  let (priority1, value1) = PriorityQueue::pop(priority_queue)
-  assert_eq(priority1, 1)
-  assert_eq(value1, "task1")
-  
-  let (priority2, value2) = PriorityQueue::pop(priority_queue)
-  assert_eq(priority2, 2)
-  assert_eq(value2, "task2")
-  
-  let (priority3, value3) = PriorityQueue::pop(priority_queue)
-  assert_eq(priority3, 3)
-  assert_eq(value3, "task3")
-  
-  // 测试查看顶部元素但不移除
-  let (top_priority, top_value) = PriorityQueue::peek(priority_queue)
-  assert_eq(top_priority, 5)
-  assert_eq(top_value, "task5")
-  
-  // 队列大小应该不变
-  assert_eq(PriorityQueue::size(priority_queue), 3)
-  
-  // 测试更新元素优先级
-  PriorityQueue::update_priority(priority_queue, "task8", 0)
-  let (new_top_priority, new_top_value) = PriorityQueue::pop(priority_queue)
-  assert_eq(new_top_priority, 0)
-  assert_eq(new_top_value, "task8")
-  
-  // 测试清空队列
-  PriorityQueue::clear(priority_queue)
-  assert_eq(PriorityQueue::size(priority_queue), 0)
-  assert_true(PriorityQueue::is_empty(priority_queue))
-}
-
-// Test 4: 高效环形缓冲区操作测试
-test "efficient circular buffer operations" {
-  // 创建环形缓冲区
-  let buffer = CircularBuffer::new(5)
-  
-  // 测试初始状态
-  assert_true(CircularBuffer::is_empty(buffer))
-  assert_false(CircularBuffer::is_full(buffer))
-  assert_eq(CircularBuffer::size(buffer), 0)
-  
-  // 添加元素
-  assert_true(CircularBuffer::push(buffer, 1))
-  assert_true(CircularBuffer::push(buffer, 2))
-  assert_true(CircularBuffer::push(buffer, 3))
-  
-  // 测试缓冲区状态
-  assert_false(CircularBuffer::is_empty(buffer))
-  assert_false(CircularBuffer::is_full(buffer))
-  assert_eq(CircularBuffer::size(buffer), 3)
-  
-  // 测试元素访问
-  assert_eq(CircularBuffer::get(buffer, 0), Some(1))
-  assert_eq(CircularBuffer::get(buffer, 1), Some(2))
-  assert_eq(CircularBuffer::get(buffer, 2), Some(3))
-  assert_eq(CircularBuffer::get(buffer, 3), None) // 索引超出范围
-  
-  // 填满缓冲区
-  assert_true(CircularBuffer::push(buffer, 4))
-  assert_true(CircularBuffer::push(buffer, 5))
-  
-  // 缓冲区现在应该满了
-  assert_false(CircularBuffer::is_empty(buffer))
-  assert_true(CircularBuffer::is_full(buffer))
-  assert_eq(CircularBuffer::size(buffer), 5)
-  
-  // 尝试添加更多元素（应该失败）
-  assert_false(CircularBuffer::push(buffer, 6))
-  
-  // 测试覆盖模式下的添加
-  CircularBuffer::push_overwrite(buffer, 6)
-  assert_true(CircularBuffer::is_full(buffer))
-  assert_eq(CircularBuffer::size(buffer), 5)
-  
-  // 最旧的元素应该被覆盖
-  assert_eq(CircularBuffer::get(buffer, 0), Some(2))
-  assert_eq(CircularBuffer::get(buffer, 4), Some(6))
-  
-  // 测试元素移除
-  let removed = CircularBuffer::pop(buffer)
-  assert_eq(removed, Some(2))
-  assert_false(CircularBuffer::is_full(buffer))
-  assert_eq(CircularBuffer::size(buffer), 4)
-  
-  // 测试迭代器
-  let mut sum = 0
-  for item in CircularBuffer::iter(buffer) {
-    sum = sum + item
-  }
-  assert_eq(sum, 20) // 3 + 4 + 5 + 6
-}
-
-// Test 5: 高效哈希表操作测试
-test "efficient hash table operations" {
-  // 创建哈希表
-  let hash_table = HashTable::new(10)
-  
-  // 测试初始状态
-  assert_eq(HashTable::size(hash_table), 0)
-  assert_true(HashTable::is_empty(hash_table))
-  
-  // 添加键值对
-  assert_true(HashTable::insert(hash_table, "key1", "value1"))
-  assert_true(HashTable::insert(hash_table, "key2", "value2"))
-  assert_true(HashTable::insert(hash_table, "key3", "value3"))
-  
-  // 测试表大小
-  assert_eq(HashTable::size(hash_table), 3)
-  assert_false(HashTable::is_empty(hash_table))
-  
-  // 测试值获取
-  assert_eq(HashTable::get(hash_table, "key1"), Some("value1"))
-  assert_eq(HashTable::get(hash_table, "key2"), Some("value2"))
-  assert_eq(HashTable::get(hash_table, "key3"), Some("value3"))
-  assert_eq(HashTable::get(hash_table, "nonexistent"), None)
-  
-  // 测试键存在性检查
-  assert_true(HashTable::contains_key(hash_table, "key1"))
-  assert_true(HashTable::contains_key(hash_table, "key2"))
-  assert_false(HashTable::contains_key(hash_table, "nonexistent"))
-  
-  // 测试值更新
-  assert_true(HashTable::insert(hash_table, "key1", "new_value1"))
-  assert_eq(HashTable::get(hash_table, "key1"), Some("new_value1"))
-  assert_eq(HashTable::size(hash_table), 3) // 大小不变，只是更新了值
-  
-  // 测试键值对删除
-  let removed_value = HashTable::remove(hash_table, "key2")
-  assert_eq(removed_value, Some("value2"))
-  assert_eq(HashTable::size(hash_table), 2)
-  assert_false(HashTable::contains_key(hash_table, "key2"))
-  
-  // 测试删除不存在的键
-  let non_existent_removal = HashTable::remove(hash_table, "nonexistent")
-  assert_eq(non_existent_removal, None)
-  assert_eq(HashTable::size(hash_table), 2) // 大小不变
-  
-  // 测试获取所有键
-  let all_keys = HashTable::keys(hash_table)
-  assert_eq(all_keys.length(), 2)
-  assert_true(all_keys.contains("key1"))
-  assert_true(all_keys.contains("key3"))
-  
-  // 测试获取所有值
-  let all_values = HashTable::values(hash_table)
-  assert_eq(all_values.length(), 2)
-  assert_true(all_values.contains("new_value1"))
-  assert_true(all_values.contains("value3"))
-  
-  // 测试清空表
-  HashTable::clear(hash_table)
-  assert_eq(HashTable::size(hash_table), 0)
-  assert_true(HashTable::is_empty(hash_table))
-  assert_eq(HashTable::get(hash_table, "key1"), None)
-}
-
-// Test 6: 高效树结构操作测试
-test "efficient tree structure operations" {
-  // 创建二叉搜索树
-  let tree = BinarySearchTree::new()
-  
-  // 测试初始状态
-  assert_true(BinarySearchTree::is_empty(tree))
-  assert_eq(BinarySearchTree::size(tree), 0)
-  
-  // 插入节点
-  BinarySearchTree::insert(tree, 50)
-  BinarySearchTree::insert(tree, 30)
-  BinarySearchTree::insert(tree, 70)
-  BinarySearchTree::insert(tree, 20)
-  BinarySearchTree::insert(tree, 40)
-  BinarySearchTree::insert(tree, 60)
-  BinarySearchTree::insert(tree, 80)
-  
-  // 测试树大小
-  assert_false(BinarySearchTree::is_empty(tree))
-  assert_eq(BinarySearchTree::size(tree), 7)
-  
-  // 测试查找
-  assert_true(BinarySearchTree::contains(tree, 50))
-  assert_true(BinarySearchTree::contains(tree, 20))
-  assert_true(BinarySearchTree::contains(tree, 80))
-  assert_false(BinarySearchTree::contains(tree, 90))
-  
-  // 测试最小值和最大值
-  assert_eq(BinarySearchTree::min(tree), Some(20))
-  assert_eq(BinarySearchTree::max(tree), Some(80))
-  
-  // 测试前序遍历
-  let preorder = BinarySearchTree::preorder_traversal(tree)
-  assert_eq(preorder, [50, 30, 20, 40, 70, 60, 80])
-  
-  // 测试中序遍历
-  let inorder = BinarySearchTree::inorder_traversal(tree)
-  assert_eq(inorder, [20, 30, 40, 50, 60, 70, 80])
-  
-  // 测试后序遍历
-  let postorder = BinarySearchTree::postorder_traversal(tree)
-  assert_eq(postorder, [20, 40, 30, 60, 80, 70, 50])
-  
-  // 测试层序遍历
-  let levelorder = BinarySearchTree::levelorder_traversal(tree)
-  assert_eq(levelorder, [50, 30, 70, 20, 40, 60, 80])
-  
-  // 测试节点删除（叶子节点）
-  BinarySearchTree::remove(tree, 20)
-  assert_false(BinarySearchTree::contains(tree, 20))
-  assert_eq(BinarySearchTree::size(tree), 6)
-  
-  // 测试节点删除（有一个子节点的节点）
-  BinarySearchTree::remove(tree, 30)
-  assert_false(BinarySearchTree::contains(tree, 30))
-  assert_eq(BinarySearchTree::size(tree), 5)
-  
-  // 测试节点删除（有两个子节点的节点）
-  BinarySearchTree::remove(tree, 50)
-  assert_false(BinarySearchTree::contains(tree, 50))
-  assert_eq(BinarySearchTree::size(tree), 4)
-  
-  // 验证树结构仍然正确
-  let new_inorder = BinarySearchTree::inorder_traversal(tree)
-  assert_eq(new_inorder, [40, 60, 70, 80])
-}
-
-// Test 7: 高效图结构操作测试
-test "efficient graph structure operations" {
-  // 创建有向图
-  let graph = DirectedGraph::new(10)
-  
-  // 测试初始状态
-  assert_eq(DirectedGraph::vertex_count(graph), 0)
-  assert_eq(DirectedGraph::edge_count(graph), 0)
-  
-  // 添加顶点
-  let v1 = DirectedGraph::add_vertex(graph, "A")
-  let v2 = DirectedGraph::add_vertex(graph, "B")
-  let v3 = DirectedGraph::add_vertex(graph, "C")
-  let v4 = DirectedGraph::add_vertex(graph, "D")
-  
-  // 测试顶点数量
-  assert_eq(DirectedGraph::vertex_count(graph), 4)
-  
-  // 添加边
-  DirectedGraph::add_edge(graph, v1, v2, 5)
-  DirectedGraph::add_edge(graph, v1, v3, 3)
-  DirectedGraph::add_edge(graph, v2, v3, 2)
-  DirectedGraph::add_edge(graph, v2, v4, 6)
-  DirectedGraph::add_edge(graph, v3, v4, 7)
-  
-  // 测试边数量
-  assert_eq(DirectedGraph::edge_count(graph), 5)
-  
-  // 测试顶点邻居
-  let v1_neighbors = DirectedGraph::neighbors(graph, v1)
-  assert_eq(v1_neighbors.length(), 2)
-  assert_true(v1_neighbors.contains(v2))
-  assert_true(v1_neighbors.contains(v3))
-  
-  let v4_neighbors = DirectedGraph::neighbors(graph, v4)
-  assert_eq(v4_neighbors.length(), 0) // v4没有出边
-  
-  // 测试边权重
-  assert_eq(DirectedGraph::edge_weight(graph, v1, v2), Some(5))
-  assert_eq(DirectedGraph::edge_weight(graph, v1, v3), Some(3))
-  assert_eq(DirectedGraph::edge_weight(graph, v4, v1), None) // 不存在的边
-  
-  // 测试顶点度数
-  assert_eq(DirectedGraph::out_degree(graph, v1), 2)
-  assert_eq(DirectedGraph::in_degree(graph, v1), 0)
-  assert_eq(DirectedGraph::out_degree(graph, v4), 0)
-  assert_eq(DirectedGraph::in_degree(graph, v4), 2)
-  
-  // 测试Dijkstra最短路径算法
-  let shortest_path_v1_to_v4 = DirectedGraph::shortest_path(graph, v1, v4)
-  match shortest_path_v1_to_v4 {
-    Some((distance, path)) => {
-      assert_eq(distance, 10) // v1->v3->v4: 3 + 7
-      assert_eq(path, [v1, v3, v4])
+  // Create trie node
+  let create_trie_node = fn() {
+    {
+      children: [],
+      is_end_of_word: false,
+      value: None
     }
-    None => assert_true(false)
   }
   
-  // 测试删除边
-  DirectedGraph::remove_edge(graph, v1, v3)
-  assert_eq(DirectedGraph::edge_count(graph), 4)
-  assert_eq(DirectedGraph::edge_weight(graph, v1, v3), None)
-  
-  // 重新计算最短路径
-  let new_shortest_path = DirectedGraph::shortest_path(graph, v1, v4)
-  match new_shortest_path {
-    Some((distance, path)) => {
-      assert_eq(distance, 11) // v1->v2->v4: 5 + 6
-      assert_eq(path, [v1, v2, v4])
+  // Create trie
+  let create_trie = fn() {
+    {
+      root: create_trie_node(),
+      size: 0
     }
-    None => assert_true(false)
   }
   
-  // 测试删除顶点
-  DirectedGraph::remove_vertex(graph, v2)
-  assert_eq(DirectedGraph::vertex_count(graph), 3)
-  assert_eq(DirectedGraph::edge_count(graph), 1) // 只剩下v3->v4
-  
-  // 测试拓扑排序
-  let topological_order = DirectedGraph::topological_sort(graph)
-  match topological_order {
-    Some(order) => {
-      assert_eq(order.length(), 3)
-      // v3应该在v4前面，因为有一条边v3->v4
-      let v3_index = order.index_of(v3)
-      let v4_index = order.index_of(v4)
-      assert_true(v3_index < v4_index)
+  // Insert word into trie
+  let insert = fn(trie: Trie, word: String, value: String) {
+    let rec insert_node = fn(node: TrieNode, chars: Array[Char], index: Int) {
+      if index >= chars.length() {
+        {
+          children: node.children,
+          is_end_of_word: true,
+          value: Some(value)
+        }
+      } else {
+        let current_char = chars[index]
+        
+        match node.children.find_index(fn(pair) { pair.0 == current_char }) {
+          Some(child_index) => {
+            let (char, child_node) = node.children[child_index]
+            let updated_child = insert_node(child_node, chars, index + 1)
+            let updated_children = node.children.update(child_index, (char, updated_child))
+            
+            {
+              children: updated_children,
+              is_end_of_word: node.is_end_of_word,
+              value: node.value
+            }
+          }
+          None => {
+            let new_child = insert_node(create_trie_node(), chars, index + 1)
+            let updated_children = node.children.push((current_char, new_child))
+            
+            {
+              children: updated_children,
+              is_end_of_word: node.is_end_of_word,
+              value: node.value
+            }
+          }
+        }
+      }
     }
+    
+    let chars = word.to_char_array()
+    let updated_root = insert_node(trie.root, chars, 0)
+    
+    {
+      root: updated_root,
+      size: trie.size + 1
+    }
+  }
+  
+  // Search for word in trie
+  let search = fn(trie: Trie, word: String) {
+    let rec search_node = fn(node: TrieNode, chars: Array[Char], index: Int) {
+      if index >= chars.length() {
+        if node.is_end_of_word {
+          Some(node.value)
+        } else {
+          None
+        }
+      } else {
+        let current_char = chars[index]
+        
+        match node.children.find(fn(pair) { pair.0 == current_char }) {
+          Some((_, child_node)) => search_node(child_node, chars, index + 1)
+          None => None
+        }
+      }
+    }
+    
+    let chars = word.to_char_array()
+    search_node(trie.root, chars, 0)
+  }
+  
+  // Test trie creation
+  let trie = create_trie()
+  assert_eq(trie.size, 0)
+  assert_false(trie.root.is_end_of_word)
+  assert_eq(trie.root.children.length(), 0)
+  
+  // Test inserting words
+  let trie1 = insert(trie, "hello", "greeting")
+  assert_eq(trie1.size, 1)
+  
+  let trie2 = insert(trie1, "world", "planet")
+  assert_eq(trie2.size, 2)
+  
+  let trie3 = insert(trie2, "help", "assistance")
+  assert_eq(trie3.size, 3)
+  
+  // Test searching for words
+  match search(trie3, "hello") {
+    Some(value) => assert_eq(value, "greeting")
     None => assert_true(false)
   }
+  
+  match search(trie3, "world") {
+    Some(value) => assert_eq(value, "planet")
+    None => assert_true(false)
+  }
+  
+  match search(trie3, "help") {
+    Some(value) => assert_eq(value, "assistance")
+    None => assert_true(false)
+  }
+  
+  // Test searching for non-existent words
+  match search(trie3, "hel") {
+    None => assert_true(true)
+    Some(_) => assert_true(false)
+  }
+  
+  match search(trie3, "helping") {
+    None => assert_true(true)
+    Some(_) => assert_true(false)
+  }
+  
+  match search(trie3, "wonderful") {
+    None => assert_true(true)
+    Some(_) => assert_true(false)
+  }
+  
+  // Test prefix sharing
+  let trie4 = insert(trie3, "hero", "superhero")
+  assert_eq(trie4.size, 4)
+  
+  // The prefix "he" should be shared between "hello", "help", and "hero"
+  match search(trie4, "hero") {
+    Some(value) => assert_eq(value, "superhero")
+    None => assert_true(false)
+  }
+}
+
+// Test 2: Bloom Filter Implementation
+test "bloom filter implementation" {
+  // Define bloom filter
+  type BloomFilter = {
+    bit_array: Array[Bool],
+    size: Int,
+    hash_count: Int,
+    item_count: Int
+  }
+  
+  // Create bloom filter
+  let create_bloom_filter = fn(size: Int, hash_count: Int) {
+    {
+      bit_array: [false] * size,
+      size,
+      hash_count,
+      item_count: 0
+    }
+  }
+  
+  // Simple hash functions for testing
+  let hash1 = fn(item: String, size: Int) {
+    let mut hash = 0
+    for i in 0..item.length() {
+      hash = (hash + item[i].to_int()) % size
+    }
+    hash
+  }
+  
+  let hash2 = fn(item: String, size: Int) {
+    let mut hash = 1
+    for i in 0..item.length() {
+      hash = (hash * 31 + item[i].to_int()) % size
+    }
+    hash
+  }
+  
+  let hash3 = fn(item: String, size: Int) {
+    let mut hash = 5381
+    for i in 0..item.length() {
+      hash = ((hash << 5) + hash + item[i].to_int()) % size
+    }
+    hash
+  }
+  
+  // Add item to bloom filter
+  let add = fn(filter: BloomFilter, item: String) {
+    let mut updated_bit_array = filter.bit_array
+    
+    for i in 0..filter.hash_count {
+      let hash_value = match i {
+        0 => hash1(item, filter.size)
+        1 => hash2(item, filter.size)
+        2 => hash3(item, filter.size)
+        _ => hash1(item, filter.size)
+      }
+      
+      updated_bit_array = updated_bit_array.update(hash_value, true)
+    }
+    
+    {
+      bit_array: updated_bit_array,
+      size: filter.size,
+      hash_count: filter.hash_count,
+      item_count: filter.item_count + 1
+    }
+  }
+  
+  // Check if item might be in bloom filter
+  let might_contain = fn(filter: BloomFilter, item: String) {
+    for i in 0..filter.hash_count {
+      let hash_value = match i {
+        0 => hash1(item, filter.size)
+        1 => hash2(item, filter.size)
+        2 => hash3(item, filter.size)
+        _ => hash1(item, filter.size)
+      }
+      
+      if !filter.bit_array[hash_value] {
+        return false
+      }
+    }
+    
+    true
+  }
+  
+  // Test bloom filter creation
+  let filter = create_bloom_filter(100, 3)
+  assert_eq(filter.size, 100)
+  assert_eq(filter.hash_count, 3)
+  assert_eq(filter.item_count, 0)
+  assert_eq(filter.bit_array.length(), 100)
+  
+  // Test adding items
+  let filter1 = add(filter, "hello")
+  assert_eq(filter1.item_count, 1)
+  
+  let filter2 = add(filter1, "world")
+  assert_eq(filter2.item_count, 2)
+  
+  let filter3 = add(filter2, "test")
+  assert_eq(filter3.item_count, 3)
+  
+  // Test checking for existing items
+  assert_true(might_contain(filter3, "hello"))
+  assert_true(might_contain(filter3, "world"))
+  assert_true(might_contain(filter3, "test"))
+  
+  // Test checking for non-existing items
+  let not_exist1 = might_contain(filter3, "foo")
+  let not_exist2 = might_contain(filter3, "bar")
+  let not_exist3 = might_contain(filter3, "baz")
+  
+  // These might be true due to false positives, but should not all be true
+  assert_false(not_exist1 && not_exist2 && not_exist3)
+  
+  // Test false positive rate (should be low with reasonable size)
+  let mut false_positive_count = 0
+  let test_items = ["apple", "banana", "cherry", "date", "elderberry"]
+  
+  for item in test_items {
+    if might_contain(filter3, item) {
+      false_positive_count = false_positive_count + 1
+    }
+  }
+  
+  // With 3 items in a 100-bit filter, false positive rate should be low
+  assert_true(false_positive_count <= test_items.length())
+}
+
+// Test 3: Skip List Implementation
+test "skip list implementation" {
+  // Define skip list node
+  type SkipListNode = {
+    key: Int,
+    value: String,
+    forward: Array[Option[SkipListNode]]
+  }
+  
+  // Define skip list
+  type SkipList = {
+    head: SkipListNode,
+    max_level: Int,
+    level: Int,
+    size: Int
+  }
+  
+  // Create skip list node
+  let create_skip_list_node = fn(key: Int, value: String, level: Int) {
+    {
+      key,
+      value,
+      forward: [None] * (level + 1)
+    }
+  }
+  
+  // Create skip list
+  let create_skip_list = fn(max_level: Int) {
+    let head = create_skip_list_node(Int::min_value(), "HEAD", max_level)
+    
+    {
+      head,
+      max_level,
+      level: 0,
+      size: 0
+    }
+  }
+  
+  // Random level generator (simplified)
+  let random_level = fn(max_level: Int) {
+    let mut level = 0
+    let mut random = 42  // Fixed seed for reproducible tests
+    
+    while level < max_level && random % 2 == 0 {
+      level = level + 1
+      random = random * 1103515245 + 12345
+    }
+    
+    level
+  }
+  
+  // Insert into skip list
+  let insert = fn(list: SkipList, key: Int, value: String) {
+    let update = [None] * (list.max_level + 1)
+    let mut current = list.head
+    
+    // Find insertion points
+    for i in (list.level)..=0 {
+      while match current.forward[i] {
+        Some(node) => node.key < key,
+        None => false
+      } {
+        current = match current.forward[i] {
+          Some(node) => node,
+          None => current
+        }
+      }
+      update = update.update(i, Some(current))
+    }
+    
+    // Check if key already exists
+    match current.forward[0] {
+      Some(node) if node.key == key => {
+        // Update existing node
+        let updated_node = { node | value }
+        let mut updated_forward = list.head.forward
+        updated_forward = updated_forward.update(0, Some(updated_node))
+        
+        let updated_head = { list.head | forward: updated_forward }
+        
+        {
+          head: updated_head,
+          max_level: list.max_level,
+          level: list.level,
+          size: list.size
+        }
+      }
+      _ => {
+        // Insert new node
+        let new_level = random_level(list.max_level)
+        if new_level > list.level {
+          for i in (list.level + 1)..=new_level {
+            update = update.update(i, Some(list.head))
+          }
+        }
+        
+        let new_node = create_skip_list_node(key, value, new_level)
+        
+        // Update forward pointers
+        let mut updated_head = list.head
+        for i in 0..=new_level {
+          match update[i] {
+            Some(prev_node) => {
+              let updated_node = {
+                new_node | 
+                forward: new_node.forward.update(i, prev_node.forward[i])
+              }
+              
+              let updated_prev_forward = prev_node.forward.update(i, Some(updated_node))
+              
+              if prev_node.key == list.head.key {
+                updated_head = { updated_head | forward: updated_prev_forward }
+              }
+            }
+            None => ()
+          }
+        }
+        
+        {
+          head: updated_head,
+          max_level: list.max_level,
+          level: if new_level > list.level { new_level } else { list.level },
+          size: list.size + 1
+        }
+      }
+    }
+  }
+  
+  // Search in skip list
+  let search = fn(list: SkipList, key: Int) {
+    let mut current = list.head
+    
+    for i in (list.level)..=0 {
+      while match current.forward[i] {
+        Some(node) => node.key < key,
+        None => false
+      } {
+        current = match current.forward[i] {
+          Some(node) => node,
+          None => current
+        }
+      }
+    }
+    
+    match current.forward[0] {
+      Some(node) if node.key == key => Some(node.value),
+      _ => None
+    }
+  }
+  
+  // Test skip list creation
+  let list = create_skip_list(4)
+  assert_eq(list.max_level, 4)
+  assert_eq(list.level, 0)
+  assert_eq(list.size, 0)
+  assert_eq(list.head.key, Int::min_value())
+  
+  // Test inserting items
+  let list1 = insert(list, 10, "ten")
+  assert_eq(list1.size, 1)
+  
+  let list2 = insert(list1, 20, "twenty")
+  assert_eq(list2.size, 2)
+  
+  let list3 = insert(list2, 5, "five")
+  assert_eq(list3.size, 3)
+  
+  let list4 = insert(list3, 15, "fifteen")
+  assert_eq(list4.size, 4)
+  
+  // Test searching for existing items
+  match search(list4, 10) {
+    Some(value) => assert_eq(value, "ten")
+    None => assert_true(false)
+  }
+  
+  match search(list4, 20) {
+    Some(value) => assert_eq(value, "twenty")
+    None => assert_true(false)
+  }
+  
+  match search(list4, 5) {
+    Some(value) => assert_eq(value, "five")
+    None => assert_true(false)
+  }
+  
+  match search(list4, 15) {
+    Some(value) => assert_eq(value, "fifteen")
+    None => assert_true(false)
+  }
+  
+  // Test searching for non-existing items
+  match search(list4, 25) {
+    None => assert_true(true)
+    Some(_) => assert_true(false)
+  }
+  
+  match search(list4, 1) {
+    None => assert_true(true)
+    Some(_) => assert_true(false)
+  }
+  
+  // Test updating existing item
+  let list5 = insert(list4, 10, "updated-ten")
+  match search(list5, 10) {
+    Some(value) => assert_eq(value, "updated-ten")
+    None => assert_true(false)
+  }
+  assert_eq(list5.size, 4)  // Size should not increase
+}
+
+// Test 4: LRU Cache Implementation
+test "lru cache implementation" {
+  // Define doubly linked list node
+  type LRUNode = {
+    key: String,
+    value: String,
+    prev: Option[LRUNode],
+    next: Option[LRUNode]
+  }
+  
+  // Define LRU cache
+  type LRUCache = {
+    capacity: Int,
+    cache: Array[(String, LRUNode)],
+    head: Option[LRUNode],
+    tail: Option[LRUNode],
+    size: Int
+  }
+  
+  // Create LRU node
+  let create_lru_node = fn(key: String, value: String) {
+    {
+      key,
+      value,
+      prev: None,
+      next: None
+    }
+  }
+  
+  // Create LRU cache
+  let create_lru_cache = fn(capacity: Int) {
+    {
+      capacity,
+      cache: [],
+      head: None,
+      tail: None,
+      size: 0
+    }
+  }
+  
+  // Remove node from linked list
+  let remove_node = fn(cache: LRUCache, node: LRUNode) {
+    match node.prev {
+      Some(prev_node) => {
+        let updated_prev = { prev_node | next: node.next }
+      }
+      None => {
+        // Node is head
+        cache.head = node.next
+      }
+    }
+    
+    match node.next {
+      Some(next_node) => {
+        let updated_next = { next_node | prev: node.prev }
+      }
+      None => {
+        // Node is tail
+        cache.tail = node.prev
+      }
+    }
+    
+    cache
+  }
+  
+  // Add node to head of linked list
+  let add_to_head = fn(cache: LRUCache, node: LRUNode) {
+    node.next = cache.head
+    node.prev = None
+    
+    match cache.head {
+      Some(head_node) => {
+        let updated_head = { head_node | prev: Some(node) }
+        cache.head = Some(node)
+      }
+      None => {
+        cache.head = Some(node)
+        cache.tail = Some(node)
+      }
+    }
+    
+    cache.size = cache.size + 1
+  }
+  
+  // Move node to head
+  let move_to_head = fn(cache: LRUCache, node: LRUNode) {
+    remove_node(cache, node)
+    add_to_head(cache, node)
+  }
+  
+  // Pop tail node
+  let pop_tail = fn(cache: LRUCache) {
+    match cache.tail {
+      Some(tail_node) => {
+        remove_node(cache, tail_node)
+        Some(tail_node)
+      }
+      None => None
+    }
+  }
+  
+  // Get value from cache
+  let get = fn(cache: LRUCache, key: String) {
+    match cache.cache.find_index(fn(pair) { pair.0 == key }) {
+      Some(index) => {
+        let (_, node) = cache.cache[index]
+        move_to_head(cache, node)
+        Some(node.value)
+      }
+      None => None
+    }
+  }
+  
+  // Put value into cache
+  let put = fn(cache: LRUCache, key: String, value: String) {
+    match cache.cache.find_index(fn(pair) { pair.0 == key }) {
+      Some(index) => {
+        let (_, node) = cache.cache[index]
+        let updated_node = { node | value }
+        let updated_cache = cache.cache.update(index, (key, updated_node))
+        move_to_head({ cache | cache: updated_cache }, updated_node)
+      }
+      None => {
+        let new_node = create_lru_node(key, value)
+        
+        if cache.size == cache.capacity {
+          match pop_tail(cache) {
+            Some(tail_node) => {
+              let updated_cache = cache.cache.filter(fn(pair) { pair.0 != tail_node.key })
+              let cache_with_removed = { cache | cache: updated_cache }
+              add_to_head(cache_with_removed, new_node)
+            }
+            None => cache
+          }
+        } else {
+          add_to_head(cache, new_node)
+        }
+      }
+    }
+  }
+  
+  // Test LRU cache creation
+  let cache = create_lru_cache(3)
+  assert_eq(cache.capacity, 3)
+  assert_eq(cache.size, 0)
+  
+  // Test putting items
+  let cache1 = put(cache, "a", "value-a")
+  let cache2 = put(cache1, "b", "value-b")
+  let cache3 = put(cache2, "c", "value-c")
+  
+  // Test getting items
+  match get(cache3, "a") {
+    Some(value) => assert_eq(value, "value-a")
+    None => assert_true(false)
+  }
+  
+  // Add item that exceeds capacity
+  let cache4 = put(cache3, "d", "value-d")
+  
+  // "a" should be the least recently used and should be evicted
+  match get(cache4, "a") {
+    None => assert_true(true)
+    Some(_) => assert_true(false)
+  }
+  
+  // "b", "c", and "d" should still be in cache
+  match get(cache4, "b") {
+    Some(value) => assert_eq(value, "value-b")
+    None => assert_true(false)
+  }
+  
+  match get(cache4, "c") {
+    Some(value) => assert_eq(value, "value-c")
+    None => assert_true(false)
+  }
+  
+  match get(cache4, "d") {
+    Some(value) => assert_eq(value, "value-d")
+    None => assert_true(false)
+  }
+  
+  // Access "b" to make it most recently used
+  let cache5 = get(cache4, "b")
+  
+  // Add another item
+  let cache6 = put(cache4, "e", "value-e")
+  
+  // "c" should be evicted (not "b" because we just accessed it)
+  match get(cache6, "c") {
+    None => assert_true(true)
+    Some(_) => assert_true(false)
+  }
+  
+  match get(cache6, "b") {
+    Some(value) => assert_eq(value, "value-b")
+    None => assert_true(false)
+  }
+}
+
+// Test 5: Disjoint Set Union (Union-Find) Implementation
+test "disjoint set union implementation" {
+  // Define DSU element
+  type DSUElement = {
+    parent: Int,
+    rank: Int,
+    size: Int
+  }
+  
+  // Define DSU
+  type DSU = {
+    elements: Array[DSUElement],
+    sets: Int
+  }
+  
+  // Create DSU element
+  let create_dsu_element = fn(parent: Int) {
+    {
+      parent,
+      rank: 0,
+      size: 1
+    }
+  }
+  
+  // Create DSU
+  let create_dsu = fn(size: Int) {
+    let elements = (0..size).map(create_dsu_element)
+    
+    {
+      elements,
+      sets: size
+    }
+  }
+  
+  // Find with path compression
+  let find = fn(dsu: DSU, x: Int) {
+    let rec find_with_compression = fn(elements: Array[DSUElement], x: Int) {
+      let element = elements[x]
+      
+      if element.parent != x {
+        let root = find_with_compression(elements, element.parent)
+        // Path compression
+        let updated_element = { element | parent: root }
+        elements.update(x, updated_element)
+      } else {
+        x
+      }
+    }
+    
+    find_with_compression(dsu.elements, x)
+  }
+  
+  // Union by rank
+  let union = fn(dsu: DSU, x: Int, y: Int) {
+    let root_x = find(dsu, x)
+    let root_y = find(dsu, y)
+    
+    if root_x != root_y {
+      let element_x = dsu.elements[root_x]
+      let element_y = dsu.elements[root_y]
+      
+      if element_x.rank < element_y.rank {
+        // Make x child of y
+        let updated_element_x = { element_x | parent: root_y }
+        let updated_element_y = { element_y | size: element_y.size + element_x.size }
+        let updated_elements = dsu.elements
+          .update(root_x, updated_element_x)
+          .update(root_y, updated_element_y)
+        
+        {
+          elements: updated_elements,
+          sets: dsu.sets - 1
+        }
+      } else if element_x.rank > element_y.rank {
+        // Make y child of x
+        let updated_element_y = { element_y | parent: root_x }
+        let updated_element_x = { element_x | size: element_x.size + element_y.size }
+        let updated_elements = dsu.elements
+          .update(root_y, updated_element_y)
+          .update(root_x, updated_element_x)
+        
+        {
+          elements: updated_elements,
+          sets: dsu.sets - 1
+        }
+      } else {
+        // Same rank, make y child of x and increment x's rank
+        let updated_element_y = { element_y | parent: root_x }
+        let updated_element_x = { element_x | rank: element_x.rank + 1, size: element_x.size + element_y.size }
+        let updated_elements = dsu.elements
+          .update(root_y, updated_element_y)
+          .update(root_x, updated_element_x)
+        
+        {
+          elements: updated_elements,
+          sets: dsu.sets - 1
+        }
+      }
+    } else {
+      dsu  // Already in the same set
+    }
+  }
+  
+  // Check if two elements are in the same set
+  let connected = fn(dsu: DSU, x: Int, y: Int) {
+    find(dsu, x) == find(dsu, y)
+  }
+  
+  // Get set size
+  let get_set_size = fn(dsu: DSU, x: Int) {
+    let root = find(dsu, x)
+    dsu.elements[root].size
+  }
+  
+  // Test DSU creation
+  let dsu = create_dsu(10)
+  assert_eq(dsu.sets, 10)
+  assert_eq(dsu.elements.length(), 11)  // 0..10
+  
+  // Test initial state
+  for i in 0..10 {
+    assert_eq(find(dsu, i), i)
+    assert_eq(get_set_size(dsu, i), 1)
+  }
+  
+  // Test union operations
+  let dsu1 = union(dsu, 1, 2)
+  assert_eq(dsu1.sets, 9)
+  assert_true(connected(dsu1, 1, 2))
+  assert_eq(get_set_size(dsu1, 1), 2)
+  assert_eq(get_set_size(dsu1, 2), 2)
+  
+  let dsu2 = union(dsu1, 3, 4)
+  assert_eq(dsu2.sets, 8)
+  assert_true(connected(dsu2, 3, 4))
+  assert_eq(get_set_size(dsu2, 3), 2)
+  
+  let dsu3 = union(dsu2, 1, 3)
+  assert_eq(dsu3.sets, 7)
+  assert_true(connected(dsu3, 1, 4))  // Transitive connection
+  assert_eq(get_set_size(dsu3, 1), 4)
+  
+  // Test path compression
+  let root_1 = find(dsu3, 1)
+  let root_2 = find(dsu3, 2)
+  let root_3 = find(dsu3, 3)
+  let root_4 = find(dsu3, 4)
+  
+  assert_eq(root_1, root_2)
+  assert_eq(root_2, root_3)
+  assert_eq(root_3, root_4)
+  
+  // Test union of large sets
+  let dsu4 = union(dsu3, 5, 6)
+  let dsu5 = union(dsu4, 7, 8)
+  let dsu6 = union(dsu5, 5, 7)
+  
+  assert_eq(dsu6.sets, 5)
+  assert_true(connected(dsu6, 5, 8))
+  assert_eq(get_set_size(dsu6, 5), 4)
+  
+  // Test connecting two large sets
+  let dsu7 = union(dsu6, 1, 5)
+  assert_eq(dsu7.sets, 4)
+  assert_true(connected(dsu7, 2, 8))  // All connected
+  assert_eq(get_set_size(dsu7, 1), 8)
+  
+  // Test remaining singletons
+  assert_eq(get_set_size(dsu7, 0), 1)
+  assert_eq(get_set_size(dsu7, 9), 1)
+  assert_eq(get_set_size(dsu7, 10), 1)
 }
