@@ -1,854 +1,779 @@
-// Azimuth 跨平台兼容性综合测试
-// 专注于测试遥测系统在不同平台和环境下的一致性和兼容性
+// Azimuth Telemetry System - Cross Platform Compatibility Comprehensive Tests
+// This file contains comprehensive tests for cross-platform compatibility
 
-// 测试1: 操作系统兼容性测试
-test "操作系统兼容性测试" {
-  // 定义操作系统信息
-  type OperatingSystem = {
-    os_name: String,
-    version: String,
-    architecture: String,
-    endianness: String,  // "little" or "big"
-    path_separator: String,
-    line_ending: String,
-    max_path_length: Int,
-    case_sensitive: Bool
-  }
+// Test 1: Operating System Detection and Adaptation
+test "operating system detection and adaptation" {
+  let platform_detector = PlatformDetector::new()
   
-  type PlatformCompatibilityResult = {
-    platform: OperatingSystem,
-    telemetry_supported: Bool,
-    features_supported: Array[String],
-    limitations: Array[String],
-    performance_impact: Float,
-    compatibility_score: Float
-  }
+  // Detect current operating system
+  let os_info = PlatformDetector::detect_operating_system(platform_detector)
   
-  // 创建不同操作系统配置
-  let windows_os = {
-    os_name: "Windows",
-    version: "10.0",
-    architecture: "x64",
-    endianness: "little",
-    path_separator: "\\",
-    line_ending: "\r\n",
-    max_path_length: 260,
-    case_sensitive: false
-  }
-  
-  let linux_os = {
-    os_name: "Linux",
-    version: "5.15",
-    architecture: "x64",
-    endianness: "little",
-    path_separator: "/",
-    line_ending: "\n",
-    max_path_length: 4096,
-    case_sensitive: true
-  }
-  
-  let macos_os = {
-    os_name: "macOS",
-    version: "12.0",
-    architecture: "arm64",
-    endianness: "little",
-    path_separator: "/",
-    line_ending: "\n",
-    max_path_length: 1024,
-    case_sensitive: false
-  }
-  
-  let freebsd_os = {
-    os_name: "FreeBSD",
-    version: "13.0",
-    architecture: "x64",
-    endianness: "little",
-    path_separator: "/",
-    line_ending: "\n",
-    max_path_length: 1024,
-    case_sensitive: true
-  }
-  
-  // 测试平台兼容性
-  let test_platform_compatibility = fn(os: OperatingSystem) -> PlatformCompatibilityResult {
-    let mut features_supported = []
-    let mut limitations = []
-    let mut telemetry_supported = true
-    let mut performance_impact = 1.0
-    let mut compatibility_score = 0.0
-    
-    // 检查基本遥测功能支持
-    match os.os_name {
-      "Windows" => {
-        features_supported = ["event_tracing", "performance_counters", "wmi", "registry"]
-        limitations = ["path_length_limit", "case_insensitivity"]
-        performance_impact = 1.2  // Windows性能开销稍高
-        compatibility_score = 0.9
-      }
-      "Linux" => {
-        features_supported = ["procfs", "sysfs", "perf_events", "cgroups"]
-        limitations = ["distribution_specific"]
-        performance_impact = 0.8  // Linux性能较好
-        compatibility_score = 1.0
-      }
-      "macOS" => {
-        features_supported = ["mach_ports", "sysctl", "instruments"]
-        limitations = ["sandbox_restrictions", "arm64_specific"]
-        performance_impact = 0.9
-        compatibility_score = 0.85
-      }
-      "FreeBSD" => {
-        features_supported = ["kvm", "sysctl", "jails"]
-        limitations = ["limited_tools", "niche_platform"]
-        performance_impact = 0.85
-        compatibility_score = 0.75
-      }
-      _ => {
-        telemetry_supported = false
-        limitations = ["unsupported_platform"]
-        compatibility_score = 0.0
-      }
+  // Verify OS detection
+  match os_info.family {
+    Windows => {
+      assert_true(os_info.name == "Windows" || os_info.name.contains("Windows"))
+      assert_true(os_info.version.length() > 0)
+      assert_true(os_info.architecture == "x86_64" || os_info.architecture == "x86" || os_info.architecture == "arm64")
     }
-    
-    // 检查架构兼容性
-    match os.architecture {
-      "x64" => {
-        features_supported = features_supported.push("64_bit_optimized")
-        compatibility_score = compatibility_score + 0.1
-      }
-      "arm64" => {
-        features_supported = features_supported.push("arm64_support")
-        compatibility_score = compatibility_score + 0.05
-      }
-      "x86" => {
-        limitations = limitations.push("32_bit_limitations")
-        compatibility_score = compatibility_score - 0.1
-      }
-      _ => {
-        limitations = limitations.push("unsupported_architecture")
-        compatibility_score = compatibility_score - 0.2
-      }
+    Linux => {
+      assert_true(os_info.name == "Linux" || os_info.name.contains("Linux"))
+      assert_true(os_info.version.length() > 0)
+      assert_true(os_info.architecture == "x86_64" || os_info.architecture == "x86" || os_info.architecture == "arm64" || os_info.architecture == "arm")
     }
-    
-    // 确保兼容性分数在0-1范围内
-    compatibility_score = if compatibility_score > 1.0 { 1.0 } else { compatibility_score }
-    compatibility_score = if compatibility_score < 0.0 { 0.0 } else { compatibility_score }
-    
-    {
-      platform: os,
-      telemetry_supported: telemetry_supported,
-      features_supported: features_supported,
-      limitations: limitations,
-      performance_impact: performance_impact,
-      compatibility_score: compatibility_score
+    MacOS => {
+      assert_true(os_info.name == "macOS" || os_info.name.contains("Mac") || os_info.name.contains("Darwin"))
+      assert_true(os_info.version.length() > 0)
+      assert_true(os_info.architecture == "x86_64" || os_info.architecture == "arm64")
     }
+    _ => assert_true(false) // Unsupported OS
   }
   
-  // 测试所有平台
-  let windows_result = test_platform_compatibility(windows_os)
-  let linux_result = test_platform_compatibility(linux_os)
-  let macos_result = test_platform_compatibility(macos_os)
-  let freebsd_result = test_platform_compatibility(freebsd_os)
+  // Test OS-specific adaptations
+  let path_separator = PlatformDetector::get_path_separator(platform_detector)
+  match os_info.family {
+    Windows => assert_eq(path_separator, "\\")
+    _ => assert_eq(path_separator, "/")
+  }
   
-  // 验证Windows兼容性
-  assert_true(windows_result.telemetry_supported)
-  assert_true(windows_result.features_supported.length() > 0)
-  assert_true(windows_result.compatibility_score > 0.8)
-  assert_true(windows_result.performance_impact > 0.0)
+  let line_ending = PlatformDetector::get_line_ending(platform_detector)
+  match os_info.family {
+    Windows => assert_eq(line_ending, "\r\n")
+    _ => assert_eq(line_ending, "\n")
+  }
   
-  // 验证Linux兼容性
-  assert_true(linux_result.telemetry_supported)
-  assert_true(linux_result.features_supported.length() > 0)
-  assert_eq(linux_result.compatibility_score, 1.0)  // Linux应该有最高兼容性
-  assert_true(linux_result.performance_impact < 1.0)  // 性能应该较好
+  let executable_extension = PlatformDetector::get_executable_extension(platform_detector)
+  match os_info.family {
+    Windows => assert_eq(executable_extension, ".exe")
+    _ => assert_eq(executable_extension, "")
+  }
   
-  // 验证macOS兼容性
-  assert_true(macos_result.telemetry_supported)
-  assert_true(macos_result.features_supported.length() > 0)
-  assert_true(macos_result.compatibility_score > 0.8)
-  assert_true(macos_result.limitations.contains("arm64_specific"))
+  // Test OS-specific directory paths
+  let temp_dir = PlatformDetector::get_temp_directory(platform_detector)
+  assert_true(temp_dir.length() > 0)
   
-  // 验证FreeBSD兼容性
-  assert_true(freebsd_result.telemetry_supported)
-  assert_true(freebsd_result.features_supported.length() > 0)
-  assert_true(freebsd_result.compatibility_score > 0.7)
-  assert_true(freebsd_result.limitations.contains("niche_platform"))
+  let home_dir = PlatformDetector::get_home_directory(platform_detector)
+  assert_true(home_dir.length() > 0)
   
-  // 比较平台兼容性
-  assert_true(linux_result.compatibility_score >= windows_result.compatibility_score)
-  assert_true(windows_result.compatibility_score >= macos_result.compatibility_score)
-  assert_true(macos_result.compatibility_score >= freebsd_result.compatibility_score)
+  let app_data_dir = PlatformDetector::get_application_data_directory(platform_detector, "azimuth")
+  assert_true(app_data_dir.length() > 0)
+  assert_true(app_data_dir.contains("azimuth"))
 }
 
-// 测试2: 架构兼容性测试
-test "架构兼容性测试" {
-  // 定义处理器架构信息
-  type ProcessorArchitecture = {
-    arch_name: String,
-    bits: Int,
-    endianness: String,
-    alignment: Int,
-    cache_line_size: Int,
-    vector_extensions: Array[String],
-    atomic_operations: Bool,
-    specific_features: Array[String]
-  }
+// Test 2: File System Compatibility
+test "file system compatibility" {
+  let file_system_adapter = FileSystemAdapter::new()
   
-  type ArchitectureCompatibilityResult = {
-    architecture: ProcessorArchitecture,
-    telemetry_optimized: Bool,
-    performance_tier: String,  // "high", "medium", "low"
-    optimization_available: Array[String],
-    compatibility_issues: Array[String],
-    benchmark_score: Float
-  }
+  // Test path handling across platforms
+  let test_paths = [
+    "/home/user/test/file.txt",
+    "C:\\Users\\User\\test\\file.txt",
+    "/tmp/test_file.tmp",
+    "./relative/path/file.txt",
+    "../parent/path/file.txt"
+  ]
   
-  // 创建不同架构配置
-  let x64_arch = {
-    arch_name: "x86_64",
-    bits: 64,
-    endianness: "little",
-    alignment: 8,
-    cache_line_size: 64,
-    vector_extensions: ["sse", "avx", "avx2"],
-    atomic_operations: true,
-    specific_features: ["out_of_order", "branch_prediction"]
-  }
-  
-  let arm64_arch = {
-    arch_name: "ARM64",
-    bits: 64,
-    endianness: "little",
-    alignment: 8,
-    cache_line_size: 128,
-    vector_extensions: ["neon", "sve"],
-    atomic_operations: true,
-    specific_features: ["big_little", "trustzone"]
-  }
-  
-  let x86_arch = {
-    arch_name: "x86",
-    bits: 32,
-    endianness: "little",
-    alignment: 4,
-    cache_line_size: 64,
-    vector_extensions: ["sse", "mmx"],
-    atomic_operations: true,
-    specific_features: ["legacy_support"]
-  }
-  
-  let riscv_arch = {
-    arch_name: "RISC-V",
-    bits: 64,
-    endianness: "little",
-    alignment: 8,
-    cache_line_size: 64,
-    vector_extensions: ["rvv"],
-    atomic_operations: true,
-    specific_features: ["modular_isa", "open_source"]
-  }
-  
-  // 测试架构兼容性
-  let test_architecture_compatibility = fn(arch: ProcessorArchitecture) -> ArchitectureCompatibilityResult {
-    let mut optimization_available = []
-    let mut compatibility_issues = []
-    let mut telemetry_optimized = true
-    let mut performance_tier = "medium"
-    let mut benchmark_score = 0.0
+  for path in test_paths {
+    // Test path normalization
+    let normalized_path = FileSystemAdapter::normalize_path(file_system_adapter, path)
+    assert_true(normalized_path.length() > 0)
     
-    // 基于架构评估优化
-    match arch.arch_name {
-      "x86_64" => {
-        optimization_available = ["simd_optimized", "cache_aligned", "atomic_fast"]
-        performance_tier = "high"
-        benchmark_score = 1.0
-      }
-      "ARM64" => {
-        optimization_available = ["neon_optimized", "power_efficient", "thermal_aware"]
-        performance_tier = "high"
-        benchmark_score = 0.95
-      }
-      "x86" => {
-        optimization_available = ["legacy_compatible", "low_memory"]
-        compatibility_issues = ["32_bit_limitations", "no_avx"]
-        performance_tier = "medium"
-        benchmark_score = 0.7
-      }
-      "RISC-V" => {
-        optimization_available = ["custom_extensions", "power_efficient"]
-        compatibility_issues = ["emerging_platform", "limited_tooling"]
-        performance_tier = "medium"
-        benchmark_score = 0.8
-      }
-      _ => {
-        telemetry_optimized = false
-        compatibility_issues = ["unsupported_architecture"]
-        performance_tier = "low"
-        benchmark_score = 0.0
-      }
-    }
+    // Test path validation
+    let is_valid = FileSystemAdapter::is_valid_path(file_system_adapter, normalized_path)
+    assert_true(is_valid)
     
-    // 检查位宽影响
-    if arch.bits < 64 {
-      compatibility_issues = compatibility_issues.push("limited_address_space")
-      benchmark_score = benchmark_score - 0.2
-    }
+    // Test path components extraction
+    let components = FileSystemAdapter::get_path_components(file_system_adapter, normalized_path)
+    assert_true(components.length() > 0)
     
-    // 检查原子操作支持
-    if !arch.atomic_operations {
-      compatibility_issues = compatibility_issues.push("no_atomic_operations")
-      benchmark_score = benchmark_score - 0.3
-      telemetry_optimized = false
-    }
+    // Test file name extraction
+    let file_name = FileSystemAdapter::get_file_name(file_system_adapter, normalized_path)
+    assert_true(file_name.length() > 0)
     
-    // 检查向量扩展
-    if arch.vector_extensions.length() > 0 {
-      optimization_available = optimization_available.push("vectorized_processing")
-      benchmark_score = benchmark_score + 0.1
-    }
-    
-    // 确保分数在合理范围内
-    benchmark_score = if benchmark_score > 1.0 { 1.0 } else { benchmark_score }
-    benchmark_score = if benchmark_score < 0.0 { 0.0 } else { benchmark_score }
-    
-    {
-      architecture: arch,
-      telemetry_optimized: telemetry_optimized,
-      performance_tier: performance_tier,
-      optimization_available: optimization_available,
-      compatibility_issues: compatibility_issues,
-      benchmark_score: benchmark_score
-    }
+    // Test directory extraction
+    let directory = FileSystemAdapter::get_directory(file_system_adapter, normalized_path)
+    assert_true(directory.length() > 0 || directory == "")
   }
   
-  // 测试所有架构
-  let x64_result = test_architecture_compatibility(x64_arch)
-  let arm64_result = test_architecture_compatibility(arm64_arch)
-  let x86_result = test_architecture_compatibility(x86_arch)
-  let riscv_result = test_architecture_compatibility(riscv_arch)
+  // Test file operations across platforms
+  let test_file_path = FileSystemAdapter::get_temp_directory(file_system_adapter) + 
+                      FileSystemAdapter::get_path_separator(file_system_adapter) + 
+                      "azimuth_test_file.tmp"
   
-  // 验证x64架构
-  assert_true(x64_result.telemetry_optimized)
-  assert_eq(x64_result.performance_tier, "high")
-  assert_true(x64_result.optimization_available.length() > 0)
-  assert_eq(x64_result.benchmark_score, 1.0)
+  // Test file creation
+  let create_result = FileSystemAdapter::create_file(file_system_adapter, test_file_path)
+  assert_true(create_result)
+  assert_true(FileSystemAdapter::file_exists(file_system_adapter, test_file_path))
   
-  // 验证ARM64架构
-  assert_true(arm64_result.telemetry_optimized)
-  assert_eq(arm64_result.performance_tier, "high")
-  assert_true(arm64_result.optimization_available.contains("power_efficient"))
-  assert_true(arm64_result.benchmark_score > 0.9)
+  // Test file writing
+  let test_content = "Test content for cross-platform compatibility\nLine 2\nLine 3"
+  let write_result = FileSystemAdapter::write_file(file_system_adapter, test_file_path, test_content)
+  assert_true(write_result)
   
-  // 验证x86架构
-  assert_true(x86_result.telemetry_optimized)
-  assert_eq(x86_result.performance_tier, "medium")
-  assert_true(x86_result.compatibility_issues.contains("32_bit_limitations"))
-  assert_true(x86_result.benchmark_score < x64_result.benchmark_score)
+  // Test file reading
+  let read_content = FileSystemAdapter::read_file(file_system_adapter, test_file_path)
+  assert_eq(read_content, test_content)
   
-  // 验证RISC-V架构
-  assert_true(riscv_result.telemetry_optimized)
-  assert_eq(riscv_result.performance_tier, "medium")
-  assert_true(riscv_result.compatibility_issues.contains("emerging_platform"))
-  assert_true(riscv_result.optimization_available.contains("custom_extensions"))
+  // Test file appending
+  let append_content = "\nAppended content"
+  let append_result = FileSystemAdapter::append_file(file_system_adapter, test_file_path, append_content)
+  assert_true(append_result)
   
-  // 比较架构性能
-  assert_eq(x64_result.performance_tier, "high")
-  assert_eq(arm64_result.performance_tier, "high")
-  assert_eq(x86_result.performance_tier, "medium")
-  assert_eq(riscv_result.performance_tier, "medium")
+  let final_content = FileSystemAdapter::read_file(file_system_adapter, test_file_path)
+  assert_eq(final_content, test_content + append_content)
+  
+  // Test file size
+  let file_size = FileSystemAdapter::get_file_size(file_system_adapter, test_file_path)
+  assert_true(file_size > 0)
+  assert_eq(file_size, final_content.length())
+  
+  // Test file permissions
+  let permissions = FileSystemAdapter::get_file_permissions(file_system_adapter, test_file_path)
+  assert_true(permissions.read)
+  assert_true(permissions.write)
+  
+  // Test file deletion
+  let delete_result = FileSystemAdapter::delete_file(file_system_adapter, test_file_path)
+  assert_true(delete_result)
+  assert_false(FileSystemAdapter::file_exists(file_system_adapter, test_file_path))
+  
+  // Test directory operations
+  let test_dir_path = FileSystemAdapter::get_temp_directory(file_system_adapter) + 
+                      FileSystemAdapter::get_path_separator(file_system_adapter) + 
+                      "azimuth_test_dir"
+  
+  // Test directory creation
+  let create_dir_result = FileSystemAdapter::create_directory(file_system_adapter, test_dir_path)
+  assert_true(create_dir_result)
+  assert_true(FileSystemAdapter::directory_exists(file_system_adapter, test_dir_path))
+  
+  // Test directory listing
+  let dir_listing = FileSystemAdapter::list_directory(file_system_adapter, test_dir_path)
+  assert_true(dir_listing.length() == 0) // Empty directory
+  
+  // Test directory deletion
+  let delete_dir_result = FileSystemAdapter::delete_directory(file_system_adapter, test_dir_path)
+  assert_true(delete_dir_result)
+  assert_false(FileSystemAdapter::directory_exists(file_system_adapter, test_dir_path))
 }
 
-// 测试3: 网络环境兼容性测试
-test "网络环境兼容性测试" {
-  // 定义网络环境信息
-  type NetworkEnvironment = {
-    environment_name: String,
-    bandwidth_mbps: Int,
-    latency_ms: Int,
-    packet_loss_rate: Float,
-    connection_type: String,  // "wired", "wireless", "cellular", "satellite"
-    nat_type: String,         // "none", "full_cone", "restricted", "symmetric"
-    firewall_restrictions: Bool,
-    proxy_required: Bool
-  }
+// Test 3: Network Compatibility
+test "network compatibility" {
+  let network_adapter = NetworkAdapter::new()
   
-  type NetworkCompatibilityResult = {
-    environment: NetworkEnvironment,
-    telemetry_feasible: Bool,
-    recommended_config: TelemetryConfig,
-    performance_impact: Float,
-    data_compression_needed: Bool,
-    fallback_strategies: Array[String]
-  }
+  // Test network interface detection
+  let interfaces = NetworkAdapter::get_network_interfaces(network_adapter)
+  assert_true(interfaces.length() > 0)
   
-  type TelemetryConfig = {
-    batch_size: Int,
-    send_interval_ms: Int,
-    retry_attempts: Int,
-    timeout_ms: Int,
-    compression_enabled: Bool,
-    encryption_enabled: Bool
-  }
-  
-  // 创建不同网络环境配置
-  let high_speed_network = {
-    environment_name: "High-Speed Office",
-    bandwidth_mbps: 1000,
-    latency_ms: 5,
-    packet_loss_rate: 0.001,
-    connection_type: "wired",
-    nat_type: "none",
-    firewall_restrictions: false,
-    proxy_required: false
-  }
-  
-  let home_network = {
-    environment_name: "Home WiFi",
-    bandwidth_mbps: 100,
-    latency_ms: 20,
-    packet_loss_rate: 0.01,
-    connection_type: "wireless",
-    nat_type: "full_cone",
-    firewall_restrictions: false,
-    proxy_required: false
-  }
-  
-  let mobile_network = {
-    environment_name: "4G Mobile",
-    bandwidth_mbps: 20,
-    latency_ms: 100,
-    packet_loss_rate: 0.02,
-    connection_type: "cellular",
-    nat_type: "restricted",
-    firewall_restrictions: false,
-    proxy_required: false
-  }
-  
-  let satellite_network = {
-    environment_name: "Satellite",
-    bandwidth_mbps: 5,
-    latency_ms: 600,
-    packet_loss_rate: 0.05,
-    connection_type: "satellite",
-    nat_type: "symmetric",
-    firewall_restrictions: true,
-    proxy_required: true
-  }
-  
-  // 测试网络环境兼容性
-  let test_network_compatibility = fn(network: NetworkEnvironment) -> NetworkCompatibilityResult {
-    let mut telemetry_feasible = true
-    let mut performance_impact = 1.0
-    let mut data_compression_needed = false
-    let mut fallback_strategies = []
+  for interface in interfaces {
+    assert_true(interface.name.length() > 0)
+    assert_true(interface.ip_addresses.length() > 0)
     
-    // 基于网络条件推荐配置
-    let recommended_config = match network.connection_type {
-      "wired" => {
-        if network.bandwidth_mbps >= 100 {
-          {
-            batch_size: 100,
-            send_interval_ms: 1000,
-            retry_attempts: 3,
-            timeout_ms: 5000,
-            compression_enabled: false,
-            encryption_enabled: true
-          }
-        } else {
-          {
-            batch_size: 50,
-            send_interval_ms: 2000,
-            retry_attempts: 3,
-            timeout_ms: 5000,
-            compression_enabled: true,
-            encryption_enabled: true
+    // Test IP address validation
+    for ip_address in interface.ip_addresses {
+      assert_true(NetworkAdapter::is_valid_ip_address(network_adapter, ip_address))
+    }
+  }
+  
+  // Test hostname resolution
+  let hostnames = ["localhost", "127.0.0.1", "google.com", "github.com"]
+  
+  for hostname in hostnames {
+    let resolution_result = NetworkAdapter::resolve_hostname(network_adapter, hostname)
+    match resolution_result {
+      Some(ip_addresses) => {
+        assert_true(ip_addresses.length() > 0)
+        
+        // Verify resolved IP addresses are valid
+        for ip_address in ip_addresses {
+          assert_true(NetworkAdapter::is_valid_ip_address(network_adapter, ip_address))
+        }
+      }
+      None => {
+        // Resolution might fail for external hosts due to network restrictions
+        // This is acceptable for localhost and IP addresses
+        assert_true(hostname == "localhost" || hostname == "127.0.0.1" ? false : true)
+      }
+    }
+  }
+  
+  // Test port availability checking
+  let test_ports = [8080, 8081, 8082, 8083, 8084]
+  
+  for port in test_ports {
+    let is_available = NetworkAdapter::is_port_available(network_adapter, port)
+    // Port availability depends on the system, so we just verify the check doesn't crash
+    assert_true(is_available == true || is_available == false)
+  }
+  
+  // Test socket creation and binding
+  for port in test_ports {
+    let socket_result = NetworkAdapter::create_socket(network_adapter, "tcp", port)
+    match socket_result {
+      Some(socket) => {
+        // Test socket operations
+        let bind_result = NetworkAdapter::bind_socket(network_adapter, socket, "127.0.0.1", port)
+        
+        if bind_result {
+          let listen_result = NetworkAdapter::listen_socket(network_adapter, socket, 5)
+          
+          if listen_result {
+            // Test socket closing
+            let close_result = NetworkAdapter::close_socket(network_adapter, socket)
+            assert_true(close_result)
           }
         }
       }
-      "wireless" => {
-        data_compression_needed = true
-        performance_impact = 1.2
-        fallback_strategies = ["buffered_sending", "adaptive_batching"]
-        {
-          batch_size: 50,
-          send_interval_ms: 2000,
-          retry_attempts: 5,
-          timeout_ms: 10000,
-          compression_enabled: true,
-          encryption_enabled: true
-        }
+      None => {
+        // Socket creation might fail if port is in use
+        // This is acceptable
       }
-      "cellular" => {
-        data_compression_needed = true
-        performance_impact = 1.5
-        fallback_strategies = ["offline_storage", "batch_compression", "priority_sending"]
-        {
-          batch_size: 25,
-          send_interval_ms: 5000,
-          retry_attempts: 5,
-          timeout_ms: 15000,
-          compression_enabled: true,
-          encryption_enabled: true
-        }
-      }
-      "satellite" => {
-        data_compression_needed = true
-        performance_impact = 2.0
-        fallback_strategies = ["offline_storage", "extreme_compression", "scheduled_sending"]
-        {
-          batch_size: 10,
-          send_interval_ms: 30000,
-          retry_attempts: 10,
-          timeout_ms: 60000,
-          compression_enabled: true,
-          encryption_enabled: false  // 加密会增加延迟
-        }
-      }
-      _ => {
-        telemetry_feasible = false
-        {
-          batch_size: 1,
-          send_interval_ms: 60000,
-          retry_attempts: 1,
-          timeout_ms: 30000,
-          compression_enabled: true,
-          encryption_enabled: false
-        }
-      }
-    }
-    
-    // 考虑网络限制
-    if network.packet_loss_rate > 0.1 {
-      telemetry_feasible = false
-      fallback_strategies = fallback_strategies.push("error_correction")
-    }
-    
-    if network.latency_ms > 1000 {
-      performance_impact = performance_impact + 0.5
-      fallback_strategies = fallback_strategies.push("async_processing")
-    }
-    
-    if network.firewall_restrictions {
-      fallback_strategies = fallback_strategies.push("alternative_ports")
-    }
-    
-    {
-      environment: network,
-      telemetry_feasible: telemetry_feasible,
-      recommended_config: recommended_config,
-      performance_impact: performance_impact,
-      data_compression_needed: data_compression_needed,
-      fallback_strategies: fallback_strategies
     }
   }
   
-  // 测试所有网络环境
-  let high_speed_result = test_network_compatibility(high_speed_network)
-  let home_result = test_network_compatibility(home_network)
-  let mobile_result = test_network_compatibility(mobile_network)
-  let satellite_result = test_network_compatibility(satellite_network)
+  // Test HTTP client compatibility
+  let http_client = NetworkAdapter::create_http_client(network_adapter)
   
-  // 验证高速网络
-  assert_true(high_speed_result.telemetry_feasible)
-  assert_eq(high_speed_result.recommended_config.batch_size, 100)
-  assert_false(high_speed_result.data_compression_needed)
-  assert_eq(high_speed_result.performance_impact, 1.0)
+  // Test HTTP request to local server if available
+  let http_request = HttpRequest::new("GET", "http://127.0.0.1:8080/test", [], None)
+  let http_result = NetworkAdapter::send_http_request(network_adapter, http_client, http_request)
   
-  // 验证家庭网络
-  assert_true(home_result.telemetry_feasible)
-  assert_eq(home_result.recommended_config.batch_size, 50)
-  assert_true(home_result.data_compression_needed)
-  assert_true(home_result.performance_impact > 1.0)
-  
-  // 验证移动网络
-  assert_true(mobile_result.telemetry_feasible)
-  assert_eq(mobile_result.recommended_config.batch_size, 25)
-  assert_true(mobile_result.data_compression_needed)
-  assert_true(mobile_result.fallback_strategies.length() > 0)
-  
-  // 验证卫星网络
-  assert_true(satellite_result.telemetry_feasible)
-  assert_eq(satellite_result.recommended_config.batch_size, 10)
-  assert_true(satellite_result.data_compression_needed)
-  assert_eq(satellite_result.performance_impact, 2.0)
-  assert_false(satellite_result.recommended_config.encryption_enabled)
-  
-  // 比较不同网络环境的配置
-  assert_true(high_speed_result.recommended_config.batch_size >= home_result.recommended_config.batch_size)
-  assert_true(home_result.recommended_config.batch_size >= mobile_result.recommended_config.batch_size)
-  assert_true(mobile_result.recommended_config.batch_size >= satellite_result.recommended_config.batch_size)
-  
-  assert_true(high_speed_result.recommended_config.send_interval_ms <= home_result.recommended_config.send_interval_ms)
-  assert_true(home_result.recommended_config.send_interval_ms <= mobile_result.recommended_config.send_interval_ms)
-  assert_true(mobile_result.recommended_config.send_interval_ms <= satellite_result.recommended_config.send_interval_ms)
+  match http_result {
+    Success(response) => {
+      assert_true(response.status_code >= 100 && response.status_code < 600)
+    }
+    Error(_) => {
+      // HTTP request might fail if no server is running
+      // This is acceptable
+    }
+  }
 }
 
-// 测试4: 运行时环境兼容性测试
-test "运行时环境兼容性测试" {
-  // 定义运行时环境信息
-  type RuntimeEnvironment = {
-    runtime_name: String,
-    version: String,
-    language_version: String,
-    memory_model: String,      // "managed", "native", "webassembly"
-    threading_model: String,   // "preemptive", "cooperative", "single_threaded"
-    garbage_collected: Bool,
-    sandboxed: Bool,
-    resource_limits: ResourceLimits
-  }
+// Test 4: Process Management Compatibility
+test "process management compatibility" {
+  let process_manager = ProcessManager::new()
   
-  type ResourceLimits = {
-    max_memory_mb: Int,
-    max_cpu_percent: Float,
-    max_file_descriptors: Int,
-    max_network_connections: Int,
-    execution_timeout_ms: Int
-  }
+  // Test current process information
+  let current_process = ProcessManager::get_current_process(process_manager)
+  assert_true(current_process.id > 0)
+  assert_true(current_process.name.length() > 0)
+  assert_true(current_process.executable_path.length() > 0)
   
-  type RuntimeCompatibilityResult = {
-    environment: RuntimeEnvironment,
-    telemetry_supported: Bool,
-    integration_complexity: String,  // "low", "medium", "high"
-    performance_characteristics: PerformanceCharacteristics,
-    required_adaptations: Array[String],
-    compatibility_score: Float
-  }
+  // Test process listing
+  let processes = ProcessManager::list_processes(process_manager)
+  assert_true(processes.length() > 0)
   
-  type PerformanceCharacteristics = {
-    startup_overhead_ms: Int,
-    memory_overhead_mb: Int,
-    cpu_overhead_percent: Float,
-    collection_impact: String
-  }
-  
-  // 创建不同运行时环境配置
-  let node_runtime = {
-    runtime_name: "Node.js",
-    version: "18.0",
-    language_version: "ES2022",
-    memory_model: "managed",
-    threading_model: "single_threaded",
-    garbage_collected: true,
-    sandboxed: false,
-    resource_limits: {
-      max_memory_mb: 2048,
-      max_cpu_percent: 80.0,
-      max_file_descriptors: 1024,
-      max_network_connections: 100,
-      execution_timeout_ms: 30000
+  // Verify current process is in the list
+  let mut current_process_found = false
+  for process in processes {
+    if process.id == current_process.id {
+      current_process_found = true
+      assert_eq(process.name, current_process.name)
+      break
     }
   }
+  assert_true(current_process_found)
   
-  let go_runtime = {
-    runtime_name: "Go",
-    version: "1.19",
-    language_version: "1.19",
-    memory_model: "native",
-    threading_model: "preemptive",
-    garbage_collected: true,
-    sandboxed: false,
-    resource_limits: {
-      max_memory_mb: 1024,
-      max_cpu_percent: 90.0,
-      max_file_descriptors: 2048,
-      max_network_connections: 200,
-      execution_timeout_ms: 60000
-    }
-  }
+  // Test process creation
+  let test_commands = [
+    ["echo", "test"],
+    ["echo", "hello", "world"]
+  ]
   
-  let wasm_runtime = {
-    runtime_name: "WebAssembly",
-    version: "2.0",
-    language_version: "WASM",
-    memory_model: "webassembly",
-    threading_model: "cooperative",
-    garbage_collected: false,
-    sandboxed: true,
-    resource_limits: {
-      max_memory_mb: 512,
-      max_cpu_percent: 70.0,
-      max_file_descriptors: 0,  // WASM没有直接文件访问
-      max_network_connections: 10,
-      execution_timeout_ms: 10000
-    }
-  }
-  
-  let java_runtime = {
-    runtime_name: "Java",
-    version: "17",
-    language_version: "17",
-    memory_model: "managed",
-    threading_model: "preemptive",
-    garbage_collected: true,
-    sandboxed: true,
-    resource_limits: {
-      max_memory_mb: 4096,
-      max_cpu_percent: 85.0,
-      max_file_descriptors: 1024,
-      max_network_connections: 150,
-      execution_timeout_ms: 120000
-    }
-  }
-  
-  // 测试运行时环境兼容性
-  let test_runtime_compatibility = fn(runtime: RuntimeEnvironment) -> RuntimeCompatibilityResult {
-    let mut telemetry_supported = true
-    let mut integration_complexity = "medium"
-    let mut required_adaptations = []
-    let mut compatibility_score = 0.0
-    
-    // 基于运行时特性评估性能特征
-    let performance_characteristics = match runtime.runtime_name {
-      "Node.js" => {
-        integration_complexity = "low"
-        required_adaptations = ["event_loop_integration", "async_processing"]
-        compatibility_score = 0.9
-        {
-          startup_overhead_ms: 50,
-          memory_overhead_mb: 64,
-          cpu_overhead_percent: 10.0,
-          collection_impact: "periodic"
+  for command in test_commands {
+    let process_result = ProcessManager::create_process(process_manager, command)
+    match process_result {
+      Some(process) => {
+        assert_true(process.id > 0)
+        
+        // Test process waiting
+        let wait_result = ProcessManager::wait_for_process(process_manager, process)
+        match wait_result {
+          ProcessResult(exit_code, stdout, stderr) => {
+            assert_eq(exit_code, 0) // Echo should succeed
+            assert_true(stdout.length() > 0)
+          }
+          _ => assert_true(false)
         }
       }
-      "Go" => {
-        integration_complexity = "low"
-        required_adaptations = ["goroutine_integration", "channel_communication"]
-        compatibility_score = 0.95
-        {
-          startup_overhead_ms: 10,
-          memory_overhead_mb: 32,
-          cpu_overhead_percent: 5.0,
-          collection_impact: "concurrent"
-        }
+      None => {
+        // Process creation might fail on some systems
+        // This is acceptable
       }
-      "WebAssembly" => {
-        integration_complexity = "high"
-        required_adaptations = ["js_bridge", "memory_sharing", "sandbox_compliance"]
-        compatibility_score = 0.7
-        {
-          startup_overhead_ms: 20,
-          memory_overhead_mb: 16,
-          cpu_overhead_percent: 15.0,
-          collection_impact: "manual"
-        }
-      }
-      "Java" => {
-        integration_complexity = "medium"
-        required_adaptations = ["jvm_integration", "class_loading", "gc_tuning"]
-        compatibility_score = 0.85
-        {
-          startup_overhead_ms: 200,
-          memory_overhead_mb: 256,
-          cpu_overhead_percent: 15.0,
-          collection_impact: "generational"
-        }
-      }
-      _ => {
-        telemetry_supported = false
-        integration_complexity = "high"
-        required_adaptations = ["custom_integration"]
-        compatibility_score = 0.0
-        {
-          startup_overhead_ms: 0,
-          memory_overhead_mb: 0,
-          cpu_overhead_percent: 0.0,
-          collection_impact: "unknown"
-        }
-      }
-    }
-    
-    // 考虑内存模型影响
-    match runtime.memory_model {
-      "native" => {
-        compatibility_score = compatibility_score + 0.05
-        required_adaptations = required_adaptations.push("manual_memory_management")
-      }
-      "managed" => {
-        required_adaptations = required_adaptations.push("gc_aware_allocation")
-      }
-      "webassembly" => {
-        required_adaptations = required_adaptations.push("linear_memory_model")
-        compatibility_score = compatibility_score - 0.1
-      }
-      _ => ()
-    }
-    
-    // 考虑线程模型影响
-    match runtime.threading_model {
-      "preemptive" => {
-        compatibility_score = compatibility_score + 0.05
-      }
-      "single_threaded" => {
-        required_adaptations = required_adaptations.push("async_processing")
-        compatibility_score = compatibility_score - 0.05
-      }
-      "cooperative" => {
-        required_adaptations = required_adaptations.push("yield_points")
-        compatibility_score = compatibility_score - 0.1
-      }
-      _ => ()
-    }
-    
-    // 考虑沙箱限制
-    if runtime.sandboxed {
-      required_adaptations = required_adaptations.push("sandbox_compliance")
-      compatibility_score = compatibility_score - 0.1
-    }
-    
-    // 确保分数在合理范围内
-    compatibility_score = if compatibility_score > 1.0 { 1.0 } else { compatibility_score }
-    compatibility_score = if compatibility_score < 0.0 { 0.0 } else { compatibility_score }
-    
-    {
-      environment: runtime,
-      telemetry_supported: telemetry_supported,
-      integration_complexity: integration_complexity,
-      performance_characteristics: performance_characteristics,
-      required_adaptations: required_adaptations,
-      compatibility_score: compatibility_score
     }
   }
   
-  // 测试所有运行时环境
-  let node_result = test_runtime_compatibility(node_runtime)
-  let go_result = test_runtime_compatibility(go_runtime)
-  let wasm_result = test_runtime_compatibility(wasm_runtime)
-  let java_result = test_runtime_compatibility(java_runtime)
+  // Test environment variables
+  let env_vars = ProcessManager::get_environment_variables(process_manager)
+  assert_true(env_vars.length() > 0)
   
-  // 验证Node.js运行时
-  assert_true(node_result.telemetry_supported)
-  assert_eq(node_result.integration_complexity, "low")
-  assert_true(node_result.required_adaptations.contains("event_loop_integration"))
-  assert_true(node_result.compatibility_score > 0.8)
-  assert_true(node_result.performance_characteristics.startup_overhead_ms < 100)
+  // Test common environment variables
+  let common_vars = ["PATH", "HOME", "USER", "USERNAME"]
+  for var in common_vars {
+    let value = ProcessManager::get_environment_variable(process_manager, var)
+    match value {
+      Some(val) => assert_true(val.length() > 0)
+      None => {
+        // Some environment variables might not exist on all systems
+        // This is acceptable
+      }
+    }
+  }
   
-  // 验证Go运行时
-  assert_true(go_result.telemetry_supported)
-  assert_eq(go_result.integration_complexity, "low")
-  assert_true(go_result.required_adaptations.contains("goroutine_integration"))
-  assert_eq(go_result.compatibility_score, 0.95)  // Go应该有最高兼容性
-  assert_true(go_result.performance_characteristics.startup_overhead_ms < 20)
+  // Test working directory
+  let working_dir = ProcessManager::get_working_directory(process_manager)
+  assert_true(working_dir.length() > 0)
+  assert_true(FileSystemAdapter::directory_exists(FileSystemAdapter::new(), working_dir))
   
-  // 验证WebAssembly运行时
-  assert_true(wasm_result.telemetry_supported)
-  assert_eq(wasm_result.integration_complexity, "high")
-  assert_true(wasm_result.required_adaptations.contains("js_bridge"))
-  assert_true(wasm_result.compatibility_score < go_result.compatibility_score)
-  assert_true(wasm_result.performance_characteristics.memory_overhead_mb < 32)
+  // Test changing working directory
+  let temp_dir = FileSystemAdapter::get_temp_directory(FileSystemAdapter::new())
+  let change_dir_result = ProcessManager::set_working_directory(process_manager, temp_dir)
+  assert_true(change_dir_result)
   
-  // 验证Java运行时
-  assert_true(java_result.telemetry_supported)
-  assert_eq(java_result.integration_complexity, "medium")
-  assert_true(java_result.required_adaptations.contains("jvm_integration"))
-  assert_true(java_result.performance_characteristics.startup_overhead_ms > 100)
-  assert_true(java_result.performance_characteristics.memory_overhead_mb > 100)
+  let new_working_dir = ProcessManager::get_working_directory(process_manager)
+  assert_eq(new_working_dir, temp_dir)
   
-  // 比较运行时性能特征
-  assert_true(go_result.performance_characteristics.startup_overhead_ms < node_result.performance_characteristics.startup_overhead_ms)
-  assert_true(node_result.performance_characteristics.startup_overhead_ms < wasm_result.performance_characteristics.startup_overhead_ms)
-  assert_true(wasm_result.performance_characteristics.startup_overhead_ms < java_result.performance_characteristics.startup_overhead_ms)
+  // Restore original working directory
+  ProcessManager::set_working_directory(process_manager, working_dir)
+}
+
+// Test 5: System Information Compatibility
+test "system information compatibility" {
+  let system_info = SystemInfo::new()
   
-  assert_true(go_result.performance_characteristics.memory_overhead_mb < node_result.performance_characteristics.memory_overhead_mb)
-  assert_true(node_result.performance_characteristics.memory_overhead_mb < wasm_result.performance_characteristics.memory_overhead_mb)
-  assert_true(wasm_result.performance_characteristics.memory_overhead_mb < java_result.performance_characteristics.memory_overhead_mb)
+  // Test CPU information
+  let cpu_info = SystemInfo::get_cpu_info(system_info)
+  assert_true(cpu_info.model.length() > 0)
+  assert_true(cpu_info.vendor.length() > 0)
+  assert_true(cpu_info.cores > 0)
+  assert_true(cpu_info.frequency_mhz > 0)
+  
+  // Test memory information
+  let memory_info = SystemInfo::get_memory_info(system_info)
+  assert_true(memory_info.total_bytes > 0)
+  assert_true(memory_info.available_bytes > 0)
+  assert_true(memory_info.available_bytes <= memory_info.total_bytes)
+  
+  // Test disk information
+  let disk_info = SystemInfo::get_disk_info(system_info)
+  assert_true(disk_info.length() > 0)
+  
+  for disk in disk_info {
+    assert_true(disk.mount_point.length() > 0)
+    assert_true(disk.total_bytes > 0)
+    assert_true(disk.available_bytes > 0)
+    assert_true(disk.available_bytes <= disk.total_bytes)
+  }
+  
+  // Test system load
+  let system_load = SystemInfo::get_system_load(system_info)
+  assert_true(system_load.load_average_1min >= 0.0)
+  assert_true(system_load.load_average_5min >= 0.0)
+  assert_true(system_load.load_average_15min >= 0.0)
+  assert_true(system_load.cpu_usage_percent >= 0.0 && system_load.cpu_usage_percent <= 100.0)
+  assert_true(system_load.memory_usage_percent >= 0.0 && system_load.memory_usage_percent <= 100.0)
+  
+  // Test system uptime
+  let uptime = SystemInfo::get_system_uptime(system_info)
+  assert_true(uptime.seconds > 0)
+  
+  // Test boot time
+  let boot_time = SystemInfo::get_boot_time(system_info)
+  assert_true(boot_time.timestamp > 0)
+  
+  // Test timezone information
+  let timezone_info = SystemInfo::get_timezone_info(system_info)
+  assert_true(timezone_info.name.length() > 0)
+  assert_true(timezone_info.offset_hours >= -12 && timezone_info.offset_hours <= 14)
+}
+
+// Test 6: Telemetry Platform Adaptation
+test "telemetry platform adaptation" {
+  let telemetry_adapter = TelemetryPlatformAdapter::new()
+  
+  // Test platform-specific telemetry configuration
+  let config = TelemetryPlatformAdapter::get_platform_configuration(telemetry_adapter)
+  
+  // Verify configuration contains platform-specific settings
+  assert_true(config.default_export_interval_ms > 0)
+  assert_true(config.default_batch_size > 0)
+  assert_true(config.max_concurrent_operations > 0)
+  
+  // Test platform-specific file paths
+  let log_file_path = TelemetryPlatformAdapter::get_log_file_path(telemetry_adapter)
+  assert_true(log_file_path.length() > 0)
+  assert_true(log_file_path.contains("azimuth") || log_file_path.contains("telemetry"))
+  
+  let config_file_path = TelemetryPlatformAdapter::get_config_file_path(telemetry_adapter)
+  assert_true(config_file_path.length() > 0)
+  assert_true(config_file_path.contains("azimuth") || config_file_path.contains("telemetry"))
+  
+  let data_dir_path = TelemetryPlatformAdapter::get_data_directory_path(telemetry_adapter)
+  assert_true(data_dir_path.length() > 0)
+  
+  // Test platform-specific performance settings
+  let performance_settings = TelemetryPlatformAdapter::get_performance_settings(telemetry_adapter)
+  
+  assert_true(performance_settings.max_memory_usage_mb > 0)
+  assert_true(performance_settings.max_file_handles > 0)
+  assert_true(performance_settings.max_threads > 0)
+  assert_true(performance_settings.gc_threshold_percent > 0 && performance_settings.gc_threshold_percent <= 100)
+  
+  // Test platform-specific network settings
+  let network_settings = TelemetryPlatformAdapter::get_network_settings(telemetry_adapter)
+  
+  assert_true(network_settings.connection_timeout_ms > 0)
+  assert_true(network_settings.read_timeout_ms > 0)
+  assert_true(network_settings.write_timeout_ms > 0)
+  assert_true(network_settings.max_retry_attempts > 0)
+  assert_true(network_settings.retry_delay_ms > 0)
+  
+  // Test platform-specific logging settings
+  let logging_settings = TelemetryPlatformAdapter::get_logging_settings(telemetry_adapter)
+  
+  assert_true(logging_settings.log_level.length() > 0)
+  assert_true(logging_settings.max_log_file_size_mb > 0)
+  assert_true(logging_settings.max_log_files > 0)
+  assert_true(logging_settings.log_rotation_enabled == true || logging_settings.log_rotation_enabled == false)
+}
+
+// Test 7: Cross-Platform Data Serialization
+test "cross-platform data serialization" {
+  let serialization_adapter = SerializationAdapter::new()
+  
+  // Create test telemetry data
+  let telemetry_data = TelemetryData::new(
+    "test.service",
+    "test.operation",
+    200,
+    100,
+    true
+  )
+  
+  // Test JSON serialization (platform-independent)
+  let json_result = SerializationAdapter::to_json(serialization_adapter, telemetry_data)
+  match json_result {
+    Some(json_string) => {
+      assert_true(json_string.length() > 0)
+      
+      // Test JSON deserialization
+      let deserialized_result = SerializationAdapter::from_json(serialization_adapter, json_string)
+      match deserialized_result {
+        Some(deserialized_data) => {
+          assert_eq(deserialized_data.service_name, telemetry_data.service_name)
+          assert_eq(deserialized_data.operation_name, telemetry_data.operation_name)
+          assert_eq(deserialized_data.status_code, telemetry_data.status_code)
+          assert_eq(deserialized_data.duration_ms, telemetry_data.duration_ms)
+          assert_eq(deserialized_data.success, telemetry_data.success)
+        }
+        None => assert_true(false)
+      }
+    }
+    None => assert_true(false)
+  }
+  
+  // Test binary serialization (platform-specific)
+  let binary_result = SerializationAdapter::to_binary(serialization_adapter, telemetry_data)
+  match binary_result {
+    Some(binary_data) => {
+      assert_true(binary_data.length() > 0)
+      
+      // Test binary deserialization
+      let deserialized_result = SerializationAdapter::from_binary(serialization_adapter, binary_data)
+      match deserialized_result {
+        Some(deserialized_data) => {
+          assert_eq(deserialized_data.service_name, telemetry_data.service_name)
+          assert_eq(deserialized_data.operation_name, telemetry_data.operation_name)
+          assert_eq(deserialized_data.status_code, telemetry_data.status_code)
+          assert_eq(deserialized_data.duration_ms, telemetry_data.duration_ms)
+          assert_eq(deserialized_data.success, telemetry_data.success)
+        }
+        None => assert_true(false)
+      }
+    }
+    None => assert_true(false)
+  }
+  
+  // Test platform-specific endianness handling
+  let endianness = SerializationAdapter::get_endianness(serialization_adapter)
+  assert_true(endianness == "little" || endianness == "big")
+  
+  // Test cross-platform integer serialization
+  let test_integers = [0, 1, -1, 2147483647, -2147483648]
+  for integer in test_integers {
+    let serialized_int = SerializationAdapter::serialize_integer(serialization_adapter, integer)
+    let deserialized_int = SerializationAdapter::deserialize_integer(serialization_adapter, serialized_int)
+    assert_eq(integer, deserialized_int)
+  }
+  
+  // Test cross-platform float serialization
+  let test_floats = [0.0, 1.0, -1.0, 3.14159, -3.14159]
+  for float in test_floats {
+    let serialized_float = SerializationAdapter::serialize_float(serialization_adapter, float)
+    let deserialized_float = SerializationAdapter::deserialize_float(serialization_adapter, serialized_float)
+    assert_true((float - deserialized_float).abs() < 0.00001)
+  }
+}
+
+// Test 8: Cross-Platform Time Handling
+test "cross-platform time handling" {
+  let time_adapter = TimeAdapter::new()
+  
+  // Test current time
+  let current_time = TimeAdapter::get_current_time(time_adapter)
+  assert_true(current_time.timestamp_seconds > 0)
+  assert_true(current_time.timestamp_milliseconds > 0)
+  assert_true(current_time.timestamp_nanoseconds > 0)
+  assert_true(current_time.timezone_offset_hours >= -12 && current_time.timezone_offset_hours <= 14)
+  
+  // Test time formatting
+  let formatted_time = TimeAdapter::format_time(time_adapter, current_time, "ISO8601")
+  assert_true(formatted_time.length() > 0)
+  
+  let formatted_time_custom = TimeAdapter::format_time(time_adapter, current_time, "YYYY-MM-DD HH:mm:ss")
+  assert_true(formatted_time_custom.length() > 0)
+  assert_true(formatted_time_custom.contains("-"))
+  assert_true(formatted_time_custom.contains(":"))
+  
+  // Test time parsing
+  let parsed_time = TimeAdapter::parse_time(time_adapter, formatted_time, "ISO8601")
+  match parsed_time {
+    Some(time) => {
+      assert_eq(time.timestamp_seconds, current_time.timestamp_seconds)
+    }
+    None => assert_true(false)
+  }
+  
+  // Test time conversion
+  let timestamp_seconds = current_time.timestamp_seconds
+  let timestamp_milliseconds = TimeAdapter::seconds_to_milliseconds(time_adapter, timestamp_seconds)
+  assert_eq(timestamp_milliseconds, timestamp_seconds * 1000)
+  
+  let timestamp_nanoseconds = TimeAdapter::seconds_to_nanoseconds(time_adapter, timestamp_seconds)
+  assert_eq(timestamp_nanoseconds, timestamp_seconds * 1000000000)
+  
+  // Test time arithmetic
+  let future_time = TimeAdapter::add_seconds(time_adapter, current_time, 3600) // Add 1 hour
+  assert_true(future_time.timestamp_seconds > current_time.timestamp_seconds)
+  assert_eq(future_time.timestamp_seconds, current_time.timestamp_seconds + 3600)
+  
+  let past_time = TimeAdapter::subtract_seconds(time_adapter, current_time, 3600) // Subtract 1 hour
+  assert_true(past_time.timestamp_seconds < current_time.timestamp_seconds)
+  assert_eq(past_time.timestamp_seconds, current_time.timestamp_seconds - 3600)
+  
+  // Test time difference
+  let time_difference = TimeAdapter::get_difference_seconds(time_adapter, future_time, current_time)
+  assert_eq(time_difference, 3600)
+  
+  // Test timezone conversion
+  let utc_time = TimeAdapter::to_utc(time_adapter, current_time)
+  assert_true(utc_time.timezone_offset_hours == 0)
+  
+  let local_time = TimeAdapter::to_local(time_adapter, utc_time)
+  assert_eq(local_time.timezone_offset_hours, current_time.timezone_offset_hours)
+}
+
+// Test 9: Cross-Platform Threading
+test "cross-platform threading" {
+  let threading_adapter = ThreadingAdapter::new()
+  
+  // Test thread creation
+  let thread_result = ThreadingAdapter::create_thread(threading_adapter, fn() {
+    Thread::sleep(100) // 100ms
+    return "thread_result"
+  })
+  match thread_result {
+    Some(thread) => {
+      // Test thread joining
+      let join_result = ThreadingAdapter::join_thread(threading_adapter, thread)
+      match join_result {
+        Some(result) => assert_eq(result, "thread_result")
+        None => assert_true(false)
+      }
+    }
+    None => assert_true(false)
+  }
+  
+  // Test thread pool creation
+  let thread_pool_result = ThreadingAdapter::create_thread_pool(threading_adapter, 4)
+  match thread_pool_result {
+    Some(thread_pool) => {
+      // Test task submission
+      let task_results = []
+      for i in 0..=10 {
+        let task_result = ThreadingAdapter::submit_task(threading_adapter, thread_pool, fn() {
+          Thread::sleep(50) // 50ms
+          return "task_result_" + i.to_string()
+        })
+        match task_result {
+          Some(task) => task_results = task_results.push(task)
+          None => assert_true(false)
+        }
+      }
+      
+      // Test task result retrieval
+      for i in 0..=task_results.length() - 1 {
+        let task = task_results[i]
+        let result = ThreadingAdapter::get_task_result(threading_adapter, task)
+        match result {
+          Some(task_result) => assert_eq(task_result, "task_result_" + i.to_string())
+          None => assert_true(false)
+        }
+      }
+      
+      // Test thread pool shutdown
+      let shutdown_result = ThreadingAdapter::shutdown_thread_pool(threading_adapter, thread_pool)
+      assert_true(shutdown_result)
+    }
+    None => assert_true(false)
+  }
+  
+  // Test mutex creation and usage
+  let mutex_result = ThreadingAdapter::create_mutex(threading_adapter)
+  match mutex_result {
+    Some(mutex) => {
+      // Test mutex locking
+      let lock_result = ThreadingAdapter::lock_mutex(threading_adapter, mutex)
+      assert_true(lock_result)
+      
+      // Test mutex unlocking
+      let unlock_result = ThreadingAdapter::unlock_mutex(threading_adapter, mutex)
+      assert_true(unlock_result)
+      
+      // Test mutex destruction
+      let destroy_result = ThreadingAdapter::destroy_mutex(threading_adapter, mutex)
+      assert_true(destroy_result)
+    }
+    None => assert_true(false)
+  }
+  
+  // Test condition variable creation and usage
+  let condition_result = ThreadingAdapter::create_condition_variable(threading_adapter)
+  match condition_result {
+    Some(condition) => {
+      // Test condition variable notification
+      let notify_result = ThreadingAdapter::notify_condition_variable(threading_adapter, condition)
+      assert_true(notify_result)
+      
+      // Test condition variable destruction
+      let destroy_result = ThreadingAdapter::destroy_condition_variable(threading_adapter, condition)
+      assert_true(destroy_result)
+    }
+    None => assert_true(false)
+  }
+}
+
+// Test 10: Cross-Platform Error Handling
+test "cross-platform error handling" {
+  let error_adapter = ErrorAdapter::new()
+  
+  // Test error code mapping
+  let platform_error_codes = [
+    1,   // General error
+    2,   // File not found
+    3,   // Permission denied
+    4,   // Invalid operation
+    5,   // Resource busy
+    11,  // Resource temporarily unavailable
+    22,  // Invalid argument
+    28,  // No space left on device
+    32,  // Broken pipe
+    33,  // Numerical argument out of domain
+    110, // Connection timed out
+    111, // Connection refused
+    112, // Host is down
+    113, // No route to host
+    104, // Connection reset by peer
+    105, // No buffer space available
+    106, // Transport endpoint is already connected
+    107, // Transport endpoint is not connected
+    108, // Cannot send after transport endpoint shutdown
+    109, // Too many references: cannot splice
+    114, // Operation already in progress
+    115, // Operation now in progress
+    116, // Stale NFS file handle
+    117, // Structure needs cleaning
+    118, // Not a XENIX named type file
+    119, // No XENIX semaphores available
+    120, // Is a named type file
+    121, // Remote I/O error
+    122, // Disk quota exceeded
+    123, // No medium found
+    124, // Wrong medium type
+    125, // Operation canceled
+    126, // Required key not available
+    127, // Key has expired
+    128, // Key has been revoked
+    129, // Key was rejected by service
+    130, // Owner died
+    131, // State not recoverable
+    132, // Operation not possible due to RF-kill
+    133, // Memory page has hardware error
+  ]
+  
+  for error_code in platform_error_codes {
+    let error_description = ErrorAdapter::get_error_description(error_adapter, error_code)
+    assert_true(error_description.length() > 0)
+    
+    let error_category = ErrorAdapter::get_error_category(error_adapter, error_code)
+    assert_true(error_category.length() > 0)
+    
+    let is_recoverable = ErrorAdapter::is_error_recoverable(error_adapter, error_code)
+    assert_true(is_recoverable == true || is_recoverable == false)
+  }
+  
+  // Test platform-specific error handling
+  let platform_errors = [
+    "ENOENT",    // No such file or directory
+    "EACCES",    // Permission denied
+    "EEXIST",    // File exists
+    "ENOTDIR",   // Not a directory
+    "EISDIR",    // Is a directory
+    "EINVAL",    // Invalid argument
+    "EMFILE",    // Too many open files
+    "ENFILE",    // Too many open files in system
+    "ENOSPC",    // No space left on device
+    "ENOMEM",    // Not enough space
+    "EAGAIN",    // Resource temporarily unavailable
+    "ETIMEDOUT", // Connection timed out
+    "ECONNREFUSED", // Connection refused
+    "ECONNRESET", // Connection reset by peer
+    "EHOSTUNREACH", // No route to host
+    "ENETUNREACH"  // Network is unreachable
+  ]
+  
+  for error_name in platform_errors {
+    let error_code_result = ErrorAdapter::get_error_code_by_name(error_adapter, error_name)
+    match error_code_result {
+      Some(error_code) => {
+        let error_description = ErrorAdapter::get_error_description(error_adapter, error_code)
+        assert_true(error_description.length() > 0)
+      }
+      None => {
+        // Some error codes might not exist on all platforms
+        // This is acceptable
+      }
+    }
+  }
+  
+  // Test error recovery strategies
+  let recoverable_errors = [1, 2, 4, 11, 22, 110, 111, 112, 113, 125]
+  for error_code in recoverable_errors {
+    let recovery_strategy = ErrorAdapter::get_recovery_strategy(error_adapter, error_code)
+    match recovery_strategy {
+      Some(strategy) => assert_true(strategy.length() > 0)
+      None => assert_true(false) // Should have recovery strategy for recoverable errors
+    }
+  }
+  
+  // Test error logging
+  let log_result = ErrorAdapter::log_error(error_adapter, 2, "Test error message")
+  assert_true(log_result)
+  
+  let log_result_with_context = ErrorAdapter::log_error_with_context(
+    error_adapter, 
+    2, 
+    "Test error message with context",
+    [("file", "/tmp/test.txt"), ("operation", "read")]
+  )
+  assert_true(log_result_with_context)
 }

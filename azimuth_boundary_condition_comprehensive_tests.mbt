@@ -1,917 +1,1271 @@
-// Azimuth 边界条件综合测试用例
-// 专注于边界条件、极端情况和异常场景测试
+// Azimuth Telemetry System - Boundary Condition Comprehensive Tests
+// This file contains comprehensive tests for boundary conditions and edge cases
 
-// 测试1: 数值边界条件测试
-test "数值边界条件测试" {
-  // 定义数值边界测试函数
-  let test_int_boundaries = fn(operation: (Int -> Int)) {
-    // 测试零值
-    let zero_result = operation(0)
-    
-    // 测试正边界
-    let max_int = 2147483647
-    let max_result = operation(max_int)
-    
-    // 测试负边界
-    let min_int = -2147483648
-    let min_result = operation(min_int)
-    
-    // 测试接近边界的值
-    let near_max_result = operation(max_int - 1)
-    let near_min_result = operation(min_int + 1)
-    
-    (zero_result, max_result, min_result, near_max_result, near_min_result)
+// Test 1: Numeric Boundary Conditions
+test "numeric boundary conditions" {
+  // Test integer boundaries
+  let max_int = 2147483647
+  let min_int = -2147483648
+  
+  // Test max integer value
+  let max_int_result = TelemetryProcessor::process_integer(max_int)
+  match max_int_result {
+    Success(result) => assert_eq(result, max_int)
+    Error(OverflowError) => assert_true(true) // Expected for max value
+    _ => assert_true(false)
   }
   
-  // 测试加法边界
-  let addition = fn(x: Int) { x + 1 }
-  let addition_results = test_int_boundaries(addition)
-  
-  assert_eq(addition_results.0, 1)  # 0 + 1 = 1
-  assert_eq(addition_results.2, -2147483647)  # -2147483648 + 1 = -2147483647
-  
-  // 测试减法边界
-  let subtraction = fn(x: Int) { x - 1 }
-  let subtraction_results = test_int_boundaries(subtraction)
-  
-  assert_eq(subtraction_results.0, -1)  # 0 - 1 = -1
-  assert_eq(subtraction_results.1, 2147483646)  # 2147483647 - 1 = 2147483646
-  
-  // 测试乘法边界
-  let multiplication = fn(x: Int) { x * 2 }
-  let multiplication_results = test_int_boundaries(multiplication)
-  
-  assert_eq(multiplication_results.0, 0)  # 0 * 2 = 0
-  
-  // 测试除法边界
-  let safe_division = fn(x: Int) {
-    if x == 0 {
-      0  # 避免除零错误
-    } else {
-      1000 / x
-    }
+  // Test min integer value
+  let min_int_result = TelemetryProcessor::process_integer(min_int)
+  match min_int_result {
+    Success(result) => assert_eq(result, min_int)
+    Error(OverflowError) => assert_true(true) // Expected for min value
+    _ => assert_true(false)
   }
   
-  let division_results = test_int_boundaries(safe_division)
-  assert_eq(division_results.0, 0)  # 特殊情况处理
-  
-  // 测试浮点数边界
-  let test_float_boundaries = fn(operation: (Float -> Float)) {
-    let zero_result = operation(0.0)
-    let max_result = operation(Float::max_value)
-    let min_result = operation(Float::min_value)
-    let inf_result = operation(Float::infinity)
-    let neg_inf_result = operation(Float::neg_infinity)
-    let nan_result = operation(Float::nan)
-    
-    (zero_result, max_result, min_result, inf_result, neg_inf_result, nan_result)
+  // Test integer overflow
+  let overflow_result = TelemetryProcessor::add_integers(max_int, 1)
+  match overflow_result {
+    Error(OverflowError) => assert_true(true) // Expected overflow
+    _ => assert_true(false)
   }
   
-  // 测试浮点数加法
-  let float_addition = fn(x: Float) { x + 1.0 }
-  let float_addition_results = test_float_boundaries(float_addition)
-  
-  assert_eq(float_addition_results.0, 1.0)  # 0.0 + 1.0 = 1.0
-  assert_true(float_addition_results.3.is_infinity())  # infinity + 1.0 = infinity
-  
-  // 测试浮点数除法
-  let float_division = fn(x: Float) {
-    if x == 0.0 {
-      0.0  # 避免除零错误
-    } else {
-      1.0 / x
-    }
+  // Test integer underflow
+  let underflow_result = TelemetryProcessor::subtract_integers(min_int, 1)
+  match underflow_result {
+    Error(OverflowError) => assert_true(true) // Expected underflow
+    _ => assert_true(false)
   }
   
-  let float_division_results = test_float_boundaries(float_division)
-  assert_eq(float_division_results.0, 0.0)  # 特殊情况处理
-  assert_eq(float_division_results.3, 0.0)  # 1.0 / infinity = 0.0
-  assert_eq(float_division_results.4, 0.0)  # 1.0 / -infinity = 0.0
-  assert_true(float_division_results.5.is_nan())  # 1.0 / NaN = NaN
+  // Test float boundaries
+  let max_float = 3.4028235e38 // Max float32
+  let min_float = 1.17549435e-38 // Min positive float32
+  let inf_float = 1.0 / 0.0 // Infinity
+  let nan_float = 0.0 / 0.0 // NaN
   
-  // 测试数组边界
-  let test_array_boundaries = fn() {
-    let empty_array = []
-    let single_element_array = [1]
-    let large_array = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    
-    // 测试空数组访问
-    let empty_first = if empty_array.length() > 0 { Some(empty_array[0]) } else { None }
-    let empty_last = if empty_array.length() > 0 { Some(empty_array[empty_array.length() - 1]) } else { None }
-    
-    // 测试单元素数组访问
-    let single_first = if single_element_array.length() > 0 { Some(single_element_array[0]) } else { None }
-    let single_last = if single_element_array.length() > 0 { Some(single_element_array[single_element_array.length() - 1]) } else { None }
-    
-    // 测试大数组访问
-    let large_first = if large_array.length() > 0 { Some(large_array[0]) } else { None }
-    let large_last = if large_array.length() > 0 { Some(large_array[large_array.length() - 1]) } else { None }
-    
-    // 测试边界索引访问
-    let large_boundary = if large_array.length() > 4 { Some(large_array[4]) } else { None }
-    
-    (empty_first, empty_last, single_first, single_last, large_first, large_last, large_boundary)
+  // Test max float value
+  let max_float_result = TelemetryProcessor::process_float(max_float)
+  match max_float_result {
+    Success(result) => assert_true((result - max_float).abs() < 0.001)
+    Error(OverflowError) => assert_true(true) // Expected for max value
+    _ => assert_true(false)
   }
   
-  let array_results = test_array_boundaries()
-  assert_eq(array_results.0, None)  # 空数组第一个元素
-  assert_eq(array_results.1, None)  # 空数组最后一个元素
-  assert_eq(array_results.2, Some(1))  # 单元素数组第一个元素
-  assert_eq(array_results.3, Some(1))  # 单元素数组最后一个元素
-  assert_eq(array_results.4, Some(1))  # 大数组第一个元素
-  assert_eq(array_results.5, Some(10))  # 大数组最后一个元素
-  assert_eq(array_results.6, Some(5))  # 大数组边界索引
+  // Test min float value
+  let min_float_result = TelemetryProcessor::process_float(min_float)
+  match min_float_result {
+    Success(result) => assert_true((result - min_float).abs() < 0.0000001)
+    _ => assert_true(false)
+  }
+  
+  // Test infinity
+  let inf_result = TelemetryProcessor::process_float(inf_float)
+  match inf_result {
+    Success(result) => assert_true(result.is_infinite())
+    _ => assert_true(false)
+  }
+  
+  // Test NaN
+  let nan_result = TelemetryProcessor::process_float(nan_float)
+  match nan_result {
+    Success(result) => assert_true(result.is_nan())
+    _ => assert_true(false)
+  }
+  
+  // Test division by zero
+  let div_by_zero_result = TelemetryProcessor::divide_floats(1.0, 0.0)
+  match div_by_zero_result {
+    Success(result) => assert_true(result.is_infinite())
+    _ => assert_true(false)
+  }
+  
+  // Test zero division
+  let zero_div_result = TelemetryProcessor::divide_floats(0.0, 1.0)
+  match zero_div_result {
+    Success(result) => assert_eq(result, 0.0)
+    _ => assert_true(false)
+  }
+  
+  // Test precision boundaries
+  let precision_test = 0.1 + 0.2 // Known floating point precision issue
+  let precision_result = TelemetryProcessor::compare_floats(precision_test, 0.3, 0.0001)
+  assert_true(precision_result) // Should be approximately equal
 }
 
-// 测试2: 字符串边界条件测试
-test "字符串边界条件测试" {
-  // 测试空字符串
+// Test 2: String and Text Boundary Conditions
+test "string and text boundary conditions" {
+  // Test empty string
   let empty_string = ""
-  assert_eq(empty_string.length(), 0)
-  assert_eq(empty_string.to_uppercase(), "")
-  assert_eq(empty_string.to_lowercase(), "")
-  assert_false(empty_string.contains("a"))
-  assert_true(empty_string.starts_with(""))
-  assert_true(empty_string.ends_with(""))
+  let empty_result = TelemetryProcessor::process_string(empty_string)
+  match empty_result {
+    Success(result) => assert_eq(result, empty_string)
+    _ => assert_true(false)
+  }
   
-  // 测试单字符字符串
-  let single_char_string = "a"
-  assert_eq(single_char_string.length(), 1)
-  assert_eq(single_char_string.to_uppercase(), "A")
-  assert_eq(single_char_string.to_lowercase(), "a")
-  assert_true(single_char_string.contains("a"))
-  assert_false(single_char_string.contains("b"))
-  assert_true(single_char_string.starts_with("a"))
-  assert_true(single_char_string.ends_with("a"))
-  assert_false(single_char_string.starts_with("b"))
-  assert_false(single_char_string.ends_with("b"))
+  // Test single character string
+  let single_char = "a"
+  let single_char_result = TelemetryProcessor::process_string(single_char)
+  match single_char_result {
+    Success(result) => assert_eq(result, single_char)
+    _ => assert_true(false)
+  }
   
-  // 测试长字符串
-  let long_string = "a".repeat(10000)
-  assert_eq(long_string.length(), 10000)
-  assert_true(long_string.contains("a"))
-  assert_false(long_string.contains("b"))
-  assert_true(long_string.starts_with("a"))
-  assert_true(long_string.ends_with("a"))
+  // Test very long string
+  let long_string = "a" * 1000000 // 1 million characters
+  let long_string_result = TelemetryProcessor::process_string(long_string)
+  match long_string_result {
+    Success(result) => assert_eq(result.length(), long_string.length())
+    Error(StringTooLongError) => assert_true(true) // Expected for very long strings
+    _ => assert_true(false)
+  }
   
-  // 测试Unicode字符串
-  let unicode_string = "你好世界"
-  assert_eq(unicode_string.length(), 4)
-  assert_true(unicode_string.contains("你好"))
-  assert_true(unicode_string.contains("世界"))
-  assert_false(unicode_string.contains("hello"))
-  assert_true(unicode_string.starts_with("你好"))
-  assert_true(unicode_string.ends_with("世界"))
+  // Test string with special characters
+  let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
+  let special_chars_result = TelemetryProcessor::process_string(special_chars)
+  match special_chars_result {
+    Success(result) => assert_eq(result, special_chars)
+    _ => assert_true(false)
+  }
   
-  // 测试特殊字符字符串
-  let special_chars_string = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
-  assert_true(special_chars_string.length() > 0)
-  assert_true(special_chars_string.contains("!"))
-  assert_true(special_chars_string.contains("?"))
-  assert_false(special_chars_string.contains("a"))
+  // Test string with Unicode characters
+  let unicode_string = "Hello 你好 Hola こんにちは 안녕하세요 مرحبا ברוכים הבאים Привет мир 🌍🌎🌏"
+  let unicode_result = TelemetryProcessor::process_string(unicode_string)
+  match unicode_result {
+    Success(result) => assert_eq(result, unicode_string)
+    _ => assert_true(false)
+  }
   
-  // 测试字符串截取边界
-  let test_string = "Hello, World!"
+  // Test string with null bytes
+  let null_byte_string = "test\0string"
+  let null_byte_result = TelemetryProcessor::process_string(null_byte_string)
+  match null_byte_result {
+    Success(result) => assert_true(result.contains("test")) // Should handle null bytes
+    _ => assert_true(false)
+  }
   
-  // 测试空截取
-  let empty_substring = test_string.substring(0, 0)
-  assert_eq(empty_substring, "")
+  // Test string with control characters
+  let control_chars = "test\n\t\rstring"
+  let control_chars_result = TelemetryProcessor::process_string(control_chars)
+  match control_chars_result {
+    Success(result) => assert_eq(result, control_chars)
+    _ => assert_true(false)
+  }
   
-  // 测试完整截取
-  let full_substring = test_string.substring(0, test_string.length())
-  assert_eq(full_substring, test_string)
+  // Test string concatenation boundaries
+  let string1 = "a" * 500000
+  let string2 = "b" * 500000
+  let concat_result = TelemetryProcessor::concatenate_strings(string1, string2)
+  match concat_result {
+    Success(result) => assert_eq(result.length(), 1000000)
+    Error(StringTooLongError) => assert_true(true) // Expected for very long result
+    _ => assert_true(false)
+  }
   
-  // 测试单字符截取
-  let single_char_substring = test_string.substring(0, 1)
-  assert_eq(single_char_substring, "H")
+  // Test string indexing boundaries
+  let test_string = "0123456789"
   
-  // 测试边界截取
-  let boundary_substring = test_string.substring(test_string.length() - 1, test_string.length())
-  assert_eq(boundary_substring, "!")
+  // Valid indices
+  let first_char = TelemetryProcessor::get_char_at(test_string, 0)
+  match first_char {
+    Some(c) => assert_eq(c, '0')
+    None => assert_true(false)
+  }
   
-  // 测试超出边界截取
-  let out_of_bounds_substring = test_string.substring(0, test_string.length() + 10)
-  assert_eq(out_of_bounds_substring, test_string)
+  let last_char = TelemetryProcessor::get_char_at(test_string, 9)
+  match last_char {
+    Some(c) => assert_eq(c, '9')
+    None => assert_true(false)
+  }
   
-  // 测试字符串分割边界
-  let empty_split_string = ""
-  let empty_split_result = empty_split_string.split(",")
-  assert_eq(empty_split_result.length(), 1)
-  assert_eq(empty_split_result[0], "")
+  // Invalid indices
+  let negative_index = TelemetryProcessor::get_char_at(test_string, -1)
+  match negative_index {
+    Some(_) => assert_true(false) // Should not succeed
+    None => assert_true(true) // Expected failure
+  }
   
-  let no_delimiter_string = "nodelimiters"
-  let no_delimiter_result = no_delimiter_string.split(",")
-  assert_eq(no_delimiter_result.length(), 1)
-  assert_eq(no_delimiter_result[0], "nodelimiters")
-  
-  let single_delimiter_string = "a,b"
-  let single_delimiter_result = single_delimiter_string.split(",")
-  assert_eq(single_delimiter_result.length(), 2)
-  assert_eq(single_delimiter_result[0], "a")
-  assert_eq(single_delimiter_result[1], "b")
-  
-  let multiple_delimiter_string = "a,b,c,d,e"
-  let multiple_delimiter_result = multiple_delimiter_string.split(",")
-  assert_eq(multiple_delimiter_result.length(), 5)
-  assert_eq(multiple_delimiter_result[0], "a")
-  assert_eq(multiple_delimiter_result[4], "e")
-  
-  // 测试连续分隔符
-  let consecutive_delimiters_string = "a,,b"
-  let consecutive_delimiters_result = consecutive_delimiters_string.split(",")
-  assert_eq(consecutive_delimiters_result.length(), 3)
-  assert_eq(consecutive_delimiters_result[0], "a")
-  assert_eq(consecutive_delimiters_result[1], "")
-  assert_eq(consecutive_delimiters_result[2], "b")
-  
-  // 测试首尾分隔符
-  let edge_delimiters_string = ",a,b,"
-  let edge_delimiters_result = edge_delimiters_string.split(",")
-  assert_eq(edge_delimiters_result.length(), 4)
-  assert_eq(edge_delimiters_result[0], "")
-  assert_eq(edge_delimiters_result[1], "a")
-  assert_eq(edge_delimiters_result[2], "b")
-  assert_eq(edge_delimiters_result[3], "")
+  let out_of_bounds_index = TelemetryProcessor::get_char_at(test_string, 10)
+  match out_of_bounds_index {
+    Some(_) => assert_true(false) // Should not succeed
+    None => assert_true(true) // Expected failure
+  }
 }
 
-// 测试3: 集合边界条件测试
-test "集合边界条件测试" {
-  // 测试空集合
-  let empty_set = Set::new()
-  assert_eq(empty_set.size(), 0)
-  assert_false(empty_set.contains("a"))
-  assert_true(empty_set.is_empty())
-  
-  // 测试单元素集合
-  let single_set = Set::singleton("a")
-  assert_eq(single_set.size(), 1)
-  assert_true(single_set.contains("a"))
-  assert_false(single_set.contains("b"))
-  assert_false(single_set.is_empty())
-  
-  // 测试大集合
-  let mut large_set = Set::new()
-  for i in 0..1000 {
-    large_set = large_set.add("item_" + i.to_string())
+// Test 3: Array and Collection Boundary Conditions
+test "array and collection boundary conditions" {
+  // Test empty array
+  let empty_array = []
+  let empty_result = TelemetryProcessor::process_array(empty_array)
+  match empty_result {
+    Success(result) => assert_eq(result.length(), 0)
+    _ => assert_true(false)
   }
-  assert_eq(large_set.size(), 1000)
-  assert_true(large_set.contains("item_0"))
-  assert_true(large_set.contains("item_999"))
-  assert_false(large_set.contains("item_1000"))
   
-  // 测试集合操作边界
-  let set_a = Set::from_array(["a", "b", "c"])
-  let set_b = Set::from_array(["c", "d", "e"])
-  let empty_set_b = Set::new()
-  
-  // 测试并集
-  let union_ab = set_a.union(set_b)
-  assert_eq(union_ab.size(), 5)
-  assert_true(union_ab.contains("a"))
-  assert_true(union_ab.contains("e"))
-  
-  let union_with_empty = set_a.union(empty_set_b)
-  assert_eq(union_with_empty.size(), 3)
-  assert_eq(union_with_empty, set_a)
-  
-  // 测试交集
-  let intersection_ab = set_a.intersect(set_b)
-  assert_eq(intersection_ab.size(), 1)
-  assert_true(intersection_ab.contains("c"))
-  
-  let intersection_with_empty = set_a.intersect(empty_set_b)
-  assert_eq(intersection_with_empty.size(), 0)
-  assert_true(intersection_with_empty.is_empty())
-  
-  // 测试差集
-  let difference_ab = set_a.difference(set_b)
-  assert_eq(difference_ab.size(), 2)
-  assert_true(difference_ab.contains("a"))
-  assert_true(difference_ab.contains("b"))
-  assert_false(difference_ab.contains("c"))
-  
-  let difference_with_empty = set_a.difference(empty_set_b)
-  assert_eq(difference_with_empty.size(), 3)
-  assert_eq(difference_with_empty, set_a)
-  
-  // 测试空Map
-  let empty_map = Map::new()
-  assert_eq(empty_map.size(), 0)
-  assert_eq(empty_map.get("a"), None)
-  assert_true(empty_map.is_empty())
-  
-  // 测试单元素Map
-  let single_map = Map::new().set("a", 1)
-  assert_eq(single_map.size(), 1)
-  assert_eq(single_map.get("a"), Some(1))
-  assert_eq(single_map.get("b"), None)
-  assert_false(single_map.is_empty())
-  
-  // 测试大Map
-  let mut large_map = Map::new()
-  for i in 0..1000 {
-    large_map = large_map.set("key_" + i.to_string(), i)
+  // Test single element array
+  let single_element = [1]
+  let single_result = TelemetryProcessor::process_array(single_element)
+  match single_result {
+    Success(result) => assert_eq(result.length(), 1)
+    _ => assert_true(false)
   }
-  assert_eq(large_map.size(), 1000)
-  assert_eq(large_map.get("key_0"), Some(0))
-  assert_eq(large_map.get("key_999"), Some(999))
-  assert_eq(large_map.get("key_1000"), None)
   
-  // 测试Map操作边界
-  let map_a = Map::new().set("a", 1).set("b", 2).set("c", 3)
-  let map_b = Map::new().set("c", 4).set("d", 5).set("e", 6)
-  let empty_map_b = Map::new()
+  // Test very large array
+  let large_array = []
+  for i in 0..=100000 {
+    large_array = large_array.push(i)
+  }
+  let large_result = TelemetryProcessor::process_array(large_array)
+  match large_result {
+    Success(result) => assert_eq(result.length(), 100001)
+    Error(ArrayTooLargeError) => assert_true(true) // Expected for very large arrays
+    _ => assert_true(false)
+  }
   
-  // 测试Map合并
-  let merged_ab = map_a.merge(map_b)
-  assert_eq(merged_ab.size(), 5)
-  assert_eq(merged_ab.get("a"), Some(1))
-  assert_eq(merged_ab.get("c"), Some(4))  # map_b的值覆盖map_a的值
-  assert_eq(merged_ab.get("e"), Some(6))
+  // Test array indexing boundaries
+  let test_array = [1, 2, 3, 4, 5]
   
-  let merged_with_empty = map_a.merge(empty_map_b)
-  assert_eq(merged_with_empty.size(), 3)
-  assert_eq(merged_with_empty, map_a)
+  // Valid indices
+  let first_element = TelemetryProcessor::get_element_at(test_array, 0)
+  match first_element {
+    Some(element) => assert_eq(element, 1)
+    None => assert_true(false)
+  }
   
-  // 测试Map过滤
-  let filtered_map = map_a.filter_fn(key, value) { value > 1 }
-  assert_eq(filtered_map.size(), 2)
-  assert_eq(filtered_map.get("a"), None)
-  assert_eq(filtered_map.get("b"), Some(2))
-  assert_eq(filtered_map.get("c"), Some(3))
+  let last_element = TelemetryProcessor::get_element_at(test_array, 4)
+  match last_element {
+    Some(element) => assert_eq(element, 5)
+    None => assert_true(false)
+  }
   
-  let filtered_all = map_a.filter_fn(key, value) { value > 10 }
-  assert_eq(filtered_all.size(), 0)
-  assert_true(filtered_all.is_empty())
+  // Invalid indices
+  let negative_index = TelemetryProcessor::get_element_at(test_array, -1)
+  match negative_index {
+    Some(_) => assert_true(false) // Should not succeed
+    None => assert_true(true) // Expected failure
+  }
   
-  let filtered_none = map_a.filter_fn(key, value) { value >= 0 }
-  assert_eq(filtered_none.size(), 3)
-  assert_eq(filtered_none, map_a)
+  let out_of_bounds_index = TelemetryProcessor::get_element_at(test_array, 5)
+  match out_of_bounds_index {
+    Some(_) => assert_true(false) // Should not succeed
+    None => assert_true(true) // Expected failure
+  }
+  
+  // Test array insertion boundaries
+  let mut mutable_array = [1, 2, 3]
+  
+  // Insert at beginning
+  let insert_beginning = TelemetryProcessor::insert_at(mutable_array, 0, 0)
+  match insert_beginning {
+    Success(result) => assert_eq(result, [0, 1, 2, 3])
+    _ => assert_true(false)
+  }
+  
+  // Insert at end
+  let insert_end = TelemetryProcessor::insert_at(mutable_array, 3, 4)
+  match insert_end {
+    Success(result) => assert_eq(result, [1, 2, 3, 4])
+    _ => assert_true(false)
+  }
+  
+  // Insert at invalid position
+  let insert_invalid = TelemetryProcessor::insert_at(mutable_array, 10, 5)
+  match insert_invalid {
+    Some(_) => assert_true(false) // Should not succeed
+    None => assert_true(true) // Expected failure
+  }
+  
+  // Test array deletion boundaries
+  let delete_array = [1, 2, 3, 4, 5]
+  
+  // Delete first element
+  let delete_first = TelemetryProcessor::delete_at(delete_array, 0)
+  match delete_first {
+    Success(result) => assert_eq(result, [2, 3, 4, 5])
+    _ => assert_true(false)
+  }
+  
+  // Delete last element
+  let delete_last = TelemetryProcessor::delete_at(delete_array, 4)
+  match delete_last {
+    Success(result) => assert_eq(result, [1, 2, 3, 4])
+    _ => assert_true(false)
+  }
+  
+  // Delete at invalid position
+  let delete_invalid = TelemetryProcessor::delete_at(delete_array, 10)
+  match delete_invalid {
+    Some(_) => assert_true(false) // Should not succeed
+    None => assert_true(true) // Expected failure
+  }
 }
 
-// 测试4: 时间边界条件测试
-test "时间边界条件测试" {
-  // 测试时间戳边界
-  let zero_timestamp = 0
-  let max_timestamp = 2147483647  # 32位有符号整数最大值
-  let min_timestamp = -2147483648  # 32位有符号整数最小值
+// Test 4: Time and Date Boundary Conditions
+test "time and date boundary conditions" {
+  // Test epoch time
+  let epoch_time = DateTime::from_timestamp(0)
+  assert_eq(epoch_time.year, 1970)
+  assert_eq(epoch_time.month, 1)
+  assert_eq(epoch_time.day, 1)
   
-  // 测试时间计算
-  let add_day = fn(timestamp: Int) { timestamp + 86400 }  # 加一天
-  let subtract_day = fn(timestamp: Int) { timestamp - 86400 }  # 减一天
-  
-  let zero_plus_day = add_day(zero_timestamp)
-  assert_eq(zero_plus_day, 86400)
-  
-  let max_plus_day = add_day(max_timestamp)
-  // 注意：这可能会导致溢出，实际应用中需要处理
-  
-  let min_minus_day = subtract_day(min_timestamp)
-  // 注意：这可能会导致溢出，实际应用中需要处理
-  
-  // 测试时间间隔计算
-  let calculate_duration = fn(start: Int, end: Int) {
-    if end >= start {
-      end - start
-    } else {
-      0  # 简化处理，实际应用中可能需要负数持续时间
-    }
+  // Test maximum supported time
+  let max_time = DateTime::from_timestamp(253402300799) // 9999-12-31 23:59:59 UTC
+  let max_time_result = TelemetryProcessor::process_datetime(max_time)
+  match max_time_result {
+    Success(result) => assert_eq(result, max_time)
+    Error(InvalidTimeError) => assert_true(true) // Expected for max time
+    _ => assert_true(false)
   }
   
-  let same_time_duration = calculate_duration(1000, 1000)
-  assert_eq(same_time_duration, 0)
-  
-  let positive_duration = calculate_duration(1000, 2000)
-  assert_eq(positive_duration, 1000)
-  
-  let negative_duration = calculate_duration(2000, 1000)
-  assert_eq(negative_duration, 0)  # 简化处理
-  
-  let zero_start_duration = calculate_duration(0, 1000)
-  assert_eq(zero_start_duration, 1000)
-  
-  let zero_end_duration = calculate_duration(1000, 0)
-  assert_eq(zero_end_duration, 0)  # 简化处理
-  
-  // 测试时间格式化边界
-  let format_timestamp = fn(timestamp: Int) {
-    if timestamp == 0 {
-      "1970-01-01 00:00:00 UTC"
-    } else if timestamp == 86400 {
-      "1970-01-02 00:00:00 UTC"
-    } else if timestamp == -86400 {
-      "1969-12-31 00:00:00 UTC"
-    } else {
-      "Other time"
-    }
+  // Test minimum supported time
+  let min_time = DateTime::from_timestamp(-62135596800) // 0001-01-01 00:00:00 UTC
+  let min_time_result = TelemetryProcessor::process_datetime(min_time)
+  match min_time_result {
+    Success(result) => assert_eq(result, min_time)
+    Error(InvalidTimeError) => assert_true(true) // Expected for min time
+    _ => assert_true(false)
   }
   
-  assert_eq(format_timestamp(0), "1970-01-01 00:00:00 UTC")
-  assert_eq(format_timestamp(86400), "1970-01-02 00:00:00 UTC")
-  assert_eq(format_timestamp(-86400), "1969-12-31 00:00:00 UTC")
-  assert_eq(format_timestamp(123456789), "Other time")
-  
-  // 测试时区边界
-  let convert_timezone = fn(timestamp: Int, offset_hours: Int) {
-    timestamp + (offset_hours * 3600)
+  // Test invalid time
+  let invalid_time = DateTime::from_timestamp(-99999999999) // Too far in the past
+  let invalid_time_result = TelemetryProcessor::process_datetime(invalid_time)
+  match invalid_time_result {
+    Error(InvalidTimeError) => assert_true(true) // Expected failure
+    _ => assert_true(false)
   }
   
-  let utc_time = 43200  # 1970-01-01 12:00:00 UTC
-  
-  let utc_plus_1 = convert_timezone(utc_time, 1)
-  assert_eq(utc_plus_1, 46800)  # 1970-01-01 13:00:00 UTC+1
-  
-  let utc_minus_1 = convert_timezone(utc_time, -1)
-  assert_eq(utc_minus_1, 39600)  # 1970-01-01 11:00:00 UTC-1
-  
-  let utc_plus_12 = convert_timezone(utc_time, 12)
-  assert_eq(utc_plus_12, 86400)  # 1970-01-02 00:00:00 UTC+12
-  
-  let utc_minus_12 = convert_timezone(utc_time, -12)
-  assert_eq(utc_minus_12, 0)  # 1970-01-01 00:00:00 UTC-12
-  
-  // 测试日期边界
-  let is_leap_year = fn(year: Int) {
-    (year % 4 == 0 and year % 100 != 0) or (year % 400 == 0)
+  // Test leap year
+  let leap_year = DateTime::new(2020, 2, 29, 0, 0, 0) // Valid leap year date
+  let leap_year_result = TelemetryProcessor::process_datetime(leap_year)
+  match leap_year_result {
+    Success(result) => assert_eq(result, leap_year)
+    _ => assert_true(false)
   }
   
-  assert_false(is_leap_year(1900))
-  assert_true(is_leap_year(2000))
-  assert_true(is_leap_year(2004))
-  assert_false(is_leap_year(2100))
-  
-  // 测试月份天数
-  let days_in_month = fn(year: Int, month: Int) {
-    match month {
-      1 => 31,
-      2 => if is_leap_year(year) { 29 } else { 28 },
-      3 => 31,
-      4 => 30,
-      5 => 31,
-      6 => 30,
-      7 => 31,
-      8 => 31,
-      9 => 30,
-      10 => 31,
-      11 => 30,
-      12 => 31,
-      _ => 0
-    }
+  // Test non-leap year
+  let non_leap_year = DateTime::new(2021, 2, 29, 0, 0, 0) // Invalid non-leap year date
+  let non_leap_year_result = TelemetryProcessor::process_datetime(non_leap_year)
+  match non_leap_year_result {
+    Error(InvalidDateError) => assert_true(true) // Expected failure
+    _ => assert_true(false)
   }
   
-  assert_eq(days_in_month(2000, 2), 29)  # 闰年二月
-  assert_eq(days_in_month(2001, 2), 28)  # 平年二月
-  assert_eq(days_in_month(2000, 4), 30)  # 四月
-  assert_eq(days_in_month(2000, 12), 31)  # 十二月
-  assert_eq(days_in_month(2000, 0), 0)   # 无效月份
-  assert_eq(days_in_month(2000, 13), 0)  # 无效月份
+  // Test month boundaries
+  let january_31 = DateTime::new(2023, 1, 31, 0, 0, 0) // Valid
+  let january_result = TelemetryProcessor::process_datetime(january_31)
+  match january_result {
+    Success(result) => assert_eq(result, january_31)
+    _ => assert_true(false)
+  }
+  
+  let february_30 = DateTime::new(2023, 2, 30, 0, 0, 0) // Invalid
+  let february_result = TelemetryProcessor::process_datetime(february_30)
+  match february_result {
+    Error(InvalidDateError) => assert_true(true) // Expected failure
+    _ => assert_true(false)
+  }
+  
+  let april_31 = DateTime::new(2023, 4, 31, 0, 0, 0) // Invalid
+  let april_result = TelemetryProcessor::process_datetime(april_31)
+  match april_result {
+    Error(InvalidDateError) => assert_true(true) // Expected failure
+    _ => assert_true(false)
+  }
+  
+  // Test time boundaries
+  let midnight = DateTime::new(2023, 6, 15, 0, 0, 0) // Valid
+  let midnight_result = TelemetryProcessor::process_datetime(midnight)
+  match midnight_result {
+    Success(result) => assert_eq(result, midnight)
+    _ => assert_true(false)
+  }
+  
+  let end_of_day = DateTime::new(2023, 6, 15, 23, 59, 59) // Valid
+  let end_of_day_result = TelemetryProcessor::process_datetime(end_of_day)
+  match end_of_day_result {
+    Success(result) => assert_eq(result, end_of_day)
+    _ => assert_true(false)
+  }
+  
+  let invalid_hour = DateTime::new(2023, 6, 15, 25, 0, 0) // Invalid
+  let invalid_hour_result = TelemetryProcessor::process_datetime(invalid_hour)
+  match invalid_hour_result {
+    Error(InvalidTimeError) => assert_true(true) // Expected failure
+    _ => assert_true(false)
+  }
+  
+  let invalid_minute = DateTime::new(2023, 6, 15, 12, 60, 0) // Invalid
+  let invalid_minute_result = TelemetryProcessor::process_datetime(invalid_minute)
+  match invalid_minute_result {
+    Error(InvalidTimeError) => assert_true(true) // Expected failure
+    _ => assert_true(false)
+  }
+  
+  let invalid_second = DateTime::new(2023, 6, 15, 12, 30, 60) // Invalid
+  let invalid_second_result = TelemetryProcessor::process_datetime(invalid_second)
+  match invalid_second_result {
+    Error(InvalidTimeError) => assert_true(true) // Expected failure
+    _ => assert_true(false)
+  }
 }
 
-// 测试5: 资源边界条件测试
-test "资源边界条件测试" {
-  // 测试内存分配边界
-  let test_memory_allocation = fn(size: Int) {
-    // 简化的内存分配测试
-    if size <= 0 {
-      ("empty", 0)
-    } else if size == 1 {
-      ("minimal", 1)
-    } else if size >= 1000000 {
-      ("large", size)
-    } else {
-      ("normal", size)
+// Test 5: Memory and Resource Boundary Conditions
+test "memory and resource boundary conditions" {
+  // Test memory allocation boundaries
+  let small_allocation = TelemetryProcessor::allocate_memory(1)
+  match small_allocation {
+    Success(_) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  let large_allocation = TelemetryProcessor::allocate_memory(1024 * 1024 * 1024) // 1GB
+  match large_allocation {
+    Success(_) => assert_true(true) // Might succeed on systems with enough memory
+    Error(OutOfMemoryError) => assert_true(true) // Expected on systems with limited memory
+    _ => assert_true(false)
+  }
+  
+  let huge_allocation = TelemetryProcessor::allocate_memory(1024 * 1024 * 1024 * 1024) // 1TB
+  match huge_allocation {
+    Error(OutOfMemoryError) => assert_true(true) // Expected failure
+    _ => assert_true(false)
+  }
+  
+  // Test negative allocation
+  let negative_allocation = TelemetryProcessor::allocate_memory(-1)
+  match negative_allocation {
+    Error(InvalidParameterError) => assert_true(true) // Expected failure
+    _ => assert_true(false)
+  }
+  
+  // Test file handle boundaries
+  let file_handle_count = TelemetryProcessor::get_open_file_handle_count()
+  assert_true(file_handle_count >= 0)
+  
+  // Test opening many files
+  let file_handles = []
+  let max_files = 1000
+  
+  for i in 0..=max_files {
+    let handle_result = TelemetryProcessor::open_file("test_file_" + i.to_string() + ".tmp")
+    match handle_result {
+      Some(handle) => file_handles = file_handles.push(handle)
+      None => {
+        // Might fail due to file handle limit
+        break
+      }
     }
   }
   
-  let empty_allocation = test_memory_allocation(0)
-  assert_eq(empty_allocation, ("empty", 0))
+  // Test closing all files
+  for handle in file_handles {
+    let close_result = TelemetryProcessor::close_file(handle)
+    assert_true(close_result)
+  }
   
-  let minimal_allocation = test_memory_allocation(1)
-  assert_eq(minimal_allocation, ("minimal", 1))
+  // Test thread boundaries
+  let thread_count = TelemetryProcessor::get_active_thread_count()
+  assert_true(thread_count >= 0)
   
-  let normal_allocation = test_memory_allocation(1000)
-  assert_eq(normal_allocation, ("normal", 1000))
+  // Test creating many threads
+  let threads = []
+  let max_threads = 100
   
-  let large_allocation = test_memory_allocation(1000000)
-  assert_eq(large_allocation, ("large", 1000000))
-  
-  // 测试文件大小边界
-  let test_file_size = fn(size_bytes: Int) {
-    if size_bytes == 0 {
-      "empty"
-    } else if size_bytes < 1024 {
-      "small"
-    } else if size_bytes < 1024 * 1024 {
-      "medium"
-    } else if size_bytes < 1024 * 1024 * 1024 {
-      "large"
-    } else {
-      "huge"
+  for i in 0..=max_threads {
+    let thread_result = TelemetryProcessor::create_thread(fn() {
+      Thread::sleep(100) // 100ms
+      return i
+    })
+    match thread_result {
+      Some(thread) => threads = threads.push(thread)
+      None => {
+        // Might fail due to thread limit
+        break
+      }
     }
   }
   
-  assert_eq(test_file_size(0), "empty")
-  assert_eq(test_file_size(512), "small")
-  assert_eq(test_file_size(1024), "medium")
-  assert_eq(test_file_size(1024 * 512), "medium")
-  assert_eq(test_file_size(1024 * 1024), "large")
-  assert_eq(test_file_size(1024 * 1024 * 512), "large")
-  assert_eq(test_file_size(1024 * 1024 * 1024), "huge")
-  
-  // 测试并发连接边界
-  let test_connection_pool = fn(current_connections: Int, max_connections: Int) {
-    if current_connections >= max_connections {
-      ("rejected", current_connections)
-    } else if current_connections >= max_connections * 80 / 100 {
-      ("warning", current_connections + 1)
-    } else {
-      ("accepted", current_connections + 1)
+  // Test joining all threads
+  for thread in threads {
+    let join_result = TelemetryProcessor::join_thread(thread)
+    match join_result {
+      Some(_) => assert_true(true)
+      None => assert_true(false)
     }
   }
   
-  let max_connections = 100
+  // Test network connection boundaries
+  let connection_count = TelemetryProcessor::get_active_connection_count()
+  assert_true(connection_count >= 0)
   
-  let empty_pool = test_connection_pool(0, max_connections)
-  assert_eq(empty_pool, ("accepted", 1))
+  // Test creating many connections
+  let connections = []
+  let max_connections = 50
   
-  let normal_pool = test_connection_pool(50, max_connections)
-  assert_eq(normal_pool, ("accepted", 51))
-  
-  let warning_pool = test_connection_pool(85, max_connections)
-  assert_eq(warning_pool, ("warning", 86))
-  
-  let full_pool = test_connection_pool(100, max_connections)
-  assert_eq(full_pool, ("rejected", 100))
-  
-  let overfull_pool = test_connection_pool(150, max_connections)
-  assert_eq(overfull_pool, ("rejected", 150))
-  
-  // 测试队列容量边界
-  let test_queue_capacity = fn(queue_size: Int, max_capacity: Int) {
-    if queue_size >= max_capacity {
-      ("full", false)
-    } else if queue_size >= max_capacity * 90 / 100 {
-      ("nearly_full", true)
-    } else {
-      ("available", true)
+  for i in 0..=max_connections {
+    let connection_result = TelemetryProcessor::create_connection("127.0.0.1", 8080 + i)
+    match connection_result {
+      Some(connection) => connections = connections.push(connection)
+      None => {
+        // Might fail due to connection limit
+        break
+      }
     }
   }
   
-  let max_capacity = 1000
-  
-  let empty_queue = test_queue_capacity(0, max_capacity)
-  assert_eq(empty_queue, ("available", true))
-  
-  let normal_queue = test_queue_capacity(500, max_capacity)
-  assert_eq(normal_queue, ("available", true))
-  
-  let nearly_full_queue = test_queue_capacity(950, max_capacity)
-  assert_eq(nearly_full_queue, ("nearly_full", true))
-  
-  let full_queue = test_queue_capacity(1000, max_capacity)
-  assert_eq(full_queue, ("full", false))
-  
-  let overfull_queue = test_queue_capacity(1500, max_capacity)
-  assert_eq(overfull_queue, ("full", false))
-  
-  // 测试缓存大小边界
-  let test_cache_size = fn(current_size: Int, max_size: Int) {
-    let utilization = current_size.to_float() / max_size.to_float()
-    
-    if utilization >= 1.0 {
-      ("overflow", 1.0)
-    } else if utilization >= 0.9 {
-      ("critical", utilization)
-    } else if utilization >= 0.7 {
-      ("warning", utilization)
-    } else if utilization >= 0.3 {
-      ("normal", utilization)
-    } else {
-      ("underutilized", utilization)
-    }
+  // Test closing all connections
+  for connection in connections {
+    let close_result = TelemetryProcessor::close_connection(connection)
+    assert_true(close_result)
   }
-  
-  let max_cache_size = 10000
-  
-  let empty_cache = test_cache_size(0, max_cache_size)
-  assert_eq(empty_cache, ("underutilized", 0.0))
-  
-  let small_cache = test_cache_size(1000, max_cache_size)
-  assert_eq(small_cache, ("underutilized", 0.1))
-  
-  let normal_cache = test_cache_size(5000, max_cache_size)
-  assert_eq(normal_cache, ("normal", 0.5))
-  
-  let warning_cache = test_cache_size(8000, max_cache_size)
-  assert_eq(warning_cache, ("warning", 0.8))
-  
-  let critical_cache = test_cache_size(9500, max_cache_size)
-  assert_eq(critical_cache, ("critical", 0.95))
-  
-  let full_cache = test_cache_size(10000, max_cache_size)
-  assert_eq(full_cache, ("overflow", 1.0))
-  
-  let overfull_cache = test_cache_size(12000, max_cache_size)
-  assert_eq(overfull_cache, ("overflow", 1.0))
 }
 
-// 测试6: 网络边界条件测试
-test "网络边界条件测试" {
-  // 测试端口边界
-  let test_port_validation = fn(port: Int) {
-    if port < 0 {
-      ("invalid", "Port cannot be negative")
-    } else if port == 0 {
-      ("invalid", "Port 0 is reserved")
-    } else if port < 1024 {
-      ("privileged", "Privileged port")
-    } else if port <= 65535 {
-      ("valid", "Regular port")
-    } else {
-      ("invalid", "Port exceeds maximum value")
-    }
+// Test 6: Network and Protocol Boundary Conditions
+test "network and protocol boundary conditions" {
+  // Test URL boundaries
+  let valid_urls = [
+    "http://example.com",
+    "https://example.com",
+    "ftp://example.com",
+    "http://example.com:8080",
+    "https://example.com/path/to/resource",
+    "http://user:password@example.com",
+    "http://192.168.1.1",
+    "https://[2001:db8::1]" // IPv6
+  ]
+  
+  for url in valid_urls {
+    let url_result = TelemetryProcessor::validate_url(url)
+    assert_true(url_result)
   }
   
-  assert_eq(test_port_validation(-1), ("invalid", "Port cannot be negative"))
-  assert_eq(test_port_validation(0), ("invalid", "Port 0 is reserved"))
-  assert_eq(test_port_validation(22), ("privileged", "Privileged port"))
-  assert_eq(test_port_validation(80), ("privileged", "Privileged port"))
-  assert_eq(test_port_validation(8080), ("valid", "Regular port"))
-  assert_eq(test_port_validation(65535), ("valid", "Regular port"))
-  assert_eq(test_port_validation(65536), ("invalid", "Port exceeds maximum value"))
+  let invalid_urls = [
+    "", // Empty
+    "not-a-url", // Invalid format
+    "http://", // Incomplete
+    "https://", // Incomplete
+    "http://.com", // Invalid domain
+    "http://example..com", // Invalid domain
+    "http://example.com:99999", // Invalid port
+    "http://example.com:abc", // Non-numeric port
+    "https://[2001:db8::1]:99999" // Invalid port with IPv6
+  ]
   
-  // 测试IP地址边界
-  let test_ip_validation = fn(ip: String) {
-    if ip == "" {
-      ("invalid", "Empty IP address")
-    } else if ip == "0.0.0.0" {
-      ("unspecified", "Unspecified address")
-    } else if ip == "127.0.0.1" {
-      ("loopback", "Loopback address")
-    } else if ip.starts_with("192.168.") {
-      ("private", "Private network")
-    } else if ip.starts_with("10.") {
-      ("private", "Private network")
-    } else if ip.starts_with("172.") {
-      let parts = ip.split(".")
-      if parts.length() >= 2 {
-        let second_octet = parts[1].to_int()
-        if second_octet >= 16 and second_octet <= 31 {
-          ("private", "Private network")
-        } else {
-          ("public", "Public address")
+  for url in invalid_urls {
+    let url_result = TelemetryProcessor::validate_url(url)
+    assert_false(url_result)
+  }
+  
+  // Test IP address boundaries
+  let valid_ips = [
+    "127.0.0.1", // Loopback
+    "192.168.1.1", // Private
+    "10.0.0.1", // Private
+    "172.16.0.1", // Private
+    "8.8.8.8", // Public
+    "2001:db8::1", // IPv6
+    "::1", // IPv6 loopback
+    "fe80::1" // IPv6 link-local
+  ]
+  
+  for ip in valid_ips {
+    let ip_result = TelemetryProcessor::validate_ip_address(ip)
+    assert_true(ip_result)
+  }
+  
+  let invalid_ips = [
+    "", // Empty
+    "256.256.256.256", // Out of range
+    "192.168.1", // Incomplete
+    "192.168.1.1.1", // Too many octets
+    "192.168.1.abc", // Non-numeric
+    "2001:db8::1::1", // Too many :: in IPv6
+    "2001:db8::zzzz" // Invalid hex in IPv6
+  ]
+  
+  for ip in invalid_ips {
+    let ip_result = TelemetryProcessor::validate_ip_address(ip)
+    assert_false(ip_result)
+  }
+  
+  // Test port boundaries
+  let valid_ports = [1, 80, 443, 8080, 65535]
+  
+  for port in valid_ports {
+    let port_result = TelemetryProcessor::validate_port(port)
+    assert_true(port_result)
+  }
+  
+  let invalid_ports = [0, -1, 65536, 100000]
+  
+  for port in invalid_ports {
+    let port_result = TelemetryProcessor::validate_port(port)
+    assert_false(port_result)
+  }
+  
+  // Test HTTP status code boundaries
+  let valid_status_codes = [100, 200, 301, 404, 500, 599]
+  
+  for code in valid_status_codes {
+    let status_result = TelemetryProcessor::validate_http_status_code(code)
+    assert_true(status_result)
+  }
+  
+  let invalid_status_codes = [99, 600, -1, 1000]
+  
+  for code in invalid_status_codes {
+    let status_result = TelemetryProcessor::validate_http_status_code(code)
+    assert_false(status_result)
+  }
+  
+  // Test packet size boundaries
+  let small_packet = "a" // 1 byte
+  let small_result = TelemetryProcessor::process_packet(small_packet)
+  match small_result {
+    Success(_) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  let large_packet = "a" * 65507 // Maximum UDP packet size
+  let large_result = TelemetryProcessor::process_packet(large_packet)
+  match large_result {
+    Success(_) => assert_true(true)
+    Error(PacketTooLargeError) => assert_true(true) // Expected for large packets
+    _ => assert_true(false)
+  }
+  
+  let huge_packet = "a" * 1000000 // Much larger than maximum
+  let huge_result = TelemetryProcessor::process_packet(huge_packet)
+  match huge_result {
+    Error(PacketTooLargeError) => assert_true(true) // Expected failure
+    _ => assert_true(false)
+  }
+}
+
+// Test 7: Data Structure Boundary Conditions
+test "data structure boundary conditions" {
+  // Test stack boundaries
+  let stack = Stack::new()
+  
+  // Test empty stack
+  assert_true(stack.is_empty())
+  assert_eq(stack.size(), 0)
+  
+  let empty_pop = stack.pop()
+  match empty_pop {
+    Some(_) => assert_true(false) // Should not succeed
+    None => assert_true(true) // Expected failure
+  }
+  
+  // Test single element stack
+  stack.push(1)
+  assert_false(stack.is_empty())
+  assert_eq(stack.size(), 1)
+  
+  let single_pop = stack.pop()
+  match single_pop {
+    Some(value) => assert_eq(value, 1)
+    None => assert_true(false)
+  }
+  
+  assert_true(stack.is_empty())
+  assert_eq(stack.size(), 0)
+  
+  // Test large stack
+  for i in 0..=10000 {
+    stack.push(i)
+  }
+  
+  assert_eq(stack.size(), 10001)
+  
+  // Test queue boundaries
+  let queue = Queue::new()
+  
+  // Test empty queue
+  assert_true(queue.is_empty())
+  assert_eq(queue.size(), 0)
+  
+  let empty_dequeue = queue.dequeue()
+  match empty_dequeue {
+    Some(_) => assert_true(false) // Should not succeed
+    None => assert_true(true) // Expected failure
+  }
+  
+  // Test single element queue
+  queue.enqueue(1)
+  assert_false(queue.is_empty())
+  assert_eq(queue.size(), 1)
+  
+  let single_dequeue = queue.dequeue()
+  match single_dequeue {
+    Some(value) => assert_eq(value, 1)
+    None => assert_true(false)
+  }
+  
+  assert_true(queue.is_empty())
+  assert_eq(queue.size(), 0)
+  
+  // Test large queue
+  for i in 0..=10000 {
+    queue.enqueue(i)
+  }
+  
+  assert_eq(queue.size(), 10001)
+  
+  // Test hash map boundaries
+  let hash_map = HashMap::new()
+  
+  // Test empty hash map
+  assert_true(hash_map.is_empty())
+  assert_eq(hash_map.size(), 0)
+  
+  let empty_get = hash_map.get("key")
+  match empty_get {
+    Some(_) => assert_true(false) // Should not succeed
+    None => assert_true(true) // Expected failure
+  }
+  
+  // Test single element hash map
+  hash_map.put("key", "value")
+  assert_false(hash_map.is_empty())
+  assert_eq(hash_map.size(), 1)
+  
+  let single_get = hash_map.get("key")
+  match single_get {
+    Some(value) => assert_eq(value, "value")
+    None => assert_true(false)
+  }
+  
+  // Test large hash map
+  for i in 0..=10000 {
+    hash_map.put("key_" + i.to_string(), "value_" + i.to_string())
+  }
+  
+  assert_eq(hash_map.size(), 10001)
+  
+  // Test hash collision handling
+  let collision_map = HashMap::new()
+  
+  // Insert values that might cause collisions
+  for i in 0..=1000 {
+    collision_map.put("collision_key_" + (i % 10).to_string(), "value_" + i.to_string())
+  }
+  
+  assert_eq(collision_map.size(), 10) // Should only have 10 unique keys
+  
+  // Test tree boundaries
+  let tree = BinarySearchTree::new()
+  
+  // Test empty tree
+  assert_true(tree.is_empty())
+  
+  // Test single node tree
+  tree.insert(5)
+  assert_false(tree.is_empty())
+  
+  let single_search = tree.search(5)
+  match single_search {
+    Some(value) => assert_eq(value, 5)
+    None => assert_true(false)
+  }
+  
+  let empty_search = tree.search(10)
+  match empty_search {
+    Some(_) => assert_true(false) // Should not succeed
+    None => assert_true(true) // Expected failure
+  }
+  
+  // Test large tree
+  for i in 0..=1000 {
+    tree.insert(i)
+  }
+  
+  // Test tree depth
+  let tree_depth = tree.depth()
+  assert_true(tree_depth > 0)
+  
+  // Test balanced tree
+  let balanced_tree = BalancedBinarySearchTree::new()
+  
+  for i in 0..=1000 {
+    balanced_tree.insert(i)
+  }
+  
+  let balanced_depth = balanced_tree.depth()
+  let unbalanced_depth = tree.depth()
+  
+  // Balanced tree should have less depth than unbalanced tree
+  assert_true(balanced_depth <= unbalanced_depth)
+}
+
+// Test 8: Algorithm and Logic Boundary Conditions
+test "algorithm and logic boundary conditions" {
+  // Test sorting boundaries
+  let empty_array = []
+  let empty_sort = TelemetryProcessor::sort_array(empty_array)
+  assert_eq(empty_sort.length(), 0)
+  
+  let single_element = [1]
+  let single_sort = TelemetryProcessor::sort_array(single_element)
+  assert_eq(single_sort, [1])
+  
+  let already_sorted = [1, 2, 3, 4, 5]
+  let sorted_sort = TelemetryProcessor::sort_array(already_sorted)
+  assert_eq(sorted_sort, [1, 2, 3, 4, 5])
+  
+  let reverse_sorted = [5, 4, 3, 2, 1]
+  let reverse_sort = TelemetryProcessor::sort_array(reverse_sorted)
+  assert_eq(reverse_sort, [1, 2, 3, 4, 5])
+  
+  let all_same = [5, 5, 5, 5, 5]
+  let same_sort = TelemetryProcessor::sort_array(all_same)
+  assert_eq(same_sort, [5, 5, 5, 5, 5])
+  
+  // Test search boundaries
+  let search_array = [1, 2, 3, 4, 5]
+  
+  // Search for first element
+  let first_search = TelemetryProcessor::binary_search(search_array, 1)
+  match first_search {
+    Some(index) => assert_eq(index, 0)
+    None => assert_true(false)
+  }
+  
+  // Search for last element
+  let last_search = TelemetryProcessor::binary_search(search_array, 5)
+  match last_search {
+    Some(index) => assert_eq(index, 4)
+    None => assert_true(false)
+  }
+  
+  // Search for middle element
+  let middle_search = TelemetryProcessor::binary_search(search_array, 3)
+  match middle_search {
+    Some(index) => assert_eq(index, 2)
+    None => assert_true(false)
+  }
+  
+  // Search for non-existent element (less than first)
+  let less_search = TelemetryProcessor::binary_search(search_array, 0)
+  match less_search {
+    Some(_) => assert_true(false) // Should not succeed
+    None => assert_true(true) // Expected failure
+  }
+  
+  // Search for non-existent element (greater than last)
+  let greater_search = TelemetryProcessor::binary_search(search_array, 6)
+  match greater_search {
+    Some(_) => assert_true(false) // Should not succeed
+    None => assert_true(true) // Expected failure
+  }
+  
+  // Search for non-existent element (between elements)
+  let between_search = TelemetryProcessor::binary_search(search_array, 2.5)
+  match between_search {
+    Some(_) => assert_true(false) // Should not succeed
+    None => assert_true(true) // Expected failure
+  }
+  
+  // Test mathematical boundaries
+  // Factorial of 0 is 1
+  let factorial_0 = TelemetryProcessor::factorial(0)
+  assert_eq(factorial_0, 1)
+  
+  // Factorial of 1 is 1
+  let factorial_1 = TelemetryProcessor::factorial(1)
+  assert_eq(factorial_1, 1)
+  
+  // Factorial of negative number should fail
+  let factorial_negative = TelemetryProcessor::factorial(-1)
+  match factorial_negative {
+    Error(InvalidParameterError) => assert_true(true) // Expected failure
+    _ => assert_true(false)
+  }
+  
+  // Fibonacci sequence boundaries
+  let fibonacci_0 = TelemetryProcessor::fibonacci(0)
+  assert_eq(fibonacci_0, 0)
+  
+  let fibonacci_1 = TelemetryProcessor::fibonacci(1)
+  assert_eq(fibonacci_1, 1)
+  
+  let fibonacci_2 = TelemetryProcessor::fibonacci(2)
+  assert_eq(fibonacci_2, 1)
+  
+  // Fibonacci of negative number should fail
+  let fibonacci_negative = TelemetryProcessor::fibonacci(-1)
+  match fibonacci_negative {
+    Error(InvalidParameterError) => assert_true(true) // Expected failure
+    _ => assert_true(false)
+  }
+  
+  // Test large numbers
+  let large_factorial = TelemetryProcessor::factorial(20)
+  assert_eq(large_factorial, 2432902008176640000)
+  
+  let very_large_factorial = TelemetryProcessor::factorial(100)
+  match very_large_factorial {
+    Success(_) => assert_true(true) // Might succeed
+    Error(OverflowError) => assert_true(true) // Expected for very large numbers
+    _ => assert_true(false)
+  }
+  
+  // Test string matching boundaries
+  let empty_pattern = ""
+  let empty_text = ""
+  let empty_match = TelemetryProcessor::pattern_match(empty_pattern, empty_text)
+  assert_true(empty_match)
+  
+  let empty_pattern_non_empty_text = TelemetryProcessor::pattern_match(empty_pattern, "text")
+  assert_true(empty_pattern_non_empty_text) // Empty pattern matches anything
+  
+  let non_empty_pattern_empty_text = TelemetryProcessor::pattern_match("pattern", "")
+  assert_false(non_empty_pattern_empty_text)
+  
+  let exact_match = TelemetryProcessor::pattern_match("hello", "hello")
+  assert_true(exact_match)
+  
+  let no_match = TelemetryProcessor::pattern_match("hello", "world")
+  assert_false(no_match)
+  
+  // Test regular expression boundaries
+  let simple_regex = TelemetryProcessor::regex_match("h.*o", "hello")
+  assert_true(simple_regex)
+  
+  let no_regex_match = TelemetryProcessor::regex_match("h.*o", "world")
+  assert_false(no_regex_match)
+  
+  let invalid_regex = TelemetryProcessor::regex_match("[", "test")
+  match invalid_regex {
+    Error(InvalidParameterError) => assert_true(true) // Expected failure
+    _ => assert_true(false)
+  }
+}
+
+// Test 9: Concurrent Operation Boundary Conditions
+test "concurrent operation boundary conditions" {
+  // Test concurrent access to shared resources
+  let shared_counter = AtomicCounter::new(0)
+  let thread_count = 100
+  let increments_per_thread = 1000
+  
+  let threads = []
+  for i in 0..=thread_count {
+    let thread = Thread::spawn(fn() {
+      for j in 0..=increments_per_thread {
+        AtomicCounter::increment(shared_counter)
+      }
+    })
+    threads = threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Verify final count
+  let final_count = AtomicCounter::get_value(shared_counter)
+  assert_eq(final_count, (thread_count + 1) * (increments_per_thread + 1))
+  
+  // Test concurrent access to shared map
+  let shared_map = ConcurrentHashMap::new()
+  
+  let map_threads = []
+  for i in 0..=thread_count {
+    let thread = Thread::spawn(fn() {
+      for j in 0..=increments_per_thread {
+        let key = "key_" + j.to_string()
+        let value = "value_" + i.to_string() + "_" + j.to_string()
+        ConcurrentHashMap::put(shared_map, key, value)
+      }
+    })
+    map_threads = map_threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in map_threads {
+    Thread::join(thread)
+  }
+  
+  // Verify map size
+  let map_size = shared_map.size()
+  assert_eq(map_size, increments_per_thread + 1)
+  
+  // Test concurrent queue operations
+  let shared_queue = ConcurrentQueue::new()
+  
+  // Producer threads
+  let producer_threads = []
+  for i in 0..=thread_count {
+    let thread = Thread::spawn(fn() {
+      for j in 0..=increments_per_thread {
+        let item = "item_" + i.to_string() + "_" + j.to_string()
+        ConcurrentQueue::enqueue(shared_queue, item)
+      }
+    })
+    producer_threads = producer_threads.push(thread)
+  }
+  
+  // Consumer threads
+  let consumer_threads = []
+  let consumed_count = AtomicCounter::new(0)
+  
+  for i in 0..=thread_count {
+    let thread = Thread::spawn(fn() {
+      for j in 0..=increments_per_thread {
+        let item = ConcurrentQueue::dequeue(shared_queue)
+        match item {
+          Some(_) => AtomicCounter::increment(consumed_count)
+          None => {
+            // Queue might be empty, try again
+            Thread::sleep(1) // Small delay
+            j = j - 1 // Retry
+          }
         }
-      } else {
-        ("invalid", "Invalid IP format")
       }
-    } else {
-      ("public", "Public address")
-    }
+    })
+    consumer_threads = consumer_threads.push(thread)
   }
   
-  assert_eq(test_ip_validation(""), ("invalid", "Empty IP address"))
-  assert_eq(test_ip_validation("0.0.0.0"), ("unspecified", "Unspecified address"))
-  assert_eq(test_ip_validation("127.0.0.1"), ("loopback", "Loopback address"))
-  assert_eq(test_ip_validation("192.168.1.1"), ("private", "Private network"))
-  assert_eq(test_ip_validation("10.0.0.1"), ("private", "Private network"))
-  assert_eq(test_ip_validation("172.16.0.1"), ("private", "Private network"))
-  assert_eq(test_ip_validation("172.32.0.1"), ("public", "Public address"))
-  assert_eq(test_ip_validation("8.8.8.8"), ("public", "Public address"))
-  
-  // 测试URL长度边界
-  let test_url_length = fn(url: String) {
-    let length = url.length()
-    
-    if length == 0 {
-      ("invalid", "Empty URL")
-    } else if length < 10 {
-      ("short", "Very short URL")
-    } else if length <= 2048 {
-      ("normal", "Normal URL length")
-    } else if length <= 8192 {
-      ("long", "Long URL")
-    } else {
-      ("too_long", "URL too long")
-    }
+  // Wait for all threads to complete
+  for thread in producer_threads {
+    Thread::join(thread)
   }
   
-  assert_eq(test_url_length(""), ("invalid", "Empty URL"))
-  assert_eq(test_url_length("a.co"), ("short", "Very short URL"))
-  assert_eq(test_url_length("https://example.com"), ("normal", "Normal URL length"))
-  
-  let long_url = "https://example.com/" + "a".repeat(2000)
-  assert_eq(test_url_length(long_url), ("long", "Long URL"))
-  
-  let very_long_url = "https://example.com/" + "a".repeat(9000)
-  assert_eq(test_url_length(very_long_url), ("too_long", "URL too long"))
-  
-  // 测试超时边界
-  let test_timeout = fn(timeout_ms: Int) {
-    if timeout_ms <= 0 {
-      ("invalid", "Timeout must be positive")
-    } else if timeout_ms < 100 {
-      ("very_short", "Very short timeout")
-    } else if timeout_ms < 1000 {
-      ("short", "Short timeout")
-    } else if timeout_ms < 30000 {
-      ("normal", "Normal timeout")
-    } else if timeout_ms < 300000 {
-      ("long", "Long timeout")
-    } else {
-      ("very_long", "Very long timeout")
-    }
+  for thread in consumer_threads {
+    Thread::join(thread)
   }
   
-  assert_eq(test_timeout(0), ("invalid", "Timeout must be positive"))
-  assert_eq(test_timeout(-100), ("invalid", "Timeout must be positive"))
-  assert_eq(test_timeout(50), ("very_short", "Very short timeout"))
-  assert_eq(test_timeout(500), ("short", "Short timeout"))
-  assert_eq(test_timeout(5000), ("normal", "Normal timeout"))
-  assert_eq(test_timeout(60000), ("long", "Long timeout"))
-  assert_eq(test_timeout(600000), ("very_long", "Very long timeout"))
+  // Verify consumption
+  let total_produced = (thread_count + 1) * (increments_per_thread + 1)
+  let total_consumed = AtomicCounter::get_value(consumed_count)
   
-  // 测试连接池边界
-  let test_connection_pool_size = fn(size: Int) {
-    if size <= 0 {
-      ("invalid", "Pool size must be positive")
-    } else if size == 1 {
-      ("minimal", "Minimal pool size")
-    } else if size <= 10 {
-      ("small", "Small pool size")
-    } else if size <= 100 {
-      ("medium", "Medium pool size")
-    } else if size <= 1000 {
-      ("large", "Large pool size")
-    } else {
-      ("very_large", "Very large pool size")
-    }
+  // Some items might not be consumed due to timing
+  assert_true(total_consumed <= total_produced)
+  
+  // Test concurrent stack operations
+  let shared_stack = ConcurrentStack::new()
+  
+  let stack_threads = []
+  for i in 0..=thread_count {
+    let thread = Thread::spawn(fn() {
+      for j in 0..=increments_per_thread {
+        let item = "item_" + i.to_string() + "_" + j.to_string()
+        ConcurrentStack::push(shared_stack, item)
+      }
+    })
+    stack_threads = stack_threads.push(thread)
   }
   
-  assert_eq(test_connection_pool_size(0), ("invalid", "Pool size must be positive"))
-  assert_eq(test_connection_pool_size(-5), ("invalid", "Pool size must be positive"))
-  assert_eq(test_connection_pool_size(1), ("minimal", "Minimal pool size"))
-  assert_eq(test_connection_pool_size(5), ("small", "Small pool size"))
-  assert_eq(test_connection_pool_size(50), ("medium", "Medium pool size"))
-  assert_eq(test_connection_pool_size(500), ("large", "Large pool size"))
-  assert_eq(test_connection_pool_size(5000), ("very_large", "Very large pool size"))
+  // Wait for all threads to complete
+  for thread in stack_threads {
+    Thread::join(thread)
+  }
+  
+  // Verify stack size
+  let stack_size = ConcurrentStack::size(shared_stack)
+  assert_eq(stack_size, (thread_count + 1) * (increments_per_thread + 1))
+  
+  // Test concurrent file operations
+  let file_lock = FileLock::new("test_concurrent_file.txt")
+  
+  let file_threads = []
+  for i in 0..=thread_count {
+    let thread = Thread::spawn(fn() {
+      FileLock::acquire(file_lock)
+      
+      // Write to file
+      let content = "Thread " + i.to_string() + " wrote this\n"
+      TelemetryProcessor::write_to_file("test_concurrent_file.txt", content)
+      
+      FileLock::release(file_lock)
+    })
+    file_threads = file_threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in file_threads {
+    Thread::join(thread)
+  }
+  
+  // Verify file content
+  let file_content = TelemetryProcessor::read_from_file("test_concurrent_file.txt")
+  assert_true(file_content.length() > 0)
+  
+  // Clean up
+  TelemetryProcessor::delete_file("test_concurrent_file.txt")
 }
 
-// 测试7: 输入验证边界条件测试
-test "输入验证边界条件测试" {
-  // 测试用户名边界
-  let test_username = fn(username: String) {
-    let length = username.length()
-    
-    if length == 0 {
-      ("invalid", "Username cannot be empty")
-    } else if length < 3 {
-      ("invalid", "Username too short")
-    } else if length > 20 {
-      ("invalid", "Username too long")
-    } else if username.starts_with(" ") or username.ends_with(" ") {
-      ("invalid", "Username cannot start or end with space")
-    } else if username.contains(" ") {
-      ("invalid", "Username cannot contain spaces")
-    } else {
-      ("valid", "Valid username")
-    }
+// Test 10: Error Handling and Exception Boundary Conditions
+test "error handling and exception boundary conditions" {
+  // Test null/None handling
+  let none_value : Option[Int] = None
+  let none_result = TelemetryProcessor::process_optional(none_value)
+  match none_result {
+    Error(NullValueError) => assert_true(true) // Expected failure
+    _ => assert_true(false)
   }
   
-  assert_eq(test_username(""), ("invalid", "Username cannot be empty"))
-  assert_eq(test_username("ab"), ("invalid", "Username too short"))
-  assert_eq(test_username("a"), ("invalid", "Username too short"))
-  assert_eq(test_username("a" * 21), ("invalid", "Username too long"))
-  assert_eq(test_username(" username"), ("invalid", "Username cannot start or end with space"))
-  assert_eq(test_username("username "), ("invalid", "Username cannot start or end with space"))
-  assert_eq(test_username("user name"), ("invalid", "Username cannot contain spaces"))
-  assert_eq(test_username("user"), ("valid", "Valid username"))
-  assert_eq(test_username("a" * 20), ("valid", "Valid username"))
-  
-  // 测试密码强度边界
-  let test_password_strength = fn(password: String) {
-    let length = password.length()
-    let has_upper = password.chars().any(fn(c) { c >= 'A' and c <= 'Z' })
-    let has_lower = password.chars().any(fn(c) { c >= 'a' and c <= 'z' })
-    let has_digit = password.chars().any(fn(c) { c >= '0' and c <= '9' })
-    let has_special = password.chars().any(fn(c) { "!@#$%^&*()_+-=[]{}|;':\",./<>?".contains(c.to_string()) })
-    
-    if length < 6 {
-      ("invalid", "Password too short")
-    } else if length > 128 {
-      ("invalid", "Password too long")
-    } else if length < 8 {
-      ("weak", "Weak password")
-    } else if has_upper and has_lower and has_digit and has_special {
-      ("strong", "Strong password")
-    } else if (has_upper and has_lower) or (has_lower and has_digit) or (has_upper and has_digit) {
-      ("medium", "Medium password")
-    } else {
-      ("weak", "Weak password")
-    }
+  let some_value = Some(42)
+  let some_result = TelemetryProcessor::process_optional(some_value)
+  match some_result {
+    Success(result) => assert_eq(result, 42)
+    _ => assert_true(false)
   }
   
-  assert_eq(test_password_strength(""), ("invalid", "Password too short"))
-  assert_eq(test_password_strength("12345"), ("invalid", "Password too short"))
-  assert_eq(test_password_strength("a" * 129), ("invalid", "Password too long"))
-  assert_eq(test_password_strength("password"), ("weak", "Weak password"))
-  assert_eq(test_password_strength("Password123"), ("medium", "Medium password"))
-  assert_eq(test_password_strength("Password123!"), ("strong", "Strong password"))
+  // Test type conversion boundaries
+  let valid_int_string = "42"
+  let valid_int_result = TelemetryProcessor::string_to_int(valid_int_string)
+  match valid_int_result {
+    Success(result) => assert_eq(result, 42)
+    _ => assert_true(false)
+  }
   
-  // 测试邮箱验证边界
-  let test_email = fn(email: String) {
-    if email.length() == 0 {
-      ("invalid", "Email cannot be empty")
-    } else if not(email.contains("@")) {
-      ("invalid", "Email must contain @")
-    } else if email.starts_with("@") {
-      ("invalid", "Email cannot start with @")
-    } else if email.ends_with("@") {
-      ("invalid", "Email cannot end with @")
-    } else if email.count("@") > 1 {
-      ("invalid", "Email can contain only one @")
-    } else {
-      let parts = email.split("@")
-      let local = parts[0]
-      let domain = parts[1]
-      
-      if local.length() == 0 {
-        ("invalid", "Local part cannot be empty")
-      } else if domain.length() == 0 {
-        ("invalid", "Domain part cannot be empty")
-      } else if not(domain.contains(".")) {
-        ("invalid", "Domain must contain .")
-      } else {
-        ("valid", "Valid email")
+  let invalid_int_string = "not_a_number"
+  let invalid_int_result = TelemetryProcessor::string_to_int(invalid_int_string)
+  match invalid_int_result {
+    Error(TypeConversionError) => assert_true(true) // Expected failure
+    _ => assert_true(false)
+  }
+  
+  let overflow_int_string = "999999999999999999999999999999"
+  let overflow_int_result = TelemetryProcessor::string_to_int(overflow_int_string)
+  match overflow_int_result {
+    Error(OverflowError) => assert_true(true) // Expected failure
+    _ => assert_true(false)
+  }
+  
+  // Test valid float string
+  let valid_float_string = "3.14"
+  let valid_float_result = TelemetryProcessor::string_to_float(valid_float_string)
+  match valid_float_result {
+    Success(result) => assert_true((result - 3.14).abs() < 0.001)
+    _ => assert_true(false)
+  }
+  
+  // Test invalid float string
+  let invalid_float_string = "not_a_float"
+  let invalid_float_result = TelemetryProcessor::string_to_float(invalid_float_string)
+  match invalid_float_result {
+    Error(TypeConversionError) => assert_true(true) // Expected failure
+    _ => assert_true(false)
+  }
+  
+  // Test special float values
+  let infinity_string = "infinity"
+  let infinity_result = TelemetryProcessor::string_to_float(infinity_string)
+  match infinity_result {
+    Success(result) => assert_true(result.is_infinite())
+    _ => assert_true(false)
+  }
+  
+  let nan_string = "nan"
+  let nan_result = TelemetryProcessor::string_to_float(nan_string)
+  match nan_result {
+    Success(result) => assert_true(result.is_nan())
+    _ => assert_true(false)
+  }
+  
+  // Test exception chaining
+  let inner_error = Error(InvalidParameterError)
+  let chained_error = TelemetryProcessor::chain_error(inner_error, "Additional context")
+  match chained_error {
+    Error(ChainedError(inner, message)) => {
+      match inner {
+        Error(InvalidParameterError) => assert_true(true)
+        _ => assert_true(false)
       }
+      assert_eq(message, "Additional context")
     }
+    _ => assert_true(false)
   }
   
-  assert_eq(test_email(""), ("invalid", "Email cannot be empty"))
-  assert_eq(test_email("email"), ("invalid", "Email must contain @"))
-  assert_eq(test_email("@domain.com"), ("invalid", "Local part cannot be empty"))
-  assert_eq(test_email("user@"), ("invalid", "Domain part cannot be empty"))
-  assert_eq(test_email("user@domain"), ("invalid", "Domain must contain ."))
-  assert_eq(test_email("user@domain.com"), ("valid", "Valid email"))
-  assert_eq(test_email("user.name@domain.com"), ("valid", "Valid email"))
+  // Test error recovery
+  let recoverable_error = Error(NetworkError)
+  let recovery_result = TelemetryProcessor::attempt_recovery(recoverable_error)
+  match recovery_result {
+    Success(_) => assert_true(true) // Recovery succeeded
+    Error(_) => assert_true(true) // Recovery failed but didn't crash
+  }
   
-  // 测试电话号码验证边界
-  let test_phone = fn(phone: String) {
-    let digits_only = phone.chars().filter(fn(c) { c >= '0' and c <= '9' }).join("")
-    let length = digits_only.length()
-    
-    if phone.length() == 0 {
-      ("invalid", "Phone cannot be empty")
-    } else if length < 7 {
-      ("invalid", "Phone too short")
-    } else if length > 15 {
-      ("invalid", "Phone too long")
-    } else if length == 10 {
-      ("valid_10_digit", "Valid 10-digit phone")
-    } else if length == 11 and digits_only.starts_with("1") {
-      ("valid_11_digit", "Valid 11-digit phone with country code")
+  // Test error aggregation
+  let errors = [
+    Error(NetworkError),
+    Error(AuthenticationError),
+    Error(ValidationError)
+  ]
+  
+  let aggregated_error = TelemetryProcessor::aggregate_errors(errors)
+  match aggregated_error {
+    Error(AggregatedError(error_list)) => {
+      assert_eq(error_list.length(), 3)
+    }
+    _ => assert_true(false)
+  }
+  
+  // Test timeout handling
+  let quick_operation = fn() { "success" }
+  let quick_result = TelemetryProcessor::execute_with_timeout(quick_operation, 1000) // 1 second
+  match quick_result {
+    Success(result) => assert_eq(result, "success")
+    _ => assert_true(false)
+  }
+  
+  let slow_operation = fn() {
+    Thread::sleep(2000) // 2 seconds
+    return "success"
+  }
+  let slow_result = TelemetryProcessor::execute_with_timeout(slow_operation, 1000) // 1 second
+  match slow_result {
+    Error(TimeoutError) => assert_true(true) // Expected timeout
+    _ => assert_true(false)
+  }
+  
+  // Test retry mechanism
+  let mut attempt_count = 0
+  let failing_operation = fn() {
+    attempt_count = attempt_count + 1
+    if attempt_count < 3 {
+      Error(NetworkError) // Fail first 2 attempts
     } else {
-      ("valid_international", "Valid international phone")
+      Success("success") // Succeed on 3rd attempt
     }
   }
   
-  assert_eq(test_phone(""), ("invalid", "Phone cannot be empty"))
-  assert_eq(test_phone("123"), ("invalid", "Phone too short"))
-  assert_eq(test_phone("1234567890123456"), ("invalid", "Phone too long"))
-  assert_eq(test_phone("1234567"), ("valid_international", "Valid international phone"))
-  assert_eq(test_phone("1234567890"), ("valid_10_digit", "Valid 10-digit phone"))
-  assert_eq(test_phone("11234567890"), ("valid_11_digit", "Valid 11-digit phone with country code"))
-  assert_eq(test_phone("(123) 456-7890"), ("valid_10_digit", "Valid 10-digit phone"))
-  assert_eq(test_phone("+1 (123) 456-7890"), ("valid_11_digit", "Valid 11-digit phone with country code"))
-  
-  // 测试年龄验证边界
-  let test_age = fn(age: Int) {
-    if age < 0 {
-      ("invalid", "Age cannot be negative")
-    } else if age == 0 {
-      ("infant", "Infant")
-    } else if age < 13 {
-      ("child", "Child")
-    } else if age < 18 {
-      ("teenager", "Teenager")
-    } else if age < 65 {
-      ("adult", "Adult")
-    } else if age < 120 {
-      ("senior", "Senior")
-    } else {
-      ("invalid", "Age unrealistic")
+  let retry_result = TelemetryProcessor::retry_operation(failing_operation, 3)
+  match retry_result {
+    Success(result) => {
+      assert_eq(result, "success")
+      assert_eq(attempt_count, 3)
     }
+    _ => assert_true(false)
   }
   
-  assert_eq(test_age(-1), ("invalid", "Age cannot be negative"))
-  assert_eq(test_age(0), ("infant", "Infant"))
-  assert_eq(test_age(5), ("child", "Child"))
-  assert_eq(test_age(12), ("child", "Child"))
-  assert_eq(test_age(13), ("teenager", "Teenager"))
-  assert_eq(test_age(17), ("teenager", "Teenager"))
-  assert_eq(test_age(18), ("adult", "Adult"))
-  assert_eq(test_age(64), ("adult", "Adult"))
-  assert_eq(test_age(65), ("senior", "Senior"))
-  assert_eq(test_age(119), ("senior", "Senior"))
-  assert_eq(test_age(120), ("invalid", "Age unrealistic"))
-  assert_eq(test_age(150), ("invalid", "Age unrealistic"))
+  // Test circuit breaker
+  let circuit_breaker = CircuitBreaker::new(3, 1000) // 3 failures, 1 second timeout
+  
+  // Successful operation
+  let success_result = TelemetryProcessor::execute_with_circuit_breaker(circuit_breaker, fn() {
+    Success("success")
+  })
+  match success_result {
+    Success(result) => assert_eq(result, "success")
+    _ => assert_true(false)
+  }
+  
+  // Trigger circuit breaker
+  for i in 0..=3 {
+    let _ = TelemetryProcessor::execute_with_circuit_breaker(circuit_breaker, fn() {
+      Error(NetworkError)
+    })
+  }
+  
+  // Circuit breaker should be open now
+  let open_result = TelemetryProcessor::execute_with_circuit_breaker(circuit_breaker, fn() {
+    Success("success")
+  })
+  match open_result {
+    Error(CircuitBreakerOpenError) => assert_true(true) // Expected failure
+    _ => assert_true(false)
+  }
 }

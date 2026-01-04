@@ -1,370 +1,684 @@
-// Azimuth 错误处理和恢复机制综合测试
-// 测试遥测系统在各种错误条件下的行为和恢复能力
+// Azimuth Telemetry System - Error Recovery Comprehensive Tests
+// This file contains comprehensive tests for error recovery mechanisms
 
-test "网络连接错误恢复测试" {
-  // 模拟网络连接中断
-  let mut connection_attempts = 0
-  let max_attempts = 3
+// Test 1: Network Connection Failure Recovery
+test "network connection failure recovery" {
+  let telemetry_client = TelemetryClient::new("https://example.com/telemetry")
   
-  // 模拟连接函数，前两次失败，第三次成功
-  let connect = fn() -> Bool {
-    connection_attempts = connection_attempts + 1
-    if connection_attempts < max_attempts {
-      false // 连接失败
-    } else {
-      true // 连接成功
-    }
-  }
+  // Simulate network failure
+  TelemetryClient::simulate_network_failure(telemetry_client, true)
   
-  // 测试重试机制
-  let mut retry_count = 0
-  let max_retries = 5
-  let mut connected = false
+  // Attempt to send telemetry data during failure
+  let span = Span::new("test.operation", Internal, 
+    SpanContext::new("trace_123", "span_456", true, ""))
   
-  while retry_count < max_retries && !connected {
-    connected = connect()
-    retry_count = retry_count + 1
-  }
-  
-  // 验证最终连接成功
-  assert_true(connected)
-  assert_eq(retry_count, 3)
-}
-
-test "数据序列化错误处理测试" {
-  // 测试无效JSON数据处理
-  let invalid_json = "{\"invalid\": json, missing_quotes: true}"
-  
-  // 模拟JSON解析函数
-  let parse_json = fn(json_str: String) -> Option[String] {
-    if json_str.contains("invalid") && json_str.contains("missing_quotes") {
-      None // 解析失败
-    } else {
-      Some("parsed") // 解析成功
-    }
-  }
-  
-  // 测试解析无效JSON
-  let result = parse_json(invalid_json)
+  let result = TelemetryClient::send_span(telemetry_client, span)
   match result {
-    Some(_) => assert_true(false) // 不应该成功
-    None => assert_true(true) // 预期失败
+    Error(NetworkError) => assert_true(true) // Expected error
+    _ => assert_true(false)
   }
   
-  // 测试解析有效JSON
-  let valid_json = "{\"valid\": \"json\", \"quotes\": \"present\"}"
-  let valid_result = parse_json(valid_json)
+  // Verify retry mechanism is triggered
+  assert_eq(TelemetryClient::retry_count(telemetry_client), 1)
+  
+  // Simulate network recovery
+  TelemetryClient::simulate_network_failure(telemetry_client, false)
+  
+  // Attempt to send telemetry data after recovery
+  let retry_result = TelemetryClient::send_span(telemetry_client, span)
+  match retry_result {
+    Success => assert_true(true) // Should succeed after recovery
+    _ => assert_true(false)
+  }
+  
+  // Verify retry count is reset after successful operation
+  assert_eq(TelemetryClient::retry_count(telemetry_client), 0)
+}
+
+// Test 2: Data Serialization Error Recovery
+test "data serialization error recovery" {
+  let serializer = TelemetrySerializer::new()
+  
+  // Create valid telemetry data
+  let valid_data = TelemetryData::new(
+    "test.service",
+    "test.operation",
+    200,
+    100,
+    true
+  )
+  
+  // Test successful serialization
+  let valid_result = TelemetrySerializer::to_json(serializer, valid_data)
   match valid_result {
-    Some(value) => assert_eq(value, "parsed")
-    None => assert_true(false)
+    Success(json) => {
+      assert_true(json.length() > 0)
+      
+      // Verify deserialization works
+      let deserialized = TelemetrySerializer::from_json(serializer, json)
+      match deserialized {
+        Success(data) => {
+          assert_eq(data.service_name, valid_data.service_name)
+          assert_eq(data.operation_name, valid_data.operation_name)
+        }
+        _ => assert_true(false)
+      }
+    }
+    _ => assert_true(false)
+  }
+  
+  // Test serialization error recovery with corrupted data
+  let corrupted_data = TelemetryData::new(
+    "", // Empty service name - may cause serialization issues
+    "test.operation",
+    200,
+    100,
+    true
+  )
+  
+  let corrupted_result = TelemetrySerializer::to_json(serializer, corrupted_data)
+  match corrupted_result {
+    Error(SerializationError) => {
+      // Verify error recovery mechanism
+      let recovered_data = TelemetrySerializer::recover_data(serializer, corrupted_data)
+      match recovered_data {
+        Some(data) => {
+          assert_eq(data.service_name, "unknown") // Default value after recovery
+          assert_eq(data.operation_name, "test.operation") // Preserved
+        }
+        None => assert_true(false)
+      }
+    }
+    Success(_) => {
+      // If serialization succeeds, test with truly invalid data
+      let invalid_data = TelemetryData::with_invalid_fields()
+      let invalid_result = TelemetrySerializer::to_json(serializer, invalid_data)
+      match invalid_result {
+        Error(SerializationError) => assert_true(true)
+        _ => assert_true(false)
+      }
+    }
+    _ => assert_true(false)
   }
 }
 
-test "内存不足错误处理测试" {
-  // 模拟内存分配函数
-  let mut memory_usage = 0
-  let max_memory = 1000
+// Test 3: Memory Exhaustion Recovery
+test "memory exhaustion recovery" {
+  let memory_manager = MemoryManager::new()
   
-  let allocate_memory = fn(size: Int) -> Bool {
-    if memory_usage + size > max_memory {
-      false // 分配失败
-    } else {
-      memory_usage = memory_usage + size
-      true // 分配成功
+  // Get initial memory state
+  let initial_memory = MemoryManager::get_memory_usage(memory_manager)
+  
+  // Simulate memory pressure
+  MemoryManager::simulate_memory_pressure(memory_manager, 0.9) // 90% usage
+  
+  // Attempt memory-intensive operations
+  let large_dataset = []
+  for i in 0..=10000 {
+    let data = TelemetryData::new(
+      "service_" + (i % 10).to_string(),
+      "operation_" + (i % 5).to_string(),
+      200 + (i % 300),
+      50 + (i % 200),
+      i % 10 != 0
+    )
+    large_dataset = large_dataset.push(data)
+  }
+  
+  // Verify memory pressure is detected
+  assert_true(MemoryManager::is_under_pressure(memory_manager))
+  
+  // Test memory cleanup mechanism
+  let cleanup_result = MemoryManager::cleanup(memory_manager)
+  match cleanup_result {
+    Success(freed_memory) => {
+      assert_true(freed_memory > 0)
+      
+      // Verify memory usage decreased
+      let after_cleanup_memory = MemoryManager::get_memory_usage(memory_manager)
+      assert_true(after_cleanup_memory < initial_memory + 100 * 1024 * 1024) // Within 100MB of initial
     }
+    _ => assert_true(false)
   }
   
-  // 测试正常分配
-  assert_true(allocate_memory(100))
-  assert_eq(memory_usage, 100)
+  // Test graceful degradation under memory pressure
+  let degraded_operations = MemoryManager::enable_graceful_degradation(memory_manager, true)
   
-  // 测试大块分配失败
-  assert_false(allocate_memory(1000))
-  assert_eq(memory_usage, 100) // 失败后内存使用不变
+  // Operations should still work but with reduced functionality
+  let simple_span = Span::new("simple.operation", Internal, 
+    SpanContext::new("trace_123", "span_456", true, ""))
   
-  // 测试释放内存后重新分配
-  memory_usage = memory_usage - 100
-  assert_true(allocate_memory(500))
-  assert_eq(memory_usage, 500)
-}
-
-test "并发访问冲突处理测试" {
-  // 模拟共享资源
-  let shared_counter = 0
-  let lock_acquired = true
-  
-  // 模拟线程安全递增函数
-  let safe_increment = fn(counter: Int, can_lock: Bool) -> Int {
-    if can_lock {
-      counter + 1
-    } else {
-      counter // 无法获取锁，不修改
-    }
-  }
-  
-  // 测试正常情况下的递增
-  let result1 = safe_increment(shared_counter, lock_acquired)
-  assert_eq(result1, 1)
-  
-  // 测试无法获取锁的情况
-  let result2 = safe_increment(shared_counter, false)
-  assert_eq(result2, 0) // 保持原值
-  
-  // 测试多次成功递增
-  let mut counter = 0
-  for i in 0..5 {
-    counter = safe_increment(counter, true)
-  }
-  assert_eq(counter, 5)
-}
-
-test "配置错误恢复测试" {
-  // 模拟配置管理器
-  struct Config {
-    endpoint: String
-    timeout: Int
-    retry_count: Int
-  }
-  
-  let default_config = Config {
-    endpoint: "http://localhost:8080",
-    timeout: 30,
-    retry_count: 3
-  }
-  
-  // 模拟配置加载函数
-  let load_config = fn(config_str: String) -> Option[Config] {
-    if config_str.contains("invalid_endpoint") {
-      None // 无效配置
-    } else if config_str.contains("timeout_error") {
-      Some(Config {
-        endpoint: "http://localhost:8080",
-        timeout: -1, // 无效超时值
-        retry_count: 3
-      })
-    } else {
-      Some(Config {
-        endpoint: "http://valid.endpoint.com",
-        timeout: 60,
-        retry_count: 5
-      })
-    }
-  }
-  
-  // 测试无效配置处理
-  let invalid_config = load_config("invalid_endpoint=true")
-  match invalid_config {
-    Some(_) => assert_true(false) // 不应该返回配置
-    None => assert_true(true) // 预期失败，应使用默认配置
-  }
-  
-  // 测试部分无效配置处理
-  let partial_config = load_config("timeout_error=true")
-  match partial_config {
-    Some(config) => {
-      // 验证无效值被修正
-      assert_eq(config.endpoint, "http://localhost:8080")
-      assert_true(config.timeout > 0) // 应该被修正为正值
-      assert_eq(config.retry_count, 3)
-    }
-    None => assert_true(false)
-  }
-  
-  // 测试有效配置
-  let valid_config = load_config("valid_configuration=true")
-  match valid_config {
-    Some(config) => {
-      assert_eq(config.endpoint, "http://valid.endpoint.com")
-      assert_eq(config.timeout, 60)
-      assert_eq(config.retry_count, 5)
+  let degraded_result = MemoryManager::create_span_under_pressure(memory_manager, simple_span)
+  match degraded_result {
+    Some(span) => {
+      // Span should be created but with limited attributes/events
+      assert_eq(Span::name(span), "simple.operation")
+      assert_true(Span::is_recording(span)) // Basic functionality preserved
     }
     None => assert_true(false)
   }
 }
 
-test "数据损坏检测和恢复测试" {
-  // 模拟数据校验和函数
-  let calculate_checksum = fn(data: String) -> Int {
-    let mut sum = 0
-    for i in 0..data.length() {
-      sum = sum + data.char_code_at(i)
+// Test 4: Database Connection Error Recovery
+test "database connection error recovery" {
+  let db_client = DatabaseClient::new("postgresql://localhost:5432/telemetry")
+  
+  // Simulate database connection failure
+  DatabaseClient::simulate_connection_failure(db_client, true)
+  
+  // Attempt to store telemetry data
+  let telemetry_data = TelemetryData::new(
+    "test.service",
+    "test.operation",
+    200,
+    100,
+    true
+  )
+  
+  let store_result = DatabaseClient::store_telemetry(db_client, telemetry_data)
+  match store_result {
+    Error(DatabaseConnectionError) => {
+      // Verify connection pool is handling the failure
+      assert_true(DatabaseClient::is_connection_pool_healthy(db_client) == false)
+      
+      // Test connection retry mechanism
+      let retry_result = DatabaseClient::retry_connection(db_client, 3) // Max 3 retries
+      match retry_result {
+        Success => assert_true(false) // Should not succeed while failure is simulated
+        Error(DatabaseConnectionError) => assert_true(true) // Expected
+        _ => assert_true(false)
+      }
+      
+      // Verify retry count is tracked
+      assert_eq(DatabaseClient::retry_count(db_client), 3)
     }
-    sum
+    _ => assert_true(false)
   }
   
-  // 模拟数据验证函数
-  let validate_data = fn(data: String, expected_checksum: Int) -> Bool {
-    let actual_checksum = calculate_checksum(data)
-    actual_checksum == expected_checksum
-  }
+  // Simulate database recovery
+  DatabaseClient::simulate_connection_failure(db_client, false)
   
-  // 测试有效数据
-  let valid_data = "valid telemetry data"
-  let valid_checksum = calculate_checksum(valid_data)
-  assert_true(validate_data(valid_data, valid_checksum))
-  
-  // 测试损坏数据检测
-  let corrupted_data = "corrupted telemetry data"
-  assert_false(validate_data(corrupted_data, valid_checksum))
-  
-  // 模拟数据恢复过程
-  let recover_data = fn(corrupted: String, backup: String) -> String {
-    if validate_data(corrupted, calculate_checksum(corrupted)) {
-      corrupted // 数据有效，无需恢复
-    } else {
-      backup // 数据损坏，使用备份
+  // Attempt to reconnect
+  let reconnect_result = DatabaseClient::retry_connection(db_client, 1)
+  match reconnect_result {
+    Success => {
+      // Verify connection is restored
+      assert_true(DatabaseClient::is_connection_pool_healthy(db_client))
+      
+      // Verify retry count is reset
+      assert_eq(DatabaseClient::retry_count(db_client), 0)
+      
+      // Attempt to store telemetry data after recovery
+      let recovery_store_result = DatabaseClient::store_telemetry(db_client, telemetry_data)
+      match recovery_store_result {
+        Success(id) => assert_true(id > 0) // Should get valid ID
+        _ => assert_true(false)
+      }
     }
+    _ => assert_true(false)
   }
-  
-  // 测试数据恢复
-  let backup_data = "backup telemetry data"
-  let recovered_data = recover_data(corrupted_data, backup_data)
-  assert_eq(recovered_data, backup_data)
-  
-  // 测试有效数据无需恢复
-  let no_recovery_needed = recover_data(valid_data, backup_data)
-  assert_eq(no_recovery_needed, valid_data)
 }
 
-test "服务降级处理测试" {
-  // 模拟服务健康检查
-  let check_service_health = fn(service_name: String) -> Bool {
-    if service_name == "telemetry_collector" {
-      true // 服务正常
-    } else if service_name == "metrics_aggregator" {
-      false // 服务异常
-    } else {
-      true // 其他服务正常
+// Test 5: File System Error Recovery
+test "file system error recovery" {
+  let file_writer = FileWriter::new("/tmp/telemetry.log")
+  
+  // Simulate disk full error
+  FileWriter::simulate_disk_full(file_writer, true)
+  
+  // Attempt to write telemetry data
+  let log_entry = LogEntry::new(
+    Info,
+    "Test log message",
+    Some([("service", "test.service")]),
+    1234567890L
+  )
+  
+  let write_result = FileWriter::write_log(file_writer, log_entry)
+  match write_result {
+    Error(DiskFullError) => {
+      // Verify fallback mechanism is activated
+      assert_true(FileWriter::is_fallback_active(file_writer))
+      
+      // Attempt to write using fallback (in-memory storage)
+      let fallback_result = FileWriter::write_to_fallback(file_writer, log_entry)
+      match fallback_result {
+        Success => {
+          // Verify data is stored in fallback
+          let fallback_data = FileWriter::get_fallback_data(file_writer)
+          assert_eq(fallback_data.length(), 1)
+          
+          let stored_entry = fallback_data[0]
+          assert_eq(stored_entry.message, "Test log message")
+          assert_eq(stored_entry.severity, Info)
+        }
+        _ => assert_true(false)
+      }
     }
+    _ => assert_true(false)
   }
   
-  // 模拟降级策略
-  let get_fallback_handler = fn(service_name: String) -> String {
-    if service_name == "telemetry_collector" {
-      "primary_handler"
-    } else if service_name == "metrics_aggregator" {
-      "fallback_handler" // 使用降级处理器
-    } else {
-      "default_handler"
+  // Simulate disk space recovery
+  FileWriter::simulate_disk_full(file_writer, false)
+  
+  // Attempt to restore from fallback
+  let restore_result = FileWriter::restore_from_fallback(file_writer)
+  match restore_result {
+    Success(restored_count) => {
+      assert_eq(restored_count, 1) // Should restore 1 entry
+      
+      // Verify fallback is cleared after restoration
+      assert_eq(FileWriter::get_fallback_data(file_writer).length(), 0)
+      
+      // Verify normal writing works again
+      let normal_write_result = FileWriter::write_log(file_writer, log_entry)
+      match normal_write_result {
+        Success => assert_true(true)
+        _ => assert_true(false)
+      }
     }
+    _ => assert_true(false)
   }
-  
-  // 测试正常服务处理
-  let collector_health = check_service_health("telemetry_collector")
-  assert_true(collector_health)
-  assert_eq(get_fallback_handler("telemetry_collector"), "primary_handler")
-  
-  // 测试异常服务降级
-  let aggregator_health = check_service_health("metrics_aggregator")
-  assert_false(aggregator_health)
-  assert_eq(get_fallback_handler("metrics_aggregator"), "fallback_handler")
-  
-  // 测试降级后的基本功能
-  let fallback_functional = fn(handler: String) -> Bool {
-    handler == "fallback_handler" || handler == "primary_handler"
-  }
-  
-  assert_true(fallback_functional("fallback_handler"))
-  assert_true(fallback_functional("primary_handler"))
 }
 
-test "批处理错误恢复测试" {
-  // 模拟批处理操作
-  struct BatchItem {
-    id: Int
-    data: String
-    processed: Bool
+// Test 6: Timeout Error Recovery
+test "timeout error recovery" {
+  let timeout_handler = TimeoutHandler::new(5000) // 5 second timeout
+  
+  // Test operation that completes within timeout
+  let fast_operation = fn() {
+    // Simulate quick operation
+    Thread::sleep(1000) // 1 second
+    "operation completed"
   }
   
-  // 创建测试批次
-  let batch_items = [
-    BatchItem { id: 1, data: "item1", processed: false },
-    BatchItem { id: 2, data: "item2", processed: false },
-    BatchItem { id: 3, data: "item3", processed: false },
-    BatchItem { id: 4, data: "item4", processed: false },
-    BatchItem { id: 5, data: "item5", processed: false }
+  let fast_result = TimeoutHandler::execute_with_timeout(timeout_handler, fast_operation)
+  match fast_result {
+    Success(result) => assert_eq(result, "operation completed")
+    _ => assert_true(false)
+  }
+  
+  // Test operation that exceeds timeout
+  let slow_operation = fn() {
+    // Simulate slow operation
+    Thread::sleep(10000) // 10 seconds
+    "operation completed"
+  }
+  
+  let slow_result = TimeoutHandler::execute_with_timeout(timeout_handler, slow_operation)
+  match slow_result {
+    Error(TimeoutError) => {
+      // Verify timeout is properly detected
+      assert_true(TimeoutHandler::last_operation_timed_out(timeout_handler))
+      
+      // Test retry with increased timeout
+      let extended_timeout = TimeoutHandler::with_timeout(timeout_handler, 15000) // 15 seconds
+      let retry_result = TimeoutHandler::execute_with_timeout(extended_timeout, slow_operation)
+      match retry_result {
+        Success(result) => assert_eq(result, "operation completed")
+        _ => assert_true(false)
+      }
+    }
+    _ => assert_true(false)
+  }
+  
+  // Test adaptive timeout mechanism
+  let adaptive_timeout = AdaptiveTimeoutHandler::new(5000) // Start with 5 seconds
+  
+  // Simulate varying operation durations
+  let operations = [
+    fn() { Thread::sleep(1000); "fast" },      // 1 second
+    fn() { Thread::sleep(3000); "medium" },    // 3 seconds
+    fn() { Thread::sleep(8000); "slow" },      // 8 seconds (exceeds initial timeout)
+    fn() { Thread::sleep(6000); "medium-slow" } // 6 seconds
   ]
   
-  // 模拟处理函数，第3项会失败
-  let process_item = fn(item: BatchItem) -> BatchItem {
-    if item.id == 3 {
-      item // 处理失败，保持原状态
-    } else {
-      { ...item, processed: true } // 处理成功
+  for operation in operations {
+    let result = AdaptiveTimeoutHandler::execute(adaptive_timeout, operation)
+    match result {
+      Success(_) => assert_true(true)
+      Error(TimeoutError) => {
+        // Verify timeout is adjusted based on operation patterns
+        let new_timeout = AdaptiveTimeoutHandler::get_current_timeout(adaptive_timeout)
+        assert_true(new_timeout > 5000) // Should be increased
+      }
+      _ => assert_true(false)
     }
   }
-  
-  // 处理批次
-  let mut processed_items = []
-  let mut failed_items = []
-  
-  for item in batch_items {
-    let result = process_item(item)
-    if result.processed {
-      processed_items = processed_items.push(result)
-    } else {
-      failed_items = failed_items.push(result)
-    }
-  }
-  
-  // 验证处理结果
-  assert_eq(processed_items.length(), 4) // 4项成功
-  assert_eq(failed_items.length(), 1) // 1项失败
-  assert_eq(failed_items[0].id, 3) // 第3项失败
-  
-  // 测试失败项重试
-  let retry_failed_item = fn(item: BatchItem) -> BatchItem {
-    if item.id == 3 {
-      { ...item, processed: true } // 重试成功
-    } else {
-      item
-    }
-  }
-  
-  let retried_item = retry_failed_item(failed_items[0])
-  assert_true(retried_item.processed)
 }
 
-test "超时错误处理测试" {
-  // 模拟时间函数
-  let current_time = 1000
-  let timeout_duration = 500
+// Test 7: Circuit Breaker Pattern Recovery
+test "circuit breaker pattern recovery" {
+  let circuit_breaker = CircuitBreaker::new(5, 10000) // 5 failures, 10 second timeout
   
-  // 模拟耗时操作
-  let long_running_operation = fn(start_time: Int, duration: Int) -> (String, Int) {
-    let end_time = start_time + duration
-    ("result", end_time)
+  // Test normal operation
+  let normal_operation = fn() { "success" }
+  let normal_result = CircuitBreaker::execute(circuit_breaker, normal_operation)
+  match normal_result {
+    Success(result) => assert_eq(result, "success")
+    _ => assert_true(false)
   }
   
-  // 测试超时检测
-  let check_timeout = fn(start_time: Int, current: Int, timeout: Int) -> Bool {
-    (current - start_time) > timeout
-  }
+  // Verify circuit is closed initially
+  assert_eq(CircuitBreaker::get_state(circuit_breaker), Closed)
   
-  // 测试正常操作（不超时）
-  let (result1, end_time1) = long_running_operation(current_time, 300)
-  assert_eq(result1, "result")
-  assert_false(check_timeout(current_time, end_time1, timeout_duration))
+  // Simulate failures to trigger circuit breaker
+  let failing_operation = fn() { Error(ServiceUnavailableError) }
   
-  // 测试超时操作
-  let (result2, end_time2) = long_running_operation(current_time, 800)
-  assert_eq(result2, "result")
-  assert_true(check_timeout(current_time, end_time2, timeout_duration))
-  
-  // 模拟超时处理策略
-  let handle_timeout = fn(start_time: Int, current: Int, timeout: Int, fallback: String) -> String {
-    if check_timeout(start_time, current, timeout) {
-      fallback // 返回降级结果
-    } else {
-      "normal_result" // 正常结果
+  for i in 0..=5 {
+    let failure_result = CircuitBreaker::execute(circuit_breaker, failing_operation)
+    match failure_result {
+      Error(ServiceUnavailableError) => assert_true(true) // Expected
+      _ => assert_true(false)
     }
   }
   
-  // 测试超时处理
-  let timeout_result = handle_timeout(current_time, current_time + 800, timeout_duration, "timeout_fallback")
-  assert_eq(timeout_result, "timeout_fallback")
+  // Verify circuit is now open
+  assert_eq(CircuitBreaker::get_state(circuit_breaker), Open)
   
-  // 测试正常情况处理
-  let normal_result = handle_timeout(current_time, current_time + 300, timeout_duration, "timeout_fallback")
-  assert_eq(normal_result, "normal_result")
+  // Test that operations are immediately rejected when circuit is open
+  let rejected_result = CircuitBreaker::execute(circuit_breaker, normal_operation)
+  match rejected_result {
+    Error(CircuitBreakerOpenError) => assert_true(true) // Expected
+    _ => assert_true(false)
+  }
+  
+  // Test half-open state after timeout
+  Thread::sleep(11000) // Wait for timeout period
+  
+  let half_open_result = CircuitBreaker::execute(circuit_breaker, normal_operation)
+  match half_open_result {
+    Success(result) => {
+      assert_eq(result, "success")
+      
+      // Verify circuit is closed again after successful operation
+      assert_eq(CircuitBreaker::get_state(circuit_breaker), Closed)
+    }
+    _ => assert_true(false)
+  }
+  
+  // Test that failure count is reset
+  assert_eq(CircuitBreaker::get_failure_count(circuit_breaker), 0)
+}
+
+// Test 8: Batch Processing Error Recovery
+test "batch processing error recovery" {
+  let batch_processor = BatchProcessor::new(100) // 100 items per batch
+  
+  // Create test data with some problematic items
+  let batch_data = []
+  for i in 0..=150 {
+    let data = if i % 50 == 0 {
+      // Create problematic data every 50 items
+      TelemetryData::with_invalid_fields()
+    } else {
+      // Create valid data
+      TelemetryData::new(
+        "service_" + (i % 10).to_string(),
+        "operation_" + (i % 5).to_string(),
+        200,
+        100,
+        true
+      )
+    }
+    batch_data = batch_data.push(data)
+  }
+  
+  // Process batch with error recovery
+  let process_result = BatchProcessor::process_with_recovery(batch_processor, batch_data)
+  match process_result {
+    BatchResult(success_count, failure_count, recovered_count) => {
+      // Verify all items were processed in some way
+      assert_eq(success_count + failure_count + recovered_count, 150)
+      
+      // Verify most items succeeded
+      assert_true(success_count > 100) // At least 100 valid items
+      
+      // Verify some items failed initially but were recovered
+      assert_true(recovered_count > 0)
+      
+      // Verify failure count is minimal
+      assert_true(failure_count < 10)
+    }
+    _ => assert_true(false)
+  }
+  
+  // Test partial batch recovery
+  let partial_batch = [
+    TelemetryData::new("service1", "op1", 200, 100, true),
+    TelemetryData::with_invalid_fields(),
+    TelemetryData::new("service2", "op2", 200, 100, true),
+    TelemetryData::with_invalid_fields(),
+    TelemetryData::new("service3", "op3", 200, 100, true)
+  ]
+  
+  let partial_result = BatchProcessor::process_with_recovery(batch_processor, partial_batch)
+  match partial_result {
+    BatchResult(success_count, failure_count, recovered_count) => {
+      assert_eq(success_count, 3) // 3 valid items
+      assert_eq(recovered_count, 2) // 2 items recovered
+      assert_eq(failure_count, 0) // No complete failures
+    }
+    _ => assert_true(false)
+  }
+}
+
+// Test 9: Configuration Error Recovery
+test "configuration error recovery" {
+  let config_manager = ConfigManager::new()
+  
+  // Load valid configuration
+  let valid_config = Config::new([
+    ("service.name", "test.service"),
+    ("sampling.rate", "0.5"),
+    ("export.interval", "5000"),
+    ("batch.size", "100")
+  ])
+  
+  let load_result = ConfigManager::load_config(config_manager, valid_config)
+  match load_result {
+    Success => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // Simulate configuration corruption
+  ConfigManager::simulate_config_corruption(config_manager, true)
+  
+  // Attempt to read configuration
+  let read_result = ConfigManager::get_config(config_manager)
+  match read_result {
+    Error(ConfigCorruptionError) => {
+      // Verify fallback configuration is used
+      let fallback_config = ConfigManager::get_fallback_config(config_manager)
+      match fallback_config {
+        Some(config) => {
+          // Verify fallback has default values
+          let service_name = Config::get(config, "service.name")
+          match service_name {
+            Some(name) => assert_eq(name, "default.service")
+            None => assert_true(false)
+          }
+        }
+        None => assert_true(false)
+      }
+      
+      // Test configuration repair mechanism
+      let repair_result = ConfigManager::repair_config(config_manager)
+      match repair_result {
+        Success => {
+          // Verify configuration is readable after repair
+          let repaired_config = ConfigManager::get_config(config_manager)
+          match repaired_config {
+            Success(config) => {
+              // Verify some values are preserved from backup
+              let service_name = Config::get(config, "service.name")
+              match service_name {
+                Some(name) => assert_eq(name, "test.service") // Should be restored
+                None => assert_true(false)
+              }
+            }
+            _ => assert_true(false)
+          }
+        }
+        _ => assert_true(false)
+      }
+    }
+    _ => assert_true(false)
+  }
+  
+  // Test configuration validation and auto-correction
+  let invalid_config = Config::new([
+    ("service.name", ""), // Invalid: empty
+    ("sampling.rate", "1.5"), // Invalid: > 1.0
+    ("export.interval", "-1000"), // Invalid: negative
+    ("batch.size", "0") // Invalid: zero
+  ])
+  
+  let validation_result = ConfigManager::validate_and_correct(config_manager, invalid_config)
+  match validation_result {
+    Success(corrected_config) => {
+      // Verify invalid values were corrected
+      let service_name = Config::get(corrected_config, "service.name")
+      match service_name {
+        Some(name) => assert_eq(name, "default.service") // Should be corrected
+        None => assert_true(false)
+      }
+      
+      let sampling_rate = Config::get(corrected_config, "sampling.rate")
+      match sampling_rate {
+        Some(rate) => assert_eq(rate, "1.0") // Should be corrected to max
+        None => assert_true(false)
+      }
+      
+      let export_interval = Config::get(corrected_config, "export.interval")
+      match export_interval {
+        Some(interval) => assert_eq(interval, "1000") // Should be corrected to min
+        None => assert_true(false)
+      }
+      
+      let batch_size = Config::get(corrected_config, "batch.size")
+      match batch_size {
+        Some(size) => assert_eq(size, "10") // Should be corrected to min
+        None => assert_true(false)
+      }
+    }
+    _ => assert_true(false)
+  }
+}
+
+// Test 10: Comprehensive Error Recovery Pipeline
+test "comprehensive error recovery pipeline" {
+  let recovery_pipeline = ErrorRecoveryPipeline::new()
+  
+  // Configure multiple recovery strategies
+  ErrorRecoveryPipeline::add_strategy(recovery_pipeline, RetryStrategy(3, 1000)) // 3 retries, 1 second delay
+  ErrorRecoveryPipeline::add_strategy(recovery_pipeline, FallbackStrategy("backup_endpoint"))
+  ErrorRecoveryPipeline::add_strategy(recovery_pipeline, CircuitBreakerStrategy(5, 10000))
+  ErrorRecoveryPipeline::add_strategy(recovery_pipeline, TimeoutStrategy(5000))
+  
+  // Create telemetry data
+  let telemetry_data = TelemetryData::new(
+    "test.service",
+    "test.operation",
+    200,
+    100,
+    true
+  )
+  
+  // Test successful operation
+  let success_operation = fn() { Success(telemetry_data) }
+  let success_result = ErrorRecoveryPipeline::execute(recovery_pipeline, success_operation)
+  match success_result {
+    Success(data) => {
+      assert_eq(data.service_name, telemetry_data.service_name)
+      assert_eq(data.operation_name, telemetry_data.operation_name)
+    }
+    _ => assert_true(false)
+  }
+  
+  // Test operation with transient failure (recoverable with retry)
+  let mut retry_count = 0
+  let transient_failure_operation = fn() {
+    retry_count = retry_count + 1
+    if retry_count < 3 {
+      Error(NetworkError) // Fail first 2 attempts
+    } else {
+      Success(telemetry_data) // Succeed on 3rd attempt
+    }
+  }
+  
+  let transient_result = ErrorRecoveryPipeline::execute(recovery_pipeline, transient_failure_operation)
+  match transient_result {
+    Success(data) => {
+      assert_eq(data.service_name, telemetry_data.service_name)
+      assert_eq(retry_count, 3) // Should have retried 3 times
+    }
+    _ => assert_true(false)
+  }
+  
+  // Test operation with persistent failure (requires fallback)
+  let persistent_failure_operation = fn() { Error(ServiceUnavailableError) }
+  
+  let persistent_result = ErrorRecoveryPipeline::execute(recovery_pipeline, persistent_failure_operation)
+  match persistent_result {
+    Success(data) => {
+      // Should have succeeded using fallback
+      assert_eq(data.service_name, telemetry_data.service_name)
+      assert_true(ErrorRecoveryPipeline::used_fallback(recovery_pipeline))
+    }
+    Error(ServiceUnavailableError) => {
+      // If fallback also failed, verify all strategies were attempted
+      assert_true(ErrorRecoveryPipeline::exhausted_all_strategies(recovery_pipeline))
+    }
+    _ => assert_true(false)
+  }
+  
+  // Test operation that times out
+  let timeout_operation = fn() {
+    Thread::sleep(10000) // 10 seconds
+    Success(telemetry_data)
+  }
+  
+  let timeout_result = ErrorRecoveryPipeline::execute(recovery_pipeline, timeout_operation)
+  match timeout_result {
+    Error(TimeoutError) => {
+      // Verify timeout was detected
+      assert_true(ErrorRecoveryPipeline::last_error_was_timeout(recovery_pipeline))
+    }
+    Success(_) => {
+      // If it succeeded, verify it was within timeout
+      assert_false(ErrorRecoveryPipeline::last_error_was_timeout(recovery_pipeline))
+    }
+    _ => assert_true(false)
+  }
+  
+  // Test circuit breaker activation
+  ErrorRecoveryPipeline::reset_circuit_breaker(recovery_pipeline)
+  
+  // Trigger multiple failures to activate circuit breaker
+  for i in 0..=5 {
+    let _ = ErrorRecoveryPipeline::execute(recovery_pipeline, persistent_failure_operation)
+  }
+  
+  // Verify circuit breaker is open
+  assert_true(ErrorRecoveryPipeline::is_circuit_breaker_open(recovery_pipeline))
+  
+  // Test that operations are immediately rejected
+  let rejected_result = ErrorRecoveryPipeline::execute(recovery_pipeline, success_operation)
+  match rejected_result {
+    Error(CircuitBreakerOpenError) => assert_true(true) // Expected
+    _ => assert_true(false)
+  }
+  
+  // Test circuit breaker recovery after timeout
+  Thread::sleep(11000) // Wait for circuit breaker timeout
+  
+  let recovery_result = ErrorRecoveryPipeline::execute(recovery_pipeline, success_operation)
+  match recovery_result {
+    Success(data) => {
+      assert_eq(data.service_name, telemetry_data.service_name)
+      assert_false(ErrorRecoveryPipeline::is_circuit_breaker_open(recovery_pipeline))
+    }
+    _ => assert_true(false)
+  }
 }

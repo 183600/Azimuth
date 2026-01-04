@@ -1,616 +1,112 @@
-// Azimuth Telemetry System - Concurrent Safety Tests
-// This file contains test cases for concurrent safety and thread safety
+// Azimuth Telemetry System - Concurrent Safety Comprehensive Tests
+// This file contains comprehensive tests for concurrent safety and thread safety
 
-// Test 1: Concurrent Attributes Operations
-test "concurrent attributes operations" {
-  let attrs = Attributes::new()
-  let num_threads = 10
+// Test 1: Concurrent Attribute Access Safety
+test "concurrent attribute access safety" {
+  let attributes = Attributes::new()
+  let thread_count = 10
   let operations_per_thread = 100
   
-  // Test concurrent attribute setting
+  // Create multiple threads that access attributes concurrently
   let threads = []
-  for i in 0..=(num_threads - 1) {
-    let thread = Thread::spawn(fn(thread_id) {
-      for j in 0..=(operations_per_thread - 1) {
-        let key = "thread_" + thread_id.to_string() + "_key_" + j.to_string()
-        let value = "thread_" + thread_id.to_string() + "_value_" + j.to_string()
-        Attributes::set(attrs, key, StringValue(value))
-      }
-    }, i)
-    threads.push(thread)
-  }
-  
-  // Wait for all threads to complete
-  for thread in threads {
-    Thread::join(thread)
-  }
-  
-  // Verify all attributes were set correctly
-  let expected_count = num_threads * operations_per_thread
-  assert_eq(Attributes::size(attrs), expected_count)
-  
-  // Test concurrent attribute getting
-  let get_threads = []
-  let results = ConcurrentArray::new()
-  
-  for i in 0..=(num_threads - 1) {
-    let thread = Thread::spawn(fn(thread_id) {
-      for j in 0..=(operations_per_thread - 1) {
-        let key = "thread_" + thread_id.to_string() + "_key_" + j.to_string()
-        let expected_value = "thread_" + thread_id.to_string() + "_value_" + j.to_string()
-        let result = Attributes::get(attrs, key)
+  for thread_id in 0..=thread_count {
+    let thread = Thread::spawn(fn() {
+      for i in 0..=operations_per_thread {
+        let key = "thread_" + thread_id.to_string() + "_key_" + i.to_string()
+        let value = "thread_" + thread_id.to_string() + "_value_" + i.to_string()
         
-        ConcurrentArray::push(results, (key, result, expected_value))
-      }
-    }, i)
-    get_threads.push(thread)
-  }
-  
-  // Wait for all threads to complete
-  for thread in get_threads {
-    Thread::join(thread)
-  }
-  
-  // Verify all get operations returned expected values
-  let results_list = ConcurrentArray::to_list(results)
-  for (key, result, expected_value) in results_list {
-    match result {
-      Some(StringValue(value)) => assert_eq(value, expected_value)
-      _ => assert_true(false, "Failed to get value for key: " + key)
-    }
-  }
-}
-
-// Test 2: Concurrent Time Series Operations
-test "concurrent time series operations" {
-  let time_series = TimeSeries::new("concurrent_test_series")
-  let num_threads = 10
-  let data_points_per_thread = 100
-  
-  // Test concurrent data point addition
-  let threads = []
-  for i in 0..=(num_threads - 1) {
-    let thread = Thread::spawn(fn(thread_id) {
-      for j in 0..=(data_points_per_thread - 1) {
-        let timestamp = Time::now() + (thread_id * 1000 + j) as Int64
-        let value = (thread_id * 100 + j) as Float
-        TimeSeries::add_data_point(time_series, TimeSeriesDataPoint::new(timestamp, value))
-      }
-    }, i)
-    threads.push(thread)
-  }
-  
-  // Wait for all threads to complete
-  for thread in threads {
-    Thread::join(thread)
-  }
-  
-  // Verify all data points were added
-  let expected_count = num_threads * data_points_per_thread
-  assert_eq(TimeSeries::data_points(time_series).length(), expected_count)
-  
-  // Test concurrent aggregation
-  let agg_threads = []
-  let agg_results = ConcurrentArray::new()
-  
-  for i in 0..=(num_threads - 1) {
-    let thread = Thread::spawn(fn(thread_id) {
-      let result = TimeSeries::aggregate(time_series, Average)
-      ConcurrentArray::push(agg_results, (thread_id, result))
-    }, i)
-    agg_threads.push(thread)
-  }
-  
-  // Wait for all threads to complete
-  for thread in agg_threads {
-    Thread::join(thread)
-  }
-  
-  // Verify all aggregation operations returned consistent results
-  let agg_results_list = ConcurrentArray::to_list(agg_results)
-  let first_result = agg_results_list[0].1
-  
-  for (thread_id, result) in agg_results_list {
-    assert_eq(result, first_result, "Inconsistent aggregation result for thread " + thread_id.to_string())
-  }
-}
-
-// Test 3: Concurrent Metrics Collection
-test "concurrent metrics collection" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "concurrent_test_meter")
-  let counter = Meter::create_counter(meter, "concurrent_counter", Some("Concurrent test counter"), Some("count"))
-  let histogram = Meter::create_histogram(meter, "concurrent_histogram", Some("Concurrent test histogram"), Some("ms"))
-  let gauge = Meter::create_gauge(meter, "concurrent_gauge", Some("Concurrent test gauge"), Some("value"))
-  
-  let num_threads = 10
-  let operations_per_thread = 100
-  
-  // Test concurrent counter operations
-  let counter_threads = []
-  for i in 0..=(num_threads - 1) {
-    let thread = Thread::spawn(fn(thread_id) {
-      for j in 0..=(operations_per_thread - 1) {
-        Counter::add(counter, 1.0)
-      }
-    }, i)
-    counter_threads.push(thread)
-  }
-  
-  // Wait for all threads to complete
-  for thread in counter_threads {
-    Thread::join(thread)
-  }
-  
-  // Test concurrent histogram operations
-  let histogram_threads = []
-  for i in 0..=(num_threads - 1) {
-    let thread = Thread::spawn(fn(thread_id) {
-      for j in 0..=(operations_per_thread - 1) {
-        let value = (thread_id * operations_per_thread + j) as Float
-        Histogram::record(histogram, value)
-      }
-    }, i)
-    histogram_threads.push(thread)
-  }
-  
-  // Wait for all threads to complete
-  for thread in histogram_threads {
-    Thread::join(thread)
-  }
-  
-  // Test concurrent gauge operations
-  let gauge_threads = []
-  for i in 0..=(num_threads - 1) {
-    let thread = Thread::spawn(fn(thread_id) {
-      for j in 0..=(operations_per_thread - 1) {
-        let value = (thread_id * operations_per_thread + j) as Float
-        Gauge::set(gauge, value)
-      }
-    }, i)
-    gauge_threads.push(thread)
-  }
-  
-  // Wait for all threads to complete
-  for thread in gauge_threads {
-    Thread::join(thread)
-  }
-  
-  // Verify metrics were collected correctly
-  let instruments = Meter::get_instruments(meter)
-  assert_true(instruments.length() >= 3)
-  
-  // Note: Actual value verification would depend on the specific metrics implementation
-  // For now, we just verify that the operations completed without errors
-}
-
-// Test 4: Concurrent Serialization/Deserialization
-test "concurrent serialization deserialization" {
-  let telemetry_data = TelemetryData::with_attributes(
-    "concurrent_test_metric",
-    42.5,
-    Attributes::from_list([
-      ("host", StringValue("server-01")),
-      ("region", StringValue("us-west-1")),
-      ("service", StringValue("auth-service"))
-    ])
-  )
-  
-  let num_threads = 10
-  let operations_per_thread = 100
-  
-  // Test concurrent JSON serialization
-  let json_serialize_threads = []
-  let json_results = ConcurrentArray::new()
-  
-  for i in 0..=(num_threads - 1) {
-    let thread = Thread::spawn(fn(thread_id) {
-      for j in 0..=(operations_per_thread - 1) {
-        let json_data = Serialization::to_json(telemetry_data)
-        ConcurrentArray::push(json_results, json_data)
-      }
-    }, i)
-    json_serialize_threads.push(thread)
-  }
-  
-  // Wait for all threads to complete
-  for thread in json_serialize_threads {
-    Thread::join(thread)
-  }
-  
-  // Verify all serialization operations produced valid JSON
-  let json_results_list = ConcurrentArray::to_list(json_results)
-  for json_data in json_results_list {
-    assert_true(json_data.length() > 0)
-    
-    // Test deserialization
-    let deserialized_data = Serialization::from_json(json_data)
-    match deserialized_data {
-      TelemetryData(data) => {
-        assert_eq(TelemetryData::metric_name(data), "concurrent_test_metric")
-        assert_eq(TelemetryData::value(data), 42.5)
-      }
-      _ => assert_true(false, "Failed to deserialize JSON data")
-    }
-  }
-  
-  // Test concurrent binary serialization
-  let binary_serialize_threads = []
-  let binary_results = ConcurrentArray::new()
-  
-  for i in 0..=(num_threads - 1) {
-    let thread = Thread::spawn(fn(thread_id) {
-      for j in 0..=(operations_per_thread - 1) {
-        let binary_data = Serialization::to_binary(telemetry_data)
-        ConcurrentArray::push(binary_results, binary_data)
-      }
-    }, i)
-    binary_serialize_threads.push(thread)
-  }
-  
-  // Wait for all threads to complete
-  for thread in binary_serialize_threads {
-    Thread::join(thread)
-  }
-  
-  // Verify all serialization operations produced valid binary data
-  let binary_results_list = ConcurrentArray::to_list(binary_results)
-  for binary_data in binary_results_list {
-    assert_true(binary_data.length() > 0)
-    
-    // Test deserialization
-    let deserialized_data = Serialization::from_binary(binary_data)
-    match deserialized_data {
-      TelemetryData(data) => {
-        assert_eq(TelemetryData::metric_name(data), "concurrent_test_metric")
-        assert_eq(TelemetryData::value(data), 42.5)
-      }
-      _ => assert_true(false, "Failed to deserialize binary data")
-    }
-  }
-}
-
-// Test 5: Concurrent Resource Operations
-test "concurrent resource operations" {
-  let resource = Resource::new()
-  let num_threads = 10
-  let operations_per_thread = 100
-  
-  // Test concurrent resource attribute setting
-  let threads = []
-  for i in 0..=(num_threads - 1) {
-    let thread = Thread::spawn(fn(thread_id) {
-      for j in 0..=(operations_per_thread - 1) {
-        let key = "thread_" + thread_id.to_string() + "_attr_" + j.to_string()
-        let value = "thread_" + thread_id.to_string() + "_value_" + j.to_string()
-        Resource::set_attribute(resource, key, StringValue(value))
-      }
-    }, i)
-    threads.push(thread)
-  }
-  
-  // Wait for all threads to complete
-  for thread in threads {
-    Thread::join(thread)
-  }
-  
-  // Test concurrent resource attribute getting
-  let get_threads = []
-  let get_results = ConcurrentArray::new()
-  
-  for i in 0..=(num_threads - 1) {
-    let thread = Thread::spawn(fn(thread_id) {
-      for j in 0..=(operations_per_thread - 1) {
-        let key = "thread_" + thread_id.to_string() + "_attr_" + j.to_string()
-        let expected_value = "thread_" + thread_id.to_string() + "_value_" + j.to_string()
-        let result = Resource::get_attribute(resource, key)
+        // Concurrent write operations
+        Attributes::set(attributes, key, StringValue(value))
         
-        ConcurrentArray::push(get_results, (key, result, expected_value))
-      }
-    }, i)
-    get_threads.push(thread)
-  }
-  
-  // Wait for all threads to complete
-  for thread in get_threads {
-    Thread::join(thread)
-  }
-  
-  // Verify all get operations returned expected values
-  let get_results_list = ConcurrentArray::to_list(get_results)
-  for (key, result, expected_value) in get_results_list {
-    match result {
-      Some(StringValue(value)) => assert_eq(value, expected_value)
-      _ => assert_true(false, "Failed to get resource attribute for key: " + key)
-    }
-  }
-  
-  // Test concurrent resource merging
-  let resource1 = Resource::new()
-  let resource2 = Resource::new()
-  
-  // Set attributes on both resources
-  Resource::set_attribute(resource1, "resource1_attr", StringValue("resource1_value"))
-  Resource::set_attribute(resource2, "resource2_attr", StringValue("resource2_value"))
-  
-  let merge_threads = []
-  let merge_results = ConcurrentArray::new()
-  
-  for i in 0..=(num_threads - 1) {
-    let thread = Thread::spawn(fn(thread_id) {
-      let merged_resource = Resource::merge(resource1, resource2)
-      let attr1 = Resource::get_attribute(merged_resource, "resource1_attr")
-      let attr2 = Resource::get_attribute(merged_resource, "resource2_attr")
-      
-      ConcurrentArray::push(merge_results, (thread_id, attr1, attr2))
-    }, i)
-    merge_threads.push(thread)
-  }
-  
-  // Wait for all threads to complete
-  for thread in merge_threads {
-    Thread::join(thread)
-  }
-  
-  // Verify all merge operations produced consistent results
-  let merge_results_list = ConcurrentArray::to_list(merge_results)
-  for (thread_id, attr1, attr2) in merge_results_list {
-    match attr1 {
-      Some(StringValue(value)) => assert_eq(value, "resource1_value")
-      _ => assert_true(false, "Failed to get resource1_attr in thread " + thread_id.to_string())
-    }
-    
-    match attr2 {
-      Some(StringValue(value)) => assert_eq(value, "resource2_value")
-      _ => assert_true(false, "Failed to get resource2_attr in thread " + thread_id.to_string())
-    }
-  }
-}
-
-// Test 6: Concurrent Context Operations
-test "concurrent context operations" {
-  let root_ctx = Context::root()
-  let num_threads = 10
-  let operations_per_thread = 100
-  
-  // Test concurrent context creation
-  let threads = []
-  let contexts = ConcurrentArray::new()
-  
-  for i in 0..=(num_threads - 1) {
-    let thread = Thread::spawn(fn(thread_id) {
-      for j in 0..=(operations_per_thread - 1) {
-        let key = ContextKey::new("thread_" + thread_id.to_string() + "_key_" + j.to_string())
-        let value = "thread_" + thread_id.to_string() + "_value_" + j.to_string()
-        let ctx = Context::with_value(root_ctx, key, value)
-        ConcurrentArray::push(contexts, (thread_id, j, ctx))
-      }
-    }, i)
-    threads.push(thread)
-  }
-  
-  // Wait for all threads to complete
-  for thread in threads {
-    Thread::join(thread)
-  }
-  
-  // Test concurrent context value retrieval
-  let get_threads = []
-  let get_results = ConcurrentArray::new()
-  
-  let contexts_list = ConcurrentArray::to_list(contexts)
-  for (thread_id, j, ctx) in contexts_list {
-    let thread = Thread::spawn(fn(t_id, idx, context) {
-      let key = ContextKey::new("thread_" + t_id.to_string() + "_key_" + idx.to_string())
-      let expected_value = "thread_" + t_id.to_string() + "_value_" + idx.to_string()
-      let result = Context::get(context, key)
-      
-      ConcurrentArray::push(get_results, (t_id, idx, result, expected_value))
-    }, thread_id, j, ctx)
-    get_threads.push(thread)
-  }
-  
-  // Wait for all threads to complete
-  for thread in get_threads {
-    Thread::join(thread)
-  }
-  
-  // Verify all get operations returned expected values
-  let get_results_list = ConcurrentArray::to_list(get_results)
-  for (thread_id, j, result, expected_value) in get_results_list {
-    match result {
-      Some(value) => assert_eq(value, expected_value)
-      _ => assert_true(false, "Failed to get context value for thread " + thread_id.to_string() + ", index " + j.to_string())
-    }
-  }
-}
-
-// Test 7: Concurrent Log Operations
-test "concurrent log operations" {
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "concurrent_test_logger")
-  let num_threads = 10
-  let logs_per_thread = 100
-  
-  // Test concurrent log emission
-  let threads = []
-  for i in 0..=(num_threads - 1) {
-    let thread = Thread::spawn(fn(thread_id) {
-      for j in 0..=(logs_per_thread - 1) {
-        let message = "Thread " + thread_id.to_string() + " log message " + j.to_string()
-        let log_record = LogRecord::new(Info, message)
-        Logger::emit(logger, log_record)
-      }
-    }, i)
-    threads.push(thread)
-  }
-  
-  // Wait for all threads to complete
-  for thread in threads {
-    Thread::join(thread)
-  }
-  
-  // Verify logs were emitted correctly
-  let logs = Logger::get_logs(logger)
-  assert_eq(logs.length(), num_threads * logs_per_thread)
-  
-  // Verify log content
-  let mut log_counts = [0; num_threads]
-  for log in logs {
-    let message = LogRecord::body(log)
-    match message {
-      Some(msg) => {
-        for i in 0..=(num_threads - 1) {
-          if msg.contains("Thread " + i.to_string()) {
-            log_counts[i] = log_counts[i] + 1
+        // Concurrent read operations
+        let retrieved = Attributes::get(attributes, key)
+        match retrieved {
+          Some(StringValue(retrieved_value)) => {
+            // Verify value consistency
+            assert_eq(retrieved_value, value)
           }
+          None => {
+            // Attribute might not be set yet due to race condition
+            // This is acceptable in concurrent scenarios
+          }
+          _ => assert_true(false)
+        }
+        
+        // Concurrent delete operations
+        if i % 10 == 0 {
+          Attributes::remove(attributes, key)
         }
       }
-      None => assert_true(false, "Log message is empty")
-    }
+    })
+    threads = threads.push(thread)
   }
   
-  for i in 0..=(num_threads - 1) {
-    assert_eq(log_counts[i], logs_per_thread, "Incorrect log count for thread " + i.to_string())
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Verify data integrity after concurrent operations
+  let all_keys = Attributes::get_all_keys(attributes)
+  
+  // Verify no corrupted data exists
+  for key in all_keys {
+    let value = Attributes::get(attributes, key)
+    match value {
+      Some(StringValue(_)) => assert_true(true) // Valid string value
+      Some(IntValue(_)) => assert_true(true) // Valid int value
+      Some(FloatValue(_)) => assert_true(true) // Valid float value
+      Some(BoolValue(_)) => assert_true(true) // Valid bool value
+      Some(ArrayStringValue(_)) => assert_true(true) // Valid array string value
+      Some(ArrayIntValue(_)) => assert_true(true) // Valid array int value
+      None => assert_true(false) // Should not happen
+    }
   }
 }
 
-// Test 8: Concurrent Span Operations
-test "concurrent span operations" {
-  let tracer = TracerProvider::get_tracer("concurrent_test_tracer")
-  let num_threads = 10
+// Test 2: Concurrent Span Creation and Management
+test "concurrent span creation and management" {
+  let span_manager = SpanManager::new()
+  let thread_count = 8
   let spans_per_thread = 50
   
-  // Test concurrent span creation and operations
+  // Create multiple threads that create spans concurrently
   let threads = []
-  let spans = ConcurrentArray::new()
-  
-  for i in 0..=(num_threads - 1) {
-    let thread = Thread::spawn(fn(thread_id) {
-      for j in 0..=(spans_per_thread - 1) {
-        let span_name = "thread_" + thread_id.to_string() + "_span_" + j.to_string()
-        let span = Tracer::start_span(tracer, span_name)
+  for thread_id in 0..=thread_count {
+    let thread = Thread::spawn(fn() {
+      for i in 0..=spans_per_thread {
+        let span_name = "concurrent_operation_" + thread_id.to_string() + "_" + i.to_string()
+        let trace_id = "trace_" + thread_id.to_string()
+        let span_id = "span_" + thread_id.to_string() + "_" + i.to_string()
         
-        // Add events and attributes
-        Span::add_event(span, "test_event", Some([("thread_id", StringValue(thread_id.to_string()))]))
-        Span::set_attribute(span, "span_index", IntValue(j))
+        let span_ctx = SpanContext::new(trace_id, span_id, true, "")
+        let span = Span::new(span_name, Internal, span_ctx)
         
-        ConcurrentArray::push(spans, (thread_id, j, span))
-      }
-    }, i)
-    threads.push(thread)
-  }
-  
-  // Wait for all threads to complete
-  for thread in threads {
-    Thread::join(thread)
-  }
-  
-  // Test concurrent span ending
-  let end_threads = []
-  let spans_list = ConcurrentArray::to_list(spans)
-  
-  for (thread_id, j, span) in spans_list {
-    let thread = Thread::spawn(fn(t_id, idx, s) {
-      Span::end(s)
-    }, thread_id, j, span)
-    end_threads.push(thread)
-  }
-  
-  // Wait for all threads to complete
-  for thread in end_threads {
-    Thread::join(thread)
-  }
-  
-  // Verify all spans were created and ended correctly
-  let finished_spans = Tracer::get_finished_spans(tracer)
-  assert_eq(finished_spans.length(), num_threads * spans_per_thread)
-}
-
-// Test 9: Concurrent Baggage Operations
-test "concurrent baggage operations" {
-  let baggage = Baggage::new()
-  let num_threads = 10
-  let entries_per_thread = 50
-  
-  // Test concurrent baggage entry setting
-  let threads = []
-  for i in 0..=(num_threads - 1) {
-    let thread = Thread::spawn(fn(thread_id) {
-      for j in 0..=(entries_per_thread - 1) {
-        let key = "thread_" + thread_id.to_string() + "_key_" + j.to_string()
-        let value = "thread_" + thread_id.to_string() + "_value_" + j.to_string()
-        Baggage::set_entry(baggage, key, value) |> ignore
-      }
-    }, i)
-    threads.push(thread)
-  }
-  
-  // Wait for all threads to complete
-  for thread in threads {
-    Thread::join(thread)
-  }
-  
-  // Test concurrent baggage entry getting
-  let get_threads = []
-  let get_results = ConcurrentArray::new()
-  
-  for i in 0..=(num_threads - 1) {
-    let thread = Thread::spawn(fn(thread_id) {
-      for j in 0..=(entries_per_thread - 1) {
-        let key = "thread_" + thread_id.to_string() + "_key_" + j.to_string()
-        let expected_value = "thread_" + thread_id.to_string() + "_value_" + j.to_string()
-        let result = Baggage::get_entry(baggage, key)
+        // Concurrent span registration
+        SpanManager::register_span(span_manager, span)
         
-        ConcurrentArray::push(get_results, (thread_id, j, result, expected_value))
-      }
-    }, i)
-    get_threads.push(thread)
-  }
-  
-  // Wait for all threads to complete
-  for thread in get_threads {
-    Thread::join(thread)
-  }
-  
-  // Verify all get operations returned expected values
-  let get_results_list = ConcurrentArray::to_list(get_results)
-  for (thread_id, j, result, expected_value) in get_results_list {
-    match result {
-      Some(value) => assert_eq(value, expected_value)
-      _ => assert_true(false, "Failed to get baggage entry for thread " + thread_id.to_string() + ", index " + j.to_string())
-    }
-  }
-}
-
-// Test 10: Concurrent Connection Pool Operations
-test "concurrent connection pool operations" {
-  let connection_pool = ConnectionPool::new_with_max_connections(5)
-  let num_threads = 10
-  let operations_per_thread = 20
-  
-  // Test concurrent connection acquisition
-  let threads = []
-  let connections = ConcurrentArray::new()
-  
-  for i in 0..=(num_threads - 1) {
-    let thread = Thread::spawn(fn(thread_id) {
-      for j in 0..=(operations_per_thread - 1) {
-        let conn_result = ConnectionPool::get_connection(connection_pool)
-        match conn_result {
-          Ok(connection) => {
-            // Simulate some work with the connection
-            Thread::sleep(Duration::milliseconds(10))
-            ConnectionPool::return_connection(connection_pool, connection)
-            ConcurrentArray::push(connections, (thread_id, j, true))
-          }
-          Err(error) => {
-            ConcurrentArray::push(connections, (thread_id, j, false))
-          }
+        // Concurrent attribute setting
+        Span::set_attribute(span, "thread.id", thread_id.to_string())
+        Span::set_attribute(span, "operation.id", i.to_string())
+        
+        // Concurrent event addition
+        Span::add_event(span, "concurrent_event", Some([
+          ("thread_id", thread_id.to_string()),
+          ("event_id", i.to_string())
+        ]))
+        
+        // Concurrent span status updates
+        if i % 5 == 0 {
+          Span::set_status(span, Ok, Some("Periodic status update"))
+        }
+        
+        // Concurrent span ending
+        if i % 3 == 0 {
+          Span::end(span)
         }
       }
-    }, i)
-    threads.push(thread)
+    })
+    threads = threads.push(thread)
   }
   
   // Wait for all threads to complete
@@ -618,27 +114,694 @@ test "concurrent connection pool operations" {
     Thread::join(thread)
   }
   
-  // Verify connection pool operations
-  let connections_list = ConcurrentArray::to_list(connections)
-  let mut success_count = 0
-  let mut failure_count = 0
+  // Verify span integrity after concurrent operations
+  let all_spans = SpanManager::get_all_spans(span_manager)
+  assert_eq(all_spans.length(), (thread_count + 1) * (spans_per_thread + 1))
   
-  for (thread_id, j, success) in connections_list {
-    if success {
-      success_count = success_count + 1
-    } else {
-      failure_count = failure_count + 1
+  // Verify no corrupted span data
+  for span in all_spans {
+    let span_name = Span::name(span)
+    assert_true(span_name.length() > 0)
+    
+    let span_ctx = Span::span_context(span)
+    assert_true(SpanContext::is_valid(span_ctx))
+    
+    // Verify attributes are consistent
+    let thread_id_attr = Span::get_attribute(span, "thread.id")
+    match thread_id_attr {
+      Some(StringValue(_)) => assert_true(true)
+      None => assert_true(false)
+      _ => assert_true(false)
+    }
+  }
+}
+
+// Test 3: Concurrent Metric Collection Safety
+test "concurrent metric collection safety" {
+  let metric_collector = MetricCollector::new()
+  let thread_count = 12
+  let metrics_per_thread = 200
+  
+  // Create multiple threads that collect metrics concurrently
+  let threads = []
+  for thread_id in 0..=thread_count {
+    let thread = Thread::spawn(fn() {
+      // Create counter metric
+      let counter = MetricCollector::create_counter(
+        metric_collector, 
+        "concurrent_counter_" + thread_id.to_string(),
+        "Concurrent counter for thread " + thread_id.to_string()
+      )
+      
+      // Create histogram metric
+      let histogram = MetricCollector::create_histogram(
+        metric_collector,
+        "concurrent_histogram_" + thread_id.to_string(),
+        "Concurrent histogram for thread " + thread_id.to_string(),
+        "ms"
+      )
+      
+      for i in 0..=metrics_per_thread {
+        // Concurrent counter updates
+        Counter::add(counter, 1.0)
+        
+        // Concurrent histogram recordings
+        let value = (i % 100) as Float + thread_id as Float
+        Histogram::record(histogram, value)
+        
+        // Concurrent gauge updates
+        if i % 10 == 0 {
+          let gauge = MetricCollector::create_gauge(
+            metric_collector,
+            "concurrent_gauge_" + thread_id.to_string(),
+            "Concurrent gauge for thread " + thread_id.to_string()
+          )
+          Gauge::set(gauge, (i % 50) as Float)
+        }
+        
+        // Concurrent metric snapshots
+        if i % 20 == 0 {
+          let snapshot = MetricCollector::create_snapshot(metric_collector)
+          assert_true(snapshot.metrics.length() > 0)
+        }
+      }
+    })
+    threads = threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Verify metric integrity after concurrent operations
+  let final_snapshot = MetricCollector::create_snapshot(metric_collector)
+  
+  // Verify all expected metrics exist
+  assert_true(final_snapshot.metrics.length() >= thread_count * 2) // At least counters and histograms
+  
+  // Verify metric values are consistent
+  for metric in final_snapshot.metrics {
+    match metric {
+      CounterMetric(name, value) => {
+        assert_true(name.starts_with("concurrent_counter_"))
+        assert_true(value >= 0.0)
+        assert_eq(value, (metrics_per_thread + 1) as Float) // Each thread added metrics_per_thread + 1 times
+      }
+      HistogramMetric(name, buckets) => {
+        assert_true(name.starts_with("concurrent_histogram_"))
+        assert_true(buckets.length() > 0)
+        
+        // Verify bucket counts sum to total
+        let mut total_count = 0
+        for bucket in buckets {
+          total_count = total_count + bucket.count
+        }
+        assert_eq(total_count, metrics_per_thread + 1)
+      }
+      GaugeMetric(name, value) => {
+        assert_true(name.starts_with("concurrent_gauge_"))
+        assert_true(value >= 0.0)
+      }
+    }
+  }
+}
+
+// Test 4: Concurrent Log Record Processing
+test "concurrent log record processing" {
+  let log_processor = LogProcessor::new()
+  let thread_count = 6
+  let logs_per_thread = 150
+  
+  // Create multiple threads that process logs concurrently
+  let threads = []
+  for thread_id in 0..=thread_count {
+    let thread = Thread::spawn(fn() {
+      for i in 0..=logs_per_thread {
+        let severity = match i % 4 {
+          0 => Debug,
+          1 => Info,
+          2 => Warning,
+          _ => Error
+        }
+        
+        let message = "Concurrent log message from thread " + thread_id.to_string() + 
+                     " iteration " + i.to_string()
+        
+        let attributes = [
+          ("thread.id", thread_id.to_string()),
+          ("iteration", i.to_string()),
+          ("severity", severity.to_string())
+        ]
+        
+        let log_record = LogRecord::new_with_attributes(
+          severity,
+          message,
+          attributes,
+          Some(1234567890L + i as Long),
+          None,
+          Some("trace_" + thread_id.to_string()),
+          Some("span_" + i.to_string())
+        )
+        
+        // Concurrent log processing
+        LogProcessor::process(log_processor, log_record)
+        
+        // Concurrent log filtering
+        if i % 5 == 0 {
+          let filter = LogFilter::new()
+          LogFilter::add_criteria(filter, "thread.id", thread_id.to_string())
+          let filtered_logs = LogProcessor::filter_logs(log_processor, filter)
+          assert_true(filtered_logs.length() >= 0)
+        }
+        
+        // Concurrent log aggregation
+        if i % 10 == 0 {
+          let aggregator = LogAggregator::new()
+          LogAggregator::add_logs(aggregator, LogProcessor::get_recent_logs(log_processor, 100))
+          let summary = LogAggregator::summarize(aggregator)
+          assert_true(summary.total_logs >= 0)
+        }
+      }
+    })
+    threads = threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Verify log processing integrity after concurrent operations
+  let all_logs = LogProcessor::get_all_logs(log_processor)
+  assert_eq(all_logs.length(), (thread_count + 1) * (logs_per_thread + 1))
+  
+  // Verify no corrupted log data
+  for log in all_logs {
+    let severity = LogRecord::severity_number(log)
+    assert_true(severity >= Debug && severity <= Fatal)
+    
+    match LogRecord::body(log) {
+      Some(message) => assert_true(message.length() > 0)
+      None => assert_true(false)
+    }
+    
+    let thread_id = LogRecord::get_attribute(log, "thread.id")
+    match thread_id {
+      Some(StringValue(_)) => assert_true(true)
+      _ => assert_true(false)
     }
   }
   
-  let total_operations = num_threads * operations_per_thread
-  assert_eq(success_count + failure_count, total_operations)
+  // Verify log counts by severity
+  let severity_counts = LogProcessor::count_by_severity(log_processor)
+  assert_eq(severity_counts[Debug], (thread_count + 1) * ((logs_per_thread + 1) / 4 + 1))
+  assert_eq(severity_counts[Info], (thread_count + 1) * ((logs_per_thread + 1) / 4 + 1))
+  assert_eq(severity_counts[Warning], (thread_count + 1) * ((logs_per_thread + 1) / 4 + 1))
+  assert_eq(severity_counts[Error], (thread_count + 1) * ((logs_per_thread + 1) / 4))
+}
+
+// Test 5: Concurrent Context Propagation Safety
+test "concurrent context propagation safety" {
+  let context_propagator = ContextPropagator::new()
+  let thread_count = 8
+  let contexts_per_thread = 30
   
-  // Most operations should succeed, but some might fail due to pool exhaustion
-  assert_true(success_count > total_operations / 2, "Too many connection failures")
+  // Create multiple threads that propagate contexts concurrently
+  let threads = []
+  for thread_id in 0..=thread_count {
+    let thread = Thread::spawn(fn() {
+      for i in 0..=contexts_per_thread {
+        let trace_id = "trace_" + thread_id.to_string() + "_" + i.to_string()
+        let span_id = "span_" + thread_id.to_string() + "_" + i.to_string()
+        
+        let span_ctx = SpanContext::new(trace_id, span_id, true, "test_state")
+        let context = Context::with_span_context(Context::root(), span_ctx)
+        
+        // Concurrent context injection
+        let headers = []
+        let injected_headers = ContextPropagator::inject(context_propagator, context, headers)
+        
+        // Concurrent context extraction
+        let extracted_context = ContextPropagator::extract(context_propagator, injected_headers)
+        
+        // Verify context consistency
+        let extracted_span_ctx = Context::span_context(extracted_context)
+        assert_eq(SpanContext::trace_id(extracted_span_ctx), trace_id)
+        assert_eq(SpanContext::span_id(extracted_span_ctx), span_id)
+        
+        // Concurrent baggage operations
+        let baggage = Baggage::new()
+        let baggage_with_entries = Baggage::set_entry(baggage, "thread.id", thread_id.to_string())
+        let baggage_with_entries = Baggage::set_entry(baggage_with_entries, "iteration", i.to_string())
+        
+        let context_with_baggage = Context::with_baggage(context, baggage_with_entries)
+        
+        // Concurrent baggage propagation
+        let propagated_context = ContextPropagator::propagate(context_propagator, context_with_baggage)
+        
+        // Verify baggage consistency
+        let propagated_baggage = Context::baggage(propagated_context)
+        let thread_id_value = Baggage::get_entry(propagated_baggage, "thread.id")
+        match thread_id_value {
+          Some(value) => assert_eq(value, thread_id.to_string())
+          None => assert_true(false)
+        }
+      }
+    })
+    threads = threads.push(thread)
+  }
   
-  // Verify pool is in a consistent state
-  let pool_stats = ConnectionPool::get_stats(connection_pool)
-  assert_eq(ConnectionPoolStats::active_connections(pool_stats), 0)
-  assert_eq(ConnectionPoolStats::available_connections(pool_stats), 5)
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Verify no context corruption occurred
+  let propagation_stats = ContextPropagator::get_statistics(context_propagator)
+  assert_eq(propagation_stats.total_injections, (thread_count + 1) * (contexts_per_thread + 1))
+  assert_eq(propagation_stats.total_extractions, (thread_count + 1) * (contexts_per_thread + 1))
+  assert_eq(propagation_stats.failed_injections, 0)
+  assert_eq(propagation_stats.failed_extractions, 0)
+}
+
+// Test 6: Concurrent Resource Management Safety
+test "concurrent resource management safety" {
+  let resource_manager = ResourceManager::new()
+  let thread_count = 10
+  let operations_per_thread = 100
+  
+  // Create multiple threads that manage resources concurrently
+  let threads = []
+  for thread_id in 0..=thread_count {
+    let thread = Thread::spawn(fn() {
+      for i in 0..=operations_per_thread {
+        let resource_id = "resource_" + thread_id.to_string() + "_" + i.to_string()
+        
+        // Concurrent resource creation
+        let resource = Resource::new_with_id(resource_id)
+        ResourceManager::register_resource(resource_manager, resource)
+        
+        // Concurrent resource acquisition
+        let acquired_resource = ResourceManager::acquire_resource(resource_manager, resource_id)
+        match acquired_resource {
+          Some(res) => {
+            // Concurrent resource usage
+            Resource::mark_in_use(res)
+            
+            // Concurrent resource updates
+            Resource::update_attribute(res, "last_used_by", thread_id.to_string())
+            Resource::update_attribute(res, "usage_count", (i + 1).to_string())
+            
+            // Concurrent resource release
+            Resource::release(res)
+            ResourceManager::release_resource(resource_manager, resource_id)
+          }
+          None => {
+            // Resource might not be available due to concurrent access
+            // This is acceptable in concurrent scenarios
+          }
+        }
+        
+        // Concurrent resource cleanup
+        if i % 20 == 0 {
+          ResourceManager::cleanup_unused_resources(resource_manager)
+        }
+        
+        // Concurrent resource statistics
+        if i % 10 == 0 {
+          let stats = ResourceManager::get_statistics(resource_manager)
+          assert_true(stats.total_resources >= 0)
+          assert_true(stats.active_resources >= 0)
+          assert_true(stats.idle_resources >= 0)
+        }
+      }
+    })
+    threads = threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Verify resource management integrity after concurrent operations
+  let final_stats = ResourceManager::get_statistics(resource_manager)
+  
+  // Verify resource counts are consistent
+  assert_eq(final_stats.total_resources, final_stats.active_resources + final_stats.idle_resources)
+  
+  // Verify no resource leaks
+  assert_eq(final_stats.leaked_resources, 0)
+  
+  // Verify no corrupted resources
+  let all_resources = ResourceManager::get_all_resources(resource_manager)
+  for resource in all_resources {
+    let resource_id = Resource::id(resource)
+    assert_true(resource_id.length() > 0)
+    assert_false(Resource::is_corrupted(resource))
+  }
+}
+
+// Test 7: Concurrent Telemetry Pipeline Safety
+test "concurrent telemetry pipeline safety" {
+  let telemetry_pipeline = TelemetryPipeline::new()
+  let thread_count = 6
+  let data_points_per_thread = 80
+  
+  // Configure pipeline components
+  let collector = TelemetryPipeline::get_collector(telemetry_pipeline)
+  let processor = TelemetryPipeline::get_processor(telemetry_pipeline)
+  let exporter = TelemetryPipeline::get_exporter(telemetry_pipeline)
+  
+  // Create multiple threads that process telemetry data concurrently
+  let threads = []
+  for thread_id in 0..=thread_count {
+    let thread = Thread::spawn(fn() {
+      for i in 0..=data_points_per_thread {
+        // Create telemetry data
+        let span = Span::new(
+          "operation_" + thread_id.to_string() + "_" + i.to_string(),
+          Internal,
+          SpanContext::new("trace_" + thread_id.to_string(), "span_" + i.to_string(), true, "")
+        )
+        
+        // Concurrent span collection
+        TelemetryCollector::add_span(collector, span)
+        
+        // Concurrent metric collection
+        let counter = TelemetryCollector::create_counter(
+          collector,
+          "counter_" + thread_id.to_string(),
+          "Counter for thread " + thread_id.to_string()
+        )
+        Counter::add(counter, 1.0)
+        
+        // Concurrent log collection
+        let log_record = LogRecord::new(
+          Info,
+          "Log message from thread " + thread_id.to_string() + " iteration " + i.to_string(),
+          Some([
+            ("thread.id", thread_id.to_string()),
+            ("iteration", i.to_string())
+          ])
+        )
+        TelemetryCollector::add_log(collector, log_record)
+        
+        // Concurrent processing
+        if i % 5 == 0 {
+          TelemetryProcessor::process_span(processor, span)
+          TelemetryProcessor::process_metrics(processor, TelemetryCollector::get_metrics(collector))
+          TelemetryProcessor::process_logs(processor, TelemetryCollector::get_logs(collector))
+        }
+        
+        // Concurrent exporting
+        if i % 10 == 0 {
+          let telemetry_data = TelemetryCollector::get_all_data(collector)
+          TelemetryExporter::export_async(exporter, telemetry_data)
+        }
+      }
+    })
+    threads = threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Wait for all async operations to complete
+  TelemetryPipeline::wait_for_completion(telemetry_pipeline)
+  
+  // Verify pipeline integrity after concurrent operations
+  let pipeline_stats = TelemetryPipeline::get_statistics(telemetry_pipeline)
+  
+  // Verify all data was processed
+  assert_eq(pipeline_stats.spans_collected, (thread_count + 1) * (data_points_per_thread + 1))
+  assert_eq(pipeline_stats.metrics_collected, (thread_count + 1) * (data_points_per_thread + 1))
+  assert_eq(pipeline_stats.logs_collected, (thread_count + 1) * (data_points_per_thread + 1))
+  
+  // Verify processing consistency
+  assert_eq(pipeline_stats.spans_processed, pipeline_stats.spans_collected)
+  assert_eq(pipeline_stats.metrics_processed, pipeline_stats.metrics_collected)
+  assert_eq(pipeline_stats.logs_processed, pipeline_stats.logs_collected)
+  
+  // Verify no data corruption
+  assert_eq(pipeline_stats.corrupted_spans, 0)
+  assert_eq(pipeline_stats.corrupted_metrics, 0)
+  assert_eq(pipeline_stats.corrupted_logs, 0)
+  
+  // Verify export consistency
+  assert_true(pipeline_stats.exports_completed > 0)
+  assert_eq(pipeline_stats.export_failures, 0)
+}
+
+// Test 8: Concurrent Configuration Management Safety
+test "concurrent configuration management safety" {
+  let config_manager = ConfigManager::new()
+  let thread_count = 8
+  let operations_per_thread = 50
+  
+  // Create multiple threads that manage configuration concurrently
+  let threads = []
+  for thread_id in 0..=thread_count {
+    let thread = Thread::spawn(fn() {
+      for i in 0..=operations_per_thread {
+        let key = "config.thread_" + thread_id.to_string() + "." + i.to_string()
+        let value = "value.thread_" + thread_id.to_string() + "." + i.to_string()
+        
+        // Concurrent configuration updates
+        ConfigManager::set(config_manager, key, value)
+        
+        // Concurrent configuration reads
+        let retrieved_value = ConfigManager::get(config_manager, key)
+        match retrieved_value {
+          Some(retrieved) => {
+            // Verify value consistency
+            assert_eq(retrieved, value)
+          }
+          None => {
+            // Configuration might not be set yet due to race condition
+            // This is acceptable in concurrent scenarios
+          }
+        }
+        
+        // Concurrent configuration validation
+        if i % 5 == 0 {
+          let validation_result = ConfigManager::validate(config_manager)
+          assert_true(validation_result.is_valid)
+        }
+        
+        // Concurrent configuration snapshots
+        if i % 10 == 0 {
+          let snapshot = ConfigManager::create_snapshot(config_manager)
+          assert_true(snapshot.configurations.length() > 0)
+        }
+        
+        // Concurrent configuration reload
+        if i % 20 == 0 {
+          ConfigManager::reload(config_manager)
+        }
+      }
+    })
+    threads = threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Verify configuration integrity after concurrent operations
+  let all_configs = ConfigManager::get_all(config_manager)
+  
+  // Verify all expected configurations exist
+  assert_eq(all_configs.length(), (thread_count + 1) * (operations_per_thread + 1))
+  
+  // Verify no corrupted configuration data
+  for (key, value) in all_configs {
+    assert_true(key.length() > 0)
+    assert_true(value.length() > 0)
+    
+    // Verify key format consistency
+    assert_true(key.starts_with("config.thread_"))
+    assert_true(key.contains("."))
+    
+    // Verify value format consistency
+    assert_true(value.starts_with("value.thread_"))
+    assert_true(value.contains("."))
+  }
+  
+  // Verify configuration statistics
+  let config_stats = ConfigManager::get_statistics(config_manager)
+  assert_eq(config_stats.total_configurations, (thread_count + 1) * (operations_per_thread + 1))
+  assert_eq(config_stats.read_operations, (thread_count + 1) * (operations_per_thread + 1))
+  assert_eq(config_stats.write_operations, (thread_count + 1) * (operations_per_thread + 1))
+  assert_eq(config_stats.validation_operations, (thread_count + 1) * ((operations_per_thread + 1) / 5 + 1))
+}
+
+// Test 9: Concurrent Memory Management Safety
+test "concurrent memory management safety" {
+  let memory_manager = MemoryManager::new()
+  let thread_count = 12
+  let allocations_per_thread = 200
+  
+  // Create multiple threads that manage memory concurrently
+  let threads = []
+  for thread_id in 0..=thread_count {
+    let thread = Thread::spawn(fn() {
+      for i in 0..=allocations_per_thread {
+        let allocation_id = "alloc_" + thread_id.to_string() + "_" + i.to_string()
+        let allocation_size = 1024 * (i % 10 + 1) // 1KB to 10KB
+        
+        // Concurrent memory allocation
+        let allocation = MemoryManager::allocate(memory_manager, allocation_id, allocation_size)
+        match allocation {
+          Some(alloc) => {
+            // Concurrent memory usage
+            MemoryManager::mark_in_use(memory_manager, alloc)
+            
+            // Concurrent memory operations
+            let data = "test data from thread " + thread_id.to_string() + " iteration " + i.to_string()
+            MemoryManager::write_data(memory_manager, alloc, data)
+            
+            let read_data = MemoryManager::read_data(memory_manager, alloc)
+            assert_eq(read_data, data)
+            
+            // Concurrent memory deallocation
+            MemoryManager::deallocate(memory_manager, alloc)
+          }
+          None => {
+            // Allocation might fail due to memory pressure
+            // This is acceptable in concurrent scenarios
+          }
+        }
+        
+        // Concurrent memory cleanup
+        if i % 25 == 0 {
+          MemoryManager::cleanup_leaks(memory_manager)
+        }
+        
+        // Concurrent memory statistics
+        if i % 15 == 0 {
+          let stats = MemoryManager::get_statistics(memory_manager)
+          assert_true(stats.total_allocations >= 0)
+          assert_true(stats.active_allocations >= 0)
+          assert_true(stats.memory_usage_bytes >= 0)
+        }
+        
+        // Concurrent garbage collection
+        if i % 50 == 0 {
+          MemoryManager::force_gc(memory_manager)
+        }
+      }
+    })
+    threads = threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Final cleanup
+  MemoryManager::cleanup_leaks(memory_manager)
+  MemoryManager::force_gc(memory_manager)
+  
+  // Verify memory management integrity after concurrent operations
+  let final_stats = MemoryManager::get_statistics(memory_manager)
+  
+  // Verify no memory leaks
+  assert_eq(final_stats.leaked_allocations, 0)
+  
+  // Verify allocation consistency
+  assert_eq(final_stats.total_allocations, final_stats.deallocated_allocations + final_stats.active_allocations)
+  
+  // Verify no corrupted memory
+  assert_eq(final_stats.corrupted_allocations, 0)
+  
+  // Verify memory usage is reasonable
+  assert_true(final_stats.memory_usage_bytes < 100 * 1024 * 1024) // Less than 100MB
+}
+
+// Test 10: Concurrent Thread Pool Safety
+test "concurrent thread pool safety" {
+  let thread_pool = ThreadPool::new(4) // 4 worker threads
+  let task_count = 100
+  
+  // Create shared data structures for concurrent access
+  let shared_counter = AtomicCounter::new(0)
+  let shared_results = ConcurrentList::new()
+  let shared_map = ConcurrentHashMap::new()
+  
+  // Submit multiple tasks to thread pool
+  let task_futures = []
+  for i in 0..=task_count {
+    let task_future = ThreadPool::submit(thread_pool, fn() {
+      // Concurrent counter increment
+      AtomicCounter::increment(shared_counter)
+      
+      // Concurrent result addition
+      let result = "task_" + i.to_string() + "_result"
+      ConcurrentList::add(shared_results, result)
+      
+      // Concurrent map operations
+      let key = "key_" + i.to_string()
+      let value = "value_" + i.to_string()
+      ConcurrentHashMap::put(shared_map, key, value)
+      
+      // Simulate some work
+      Thread::sleep(10) // 10ms
+      
+      // Concurrent map lookup
+      let retrieved_value = ConcurrentHashMap::get(shared_map, key)
+      match retrieved_value {
+        Some(retrieved) => assert_eq(retrieved, value)
+        None => assert_true(false)
+      }
+      
+      return i * 2
+    })
+    task_futures = task_futures.push(task_future)
+  }
+  
+  // Wait for all tasks to complete
+  let mut task_results = []
+  for future in task_futures {
+    let result = ThreadPool::get_result(future)
+    task_results = task_results.push(result)
+  }
+  
+  // Verify thread pool integrity after concurrent operations
+  let pool_stats = ThreadPool::get_statistics(thread_pool)
+  
+  // Verify all tasks were executed
+  assert_eq(pool_stats.tasks_submitted, task_count + 1)
+  assert_eq(pool_stats.tasks_completed, task_count + 1)
+  assert_eq(pool_stats.tasks_failed, 0)
+  
+  // Verify shared data consistency
+  assert_eq(AtomicCounter::get_value(shared_counter), task_count + 1)
+  assert_eq(shared_results.length(), task_count + 1)
+  assert_eq(shared_map.size(), task_count + 1)
+  
+  // Verify task results consistency
+  assert_eq(task_results.length(), task_count + 1)
+  for i in 0..=task_count {
+    assert_eq(task_results[i], i * 2)
+  }
+  
+  // Verify no thread corruption
+  assert_eq(pool_stats.corrupted_threads, 0)
+  
+  // Verify thread pool is still functional
+  let final_task = ThreadPool::submit(thread_pool, fn() {
+    return "final_task_result"
+  })
+  let final_result = ThreadPool::get_result(final_task)
+  assert_eq(final_result, "final_task_result")
+  
+  // Shutdown thread pool
+  ThreadPool::shutdown(thread_pool)
+  assert_true(ThreadPool::is_shutdown(thread_pool))
 }
