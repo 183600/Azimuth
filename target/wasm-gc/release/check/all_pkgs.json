@@ -122,6 +122,11 @@
     },
     {
       "root": "azimuth/telemetry",
+      "rel": "temp_test",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/temp_test/temp_test.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
       "rel": "tests/azimuth/telemetry",
       "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/tests/azimuth/telemetry/telemetry.mi"
     },

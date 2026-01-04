@@ -420,6 +420,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_security_enhanced_tests.mbt": {
   },
+  "azimuth_security_encryption_tests.mbt": {
+  },
   "azimuth_security_comprehensive_tests.mbt": {
   },
   "azimuth_security_authentication_tests.mbt": {
@@ -453,6 +455,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_resource_management_optimization_tests.mbt": {
   },
   "azimuth_resource_management_focused_tests.mbt": {
+  },
+  "azimuth_resource_management_efficiency_tests.mbt": {
   },
   "azimuth_resource_management_comprehensive_tests.mbt": {
   },

@@ -14808,6 +14808,35 @@
     {
       "is-main": false,
       "is-third-party": false,
+      "root-path": "/home/runner/work/Azimuth/Azimuth/temp_test",
+      "root": "azimuth/telemetry",
+      "rel": "temp_test",
+      "files": {
+        "/home/runner/work/Azimuth/Azimuth/temp_test/azimuth_new_telemetry_feature_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        }
+      },
+      "wbtest-files": {},
+      "test-files": {},
+      "mbt-md-files": {},
+      "deps": [],
+      "wbtest-deps": [],
+      "test-deps": [],
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/temp_test/temp_test.mi"
+    },
+    {
+      "is-main": false,
+      "is-third-party": false,
       "root-path": "/home/runner/work/Azimuth/Azimuth/tests/azimuth/telemetry",
       "root": "azimuth/telemetry",
       "rel": "tests/azimuth/telemetry",
