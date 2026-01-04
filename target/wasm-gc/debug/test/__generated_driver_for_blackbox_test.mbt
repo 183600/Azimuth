@@ -334,6 +334,18 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_simple_new_tests.mbt": {
   },
+  "azimuth_simple_new_test.mbt": {
+    0: (__test_617a696d7574685f73696d706c655f6e65775f746573742e6d6274_0, ["telemetry data validation"]),
+    1: (__test_617a696d7574685f73696d706c655f6e65775f746573742e6d6274_1, ["telemetry metrics aggregation"]),
+    2: (__test_617a696d7574685f73696d706c655f6e65775f746573742e6d6274_2, ["telemetry context propagation"]),
+    3: (__test_617a696d7574685f73696d706c655f6e65775f746573742e6d6274_3, ["telemetry error handling"]),
+    4: (__test_617a696d7574685f73696d706c655f6e65775f746573742e6d6274_4, ["telemetry sampling strategy"]),
+    5: (__test_617a696d7574685f73696d706c655f6e65775f746573742e6d6274_5, ["telemetry performance metrics"]),
+    6: (__test_617a696d7574685f73696d706c655f6e65775f746573742e6d6274_6, ["telemetry data serialization"]),
+    7: (__test_617a696d7574685f73696d706c655f6e65775f746573742e6d6274_7, ["telemetry resource management"]),
+    8: (__test_617a696d7574685f73696d706c655f6e65775f746573742e6d6274_8, ["telemetry alert conditions"]),
+    9: (__test_617a696d7574685f73696d706c655f6e65775f746573742e6d6274_9, ["telemetry data retention"]),
+  },
   "azimuth_simple_moonbit_tests.mbt": {
   },
   "azimuth_simple_moonbit_feature_tests.mbt": {

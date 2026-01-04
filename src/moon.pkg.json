@@ -127,5 +127,6 @@
         "../azimuth_enhanced_telemetry_system_tests.mbt",
         "../azimuth_enhanced_quality_test_suite.mbt",
         "../azimuth_additional_high_quality_integration_tests.mbt",
-        "../azimuth_simple_new_test.mbt"]  }
+        "../azimuth_simple_new_test.mbt",
+        "../azimuth_enhanced_moonbit_test_suite.mbt"]  }
 }
