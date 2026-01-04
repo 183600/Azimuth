@@ -1,1000 +1,952 @@
-// 遥测数据安全与隐私保护测试 - Telemetry Data Security and Privacy Protection Tests
-// 专注于遥测数据的安全处理、加密和隐私保护机制
+// Azimuth 遥测数据安全与隐私保护测试用例
+// 专注于数据加密、隐私保护、访问控制等安全功能
 
-test "遥测数据敏感信息识别与脱敏测试" {
-  // 测试遥测数据中敏感信息的识别和脱敏处理
-  let sensitive_patterns = [
-    ("email", "\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"),
-    ("phone", "\b\d{3}-\d{3}-\d{4}\b"),
-    ("credit_card", "\b\d{4}[ -]?\d{4}[ -]?\d{4}[ -]?\d{4}\b"),
-    ("ssn", "\b\d{3}-\d{2}-\d{4}\b"),
-    ("api_key", "\b[A-Za-z0-9]{32,}\b"),
-    ("password", "(?i)password[\s]*[:=][\s]*[^\s]+"),
-    ("token", "(?i)(token|bearer)[\s]*[:=][\s]*[^\s]+")
-  ]
+// 测试1: 遥测数据加密与解密
+test "遥测数据加密与解密功能" {
+  // 定义加密算法类型
+  enum EncryptionAlgorithm {
+    AES256
+    ChaCha20
+    RSA
+  }
   
-  let telemetry_data_with_sensitive_info = [
-    {
-      "trace_id": "security_test_trace_001",
-      "service": "user-service",
-      "operation": "user_registration",
-      "attributes": [
-        ("user.email", StringValue("john.doe@example.com")),
-        ("user.phone", StringValue("123-456-7890")),
-        ("user.address", StringValue("123 Main St, New York, NY")),
-        ("user.ssn", StringValue("123-45-6789")),
-        ("payment.card", StringValue("4111-1111-1111-1111")),
-        ("api.key", StringValue("abcd1234567890abcd1234567890abcd")),
-        ("auth.token", StringValue("Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"))
-      ]
-    },
-    {
-      "trace_id": "security_test_trace_002",
-      "service": "payment-service",
-      "operation": "process_payment",
-      "attributes": [
-        ("payment.account", StringValue("acc_1234567890")),
-        ("payment.amount", FloatValue(99.99)),
-        ("payment.currency", StringValue("USD")),
-        ("user.email", StringValue("jane.smith@company.org")),
-        ("merchant.id", StringValue("merchant_001")),
-        ("transaction.id", StringValue("txn_abc123def456"))
-      ]
-    },
-    {
-      "trace_id": "security_test_trace_003",
-      "service": "auth-service",
-      "operation": "user_login",
-      "attributes": [
-        ("login.username", StringValue("user123")),
-        ("login.password", StringValue("password123")),
-        ("login.ip", StringValue("192.168.1.100")),
-        ("user.agent", StringValue("Mozilla/5.0 (Windows NT 10.0; Win64; x64)")),
-        ("session.id", StringValue("sess_abcdef123456"))
-      ]
+  // 定义加密配置
+  type EncryptionConfig {
+    algorithm: EncryptionAlgorithm
+    key_id: String
+    iv_length: Int
+    include_timestamp: Bool
+  }
+  
+  // 定义敏感数据类型
+  enum SensitiveDataType {
+    PersonalInformation
+    FinancialData
+    HealthInformation
+    SecurityCredentials
+  }
+  
+  // 模拟加密函数
+  let encrypt_data = fn(data: String, config: EncryptionConfig) -> String {
+    // 简化的加密模拟
+    let algorithm_prefix = match config.algorithm {
+      EncryptionAlgorithm::AES256 => "AES256:"
+      EncryptionAlgorithm::ChaCha20 => "CC20:"
+      EncryptionAlgorithm::RSA => "RSA:"
     }
-  ]
-  
-  // 敏感信息脱敏处理
-  let sanitized_data = []
-  
-  for data in telemetry_data_with_sensitive_info {
-    let sanitized_attributes = []
     
-    for attr in data["attributes"] {
-      let key = attr.0
-      let value = attr.1
-      let is_sensitive = false
-      let sanitized_value = value
+    let timestamp_suffix = if config.include_timestamp {
+      ":ts:" + (1640995200).to_string()
+    } else {
+      ""
+    }
+    
+    // 模拟加密过程：反转字符串并添加前缀
+    let reversed = data.to_char_array().reverse().join("")
+    algorithm_prefix + reversed + timestamp_suffix
+  }
+  
+  // 模拟解密函数
+  let decrypt_data = fn(encrypted_data: String, config: EncryptionConfig) -> String {
+    // 简化的解密模拟
+    let algorithm_prefix = match config.algorithm {
+      EncryptionAlgorithm::AES256 => "AES256:"
+      EncryptionAlgorithm::ChaCha20 => "CC20:"
+      EncryptionAlgorithm::RSA => "RSA:"
+    }
+    
+    // 移除前缀
+    let without_prefix = if encrypted_data.starts_with(algorithm_prefix) {
+      encrypted_data.substring(algorithm_prefix.length(), encrypted_data.length() - algorithm_prefix.length())
+    } else {
+      encrypted_data
+    }
+    
+    // 移除时间戳（如果存在）
+    let without_timestamp = if config.include_timestamp {
+      let ts_index = without_timestamp.find(":ts:")
+      match ts_index {
+        Some(index) => without_timestamp.substring(0, index),
+        None => without_timestamp
+      }
+    } else {
+      without_timestamp
+    }
+    
+    // 模拟解密过程：再次反转字符串
+    without_timestamp.to_char_array().reverse().join("")
+  }
+  
+  // 创建测试配置
+  let aes_config = {
+    algorithm: EncryptionAlgorithm::AES256,
+    key_id: "key-001",
+    iv_length: 16,
+    include_timestamp: true
+  }
+  
+  let chacha_config = {
+    algorithm: EncryptionAlgorithm::ChaCha20,
+    key_id: "key-002",
+    iv_length: 12,
+    include_timestamp: false
+  }
+  
+  // 测试基本加密解密
+  let sensitive_data = "user_id=12345,email=user@example.com"
+  
+  let encrypted_aes = encrypt_data(sensitive_data, aes_config)
+  assert_true(encrypted_aes.starts_with("AES256:"))
+  assert_true(encrypted_aes.contains(":ts:"))
+  
+  let decrypted_aes = decrypt_data(encrypted_aes, aes_config)
+  assert_eq(decrypted_aes, sensitive_data)
+  
+  // 测试不同算法的加密
+  let encrypted_chacha = encrypt_data(sensitive_data, chacha_config)
+  assert_true(encrypted_chacha.starts_with("CC20:"))
+  assert_false(encrypted_chacha.contains(":ts:"))
+  
+  let decrypted_chacha = decrypt_data(encrypted_chacha, chacha_config)
+  assert_eq(decrypted_chacha, sensitive_data)
+  
+  // 测试错误处理
+  let invalid_encrypted = "INVALID:algorithms"
+  let decrypted_invalid = decrypt_data(invalid_encrypted, aes_config)
+  assert_not_eq(decrypted_invalid, sensitive_data)
+}
+
+// 测试2: 敏感数据检测与脱敏
+test "敏感数据检测与脱敏处理" {
+  // 定义脱敏策略
+  enum MaskingStrategy {
+    FullRedaction  // 完全删除
+    PartialMask    // 部分遮蔽
+    Tokenization   // 令牌化
+    Hashing        // 哈希处理
+  }
+  
+  // 定义脱敏规则
+  type MaskingRule {
+    data_type: SensitiveDataType
+    field_pattern: String
+    strategy: MaskingStrategy
+    preserve_length: Bool
+    prefix_length: Int
+    suffix_length: Int
+  }
+  
+  // 定义脱敏配置
+  type MaskingConfig {
+    rules: Array[MaskingRule]
+    default_strategy: MaskingStrategy
+  }
+  
+  // 模拟正则表达式匹配
+  let pattern_matches = fn(text: String, pattern: String) -> Bool {
+    // 简化的模式匹配
+    match pattern {
+      "email" => text.contains("@") && text.contains("."),
+      "phone" => text.length() >= 10 && text.chars().all(fn(c) { c.is_digit() || c == '-' || c == '+' || c == '(' || c == ')' }),
+      "credit_card" => text.length() >= 13 && text.length() <= 19 && text.chars().all(fn(c) { c.is_digit() || c == ' ' || c == '-' }),
+      "ssn" => text.length() == 11 && text[3] == '-' && text[6] == '-',
+      "api_key" => text.starts_with("sk-") || text.starts_with("api_"),
+      _ => false
+    }
+  }
+  
+  // 应用脱敏策略
+  let apply_masking = fn(value: String, strategy: MaskingStrategy, preserve_length: Bool, prefix_len: Int, suffix_len: Int) -> String {
+    match strategy {
+      MaskingStrategy::FullRedaction => "***",
+      MaskingStrategy::PartialMask => {
+        if preserve_length && value.length() > (prefix_len + suffix_len) {
+          let prefix = value.substring(0, prefix_len)
+          let suffix = value.substring(value.length() - suffix_len, suffix_len)
+          let mask_length = value.length() - prefix_len - suffix_len
+          prefix + "*".repeat(mask_length) + suffix
+        } else {
+          "***"
+        }
+      },
+      MaskingStrategy::Tokenization => "TOKEN-" + (value.length() % 1000).to_string(),
+      MaskingStrategy::Hashing => "HASH-" + (value.length() * 31).to_string()
+    }
+  }
+  
+  // 检测并脱敏数据
+  let detect_and_mask = fn(data: Map[String, String], config: MaskingConfig) -> Map[String, String] {
+    let mut result = Map::empty()
+    
+    for (key, value) in data.to_array() {
+      let mut masked_value = value
+      let mut should_mask = false
       
-      // 检查属性名是否包含敏感关键词
-      let sensitive_keywords = ["email", "phone", "card", "ssn", "password", "token", "key", "secret"]
-      for keyword in sensitive_keywords {
-        if key.contains(keyword) {
-          is_sensitive = true
+      // 检查是否匹配任何脱敏规则
+      for rule in config.rules {
+        if pattern_matches(key, rule.field_pattern) || pattern_matches(value, rule.field_pattern) {
+          masked_value = apply_masking(value, rule.strategy, rule.preserve_length, rule.prefix_length, rule.suffix_length)
+          should_mask = true
           break
         }
       }
       
-      // 检查属性值是否匹配敏感模式
-      if !is_sensitive {
-        match value {
-          StringValue(str) => {
-            for pattern in sensitive_patterns {
-              let pattern_name = pattern.0
-              let pattern_regex = pattern.1
-              // 简化实现：检查字符串是否包含敏感模式的关键词
-              if pattern_name == "email" && str.contains("@") {
-                is_sensitive = true
-                break
-              } else if pattern_name == "phone" && str.contains("-") && str.length() >= 10 {
-                is_sensitive = true
-                break
-              } else if pattern_name == "credit_card" && str.length() >= 16 {
-                is_sensitive = true
-                break
-              } else if pattern_name == "password" && str.contains("password") {
-                is_sensitive = true
-                break
-              }
-            }
+      // 如果没有匹配规则但值包含敏感信息，应用默认策略
+      if not(should_mask) {
+        let sensitive_patterns = ["email", "phone", "credit_card", "ssn", "api_key"]
+        for pattern in sensitive_patterns {
+          if pattern_matches(value, pattern) {
+            masked_value = apply_masking(value, config.default_strategy, true, 2, 2)
+            break
           }
-          _ => ()
         }
       }
       
-      // 应用脱敏策略
-      if is_sensitive {
-        match value {
-          StringValue(str) => {
-            if key.contains("email") {
-              // 邮箱脱敏：保留第一个字符和域名
-              let parts = str.split("@")
-              if parts.length() == 2 {
-                let username = parts[0]
-                let domain = parts[1]
-                let sanitized_username = username.slice(0, 1) + "***" + username.slice(username.length() - 1, username.length())
-                sanitized_value = StringValue(sanitized_username + "@" + domain)
-              } else {
-                sanitized_value = StringValue("***@***.***")
-              }
-            } else if key.contains("phone") {
-              // 电话脱敏：保留前3位和后4位
-              sanitized_value = StringValue(str.slice(0, 3) + "-***-" + str.slice(str.length() - 4, str.length()))
-            } else if key.contains("card") {
-              // 信用卡脱敏：只显示后4位
-              sanitized_value = StringValue("****-****-****-" + str.slice(str.length() - 4, str.length()))
-            } else if key.contains("password") || key.contains("token") || key.contains("key") {
-              // 密码、令牌和密钥完全脱敏
-              sanitized_value = StringValue("***")
-            } else {
-              // 其他敏感信息部分脱敏
-              sanitized_value = StringValue("***")
-            }
-          }
-          _ => sanitized_value = value // 非字符串值保持不变
-        }
-      }
-      
-      sanitized_attributes.push((key, sanitized_value))
+      result = Map::insert(result, key, masked_value)
     }
     
-    let sanitized_entry = {
-      "trace_id": data["trace_id"],
-      "service": data["service"],
-      "operation": data["operation"],
-      "attributes": sanitized_attributes
-    }
-    sanitized_data.push(sanitized_entry)
+    result
   }
+  
+  // 创建测试数据
+  let telemetry_data = Map::from([
+    ("user.email", "john.doe@example.com"),
+    ("user.phone", "+1-555-123-4567"),
+    ("payment.card", "4532-1234-5678-9012"),
+    ("user.ssn", "123-45-6789"),
+    ("api.key", "sk_live_1234567890abcdef"),
+    ("operation.name", "user.login"),
+    ("response.time", "250"),
+    ("server.name", "api-server-01")
+  ])
+  
+  // 创建脱敏规则
+  let masking_rules = [
+    {
+      data_type: SensitiveDataType::PersonalInformation,
+      field_pattern: "email",
+      strategy: MaskingStrategy::PartialMask,
+      preserve_length: true,
+      prefix_length: 2,
+      suffix_length: 8
+    },
+    {
+      data_type: SensitiveDataType::PersonalInformation,
+      field_pattern: "phone",
+      strategy: MaskingStrategy::PartialMask,
+      preserve_length: true,
+      prefix_length: 3,
+      suffix_length: 4
+    },
+    {
+      data_type: SensitiveDataType::FinancialData,
+      field_pattern: "credit_card",
+      strategy: MaskingStrategy::PartialMask,
+      preserve_length: true,
+      prefix_length: 4,
+      suffix_length: 4
+    },
+    {
+      data_type: SensitiveDataType::PersonalInformation,
+      field_pattern: "ssn",
+      strategy: MaskingStrategy::FullRedaction,
+      preserve_length: false,
+      prefix_length: 0,
+      suffix_length: 0
+    },
+    {
+      data_type: SensitiveDataType::SecurityCredentials,
+      field_pattern: "api_key",
+      strategy: MaskingStrategy::Tokenization,
+      preserve_length: false,
+      prefix_length: 0,
+      suffix_length: 0
+    }
+  ]
+  
+  let masking_config = {
+    rules: masking_rules,
+    default_strategy: MaskingStrategy::PartialMask
+  }
+  
+  // 应用脱敏
+  let masked_data = detect_and_mask(telemetry_data, masking_config)
   
   // 验证脱敏结果
-  assert_eq(sanitized_data.length(), 3)
-  
-  // 验证第一个数据的脱敏
-  let first_data = sanitized_data[0]
-  let first_attrs = first_data["attributes"]
-  
-  // 验证邮箱脱敏
-  let email_attr = first_attrs.find(fn(attr) { attr.0 == "user.email" })
-  match email_attr {
-    Some((_, StringValue(email))) => {
-      assert_true(email.contains("j***e@example.com"))
-      assert_false(email.contains("john.doe"))
-    }
-    _ => assert_true(false)
+  match Map::get(masked_data, "user.email") {
+    Some(value) => {
+      assert_eq(value.length(), "john.doe@example.com".length())
+      assert_true(value.starts_with("jo"))
+      assert_true(value.ends_with("example.com"))
+      assert_true(value.contains("*"))
+    },
+    None => assert_true(false)
   }
   
-  // 验证电话脱敏
-  let phone_attr = first_attrs.find(fn(attr) { attr.0 == "user.phone" })
-  match phone_attr {
-    Some((_, StringValue(phone))) => {
-      assert_true(phone.contains("123-***-7890"))
-      assert_false(phone.contains("456"))
-    }
-    _ => assert_true(false)
+  match Map::get(masked_data, "user.ssn") {
+    Some(value) => assert_eq(value, "***"),
+    None => assert_true(false)
   }
   
-  // 验证信用卡脱敏
-  let card_attr = first_attrs.find(fn(attr) { attr.0 == "payment.card" })
-  match card_attr {
-    Some((_, StringValue(card))) => {
-      assert_true(card.contains("****-****-****-1111"))
-      assert_false(card.contains("4111"))
-    }
-    _ => assert_true(false)
+  match Map::get(masked_data, "api.key") {
+    Some(value) => assert_true(value.starts_with("TOKEN-")),
+    None => assert_true(false)
   }
   
-  // 验证密码脱敏
-  let password_attr = first_attrs.find(fn(attr) { attr.0 == "login.password" })
-  match password_attr {
-    Some((_, StringValue(password))) => {
-      assert_eq(password, "***")
-      assert_false(password.contains("password123"))
-    }
-    _ => assert_true(false)
+  // 验证非敏感数据未被修改
+  match Map::get(masked_data, "operation.name") {
+    Some(value) => assert_eq(value, "user.login"),
+    None => assert_true(false)
   }
   
-  // 验证非敏感信息保持不变
-  let address_attr = first_attrs.find(fn(attr) { attr.0 == "user.address" })
-  match address_attr {
-    Some((_, StringValue(address))) => {
-      assert_eq(address, "123 Main St, New York, NY")
-    }
-    _ => assert_true(false)
+  match Map::get(masked_data, "server.name") {
+    Some(value) => assert_eq(value, "api-server-01"),
+    None => assert_true(false)
   }
 }
 
-test "遥测数据加密与解密测试" {
-  // 测试遥测数据的加密和解密过程
-  let encryption_algorithm = "AES-256-GCM"
-  let key_id = "key_v1"
-  let telemetry_data = [
+// 测试3: 遥测数据访问控制
+test "遥测数据访问控制与权限验证" {
+  // 定义权限级别
+  enum PermissionLevel {
+    None
+    Read
+    Write
+    Admin
+  }
+  
+  // 定义用户角色
+  enum UserRole {
+    Viewer
+    Analyst
+    Engineer
+    Manager
+    Admin
+  }
+  
+  // 定义用户
+  type User = {
+    id: String
+    username: String
+    role: UserRole
+    team: String
+    permissions: Array[String]
+  }
+  
+  // 定义资源
+  type Resource = {
+    id: String
+    name: String
+    type: String
+    sensitivity: String
+    owner: String
+    tags: Array[String]
+  }
+  
+  // 定义访问策略
+  type AccessPolicy = {
+    name: String
+    role: UserRole
+    resource_type: String
+    required_permission: PermissionLevel
+    conditions: Array[String]
+  }
+  
+  // 检查用户权限
+  let check_permission = fn(user: User, resource: Resource, required_level: PermissionLevel, policies: Array[AccessPolicy]) -> Bool {
+    // 查找适用的策略
+    let applicable_policies = policies.filter(fn(policy) {
+      policy.role == user.role && policy.resource_type == resource.type
+    })
+    
+    if applicable_policies.length() == 0 {
+      return false
+    }
+    
+    // 检查条件
+    for policy in applicable_policies {
+      let mut conditions_met = true
+      
+      for condition in policy.conditions {
+        match condition {
+          "same_team" => {
+            if user.team != resource.owner {
+              conditions_met = false
+            }
+          },
+          "not_sensitive" => {
+            if resource.sensitivity == "high" {
+              conditions_met = false
+            }
+          },
+          "owner_only" => {
+            if user.id != resource.owner {
+              conditions_met = false
+            }
+          },
+          _ => {}
+        }
+      }
+      
+      if conditions_met {
+        return true
+      }
+    }
+    
+    false
+  }
+  
+  // 检查字段级别权限
+  let check_field_access = fn(user: User, field_name: String, field_sensitivity: String) -> Bool {
+    match user.role {
+      UserRole::Admin => true,
+      UserRole::Manager => field_sensitivity != "restricted",
+      UserRole::Engineer => field_sensitivity == "public" || field_sensitivity == "internal",
+      UserRole::Analyst => field_sensitivity == "public",
+      UserRole::Viewer => field_sensitivity == "public"
+    }
+  }
+  
+  // 过滤可访问的字段
+  let filter_accessible_fields = fn(user: User, data: Map[String, String], field_sensitivities: Map[String, String]) -> Map[String, String] {
+    let mut result = Map::empty()
+    
+    for (field, value) in data.to_array() {
+      let sensitivity = match Map::get(field_sensitivities, field) {
+        Some(s) => s,
+        None => "public"
+      }
+      
+      if check_field_access(user, field, sensitivity) {
+        result = Map::insert(result, field, value)
+      }
+    }
+    
+    result
+  }
+  
+  // 创建测试用户
+  let users = [
     {
-      "trace_id": "encryption_test_trace_001",
-      "service": "secure-service",
-      "operation": "secure_operation",
-      "attributes": [
-        ("user.id", StringValue("user_12345")),
-        ("transaction.id", StringValue("txn_abcdef123456")),
-        ("amount", FloatValue(123.45)),
-        ("currency", StringValue("USD")),
-        ("timestamp", IntValue(1640995200)),
-        ("metadata", StringValue("sensitive_metadata"))
-      ]
+      id: "user-001",
+      username: "admin",
+      role: UserRole::Admin,
+      team: "platform",
+      permissions: ["read", "write", "delete", "admin"]
     },
     {
-      "trace_id": "encryption_test_trace_002",
-      "service": "payment-service",
-      "operation": "process_payment",
-      "attributes": [
-        ("payment.method", StringValue("credit_card")),
-        ("card.last4", StringValue("1234")),
-        ("merchant.id", StringValue("merchant_001")),
-        ("approval.code", StringValue("APPROVED"))
-      ]
+      id: "user-002",
+      username: "manager",
+      role: UserRole::Manager,
+      team: "observability",
+      permissions: ["read", "write", "manage"]
+    },
+    {
+      id: "user-003",
+      username: "engineer",
+      role: UserRole::Engineer,
+      team: "backend",
+      permissions: ["read", "write"]
+    },
+    {
+      id: "user-004",
+      username: "analyst",
+      role: UserRole::Analyst,
+      team: "data",
+      permissions: ["read"]
+    },
+    {
+      id: "user-005",
+      username: "viewer",
+      role: UserRole::Viewer,
+      team: "support",
+      permissions: ["read"]
     }
   ]
   
-  // 加密过程
-  let encrypted_data = []
-  
-  for data in telemetry_data {
-    let encrypted_attributes = []
-    
-    for attr in data["attributes"] {
-      let key = attr.0
-      let value = attr.1
-      
-      // 根据属性类型决定是否加密
-      let should_encrypt = key.contains("id") || key.contains("metadata") || key.contains("code")
-      
-      if should_encrypt {
-        match value {
-          StringValue(str) => {
-            // 模拟加密过程
-            let encrypted_value = {
-              "algorithm": encryption_algorithm,
-              "key_id": key_id,
-              "ciphertext": "encrypted_" + str,
-              "iv": "initialization_vector_" + key,
-              "tag": "authentication_tag_" + key,
-              "encrypted": true
-            }
-            encrypted_attributes.push((key, encrypted_value))
-          }
-          _ => {
-            // 非字符串值转换为字符串后加密
-            let str_value = match value {
-              IntValue(i) => i.to_string()
-              FloatValue(f) => f.to_string()
-              BoolValue(b) => b.to_string()
-              _ => "unknown"
-            }
-            let encrypted_value = {
-              "algorithm": encryption_algorithm,
-              "key_id": key_id,
-              "ciphertext": "encrypted_" + str_value,
-              "iv": "initialization_vector_" + key,
-              "tag": "authentication_tag_" + key,
-              "encrypted": true
-            }
-            encrypted_attributes.push((key, encrypted_value))
-          }
-        }
-      } else {
-        // 不加密的属性保持原样
-        encrypted_attributes.push((key, value))
-      }
+  // 创建测试资源
+  let resources = [
+    {
+      id: "resource-001",
+      name: "production-metrics",
+      type: "metrics",
+      sensitivity: "high",
+      owner: "platform",
+      tags: ["production", "critical"]
+    },
+    {
+      id: "resource-002",
+      name: "user-activity-logs",
+      type: "logs",
+      sensitivity: "medium",
+      owner: "observability",
+      tags: ["user", "activity"]
+    },
+    {
+      id: "resource-003",
+      name: "performance-traces",
+      type: "traces",
+      sensitivity: "medium",
+      owner: "backend",
+      tags: ["performance", "traces"]
+    },
+    {
+      id: "resource-004",
+      name: "error-reports",
+      type: "alerts",
+      sensitivity: "low",
+      owner: "support",
+      tags: ["errors", "alerts"]
     }
-    
-    let encrypted_entry = {
-      "trace_id": data["trace_id"],
-      "service": data["service"],
-      "operation": data["operation"],
-      "attributes": encrypted_attributes
+  ]
+  
+  // 创建访问策略
+  let access_policies = [
+    {
+      name: "admin-full-access",
+      role: UserRole::Admin,
+      resource_type: "*",
+      required_permission: PermissionLevel::Admin,
+      conditions: []
+    },
+    {
+      name: "manager-team-access",
+      role: UserRole::Manager,
+      resource_type: "metrics",
+      required_permission: PermissionLevel::Read,
+      conditions: ["same_team"]
+    },
+    {
+      name: "engineer-resource-access",
+      role: UserRole::Engineer,
+      resource_type: "traces",
+      required_permission: PermissionLevel::Read,
+      conditions: ["same_team"]
+    },
+    {
+      name: "analyst-public-access",
+      role: UserRole::Analyst,
+      resource_type: "*",
+      required_permission: PermissionLevel::Read,
+      conditions: ["not_sensitive"]
+    },
+    {
+      name: "viewer-limited-access",
+      role: UserRole::Viewer,
+      resource_type: "alerts",
+      required_permission: PermissionLevel::Read,
+      conditions: []
     }
-    encrypted_data.push(encrypted_entry)
-  }
+  ]
   
-  // 验证加密结果
-  assert_eq(encrypted_data.length(), 2)
+  // 测试资源访问权限
+  let admin_user = users[0]
+  let manager_user = users[1]
+  let engineer_user = users[2]
+  let analyst_user = users[3]
+  let viewer_user = users[4]
   
-  // 验证第一个数据的加密
-  let first_encrypted = encrypted_data[0]
-  let first_encrypted_attrs = first_encrypted["attributes"]
+  let metrics_resource = resources[0]
+  let logs_resource = resources[1]
+  let traces_resource = resources[2]
+  let alerts_resource = resources[3]
   
-  // 验证加密的属性
-  let user_id_attr = first_encrypted_attrs.find(fn(attr) { attr.0 == "user.id" })
-  match user_id_attr {
-    Some((_, encrypted_value)) => {
-      match encrypted_value {
-        StringValue(_) => assert_true(false) // 不应该是字符串
-        _ => {
-          // 应该是加密对象
-          assert_true(encrypted_value.contains_key("algorithm"))
-          assert_true(encrypted_value.contains_key("key_id"))
-          assert_true(encrypted_value.contains_key("ciphertext"))
-          assert_true(encrypted_value.contains_key("iv"))
-          assert_true(encrypted_value.contains_key("tag"))
-          assert_true(encrypted_value["encrypted"])
-        }
-      }
-    }
-    _ => assert_true(false)
-  }
+  // 管理员应该能访问所有资源
+  assert_true(check_permission(admin_user, metrics_resource, PermissionLevel::Read, access_policies))
+  assert_true(check_permission(admin_user, logs_resource, PermissionLevel::Read, access_policies))
+  assert_true(check_permission(admin_user, traces_resource, PermissionLevel::Read, access_policies))
+  assert_true(check_permission(admin_user, alerts_resource, PermissionLevel::Read, access_policies))
   
-  // 验证未加密的属性
-  let amount_attr = first_encrypted_attrs.find(fn(attr) { attr.0 == "amount" })
-  match amount_attr {
-    Some((_, FloatValue(amount))) => {
-      assert_eq(amount, 123.45)
-    }
-    _ => assert_true(false)
-  }
+  // 经理只能访问同团队的高敏感度资源
+  assert_false(check_permission(manager_user, metrics_resource, PermissionLevel::Read, access_policies)) // 不同团队
+  assert_true(check_permission(manager_user, logs_resource, PermissionLevel::Read, access_policies)) // 同团队
   
-  // 解密过程
-  let decrypted_data = []
+  // 工程师只能访问同团队的追踪数据
+  assert_false(check_permission(engineer_user, metrics_resource, PermissionLevel::Read, access_policies)) // 不同团队
+  assert_true(check_permission(engineer_user, traces_resource, PermissionLevel::Read, access_policies)) // 同团队
   
-  for encrypted_data_entry in encrypted_data {
-    let decrypted_attributes = []
-    
-    for attr in encrypted_data_entry["attributes"] {
-      let key = attr.0
-      let value = attr.1
-      
-      // 检查是否是加密的属性
-      let is_encrypted = match value {
-        StringValue(_) => false
-        _ => value.contains_key("encrypted") && value["encrypted"]
-      }
-      
-      if is_encrypted {
-        // 模拟解密过程
-        let ciphertext = value["ciphertext"]
-        let decrypted_str = ciphertext.replace("encrypted_", "")
-        
-        // 根据原始属性类型恢复值
-        let original_value = if key.contains("amount") {
-          FloatValue(123.45)
-        } else if key.contains("timestamp") {
-          IntValue(1640995200)
-        } else {
-          StringValue(decrypted_str)
-        }
-        
-        decrypted_attributes.push((key, original_value))
-      } else {
-        // 未加密的属性直接添加
-        decrypted_attributes.push((key, value))
-      }
-    }
-    
-    let decrypted_entry = {
-      "trace_id": encrypted_data_entry["trace_id"],
-      "service": encrypted_data_entry["service"],
-      "operation": encrypted_data_entry["operation"],
-      "attributes": decrypted_attributes
-    }
-    decrypted_data.push(decrypted_entry)
-  }
+  // 分析师只能访问非敏感资源
+  assert_false(check_permission(analyst_user, metrics_resource, PermissionLevel::Read, access_policies)) // 高敏感度
+  assert_true(check_permission(analyst_user, alerts_resource, PermissionLevel::Read, access_policies)) // 低敏感度
   
-  // 验证解密结果
-  assert_eq(decrypted_data.length(), 2)
+  // 查看者只能访问告警资源
+  assert_false(check_permission(viewer_user, logs_resource, PermissionLevel::Read, access_policies)) // 无权限
+  assert_true(check_permission(viewer_user, alerts_resource, PermissionLevel::Read, access_policies)) // 有权限
   
-  // 验证解密后的数据与原始数据一致
-  let first_decrypted = decrypted_data[0]
-  let first_original = telemetry_data[0]
+  // 测试字段级别访问控制
+  let telemetry_data = Map::from([
+    ("operation.name", "user.login"),
+    ("user.id", "12345"),
+    ("user.email", "user@example.com"),
+    ("response.time", "250"),
+    ("error.stack", "NullPointerException at line 42"),
+    ("api.key", "sk_live_1234567890abcdef")
+  ])
   
-  assert_eq(first_decrypted["trace_id"], first_original["trace_id"])
-  assert_eq(first_decrypted["service"], first_original["service"])
-  assert_eq(first_decrypted["operation"], first_original["operation"])
-  assert_eq(first_decrypted["attributes"].length(), first_original["attributes"].length())
+  let field_sensitivities = Map::from([
+    ("operation.name", "public"),
+    ("user.id", "internal"),
+    ("user.email", "internal"),
+    ("response.time", "public"),
+    ("error.stack", "internal"),
+    ("api.key", "restricted")
+  ])
   
-  // 验证具体属性值
-  for attr in first_original["attributes"] {
-    let key = attr.0
-    let original_value = attr.1
-    let decrypted_attr = first_decrypted["attributes"].find(fn(a) { a.0 == key })
-    
-    match decrypted_attr {
-      Some((_, decrypted_value)) => {
-        match (original_value, decrypted_value) {
-          (StringValue(orig), StringValue(dec)) => assert_eq(orig, dec)
-          (FloatValue(orig), FloatValue(dec)) => assert_eq(orig, dec)
-          (IntValue(orig), IntValue(dec)) => assert_eq(orig, dec)
-          (BoolValue(orig), BoolValue(dec)) => assert_eq(orig, dec)
-          _ => assert_true(false)
-        }
-      }
-      None => assert_true(false)
-    }
-  }
+  // 测试不同角色的字段访问权限
+  let admin_fields = filter_accessible_fields(admin_user, telemetry_data, field_sensitivities)
+  assert_eq(admin_fields.size(), telemetry_data.size()) // 管理员访问所有字段
+  
+  let analyst_fields = filter_accessible_fields(analyst_user, telemetry_data, field_sensitivities)
+  assert_eq(analyst_fields.size(), 2) // 分析师只能访问公共字段
+  assert_true(Map::contains_key(analyst_fields, "operation.name"))
+  assert_true(Map::contains_key(analyst_fields, "response.time"))
+  
+  let engineer_fields = filter_accessible_fields(engineer_user, telemetry_data, field_sensitivities)
+  assert_eq(engineer_fields.size(), 4) // 工程师可以访问公共和内部字段
+  assert_true(Map::contains_key(engineer_fields, "operation.name"))
+  assert_true(Map::contains_key(engineer_fields, "response.time"))
+  assert_true(Map::contains_key(engineer_fields, "user.id"))
+  assert_true(Map::contains_key(engineer_fields, "error.stack"))
 }
 
-test "遥测数据访问控制测试" {
-  // 测试遥测数据的访问控制机制
-  let user_roles = ["admin", "operator", "analyst", "viewer"]
-  let data_sensitivity_levels = ["public", "internal", "confidential", "restricted"]
-  
-  let telemetry_data_with_sensitivity = [
-    {
-      "trace_id": "access_control_test_001",
-      "service": "public-service",
-      "operation": "public_operation",
-      "sensitivity": "public",
-      "attributes": [
-        ("request.count", IntValue(100)),
-        ("response.time", FloatValue(200.5)),
-        ("service.version", StringValue("1.0.0"))
-      ]
-    },
-    {
-      "trace_id": "access_control_test_002",
-      "service": "internal-service",
-      "operation": "internal_operation",
-      "sensitivity": "internal",
-      "attributes": [
-        ("user.id", StringValue("user_12345")),
-        ("session.id", StringValue("sess_abcdef")),
-        ("internal.metric", IntValue(42))
-      ]
-    },
-    {
-      "trace_id": "access_control_test_003",
-      "service": "payment-service",
-      "operation": "process_payment",
-      "sensitivity": "confidential",
-      "attributes": [
-        ("payment.amount", FloatValue(99.99)),
-        ("payment.method", StringValue("credit_card")),
-        ("user.email", StringValue("user@example.com"))
-      ]
-    },
-    {
-      "trace_id": "access_control_test_004",
-      "service": "admin-service",
-      "operation": "admin_operation",
-      "sensitivity": "restricted",
-      "attributes": [
-        ("admin.action", StringValue("delete_user")),
-        ("target.user", StringValue("user_67890")),
-        ("admin.reason", StringValue("policy_violation"))
-      ]
-    }
-  ]
-  
-  // 定义角色访问权限
-  let role_permissions = {
-    "admin": ["public", "internal", "confidential", "restricted"],
-    "operator": ["public", "internal", "confidential"],
-    "analyst": ["public", "internal"],
-    "viewer": ["public"]
+// 测试4: 审计日志与合规性验证
+test "遥测数据审计日志与合规性验证" {
+  // 定义审计事件类型
+  enum AuditEventType {
+    DataAccess
+    DataModification
+    ConfigurationChange
+    SecurityEvent
+    SystemEvent
   }
   
-  // 测试不同角色的访问权限
-  let access_test_results = []
+  // 定义审计事件
+  type AuditEvent = {
+    timestamp: Int
+    event_type: AuditEventType
+    user_id: String
+    resource_id: String
+    action: String
+    result: String
+    details: Map[String, String]
+    ip_address: String
+    user_agent: String
+  }
   
-  for role in user_roles {
-    let accessible_data = []
-    let denied_data = []
+  // 定义合规性规则
+  type ComplianceRule = {
+    id: String
+    name: String
+    description: String
+    regulation: String // GDPR, HIPAA, PCI-DSS, etc.
+    check_function: (Array[AuditEvent]) -> Array[ComplianceViolation]
+  }
+  
+  // 定义合规性违规
+  type ComplianceViolation = {
+    rule_id: String
+    timestamp: Int
+    severity: String
+    description: String
+    affected_events: Array[Int]
+    recommended_action: String
+  }
+  
+  // 创建审计事件
+  let create_audit_event = fn(timestamp: Int, event_type: AuditEventType, user_id: String, resource_id: String, action: String, result: String, details: Map[String, String], ip_address: String, user_agent: String) -> AuditEvent {
+    {
+      timestamp,
+      event_type,
+      user_id,
+      resource_id,
+      action,
+      result,
+      details,
+      ip_address,
+      user_agent
+    }
+  }
+  
+  // 检查数据访问模式
+  let check_data_access_patterns = fn(events: Array[AuditEvent]) -> Array[ComplianceViolation] {
+    let mut violations = []
     
-    for data in telemetry_data_with_sensitivity {
-      let sensitivity = data["sensitivity"]
-      let permissions = role_permissions[role]
-      let has_permission = permissions.contains(sensitivity)
+    // 检查异常访问时间
+    let business_hours_start = 9 * 60 * 60 // 9:00 AM in seconds
+    let business_hours_end = 17 * 60 * 60  // 5:00 PM in seconds
+    
+    for i in 0..events.length() {
+      let event = events[i]
+      let hour_of_day = (event.timestamp / 3600) % 24
+      let seconds_of_day = hour_of_day * 60 * 60
       
-      if has_permission {
-        // 用户有权访问数据，返回完整数据
-        accessible_data.push(data)
-      } else {
-        // 用户无权访问数据，返回脱敏数据或拒绝访问
-        let sanitized_data = {
-          "trace_id": data["trace_id"],
-          "service": data["service"],
-          "operation": data["operation"],
-          "sensitivity": data["sensitivity"],
-          "attributes": [("access.denied", StringValue("insufficient_permissions"))],
-          "access_granted": false
+      // 检查非工作时间访问敏感数据
+      if event.event_type == AuditEventType::DataAccess && (seconds_of_day < business_hours_start || seconds_of_day > business_hours_end) {
+        match Map::get(event.details, "sensitivity") {
+          Some(sensitivity) => {
+            if sensitivity == "high" {
+              let violation = {
+                rule_id: "GDPR-001",
+                timestamp: event.timestamp,
+                severity: "medium",
+                description: "访问高敏感度数据在非工作时间",
+                affected_events: [i],
+                recommended_action: "验证访问的必要性并记录业务理由"
+              }
+              violations = violations.push(violation)
+            }
+          },
+          None => {}
         }
-        denied_data.push(sanitized_data)
       }
     }
     
-    access_test_results.push({
-      "role": role,
-      "accessible_count": accessible_data.length(),
-      "denied_count": denied_data.length(),
-      "accessible_data": accessible_data,
-      "denied_data": denied_data
+    violations
+  }
+  
+  // 检查批量数据访问
+  let check_bulk_data_access = fn(events: Array[AuditEvent]) -> Array[ComplianceViolation] {
+    let mut violations = []
+    let access_threshold = 100 // 1小时内访问100条记录
+    
+    // 按用户和小时分组
+    let mut user_hour_access = Map::empty()
+    
+    for i in 0..events.length() {
+      let event = events[i]
+      
+      if event.event_type == AuditEventType::DataAccess {
+        let hour_key = event.user_id + ":" + (event.timestamp / 3600).to_string()
+        let current_count = match Map::get(user_hour_access, hour_key) {
+          Some(count) => count,
+          None => 0
+        }
+        
+        user_hour_access = Map::insert(user_hour_access, hour_key, current_count + 1)
+        
+        // 检查是否超过阈值
+        if current_count + 1 > access_threshold {
+          let violation = {
+            rule_id: "GDPR-002",
+            timestamp: event.timestamp,
+            severity: "high",
+            description: "用户在1小时内访问大量数据记录",
+            affected_events: [i],
+            recommended_action: "审查批量访问的必要性和授权"
+          }
+          violations = violations.push(violation)
+        }
+      }
+    }
+    
+    violations
+  }
+  
+  // 检查数据保留期限
+  let check_data_retention = fn(events: Array[AuditEvent]) -> Array[ComplianceViolation] {
+    let mut violations = []
+    let current_time = 1640995200 // 示例当前时间
+    let retention_days = 30 // 30天保留期限
+    let retention_seconds = retention_days * 24 * 60 * 60
+    
+    // 查找数据删除事件
+    for i in 0..events.length() {
+      let event = events[i]
+      
+      if event.action == "delete" {
+        match Map::get(event.details, "creation_time") {
+          Some(creation_time_str) => {
+            let creation_time = creation_time_str.to_int()
+            let data_age = event.timestamp - creation_time
+            
+            if data_age < retention_seconds {
+              let violation = {
+                rule_id: "GDPR-003",
+                timestamp: event.timestamp,
+                severity: "high",
+                description: "在保留期限前删除数据",
+                affected_events: [i],
+                recommended_action: "确保数据删除符合保留政策要求"
+              }
+              violations = violations.push(violation)
+            }
+          },
+          None => {}
+        }
+      }
+    }
+    
+    violations
+  }
+  
+  // 创建测试审计事件
+  let base_time = 1640995200 // 2022-01-01 00:00:00 UTC
+  let audit_events = [
+    // 正常工作时间访问
+    create_audit_event(
+      base_time + (10 * 60 * 60), // 10:00 AM
+      AuditEventType::DataAccess,
+      "user-001",
+      "resource-001",
+      "read",
+      "success",
+      Map::from([("record_count", "5"), ("sensitivity", "low")]),
+      "192.168.1.100",
+      "Mozilla/5.0"
+    ),
+    
+    // 非工作时间访问敏感数据
+    create_audit_event(
+      base_time + (22 * 60 * 60), // 10:00 PM
+      AuditEventType::DataAccess,
+      "user-002",
+      "resource-002",
+      "read",
+      "success",
+      Map::from([("record_count", "10"), ("sensitivity", "high")]),
+      "192.168.1.101",
+      "Mozilla/5.0"
+    ),
+    
+    // 批量数据访问
+    create_audit_event(
+      base_time + (14 * 60 * 60), // 2:00 PM
+      AuditEventType::DataAccess,
+      "user-003",
+      "resource-003",
+      "bulk_export",
+      "success",
+      Map::from([("record_count", "150"), ("sensitivity", "medium")]),
+      "192.168.1.102",
+      "Mozilla/5.0"
+    ),
+    
+    // 配置更改
+    create_audit_event(
+      base_time + (15 * 60 * 60), // 3:00 PM
+      AuditEventType::ConfigurationChange,
+      "user-004",
+      "config-001",
+      "update",
+      "success",
+      Map::from([("setting", "retention_period"), ("old_value", "90"), ("new_value", "30")]),
+      "192.168.1.103",
+      "Mozilla/5.0"
+    ),
+    
+    // 提前删除数据
+    create_audit_event(
+      base_time + (16 * 60 * 60), // 4:00 PM
+      AuditEventType::DataModification,
+      "user-005",
+      "resource-004",
+      "delete",
+      "success",
+      Map::from([("record_count", "50"), ("creation_time", (base_time - (10 * 24 * 60 * 60)).to_string())]), // 10天前创建
+      "192.168.1.104",
+      "Mozilla/5.0"
+    )
+  ]
+  
+  // 创建合规性规则
+  let compliance_rules = [
+    {
+      id: "GDPR-001",
+      name: "非工作时间敏感数据访问",
+      description: "监控在非工作时间访问高敏感度数据的行为",
+      regulation: "GDPR",
+      check_function: check_data_access_patterns
+    },
+    {
+      id: "GDPR-002",
+      name: "批量数据访问限制",
+      description: "监控用户在短时间内大量访问数据的行为",
+      regulation: "GDPR",
+      check_function: check_bulk_data_access
+    },
+    {
+      id: "GDPR-003",
+      name: "数据保留期限",
+      description: "确保数据在保留期限前不被删除",
+      regulation: "GDPR",
+      check_function: check_data_retention
+    }
+  ]
+  
+  // 运行合规性检查
+  let mut all_violations = []
+  
+  for rule in compliance_rules {
+    let rule_violations = rule.check_function(audit_events)
+    for violation in rule_violations {
+      all_violations = all_violations.push(violation)
+    }
+  }
+  
+  // 验证违规检测
+  assert_eq(all_violations.length(), 3) // 应该检测到3个违规
+  
+  // 验证第一个违规：非工作时间访问敏感数据
+  let first_violation = all_violations[0]
+  assert_eq(first_violation.rule_id, "GDPR-001")
+  assert_eq(first_violation.severity, "medium")
+  
+  // 验证第二个违规：批量数据访问
+  let second_violation = all_violations[1]
+  assert_eq(second_violation.rule_id, "GDPR-002")
+  assert_eq(second_violation.severity, "high")
+  
+  // 验证第三个违规：提前删除数据
+  let third_violation = all_violations[2]
+  assert_eq(third_violation.rule_id, "GDPR-003")
+  assert_eq(third_violation.severity, "high")
+  
+  // 测试审计日志查询
+  let query_audit_events = fn(events: Array[AuditEvent], filters: Map[String, String]) -> Array[AuditEvent] {
+    events.filter(fn(event) {
+      let mut matches = true
+      
+      for (key, value) in filters.to_array() {
+        match key {
+          "user_id" => {
+            if event.user_id != value {
+              matches = false
+            }
+          },
+          "event_type" => {
+            let event_type_str = match event.event_type {
+              AuditEventType::DataAccess => "data_access",
+              AuditEventType::DataModification => "data_modification",
+              AuditEventType::ConfigurationChange => "config_change",
+              AuditEventType::SecurityEvent => "security_event",
+              AuditEventType::SystemEvent => "system_event"
+            }
+            if event_type_str != value {
+              matches = false
+            }
+          },
+          "action" => {
+            if event.action != value {
+              matches = false
+            }
+          },
+          _ => {}
+        }
+      }
+      
+      matches
     })
   }
   
-  // 验证访问控制结果
-  assert_eq(access_test_results.length(), 4)
+  // 测试查询功能
+  let user_events = query_audit_events(audit_events, Map::from([("user_id", "user-001")]))
+  assert_eq(user_events.length(), 1)
+  assert_eq(user_events[0].user_id, "user-001")
   
-  // 验证admin角色可以访问所有数据
-  let admin_result = access_test_results.find(fn(r) { r["role"] == "admin" })
-  match admin_result {
-    Some(result) => {
-      assert_eq(result["accessible_count"], 4)
-      assert_eq(result["denied_count"], 0)
-    }
-    None => assert_true(false)
-  }
+  let access_events = query_audit_events(audit_events, Map::from([("event_type", "data_access")]))
+  assert_eq(access_events.length(), 3)
   
-  // 验证operator角色可以访问public、internal和confidential数据
-  let operator_result = access_test_results.find(fn(r) { r["role"] == "operator" })
-  match operator_result {
-    Some(result) => {
-      assert_eq(result["accessible_count"], 3)
-      assert_eq(result["denied_count"], 1)
-      
-      // 验证被拒绝访问的是restricted数据
-      let denied_data = result["denied_data"]
-      assert_eq(denied_data.length(), 1)
-      assert_eq(denied_data[0]["sensitivity"], "restricted")
-    }
-    None => assert_true(false)
-  }
-  
-  // 验证analyst角色可以访问public和internal数据
-  let analyst_result = access_test_results.find(fn(r) { r["role"] == "analyst" })
-  match analyst_result {
-    Some(result) => {
-      assert_eq(result["accessible_count"], 2)
-      assert_eq(result["denied_count"], 2)
-      
-      // 验证被拒绝访问的是confidential和restricted数据
-      let denied_data = result["denied_data"]
-      assert_eq(denied_data.length(), 2)
-      assert_true(denied_data.some(fn(d) { d["sensitivity"] == "confidential" }))
-      assert_true(denied_data.some(fn(d) { d["sensitivity"] == "restricted" }))
-    }
-    None => assert_true(false)
-  }
-  
-  // 验证viewer角色只能访问public数据
-  let viewer_result = access_test_results.find(fn(r) { r["role"] == "viewer" })
-  match viewer_result {
-    Some(result) => {
-      assert_eq(result["accessible_count"], 1)
-      assert_eq(result["denied_count"], 3)
-      
-      // 验证被拒绝访问的是internal、confidential和restricted数据
-      let denied_data = result["denied_data"]
-      assert_eq(denied_data.length(), 3)
-      assert_true(denied_data.some(fn(d) { d["sensitivity"] == "internal" }))
-      assert_true(denied_data.some(fn(d) { d["sensitivity"] == "confidential" }))
-      assert_true(denied_data.some(fn(d) { d["sensitivity"] == "restricted" }))
-    }
-    None => assert_true(false)
-  }
-}
-
-test "遥测数据审计日志测试" {
-  // 测试遥测数据访问和修改的审计日志
-  let audit_log = []
-  let current_user = "admin_user"
-  let current_session = "session_12345"
-  
-  // 模拟遥测数据操作
-  let telemetry_data = {
-    "trace_id": "audit_test_trace_001",
-    "service": "audit-service",
-    "operation": "audit_operation",
-    "attributes": [
-      ("user.id", StringValue("user_12345")),
-      ("transaction.id", StringValue("txn_abcdef")),
-      ("amount", FloatValue(99.99))
-    ]
-  }
-  
-  // 记录数据创建
-  let create_log_entry = {
-    "timestamp": Clock::now_unix_nanos(Clock::system()),
-    "user": current_user,
-    "session": current_session,
-    "action": "create",
-    "resource_type": "telemetry_data",
-    "resource_id": telemetry_data["trace_id"],
-    "details": {
-      "service": telemetry_data["service"],
-      "operation": telemetry_data["operation"],
-      "attribute_count": telemetry_data["attributes"].length()
-    },
-    "ip_address": "192.168.1.100",
-    "user_agent": "Azimuth-CLI/1.0"
-  }
-  audit_log.push(create_log_entry)
-  
-  // 记录数据读取
-  let read_log_entry = {
-    "timestamp": Clock::now_unix_nanos(Clock::system()) + 1000000L,
-    "user": "analyst_user",
-    "session": "session_23456",
-    "action": "read",
-    "resource_type": "telemetry_data",
-    "resource_id": telemetry_data["trace_id"],
-    "details": {
-      "query_filter": "service=audit-service",
-      "result_count": 1,
-      "access_level": "confidential"
-    },
-    "ip_address": "192.168.1.101",
-    "user_agent": "Web-UI/2.0"
-  }
-  audit_log.push(read_log_entry)
-  
-  // 记录数据更新
-  let updated_attributes = [
-    ("user.id", StringValue("user_12345")),
-    ("transaction.id", StringValue("txn_abcdef")),
-    ("amount", FloatValue(149.99)), // 金额从99.99更新为149.99
-    ("status", StringValue("completed")) // 新增状态字段
-  ]
-  
-  let update_log_entry = {
-    "timestamp": Clock::now_unix_nanos(Clock::system()) + 2000000L,
-    "user": current_user,
-    "session": current_session,
-    "action": "update",
-    "resource_type": "telemetry_data",
-    "resource_id": telemetry_data["trace_id"],
-    "details": {
-      "changed_fields": ["amount", "status"],
-      "old_values": {
-        "amount": 99.99
-      },
-      "new_values": {
-        "amount": 149.99,
-        "status": "completed"
-      }
-    },
-    "ip_address": "192.168.1.100",
-    "user_agent": "Azimuth-CLI/1.0"
-  }
-  audit_log.push(update_log_entry)
-  
-  // 记录数据删除
-  let delete_log_entry = {
-    "timestamp": Clock::now_unix_nanos(Clock::system()) + 3000000L,
-    "user": "admin_user",
-    "session": "session_34567",
-    "action": "delete",
-    "resource_type": "telemetry_data",
-    "resource_id": telemetry_data["trace_id"],
-    "details": {
-      "reason": "data_retention_policy",
-      "retention_period": "90_days"
-    },
-    "ip_address": "192.168.1.102",
-    "user_agent": "Scheduled-Job/1.0"
-  }
-  audit_log.push(delete_log_entry)
-  
-  // 记录访问拒绝
-  let access_denied_log_entry = {
-    "timestamp": Clock::now_unix_nanos(Clock::system()) + 4000000L,
-    "user": "viewer_user",
-    "session": "session_45678",
-    "action": "read",
-    "resource_type": "telemetry_data",
-    "resource_id": "audit_test_trace_002", // 不同的trace_id
-    "details": {
-      "access_denied": true,
-      "required_permission": "confidential",
-      "user_permission": "public",
-      "reason": "insufficient_permissions"
-    },
-    "ip_address": "192.168.1.103",
-    "user_agent": "Web-UI/2.0"
-  }
-  audit_log.push(access_denied_log_entry)
-  
-  // 验证审计日志
-  assert_eq(audit_log.length(), 5)
-  
-  // 验证创建日志
-  let create_log = audit_log[0]
-  assert_eq(create_log["action"], "create")
-  assert_eq(create_log["user"], "admin_user")
-  assert_eq(create_log["resource_id"], "audit_test_trace_001")
-  
-  // 验证读取日志
-  let read_log = audit_log[1]
-  assert_eq(read_log["action"], "read")
-  assert_eq(read_log["user"], "analyst_user")
-  assert_eq(read_log["resource_id"], "audit_test_trace_001")
-  
-  // 验证更新日志
-  let update_log = audit_log[2]
-  assert_eq(update_log["action"], "update")
-  assert_eq(update_log["user"], "admin_user")
-  assert_eq(update_log["resource_id"], "audit_test_trace_001")
-  assert_true(update_log["details"].contains_key("changed_fields"))
-  assert_true(update_log["details"].contains_key("old_values"))
-  assert_true(update_log["details"].contains_key("new_values"))
-  
-  // 验证删除日志
-  let delete_log = audit_log[3]
-  assert_eq(delete_log["action"], "delete")
-  assert_eq(delete_log["resource_id"], "audit_test_trace_001")
-  assert_true(delete_log["details"].contains_key("reason"))
-  
-  // 验证访问拒绝日志
-  let access_denied_log = audit_log[4]
-  assert_eq(access_denied_log["action"], "read")
-  assert_eq(access_denied_log["user"], "viewer_user")
-  assert_eq(access_denied_log["resource_id"], "audit_test_trace_002")
-  assert_true(access_denied_log["details"]["access_denied"])
-  
-  // 验证审计日志的时间顺序
-  for i = 1; i < audit_log.length(); i = i + 1 {
-    let prev_timestamp = audit_log[i-1]["timestamp"]
-    let curr_timestamp = audit_log[i]["timestamp"]
-    assert_true(prev_timestamp <= curr_timestamp)
-  }
-  
-  // 验证审计日志的完整性
-  let required_fields = ["timestamp", "user", "session", "action", "resource_type", "resource_id", "details"]
-  for log in audit_log {
-    for field in required_fields {
-      assert_true(log.contains_key(field))
-    }
-  }
-  
-  // 测试审计日志查询
-  let user_actions = audit_log.filter(fn(log) { log["user"] == "admin_user" })
-  assert_eq(user_actions.length(), 3) // admin_user执行了create、update和delete操作
-  
-  let read_actions = audit_log.filter(fn(log) { log["action"] == "read" })
-  assert_eq(read_actions.length(), 2) // 有2次读取操作
-  
-  let access_denied_actions = audit_log.filter(fn(log) { 
-    log["details"].contains_key("access_denied") && log["details"]["access_denied"]
-  })
-  assert_eq(access_denied_actions.length(), 1) // 有1次访问被拒绝
-}
-
-test "遥测数据隐私合规性测试" {
-  // 测试遥测数据的隐私合规性处理
-  let data_residency_requirements = {
-    "EU": ["GDPR"],
-    "US": ["CCPA", "CPRA"],
-    "CA": ["PIPEDA"],
-    "AU": ["Privacy Act"]
-  }
-  
-  let user_data_with_regions = [
-    {
-      "user_id": "user_eu_001",
-      "region": "EU",
-      "consent_given": true,
-      "data_purpose": "analytics",
-      "retention_days": 30,
-      "attributes": [
-        ("user.email", StringValue("user@example.eu")),
-        ("user.name", StringValue("John Doe")),
-        ("user.ip", StringValue("192.168.1.100")),
-        ("user.preferences", StringValue("dark_theme")),
-        ("analytics.events", IntValue(42))
-      ]
-    },
-    {
-      "user_id": "user_us_001",
-      "region": "US",
-      "consent_given": true,
-      "data_purpose": "marketing",
-      "retention_days": 90,
-      "attributes": [
-        ("user.email", StringValue("user@example.us")),
-        ("user.phone", StringValue("123-456-7890")),
-        ("user.address", StringValue("123 Main St, Anytown, USA")),
-        ("marketing.consent", BoolValue(true)),
-        ("purchase.history", IntValue(5))
-      ]
-    },
-    {
-      "user_id": "user_ca_001",
-      "region": "CA",
-      "consent_given": false,
-      "data_purpose": "analytics",
-      "retention_days": 60,
-      "attributes": [
-        ("user.email", StringValue("user@example.ca")),
-        ("user.age", IntValue(25)),
-        ("user.gender", StringValue("prefer_not_to_say")),
-        ("analytics.consent", BoolValue(false))
-      ]
-    }
-  ]
-  
-  // 隐私合规性处理
-  let compliant_data = []
-  
-  for user_data in user_data_with_regions {
-    let region = user_data["region"]
-    let consent_given = user_data["consent_given"]
-    let data_purpose = user_data["data_purpose"]
-    let retention_days = user_data["retention_days"]
-    let applicable_regulations = data_residency_requirements[region]
-    
-    // 检查用户同意
-    if !consent_given {
-      // 用户未同意，不能收集数据
-      let compliant_entry = {
-        "user_id": user_data["user_id"],
-        "region": region,
-        "status": "data_not_collected",
-        "reason": "user_consent_not_given",
-        "applicable_regulations": applicable_regulations
-      }
-      compliant_data.push(compliant_entry)
-      continue
-    }
-    
-    // 根据地区和目的应用隐私规则
-    let filtered_attributes = []
-    
-    for attr in user_data["attributes"] {
-      let key = attr.0
-      let value = attr.1
-      let should_include = false
-      
-      if region == "EU" {
-        // GDPR规则：明确同意，数据最小化
-        if data_purpose == "analytics" && 
-           (key.contains("analytics") || key.contains("user.email") || key.contains("user.name")) {
-          should_include = true
-        }
-      } else if region == "US" {
-        // CCPA规则：消费者选择权
-        if key.contains("marketing") || key.contains("purchase") || key.contains("user.email") {
-          should_include = true
-        }
-      } else if region == "CA" {
-        // PIPEDA规则：适当目的
-        if key.contains("user.email") || key.contains("analytics") {
-          should_include = true
-        }
-      }
-      
-      if should_include {
-        filtered_attributes.push((key, value))
-      }
-    }
-    
-    // 应用数据保留策略
-    let adjusted_retention_days = retention_days
-    if region == "EU" && data_purpose == "analytics" {
-      adjusted_retention_days = 30 // GDPR Analytics默认30天
-    } else if region == "US" && data_purpose == "marketing" {
-      adjusted_retention_days = 90 // CCPA Marketing最长90天
-    }
-    
-    let compliant_entry = {
-      "user_id": user_data["user_id"],
-      "region": region,
-      "status": "data_collected",
-      "data_purpose": data_purpose,
-      "retention_days": adjusted_retention_days,
-      "attributes": filtered_attributes,
-      "applicable_regulations": applicable_regulations
-    }
-    compliant_data.push(compliant_entry)
-  }
-  
-  // 验证隐私合规性结果
-  assert_eq(compliant_data.length(), 3)
-  
-  // 验证EU用户数据处理
-  let eu_data = compliant_data.find(fn(d) { d["region"] == "EU" })
-  match eu_data {
-    Some(data) => {
-      assert_eq(data["status"], "data_collected")
-      assert_eq(data["retention_days"], 30)
-      assert_true(data["applicable_regulations"].contains("GDPR"))
-      
-      // 验证只包含必要的属性
-      let attrs = data["attributes"]
-      assert_true(attrs.length() <= 3) // 数据最小化
-      assert_true(attrs.some(fn(attr) { attr.0 == "user.email" }))
-      assert_true(attrs.some(fn(attr) { attr.0 == "analytics.events" }))
-    }
-    None => assert_true(false)
-  }
-  
-  // 验证US用户数据处理
-  let us_data = compliant_data.find(fn(d) { d["region"] == "US" })
-  match us_data {
-    Some(data) => {
-      assert_eq(data["status"], "data_collected")
-      assert_eq(data["retention_days"], 90)
-      assert_true(data["applicable_regulations"].contains("CCPA"))
-      
-      // 验证包含营销相关属性
-      let attrs = data["attributes"]
-      assert_true(attrs.some(fn(attr) { attr.0 == "marketing.consent" }))
-      assert_true(attrs.some(fn(attr) { attr.0 == "purchase.history" }))
-    }
-    None => assert_true(false)
-  }
-  
-  // 验证CA用户数据处理
-  let ca_data = compliant_data.find(fn(d) { d["region"] == "CA" })
-  match ca_data {
-    Some(data) => {
-      assert_eq(data["status"], "data_not_collected")
-      assert_eq(data["reason"], "user_consent_not_given")
-      assert_true(data["applicable_regulations"].contains("PIPEDA"))
-    }
-    None => assert_true(false)
-  }
-  
-  // 验证数据主体访问请求（DSAR）处理
-  let dsar_request = {
-    "user_id": "user_eu_001",
-    "request_type": "data_access",
-    "region": "EU",
-    "timestamp": Clock::now_unix_nanos(Clock::system())
-  }
-  
-  let dsar_response = {
-    "request_id": "dsar_12345",
-    "user_id": dsar_request["user_id"],
-    "request_type": dsar_request["request_type"],
-    "status": "processed",
-    "data_provided": {
-      "user.email": "user@example.eu",
-      "user.name": "John Doe",
-      "analytics.events": 42
-    },
-    "processing_time_ms": 500,
-    "compliance_notes": [
-      "Data provided in accordance with GDPR Article 15",
-      "Only data with explicit consent included",
-      "Data minimization principles applied"
-    ]
-  }
-  
-  // 验证DSAR响应
-  assert_eq(dsar_response["user_id"], "user_eu_001")
-  assert_eq(dsar_response["request_type"], "data_access")
-  assert_eq(dsar_response["status"], "processed")
-  assert_true(dsar_response["data_provided"].contains_key("user.email"))
-  assert_true(dsar_response["compliance_notes"].length() > 0)
-  
-  // 验证数据删除请求（被遗忘权）
-  let deletion_request = {
-    "user_id": "user_eu_001",
-    "request_type": "data_deletion",
-    "region": "EU",
-    "reason": "withdraw_consent",
-    "timestamp": Clock::now_unix_nanos(Clock::system())
-  }
-  
-  let deletion_response = {
-    "request_id": "del_67890",
-    "user_id": deletion_request["user_id"],
-    "request_type": deletion_request["request_type"],
-    "status": "completed",
-    "deleted_data_categories": ["user.profile", "analytics.events"],
-    "retained_data": {
-      "legal_hold": [],
-      "essential_services": []
-    },
-    "compliance_notes": [
-      "Data deleted in accordance with GDPR Article 17",
-      "Verification of identity completed",
-      "No legal holds preventing deletion"
-    ]
-  }
-  
-  // 验证删除响应
-  assert_eq(deletion_response["user_id"], "user_eu_001")
-  assert_eq(deletion_response["request_type"], "data_deletion")
-  assert_eq(deletion_response["status"], "completed")
-  assert_true(deletion_response["deleted_data_categories"].length() > 0)
-  assert_true(deletion_response["compliance_notes"].length() > 0)
+  let delete_events = query_audit_events(audit_events, Map::from([("action", "delete")]))
+  assert_eq(delete_events.length(), 1)
+  assert_eq(delete_events[0].action, "delete")
 }
