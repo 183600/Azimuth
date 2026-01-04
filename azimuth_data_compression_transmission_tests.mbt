@@ -1,1029 +1,675 @@
-// Azimuth 遥测数据压缩和传输测试用例
-// 包含遥测数据的压缩算法、传输协议和网络优化
+// Azimuth Telemetry System - Data Compression and Transmission Optimization Tests
+// This file contains comprehensive test cases for data compression and transmission optimization
 
-// 测试1: 基础数据压缩算法
-test "基础数据压缩算法" {
-  // 简化的RLE（Run-Length Encoding）压缩
-  let rle_compress = fn(data: Array[Int]) {
-    if data.length() == 0 {
-      return []
-    }
-    
-    let mut compressed = []
-    let mut current_value = data[0]
-    let mut count = 1
-    
-    for i in 1..data.length() {
-      if data[i] == current_value {
-        count = count + 1
-      } else {
-        // 添加压缩的值和计数
-        compressed = compressed.push(current_value)
-        compressed = compressed.push(count)
-        
-        // 重置为新的值
-        current_value = data[i]
-        count = 1
-      }
-    }
-    
-    // 添加最后一个值和计数
-    compressed = compressed.push(current_value)
-    compressed = compressed.push(count)
-    
-    compressed
+// Test 1: Gzip Compression for Telemetry Data
+test "gzip compression for telemetry data" {
+  let compressor = GzipCompressor::new()
+  
+  // Create test telemetry data
+  let telemetry_data = TelemetryData::new()
+  
+  // Add spans
+  for i in 0..=100 {
+    let span = TelemetryData::create_span(telemetry_data, "test_span_" + i.to_string())
+    TelemetryData::add_event(span, "event_" + i.to_string(), Some([("data", StringValue("test_data_" + i.to_string()))]))
+    TelemetryData::set_attribute(span, "attr_" + i.to_string(), IntValue(i))
   }
   
-  // RLE解压缩
-  let rle_decompress = fn(compressed: Array[Int>) {
-    if compressed.length() == 0 || compressed.length() % 2 != 0 {
-      return []
-    }
-    
-    let mut decompressed = []
-    
-    for i in 0..compressed.length() / 2 {
-      let value = compressed[i * 2]
-      let count = compressed[i * 2 + 1]
-      
-      for j in 0..count {
-        decompressed = decompressed.push(value)
-      }
-    }
-    
-    decompressed
+  // Add metrics
+  for i in 0..=50 {
+    let metric = TelemetryData::create_metric(telemetry_data, "metric_" + i.to_string())
+    TelemetryData::add_measurement(metric, i.to_float())
   }
   
-  // 简化的字典压缩
-  let dictionary_compress = fn(data: Array[String>) {
-    let mut dictionary = []
-    let mut compressed = []
-    let mut next_id = 0
-    
-    for item in data {
-      let existing_index = dictionary.find_index(fn(entry) { entry == item })
-      
-      match existing_index {
-        Some(index) => {
-          // 使用现有字典条目
-          compressed = compressed.push(index)
-        }
-        None => {
-          // 添加到字典
-          dictionary = dictionary.push(item)
-          compressed = compressed.push(next_id)
-          next_id = next_id + 1
-        }
-      }
-    }
-    
-    (dictionary, compressed)
+  // Add logs
+  for i in 0..=75 {
+    let log = TelemetryData::create_log(telemetry_data, Info, "log message " + i.to_string())
+    TelemetryData::add_log_attribute(log, "log_id", IntValue(i))
   }
   
-  // 字典解压缩
-  let dictionary_decompress = fn(dictionary: Array[String>, compressed: Array[Int>) {
-    let mut decompressed = []
-    
-    for index in compressed {
-      if index < dictionary.length() {
-        decompressed = decompressed.push(dictionary[index])
-      }
-    }
-    
-    decompressed
-  }
+  // Serialize telemetry data
+  let serialized_data = TelemetryData::serialize(telemetry_data)
+  let original_size = serialized_data.length()
   
-  // 测试RLE压缩
-  let test_data_rle = [1, 1, 1, 2, 2, 3, 3, 3, 3, 2, 2, 2, 4, 4]
-  let compressed_rle = rle_compress(test_data_rle)
-  let decompressed_rle = rle_decompress(compressed_rle)
+  // Compress data
+  let compressed_data = GzipCompressor::compress(compressor, serialized_data)
+  let compressed_size = compressed_data.length()
   
-  // 验证RLE压缩结果
-  assert_eq(compressed_rle, [1, 3, 2, 2, 3, 4, 2, 3, 4, 2])
-  assert_eq(decompressed_rle, test_data_rle)
+  // Verify compression
+  assert_true(compressed_size < original_size)
   
-  // 验证压缩效果
-  assert_true(compressed_rle.length() < test_data_rle.length())
+  // Calculate compression ratio
+  let compression_ratio = compressed_size.to_float() / original_size.to_float()
+  assert_true(compression_ratio < 0.8) // At least 20% compression
   
-  // 测试字典压缩
-  let test_data_dict = ["error", "warning", "error", "info", "warning", "error", "error"]
-  let (dictionary, compressed_dict) = dictionary_compress(test_data_dict)
-  let decompressed_dict = dictionary_decompress(dictionary, compressed_dict)
+  // Decompress data
+  let decompressed_data = GzipCompressor::decompress(compressor, compressed_data)
   
-  // 验证字典压缩结果
-  assert_eq(dictionary, ["error", "warning", "info"])
-  assert_eq(compressed_dict, [0, 1, 0, 2, 1, 0, 0])
-  assert_eq(decompressed_dict, test_data_dict)
+  // Verify decompression
+  assert_eq(decompressed_data.length(), original_size)
+  assert_eq(decompressed_data, serialized_data)
   
-  // 验证压缩效果
-  assert_true(compressed_dict.length() < test_data_dict.length())
+  // Verify telemetry data can be reconstructed from decompressed data
+  let reconstructed_telemetry = TelemetryData::deserialize(decompressed_data)
   
-  // 测试边界情况
-  let empty_data = []
-  let empty_compressed = rle_compress(empty_data)
-  let empty_decompressed = rle_decompress(empty_compressed)
-  assert_eq(empty_compressed, [])
-  assert_eq(empty_decompressed, [])
+  let original_span_count = TelemetryData::get_span_count(telemetry_data)
+  let reconstructed_span_count = TelemetryData::get_span_count(reconstructed_telemetry)
+  assert_eq(original_span_count, reconstructed_span_count)
   
-  let single_item = [5]
-  let single_compressed = rle_compress(single_item)
-  let single_decompressed = rle_decompress(single_compressed)
-  assert_eq(single_compressed, [5, 1])
-  assert_eq(single_decompressed, single_item)
+  let original_metric_count = TelemetryData::get_metric_count(telemetry_data)
+  let reconstructed_metric_count = TelemetryData::get_metric_count(reconstructed_telemetry)
+  assert_eq(original_metric_count, reconstructed_metric_count)
   
-  let unique_data = [1, 2, 3, 4, 5]
-  let unique_compressed = rle_compress(unique_data)
-  let unique_decompressed = rle_decompress(unique_compressed)
-  assert_eq(unique_compressed, [1, 1, 2, 1, 3, 1, 4, 1, 5, 1])
-  assert_eq(unique_decompressed, unique_data)
-  
-  // 测试大数据集
-  let large_data = []
-  for i in 0..100 {
-    large_data = large_data + [i % 10] * 10  // 每个数字重复10次
-  }
-  
-  let large_compressed = rle_compress(large_data)
-  let large_decompressed = rle_decompress(large_compressed)
-  
-  // 验证大数据压缩
-  assert_eq(large_decompressed, large_data)
-  assert_true(large_compressed.length() < large_data.length())
-  
-  // 计算压缩比
-  let compression_ratio = (large_compressed.length() as Float) / (large_data.length() as Float)
-  assert_true(compression_ratio < 0.5)  // 至少50%的压缩率
+  let original_log_count = TelemetryData::get_log_count(telemetry_data)
+  let reconstructed_log_count = TelemetryData::get_log_count(reconstructed_telemetry)
+  assert_eq(original_log_count, reconstructed_log_count)
 }
 
-// 测试2: 遥测数据专用压缩
-test "遥测数据专用压缩" {
-  // 定义遥测数据结构
-  type TelemetryData = {
-    timestamp: Int,
-    metric_name: String,
-    value: Float,
-    tags: Array<(String, String)>
+// Test 2: LZ4 Compression for High-Speed Telemetry
+test "lz4 compression for high-speed telemetry" {
+  let compressor = LZ4Compressor::new()
+  
+  // Create large telemetry dataset
+  let telemetry_data = TelemetryData::new()
+  
+  // Add many spans with similar data (good for compression)
+  for i in 0..=1000 {
+    let span = TelemetryData::create_span(telemetry_data, "high_frequency_operation")
+    TelemetryData::add_event(span, "operation_start", Some([("operation_id", IntValue(i))]))
+    TelemetryData::add_event(span, "operation_complete", Some([("operation_id", IntValue(i))]))
+    TelemetryData::set_attribute(span, "service", StringValue("telemetry_service"))
+    TelemetryData::set_attribute(span, "version", StringValue("1.0.0"))
   }
   
-  // 时间增量压缩
-  let compress_timestamp_deltas = fn(timestamps: Array[Int]) {
-    if timestamps.length() == 0 {
-      return []
-    }
-    
-    let mut compressed = []
-    compressed = compressed.push(timestamps[0])  // 第一个时间戳
-    
-    for i in 1..timestamps.length() {
-      let delta = timestamps[i] - timestamps[i - 1]
-      compressed = compressed.push(delta)
-    }
-    
-    compressed
-  }
+  // Serialize telemetry data
+  let serialized_data = TelemetryData::serialize(telemetry_data)
+  let original_size = serialized_data.length()
   
-  // 时间增量解压缩
-  let decompress_timestamp_deltas = fn(compressed: Array[Int>) {
-    if compressed.length() == 0 {
-      return []
-    }
-    
-    let mut timestamps = []
-    timestamps = timestamps.push(compressed[0])
-    
-    for i in 1..compressed.length() {
-      let next_timestamp = timestamps[i - 1] + compressed[i]
-      timestamps = timestamps.push(next_timestamp)
-    }
-    
-    timestamps
-  }
+  // Compress with LZ4
+  let start_time = Time::current_time_millis()
+  let compressed_data = LZ4Compressor::compress(compressor, serialized_data)
+  let compression_time = Time::current_time_millis() - start_time
   
-  // 度量名称字典压缩
-  let compress_metric_names = fn(data: Array[TelemetryData>) {
-    let mut name_dictionary = []
-    let mut next_id = 0
-    let mut compressed_data = []
-    
-    for item in data {
-      let name_index = match name_dictionary.find_index(fn(name) { name == item.metric_name }) {
-        Some(index) => index
-        None => {
-          name_dictionary = name_dictionary.push(item.metric_name)
-          let current_id = next_id
-          next_id = next_id + 1
-          current_id
-        }
-      }
-      
-      let compressed_item = {
-        timestamp: item.timestamp,
-        metric_name_id: name_index,
-        value: item.value,
-        tags: item.tags
-      }
-      
-      compressed_data = compressed_data.push(compressed_item)
-    }
-    
-    (name_dictionary, compressed_data)
-  }
+  // Verify compression
+  assert_true(compressed_data.length() < original_size)
   
-  // 标签字典压缩
-  let compress_tags = fn(data: Array[TelemetryData>) {
-    let mut tag_dictionary = []
-    let mut next_id = 0
-    let mut compressed_data = []
-    
-    for item in data {
-      let mut compressed_tags = []
-      
-      for (key, value) in item.tags {
-        let tag_string = key + "=" + value
-        let tag_index = match tag_dictionary.find_index(fn(tag) { tag == tag_string }) {
-          Some(index) => index
-          None => {
-            tag_dictionary = tag_dictionary.push(tag_string)
-            let current_id = next_id
-            next_id = next_id + 1
-            current_id
-          }
-        }
-        
-        compressed_tags = compressed_tags.push(tag_index)
-      }
-      
-      let compressed_item = {
-        timestamp: item.timestamp,
-        metric_name: item.metric_name,
-        value: item.value,
-        tag_ids: compressed_tags
-      }
-      
-      compressed_data = compressed_data.push(compressed_item)
-    }
-    
-    (tag_dictionary, compressed_data)
-  }
+  // Verify compression speed (LZ4 should be fast)
+  assert_true(compression_time < 100) // Should compress in less than 100ms
   
-  // 测试时间增量压缩
-  let timestamps = [1000, 1010, 1020, 1035, 1050, 1060, 1070]
-  let compressed_timestamps = compress_timestamp_deltas(timestamps)
-  let decompressed_timestamps = decompress_timestamp_deltas(compressed_timestamps)
+  // Decompress with LZ4
+  let start_time = Time::current_time_millis()
+  let decompressed_data = LZ4Compressor::decompress(compressor, compressed_data)
+  let decompression_time = Time::current_time_millis() - start_time
   
-  // 验证时间增量压缩
-  assert_eq(compressed_timestamps, [1000, 10, 10, 15, 15, 10, 10])
-  assert_eq(decompressed_timestamps, timestamps)
+  // Verify decompression speed
+  assert_true(decompression_time < 100) // Should decompress in less than 100ms
   
-  // 测试度量名称压缩
-  let telemetry_data = [
-    { timestamp: 1000, metric_name: "cpu.usage", value: 75.5, tags: [("host", "server1")] },
-    { timestamp: 1010, metric_name: "memory.usage", value: 60.2, tags: [("host", "server1")] },
-    { timestamp: 1020, metric_name: "cpu.usage", value: 78.1, tags: [("host", "server2")] },
-    { timestamp: 1030, metric_name: "disk.io", value: 125.3, tags: [("host", "server1")] },
-    { timestamp: 1040, metric_name: "cpu.usage", value: 80.0, tags: [("host", "server2")] }
+  // Verify decompression
+  assert_eq(decompressed_data.length(), original_size)
+  assert_eq(decompressed_data, serialized_data)
+}
+
+// Test 3: Adaptive Compression Strategy
+test "adaptive compression strategy" {
+  let adaptive_compressor = AdaptiveCompressor::new()
+  
+  // Test with different data types
+  let test_cases = [
+    ("repetitive_data", "x".repeat(10000)), // Highly compressible
+    ("random_data", generate_random_data(10000)), // Poorly compressible
+    ("json_data", generate_json_data(100)), // Moderately compressible
+    ("binary_data", generate_binary_data(10000)) // Variable compressibility
   ]
   
-  let (name_dict, compressed_by_name) = compress_metric_names(telemetry_data)
-  
-  // 验证度量名称字典
-  assert_eq(name_dict, ["cpu.usage", "memory.usage", "disk.io"])
-  
-  // 验证压缩后的数据
-  assert_eq(compressed_by_name[0].metric_name_id, 0)  // cpu.usage
-  assert_eq(compressed_by_name[1].metric_name_id, 1)  // memory.usage
-  assert_eq(compressed_by_name[2].metric_name_id, 0)  // cpu.usage
-  assert_eq(compressed_by_name[3].metric_name_id, 2)  // disk.io
-  assert_eq(compressed_by_name[4].metric_name_id, 0)  // cpu.usage
-  
-  // 测试标签压缩
-  let (tag_dict, compressed_by_tags) = compress_tags(telemetry_data)
-  
-  // 验证标签字典
-  assert_eq(tag_dict, ["host=server1", "host=server2"])
-  
-  // 验证压缩后的标签
-  assert_eq(compressed_by_tags[0].tag_ids, [0])  // host=server1
-  assert_eq(compressed_by_tags[1].tag_ids, [0])  // host=server1
-  assert_eq(compressed_by_tags[2].tag_ids, [1])  // host=server2
-  assert_eq(compressed_by_tags[3].tag_ids, [0])  // host=server1
-  assert_eq(compressed_by_tags[4].tag_ids, [1])  // host=server2
-  
-  // 计算压缩效果
-  let original_size = telemetry_data.length() * 100  // 假设每条记录100字节
-  let compressed_size = name_dict.length() * 20 + compressed_by_name.length() * 80  // 估算
-  let compression_ratio = (compressed_size as Float) / (original_size as Float)
-  
-  assert_true(compression_ratio < 1.0)  // 应该有压缩效果
+  for (name, data) in test_cases {
+    // Compress with adaptive strategy
+    let compression_result = AdaptiveCompressor::compress(adaptive_compressor, data)
+    
+    // Verify compression
+    assert_true(compression_result.compressed_data.length() <= data.length())
+    
+    // Verify appropriate algorithm was chosen
+    match name {
+      "repetitive_data" => {
+        // Should use high-compression algorithm for repetitive data
+        assert_true(compression_result.algorithm == "gzip" || compression_result.algorithm == "deflate")
+      }
+      "random_data" => {
+        // Might use no compression or fast compression for random data
+        assert_true(compression_result.algorithm == "none" || compression_result.algorithm == "lz4")
+      }
+      "json_data" => {
+        // Should use balanced compression for structured data
+        assert_true(compression_result.algorithm == "gzip" || compression_result.algorithm == "lz4")
+      }
+      "binary_data" => {
+        // Should adapt based on compressibility
+        assert_true(compression_result.algorithm != "")
+      }
+      _ => assert_true(false)
+    }
+    
+    // Decompress and verify
+    let decompressed_data = AdaptiveCompressor::decompress(adaptive_compressor, compression_result)
+    assert_eq(decompressed_data, data)
+  }
 }
 
-// 测试3: 遥测数据传输协议
-test "遥测数据传输协议" {
-  // 定义传输协议头
-  type ProtocolHeader = {
-    version: Int,
-    message_type: String,
-    compression_type: String,
-    payload_size: Int,
-    checksum: Int
-  }
+// Test 4: Batch Compression for Telemetry Batches
+test "batch compression for telemetry batches" {
+  let batch_compressor = BatchCompressor::new()
   
-  // 定义传输消息
-  type TransportMessage = {
-    header: ProtocolHeader,
-    payload: Array[Int]
-  }
+  // Create multiple telemetry batches
+  let batches = []
+  let batch_count = 10
   
-  // 创建协议头
-  let create_header = fn(
-    message_type: String, 
-    compression_type: String, 
-    payload_size: Int
-  ) {
-    let checksum = (message_type.length() + compression_type.length() + payload_size) % 10000  // 简化的校验和
+  for i in 0..=batch_count {
+    let batch = TelemetryBatch::new()
     
-    {
-      version: 1,
-      message_type,
-      compression_type,
-      payload_size,
-      checksum
-    }
-  }
-  
-  // 序列化协议头
-  let serialize_header = fn(header: ProtocolHeader) {
-    let mut serialized = []
-    
-    // 版本号
-    serialized = serialized + [header.version / 100, header.version % 100]
-    
-    // 消息类型长度和内容
-    serialized = serialized.push(header.message_type.length())
-    for c in header.message_type.to_char_array() {
-      serialized = serialized.push(c.to_int())
+    // Add data to batch
+    for j in 0..=50 {
+      let span = TelemetryBatch::create_span(batch, "batch_" + i.to_string() + "_span_" + j.to_string())
+      TelemetryBatch::add_event(span, "event", Some([("batch_id", IntValue(i))]))
     }
     
-    // 压缩类型长度和内容
-    serialized = serialized.push(header.compression_type.length())
-    for c in header.compression_type.to_char_array() {
-      serialized = serialized.push(c.to_int())
-    }
-    
-    // 载荷大小（4字节）
-    serialized = serialized + [
-      (header.payload_size >> 24) & 0xFF,
-      (header.payload_size >> 16) & 0xFF,
-      (header.payload_size >> 8) & 0xFF,
-      header.payload_size & 0xFF
-    ]
-    
-    // 校验和（2字节）
-    serialized = serialized + [
-      (header.checksum >> 8) & 0xFF,
-      header.checksum & 0xFF
-    ]
-    
-    serialized
+    batches.push(batch)
   }
   
-  // 反序列化协议头
-  let deserialize_header = fn(data: Array[Int]) {
-    if data.length() < 10 {
-      return None
-    }
+  // Serialize all batches
+  let serialized_batches = []
+  let total_original_size = 0
+  
+  for batch in batches {
+    let serialized = TelemetryBatch::serialize(batch)
+    serialized_batches.push(serialized)
+    total_original_size = total_original_size + serialized.length()
+  }
+  
+  // Compress batches together
+  let compression_result = BatchCompressor::compress_batches(batch_compressor, serialized_batches)
+  
+  // Verify compression
+  assert_true(compression_result.compressed_data.length() < total_original_size)
+  
+  // Calculate compression ratio
+  let compression_ratio = compression_result.compressed_data.length().to_float() / total_original_size.to_float()
+  assert_true(compression_ratio < 0.8) // At least 20% compression
+  
+  // Decompress batches
+  let decompressed_batches = BatchCompressor::decompress_batches(batch_compressor, compression_result)
+  
+  // Verify decompression
+  assert_eq(decompressed_batches.length(), serialized_batches.length())
+  
+  for i in 0..=decompressed_batches.length() {
+    assert_eq(decompressed_batches[i], serialized_batches[i])
+  }
+  
+  // Verify individual batches can be extracted
+  for i in 0..=batch_count {
+    let extracted_batch = BatchCompressor::extract_batch(batch_compressor, compression_result, i)
+    assert_eq(extracted_batch, serialized_batches[i])
+  }
+}
+
+// Test 5: Delta Compression for Time Series Data
+test "delta compression for time series data" {
+  let delta_compressor = DeltaCompressor::new()
+  
+  // Create time series data
+  let time_series = TimeSeries::new("delta_test_series")
+  
+  // Add points with predictable patterns (good for delta compression)
+  let base_timestamp = 1609459200000L // 2021-01-01 00:00:00 UTC
+  let base_value = 100.0
+  
+  for i in 0..=1000 {
+    let timestamp = base_timestamp + i.to_long() * 60000L // 1 minute intervals
+    let value = base_value + i.to_float() * 0.1 // Incremental values
+    let point = TimeSeriesPoint::new(timestamp, value)
+    TimeSeries::add_point(time_series, point)
+  }
+  
+  // Serialize time series
+  let serialized_data = TimeSeries::serialize(time_series)
+  let original_size = serialized_data.length()
+  
+  // Compress with delta compression
+  let compressed_data = DeltaCompressor::compress(delta_compressor, serialized_data)
+  let compressed_size = compressed_data.length()
+  
+  // Verify compression
+  assert_true(compressed_size < original_size)
+  
+  // Calculate compression ratio
+  let compression_ratio = compressed_size.to_float() / original_size.to_float()
+  assert_true(compression_ratio < 0.5) // Delta compression should be very effective for this data
+  
+  // Decompress with delta compression
+  let decompressed_data = DeltaCompressor::decompress(delta_compressor, compressed_data)
+  
+  // Verify decompression
+  assert_eq(decompressed_data.length(), original_size)
+  assert_eq(decompressed_data, serialized_data)
+  
+  // Verify time series can be reconstructed
+  let reconstructed_series = TimeSeries::deserialize(decompressed_data)
+  
+  let original_point_count = TimeSeries::length(time_series)
+  let reconstructed_point_count = TimeSeries::length(reconstructed_series)
+  assert_eq(original_point_count, reconstructed_point_count)
+  
+  // Verify data integrity
+  for i in 0..=original_point_count {
+    let original_point = TimeSeries::get_point(time_series, i)
+    let reconstructed_point = TimeSeries::get_point(reconstructed_series, i)
     
-    let mut index = 0
-    
-    // 版本号
-    let version = data[index] * 100 + data[index + 1]
-    index = index + 2
-    
-    // 消息类型
-    let message_type_length = data[index]
-    index = index + 1
-    
-    let mut message_type = ""
-    for i in 0..message_type_length {
-      if index + i < data.length() {
-        message_type = message_type + (data[index + i] as Char).to_string()
+    match (original_point, reconstructed_point) {
+      (Some(orig), Some(recon)) => {
+        assert_eq(TimeSeriesPoint::timestamp(orig), TimeSeriesPoint::timestamp(recon))
+        assert_eq(TimeSeriesPoint::value(orig), TimeSeriesPoint::value(recon))
       }
-    }
-    index = index + message_type_length
-    
-    // 压缩类型
-    let compression_type_length = data[index]
-    index = index + 1
-    
-    let mut compression_type = ""
-    for i in 0..compression_type_length {
-      if index + i < data.length() {
-        compression_type = compression_type + (data[index + i] as Char).to_string()
-      }
-    }
-    index = index + compression_type_length
-    
-    // 载荷大小
-    let payload_size = (data[index] << 24) | (data[index + 1] << 16) | 
-                      (data[index + 2] << 8) | data[index + 3]
-    index = index + 4
-    
-    // 校验和
-    let checksum = (data[index] << 8) | data[index + 1]
-    
-    Some({
-      version,
-      message_type,
-      compression_type,
-      payload_size,
-      checksum
-    })
-  }
-  
-  // 创建传输消息
-  let create_message = fn(message_type: String, compression_type: String, payload: Array[Int>) {
-    let header = create_header(message_type, compression_type, payload.length())
-    let serialized_header = serialize_header(header)
-    
-    {
-      header,
-      payload: serialized_header + payload
+      _ => assert_true(false)
     }
   }
+}
+
+// Test 6: Network Transmission Optimization
+test "network transmission optimization" {
+  let transmission_optimizer = NetworkTransmissionOptimizer::new()
   
-  // 解析传输消息
-  let parse_message = fn(message: TransportMessage) {
-    let header_data = message.payload.slice(0, message.payload.length() - message.header.payload_size)
-    let payload_data = message.payload.slice(header_data.length())
-    
-    match deserialize_header(header_data) {
-      Some(parsed_header) => {
-        if parsed_header.checksum == message.header.checksum {
-          Some((parsed_header, payload_data))
-        } else {
-          None  // 校验和不匹配
-        }
-      }
-      None => None
-    }
+  // Create telemetry data
+  let telemetry_data = TelemetryData::new()
+  
+  // Add substantial amount of data
+  for i in 0..=500 {
+    let span = TelemetryData::create_span(telemetry_data, "network_test_span_" + i.to_string())
+    TelemetryData::add_event(span, "network_event", Some([
+      ("large_data", StringValue("x".repeat(1000))), // 1KB of data per event
+      ("metadata", StringValue("metadata_" + i.to_string()))
+    ]))
   }
   
-  // 测试协议头序列化和反序列化
-  let test_header = create_header("telemetry", "rle", 1024)
-  let serialized = serialize_header(test_header)
-  let parsed = deserialize_header(serialized)
+  // Serialize telemetry data
+  let serialized_data = TelemetryData::serialize(telemetry_data)
+  let original_size = serialized_data.length()
   
-  match parsed {
-    Some(header) => {
-      assert_eq(header.version, test_header.version)
-      assert_eq(header.message_type, test_header.message_type)
-      assert_eq(header.compression_type, test_header.compression_type)
-      assert_eq(header.payload_size, test_header.payload_size)
-      assert_eq(header.checksum, test_header.checksum)
-    }
+  // Optimize for network transmission
+  let optimization_result = transmission_optimizer.optimize_for_network(serialized_data)
+  
+  // Verify optimization
+  assert_true(optimization_result.optimized_data.length() <= original_size)
+  
+  // Verify headers were added
+  assert_true(optimization_result.headers.contains("Content-Encoding"))
+  assert_true(optimization_result.headers.contains("X-Telemetry-Compression"))
+  assert_true(optimization_result.headers.contains("X-Telemetry-Checksum"))
+  
+  // Verify checksum
+  let expected_checksum = calculate_checksum(optimization_result.optimized_data)
+  let actual_checksum = optimization_result.headers.get("X-Telemetry-Checksum")
+  match actual_checksum {
+    Some(checksum) => assert_eq(checksum, expected_checksum)
     None => assert_true(false)
   }
   
-  // 测试传输消息创建和解析
-  let test_payload = [1, 2, 3, 4, 5, 1, 1, 1, 2, 2, 3]
-  let test_message = create_message("metrics", "rle", test_payload)
+  // Simulate network transmission
+  let network_transmitter = MockNetworkTransmitter::new()
+  let transmission_result = network_transmitter.transmit(optimization_result.optimized_data, optimization_result.headers)
   
-  match parse_message(test_message) {
-    Some((header, payload)) => {
-      assert_eq(header.message_type, "metrics")
-      assert_eq(header.compression_type, "rle")
-      assert_eq(payload, test_payload)
-    }
-    None => assert_true(false)
-  }
+  // Verify transmission
+  assert_true(transmission_result.success)
+  assert_eq(transmission_result.bytes_sent, optimization_result.optimized_data.length())
+  assert_eq(transmission_result.headers_received, optimization_result.headers)
   
-  // 测试不同消息类型
-  let span_payload = [10, 20, 30, 40, 50]
-  let span_message = create_message("spans", "dict", span_payload)
+  // Verify data integrity after transmission
+  let received_data = transmission_result.data_received
+  let received_checksum = calculate_checksum(received_data)
+  assert_eq(received_checksum, expected_checksum)
   
-  match parse_message(span_message) {
-    Some((header, payload)) => {
-      assert_eq(header.message_type, "spans")
-      assert_eq(header.compression_type, "dict")
-      assert_eq(payload, span_payload)
-    }
-    None => assert_true(false)
-  }
+  // Deoptimize data
+  let deoptimized_data = transmission_optimizer.deoptimize_from_network(received_data, transmission_result.headers_received)
   
-  // 测试错误处理
-  let corrupt_payload = [1, 2, 3]  // 太短，无法解析头
-  let corrupt_message = {
-    header: test_header,
-    payload: corrupt_payload
-  }
+  // Verify deoptimization
+  assert_eq(deoptimized_data.length(), original_size)
+  assert_eq(deoptimized_data, serialized_data)
   
-  let corrupt_result = parse_message(corrupt_message)
-  assert_eq(corrupt_result, None)
+  // Verify telemetry data can be reconstructed
+  let reconstructed_telemetry = TelemetryData::deserialize(deoptimized_data)
+  
+  let original_span_count = TelemetryData::get_span_count(telemetry_data)
+  let reconstructed_span_count = TelemetryData::get_span_count(reconstructed_telemetry)
+  assert_eq(original_span_count, reconstructed_span_count)
 }
 
-// 测试4: 网络传输优化
-test "网络传输优化" {
-  // 定义批处理策略
-  type BatchStrategy = {
-    max_batch_size: Int,
-    max_wait_time_ms: Int,
-    compression_threshold: Int
-  }
+// Test 7: Streaming Compression for Real-time Telemetry
+test "streaming compression for real-time telemetry" {
+  let streaming_compressor = StreamingCompressor::new()
   
-  // 定义传输缓冲区
-  type TransmissionBuffer = {
-    items: Array[TelemetryData],
-    last_flush: Int,
-    batch_strategy: BatchStrategy
-  }
+  // Create streaming telemetry source
+  let telemetry_source = StreamingTelemetrySource::new()
   
-  // 创建批处理策略
-  let create_batch_strategy = fn(max_size: Int, max_wait: Int, compression_threshold: Int) {
-    {
-      max_batch_size: max_size,
-      max_wait_time_ms: max_wait,
-      compression_threshold: compression_threshold
-    }
-  }
+  // Start compression stream
+  let compression_stream = streaming_compressor.start_compression_stream()
   
-  // 创建传输缓冲区
-  let create_transmission_buffer = fn(strategy: BatchStrategy) {
-    {
-      items: [],
-      last_flush: Time::now(),
-      batch_strategy: strategy
-    }
-  }
+  // Generate and compress telemetry data in chunks
+  let chunk_count = 20
+  let data_per_chunk = 1000
   
-  // 添加项目到缓冲区
-  let add_to_buffer = fn(buffer: TransmissionBuffer, item: TelemetryData) {
-    let mut updated_buffer = buffer
-    updated_buffer.items = updated_buffer.items.push(item)
-    updated_buffer
-  }
-  
-  // 检查是否应该刷新缓冲区
-  let should_flush = fn(buffer: TransmissionBuffer) {
-    let current_time = Time::now()
-    let time_elapsed = current_time - buffer.last_flush
-    let size_threshold = buffer.items.length() >= buffer.batch_strategy.max_batch_size
-    let time_threshold = time_elapsed >= buffer.batch_strategy.max_wait_time_ms
+  for i in 0..=chunk_count {
+    // Generate telemetry chunk
+    let chunk_data = telemetry_source.generate_chunk(data_per_chunk)
     
-    size_threshold || time_threshold
-  }
-  
-  // 刷新缓冲区
-  let flush_buffer = fn(buffer: TransmissionBuffer) {
-    let current_time = Time::now()
+    // Compress chunk
+    let compressed_chunk = streaming_compressor.compress_chunk(compression_stream, chunk_data)
     
-    // 决定是否压缩
-    let should_compress = buffer.items.length() >= buffer.batch_strategy.compression_threshold
+    // Verify chunk was compressed
+    assert_true(compressed_chunk.length() <= chunk_data.length())
     
-    // 模拟压缩过程
-    let compressed_size = if should_compress {
-      (buffer.items.length() as Float * 0.6) as Int  // 40%压缩率
-    } else {
-      buffer.items.length()
-    }
-    
-    // 创建传输消息
-    let compression_type = if should_compress { "rle" } else { "none" }
-    let payload = []  // 简化：实际应该是压缩后的数据
-    
-    let message = create_message("telemetry_batch", compression_type, payload)
-    
-    // 重置缓冲区
-    let updated_buffer = {
-      items: [],
-      last_flush: current_time,
-      batch_strategy: buffer.batch_strategy
-    }
-    
-    (updated_buffer, message, buffer.items.length(), compressed_size)
+    // Add to compressed chunks collection
+    streaming_compressor.add_compressed_chunk(compression_stream, compressed_chunk)
   }
   
-  // 使用前一个测试的函数
-  let create_message = fn(message_type: String, compression_type: String, payload: Array[Int>) {
-    let header = create_header(message_type, compression_type, payload.length())
-    {
-      header,
-      payload
-    }
+  // Finish compression stream
+  let final_compressed_data = streaming_compressor.finish_compression_stream(compression_stream)
+  
+  // Calculate total original size
+  let total_original_size = chunk_count * data_per_chunk
+  
+  // Verify final compression
+  assert_true(final_compressed_data.length() < total_original_size)
+  
+  // Start decompression stream
+  let decompression_stream = streaming_compressor.start_decompression_stream()
+  
+  // Decompress chunks
+  let decompressed_chunks = []
+  
+  for compressed_chunk in streaming_compressor.get_compressed_chunks(compression_stream) {
+    let decompressed_chunk = streaming_compressor.decompress_chunk(decompression_stream, compressed_chunk)
+    decompressed_chunks.push(decompressed_chunk)
   }
   
-  let create_header = fn(message_type: String, compression_type: String, payload_size: Int) {
-    let checksum = (message_type.length() + compression_type.length() + payload_size) % 10000
-    
-    {
-      version: 1,
-      message_type,
-      compression_type,
-      payload_size,
-      checksum
-    }
-  }
+  // Finish decompression stream
+  let final_decompressed_data = streaming_compressor.finish_decompression_stream(decompression_stream)
   
-  // 生成测试遥测数据
-  let generate_telemetry_data = fn(count: Int, start_time: Int) {
-    let mut data = []
-    
-    for i in 0..count {
-      let item = {
-        timestamp: start_time + i * 10,
-        metric_name: "test.metric." + (i % 5).to_string(),
-        value: (i * 1.5) as Float,
-        tags: [
-          ("host", "server-" + (i % 3).to_string()),
-          ("region", "us-west-" + (i % 2).to_string())
-        ]
-      }
-      
-      data = data.push(item)
-    }
-    
-    data
-  }
+  // Verify decompression
+  assert_eq(final_decompressed_data.length(), total_original_size)
   
-  // 测试批处理策略
-  let strategy = create_batch_strategy(10, 1000, 5)
-  let buffer = create_transmission_buffer(strategy)
+  // Verify data integrity by reconstructing telemetry data
+  let reconstructed_telemetry = TelemetryData::deserialize(final_decompressed_data)
   
-  // 添加少量数据，不应触发刷新
-  let mut current_buffer = buffer
-  let small_batch = generate_telemetry_data(3, 1000)
-  
-  for item in small_batch {
-    current_buffer = add_to_buffer(current_buffer, item)
-  }
-  
-  assert_eq(current_buffer.items.length(), 3)
-  assert_false(should_flush(current_buffer))
-  
-  // 添加更多数据触发大小阈值
-  let large_batch = generate_telemetry_data(8, 1030)
-  
-  for item in large_batch {
-    current_buffer = add_to_buffer(current_buffer, item)
-  }
-  
-  assert_eq(current_buffer.items.length(), 11)
-  assert_true(should_flush(current_buffer))
-  
-  // 刷新缓冲区
-  let (flushed_buffer, message, original_size, compressed_size) = flush_buffer(current_buffer)
-  
-  // 验证刷新结果
-  assert_eq(flushed_buffer.items.length(), 0)
-  assert_eq(original_size, 11)
-  assert_true(compressed_size < original_size)  // 应该有压缩
-  assert_eq(message.header.compression_type, "rle")
-  
-  // 测试时间阈值触发
-  let time_buffer = create_transmission_buffer(strategy)
-  let mut current_time_buffer = time_buffer
-  
-  // 添加少量数据
-  let time_batch = generate_telemetry_data(3, 2000)
-  
-  for item in time_batch {
-    current_time_buffer = add_to_buffer(current_time_buffer, item)
-  }
-  
-  assert_eq(current_time_buffer.items.length(), 3)
-  assert_false(should_flush(current_time_buffer))
-  
-  // 模拟时间流逝（在实际环境中，这需要等待）
-  let time_elapsed_buffer = {
-    items: current_time_buffer.items,
-    last_flush: Time::now() - 2000,  // 2秒前
-    batch_strategy: current_time_buffer.batch_strategy
-  }
-  
-  assert_true(should_flush(time_elapsed_buffer))
-  
-  // 测试不同批处理策略
-  let high_volume_strategy = create_batch_strategy(50, 500, 20)
-  let low_volume_strategy = create_batch_strategy(5, 2000, 3)
-  
-  let high_buffer = create_transmission_buffer(high_volume_strategy)
-  let low_buffer = create_transmission_buffer(low_volume_strategy)
-  
-  // 添加相同数据到不同缓冲区
-  let test_data = generate_telemetry_data(25, 3000)
-  
-  let mut current_high_buffer = high_buffer
-  let mut current_low_buffer = low_buffer
-  
-  for item in test_data {
-    current_high_buffer = add_to_buffer(current_high_buffer, item)
-    current_low_buffer = add_to_buffer(current_low_buffer, item)
-  }
-  
-  // 高容量缓冲区应该触发刷新
-  assert_true(should_flush(current_high_buffer))
-  
-  // 低容量缓冲区也应该触发刷新（超过大小阈值）
-  assert_true(should_flush(current_low_buffer))
-  
-  // 刷新并比较压缩效果
-  let (_, high_message, high_original, high_compressed) = flush_buffer(current_high_buffer)
-  let (_, low_message, low_original, low_compressed) = flush_buffer(current_low_buffer)
-  
-  // 高容量缓冲区应该使用压缩
-  assert_eq(high_message.header.compression_type, "rle")
-  assert_true(high_compressed < high_original)
-  
-  // 低容量缓冲区可能不使用压缩（取决于阈值）
-  if low_original >= low_buffer.batch_strategy.compression_threshold {
-    assert_eq(low_message.header.compression_type, "rle")
-    assert_true(low_compressed < low_original)
-  } else {
-    assert_eq(low_message.header.compression_type, "none")
-    assert_eq(low_compressed, low_original)
-  }
-  
-  // 计算传输效率
-  let high_compression_ratio = (high_compressed as Float) / (high_original as Float)
-  let low_compression_ratio = (low_compressed as Float) / (low_original as Float)
-  
-  // 高容量缓冲区应该有更好的压缩比
-  assert_true(high_compression_ratio <= low_compression_ratio)
+  // Verify telemetry data integrity
+  let expected_span_count = chunk_count * 10 // Assuming 10 spans per chunk
+  let actual_span_count = TelemetryData::get_span_count(reconstructed_telemetry)
+  assert_eq(actual_span_count, expected_span_count)
 }
 
-// 测试5: 网络错误处理和重试
-test "网络错误处理和重试" {
-  // 定义网络状态
-  enum NetworkStatus {
-    Connected
-    Disconnected
-    Slow
-    Error
+// Test 8: Compression Level Optimization
+test "compression level optimization" {
+  let compression_optimizer = CompressionLevelOptimizer::new()
+  
+  // Create test datasets with different characteristics
+  let test_datasets = [
+    ("highly_repetitive", "x".repeat(10000)), // Very repetitive
+    ("structured_json", generate_json_data(1000)), // Structured text
+    ("binary_data", generate_binary_data(10000)), // Binary data
+    ("mixed_data", generate_mixed_data(10000)) // Mixed content
+  ]
+  
+  for (name, data) in test_datasets {
+    // Find optimal compression level
+    let optimization_result = compression_optimizer.find_optimal_level(data)
+    
+    // Verify optimization result
+    assert_true(optimization_result.optimal_level >= 1 && optimization_result.optimal_level <= 9)
+    assert_true(optimization_result.compression_ratio > 0.0)
+    assert_true(optimization_result.compression_time_ms > 0)
+    assert_true(optimization_result.decompression_time_ms > 0)
+    
+    // Test with the optimal level
+    let compressor = GzipCompressor::with_level(optimization_result.optimal_level)
+    
+    let start_time = Time::current_time_millis()
+    let compressed_data = GzipCompressor::compress(compressor, data)
+    let compression_time = Time::current_time_millis() - start_time
+    
+    let start_time = Time::current_time_millis()
+    let decompressed_data = GzipCompressor::decompress(compressor, compressed_data)
+    let decompression_time = Time::current_time_millis() - start_time
+    
+    // Verify data integrity
+    assert_eq(decompressed_data, data)
+    
+    // Verify performance is within expected range
+    assert_true(compression_time <= optimization_result.compression_time_ms * 1.2) // Within 20% of expected
+    assert_true(decompression_time <= optimization_result.decompression_time_ms * 1.2) // Within 20% of expected
+    
+    // Verify compression ratio
+    let actual_ratio = compressed_data.length().to_float() / data.length().to_float()
+    assert_true(actual_ratio <= optimization_result.compression_ratio * 1.1) // Within 10% of expected
+  }
+}
+
+// Test 9: Multi-Stage Compression Pipeline
+test "multi-stage compression pipeline" {
+  let compression_pipeline = MultiStageCompressionPipeline::new()
+  
+  // Configure pipeline stages
+  compression_pipeline.add_stage(PreprocessingStage::new()) // Data preprocessing
+  compression_pipeline.add_stage(CompressionStage::new("gzip", 6)) // Gzip compression
+  compression_pipeline.add_stage(PostprocessingStage::new()) // Data postprocessing
+  
+  // Create complex telemetry data
+  let telemetry_data = ComplexTelemetryData::new()
+  
+  // Add various types of data
+  for i in 0..=200 {
+    // Add spans with different characteristics
+    let span = ComplexTelemetryData::create_span(telemetry_data, "complex_span_" + i.to_string())
+    
+    // Add repetitive events (good for compression)
+    for j in 0..=10 {
+      ComplexTelemetryData::add_event(span, "repetitive_event", Some([("type", StringValue("standard"))]))
+    }
+    
+    // Add unique events (poor for compression)
+    ComplexTelemetryData::add_event(span, "unique_event_" + i.to_string(), Some([("unique_id", StringValue(i.to_string()))]))
+    
+    // Add structured attributes
+    ComplexTelemetryData::set_attribute(span, "structured_data", StringValue(generate_json_data(10)))
   }
   
-  // 定义传输结果
-  type TransmissionResult = {
-    success: Bool,
-    bytes_sent: Int,
-    error_message: Option<String>,
-    retry_count: Int
+  // Serialize telemetry data
+  let serialized_data = ComplexTelemetryData::serialize(telemetry_data)
+  let original_size = serialized_data.length()
+  
+  // Process through compression pipeline
+  let pipeline_result = compression_pipeline.process(serialized_data)
+  
+  // Verify pipeline processing
+  assert_true(pipeline_result.final_data.length() < original_size)
+  
+  // Verify all stages were processed
+  assert_eq(pipeline_result.stage_results.length(), 3)
+  
+  // Verify stage results
+  for stage_result in pipeline_result.stage_results {
+    assert_true(stage_result.input_size > 0)
+    assert_true(stage_result.output_size > 0)
+    assert_true(stage_result.processing_time_ms > 0)
   }
   
-  // 定义重试策略
-  type RetryStrategy = {
-    max_attempts: Int,
-    initial_delay_ms: Int,
-    max_delay_ms: Int,
-    backoff_multiplier: Float
+  // Calculate overall compression ratio
+  let overall_ratio = pipeline_result.final_data.length().to_float() / original_size.to_float()
+  assert_true(overall_ratio < 0.7) // At least 30% compression
+  
+  // Reverse process through decompression pipeline
+  let decompression_pipeline = MultiStageDecompressionPipeline::new()
+  decompression_pipeline.add_stage(PreprocessingStage::new()) // Reverse postprocessing
+  decompression_pipeline.add_stage(DecompressionStage::new("gzip")) // Gzip decompression
+  decompression_pipeline.add_stage(PostprocessingStage::new()) // Reverse preprocessing
+  
+  let decompressed_data = decompression_pipeline.process(pipeline_result.final_data)
+  
+  // Verify decompression
+  assert_eq(decompressed_data.length(), original_size)
+  assert_eq(decompressed_data, serialized_data)
+  
+  // Verify telemetry data can be reconstructed
+  let reconstructed_telemetry = ComplexTelemetryData::deserialize(decompressed_data)
+  
+  let original_span_count = ComplexTelemetryData::get_span_count(telemetry_data)
+  let reconstructed_span_count = ComplexTelemetryData::get_span_count(reconstructed_telemetry)
+  assert_eq(original_span_count, reconstructed_span_count)
+}
+
+// Test 10: Adaptive Transmission Based on Network Conditions
+test "adaptive transmission based on network conditions" {
+  let adaptive_transmitter = AdaptiveTransmitter::new()
+  
+  // Create telemetry data
+  let telemetry_data = TelemetryData::new()
+  
+  // Add substantial amount of data
+  for i in 0..=100 {
+    let span = TelemetryData::create_span(telemetry_data, "adaptive_test_span_" + i.to_string())
+    TelemetryData::add_event(span, "adaptive_event", Some([("data", StringValue("x".repeat(1000)))]))
   }
   
-  // 模拟网络传输
-  let simulate_transmission = fn(
-    message: TransportMessage, 
-    network_status: NetworkStatus,
-    attempt: Int
-  ) {
-    match network_status {
-      NetworkStatus::Connected => {
-        // 成功传输
-        let bytes_sent = message.payload.length()
-        {
-          success: true,
-          bytes_sent,
-          error_message: None,
-          retry_count: attempt - 1
-        }
+  // Serialize telemetry data
+  let serialized_data = TelemetryData::serialize(telemetry_data)
+  
+  // Test with different network conditions
+  let network_conditions = [
+    NetworkCondition::new("excellent", 100.0, 10, 0.0), // 100 Mbps, 10ms latency, 0% packet loss
+    NetworkCondition::new("good", 50.0, 50, 0.1),      // 50 Mbps, 50ms latency, 0.1% packet loss
+    NetworkCondition::new("poor", 5.0, 200, 2.0),      // 5 Mbps, 200ms latency, 2% packet loss
+    NetworkCondition::new("terrible", 1.0, 500, 5.0)   // 1 Mbps, 500ms latency, 5% packet loss
+  ]
+  
+  for condition in network_conditions {
+    // Set network condition
+    adaptive_transmitter.set_network_condition(condition)
+    
+    // Adapt transmission strategy
+    let transmission_strategy = adaptive_transmitter.adapt_strategy(serialized_data)
+    
+    // Verify strategy adaptation based on network conditions
+    match condition.name {
+      "excellent" => {
+        // Should use minimal compression, larger chunks
+        assert_true(transmission_strategy.compression_level <= 3)
+        assert_true(transmission_strategy.chunk_size >= 65536) // 64KB or larger
+        assert_true(transmission_strategy.retry_count <= 3)
       }
-      NetworkStatus::Disconnected => {
-        // 连接失败
-        {
-          success: false,
-          bytes_sent: 0,
-          error_message: Some("Connection refused"),
-          retry_count: attempt - 1
-        }
+      "good" => {
+        // Should use moderate compression, medium chunks
+        assert_true(transmission_strategy.compression_level >= 3 && transmission_strategy.compression_level <= 6)
+        assert_true(transmission_strategy.chunk_size >= 32768 && transmission_strategy.chunk_size < 65536)
+        assert_true(transmission_strategy.retry_count <= 5)
       }
-      NetworkStatus::Slow => {
-        // 网络慢，可能超时
-        if attempt <= 2 {
-          {
-            success: false,
-            bytes_sent: message.payload.length() / 2,
-            error_message: Some("Timeout"),
-            retry_count: attempt - 1
-          }
-        } else {
-          // 重试成功
-          {
-            success: true,
-            bytes_sent: message.payload.length(),
-            error_message: None,
-            retry_count: attempt - 1
-          }
-        }
+      "poor" => {
+        // Should use high compression, smaller chunks
+        assert_true(transmission_strategy.compression_level >= 6)
+        assert_true(transmission_strategy.chunk_size >= 16384 && transmission_strategy.chunk_size < 32768)
+        assert_true(transmission_strategy.retry_count <= 10)
       }
-      NetworkStatus::Error => {
-        // 网络错误，总是失败
-        {
-          success: false,
-          bytes_sent: 0,
-          error_message: Some("Network error"),
-          retry_count: attempt - 1
-        }
+      "terrible" => {
+        // Should use maximum compression, smallest chunks
+        assert_true(transmission_strategy.compression_level >= 8)
+        assert_true(transmission_strategy.chunk_size < 16384)
+        assert_true(transmission_strategy.retry_count <= 15)
       }
-    }
-  }
-  
-  // 计算重试延迟
-  let calculate_retry_delay = fn(strategy: RetryStrategy, attempt: Int) {
-    let delay = strategy.initial_delay_ms as Float * 
-               (strategy.backoff_multiplier.pow((attempt - 1) as Float))
-    
-    let capped_delay = if delay > strategy.max_delay_ms as Float {
-      strategy.max_delay_ms as Float
-    } else {
-      delay
+      _ => assert_true(false)
     }
     
-    capped_delay as Int
-  }
-  
-  // 带重试的传输
-  let transmit_with_retry = fn(
-    message: TransportMessage,
-    network_status: NetworkStatus,
-    retry_strategy: RetryStrategy
-  ) {
-    let mut attempt = 1
-    let mut total_delay = 0
-    let mut result = simulate_transmission(message, network_status, attempt)
+    // Transmit data with adapted strategy
+    let transmission_result = adaptive_transmitter.transmit_with_strategy(serialized_data, transmission_strategy)
     
-    while not(result.success) && attempt < retry_strategy.max_attempts {
-      attempt = attempt + 1
-      let delay = calculate_retry_delay(retry_strategy, attempt)
-      total_delay = total_delay + delay
-      
-      // 模拟延迟等待
-      result = simulate_transmission(message, network_status, attempt)
-    }
+    // Verify transmission
+    assert_true(transmission_result.success)
     
-    {
-      success: result.success,
-      bytes_sent: result.bytes_sent,
-      error_message: result.error_message,
-      retry_count: result.retry_count,
-      total_delay_ms: total_delay
-    }
+    // Verify transmission metrics are reasonable for network conditions
+    assert_true(transmission_result.transmission_time_ms <= condition.expected_transmission_time_ms * 1.5)
+    assert_true(transmission_result.retransmission_count <= transmission_strategy.retry_count)
+    
+    // Verify data integrity
+    let received_data = transmission_result.data_received
+    assert_eq(received_data.length(), serialized_data.length())
+    assert_eq(received_data, serialized_data)
+  }
+}
+
+// Helper functions
+fn generate_random_data(size : Int) -> String {
+  let result = ""
+  let chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+  
+  for i in 0..=size {
+    let index = (i % chars.length())
+    result = result + chars[index]
   }
   
-  // 使用前一个测试的类型
-  type TransportMessage = {
-    header: ProtocolHeader,
-    payload: Array[Int>
-  }
+  result
+}
+
+fn generate_json_data(count : Int) -> String {
+  let result = "["
   
-  type ProtocolHeader = {
-    version: Int,
-    message_type: String,
-    compression_type: String,
-    payload_size: Int,
-    checksum: Int
-  }
-  
-  // 创建测试消息
-  let create_test_message = fn(payload_size: Int) {
-    let mut payload = []
-    for i in 0..payload_size {
-      payload = payload.push(i % 256)
+  for i in 0..=count {
+    if i > 0 {
+      result = result + ","
     }
     
-    let header = {
-      version: 1,
-      message_type: "test",
-      compression_type: "none",
-      payload_size,
-      checksum: payload_size % 10000
-    }
-    
-    {
-      header,
-      payload
-    }
+    result = result + "{"
+    result = result + "\"id\":" + i.to_string() + ","
+    result = result + "\"name\":\"item_" + i.to_string() + "\"," 
+    result = result + "\"value\":" + (i * 10).to_string() + ","
+    result = result + "\"timestamp\":" + (1609459200000L + i.to_long() * 1000L).to_string()
+    result = result + "}"
   }
   
-  // 测试不同网络状态下的传输
-  let test_message = create_test_message(1024)
-  let retry_strategy = {
-    max_attempts: 3,
-    initial_delay_ms: 100,
-    max_delay_ms: 1000,
-    backoff_multiplier: 2.0
+  result = result + "]"
+  result
+}
+
+fn generate_binary_data(size : Int) -> String {
+  let result = ""
+  
+  for i in 0..=size {
+    result = result + (i % 256).to_string()
   }
   
-  // 测试连接正常
-  let connected_result = transmit_with_retry(
-    test_message, 
-    NetworkStatus::Connected, 
-    retry_strategy
-  )
+  result
+}
+
+fn generate_mixed_data(size : Int) -> String {
+  let result = ""
+  let chunk_size = size / 4
   
-  assert_true(connected_result.success)
-  assert_eq(connected_result.bytes_sent, 1024)
-  assert_eq(connected_result.retry_count, 0)
-  assert_eq(connected_result.total_delay_ms, 0)
+  // Add repetitive data
+  result = result + "x".repeat(chunk_size)
   
-  // 测试连接断开
-  let disconnected_result = transmit_with_retry(
-    test_message, 
-    NetworkStatus::Disconnected, 
-    retry_strategy
-  )
+  // Add random data
+  result = result + generate_random_data(chunk_size)
   
-  assert_false(disconnected_result.success)
-  assert_eq(disconnected_result.bytes_sent, 0)
-  assert_eq(disconnected_result.retry_count, 2)  // 最大尝试次数-1
-  assert_true(disconnected_result.total_delay_ms > 0)
+  // Add JSON data
+  result = result + generate_json_data(chunk_size / 100)
   
-  // 测试网络慢
-  let slow_result = transmit_with_retry(
-    test_message, 
-    NetworkStatus::Slow, 
-    retry_strategy
-  )
+  // Add binary data
+  result = result + generate_binary_data(chunk_size)
   
-  assert_true(slow_result.success)
-  assert_eq(slow_result.bytes_sent, 1024)
-  assert_eq(slow_result.retry_count, 2)  // 前2次失败，第3次成功
-  assert_true(slow_result.total_delay_ms > 0)
+  result
+}
+
+fn calculate_checksum(data : String) -> String {
+  // Simple checksum implementation
+  let checksum = 0
   
-  // 测试网络错误
-  let error_result = transmit_with_retry(
-    test_message, 
-    NetworkStatus::Error, 
-    retry_strategy
-  )
-  
-  assert_false(error_result.success)
-  assert_eq(error_result.bytes_sent, 0)
-  assert_eq(error_result.retry_count, 2)  // 最大尝试次数-1
-  assert_true(error_result.total_delay_ms > 0)
-  
-  // 测试重试延迟计算
-  let delay1 = calculate_retry_delay(retry_strategy, 1)
-  let delay2 = calculate_retry_delay(retry_strategy, 2)
-  let delay3 = calculate_retry_delay(retry_strategy, 3)
-  
-  assert_eq(delay1, 100)  // 初始延迟
-  assert_eq(delay2, 200)  // 100 * 2
-  assert_eq(delay3, 400)  // 200 * 2
-  
-  // 测试最大延迟限制
-  let capped_strategy = {
-    max_attempts: 5,
-    initial_delay_ms: 100,
-    max_delay_ms: 300,
-    backoff_multiplier: 2.0
+  for i in 0..=data.length() {
+    checksum = (checksum + data[i]) % 1000000007 // Use large prime for modulo
   }
   
-  let capped_delay1 = calculate_retry_delay(capped_strategy, 1)
-  let capped_delay2 = calculate_retry_delay(capped_strategy, 2)
-  let capped_delay3 = calculate_retry_delay(capped_strategy, 3)
-  
-  assert_eq(capped_delay1, 100)  // 初始延迟
-  assert_eq(capped_delay2, 200)  // 100 * 2
-  assert_eq(capped_delay3, 300)  // 会被限制在最大延迟
-  
-  // 测试不同重试策略
-  let aggressive_strategy = {
-    max_attempts: 5,
-    initial_delay_ms: 50,
-    max_delay_ms: 500,
-    backoff_multiplier: 1.5
-  }
-  
-  let conservative_strategy = {
-    max_attempts: 2,
-    initial_delay_ms: 200,
-    max_delay_ms: 1000,
-    backoff_multiplier: 3.0
-  }
-  
-  let aggressive_result = transmit_with_retry(
-    test_message, 
-    NetworkStatus::Slow, 
-    aggressive_strategy
-  )
-  
-  let conservative_result = transmit_with_retry(
-    test_message, 
-    NetworkStatus::Slow, 
-    conservative_strategy
-  )
-  
-  // 两种策略都应该成功
-  assert_true(aggressive_result.success)
-  assert_true(conservative_result.success)
-  
-  // 激进策略应该有更多重试次数但总延迟更少
-  assert_true(aggressive_result.retry_count >= conservative_result.retry_count)
-  assert_true(aggressive_result.total_delay_ms <= conservative_result.total_delay_ms)
+  checksum.to_string()
 }
