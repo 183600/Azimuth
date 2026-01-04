@@ -1,1218 +1,751 @@
-// Azimuth Telemetry System - Network Communication Tests
-// This file contains test cases for network communication and protocol handling functionality
+// Azimuth Network Communication Test Suite
+// 网络通信测试套件 - 专注于网络协议、连接管理和数据传输
 
-// Test 1: HTTP Client Communication
-test "http client communication" {
-  // Create HTTP client with default configuration
+// 测试1: HTTP/HTTPS客户端通信
+test "HTTP/HTTPS客户端通信测试" {
+  // 创建HTTP客户端
   let http_client = HttpClient::new()
-  
-  // Verify client configuration
-  assert_eq(HttpClient::timeout(http_client), 30000) // 30 seconds default
-  assert_eq(HttpClient::max_retries(http_client), 3)
-  assert_eq(HttpClient::follow_redirects(http_client), true)
-  
-  // Configure HTTP client
-  HttpClient::set_timeout(http_client, 10000) // 10 seconds
-  HttpClient::set_max_retries(http_client, 5)
-  HttpClient::set_follow_redirects(http_client, false)
+  HttpClient::set_timeout(http_client, 5000) // 5秒超时
   HttpClient::set_user_agent(http_client, "Azimuth-Telemetry/1.0")
+  HttpClient::set_max_redirects(http_client, 3)
   
-  // Verify updated configuration
-  assert_eq(HttpClient::timeout(http_client), 10000)
-  assert_eq(HttpClient::max_retries(http_client), 5)
-  assert_eq(HttpClient::follow_redirects(http_client), false)
-  assert_eq(HttpClient::user_agent(http_client), "Azimuth-Telemetry/1.0")
+  // 配置请求头
+  let headers = [
+    ("Content-Type", "application/json"),
+    ("Accept", "application/json"),
+    ("X-Trace-ID", "trace-123456"),
+    ("X-Request-ID", "req-789012")
+  ]
   
-  // Test GET request
-  let get_headers = Headers::new()
-  Headers::set(get_headers, "Accept", "application/json")
-  Headers::set(get_headers, "X-API-Key", "test-api-key")
-  
-  let get_request = HttpRequest::new("GET", "https://httpbin.org/get")
-  HttpRequest::set_headers(get_request, get_headers)
-  
-  let get_response = HttpClient::execute(http_client, get_request)
-  
-  match get_response {
-    Ok(response) => {
-      assert_eq(HttpResponse::status_code(response), 200)
-      assert_eq(HttpResponse::status_message(response), "OK")
-      assert_true(HttpResponse::headers(response).has("content-type"))
-      assert_true(HttpResponse::body(response).length() > 0)
-      
-      // Parse JSON response
-      let json_body = HttpResponse::json(response)
-      match json_body {
-        Ok(json) => {
-          assert_true(Json::has_key(json, "url"))
-          assert_true(Json::has_key(json, "headers"))
-        }
-        Err(_) => assert_true(false)
-      }
-    }
-    Err(_) => {
-      // In test environment, network requests might fail
-      // We'll consider this acceptable for testing purposes
-      assert_true(true)
+  // 创建遥测数据负载
+  let telemetry_payload = {
+    "trace_id": "trace-123456",
+    "span_id": "span-789012",
+    "service_name": "azimuth-telemetry",
+    "operation_name": "http.request",
+    "start_time": 1640995200000,
+    "end_time": 1640995200500,
+    "status": "ok",
+    "attributes": {
+      "http.method": "GET",
+      "http.url": "https://api.example.com/telemetry",
+      "http.status_code": 200,
+      "response_size": 1024
     }
   }
   
-  // Test POST request with JSON body
-  let post_data = Json::object([
-    ("name", Json::string("test")),
-    ("value", Json::number(42))
+  // 测试HTTPS GET请求
+  let get_request = HttpRequest::new("GET", "https://api.example.com/telemetry")
+  HttpRequest::set_headers(get_request, headers)
+  
+  let get_start_time = Clock::now_unix_nanos(Clock::system())
+  let get_response = HttpClient::execute(http_client, get_request)
+  let get_end_time = Clock::now_unix_nanos(Clock::system())
+  
+  // 验证GET请求
+  match get_response {
+    HttpResponse(status_code: 200, headers: response_headers, body: response_body) => {
+      assert_true(response_headers.contains("Content-Type"))
+      assert_true(response_body.length() > 0)
+      
+      // 验证响应时间
+      let response_time = get_end_time - get_start_time
+      assert_true(response_time < 5000000000) // 小于5秒
+    }
+    _ => assert_true(false)
+  }
+  
+  // 测试HTTPS POST请求
+  let post_request = HttpRequest::new("POST", "https://api.example.com/telemetry")
+  HttpRequest::set_headers(post_request, headers)
+  HttpRequest::set_body(post_request, Json::serialize(telemetry_payload))
+  
+  let post_start_time = Clock::now_unix_nanos(Clock::system())
+  let post_response = HttpClient::execute(http_client, post_request)
+  let post_end_time = Clock::now_unix_nanos(Clock::system())
+  
+  // 验证POST请求
+  match post_response {
+    HttpResponse(status_code: 201, headers: response_headers, body: response_body) => {
+      assert_true(response_headers.contains("Location"))
+      assert_true(response_body.contains("success"))
+      
+      // 验证响应时间
+      let response_time = post_end_time - post_start_time
+      assert_true(response_time < 5000000000) // 小于5秒
+    }
+    _ => assert_true(false)
+  }
+  
+  // 测试连接池复用
+  let pooled_request = HttpRequest::new("GET", "https://api.example.com/telemetry/pool")
+  let pooled_response = HttpClient::execute(http_client, pooled_request)
+  
+  match pooled_response {
+    HttpResponse(status_code: 200, _, _) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // 验证连接池统计
+  let pool_stats = HttpClient::get_connection_pool_stats(http_client)
+  assert_true(pool_stats.active_connections > 0)
+  assert_true(pool_stats.total_requests >= 3)
+}
+
+// 测试2: WebSocket通信
+test "WebSocket通信测试" {
+  // 创建WebSocket客户端
+  let ws_client = WebSocketClient::new()
+  WebSocketClient::set_ping_interval(ws_client, 30000) // 30秒ping间隔
+  WebSocketClient::set_max_message_size(ws_client, 1024 * 1024) // 1MB最大消息
+  
+  // 连接到WebSocket服务器
+  let ws_url = "wss://telemetry.example.com/ws"
+  let connect_result = WebSocketClient::connect(ws_client, ws_url)
+  
+  assert_true(connect_result.success)
+  assert_true(connect_result.connection_id.length() > 0)
+  
+  let connection_id = connect_result.connection_id
+  
+  // 测试发送文本消息
+  let text_message = {
+    "type": "telemetry_data",
+    "trace_id": "trace-123456",
+    "span_id": "span-789012",
+    "timestamp": 1640995200000,
+    "metrics": [
+      {"name": "cpu_usage", "value": 75.5, "unit": "percent"},
+      {"name": "memory_usage", "value": 512.0, "unit": "mb"},
+      {"name": "request_count", "value": 1000, "unit": "count"}
+    ]
+  }
+  
+  let send_result = WebSocketClient::send_text(ws_client, connection_id, Json::serialize(text_message))
+  assert_true(send_result.success)
+  
+  // 测试发送二进制消息
+  let binary_data = BinaryData::from_string("binary_telemetry_data")
+  let binary_send_result = WebSocketClient::send_binary(ws_client, connection_id, binary_data)
+  assert_true(binary_send_result.success)
+  
+  // 测试接收消息
+  let receive_start = Clock::now_unix_nanos(Clock::system())
+  let receive_result = WebSocketClient::receive_message(ws_client, connection_id, 5000) // 5秒超时
+  let receive_end = Clock::now_unix_nanos(Clock::system())
+  
+  match receive_result {
+    WebSocketMessage::Text(text) => {
+      assert_true(text.contains("telemetry"))
+      assert_true(text.contains("acknowledged"))
+    }
+    WebSocketMessage::Binary(data) => {
+      assert_true(data.length() > 0)
+    }
+    WebSocketMessage::Close(_) => assert_true(false)
+  }
+  
+  // 验证接收延迟
+  let receive_latency = receive_end - receive_start
+  assert_true(receive_latency < 1000000000) // 小于1秒
+  
+  // 测试心跳机制
+  let ping_result = WebSocketClient::ping(ws_client, connection_id)
+  assert_true(ping_result.success)
+  
+  let pong_result = WebSocketClient::wait_for_pong(ws_client, connection_id, 3000)
+  assert_true(pong_result.success)
+  
+  // 测试连接状态
+  let connection_status = WebSocketClient::get_connection_status(ws_client, connection_id)
+  assert_eq(connection_status, WebSocketStatus::Connected)
+  
+  // 测试优雅关闭
+  let close_result = WebSocketClient::close(ws_client, connection_id, 1000, "Normal closure")
+  assert_true(close_result.success)
+  
+  // 验证连接已关闭
+  let closed_status = WebSocketClient::get_connection_status(ws_client, connection_id)
+  assert_eq(closed_status, WebSocketStatus::Closed)
+}
+
+// 测试3: TCP/UDP套接字通信
+test "TCP/UDP套接字通信测试" {
+  // 创建TCP客户端
+  let tcp_client = TcpClient::new()
+  TcpClient::set_connect_timeout(tcp_client, 5000) // 5秒连接超时
+  TcpClient::set_read_timeout(tcp_client, 3000) // 3秒读取超时
+  TcpClient::set_write_timeout(tcp_client, 3000) // 3秒写入超时
+  
+  // 连接到TCP服务器
+  let tcp_address = SocketAddress::new("tcp.telemetry.example.com", 8080)
+  let tcp_connect_result = TcpClient::connect(tcp_client, tcp_address)
+  
+  assert_true(tcp_connect_result.success)
+  let tcp_connection = tcp_connect_result.connection
+  
+  // 测试TCP数据发送
+  let tcp_data = {
+    "protocol": "telemetry",
+    "version": "1.0",
+    "data": {
+      "trace_id": "trace-123456",
+      "metrics": [
+        {"name": "latency", "value": 150.5, "unit": "ms"},
+        {"name": "throughput", "value": 1000.0, "unit": "ops/s"}
+      ]
+    }
+  }
+  
+  let tcp_send_result = TcpClient::send(tcp_connection, Json::serialize(tcp_data))
+  assert_true(tcp_send_result.bytes_sent > 0)
+  
+  // 测试TCP数据接收
+  let tcp_receive_result = TcpClient::receive(tcp_connection, 4096) // 最多4KB
+  assert_true(tcp_receive_result.bytes_received > 0)
+  assert_true(tcp_receive_result.data.length() > 0)
+  
+  // 测试TCP连接统计
+  let tcp_stats = TcpClient::get_connection_stats(tcp_connection)
+  assert_true(tcp_stats.bytes_sent > 0)
+  assert_true(tcp_stats.bytes_received > 0)
+  assert_true(tcp_stats.connection_duration > 0)
+  
+  // 关闭TCP连接
+  let tcp_close_result = TcpClient::close(tcp_connection)
+  assert_true(tcp_close_result.success)
+  
+  // 创建UDP客户端
+  let udp_client = UdpClient::new()
+  UdpClient::set_send_timeout(udp_client, 1000) // 1秒发送超时
+  UdpClient::set_receive_timeout(udp_client, 1000) // 1秒接收超时
+  
+  // 绑定UDP套接字
+  let udp_bind_result = UdpClient::bind(udp_client, SocketAddress::new("0.0.0.0", 0)) // 随机端口
+  assert_true(udp_bind_result.success)
+  let udp_socket = udp_bind_result.socket
+  
+  // 测试UDP数据发送
+  let udp_target = SocketAddress::new("udp.telemetry.example.com", 9090)
+  let udp_data = "udp_telemetry_packet"
+  let udp_send_result = UdpClient::send_to(udp_socket, udp_data, udp_target)
+  assert_true(udp_send_result.bytes_sent > 0)
+  
+  // 测试UDP数据接收
+  let udp_receive_result = UdpClient::receive_from(udp_socket, 1024) // 最多1KB
+  match udp_receive_result {
+    UdpReceiveResult(data: received_data, from: sender) => {
+      assert_true(received_data.length() > 0)
+      assert_true(sender.address.length() > 0)
+    }
+    UdpReceiveTimeout => assert_true(false) // 不应该超时
+  }
+  
+  // 关闭UDP套接字
+  let udp_close_result = UdpClient::close(udp_socket)
+  assert_true(udp_close_result.success)
+}
+
+// 测试4: 网络连接池管理
+test "网络连接池管理测试" {
+  // 创建连接池
+  let connection_pool = ConnectionPool::new()
+  ConnectionPool::set_max_connections(connection_pool, 10) // 最大10个连接
+  ConnectionPool::set_max_idle_time(connection_pool, 30000) // 30秒空闲超时
+  ConnectionPool::set_connection_timeout(connection_pool, 5000) // 5秒连接超时
+  
+  // 配置连接池目标
+  let pool_targets = [
+    ("https://api1.example.com", 5), // 最多5个连接
+    ("https://api2.example.com", 3), // 最多3个连接
+    ("https://api3.example.com", 2)  // 最多2个连接
+  ]
+  
+  for (target, max_connections) in pool_targets {
+    ConnectionPool::add_target(connection_pool, target, max_connections)
+  }
+  
+  // 测试连接获取
+  let connection1 = ConnectionPool::get_connection(connection_pool, "https://api1.example.com")
+  assert_true(connection1.is_some())
+  
+  let connection2 = ConnectionPool::get_connection(connection_pool, "https://api1.example.com")
+  assert_true(connection2.is_some())
+  
+  let connection3 = ConnectionPool::get_connection(connection_pool, "https://api2.example.com")
+  assert_true(connection3.is_some())
+  
+  // 测试连接池统计
+  let pool_stats = ConnectionPool::get_stats(connection_pool)
+  assert_true(pool_stats.active_connections >= 3)
+  assert_true(pool_stats.total_connections_created >= 3)
+  
+  // 测试连接归还
+  ConnectionPool::return_connection(connection_pool, connection1.unwrap())
+  
+  let returned_stats = ConnectionPool::get_stats(connection_pool)
+  assert_true(returned_stats.idle_connections > 0)
+  
+  // 测试连接复用
+  let reused_connection = ConnectionPool::get_connection(connection_pool, "https://api1.example.com")
+  assert_true(reused_connection.is_some())
+  
+  // 验证连接复用统计
+  let reuse_stats = ConnectionPool::get_stats(connection_pool)
+  assert_true(reuse_stats.connections_reused > 0)
+  
+  // 测试连接清理
+  ConnectionPool::cleanup_idle_connections(connection_pool)
+  
+  let cleanup_stats = ConnectionPool::get_stats(connection_pool)
+  assert_true(cleanup_stats.connections_cleaned >= 0)
+  
+  // 归还所有连接
+  if connection2.is_some() {
+    ConnectionPool::return_connection(connection_pool, connection2.unwrap())
+  }
+  if connection3.is_some() {
+    ConnectionPool::return_connection(connection_pool, connection3.unwrap())
+  }
+  if reused_connection.is_some() {
+    ConnectionPool::return_connection(connection_pool, reused_connection.unwrap())
+  }
+  
+  // 关闭连接池
+  ConnectionPool::close(connection_pool)
+  
+  let final_stats = ConnectionPool::get_stats(connection_pool)
+  assert_eq(final_stats.active_connections, 0)
+}
+
+// 测试5: 网络错误处理和重试机制
+test "网络错误处理和重试机制测试" {
+  // 创建带重试机制的HTTP客户端
+  let retry_client = HttpClient::new()
+  
+  // 配置重试策略
+  let retry_policy = RetryPolicy::new()
+  RetryPolicy::set_max_attempts(retry_policy, 3) // 最多3次尝试
+  RetryPolicy::set_initial_delay(retry_policy, 1000) // 初始延迟1秒
+  RetryPolicy::set_max_delay(retry_policy, 10000) // 最大延迟10秒
+  RetryPolicy::set_backoff_multiplier(retry_policy, 2.0) // 指数退避
+  RetryPolicy::set_retryable_status_codes(retry_policy, [500, 502, 503, 504]) // 可重试状态码
+  
+  HttpClient::set_retry_policy(retry_client, retry_policy)
+  
+  // 测试网络超时错误
+  let timeout_request = HttpRequest::new("GET", "https://timeout.example.com/timeout")
+  HttpClient::set_timeout(retry_client, 1000) // 1秒超时
+  
+  let timeout_start = Clock::now_unix_nanos(Clock::system())
+  let timeout_response = HttpClient::execute(retry_client, timeout_request)
+  let timeout_end = Clock::now_unix_nanos(Clock::system())
+  
+  // 验证超时处理
+  match timeout_response {
+    HttpError(error_type: NetworkTimeout, message: _) => {
+      assert_true(true)
+      
+      // 验证重试时间
+      let total_time = timeout_end - timeout_start
+      assert_true(total_time >= 3000000000) // 至少3秒（1秒超时 × 3次尝试）
+    }
+    _ => assert_true(false)
+  }
+  
+  // 测试连接拒绝错误
+  let refused_request = HttpRequest::new("GET", "https://refused.example.com/refused")
+  let refused_response = HttpClient::execute(retry_client, refused_request)
+  
+  match refused_response {
+    HttpError(error_type: ConnectionRefused, message: _) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // 测试DNS解析错误
+  let dns_request = HttpRequest::new("GET", "https://nonexistent.domain.example.com")
+  let dns_response = HttpClient::execute(retry_client, dns_request)
+  
+  match dns_response {
+    HttpError(error_type: DnsResolutionFailed, message: _) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // 测试服务器错误重试
+  let server_error_request = HttpRequest::new("GET", "https://error.example.com/server-error")
+  let server_error_response = HttpClient::execute(retry_client, server_error_request)
+  
+  // 根据服务器配置，这可能成功或失败，但应该尝试重试
+  match server_error_response {
+    HttpResponse(status_code: 200, _, _) => assert_true(true) // 重试后成功
+    HttpError(error_type: MaxRetriesExceeded, message: _) => assert_true(true) // 重试次数耗尽
+    _ => assert_true(false)
+  }
+  
+  // 验证重试统计
+  let retry_stats = HttpClient::get_retry_stats(retry_client)
+  assert_true(retry_stats.total_retries > 0)
+  assert_true(retry_stats.failed_retries > 0)
+  
+  // 测试断路器模式
+  let circuit_breaker = CircuitBreaker::new()
+  CircuitBreaker::set_failure_threshold(circuit_breaker, 5) // 5次失败后打开
+  CircuitBreaker::set_recovery_timeout(circuit_breaker, 30000) // 30秒后尝试恢复
+  
+  // 模拟多次失败
+  for i in 1..=6 {
+    let failing_request = HttpRequest::new("GET", "https://failing.example.com/fail")
+    let failing_response = HttpClient::execute_with_circuit_breaker(retry_client, failing_request, circuit_breaker)
+    
+    if i <= 5 {
+      match failing_response {
+        HttpError(error_type: ConnectionRefused, message: _) => assert_true(true)
+        _ => assert_true(false)
+      }
+    } else {
+      match failing_response {
+        HttpError(error_type: CircuitBreakerOpen, message: _) => assert_true(true)
+        _ => assert_true(false)
+      }
+    }
+  }
+  
+  // 验证断路器状态
+  let breaker_state = CircuitBreaker::get_state(circuit_breaker)
+  assert_eq(breaker_state, CircuitBreakerState::Open)
+}
+
+// 测试6: 网络性能和吞吐量测试
+test "网络性能和吞吐量测试" {
+  // 创建性能测试客户端
+  let perf_client = HttpClient::new()
+  HttpClient::set_timeout(perf_client, 30000) // 30秒超时
+  HttpClient::set_keep_alive(perf_client, true)
+  
+  // 准备测试数据
+  let small_payload = Json::serialize({
+    "type": "small_telemetry",
+    "data": "small_data_payload"
+  })
+  
+  let medium_payload = Json::serialize({
+    "type": "medium_telemetry",
+    "data": "x".repeat(1024) // 1KB数据
+  })
+  
+  let large_payload = Json::serialize({
+    "type": "large_telemetry",
+    "data": "x".repeat(10240) // 10KB数据
+  })
+  
+  // 测试小数据包吞吐量
+  let small_start_time = Clock::now_unix_nanos(Clock::system())
+  let mut small_success_count = 0
+  
+  for i in 1..=100 {
+    let small_request = HttpRequest::new("POST", "https://perf.example.com/telemetry")
+    HttpRequest::set_body(small_request, small_payload)
+    
+    let small_response = HttpClient::execute(perf_client, small_request)
+    match small_response {
+      HttpResponse(status_code: 200, _, _) => small_success_count = small_success_count + 1
+      _ => () // 忽略错误
+    }
+  }
+  
+  let small_end_time = Clock::now_unix_nanos(Clock::system())
+  let small_duration = (small_end_time - small_start_time) / 1000000 // 转换为毫秒
+  let small_throughput = (small_success_count.to_float() / small_duration.to_float()) * 1000 // 请求/秒
+  
+  assert_true(small_success_count >= 90) // 至少90%成功
+  assert_true(small_throughput > 10.0) // 至少10请求/秒
+  
+  // 测试中等数据包吞吐量
+  let medium_start_time = Clock::now_unix_nanos(Clock::system())
+  let mut medium_success_count = 0
+  
+  for i in 1..=50 {
+    let medium_request = HttpRequest::new("POST", "https://perf.example.com/telemetry")
+    HttpRequest::set_body(medium_request, medium_payload)
+    
+    let medium_response = HttpClient::execute(perf_client, medium_request)
+    match medium_response {
+      HttpResponse(status_code: 200, _, _) => medium_success_count = medium_success_count + 1
+      _ => () // 忽略错误
+    }
+  }
+  
+  let medium_end_time = Clock::now_unix_nanos(Clock::system())
+  let medium_duration = (medium_end_time - medium_start_time) / 1000000 // 转换为毫秒
+  let medium_throughput = (medium_success_count.to_float() / medium_duration.to_float()) * 1000 // 请求/秒
+  
+  assert_true(medium_success_count >= 45) // 至少90%成功
+  assert_true(medium_throughput > 5.0) // 至少5请求/秒
+  
+  // 测试大数据包吞吐量
+  let large_start_time = Clock::now_unix_nanos(Clock::system())
+  let mut large_success_count = 0
+  
+  for i in 1..=20 {
+    let large_request = HttpRequest::new("POST", "https://perf.example.com/telemetry")
+    HttpRequest::set_body(large_request, large_payload)
+    
+    let large_response = HttpClient::execute(perf_client, large_request)
+    match large_response {
+      HttpResponse(status_code: 200, _, _) => large_success_count = large_success_count + 1
+      _ => () // 忽略错误
+    }
+  }
+  
+  let large_end_time = Clock::now_unix_nanos(Clock::system())
+  let large_duration = (large_end_time - large_start_time) / 1000000 // 转换为毫秒
+  let large_throughput = (large_success_count.to_float() / large_duration.to_float()) * 1000 // 请求/秒
+  
+  assert_true(large_success_count >= 18) // 至少90%成功
+  assert_true(large_throughput > 1.0) // 至少1请求/秒
+  
+  // 测试并发连接性能
+  let concurrent_start_time = Clock::now_unix_nanos(Clock::system())
+  let mut concurrent_success_count = 0
+  
+  // 创建10个并发请求
+  let concurrent_results = []
+  for i in 1..=10 {
+    let concurrent_request = HttpRequest::new("GET", "https://perf.example.com/concurrent")
+    let concurrent_response = HttpClient::execute_async(perf_client, concurrent_request)
+    concurrent_results.push(concurrent_response)
+  }
+  
+  // 等待所有请求完成
+  for result in concurrent_results {
+    let response = HttpClient::wait_for_result(result)
+    match response {
+      HttpResponse(status_code: 200, _, _) => concurrent_success_count = concurrent_success_count + 1
+      _ => () // 忽略错误
+    }
+  }
+  
+  let concurrent_end_time = Clock::now_unix_nanos(Clock::system())
+  let concurrent_duration = (concurrent_end_time - concurrent_start_time) / 1000000 // 转换为毫秒
+  
+  assert_true(concurrent_success_count >= 8) // 至少80%成功
+  assert_true(concurrent_duration < 10000) // 小于10秒
+  
+  // 验证性能统计
+  let perf_stats = HttpClient::get_performance_stats(perf_client)
+  assert_true(perf_stats.total_requests >= 170)
+  assert_true(perf_stats.successful_requests >= 153)
+  assert_true(perf_stats.average_response_time > 0)
+  assert_true(perf_stats.p95_response_time > perf_stats.average_response_time)
+}
+
+// 测试7: 网络安全和TLS配置
+test "网络安全和TLS配置测试" {
+  // 创建安全HTTP客户端
+  let secure_client = HttpClient::new()
+  
+  // 配置TLS
+  let tls_config = TlsConfig::new()
+  TlsConfig::set_verify_mode(tls_config, TlsVerifyMode::Strict) // 严格验证
+  TlsConfig::set_min_version(tls_config, TlsVersion::TLS1_2) // 最低TLS 1.2
+  TlsConfig::set_max_version(tls_config, TlsVersion::TLS1_3) // 最高TLS 1.3
+  TlsConfig::set_cipher_suites(tls_config, [
+    "TLS_AES_256_GCM_SHA384",
+    "TLS_CHACHA20_POLY1305_SHA256",
+    "TLS_AES_128_GCM_SHA256"
   ])
   
-  let post_headers = Headers::new()
-  Headers::set(post_headers, "Content-Type", "application/json")
-  Headers::set(post_headers, "X-API-Key", "test-api-key")
+  // 添加CA证书
+  let ca_cert_path = "/etc/ssl/certs/ca-certificates.crt"
+  TlsConfig::add_ca_certificate(tls_config, ca_cert_path)
   
-  let post_request = HttpRequest::new("POST", "https://httpbin.org/post")
-  HttpRequest::set_headers(post_request, post_headers)
-  HttpRequest::set_body(post_request, Json::to_string(post_data))
+  // 添加客户端证书
+  let client_cert_path = "/path/to/client.crt"
+  let client_key_path = "/path/to/client.key"
+  TlsConfig::set_client_certificate(tls_config, client_cert_path, client_key_path)
   
-  let post_response = HttpClient::execute(http_client, post_request)
+  HttpClient::set_tls_config(secure_client, tls_config)
   
-  match post_response {
-    Ok(response) => {
-      assert_eq(HttpResponse::status_code(response), 200)
-      
-      let json_body = HttpResponse::json(response)
-      match json_body {
-        Ok(json) => {
-          assert_true(Json::has_key(json, "json"))
-          let received_data = Json::get(json, "json")
-          match received_data {
-            Some(data) => {
-              assert_eq(Json::get_string(data, "name"), Some("test"))
-              assert_eq(Json::get_number(data, "value"), Some(42.0))
-            }
-            None => assert_true(false)
-          }
-        }
-        Err(_) => assert_true(false)
-      }
-    }
-    Err(_) => {
-      // In test environment, network requests might fail
+  // 测试HTTPS连接
+  let secure_request = HttpRequest::new("GET", "https://secure.example.com/api")
+  let secure_response = HttpClient::execute(secure_client, secure_request)
+  
+  match secure_response {
+    HttpResponse(status_code: 200, headers: response_headers, body: _) => {
       assert_true(true)
+      
+      // 验证安全头
+      assert_true(response_headers.contains("Strict-Transport-Security"))
+      assert_true(response_headers.contains("X-Content-Type-Options"))
     }
+    _ => assert_true(false)
   }
   
-  // Test request with query parameters
-  let query_request = HttpRequest::new("GET", "https://httpbin.org/get")
-  HttpRequest::add_query_param(query_request, "param1", "value1")
-  HttpRequest::add_query_param(query_request, "param2", "value2")
+  // 测试证书验证
+  let cert_info = HttpClient::get_peer_certificate_info(secure_client, "secure.example.com")
+  assert_true(cert_info.is_valid)
+  assert_true(cert_info.subject.contains("secure.example.com"))
+  assert_true(cert_info.issuer.contains("trusted_ca"))
+  assert_true(cert_info.not_after > Clock::now_unix_nanos(Clock::system()))
   
-  let query_response = HttpClient::execute(http_client, query_request)
+  // 测试证书固定
+  let pinning_client = HttpClient::new()
+  let pinning_config = CertificatePinningConfig::new()
+  CertificatePinningConfig::add_public_key_hash(pinning_config, "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
   
-  match query_response {
-    Ok(response) => {
-      assert_eq(HttpResponse::status_code(response), 200)
-      
-      let json_body = HttpResponse::json(response)
-      match json_body {
-        Ok(json) => {
-          let args = Json::get(json, "args")
-          match args {
-            Some(args_obj) => {
-              assert_eq(Json::get_string(args_obj, "param1"), Some("value1"))
-              assert_eq(Json::get_string(args_obj, "param2"), Some("value2"))
-            }
-            None => assert_true(false)
-          }
-        }
-        Err(_) => assert_true(false)
-      }
-    }
-    Err(_) => {
-      // In test environment, network requests might fail
-      assert_true(true)
-    }
+  HttpClient::set_certificate_pinning(pinning_client, pinning_config)
+  
+  let pinning_request = HttpRequest::new("GET", "https://pinned.example.com/api")
+  let pinning_response = HttpClient::execute(pinning_client, pinning_request)
+  
+  match pinning_response {
+    HttpResponse(status_code: 200, _, _) => assert_true(true) // 证书匹配
+    HttpError(error_type: CertificatePinningFailed, message: _) => assert_true(true) // 证书不匹配
+    _ => assert_true(false)
   }
   
-  // Test request with custom headers
-  let custom_request = HttpRequest::new("GET", "https://httpbin.org/headers")
-  HttpRequest::add_header(custom_request, "X-Custom-Header", "custom-value")
-  HttpRequest::add_header(custom_request, "X-Another-Header", "another-value")
+  // 测试OCSP装订
+  let ocsp_client = HttpClient::new()
+  let ocsp_config = TlsConfig::new()
+  TlsConfig::enable_ocsp_stapling(ocsp_config, true)
+  TlsConfig::set_ocsp_verify_mode(ocsp_config, OcspVerifyMode::Require)
   
-  let custom_response = HttpClient::execute(http_client, custom_request)
+  HttpClient::set_tls_config(ocsp_client, ocsp_config)
   
-  match custom_response {
-    Ok(response) => {
-      assert_eq(HttpResponse::status_code(response), 200)
-      
-      let json_body = HttpResponse::json(response)
-      match json_body {
-        Ok(json) => {
-          let headers = Json::get(json, "headers")
-          match headers {
-            Some(headers_obj) => {
-              assert_eq(Json::get_string(headers_obj, "X-Custom-Header"), Some("custom-value"))
-              assert_eq(Json::get_string(headers_obj, "X-Another-Header"), Some("another-value"))
-            }
-            None => assert_true(false)
-          }
-        }
-        Err(_) => assert_true(false)
-      }
-    }
-    Err(_) => {
-      // In test environment, network requests might fail
+  let ocsp_request = HttpRequest::new("GET", "https://ocsp.example.com/api")
+  let ocsp_response = HttpClient::execute(ocsp_client, ocsp_request)
+  
+  match ocsp_response {
+    HttpResponse(status_code: 200, _, _) => assert_true(true)
+    HttpError(error_type: OcspVerificationFailed, message: _) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // 测试安全连接重用
+  let reuse_request1 = HttpRequest::new("GET", "https://secure.example.com/api1")
+  let reuse_response1 = HttpClient::execute(secure_client, reuse_request1)
+  
+  let reuse_request2 = HttpRequest::new("GET", "https://secure.example.com/api2")
+  let reuse_response2 = HttpClient::execute(secure_client, reuse_request2)
+  
+  match (reuse_response1, reuse_response2) {
+    (HttpResponse(status_code: 200, _, _), HttpResponse(status_code: 200, _, _)) => {
       assert_true(true)
+      
+      // 验证连接重用统计
+      let reuse_stats = HttpClient::get_connection_stats(secure_client)
+      assert_true(reuse_stats.connections_reused > 0)
     }
+    _ => assert_true(false)
   }
 }
 
-// Test 2: HTTP Server Communication
-test "http server communication" {
-  // Create HTTP server
-  let http_server = HttpServer::new(8080)
+// 测试8: 网络代理和负载均衡
+test "网络代理和负载均衡测试" {
+  // 创建带代理配置的HTTP客户端
+  let proxy_client = HttpClient::new()
   
-  // Verify server configuration
-  assert_eq(HttpServer::port(http_server), 8080)
-  assert_eq(HttpServer::host(http_server), "localhost")
-  assert_eq(HttpServer::is_running(http_server), false)
+  // 配置HTTP代理
+  let http_proxy = ProxyConfig::new()
+  ProxyConfig::set_type(http_proxy, ProxyType::Http)
+  ProxyConfig::set_host(http_proxy, "proxy.example.com")
+  ProxyConfig::set_port(http_proxy, 8080)
+  ProxyConfig::set_username(http_proxy, "proxy_user")
+  ProxyConfig::set_password(http_proxy, "proxy_pass")
   
-  // Configure server routes
-  HttpServer::add_route(http_server, "/health", "GET", fn(request) {
-    let response = HttpResponse::new(200, "OK")
-    HttpResponse::set_body(response, "{\"status\":\"healthy\"}")
-    HttpResponse::add_header(response, "Content-Type", "application/json")
-    response
-  })
+  // 配置代理绕过规则
+  ProxyConfig::add_bypass_rule(http_proxy, "*.local")
+  ProxyConfig::add_bypass_rule(http_proxy, "192.168.*")
   
-  HttpServer::add_route(http_server, "/api/telemetry", "POST", fn(request) {
-    let body = HttpRequest::body(request)
+  HttpClient::set_proxy_config(proxy_client, http_proxy)
+  
+  // 测试通过代理的请求
+  let proxy_request = HttpRequest::new("GET", "https://api.example.com/through-proxy")
+  let proxy_response = HttpClient::execute(proxy_client, proxy_request)
+  
+  match proxy_response {
+    HttpResponse(status_code: 200, _, _) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // 验证代理使用统计
+  let proxy_stats = HttpClient::get_proxy_stats(proxy_client)
+  assert_true(proxy_stats.requests_through_proxy > 0)
+  
+  // 创建负载均衡客户端
+  let lb_client = HttpClient::new()
+  
+  // 配置负载均衡
+  let lb_config = LoadBalancerConfig::new()
+  LoadBalancerConfig::set_algorithm(lb_config, LoadBalancerAlgorithm::RoundRobin)
+  LoadBalancerConfig::add_target(lb_config, "https://api1.example.com")
+  LoadBalancerConfig::add_target(lb_config, "https://api2.example.com")
+  LoadBalancerConfig::add_target(lb_config, "https://api3.example.com")
+  LoadBalancerConfig::set_health_check_path(lb_config, "/health")
+  LoadBalancerConfig::set_health_check_interval(lb_config, 30000) // 30秒健康检查
+  
+  HttpClient::set_load_balancer_config(lb_client, lb_config)
+  
+  // 测试负载均衡
+  let mut responses = []
+  for i in 1..=9 {
+    let lb_request = HttpRequest::new("GET", "https://lb.example.com/api")
+    let lb_response = HttpClient::execute(lb_client, lb_request)
     
-    // Process telemetry data
-    let processed_data = TelemetryProcessor::process(body)
-    
-    let response = HttpResponse::new(200, "OK")
-    HttpResponse::set_body(response, Json::to_string(processed_data))
-    HttpResponse::add_header(response, "Content-Type", "application/json")
-    response
-  })
-  
-  HttpServer::add_route(http_server, "/api/metrics", "GET", fn(request) {
-    let metrics = MetricsCollector::get_current_metrics()
-    
-    let response = HttpResponse::new(200, "OK")
-    HttpResponse::set_body(response, Json::to_string(metrics))
-    HttpResponse::add_header(response, "Content-Type", "application/json")
-    response
-  })
-  
-  // Start server
-  let start_result = HttpServer::start(http_server)
-  
-  match start_result {
-    Ok(_) => assert_true(true)
-    Err(_) => {
-      // In test environment, might not be able to bind to port
-      assert_true(true)
+    match lb_response {
+      HttpResponse(status_code: 200, headers: response_headers, body: _) => {
+        // 从响应头获取实际处理请求的服务器
+        match response_headers.get("X-Served-By") {
+          Some(server) => responses.push(server),
+          None => responses.push("unknown")
+        }
+      }
+      _ => assert_true(false)
     }
   }
   
-  // Test server communication if it started successfully
-  if HttpServer::is_running(http_server) {
-    // Create client to test server
-    let client = HttpClient::new()
-    
-    // Test health endpoint
-    let health_request = HttpRequest::new("GET", "http://localhost:8080/health")
-    let health_response = HttpClient::execute(client, health_request)
-    
-    match health_response {
-      Ok(response) => {
-        assert_eq(HttpResponse::status_code(response), 200)
-        assert_eq(HttpResponse::status_message(response), "OK")
-        
-        let json_body = HttpResponse::json(response)
-        match json_body {
-          Ok(json) => {
-            assert_eq(Json::get_string(json, "status"), Some("healthy"))
-          }
-          Err(_) => assert_true(false)
-        }
-      }
-      Err(_) => assert_true(false)
-    }
-    
-    // Test telemetry endpoint
-    let telemetry_data = Json::object([
-      ("trace_id", Json::string("trace-12345")),
-      ("span_id", Json::string("span-67890")),
-      ("timestamp", Json::number(1640995200000)),
-      ("duration", Json::number(150)),
-      ("status", Json::string("ok"))
-    ])
-    
-    let telemetry_request = HttpRequest::new("POST", "http://localhost:8080/api/telemetry")
-    HttpRequest::add_header(telemetry_request, "Content-Type", "application/json")
-    HttpRequest::set_body(telemetry_request, Json::to_string(telemetry_data))
-    
-    let telemetry_response = HttpClient::execute(client, telemetry_request)
-    
-    match telemetry_response {
-      Ok(response) => {
-        assert_eq(HttpResponse::status_code(response), 200)
-        
-        let json_body = HttpResponse::json(response)
-        match json_body {
-          Ok(json) => {
-            assert_true(Json::has_key(json, "processed"))
-            assert_true(Json::has_key(json, "timestamp"))
-          }
-          Err(_) => assert_true(false)
-        }
-      }
-      Err(_) => assert_true(false)
-    }
-    
-    // Test metrics endpoint
-    let metrics_request = HttpRequest::new("GET", "http://localhost:8080/api/metrics")
-    let metrics_response = HttpClient::execute(client, metrics_request)
-    
-    match metrics_response {
-      Ok(response) => {
-        assert_eq(HttpResponse::status_code(response), 200)
-        
-        let json_body = HttpResponse::json(response)
-        match json_body {
-          Ok(json) => {
-            assert_true(Json::has_key(json, "metrics"))
-            assert_true(Json::has_key(json, "timestamp"))
-          }
-          Err(_) => assert_true(false)
-        }
-      }
-      Err(_) => assert_true(false)
-    }
-    
-    // Test 404 response
-    let not_found_request = HttpRequest::new("GET", "http://localhost:8080/nonexistent")
-    let not_found_response = HttpClient::execute(client, not_found_request)
-    
-    match not_found_response {
-      Ok(response) => {
-        assert_eq(HttpResponse::status_code(response), 404)
-      }
-      Err(_) => assert_true(false)
-    }
-    
-    // Stop server
-    let stop_result = HttpServer::stop(http_server)
-    match stop_result {
-      Ok(_) => assert_true(true)
-      Err(_) => assert_true(false)
-    }
+  // 验证负载分布
+  let server_counts = responses.reduce(fn(acc, server) {
+    let count = acc.get(server).or_else(Some(0))
+    acc.set(server, count + 1)
+    acc
+  }, {})
+  
+  // 每个服务器应该处理大约相同数量的请求
+  assert_true(server_counts.size() >= 2) // 至少使用2个服务器
+  for (_, count) in server_counts {
+    assert_true(count >= 2) // 每个服务器至少处理2个请求
+    assert_true(count <= 5) // 每个服务器最多处理5个请求
   }
   
-  // Verify server is stopped
-  assert_eq(HttpServer::is_running(http_server), false)
-}
-
-// Test 3: WebSocket Communication
-test "websocket communication" {
-  // Create WebSocket client
-  let ws_client = WebSocketClient::new()
+  // 测试故障转移
+  let failover_client = HttpClient::new()
+  let failover_config = LoadBalancerConfig::new()
+  LoadBalancerConfig::set_algorithm(failover_config, LoadBalancerAlgorithm::Failover)
+  LoadBalancerConfig::add_target(failover_config, "https://primary.example.com")
+  LoadBalancerConfig::add_target(failover_config, "https://backup.example.com")
   
-  // Configure WebSocket client
-  WebSocketClient::set_timeout(ws_client, 10000) // 10 seconds
-  WebSocketClient::set_max_reconnect_attempts(ws_client, 3)
-  WebSocketClient::set_heartbeat_interval(ws_client, 30000) // 30 seconds
+  HttpClient::set_load_balancer_config(failover_client, failover_config)
   
-  // Test WebSocket connection
-  let connect_result = WebSocketClient::connect(ws_client, "wss://echo.websocket.org")
+  let failover_request = HttpRequest::new("GET", "https://failover.example.com/api")
+  let failover_response = HttpClient::execute(failover_client, failover_request)
   
-  match connect_result {
-    Ok(_) => {
-      assert_true(WebSocketClient::is_connected(ws_client))
-      
-      // Test sending text message
-      let text_message = "Hello, WebSocket!"
-      let send_result = WebSocketClient::send_text(ws_client, text_message)
-      
-      match send_result {
-        Ok(_) => assert_true(true)
-        Err(_) => assert_true(false)
-      }
-      
-      // Test receiving text message (echo server should send it back)
-      let receive_result = WebSocketClient::receive_text(ws_client, 5000) // 5 seconds timeout
-      
-      match receive_result {
-        Ok(message) => assert_eq(message, text_message)
-        Err(_) => {
-          // In test environment, might not receive message in time
-          assert_true(true)
+  match failover_response {
+    HttpResponse(status_code: 200, headers: response_headers, _) => {
+      // 验证使用了哪个服务器
+      match response_headers.get("X-Served-By") {
+        Some(server) => {
+          assert_true(server == "primary.example.com" || server == "backup.example.com")
         }
-      }
-      
-      // Test sending binary message
-      let binary_data = [0x48, 0x65, 0x6C, 0x6C, 0x6F] // "Hello" in bytes
-      let binary_result = WebSocketClient::send_binary(ws_client, binary_data)
-      
-      match binary_result {
-        Ok(_) => assert_true(true)
-        Err(_) => assert_true(false)
-      }
-      
-      // Test receiving binary message
-      let binary_receive_result = WebSocketClient::receive_binary(ws_client, 5000)
-      
-      match binary_receive_result {
-        Ok(data) => assert_eq(data, binary_data)
-        Err(_) => {
-          // In test environment, might not receive message in time
-          assert_true(true)
-        }
-      }
-      
-      // Test ping/pong
-      let ping_result = WebSocketClient::ping(ws_client)
-      
-      match ping_result {
-        Ok(_) => assert_true(true)
-        Err(_) => assert_true(false)
-      }
-      
-      // Disconnect
-      let disconnect_result = WebSocketClient::disconnect(ws_client)
-      
-      match disconnect_result {
-        Ok(_) => assert_true(true)
-        Err(_) => assert_true(false)
-      }
-      
-      assert_false(WebSocketClient::is_connected(ws_client))
-    }
-    Err(_) => {
-      // In test environment, WebSocket connection might fail
-      assert_true(true)
-    }
-  }
-  
-  // Create WebSocket server
-  let ws_server = WebSocketServer::new(8081)
-  
-  // Configure WebSocket server
-  WebSocketServer::on_connection(ws_server, fn(connection) {
-    // Handle new connection
-    WebSocketConnection::send_text(connection, "Welcome to WebSocket server!")
-  })
-  
-  WebSocketServer::on_message(ws_server, fn(connection, message) {
-    // Echo message back
-    match message {
-      TextMessage(text) => {
-        WebSocketConnection::send_text(connection, "Echo: " + text)
-      }
-      BinaryMessage(data) => {
-        WebSocketConnection::send_binary(connection, data)
-      }
-    }
-  })
-  
-  WebSocketServer::on_disconnection(ws_server, fn(connection, code, reason) {
-    // Handle disconnection
-    let log_entry = "Client disconnected: " + code.to_string() + " - " + reason
-    Logger::info(log_entry)
-  })
-  
-  // Start WebSocket server
-  let server_start_result = WebSocketServer::start(ws_server)
-  
-  match server_start_result {
-    Ok(_) => assert_true(true)
-    Err(_) => {
-      // In test environment, might not be able to bind to port
-      assert_true(true)
-    }
-  }
-  
-  // Test WebSocket server if it started successfully
-  if WebSocketServer::is_running(ws_server) {
-    // Connect client to server
-    let client_to_server = WebSocketClient::new()
-    let client_connect_result = WebSocketClient::connect(client_to_server, "ws://localhost:8081")
-    
-    match client_connect_result {
-      Ok(_) => {
-        // Receive welcome message
-        let welcome_result = WebSocketClient::receive_text(client_to_server, 5000)
-        
-        match welcome_result {
-          Ok(message) => assert_eq(message, "Welcome to WebSocket server!")
-          Err(_) => {
-            // In test environment, might not receive message in time
-            assert_true(true)
-          }
-        }
-        
-        // Send message to server
-        let test_message = "Test message"
-        WebSocketClient::send_text(client_to_server, test_message)
-        
-        // Receive echo
-        let echo_result = WebSocketClient::receive_text(client_to_server, 5000)
-        
-        match echo_result {
-          Ok(message) => assert_eq(message, "Echo: " + test_message)
-          Err(_) => {
-            // In test environment, might not receive message in time
-            assert_true(true)
-          }
-        }
-        
-        // Disconnect
-        WebSocketClient::disconnect(client_to_server)
-      }
-      Err(_) => {
-        // In test environment, connection might fail
-        assert_true(true)
-      }
-    }
-    
-    // Stop WebSocket server
-    let server_stop_result = WebSocketServer::stop(ws_server)
-    match server_stop_result {
-      Ok(_) => assert_true(true)
-      Err(_) => assert_true(false)
-    }
-  }
-}
-
-// Test 4: gRPC Communication
-test "grpc communication" {
-  // Create gRPC client
-  let grpc_client = GrpcClient::new("localhost:50051")
-  
-  // Configure gRPC client
-  GrpcClient::set_timeout(grpc_client, 10000) // 10 seconds
-  GrpcClient::set_max_receive_message_length(grpc_client, 4 * 1024 * 1024) // 4MB
-  GrpcClient::set_max_send_message_length(grpc_client, 4 * 1024 * 1024) // 4MB
-  
-  // Test unary RPC call
-  let unary_request = GrpcRequest::new("GetTelemetryData")
-  GrpcRequest::add_field(unary_request, "trace_id", "trace-12345")
-  GrpcRequest::add_field(unary_request, "start_time", "1640995200000")
-  GrpcRequest::add_field(unary_request, "end_time", "1640995260000")
-  
-  let unary_response = GrpcClient::unary_call(grpc_client, "TelemetryService", "GetTelemetryData", unary_request)
-  
-  match unary_response {
-    Ok(response) => {
-      assert_eq(GrpcResponse::status_code(response), 0) // OK
-      assert_true(GrpcResponse::has_field(response, "telemetry_data"))
-      
-      let telemetry_data = GrpcResponse::get_field(response, "telemetry_data")
-      match telemetry_data {
-        Some(data) => assert_true(data.length() > 0)
         None => assert_true(false)
       }
     }
-    Err(_) => {
-      // In test environment, gRPC server might not be available
-      assert_true(true)
-    }
+    _ => assert_true(false)
   }
   
-  // Test server streaming RPC call
-  let stream_request = GrpcRequest::new("StreamTelemetryData")
-  GrpcRequest::add_field(stream_request, "trace_id", "trace-12345")
-  GrpcRequest::add_field(stream_request, "filter", "all")
-  
-  let stream_response = GrpcClient::server_streaming_call(
-    grpc_client,
-    "TelemetryService",
-    "StreamTelemetryData",
-    stream_request
-  )
-  
-  match stream_response {
-    Ok(stream) => {
-      let mut received_count = 0
-      
-      // Receive up to 10 messages from stream
-      for i in 0..=9 {
-        match GrpcStream::receive(stream, 1000) { // 1 second timeout
-          Ok(message) => {
-            assert_true(GrpcMessage::has_field(message, "telemetry_data"))
-            received_count = received_count + 1
-          }
-          Err(_) => break // Stream ended or timeout
-        }
-      }
-      
-      assert_true(received_count > 0)
-      GrpcStream::close(stream)
-    }
-    Err(_) => {
-      // In test environment, gRPC server might not be available
-      assert_true(true)
-    }
-  }
-  
-  // Test client streaming RPC call
-  let client_stream_request = GrpcRequest::new("CollectTelemetryData")
-  let client_stream = GrpcClient::client_streaming_call(
-    grpc_client,
-    "TelemetryService",
-    "CollectTelemetryData",
-    client_stream_request
-  )
-  
-  match client_stream {
-    Ok(stream) => {
-      // Send multiple messages
-      for i in 0..=4 {
-        let message = GrpcMessage::new()
-        GrpcMessage::add_field(message, "trace_id", "trace-" + i.to_string())
-        GrpcMessage::add_field(message, "span_id", "span-" + i.to_string())
-        GrpcMessage::add_field(message, "timestamp", (1640995200000 + i * 1000).to_string())
-        
-        match GrpcStream::send(stream, message) {
-          Ok(_) => assert_true(true)
-          Err(_) => assert_true(false)
-        }
-      }
-      
-      // Close and receive response
-      let response = GrpcStream::close_and_receive(stream)
-      
-      match response {
-        Ok(resp) => {
-          assert_eq(GrpcResponse::status_code(resp), 0) // OK
-          assert_true(GrpcResponse::has_field(resp, "collected_count"))
-          
-          let count = GrpcResponse::get_field(resp, "collected_count")
-          match count {
-            Some(count_str) => assert_eq(count_str, "5")
-            None => assert_true(false)
-          }
-        }
-        Err(_) => assert_true(false)
-      }
-    }
-    Err(_) => {
-      // In test environment, gRPC server might not be available
-      assert_true(true)
-    }
-  }
-  
-  // Test bidirectional streaming RPC call
-  let bidi_request = GrpcRequest::new("ProcessTelemetryData")
-  let bidi_stream = GrpcClient::bidirectional_streaming_call(
-    grpc_client,
-    "TelemetryService",
-    "ProcessTelemetryData",
-    bidi_request
-  )
-  
-  match bidi_stream {
-    Ok(stream) => {
-      // Send messages and receive responses
-      for i in 0..=4 {
-        let message = GrpcMessage::new()
-        GrpcMessage::add_field(message, "trace_id", "trace-" + i.to_string())
-        GrpcMessage::add_field(message, "operation", "process")
-        
-        match GrpcStream::send(stream, message) {
-          Ok(_) => {
-            // Try to receive response
-            match GrpcStream::receive(stream, 1000) {
-              Ok(response) => {
-                assert_true(GrpcMessage::has_field(response, "processed_trace_id"))
-                assert_true(GrpcMessage::has_field(response, "status"))
-              }
-              Err(_) => {
-                // In test environment, might not receive response in time
-                assert_true(true)
-              }
-            }
-          }
-          Err(_) => assert_true(false)
-        }
-      }
-      
-      GrpcStream::close(stream)
-    }
-    Err(_) => {
-      // In test environment, gRPC server might not be available
-      assert_true(true)
-    }
-  }
-  
-  // Test gRPC with authentication
-  let auth_client = GrpcClient::new("localhost:50051")
-  GrpcClient::set_auth_token(auth_client, "Bearer test-token")
-  
-  let auth_request = GrpcRequest::new("GetSecureTelemetryData")
-  let auth_response = GrpcClient::unary_call(auth_client, "TelemetryService", "GetSecureTelemetryData", auth_request)
-  
-  match auth_response {
-    Ok(response) => {
-      assert_eq(GrpcResponse::status_code(response), 0) // OK
-    }
-    Err(error) => {
-      // Might get Unauthenticated error, which is expected
-      assert_true(error.contains("Unauthenticated") || error.contains("connection"))
-    }
-  }
-}
-
-// Test 5: Message Queue Communication
-test "message queue communication" {
-  // Create message queue producer
-  let producer = MessageQueueProducer::new("localhost:9092", "telemetry-topic")
-  
-  // Configure producer
-  MessageQueueProducer::set_batch_size(producer, 100)
-  MessageQueueProducer::set_timeout(producer, 5000) // 5 seconds
-  MessageQueueProducer::set_compression_type(producer, "gzip")
-  
-  // Verify producer configuration
-  assert_eq(MessageQueueProducer::brokers(producer), ["localhost:9092"])
-  assert_eq(MessageQueueProducer::topic(producer), "telemetry-topic")
-  assert_eq(MessageQueueProducer::batch_size(producer), 100)
-  
-  // Test sending single message
-  let telemetry_message = Message::new("telemetry_data", Json::object([
-    ("trace_id", Json::string("trace-12345")),
-    ("span_id", Json::string("span-67890")),
-    ("timestamp", Json::number(1640995200000)),
-    ("duration", Json::number(150)),
-    ("status", Json::string("ok"))
-  ]))
-  
-  Message::add_header(telemetry_message, "Content-Type", "application/json")
-  Message::add_header(telemetry_message, "Source", "azimuth-telemetry")
-  
-  let send_result = MessageQueueProducer::send(producer, telemetry_message)
-  
-  match send_result {
-    Ok(offset) => assert_true(offset >= 0)
-    Err(_) => {
-      // In test environment, Kafka might not be available
-      assert_true(true)
-    }
-  }
-  
-  // Test sending multiple messages
-  let messages = []
-  
-  for i in 0..=9 {
-    let message = Message::new("telemetry_data", Json::object([
-      ("trace_id", Json::string("trace-" + i.to_string())),
-      ("span_id", Json::string("span-" + i.to_string())),
-      ("timestamp", Json::number(1640995200000 + i * 1000)),
-      ("duration", Json::number(100 + i * 10)),
-      ("status", Json::string("ok"))
-    ]))
-    
-    Message::add_header(message, "Content-Type", "application/json")
-    Message::add_header(message, "Source", "azimuth-telemetry")
-    messages = messages.push(message)
-  }
-  
-  let batch_send_result = MessageQueueProducer::send_batch(producer, messages)
-  
-  match batch_send_result {
-    Ok(offsets) => assert_eq(offsets.length(), 10)
-    Err(_) => {
-      // In test environment, Kafka might not be available
-      assert_true(true)
-    }
-  }
-  
-  // Create message queue consumer
-  let consumer = MessageQueueConsumer::new("localhost:9092", "telemetry-topic", "test-group")
-  
-  // Configure consumer
-  MessageQueueConsumer::set_auto_offset_reset(consumer, "earliest")
-  MessageQueueConsumer::set_enable_auto_commit(consumer, true)
-  MessageQueueConsumer::set_poll_timeout(consumer, 5000) // 5 seconds
-  
-  // Verify consumer configuration
-  assert_eq(MessageQueueConsumer::brokers(consumer), ["localhost:9092"])
-  assert_eq(MessageQueueConsumer::topic(consumer), "telemetry-topic")
-  assert_eq(MessageQueueConsumer::group_id(consumer), "test-group")
-  
-  // Test consuming messages
-  let consume_result = MessageQueueConsumer::poll(consumer)
-  
-  match consume_result {
-    Ok(messages) => {
-      for message in messages {
-        assert_eq(Message::topic(message), "telemetry-topic")
-        assert_true(Message::key(message).length() > 0)
-        assert_true(Message::value(message).length() > 0)
-        
-        // Parse JSON value
-        let json_value = Message::json(message)
-        match json_value {
-          Ok(json) => {
-            assert_true(Json::has_key(json, "trace_id"))
-            assert_true(Json::has_key(json, "span_id"))
-            assert_true(Json::has_key(json, "timestamp"))
-          }
-          Err(_) => assert_true(false)
-        }
-        
-        // Commit message offset
-        let commit_result = MessageQueueConsumer::commit(consumer, message)
-        match commit_result {
-          Ok(_) => assert_true(true)
-          Err(_) => assert_true(false)
-        }
-      }
-    }
-    Err(_) => {
-      // In test environment, Kafka might not be available
-      assert_true(true)
-    }
-  }
-  
-  // Test message queue with different serialization formats
-  let protobuf_producer = MessageQueueProducer::new("localhost:9092", "telemetry-protobuf")
-  MessageQueueProducer::set_serialization_format(protobuf_producer, "protobuf")
-  
-  let telemetry_data = TelemetryData::new(
-    "trace-12345",
-    "span-67890",
-    1640995200000,
-    150,
-    "ok"
-  )
-  
-  let protobuf_send_result = MessageQueueProducer::send_protobuf(protobuf_producer, telemetry_data)
-  
-  match protobuf_send_result {
-    Ok(offset) => assert_true(offset >= 0)
-    Err(_) => {
-      // In test environment, Kafka might not be available
-      assert_true(true)
-    }
-  }
-  
-  let protobuf_consumer = MessageQueueConsumer::new("localhost:9092", "telemetry-protobuf", "test-group")
-  MessageQueueConsumer::set_deserialization_format(protobuf_consumer, "protobuf")
-  
-  let protobuf_consume_result = MessageQueueConsumer::poll_protobuf(protobuf_consumer)
-  
-  match protobuf_consume_result {
-    Ok(messages) => {
-      for message in messages {
-        let telemetry_data = Message::as_protobuf(message)
-        match telemetry_data {
-          Ok(data) => {
-            assert_eq(data.trace_id, "trace-12345")
-            assert_eq(data.span_id, "span-67890")
-            assert_eq(data.timestamp, 1640995200000)
-            assert_eq(data.duration, 150)
-            assert_eq(data.status, "ok")
-          }
-          Err(_) => assert_true(false)
-        }
-      }
-    }
-    Err(_) => {
-      // In test environment, Kafka might not be available
-      assert_true(true)
-    }
-  }
-  
-  // Test message queue with different patterns
-  // Pub/Sub pattern
-  let pub_producer = MessageQueueProducer::new("localhost:9092", "notifications")
-  let sub_consumer = MessageQueueConsumer::new("localhost:9092", "notifications", "notification-subscribers")
-  
-  let notification_message = Message::new("notification", Json::object([
-    ("type", Json::string("alert")),
-    ("message", Json::string("High CPU usage detected")),
-    ("severity", Json::string("warning"))
-  ]))
-  
-  Message::add_header(notification_message, "Event-Type", "alert")
-  
-  let pub_send_result = MessageQueueProducer::send(pub_producer, notification_message)
-  
-  match pub_send_result {
-    Ok(offset) => assert_true(offset >= 0)
-    Err(_) => {
-      // In test environment, Kafka might not be available
-      assert_true(true)
-    }
-  }
-  
-  // Request/Reply pattern
-  let request_producer = MessageQueueProducer::new("localhost:9092", "requests")
-  let reply_consumer = MessageQueueConsumer::new("localhost:9092", "replies", "reply-handlers")
-  
-  let request_message = Message::new("request", Json::object([
-    ("id", Json::string("req-12345")),
-    ("method", Json::string("GetTelemetryData")),
-    ("params", Json::object([
-      ("trace_id", Json::string("trace-12345"))
-    ]))
-  ]))
-  
-  Message::add_header(request_message, "Reply-To", "replies")
-  Message::add_header(request_message, "Correlation-ID", "corr-12345")
-  
-  let request_send_result = MessageQueueProducer::send(request_producer, request_message)
-  
-  match request_send_result {
-    Ok(offset) => assert_true(offset >= 0)
-    Err(_) => {
-      // In test environment, Kafka might not be available
-      assert_true(true)
-    }
-  }
-}
-
-// Test 6: Network Protocol Handling
-test "network protocol handling" {
-  // Test TCP protocol handling
-  let tcp_client = TcpClient::new()
-  
-  // Configure TCP client
-  TcpClient::set_timeout(tcp_client, 10000) // 10 seconds
-  TcpClient::set_keep_alive(tcp_client, true)
-  TcpClient::set_no_delay(tcp_client, true)
-  
-  // Test TCP connection
-  let tcp_connect_result = TcpClient::connect(tcp_client, "httpbin.org", 80)
-  
-  match tcp_connect_result {
-    Ok(_) => {
-      assert_true(TcpClient::is_connected(tcp_client))
-      
-      // Test sending data
-      let http_request = "GET /get HTTP/1.1\r\nHost: httpbin.org\r\nConnection: close\r\n\r\n"
-      let send_result = TcpClient::send(tcp_client, http_request)
-      
-      match send_result {
-        Ok(bytes_sent) => assert_eq(bytes_sent, http_request.length())
-        Err(_) => assert_true(false)
-      }
-      
-      // Test receiving data
-      let receive_result = TcpClient::receive(tcp_client, 4096) // Receive up to 4KB
-      
-      match receive_result {
-        Ok(data) => {
-          assert_true(data.length() > 0)
-          assert_true(data.to_string().starts_with("HTTP/1.1"))
-        }
-        Err(_) => assert_true(false)
-      }
-      
-      // Close connection
-      let close_result = TcpClient::close(tcp_client)
-      match close_result {
-        Ok(_) => assert_true(true)
-        Err(_) => assert_true(false)
-      }
-      
-      assert_false(TcpClient::is_connected(tcp_client))
-    }
-    Err(_) => {
-      // In test environment, TCP connection might fail
-      assert_true(true)
-    }
-  }
-  
-  // Test UDP protocol handling
-  let udp_client = UdpClient::new()
-  
-  // Configure UDP client
-  UdpClient::set_timeout(udp_client, 5000) // 5 seconds
-  
-  // Test UDP communication
-  let udp_data = "test udp message"
-  let udp_send_result = UdpClient::send_to(udp_client, udp_data, "httpbin.org", 80)
-  
-  match udp_send_result {
-    Ok(bytes_sent) => assert_eq(bytes_sent, udp_data.length())
-    Err(_) => {
-      // In test environment, UDP send might fail
-      assert_true(true)
-    }
-  }
-  
-  // Test creating TCP server
-  let tcp_server = TcpServer::new(8082)
-  
-  // Configure TCP server
-  TcpServer::on_connection(tcp_server, fn(connection) {
-    // Handle new connection
-    let receive_result = TcpConnection::receive(connection, 1024)
-    
-    match receive_result {
-      Ok(data) => {
-        // Echo back the data
-        TcpConnection::send(connection, data)
-      }
-      Err(_) => {
-        // Handle error
-      }
-    }
-  })
-  
-  // Start TCP server
-  let tcp_server_start_result = TcpServer::start(tcp_server)
-  
-  match tcp_server_start_result {
-    Ok(_) => assert_true(true)
-    Err(_) => {
-      // In test environment, might not be able to bind to port
-      assert_true(true)
-    }
-  }
-  
-  // Test TCP server if it started successfully
-  if TcpServer::is_running(tcp_server) {
-    // Connect client to server
-    let tcp_client_to_server = TcpClient::new()
-    let client_connect_result = TcpClient::connect(tcp_client_to_server, "localhost", 8082)
-    
-    match client_connect_result {
-      Ok(_) => {
-        // Send data to server
-        let test_data = "echo test"
-        TcpClient::send(tcp_client_to_server, test_data)
-        
-        // Receive echo
-        let echo_result = TcpClient::receive(tcp_client_to_server, 1024)
-        
-        match echo_result {
-          Ok(data) => assert_eq(data.to_string(), test_data)
-          Err(_) => {
-            // In test environment, might not receive data in time
-            assert_true(true)
-          }
-        }
-        
-        // Close connection
-        TcpClient::close(tcp_client_to_server)
-      }
-      Err(_) => {
-        // In test environment, connection might fail
-        assert_true(true)
-      }
-    }
-    
-    // Stop TCP server
-    let tcp_server_stop_result = TcpServer::stop(tcp_server)
-    match tcp_server_stop_result {
-      Ok(_) => assert_true(true)
-      Err(_) => assert_true(false)
-    }
-  }
-  
-  // Test protocol detection and handling
-  let protocol_detector = ProtocolDetector::new()
-  
-  // Add protocol handlers
-  ProtocolDetector::add_handler(protocol_detector, "http", HttpProtocolHandler::new())
-  ProtocolDetector::add_handler(protocol_detector, "https", HttpsProtocolHandler::new())
-  ProtocolDetector::add_handler(protocol_detector, "grpc", GrpcProtocolHandler::new())
-  
-  // Test protocol detection
-  let http_data = "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n"
-  let detected_http = ProtocolDetector::detect_protocol(protocol_detector, http_data)
-  assert_eq(detected_http, "http")
-  
-  let https_data = [0x16, 0x03, 0x01] // TLS handshake start
-  let detected_https = ProtocolDetector::detect_protocol(protocol_detector, https_data)
-  assert_eq(detected_https, "https")
-  
-  let grpc_data = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] // gRPC prefix
-  let detected_grpc = ProtocolDetector::detect_protocol(protocol_detector, grpc_data)
-  assert_eq(detected_grpc, "grpc")
-  
-  // Test protocol-specific handling
-  let http_handler = ProtocolDetector::get_handler(protocol_detector, "http")
-  match http_handler {
-    Some(handler) => {
-      let processed = HttpProtocolHandler::process_data(handler, http_data)
-      assert_true(processed.contains("GET"))
-      assert_true(processed.contains("HTTP/1.1"))
-    }
-    None => assert_true(false)
-  }
-}
-
-// Test 7: Network Resilience and Error Handling
-test "network resilience and error handling" {
-  // Create resilient HTTP client with retry and circuit breaker
-  let resilient_client = ResilientHttpClient::new()
-  
-  // Configure retry policy
-  let retry_policy = RetryPolicy::exponential_backoff(3, 1000, 2.0) // 3 retries, 1s base, 2x multiplier
-  ResilientHttpClient::set_retry_policy(resilient_client, retry_policy)
-  
-  // Configure circuit breaker
-  let circuit_breaker = CircuitBreaker::new(5, 30000) // 5 failures, 30s timeout
-  ResilientHttpClient::set_circuit_breaker(resilient_client, circuit_breaker)
-  
-  // Configure timeout
-  ResilientHttpClient::set_timeout(resilient_client, 5000) // 5 seconds
-  
-  // Test successful request
-  let success_request = HttpRequest::new("GET", "https://httpbin.org/status/200")
-  let success_response = ResilientHttpClient::execute(resilient_client, success_request)
-  
-  match success_response {
-    Ok(response) => {
-      assert_eq(HttpResponse::status_code(response), 200)
-    }
-    Err(_) => {
-      // In test environment, request might fail
-      assert_true(true)
-    }
-  }
-  
-  // Test request that triggers retry
-  let retry_request = HttpRequest::new("GET", "https://httpbin.org/status/500")
-  let retry_response = ResilientHttpClient::execute(resilient_client, retry_request)
-  
-  match retry_response {
-    Ok(response) => {
-      // Should eventually succeed after retries (or still fail with 500)
-      assert_true(HttpResponse::status_code(response) == 200 || HttpResponse::status_code(response) == 500)
-    }
-    Err(error) => {
-      // Should have retried before giving up
-      assert_true(error.contains("retry") || error.contains("circuit"))
-    }
-  }
-  
-  // Test request that times out
-  let timeout_request = HttpRequest::new("GET", "https://httpbin.org/delay/10") // 10 second delay
-  let timeout_response = ResilientHttpClient::execute(resilient_client, timeout_request)
-  
-  match timeout_response {
-    Ok(_) => assert_true(false) // Should not succeed due to timeout
-    Err(error) => {
-      assert_true(error.contains("timeout"))
-    }
-  }
-  
-  // Test circuit breaker opening
-  let failing_request = HttpRequest::new("GET", "https://nonexistent-domain-12345.com")
-  
-  // Make multiple failing requests to trigger circuit breaker
-  for i in 0..=5 {
-    let response = ResilientHttpClient::execute(resilient_client, failing_request);
-    // Should fail and eventually trigger circuit breaker
-  }
-  
-  // Check circuit breaker state
-  let circuit_state = ResilientHttpClient::circuit_breaker_state(resilient_client)
-  assert_eq(circuit_state, "open") // Should be open after failures
-  
-  // Test request with open circuit breaker
-  let circuit_request = HttpRequest::new("GET", "https://httpbin.org/get")
-  let circuit_response = ResilientHttpClient::execute(resilient_client, circuit_request)
-  
-  match circuit_response {
-    Ok(_) => assert_true(false) // Should not succeed with open circuit
-    Err(error) => {
-      assert_true(error.contains("circuit") || error.contains("open"))
-    }
-  }
-  
-  // Test network connection pooling
-  let pool_client = PooledHttpClient::new()
-  
-  // Configure connection pool
-  ConnectionPool::set_max_connections(pool_client, 10)
-  ConnectionPool::set_max_idle_connections(pool_client, 5)
-  ConnectionPool::set_connection_timeout(pool_client, 10000) // 10 seconds
-  ConnectionPool::set_idle_timeout(pool_client, 60000) // 1 minute
-  
-  // Test connection reuse
-  let pool_request1 = HttpRequest::new("GET", "https://httpbin.org/get")
-  let pool_response1 = PooledHttpClient::execute(pool_client, pool_request1)
-  
-  let pool_request2 = HttpRequest::new("GET", "https://httpbin.org/get")
-  let pool_response2 = PooledHttpClient::execute(pool_client, pool_request2)
-  
-  // Both requests should succeed
-  match (pool_response1, pool_response2) {
-    (Ok(response1), Ok(response2)) => {
-      assert_eq(HttpResponse::status_code(response1), 200)
-      assert_eq(HttpResponse::status_code(response2), 200)
-    }
-    _ => {
-      // In test environment, requests might fail
-      assert_true(true)
-    }
-  }
-  
-  // Check connection pool statistics
-  let pool_stats = ConnectionPool::statistics(pool_client)
-  assert_true(pool_stats.active_connections >= 0)
-  assert_true(pool_stats.idle_connections >= 0)
-  assert_true(pool_stats.total_connections >= 0)
-  
-  // Test network health checking
-  let health_checker = NetworkHealthChecker::new()
-  
-  // Add health check endpoints
-  NetworkHealthChecker::add_endpoint(health_checker, "httpbin", "https://httpbin.org/status/200")
-  NetworkHealthChecker::add_endpoint(health_checker, "google", "https://www.google.com")
-  
-  // Configure health check interval
-  NetworkHealthChecker::set_interval(health_checker, 30000) // 30 seconds
-  NetworkHealthChecker::set_timeout(health_checker, 5000) // 5 seconds
-  
-  // Start health checker
-  NetworkHealthChecker::start(health_checker)
-  
-  // Wait for health checks
-  Thread::sleep(2000) // 2 seconds
-  
-  // Get health status
-  let health_status = NetworkHealthChecker::get_status(health_checker)
-  
-  assert_true(health_status.contains_key("httpbin"))
-  assert_true(health_status.contains_key("google"))
-  
-  // Check endpoint health
-  let httpbin_health = health_status.get("httpbin")
-  match httpbin_health {
-    Some(status) => {
-      assert_true(status.healthy || status.error.length() > 0)
-      assert_true(status.last_check > 0)
-    }
-    None => assert_true(false)
-  }
-  
-  // Stop health checker
-  NetworkHealthChecker::stop(health_checker)
-  
-  // Test network metrics collection
-  let metrics_collector = NetworkMetricsCollector::new()
-  
-  // Collect metrics from HTTP client
-  let http_metrics = NetworkMetricsCollector::collect_from_http_client(metrics_collector, resilient_client)
-  
-  assert_true(http_metrics.contains_key("request_count"))
-  assert_true(http_metrics.contains_key("success_count"))
-  assert_true(http_metrics.contains_key("error_count"))
-  assert_true(http_metrics.contains_key("retry_count"))
-  assert_true(http_metrics.contains_key("circuit_breaker_state"))
-  
-  // Collect metrics from connection pool
-  let pool_metrics = NetworkMetricsCollector::collect_from_connection_pool(metrics_collector, pool_client)
-  
-  assert_true(pool_metrics.contains_key("active_connections"))
-  assert_true(pool_metrics.contains_key("idle_connections"))
-  assert_true(pool_metrics.contains_key("total_connections"))
-  assert_true(pool_metrics.contains_key("connection_reuse_count"))
+  // 验证负载均衡统计
+  let lb_stats = HttpClient::get_load_balancer_stats(lb_client)
+  assert_true(lb_stats.total_requests >= 9)
+  assert_true(lb_stats.healthy_targets >= 2)
+  assert_true(lb_stats.failed_targets >= 0)
 }
