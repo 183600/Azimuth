@@ -134,5 +134,14 @@
         "../azimuth_enhanced_core_functionality_tests.mbt",
         "../azimuth_essential_tests.mbt",
         "../azimuth_focused_moonbit_tests.mbt",
-        "../azimuth_new_comprehensive_test_cases.mbt"]  }
+        "../azimuth_new_comprehensive_test_cases.mbt",
+        "../azimuth_premium_telemetry_data_processing_tests.mbt",
+        "../azimuth_premium_concurrent_safety_tests.mbt",
+        "../azimuth_premium_error_handling_recovery_tests.mbt",
+        "../azimuth_premium_performance_benchmark_tests.mbt",
+        "../azimuth_premium_distributed_tracing_consistency_tests.mbt",
+        "../azimuth_premium_serialization_deserialization_tests.mbt",
+        "../azimuth_premium_resource_management_tests.mbt",
+        "../azimuth_premium_cross_service_propagation_tests.mbt",
+        "../azimuth_premium_internationalization_support_tests.mbt"]  }
 }

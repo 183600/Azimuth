@@ -1,552 +1,370 @@
-// Azimuth Performance Benchmark Tests
-// This file contains test cases for performance benchmarking
+// Azimuth Premium Performance Benchmark Tests
+// 高质量性能基准测试用例 - 专注于系统性能指标和资源使用效率
 
-// Test 1: Algorithm Performance Comparison
-test "算法性能比较" {
-  // 定义排序算法
-  let bubble_sort = fn(arr: Array[Int]) {
-    let result = arr.copy()
-    let n = result.length()
-    
-    for i in 0..n {
-      for j in 0..(n - i - 1) {
-        if result[j] > result[j + 1] {
-          let temp = result[j]
-          result[j] = result[j + 1]
-          result[j + 1] = temp
-        }
-      }
+test "遥测数据处理的吞吐量基准" {
+  // 创建性能基准测试器
+  let benchmark = PerformanceBenchmark::new("telemetry_throughput")
+  let telemetry_processor = TelemetryProcessor::optimized()
+  
+  // 准备测试数据集
+  let dataset_sizes = [1000, 5000, 10000, 50000, 100000]
+  let throughput_results = []
+  
+  for size in dataset_sizes {
+    let test_data = []
+    for i in 0..size {
+      let data_point = TelemetryDataPoint::new(
+        "benchmark_metric",
+        Random::next_float() * 100.0,
+        1234567890L + i.to_long()
+      )
+      test_data.push(data_point)
     }
     
-    result
+    // 执行基准测试
+    let result = PerformanceBenchmark::measure_throughput(benchmark, fn() {
+      TelemetryProcessor::process_batch(telemetry_processor, test_data)
+    })
+    
+    throughput_results.push((size, result))
+    
+    // 验证性能指标
+    assert_true(result.operations_per_second > 0)
+    assert_true(result.total_time_ms > 0)
+    assert_true(result.memory_used_mb >= 0)
+    
+    // 验证处理结果
+    assert_eq(result.items_processed, size)
+    assert_eq(result.success_count, size)
+    assert_eq(result.error_count, 0)
   }
   
-  let quick_sort = fn(arr: Array[Int]) {
-    if arr.length() <= 1 {
-      return arr
-    }
+  // 验证吞吐量随数据量的变化趋势
+  for i in 1..throughput_results.length() {
+    let prev_size = throughput_results[i-1].0
+    let curr_size = throughput_results[i].0
+    let prev_throughput = throughput_results[i-1].1.operations_per_second
+    let curr_throughput = throughput_results[i].1.operations_per_second
     
-    let pivot = arr[0]
-    let less = arr.slice(1, arr.length()).filter(fn(x) { x <= pivot })
-    let greater = arr.slice(1, arr.length()).filter(fn(x) { x > pivot })
-    
-    quick_sort(less) + [pivot] + quick_sort(greater)
+    // 随着数据量增加，吞吐量不应显著下降（允许20%的下降）
+    let throughput_ratio = curr_throughput / prev_throughput
+    assert_true(throughput_ratio > 0.8)
   }
   
-  let merge_sort = fn(arr: Array[Int]) {
-    if arr.length() <= 1 {
-      return arr
-    }
-    
-    let mid = arr.length() / 2
-    let left = merge_sort(arr.slice(0, mid))
-    let right = merge_sort(arr.slice(mid, arr.length()))
-    
-    let merge = fn(left: Array[Int], right: Array[Int]) {
-      let mut result = []
-      let mut i = 0
-      let mut j = 0
-      
-      while i < left.length() && j < right.length() {
-        if left[i] <= right[j] {
-          result = result.push(left[i])
-          i = i + 1
-        } else {
-          result = result.push(right[j])
-          j = j + 1
-        }
-      }
-      
-      // 添加剩余元素
-      while i < left.length() {
-        result = result.push(left[i])
-        i = i + 1
-      }
-      
-      while j < right.length() {
-        result = result.push(right[j])
-        j = j + 1
-      }
-      
-      result
-    }
-    
-    merge(left, right)
-  }
-  
-  // 性能测试函数
-  let benchmark_sort = fn(sort_fn: (Array[Int]) -> Array[Int>, data: Array[Int], iterations: Int) {
-    let start_time = Time::now()
-    
-    for i in 0..iterations {
-      let _ = sort_fn(data)
-    }
-    
-    let end_time = Time::now()
-    end_time - start_time
-  }
-  
-  // 创建测试数据
-  let small_data = [5, 2, 8, 1, 9, 3]
-  let medium_data = []
-  for i in 0..100 {
-    medium_data = medium_data.push((100 - i) % 50)  // 0-49的重复值
-  }
-  
-  // 测试小数据集
-  let bubble_time_small = benchmark_sort(bubble_sort, small_data, 100)
-  let quick_time_small = benchmark_sort(quick_sort, small_data, 100)
-  let merge_time_small = benchmark_sort(merge_sort, small_data, 100)
-  
-  // 验证排序结果正确性
-  let bubble_result = bubble_sort(small_data)
-  let quick_result = quick_sort(small_data)
-  let merge_result = merge_sort(small_data)
-  
-  assert_eq(bubble_result, [1, 2, 3, 5, 8, 9])
-  assert_eq(quick_result, [1, 2, 3, 5, 8, 9])
-  assert_eq(merge_result, [1, 2, 3, 5, 8, 9])
-  
-  // 测试中等数据集
-  let bubble_time_medium = benchmark_sort(bubble_sort, medium_data, 10)
-  let quick_time_medium = benchmark_sort(quick_sort, medium_data, 10)
-  let merge_time_medium = benchmark_sort(merge_sort, medium_data, 10)
-  
-  // 验证性能差异
-  // 对于小数据集，性能差异可能不明显
-  // 对于中等数据集，快速排序和归并排序应该明显快于冒泡排序
-  assert_true(bubble_time_medium > quick_time_medium)
-  assert_true(bubble_time_medium > merge_time_medium)
+  // 验证内存使用效率
+  let largest_result = throughput_results[throughput_results.length()-1].1
+  let memory_per_item = largest_result.memory_used_mb * 1024 * 1024 / largest_result.items_processed
+  assert_true(memory_per_item < 1024) // 每项数据内存使用应小于1KB
 }
 
-// Test 2: Data Structure Performance
-test "数据结构性能测试" {
-  // 测试数组操作性能
-  let benchmark_array_operations = fn(size: Int) {
-    // 创建数组
-    let start_time = Time::now()
-    let mut arr = []
-    for i in 0..size {
-      arr = arr.push(i)
-    }
-    let creation_time = Time::now() - start_time
+test "并发处理性能基准" {
+  let benchmark = PerformanceBenchmark::new("concurrent_processing")
+  let telemetry_processor = TelemetryProcessor::thread_safe()
+  
+  let thread_counts = [1, 2, 4, 8, 16]
+  let concurrent_results = []
+  
+  for thread_count in thread_counts {
+    let data_per_thread = 10000
+    let total_data_size = thread_count * data_per_thread
     
-    // 查找操作
-    start_time = Time::now()
-    let target = size / 2
-    let found = arr.contains(target)
-    let search_time = Time::now() - start_time
-    
-    // 过滤操作
-    start_time = Time::now()
-    let filtered = arr.filter(fn(x) { x % 2 == 0 })
-    let filter_time = Time::now() - start_time
-    
-    // 映射操作
-    start_time = Time::now()
-    let mapped = arr.map(fn(x) { x * 2 })
-    let map_time = Time::now() - start_time
-    
-    {
-      creation_time,
-      search_time,
-      filter_time,
-      map_time,
-      array_size: size,
-      filtered_count: filtered.length(),
-      mapped_count: mapped.length()
-    }
-  }
-  
-  // 测试Map操作性能
-  let benchmark_map_operations = fn(size: Int) {
-    // 创建Map
-    let start_time = Time::now()
-    let mut map = Map::empty()
-    for i in 0..size {
-      let _ = Map::insert(map, "key" + i.to_string(), i)
-    }
-    let creation_time = Time::now() - start_time
-    
-    // 查找操作
-    start_time = Time::now()
-    let target_key = "key" + (size / 2).to_string()
-    let found = Map::get(map, target_key)
-    let search_time = Time::now() - start_time
-    
-    // 更新操作
-    start_time = Time::now()
-    let mut updated_map = map
-    for i in 0..size {
-      let _ = Map::insert(updated_map, "key" + i.to_string(), i * 2)
-    }
-    let update_time = Time::now() - start_time
-    
-    {
-      creation_time,
-      search_time,
-      update_time,
-      map_size: size,
-      found_value: found
-    }
-  }
-  
-  // 测试不同大小的数据结构
-  let small_array_perf = benchmark_array_operations(100)
-  let medium_array_perf = benchmark_array_operations(1000)
-  let large_array_perf = benchmark_array_operations(10000)
-  
-  let small_map_perf = benchmark_map_operations(100)
-  let medium_map_perf = benchmark_map_operations(1000)
-  let large_map_perf = benchmark_map_operations(10000)
-  
-  // 验证结果
-  assert_eq(small_array_perf.array_size, 100)
-  assert_eq(small_array_perf.filtered_count, 50)  // 一半的偶数
-  assert_eq(small_array_perf.mapped_count, 100)
-  
-  assert_eq(medium_array_perf.array_size, 1000)
-  assert_eq(medium_array_perf.filtered_count, 500)
-  assert_eq(medium_array_perf.mapped_count, 1000)
-  
-  assert_eq(large_array_perf.array_size, 10000)
-  assert_eq(large_array_perf.filtered_count, 5000)
-  assert_eq(large_array_perf.mapped_count, 10000)
-  
-  // 验证Map操作
-  match small_map_perf.found_value {
-    Some(value) => assert_eq(value, 50)
-    None => assert_true(false)
-  }
-  
-  // 验证性能差异
-  // 大数据集的操作应该比小数据集慢
-  assert_true(large_array_perf.creation_time > small_array_perf.creation_time)
-  assert_true(large_map_perf.creation_time > small_map_perf.creation_time)
-  
-  // Map查找应该比数组查找快（对于大数据集）
-  assert_true(large_map_perf.search_time < large_array_perf.search_time)
-}
-
-// Test 3: Memory Allocation Performance
-test "内存分配性能测试" {
-  // 测试字符串创建性能
-  let benchmark_string_creation = fn(count: Int, length: Int) {
-    let start_time = Time::now()
-    let mut strings = []
-    
-    for i in 0..count {
-      let mut str = ""
-      for j in 0..length {
-        str = str + "a"
+    // 执行并发基准测试
+    let result = PerformanceBenchmark::measure_concurrent(benchmark, thread_count, fn() {
+      let local_data = []
+      for i in 0..data_per_thread {
+        let data_point = TelemetryDataPoint::new(
+          "concurrent_metric",
+          Random::next_float() * 100.0,
+          1234567890L + i.to_long()
+        )
+        local_data.push(data_point)
       }
-      strings = strings.push(str)
-    }
+      TelemetryProcessor::process_batch(telemetry_processor, local_data)
+    })
     
-    let end_time = Time::now()
-    {
-      creation_time: end_time - start_time,
-      string_count: count,
-      total_length: count * length,
-      avg_length: length
+    concurrent_results.push((thread_count, result))
+    
+    // 验证并发性能
+    assert_true(result.total_time_ms > 0)
+    assert_eq(result.items_processed, total_data_size)
+    assert_eq(result.success_count, total_data_size)
+    
+    // 计算并行效率
+    if thread_count > 1 {
+      let single_thread_result = concurrent_results[0].1
+      let speedup = single_thread_result.total_time_ms / result.total_time_ms
+      let parallel_efficiency = speedup / thread_count.to_float()
+      
+      // 并行效率应该至少达到50%（考虑到线程开销）
+      assert_true(parallel_efficiency > 0.5)
     }
   }
   
-  // 测试对象创建性能
-  type TestObject = {
-    id: Int,
-    name: String,
-    data: Array[Int]
-  }
-  
-  let benchmark_object_creation = fn(count: Int) {
-    let start_time = Time::now()
-    let mut objects = []
-    
-    for i in 0..count {
-      let obj = {
-        id: i,
-        name: "object-" + i.to_string(),
-        data: [i, i * 2, i * 3]
-      }
-      objects = objects.push(obj)
-    }
-    
-    let end_time = Time::now()
-    {
-      creation_time: end_time - start_time,
-      object_count: count,
-      memory_usage: count * 100  // 估算内存使用
-    }
-  }
-  
-  // 测试数组扩展性能
-  let benchmark_array_expansion = fn(initial_size: Int, growth_factor: Int) {
-    let start_time = Time::now()
-    let mut arr = []
-    
-    // 初始填充
-    for i in 0..initial_size {
-      arr = arr.push(i)
-    }
-    
-    // 扩展数组
-    for i in 0..(initial_size * growth_factor) {
-      arr = arr.push(initial_size + i)
-    }
-    
-    let end_time = Time::now()
-    {
-      expansion_time: end_time - start_time,
-      initial_size,
-      final_size: arr.length(),
-      growth_factor
-    }
-  }
-  
-  // 执行性能测试
-  let string_perf_small = benchmark_string_creation(100, 10)
-  let string_perf_medium = benchmark_string_creation(1000, 100)
-  let string_perf_large = benchmark_string_creation(10000, 1000)
-  
-  let object_perf_small = benchmark_object_creation(100)
-  let object_perf_medium = benchmark_object_creation(1000)
-  let object_perf_large = benchmark_object_creation(10000)
-  
-  let array_expansion_perf = benchmark_array_expansion(1000, 5)
-  
-  // 验证结果
-  assert_eq(string_perf_small.string_count, 100)
-  assert_eq(string_perf_small.total_length, 1000)
-  
-  assert_eq(string_perf_medium.string_count, 1000)
-  assert_eq(string_perf_medium.total_length, 100000)
-  
-  assert_eq(string_perf_large.string_count, 10000)
-  assert_eq(string_perf_large.total_length, 10000000)
-  
-  assert_eq(object_perf_small.object_count, 100)
-  assert_eq(object_perf_medium.object_count, 1000)
-  assert_eq(object_perf_large.object_count, 10000)
-  
-  assert_eq(array_expansion_perf.initial_size, 1000)
-  assert_eq(array_expansion_perf.final_size, 6000)  // 1000 + 1000 * 5
-  assert_eq(array_expansion_perf.growth_factor, 5)
-  
-  // 验证性能差异
-  assert_true(string_perf_large.creation_time > string_perf_small.creation_time)
-  assert_true(object_perf_large.creation_time > object_perf_small.creation_time)
-  
-  // 字符串长度对性能的影响
-  assert_true(string_perf_large.creation_time > string_perf_medium.creation_time)
-}
-
-// Test 4: Function Call Overhead
-test "函数调用开销测试" {
-  // 简单函数
-  let simple_function = fn(x: Int) { x + 1 }
-  
-  // 带多个参数的函数
-  let multi_param_function = fn(a: Int, b: Int, c: Int) { a + b + c }
-  
-  // 递归函数
-  let recursive_function = fn(n: Int) {
-    if n <= 1 {
-      1
+  // 验证最佳线程数下的性能
+  let best_result = concurrent_results.reduce(fn(best, current) {
+    if current.1.operations_per_second > best.1.operations_per_second {
+      current
     } else {
-      n + recursive_function(n - 1)
+      best
     }
-  }
+  })
   
-  // 高阶函数
-  let higher_order_function = fn(f: (Int) -> Int, x: Int) { f(x) * 2 }
-  
-  // 性能测试函数
-  let benchmark_function_calls = fn(func: () -> Unit, iterations: Int) {
-    let start_time = Time::now()
-    
-    for i in 0..iterations {
-      func()
-    }
-    
-    let end_time = Time::now()
-    end_time - start_time
-  }
-  
-  // 测试简单函数调用
-  let simple_func = fn() { simple_function(42) }
-  let simple_time = benchmark_function_calls(simple_func, 100000)
-  
-  // 测试多参数函数调用
-  let multi_param_func = fn() { multi_param_function(1, 2, 3) }
-  let multi_param_time = benchmark_function_calls(multi_param_func, 100000)
-  
-  // 测试递归函数调用
-  let recursive_func = fn() { recursive_function(10) }
-  let recursive_time = benchmark_function_calls(recursive_func, 10000)  // 较少迭代，因为递归开销大
-  
-  // 测试高阶函数调用
-  let higher_order_func = fn() { higher_order_function(simple_function, 5) }
-  let higher_order_time = benchmark_function_calls(higher_order_func, 100000)
-  
-  // 测试内联操作（无函数调用）
-  let inline_func = fn() { 
-    let x = 42
-    let _ = x + 1
-  }
-  let inline_time = benchmark_function_calls(inline_func, 100000)
-  
-  // 验证函数正确性
-  assert_eq(simple_function(42), 43)
-  assert_eq(multi_param_function(1, 2, 3), 6)
-  assert_eq(recursive_function(5), 15)  // 5 + 4 + 3 + 2 + 1
-  assert_eq(higher_order_function(simple_function, 5), 12)  // (5 + 1) * 2
-  
-  // 验证性能差异
-  // 内联操作应该最快
-  assert_true(inline_time < simple_time)
-  
-  // 高阶函数应该比简单函数慢
-  assert_true(higher_order_time > simple_time)
-  
-  // 递归函数应该最慢（即使迭代次数较少）
-  assert_true(recursive_time > simple_time)
+  // 最佳性能应该显著优于单线程性能
+  let single_thread_throughput = concurrent_results[0].1.operations_per_second
+  let best_throughput = best_result.1.operations_per_second
+  assert_true(best_throughput > single_thread_throughput * 2.0) // 至少2倍提升
 }
 
-// Test 5: Telemetry Collection Performance
-test "遥测数据收集性能测试" {
-  // 定义遥测数据点
-  type TelemetryPoint = {
-    timestamp: Int,
-    metric_name: String,
-    value: Float,
-    tags: Array[(String, String)]
-  }
+test "内存使用效率基准" {
+  let benchmark = PerformanceBenchmark::new("memory_efficiency")
+  let memory_profiler = MemoryProfiler::new()
   
-  // 遥测收集器
-  type TelemetryCollector = {
-    points: Array[TelemetryPoint],
-    buffer_size: Int
-  }
+  // 测试不同数据结构的内存使用
+  let data_structures = [
+    ("array", fn() { Array::new() }),
+    ("vector", fn() { Vector::new() }),
+    ("hash_map", fn() { HashMap::new() }),
+    ("btree_map", fn() { BTreeMap::new() })
+  ]
   
-  // 创建遥测收集器
-  let create_collector = fn(buffer_size: Int) {
-    {
-      points: [],
-      buffer_size
-    }
-  }
-  
-  // 添加遥测点
-  let add_telemetry_point = fn(collector: TelemetryCollector, point: TelemetryPoint) {
-    let updated_points = collector.points.push(point)
+  for (structure_name, create_fn) in data_structures {
+    MemoryProfiler::start_profiling(memory_profiler)
     
-    // 如果超过缓冲区大小，移除最旧的点
-    let final_points = if updated_points.length() > collector.buffer_size {
-      updated_points.slice(1, updated_points.length())
-    } else {
-      updated_points
-    }
+    let data_structure = create_fn()
+    let num_items = 100000
     
-    {
-      ...collector,
-      points: final_points
-    }
-  }
-  
-  // 批量添加遥测点
-  let batch_add_points = fn(collector: TelemetryCollector, points: Array[TelemetryPoint]) {
-    let mut updated_collector = collector
-    
-    for point in points {
-      updated_collector = add_telemetry_point(updated_collector, point)
-    }
-    
-    updated_collector
-  }
-  
-  // 性能测试
-  let benchmark_telemetry_collection = fn(point_count: Int, batch_size: Int) {
-    let collector = create_collector(10000)
-    
-    // 创建测试数据
-    let mut test_points = []
-    for i in 0..point_count {
-      let point = {
-        timestamp: Time::now() + i,
-        metric_name: "metric_" + (i % 10).to_string(),
-        value: (i % 100) as Float,
-        tags: [("source", "test"), ("index", i.to_string())]
+    // 填充数据结构
+    for i in 0..num_items {
+      let key = "key_" + i.to_string()
+      let value = TelemetryDataPoint::new(
+        "memory_test_metric",
+        i.to_float(),
+        1234567890L + i.to_long()
+      )
+      
+      match structure_name {
+        "array" => Array::push(data_structure, value),
+        "vector" => Vector::push(data_structure, value),
+        "hash_map" => HashMap::insert(data_structure, key, value),
+        "btree_map" => BTreeMap::insert(data_structure, key, value),
+        _ => assert_true(false)
       }
-      test_points = test_points.push(point)
     }
     
-    // 单点添加测试
-    let start_time = Time::now()
-    let mut single_collector = collector
-    for point in test_points {
-      single_collector = add_telemetry_point(single_collector, point)
-    }
-    let single_add_time = Time::now() - start_time
+    let memory_usage = MemoryProfiler::stop_profiling(memory_profiler)
     
-    // 批量添加测试
-    start_time = Time::now()
-    let batch_collector = batch_add_points(collector, test_points)
-    let batch_add_time = Time::now() - start_time
+    // 验证内存使用效率
+    let memory_per_item = memory_usage.total_bytes / num_items
+    assert_true(memory_per_item < 2048) // 每项内存使用应小于2KB
     
-    // 查询测试
-    start_time = Time::now()
-    let filtered_points = batch_collector.points.filter(fn(p) { p.metric_name == "metric_5" })
-    let query_time = Time::now() - start_time
+    // 验证内存碎片率
+    assert_true(memory_usage.fragmentation_ratio < 0.3) // 碎片率应小于30%
     
-    // 聚合测试
-    start_time = Time::now()
-    let sum = batch_collector.points.reduce(fn(acc, p) { acc + p.value }, 0.0)
-    let avg = sum / (batch_collector.points.length() as Float)
-    let aggregation_time = Time::now() - start_time
-    
-    {
-      point_count,
-      single_add_time,
-      batch_add_time,
-      query_time,
-      aggregation_time,
-      final_count: batch_collector.points.length(),
-      filtered_count: filtered_points.length(),
-      average_value: avg
-    }
+    // 记录基准结果
+    PerformanceBenchmark::record_memory_result(benchmark, structure_name, memory_usage)
   }
   
-  // 执行性能测试
-  let small_collection_perf = benchmark_telemetry_collection(1000, 100)
-  let medium_collection_perf = benchmark_telemetry_collection(10000, 1000)
-  let large_collection_perf = benchmark_telemetry_collection(100000, 10000)
+  // 比较不同数据结构的内存效率
+  let memory_results = PerformanceBenchmark::get_memory_results(benchmark)
+  let sorted_results = memory_results.sort_by(fn(a, b) { a.memory_per_item <=> b.memory_per_item })
   
-  // 验证结果
-  assert_eq(small_collection_perf.point_count, 1000)
-  assert_eq(small_collection_perf.final_count, 1000)  // 未超过缓冲区
+  // 最有效的数据结构应该比最低效的数据结构节省至少30%的内存
+  let most_efficient = sorted_results[0]
+  let least_efficient = sorted_results[sorted_results.length()-1]
+  let memory_savings = (least_efficient.memory_per_item - most_efficient.memory_per_item) / least_efficient.memory_per_item
+  assert_true(memory_savings > 0.3)
+}
+
+test "网络I/O性能基准" {
+  let benchmark = PerformanceBenchmark::new("network_io")
+  let network_client = MockNetworkClient::new()
+  let telemetry_service = TelemetryService::with_client(network_client)
   
-  assert_eq(medium_collection_perf.point_count, 10000)
-  assert_eq(medium_collection_perf.final_count, 10000)  // 刚好达到缓冲区
+  // 测试不同批量大小的网络传输性能
+  let batch_sizes = [1, 10, 50, 100, 500, 1000]
+  let network_results = []
   
-  assert_eq(large_collection_perf.point_count, 100000)
-  assert_eq(large_collection_perf.final_count, 10000)  // 超过缓冲区，被截断
+  for batch_size in batch_sizes {
+    let test_batch = []
+    for i in 0..batch_size {
+      let data_point = TelemetryDataPoint::new(
+        "network_test_metric",
+        Random::next_float() * 100.0,
+        1234567890L + i.to_long()
+      )
+      test_batch.push(data_point)
+    }
+    
+    // 执行网络基准测试
+    let result = PerformanceBenchmark::measure_network(benchmark, fn() {
+      TelemetryService::send_batch(telemetry_service, test_batch)
+    })
+    
+    network_results.push((batch_size, result))
+    
+    // 验证网络性能指标
+    assert_true(result.total_time_ms > 0)
+    assert_true(result.bytes_sent > 0)
+    assert_true(result.network_latency_ms >= 0)
+    
+    // 计算吞吐量
+    let throughput = result.bytes_sent / (result.total_time_ms / 1000.0)
+    assert_true(throughput > 0)
+  }
   
-  // 验证聚合结果
-  assert_true(small_collection_perf.average_value > 0.0)
-  assert_true(medium_collection_perf.average_value > 0.0)
-  assert_true(large_collection_perf.average_value > 0.0)
+  // 验证批量传输的效率
+  let single_item_result = network_results[0].1
+  let largest_batch_result = network_results[network_results.length()-1].1
   
-  // 验证过滤结果
-  assert_true(small_collection_perf.filtered_count > 0)
-  assert_true(medium_collection_perf.filtered_count > 0)
-  assert_true(large_collection_perf.filtered_count > 0)
+  // 批量传输的平均延迟应该显著低于单项传输
+  let single_item_latency = single_item_result.network_latency_ms
+  let batch_item_latency = largest_batch_result.network_latency_ms / largest_batch_result.items_processed.to_float()
+  assert_true(batch_item_latency < single_item_latency * 0.5)
   
-  // 验证性能差异
-  // 批量添加应该比单点添加快
-  assert_true(medium_collection_perf.batch_add_time < medium_collection_perf.single_add_time)
+  // 验证网络压缩效率
+  let compression_result = PerformanceBenchmark::measure_compression(benchmark, fn() {
+    let large_batch = []
+    for i in 0..10000 {
+      let data_point = TelemetryDataPoint::new(
+        "compression_test_metric",
+        Random::next_float() * 100.0,
+        1234567890L + i.to_long()
+      )
+      large_batch.push(data_point)
+    }
+    TelemetryService::send_compressed(telemetry_service, large_batch)
+  })
   
-  // 大数据集操作应该比小数据集慢
-  assert_true(large_collection_perf.query_time > small_collection_perf.query_time)
-  assert_true(large_collection_perf.aggregation_time > small_collection_perf.aggregation_time)
+  // 压缩应该减少至少50%的数据量
+  let compression_ratio = compression_result.compressed_bytes / compression_result.original_bytes
+  assert_true(compression_ratio < 0.5)
+}
+
+test "序列化/反序列化性能基准" {
+  let benchmark = PerformanceBenchmark::new("serialization")
+  let test_data = []
+  
+  // 准备复杂的测试数据
+  for i in 0..10000 {
+    let telemetry_record = TelemetryRecord::new()
+    TelemetryRecord::add_metric(telemetry_record, "cpu_usage", Random::next_float() * 100.0)
+    TelemetryRecord::add_metric(telemetry_record, "memory_usage", Random::next_float() * 100.0)
+    TelemetryRecord::add_attribute(telemetry_record, "host", "server_" + (i % 10).to_string())
+    TelemetryRecord::add_attribute(telemetry_record, "region", "us-west-" + (i % 3).to_string())
+    TelemetryRecord::set_timestamp(telemetry_record, 1234567890L + i.to_long())
+    test_data.push(telemetry_record)
+  }
+  
+  // 测试不同序列化格式的性能
+  let serialization_formats = [
+    ("json", SerializationFormat::Json),
+    ("binary", SerializationFormat::Binary),
+    ("protobuf", SerializationFormat::Protobuf),
+    ("msgpack", SerializationFormat::MsgPack)
+  ]
+  
+  for (format_name, format) in serialization_formats {
+    let serializer = Serializer::for_format(format)
+    
+    // 序列化性能测试
+    let serialization_result = PerformanceBenchmark::measure_serialization(benchmark, fn() {
+      Serializer::serialize_batch(serializer, test_data)
+    })
+    
+    // 反序列化性能测试
+    let serialized_data = Serializer::serialize_batch(serializer, test_data)
+    let deserialization_result = PerformanceBenchmark::measure_deserialization(benchmark, fn() {
+      Serializer::deserialize_batch(serializer, serialized_data)
+    })
+    
+    // 验证序列化性能
+    assert_true(serialization_result.total_time_ms > 0)
+    assert_true(serialization_result.bytes_generated > 0)
+    
+    // 验证反序列化性能
+    assert_true(deserialization_result.total_time_ms > 0)
+    assert_eq(deserialization_result.items_processed, test_data.length())
+    
+    // 验证数据完整性
+    assert_eq(deserialization_result.success_count, test_data.length())
+    assert_eq(deserialization_result.error_count, 0)
+    
+    // 计算序列化效率
+    let bytes_per_item = serialization_result.bytes_generated / test_data.length()
+    let serialization_throughput = test_data.length() / (serialization_result.total_time_ms / 1000.0)
+    let deserialization_throughput = test_data.length() / (deserialization_result.total_time_ms / 1000.0)
+    
+    // 记录结果
+    PerformanceBenchmark::record_serialization_result(benchmark, format_name, bytes_per_item, serialization_throughput, deserialization_throughput)
+  }
+  
+  // 比较不同格式的性能
+  let serialization_results = PerformanceBenchmark::get_serialization_results(benchmark)
+  
+  // 二进制格式应该比JSON格式更紧凑
+  let json_result = serialization_results.find(fn(r) { r.format == "json" })
+  let binary_result = serialization_results.find(fn(r) { r.format == "binary" })
+  
+  match (json_result, binary_result) {
+    (Some(json), Some(binary)) => {
+      assert_true(binary.bytes_per_item < json.bytes_per_item) // 二进制应该更紧凑
+      assert_true(binary.serialization_throughput > json.serialization_throughput) // 二进制应该更快
+    }
+    _ => assert_true(false)
+  }
+}
+
+test "缓存性能基准" {
+  let benchmark = PerformanceBenchmark::new("cache_performance")
+  let cache_sizes = [1000, 5000, 10000, 50000]
+  let cache_results = []
+  
+  for cache_size in cache_sizes {
+    let cache = LRUCache::new(cache_size)
+    
+    // 填充缓存
+    for i in 0..cache_size {
+      let key = "cache_key_" + i.to_string()
+      let value = TelemetryDataPoint::new(
+        "cached_metric",
+        i.to_float(),
+        1234567890L + i.to_long()
+      )
+      LRUCache::put(cache, key, value)
+    }
+    
+    // 测试缓存读取性能
+    let read_result = PerformanceBenchmark::measure_cache_reads(benchmark, cache, 10000)
+    
+    // 测试缓存写入性能
+    let write_result = PerformanceBenchmark::measure_cache_writes(benchmark, cache, 10000)
+    
+    // 测试缓存淘汰性能
+    let eviction_result = PerformanceBenchmark::measure_cache_evictions(benchmark, cache, cache_size / 2)
+    
+    cache_results.push((cache_size, read_result, write_result, eviction_result))
+    
+    // 验证缓存性能指标
+    assert_true(read_result.avg_read_time_us > 0)
+    assert_true(write_result.avg_write_time_us > 0)
+    assert_true(eviction_result.avg_eviction_time_us > 0)
+    
+    // 验证缓存命中率
+    assert_true(read_result.hit_rate > 0.8) // 命中率应该大于80%
+    
+    // 验证读写性能平衡
+    let read_write_ratio = read_result.avg_read_time_us / write_result.avg_write_time_us
+    assert_true(read_write_ratio > 0.5 && read_write_ratio < 2.0) // 读写性能应该相对平衡
+  }
+  
+  // 验证缓存大小对性能的影响
+  let smallest_cache = cache_results[0]
+  let largest_cache = cache_results[cache_results.length()-1]
+  
+  // 大缓存的读取性能应该优于小缓存（更好的命中率）
+  assert_true(largest_cache.1.hit_rate >= smallest_cache.1.hit_rate)
+  
+  // 大缓存的写入性能可能略低于小缓存（更多的维护开销）
+  let write_performance_ratio = largest_cache.2.avg_write_time_us / smallest_cache.2.avg_write_time_us
+  assert_true(write_performance_ratio < 3.0) // 写入性能下降不应超过3倍
 }

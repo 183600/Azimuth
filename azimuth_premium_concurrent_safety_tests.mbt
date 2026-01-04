@@ -1,349 +1,304 @@
 // Azimuth Premium Concurrent Safety Tests
-// This file contains high-quality test cases for concurrent operations and thread safety
+// 高质量并发安全性测试用例 - 专注于多线程环境下的数据一致性和竞态条件
 
-// Test 1: Thread-Safe Counter Operations
-test "thread-safe counter operations" {
-  let counter = AtomicCounter::new(0)
+test "并发写入遥测数据的安全性" {
+  // 创建共享的遥测数据存储
+  let telemetry_store = ConcurrentTelemetryStore::new()
+  let num_threads = 10
+  let operations_per_thread = 100
   
-  assert_eq(AtomicCounter::get(counter), 0)
-  
-  // Test increment operations
-  AtomicCounter::increment(counter)
-  assert_eq(AtomicCounter::get(counter), 1)
-  
-  AtomicCounter::add(counter, 5)
-  assert_eq(AtomicCounter::get(counter), 6)
-  
-  // Test decrement operations
-  AtomicCounter::decrement(counter)
-  assert_eq(AtomicCounter::get(counter), 5)
-  
-  AtomicCounter::subtract(counter, 2)
-  assert_eq(AtomicCounter::get(counter), 3)
-  
-  // Test compare and swap
-  let success = AtomicCounter::compare_and_swap(counter, 3, 10)
-  assert_true(success)
-  assert_eq(AtomicCounter::get(counter), 10)
-  
-  // Failed compare and swap
-  let failed = AtomicCounter::compare_and_swap(counter, 3, 20)
-  assert_false(failed)
-  assert_eq(AtomicCounter::get(counter), 10)
-  
-  // Test fetch and add
-  let old_value = AtomicCounter::fetch_and_add(counter, 5)
-  assert_eq(old_value, 10)
-  assert_eq(AtomicCounter::get(counter), 15)
-}
-
-// Test 2: Thread-Safe Queue Operations
-test "thread-safe queue operations" {
-  let queue = ConcurrentQueue::new()
-  
-  // Test empty queue
-  assert_true(ConcurrentQueue::is_empty(queue))
-  assert_eq(ConcurrentQueue::size(queue), 0)
-  
-  // Test enqueue operations
-  assert_true(ConcurrentQueue::enqueue(queue, "item1"))
-  assert_true(ConcurrentQueue::enqueue(queue, "item2"))
-  assert_true(ConcurrentQueue::enqueue(queue, "item3"))
-  
-  assert_false(ConcurrentQueue::is_empty(queue))
-  assert_eq(ConcurrentQueue::size(queue), 3)
-  
-  // Test dequeue operations
-  match ConcurrentQueue::dequeue(queue) {
-    Some(item) => assert_eq(item, "item1")
-    None => assert_true(false)
-  }
-  
-  assert_eq(ConcurrentQueue::size(queue), 2)
-  
-  // Test blocking dequeue with timeout
-  match ConcurrentQueue::dequeue_with_timeout(queue, 100) {
-    Some(item) => assert_eq(item, "item2")
-    None => assert_true(false)
-  }
-  
-  // Test empty queue timeout
-  ConcurrentQueue::dequeue(queue)  // Remove last item
-  match ConcurrentQueue::dequeue_with_timeout(queue, 50) {
-    Some(_) => assert_true(false)
-    None => assert_true(true)  // Timeout expected
-  }
-}
-
-// Test 3: Thread-Safe Hash Map Operations
-test "thread-safe hash map operations" {
-  let map = ConcurrentHashMap::new()
-  
-  // Test empty map
-  assert_eq(ConcurrentHashMap::size(map), 0)
-  assert_true(ConcurrentHashMap::is_empty(map))
-  
-  // Test put operations
-  match ConcurrentHashMap::put(map, "key1", "value1") {
-    None => assert_true(true)  // Expected for new key
-    Some(_) => assert_true(false)
-  }
-  
-  match ConcurrentHashMap::put(map, "key2", "value2") {
-    None => assert_true(true)
-    Some(_) => assert_true(false)
-  }
-  
-  assert_eq(ConcurrentHashMap::size(map), 2)
-  
-  // Test get operations
-  match ConcurrentHashMap::get(map, "key1") {
-    Some(value) => assert_eq(value, "value1")
-    None => assert_true(false)
-  }
-  
-  // Test put if absent
-  match ConcurrentHashMap::put_if_absent(map, "key1", "new_value1") {
-    Some(old_value) => assert_eq(old_value, "value1")
-    None => assert_true(false)
-  }
-  
-  match ConcurrentHashMap::put_if_absent(map, "key3", "value3") {
-    None => assert_true(true)
-    Some(_) => assert_true(false)
-  }
-  
-  // Test remove operations
-  match ConcurrentHashMap::remove(map, "key2") {
-    Some(value) => assert_eq(value, "value2")
-    None => assert_true(false)
-  }
-  
-  assert_false(ConcurrentHashMap::contains_key(map, "key2"))
-  assert_eq(ConcurrentHashMap::size(map), 2)
-  
-  // Test compute if absent
-  let result = ConcurrentHashMap::compute_if_absent(map, "key4", || "computed_value")
-  assert_eq(result, "computed_value")
-  assert_eq(ConcurrentHashMap::size(map), 3)
-}
-
-// Test 4: Read-Write Lock Operations
-test "read-write lock operations" {
-  let lock = ReadWriteLock::new()
-  let shared_data = Ref::new(0)
-  
-  // Test read lock
-  {
-    let _read_guard = ReadWriteLock::read_lock(lock)
-    assert_eq(*Ref::borrow(shared_data), 0)
-    // Multiple read locks should be allowed
-    let _read_guard2 = ReadWriteLock::read_lock(lock)
-    assert_eq(*Ref::borrow(shared_data), 0)
-  }
-  
-  // Test write lock
-  {
-    let mut write_guard = ReadWriteLock::write_lock(lock)
-    *Ref::borrow_mut(write_guard) = 42
-    assert_eq(*Ref::borrow(write_guard), 42)
-  }
-  
-  // Test try read lock
-  match ReadWriteLock::try_read_lock(lock) {
-    Some(_guard) => assert_eq(*Ref::borrow(shared_data), 42)
-    None => assert_true(false)
-  }
-  
-  // Test try write lock
-  match ReadWriteLock::try_write_lock(lock) {
-    Some(mut _guard) => {
-      *Ref::borrow_mut(_guard) = 100
-      assert_eq(*Ref::borrow(_guard), 100)
-    }
-    None => assert_true(false)
-  }
-}
-
-// Test 5: Thread Pool Operations
-test "thread pool operations" {
-  let pool = ThreadPool::new(4)
-  
-  // Test submit task
-  let future = ThreadPool::submit(pool, || {
-    let mut sum = 0
-    for i in 1..=10 {
-      sum = sum + i
-    }
-    sum
-  })
-  
-  // Test get result
-  match ThreadPool::get_result(future) {
-    Some(result) => assert_eq(result, 55)  // Sum of 1 to 10
-    None => assert_true(false)
-  }
-  
-  // Test submit multiple tasks
-  let futures = []
-  for i in 0..5 {
-    let future = ThreadPool::submit(pool, || {
-      Thread::sleep(10)  // Simulate work
-      i * 2
+  // 创建多个线程同时写入数据
+  let threads = []
+  for thread_id in 0..num_threads {
+    let thread = Thread::spawn(fn() {
+      for i in 0..operations_per_thread {
+        let metric_name = "concurrent_metric_" + thread_id.to_string()
+        let value = (thread_id * operations_per_thread + i).to_float()
+        let timestamp = 1234567890L + (thread_id * operations_per_thread + i).to_long()
+        
+        let data_point = TelemetryDataPoint::new(metric_name, value, timestamp)
+        ConcurrentTelemetryStore::add(telemetry_store, data_point)
+      }
     })
-    futures.push(future)
+    threads.push(thread)
   }
   
-  // Collect results
-  let results = []
-  for future in futures {
-    match ThreadPool::get_result(future) {
-      Some(result) => results.push(result)
-      None => assert_true(false)
-    }
+  // 等待所有线程完成
+  for thread in threads {
+    Thread::join(thread)
   }
   
-  assert_eq(results.length(), 5)
-  assert_eq(results[0], 0)
-  assert_eq(results[1], 2)
-  assert_eq(results[2], 4)
-  assert_eq(results[3], 6)
-  assert_eq(results[4], 8)
+  // 验证数据完整性
+  let all_data = ConcurrentTelemetryStore::get_all(telemetry_store)
+  assert_eq(all_data.length(), num_threads * operations_per_thread)
   
-  // Test shutdown
-  ThreadPool::shutdown(pool)
+  // 验证没有数据丢失或重复
+  let mut value_set = Set::new()
+  for data_point in all_data {
+    assert_false(value_set.contains(data_point.value)) // 确保没有重复
+    value_set.add(data_point.value)
+  }
+  assert_eq(value_set.size(), num_threads * operations_per_thread)
 }
 
-// Test 6: Barrier Synchronization
-test "barrier synchronization" {
-  let barrier = Barrier::new(3)
-  let counter = AtomicCounter::new(0)
+test "并发读取和写入的一致性" {
+  // 创建共享的遥测数据存储并预填充数据
+  let telemetry_store = ConcurrentTelemetryStore::new()
   
-  // Test barrier wait
-  let futures = []
-  for i in 0..3 {
-    let future = ThreadPool::submit(ThreadPool::new(1), || {
-      AtomicCounter::increment(counter)
-      Barrier::wait(barrier)
-      AtomicCounter::increment(counter)
-      i
+  // 预填充一些数据
+  for i in 0..50 {
+    let data_point = TelemetryDataPoint::new("initial_metric", i.to_float(), 1234567890L + i.to_long())
+    ConcurrentTelemetryStore::add(telemetry_store, data_point)
+  }
+  
+  let num_reader_threads = 5
+  let num_writer_threads = 3
+  let operations_per_thread = 20
+  
+  let threads = []
+  
+  // 创建读取线程
+  for reader_id in 0..num_reader_threads {
+    let thread = Thread::spawn(fn() {
+      for i in 0..operations_per_thread {
+        // 读取所有数据并验证一致性
+        let snapshot = ConcurrentTelemetryStore::get_snapshot(telemetry_store)
+        
+        // 验证快照中的数据是自洽的
+        let mut expected_size = 50 // 初始数据量
+        for j in 0..num_writer_threads {
+          expected_size = expected_size + (i * num_writer_threads + j) // 估算当前应该有的数据量
+        }
+        
+        // 数据量应该至少等于初始数据量
+        assert_true(snapshot.length() >= 50)
+        
+        // 验证数据的时间戳是递增的（如果按时间戳排序）
+        let sorted_snapshot = snapshot.sort_by(fn(a, b) { a.timestamp <=> b.timestamp })
+        for k in 1..sorted_snapshot.length() {
+          assert_true(sorted_snapshot[k].timestamp >= sorted_snapshot[k-1].timestamp)
+        }
+        
+        Thread::sleep(1) // 短暂休眠以增加并发冲突的可能性
+      }
     })
-    futures.push(future)
+    threads.push(thread)
   }
   
-  // Collect results
-  let results = []
-  for future in futures {
-    match ThreadPool::get_result(future) {
-      Some(result) => results.push(result)
-      None => assert_true(false)
-    }
-  }
-  
-  // All threads should have passed the barrier
-  assert_eq(AtomicCounter::get(counter), 6)  // 3 threads * 2 increments each
-  assert_eq(results.length(), 3)
-}
-
-// Test 7: Semaphore Operations
-test "semaphore operations" {
-  let semaphore = Semaphore::new(2)
-  let counter = AtomicCounter::new(0)
-  
-  // Test acquire and release
-  assert_true(Semaphore::try_acquire(semaphore))
-  assert_true(Semaphore::try_acquire(semaphore))
-  assert_false(Semaphore::try_acquire(semaphore))  // Should fail
-  
-  Semaphore::release(semaphore)
-  assert_true(Semaphore::try_acquire(semaphore))  // Should succeed now
-  
-  // Test acquire with timeout
-  Semaphore::release(semaphore)  // Release one more permit
-  match Semaphore::acquire_with_timeout(semaphore, 50) {
-    true => assert_true(true)
-    false => assert_true(false)
-  }
-  
-  assert_false(Semaphore::try_acquire(semaphore))  // No permits left
-  
-  // Test concurrent access
-  let futures = []
-  for i in 0..5 {
-    let future = ThreadPool::submit(ThreadPool::new(1), || {
-      Semaphore::acquire(semaphore)
-      AtomicCounter::increment(counter)
-      Thread::sleep(10)  // Simulate work
-      AtomicCounter::increment(counter)
-      Semaphore::release(semaphore)
-      i
+  // 创建写入线程
+  for writer_id in 0..num_writer_threads {
+    let thread = Thread::spawn(fn() {
+      for i in 0..operations_per_thread {
+        let metric_name = "writer_metric_" + writer_id.to_string()
+        let value = (writer_id * operations_per_thread + i).to_float() + 1000.0
+        let timestamp = 1234568000L + (writer_id * operations_per_thread + i).to_long()
+        
+        let data_point = TelemetryDataPoint::new(metric_name, value, timestamp)
+        ConcurrentTelemetryStore::add(telemetry_store, data_point)
+        
+        Thread::sleep(2) // 短暂休眠以增加并发冲突的可能性
+      }
     })
-    futures.push(future)
+    threads.push(thread)
   }
   
-  // Collect results
-  let results = []
-  for future in futures {
-    match ThreadPool::get_result(future) {
-      Some(result) => results.push(result)
-      None => assert_true(false)
-    }
+  // 等待所有线程完成
+  for thread in threads {
+    Thread::join(thread)
   }
   
-  assert_eq(AtomicCounter::get(counter), 10)  // 5 threads * 2 increments each
-  assert_eq(results.length(), 5)
+  // 验证最终数据完整性
+  let final_data = ConcurrentTelemetryStore::get_all(telemetry_store)
+  assert_eq(final_data.length(), 50 + (num_writer_threads * operations_per_thread))
 }
 
-// Test 8: Atomic Reference Operations
-test "atomic reference operations" {
-  let atomic_ref = AtomicRef::new("initial_value")
+test "并发聚合操作的线程安全性" {
+  // 创建共享的遥测数据存储
+  let telemetry_store = ConcurrentTelemetryStore::new()
   
-  // Test get operations
-  match AtomicRef::get(atomic_ref) {
-    Some(value) => assert_eq(value, "initial_value")
-    None => assert_true(false)
+  // 预填充大量数据
+  for i in 0..1000 {
+    let metric_name = "agg_metric_" + (i % 10).to_string() // 10种不同的指标
+    let value = (i * 0.5) + (Random::next_float() * 10.0) // 添加一些随机性
+    let timestamp = 1234567890L + i.to_long()
+    
+    let data_point = TelemetryDataPoint::new(metric_name, value, timestamp)
+    ConcurrentTelemetryStore::add(telemetry_store, data_point)
   }
   
-  // Test compare and swap
-  let old_value = AtomicRef::compare_and_swap(atomic_ref, "initial_value", "new_value")
-  match old_value {
-    Some(value) => assert_eq(value, "initial_value")
-    None => assert_true(false)
+  let num_aggregator_threads = 8
+  let threads = []
+  let results = ConcurrentResults::new()
+  
+  // 创建多个聚合线程
+  for thread_id in 0..num_aggregator_threads {
+    let thread = Thread::spawn(fn() {
+      for metric_idx in 0..10 {
+        let metric_name = "agg_metric_" + metric_idx.to_string()
+        
+        // 执行各种聚合操作
+        let count = ConcurrentTelemetryStore::count_by_metric(telemetry_store, metric_name)
+        let sum = ConcurrentTelemetryStore::sum_by_metric(telemetry_store, metric_name)
+        let average = ConcurrentTelemetryStore::average_by_metric(telemetry_store, metric_name)
+        let min = ConcurrentTelemetryStore::min_by_metric(telemetry_store, metric_name)
+        let max = ConcurrentTelemetryStore::max_by_metric(telemetry_store, metric_name)
+        
+        // 验证聚合结果的一致性
+        assert_true(count > 0)
+        assert_true(average >= min && average <= max)
+        assert_true(sum / count.to_float() >= min && sum / count.to_float() <= max)
+        
+        // 存储结果用于后续验证
+        ConcurrentResults::add(results, thread_id, metric_name, count, sum, average, min, max)
+      }
+    })
+    threads.push(thread)
   }
   
-  match AtomicRef::get(atomic_ref) {
-    Some(value) => assert_eq(value, "new_value")
-    None => assert_true(false)
+  // 等待所有线程完成
+  for thread in threads {
+    Thread::join(thread)
   }
   
-  // Failed compare and swap
-  let failed = AtomicRef::compare_and_swap(atomic_ref, "initial_value", "another_value")
-  match failed {
-    Some(value) => assert_eq(value, "new_value")
-    None => assert_true(false)
+  // 验证所有线程得到相同的聚合结果
+  let all_results = ConcurrentResults::get_all(results)
+  for metric_idx in 0..10 {
+    let metric_name = "agg_metric_" + metric_idx.to_string()
+    let metric_results = all_results.filter(fn(r) { r.metric_name == metric_name })
+    
+    // 所有线程对同一指标的聚合结果应该相同
+    let first_result = metric_results[0]
+    for result in metric_results {
+      assert_eq(result.count, first_result.count)
+      assert_eq(result.sum, first_result.sum)
+      assert_eq(result.average, first_result.average)
+      assert_eq(result.min, first_result.min)
+      assert_eq(result.max, first_result.max)
+    }
+  }
+}
+
+test "并发资源池管理的安全性" {
+  // 创建共享的资源池
+  let resource_pool = ConcurrentResourcePool::new(5) // 池大小为5
+  let num_threads = 10
+  let operations_per_thread = 20
+  
+  let threads = []
+  let usage_stats = ConcurrentUsageStats::new()
+  
+  // 创建多个线程竞争资源
+  for thread_id in 0..num_threads {
+    let thread = Thread::spawn(fn() {
+      for i in 0..operations_per_thread {
+        // 尝试获取资源
+        let resource = ConcurrentResourcePool::acquire(resource_pool, 100) // 100ms超时
+        match resource {
+          Some(res) => {
+            // 成功获取资源，记录使用情况
+            ConcurrentUsageStats::record_acquisition(usage_stats, thread_id)
+            
+            // 模拟资源使用
+            let work_time = Random::next_int(10) + 5 // 5-15ms的工作时间
+            Thread::sleep(work_time)
+            
+            // 释放资源
+            ConcurrentResourcePool::release(resource_pool, res)
+            ConcurrentUsageStats::record_release(usage_stats, thread_id)
+          }
+          None => {
+            // 获取资源失败，记录超时
+            ConcurrentUsageStats::record_timeout(usage_stats, thread_id)
+          }
+        }
+        
+        Thread::sleep(Random::next_int(5)) // 随机休眠
+      }
+    })
+    threads.push(thread)
   }
   
-  match AtomicRef::get(atomic_ref) {
-    Some(value) => assert_eq(value, "new_value")
-    None => assert_true(false)
+  // 等待所有线程完成
+  for thread in threads {
+    Thread::join(thread)
   }
   
-  // Test swap
-  let swapped = AtomicRef::swap(atomic_ref, "swapped_value")
-  match swapped {
-    Some(value) => assert_eq(value, "new_value")
-    None => assert_true(false)
+  // 验证资源池状态
+  assert_eq(ConcurrentResourcePool::available_count(resource_pool), 5) // 所有资源应该被释放
+  
+  // 验证使用统计
+  let stats = ConcurrentUsageStats::get_summary(usage_stats)
+  assert_eq(stats.total_acquisitions, stats.total_releases) // 获取和释放次数应该相等
+  assert_true(stats.total_acquisitions > 0) // 应该有成功的获取操作
+  assert_true(stats.total_timeouts >= 0) // 可能有超时操作
+  
+  // 验证没有资源泄漏
+  assert_eq(stats.total_acquisitions - stats.total_releases, 0)
+}
+
+test "并发缓存操作的一致性" {
+  // 创建共享缓存
+  let cache = ConcurrentCache::new(100) // 最大100个条目
+  let num_threads = 8
+  let operations_per_thread = 50
+  
+  let threads = []
+  
+  // 创建多个线程进行缓存操作
+  for thread_id in 0..num_threads {
+    let thread = Thread::spawn(fn() {
+      for i in 0..operations_per_thread {
+        let key = "cache_key_" + (thread_id * operations_per_thread + i).to_string()
+        let value = "cache_value_" + thread_id.to_string() + "_" + i.to_string()
+        
+        // 写入缓存
+        ConcurrentCache::put(cache, key, value)
+        
+        // 立即读取验证
+        let retrieved = ConcurrentCache::get(cache, key)
+        match retrieved {
+          Some(v) => assert_eq(v, value)
+          None => assert_true(false) // 刚写入的值应该能立即读取
+        }
+        
+        // 随机读取其他键
+        if i > 0 && Random::next_float() > 0.7 {
+          let random_key = "cache_key_" + Random::next_int(thread_id * operations_per_thread + i).to_string()
+          let random_value = ConcurrentCache::get(cache, random_key)
+          // 不做断言，因为是随机读取，可能存在也可能不存在
+        }
+        
+        // 偶尔删除一些条目
+        if i > 10 && Random::next_float() > 0.8 {
+          let key_to_delete = "cache_key_" + (thread_id * operations_per_thread + i - 10).to_string()
+          ConcurrentCache::remove(cache, key_to_delete)
+        }
+      }
+    })
+    threads.push(thread)
   }
   
-  match AtomicRef::get(atomic_ref) {
-    Some(value) => assert_eq(value, "swapped_value")
-    None => assert_true(false)
+  // 等待所有线程完成
+  for thread in threads {
+    Thread::join(thread)
   }
   
-  // Test update
-  AtomicRef::update(atomic_ref, |value| value + "_updated")
-  match AtomicRef::get(atomic_ref) {
-    Some(value) => assert_eq(value, "swapped_value_updated")
-    None => assert_true(false)
+  // 验证缓存一致性
+  let cache_stats = ConcurrentCache::get_stats(cache)
+  assert_true(cache_stats.size <= 100) // 缓存大小不应超过限制
+  assert_true(cache_stats.hits > 0) // 应该有缓存命中
+  assert_true(cache_stats.misses >= 0) // 可能有缓存未命中
+  
+  // 验证缓存中的数据一致性
+  let all_keys = ConcurrentCache::get_all_keys(cache)
+  for key in all_keys {
+    let value = ConcurrentCache::get(cache, key)
+    match value {
+      Some(v) => {
+        // 验证值格式正确
+        assert_true(v.starts_with("cache_value_"))
+      }
+      None => assert_true(false) // 键存在但值不存在是不一致的
+    }
   }
 }

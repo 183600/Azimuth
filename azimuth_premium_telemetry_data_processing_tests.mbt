@@ -1,219 +1,244 @@
-// Azimuth 高级遥测数据处理测试用例
-// 专注于测试遥测数据的高级处理、转换和分析功能
+// Azimuth Premium Telemetry Data Processing Tests
+// 高质量遥测数据处理测试用例 - 专注于数据转换、聚合和分析功能
 
-// 测试1: 遥测数据流处理管道
-test "遥测数据流处理管道测试" {
-  // 创建模拟遥测数据点
+test "遥测数据批量处理和聚合" {
+  // 创建模拟的遥测数据点
   let data_points = [
-    { timestamp: 1640995200000, metric_name: "cpu.usage", value: 45.2, tags: ["host:server1", "region:us-east"] },
-    { timestamp: 1640995260000, metric_name: "cpu.usage", value: 48.7, tags: ["host:server1", "region:us-east"] },
-    { timestamp: 1640995320000, metric_name: "memory.usage", value: 67.3, tags: ["host:server1", "region:us-east"] },
-    { timestamp: 1640995380000, metric_name: "cpu.usage", value: 52.1, tags: ["host:server2", "region:us-west"] },
-    { timestamp: 1640995440000, metric_name: "memory.usage", value: 71.8, tags: ["host:server2", "region:us-west"] }
+    TelemetryDataPoint::new("cpu_usage", 45.2, 1234567890L),
+    TelemetryDataPoint::new("cpu_usage", 52.8, 1234567891L),
+    TelemetryDataPoint::new("cpu_usage", 38.1, 1234567892L),
+    TelemetryDataPoint::new("memory_usage", 67.3, 1234567890L),
+    TelemetryDataPoint::new("memory_usage", 71.2, 1234567891L),
+    TelemetryDataPoint::new("memory_usage", 69.8, 1234567892L)
   ]
   
-  // 验证数据点数量
-  assert_eq(data_points.length(), 5)
+  // 测试按指标名称分组
+  let grouped_data = TelemetryProcessor::group_by_metric(data_points)
+  assert_eq(grouped_data.length(), 2)
   
-  // 按指标名称分组
-  let grouped_by_metric = data_points.group_by(|point| point.metric_name)
+  let cpu_data = grouped_data["cpu_usage"]
+  assert_eq(cpu_data.length(), 3)
+  assert_eq(cpu_data[0].value, 45.2)
+  assert_eq(cpu_data[1].value, 52.8)
+  assert_eq(cpu_data[2].value, 38.1)
   
-  // 验证分组结果
-  assert_eq(grouped_by_metric.size(), 2)
-  assert_true(grouped_by_metric.contains_key("cpu.usage"))
-  assert_true(grouped_by_metric.contains_key("memory.usage"))
+  let memory_data = grouped_data["memory_usage"]
+  assert_eq(memory_data.length(), 3)
+  assert_eq(memory_data[0].value, 67.3)
+  assert_eq(memory_data[1].value, 71.2)
+  assert_eq(memory_data[2].value, 69.8)
   
-  // 验证CPU使用率数据点
-  let cpu_points = grouped_by_metric.get("cpu.usage")
-  match cpu_points {
-    Some(points) => {
-      assert_eq(points.length(), 3)
-      assert_eq(points[0].value, 45.2)
-      assert_eq(points[1].value, 48.7)
-      assert_eq(points[2].value, 52.1)
-    }
-    None => assert_true(false)
-  }
+  // 测试计算聚合统计信息
+  let cpu_stats = TelemetryProcessor::calculate_stats(cpu_data)
+  assert_eq(cpu_stats.count, 3)
+  assert_eq(cpu_stats.min, 38.1)
+  assert_eq(cpu_stats.max, 52.8)
+  assert_eq(cpu_stats.average, 45.36666666666667)
+  assert_eq(cpu_stats.sum, 136.1)
   
-  // 验证内存使用率数据点
-  let memory_points = grouped_by_metric.get("memory.usage")
-  match memory_points {
-    Some(points) => {
-      assert_eq(points.length(), 2)
-      assert_eq(points[0].value, 67.3)
-      assert_eq(points[1].value, 71.8)
-    }
-    None => assert_true(false)
-  }
+  let memory_stats = TelemetryProcessor::calculate_stats(memory_data)
+  assert_eq(memory_stats.count, 3)
+  assert_eq(memory_stats.min, 67.3)
+  assert_eq(memory_stats.max, 71.2)
+  assert_eq(memory_stats.average, 69.43333333333334)
+  assert_eq(memory_stats.sum, 208.3)
 }
 
-// 测试2: 时间窗口聚合计算
-test "时间窗口聚合计算测试" {
-  // 创建时间序列数据
-  let time_series = [
-    { timestamp: 1640995200000, value: 10.5 },
-    { timestamp: 1640995260000, value: 12.3 },
-    { timestamp: 1640995320000, value: 11.8 },
-    { timestamp: 1640995380000, value: 13.2 },
-    { timestamp: 1640995440000, value: 14.7 },
-    { timestamp: 1640995500000, value: 15.1 }
+test "遥测数据时间窗口分析" {
+  // 创建跨时间窗口的遥测数据
+  let time_series_data = [
+    TelemetryDataPoint::new("response_time", 120.5, 1234567800L),
+    TelemetryDataPoint::new("response_time", 135.2, 1234567860L),
+    TelemetryDataPoint::new("response_time", 98.7, 1234567920L),
+    TelemetryDataPoint::new("response_time", 142.3, 1234567980L),
+    TelemetryDataPoint::new("response_time", 115.8, 1234568040L),
+    TelemetryDataPoint::new("response_time", 128.9, 1234568100L)
   ]
   
-  // 计算时间窗口内的平均值（窗口大小：3个数据点）
-  let window_size = 3
-  let moving_averages = []
+  // 测试时间窗口分割（60秒窗口）
+  let window_size = 60L
+  let time_windows = TelemetryProcessor::split_by_time_window(time_series_data, window_size)
+  assert_eq(time_windows.length(), 2)
   
-  for i = 0; i <= time_series.length() - window_size; i = i + 1 {
-    let window_sum = 0.0
-    for j = i; j < i + window_size; j = j + 1 {
-      window_sum = window_sum + time_series[j].value
-    }
-    let avg = window_sum / window_size.to_int()
-    moving_averages.push(avg)
-  }
+  // 第一个窗口应该包含前3个数据点
+  let first_window = time_windows[0]
+  assert_eq(first_window.length(), 3)
+  assert_eq(first_window[0].timestamp, 1234567800L)
+  assert_eq(first_window[2].timestamp, 1234567920L)
   
-  // 验证移动平均结果
-  assert_eq(moving_averages.length(), 4)
-  assert_eq(moving_averages[0], (10.5 + 12.3 + 11.8) / 3.0)
-  assert_eq(moving_averages[1], (12.3 + 11.8 + 13.2) / 3.0)
-  assert_eq(moving_averages[2], (11.8 + 13.2 + 14.7) / 3.0)
-  assert_eq(moving_averages[3], (13.2 + 14.7 + 15.1) / 3.0)
+  // 第二个窗口应该包含后3个数据点
+  let second_window = time_windows[1]
+  assert_eq(second_window.length(), 3)
+  assert_eq(second_window[0].timestamp, 1234567980L)
+  assert_eq(second_window[2].timestamp, 1234568100L)
+  
+  // 测试每个窗口的统计信息
+  let first_window_stats = TelemetryProcessor::calculate_stats(first_window)
+  assert_eq(first_window_stats.average, 118.13333333333334)
+  
+  let second_window_stats = TelemetryProcessor::calculate_stats(second_window)
+  assert_eq(second_window_stats.average, 129.0)
 }
 
-// 测试3: 异常检测算法
-test "异常检测算法测试" {
-  // 创建包含异常的指标数据
-  let metrics_data = [23.5, 24.1, 23.8, 24.2, 23.9, 45.7, 24.0, 23.7, 24.3, 23.6]
+test "遥测数据异常检测" {
+  // 创建包含异常值的遥测数据
+  let normal_data = [
+    TelemetryDataPoint::new("latency", 45.2, 1234567890L),
+    TelemetryDataPoint::new("latency", 47.8, 1234567891L),
+    TelemetryDataPoint::new("latency", 44.1, 1234567892L),
+    TelemetryDataPoint::new("latency", 46.5, 1234567893L),
+    TelemetryDataPoint::new("latency", 48.2, 1234567894L),
+    TelemetryDataPoint::new("latency", 125.7, 1234567895L), // 异常值
+    TelemetryDataPoint::new("latency", 45.9, 1234567896L),
+    TelemetryDataPoint::new("latency", 47.3, 1234567897L)
+  ]
   
-  // 计算均值和标准差
-  let sum = 0.0
-  for value in metrics_data {
-    sum = sum + value
-  }
-  let mean = sum / metrics_data.length().to_int()
-  
-  let variance_sum = 0.0
-  for value in metrics_data {
-    let diff = value - mean
-    variance_sum = variance_sum + diff * diff
-  }
-  let variance = variance_sum / metrics_data.length().to_int()
-  let std_dev = sqrt(variance)
-  
-  // 使用3σ规则检测异常
-  let threshold = 3.0 * std_dev
-  let anomalies = []
-  
-  for i = 0; i < metrics_data.length(); i = i + 1 {
-    let value = metrics_data[i]
-    let z_score = abs(value - mean) / std_dev
-    if z_score > 3.0 {
-      anomalies.push({ index: i, value: value, z_score: z_score })
-    }
-  }
-  
-  // 验证异常检测结果
+  // 使用标准差方法检测异常值
+  let anomalies = TelemetryProcessor::detect_anomalies(normal_data, "stddev", 2.0)
   assert_eq(anomalies.length(), 1)
-  assert_eq(anomalies[0].index, 5)  // 第6个数据点是异常
-  assert_eq(anomalies[0].value, 45.7)
-  assert_true(anomalies[0].z_score > 3.0)
-}
-
-// 测试4: 指标数据降采样
-test "指标数据降采样测试" {
-  // 创建高频率时间序列数据（每分钟一个数据点）
-  let high_freq_data = []
-  let base_timestamp = 1640995200000  // 2022-01-01 00:00:00
+  assert_eq(anomalies[0].value, 125.7)
+  assert_eq(anomalies[0].timestamp, 1234567895L)
   
-  for i = 0; i < 60; i = i + 1 {
-    high_freq_data.push({
-      timestamp: base_timestamp + i * 60000,  // 每分钟
-      value: 50.0 + (i % 10).to_int().to_float() * 2.0
-    })
-  }
+  // 使用四分位距方法检测异常值
+  let iqr_anomalies = TelemetryProcessor::detect_anomalies(normal_data, "iqr", 1.5)
+  assert_eq(iqr_anomalies.length(), 1)
+  assert_eq(iqr_anomalies[0].value, 125.7)
   
-  // 降采样到每小时（取每小时的最大值）
-  let downsampled_data = []
-  let hour_in_ms = 3600000  // 一小时的毫秒数
-  
-  for i = 0; i < high_freq_data.length(); i = i + 60 {
-    let hour_start = high_freq_data[i].timestamp
-    let hour_end = hour_start + hour_in_ms
-    
-    // 获取当前小时的所有数据点
-    let hour_data = []
-    for j = i; j < high_freq_data.length() && high_freq_data[j].timestamp < hour_end; j = j + 1 {
-      hour_data.push(high_freq_data[j].value)
-    }
-    
-    // 计算最大值
-    let max_value = hour_data[0]
-    for value in hour_data {
-      if value > max_value {
-        max_value = value
-      }
-    }
-    
-    downsampled_data.push({
-      timestamp: hour_start,
-      value: max_value
-    })
-  }
-  
-  // 验证降采样结果
-  assert_eq(downsampled_data.length(), 1)  // 60分钟的数据降采样为1小时
-  assert_eq(downsampled_data[0].timestamp, 1640995200000)
-  assert_eq(downsampled_data[0].value, 68.0)  // 50 + 9*2 = 68
-}
-
-// 测试5: 多维度指标分析
-test "多维度指标分析测试" {
-  // 创建带有多维标签的指标数据
-  let multi_dim_metrics = [
-    { metric: "response_time", value: 120, tags: { service: "api", region: "us-east", version: "v1.0" } },
-    { metric: "response_time", value: 95, tags: { service: "api", region: "us-east", version: "v1.1" } },
-    { metric: "response_time", value: 150, tags: { service: "web", region: "us-east", version: "v1.0" } },
-    { metric: "response_time", value: 85, tags: { service: "api", region: "us-west", version: "v1.0" } },
-    { metric: "throughput", value: 1000, tags: { service: "api", region: "us-east", version: "v1.0" } },
-    { metric: "throughput", value: 1200, tags: { service: "api", region: "us-east", version: "v1.1" } }
+  // 测试无异常值的数据
+  let clean_data = [
+    TelemetryDataPoint::new("latency", 45.2, 1234567890L),
+    TelemetryDataPoint::new("latency", 47.8, 1234567891L),
+    TelemetryDataPoint::new("latency", 44.1, 1234567892L),
+    TelemetryDataPoint::new("latency", 46.5, 1234567893L),
+    TelemetryDataPoint::new("latency", 48.2, 1234567894L)
   ]
   
-  // 按服务分组计算平均响应时间
-  let response_time_by_service = {}
+  let no_anomalies = TelemetryProcessor::detect_anomalies(clean_data, "stddev", 2.0)
+  assert_eq(no_anomalies.length(), 0)
+}
+
+test "遥测数据趋势分析" {
+  // 创建具有明显趋势的遥测数据
+  let trend_data = [
+    TelemetryDataPoint::new("error_rate", 2.1, 1234567890L),
+    TelemetryDataPoint::new("error_rate", 2.5, 1234567891L),
+    TelemetryDataPoint::new("error_rate", 3.2, 1234567892L),
+    TelemetryDataPoint::new("error_rate", 3.8, 1234567893L),
+    TelemetryDataPoint::new("error_rate", 4.5, 1234567894L),
+    TelemetryDataPoint::new("error_rate", 5.1, 1234567895L),
+    TelemetryDataPoint::new("error_rate", 5.8, 1234567896L),
+    TelemetryDataPoint::new("error_rate", 6.3, 1234567897L)
+  ]
   
-  for metric_data in multi_dim_metrics {
-    if metric_data.metric == "response_time" {
-      let service = metric_data.tags.service
-      let current_sum = response_time_by_service.get(service)
-      match current_sum {
-        Some((sum, count)) => {
-          response_time_by_service.set(service, (sum + metric_data.value, count + 1))
-        }
-        None => {
-          response_time_by_service.set(service, (metric_data.value, 1))
-        }
-      }
-    }
-  }
+  // 计算趋势斜率
+  let trend_analysis = TelemetryProcessor::analyze_trend(trend_data)
+  assert_true(trend_analysis.slope > 0.5) // 上升趋势
+  assert_eq(trend_analysis.direction, "increasing")
+  assert_true(trend_analysis.correlation > 0.9) // 强相关性
   
-  // 计算平均值
-  let avg_response_time_by_service = {}
-  for (service, (sum, count)) in response_time_by_service {
-    avg_response_time_by_service.set(service, sum / count.to_int())
-  }
+  // 创建下降趋势的数据
+  let decreasing_data = [
+    TelemetryDataPoint::new("throughput", 1000.5, 1234567890L),
+    TelemetryDataPoint::new("throughput", 950.2, 1234567891L),
+    TelemetryDataPoint::new("throughput", 890.7, 1234567892L),
+    TelemetryDataPoint::new("throughput", 845.3, 1234567893L),
+    TelemetryDataPoint::new("throughput", 790.8, 1234567894L),
+    TelemetryDataPoint::new("throughput", 735.4, 1234567895L)
+  ]
   
-  // 验证分组聚合结果
-  assert_eq(avg_response_time_by_service.size(), 2)
+  let decreasing_trend = TelemetryProcessor::analyze_trend(decreasing_data)
+  assert_true(decreasing_trend.slope < -40.0) // 下降趋势
+  assert_eq(decreasing_trend.direction, "decreasing")
+  assert_true(decreasing_trend.correlation < -0.9) // 强负相关性
   
-  let api_avg = avg_response_time_by_service.get("api")
-  match api_avg {
-    Some(avg) => assert_eq(avg, (120 + 95 + 85) / 3.0)
-    None => assert_true(false)
-  }
+  // 创建平稳数据
+  let stable_data = [
+    TelemetryDataPoint::new("cpu_temp", 65.2, 1234567890L),
+    TelemetryDataPoint::new("cpu_temp", 64.8, 1234567891L),
+    TelemetryDataPoint::new("cpu_temp", 65.5, 1234567892L),
+    TelemetryDataPoint::new("cpu_temp", 64.9, 1234567893L),
+    TelemetryDataPoint::new("cpu_temp", 65.1, 1234567894L)
+  ]
   
-  let web_avg = avg_response_time_by_service.get("web")
-  match web_avg {
-    Some(avg) => assert_eq(avg, 150.0)
-    None => assert_true(false)
+  let stable_trend = TelemetryProcessor::analyze_trend(stable_data)
+  assert_eq(stable_trend.direction, "stable")
+  assert_true(stable_trend.correlation.abs() < 0.3) // 弱相关性
+}
+
+test "遥测数据预测和预报" {
+  // 创建历史数据用于预测
+  let historical_data = [
+    TelemetryDataPoint::new("disk_usage", 45.2, 1234567000L),
+    TelemetryDataPoint::new("disk_usage", 46.8, 1234567060L),
+    TelemetryDataPoint::new("disk_usage", 48.1, 1234567120L),
+    TelemetryDataPoint::new("disk_usage", 49.5, 1234567180L),
+    TelemetryDataPoint::new("disk_usage", 51.2, 1234567240L),
+    TelemetryDataPoint::new("disk_usage", 52.7, 1234567300L),
+    TelemetryDataPoint::new("disk_usage", 54.3, 1234567360L),
+    TelemetryDataPoint::new("disk_usage", 55.8, 1234567420L)
+  ]
+  
+  // 使用线性回归预测未来值
+  let prediction_model = TelemetryProcessor::create_prediction_model(historical_data, "linear")
+  let future_predictions = TelemetryProcessor::predict(prediction_model, 1234567480L, 3) // 预测未来3个时间点
+  
+  assert_eq(future_predictions.length(), 3)
+  assert_true(future_predictions[0] > 55.8) // 预测值应该大于最后一个历史值
+  assert_true(future_predictions[1] > future_predictions[0]) // 上升趋势
+  assert_true(future_predictions[2] > future_predictions[1])
+  
+  // 测试预测准确性（使用历史数据的一部分进行验证）
+  let training_data = historical_data.slice(0, 6)
+  let validation_data = historical_data.slice(6, 2)
+  
+  let validation_model = TelemetryProcessor::create_prediction_model(training_data, "linear")
+  let validation_predictions = TelemetryProcessor::predict(validation_model, 1234567360L, 2)
+  
+  // 验证预测误差在可接受范围内
+  let error1 = (validation_predictions[0] - validation_data[0].value).abs()
+  let error2 = (validation_predictions[1] - validation_data[1].value).abs()
+  assert_true(error1 < 2.0) // 误差小于2个单位
+  assert_true(error2 < 2.0)
+}
+
+test "遥测数据质量验证" {
+  // 创建包含各种质量问题的数据
+  let problematic_data = [
+    TelemetryDataPoint::new("metric1", -1.0, 1234567890L), // 负值（可能无效）
+    TelemetryDataPoint::new("metric1", 45.2, 1234567891L),
+    TelemetryDataPoint::new("metric1", 0.0, 1234567892L), // 零值
+    TelemetryDataPoint::new("metric1", 999999.9, 1234567893L), // 极大值
+    TelemetryDataPoint::new("metric1", 47.8, 1234567894L),
+    TelemetryDataPoint::new("metric1", 0.0, 1234567895L), // 重复零值
+    TelemetryDataPoint::new("metric1", 48.1, 1234567896L)
+  ]
+  
+  // 定义数据质量规则
+  let quality_rules = DataQualityRules::new()
+  DataQualityRules::add_range_rule(quality_rules, "metric1", 0.0, 100.0) // 值范围0-100
+  DataQualityRules::add_outlier_rule(quality_rules, "metric1", 3.0) // 3倍标准差异常检测
+  DataQualityRules::add_monotonic_rule(quality_rules, "metric1", false) // 不要求单调
+  
+  // 执行数据质量检查
+  let quality_report = TelemetryProcessor::validate_data_quality(problematic_data, quality_rules)
+  assert_eq(quality_report.total_records, 7)
+  assert_eq(quality_report.valid_records, 5)
+  assert_eq(quality_report.invalid_records, 2)
+  
+  // 检查具体问题
+  let negative_issues = quality_report.issues.filter(fn(i) { i.issue_type == "negative_value" })
+  let outlier_issues = quality_report.issues.filter(fn(i) { i.issue_type == "outlier" })
+  
+  assert_eq(negative_issues.length(), 1)
+  assert_eq(outlier_issues.length(), 1)
+  
+  // 测试数据清洗功能
+  let cleaned_data = TelemetryProcessor::clean_data(problematic_data, quality_rules)
+  assert_eq(cleaned_data.length(), 5) // 移除了无效数据点
+  
+  // 验证清洗后的数据
+  for data_point in cleaned_data {
+    assert_true(data_point.value >= 0.0)
+    assert_true(data_point.value <= 100.0)
   }
 }
