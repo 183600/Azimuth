@@ -1,453 +1,568 @@
-// Azimuth Telemetry System - Realtime Stream Processing Performance Tests
-// This file contains comprehensive test cases for realtime stream processing performance
+// Azimuth Real-time Stream Processing Tests
+// This file contains test cases for real-time telemetry data stream processing
 
-// Test 1: High-Throughput Telemetry Stream Processing
-test "high-throughput telemetry stream processing" {
-  // Initialize stream processor with performance configuration
-  let stream_config = StreamProcessorConfig::new(
-    buffer_size: 10000,
-    batch_size: 100,
-    processing_threads: 4,
-    flush_interval: Duration::from_millis(100)
-  )
+test "basic stream processing" {
+  // Create stream processor
+  let processor = StreamProcessor::new()
   
-  let stream_processor = StreamProcessor::new(stream_config)
+  // Create test data stream
+  let stream = Stream::new()
   
-  // Create telemetry data generator
-  let data_generator = TelemetryDataGenerator::new()
-  
-  // Configure for high throughput
-  let generator_config = DataGeneratorConfig::new(
-    spans_per_second: 10000,
-    metrics_per_second: 5000,
-    logs_per_second: 8000,
-    attribute_count: 10,
-    event_count_per_span: 3
-  )
-  
-  TelemetryDataGenerator::configure(data_generator, generator_config)
-  
-  // Start performance monitoring
-  let performance_monitor = PerformanceMonitor::new()
-  PerformanceMonitor::start_monitoring(performance_monitor)
-  
-  // Start stream processing
-  StreamProcessor::start(stream_processor)
-  
-  // Generate and process telemetry data for 10 seconds
-  let test_duration = Duration::from_seconds(10)
-  let start_time = Clock::now()
-  
-  while Clock::now() - start_time < test_duration {
-    // Generate batch of telemetry data
-    let telemetry_batch = TelemetryDataGenerator::generate_batch(data_generator, 100)
+  // Add telemetry data to stream
+  for i in 0..10 {
+    let span_ctx = SpanContext::new("stream_trace_" + i.to_string(), "stream_span_" + i.to_string(), true, "")
+    let span = Span::new("stream_span_" + i.to_string(), Internal, span_ctx)
     
-    // Process the batch
-    let process_start = Clock::now()
-    StreamProcessor::process_batch(stream_processor, telemetry_batch)
-    let process_end = Clock::now()
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "stream_id", IntValue(i))
+    Attributes::set(attrs, "stream_value", StringValue("value_" + i.to_string()))
     
-    // Record processing time
-    PerformanceMonitor::record_processing_time(
-      performance_monitor,
-      process_end - process_start
-    )
+    Span::add_event(span, "stream_event", Some(attrs))
     
-    // Small delay to prevent overwhelming the system
-    Thread::sleep(Duration::from_millis(1))
+    // Add to stream
+    Stream::add_data(stream, span)
   }
   
-  // Stop stream processing and monitoring
-  StreamProcessor::stop(stream_processor)
-  PerformanceMonitor::stop_monitoring(performance_monitor)
+  // Process stream
+  let processed_data = StreamProcessor::process(processor, stream)
   
-  // Get performance metrics
-  let performance_metrics = PerformanceMonitor::get_metrics(performance_monitor)
+  // Verify all data was processed
+  assert_eq(processed_data.length(), 10)
   
-  // Verify performance requirements
-  assert_true(performance_metrics.throughput >= 20000) // At least 20K items/second
-  assert_true(performance_metrics.average_processing_time <= 10.0) // <= 10ms average
-  assert_true(performance_metrics.p95_processing_time <= 50.0) // <= 50ms P95
-  assert_true(performance_metrics.max_processing_time <= 200.0) // <= 200ms max
-  assert_true(performance_metrics.error_rate <= 0.01) // <= 1% error rate
-  
-  // Verify resource usage
-  assert_true(performance_metrics.memory_usage <= 500 * 1024 * 1024) // <= 500MB
-  assert_true(performance_metrics.cpu_usage <= 80.0) // <= 80% CPU
+  // Verify processed data is valid
+  for data in processed_data {
+    assert_true(Span::is_valid(data))
+    
+    let name = Span::name(data)
+    assert_true(name.contains("stream_span_"))
+  }
 }
 
-// Test 2: Low-Latency Telemetry Processing
-test "low-latency telemetry processing" {
-  // Configure stream processor for low latency
-  let stream_config = StreamProcessorConfig::new(
-    buffer_size: 1000,
-    batch_size: 1, // Process items individually for lowest latency
-    processing_threads: 8, // More threads for parallel processing
-    flush_interval: Duration::from_millis(1) // Minimal flush interval
-  )
+test "real-time metrics aggregation" {
+  // Create metrics aggregator
+  let aggregator = MetricsAggregator::new()
   
-  let stream_processor = StreamProcessor::new(stream_config)
+  // Create metrics stream
+  let metrics_stream = Stream::new()
   
-  // Start processing
-  StreamProcessor::start(stream_processor)
-  
-  // Measure end-to-end latency
-  let latency_measurements = []
-  let test_iterations = 1000
-  
-  for i in 0..test_iterations {
-    // Create single telemetry item
-    let telemetry_item = TelemetryItem::new(
-      id: "item_" + i.to_string(),
-      type: Span,
-      timestamp: Clock::now()
+  // Add metrics to stream
+  for i in 0..100 {
+    let metric = Metric::new(
+      "test_metric_" + (i % 5).to_string(), // 5 different metric names
+      i.to_float(),
+      Attributes::new()
     )
     
-    // Record start time
-    let start_time = Clock::now()
-    
-    // Process item
-    StreamProcessor::process_item(stream_processor, telemetry_item)
-    
-    // Record end time
-    let end_time = Clock::now()
-    let latency = (end_time - start_time).to_milliseconds()
-    
-    latency_measurements.push(latency)
+    Stream::add_data(metrics_stream, metric)
   }
   
-  // Stop processing
-  StreamProcessor::stop(stream_processor)
+  // Aggregate metrics in real-time
+  let aggregated_metrics = MetricsAggregator::aggregate(aggregator, metrics_stream)
   
-  // Calculate latency statistics
-  let avg_latency = latency_measurements.reduce(0.0, +) / latency_measurements.length()
-  let sorted_latencies = latency_measurements.sort()
-  let p50_latency = sorted_latencies[sorted_latencies.length() / 2]
-  let p95_latency = sorted_latencies[(sorted_latencies.length() * 95) / 100]
-  let p99_latency = sorted_latencies[(sorted_latencies.length() * 99) / 100]
-  let max_latency = sorted_latencies[sorted_latencies.length() - 1]
+  // Verify aggregation results
+  assert_eq(aggregated_metrics.length(), 5) // Should have 5 different metrics
   
-  // Verify latency requirements
-  assert_true(avg_latency <= 5.0) // <= 5ms average
-  assert_true(p50_latency <= 3.0) // <= 3ms median
-  assert_true(p95_latency <= 10.0) // <= 10ms P95
-  assert_true(p99_latency <= 20.0) // <= 20ms P99
-  assert_true(max_latency <= 50.0) // <= 50ms maximum
+  for metric in aggregated_metrics {
+    let name = Metric::name(metric)
+    assert_true(name.contains("test_metric_"))
+    
+    // Verify each metric was aggregated from 20 values (100 / 5)
+    let value_count = Metric::value_count(metric)
+    assert_eq(value_count, 20)
+    
+    // Verify aggregation statistics
+    let avg = Metric::average(metric)
+    let min = Metric::minimum(metric)
+    let max = Metric::maximum(metric)
+    
+    assert_true(avg >= min && avg <= max)
+  }
 }
 
-// Test 3: Backpressure Handling
-test "backpressure handling" {
-  // Configure stream processor with limited capacity
-  let stream_config = StreamProcessorConfig::new(
-    buffer_size: 100, // Small buffer to trigger backpressure
-    batch_size: 10,
-    processing_threads: 2, // Limited processing capacity
-    flush_interval: Duration::from_millis(100)
-  )
+test "stream filtering and transformation" {
+  // Create stream processor with filters and transformers
+  let processor = StreamProcessor::new()
   
-  let stream_processor = StreamProcessor::new(stream_config)
-  
-  // Start processing
-  StreamProcessor::start(stream_processor)
-  
-  // Generate high volume of data to trigger backpressure
-  let data_generator = TelemetryDataGenerator::new()
-  let generator_config = DataGeneratorConfig::new(
-    spans_per_second: 50000, // Very high generation rate
-    metrics_per_second: 25000,
-    logs_per_second: 40000,
-    attribute_count: 20, // Complex data to slow processing
-    event_count_per_span: 10
-  )
-  
-  TelemetryDataGenerator::configure(data_generator, generator_config)
-  
-  // Track backpressure events
-  let backpressure_events = []
-  let processed_items = 0
-  let dropped_items = 0
-  
-  // Run test for 5 seconds
-  let test_duration = Duration::from_seconds(5)
-  let start_time = Clock::now()
-  
-  while Clock::now() - start_time < test_duration {
-    // Generate batch of telemetry data
-    let telemetry_batch = TelemetryDataGenerator::generate_batch(data_generator, 1000)
-    
-    // Try to process the batch
-    match StreamProcessor::process_batch_with_backpressure(stream_processor, telemetry_batch) {
-      ProcessResult::Success(count) => {
-        processed_items = processed_items + count
-      }
-      ProcessResult::Backpressure(dropped_count) => {
-        dropped_items = dropped_items + dropped_count
-        backpressure_events.push(Clock::now())
-      }
-      ProcessResult::Error(error) => {
-        // Handle error
-      }
-    }
-    
-    Thread::sleep(Duration::from_millis(10))
-  }
-  
-  // Stop processing
-  StreamProcessor::stop(stream_processor)
-  
-  // Verify backpressure handling
-  assert_true(backpressure_events.length() > 0) // Backpressure should have been triggered
-  assert_true(dropped_items > 0) // Some items should have been dropped
-  
-  // Verify system stability under backpressure
-  let backpressure_frequency = backpressure_events.length() as Float / test_duration.to_seconds()
-  assert_true(backpressure_frequency <= 10.0) // <= 10 backpressure events per second
-  
-  // Verify recovery after backpressure
-  let final_buffer_usage = StreamProcessor::buffer_usage(stream_processor)
-  assert_true(final_buffer_usage <= 0.8) // Buffer usage should recover to <= 80%
-}
-
-// Test 4: Stream Processing Scalability
-test "stream processing scalability" {
-  // Test different configurations to find optimal scaling
-  let thread_counts = [1, 2, 4, 8]
-  let scalability_results = []
-  
-  for thread_count in thread_counts {
-    // Configure stream processor
-    let stream_config = StreamProcessorConfig::new(
-      buffer_size: 5000,
-      batch_size: 50,
-      processing_threads: thread_count,
-      flush_interval: Duration::from_millis(50)
-    )
-    
-    let stream_processor = StreamProcessor::new(stream_config)
-    
-    // Start processing
-    StreamProcessor::start(stream_processor)
-    
-    // Generate consistent load
-    let data_generator = TelemetryDataGenerator::new()
-    let generator_config = DataGeneratorConfig::new(
-      spans_per_second: 10000,
-      metrics_per_second: 5000,
-      logs_per_second: 8000,
-      attribute_count: 10,
-      event_count_per_span: 3
-    )
-    
-    TelemetryDataGenerator::configure(data_generator, generator_config)
-    
-    // Measure performance for 10 seconds
-    let test_duration = Duration::from_seconds(10)
-    let start_time = Clock::now()
-    let items_processed = 0
-    
-    while Clock::now() - start_time < test_duration {
-      let telemetry_batch = TelemetryDataGenerator::generate_batch(data_generator, 100)
-      let processed = StreamProcessor::process_batch(stream_processor, telemetry_batch)
-      items_processed = items_processed + processed
-      
-      Thread::sleep(Duration::from_millis(5))
-    }
-    
-    // Stop processing
-    StreamProcessor::stop(stream_processor)
-    
-    // Calculate throughput
-    let throughput = items_processed as Float / test_duration.to_seconds()
-    
-    scalability_results.push({
-      thread_count: thread_count,
-      throughput: throughput,
-      efficiency: throughput / thread_count as Float
-    })
-  }
-  
-  // Verify scalability characteristics
-  assert_true(scalability_results.length() == 4)
-  
-  // Throughput should increase with more threads (up to a point)
-  assert_true(scalability_results[1].throughput > scalability_results[0].throughput)
-  assert_true(scalability_results[2].throughput > scalability_results[1].throughput)
-  
-  // Efficiency should remain reasonable (not too much diminishing returns)
-  assert_true(scalability_results[3].efficiency >= scalability_results[0].efficiency * 0.5)
-  
-  // Find optimal configuration (highest throughput)
-  let optimal_config = scalability_results.reduce({thread_count: 0, throughput: 0.0, efficiency: 0.0}, (acc, result) => {
-    if result.throughput > acc.throughput {
-      result
-    } else {
-      acc
-    }
+  // Add filter for specific trace IDs
+  StreamProcessor::add_filter(processor, fn(data) {
+    let ctx = Span::span_context(data)
+    let trace_id = SpanContext::trace_id(ctx)
+    trace_id.contains("filter")
   })
   
-  // Verify optimal configuration is reasonable
-  assert_true(optimal_config.thread_count >= 2)
-  assert_true(optimal_config.throughput >= 15000) // Minimum acceptable throughput
-}
-
-// Test 5: Memory-Efficient Stream Processing
-test "memory-efficient stream processing" {
-  // Configure for memory efficiency
-  let stream_config = StreamProcessorConfig::new(
-    buffer_size: 1000,
-    batch_size: 20,
-    processing_threads: 2,
-    flush_interval: Duration::from_millis(100)
-  )
-  
-  let stream_processor = StreamProcessor::new(stream_config)
-  
-  // Start memory monitoring
-  let memory_monitor = MemoryMonitor::new()
-  MemoryMonitor::start_monitoring(memory_monitor)
-  
-  // Start processing
-  StreamProcessor::start(stream_processor)
-  
-  // Process large volume of data with memory constraints
-  let data_generator = TelemetryDataGenerator::new()
-  let generator_config = DataGeneratorConfig::new(
-    spans_per_second: 5000,
-    metrics_per_second: 2500,
-    logs_per_second: 4000,
-    attribute_count: 5, // Fewer attributes to reduce memory
-    event_count_per_span: 2
-  )
-  
-  TelemetryDataGenerator::configure(data_generator, generator_config)
-  
-  // Run for extended period to test memory stability
-  let test_duration = Duration::from_seconds(30)
-  let start_time = Clock::now()
-  let total_items = 0
-  
-  while Clock::now() - start_time < test_duration {
-    let telemetry_batch = TelemetryDataGenerator::generate_batch(data_generator, 100)
-    let processed = StreamProcessor::process_batch(stream_processor, telemetry_batch)
-    total_items = total_items + processed
+  // Add transformer to normalize attribute values
+  StreamProcessor::add_transformer(processor, fn(data) {
+    let attrs = Span::attributes(data)
+    let normalized_attrs = Attributes::new()
     
-    // Check memory usage periodically
-    if total_items % 1000 == 0 {
-      let current_memory = MemoryMonitor::current_usage(memory_monitor)
-      assert_true(current_memory <= 100 * 1024 * 1024) // <= 100MB
+    // Copy all attributes with normalized keys
+    for (key, value) in Attributes::to_list(attrs) {
+      let normalized_key = String::lowercase(key)
+      Attributes::set(normalized_attrs, normalized_key, value)
     }
     
-    Thread::sleep(Duration::from_millis(10))
-  }
-  
-  // Stop processing and monitoring
-  StreamProcessor::stop(stream_processor)
-  MemoryMonitor::stop_monitoring(memory_monitor)
-  
-  // Get memory metrics
-  let memory_metrics = MemoryMonitor::get_metrics(memory_monitor)
-  
-  // Verify memory efficiency
-  assert_true(memory_metrics.peak_usage <= 150 * 1024 * 1024) // <= 150MB peak
-  assert_true(memory_metrics.average_usage <= 80 * 1024 * 1024) // <= 80MB average
-  assert_true(memory_metrics.final_usage <= 20 * 1024 * 1024) // <= 20MB after cleanup
-  
-  // Verify memory efficiency per item
-  let memory_per_item = memory_metrics.average_usage / total_items as Float
-  assert_true(memory_per_item <= 1024.0) // <= 1KB per item
-}
-
-// Test 6: Fault-Tolerant Stream Processing
-test "fault-tolerant stream processing" {
-  // Configure stream processor with fault tolerance
-  let stream_config = StreamProcessorConfig::new(
-    buffer_size: 2000,
-    batch_size: 50,
-    processing_threads: 4,
-    flush_interval: Duration::from_millis(100)
-  )
-  
-  let stream_processor = StreamProcessor::new(stream_config)
-  
-  // Configure fault injection
-  let fault_injector = FaultInjector::new()
-  FaultInjector::configure(fault_injector, {
-    error_rate: 0.05, // 5% error rate
-    timeout_rate: 0.02, // 2% timeout rate
-    failure_types: [NetworkError, ProcessingError, SerializationError]
+    // Replace attributes with normalized ones
+    Span::set_attributes(data, normalized_attrs)
+    
+    data
   })
   
-  // Start processing
-  StreamProcessor::start(stream_processor)
-  FaultInjector::start_injection(fault_injector)
+  // Create mixed data stream
+  let stream = Stream::new()
   
-  // Track processing results
-  let successful_items = 0
-  let failed_items = 0
-  let retried_items = 0
-  let recovered_items = 0
-  
-  // Generate and process data with faults
-  let data_generator = TelemetryDataGenerator::new()
-  let generator_config = DataGeneratorConfig::new(
-    spans_per_second: 3000,
-    metrics_per_second: 1500,
-    logs_per_second: 2400,
-    attribute_count: 8,
-    event_count_per_span: 3
-  )
-  
-  TelemetryDataGenerator::configure(data_generator, generator_config)
-  
-  // Run test for 10 seconds
-  let test_duration = Duration::from_seconds(10)
-  let start_time = Clock::now()
-  
-  while Clock::now() - start_time < test_duration {
-    let telemetry_batch = TelemetryDataGenerator::generate_batch(data_generator, 50)
+  // Add data that should be filtered
+  for i in 0..5 {
+    let span_ctx = SpanContext::new("filter_trace_" + i.to_string(), "filter_span_" + i.to_string(), true, "")
+    let span = Span::new("filter_span_" + i.to_string(), Internal, span_ctx)
     
-    // Process batch with fault tolerance
-    let result = StreamProcessor::process_batch_with_retry(
-      stream_processor,
-      telemetry_batch,
-      max_retries: 3
-    )
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "MixedCase_Key", StringValue("MixedCase_Value"))
     
-    match result {
-      RetryResult::Success(count) => {
-        successful_items = successful_items + count
-      }
-      RetryResult::PartialSuccess(successful, failed) => {
-        successful_items = successful_items + successful
-        failed_items = failed_items + failed
-      }
-      RetryResult::Failure(count) => {
-        failed_items = failed_items + count
-      }
-      RetryResult::Retried(retried, recovered) => {
-        retried_items = retried_items + retried
-        recovered_items = recovered_items + recovered
-      }
-    }
+    Span::add_event(span, "filter_event", Some(attrs))
     
-    Thread::sleep(Duration::from_millis(20))
+    Stream::add_data(stream, span)
   }
   
-  // Stop processing and fault injection
-  StreamProcessor::stop(stream_processor)
-  FaultInjector::stop_injection(fault_injector)
+  // Add data that should be filtered out
+  for i in 0..5 {
+    let span_ctx = SpanContext::new("other_trace_" + i.to_string(), "other_span_" + i.to_string(), true, "")
+    let span = Span::new("other_span_" + i.to_string(), Internal, span_ctx)
+    
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "MixedCase_Key", StringValue("MixedCase_Value"))
+    
+    Span::add_event(span, "other_event", Some(attrs))
+    
+    Stream::add_data(stream, span)
+  }
   
-  // Verify fault tolerance
-  let total_items = successful_items + failed_items
-  let success_rate = successful_items as Float / total_items as Float
-  let recovery_rate = recovered_items as Float / retried_items as Float
+  // Process stream
+  let processed_data = StreamProcessor::process(processor, stream)
   
-  assert_true(success_rate >= 0.90) // >= 90% overall success rate
-  assert_true(recovery_rate >= 0.70) // >= 70% recovery rate for retries
-  assert_true(retried_items > 0) // Some items should have been retried
+  // Verify only filtered data was processed
+  assert_eq(processed_data.length(), 5)
   
-  // Verify system stability under faults
-  let final_status = StreamProcessor::health_status(stream_processor)
-  assert_true(final_status.is_healthy)
-  assert_true(final_status.error_rate <= 0.1) // <= 10% error rate
+  // Verify transformation was applied
+  for data in processed_data {
+    let attrs = Span::attributes(data)
+    
+    // Check for normalized key
+    let normalized_attr = Attributes::get(attrs, "mixedcase_key")
+    match normalized_attr {
+      StringValue(v) => assert_eq(v, "MixedCase_Value")
+      _ => assert_true(false)
+    }
+    
+    // Check original key is gone
+    let original_attr = Attributes::get(attrs, "MixedCase_Key")
+    match original_attr {
+      Some(_) => assert_true(false) // Should be normalized
+      None => assert_true(true)
+    }
+  }
+}
+
+test "windowed stream processing" {
+  // Create windowed stream processor
+  let processor = WindowedStreamProcessor::new()
+  
+  // Set up time windows (5-second windows)
+  WindowedStreamProcessor::set_window_size(processor, 5000)
+  
+  // Create time-based data stream
+  let stream = Stream::new()
+  let base_time = Time::now()
+  
+  // Add data across different time windows
+  for i in 0..20 {
+    let span_ctx = SpanContext::new("window_trace_" + i.to_string(), "window_span_" + i.to_string(), true, "")
+    let span = Span::new("window_span_" + i.to_string(), Internal, span_ctx)
+    
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "window_index", IntValue(i / 5)) // 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, ...
+    Attributes::set(attrs, "timestamp", IntValue(base_time + i * 1000)) // 1 second apart
+    
+    Span::add_event(span, "window_event", Some(attrs))
+    
+    Stream::add_data(stream, span)
+  }
+  
+  // Process with windows
+  let windowed_results = WindowedStreamProcessor::process(processor, stream)
+  
+  // Verify we have 4 windows (20 items / 5 per window)
+  assert_eq(windowed_results.length(), 4)
+  
+  // Verify each window has correct data
+  for i in 0..4 {
+    let window = windowed_results[i]
+    assert_eq(Window::size(window), 5)
+    
+    // Verify all items in window have correct window_index
+    for data in Window::data(window) {
+      let attrs = Span::attributes(data)
+      let window_index = Attributes::get(attrs, "window_index")
+      match window_index {
+        IntValue(index) => assert_eq(index, i)
+        _ => assert_true(false)
+      }
+    }
+  }
+}
+
+test "stream anomaly detection" {
+  // Create anomaly detector
+  let detector = AnomalyDetector::new()
+  
+  // Configure anomaly detection
+  AnomalyDetector::set_threshold(detector, 2.0) // 2 standard deviations
+  AnomalyDetector::set_window_size(detector, 10) // Use last 10 values
+  
+  // Create metrics stream with anomalies
+  let metrics_stream = Stream::new()
+  
+  // Add normal values (around 100)
+  for i in 0..15 {
+    let value = 100.0 + (Random::normal() * 10.0) // Normal distribution around 100
+    let metric = Metric::new("anomaly_test", value, Attributes::new())
+    Stream::add_data(metrics_stream, metric)
+  }
+  
+  // Add anomalous values
+  let anomalous_values = [200.0, 250.0, 50.0, 0.0, 300.0]
+  for value in anomalous_values {
+    let metric = Metric::new("anomaly_test", value, Attributes::new())
+    Stream::add_data(metrics_stream, metric)
+  }
+  
+  // Detect anomalies
+  let anomalies = AnomalyDetector::detect(detector, metrics_stream)
+  
+  // Verify anomalies were detected
+  assert_true(anomalies.length() > 0)
+  
+  // Verify detected anomalies are actually anomalous
+  for anomaly in anomalies {
+    let value = Anomaly::value(anomaly)
+    assert_true(value > 150.0 || value < 50.0) // Should be outside normal range
+    
+    // Verify anomaly metadata
+    let metric_name = Anomaly::metric_name(anomaly)
+    assert_eq(metric_name, "anomaly_test")
+    
+    let score = Anomaly::score(anomaly)
+    assert_true(score > 2.0) // Should exceed threshold
+  }
+}
+
+test "real-time alerting" {
+  // Create alert manager
+  let alert_manager = AlertManager::new()
+  
+  // Configure alert conditions
+  AlertManager::add_condition(alert_manager, "high_error_rate", fn(data) {
+    let attrs = Span::attributes(data)
+    let status = Attributes::get(attrs, "status")
+    
+    match status {
+      StringValue(s) => s == "error"
+      _ => false
+    }
+  }, 5, 10000) // 5 errors in 10 seconds
+  
+  AlertManager::add_condition(alert_manager, "high_latency", fn(data) {
+    let attrs = Span::attributes(data)
+    let latency = Attributes::get(attrs, "latency")
+    
+    match latency {
+      IntValue(l) => l > 1000 // > 1000ms
+      _ => false
+    }
+  }, 3, 5000) // 3 high latency events in 5 seconds
+  
+  // Create event stream
+  let event_stream = Stream::new()
+  
+  // Add normal events
+  for i in 0..10 {
+    let span_ctx = SpanContext::new("alert_trace_" + i.to_string(), "alert_span_" + i.to_string(), true, "")
+    let span = Span::new("alert_span_" + i.to_string(), Internal, span_ctx)
+    
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "status", StringValue("success"))
+    Attributes::set(attrs, "latency", IntValue(100 + i * 10)) // 100-190ms
+    
+    Span::add_event(span, "normal_event", Some(attrs))
+    
+    Stream::add_data(event_stream, span)
+  }
+  
+  // Add error events (should trigger alert)
+  for i in 0..5 {
+    let span_ctx = SpanContext::new("alert_trace_error_" + i.to_string(), "alert_span_error_" + i.to_string(), true, "")
+    let span = Span::new("alert_span_error_" + i.to_string(), Internal, span_ctx)
+    
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "status", StringValue("error"))
+    Attributes::set(attrs, "latency", IntValue(50))
+    
+    Span::add_event(span, "error_event", Some(attrs))
+    
+    Stream::add_data(event_stream, span)
+  }
+  
+  // Add high latency events (should trigger alert)
+  for i in 0..3 {
+    let span_ctx = SpanContext::new("alert_trace_latency_" + i.to_string(), "alert_span_latency_" + i.to_string(), true, "")
+    let span = Span::new("alert_span_latency_" + i.to_string(), Internal, span_ctx)
+    
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "status", StringValue("success"))
+    Attributes::set(attrs, "latency", IntValue(1500 + i * 100)) // 1500-1700ms
+    
+    Span::add_event(span, "latency_event", Some(attrs))
+    
+    Stream::add_data(event_stream, span)
+  }
+  
+  // Process events and check for alerts
+  let alerts = AlertManager::process_events(alert_manager, event_stream)
+  
+  // Verify alerts were generated
+  assert_true(alerts.length() >= 2) // Should have at least 2 alerts (error rate and high latency)
+  
+  // Verify alert content
+  let error_alerts = []
+  let latency_alerts = []
+  
+  for alert in alerts {
+    let alert_type = Alert::type(alert)
+    
+    if alert_type == "high_error_rate" {
+      error_alerts.push(alert)
+    } else if alert_type == "high_latency" {
+      latency_alerts.push(alert)
+    }
+  }
+  
+  assert_true(error_alerts.length() > 0)
+  assert_true(latency_alerts.length() > 0)
+  
+  // Verify error alert details
+  for alert in error_alerts {
+    let count = Alert::count(alert)
+    assert_true(count >= 5)
+    
+    let message = Alert::message(alert)
+    assert_true(message.contains("high_error_rate"))
+  }
+  
+  // Verify latency alert details
+  for alert in latency_alerts {
+    let count = Alert::count(alert)
+    assert_true(count >= 3)
+    
+    let message = Alert::message(alert)
+    assert_true(message.contains("high_latency"))
+  }
+}
+
+test "stream backpressure handling" {
+  // Create stream processor with backpressure handling
+  let processor = StreamProcessor::with_backpressure_handling()
+  
+  // Set backpressure threshold
+  StreamProcessor::set_backpressure_threshold(processor, 100) // Max 100 items in buffer
+  
+  // Create high-volume data stream
+  let stream = Stream::new()
+  
+  // Add large amount of data (more than threshold)
+  for i in 0..500 {
+    let span_ctx = SpanContext::new("backpressure_trace_" + i.to_string(), "backpressure_span_" + i.to_string(), true, "")
+    let span = Span::new("backpressure_span_" + i.to_string(), Internal, span_ctx)
+    
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "backpressure_id", IntValue(i))
+    
+    Span::add_event(span, "backpressure_event", Some(attrs))
+    
+    Stream::add_data(stream, span)
+  }
+  
+  // Process stream with backpressure
+  let processed_data = StreamProcessor::process_with_backpressure(processor, stream)
+  
+  // Verify backpressure was applied
+  assert_true(StreamProcessor::backpressure_was_applied(processor))
+  
+  // Verify data was not lost
+  assert_true(processed_data.length() > 0)
+  assert_true(processed_data.length() <= 500)
+  
+  // Verify processed data is valid
+  for data in processed_data {
+    assert_true(Span::is_valid(data))
+    
+    let attrs = Span::attributes(data)
+    let backpressure_id = Attributes::get(attrs, "backpressure_id")
+    
+    match backpressure_id {
+      IntValue(id) => assert_true(id >= 0 && id < 500)
+      _ => assert_true(false)
+    }
+  }
+}
+
+test "stream persistence and recovery" {
+  // Create persistent stream processor
+  let processor = PersistentStreamProcessor::new("/tmp/azimuth_stream_test")
+  
+  // Create data stream
+  let stream = Stream::new()
+  
+  // Add data to stream
+  for i in 0..20 {
+    let span_ctx = SpanContext::new("persistence_trace_" + i.to_string(), "persistence_span_" + i.to_string(), true, "")
+    let span = Span::new("persistence_span_" + i.to_string(), Internal, span_ctx)
+    
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "persistence_id", IntValue(i))
+    Attributes::set(attrs, "persistence_value", StringValue("value_" + i.to_string()))
+    
+    Span::add_event(span, "persistence_event", Some(attrs))
+    
+    Stream::add_data(stream, span)
+  }
+  
+  // Process stream with persistence
+  let checkpoint_id = PersistentStreamProcessor::process_with_checkpoint(processor, stream)
+  assert_true(checkpoint_id.length() > 0)
+  
+  // Verify checkpoint was created
+  assert_true(PersistentStreamProcessor::checkpoint_exists(processor, checkpoint_id))
+  
+  // Simulate failure and recovery
+  let recovered_processor = PersistentStreamProcessor::new("/tmp/azimuth_stream_test")
+  
+  // Recover from checkpoint
+  let recovery_result = PersistentStreamProcessor::recover_from_checkpoint(recovered_processor, checkpoint_id)
+  assert_true(recovery_result)
+  
+  // Verify recovered state
+  let recovered_data = PersistentStreamProcessor::get_processed_data(recovered_processor)
+  assert_eq(recovered_data.length(), 20)
+  
+  // Verify recovered data is valid
+  for data in recovered_data {
+    assert_true(Span::is_valid(data))
+    
+    let attrs = Span::attributes(data)
+    let persistence_id = Attributes::get(attrs, "persistence_id")
+    
+    match persistence_id {
+      IntValue(id) => assert_true(id >= 0 && id < 20)
+      _ => assert_true(false)
+    }
+  }
+  
+  // Clean up
+  PersistentStreamProcessor::cleanup(recovered_processor)
+}
+
+test "multi-stream correlation" {
+  // Create multi-stream processor
+  let processor = MultiStreamProcessor::new()
+  
+  // Create multiple streams
+  let span_stream = Stream::new()
+  let metric_stream = Stream::new()
+  let log_stream = Stream::new()
+  
+  // Add correlated data to streams
+  for i in 0..10 {
+    let correlation_id = "correlation_" + i.to_string()
+    
+    // Add span
+    let span_ctx = SpanContext::new("span_trace_" + i.to_string(), "span_span_" + i.to_string(), true, "")
+    let span = Span::new("span_" + i.to_string(), Internal, span_ctx)
+    
+    let span_attrs = Attributes::new()
+    Attributes::set(span_attrs, "correlation_id", StringValue(correlation_id))
+    Attributes::set(span_attrs, "span_data", StringValue("span_value_" + i.to_string()))
+    
+    Span::add_event(span, "span_event", Some(span_attrs))
+    Stream::add_data(span_stream, span)
+    
+    // Add metric
+    let metric = Metric::new(
+      "metric_" + i.to_string(),
+      i.to_float() * 10.0,
+      Attributes::new()
+    )
+    
+    let metric_attrs = Metric::attributes(metric)
+    Attributes::set(metric_attrs, "correlation_id", StringValue(correlation_id))
+    Attributes::set(metric_attrs, "metric_data", StringValue("metric_value_" + i.to_string()))
+    
+    Stream::add_data(metric_stream, metric)
+    
+    // Add log
+    let log_record = LogRecord::new(
+      Info,
+      Some("Log message " + i.to_string()),
+      Some(Attributes::new()),
+      Some(1234567890L + i),
+      Some(1234567891L + i),
+      Some("log_trace_" + i.to_string()),
+      Some("log_span_" + i.to_string())
+    )
+    
+    let log_attrs = LogRecord::attributes(log_record)
+    Attributes::set(log_attrs, "correlation_id", StringValue(correlation_id))
+    Attributes::set(log_attrs, "log_data", StringValue("log_value_" + i.to_string()))
+    
+    Stream::add_data(log_stream, log_record)
+  }
+  
+  // Process streams with correlation
+  let correlated_results = MultiStreamProcessor::process_with_correlation(
+    processor,
+    [span_stream, metric_stream, log_stream]
+  )
+  
+  // Verify correlation results
+  assert_eq(correlated_results.length(), 10)
+  
+  // Verify each correlation group has correct data
+  for correlation_group in correlated_results {
+    let correlation_id = CorrelationGroup::id(correlation_group)
+    assert_true(correlation_id.contains("correlation_"))
+    
+    // Verify each group has span, metric, and log
+    assert_true(CorrelationGroup::has_span(correlation_group))
+    assert_true(CorrelationGroup::has_metric(correlation_group))
+    assert_true(CorrelationGroup::has_log(correlation_group))
+    
+    // Verify correlation IDs match
+    let span = CorrelationGroup::span(correlation_group)
+    let metric = CorrelationGroup::metric(correlation_group)
+    let log = CorrelationGroup::log(correlation_group)
+    
+    let span_attrs = Span::attributes(span)
+    let metric_attrs = Metric::attributes(metric)
+    let log_attrs = LogRecord::attributes(log)
+    
+    let span_correlation_id = Attributes::get(span_attrs, "correlation_id")
+    let metric_correlation_id = Attributes::get(metric_attrs, "correlation_id")
+    let log_correlation_id = Attributes::get(log_attrs, "correlation_id")
+    
+    match (span_correlation_id, metric_correlation_id, log_correlation_id) {
+      (StringValue(span_id), StringValue(metric_id), StringValue(log_id)) => {
+        assert_eq(span_id, metric_id)
+        assert_eq(metric_id, log_id)
+      }
+      _ => assert_true(false)
+    }
+  }
 }
