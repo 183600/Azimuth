@@ -1,1289 +1,1199 @@
-// Azimuth 数据序列化测试用例
-// 专注于JSON、XML、二进制序列化和自定义格式处理功能测试
+// Azimuth Telemetry System - Data Serialization Tests
+// This file contains test cases for data serialization and deserialization functionality
 
-// 测试1: JSON序列化和反序列化
-test "JSON序列化和反序列化测试" {
-  // 测试基本类型序列化
-  let json_string = JsonSerializer::serialize(42)
-  assert_eq(json_string, "42")
-  
-  let json_float = JsonSerializer::serialize(3.14)
-  assert_eq(json_float, "3.14")
-  
-  let json_bool = JsonSerializer::serialize(true)
-  assert_eq(json_bool, "true")
-  
-  let json_null = JsonSerializer::serialize(None)
-  assert_eq(json_null, "null")
-  
-  let json_str = JsonSerializer::serialize("Hello, JSON!")
-  assert_eq(json_str, "\"Hello, JSON!\"")
-  
-  // 测试数组序列化
-  let array_data = [1, 2, 3, 4, 5]
-  let json_array = JsonSerializer::serialize(array_data)
-  assert_eq(json_array, "[1,2,3,4,5]")
-  
-  let string_array = ["apple", "banana", "cherry"]
-  let json_string_array = JsonSerializer::serialize(string_array)
-  assert_eq(json_string_array, "[\"apple\",\"banana\",\"cherry\"]")
-  
-  // 测试对象序列化
-  let person = Person::new("Alice", 30, "alice@example.com")
-  let json_object = JsonSerializer::serialize(person)
-  assert_true(json_object.contains("\"name\":\"Alice\""))
-  assert_true(json_object.contains("\"age\":30"))
-  assert_true(json_object.contains("\"email\":\"alice@example.com\""))
-  
-  // 测试嵌套对象序列化
-  let address = Address::new("123 Main St", "Anytown", "12345")
-  let person_with_address = PersonWithAddress::new("Bob", 25, "bob@example.com", address)
-  let json_nested = JsonSerializer::serialize(person_with_address)
-  assert_true(json_nested.contains("\"name\":\"Bob\""))
-  assert_true(json_nested.contains("\"address\""))
-  assert_true(json_nested.contains("\"street\":\"123 Main St\""))
-  
-  // 测试反序列化
-  let parsed_int = JsonSerializer::deserialize[Int]("42")
-  assert_eq(parsed_int, 42)
-  
-  let parsed_float = JsonSerializer::deserialize[Float]("3.14")
-  assert_true(parsed_float - 3.14 < 0.001)
-  
-  let parsed_bool = JsonSerializer::deserialize[Bool]("true")
-  assert_eq(parsed_bool, true)
-  
-  let parsed_string = JsonSerializer::deserialize[String]("\"Hello, JSON!\"")
-  assert_eq(parsed_string, "Hello, JSON!")
-  
-  let parsed_array = JsonSerializer::deserialize[Array[Int]]("[1,2,3,4,5]")
-  assert_eq(parsed_array.length(), 5)
-  assert_eq(parsed_array[0], 1)
-  assert_eq(parsed_array[4], 5)
-  
-  let parsed_person = JsonSerializer::deserialize[Person](json_object)
-  assert_eq(Person::name(parsed_person), "Alice")
-  assert_eq(Person::age(parsed_person), 30)
-  assert_eq(Person::email(parsed_person), "alice@example.com")
-}
-
-// 测试2: JSON高级特性
-test "JSON高级特性测试" {
-  // 测试可选字段和空值处理
-  let person_with_optional = PersonWithOptional::new("Charlie", Some(35), None)
-  let json_optional = JsonSerializer::serialize(person_with_optional)
-  assert_true(json_optional.contains("\"name\":\"Charlie\""))
-  assert_true(json_optional.contains("\"age\":35"))
-  assert_false(json_optional.contains("\"email\"")) // None字段应该被省略
-  
-  // 测试自定义序列化
-  let custom_date = CustomDate::new(2023, 12, 25)
-  let json_custom = JsonSerializer::serialize_with_formatter(custom_date, fn(date) {
-    date.year.to_string() + "-" + 
-    (if date.month < 10 { "0" } else { "" }) + date.month.to_string() + "-" +
-    (if date.day < 10 { "0" } else { "" }) + date.day.to_string()
-  })
-  assert_eq(json_custom, "\"2023-12-25\"")
-  
-  // 测试自定义反序列化
-  let parsed_date = JsonSerializer::deserialize_with_parser[CustomDate]("\"2023-12-25\"", fn(date_str) {
-    let parts = date_str.split("-")
-    CustomDate::new(
-      parts[0].to_int(),
-      parts[1].to_int(),
-      parts[2].to_int()
-    )
-  })
-  assert_eq(CustomDate::year(parsed_date), 2023)
-  assert_eq(CustomDate::month(parsed_date), 12)
-  assert_eq(CustomDate::day(parsed_date), 25)
-  
-  // 测试JSON路径查询
-  let complex_json = "{\"user\":{\"name\":\"Alice\",\"profile\":{\"age\":30,\"settings\":{\"theme\":\"dark\",\"notifications\":true}}}}"
-  let name = JsonPath::query(complex_json, "user.name")
-  assert_eq(name, "Alice")
-  
-  let age = JsonPath::query(complex_json, "user.profile.age")
-  assert_eq(age, "30")
-  
-  let theme = JsonPath::query(complex_json, "user.profile.settings.theme")
-  assert_eq(theme, "dark")
-  
-  let notifications = JsonPath::query(complex_json, "user.profile.settings.notifications")
-  assert_eq(notifications, "true")
-  
-  // 测试JSON合并
-  let json1 = "{\"a\":1,\"b\":2}"
-  let json2 = "{\"b\":3,\"c\":4}"
-  let merged = JsonUtils::merge(json1, json2)
-  assert_true(merged.contains("\"a\":1"))
-  assert_true(merged.contains("\"b\":3")) // json2的值应该覆盖json1
-  assert_true(merged.contains("\"c\":4"))
-  
-  // 测试JSON验证
-  let valid_json = "{\"name\":\"Alice\",\"age\":30}"
-  assert_true(JsonValidator::is_valid(valid_json))
-  
-  let invalid_json = "{\"name\":\"Alice\",\"age\":30" // 缺少闭合括号
-  assert_false(JsonValidator::is_valid(invalid_json))
-  
-  // 测试JSON格式化
-  let minified_json = "{\"name\":\"Alice\",\"age\":30,\"email\":\"alice@example.com\"}"
-  let formatted_json = JsonFormatter::pretty_print(minified_json, 2)
-  assert_true(formatted_json.contains("\n"))
-  assert_true(formatted_json.contains("  ")) // 缩进
-}
-
-// 测试3: XML序列化和反序列化
-test "XML序列化和反序列化测试" {
-  // 测试基本XML元素创建
-  let element = XmlElement::new("person")
-  XmlElement::set_attribute(element, "id", "123")
-  XmlElement::add_child(element, XmlElement::new_text("name", "Alice"))
-  XmlElement::add_child(element, XmlElement::new_text("age", "30"))
-  
-  // 测试XML序列化
-  let xml_string = XmlSerializer::serialize(element)
-  assert_true(xml_string.contains("<person id=\"123\">"))
-  assert_true(xml_string.contains("<name>Alice</name>"))
-  assert_true(xml_string.contains("<age>30</age>"))
-  assert_true(xml_string.contains("</person>"))
-  
-  // 测试XML反序列化
-  let parsed_element = XmlSerializer::deserialize(xml_string)
-  assert_eq(XmlElement::name(parsed_element), "person")
-  assert_eq(XmlElement::attribute(parsed_element, "id"), Some("123"))
-  
-  let name_element = XmlElement::child(parsed_element, "name")
-  assert_eq(XmlElement::name(name_element), "name")
-  assert_eq(XmlElement::text(name_element), "Alice")
-  
-  let age_element = XmlElement::child(parsed_element, "age")
-  assert_eq(XmlElement::name(age_element), "age")
-  assert_eq(XmlElement::text(age_element), "30")
-  
-  // 测试复杂XML结构
-  let company = XmlElement::new("company")
-  XmlElement::set_attribute(company, "name", "Tech Corp")
-  
-  let employees = XmlElement::new("employees")
-  
-  let employee1 = XmlElement::new("employee")
-  XmlElement::set_attribute(employee1, "id", "1")
-  XmlElement::add_child(employee1, XmlElement::new_text("name", "Alice"))
-  XmlElement::add_child(employee1, XmlElement::new_text("department", "Engineering"))
-  
-  let employee2 = XmlElement::new("employee")
-  XmlElement::set_attribute(employee2, "id", "2")
-  XmlElement::add_child(employee2, XmlElement::new_text("name", "Bob"))
-  XmlElement::add_child(employee2, XmlElement::new_text("department", "Marketing"))
-  
-  XmlElement::add_child(employees, employee1)
-  XmlElement::add_child(employees, employee2)
-  XmlElement::add_child(company, employees)
-  
-  let complex_xml = XmlSerializer::serialize(company)
-  assert_true(complex_xml.contains("<company name=\"Tech Corp\">"))
-  assert_true(complex_xml.contains("<employees>"))
-  assert_true(complex_xml.contains("<employee id=\"1\">"))
-  assert_true(complex_xml.contains("<name>Alice</name>"))
-  assert_true(complex_xml.contains("<department>Engineering</department>"))
-  
-  // 测试XML命名空间
-  let ns_element = XmlElement::new_with_namespace("item", "http://example.com/ns")
-  XmlElement::set_attribute(ns_element, "xmlns", "http://example.com/ns")
-  XmlElement::add_child(ns_element, XmlElement::new_text("title", "Sample Item"))
-  
-  let ns_xml = XmlSerializer::serialize(ns_element)
-  assert_true(ns_xml.contains("xmlns=\"http://example.com/ns\""))
-  
-  // 测试XPath查询
-  let xpath_result = XmlXPath::query(complex_xml, "//employee[name='Alice']/department")
-  assert_eq(xpath_result, "Engineering")
-  
-  let all_names = XmlXPath::query_all(complex_xml, "//employee/name/text()")
-  assert_eq(all_names.length(), 2)
-  assert_true(all_names.contains("Alice"))
-  assert_true(all_names.contains("Bob"))
-  
-  // 测试XML验证
-  let valid_xml = "<root><child>content</child></root>"
-  assert_true(XmlValidator::is_valid(valid_xml))
-  
-  let invalid_xml = "<root><child>content" // 缺少闭合标签
-  assert_false(XmlValidator::is_valid(invalid_xml))
-  
-  // 测试XML转换
-  let transformed_xml = XmlTransformer::transform(complex_xml, fn(element) {
-    if XmlElement::name(element) == "employee" {
-      XmlElement::set_attribute(element, "status", "active")
-    }
-    element
-  })
-  assert_true(transformed_xml.contains("status=\"active\""))
-}
-
-// 测试4: 二进制序列化
-test "二进制序列化测试" {
-  // 测试基本类型二进制序列化
-  let binary_int = BinarySerializer::serialize(42)
-  assert_eq(binary_int.length(), 4) // 32位整数 = 4字节
-  
-  let binary_float = BinarySerializer::serialize(3.14)
-  assert_eq(binary_float.length(), 4) // 32位浮点数 = 4字节
-  
-  let binary_bool = BinarySerializer::serialize(true)
-  assert_eq(binary_bool.length(), 1) // 布尔值 = 1字节
-  
-  let binary_string = BinarySerializer::serialize("Hello, Binary!")
-  // 字符串 = 长度前缀(4字节) + 字符内容
-  assert_eq(binary_string.length(), 4 + "Hello, Binary!".length())
-  
-  // 测试二进制反序列化
-  let parsed_int = BinarySerializer::deserialize[Int](binary_int)
-  assert_eq(parsed_int, 42)
-  
-  let parsed_float = BinarySerializer::deserialize[Float](binary_float)
-  assert_true(parsed_float - 3.14 < 0.001)
-  
-  let parsed_bool = BinarySerializer::deserialize[Bool](binary_bool)
-  assert_eq(parsed_bool, true)
-  
-  let parsed_string = BinarySerializer::deserialize[String](binary_string)
-  assert_eq(parsed_string, "Hello, Binary!")
-  
-  // 测试复杂对象二进制序列化
-  let person = Person::new("Alice", 30, "alice@example.com")
-  let binary_person = BinarySerializer::serialize(person)
-  
-  let parsed_person = BinarySerializer::deserialize[Person](binary_person)
-  assert_eq(Person::name(parsed_person), "Alice")
-  assert_eq(Person::age(parsed_person), 30)
-  assert_eq(Person::email(parsed_person), "alice@example.com")
-  
-  // 测试二进制序列化版本控制
-  let versioned_serializer = BinarySerializer::with_version(1)
-  let versioned_data = BinarySerializer::serialize_with_version(versioned_serializer, person)
-  
-  let versioned_deserializer = BinarySerializer::with_version(1)
-  let versioned_parsed = BinarySerializer::deserialize_with_version[Person](versioned_deserializer, versioned_data)
-  assert_eq(Person::name(versioned_parsed), "Alice")
-  
-  // 测试二进制压缩
-  let large_data = "A".repeat(10000)
-  let uncompressed = BinarySerializer::serialize(large_data)
-  let compressed = BinarySerializer::compress(uncompressed)
-  
-  assert_true(compressed.length() < uncompressed.length())
-  
-  let decompressed = BinarySerializer::decompress(compressed)
-  let parsed_large = BinarySerializer::deserialize[String](decompressed)
-  assert_eq(parsed_large, large_data)
-  
-  // 测试二进制加密
-  let encryption_key = "encryption-key-16"
-  let encrypted = BinarySerializer::encrypt(uncompressed, encryption_key)
-  let decrypted = BinarySerializer::decrypt(encrypted, encryption_key)
-  
-  assert_ne(encrypted, uncompressed)
-  assert_eq(decrypted, uncompressed)
-}
-
-// 测试5: Protocol Buffers序列化
-test "Protocol Buffers序列化测试" {
-  // 测试Protocol Buffers消息定义
-  let person_proto = ProtoMessage::new("Person")
-  ProtoMessage::add_field(person_proto, "name", ProtoFieldType::String, 1)
-  ProtoMessage::add_field(person_proto, "age", ProtoFieldType::Int32, 2)
-  ProtoMessage::add_field(person_proto, "email", ProtoFieldType::String, 3)
-  
-  // 测试Protocol Buffers序列化
-  let person = Person::new("Alice", 30, "alice@example.com")
-  let proto_data = ProtoSerializer::serialize(person, person_proto)
-  
-  // Protocol Buffers数据应该是二进制格式
-  assert_true(proto_data.length() > 0)
-  
-  // 测试Protocol Buffers反序列化
-  let parsed_person = ProtoSerializer::deserialize[Person](proto_data, person_proto)
-  assert_eq(Person::name(parsed_person), "Alice")
-  assert_eq(Person::age(parsed_person), 30)
-  assert_eq(Person::email(parsed_person), "alice@example.com")
-  
-  // 测试嵌套Protocol Buffers消息
-  let address_proto = ProtoMessage::new("Address")
-  ProtoMessage::add_field(address_proto, "street", ProtoFieldType::String, 1)
-  ProtoMessage::add_field(address_proto, "city", ProtoFieldType::String, 2)
-  ProtoMessage::add_field(address_proto, "zip", ProtoFieldType::String, 3)
-  
-  let person_with_address_proto = ProtoMessage::new("PersonWithAddress")
-  ProtoMessage::add_field(person_with_address_proto, "name", ProtoFieldType::String, 1)
-  ProtoMessage::add_field(person_with_address_proto, "age", ProtoFieldType::Int32, 2)
-  ProtoMessage::add_field(person_with_address_proto, "address", ProtoFieldType::Message, 3, address_proto)
-  
-  let address = Address::new("123 Main St", "Anytown", "12345")
-  let person_with_address = PersonWithAddress::new("Bob", 25, "bob@example.com", address)
-  
-  let nested_proto_data = ProtoSerializer::serialize(person_with_address, person_with_address_proto)
-  let parsed_nested = ProtoSerializer::deserialize[PersonWithAddress](nested_proto_data, person_with_address_proto)
-  
-  assert_eq(PersonWithAddress::name(parsed_nested), "Bob")
-  assert_eq(PersonWithAddress::age(parsed_nested), 25)
-  assert_eq(Address::street(PersonWithAddress::address(parsed_nested)), "123 Main St")
-  
-  // 测试Protocol Buffers重复字段
-  let list_proto = ProtoMessage::new("PersonList")
-  ProtoMessage::add_field(list_proto, "people", ProtoFieldType::RepeatedMessage, 1, person_proto)
-  
-  let people = [person, parsed_person]
-  let person_list = PersonList::new(people)
-  let list_proto_data = ProtoSerializer::serialize(person_list, list_proto)
-  
-  let parsed_list = ProtoSerializer::deserialize[PersonList](list_proto_data, list_proto)
-  assert_eq(PersonList::people(parsed_list).length(), 2)
-  
-  // 测试Protocol Buffers向前兼容性
-  let extended_person_proto = ProtoMessage::new("ExtendedPerson")
-  ProtoMessage::add_field(extended_person_proto, "name", ProtoFieldType::String, 1)
-  ProtoMessage::add_field(extended_person_proto, "age", ProtoFieldType::Int32, 2)
-  ProtoMessage::add_field(extended_person_proto, "email", ProtoFieldType::String, 3)
-  ProtoMessage::add_field(extended_person_proto, "phone", ProtoFieldType::String, 4) // 新字段
-  
-  let extended_person = ExtendedPerson::new("Charlie", 35, "charlie@example.com", "555-1234")
-  let extended_proto_data = ProtoSerializer::serialize(extended_person, extended_person_proto)
-  
-  // 使用旧的消息定义解析新数据（新字段应该被忽略）
-  let backward_compatible = ProtoSerializer::deserialize[Person](extended_proto_data, person_proto)
-  assert_eq(Person::name(backward_compatible), "Charlie")
-  assert_eq(Person::age(backward_compatible), 35)
-  assert_eq(Person::email(backward_compatible), "charlie@example.com")
-}
-
-// 测试6: 自定义序列化格式
-test "自定义序列化格式测试" {
-  // 测试CSV序列化
-  let people = [
-    Person::new("Alice", 30, "alice@example.com"),
-    Person::new("Bob", 25, "bob@example.com"),
-    Person::new("Charlie", 35, "charlie@example.com")
-  ]
-  
-  let csv_data = CsvSerializer::serialize(people)
-  let lines = csv_data.split("\n")
-  assert_eq(lines.length(), 4) // 头部 + 3行数据
-  assert_eq(lines[0], "name,age,email")
-  assert_eq(lines[1], "Alice,30,alice@example.com")
-  
-  // 测试CSV反序列化
-  let parsed_people = CsvSerializer::deserialize[Person](csv_data)
-  assert_eq(parsed_people.length(), 3)
-  assert_eq(Person::name(parsed_people[0]), "Alice")
-  assert_eq(Person::age(parsed_people[1]), 25)
-  
-  // 测试YAML序列化
-  let config = Config::new(
-    "localhost",
-    8080,
-    DatabaseConfig::new("mydb", "user", "pass"),
-    ["feature1", "feature2"]
+// Test 1: JSON Serialization and Deserialization
+test "json serialization and deserialization" {
+  // Create test data structures
+  let telemetry_data = TelemetryData::new(
+    "trace-12345",
+    "span-67890",
+    1640995200000,
+    150,
+    "ok"
   )
   
-  let yaml_data = YamlSerializer::serialize(config)
-  assert_true(yaml_data.contains("server:"))
-  assert_true(yaml_data.contains("host: localhost"))
-  assert_true(yaml_data.contains("port: 8080"))
-  assert_true(yaml_data.contains("database:"))
-  assert_true(yaml_data.contains("features:"))
+  TelemetryData::add_attribute(telemetry_data, "service.name", "user-service")
+  TelemetryData::add_attribute(telemetry_data, "host.name", "server-01")
+  TelemetryData::add_attribute(telemetry_data, "region", "us-west-2")
   
-  // 测试YAML反序列化
-  let parsed_config = YamlSerializer::deserialize[Config](yaml_data)
-  assert_eq(Config::host(parsed_config), "localhost")
-  assert_eq(Config::port(parsed_config), 8080)
-  assert_eq(DatabaseConfig::name(Config::database(parsed_config)), "mydb")
-  assert_eq(Config::features(parsed_config).length(), 2)
+  TelemetryData::add_event(telemetry_data, "db.query.start", 1640995200050)
+  TelemetryData::add_event(telemetry_data, "db.query.execute", 1640995200100)
+  TelemetryData::add_event(telemetry_data, "db.query.complete", 1640995200150)
   
-  // 测试TOML序列化
-  let toml_data = TomlSerializer::serialize(config)
-  assert_true(toml_data.contains("[server]"))
-  assert_true(toml_data.contains("host = \"localhost\""))
-  assert_true(toml_data.contains("port = 8080"))
+  // Test JSON serialization
+  let json_serializer = JsonSerializer::new()
+  let serialized_json = JsonSerializer::serialize(json_serializer, telemetry_data)
   
-  // 测试TOML反序列化
-  let parsed_toml_config = TomlSerializer::deserialize[Config](toml_data)
-  assert_eq(Config::host(parsed_toml_config), "localhost")
-  assert_eq(Config::port(parsed_toml_config), 8080)
+  assert_true(serialized_json.length() > 0)
+  assert_true(serialized_json.contains("\"trace_id\":\"trace-12345\""))
+  assert_true(serialized_json.contains("\"span_id\":\"span-67890\""))
+  assert_true(serialized_json.contains("\"timestamp\":1640995200000"))
+  assert_true(serialized_json.contains("\"duration\":150"))
+  assert_true(serialized_json.contains("\"status\":\"ok\""))
+  assert_true(serialized_json.contains("\"service.name\":\"user-service\""))
+  assert_true(serialized_json.contains("\"host.name\":\"server-01\""))
+  assert_true(serialized_json.contains("\"region\":\"us-west-2\""))
   
-  // 测试自定义序列化器
-  let custom_serializer = CustomSerializer::new()
-  CustomSerializer::register_formatter(custom_serializer, "Person", fn(person) {
-    Person::name(person) + "|" + Person::age(person).to_string() + "|" + Person::email(person)
-  })
+  // Test JSON deserialization
+  let deserialized_data = JsonSerializer::deserialize(json_serializer, serialized_json)
   
-  CustomSerializer::register_parser(custom_serializer, "Person", fn(data) {
-    let parts = data.split("|")
-    Person::new(parts[0], parts[1].to_int(), parts[2])
-  })
-  
-  let custom_data = CustomSerializer::serialize(custom_serializer, person)
-  assert_eq(custom_data, "Alice|30|alice@example.com")
-  
-  let custom_parsed = CustomSerializer::deserialize[Person](custom_serializer, custom_data)
-  assert_eq(Person::name(custom_parsed), "Alice")
-  assert_eq(Person::age(custom_parsed), 30)
-}
-
-// 测试7: 序列化性能测试
-test "序列化性能测试" {
-  // 创建大量测试数据
-  let large_dataset = []
-  for i in 1..=10000 {
-    let person = Person::new(
-      "Person" + i.to_string(),
-      20 + (i % 50),
-      "person" + i.to_string() + "@example.com"
-    )
-    large_dataset = large_dataset.push(person)
-  }
-  
-  // 测试JSON序列化性能
-  let start_time = Time::now()
-  let json_data = JsonSerializer::serialize(large_dataset)
-  let json_serialization_time = Time::elapsed_since(start_time)
-  
-  assert_true(json_data.length() > 0)
-  
-  // 测试JSON反序列化性能
-  start_time = Time::now()
-  let json_parsed = JsonSerializer::deserialize[Array[Person]](json_data)
-  let json_deserialization_time = Time::elapsed_since(start_time)
-  
-  assert_eq(json_parsed.length(), 10000)
-  
-  // 测试二进制序列化性能
-  start_time = Time::now()
-  let binary_data = BinarySerializer::serialize(large_dataset)
-  let binary_serialization_time = Time::elapsed_since(start_time)
-  
-  // 测试二进制反序列化性能
-  start_time = Time::now()
-  let binary_parsed = BinarySerializer::deserialize[Array[Person]](binary_data)
-  let binary_deserialization_time = Time::elapsed_since(start_time)
-  
-  assert_eq(binary_parsed.length(), 10000)
-  
-  // 测试Protocol Buffers序列化性能
-  let person_proto = ProtoMessage::new("Person")
-  ProtoMessage::add_field(person_proto, "name", ProtoFieldType::String, 1)
-  ProtoMessage::add_field(person_proto, "age", ProtoFieldType::Int32, 2)
-  ProtoMessage::add_field(person_proto, "email", ProtoFieldType::String, 3)
-  
-  let list_proto = ProtoMessage::new("PersonList")
-  ProtoMessage::add_field(list_proto, "people", ProtoFieldType::RepeatedMessage, 1, person_proto)
-  
-  let person_list = PersonList::new(large_dataset)
-  
-  start_time = Time::now()
-  let proto_data = ProtoSerializer::serialize(person_list, list_proto)
-  let proto_serialization_time = Time::elapsed_since(start_time)
-  
-  start_time = Time::now()
-  let proto_parsed = ProtoSerializer::deserialize[PersonList](proto_data, list_proto)
-  let proto_deserialization_time = Time::elapsed_since(start_time)
-  
-  assert_eq(PersonList::people(proto_parsed).length(), 10000)
-  
-  // 比较性能
-  assert_true(json_serialization_time < 10000) // 应该在10秒内完成
-  assert_true(json_deserialization_time < 10000) // 应该在10秒内完成
-  assert_true(binary_serialization_time < 10000) // 应该在10秒内完成
-  assert_true(binary_deserialization_time < 10000) // 应该在10秒内完成
-  assert_true(proto_serialization_time < 10000) // 应该在10秒内完成
-  assert_true(proto_deserialization_time < 10000) // 应该在10秒内完成
-  
-  // 比较数据大小
-  assert_true(binary_data.length() < json_data.length()) // 二进制应该更小
-  assert_true(proto_data.length() < json_data.length()) // Proto应该更小
-  
-  // 验证数据完整性
-  for i in 0..10000 {
-    let original = large_dataset[i]
-    let json_result = json_parsed[i]
-    let binary_result = binary_parsed[i]
-    let proto_result = PersonList::people(proto_parsed)[i]
-    
-    assert_eq(Person::name(original), Person::name(json_result))
-    assert_eq(Person::age(original), Person::age(json_result))
-    assert_eq(Person::email(original), Person::email(json_result))
-    
-    assert_eq(Person::name(original), Person::name(binary_result))
-    assert_eq(Person::age(original), Person::age(binary_result))
-    assert_eq(Person::email(original), Person::email(binary_result))
-    
-    assert_eq(Person::name(original), Person::name(proto_result))
-    assert_eq(Person::age(original), Person::age(proto_result))
-    assert_eq(Person::email(original), Person::email(proto_result))
-  }
-}
-
-// 测试8: 序列化错误处理
-test "序列化错误处理测试" {
-  // 测试JSON解析错误
-  let malformed_json = "{\"name\":\"Alice\",\"age\":30" // 缺少闭合括号
-  let json_parse_result = JsonSerializer::try_deserialize[Person](malformed_json)
-  match json_parse_result {
-    Ok(_) => assert_true(false) // 应该失败
-    Err(error) => assert_true(error.contains("parse") || error.contains("invalid"))
-  }
-  
-  // 测试XML解析错误
-  let malformed_xml = "<person><name>Alice<age>30</age></person>" // 缺少闭合标签
-  let xml_parse_result = XmlSerializer::try_deserialize(malformed_xml)
-  match xml_parse_result {
-    Ok(_) => assert_true(false) // 应该失败
-    Err(error) => assert_true(error.contains("parse") || error.contains("invalid"))
-  }
-  
-  // 测试类型不匹配错误
-  let json_string = "\"not a number\""
-  let type_mismatch_result = JsonSerializer::try_deserialize[Int](json_string)
-  match type_mismatch_result {
-    Ok(_) => assert_true(false) // 应该失败
-    Err(error) => assert_true(error.contains("type") || error.contains("mismatch"))
-  }
-  
-  // 测试Protocol Buffers版本不兼容错误
-  let old_proto = ProtoMessage::new("OldPerson")
-  ProtoMessage::add_field(old_proto, "name", ProtoFieldType::String, 1)
-  
-  let new_proto = ProtoMessage::new("NewPerson")
-  ProtoMessage::add_field(new_proto, "name", ProtoFieldType::String, 1)
-  ProtoMessage::add_field(new_proto, "age", ProtoFieldType::Int32, 2)
-  
-  let new_person = ExtendedPerson::new("Alice", 30, "alice@example.com", "555-1234")
-  let new_proto_data = ProtoSerializer::serialize(new_person, new_proto)
-  
-  let version_mismatch_result = ProtoSerializer::try_deserialize[Person](new_proto_data, old_proto)
-  // 这可能成功或失败，取决于实现
-  // 如果成功，应该只解析兼容的字段
-  
-  // 测试序列化大小限制
-  let huge_string = "A".repeat(100000000) // 100MB字符串
-  let size_limit_result = JsonSerializer::try_serialize_with_limit(huge_string, 50000000) // 50MB限制
-  match size_limit_result {
-    Ok(_) => assert_true(false) // 应该失败
-    Err(error) => assert_true(error.contains("size") || error.contains("limit"))
-  }
-  
-  // 测试反序列化深度限制
-  let deeply_nested = create_nested_json(100) // 创建100层嵌套的JSON
-  let depth_limit_result = JsonSerializer::try_deserialize_with_limit(deeply_nested, 50) // 50层限制
-  match depth_limit_result {
-    Ok(_) => assert_true(false) // 应该失败
-    Err(error) => assert_true(error.contains("depth") || error.contains("limit"))
-  }
-  
-  // 测试安全反序列化
-  let malicious_json = "{\"__proto__\":{\"admin\":true}}" // 潜在的原型污染
-  let safe_result = JsonSerializer::safe_deserialize[Map[String, Any]](malicious_json)
-  match safe_result {
-    Ok(parsed) => {
-      // 应该过滤掉危险字段
-      assert_false(Map::contains_key(parsed, "__proto__"))
+  match deserialized_data {
+    Ok(data) => {
+      assert_eq(TelemetryData::trace_id(data), "trace-12345")
+      assert_eq(TelemetryData::span_id(data), "span-67890")
+      assert_eq(TelemetryData::timestamp(data), 1640995200000)
+      assert_eq(TelemetryData::duration(data), 150)
+      assert_eq(TelemetryData::status(data), "ok")
+      
+      assert_eq(TelemetryData::get_attribute(data, "service.name"), Some("user-service"))
+      assert_eq(TelemetryData::get_attribute(data, "host.name"), Some("server-01"))
+      assert_eq(TelemetryData::get_attribute(data, "region"), Some("us-west-2"))
+      
+      let events = TelemetryData::events(data)
+      assert_eq(events.length(), 3)
+      assert_eq(events[0].name, "db.query.start")
+      assert_eq(events[0].timestamp, 1640995200050)
+      assert_eq(events[1].name, "db.query.execute")
+      assert_eq(events[1].timestamp, 1640995200100)
+      assert_eq(events[2].name, "db.query.complete")
+      assert_eq(events[2].timestamp, 1640995200150)
     }
-    Err(_) => assert_true(true) // 或者直接拒绝
+    Err(_) => assert_true(false)
   }
-}
-
-// 测试9: 序列化安全性
-test "序列化安全性测试" {
-  // 测试敏感数据过滤
-  let user_with_password = UserWithPassword::new("alice", "secret123")
-  let serializer = JsonSerializer::with_security_policy()
-  JsonSerializer::add_sensitive_field(serializer, "password")
   
-  let filtered_json = JsonSerializer::serialize_with_filter(serializer, user_with_password)
-  assert_false(filtered_json.contains("secret123"))
-  assert_true(filtered_json.contains("\"name\":\"alice\""))
+  // Test JSON serialization with pretty printing
+  let pretty_json = JsonSerializer::serialize_pretty(json_serializer, telemetry_data)
   
-  // 测试反序列化输入验证
-  let malicious_input = "{\"name\":\"<script>alert('xss')</script>\",\"age\":30}"
-  let safe_parser = JsonSerializer::with_input_validation()
-  JsonSerializer::add_validation_rule(safe_parser, "name", fn(value) {
-    !value.contains("<script>")
+  assert_true(pretty_json.contains("\n")) // Should contain newlines
+  assert_true(pretty_json.contains("  ")) // Should contain indentation
+  assert_true(pretty_json.contains("\"trace_id\": \"trace-12345\""))
+  
+  // Test JSON serialization with custom settings
+  let custom_serializer = JsonSerializer::with_options(JsonOptions {
+    indent: 4,
+    sort_keys: true,
+    omit_null_values: true,
+    escape_unicode: false
   })
   
-  let validation_result = JsonSerializer::try_deserialize_with_validation[Person](malicious_input, safe_parser)
-  match validation_result {
-    Ok(_) => assert_true(false) // 应该失败
-    Err(error) => assert_true(error.contains("validation") || error.contains("unsafe"))
+  let custom_json = JsonSerializer::serialize(custom_serializer, telemetry_data)
+  assert_true(custom_json.length() > 0)
+  
+  // Test JSON deserialization with validation
+  let schema = JsonSchema::from_type(TelemetryData::type_info())
+  let validated_deserializer = JsonValidatingDeserializer::new(schema)
+  
+  let validated_result = JsonValidatingDeserializer::deserialize(validated_deserializer, serialized_json)
+  
+  match validated_result {
+    Ok(data) => {
+      assert_eq(TelemetryData::trace_id(data), "trace-12345")
+    }
+    Err(error) => {
+      // Should not fail with valid data
+      assert_true(false)
+    }
   }
   
-  // 测试序列化数据签名
-  let sensitive_data = SensitiveData::new("confidential information")
-  let signing_key = "signing-key-32-bytes-long"
+  // Test JSON deserialization with invalid data
+  let invalid_json = "{\"trace_id\":123,\"span_id\":\"span-67890\"}" // trace_id should be string
   
-  let signed_data = SecureSerializer::serialize_and_sign(sensitive_data, signing_key)
-  assert_true(signed_data.contains("data:"))
-  assert_true(signed_data.contains("signature:"))
+  let invalid_result = JsonValidatingDeserializer::deserialize(validated_deserializer, invalid_json)
   
-  let verification_result = SecureSerializer::deserialize_and_verify[SensitiveData](signed_data, signing_key)
-  match verification_result {
-    Ok(data) => assert_eq(SensitiveData::content(data), "confidential information")
+  match invalid_result {
+    Ok(_) => assert_true(false) // Should fail with invalid data
+    Err(error) => {
+      assert_true(error.contains("validation") || error.contains("type"))
+    }
+  }
+  
+  // Test JSON serialization of collections
+  let telemetry_collection = [
+    telemetry_data,
+    TelemetryData::new("trace-12346", "span-67891", 1640995201000, 200, "ok"),
+    TelemetryData::new("trace-12347", "span-67892", 1640995202000, 100, "error")
+  ]
+  
+  let collection_json = JsonSerializer::serialize_collection(json_serializer, telemetry_collection)
+  
+  assert_true(collection_json.contains("["))
+  assert_true(collection_json.contains("]"))
+  assert_true(collection_json.contains("\"trace_id\":\"trace-12345\""))
+  assert_true(collection_json.contains("\"trace_id\":\"trace-12346\""))
+  assert_true(collection_json.contains("\"trace_id\":\"trace-12347\""))
+  
+  // Test JSON deserialization of collections
+  let deserialized_collection = JsonSerializer::deserialize_collection(json_serializer, collection_json)
+  
+  match deserialized_collection {
+    Ok(collection) => {
+      assert_eq(collection.length(), 3)
+      assert_eq(TelemetryData::trace_id(collection[0]), "trace-12345")
+      assert_eq(TelemetryData::trace_id(collection[1]), "trace-12346")
+      assert_eq(TelemetryData::trace_id(collection[2]), "trace-12347")
+    }
+    Err(_) => assert_true(false)
+  }
+}
+
+// Test 2: Protocol Buffers Serialization and Deserialization
+test "protocol buffers serialization and deserialization" {
+  // Create test data structures
+  let telemetry_data = TelemetryData::new(
+    "trace-12345",
+    "span-67890",
+    1640995200000,
+    150,
+    "ok"
+  )
+  
+  TelemetryData::add_attribute(telemetry_data, "service.name", "user-service")
+  TelemetryData::add_attribute(telemetry_data, "host.name", "server-01")
+  TelemetryData::add_attribute(telemetry_data, "region", "us-west-2")
+  
+  TelemetryData::add_event(telemetry_data, "db.query.start", 1640995200050)
+  TelemetryData::add_event(telemetry_data, "db.query.execute", 1640995200100)
+  TelemetryData::add_event(telemetry_data, "db.query.complete", 1640995200150)
+  
+  // Test Protocol Buffers serialization
+  let protobuf_serializer = ProtobufSerializer::new()
+  let serialized_protobuf = ProtobufSerializer::serialize(protobuf_serializer, telemetry_data)
+  
+  assert_true(serialized_protobuf.length() > 0)
+  assert_true(serialized_protobuf.length() < 1000) // Should be compact
+  
+  // Test Protocol Buffers deserialization
+  let deserialized_data = ProtobufSerializer::deserialize(protobuf_serializer, serialized_protobuf)
+  
+  match deserialized_data {
+    Ok(data) => {
+      assert_eq(TelemetryData::trace_id(data), "trace-12345")
+      assert_eq(TelemetryData::span_id(data), "span-67890")
+      assert_eq(TelemetryData::timestamp(data), 1640995200000)
+      assert_eq(TelemetryData::duration(data), 150)
+      assert_eq(TelemetryData::status(data), "ok")
+      
+      assert_eq(TelemetryData::get_attribute(data, "service.name"), Some("user-service"))
+      assert_eq(TelemetryData::get_attribute(data, "host.name"), Some("server-01"))
+      assert_eq(TelemetryData::get_attribute(data, "region"), Some("us-west-2"))
+      
+      let events = TelemetryData::events(data)
+      assert_eq(events.length(), 3)
+      assert_eq(events[0].name, "db.query.start")
+      assert_eq(events[0].timestamp, 1640995200050)
+      assert_eq(events[1].name, "db.query.execute")
+      assert_eq(events[1].timestamp, 1640995200100)
+      assert_eq(events[2].name, "db.query.complete")
+      assert_eq(events[2].timestamp, 1640995200150)
+    }
     Err(_) => assert_true(false)
   }
   
-  // 测试签名验证失败
-  let wrong_key = "wrong-signing-key-32-bytes"
-  let wrong_verification = SecureSerializer::try_deserialize_and_verify[SensitiveData](signed_data, wrong_key)
-  match wrong_verification {
-    Ok(_) => assert_true(false) // 应该失败
-    Err(error) => assert_true(error.contains("signature") || error.contains("verify"))
+  // Test Protocol Buffers serialization with different versions
+  let v1_serializer = ProtobufSerializer::with_version("v1")
+  let v2_serializer = ProtobufSerializer::with_version("v2")
+  
+  let v1_data = ProtobufSerializer::serialize(v1_serializer, telemetry_data)
+  let v2_data = ProtobufSerializer::serialize(v2_serializer, telemetry_data)
+  
+  assert_true(v1_data.length() > 0)
+  assert_true(v2_data.length() > 0)
+  // V2 might be more efficient
+  assert_true(v2_data.length() <= v1_data.length())
+  
+  // Test backward compatibility
+  let v1_deserialized = ProtobufSerializer::deserialize(v1_serializer, v1_data)
+  let v2_deserialized = ProtobufSerializer::deserialize(v2_serializer, v2_data)
+  
+  match (v1_deserialized, v2_deserialized) {
+    (Ok(v1_data), Ok(v2_data)) => {
+      assert_eq(TelemetryData::trace_id(v1_data), TelemetryData::trace_id(v2_data))
+      assert_eq(TelemetryData::span_id(v1_data), TelemetryData::span_id(v2_data))
+    }
+    _ => assert_true(false)
   }
   
-  // 测试篡改检测
-  let tampered_data = signed_data.replace("confidential", "modified")
-  let tampered_verification = SecureSerializer::try_deserialize_and_verify[SensitiveData](tampered_data, signing_key)
-  match tampered_verification {
-    Ok(_) => assert_true(false) // 应该失败
-    Err(error) => assert_true(error.contains("signature") || error.contains("tampered"))
-  }
+  // Test Protocol Buffers serialization of collections
+  let telemetry_collection = [
+    telemetry_data,
+    TelemetryData::new("trace-12346", "span-67891", 1640995201000, 200, "ok"),
+    TelemetryData::new("trace-12347", "span-67892", 1640995202000, 100, "error")
+  ]
   
-  // 测试序列化数据加密
-  let encrypted_data = SecureSerializer::serialize_and_encrypt(sensitive_data, "encryption-key-32")
-  assert_ne(encrypted_data, "confidential information")
+  let collection_protobuf = ProtobufSerializer::serialize_collection(protobuf_serializer, telemetry_collection)
   
-  let decrypted_result = SecureSerializer::deserialize_and_decrypt[SensitiveData](encrypted_data, "encryption-key-32")
-  match decrypted_result {
-    Ok(data) => assert_eq(SensitiveData::content(data), "confidential information")
+  assert_true(collection_protobuf.length() > 0)
+  assert_true(collection_protobuf.length() < 3000) // Should be compact
+  
+  // Test Protocol Buffers deserialization of collections
+  let deserialized_collection = ProtobufSerializer::deserialize_collection(protobuf_serializer, collection_protobuf)
+  
+  match deserialized_collection {
+    Ok(collection) => {
+      assert_eq(collection.length(), 3)
+      assert_eq(TelemetryData::trace_id(collection[0]), "trace-12345")
+      assert_eq(TelemetryData::trace_id(collection[1]), "trace-12346")
+      assert_eq(TelemetryData::trace_id(collection[2]), "trace-12347")
+    }
     Err(_) => assert_true(false)
   }
   
-  // 测试解密失败
-  let wrong_encryption_key = "wrong-encryption-key-32"
-  let decryption_failure = SecureSerializer::try_deserialize_and_decrypt[SensitiveData](encrypted_data, wrong_encryption_key)
-  match decryption_failure {
-    Ok(_) => assert_true(false) // 应该失败
-    Err(error) => assert_true(error.contains("decrypt") || error.contains("key"))
+  // Test Protocol Buffers with partial data
+  let partial_data = TelemetryData::new("trace-12348", "span-67893", 1640995203000, 120, "ok")
+  // Don't add attributes or events
+  
+  let partial_protobuf = ProtobufSerializer::serialize(protobuf_serializer, partial_data)
+  let partial_deserialized = ProtobufSerializer::deserialize(protobuf_serializer, partial_protobuf)
+  
+  match partial_deserialized {
+    Ok(data) => {
+      assert_eq(TelemetryData::trace_id(data), "trace-12348")
+      assert_eq(TelemetryData::span_id(data), "span-67893")
+      assert_eq(TelemetryData::attributes(data).length(), 0)
+      assert_eq(TelemetryData::events(data).length(), 0)
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  // Test Protocol Buffers performance
+  let large_collection = []
+  
+  for i in 0..=999 { // 1000 items
+    let data = TelemetryData::new(
+      "trace-" + i.to_string(),
+      "span-" + i.to_string(),
+      1640995200000 + i * 1000,
+      100 + i,
+      if i % 10 == 0 { "error" } else { "ok" }
+    )
+    
+    TelemetryData::add_attribute(data, "index", i.to_string())
+    large_collection = large_collection.push(data)
+  }
+  
+  let serialize_start = Time::now()
+  let large_protobuf = ProtobufSerializer::serialize_collection(protobuf_serializer, large_collection)
+  let serialize_end = Time::now()
+  let serialize_time = serialize_end - serialize_start
+  
+  let deserialize_start = Time::now()
+  let large_deserialized = ProtobufSerializer::deserialize_collection(protobuf_serializer, large_protobuf)
+  let deserialize_end = Time::now()
+  let deserialize_time = deserialize_end - deserialize_start
+  
+  match large_deserialized {
+    Ok(collection) => {
+      assert_eq(collection.length(), 1000)
+      assert_true(serialize_time < 1000) // Should serialize in less than 1 second
+      assert_true(deserialize_time < 1000) // Should deserialize in less than 1 second
+    }
+    Err(_) => assert_true(false)
   }
 }
 
-// 测试10: 跨平台序列化兼容性
-test "跨平台序列化兼容性测试" {
-  // 测试大端序和小端序兼容性
-  let test_data = 123456789
-  let little_endian = BinarySerializer::serialize_with_endian(test_data, Endianness::Little)
-  let big_endian = BinarySerializer::serialize_with_endian(test_data, Endianness::Big)
+// Test 3: MessagePack Serialization and Deserialization
+test "messagepack serialization and deserialization" {
+  // Create test data structures
+  let telemetry_data = TelemetryData::new(
+    "trace-12345",
+    "span-67890",
+    1640995200000,
+    150,
+    "ok"
+  )
   
-  assert_ne(little_endian, big_endian)
+  TelemetryData::add_attribute(telemetry_data, "service.name", "user-service")
+  TelemetryData::add_attribute(telemetry_data, "host.name", "server-01")
+  TelemetryData::add_attribute(telemetry_data, "region", "us-west-2")
   
-  // 测试跨字节序解析
-  let parsed_from_little = BinarySerializer::deserialize_with_endian[Int](little_endian, Endianness::Little)
-  let parsed_from_big = BinarySerializer::deserialize_with_endian[Int](big_endian, Endianness::Big)
+  TelemetryData::add_event(telemetry_data, "db.query.start", 1640995200050)
+  TelemetryData::add_event(telemetry_data, "db.query.execute", 1640995200100)
+  TelemetryData::add_event(telemetry_data, "db.query.complete", 1640995200150)
   
-  assert_eq(parsed_from_little, test_data)
-  assert_eq(parsed_from_big, test_data)
+  // Test MessagePack serialization
+  let msgpack_serializer = MessagePackSerializer::new()
+  let serialized_msgpack = MessagePackSerializer::serialize(msgpack_serializer, telemetry_data)
   
-  // 测试平台特定序列化
-  let platform_info = PlatformInfo::new()
-  let platform_data = PlatformSerializer::serialize(platform_info)
+  assert_true(serialized_msgpack.length() > 0)
+  assert_true(serialized_msgpack.length() < 1000) // Should be compact
   
-  // 模拟不同平台解析
-  let windows_parsed = PlatformSerializer::deserialize_for_platform(platform_data, "Windows")
-  let linux_parsed = PlatformSerializer::deserialize_for_platform(platform_data, "Linux")
-  let macos_parsed = PlatformSerializer::deserialize_for_platform(platform_data, "macOS")
+  // Test MessagePack deserialization
+  let deserialized_data = MessagePackSerializer::deserialize(msgpack_serializer, serialized_msgpack)
   
-  // 所有平台应该能解析基本信息
-  assert_true(PlatformInfo::os_name(windows_parsed).length() > 0)
-  assert_true(PlatformInfo::os_name(linux_parsed).length() > 0)
-  assert_true(PlatformInfo::os_name(macos_parsed).length() > 0)
+  match deserialized_data {
+    Ok(data) => {
+      assert_eq(TelemetryData::trace_id(data), "trace-12345")
+      assert_eq(TelemetryData::span_id(data), "span-67890")
+      assert_eq(TelemetryData::timestamp(data), 1640995200000)
+      assert_eq(TelemetryData::duration(data), 150)
+      assert_eq(TelemetryData::status(data), "ok")
+      
+      assert_eq(TelemetryData::get_attribute(data, "service.name"), Some("user-service"))
+      assert_eq(TelemetryData::get_attribute(data, "host.name"), Some("server-01"))
+      assert_eq(TelemetryData::get_attribute(data, "region"), Some("us-west-2"))
+      
+      let events = TelemetryData::events(data)
+      assert_eq(events.length(), 3)
+      assert_eq(events[0].name, "db.query.start")
+      assert_eq(events[0].timestamp, 1640995200050)
+      assert_eq(events[1].name, "db.query.execute")
+      assert_eq(events[1].timestamp, 1640995200100)
+      assert_eq(events[2].name, "db.query.complete")
+      assert_eq(events[2].timestamp, 1640995200150)
+    }
+    Err(_) => assert_true(false)
+  }
   
-  // 测试版本兼容性
-  let v1_data = VersionedSerializer::serialize_v1(person)
-  let v2_data = VersionedSerializer::serialize_v2(person)
+  // Test MessagePack serialization with different options
+  let compact_serializer = MessagePackSerializer::with_options(MsgPackOptions {
+    use_str8: true,
+    use_bin8: true,
+    prefer_int32: true,
+    sort_keys: true
+  })
   
-  // V2应该能解析V1数据（向后兼容）
-  let v1_parsed_in_v2 = VersionedSerializer::deserialize_v2_from_v1(v1_data)
-  assert_eq(Person::name(v1_parsed_in_v2), Person::name(person))
+  let compact_msgpack = MessagePackSerializer::serialize(compact_serializer, telemetry_data)
   
-  // V1应该能解析V2数据（可能忽略新字段）
-  let v2_parsed_in_v1 = VersionedSerializer::deserialize_v1_from_v2(v2_data)
-  assert_eq(Person::name(v2_parsed_in_v1), Person::name(person))
+  assert_true(compact_msgpack.length() > 0)
+  // Compact options should result in smaller size
+  assert_true(compact_msgpack.length() <= serialized_msgpack.length())
   
-  // 测试语言特定的序列化格式
-  let json_with_types = JsonSerializer::serialize_with_types(person)
-  assert_true(json_with_types.contains("\"__type\":\"Person\""))
+  // Test MessagePack serialization of collections
+  let telemetry_collection = [
+    telemetry_data,
+    TelemetryData::new("trace-12346", "span-67891", 1640995201000, 200, "ok"),
+    TelemetryData::new("trace-12347", "span-67892", 1640995202000, 100, "error")
+  ]
   
-  let cross_language_parsed = CrossLanguageSerializer::deserialize_from_any(json_with_types)
-  assert_eq(CrossLanguageData::field(cross_language_parsed, "name"), "Alice")
+  let collection_msgpack = MessagePackSerializer::serialize_collection(msgpack_serializer, telemetry_collection)
   
-  // 测试标准格式兼容性
-  let standard_json = JsonSerializer::serialize(person)
-  let is_compliant = JsonValidator::is_compliant_with_standard(standard_json, "RFC8259")
-  assert_true(is_compliant)
+  assert_true(collection_msgpack.length() > 0)
+  assert_true(collection_msgpack.length() < 3000) // Should be compact
   
-  let standard_xml = XmlSerializer::serialize(element)
-  let is_xml_compliant = XmlValidator::is_compliant_with_standard(standard_xml, "XML1.0")
-  assert_true(is_xml_compliant)
-}
-
-// 辅助类型定义
-type Person {
-  name : String
-  age : Int
-  email : String
-}
-
-type PersonWithOptional {
-  name : String
-  age : Option[Int]
-  email : Option[String]
-}
-
-type PersonWithAddress {
-  name : String
-  age : Int
-  email : String
-  address : Address
-}
-
-type Address {
-  street : String
-  city : String
-  zip : String
-}
-
-type CustomDate {
-  year : Int
-  month : Int
-  day : Int
-}
-
-type UserWithPassword {
-  username : String
-  password : String
-}
-
-type SensitiveData {
-  content : String
-}
-
-type Config {
-  host : String
-  port : Int
-  database : DatabaseConfig
-  features : Array[String]
-}
-
-type DatabaseConfig {
-  name : String
-  user : String
-  password : String
-}
-
-type PersonList {
-  people : Array[Person]
-}
-
-type ExtendedPerson {
-  name : String
-  age : Int
-  email : String
-  phone : String
-}
-
-type PlatformInfo {
-  os_name : String
-  architecture : String
-  version : String
-}
-
-type CrossLanguageData {
-  type_name : String
-  fields : Map[String, String]
-}
-
-// 简化的辅助函数定义（实际实现中这些应该有完整的实现）
-fn Person::new(name : String, age : Int, email : String) -> Person {
-  { name, age, email }
-}
-
-fn Person::name(person : Person) -> String { person.name }
-fn Person::age(person : Person) -> Int { person.age }
-fn Person::email(person : Person) -> String { person.email }
-
-fn PersonWithOptional::new(name : String, age : Option[Int], email : Option[String]) -> PersonWithOptional {
-  { name, age, email }
-}
-
-fn PersonWithAddress::new(name : String, age : Int, email : String, address : Address) -> PersonWithAddress {
-  { name, age, email, address }
-}
-
-fn Address::new(street : String, city : String, zip : String) -> Address {
-  { street, city, zip }
-}
-
-fn CustomDate::new(year : Int, month : Int, day : Int) -> CustomDate {
-  { year, month, day }
-}
-
-fn CustomDate::year(date : CustomDate) -> Int { date.year }
-fn CustomDate::month(date : CustomDate) -> Int { date.month }
-fn CustomDate::day(date : CustomDate) -> Int { date.day }
-
-fn UserWithPassword::new(username : String, password : String) -> UserWithPassword {
-  { username, password }
-}
-
-fn SensitiveData::new(content : String) -> SensitiveData {
-  { content }
-}
-
-fn SensitiveData::content(data : SensitiveData) -> String { data.content }
-
-fn Config::new(host : String, port : Int, database : DatabaseConfig, features : Array[String]) -> Config {
-  { host, port, database, features }
-}
-
-fn Config::host(config : Config) -> String { config.host }
-fn Config::port(config : Config) -> Int { config.port }
-fn Config::database(config : Config) -> DatabaseConfig { config.database }
-fn Config::features(config : Config) -> Array[String] { config.features }
-
-fn DatabaseConfig::new(name : String, user : String, password : String) -> DatabaseConfig {
-  { name, user, password }
-}
-
-fn DatabaseConfig::name(config : DatabaseConfig) -> String { config.name }
-
-fn PersonList::new(people : Array[Person]) -> PersonList {
-  { people }
-}
-
-fn PersonList::people(list : PersonList) -> Array[Person] { list.people }
-
-fn ExtendedPerson::new(name : String, age : Int, email : String, phone : String) -> ExtendedPerson {
-  { name, age, email, phone }
-}
-
-fn PlatformInfo::new() -> PlatformInfo {
-  { os_name: "", architecture: "", version: "" }
-}
-
-fn PlatformInfo::os_name(info : PlatformInfo) -> String { info.os_name }
-
-fn CrossLanguageData::field(data : CrossLanguageData, field_name : String) -> String {
-  Map::get_with_default(data.fields, field_name, "")
-}
-
-fn JsonSerializer::serialize[T](data : T) -> String {
-  // JSON序列化的实现
-  ""
-}
-
-fn JsonSerializer::deserialize[T](json_string : String) -> T {
-  // JSON反序列化的实现
-  panic("not implemented")
-}
-
-fn JsonSerializer::serialize_with_formatter[T](data : T, formatter : T -> String) -> String {
-  // 带自定义格式化器的JSON序列化实现
-  ""
-}
-
-fn JsonSerializer::deserialize_with_parser[T](json_string : String, parser : String -> T) -> T {
-  // 带自定义解析器的JSON反序列化实现
-  panic("not implemented")
-}
-
-fn JsonPath::query(json_string : String, path : String) -> String {
-  // JSON路径查询的实现
-  ""
-}
-
-fn JsonUtils::merge(json1 : String, json2 : String) -> String {
-  // JSON合并的实现
-  ""
-}
-
-fn JsonValidator::is_valid(json_string : String) -> Bool {
-  // JSON验证的实现
-  true
-}
-
-fn JsonFormatter::pretty_print(json_string : String, indent : Int) -> String {
-  // JSON格式化的实现
-  ""
-}
-
-fn XmlElement::new(name : String) -> Int {
-  // 创建XML元素的实现
-  0
-}
-
-fn XmlElement::new_with_namespace(name : String, namespace : String) -> Int {
-  // 创建带命名空间的XML元素的实现
-  0
-}
-
-fn XmlElement::new_text(name : String, text : String) -> Int {
-  // 创建文本XML元素的实现
-  0
-}
-
-fn XmlElement::set_attribute(element : Int, name : String, value : String) -> Unit {
-  // 设置XML元素属性的实现
-}
-
-fn XmlElement::add_child(element : Int, child : Int) -> Unit {
-  // 添加XML子元素的实现
-}
-
-fn XmlSerializer::serialize(element : Int) -> String {
-  // XML序列化的实现
-  ""
-}
-
-fn XmlSerializer::deserialize(xml_string : String) -> Int {
-  // XML反序列化的实现
-  0
-}
-
-fn XmlElement::name(element : Int) -> String {
-  // 获取XML元素名称的实现
-  ""
-}
-
-fn XmlElement::attribute(element : Int, name : String) -> Option[String] {
-  // 获取XML元素属性的实现
-  Some("")
-}
-
-fn XmlElement::child(element : Int, name : String) -> Int {
-  // 获取XML子元素的实现
-  0
-}
-
-fn XmlElement::text(element : Int) -> String {
-  // 获取XML元素文本的实现
-  ""
-}
-
-fn XmlXPath::query(xml_string : String, xpath : String) -> String {
-  // XPath查询的实现
-  ""
-}
-
-fn XmlXPath::query_all(xml_string : String, xpath : String) -> Array[String] {
-  // XPath多值查询的实现
-  []
-}
-
-fn XmlValidator::is_valid(xml_string : String) -> Bool {
-  // XML验证的实现
-  true
-}
-
-fn XmlTransformer::transform(xml_string : String, transformer : Int -> Int) -> String {
-  // XML转换的实现
-  ""
-}
-
-fn BinarySerializer::serialize[T](data : T) -> String {
-  // 二进制序列化的实现
-  ""
-}
-
-fn BinarySerializer::deserialize[T](binary_data : String) -> T {
-  // 二进制反序列化的实现
-  panic("not implemented")
-}
-
-fn BinarySerializer::with_version(version : Int) -> Int {
-  // 创建版本化二进制序列化器的实现
-  0
-}
-
-fn BinarySerializer::serialize_with_version[T](serializer : Int, data : T) -> String {
-  // 版本化二进制序列化的实现
-  ""
-}
-
-fn BinarySerializer::deserialize_with_version[T](serializer : Int, binary_data : String) -> T {
-  // 版本化二进制反序列化的实现
-  panic("not implemented")
-}
-
-fn BinarySerializer::compress(data : String) -> String {
-  // 二进制数据压缩的实现
-  ""
-}
-
-fn BinarySerializer::decompress(compressed_data : String) -> String {
-  // 二进制数据解压缩的实现
-  ""
-}
-
-fn BinarySerializer::encrypt(data : String, key : String) -> String {
-  // 二进制数据加密的实现
-  ""
-}
-
-fn BinarySerializer::decrypt(encrypted_data : String, key : String) -> String {
-  // 二进制数据解密的实现
-  ""
-}
-
-fn BinarySerializer::serialize_with_endian[T](data : T, endianness : Endianness) -> String {
-  // 指定字节序的二进制序列化实现
-  ""
-}
-
-fn BinarySerializer::deserialize_with_endian[T](binary_data : String, endianness : Endianness) -> T {
-  // 指定字节序的二进制反序列化实现
-  panic("not implemented")
-}
-
-enum Endianness {
-  Little
-  Big
-}
-
-fn ProtoMessage::new(name : String) -> Int {
-  // 创建Protocol Buffers消息的实现
-  0
-}
-
-fn ProtoMessage::add_field(message : Int, name : String, field_type : ProtoFieldType, number : Int) -> Unit {
-  // 添加Protocol Buffers字段的实现
-}
-
-fn ProtoMessage::add_field(message : Int, name : String, field_type : ProtoFieldType, number : Int, sub_message : Int) -> Unit {
-  // 添加Protocol Buffers消息字段的实现
-}
-
-enum ProtoFieldType {
-  String
-  Int32
-  Int64
-  Float
-  Double
-  Bool
-  Message
-  RepeatedMessage
-}
-
-fn ProtoSerializer::serialize[T](data : T, message : Int) -> String {
-  // Protocol Buffers序列化的实现
-  ""
-}
-
-fn ProtoSerializer::deserialize[T](proto_data : String, message : Int) -> T {
-  // Protocol Buffers反序列化的实现
-  panic("not implemented")
-}
-
-fn CsvSerializer::serialize[T](data : T) -> String {
-  // CSV序列化的实现
-  ""
-}
-
-fn CsvSerializer::deserialize[T](csv_string : String) -> T {
-  // CSV反序列化的实现
-  panic("not implemented")
-}
-
-fn YamlSerializer::serialize[T](data : T) -> String {
-  // YAML序列化的实现
-  ""
-}
-
-fn YamlSerializer::deserialize[T](yaml_string : String) -> T {
-  // YAML反序列化的实现
-  panic("not implemented")
-}
-
-fn TomlSerializer::serialize[T](data : T) -> String {
-  // TOML序列化的实现
-  ""
-}
-
-fn TomlSerializer::deserialize[T](toml_string : String) -> T {
-  // TOML反序列化的实现
-  panic("not implemented")
-}
-
-fn CustomSerializer::new() -> Int {
-  // 创建自定义序列化器的实现
-  0
-}
-
-fn CustomSerializer::register_formatter[T](serializer : Int, type_name : String, formatter : T -> String) -> Unit {
-  // 注册自定义格式化器的实现
-}
-
-fn CustomSerializer::register_parser[T](serializer : Int, type_name : String, parser : String -> T) -> Unit {
-  // 注册自定义解析器的实现
-}
-
-fn CustomSerializer::serialize[T](serializer : Int, data : T) -> String {
-  // 自定义序列化的实现
-  ""
-}
-
-fn CustomSerializer::deserialize[T](serializer : Int, data : String) -> T {
-  // 自定义反序列化的实现
-  panic("not implemented")
-}
-
-fn JsonSerializer::try_deserialize[T](json_string : String) -> Result[T, String] {
-  // 尝试JSON反序列化的实现
-  Err("not implemented")
-}
-
-fn XmlSerializer::try_deserialize(xml_string : String) -> Result[Int, String] {
-  // 尝试XML反序列化的实现
-  Err("not implemented")
-}
-
-fn JsonSerializer::try_serialize_with_limit[T](data : T, size_limit : Int) -> Result[String, String] {
-  // 带大小限制的JSON序列化实现
-  Err("not implemented")
-}
-
-fn JsonSerializer::try_deserialize_with_limit[T](json_string : String, depth_limit : Int) -> Result[T, String] {
-  // 带深度限制的JSON反序列化实现
-  Err("not implemented")
-}
-
-fn JsonSerializer::safe_deserialize[T](json_string : String) -> Result[T, String] {
-  // 安全JSON反序列化的实现
-  Err("not implemented")
-}
-
-fn JsonSerializer::with_security_policy() -> Int {
-  // 创建安全JSON序列化器的实现
-  0
-}
-
-fn JsonSerializer::add_sensitive_field(serializer : Int, field_name : String) -> Unit {
-  // 添加敏感字段的实现
-}
-
-fn JsonSerializer::serialize_with_filter[T](serializer : Int, data : T) -> String {
-  // 带过滤器的JSON序列化实现
-  ""
-}
-
-fn JsonSerializer::with_input_validation() -> Int {
-  // 创建带输入验证的JSON反序列化器的实现
-  0
-}
-
-fn JsonSerializer::add_validation_rule[T](serializer : Int, field_name : String, validator : T -> Bool) -> Unit {
-  // 添加验证规则的实现
-}
-
-fn JsonSerializer::try_deserialize_with_validation[T](json_string : String, serializer : Int) -> Result[T, String] {
-  // 带验证的JSON反序列化实现
-  Err("not implemented")
-}
-
-fn SecureSerializer::serialize_and_sign[T](data : T, key : String) -> String {
-  // 序列化并签名的实现
-  ""
-}
-
-fn SecureSerializer::deserialize_and_verify[T](signed_data : String, key : String) -> Result[T, String] {
-  // 反序列化并验证的实现
-  Err("not implemented")
-}
-
-fn SecureSerializer::try_deserialize_and_verify[T](signed_data : String, key : String) -> Result[T, String] {
-  // 尝试反序列化并验证的实现
-  Err("not implemented")
-}
-
-fn SecureSerializer::serialize_and_encrypt[T](data : T, key : String) -> String {
-  // 序列化并加密的实现
-  ""
-}
-
-fn SecureSerializer::deserialize_and_decrypt[T](encrypted_data : String, key : String) -> Result[T, String] {
-  // 反序列化并解密的实现
-  Err("not implemented")
-}
-
-fn SecureSerializer::try_deserialize_and_decrypt[T](encrypted_data : String, key : String) -> Result[T, String] {
-  // 尝试反序列化并解密的实现
-  Err("not implemented")
-}
-
-fn PlatformSerializer::serialize(platform_info : PlatformInfo) -> String {
-  // 平台特定序列化的实现
-  ""
-}
-
-fn PlatformSerializer::deserialize_for_platform(data : String, platform : String) -> PlatformInfo {
-  // 平台特定反序列化的实现
-  PlatformInfo::new()
-}
-
-fn VersionedSerializer::serialize_v1[T](data : T) -> String {
-  // V1版本序列化的实现
-  ""
-}
-
-fn VersionedSerializer::serialize_v2[T](data : T) -> String {
-  // V2版本序列化的实现
-  ""
-}
-
-fn VersionedSerializer::deserialize_v2_from_v1(data : String) -> Person {
-  // V2解析V1数据的实现
-  Person::new("", 0, "")
-}
-
-fn VersionedSerializer::deserialize_v1_from_v2(data : String) -> Person {
-  // V1解析V2数据的实现
-  Person::new("", 0, "")
-}
-
-fn JsonSerializer::serialize_with_types[T](data : T) -> String {
-  // 带类型信息的JSON序列化实现
-  ""
-}
-
-fn CrossLanguageSerializer::deserialize_from_any(data : String) -> CrossLanguageData {
-  // 跨语言反序列化的实现
-  { type_name: "", fields: Map::empty() }
-}
-
-fn JsonValidator::is_compliant_with_standard(json_string : String, standard : String) -> Bool {
-  // 标准兼容性检查的实现
-  true
-}
-
-fn XmlValidator::is_compliant_with_standard(xml_string : String, standard : String) -> Bool {
-  // XML标准兼容性检查的实现
-  true
-}
-
-fn Time::now() -> Time {
-  // 获取当前时间的实现
-  { hour: 0, minute: 0, second: 0 }
-}
-
-fn Time::elapsed_since(start_time : Time) -> Int {
-  // 计算经过时间的实现
-  0
-}
-
-fn create_nested_json(depth : Int) -> String {
-  // 创建嵌套JSON的实现
-  if depth <= 0 {
-    "\"leaf\""
-  } else {
-    "{\"nested\":" + create_nested_json(depth - 1) + "}"
+  // Test MessagePack deserialization of collections
+  let deserialized_collection = MessagePackSerializer::deserialize_collection(msgpack_serializer, collection_msgpack)
+  
+  match deserialized_collection {
+    Ok(collection) => {
+      assert_eq(collection.length(), 3)
+      assert_eq(TelemetryData::trace_id(collection[0]), "trace-12345")
+      assert_eq(TelemetryData::trace_id(collection[1]), "trace-12346")
+      assert_eq(TelemetryData::trace_id(collection[2]), "trace-12347")
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  // Test MessagePack streaming serialization
+  let stream_serializer = MessagePackStreamSerializer::new()
+  let stream_buffer = Buffer::new()
+  
+  for data in telemetry_collection {
+    MessagePackStreamSerializer::serialize_to_stream(stream_serializer, data, stream_buffer)
+  }
+  
+  let stream_data = Buffer::to_bytes(stream_buffer)
+  assert_true(stream_data.length() > 0)
+  
+  // Test MessagePack streaming deserialization
+  let stream_deserializer = MessagePackStreamDeserializer::new()
+  let stream_reader = BufferReader::new(stream_data)
+  let deserialized_stream = []
+  
+  while MessagePackStreamDeserializer::has_next(stream_deserializer, stream_reader) {
+    match MessagePackStreamDeserializer::deserialize_next(stream_deserializer, stream_reader) {
+      Ok(data) => deserialized_stream = deserialized_stream.push(data),
+      Err(_) => break
+    }
+  }
+  
+  assert_eq(deserialized_stream.length(), 3)
+  assert_eq(TelemetryData::trace_id(deserialized_stream[0]), "trace-12345")
+  assert_eq(TelemetryData::trace_id(deserialized_stream[1]), "trace-12346")
+  assert_eq(TelemetryData::trace_id(deserialized_stream[2]), "trace-12347")
+}
+
+// Test 4: XML Serialization and Deserialization
+test "xml serialization and deserialization" {
+  // Create test data structures
+  let telemetry_data = TelemetryData::new(
+    "trace-12345",
+    "span-67890",
+    1640995200000,
+    150,
+    "ok"
+  )
+  
+  TelemetryData::add_attribute(telemetry_data, "service.name", "user-service")
+  TelemetryData::add_attribute(telemetry_data, "host.name", "server-01")
+  TelemetryData::add_attribute(telemetry_data, "region", "us-west-2")
+  
+  TelemetryData::add_event(telemetry_data, "db.query.start", 1640995200050)
+  TelemetryData::add_event(telemetry_data, "db.query.execute", 1640995200100)
+  TelemetryData::add_event(telemetry_data, "db.query.complete", 1640995200150)
+  
+  // Test XML serialization
+  let xml_serializer = XmlSerializer::new()
+  let serialized_xml = XmlSerializer::serialize(xml_serializer, telemetry_data)
+  
+  assert_true(serialized_xml.length() > 0)
+  assert_true(serialized_xml.contains("<TelemetryData>"))
+  assert_true(serialized_xml.contains("</TelemetryData>"))
+  assert_true(serialized_xml.contains("<trace_id>trace-12345</trace_id>"))
+  assert_true(serialized_xml.contains("<span_id>span-67890</span_id>"))
+  assert_true(serialized_xml.contains("<timestamp>1640995200000</timestamp>"))
+  assert_true(serialized_xml.contains("<duration>150</duration>"))
+  assert_true(serialized_xml.contains("<status>ok</status>"))
+  assert_true(serialized_xml.contains("<attributes>"))
+  assert_true(serialized_xml.contains("<events>"))
+  
+  // Test XML deserialization
+  let deserialized_data = XmlSerializer::deserialize(xml_serializer, serialized_xml)
+  
+  match deserialized_data {
+    Ok(data) => {
+      assert_eq(TelemetryData::trace_id(data), "trace-12345")
+      assert_eq(TelemetryData::span_id(data), "span-67890")
+      assert_eq(TelemetryData::timestamp(data), 1640995200000)
+      assert_eq(TelemetryData::duration(data), 150)
+      assert_eq(TelemetryData::status(data), "ok")
+      
+      assert_eq(TelemetryData::get_attribute(data, "service.name"), Some("user-service"))
+      assert_eq(TelemetryData::get_attribute(data, "host.name"), Some("server-01"))
+      assert_eq(TelemetryData::get_attribute(data, "region"), Some("us-west-2"))
+      
+      let events = TelemetryData::events(data)
+      assert_eq(events.length(), 3)
+      assert_eq(events[0].name, "db.query.start")
+      assert_eq(events[0].timestamp, 1640995200050)
+      assert_eq(events[1].name, "db.query.execute")
+      assert_eq(events[1].timestamp, 1640995200100)
+      assert_eq(events[2].name, "db.query.complete")
+      assert_eq(events[2].timestamp, 1640995200150)
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  // Test XML serialization with pretty printing
+  let pretty_xml = XmlSerializer::serialize_pretty(xml_serializer, telemetry_data)
+  
+  assert_true(pretty_xml.contains("\n")) // Should contain newlines
+  assert_true(pretty_xml.contains("  ")) // Should contain indentation
+  assert_true(pretty_xml.contains("<TelemetryData>"))
+  
+  // Test XML serialization with custom options
+  let custom_serializer = XmlSerializer::with_options(XmlOptions {
+    indent: 4,
+    omit_xml_declaration: false,
+    use_attributes: true,
+    namespace: "http://azimuth.io/telemetry"
+  })
+  
+  let custom_xml = XmlSerializer::serialize(custom_serializer, telemetry_data)
+  
+  assert_true(custom_xml.contains("<?xml"))
+  assert_true(custom_xml.contains("http://azimuth.io/telemetry"))
+  assert_true(custom_xml.length() > 0)
+  
+  // Test XML deserialization with schema validation
+  let xml_schema = XmlSchema::from_file("telemetry_schema.xsd")
+  match xml_schema {
+    Ok(schema) => {
+      let validating_deserializer = XmlValidatingDeserializer::new(schema)
+      
+      let validated_result = XmlValidatingDeserializer::deserialize(validating_deserializer, serialized_xml)
+      
+      match validated_result {
+        Ok(data) => {
+          assert_eq(TelemetryData::trace_id(data), "trace-12345")
+        }
+        Err(error) => {
+          // Should not fail with valid data
+          assert_true(false)
+        }
+      }
+      
+      // Test with invalid XML
+      let invalid_xml = "<TelemetryData><trace_id>123</trace_id></TelemetryData>" // Missing required fields
+      
+      let invalid_result = XmlValidatingDeserializer::deserialize(validating_deserializer, invalid_xml)
+      
+      match invalid_result {
+        Ok(_) => assert_true(false) // Should fail with invalid data
+        Err(error) => {
+          assert_true(error.contains("validation") || error.contains("schema"))
+        }
+      }
+    }
+    Err(_) => {
+      // Schema file might not exist in test environment
+      assert_true(true)
+    }
+  }
+  
+  // Test XML serialization of collections
+  let telemetry_collection = [
+    telemetry_data,
+    TelemetryData::new("trace-12346", "span-67891", 1640995201000, 200, "ok"),
+    TelemetryData::new("trace-12347", "span-67892", 1640995202000, 100, "error")
+  ]
+  
+  let collection_xml = XmlSerializer::serialize_collection(xml_serializer, telemetry_collection)
+  
+  assert_true(collection_xml.contains("<TelemetryDataCollection>"))
+  assert_true(collection_xml.contains("</TelemetryDataCollection>"))
+  assert_true(collection_xml.contains("<TelemetryData>"))
+  assert_true(collection_xml.contains("</TelemetryData>"))
+  assert_true(collection_xml.contains("<trace_id>trace-12345</trace_id>"))
+  assert_true(collection_xml.contains("<trace_id>trace-12346</trace_id>"))
+  assert_true(collection_xml.contains("<trace_id>trace-12347</trace_id>"))
+  
+  // Test XML deserialization of collections
+  let deserialized_collection = XmlSerializer::deserialize_collection(xml_serializer, collection_xml)
+  
+  match deserialized_collection {
+    Ok(collection) => {
+      assert_eq(collection.length(), 3)
+      assert_eq(TelemetryData::trace_id(collection[0]), "trace-12345")
+      assert_eq(TelemetryData::trace_id(collection[1]), "trace-12346")
+      assert_eq(TelemetryData::trace_id(collection[2]), "trace-12347")
+    }
+    Err(_) => assert_true(false)
+  }
+}
+
+// Test 5: Custom Binary Serialization and Deserialization
+test "custom binary serialization and deserialization" {
+  // Create test data structures
+  let telemetry_data = TelemetryData::new(
+    "trace-12345",
+    "span-67890",
+    1640995200000,
+    150,
+    "ok"
+  )
+  
+  TelemetryData::add_attribute(telemetry_data, "service.name", "user-service")
+  TelemetryData::add_attribute(telemetry_data, "host.name", "server-01")
+  TelemetryData::add_attribute(telemetry_data, "region", "us-west-2")
+  
+  TelemetryData::add_event(telemetry_data, "db.query.start", 1640995200050)
+  TelemetryData::add_event(telemetry_data, "db.query.execute", 1640995200100)
+  TelemetryData::add_event(telemetry_data, "db.query.complete", 1640995200150)
+  
+  // Test custom binary serialization
+  let binary_serializer = CustomBinarySerializer::new()
+  let serialized_binary = CustomBinarySerializer::serialize(binary_serializer, telemetry_data)
+  
+  assert_true(serialized_binary.length() > 0)
+  assert_true(serialized_binary.length() < 500) // Should be very compact
+  
+  // Test custom binary deserialization
+  let deserialized_data = CustomBinarySerializer::deserialize(binary_serializer, serialized_binary)
+  
+  match deserialized_data {
+    Ok(data) => {
+      assert_eq(TelemetryData::trace_id(data), "trace-12345")
+      assert_eq(TelemetryData::span_id(data), "span-67890")
+      assert_eq(TelemetryData::timestamp(data), 1640995200000)
+      assert_eq(TelemetryData::duration(data), 150)
+      assert_eq(TelemetryData::status(data), "ok")
+      
+      assert_eq(TelemetryData::get_attribute(data, "service.name"), Some("user-service"))
+      assert_eq(TelemetryData::get_attribute(data, "host.name"), Some("server-01"))
+      assert_eq(TelemetryData::get_attribute(data, "region"), Some("us-west-2"))
+      
+      let events = TelemetryData::events(data)
+      assert_eq(events.length(), 3)
+      assert_eq(events[0].name, "db.query.start")
+      assert_eq(events[0].timestamp, 1640995200050)
+      assert_eq(events[1].name, "db.query.execute")
+      assert_eq(events[1].timestamp, 1640995200100)
+      assert_eq(events[2].name, "db.query.complete")
+      assert_eq(events[2].timestamp, 1640995200150)
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  // Test custom binary serialization with compression
+  let compressed_serializer = CustomBinarySerializer::with_compression("gzip")
+  let compressed_binary = CustomBinarySerializer::serialize(compressed_serializer, telemetry_data)
+  
+  assert_true(compressed_binary.length() > 0)
+  // Compressed data should be smaller or similar in size
+  assert_true(compressed_binary.length() <= serialized_binary.length())
+  
+  // Test custom binary deserialization with compression
+  let decompressed_data = CustomBinarySerializer::deserialize(compressed_serializer, compressed_binary)
+  
+  match decompressed_data {
+    Ok(data) => {
+      assert_eq(TelemetryData::trace_id(data), "trace-12345")
+      assert_eq(TelemetryData::span_id(data), "span-67890")
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  // Test custom binary serialization with encryption
+  let encryption_key = EncryptionKey::generate()
+  let encrypted_serializer = CustomBinarySerializer::with_encryption(encryption_key, "AES-256-GCM")
+  let encrypted_binary = CustomBinarySerializer::serialize(encrypted_serializer, telemetry_data)
+  
+  assert_true(encrypted_binary.length() > 0)
+  // Encrypted data should be different from unencrypted
+  assert_true(encrypted_binary != serialized_binary)
+  
+  // Test custom binary deserialization with encryption
+  let decrypted_data = CustomBinarySerializer::deserialize(encrypted_serializer, encrypted_binary)
+  
+  match decrypted_data {
+    Ok(data) => {
+      assert_eq(TelemetryData::trace_id(data), "trace-12345")
+      assert_eq(TelemetryData::span_id(data), "span-67890")
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  // Test custom binary serialization with versioning
+  let v1_serializer = CustomBinarySerializer::with_version("v1")
+  let v2_serializer = CustomBinarySerializer::with_version("v2")
+  
+  let v1_binary = CustomBinarySerializer::serialize(v1_serializer, telemetry_data)
+  let v2_binary = CustomBinarySerializer::serialize(v2_serializer, telemetry_data)
+  
+  // Different versions might have different formats
+  assert_true(v1_binary.length() > 0)
+  assert_true(v2_binary.length() > 0)
+  
+  // Test backward compatibility
+  let v1_deserialized = CustomBinarySerializer::deserialize(v2_serializer, v1_binary) // V2 should read V1
+  match v1_deserialized {
+    Ok(data) => {
+      assert_eq(TelemetryData::trace_id(data), "trace-12345")
+      assert_eq(TelemetryData::span_id(data), "span-67890")
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  // Test custom binary serialization of collections
+  let telemetry_collection = [
+    telemetry_data,
+    TelemetryData::new("trace-12346", "span-67891", 1640995201000, 200, "ok"),
+    TelemetryData::new("trace-12347", "span-67892", 1640995202000, 100, "error")
+  ]
+  
+  let collection_binary = CustomBinarySerializer::serialize_collection(binary_serializer, telemetry_collection)
+  
+  assert_true(collection_binary.length() > 0)
+  assert_true(collection_binary.length() < 1500) // Should be compact
+  
+  // Test custom binary deserialization of collections
+  let deserialized_collection = CustomBinarySerializer::deserialize_collection(binary_serializer, collection_binary)
+  
+  match deserialized_collection {
+    Ok(collection) => {
+      assert_eq(collection.length(), 3)
+      assert_eq(TelemetryData::trace_id(collection[0]), "trace-12345")
+      assert_eq(TelemetryData::trace_id(collection[1]), "trace-12346")
+      assert_eq(TelemetryData::trace_id(collection[2]), "trace-12347")
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  // Test custom binary streaming serialization
+  let stream_serializer = CustomBinaryStreamSerializer::new()
+  let stream_buffer = Buffer::new()
+  
+  for data in telemetry_collection {
+    CustomBinaryStreamSerializer::serialize_to_stream(stream_serializer, data, stream_buffer)
+  }
+  
+  let stream_data = Buffer::to_bytes(stream_buffer)
+  assert_true(stream_data.length() > 0)
+  
+  // Test custom binary streaming deserialization
+  let stream_deserializer = CustomBinaryStreamDeserializer::new()
+  let stream_reader = BufferReader::new(stream_data)
+  let deserialized_stream = []
+  
+  while CustomBinaryStreamDeserializer::has_next(stream_deserializer, stream_reader) {
+    match CustomBinaryStreamDeserializer::deserialize_next(stream_deserializer, stream_reader) {
+      Ok(data) => deserialized_stream = deserialized_stream.push(data),
+      Err(_) => break
+    }
+  }
+  
+  assert_eq(deserialized_stream.length(), 3)
+  assert_eq(TelemetryData::trace_id(deserialized_stream[0]), "trace-12345")
+  assert_eq(TelemetryData::trace_id(deserialized_stream[1]), "trace-12346")
+  assert_eq(TelemetryData::trace_id(deserialized_stream[2]), "trace-12347")
+}
+
+// Test 6: Serialization Format Comparison and Performance
+test "serialization format comparison and performance" {
+  // Create test data structures
+  let telemetry_data = TelemetryData::new(
+    "trace-12345",
+    "span-67890",
+    1640995200000,
+    150,
+    "ok"
+  )
+  
+  TelemetryData::add_attribute(telemetry_data, "service.name", "user-service")
+  TelemetryData::add_attribute(telemetry_data, "host.name", "server-01")
+  TelemetryData::add_attribute(telemetry_data, "region", "us-west-2")
+  TelemetryData::add_attribute(telemetry_data, "environment", "production")
+  TelemetryData::add_attribute(telemetry_data, "version", "1.2.3")
+  
+  TelemetryData::add_event(telemetry_data, "db.query.start", 1640995200050)
+  TelemetryData::add_event(telemetry_data, "db.query.execute", 1640995200100)
+  TelemetryData::add_event(telemetry_data, "db.query.complete", 1640995200150)
+  TelemetryData::add_event(telemetry_data, "cache.check", 1640995200160)
+  TelemetryData::add_event(telemetry_data, "cache.hit", 1640995200170)
+  
+  // Test serialization with different formats
+  let json_serializer = JsonSerializer::new()
+  let protobuf_serializer = ProtobufSerializer::new()
+  let msgpack_serializer = MessagePackSerializer::new()
+  let xml_serializer = XmlSerializer::new()
+  let binary_serializer = CustomBinarySerializer::new()
+  
+  // Serialize data with each format
+  let json_start = Time::now()
+  let json_data = JsonSerializer::serialize(json_serializer, telemetry_data)
+  let json_end = Time::now()
+  let json_serialize_time = json_end - json_start
+  
+  let protobuf_start = Time::now()
+  let protobuf_data = ProtobufSerializer::serialize(protobuf_serializer, telemetry_data)
+  let protobuf_end = Time::now()
+  let protobuf_serialize_time = protobuf_end - protobuf_start
+  
+  let msgpack_start = Time::now()
+  let msgpack_data = MessagePackSerializer::serialize(msgpack_serializer, telemetry_data)
+  let msgpack_end = Time::now()
+  let msgpack_serialize_time = msgpack_end - msgpack_start
+  
+  let xml_start = Time::now()
+  let xml_data = XmlSerializer::serialize(xml_serializer, telemetry_data)
+  let xml_end = Time::now()
+  let xml_serialize_time = xml_end - xml_start
+  
+  let binary_start = Time::now()
+  let binary_data = CustomBinarySerializer::serialize(binary_serializer, telemetry_data)
+  let binary_end = Time::now()
+  let binary_serialize_time = binary_end - binary_start
+  
+  // Test deserialization with each format
+  let json_deserialize_start = Time::now()
+  let json_deserialized = JsonSerializer::deserialize(json_serializer, json_data)
+  let json_deserialize_end = Time::now()
+  let json_deserialize_time = json_deserialize_end - json_deserialize_start
+  
+  let protobuf_deserialize_start = Time::now()
+  let protobuf_deserialized = ProtobufSerializer::deserialize(protobuf_serializer, protobuf_data)
+  let protobuf_deserialize_end = Time::now()
+  let protobuf_deserialize_time = protobuf_deserialize_end - protobuf_deserialize_start
+  
+  let msgpack_deserialize_start = Time::now()
+  let msgpack_deserialized = MessagePackSerializer::deserialize(msgpack_serializer, msgpack_data)
+  let msgpack_deserialize_end = Time::now()
+  let msgpack_deserialize_time = msgpack_deserialize_end - msgpack_deserialize_start
+  
+  let xml_deserialize_start = Time::now()
+  let xml_deserialized = XmlSerializer::deserialize(xml_serializer, xml_data)
+  let xml_deserialize_end = Time::now()
+  let xml_deserialize_time = xml_deserialize_end - xml_deserialize_start
+  
+  let binary_deserialize_start = Time::now()
+  let binary_deserialized = CustomBinarySerializer::deserialize(binary_serializer, binary_data)
+  let binary_deserialize_end = Time::now()
+  let binary_deserialize_time = binary_deserialize_end - binary_deserialize_start
+  
+  // Verify all deserializations succeeded
+  match (json_deserialized, protobuf_deserialized, msgpack_deserialized, xml_deserialized, binary_deserialized) {
+    (Ok(json_data), Ok(protobuf_data), Ok(msgpack_data), Ok(xml_data), Ok(binary_data)) => {
+      // Verify data integrity
+      assert_eq(TelemetryData::trace_id(json_data), TelemetryData::trace_id(protobuf_data))
+      assert_eq(TelemetryData::trace_id(protobuf_data), TelemetryData::trace_id(msgpack_data))
+      assert_eq(TelemetryData::trace_id(msgpack_data), TelemetryData::trace_id(xml_data))
+      assert_eq(TelemetryData::trace_id(xml_data), TelemetryData::trace_id(binary_data))
+      
+      // Compare serialization sizes
+      let json_size = json_data.length()
+      let protobuf_size = protobuf_data.length()
+      let msgpack_size = msgpack_data.length()
+      let xml_size = xml_data.length()
+      let binary_size = binary_data.length()
+      
+      // Binary formats should be more compact than text formats
+      assert_true(protobuf_size < json_size)
+      assert_true(protobuf_size < xml_size)
+      assert_true(msgpack_size < json_size)
+      assert_true(msgpack_size < xml_size)
+      assert_true(binary_size < json_size)
+      assert_true(binary_size < xml_size)
+      
+      // Custom binary should be most compact
+      assert_true(binary_size <= protobuf_size)
+      assert_true(binary_size <= msgpack_size)
+      
+      // XML should be most verbose
+      assert_true(xml_size > json_size)
+      
+      // Compare serialization performance
+      let serialize_times = [
+        ("json", json_serialize_time),
+        ("protobuf", protobuf_serialize_time),
+        ("msgpack", msgpack_serialize_time),
+        ("xml", xml_serialize_time),
+        ("binary", binary_serialize_time)
+      ]
+      
+      let fastest_serialize = serialize_times.reduce(fn(fastest, current) {
+        if current.1 < fastest.1 {
+          current
+        } else {
+          fastest
+        }
+      }, serialize_times[0])
+      
+      let slowest_serialize = serialize_times.reduce(fn(slowest, current) {
+        if current.1 > slowest.1 {
+          current
+        } else {
+          slowest
+        }
+      }, serialize_times[0])
+      
+      // Binary formats should generally be faster than text formats
+      assert_true(fastest_serialize.0 == "binary" || fastest_serialize.0 == "protobuf" || fastest_serialize.0 == "msgpack")
+      assert_true(slowest_serialize.0 == "xml" || slowest_serialize.0 == "json")
+      
+      // Compare deserialization performance
+      let deserialize_times = [
+        ("json", json_deserialize_time),
+        ("protobuf", protobuf_deserialize_time),
+        ("msgpack", msgpack_deserialize_time),
+        ("xml", xml_deserialize_time),
+        ("binary", binary_deserialize_time)
+      ]
+      
+      let fastest_deserialize = deserialize_times.reduce(fn(fastest, current) {
+        if current.1 < fastest.1 {
+          current
+        } else {
+          fastest
+        }
+      }, deserialize_times[0])
+      
+      let slowest_deserialize = deserialize_times.reduce(fn(slowest, current) {
+        if current.1 > slowest.1 {
+          current
+        } else {
+          slowest
+        }
+      }, deserialize_times[0])
+      
+      // Binary formats should generally be faster than text formats
+      assert_true(fastest_deserialize.0 == "binary" || fastest_deserialize.0 == "protobuf" || fastest_deserialize.0 == "msgpack")
+      assert_true(slowest_deserialize.0 == "xml" || slowest_deserialize.0 == "json")
+    }
+    _ => assert_true(false)
+  }
+  
+  // Test serialization performance with large collections
+  let large_collection = []
+  
+  for i in 0..=999 { // 1000 items
+    let data = TelemetryData::new(
+      "trace-" + i.to_string(),
+      "span-" + i.to_string(),
+      1640995200000 + i * 1000,
+      100 + i,
+      if i % 10 == 0 { "error" } else { "ok" }
+    )
+    
+    TelemetryData::add_attribute(data, "index", i.to_string())
+    TelemetryData::add_attribute(data, "batch", "test")
+    
+    if i % 5 == 0 {
+      TelemetryData::add_event(data, "event-" + i.to_string(), 1640995200000 + i * 1000 + 500)
+    }
+    
+    large_collection = large_collection.push(data)
+  }
+  
+  // Serialize large collection with each format
+  let large_json_start = Time::now()
+  let large_json_data = JsonSerializer::serialize_collection(json_serializer, large_collection)
+  let large_json_end = Time::now()
+  let large_json_time = large_json_end - large_json_start
+  
+  let large_protobuf_start = Time::now()
+  let large_protobuf_data = ProtobufSerializer::serialize_collection(protobuf_serializer, large_collection)
+  let large_protobuf_end = Time::now()
+  let large_protobuf_time = large_protobuf_end - large_protobuf_start
+  
+  let large_msgpack_start = Time::now()
+  let large_msgpack_data = MessagePackSerializer::serialize_collection(msgpack_serializer, large_collection)
+  let large_msgpack_end = Time::now()
+  let large_msgpack_time = large_msgpack_end - large_msgpack_start
+  
+  let large_binary_start = Time::now()
+  let large_binary_data = CustomBinarySerializer::serialize_collection(binary_serializer, large_collection)
+  let large_binary_end = Time::now()
+  let large_binary_time = large_binary_end - large_binary_start
+  
+  // Compare large collection serialization performance
+  let large_serialize_times = [
+    ("json", large_json_time, large_json_data.length()),
+    ("protobuf", large_protobuf_time, large_protobuf_data.length()),
+    ("msgpack", large_msgpack_time, large_msgpack_data.length()),
+    ("binary", large_binary_time, large_binary_data.length())
+  ]
+  
+  let fastest_large_serialize = large_serialize_times.reduce(fn(fastest, current) {
+    if current.1 < fastest.1 {
+      current
+    } else {
+      fastest
+    }
+  }, large_serialize_times[0])
+  
+  // Binary formats should be significantly faster for large collections
+  assert_true(fastest_large_serialize.0 == "binary" || fastest_large_serialize.0 == "protobuf" || fastest_large_serialize.0 == "msgpack")
+  
+  // Compare large collection sizes
+  let json_size = large_json_data.length()
+  let protobuf_size = large_protobuf_data.length()
+  let msgpack_size = large_msgpack_data.length()
+  let binary_size = large_binary_data.length()
+  
+  // Binary formats should be significantly more compact for large collections
+  assert_true(protobuf_size < json_size * 0.5) // At least 50% smaller
+  assert_true(msgpack_size < json_size * 0.5) // At least 50% smaller
+  assert_true(binary_size < json_size * 0.5) // At least 50% smaller
+}
+
+// Test 7: Serialization Error Handling and Recovery
+test "serialization error handling and recovery" {
+  // Test JSON error handling
+  let json_serializer = JsonSerializer::new()
+  
+  // Test with invalid JSON
+  let invalid_json = "{\"trace_id\":123,\"span_id\":\"span-67890\"}" // trace_id should be string
+  
+  let json_error_result = JsonSerializer::deserialize(json_serializer, invalid_json)
+  
+  match json_error_result {
+    Ok(_) => assert_true(false) // Should fail with invalid data
+    Err(error) => {
+      assert_true(error.contains("parse") || error.contains("type") || error.contains("invalid"))
+    }
+  }
+  
+  // Test with malformed JSON
+  let malformed_json = "{\"trace_id\":\"trace-12345\",\"span_id\":\"span-67890\"" // Missing closing brace
+  
+  let malformed_result = JsonSerializer::deserialize(json_serializer, malformed_json)
+  
+  match malformed_result {
+    Ok(_) => assert_true(false) // Should fail with malformed JSON
+    Err(error) => {
+      assert_true(error.contains("parse") || error.contains("syntax") || error.contains("malformed"))
+    }
+  }
+  
+  // Test with incomplete JSON
+  let incomplete_json = "{\"trace_id\":\"trace-12345\"}" // Missing required fields
+  
+  let incomplete_result = JsonSerializer::deserialize(json_serializer, incomplete_json)
+  
+  match incomplete_result {
+    Ok(_) => assert_true(false) // Should fail with incomplete data
+    Err(error) => {
+      assert_true(error.contains("required") || error.contains("missing") || error.contains("field"))
+    }
+  }
+  
+  // Test Protocol Buffers error handling
+  let protobuf_serializer = ProtobufSerializer::new()
+  
+  // Test with invalid protobuf data
+  let invalid_protobuf = [0x00, 0x01, 0x02, 0x03] // Invalid protobuf data
+  
+  let protobuf_error_result = ProtobufSerializer::deserialize(protobuf_serializer, invalid_protobuf)
+  
+  match protobuf_error_result {
+    Ok(_) => assert_true(false) // Should fail with invalid data
+    Err(error) => {
+      assert_true(error.contains("parse") || error.contains("invalid") || error.contains("protobuf"))
+    }
+  }
+  
+  // Test with truncated protobuf data
+  let telemetry_data = TelemetryData::new("trace-12345", "span-67890", 1640995200000, 150, "ok")
+  let valid_protobuf = ProtobufSerializer::serialize(protobuf_serializer, telemetry_data)
+  
+  // Truncate the data
+  let truncated_protobuf = valid_protobuf.slice(0, valid_protobuf.length() / 2)
+  
+  let truncated_result = ProtobufSerializer::deserialize(protobuf_serializer, truncated_protobuf)
+  
+  match truncated_result {
+    Ok(_) => assert_true(false) // Should fail with truncated data
+    Err(error) => {
+      assert_true(error.contains("truncated") || error.contains("incomplete") || error.contains("eof"))
+    }
+  }
+  
+  // Test MessagePack error handling
+  let msgpack_serializer = MessagePackSerializer::new()
+  
+  // Test with invalid MessagePack data
+  let invalid_msgpack = [0xFF, 0xFF, 0xFF, 0xFF] // Invalid MessagePack data
+  
+  let msgpack_error_result = MessagePackSerializer::deserialize(msgpack_serializer, invalid_msgpack)
+  
+  match msgpack_error_result {
+    Ok(_) => assert_true(false) // Should fail with invalid data
+    Err(error) => {
+      assert_true(error.contains("parse") || error.contains("invalid") || error.contains("msgpack"))
+    }
+  }
+  
+  // Test with truncated MessagePack data
+  let valid_msgpack = MessagePackSerializer::serialize(msgpack_serializer, telemetry_data)
+  
+  // Truncate the data
+  let truncated_msgpack = valid_msgpack.slice(0, valid_msgpack.length() / 2)
+  
+  let truncated_msgpack_result = MessagePackSerializer::deserialize(msgpack_serializer, truncated_msgpack)
+  
+  match truncated_msgpack_result {
+    Ok(_) => assert_true(false) // Should fail with truncated data
+    Err(error) => {
+      assert_true(error.contains("truncated") || error.contains("incomplete") || error.contains("eof"))
+    }
+  }
+  
+  // Test XML error handling
+  let xml_serializer = XmlSerializer::new()
+  
+  // Test with malformed XML
+  let malformed_xml = "<TelemetryData><trace_id>trace-12345</TelemetryData>" // Missing closing tag
+  
+  let malformed_xml_result = XmlSerializer::deserialize(xml_serializer, malformed_xml)
+  
+  match malformed_xml_result {
+    Ok(_) => assert_true(false) // Should fail with malformed XML
+    Err(error) => {
+      assert_true(error.contains("parse") || error.contains("xml") || error.contains("malformed"))
+    }
+  }
+  
+  // Test with incomplete XML
+  let incomplete_xml = "<TelemetryData><trace_id>trace-12345</trace_id></TelemetryData>" // Missing required fields
+  
+  let incomplete_xml_result = XmlSerializer::deserialize(xml_serializer, incomplete_xml)
+  
+  match incomplete_xml_result {
+    Ok(_) => assert_true(false) // Should fail with incomplete data
+    Err(error) => {
+      assert_true(error.contains("required") || error.contains("missing") || error.contains("field"))
+    }
+  }
+  
+  // Test custom binary error handling
+  let binary_serializer = CustomBinarySerializer::new()
+  
+  // Test with invalid binary data
+  let invalid_binary = [0x00, 0x01, 0x02, 0x03] // Invalid binary data
+  
+  let binary_error_result = CustomBinarySerializer::deserialize(binary_serializer, invalid_binary)
+  
+  match binary_error_result {
+    Ok(_) => assert_true(false) // Should fail with invalid data
+    Err(error) => {
+      assert_true(error.contains("parse") || error.contains("invalid") || error.contains("binary"))
+    }
+  }
+  
+  // Test with version mismatch
+  let v1_serializer = CustomBinarySerializer::with_version("v1")
+  let v2_serializer = CustomBinarySerializer::with_version("v2")
+  
+  let v1_data = CustomBinarySerializer::serialize(v1_serializer, telemetry_data)
+  
+  // Try to deserialize with incompatible version
+  let incompatible_result = CustomBinarySerializer::deserialize_with_version(v2_serializer, v1_data, "v3") // Non-existent version
+  
+  match incompatible_result {
+    Ok(_) => assert_true(false) // Should fail with version mismatch
+    Err(error) => {
+      assert_true(error.contains("version") || error.contains("unsupported") || error.contains("incompatible"))
+    }
+  }
+  
+  // Test error recovery with fallback deserializer
+  let fallback_deserializer = FallbackDeserializer::new([
+    json_serializer,
+    protobuf_serializer,
+    msgpack_serializer
+  ])
+  
+  // Try to deserialize with different formats
+  let json_data = JsonSerializer::serialize(json_serializer, telemetry_data)
+  
+  let fallback_result = FallbackDeserializer::deserialize(fallback_deserializer, json_data)
+  
+  match fallback_result {
+    Ok(data) => {
+      assert_eq(TelemetryData::trace_id(data), "trace-12345")
+      assert_eq(TelemetryData::span_id(data), "span-67890")
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  // Test error recovery with partial data
+  let partial_deserializer = PartialDeserializer::new()
+  
+  // Try to deserialize with partial data
+  let partial_result = PartialDeserializer::deserialize(partial_deserializer, truncated_protobuf)
+  
+  match partial_result {
+    Ok(data) => {
+      // Should succeed with partial data if possible
+      assert_true(TelemetryData::trace_id(data).length() > 0)
+    }
+    Err(_) => {
+      // Might fail if no partial data can be recovered
+      assert_true(true)
+    }
+  }
+  
+  // Test serialization error logging
+  let error_logger = SerializationErrorLogger::new()
+  
+  // Configure error logger
+  SerializationErrorLogger::log_to_file(error_logger, "/tmp/serialization_errors.log")
+  SerializationErrorLogger::set_max_log_size(error_logger, 1024 * 1024) // 1MB
+  
+  // Trigger some errors to log
+  JsonSerializer::deserialize(json_serializer, invalid_json);
+  ProtobufSerializer::deserialize(protobuf_serializer, invalid_protobuf);
+  XmlSerializer::deserialize(xml_serializer, malformed_xml);
+  
+  // Check error log
+  let error_log = SerializationErrorLogger::get_errors(error_logger)
+  
+  assert_true(error_log.length() >= 3)
+  
+  for error in error_log {
+    assert_true(error.timestamp > 0)
+    assert_true(error.error_type.length() > 0)
+    assert_true(error.message.length() > 0)
+    assert_true(error.format.length() > 0)
   }
 }

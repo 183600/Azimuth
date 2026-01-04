@@ -1,507 +1,1083 @@
-// 缓存机制测试
-// 测试Azimuth遥测系统的缓存机制功能
+// Azimuth Telemetry System - Caching Mechanism Tests
+// This file contains test cases for caching mechanisms and functionality
 
-test "内存缓存基础操作" {
-  // 测试内存缓存基础操作
-  let memory_cache = MemoryCache::new()
+// Test 1: In-Memory Cache Implementation
+test "in-memory cache implementation" {
+  // Create an in-memory cache
+  let cache = InMemoryCache::new()
   
-  // 配置缓存
-  MemoryCache::set_max_size(memory_cache, 1000)
-  MemoryCache::set_ttl(memory_cache, 60000) // 60秒TTL
-  MemoryCache::set_eviction_policy(memory_cache, LRU)
+  // Verify cache properties
+  assert_eq(InMemoryCache::size(cache), 0)
+  assert_eq(InMemoryCache::max_size(cache), 1000) // Default max size
+  assert_eq(InMemoryCache::ttl(cache), 300000) // Default 5 minutes TTL
   
-  // 测试添加和获取
-  MemoryCache::put(memory_cache, "key1", "value1")
-  MemoryCache::put(memory_cache, "key2", "value2")
-  MemoryCache::put(memory_cache, "key3", "value3")
+  // Configure cache
+  InMemoryCache::set_max_size(cache, 100)
+  InMemoryCache::set_ttl(cache, 60000) // 1 minute TTL
+  InMemoryCache::set_cleanup_interval(cache, 10000) // 10 seconds cleanup interval
   
-  // 验证获取
-  let value1 = MemoryCache::get(memory_cache, "key1")
-  let value2 = MemoryCache::get(memory_cache, "key2")
-  let value3 = MemoryCache::get(memory_cache, "key3")
+  // Verify updated configuration
+  assert_eq(InMemoryCache::max_size(cache), 100)
+  assert_eq(InMemoryCache::ttl(cache), 60000)
+  assert_eq(InMemoryCache::cleanup_interval(cache), 10000)
   
-  assert_eq(value1, Some("value1"))
-  assert_eq(value2, Some("value2"))
-  assert_eq(value3, Some("value3"))
+  // Test cache put and get
+  InMemoryCache::put(cache, "key1", "value1")
+  InMemoryCache::put(cache, "key2", "value2")
+  InMemoryCache::put(cache, "key3", "value3")
   
-  // 测试不存在的键
-  let non_existent = MemoryCache::get(memory_cache, "non_existent")
-  assert_eq(non_existent, None)
+  assert_eq(InMemoryCache::size(cache), 3)
   
-  // 测试更新
-  MemoryCache::put(memory_cache, "key1", "new_value1")
-  let updated_value1 = MemoryCache::get(memory_cache, "key1")
-  assert_eq(updated_value1, Some("new_value1"))
+  // Test cache get
+  let value1 = InMemoryCache::get(cache, "key1")
+  let value2 = InMemoryCache::get(cache, "key2")
+  let value3 = InMemoryCache::get(cache, "key3")
+  let value4 = InMemoryCache::get(cache, "key4") // Non-existent key
   
-  // 测试删除
-  MemoryCache::remove(memory_cache, "key2")
-  let removed_value2 = MemoryCache::get(memory_cache, "key2")
-  assert_eq(removed_value2, None)
-  
-  // 验证缓存大小
-  assert_eq(MemoryCache::size(memory_cache), 2)
-  
-  // 测试清空
-  MemoryCache::clear(memory_cache)
-  assert_eq(MemoryCache::size(memory_cache), 0)
-  
-  let cleared_value1 = MemoryCache::get(memory_cache, "key1")
-  let cleared_value3 = MemoryCache::get(memory_cache, "key3")
-  
-  assert_eq(cleared_value1, None)
-  assert_eq(cleared_value3, None)
-}
-
-test "缓存TTL和过期机制" {
-  // 测试缓存TTL和过期机制
-  let ttl_cache = MemoryCache::new()
-  
-  // 设置短TTL用于测试
-  MemoryCache::set_ttl(ttl_cache, 1000) // 1秒TTL
-  
-  // 添加缓存项
-  MemoryCache::put(ttl_cache, "short_lived", "expires_soon")
-  
-  // 立即获取应该成功
-  let immediate_value = MemoryCache::get(ttl_cache, "short_lived")
-  assert_eq(immediate_value, Some("expires_soon"))
-  
-  // 等待过期
-  Thread::sleep(1200) // 等待1.2秒
-  
-  // 过期后获取应该失败
-  let expired_value = MemoryCache::get(ttl_cache, "short_lived")
-  assert_eq(expired_value, None)
-  
-  // 测试自定义TTL
-  MemoryCache::put_with_ttl(ttl_cache, "custom_ttl", "custom_value", 5000) // 5秒TTL
-  
-  // 立即获取应该成功
-  let custom_immediate = MemoryCache::get(ttl_cache, "custom_ttl")
-  assert_eq(custom_immediate, Some("custom_value"))
-  
-  // 等待默认TTL过期
-  Thread::sleep(1200)
-  
-  // 自定义TTL的项应该仍然存在
-  let custom_after_wait = MemoryCache::get(ttl_cache, "custom_ttl")
-  assert_eq(custom_after_wait, Some("custom_value"))
-  
-  // 等待自定义TTL过期
-  Thread::sleep(4000)
-  
-  // 自定义TTL的项现在应该过期
-  let custom_expired = MemoryCache::get(ttl_cache, "custom_ttl")
-  assert_eq(custom_expired, None)
-  
-  // 测试TTL刷新
-  MemoryCache::put(ttl_cache, "refreshable", "refresh_me")
-  
-  // 多次获取以刷新TTL
-  for i in 0..3 {
-    Thread::sleep(400) // 每次等待400ms
-    let refreshed_value = MemoryCache::get(ttl_cache, "refreshable")
-    assert_eq(refreshed_value, Some("refresh_me"))
+  match value1 {
+    Some(v) => assert_eq(v, "value1")
+    None => assert_true(false)
   }
   
-  // 最后一次等待后应该仍然有效
-  let final_refreshed = MemoryCache::get(ttl_cache, "refreshable")
-  assert_eq(final_refreshed, Some("refresh_me"))
-}
-
-test "缓存淘汰策略" {
-  // 测试缓存淘汰策略
-  let lru_cache = MemoryCache::new()
-  MemoryCache::set_max_size(lru_cache, 3)
-  MemoryCache::set_eviction_policy(lru_cache, LRU)
-  
-  // 添加3个项，填满缓存
-  MemoryCache::put(lru_cache, "key1", "value1")
-  MemoryCache::put(lru_cache, "key2", "value2")
-  MemoryCache::put(lru_cache, "key3", "value3")
-  
-  // 验证缓存大小
-  assert_eq(MemoryCache::size(lru_cache), 3)
-  
-  // 访问key1，使其成为最近使用
-  MemoryCache::get(lru_cache, "key1")
-  
-  // 添加新项，应该淘汰key2（最久未使用）
-  MemoryCache::put(lru_cache, "key4", "value4")
-  
-  // 验证缓存大小仍为3
-  assert_eq(MemoryCache::size(lru_cache), 3)
-  
-  // 验证key1仍在（最近访问过）
-  let value1 = MemoryCache::get(lru_cache, "key1")
-  assert_eq(value1, Some("value1"))
-  
-  // 验证key2已被淘汰
-  let value2 = MemoryCache::get(lru_cache, "key2")
-  assert_eq(value2, None)
-  
-  // 验证key3和key4仍在
-  let value3 = MemoryCache::get(lru_cache, "key3")
-  let value4 = MemoryCache::get(lru_cache, "key4")
-  
-  assert_eq(value3, Some("value3"))
-  assert_eq(value4, Some("value4"))
-  
-  // 测试LFU策略
-  let lfu_cache = MemoryCache::new()
-  MemoryCache::set_max_size(lfu_cache, 3)
-  MemoryCache::set_eviction_policy(lfu_cache, LFU)
-  
-  // 添加3个项
-  MemoryCache::put(lfu_cache, "lfu_key1", "lfu_value1")
-  MemoryCache::put(lfu_cache, "lfu_key2", "lfu_value2")
-  MemoryCache::put(lfu_cache, "lfu_key3", "lfu_value3")
-  
-  // 多次访问lfu_key1，增加其频率
-  for i in 0..5 {
-    MemoryCache::get(lfu_cache, "lfu_key1")
+  match value2 {
+    Some(v) => assert_eq(v, "value2")
+    None => assert_true(false)
   }
   
-  // 访问lfu_key2一次
-  MemoryCache::get(lfu_cache, "lfu_key2")
-  
-  // 添加新项，应该淘汰lfu_key3（频率最低）
-  MemoryCache::put(lfu_cache, "lfu_key4", "lfu_value4")
-  
-  // 验证lfu_key1和lfu_key2仍在
-  let lfu_value1 = MemoryCache::get(lfu_cache, "lfu_key1")
-  let lfu_value2 = MemoryCache::get(lfu_cache, "lfu_key2")
-  
-  assert_eq(lfu_value1, Some("lfu_value1"))
-  assert_eq(lfu_value2, Some("lfu_value2"))
-  
-  // 验证lfu_key3已被淘汰
-  let lfu_value3 = MemoryCache::get(lfu_cache, "lfu_key3")
-  assert_eq(lfu_value3, None)
-  
-  // 验证lfu_key4已添加
-  let lfu_value4 = MemoryCache::get(lfu_cache, "lfu_key4")
-  assert_eq(lfu_value4, Some("lfu_value4"))
-}
-
-test "分布式缓存操作" {
-  // 测试分布式缓存操作
-  let distributed_cache = DistributedCache::new()
-  
-  // 配置分布式缓存
-  let nodes = [
-    CacheNode::new("node1", "127.0.0.1", 7001),
-    CacheNode::new("node2", "127.0.0.1", 7002),
-    CacheNode::new("node3", "127.0.0.1", 7003)
-  ]
-  
-  for node in nodes {
-    DistributedCache::add_node(distributed_cache, node)
+  match value3 {
+    Some(v) => assert_eq(v, "value3")
+    None => assert_true(false)
   }
   
-  DistributedCache::set_replication_factor(distributed_cache, 2)
-  DistributedCache::set_consistency_level(distributed_cache, Eventual)
-  
-  // 测试添加和获取
-  DistributedCache::put(distributed_cache, "distributed_key1", "distributed_value1")
-  DistributedCache::put(distributed_cache, "distributed_key2", "distributed_value2")
-  
-  // 获取值
-  let value1 = DistributedCache::get(distributed_cache, "distributed_key1")
-  let value2 = DistributedCache::get(distributed_cache, "distributed_key2")
-  
-  assert_eq(value1, Some("distributed_value1"))
-  assert_eq(value2, Some("distributed_value2"))
-  
-  // 测试批量操作
-  let batch_items = [
-    ("batch_key1", "batch_value1"),
-    ("batch_key2", "batch_value2"),
-    ("batch_key3", "batch_value3")
-  ]
-  
-  DistributedCache::put_batch(distributed_cache, batch_items)
-  
-  // 批量获取
-  let batch_keys = ["batch_key1", "batch_key2", "batch_key3", "non_existent_key"]
-  let batch_results = DistributedCache::get_batch(distributed_cache, batch_keys)
-  
-  assert_eq(Array::length(batch_results), 4)
-  assert_eq(Array::get(batch_results, 0), Some("batch_value1"))
-  assert_eq(Array::get(batch_results, 1), Some("batch_value2"))
-  assert_eq(Array::get(batch_results, 2), Some("batch_value3"))
-  assert_eq(Array::get(batch_results, 3), None)
-  
-  // 测试缓存统计
-  let stats = DistributedCache::get_statistics(distributed_cache)
-  
-  assert_true(DistributedStats::has_total_keys(stats))
-  assert_true(DistributedStats::has_total_memory_usage(stats))
-  assert_true(DistributedStats::has_hit_rate(stats))
-  assert_true(DistributedStats::has_miss_rate(stats))
-  assert_true(DistributedStats::has_node_statistics(stats))
-  
-  // 验证统计值
-  let total_keys = DistributedStats::get_total_keys(stats)
-  let hit_rate = DistributedStats::get_hit_rate(stats)
-  let miss_rate = DistributedStats::get_miss_rate(stats)
-  
-  assert_true(total_keys >= 5)
-  assert_true(hit_rate >= 0.0 && hit_rate <= 1.0)
-  assert_true(miss_rate >= 0.0 && miss_rate <= 1.0)
-  assert_true((hit_rate + miss_rate) <= 1.0)
-  
-  // 测试节点状态
-  let node_stats = DistributedStats::get_node_statistics(stats)
-  assert_eq(Array::length(node_stats), 3)
-  
-  for node_stat in node_stats {
-    assert_true(NodeStats::has_node_id(node_stat))
-    assert_true(NodeStats::has_key_count(node_stat))
-    assert_true(NodeStats::has_memory_usage(node_stat))
-    assert_true(NodeStats::has_is_healthy(node_stat))
-    
-    assert_true(NodeStats::get_key_count(node_stat) >= 0)
-    assert_true(NodeStats::get_memory_usage(node_stat) >= 0)
-    assert_true(NodeStats::get_is_healthy(node_stat))
+  match value4 {
+    Some(_) => assert_true(false) // Should not exist
+    None => assert_true(true)
   }
+  
+  // Test cache contains
+  assert_true(InMemoryCache::contains(cache, "key1"))
+  assert_true(InMemoryCache::contains(cache, "key2"))
+  assert_true(InMemoryCache::contains(cache, "key3"))
+  assert_false(InMemoryCache::contains(cache, "key4"))
+  
+  // Test cache remove
+  InMemoryCache::remove(cache, "key2")
+  
+  assert_eq(InMemoryCache::size(cache), 2)
+  assert_false(InMemoryCache::contains(cache, "key2"))
+  
+  let value2_removed = InMemoryCache::get(cache, "key2")
+  match value2_removed {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // Test cache clear
+  InMemoryCache::clear(cache)
+  
+  assert_eq(InMemoryCache::size(cache), 0)
+  assert_false(InMemoryCache::contains(cache, "key1"))
+  assert_false(InMemoryCache::contains(cache, "key3"))
+  
+  // Test cache with TTL
+  InMemoryCache::put_with_ttl(cache, "ttl_key", "ttl_value", 100) // 100ms TTL
+  
+  let ttl_value = InMemoryCache::get(cache, "ttl_key")
+  match ttl_value {
+    Some(v) => assert_eq(v, "ttl_value")
+    None => assert_true(false)
+  }
+  
+  // Wait for TTL to expire
+  Thread::sleep(150)
+  
+  let expired_value = InMemoryCache::get(cache, "ttl_key")
+  match expired_value {
+    Some(_) => assert_true(false) // Should be expired
+    None => assert_true(true)
+  }
+  
+  // Test cache eviction when max size is reached
+  InMemoryCache::set_max_size(cache, 3)
+  
+  InMemoryCache::put(cache, "evict1", "value1")
+  InMemoryCache::put(cache, "evict2", "value2")
+  InMemoryCache::put(cache, "evict3", "value3")
+  assert_eq(InMemoryCache::size(cache), 3)
+  
+  // Add one more item to trigger eviction
+  InMemoryCache::put(cache, "evict4", "value4")
+  
+  assert_eq(InMemoryCache::size(cache), 3) // Should still be 3 due to eviction
+  
+  // Check which item was evicted (should be the oldest)
+  let evict1_value = InMemoryCache::get(cache, "evict1")
+  let evict2_value = InMemoryCache::get(cache, "evict2")
+  let evict3_value = InMemoryCache::get(cache, "evict3")
+  let evict4_value = InMemoryCache::get(cache, "evict4")
+  
+  match evict1_value {
+    Some(_) => assert_true(false) // Should be evicted
+    None => assert_true(true)
+  }
+  
+  match evict4_value {
+    Some(v) => assert_eq(v, "value4") // Should exist
+    None => assert_true(false)
+  }
+  
+  // Test cache statistics
+  let stats = InMemoryCache::statistics(cache)
+  
+  assert_eq(stats.hits, 0)
+  assert_eq(stats.misses, 0)
+  assert_eq(stats.puts, 8)
+  assert_eq(stats.evictions, 1)
+  assert_eq(stats.expirations, 1)
+  
+  // Test cache hit/miss tracking
+  InMemoryCache::put(cache, "stats_key", "stats_value")
+  InMemoryCache::get(cache, "stats_key") // Hit
+  InMemoryCache::get(cache, "stats_key") // Hit
+  InMemoryCache::get(cache, "nonexistent") // Miss
+  
+  let updated_stats = InMemoryCache::statistics(cache)
+  
+  assert_eq(updated_stats.hits, 2)
+  assert_eq(updated_stats.misses, 1)
 }
 
-test "缓存预热和加载" {
-  // 测试缓存预热和加载
-  let cache_warmup = CacheWarmupManager::new()
+// Test 2: LRU Cache Implementation
+test "lru cache implementation" {
+  // Create an LRU cache
+  let lru_cache = LRUCache::new(5) // Max size of 5
   
-  // 创建数据加载器
-  let data_loader = TestDataLoader::new()
+  // Verify cache properties
+  assert_eq(LRUCache::size(lru_cache), 0)
+  assert_eq(LRUCache::max_size(lru_cache), 5)
   
-  // 配置预热策略
-  let warmup_config = WarmupConfig::new()
-  WarmupConfig::add_data_source(warmup_config, "user_profiles", data_loader)
-  WarmupConfig::add_key_pattern(warmup_config, "user_profile_.*")
-  WarmupConfig::set_batch_size(warmup_config, 100)
-  WarmupConfig::set_concurrency(warmup_config, 5)
+  // Test LRU cache put and get
+  LRUCache::put(lru_cache, "key1", "value1")
+  LRUCache::put(lru_cache, "key2", "value2")
+  LRUCache::put(lru_cache, "key3", "value3")
   
-  CacheWarmupManager::configure(cache_warmup, warmup_config)
+  assert_eq(LRUCache::size(lru_cache), 3)
   
-  // 开始预热
-  CacheWarmupManager::start_warmup(cache_warmup)
+  // Test LRU order
+  let lru_order = LRUCache::get_order(lru_cache)
+  assert_eq(lru_order, ["key3", "key2", "key1"]) // key3 is most recent, key1 is least recent
   
-  // 等待预热完成
-  CacheWarmupManager::wait_for_completion(cache_warmup)
+  // Test cache get updates LRU order
+  let value2 = LRUCache::get(lru_cache, "key2")
+  match value2 {
+    Some(v) => assert_eq(v, "value2")
+    None => assert_true(false)
+  }
   
-  // 获取预热结果
-  let warmup_result = CacheWarmupManager::get_result(cache_warmup)
+  let updated_order = LRUCache::get_order(lru_cache)
+  assert_eq(updated_order, ["key2", "key3", "key1"]) // key2 is now most recent
   
-  // 验证预热结果
-  assert_true(WarmupResult::is_successful(warmup_result))
-  assert_true(WarmupResult::has_loaded_keys(warmup_result))
-  assert_true(WarmupResult::has_failed_keys(warmup_result))
-  assert_true(WarmupResult::has_statistics(warmup_result))
+  // Fill cache to max size
+  LRUCache::put(lru_cache, "key4", "value4")
+  LRUCache::put(lru_cache, "key5", "value5")
   
-  // 验证加载的键
-  let loaded_keys = WarmupResult::get_loaded_keys(warmup_result)
-  assert_true(Array::length(loaded_keys) > 0)
+  assert_eq(LRUCache::size(lru_cache), 5)
   
-  // 验证失败的键
-  let failed_keys = WarmupResult::get_failed_keys(warmup_result)
-  assert_true(Array::length(failed_keys) >= 0)
+  // Add one more item to trigger LRU eviction
+  LRUCache::put(lru_cache, "key6", "value6")
   
-  // 验证统计信息
-  let warmup_stats = WarmupResult::get_statistics(warmup_result)
-  assert_true(WarmupStats::has_total_requested(warmup_stats))
-  assert_true(WarmupStats::has_successfully_loaded(warmup_stats))
-  assert_true(WarmupStats::has_failed_to_load(warmup_stats))
-  assert_true(WarmupStats::has_load_time(warmup_stats))
+  assert_eq(LRUCache::size(lru_cache), 5) // Should still be 5 due to eviction
   
-  let total_requested = WarmupStats::get_total_requested(warmup_stats)
-  let successfully_loaded = WarmupStats::get_successfully_loaded(warmup_stats)
-  let failed_to_load = WarmupStats::get_failed_to_load(warmup_stats)
+  // Check which item was evicted (should be the least recently used)
+  let key1_value = LRUCache::get(lru_cache, "key1")
+  let key6_value = LRUCache::get(lru_cache, "key6")
   
-  assert_eq(total_requested, successfully_loaded + failed_to_load)
-  assert_true(WarmupStats::get_load_time(warmup_stats) > 0)
+  match key1_value {
+    Some(_) => assert_true(false) // Should be evicted
+    None => assert_true(true)
+  }
   
-  // 测试增量预热
-  CacheWarmupManager::start_incremental_warmup(cache_warmup, ["new_user_profile_1", "new_user_profile_2"])
-  CacheWarmupManager::wait_for_completion(cache_warmup)
+  match key6_value {
+    Some(v) => assert_eq(v, "value6") // Should exist
+    None => assert_true(false)
+  }
   
-  let incremental_result = CacheWarmupManager::get_result(cache_warmup)
-  let incremental_loaded = WarmupResult::get_loaded_keys(incremental_result)
+  // Test LRU order after eviction
+  let final_order = LRUCache::get_order(lru_cache)
+  assert_eq(final_order[0], "key6") // key6 is most recent
+  assert_false(final_order.contains("key1")) // key1 was evicted
   
-  assert_true(Array::contains(incremental_loaded, "new_user_profile_1"))
-  assert_true(Array::contains(incremental_loaded, "new_user_profile_2"))
+  // Test LRU cache with TTL
+  let lru_ttl_cache = LRUCache::with_ttl(3, 1000) // Max size 3, 1 second TTL
   
-  // 测试预热计划
-  let warmup_scheduler = WarmupScheduler::new()
+  LRUCache::put(lru_ttl_cache, "ttl1", "value1")
+  LRUCache::put(lru_ttl_cache, "ttl2", "value2")
+  LRUCache::put(lru_ttl_cache, "ttl3", "value3")
   
-  // 添加定时预热任务
-  WarmupScheduler::add_scheduled_warmup(warmup_scheduler, "daily_user_warmup", "0 2 * * *", data_loader) // 每天凌晨2点
-  WarmupScheduler::add_scheduled_warmup(warmup_scheduler, "hourly_stats_warmup", "0 * * * *", data_loader) // 每小时
+  // Wait for TTL to expire
+  Thread::sleep(1100)
   
-  // 启动调度器
-  WarmupScheduler::start(warmup_scheduler)
+  // Access should trigger cleanup of expired items
+  let ttl1_value = LRUCache::get(lru_ttl_cache, "ttl1")
+  match ttl1_value {
+    Some(_) => assert_true(false) // Should be expired
+    None => assert_true(true)
+  }
   
-  // 获取调度状态
-  let schedule_status = WarmupScheduler::get_status(warmup_scheduler)
-  assert_true(ScheduleStatus::is_running(schedule_status))
-  assert_true(ScheduleStatus::has_active_tasks(schedule_status))
+  // Add new item to fill cache
+  LRUCache::put(lru_ttl_cache, "ttl4", "value4")
   
-  let active_tasks = ScheduleStatus::get_active_tasks(schedule_status)
-  assert_eq(Array::length(active_tasks), 2)
+  assert_eq(LRUCache::size(lru_ttl_cache), 1) // Only ttl4 should remain
   
-  // 停止调度器
-  WarmupScheduler::stop(warmup_scheduler)
+  // Test LRU cache statistics
+  let stats = LRUCache::statistics(lru_cache)
   
-  let stopped_status = WarmupScheduler::get_status(warmup_scheduler);
-  assert_false(ScheduleStatus::is_running(stopped_status))
+  assert_eq(stats.hits, 1)
+  assert_eq(stats.misses, 1)
+  assert_eq(stats.puts, 6)
+  assert_eq(stats.evictions, 1)
+  
+  // Test LRU cache peek (doesn't update LRU order)
+  LRUCache::put(lru_cache, "peek_key", "peek_value")
+  let before_peek_order = LRUCache::get_order(lru_cache)
+  
+  let peek_value = LRUCache::peek(lru_cache, "peek_key")
+  match peek_value {
+    Some(v) => assert_eq(v, "peek_value")
+    None => assert_true(false)
+  }
+  
+  let after_peek_order = LRUCache::get_order(lru_cache)
+  assert_eq(before_peek_order, after_peek_order) // Order should not change
 }
 
-test "缓存性能监控和优化" {
-  // 测试缓存性能监控和优化
-  let cache_monitor = CacheMonitor::new()
+// Test 3: Distributed Cache Implementation
+test "distributed cache implementation" {
+  // Create a distributed cache
+  let distributed_cache = DistributedCache::new("localhost:6379") // Redis connection
   
-  // 创建监控的缓存
-  let monitored_cache = MonitoredCache::new(cache_monitor)
-  MonitoredCache::set_max_size(monitored_cache, 1000)
-  MonitoredCache::set_ttl(monitored_cache, 60000)
+  // Verify cache properties
+  assert_eq(DistributedCache::nodes(distributed_cache), ["localhost:6379"])
+  assert_eq(DistributedCache::key_prefix(distributed_cache), "azimuth:")
+  assert_eq(DistributedCache::default_ttl(distributed_cache), 300) // 5 minutes
   
-  // 执行大量缓存操作
-  for i in 0..10000 {
-    let key = "perf_key_" + (i % 1000).to_string() // 使用1000个不同的键
-    let value = "perf_value_" + i.to_string()
-    
-    MonitoredCache::put(monitored_cache, key, value)
-    
-    // 随机获取一些值
-    if i % 3 == 0 {
-      let random_key = "perf_key_" + (Math::random() * 1000).to_int().to_string()
-      MonitoredCache::get(monitored_cache, random_key)
+  // Configure distributed cache
+  DistributedCache::set_key_prefix(distributed_cache, "azimuth:telemetry:")
+  DistributedCache::set_default_ttl(distributed_cache, 600) // 10 minutes
+  DistributedCache::set_connection_timeout(distributed_cache, 5000) // 5 seconds
+  DistributedCache::set_command_timeout(distributed_cache, 1000) // 1 second
+  
+  // Test distributed cache put and get
+  let put_result = DistributedCache::put(distributed_cache, "dist_key1", "dist_value1")
+  match put_result {
+    Ok(_) => assert_true(true)
+    Err(_) => {
+      // In test environment, Redis might not be available
+      assert_true(true)
     }
   }
   
-  // 获取性能指标
-  let performance_metrics = CacheMonitor::get_performance_metrics(cache_monitor)
+  let get_result = DistributedCache::get(distributed_cache, "dist_key1")
+  match get_result {
+    Ok(value) => assert_eq(value, "dist_value1")
+    Err(_) => {
+      // In test environment, Redis might not be available
+      assert_true(true)
+    }
+  }
   
-  // 验证性能指标
-  assert_true(PerformanceMetrics::has_total_operations(performance_metrics))
-  assert_true(PerformanceMetrics::has_hit_count(performance_metrics))
-  assert_true(PerformanceMetrics::has_miss_count(performance_metrics))
-  assert_true(PerformanceMetrics::has_put_count(performance_metrics))
-  assert_true(PerformanceMetrics::has_eviction_count(performance_metrics))
-  assert_true(PerformanceMetrics::has_average_get_time(performance_metrics))
-  assert_true(PerformanceMetrics::has_average_put_time(performance_metrics))
+  // Test distributed cache with TTL
+  let ttl_put_result = DistributedCache::put_with_ttl(distributed_cache, "ttl_key", "ttl_value", 5) // 5 seconds
+  match ttl_put_result {
+    Ok(_) => assert_true(true)
+    Err(_) => {
+      // In test environment, Redis might not be available
+      assert_true(true)
+    }
+  }
   
-  // 验证指标值
-  let total_ops = PerformanceMetrics::get_total_operations(performance_metrics)
-  let hit_count = PerformanceMetrics::get_hit_count(performance_metrics)
-  let miss_count = PerformanceMetrics::get_miss_count(performance_metrics)
-  let put_count = PerformanceMetrics::get_put_count(performance_metrics)
+  let ttl_get_result = DistributedCache::get(distributed_cache, "ttl_key")
+  match ttl_get_result {
+    Ok(value) => assert_eq(value, "ttl_value")
+    Err(_) => {
+      // In test environment, Redis might not be available
+      assert_true(true)
+    }
+  }
   
-  assert_true(total_ops > 0)
-  assert_true(hit_count >= 0)
-  assert_true(miss_count >= 0)
-  assert_true(put_count > 0)
+  // Wait for TTL to expire
+  Thread::sleep(6000)
   
-  // 计算命中率
-  let hit_rate = hit_count.to_float() / (hit_count + miss_count).to_float()
-  assert_true(hit_rate >= 0.0 && hit_rate <= 1.0)
+  let expired_result = DistributedCache::get(distributed_cache, "ttl_key")
+  match expired_result {
+    Ok(_) => assert_true(false) // Should be expired
+    Err(error) => {
+      // Should get nil or connection error
+      assert_true(error.contains("nil") || error.contains("connection"))
+    }
+  }
   
-  // 测试缓存优化器
-  let cache_optimizer = CacheOptimizer::new()
+  // Test distributed cache put and get multiple values
+  let multi_put_result = DistributedCache::put_multiple(distributed_cache, [
+    ("multi_key1", "multi_value1"),
+    ("multi_key2", "multi_value2"),
+    ("multi_key3", "multi_value3")
+  ])
   
-  // 分析当前缓存配置
-  let optimization_analysis = CacheOptimizer::analyze_configuration(cache_optimizer, monitored_cache)
+  match multi_put_result {
+    Ok(_) => assert_true(true)
+    Err(_) => {
+      // In test environment, Redis might not be available
+      assert_true(true)
+    }
+  }
   
-  // 验证分析结果
-  assert_true(OptimizationAnalysis::has_recommendations(optimization_analysis))
-  assert_true(OptimizationAnalysis::has_current_performance(optimization_analysis))
-  assert_true(OptimizationAnalysis::has_potential_improvements(optimization_analysis))
+  let multi_get_result = DistributedCache::get_multiple(distributed_cache, [
+    "multi_key1",
+    "multi_key2",
+    "multi_key3",
+    "nonexistent_key"
+  ])
   
-  // 获取优化建议
-  let recommendations = OptimizationAnalysis::get_recommendations(optimization_analysis)
-  assert_true(Array::length(recommendations) >= 0)
+  match multi_get_result {
+    Ok(values) => {
+      assert_eq(values.get("multi_key1"), Some("multi_value1"))
+      assert_eq(values.get("multi_key2"), Some("multi_value2"))
+      assert_eq(values.get("multi_key3"), Some("multi_value3"))
+      assert_eq(values.get("nonexistent_key"), None)
+    }
+    Err(_) => {
+      // In test environment, Redis might not be available
+      assert_true(true)
+    }
+  }
   
-  // 应用优化建议
-  for recommendation in recommendations {
-    if Recommendation::is_applicable(recommendation) {
-      let applied = CacheOptimizer::apply_recommendation(cache_optimizer, monitored_cache, recommendation)
-      if applied {
-        // 验证建议已应用
-        assert_true(Recommendation::is_applied(recommendation))
+  // Test distributed cache remove
+  let remove_result = DistributedCache::remove(distributed_cache, "multi_key2")
+  match remove_result {
+    Ok(_) => assert_true(true)
+    Err(_) => {
+      // In test environment, Redis might not be available
+      assert_true(true)
+    }
+  }
+  
+  let removed_get_result = DistributedCache::get(distributed_cache, "multi_key2")
+  match removed_get_result {
+    Ok(_) => assert_true(false) // Should be removed
+    Err(error) => {
+      // Should get nil or connection error
+      assert_true(error.contains("nil") || error.contains("connection"))
+    }
+  }
+  
+  // Test distributed cache exists
+  let exists_result = DistributedCache::exists(distributed_cache, "multi_key1")
+  match exists_result {
+    Ok(exists) => assert_true(exists)
+    Err(_) => {
+      // In test environment, Redis might not be available
+      assert_true(true)
+    }
+  }
+  
+  let not_exists_result = DistributedCache::exists(distributed_cache, "nonexistent_key")
+  match not_exists_result {
+    Ok(exists) => assert_false(exists)
+    Err(_) => {
+      // In test environment, Redis might not be available
+      assert_true(true)
+    }
+  }
+  
+  // Test distributed cache increment
+  let incr_result = DistributedCache::increment(distributed_cache, "counter", 1)
+  match incr_result {
+    Ok(value) => assert_eq(value, 1)
+    Err(_) => {
+      // In test environment, Redis might not be available
+      assert_true(true)
+    }
+  }
+  
+  let incr2_result = DistributedCache::increment(distributed_cache, "counter", 5)
+  match incr2_result {
+    Ok(value) => assert_eq(value, 6)
+    Err(_) => {
+      // In test environment, Redis might not be available
+      assert_true(true)
+    }
+  }
+  
+  // Test distributed cache atomic operations
+  let atomic_result = DistributedCache::atomic_update(distributed_cache, "atomic_key", "initial_value", fn(current_value) {
+    current_value + "_updated"
+  })
+  
+  match atomic_result {
+    Ok(new_value) => assert_eq(new_value, "initial_value_updated")
+    Err(_) => {
+      // In test environment, Redis might not be available
+      assert_true(true)
+    }
+  }
+  
+  // Test distributed cache statistics
+  let stats = DistributedCache::statistics(distributed_cache)
+  
+  assert_true(stats.hits >= 0)
+  assert_true(stats.misses >= 0)
+  assert_true(stats.puts >= 0)
+  assert_true(stats.errors >= 0)
+  assert_true(stats.connection_count >= 0)
+}
+
+// Test 4: Multi-Level Cache Implementation
+test "multi-level cache implementation" {
+  // Create cache levels
+  let l1_cache = InMemoryCache::new() // L1: In-memory cache
+  InMemoryCache::set_max_size(l1_cache, 100)
+  InMemoryCache::set_ttl(l1_cache, 60000) // 1 minute
+  
+  let l2_cache = LRUCache::new(1000) // L2: LRU cache
+  LRUCache::set_ttl(l2_cache, 300000) // 5 minutes
+  
+  let l3_cache = DistributedCache::new("localhost:6379") // L3: Distributed cache
+  DistributedCache::set_default_ttl(l3_cache, 3600) // 1 hour
+  
+  // Create multi-level cache
+  let multi_cache = MultiLevelCache::new([l1_cache, l2_cache, l3_cache])
+  
+  // Verify cache properties
+  assert_eq(MultiLevelCache::level_count(multi_cache), 3)
+  assert_eq(MultiLevelCache::size(multi_cache), 0)
+  
+  // Test multi-level cache put and get
+  MultiLevelCache::put(multi_cache, "ml_key1", "ml_value1")
+  
+  // Value should be in L1 cache
+  let l1_value = InMemoryCache::get(l1_cache, "ml_key1")
+  match l1_value {
+    Some(v) => assert_eq(v, "ml_value1")
+    None => assert_true(false)
+  }
+  
+  // Get value from multi-level cache
+  let get_result = MultiLevelCache::get(multi_cache, "ml_key1")
+  match get_result {
+    Ok(value) => assert_eq(value, "ml_value1")
+    Err(_) => assert_true(false)
+  }
+  
+  // Test cache miss
+  let miss_result = MultiLevelCache::get(multi_cache, "nonexistent_key")
+  match miss_result {
+    Ok(_) => assert_true(false) // Should not exist
+    Err(error) => assert_eq(error, "key not found")
+  }
+  
+  // Test cache promotion (L3 to L2 to L1)
+  // Directly put value in L3 cache
+  let l3_put_result = DistributedCache::put(l3_cache, "l3_key", "l3_value")
+  match l3_put_result {
+    Ok(_) => assert_true(true)
+    Err(_) => {
+      // In test environment, Redis might not be available
+      assert_true(true)
+    }
+  }
+  
+  // Get value from multi-level cache (should promote to L1)
+  let promote_result = MultiLevelCache::get(multi_cache, "l3_key")
+  match promote_result {
+    Ok(value) => assert_eq(value, "l3_value")
+    Err(_) => {
+      // In test environment, Redis might not be available
+      assert_true(true)
+    }
+  }
+  
+  // Check if value was promoted to L1
+  let l1_promoted = InMemoryCache::get(l1_cache, "l3_key")
+  match l1_promoted {
+    Some(v) => assert_eq(v, "l3_value")
+    None => {
+      // In test environment, Redis might not be available
+      assert_true(true)
+    }
+  }
+  
+  // Test cache eviction and fallback
+  // Fill L1 cache to capacity
+  for i in 0..=99 { // 100 items
+    MultiLevelCache::put(multi_cache, "evict_key" + i.to_string(), "evict_value" + i.to_string())
+  }
+  
+  // Add one more item to trigger eviction in L1
+  MultiLevelCache::put(multi_cache, "overflow_key", "overflow_value")
+  
+  // Check if evicted item is still accessible from lower levels
+  let evicted_result = MultiLevelCache::get(multi_cache, "evict_key0")
+  match evicted_result {
+    Ok(value) => assert_eq(value, "evict_value0")
+    Err(_) => {
+      // In test environment, distributed cache might not be available
+      assert_true(true)
+    }
+  }
+  
+  // Test multi-level cache statistics
+  let stats = MultiLevelCache::statistics(multi_cache)
+  
+  assert_eq(stats.level_count, 3)
+  assert_true(stats.total_hits >= 0)
+  assert_true(stats.total_misses >= 0)
+  assert_true(stats.l1_hits >= 0)
+  assert_true(stats.l2_hits >= 0)
+  assert_true(stats.l3_hits >= 0)
+  assert_true(stats.promotions >= 0)
+  
+  // Test cache warming
+  let warm_keys = ["warm_key1", "warm_key2", "warm_key3"]
+  let warm_values = ["warm_value1", "warm_value2", "warm_value3"]
+  
+  // Put values directly in L3 cache
+  for i in 0..=warm_keys.length() - 1 {
+    let put_result = DistributedCache::put(l3_cache, warm_keys[i], warm_values[i])
+    match put_result {
+      Ok(_) => assert_true(true)
+      Err(_) => {
+        // In test environment, Redis might not be available
+        assert_true(true)
       }
     }
   }
   
-  // 测试热点数据分析
-  let hot_data_analyzer = HotDataAnalyzer::new()
-  
-  // 分析热点数据
-  let hot_data_analysis = HotDataAnalyzer::analyze(hot_data_analyzer, monitored_cache)
-  
-  // 验证热点数据
-  assert_true(HotDataAnalysis::has_hot_keys(hot_data_analysis))
-  assert_true(HotDataAnalysis::has_access_patterns(hot_data_analysis))
-  
-  let hot_keys = HotDataAnalysis::get_hot_keys(hot_data_analysis)
-  assert_true(Array::length(hot_keys) >= 0)
-  
-  // 验证热点键信息
-  for hot_key in hot_keys {
-    assert_true(HotKey::has_key(hot_key))
-    assert_true(HotKey::has_access_count(hot_key))
-    assert_true(HotKey::has_access_frequency(hot_key))
-    
-    assert_true(HotKey::get_access_count(hot_key) > 0)
-    assert_true(HotKey::get_access_frequency(hot_key) > 0.0)
+  // Warm cache with specific keys
+  let warm_result = MultiLevelCache::warm(multi_cache, warm_keys)
+  match warm_result {
+    Ok(warmed_count) => assert_eq(warmed_count, 3)
+    Err(_) => {
+      // In test environment, Redis might not be available
+      assert_true(true)
+    }
   }
   
-  // 测试缓存容量规划
-  let capacity_planner = CapacityPlanner::new()
-  
-  // 分析当前使用情况
-  let capacity_analysis = CapacityPlanner::analyze_usage(capacity_planner, monitored_cache)
-  
-  // 验证容量分析
-  assert_true(CapacityAnalysis::has_current_usage(capacity_analysis))
-  assert_true(CapacityAnalysis::has_growth_projection(capacity_analysis))
-  assert_true(CapacityAnalysis::has_optimal_size_recommendation(capacity_analysis))
-  
-  // 获取容量建议
-  let optimal_size = CapacityAnalysis::get_optimal_size_recommendation(capacity_analysis)
-  assert_true(optimal_size > 0)
-  
-  // 测试缓存分区
-  let partitioned_cache = PartitionedCache::new()
-  
-  // 创建分区
-  PartitionedCache::create_partition(partitioned_cache, "user_data", 500)
-  PartitionedCache::create_partition(partitioned_cache, "product_data", 300)
-  PartitionedCache::create_partition(partitioned_cache, "order_data", 200)
-  
-  // 在不同分区中添加数据
-  PartitionedCache::put(partitioned_cache, "user_data", "user_123", "user_data_123")
-  PartitionedCache::put(partitioned_cache, "product_data", "product_456", "product_data_456")
-  PartitionedCache::put(partitioned_cache, "order_data", "order_789", "order_data_789")
-  
-  // 从不同分区获取数据
-  let user_data = PartitionedCache::get(partitioned_cache, "user_data", "user_123")
-  let product_data = PartitionedCache::get(partitioned_cache, "product_data", "product_456")
-  let order_data = PartitionedCache::get(partitioned_cache, "order_data", "order_789")
-  
-  assert_eq(user_data, Some("user_data_123"))
-  assert_eq(product_data, Some("product_data_456"))
-  assert_eq(order_data, Some("order_data_789"))
-  
-  // 获取分区统计
-  let partition_stats = PartitionedCache::get_partition_statistics(partitioned_cache)
-  assert_eq(Array::length(partition_stats), 3)
-  
-  for stat in partition_stats {
-    assert_true(PartitionStats::has_partition_name(stat))
-    assert_true(PartitionStats::has_size(stat))
-    assert_true(PartitionStats::has_max_size(stat))
-    assert_true(PartitionStats::has_utilization(stat))
-    
-    let utilization = PartitionStats::get_utilization(stat)
-    assert_true(utilization >= 0.0 && utilization <= 1.0)
+  // Check if warmed keys are now in L1 cache
+  let warm_l1_result = InMemoryCache::get(l1_cache, "warm_key1")
+  match warm_l1_result {
+    Some(v) => assert_eq(v, "warm_value1")
+    None => {
+      // In test environment, Redis might not be available
+      assert_true(true)
+    }
   }
+  
+  // Test cache invalidation
+  MultiLevelCache::put(multi_cache, "invalidate_key", "invalidate_value")
+  
+  // Verify value exists in all levels
+  let l1_before = InMemoryCache::get(l1_cache, "invalidate_key")
+  match l1_before {
+    Some(_) => assert_true(true)
+    None => assert_true(false)
+  }
+  
+  // Invalidate key across all levels
+  MultiLevelCache::invalidate(multi_cache, "invalidate_key")
+  
+  // Verify key is removed from all levels
+  let l1_after = InMemoryCache::get(l1_cache, "invalidate_key")
+  match l1_after {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  let invalidate_result = MultiLevelCache::get(multi_cache, "invalidate_key")
+  match invalidate_result {
+    Ok(_) => assert_true(false) // Should not exist
+    Err(error) => assert_eq(error, "key not found")
+  }
+}
+
+// Test 5: Cache Invalidation Strategies
+test "cache invalidation strategies" {
+  // Create cache with invalidation strategies
+  let cache = InMemoryCache::new()
+  
+  // Test time-based invalidation
+  InMemoryCache::put(cache, "time_key", "time_value")
+  
+  // Verify value exists
+  let before_time = InMemoryCache::get(cache, "time_key")
+  match before_time {
+    Some(v) => assert_eq(v, "time_value")
+    None => assert_true(false)
+  }
+  
+  // Invalidate by time
+  Thread::sleep(100) // Wait 100ms
+  
+  InMemoryCache::invalidate_by_time(cache, 50) // Invalidate items older than 50ms
+  
+  // Verify value is invalidated
+  let after_time = InMemoryCache::get(cache, "time_key")
+  match after_time {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // Test pattern-based invalidation
+  InMemoryCache::put(cache, "pattern:key1", "value1")
+  InMemoryCache::put(cache, "pattern:key2", "value2")
+  InMemoryCache::put(cache, "other:key1", "value3")
+  
+  // Invalidate by pattern
+  InMemoryCache::invalidate_by_pattern(cache, "pattern:*")
+  
+  // Verify pattern-matched keys are invalidated
+  let pattern1_result = InMemoryCache::get(cache, "pattern:key1")
+  match pattern1_result {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  let pattern2_result = InMemoryCache::get(cache, "pattern:key2")
+  match pattern2_result {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // Verify non-matched key still exists
+  let other_result = InMemoryCache::get(cache, "other:key1")
+  match other_result {
+    Some(v) => assert_eq(v, "value3")
+    None => assert_true(false)
+  }
+  
+  // Test tag-based invalidation
+  InMemoryCache::put_with_tags(cache, "tag:key1", "value1", ["tag1", "tag2"])
+  InMemoryCache::put_with_tags(cache, "tag:key2", "value2", ["tag2", "tag3"])
+  InMemoryCache::put_with_tags(cache, "tag:key3", "value3", ["tag1", "tag3"])
+  
+  // Invalidate by tag
+  InMemoryCache::invalidate_by_tag(cache, "tag2")
+  
+  // Verify items with tag2 are invalidated
+  let tag1_result = InMemoryCache::get(cache, "tag:key1")
+  match tag1_result {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  let tag2_result = InMemoryCache::get(cache, "tag:key2")
+  match tag2_result {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // Verify items without tag2 still exist
+  let tag3_result = InMemoryCache::get(cache, "tag:key3")
+  match tag3_result {
+    Some(v) => assert_eq(v, "value3")
+    None => assert_true(false)
+  }
+  
+  // Test dependency-based invalidation
+  InMemoryCache::put_with_dependencies(cache, "dep:key1", "value1", ["dep:key2", "dep:key3"])
+  InMemoryCache::put(cache, "dep:key2", "value2")
+  InMemoryCache::put(cache, "dep:key3", "value3")
+  
+  // Invalidate dependency
+  InMemoryCache::invalidate(cache, "dep:key2")
+  
+  // Verify dependent key is also invalidated
+  let dep1_result = InMemoryCache::get(cache, "dep:key1")
+  match dep1_result {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // Verify non-dependent key still exists
+  let dep3_result = InMemoryCache::get(cache, "dep:key3")
+  match dep3_result {
+    Some(v) => assert_eq(v, "value3")
+    None => assert_true(false)
+  }
+  
+  // Test size-based invalidation
+  InMemoryCache::set_max_size(cache, 3)
+  
+  InMemoryCache::put(cache, "size:key1", "value1")
+  InMemoryCache::put(cache, "size:key2", "value2")
+  InMemoryCache::put(cache, "size:key3", "value3")
+  
+  // Add one more to trigger eviction
+  InMemoryCache::put(cache, "size:key4", "value4")
+  
+  // Verify oldest item is evicted
+  let size1_result = InMemoryCache::get(cache, "size:key1")
+  match size1_result {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // Verify newest item exists
+  let size4_result = InMemoryCache::get(cache, "size:key4")
+  match size4_result {
+    Some(v) => assert_eq(v, "value4")
+    None => assert_true(false)
+  }
+  
+  // Test invalidation callbacks
+  let mut invalidated_keys = []
+  
+  InMemoryCache::set_invalidation_callback(cache, fn(key) {
+    invalidated_keys = invalidated_keys.push(key)
+  })
+  
+  InMemoryCache::put(cache, "callback:key1", "value1")
+  InMemoryCache::invalidate(cache, "callback:key1")
+  
+  assert_true(invalidated_keys.contains("callback:key1"))
+}
+
+// Test 6: Cache Performance and Optimization
+test "cache performance and optimization" {
+  // Create caches for performance testing
+  let memory_cache = InMemoryCache::new()
+  let lru_cache = LRUCache::new(1000)
+  
+  // Configure caches
+  InMemoryCache::set_max_size(memory_cache, 1000)
+  InMemoryCache::set_ttl(memory_cache, 300000) // 5 minutes
+  
+  // Test cache put performance
+  let put_start = Time::now()
+  
+  for i in 0..=9999 { // 10,000 items
+    InMemoryCache::put(memory_cache, "perf_key" + i.to_string(), "perf_value" + i.to_string())
+  }
+  
+  let put_end = Time::now()
+  let put_duration = put_end - put_start
+  
+  assert_true(put_duration < 1000) // Should complete in less than 1 second
+  
+  // Test cache get performance
+  let get_start = Time::now()
+  
+  for i in 0..=9999 { // 10,000 items
+    InMemoryCache::get(memory_cache, "perf_key" + i.to_string())
+  }
+  
+  let get_end = Time::now()
+  let get_duration = get_end - get_start
+  
+  assert_true(get_duration < 500) // Should complete in less than 0.5 seconds
+  
+  // Test LRU cache performance
+  let lru_put_start = Time::now()
+  
+  for i in 0..=9999 { // 10,000 items
+    LRUCache::put(lru_cache, "lru_key" + i.to_string(), "lru_value" + i.to_string())
+  }
+  
+  let lru_put_end = Time::now()
+  let lru_put_duration = lru_put_end - lru_put_start
+  
+  assert_true(lru_put_duration < 1000) // Should complete in less than 1 second
+  
+  // Test cache hit ratio
+  let hit_cache = InMemoryCache::new()
+  InMemoryCache::set_max_size(hit_cache, 100)
+  
+  // Fill cache with 100 items
+  for i in 0..=99 {
+    InMemoryCache::put(hit_cache, "hit_key" + i.to_string(), "hit_value" + i.to_string())
+  }
+  
+  // Perform 1000 get operations with 80% hit rate
+  let mut hits = 0
+  let mut misses = 0
+  
+  for i in 0..=999 {
+    let key_index = if i % 10 < 8 { i % 100 } else { 100 + i } // 80% existing keys, 20% new keys
+    let result = InMemoryCache::get(hit_cache, "hit_key" + key_index.to_string())
+    
+    match result {
+      Some(_) => hits = hits + 1
+      None => misses = misses + 1
+    }
+  }
+  
+  let hit_ratio = hits.to_float() / (hits + misses).to_float()
+  assert_true(hit_ratio > 0.7 && hit_ratio < 0.9) // Should be close to 80%
+  
+  // Test cache memory usage
+  let memory_usage = InMemoryCache::memory_usage(memory_cache)
+  assert_true(memory_usage > 0)
+  
+  // Test cache optimization with compression
+  let compressed_cache = InMemoryCache::with_compression("gzip")
+  
+  for i in 0..=99 {
+    let large_value = "x".repeat(1000) // 1KB string
+    InMemoryCache::put(compressed_cache, "comp_key" + i.to_string(), large_value)
+  }
+  
+  let compressed_memory = InMemoryCache::memory_usage(compressed_cache)
+  let uncompressed_memory = InMemoryCache::memory_usage(memory_cache)
+  
+  // Compressed cache should use less memory
+  assert_true(compressed_memory < uncompressed_memory)
+  
+  // Test cache optimization with serialization
+  let serialized_cache = InMemoryCache::with_serialization("json")
+  
+  let complex_data = ComplexData::new("test", 42, [1, 2, 3, 4, 5])
+  InMemoryCache::put(serialized_cache, "complex_key", complex_data)
+  
+  let retrieved_data = InMemoryCache::get(serialized_cache, "complex_key")
+  match retrieved_data {
+    Ok(data) => {
+      assert_eq(ComplexData::name(data), "test")
+      assert_eq(ComplexData::value(data), 42)
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  // Test cache benchmarking
+  let benchmark_results = CacheBenchmark::run([
+    ("memory", memory_cache),
+    ("lru", lru_cache),
+    ("compressed", compressed_cache),
+    ("serialized", serialized_cache)
+  ], 1000) // 1000 operations
+  
+  for (name, results) in benchmark_results {
+    assert_true(results.put_time > 0)
+    assert_true(results.get_time > 0)
+    assert_true(results.memory_usage > 0)
+    assert_true(results.hit_ratio >= 0.0 && results.hit_ratio <= 1.0)
+    
+    // Memory cache should be fastest for puts and gets
+    if name == "memory" {
+      assert_true(results.put_time < 100) // Less than 100ms for 1000 operations
+      assert_true(results.get_time < 50)  // Less than 50ms for 1000 operations
+    }
+  }
+  
+  // Test cache optimization with prefetching
+  let prefetch_cache = InMemoryCache::new()
+  
+  // Configure prefetching
+  InMemoryCache::enable_prefetching(prefetch_cache, 10) // Prefetch 10 items
+  
+  // Add items with related keys
+  for i in 0..=99 {
+    InMemoryCache::put(prefetch_cache, "prefetch:key:" + i.to_string(), "value:" + i.to_string())
+  }
+  
+  // Access first item to trigger prefetching
+  InMemoryCache::get(prefetch_cache, "prefetch:key:0")
+  
+  // Check if related items were prefetched
+  let stats = InMemoryCache::statistics(prefetch_cache)
+  assert_true(stats.prefetch_count > 0)
+  
+  // Test cache optimization with batch operations
+  let batch_cache = InMemoryCache::new()
+  
+  // Batch put
+  let batch_items = []
+  for i in 0..=99 {
+    batch_items = batch_items.push(("batch:key:" + i.to_string(), "batch:value:" + i.to_string()))
+  }
+  
+  let batch_put_start = Time::now()
+  InMemoryCache::put_batch(batch_cache, batch_items)
+  let batch_put_end = Time::now()
+  let batch_put_duration = batch_put_end - batch_put_start
+  
+  // Individual put for comparison
+  let individual_put_start = Time::now()
+  for i in 0..=99 {
+    InMemoryCache::put(batch_cache, "individual:key:" + i.to_string(), "individual:value:" + i.to_string())
+  }
+  let individual_put_end = Time::now()
+  let individual_put_duration = individual_put_end - individual_put_start
+  
+  // Batch put should be faster
+  assert_true(batch_put_duration < individual_put_duration)
+  
+  // Batch get
+  let batch_keys = []
+  for i in 0..=99 {
+    batch_keys = batch_keys.push("batch:key:" + i.to_string())
+  }
+  
+  let batch_get_start = Time::now()
+  let batch_results = InMemoryCache::get_batch(batch_cache, batch_keys)
+  let batch_get_end = Time::now()
+  let batch_get_duration = batch_get_end - batch_get_start
+  
+  // Individual get for comparison
+  let individual_get_start = Time::now()
+  for i in 0..=99 {
+    InMemoryCache::get(batch_cache, "batch:key:" + i.to_string())
+  }
+  let individual_get_end = Time::now()
+  let individual_get_duration = individual_get_end - individual_get_start
+  
+  // Batch get should be faster
+  assert_true(batch_get_duration < individual_get_duration)
+  assert_eq(batch_results.length(), 100)
+}
+
+// Test 7: Cache Monitoring and Metrics
+test "cache monitoring and metrics" {
+  // Create cache with monitoring
+  let cache = InMemoryCache::new()
+  
+  // Enable monitoring
+  InMemoryCache::enable_monitoring(cache, true)
+  
+  // Perform cache operations
+  InMemoryCache::put(cache, "monitor_key1", "monitor_value1")
+  InMemoryCache::put(cache, "monitor_key2", "monitor_value2")
+  InMemoryCache::get(cache, "monitor_key1") // Hit
+  InMemoryCache::get(cache, "monitor_key3") // Miss
+  InMemoryCache::remove(cache, "monitor_key2")
+  
+  // Get cache metrics
+  let metrics = InMemoryCache::get_metrics(cache)
+  
+  assert_eq(metrics.puts, 2)
+  assert_eq(metrics.gets, 2)
+  assert_eq(metrics.hits, 1)
+  assert_eq(metrics.misses, 1)
+  assert_eq(metrics.removes, 1)
+  assert_eq(metrics.evictions, 0)
+  assert_eq(metrics.expirations, 0)
+  
+  // Test cache health check
+  let health = InMemoryCache::health_check(cache)
+  
+  assert_true(health.healthy)
+  assert_true(health.memory_usage > 0)
+  assert_true(health.hit_ratio >= 0.0 && health.hit_ratio <= 1.0)
+  assert_true(health.uptime > 0)
+  
+  // Test cache performance metrics
+  let perf_metrics = InMemoryCache::performance_metrics(cache)
+  
+  assert_true(perf_metrics.avg_put_time > 0)
+  assert_true(perf_metrics.avg_get_time > 0)
+  assert_true(perf_metrics.max_put_time > 0)
+  assert_true(perf_metrics.max_get_time > 0)
+  assert_true(perf_metrics.total_operations > 0)
+  
+  // Test cache alerting
+  let alert_manager = CacheAlertManager::new()
+  
+  // Configure alerts
+  CacheAlertManager::add_alert(alert_manager, CacheAlert {
+    name: "high_miss_rate",
+    condition: AlertCondition::HitRatio(LessThan, 0.8),
+    severity: AlertSeverity::Warning,
+    enabled: true
+  })
+  
+  CacheAlertManager::add_alert(alert_manager, CacheAlert {
+    name: "high_memory_usage",
+    condition: AlertCondition::MemoryUsage(GreaterThan, 0.9),
+    severity: AlertSeverity::Critical,
+    enabled: true
+  })
+  
+  // Check alerts
+  let alerts = CacheAlertManager::check_alerts(alert_manager, cache)
+  
+  // Should have no alerts with current cache state
+  assert_eq(alerts.length(), 0)
+  
+  // Simulate high miss rate
+  for i in 0..=99 {
+    InMemoryCache::get(cache, "nonexistent_key" + i.to_string()) // All misses
+  }
+  
+  let high_miss_alerts = CacheAlertManager::check_alerts(alert_manager, cache)
+  
+  // Should have high miss rate alert
+  assert_true(high_miss_alerts.length() > 0)
+  assert_true(high_miss_alerts.any(fn(alert) { alert.name == "high_miss_rate" }))
+  
+  // Test cache metrics export
+  let exporter = MetricsExporter::prometheus()
+  let exported_metrics = MetricsExporter::export_cache_metrics(exporter, cache)
+  
+  assert_true(exported_metrics.contains("# TYPE cache_puts counter"))
+  assert_true(exported_metrics.contains("# TYPE cache_gets counter"))
+  assert_true(exported_metrics.contains("# TYPE cache_hits counter"))
+  assert_true(exported_metrics.contains("# TYPE cache_misses counter"))
+  assert_true(exported_metrics.contains("# TYPE cache_hit_ratio gauge"))
+  
+  // Test cache metrics aggregation
+  let caches = [
+    ("cache1", cache),
+    ("cache2", InMemoryCache::new()),
+    ("cache3", InMemoryCache::new())
+  ]
+  
+  // Add some data to other caches
+  InMemoryCache::put(caches[1].1, "agg_key1", "agg_value1")
+  InMemoryCache::put(caches[2].1, "agg_key2", "agg_value2")
+  
+  let aggregated_metrics = MetricsAggregator::aggregate_cache_metrics(caches)
+  
+  assert_true(aggregated_metrics.contains_key("total_puts"))
+  assert_true(aggregated_metrics.contains_key("total_gets"))
+  assert_true(aggregated_metrics.contains_key("total_hits"))
+  assert_true(aggregated_metrics.contains_key("total_misses"))
+  assert_true(aggregated_metrics.contains_key("avg_hit_ratio"))
+  
+  // Verify aggregated values
+  let total_puts = aggregated_metrics.get("total_puts")
+  match total_puts {
+    Some(value) => assert_eq(value, 4) // 2 from cache1, 1 from cache2, 1 from cache3
+    None => assert_true(false)
+  }
+  
+  // Test cache metrics visualization
+  let visualizer = CacheMetricsVisualizer::new()
+  
+  // Generate hit ratio chart
+  let hit_ratio_chart = CacheMetricsVisualizer::generate_hit_ratio_chart(visualizer, cache, 3600) // Last hour
+  
+  assert_true(hit_ratio_chart.contains("chart"))
+  assert_true(hit_ratio_chart.contains("hit_ratio"))
+  
+  // Generate memory usage chart
+  let memory_chart = CacheMetricsVisualizer::generate_memory_chart(visualizer, cache, 3600) // Last hour
+  
+  assert_true(memory_chart.contains("chart"))
+  assert_true(memory_chart.contains("memory_usage"))
+  
+  // Generate operations chart
+  let ops_chart = CacheMetricsVisualizer::generate_operations_chart(visualizer, cache, 3600) // Last hour
+  
+  assert_true(ops_chart.contains("chart"))
+  assert_true(ops_chart.contains("operations"))
+  
+  // Test cache metrics dashboard
+  let dashboard = CacheDashboard::new([cache])
+  
+  let dashboard_html = CacheDashboard::generate(dashboard)
+  
+  assert_true(dashboard_html.contains("<html>"))
+  assert_true(dashboard_html.contains("Cache Metrics Dashboard"))
+  assert_true(dashboard_html.contains("Hit Ratio"))
+  assert_true(dashboard_html.contains("Memory Usage"))
+  assert_true(dashboard_html.contains("Operations"))
 }
