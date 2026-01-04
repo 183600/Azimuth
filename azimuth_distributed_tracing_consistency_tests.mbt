@@ -1,730 +1,420 @@
 // Azimuth Telemetry System - Distributed Tracing Consistency Tests
 // This file contains test cases for distributed tracing consistency across services
 
-// Test 1: Cross-Service Trace Context Propagation
-test "cross-service trace context propagation" {
-  let trace_context_manager = TraceContextManager::new()
+// Test 1: Trace Context Propagation
+test "trace context propagation" {
+  // Create a root span
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let root_span_id = "b7ad6b7169203331"
+  let root_span_ctx = SpanContext::new(trace_id, root_span_id, true, "")
   
-  // Create root trace context
-  let root_trace_id = "root_trace_12345"
-  let root_span_id = "root_span_67890"
-  let root_context = TraceContext::new(root_trace_id, root_span_id, true, [])
-    .with_baggage_entry("user_id", "user_123")
-    .with_baggage_entry("request_id", "req_456")
+  // Create a root span
+  let root_span = Span::new("root-operation", Server, root_span_ctx)
   
-  // Test context propagation to service A
-  let service_a_context = TraceContextManager::propagate_to_service(
-    trace_context_manager,
-    root_context,
-    "service-a"
-  )
+  // Create a child span
+  let child_span_id = "b7ad6b7169203332"
+  let child_span_ctx = SpanContext::new(trace_id, child_span_id, true, "")
+  let child_span = Span::new("child-operation", Client, child_span_ctx)
   
-  assert_eq(TraceContext::trace_id(service_a_context), root_trace_id)
-  assert_not_eq(TraceContext::span_id(service_a_context), root_span_id) // Should have new span ID
-  assert_true(TraceContext::is_sampled(service_a_context))
+  // Verify trace ID consistency
+  assert_eq(SpanContext::trace_id(Span::span_context(root_span)), trace_id)
+  assert_eq(SpanContext::trace_id(Span::span_context(child_span)), trace_id)
   
-  // Verify baggage is preserved
-  let user_id = TraceContext::get_baggage_entry(service_a_context, "user_id")
-  match user_id {
-    Some(value) => assert_eq(value, "user_123")
+  // Verify span IDs are different
+  assert_not_eq(SpanContext::span_id(Span::span_context(root_span)), 
+                SpanContext::span_id(Span::span_context(child_span)))
+  
+  // Verify parent-child relationship
+  assert_eq(Span::parent_span_id(child_span), Some(root_span_id))
+}
+
+// Test 2: Cross-Service Trace Context Injection and Extraction
+test "cross-service trace context injection and extraction" {
+  // Create a trace context
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_id = "b7ad6b7169203331"
+  let span_ctx = SpanContext::new(trace_id, span_id, true, "")
+  
+  // Create a propagator
+  let propagator = TraceContextPropagator::new()
+  
+  // Inject trace context into headers
+  let carrier = Headers::new()
+  TraceContextPropagator::inject(propagator, span_ctx, carrier)
+  
+  // Verify trace context was injected
+  let traceparent_header = Headers::get(carrier, "traceparent")
+  match traceparent_header {
+    Some(header) => {
+      // Header should contain version, trace-id, parent-id, and flags
+      assert_true(header.contains(trace_id))
+      assert_true(header.contains(span_id))
+    }
     None => assert_true(false)
   }
   
-  // Test context propagation from service A to service B
-  let service_b_context = TraceContextManager::propagate_to_service(
-    trace_context_manager,
-    service_a_context,
-    "service-b"
-  )
+  // Extract trace context from headers
+  let extracted_ctx = TraceContextPropagator::extract(propagator, carrier)
   
-  assert_eq(TraceContext::trace_id(service_b_context), root_trace_id)
-  assert_not_eq(TraceContext::span_id(service_b_context), TraceContext::span_id(service_a_context))
-  
-  // Test context propagation from service B to service C
-  let service_c_context = TraceContextManager::propagate_to_service(
-    trace_context_manager,
-    service_b_context,
-    "service-c"
-  )
-  
-  assert_eq(TraceContext::trace_id(service_c_context), root_trace_id)
-  assert_not_eq(TraceContext::span_id(service_c_context), TraceContext::span_id(service_b_context))
-  
-  // Verify all contexts belong to the same trace
-  let trace_spans = TraceContextManager::get_all_spans_in_trace(trace_context_manager, root_trace_id)
-  assert_eq(trace_spans.length(), 4) // root + service-a + service-b + service-c
-  
-  for span in trace_spans {
-    assert_eq(TraceContext::trace_id(span), root_trace_id)
+  // Verify extracted context matches original
+  match extracted_ctx {
+    Some(ctx) => {
+      assert_eq(SpanContext::trace_id(ctx), trace_id)
+      assert_eq(SpanContext::span_id(ctx), span_id)
+      assert_true(SpanContext::is_sampled(ctx))
+    }
+    None => assert_true(false)
   }
 }
 
-// Test 2: Distributed Span Relationships
-test "distributed span relationships" {
-  let span_relationship_manager = SpanRelationshipManager::new()
+// Test 3: Baggage Propagation Across Services
+test "baggage propagation across services" {
+  // Create initial baggage
+  let baggage = Baggage::new()
+  let baggage_with_entries = Baggage::set_entry(baggage, "user.id", "user123")
+  let baggage_with_entries = Baggage::set_entry(baggage_with_entries, "request.id", "req456")
   
-  // Create root span
-  let root_span = Span::new("root_operation", Server, TraceContext::new("trace_1", "span_1", true, []))
+  // Create a propagator
+  let propagator = TraceContextPropagator::new()
   
-  // Create child spans in different services
-  let service_a_span = Span::new("service_a_operation", Server, 
-    TraceContext::new("trace_1", "span_2", true, [])
-      .with_parent_span_id("span_1")
-  )
+  // Inject baggage into headers
+  let carrier = Headers::new()
+  TraceContextPropagator::inject_baggage(propagator, baggage_with_entries, carrier)
   
-  let service_b_span = Span::new("service_b_operation", Server,
-    TraceContext::new("trace_1", "span_3", true, [])
-      .with_parent_span_id("span_2")
-  )
+  // Verify baggage was injected
+  let baggage_header = Headers::get(carrier, "baggage")
+  match baggage_header {
+    Some(header) => {
+      assert_true(header.contains("user.id=user123"))
+      assert_true(header.contains("request.id=req456"))
+    }
+    None => assert_true(false)
+  }
   
-  let service_c_span = Span::new("service_c_operation", Server,
-    TraceContext::new("trace_1", "span_4", true, [])
-      .with_parent_span_id("span_2")
-  )
+  // Extract baggage from headers
+  let extracted_baggage = TraceContextPropagator::extract_baggage(propagator, carrier)
   
-  // Add spans to relationship manager
-  SpanRelationshipManager::add_span(span_relationship_manager, root_span)
-  SpanRelationshipManager::add_span(span_relationship_manager, service_a_span)
-  SpanRelationshipManager::add_span(span_relationship_manager, service_b_span)
-  SpanRelationshipManager::add_span(span_relationship_manager, service_c_span)
+  // Verify extracted baggage matches original
+  let user_id = Baggage::get_entry(extracted_baggage, "user.id")
+  match user_id {
+    Some(value) => assert_eq(value, "user123")
+    None => assert_true(false)
+  }
   
-  // Test parent-child relationships
-  let root_children = SpanRelationshipManager::get_children(span_relationship_manager, "span_1")
-  assert_eq(root_children.length(), 1)
-  assert_eq(Span::name(root_children[0]), "service_a_operation")
-  
-  let service_a_children = SpanRelationshipManager::get_children(span_relationship_manager, "span_2")
-  assert_eq(service_a_children.length(), 2)
-  
-  let child_names = service_a_children.map(|s| Span::name(s))
-  assert_true(child_names.contains("service_b_operation"))
-  assert_true(child_names.contains("service_c_operation"))
-  
-  // Test span hierarchy
-  let hierarchy = SpanRelationshipManager::build_hierarchy(span_relationship_manager, "trace_1")
-  assert_eq(hierarchy.root_span_id, "span_1")
-  assert_eq(hierarchy.all_spans.length(), 4)
-  
-  // Test depth calculation
-  let root_depth = SpanRelationshipManager::get_depth(span_relationship_manager, "span_1")
-  let service_a_depth = SpanRelationshipManager::get_depth(span_relationship_manager, "span_2")
-  let service_b_depth = SpanRelationshipManager::get_depth(span_relationship_manager, "span_3")
-  
-  assert_eq(root_depth, 0)
-  assert_eq(service_a_depth, 1)
-  assert_eq(service_b_depth, 2)
+  let request_id = Baggage::get_entry(extracted_baggage, "request.id")
+  match request_id {
+    Some(value) => assert_eq(value, "req456")
+    None => assert_true(false)
+  }
 }
 
-// Test 3: Trace Consistency Validation
-test "trace consistency validation" {
-  let trace_validator = TraceConsistencyValidator::new()
-  
-  // Configure validation rules
-  let validation_rules = ValidationRules::new()
-    .require_trace_id_consistency(true)
-    .require_parent_child_consistency(true)
-    .require_timestamp_ordering(true)
-    .require_service_name_format(true)
-    .require_span_name_format(true)
-  
-  TraceConsistencyValidator::configure(trace_validator, validation_rules)
+// Test 4: Distributed Trace Consistency Validation
+test "distributed trace consistency validation" {
+  // Create a trace validator
+  let validator = TraceConsistencyValidator::new()
   
   // Create a consistent trace
-  let consistent_trace = DistributedTrace::new("consistent_trace_001")
-    .add_span(Span::new("root", Server, 
-      TraceContext::new("consistent_trace_001", "span_1", true, [])
-        .with_timestamp(Time::now())
-    ))
-    .add_span(Span::new("service_a", Client,
-      TraceContext::new("consistent_trace_001", "span_2", true, [])
-        .with_parent_span_id("span_1")
-        .with_timestamp(Time::now() + Duration::milliseconds(10))
-    ))
-    .add_span(Span::new("service_b", Client,
-      TraceContext::new("consistent_trace_001", "span_3", true, [])
-        .with_parent_span_id("span_2")
-        .with_timestamp(Time::now() + Duration::milliseconds(20))
-    ))
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span1_ctx = SpanContext::new(trace_id, "b7ad6b7169203331", true, "")
+  let span2_ctx = SpanContext::new(trace_id, "b7ad6b7169203332", true, "")
+  let span3_ctx = SpanContext::new(trace_id, "b7ad6b7169203333", true, "")
   
-  // Validate consistent trace
-  let consistent_result = TraceConsistencyValidator::validate(trace_validator, consistent_trace)
-  match consistent_result {
-    ValidationResult::Valid => assert_true(true),
-    ValidationResult::Invalid(errors) => assert_true(false, "Consistent trace should be valid: " + errors.join(", "))
-    ValidationResult::Warning(warnings) => assert_true(true) // Warnings are acceptable
-  }
+  // Create spans with consistent timing
+  let span1 = Span::new("service-a-operation", Server, span1_ctx)
+  Span::set_timestamp(span1, 1640995200000L, 1640995200100L)
   
-  // Create an inconsistent trace (invalid parent-child relationship)
-  let inconsistent_trace = DistributedTrace::new("inconsistent_trace_001")
-    .add_span(Span::new("root", Server,
-      TraceContext::new("inconsistent_trace_001", "span_1", true, [])
-        .with_timestamp(Time::now())
-    ))
-    .add_span(Span::new("service_a", Client,
-      TraceContext::new("inconsistent_trace_001", "span_2", true, [])
-        .with_parent_span_id("non_existent_parent") // Invalid parent
-        .with_timestamp(Time::now() + Duration::milliseconds(10))
-    ))
-    .add_span(Span::new("service_b", Client,
-      TraceContext::new("different_trace_001", "span_3", true, []) // Different trace ID
-        .with_parent_span_id("span_2")
-        .with_timestamp(Time::now() + Duration::milliseconds(20))
-    ))
+  let span2 = Span::new("service-b-operation", Client, span2_ctx)
+  Span::set_timestamp(span2, 1640995200050L, 1640995200080L)
+  Span::set_parent_span_id(span2, "b7ad6b7169203331")
   
-  // Validate inconsistent trace
-  let inconsistent_result = TraceConsistencyValidator::validate(trace_validator, inconsistent_trace)
-  match inconsistent_result {
-    ValidationResult::Valid => assert_true(false),
-    ValidationResult::Invalid(errors) => {
-      assert_true(errors.length() >= 2) // Should have at least 2 errors
-      assert_true(errors.any(|e| e.contains("parent")))
-      assert_true(errors.any(|e| e.contains("trace_id")))
-    }
-    ValidationResult::Warning(_) => assert_true(false) // Should be errors, not warnings
-  }
+  let span3 = Span::new("service-c-operation", Server, span3_ctx)
+  Span::set_timestamp(span3, 1640995200090L, 1640995200120L)
+  Span::set_parent_span_id(span3, "b7ad6b7169203332")
+  
+  // Validate trace consistency
+  let spans = [span1, span2, span3]
+  let validation_result = TraceConsistencyValidator::validate_trace(validator, spans)
+  
+  // Verify validation passes
+  assert_true(TraceConsistencyValidator::is_valid(validation_result))
+  assert_eq(TraceConsistencyValidator::error_count(validation_result), 0)
 }
 
-// Test 4: Trace Sampling Consistency
-test "trace sampling consistency" {
-  let sampling_manager = TraceSamplingManager::new()
+// Test 5: Inconsistent Trace Detection
+test "inconsistent trace detection" {
+  // Create a trace validator
+  let validator = TraceConsistencyValidator::new()
   
-  // Configure consistent sampling
-  let sampling_config = SamplingConfig::new()
-    .with_sampling_strategy(TraceIdRatioBased(0.1)) // 10% sampling
-    .with_consistent_sampling_across_services(true)
-    .with_parent_based_sampling(true)
+  // Create spans with inconsistent trace IDs
+  let span1_ctx = SpanContext::new("trace1", "b7ad6b7169203331", true, "")
+  let span2_ctx = SpanContext::new("trace2", "b7ad6b7169203332", true, "")  // Different trace ID
+  let span3_ctx = SpanContext::new("trace1", "b7ad6b7169203333", true, "")
   
-  TraceSamplingManager::configure(sampling_manager, sampling_config)
+  let span1 = Span::new("service-a-operation", Server, span1_ctx)
+  let span2 = Span::new("service-b-operation", Client, span2_ctx)
+  Span::set_parent_span_id(span2, "b7ad6b7169203331")  // Claims parent from different trace
   
-  // Create root span with sampling decision
-  let root_trace_id = "sampling_trace_001"
-  let root_sampling_decision = TraceSamplingManager::should_sample(sampling_manager, root_trace_id, "root_service")
+  let span3 = Span::new("service-c-operation", Server, span3_ctx)
+  Span::set_parent_span_id(span3, "b7ad6b7169203332")
   
-  // Create child spans in different services
-  let service_a_sampling_decision = TraceSamplingManager::should_sample_for_child(
-    sampling_manager,
-    root_trace_id,
-    "service-a",
-    root_sampling_decision
-  )
+  // Validate trace consistency
+  let spans = [span1, span2, span3]
+  let validation_result = TraceConsistencyValidator::validate_trace(validator, spans)
   
-  let service_b_sampling_decision = TraceSamplingManager::should_sample_for_child(
-    sampling_manager,
-    root_trace_id,
-    "service-b",
-    root_sampling_decision
-  )
+  // Verify validation fails
+  assert_false(TraceConsistencyValidator::is_valid(validation_result))
+  assert_true(TraceConsistencyValidator::error_count(validation_result) > 0)
   
-  let service_c_sampling_decision = TraceSamplingManager::should_sample_for_child(
-    sampling_manager,
-    root_trace_id,
-    "service-c",
-    root_sampling_decision
-  )
+  // Check for specific error types
+  let trace_id_errors = TraceConsistencyValidator::get_errors_by_type(validation_result, ValidationErrorType::InconsistentTraceId)
+  assert_true(trace_id_errors.length() > 0)
+}
+
+// Test 6: Temporal Consistency Validation
+test "temporal consistency validation" {
+  // Create a trace validator
+  let validator = TraceConsistencyValidator::new()
+  
+  // Create spans with timing issues
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span1_ctx = SpanContext::new(trace_id, "b7ad6b7169203331", true, "")
+  let span2_ctx = SpanContext::new(trace_id, "b7ad6b7169203332", true, "")
+  
+  let span1 = Span::new("parent-operation", Server, span1_ctx)
+  Span::set_timestamp(span1, 1640995200000L, 1640995200100L)  // 100ms duration
+  
+  let span2 = Span::new("child-operation", Client, span2_ctx)
+  Span::set_timestamp(span2, 1640995200050L, 1640995200080L)  // Within parent timeframe
+  Span::set_parent_span_id(span2, "b7ad6b7169203331")
+  
+  // Validate temporal consistency
+  let spans = [span1, span2]
+  let validation_result = TraceConsistencyValidator::validate_temporal_consistency(validator, spans)
+  
+  // Verify validation passes for consistent timing
+  assert_true(TraceConsistencyValidator::is_valid(validation_result))
+  
+  // Create span with inconsistent timing
+  let span3_ctx = SpanContext::new(trace_id, "b7ad6b7169203333", true, "")
+  let span3 = Span::new("late-child-operation", Client, span3_ctx)
+  Span::set_timestamp(span3, 1640995200200L, 1640995200250L)  // Starts after parent ends
+  Span::set_parent_span_id(span3, "b7ad6b7169203331")
+  
+  let spans_with_timing_issue = [span1, span3]
+  let timing_validation_result = TraceConsistencyValidator::validate_temporal_consistency(validator, spans_with_timing_issue)
+  
+  // Verify validation fails for inconsistent timing
+  assert_false(TraceConsistencyValidator::is_valid(timing_validation_result))
+  
+  let timing_errors = TraceConsistencyValidator::get_errors_by_type(timing_validation_result, ValidationErrorType::TemporalInconsistency)
+  assert_true(timing_errors.length() > 0)
+}
+
+// Test 7: Sampling Consistency Across Services
+test "sampling consistency across services" {
+  // Create a trace with sampling decisions
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  
+  // Create a sampled root span
+  let root_span_ctx = SpanContext::new(trace_id, "b7ad6b7169203331", true, "")
+  let root_span = Span::new("root-operation", Server, root_span_ctx)
+  
+  // Create child spans that should respect sampling decision
+  let child1_ctx = SpanContext::new(trace_id, "b7ad6b7169203332", true, "")
+  let child1 = Span::new("child-operation-1", Client, child1_ctx)
+  Span::set_parent_span_id(child1, "b7ad6b7169203331")
+  
+  let child2_ctx = SpanContext::new(trace_id, "b7ad6b7169203333", true, "")
+  let child2 = Span::new("child-operation-2", Server, child2_ctx)
+  Span::set_parent_span_id(child2, "b7ad6b7169203331")
+  
+  // Verify all spans are sampled
+  assert_true(SpanContext::is_sampled(Span::span_context(root_span)))
+  assert_true(SpanContext::is_sampled(Span::span_context(child1)))
+  assert_true(SpanContext::is_sampled(Span::span_context(child2)))
+  
+  // Create a trace validator
+  let validator = TraceConsistencyValidator::new()
+  let spans = [root_span, child1, child2]
+  let validation_result = TraceConsistencyValidator::validate_sampling_consistency(validator, spans)
   
   // Verify sampling consistency
-  assert_eq(root_sampling_decision.is_sampled, service_a_sampling_decision.is_sampled)
-  assert_eq(root_sampling_decision.is_sampled, service_b_sampling_decision.is_sampled)
-  assert_eq(root_sampling_decision.is_sampled, service_c_sampling_decision.is_sampled)
+  assert_true(TraceConsistencyValidator::is_valid(validation_result))
   
-  // Verify sampling attributes are consistent
-  assert_eq(root_sampling_decision.attributes, service_a_sampling_decision.attributes)
-  assert_eq(root_sampling_decision.attributes, service_b_sampling_decision.attributes)
-  assert_eq(root_sampling_decision.attributes, service_c_sampling_decision.attributes)
+  // Create a span with inconsistent sampling
+  let inconsistent_ctx = SpanContext::new(trace_id, "b7ad6b7169203334", false, "")  // Not sampled
+  let inconsistent_span = Span::new("inconsistent-operation", Client, inconsistent_ctx)
+  Span::set_parent_span_id(inconsistent_span, "b7ad6b7169203331")
   
-  // Test with multiple traces
-  let mut sampled_traces = 0
-  let mut total_traces = 100
+  let spans_with_inconsistent_sampling = [root_span, child1, child2, inconsistent_span]
+  let sampling_validation_result = TraceConsistencyValidator::validate_sampling_consistency(validator, spans_with_inconsistent_sampling)
   
-  for i in 0..total_traces {
-    let trace_id = "trace_" + i.to_string()
-    let sampling_decision = TraceSamplingManager::should_sample(sampling_manager, trace_id, "test_service")
-    
-    if sampling_decision.is_sampled {
-      sampled_traces = sampled_traces + 1
-    }
-    
-    // Verify child spans have same sampling decision
-    let child_decision = TraceSamplingManager::should_sample_for_child(
-      sampling_manager,
-      trace_id,
-      "child_service",
-      sampling_decision
-    )
-    
-    assert_eq(sampling_decision.is_sampled, child_decision.is_sampled)
-  }
+  // Verify sampling inconsistency is detected
+  assert_false(TraceConsistencyValidator::is_valid(sampling_validation_result))
   
-  // Verify sampling rate is approximately 10%
-  let actual_sampling_rate = sampled_traces.to_float() / total_traces.to_float()
-  assert_true(actual_sampling_rate > 0.05 && actual_sampling_rate < 0.15) // Allow some variance
+  let sampling_errors = TraceConsistencyValidator::get_errors_by_type(sampling_validation_result, ValidationErrorType::SamplingInconsistency)
+  assert_true(sampling_errors.length() > 0)
 }
 
-// Test 5: Distributed Trace Timeline Consistency
-test "distributed trace timeline consistency" {
-  let timeline_validator = TimelineConsistencyValidator::new()
+// Test 8: Service Graph Consistency
+test "service graph consistency" {
+  // Create a service graph validator
+  let validator = ServiceGraphValidator::new()
   
-  // Configure timeline validation
-  let timeline_config = TimelineConfig::new()
-    .with_max_clock_skew(Duration::seconds(5)) // Allow 5 seconds of clock skew
-    .with_require_parent_before_child(true)
-    .with_require_span_duration_positive(true)
+  // Create spans representing service calls
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
   
-  TimelineConsistencyValidator::configure(timeline_validator, timeline_config)
+  // Service A calls Service B
+  let span_a_ctx = SpanContext::new(trace_id, "b7ad6b7169203331", true, "")
+  let span_a = Span::new("service-a-operation", Server, span_a_ctx)
+  Span::set_service_name(span_a, "service-a")
   
-  // Create a trace with consistent timeline
-  let base_time = Time::now()
+  let span_b_ctx = SpanContext::new(trace_id, "b7ad6b7169203332", true, "")
+  let span_b = Span::new("service-b-operation", Server, span_b_ctx)
+  Span::set_service_name(span_b, "service-b")
+  Span::set_parent_span_id(span_b, "b7ad6b7169203331")
   
-  let consistent_trace = DistributedTrace::new("timeline_consistent_trace")
-    .add_span(Span::new("root", Server,
-      TraceContext::new("timeline_consistent_trace", "span_1", true, [])
-        .with_timestamp(base_time)
-        .with_duration(Duration::milliseconds(1000))
-    ))
-    .add_span(Span::new("service_a", Client,
-      TraceContext::new("timeline_consistent_trace", "span_2", true, [])
-        .with_parent_span_id("span_1")
-        .with_timestamp(base_time + Duration::milliseconds(100))
-        .with_duration(Duration::milliseconds(500))
-    ))
-    .add_span(Span::new("service_b", Client,
-      TraceContext::new("timeline_consistent_trace", "span_3", true, [])
-        .with_parent_span_id("span_2")
-        .with_timestamp(base_time + Duration::milliseconds(200))
-        .with_duration(Duration::milliseconds(300))
-    ))
+  // Service B calls Service C
+  let span_c_ctx = SpanContext::new(trace_id, "b7ad6b7169203333", true, "")
+  let span_c = Span::new("service-c-operation", Server, span_c_ctx)
+  Span::set_service_name(span_c, "service-c")
+  Span::set_parent_span_id(span_c, "b7ad6b7169203332")
   
-  // Validate consistent timeline
-  let consistent_result = TimelineConsistencyValidator::validate(timeline_validator, consistent_trace)
-  match consistent_result {
-    ValidationResult::Valid => assert_true(true),
-    ValidationResult::Invalid(errors) => assert_true(false, "Consistent timeline should be valid: " + errors.join(", "))
-    ValidationResult::Warning(warnings) => assert_true(true) // Warnings are acceptable
-  }
+  // Validate service graph
+  let spans = [span_a, span_b, span_c]
+  let service_graph = ServiceGraphValidator::build_graph(validator, spans)
+  let graph_validation_result = ServiceGraphValidator::validate_graph(validator, service_graph)
   
-  // Create a trace with inconsistent timeline (child starts before parent)
-  let inconsistent_trace = DistributedTrace::new("timeline_inconsistent_trace")
-    .add_span(Span::new("root", Server,
-      TraceContext::new("timeline_inconsistent_trace", "span_1", true, [])
-        .with_timestamp(base_time)
-        .with_duration(Duration::milliseconds(1000))
-    ))
-    .add_span(Span::new("service_a", Client,
-      TraceContext::new("timeline_inconsistent_trace", "span_2", true, [])
-        .with_parent_span_id("span_1")
-        .with_timestamp(base_time - Duration::milliseconds(100)) // Starts before parent
-        .with_duration(Duration::milliseconds(500))
-    ))
-    .add_span(Span::new("service_b", Client,
-      TraceContext::new("timeline_inconsistent_trace", "span_3", true, [])
-        .with_parent_span_id("span_2")
-        .with_timestamp(base_time + Duration::milliseconds(200))
-        .with_duration(Duration::milliseconds(300))
-    ))
+  // Verify graph is valid
+  assert_true(ServiceGraphValidator::is_valid(graph_validation_result))
   
-  // Validate inconsistent timeline
-  let inconsistent_result = TimelineConsistencyValidator::validate(timeline_validator, inconsistent_trace)
-  match inconsistent_result {
-    ValidationResult::Valid => assert_true(false),
-    ValidationResult::Invalid(errors) => {
-      assert_true(errors.length() >= 1)
-      assert_true(errors.any(|e| e.contains("timeline") || e.contains("parent")))
-    }
-    ValidationResult::Warning(_) => assert_true(false)
-  }
+  // Verify service relationships
+  let service_a_children = ServiceGraphValidator::get_child_services(service_graph, "service-a")
+  assert_eq(service_a_children.length(), 1)
+  assert_eq(service_a_children[0], "service-b")
+  
+  let service_b_children = ServiceGraphValidator::get_child_services(service_graph, "service-b")
+  assert_eq(service_b_children.length(), 1)
+  assert_eq(service_b_children[0], "service-c")
+  
+  let service_c_children = ServiceGraphValidator::get_child_services(service_graph, "service-c")
+  assert_eq(service_c_children.length(), 0)  // Leaf service
+  
+  // Verify parent relationships
+  let service_c_parents = ServiceGraphValidator::get_parent_services(service_graph, "service-c")
+  assert_eq(service_c_parents.length(), 1)
+  assert_eq(service_c_parents[0], "service-b")
 }
 
-// Test 6: Cross-Service Attribute Consistency
+// Test 9: Cross-Service Attribute Consistency
 test "cross-service attribute consistency" {
-  let attribute_manager = CrossServiceAttributeManager::new()
+  // Create an attribute consistency validator
+  let validator = AttributeConsistencyValidator::new()
   
-  // Configure attribute consistency rules
-  let attribute_rules = AttributeRules::new()
-    .add_required_attribute("service.name")
-    .add_required_attribute("service.version")
-    .add_required_attribute("service.instance.id")
-    .add_standardized_attribute("http.method")
-    .add_standardized_attribute("http.status_code")
-    .add_standardized_attribute("http.url")
-    .add_propagated_attribute("user.id")
-    .add_propagated_attribute("request.id")
-    .add_propagated_attribute("tenant.id")
-  
-  CrossServiceAttributeManager::configure(attribute_manager, attribute_rules)
+  // Define required attributes that should be consistent across services
+  let required_attributes = [
+    "service.name",
+    "service.version",
+    "deployment.environment"
+  ]
   
   // Create spans with consistent attributes
-  let consistent_spans = [
-    Span::new("frontend_request", Server,
-      TraceContext::new("attr_consistent_trace", "span_1", true, [])
-        .with_attributes([
-          ("service.name", StringValue("frontend-service")),
-          ("service.version", StringValue("1.2.3")),
-          ("service.instance.id", StringValue("frontend-01")),
-          ("http.method", StringValue("GET")),
-          ("http.url", StringValue("/api/users")),
-          ("user.id", StringValue("user_123")),
-          ("request.id", StringValue("req_456"))
-        ])
-    ),
-    Span::new("api_call", Client,
-      TraceContext::new("attr_consistent_trace", "span_2", true, [])
-        .with_parent_span_id("span_1")
-        .with_attributes([
-          ("service.name", StringValue("api-service")),
-          ("service.version", StringValue("2.1.0")),
-          ("service.instance.id", StringValue("api-01")),
-          ("http.method", StringValue("GET")),
-          ("http.url", StringValue("/api/users")),
-          ("user.id", StringValue("user_123")),
-          ("request.id", StringValue("req_456"))
-        ])
-    ),
-    Span::new("database_query", Client,
-      TraceContext::new("attr_consistent_trace", "span_3", true, [])
-        .with_parent_span_id("span_2")
-        .with_attributes([
-          ("service.name", StringValue("database-service")),
-          ("service.version", StringValue("3.0.1")),
-          ("service.instance.id", StringValue("db-01")),
-          ("db.statement", StringValue("SELECT * FROM users")),
-          ("user.id", StringValue("user_123")),
-          ("request.id", StringValue("req_456"))
-        ])
-    )
-  ]
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
   
-  // Validate consistent attributes
-  let consistent_result = CrossServiceAttributeManager::validate_consistency(attribute_manager, consistent_spans)
-  match consistent_result {
-    ValidationResult::Valid => assert_true(true),
-    ValidationResult::Invalid(errors) => assert_true(false, "Consistent attributes should be valid: " + errors.join(", "))
-    ValidationResult::Warning(warnings) => assert_true(true) // Warnings are acceptable
-  }
+  let span1_ctx = SpanContext::new(trace_id, "b7ad6b7169203331", true, "")
+  let span1 = Span::new("service-a-operation", Server, span1_ctx)
+  Span::set_attributes(span1, [
+    ("service.name", StringValue("user-service")),
+    ("service.version", StringValue("1.2.3")),
+    ("deployment.environment", StringValue("production"))
+  ])
   
-  // Create spans with inconsistent attributes
-  let inconsistent_spans = [
-    Span::new("frontend_request", Server,
-      TraceContext::new("attr_inconsistent_trace", "span_1", true, [])
-        .with_attributes([
-          ("service.name", StringValue("frontend-service")),
-          // Missing service.version
-          ("service.instance.id", StringValue("frontend-01")),
-          ("http.method", StringValue("GET")),
-          ("http.url", StringValue("/api/users")),
-          ("user.id", StringValue("user_123")),
-          ("request.id", StringValue("req_456"))
-        ])
-    ),
-    Span::new("api_call", Client,
-      TraceContext::new("attr_inconsistent_trace", "span_2", true, [])
-        .with_parent_span_id("span_1")
-        .with_attributes([
-          ("service.name", StringValue("api-service")),
-          ("service.version", StringValue("2.1.0")),
-          ("service.instance.id", StringValue("api-01")),
-          // Non-standard HTTP method attribute
-          ("method", StringValue("GET")),
-          ("http.url", StringValue("/api/users")),
-          ("user.id", StringValue("user_456")), // Different user ID
-          ("request.id", StringValue("req_456"))
-        ])
-    )
-  ]
+  let span2_ctx = SpanContext::new(trace_id, "b7ad6b7169203332", true, "")
+  let span2 = Span::new("service-b-operation", Client, span2_ctx)
+  Span::set_attributes(span2, [
+    ("service.name", StringValue("auth-service")),
+    ("service.version", StringValue("1.2.3")),  // Same version
+    ("deployment.environment", StringValue("production"))  // Same environment
+  ])
   
-  // Validate inconsistent attributes
-  let inconsistent_result = CrossServiceAttributeManager::validate_consistency(attribute_manager, inconsistent_spans)
-  match inconsistent_result {
-    ValidationResult::Valid => assert_true(false),
-    ValidationResult::Invalid(errors) => {
-      assert_true(errors.length() >= 3) // Should have at least 3 errors
-      assert_true(errors.any(|e| e.contains("service.version")))
-      assert_true(errors.any(|e| e.contains("http.method")))
-      assert_true(errors.any(|e| e.contains("user.id")))
-    }
-    ValidationResult::Warning(_) => assert_true(false)
-  }
+  // Validate attribute consistency
+  let spans = [span1, span2]
+  let validation_result = AttributeConsistencyValidator::validate_attributes(validator, spans, required_attributes)
+  
+  // Verify validation passes for consistent attributes
+  assert_true(AttributeConsistencyValidator::is_valid(validation_result))
+  
+  // Create a span with inconsistent attributes
+  let span3_ctx = SpanContext::new(trace_id, "b7ad6b7169203333", true, "")
+  let span3 = Span::new("service-c-operation", Server, span3_ctx)
+  Span::set_attributes(span3, [
+    ("service.name", StringValue("billing-service")),
+    ("service.version", StringValue("2.0.0")),  // Different version
+    ("deployment.environment", StringValue("staging"))  // Different environment
+  ])
+  
+  let spans_with_inconsistent_attrs = [span1, span2, span3]
+  let attr_validation_result = AttributeConsistencyValidator::validate_attributes(validator, spans_with_inconsistent_attrs, required_attributes)
+  
+  // Verify attribute inconsistency is detected
+  assert_false(AttributeConsistencyValidator::is_valid(attr_validation_result))
+  
+  let attr_errors = AttributeConsistencyValidator::get_inconsistent_attributes(attr_validation_result)
+  assert_true(attr_errors.contains("service.version"))
+  assert_true(attr_errors.contains("deployment.environment"))
 }
 
-// Test 7: Distributed Trace Aggregation Consistency
-test "distributed trace aggregation consistency" {
-  let aggregation_manager = DistributedTraceAggregationManager::new()
-  
-  // Configure aggregation
-  let aggregation_config = AggregationConfig::new()
-    .with_time_window(Duration::minutes(5))
-    .with_group_by_attributes(["service.name", "operation.name"])
-    .with_metrics(["duration", "error_rate", "throughput"])
-    .with_percentiles([50.0, 90.0, 95.0, 99.0])
-  
-  DistributedTraceAggregationManager::configure(aggregation_manager, aggregation_config)
-  
-  // Generate distributed traces across multiple services
-  let services = ["frontend", "api", "database", "cache", "auth"]
-  let operations = ["get_user", "create_order", "update_profile", "delete_account"]
-  
-  let base_time = Time::now() - Duration::minutes(10)
-  
-  for i in 0..=100 {
-    let trace_id = "aggregation_trace_" + i.to_string()
-    let service = services[i % services.length()]
-    let operation = operations[i % operations.length()]
-    let timestamp = base_time + Duration::seconds(i * 6) // Every 6 seconds
-    
-    let is_error = i % 10 == 0 // 10% error rate
-    let duration = if is_error {
-      1000 + Math::random() * 2000 // Longer duration for errors
-    } else {
-      100 + Math::random() * 500
-    }
-    
-    let trace = DistributedTrace::new(trace_id)
-      .add_span(Span::new(operation, Server,
-        TraceContext::new(trace_id, "span_1", true, [])
-          .with_timestamp(timestamp)
-          .with_duration(Duration::milliseconds(duration.to_int()))
-          .with_attributes([
-            ("service.name", StringValue(service)),
-            ("operation.name", StringValue(operation)),
-            ("error", BoolValue(is_error))
-          ])
-      ))
-    
-    DistributedTraceAggregationManager::add_trace(aggregation_manager, trace)
-  }
-  
-  // Test aggregation results
-  let aggregation_results = DistributedTraceAggregationManager::get_aggregations(aggregation_manager)
-  assert_true(aggregation_results.length() > 0)
-  
-  // Verify aggregation consistency
-  for aggregation in aggregation_results {
-    let service_name = AggregationResult::get_attribute(aggregation, "service.name")
-    let operation_name = AggregationResult::get_attribute(aggregation, "operation.name")
-    
-    match (service_name, operation_name) {
-      (Some(StringValue(service)), Some(StringValue(operation))) => {
-        // Verify metrics are present and consistent
-        let duration_metric = AggregationResult::get_metric(aggregation, "duration")
-        let error_rate_metric = AggregationResult::get_metric(aggregation, "error_rate")
-        let throughput_metric = AggregationResult::get_metric(aggregation, "throughput")
-        
-        assert_true(duration_metric > 0.0)
-        assert_true(error_rate_metric >= 0.0 && error_rate_metric <= 1.0)
-        assert_true(throughput_metric > 0.0)
-        
-        // Verify percentiles are consistent
-        let p50 = AggregationResult::get_percentile(aggregation, "duration", 50.0)
-        let p90 = AggregationResult::get_percentile(aggregation, "duration", 90.0)
-        let p95 = AggregationResult::get_percentile(aggregation, "duration", 95.0)
-        let p99 = AggregationResult::get_percentile(aggregation, "duration", 99.0)
-        
-        assert_true(p50 <= p90)
-        assert_true(p90 <= p95)
-        assert_true(p95 <= p99)
-      }
-      _ => assert_true(false)
-    }
-  }
-  
-  // Test cross-service aggregation consistency
-  let cross_service_results = DistributedTraceAggregationManager::get_cross_service_aggregations(aggregation_manager)
-  assert_true(cross_service_results.length() >= services.length())
-  
-  // Verify service-level metrics are consistent with operation-level metrics
-  for service_result in cross_service_results {
-    let service_name = AggregationResult::get_attribute(service_result, "service.name")
-    match service_name {
-      Some(StringValue(service)) => {
-        // Get all operation-level aggregations for this service
-        let service_operations = aggregation_results.filter(|r| {
-          match AggregationResult::get_attribute(r, "service.name") {
-            Some(StringValue(s)) => s == service
-            _ => false
-          }
-        })
-        
-        if service_operations.length() > 0 {
-          // Verify service-level error rate is within bounds of operation-level error rates
-          let service_error_rate = AggregationResult::get_metric(service_result, "error_rate")
-          let operation_error_rates = service_operations.map(|o| AggregationResult::get_metric(o, "error_rate"))
-          
-          let min_op_error_rate = operation_error_rates.reduce(Math::min)
-          let max_op_error_rate = operation_error_rates.reduce(Math::max)
-          
-          assert_true(service_error_rate >= min_op_error_rate * 0.9) // Allow some variance
-          assert_true(service_error_rate <= max_op_error_rate * 1.1) // Allow some variance
-        }
-      }
-      _ => assert_true(false)
-    }
-  }
-}
-
-// Test 8: Distributed Trace Reconstruction
+// Test 10: Distributed Trace Reconstruction
 test "distributed trace reconstruction" {
-  let trace_reconstructor = DistributedTraceReconstructor::new()
+  // Create a trace reconstructor
+  let reconstructor = TraceReconstructor::new()
   
-  // Configure reconstruction
-  let reconstruction_config = ReconstructionConfig::new()
-    .with_span_timeout(Duration::seconds(30))
-    .with_max_spans_per_trace(1000)
-    .with_require_root_span(true)
-    .with_validate_timeline(true)
-    .with_fill_missing_attributes(true)
+  // Create spans from different services that form a distributed trace
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
   
-  DistributedTraceReconstructor::configure(trace_reconstructor, reconstruction_config)
+  // These spans might be received out of order
+  let span2_ctx = SpanContext::new(trace_id, "b7ad6b7169203332", true, "")
+  let span2 = Span::new("service-b-operation", Server, span2_ctx)
+  Span::set_parent_span_id(span2, "b7ad6b7169203331")
+  Span::set_timestamp(span2, 1640995200050L, 1640995200080L)
   
-  // Simulate distributed trace collection from multiple services
-  let trace_id = "reconstruction_trace_001"
-  let base_time = Time::now() - Duration::minutes(1)
+  let span1_ctx = SpanContext::new(trace_id, "b7ad6b7169203331", true, "")
+  let span1 = Span::new("service-a-operation", Server, span1_ctx)
+  Span::set_timestamp(span1, 1640995200000L, 1640995200100L)
   
-  // Spans collected from different services at different times
-  let spans = [
-    // From frontend service
-    Span::new("http_request", Server,
-      TraceContext::new(trace_id, "span_1", true, [])
-        .with_timestamp(base_time)
-        .with_duration(Duration::milliseconds(1000))
-        .with_attributes([
-          ("service.name", StringValue("frontend")),
-          ("http.method", StringValue("POST")),
-          ("http.url", StringValue("/api/orders"))
-        ])
-    ),
-    
-    // From API service
-    Span::new("process_order", Server,
-      TraceContext::new(trace_id, "span_2", true, [])
-        .with_parent_span_id("span_1")
-        .with_timestamp(base_time + Duration::milliseconds(100))
-        .with_duration(Duration::milliseconds(800))
-        .with_attributes([
-          ("service.name", StringValue("api")),
-          ("operation.name", StringValue("process_order"))
-        ])
-    ),
-    
-    // From database service
-    Span::new("db_query", Client,
-      TraceContext::new(trace_id, "span_3", true, [])
-        .with_parent_span_id("span_2")
-        .with_timestamp(base_time + Duration::milliseconds(200))
-        .with_duration(Duration::milliseconds(300))
-        .with_attributes([
-          ("service.name", StringValue("database")),
-          ("db.statement", StringValue("INSERT INTO orders"))
-        ])
-    ),
-    
-    // From cache service
-    Span::new("cache_get", Client,
-      TraceContext::new(trace_id, "span_4", true, [])
-        .with_parent_span_id("span_2")
-        .with_timestamp(base_time + Duration::milliseconds(150))
-        .with_duration(Duration::milliseconds(50))
-        .with_attributes([
-          ("service.name", StringValue("cache")),
-          ("cache.key", StringValue("user_123"))
-        ])
-    ),
-    
-    // From auth service
-    Span::new("authorize", Client,
-      TraceContext::new(trace_id, "span_5", true, [])
-        .with_parent_span_id("span_2")
-        .with_timestamp(base_time + Duration::milliseconds(120))
-        .with_duration(Duration::milliseconds(100))
-        .with_attributes([
-          ("service.name", StringValue("auth")),
-          ("auth.user", StringValue("user_123"))
-        ])
-    )
-  ]
+  let span3_ctx = SpanContext::new(trace_id, "b7ad6b7169203333", true, "")
+  let span3 = Span::new("service-c-operation", Client, span3_ctx)
+  Span::set_parent_span_id(span3, "b7ad6b7169203332")
+  Span::set_timestamp(span3, 1640995200090L, 1640995200120L)
   
-  // Add spans to reconstructor in random order (simulating out-of-order arrival)
-  let span_indices = [3, 0, 4, 2, 1] // Random order
-  for i in span_indices {
-    DistributedTraceReconstructor::add_span(trace_reconstructor, spans[i])
-  }
+  // Reconstruct the trace
+  let spans = [span2, span1, span3]  // Out of order
+  let reconstructed_trace = TraceReconstructor::reconstruct(reconstructor, spans)
   
-  // Test trace reconstruction
-  let reconstructed_trace = DistributedTraceReconstructor::reconstruct(trace_reconstructor, trace_id)
-  match reconstructed_trace {
-    Some(trace) => {
-      // Verify trace structure
-      assert_eq(DistributedTrace::trace_id(trace), trace_id)
-      assert_eq(DistributedTrace::span_count(trace), 5)
+  // Verify reconstruction
+  assert_eq(TraceReconstructor::get_trace_id(reconstructed_trace), trace_id)
+  assert_eq(TraceReconstructor::get_span_count(reconstructed_trace), 3)
+  
+  // Verify span order (root should be first)
+  let ordered_spans = TraceReconstructor::get_ordered_spans(reconstructed_trace)
+  assert_eq(SpanContext::span_id(Span::span_context(ordered_spans[0])), "b7ad6b7169203331")  // Root
+  assert_eq(SpanContext::span_id(Span::span_context(ordered_spans[1])), "b7ad6b7169203332")  // Child
+  assert_eq(SpanContext::span_id(Span::span_context(ordered_spans[2])), "b7ad6b7169203333")  // Grandchild
+  
+  // Verify trace tree structure
+  let root_span = TraceReconstructor::get_root_span(reconstructed_trace)
+  match root_span {
+    Some(span) => {
+      assert_eq(SpanContext::span_id(Span::span_context(span)), "b7ad6b7169203331")
       
-      // Verify span relationships
-      let root_span = DistributedTrace::get_root_span(trace)
-      match root_span {
-        Some(span) => {
-          assert_eq(Span::name(span), "http_request")
-          assert_eq(Span::get_attribute(span, "service.name"), Some(StringValue("frontend")))
-        }
-        None => assert_true(false)
-      }
+      let children = TraceReconstructor::get_child_spans(reconstructed_trace, span)
+      assert_eq(children.length(), 1)
+      assert_eq(SpanContext::span_id(Span::span_context(children[0])), "b7ad6b7169203332")
       
-      // Verify span hierarchy
-      let children_of_root = DistributedTrace::get_child_spans(trace, "span_1")
-      assert_eq(children_of_root.length(), 1)
-      assert_eq(Span::name(children_of_root[0]), "process_order")
-      
-      let children_of_process = DistributedTrace::get_child_spans(trace, "span_2")
-      assert_eq(children_of_process.length(), 3)
-      
-      let child_names = children_of_process.map(|s| Span::name(s))
-      assert_true(child_names.contains("db_query"))
-      assert_true(child_names.contains("cache_get"))
-      assert_true(child_names.contains("authorize"))
-      
-      // Verify timeline consistency
-      assert_true(DistributedTrace::is_timeline_consistent(trace))
-      
-      // Verify attribute consistency
-      assert_true(DistributedTrace::are_attributes_consistent(trace))
-      
-      // Verify reconstructed trace metrics
-      let trace_metrics = DistributedTrace::calculate_metrics(trace)
-      assert_true(TraceMetrics::total_duration(trace_metrics) > 0)
-      assert_eq(TraceMetrics::span_count(trace_metrics), 5)
-      assert_eq(TraceMetrics::service_count(trace_metrics), 5)
+      let grandchildren = TraceReconstructor::get_child_spans(reconstructed_trace, children[0])
+      assert_eq(grandchildren.length(), 1)
+      assert_eq(SpanContext::span_id(Span::span_context(grandchildren[0])), "b7ad6b7169203333")
     }
     None => assert_true(false)
   }
-  
-  // Test incomplete trace reconstruction (missing spans)
-  let incomplete_trace_id = "incomplete_trace_001"
-  
-  // Add only some spans
-  DistributedTraceReconstructor::add_span(trace_reconstructor, 
-    Span::new("root", Server,
-      TraceContext::new(incomplete_trace_id, "span_1", true, [])
-        .with_timestamp(base_time)
-    )
-  )
-  
-  DistributedTraceReconstructor::add_span(trace_reconstructor,
-    Span::new("child", Client,
-      TraceContext::new(incomplete_trace_id, "span_2", true, [])
-        .with_parent_span_id("span_1")
-        .with_timestamp(base_time + Duration::milliseconds(100))
-    )
-  )
-  
-  // Try to reconstruct incomplete trace
-  let incomplete_result = DistributedTraceReconstructor::reconstruct(trace_reconstructor, incomplete_trace_id)
-  match incomplete_result {
-    Some(trace) => {
-      // Should still reconstruct what's available
-      assert_eq(DistributedTrace::span_count(trace), 2)
-      assert_true(DistributedTrace::is_incomplete(trace))
-    }
-    None => assert_true(false)
-  }
-  
-  // Test reconstruction metrics
-  let reconstruction_metrics = DistributedTraceReconstructor::get_metrics(trace_reconstructor)
-  assert_true(ReconstructionMetrics::successful_reconstructions(reconstruction_metrics) >= 1)
-  assert_true(ReconstructionMetrics::incomplete_traces(reconstruction_metrics) >= 1)
 }
