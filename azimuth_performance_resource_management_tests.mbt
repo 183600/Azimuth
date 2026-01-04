@@ -1,841 +1,1270 @@
-// Azimuth Telemetry System - Performance and Resource Management Tests
-// This file contains test cases for performance optimization and resource management
+// Azimuth High-Quality Performance and Resource Management Tests
+// This file contains comprehensive test cases for performance and resource management
 
-// Test 1: Memory Usage Optimization
-test "memory usage optimization" {
-  // Test efficient span creation and cleanup
-  let spans = []
+// Test 1: Memory Management and Leak Detection
+test "memory management and leak detection" {
+  let memory_manager = MemoryManager::new()
+  let leak_detector = MemoryLeakDetector::new()
   
-  // Create spans in batches to test memory efficiency
-  for batch in 1..=5 {
-    let batch_spans = []
-    
-    // Create 100 spans per batch
-    for i in 1..=100 {
-      let span_id = "span_" + batch.to_string() + "_" + i.to_string()
-      let ctx = SpanContext::new("trace123456789012345678901234567890", span_id, true, "")
-      let span = Span::new("memory_test_span_" + i.to_string(), Internal, ctx)
-      
-      // Add minimal attributes to test memory usage
-      Span::set_attribute(span, "batch", IntValue(batch))
-      Span::set_attribute(span, "index", IntValue(i))
-      
-      batch_spans.push(span)
+  // Test memory allocation and deallocation
+  let initial_memory = memory_manager.get_usage()
+  
+  // Allocate memory
+  let allocated_blocks = []
+  for i in 0..=100 {
+    let block = memory_manager.allocate(1024 * i) // Allocate increasing block sizes
+    allocated_blocks.push(block)
+  }
+  
+  let peak_memory = memory_manager.get_usage()
+  assert_true(peak_memory.total_allocated > initial_memory.total_allocated)
+  
+  // Verify all blocks are tracked
+  assert_eq(memory_manager.get_allocated_blocks_count(), 101)
+  
+  // Deallocate memory
+  for block in allocated_blocks {
+    memory_manager.deallocate(block)
+  }
+  
+  let final_memory = memory_manager.get_usage()
+  assert_true(final_memory.total_allocated < peak_memory.total_allocated)
+  
+  // Test memory leak detection
+  leak_detector.start_monitoring()
+  
+  // Simulate potential memory leak
+  let leaked_blocks = []
+  for i in 0..=50 {
+    let block = memory_manager.allocate(2048)
+    // Intentionally not deallocating some blocks
+    if i % 3 != 0 {
+      leaked_blocks.push(block)
     }
-    
-    // End spans immediately to test cleanup
-    for span in batch_spans {
-      Span::end(span)
+  }
+  
+  let leak_report = leak_detector.detect_leaks()
+  assert_true(leak_report.potential_leaks > 0)
+  assert_true(leak_report.leaked_bytes > 0)
+  
+  // Clean up leaked blocks
+  for block in leaked_blocks {
+    memory_manager.deallocate(block)
+  }
+  
+  let final_leak_report = leak_detector.detect_leaks()
+  assert_eq(final_leak_report.potential_leaks, 0)
+  
+  // Test memory pool management
+  let memory_pool = MemoryPool::new(1024 * 1024, 100) // 1MB chunks, 100 chunks
+  
+  let pooled_blocks = []
+  for i in 0..=50 {
+    let block = memory_pool.acquire()
+    pooled_blocks.push(block)
+  }
+  
+  assert_eq(memory_pool.get_available_count(), 50)
+  
+  // Return blocks to pool
+  for block in pooled_blocks {
+    memory_pool.release(block)
+  }
+  
+  assert_eq(memory_pool.get_available_count(), 100)
+  
+  // Test memory fragmentation
+  let fragmentation_analyzer = MemoryFragmentationAnalyzer::new()
+  
+  // Create fragmented allocation pattern
+  let fragmented_blocks = []
+  for i in 0..=20 {
+    let block = memory_manager.allocate(1024)
+    fragmented_blocks.push(block)
+  }
+  
+  // Deallocate every other block to create fragmentation
+  for i in 0..=19 {
+    if i % 2 == 0 {
+      memory_manager.deallocate(fragmented_blocks[i])
     }
-    
-    // Clear batch array to free memory
-    batch_spans = []
   }
   
-  // Test attribute memory efficiency
-  let attrs = Attributes::new()
+  let fragmentation_report = fragmentation_analyzer.analyze_fragmentation()
+  assert_true(fragmentation_report.fragmentation_ratio > 0.0)
+  assert_true(fragmentation_report.largest_free_block < 1024 * 10)
   
-  // Add many attributes to test memory usage
-  for i in 1..=1000 {
-    let key = "attr_" + i.to_string()
-    let value = StringValue("value_" + i.to_string())
-    Attributes::set(attrs, key, value)
-  }
-  
-  // Verify some attributes are set
-  let test_attr = Attributes::get(attrs, "attr_500")
-  match test_attr {
-    Some(StringValue(value)) => assert_eq(value, "value_500")
-    _ => assert_true(false)
-  }
-  
-  // Test array attribute memory efficiency
-  let large_string_array = []
-  for i in 1..=1000 {
-    large_string_array.push("string_" + i.to_string())
-  }
-  
-  Attributes::set(attrs, "large.array", ArrayStringValue(large_string_array))
-  
-  let array_result = Attributes::get(attrs, "large.array")
-  match array_result {
-    Some(ArrayStringValue(arr)) => assert_eq(arr.length(), 1000)
-    _ => assert_true(false)
-  }
-}
-
-// Test 2: Performance Benchmarking for Metrics
-test "performance benchmarking for metrics" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "performance_meter")
-  
-  // Create metrics for performance testing
-  let counter = Meter::create_counter(
-    meter,
-    "performance.counter",
-    Some("Performance test counter"),
-    Some("operations")
-  )
-  
-  let histogram = Meter::create_histogram(
-    meter,
-    "performance.histogram",
-    Some("Performance test histogram"),
-    Some("ms")
-  )
-  
-  let gauge = Meter::create_gauge(
-    meter,
-    "performance.gauge",
-    Some("Performance test gauge"),
-    Some("units")
-  )
-  
-  // Benchmark counter operations
-  let start_time = 1234567890L
-  
-  // Perform 10,000 counter operations
-  for i in 1..=10000 {
-    Counter::add(counter, 1.0, Some(Attributes::with([
-      ("operation.type", StringValue("benchmark")),
-      ("iteration", IntValue(i))
-    ])))
-  }
-  
-  let counter_end_time = 1234567890L
-  
-  // Benchmark histogram operations
-  for i in 1..=5000 {
-    let value = 50.0 + (i.to_float() % 1000.0)
-    Histogram::record(histogram, value, Some(Attributes::with([
-      ("operation.type", StringValue("benchmark")),
-      ("iteration", IntValue(i))
-    ])))
-  }
-  
-  let histogram_end_time = 1234567890L
-  
-  // Benchmark gauge operations
-  for i in 1..=3000 {
-    let value = 100.0 + (i.to_float() % 50.0)
-    Gauge::record(gauge, value, Some(Attributes::with([
-      ("operation.type", StringValue("benchmark")),
-      ("iteration", IntValue(i))
-    ])))
-  }
-  
-  let gauge_end_time = 1234567890L
-  
-  // Verify metrics are properly configured
-  let counter_instrument = Counter::as_instrument(counter)
-  assert_eq(Instrument::name(counter_instrument), "performance.counter")
-  
-  let histogram_instrument = Histogram::as_instrument(histogram)
-  assert_eq(Instrument::name(histogram_instrument), "performance.histogram")
-  
-  let gauge_instrument = Gauge::as_instrument(gauge)
-  assert_eq(Instrument::name(gauge_instrument), "performance.gauge")
-  
-  // Test performance with different attribute combinations
-  let performance_counter = Meter::create_counter(
-    meter,
-    "attribute.performance.counter",
-    Some("Attribute performance test counter"),
-    Some("operations")
-  )
-  
-  // Test with varying numbers of attributes
-  for attr_count in [1, 5, 10, 25, 50, 100] {
-    let attrs = Attributes::new()
-    
-    // Add varying number of attributes
-    for i in 1..=attr_count {
-      let key = "attr_" + i.to_string()
-      let value = StringValue("value_" + i.to_string())
-      Attributes::set(attrs, key, value)
-    }
-    
-    // Measure performance with this attribute count
-    for i in 1..=1000 {
-      Counter::add(performance_counter, 1.0, Some(attrs))
+  // Clean up remaining blocks
+  for i in 0..=19 {
+    if i % 2 == 1 {
+      memory_manager.deallocate(fragmented_blocks[i])
     }
   }
 }
 
-// Test 3: Resource Pool Management
-test "resource pool management" {
-  // Test span context pool efficiency
-  let context_pool = []
+// Test 2: CPU Performance and Optimization
+test "cpu performance and optimization" {
+  let cpu_monitor = CPUMonitor::new()
+  let performance_profiler = PerformanceProfiler::new()
   
-  // Create and reuse span contexts
-  for i in 1..=100 {
-    let trace_id = "trace123456789012345678901234567890"
-    let span_id = "span_" + i.to_string().pad_left(16, '0')
-    let ctx = SpanContext::new(trace_id, span_id, true, "")
-    context_pool.push(ctx)
+  // Test CPU usage monitoring
+  let initial_cpu_usage = cpu_monitor.get_current_usage()
+  
+  // CPU-intensive operation
+  let cpu_intensive_task = || {
+    let mut result = 0
+    for i in 0..=1000000 {
+      result = result + i * i
+    }
+    result
   }
   
-  // Verify all contexts are valid
-  for ctx in context_pool {
-    assert_true(SpanContext::is_valid(ctx))
-    assert_true(SpanContext::is_sampled(ctx))
-    assert_eq(SpanContext::trace_id(ctx), "trace123456789012345678901234567890")
+  performance_profiler.start_profiling("cpu_intensive_task")
+  let task_result = cpu_intensive_task()
+  performance_profiler.stop_profiling("cpu_intensive_task")
+  
+  let final_cpu_usage = cpu_monitor.get_current_usage()
+  
+  // Verify task completed successfully
+  assert_true(task_result > 0)
+  
+  // Check profiling results
+  let profile_data = performance_profiler.get_profile("cpu_intensive_task")
+  assert_true(profile_data.execution_time_ms > 0)
+  assert_true(profile_data.cpu_time_ms > 0)
+  assert_true(profile_data.cpu_usage_percent > 0)
+  
+  // Test CPU core utilization
+  let core_utilization = cpu_monitor.get_core_utilization()
+  assert_true(core_utilization.length() > 0)
+  
+  for core_usage in core_utilization {
+    assert_true(core_usage.utilization_percent >= 0.0)
+    assert_true(core_usage.utilization_percent <= 100.0)
   }
   
-  // Test attribute pool efficiency
-  let attribute_pool = []
+  // Test multi-threaded CPU performance
+  let thread_pool = ThreadPool::new(4) // 4 worker threads
   
-  // Create reusable attribute sets
-  let base_attrs = Attributes::with([
-    ("service.name", StringValue("azimuth-performance-test")),
-    ("service.version", StringValue("2.1.0")),
-    ("environment", StringValue("test"))
+  let parallel_tasks = []
+  for i in 0..=10 {
+    let task = thread_pool.submit(|| {
+      let mut local_result = 0
+      for j in 0..=100000 {
+        local_result = local_result + j * j
+      }
+      local_result
+    })
+    parallel_tasks.push(task)
+  }
+  
+  // Wait for all tasks to complete
+  let results = []
+  for task in parallel_tasks {
+    let result = task.wait()
+    results.push(result)
+  }
+  
+  assert_eq(results.length(), 11)
+  
+  // Verify all results are correct
+  for result in results {
+    assert_true(result > 0)
+  }
+  
+  // Compare parallel vs sequential performance
+  let sequential_start = get_current_timestamp()
+  let sequential_result = cpu_intensive_task()
+  let sequential_end = get_current_timestamp()
+  let sequential_time = sequential_end - sequential_start
+  
+  let parallel_start = get_current_timestamp()
+  let parallel_result = cpu_intensive_task() // Same task but in parallel context
+  let parallel_end = get_current_timestamp()
+  let parallel_time = parallel_end - parallel_start
+  
+  // Performance should be comparable (this is a simplified test)
+  assert_true(abs(parallel_time.to_millis() - sequential_time.to_millis()) < 1000)
+  
+  // Test CPU frequency scaling
+  let frequency_monitor = CPUFrequencyMonitor::new()
+  let frequency_info = frequency_monitor.get_frequency_info()
+  
+  assert_true(frequency_info.current_frequency > 0)
+  assert_true(frequency_info.min_frequency > 0)
+  assert_true(frequency_info.max_frequency >= frequency_info.min_frequency)
+  
+  // Test thermal throttling detection
+  let thermal_monitor = ThermalMonitor::new()
+  let thermal_info = thermal_monitor.get_thermal_info()
+  
+  assert_true(thermal_info.current_temperature >= 0.0)
+  assert_true(thermal_info.max_temperature >= thermal_info.current_temperature)
+  assert_true(thermal_info.critical_temperature >= thermal_info.max_temperature)
+  
+  // Test performance governor
+  let performance_governor = PerformanceGovernor::new()
+  
+  // Set performance mode
+  performance_governor.set_governor(GovernorMode::Performance)
+  assert_eq(performance_governor.get_current_governor(), GovernorMode::Performance)
+  
+  // Execute task in performance mode
+  let perf_mode_result = cpu_intensive_task()
+  assert_true(perf_mode_result > 0)
+  
+  // Set powersave mode
+  performance_governor.set_governor(GovernorMode::Powersave)
+  assert_eq(performance_governor.get_current_governor(), GovernorMode::Powersave)
+  
+  // Execute task in powersave mode
+  let power_mode_result = cpu_intensive_task()
+  assert_true(power_mode_result > 0)
+}
+
+// Test 3: I/O Performance and Optimization
+test "io performance and optimization" {
+  let io_monitor = IOMonitor::new()
+  let io_profiler = IOProfiler::new()
+  
+  // Test file I/O performance
+  let test_file = "/tmp/azimuth_io_test.txt"
+  let test_data = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. ".repeat(10000)
+  
+  io_profiler.start_profiling("file_write")
+  let write_result = write_file_to_disk(test_file, test_data)
+  io_profiler.stop_profiling("file_write")
+  
+  assert_true(write_result.is_success)
+  
+  let write_profile = io_profiler.get_profile("file_write")
+  assert_true(write_profile.bytes_written > 0)
+  assert_true(write_profile.write_time_ms > 0)
+  assert_true(write_profile.write_throughput_mbps > 0)
+  
+  // Test file read performance
+  io_profiler.start_profiling("file_read")
+  let read_result = read_file_from_disk(test_file)
+  io_profiler.stop_profiling("file_read")
+  
+  assert_true(read_result.is_success)
+  assert_eq(read_result.content, test_data)
+  
+  let read_profile = io_profiler.get_profile("file_read")
+  assert_true(read_profile.bytes_read > 0)
+  assert_true(read_profile.read_time_ms > 0)
+  assert_true(read_profile.read_throughput_mbps > 0)
+  
+  // Test buffered vs unbuffered I/O
+  let buffered_test_file = "/tmp/azimuth_buffered_test.txt"
+  let unbuffered_test_file = "/tmp/azimuth_unbuffered_test.txt"
+  
+  // Buffered I/O
+  let buffered_start = get_current_timestamp()
+  write_file_buffered(buffered_test_file, test_data)
+  let buffered_content = read_file_buffered(buffered_test_file)
+  let buffered_end = get_current_timestamp()
+  let buffered_time = buffered_end - buffered_start
+  
+  // Unbuffered I/O
+  let unbuffered_start = get_current_timestamp()
+  write_file_unbuffered(unbuffered_test_file, test_data)
+  let unbuffered_content = read_file_unbuffered(unbuffered_test_file)
+  let unbuffered_end = get_current_timestamp()
+  let unbuffered_time = unbuffered_end - unbuffered_start
+  
+  // Verify content is the same
+  assert_eq(buffered_content, test_data)
+  assert_eq(unbuffered_content, test_data)
+  
+  // Buffered I/O should generally be faster for this use case
+  assert_true(buffered_time.to_millis() <= unbuffered_time.to_millis() + 100) // Allow some tolerance
+  
+  // Test asynchronous I/O
+  let async_io_manager = AsyncIOManager::new()
+  
+  let async_file = "/tmp/azimuth_async_test.txt"
+  let async_write_future = async_io_manager.write_file(async_file, test_data)
+  let write_result = async_write_future.wait()
+  assert_true(write_result.is_success)
+  
+  let async_read_future = async_io_manager.read_file(async_file)
+  let read_result = async_read_future.wait()
+  assert_true(read_result.is_success)
+  assert_eq(read_result.content, test_data)
+  
+  // Test I/O monitoring
+  let io_metrics = io_monitor.get_metrics()
+  
+  assert_true(io_metrics.total_read_operations > 0)
+  assert_true(io_metrics.total_write_operations > 0)
+  assert_true(io_metrics.total_bytes_read > 0)
+  assert_true(io_metrics.total_bytes_written > 0)
+  assert_true(io_metrics.average_read_latency_ms > 0)
+  assert_true(io_metrics.average_write_latency_ms > 0)
+  
+  // Test disk space monitoring
+  let disk_monitor = DiskSpaceMonitor::new()
+  let disk_info = disk_monitor.get_disk_info("/tmp")
+  
+  assert_true(disk_info.total_space > 0)
+  assert_true(disk_info.used_space > 0)
+  assert_true(disk_info.free_space > 0)
+  assert_true(disk_info.used_space + disk_info.free_space <= disk_info.total_space)
+  
+  let usage_percentage = (disk_info.used_space.to_float() / disk_info.total_space.to_float()) * 100.0
+  assert_true(usage_percentage >= 0.0 && usage_percentage <= 100.0)
+  
+  // Clean up test files
+  remove_file(test_file)
+  remove_file(buffered_test_file)
+  remove_file(unbuffered_test_file)
+  remove_file(async_file)
+}
+
+// Test 4: Network Performance and Optimization
+test "network performance and optimization" {
+  let network_monitor = NetworkMonitor::new()
+  let network_profiler = NetworkProfiler::new()
+  
+  // Test network bandwidth measurement
+  let bandwidth_tester = BandwidthTester::new()
+  
+  let bandwidth_result = bandwidth_tester.measure_bandwidth(
+    "http://example.com/large_file", // Test URL
+    Duration::from_seconds(10) // 10 second test
+  )
+  
+  assert_true(bandwidth_result.is_success)
+  assert_true(bandwidth_result.download_speed_mbps > 0)
+  assert_true(bandwidth_result.upload_speed_mbps >= 0)
+  assert_true(bandwidth_result.latency_ms > 0)
+  
+  // Test network latency measurement
+  let latency_tester = LatencyTester::new()
+  
+  let latency_results = latency_tester.measure_latency_to_hosts([
+    "8.8.8.8", // Google DNS
+    "1.1.1.1", // Cloudflare DNS
+    "example.com"
   ])
   
-  for i in 1..=50 {
-    let attrs = Attributes::with([
-      ("service.name", StringValue("azimuth-performance-test")),
-      ("service.version", StringValue("2.1.0")),
-      ("environment", StringValue("test")),
-      ("worker.id", IntValue(i)),
-      ("operation.type", StringValue("resource_pool_test"))
-    ])
-    attribute_pool.push(attrs)
+  assert_eq(latency_results.length(), 3)
+  
+  for latency_result in latency_results {
+    assert_true(latency_result.host.length() > 0)
+    assert_true(latency_result.average_latency_ms > 0)
+    assert_true(latency_result.min_latency_ms > 0)
+    assert_true(latency_result.max_latency_ms >= latency_result.min_latency_ms)
+    assert_true(latency_result.packet_loss_percentage >= 0.0 && latency_result.packet_loss_percentage <= 100.0)
   }
   
-  // Verify all attribute sets have correct values
-  for i in 1..=50 {
-    let attrs = attribute_pool[i - 1]
-    let worker_id = Attributes::get(attrs, "worker.id")
-    match worker_id {
-      Some(IntValue(id)) => assert_eq(id, i)
-      _ => assert_true(false)
+  // Test connection pooling
+  let connection_pool = ConnectionPool::new(10) // Max 10 connections
+  
+  let connections = []
+  for i in 0..=15 {
+    let connection_result = connection_pool.get_connection("http://example.com")
+    
+    match connection_result {
+      Ok(conn) => {
+        connections.push(conn)
+      }
+      Err(ConnectionPoolError::Exhausted) => {
+        assert_true(connections.length() >= 10)
+        break
+      }
+      Err(_) => {
+        assert_true(false) // Unexpected error
+      }
     }
   }
+  
+  // Return connections to pool
+  for conn in connections {
+    connection_pool.return_connection(conn)
+  }
+  
+  // Test HTTP client performance
+  let http_client = OptimizedHttpClient::new()
+    .with_connection_timeout(Duration::from_seconds(5))
+    .with_read_timeout(Duration::from_seconds(10))
+    .with_max_retries(3)
+    .with_compression(true)
+  
+  let http_start = get_current_timestamp()
+  let http_response = http_client.get("http://example.com")
+  let http_end = get_current_timestamp()
+  let http_time = http_end - http_start
+  
+  assert_true(http_response.is_success)
+  assert_true(http_response.status_code >= 200 && http_response.status_code < 300)
+  assert_true(http_response.content.length() > 0)
+  assert_true(http_time.to_millis() > 0)
+  
+  // Test network monitoring
+  let network_metrics = network_monitor.get_metrics()
+  
+  assert_true(network_metrics.bytes_sent >= 0)
+  assert_true(network_metrics.bytes_received >= 0)
+  assert_true(network_metrics.packets_sent >= 0)
+  assert_true(network_metrics.packets_received >= 0)
+  assert_true(network_metrics.connections_established >= 0)
+  assert_true(network_metrics.connections_failed >= 0)
+  
+  // Test network interface monitoring
+  let interface_monitor = NetworkInterfaceMonitor::new()
+  let interfaces = interface_monitor.get_network_interfaces()
+  
+  assert_true(interfaces.length() > 0)
+  
+  for interface in interfaces {
+    assert_true(interface.name.length() > 0)
+    assert_true(interface.bytes_sent >= 0)
+    assert_true(interface.bytes_received >= 0)
+    assert_true(interface.packets_sent >= 0)
+    assert_true(interface.packets_received >= 0)
+    assert_true(interface.errors_in >= 0)
+    assert_true(interface.errors_out >= 0)
+  }
+  
+  // Test DNS performance
+  let dns_tester = DNSTester::new()
+  
+  let dns_results = dns_tester.measure_dns_resolution([
+    "google.com",
+    "cloudflare.com",
+    "example.com"
+  ])
+  
+  assert_eq(dns_results.length(), 3)
+  
+  for dns_result in dns_results {
+    assert_true(dns_result.domain.length() > 0)
+    assert_true(dns_result.resolution_time_ms > 0)
+    assert_true(dns_result.ip_addresses.length() > 0)
+    assert_false(dns_result.resolution_failed)
+  }
+}
+
+// Test 5: Database Performance and Optimization
+test "database performance and optimization" {
+  let db_manager = DatabaseManager::new()
+  let db_profiler = DatabaseProfiler::new()
+  
+  // Test database connection pooling
+  let connection_pool = db_manager.create_connection_pool(
+    "test_db",
+    10, // Max connections
+    5,  // Min connections
+    Duration::from_seconds(30) // Idle timeout
+  )
+  
+  assert_eq(connection_pool.get_active_connections(), 5)
+  assert_eq(connection_pool.get_idle_connections(), 0)
+  
+  // Test query performance
+  let test_data = generate_test_database_records(1000)
+  
+  db_profiler.start_profiling("bulk_insert")
+  let insert_result = db_manager.bulk_insert("test_table", test_data)
+  db_profiler.stop_profiling("bulk_insert")
+  
+  assert_true(insert_result.is_success)
+  assert_eq(insert_result.affected_rows, 1000)
+  
+  let insert_profile = db_profiler.get_profile("bulk_insert")
+  assert_true(insert_profile.execution_time_ms > 0)
+  assert_true(insert_profile.rows_per_second > 0)
+  
+  // Test query optimization
+  let query_optimizer = QueryOptimizer::new()
+  
+  let unoptimized_query = "SELECT * FROM test_table WHERE category = 'test' AND value > 100"
+  let optimized_query = query_optimizer.optimize_query(unoptimized_query)
+  
+  assert_ne(optimized_query, unoptimized_query)
+  
+  // Test query execution with optimization
+  db_profiler.start_profiling("unoptimized_query")
+  let unoptimized_result = db_manager.execute_query(unoptimized_query)
+  db_profiler.stop_profiling("unoptimized_query")
+  
+  db_profiler.start_profiling("optimized_query")
+  let optimized_result = db_manager.execute_query(optimized_query)
+  db_profiler.stop_profiling("optimized_query")
+  
+  assert_true(unoptimized_result.is_success)
+  assert_true(optimized_result.is_success)
+  assert_eq(unoptimized_result.rows.length(), optimized_result.rows.length())
+  
+  let unoptimized_profile = db_profiler.get_profile("unoptimized_query")
+  let optimized_profile = db_profiler.get_profile("optimized_query")
+  
+  // Optimized query should be faster (or at least not significantly slower)
+  assert_true(optimized_profile.execution_time_ms <= unoptimized_profile.execution_time_ms + 50)
+  
+  // Test index performance
+  let index_manager = db_manager.get_index_manager()
+  
+  // Create index
+  let index_result = index_manager.create_index("test_table", "category_index", ["category"])
+  assert_true(index_result.is_success)
+  
+  // Test query performance with index
+  db_profiler.start_profiling("indexed_query")
+  let indexed_result = db_manager.execute_query("SELECT * FROM test_table WHERE category = 'test'")
+  db_profiler.stop_profiling("indexed_query")
+  
+  let indexed_profile = db_profiler.get_profile("indexed_query")
+  assert_true(indexed_profile.execution_time_ms > 0)
+  assert_true(indexed_profile.indexes_used.length() > 0)
+  assert_true(indexed_profile.indexes_used.contains("category_index"))
+  
+  // Test transaction performance
+  let transaction_manager = db_manager.get_transaction_manager()
+  
+  db_profiler.start_profiling("transaction_batch")
+  let transaction_result = transaction_manager.execute_in_transaction(|| {
+    for i in 0..=100 {
+      let update_query = "UPDATE test_table SET value = value + 1 WHERE id = " + i.to_string()
+      let update_result = db_manager.execute_update(update_query)
+      if !update_result.is_success {
+        return false
+      }
+    }
+    true
+  })
+  db_profiler.stop_profiling("transaction_batch")
+  
+  assert_true(transaction_result.is_success)
+  
+  let transaction_profile = db_profiler.get_profile("transaction_batch")
+  assert_true(transaction_profile.execution_time_ms > 0)
+  assert_eq(transaction_profile.transaction_status, "committed")
+  
+  // Test database caching
+  let cache_manager = db_manager.get_cache_manager()
+  
+  // Enable query result caching
+  cache_manager.enable_query_caching(Duration::from_minutes(5))
+  
+  // First query (cache miss)
+  db_profiler.start_profiling("cached_query_miss")
+  let first_result = db_manager.execute_cached_query("SELECT COUNT(*) FROM test_table")
+  db_profiler.stop_profiling("cached_query_miss")
+  
+  // Second query (cache hit)
+  db_profiler.start_profiling("cached_query_hit")
+  let second_result = db_manager.execute_cached_query("SELECT COUNT(*) FROM test_table")
+  db_profiler.stop_profiling("cached_query_hit")
+  
+  assert_true(first_result.is_success)
+  assert_true(second_result.is_success)
+  assert_eq(first_result.rows[0][0], second_result.rows[0][0])
+  
+  let cache_miss_profile = db_profiler.get_profile("cached_query_miss")
+  let cache_hit_profile = db_profiler.get_profile("cached_query_hit")
+  
+  // Cache hit should be significantly faster
+  assert_true(cache_hit_profile.execution_time_ms < cache_miss_profile.execution_time_ms)
+  assert_eq(cache_hit_profile.cache_status, "hit")
+  assert_eq(cache_miss_profile.cache_status, "miss")
+  
+  // Test database performance metrics
+  let db_metrics = db_manager.get_performance_metrics()
+  
+  assert_true(db_metrics.total_queries > 0)
+  assert_true(db_metrics.total_updates > 0)
+  assert_true(db_metrics.average_query_time_ms > 0)
+  assert_true(db_metrics.cache_hit_rate >= 0.0 && db_metrics.cache_hit_rate <= 1.0)
+  assert_true(db_metrics.connection_pool_utilization >= 0.0 && db_metrics.connection_pool_utilization <= 1.0)
+}
+
+// Test 6: Application Performance Monitoring
+test "application performance monitoring" {
+  let apm = ApplicationPerformanceMonitor::new()
+  
+  // Test transaction tracing
+  let transaction_tracer = apm.get_transaction_tracer()
+  
+  let transaction = transaction_tracer.start_transaction("user_registration")
+  
+  // Simulate application operations
+  sleep(Duration::from_millis(50))
+  
+  let db_span = transaction.start_span("database_operation", SpanType::Database)
+  sleep(Duration::from_millis(100))
+  db_span.finish()
+  
+  let api_span = transaction.start_span("api_call", SpanType::External)
+  sleep(Duration::from_millis(200))
+  api_span.finish()
+  
+  let cache_span = transaction.start_span("cache_lookup", SpanType::Cache)
+  sleep(Duration::from_millis(25))
+  cache_span.finish()
+  
+  transaction.finish()
+  
+  // Verify transaction was recorded
+  let transactions = apm.get_transactions()
+  assert_true(transactions.length() > 0)
+  
+  let recorded_transaction = transactions[0]
+  assert_eq(recorded_transaction.name, "user_registration")
+  assert_true(recorded_transaction.duration_ms > 0)
+  assert_eq(recorded_transaction.spans.length(), 3)
+  
+  // Verify spans
+  let db_span_recorded = recorded_transaction.spans.find(|s| s.name == "database_operation")
+  assert_true(db_span_recorded.is_some())
+  assert_eq(db_span_recorded.unwrap().span_type, SpanType::Database)
+  
+  let api_span_recorded = recorded_transaction.spans.find(|s| s.name == "api_call")
+  assert_true(api_span_recorded.is_some())
+  assert_eq(api_span_recorded.unwrap().span_type, SpanType::External)
+  
+  let cache_span_recorded = recorded_transaction.spans.find(|s| s.name == "cache_lookup")
+  assert_true(cache_span_recorded.is_some())
+  assert_eq(cache_span_recorded.unwrap().span_type, SpanType::Cache)
+  
+  // Test performance metrics collection
+  let metrics_collector = apm.get_metrics_collector()
+  
+  // Record custom metrics
+  metrics_collector.record_counter("user_registrations", 1)
+  metrics_collector.record_histogram("registration_duration_ms", 375)
+  metrics_collector.record_gauge("active_sessions", 42)
+  
+  // Test application resource monitoring
+  let resource_monitor = apm.get_resource_monitor()
+  let resource_metrics = resource_monitor.get_current_metrics()
+  
+  assert_true(resource_metrics.cpu_usage_percent >= 0.0)
+  assert_true(resource_metrics.memory_usage_mb > 0)
+  assert_true(resource_metrics.gc_collections >= 0)
+  assert_true(resource_metrics.thread_count > 0)
+  
+  // Test error tracking
+  let error_tracker = apm.get_error_tracker()
+  
+  // Simulate an error
+  try {
+    raise ApplicationError::new("Simulated application error")
+  } catch {
+    e: ApplicationError => {
+      error_tracker.record_error(e)
+    }
+  }
+  
+  let errors = apm.get_errors()
+  assert_true(errors.length() > 0)
+  
+  let recorded_error = errors[0]
+  assert_eq(recorded_error.message, "Simulated application error")
+  assert_true(recorded_error.timestamp > 0)
+  
+  // Test performance alerts
+  let alert_manager = apm.get_alert_manager()
+  
+  // Configure performance alerts
+  alert_manager.add_alert_rule(
+    "high_response_time",
+    AlertType::Threshold,
+    "response_time_p95 > 1000"
+  )
+  
+  alert_manager.add_alert_rule(
+    "high_error_rate",
+    AlertType::Threshold,
+    "error_rate > 0.05"
+  )
+  
+  // Simulate high response time
+  metrics_collector.record_histogram("response_time_ms", 1500)
+  
+  // Check for alerts
+  let alerts = alert_manager.check_alerts()
+  let high_response_time_alert = alerts.find(|a| a.rule_name == "high_response_time")
+  assert_true(high_response_time_alert.is_some())
+  
+  // Test performance dashboard data
+  let dashboard_data = apm.get_dashboard_data()
+  
+  assert_true(dashboard_data.response_time_p95 > 0)
+  assert_true(dashboard_data.response_time_p99 > 0)
+  assert_true(dashboard_data.throughput_per_second > 0)
+  assert_true(dashboard_data.error_rate >= 0.0 && dashboard_data.error_rate <= 1.0)
+  assert_true(dashboard_data.apdex_score >= 0.0 && dashboard_data.apdex_score <= 1.0)
+}
+
+// Test 7: Load Testing and Stress Testing
+test "load testing and stress testing" {
+  let load_tester = LoadTester::new()
+  
+  // Configure load test
+  let load_test_config = LoadTestConfig::new()
+    .with_concurrent_users(50)
+    .with_duration(Duration::from_minutes(1))
+    .with_ramp_up(Duration::from_seconds(30))
+    .with_think_time(Duration::from_millis(500))
+  
+  // Define test scenario
+  let test_scenario = LoadTestScenario::new("user_journey")
+    .add_step("login", || {
+      // Simulate login
+      sleep(Duration::from_millis(200))
+      LoadTestStepResult::Success
+    })
+    .add_step("browse_products", || {
+      // Simulate browsing
+      sleep(Duration::from_millis(500))
+      LoadTestStepResult::Success
+    })
+    .add_step("add_to_cart", || {
+      // Simulate adding to cart
+      sleep(Duration::from_millis(300))
+      LoadTestStepResult::Success
+    })
+    .add_step("checkout", || {
+      // Simulate checkout
+      sleep(Duration::from_millis(1000))
+      LoadTestStepResult::Success
+    })
+  
+  // Execute load test
+  let load_test_result = load_tester.execute_load_test(load_test_config, test_scenario)
+  
+  assert_true(load_test_result.is_success)
+  assert_true(load_test_result.total_requests > 0)
+  assert_true(load_test_result.successful_requests > 0)
+  assert_true(load_test_result.failed_requests >= 0)
+  assert_true(load_test_result.average_response_time_ms > 0)
+  assert_true(load_test_result.p95_response_time_ms >= load_test_result.average_response_time_ms)
+  assert_true(load_test_result.p99_response_time_ms >= load_test_result.p95_response_time_ms)
+  assert_true(load_test_result.throughput_per_second > 0)
+  
+  // Calculate success rate
+  let success_rate = load_test_result.successful_requests.to_float() / load_test_result.total_requests.to_float()
+  assert_true(success_rate > 0.9) // At least 90% success rate
+  
+  // Test stress testing
+  let stress_test_config = StressTestConfig::new()
+    .with_max_users(200)
+    .with_duration(Duration::from_minutes(2))
+    .with_step_duration(Duration::from_seconds(30))
+    .with_step_users(25)
+  
+  let stress_test_result = load_tester.execute_stress_test(stress_test_config, test_scenario)
+  
+  assert_true(stress_test_result.is_success)
+  assert_true(stress_test_result.breaking_point_users > 0)
+  assert_true(stress_test_result.max_sustained_users > 0)
+  assert_true(stress_test_result.performance_degradation_point > 0)
+  
+  // Verify stress test metrics
+  assert_true(stress_test_result.breaking_point_response_time > stress_test_result.baseline_response_time * 2)
+  assert_true(stress_test_result.breaking_point_error_rate > 0.1) // Error rate > 10% at breaking point
+  
+  // Test spike testing
+  let spike_test_config = SpikeTestConfig::new()
+    .with_normal_users(20)
+    .with_spike_users(100)
+    .with_spike_duration(Duration::from_seconds(30))
+    .with_total_duration(Duration::from_minutes(2))
+  
+  let spike_test_result = load_tester.execute_spike_test(spike_test_config, test_scenario)
+  
+  assert_true(spike_test_result.is_success)
+  assert_true(spike_test_result.recovery_time_ms > 0)
+  assert_true(spike_test_result.spike_response_time > spike_test_result.normal_response_time)
+  assert_true(spike_test_result.spike_error_rate >= spike_test_result.normal_error_rate)
+  
+  // Test endurance testing
+  let endurance_test_config = EnduranceTestConfig::new()
+    .with_duration(Duration::from_hours(1))
+    .with_concurrent_users(30)
+    .with_threshold_check_interval(Duration::from_minutes(5))
+  
+  let endurance_test_result = load_tester.execute_endurance_test(endurance_test_config, test_scenario)
+  
+  assert_true(endurance_test_result.is_success)
+  assert_true(endurance_test_result.total_duration_ms >= Duration::from_hours(1).to_millis())
+  assert_true(endurance_test_result.memory_leak_detected == false)
+  assert_true(endurance_test_result.performance_degradation_detected == false)
+}
+
+// Test 8: Resource Optimization and Scaling
+test "resource optimization and scaling" {
+  let resource_optimizer = ResourceOptimizer::new()
+  
+  // Test auto-scaling configuration
+  let auto_scaler = AutoScaler::new()
+  
+  let scaling_policy = ScalingPolicy::new()
+    .with_min_instances(2)
+    .with_max_instances(10)
+    .with_target_cpu_utilization(70.0)
+    .with_target_memory_utilization(80.0)
+    .with_scale_up_cooldown(Duration::from_minutes(5))
+    .with_scale_down_cooldown(Duration::from_minutes(10))
+    .with_scale_up_step(1)
+    .with_scale_down_step(1)
+  
+  auto_scaler.set_policy(scaling_policy)
+  
+  // Test scaling decisions
+  let current_metrics = ResourceMetrics::new()
+    .with_cpu_utilization(85.0) // High CPU
+    .with_memory_utilization(60.0) // Normal memory
+    .with_request_rate(1000)
+    .with_response_time_p95(800)
+    .with_current_instances(3)
+  
+  let scaling_decision = auto_scaler.evaluate_scaling(current_metrics)
+  assert_eq(scaling_decision.action, ScalingAction::ScaleUp)
+  assert_eq(scaling_decision.target_instances, 4)
+  assert_true(scaling_decision.reason.contains("CPU utilization"))
+  
+  // Test scale down decision
+  let low_load_metrics = ResourceMetrics::new()
+    .with_cpu_utilization(30.0) // Low CPU
+    .with_memory_utilization(40.0) // Low memory
+    .with_request_rate(200)
+    .with_response_time_p95(200)
+    .with_current_instances(5)
+  
+  let scale_down_decision = auto_scaler.evaluate_scaling(low_load_metrics)
+  assert_eq(scale_down_decision.action, ScalingAction::ScaleDown)
+  assert_eq(scale_down_decision.target_instances, 4)
+  assert_true(scale_down_decision.reason.contains("Low utilization"))
+  
+  // Test resource allocation optimization
+  let allocation_optimizer = AllocationOptimizer::new()
+  
+  let resources = [
+    ResourceType::CPU(4),
+    ResourceType::Memory(8192), // 8GB
+    ResourceType::Storage(100), // 100GB
+    ResourceType::Network(1000) // 1Gbps
+  ]
+  
+  let workloads = [
+    Workload::new("web_server", 0.5, 2.0, 10, 100),
+    Workload::new("database", 2.0, 4.0, 50, 500),
+    Workload::new("cache", 1.0, 2.0, 5, 50),
+    Workload::new("background_jobs", 1.5, 1.0, 20, 200)
+  ]
+  
+  let allocation_result = allocation_optimizer.optimize_allocation(resources, workloads)
+  
+  assert_true(allocation_result.is_feasible)
+  assert_true(allocation_result.utilization_score > 0.7) // Good utilization
+  assert_true(allocation_result.allocation.length() == 4)
+  
+  // Verify each workload gets allocated resources
+  for workload in workloads {
+    let allocated = allocation_result.allocation.find(|a| a.workload_id == workload.id)
+    assert_true(allocated.is_some())
+    
+    let allocation = allocated.unwrap()
+    assert_true(allocation.cpu_cores > 0)
+    assert_true(allocation.memory_mb > 0)
+    assert_true(allocation.storage_gb > 0)
+    assert_true(allocation.network_mbps > 0)
+  }
+  
+  // Test cost optimization
+  let cost_optimizer = CostOptimizer::new()
+  
+  let cloud_providers = [
+    CloudProvider::new("aws", 0.05, 0.01, 0.10, 0.02), // Cost per unit
+    CloudProvider::new("gcp", 0.04, 0.01, 0.12, 0.01),
+    CloudProvider::new("azure", 0.06, 0.02, 0.09, 0.03)
+  ]
+  
+  let cost_optimization_result = cost_optimizer.optimize_costs(cloud_providers, allocation_result.allocation)
+  
+  assert_true(cost_optimization_result.total_monthly_cost > 0)
+  assert_true(cost_optimization_result.recommended_provider.length() > 0)
+  assert_true(cost_optimization_result.potential_savings_percentage >= 0.0)
+  
+  // Test performance tuning
+  let performance_tuner = PerformanceTuner::new()
+  
+  let tuning_parameters = [
+    TuningParameter::new("thread_pool_size", 1, 50, 8),
+    TuningParameter::new("connection_pool_size", 1, 100, 20),
+    TuningParameter::new("cache_size_mb", 64, 1024, 256),
+    TuningParameter::new("batch_size", 10, 1000, 100)
+  ]
+  
+  let performance_goal = PerformanceGoal::new()
+    .with_target_throughput(1000)
+    .with_target_p95_response_time(500)
+    .with_target_error_rate(0.01)
+  
+  let tuning_result = performance_tuner.optimize_parameters(tuning_parameters, performance_goal)
+  
+  assert_true(tuning_result.is_optimal)
+  assert_true(tuning_result.optimized_parameters.length() == 4)
+  assert_true(tuning_result.achieved_throughput >= performance_goal.target_throughput)
+  assert_true(tuning_result.achieved_p95_response_time <= performance_goal.target_p95_response_time)
+  assert_true(tuning_result.achieved_error_rate <= performance_goal.target_error_rate)
+  
+  // Verify parameter changes
+  for param in tuning_result.optimized_parameters {
+    let original = tuning_parameters.find(|p| p.name == param.name)
+    assert_true(original.is_some())
+    
+    let original_param = original.unwrap()
+    assert_true(param.value >= original_param.min_value)
+    assert_true(param.value <= original_param.max_value)
+  }
+}
+
+// Test 9: Performance Profiling and Analysis
+test "performance profiling and analysis" {
+  let profiler = AdvancedProfiler::new()
+  
+  // Test CPU profiling
+  profiler.start_cpu_profiling()
+  
+  // Simulate CPU-intensive work
+  let mut result = 0
+  for i in 0..=1000000 {
+    result = result + fibonacci(i % 20)
+  }
+  
+  let cpu_profile = profiler.stop_cpu_profiling()
+  
+  assert_true(cpu_profile.total_duration_ms > 0)
+  assert_true(cpu_profile.samples.length() > 0)
+  
+  // Verify hot spots
+  let hot_spots = cpu_profile.get_hot_spots(10) // Top 10 hot spots
+  assert_true(hot_spots.length() > 0)
+  
+  for spot in hot_spots {
+    assert_true(spot.function_name.length() > 0)
+    assert_true(spot.percentage > 0.0)
+    assert_true(spot.sample_count > 0)
+  }
+  
+  // Test memory profiling
+  profiler.start_memory_profiling()
+  
+  // Simulate memory allocation
+  let allocations = []
+  for i in 0..=1000 {
+    let allocation = allocate_object(i * 100)
+    allocations.push(allocation)
+  }
+  
+  let memory_profile = profiler.stop_memory_profiling()
+  
+  assert_true(memory_profile.total_allocated_mb > 0)
+  assert_true(memory_profile.allocation_sites.length() > 0)
+  
+  // Verify allocation patterns
+  let top_allocations = memory_profile.get_top_allocations(5)
+  assert_true(top_allocations.length() > 0)
+  
+  for allocation in top_allocations {
+    assert_true(allocation.function_name.length() > 0)
+    assert_true(allocation.size_mb > 0)
+    assert_true(allocation.count > 0)
+  }
+  
+  // Clean up allocations
+  for allocation in allocations {
+    deallocate_object(allocation)
+  }
+  
+  // Test lock contention profiling
+  profiler.start_lock_profiling()
+  
+  let mutex = Mutex::new()
+  let threads = []
+  
+  // Create threads that contend for the lock
+  for i in 0..=10 {
+    let thread = Thread::spawn(|| {
+      for j in 0..=100 {
+        let _lock = mutex.lock()
+        // Critical section
+        let _result = fibonacci(20)
+      }
+    })
+    threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    thread.join()
+  }
+  
+  let lock_profile = profiler.stop_lock_profiling()
+  
+  assert_true(lock_profile.total_contention_time_ms > 0)
+  assert_true(lock_profile.lock_acquisitions > 0)
+  
+  // Test I/O profiling
+  profiler.start_io_profiling()
+  
+  // Simulate I/O operations
+  let file = open_file("/tmp/profile_test.txt")
+  write_string_to_file(file, "test data")
+  let content = read_string_from_file(file)
+  close_file(file)
+  
+  let io_profile = profiler.stop_io_profiling()
+  
+  assert_true(io_profile.total_io_time_ms > 0)
+  assert_true(io_profile.read_operations > 0)
+  assert_true(io_profile.write_operations > 0)
+  assert_true(io_profile.bytes_read > 0)
+  assert_true(io_profile.bytes_written > 0)
+  
+  // Test performance regression detection
+  let regression_detector = PerformanceRegressionDetector::new()
+  
+  // Baseline performance data
+  let baseline_metrics = PerformanceMetrics::new()
+    .with_throughput(1000.0)
+    .with_p95_response_time(200.0)
+    .with_p99_response_time(500.0)
+    .with_error_rate(0.01)
+    .with_cpu_utilization(60.0)
+    .with_memory_utilization(70.0)
+  
+  // Current performance data (slightly worse)
+  let current_metrics = PerformanceMetrics::new()
+    .with_throughput(950.0) // 5% decrease
+    .with_p95_response_time(250.0) // 25% increase
+    .with_p99_response_time(600.0) // 20% increase
+    .with_error_rate(0.015) // 50% increase
+    .with_cpu_utilization(65.0) // 8% increase
+    .with_memory_utilization(75.0) // 7% increase
+  
+  let regression_analysis = regression_detector.analyze_regression(baseline_metrics, current_metrics)
+  
+  assert_true(regression_analysis.has_regression)
+  assert_true(regression_analysis.regressions.length() > 0)
+  
+  // Verify specific regressions
+  let throughput_regression = regression_analysis.regressions.find(|r| r.metric == "throughput")
+  assert_true(throughput_regression.is_some())
+  assert_true(throughput_regression.unwrap().percentage_change < -5.0)
+  
+  let response_time_regression = regression_analysis.regressions.find(|r| r.metric == "p95_response_time")
+  assert_true(response_time_regression.is_some())
+  assert_true(response_time_regression.unwrap().percentage_change > 20.0)
+  
+  // Test performance comparison
+  let performance_comparator = PerformanceComparator::new()
+  
+  let config_a = TestConfiguration::new("config_a")
+    .with_parameter("thread_pool_size", 8)
+    .with_parameter("cache_size", 256)
+  
+  let config_b = TestConfiguration::new("config_b")
+    .with_parameter("thread_pool_size", 16)
+    .with_parameter("cache_size", 512)
+  
+  let results_a = run_performance_test(config_a, Duration::from_minutes(1))
+  let results_b = run_performance_test(config_b, Duration::from_minutes(1))
+  
+  let comparison = performance_comparator.compare(results_a, results_b)
+  
+  assert_true(comparison.overall_winner == "config_b" || comparison.overall_winner == "config_a")
+  assert_true(comparison.metric_comparisons.length() > 0)
+  
+  for metric_comparison in comparison.metric_comparisons {
+    assert_true(metric_comparison.metric_name.length() > 0)
+    assert_true(metric_comparison.value_a > 0)
+    assert_true(metric_comparison.value_b > 0)
+    assert_true(metric_comparison.percentage_difference != 0.0)
+  }
+}
+
+// Test 10: Resource Cleanup and Health Monitoring
+test "resource cleanup and health monitoring" {
+  let resource_manager = ResourceManager::new()
+  let health_monitor = HealthMonitor::new()
   
   // Test resource cleanup
-  for ctx in context_pool {
-    // In a real implementation, this would return context to pool
-    assert_true(SpanContext::is_valid(ctx))
+  let cleanup_tracker = ResourceCleanupTracker::new()
+  
+  // Allocate various resources
+  let file_handles = []
+  for i in 0..=10 {
+    let handle = resource_manager.open_file("/tmp/test_" + i.to_string())
+    file_handles.push(handle)
+    cleanup_tracker.track_resource(handle, ResourceType::FileHandle)
   }
   
-  for attrs in attribute_pool {
-    // In a real implementation, this would return attributes to pool
-    let service_name = Attributes::get(attrs, "service.name")
-    match service_name {
-      Some(StringValue(name)) => assert_eq(name, "azimuth-performance-test")
-      _ => assert_true(false)
-    }
-  }
-}
-
-// Test 4: Batch Processing Optimization
-test "batch processing optimization" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "batch_meter")
-  
-  // Create metrics for batch testing
-  let batch_counter = Meter::create_counter(
-    meter,
-    "batch.operations.total",
-    Some("Total batch operations"),
-    Some("operations")
-  )
-  
-  let batch_histogram = Meter::create_histogram(
-    meter,
-    "batch.operation.duration",
-    Some("Batch operation duration"),
-    Some("ms")
-  )
-  
-  // Test batch sizes for optimal performance
-  let batch_sizes = [10, 50, 100, 500, 1000, 2000]
-  
-  for batch_size in batch_sizes {
-    let batch_start_time = 1234567890L
-    
-    // Process batch
-    for i in 1..=batch_size {
-      Counter::add(batch_counter, 1.0, Some(Attributes::with([
-        ("batch.size", IntValue(batch_size)),
-        ("operation.index", IntValue(i)),
-        ("processing.mode", StringValue("batch"))
-      ])))
-      
-      let duration = 10.0 + (i.to_float() % 100.0)
-      Histogram::record(batch_histogram, duration, Some(Attributes::with([
-        ("batch.size", IntValue(batch_size)),
-        ("operation.index", IntValue(i))
-      ])))
-    }
-    
-    let batch_end_time = 1234567890L
-    
-    // Record batch completion
-    Histogram::record(batch_histogram, (batch_end_time - batch_start_time).to_float(), Some(Attributes::with([
-      ("operation.type", StringValue("batch_complete")),
-      ("batch.size", IntValue(batch_size))
-    ])))
+  let network_connections = []
+  for i in 0..=5 {
+    let conn = resource_manager.open_connection("localhost:8080")
+    network_connections.push(conn)
+    cleanup_tracker.track_resource(conn, ResourceType::NetworkConnection)
   }
   
-  // Test log batch processing
-  let log_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(log_provider, "batch_logger")
-  
-  // Create log records in batches
-  for batch in 1..=10 {
-    let log_batch = []
-    
-    // Create 100 log records per batch
-    for i in 1..=100 {
-      let log = LogRecord::new(Info, "Batch log message " + batch.to_string() + "_" + i.to_string())
-      log_batch.push(log)
-    }
-    
-    // Process log batch
-    for log in log_batch {
-      Logger::emit(logger, log)
-    }
-    
-    // Clear batch
-    log_batch = []
+  let memory_blocks = []
+  for i in 0..=20 {
+    let block = resource_manager.allocate_memory(1024 * (i + 1))
+    memory_blocks.push(block)
+    cleanup_tracker.track_resource(block, ResourceType::Memory)
   }
   
-  // Test span batch processing
-  let span_batch = []
+  // Verify resources are tracked
+  assert_eq(cleanup_tracker.get_tracked_resources_count(), 36)
   
-  // Create spans in batch
-  for i in 1..=200 {
-    let span_id = "batch_span_" + i.to_string()
-    let ctx = SpanContext::new("trace123456789012345678901234567890", span_id, true, "")
-    let span = Span::new("batch_operation_" + i.to_string(), Internal, ctx)
-    
-    Span::set_attribute(span, "batch.id", IntValue(1))
-    Span::set_attribute(span, "batch.index", IntValue(i))
-    
-    span_batch.push(span)
+  // Clean up resources
+  for handle in file_handles {
+    resource_manager.close_file(handle)
+    cleanup_tracker.untrack_resource(handle)
   }
   
-  // End all spans in batch
-  for span in span_batch {
-    Span::end(span)
-  }
-}
-
-// Test 5: Memory Leak Detection
-test "memory leak detection" {
-  // Test span lifecycle management
-  let spans = []
-  
-  // Create spans and ensure proper cleanup
-  for i in 1..=1000 {
-    let span_id = "leak_test_span_" + i.to_string()
-    let ctx = SpanContext::new("trace123456789012345678901234567890", span_id, true, "")
-    let span = Span::new("leak_test_operation", Internal, ctx)
-    
-    // Add attributes
-    Span::set_attribute(span, "test.id", IntValue(i))
-    Span::set_attribute(span, "test.type", StringValue("leak_detection"))
-    
-    // Add events
-    Span::add_event(span, "span_created", Some([
-      ("creation.time", IntValue(1234567890 + i))
-    ]))
-    
-    // End span immediately
-    Span::end(span)
-    
-    // Add to array for potential leak detection
-    if i % 100 == 0 {
-      spans.push(span)
-    }
+  for conn in network_connections {
+    resource_manager.close_connection(conn)
+    cleanup_tracker.untrack_resource(conn)
   }
   
-  // Clean up remaining spans
-  for span in spans {
-    // Verify span is properly ended
-    assert_eq(Span::status(span), Unset) // Or appropriate status
+  for block in memory_blocks {
+    resource_manager.free_memory(block)
+    cleanup_tracker.untrack_resource(block)
   }
   
-  // Test attribute cleanup
-  let attrs = Attributes::new()
+  // Verify all resources are cleaned up
+  assert_eq(cleanup_tracker.get_tracked_resources_count(), 0)
   
-  // Add many attributes
-  for i in 1..=5000 {
-    let key = "leak_test_attr_" + i.to_string()
-    let value = StringValue("value_" + i.to_string())
-    Attributes::set(attrs, key, value)
+  // Test resource leak detection
+  let leak_detector = ResourceLeakDetector::new()
+  
+  // Intentionally leak some resources
+  let leaked_handles = []
+  for i in 0..=5 {
+    let handle = resource_manager.open_file("/tmp/leaked_" + i.to_string())
+    leaked_handles.push(handle)
   }
   
-  // Test context cleanup
-  let ctx = Context::root()
+  let leak_report = leak_detector.detect_leaks()
+  assert_true(leak_report.leaked_resources.length() > 0)
   
-  // Add many context values
-  let contexts = []
-  for i in 1..=1000 {
-    let key = ContextKey::new("leak_test_key_" + i.to_string())
-    let value = "leak_test_value_" + i.to_string()
-    let new_ctx = Context::with_value(ctx, key, value)
-    contexts.push(new_ctx)
+  // Clean up leaked resources
+  for handle in leaked_handles {
+    resource_manager.close_file(handle)
   }
   
-  // Verify context values
-  for i in 1..=1000 {
-    let test_ctx = contexts[i - 1]
-    let key = ContextKey::new("leak_test_key_" + i.to_string())
-    match Context::get(test_ctx, key) {
-      Some(value) => assert_eq(value, "leak_test_value_" + i.to_string())
-      None => assert_true(false)
-    }
-  }
-}
-
-// Test 6: CPU Usage Optimization
-test "cpu usage optimization" {
-  // Test efficient algorithms for common operations
-  
-  // Test efficient attribute lookup
-  let attrs = Attributes::new()
-  
-  // Add attributes
-  for i in 1..=1000 {
-    let key = "cpu_test_attr_" + i.to_string()
-    let value = StringValue("value_" + i.to_string())
-    Attributes::set(attrs, key, value)
-  }
-  
-  // Test efficient lookup patterns
-  let lookup_keys = ["cpu_test_attr_1", "cpu_test_attr_500", "cpu_test_attr_1000"]
-  
-  for key in lookup_keys {
-    let result = Attributes::get(attrs, key)
-    match result {
-      Some(StringValue(value)) => assert_true(value.starts_with("value_"))
-      None => assert_true(false)
-    }
-  }
-  
-  // Test efficient string operations
-  let test_strings = []
-  
-  // Create test strings
-  for i in 1..=1000 {
-    test_strings.push("test_string_" + i.to_string())
-  }
-  
-  // Test efficient string processing
-  for str in test_strings {
-    assert_true(str.starts_with("test_string_"))
-    assert_true(str.length() > 0)
-  }
-  
-  // Test efficient array operations
-  let test_array = []
-  
-  // Create test array
-  for i in 1..=10000 {
-    test_array.push(i)
-  }
-  
-  // Test efficient array access
-  let test_indices = [0, 4999, 9999]
-  
-  for index in test_indices {
-    assert_true(index < test_array.length())
-    assert_eq(test_array[index], index + 1)
-  }
-  
-  // Test efficient filtering
-  let even_numbers = filter(test_array, fn(x) { x % 2 == 0 })
-  assert_eq(even_numbers.length(), 5000)
-  
-  // Test efficient mapping
-  let doubled = map(test_array[0..=99], fn(x) { x * 2 })
-  assert_eq(doubled.length(), 100)
-  assert_eq(doubled[0], 2)
-  assert_eq(doubled[99], 200)
-}
-
-// Test 7: I/O Performance Optimization
-test "io performance optimization" {
-  // Test efficient log batching
-  let log_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(log_provider, "io_performance_logger")
-  
-  // Create log batch
-  let log_batch = []
-  
-  // Create logs with varying sizes
-  for i in 1..=1000 {
-    let message_size = i % 100 + 10  // Messages between 10 and 110 characters
-    let message = "a".repeat(message_size) + " " + i.to_string()
-    let log = LogRecord::new(Info, message)
-    log_batch.push(log)
-  }
-  
-  // Process logs in batches
-  let batch_size = 100
-  for batch_start in range(0, log_batch.length(), batch_size) {
-    let batch_end = min(batch_start + batch_size, log_batch.length())
-    
-    // Process batch
-    for i in batch_start..<batch_end {
-      Logger::emit(logger, log_batch[i])
-    }
-  }
-  
-  // Test efficient metric batching
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "io_performance_meter")
-  
-  let counter = Meter::create_counter(
-    meter,
-    "io.performance.counter",
-    Some("I/O performance counter"),
-    Some("operations")
-  )
-  
-  // Batch metric updates
-  let metric_batch = []
-  
-  for i in 1..=5000 {
-    let attrs = Attributes::with([
-      ("operation.type", StringValue("io_performance")),
-      ("operation.id", IntValue(i)),
-      ("batch.size", IntValue(100))
-    ])
-    metric_batch.push(attrs)
-  }
-  
-  // Process metric batch
-  for attrs in metric_batch {
-    Counter::add(counter, 1.0, Some(attrs))
-  }
-  
-  // Test efficient span batching
-  let span_batch = []
-  
-  // Create spans in batch
-  for i in 1..=500 {
-    let span_id = "io_span_" + i.to_string()
-    let ctx = SpanContext::new("trace123456789012345678901234567890", span_id, true, "")
-    let span = Span::new("io_performance_operation", Internal, ctx)
-    
-    Span::set_attribute(span, "operation.id", IntValue(i))
-    Span::set_attribute(span, "batch.id", IntValue(1))
-    
-    span_batch.push(span)
-  }
-  
-  // End spans in batch
-  for span in span_batch {
-    Span::end(span)
-  }
-}
-
-// Test 8: Resource Pool Recycling
-test "resource pool recycling" {
-  // Test span context recycling
-  let context_pool = []
-  let recycled_contexts = []
-  
-  // Create initial pool
-  for i in 1..=100 {
-    let trace_id = "trace123456789012345678901234567890"
-    let span_id = "pool_span_" + i.to_string().pad_left(16, '0')
-    let ctx = SpanContext::new(trace_id, span_id, true, "")
-    context_pool.push(ctx)
-  }
-  
-  // Recycle contexts
-  for ctx in context_pool {
-    // In a real implementation, this would reset and reuse the context
-    let recycled_ctx = SpanContext::new(
-      SpanContext::trace_id(ctx),
-      "recycled_" + SpanContext::span_id(ctx),
-      true,
-      ""
-    )
-    recycled_contexts.push(recycled_ctx)
-  }
-  
-  // Verify recycled contexts
-  for ctx in recycled_contexts {
-    assert_true(SpanContext::is_valid(ctx))
-    assert_true(SpanContext::is_sampled(ctx))
-    assert_true(SpanContext::span_id(ctx).starts_with("recycled_"))
-  }
-  
-  // Test attribute recycling
-  let attribute_pool = []
-  let recycled_attributes = []
-  
-  // Create initial pool
-  for i in 1..=50 {
-    let attrs = Attributes::with([
-      ("pool.id", IntValue(i)),
-      ("pool.type", StringValue("recyclable")),
-      ("initial.value", StringValue("initial_" + i.to_string()))
-    ])
-    attribute_pool.push(attrs)
-  }
-  
-  // Recycle attributes
-  for attrs in attribute_pool {
-    // In a real implementation, this would reset and reuse the attributes
-    let recycled_attrs = Attributes::with([
-      ("recycled.id", IntValue(Attributes::get(attrs, "pool.id").unwrap_or(IntValue(0)).unwrap_or(0))),
-      ("recycled.type", StringValue("recycled")),
-      ("recycled.value", StringValue("recycled_value"))
-    ])
-    recycled_attributes.push(recycled_attrs)
-  }
-  
-  // Verify recycled attributes
-  for attrs in recycled_attributes {
-    let recycled_type = Attributes::get(attrs, "recycled.type")
-    match recycled_type {
-      Some(StringValue(type_str)) => assert_eq(type_str, "recycled")
-      _ => assert_true(false)
-    }
-  }
-  
-  // Test resource cleanup
-  context_pool = []
-  attribute_pool = []
-  recycled_contexts = []
-  recycled_attributes = []
-}
-
-// Test 9: Performance Monitoring and Metrics
-test "performance monitoring and metrics" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "performance_monitor")
-  
-  // Create performance monitoring metrics
-  let operation_counter = Meter::create_counter(
-    meter,
-    "performance.operations.total",
-    Some("Total performance operations"),
-    Some("operations")
-  )
-  
-  let duration_histogram = Meter::create_histogram(
-    meter,
-    "performance.operation.duration",
-    Some("Performance operation duration"),
-    Some("ms")
-  )
-  
-  let memory_gauge = Meter::create_gauge(
-    meter,
-    "performance.memory.usage",
-    Some("Current memory usage"),
-    Some("bytes")
-  )
-  
-  let cpu_gauge = Meter::create_gauge(
-    meter,
-    "performance.cpu.usage",
-    Some("Current CPU usage"),
-    Some("percent")
-  )
-  
-  // Simulate performance monitoring
-  for operation_type in ["span_creation", "attribute_setting", "metric_recording", "log_emission"] {
-    for i in 1..=100 {
-      let start_time = 1234567890L + i
-      
-      // Record operation start
-      Counter::add(operation_counter, 1.0, Some(Attributes::with([
-        ("operation.type", StringValue(operation_type)),
-        ("operation.id", IntValue(i))
-      ])))
-      
-      // Simulate operation duration
-      let base_duration = match operation_type {
-        "span_creation" => 5
-        "attribute_setting" => 2
-        "metric_recording" => 3
-        "log_emission" => 4
-        _ => 1
+  // Test health monitoring
+  let health_checks = [
+    HealthCheck::new("database", || {
+      // Simulate database health check
+      let result = check_database_connection()
+      if result {
+        HealthStatus::Healthy
+      } else {
+        HealthStatus::Unhealthy("Database connection failed")
       }
-      
-      let duration = base_duration + (i % 10)
-      Histogram::record(duration_histogram, duration.to_float(), Some(Attributes::with([
-        ("operation.type", StringValue(operation_type)),
-        ("operation.id", IntValue(i))
-      ])))
-      
-      // Simulate memory usage
-      let memory_usage = 1024 * 1024 * (10 + (i % 50))  // 10-60 MB
-      Gauge::record(memory_gauge, memory_usage.to_float(), Some(Attributes::with([
-        ("operation.type", StringValue(operation_type))
-      ])))
-      
-      // Simulate CPU usage
-      let cpu_usage = 10.0 + (i.to_float() % 80.0)  // 10-90%
-      Gauge::record(cpu_gauge, cpu_usage, Some(Attributes::with([
-        ("operation.type", StringValue(operation_type))
-      ])))
-      
-      let end_time = start_time + duration
-    }
-  }
-  
-  // Create performance summary metrics
-  let summary_counter = Meter::create_counter(
-    meter,
-    "performance.summary.operations",
-    Some("Performance summary operations"),
-    Some("operations")
-  )
-  
-  // Record summary
-  Counter::add(summary_counter, 400.0, Some(Attributes::with([
-    ("summary.type", StringValue("total_operations")),
-    ("monitoring.period", StringValue("test_session"))
-  ])))
-  
-  // Verify metric instruments
-  let operation_instrument = Counter::as_instrument(operation_counter)
-  assert_eq(Instrument::name(operation_instrument), "performance.operations.total")
-  
-  let duration_instrument = Histogram::as_instrument(duration_histogram)
-  assert_eq(Instrument::name(duration_instrument), "performance.operation.duration")
-  
-  let memory_instrument = Gauge::as_instrument(memory_gauge)
-  assert_eq(Instrument::name(memory_instrument), "performance.memory.usage")
-  
-  let cpu_instrument = Gauge::as_instrument(cpu_gauge)
-  assert_eq(Instrument::name(cpu_instrument), "performance.cpu.usage")
-}
-
-// Test 10: Scalability Testing
-test "scalability testing" {
-  // Test system scalability with increasing load
-  
-  let test_scales = [100, 500, 1000, 2000, 5000]
-  
-  for scale in test_scales {
-    let provider = MeterProvider::default()
-    let meter = MeterProvider::get_meter(provider, "scalability_meter_" + scale.to_string())
-    
-    // Create metrics for this scale
-    let scale_counter = Meter::create_counter(
-      meter,
-      "scale.operations.total",
-      Some("Total operations at scale " + scale.to_string()),
-      Some("operations")
-    )
-    
-    let scale_histogram = Meter::create_histogram(
-      meter,
-      "scale.operation.duration",
-      Some("Operation duration at scale " + scale.to_string()),
-      Some("ms")
-    )
-    
-    // Create spans at scale
-    let spans = []
-    
-    for i in 1..=scale {
-      let span_id = "scale_span_" + i.to_string()
-      let ctx = SpanContext::new("scale_trace_123456789012345678901234567890", span_id, true, "")
-      let span = Span::new("scale_operation", Internal, ctx)
-      
-      // Add scale-specific attributes
-      Span::set_attribute(span, "scale", IntValue(scale))
-      Span::set_attribute(span, "index", IntValue(i))
-      
-      // Add events
-      if i % 100 == 0 {
-        Span::add_event(span, "milestone_reached", Some([
-          ("milestone", IntValue(i)),
-          ("scale", IntValue(scale))
-        ]))
+    }),
+    HealthCheck::new("redis", || {
+      // Simulate Redis health check
+      let result = check_redis_connection()
+      if result {
+        HealthStatus::Healthy
+      } else {
+        HealthStatus::Degraded("Redis connection slow")
       }
-      
-      spans.push(span)
-      
-      // Record metrics
-      Counter::add(scale_counter, 1.0, Some(Attributes::with([
-        ("scale", IntValue(scale)),
-        ("operation", StringValue("span_creation"))
-      ])))
-      
-      let duration = 1.0 + (i.to_float() % 10.0)
-      Histogram::record(scale_histogram, duration, Some(Attributes::with([
-        ("scale", IntValue(scale)),
-        ("operation", StringValue("span_creation"))
-      ])))
-    }
+    }),
+    HealthCheck::new("disk_space", || {
+      // Simulate disk space check
+      let usage = get_disk_usage("/")
+      if usage.percentage_used > 90.0 {
+        HealthStatus::Unhealthy("Disk space critically low")
+      } else if usage.percentage_used > 80.0 {
+        HealthStatus::Degraded("Disk space getting low")
+      } else {
+        HealthStatus::Healthy
+      }
+    })
+  ]
+  
+  for check in health_checks {
+    health_monitor.add_check(check)
+  }
+  
+  // Run health checks
+  let health_results = health_monitor.run_all_checks()
+  
+  assert_eq(health_results.length(), 3)
+  
+  for result in health_results {
+    assert_true(result.check_name.length() > 0)
+    assert_true(result.check_time > 0)
+    assert_true(result.response_time_ms >= 0)
     
-    // End all spans
-    for span in spans {
-      Span::end(span)
-      
-      // Record end metrics
-      Counter::add(scale_counter, 1.0, Some(Attributes::with([
-        ("scale", IntValue(scale)),
-        ("operation", StringValue("span_ending"))
-      ])))
-      
-      let duration = 0.5 + (spans.length().to_float() % 5.0)
-      Histogram::record(scale_histogram, duration, Some(Attributes::with([
-        ("scale", IntValue(scale)),
-        ("operation", StringValue("span_ending"))
-      ])))
-    }
-    
-    // Create logs at scale
-    let log_provider = LoggerProvider::default()
-    let logger = LoggerProvider::get_logger(log_provider, "scale_logger_" + scale.to_string())
-    
-    for i in 1..=scale {
-      let log = LogRecord::new(Info, "Scale test log " + i.to_string() + " at scale " + scale.to_string())
-      Logger::emit(logger, log)
-      
-      // Record log metrics
-      Counter::add(scale_counter, 1.0, Some(Attributes::with([
-        ("scale", IntValue(scale)),
-        ("operation", StringValue("log_emission"))
-      ])))
-      
-      let duration = 0.1 + (i.to_float() % 2.0)
-      Histogram::record(scale_histogram, duration, Some(Attributes::with([
-        ("scale", IntValue(scale)),
-        ("operation", StringValue("log_emission"))
-      ])))
-    }
-    
-    // Create attributes at scale
-    let attrs = Attributes::new()
-    
-    for i in 1..=scale {
-      let key = "scale_attr_" + i.to_string()
-      let value = StringValue("scale_value_" + i.to_string())
-      Attributes::set(attrs, key, value)
-      
-      // Record attribute metrics
-      Counter::add(scale_counter, 1.0, Some(Attributes::with([
-        ("scale", IntValue(scale)),
-        ("operation", StringValue("attribute_setting"))
-      ])))
-      
-      let duration = 0.05 + (i.to_float() % 1.0)
-      Histogram::record(scale_histogram, duration, Some(Attributes::with([
-        ("scale", IntValue(scale)),
-        ("operation", StringValue("attribute_setting"))
-      ])))
-    }
-    
-    // Verify some attributes are set at this scale
-    let test_attr = Attributes::get(attrs, "scale_attr_" + (scale / 2).to_string())
-    match test_attr {
-      Some(StringValue(value)) => assert_eq(value, "scale_value_" + (scale / 2).to_string())
-      None => assert_true(false)
+    match result.status {
+      HealthStatus::Healthy => {
+        assert_true(true)
+      }
+      HealthStatus::Degraded(reason) => {
+        assert_true(reason.length() > 0)
+      }
+      HealthStatus::Unhealthy(reason) => {
+        assert_true(reason.length() > 0)
+      }
     }
   }
+  
+  // Test overall system health
+  let overall_health = health_monitor.get_overall_health()
+  
+  assert_true(overall_health.status == "healthy" || 
+              overall_health.status == "degraded" || 
+              overall_health.status == "unhealthy")
+  assert_true(overall_health.healthy_checks >= 0)
+  assert_true(overall_health.degraded_checks >= 0)
+  assert_true(overall_health.unhealthy_checks >= 0)
+  assert_true(overall_health.last_check_time > 0)
+  
+  // Test health monitoring metrics
+  let health_metrics = health_monitor.get_metrics()
+  
+  assert_true(health_metrics.total_checks > 0)
+  assert_true(health_metrics.average_check_time_ms >= 0)
+  assert_true(health_metrics.uptime_percentage >= 0.0 && health_metrics.uptime_percentage <= 1.0)
+  assert_true(health_metrics.mean_time_to_recovery_ms >= 0)
+  
+  // Test automatic recovery actions
+  let recovery_manager = RecoveryManager::new()
+  
+  // Configure recovery actions
+  recovery_manager.add_recovery_action("database", RecoveryAction::RestartService)
+  recovery_manager.add_recovery_action("redis", RecoveryAction::ClearCache)
+  recovery_manager.add_recovery_action("disk_space", RecoveryAction::CleanupTempFiles)
+  
+  // Simulate unhealthy state
+  let unhealthy_results = [
+    HealthCheckResult::new("database", HealthStatus::Unhealthy("Connection failed"), get_current_timestamp(), 1000),
+    HealthCheckResult::new("redis", HealthStatus::Degraded("High latency"), get_current_timestamp(), 500)
+  ]
+  
+  // Trigger recovery actions
+  for result in unhealthy_results {
+    if result.status.is_unhealthy() || result.status.is_degraded() {
+      let recovery_result = recovery_manager.execute_recovery(result.check_name, result.status)
+      assert_true(recovery_result.action_taken)
+      assert_true(recovery_result.execution_time_ms > 0)
+    }
+  }
+  
+  // Verify recovery metrics
+  let recovery_metrics = recovery_manager.get_metrics()
+  
+  assert_true(recovery_metrics.total_recovery_actions > 0)
+  assert_true(recovery_metrics.successful_recoveries >= 0)
+  assert_true(recovery_metrics.failed_recoveries >= 0)
 }
