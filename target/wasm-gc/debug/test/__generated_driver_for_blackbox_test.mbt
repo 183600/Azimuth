@@ -904,6 +904,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_memory_leak_detection_resource_cleanup_tests.mbt": {
   },
+  "azimuth_machine_learning_tests.mbt": {
+  },
   "azimuth_machine_learning_integration_tests.mbt": {
   },
   "azimuth_logging_telemetry_tests.mbt": {
@@ -970,6 +972,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_high_quality_telemetry_system_tests.mbt": {
   },
+  "azimuth_high_quality_telemetry_serialization_tests.mbt": {
+  },
   "azimuth_high_quality_telemetry_integrity_tests.mbt": {
   },
   "azimuth_high_quality_telemetry_data_processing_tests.mbt": {
@@ -982,9 +986,13 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_high_quality_security_tests.mbt": {
   },
+  "azimuth_high_quality_security_privacy_tests.mbt": {
+  },
   "azimuth_high_quality_resource_merge_tests.mbt": {
   },
   "azimuth_high_quality_resource_constraint_tests.mbt": {
+  },
+  "azimuth_high_quality_realtime_streaming_tests.mbt": {
   },
   "azimuth_high_quality_realtime_stream_processing_tests.mbt": {
   },
@@ -996,9 +1004,13 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_high_quality_performance_resource_tests.mbt": {
   },
+  "azimuth_high_quality_performance_benchmark_tests.mbt": {
+  },
   "azimuth_high_quality_moonbit_tests.mbt": {
   },
   "azimuth_high_quality_metrics_aggregation_tests.mbt": {
+  },
+  "azimuth_high_quality_memory_management_tests.mbt": {
   },
   "azimuth_high_quality_log_record_context_tests.mbt": {
   },
@@ -1018,11 +1030,15 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_high_quality_dynamic_configuration_tests.mbt": {
   },
+  "azimuth_high_quality_distributed_tracing_tests.mbt": {
+  },
   "azimuth_high_quality_data_processing_tests.mbt": {
   },
   "azimuth_high_quality_cross_service_tracing_tests.mbt": {
   },
   "azimuth_high_quality_cross_service_tests.mbt": {
+  },
+  "azimuth_high_quality_cross_platform_tests.mbt": {
   },
   "azimuth_high_quality_context_propagation_tests.mbt": {
   },
@@ -1847,6 +1863,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_adaptive_performance_tuning_tests.mbt": {
   },
   "azimuth_adaptive_configuration_tests.mbt": {
+  },
+  "azimuth_accessibility_tests.mbt": {
   },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
