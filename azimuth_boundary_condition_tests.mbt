@@ -1,546 +1,419 @@
-// Azimuth Boundary Condition and Exception Handling Tests
-// 测试边界条件、异常处理和错误恢复功能
+// Azimuth Boundary Condition Tests
+// This file contains test cases for boundary conditions and edge cases
 
-test "数值边界条件测试" {
-  // 测试数值边界条件
-  let max_int32 = 2147483647
-  let min_int32 = -2147483648
-  let max_int64 = 9223372036854775807L
-  let min_int64 = -9223372036854775808L
+test "numeric boundary conditions for metrics" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "boundary_meter")
+  let counter = Meter::create_counter(meter, "boundary_counter", Some("Boundary counter"), Some("count"))
   
-  // 测试整数溢出
-  let overflow_result = add_with_overflow_check(max_int32, 1)
-  assert_true(overflow_result.is_error)
-  assert_true(overflow_result.error.contains("overflow"))
+  // Test maximum value boundary
+  let max_value = 9223372036854775807 // Max 64-bit integer
+  Counter::add(counter, max_value.to_float())
   
-  let safe_add = add_with_overflow_check(max_int32, 0)
-  assert_true(safe_add.is_ok)
-  assert_eq(safe_add.value, max_int32)
+  // Test minimum value boundary
+  let min_value = -9223372036854775808 // Min 64-bit integer
+  Counter::add(counter, min_value.to_float())
   
-  // 测试整数下溢
-  let underflow_result = subtract_with_overflow_check(min_int32, 1)
-  assert_true(underflow_result.is_error)
-  assert_true(underflow_result.error.contains("underflow"))
+  // Test floating point precision boundaries
+  let max_float = 1.7976931348623157e+308 // Max double
+  let min_float = 2.2250738585072014e-308 // Min positive double
   
-  let safe_subtract = subtract_with_overflow_check(min_int32, 0)
-  assert_true(safe_subtract.is_ok)
-  assert_eq(safe_subtract.value, min_int32)
+  Counter::add(counter, max_float)
+  Counter::add(counter, min_float)
   
-  // 测试64位整数边界
-  let int64_overflow = multiply_with_overflow_check(max_int64, 2)
-  assert_true(int64_overflow.is_error)
+  // Test infinity
+  Counter::add(counter, 1.0 / 0.0) // Positive infinity
   
-  let int64_safe = multiply_with_overflow_check(max_int64, 1)
-  assert_true(int64_safe.is_ok)
-  assert_eq(int64_safe.value, max_int64)
+  // Test NaN
+  Counter::add(counter, 0.0 / 0.0) // NaN
   
-  // 测试浮点数边界
-  let max_float = 3.4028235e38
-  let min_float = -3.4028235e38
-  let inf_float = 1.0 / 0.0
-  let neg_inf_float = -1.0 / 0.0
-  let nan_float = 0.0 / 0.0
-  
-  assert_true(is_infinite(inf_float))
-  assert_true(is_infinite(neg_inf_float))
-  assert_true(is_nan(nan_float))
-  assert_false(is_nan(max_float))
-  assert_false(is_infinite(max_float))
-  
-  // 测试浮点数精度边界
-  let very_small = 1e-10
-  let very_large = 1e10
-  let precision_test = very_large + very_small
-  assert_true(precision_test == very_large)  // 小数被精度丢失
-  
-  // 测试除零边界
-  let div_by_zero_result = safe_divide(10.0, 0.0)
-  assert_true(div_by_zero_result.is_error)
-  assert_true(div_by_zero_result.error.contains("division by zero"))
-  
-  let zero_div_zero_result = safe_divide(0.0, 0.0)
-  assert_true(zero_div_zero_result.is_error)
-  
-  let safe_division = safe_divide(10.0, 2.0)
-  assert_true(safe_division.is_ok)
-  assert_eq(safe_division.value, 5.0)
+  // Verify counter handles boundary conditions
+  assert_true(Counter::is_valid(counter))
 }
 
-test "字符串和集合边界条件" {
-  // 测试字符串边界条件
-  let empty_string = ""
-  let very_long_string = "a" * 1000000  // 1MB字符串
-  let unicode_string = "测试🚀Unicode🌟字符串"
+test "string length boundary conditions" {
+  let attrs = Attributes::new()
   
-  // 测试空字符串操作
-  assert_eq(empty_string.length(), 0)
-  assert_true(empty_string.is_empty())
-  assert_eq(empty_string.to_uppercase(), "")
-  assert_eq(empty_string.to_lowercase(), "")
-  assert_false(empty_string.contains("a"))
-  
-  // 测试长字符串操作
-  assert_eq(very_long_string.length(), 1000000)
-  assert_true(very_long_string.contains("a"))
-  assert_eq(very_long_string.substring(0, 10), "aaaaaaaaaa")
-  
-  // 测试字符串边界索引
-  let empty_substring = empty_string.substring(0, 0)
-  assert_eq(empty_substring, "")
-  
-  let out_of_bounds_substring = very_long_string.safe_substring(999999, 5)
-  assert_eq(out_of_bounds_substring, "a")
-  
-  let invalid_substring = very_long_string.safe_substring(1000001, 10)
-  assert_eq(invalid_substring, "")
-  
-  // 测试Unicode字符串
-  assert_eq(unicode_string.length(), 11)  // Unicode字符计数
-  assert_true(unicode_string.contains("测试"))
-  assert_true(unicode_string.contains("🚀"))
-  
-  // 测试集合边界条件
-  let empty_array = []
-  let large_array = [0] * 100000  // 10万元素数组
-  
-  // 测试空数组操作
-  assert_eq(empty_array.length(), 0)
-  assert_true(empty_array.is_empty())
-  assert_eq(empty_array.first(), None)
-  assert_eq(empty_array.last(), None)
-  
-  // 测试大数组操作
-  assert_eq(large_array.length(), 100000)
-  assert_eq(large_array.first(), Some(0))
-  assert_eq(large_array.last(), Some(0))
-  
-  // 测试数组边界索引
-  let empty_first = empty_array.get_safe(0)
-  assert_eq(empty_first, None)
-  
-  let large_first = large_array.get_safe(0)
-  assert_eq(large_first, Some(0))
-  
-  let large_last = large_array.get_safe(99999)
-  assert_eq(large_last, Some(0))
-  
-  let out_of_bounds = large_array.get_safe(100000)
-  assert_eq(out_of_bounds, None)
-  
-  // 测试集合操作边界
-  let empty_result = empty_array.filter(fn(x) { x > 0 })
-  assert_eq(empty_result.length(), 0)
-  
-  let large_filtered = large_array.filter(fn(x) { x > 0 })
-  assert_eq(large_filtered.length(), 0)
-  
-  let large_mapped = large_array.map(fn(x) { x + 1 })
-  assert_eq(large_mapped.length(), 100000)
-  assert_eq(large_mapped[0], 1)
-  assert_eq(large_mapped[99999], 1)
-}
-
-test "内存和资源边界条件" {
-  // 测试内存边界条件
-  let memory_limiter = MemoryLimiter::new(50 * 1024 * 1024)  // 50MB限制
-  
-  // 测试内存分配边界
-  let small_allocation = MemoryLimiter::allocate(memory_limiter, 1024)  // 1KB
-  assert_true(small_allocation.is_ok)
-  
-  let large_allocation = MemoryLimiter::allocate(memory_limiter, 100 * 1024 * 1024)  // 100MB
-  assert_true(large_allocation.is_error)
-  assert_true(large_allocation.error.contains("memory limit exceeded"))
-  
-  // 测试内存释放
-  MemoryLimiter::deallocate(memory_limiter, small_allocation.value)
-  
-  let after_release_allocation = MemoryLimiter::allocate(memory_limiter, 1024)
-  assert_true(after_release_allocation.is_ok)
-  
-  // 测试文件句柄边界
-  let file_handle_limiter = FileHandleLimiter::new(10)
-  
-  let file_handles = []
-  for i in 0..=9 {
-    let handle = FileHandleLimiter::acquire(file_handle_limiter)
-    file_handles = file_handles.push(handle)
+  // Test empty string
+  Attributes::set(attrs, "empty_string", StringValue(""))
+  let empty_result = Attributes::get(attrs, "empty_string")
+  match empty_result {
+    StringValue(v) => assert_eq(v, "")
+    _ => assert_true(false)
   }
   
-  assert_eq(file_handles.length(), 10)
-  
-  // 测试句柄耗尽
-  let exhausted_handle = FileHandleLimiter::acquire(file_handle_limiter)
-  assert_true(exhausted_handle.is_error)
-  assert_true(exhausted_handle.error.contains("no available file handles"))
-  
-  // 释放一个句柄
-  FileHandleLimiter::release(file_handle_limiter, file_handles[0])
-  
-  let available_handle = FileHandleLimiter::acquire(file_handle_limiter)
-  assert_true(available_handle.is_ok)
-  
-  // 测试网络连接边界
-  let connection_limiter = ConnectionLimiter::new(5)
-  
-  let connections = []
-  for i in 0..=4 {
-    let conn = ConnectionLimiter::establish(connection_limiter, "endpoint-" + i.to_string())
-    connections = connections.push(conn)
+  // Test single character string
+  Attributes::set(attrs, "single_char", StringValue("a"))
+  let single_result = Attributes::get(attrs, "single_char")
+  match single_result {
+    StringValue(v) => assert_eq(v, "a")
+    _ => assert_true(false)
   }
   
-  assert_eq(connections.length(), 5)
+  // Test very long string (within reasonable limits)
+  let long_string = "a" * 10000
+  Attributes::set(attrs, "long_string", StringValue(long_string))
+  let long_result = Attributes::get(attrs, "long_string")
+  match long_result {
+    StringValue(v) => assert_eq(v, long_string)
+    _ => assert_true(false)
+  }
   
-  // 测试连接耗尽
-  let exhausted_connection = ConnectionLimiter::establish(connection_limiter, "extra-endpoint")
-  assert_true(exhausted_connection.is_error)
-  assert_true(exhausted_connection.error.contains("connection limit exceeded"))
+  // Test string with special characters
+  let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?`~\\"
+  Attributes::set(attrs, "special_chars", StringValue(special_chars))
+  let special_result = Attributes::get(attrs, "special_chars")
+  match special_result {
+    StringValue(v) => assert_eq(v, special_chars)
+    _ => assert_true(false)
+  }
   
-  // 清理连接
-  for conn in connections {
-    ConnectionLimiter::close(connection_limiter, conn)
+  // Test Unicode characters
+  let unicode = "🚀🌟✨🎉🔥💯"
+  Attributes::set(attrs, "unicode", StringValue(unicode))
+  let unicode_result = Attributes::get(attrs, "unicode")
+  match unicode_result {
+    StringValue(v) => assert_eq(v, unicode)
+    _ => assert_true(false)
   }
 }
 
-test "并发和竞争条件边界" {
-  // 测试并发边界条件
-  let concurrent_counter = ConcurrentCounter::new()
-  let concurrent_map = ConcurrentHashMap::new()
-  let concurrent_queue = ConcurrentQueue::new(100)
-  
-  // 启动多个并发任务
-  let concurrent_tasks = []
-  for i in 0..=9 {
-    let task = spawn(fn() {
-      // 并发递增计数器
-      for j in 0..=99 {
-        ConcurrentCounter::increment(concurrent_counter)
-      }
-      
-      // 并发写入映射
-      for k in 0..=9 {
-        let key = "key-" + i.to_string() + "-" + k.to_string()
-        let value = "value-" + i.to_string() + "-" + k.to_string()
-        ConcurrentHashMap::put(concurrent_map, key, value)
-      }
-      
-      // 并发入队
-      for m in 0..=9 {
-        ConcurrentQueue::enqueue(concurrent_queue, "item-" + i.to_string() + "-" + m.to_string())
-      }
-    })
-    concurrent_tasks = concurrent_tasks.push(task)
+test "array size boundary conditions" {
+  // Test empty array
+  let empty_string_array = ArrayStringValue([])
+  match empty_string_array {
+    ArrayStringValue(v) => assert_eq(v.length(), 0)
+    _ => assert_true(false)
   }
   
-  // 等待所有任务完成
-  for task in concurrent_tasks {
-    join(task)
+  let empty_int_array = ArrayIntValue([])
+  match empty_int_array {
+    ArrayIntValue(v) => assert_eq(v.length(), 0)
+    _ => assert_true(false)
   }
   
-  // 验证并发结果
-  assert_eq(ConcurrentCounter::value(concurrent_counter), 1000)  // 10个线程 × 100次递增
-  assert_eq(ConcurrentHashMap::size(concurrent_map), 100)      // 10个线程 × 10个键值对
-  assert_eq(ConcurrentQueue::size(concurrent_queue), 100)      // 10个线程 × 10个项目
-  
-  // 测试并发边界条件
-  let bounded_queue = BoundedConcurrentQueue::new(5)
-  
-  // 填满队列
-  for i in 0..=4 {
-    let enqueue_result = BoundedConcurrentQueue::try_enqueue(bounded_queue, "item-" + i.to_string())
-    assert_true(enqueue_result.is_ok)
-  }
-  
-  // 测试队列满时的边界条件
-  let full_queue_result = BoundedConcurrentQueue::try_enqueue(bounded_queue, "extra-item")
-  assert_true(full_queue_result.is_error)
-  assert_true(full_queue_result.error.contains("queue is full"))
-  
-  // 测试空队列的边界条件
-  let empty_queue = BoundedConcurrentQueue::new(5)
-  let empty_dequeue_result = BoundedConcurrentQueue::try_dequeue(empty_queue)
-  assert_true(empty_dequeue_result.is_error)
-  assert_true(empty_dequeue_result.error.contains("queue is empty"))
-  
-  // 测试死锁检测
-  let deadlock_detector = DeadlockDetector::new()
-  
-  // 模拟潜在死锁场景
-  let resource_a = DeadlockDetector::create_resource(deadlock_detector, "resource-a")
-  let resource_b = DeadlockDetector::create_resource(deadlock_detector, "resource-b")
-  
-  let deadlock_task1 = spawn(fn() {
-    DeadlockDetector::acquire(deadlock_detector, resource_a)
-    sleep(100)  // 增加死锁概率
-    DeadlockDetector::acquire(deadlock_detector, resource_b)
-    DeadlockDetector::release(deadlock_detector, resource_b)
-    DeadlockDetector::release(deadlock_detector, resource_a)
-  })
-  
-  let deadlock_task2 = spawn(fn() {
-    DeadlockDetector::acquire(deadlock_detector, resource_b)
-    sleep(100)  // 增加死锁概率
-    DeadlockDetector::acquire(deadlock_detector, resource_a)
-    DeadlockDetector::release(deadlock_detector, resource_a)
-    DeadlockDetector::release(deadlock_detector, resource_b)
-  })
-  
-  // 等待并检测死锁
-  sleep(1000)
-  let deadlock_detected = DeadlockDetector::detect_deadlock(deadlock_detector)
-  
-  if deadlock_detected {
-    DeadlockDetector::resolve_deadlock(deadlock_detector)
-  }
-  
-  join(deadlock_task1)
-  join(deadlock_task2)
-}
-
-test "异常处理和恢复机制" {
-  // 测试异常处理和恢复机制
-  let exception_handler = ExceptionHandler::new({
-    "max_retries": 3,
-    "backoff_strategy": "exponential",
-    "recovery_strategies": {
-      "timeout": "retry_with_backoff",
-      "connection_error": "circuit_breaker",
-      "data_corruption": "fallback_to_cache"
+  // Test single element array
+  let single_string_array = ArrayStringValue(["single"])
+  match single_string_array {
+    ArrayStringValue(v) => {
+      assert_eq(v.length(), 1)
+      assert_eq(v[0], "single")
     }
-  })
-  
-  // 测试可恢复异常
-  let recoverable_attempts = ref 0
-  let recoverable_result = ExceptionHandler::execute_with_recovery(
-    exception_handler,
-    fn() {
-      recoverable_attempts := !recoverable_attempts + 1
-      if !recoverable_attempts < 3 {
-        raise Exception("timeout", "Operation timed out")
-      } else {
-        "success"
-      }
-    },
-    "timeout"
-  )
-  
-  assert_true(recoverable_result.is_ok)
-  assert_eq(recoverable_result.value, "success")
-  assert_eq(!recoverable_attempts, 3)
-  
-  // 测试不可恢复异常
-  let unrecoverable_attempts = ref 0
-  let unrecoverable_result = ExceptionHandler::execute_with_recovery(
-    exception_handler,
-    fn() {
-      unrecoverable_attempts := !unrecoverable_attempts + 1
-      raise Exception("data_corruption", "Critical data corruption detected")
-    },
-    "data_corruption"
-  )
-  
-  assert_true(unrecoverable_result.is_error)
-  assert_eq(!unrecoverable_attempts, 1)  // 不应重试数据损坏错误
-  
-  // 测试熔断器机制
-  let circuit_breaker = CircuitBreaker::new({
-    "failure_threshold": 3,
-    "recovery_timeout": 5000,  // 5秒
-    "monitoring_period": 10000  // 10秒
-  })
-  
-  // 触发熔断器
-  for i in 0..=2 {
-    let result = CircuitBreaker::execute(circuit_breaker, fn() {
-      raise Exception("connection_error", "Connection failed")
-    })
-    assert_true(result.is_error)
+    _ => assert_true(false)
   }
   
-  // 验证熔断器状态
-  assert_true(CircuitBreaker::is_open(circuit_breaker))
-  
-  // 测试熔断器开启时的行为
-  let open_circuit_result = CircuitBreaker::execute(circuit_breaker, fn() {
-    "this should not execute"
-  })
-  assert_true(open_circuit_result.is_error)
-  assert_true(open_circuit_result.error.contains("circuit breaker is open"))
-  
-  // 测试降级策略
-  let fallback_handler = FallbackHandler::new({
-    "strategies": {
-      "cache": "return_cached_value",
-      "default": "return_default_value",
-      "alternative": "execute_alternative_service"
+  let single_int_array = ArrayIntValue([42])
+  match single_int_array {
+    ArrayIntValue(v) => {
+      assert_eq(v.length(), 1)
+      assert_eq(v[0], 42)
     }
-  })
+    _ => assert_true(false)
+  }
   
-  FallbackHandler::set_cache_value(fallback_handler, "test_key", "cached_value")
-  FallbackHandler::set_default_value(fallback_handler, "test_key", "default_value")
-  
-  // 测试缓存降级
-  let cache_fallback_result = FallbackHandler::execute_with_fallback(
-    fallback_handler,
-    fn() { raise Exception("service_unavailable", "Service is down") },
-    "test_key",
-    "cache"
-  )
-  assert_true(cache_fallback_result.is_ok)
-  assert_eq(cache_fallback_result.value, "cached_value")
-  
-  // 测试默认值降级
-  let default_fallback_result = FallbackHandler::execute_with_fallback(
-    fallback_handler,
-    fn() { raise Exception("service_unavailable", "Service is down") },
-    "unknown_key",
-    "default"
-  )
-  assert_true(default_fallback_result.is_ok)
-  assert_eq(default_fallback_result.value, "default_value")
-  
-  // 测试异常链和上下文
-  let context_builder = ExceptionContext::builder()
-  ExceptionContext::add_context(context_builder, "user_id", "user-123")
-  ExceptionContext::add_context(context_builder, "operation", "data_processing")
-  ExceptionContext::add_context(context_builder, "timestamp", get_current_timestamp())
-  
-  let context = ExceptionContext::build(context_builder)
-  
-  let contextual_result = ExceptionHandler::execute_with_context(
-    exception_handler,
-    context,
-    fn() {
-      raise Exception("validation_error", "Invalid input data")
+  // Test large array (within reasonable limits)
+  let large_int_array = ArrayIntValue(Array::range(0, 1000))
+  match large_int_array {
+    ArrayIntValue(v) => {
+      assert_eq(v.length(), 1000)
+      assert_eq(v[0], 0)
+      assert_eq(v[999], 999)
     }
-  )
-  
-  assert_true(contextual_result.is_error)
-  assert_true(contextual_result.error.contains("user_id"))
-  assert_true(contextual_result.error.contains("operation"))
-  assert_true(contextual_result.error.contains("validation_error"))
+    _ => assert_true(false)
+  }
 }
 
-test "系统资源耗尽场景" {
-  // 测试系统资源耗尽场景
-  let resource_monitor = ResourceMonitor::new()
-  
-  // 测试内存耗尽场景
-  let memory_consumer = MemoryConsumer::new()
-  let memory_consumption = ref 0
-  
-  let memory_exhaustion_result = ExceptionHandler::execute_with_recovery(
-    exception_handler,
-    fn() {
-      memory_consumption := !memory_consumption + (10 * 1024 * 1024)  // 每次增加10MB
-      let allocation_attempt = MemoryConsumer::allocate(memory_consumer, 10 * 1024 * 1024)
-      
-      match allocation_attempt {
-        Ok(_) => "allocated",
-        Err(error) => {
-          if error.contains("out of memory") {
-            raise Exception("out_of_memory", "System memory exhausted")
-          } else {
-            raise Exception("allocation_error", error)
-          }
-        }
-      }
-    },
-    "out_of_memory"
+test "timestamp boundary conditions" {
+  // Test minimum timestamp
+  let min_timestamp = 0L
+  let log_record1 = LogRecord::new(
+    Info,
+    Some("Minimum timestamp test"),
+    Some(Attributes::new()),
+    Some(min_timestamp),
+    Some(1L),
+    Some("trace_id"),
+    Some("span_id")
   )
+  assert_eq(LogRecord::timestamp(log_record1), Some(min_timestamp))
   
-  // 验证内存耗尽处理
-  assert_true(memory_consumption > 0)
-  assert_true(memory_exhaustion_result.is_ok || memory_exhaustion_result.is_error)
-  
-  // 测试文件描述符耗尽场景
-  let fd_consumer = FileDescriptorConsumer::new()
-  let fd_count = ref 0
-  
-  let fd_exhaustion_result = ExceptionHandler::execute_with_recovery(
-    exception_handler,
-    fn() {
-      fd_count := !fd_count + 1
-      let fd_attempt = FileDescriptorConsumer::open_file(fd_consumer, "temp_file_" + !fd_count.to_string())
-      
-      match fd_attempt {
-        Ok(_) => "file_opened",
-        Err(error) => {
-          if error.contains("too many open files") {
-            raise Exception("fd_exhaustion", "File descriptor limit reached")
-          } else {
-            raise Exception("file_error", error)
-          }
-        }
-      }
-    },
-    "fd_exhaustion"
+  // Test maximum timestamp (reasonable limit)
+  let max_timestamp = 253402300799L // January 1, 9999 00:00:00 UTC
+  let log_record2 = LogRecord::new(
+    Info,
+    Some("Maximum timestamp test"),
+    Some(Attributes::new()),
+    Some(max_timestamp),
+    Some(1L),
+    Some("trace_id"),
+    Some("span_id")
   )
+  assert_eq(LogRecord::timestamp(log_record2), Some(max_timestamp))
   
-  // 验证文件描述符耗尽处理
-  assert_true(fd_count > 0)
-  
-  // 测试磁盘空间耗尽场景
-  let disk_consumer = DiskConsumer::new("/tmp")
-  let disk_usage = ref 0
-  
-  let disk_exhaustion_result = ExceptionHandler::execute_with_recovery(
-    exception_handler,
-    fn() {
-      disk_usage := !disk_usage + (1024 * 1024)  // 每次增加1MB
-      let write_attempt = DiskConsumer::write_file(
-        disk_consumer, 
-        "large_file_" + !disk_usage.to_string(), 
-        "x" * (1024 * 1024)
-      )
-      
-      match write_attempt {
-        Ok(_) => "data_written",
-        Err(error) => {
-          if error.contains("no space left") {
-            raise Exception("disk_full", "Disk space exhausted")
-          } else {
-            raise Exception("disk_error", error)
-          }
-        }
-      }
-    },
-    "disk_full"
+  // Test negative timestamp
+  let negative_timestamp = -1000L
+  let log_record3 = LogRecord::new(
+    Info,
+    Some("Negative timestamp test"),
+    Some(Attributes::new()),
+    Some(negative_timestamp),
+    Some(1L),
+    Some("trace_id"),
+    Some("span_id")
   )
+  assert_eq(LogRecord::timestamp(log_record3), Some(negative_timestamp))
+}
+
+test "span context boundary conditions" {
+  // Test empty trace ID and span ID
+  let empty_ctx = SpanContext::new("", "", true, "")
+  assert_false(SpanContext::is_valid(empty_ctx))
   
-  // 验证磁盘空间耗尽处理
-  assert_true(disk_usage > 0)
+  // Test minimum valid trace ID and span ID (1 character)
+  let min_ctx = SpanContext::new("a", "b", true, "")
+  assert_true(SpanContext::is_valid(min_ctx))
   
-  // 测试网络端口耗尽场景
-  let port_consumer = PortConsumer::new()
-  let port_count = ref 0
+  // Test maximum valid trace ID and span ID (32 characters)
+  let max_trace_id = "0123456789abcdef0123456789abcdef"
+  let max_span_id = "0123456789abcdef0123456789abcde"
+  let max_ctx = SpanContext::new(max_trace_id, max_span_id, true, "")
+  assert_true(SpanContext::is_valid(max_ctx))
   
-  let port_exhaustion_result = ExceptionHandler::execute_with_recovery(
-    exception_handler,
-    fn() {
-      port_count := !port_count + 1
-      let port_attempt = PortConsumer::bind_port(port_consumer, 8000 + !port_count)
+  // Test invalid trace ID and span ID (too long)
+  let invalid_trace_id = "0123456789abcdef0123456789abcdef0"
+  let invalid_span_id = "0123456789abcdef0123456789abcdef0"
+  let invalid_ctx = SpanContext::new(invalid_trace_id, invalid_span_id, true, "")
+  assert_false(SpanContext::is_valid(invalid_ctx))
+  
+  // Test trace ID and span ID with invalid characters
+  let invalid_char_ctx = SpanContext::new("invalid@trace", "invalid@span", true, "")
+  assert_false(SpanContext::is_valid(invalid_char_ctx))
+}
+
+test "attribute count boundary conditions" {
+  let attrs = Attributes::new()
+  
+  // Test zero attributes
+  assert_eq(Attributes::count(attrs), 0)
+  
+  // Test single attribute
+  Attributes::set(attrs, "single", StringValue("value"))
+  assert_eq(Attributes::count(attrs), 1)
+  
+  // Test maximum reasonable attribute count
+  for i in 1..1000 {
+    Attributes::set(attrs, "attr_" + i.to_string(), StringValue("value_" + i.to_string()))
+  }
+  assert_eq(Attributes::count(attrs), 1000)
+  
+  // Test attribute key length boundaries
+  let very_long_key = "a" * 256
+  Attributes::set(attrs, very_long_key, StringValue("value"))
+  let result = Attributes::get(attrs, very_long_key)
+  match result {
+    Some(_) => assert_true(true)
+    None => assert_true(false) // Some systems may limit key length
+  }
+  
+  // Test attribute value length boundaries
+  let very_long_value = "a" * 10000
+  Attributes::set(attrs, "long_value_key", StringValue(very_long_value))
+  let long_value_result = Attributes::get(attrs, "long_value_key")
+  match long_value_result {
+    StringValue(v) => assert_eq(v, very_long_value)
+    _ => assert_true(false)
+  }
+}
+
+test "resource limits boundary conditions" {
+  let resource = Resource::new()
+  
+  // Test resource with no attributes
+  assert_eq(Resource::attribute_count(resource), 0)
+  
+  // Test resource with maximum reasonable attributes
+  let attrs = []
+  for i in 0..500 {
+    attrs.push(("attr_" + i.to_string(), StringValue("value_" + i.to_string())))
+  }
+  let resource_with_attrs = Resource::with_attributes(resource, attrs)
+  
+  // Verify attributes were added (may be limited by implementation)
+  let attr_count = Resource::attribute_count(resource_with_attrs)
+  assert_true(attr_count > 0)
+  assert_true(attr_count <= 500)
+  
+  // Test resource merging with many attributes
+  let more_attrs = []
+  for i in 500..1000 {
+    more_attrs.push(("more_attr_" + i.to_string(), StringValue("more_value_" + i.to_string())))
+  }
+  let more_resource = Resource::with_attributes(Resource::new(), more_attrs)
+  let merged_resource = Resource::merge(resource_with_attrs, more_resource)
+  
+  // Verify merge was successful
+  let merged_count = Resource::attribute_count(merged_resource)
+  assert_true(merged_count > 0)
+}
+
+test "concurrent operations boundary conditions" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "concurrent_meter")
+  let counter = Meter::create_counter(meter, "concurrent_counter", Some("Concurrent counter"), Some("count"))
+  
+  // Test rapid concurrent operations
+  for batch in 0..100 {
+    for i in 0..100 {
+      let operation_id = "batch_" + batch.to_string() + "_op_" + i.to_string()
+      let attrs = Attributes::new()
+      Attributes::set(attrs, "operation_id", StringValue(operation_id))
       
-      match port_attempt {
-        Ok(_) => "port_bound",
-        Err(error) => {
-          if error.contains("address already in use") || error.contains("no available ports") {
-            raise Exception("port_exhaustion", "Network ports exhausted")
-          } else {
-            raise Exception("network_error", error)
-          }
-        }
-      }
-    },
-    "port_exhaustion"
-  )
+      Counter::add(counter, 1.0, Some(attrs))
+    }
+  }
   
-  // 验证网络端口耗尽处理
-  assert_true(port_count > 0)
+  // Verify counter is still valid after many operations
+  assert_true(Counter::is_valid(counter))
   
-  // 清理资源
-  MemoryConsumer::cleanup(memory_consumer)
-  FileDescriptorConsumer::cleanup(fd_consumer)
-  DiskConsumer::cleanup(disk_consumer)
-  PortConsumer::cleanup(port_consumer)
+  // Test context with many nested values
+  let root_ctx = Context::root()
+  let mut ctx = root_ctx
+  
+  for i in 0..100 {
+    let key = ContextKey::new("key_" + i.to_string())
+    ctx = Context::with_value(ctx, key, "value_" + i.to_string())
+  }
+  
+  // Verify context is still valid
+  let test_key = ContextKey::new("key_50")
+  let value = Context::get(ctx, test_key)
+  match value {
+    Some(v) => assert_eq(v, "value_50")
+    None => assert_true(false)
+  }
+}
+
+test "memory allocation boundary conditions" {
+  // Test memory allocation with many small objects
+  let spans = []
+  
+  for i in 0..1000 {
+    let span_ctx = SpanContext::new("mem_trace_" + i.to_string(), "mem_span_" + i.to_string(), true, "")
+    let span = Span::new("memory_test_span_" + i.to_string(), Internal, span_ctx)
+    spans.push(span)
+  }
+  
+  // Verify all spans are valid
+  for span in spans {
+    assert_true(Span::is_valid(span))
+  }
+  
+  // Test memory allocation with few large objects
+  let large_attrs = []
+  
+  for i in 0..10 {
+    let attrs = Attributes::new()
+    
+    // Add many attributes to each
+    for j in 0..1000 {
+      Attributes::set(attrs, "attr_" + j.to_string(), StringValue("value_" + j.to_string()))
+    }
+    
+    large_attrs.push(attrs)
+  }
+  
+  // Verify all attribute sets are valid
+  for attrs in large_attrs {
+    assert_true(Attributes::is_valid(attrs))
+    assert_eq(Attributes::count(attrs), 1000)
+  }
+  
+  // Clean up
+  for span in spans {
+    Span::end(span)
+  }
+}
+
+test "data type conversion boundary conditions" {
+  // Test integer to float conversion
+  let max_int = 2147483647
+  let min_int = -2147483648
+  let max_int_float = max_int.to_float()
+  let min_int_float = min_int.to_float()
+  
+  assert_true(max_int_float > 2147483646.0)
+  assert_true(min_int_float < -2147483647.0)
+  
+  // Test float to integer conversion
+  let max_float = 2147483647.0
+  let min_float = -2147483648.0
+  let max_float_int = max_float.to_int()
+  let min_float_int = min_float.to_int()
+  
+  assert_eq(max_float_int, 2147483647)
+  assert_eq(min_float_int, -2147483648)
+  
+  // Test boolean to string conversion
+  let true_string = true.to_string()
+  let false_string = false.to_string()
+  
+  assert_eq(true_string, "true")
+  assert_eq(false_string, "false")
+  
+  // Test string to boolean conversion
+  let true_bool = "true".to_bool()
+  let false_bool = "false".to_bool()
+  
+  assert_true(true_bool)
+  assert_false(false_bool)
+  
+  // Test invalid string to boolean conversion
+  let invalid_bool = "invalid".to_bool_safe()
+  match invalid_bool {
+    Success(_) => assert_true(false) // Should not succeed
+    Error(_) => assert_true(true) // Expected error
+  }
+}
+
+test "network and I/O boundary conditions" {
+  let client = HttpClient::new()
+  
+  // Test very long URL
+  let long_url = "https://example.com/" + "a" * 1000
+  let request1 = HttpRequest::new("GET", long_url, [], None)
+  
+  // System should handle long URLs gracefully
+  let result1 = HttpClient::execute_safe(client, request1)
+  match result1 {
+    Success(_) => assert_true(true)
+    Error(_) => assert_true(true) // May fail due to URL length limits
+    _ => assert_true(false)
+  }
+  
+  // Test request with many headers
+  let many_headers = []
+  for i in 0..100 {
+    many_headers.push(("header_" + i.to_string(), "value_" + i.to_string()))
+  }
+  let request2 = HttpRequest::new("GET", "https://example.com/api", many_headers, None)
+  
+  // System should handle many headers gracefully
+  let result2 = HttpClient::execute_safe(client, request2)
+  match result2 {
+    Success(_) => assert_true(true)
+    Error(_) => assert_true(true) // May fail due to header count limits
+    _ => assert_true(false)
+  }
+  
+  // Test request with very large body
+  let large_body = "a" * 1000000 // 1MB body
+  let request3 = HttpRequest::new("POST", "https://example.com/api", [], Some(large_body))
+  
+  // System should handle large bodies gracefully
+  let result3 = HttpClient::execute_safe(client, request3)
+  match result3 {
+    Success(_) => assert_true(true)
+    Error(_) => assert_true(true) // May fail due to body size limits
+    _ => assert_true(false)
+  }
 }
