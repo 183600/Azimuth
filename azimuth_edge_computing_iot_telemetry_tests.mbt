@@ -1,673 +1,1026 @@
-// 边缘计算和IoT遥测测试
-// 测试Azimuth遥测系统的边缘计算和IoT遥测功能
+// Edge Computing and IoT Telemetry Tests for Azimuth Telemetry System
+// This file contains test cases for edge computing and IoT telemetry capabilities
 
-test "边缘设备遥测数据收集" {
-  // 测试边缘设备遥测数据收集功能
-  let edge_telemetry_collector = EdgeTelemetryCollector::new()
+// Test 1: Edge Device Telemetry Collection
+test "edge device telemetry collection" {
+  let edge_collector = EdgeTelemetryCollector::new()
   
-  // 配置边缘设备
-  let edge_device = EdgeDevice::new("device-001", "temperature-sensor", "factory-floor-1")
-  EdgeDevice::set_location(edge_device, {"latitude": 37.7749, "longitude": -122.4194})
-  EdgeDevice::set_capabilities(edge_device, ["temperature", "humidity", "pressure"])
-  EdgeDevice::set_sampling_rate(edge_device, 1000) // 1秒采样率
+  // Configure edge collector
+  edge_collector.configure(EdgeConfig::new()
+    .with_device_id("edge_device_001")
+    .with_collection_interval(1000)
+    .with_batch_size(50)
+    .with_compression_enabled(true)
+    .with_offline_storage_enabled(true))
   
-  EdgeTelemetryCollector::register_device(edge_telemetry_collector, edge_device)
+  // Start edge collector
+  edge_collector.start()
   
-  // 配置数据收集策略
-  let collection_strategy = CollectionStrategy::new()
-  CollectionStrategy::set_batch_size(collection_strategy, 10)
-  CollectionStrategy::set_flush_interval(collection_strategy, 5000) // 5秒
-  CollectionStrategy::set_compression_enabled(collection_strategy, true)
-  CollectionStrategy::set_encryption_enabled(collection_strategy, false)
+  // Simulate IoT device sensors
+  let temperature_sensor = Sensor::new("temperature", "celsius", -40.0, 125.0, 0.1)
+  let humidity_sensor = Sensor::new("humidity", "percent", 0.0, 100.0, 0.5)
+  let pressure_sensor = Sensor::new("pressure", "hpa", 300.0, 1100.0, 0.1)
+  let motion_sensor = Sensor::new("motion", "boolean", 0.0, 1.0, 1.0)
   
-  EdgeTelemetryCollector::set_strategy(edge_telemetry_collector, collection_strategy)
+  let sensors = [temperature_sensor, humidity_sensor, pressure_sensor, motion_sensor]
   
-  // 开始收集数据
-  EdgeTelemetryCollector::start_collection(edge_telemetry_collector)
-  
-  // 模拟传感器数据生成
-  let sensor_simulator = SensorSimulator::new(edge_device)
-  SensorSimulator::start(sensor_simulator)
-  
-  // 等待数据收集
-  Thread::sleep(6000) // 等待6秒，确保至少一次刷新
-  
-  // 停止收集
-  EdgeTelemetryCollector::stop_collection(edge_telemetry_collector)
-  SensorSimulator::stop(sensor_simulator)
-  
-  // 获取收集的数据
-  let collected_data = EdgeTelemetryCollector::get_collected_data(edge_telemetry_collector)
-  
-  // 验证收集的数据
-  assert_true(Array::length(collected_data) > 0)
-  
-  for data_point in collected_data {
-    assert_true(TelemetryDataPoint::has_device_id(data_point))
-    assert_true(TelemetryDataPoint::has_timestamp(data_point))
-    assert_true(TelemetryDataPoint::has_metrics(data_point))
+  // Generate sensor readings
+  let sensor_readings = []
+  for i in 0..=200 {
+    let timestamp = get_current_time_ms() + (i * 1000)
     
-    assert_eq(TelemetryDataPoint::get_device_id(data_point), "device-001")
-    
-    let metrics = TelemetryDataPoint::get_metrics(data_point)
-    assert_true(MetricMap::has_metric(metrics, "temperature"))
-    assert_true(MetricMap::has_metric(metrics, "humidity"))
-    assert_true(MetricMap::has_metric(metrics, "pressure"))
-    
-    // 验证温度值在合理范围内
-    let temperature = MetricMap::get_metric(metrics, "temperature")
-    assert_true(temperature >= -50.0 && temperature <= 100.0)
-    
-    // 验证湿度值在合理范围内
-    let humidity = MetricMap::get_metric(metrics, "humidity")
-    assert_true(humidity >= 0.0 && humidity <= 100.0)
-    
-    // 验证压力值在合理范围内
-    let pressure = MetricMap::get_metric(metrics, "pressure")
-    assert_true(pressure >= 800.0 && pressure <= 1200.0)
+    for sensor in sensors {
+      let reading = SensorReading::new(
+        sensor.sensor_id,
+        generate_sensor_value(sensor),
+        timestamp,
+        sensor.unit
+      )
+      sensor_readings.push(reading)
+    }
   }
   
-  // 验证数据质量
-  let data_quality = EdgeTelemetryCollector::get_data_quality(edge_telemetry_collector)
+  // Collect telemetry data
+  let collection_results = []
+  for reading in sensor_readings {
+    let result = edge_collector.collect(reading)
+    collection_results.push(result)
+  }
   
-  assert_true(DataQuality::has_completeness_score(data_quality))
-  assert_true(DataQuality::has_accuracy_score(data_quality))
-  assert_true(DataQuality::has_timeliness_score(data_quality))
+  // Verify collection results
+  assert_eq(collection_results.length(), 800) // 4 sensors * 200 readings
   
-  let completeness = DataQuality::get_completeness_score(data_quality)
-  let accuracy = DataQuality::get_accuracy_score(data_quality)
-  let timeliness = DataQuality::get_timeliness_score(data_quality)
+  let successful_collections = collection_results.filter(|r| r.success).length()
+  assert_true(successful_collections > 760) // At least 95% success rate
   
-  assert_true(completeness >= 0.0 && completeness <= 1.0)
-  assert_true(accuracy >= 0.0 && accuracy <= 1.0)
-  assert_true(timeliness >= 0.0 && timeliness <= 1.0)
+  // Verify batch processing
+  let batches = edge_collector.get_batches()
+  assert_true(batches.length() > 0)
+  
+  for batch in batches {
+    assert_true(batch.batch_id.length() > 0)
+    assert_true(batch.readings.length() > 0)
+    assert_true(batch.readings.length() <= 50) // Should not exceed batch size
+    assert_true(batch.timestamp > 0)
+    assert_true(batch.compressed_size < batch.uncompressed_size) // Compression should reduce size
+  }
+  
+  // Verify offline storage
+  let offline_storage = edge_collector.get_offline_storage()
+  assert_true(offline_storage.stored_readings > 0)
+  assert_true(offline_storage.storage_size_mb > 0.0)
+  assert_true(offline_storage.max_capacity_mb > offline_storage.storage_size_mb)
+  
+  // Stop edge collector
+  edge_collector.stop()
 }
 
-test "边缘计算数据处理和分析" {
-  // 测试边缘计算数据处理和分析功能
+// Test 2: Edge Data Processing and Filtering
+test "edge data processing and filtering" {
   let edge_processor = EdgeDataProcessor::new()
   
-  // 配置处理管道
-  let processing_pipeline = ProcessingPipeline::new()
+  // Configure processing rules
+  edge_processor.add_filter("temperature_range", FilterRule::range("temperature", -20.0, 50.0))
+  edge_processor.add_filter("humidity_valid", FilterRule::range("humidity", 0.0, 100.0))
+  edge_processor.add_filter("pressure_normal", FilterRule::range("pressure", 900.0, 1100.0))
+  edge_processor.add_filter("motion_detection", FilterRule::equals("motion", true))
   
-  // 添加数据清洗阶段
-  let cleaning_stage = DataCleaningStage::new()
-  DataCleaningStage::add_outlier_detection(cleaning_stage, "temperature", ZScore, 2.0)
-  DataCleaningStage::add_outlier_detection(cleaning_stage, "humidity", ZScore, 2.0)
-  DataCleaningStage::add_missing_value_handling(cleaning_stage, "pressure", LinearInterpolation)
+  // Configure transformations
+  edge_processor.add_transformation("temp_fahrenheit", TransformRule::formula("temperature", "celsius_to_fahrenheit"))
+  edge_processor.add_transformation("heat_index", TransformRule::calculate("heat_index", ["temperature", "humidity"]))
+  edge_processor.add_transformation("pressure_trend", TransformRule::trend("pressure", 5))
+  edge_processor.add_transformation("motion_count", TransformRule::aggregate("motion", "count", 60))
   
-  ProcessingPipeline::add_stage(processing_pipeline, cleaning_stage)
+  // Start edge processor
+  edge_processor.start()
   
-  // 添加数据转换阶段
-  let transformation_stage = DataTransformationStage::new()
-  DataTransformationStage::add_unit_conversion(transformation_stage, "temperature", Celsius, Fahrenheit)
-  DataTransformationStage::add_smoothing(transformation_stage, "humidity", MovingAverage, 5)
-  DataTransformationStage::add_derived_metric(transformation_stage, "heat_index", ["temperature", "humidity"])
+  // Generate edge device data
+  let edge_data = generate_edge_device_data(500)
   
-  ProcessingPipeline::add_stage(processing_pipeline, transformation_stage)
-  
-  // 添加异常检测阶段
-  let anomaly_detection_stage = AnomalyDetectionStage::new()
-  AnomalyDetectionStage::add_detection_algorithm(anomaly_detection_stage, "temperature", IsolationForest)
-  AnomalyDetectionStage::add_detection_algorithm(anomaly_detection_stage, "pressure", StatisticalThreshold)
-  
-  ProcessingPipeline::add_stage(processing_pipeline, anomaly_detection_stage)
-  
-  EdgeDataProcessor::set_pipeline(edge_processor, processing_pipeline)
-  
-  // 创建测试数据
-  let test_data = []
-  for i in 0..100 {
-    let base_temp = 25.0 + Math::sin(i.to_float() * 0.1) * 5.0
-    let base_humidity = 60.0 + Math::cos(i.to_float() * 0.1) * 10.0
-    let base_pressure = 1013.25 + Math::sin(i.to_float() * 0.05) * 5.0
-    
-    // 添加一些异常值
-    let temp = if i == 50 { base_temp + 20.0 } else { base_temp }
-    let humidity = if i == 75 { base_humidity - 30.0 } else { base_humidity }
-    
-    let data_point = TelemetryDataPoint::new("device-002", 1704067200000L + i.to_long())
-    TelemetryDataPoint::add_metric(data_point, "temperature", temp)
-    TelemetryDataPoint::add_metric(data_point, "humidity", humidity)
-    TelemetryDataPoint::add_metric(data_point, "pressure", base_pressure)
-    
-    Array::push(test_data, data_point)
-  }
-  
-  // 处理数据
-  let processed_data = EdgeDataProcessor::process_batch(edge_processor, test_data)
-  
-  // 验证处理结果
-  assert_eq(Array::length(processed_data), Array::length(test_data))
-  
-  for i in 0..Array::length(processed_data) {
-    let original_point = Array::get(test_data, i)
-    let processed_point = Array::get(processed_data, i)
-    
-    // 验证温度已转换为华氏度
-    let original_temp = TelemetryDataPoint::get_metric(original_point, "temperature")
-    let processed_temp = TelemetryDataPoint::get_metric(processed_point, "temperature")
-    
-    let expected_fahrenheit = original_temp * 9.0 / 5.0 + 32.0
-    assert_true(Math::abs(processed_temp - expected_fahrenheit) < 0.01)
-    
-    // 验证湿度已平滑（除了前几个点）
-    if i >= 5 {
-      let original_humidity = TelemetryDataPoint::get_metric(original_point, "humidity")
-      let processed_humidity = TelemetryDataPoint::get_metric(processed_point, "humidity")
-      
-      // 移动平均应该不同
-      assert_ne(processed_humidity, original_humidity)
-    }
-    
-    // 验证派生指标 heat_index 已添加
-    assert_true(TelemetryDataPoint::has_metric(processed_point, "heat_index"))
-    
-    // 验证异常检测结果
-    let anomaly_flags = TelemetryDataPoint::get_anomaly_flags(processed_point)
-    assert_true(Array::length(anomaly_flags) >= 0)
-    
-    // 检查是否检测到了我们添加的异常
-    if i == 50 || i == 75 {
-      assert_true(Array::length(anomaly_flags) > 0)
+  // Process data through filters and transformations
+  let processing_results = []
+  for data_point in edge_data {
+    let filtered_data = edge_processor.apply_filters(data_point)
+    if filtered_data.is_some() {
+      let processed_data = edge_processor.apply_transformations(filtered_data.unwrap())
+      processing_results.push(processed_data)
     }
   }
   
-  // 获取处理统计
-  let processing_stats = EdgeDataProcessor::get_statistics(edge_processor)
+  // Verify filtering results
+  assert_true(processing_results.length() > 0)
+  assert_true(processing_results.length() < edge_data.length()) // Some data should be filtered out
   
-  // 验证处理统计
-  assert_true(ProcessingStats::has_total_processed(processing_stats))
-  assert_true(ProcessingStats::has_outliers_detected(processing_stats))
-  assert_true(ProcessingStats::has_anomalies_detected(processing_stats))
-  assert_true(ProcessingStats::has_processing_time(processing_stats))
-  
-  let total_processed = ProcessingStats::get_total_processed(processing_stats)
-  let outliers_detected = ProcessingStats::get_outliers_detected(processing_stats)
-  let anomalies_detected = ProcessingStats::get_anomalies_detected(processing_stats)
-  
-  assert_eq(total_processed, 100)
-  assert_true(outliers_detected >= 2) // 至少检测到我们添加的2个异常值
-  assert_true(anomalies_detected >= 2) // 至少检测到2个异常
-  assert_true(ProcessingStats::get_processing_time(processing_stats) > 0)
-}
-
-test "边缘设备资源管理和优化" {
-  // 测试边缘设备资源管理和优化功能
-  let edge_resource_manager = EdgeResourceManager::new()
-  
-  // 配置资源限制
-  let resource_limits = ResourceLimits::new()
-  ResourceLimits::set_cpu_limit(resource_limits, 80.0) // 80% CPU使用率限制
-  ResourceLimits::set_memory_limit(resource_limits, 512 * 1024 * 1024) // 512MB内存限制
-  ResourceLimits::set_storage_limit(resource_limits, 1024 * 1024 * 1024) // 1GB存储限制
-  ResourceLimits::set_network_limit(resource_limits, 10 * 1024 * 1024) // 10MB/s网络限制
-  
-  EdgeResourceManager::set_limits(edge_resource_manager, resource_limits)
-  
-  // 启动资源监控
-  EdgeResourceManager::start_monitoring(edge_resource_manager)
-  
-  // 模拟资源使用
-  let resource_simulator = ResourceSimulator::new()
-  ResourceSimulator::set_cpu_usage(resource_simulator, 60.0) // 60% CPU使用率
-  ResourceSimulator::set_memory_usage(resource_simulator, 256 * 1024 * 1024) // 256MB内存使用
-  ResourceSimulator::set_storage_usage(resource_simulator, 500 * 1024 * 1024) // 500MB存储使用
-  ResourceSimulator::set_network_usage(resource_simulator, 5 * 1024 * 1024) // 5MB/s网络使用
-  
-  ResourceSimulator::start(resource_simulator)
-  
-  // 等待监控数据收集
-  Thread::sleep(2000)
-  
-  // 获取当前资源使用情况
-  let current_usage = EdgeResourceManager::get_current_usage(edge_resource_manager)
-  
-  // 验证资源使用情况
-  assert_true(ResourceUsage::has_cpu_usage(current_usage))
-  assert_true(ResourceUsage::has_memory_usage(current_usage))
-  assert_true(ResourceUsage::has_storage_usage(current_usage))
-  assert_true(ResourceUsage::has_network_usage(current_usage))
-  
-  let cpu_usage = ResourceUsage::get_cpu_usage(current_usage)
-  let memory_usage = ResourceUsage::get_memory_usage(current_usage)
-  let storage_usage = ResourceUsage::get_storage_usage(current_usage)
-  let network_usage = ResourceUsage::get_network_usage(current_usage)
-  
-  assert_eq(cpu_usage, 60.0)
-  assert_eq(memory_usage, 256 * 1024 * 1024)
-  assert_eq(storage_usage, 500 * 1024 * 1024)
-  assert_eq(network_usage, 5 * 1024 * 1024)
-  
-  // 测试资源优化建议
-  let optimization_suggestions = EdgeResourceManager::get_optimization_suggestions(edge_resource_manager)
-  
-  // 验证优化建议
-  assert_true(Array::length(optimization_suggestions) >= 0)
-  
-  for suggestion in optimization_suggestions {
-    assert_true(OptimizationSuggestion::has_resource_type(suggestion))
-    assert_true(OptimizationSuggestion::has_current_usage(suggestion))
-    assert_true(OptimizationSuggestion::has_recommended_action(suggestion))
-    assert_true(OptimizationSuggestion::has_potential_savings(suggestion))
-  }
-  
-  // 增加资源使用以触发优化
-  ResourceSimulator::set_cpu_usage(resource_simulator, 90.0) // 超过80%限制
-  ResourceSimulator::set_memory_usage(resource_simulator, 600 * 1024 * 1024) // 超过512MB限制
-  
-  Thread::sleep(2000)
-  
-  // 检查是否触发了资源优化
-  let high_usage = EdgeResourceManager::get_current_usage(edge_resource_manager)
-  let high_usage_suggestions = EdgeResourceManager::get_optimization_suggestions(edge_resource_manager)
-  
-  // 高使用率时应该有更多优化建议
-  assert_true(Array::length(high_usage_suggestions) > Array::length(optimization_suggestions))
-  
-  // 测试自动资源优化
-  let auto_optimizer = AutoResourceOptimizer::new()
-  AutoResourceOptimizer::enable_cpu_optimization(auto_optimizer, true)
-  AutoResourceOptimizer::enable_memory_optimization(auto_optimizer, true)
-  AutoResourceOptimizer::enable_storage_optimization(auto_optimizer, true)
-  
-  EdgeResourceManager::set_auto_optimizer(edge_resource_manager, auto_optimizer)
-  
-  // 触发自动优化
-  EdgeResourceManager::trigger_optimization(edge_resource_manager)
-  
-  // 等待优化完成
-  Thread::sleep(1000)
-  
-  // 验证优化结果
-  let optimization_result = EdgeResourceManager::get_last_optimization_result(edge_resource_manager)
-  
-  assert_true(OptimizationResult::is_successful(optimization_result))
-  assert_true(OptimizationResult::has_applied_optimizations(optimization_result))
-  assert_true(OptimizationResult::has_resource_savings(optimization_result))
-  
-  let applied_optimizations = OptimizationResult::get_applied_optimizations(optimization_result)
-  assert_true(Array::length(applied_optimizations) > 0)
-  
-  // 停止监控和模拟
-  EdgeResourceManager::stop_monitoring(edge_resource_manager)
-  ResourceSimulator::stop(resource_simulator)
-}
-
-test "IoT设备连接和通信管理" {
-  // 测试IoT设备连接和通信管理功能
-  let iot_connection_manager = IoTConnectionManager::new()
-  
-  // 配置连接策略
-  let connection_strategy = ConnectionStrategy::new()
-  ConnectionStrategy::set_max_connections(connection_strategy, 100)
-  ConnectionStrategy::set_connection_timeout(connection_strategy, 5000) // 5秒超时
-  ConnectionStrategy::set_heartbeat_interval(connection_strategy, 30000) // 30秒心跳
-  ConnectionStrategy::set_retry_policy(connection_strategy, ExponentialBackoff, 3, 1000)
-  
-  IoTConnectionManager::set_strategy(iot_connection_manager, connection_strategy)
-  
-  // 创建IoT设备模拟器
-  let iot_devices = []
-  
-  for i in 0..10 {
-    let device = IoTDeviceSimulator::new("iot-device-" + i.to_string())
-    IoTDeviceSimulator::set_protocol(device, MQTT)
-    IoTDeviceSimulator::set_endpoint(device, "mqtt://broker.example.com:1883")
-    IoTDeviceSimulator::set_credentials(device, "user-" + i.to_string(), "pass-" + i.to_string())
-    IoTDeviceSimulator::set_qos(device, 1)
-    
-    Array::push(iot_devices, device)
-  }
-  
-  // 注册设备
-  for device in iot_devices {
-    IoTConnectionManager::register_device(iot_connection_manager, IoTDeviceSimulator::get_id(device))
-  }
-  
-  // 启动连接管理器
-  IoTConnectionManager::start(iot_connection_manager)
-  
-  // 连接所有设备
-  for device in iot_devices {
-    IoTDeviceSimulator::connect(device)
-  }
-  
-  // 等待连接建立
-  Thread::sleep(2000)
-  
-  // 验证连接状态
-  let connection_status = IoTConnectionManager::get_connection_status(iot_connection_manager)
-  
-  assert_true(ConnectionStatus::has_total_devices(connection_status))
-  assert_true(ConnectionStatus::has_connected_devices(connection_status))
-  assert_true(ConnectionStatus::has_disconnected_devices(connection_status))
-  assert_true(ConnectionStatus::has_connection_statistics(connection_status))
-  
-  let total_devices = ConnectionStatus::get_total_devices(connection_status)
-  let connected_devices = ConnectionStatus::get_connected_devices(connection_status)
-  
-  assert_eq(total_devices, 10)
-  assert_true(connected_devices >= 8) // 至少8个设备应该连接成功
-  
-  // 测试消息发送
-  let message_sender = IoTMessageSender::new()
-  
-  for i in 0..10 {
-    let device_id = "iot-device-" + i.to_string()
-    let message = IoTMessage::new(device_id, "telemetry/data", "{\"temperature\": 25.5, \"humidity\": 60.2}")
-    let result = IoTMessageSender::send(message_sender, message)
-    
-    if ConnectionStatus::is_device_connected(connection_status, device_id) {
-      assert_true(MessageResult::is_successful(result))
+  // Verify temperature range filter
+  for processed in processing_results {
+    match processed.get("temperature") {
+      Some(temp) => {
+        assert_true(temp >= -20.0 && temp <= 50.0)
+      },
+      None => {}
     }
   }
   
-  // 测试消息接收
-  let message_receiver = IoTMessageReceiver::new()
-  IoTMessageReceiver::subscribe(message_receiver, "telemetry/data")
-  
-  // 模拟接收消息
-  for i in 0..5 {
-    let device_id = "iot-device-" + i.to_string()
-    let message = IoTMessage::new(device_id, "telemetry/data", "{\"temperature\": " + (20 + i).to_string() + ", \"humidity\": " + (50 + i).to_string() + "}")
-    IoTMessageReceiver::receive(message_receiver, message)
+  // Verify humidity valid filter
+  for processed in processing_results {
+    match processed.get("humidity") {
+      Some(humidity) => {
+        assert_true(humidity >= 0.0 && humidity <= 100.0)
+      },
+      None => {}
+    }
   }
   
-  // 获取接收的消息
-  let received_messages = IoTMessageReceiver::get_messages(message_receiver)
-  assert_eq(Array::length(received_messages), 5)
+  // Verify pressure normal filter
+  for processed in processing_results {
+    match processed.get("pressure") {
+      Some(pressure) => {
+        assert_true(pressure >= 900.0 && pressure <= 1100.0)
+      },
+      None => {}
+    }
+  }
   
-  // 验证消息内容
-  for i in 0..5 {
-    let message = Array::get(received_messages, i)
-    assert_eq(IoTMessage::get_topic(message), "telemetry/data")
-    assert_eq(IoTMessage::get_device_id(message), "iot-device-" + i.to_string())
+  // Verify motion detection filter
+  for processed in processing_results {
+    match processed.get("motion") {
+      Some(motion) => {
+        assert_eq(motion, true)
+      },
+      None => {}
+    }
+  }
+  
+  // Verify transformations
+  for processed in processing_results {
+    // Check temperature in Fahrenheit
+    if processed.contains_key("temperature") {
+      assert_true(processed.contains_key("temp_fahrenheit"))
+      let celsius = processed.get("temperature")
+      let fahrenheit = processed.get("temp_fahrenheit")
+      assert_eq(fahrenheit, celsius * 9.0 / 5.0 + 32.0)
+    }
     
-    let payload = IoTMessage::get_payload(message)
-    assert_true(String::contains(payload, "temperature"))
-    assert_true(String::contains(payload, "humidity"))
+    // Check heat index calculation
+    if processed.contains_key("temperature") && processed.contains_key("humidity") {
+      assert_true(processed.contains_key("heat_index"))
+      let heat_index = processed.get("heat_index")
+      assert_true(heat_index >= 0.0)
+    }
+    
+    // Check pressure trend
+    if processed.contains_key("pressure") {
+      assert_true(processed.contains_key("pressure_trend"))
+      let trend = processed.get("pressure_trend")
+      assert_true(trend == "increasing" || trend == "decreasing" || trend == "stable")
+    }
+    
+    // Check motion count
+    if processed.contains_key("motion") {
+      assert_true(processed.contains_key("motion_count"))
+      let count = processed.get("motion_count")
+      assert_true(count >= 0.0)
+    }
   }
   
-  // 测试设备断连和重连
-  let device_to_disconnect = Array::get(iot_devices, 0)
-  IoTDeviceSimulator::disconnect(device_to_disconnect)
-  
-  Thread::sleep(1000)
-  
-  // 验证设备已断开
-  let updated_status = IoTConnectionManager::get_connection_status(iot_connection_manager)
-  assert_false(ConnectionStatus::is_device_connected(updated_status, "iot-device-0"))
-  
-  // 重新连接设备
-  IoTDeviceSimulator::connect(device_to_disconnect)
-  
-  Thread::sleep(2000)
-  
-  // 验证设备已重新连接
-  let reconnected_status = IoTConnectionManager::get_connection_status(iot_connection_manager)
-  assert_true(ConnectionStatus::is_device_connected(reconnected_status, "iot-device-0"))
-  
-  // 断开所有设备并停止连接管理器
-  for device in iot_devices {
-    IoTDeviceSimulator::disconnect(device)
-  }
-  
-  Thread::sleep(1000)
-  
-  IoTConnectionManager::stop(iot_connection_manager)
-  
-  // 验证所有设备已断开
-  let final_status = IoTConnectionManager::get_connection_status(iot_connection_manager)
-  assert_eq(ConnectionStatus::get_connected_devices(final_status), 0)
+  // Stop edge processor
+  edge_processor.stop()
 }
 
-test "边缘到云数据同步" {
-  // 测试边缘到云数据同步功能
-  let edge_cloud_sync = EdgeCloudSync::new()
+// Test 3: Edge-to-Cloud Communication
+test "edge-to-cloud communication" {
+  let edge_communicator = EdgeCloudCommunicator::new()
   
-  // 配置云端点
-  let cloud_endpoint = CloudEndpoint::new("https://cloud.example.com/api/telemetry")
-  CloudEndpoint::set_authentication(cloud_endpoint, BearerToken, "edge-token-12345")
-  CloudEndpoint::set_batch_size(cloud_endpoint, 50)
-  CloudEndpoint::set_compression(cloud_endpoint, Gzip)
-  CloudEndpoint::set_retry_policy(cloud_endpoint, ExponentialBackoff, 5, 2000)
+  // Configure communication
+  edge_communicator.configure(CommunicationConfig::new()
+    .with_cloud_endpoint("https://cloud.azimuth.com/telemetry")
+    .with_api_key("edge_api_key_12345")
+    .with_protocol("mqtt")
+    .with_qos(1)
+    .with_retry_policy(RetryPolicy::exponential(3, 1000, 2.0))
+    .with_offline_queue_enabled(true))
   
-  EdgeCloudSync::set_cloud_endpoint(edge_cloud_sync, cloud_endpoint)
+  // Start edge communicator
+  edge_communicator.start()
   
-  // 配置同步策略
-  let sync_strategy = SyncStrategy::new()
-  SyncStrategy::set_sync_interval(sync_strategy, 10000) // 10秒间隔
-  SyncStrategy::set_sync_mode(sync_strategy, Batch)
-  SyncStrategy::set_offline_support(sync_strategy, true)
-  SyncStrategy::set_local_storage_limit(sync_strategy, 100 * 1024 * 1024) // 100MB本地存储
+  // Generate edge telemetry data
+  let edge_telemetry = generate_edge_telemetry_data(300)
   
-  EdgeCloudSync::set_strategy(edge_cloud_sync, sync_strategy)
+  // Send data to cloud
+  let transmission_results = []
+  for data_batch in edge_telemetry {
+    let result = edge_communicator.send_to_cloud(data_batch)
+    transmission_results.push(result)
+  }
   
-  // 启动同步
-  EdgeCloudSync::start(edge_cloud_sync)
+  // Verify transmission results
+  assert_eq(transmission_results.length(), 300)
   
-  // 生成测试数据
-  let test_data = []
-  for i in 0..100 {
-    let data_point = TelemetryDataPoint::new("edge-device-" + (i % 5).to_string(), 1704067200000L + i.to_long())
-    TelemetryDataPoint::add_metric(data_point, "temperature", 20.0 + Math::random() * 10.0)
-    TelemetryDataPoint::add_metric(data_point, "humidity", 50.0 + Math::random() * 20.0)
-    TelemetryDataPoint::add_metric(data_point, "battery", 80.0 + Math::random() * 20.0)
+  let successful_transmissions = transmission_results.filter(|r| r.success).length()
+  assert_true(successful_transmissions > 270) // At least 90% success rate
+  
+  // Verify retry mechanism
+  let retry_attempts = transmission_results.flat_map(|r| r.retry_attempts).reduce(0, |sum, attempts| sum + attempts)
+  assert_true(retry_attempts >= 0)
+  
+  // Verify offline queuing
+  let offline_queue = edge_communicator.get_offline_queue()
+  assert_true(offline_queue.queued_messages >= 0)
+  assert_true(offline_queue.max_queue_size > offline_queue.queued_messages)
+  
+  // Test different communication protocols
+  let protocols = ["mqtt", "http", "websocket", "coap"]
+  
+  for protocol in protocols {
+    edge_communicator.set_protocol(protocol)
     
-    Array::push(test_data, data_point)
-  }
-  
-  // 添加数据到同步队列
-  for data_point in test_data {
-    EdgeCloudSync::add_data(edge_cloud_sync, data_point)
-  }
-  
-  // 等待同步完成
-  Thread::sleep(12000)
-  
-  // 获取同步状态
-  let sync_status = EdgeCloudSync::get_sync_status(edge_cloud_sync)
-  
-  // 验证同步状态
-  assert_true(SyncStatus::has_total_pending(sync_status))
-  assert_true(SyncStatus::has_synced_count(sync_status))
-  assert_true(SyncStatus::has_failed_count(sync_status))
-  assert_true(SyncStatus::has_last_sync_time(sync_status))
-  
-  let total_pending = SyncStatus::get_total_pending(sync_status)
-  let synced_count = SyncStatus::get_synced_count(sync_status)
-  let failed_count = SyncStatus::get_failed_count(sync_status)
-  
-  assert_eq(total_pending, synced_count + failed_count)
-  assert_true(synced_count > 0) // 至少有一些数据应该同步成功
-  
-  // 测试离线模式
-  EdgeCloudSync::simulate_network_failure(edge_cloud_sync)
-  
-  // 添加更多数据（这些数据应该在本地缓存）
-  let offline_data = []
-  for i in 0..20 {
-    let data_point = TelemetryDataPoint::new("edge-device-offline", 1704067200000L + i.to_long())
-    TelemetryDataPoint::add_metric(data_point, "temperature", 25.0 + Math::random() * 5.0)
-    TelemetryDataPoint::add_metric(data_point, "humidity", 55.0 + Math::random() * 15.0)
+    let protocol_data = generate_edge_telemetry_data(50)
+    let protocol_results = []
     
-    Array::push(offline_data, data_point)
-    EdgeCloudSync::add_data(edge_cloud_sync, data_point)
+    for data_batch in protocol_data {
+      let result = edge_communicator.send_to_cloud(data_batch)
+      protocol_results.push(result)
+    }
+    
+    // Verify protocol-specific behavior
+    match protocol {
+      "mqtt" => {
+        // Should support QoS levels
+        let qos_results = protocol_results.filter(|r| r.qos_level > 0).length()
+        assert_true(qos_results > 0)
+      },
+      "http" => {
+        // Should have HTTP status codes
+        let http_results = protocol_results.filter(|r| r.http_status_code > 0).length()
+        assert_true(http_results > 0)
+      },
+      "websocket" => {
+        // Should support real-time communication
+        let latency_results = protocol_results.filter(|r| r.latency_ms < 100).length()
+        assert_true(latency_results > 0)
+      },
+      "coap" => {
+        // Should be lightweight for IoT
+        let size_results = protocol_results.filter(|r| r.message_size < 1024).length()
+        assert_true(size_results > 0)
+      },
+      _ => assert_true(false)
+    }
   }
   
-  Thread::sleep(2000)
+  // Test bidirectional communication
+  let cloud_commands = [
+    CloudCommand::new("update_config", {"collection_interval": 500}),
+    CloudCommand::new("restart_device", {}),
+    CloudCommand::new("calibrate_sensors", {"sensors": ["temperature", "humidity"]}),
+    CloudCommand::new("firmware_update", {"version": "1.2.3", "url": "https://firmware.azimuth.com/v1.2.3.bin"})
+  ]
   
-  // 验证离线数据已缓存
-  let offline_status = EdgeCloudSync::get_sync_status(edge_cloud_sync)
-  let cached_count = EdgeCloudSync::get_cached_count(edge_cloud_sync)
+  let command_results = []
+  for command in cloud_commands {
+    let result = edge_communicator.receive_command(command)
+    command_results.push(result)
+  }
   
-  assert_true(cached_count >= 20)
+  // Verify command processing
+  assert_eq(command_results.length(), 4)
   
-  // 恢复网络连接
-  EdgeCloudSync::simulate_network_recovery(edge_cloud_sync)
+  for result in command_results {
+    assert_true(result.command_received)
+    assert_true(result.processing_time_ms >= 0)
+    assert_true(result.response.length() > 0)
+  }
   
-  // 等待离线数据同步
-  Thread::sleep(5000)
-  
-  // 验证离线数据已同步
-  let recovery_status = EdgeCloudSync::get_sync_status(edge_cloud_sync)
-  let final_cached_count = EdgeCloudSync::get_cached_count(edge_cloud_sync)
-  
-  assert_true(final_cached_count < cached_count) // 缓存数量应该减少
-  
-  // 测试数据压缩
-  let compression_stats = EdgeCloudSync::get_compression_stats(edge_cloud_sync)
-  
-  assert_true(CompressionStats::has_original_size(compression_stats))
-  assert_true(CompressionStats::has_compressed_size(compression_stats))
-  assert_true(CompressionStats::has_compression_ratio(compression_stats))
-  
-  let original_size = CompressionStats::get_original_size(compression_stats)
-  let compressed_size = CompressionStats::get_compressed_size(compression_stats)
-  let compression_ratio = CompressionStats::get_compression_ratio(compression_stats)
-  
-  assert_true(original_size > 0)
-  assert_true(compressed_size > 0);
-  assert_true(compression_ratio > 0.0 && compression_ratio <= 1.0)
-  assert_true(compressed_size < original_size) // 压缩后应该更小
-  
-  // 停止同步
-  EdgeCloudSync::stop(edge_cloud_sync)
-  
-  // 验证同步已停止
-  let stopped_status = EdgeCloudSync::get_sync_status(edge_cloud_sync)
-  assert_false(SyncStatus::is_active(stopped_status))
+  // Stop edge communicator
+  edge_communicator.stop()
 }
 
-test "边缘设备安全和认证" {
-  // 测试边缘设备安全和认证功能
-  let edge_security_manager = EdgeSecurityManager::new()
+// Test 4: Edge Device Resource Management
+test "edge device resource management" {
+  let resource_manager = EdgeResourceManager::new()
   
-  // 配置安全策略
-  let security_policy = SecurityPolicy::new()
-  SecurityPolicy::set_encryption_required(security_policy, true)
-  SecurityPolicy::set_authentication_method(security_policy, CertificateBased)
-  SecurityPolicy::set_certificate_validation(security_policy, Strict)
-  SecurityPolicy::set_access_control(security_policy, RoleBased)
+  // Configure resource limits
+  resource_manager.configure(ResourceConfig::new()
+    .with_max_cpu_usage(80.0)
+    .with_max_memory_usage(70.0)
+    .with_max_storage_usage(90.0)
+    .with_max_network_usage(60.0)
+    .with_monitoring_interval(5000))
   
-  EdgeSecurityManager::set_policy(edge_security_manager, security_policy)
+  // Start resource manager
+  resource_manager.start()
   
-  // 生成设备证书
-  let certificate_generator = CertificateGenerator::new()
+  // Simulate resource-intensive operations
+  let resource_operations = [
+    ResourceOperation::new("data_processing", 50.0, 30.0, 10.0, 20.0, 5000),
+    ResourceOperation::new("data_compression", 70.0, 40.0, 5.0, 10.0, 3000),
+    ResourceOperation::new("data_transmission", 30.0, 20.0, 2.0, 80.0, 2000),
+    ResourceOperation::new("sensor_reading", 20.0, 10.0, 1.0, 5.0, 1000),
+    ResourceOperation::new("local_storage", 40.0, 25.0, 60.0, 15.0, 4000)
+  ]
   
-  let device_certificates = []
-  for i in 0..5 {
-    let device_id = "secure-device-" + i.to_string()
-    let certificate = CertificateGenerator::generate_device_certificate(certificate_generator, device_id)
-    Array::push(device_certificates, certificate)
-  }
+  // Execute operations and monitor resources
+  let operation_results = []
+  let resource_snapshots = []
   
-  // 注册设备证书
-  for i in 0..5 {
-    let device_id = "secure-device-" + i.to_string()
-    let certificate = Array::get(device_certificates, i)
-    EdgeSecurityManager::register_device_certificate(edge_security_manager, device_id, certificate)
-  }
-  
-  // 测试设备认证
-  for i in 0..5 {
-    let device_id = "secure-device-" + i.to_string()
-    let certificate = Array::get(device_certificates, i)
+  for operation in resource_operations {
+    // Get resource snapshot before operation
+    let before_snapshot = resource_manager.get_resource_snapshot()
+    resource_snapshots.push(before_snapshot)
     
-    let auth_result = EdgeSecurityManager::authenticate_device(edge_security_manager, device_id, certificate)
-    assert_true(AuthenticationResult::is_successful(auth_result))
+    // Execute operation
+    let result = resource_manager.execute_operation(operation)
+    operation_results.push(result)
     
-    let auth_token = AuthenticationResult::get_token(auth_result)
-    assert_true(String::length(auth_token) > 0)
+    // Get resource snapshot after operation
+    let after_snapshot = resource_manager.get_resource_snapshot()
+    resource_snapshots.push(after_snapshot)
   }
   
-  // 测试无效证书认证
-  let invalid_certificate = CertificateGenerator::generate_invalid_certificate(certificate_generator)
-  let invalid_auth_result = EdgeSecurityManager::authenticate_device(edge_security_manager, "invalid-device", invalid_certificate)
+  // Verify operation results
+  assert_eq(operation_results.length(), 5)
   
-  assert_false(AuthenticationResult::is_successful(invalid_auth_result))
+  for result in operation_results {
+    assert_true(result.executed || result.resource_limited)
+    assert_true(result.execution_time_ms >= 0)
+    
+    if result.executed {
+      assert_true(result.cpu_usage <= 80.0)
+      assert_true(result.memory_usage <= 70.0)
+      assert_true(result.storage_usage <= 90.0)
+      assert_true(result.network_usage <= 60.0)
+    }
+  }
   
-  // 测试消息加密
-  let message_encryptor = MessageEncryptor::new()
-  MessageEncryptor::set_algorithm(message_encryptor, AES256)
-  MessageEncryptor::set_key_derivation(message_encryptor, PBKDF2)
+  // Verify resource monitoring
+  assert_true(resource_snapshots.length() > 0)
   
-  let original_message = "{\"temperature\": 25.5, \"humidity\": 60.2, \"timestamp\": 1704067200000}"
+  for snapshot in resource_snapshots {
+    assert_true(snapshot.timestamp > 0)
+    assert_true(snapshot.cpu_usage >= 0.0 && snapshot.cpu_usage <= 100.0)
+    assert_true(snapshot.memory_usage >= 0.0 && snapshot.memory_usage <= 100.0)
+    assert_true(snapshot.storage_usage >= 0.0 && snapshot.storage_usage <= 100.0)
+    assert_true(snapshot.network_usage >= 0.0 && snapshot.network_usage <= 100.0)
+    assert_true(snapshot.available_memory_mb > 0)
+    assert_true(snapshot.available_storage_mb > 0)
+  }
   
-  // 加密消息
-  let encrypted_message = MessageEncryptor::encrypt(message_encryptor, original_message)
+  // Test resource optimization
+  let optimization_strategies = ["cpu_priority", "memory_priority", "storage_priority", "balanced"]
   
-  assert_ne(encrypted_message, original_message)
-  assert_true(String::length(encrypted_message) > 0)
+  for strategy in optimization_strategies {
+    resource_manager.set_optimization_strategy(strategy)
+    
+    let strategy_operations = generate_resource_operations(20, strategy)
+    let strategy_results = []
+    
+    for operation in strategy_operations {
+      let result = resource_manager.execute_operation(operation)
+      strategy_results.push(result)
+    }
+    
+    // Verify strategy-specific behavior
+    let executed_operations = strategy_results.filter(|r| r.executed).length()
+    let limited_operations = strategy_results.filter(|r| r.resource_limited).length()
+    
+    match strategy {
+      "cpu_priority" => {
+        // Should prioritize CPU availability
+        let cpu_limited = strategy_results.filter(|r| r.limited_by == "cpu").length()
+        assert_true(cpu_limited < limited_operations / 2)
+      },
+      "memory_priority" => {
+        // Should prioritize memory availability
+        let memory_limited = strategy_results.filter(|r| r.limited_by == "memory").length()
+        assert_true(memory_limited < limited_operations / 2)
+      },
+      "storage_priority" => {
+        // Should prioritize storage availability
+        let storage_limited = strategy_results.filter(|r| r.limited_by == "storage").length()
+        assert_true(storage_limited < limited_operations / 2)
+      },
+      "balanced" => {
+        // Should balance all resources
+        assert_true(executed_operations > limited_operations)
+      },
+      _ => assert_true(false)
+    }
+  }
   
-  // 解密消息
-  let decrypted_message = MessageEncryptor::decrypt(message_encryptor, encrypted_message)
+  // Test resource cleanup
+  let cleanup_result = resource_manager.cleanup_resources()
+  assert_true(cleanup_result.success)
+  assert_true(cleanup_result.freed_memory_mb > 0)
+  assert_true(cleanup_result.freed_storage_mb > 0)
+  assert_true(cleanup_result.terminated_processes >= 0)
   
-  assert_eq(decrypted_message, original_message)
+  // Stop resource manager
+  resource_manager.stop()
+}
+
+// Test 5: Edge Device Security
+test "edge device security" {
+  let edge_security = EdgeSecurityManager::new()
   
-  // 测试访问控制
-  let access_controller = AccessController::new()
+  // Configure security
+  edge_security.configure(SecurityConfig::new()
+    .with_encryption_enabled(true)
+    .with_authentication_enabled(true)
+    .with_authorization_enabled(true)
+    .with_secure_boot_enabled(true)
+    .with_tamper_detection_enabled(true))
   
-  // 定义角色和权限
-  AccessController::add_role(access_controller, "admin", ["read", "write", "delete", "configure"])
-  AccessController::add_role(access_controller, "operator", ["read", "write"])
-  AccessController::add_role(access_controller, "viewer", ["read"])
+  // Start edge security
+  edge_security.start()
   
-  // 分配角色给设备
-  AccessController::assign_role(access_controller, "secure-device-0", "admin")
-  AccessController::assign_role(access_controller, "secure-device-1", "operator")
-  AccessController::assign_role(access_controller, "secure-device-2", "viewer")
+  // Test device authentication
+  let auth_credentials = [
+    AuthCredentials::new("device_001", "password_123", "certificate_001"),
+    AuthCredentials::new("device_002", "password_456", "certificate_002"),
+    AuthCredentials::new("device_003", "password_789", "certificate_003")
+  ]
   
-  // 测试权限检查
-  assert_true(AccessController::has_permission(access_controller, "secure-device-0", "read"))
-  assert_true(AccessController::has_permission(access_controller, "secure-device-0", "write"))
-  assert_true(AccessController::has_permission(access_controller, "secure-device-0", "delete"))
-  assert_true(AccessController::has_permission(access_controller, "secure-device-0", "configure"))
+  let auth_results = []
+  for credentials in auth_credentials {
+    let result = edge_security.authenticate_device(credentials)
+    auth_results.push(result)
+  }
   
-  assert_true(AccessController::has_permission(access_controller, "secure-device-1", "read"))
-  assert_true(AccessController::has_permission(access_controller, "secure-device-1", "write"))
-  assert_false(AccessController::has_permission(access_controller, "secure-device-1", "delete"))
-  assert_false(AccessController::has_permission(access_controller, "secure-device-1", "configure"))
+  // Verify authentication results
+  assert_eq(auth_results.length(), 3)
   
-  assert_true(AccessController::has_permission(access_controller, "secure-device-2", "read"))
-  assert_false(AccessController::has_permission(access_controller, "secure-device-2", "write"))
-  assert_false(AccessController::has_permission(access_controller, "secure-device-2", "delete"))
-  assert_false(AccessController::has_permission(access_controller, "secure-device-2", "configure"))
+  for result in auth_results {
+    assert_true(result.authenticated)
+    assert_true(result.session_token.length() > 0)
+    assert_true(result.expires_at > get_current_time_ms())
+  }
   
-  // 测试安全审计
-  let security_auditor = SecurityAuditor::new()
+  // Test data encryption
+  let sensitive_data = [
+    "sensor_calibration_data",
+    "device_configuration",
+    "user_credentials",
+    "encryption_keys"
+  ]
   
-  // 记录安全事件
-  SecurityAuditor::log_authentication_event(security_auditor, "secure-device-0", Success, 1704067200000L)
-  SecurityAuditor::log_authentication_event(security_auditor, "invalid-device", Failure, 1704067201000L)
-  SecurityAuditor::log_access_event(security_auditor, "secure-device-1", "read", "/api/telemetry", Success, 1704067202000L)
-  SecurityAuditor::log_access_event(security_auditor, "secure-device-2", "write", "/api/config", Failure, 1704067203000L)
+  let encryption_results = []
+  for data in sensitive_data {
+    let encrypted = edge_security.encrypt_data(data)
+    let decrypted = edge_security.decrypt_data(encrypted)
+    encryption_results.push((encrypted, decrypted))
+  }
   
-  // 获取审计报告
-  let audit_report = SecurityAuditor::generate_report(security_auditor)
+  // Verify encryption results
+  assert_eq(encryption_results.length(), 4)
   
-  // 验证审计报告
-  assert_true(AuditReport::has_authentication_events(audit_report))
-  assert_true(AuditReport::has_access_events(audit_report))
-  assert_true(AuditReport::has_security_summary(audit_report))
+  for (encrypted, decrypted) in encryption_results {
+    assert_true(encrypted.length() > 0)
+    assert_true(decrypted.length() > 0)
+    assert_ne(encrypted, decrypted) // Encrypted data should be different
+    
+    // Verify decryption restores original data
+    let original_index = encryption_results.find_index(|(enc, dec)| enc == encrypted)
+    assert_eq(decrypted, sensitive_data[original_index])
+  }
   
-  let auth_events = AuditReport::get_authentication_events(audit_report)
-  let access_events = AuditReport::get_access_events(audit_report)
+  // Test access control
+  let access_requests = [
+    AccessRequest::new("device_001", "read_sensor_data"),
+    AccessRequest::new("device_002", "write_configuration"),
+    AccessRequest::new("device_001", "update_firmware"),
+    AccessRequest::new("device_003", "read_logs"),
+    AccessRequest::new("unauthorized_device", "access_all")
+  ]
   
-  assert_eq(Array::length(auth_events), 2)
-  assert_eq(Array::length(access_events), 2)
+  let access_results = []
+  for request in access_requests {
+    let result = edge_security.check_access(request)
+    access_results.push(result)
+  }
   
-  // 验证安全摘要
-  let security_summary = AuditReport::get_security_summary(audit_report)
-  assert_true(SecuritySummary::has_successful_authentications(security_summary))
-  assert_true(SecuritySummary::has_failed_authentications(security_summary))
-  assert_true(SecuritySummary::has_successful_access(security_summary))
-  assert_true(SecuritySummary::has_failed_access(security_summary))
-  assert_true(SecuritySummary::has_security_incidents(security_summary))
+  // Verify access control results
+  assert_eq(access_results.length(), 5)
   
-  assert_eq(SecuritySummary::get_successful_authentications(security_summary), 1)
-  assert_eq(SecuritySummary::get_failed_authentications(security_summary), 1)
-  assert_eq(SecuritySummary::get_successful_access(security_summary), 1)
-  assert_eq(SecuritySummary::get_failed_access(security_summary), 1)
+  let authorized_requests = access_results.filter(|r| r.authorized).length()
+  assert_true(authorized_requests >= 3 && authorized_requests <= 4)
+  
+  // Unauthorized request should be denied
+  let unauthorized_result = access_results[4]
+  assert_false(unauthorized_result.authorized)
+  assert_eq(unauthorized_result.reason, "device_not_authorized")
+  
+  // Test tamper detection
+  let tampering_events = [
+    TamperingEvent::new("physical_tampering", "device_case_opened"),
+    TamperingEvent::new("software_tampering", "unauthorized_modification"),
+    TamperingEvent::new("network_tampering", "suspicious_traffic"),
+    TamperingEvent::new("data_tampering", "altered_sensor_readings")
+  ]
+  
+  let tamper_results = []
+  for event in tampering_events {
+    let result = edge_security.detect_tampering(event)
+    tamper_results.push(result)
+  }
+  
+  // Verify tamper detection results
+  assert_eq(tamper_results.length(), 4)
+  
+  for result in tamper_results {
+    assert_true(result.detected)
+    assert_true(result.severity == "low" || result.severity == "medium" || result.severity == "high" || result.severity == "critical")
+    assert_true(result.timestamp > 0)
+    assert_true(result.response_actions.length() > 0)
+  }
+  
+  // Test secure boot
+  let secure_boot_result = edge_security.verify_secure_boot()
+  assert_true(secure_boot_result.verified)
+  assert_true(secure_boot_result.bootloader_hash.length() > 0)
+  assert_true(secure_boot_result.kernel_hash.length() > 0)
+  assert_true(secure_boot_result.trusted)
+  
+  // Stop edge security
+  edge_security.stop()
+}
+
+// Test 6: Edge Device Firmware Management
+test "edge device firmware management" {
+  let firmware_manager = EdgeFirmwareManager::new()
+  
+  // Configure firmware management
+  firmware_manager.configure(FirmwareConfig::new()
+    .with_current_version("1.0.0")
+    .with_update_server("https://firmware.azimuth.com")
+    .with_auto_update_enabled(false)
+    .with_rollback_enabled(true)
+    .with_signature_verification_enabled(true))
+  
+  // Start firmware manager
+  firmware_manager.start()
+  
+  // Test firmware version checking
+  let version_check_result = firmware_manager.check_for_updates()
+  assert_true(version_check_result.update_available)
+  assert_true(version_check_result.latest_version > "1.0.0")
+  assert_true(version_check_result.release_notes.length() > 0)
+  assert_true(version_check_result.download_url.length() > 0)
+  assert_true(version_check_result.file_size_mb > 0)
+  
+  // Test firmware download
+  let download_result = firmware_manager.download_firmware(version_check_result.latest_version)
+  assert_true(download_result.success)
+  assert_true(download_result.downloaded_file_path.length() > 0)
+  assert_true(download_result.file_size_mb > 0)
+  assert_true(download_result.checksum.length() > 0)
+  assert_true(download_result.signature.length() > 0)
+  
+  // Test firmware verification
+  let verification_result = firmware_manager.verify_firmware(download_result.downloaded_file_path)
+  assert_true(verification_result.verified)
+  assert_true(verification_result.checksum_valid)
+  assert_true(verification_result.signature_valid)
+  assert_true(verification_result.trusted_source)
+  assert_true(verification_result.compatible)
+  
+  // Test firmware installation
+  let installation_result = firmware_manager.install_firmware(download_result.downloaded_file_path)
+  assert_true(installation_result.success)
+  assert_true(installation_result.new_version == version_check_result.latest_version)
+  assert_true(installation_result.installation_time_ms > 0)
+  assert_true(installation_result.backup_created)
+  assert_true(installation_result.backup_path.length() > 0)
+  
+  // Test firmware rollback
+  let rollback_result = firmware_manager.rollback_firmware()
+  assert_true(rollback_result.success)
+  assert_true(rollback_result.previous_version == "1.0.0")
+  assert_true(rollback_result.rollback_time_ms > 0)
+  assert_true(rollback_result.rollback_successful)
+  
+  // Test firmware scheduling
+  let schedule_result = firmware_manager.schedule_update(
+    version_check_result.latest_version,
+    get_current_time_ms() + 3600000 // 1 hour from now
+  )
+  assert_true(schedule_result.scheduled)
+  assert_true(schedule_result.scheduled_time > get_current_time_ms())
+  assert_true(schedule_result.update_version == version_check_result.latest_version)
+  
+  // Verify scheduled update
+  let scheduled_updates = firmware_manager.get_scheduled_updates()
+  assert_eq(scheduled_updates.length(), 1)
+  
+  let scheduled_update = scheduled_updates[0]
+  assert_eq(scheduled_update.version, version_check_result.latest_version)
+  assert_true(scheduled_update.scheduled_time > get_current_time_ms())
+  assert_false(scheduled_update.completed)
+  
+  // Test firmware configuration
+  let firmware_config = FirmwareConfiguration::new()
+    .with_auto_reboot(true)
+    .with_maintenance_window_enabled(true)
+    .with_maintenance_window_start("02:00")
+    .with_maintenance_window_end("04:00")
+    .with_max_download_attempts(3)
+    .with_verification_timeout(300)
+  
+  let config_result = firmware_manager.update_configuration(firmware_config)
+  assert_true(config_result.success)
+  
+  // Verify configuration
+  let current_config = firmware_manager.get_configuration()
+  assert_true(current_config.auto_reboot)
+  assert_true(current_config.maintenance_window_enabled)
+  assert_eq(current_config.maintenance_window_start, "02:00")
+  assert_eq(current_config.maintenance_window_end, "04:00")
+  assert_eq(current_config.max_download_attempts, 3)
+  assert_eq(current_config.verification_timeout, 300)
+  
+  // Stop firmware manager
+  firmware_manager.stop()
+}
+
+// Test 7: Edge Device Analytics
+test "edge device analytics" {
+  let edge_analytics = EdgeAnalyticsEngine::new()
+  
+  // Configure analytics
+  edge_analytics.configure(AnalyticsConfig::new()
+    .with_local_processing_enabled(true)
+    .with_model_types(["anomaly_detection", "trend_analysis", "prediction"])
+    .with_training_interval(3600000) // 1 hour
+    .with_inference_interval(1000) // 1 second
+    .with_model_storage_path("/edge/models"))
+  
+  // Start edge analytics
+  edge_analytics.start()
+  
+  // Generate historical sensor data for training
+  let historical_data = generate_historical_sensor_data(1000)
+  
+  // Train analytics models
+  let training_results = []
+  for model_type in ["anomaly_detection", "trend_analysis", "prediction"] {
+    let result = edge_analytics.train_model(model_type, historical_data)
+    training_results.push(result)
+  }
+  
+  // Verify training results
+  assert_eq(training_results.length(), 3)
+  
+  for result in training_results {
+    assert_true(result.success)
+    assert_true(result.model_path.length() > 0)
+    assert_true(result.training_time_ms > 0)
+    assert_true(result.training_accuracy > 0.5)
+    assert_true(result.model_size_mb > 0)
+  }
+  
+  // Generate real-time sensor data for inference
+  let realtime_data = generate_realtime_sensor_data(200)
+  
+  // Perform analytics inference
+  let inference_results = []
+  for data_point in realtime_data {
+    let result = edge_analytics.infer(data_point)
+    inference_results.push(result)
+  }
+  
+  // Verify inference results
+  assert_eq(inference_results.length(), 200)
+  
+  for result in inference_results {
+    assert_true(result.anomaly_score >= 0.0 && result.anomaly_score <= 1.0)
+    assert_true(result.trend_direction == "increasing" || result.trend_direction == "decreasing" || result.trend_direction == "stable")
+    assert_true(result.predicted_value >= 0.0)
+    assert_true(result.confidence >= 0.0 && result.confidence <= 1.0)
+    assert_true(result.processing_time_ms < 100) // Should be fast for edge processing
+  }
+  
+  // Test anomaly detection
+  let anomaly_data = generate_anomalous_sensor_data(50)
+  let anomaly_detection_results = []
+  
+  for data_point in anomaly_data {
+    let result = edge_analytics.detect_anomaly(data_point)
+    anomaly_detection_results.push(result)
+  }
+  
+  // Verify anomaly detection results
+  assert_eq(anomaly_detection_results.length(), 50)
+  
+  let detected_anomalies = anomaly_detection_results.filter(|r| r.is_anomaly).length()
+  assert_true(detected_anomalies > 20) // Should detect most anomalies
+  
+  for result in anomaly_detection_results {
+    if result.is_anomaly {
+      assert_true(result.anomaly_score > 0.7)
+      assert_true(result.anomaly_type.length() > 0)
+      assert_true(result.severity == "low" || result.severity == "medium" || result.severity == "high")
+    }
+  }
+  
+  // Test trend analysis
+  let trend_data = generate_trend_sensor_data(100, "increasing")
+  let trend_analysis_results = []
+  
+  for data_point in trend_data {
+    let result = edge_analytics.analyze_trend(data_point, 10) // 10-point window
+    trend_analysis_results.push(result)
+  }
+  
+  // Verify trend analysis results
+  assert_eq(trend_analysis_results.length(), 100)
+  
+  let increasing_trends = trend_analysis_results.filter(|r| r.trend_direction == "increasing").length()
+  assert_true(increasing_trends > 70) // Should detect increasing trend
+  
+  for result in trend_analysis_results {
+    assert_true(result.trend_strength >= 0.0 && result.trend_strength <= 1.0)
+    assert_true(result.confidence >= 0.0 && result.confidence <= 1.0)
+    assert_true(result.data_points_analyzed <= 10)
+  }
+  
+  // Test prediction
+  let prediction_data = generate_prediction_sensor_data(50)
+  let prediction_results = []
+  
+  for data_point in prediction_data {
+    let result = edge_analytics.predict(data_point, 5) // Predict 5 steps ahead
+    prediction_results.push(result)
+  }
+  
+  // Verify prediction results
+  assert_eq(prediction_results.length(), 50)
+  
+  for result in prediction_results {
+    assert_eq(result.predicted_values.length(), 5)
+    assert_true(result.confidence >= 0.0 && result.confidence <= 1.0)
+    assert_true(result.prediction_horizon == 5)
+    
+    for predicted_value in result.predicted_values {
+      assert_true(predicted_value >= 0.0)
+    }
+  }
+  
+  // Test model performance
+  let performance_metrics = edge_analytics.get_model_performance()
+  assert_true(performance_metrics.length() == 3)
+  
+  for metrics in performance_metrics {
+    assert_true(metrics.model_type.length() > 0)
+    assert_true(metrics.accuracy >= 0.0 && metrics.accuracy <= 1.0)
+    assert_true(metrics.precision >= 0.0 && metrics.precision <= 1.0)
+    assert_true(metrics.recall >= 0.0 && metrics.recall <= 1.0)
+    assert_true(metrics.f1_score >= 0.0 && metrics.f1_score <= 1.0)
+    assert_true(metrics.inference_time_ms < 100)
+  }
+  
+  // Stop edge analytics
+  edge_analytics.stop()
+}
+
+// Test 8: Edge Device Health Monitoring
+test "edge device health monitoring" {
+  let health_monitor = EdgeHealthMonitor::new()
+  
+  // Configure health monitoring
+  health_monitor.configure(HealthConfig::new()
+    .with_monitoring_interval(5000)
+    .with_health_check_timeout(1000)
+    .with_auto_recovery_enabled(true)
+    .with_alert_thresholds(HealthThresholds::new()
+      .with_cpu_threshold(80.0)
+      .with_memory_threshold(85.0)
+      .with_storage_threshold(90.0)
+      .with_temperature_threshold(70.0)
+      .with_network_latency_threshold(1000)))
+  
+  // Start health monitor
+  health_monitor.start()
+  
+  // Generate health monitoring data
+  let health_data = generate_device_health_data(100)
+  
+  // Monitor device health
+  let health_results = []
+  for data_point in health_data {
+    let result = health_monitor.check_health(data_point)
+    health_results.push(result)
+  }
+  
+  // Verify health monitoring results
+  assert_eq(health_results.length(), 100)
+  
+  let healthy_checks = health_results.filter(|r| r.health_status == "healthy").length()
+  let warning_checks = health_results.filter(|r| r.health_status == "warning").length()
+  let critical_checks = health_results.filter(|r| r.health_status == "critical").length()
+  
+  assert_true(healthy_checks > 0)
+  assert_true(warning_checks >= 0)
+  assert_true(critical_checks >= 0)
+  
+  // Verify health metrics
+  for result in health_results {
+    assert_true(result.timestamp > 0)
+    assert_true(result.cpu_usage >= 0.0 && result.cpu_usage <= 100.0)
+    assert_true(result.memory_usage >= 0.0 && result.memory_usage <= 100.0)
+    assert_true(result.storage_usage >= 0.0 && result.storage_usage <= 100.0)
+    assert_true(result.temperature >= 0.0 && result.temperature <= 100.0)
+    assert_true(result.network_latency_ms >= 0)
+    assert_true(result.uptime_seconds > 0)
+  }
+  
+  // Test health alerts
+  let health_alerts = health_monitor.get_health_alerts()
+  assert_true(health_alerts.length() >= 0)
+  
+  for alert in health_alerts {
+    assert_true(alert.alert_id.length() > 0)
+    assert_true(alert.alert_type.length() > 0)
+    assert_true(alert.severity == "info" || alert.severity == "warning" || alert.severity == "critical")
+    assert_true(alert.message.length() > 0)
+    assert_true(alert.timestamp > 0)
+    assert_true(alert.resolved == false || alert.resolved == true)
+  }
+  
+  // Test auto-recovery
+  let recovery_events = health_monitor.get_recovery_events()
+  assert_true(recovery_events.length() >= 0)
+  
+  for event in recovery_events {
+    assert_true(event.event_id.length() > 0)
+    assert_true(event.trigger.length() > 0)
+    assert_true(event.action.length() > 0)
+    assert_true(event.timestamp > 0)
+    assert_true(event.success == false || event.success == true)
+    assert_true(event.execution_time_ms >= 0)
+  }
+  
+  // Test device diagnostics
+  let diagnostics_result = health_monitor.run_diagnostics()
+  assert_true(diagnostics_result.success)
+  assert_true(diagnostics_result.diagnostics_time_ms > 0)
+  assert_true(diagnostics_result.component_checks.length() > 0)
+  
+  for component_check in diagnostics_result.component_checks {
+    assert_true(component_check.component_name.length() > 0)
+    assert_true(component_check.status == "pass" || component_check.status == "fail" || component_check.status == "warning")
+    assert_true(component_check.check_time_ms >= 0)
+    assert_true(component_check.details.length() >= 0)
+  }
+  
+  // Test health trends
+  let health_trends = health_monitor.analyze_health_trends(24) // Last 24 hours
+  assert_true(health_trends.analysis_period_hours == 24)
+  assert_true(health_trends.cpu_trend == "stable" || health_trends.cpu_trend == "increasing" || health_trends.cpu_trend == "decreasing")
+  assert_true(health_trends.memory_trend == "stable" || health_trends.memory_trend == "increasing" || health_trends.memory_trend == "decreasing")
+  assert_true(health_trends.storage_trend == "stable" || health_trends.storage_trend == "increasing" || health_trends.storage_trend == "decreasing")
+  assert_true(health_trends.temperature_trend == "stable" || health_trends.temperature_trend == "increasing" || health_trends.temperature_trend == "decreasing")
+  assert_true(health_trends.overall_health_score >= 0.0 && health_trends.overall_health_score <= 1.0)
+  
+  // Test health recommendations
+  let recommendations = health_monitor.get_health_recommendations()
+  assert_true(recommendations.length() >= 0)
+  
+  for recommendation in recommendations {
+    assert_true(recommendation.recommendation_id.length() > 0)
+    assert_true(recommendation.category.length() > 0)
+    assert_true(recommendation.priority == "low" || recommendation.priority == "medium" || recommendation.priority == "high")
+    assert_true(recommendation.title.length() > 0)
+    assert_true(recommendation.description.length() > 0)
+    assert_true(recommendation.actionable == false || recommendation.actionable == true)
+  }
+  
+  // Stop health monitor
+  health_monitor.stop()
+}
+
+// Test 9: Edge Device Synchronization
+test "edge device synchronization" {
+  let sync_manager = EdgeSyncManager::new()
+  
+  // Configure synchronization
+  sync_manager.configure(SyncConfig::new()
+    .with_sync_interval(30000) // 30 seconds
+    .with_conflict_resolution_strategy("last_writer_wins")
+    .with_compression_enabled(true)
+    .with_encryption_enabled(true)
+    .with_bandwidth_limit(1000000)) // 1MB/s
+  
+  // Start sync manager
+  sync_manager.start()
+  
+  // Generate local data
+  let local_data = generate_local_edge_data(200)
+  
+  // Generate remote data
+  let remote_data = generate_remote_edge_data(150)
+  
+  // Store local data
+  for data_point in local_data {
+    sync_manager.store_local(data_point)
+  }
+  
+  // Store remote data
+  for data_point in remote_data {
+    sync_manager.store_remote(data_point)
+  }
+  
+  // Test bidirectional synchronization
+  let sync_result = sync_manager.synchronize()
+  assert_true(sync_result.success)
+  assert_true(sync_result.sync_time_ms > 0)
+  assert_true(sync_result.local_changes_synced > 0)
+  assert_true(sync_result.remote_changes_synced > 0)
+  assert_true(sync_result.conflicts_resolved >= 0)
+  assert_true(sync_result.data_transferred_mb > 0)
+  
+  // Verify synchronized data
+  let synchronized_data = sync_manager.get_synchronized_data()
+  assert_true(synchronized_data.length() >= local_data.length())
+  assert_true(synchronized_data.length() >= remote_data.length())
+  
+  // Test conflict resolution
+  let conflict_data = generate_conflicting_edge_data(50)
+  for data_point in conflict_data {
+    sync_manager.store_local(data_point)
+    sync_manager.store_remote(data_point)
+  }
+  
+  let conflict_sync_result = sync_manager.synchronize()
+  assert_true(conflict_sync_result.success)
+  assert_true(conflict_sync_result.conflicts_resolved > 0)
+  
+  // Verify conflict resolution
+  let conflict_resolution_strategies = ["last_writer_wins", "first_writer_wins", "merge", "manual"]
+  
+  for strategy in conflict_resolution_strategies {
+    sync_manager.set_conflict_resolution_strategy(strategy)
+    
+    let strategy_conflicts = generate_conflicting_edge_data(20)
+    for data_point in strategy_conflicts {
+      sync_manager.store_local(data_point)
+      sync_manager.store_remote(data_point)
+    }
+    
+    let strategy_sync_result = sync_manager.synchronize()
+    assert_true(strategy_sync_result.success)
+    assert_true(strategy_sync_result.conflicts_resolved > 0)
+    
+    // Verify strategy-specific behavior
+    match strategy {
+      "last_writer_wins" => {
+        // Should keep the most recent version
+        assert_true(strategy_sync_result.conflicts_resolved == strategy_conflicts.length())
+      },
+      "first_writer_wins" => {
+        // Should keep the original version
+        assert_true(strategy_sync_result.conflicts_resolved == strategy_conflicts.length())
+      },
+      "merge" => {
+        // Should attempt to merge changes
+        assert_true(strategy_sync_result.conflicts_resolved <= strategy_conflicts.length())
+      },
+      "manual" => {
+        // Should require manual intervention
+        assert_true(strategy_sync_result.manual_intervention_required)
+      },
+      _ => assert_true(false)
+    }
+  }
+  
+  // Test partial synchronization
+  let partial_sync_result = sync_manager.synchronize_partial(["temperature", "humidity"])
+  assert_true(partial_sync_result.success)
+  assert_true(partial_sync_result.synced_data_types.length() == 2)
+  assert_true(partial_sync_result.synced_data_types.contains("temperature"))
+  assert_true(partial_sync_result.synced_data_types.contains("humidity"))
+  
+  // Test synchronization history
+  let sync_history = sync_manager.get_sync_history()
+  assert_true(sync_history.length() > 0)
+  
+  for sync_event in sync_history {
+    assert_true(sync_event.sync_id.length() > 0)
+    assert_true(sync_event.timestamp > 0)
+    assert_true(sync_event.sync_duration_ms > 0)
+    assert_true(sync_event.data_transferred_mb >= 0.0)
+    assert_true(sync_event.conflicts_resolved >= 0)
+    assert_true(sync_event.success == false || sync_event.success == true)
+  }
+  
+  // Test synchronization statistics
+  let sync_stats = sync_manager.get_sync_statistics()
+  assert_true(sync_stats.total_syncs > 0)
+  assert_true(sync_stats.successful_syncs > 0)
+  assert_true(sync_stats.failed_syncs >= 0)
+  assert_true(sync_stats.total_data_transferred_mb > 0.0)
+  assert_true(sync_stats.total_conflicts_resolved >= 0)
+  assert_true(sync_stats.average_sync_time_ms > 0.0)
+  assert_true(sync_stats.last_sync_time > 0)
+  
+  // Stop sync manager
+  sync_manager.stop()
 }
