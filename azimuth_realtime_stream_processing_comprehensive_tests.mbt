@@ -1,626 +1,897 @@
-// Azimuth 实时流处理测试用例
-// 专注于测试实时遥测数据流的处理、分析和转发能力
+// Azimuth Telemetry System - Comprehensive Real-time Stream Processing Tests
+// This file contains comprehensive test cases for real-time stream processing capabilities
 
-// 测试1: 基本流数据处理
-test "基本流数据处理" {
-  // 模拟实时遥测数据流
-  let telemetry_stream = [
-    {timestamp: 1640995200000L, event_type: "metric", value: 100.0, tags: [("service", "auth")]},
-    {timestamp: 1640995201000L, event_type: "trace", value: 0.0, tags: [("service", "api")]},
-    {timestamp: 1640995202000L, event_type: "metric", value: 105.0, tags: [("service", "auth")]},
-    {timestamp: 1640995203000L, event_type: "log", value: 0.0, tags: [("level", "info")]},
-    {timestamp: 1640995204000L, event_type: "metric", value: 98.0, tags: [("service", "auth")]},
-    {timestamp: 1640995205000L, event_type: "trace", value: 0.0, tags: [("service", "db")]}
-  ]
+// Test 1: Real-time Stream Creation and Basic Operations
+test "realtime stream creation and basic operations" {
+  // Create a real-time stream
+  let stream = RealtimeStream::new("test_stream", Some("Test stream for basic operations"))
   
-  // 按事件类型分类
-  let metrics_stream = telemetry_stream.filter(fn(event) { event.event_type == "metric" })
-  let traces_stream = telemetry_stream.filter(fn(event) { event.event_type == "trace" })
-  let logs_stream = telemetry_stream.filter(fn(event) { event.event_type == "log" })
+  // Verify stream properties
+  assert_eq(RealtimeStream::name(stream), "test_stream")
+  match RealtimeStream::description(stream) {
+    Some(desc) => assert_eq(desc, "Test stream for basic operations")
+    None => assert_true(false)
+  }
+  assert_true(RealtimeStream::is_active(stream))
+  assert_eq(RealtimeStream::subscriber_count(stream), 0)
   
-  // 验证流分类
-  assert_eq(metrics_stream.length(), 3)
-  assert_eq(traces_stream.length(), 2)
-  assert_eq(logs_stream.length(), 1)
+  // Create stream attributes
+  let stream_attrs = Attributes::new()
+  Attributes::set(stream_attrs, "stream.type", StringValue("test"))
+  Attributes::set(stream_attrs, "stream.source", StringValue("unit_test"))
   
-  // 计算指标流的平均值
-  let metric_values = metrics_stream.map(fn(event) { event.value })
-  let metric_avg = metric_values.fold(0.0, fn(acc, value) { acc + value }) / metric_values.length().to_double()
+  // Add attributes to stream
+  RealtimeStream::add_attributes(stream, stream_attrs)
   
-  // 验证指标计算
-  assert_eq(metric_avg, (100.0 + 105.0 + 98.0) / 3.0)
-  assert_eq(metric_avg, 101.0)
+  // Verify attributes are added
+  let retrieved_attrs = RealtimeStream::get_attributes(stream)
+  let stream_type = Attributes::get(retrieved_attrs, "stream.type")
+  match stream_type {
+    Some(StringValue(t)) => assert_eq(t, "test")
+    None => assert_true(false)
+  }
   
-  // 按服务标签过滤
-  let auth_service_events = telemetry_stream.filter(fn(event) {
-    event.tags.contains(fn(tag) { tag.0 == "service" && tag.1 == "auth" })
-  })
-  
-  // 验证服务过滤
-  assert_eq(auth_service_events.length(), 3)
-  assert_true(auth_service_events.all(fn(event) { event.event_type == "metric" }))
+  // Close stream
+  RealtimeStream::close(stream)
+  assert_false(RealtimeStream::is_active(stream))
 }
 
-// 测试2: 流式窗口聚合
-test "流式窗口聚合" {
-  // 模拟时间序列数据流
-  let time_series_stream = [
-    {timestamp: 1640995200000L, value: 10.0},
-    {timestamp: 1640995201000L, value: 15.0},
-    {timestamp: 1640995202000L, value: 12.0},
-    {timestamp: 1640995203000L, value: 18.0},
-    {timestamp: 1640995204000L, value: 20.0},
-    {timestamp: 1640995205000L, value: 14.0},
-    {timestamp: 1640995206000L, value: 16.0},
-    {timestamp: 1640995207000L, value: 22.0}
-  ]
+// Test 2: Stream Subscription and Publishing
+test "stream subscription and publishing" {
+  // Create stream
+  let stream = RealtimeStream::new("pubsub_stream", Some("Stream for pub/sub testing"))
   
-  // 定义时间窗口大小（3秒）
-  let window_size_ms = 3000L
+  // Create subscriber
+  let subscriber = RealtimeStream::subscribe(stream)
   
-  // 滑动窗口聚合
-  let sliding_window_aggregation = fn(stream: Array[{timestamp: Int, value: Double}], window_start: Int) -> {
-    window_start: Int,
-    window_end: Int,
-    count: Int,
-    sum: Double,
-    avg: Double,
-    min: Double,
-    max: Double
-  } {
-    let window_end = window_start + window_size_ms
-    let window_data = stream.filter(fn(point) { 
-      point.timestamp >= window_start && point.timestamp < window_end 
-    })
-    
-    if window_data.length() > 0 {
-      let values = window_data.map(fn(point) { point.value })
-      let sum = values.fold(0.0, fn(acc, value) { acc + value })
-      let count = values.length()
-      
-      {
-        window_start: window_start,
-        window_end: window_end,
-        count: count,
-        sum: sum,
-        avg: sum / count.to_double(),
-        min: values.fold(999999.0, fn(acc, value) { if value < acc { value } else { acc } }),
-        max: values.fold(0.0, fn(acc, value) { if value > acc { value } else { acc } })
+  // Verify subscription
+  assert_eq(RealtimeStream::subscriber_count(stream), 1)
+  assert_true(RealtimeStream::is_subscribed(stream, subscriber))
+  
+  // Create publisher
+  let publisher = RealtimeStream::create_publisher(stream)
+  
+  // Publish telemetry data
+  let telemetry_data = TelemetryData::new()
+  TelemetryData::add_attribute(telemetry_data, "test.id", IntValue(123))
+  TelemetryData::add_attribute(telemetry_data, "test.type", StringValue("stream_test"))
+  
+  let publish_result = RealtimeStream::publish(publisher, telemetry_data)
+  assert_true(publish_result)
+  
+  // Receive data from subscriber
+  let received_data = RealtimeStream::receive(subscriber, 1000)  // 1 second timeout
+  match received_data {
+    Some(data) => {
+      let test_id = TelemetryData::get_attribute(data, "test.id")
+      match test_id {
+        Some(IntValue(id)) => assert_eq(id, 123)
+        None => assert_true(false)
       }
+    }
+    None => assert_true(false)
+  }
+  
+  // Unsubscribe
+  RealtimeStream::unsubscribe(stream, subscriber)
+  assert_eq(RealtimeStream::subscriber_count(stream), 0)
+  assert_false(RealtimeStream::is_subscribed(stream, subscriber))
+  
+  // Close stream
+  RealtimeStream::close(stream)
+}
+
+// Test 3: Stream Filtering and Transformation
+test "stream filtering and transformation" {
+  // Create stream
+  let stream = RealtimeStream::new("filter_stream", Some("Stream for filtering testing"))
+  
+  // Create filter for error events only
+  let error_filter = RealtimeStream::create_filter(fn(data: TelemetryData) -> Bool {
+    match TelemetryData::get_attribute(data, "event.type") {
+      Some(StringValue(event_type)) => event_type == "error"
+      _ => false
+    }
+  })
+  
+  // Create filtered subscriber
+  let error_subscriber = RealtimeStream::subscribe_with_filter(stream, error_filter)
+  
+  // Create publisher
+  let publisher = RealtimeStream::create_publisher(stream)
+  
+  // Publish error event
+  let error_data = TelemetryData::new()
+  TelemetryData::add_attribute(error_data, "event.type", StringValue("error"))
+  TelemetryData::add_attribute(error_data, "error.code", IntValue(500))
+  
+  RealtimeStream::publish(publisher, error_data)
+  
+  // Publish non-error event
+  let normal_data = TelemetryData::new()
+  TelemetryData::add_attribute(normal_data, "event.type", StringValue("info"))
+  TelemetryData::add_attribute(normal_data, "message", StringValue("Normal operation"))
+  
+  RealtimeStream::publish(publisher, normal_data)
+  
+  // Receive filtered data (should only get error event)
+  let received_error = RealtimeStream::receive(error_subscriber, 1000)
+  match received_error {
+    Some(data) => {
+      let event_type = TelemetryData::get_attribute(data, "event.type")
+      match event_type {
+        Some(StringValue(t)) => assert_eq(t, "error")
+        None => assert_true(false)
+      }
+    }
+    None => assert_true(false)
+  }
+  
+  // Should not receive normal event due to filter
+  let received_normal = RealtimeStream::receive(error_subscriber, 500)  // Short timeout
+  match received_normal {
+    Some(_) => assert_true(false)  // Should not receive normal event
+    None => assert_true(true)       // Expected - no normal event
+  }
+  
+  // Create transformation function
+  let transform_fn = fn(data: TelemetryData) -> TelemetryData {
+    let transformed = TelemetryData::new()
+    
+    // Copy all original attributes
+    let original_attrs = TelemetryData::get_all_attributes(data)
+    for (key, value) in original_attrs {
+      TelemetryData::add_attribute(transformed, key, value)
+    }
+    
+    // Add transformation metadata
+    TelemetryData::add_attribute(transformed, "transformed", BoolValue(true))
+    TelemetryData::add_attribute(transformed, "transform.timestamp", IntValue(1234567890))
+    
+    transformed
+  }
+  
+  // Create transformed subscriber
+  let transform_subscriber = RealtimeStream::subscribe_with_transform(stream, transform_fn)
+  
+  // Publish data for transformation
+  let transform_data = TelemetryData::new()
+  TelemetryData::add_attribute(transform_data, "original.data", StringValue("test"))
+  
+  RealtimeStream::publish(publisher, transform_data)
+  
+  // Receive transformed data
+  let received_transformed = RealtimeStream::receive(transform_subscriber, 1000)
+  match received_transformed {
+    Some(data) => {
+      let original_data = TelemetryData::get_attribute(data, "original.data")
+      match original_data {
+        Some(StringValue(value)) => assert_eq(value, "test")
+        None => assert_true(false)
+      }
+      
+      let transformed = TelemetryData::get_attribute(data, "transformed")
+      match transformed {
+        Some(BoolValue(t)) => assert_true(t)
+        None => assert_true(false)
+      }
+    }
+    None => assert_true(false)
+  }
+  
+  // Close stream
+  RealtimeStream::close(stream)
+}
+
+// Test 4: Stream Aggregation and Windowing
+test "stream aggregation and windowing" {
+  // Create stream
+  let stream = RealtimeStream::new("aggregation_stream", Some("Stream for aggregation testing"))
+  
+  // Create time window aggregator (5-second windows)
+  let window_aggregator = RealtimeStream::create_window_aggregator(5000)  // 5 seconds
+  
+  // Create aggregation function (count events)
+  let count_fn = fn(data: Array<TelemetryData>) -> TelemetryData {
+    let result = TelemetryData::new()
+    TelemetryData::add_attribute(result, "aggregation.type", StringValue("count"))
+    TelemetryData::add_attribute(result, "event.count", IntValue(data.length()))
+    TelemetryData::add_attribute(result, "window.start", IntValue(1234567890))
+    TelemetryData::add_attribute(result, "window.end", IntValue(1234567895))
+    result
+  }
+  
+  // Create aggregation subscriber
+  let aggregation_subscriber = RealtimeStream::subscribe_with_aggregation(stream, window_aggregator, count_fn)
+  
+  // Create publisher
+  let publisher = RealtimeStream::create_publisher(stream)
+  
+  // Publish multiple events
+  for i in 0..10 {
+    let event_data = TelemetryData::new()
+    TelemetryData::add_attribute(event_data, "event.id", IntValue(i))
+    TelemetryData::add_attribute(event_data, "event.type", StringValue("test"))
+    RealtimeStream::publish(publisher, event_data)
+  }
+  
+  // Wait for aggregation (simulate time passing)
+  // In real implementation, this would wait for the window to close
+  // For testing, we'll trigger manual aggregation
+  RealtimeStream::trigger_aggregation(stream, window_aggregator)
+  
+  // Receive aggregated data
+  let received_aggregation = RealtimeStream::receive(aggregation_subscriber, 2000)
+  match received_aggregation {
+    Some(data) => {
+      let aggregation_type = TelemetryData::get_attribute(data, "aggregation.type")
+      match aggregation_type {
+        Some(StringValue(t)) => assert_eq(t, "count")
+        None => assert_true(false)
+      }
+      
+      let event_count = TelemetryData::get_attribute(data, "event.count")
+      match event_count {
+        Some(IntValue(count)) => assert_eq(count, 10)
+        None => assert_true(false)
+      }
+    }
+    None => assert_true(false)
+  }
+  
+  // Close stream
+  RealtimeStream::close(stream)
+}
+
+// Test 5: Stream Backpressure and Flow Control
+test "stream backpressure and flow control" {
+  // Create stream with limited buffer
+  let stream = RealtimeStream::new_with_buffer("backpressure_stream", Some("Stream for backpressure testing"), 100)  // 100 item buffer
+  
+  // Create slow subscriber (simulates slow processing)
+  let slow_subscriber = RealtimeStream::subscribe(stream)
+  
+  // Create publisher
+  let publisher = RealtimeStream::create_publisher(stream)
+  
+  // Publish many items quickly (should trigger backpressure)
+  let mut publish_count = 0
+  let mut backpressure_triggered = false
+  
+  for i in 0..200 {  // More than buffer capacity
+    let data = TelemetryData::new()
+    TelemetryData::add_attribute(data, "event.id", IntValue(i))
+    
+    if RealtimeStream::publish(publisher, data) {
+      publish_count = publish_count + 1
     } else {
-      {
-        window_start: window_start,
-        window_end: window_end,
-        count: 0,
-        sum: 0.0,
-        avg: 0.0,
-        min: 0.0,
-        max: 0.0
-      }
+      backpressure_triggered = true
+      break
     }
   }
   
-  // 计算第一个窗口（0-3秒）
-  let window1 = sliding_window_aggregation(time_series_stream, 1640995200000L)
+  // Verify backpressure was triggered
+  assert_true(backpressure_triggered)
+  assert_true(publish_count < 200)
   
-  // 验证第一个窗口结果
-  assert_eq(window1.window_start, 1640995200000L)
-  assert_eq(window1.window_end, 1640995203000L)
-  assert_eq(window1.count, 3)  // 前3个数据点
-  assert_eq(window1.sum, 37.0)  // 10 + 15 + 12
-  assert_eq(window1.avg, 12.333333333333334)
-  assert_eq(window1.min, 10.0)
-  assert_eq(window1.max, 15.0)
+  // Process some items from subscriber
+  for i in 0..50 {
+    let received = RealtimeStream::receive(slow_subscriber, 100)
+    match received {
+      Some(_) => {}  // Process item
+      None => break
+    }
+  }
   
-  // 计算第二个窗口（1-4秒）
-  let window2 = sliding_window_aggregation(time_series_stream, 1640995201000L)
+  // Should be able to publish more items now
+  let additional_publish_count = 0
+  for i in 0..50 {
+    let data = TelemetryData::new()
+    TelemetryData::add_attribute(data, "additional.id", IntValue(i))
+    
+    if RealtimeStream::publish(publisher, data) {
+      additional_publish_count = additional_publish_count + 1
+    } else {
+      break
+    }
+  }
   
-  // 验证第二个窗口结果
-  assert_eq(window2.count, 3)  // 第2-4个数据点
-  assert_eq(window2.sum, 45.0)  // 15 + 12 + 18
-  assert_eq(window2.avg, 15.0)
+  // Verify additional items could be published
+  assert_true(additional_publish_count > 0)
   
-  // 计算所有滑动窗口
-  let window_starts = [
-    1640995200000L,
-    1640995201000L,
-    1640995202000L,
-    1640995203000L,
-    1640995204000L,
-    1640995205000L
-  ]
-  
-  let all_windows = window_starts.map(sliding_window_aggregation)
-  
-  // 验证窗口数量
-  assert_eq(all_windows.length(), 6)
-  
-  // 验证每个窗口都有数据
-  assert_true(all_windows.all(fn(window) { window.count > 0 }))
+  // Close stream
+  RealtimeStream::close(stream)
 }
 
-// 测试3: 流式异常检测
-test "流式异常检测" {
-  // 模拟包含异常的指标流
-  let metrics_with_anomalies = [
-    {timestamp: 1640995200000L, metric_name: "cpu_usage", value: 45.0},
-    {timestamp: 1640995201000L, metric_name: "cpu_usage", value: 48.0},
-    {timestamp: 1640995202000L, metric_name: "cpu_usage", value: 52.0},
-    {timestamp: 1640995203000L, metric_name: "cpu_usage", value: 95.0},  // 异常值
-    {timestamp: 1640995204000L, metric_name: "cpu_usage", value: 46.0},
-    {timestamp: 1640995205000L, metric_name: "cpu_usage", value: 49.0},
-    {timestamp: 1640995206000L, metric_name: "cpu_usage", value: 51.0},
-    {timestamp: 1640995207000L, metric_name: "cpu_usage", value: 98.0}   // 异常值
-  ]
+// Test 6: Stream Persistence and Recovery
+test "stream persistence and recovery" {
+  // Create persistent stream
+  let stream = RealtimeStream::new_persistent("persistent_stream", Some("Persistent stream for testing"))
   
-  // 基于统计的异常检测
-  let statistical_anomaly_detection = fn(stream: Array[{timestamp: Int, metric_name: String, value: Double}], threshold: Double) -> Array[Int] {
-    if stream.length() < 3 { return [] }
-    
-    // 计算移动平均和标准差
-    let moving_averages = stream.slice(0, stream.length() - 2).map_with_index(fn(i, point) {
-      let window = stream.slice(i, i + 3)
-      let values = window.map(fn(p) { p.value })
-      let avg = values.fold(0.0, fn(acc, v) { acc + v }) / values.length().to_double()
-      
-      (i + 1, avg)  // 返回中间点的索引和移动平均值
-    })
-    
-    // 检测异常（值与移动平均的差异超过阈值）
-    moving_averages.filter(fn(pair) {
-      let index = pair.0
-      let avg = pair.1
-      let value = stream[index].value
-      (value - avg).abs() > threshold
-    }).map(fn(pair) { pair.0 })
+  // Create subscriber
+  let subscriber = RealtimeStream::subscribe(stream)
+  
+  // Create publisher
+  let publisher = RealtimeStream::create_publisher(stream)
+  
+  // Publish some data
+  for i in 0..10 {
+    let data = TelemetryData::new()
+    TelemetryData::add_attribute(data, "persistent.id", IntValue(i))
+    TelemetryData::add_attribute(data, "persistent.data", StringValue("persistent_data_" + i.to_string()))
+    RealtimeStream::publish(publisher, data)
   }
   
-  // 使用统计方法检测异常
-  let anomaly_indices = statistical_anomaly_detection(metrics_with_anomalies, 30.0)
+  // Force persistence
+  RealtimeStream::persist(stream)
   
-  // 验证异常检测
-  assert_eq(anomaly_indices.length(), 2)
-  assert_true(anomaly_indices.contains(3))  // 第4个数据点（95.0）
-  assert_true(anomaly_indices.contains(7))  // 第8个数据点（98.0）
+  // Close stream
+  RealtimeStream::close(stream)
   
-  // 基于阈值的简单异常检测
-  let threshold_anomaly_detection = fn(stream: Array[{timestamp: Int, metric_name: String, value: Double}], min_threshold: Double, max_threshold: Double) -> Array[Int] {
-    stream.map_with_index(fn(i, point) {
-      if point.value < min_threshold || point.value > max_threshold {
-        i
-      } else {
-        -1
+  // Recover stream
+  let recovered_stream = RealtimeStream::recover("persistent_stream")
+  
+  // Verify recovery
+  assert_true(RealtimeStream::is_active(recovered_stream))
+  assert_eq(RealtimeStream::name(recovered_stream), "persistent_stream")
+  
+  // Create new subscriber for recovered stream
+  let recovered_subscriber = RealtimeStream::subscribe(recovered_stream)
+  
+  // Should receive persisted data
+  let mut received_count = 0
+  for i in 0..10 {
+    let received = RealtimeStream::receive(recovered_subscriber, 1000)
+    match received {
+      Some(data) => {
+        let persistent_id = TelemetryData::get_attribute(data, "persistent.id")
+        match persistent_id {
+          Some(IntValue(id)) => assert_eq(id, i)
+          None => assert_true(false)
+        }
+        received_count = received_count + 1
       }
-    }).filter(fn(index) { index >= 0 })
+      None => break
+    }
   }
   
-  // 使用阈值方法检测异常
-  let threshold_anomalies = threshold_anomaly_detection(metrics_with_anomalies, 20.0, 80.0)
+  // Verify all persisted data was recovered
+  assert_eq(received_count, 10)
   
-  // 验证阈值异常检测
-  assert_eq(threshold_anomalies.length(), 2)
-  assert_true(threshold_anomalies.contains(3))  // 95.0 > 80.0
-  assert_true(threshold_anomalies.contains(7))  // 98.0 > 80.0
+  // Close recovered stream
+  RealtimeStream::close(recovered_stream)
+}
+
+// Test 7: Multi-stream Joins and Merges
+test "multi-stream joins and merges" {
+  // Create multiple streams
+  let stream1 = RealtimeStream::new("stream1", Some("First stream for join testing"))
+  let stream2 = RealtimeStream::new("stream2", Some("Second stream for join testing"))
   
-  // 生成异常警报
-  let anomaly_alerts = anomaly_indices.map(fn(index) {
-    let point = metrics_with_anomalies[index]
-    {
-      timestamp: point.timestamp,
-      metric_name: point.metric_name,
-      value: point.value,
-      alert_type: "statistical_anomaly",
-      severity: if point.value > 90.0 { "critical" } else { "warning" }
+  // Create publishers
+  let publisher1 = RealtimeStream::create_publisher(stream1)
+  let publisher2 = RealtimeStream::create_publisher(stream2)
+  
+  // Publish to stream1
+  for i in 0..5 {
+    let data = TelemetryData::new()
+    TelemetryData::add_attribute(data, "stream", StringValue("stream1"))
+    TelemetryData::add_attribute(data, "join.key", StringValue("key_" + (i % 3).to_string()))  // Create some matching keys
+    TelemetryData::add_attribute(data, "value", IntValue(i))
+    RealtimeStream::publish(publisher1, data)
+  }
+  
+  // Publish to stream2
+  for i in 0..5 {
+    let data = TelemetryData::new()
+    TelemetryData::add_attribute(data, "stream", StringValue("stream2"))
+    TelemetryData::add_attribute(data, "join.key", StringValue("key_" + (i % 3).to_string()))  // Create some matching keys
+    TelemetryData::add_attribute(data, "value", IntValue(i * 10))
+    RealtimeStream::publish(publisher2, data)
+  }
+  
+  // Create join function
+  let join_fn = fn(data1: TelemetryData, data2: TelemetryData) -> TelemetryData {
+    let joined = TelemetryData::new()
+    
+    // Get join key
+    let key1 = TelemetryData::get_attribute(data1, "join.key")
+    let key2 = TelemetryData::get_attribute(data2, "join.key")
+    
+    match (key1, key2) {
+      (Some(StringValue(k1)), Some(StringValue(k2))) => {
+        if k1 == k2 {
+          TelemetryData::add_attribute(joined, "join.key", StringValue(k1))
+          
+          let value1 = TelemetryData::get_attribute(data1, "value")
+          let value2 = TelemetryData::get_attribute(data2, "value")
+          
+          match (value1, value2) {
+            (Some(IntValue(v1)), Some(IntValue(v2))) => {
+              TelemetryData::add_attribute(joined, "stream1.value", IntValue(v1))
+              TelemetryData::add_attribute(joined, "stream2.value", IntValue(v2))
+              TelemetryData::add_attribute(joined, "sum", IntValue(v1 + v2))
+            }
+            _ => {}
+          }
+        }
+      }
+      _ => {}
+    }
+    
+    joined
+  }
+  
+  // Create joined stream
+  let joined_stream = RealtimeStream::join_streams([stream1, stream2], join_fn)
+  
+  // Create subscriber for joined stream
+  let joined_subscriber = RealtimeStream::subscribe(joined_stream)
+  
+  // Receive joined data
+  let mut join_count = 0
+  for i in 0..10 {
+    let received = RealtimeStream::receive(joined_subscriber, 1000)
+    match received {
+      Some(data) => {
+        join_count = join_count + 1
+        
+        let join_key = TelemetryData::get_attribute(data, "join.key")
+        match join_key {
+          Some(StringValue(_)) => {}  // Valid join
+          None => assert_true(false)
+        }
+      }
+      None => break
+    }
+  }
+  
+  // Verify joins occurred
+  assert_true(join_count > 0)
+  
+  // Create merged stream
+  let merged_stream = RealtimeStream::merge_streams([stream1, stream2])
+  
+  // Create subscriber for merged stream
+  let merged_subscriber = RealtimeStream::subscribe(merged_stream)
+  
+  // Receive merged data
+  let mut merge_count = 0
+  for i in 0..15 {  // Should receive all items from both streams
+    let received = RealtimeStream::receive(merged_subscriber, 1000)
+    match received {
+      Some(data) => {
+        merge_count = merge_count + 1
+        
+        let stream_name = TelemetryData::get_attribute(data, "stream")
+        match stream_name {
+          Some(StringValue(name)) => assert_true(name == "stream1" || name == "stream2")
+          None => assert_true(false)
+        }
+      }
+      None => break
+    }
+  }
+  
+  // Verify all items were merged
+  assert_eq(merge_count, 10)  // 5 from each stream
+  
+  // Close all streams
+  RealtimeStream::close(stream1)
+  RealtimeStream::close(stream2)
+  RealtimeStream::close(joined_stream)
+  RealtimeStream::close(merged_stream)
+}
+
+// Test 8: Stream Metrics and Monitoring
+test "stream metrics and monitoring" {
+  // Create stream
+  let stream = RealtimeStream::new("metrics_stream", Some("Stream for metrics testing"))
+  
+  // Enable metrics collection
+  RealtimeStream::enable_metrics(stream)
+  
+  // Create subscriber and publisher
+  let subscriber = RealtimeStream::subscribe(stream)
+  let publisher = RealtimeStream::create_publisher(stream)
+  
+  // Get initial metrics
+  let initial_metrics = RealtimeStream::get_metrics(stream)
+  let initial_publish_count = RealtimeStreamMetrics::get_publish_count(initial_metrics)
+  let initial_receive_count = RealtimeStreamMetrics::get_receive_count(initial_metrics)
+  
+  assert_eq(initial_publish_count, 0)
+  assert_eq(initial_receive_count, 0)
+  
+  // Publish data
+  for i in 0..10 {
+    let data = TelemetryData::new()
+    TelemetryData::add_attribute(data, "metrics.test", IntValue(i))
+    RealtimeStream::publish(publisher, data)
+  }
+  
+  // Receive some data
+  for i in 0..5 {
+    let received = RealtimeStream::receive(subscriber, 1000)
+    match received {
+      Some(_) => {}  // Process data
+      None => break
+    }
+  }
+  
+  // Get updated metrics
+  let updated_metrics = RealtimeStream::get_metrics(stream)
+  let updated_publish_count = RealtimeStreamMetrics::get_publish_count(updated_metrics)
+  let updated_receive_count = RealtimeStreamMetrics::get_receive_count(updated_metrics)
+  
+  // Verify metrics updated
+  assert_eq(updated_publish_count, 10)
+  assert_eq(updated_receive_count, 5)
+  
+  // Verify additional metrics
+  let subscriber_count = RealtimeStreamMetrics::get_subscriber_count(updated_metrics)
+  assert_eq(subscriber_count, 1)
+  
+  let buffer_size = RealtimeStreamMetrics::get_buffer_size(updated_metrics)
+  let buffer_usage = RealtimeStreamMetrics::get_buffer_usage(updated_metrics)
+  
+  assert_true(buffer_size > 0)
+  assert_true(buffer_usage >= 0 && buffer_usage <= buffer_size)
+  
+  // Get throughput metrics
+  let publish_throughput = RealtimeStreamMetrics::get_publish_throughput(updated_metrics)
+  let receive_throughput = RealtimeStreamMetrics::get_receive_throughput(updated_metrics)
+  
+  assert_true(publish_throughput >= 0.0)
+  assert_true(receive_throughput >= 0.0)
+  
+  // Get latency metrics
+  let average_latency = RealtimeStreamMetrics::get_average_latency(updated_metrics)
+  assert_true(average_latency >= 0.0)
+  
+  // Close stream
+  RealtimeStream::close(stream)
+}
+
+// Test 9: Stream Error Handling and Recovery
+test "stream error handling and recovery" {
+  // Create stream
+  let stream = RealtimeStream::new("error_stream", Some("Stream for error testing"))
+  
+  // Create subscriber and publisher
+  let subscriber = RealtimeStream::subscribe(stream)
+  let publisher = RealtimeStream::create_publisher(stream)
+  
+  // Create error handler
+  let error_handler = RealtimeStream::create_error_handler(fn(error: StreamError) {
+    match StreamError::type(error) {
+      PublishError => {
+        // Handle publish error
+        StreamError::recover(error)
+      }
+      SubscribeError => {
+        // Handle subscribe error
+        StreamError::recover(error)
+      }
+      ProcessingError => {
+        // Handle processing error
+        StreamError::retry(error, 3)  // Retry up to 3 times
+      }
     }
   })
   
-  // 验证警报生成
-  assert_eq(anomaly_alerts.length(), 2)
-  assert_true(anomaly_alerts.all(fn(alert) { alert.metric_name == "cpu_usage" }))
-  assert_true(anomaly_alerts.all(fn(alert) { alert.severity == "critical" }))
-}
-
-// 测试4: 流式数据转换和丰富
-test "流式数据转换和丰富" {
-  // 模拟原始遥测事件流
-  let raw_events = [
-    {
-      timestamp: 1640995200000L,
-      event_type: "http_request",
-      method: "GET",
-      path: "/api/users",
-      status_code: 200,
-      duration_ms: 150
-    },
-    {
-      timestamp: 1640995201000L,
-      event_type: "http_request",
-      method: "POST",
-      path: "/api/orders",
-      status_code: 201,
-      duration_ms: 300
-    },
-    {
-      timestamp: 1640995202000L,
-      event_type: "http_request",
-      method: "GET",
-      path: "/api/products",
-      status_code: 500,
-      duration_ms: 800
-    }
-  ]
+  // Set error handler
+  RealtimeStream::set_error_handler(stream, error_handler)
   
-  // 数据转换：添加计算字段
-  let enrich_events = fn(events: Array[{
-    timestamp: Int,
-    event_type: String,
-    method: String,
-    path: String,
-    status_code: Int,
-    duration_ms: Int
-  }]) -> Array[{
-    timestamp: Int,
-    event_type: String,
-    method: String,
-    path: String,
-    status_code: Int,
-    duration_ms: Int,
-    status_class: String,
-    endpoint_category: String,
-    performance_tier: String
-  }> {
-    events.map(fn(event) {
-      // 状态码分类
-      let status_class = if event.status_code >= 200 && event.status_code < 300 {
-        "success"
-      } else if event.status_code >= 400 && event.status_code < 500 {
-        "client_error"
-      } else if event.status_code >= 500 {
-        "server_error"
-      } else {
-        "unknown"
+  // Publish normal data
+  let normal_data = TelemetryData::new()
+  TelemetryData::add_attribute(normal_data, "test.type", StringValue("normal"))
+  let normal_result = RealtimeStream::publish(publisher, normal_data)
+  assert_true(normal_result)
+  
+  // Simulate error condition
+  let error_data = TelemetryData::new()
+  TelemetryData::add_attribute(error_data, "test.type", StringValue("error_trigger"))
+  
+  // This should trigger error handling
+  let error_result = RealtimeStream::publish(publisher, error_data)
+  
+  // Error handler should recover, so publish might succeed or fail gracefully
+  // The important thing is that the stream continues to function
+  
+  // Publish more data after error
+  let recovery_data = TelemetryData::new()
+  TelemetryData::add_attribute(recovery_data, "test.type", StringValue("recovery"))
+  let recovery_result = RealtimeStream::publish(publisher, recovery_data)
+  
+  // Stream should still be functional
+  assert_true(RealtimeStream::is_active(stream))
+  
+  // Receive data
+  let received = RealtimeStream::receive(subscriber, 1000)
+  match received {
+    Some(data) => {
+      let test_type = TelemetryData::get_attribute(data, "test.type")
+      match test_type {
+        Some(StringValue(t)) => assert_true(t == "normal" || t == "recovery")
+        None => assert_true(false)
       }
-      
-      // 端点分类
-      let endpoint_category = if event.path.contains("/users") {
-        "user_management"
-      } else if event.path.contains("/orders") {
-        "order_management"
-      } else if event.path.contains("/products") {
-        "product_management"
-      } else {
-        "other"
-      }
-      
-      // 性能分层
-      let performance_tier = if event.duration_ms < 200 {
-        "fast"
-      } else if event.duration_ms < 500 {
-        "normal"
-      } else {
-        "slow"
-      }
-      
-      {
-        timestamp: event.timestamp,
-        event_type: event.event_type,
-        method: event.method,
-        path: event.path,
-        status_code: event.status_code,
-        duration_ms: event.duration_ms,
-        status_class: status_class,
-        endpoint_category: endpoint_category,
-        performance_tier: performance_tier
-      }
-    })
+    }
+    None => assert_true(false)
   }
   
-  // 执行数据丰富
-  let enriched_events = enrich_events(raw_events)
+  // Get error metrics
+  let error_metrics = RealtimeStream::get_error_metrics(stream)
+  let error_count = RealtimeStreamErrorMetrics::get_error_count(error_metrics)
+  let recovery_count = RealtimeStreamErrorMetrics::get_recovery_count(error_metrics)
   
-  // 验证数据丰富结果
-  assert_eq(enriched_events.length(), 3)
+  assert_true(error_count >= 0)
+  assert_true(recovery_count >= 0)
   
-  // 验证第一个事件的丰富字段
-  let first_event = enriched_events[0]
-  assert_eq(first_event.status_class, "success")      // 200 -> success
-  assert_eq(first_event.endpoint_category, "user_management")  // /api/users -> user_management
-  assert_eq(first_event.performance_tier, "fast")    // 150ms -> fast
+  // Close stream
+  RealtimeStream::close(stream)
+}
+
+// Test 10: Comprehensive Real-time Processing Scenario
+test "comprehensive realtime processing scenario" {
+  // Create a comprehensive real-time processing pipeline
   
-  // 验证第二个事件的丰富字段
-  let second_event = enriched_events[1]
-  assert_eq(second_event.status_class, "success")      // 201 -> success
-  assert_eq(second_event.endpoint_category, "order_management")  // /api/orders -> order_management
-  assert_eq(second_event.performance_tier, "normal")  // 300ms -> normal
+  // 1. Create input streams from different sources
+  let user_activity_stream = RealtimeStream::new("user_activity", Some("User activity events"))
+  let system_metrics_stream = RealtimeStream::new("system_metrics", Some("System metrics"))
+  let error_log_stream = RealtimeStream::new("error_logs", Some("Error log events"))
   
-  // 验证第三个事件的丰富字段
-  let third_event = enriched_events[2]
-  assert_eq(third_event.status_class, "server_error")  // 500 -> server_error
-  assert_eq(third_event.endpoint_category, "product_management")  // /api/products -> product_management
-  assert_eq(third_event.performance_tier, "slow")     // 800ms -> slow
-  
-  // 按性能分层统计
-  let performance_stats = enriched_events.fold(
-    {fast: 0, normal: 0, slow: 0}, 
-    fn(acc, event) {
-      match event.performance_tier {
-        "fast" => {fast: acc.fast + 1, normal: acc.normal, slow: acc.slow}
-        "normal" => {fast: acc.fast, normal: acc.normal + 1, slow: acc.slow}
-        "slow" => {fast: acc.fast, normal: acc.normal, slow: acc.slow + 1}
-        _ => acc
-      }
+  // 2. Create filters for each stream
+  let high_activity_filter = RealtimeStream::create_filter(fn(data: TelemetryData) -> Bool {
+    match TelemetryData::get_attribute(data, "activity.level") {
+      Some(StringValue(level)) => level == "high"
+      _ => false
     }
+  })
+  
+  let critical_metrics_filter = RealtimeStream::create_filter(fn(data: TelemetryData) -> Bool {
+    match TelemetryData::get_attribute(data, "metric.severity") {
+      Some(StringValue(severity)) => severity == "critical"
+      _ => false
+    }
+  })
+  
+  let error_filter = RealtimeStream::create_filter(fn(data: TelemetryData) -> Bool {
+    match TelemetryData::get_attribute(data, "log.level") {
+      Some(StringValue(level)) => level == "error"
+      _ => false
+    }
+  })
+  
+  // 3. Create filtered subscribers
+  let high_activity_subscriber = RealtimeStream::subscribe_with_filter(user_activity_stream, high_activity_filter)
+  let critical_metrics_subscriber = RealtimeStream::subscribe_with_filter(system_metrics_stream, critical_metrics_filter)
+  let error_subscriber = RealtimeStream::subscribe_with_filter(error_log_stream, error_filter)
+  
+  // 4. Create aggregation functions
+  let activity_aggregator = RealtimeStream::create_window_aggregator(10000)  // 10 second window
+  let activity_aggregation_fn = fn(data: Array<TelemetryData>) -> TelemetryData {
+    let result = TelemetryData::new()
+    TelemetryData::add_attribute(result, "aggregation.type", StringValue("user_activity"))
+    TelemetryData::add_attribute(result, "activity.count", IntValue(data.length()))
+    TelemetryData::add_attribute(result, "aggregation.timestamp", IntValue(1234567890))
+    result
+  }
+  
+  let metrics_aggregator = RealtimeStream::create_window_aggregator(5000)  // 5 second window
+  let metrics_aggregation_fn = fn(data: Array<TelemetryData>) -> TelemetryData {
+    let result = TelemetryData::new()
+    TelemetryData::add_attribute(result, "aggregation.type", StringValue("system_metrics"))
+    TelemetryData::add_attribute(result, "metrics.count", IntValue(data.length()))
+    TelemetryData::add_attribute(result, "aggregation.timestamp", IntValue(1234567890))
+    result
+  }
+  
+  // 5. Create aggregation subscribers
+  let activity_aggregation_subscriber = RealtimeStream::subscribe_with_aggregation(
+    user_activity_stream,
+    activity_aggregator,
+    activity_aggregation_fn
   )
   
-  // 验证性能统计
-  assert_eq(performance_stats.fast, 1)
-  assert_eq(performance_stats.normal, 1)
-  assert_eq(performance_stats.slow, 1)
-}
-
-// 测试5: 流式数据路由和分发
-test "流式数据路由和分发" {
-  // 模拟混合遥测数据流
-  let mixed_stream = [
-    {timestamp: 1640995200000L, event_type: "metric", source: "service-a", priority: "high"},
-    {timestamp: 1640995201000L, event_type: "trace", source: "service-b", priority: "normal"},
-    {timestamp: 1640995202000L, event_type: "log", source: "service-a", priority: "low"},
-    {timestamp: 1640995203000L, event_type: "metric", source: "service-c", priority: "critical"},
-    {timestamp: 1640995204000L, event_type: "trace", source: "service-a", priority: "high"},
-    {timestamp: 1640995205000L, event_type: "metric", source: "service-b", priority: "normal"}
-  ]
+  let metrics_aggregation_subscriber = RealtimeStream::subscribe_with_aggregation(
+    system_metrics_stream,
+    metrics_aggregator,
+    metrics_aggregation_fn
+  )
   
-  // 定义路由规则
-  let routing_rules = [
-    {
-      name: "metrics_store",
-      condition: fn(event: {timestamp: Int, event_type: String, source: String, priority: String}) -> Bool {
-        event.event_type == "metric"
-      }
-    },
-    {
-      name: "traces_store",
-      condition: fn(event: {timestamp: Int, event_type: String, source: String, priority: String}) -> Bool {
-        event.event_type == "trace"
-      }
-    },
-    {
-      name: "logs_store",
-      condition: fn(event: {timestamp: Int, event_type: String, source: String, priority: String}) -> Bool {
-        event.event_type == "log"
-      }
-    },
-    {
-      name: "high_priority_queue",
-      condition: fn(event: {timestamp: Int, event_type: String, source: String, priority: String}) -> Bool {
-        event.priority == "high" || event.priority == "critical"
-      }
-    }
-  ]
-  
-  // 应用路由规则
-  let routed_streams = routing_rules.map(fn(rule) {
-    let matched_events = mixed_stream.filter(rule.condition)
+  // 6. Create alert function for error events
+  let alert_fn = fn(data: TelemetryData) -> TelemetryData {
+    let alert = TelemetryData::new()
+    TelemetryData::add_attribute(alert, "alert.type", StringValue("error"))
+    TelemetryData::add_attribute(alert, "alert.severity", StringValue("high"))
     
-    {
-      destination: rule.name,
-      events: matched_events,
-      count: matched_events.length()
+    let error_message = TelemetryData::get_attribute(data, "error.message")
+    match error_message {
+      Some(StringValue(message)) => TelemetryData::add_attribute(alert, "alert.message", StringValue(message))
+      None => {}
     }
-  })
-  
-  // 验证路由结果
-  assert_eq(routed_streams.length(), 4)
-  
-  // 验证metrics_store路由
-  let metrics_route = routed_streams.find(fn(route) { route.destination == "metrics_store" })
-  match metrics_route {
-    Some(route) => {
-      assert_eq(route.count, 3)  // 3个metric事件
-      assert_true(route.events.all(fn(event) { event.event_type == "metric" }))
-    }
-    None => assert_true(false)
-  }
-  
-  // 验证traces_store路由
-  let traces_route = routed_streams.find(fn(route) { route.destination == "traces_store" })
-  match traces_route {
-    Some(route) => {
-      assert_eq(route.count, 2)  // 2个trace事件
-      assert_true(route.events.all(fn(event) { event.event_type == "trace" }))
-    }
-    None => assert_true(false)
-  }
-  
-  // 验证high_priority_queue路由
-  let high_priority_route = routed_streams.find(fn(route) { route.destination == "high_priority_queue" })
-  match high_priority_route {
-    Some(route) => {
-      assert_eq(route.count, 2)  // 2个高优先级事件
-      assert_true(route.events.all(fn(event) { 
-        event.priority == "high" || event.priority == "critical" 
-      }))
-    }
-    None => assert_true(false)
-  }
-  
-  // 验证事件可以路由到多个目的地
-  let high_priority_metric = mixed_stream.find(fn(event) { 
-    event.event_type == "metric" && (event.priority == "high" || event.priority == "critical") 
-  })
-  
-  match high_priority_metric {
-    Some(event) => {
-      // 这个事件应该同时出现在metrics_store和high_priority_queue中
-      let metrics_contains = metrics_route.unwrap().events.contains(event)
-      let high_priority_contains = high_priority_route.unwrap().events.contains(event)
-      
-      assert_true(metrics_contains)
-      assert_true(high_priority_contains)
-    }
-    None => assert_true(false)
-  }
-}
-
-// 测试6: 流式数据背压处理
-test "流式数据背压处理" {
-  // 模拟流处理系统状态
-  let stream_processor_state = {
-    input_queue_size: 1000,
-    processing_capacity: 800,
-    output_queue_size: 200,
-    max_queue_size: 1500,
-    backpressure_threshold: 0.8
-  }
-  
-  // 计算系统负载
-  let input_load = stream_processor_state.input_queue_size.to_double() / stream_processor_state.max_queue_size.to_double()
-  let output_load = stream_processor_state.output_queue_size.to_double() / stream_processor_state.max_queue_size.to_double()
-  let total_load = (stream_processor_state.input_queue_size + stream_processor_state.output_queue_size).to_double() / 
-                   (stream_processor_state.max_queue_size * 2).to_double()
-  
-  // 验证负载计算
-  assert_eq(input_load, 0.6666666666666666)  // 1000/1500
-  assert_eq(output_load, 0.13333333333333333)  // 200/1500
-  assert_eq(total_load, 0.4)  // (1000+200)/(1500*2)
-  
-  // 检测背压条件
-  let backpressure_detected = total_load >= stream_processor_state.backpressure_threshold ||
-                            input_load >= stream_processor_state.backpressure_threshold
-  
-  // 验证背压检测
-  assert_false(backpressure_detected)  // 0.4 < 0.8，没有背压
-  
-  // 模拟高负载情况
-  let high_load_state = {
-    input_queue_size: 1400,
-    processing_capacity: 800,
-    output_queue_size: 600,
-    max_queue_size: 1500,
-    backpressure_threshold: 0.8
-  }
-  
-  let high_input_load = high_load_state.input_queue_size.to_double() / high_load_state.max_queue_size.to_double()
-  let high_total_load = (high_load_state.input_queue_size + high_load_state.output_queue_size).to_double() / 
-                       (high_load_state.max_queue_size * 2).to_double()
-  
-  let high_load_backpressure = high_input_load >= high_load_state.backpressure_threshold ||
-                              high_total_load >= high_load_state.backpressure_threshold
-  
-  // 验证高负载背压检测
-  assert_true(high_load_backpressure)  // 0.933 > 0.8，有背压
-  
-  // 定义背压处理策略
-  let backpressure_strategies = [
-    {
-      load_level: "moderate",
-      actions: ["reduce_batch_size", "increase_processing_threads"]
-    },
-    {
-      load_level: "high",
-      actions: ["drop_non_critical_events", "increase_sampling_rate"]
-    },
-    {
-      load_level: "critical",
-      actions: ["reject_new_events", "alert_operator", "scale_up_resources"]
-    }
-  ]
-  
-  // 根据负载级别选择策略
-  let select_backpressure_strategy = fn(load_ratio: Double) -> String {
-    if load_ratio >= 0.9 {
-      "critical"
-    } else if load_ratio >= 0.7 {
-      "high"
-    } else if load_ratio >= 0.5 {
-      "moderate"
-    } else {
-      "normal"
-    }
-  }
-  
-  // 测试策略选择
-  assert_eq(select_backpressure_strategy(0.4), "normal")
-  assert_eq(select_backpressure_strategy(0.6), "moderate")
-  assert_eq(select_backpressure_strategy(0.8), "high")
-  assert_eq(select_backpressure_strategy(0.95), "critical")
-  
-  // 为高负载情况选择策略
-  let high_load_strategy = select_backpressure_strategy(high_input_load)
-  assert_eq(high_load_strategy, "critical")
-  
-  // 获取对应的处理动作
-  let selected_actions = backpressure_strategies.find_fn(fn(strategy) {
-    strategy.load_level == high_load_strategy
-  })
-  
-  match selected_actions {
-    Some(strategy) => {
-      assert_eq(strategy.actions.length(), 3)
-      assert_true(strategy.actions.contains("reject_new_events"))
-      assert_true(strategy.actions.contains("alert_operator"))
-      assert_true(strategy.actions.contains("scale_up_resources"))
-    }
-    None => assert_true(false)
-  }
-  
-  // 模拟背压恢复
-  let apply_backpressure_recovery = fn(state: {
-    input_queue_size: Int,
-    processing_capacity: Int,
-    output_queue_size: Int,
-    max_queue_size: Int,
-    backpressure_threshold: Double
-  }) -> {
-    input_queue_size: Int,
-    processing_capacity: Int,
-    output_queue_size: Int,
-    max_queue_size: Int,
-    backpressure_threshold: Double,
-    recovery_actions: Array[String]
-  } {
-    let input_load = state.input_queue_size.to_double() / state.max_queue_size.to_double()
-    let total_load = (state.input_queue_size + state.output_queue_size).to_double() / 
-                    (state.max_queue_size * 2).to_double()
     
-    if total_load >= state.backpressure_threshold {
-      // 应用背压恢复措施
-      let reduced_input = (state.input_queue_size * 7 / 10)  // 减少30%
-      let increased_capacity = state.processing_capacity + 200  // 增加处理能力
-      
-      {
-        input_queue_size: reduced_input,
-        processing_capacity: increased_capacity,
-        output_queue_size: state.output_queue_size,
-        max_queue_size: state.max_queue_size,
-        backpressure_threshold: state.backpressure_threshold,
-        recovery_actions: ["reduce_input_rate", "increase_processing_capacity"]
-      }
-    } else {
-      {
-        input_queue_size: state.input_queue_size,
-        processing_capacity: state.processing_capacity,
-        output_queue_size: state.output_queue_size,
-        max_queue_size: state.max_queue_size,
-        backpressure_threshold: state.backpressure_threshold,
-        recovery_actions: []
-      }
-    }
+    TelemetryData::add_attribute(alert, "alert.timestamp", IntValue(1234567890))
+    alert
   }
   
-  // 应用背压恢复
-  let recovered_state = apply_backpressure_recovery(high_load_state)
+  // 7. Create alert stream
+  let alert_stream = RealtimeStream::new("alerts", Some("Alert stream"))
+  let alert_subscriber = RealtimeStream::subscribe(alert_stream)
   
-  // 验证恢复结果
-  assert_eq(recovered_state.input_queue_size, 980)  // 1400 * 0.7
-  assert_eq(recovered_state.processing_capacity, 1000)  // 800 + 200
-  assert_eq(recovered_state.recovery_actions.length(), 2)
-  assert_true(recovered_state.recovery_actions.contains("reduce_input_rate"))
-  assert_true(recovered_state.recovery_actions.contains("increase_processing_capacity"))
+  // 8. Create publishers
+  let user_activity_publisher = RealtimeStream::create_publisher(user_activity_stream)
+  let system_metrics_publisher = RealtimeStream::create_publisher(system_metrics_stream)
+  let error_log_publisher = RealtimeStream::create_publisher(error_log_stream)
+  let alert_publisher = RealtimeStream::create_publisher(alert_stream)
   
-  // 验证恢复后的负载
-  let recovered_load = (recovered_state.input_queue_size + recovered_state.output_queue_size).to_double() / 
-                      (recovered_state.max_queue_size * 2).to_double()
+  // 9. Simulate data publishing
   
-  assert_true(recovered_load < high_total_load)  // 负载应该降低
+  // User activity events
+  for i in 0..20 {
+    let data = TelemetryData::new()
+    TelemetryData::add_attribute(data, "user.id", StringValue("user_" + i.to_string()))
+    TelemetryData::add_attribute(data, "activity.level", if i % 3 == 0 { StringValue("high") } else { StringValue("normal") })
+    TelemetryData::add_attribute(data, "activity.type", StringValue("page_view"))
+    RealtimeStream::publish(user_activity_publisher, data)
+  }
+  
+  // System metrics
+  for i in 0..15 {
+    let data = TelemetryData::new()
+    TelemetryData::add_attribute(data, "metric.name", StringValue("cpu_usage"))
+    TelemetryData::add_attribute(data, "metric.value", FloatValue(i * 5.0))
+    TelemetryData::add_attribute(data, "metric.severity", if i % 5 == 0 { StringValue("critical") } else { StringValue("normal") })
+    RealtimeStream::publish(system_metrics_publisher, data)
+  }
+  
+  // Error logs
+  for i in 0..5 {
+    let data = TelemetryData::new()
+    TelemetryData::add_attribute(data, "log.level", StringValue("error"))
+    TelemetryData::add_attribute(data, "error.message", StringValue("Error " + i.to_string()))
+    TelemetryData::add_attribute(data, "error.code", IntValue(500 + i))
+    
+    // Publish to error log stream
+    RealtimeStream::publish(error_log_publisher, data)
+    
+    // Create and publish alert
+    let alert = alert_fn(data)
+    RealtimeStream::publish(alert_publisher, alert)
+  }
+  
+  // 10. Trigger aggregations
+  RealtimeStream::trigger_aggregation(user_activity_stream, activity_aggregator)
+  RealtimeStream::trigger_aggregation(system_metrics_stream, metrics_aggregator)
+  
+  // 11. Verify results
+  
+  // Receive high activity events
+  let mut high_activity_count = 0
+  for i in 0..10 {  // Should receive about 1/3 of events
+    let received = RealtimeStream::receive(high_activity_subscriber, 1000)
+    match received {
+      Some(data) => {
+        high_activity_count = high_activity_count + 1
+        let activity_level = TelemetryData::get_attribute(data, "activity.level")
+        match activity_level {
+          Some(StringValue(level)) => assert_eq(level, "high")
+          None => assert_true(false)
+        }
+      }
+      None => break
+    }
+  }
+  assert_true(high_activity_count > 0)
+  
+  // Receive critical metrics
+  let mut critical_metrics_count = 0
+  for i in 0..5 {  // Should receive about 1/5 of events
+    let received = RealtimeStream::receive(critical_metrics_subscriber, 1000)
+    match received {
+      Some(data) => {
+        critical_metrics_count = critical_metrics_count + 1
+        let metric_severity = TelemetryData::get_attribute(data, "metric.severity")
+        match metric_severity {
+          Some(StringValue(severity)) => assert_eq(severity, "critical")
+          None => assert_true(false)
+        }
+      }
+      None => break
+    }
+  }
+  assert_true(critical_metrics_count > 0)
+  
+  // Receive error events
+  let mut error_count = 0
+  for i in 0..5 {
+    let received = RealtimeStream::receive(error_subscriber, 1000)
+    match received {
+      Some(data) => {
+        error_count = error_count + 1
+        let log_level = TelemetryData::get_attribute(data, "log.level")
+        match log_level {
+          Some(StringValue(level)) => assert_eq(level, "error")
+          None => assert_true(false)
+        }
+      }
+      None => break
+    }
+  }
+  assert_eq(error_count, 5)
+  
+  // Receive activity aggregation
+  let activity_aggregation = RealtimeStream::receive(activity_aggregation_subscriber, 2000)
+  match activity_aggregation {
+    Some(data) => {
+      let aggregation_type = TelemetryData::get_attribute(data, "aggregation.type")
+      match aggregation_type {
+        Some(StringValue(t)) => assert_eq(t, "user_activity")
+        None => assert_true(false)
+      }
+      
+      let activity_count = TelemetryData::get_attribute(data, "activity.count")
+      match activity_count {
+        Some(IntValue(count)) => assert_eq(count, 20)
+        None => assert_true(false)
+      }
+    }
+    None => assert_true(false)
+  }
+  
+  // Receive metrics aggregation
+  let metrics_aggregation = RealtimeStream::receive(metrics_aggregation_subscriber, 2000)
+  match metrics_aggregation {
+    Some(data) => {
+      let aggregation_type = TelemetryData::get_attribute(data, "aggregation.type")
+      match aggregation_type {
+        Some(StringValue(t)) => assert_eq(t, "system_metrics")
+        None => assert_true(false)
+      }
+      
+      let metrics_count = TelemetryData::get_attribute(data, "metrics.count")
+      match metrics_count {
+        Some(IntValue(count)) => assert_eq(count, 15)
+        None => assert_true(false)
+      }
+    }
+    None => assert_true(false)
+  }
+  
+  // Receive alerts
+  let mut alert_count = 0
+  for i in 0..5 {
+    let received = RealtimeStream::receive(alert_subscriber, 1000)
+    match received {
+      Some(data) => {
+        alert_count = alert_count + 1
+        let alert_type = TelemetryData::get_attribute(data, "alert.type")
+        match alert_type {
+          Some(StringValue(t)) => assert_eq(t, "error")
+          None => assert_true(false)
+        }
+      }
+      None => break
+    }
+  }
+  assert_eq(alert_count, 5)
+  
+  // 12. Get stream metrics
+  let user_activity_metrics = RealtimeStream::get_metrics(user_activity_stream)
+  let system_metrics_metrics = RealtimeStream::get_metrics(system_metrics_stream)
+  let error_log_metrics = RealtimeStream::get_metrics(error_log_stream)
+  let alert_metrics = RealtimeStream::get_metrics(alert_stream)
+  
+  // Verify metrics
+  assert_eq(RealtimeStreamMetrics::get_publish_count(user_activity_metrics), 20)
+  assert_eq(RealtimeStreamMetrics::get_publish_count(system_metrics_metrics), 15)
+  assert_eq(RealtimeStreamMetrics::get_publish_count(error_log_metrics), 5)
+  assert_eq(RealtimeStreamMetrics::get_publish_count(alert_metrics), 5)
+  
+  // 13. Close all streams
+  RealtimeStream::close(user_activity_stream)
+  RealtimeStream::close(system_metrics_stream)
+  RealtimeStream::close(error_log_stream)
+  RealtimeStream::close(alert_stream)
 }
