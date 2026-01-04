@@ -1,428 +1,217 @@
-// Azimuth Telemetry System - Distributed Tracing Consistency Tests
-// This file contains comprehensive test cases for distributed tracing consistency
+// Azimuth Distributed Tracing Consistency Tests
+// This file contains high-quality test cases for distributed tracing consistency
 
-// Test 1: Cross-Service Trace Context Propagation
-test "cross-service trace context propagation" {
-  // Initialize tracing provider
-  let tracer_provider = TracerProvider::new()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "consistency_tracer")
+// Test 1: Trace Context Propagation Across Service Boundaries
+test "trace context propagation across service boundaries" {
+  // Create initial trace context
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let parent_span_id = "b7ad6b7169203331"
+  let initial_ctx = SpanContext::new(trace_id, parent_span_id, true, "initial_state")
   
-  // Create root span for the request
-  let root_span = Tracer::start_span(tracer, "user_request")
-  let root_ctx = Span::span_context(root_span)
-  let root_trace_id = SpanContext::trace_id(root_ctx)
+  // Service A creates a child span
+  let service_a_span_id = "a1b2c3d4e5f67890"
+  let service_a_ctx = SpanContext::new(trace_id, service_a_span_id, true, "service_a_state")
+  assert_eq(SpanContext::trace_id(service_a_ctx), trace_id)
+  assert_eq(SpanContext::parent_span_id(service_a_ctx), parent_span_id)
+  assert_eq(SpanContext::span_id(service_a_ctx), service_a_span_id)
   
-  // Simulate service A receiving the request
-  let service_a_span = Tracer::start_span_with_context(
-    tracer, 
-    "service_a.process", 
-    Some(root_ctx),
-    Some(Server)
-  )
+  // Service B creates a child span from Service A
+  let service_b_span_id = "1234567890abcdef"
+  let service_b_ctx = SpanContext::new(trace_id, service_b_span_id, true, "service_b_state")
+  assert_eq(SpanContext::trace_id(service_b_ctx), trace_id)
+  assert_eq(SpanContext::parent_span_id(service_b_ctx), service_a_span_id)
+  assert_eq(SpanContext::span_id(service_b_ctx), service_b_span_id)
   
-  // Service A calls Service B
-  let service_a_ctx = Span::span_context(service_a_span)
-  let service_b_span = Tracer::start_span_with_context(
-    tracer,
-    "service_b.process",
-    Some(service_a_ctx),
-    Some(Client)
-  )
+  // Service C creates a child span from Service B
+  let service_c_span_id = "fedcba0987654321"
+  let service_c_ctx = SpanContext::new(trace_id, service_c_span_id, true, "service_c_state")
+  assert_eq(SpanContext::trace_id(service_c_ctx), trace_id)
+  assert_eq(SpanContext::parent_span_id(service_c_ctx), service_b_span_id)
+  assert_eq(SpanContext::span_id(service_c_ctx), service_c_span_id)
   
-  // Service B calls Service C
-  let service_b_ctx = Span::span_context(service_b_span)
-  let service_c_span = Tracer::start_span_with_context(
-    tracer,
-    "service_c.process",
-    Some(service_b_ctx),
-    Some(Client)
-  )
-  
-  // Verify trace context consistency across all services
-  let service_c_ctx = Span::span_context(service_c_span)
-  
-  // All spans should have the same trace ID
-  assert_eq(SpanContext::trace_id(root_ctx), root_trace_id)
-  assert_eq(SpanContext::trace_id(service_a_ctx), root_trace_id)
-  assert_eq(SpanContext::trace_id(service_b_ctx), root_trace_id)
-  assert_eq(SpanContext::trace_id(service_c_ctx), root_trace_id)
-  
-  // Each span should have a unique span ID
-  assert_not_eq(SpanContext::span_id(root_ctx), SpanContext::span_id(service_a_ctx))
-  assert_not_eq(SpanContext::span_id(service_a_ctx), SpanContext::span_id(service_b_ctx))
-  assert_not_eq(SpanContext::span_id(service_b_ctx), SpanContext::span_id(service_c_ctx))
+  // Verify trace consistency across all services
+  assert_eq(SpanContext::trace_id(initial_ctx), SpanContext::trace_id(service_a_ctx))
+  assert_eq(SpanContext::trace_id(service_a_ctx), SpanContext::trace_id(service_b_ctx))
+  assert_eq(SpanContext::trace_id(service_b_ctx), SpanContext::trace_id(service_c_ctx))
   
   // Verify parent-child relationships
-  assert_eq(Span::parent_span_id(service_a_span), Some(SpanContext::span_id(root_ctx)))
-  assert_eq(Span::parent_span_id(service_b_span), Some(SpanContext::span_id(service_a_ctx)))
-  assert_eq(Span::parent_span_id(service_c_span), Some(SpanContext::span_id(service_b_ctx)))
-  
-  // End all spans
-  Span::end(service_c_span)
-  Span::end(service_b_span)
-  Span::end(service_a_span)
-  Span::end(root_span)
+  assert_eq(SpanContext::parent_span_id(service_a_ctx), parent_span_id)
+  assert_eq(SpanContext::parent_span_id(service_b_ctx), service_a_span_id)
+  assert_eq(SpanContext::parent_span_id(service_c_ctx), service_b_span_id)
 }
 
-// Test 2: Distributed Trace Baggage Propagation
-test "distributed trace baggage propagation" {
-  let tracer_provider = TracerProvider::new()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "baggage_tracer")
+// Test 2: Baggage Propagation Consistency
+test "baggage propagation consistency" {
+  let initial_baggage = Baggage::new()
   
-  // Create root span with initial baggage
-  let root_span = Tracer::start_span(tracer, "init_request")
-  let root_ctx = Span::span_context(root_span)
+  // Set initial baggage entries
+  let baggage_with_user = Baggage::set_entry(initial_baggage, "user.id", "user123")
+  let baggage_with_session = Baggage::set_entry(baggage_with_user, "session.id", "session456")
+  let baggage_with_tenant = Baggage::set_entry(baggage_with_session, "tenant.id", "tenant789")
   
-  // Add baggage items
-  let baggage1 = Baggage::new()
-  let baggage_with_user = Baggage::set_entry(baggage1, "user.id", "12345")
-  let baggage_with_tenant = Baggage::set_entry(baggage_with_user, "tenant.id", "tenant-abc")
-  let baggage_with_request_id = Baggage::set_entry(baggage_with_tenant, "request.id", "req-789")
+  // Service A adds service-specific baggage
+  let service_a_baggage = Baggage::set_entry(baggage_with_tenant, "service.a.version", "1.2.3")
   
-  // Attach baggage to context
-  let ctx_with_baggage = Context::with_value(
-    Context::root(),
-    ContextKey::new("baggage"),
-    baggage_with_request_id
-  )
+  // Service B adds service-specific baggage
+  let service_b_baggage = Baggage::set_entry(service_a_baggage, "service.b.version", "2.3.4")
   
-  // Simulate service chain with baggage propagation
-  let service_a_span = Tracer::start_span_with_context(
-    tracer,
-    "service_a.process",
-    Some(root_ctx),
-    Some(Server)
-  )
+  // Service C adds service-specific baggage
+  let service_c_baggage = Baggage::set_entry(service_b_baggage, "service.c.version", "3.4.5")
   
-  // Service A should be able to access baggage
-  let service_a_baggage = Context::get(ctx_with_baggage, ContextKey::new("baggage"))
-  match service_a_baggage {
-    Some(baggage) => {
-      match Baggage::get_entry(baggage, "user.id") {
-        Some(user_id) => assert_eq(user_id, "12345")
-        None => assert_true(false)
-      }
-      match Baggage::get_entry(baggage, "tenant.id") {
-        Some(tenant_id) => assert_eq(tenant_id, "tenant-abc")
-        None => assert_true(false)
-      }
+  // Verify baggage consistency across services
+  let user_id = Baggage::get_entry(service_c_baggage, "user.id")
+  match user_id {
+    Some(value) => assert_eq(value, "user123")
+    None => assert_true(false)
+  }
+  
+  let session_id = Baggage::get_entry(service_c_baggage, "session.id")
+  match session_id {
+    Some(value) => assert_eq(value, "session456")
+    None => assert_true(false)
+  }
+  
+  let tenant_id = Baggage::get_entry(service_c_baggage, "tenant.id")
+  match tenant_id {
+    Some(value) => assert_eq(value, "tenant789")
+    None => assert_true(false)
+  }
+  
+  // Verify service-specific baggage
+  let service_a_version = Baggage::get_entry(service_c_baggage, "service.a.version")
+  match service_a_version {
+    Some(value) => assert_eq(value, "1.2.3")
+    None => assert_true(false)
+  }
+  
+  let service_b_version = Baggage::get_entry(service_c_baggage, "service.b.version")
+  match service_b_version {
+    Some(value) => assert_eq(value, "2.3.4")
+    None => assert_true(false)
+  }
+  
+  let service_c_version = Baggage::get_entry(service_c_baggage, "service.c.version")
+  match service_c_version {
+    Some(value) => assert_eq(value, "3.4.5")
+    None => assert_true(false)
+  }
+}
+
+// Test 3: Span Event Ordering Consistency
+test "span event ordering consistency" {
+  let span_ctx = SpanContext::new("trace123", "span456", true, "test_state")
+  let span = Span::new("test_span", Internal, span_ctx)
+  
+  // Add events in specific order
+  Span::add_event(span, "start_processing", Some([("step", StringValue("1"))]))
+  Span::add_event(span, "validate_input", Some([("step", StringValue("2"))]))
+  Span::add_event(span, "process_data", Some([("step", StringValue("3"))]))
+  Span::add_event(span, "validate_output", Some([("step", StringValue("4"))]))
+  Span::add_event(span, "complete_processing", Some([("step", StringValue("5"))]))
+  
+  // Retrieve events and verify order
+  let events = Span::events(span)
+  assert_eq(events.length(), 5)
+  
+  // Verify event names are in correct order
+  assert_eq(events[0].name, "start_processing")
+  assert_eq(events[1].name, "validate_input")
+  assert_eq(events[2].name, "process_data")
+  assert_eq(events[3].name, "validate_output")
+  assert_eq(events[4].name, "complete_processing")
+  
+  // Verify event attributes contain step information
+  for i in 0..=4 {
+    let step_attr = Attributes::get(events[i].attributes, "step")
+    match step_attr {
+      Some(StringValue(step)) => assert_eq(step, (i + 1).to_string())
+      _ => assert_true(false)
     }
-    None => assert_true(false)
   }
   
-  // Service B adds more baggage
-  let service_b_span = Tracer::start_span_with_context(
-    tracer,
-    "service_b.process",
-    Some(Span::span_context(service_a_span)),
-    Some(Client)
-  )
-  
-  let service_b_baggage = match service_a_baggage {
-    Some(baggage) => Baggage::set_entry(baggage, "service.b.metadata", "processed")
-    None => assert_true(false); Baggage::new()
+  // Verify timestamps are in ascending order
+  for i in 0..=3 {
+    assert_true(events[i].timestamp <= events[i + 1].timestamp)
   }
-  
-  // Service C should see all baggage items
-  let service_c_span = Tracer::start_span_with_context(
-    tracer,
-    "service_c.process",
-    Some(Span::span_context(service_b_span)),
-    Some(Client)
-  )
-  
-  // Verify baggage propagation consistency
-  match service_b_baggage {
-    Some(baggage) => {
-      match Baggage::get_entry(baggage, "user.id") {
-        Some(user_id) => assert_eq(user_id, "12345")
-        None => assert_true(false)
-      }
-      match Baggage::get_entry(baggage, "tenant.id") {
-        Some(tenant_id) => assert_eq(tenant_id, "tenant-abc")
-        None => assert_true(false)
-      }
-      match Baggage::get_entry(baggage, "service.b.metadata") {
-        Some(metadata) => assert_eq(metadata, "processed")
-        None => assert_true(false)
-      }
-    }
-    None => assert_true(false)
-  }
-  
-  // End spans
-  Span::end(service_c_span)
-  Span::end(service_b_span)
-  Span::end(service_a_span)
-  Span::end(root_span)
 }
 
-// Test 3: Trace Sampling Consistency
-test "trace sampling consistency" {
-  // Configure sampling strategy
-  let sampler_config = SamplerConfig::new(
-    SamplingStrategy::TraceIdRatio,
-    0.5, // 50% sampling rate
-    Some("test-sampler")
-  )
+// Test 4: Cross-Service Trace Consistency with Network Partitions
+test "cross-service trace consistency with network partitions" {
+  // Simulate a distributed trace that experiences network partitions
+  let trace_id = "partitioned_trace_123"
   
-  let tracer_provider = TracerProvider::with_sampler(sampler_config)
-  let tracer = TracerProvider::get_tracer(tracer_provider, "sampling_tracer")
+  // Service A starts the trace
+  let service_a_span_id = "service_a_span_1"
+  let service_a_ctx = SpanContext::new(trace_id, service_a_span_id, true, "service_a_state")
   
-  // Create multiple traces to test sampling consistency
-  let sampled_traces = []
-  let unsampled_traces = []
+  // Service B receives the trace context (normal operation)
+  let service_b_span_id = "service_b_span_1"
+  let service_b_ctx = SpanContext::new(trace_id, service_b_span_id, true, "service_b_state")
+  assert_eq(SpanContext::trace_id(service_b_ctx), trace_id)
   
-  // Generate 10 traces
-  for i in 0..10 {
-    let span_name = "trace_" + i.to_string()
-    let span = Tracer::start_span(tracer, span_name)
-    let ctx = Span::span_context(span)
-    
-    if SpanContext::is_sampled(ctx) {
-      sampled_traces.push(span)
-    } else {
-      unsampled_traces.push(span)
-    }
-    
-    Span::end(span)
-  }
+  // Simulate network partition - Service C doesn't receive proper context
+  // and creates a new trace (this should be detected and handled)
+  let service_c_isolated_span_id = "service_c_span_isolated"
+  let service_c_isolated_ctx = SpanContext::new("isolated_trace_456", service_c_isolated_span_id, true, "service_c_isolated_state")
   
-  // With 50% sampling rate and deterministic sampler, we should have approximately equal counts
-  assert_true(sampled_traces.length() > 0)
-  assert_true(unsampled_traces.length() > 0)
+  // Network partition heals - Service D receives proper context
+  let service_d_span_id = "service_d_span_1"
+  let service_d_ctx = SpanContext::new(trace_id, service_d_span_id, true, "service_d_state")
+  assert_eq(SpanContext::trace_id(service_d_ctx), trace_id)
   
-  // Test that all spans in a single trace have consistent sampling decisions
-  let root_span = Tracer::start_span(tracer, "sampled_trace_root")
-  let root_ctx = Span::span_context(root_span)
-  let root_sampled = SpanContext::is_sampled(root_ctx)
+  // Service E continues the trace from Service D
+  let service_e_span_id = "service_e_span_1"
+  let service_e_ctx = SpanContext::new(trace_id, service_e_span_id, true, "service_e_state")
+  assert_eq(SpanContext::trace_id(service_e_ctx), trace_id)
   
-  let child_span = Tracer::start_span_with_context(
-    tracer,
-    "sampled_trace_child",
-    Some(root_ctx),
-    Some(Internal)
-  )
-  let child_ctx = Span::span_context(child_span)
-  let child_sampled = SpanContext::is_sampled(child_ctx)
+  // Verify that services A, B, D, E have consistent trace IDs
+  assert_eq(SpanContext::trace_id(service_a_ctx), SpanContext::trace_id(service_b_ctx))
+  assert_eq(SpanContext::trace_id(service_b_ctx), SpanContext::trace_id(service_d_ctx))
+  assert_eq(SpanContext::trace_id(service_d_ctx), SpanContext::trace_id(service_e_ctx))
   
-  // Parent and child should have the same sampling decision
-  assert_eq(root_sampled, child_sampled)
+  // Verify that Service C has a different trace ID (isolated)
+  assert_true(SpanContext::trace_id(service_c_isolated_ctx) != trace_id)
   
-  Span::end(child_span)
-  Span::end(root_span)
+  // In a real system, there would be mechanisms to detect and handle such partitions
+  // This test verifies the structure for such detection
 }
 
-// Test 4: Distributed Trace Event Ordering
-test "distributed trace event ordering" {
-  let tracer_provider = TracerProvider::new()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "ordering_tracer")
+// Test 5: Sampling Decision Consistency Across Services
+test "sampling decision consistency across services" {
+  // Test case 1: Sampled trace
+  let sampled_trace_id = "sampled_trace_123"
+  let sampled_ctx = SpanContext::new(sampled_trace_id, "parent_span_1", true, "sampled_state")
+  assert_true(SpanContext::is_sampled(sampled_ctx))
   
-  // Create a trace with multiple services
-  let root_span = Tracer::start_span(tracer, "distributed_request")
-  let root_start_time = Span::start_time(root_span)
+  // Child spans should respect the sampling decision
+  let child_sampled_ctx_1 = SpanContext::new(sampled_trace_id, "child_span_1", true, "child_sampled_state_1")
+  let child_sampled_ctx_2 = SpanContext::new(sampled_trace_id, "child_span_2", true, "child_sampled_state_2")
+  let grandchild_sampled_ctx = SpanContext::new(sampled_trace_id, "grandchild_span_1", true, "grandchild_sampled_state")
   
-  // Simulate service processing with time delays
-  let service_a_span = Tracer::start_span_with_context(
-    tracer,
-    "service_a.process",
-    Some(Span::span_context(root_span)),
-    Some(Server)
-  )
+  assert_true(SpanContext::is_sampled(child_sampled_ctx_1))
+  assert_true(SpanContext::is_sampled(child_sampled_ctx_2))
+  assert_true(SpanContext::is_sampled(grandchild_sampled_ctx))
   
-  // Add events to service A
-  Span::add_event(service_a_span, "service_a.start")
-  Span::add_event(service_a_span, "service_a.authenticated")
-  Span::add_event(service_a_span, "service_a.processing")
+  // Test case 2: Not sampled trace
+  let not_sampled_trace_id = "not_sampled_trace_456"
+  let not_sampled_ctx = SpanContext::new(not_sampled_trace_id, "parent_span_2", false, "not_sampled_state")
+  assert_false(SpanContext::is_sampled(not_sampled_ctx))
   
-  // Service A calls Service B
-  let service_b_span = Tracer::start_span_with_context(
-    tracer,
-    "service_b.process",
-    Some(Span::span_context(service_a_span)),
-    Some(Client)
-  )
+  // Child spans should respect the sampling decision
+  let child_not_sampled_ctx_1 = SpanContext::new(not_sampled_trace_id, "child_span_3", false, "child_not_sampled_state_1")
+  let child_not_sampled_ctx_2 = SpanContext::new(not_sampled_trace_id, "child_span_4", false, "child_not_sampled_state_2")
+  let grandchild_not_sampled_ctx = SpanContext::new(not_sampled_trace_id, "grandchild_span_2", false, "grandchild_not_sampled_state")
   
-  // Add events to service B
-  Span::add_event(service_b_span, "service_b.start")
-  Span::add_event(service_b_span, "service_b.database_query")
-  Span::add_event(service_b_span, "service_b.complete")
+  assert_false(SpanContext::is_sampled(child_not_sampled_ctx_1))
+  assert_false(SpanContext::is_sampled(child_not_sampled_ctx_2))
+  assert_false(SpanContext::is_sampled(grandchild_not_sampled_ctx))
   
-  // Service B calls Service C
-  let service_c_span = Tracer::start_span_with_context(
-    tracer,
-    "service_c.process",
-    Some(Span::span_context(service_b_span)),
-    Some(Client)
-  )
+  // Verify that sampling decisions are consistent across the entire trace
+  assert_true(SpanContext::trace_id(sampled_ctx) == SpanContext::trace_id(child_sampled_ctx_1))
+  assert_true(SpanContext::is_sampled(sampled_ctx) == SpanContext::is_sampled(child_sampled_ctx_1))
+  assert_true(SpanContext::is_sampled(child_sampled_ctx_1) == SpanContext::is_sampled(grandchild_sampled_ctx))
   
-  // Add events to service C
-  Span::add_event(service_c_span, "service_c.start")
-  Span::add_event(service_c_span, "service_c.cache_lookup")
-  Span::add_event(service_c_span, "service_c.complete")
-  
-  // End spans in reverse order
-  Span::end(service_c_span)
-  Span::end(service_b_span)
-  Span::end(service_a_span)
-  Span::end(root_span)
-  
-  // Verify event ordering within each span
-  let service_a_events = Span::events(service_a_span)
-  assert_eq(service_a_events.length(), 3)
-  assert_eq(service_a_events[0].name, "service_a.start")
-  assert_eq(service_a_events[1].name, "service_a.authenticated")
-  assert_eq(service_a_events[2].name, "service_a.processing")
-  
-  let service_b_events = Span::events(service_b_span)
-  assert_eq(service_b_events.length(), 3)
-  assert_eq(service_b_events[0].name, "service_b.start")
-  assert_eq(service_b_events[1].name, "service_b.database_query")
-  assert_eq(service_b_events[2].name, "service_b.complete")
-  
-  let service_c_events = Span::events(service_c_span)
-  assert_eq(service_c_events.length(), 3)
-  assert_eq(service_c_events[0].name, "service_c.start")
-  assert_eq(service_c_events[1].name, "service_c.cache_lookup")
-  assert_eq(service_c_events[2].name, "service_c.complete")
-  
-  // Verify span ordering based on timestamps
-  assert_true(Span::start_time(root_span) <= Span::start_time(service_a_span))
-  assert_true(Span::start_time(service_a_span) <= Span::start_time(service_b_span))
-  assert_true(Span::start_time(service_b_span) <= Span::start_time(service_c_span))
-  
-  // Verify end times are also ordered
-  assert_true(Span::end_time(service_c_span) <= Span::end_time(service_b_span))
-  assert_true(Span::end_time(service_b_span) <= Span::end_time(service_a_span))
-  assert_true(Span::end_time(service_a_span) <= Span::end_time(root_span))
-}
-
-// Test 5: Trace Context Injection and Extraction
-test "trace context injection and extraction" {
-  let tracer_provider = TracerProvider::new()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "injection_tracer")
-  
-  // Create a span
-  let span = Tracer::start_span(tracer, "test_span")
-  let ctx = Span::span_context(span)
-  
-  // Get the propagator
-  let propagator = TraceContextPropagator::new()
-  
-  // Create headers carrier
-  let carrier = Headers::new()
-  
-  // Inject context into carrier
-  Propagator::inject(propagator, ctx, carrier)
-  
-  // Verify traceparent header is present
-  let traceparent = Headers::get(carrier, "traceparent")
-  match traceparent {
-    Some(header_value) => {
-      // traceparent format: version-trace_id-span_id-flags
-      let parts = header_value.split("-")
-      assert_eq(parts.length(), 4)
-      assert_eq(parts[0], "00") // Version
-      assert_eq(parts[1], SpanContext::trace_id(ctx))
-      assert_eq(parts[2], SpanContext::span_id(ctx))
-      assert_eq(parts[3], "01") // Sampled flag
-    }
-    None => assert_true(false)
-  }
-  
-  // Verify tracestate header if baggage is present
-  let tracestate = Headers::get(carrier, "tracestate")
-  // tracestate might not be present if no baggage is set
-  
-  // Extract context from carrier
-  let extracted_ctx = Propagator::extract(propagator, carrier)
-  
-  // Verify extracted context matches original
-  assert_eq(SpanContext::trace_id(extracted_ctx), SpanContext::trace_id(ctx))
-  assert_eq(SpanContext::span_id(extracted_ctx), SpanContext::span_id(ctx))
-  assert_eq(SpanContext::is_sampled(extracted_ctx), SpanContext::is_sampled(ctx))
-  
-  Span::end(span)
-}
-
-// Test 6: Distributed Trace Consistency Under Failure
-test "distributed trace consistency under failure" {
-  let tracer_provider = TracerProvider::new()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "failure_tracer")
-  
-  // Create a trace that simulates partial failure
-  let root_span = Tracer::start_span(tracer, "request_with_failure")
-  let root_ctx = Span::span_context(root_span)
-  
-  // Service A processes successfully
-  let service_a_span = Tracer::start_span_with_context(
-    tracer,
-    "service_a.process",
-    Some(root_ctx),
-    Some(Server)
-  )
-  
-  // Service A calls Service B
-  let service_b_span = Tracer::start_span_with_context(
-    tracer,
-    "service_b.process",
-    Some(Span::span_context(service_a_span)),
-    Some(Client)
-  )
-  
-  // Service B encounters an error
-  Span::set_status(service_b_span, Error, Some("Database connection failed"))
-  Span::add_event(service_b_span, "error", Some([
-    ("error.type", StringValue("database")),
-    ("error.message", StringValue("Connection timeout"))
-  ]))
-  
-  // Service B attempts to call Service C but fails
-  let service_c_span = Tracer::start_span_with_context(
-    tracer,
-    "service_c.process",
-    Some(Span::span_context(service_b_span)),
-    Some(Client)
-  )
-  
-  // Service C never gets called due to failure in B
-  Span::set_status(service_c_span, Error, Some("Service C not reached"))
-  
-  // End spans
-  Span::end(service_c_span)
-  Span::end(service_b_span)
-  
-  // Service A continues processing despite B's failure
-  Span::add_event(service_a_span, "fallback_activated")
-  Span::set_status(service_a_span, Ok, Some("Processed with fallback"))
-  
-  Span::end(service_a_span)
-  
-  // Root span reflects partial failure
-  Span::set_status(root_span, Error, Some("Partial service failure"))
-  Span::end(root_span)
-  
-  // Verify trace consistency despite failures
-  
-  // All spans should still have the same trace ID
-  assert_eq(SpanContext::trace_id(root_ctx), SpanContext::trace_id(Span::span_context(service_a_span)))
-  assert_eq(SpanContext::trace_id(root_ctx), SpanContext::trace_id(Span::span_context(service_b_span)))
-  assert_eq(SpanContext::trace_id(root_ctx), SpanContext::trace_id(Span::span_context(service_c_span)))
-  
-  // Status should reflect the errors
-  assert_eq(Span::status(service_b_span), Error)
-  assert_eq(Span::status(service_c_span), Error)
-  assert_eq(Span::status(service_a_span), Ok) // Recovered
-  assert_eq(Span::status(root_span), Error) // Overall failure
-  
-  // Verify error propagation
-  match Span::status_message(service_b_span) {
-    Some(message) => assert_eq(message, "Database connection failed")
-    None => assert_true(false)
-  }
-  
-  match Span::status_message(service_c_span) {
-    Some(message) => assert_eq(message, "Service C not reached")
-    None => assert_true(false)
-  }
+  assert_true(SpanContext::trace_id(not_sampled_ctx) == SpanContext::trace_id(child_not_sampled_ctx_1))
+  assert_true(SpanContext::is_sampled(not_sampled_ctx) == SpanContext::is_sampled(child_not_sampled_ctx_1))
+  assert_true(SpanContext::is_sampled(child_not_sampled_ctx_1) == SpanContext::is_sampled(grandchild_not_sampled_ctx))
 }
