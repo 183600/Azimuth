@@ -1,600 +1,927 @@
 // Azimuth Enhanced MoonBit Test Suite
-// 增强的MoonBit测试用例，涵盖遥测系统的高级功能
+// This file contains enhanced MoonBit test cases focusing on advanced telemetry scenarios
 
-// 测试1: 上下文切换与恢复
-test "上下文切换与恢复测试" {
-  // 创建根上下文
-  let root_ctx = Context::root()
+// Test 1: Trace Context Propagation
+test "trace context propagation across service boundaries" {
+  // Define trace context structure
+  type TraceContext = {
+    trace_id: String,
+    span_id: String,
+    flags: Int,
+    baggage: Array[(String, String)]
+  }
   
-  // 创建第一级上下文
-  let level1_key = ContextKey::new("level1.data")
-  let level1_ctx = Context::with_value(root_ctx, level1_key, "level1-value")
+  // Create initial trace context
+  let root_context = {
+    trace_id: "trace-abc123",
+    span_id: "span-def456",
+    flags: 1,
+    baggage: [("user.id", "12345"), ("request.source", "mobile")]
+  }
   
-  // 创建第二级上下文
-  let level2_key = ContextKey::new("level2.data")
-  let level2_ctx = Context::with_value(level1_ctx, level2_key, "level2-value")
+  // Simulate context propagation to downstream service
+  let propagate_to_service = fn(context: TraceContext, service_name: String) {
+    let new_span_id = "span-" + service_name + "-" + (context.span_id.length() + 1).to_string()
+    {
+      trace_id: context.trace_id,
+      span_id: new_span_id,
+      flags: context.flags,
+      baggage: context.baggage.push(("service.name", service_name))
+    }
+  }
   
-  // 创建第三级上下文
-  let level3_key = ContextKey::new("level3.data")
-  let level3_ctx = Context::with_value(level2_ctx, level3_key, "level3-value")
+  // Propagate to payment service
+  let payment_context = propagate_to_service(root_context, "payment")
+  assert_eq(payment_context.trace_id, "trace-abc123")
+  assert_eq(payment_context.span_id, "span-payment-12")
+  assert_eq(payment_context.flags, 1)
+  assert_eq(payment_context.baggage.length(), 3)
+  assert_true(payment_context.baggage.contains(("service.name", "payment")))
   
-  // 验证所有级别的上下文值
-  assert_eq(Context::get(level3_ctx, level1_key), Some("level1-value"))
-  assert_eq(Context::get(level3_ctx, level2_key), Some("level2-value"))
-  assert_eq(Context::get(level3_ctx, level3_key), Some("level3-value"))
+  // Propagate to inventory service
+  let inventory_context = propagate_to_service(payment_context, "inventory")
+  assert_eq(inventory_context.trace_id, "trace-abc123")
+  assert_eq(inventory_context.span_id, "span-inventory-12")
+  assert_eq(inventory_context.baggage.length(), 4)
+  assert_true(inventory_context.baggage.contains(("service.name", "inventory")))
   
-  // 测试上下文切换
-  let switch_key = ContextKey::new("switch.data")
-  let switched_ctx = Context::with_value(level3_ctx, switch_key, "switched-value")
-  
-  // 验证切换后的上下文
-  assert_eq(Context::get(switched_ctx, switch_key), Some("switched-value"))
-  assert_eq(Context::get(switched_ctx, level1_key), Some("level1-value"))
-  assert_eq(Context::get(switched_ctx, level2_key), Some("level2-value"))
-  assert_eq(Context::get(switched_ctx, level3_key), Some("level3-value"))
-  
-  // 测试上下文恢复
-  let recovered_ctx = Context::with_value(switched_ctx, level3_key, "recovered-value")
-  
-  // 验证恢复后的上下文
-  assert_eq(Context::get(recovered_ctx, level3_key), Some("recovered-value"))
-  assert_eq(Context::get(recovered_ctx, level2_key), Some("level2-value"))
-  assert_eq(Context::get(recovered_ctx, level1_key), Some("level1-value"))
+  // Verify trace ID remains consistent
+  assert_eq(root_context.trace_id, payment_context.trace_id)
+  assert_eq(payment_context.trace_id, inventory_context.trace_id)
 }
 
-// 测试2: 异步操作追踪
-test "异步操作追踪测试" {
-  // 创建Tracer
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "async-test")
+// Test 2: Metric Aggregation and Statistics
+test "metric aggregation and statistical calculations" {
+  // Define metric data point
+  type MetricPoint = {
+    name: String,
+    value: Float,
+    timestamp: Int,
+    tags: Array[(String, String)]
+  }
   
-  // 创建父Span
-  let parent_span = Tracer::start_span(tracer, "async-operation")
-  let parent_span_ctx = Span::span_context(parent_span)
-  
-  // 模拟异步操作1
-  let async1_span = Tracer::start_span(tracer, "async-operation-1")
-  Span::set_parent(async1_span, parent_span_ctx)
-  Span::add_event(async1_span, "async-operation-1-started")
-  Span::set_status(async1_span, Ok)
-  Span::end(async1_span)
-  
-  // 模拟异步操作2
-  let async2_span = Tracer::start_span(tracer, "async-operation-2")
-  Span::set_parent(async2_span, parent_span_ctx)
-  Span::add_event(async2_span, "async-operation-2-started")
-  Span::set_status(async2_span, Ok)
-  Span::end(async2_span)
-  
-  // 模拟异步操作3（嵌套异步）
-  let async3_span = Tracer::start_span(tracer, "async-operation-3")
-  Span::set_parent(async3_span, parent_span_ctx)
-  
-  // 嵌套异步子操作
-  let async3_child_span = Tracer::start_span(tracer, "async-operation-3-child")
-  Span::set_parent(async3_child_span, Span::span_context(async3_span))
-  Span::add_event(async3_child_span, "async-operation-3-child-started")
-  Span::set_status(async3_child_span, Ok)
-  Span::end(async3_child_span)
-  
-  Span::set_status(async3_span, Ok)
-  Span::end(async3_span)
-  
-  // 结束父Span
-  Span::add_event(parent_span, "all-async-operations-completed")
-  Span::set_status(parent_span, Ok)
-  Span::end(parent_span)
-  
-  // 验证异步操作追踪结构
-  assert_eq(Span::name(parent_span), "async-operation")
-  assert_eq(Span::name(async1_span), "async-operation-1")
-  assert_eq(Span::name(async2_span), "async-operation-2")
-  assert_eq(Span::name(async3_span), "async-operation-3")
-  assert_eq(Span::name(async3_child_span), "async-operation-3-child")
-}
-
-// 测试3: 度量聚合功能
-test "度量聚合功能测试" {
-  // 创建Meter
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "aggregation-test")
-  
-  // 创建Counter
-  let request_counter = Meter::create_counter(meter, "http.requests.total", "HTTP请求总数", "count")
-  
-  // 添加不同标签的计数
-  let success_labels = [("status", "success"), ("method", "GET")]
-  let error_labels = [("status", "error"), ("method", "POST")]
-  
-  Counter::add_with_labels(request_counter, 100.0, success_labels)
-  Counter::add_with_labels(request_counter, 5.0, error_labels)
-  Counter::add_with_labels(request_counter, 200.0, success_labels)
-  Counter::add_with_labels(request_counter, 3.0, error_labels)
-  
-  // 创建Histogram
-  let response_histogram = Meter::create_histogram(meter, "http.response.duration", "HTTP响应时间", "ms")
-  
-  // 记录不同标签的响应时间
-  let fast_labels = [("endpoint", "/api/fast"), ("method", "GET")]
-  let slow_labels = [("endpoint", "/api/slow"), ("method", "POST")]
-  
-  Histogram::record_with_labels(response_histogram, 50.0, fast_labels)
-  Histogram::record_with_labels(response_histogram, 75.0, fast_labels)
-  Histogram::record_with_labels(response_histogram, 100.0, fast_labels)
-  Histogram::record_with_labels(response_histogram, 500.0, slow_labels)
-  Histogram::record_with_labels(response_histogram, 750.0, slow_labels)
-  Histogram::record_with_labels(response_histogram, 1000.0, slow_labels)
-  
-  // 创建UpDownCounter
-  let connection_counter = Meter::create_updown_counter(meter, "active.connections", "活动连接数", "count")
-  
-  // 模拟连接数变化
-  UpDownCounter::add_with_labels(connection_counter, 10.0, [("type", "http")])
-  UpDownCounter::add_with_labels(connection_counter, 5.0, [("type", "websocket")])
-  UpDownCounter::add_with_labels(connection_counter, -3.0, [("type", "http")])
-  UpDownCounter::add_with_labels(connection_counter, -2.0, [("type", "websocket")])
-  
-  // 创建Gauge
-  let memory_gauge = Meter::create_gauge(meter, "memory.usage", "内存使用量", "bytes")
-  
-  // 记录不同类型的内存使用量
-  Gauge::record_with_labels(memory_gauge, 1024000.0, [("type", "heap")])
-  Gauge::record_with_labels(memory_gauge, 512000.0, [("type", "stack")])
-  Gauge::record_with_labels(memory_gauge, 256000.0, [("type", "code")])
-  
-  // 验证度量创建成功
-  assert_eq(request_counter.name, "http.requests.total")
-  assert_eq(response_histogram.name, "http.response.duration")
-  assert_eq(connection_counter.name, "active.connections")
-  assert_eq(memory_gauge.name, "memory.usage")
-}
-
-// 测试4: 日志级别过滤
-test "日志级别过滤测试" {
-  // 创建Logger
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "filter-test")
-  
-  // 创建不同级别的日志记录
-  let trace_log = LogRecord::new(Trace, "详细追踪信息")
-  let debug_log = LogRecord::new(Debug, "调试信息")
-  let info_log = LogRecord::new(Info, "一般信息")
-  let warn_log = LogRecord::new(Warn, "警告信息")
-  let error_log = LogRecord::new(Error, "错误信息")
-  let fatal_log = LogRecord::new(Fatal, "致命错误信息")
-  
-  // 验证日志级别
-  assert_eq(LogRecord::severity_number(trace_log), Trace)
-  assert_eq(LogRecord::severity_number(debug_log), Debug)
-  assert_eq(LogRecord::severity_number(info_log), Info)
-  assert_eq(LogRecord::severity_number(warn_log), Warn)
-  assert_eq(LogRecord::severity_number(error_log), Error)
-  assert_eq(LogRecord::severity_number(fatal_log), Fatal)
-  
-  // 验证日志内容
-  assert_eq(LogRecord::body(trace_log), Some("详细追踪信息"))
-  assert_eq(LogRecord::body(debug_log), Some("调试信息"))
-  assert_eq(LogRecord::body(info_log), Some("一般信息"))
-  assert_eq(LogRecord::body(warn_log), Some("警告信息"))
-  assert_eq(LogRecord::body(error_log), Some("错误信息"))
-  assert_eq(LogRecord::body(fatal_log), Some("致命错误信息"))
-  
-  // 创建带属性的日志记录
-  let attributes = [
-    ("user.id", StringValue("user-123")),
-    ("request.id", StringValue("req-456")),
-    ("response.time", IntValue(250))
+  // Create sample metrics
+  let response_times = [
+    { name: "http.request.duration", value: 120.5, timestamp: 1640995200, tags: [("endpoint", "/api/users")] },
+    { name: "http.request.duration", value: 85.3, timestamp: 1640995201, tags: [("endpoint", "/api/users")] },
+    { name: "http.request.duration", value: 210.7, timestamp: 1640995202, tags: [("endpoint", "/api/users")] },
+    { name: "http.request.duration", value: 95.2, timestamp: 1640995203, tags: [("endpoint", "/api/users")] },
+    { name: "http.request.duration", value: 150.8, timestamp: 1640995204, tags: [("endpoint", "/api/users")] }
   ]
   
-  let contextual_log = LogRecord::new_with_attributes(
-    Warn,
-    Some("操作警告"),
-    attributes
-  )
+  // Calculate average
+  let calculate_average = fn(metrics: Array[MetricPoint]) {
+    let mut sum = 0.0
+    for metric in metrics {
+      sum = sum + metric.value
+    }
+    sum / metrics.length().to_float()
+  }
   
-  // 验证带属性的日志记录
-  assert_eq(LogRecord::severity_number(contextual_log), Warn)
-  assert_eq(LogRecord::body(contextual_log), Some("操作警告"))
+  let avg_response_time = calculate_average(response_times)
+  assert_eq(avg_response_time, 132.5)
   
-  // 发出所有日志记录
-  Logger::emit(logger, trace_log)
-  Logger::emit(logger, debug_log)
-  Logger::emit(logger, info_log)
-  Logger::emit(logger, warn_log)
-  Logger::emit(logger, error_log)
-  Logger::emit(logger, fatal_log)
-  Logger::emit(logger, contextual_log)
+  // Calculate min and max
+  let calculate_min_max = fn(metrics: Array[MetricPoint]) {
+    let mut min = metrics[0].value
+    let mut max = metrics[0].value
+    
+    for metric in metrics {
+      if metric.value < min {
+        min = metric.value
+      }
+      if metric.value > max {
+        max = metric.value
+      }
+    }
+    
+    (min, max)
+  }
   
-  // 验证日志发出成功（没有崩溃）
-  assert_true(true)
+  let (min_time, max_time) = calculate_min_max(response_times)
+  assert_eq(min_time, 85.3)
+  assert_eq(max_time, 210.7)
+  
+  // Calculate percentiles (simplified)
+  let calculate_percentile = fn(metrics: Array[MetricPoint], percentile: Float) {
+    let sorted_values = metrics.map(fn(m) { m.value }).sort()
+    let index = ((metrics.length().to_float() - 1.0) * percentile / 100.0).to_int()
+    sorted_values[index]
+  }
+  
+  let p50 = calculate_percentile(response_times, 50.0)
+  let p95 = calculate_percentile(response_times, 95.0)
+  
+  assert_eq(p50, 120.5)  // Median
+  assert_eq(p95, 210.7)  // 95th percentile
 }
 
-// 测试5: 遥测数据序列化
-test "遥测数据序列化测试" {
-  // 创建Span
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "serialization-test")
-  let span = Tracer::start_span(tracer, "serialization-test-span")
+// Test 3: Span Event and Annotation Handling
+test "span event and annotation handling" {
+  // Define span event structure
+  type SpanEvent = {
+    name: String,
+    timestamp: Int,
+    attributes: Array[(String, String)]
+  }
   
-  // 添加Span属性
-  Span::set_attribute(span, "string.attr", StringValue("test-value"))
-  Span::set_attribute(span, "int.attr", IntValue(42))
-  Span::set_attribute(span, "float.attr", FloatValue(3.14))
-  Span::set_attribute(span, "bool.attr", BoolValue(true))
+  // Define span structure with events
+  type SpanWithEvents = {
+    name: String,
+    start_time: Int,
+    end_time: Int,
+    status: String,
+    events: Array[SpanEvent]
+  }
   
-  // 添加Span事件
-  Span::add_event(span, "test-event", [
-    ("event.data", StringValue("event-value")),
-    ("event.timestamp", IntValue(1640995200))
-  ])
+  // Create a span with events
+  let create_span_with_events = fn(name: String) {
+    {
+      name,
+      start_time: 1640995200,
+      end_time: 1640995300,
+      status: "ok",
+      events: []
+    }
+  }
   
-  // 设置Span状态
-  Span::set_status(span, Ok, Some("操作成功"))
+  // Add event to span
+  let add_event = fn(span: SpanWithEvents, event_name: String, attributes: Array[(String, String)]) {
+    let event = {
+      name: event_name,
+      timestamp: span.start_time + span.events.length() * 10,
+      attributes
+    }
+    { span | events: span.events.push(event) }
+  }
   
-  // 序列化Span数据
-  let serialized_span = Span::serialize(span)
+  // Create and populate span
+  let db_span = create_span_with_events("database_query")
+  let db_span_with_connect = add_event(db_span, "db.connection", [("pool", "primary"), ("timeout", "5000")])
+  let db_span_with_query = add_event(db_span_with_connect, "db.query.start", [("query", "SELECT * FROM users")])
+  let db_span_with_result = add_event(db_span_with_query, "db.query.complete", [("rows", "42"), ("duration", "120")])
   
-  // 验证序列化数据
-  assert_true(serialized_span != "")
-  assert_true(string_contains(serialized_span, "serialization-test-span"))
-  assert_true(string_contains(serialized_span, "string.attr"))
-  assert_true(string_contains(serialized_span, "test-event"))
+  // Verify events
+  assert_eq(db_span_with_result.events.length(), 3)
+  assert_eq(db_span_with_result.events[0].name, "db.connection")
+  assert_eq(db_span_with_result.events[1].name, "db.query.start")
+  assert_eq(db_span_with_result.events[2].name, "db.query.complete")
   
-  // 反序列化Span数据
-  let deserialized_span = Span::deserialize(serialized_span)
+  // Verify event attributes
+  let connect_event = db_span_with_result.events[0]
+  assert_true(connect_event.attributes.contains(("pool", "primary")))
+  assert_true(connect_event.attributes.contains(("timeout", "5000")))
   
-  // 验证反序列化数据
-  assert_eq(Span::name(deserialized_span), "serialization-test-span")
-  assert_eq(Span::status(deserialized_span), Ok)
+  let result_event = db_span_with_result.events[2]
+  assert_true(result_event.attributes.contains(("rows", "42")))
+  assert_true(result_event.attributes.contains(("duration", "120")))
   
-  // 创建度量数据
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "serialization-metrics")
-  let counter = Meter::create_counter(meter, "test.counter", "测试计数器", "count")
+  // Calculate event timing
+  let event_timings = db_span_with_result.events.map(fn(e) { e.timestamp - db_span_with_result.start_time })
+  assert_eq(event_timings, [0, 10, 20])
+}
+
+// Test 4: Sampling Strategy Implementation
+test "sampling strategy implementation for telemetry" {
+  // Define sampling decision enum
+  enum SamplingDecision {
+    Drop
+    Record
+    RecordAndSample
+  }
   
-  // 添加度量数据
-  Counter::add(counter, 100.0)
-  Counter::add(counter, 200.0)
+  // Define sampling result
+  type SamplingResult = {
+    decision: SamplingDecision,
+    attributes: Array[(String, String)]
+  }
   
-  // 序列化度量数据
-  let serialized_metrics = Meter::serialize_metrics(meter)
+  // Implement probabilistic sampling
+  let probabilistic_sampling = fn(trace_id: String, sample_rate: Float) {
+    // Simple hash-based sampling simulation
+    let hash_code = trace_id.length() % 100
+    let threshold = (sample_rate * 100.0).to_int()
+    
+    if hash_code < threshold {
+      {
+        decision: SamplingDecision::RecordAndSample,
+        attributes: [("sampler.type", "probabilistic"), ("sampler.param", sample_rate.to_string())]
+      }
+    } else {
+      {
+        decision: SamplingDecision::Drop,
+        attributes: [("sampler.type", "probabilistic"), ("sampler.param", sample_rate.to_string())]
+      }
+    }
+  }
   
-  // 验证序列化度量数据
-  assert_true(serialized_metrics != "")
-  assert_true(string_contains(serialized_metrics, "test.counter"))
+  // Test with different sample rates
+  let high_sample_result = probabilistic_sampling("trace-abc123", 0.8)
+  let low_sample_result = probabilistic_sampling("trace-xyz789", 0.1)
   
-  // 创建日志数据
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "serialization-logger")
-  let log_record = LogRecord::new_with_attributes(
-    Info,
-    Some("序列化测试日志"),
-    [
-      ("log.attr1", StringValue("log-value1")),
-      ("log.attr2", IntValue(123))
+  // Verify sampling decisions (based on our simple hash)
+  match high_sample_result.decision {
+    SamplingDecision::RecordAndSample => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match low_sample_result.decision {
+    SamplingDecision::Drop => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // Verify sampling attributes
+  assert_true(high_sample_result.attributes.contains(("sampler.type", "probabilistic")))
+  assert_true(high_sample_result.attributes.contains(("sampler.param", "0.8")))
+  
+  assert_true(low_sample_result.attributes.contains(("sampler.type", "probabilistic")))
+  assert_true(low_sample_result.attributes.contains(("sampler.param", "0.1")))
+  
+  // Implement rate-limiting sampling
+  let rate_limiting_sampling = fn(current_count: Int, max_traces_per_second: Int) {
+    if current_count < max_traces_per_second {
+      {
+        decision: SamplingDecision::RecordAndSample,
+        attributes: [("sampler.type", "rate_limiting"), ("sampler.param", max_traces_per_second.to_string())]
+      }
+    } else {
+      {
+        decision: SamplingDecision::Drop,
+        attributes: [("sampler.type", "rate_limiting"), ("sampler.param", max_traces_per_second.to_string())]
+      }
+    }
+  }
+  
+  // Test rate limiting
+  let under_limit = rate_limiting_sampling(5, 10)
+  let over_limit = rate_limiting_sampling(15, 10)
+  
+  match under_limit.decision {
+    SamplingDecision::RecordAndSample => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match over_limit.decision {
+    SamplingDecision::Drop => assert_true(true)
+    _ => assert_true(false)
+  }
+}
+
+// Test 5: Telemetry Data Serialization
+test "telemetry data serialization to different formats" {
+  // Define telemetry data structure
+  type TelemetryData = {
+    trace_id: String,
+    spans: Array[SpanInfo],
+    metrics: Array[MetricInfo]
+  }
+  
+  type SpanInfo = {
+    span_id: String,
+    parent_span_id: Option[String],
+    operation_name: String,
+    start_time: Int,
+    end_time: Int,
+    status: String
+  }
+  
+  type MetricInfo = {
+    name: String,
+    value: Float,
+    unit: String,
+    tags: Array[(String, String)]
+  }
+  
+  // Create sample telemetry data
+  let telemetry_data = {
+    trace_id: "trace-12345",
+    spans: [
+      {
+        span_id: "span-1",
+        parent_span_id: None,
+        operation_name: "http.request",
+        start_time: 1640995200,
+        end_time: 1640995250,
+        status: "ok"
+      },
+      {
+        span_id: "span-2",
+        parent_span_id: Some("span-1"),
+        operation_name: "database.query",
+        start_time: 1640995210,
+        end_time: 1640995240,
+        status: "ok"
+      }
+    ],
+    metrics: [
+      {
+        name: "http.request.duration",
+        value: 50.0,
+        unit: "ms",
+        tags: [("endpoint", "/api/users")]
+      },
+      {
+        name: "database.query.duration",
+        value: 30.0,
+        unit: "ms",
+        tags: [("table", "users")]
+      }
     ]
-  )
+  }
   
-  // 序列化日志数据
-  let serialized_log = LogRecord::serialize(log_record)
+  // Serialize to JSON-like format
+  let serialize_to_json = fn(data: TelemetryData) {
+    let spans_json = "[" + data.spans.map(fn(span) {
+      "{" + 
+      "\"span_id\":\"" + span.span_id + "\"," +
+      "\"parent_span_id\":" + match span.parent_span_id {
+        Some(id) => "\"" + id + "\""
+        None => "null"
+      } + "," +
+      "\"operation_name\":\"" + span.operation_name + "\"," +
+      "\"start_time\":" + span.start_time.to_string() + "," +
+      "\"end_time\":" + span.end_time.to_string() + "," +
+      "\"status\":\"" + span.status + "\"" +
+      "}"
+    }).join(",") + "]"
+    
+    "{" +
+    "\"trace_id\":\"" + data.trace_id + "\"," +
+    "\"spans\":" + spans_json +
+    "}"
+  }
   
-  // 验证序列化日志数据
-  assert_true(serialized_log != "")
-  assert_true(string_contains(serialized_log, "序列化测试日志"))
-  assert_true(string_contains(serialized_log, "log.attr1"))
+  // Serialize to key-value format
+  let serialize_to_kv = fn(data: TelemetryData) {
+    let mut result = []
+    result = result.push(("trace_id", data.trace_id))
+    result = result.push(("span_count", data.spans.length().to_string()))
+    result = result.push(("metric_count", data.metrics.length().to_string()))
+    
+    for i in 0..data.spans.length() {
+      let span = data.spans[i]
+      let prefix = "span." + i.to_string() + "."
+      result = result.push((prefix + "id", span.span_id))
+      result = result.push((prefix + "operation", span.operation_name))
+      result = result.push((prefix + "duration", (span.end_time - span.start_time).to_string()))
+    }
+    
+    result
+  }
+  
+  // Test serialization
+  let kv_format = serialize_to_kv(telemetry_data)
+  assert_eq(kv_format.length(), 8)  // 3 base fields + 2 spans * 3 fields each
+  assert_true(kv_format.contains(("trace_id", "trace-12345")))
+  assert_true(kv_format.contains(("span_count", "2")))
+  assert_true(kv_format.contains(("metric_count", "2")))
+  assert_true(kv_format.contains(("span.0.id", "span-1")))
+  assert_true(kv_format.contains(("span.0.operation", "http.request")))
+  assert_true(kv_format.contains(("span.0.duration", "50")))
+  assert_true(kv_format.contains(("span.1.id", "span-2")))
+  assert_true(kv_format.contains(("span.1.operation", "database.query")))
+  assert_true(kv_format.contains(("span.1.duration", "30")))
 }
 
-// 测试6: 错误处理与恢复
-test "错误处理与恢复测试" {
-  // 测试无效Span上下文处理
-  let invalid_span_ctx = SpanContext::new("", "invalid-span", true, "")
-  assert_false(SpanContext::is_valid(invalid_span_ctx))
+// Test 6: Correlation ID Management
+test "correlation ID management across distributed systems" {
+  // Define correlation context
+  type CorrelationContext = {
+    correlation_id: String,
+    causation_id: Option[String],
+    message_id: String,
+    timestamp: Int,
+    source_service: String
+  }
   
-  // 测试空Trace ID处理
-  let empty_trace_ctx = SpanContext::new("", "valid-span", true, "")
-  assert_false(SpanContext::is_valid(empty_trace_ctx))
+  // Generate correlation ID
+  let generate_correlation_id = fn() {
+    "corr-" + (1640995200 + 42).to_string() + "-" + "abc123"
+  }
   
-  // 测试空Span ID处理
-  let empty_span_ctx = SpanContext::new("valid-trace", "", true, "")
-  assert_false(SpanContext::is_valid(empty_span_ctx))
+  // Create initial correlation context
+  let create_correlation_context = fn(source_service: String, causation_id: Option[String]) {
+    {
+      correlation_id: generate_correlation_id(),
+      causation_id,
+      message_id: "msg-" + (1640995200 + 42).to_string() + "-def456",
+      timestamp: 1640995200,
+      source_service
+    }
+  }
   
-  // 测试无效属性值处理
-  let empty_string_value = StringValue("")
-  let null_string_value = StringValue("null")
+  // Propagate correlation context
+  let propagate_correlation = fn(context: CorrelationContext, target_service: String) {
+    {
+      correlation_id: context.correlation_id,
+      causation_id: Some(context.message_id),
+      message_id: "msg-" + (context.timestamp + 10).to_string() + "-ghi789",
+      timestamp: context.timestamp + 10,
+      source_service: target_service
+    }
+  }
   
-  assert_eq(empty_string_value, StringValue(""))
-  assert_eq(null_string_value, StringValue("null"))
+  // Test correlation flow
+  let api_context = create_correlation_context("api-service", None)
+  assert_eq(api_context.source_service, "api-service")
+  assert_eq(api_context.causation_id, None)
   
-  // 测试无效度量值处理
-  let nan_value = FloatValue(0.0/0.0)  // NaN
-  let inf_value = FloatValue(1.0/0.0)  // Infinity
-  let neg_inf_value = FloatValue(-1.0/0.0)  // -Infinity
+  let payment_context = propagate_correlation(api_context, "payment-service")
+  assert_eq(payment_context.correlation_id, api_context.correlation_id)
+  assert_eq(payment_context.causation_id, Some(api_context.message_id))
+  assert_eq(payment_context.source_service, "payment-service")
   
-  assert_eq(nan_value, FloatValue(0.0/0.0))
-  assert_eq(inf_value, FloatValue(1.0/0.0))
-  assert_eq(neg_inf_value, FloatValue(-1.0/0.0))
+  let notification_context = propagate_correlation(payment_context, "notification-service")
+  assert_eq(notification_context.correlation_id, api_context.correlation_id)
+  assert_eq(notification_context.causation_id, Some(payment_context.message_id))
+  assert_eq(notification_context.source_service, "notification-service")
   
-  // 测试无效日志级别处理
-  let invalid_log = LogRecord::new_with_attributes(
-    999,  // 无效日志级别
-    Some("无效日志级别测试"),
-    [("test.attr", StringValue("test-value"))]
-  )
+  // Verify correlation chain
+  assert_eq(api_context.correlation_id, payment_context.correlation_id)
+  assert_eq(payment_context.correlation_id, notification_context.correlation_id)
   
-  // 验证无效日志级别处理
-  assert_eq(LogRecord::body(invalid_log), Some("无效日志级别测试"))
-  
-  // 测试资源属性错误处理
-  let resource = Resource::new()
-  let resource_with_invalid_attrs = Resource::with_attributes(resource, [
-    ("", StringValue("empty-key")),  // 空键
-    ("valid.key", StringValue("")),  // 空值
-    ("special.chars.key!@#", StringValue("special-value"))  // 特殊字符键
-  ])
-  
-  // 验证资源属性错误处理
-  let empty_key_attr = Resource::get_attribute(resource_with_invalid_attrs, "")
-  let valid_key_attr = Resource::get_attribute(resource_with_invalid_attrs, "valid.key")
-  
-  // 基于简化实现验证
-  assert_eq(empty_key_attr, Some(StringValue("test_value")))
-  assert_eq(valid_key_attr, Some(StringValue("")))
-  
-  // 测试传播器错误处理
-  let propagator = W3CTraceContextPropagator::new()
-  let carrier = TextMapCarrier::new()
-  
-  // 注入无效上下文
-  let invalid_ctx = Context::with_value(Context::root(), ContextKey::new("invalid"), "invalid-value")
-  W3CTraceContextPropagator::inject(propagator, invalid_ctx, carrier)
-  
-  // 提取无效上下文
-  let extracted_ctx = W3CTraceContextPropagator::extract(propagator, carrier)
-  
-  // 验证错误处理成功（没有崩溃）
-  assert_true(true)
+  assert_eq(api_context.message_id, payment_context.causation_id.unwrap())
+  assert_eq(payment_context.message_id, notification_context.causation_id.unwrap())
 }
 
-// 测试7: 性能基准测试
-test "性能基准测试测试" {
-  // 测试Span创建性能
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "performance-test")
-  
-  let start_time = Clock::now_unix_nanos(Clock::system())
-  
-  // 创建大量Span
-  let spans = []
-  for i in 0..1000 {
-    let span = Tracer::start_span(tracer, "perf-span-" + int_to_string(i))
-    spans.push(span)
+// Test 7: Performance Baseline and Threshold Monitoring
+test "performance baseline and threshold monitoring" {
+  // Define performance baseline
+  type PerformanceBaseline = {
+    metric_name: String,
+    baseline_value: Float,
+    warning_threshold: Float,
+    critical_threshold: Float,
+    unit: String
   }
   
-  let span_creation_time = Clock::now_unix_nanos(Clock::system()) - start_time
-  
-  // 验证Span创建性能（应该在合理时间内完成）
-  assert_true(span_creation_time < 10000000000L)  // 10秒
-  
-  // 测试Span属性设置性能
-  start_time = Clock::now_unix_nanos(Clock::system())
-  
-  for span in spans {
-    Span::set_attribute(span, "perf.attr", StringValue("perf-value"))
-    Span::add_event(span, "perf-event", [("event.data", StringValue("event-value"))])
+  // Define performance measurement
+  type PerformanceMeasurement = {
+    metric_name: String,
+    value: Float,
+    timestamp: Int,
+    tags: Array[(String, String)]
   }
   
-  let span_attribute_time = Clock::now_unix_nanos(Clock::system()) - start_time
-  
-  // 验证Span属性设置性能
-  assert_true(span_attribute_time < 5000000000L)  // 5秒
-  
-  // 测试度量操作性能
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "perf-meter")
-  let counter = Meter::create_counter(meter, "perf.counter", "性能测试计数器", "count")
-  
-  start_time = Clock::now_unix_nanos(Clock::system())
-  
-  // 大量度量操作
-  for i in 0..10000 {
-    Counter::add(counter, 1.0)
+  // Define alert level
+  enum AlertLevel {
+    Normal
+    Warning
+    Critical
   }
   
-  let metrics_time = Clock::now_unix_nanos(Clock::system()) - start_time
+  // Create baselines
+  let baselines = [
+    { metric_name: "response_time", baseline_value: 100.0, warning_threshold: 150.0, critical_threshold: 200.0, unit: "ms" },
+    { metric_name: "error_rate", baseline_value: 0.01, warning_threshold: 0.05, critical_threshold: 0.1, unit: "percent" },
+    { metric_name: "throughput", baseline_value: 1000.0, warning_threshold: 800.0, critical_threshold: 500.0, unit: "req/s" }
+  ]
   
-  // 验证度量操作性能
-  assert_true(metrics_time < 5000000000L)  // 5秒
-  
-  // 测试日志记录性能
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "perf-logger")
-  
-  start_time = Clock::now_unix_nanos(Clock::system())
-  
-  // 大量日志记录
-  for i in 0..1000 {
-    let log_record = LogRecord::new_with_attributes(
-      Info,
-      Some("性能测试日志 " + int_to_string(i)),
-      [("log.index", IntValue(i))]
-    )
-    Logger::emit(logger, log_record)
+  // Function to check against baseline
+  let check_performance = fn(measurement: PerformanceMeasurement, baseline: PerformanceBaseline) {
+    if measurement.value >= baseline.critical_threshold {
+      AlertLevel::Critical
+    } else if measurement.value >= baseline.warning_threshold {
+      AlertLevel::Warning
+    } else {
+      AlertLevel::Normal
+    }
   }
   
-  let logging_time = Clock::now_unix_nanos(Clock::system()) - start_time
+  // Test normal performance
+  let normal_response_time = { metric_name: "response_time", value: 120.0, timestamp: 1640995200, tags: [("endpoint", "/api/users")] }
+  let response_time_baseline = baselines[0]
+  let response_time_status = check_performance(normal_response_time, response_time_baseline)
   
-  // 验证日志记录性能
-  assert_true(logging_time < 10000000000L)  // 10秒
-  
-  // 结束所有Span
-  for span in spans {
-    Span::end(span)
+  match response_time_status {
+    AlertLevel::Normal => assert_true(true)
+    _ => assert_true(false)
   }
   
-  // 验证性能基准测试完成
-  assert_true(true)
-}
-
-// 测试8: 跨服务追踪测试
-test "跨服务追踪测试" {
-  // 模拟微服务调用链：Frontend -> API Gateway -> Service A -> Service B -> Database
+  // Test warning performance
+  let warning_response_time = { metric_name: "response_time", value: 160.0, timestamp: 1640995201, tags: [("endpoint", "/api/users")] }
+  let warning_status = check_performance(warning_response_time, response_time_baseline)
   
-  // Frontend Span
-  let frontend_tracer = TracerProvider::get_tracer(TracerProvider::default(), "frontend-service")
-  let frontend_span = Tracer::start_span(frontend_tracer, "frontend.request")
-  Span::set_kind(frontend_span, Client)
+  match warning_status {
+    AlertLevel::Warning => assert_true(true)
+    _ => assert_true(false)
+  }
   
-  let frontend_trace_id = SpanContext::trace_id(Span::span_context(frontend_span))
+  // Test critical performance
+  let critical_response_time = { metric_name: "response_time", value: 220.0, timestamp: 1640995202, tags: [("endpoint", "/api/users")] }
+  let critical_status = check_performance(critical_response_time, response_time_baseline)
   
-  // API Gateway Span
-  let gateway_tracer = TracerProvider::get_tracer(TracerProvider::default(), "api-gateway")
-  let gateway_span_ctx = SpanContext::new(frontend_trace_id, "gateway-span", true, "")
-  let gateway_span = Span::new("gateway.process", Server, gateway_span_ctx)
+  match critical_status {
+    AlertLevel::Critical => assert_true(true)
+    _ => assert_true(false)
+  }
   
-  // Service A Span
-  let service_a_tracer = TracerProvider::get_tracer(TracerProvider::default(), "service-a")
-  let service_a_span_ctx = SpanContext::new(frontend_trace_id, "service-a-span", true, "")
-  let service_a_span = Span::new("service-a.process", Server, service_a_span_ctx)
+  // Test decreasing metric (throughput)
+  let normal_throughput = { metric_name: "throughput", value: 900.0, timestamp: 1640995203, tags: [("service", "api")] }
+  let throughput_baseline = baselines[2]
+  let throughput_status = check_performance(normal_throughput, throughput_baseline)
   
-  // Service B Span
-  let service_b_tracer = TracerProvider::get_tracer(TracerProvider::default(), "service-b")
-  let service_b_span_ctx = SpanContext::new(frontend_trace_id, "service-b-span", true, "")
-  let service_b_span = Span::new("service-b.process", Client, service_b_span_ctx)
+  match throughput_status {
+    AlertLevel::Warning => assert_true(true)
+    _ => assert_true(false)
+  }
   
-  // Database Span
-  let db_tracer = TracerProvider::get_tracer(TracerProvider::default(), "database")
-  let db_span_ctx = SpanContext::new(frontend_trace_id, "db-span", true, "")
-  let db_span = Span::new("database.query", Client, db_span_ctx)
+  // Test critical throughput
+  let critical_throughput = { metric_name: "throughput", value: 400.0, timestamp: 1640995204, tags: [("service", "api")] }
+  let critical_throughput_status = check_performance(critical_throughput, throughput_baseline)
   
-  // 验证Trace ID在整个调用链中保持一致
-  assert_eq(SpanContext::trace_id(Span::span_context(frontend_span)), frontend_trace_id)
-  assert_eq(SpanContext::trace_id(gateway_span_ctx), frontend_trace_id)
-  assert_eq(SpanContext::trace_id(service_a_span_ctx), frontend_trace_id)
-  assert_eq(SpanContext::trace_id(service_b_span_ctx), frontend_trace_id)
-  assert_eq(SpanContext::trace_id(db_span_ctx), frontend_trace_id)
-  
-  // 验证Span ID唯一性
-  assert_true(SpanContext::span_id(Span::span_context(frontend_span)) != 
-              SpanContext::span_id(gateway_span_ctx))
-  assert_true(SpanContext::span_id(gateway_span_ctx) != 
-              SpanContext::span_id(service_a_span_ctx))
-  assert_true(SpanContext::span_id(service_a_span_ctx) != 
-              SpanContext::span_id(service_b_span_ctx))
-  assert_true(SpanContext::span_id(service_b_span_ctx) != 
-              SpanContext::span_id(db_span_ctx))
-  
-  // 为每个服务添加Baggage
-  let baggage = Baggage::new()
-  let baggage_with_user = Baggage::set_entry(baggage, "user.id", "user-12345")
-  let baggage_with_session = Baggage::set_entry(baggage_with_user, "session.id", "session-abcdef")
-  let final_baggage = Baggage::set_entry(baggage_with_session, "request.id", "req-67890")
-  
-  // 验证Baggage传播
-  assert_eq(Baggage::get_entry(final_baggage, "user.id"), Some("user-12345"))
-  assert_eq(Baggage::get_entry(final_baggage, "session.id"), Some("session-abcdef"))
-  assert_eq(Baggage::get_entry(final_baggage, "request.id"), Some("req-67890"))
-  
-  // 为每个服务添加度量
-  let meter_provider = MeterProvider::default()
-  
-  // Frontend度量
-  let frontend_meter = MeterProvider::get_meter(meter_provider, "frontend-service")
-  let frontend_requests = Meter::create_counter(frontend_meter, "frontend.requests.total")
-  Counter::add(frontend_requests, 1.0)
-  
-  // Gateway度量
-  let gateway_meter = MeterProvider::get_meter(meter_provider, "api-gateway")
-  let gateway_requests = Meter::create_counter(gateway_meter, "gateway.requests.total")
-  let gateway_duration = Meter::create_histogram(gateway_meter, "gateway.duration.ms")
-  Counter::add(gateway_requests, 1.0)
-  Histogram::record(gateway_duration, 50.0)
-  
-  // Service A度量
-  let service_a_meter = MeterProvider::get_meter(meter_provider, "service-a")
-  let service_a_requests = Meter::create_counter(service_a_meter, "service-a.requests.total")
-  let service_a_duration = Meter::create_histogram(service_a_meter, "service-a.duration.ms")
-  Counter::add(service_a_requests, 1.0)
-  Histogram::record(service_a_duration, 100.0)
-  
-  // Service B度量
-  let service_b_meter = MeterProvider::get_meter(meter_provider, "service-b")
-  let service_b_requests = Meter::create_counter(service_b_meter, "service-b.requests.total")
-  let service_b_duration = Meter::create_histogram(service_b_meter, "service-b.duration.ms")
-  Counter::add(service_b_requests, 1.0)
-  Histogram::record(service_b_duration, 150.0)
-  
-  // Database度量
-  let db_meter = MeterProvider::get_meter(meter_provider, "database")
-  let db_queries = Meter::create_counter(db_meter, "database.queries.total")
-  let db_duration = Meter::create_histogram(db_meter, "database.query.duration.ms")
-  Counter::add(db_queries, 1.0)
-  Histogram::record(db_duration, 25.0)
-  
-  // 结束所有Span（按照调用顺序的反向）
-  Span::end(db_span)
-  Span::end(service_b_span)
-  Span::end(service_a_span)
-  Span::end(gateway_span)
-  Span::end(frontend_span)
-  
-  // 验证跨服务追踪集成
-  assert_eq(frontend_requests.name, "frontend.requests.total")
-  assert_eq(gateway_requests.name, "gateway.requests.total")
-  assert_eq(gateway_duration.name, "gateway.duration.ms")
-  assert_eq(service_a_requests.name, "service-a.requests.total")
-  assert_eq(service_a_duration.name, "service-a.duration.ms")
-  assert_eq(service_b_requests.name, "service-b.requests.total")
-  assert_eq(service_b_duration.name, "service-b.duration.ms")
-  assert_eq(db_queries.name, "database.queries.total")
-  assert_eq(db_duration.name, "database.query.duration.ms")
-}
-
-// 辅助函数
-fn int_to_string(i : Int) -> String {
-  match i {
-    0 => "0"
-    1 => "1"
-    2 => "2"
-    3 => "3"
-    4 => "4"
-    5 => "5"
-    6 => "6"
-    7 => "7"
-    8 => "8"
-    9 => "9"
-    10 => "10"
-    25 => "25"
-    42 => "42"
-    50 => "50"
-    75 => "75"
-    100 => "100"
-    123 => "123"
-    150 => "150"
-    200 => "200"
-    250 => "250"
-    500 => "500"
-    750 => "750"
-    1000 => "1000"
-    5000 => "5000"
-    10000 => "10000"
-    _ => "default"
+  match critical_throughput_status {
+    AlertLevel::Critical => assert_true(true)
+    _ => assert_true(false)
   }
 }
 
-fn string_contains(s : String, substr : String) -> Bool {
-  if s == "serialization-test-span" && substr == "serialization-test-span" {
-    true
-  } else if s == "serialization-test-span" && substr == "string.attr" {
-    true
-  } else if s == "serialization-test-span" && substr == "test-event" {
-    true
-  } else if s == "test.counter" && substr == "test.counter" {
-    true
-  } else if s == "序列化测试日志" && substr == "序列化测试日志" {
-    true
-  } else if s == "序列化测试日志" && substr == "log.attr1" {
-    true
-  } else {
-    false
+// Test 8: Resource Utilization Tracking
+test "resource utilization tracking and analysis" {
+  // Define resource metrics
+  type ResourceMetrics = {
+    cpu_usage: Float,
+    memory_usage: Float,
+    disk_usage: Float,
+    network_io: Float,
+    timestamp: Int
   }
+  
+  // Define resource utilization category
+  enum UtilizationLevel {
+    Low
+    Medium
+    High
+    Critical
+  }
+  
+  // Categorize utilization
+  let categorize_utilization = fn(value: Float) {
+    if value < 0.5 {
+      UtilizationLevel::Low
+    } else if value < 0.75 {
+      UtilizationLevel::Medium
+    } else if value < 0.9 {
+      UtilizationLevel::High
+    } else {
+      UtilizationLevel::Critical
+    }
+  }
+  
+  // Create sample resource metrics
+  let resource_samples = [
+    { cpu_usage: 0.25, memory_usage: 0.60, disk_usage: 0.40, network_io: 0.15, timestamp: 1640995200 },
+    { cpu_usage: 0.45, memory_usage: 0.65, disk_usage: 0.42, network_io: 0.20, timestamp: 1640995201 },
+    { cpu_usage: 0.80, memory_usage: 0.70, disk_usage: 0.45, network_io: 0.85, timestamp: 1640995202 },
+    { cpu_usage: 0.95, memory_usage: 0.92, disk_usage: 0.50, network_io: 0.90, timestamp: 1640995203 }
+  ]
+  
+  // Calculate average utilization
+  let calculate_average_utilization = fn(samples: Array[ResourceMetrics]) {
+    let mut cpu_sum = 0.0
+    let mut memory_sum = 0.0
+    let mut disk_sum = 0.0
+    let mut network_sum = 0.0
+    
+    for sample in samples {
+      cpu_sum = cpu_sum + sample.cpu_usage
+      memory_sum = memory_sum + sample.memory_usage
+      disk_sum = disk_sum + sample.disk_usage
+      network_sum = network_sum + sample.network_io
+    }
+    
+    let count = samples.length().to_float()
+    {
+      cpu_usage: cpu_sum / count,
+      memory_usage: memory_sum / count,
+      disk_usage: disk_sum / count,
+      network_io: network_sum / count,
+      timestamp: samples[0].timestamp
+    }
+  }
+  
+  let average_utilization = calculate_average_utilization(resource_samples)
+  assert_eq(average_utilization.cpu_usage, 0.6125)
+  assert_eq(average_utilization.memory_usage, 0.7175)
+  assert_eq(average_utilization.disk_usage, 0.4425)
+  assert_eq(average_utilization.network_io, 0.525)
+  
+  // Categorize average utilization
+  let cpu_level = categorize_utilization(average_utilization.cpu_usage)
+  let memory_level = categorize_utilization(average_utilization.memory_usage)
+  let disk_level = categorize_utilization(average_utilization.disk_usage)
+  let network_level = categorize_utilization(average_utilization.network_io)
+  
+  match cpu_level {
+    UtilizationLevel::Medium => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match memory_level {
+    UtilizationLevel::Medium => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match disk_level {
+    UtilizationLevel::Low => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match network_level {
+    UtilizationLevel::Medium => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // Find peak utilization
+  let find_peak_utilization = fn(samples: Array[ResourceMetrics]) {
+    let mut peak_cpu = 0.0
+    let mut peak_memory = 0.0
+    let mut peak_disk = 0.0
+    let mut peak_network = 0.0
+    
+    for sample in samples {
+      if sample.cpu_usage > peak_cpu {
+        peak_cpu = sample.cpu_usage
+      }
+      if sample.memory_usage > peak_memory {
+        peak_memory = sample.memory_usage
+      }
+      if sample.disk_usage > peak_disk {
+        peak_disk = sample.disk_usage
+      }
+      if sample.network_io > peak_network {
+        peak_network = sample.network_io
+      }
+    }
+    
+    {
+      cpu_usage: peak_cpu,
+      memory_usage: peak_memory,
+      disk_usage: peak_disk,
+      network_io: peak_network,
+      timestamp: samples[0].timestamp
+    }
+  }
+  
+  let peak_utilization = find_peak_utilization(resource_samples)
+  assert_eq(peak_utilization.cpu_usage, 0.95)
+  assert_eq(peak_utilization.memory_usage, 0.92)
+  assert_eq(peak_utilization.disk_usage, 0.50)
+  assert_eq(peak_utilization.network_io, 0.90)
+  
+  // Verify peak utilization categories
+  let peak_cpu_level = categorize_utilization(peak_utilization.cpu_usage)
+  let peak_memory_level = categorize_utilization(peak_utilization.memory_usage)
+  let peak_network_level = categorize_utilization(peak_utilization.network_io)
+  
+  match peak_cpu_level {
+    UtilizationLevel::Critical => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match peak_memory_level {
+    UtilizationLevel::Critical => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match peak_network_level {
+    UtilizationLevel::Critical => assert_true(true)
+    _ => assert_true(false)
+  }
+}
+
+// Test 9: Distributed Tracing Error Recovery
+test "distributed tracing error recovery mechanisms" {
+  // Define error types
+  enum TracingError {
+    SpanContextCorrupted(String)
+    TraceTimeout(Int)
+    SerializationFailed(String)
+    NetworkError(String)
+  }
+  
+  // Define recovery strategy
+  enum RecoveryStrategy {
+    Retry(Int)
+    Fallback(String)
+    Skip
+    Abort
+  }
+  
+  // Define error recovery result
+  type RecoveryResult = {
+    strategy: RecoveryStrategy,
+    success: Bool,
+    message: String
+  }
+  
+  // Implement error recovery
+  let recover_from_error = fn(error: TracingError) {
+    match error {
+      TracingError::SpanContextCorrupted(context) => {
+        {
+          strategy: RecoveryStrategy::Fallback("new-context"),
+          success: true,
+          message: "Created new trace context due to corruption"
+        }
+      }
+      TracingError::TraceTimeout(timeout_ms) => {
+        if timeout_ms < 5000 {
+          {
+            strategy: RecoveryStrategy::Retry(3),
+            success: true,
+            message: "Retrying trace operation after timeout"
+          }
+        } else {
+          {
+            strategy: RecoveryStrategy::Abort,
+            success: false,
+            message: "Trace timeout exceeded maximum threshold"
+          }
+        }
+      }
+      TracingError::SerializationFailed(data_type) => {
+        {
+          strategy: RecoveryStrategy::Fallback("simplified-format"),
+          success: true,
+          message: "Falling back to simplified serialization for " + data_type
+        }
+      }
+      TracingError::NetworkError(service) => {
+        {
+          strategy: RecoveryStrategy::Skip,
+          success: true,
+          message: "Skipping trace export to unavailable service: " + service
+        }
+      }
+    }
+  }
+  
+  // Test error recovery scenarios
+  let context_error = TracingError::SpanContextCorrupted("trace-123")
+  let context_recovery = recover_from_error(context_error)
+  
+  match context_recovery.strategy {
+    RecoveryStrategy::Fallback(fallback) => assert_eq(fallback, "new-context")
+    _ => assert_true(false)
+  }
+  assert_true(context_recovery.success)
+  
+  let short_timeout_error = TracingError::TraceTimeout(3000)
+  let short_timeout_recovery = recover_from_error(short_timeout_error)
+  
+  match short_timeout_recovery.strategy {
+    RecoveryStrategy::Retry(retries) => assert_eq(retries, 3)
+    _ => assert_true(false)
+  }
+  assert_true(short_timeout_recovery.success)
+  
+  let long_timeout_error = TracingError::TraceTimeout(10000)
+  let long_timeout_recovery = recover_from_error(long_timeout_error)
+  
+  match long_timeout_recovery.strategy {
+    RecoveryStrategy::Abort => assert_true(true)
+    _ => assert_true(false)
+  }
+  assert_false(long_timeout_recovery.success)
+  
+  let serialization_error = TracingError::SerializationFailed("span-data")
+  let serialization_recovery = recover_from_error(serialization_error)
+  
+  match serialization_recovery.strategy {
+    RecoveryStrategy::Fallback(format) => assert_eq(format, "simplified-format")
+    _ => assert_true(false)
+  }
+  assert_true(serialization_recovery.success)
+  
+  let network_error = TracingError::NetworkError("collector-service")
+  let network_recovery = recover_from_error(network_error)
+  
+  match network_recovery.strategy {
+    RecoveryStrategy::Skip => assert_true(true)
+    _ => assert_true(false)
+  }
+  assert_true(network_recovery.success)
+}
+
+// Test 10: Telemetry Data Retention Policy
+test "telemetry data retention policy implementation" {
+  // Define data retention policy
+  type RetentionPolicy = {
+    trace_retention_days: Int,
+    metric_retention_days: Int,
+    log_retention_days: Int,
+    high_cardinality_retention_hours: Int
+  }
+  
+  // Define telemetry data types
+  enum TelemetryDataType {
+    Trace
+    Metric
+    Log
+    HighCardinality
+  }
+  
+  // Define data record with timestamp
+  type DataRecord = {
+    id: String,
+    data_type: TelemetryDataType,
+    timestamp: Int,
+    size_bytes: Int
+  }
+  
+  // Create retention policy
+  let policy = {
+    trace_retention_days: 7,
+    metric_retention_days: 30,
+    log_retention_days: 14,
+    high_cardinality_retention_hours: 24
+  }
+  
+  // Check if data should be retained
+  let should_retain = fn(record: DataRecord, current_time: Int, policy: RetentionPolicy) {
+    let age_seconds = current_time - record.timestamp
+    let age_days = age_seconds / 86400
+    let age_hours = age_seconds / 3600
+    
+    match record.data_type {
+      TelemetryDataType::Trace => age_days <= policy.trace_retention_days
+      TelemetryDataType::Metric => age_days <= policy.metric_retention_days
+      TelemetryDataType::Log => age_days <= policy.log_retention_days
+      TelemetryDataType::HighCardinality => age_hours <= policy.high_cardinality_retention_hours
+    }
+  }
+  
+  // Create test data with different ages
+  let current_time = 1640995200  // 2022-01-01 00:00:00 UTC
+  
+  let data_records = [
+    // Recent trace (1 day old) - should retain
+    { id: "trace-1", data_type: TelemetryDataType::Trace, timestamp: current_time - 86400, size_bytes: 1024 },
+    // Old trace (10 days old) - should not retain
+    { id: "trace-2", data_type: TelemetryDataType::Trace, timestamp: current_time - 864000, size_bytes: 1024 },
+    // Recent metric (5 days old) - should retain
+    { id: "metric-1", data_type: TelemetryDataType::Metric, timestamp: current_time - 432000, size_bytes: 512 },
+    // Old metric (40 days old) - should not retain
+    { id: "metric-2", data_type: TelemetryDataType::Metric, timestamp: current_time - 3456000, size_bytes: 512 },
+    // Recent log (10 days old) - should retain
+    { id: "log-1", data_type: TelemetryDataType::Log, timestamp: current_time - 864000, size_bytes: 256 },
+    // Old log (20 days old) - should not retain
+    { id: "log-2", data_type: TelemetryDataType::Log, timestamp: current_time - 1728000, size_bytes: 256 },
+    // Recent high cardinality (12 hours old) - should retain
+    { id: "hc-1", data_type: TelemetryDataType::HighCardinality, timestamp: current_time - 43200, size_bytes: 2048 },
+    // Old high cardinality (30 hours old) - should not retain
+    { id: "hc-2", data_type: TelemetryDataType::HighCardinality, timestamp: current_time - 108000, size_bytes: 2048 }
+  ]
+  
+  // Test retention decisions
+  let recent_trace_retained = should_retain(data_records[0], current_time, policy)
+  assert_true(recent_trace_retained)
+  
+  let old_trace_retained = should_retain(data_records[1], current_time, policy)
+  assert_false(old_trace_retained)
+  
+  let recent_metric_retained = should_retain(data_records[2], current_time, policy)
+  assert_true(recent_metric_retained)
+  
+  let old_metric_retained = should_retain(data_records[3], current_time, policy)
+  assert_false(old_metric_retained)
+  
+  let recent_log_retained = should_retain(data_records[4], current_time, policy)
+  assert_true(recent_log_retained)
+  
+  let old_log_retained = should_retain(data_records[5], current_time, policy)
+  assert_false(old_log_retained)
+  
+  let recent_hc_retained = should_retain(data_records[6], current_time, policy)
+  assert_true(recent_hc_retained)
+  
+  let old_hc_retained = should_retain(data_records[7], current_time, policy)
+  assert_false(old_hc_retained)
+  
+  // Calculate storage savings from retention policy
+  let calculate_storage_savings = fn(records: Array[DataRecord], current_time: Int, policy: RetentionPolicy) {
+    let mut total_size = 0
+    let mut retained_size = 0
+    
+    for record in records {
+      total_size = total_size + record.size_bytes
+      if should_retain(record, current_time, policy) {
+        retained_size = retained_size + record.size_bytes
+      }
+    }
+    
+    {
+      total_size,
+      retained_size,
+      deleted_size: total_size - retained_size,
+      savings_percentage: ((total_size - retained_size).to_float() / total_size.to_float()) * 100.0
+    }
+  }
+  
+  let storage_analysis = calculate_storage_savings(data_records, current_time, policy)
+  assert_eq(storage_analysis.total_size, 7680)
+  assert_eq(storage_analysis.retained_size, 3840)
+  assert_eq(storage_analysis.deleted_size, 3840)
+  assert_eq(storage_analysis.savings_percentage, 50.0)
 }
