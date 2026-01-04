@@ -113,5 +113,11 @@
         "../azimuth_memory_management_resource_cleanup_comprehensive_tests.mbt",
         "../azimuth_internationalization_comprehensive_support_tests.mbt",
         "../azimuth_realtime_stream_processing_comprehensive_tests.mbt",
-        "azimuth_high_quality_comprehensive_tests.mbt"]  }
+        "azimuth_high_quality_comprehensive_tests.mbt",
+        "../azimuth_telemetry_security_privacy_tests.mbt",
+        "../azimuth_multidimensional_data_analysis_tests.mbt",
+        "../azimuth_data_consistency_validation_tests.mbt",
+        "../azimuth_adaptive_sampling_strategy_tests.mbt",
+        "../azimuth_telemetry_system_failure_recovery_tests.mbt",
+        "../azimuth_cross_service_telemetry_synchronization_tests.mbt"]  }
 }
