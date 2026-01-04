@@ -1,448 +1,582 @@
-// Azimuth Telemetry System - Memory Management and Resource Cleanup Tests
+// Memory Management and Resource Cleanup Tests
 // This file contains comprehensive test cases for memory management and resource cleanup
 
 // Test 1: Span Memory Management
 test "span memory management" {
-  let initial_memory = MemoryManager::get_current_usage()
+  let memory_tracker = MemoryTracker::new()
   
-  // Create many spans
-  let spans = []
-  let span_count = 10000
+  // Record baseline memory
+  let baseline_memory = MemoryTracker::get_current_usage(memory_tracker)
   
-  for i in 0..=span_count {
-    let trace_id = "trace_" + i.to_string()
-    let span_id = "span_" + i.to_string()
-    let ctx = SpanContext::new(trace_id, span_id, true, "")
-    let span = Span::new("memory_test_span", Internal, ctx)
+  // Create a large number of spans
+  let mut spans = []
+  for i in 0..10000 {
+    let span_name = "memory_test_span_" + i.to_string()
+    let span_ctx = SpanContext::new("memory_test_trace", "span_" + i.to_string(), true, "")
+    let span = Span::new(span_name, Internal, span_ctx)
     
-    // Add events and attributes to increase memory usage
-    for j in 0..=10 {
-      Span::add_event(span, "event_" + j.to_string(), Some([("event_data", StringValue("test_data_" + j.to_string()))]))
-    }
+    // Add attributes and events
+    Span::add_attribute(span, "index", IntValue(i))
+    Span::add_event(span, "test_event", Some([("index", IntValue(i))]))
     
-    for j in 0..=5 {
-      Span::set_attribute(span, "attr_" + j.to_string(), StringValue("attr_value_" + j.to_string()))
-    }
-    
-    spans.push(span)
+    spans = spans + [span]
   }
   
-  let peak_memory = MemoryManager::get_current_usage()
-  let memory_increase = peak_memory - initial_memory
+  // Check memory after span creation
+  let after_creation = MemoryTracker::get_current_usage(memory_tracker)
+  let memory_increase = MemoryTracker::calculate_increase(baseline_memory, after_creation)
   
-  // Verify memory increased as expected
-  assert_true(memory_increase > 0)
+  // Verify memory usage is reasonable
+  let memory_per_span = memory_increase / 10000
+  assert_true(memory_per_span < 1000) // Less than 1KB per span
   
-  // Clear spans to trigger garbage collection
+  // Clear references to spans
   spans = []
   
   // Force garbage collection
-  MemoryManager::force_gc()
+  MemoryTracker::force_gc(memory_tracker)
   
-  let final_memory = MemoryManager::get_current_usage()
-  let memory_recovered = peak_memory - final_memory
+  // Check memory after cleanup
+  let after_cleanup = MemoryTracker::get_current_usage(memory_tracker)
+  let memory_decrease = MemoryTracker::calculate_decrease(after_creation, after_cleanup)
   
-  // Verify most memory was recovered
-  let recovery_rate = memory_recovered.to_float() / memory_increase.to_float()
-  assert_true(recovery_rate > 0.7) // At least 70% recovered
+  // Verify most memory is reclaimed
+  let reclamation_rate = (memory_decrease as Float) / (memory_increase as Float)
+  assert_true(reclamation_rate > 0.8) // At least 80% of memory should be reclaimed
+  
+  // Verify no memory leaks
+  let final_memory = MemoryTracker::get_current_usage(memory_tracker)
+  let final_increase = MemoryTracker::calculate_increase(baseline_memory, final_memory)
+  assert_true(final_increase < 1024 * 1024) // Less than 1MB increase from baseline
 }
 
-// Test 2: Time Series Memory Management
-test "time series memory management" {
-  let initial_memory = MemoryManager::get_current_usage()
+// Test 2: Metrics Memory Management
+test "metrics memory management" {
+  let memory_tracker = MemoryTracker::new()
   
-  // Create time series with many points
-  let time_series = []
-  let series_count = 100
-  let points_per_series = 1000
+  // Record baseline memory
+  let baseline_memory = MemoryTracker::get_current_usage(memory_tracker)
   
-  for i in 0..=series_count {
-    let points = []
-    for j in 0..=points_per_series {
-      let timestamp = 1000L + (i * points_per_series + j).to_long() * 100L
-      let value = (i * points_per_series + j).to_float() * 0.1
-      let point = TimeSeriesPoint::new(timestamp, value)
-      points.push(point)
-    }
+  // Create metrics provider with many instruments
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "memory_test_meter")
+  
+  let mut counters = []
+  let mut histograms = []
+  let mut updown_counters = []
+  
+  // Create many metric instruments
+  for i in 0..1000 {
+    let counter = Meter::create_counter(meter, "counter_" + i.to_string(), None, None)
+    counters = counters + [counter]
     
-    let series = TimeSeries::from_points("series_" + i.to_string(), points)
-    time_series.push(series)
+    let histogram = Meter::create_histogram(meter, "histogram_" + i.to_string(), None, None)
+    histograms = histograms + [histogram]
+    
+    let updown_counter = Meter::create_updown_counter(meter, "updown_" + i.to_string(), None, None)
+    updown_counters = updown_counters + [updown_counter]
   }
   
-  let peak_memory = MemoryManager::get_current_usage()
-  let memory_increase = peak_memory - initial_memory
+  // Record many metric values
+  for i in 0..1000 {
+    for j in 0..100 {
+      Counter::add(counters[i], j.to_int() as Float)
+      Histogram::record(histograms[i], j.to_int() as Float)
+      UpDownCounter::add(updown_counters[i], j.to_int() as Float)
+    }
+  }
   
-  // Verify memory increased as expected
-  assert_true(memory_increase > 0)
+  // Check memory after metrics operations
+  let after_metrics = MemoryTracker::get_current_usage(memory_tracker)
+  let metrics_memory_increase = MemoryTracker::calculate_increase(baseline_memory, after_metrics)
   
-  // Clear time series to trigger garbage collection
-  time_series = []
+  // Verify memory usage is reasonable
+  let memory_per_instrument = metrics_memory_increase / 3000 // 1000 of each type
+  assert_true(memory_per_instrument < 2000) // Less than 2KB per instrument
+  
+  // Clear references
+  counters = []
+  histograms = []
+  updown_counters = []
   
   // Force garbage collection
-  MemoryManager::force_gc()
+  MemoryTracker::force_gc(memory_tracker)
   
-  let final_memory = MemoryManager::get_current_usage()
-  let memory_recovered = peak_memory - final_memory
+  // Check memory after cleanup
+  let after_metrics_cleanup = MemoryTracker::get_current_usage(memory_tracker)
+  let metrics_memory_decrease = MemoryTracker::calculate_decrease(after_metrics, after_metrics_cleanup)
   
-  // Verify most memory was recovered
-  let recovery_rate = memory_recovered.to_float() / memory_increase.to_float()
-  assert_true(recovery_rate > 0.7) // At least 70% recovered
+  // Verify most memory is reclaimed
+  let metrics_reclamation_rate = (metrics_memory_decrease as Float) / (metrics_memory_increase as Float)
+  assert_true(metrics_reclamation_rate > 0.7) // At least 70% of memory should be reclaimed
 }
 
-// Test 3: Attributes Memory Management
-test "attributes memory management" {
-  let initial_memory = MemoryManager::get_current_usage()
+// Test 3: Log Record Memory Management
+test "log record memory management" {
+  let memory_tracker = MemoryTracker::new()
   
-  // Create attributes with many entries
-  let attributes = []
-  let attr_count = 1000
-  let entries_per_attr = 100
+  // Record baseline memory
+  let baseline_memory = MemoryTracker::get_current_usage(memory_tracker)
   
-  for i in 0..=attr_count {
-    let attrs = Attributes::new()
-    for j in 0..=entries_per_attr {
-      let key = "attr_" + i.to_string() + "_" + j.to_string()
-      let value = StringValue("value_" + i.to_string() + "_" + j.to_string())
-      Attributes::set(attrs, key, value)
-    }
-    attributes.push(attrs)
-  }
+  // Create logger
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "memory_test_logger")
   
-  let peak_memory = MemoryManager::get_current_usage()
-  let memory_increase = peak_memory - initial_memory
-  
-  // Verify memory increased as expected
-  assert_true(memory_increase > 0)
-  
-  // Clear attributes to trigger garbage collection
-  attributes = []
-  
-  // Force garbage collection
-  MemoryManager::force_gc()
-  
-  let final_memory = MemoryManager::get_current_usage()
-  let memory_recovered = peak_memory - final_memory
-  
-  // Verify most memory was recovered
-  let recovery_rate = memory_recovered.to_float() / memory_increase.to_float()
-  assert_true(recovery_rate > 0.7) // At least 70% recovered
-}
-
-// Test 4: Log Records Memory Management
-test "log records memory management" {
-  let initial_memory = MemoryManager::get_current_usage()
-  
-  // Create many log records
-  let log_records = []
-  let log_count = 50000
-  
-  for i in 0..=log_count {
-    let severity = if i % 4 == 0 { Info } else if i % 4 == 1 { Warn } else if i % 4 == 2 { Error } else { Debug }
-    let message = "Log message " + i.to_string() + " with additional content to increase memory usage"
-    let log_record = LogRecord::new(severity, message)
+  // Create and emit many log records
+  for i in 0..10000 {
+    let message = "Log message " + i.to_string() + " with some additional content to increase memory usage"
+    let log_record = LogRecord::new(Info, message)
     
-    // Add attributes to increase memory usage
-    LogRecord::add_attribute(log_record, "log_id", IntValue(i))
-    LogRecord::add_attribute(log_record, "thread_id", IntValue(i % 10))
-    LogRecord::add_attribute(log_record, "timestamp", IntValue(1000 + i))
+    // Add attributes
+    LogRecord::add_attribute(log_record, "index", IntValue(i))
+    LogRecord::add_attribute(log_record, "thread", StringValue("test_thread"))
     
-    log_records.push(log_record)
-  }
-  
-  let peak_memory = MemoryManager::get_current_usage()
-  let memory_increase = peak_memory - initial_memory
-  
-  // Verify memory increased as expected
-  assert_true(memory_increase > 0)
-  
-  // Clear log records to trigger garbage collection
-  log_records = []
-  
-  // Force garbage collection
-  MemoryManager::force_gc()
-  
-  let final_memory = MemoryManager::get_current_usage()
-  let memory_recovered = peak_memory - final_memory
-  
-  // Verify most memory was recovered
-  let recovery_rate = memory_recovered.to_float() / memory_increase.to_float()
-  assert_true(recovery_rate > 0.7) // At least 70% recovered
-}
-
-// Test 5: Resource Pool Management
-test "resource pool management" {
-  let resource_pool = ResourcePool::new(100) // Max 100 resources
-  let created_resources = []
-  
-  // Create resources up to the pool limit
-  for i in 0..=150 {
-    let resource_name = "resource_" + i.to_string()
-    let resource = ResourcePool::acquire(resource_pool, resource_name)
-    
-    if resource != nil {
-      created_resources.push(resource)
-    }
-  }
-  
-  // Verify we didn't exceed the pool limit
-  assert_true(created_resources.length() <= 100)
-  
-  // Release some resources back to the pool
-  let released_count = 50
-  for i in 0..=released_count {
-    if i < created_resources.length() {
-      ResourcePool::release(resource_pool, created_resources[i])
-    }
-  }
-  
-  // Try to acquire more resources
-  let additional_resources = []
-  for i in 0..=released_count {
-    let resource_name = "additional_resource_" + i.to_string()
-    let resource = ResourcePool::acquire(resource_pool, resource_name)
-    
-    if resource != nil {
-      additional_resources.push(resource)
-    }
-  }
-  
-  // Verify we can acquire resources after releasing some
-  assert_true(additional_resources.length() > 0)
-  
-  // Release all resources
-  for resource in created_resources {
-    ResourcePool::release(resource_pool, resource)
-  }
-  
-  for resource in additional_resources {
-    ResourcePool::release(resource_pool, resource)
-  }
-  
-  // Verify pool is back to full capacity
-  assert_eq(ResourcePool::available_count(resource_pool), 100)
-}
-
-// Test 6: File Handle Cleanup
-test "file handle cleanup" {
-  let file_manager = FileManager::new()
-  let file_handles = []
-  let file_count = 100
-  
-  // Open many files
-  for i in 0..=file_count {
-    let file_name = "test_file_" + i.to_string() + ".txt"
-    let handle = FileManager::open_file(file_manager, file_name, "w")
-    
-    if handle != nil {
-      file_handles.push(handle)
-      
-      // Write some data to the file
-      FileManager::write_file(handle, "Test data for file " + i.to_string())
-    }
-  }
-  
-  // Verify files were opened
-  assert_true(file_handles.length() > 0)
-  
-  // Get initial file handle count
-  let initial_handle_count = FileManager::get_open_handle_count(file_manager)
-  
-  // Close all file handles
-  for handle in file_handles {
-    FileManager::close_file(handle)
-  }
-  
-  // Force garbage collection
-  MemoryManager::force_gc()
-  
-  // Verify file handles were cleaned up
-  let final_handle_count = FileManager::get_open_handle_count(file_manager)
-  assert_true(final_handle_count < initial_handle_count)
-  
-  // Clean up test files
-  for i in 0..=file_count {
-    let file_name = "test_file_" + i.to_string() + ".txt"
-    FileManager::delete_file(file_manager, file_name)
-  }
-}
-
-// Test 7: Network Connection Cleanup
-test "network connection cleanup" {
-  let connection_manager = ConnectionManager::new()
-  let connections = []
-  let connection_count = 50
-  
-  // Open many connections
-  for i in 0..=connection_count {
-    let host = "example" + i.to_string() + ".com"
-    let port = 8080 + i
-    let connection = ConnectionManager::open_connection(connection_manager, host, port)
-    
-    if connection != nil {
-      connections.push(connection)
-    }
-  }
-  
-  // Verify connections were opened
-  assert_true(connections.length() > 0)
-  
-  // Get initial connection count
-  let initial_connection_count = ConnectionManager::get_active_connection_count(connection_manager)
-  
-  // Close all connections
-  for connection in connections {
-    ConnectionManager::close_connection(connection)
-  }
-  
-  // Force garbage collection
-  MemoryManager::force_gc()
-  
-  // Verify connections were cleaned up
-  let final_connection_count = ConnectionManager::get_active_connection_count(connection_manager)
-  assert_true(final_connection_count < initial_connection_count)
-}
-
-// Test 8: Buffer Management and Cleanup
-test "buffer management and cleanup" {
-  let buffer_manager = BufferManager::new()
-  let buffers = []
-  let buffer_count = 100
-  let buffer_size = 1024 * 1024 // 1MB per buffer
-  
-  // Allocate many large buffers
-  for i in 0..=buffer_count {
-    let buffer = BufferManager::allocate_buffer(buffer_manager, buffer_size)
-    
-    if buffer != nil {
-      // Write some data to the buffer
-      for j in 0..=buffer_size {
-        BufferManager::write_byte(buffer, j % 256)
-      }
-      
-      buffers.push(buffer)
-    }
-  }
-  
-  // Verify buffers were allocated
-  assert_true(buffers.length() > 0)
-  
-  // Get initial memory usage
-  let initial_memory = MemoryManager::get_current_usage()
-  
-  // Deallocate all buffers
-  for buffer in buffers {
-    BufferManager::deallocate_buffer(buffer_manager, buffer)
-  }
-  
-  // Force garbage collection
-  MemoryManager::force_gc()
-  
-  // Verify memory was recovered
-  let final_memory = MemoryManager::get_current_usage()
-  let memory_recovered = initial_memory - final_memory
-  
-  assert_true(memory_recovered > 0)
-  
-  // Verify buffer pool is back to full capacity
-  assert_eq(BufferManager::available_buffer_count(buffer_manager), buffer_count)
-}
-
-// Test 9: Cache Eviction and Cleanup
-test "cache eviction and cleanup" {
-  let cache = Cache::new(1000) // Max 1000 entries
-  let cache_entries = []
-  let entry_count = 1500
-  
-  // Add more entries than the cache can hold
-  for i in 0..=entry_count {
-    let key = "key_" + i.to_string()
-    let value = "value_" + i.to_string()
-    Cache::put(cache, key, value)
-    
-    if i < 1000 {
-      cache_entries.push(key)
-    }
-  }
-  
-  // Verify cache size is at maximum
-  assert_eq(Cache::size(cache), 1000)
-  
-  // Verify some entries were evicted
-  let evicted_count = 0
-  for key in cache_entries {
-    if !Cache::contains(cache, key) {
-      evicted_count = evicted_count + 1
-    }
-  }
-  
-  assert_true(evicted_count > 0)
-  
-  // Clear the cache
-  Cache::clear(cache)
-  
-  // Verify cache is empty
-  assert_eq(Cache::size(cache), 0)
-  
-  // Force garbage collection
-  MemoryManager::force_gc()
-  
-  // Verify memory was recovered
-  let final_memory = MemoryManager::get_current_usage()
-  assert_true(final_memory < MemoryManager::get_current_usage()) // This is a simplified check
-}
-
-// Test 10: Telemetry Component Lifecycle Management
-test "telemetry component lifecycle management" {
-  let telemetry_system = TelemetrySystem::new()
-  let components = []
-  
-  // Create and initialize telemetry components
-  let tracer = TelemetrySystem::create_tracer(telemetry_system, "lifecycle_test_tracer")
-  let meter = TelemetrySystem::create_meter(telemetry_system, "lifecycle_test_meter")
-  let logger = TelemetrySystem::create_logger(telemetry_system, "lifecycle_test_logger")
-  
-  components.push(tracer)
-  components.push(meter)
-  components.push(logger)
-  
-  // Use components to generate telemetry data
-  for i in 0..=1000 {
-    // Create spans
-    let span = Tracer::start_span(tracer, "lifecycle_span_" + i.to_string())
-    Span::add_event(span, "test_event", None)
-    Span::end(span)
-    
-    // Record metrics
-    let counter = Meter::get_counter(meter, "lifecycle_counter")
-    Counter::add(counter, 1.0)
-    
-    // Log events
-    let log_record = LogRecord::new(Info, "Lifecycle log " + i.to_string())
     Logger::emit(logger, log_record)
   }
   
-  // Get initial memory usage
-  let initial_memory = MemoryManager::get_current_usage()
+  // Check memory after logging
+  let after_logging = MemoryTracker::get_current_usage(memory_tracker)
+  let logging_memory_increase = MemoryTracker::calculate_increase(baseline_memory, after_logging)
   
-  // Shutdown components
-  for component in components {
-    TelemetrySystem::shutdown_component(telemetry_system, component)
-  }
+  // Verify memory usage is reasonable
+  let memory_per_log = logging_memory_increase / 10000
+  assert_true(memory_per_log < 500) // Less than 500 bytes per log
+  
+  // Test log buffer cleanup
+  Logger::clear_buffers(logger)
   
   // Force garbage collection
-  MemoryManager::force_gc()
+  MemoryTracker::force_gc(memory_tracker)
   
-  // Verify memory was recovered
-  let final_memory = MemoryManager::get_current_usage()
-  let memory_recovered = initial_memory - final_memory
+  // Check memory after cleanup
+  let after_log_cleanup = MemoryTracker::get_current_usage(memory_tracker)
+  let log_memory_decrease = MemoryTracker::calculate_decrease(after_logging, after_log_cleanup)
   
-  assert_true(memory_recovered > 0)
+  // Verify most memory is reclaimed
+  let log_reclamation_rate = (log_memory_decrease as Float) / (logging_memory_increase as Float)
+  assert_true(log_reclamation_rate > 0.8) // At least 80% of memory should be reclaimed
+}
+
+// Test 4: Context and Baggage Memory Management
+test "context and baggage memory management" {
+  let memory_tracker = MemoryTracker::new()
   
-  // Verify telemetry system can be restarted
-  let new_tracer = TelemetrySystem::create_tracer(telemetry_system, "restarted_tracer")
-  assert_true(new_tracer != nil)
+  // Record baseline memory
+  let baseline_memory = MemoryTracker::get_current_usage(memory_tracker)
   
-  // Clean up
-  TelemetrySystem::shutdown_component(telemetry_system, new_tracer)
-  TelemetrySystem::shutdown(telemetry_system)
+  // Create many contexts with baggage
+  let mut contexts = []
+  let mut baggage_items = []
+  
+  for i in 0..5000 {
+    // Create context
+    let trace_id = "trace_" + i.to_string()
+    let span_id = "span_" + i.to_string()
+    let span_ctx = SpanContext::new(trace_id, span_id, true, "")
+    
+    // Create baggage with many entries
+    let baggage = Baggage::new()
+    let mut updated_baggage = baggage
+    
+    for j in 0..10 {
+      let key = "baggage_key_" + j.to_string()
+      let value = "baggage_value_" + i.to_string() + "_" + j.to_string()
+      updated_baggage = Baggage::set_entry(updated_baggage, key, value)
+    }
+    
+    // Create context with baggage
+    let ctx_with_baggage = SpanContext::with_baggage(trace_id, span_id, true, updated_baggage)
+    
+    contexts = contexts + [ctx_with_baggage]
+    baggage_items = baggage_items + [updated_baggage]
+  }
+  
+  // Check memory after context creation
+  let after_contexts = MemoryTracker::get_current_usage(memory_tracker)
+  let context_memory_increase = MemoryTracker::calculate_increase(baseline_memory, after_contexts)
+  
+  // Verify memory usage is reasonable
+  let memory_per_context = context_memory_increase / 5000
+  assert_true(memory_per_context < 1500) // Less than 1.5KB per context
+  
+  // Clear references
+  contexts = []
+  baggage_items = []
+  
+  // Force garbage collection
+  MemoryTracker::force_gc(memory_tracker)
+  
+  // Check memory after cleanup
+  let after_context_cleanup = MemoryTracker::get_current_usage(memory_tracker)
+  let context_memory_decrease = MemoryTracker::calculate_decrease(after_contexts, after_context_cleanup)
+  
+  // Verify most memory is reclaimed
+  let context_reclamation_rate = (context_memory_decrease as Float) / (context_memory_increase as Float)
+  assert_true(context_reclamation_rate > 0.8) // At least 80% of memory should be reclaimed
+}
+
+// Test 5: Resource Memory Management
+test "resource memory management" {
+  let memory_tracker = MemoryTracker::new()
+  
+  // Record baseline memory
+  let baseline_memory = MemoryTracker::get_current_usage(memory_tracker)
+  
+  // Create many resources with attributes
+  let mut resources = []
+  
+  for i in 0..2000 {
+    // Create resource with many attributes
+    let mut attrs = []
+    
+    for j in 0..20 {
+      let key = "attr_" + j.to_string()
+      let value = StringValue("value_" + i.to_string() + "_" + j.to_string())
+      attrs = attrs + [(key, value)]
+    }
+    
+    let resource = Resource::with_attributes(Resource::new(), attrs)
+    resources = resources + [resource]
+  }
+  
+  // Check memory after resource creation
+  let after_resources = MemoryTracker::get_current_usage(memory_tracker)
+  let resource_memory_increase = MemoryTracker::calculate_increase(baseline_memory, after_resources)
+  
+  // Verify memory usage is reasonable
+  let memory_per_resource = resource_memory_increase / 2000
+  assert_true(memory_per_resource < 2000) // Less than 2KB per resource
+  
+  // Test resource merging
+  let merged_resources = []
+  for i in 0..1000 {
+    let merged = Resource::merge(resources[i * 2], resources[i * 2 + 1])
+    merged_resources = merged_resources + [merged]
+  }
+  
+  // Check memory after merging
+  let after_merging = MemoryTracker::get_current_usage(memory_tracker)
+  let merging_memory_increase = MemoryTracker::calculate_increase(after_resources, after_merging)
+  
+  // Clear references
+  resources = []
+  merged_resources = []
+  
+  // Force garbage collection
+  MemoryTracker::force_gc(memory_tracker)
+  
+  // Check memory after cleanup
+  let after_resource_cleanup = MemoryTracker::get_current_usage(memory_tracker)
+  let resource_memory_decrease = MemoryTracker::calculate_decrease(after_merging, after_resource_cleanup)
+  
+  // Verify most memory is reclaimed
+  let resource_reclamation_rate = (resource_memory_decrease as Float) / 
+    ((resource_memory_increase + merging_memory_increase) as Float)
+  assert_true(resource_reclamation_rate > 0.7) // At least 70% of memory should be reclaimed
+}
+
+// Test 6: Attribute Memory Management
+test "attribute memory management" {
+  let memory_tracker = MemoryTracker::new()
+  
+  // Record baseline memory
+  let baseline_memory = MemoryTracker::get_current_usage(memory_tracker)
+  
+  // Create many attributes of different types
+  let mut attributes = []
+  
+  for i in 0..10000 {
+    // String attributes
+    let string_attr = StringValue("string_value_" + i.to_string())
+    attributes = attributes + [string_attr]
+    
+    // Int attributes
+    let int_attr = IntValue(i)
+    attributes = attributes + [int_attr]
+    
+    // Float attributes
+    let float_attr = FloatValue(i.to_int() as Float * 1.5)
+    attributes = attributes + [float_attr]
+    
+    // Bool attributes
+    let bool_attr = BoolValue(i % 2 == 0)
+    attributes = attributes + [bool_attr]
+    
+    // Array attributes
+    let array_attr = ArrayStringValue(["item1", "item2", "item3"])
+    attributes = attributes + [array_attr]
+  }
+  
+  // Check memory after attribute creation
+  let after_attributes = MemoryTracker::get_current_usage(memory_tracker)
+  let attribute_memory_increase = MemoryTracker::calculate_increase(baseline_memory, after_attributes)
+  
+  // Verify memory usage is reasonable
+  let memory_per_attribute = attribute_memory_increase / 50000 // 10000 * 5 attributes each
+  assert_true(memory_per_attribute < 200) // Less than 200 bytes per attribute
+  
+  // Clear references
+  attributes = []
+  
+  // Force garbage collection
+  MemoryTracker::force_gc(memory_tracker)
+  
+  // Check memory after cleanup
+  let after_attribute_cleanup = MemoryTracker::get_current_usage(memory_tracker)
+  let attribute_memory_decrease = MemoryTracker::calculate_decrease(after_attributes, after_attribute_cleanup)
+  
+  // Verify most memory is reclaimed
+  let attribute_reclamation_rate = (attribute_memory_decrease as Float) / (attribute_memory_increase as Float)
+  assert_true(attribute_reclamation_rate > 0.8) // At least 80% of memory should be reclaimed
+}
+
+// Test 7: Serialization Buffer Memory Management
+test "serialization buffer memory management" {
+  let memory_tracker = MemoryTracker::new()
+  
+  // Record baseline memory
+  let baseline_memory = MemoryTracker::get_current_usage(memory_tracker)
+  
+  // Create spans for serialization
+  let mut spans = []
+  for i in 0..1000 {
+    let span_name = "serialization_test_span_" + i.to_string()
+    let span_ctx = SpanContext::new("trace_id", "span_id", true, "")
+    let span = Span::new(span_name, Internal, span_ctx)
+    
+    // Add many attributes and events
+    for j in 0..10 {
+      Span::add_attribute(span, "attr_" + j.to_string(), StringValue("value_" + j.to_string()))
+      Span::add_event(span, "event_" + j.to_string(), Some([("event_attr", StringValue("event_value"))]))
+    }
+    
+    spans = spans + [span]
+  }
+  
+  // Serialize spans to JSON
+  let mut json_buffers = []
+  for span in spans {
+    let json = SpanSerializer::to_json(span)
+    json_buffers = json_buffers + [json]
+  }
+  
+  // Check memory after JSON serialization
+  let after_json_serialization = MemoryTracker::get_current_usage(memory_tracker)
+  let json_memory_increase = MemoryTracker::calculate_increase(baseline_memory, after_json_serialization)
+  
+  // Verify memory usage is reasonable
+  let memory_per_json_buffer = json_memory_increase / 1000
+  assert_true(memory_per_json_buffer < 5000) // Less than 5KB per JSON buffer
+  
+  // Serialize spans to binary
+  let mut binary_buffers = []
+  for span in spans {
+    let binary = SpanSerializer::to_binary(span)
+    binary_buffers = binary_buffers + [binary]
+  }
+  
+  // Check memory after binary serialization
+  let after_binary_serialization = MemoryTracker::get_current_usage(memory_tracker)
+  let binary_memory_increase = MemoryTracker::calculate_increase(after_json_serialization, after_binary_serialization)
+  
+  // Verify binary is more compact than JSON
+  let memory_per_binary_buffer = binary_memory_increase / 1000
+  assert_true(memory_per_binary_buffer < memory_per_json_buffer) // Binary should be more compact
+  
+  // Clear references
+  spans = []
+  json_buffers = []
+  binary_buffers = []
+  
+  // Force garbage collection
+  MemoryTracker::force_gc(memory_tracker)
+  
+  // Check memory after cleanup
+  let after_serialization_cleanup = MemoryTracker::get_current_usage(memory_tracker)
+  let serialization_memory_decrease = MemoryTracker::calculate_decrease(after_binary_serialization, after_serialization_cleanup)
+  
+  // Verify most memory is reclaimed
+  let total_serialization_memory = json_memory_increase + binary_memory_increase
+  let serialization_reclamation_rate = (serialization_memory_decrease as Float) / (total_serialization_memory as Float)
+  assert_true(serialization_reclamation_rate > 0.8) // At least 80% of memory should be reclaimed
+}
+
+// Test 8: Telemetry Pipeline Memory Management
+test "telemetry pipeline memory management" {
+  let memory_tracker = MemoryTracker::new()
+  
+  // Record baseline memory
+  let baseline_memory = MemoryTracker::get_current_usage(memory_tracker)
+  
+  // Create telemetry pipeline
+  let pipeline = TelemetryPipeline::new()
+  
+  // Add processors
+  TelemetryPipeline::add_processor(pipeline, MemoryFilterProcessor::new())
+  TelemetryPipeline::add_processor(pipeline, MemoryTransformProcessor::new())
+  TelemetryPipeline::add_processor(pipeline, MemoryAggregatorProcessor::new())
+  
+  // Process large amount of telemetry data
+  for i in 0..5000 {
+    let data = TelemetryData::new("metric_" + i.to_string(), i.to_int() as Float, "unit", 
+      Some([("index", IntValue(i))]))
+    
+    TelemetryPipeline::process(pipeline, data)
+  }
+  
+  // Check memory after processing
+  let after_processing = MemoryTracker::get_current_usage(memory_tracker)
+  let processing_memory_increase = MemoryTracker::calculate_increase(baseline_memory, after_processing)
+  
+  // Verify memory usage is reasonable
+  let memory_per_item = processing_memory_increase / 5000
+  assert_true(memory_per_item < 1000) // Less than 1KB per processed item
+  
+  // Clear pipeline buffers
+  TelemetryPipeline::clear_buffers(pipeline)
+  
+  // Force garbage collection
+  MemoryTracker::force_gc(memory_tracker)
+  
+  // Check memory after cleanup
+  let after_pipeline_cleanup = MemoryTracker::get_current_usage(memory_tracker)
+  let pipeline_memory_decrease = MemoryTracker::calculate_decrease(after_processing, after_pipeline_cleanup)
+  
+  // Verify most memory is reclaimed
+  let pipeline_reclamation_rate = (pipeline_memory_decrease as Float) / (processing_memory_increase as Float)
+  assert_true(pipeline_reclamation_rate > 0.8) // At least 80% of memory should be reclaimed
+}
+
+// Test 9: Memory Leak Detection
+test "memory leak detection" {
+  let leak_detector = MemoryLeakDetector::new()
+  
+  // Start leak detection
+  MemoryLeakDetector::start(leak_detector)
+  
+  // Perform operations that might leak memory
+  let mut potential_leaks = []
+  
+  for i in 0..1000 {
+    // Create objects that might not be properly cleaned up
+    let span = Span::new("leak_test_span", Internal, SpanContext::new("trace_id", "span_id", true, ""))
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "index", IntValue(i))
+    
+    // Simulate potential leak by not properly cleaning up
+    potential_leaks = potential_leaks + [(span, attrs)]
+  }
+  
+  // Intentionally don't clean up half of the objects
+  let cleaned_objects = potential_leaks.slice(0, 500)
+  let leaked_objects = potential_leaks.slice(500, 1000)
+  
+  // Clean up only half of the objects
+  for (span, attrs) in cleaned_objects {
+    // Proper cleanup
+    Span::end(span)
+    Attributes::clear(attrs)
+  }
+  
+  // Run leak detection
+  let leak_report = MemoryLeakDetector::analyze(leak_detector)
+  
+  // Verify leak detection
+  assert_true(MemoryLeakReport::potential_leaks_detected(leak_report))
+  assert_eq(MemoryLeakReport::leaked_object_count(leak_report), 500) // Should detect 500 leaked objects
+  
+  // Clean up remaining objects
+  for (span, attrs) in leaked_objects {
+    Span::end(span)
+    Attributes::clear(attrs)
+  }
+  
+  // Run leak detection again
+  let final_leak_report = MemoryLeakDetector::analyze(leak_detector)
+  
+  // Verify no more leaks
+  assert_false(MemoryLeakReport::potential_leaks_detected(final_leak_report))
+  assert_eq(MemoryLeakReport::leaked_object_count(final_leak_report), 0)
+}
+
+// Test 10: Resource Pool Management
+test "resource pool management" {
+  let resource_pool = ResourcePool::new(100) // Pool with 100 resources
+  
+  // Test resource acquisition and release
+  let acquired_resources = []
+  
+  // Acquire all resources
+  for i in 0..100 {
+    let resource = ResourcePool::acquire(resource_pool)
+    assert_true(resource.is_some()) // Should be able to acquire
+    acquired_resources = acquired_resources + [resource.unwrap()]
+  }
+  
+  // Verify pool is empty
+  assert_true(ResourcePool::acquire(resource_pool).is_none()) // Should not be able to acquire more
+  
+  // Release half of the resources
+  for i in 0..50 {
+    ResourcePool::release(resource_pool, acquired_resources[i])
+  }
+  
+  // Verify pool has available resources
+  assert_eq(ResourcePool::available_count(resource_pool), 50)
+  
+  // Acquire resources again
+  let reacquired_resources = []
+  for i in 0..50 {
+    let resource = ResourcePool::acquire(resource_pool)
+    assert_true(resource.is_some()) // Should be able to acquire
+    reacquired_resources = reacquired_resources + [resource.unwrap()]
+  }
+  
+  // Verify pool is empty again
+  assert_true(ResourcePool::acquire(resource_pool).is_none()) // Should not be able to acquire more
+  
+  // Release all resources
+  for i in 50..100 {
+    ResourcePool::release(resource_pool, acquired_resources[i])
+  }
+  
+  for resource in reacquired_resources {
+    ResourcePool::release(resource_pool, resource)
+  }
+  
+  // Verify all resources are available
+  assert_eq(ResourcePool::available_count(resource_pool), 100)
+  
+  // Test resource pool memory efficiency
+  let memory_tracker = MemoryTracker::new()
+  let baseline_memory = MemoryTracker::get_current_usage(memory_tracker)
+  
+  // Create many resource pools
+  let mut pools = []
+  for i in 0..10 {
+    let pool = ResourcePool::new(1000) // Large pools
+    pools = pools + [pool]
+  }
+  
+  // Check memory after pool creation
+  let after_pools = MemoryTracker::get_current_usage(memory_tracker)
+  let pools_memory_increase = MemoryTracker::calculate_increase(baseline_memory, after_pools)
+  
+  // Verify memory usage is reasonable
+  let memory_per_pool = pools_memory_increase / 10
+  assert_true(memory_per_pool < 1024 * 1024) // Less than 1MB per pool
+  
+  // Clear references
+  pools = []
+  
+  // Force garbage collection
+  MemoryTracker::force_gc(memory_tracker)
+  
+  // Check memory after cleanup
+  let after_pool_cleanup = MemoryTracker::get_current_usage(memory_tracker)
+  let pool_memory_decrease = MemoryTracker::calculate_decrease(after_pools, after_pool_cleanup)
+  
+  // Verify most memory is reclaimed
+  let pool_reclamation_rate = (pool_memory_decrease as Float) / (pools_memory_increase as Float)
+  assert_true(pool_reclamation_rate > 0.8) // At least 80% of memory should be reclaimed
 }
