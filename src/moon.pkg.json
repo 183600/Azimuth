@@ -143,5 +143,15 @@
         "../azimuth_premium_serialization_deserialization_tests.mbt",
         "../azimuth_premium_resource_management_tests.mbt",
         "../azimuth_premium_cross_service_propagation_tests.mbt",
-        "../azimuth_premium_internationalization_support_tests.mbt"]  }
+        "../azimuth_premium_internationalization_support_tests.mbt",
+        "../azimuth_fundamental_data_types_enhanced_tests.mbt",
+        "../azimuth_telemetry_pipeline_integration_tests.mbt",
+        "../azimuth_concurrent_operations_safety_tests.mbt",
+        "../azimuth_error_handling_comprehensive_tests.mbt",
+        "../azimuth_performance_optimization_tests.mbt",
+        "../azimuth_serialization_format_tests.mbt",
+        "../azimuth_metrics_collection_aggregation_tests.mbt",
+        "../azimuth_distributed_tracing_advanced_tests.mbt",
+        "../azimuth_resource_management_efficiency_tests.mbt",
+        "../azimuth_security_encryption_tests.mbt"]  }
 }
