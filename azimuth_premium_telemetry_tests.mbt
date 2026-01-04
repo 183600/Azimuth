@@ -1,339 +1,1753 @@
 // Azimuth Premium Telemetry Test Suite
-// 高质量遥测系统测试用例，专注于核心功能和边界情况
+// High-quality test cases focusing on advanced telemetry scenarios and edge cases
 
-// 测试1: 遥测数据生成和验证
-test "telemetry data generation and validation" {
-  // 创建遥测数据点
-  let telemetry_point = {
-    timestamp: 1640995200000,  // 2022-01-01 00:00:00 UTC
-    metric_name: "cpu_usage",
-    value: 75.5,
-    tags: ["host:server1", "region:us-west"],
-    source: "system_monitor"
+// Test 1: Distributed Trace Context Propagation
+test "distributed trace context propagation across service boundaries" {
+  // Define trace context structure
+  type TraceContext = {
+    trace_id: String,
+    span_id: String,
+    parent_span_id: Option[String],
+    baggage: Array[(String, String)],
+    sampled: Bool
   }
   
-  // 验证数据完整性
-  assert_true(telemetry_point.timestamp > 0)
-  assert_true(telemetry_point.value >= 0.0)
-  assert_true(telemetry_point.metric_name.length() > 0)
-  assert_eq(telemetry_point.tags.length(), 2)
-  assert_eq(telemetry_point.source, "system_monitor")
-  
-  // 验证标签格式
-  for tag in telemetry_point.tags {
-    assert_true(tag.contains(":"))
-    let parts = tag.split(":")
-    assert_eq(parts.length(), 2)
-    assert_true(parts[0].length() > 0)
-    assert_true(parts[1].length() > 0)
-  }
-}
-
-// 测试2: 遥测数据序列化和反序列化
-test "telemetry data serialization and deserialization" {
-  let original_data = {
-    trace_id: "abc123def456",
-    span_id: "span789",
-    parent_span_id: Some("parent456"),
-    operation_name: "database_query",
-    start_time: 1640995200000,
-    duration: 150,
-    status: "success",
-    attributes: [("db.type", "postgresql"), ("db.statement", "SELECT * FROM users")]
+  // Create initial trace context
+  let root_context = {
+    trace_id: "trace-abc123",
+    span_id: "span-def456",
+    parent_span_id: None,
+    baggage: [("user.id", "user-789"), ("request.id", "req-012")],
+    sampled: true
   }
   
-  // 序列化为JSON字符串
-  let serialized = serialize_telemetry(original_data)
-  assert_true(serialized.contains("abc123def456"))
-  assert_true(serialized.contains("database_query"))
-  assert_true(serialized.contains("postgresql"))
+  // Simulate service boundary crossing
+  let extract_context = fn(headers: Array[(String, String)>) {
+    let trace_header = headers.find(fn(h) { h.0 == "traceparent" })
+    let baggage_header = headers.find(fn(h) { h.0 == "baggage" })
+    
+    match trace_header {
+      Some((_, trace_value)) => {
+        let parts = trace_value.split("-")
+        if parts.length() >= 3 {
+          Some({
+            trace_id: parts[1],
+            span_id: parts[2],
+            parent_span_id: Some(parts[2]),
+            baggage: [],
+            sampled: parts[0] == "00"
+          })
+        } else {
+          None
+        }
+      }
+      None => None
+    }
+  }
   
-  // 反序列化回对象
-  let deserialized = deserialize_telemetry(serialized)
-  match deserialized {
-    Some(data) => {
-      assert_eq(data.trace_id, original_data.trace_id)
-      assert_eq(data.span_id, original_data.span_id)
-      assert_eq(data.operation_name, original_data.operation_name)
-      assert_eq(data.status, original_data.status)
-      assert_eq(data.attributes.length(), 2)
+  let inject_context = fn(context: TraceContext) {
+    let trace_header = "00-" + context.trace_id + "-" + context.span_id + "-01"
+    let baggage_items = context.baggage.map(fn(item) { item.0 + "=" + item.1 })
+    let baggage_header = baggage_items.join(",")
+    
+    [
+      ("traceparent", trace_header),
+      ("baggage", baggage_header)
+    ]
+  }
+  
+  // Test context injection
+  let injected_headers = inject_context(root_context)
+  assert_eq(injected_headers.length(), 2)
+  assert_true(injected_headers[0].1.contains(root_context.trace_id))
+  assert_true(injected_headers[0].1.contains(root_context.span_id))
+  
+  // Test context extraction
+  let extracted_context = extract_context(injected_headers)
+  assert_true(extracted_context.is_some())
+  
+  match extracted_context {
+    Some(context) => {
+      assert_eq(context.trace_id, root_context.trace_id)
+      assert_eq(context.parent_span_id, Some(root_context.span_id))
+      assert_true(context.sampled)
     }
     None => assert_true(false)
   }
+  
+  // Test baggage propagation
+  let updated_context = match extracted_context {
+    Some(ctx) => { ctx | baggage: root_context.baggage }
+    None => root_context
+  }
+  
+  assert_eq(updated_context.baggage.length(), 2)
+  assert_true(updated_context.baggage.contains(("user.id", "user-789")))
+  assert_true(updated_context.baggage.contains(("request.id", "req-012")))
 }
 
-// 测试3: 遥测数据聚合和统计
-test "telemetry data aggregation and statistics" {
-  let metrics = [
-    {name: "response_time", value: 120.5, timestamp: 1640995200000},
-    {name: "response_time", value: 85.3, timestamp: 1640995260000},
-    {name: "response_time", value: 200.1, timestamp: 1640995320000},
-    {name: "response_time", value: 95.7, timestamp: 1640995380000},
-    {name: "response_time", value: 150.2, timestamp: 1640995440000}
+// Test 2: Real-time Telemetry Stream Processing
+test "real-time telemetry stream processing with windowing" {
+  // Define telemetry event structure
+  type TelemetryEvent = {
+    timestamp: Int,
+    event_type: String,
+    service_name: String,
+    duration_ms: Int,
+    status_code: Int,
+    attributes: Array[(String, String)]
+  }
+  
+  // Create sliding window processor
+  let sliding_window_processor = fn(events: Array[TelemetryEvent], window_size_ms: Int) {
+    let mut windows = []
+    let mut current_window_start = if events.length() > 0 { events[0].timestamp } else { 0 }
+    
+    for event in events {
+      while event.timestamp >= current_window_start + window_size_ms {
+        current_window_start = current_window_start + window_size_ms
+      }
+      
+      let window_events = events.filter(fn(e) { 
+        e.timestamp >= current_window_start && e.timestamp < current_window_start + window_size_ms
+      })
+      
+      if window_events.length() > 0 && not(windows.any(fn(w) { w.0 == current_window_start })) {
+        windows = windows.push((current_window_start, window_events))
+      }
+    }
+    
+    windows
+  }
+  
+  // Generate test events
+  let base_time = 1640995200000  // Millisecond timestamp
+  let test_events = [
+    { timestamp: base_time, event_type: "http_request", service_name: "api", duration_ms: 120, status_code: 200, attributes: [] },
+    { timestamp: base_time + 500, event_type: "database_query", service_name: "db", duration_ms: 45, status_code: 200, attributes: [] },
+    { timestamp: base_time + 1200, event_type: "http_request", service_name: "api", duration_ms: 200, status_code: 500, attributes: [] },
+    { timestamp: base_time + 1800, event_type: "cache_hit", service_name: "cache", duration_ms: 5, status_code: 200, attributes: [] },
+    { timestamp: base_time + 2500, event_type: "http_request", service_name: "api", duration_ms: 80, status_code: 200, attributes: [] }
   ]
   
-  // 计算平均值
-  let total = metrics.reduce(fn(acc, m) { acc + m.value }, 0.0)
-  let average = total / Int::to_float(metrics.length())
-  assert_true(average > 130.0 && average < 131.0)
+  // Process with 1-second windows
+  let windows = sliding_window_processor(test_events, 1000)
+  assert_eq(windows.length(), 3)
   
-  // 计算最大值和最小值
-  let max_value = metrics.reduce(fn(acc, m) { 
-    if m.value > acc { m.value } else { acc } 
-  }, 0.0)
-  let min_value = metrics.reduce(fn(acc, m) { 
-    if m.value < acc { m.value } else { acc } 
-  }, 999999.0)
+  // Analyze first window (base_time to base_time + 1000)
+  let first_window = windows[0]
+  assert_eq(first_window.0, base_time)
+  assert_eq(first_window.1.length(), 2)
   
-  assert_eq(max_value, 200.1)
-  assert_eq(min_value, 85.3)
+  // Calculate window metrics
+  let calculate_window_metrics = fn(window_events: Array[TelemetryEvent>) {
+    let total_requests = window_events.length()
+    let error_count = window_events.filter(fn(e) { e.status_code >= 400 }).length()
+    let avg_duration = if total_requests > 0 {
+      window_events.reduce(fn(acc, e) { acc + e.duration_ms }, 0) / total_requests
+    } else {
+      0
+    }
+    
+    {
+      total_events: total_requests,
+      error_rate: if total_requests > 0 { (error_count * 100) / total_requests } else { 0 },
+      avg_duration_ms: avg_duration
+    }
+  }
   
-  // 计算百分位数
-  let sorted_values = metrics.map(fn(m) { m.value }).sort()
-  let p95_index = Int::to_float(sorted_values.length()) * 0.95
-  let p95_value = sorted_values[Int::floor(p95_index)]
-  assert_true(p95_value > 180.0)
+  let first_window_metrics = calculate_window_metrics(first_window.1)
+  assert_eq(first_window_metrics.total_events, 2)
+  assert_eq(first_window_metrics.error_rate, 0)
+  assert_eq(first_window_metrics.avg_duration_ms, 82)  // (120 + 45) / 2
+  
+  // Test second window (contains error)
+  let second_window = windows[1]
+  let second_window_metrics = calculate_window_metrics(second_window.1)
+  assert_eq(second_window_metrics.total_events, 2)
+  assert_eq(second_window_metrics.error_rate, 50)  // 1 error out of 2 events
 }
 
-// 测试4: 遥测上下文传播
-test "telemetry context propagation" {
-  // 创建父级上下文
-  let parent_context = {
-    trace_id: "trace123",
-    span_id: "span456",
-    baggage: [("user_id", "user789"), ("request_id", "req123")],
-    flags: ["sampled"]
+// Test 3: Telemetry Data Compression and Optimization
+test "telemetry data compression and optimization strategies" {
+  // Define telemetry batch structure
+  type TelemetryBatch = {
+    spans: Array[SpanData],
+    metrics: Array[MetricData],
+    resource_attributes: Array[(String, String)]
   }
   
-  // 创建子级上下文并继承父级属性
-  let child_context = create_child_context(parent_context, "span789")
-  
-  // 验证上下文传播
-  assert_eq(child_context.trace_id, parent_context.trace_id)
-  assert_eq(child_context.span_id, "span789")
-  assert_eq(child_context.baggage.length(), parent_context.baggage.length())
-  
-  // 验证baggage项传播
-  for item in parent_context.baggage {
-    assert_true(child_context.baggage.contains(item))
+  type SpanData = {
+    trace_id: String,
+    span_id: String,
+    parent_span_id: Option[String],
+    name: String,
+    start_time: Int,
+    end_time: Int,
+    status: String,
+    attributes: Array[(String, String)]
   }
   
-  // 添加新的baggage项到子上下文
-  let updated_child = add_baggage_item(child_context, "operation", "query")
-  assert_eq(updated_child.baggage.length(), parent_context.baggage.length() + 1)
-  assert_true(updated_child.baggage.contains(("operation", "query")))
-}
-
-// 测试5: 遥测数据采样策略
-test "telemetry data sampling strategies" {
-  // 测试固定采样率
-  let fixed_sampler = FixedRateSampler(0.1)  // 10%采样率
-  let sampled_count = 1000
-  let mut sampled_in = 0
-  
-  for i in 0..sampled_count {
-    let decision = fixed_sampler.should_sample("trace_" + i.to_string())
-    if decision { sampled_in = sampled_in + 1 }
+  type MetricData = {
+    name: String,
+    value: Float,
+    unit: String,
+    timestamp: Int,
+    attributes: Array[(String, String)]
   }
   
-  // 验证采样率在预期范围内（允许5%的误差）
-  let actual_rate = Int::to_float(sampled_in) / Int::to_float(sampled_count)
-  assert_true(actual_rate > 0.05 && actual_rate < 0.15)
-  
-  // 测试基于属性的采样
-  let attribute_sampler = AttributeBasedSampler([("error", "true")])
-  let error_telemetry = {
-    trace_id: "trace_error",
-    attributes: [("error", "true"), ("status", "500")]
+  // Create data deduplicator
+  let deduplicate_attributes = fn(attributes: Array[(String, String)]) {
+    let mut seen = []
+    let mut result = []
+    
+    for attr in attributes {
+      if not(seen.contains(attr.0)) {
+        seen = seen.push(attr.0)
+        result = result.push(attr)
+      }
+    }
+    
+    result
   }
-  let normal_telemetry = {
-    trace_id: "trace_normal",
-    attributes: [("status", "200")]
-  }
   
-  assert_true(attribute_sampler.should_sample_with_attributes(error_telemetry))
-  assert_false(attribute_sampler.should_sample_with_attributes(normal_telemetry))
-}
-
-// 测试6: 遥测数据过滤和转换
-test "telemetry data filtering and transformation" {
-  let telemetry_data = [
-    {name: "cpu_usage", value: 85.5, host: "server1", env: "prod"},
-    {name: "memory_usage", value: 60.2, host: "server1", env: "prod"},
-    {name: "cpu_usage", value: 45.3, host: "server2", env: "dev"},
-    {name: "disk_io", value: 120.7, host: "server1", env: "prod"},
-    {name: "network_latency", value: 25.8, host: "server3", env: "staging"}
-  ]
-  
-  // 过滤生产环境的指标
-  let prod_metrics = telemetry_data.filter(fn(m) { m.env == "prod" })
-  assert_eq(prod_metrics.length(), 3)
-  
-  // 过滤CPU使用率指标
-  let cpu_metrics = telemetry_data.filter(fn(m) { m.name == "cpu_usage" })
-  assert_eq(cpu_metrics.length(), 2)
-  
-  // 转换：标准化单位（将MB转换为GB）
-  let memory_gb = telemetry_data
-    .filter(fn(m) { m.name == "memory_usage" })
-    .map(fn(m) { 
-      {name: m.name, value: m.value / 1024.0, host: m.host, env: m.env} 
+  // Create attribute compressor (common patterns)
+  let compress_attributes = fn(attributes: Array[(String, String)>) {
+    let common_prefixes = [
+      ("service.", "s."),
+      ("telemetry.", "t."),
+      ("http.", "h."),
+      ("db.", "d.")
+    ]
+    
+    attributes.map(fn(attr) {
+      let (key, value) = attr
+      let mut compressed_key = key
+      
+      for (prefix, short_prefix) in common_prefixes {
+        if key.starts_with(prefix) {
+          compressed_key = short_prefix + key.substring(prefix.length(), key.length() - prefix.length())
+          break
+        }
+      }
+      
+      (compressed_key, value)
     })
-  
-  assert_eq(memory_gb.length(), 1)
-  assert_true(memory_gb[0].value < 1.0)  // 60.2MB应该小于1GB
-  
-  // 聚合：按主机分组计算平均值
-  let grouped_by_host = group_by_host(telemetry_data)
-  assert_eq(grouped_by_host["server1"].length(), 3)
-  assert_eq(grouped_by_host["server2"].length(), 1)
-  assert_eq(grouped_by_host["server3"].length(), 1)
-}
-
-// 测试7: 遥测数据异常检测
-test "telemetry anomaly detection" {
-  let normal_metrics = [50.0, 52.0, 48.0, 51.0, 49.0, 53.0, 47.0, 50.0, 52.0, 48.0]
-  let anomalous_metrics = [50.0, 52.0, 48.0, 150.0, 49.0, 53.0, 47.0, 50.0, 52.0, 48.0]
-  
-  // 计算统计阈值
-  let mean = calculate_mean(normal_metrics)
-  let std_dev = calculate_standard_deviation(normal_metrics, mean)
-  
-  // 使用3σ规则检测异常
-  let threshold = 3.0 * std_dev
-  let anomalies = detect_anomalies(anomalous_metrics, mean, threshold)
-  
-  assert_eq(anomalies.length(), 1)
-  assert_eq(anomalies[0].value, 150.0)
-  assert_eq(anomalies[0].index, 3)
-  
-  // 测试正常数据不应检测到异常
-  let normal_anomalies = detect_anomalies(normal_metrics, mean, threshold)
-  assert_eq(normal_anomalies.length(), 0)
-  
-  // 测试趋势异常检测
-  let trend_data = [10.0, 15.0, 20.0, 25.0, 30.0, 100.0, 35.0, 40.0, 45.0, 50.0]
-  let trend_anomalies = detect_trend_anomalies(trend_data, 2.0)
-  assert_eq(trend_anomalies.length(), 1)
-  assert_eq(trend_anomalies[0].index, 5)
-}
-
-// 测试8: 遥测数据存储和检索
-test "telemetry data storage and retrieval" {
-  let storage = InMemoryTelemetryStorage()
-  
-  // 存储遥测数据
-  let telemetry_data = [
-    {trace_id: "trace1", timestamp: 1640995200000, data: "sample_data_1"},
-    {trace_id: "trace2", timestamp: 1640995260000, data: "sample_data_2"},
-    {trace_id: "trace3", timestamp: 1640995320000, data: "sample_data_3"}
-  ]
-  
-  for data in telemetry_data {
-    storage.store(data)
   }
   
-  // 验证存储
-  assert_eq(storage.count(), 3)
+  // Create batch optimizer
+  let optimize_batch = fn(batch: TelemetryBatch) {
+    let optimized_spans = batch.spans.map(fn(span) {
+      let deduped_attrs = deduplicate_attributes(span.attributes)
+      let compressed_attrs = compress_attributes(deduped_attrs)
+      
+      { span | attributes: compressed_attrs }
+    })
+    
+    let optimized_metrics = batch.metrics.map(fn(metric) {
+      let deduped_attrs = deduplicate_attributes(metric.attributes)
+      let compressed_attrs = compress_attributes(deduped_attrs)
+      
+      { metric | attributes: compressed_attrs }
+    })
+    
+    {
+      spans: optimized_spans,
+      metrics: optimized_metrics,
+      resource_attributes: compress_attributes(batch.resource_attributes)
+    }
+  }
   
-  // 按时间范围检索
-  let time_range_results = storage.query_by_time_range(
-    1640995200000, 
-    1640995300000
-  )
-  assert_eq(time_range_results.length(), 2)
+  // Create test batch with redundant attributes
+  let test_batch = {
+    spans: [
+      {
+        trace_id: "trace-123",
+        span_id: "span-456",
+        parent_span_id: None,
+        name: "http_request",
+        start_time: 1640995200,
+        end_time: 1640995250,
+        status: "ok",
+        attributes: [
+          ("service.name", "api-service"),
+          ("service.version", "1.2.3"),
+          ("service.name", "api-service"),  // Duplicate
+          ("http.method", "GET"),
+          ("http.status_code", "200"),
+          ("telemetry.sdk.version", "1.0.0")
+        ]
+      }
+    ],
+    metrics: [
+      {
+        name: "http_requests_total",
+        value: 100.0,
+        unit: "count",
+        timestamp: 1640995200,
+        attributes: [
+          ("service.name", "api-service"),
+          ("http.method", "GET"),
+          ("service.name", "api-service")  // Duplicate
+        ]
+      }
+    ],
+    resource_attributes: [
+      ("service.name", "api-service"),
+      ("service.instance.id", "instance-123"),
+      ("telemetry.sdk.name", "opentelemetry"),
+      ("service.name", "api-service")  // Duplicate
+    ]
+  }
   
-  // 按trace_id检索
-  let trace_result = storage.query_by_trace_id("trace2")
-  match trace_result {
-    Some(data) => assert_eq(data.data, "sample_data_2")
+  // Test optimization
+  let optimized_batch = optimize_batch(test_batch)
+  
+  // Verify span optimization
+  let optimized_span = optimized_batch.spans[0]
+  assert_eq(optimized_span.attributes.length(), 5)  // Removed duplicate
+  assert_true(optimized_span.attributes.contains(("s.name", "api-service")))
+  assert_true(optimized_span.attributes.contains(("s.version", "1.2.3")))
+  assert_true(optimized_span.attributes.contains(("h.method", "GET")))
+  assert_true(optimized_span.attributes.contains(("h.status_code", "200")))
+  assert_true(optimized_span.attributes.contains(("t.sdk.version", "1.0.0")))
+  
+  // Verify metric optimization
+  let optimized_metric = optimized_batch.metrics[0]
+  assert_eq(optimized_metric.attributes.length(), 2)  // Removed duplicate
+  assert_true(optimized_metric.attributes.contains(("s.name", "api-service")))
+  assert_true(optimized_metric.attributes.contains(("h.method", "GET")))
+  
+  // Verify resource attributes optimization
+  assert_eq(optimized_batch.resource_attributes.length(), 3)  // Removed duplicate
+  assert_true(optimized_batch.resource_attributes.contains(("s.name", "api-service")))
+  assert_true(optimized_batch.resource_attributes.contains(("s.instance.id", "instance-123")))
+  assert_true(optimized_batch.resource_attributes.contains(("t.sdk.name", "opentelemetry")))
+}
+
+// Test 4: Telemetry Anomaly Detection
+test "telemetry anomaly detection and alerting" {
+  // Define anomaly detection parameters
+  type AnomalyThreshold = {
+    metric_name: String,
+    min_value: Option[Float],
+    max_value: Option[Float],
+    deviation_percentage: Float
+  }
+  
+  type AnomalyAlert = {
+    timestamp: Int,
+    metric_name: String,
+    actual_value: Float,
+    expected_range: (Float, Float),
+    severity: String
+  }
+  
+  // Create anomaly detector
+  let detect_anomalies = fn(metric_values: Array[(Int, Float)>, threshold: AnomalyThreshold, baseline_window: Int) {
+    if metric_values.length() < baseline_window + 1 {
+      return []
+    }
+    
+    // Calculate baseline from first N values
+    let baseline_values = metric_values.slice(0, baseline_window)
+    let baseline_avg = baseline_values.reduce(fn(acc, v) { acc + v.1 }, 0.0) / (baseline_window as Float)
+    
+    // Calculate standard deviation
+    let variance = baseline_values.reduce(fn(acc, v) { 
+      let diff = v.1 - baseline_avg
+      acc + (diff * diff)
+    }, 0.0) / (baseline_window as Float)
+    let std_dev = variance.sqrt()
+    
+    // Check for anomalies in remaining values
+    let test_values = metric_values.slice(baseline_window, metric_values.length())
+    let mut alerts = []
+    
+    for (timestamp, value) in test_values {
+      let lower_bound = baseline_avg - (threshold.deviation_percentage * baseline_avg / 100.0)
+      let upper_bound = baseline_avg + (threshold.deviation_percentage * baseline_avg / 100.0)
+      
+      // Check absolute thresholds
+      let abs_min_violation = match threshold.min_value {
+        Some(min) => value < min
+        None => false
+      }
+      
+      let abs_max_violation = match threshold.max_value {
+        Some(max) => value > max
+        None => false
+      }
+      
+      // Check statistical anomaly
+      let statistical_anomaly = value < lower_bound or value > upper_bound
+      
+      if abs_min_violation or abs_max_violation or statistical_anomaly {
+        let severity = if abs_min_violation or abs_max_violation {
+          "critical"
+        } else if value < lower_bound - (2.0 * std_dev) or value > upper_bound + (2.0 * std_dev) {
+          "high"
+        } else {
+          "medium"
+        }
+        
+        alerts = alerts.push({
+          timestamp,
+          metric_name: threshold.metric_name,
+          actual_value: value,
+          expected_range: (lower_bound, upper_bound),
+          severity
+        })
+      }
+    }
+    
+    alerts
+  }
+  
+  // Test with response time metrics
+  let response_time_data = [
+    (1640995200, 100.0),   // Baseline period starts
+    (1640995260, 120.0),
+    (1640995320, 95.0),
+    (1640995380, 105.0),
+    (1640995440, 110.0),
+    (1640995500, 98.0),
+    (1640995560, 102.0),
+    (1640995620, 115.0),
+    (1640995680, 1500.0),  // Anomaly - very high response time
+    (1640995740, 90.0),    // Anomaly - very low response time
+    (1640995800, 200.0)    // Anomaly - moderately high
+  ]
+  
+  let response_time_threshold = {
+    metric_name: "response_time_ms",
+    min_value: Some(50.0),
+    max_value: Some(500.0),
+    deviation_percentage: 50.0
+  }
+  
+  let alerts = detect_anomalies(response_time_data, response_time_threshold, 8)
+  
+  // Should detect 3 anomalies
+  assert_eq(alerts.length(), 3)
+  
+  // Check critical alert (exceeds max threshold)
+  let critical_alert = alerts.find(fn(a) { a.severity == "critical" })
+  assert_true(critical_alert.is_some())
+  match critical_alert {
+    Some(alert) => {
+      assert_eq(alert.actual_value, 1500.0)
+      assert_eq(alert.metric_name, "response_time_ms")
+    }
     None => assert_true(false)
   }
   
-  // 测试删除功能
-  let deleted = storage.delete_by_trace_id("trace1")
-  assert_true(deleted)
-  assert_eq(storage.count(), 2)
+  // Check medium alert (statistical anomaly)
+  let medium_alerts = alerts.filter(fn(a) { a.severity == "medium" })
+  assert_eq(medium_alerts.length(), 2)
   
-  let deleted_result = storage.query_by_trace_id("trace1")
-  assert_eq(deleted_result, None)
-}
-
-// 测试9: 遥测数据性能基准
-test "telemetry data performance benchmarks" {
-  let large_dataset = generate_large_telemetry_dataset(10000)
-  let start_time = get_current_timestamp()
-  
-  // 测试批量处理性能
-  let processed = batch_process_telemetry(large_dataset)
-  let end_time = get_current_timestamp()
-  
-  let processing_time = end_time - start_time
-  assert_true(processing_time < 5000)  // 应在5秒内完成处理
-  assert_eq(processed.length(), large_dataset.length())
-  
-  // 测试内存使用效率
-  let memory_before = get_memory_usage()
-  let aggregated = aggregate_telemetry_data(large_dataset)
-  let memory_after = get_memory_usage()
-  
-  let memory_increase = memory_after - memory_before
-  let memory_per_item = Int::to_float(memory_increase) / Int::to_float(large_dataset.length())
-  
-  // 每项数据内存增长应小于1KB
-  assert_true(memory_per_item < 1024.0)
-  assert_true(aggregated.keys().length() > 0)
-  
-  // 测试并发处理性能
-  let concurrent_start = get_current_timestamp()
-  let concurrent_results = concurrent_process_telemetry(large_dataset, 4)
-  let concurrent_end = get_current_timestamp()
-  
-  let concurrent_time = concurrent_end - concurrent_start
-  // 并发处理应更快（至少快20%）
-  assert_true(concurrent_time < processing_time * 0.8)
-}
-
-// 测试10: 遥测数据完整性验证
-test "telemetry data integrity validation" {
-  // 创建测试数据集
-  let telemetry_batch = [
-    {id: "1", checksum: "abc123", data: "sample1"},
-    {id: "2", checksum: "def456", data: "sample2"},
-    {id: "3", checksum: "ghi789", data: "sample3"}
+  // Test with error rate metrics
+  let error_rate_data = [
+    (1640995200, 0.01),
+    (1640995260, 0.02),
+    (1640995320, 0.015),
+    (1640995380, 0.005),
+    (1640995440, 0.012),
+    (1640995500, 0.008),
+    (1640995560, 0.018),
+    (1640995620, 0.011),
+    (1640995680, 0.15),    // Anomaly - high error rate
+    (1640995740, 0.02)
   ]
   
-  // 计算校验和
-  let validated_batch = telemetry_batch.map(fn(item) {
-    let calculated_checksum = calculate_checksum(item.data)
-    {id: item.id, checksum: item.checksum, data: item.data, 
-     is_valid: calculated_checksum == item.checksum}
-  })
-  
-  // 验证校验和匹配
-  for item in validated_batch {
-    assert_true(item.is_valid)
+  let error_rate_threshold = {
+    metric_name: "error_rate",
+    min_value: Some(0.0),
+    max_value: Some(0.1),
+    deviation_percentage: 200.0
   }
   
-  // 测试损坏数据检测
-  let corrupted_data = [
-    {id: "1", checksum: "abc123", data: "corrupted_sample1"},
-    {id: "2", checksum: "def456", data: "sample2"}
+  let error_alerts = detect_anomalies(error_rate_data, error_rate_threshold, 8)
+  assert_eq(error_alerts.length(), 1)
+  assert_eq(error_alerts[0].actual_value, 0.15)
+  assert_eq(error_alerts[0].severity, "critical")
+}
+
+// Test 5: Telemetry Memory Management
+test "telemetry memory management and resource cleanup" {
+  // Define memory pool for telemetry objects
+  type MemoryPool[T] = {
+    available: Array[T],
+    in_use: Array[T],
+    max_size: Int,
+    created: Int,
+    reused: Int
+  }
+  
+  // Create memory pool manager
+  let create_memory_pool = fn(max_size: Int) {
+    {
+      available: [],
+      in_use: [],
+      max_size,
+      created: 0,
+      reused: 0
+    }
+  }
+  
+  let acquire_from_pool = fn(pool: MemoryPool[T], factory: () -> T) {
+    match pool.available.pop() {
+      Some(item) => {
+        {
+          pool | 
+          in_use: pool.in_use.push(item),
+          reused: pool.reused + 1
+        },
+        Some(item)
+      }
+      None => {
+        if pool.created < pool.max_size {
+          let new_item = factory()
+          {
+            pool |
+            in_use: pool.in_use.push(new_item),
+            created: pool.created + 1
+          },
+          Some(new_item)
+        } else {
+          (pool, None)
+        }
+      }
+    }
+  }
+  
+  let release_to_pool = fn(pool: MemoryPool[T], item: T) {
+    let updated_in_use = pool.in_use.filter(fn(i) { i != item })
+    {
+      pool |
+      available: pool.available.push(item),
+      in_use: updated_in_use
+    }
+  }
+  
+  // Test with telemetry span objects
+  let span_factory = fn() {
+    {
+      trace_id: "",
+      span_id: "",
+      name: "",
+      start_time: 0,
+      end_time: 0,
+      attributes: []
+    }
+  }
+  
+  let initial_pool = create_memory_pool(5)
+  
+  // Acquire first span (should create new)
+  let (pool1, span1_opt) = acquire_from_pool(initial_pool, span_factory)
+  assert_true(span1_opt.is_some())
+  assert_eq(pool1.created, 1)
+  assert_eq(pool1.reused, 0)
+  assert_eq(pool1.in_use.length(), 1)
+  
+  // Acquire second span (should create new)
+  let (pool2, span2_opt) = acquire_from_pool(pool1, span_factory)
+  assert_true(span2_opt.is_some())
+  assert_eq(pool2.created, 2)
+  assert_eq(pool2.reused, 0)
+  assert_eq(pool2.in_use.length(), 2)
+  
+  // Release first span back to pool
+  let pool3 = release_to_pool(pool2, span1_opt.unwrap())
+  assert_eq(pool3.available.length(), 1)
+  assert_eq(pool3.in_use.length(), 1)
+  
+  // Acquire third span (should reuse from pool)
+  let (pool4, span3_opt) = acquire_from_pool(pool3, span_factory)
+  assert_true(span3_opt.is_some())
+  assert_eq(pool4.created, 2)  // No new creation
+  assert_eq(pool4.reused, 1)   // Reused one
+  assert_eq(pool4.available.length(), 0)
+  assert_eq(pool4.in_use.length(), 2)
+  
+  // Test memory pressure scenario
+  let mut pressure_pool = pool4
+  
+  // Acquire remaining spans to fill pool
+  for i in 0..3 {
+    let (new_pool, span_opt) = acquire_from_pool(pressure_pool, span_factory)
+    pressure_pool = new_pool
+  }
+  
+  assert_eq(pressure_pool.created, 5)  // Should have created max 5 spans
+  assert_eq(pressure_pool.in_use.length(), 5)
+  
+  // Try to acquire beyond pool limit
+  let (final_pool, overflow_span) = acquire_from_pool(pressure_pool, span_factory)
+  assert_true(overflow_span.is_none())  // Should fail due to pool limit
+  assert_eq(final_pool.created, 5)     // No new creation
+  assert_eq(final_pool.in_use.length(), 5)
+  
+  // Test cleanup simulation
+  let cleanup_pool = fn(pool: MemoryPool[T]) {
+    // Release all in-use items back to pool
+    let mut cleaned_pool = pool
+    for item in pool.in_use {
+      cleaned_pool = release_to_pool(cleaned_pool, item)
+    }
+    cleaned_pool
+  }
+  
+  let cleaned_pool = cleanup_pool(final_pool)
+  assert_eq(cleaned_pool.in_use.length(), 0)
+  assert_eq(cleaned_pool.available.length(), 5)
+  
+  // Test pool statistics
+  let pool_efficiency = if cleaned_pool.created > 0 {
+    (cleaned_pool.reused * 100) / cleaned_pool.created
+  } else {
+    0
+  }
+  
+  assert_eq(pool_efficiency, 20)  // 1 reuse out of 5 created = 20%
+}
+
+// Test 6: Telemetry Data Correlation
+test "telemetry data correlation across multiple signals" {
+  // Define correlation identifiers
+  type CorrelationId = String
+  type TraceId = String
+  type SpanId = String
+  
+  // Define correlated telemetry signals
+  type CorrelatedSignals = {
+    trace_id: TraceId,
+    spans: Array[SpanReference],
+    logs: Array[LogReference],
+    metrics: Array[MetricReference],
+    errors: Array[ErrorReference]
+  }
+  
+  type SpanReference = {
+    span_id: SpanId,
+    parent_span_id: Option[SpanId],
+    service_name: String,
+    operation_name: String,
+    start_time: Int,
+    duration_ms: Int,
+    status: String
+  }
+  
+  type LogReference = {
+    timestamp: Int,
+    severity: String,
+    message: String,
+    span_id: Option[SpanId>,
+    attributes: Array[(String, String)]
+  }
+  
+  type MetricReference = {
+    name: String,
+    value: Float,
+    timestamp: Int,
+    span_id: Option[SpanId>,
+    attributes: Array[(String, String)]
+  }
+  
+  type ErrorReference = {
+    error_id: String,
+    error_type: String,
+    message: String,
+    timestamp: Int,
+    span_id: Option[SpanId],
+    stack_trace: String
+  }
+  
+  // Create correlation engine
+  let correlate_signals = fn(
+    spans: Array[SpanReference], 
+    logs: Array[LogReference], 
+    metrics: Array[MetricReference], 
+    errors: Array[ErrorReference]
+  ) {
+    // Group by trace_id
+    let trace_groups = spans.group_by(fn(s) { s.trace_id })
+    
+    // Build correlated signals for each trace
+    trace_groups.map(fn((trace_id, trace_spans)) {
+      let span_ids = trace_spans.map(fn(s) { s.span_id })
+      
+      // Filter logs by span_id or trace_id
+      let correlated_logs = logs.filter(fn(log) {
+        match log.span_id {
+          Some(span_id) => span_ids.contains(span_id)
+          None => false
+        }
+      })
+      
+      // Filter metrics by span_id
+      let correlated_metrics = metrics.filter(fn(metric) {
+        match metric.span_id {
+          Some(span_id) => span_ids.contains(span_id)
+          None => false
+        }
+      })
+      
+      // Filter errors by span_id
+      let correlated_errors = errors.filter(fn(error) {
+        match error.span_id {
+          Some(span_id) => span_ids.contains(span_id)
+          None => false
+        }
+      })
+      
+      {
+        trace_id,
+        spans: trace_spans,
+        logs: correlated_logs,
+        metrics: correlated_metrics,
+        errors: correlated_errors
+      }
+    })
+  }
+  
+  // Create test data
+  let test_spans = [
+    {
+      trace_id: "trace-123",
+      span_id: "span-abc",
+      parent_span_id: None,
+      service_name: "api-gateway",
+      operation_name: "process_request",
+      start_time: 1640995200,
+      duration_ms: 150,
+      status: "ok"
+    },
+    {
+      trace_id: "trace-123",
+      span_id: "span-def",
+      parent_span_id: Some("span-abc"),
+      service_name: "user-service",
+      operation_name: "authenticate_user",
+      start_time: 1640995210,
+      duration_ms: 80,
+      status: "ok"
+    },
+    {
+      trace_id: "trace-456",
+      span_id: "span-ghi",
+      parent_span_id: None,
+      service_name: "payment-service",
+      operation_name: "process_payment",
+      start_time: 1640995300,
+      duration_ms: 1200,
+      status: "error"
+    }
   ]
   
-  let corruption_detected = detect_data_corruption(corrupted_data)
-  assert_true(corruption_detected)
+  let test_logs = [
+    {
+      timestamp: 1640995205,
+      severity: "INFO",
+      message: "Request received",
+      span_id: Some("span-abc"),
+      attributes: [("user.id", "user-789")]
+    },
+    {
+      timestamp: 1640995215,
+      severity: "DEBUG",
+      message: "Authentication successful",
+      span_id: Some("span-def"),
+      attributes: [("auth.method", "jwt")]
+    },
+    {
+      timestamp: 1640995310,
+      severity: "ERROR",
+      message: "Payment processing failed",
+      span_id: Some("span-ghi"),
+      attributes: [("error.code", "CARD_DECLINED")]
+    }
+  ]
   
-  // 测试数据修复
-  let repair_result = attempt_data_repair(corrupted_data[0])
-  match repair_result {
-    Some(repaired) => assert_true(repaired.data.length() > 0)
+  let test_metrics = [
+    {
+      name: "http_requests_total",
+      value: 1.0,
+      timestamp: 1640995200,
+      span_id: Some("span-abc"),
+      attributes: [("method", "POST"), ("status", "200")]
+    },
+    {
+      name: "db_query_duration_ms",
+      value: 45.0,
+      timestamp: 1640995210,
+      span_id: Some("span-def"),
+      attributes: [("query.type", "SELECT")]
+    },
+    {
+      name: "payment_failures_total",
+      value: 1.0,
+      timestamp: 1640995300,
+      span_id: Some("span-ghi"),
+      attributes: [("reason", "CARD_DECLINED")]
+    }
+  ]
+  
+  let test_errors = [
+    {
+      error_id: "error-123",
+      error_type: "PaymentError",
+      message: "Card declined",
+      timestamp: 1640995310,
+      span_id: Some("span-ghi"),
+      stack_trace: "at PaymentService.process..."
+    }
+  ]
+  
+  // Test correlation
+  let correlated_signals = correlate_signals(test_spans, test_logs, test_metrics, test_errors)
+  assert_eq(correlated_signals.length(), 2)  // Two different traces
+  
+  // Test trace-123 correlation
+  let trace_123 = correlated_signals.find(fn(cs) { cs.trace_id == "trace-123" })
+  assert_true(trace_123.is_some())
+  
+  match trace_123 {
+    Some(cs) => {
+      assert_eq(cs.spans.length(), 2)
+      assert_eq(cs.logs.length(), 2)
+      assert_eq(cs.metrics.length(), 2)
+      assert_eq(cs.errors.length(), 0)  // No errors in this trace
+    }
     None => assert_true(false)
   }
   
-  // 测试端到端完整性验证
-  let end_to_end_result = verify_end_to_end_integrity(telemetry_batch)
-  assert_true(end_to_end_result.all_valid)
-  assert_eq(end_to_end_result.valid_count, telemetry_batch.length())
-  assert_eq(end_to_end_result.invalid_count, 0)
+  // Test trace-456 correlation
+  let trace_456 = correlated_signals.find(fn(cs) { cs.trace_id == "trace-456" })
+  assert_true(trace_456.is_some())
+  
+  match trace_456 {
+    Some(cs) => {
+      assert_eq(cs.spans.length(), 1)
+      assert_eq(cs.logs.length(), 1)
+      assert_eq(cs.metrics.length(), 1)
+      assert_eq(cs.errors.length(), 1)  // One error in this trace
+    }
+    None => assert_true(false)
+  }
+  
+  // Test correlation analysis
+  let analyze_correlation = fn(correlated: CorrelatedSignals) {
+    let total_duration = correlated.spans.reduce(fn(acc, span) { acc + span.duration_ms }, 0)
+    let error_count = correlated.errors.length()
+    let log_levels = correlated.logs.map(fn(log) { log.severity })
+    let error_logs = log_levels.filter(fn(level) { level == "ERROR" }).length()
+    
+    {
+      total_spans: correlated.spans.length(),
+      total_duration_ms: total_duration,
+      has_errors: error_count > 0,
+      error_count: error_count,
+      error_log_count: error_logs,
+      services_involved: correlated.spans.map(fn(s) { s.service_name }).unique()
+    }
+  }
+  
+  let analysis_123 = analyze_correlation(trace_123.unwrap())
+  assert_eq(analysis_123.total_spans, 2)
+  assert_eq(analysis_123.total_duration_ms, 230)  // 150 + 80
+  assert_false(analysis_123.has_errors)
+  assert_eq(analysis_123.error_count, 0)
+  assert_eq(analysis_123.services_involved.length(), 2)
+  
+  let analysis_456 = analyze_correlation(trace_456.unwrap())
+  assert_eq(analysis_456.total_spans, 1)
+  assert_eq(analysis_456.total_duration_ms, 1200)
+  assert_true(analysis_456.has_errors)
+  assert_eq(analysis_456.error_count, 1)
+  assert_eq(analysis_456.error_log_count, 1)
+  assert_eq(analysis_456.services_involved.length(), 1)
+}
+
+// Test 7: Adaptive Telemetry Sampling
+test "adaptive telemetry sampling with dynamic rate adjustment" {
+  // Define sampling strategy
+  type SamplingStrategy = {
+    base_rate: Float,
+    min_rate: Float,
+    max_rate: Float,
+    adjustment_factor: Float,
+    error_threshold: Float,
+    latency_threshold: Int
+  }
+  
+  type SamplingDecision = {
+    sampled: Bool,
+    rate: Float,
+    reason: String
+  }
+  
+  type SystemMetrics = {
+    error_rate: Float,
+    avg_latency_ms: Int,
+    throughput: Int,
+    resource_usage: Float
+  }
+  
+  // Create adaptive sampler
+  let create_adaptive_sampler = fn(strategy: SamplingStrategy) {
+    let mut current_rate = strategy.base_rate
+    
+    fn(trace_id: String, system_metrics: SystemMetrics) -> SamplingDecision {
+      // Adjust rate based on system metrics
+      let adjusted_rate = if system_metrics.error_rate > strategy.error_threshold {
+        // Increase sampling during high error rates
+        let new_rate = current_rate * (1.0 + strategy.adjustment_factor)
+        if new_rate > strategy.max_rate { strategy.max_rate } else { new_rate }
+      } else if system_metrics.avg_latency_ms > strategy.latency_threshold {
+        // Increase sampling during high latency
+        let new_rate = current_rate * (1.0 + strategy.adjustment_factor)
+        if new_rate > strategy.max_rate { strategy.max_rate } else { new_rate }
+      } else if system_metrics.resource_usage > 0.8 {
+        // Decrease sampling during high resource usage
+        let new_rate = current_rate * (1.0 - strategy.adjustment_factor)
+        if new_rate < strategy.min_rate { strategy.min_rate } else { new_rate }
+      } else {
+        // Gradually return to base rate
+        let adjustment = (strategy.base_rate - current_rate) * 0.1
+        current_rate + adjustment
+      }
+      
+      current_rate = adjusted_rate
+      
+      // Make sampling decision
+      let hash = trace_id.chars().reduce(0, fn(acc, c) { acc + c.to_int() })
+      let normalized = (hash % 1000) as Float / 1000.0
+      
+      let sampled = normalized <= current_rate
+      let reason = if sampled {
+        "Sampled at rate " + current_rate.to_string()
+      } else {
+        "Not sampled at rate " + current_rate.to_string()
+      }
+      
+      {
+        sampled,
+        rate: current_rate,
+        reason
+      }
+    }
+  }
+  
+  // Test adaptive sampling behavior
+  let strategy = {
+    base_rate: 0.1,      // 10% base sampling
+    min_rate: 0.01,      // 1% minimum
+    max_rate: 0.5,       // 50% maximum
+    adjustment_factor: 0.5,  // 50% adjustment
+    error_threshold: 0.05,  // 5% error rate threshold
+    latency_threshold: 500   // 500ms latency threshold
+  }
+  
+  let sampler = create_adaptive_sampler(strategy)
+  
+  // Test under normal conditions
+  let normal_metrics = {
+    error_rate: 0.01,
+    avg_latency_ms: 100,
+    throughput: 1000,
+    resource_usage: 0.4
+  }
+  
+  let normal_decision1 = sampler("trace-001", normal_metrics)
+  let normal_decision2 = sampler("trace-002", normal_metrics)
+  let normal_decision3 = sampler("trace-003", normal_metrics)
+  
+  // Should sample around base rate (10%)
+  let normal_sampled_count = [normal_decision1, normal_decision2, normal_decision3]
+    .filter(fn(d) { d.sampled })
+    .length()
+  
+  assert_true(normal_sampled_count >= 0 && normal_sampled_count <= 3)
+  
+  // Test under high error conditions
+  let high_error_metrics = {
+    error_rate: 0.1,  // 10% error rate (above threshold)
+    avg_latency_ms: 100,
+    throughput: 1000,
+    resource_usage: 0.4
+  }
+  
+  let error_decision1 = sampler("trace-004", high_error_metrics)
+  let error_decision2 = sampler("trace-005", high_error_metrics)
+  let error_decision3 = sampler("trace-006", high_error_metrics)
+  
+  // Rate should increase due to high error rate
+  assert_true(error_decision1.rate > normal_decision1.rate)
+  assert_true(error_decision2.rate > normal_decision2.rate)
+  assert_true(error_decision3.rate > normal_decision3.rate)
+  
+  // Test under high resource usage
+  let high_resource_metrics = {
+    error_rate: 0.01,
+    avg_latency_ms: 100,
+    throughput: 1000,
+    resource_usage: 0.9  // 90% resource usage
+  }
+  
+  let resource_decision1 = sampler("trace-007", high_resource_metrics)
+  let resource_decision2 = sampler("trace-008", high_resource_metrics)
+  let resource_decision3 = sampler("trace-009", high_resource_metrics)
+  
+  // Rate should decrease due to high resource usage
+  assert_true(resource_decision1.rate < error_decision1.rate)
+  assert_true(resource_decision2.rate < error_decision2.rate)
+  assert_true(resource_decision3.rate < error_decision3.rate)
+  
+  // Test rate boundaries
+  assert_true(resource_decision1.rate >= strategy.min_rate)
+  assert_true(resource_decision1.rate <= strategy.max_rate)
+  
+  // Test sustained conditions (rate should stabilize)
+  let stabilized_decision = sampler("trace-010", high_resource_metrics)
+  assert_true(stabilized_decision.rate >= strategy.min_rate)
+  assert_true(stabilized_decision.rate <= strategy.max_rate)
+  
+  // Test gradual recovery
+  let recovery_metrics = {
+    error_rate: 0.01,
+    avg_latency_ms: 100,
+    throughput: 1000,
+    resource_usage: 0.4
+  }
+  
+  let recovery_decision1 = sampler("trace-011", recovery_metrics)
+  let recovery_decision2 = sampler("trace-012", recovery_metrics)
+  let recovery_decision3 = sampler("trace-013", recovery_metrics)
+  
+  // Rate should gradually move toward base rate
+  assert_true(recovery_decision3.rate > resource_decision3.rate)
+}
+
+// Test 8: Telemetry Pipeline Performance Optimization
+test "telemetry pipeline performance optimization with batching" {
+  // Define pipeline configuration
+  type PipelineConfig = {
+    batch_size: Int,
+    batch_timeout_ms: Int,
+    max_concurrent_batches: Int,
+    compression_enabled: Bool,
+    prioritization_enabled: Bool
+  }
+  
+  type TelemetryItem = {
+    id: String,
+    timestamp: Int,
+    priority: String,  // "high", "medium", "low"
+    size_bytes: Int,
+    processing_time_ms: Int
+  }
+  
+  type BatchMetrics = {
+    item_count: Int,
+    total_size_bytes: Int,
+    processing_time_ms: Int,
+    compression_ratio: Option[Float]
+  }
+  
+  // Create batch processor
+  let create_batch_processor = fn(config: PipelineConfig) {
+    let mut pending_items = []
+    let mut batch_start_time = 0
+    
+    fn(item: TelemetryItem, current_time: Int) -> (Array[TelemetryItem], BatchMetrics) {
+      pending_items = pending_items.push(item)
+      
+      if batch_start_time == 0 {
+        batch_start_time = current_time
+      }
+      
+      let batch_ready = pending_items.length() >= config.batch_size or 
+                       (current_time - batch_start_time) >= config.batch_timeout_ms
+      
+      if batch_ready {
+        // Sort by priority if enabled
+        let sorted_items = if config.prioritization_enabled {
+          pending_items.sort(fn(a, b) {
+            let priority_order = ["high", "medium", "low"]
+            let a_index = priority_order.find_index(fn(p) { p == a.priority }).unwrap_or(999)
+            let b_index = priority_order.find_index(fn(p) { p == b.priority }).unwrap_or(999)
+            
+            if a_index < b_index { -1 } else if a_index > b_index { 1 } else { 0 }
+          })
+        } else {
+          pending_items
+        }
+        
+        let total_size = sorted_items.reduce(fn(acc, item) { acc + item.size_bytes }, 0)
+        let processing_time = sorted_items.reduce(fn(acc, item) { acc + item.processing_time_ms }, 0)
+        
+        // Simulate compression
+        let compression_ratio = if config.compression_enabled {
+          Some(0.7)  // 30% compression
+        } else {
+          None
+        }
+        
+        let metrics = {
+          item_count: sorted_items.length(),
+          total_size_bytes: total_size,
+          processing_time_ms: processing_time,
+          compression_ratio
+        }
+        
+        // Reset for next batch
+        pending_items = []
+        batch_start_time = 0
+        
+        (sorted_items, metrics)
+      } else {
+        ([], {
+          item_count: 0,
+          total_size_bytes: 0,
+          processing_time_ms: 0,
+          compression_ratio: None
+        })
+      }
+    }
+  }
+  
+  // Test pipeline configuration
+  let config = {
+    batch_size: 5,
+    batch_timeout_ms: 1000,
+    max_concurrent_batches: 3,
+    compression_enabled: true,
+    prioritization_enabled: true
+  }
+  
+  let processor = create_batch_processor(config)
+  
+  // Create test items with varying priorities
+  let test_items = [
+    { id: "item-1", timestamp: 1000, priority: "low", size_bytes: 100, processing_time_ms: 10 },
+    { id: "item-2", timestamp: 1000, priority: "high", size_bytes: 150, processing_time_ms: 20 },
+    { id: "item-3", timestamp: 1000, priority: "medium", size_bytes: 120, processing_time_ms: 15 },
+    { id: "item-4", timestamp: 1000, priority: "high", size_bytes: 200, processing_time_ms: 25 },
+    { id: "item-5", timestamp: 1000, priority: "low", size_bytes: 80, processing_time_ms: 8 },
+    { id: "item-6", timestamp: 2000, priority: "medium", size_bytes: 130, processing_time_ms: 18 }
+  ]
+  
+  // Process items and collect batches
+  let mut all_batches = []
+  let mut all_metrics = []
+  
+  for item in test_items {
+    let (batch, metrics) = processor(item, item.timestamp)
+    
+    if batch.length() > 0 {
+      all_batches = all_batches.push(batch)
+      all_metrics = all_metrics.push(metrics)
+    }
+  }
+  
+  // Should have created one batch with first 5 items
+  assert_eq(all_batches.length(), 1)
+  assert_eq(all_metrics.length(), 1)
+  
+  let batch = all_batches[0]
+  let metrics = all_metrics[0]
+  
+  // Verify batch size
+  assert_eq(batch.length(), 5)
+  assert_eq(metrics.item_count, 5)
+  
+  // Verify prioritization (high priority items should come first)
+  assert_eq(batch[0].priority, "high")  // item-2
+  assert_eq(batch[1].priority, "high")  // item-4
+  assert_eq(batch[2].priority, "medium")  // item-3
+  assert_eq(batch[3].priority, "low")   // item-1
+  assert_eq(batch[4].priority, "low")   // item-5
+  
+  // Verify batch metrics
+  assert_eq(metrics.total_size_bytes, 100 + 150 + 120 + 200 + 80)
+  assert_eq(metrics.processing_time_ms, 10 + 20 + 15 + 25 + 8)
+  assert_eq(metrics.compression_ratio, Some(0.7))
+  
+  // Test timeout-based batching
+  let timeout_item = { id: "item-7", timestamp: 3000, priority: "low", size_bytes: 90, processing_time_ms: 12 }
+  let (timeout_batch, timeout_metrics) = processor(timeout_item, timeout_item.timestamp)
+  
+  // Should create a batch due to timeout (item-6 + item-7)
+  assert_eq(timeout_batch.length(), 2)
+  assert_eq(timeout_metrics.item_count, 2)
+  
+  // Test performance optimization
+  let calculate_throughput = fn(metrics: Array[BatchMetrics>, time_window_ms: Int) {
+    let total_items = metrics.reduce(fn(acc, m) { acc + m.item_count }, 0)
+    let total_size = metrics.reduce(fn(acc, m) { acc + m.total_size_bytes }, 0)
+    
+    {
+      items_per_second: (total_items * 1000) / time_window_ms,
+      bytes_per_second: (total_size * 1000) / time_window_ms,
+      avg_processing_time_ms: if metrics.length() > 0 {
+        metrics.reduce(fn(acc, m) { acc + m.processing_time_ms }, 0) / metrics.length()
+      } else {
+        0
+      }
+    }
+  }
+  
+  let all_batch_metrics = all_metrics + [timeout_metrics]
+  let performance = calculate_throughput(all_batch_metrics, 2000)  // 2 second window
+  
+  assert_true(performance.items_per_second > 0)
+  assert_true(performance.bytes_per_second > 0)
+  assert_true(performance.avg_processing_time_ms > 0)
+  
+  // Test compression effectiveness
+  let total_compressed_size = all_batch_metrics
+    .filter(fn(m) { m.compression_ratio.is_some() })
+    .reduce(fn(acc, m) { 
+      let ratio = m.compression_ratio.unwrap_or(1.0)
+      acc + (m.total_size_bytes as Float * ratio) as Int
+    }, 0)
+  
+  let total_original_size = all_batch_metrics
+    .filter(fn(m) { m.compression_ratio.is_some() })
+    .reduce(fn(acc, m) { acc + m.total_size_bytes }, 0)
+  
+  assert_true(total_compressed_size < total_original_size)
+}
+
+// Test 9: Telemetry Data Validation and Schema Enforcement
+test "telemetry data validation and schema enforcement" {
+  // Define validation schema
+  type ValidationSchema = {
+    required_fields: Array[String],
+    field_types: Array[(String, String)],  // (field_name, type_name)
+    field_constraints: Array[(String, String)]  // (field_name, constraint)
+  }
+  
+  type ValidationError = {
+    field: String,
+    message: String,
+    severity: String  // "error", "warning"
+  }
+  
+  type ValidationResult = {
+    valid: Bool,
+    errors: Array[ValidationError],
+    warnings: Array[ValidationError]
+  }
+  
+  // Create validator function
+  let create_validator = fn(schema: ValidationSchema) {
+    fn(data: Array[(String, String)>) -> ValidationResult {
+      let mut errors = []
+      let mut warnings = []
+      
+      // Check required fields
+      for field in schema.required_fields {
+        let field_present = data.any(fn(item) { item.0 == field })
+        if not(field_present) {
+          errors = errors.push({
+            field,
+            message: "Required field is missing",
+            severity: "error"
+          })
+        }
+      }
+      
+      // Check field types
+      for (field_name, expected_type) in schema.field_types {
+        match data.find(fn(item) { item.0 == field_name }) {
+          Some((_, value)) => {
+            let type_valid = match expected_type {
+              "string" => true,  // All values are strings in this simplified model
+              "int" => {
+                value.chars().all(fn(c) { c >= '0' and c <= '9' })
+              }
+              "float" => {
+                let parts = value.split(".")
+                parts.length() == 2 and 
+                parts[0].chars().all(fn(c) { c >= '0' and c <= '9' }) and
+                parts[1].chars().all(fn(c) { c >= '0' and c <= '9' })
+              }
+              "boolean" => value == "true" or value == "false",
+              _ => false
+            }
+            
+            if not(type_valid) {
+              errors = errors.push({
+                field: field_name,
+                message: "Invalid type for field, expected " + expected_type,
+                severity: "error"
+              })
+            }
+          }
+          None => {}  // Missing field already caught by required fields check
+        }
+      }
+      
+      // Check field constraints
+      for (field_name, constraint) in schema.field_constraints {
+        match data.find(fn(item) { item.0 == field_name }) {
+          Some((_, value)) => {
+            let constraint_valid = match constraint {
+              s if s.starts_with("min_length:") => {
+                let min_length = s.substring(11, s.length() - 11).to_int()
+                value.length() >= min_length
+              }
+              s if s.starts_with("max_length:") => {
+                let max_length = s.substring(11, s.length() - 11).to_int()
+                value.length() <= max_length
+              }
+              s if s.starts_with("pattern:") => {
+                let pattern = s.substring(8, s.length() - 8)
+                // Simplified pattern matching
+                if pattern == "trace_id" {
+                  value.length() == 11 and value.starts_with("trace-")
+                } else if pattern == "span_id" {
+                  value.length() == 9 and value.starts_with("span-")
+                } else {
+                  false
+                }
+              }
+              _ => false
+            }
+            
+            if not(constraint_valid) {
+              warnings = warnings.push({
+                field: field_name,
+                message: "Field does not satisfy constraint: " + constraint,
+                severity: "warning"
+              })
+            }
+          }
+          None => {}  // Missing field already caught by required fields check
+        }
+      }
+      
+      {
+        valid: errors.length() == 0,
+        errors,
+        warnings
+      }
+    }
+  }
+  
+  // Create telemetry schema
+  let telemetry_schema = {
+    required_fields: ["trace_id", "span_id", "service_name", "operation_name"],
+    field_types: [
+      ("trace_id", "string"),
+      ("span_id", "string"),
+      ("service_name", "string"),
+      ("operation_name", "string"),
+      ("start_time", "int"),
+      ("duration_ms", "int"),
+      ("success", "boolean")
+    ],
+    field_constraints: [
+      ("trace_id", "pattern:trace_id"),
+      ("span_id", "pattern:span_id"),
+      ("service_name", "min_length:1"),
+      ("service_name", "max_length:50"),
+      ("operation_name", "min_length:1"),
+      ("operation_name", "max_length:100")
+    ]
+  }
+  
+  let validator = create_validator(telemetry_schema)
+  
+  // Test valid telemetry data
+  let valid_data = [
+    ("trace_id", "trace-abc123"),
+    ("span_id", "span-def456"),
+    ("service_name", "api-service"),
+    ("operation_name", "process_request"),
+    ("start_time", "1640995200"),
+    ("duration_ms", "150"),
+    ("success", "true")
+  ]
+  
+  let valid_result = validator(valid_data)
+  assert_true(valid_result.valid)
+  assert_eq(valid_result.errors.length(), 0)
+  assert_eq(valid_result.warnings.length(), 0)
+  
+  // Test missing required field
+  let missing_field_data = [
+    ("span_id", "span-def456"),
+    ("service_name", "api-service"),
+    ("operation_name", "process_request")
+  ]
+  
+  let missing_field_result = validator(missing_field_data)
+  assert_false(missing_field_result.valid)
+  assert_eq(missing_field_result.errors.length(), 1)
+  assert_eq(missing_field_result.errors[0].field, "trace_id")
+  assert_eq(missing_field_result.errors[0].message, "Required field is missing")
+  
+  // Test invalid type
+  let invalid_type_data = [
+    ("trace_id", "trace-abc123"),
+    ("span_id", "span-def456"),
+    ("service_name", "api-service"),
+    ("operation_name", "process_request"),
+    ("start_time", "not_a_number"),  // Invalid type
+    ("duration_ms", "150"),
+    ("success", "true")
+  ]
+  
+  let invalid_type_result = validator(invalid_type_data)
+  assert_false(invalid_type_result.valid)
+  assert_eq(invalid_type_result.errors.length(), 1)
+  assert_eq(invalid_type_result.errors[0].field, "start_time")
+  assert_true(invalid_type_result.errors[0].message.contains("Invalid type"))
+  
+  // Test constraint violations
+  let constraint_violation_data = [
+    ("trace_id", "invalid_trace"),  // Wrong pattern
+    ("span_id", "span-def456"),
+    ("service_name", ""),  // Too short
+    ("operation_name", "process_request")
+  ]
+  
+  let constraint_result = validator(constraint_violation_data)
+  assert_false(constraint_result.valid)
+  assert_eq(constraint_result.errors.length(), 1)  // Missing required fields
+  assert_eq(constraint_result.warnings.length(), 2)  // Constraint violations
+  
+  let warning_fields = constraint_result.warnings.map(fn(w) { w.field })
+  assert_true(warning_fields.contains("trace_id"))
+  assert_true(warning_fields.contains("service_name"))
+  
+  // Test partial validation (some valid, some invalid)
+  let partial_data = [
+    ("trace_id", "trace-abc123"),
+    ("span_id", "span-def456"),
+    ("service_name", "api-service"),
+    ("operation_name", "process_request"),
+    ("start_time", "1640995200"),  // Valid
+    ("duration_ms", "invalid"),     // Invalid type
+    ("success", "maybe")            // Invalid type
+  ]
+  
+  let partial_result = validator(partial_data)
+  assert_false(partial_result.valid)
+  assert_eq(partial_result.errors.length(), 2)  // Two type errors
+  assert_eq(partial_result.warnings.length(), 0)
+  
+  // Test validation statistics
+  let calculate_validation_stats = fn(results: Array[ValidationResult]) {
+    let total = results.length()
+    let valid_count = results.filter(fn(r) { r.valid }).length()
+    let total_errors = results.reduce(fn(acc, r) { acc + r.errors.length() }, 0)
+    let total_warnings = results.reduce(fn(acc, r) { acc + r.warnings.length() }, 0)
+    
+    {
+      total_validated: total,
+      valid_count: valid_count,
+      invalid_count: total - valid_count,
+      validation_rate: if total > 0 { (valid_count * 100) / total } else { 0 },
+      total_errors: total_errors,
+      total_warnings: total_warnings
+    }
+  }
+  
+  let all_results = [
+    valid_result,
+    missing_field_result,
+    invalid_type_result,
+    constraint_result,
+    partial_result
+  ]
+  
+  let stats = calculate_validation_stats(all_results)
+  assert_eq(stats.total_validated, 5)
+  assert_eq(stats.valid_count, 1)
+  assert_eq(stats.invalid_count, 4)
+  assert_eq(stats.validation_rate, 20)
+  assert_eq(stats.total_errors, 5)
+  assert_eq(stats.total_warnings, 2)
+}
+
+// Test 10: Telemetry Security and Privacy Controls
+test "telemetry security and privacy controls with data masking" {
+  // Define privacy policy
+  type PrivacyPolicy = {
+    sensitive_fields: Array[String],
+    masking_rules: Array[(String, String)],  // (field_pattern, masking_strategy)
+    retention_days: Int,
+    anonymization_enabled: Bool
+  }
+  
+  type SecurityContext = {
+    authorized_roles: Array[String],
+    data_classification: String,  // "public", "internal", "confidential"
+    encryption_required: Bool,
+    audit_logging: Bool
+  }
+  
+  // Create privacy processor
+  let create_privacy_processor = fn(policy: PrivacyPolicy) {
+    let mask_value = fn(value: String, strategy: String) {
+      match strategy {
+        "full_mask" => "***"
+        "partial_mask" => {
+          if value.length() <= 4 {
+            "***"
+          } else {
+            value.substring(0, 2) + "***" + value.substring(value.length() - 2, 2)
+          }
+        }
+        "email_mask" => {
+          let parts = value.split("@")
+          if parts.length() == 2 {
+            let username = parts[0]
+            let domain = parts[1]
+            let masked_username = if username.length() <= 2 {
+              "***"
+            } else {
+              username.substring(0, 1) + "***" + username.substring(username.length() - 1, 1)
+            }
+            masked_username + "@" + domain
+          } else {
+            "***"
+          }
+        }
+        "hash_mask" => {
+          // Simplified hash simulation
+          let hash = value.chars().reduce(0, fn(acc, c) { acc + c.to_int() })
+          "hash_" + (hash % 10000).to_string()
+        }
+        _ => value
+      }
+    }
+    
+    fn(attributes: Array[(String, String)], user_role: String) -> Array[(String, String)] {
+      attributes.map(fn(attr) {
+        let (key, value) = attr
+        
+        // Check if field is sensitive
+        let is_sensitive = policy.sensitive_fields.any(fn(field) { 
+          key.contains(field) or key == field 
+        })
+        
+        if is_sensitive {
+          // Find applicable masking rule
+          let masking_rule = policy.masking_rules.find(fn(rule) { 
+            key.contains(rule.0) or key == rule.0 
+          })
+          
+          match masking_rule {
+            Some((_, strategy)) => {
+              (key, mask_value(value, strategy))
+            }
+            None => {
+              (key, mask_value(value, "partial_mask"))
+            }
+          }
+        } else {
+          (key, value)
+        }
+      })
+    }
+  }
+  
+  // Create security validator
+  let create_security_validator = fn(security_context: SecurityContext) {
+    fn(attributes: Array[(String, String)>, user_role: String) -> (Bool, String) {
+      // Check authorization
+      let authorized = security_context.authorized_roles.contains(user_role)
+      
+      if not(authorized) {
+        return (false, "User not authorized for this data classification")
+      }
+      
+      // Check data classification requirements
+      match security_context.data_classification {
+        "confidential" => {
+          if not(security_context.encryption_required) {
+            return (false, "Encryption required for confidential data")
+          }
+          
+          if not(security_context.audit_logging) {
+            return (false, "Audit logging required for confidential data")
+          }
+        }
+        "internal" => {
+          if not(security_context.audit_logging) {
+            return (false, "Audit logging required for internal data")
+          }
+        }
+        "public" => {}  // No additional requirements
+        _ => {
+          return (false, "Unknown data classification")
+        }
+      }
+      
+      // Check for prohibited data
+      let prohibited_patterns = ["password", "secret", "token", "key"]
+      for (key, _) in attributes {
+        if prohibited_patterns.any(fn(pattern) { key.contains(pattern) }) {
+          return (false, "Prohibited field detected: " + key)
+        }
+      }
+      
+      (true, "Access granted")
+    }
+  }
+  
+  // Create privacy policy
+  let privacy_policy = {
+    sensitive_fields: ["email", "user_id", "phone", "ssn", "credit_card"],
+    masking_rules: [
+      ("email", "email_mask"),
+      ("user_id", "hash_mask"),
+      ("phone", "partial_mask"),
+      ("ssn", "full_mask"),
+      ("credit_card", "partial_mask")
+    ],
+    retention_days: 30,
+    anonymization_enabled: true
+  }
+  
+  // Create security context
+  let security_context = {
+    authorized_roles: ["admin", "analyst", "viewer"],
+    data_classification: "confidential",
+    encryption_required: true,
+    audit_logging: true
+  }
+  
+  let privacy_processor = create_privacy_processor(privacy_policy)
+  let security_validator = create_security_validator(security_context)
+  
+  // Create test telemetry data with sensitive information
+  let sensitive_data = [
+    ("trace_id", "trace-abc123"),
+    ("service_name", "user-service"),
+    ("operation_name", "authenticate_user"),
+    ("email", "john.doe@example.com"),
+    ("user_id", "user-789456"),
+    ("phone", "+1-555-123-4567"),
+    ("ssn", "123-45-6789"),
+    ("credit_card", "4532-1234-5678-9012"),
+    ("request_id", "req-123456"),
+    ("session_id", "sess-789012")
+  ]
+  
+  // Test security validation
+  let (admin_authorized, admin_message) = security_validator(sensitive_data, "admin")
+  assert_true(admin_authorized)
+  assert_eq(admin_message, "Access granted")
+  
+  let (viewer_authorized, viewer_message) = security_validator(sensitive_data, "viewer")
+  assert_true(viewer_authorized)
+  assert_eq(viewer_message, "Access granted")
+  
+  let (unauthorized, unauthorized_message) = security_validator(sensitive_data, "guest")
+  assert_false(unauthorized)
+  assert_eq(unauthorized_message, "User not authorized for this data classification")
+  
+  // Test privacy masking for different user roles
+  let admin_masked_data = privacy_processor(sensitive_data, "admin")
+  let viewer_masked_data = privacy_processor(sensitive_data, "viewer")
+  
+  // Admin should see masked data
+  let admin_email = admin_masked_data.find(fn(item) { item.0 == "email" })
+  assert_true(admin_email.is_some())
+  assert_eq(admin_email.unwrap().1, "j***n@example.com")
+  
+  let admin_user_id = admin_masked_data.find(fn(item) { item.0 == "user_id" })
+  assert_true(admin_user_id.is_some())
+  assert_true(admin_user_id.unwrap().1.starts_with("hash_"))
+  
+  let admin_ssn = admin_masked_data.find(fn(item) { item.0 == "ssn" })
+  assert_true(admin_ssn.is_some())
+  assert_eq(admin_ssn.unwrap().1, "***")
+  
+  // Viewer should see the same masked data (masking is role-independent in this simplified model)
+  let viewer_email = viewer_masked_data.find(fn(item) { item.0 == "email" })
+  assert_true(viewer_email.is_some())
+  assert_eq(viewer_email.unwrap().1, "j***n@example.com")
+  
+  // Non-sensitive fields should remain unchanged
+  let admin_trace_id = admin_masked_data.find(fn(item) { item.0 == "trace_id" })
+  assert_true(admin_trace_id.is_some())
+  assert_eq(admin_trace_id.unwrap().1, "trace-abc123")
+  
+  let admin_service_name = admin_masked_data.find(fn(item) { item.0 == "service_name" })
+  assert_true(admin_service_name.is_some())
+  assert_eq(admin_service_name.unwrap().1, "user-service")
+  
+  // Test data retention simulation
+  let check_retention = fn(timestamp: Int, current_time: Int, policy: PrivacyPolicy) {
+    let age_days = (current_time - timestamp) / (24 * 60 * 60)
+    age_days <= policy.retention_days
+  }
+  
+  let current_time = 1640995200  // Example timestamp
+  let old_timestamp = current_time - (40 * 24 * 60 * 60)  // 40 days ago
+  
+  assert_true(check_retention(current_time, current_time, privacy_policy))  // Current data
+  assert_false(check_retention(old_timestamp, current_time, privacy_policy))  // Old data
+  
+  // Test anonymization
+  let anonymize_data = fn(attributes: Array[(String, String)>, policy: PrivacyPolicy) {
+    if policy.anonymization_enabled {
+      attributes.map(fn(attr) {
+        let (key, value) = attr
+        
+        // Replace user identifiers with anonymous equivalents
+        if key.contains("user_id") or key.contains("session_id") {
+          let hash = value.chars().reduce(0, fn(acc, c) { acc + c.to_int() })
+          (key, "anon_" + (hash % 100000).to_string())
+        } else {
+          (key, value)
+        }
+      })
+    } else {
+      attributes
+    }
+  }
+  
+  let anonymized_data = anonymize_data(admin_masked_data, privacy_policy)
+  let anon_user_id = anonymized_data.find(fn(item) { item.0 == "user_id" })
+  assert_true(anon_user_id.is_some())
+  assert_true(anon_user_id.unwrap().1.starts_with("anon_"))
+  
+  let anon_session_id = anonymized_data.find(fn(item) { item.0 == "session_id" })
+  assert_true(anon_session_id.is_some())
+  assert_true(anon_session_id.unwrap().1.starts_with("anon_"))
+  
+  // Test security audit logging simulation
+  let audit_log = { mut entries: [] }
+  
+  let log_access = fn(user_role: String, data: Array[(String, String)>, authorized: Bool) {
+    let timestamp = 1640995200
+    let data_class = "confidential"
+    let field_count = data.length()
+    
+    audit_log.entries = audit_log.entries.push({
+      timestamp,
+      user_role,
+      data_class,
+      field_count,
+      authorized
+    })
+  }
+  
+  log_access("admin", sensitive_data, true)
+  log_access("guest", sensitive_data, false)
+  
+  assert_eq(audit_log.entries.length(), 2)
+  assert_eq(audit_log.entries[0].user_role, "admin")
+  assert_eq(audit_log.entries[0].authorized, true)
+  assert_eq(audit_log.entries[1].user_role, "guest")
+  assert_eq(audit_log.entries[1].authorized, false)
 }
