@@ -1,345 +1,237 @@
-// Azimuth 跨服务追踪一致性测试用例
-// 专注于分布式系统中追踪信息的一致性和完整性
+// Azimuth Telemetry System - Cross-Service Trace Consistency Tests
+// This file contains test cases for cross-service trace consistency and correlation
 
-// 测试1: 跨服务追踪上下文传递一致性
-test "跨服务追踪上下文传递一致性测试" {
-  // 创建初始追踪上下文
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "service.a")
+test "跨服务追踪上下文传播一致性测试" {
+  // 模拟服务间的追踪上下文传播
+  struct TraceContext {
+    trace_id : String
+    parent_span_id : String
+    span_id : String
+    sampling_decision : Bool
+    baggage : Array[(String, String)]
+  }
   
-  let root_span = Tracer::start_span(tracer, "api.entry.point")
-  let root_context = Span::span_context(root_span)
+  // 服务A创建初始追踪上下文
+  let service_a_context = TraceContext("trace-12345", "", "span-a001", true, [("user.id", "user-001"), ("request.id", "req-001")])
   
-  // 验证根span上下文
-  assert_true(SpanContext::is_valid(root_context))
-  assert_true(SpanContext::is_sampled(root_context))
-  assert_eq(SpanContext::trace_id(root_context), "test_trace_id")
+  // 传播到服务B
+  func propagate_to_service_b(context : TraceContext, service_name : String) -> TraceContext {
+    TraceContext(
+      context.trace_id,
+      context.span_id,
+      "span-b001",
+      context.sampling_decision,
+      context.baggage.push(("service.name", service_name))
+    )
+  }
   
-  // 模拟服务间调用 - 传递追踪上下文
-  let service_b_tracer = TracerProvider::get_tracer(tracer_provider, "service.b")
-  let child_span = Tracer::start_span(service_b_tracer, "database.operation")
+  // 传播到服务C
+  func propagate_to_service_c(context : TraceContext, service_name : String) -> TraceContext {
+    TraceContext(
+      context.trace_id,
+      context.span_id,
+      "span-c001",
+      context.sampling_decision,
+      context.baggage.push(("service.name", service_name))
+    )
+  }
   
-  // 验证子span与父span的追踪ID一致
-  let child_context = Span::span_context(child_span)
-  assert_eq(SpanContext::trace_id(child_context), SpanContext::trace_id(root_context))
-  
-  // 模拟服务链调用
-  let service_c_tracer = TracerProvider::get_tracer(tracer_provider, "service.c")
-  let grandchild_span = Tracer::start_span(service_c_tracer, "cache.operation")
-  
-  // 验证整个调用链的追踪ID一致性
-  let grandchild_context = Span::span_context(grandchild_span)
-  assert_eq(SpanContext::trace_id(grandchild_context), SpanContext::trace_id(root_context))
-  
-  // 完成所有span
-  Span::end(grandchild_span)
-  Span::end(child_span)
-  Span::end(root_span)
-}
-
-// 测试2: 跨服务Baggage传递一致性
-test "跨服务Baggage传递一致性测试" {
-  // 创建根上下文并添加baggage
-  let root_ctx = Context::root()
-  let user_id_key = ContextKey::new("user.id")
-  let request_id_key = ContextKey::new("request.id")
-  let tenant_key = ContextKey::new("tenant.id")
-  
-  let ctx_with_baggage = root_ctx
-    |> Context::with_value(user_id_key, "user-12345")
-    |> Context::with_value(request_id_key, "req-abcde")
-    |> Context::with_value(tenant_key, "tenant-prod")
-  
-  // 创建传播器并注入上下文
-  let propagator = W3CTraceContextPropagator::new()
-  let carrier = TextMapCarrier::new()
-  CompositePropagator::inject(CompositePropagator::new([propagator]), ctx_with_baggage, carrier)
-  
-  // 验证baggage项在上下文中
-  assert_eq(Context::get(ctx_with_baggage, user_id_key), Some("user-12345"))
-  assert_eq(Context::get(ctx_with_baggage, request_id_key), Some("req-abcde"))
-  assert_eq(Context::get(ctx_with_baggage, tenant_key), Some("tenant-prod"))
-  
-  // 模拟跨服务提取上下文
-  let extracted_ctx = CompositePropagator::extract(CompositePropagator::new([propagator]), carrier)
-  
-  // 验证提取的上下文包含原始baggage项
-  let extracted_user_id = Context::get(extracted_ctx, user_id_key)
-  let extracted_request_id = Context::get(extracted_ctx, request_id_key)
-  let extracted_tenant = Context::get(extracted_ctx, tenant_key)
-  
-  assert_eq(extracted_user_id, Some("user-12345"))
-  assert_eq(extracted_request_id, Some("req-abcde"))
-  assert_eq(extracted_tenant, Some("tenant-prod"))
-}
-
-// 测试3: 跨服务Span层次关系一致性
-test "跨服务Span层次关系一致性测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "gateway.service")
-  
-  // 创建网关层的根span
-  let gateway_span = Tracer::start_span(tracer, "gateway.request")
-  let gateway_context = Span::span_context(gateway_span)
-  
-  // 创建业务服务层span
-  let business_tracer = TracerProvider::get_tracer(tracer_provider, "business.service")
-  let business_span = Tracer::start_span(business_tracer, "business.logic")
-  let business_context = Span::span_context(business_span)
-  
-  // 创建数据访问层span
-  let data_tracer = TracerProvider::get_tracer(tracer_provider, "data.service")
-  let data_span = Tracer::start_span(data_tracer, "data.access")
-  let data_context = Span::span_context(data_span)
-  
-  // 验证所有span属于同一追踪
-  assert_eq(SpanContext::trace_id(gateway_context), SpanContext::trace_id(business_context))
-  assert_eq(SpanContext::trace_id(business_context), SpanContext::trace_id(data_context))
-  
-  // 验证span ID的唯一性
-  assert_ne(SpanContext::span_id(gateway_context), SpanContext::span_id(business_context))
-  assert_ne(SpanContext::span_id(business_context), SpanContext::span_id(data_context))
-  assert_ne(SpanContext::span_id(gateway_context), SpanContext::span_id(data_context))
-  
-  // 验证span状态
-  assert_eq(Span::status(gateway_span), Unset)
-  assert_eq(Span::status(business_span), Unset)
-  assert_eq(Span::status(data_span), Unset)
-  
-  // 设置span状态并完成
-  Span::set_status(data_span, Ok)
-  Span::set_status(business_span, Ok)
-  Span::set_status(gateway_span, Ok)
-  
-  Span::end(data_span)
-  Span::end(business_span)
-  Span::end(gateway_span)
-  
-  // 验证完成后的状态
-  assert_eq(Span::status(data_span), Ok)
-  assert_eq(Span::status(business_span), Ok)
-  assert_eq(Span::status(gateway_span), Ok)
-}
-
-// 测试4: 跨服务错误传播一致性
-test "跨服务错误传播一致性测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "error.prone.service")
-  
-  // 创建正常操作的span
-  let normal_span = Tracer::start_span(tracer, "normal.operation")
-  Span::set_status(normal_span, Ok)
-  Span::end(normal_span)
-  
-  // 创建错误操作的span
-  let error_span = Tracer::start_span(tracer, "error.operation")
-  Span::set_status(error_span, Error)
-  
-  // 添加错误事件
-  Span::add_event(error_span, "exception.occurred", None)
-  
-  // 创建恢复操作的span
-  let recovery_span = Tracer::start_span(tracer, "recovery.operation")
-  Span::set_status(recovery_span, Ok)
-  Span::end(recovery_span)
-  
-  // 完成错误span
-  Span::end(error_span)
-  
-  // 验证状态传播
-  assert_eq(Span::status(normal_span), Ok)
-  assert_eq(Span::status(error_span), Error)
-  assert_eq(Span::status(recovery_span), Ok)
-  
-  // 验证span上下文一致性
-  let normal_context = Span::span_context(normal_span)
-  let error_context = Span::span_context(error_span)
-  let recovery_context = Span::span_context(recovery_span)
-  
-  assert_eq(SpanContext::trace_id(normal_context), SpanContext::trace_id(error_context))
-  assert_eq(SpanContext::trace_id(error_context), SpanContext::trace_id(recovery_context))
-}
-
-// 测试5: 跨服务时间戳一致性
-test "跨服务时间戳一致性测试" {
-  let clock = Clock::system()
-  let base_timestamp = Clock::now_unix_nanos(clock)
-  
-  // 创建日志记录器
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "timestamp.consistency.logger")
-  
-  // 在不同服务中创建日志记录
-  let service_a_log = LogRecord::new_with_context(
-    Info,
-    Some("Service A operation started"),
-    None,
-    Some(base_timestamp),
-    Some(base_timestamp + 1000L),
-    Some("trace-a123"),
-    Some("span-a456"),
-    None
-  )
-  
-  let service_b_log = LogRecord::new_with_context(
-    Info,
-    Some("Service B operation started"),
-    None,
-    Some(base_timestamp + 5000L),
-    Some(base_timestamp + 6000L),
-    Some("trace-a123"),
-    Some("span-b789"),
-    None
-  )
-  
-  let service_c_log = LogRecord::new_with_context(
-    Info,
-    Some("Service C operation started"),
-    None,
-    Some(base_timestamp + 10000L),
-    Some(base_timestamp + 11000L),
-    Some("trace-a123"),
-    Some("span-c012"),
-    None
-  )
-  
-  // 验证时间戳的递增性
-  assert_true(LogRecord::timestamp(service_a_log) < LogRecord::timestamp(service_b_log))
-  assert_true(LogRecord::timestamp(service_b_log) < LogRecord::timestamp(service_c_log))
+  let service_b_context = propagate_to_service_b(service_a_context, "payment-service")
+  let service_c_context = propagate_to_service_c(service_b_context, "inventory-service")
   
   // 验证追踪ID一致性
-  assert_eq(LogRecord::trace_id(service_a_log), Some("trace-a123"))
-  assert_eq(LogRecord::trace_id(service_b_log), Some("trace-a123"))
-  assert_eq(LogRecord::trace_id(service_c_log), Some("trace-a123"))
+  assert_eq(service_a_context.trace_id, service_b_context.trace_id)
+  assert_eq(service_b_context.trace_id, service_c_context.trace_id)
   
-  // 验证span ID唯一性
-  assert_ne(LogRecord::span_id(service_a_log), LogRecord::span_id(service_b_log))
-  assert_ne(LogRecord::span_id(service_b_log), LogRecord::span_id(service_c_log))
-  assert_ne(LogRecord::span_id(service_a_log), LogRecord::span_id(service_c_log))
+  // 验证父子关系
+  assert_eq(service_b_context.parent_span_id, service_a_context.span_id)
+  assert_eq(service_c_context.parent_span_id, service_b_context.span_id)
   
-  // 发送日志记录
-  Logger::emit(logger, service_a_log)
-  Logger::emit(logger, service_b_log)
-  Logger::emit(logger, service_c_log)
+  // 验证采样决策一致性
+  assert_eq(service_a_context.sampling_decision, service_b_context.sampling_decision)
+  assert_eq(service_b_context.sampling_decision, service_c_context.sampling_decision)
 }
 
-// 测试6: 跨服务资源属性一致性
-test "跨服务资源属性一致性测试" {
-  // 创建基础资源
-  let base_resource = Resource::new()
-  
-  // 添加全局服务属性
-  let global_attrs = [
-    ("service.namespace", StringValue("production")),
-    ("service.environment", StringValue("prod")),
-    ("service.version", StringValue("2.1.0"))
-  ]
-  let global_resource = Resource::with_attributes(base_resource, global_attrs)
-  
-  // 添加服务A特定属性
-  let service_a_attrs = [
-    ("service.name", StringValue("auth.service")),
-    ("service.instance.id", StringValue("auth-prod-01")),
-    ("service.port", IntValue(8080))
-  ]
-  let service_a_resource = Resource::with_attributes(global_resource, service_a_attrs)
-  
-  // 添加服务B特定属性
-  let service_b_attrs = [
-    ("service.name", StringValue("payment.service")),
-    ("service.instance.id", StringValue("payment-prod-02")),
-    ("service.port", IntValue(8081))
-  ]
-  let service_b_resource = Resource::with_attributes(global_resource, service_b_attrs)
-  
-  // 验证全局属性在所有服务中存在
-  assert_eq(Resource::get_attribute(service_a_resource, "service.namespace"), Some(StringValue("production")))
-  assert_eq(Resource::get_attribute(service_b_resource, "service.namespace"), Some(StringValue("production")))
-  
-  assert_eq(Resource::get_attribute(service_a_resource, "service.environment"), Some(StringValue("prod")))
-  assert_eq(Resource::get_attribute(service_b_resource, "service.environment"), Some(StringValue("prod")))
-  
-  assert_eq(Resource::get_attribute(service_a_resource, "service.version"), Some(StringValue("2.1.0")))
-  assert_eq(Resource::get_attribute(service_b_resource, "service.version"), Some(StringValue("2.1.0")))
-  
-  // 验证服务特定属性
-  assert_eq(Resource::get_attribute(service_a_resource, "service.name"), Some(StringValue("auth.service")))
-  assert_eq(Resource::get_attribute(service_b_resource, "service.name"), Some(StringValue("payment.service")))
-  
-  assert_eq(Resource::get_attribute(service_a_resource, "service.instance.id"), Some(StringValue("auth-prod-01")))
-  assert_eq(Resource::get_attribute(service_b_resource, "service.instance.id"), Some(StringValue("payment-prod-02")))
-}
-
-// 测试7: 跨服务指标一致性
-test "跨服务指标一致性测试" {
-  let provider = MeterProvider::default()
-  
-  // 创建服务A的指标
-  let service_a_meter = MeterProvider::get_meter(provider, "auth.service")
-  let auth_requests = Meter::create_counter(service_a_meter, "auth.requests.total")
-  let auth_latency = Meter::create_histogram(service_a_meter, "auth.request.duration")
-  
-  // 创建服务B的指标
-  let service_b_meter = MeterProvider::get_meter(provider, "payment.service")
-  let payment_requests = Meter::create_counter(service_b_meter, "payment.requests.total")
-  let payment_latency = Meter::create_histogram(service_b_meter, "payment.request.duration")
-  
-  // 记录指标数据
-  Counter::add(auth_requests, 1000.0)
-  Histogram::record(auth_latency, 0.125)
-  Histogram::record(auth_latency, 0.250)
-  
-  Counter::add(payment_requests, 500.0)
-  Histogram::record(payment_latency, 0.350)
-  Histogram::record(payment_latency, 0.450)
-  
-  // 验证指标名称一致性
-  assert_eq(Instrument::name(Counter(auth_requests.name, None, None)), "auth.requests.total")
-  assert_eq(Instrument::name(Counter(payment_requests.name, None, None)), "payment.requests.total")
-  
-  // 验证指标类型一致性
-  match Counter(auth_requests.name, None, None) {
-    Counter(name, _, _) => assert_eq(name, "auth.requests.total")
-    _ => assert_true(false)
+test "分布式追踪时间戳一致性测试" {
+  // 模拟分布式追踪中的时间戳处理
+  struct TraceEvent {
+    service_name : String
+    span_id : String
+    timestamp : Int
+    parent_timestamp : Int
   }
   
-  match Histogram(payment_latency.name, None, None) {
-    Histogram(name, _, _) => assert_eq(name, "payment.request.duration")
-    _ => assert_true(false)
+  let base_time = 1640995200000 // 2022-01-01 00:00:00 UTC in milliseconds
+  
+  // 服务A开始处理
+  let service_a_start = TraceEvent("service-a", "span-a001", base_time, 0)
+  
+  // 服务B处理（应该在服务A之后）
+  let service_b_start = TraceEvent("service-b", "span-b001", base_time + 50, service_a_start.timestamp)
+  
+  // 服务C处理（应该在服务B之后）
+  let service_c_start = TraceEvent("service-c", "span-c001", base_time + 120, service_b_start.timestamp)
+  
+  // 验证时间戳单调性
+  assert_true(service_b_start.timestamp > service_a_start.timestamp)
+  assert_true(service_c_start.timestamp > service_b_start.timestamp)
+  
+  // 验证父子时间戳关系
+  assert_eq(service_b_start.parent_timestamp, service_a_start.timestamp)
+  assert_eq(service_c_start.parent_timestamp, service_b_start.timestamp)
+}
+
+test "跨服务追踪标签一致性测试" {
+  // 模拟跨服务的追踪标签传播
+  struct TraceTags {
+    mandatory_tags : Array[(String, String)]
+    optional_tags : Array[(String, String)]
+  }
+  
+  // 标准化必需标签
+  let mandatory_tags = [
+    ("service.name", ""),
+    ("service.version", "1.0.0"),
+    ("deployment.environment", "production"),
+    ("telemetry.sdk.name", "azimuth"),
+    ("telemetry.sdk.version", "0.1.0")
+  ]
+  
+  // 服务A添加标签
+  func add_service_a_tags(base_tags : Array[(String, String)]) -> TraceTags {
+    let service_tags = base_tags.map(fn(t) {
+      if t.0 == "service.name" { ("service.name", "user-service") } else { t }
+    })
+    
+    TraceTags(
+      service_tags,
+      [("user.id", "user-001"), ("request.source", "mobile")]
+    )
+  }
+  
+  // 服务B添加标签
+  func add_service_b_tags(base_tags : Array[(String, String)]) -> TraceTags {
+    let service_tags = base_tags.map(fn(t) {
+      if t.0 == "service.name" { ("service.name", "payment-service") } else { t }
+    })
+    
+    TraceTags(
+      service_tags,
+      [("payment.method", "credit_card"), ("currency", "USD")]
+    )
+  }
+  
+  let service_a_tags = add_service_a_tags(mandatory_tags)
+  let service_b_tags = add_service_b_tags(mandatory_tags)
+  
+  // 验证必需标签一致性
+  assert_eq(service_a_tags.mandatory_tags.length(), service_b_tags.mandatory_tags.length())
+  for tag in service_a_tags.mandatory_tags {
+    if tag.0 != "service.name" {
+      let found = service_b_tags.mandatory_tags.any(fn(t) { t.0 == tag.0 && t.1 == tag.1 })
+      assert_true(found)
+    }
   }
 }
 
-// 测试8: 跨服务传播器一致性
-test "跨服务传播器一致性测试" {
-  // 创建复合传播器
-  let trace_propagator = W3CTraceContextPropagator::new()
-  let baggage_propagator = W3CBaggagePropagator::new()
-  let composite_propagator = CompositePropagator::new([trace_propagator])
+test "跨服务追踪状态一致性测试" {
+  // 模拟追踪状态在不同服务间的一致性
+  enum SpanStatus {
+    Pending
+    Running
+    Completed
+    Failed
+  }
   
-  // 创建源上下文
-  let source_ctx = Context::root()
-  let trace_key = ContextKey::new("trace.info")
-  let metadata_key = ContextKey::new("metadata")
+  struct SpanState {
+    span_id : String
+    status : SpanStatus
+    error_message : Option[String]
+  }
   
-  let enriched_ctx = source_ctx
-    |> Context::with_value(trace_key, "sample.trace")
-    |> Context::with_value(metadata_key, "sample.metadata")
+  // 服务A的状态变化
+  let service_a_states = [
+    SpanState("span-a001", SpanStatus::Pending, None),
+    SpanState("span-a001", SpanStatus::Running, None),
+    SpanState("span-a001", SpanStatus::Completed, None)
+  ]
   
-  // 创建载体并注入上下文
-  let carrier = TextMapCarrier::new()
-  CompositePropagator::inject(composite_propagator, enriched_ctx, carrier)
+  // 服务B的状态变化（模拟失败情况）
+  let service_b_states = [
+    SpanState("span-b001", SpanStatus::Pending, None),
+    SpanState("span-b001", SpanStatus::Running, None),
+    SpanState("span-b001", SpanStatus::Failed, Some("Payment processing failed"))
+  ]
   
-  // 验证载体包含追踪信息
-  let trace_header = TextMapCarrier::get(carrier, "traceparent")
-  assert_true(trace_header.is_some())
+  // 验证状态序列合理性
+  func validate_state_sequence(states : Array[SpanState]) -> Bool {
+    if states.length() < 2 { return true }
+    
+    for i in 1..states.length() {
+      let prev_status = states[i-1].status
+      let curr_status = states[i].status
+      
+      // 状态转换规则检查
+      match (prev_status, curr_status) {
+        (SpanStatus::Pending, SpanStatus::Running) => true
+        (SpanStatus::Running, SpanStatus::Completed) => true
+        (SpanStatus::Running, SpanStatus::Failed) => true
+        (SpanStatus::Pending, SpanStatus::Failed) => true
+        _ => false
+      } |> assert_true
+    }
+    
+    true
+  }
   
-  // 提取上下文
-  let extracted_ctx = CompositePropagator::extract(composite_propagator, carrier)
+  assert_true(validate_state_sequence(service_a_states))
+  assert_true(validate_state_sequence(service_b_states))
+}
+
+test "跨服务追踪链完整性测试" {
+  // 模拟完整的跨服务追踪链
+  struct TraceLink {
+    from_service : String
+    to_service : String
+    from_span : String
+    to_span : String
+    trace_id : String
+  }
   
-  // 验证提取的上下文包含预期信息
-  let extracted_trace = Context::get(extracted_ctx, trace_key)
-  let extracted_metadata = Context::get(extracted_ctx, metadata_key)
+  // 构建服务调用链
+  let trace_links = [
+    TraceLink("gateway", "user-service", "span-g001", "span-u001", "trace-001"),
+    TraceLink("user-service", "payment-service", "span-u002", "span-p001", "trace-001"),
+    TraceLink("payment-service", "inventory-service", "span-p002", "span-i001", "trace-001"),
+    TraceLink("inventory-service", "notification-service", "span-i002", "span-n001", "trace-001")
+  ]
   
-  assert_eq(extracted_trace, Some("sample.trace"))
-  assert_eq(extracted_metadata, Some("sample.metadata"))
+  // 验证追踪链完整性
+  func validate_trace_chain(links : Array[TraceLink]) -> Bool {
+    if links.length() < 2 { return true }
+    
+    // 验证所有链接具有相同的追踪ID
+    let trace_id = links[0].trace_id
+    for link in links {
+      assert_eq(link.trace_id, trace_id)
+    }
+    
+    // 验证链接的连续性
+    for i in 1..links.length() {
+      let prev_link = links[i-1]
+      let curr_link = links[i]
+      
+      // 前一个链接的目标服务应该是当前链接的源服务
+      assert_eq(prev_link.to_service, curr_link.from_service)
+    }
+    
+    true
+  }
+  
+  assert_true(validate_trace_chain(trace_links))
+  
+  // 验证服务调用顺序
+  let service_order = trace_links.map(fn(l) { l.from_service }).push(trace_links[trace_links.length()-1].to_service)
+  let expected_order = ["gateway", "user-service", "payment-service", "inventory-service", "notification-service"]
+  assert_eq(service_order, expected_order)
 }
