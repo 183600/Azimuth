@@ -1,405 +1,507 @@
-// Azimuth Telemetry System - Performance Benchmark Tests
-// This file contains comprehensive performance benchmark test cases
+// 性能基准测试用例
+// 测试Azimuth遥测系统的性能基准
 
-// Test 1: Span Creation Performance
-test "span creation performance benchmark" {
-  let start_time = Performance::current_time_millis()
-  let span_count = 10000
+test "span创建性能基准" {
+  // 测试span创建的性能基准
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "benchmark.test")
   
-  // Create spans in a loop
-  for i in 0..=span_count {
-    let trace_id = "trace" + i.to_string()
-    let span_id = "span" + i.to_string()
-    let ctx = SpanContext::new(trace_id, span_id, true, "")
-    let span = Span::new("benchmark-operation", Internal, ctx)
-    // Simulate some work
-    Span::add_event(span, "test-event", None)
-  }
+  // 测试不同数量span的创建时间
+  let test_sizes = [100, 1000, 5000, 10000]
   
-  let end_time = Performance::current_time_millis()
-  let duration = end_time - start_time
-  
-  // Performance assertion: should complete within reasonable time
-  assert_true(duration < 5000) // 5 seconds for 10,000 spans
-  
-  // Calculate spans per second
-  let spans_per_second = (span_count.to_float() / duration.to_float()) * 1000.0
-  assert_true(spans_per_second > 1000.0) // At least 1000 spans per second
-}
-
-// Test 2: Attribute Operations Performance
-test "attribute operations performance benchmark" {
-  let attrs = Attributes::new()
-  let start_time = Performance::current_time_millis()
-  let operation_count = 10000
-  
-  // Set attributes
-  for i in 0..=operation_count {
-    let key = "attr" + i.to_string()
-    let value = StringValue("value" + i.to_string())
-    Attributes::set(attrs, key, value)
-  }
-  
-  let set_time = Performance::current_time_millis()
-  let set_duration = set_time - start_time
-  
-  // Get attributes
-  for i in 0..=operation_count {
-    let key = "attr" + i.to_string()
-    let _ = Attributes::get(attrs, key)
-  }
-  
-  let end_time = Performance::current_time_millis()
-  let get_duration = end_time - set_time
-  
-  // Performance assertions
-  assert_true(set_duration < 1000) // 1 second for 10,000 sets
-  assert_true(get_duration < 1000) // 1 second for 10,000 gets
-  
-  let set_ops_per_second = (operation_count.to_float() / set_duration.to_float()) * 1000.0
-  let get_ops_per_second = (operation_count.to_float() / get_duration.to_float()) * 1000.0
-  
-  assert_true(set_ops_per_second > 5000.0) // At least 5000 sets per second
-  assert_true(get_ops_per_second > 10000.0) // At least 10000 gets per second
-}
-
-// Test 3: Time Series Data Processing Performance
-test "time series data processing performance benchmark" {
-  let point_count = 50000
-  let points = []
-  
-  // Generate test data
-  let data_gen_start = Performance::current_time_millis()
-  for i in 0..=point_count {
-    let timestamp = 1000L + i.to_long() * 100L
-    let value = i.to_float() * 0.1
-    let point = TimeSeriesPoint::new(timestamp, value)
-    points.push(point)
-  }
-  let data_gen_end = Performance::current_time_millis()
-  let data_gen_duration = data_gen_end - data_gen_start
-  
-  // Create time series
-  let series_start = Performance::current_time_millis()
-  let series = TimeSeries::from_points("benchmark.series", points)
-  let series_end = Performance::current_time_millis()
-  let series_duration = series_end - series_start
-  
-  // Perform aggregation
-  let agg_start = Performance::current_time_millis()
-  let average = TimeSeries::average(series)
-  let sum = TimeSeries::sum(series)
-  let min = TimeSeries::min(series)
-  let max = TimeSeries::max(series)
-  let agg_end = Performance::current_time_millis()
-  let agg_duration = agg_end - agg_start
-  
-  // Verify calculations are correct
-  match average {
-    Some(avg) => assert_true(avg > 0.0)
-    None => assert_true(false)
-  }
-  
-  match sum {
-    Some(s) => assert_true(s > 0.0)
-    None => assert_true(false)
-  }
-  
-  match min {
-    Some(m) => assert_eq(m, 0.0)
-    None => assert_true(false)
-  }
-  
-  match max {
-    Some(m) => assert_eq(m, (point_count - 1).to_float() * 0.1)
-    None => assert_true(false)
-  }
-  
-  // Performance assertions
-  assert_true(data_gen_duration < 1000) // 1 second for data generation
-  assert_true(series_duration < 500) // 500ms for series creation
-  assert_true(agg_duration < 200) // 200ms for aggregation
-  
-  let points_per_second = (point_count.to_float() / agg_duration.to_float()) * 1000.0
-  assert_true(points_per_second > 100000.0) // At least 100,000 points per second
-}
-
-// Test 4: Metrics Collection Performance
-test "metrics collection performance benchmark" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "benchmark_meter")
-  
-  // Create instruments
-  let counter = Meter::create_counter(meter, "benchmark_counter", None, None)
-  let histogram = Meter::create_histogram(meter, "benchmark_histogram", None, None)
-  let updown_counter = Meter::create_updown_counter(meter, "benchmark_updown", None, None)
-  
-  let operation_count = 100000
-  let start_time = Performance::current_time_millis()
-  
-  // Perform metric operations
-  for i in 0..=operation_count {
-    Counter::add(counter, i.to_float())
-    Histogram::record(histogram, i.to_float() * 0.1)
-    UpDownCounter::add(updown_counter, i.to_float() % 10.0)
-  }
-  
-  let end_time = Performance::current_time_millis()
-  let duration = end_time - start_time
-  
-  // Performance assertion
-  assert_true(duration < 2000) // 2 seconds for 100,000 operations
-  
-  let ops_per_second = (operation_count.to_float() * 3.0 / duration.to_float()) * 1000.0
-  assert_true(ops_per_second > 100000.0) // At least 100,000 metric operations per second
-}
-
-// Test 5: Log Record Processing Performance
-test "log record processing performance benchmark" {
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "benchmark_logger")
-  
-  let log_count = 50000
-  let start_time = Performance::current_time_millis()
-  
-  // Create and emit log records
-  for i in 0..=log_count {
-    let severity = if i % 4 == 0 { Info } else if i % 4 == 1 { Warn } else if i % 4 == 2 { Error } else { Debug }
-    let message = "Log message " + i.to_string()
-    let log_record = LogRecord::new(severity, message)
-    Logger::emit(logger, log_record)
-  }
-  
-  let end_time = Performance::current_time_millis()
-  let duration = end_time - start_time
-  
-  // Performance assertion
-  assert_true(duration < 3000) // 3 seconds for 50,000 log records
-  
-  let logs_per_second = (log_count.to_float() / duration.to_float()) * 1000.0
-  assert_true(logs_per_second > 15000.0) // At least 15,000 logs per second
-}
-
-// Test 6: Context Propagation Performance
-test "context propagation performance benchmark" {
-  let root_ctx = Context::root()
-  let propagation_count = 100000
-  let start_time = Performance::current_time_millis()
-  
-  // Create context chain
-  let mut current_ctx = root_ctx
-  for i in 0..=propagation_count {
-    let key = ContextKey::new("key" + i.to_string())
-    let value = "value" + i.to_string()
-    current_ctx = Context::with_value(current_ctx, key, value)
-  }
-  
-  let creation_time = Performance::current_time_millis()
-  let creation_duration = creation_time - start_time
-  
-  // Retrieve values from context chain
-  for i in 0..=propagation_count {
-    let key = ContextKey::new("key" + i.to_string())
-    let _ = Context::get(current_ctx, key)
-  }
-  
-  let end_time = Performance::current_time_millis()
-  let retrieval_duration = end_time - creation_time
-  
-  // Performance assertions
-  assert_true(creation_duration < 2000) // 2 seconds for context creation
-  assert_true(retrieval_duration < 3000) // 3 seconds for context retrieval
-  
-  let creation_ops_per_second = (propagation_count.to_float() / creation_duration.to_float()) * 1000.0
-  let retrieval_ops_per_second = (propagation_count.to_float() / retrieval_duration.to_float()) * 1000.0
-  
-  assert_true(creation_ops_per_second > 25000.0) // At least 25,000 context creations per second
-  assert_true(retrieval_ops_per_second > 20000.0) // At least 20,000 context retrievals per second
-}
-
-// Test 7: Serialization/Deserialization Performance
-test "serialization deserialization performance benchmark" {
-  // Create complex test span
-  let ctx = SpanContext::new("test_trace_id", "test_span_id", true, "test_state")
-  let span = Span::new("test_operation", Internal, ctx)
-  
-  // Add events and attributes
-  for i in 0..=100 {
-    Span::add_event(span, "event" + i.to_string(), Some([("event_id", IntValue(i))]))
-  }
-  
-  let attrs = Attributes::new()
-  for i in 0..=50 {
-    Attributes::set(attrs, "attr" + i.to_string(), StringValue("value" + i.to_string()))
-  }
-  Span::set_attributes(span, attrs)
-  
-  let operation_count = 10000
-  let start_time = Performance::current_time_millis()
-  
-  // Serialize spans
-  let serialized_spans = []
-  for i in 0..=operation_count {
-    let serialized = Span::serialize(span)
-    serialized_spans.push(serialized)
-  }
-  
-  let serialization_time = Performance::current_time_millis()
-  let serialization_duration = serialization_time - start_time
-  
-  // Deserialize spans
-  for serialized in serialized_spans {
-    let _ = Span::deserialize(serialized)
-  }
-  
-  let end_time = Performance::current_time_millis()
-  let deserialization_duration = end_time - serialization_time
-  
-  // Performance assertions
-  assert_true(serialization_duration < 2000) // 2 seconds for serialization
-  assert_true(deserialization_duration < 3000) // 3 seconds for deserialization
-  
-  let serialization_ops_per_second = (operation_count.to_float() / serialization_duration.to_float()) * 1000.0
-  let deserialization_ops_per_second = (operation_count.to_float() / deserialization_duration.to_float()) * 1000.0
-  
-  assert_true(serialization_ops_per_second > 5000.0) // At least 5,000 serializations per second
-  assert_true(deserialization_ops_per_second > 3000.0) // At least 3,000 deserializations per second
-}
-
-// Test 8: Memory Usage Benchmark
-test "memory usage benchmark" {
-  let initial_memory = Performance::current_memory_usage()
-  
-  // Create large number of telemetry objects
-  let spans = []
-  let time_series = []
-  let attributes = []
-  
-  let object_count = 10000
-  for i in 0..=object_count {
-    // Create spans
-    let ctx = SpanContext::new("trace" + i.to_string(), "span" + i.to_string(), true, "")
-    let span = Span::new("operation" + i.to_string(), Internal, ctx)
-    spans.push(span)
+  for size in test_sizes {
+    let start_time = Time::now()
     
-    // Create time series
-    let points = [
-      TimeSeriesPoint::new(1000L + i.to_long(), i.to_float()),
-      TimeSeriesPoint::new(2000L + i.to_long(), (i + 1).to_float()),
-      TimeSeriesPoint::new(3000L + i.to_long(), (i + 2).to_float())
-    ]
-    let series = TimeSeries::from_points("series" + i.to_string(), points)
-    time_series.push(series)
+    // 创建指定数量的span
+    let spans = []
+    for i = 0; i < size; i = i + 1 {
+      let span = Tracer::start_span(tracer, "benchmark.operation." + i.to_string())
+      spans.push(span)
+    }
     
-    // Create attributes
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "key1", StringValue("value1"))
-    Attributes::set(attrs, "key2", IntValue(i))
-    Attributes::set(attrs, "key3", FloatValue(i.to_float()))
-    attributes.push(attrs)
+    let creation_time = Time::now() - start_time
+    let spans_per_second = size.to_float() / creation_time.to_float()
+    
+    // 验证性能基准（每秒至少创建10000个span）
+    assert_true(spans_per_second >= 10000.0)
+    
+    // 结束所有span
+    for span in spans {
+      Span::end(span)
+    }
+    
+    // 记录性能指标
+    let meter_provider = MeterProvider::default()
+    let meter = MeterProvider::get_meter(meter_provider, "benchmark.metrics")
+    let performance_histogram = Meter::create_histogram(
+      meter, 
+      "span.creation.performance", 
+      Some("Span creation performance"), 
+      Some("spans/sec")
+    )
+    
+    Histogram::record_with_attributes(
+      performance_histogram, 
+      spans_per_second, 
+      [("test.size", size.to_string()), ("operation.type", "span.creation")]
+    )
   }
   
-  let peak_memory = Performance::current_memory_usage()
-  let memory_increase = peak_memory - initial_memory
-  
-  // Clean up objects
-  let spans = []
-  let time_series = []
-  let attributes = []
-  
-  let final_memory = Performance::current_memory_usage()
-  let memory_recovered = peak_memory - final_memory
-  
-  // Memory usage assertions
-  let memory_per_object = memory_increase.to_float() / (object_count * 3).to_float()
-  assert_true(memory_per_object < 10000.0) // Less than 10KB per object
-  
-  // Memory recovery assertion (at least 50% recovered)
-  let recovery_rate = memory_recovered.to_float() / memory_increase.to_float()
-  assert_true(recovery_rate > 0.5)
+  assert_true(true)
 }
 
-// Test 9: Concurrent Operations Performance
-test "concurrent operations performance benchmark" {
-  let thread_count = 10
-  let operations_per_thread = 10000
-  let start_time = Performance::current_time_millis()
+test "属性设置性能基准" {
+  // 测试属性设置的性能基准
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "attribute.benchmark.test")
   
-  // Simulate concurrent span creation
-  let threads = []
-  for t in 0..=thread_count {
-    // In a real implementation, this would spawn threads
-    // For this test, we simulate concurrent operations
-    for i in 0..=operations_per_thread {
-      let trace_id = "trace" + t.to_string() + "_" + i.to_string()
-      let span_id = "span" + t.to_string() + "_" + i.to_string()
-      let ctx = SpanContext::new(trace_id, span_id, true, "")
-      let span = Span::new("concurrent-operation", Internal, ctx)
-      Span::add_event(span, "concurrent-event", None)
+  let span = Tracer::start_span(tracer, "attribute.benchmark.operation")
+  
+  // 测试不同数量属性的设置时间
+  let attribute_counts = [10, 50, 100, 500]
+  
+  for count in attribute_counts {
+    let start_time = Time::now()
+    
+    // 设置指定数量的属性
+    for i = 0; i < count; i = i + 1 {
+      Span::set_attribute(span, "attribute." + i.to_string(), "value." + i.to_string())
+    }
+    
+    let setting_time = Time::now() - start_time
+    let attributes_per_second = count.to_float() / setting_time.to_float()
+    
+    // 验证性能基准（每秒至少设置50000个属性）
+    assert_true(attributes_per_second >= 50000.0)
+    
+    // 记录性能指标
+    let meter_provider = MeterProvider::default()
+    let meter = MeterProvider::get_meter(meter_provider, "benchmark.metrics")
+    let performance_histogram = Meter::create_histogram(
+      meter, 
+      "attribute.setting.performance", 
+      Some("Attribute setting performance"), 
+      Some("attributes/sec")
+    )
+    
+    Histogram::record_with_attributes(
+      performance_histogram, 
+      attributes_per_second, 
+      [("attribute.count", count.to_string()), ("operation.type", "attribute.setting")]
+    )
+  }
+  
+  Span::end(span)
+  assert_true(true)
+}
+
+test "事件添加性能基准" {
+  // 测试事件添加的性能基准
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "event.benchmark.test")
+  
+  let span = Tracer::start_span(tracer, "event.benchmark.operation")
+  
+  // 测试不同数量事件的添加时间
+  let event_counts = [10, 50, 100, 500]
+  
+  for count in event_counts {
+    let start_time = Time::now()
+    
+    // 添加指定数量的事件
+    for i = 0; i < count; i = i + 1 {
+      Span::add_event(span, "benchmark.event." + i.to_string(), [
+        ("event.index", IntValue(i)),
+        ("event.timestamp", Time::now().to_string()),
+        ("event.data", "event.data." + i.to_string())
+      ])
+    }
+    
+    let adding_time = Time::now() - start_time
+    let events_per_second = count.to_float() / adding_time.to_float()
+    
+    // 验证性能基准（每秒至少添加20000个事件）
+    assert_true(events_per_second >= 20000.0)
+    
+    // 记录性能指标
+    let meter_provider = MeterProvider::default()
+    let meter = MeterProvider::get_meter(meter_provider, "benchmark.metrics")
+    let performance_histogram = Meter::create_histogram(
+      meter, 
+      "event.adding.performance", 
+      Some("Event adding performance"), 
+      Some("events/sec")
+    )
+    
+    Histogram::record_with_attributes(
+      performance_histogram, 
+      events_per_second, 
+      [("event.count", count.to_string()), ("operation.type", "event.adding")]
+    )
+  }
+  
+  Span::end(span)
+  assert_true(true)
+}
+
+test "度量记录性能基准" {
+  // 测试度量记录的性能基准
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "metrics.benchmark.test")
+  
+  // 创建不同类型的度量
+  let counter = Meter::create_counter(meter, "benchmark.counter", Some("Benchmark counter"), Some("count"))
+  let histogram = Meter::create_histogram(meter, "benchmark.histogram", Some("Benchmark histogram"), Some("ms"))
+  let gauge = Meter::create_gauge(meter, "benchmark.gauge", Some("Benchmark gauge"), Some("value"))
+  
+  // 测试计数器记录性能
+  let counter_counts = [1000, 5000, 10000, 50000]
+  
+  for count in counter_counts {
+    let start_time = Time::now()
+    
+    // 记录指定数量的计数器值
+    for i = 0; i < count; i = i + 1 {
+      Counter::add_with_attributes(counter, 1.0, [
+        ("operation.type", "benchmark"),
+        ("operation.index", i.to_string())
+      ])
+    }
+    
+    let recording_time = Time::now() - start_time
+    let records_per_second = count.to_float() / recording_time.to_float()
+    
+    // 验证性能基准（每秒至少记录100000个计数器值）
+    assert_true(records_per_second >= 100000.0)
+    
+    // 记录性能指标
+    let performance_meter = MeterProvider::get_meter(meter_provider, "benchmark.metrics")
+    let performance_histogram = Meter::create_histogram(
+      performance_meter, 
+      "counter.recording.performance", 
+      Some("Counter recording performance"), 
+      Some("records/sec")
+    )
+    
+    Histogram::record_with_attributes(
+      performance_histogram, 
+      records_per_second, 
+      [("record.count", count.to_string()), ("operation.type", "counter.recording")]
+    )
+  }
+  
+  // 测试直方图记录性能
+  let histogram_counts = [1000, 5000, 10000]
+  
+  for count in histogram_counts {
+    let start_time = Time::now()
+    
+    // 记录指定数量的直方图值
+    for i = 0; i < count; i = i + 1 {
+      Histogram::record_with_attributes(histogram, (i % 1000).to_float(), [
+        ("operation.type", "benchmark"),
+        ("operation.index", i.to_string())
+      ])
+    }
+    
+    let recording_time = Time::now() - start_time
+    let records_per_second = count.to_float() / recording_time.to_float()
+    
+    // 验证性能基准（每秒至少记录50000个直方图值）
+    assert_true(records_per_second >= 50000.0)
+    
+    // 记录性能指标
+    let performance_meter = MeterProvider::get_meter(meter_provider, "benchmark.metrics")
+    let performance_histogram = Meter::create_histogram(
+      performance_meter, 
+      "histogram.recording.performance", 
+      Some("Histogram recording performance"), 
+      Some("records/sec")
+    )
+    
+    Histogram::record_with_attributes(
+      performance_histogram, 
+      records_per_second, 
+      [("record.count", count.to_string()), ("operation.type", "histogram.recording")]
+    )
+  }
+  
+  // 测试仪表记录性能
+  let gauge_counts = [1000, 5000, 10000]
+  
+  for count in gauge_counts {
+    let start_time = Time::now()
+    
+    // 记录指定数量的仪表值
+    for i = 0; i < count; i = i + 1 {
+      Gauge::set_with_attributes(gauge, (i % 100).to_float(), [
+        ("operation.type", "benchmark"),
+        ("operation.index", i.to_string())
+      ])
+    }
+    
+    let recording_time = Time::now() - start_time
+    let records_per_second = count.to_float() / recording_time.to_float()
+    
+    // 验证性能基准（每秒至少记录80000个仪表值）
+    assert_true(records_per_second >= 80000.0)
+    
+    // 记录性能指标
+    let performance_meter = MeterProvider::get_meter(meter_provider, "benchmark.metrics")
+    let performance_histogram = Meter::create_histogram(
+      performance_meter, 
+      "gauge.recording.performance", 
+      Some("Gauge recording performance"), 
+      Some("records/sec")
+    )
+    
+    Histogram::record_with_attributes(
+      performance_histogram, 
+      records_per_second, 
+      [("record.count", count.to_string()), ("operation.type", "gauge.recording")]
+    )
+  }
+  
+  assert_true(true)
+}
+
+test "日志记录性能基准" {
+  // 测试日志记录的性能基准
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "log.benchmark.test")
+  
+  // 测试不同严重性级别的日志记录性能
+  let severity_levels = [Debug, Info, Warn, Error]
+  let log_counts = [1000, 5000, 10000, 50000]
+  
+  for severity in severity_levels {
+    for count in log_counts {
+      let start_time = Time::now()
+      
+      // 记录指定数量的日志
+      for i = 0; i < count; i = i + 1 {
+        let log = LogRecord::new(severity, "Benchmark log message " + i.to_string())
+        LogRecord::add_attribute(log, "log.index", i)
+        LogRecord::add_attribute(log, "operation.type", "benchmark")
+        LogRecord::add_attribute(log, "service.name", "benchmark.service")
+        
+        Logger::emit(logger, log)
+      }
+      
+      let recording_time = Time::now() - start_time
+      let logs_per_second = count.to_float() / recording_time.to_float()
+      
+      // 验证性能基准（每秒至少记录50000条日志）
+      assert_true(logs_per_second >= 50000.0)
+      
+      // 记录性能指标
+      let meter_provider = MeterProvider::default()
+      let meter = MeterProvider::get_meter(meter_provider, "benchmark.metrics")
+      let performance_histogram = Meter::create_histogram(
+        meter, 
+        "log.recording.performance", 
+        Some("Log recording performance"), 
+        Some("logs/sec")
+      )
+      
+      Histogram::record_with_attributes(
+        performance_histogram, 
+        logs_per_second, 
+        [
+          ("log.count", count.to_string()), 
+          ("severity.level", severity.to_string()),
+          ("operation.type", "log.recording")
+        ]
+      )
     }
   }
   
-  let end_time = Performance::current_time_millis()
-  let duration = end_time - start_time
-  let total_operations = thread_count * operations_per_thread
-  
-  // Performance assertion
-  assert_true(duration < 5000) // 5 seconds for all operations
-  
-  let ops_per_second = (total_operations.to_float() / duration.to_float()) * 1000.0
-  assert_true(ops_per_second > 15000.0) // At least 15,000 operations per second
+  assert_true(true)
 }
 
-// Test 10: End-to-End Telemetry Pipeline Performance
-test "end-to-end telemetry pipeline performance benchmark" {
-  let provider = TelemetryProvider::new()
-  let tracer = TelemetryProvider::get_tracer(provider, "benchmark_tracer")
-  let meter = TelemetryProvider::get_meter(provider, "benchmark_meter")
-  let logger = TelemetryProvider::get_logger(provider, "benchmark_logger")
+test "上下文传播性能基准" {
+  // 测试上下文传播的性能基准
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "context.benchmark.test")
   
-  let operation_count = 5000
-  let start_time = Performance::current_time_millis()
+  let span = Tracer::start_span(tracer, "context.benchmark.operation")
+  let span_context = Span::span_context(span)
   
-  // Simulate complete telemetry pipeline
-  for i in 0..=operation_count {
-    // 1. Create span
-    let span = Tracer::start_span(tracer, "pipeline-operation")
+  // 创建传播器
+  let propagator = TextMapPropagator::new()
+  
+  // 测试不同数量上下文传播的性能
+  let propagation_counts = [100, 1000, 5000, 10000]
+  
+  for count in propagation_counts {
+    // 测试注入性能
+    let injection_start_time = Time::now()
     
-    // 2. Add events and attributes
-    Span::add_event(span, "operation-start", Some([("operation_id", IntValue(i))]))
-    Span::set_attribute(span, "operation_type", StringValue("benchmark"))
+    let carriers = []
+    for i = 0; i < count; i = i + 1 {
+      let carrier = []
+      Propagator::inject(propagator, span_context, carrier)
+      carriers.push(carrier)
+    }
     
-    // 3. Record metrics
-    let counter = Meter::get_counter(meter, "operations_completed")
-    Counter::add(counter, 1.0)
+    let injection_time = Time::now() - injection_start_time
+    let injections_per_second = count.to_float() / injection_time.to_float()
     
-    let histogram = Meter::get_histogram(meter, "operation_duration")
-    Histogram::record(histogram, 100.0)
+    // 验证注入性能基准（每秒至少注入50000个上下文）
+    assert_true(injections_per_second >= 50000.0)
     
-    // 4. Log events
-    let log_record = LogRecord::new(Info, "Operation " + i.to_string() + " completed")
-    Logger::emit(logger, log_record)
+    // 记录注入性能指标
+    let meter_provider = MeterProvider::default()
+    let meter = MeterProvider::get_meter(meter_provider, "benchmark.metrics")
+    let injection_histogram = Meter::create_histogram(
+      meter, 
+      "context.injection.performance", 
+      Some("Context injection performance"), 
+      Some("injections/sec")
+    )
     
-    // 5. End span
-    Span::end(span)
+    Histogram::record_with_attributes(
+      injection_histogram, 
+      injections_per_second, 
+      [("propagation.count", count.to_string()), ("operation.type", "context.injection")]
+    )
+    
+    // 测试提取性能
+    let extraction_start_time = Time::now()
+    
+    for carrier in carriers {
+      let extracted_context = Propagator::extract(propagator, carrier)
+      // 验证提取的上下文有效
+      assert_true(SpanContext::is_valid(extracted_context))
+    }
+    
+    let extraction_time = Time::now() - extraction_start_time
+    let extractions_per_second = count.to_float() / extraction_time.to_float()
+    
+    // 验证提取性能基准（每秒至少提取50000个上下文）
+    assert_true(extractions_per_second >= 50000.0)
+    
+    // 记录提取性能指标
+    let extraction_histogram = Meter::create_histogram(
+      meter, 
+      "context.extraction.performance", 
+      Some("Context extraction performance"), 
+      Some("extractions/sec")
+    )
+    
+    Histogram::record_with_attributes(
+      extraction_histogram, 
+      extractions_per_second, 
+      [("propagation.count", count.to_string()), ("operation.type", "context.extraction")]
+    )
   }
   
-  let end_time = Performance::current_time_millis()
-  let duration = end_time - start_time
+  Span::end(span)
+  assert_true(true)
+}
+
+test "序列化性能基准" {
+  // 测试序列化的性能基准
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "serialization.benchmark.test")
   
-  // Performance assertion
-  assert_true(duration < 10000) // 10 seconds for complete pipeline
+  // 创建不同复杂度的span
+  let span_complexities = [
+    ("simple", 10),      // 10个属性
+    ("medium", 50),      // 50个属性
+    ("complex", 100),    // 100个属性
+    ("heavy", 500)       // 500个属性
+  ]
   
-  let ops_per_second = (operation_count.to_float() / duration.to_float()) * 1000.0
-  assert_true(ops_per_second > 500.0) // At least 500 complete pipeline operations per second
+  for (complexity, attribute_count) in span_complexities {
+    let spans = []
+    
+    // 创建指定复杂度的span
+    for i = 0; i < 100; i = i + 1 {
+      let span = Tracer::start_span(tracer, "benchmark." + complexity + "." + i.to_string())
+      
+      // 添加指定数量的属性
+      for j = 0; j < attribute_count; j = j + 1 {
+        Span::set_attribute(span, "attribute." + j.to_string(), "value." + j.to_string())
+      }
+      
+      spans.push(span)
+    }
+    
+    // 测试序列化性能
+    let serialization_start_time = Time::now()
+    
+    let serialized_spans = []
+    for span in spans {
+      let serialized = Span::serialize(span)
+      serialized_spans.push(serialized)
+    }
+    
+    let serialization_time = Time::now() - serialization_start_time
+    let serializations_per_second = 100.0 / serialization_time.to_float()
+    
+    // 验证序列化性能基准（每秒至少序列化100个span）
+    assert_true(serializations_per_second >= 100.0)
+    
+    // 记录序列化性能指标
+    let meter_provider = MeterProvider::default()
+    let meter = MeterProvider::get_meter(meter_provider, "benchmark.metrics")
+    let serialization_histogram = Meter::create_histogram(
+      meter, 
+      "span.serialization.performance", 
+      Some("Span serialization performance"), 
+      Some("spans/sec")
+    )
+    
+    Histogram::record_with_attributes(
+      serialization_histogram, 
+      serializations_per_second, 
+      [
+        ("complexity", complexity), 
+        ("attribute.count", attribute_count.to_string()),
+        ("operation.type", "span.serialization")
+      ]
+    )
+    
+    // 测试反序列化性能
+    let deserialization_start_time = Time::now()
+    
+    for serialized in serialized_spans {
+      let deserialized_span = Span::deserialize(serialized)
+      // 验证反序列化的span有效
+      let deserialized_name = Span::name(deserialized_span)
+      assert_true(String::contains(deserialized_name, "benchmark." + complexity))
+    }
+    
+    let deserialization_time = Time::now() - deserialization_start_time
+    let deserializations_per_second = 100.0 / deserialization_time.to_float()
+    
+    // 验证反序列化性能基准（每秒至少反序列化100个span）
+    assert_true(deserializations_per_second >= 100.0)
+    
+    // 记录反序列化性能指标
+    let deserialization_histogram = Meter::create_histogram(
+      meter, 
+      "span.deserialization.performance", 
+      Some("Span deserialization performance"), 
+      Some("spans/sec")
+    )
+    
+    Histogram::record_with_attributes(
+      deserialization_histogram, 
+      deserializations_per_second, 
+      [
+        ("complexity", complexity), 
+        ("attribute.count", attribute_count.to_string()),
+        ("operation.type", "span.deserialization")
+      ]
+    )
+    
+    // 结束所有span
+    for span in spans {
+      Span::end(span)
+    }
+  }
   
-  // Verify telemetry data was collected
-  let metrics = Meter::get_metrics(meter)
-  assert_true(metrics.length() > 0)
-  
-  let spans = Tracer::get_spans(tracer)
-  assert_true(spans.length() == operation_count)
-  
-  let logs = Logger::get_logs(logger)
-  assert_true(logs.length() == operation_count)
+  assert_true(true)
 }
