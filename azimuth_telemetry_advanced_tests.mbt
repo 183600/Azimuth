@@ -1,112 +1,514 @@
 // Azimuth Advanced Telemetry Test Suite
-// This file contains advanced MoonBit test cases focusing on telemetry features
+// This file contains advanced telemetry-specific test cases
 
-// Test 1: Telemetry Data Aggregation
-test "telemetry data aggregation" {
-  // Define telemetry metric types
-  type Metric = {
-    name: String,
-    value: Float,
-    timestamp: Int,
-    tags: Array[String]
+// Test 1: Telemetry Data Generation
+test "telemetry data generation and validation" {
+  // Generate telemetry span data
+  let generate_span_id = fn() {
+    let timestamp = 1640995200  // Fixed timestamp for reproducible tests
+    let random = 12345  // Deterministic "random" value for testing
+    "span-" + timestamp.to_string() + "-" + random.to_string()
   }
   
-  // Create sample metrics
-  let metrics = [
-    { name: "response_time", value: 120.5, timestamp: 1640995200, tags: ["service:api", "endpoint:/users"] },
-    { name: "response_time", value: 85.3, timestamp: 1640995260, tags: ["service:api", "endpoint:/users"] },
-    { name: "response_time", value: 200.1, timestamp: 1640995320, tags: ["service:api", "endpoint:/products"] },
-    { name: "error_rate", value: 0.05, timestamp: 1640995200, tags: ["service:api", "endpoint:/users"] },
-    { name: "error_rate", value: 0.02, timestamp: 1640995260, tags: ["service:api", "endpoint:/users"] }
-  ]
-  
-  // Filter metrics by name
-  let filter_by_name = fn(metrics: Array[Metric], name: String) {
-    let mut result = []
-    for metric in metrics {
-      if metric.name == name {
-        result = result.push(metric)
-      }
-    }
-    result
+  let generate_trace_id = fn() {
+    let timestamp = 1640995200
+    let service_id = "payment"
+    let instance = 1
+    "trace-" + service_id + "-" + timestamp.to_string() + "-" + instance.to_string()
   }
   
-  // Calculate average
-  let calculate_average = fn(metrics: Array[Metric]) {
-    if metrics.length() == 0 {
-      0.0
-    } else {
-      let mut sum = 0.0
-      for metric in metrics {
-        sum = sum + metric.value
-      }
-      sum / metrics.length().to_float()
+  let span_id = generate_span_id()
+  let trace_id = generate_trace_id()
+  
+  // Validate generated IDs
+  assert_true(span_id.starts_with("span-"))
+  assert_true(trace_id.starts_with("trace-"))
+  assert_true(span_id.length() > 10)
+  assert_true(trace_id.length() > 10)
+  
+  // Create telemetry event
+  let create_telemetry_event = fn(name: String, event_type: String) {
+    {
+      name,
+      event_type,
+      span_id: generate_span_id(),
+      trace_id: generate_trace_id(),
+      timestamp: 1640995200,
+      attributes: []
     }
   }
   
-  // Calculate min and max
-  let calculate_min_max = fn(metrics: Array[Metric]) {
-    if metrics.length() == 0 {
-      (0.0, 0.0)
-    } else {
-      let mut min = metrics[0].value
-      let mut max = metrics[0].value
-      
-      for metric in metrics {
-        if metric.value < min {
-          min = metric.value
-        }
-        if metric.value > max {
-          max = metric.value
-        }
-      }
-      
-      (min, max)
+  let event = create_telemetry_event("payment_processed", "business")
+  assert_eq(event.name, "payment_processed")
+  assert_eq(event.event_type, "business")
+  assert_true(event.span_id.starts_with("span-"))
+  assert_true(event.trace_id.starts_with("trace-"))
+  assert_eq(event.attributes.length(), 0)
+  
+  // Add attributes to event
+  let add_attribute = fn(event, key: String, value: String) {
+    { event | 
+      attributes: event.attributes.push((key, value))
     }
   }
   
-  // Test aggregation functions
-  let response_time_metrics = filter_by_name(metrics, "response_time")
-  assert_eq(response_time_metrics.length(), 3)
+  let event_with_attrs = add_attribute(event, "amount", "100.50")
+  let event_final = add_attribute(event_with_attrs, "currency", "USD")
   
-  let avg_response_time = calculate_average(response_time_metrics)
-  assert_true(avg_response_time > 135.0 and avg_response_time < 136.0)
-  
-  let (min_response_time, max_response_time) = calculate_min_max(response_time_metrics)
-  assert_eq(min_response_time, 85.3)
-  assert_eq(max_response_time, 200.1)
-  
-  // Test error rate aggregation
-  let error_rate_metrics = filter_by_name(metrics, "error_rate")
-  assert_eq(error_rate_metrics.length(), 2)
-  
-  let avg_error_rate = calculate_average(error_rate_metrics)
-  assert_true(avg_error_rate > 0.034 and avg_error_rate < 0.036)
-  
-  // Test aggregation by tags
-  let filter_by_tag = fn(metrics: Array[Metric], tag: String) {
-    let mut result = []
-    for metric in metrics {
-      if metric.tags.contains(tag) {
-        result = result.push(metric)
-      }
-    }
-    result
-  }
-  
-  let users_endpoint_metrics = filter_by_tag(metrics, "endpoint:/users")
-  assert_eq(users_endpoint_metrics.length(), 4)
-  
-  let users_avg_response_time = calculate_average(
-    filter_by_name(users_endpoint_metrics, "response_time")
-  )
-  assert_eq(users_avg_response_time, (120.5 + 85.3) / 2.0)
+  assert_eq(event_final.attributes.length(), 2)
+  assert_true(event_final.attributes.contains(("amount", "100.50")))
+  assert_true(event_final.attributes.contains(("currency", "USD")))
 }
 
-// Test 2: Telemetry Data Serialization and Deserialization
-test "telemetry data serialization and deserialization" {
-  // Define telemetry span type
-  type Span = {
+// Test 2: Distributed Trace Context Propagation
+test "distributed trace context propagation" {
+  // Define trace context structure
+  type TraceContext = {
+    trace_id: String,
+    span_id: String,
+    baggage: Array[(String, String)],
+    sampled: Bool
+  }
+  
+  // Create root trace context
+  let create_root_context = fn(service_name: String) {
+    {
+      trace_id: "trace-" + service_name + "-1640995200",
+      span_id: "span-root-" + service_name,
+      baggage: [],
+      sampled: true
+    }
+  }
+  
+  // Extract context from headers (simulated)
+  let extract_context = fn(headers: Array[(String, String)]) {
+    let mut trace_id = None
+    let mut span_id = None
+    let mut baggage = []
+    
+    for (key, value) in headers {
+      match key {
+        "x-trace-id" => trace_id = Some(value)
+        "x-span-id" => span_id = Some(value)
+        "x-baggage" => {
+          // Parse baggage items (simplified)
+          let items = value.split(",")
+          for item in items {
+            let parts = item.split("=")
+            if parts.length() == 2 {
+              baggage = baggage.push((parts[0], parts[1]))
+            }
+          }
+        }
+        _ => ()  // Ignore other headers
+      }
+    }
+    
+    match (trace_id, span_id) {
+      (Some(trace), Some(span)) => Some({
+        trace_id: trace,
+        span_id: span,
+        baggage: baggage,
+        sampled: true
+      })
+      _ => None
+    }
+  }
+  
+  // Inject context into headers (simulated)
+  let inject_context = fn(context: TraceContext) {
+    let mut headers = []
+    headers = headers.push(("x-trace-id", context.trace_id))
+    headers = headers.push(("x-span-id", context.span_id))
+    
+    if context.baggage.length() > 0 {
+      let baggage_str = context.baggage
+        .map(fn((k, v)) { k + "=" + v })
+        .reduce(fn(acc, item) { acc + "," + item })
+      headers = headers.push(("x-baggage", baggage_str))
+    }
+    
+    headers
+  }
+  
+  // Test context creation and propagation
+  let root_context = create_root_context("payment-service")
+  assert_eq(root_context.trace_id, "trace-payment-service-1640995200")
+  assert_eq(root_context.span_id, "span-root-payment-service")
+  assert_eq(root_context.baggage.length(), 0)
+  assert_true(root_context.sampled)
+  
+  // Add baggage items
+  let with_baggage = { root_context |
+    baggage: root_context.baggage
+      .push(("user.id", "12345"))
+      .push(("request.id", "req-789"))
+  }
+  
+  // Inject context into headers
+  let headers = inject_context(with_baggage)
+  
+  // Verify headers contain trace information
+  let trace_header = headers.find(fn((k, _)) { k == "x-trace-id" })
+  let span_header = headers.find(fn((k, _)) { k == "x-span-id" })
+  let baggage_header = headers.find(fn((k, _)) { k == "x-baggage" })
+  
+  assert_eq(trace_header, Some(("x-trace-id", "trace-payment-service-1640995200")))
+  assert_eq(span_header, Some(("x-span-id", "span-root-payment-service")))
+  assert_true(baggage_header.is_some())
+  
+  // Extract context from headers
+  let extracted_context_opt = extract_context(headers)
+  
+  match extracted_context_opt {
+    Some(extracted_context) => {
+      assert_eq(extracted_context.trace_id, root_context.trace_id)
+      assert_eq(extracted_context.span_id, root_context.span_id)
+      assert_eq(extracted_context.baggage.length(), 2)
+      assert_true(extracted_context.baggage.contains(("user.id", "12345")))
+      assert_true(extracted_context.baggage.contains(("request.id", "req-789")))
+    }
+    None => assert_true(false)
+  }
+  
+  // Create child context
+  let create_child_context = fn(parent: TraceContext, child_name: String) {
+    {
+      trace_id: parent.trace_id,
+      span_id: "span-" + child_name + "-" + parent.span_id,
+      baggage: parent.baggage,
+      sampled: parent.sampled
+    }
+  }
+  
+  let child_context = create_child_context(with_baggage, "database")
+  assert_eq(child_context.trace_id, root_context.trace_id)
+  assert_eq(child_context.span_id, "span-database-span-root-payment-service")
+  assert_eq(child_context.baggage.length(), 2)
+  assert_true(child_context.sampled)
+}
+
+// Test 3: Performance Metrics Collection
+test "performance metrics collection and aggregation" {
+  // Define metric types
+  enum MetricType {
+    Counter
+    Gauge
+    Histogram
+    Summary
+  }
+  
+  // Define metric structure
+  type Metric = {
+    name: String,
+    metric_type: MetricType,
+    value: Float,
+    labels: Array[(String, String)],
+    timestamp: Int
+  }
+  
+  // Create metrics
+  let create_counter = fn(name: String, value: Float, labels: Array[(String, String)]) {
+    {
+      name,
+      metric_type: MetricType::Counter,
+      value,
+      labels,
+      timestamp: 1640995200
+    }
+  }
+  
+  let create_gauge = fn(name: String, value: Float, labels: Array[(String, String)]) {
+    {
+      name,
+      metric_type: MetricType::Gauge,
+      value,
+      labels,
+      timestamp: 1640995200
+    }
+  }
+  
+  let create_histogram = fn(name: String, value: Float, labels: Array[(String, String)]) {
+    {
+      name,
+      metric_type: MetricType::Histogram,
+      value,
+      labels,
+      timestamp: 1640995200
+    }
+  }
+  
+  // Test metric creation
+  let request_counter = create_counter("http_requests_total", 1000.0, [("method", "GET"), ("status", "200")])
+  let active_connections = create_gauge("active_connections", 25.0, [("service", "api")])
+  let response_time = create_histogram("http_request_duration_seconds", 0.150, [("endpoint", "/api/users")])
+  
+  assert_eq(request_counter.name, "http_requests_total")
+  assert_eq(request_counter.value, 1000.0)
+  assert_eq(request_counter.labels.length(), 2)
+  
+  assert_eq(active_connections.metric_type, MetricType::Gauge)
+  assert_eq(active_connections.value, 25.0)
+  
+  assert_eq(response_time.metric_type, MetricType::Histogram)
+  assert_eq(response_time.value, 0.150)
+  
+  // Aggregate metrics by name
+  let aggregate_by_name = fn(metrics: Array[Metric]) {
+    let mut groups = []
+    
+    for metric in metrics {
+      let existing = groups.find(fn(m) { m.name == metric.name })
+      match existing {
+        Some(existing_metric) => {
+          // For counters, sum values
+          let updated_value = match existing_metric.metric_type {
+            MetricType::Counter => existing_metric.value + metric.value
+            MetricType::Gauge => metric.value  // Use latest gauge value
+            _ => existing_metric.value  // Simplified for other types
+          }
+          
+          // Update the metric (simplified)
+          let index = groups.index_of(existing_metric)
+          groups = groups.set(index, { existing_metric | value: updated_value })
+        }
+        None => {
+          groups = groups.push(metric)
+        }
+      }
+    }
+    
+    groups
+  }
+  
+  // Create multiple metrics with the same name
+  let counter1 = create_counter("http_requests_total", 100.0, [("method", "GET")])
+  let counter2 = create_counter("http_requests_total", 200.0, [("method", "POST")])
+  let counter3 = create_counter("http_requests_total", 150.0, [("method", "GET")])
+  
+  let all_metrics = [request_counter, counter1, counter2, counter3, active_connections, response_time]
+  let aggregated = aggregate_by_name(all_metrics)
+  
+  // Find aggregated counter
+  let aggregated_counter = aggregated.find(fn(m) { m.name == "http_requests_total" })
+  match aggregated_counter {
+    Some(counter) => assert_eq(counter.value, 1450.0)  // 1000 + 100 + 200 + 150
+    None => assert_true(false)
+  }
+  
+  // Filter metrics by label
+  let filter_by_label = fn(metrics: Array[Metric], label_key: String, label_value: String) {
+    metrics.filter(fn(metric) {
+      metric.labels.find(fn((k, v)) { k == label_key and v == label_value }).is_some()
+    })
+  }
+  
+  let get_metrics = filter_by_label(all_metrics, "method", "GET")
+  assert_eq(get_metrics.length(), 2)
+  
+  // Calculate metric statistics
+  let calculate_stats = fn(metrics: Array[Metric]) {
+    let values = metrics.map(fn(m) { m.value })
+    let sum = values.reduce(fn(acc, v) { acc + v }, 0.0)
+    let count = values.length().to_float()
+    let avg = sum / count
+    
+    let min = values.reduce(fn(acc, v) { if v < acc { v } else { acc } }, values[0])
+    let max = values.reduce(fn(acc, v) { if v > acc { v } else { acc } }, values[0])
+    
+    { sum, avg, min, max, count }
+  }
+  
+  let response_times = [
+    create_histogram("response_time", 0.100, []),
+    create_histogram("response_time", 0.200, []),
+    create_histogram("response_time", 0.150, []),
+    create_histogram("response_time", 0.300, []),
+    create_histogram("response_time", 0.125, [])
+  ]
+  
+  let stats = calculate_stats(response_times)
+  assert_eq(stats.sum, 0.875)
+  assert_eq(stats.avg, 0.175)
+  assert_eq(stats.min, 0.100)
+  assert_eq(stats.max, 0.300)
+  assert_eq(stats.count, 5.0)
+}
+
+// Test 4: Sampling Strategies
+test "telemetry sampling strategies" {
+  // Define sampling decision types
+  enum SamplingDecision {
+    RecordAndSample
+    RecordOnly
+    Drop
+  }
+  
+  // Define sampling strategy types
+  enum SamplingStrategy {
+    AlwaysOn
+    AlwaysOff
+    Probability(Float)  // Sample rate between 0.0 and 1.0
+    RateLimiting(Int)   // Max samples per second
+  }
+  
+  // Define sampler structure
+  type Sampler = {
+    strategy: SamplingStrategy,
+    samples_taken: Int,
+    samples_seen: Int,
+    rate_limit_tokens: Int,
+    last_refill: Int
+  }
+  
+  // Create sampler with strategy
+  let create_sampler = fn(strategy: SamplingStrategy) {
+    {
+      strategy,
+      samples_taken: 0,
+      samples_seen: 0,
+      rate_limit_tokens: 10,  // Default rate limit tokens
+      last_refill: 1640995200
+    }
+  }
+  
+  // Make sampling decision
+  let make_sampling_decision = fn(sampler: Sampler, trace_id: String) {
+    match sampler.strategy {
+      SamplingStrategy::AlwaysOn => (SamplingDecision::RecordAndSample, sampler)
+      
+      SamplingStrategy::AlwaysOff => (SamplingDecision::Drop, sampler)
+      
+      SamplingStrategy::Probability(rate) => {
+        // Simple deterministic "random" based on trace ID for testing
+        let hash = trace_id.length() % 100
+        let threshold = (rate * 100.0).to_int()
+        
+        if hash < threshold {
+          (SamplingDecision::RecordAndSample, { sampler | 
+            samples_taken: sampler.samples_taken + 1,
+            samples_seen: sampler.samples_seen + 1
+          })
+        } else {
+          (SamplingDecision::RecordOnly, { sampler |
+            samples_seen: sampler.samples_seen + 1
+          })
+        }
+      }
+      
+      SamplingStrategy::RateLimiting(max_per_second) => {
+        // Simplified rate limiting with token bucket
+        let current_time = 1640995200
+        let time_diff = current_time - sampler.last_refill
+        
+        // Refill tokens (simplified - 1 token per second)
+        let new_tokens = if time_diff >= 1 { time_diff } else { 0 }
+        let updated_tokens = min(sampler.rate_limit_tokens + new_tokens, max_per_second)
+        
+        if updated_tokens > 0 {
+          (SamplingDecision::RecordAndSample, { sampler |
+            samples_taken: sampler.samples_taken + 1,
+            samples_seen: sampler.samples_seen + 1,
+            rate_limit_tokens: updated_tokens - 1,
+            last_refill: current_time
+          })
+        } else {
+          (SamplingDecision::RecordOnly, { sampler |
+            samples_seen: sampler.samples_seen + 1,
+            last_refill: current_time
+          })
+        }
+      }
+    }
+  }
+  
+  // Test AlwaysOn sampler
+  let always_on_sampler = create_sampler(SamplingStrategy::AlwaysOn)
+  let (decision1, _) = make_sampling_decision(always_on_sampler, "trace-123")
+  assert_eq(decision1, SamplingDecision::RecordAndSample)
+  
+  // Test AlwaysOff sampler
+  let always_off_sampler = create_sampler(SamplingStrategy::AlwaysOff)
+  let (decision2, _) = make_sampling_decision(always_off_sampler, "trace-456")
+  assert_eq(decision2, SamplingDecision::Drop)
+  
+  // Test probability sampler
+  let prob_sampler = create_sampler(SamplingStrategy::Probability(0.5))  // 50% sampling
+  
+  // Use trace IDs with different lengths to get different "random" values
+  let trace_a = "trace-short"  // length 10 -> 10 % 100 = 10
+  let trace_b = "trace-very-long-trace-id-with-many-characters"  // length 44 -> 44 % 100 = 44
+  let trace_c = "trace-much-much-much-much-much-longer-trace-id"  // length 50 -> 50 % 100 = 50
+  let trace_d = "trace-extremely-long-trace-id-that-should-not-be-sampled"  // length 58 -> 58 % 100 = 58
+  
+  let (decision_a, sampler_a) = make_sampling_decision(prob_sampler, trace_a)
+  let (decision_b, sampler_b) = make_sampling_decision(sampler_a, trace_b)
+  let (decision_c, sampler_c) = make_sampling_decision(sampler_b, trace_c)
+  let (decision_d, sampler_d) = make_sampling_decision(sampler_c, trace_d)
+  
+  // With 50% probability (threshold = 50), traces with hash < 50 should be sampled
+  assert_eq(decision_a, SamplingDecision::RecordAndSample)  // 10 < 50
+  assert_eq(decision_b, SamplingDecision::RecordOnly)       // 44 < 50
+  assert_eq(decision_c, SamplingDecision::RecordOnly)       // 50 >= 50
+  assert_eq(decision_d, SamplingDecision::RecordOnly)       // 58 >= 50
+  
+  assert_eq(sampler_d.samples_taken, 1)
+  assert_eq(sampler_d.samples_seen, 4)
+  
+  // Test rate limiting sampler
+  let rate_limit_sampler = create_sampler(SamplingStrategy::RateLimiting(3))
+  
+  let (decision_r1, sampler_r1) = make_sampling_decision(rate_limit_sampler, "trace-1")
+  let (decision_r2, sampler_r2) = make_sampling_decision(sampler_r1, "trace-2")
+  let (decision_r3, sampler_r3) = make_sampling_decision(sampler_r2, "trace-3")
+  let (decision_r4, sampler_r4) = make_sampling_decision(sampler_r3, "trace-4")
+  
+  // First 3 should be sampled (initial tokens = 10, but limited to max_per_second = 3)
+  assert_eq(decision_r1, SamplingDecision::RecordAndSample)
+  assert_eq(decision_r2, SamplingDecision::RecordAndSample)
+  assert_eq(decision_r3, SamplingDecision::RecordAndSample)
+  
+  // 4th should not be sampled (tokens exhausted)
+  assert_eq(decision_r4, SamplingDecision::RecordOnly)
+  
+  assert_eq(sampler_r4.samples_taken, 3)
+  assert_eq(sampler_r4.samples_seen, 4)
+  
+  // Test adaptive sampling based on trace length
+  let adaptive_sampling = fn(sampler: Sampler, trace_id: String) {
+    let base_decision = make_sampling_decision(sampler, trace_id)
+    match base_decision {
+      (SamplingDecision::RecordAndSample, updated_sampler) => {
+        // For very long traces, use RecordOnly to save resources
+        if trace_id.length() > 50 {
+          (SamplingDecision::RecordOnly, updated_sampler)
+        } else {
+          (SamplingDecision::RecordAndSample, updated_sampler)
+        }
+      }
+      other => other
+    }
+  }
+  
+  let adaptive_sampler = create_sampler(SamplingStrategy::Probability(0.8))
+  
+  let short_trace = "trace-short"
+  let long_trace = "trace-this-is-a-very-long-trace-id-that-should-be-adaptively-sampled"
+  
+  let (adaptive_decision_short, _) = adaptive_sampling(adaptive_sampler, short_trace)
+  let (adaptive_decision_long, _) = adaptive_sampling(adaptive_sampler, long_trace)
+  
+  // Short trace should follow normal sampling
+  assert_eq(adaptive_decision_short, SamplingDecision::RecordAndSample)
+  
+  // Long trace should be downgraded to RecordOnly even if normally sampled
+  assert_eq(adaptive_decision_long, SamplingDecision::RecordOnly)
+}
+
+// Test 5: Telemetry Data Serialization
+test "telemetry data serialization formats" {
+  // Define telemetry span structure
+  type TelemetrySpan = {
     trace_id: String,
     span_id: String,
     parent_span_id: Option[String],
@@ -114,1274 +516,851 @@ test "telemetry data serialization and deserialization" {
     start_time: Int,
     end_time: Int,
     status: String,
-    tags: Array[(String, String)]
+    tags: Array[(String, String)],
+    logs: Array[(Int, String)]
   }
   
-  // Create a sample span
-  let span = {
+  // Create test span
+  let test_span = {
     trace_id: "trace-12345",
     span_id: "span-67890",
-    parent_span_id: Some("span-11111"),
+    parent_span_id: Some("span-parent"),
     operation_name: "database_query",
     start_time: 1640995200,
     end_time: 1640995250,
     status: "ok",
-    tags: [
-      ("service", "payment-service"),
-      ("operation", "SELECT"),
-      ("table", "transactions")
-    ]
+    tags: [("service", "payment"), ("db.type", "postgresql")],
+    logs: [(1640995220, "Query started"), (1640995240, "Query completed")]
   }
   
-  // Serialize span to string representation
-  let serialize_span = fn(span: Span) {
-    let parent_id = match span.parent_span_id {
-      Some(id) => id
+  // Serialize to JSON-like string (simplified)
+  let serialize_to_json = fn(span: TelemetrySpan) {
+    let tags_str = span.tags
+      .map(fn((k, v)) { "\"" + k + "\":\"" + v + "\"" })
+      .reduce(fn(acc, item) { acc + "," + item })
+    
+    let logs_str = span.logs
+      .map(fn((time, msg)) { "{\"timestamp\":" + time.to_string() + ",\"message\":\"" + msg + "\"}" })
+      .reduce(fn(acc, item) { acc + "," + item })
+    
+    let parent_str = match span.parent_span_id {
+      Some(parent) => "\"" + parent + "\""
       None => "null"
     }
     
-    let tags_str = span.tags.reduce(fn(acc, tag) {
-      let (key, value) = tag
-      acc + key + ":" + value + ","
-    }, "").remove_suffix(",")
-    
-    "trace_id:" + span.trace_id + "|" +
-    "span_id:" + span.span_id + "|" +
-    "parent_span_id:" + parent_id + "|" +
-    "operation_name:" + span.operation_name + "|" +
-    "start_time:" + span.start_time.to_string() + "|" +
-    "end_time:" + span.end_time.to_string() + "|" +
-    "status:" + span.status + "|" +
-    "tags:" + tags_str
+    "{" +
+    "\"trace_id\":\"" + span.trace_id + "\"," +
+    "\"span_id\":\"" + span.span_id + "\"," +
+    "\"parent_span_id\":" + parent_str + "," +
+    "\"operation_name\":\"" + span.operation_name + "\"," +
+    "\"start_time\":" + span.start_time.to_string() + "," +
+    "\"end_time\":" + span.end_time.to_string() + "," +
+    "\"status\":\"" + span.status + "\"," +
+    "\"tags\":{" + tags_str + "}," +
+    "\"logs\":[" + logs_str + "]" +
+    "}"
   }
   
-  // Deserialize string to span
-  let deserialize_span = fn(serialized: String) {
-    let parts = serialized.split("|")
+  // Serialize to key-value format
+  let serialize_to_kv = fn(span: TelemetrySpan) {
+    let mut pairs = []
+    pairs = pairs.push(("trace_id", span.trace_id))
+    pairs = pairs.push(("span_id", span.span_id))
     
-    let parse_field = fn(part: String) {
-      let field_parts = part.split(":")
-      if field_parts.length() > 1 {
-        field_parts[1]
-      } else {
-        ""
-      }
+    match span.parent_span_id {
+      Some(parent) => pairs = pairs.push(("parent_span_id", parent))
+      None => ()
     }
     
-    let parse_tags = fn(tags_str: String) {
-      if tags_str == "" {
-        []
-      } else {
-        let tag_pairs = tags_str.split(",")
-        let mut result = []
-        for pair in tag_pairs {
-          let kv = pair.split(":")
-          if kv.length() == 2 {
-            result = result.push((kv[0], kv[1]))
-          }
-        }
-        result
-      }
+    pairs = pairs.push(("operation_name", span.operation_name))
+    pairs = pairs.push(("start_time", span.start_time.to_string()))
+    pairs = pairs.push(("end_time", span.end_time.to_string()))
+    pairs = pairs.push(("status", span.status))
+    
+    // Add tags
+    for (key, value) in span.tags {
+      pairs = pairs.push(("tag." + key, value))
     }
     
-    let parent_id_str = parse_field(parts[2])
-    let parent_span_id = if parent_id_str == "null" {
-      None
-    } else {
-      Some(parent_id_str)
+    // Add logs
+    for (i, (time, msg)) in span.logs.enumerate() {
+      pairs = pairs.push(("log." + i.to_string() + ".timestamp", time.to_string()))
+      pairs = pairs.push(("log." + i.to_string() + ".message", msg))
     }
     
+    pairs.map(fn((k, v)) { k + "=" + v })
+      .reduce(fn(acc, item) { acc + "\n" + item })
+  }
+  
+  // Test JSON serialization
+  let json_str = serialize_to_json(test_span)
+  assert_true(json_str.contains("\"trace_id\":\"trace-12345\""))
+  assert_true(json_str.contains("\"span_id\":\"span-67890\""))
+  assert_true(json_str.contains("\"parent_span_id\":\"span-parent\""))
+  assert_true(json_str.contains("\"operation_name\":\"database_query\""))
+  assert_true(json_str.contains("\"service\":\"payment\""))
+  assert_true(json_str.contains("\"Query started\""))
+  
+  // Test KV serialization
+  let kv_str = serialize_to_kv(test_span)
+  assert_true(kv_str.contains("trace_id=trace-12345"))
+  assert_true(kv_str.contains("span_id=span-67890"))
+  assert_true(kv_str.contains("parent_span_id=span-parent"))
+  assert_true(kv_str.contains("operation_name=database_query"))
+  assert_true(kv_str.contains("tag.service=payment"))
+  assert_true(kv_str.contains("log.0.message=Query started"))
+  
+  // Parse from JSON-like string (simplified)
+  let parse_from_json = fn(json_str: String) {
+    // Simplified parsing - in real implementation would use proper JSON parser
+    let trace_id_start = json_str.index_of("\"trace_id\":\"") + 12
+    let trace_id_end = json_str.index_of("\"", trace_id_start)
+    let trace_id = json_str.substring(trace_id_start, trace_id_end - trace_id_start)
+    
+    let span_id_start = json_str.index_of("\"span_id\":\"") + 11
+    let span_id_end = json_str.index_of("\"", span_id_start)
+    let span_id = json_str.substring(span_id_start, span_id_end - span_id_start)
+    
+    let operation_start = json_str.index_of("\"operation_name\":\"") + 18
+    let operation_end = json_str.index_of("\"", operation_start)
+    let operation_name = json_str.substring(operation_start, operation_end - operation_start)
+    
+    // Create simplified span (omitting complex parsing for tags and logs)
     {
-      trace_id: parse_field(parts[0]),
-      span_id: parse_field(parts[1]),
-      parent_span_id,
-      operation_name: parse_field(parts[3]),
-      start_time: parse_field(parts[4]).to_int(),
-      end_time: parse_field(parts[5]).to_int(),
-      status: parse_field(parts[6]),
-      tags: parse_tags(parse_field(parts[7]))
+      trace_id,
+      span_id,
+      parent_span_id: None,  // Simplified
+      operation_name,
+      start_time: 0,  // Simplified
+      end_time: 0,    // Simplified
+      status: "unknown",  // Simplified
+      tags: [],  // Simplified
+      logs: []   // Simplified
     }
   }
   
-  // Test serialization
-  let serialized = serialize_span(span)
-  assert_true(serialized.contains("trace_id:trace-12345"))
-  assert_true(serialized.contains("span_id:span-67890"))
-  assert_true(serialized.contains("parent_span_id:span-11111"))
-  assert_true(serialized.contains("operation_name:database_query"))
-  assert_true(serialized.contains("tags:service:payment-service,operation:SELECT,table:transactions"))
+  // Test JSON parsing
+  let parsed_span = parse_from_json(json_str)
+  assert_eq(parsed_span.trace_id, "trace-12345")
+  assert_eq(parsed_span.span_id, "span-67890")
+  assert_eq(parsed_span.operation_name, "database_query")
   
-  // Test deserialization
-  let deserialized = deserialize_span(serialized)
-  assert_eq(deserialized.trace_id, span.trace_id)
-  assert_eq(deserialized.span_id, span.span_id)
-  assert_eq(deserialized.parent_span_id, span.parent_span_id)
-  assert_eq(deserialized.operation_name, span.operation_name)
-  assert_eq(deserialized.start_time, span.start_time)
-  assert_eq(deserialized.end_time, span.end_time)
-  assert_eq(deserialized.status, span.status)
-  assert_eq(deserialized.tags.length(), span.tags.length())
+  // Test format conversion
+  let convert_json_to_kv = fn(json_str: String) {
+    let parsed = parse_from_json(json_str)
+    serialize_to_kv(parsed)
+  }
   
-  // Test with null parent_span_id
-  let span_without_parent = { span | parent_span_id: None }
-  let serialized_without_parent = serialize_span(span_without_parent)
-  let deserialized_without_parent = deserialize_span(serialized_without_parent)
-  assert_eq(deserialized_without_parent.parent_span_id, None)
+  let converted_kv = convert_json_to_kv(json_str)
+  assert_true(converted_kv.contains("trace_id=trace-12345"))
+  assert_true(converted_kv.contains("span_id=span-67890"))
+  assert_true(converted_kv.contains("operation_name=database_query"))
+  
+  // Test compression simulation
+  let compress_data = fn(data: String) {
+    // Simulate compression by removing whitespace and using shorter representations
+    data.replace(" ", "")
+      .replace("\n", "")
+      .replace("\"", "'")
+      .replace(":", "=")
+      .replace(",", ";")
+  }
+  
+  let compressed_json = compress_data(json_str)
+  assert_true(compressed_json.length() < json_str.length())
+  assert_true(compressed_json.contains("trace_id=trace-12345"))
 }
 
-// Test 3: Telemetry Data Filtering and Querying
-test "telemetry data filtering and querying" {
-  // Define telemetry log entry type
-  type LogEntry = {
-    timestamp: Int,
-    level: String,
-    message: String,
-    service: String,
-    trace_id: Option[String],
-    span_id: Option[String],
-    attributes: Array[(String, String)]
-  }
-  
-  // Create sample log entries
-  let logs = [
-    {
-      timestamp: 1640995200,
-      level: "INFO",
-      message: "Request started",
-      service: "api-service",
-      trace_id: Some("trace-123"),
-      span_id: Some("span-456"),
-      attributes: [("method", "GET"), ("/users", "endpoint")]
-    },
-    {
-      timestamp: 1640995210,
-      level: "DEBUG",
-      message: "Database connection established",
-      service: "api-service",
-      trace_id: Some("trace-123"),
-      span_id: Some("span-789"),
-      attributes: [("db", "postgresql")]
-    },
-    {
-      timestamp: 1640995220,
-      level: "WARN",
-      message: "Slow query detected",
-      service: "db-service",
-      trace_id: Some("trace-123"),
-      span_id: Some("span-789"),
-      attributes: [("duration", "1500ms")]
-    },
-    {
-      timestamp: 1640995230,
-      level: "ERROR",
-      message: "Connection timeout",
-      service: "db-service",
-      trace_id: Some("trace-456"),
-      span_id: Some("span-111"),
-      attributes: [("timeout", "30s")]
-    },
-    {
-      timestamp: 1640995240,
-      level: "INFO",
-      message: "Request completed",
-      service: "api-service",
-      trace_id: Some("trace-123"),
-      span_id: Some("span-456"),
-      attributes: [("status", "200")]
-    }
-  ]
-  
-  // Filter by log level
-  let filter_by_level = fn(logs: Array[LogEntry], level: String) {
-    let mut result = []
-    for log in logs {
-      if log.level == level {
-        result = result.push(log)
-      }
-    }
-    result
-  }
-  
-  // Filter by service
-  let filter_by_service = fn(logs: Array[LogEntry], service: String) {
-    let mut result = []
-    for log in logs {
-      if log.service == service {
-        result = result.push(log)
-      }
-    }
-    result
-  }
-  
-  // Filter by trace ID
-  let filter_by_trace_id = fn(logs: Array[LogEntry], trace_id: String) {
-    let mut result = []
-    for log in logs {
-      match log.trace_id {
-        Some(id) => if id == trace_id { result = result.push(log) }
-        None => {}
-      }
-    }
-    result
-  }
-  
-  // Filter by time range
-  let filter_by_time_range = fn(logs: Array[LogEntry], start: Int, end: Int) {
-    let mut result = []
-    for log in logs {
-      if log.timestamp >= start and log.timestamp <= end {
-        result = result.push(log)
-      }
-    }
-    result
-  }
-  
-  // Filter by attribute key-value
-  let filter_by_attribute = fn(logs: Array[LogEntry], key: String, value: String) {
-    let mut result = []
-    for log in logs {
-      let mut found = false
-      for (k, v) in log.attributes {
-        if k == key and v == value {
-          found = true
-        }
-      }
-      if found {
-        result = result.push(log)
-      }
-    }
-    result
-  }
-  
-  // Test filtering functions
-  let error_logs = filter_by_level(logs, "ERROR")
-  assert_eq(error_logs.length(), 1)
-  assert_eq(error_logs[0].message, "Connection timeout")
-  
-  let api_service_logs = filter_by_service(logs, "api-service")
-  assert_eq(api_service_logs.length(), 3)
-  
-  let trace_123_logs = filter_by_trace_id(logs, "trace-123")
-  assert_eq(trace_123_logs.length(), 4)
-  
-  let time_range_logs = filter_by_time_range(logs, 1640995210, 1640995230)
-  assert_eq(time_range_logs.length(), 3)
-  
-  let db_logs = filter_by_attribute(logs, "db", "postgresql")
-  assert_eq(db_logs.length(), 1)
-  assert_eq(db_logs[0].message, "Database connection established")
-  
-  // Test compound queries
-  let api_error_logs = filter_by_level(filter_by_service(logs, "api-service"), "ERROR")
-  assert_eq(api_error_logs.length(), 0)
-  
-  let db_warn_logs = filter_by_level(filter_by_service(logs, "db-service"), "WARN")
-  assert_eq(db_warn_logs.length(), 1)
-  assert_eq(db_warn_logs[0].message, "Slow query detected")
-  
-  // Test query with multiple conditions
-  let complex_query = fn(logs: Array[LogEntry]) {
-    let mut result = []
-    for log in logs {
-      if log.service == "api-service" and 
-         log.level != "ERROR" and 
-         log.timestamp >= 1640995210 and
-         log.timestamp <= 1640995230 {
-        result = result.push(log)
-      }
-    }
-    result
-  }
-  
-  let complex_results = complex_query(logs)
-  assert_eq(complex_results.length(), 1)
-  assert_eq(complex_results[0].message, "Database connection established")
-}
-
-// Test 4: Telemetry Performance Monitoring
-test "telemetry performance monitoring" {
-  // Define performance metrics type
-  type PerformanceMetric = {
-    operation: String,
-    duration: Int,
-    cpu_usage: Float,
-    memory_usage: Float,
-    timestamp: Int
-  }
-  
-  // Create sample performance metrics
-  let metrics = [
-    { operation: "database_query", duration: 150, cpu_usage: 0.25, memory_usage: 0.45, timestamp: 1640995200 },
-    { operation: "api_call", duration: 80, cpu_usage: 0.15, memory_usage: 0.30, timestamp: 1640995260 },
-    { operation: "cache_lookup", duration: 5, cpu_usage: 0.05, memory_usage: 0.10, timestamp: 1640995320 },
-    { operation: "database_query", duration: 200, cpu_usage: 0.35, memory_usage: 0.50, timestamp: 1640995380 },
-    { operation: "api_call", duration: 120, cpu_usage: 0.20, memory_usage: 0.35, timestamp: 1640995440 },
-    { operation: "cache_lookup", duration: 3, cpu_usage: 0.03, memory_usage: 0.08, timestamp: 1640995500 }
-  ]
-  
-  // Calculate percentiles
-  let calculate_percentile = fn(values: Array[Int], percentile: Float) {
-    if values.length() == 0 {
-      0
-    } else {
-      let sorted_values = values.sort(fn(a, b) { a - b })
-      let index = ((sorted_values.length() - 1).to_float() * percentile / 100.0).to_int()
-      sorted_values[index]
-    }
-  }
-  
-  // Calculate moving average
-  let calculate_moving_average = fn(values: Array[Int], window: Int) {
-    if values.length() == 0 or window <= 0 {
-      []
-    } else {
-      let mut result = []
-      for i in 0..values.length() {
-        let start = if i - window + 1 < 0 { 0 } else { i - window + 1 }
-        let mut sum = 0
-        let mut count = 0
-        for j in start..=i {
-          sum = sum + values[j]
-          count = count + 1
-        }
-        result = result.push(sum / count)
-      }
-      result
-    }
-  }
-  
-  // Detect anomalies
-  let detect_anomalies = fn(metrics: Array[PerformanceMetric], threshold: Float) {
-    let mut result = []
-    for metric in metrics {
-      if metric.cpu_usage > threshold or metric.memory_usage > threshold {
-        result = result.push(metric)
-      }
-    }
-    result
-  }
-  
-  // Calculate performance by operation
-  let calculate_performance_by_operation = fn(metrics: Array[PerformanceMetric]) {
-    let mut result = []
-    let mut operations = []
-    
-    // Get unique operations
-    for metric in metrics {
-      if not(operations.contains(metric.operation)) {
-        operations = operations.push(metric.operation)
-      }
-    }
-    
-    // Calculate stats for each operation
-    for operation in operations {
-      let operation_metrics = metrics.filter(fn(m) { m.operation == operation })
-      let durations = operation_metrics.map(fn(m) { m.duration })
-      let avg_duration = durations.reduce(fn(acc, d) { acc + d }, 0) / durations.length()
-      let max_duration = durations.reduce(fn(acc, d) { if d > acc { d } else { acc } }, 0)
-      let min_duration = durations.reduce(fn(acc, d) { if d < acc { d } else { acc } }, 100000)
-      
-      result = result.push({
-        operation,
-        avg_duration,
-        min_duration,
-        max_duration,
-        count: operation_metrics.length()
-      })
-    }
-    
-    result
-  }
-  
-  // Test performance calculations
-  let durations = metrics.map(fn(m) { m.duration })
-  let p50 = calculate_percentile(durations, 50.0)
-  let p95 = calculate_percentile(durations, 95.0)
-  let p99 = calculate_percentile(durations, 99.0)
-  
-  assert_eq(p50, 100)  // Median of [3, 5, 80, 120, 150, 200]
-  assert_eq(p95, 200)
-  assert_eq(p99, 200)
-  
-  // Test moving average
-  let moving_avg = calculate_moving_average(durations, 3)
-  assert_eq(moving_avg.length(), 6)
-  assert_eq(moving_avg[0], 150)  // (150) / 1
-  assert_eq(moving_avg[1], 115)  // (150 + 80) / 2
-  assert_eq(moving_avg[2], 78)   // (150 + 80 + 5) / 3
-  
-  // Test anomaly detection
-  let anomalies = detect_anomalies(metrics, 0.3)
-  assert_eq(anomalies.length(), 1)
-  assert_eq(anomalies[0].operation, "database_query")
-  assert_eq(anomalies[0].cpu_usage, 0.35)
-  
-  // Test performance by operation
-  let performance_by_op = calculate_performance_by_operation(metrics)
-  assert_eq(performance_by_op.length(), 3)
-  
-  let db_stats = performance_by_op.filter(fn(s) { s.operation == "database_query" })[0]
-  assert_eq(db_stats.avg_duration, 175)  // (150 + 200) / 2
-  assert_eq(db_stats.min_duration, 150)
-  assert_eq(db_stats.max_duration, 200)
-  assert_eq(db_stats.count, 2)
-  
-  let cache_stats = performance_by_op.filter(fn(s) { s.operation == "cache_lookup" })[0]
-  assert_eq(cache_stats.avg_duration, 4)  // (5 + 3) / 2
-  assert_eq(cache_stats.min_duration, 3)
-  assert_eq(cache_stats.max_duration, 5)
-  assert_eq(cache_stats.count, 2)
-}
-
-// Test 5: Telemetry Sampling Strategy
-test "telemetry sampling strategy" {
-  // Define sampling strategy types
-  enum SamplingStrategy {
-    Always
-    Never
-    Probability(Float)  // Sample rate between 0.0 and 1.0
-    CountBased(Int)     // Sample every Nth item
-    TimeBased(Int)      // Sample once per N seconds
-  }
-  
-  // Define sampling decision
-  type SamplingDecision = {
-    should_sample: Bool,
-    reason: String
-  }
-  
-  // Create sampling function
-  let should_sample = fn(strategy: SamplingStrategy, trace_id: String, timestamp: Int, count: Int) {
-    match strategy {
-      SamplingStrategy::Always => {
-        { should_sample: true, reason: "always" }
-      }
-      SamplingStrategy::Never => {
-        { should_sample: false, reason: "never" }
-      }
-      SamplingStrategy::Probability(rate) => {
-        // Simple hash-based deterministic sampling
-        let hash = trace_id.length() % 100
-        let should = hash < (rate * 100.0).to_int()
-        { should_sample: should, reason: "probability:" + rate.to_string() }
-      }
-      SamplingStrategy::CountBased(n) => {
-        let should = count % n == 0
-        { should_sample: should, reason: "count_based:" + n.to_string() }
-      }
-      SamplingStrategy::TimeBased(seconds) => {
-        let should = timestamp % seconds == 0
-        { should_sample: should, reason: "time_based:" + seconds.to_string() }
-      }
-    }
-  }
-  
-  // Test Always strategy
-  let always_decision = should_sample(SamplingStrategy::Always, "trace-123", 1640995200, 1)
-  assert_true(always_decision.should_sample)
-  assert_eq(always_decision.reason, "always")
-  
-  // Test Never strategy
-  let never_decision = should_sample(SamplingStrategy::Never, "trace-123", 1640995200, 1)
-  assert_false(never_decision.should_sample)
-  assert_eq(never_decision.reason, "never")
-  
-  // Test Probability strategy
-  let prob_decision_1 = should_sample(SamplingStrategy::Probability(0.5), "trace-123", 1640995200, 1)
-  let prob_decision_2 = should_sample(SamplingStrategy::Probability(0.0), "trace-123", 1640995200, 1)
-  let prob_decision_3 = should_sample(SamplingStrategy::Probability(1.0), "trace-123", 1640995200, 1)
-  
-  // Note: These assertions depend on the hash implementation
-  // For this test, we're using trace_id.length() % 100
-  // "trace-123" has length 9, so hash = 9
-  assert_true(prob_decision_1.should_sample)  // 9 < 50
-  assert_false(prob_decision_2.should_sample) // 9 >= 0
-  assert_true(prob_decision_3.should_sample)  // 9 < 100
-  
-  // Test CountBased strategy
-  let count_decision_1 = should_sample(SamplingStrategy::CountBased(10), "trace-123", 1640995200, 10)
-  let count_decision_2 = should_sample(SamplingStrategy::CountBased(10), "trace-123", 1640995200, 5)
-  
-  assert_true(count_decision_1.should_sample)   // 10 % 10 == 0
-  assert_false(count_decision_2.should_sample)  // 5 % 10 != 0
-  
-  // Test TimeBased strategy
-  let time_decision_1 = should_sample(SamplingStrategy::TimeBased(60), "trace-123", 1640995200, 1)
-  let time_decision_2 = should_sample(SamplingStrategy::TimeBased(60), "trace-123", 1640995230, 1)
-  
-  assert_true(time_decision_1.should_sample)    // 1640995200 % 60 == 0
-  assert_false(time_decision_2.should_sample)   // 1640995230 % 60 != 0
-  
-  // Test sampling with multiple traces
-  let sample_multiple_traces = fn(strategy: SamplingStrategy, traces: Array[String]) {
-    let mut sampled_count = 0
-    let mut total_count = 0
-    
-    for i in 0..traces.length() {
-      let trace_id = traces[i]
-      let decision = should_sample(strategy, trace_id, 1640995200 + i * 10, i + 1)
-      total_count = total_count + 1
-      if decision.should_sample {
-        sampled_count = sampled_count + 1
-      }
-    }
-    
-    { sampled_count, total_count, rate: sampled_count.to_float() / total_count.to_float() }
-  }
-  
-  let test_traces = ["trace-1", "trace-2", "trace-3", "trace-4", "trace-5", "trace-6", "trace-7", "trace-8", "trace-9", "trace-10"]
-  
-  // Test with CountBased(2) - should sample roughly 50%
-  let count_result = sample_multiple_traces(SamplingStrategy::CountBased(2), test_traces)
-  assert_eq(count_result.total_count, 10)
-  assert_eq(count_result.sampled_count, 5)  // Every 2nd item
-  assert_eq(count_result.rate, 0.5)
-  
-  // Test with CountBased(3) - should sample roughly 33%
-  let count_result_3 = sample_multiple_traces(SamplingStrategy::CountBased(3), test_traces)
-  assert_eq(count_result_3.total_count, 10)
-  assert_eq(count_result_3.sampled_count, 4)  // Items 3, 6, 9
-  assert_true(count_result_3.rate > 0.3 and count_result_3.rate < 0.4)
-}
-
-// Test 6: Telemetry Context Propagation
-test "telemetry context propagation" {
-  // Define context type
-  type TelemetryContext = {
+// Test 6: Cross-Service Telemetry Consistency
+test "cross-service telemetry consistency" {
+  // Define service telemetry structure
+  type ServiceTelemetry = {
+    service_name: String,
+    service_version: String,
     trace_id: String,
+    spans: Array[ServiceSpan],
+    metrics: Array[ServiceMetric]
+  }
+  
+  type ServiceSpan = {
     span_id: String,
-    baggage: Array[(String, String)],
-    flags: Int
-  }
-  
-  // Define propagator interface
-  type Propagator = {
-    inject: (TelemetryContext, Array[(String, String)]) -> Array[(String, String)],
-    extract: (Array[(String, String)]) -> TelemetryContext
-  }
-  
-  // Create text map propagator
-  let text_map_propagator = {
-    inject: fn(context: TelemetryContext, carrier: Array[(String, String)]) {
-      let mut result = carrier
-      
-      // Inject trace context
-      result = result.push(("traceparent", "00-" + context.trace_id + "-" + context.span_id + "-" + context.flags.to_string(16)))
-      
-      // Inject baggage
-      for (key, value) in context.baggage {
-        result = result.push(("baggage-" + key, value))
-      }
-      
-      result
-    },
-    
-    extract: fn(carrier: Array[(String, String)]) {
-      let mut trace_id = ""
-      let mut span_id = ""
-      let mut flags = 0
-      let mut baggage = []
-      
-      // Extract trace context
-      for (key, value) in carrier {
-        if key == "traceparent" {
-          let parts = value.split("-")
-          if parts.length() >= 4 {
-            trace_id = parts[1]
-            span_id = parts[2]
-            flags = parts[3].to_int(16)
-          }
-        } else if key.starts_with("baggage-") {
-          let baggage_key = key.substring(8, key.length() - 8)  // Remove "baggage-" prefix
-          baggage = baggage.push((baggage_key, value))
-        }
-      }
-      
-      {
-        trace_id,
-        span_id,
-        baggage,
-        flags
-      }
-    }
-  }
-  
-  // Create initial context
-  let initial_context = {
-    trace_id: "4bf92f3577b34da6a3ce929d0e0e4736",
-    span_id: "00f067aa0ba902b7",
-    baggage: [
-      ("user-id", "12345"),
-      ("request-id", "req-67890"),
-      ("service", "api-gateway")
-    ],
-    flags: 1
-  }
-  
-  // Test context injection
-  let carrier = []
-  let injected_carrier = text_map_propagator.inject(initial_context, carrier)
-  
-  assert_eq(injected_carrier.length(), 4)  // 1 traceparent + 3 baggage items
-  assert_true(injected_carrier.contains(("traceparent", "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-1")))
-  assert_true(injected_carrier.contains(("baggage-user-id", "12345")))
-  assert_true(injected_carrier.contains(("baggage-request-id", "req-67890")))
-  assert_true(injected_carrier.contains(("baggage-service", "api-gateway")))
-  
-  // Test context extraction
-  let extracted_context = text_map_propagator.extract(injected_carrier)
-  
-  assert_eq(extracted_context.trace_id, initial_context.trace_id)
-  assert_eq(extracted_context.span_id, initial_context.span_id)
-  assert_eq(extracted_context.flags, initial_context.flags)
-  assert_eq(extracted_context.baggage.length(), initial_context.baggage.length())
-  
-  // Verify baggage items
-  for (key, value) in initial_context.baggage {
-    assert_true(extracted_context.baggage.contains((key, value)))
-  }
-  
-  // Test context propagation across multiple services
-  let propagate_across_services = fn(initial_context: TelemetryContext, services: Array[String]) {
-    let mut contexts = []
-    let current_context = initial_context
-    
-    for service in services {
-      // Extract context from previous service
-      let carrier = []
-      let injected = text_map_propagator.inject(current_context, carrier)
-      
-      // Simulate network call
-      let received_carrier = injected
-      
-      // Extract context in new service
-      let extracted = text_map_propagator.extract(received_carrier)
-      
-      // Add service-specific baggage
-      let service_baggage = [
-        ("service", service),
-        ("timestamp", "1640995200")
-      ]
-      
-      let updated_context = {
-        trace_id: extracted.trace_id,
-        span_id: extracted.span_id + "-" + service.length().to_string(),  // Simulate new span
-        baggage: extracted.baggage + service_baggage,
-        flags: extracted.flags
-      }
-      
-      contexts = contexts.push((service, updated_context))
-      current_context = updated_context
-    }
-    
-    contexts
-  }
-  
-  let services = ["user-service", "order-service", "payment-service"]
-  let propagated_contexts = propagate_across_services(initial_context, services)
-  
-  assert_eq(propagated_contexts.length(), 3)
-  
-  // Verify trace ID remains the same across all services
-  for (service, context) in propagated_contexts {
-    assert_eq(context.trace_id, initial_context.trace_id)
-    assert_true(context.baggage.contains(("service", service)))
-    
-    // Verify original baggage is preserved
-    assert_true(context.baggage.contains(("user-id", "12345")))
-    assert_true(context.baggage.contains(("request-id", "req-67890")))
-  }
-  
-  // Verify span IDs are different
-  let user_span = propagated_contexts.filter(fn(pair) { pair.0 == "user-service" })[0].1.span_id
-  let order_span = propagated_contexts.filter(fn(pair) { pair.0 == "order-service" })[0].1.span_id
-  let payment_span = propagated_contexts.filter(fn(pair) { pair.0 == "payment-service" })[0].1.span_id
-  
-  assert_not_eq(user_span, order_span)
-  assert_not_eq(order_span, payment_span)
-  assert_not_eq(user_span, payment_span)
-}
-
-// Test 7: Telemetry Data Batch Processing
-test "telemetry data batch processing" {
-  // Define telemetry event type
-  type TelemetryEvent = {
-    id: String,
-    timestamp: Int,
-    event_type: String,
-    data: String,
-    processed: Bool
-  }
-  
-  // Define batch processor type
-  type BatchProcessor = {
-    batch_size: Int,
-    flush_interval: Int,
-    process_batch: (Array[TelemetryEvent]) -> Array[TelemetryEvent]
-  }
-  
-  // Create sample events
-  let create_events = fn(count: Int, base_timestamp: Int) {
-    let mut events = []
-    for i in 0..count {
-      events = events.push({
-        id: "event-" + i.to_string(),
-        timestamp: base_timestamp + i * 10,
-        event_type: if i % 2 == 0 { "metric" } else { "log" },
-        data: "data-" + i.to_string(),
-        processed: false
-      })
-    }
-    events
-  }
-  
-  // Create batch processor
-  let create_batch_processor = fn(batch_size: Int, flush_interval: Int) {
-    {
-      batch_size,
-      flush_interval,
-      process_batch: fn(events: Array[TelemetryEvent]) {
-        // Simulate processing - mark events as processed
-        events.map(fn(event) { { event | processed: true } })
-      }
-    }
-  }
-  
-  // Process events in batches
-  let process_events = fn(events: Array[TelemetryEvent], processor: BatchProcessor) {
-    let mut processed_events = []
-    let mut batch = []
-    let mut last_flush_time = 0
-    
-    for event in events {
-      batch = batch.push(event)
-      
-      // Check if batch is full or flush interval has passed
-      let should_flush = batch.length() >= processor.batch_size or 
-                        (event.timestamp - last_flush_time) >= processor.flush_interval
-      
-      if should_flush {
-        let processed_batch = processor.process_batch(batch)
-        processed_events = processed_events + processed_batch
-        batch = []
-        last_flush_time = event.timestamp
-      }
-    }
-    
-    // Process remaining events in the last batch
-    if batch.length() > 0 {
-      let processed_batch = processor.process_batch(batch)
-      processed_events = processed_events + processed_batch
-    }
-    
-    processed_events
-  }
-  
-  // Test batch processing
-  let events = create_events(25, 1640995200)
-  let processor = create_batch_processor(10, 100)  // Batch size 10, flush every 100 seconds
-  
-  let processed_events = process_events(events, processor)
-  
-  // Verify all events are processed
-  assert_eq(processed_events.length(), events.length())
-  
-  for event in processed_events {
-    assert_true(event.processed)
-  }
-  
-  // Verify batch boundaries
-  // With batch_size=10 and 25 events, we should have 3 batches: 10, 10, 5
-  let batch_1 = processed_events.slice(0, 10)
-  let batch_2 = processed_events.slice(10, 10)
-  let batch_3 = processed_events.slice(20, 5)
-  
-  assert_eq(batch_1.length(), 10)
-  assert_eq(batch_2.length(), 10)
-  assert_eq(batch_3.length(), 5)
-  
-  // Test with time-based flushing
-  let time_based_events = create_events(5, 1640995200)
-  let time_based_processor = create_batch_processor(10, 50)  // Batch size 10, flush every 50 seconds
-  
-  let time_processed = process_events(time_based_events, time_based_processor)
-  
-  // With 5 events and flush interval of 50 seconds, events should be flushed by time
-  // Events at timestamps: 1640995200, 1640995210, 1640995220, 1640995230, 1640995240
-  // The 5th event (1640995240) should trigger a flush because 1640995240 - 1640995200 >= 40 (close to 50)
-  assert_eq(time_processed.length(), 5)
-  
-  for event in time_processed {
-    assert_true(event.processed)
-  }
-  
-  // Test batch filtering
-  let filter_processor = {
-    batch_size: 5,
-    flush_interval: 100,
-    process_batch: fn(events: Array[TelemetryEvent]) {
-      // Only process metric events
-      events.filter(fn(event) { event.event_type == "metric" })
-         .map(fn(event) { { event | processed: true } })
-    }
-  }
-  
-  let mixed_events = create_events(10, 1640995200)
-  let filtered_processed = process_events(mixed_events, filter_processor)
-  
-  // Only metric events (even indices) should be processed
-  let expected_count = 5  // 0, 2, 4, 6, 8
-  assert_eq(filtered_processed.length(), expected_count)
-  
-  for event in filtered_processed {
-    assert_eq(event.event_type, "metric")
-    assert_true(event.processed)
-  }
-}
-
-// Test 8: Telemetry Data Caching
-test "telemetry data caching" {
-  // Define cache entry type
-  type CacheEntry[T] = {
-    key: String,
-    value: T,
-    timestamp: Int,
-    ttl: Int  // Time to live in seconds
-  }
-  
-  // Define cache type
-  type Cache[T] = {
-    entries: Array[CacheEntry[T]],
-    max_size: Int,
-    default_ttl: Int
-  }
-  
-  // Create cache
-  let create_cache = fn(max_size: Int, default_ttl: Int) {
-    {
-      entries: [],
-      max_size,
-      default_ttl
-    }
-  }
-  
-  // Check if cache entry is expired
-  let is_expired = fn(entry: CacheEntry[T], current_time: Int) {
-    (current_time - entry.timestamp) > entry.ttl
-  }
-  
-  // Get value from cache
-  let cache_get = fn(cache: Cache[T], key: String, current_time: Int) {
-    // Find entry by key
-    let mut found_entry = None
-    for entry in cache.entries {
-      if entry.key == key and not(is_expired(entry, current_time)) {
-        found_entry = Some(entry.value)
-      }
-    }
-    found_entry
-  }
-  
-  // Put value in cache
-  let cache_put = fn(cache: Cache[T], key: String, value: T, current_time: Int, ttl: Option[Int]) {
-    let actual_ttl = match ttl {
-      Some(t) => t
-      None => cache.default_ttl
-    }
-    
-    // Remove existing entry with same key
-    let mut filtered_entries = []
-    for entry in cache.entries {
-      if entry.key != key {
-        filtered_entries = filtered_entries.push(entry)
-      }
-    }
-    
-    // Add new entry
-    let new_entry = {
-      key,
-      value,
-      timestamp: current_time,
-      ttl: actual_ttl
-    }
-    
-    let updated_entries = filtered_entries.push(new_entry)
-    
-    // Enforce max size (remove oldest entries if needed)
-    let mut final_entries = updated_entries
-    if final_entries.length() > cache.max_size {
-      let sorted_by_timestamp = final_entries.sort(fn(a, b) { a.timestamp - b.timestamp })
-      final_entries = sorted_by_timestamp.slice(final_entries.length() - cache.max_size, cache.max_size)
-    }
-    
-    { cache | entries: final_entries }
-  }
-  
-  // Clean up expired entries
-  let cache_cleanup = fn(cache: Cache[T], current_time: Int) {
-    let mut valid_entries = []
-    for entry in cache.entries {
-      if not(is_expired(entry, current_time)) {
-        valid_entries = valid_entries.push(entry)
-      }
-    }
-    { cache | entries: valid_entries }
-  }
-  
-  // Test cache operations
-  let cache = create_cache(5, 60)  // Max 5 entries, 60s TTL
-  let current_time = 1640995200
-  
-  // Test put and get
-  let cache1 = cache_put(cache, "trace-123", "span-data-1", current_time, None)
-  let value1 = cache_get(cache1, "trace-123", current_time)
-  assert_eq(value1, Some("span-data-1"))
-  
-  // Test missing key
-  let missing = cache_get(cache1, "missing-key", current_time)
-  assert_eq(missing, None)
-  
-  // Test multiple entries
-  let cache2 = cache_put(cache1, "trace-456", "span-data-2", current_time, None)
-  let cache3 = cache_put(cache2, "trace-789", "span-data-3", current_time, None)
-  
-  assert_eq(cache_get(cache3, "trace-123", current_time), Some("span-data-1"))
-  assert_eq(cache_get(cache3, "trace-456", current_time), Some("span-data-2"))
-  assert_eq(cache_get(cache3, "trace-789", current_time), Some("span-data-3"))
-  
-  // Test entry expiration
-  let expired_time = current_time + 120  // 2 minutes later, past the 60s TTL
-  let expired_value = cache_get(cache3, "trace-123", expired_time)
-  assert_eq(expired_value, None)
-  
-  // Test cleanup
-  let cleaned_cache = cache_cleanup(cache3, expired_time)
-  assert_eq(cleaned_cache.entries.length(), 0)  // All entries should be expired
-  
-  // Test max size enforcement
-  let time = current_time
-  let cache_a = cache_put(cache, "key1", "value1", time, None)
-  let cache_b = cache_put(cache_a, "key2", "value2", time + 1, None)
-  let cache_c = cache_put(cache_b, "key3", "value3", time + 2, None)
-  let cache_d = cache_put(cache_c, "key4", "value4", time + 3, None)
-  let cache_e = cache_put(cache_d, "key5", "value5", time + 4, None)
-  let cache_f = cache_put(cache_e, "key6", "value6", time + 5, None)  // This should evict the oldest
-  
-  assert_eq(cache_f.entries.length(), 5)  // Max size enforced
-  assert_eq(cache_get(cache_f, "key1", time + 5), None)  // Oldest entry evicted
-  assert_eq(cache_get(cache_f, "key6", time + 5), Some("value6"))  // Newest entry present
-  
-  // Test custom TTL
-  let cache_g = cache_put(cache, "short-lived", "value", current_time, Some(10))  // 10s TTL
-  assert_eq(cache_get(cache_g, "short-lived", current_time + 5), Some("value"))  // Still valid
-  assert_eq(cache_get(cache_g, "short-lived", current_time + 15), None)  // Expired
-  
-  // Test cache with complex data
-  type SpanData = {
-    trace_id: String,
-    span_id: String,
-    operation: String,
-    duration: Int
-  }
-  
-  let span_cache = create_cache(3, 30)
-  let span_data = {
-    trace_id: "trace-123",
-    span_id: "span-456",
-    operation: "database_query",
-    duration: 150
-  }
-  
-  let span_cache1 = cache_put(span_cache, "span-key", span_data, current_time, None)
-  let retrieved_span = cache_get(span_cache1, "span-key", current_time)
-  
-  match retrieved_span {
-    Some(data) => {
-      assert_eq(data.trace_id, "trace-123")
-      assert_eq(data.span_id, "span-456")
-      assert_eq(data.operation, "database_query")
-      assert_eq(data.duration, 150)
-    }
-    None => assert_true(false)
-  }
-}
-
-// Test 9: Telemetry Data Compression
-test "telemetry data compression" {
-  // Define telemetry data type
-  type TelemetryData = {
-    trace_id: String,
-    spans: Array[SpanData],
-    metrics: Array[MetricData],
-    logs: Array[LogData]
-  }
-  
-  type SpanData = {
-    span_id: String,
-    parent_span_id: Option[String],
-    operation: String,
+    operation_name: String,
     start_time: Int,
     end_time: Int,
-    tags: Array[(String, String)]
+    service_name: String
   }
   
-  type MetricData = {
+  type ServiceMetric = {
     name: String,
     value: Float,
-    timestamp: Int,
-    tags: Array[(String, String)]
+    service_name: String
   }
   
-  type LogData = {
-    timestamp: Int,
-    level: String,
-    message: String,
-    tags: Array[(String, String)]
+  // Create service telemetry data
+  let create_service_span = fn(span_id: String, operation: String, service: String, start: Int, duration: Int) {
+    {
+      span_id,
+      operation_name: operation,
+      start_time: start,
+      end_time: start + duration,
+      service_name: service
+    }
   }
   
-  // Create sample telemetry data
-  let create_sample_data = fn() {
-    let spans = [
-      {
-        span_id: "span-1",
-        parent_span_id: None,
-        operation: "http_request",
-        start_time: 1640995200,
-        end_time: 1640995250,
-        tags: [("service", "api"), ("endpoint", "/users")]
-      },
-      {
-        span_id: "span-2",
-        parent_span_id: Some("span-1"),
-        operation: "database_query",
-        start_time: 1640995210,
-        end_time: 1640995240,
-        tags: [("service", "api"), ("query", "SELECT * FROM users")]
-      }
+  let create_service_metric = fn(name: String, value: Float, service: String) {
+    {
+      name,
+      value,
+      service_name: service
+    }
+  }
+  
+  // Create telemetry for multiple services
+  let api_service = {
+    service_name: "api-service",
+    service_version: "1.2.3",
+    trace_id: "trace-12345",
+    spans: [
+      create_service_span("span-1", "http_request", "api-service", 1640995200, 100),
+      create_service_span("span-2", "auth_check", "api-service", 1640995210, 50)
+    ],
+    metrics: [
+      create_service_metric("http_requests_total", 1.0, "api-service"),
+      create_service_metric("request_duration_ms", 100.0, "api-service")
     ]
+  }
+  
+  let payment_service = {
+    service_name: "payment-service",
+    service_version: "2.1.0",
+    trace_id: "trace-12345",  // Same trace ID for correlation
+    spans: [
+      create_service_span("span-3", "process_payment", "payment-service", 1640995220, 200),
+      create_service_span("span-4", "validate_card", "payment-service", 1640995230, 75)
+    ],
+    metrics: [
+      create_service_metric("payments_processed", 1.0, "payment-service"),
+      create_service_metric("payment_amount", 100.50, "payment-service")
+    ]
+  }
+  
+  let notification_service = {
+    service_name: "notification-service",
+    service_version: "1.0.5",
+    trace_id: "trace-12345",  // Same trace ID for correlation
+    spans: [
+      create_service_span("span-5", "send_receipt", "notification-service", 1640995240, 150)
+    ],
+    metrics: [
+      create_service_metric("notifications_sent", 1.0, "notification-service")
+    ]
+  }
+  
+  // Verify trace ID consistency across services
+  assert_eq(api_service.trace_id, payment_service.trace_id)
+  assert_eq(payment_service.trace_id, notification_service.trace_id)
+  assert_eq(api_service.trace_id, "trace-12345")
+  
+  // Merge telemetry from multiple services
+  let merge_telemetry = fn(services: Array[ServiceTelemetry]) {
+    let mut all_spans = []
+    let mut all_metrics = []
+    let mut trace_id = None
     
-    let metrics = [
-      {
-        name: "http_request_duration",
-        value: 50.0,
-        timestamp: 1640995250,
-        tags: [("service", "api"), ("endpoint", "/users"), ("status", "200")]
-      },
-      {
-        name: "database_query_duration",
-        value: 30.0,
-        timestamp: 1640995240,
-        tags: [("service", "api"), ("query", "SELECT * FROM users")]
+    for service in services {
+      all_spans = all_spans + service.spans
+      all_metrics = all_metrics + service.metrics
+      
+      match trace_id {
+        None => trace_id = Some(service.trace_id)
+        Some(existing_id) => assert_eq(existing_id, service.trace_id)
       }
-    ]
-    
-    let logs = [
-      {
-        timestamp: 1640995200,
-        level: "INFO",
-        message: "Request started",
-        tags: [("service", "api"), ("request_id", "req-123")]
-      },
-      {
-        timestamp: 1640995250,
-        level: "INFO",
-        message: "Request completed",
-        tags: [("service", "api"), ("request_id", "req-123")]
-      }
-    ]
+    }
     
     {
-      trace_id: "trace-123",
-      spans,
-      metrics,
-      logs
+      trace_id: trace_id.unwrap_or(""),
+      spans: all_spans,
+      metrics: all_metrics,
+      services: services.map(fn(s) { s.service_name })
     }
   }
   
-  // Serialize telemetry data to string
-  let serialize_telemetry_data = fn(data: TelemetryData) {
-    let serialize_span = fn(span: SpanData) {
-      let parent_id = match span.parent_span_id {
-        Some(id) => id
-        None => ""
-      }
-      
-      let tags_str = span.tags.reduce(fn(acc, tag) {
-        let (k, v) = tag
-        acc + k + ":" + v + ","
-      }, "").remove_suffix(",")
-      
-      span.span_id + "|" + parent_id + "|" + span.operation + "|" + 
-      span.start_time.to_string() + "|" + span.end_time.to_string() + "|" + tags_str
-    }
-    
-    let serialize_metric = fn(metric: MetricData) {
-      let tags_str = metric.tags.reduce(fn(acc, tag) {
-        let (k, v) = tag
-        acc + k + ":" + v + ","
-      }, "").remove_suffix(",")
-      
-      metric.name + "|" + metric.value.to_string() + "|" + 
-      metric.timestamp.to_string() + "|" + tags_str
-    }
-    
-    let serialize_log = fn(log: LogData) {
-      let tags_str = log.tags.reduce(fn(acc, tag) {
-        let (k, v) = tag
-        acc + k + ":" + v + ","
-      }, "").remove_suffix(",")
-      
-      log.timestamp.to_string() + "|" + log.level + "|" + log.message + "|" + tags_str
-    }
-    
-    let spans_str = data.spans.reduce(fn(acc, span) {
-      acc + serialize_span(span) + ";"
-    }, "").remove_suffix(";")
-    
-    let metrics_str = data.metrics.reduce(fn(acc, metric) {
-      acc + serialize_metric(metric) + ";"
-    }, "").remove_suffix(";")
-    
-    let logs_str = data.logs.reduce(fn(acc, log) {
-      acc + serialize_log(log) + ";"
-    }, "").remove_suffix(";")
-    
-    data.trace_id + "|" + spans_str + "|" + metrics_str + "|" + logs_str
-  }
+  let services = [api_service, payment_service, notification_service]
+  let merged = merge_telemetry(services)
   
-  // Simple compression using run-length encoding for repeated characters
-  let compress_string = fn(input: String) {
-    if input.length() == 0 {
-      ""
-    } else {
-      let mut result = ""
-      let mut count = 1
-      let current_char = input[0]
-      
-      for i in 1..input.length() {
-        if input[i] == current_char {
-          count = count + 1
-        } else {
-          if count > 3 {
-            result = result + current_char.to_string() + "[" + count.to_string() + "]"
-          } else {
-            for j in 0..count {
-              result = result + current_char.to_string()
-            }
-          }
-          current_char = input[i]
-          count = 1
-        }
+  assert_eq(merged.trace_id, "trace-12345")
+  assert_eq(merged.spans.length(), 5)  // 2 + 2 + 1
+  assert_eq(merged.metrics.length(), 4)  // 2 + 2 + 1
+  assert_eq(merged.services.length(), 3)
+  assert_true(merged.services.contains("api-service"))
+  assert_true(merged.services.contains("payment-service"))
+  assert_true(merged.services.contains("notification-service"))
+  
+  // Analyze trace timeline
+  let analyze_timeline = fn(spans: Array[ServiceSpan]) {
+    let sorted_spans = spans.sort_by(fn(a, b) { a.start_time - b.start_time })
+    
+    let mut total_duration = 0
+    let mut earliest_start = sorted_spans[0].start_time
+    let mut latest_end = sorted_spans[0].end_time
+    
+    for span in sorted_spans {
+      if span.start_time < earliest_start {
+        earliest_start = span.start_time
       }
-      
-      // Handle the last character sequence
-      if count > 3 {
-        result = result + current_char.to_string() + "[" + count.to_string() + "]"
-      } else {
-        for j in 0..count {
-          result = result + current_char.to_string()
-        }
+      if span.end_time > latest_end {
+        latest_end = span.end_time
       }
-      
-      result
+      total_duration = total_duration + (span.end_time - span.start_time)
+    }
+    
+    let trace_duration = latest_end - earliest_start
+    
+    {
+      spans: sorted_spans,
+      trace_duration,
+      total_span_duration: total_duration,
+      earliest_start,
+      latest_end
     }
   }
   
-  // Decompress the run-length encoded string
-  let decompress_string = fn(compressed: String) {
-    let mut result = ""
-    let i = 0
+  let timeline = analyze_timeline(merged.spans)
+  assert_eq(timeline.spans.length(), 5)
+  assert_eq(timeline.trace_duration, 240)  // From 1640995200 to 1640995440
+  assert_eq(timeline.total_span_duration, 575)  // 100 + 50 + 200 + 75 + 150
+  assert_eq(timeline.earliest_start, 1640995200)
+  assert_eq(timeline.latest_end, 1640995440)
+  
+  // Verify span order
+  assert_eq(timeline.spans[0].operation_name, "http_request")
+  assert_eq(timeline.spans[1].operation_name, "auth_check")
+  assert_eq(timeline.spans[2].operation_name, "process_payment")
+  assert_eq(timeline.spans[3].operation_name, "validate_card")
+  assert_eq(timeline.spans[4].operation_name, "send_receipt")
+  
+  // Check for overlapping spans (potential concurrency)
+  let find_overlaps = fn(spans: Array[ServiceSpan]) {
+    let mut overlaps = []
     
-    while i < compressed.length() {
-      let char = compressed[i]
-      
-      if i + 1 < compressed.length() and compressed[i + 1] == '[' {
-        // Found a run-length encoding pattern
-        let j = i + 2
-        let mut num_str = ""
+    for i in 0..spans.length() {
+      for j in (i + 1)..spans.length() {
+        let span_a = spans[i]
+        let span_b = spans[j]
         
-        while j < compressed.length() and compressed[j] != ']' {
-          num_str = num_str + compressed[j].to_string()
-        }
+        // Check if spans overlap
+        let overlap = not(span_a.end_time <= span_b.start_time or span_b.end_time <= span_a.start_time)
         
-        if j < compressed.length() and compressed[j] == ']' {
-          let count = num_str.to_int()
-          for k in 0..count {
-            result = result + char.to_string()
-          }
-          i = j + 1
-        } else {
-          // Invalid pattern, just add the character
-          result = result + char.to_string()
-          i = i + 1
+        if overlap {
+          overlaps = overlaps.push((span_a, span_b))
         }
-      } else {
-        // Regular character
-        result = result + char.to_string()
-        i = i + 1
       }
     }
     
-    result
+    overlaps
   }
   
-  // Test serialization
-  let sample_data = create_sample_data()
-  let serialized = serialize_telemetry_data(sample_data)
+  let overlaps = find_overlaps(merged.spans)
   
-  assert_true(serialized.contains("trace-123"))
-  assert_true(serialized.contains("span-1"))
-  assert_true(serialized.contains("http_request"))
-  assert_true(serialized.contains("database_query"))
+  // Based on our test data, there should be some overlaps
+  // auth_check (1640995210-1640995260) overlaps with process_payment (1640995220-1640995420)
+  assert_true(overlaps.length() > 0)
   
-  // Test compression
-  let compressed = compress_string(serialized)
-  let decompressed = decompress_string(compressed)
+  // Verify service-specific metrics
+  let get_metrics_by_service = fn(metrics: Array[ServiceMetric], service: String) {
+    metrics.filter(fn(m) { m.service_name == service })
+  }
   
-  assert_eq(serialized, decompressed)
+  let api_metrics = get_metrics_by_service(merged.metrics, "api-service")
+  let payment_metrics = get_metrics_by_service(merged.metrics, "payment-service")
+  let notification_metrics = get_metrics_by_service(merged.metrics, "notification-service")
   
-  // Create a string with repeated characters to test compression effectiveness
-  let repetitive_string = "aaaaabbbbcccccdddddeeeee" + "f".repeat(50) + "ggggg"
-  let compressed_repetitive = compress_string(repetitive_string)
-  let decompressed_repetitive = decompress_string(compressed_repetitive)
+  assert_eq(api_metrics.length(), 2)
+  assert_eq(payment_metrics.length(), 2)
+  assert_eq(notification_metrics.length(), 1)
   
-  assert_eq(repetitive_string, decompressed_repetitive)
-  assert_true(compressed_repetitive.length() < repetitive_string.length())
-  
-  // Test compression ratio calculation
-  let calculate_compression_ratio = fn(original: String, compressed: String) {
-    if original.length() == 0 {
-      0.0
-    } else {
-      (1.0 - (compressed.length().to_float() / original.length().to_float())) * 100.0
+  // Calculate cross-service metrics
+  let calculate_cross_service_metrics = fn(merged_telemetry) {
+    let service_count = merged_telemetry.services.length().to_float()
+    let total_span_count = merged_telemetry.spans.length().to_float()
+    let spans_per_service = total_span_count / service_count
+    
+    let metric_count = merged_telemetry.metrics.length().to_float()
+    let metrics_per_service = metric_count / service_count
+    
+    {
+      service_count,
+      total_spans: total_span_count,
+      spans_per_service,
+      total_metrics: metric_count,
+      metrics_per_service,
+      trace_duration: timeline.trace_duration
     }
   }
   
-  let compression_ratio = calculate_compression_ratio(repetitive_string, compressed_repetitive)
-  assert_true(compression_ratio > 50.0)  // Should achieve at least 50% compression
+  let cross_metrics = calculate_cross_service_metrics(merged)
+  assert_eq(cross_metrics.service_count, 3.0)
+  assert_eq(cross_metrics.total_spans, 5.0)
+  assert_eq(cross_metrics.spans_per_service, 5.0 / 3.0)
+  assert_eq(cross_metrics.total_metrics, 4.0)
+  assert_eq(cross_metrics.metrics_per_service, 4.0 / 3.0)
+  assert_eq(cross_metrics.trace_duration, 240)
+}
+
+// Test 7: Telemetry Configuration Management
+test "telemetry configuration management" {
+  // Define configuration types
+  type TelemetryConfig = {
+    service_name: String,
+    service_version: String,
+    enabled: Bool,
+    sampling_rate: Float,
+    export_interval: Int,
+    batch_size: Int,
+    headers: Array[(String, String)],
+    processors: Array[String]
+  }
   
-  // Test with real telemetry data
-  let telemetry_compressed = compress_string(serialized)
-  let telemetry_decompressed = decompress_string(telemetry_compressed)
-  let telemetry_compression_ratio = calculate_compression_ratio(serialized, telemetry_compressed)
+  // Create default configuration
+  let create_default_config = fn(service_name: String) {
+    {
+      service_name,
+      service_version: "1.0.0",
+      enabled: true,
+      sampling_rate: 1.0,  // 100% sampling
+      export_interval: 60000,  // 60 seconds
+      batch_size: 100,
+      headers: [],
+      processors: ["batch", "attribute"]
+    }
+  }
   
-  assert_eq(serialized, telemetry_decompressed)
-  // Real telemetry data might not compress as well as repetitive data
-  assert_true(telemetry_compression_ratio >= 0.0)
+  // Update configuration with overrides
+  let update_config = fn(config: TelemetryConfig, overrides: Array[(String, String)]) {
+    let mut updated = config
+    
+    for (key, value) in overrides {
+      match key {
+        "service_version" => updated = { updated | service_version: value }
+        "enabled" => updated = { updated | enabled: value == "true" }
+        "sampling_rate" => updated = { updated | sampling_rate: value.to_float() }
+        "export_interval" => updated = { updated | export_interval: value.to_int() }
+        "batch_size" => updated = { updated | batch_size: value.to_int() }
+        _ => ()  // Ignore unknown keys
+      }
+    }
+    
+    updated
+  }
   
-  // Test batch compression
-  let batch_data = [
-    create_sample_data(),
-    create_sample_data(),
-    create_sample_data()
+  // Validate configuration
+  let validate_config = fn(config: TelemetryConfig) {
+    let mut errors = []
+    
+    if config.service_name == "" {
+      errors = errors.push("Service name cannot be empty")
+    }
+    
+    if config.sampling_rate < 0.0 or config.sampling_rate > 1.0 {
+      errors = errors.push("Sampling rate must be between 0.0 and 1.0")
+    }
+    
+    if config.export_interval < 1000 {
+      errors = errors.push("Export interval must be at least 1000ms")
+    }
+    
+    if config.batch_size < 1 or config.batch_size > 10000 {
+      errors = errors.push("Batch size must be between 1 and 10000")
+    }
+    
+    {
+      valid: errors.length() == 0,
+      errors
+    }
+  }
+  
+  // Test default configuration
+  let default_config = create_default_config("payment-service")
+  assert_eq(default_config.service_name, "payment-service")
+  assert_eq(default_config.service_version, "1.0.0")
+  assert_true(default_config.enabled)
+  assert_eq(default_config.sampling_rate, 1.0)
+  assert_eq(default_config.export_interval, 60000)
+  assert_eq(default_config.batch_size, 100)
+  
+  // Test configuration validation
+  let validation_result = validate_config(default_config)
+  assert_true(validation_result.valid)
+  assert_eq(validation_result.errors.length(), 0)
+  
+  // Test configuration updates
+  let overrides = [
+    ("service_version", "2.1.0"),
+    ("sampling_rate", "0.5"),
+    ("export_interval", "30000"),
+    ("batch_size", "50")
   ]
   
-  let serialized_batch = batch_data.map(serialize_telemetry_data)
-  let compressed_batch = serialized_batch.map(compress_string)
-  let decompressed_batch = compressed_batch.map(decompress_string)
+  let updated_config = update_config(default_config, overrides)
+  assert_eq(updated_config.service_version, "2.1.0")
+  assert_eq(updated_config.sampling_rate, 0.5)
+  assert_eq(updated_config.export_interval, 30000)
+  assert_eq(updated_config.batch_size, 50)
   
-  assert_eq(serialized_batch.length(), decompressed_batch.length())
-  for i in 0..serialized_batch.length() {
-    assert_eq(serialized_batch[i], decompressed_batch[i])
+  // Test invalid configuration
+  let invalid_overrides = [
+    ("sampling_rate", "1.5"),  // Invalid: > 1.0
+    ("export_interval", "500"), // Invalid: < 1000
+    ("batch_size", "0")         // Invalid: < 1
+  ]
+  
+  let invalid_config = update_config(default_config, invalid_overrides)
+  let invalid_validation = validate_config(invalid_config)
+  assert_false(invalid_validation.valid)
+  assert_eq(invalid_validation.errors.length(), 3)
+  
+  // Test configuration merging
+  let merge_configs = fn(base: TelemetryConfig, override: TelemetryConfig) {
+    {
+      service_name: if override.service_name != "" { override.service_name } else { base.service_name },
+      service_version: if override.service_version != "" { override.service_version } else { base.service_version },
+      enabled: override.enabled,
+      sampling_rate: if override.sampling_rate >= 0.0 { override.sampling_rate } else { base.sampling_rate },
+      export_interval: if override.export_interval > 0 { override.export_interval } else { base.export_interval },
+      batch_size: if override.batch_size > 0 { override.batch_size } else { base.batch_size },
+      headers: base.headers + override.headers,
+      processors: if override.processors.length() > 0 { override.processors } else { base.processors }
+    }
   }
+  
+  let override_config = {
+    service_name: "",
+    service_version: "3.0.0",
+    enabled: false,
+    sampling_rate: 0.1,
+    export_interval: 0,
+    batch_size: 200,
+    headers: [("x-custom-header", "value")],
+    processors: ["filter", "sampling"]
+  }
+  
+  let merged_config = merge_configs(default_config, override_config)
+  assert_eq(merged_config.service_name, "payment-service")  // From base
+  assert_eq(merged_config.service_version, "3.0.0")         // From override
+  assert_false(merged_config.enabled)                       // From override
+  assert_eq(merged_config.sampling_rate, 0.1)               // From override
+  assert_eq(merged_config.export_interval, 60000)           // From base (override was 0)
+  assert_eq(merged_config.batch_size, 200)                  // From override
+  assert_eq(merged_config.headers.length(), 1)              // From override
+  assert_eq(merged_config.processors.length(), 2)           // From override
+  
+  // Test configuration environment variable override
+  let apply_env_overrides = fn(config: TelemetryConfig, env_vars: Array[(String, String)]) {
+    let mut updated = config
+    
+    for (key, value) in env_vars {
+      match key {
+        "TELEMETRY_SERVICE_NAME" => updated = { updated | service_name: value }
+        "TELEMETRY_SAMPLING_RATE" => {
+          let rate = value.to_float()
+          if rate >= 0.0 and rate <= 1.0 {
+            updated = { updated | sampling_rate: rate }
+          }
+        }
+        "TELEMETRY_ENABLED" => updated = { updated | enabled: value == "true" }
+        "TELEMETRY_EXPORT_INTERVAL" => {
+          let interval = value.to_int()
+          if interval >= 1000 {
+            updated = { updated | export_interval: interval }
+          }
+        }
+        _ => ()  // Ignore other environment variables
+      }
+    }
+    
+    updated
+  }
+  
+  let env_vars = [
+    ("TELEMETRY_SAMPLING_RATE", "0.25"),
+    ("TELEMETRY_ENABLED", "false"),
+    ("TELEMETRY_EXPORT_INTERVAL", "120000"),
+    ("OTHER_VAR", "ignored")
+  ]
+  
+  let env_config = apply_env_overrides(default_config, env_vars)
+  assert_eq(env_config.service_name, "payment-service")  // Unchanged
+  assert_eq(env_config.sampling_rate, 0.25)              // From env
+  assert_false(env_config.enabled)                       // From env
+  assert_eq(env_config.export_interval, 120000)          // From env
+  
+  // Test configuration serialization
+  let serialize_config = fn(config: TelemetryConfig) {
+    let mut lines = []
+    lines = lines.push("service_name=" + config.service_name)
+    lines = lines.push("service_version=" + config.service_version)
+    lines = lines.push("enabled=" + config.enabled.to_string())
+    lines = lines.push("sampling_rate=" + config.sampling_rate.to_string())
+    lines = lines.push("export_interval=" + config.export_interval.to_string())
+    lines = lines.push("batch_size=" + config.batch_size.to_string())
+    
+    if config.headers.length() > 0 {
+      for (key, value) in config.headers {
+        lines = lines.push("header." + key + "=" + value)
+      }
+    }
+    
+    if config.processors.length() > 0 {
+      let processors_str = config.processors.reduce(fn(acc, p) { acc + "," + p })
+      lines = lines.push("processors=" + processors_str)
+    }
+    
+    lines.reduce(fn(acc, line) { acc + "\n" + line })
+  }
+  
+  let config_str = serialize_config(env_config)
+  assert_true(config_str.contains("service_name=payment-service"))
+  assert_true(config_str.contains("sampling_rate=0.25"))
+  assert_true(config_str.contains("enabled=false"))
+  assert_true(config_str.contains("export_interval=120000"))
+}
+
+// Test 8: Telemetry Data Retention and Cleanup
+test "telemetry data retention and cleanup" {
+  // Define telemetry data record
+  type TelemetryRecord = {
+    id: String,
+    timestamp: Int,
+    data_size: Int,
+    access_count: Int,
+    last_accessed: Int
+  }
+  
+  // Define retention policy
+  type RetentionPolicy = {
+    max_age_seconds: Int,
+    max_records: Int,
+    max_storage_mb: Int,
+    cleanup_interval_seconds: Int
+  }
+  
+  // Create retention policy
+  let create_retention_policy = fn(max_age: Int, max_records: Int, max_storage: Int) {
+    {
+      max_age_seconds: max_age,
+      max_records,
+      max_storage_mb: max_storage,
+      cleanup_interval_seconds: 300  // 5 minutes
+    }
+  }
+  
+  // Create telemetry records
+  let create_record = fn(id: String, timestamp: Int, size: Int) {
+    {
+      id,
+      timestamp,
+      data_size: size,
+      access_count: 0,
+      last_accessed: timestamp
+    }
+  }
+  
+  // Create test records with different timestamps
+  let current_time = 1640995200  // Current time
+  let records = [
+    create_record("record-1", current_time - 86400, 1024),      // 1 day old
+    create_record("record-2", current_time - 172800, 2048),     // 2 days old
+    create_record("record-3", current_time - 259200, 1536),     // 3 days old
+    create_record("record-4", current_time - 3600, 512),        // 1 hour old
+    create_record("record-5", current_time - 604800, 3072),     // 1 week old
+    create_record("record-6", current_time, 256)                // Current
+  ]
+  
+  // Test retention policy
+  let policy = create_retention_policy(172800, 5, 10)  // 2 days, 5 records, 10MB
+  
+  assert_eq(policy.max_age_seconds, 172800)
+  assert_eq(policy.max_records, 5)
+  assert_eq(policy.max_storage_mb, 10)
+  
+  // Check if record should be retained based on age
+  let should_retain_by_age = fn(record: TelemetryRecord, policy: RetentionPolicy, current_time: Int) {
+    let age = current_time - record.timestamp
+    age <= policy.max_age_seconds
+  }
+  
+  // Test age-based retention
+  let record_1_age = current_time - records[0].timestamp
+  let record_2_age = current_time - records[1].timestamp
+  let record_3_age = current_time - records[2].timestamp
+  let record_4_age = current_time - records[3].timestamp
+  let record_5_age = current_time - records[4].timestamp
+  let record_6_age = current_time - records[5].timestamp
+  
+  assert_eq(record_1_age, 86400)   // 1 day
+  assert_eq(record_2_age, 172800)  // 2 days
+  assert_eq(record_3_age, 259200)  // 3 days
+  assert_eq(record_4_age, 3600)    // 1 hour
+  assert_eq(record_5_age, 604800)  // 1 week
+  assert_eq(record_6_age, 0)       // Current
+  
+  assert_true(should_retain_by_age(records[0], policy, current_time))   // 1 day old
+  assert_true(should_retain_by_age(records[1], policy, current_time))   // 2 days old (boundary)
+  assert_false(should_retain_by_age(records[2], policy, current_time))  // 3 days old
+  assert_true(should_retain_by_age(records[3], policy, current_time))   // 1 hour old
+  assert_false(should_retain_by_age(records[4], policy, current_time))  // 1 week old
+  assert_true(should_retain_by_age(records[5], policy, current_time))   // Current
+  
+  // Filter records by age
+  let filter_by_age = fn(records: Array[TelemetryRecord], policy: RetentionPolicy, current_time: Int) {
+    records.filter(fn(record) {
+      should_retain_by_age(record, policy, current_time)
+    })
+  }
+  
+  let age_filtered = filter_by_age(records, policy, current_time)
+  assert_eq(age_filtered.length(), 4)  // records 0, 1, 3, 5
+  
+  // Filter records by count (keep most recent)
+  let filter_by_count = fn(records: Array[TelemetryRecord], max_count: Int) {
+    let sorted = records.sort_by(fn(a, b) { b.timestamp - a.timestamp })
+    sorted.slice(0, max_count)
+  }
+  
+  let count_filtered = filter_by_count(records, policy.max_records)
+  assert_eq(count_filtered.length(), 5)
+  
+  // Verify the 5 most recent records are kept
+  assert_eq(count_filtered[0].timestamp, current_time)           // record-6
+  assert_eq(count_filtered[1].timestamp, current_time - 3600)    // record-4
+  assert_eq(count_filtered[2].timestamp, current_time - 86400)   // record-1
+  assert_eq(count_filtered[3].timestamp, current_time - 172800)  // record-2
+  assert_eq(count_filtered[4].timestamp, current_time - 259200)  // record-3
+  
+  // Filter records by storage size
+  let filter_by_storage = fn(records: Array[TelemetryRecord], max_storage_mb: Int) {
+    let max_storage_bytes = max_storage_mb * 1024 * 1024
+    let sorted = records.sort_by(fn(a, b) { b.timestamp - a.timestamp })
+    
+    let mut kept = []
+    let mut current_size = 0
+    
+    for record in sorted {
+      if current_size + record.data_size <= max_storage_bytes {
+        kept = kept.push(record)
+        current_size = current_size + record.data_size
+      }
+    }
+    
+    kept
+  }
+  
+  let storage_filtered = filter_by_storage(records, 0)  // 0MB limit for testing
+  assert_eq(storage_filtered.length(), 0)
+  
+  let storage_filtered_1mb = filter_by_storage(records, 1)  // 1MB limit
+  // Calculate how many records fit in 1MB (1,048,576 bytes)
+  let mut total_size = 0
+  let mut count = 0
+  for record in records.sort_by(fn(a, b) { b.timestamp - a.timestamp }) {
+    if total_size + record.data_size <= 1048576 {
+      total_size = total_size + record.data_size
+      count = count + 1
+    }
+  }
+  assert_eq(storage_filtered_1mb.length(), count)
+  
+  // Apply all retention policies
+  let apply_retention_policies = fn(records: Array[TelemetryRecord], policy: RetentionPolicy, current_time: Int) {
+    // First filter by age
+    let age_filtered = filter_by_age(records, policy, current_time)
+    
+    // Then filter by count (most recent)
+    let count_filtered = filter_by_count(age_filtered, policy.max_records)
+    
+    // Finally filter by storage
+    let storage_filtered = filter_by_storage(count_filtered, policy.max_storage_mb)
+    
+    storage_filtered
+  }
+  
+  let retained_records = apply_retention_policies(records, policy, current_time)
+  
+  // Verify retention results
+  assert_true(retained_records.length() <= policy.max_records)
+  
+  // Calculate total storage used
+  let total_storage = retained_records.reduce(fn(acc, record) { acc + record.data_size }, 0)
+  let total_storage_mb = total_storage / (1024 * 1024)
+  assert_true(total_storage_mb <= policy.max_storage_mb)
+  
+  // Verify all retained records are within age limit
+  for record in retained_records {
+    let age = current_time - record.timestamp
+    assert_true(age <= policy.max_age_seconds)
+  }
+  
+  // Test record access tracking
+  let update_access = fn(record: TelemetryRecord, current_time: Int) {
+    {
+      id: record.id,
+      timestamp: record.timestamp,
+      data_size: record.data_size,
+      access_count: record.access_count + 1,
+      last_accessed: current_time
+    }
+  }
+  
+  let accessed_record = update_access(retained_records[0], current_time + 3600)
+  assert_eq(accessed_record.access_count, 1)
+  assert_eq(accessed_record.last_accessed, current_time + 3600)
+  
+  // Test cleanup based on access patterns (LRU)
+  let filter_by_lru = fn(records: Array[TelemetryRecord], keep_count: Int) {
+    let sorted_by_access = records.sort_by(fn(a, b) { b.last_accessed - a.last_accessed })
+    sorted_by_access.slice(0, keep_count)
+  }
+  
+  let lru_filtered = filter_by_lru(retained_records, 2)
+  assert_eq(lru_filtered.length(), 2)
+  
+  // Create records with different access patterns
+  let accessed_records = [
+    update_access(records[0], current_time - 3600),  // Accessed 1 hour ago
+    update_access(records[1], current_time - 7200),  // Accessed 2 hours ago
+    update_access(records[2], current_time - 1800),  // Accessed 30 minutes ago
+  ]
+  
+  let lru_result = filter_by_lru(accessed_records, 2)
+  // Should keep the most recently accessed
+  assert_eq(lru_result[0].id, records[2].id)  // Accessed 30 minutes ago
+  assert_eq(lru_result[1].id, records[0].id)  // Accessed 1 hour ago
+  
+  // Test retention statistics
+  let calculate_retention_stats = fn(original: Array[TelemetryRecord], retained: Array[TelemetryRecord]) {
+    let original_count = original.length()
+    let retained_count = retained.length()
+    let removed_count = original_count - retained_count
+    let retention_rate = retained_count.to_float() / original_count.to_float()
+    
+    let original_size = original.reduce(fn(acc, r) { acc + r.data_size }, 0)
+    let retained_size = retained.reduce(fn(acc, r) { acc + r.data_size }, 0)
+    let removed_size = original_size - retained_size
+    
+    {
+      original_count,
+      retained_count,
+      removed_count,
+      retention_rate,
+      original_size_kb: original_size / 1024,
+      retained_size_kb: retained_size / 1024,
+      removed_size_kb: removed_size / 1024
+    }
+  }
+  
+  let stats = calculate_retention_stats(records, retained_records)
+  assert_eq(stats.original_count, 6)
+  assert_eq(stats.removed_count, stats.original_count - stats.retained_count)
+  assert_true(stats.retention_rate <= 1.0)
+  assert_eq(stats.retained_size_kb + stats.removed_size_kb, stats.original_size_kb)
 }
