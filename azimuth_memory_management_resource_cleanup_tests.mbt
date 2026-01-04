@@ -1,485 +1,437 @@
-// Azimuth Telemetry System - Memory Management and Resource Cleanup Tests
-// This file contains test cases for memory management and resource cleanup functionality
+// Azimuth 内存管理和资源清理测试用例
+// 专注于测试内存泄漏检测、资源分配和自动清理机制
 
-// Test 1: Memory Pool Management
-test "memory pool management" {
-  // Create memory pool
-  let pool = MemoryPool::new(1024) // 1KB pool
+// 测试1: 内存泄漏检测
+test "内存泄漏检测" {
+  // 1. 创建内存监控器
+  let memory_monitor = MemoryMonitor::new()
+  let initial_memory = MemoryMonitor::get_allocated_memory(memory_monitor)
   
-  // Verify initial state
-  assert_eq(MemoryPool::total_capacity(pool), 1024)
-  assert_eq(MemoryPool::used_capacity(pool), 0)
-  assert_eq(MemoryPool::available_capacity(pool), 1024)
+  // 2. 创建大量临时对象
+  let temporary_objects = []
+  for i in 0..=1000 {
+    let telemetry_data = TelemetryData({
+      id: "temp_" + i.to_string(),
+      metrics: [
+        ("cpu", FloatValue(0.5 + (i % 100) as Float / 100.0)),
+        ("memory", IntValue(1024 * (i % 10 + 1))),
+        ("network", IntValue(100 * (i % 5 + 1)))
+      ],
+      timestamp: 1735689600000000000L + (i as Int64 * 1000000L)
+    })
+    temporary_objects.push(telemetry_data)
+  }
   
-  // Allocate memory blocks
-  let block1 = MemoryPool::allocate(pool, 256)
-  let block2 = MemoryPool::allocate(pool, 512)
-  let block3 = MemoryPool::allocate(pool, 128)
+  // 3. 验证内存增长
+  let peak_memory = MemoryMonitor::get_allocated_memory(memory_monitor)
+  assert_true(peak_memory > initial_memory)
   
-  // Verify allocations
-  assert_true(MemoryBlock::is_valid(block1))
-  assert_true(MemoryBlock::is_valid(block2))
-  assert_true(MemoryBlock::is_valid(block3))
+  // 4. 清理对象
+  temporary_objects = []
   
-  assert_eq(MemoryPool::used_capacity(pool), 896) // 256 + 512 + 128
-  assert_eq(MemoryPool::available_capacity(pool), 128) // 1024 - 896
+  // 5. 强制垃圾回收
+  MemoryMonitor::force_gc(memory_monitor)
   
-  // Test allocation failure (not enough memory)
-  let failed_block = MemoryPool::allocate(pool, 256)
-  assert_false(MemoryBlock::is_valid(failed_block))
+  // 6. 验证内存回收
+  let final_memory = MemoryMonitor::get_allocated_memory(memory_monitor)
+  let memory_leak = final_memory - initial_memory
   
-  // Free memory blocks
-  MemoryPool::deallocate(pool, block2) // Free 512 bytes
-  
-  // Verify deallocation
-  assert_eq(MemoryPool::used_capacity(pool), 384) // 256 + 128
-  assert_eq(MemoryPool::available_capacity(pool), 640) // 1024 - 384
-  
-  // Test allocation after deallocation
-  let block4 = MemoryPool::allocate(pool, 400)
-  assert_true(MemoryBlock::is_valid(block4))
-  
-  // Verify final state
-  assert_eq(MemoryPool::used_capacity(pool), 784) // 256 + 128 + 400
-  assert_eq(MemoryPool::available_capacity(pool), 240) // 1024 - 784
-  
-  // Clean up all blocks
-  MemoryPool::deallocate(pool, block1)
-  MemoryPool::deallocate(pool, block3)
-  MemoryPool::deallocate(pool, block4)
-  
-  // Verify pool is empty
-  assert_eq(MemoryPool::used_capacity(pool), 0)
-  assert_eq(MemoryPool::available_capacity(pool), 1024)
+  // 允许少量内存增长（由于缓存等原因）
+  assert_true(memory_leak < (temporary_objects.length() * 100)) // 每个对象不超过100字节泄漏
 }
 
-// Test 2: Buffer Management and Cleanup
-test "buffer management and cleanup" {
-  // Create buffer manager
-  let buffer_manager = BufferManager::new()
+// 测试2: 资源生命周期管理
+test "资源生命周期管理" {
+  // 1. 创建资源管理器
+  let resource_manager = ResourceManager::new()
   
-  // Create buffers of different sizes
-  let small_buffer = BufferManager::create_buffer(buffer_manager, 1024)    // 1KB
-  let medium_buffer = BufferManager::create_buffer(buffer_manager, 10240)  // 10KB
-  let large_buffer = BufferManager::create_buffer(buffer_manager, 102400)  // 100KB
+  // 2. 创建多种类型的资源
+  let file_resource = ResourceManager::create_file_resource(resource_manager, "/tmp/telemetry.log")
+  let network_resource = ResourceManager::create_network_resource(resource_manager, "tcp://localhost:8080")
+  let memory_resource = ResourceManager::create_memory_resource(resource_manager, 1024 * 1024) // 1MB
+  let db_connection = ResourceManager::create_db_connection(resource_manager, "postgresql://localhost/azimuth")
   
-  // Verify buffer creation
-  assert_true(Buffer::is_valid(small_buffer))
-  assert_true(Buffer::is_valid(medium_buffer))
-  assert_true(Buffer::is_valid(large_buffer))
+  // 3. 验证资源创建
+  assert_true(ResourceManager::is_resource_active(resource_manager, file_resource.id))
+  assert_true(ResourceManager::is_resource_active(resource_manager, network_resource.id))
+  assert_true(ResourceManager::is_resource_active(resource_manager, memory_resource.id))
+  assert_true(ResourceManager::is_resource_active(resource_manager, db_connection.id))
   
-  assert_eq(Buffer::capacity(small_buffer), 1024)
-  assert_eq(Buffer::capacity(medium_buffer), 10240)
-  assert_eq(Buffer::capacity(large_buffer), 102400)
+  // 4. 使用资源
+  ResourceManager::write_to_file(resource_manager, file_resource.id, "Telemetry data: test")
+  ResourceManager::send_network_data(resource_manager, network_resource.id, "ping")
+  ResourceManager::allocate_memory(resource_manager, memory_resource.id, 512)
+  ResourceManager::execute_query(resource_manager, db_connection.id, "SELECT 1")
   
-  // Write data to buffers
-  let test_data = "Hello, World! This is test data for buffer management."
+  // 5. 验证资源使用状态
+  assert_eq(ResourceManager::get_file_size(resource_manager, file_resource.id), 21)
+  assert_eq(ResourceManager::get_network_bytes_sent(resource_manager, network_resource.id), 4)
+  assert_eq(ResourceManager::get_memory_used(resource_manager, memory_resource.id), 512)
+  assert_eq(ResourceManager::get_db_query_count(resource_manager, db_connection.id), 1)
   
-  let small_write_result = Buffer::write(small_buffer, test_data)
-  let medium_write_result = Buffer::write(medium_buffer, test_data)
-  let large_write_result = Buffer::write(large_buffer, test_data)
+  // 6. 释放资源
+  ResourceManager::release_resource(resource_manager, file_resource.id)
+  ResourceManager::release_resource(resource_manager, network_resource.id)
+  ResourceManager::release_resource(resource_manager, memory_resource.id)
+  ResourceManager::release_resource(resource_manager, db_connection.id)
   
-  assert_true(small_write_result)
-  assert_true(medium_write_result)
-  assert_true(large_write_result)
+  // 7. 验证资源释放
+  assert_false(ResourceManager::is_resource_active(resource_manager, file_resource.id))
+  assert_false(ResourceManager::is_resource_active(resource_manager, network_resource.id))
+  assert_false(ResourceManager::is_resource_active(resource_manager, memory_resource.id))
+  assert_false(ResourceManager::is_resource_active(resource_manager, db_connection.id))
   
-  // Verify data written
-  assert_eq(Buffer::size(small_buffer), test_data.length())
-  assert_eq(Buffer::size(medium_buffer), test_data.length())
-  assert_eq(Buffer::size(large_buffer), test_data.length())
-  
-  // Read data from buffers
-  let small_read_data = Buffer::read(small_buffer, test_data.length())
-  let medium_read_data = Buffer::read(medium_buffer, test_data.length())
-  let large_read_data = Buffer::read(large_buffer, test_data.length())
-  
-  match small_read_data {
-    Some(data) => assert_eq(data, test_data)
-    None => assert_true(false)
-  }
-  
-  match medium_read_data {
-    Some(data) => assert_eq(data, test_data)
-    None => assert_true(false)
-  }
-  
-  match large_read_data {
-    Some(data) => assert_eq(data, test_data)
-    None => assert_true(false)
-  }
-  
-  // Test buffer resize
-  let resized_small = BufferManager::resize_buffer(buffer_manager, small_buffer, 2048)
-  assert_true(Buffer::is_valid(resized_small))
-  assert_eq(Buffer::capacity(resized_small), 2048)
-  
-  // Test buffer copy
-  let copied_buffer = BufferManager::copy_buffer(buffer_manager, medium_buffer)
-  assert_true(Buffer::is_valid(copied_buffer))
-  assert_eq(Buffer::capacity(copied_buffer), Buffer::capacity(medium_buffer))
-  assert_eq(Buffer::size(copied_buffer), Buffer::size(medium_buffer))
-  
-  // Clean up buffers
-  BufferManager::destroy_buffer(buffer_manager, small_buffer)
-  BufferManager::destroy_buffer(buffer_manager, resized_small)
-  BufferManager::destroy_buffer(buffer_manager, medium_buffer)
-  BufferManager::destroy_buffer(buffer_manager, copied_buffer)
-  BufferManager::destroy_buffer(buffer_manager, large_buffer)
-  
-  // Verify buffers are cleaned up
-  assert_false(Buffer::is_valid(small_buffer))
-  assert_false(Buffer::is_valid(resized_small))
-  assert_false(Buffer::is_valid(medium_buffer))
-  assert_false(Buffer::is_valid(copied_buffer))
-  assert_false(Buffer::is_valid(large_buffer))
+  // 8. 验证资源管理器清理
+  assert_eq(ResourceManager::get_active_resource_count(resource_manager), 0)
 }
 
-// Test 3: Resource Reference Counting
-test "resource reference counting" {
-  // Create resource with reference counting
-  let resource = RefCountedResource::new("test_resource", 1024)
+// 测试3: 自动资源清理
+test "自动资源清理" {
+  // 1. 创建自动清理管理器
+  let auto_cleanup_manager = AutoCleanupManager::new()
   
-  // Verify initial reference count
-  assert_eq(RefCountedResource::ref_count(resource), 1)
-  
-  // Add references
-  let ref1 = RefCountedResource::add_ref(resource)
-  let ref2 = RefCountedResource::add_ref(resource)
-  let ref3 = RefCountedResource::add_ref(resource)
-  
-  // Verify reference count after adding references
-  assert_eq(RefCountedResource::ref_count(resource), 4)
-  assert_eq(RefCountedResource::ref_count(ref1), 4)
-  assert_eq(RefCountedResource::ref_count(ref2), 4)
-  assert_eq(RefCountedResource::ref_count(ref3), 4)
-  
-  // Release references
-  RefCountedResource::release(ref1)
-  assert_eq(RefCountedResource::ref_count(resource), 3)
-  
-  RefCountedResource::release(ref2)
-  assert_eq(RefCountedResource::ref_count(resource), 2)
-  
-  RefCountedResource::release(ref3)
-  assert_eq(RefCountedResource::ref_count(resource), 1)
-  
-  // Test resource data access
-  match RefCountedResource::data(resource) {
-    Some(data) => assert_eq(data, "test_resource")
-    None => assert_true(false)
+  // 2. 创建带自动清理的资源
+  let auto_cleanup_resources = []
+  for i in 0..=100 {
+    let resource = AutoCleanupManager::create_resource(
+      auto_cleanup_manager,
+      "resource_" + i.to_string(),
+      1000 + i * 100 // 不同的过期时间
+    )
+    auto_cleanup_resources.push(resource)
   }
   
-  // Test resource size
-  assert_eq(RefCountedResource::size(resource), 1024)
+  // 3. 验证资源创建
+  assert_eq(AutoCleanupManager::get_resource_count(auto_cleanup_manager), 100)
   
-  // Final release (resource should be destroyed)
-  RefCountedResource::release(resource)
+  // 4. 模拟时间流逝，触发部分资源过期
+  AutoCleanupManager::advance_time(auto_cleanup_manager, 1500)
   
-  // Resource should no longer be valid
-  assert_false(RefCountedResource::is_valid(resource))
+  // 5. 触发自动清理
+  AutoCleanupManager::trigger_cleanup(auto_cleanup_manager)
+  
+  // 6. 验证部分资源被清理
+  assert_true(AutoCleanupManager::get_resource_count(auto_cleanup_manager) < 100)
+  assert_true(AutoCleanupManager::get_resource_count(auto_cleanup_manager) > 0)
+  
+  // 7. 继续时间流逝，清理所有资源
+  AutoCleanupManager::advance_time(auto_cleanup_manager, 10000)
+  AutoCleanupManager::trigger_cleanup(auto_cleanup_manager)
+  
+  // 8. 验证所有资源被清理
+  assert_eq(AutoCleanupManager::get_resource_count(auto_cleanup_manager), 0)
 }
 
-// Test 4: Garbage Collection for Telemetry Data
-test "garbage collection for telemetry data" {
-  // Create garbage collector
-  let gc = GarbageCollector::new()
+// 测试4: 循环引用检测
+test "循环引用检测" {
+  // 1. 创建循环引用检测器
+  let cycle_detector = CycleDetector::new()
   
-  // Create telemetry data objects
-  let metric1 = TelemetryMetric::new("cpu.usage", 75.5, None, None)
-  let metric2 = TelemetryMetric::new("memory.usage", 60.2, None, None)
-  let metric3 = TelemetryMetric::new("disk.usage", 45.8, None, None)
+  // 2. 创建对象A
+  let object_a = RefCountedObject::new("ObjectA")
+  let ref_a = RefCountedObject::add_ref(object_a)
   
-  // Register objects with garbage collector
-  let gc_with_objects = GarbageCollector::register(
-    GarbageCollector::register(
-      GarbageCollector::register(gc, metric1),
-      metric2),
-    metric3)
+  // 3. 创建对象B
+  let object_b = RefCountedObject::new("ObjectB")
+  let ref_b = RefCountedObject::add_ref(object_b)
   
-  // Verify objects are registered
-  assert_true(GarbageCollector::is_registered(gc_with_objects, metric1))
-  assert_true(GarbageCollector::is_registered(gc_with_objects, metric2))
-  assert_true(GarbageCollector::is_registered(gc_with_objects, metric3))
+  // 4. 建立A引用B的关系
+  RefCountedObject::set_reference(object_a, "ref_to_b", object_b)
   
-  // Mark objects as reachable
-  let gc_with_reachable = GarbageCollector::mark_reachable(gc_with_objects, [metric1, metric3])
+  // 5. 建立B引用A的关系（形成循环）
+  RefCountedObject::set_reference(object_b, "ref_to_a", object_a)
   
-  // Run garbage collection
-  let gc_after_collection = GarbageCollector::collect(gc_with_reachable)
+  // 6. 验证引用计数
+  assert_eq(RefCountedObject::get_ref_count(object_a), 2)
+  assert_eq(RefCountedObject::get_ref_count(object_b), 2)
   
-  // Verify that metric2 was collected (not marked as reachable)
-  assert_true(GarbageCollector::is_registered(gc_after_collection, metric1))
-  assert_false(GarbageCollector::is_registered(gc_after_collection, metric2))
-  assert_true(GarbageCollector::is_registered(gc_after_collection, metric3))
+  // 7. 释放外部引用
+  RefCountedObject::release_ref(ref_a)
+  RefCountedObject::release_ref(ref_b)
   
-  // Get collection statistics
-  let stats = GarbageCollector::get_stats(gc_after_collection)
-  assert_eq(GCStats::objects_collected(stats), 1)
-  assert_eq(GCStats::objects_remaining(stats), 2)
-  assert_true(GCStats::memory_freed(stats) > 0)
+  // 8. 验证仍有循环引用
+  assert_eq(RefCountedObject::get_ref_count(object_a), 1)
+  assert_eq(RefCountedObject::get_ref_count(object_b), 1)
   
-  // Test generational garbage collection
-  let young_metric = TelemetryMetric::new("network.latency", 25.3, None, None)
-  let old_metric = TelemetryMetric::new("cache.hit.rate", 85.7, None, None)
+  // 9. 检测循环引用
+  let cycles = CycleDetector::detect_cycles(cycle_detector)
+  assert_eq(cycles.length(), 1)
+  assert_true(cycles[0].contains("ObjectA"))
+  assert_true(cycles[0].contains("ObjectB"))
   
-  let gc_with_generations = GarbageCollector::register(
-    GarbageCollector::register(gc_after_collection, young_metric),
-    old_metric)
+  // 10. 清理循环引用
+  CycleDetector::break_cycles(cycle_detector)
   
-  // Mark young metric as young generation and old metric as old generation
-  let gc_with_generation_marks = GarbageCollector::mark_generation(
-    GarbageCollector::mark_generation(gc_with_generations, young_metric, "young"),
-    old_metric,
-    "old"
+  // 11. 验证对象被正确清理
+  assert_true(RefCountedObject::is_destroyed(object_a))
+  assert_true(RefCountedObject::is_destroyed(object_b))
+}
+
+// 测试5: 内存池管理
+test "内存池管理" {
+  // 1. 创建内存池
+  let memory_pool = MemoryPool::new(1024 * 1024) // 1MB池
+  
+  // 2. 验证初始状态
+  assert_eq(MemoryPool::get_total_size(memory_pool), 1024 * 1024)
+  assert_eq(MemoryPool::get_available_size(memory_pool), 1024 * 1024)
+  assert_eq(MemoryPool::get_allocated_count(memory_pool), 0)
+  
+  // 3. 分配内存块
+  let allocations = []
+  let allocation_sizes = [1024, 2048, 4096, 8192, 16384]
+  
+  for size in allocation_sizes {
+    let allocation = MemoryPool::allocate(memory_pool, size)
+    assert_true(MemoryPool::is_valid_allocation(memory_pool, allocation))
+    allocations.push(allocation)
+  }
+  
+  // 4. 验证分配状态
+  assert_eq(MemoryPool::get_allocated_count(memory_pool), 5)
+  assert_true(MemoryPool::get_available_size(memory_pool) < 1024 * 1024)
+  
+  // 5. 使用分配的内存
+  for i in 0..allocations.length() {
+    let allocation = allocations[i]
+    let data = "test_data_" + i.to_string()
+    MemoryPool::write_data(memory_pool, allocation, data)
+    
+    let read_data = MemoryPool::read_data(memory_pool, allocation)
+    assert_eq(read_data, data)
+  }
+  
+  // 6. 释放部分内存
+  MemoryPool::deallocate(memory_pool, allocations[1]) // 释放第二个分配
+  MemoryPool::deallocate(memory_pool, allocations[3]) // 释放第四个分配
+  
+  // 7. 验证释放状态
+  assert_eq(MemoryPool::get_allocated_count(memory_pool), 3)
+  assert_true(MemoryPool::get_available_size(memory_pool) > MemoryPool::get_available_size(memory_pool) - 2048 - 8192)
+  
+  // 8. 分配新内存验证碎片整理
+  let new_allocation = MemoryPool::allocate(memory_pool, 5120)
+  assert_true(MemoryPool::is_valid_allocation(memory_pool, new_allocation))
+  
+  // 9. 释放所有内存
+  for allocation in allocations {
+    if MemoryPool::is_valid_allocation(memory_pool, allocation) {
+      MemoryPool::deallocate(memory_pool, allocation)
+    }
+  }
+  MemoryPool::deallocate(memory_pool, new_allocation)
+  
+  // 10. 验证完全释放
+  assert_eq(MemoryPool::get_allocated_count(memory_pool), 0)
+  assert_eq(MemoryPool::get_available_size(memory_pool), 1024 * 1024)
+}
+
+// 测试6: 资源限制和配额管理
+test "资源限制和配额管理" {
+  // 1. 创建资源配额管理器
+  let quota_manager = QuotaManager::new()
+  
+  // 2. 设置资源配额
+  QuotaManager::set_quota(quota_manager, "memory", 100 * 1024 * 1024) // 100MB
+  QuotaManager::set_quota(quota_manager, "file_handles", 1000)
+  QuotaManager::set_quota(quota_manager, "network_connections", 100)
+  QuotaManager::set_quota(quota_manager, "cpu_time", 10000) // 10秒
+  
+  // 3. 验证配额设置
+  assert_eq(QuotaManager::get_quota(quota_manager, "memory"), 100 * 1024 * 1024)
+  assert_eq(QuotaManager::get_quota(quota_manager, "file_handles"), 1000)
+  assert_eq(QuotaManager::get_quota(quota_manager, "network_connections"), 100)
+  assert_eq(QuotaManager::get_quota(quota_manager, "cpu_time"), 10000)
+  
+  // 4. 请求资源分配
+  let memory_request1 = QuotaManager::request_resource(quota_manager, "memory", 50 * 1024 * 1024)
+  assert_true(memory_request1.approved)
+  
+  let memory_request2 = QuotaManager::request_resource(quota_manager, "memory", 30 * 1024 * 1024)
+  assert_true(memory_request2.approved)
+  
+  let memory_request3 = QuotaManager::request_resource(quota_manager, "memory", 30 * 1024 * 1024)
+  assert_false(memory_request3.approved) // 超出配额
+  
+  // 5. 释放部分资源
+  QuotaManager::release_resource(quota_manager, "memory", 30 * 1024 * 1024)
+  
+  // 6. 重新请求资源
+  let memory_request4 = QuotaManager::request_resource(quota_manager, "memory", 30 * 1024 * 1024)
+  assert_true(memory_request4.approved) // 现在应该可以
+  
+  // 7. 测试其他资源类型
+  let file_request1 = QuotaManager::request_resource(quota_manager, "file_handles", 500)
+  assert_true(file_request1.approved)
+  
+  let file_request2 = QuotaManager::request_resource(quota_manager, "file_handles", 600)
+  assert_false(file_request2.approved) // 超出配额
+  
+  // 8. 验证资源使用情况
+  assert_eq(QuotaManager::get_used(quota_manager, "memory"), 80 * 1024 * 1024)
+  assert_eq(QuotaManager::get_used(quota_manager, "file_handles"), 500)
+  assert_eq(QuotaManager::get_used(quota_manager, "network_connections"), 0)
+  assert_eq(QuotaManager::get_used(quota_manager, "cpu_time"), 0)
+  
+  // 9. 测试配额调整
+  QuotaManager::adjust_quota(quota_manager, "memory", 150 * 1024 * 1024)
+  assert_eq(QuotaManager::get_quota(quota_manager, "memory"), 150 * 1024 * 1024)
+  
+  // 10. 验证调整后的配额允许更多请求
+  let memory_request5 = QuotaManager::request_resource(quota_manager, "memory", 40 * 1024 * 1024)
+  assert_true(memory_request5.approved)
+}
+
+// 测试7: 延迟清理和批量操作
+test "延迟清理和批量操作" {
+  // 1. 创建延迟清理管理器
+  let deferred_cleanup_manager = DeferredCleanupManager::new()
+  
+  // 2. 创建大量资源
+  let resources = []
+  for i in 0..=1000 {
+    let resource = TelemetryResource({
+      id: "resource_" + i.to_string(),
+      data: "large_data_payload_".repeat(100), // 每个资源约2KB
+      references: []
+    })
+    resources.push(resource)
+  }
+  
+  // 3. 标记资源为待清理
+  for resource in resources {
+    DeferredCleanupManager::mark_for_cleanup(deferred_cleanup_manager, resource.id)
+  }
+  
+  // 4. 验证资源被标记但尚未清理
+  assert_eq(DeferredCleanupManager::get_pending_count(deferred_cleanup_manager), 1000)
+  assert_true(TelemetryResource::is_active(resources[0]))
+  
+  // 5. 设置清理阈值
+  DeferredCleanupManager::set_cleanup_threshold(deferred_cleanup_manager, 100) // 100个资源触发清理
+  
+  // 6. 部分释放资源引用
+  for i in 0..=99 {
+    TelemetryResource::release(resources[i])
+  }
+  
+  // 7. 触发批量清理
+  DeferredCleanupManager::trigger_batch_cleanup(deferred_cleanup_manager)
+  
+  // 8. 验证部分资源被清理
+  assert_eq(DeferredCleanupManager::get_pending_count(deferred_cleanup_manager), 900)
+  assert_false(TelemetryResource::is_active(resources[0]))
+  assert_false(TelemetryResource::is_active(resources[99]))
+  assert_true(TelemetryResource::is_active(resources[100]))
+  
+  // 9. 释放剩余资源引用
+  for i in 100..=1000 {
+    TelemetryResource::release(resources[i])
+  }
+  
+  // 10. 使用时间触发清理
+  DeferredCleanupManager::set_time_threshold(deferred_cleanup_manager, 5000) // 5秒
+  DeferredCleanupManager::advance_time(deferred_cleanup_manager, 6000) // 6秒
+  DeferredCleanupManager::trigger_time_based_cleanup(deferred_cleanup_manager)
+  
+  // 11. 验证所有资源被清理
+  assert_eq(DeferredCleanupManager::get_pending_count(deferred_cleanup_manager), 0)
+  
+  // 12. 验证清理统计
+  let stats = DeferredCleanupManager::get_cleanup_stats(deferred_cleanup_manager)
+  assert_eq(stats.total_cleaned, 1000)
+  assert_eq(stats.batch_cleanups, 2)
+  assert_true(stats.total_memory_freed > 2000000) // 至少2MB
+}
+
+// 测试8: 资源优先级和紧急回收
+test "资源优先级和紧急回收" {
+  // 1. 创建优先级资源管理器
+  let priority_resource_manager = PriorityResourceManager::new()
+  
+  // 2. 创建不同优先级的资源
+  let critical_resource = PriorityResourceManager::create_resource(
+    priority_resource_manager, 
+    "critical_telemetry", 
+    Priority::Critical
   )
   
-  // Run young generation collection
-  let gc_after_young_gc = GarbageCollector::collect_generation(gc_with_generation_marks, "young")
-  
-  // Verify old generation objects survive young generation collection
-  assert_true(GarbageCollector::is_registered(gc_after_young_gc, old_metric))
-  assert_true(GarbageCollector::is_registered(gc_after_young_gc, metric1))
-  assert_true(GarbageCollector::is_registered(gc_after_young_gc, metric3))
-}
-
-// Test 5: Memory Leak Detection
-test "memory leak detection" {
-  // Create memory leak detector
-  let leak_detector = MemoryLeakDetector::new()
-  
-  // Start tracking
-  let tracking_detector = MemoryLeakDetector::start_tracking(leak_detector)
-  
-  // Allocate some resources
-  let resource1 = Resource::new("resource1", 1024)
-  let resource2 = Resource::new("resource2", 2048)
-  let resource3 = Resource::new("resource3", 4096)
-  
-  // Register resources with leak detector
-  let detector_with_resources = MemoryLeakDetector::track_resource(
-    MemoryLeakDetector::track_resource(
-      MemoryLeakDetector::track_resource(tracking_detector, resource1),
-      resource2),
-    resource3)
-  
-  // Properly clean up some resources
-  Resource::destroy(resource1)
-  Resource::destroy(resource3)
-  
-  // Update leak detector with cleaned up resources
-  let detector_after_cleanup = MemoryLeakDetector::untrack_resource(
-    MemoryLeakDetector::untrack_resource(detector_with_resources, resource1),
-    resource3)
-  
-  // Check for leaks
-  let leak_report = MemoryLeakDetector::detect_leaks(detector_after_cleanup)
-  
-  // Should detect resource2 as a leak
-  assert_eq(LeakReport::leaked_resources(leak_report).length(), 1)
-  
-  let leaked_resource = LeakReport::leaked_resources(leak_report)[0]
-  assert_eq(Resource::name(leaked_resource), "resource2")
-  assert_eq(Resource::size(leaked_resource), 2048)
-  
-  // Verify leak statistics
-  assert_eq(LeakReport::total_leaked_memory(leak_report), 2048)
-  assert_eq(LeakReport::leak_count(leak_report), 1)
-  
-  // Clean up remaining resource
-  Resource::destroy(resource2)
-  
-  // Final leak check
-  let final_leak_report = MemoryLeakDetector::detect_leaks(detector_after_cleanup)
-  assert_eq(LeakReport::leaked_resources(final_leak_report).length(), 0)
-  assert_eq(LeakReport::total_leaked_memory(final_leak_report), 0)
-  
-  // Stop tracking
-  MemoryLeakDetector::stop_tracking(detector_after_cleanup)
-}
-
-// Test 6: Resource Pool Cleanup
-test "resource pool cleanup" {
-  // Create resource pool
-  let resource_pool = ResourcePool::new(10) // Maximum 10 resources
-  
-  // Verify initial state
-  assert_eq(ResourcePool::capacity(resource_pool), 10)
-  assert_eq(ResourcePool::available_count(resource_pool), 10)
-  assert_eq(ResourcePool::used_count(resource_pool), 0)
-  
-  // Acquire resources from pool
-  let resource1 = ResourcePool::acquire(resource_pool)
-  let resource2 = ResourcePool::acquire(resource_pool)
-  let resource3 = ResourcePool::acquire(resource_pool)
-  
-  // Verify resources were acquired
-  assert_true(Resource::is_valid(resource1))
-  assert_true(Resource::is_valid(resource2))
-  assert_true(Resource::is_valid(resource3))
-  
-  assert_eq(ResourcePool::available_count(resource_pool), 7)
-  assert_eq(ResourcePool::used_count(resource_pool), 3)
-  
-  // Return resources to pool
-  ResourcePool::release(resource_pool, resource1)
-  ResourcePool::release(resource_pool, resource2)
-  
-  // Verify resources were returned
-  assert_eq(ResourcePool::available_count(resource_pool), 9)
-  assert_eq(ResourcePool::used_count(resource_pool), 1)
-  
-  // Acquire more resources
-  let resource4 = ResourcePool::acquire(resource_pool)
-  let resource5 = ResourcePool::acquire(resource_pool)
-  
-  assert_true(Resource::is_valid(resource4))
-  assert_true(Resource::is_valid(resource5))
-  
-  // Fill the pool to capacity
-  let remaining_resources = []
-  for i in 0..5 {
-    let resource = ResourcePool::acquire(resource_pool)
-    remaining_resources = Array::push(remaining_resources, resource)
+  let high_resources = []
+  for i in 0..=10 {
+    let resource = PriorityResourceManager::create_resource(
+      priority_resource_manager, 
+      "high_priority_" + i.to_string(), 
+      Priority::High
+    )
+    high_resources.push(resource)
   }
   
-  assert_eq(ResourcePool::available_count(resource_pool), 0)
-  assert_eq(ResourcePool::used_count(resource_pool), 10)
-  
-  // Try to acquire from full pool (should fail)
-  let failed_resource = ResourcePool::acquire(resource_pool)
-  assert_false(Resource::is_valid(failed_resource))
-  
-  // Clear the pool (release all resources)
-  ResourcePool::clear(resource_pool)
-  
-  // Verify pool is cleared
-  assert_eq(ResourcePool::available_count(resource_pool), 10)
-  assert_eq(ResourcePool::used_count(resource_pool), 0)
-  
-  // All previously acquired resources should now be invalid
-  assert_false(Resource::is_valid(resource3))
-  assert_false(Resource::is_valid(resource4))
-  assert_false(Resource::is_valid(resource5))
-  
-  for resource in remaining_resources {
-    assert_false(Resource::is_valid(resource))
+  let normal_resources = []
+  for i in 0..=50 {
+    let resource = PriorityResourceManager::create_resource(
+      priority_resource_manager, 
+      "normal_priority_" + i.to_string(), 
+      Priority::Normal
+    )
+    normal_resources.push(resource)
   }
-}
-
-// Test 7: Circular Reference Detection and Cleanup
-test "circular reference detection and cleanup" {
-  // Create objects that can reference each other
-  let object_a = CircularRefObject::new("A")
-  let object_b = CircularRefObject::new("B")
-  let object_c = CircularRefObject::new("C")
   
-  // Create circular references: A -> B -> C -> A
-  CircularRefObject::set_reference(object_a, object_b)
-  CircularRefObject::set_reference(object_b, object_c)
-  CircularRefObject::set_reference(object_c, object_a)
+  let low_resources = []
+  for i in 0..=100 {
+    let resource = PriorityResourceManager::create_resource(
+      priority_resource_manager, 
+      "low_priority_" + i.to_string(), 
+      Priority::Low
+    )
+    low_resources.push(resource)
+  }
   
-  // Verify circular references
-  assert_true(CircularRefObject::has_reference(object_a, object_b))
-  assert_true(CircularRefObject::has_reference(object_b, object_c))
-  assert_true(CircularRefObject::has_reference(object_c, object_a))
+  // 3. 验证资源创建
+  assert_eq(PriorityResourceManager::get_resource_count(priority_resource_manager), 162)
+  assert_eq(PriorityResourceManager::get_resource_count_by_priority(priority_resource_manager, Priority::Critical), 1)
+  assert_eq(PriorityResourceManager::get_resource_count_by_priority(priority_resource_manager, Priority::High), 10)
+  assert_eq(PriorityResourceManager::get_resource_count_by_priority(priority_resource_manager, Priority::Normal), 50)
+  assert_eq(PriorityResourceManager::get_resource_count_by_priority(priority_resource_manager, Priority::Low), 100)
   
-  // Create circular reference detector
-  let detector = CircularRefDetector::new()
+  // 4. 模拟内存压力
+  PriorityResourceManager::simulate_memory_pressure(priority_resource_manager, 0.8) // 80%内存使用率
   
-  // Detect circular references
-  let circular_refs = CircularRefDetector::detect(detector, [object_a, object_b, object_c])
+  // 5. 触发紧急回收（应该先回收低优先级资源）
+  let回收_stats = PriorityResourceManager::emergency_reclaim(priority_resource_manager, 50) // 回收50个资源
   
-  // Should detect the circular reference
-  assert_eq(circular_refs.length(), 1)
+  // 6. 验证回收结果
+  assert_eq(回收_stats.resources_reclaimed, 50)
+  assert_eq(PriorityResourceManager::get_resource_count_by_priority(priority_resource_manager, Priority::Critical), 1) // 关键资源保持
+  assert_eq(PriorityResourceManager::get_resource_count_by_priority(priority_resource_manager, Priority::High), 10) // 高优先级保持
+  assert_eq(PriorityResourceManager::get_resource_count_by_priority(priority_resource_manager, Priority::Normal), 50) // 普通资源保持
+  assert_eq(PriorityResourceManager::get_resource_count_by_priority(priority_resource_manager, Priority::Low), 50) // 低优先级被回收
   
-  let circular_ref = circular_refs[0]
-  assert_eq(CircularRef::length(circular_ref), 3)
+  // 7. 增加内存压力
+  PriorityResourceManager::simulate_memory_pressure(priority_resource_manager, 0.95) // 95%内存使用率
   
-  // Break the circular reference
-  CircularRefObject::clear_reference(object_c) // Break C -> A
+  // 8. 再次触发紧急回收
+  let回收_stats2 = PriorityResourceManager::emergency_reclaim(priority_resource_manager, 40) // 回收40个资源
   
-  // Verify circular reference is broken
-  assert_false(CircularRefObject::has_reference(object_c, object_a))
+  // 9. 验证回收结果
+  assert_eq(回收_stats2.resources_reclaimed, 40)
+  assert_eq(PriorityResourceManager::get_resource_count_by_priority(priority_resource_manager, Priority::Critical), 1) // 关键资源保持
+  assert_eq(PriorityResourceManager::get_resource_count_by_priority(priority_resource_manager, Priority::High), 10) // 高优先级保持
+  assert_eq(PriorityResourceManager::get_resource_count_by_priority(priority_resource_manager, Priority::Normal), 10) // 部分普通资源被回收
+  assert_eq(PriorityResourceManager::get_resource_count_by_priority(priority_resource_manager, Priority::Low), 0) // 所有低优先级被回收
   
-  // Detect circular references again
-  let circular_refs_after_break = CircularRefDetector::detect(detector, [object_a, object_b, object_c])
+  // 10. 极端内存压力
+  PriorityResourceManager::simulate_memory_pressure(priority_resource_manager, 0.99) // 99%内存使用率
   
-  // Should not detect any circular references
-  assert_eq(circular_refs_after_break.length(), 0)
+  // 11. 最后的紧急回收
+  let回收_stats3 = PriorityResourceManager::emergency_reclaim(priority_resource_manager, 15) // 回收15个资源
   
-  // Clean up objects
-  CircularRefObject::destroy(object_a)
-  CircularRefObject::destroy(object_b)
-  CircularRefObject::destroy(object_c)
-}
-
-// Test 8: Memory Usage Monitoring and Thresholds
-test "memory usage monitoring and thresholds" {
-  // Create memory monitor
-  let monitor = MemoryMonitor::new()
+  // 12. 验证最终结果
+  assert_eq(回收_stats3.resources_reclaimed, 15)
+  assert_eq(PriorityResourceManager::get_resource_count_by_priority(priority_resource_manager, Priority::Critical), 1) // 关键资源仍然保持
+  assert_eq(PriorityResourceManager::get_resource_count_by_priority(priority_resource_manager, Priority::High), 5) // 部分高优先级被回收
+  assert_eq(PriorityResourceManager::get_resource_count_by_priority(priority_resource_manager, Priority::Normal), 0) // 所有普通资源被回收
+  assert_eq(PriorityResourceManager::get_resource_count_by_priority(priority_resource_manager, Priority::Low), 0) // 所有低优先级被回收
   
-  // Set memory thresholds
-  let monitor_with_thresholds = MemoryMonitor::set_thresholds(monitor, [
-    ("warning", 80.0),   // 80% usage triggers warning
-    ("critical", 90.0),  // 90% usage triggers critical alert
-    ("emergency", 95.0)  // 95% usage triggers emergency
-  ])
-  
-  // Simulate memory usage
-  let monitor_with_usage = MemoryMonitor::update_usage(monitor_with_thresholds, 50.0)
-  
-  // Check current status
-  assert_eq(MemoryMonitor::current_usage(monitor_with_usage), 50.0)
-  assert_eq(MemoryMonitor::status(monitor_with_usage), "normal")
-  
-  // Increase usage to warning level
-  let monitor_at_warning = MemoryMonitor::update_usage(monitor_with_usage, 85.0)
-  
-  assert_eq(MemoryMonitor::current_usage(monitor_at_warning), 85.0)
-  assert_eq(MemoryMonitor::status(monitor_at_warning), "warning")
-  
-  // Check if warning alert was triggered
-  let alerts = MemoryMonitor::get_alerts(monitor_at_warning)
-  assert_eq(alerts.length(), 1)
-  assert_eq(MemoryAlert::level(alerts[0]), "warning")
-  
-  // Increase usage to critical level
-  let monitor_at_critical = MemoryMonitor::update_usage(monitor_at_warning, 92.0)
-  
-  assert_eq(MemoryMonitor::current_usage(monitor_at_critical), 92.0)
-  assert_eq(MemoryMonitor::status(monitor_at_critical), "critical")
-  
-  // Check if critical alert was triggered
-  let critical_alerts = MemoryMonitor::get_alerts(monitor_at_critical)
-  assert_eq(critical_alerts.length(), 2) // Previous warning + new critical
-  
-  // Increase usage to emergency level
-  let monitor_at_emergency = MemoryMonitor::update_usage(monitor_at_critical, 97.0)
-  
-  assert_eq(MemoryMonitor::current_usage(monitor_at_emergency), 97.0)
-  assert_eq(MemoryMonitor::status(monitor_at_emergency), "emergency")
-  
-  // Check if emergency alert was triggered
-  let emergency_alerts = MemoryMonitor::get_alerts(monitor_at_emergency)
-  assert_eq(emergency_alerts.length(), 3) // Previous alerts + new emergency
-  
-  // Test automatic cleanup at emergency level
-  let monitor_after_cleanup = MemoryMonitor::trigger_emergency_cleanup(monitor_at_emergency)
-  
-  // Verify cleanup was triggered
-  assert_true(MemoryMonitor::cleanup_triggered(monitor_after_cleanup))
-  
-  // Usage should be reduced after cleanup
-  assert_true(MemoryMonitor::current_usage(monitor_after_cleanup) < 97.0)
-  
-  // Test memory usage history
-  let history = MemoryMonitor::get_usage_history(monitor_after_cleanup, 5) // Get last 5 measurements
-  assert_eq(history.length(), 5)
-  
-  // Verify history contains expected values
-  assert_eq(history[0], 50.0)   // Initial
-  assert_eq(history[1], 85.0)   // Warning
-  assert_eq(history[2], 92.0)   // Critical
-  assert_eq(history[3], 97.0)   // Emergency
-  assert_true(history[4] < 97.0) // After cleanup
+  // 13. 验证关键资源始终受到保护
+  assert_true(PriorityResourceManager::is_resource_active(priority_resource_manager, critical_resource.id))
 }
