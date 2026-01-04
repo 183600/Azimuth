@@ -8404,6 +8404,17 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_617a696d7574685f636f6d70726568656e736976655f73797374656d5f74657374732e6d6274_8, ["cross-service integration"]),
     9: (__test_617a696d7574685f636f6d70726568656e736976655f73797374656d5f74657374732e6d6274_9, ["resource limits and recovery"]),
   },
+  "azimuth_comprehensive_new_tests.mbt": {
+    0: (__test_617a696d7574685f636f6d70726568656e736976655f6e65775f74657374732e6d6274_0, ["attributes creation and manipulation"]),
+    1: (__test_617a696d7574685f636f6d70726568656e736976655f6e65775f74657374732e6d6274_1, ["context creation and value management"]),
+    2: (__test_617a696d7574685f636f6d70726568656e736976655f6e65775f74657374732e6d6274_2, ["span context creation and validation"]),
+    3: (__test_617a696d7574685f636f6d70726568656e736976655f6e65775f74657374732e6d6274_3, ["span creation and lifecycle"]),
+    4: (__test_617a696d7574685f636f6d70726568656e736976655f6e65775f74657374732e6d6274_4, ["tracer and tracer provider functionality"]),
+    5: (__test_617a696d7574685f636f6d70726568656e736976655f6e65775f74657374732e6d6274_5, ["metrics creation and operations"]),
+    6: (__test_617a696d7574685f636f6d70726568656e736976655f6e65775f74657374732e6d6274_6, ["logging functionality"]),
+    7: (__test_617a696d7574685f636f6d70726568656e736976655f6e65775f74657374732e6d6274_7, ["resource creation and management"]),
+    8: (__test_617a696d7574685f636f6d70726568656e736976655f6e65775f74657374732e6d6274_8, ["platform services functionality"]),
+  },
   "azimuth_comprehensive_new_test_suite.mbt": {
     0: (__test_617a696d7574685f636f6d70726568656e736976655f6e65775f746573745f73756974652e6d6274_0, ["data serialization and deserialization"]),
     1: (__test_617a696d7574685f636f6d70726568656e736976655f6e65775f746573745f73756974652e6d6274_1, ["time series data processing"]),
