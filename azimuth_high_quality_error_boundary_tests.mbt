@@ -1,329 +1,480 @@
-// High-Quality Test Suite for Error Boundary Handling
-// This file contains comprehensive test cases for error boundary handling functionality
+// Azimuth Telemetry System - High Quality Error Boundary Tests
+// This file contains comprehensive test cases for error boundary and exception handling
 
-test "span with invalid trace context" {
-  // Test with empty trace ID
-  let invalid_trace_id = ""
-  let span_id = "b7ad6b7169203331"
-  let invalid_ctx = SpanContext::new(invalid_trace_id, span_id, true, "")
-  let invalid_span = Span::new("invalid-span", Internal, invalid_ctx)
+// Test 1: Invalid Attribute Value Handling
+test "invalid attribute value handling" {
+  let attrs = Attributes::new()
   
-  // Verify invalid context is detected
-  assert_false(SpanContext::is_valid(Span::span_context(invalid_span)))
+  // Test handling of null/undefined values
+  Attributes::set(attrs, "null_string", StringValue(""))
+  Attributes::set(attrs, "zero_int", IntValue(0))
+  Attributes::set(attrs, "zero_float", FloatValue(0.0))
+  Attributes::set(attrs, "false_bool", BoolValue(false))
   
-  // Test with empty span ID
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let invalid_span_id = ""
-  let invalid_ctx2 = SpanContext::new(trace_id, invalid_span_id, true, "")
-  let invalid_span2 = Span::new("invalid-span2", Internal, invalid_ctx2)
+  // Verify null/empty values are handled correctly
+  let null_string_result = Attributes::get(attrs, "null_string")
+  match null_string_result {
+    Some(StringValue(v)) => assert_eq(v, "")
+    _ => assert_true(false)
+  }
   
-  // Verify invalid context is detected
-  assert_false(SpanContext::is_valid(Span::span_context(invalid_span2)))
+  let zero_int_result = Attributes::get(attrs, "zero_int")
+  match zero_int_result {
+    Some(IntValue(v)) => assert_eq(v, 0)
+    _ => assert_true(false)
+  }
+  
+  let zero_float_result = Attributes::get(attrs, "zero_float")
+  match zero_float_result {
+    Some(FloatValue(v)) => assert_true(abs(v - 0.0) < 0.00001)
+    _ => assert_true(false)
+  }
+  
+  let false_bool_result = Attributes::get(attrs, "false_bool")
+  match false_bool_result {
+    Some(BoolValue(v)) => assert_false(v)
+    _ => assert_true(false)
+  }
+  
+  // Test handling of extremely large values
+  let max_int = IntValue::max()
+  let min_int = IntValue::min()
+  let max_float = FloatValue::max()
+  let min_float = FloatValue::min()
+  
+  Attributes::set(attrs, "max_int", max_int)
+  Attributes::set(attrs, "min_int", min_int)
+  Attributes::set(attrs, "max_float", max_float)
+  Attributes::set(attrs, "min_float", min_float)
+  
+  // Verify extreme values are handled
+  let max_int_result = Attributes::get(attrs, "max_int")
+  match max_int_result {
+    Some(IntValue(v)) => assert_eq(v, max_int)
+    _ => assert_true(false)
+  }
+  
+  let min_int_result = Attributes::get(attrs, "min_int")
+  match min_int_result {
+    Some(IntValue(v)) => assert_eq(v, min_int)
+    _ => assert_true(false)
+  }
+  
+  let max_float_result = Attributes::get(attrs, "max_float")
+  match max_float_result {
+    Some(FloatValue(v)) => assert_eq(v, max_float)
+    _ => assert_true(false)
+  }
+  
+  let min_float_result = Attributes::get(attrs, "min_float")
+  match min_float_result {
+    Some(FloatValue(v)) => assert_eq(v, min_float)
+    _ => assert_true(false)
+  }
 }
 
-test "span error status handling" {
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let span_id = "b7ad6b7169203331"
-  let span_ctx = SpanContext::new(trace_id, span_id, true, "")
-  let span = Span::new("error-span", Internal, span_ctx)
+// Test 2: Invalid Span Context Handling
+test "invalid span context handling" {
+  // Test empty trace ID and span ID
+  let empty_ctx = SpanContext::new("", "", false, "")
+  assert_false(SpanContext::is_valid(empty_ctx))
+  assert_false(SpanContext::is_sampled(empty_ctx))
   
-  // Initially unset status
-  assert_eq(Span::status(span), Unset)
+  // Test invalid trace ID format
+  let invalid_trace_ctx = SpanContext::new("invalid_trace_id", "valid_span_id", true, "test")
+  assert_false(SpanContext::is_valid(invalid_trace_ctx))
   
-  // Set error status
-  Span::set_status(span, Error, Some("Database connection failed"))
-  assert_eq(Span::status(span), Error)
+  // Test invalid span ID format
+  let invalid_span_ctx = SpanContext::new("0af7651916cd43dd8448eb211c80319c", "invalid_span_id", true, "test")
+  assert_false(SpanContext::is_valid(invalid_span_ctx))
   
-  // Add error event
-  let error_attrs = [("error.type", StringValue("ConnectionError")), ("error.message", StringValue("Timeout after 30 seconds"))]
-  Span::add_event(span, "exception", Some(error_attrs))
+  // Test valid context
+  let valid_ctx = SpanContext::new("0af7651916cd43dd8448eb211c80319c", "b7ad6b7169203331", true, "test")
+  assert_true(SpanContext::is_valid(valid_ctx))
+  assert_true(SpanContext::is_sampled(valid_ctx))
   
-  // End span with error
-  Span::end(span)
+  // Test creating span with invalid context
+  let invalid_span = Span::new("invalid_span", Internal, empty_ctx)
+  assert_false(Span::is_recording(invalid_span))
   
-  // Verify error status is preserved
-  assert_eq(Span::status(span), Error)
+  // Test operations on invalid span
+  Span::add_event(invalid_span, "test_event", None)
+  Span::set_attribute(invalid_span, "test_attr", StringValue("test_value"))
+  Span::set_status(invalid_span, Error, Some("Invalid span test"))
+  Span::end(invalid_span)
+  
+  // Should not crash or cause errors
+  assert_true(true)
 }
 
-test "context with missing values" {
-  let root_ctx = Context::root()
-  let nonexistent_key = ContextKey::new("nonexistent.key")
+// Test 3: Corrupted Data Deserialization
+test "corrupted data deserialization" {
+  // Test deserializing corrupted span data
+  let corrupted_span_data = "corrupted_span_data_that_is_not_valid_json_or_binary"
+  let deserialized_span = Span::deserialize(corrupted_span_data)
   
-  // Try to get nonexistent value
-  let missing_value = Context::get(root_ctx, nonexistent_key)
-  assert_eq(missing_value, None)
+  match deserialized_span {
+    Some(_) => assert_true(false) // Should not succeed with corrupted data
+    None => assert_true(true) // Expected behavior
+  }
   
-  // Create context with value and try to get different key
-  let key = ContextKey::new("existing.key")
-  let ctx_with_value = Context::with_value(root_ctx, key, "value")
+  // Test deserializing truncated data
+  let truncated_data = "{\"trace_id\":\"0af7651916cd43dd8448eb211c80319c\""
+  let deserialized_truncated = Span::deserialize(truncated_data)
   
-  let different_key = ContextKey::new("different.key")
-  let missing_value2 = Context::get(ctx_with_value, different_key)
-  assert_eq(missing_value2, None)
+  match deserialized_truncated {
+    Some(_) => assert_true(false) // Should not succeed with truncated data
+    None => assert_true(true) // Expected behavior
+  }
+  
+  // Test deserializing empty data
+  let empty_data = ""
+  let deserialized_empty = Span::deserialize(empty_data)
+  
+  match deserialized_empty {
+    Some(_) => assert_true(false) // Should not succeed with empty data
+    None => assert_true(true) // Expected behavior
+  }
+  
+  // Test deserializing null data
+  let null_data = "null"
+  let deserialized_null = Span::deserialize(null_data)
+  
+  match deserialized_null {
+    Some(_) => assert_true(false) // Should not succeed with null data
+    None => assert_true(true) // Expected behavior
+  }
 }
 
-test "baggage with missing entries" {
-  let baggage = Baggage::new()
+// Test 4: Memory Exhaustion Handling
+test "memory exhaustion handling" {
+  let initial_memory = Memory::get_usage()
   
-  // Try to get nonexistent entry
-  let missing_entry = Baggage::get_entry(baggage, "nonexistent.key")
-  assert_eq(missing_entry, None)
+  // Try to allocate large amounts of memory
+  let mut large_arrays = []
+  let mut allocation_count = 0
   
-  // Add entry and try to get different key
-  let updated_baggage = Baggage::set_entry(baggage, "existing.key", "value")
-  let missing_entry2 = Baggage::get_entry(updated_baggage, "different.key")
-  assert_eq(missing_entry2, None)
+  // Keep allocating until memory pressure is high or allocation fails
+  while Memory::get_pressure_level() < High && allocation_count < 1000 {
+    let large_array = ArrayStringValue(Array::range(0, 10000).map(fn(i) { "large_string_item_" + i.to_string() }))
+    large_arrays = large_arrays.push(large_array)
+    allocation_count = allocation_count + 1
+    
+    // Periodically try to create telemetry objects
+    if allocation_count % 100 == 0 {
+      let attrs = Attributes::new()
+      Attributes::set(attrs, "allocation_count", IntValue(allocation_count))
+      
+      let trace_id = "memory_test_trace"
+      let span_id = "memory_test_span_" + allocation_count.to_string()
+      let span_ctx = SpanContext::new(trace_id, span_id, true, "memory_test")
+      let span = Span::new("memory_test_operation", Internal, span_ctx)
+      
+      // Should still be able to create basic telemetry objects under memory pressure
+      assert_true(Span::name(span) == "memory_test_operation")
+      Span::end(span)
+    }
+  }
+  
+  // Verify system is still responsive
+  let test_attrs = Attributes::new()
+  Attributes::set(test_attrs, "memory_test", StringValue("completed"))
+  
+  let result = Attributes::get(test_attrs, "memory_test")
+  match result {
+    Some(StringValue(v)) => assert_eq(v, "completed")
+    _ => assert_true(false)
+  }
+  
+  // Clean up
+  large_arrays = []
+  Memory::collect()
+  
+  let final_memory = Memory::get_usage()
+  
+  // Memory should be recoverable
+  assert_true(final_memory < initial_memory + 100 * 1024 * 1024) // Within 100MB of initial
 }
 
-test "metrics with zero and negative values" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "test-meter")
+// Test 5: Concurrent Exception Handling
+test "concurrent exception handling" {
+  let num_threads = 20
+  let operations_per_thread = 50
   
-  // Test counter with zero value
-  let counter = Meter::create_counter(meter, "test.counter")
-  Counter::add(counter, 0.0)
+  // Simulate concurrent operations that might fail
+  for thread_id in 0..num_threads {
+    for i in 0..operations_per_thread {
+      // Test operations with invalid data
+      if i % 10 == 0 {
+        // Try to create span with invalid trace ID
+        let invalid_trace_id = ""
+        let span_id = "span_" + thread_id.to_string() + "_" + i.to_string()
+        let span_ctx = SpanContext::new(invalid_trace_id, span_id, true, "concurrent_test")
+        let span = Span::new("invalid_span", Internal, span_ctx)
+        
+        // Should handle gracefully
+        assert_false(Span::is_recording(span))
+        Span::end(span)
+      } else if i % 10 == 1 {
+        // Try to set invalid attribute
+        let attrs = Attributes::new()
+        // Try to use extremely long key
+        let long_key = "very_long_key_" + "x".repeat(10000)
+        Attributes::set(attrs, long_key, StringValue("test_value"))
+        
+        // Should handle gracefully
+        let result = Attributes::get(attrs, long_key)
+        match result {
+          Some(StringValue(v)) => assert_eq(v, "test_value")
+          None => assert_true(true) // Might be rejected due to length
+        }
+      } else {
+        // Normal operations
+        let trace_id = "trace_" + thread_id.to_string()
+        let span_id = "span_" + thread_id.to_string() + "_" + i.to_string()
+        let span_ctx = SpanContext::new(trace_id, span_id, true, "concurrent_test")
+        let span = Span::new("normal_span", Internal, span_ctx)
+        
+        Span::set_attribute(span, "thread_id", IntValue(thread_id))
+        Span::set_attribute(span, "operation_id", IntValue(i))
+        Span::end(span)
+      }
+    }
+  }
   
-  // Test counter with negative value (should be allowed for some implementations)
-  Counter::add(counter, -10.0)
+  // Verify system is still functional after concurrent exceptions
+  let test_span_ctx = SpanContext::new("test_trace", "test_span", true, "test")
+  let test_span = Span::new("test_operation", Internal, test_span_ctx)
   
-  // Test histogram with zero value
-  let histogram = Meter::create_histogram(meter, "test.histogram")
-  Histogram::record(histogram, 0.0)
-  
-  // Test histogram with negative value (should be allowed for some implementations)
-  Histogram::record(histogram, -5.0)
-  
-  // Test updown counter with negative value
-  let updown_counter = Meter::create_updown_counter(meter, "test.updown")
-  UpDownCounter::add(updown_counter, -100.0)
-  
-  // Test gauge with negative value
-  let gauge = Meter::create_gauge(meter, "test.gauge")
-  UpDownCounter::add(gauge, -50.0)
-  
-  assert_true(true) // If we reach here, operations were successful
+  assert_true(Span::is_recording(test_span))
+  Span::end(test_span)
 }
 
-test "log record with empty body" {
-  // Test log record with empty body
-  let record_with_empty_body = LogRecord::new(Info, "")
-  assert_eq(LogRecord::body(record_with_empty_body), Some(""))
+// Test 6: Network Failure Simulation
+test "network failure simulation" {
+  let client = HttpClient::new()
   
-  // Test log record with None body (using new_with_context)
-  let record_with_none_body = LogRecord::new_with_context(
-    Warn,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None
-  )
-  assert_eq(LogRecord::body(record_with_none_body), None)
+  // Simulate network timeout
+  let timeout_request = HttpRequest::new("GET", "https://timeout.example.com/api", [], None)
+  let timeout_response = HttpClient::send_with_timeout(client, timeout_request, 1) // 1ms timeout
+  
+  match timeout_response {
+    Some(response) => {
+      // Should handle timeout gracefully
+      assert_eq(HttpResponse::status_code(response), 408) // Request Timeout
+    }
+    None => {
+      // Or return None on timeout
+      assert_true(true)
+    }
+  }
+  
+  // Simulate connection refused
+  let refused_request = HttpRequest::new("GET", "http://localhost:99999/nonexistent", [], None)
+  let refused_response = HttpClient::send(client, refused_request)
+  
+  match refused_response {
+    Some(response) => {
+      // Should handle connection error gracefully
+      let status = HttpResponse::status_code(response)
+      assert_true(status >= 500 || status == 0) // Server error or connection failed
+    }
+    None => {
+      // Or return None on connection failure
+      assert_true(true)
+    }
+  }
+  
+  // Simulate invalid URL
+  let invalid_request = HttpRequest::new("GET", "not-a-valid-url", [], None)
+  let invalid_response = HttpClient::send(client, invalid_request)
+  
+  match invalid_response {
+    Some(_) => assert_true(false) // Should not succeed with invalid URL
+    None => assert_true(true) // Expected behavior
+  }
 }
 
-test "resource with empty attributes" {
-  let resource = Resource::new()
-  let empty_attrs = [] : Array[(String, AttributeValue)]
-  let resource_with_empty_attrs = Resource::with_attributes(resource, empty_attrs)
+// Test 7: File System Error Handling
+test "file system error handling" {
+  // Test reading non-existent file
+  let non_existent_result = File::read("/path/to/non/existent/file.json")
+  match non_existent_result {
+    Ok(_) => assert_true(false) // Should not succeed
+    Err(error) => {
+      // Should handle gracefully
+      assert_true(error.contains("not found") || error.contains("No such file"))
+    }
+  }
   
-  // Try to get attribute from resource with empty attributes
-  let missing_attr = Resource::get_attribute(resource_with_empty_attrs, "any.key")
-  assert_eq(missing_attr, None)
+  // Test writing to read-only directory
+  let readonly_result = File::write("/readonly/path/test.json", "test content")
+  match readonly_result {
+    Ok(_) => assert_true(false) // Should not succeed
+    Err(error) => {
+      // Should handle gracefully
+      assert_true(error.contains("permission") || error.contains("read-only"))
+    }
+  }
+  
+  // Test creating directory with invalid path
+  let invalid_dir_result = Directory::create("/invalid/path/with/\0/null/character")
+  match invalid_dir_result {
+    Ok(_) => assert_true(false) // Should not succeed
+    Err(_) => assert_true(true) // Expected behavior
+  }
+  
+  // Test operations should not crash system
+  let test_span_ctx = SpanContext::new("filesystem_test", "test_span", true, "test")
+  let test_span = Span::new("filesystem_test_operation", Internal, test_span_ctx)
+  
+  assert_true(Span::is_recording(test_span))
+  Span::end(test_span)
 }
 
-test "propagator with empty carrier" {
-  let trace_propagator = W3CTraceContextPropagator::new()
-  let propagators = [trace_propagator]
-  let composite_propagator = CompositePropagator::new(propagators)
+// Test 8: Resource Limit Handling
+test "resource limit handling" {
+  // Test exhausting file descriptors
+  let mut file_handles = []
+  let mut open_count = 0
   
-  let empty_carrier = TextMapCarrier::new()
-  let ctx = Context::root()
+  // Try to open many files until limit is reached
+  while open_count < 1000 {
+    let file_result = File::open("/dev/null") // Try to open null device
+    match file_result {
+      Ok(handle) => {
+        file_handles = file_handles.push(handle)
+        open_count = open_count + 1
+      }
+      Err(_) => {
+        // Limit reached, stop trying
+        break
+      }
+    }
+  }
   
-  // Try to extract from empty carrier
-  let extracted_ctx = CompositePropagator::extract(composite_propagator, empty_carrier)
+  // System should still be functional
+  let test_attrs = Attributes::new()
+  Attributes::set(test_attrs, "file_handles_opened", IntValue(open_count))
   
-  // Verify extraction worked (returns a different context)
-  let key = ContextKey::new("extracted")
-  assert_eq(Context::get(extracted_ctx, key), Some("true"))
+  let result = Attributes::get(test_attrs, "file_handles_opened")
+  match result {
+    Some(IntValue(v)) => assert_eq(v, open_count)
+    _ => assert_true(false)
+  }
   
-  // Inject into empty carrier
-  CompositePropagator::inject(composite_propagator, ctx, empty_carrier)
+  // Clean up file handles
+  for handle in file_handles {
+    File::close(handle)
+  }
   
-  // Verify injection worked
-  assert_eq(TextMapCarrier::get(empty_carrier, "traceparent"), Some("00-test-trace-id-test-span-id-01"))
+  // Verify system recovers
+  let recovery_test = File::open("/dev/null")
+  match recovery_test {
+    Ok(_) => assert_true(true) // Should be able to open files again
+    Err(_) => assert_true(false) // System should recover
+  }
 }
 
-test "span with extremely long names" {
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let span_id = "b7ad6b7169203331"
-  let span_ctx = SpanContext::new(trace_id, span_id, true, "")
+// Test 9: Type Conversion Error Handling
+test "type conversion error handling" {
+  // Test invalid string to int conversion
+  let invalid_int_result = "not_a_number".to_int()
+  match invalid_int_result {
+    Ok(_) => assert_true(false) // Should not succeed
+    Err(_) => assert_true(true) // Expected behavior
+  }
   
-  // Create span with very long name
-  let long_name = "this.is.a.very.long.span.name.that.exceeds.normal.lengths.and.tests.boundary.conditions"
-  let span_with_long_name = Span::new(long_name, Internal, span_ctx)
+  // Test invalid string to float conversion
+  let invalid_float_result = "not_a_float".to_float()
+  match invalid_float_result {
+    Ok(_) => assert_true(false) // Should not succeed
+    Err(_) => assert_true(true) // Expected behavior
+  }
   
-  // Verify name is preserved
-  assert_eq(Span::name(span_with_long_name), long_name)
+  // Test overflow conversion
+  let overflow_result = "999999999999999999999999999999".to_int()
+  match overflow_result {
+    Ok(_) => assert_true(false) // Should not succeed
+    Err(_) => assert_true(true) // Expected behavior
+  }
   
-  // Add event with long name
-  Span::add_event(span_with_long_name, "this.is.a.very.long.event.name.that.exceeds.normal.lengths", None)
+  // Test valid conversions still work
+  let valid_int_result = "42".to_int()
+  match valid_int_result {
+    Ok(value) => assert_eq(value, 42)
+    Err(_) => assert_true(false)
+  }
   
-  // End span
-  Span::end(span_with_long_name)
-  
-  // Verify span is still accessible
-  assert_eq(Span::name(span_with_long_name), long_name)
+  let valid_float_result = "3.14".to_float()
+  match valid_float_result {
+    Ok(value) => assert_true(abs(value - 3.14) < 0.00001)
+    Err(_) => assert_true(false)
+  }
 }
 
-test "context with special characters" {
-  let root_ctx = Context::root()
+// Test 10: Graceful Degradation Under Stress
+test "graceful degradation under stress" {
+  let normal_operation_count = 1000
+  let stress_operation_count = 10000
   
-  // Test key with special characters
-  let special_key = ContextKey::new("key.with.special.chars!@#$%^&*()")
-  let ctx_with_special = Context::with_value(root_ctx, special_key, "value.with.special.chars!@#$%^&*()")
+  // Baseline performance under normal conditions
+  let normal_start_time = Time::now()
+  for i in 0..normal_operation_count {
+    let trace_id = "normal_trace_" + i.to_string()
+    let span_id = "normal_span_" + i.to_string()
+    let span_ctx = SpanContext::new(trace_id, span_id, true, "normal_test")
+    let span = Span::new("normal_operation", Internal, span_ctx)
+    
+    Span::set_attribute(span, "operation_id", IntValue(i))
+    Span::add_event(span, "normal_event", None)
+    Span::end(span)
+  }
+  let normal_time = Time::now() - normal_start_time
   
-  // Verify special characters are preserved
-  assert_eq(Context::get(ctx_with_special, special_key), Some("value.with.special.chars!@#$%^&*()"))
+  // Simulate stress conditions
+  let stress_start_time = Time::now()
+  for i in 0..stress_operation_count {
+    let trace_id = "stress_trace_" + i.to_string()
+    let span_id = "stress_span_" + i.to_string()
+    let span_ctx = SpanContext::new(trace_id, span_id, true, "stress_test")
+    let span = Span::new("stress_operation", Internal, span_ctx)
+    
+    // Add more complex operations under stress
+    Span::set_attribute(span, "operation_id", IntValue(i))
+    Span::set_attribute(span, "stress_data", StringValue("stress_data_" + i.to_string()))
+    
+    // Add multiple events
+    for j in 0..5 {
+      Span::add_event(span, "stress_event_" + j.to_string(), Some([
+        ("event_id", IntValue(j)),
+        ("data", StringValue("stress_event_data_" + j.to_string()))
+      ]))
+    }
+    
+    Span::end(span)
+    
+    // Periodically check system health
+    if i % 1000 == 0 {
+      let health_check = Span::new("health_check", Internal, span_ctx)
+      assert_true(Span::name(health_check) == "health_check")
+      Span::end(health_check)
+    }
+  }
+  let stress_time = Time::now() - stress_start_time
   
-  // Test key with unicode characters
-  let unicode_key = ContextKey::new("键.值.测试")
-  let ctx_with_unicode = Context::with_value(ctx_with_special, unicode_key, "测试值")
+  // System should still be functional after stress
+  let recovery_span_ctx = SpanContext::new("recovery_trace", "recovery_span", true, "recovery_test")
+  let recovery_span = Span::new("recovery_operation", Internal, recovery_span_ctx)
   
-  // Verify unicode characters are preserved
-  assert_eq(Context::get(ctx_with_unicode, unicode_key), Some("测试值"))
-}
-
-test "baggage with special characters" {
-  let baggage = Baggage::new()
+  assert_true(Span::is_recording(recovery_span))
+  Span::end(recovery_span)
   
-  // Test entry with special characters
-  let baggage_with_special = Baggage::set_entry(baggage, "key.with.special.chars!@#$%^&*()", "value.with.special.chars!@#$%^&*()")
+  // Calculate performance degradation
+  let normal_ops_per_second = (normal_operation_count.to_float() / normal_time.to_float()) * 1000.0
+  let stress_ops_per_second = (stress_operation_count.to_float() / stress_time.to_float()) * 1000.0
+  let degradation_ratio = stress_ops_per_second / normal_ops_per_second
   
-  // Verify special characters are preserved
-  assert_eq(Baggage::get_entry(baggage_with_special, "key.with.special.chars!@#$%^&*()"), Some("value.with.special.chars!@#$%^&*()"))
-  
-  // Test entry with unicode characters
-  let baggage_with_unicode = Baggage::set_entry(baggage_with_special, "键.值.测试", "测试值")
-  
-  // Verify unicode characters are preserved
-  assert_eq(Baggage::get_entry(baggage_with_unicode, "键.值.测试"), Some("测试值"))
-}
-
-test "attributes with special characters and types" {
-  let attrs = [
-    ("string.special", StringValue("value.with.special.chars!@#$%^&*()")),
-    ("string.unicode", StringValue("测试值")),
-    ("int.large", IntValue(2147483647)),
-    ("int.negative", IntValue(-2147483648)),
-    ("float.large", FloatValue(3.4028235e38)),
-    ("float.small", FloatValue(1.17549435e-38)),
-    ("float.negative", FloatValue(-3.4028235e38)),
-    ("bool.true", BoolValue(true)),
-    ("bool.false", BoolValue(false)),
-    ("array.empty", ArrayStringValue([])),
-    ("array.single", ArrayStringValue(["single"])),
-    ("array.multiple", ArrayStringValue(["value1", "value2", "value3"])),
-    ("array.int", ArrayIntValue([1, 2, 3, 4, 5]))
-  ]
-  
-  let resource = Resource::new()
-  let resource_with_attrs = Resource::with_attributes(resource, attrs)
-  
-  // Verify all attributes are accessible
-  assert_eq(Resource::get_attribute(resource_with_attrs, "string.special"), Some(StringValue("value.with.special.chars!@#$%^&*()")))
-  assert_eq(Resource::get_attribute(resource_with_attrs, "string.unicode"), Some(StringValue("测试值")))
-  assert_eq(Resource::get_attribute(resource_with_attrs, "int.large"), Some(IntValue(2147483647)))
-  assert_eq(Resource::get_attribute(resource_with_attrs, "int.negative"), Some(IntValue(-2147483648)))
-  assert_eq(Resource::get_attribute(resource_with_attrs, "float.large"), Some(FloatValue(3.4028235e38)))
-  assert_eq(Resource::get_attribute(resource_with_attrs, "float.small"), Some(FloatValue(1.17549435e-38)))
-  assert_eq(Resource::get_attribute(resource_with_attrs, "float.negative"), Some(FloatValue(-3.4028235e38)))
-  assert_eq(Resource::get_attribute(resource_with_attrs, "bool.true"), Some(BoolValue(true)))
-  assert_eq(Resource::get_attribute(resource_with_attrs, "bool.false"), Some(BoolValue(false)))
-  assert_eq(Resource::get_attribute(resource_with_attrs, "array.empty"), Some(ArrayStringValue([])))
-  assert_eq(Resource::get_attribute(resource_with_attrs, "array.single"), Some(ArrayStringValue(["single"])))
-  assert_eq(Resource::get_attribute(resource_with_attrs, "array.multiple"), Some(ArrayStringValue(["value1", "value2", "value3"])))
-  assert_eq(Resource::get_attribute(resource_with_attrs, "array.int"), Some(ArrayIntValue([1, 2, 3, 4, 5])))
-}
-
-test "error recovery scenario" {
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let span_id = "b7ad6b7169203331"
-  let span_ctx = SpanContext::new(trace_id, span_id, true, "")
-  let span = Span::new("error-recovery-span", Internal, span_ctx)
-  
-  // Simulate error condition
-  Span::set_status(span, Error, Some("Initial error"))
-  
-  // Add error event
-  Span::add_event(span, "error.occurred", None)
-  
-  // Simulate recovery
-  Span::set_status(span, Ok, Some("Error recovered"))
-  
-  // Add recovery event
-  Span::add_event(span, "error.recovered", None)
-  
-  // End span
-  Span::end(span)
-  
-  // Verify final state
-  assert_eq(Span::status(span), Ok)
-}
-
-test "complex error boundary scenario" {
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let span_id = "b7ad6b7169203331"
-  let span_ctx = SpanContext::new(trace_id, span_id, true, "")
-  let span = Span::new("complex-error-span", Internal, span_ctx)
-  
-  // Create context with error information
-  let ctx = Context::root()
-  let error_key = ContextKey::new("error.type")
-  let ctx_with_error = Context::with_value(ctx, error_key, "DatabaseError")
-  
-  // Create baggage with error information
-  let baggage = Baggage::new()
-  let baggage_with_error = Baggage::set_entry(baggage, "error.code", "500")
-  
-  // Create log record with error
-  let error_record = LogRecord::new_with_context(
-    Error,
-    Some("Database connection failed"),
-    None,
-    None,
-    None,
-    Some(trace_id),
-    Some(span_id),
-    Some(ctx_with_error)
-  )
-  
-  // Create metrics for error tracking
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "error-tracking")
-  let error_counter = Meter::create_counter(meter, "errors.total")
-  
-  // Increment error counter
-  Counter::add(error_counter, 1.0)
-  
-  // Add error event to span
-  let error_attrs = [
-    ("error.type", StringValue("DatabaseError")),
-    ("error.code", IntValue(500)),
-    ("error.message", StringValue("Connection timeout"))
-  ]
-  Span::add_event(span, "database.error", Some(error_attrs))
-  
-  // Set error status
-  Span::set_status(span, Error, Some("Database operation failed"))
-  
-  // End span
-  Span::end(span)
-  
-  // Verify error state
-  assert_eq(Span::status(span), Error)
-  assert_eq(LogRecord::severity_number(error_record), Error)
-  assert_eq(Context::get(ctx_with_error, error_key), Some("DatabaseError"))
-  assert_eq(Baggage::get_entry(baggage_with_error, "error.code"), Some("500"))
+  // Performance should not degrade more than 50% under stress
+  assert_true(degradation_ratio > 0.5)
 }

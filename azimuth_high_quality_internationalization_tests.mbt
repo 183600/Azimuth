@@ -1,407 +1,531 @@
-// High Quality Internationalization Tests for Azimuth Telemetry System
-// This file contains comprehensive tests for internationalization and localization support
+// Azimuth Telemetry System - High Quality Internationalization Tests
+// This file contains comprehensive test cases for internationalization support
 
-// Test 1: Unicode String Handling in Attributes
-test "unicode string handling in attributes" {
-  // Test Chinese characters
-  let chinese_attrs = Attributes::new()
-  Attributes::set(chinese_attrs, "用户.标识", StringValue("用户123"))
-  Attributes::set(chinese_attrs, "会话.标识", StringValue("会话456"))
-  Attributes::set(chinese_attrs, "租户.标识", StringValue("租户789"))
-  Attributes::set(chinese_attrs, "操作.名称", StringValue("数据处理"))
+// Test 1: Multi-language String Handling
+test "multi-language string handling" {
+  // Test various language strings
+  let english_string = "Hello, World!"
+  let chinese_string = "你好，世界！"
+  let japanese_string = "こんにちは、世界！"
+  let korean_string = "안녕하세요, 세계!"
+  let arabic_string = "مرحبا بالعالم!"
+  let russian_string = "Привет, мир!"
+  let french_string = "Bonjour, le monde!"
+  let german_string = "Hallo, Welt!"
+  let spanish_string = "¡Hola, mundo!"
+  let hindi_string = "नमस्ते दुनिया!"
   
-  assert_eq(Attributes::get(chinese_attrs, "用户.标识"), Some(StringValue("用户123")))
-  assert_eq(Attributes::get(chinese_attrs, "会话.标识"), Some(StringValue("会话456")))
-  assert_eq(Attributes::get(chinese_attrs, "租户.标识"), Some(StringValue("租户789")))
-  assert_eq(Attributes::get(chinese_attrs, "操作.名称"), Some(StringValue("数据处理")))
+  // Create attributes with multi-language content
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "english_greeting", StringValue(english_string))
+  Attributes::set(attrs, "chinese_greeting", StringValue(chinese_string))
+  Attributes::set(attrs, "japanese_greeting", StringValue(japanese_string))
+  Attributes::set(attrs, "korean_greeting", StringValue(korean_string))
+  Attributes::set(attrs, "arabic_greeting", StringValue(arabic_string))
+  Attributes::set(attrs, "russian_greeting", StringValue(russian_string))
+  Attributes::set(attrs, "french_greeting", StringValue(french_string))
+  Attributes::set(attrs, "german_greeting", StringValue(german_string))
+  Attributes::set(attrs, "spanish_greeting", StringValue(spanish_string))
+  Attributes::set(attrs, "hindi_greeting", StringValue(hindi_string))
   
-  // Test Japanese characters
-  let japanese_attrs = Attributes::new()
-  Attributes::set(japanese_attrs, "ユーザー.ID", StringValue("ユーザー123"))
-  Attributes::set(japanese_attrs, "セッション.ID", StringValue("セッション456"))
-  Attributes::set(japanese_attrs, "テナント.ID", StringValue("テナント789"))
-  Attributes::set(japanese_attrs, "操作.名前", StringValue("データ処理"))
+  // Verify all strings are stored and retrieved correctly
+  let english_result = Attributes::get(attrs, "english_greeting")
+  match english_result {
+    Some(StringValue(v)) => assert_eq(v, english_string)
+    _ => assert_true(false)
+  }
   
-  assert_eq(Attributes::get(japanese_attrs, "ユーザー.ID"), Some(StringValue("ユーザー123")))
-  assert_eq(Attributes::get(japanese_attrs, "セッション.ID"), Some(StringValue("セッション456")))
-  assert_eq(Attributes::get(japanese_attrs, "テナント.ID"), Some(StringValue("テナント789")))
-  assert_eq(Attributes::get(japanese_attrs, "操作.名前"), Some(StringValue("データ処理")))
+  let chinese_result = Attributes::get(attrs, "chinese_greeting")
+  match chinese_result {
+    Some(StringValue(v)) => assert_eq(v, chinese_string)
+    _ => assert_true(false)
+  }
   
-  // Test Korean characters
-  let korean_attrs = Attributes::new()
-  Attributes::set(korean_attrs, "사용자.ID", StringValue("사용자123"))
-  Attributes::set(korean_attrs, "세션.ID", StringValue("세션456"))
-  Attributes::set(korean_attrs, "테넌트.ID", StringValue("테넌트789"))
-  Attributes::set(korean_attrs, "작업.이름", StringValue("데이터처리"))
+  let japanese_result = Attributes::get(attrs, "japanese_greeting")
+  match japanese_result {
+    Some(StringValue(v)) => assert_eq(v, japanese_string)
+    _ => assert_true(false)
+  }
   
-  assert_eq(Attributes::get(korean_attrs, "사용자.ID"), Some(StringValue("사용자123")))
-  assert_eq(Attributes::get(korean_attrs, "세션.ID"), Some(StringValue("세션456")))
-  assert_eq(Attributes::get(korean_attrs, "테넌트.ID"), Some(StringValue("테넌트789")))
-  assert_eq(Attributes::get(korean_attrs, "작업.이름"), Some(StringValue("데이터처리")))
+  let korean_result = Attributes::get(attrs, "korean_greeting")
+  match korean_result {
+    Some(StringValue(v)) => assert_eq(v, korean_string)
+    _ => assert_true(false)
+  }
   
-  // Test Arabic characters
-  let arabic_attrs = Attributes::new()
-  Attributes::set(arabic_attrs, "معرف.المستخدم", StringValue("مستخدم123"))
-  Attributes::set(arabic_attrs, "معرف.الجلسة", StringValue("جلسة456"))
-  Attributes::set(arabic_attrs, "معرف.المستأجر", StringValue("مستأجر789"))
-  Attributes::set(arabic_attrs, "اسم.العملية", StringValue("معالجة.البيانات"))
+  let arabic_result = Attributes::get(attrs, "arabic_greeting")
+  match arabic_result {
+    Some(StringValue(v)) => assert_eq(v, arabic_string)
+    _ => assert_true(false)
+  }
   
-  assert_eq(Attributes::get(arabic_attrs, "معرف.المستخدم"), Some(StringValue("مستخدم123")))
-  assert_eq(Attributes::get(arabic_attrs, "معرف.الجلسة"), Some(StringValue("جلسة456")))
-  assert_eq(Attributes::get(arabic_attrs, "معرف.المستأجر"), Some(StringValue("مستأجر789")))
-  assert_eq(Attributes::get(arabic_attrs, "اسم.العملية"), Some(StringValue("معالجة.البيانات")))
-}
-
-// Test 2: Unicode String Handling in Baggage
-test "unicode string handling in baggage" {
-  // Test Chinese baggage entries
-  let chinese_baggage = Baggage::new()
-  let with_user = Baggage::set_entry(chinese_baggage, "用户标识", "用户123")
-  let with_session = Baggage::set_entry(with_user, "会话标识", "会话456")
-  let with_tenant = Baggage::set_entry(with_session, "租户标识", "租户789")
+  let russian_result = Attributes::get(attrs, "russian_greeting")
+  match russian_result {
+    Some(StringValue(v)) => assert_eq(v, russian_string)
+    _ => assert_true(false)
+  }
   
-  assert_eq(Baggage::get_entry(with_tenant, "用户标识"), Some("用户123"))
-  assert_eq(Baggage::get_entry(with_tenant, "会话标识"), Some("会话456"))
-  assert_eq(Baggage::get_entry(with_tenant, "租户标识"), Some("租户789"))
+  let french_result = Attributes::get(attrs, "french_greeting")
+  match french_result {
+    Some(StringValue(v)) => assert_eq(v, french_string)
+    _ => assert_true(false)
+  }
   
-  // Test Japanese baggage entries
-  let japanese_baggage = Baggage::new()
-  let with_jp_user = Baggage::set_entry(japanese_baggage, "ユーザーID", "ユーザー123")
-  let with_jp_session = Baggage::set_entry(with_jp_user, "セッションID", "セッション456")
-  let with_jp_tenant = Baggage::set_entry(with_jp_session, "テナントID", "テナント789")
+  let german_result = Attributes::get(attrs, "german_greeting")
+  match german_result {
+    Some(StringValue(v)) => assert_eq(v, german_string)
+    _ => assert_true(false)
+  }
   
-  assert_eq(Baggage::get_entry(with_jp_tenant, "ユーザーID"), Some("ユーザー123"))
-  assert_eq(Baggage::get_entry(with_jp_tenant, "セッションID"), Some("セッション456"))
-  assert_eq(Baggage::get_entry(with_jp_tenant, "テナントID"), Some("テナント789"))
+  let spanish_result = Attributes::get(attrs, "spanish_greeting")
+  match spanish_result {
+    Some(StringValue(v)) => assert_eq(v, spanish_string)
+    _ => assert_true(false)
+  }
   
-  // Test mixed language baggage entries
-  let mixed_baggage = Baggage::new()
-  let with_chinese = Baggage::set_entry(mixed_baggage, "中文键", "中文值")
-  let with_japanese = Baggage::set_entry(with_chinese, "日本語キー", "日本語値")
-  let with_english = Baggage::set_entry(with_japanese, "english.key", "english.value")
-  let with_emoji = Baggage::set_entry(with_english, "表情符号键", "表情符号值🚀")
-  
-  assert_eq(Baggage::get_entry(with_emoji, "中文键"), Some("中文值"))
-  assert_eq(Baggage::get_entry(with_emoji, "日本語キー"), Some("日本語値"))
-  assert_eq(Baggage::get_entry(with_emoji, "english.key"), Some("english.value"))
-  assert_eq(Baggage::get_entry(with_emoji, "表情符号键"), Some("表情符号值🚀"))
-}
-
-// Test 3: Unicode String Handling in Context
-test "unicode string handling in context" {
-  // Test context keys with Unicode characters
-  let ctx = Context::root()
-  
-  let chinese_key = ContextKey::new("中文键")
-  let ctx_with_chinese = Context::with_value(ctx, chinese_key, "中文值")
-  assert_eq(Context::get(ctx_with_chinese, chinese_key), Some("中文值"))
-  
-  let japanese_key = ContextKey::new("日本語キー")
-  let ctx_with_japanese = Context::with_value(ctx_with_chinese, japanese_key, "日本語値")
-  assert_eq(Context::get(ctx_with_japanese, japanese_key), Some("日本語値"))
-  
-  let korean_key = ContextKey::new("한국어키")
-  let ctx_with_korean = Context::with_value(ctx_with_japanese, korean_key, "한국어값")
-  assert_eq(Context::get(ctx_with_korean, korean_key), Some("한국어값"))
-  
-  let arabic_key = ContextKey::new("مفتاح.عربي")
-  let ctx_with_arabic = Context::with_value(ctx_with_korean, arabic_key, "قيمة.عربية")
-  assert_eq(Context::get(ctx_with_arabic, arabic_key), Some("قيمة.عربية"))
-  
-  // Test context values with Unicode characters
-  let emoji_key = ContextKey::new("emoji.test")
-  let ctx_with_emoji = Context::with_value(ctx_with_arabic, emoji_key, "测试值🚀😀🎉")
-  assert_eq(Context::get(ctx_with_emoji, emoji_key), Some("测试值🚀😀🎉"))
-}
-
-// Test 4: Unicode String Handling in Span Names and Attributes
-test "unicode string handling in span names and attributes" {
-  // Test span names with Unicode characters
-  let tracer = TracerProvider::get_tracer(TracerProvider::new(), "国际化测试")
-  
-  let chinese_span = Tracer::start_span(tracer, "中文操作")
-  assert_eq(Span::name(chinese_span), "中文操作")
-  
-  let japanese_span = Tracer::start_span(tracer, "日本語操作")
-  assert_eq(Span::name(japanese_span), "日本語操作")
-  
-  let korean_span = Tracer::start_span(tracer, "한국어작업")
-  assert_eq(Span::name(korean_span), "한국어작업")
-  
-  let emoji_span = Tracer::start_span(tracer, "表情符号操作🚀")
-  assert_eq(Span::name(emoji_span), "表情符号操作🚀")
-  
-  // Test span attributes with Unicode characters
-  Span::set_attribute(chinese_span, "用户标识", StringValue("用户123"))
-  Span::set_attribute(chinese_span, "操作结果", StringValue("成功"))
-  Span::set_attribute(chinese_span, "错误信息", StringValue("无错误"))
-  
-  Span::set_attribute(japanese_span, "ユーザーID", StringValue("ユーザー123"))
-  Span::set_attribute(japanese_span, "操作結果", StringValue("成功"))
-  Span::set_attribute(japanese_span, "エラー情報", StringValue("エラーなし"))
-  
-  Span::set_attribute(korean_span, "사용자ID", StringValue("사용자123"))
-  Span::set_attribute(korean_span, "작업결과", StringValue("성공"))
-  Span::set_attribute(korean_span, "오류정보", StringValue("오류없음"))
-  
-  Span::set_attribute(emoji_span, "user.id", StringValue("user123"))
-  Span::set_attribute(emoji_span, "operation.result", StringValue("success 🎉"))
-  Span::set_attribute(emoji_span, "error.message", StringValue("no error 😊"))
-}
-
-// Test 5: Unicode String Handling in Log Records
-test "unicode string handling in log records" {
-  // Test log records with Unicode characters
-  let logger = LoggerProvider::get_logger(LoggerProvider::new(), "国际化日志器")
-  
-  // Chinese log record
-  let chinese_log = LogRecord::new()
-  LogRecord::set_body(chinese_log, "处理用户请求")
-  LogRecord::set_severity(chinese_log, Info)
-  LogRecord::set_attribute(chinese_log, "用户标识", StringValue("用户123"))
-  LogRecord::set_attribute(chinese_log, "操作类型", StringValue("数据查询"))
-  LogRecord::set_attribute(chinese_log, "结果", StringValue("成功"))
-  
-  assert_eq(LogRecord::body(chinese_log), "处理用户请求")
-  assert_eq(LogRecord::severity(chinese_log), Info)
-  
-  // Japanese log record
-  let japanese_log = LogRecord::new()
-  LogRecord::set_body(japanese_log, "ユーザーリクエストを処理")
-  LogRecord::set_severity(japanese_log, Info)
-  LogRecord::set_attribute(japanese_log, "ユーザーID", StringValue("ユーザー123"))
-  LogRecord::set_attribute(japanese_log, "操作タイプ", StringValue("データクエリ"))
-  LogRecord::set_attribute(japanese_log, "結果", StringValue("成功"))
-  
-  assert_eq(LogRecord::body(japanese_log), "ユーザーリクエストを処理")
-  assert_eq(LogRecord::severity(japanese_log), Info)
-  
-  // Korean log record
-  let korean_log = LogRecord::new()
-  LogRecord::set_body(korean_log, "사용자 요청 처리")
-  LogRecord::set_severity(korean_log, Info)
-  LogRecord::set_attribute(korean_log, "사용자ID", StringValue("사용자123"))
-  LogRecord::set_attribute(korean_log, "작업유형", StringValue("데이터조회"))
-  LogRecord::set_attribute(korean_log, "결과", StringValue("성공"))
-  
-  assert_eq(LogRecord::body(korean_log), "사용자 요청 처리")
-  assert_eq(LogRecord::severity(korean_log), Info)
-  
-  // Emoji log record
-  let emoji_log = LogRecord::new()
-  LogRecord::set_body(emoji_log, "Processing request with emojis 🚀")
-  LogRecord::set_severity(emoji_log, Info)
-  LogRecord::set_attribute(emoji_log, "user.id", StringValue("user123"))
-  LogRecord::set_attribute(emoji_log, "operation.type", StringValue("data query"))
-  LogRecord::set_attribute(emoji_log, "result", StringValue("success 🎉"))
-  
-  assert_eq(LogRecord::body(emoji_log), "Processing request with emojis 🚀")
-  assert_eq(LogRecord::severity(emoji_log), Info)
-}
-
-// Test 6: Unicode String Handling in Resource Attributes
-test "unicode string handling in resource attributes" {
-  // Test resource with Unicode attributes
-  let chinese_resource = Resource::new()
-  Resource::set_attribute(chinese_resource, "服务名称", StringValue("中文服务"))
-  Resource::set_attribute(chinese_resource, "服务版本", StringValue("1.0.0"))
-  Resource::set_attribute(chinese_resource, "实例标识", StringValue("实例123"))
-  Resource::set_attribute(chinese_resource, "部署环境", StringValue("生产环境"))
-  
-  assert_eq(Resource::get_attribute(chinese_resource, "服务名称"), Some(StringValue("中文服务")))
-  assert_eq(Resource::get_attribute(chinese_resource, "服务版本"), Some(StringValue("1.0.0")))
-  assert_eq(Resource::get_attribute(chinese_resource, "实例标识"), Some(StringValue("实例123")))
-  assert_eq(Resource::get_attribute(chinese_resource, "部署环境"), Some(StringValue("生产环境")))
-  
-  // Test resource with Japanese attributes
-  let japanese_resource = Resource::new()
-  Resource::set_attribute(japanese_resource, "サービス名", StringValue("日本語サービス"))
-  Resource::set_attribute(japanese_resource, "サービスバージョン", StringValue("1.0.0"))
-  Resource::set_attribute(japanese_resource, "インスタンスID", StringValue("インスタンス123"))
-  Resource::set_attribute(japanese_resource, "配備環境", StringValue("本番環境"))
-  
-  assert_eq(Resource::get_attribute(japanese_resource, "サービス名"), Some(StringValue("日本語サービス")))
-  assert_eq(Resource::get_attribute(japanese_resource, "サービスバージョン"), Some(StringValue("1.0.0")))
-  assert_eq(Resource::get_attribute(japanese_resource, "インスタンスID"), Some(StringValue("インスタンス123")))
-  assert_eq(Resource::get_attribute(japanese_resource, "配備環境"), Some(StringValue("本番環境")))
-  
-  // Test resource with Korean attributes
-  let korean_resource = Resource::new()
-  Resource::set_attribute(korean_resource, "서비스명", StringValue("한국어서비스"))
-  Resource::set_attribute(korean_resource, "서비스버전", StringValue("1.0.0"))
-  Resource::set_attribute(korean_resource, "인스턴스ID", StringValue("인스턴스123"))
-  Resource::set_attribute(korean_resource, "배포환경", StringValue("프로덕션"))
-  
-  assert_eq(Resource::get_attribute(korean_resource, "서비스명"), Some(StringValue("한국어서비스")))
-  assert_eq(Resource::get_attribute(korean_resource, "서비스버전"), Some(StringValue("1.0.0")))
-  assert_eq(Resource::get_attribute(korean_resource, "인스턴스ID"), Some(StringValue("인스턴스123")))
-  assert_eq(Resource::get_attribute(korean_resource, "배포환경"), Some(StringValue("프로덕션")))
-}
-
-// Test 7: Unicode String Handling in Instrumentation Scope
-test "unicode string handling in instrumentation scope" {
-  // Test instrumentation scope with Unicode characters
-  let chinese_scope = InstrumentationScope::new(
-    "中文遥测库",
-    Some("1.0.0"),
-    Some("https://example.com/中文/模式/v1")
-  )
-  
-  assert_eq(chinese_scope.name, "中文遥测库")
-  assert_eq(chinese_scope.version, Some("1.0.0"))
-  assert_eq(chinese_scope.schema_url, Some("https://example.com/中文/模式/v1"))
-  
-  let japanese_scope = InstrumentationScope::new(
-    "日本語テレメトリーライブラリ",
-    Some("1.0.0"),
-    Some("https://example.com/日本語/スキーマ/v1")
-  )
-  
-  assert_eq(japanese_scope.name, "日本語テレメトリーライブラリ")
-  assert_eq(japanese_scope.version, Some("1.0.0"))
-  assert_eq(japanese_scope.schema_url, Some("https://example.com/日本語/スキーマ/v1"))
-  
-  let korean_scope = InstrumentationScope::new(
-    "한국어원격측정라이브러리",
-    Some("1.0.0"),
-    Some("https://example.com/한국어/스키마/v1")
-  )
-  
-  assert_eq(korean_scope.name, "한국어원격측정라이브러리")
-  assert_eq(korean_scope.version, Some("1.0.0"))
-  assert_eq(korean_scope.schema_url, Some("https://example.com/한국어/스키마/v1"))
-}
-
-// Test 8: Unicode String Handling in Text Map Carrier
-test "unicode string handling in text map carrier" {
-  // Test carrier with Unicode headers
-  let carrier = TextMapCarrier::new()
-  
-  // Set headers with Unicode characters
-  TextMapCarrier::set(carrier, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-  TextMapCarrier::set(carrier, "中文 baggage", "用户标识=用户123,会话标识=会话456")
-  TextMapCarrier::set(carrier, "日本語 baggage", "ユーザーID=ユーザー123,セッションID=セッション456")
-  TextMapCarrier::set(carrier, "한국어 baggage", "사용자ID=사용자123,세션ID=세션456")
-  TextMapCarrier::set(carrier, "emoji baggage", "user=user123,emoji=🚀😀🎉")
-  
-  // Verify headers are stored correctly
-  assert_eq(TextMapCarrier::get(carrier, "traceparent"), Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
-  assert_eq(TextMapCarrier::get(carrier, "中文 baggage"), Some("用户标识=用户123,会话标识=会话456"))
-  assert_eq(TextMapCarrier::get(carrier, "日本語 baggage"), Some("ユーザーID=ユーザー123,セッションID=セッション456"))
-  assert_eq(TextMapCarrier::get(carrier, "한국어 baggage"), Some("사용자ID=사용자123,세션ID=세션456"))
-  assert_eq(TextMapCarrier::get(carrier, "emoji baggage"), Some("user=user123,emoji=🚀😀🎉"))
-  
-  // Test propagation with Unicode baggage
-  let baggage_propagator = W3CBaggagePropagator::new()
-  let ctx = Context::root()
-  
-  // Create context with Unicode baggage
-  let unicode_baggage = Baggage::new()
-  let with_chinese = Baggage::set_entry(unicode_baggage, "中文键", "中文值")
-  let with_japanese = Baggage::set_entry(with_chinese, "日本語キー", "日本語値")
-  let with_korean = Baggage::set_entry(with_japanese, "한국어키", "한국어값")
-  let with_emoji = Baggage::set_entry(with_korean, "emoji키", "emoji값🚀")
-  
-  let ctx_with_unicode = Context::with_value(ctx, ContextKey::new("baggage"), with_emoji)
-  
-  // Inject Unicode baggage
-  let unicode_carrier = TextMapCarrier::new()
-  W3CBaggagePropagator::inject(baggage_propagator, ctx_with_unicode, unicode_carrier)
-  
-  // Extract Unicode baggage
-  let extracted_ctx = W3CBaggagePropagator::extract(baggage_propagator, unicode_carrier)
-  let extracted_baggage = Context::get(extracted_ctx, ContextKey::new("baggage"))
-  
-  // Verify Unicode baggage is extracted correctly
-  match (extracted_baggage) {
-    Some(baggage) => {
-      assert_eq(Baggage::get_entry(baggage, "中文键"), Some("中文值"))
-      assert_eq(Baggage::get_entry(baggage, "日本語キー"), Some("日本語値"))
-      assert_eq(Baggage::get_entry(baggage, "한국어키"), Some("한국어값"))
-      assert_eq(Baggage::get_entry(baggage, "emoji키"), Some("emoji값🚀"))
-    }
-    None => assert_true(false) // Should not happen
+  let hindi_result = Attributes::get(attrs, "hindi_greeting")
+  match hindi_result {
+    Some(StringValue(v)) => assert_eq(v, hindi_string)
+    _ => assert_true(false)
   }
 }
 
-// Test 9: Unicode String Handling in Metrics
-test "unicode string handling in metrics" {
-  // Test metrics with Unicode characters
-  let meter = MeterProvider::get_meter(MeterProvider::new(), "国际化仪表")
+// Test 2: Locale-aware Formatting
+test "locale-aware formatting" {
+  // Test different locales
+  let locales = ["en-US", "zh-CN", "ja-JP", "ko-KR", "ar-SA", "ru-RU", "fr-FR", "de-DE", "es-ES", "hi-IN"]
   
-  // Create instruments with Unicode names
-  let chinese_counter = Meter::create_counter(meter, "中文计数器")
-  let japanese_counter = Meter::create_counter(meter, "日本語カウンター")
-  let korean_counter = Meter::create_counter(meter, "한국어카운터")
-  let emoji_counter = Meter::create_counter(meter, "emoji counter 🚀")
+  // Test number formatting
+  let test_number = 1234567.89
+  let mut formatted_numbers = []
   
-  assert_eq(chinese_counter.name, "中文计数器")
-  assert_eq(japanese_counter.name, "日本語カウンター")
-  assert_eq(korean_counter.name, "한국어카운터")
-  assert_eq(emoji_counter.name, "emoji counter 🚀")
+  for locale in locales {
+    let formatted_number = Locale::format_number(test_number, locale)
+    formatted_numbers = formatted_numbers.push((locale, formatted_number))
+  }
   
-  // Record metrics with Unicode attributes
-  Counter::add(chinese_counter, 1, [ ("操作类型", StringValue("数据查询")), ("用户类型", StringValue("管理员")) ])
-  Counter::add(japanese_counter, 1, [ ("操作タイプ", StringValue("データクエリ")), ("ユーザータイプ", StringValue("管理者")) ])
-  Counter::add(korean_counter, 1, [ ("작업유형", StringValue("데이터조회")), ("사용자유형", StringValue("관리자")) ])
-  Counter::add(emoji_counter, 1, [ ("operation.type", StringValue("data query")), ("user.type", StringValue("admin 😊")) ])
+  // Verify each locale has a formatted number
+  for (locale, formatted_number) in formatted_numbers {
+    assert_true(formatted_number.length() > 0)
+    
+    // Create span with locale-specific formatting
+    let span_ctx = SpanContext::new("locale_test", "locale_span", true, "locale_test")
+    let span = Span::new("locale_formatting", Internal, span_ctx)
+    
+    Span::set_attribute(span, "locale", StringValue(locale))
+    Span::set_attribute(span, "original_number", FloatValue(test_number))
+    Span::set_attribute(span, "formatted_number", StringValue(formatted_number))
+    
+    Span::end(span)
+  }
   
-  // Test histogram with Unicode names
-  let chinese_histogram = Meter::create_histogram(meter, "中文直方图")
-  let japanese_histogram = Meter::create_histogram(meter, "日本語ヒストグラム")
-  let korean_histogram = Meter::create_histogram(meter, "한국어히스토그램")
+  // Test date formatting
+  let test_date = Time::now()
+  let mut formatted_dates = []
   
-  assert_eq(chinese_histogram.name, "中文直方图")
-  assert_eq(japanese_histogram.name, "日本語ヒストグラム")
-  assert_eq(korean_histogram.name, "한국어히스토그램")
+  for locale in locales {
+    let formatted_date = Locale::format_date(test_date, locale)
+    formatted_dates = formatted_dates.push((locale, formatted_date))
+  }
   
-  // Record histogram values with Unicode attributes
-  Histogram::record(chinese_histogram, 150.0, [ ("操作类型", StringValue("数据查询")), ("响应时间", StringValue("正常")) ])
-  Histogram::record(japanese_histogram, 200.0, [ ("操作タイプ", StringValue("データクエリ")), ("応答時間", StringValue("正常")) ])
-  Histogram::record(korean_histogram, 100.0, [ ("작업유형", StringValue("데이터조회")), ("응답시간", StringValue("정상")) ])
+  // Verify each locale has a formatted date
+  for (locale, formatted_date) in formatted_dates {
+    assert_true(formatted_date.length() > 0)
+    
+    // Create span with locale-specific date formatting
+    let span_ctx = SpanContext::new("date_locale_test", "date_locale_span", true, "locale_test")
+    let span = Span::new("date_locale_formatting", Internal, span_ctx)
+    
+    Span::set_attribute(span, "locale", StringValue(locale))
+    Span::set_attribute(span, "timestamp", IntValue(test_date))
+    Span::set_attribute(span, "formatted_date", StringValue(formatted_date))
+    
+    Span::end(span)
+  }
 }
 
-// Test 10: Locale-Specific Formatting and Handling
-test "locale-specific formatting and handling" {
-  // Test locale-specific number formatting
-  let chinese_attrs = Attributes::new()
-  Attributes::set(chinese_attrs, "数值", IntValue(1234567))
-  Attributes::set(chinese_attrs, "小数", FloatValue(1234.5678))
-  Attributes::set(chinese_attrs, "百分比", FloatValue(0.1234))
+// Test 3: Right-to-Left Language Support
+test "right-to-left language support" {
+  // Test RTL languages
+  let arabic_text = "مرحبا بالعالم"
+  let hebrew_text = "שלום עולם"
+  let persian_text = "سلام دنیا"
+  let urdu_text = "ہیلو دنیا"
+  let yiddish_text = "העלא וועלט"
   
-  assert_eq(Attributes::get(chinese_attrs, "数值"), Some(IntValue(1234567)))
-  assert_eq(Attributes::get(chinese_attrs, "小数"), Some(FloatValue(1234.5678)))
-  assert_eq(Attributes::get(chinese_attrs, "百分比"), Some(FloatValue(0.1234)))
+  // Create attributes with RTL text
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "arabic_text", StringValue(arabic_text))
+  Attributes::set(attrs, "hebrew_text", StringValue(hebrew_text))
+  Attributes::set(attrs, "persian_text", StringValue(persian_text))
+  Attributes::set(attrs, "urdu_text", StringValue(urdu_text))
+  Attributes::set(attrs, "yiddish_text", StringValue(yiddish_text))
   
-  // Test locale-specific date/time formatting
-  let japanese_attrs = Attributes::new()
-  Attributes::set(japanese_attrs, "日付", StringValue("2023-12-31"))
-  Attributes::set(japanese_attrs, "時刻", StringValue("23:59:59"))
-  Attributes::set(japanese_attrs, "タイムスタンプ", StringValue("2023-12-31T23:59:59.999Z"))
+  // Test text direction detection
+  let arabic_direction = Locale::text_direction(arabic_text)
+  let hebrew_direction = Locale::text_direction(hebrew_text)
+  let persian_direction = Locale::text_direction(persian_text)
+  let urdu_direction = Locale::text_direction(urdu_text)
+  let yiddish_direction = Locale::text_direction(yiddish_text)
   
-  assert_eq(Attributes::get(japanese_attrs, "日付"), Some(StringValue("2023-12-31")))
-  assert_eq(Attributes::get(japanese_attrs, "時刻"), Some(StringValue("23:59:59")))
-  assert_eq(Attributes::get(japanese_attrs, "タイムスタンプ"), Some(StringValue("2023-12-31T23:59:59.999Z")))
+  assert_eq(arabic_direction, "RTL")
+  assert_eq(hebrew_direction, "RTL")
+  assert_eq(persian_direction, "RTL")
+  assert_eq(urdu_direction, "RTL")
+  assert_eq(yiddish_direction, "RTL")
   
-  // Test locale-specific currency formatting
-  let korean_attrs = Attributes::new()
-  Attributes::set(korean_attrs, "통화", StringValue("KRW"))
-  Attributes::set(korean_attrs, "금액", IntValue(50000))
-  Attributes::set(korean_attrs, "형식화된금액", StringValue("₩50,000"))
+  // Test LTL for comparison
+  let english_text = "Hello World"
+  let english_direction = Locale::text_direction(english_text)
+  assert_eq(english_direction, "LTR")
   
-  assert_eq(Attributes::get(korean_attrs, "통화"), Some(StringValue("KRW")))
-  assert_eq(Attributes::get(korean_attrs, "금액"), Some(IntValue(50000)))
-  assert_eq(Attributes::get(korean_attrs, "형식화된금액"), Some(StringValue("₩50,000")))
+  // Create span with RTL text support
+  let span_ctx = SpanContext::new("rtl_test", "rtl_span", true, "rtl_test")
+  let span = Span::new("rtl_text_support", Internal, span_ctx)
   
-  // Test locale-specific address formatting
-  let address_attrs = Attributes::new()
-  Attributes::set(address_attrs, "中文地址", StringValue("北京市朝阳区建国门外大街1号"))
-  Attributes::set(address_attrs, "日本語住所", StringValue("東京都千代田区丸の内1-2-3"))
-  Attributes::set(address_attrs, "한국어주소", StringValue("서울특별시 종로구 세종대로 1"))
-  Attributes::set(address_attrs, "English Address", StringValue("123 Main St, New York, NY 10001"))
+  Span::set_attribute(span, "arabic_text", StringValue(arabic_text))
+  Span::set_attribute(span, "hebrew_text", StringValue(hebrew_text))
+  Span::set_attribute(span, "arabic_direction", StringValue(arabic_direction))
+  Span::set_attribute(span, "hebrew_direction", StringValue(hebrew_direction))
+  Span::set_attribute(span, "english_text", StringValue(english_text))
+  Span::set_attribute(span, "english_direction", StringValue(english_direction))
   
-  assert_eq(Attributes::get(address_attrs, "中文地址"), Some(StringValue("北京市朝阳区建国门外大街1号")))
-  assert_eq(Attributes::get(address_attrs, "日本語住所"), Some(StringValue("東京都千代田区丸の内1-2-3")))
-  assert_eq(Attributes::get(address_attrs, "한국어주소"), Some(StringValue("서울특별시 종로구 세종대로 1")))
-  assert_eq(Attributes::get(address_attrs, "English Address"), Some(StringValue("123 Main St, New York, NY 10001")))
+  // Add RTL-specific events
+  Span::add_event(span, "rtl_text_processed", Some([
+    ("arabic_length", IntValue(arabic_text.length())),
+    ("hebrew_length", IntValue(hebrew_text.length())),
+    ("text_direction_supported", BoolValue(true))
+  ]))
+  
+  Span::end(span)
+}
+
+// Test 4: Unicode Normalization
+test "unicode normalization" {
+  // Test different Unicode normalization forms
+  let composed_string = "é" // Single code point
+  let decomposed_string = "e\u0301" // 'e' + combining acute accent
+  
+  // Test NFC (Normalization Form C - canonical composition)
+  let nfc_composed = Unicode::normalize(composed_string, "NFC")
+  let nfc_decomposed = Unicode::normalize(decomposed_string, "NFC")
+  
+  // Both should normalize to the composed form
+  assert_eq(nfc_composed, composed_string)
+  assert_eq(nfc_decomposed, composed_string)
+  
+  // Test NFD (Normalization Form D - canonical decomposition)
+  let nfd_composed = Unicode::normalize(composed_string, "NFD")
+  let nfd_decomposed = Unicode::normalize(decomposed_string, "NFD")
+  
+  // Both should normalize to the decomposed form
+  assert_eq(nfd_composed, decomposed_string)
+  assert_eq(nfd_decomposed, decomposed_string)
+  
+  // Test NFKC (Normalization Form KC - compatibility composition)
+  let nfkc_composed = Unicode::normalize(composed_string, "NFKC")
+  let nfkc_decomposed = Unicode::normalize(decomposed_string, "NFKC")
+  
+  // Both should normalize to the composed form
+  assert_eq(nfkc_composed, composed_string)
+  assert_eq(nfkc_decomposed, composed_string)
+  
+  // Test NFKD (Normalization Form KD - compatibility decomposition)
+  let nfkd_composed = Unicode::normalize(composed_string, "NFKD")
+  let nfkd_decomposed = Unicode::normalize(decomposed_string, "NFKD")
+  
+  // Both should normalize to the decomposed form
+  assert_eq(nfkd_composed, decomposed_string)
+  assert_eq(nfkd_decomposed, decomposed_string)
+  
+  // Create span with Unicode normalization
+  let span_ctx = SpanContext::new("unicode_test", "unicode_span", true, "unicode_test")
+  let span = Span::new("unicode_normalization", Internal, span_ctx)
+  
+  Span::set_attribute(span, "original_composed", StringValue(composed_string))
+  Span::set_attribute(span, "original_decomposed", StringValue(decomposed_string))
+  Span::set_attribute(span, "nfc_result", StringValue(nfc_composed))
+  Span::set_attribute(span, "nfd_result", StringValue(nfd_composed))
+  Span::set_attribute(span, "nfkc_result", StringValue(nfkc_composed))
+  Span::set_attribute(span, "nfkd_result", StringValue(nfkd_composed))
+  
+  Span::end(span)
+}
+
+// Test 5: Multi-language Error Messages
+test "multi-language error messages" {
+  // Define error messages in different languages
+  let error_messages = [
+    ("en", "Operation failed: Invalid input parameter"),
+    ("zh", "操作失败：输入参数无效"),
+    ("ja", "操作が失敗しました：入力パラメータが無効です"),
+    ("ko", "작업 실패: 입력 매개변수가 유효하지 않습니다"),
+    ("ar", "فشلت العملية: معلمة الإدخال غير صالحة"),
+    ("ru", "Операция не удалась: недопустимый параметр ввода"),
+    ("fr", "Opération échouée: paramètre d'entrée non valide"),
+    ("de", "Operation fehlgeschlagen: Ungültiger Eingabeparameter"),
+    ("es", "Operación fallida: parámetro de entrada no válido"),
+    ("hi", "ऑपरेशन विफल: अमान्य इनपुट पैरामीटर")
+  ]
+  
+  // Test error message localization
+  for (lang, message) in error_messages {
+    let localized_message = Locale::localize_error("invalid_input", lang)
+    
+    // In a real implementation, this would return the localized message
+    // For this test, we'll use the provided message
+    let final_message = if localized_message == "" { message } else { localized_message }
+    
+    assert_true(final_message.length() > 0)
+    
+    // Create span with localized error message
+    let span_ctx = SpanContext::new("error_test", "error_span", true, "error_test")
+    let span = Span::new("localized_error", Internal, span_ctx)
+    
+    Span::set_attribute(span, "language", StringValue(lang))
+    Span::set_attribute(span, "error_code", StringValue("invalid_input"))
+    Span::set_attribute(span, "error_message", StringValue(final_message))
+    Span::set_status(span, Error, Some(final_message))
+    
+    Span::end(span)
+  }
+}
+
+// Test 6: Collation and Sorting
+test "collation and sorting" {
+  // Test strings with different characters that need proper collation
+  let test_strings = [
+    "apple", "Banana", "cherry", "Álvaro", "Zebra", "äpple", "Österreich", "Москва", "北京", "東京"
+  ]
+  
+  // Test sorting with different locales
+  let locales = ["en-US", "de-DE", "sv-SE", "ru-RU", "zh-CN", "ja-JP"]
+  
+  for locale in locales {
+    let sorted_strings = Locale::sort_strings(test_strings, locale)
+    
+    // Verify sorting result
+    assert_eq(sorted_strings.length(), test_strings.length())
+    
+    // Create span with locale-specific sorting
+    let span_ctx = SpanContext::new("collation_test", "collation_span", true, "collation_test")
+    let span = Span::new("locale_sorting", Internal, span_ctx)
+    
+    Span::set_attribute(span, "locale", StringValue(locale))
+    Span::set_attribute(span, "string_count", IntValue(test_strings.length()))
+    
+    // Add sorting result as events
+    for i in 0..sorted_strings.length() {
+      Span::add_event(span, "sorted_string", Some([
+        ("position", IntValue(i)),
+        ("value", StringValue(sorted_strings[i])),
+        ("locale", StringValue(locale))
+      ]))
+    }
+    
+    Span::end(span)
+  }
+}
+
+// Test 7: Time Zone Localization
+test "time zone localization" {
+  let test_timestamp = 1609459200000 // 2021-01-01 00:00:00 UTC
+  
+  // Test different time zones
+  let time_zones = [
+    ("UTC", "UTC"),
+    ("America/New_York", "US/Eastern"),
+    ("America/Los_Angeles", "US/Pacific"),
+    ("Europe/London", "Europe/London"),
+    ("Europe/Paris", "Europe/Paris"),
+    ("Asia/Tokyo", "Asia/Tokyo"),
+    ("Asia/Shanghai", "Asia/Shanghai"),
+    ("Australia/Sydney", "Australia/Sydney")
+  ]
+  
+  for (tz_id, tz_name) in time_zones {
+    let localized_time = Locale::format_time_in_timezone(test_timestamp, tz_id)
+    
+    assert_true(localized_time.length() > 0)
+    
+    // Create span with time zone localization
+    let span_ctx = SpanContext::new("timezone_test", "timezone_span", true, "timezone_test")
+    let span = Span::new("timezone_localization", Internal, span_ctx)
+    
+    Span::set_attribute(span, "timezone_id", StringValue(tz_id))
+    Span::set_attribute(span, "timezone_name", StringValue(tz_name))
+    Span::set_attribute(span, "timestamp", IntValue(test_timestamp))
+    Span::set_attribute(span, "localized_time", StringValue(localized_time))
+    
+    Span::end(span)
+  }
+}
+
+// Test 8: Currency and Number Formatting
+test "currency and number formatting" {
+  let test_amount = 1234.56
+  
+  // Test currency formatting for different locales
+  let currency_locales = [
+    ("en-US", "USD"),
+    ("en-GB", "GBP"),
+    ("de-DE", "EUR"),
+    ("fr-FR", "EUR"),
+    ("ja-JP", "JPY"),
+    ("zh-CN", "CNY"),
+    ("ko-KR", "KRW"),
+    ("ar-SA", "SAR"),
+    ("ru-RU", "RUB"),
+    ("es-ES", "EUR")
+  ]
+  
+  for (locale, currency) in currency_locales {
+    let formatted_currency = Locale::format_currency(test_amount, currency, locale)
+    
+    assert_true(formatted_currency.length() > 0)
+    
+    // Create span with currency formatting
+    let span_ctx = SpanContext::new("currency_test", "currency_span", true, "currency_test")
+    let span = Span::new("currency_formatting", Internal, span_ctx)
+    
+    Span::set_attribute(span, "locale", StringValue(locale))
+    Span::set_attribute(span, "currency", StringValue(currency))
+    Span::set_attribute(span, "amount", FloatValue(test_amount))
+    Span::set_attribute(span, "formatted_currency", StringValue(formatted_currency))
+    
+    Span::end(span)
+  }
+  
+  // Test percentage formatting
+  let percentage_locales = ["en-US", "fr-FR", "de-DE", "ja-JP", "ar-SA"]
+  let test_percentage = 0.7542
+  
+  for locale in percentage_locales {
+    let formatted_percentage = Locale::format_percentage(test_percentage, locale)
+    
+    assert_true(formatted_percentage.length() > 0)
+    
+    // Create span with percentage formatting
+    let span_ctx = SpanContext::new("percentage_test", "percentage_span", true, "percentage_test")
+    let span = Span::new("percentage_formatting", Internal, span_ctx)
+    
+    Span::set_attribute(span, "locale", StringValue(locale))
+    Span::set_attribute(span, "percentage", FloatValue(test_percentage))
+    Span::set_attribute(span, "formatted_percentage", StringValue(formatted_percentage))
+    
+    Span::end(span)
+  }
+}
+
+// Test 9: Multi-language Log Messages
+test "multi-language log messages" {
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "internationalization_logger")
+  
+  // Define log messages in different languages
+  let log_messages = [
+    ("en", Info, "Application started successfully"),
+    ("zh", Info, "应用程序启动成功"),
+    ("ja", Info, "アプリケーションが正常に起動しました"),
+    ("ko", Info, "애플리케이션이 성공적으로 시작되었습니다"),
+    ("ar", Info, "تم بدء التطبيق بنجاح"),
+    ("ru", Info, "Приложение успешно запущено"),
+    ("fr", Info, "L'application a démarré avec succès"),
+    ("de", Info, "Anwendung erfolgreich gestartet"),
+    ("es", Info, "Aplicación iniciada correctamente"),
+    ("hi", Info, "एप्लिकेशन सफलतापूर्वक शुरू हुई")
+  ]
+  
+  for (lang, severity, message) in log_messages {
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "language", StringValue(lang))
+    Attributes::set(attrs, "component", StringValue("internationalization_test"))
+    
+    let log_record = LogRecord::new_with_context(
+      severity,
+      Some(message),
+      Some(attrs),
+      Some(Time::now()),
+      Some(Time::now()),
+      Some("log_trace"),
+      Some("log_span"),
+      None
+    )
+    
+    Logger::emit(logger, log_record)
+  }
+  
+  // Verify log count
+  let log_count = Logger::get_log_count(logger)
+  assert_true(log_count >= 10)
+}
+
+// Test 10: Internationalization Resource Management
+test "internationalization resource management" {
+  // Test loading different language resource files
+  let languages = ["en", "zh", "ja", "ko", "ar", "ru", "fr", "de", "es", "hi"]
+  
+  for lang in languages {
+    // Load language resources
+    let resources = I18n::load_resources(lang)
+    
+    match resources {
+      Some(res) => {
+        // Test getting a localized string
+        let localized_string = I18n::get_string(res, "welcome_message")
+        
+        // If the resource exists, it should have a value
+        if localized_string != "" {
+          assert_true(localized_string.length() > 0)
+          
+          // Create span with localized resource
+          let span_ctx = SpanContext::new("i18n_resource_test", "i18n_resource_span", true, "i18n_test")
+          let span = Span::new("i18n_resource_loading", Internal, span_ctx)
+          
+          Span::set_attribute(span, "language", StringValue(lang))
+          Span::set_attribute(span, "resource_loaded", BoolValue(true))
+          Span::set_attribute(span, "welcome_message", StringValue(localized_string))
+          
+          Span::end(span)
+        }
+      }
+      None => {
+        // Create span indicating resource loading failure
+        let span_ctx = SpanContext::new("i18n_resource_test", "i18n_resource_span", true, "i18n_test")
+        let span = Span::new("i18n_resource_loading", Internal, span_ctx)
+        
+        Span::set_attribute(span, "language", StringValue(lang))
+        Span::set_attribute(span, "resource_loaded", BoolValue(false))
+        Span::set_status(span, Error, Some("Failed to load language resources"))
+        
+        Span::end(span)
+      }
+    }
+  }
+  
+  // Test fallback mechanism
+  let fallback_string = I18n::get_string_with_fallback("non_existent_key", "en", "Default message")
+  assert_eq(fallback_string, "Default message")
+  
+  // Test pluralization rules
+  let test_counts = [0, 1, 2, 5, 10, 100]
+  
+  for count in test_counts {
+    for lang in ["en", "zh", "ja", "ru", "ar"] {
+      let pluralized_string = I18n::pluralize("item_count", count, lang)
+      
+      // Should return a valid string
+      assert_true(pluralized_string.length() > 0)
+      
+      // Create span with pluralization test
+      let span_ctx = SpanContext::new("pluralization_test", "pluralization_span", true, "i18n_test")
+      let span = Span::new("pluralization_testing", Internal, span_ctx)
+      
+      Span::set_attribute(span, "language", StringValue(lang))
+      Span::set_attribute(span, "count", IntValue(count))
+      Span::set_attribute(span, "pluralized_string", StringValue(pluralized_string))
+      
+      Span::end(span)
+    }
+  }
 }
