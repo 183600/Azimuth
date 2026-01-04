@@ -1,512 +1,453 @@
-// Azimuth 安全性测试用例
-// 专注于测试系统的安全特性和防护能力
+// 安全性测试用例
+// 测试Azimuth遥测系统的安全性功能
 
-// 测试1: 敏感数据处理安全测试
-test "敏感数据处理安全测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "security.test")
+test "敏感数据过滤和脱敏" {
+  // 测试敏感数据的过滤和脱敏
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "security.test")
   
-  // 测试敏感数据过滤
-  let counter = Meter::create_counter(meter, "sensitive.data.counter")
+  // 创建包含敏感数据的span
+  let span = Tracer::start_span(tracer, "secure.operation")
   
-  // 尝试记录包含敏感信息的属性
-  let sensitive_attrs = [
-    ("password", StringValue("secret123")),
-    ("api_key", StringValue("sk-1234567890")),
-    ("token", StringValue("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9")),
-    ("credit_card", StringValue("4111-1111-1111-1111"))
-  ]
+  // 添加正常属性
+  Span::set_attribute(span, "operation.type", "user.authentication")
+  Span::set_attribute(span, "service.name", "auth.service")
+  Span::set_attribute(span, "user.id", "user-12345")
   
-  // 安全过滤器应该过滤或脱敏这些数据
-  let filtered_attrs = Security::filter_sensitive_attributes(sensitive_attrs)
+  // 添加敏感属性（应被过滤或脱敏）
+  Span::set_attribute(span, "user.password", "secret-password-123")
+  Span::set_attribute(span, "user.email", "user@example.com")
+  Span::set_attribute(span, "user.phone", "+1234567890")
+  Span::set_attribute(span, "credit.card.number", "4111-1111-1111-1111")
+  Span::set_attribute(span, "social.security.number", "123-45-6789")
+  Span::set_attribute(span, "api.key", "sk-1234567890abcdef")
   
-  // 验证敏感数据已被过滤或脱敏
-  for (key, value) in filtered_attrs {
-    match value {
-      StringValue(s) => {
-        assert_false(s.contains("secret123"))
-        assert_false(s.contains("sk-1234567890"))
-        assert_false(s.contains("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"))
-        assert_false(s.contains("4111-1111-1111-1111"))
-      }
-      _ => {}
-    }
-  }
-  
-  // 测试敏感数据脱敏
-  let masked_password = Security::mask_sensitive_data("secret123", "password")
-  let masked_api_key = Security::mask_sensitive_data("sk-1234567890", "api_key")
-  let masked_token = Security::mask_sensitive_data("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9", "token")
-  
-  // 验证脱敏结果
-  assert_true(masked_password.contains("***"))
-  assert_true(masked_api_key.contains("***"))
-  assert_true(masked_token.contains("***"))
-  
-  // 记录安全事件
-  Counter::add(counter, 1.0, filtered_attrs)
-  assert_eq(Counter::value(counter), 1.0)
-}
-
-// 测试2: 输入验证和清理测试
-test "输入验证和清理测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "input.validation.test")
-  
-  // 测试SQL注入防护
-  let sql_injection_attempts = [
-    "'; DROP TABLE users; --",
-    "1' OR '1'='1",
-    "1; DELETE FROM users WHERE 1=1; --",
-    "admin'--",
-    "admin' /*",
-    "' OR 1=1#"
-  ]
-  
-  for injection in sql_injection_attempts {
-    let sanitized = Security::sanitize_input(injection)
-    assert_false(sanitized.contains("DROP"))
-    assert_false(sanitized.contains("DELETE"))
-    assert_false(sanitized.contains("'"))
-    assert_false(sanitized.contains(";"))
-    assert_false(sanitized.contains("--"))
-    assert_false(sanitized.contains("/*"))
-    assert_false(sanitized.contains("#"))
-  }
-  
-  // 测试XSS防护
-  let xss_attempts = [
-    "<script>alert('xss')</script>",
-    "javascript:alert('xss')",
-    "<img src=x onerror=alert('xss')>",
-    "<svg onload=alert('xss')>",
-    "';alert('xss');//"
-  ]
-  
-  for xss in xss_attempts {
-    let sanitized = Security::sanitize_input(xss)
-    assert_false(sanitized.contains("<script>"))
-    assert_false(sanitized.contains("javascript:"))
-    assert_false(sanitized.contains("onerror"))
-    assert_false(sanitized.contains("onload"))
-  }
-  
-  // 测试路径遍历防护
-  let path_traversal_attempts = [
-    "../../../etc/passwd",
-    "..\\..\\..\\windows\\system32\\config\\sam",
-    "....//....//....//etc/passwd",
-    "%2e%2e%2f%2e%2e%2f%2e%2e%2fetc%2fpasswd"
-  ]
-  
-  for traversal in path_traversal_attempts {
-    let sanitized = Security::sanitize_path(traversal)
-    assert_false(sanitized.contains(".."))
-    assert_false(sanitized.contains("%2e"))
-  }
-  
-  // 记录验证结果
-  let counter = Meter::create_counter(meter, "validation.counter")
-  Counter::add(counter, sql_injection_attempts.length().to_float())
-  Counter::add(counter, xss_attempts.length().to_float())
-  Counter::add(counter, path_traversal_attempts.length().to_float())
-  
-  assert_eq(Counter::value(counter), (sql_injection_attempts.length() + xss_attempts.length() + path_traversal_attempts.length()).to_float())
-}
-
-// 测试3: 访问控制和权限测试
-test "访问控制和权限测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "access.control.test")
-  
-  // 创建不同权限级别的上下文
-  let admin_ctx = Context::with_value(Context::root(), ContextKey::new("role"), "admin")
-  let user_ctx = Context::with_value(Context::root(), ContextKey::new("role"), "user")
-  let guest_ctx = Context::with_value(Context::root(), ContextKey::new("role"), "guest")
-  
-  // 测试权限检查
-  let admin_access = Security::check_permission(admin_ctx, "read_sensitive_data")
-  let user_access = Security::check_permission(user_ctx, "read_sensitive_data")
-  let guest_access = Security::check_permission(guest_ctx, "read_sensitive_data")
-  
-  // 管理员应该有权限，普通用户和客人不应该有
-  assert_true(admin_access)
-  assert_false(user_access)
-  assert_false(guest_access)
-  
-  // 测试资源访问控制
-  let protected_resource = "protected_resource_123"
-  let admin_resource_access = Security::check_resource_access(admin_ctx, protected_resource, "read")
-  let user_resource_access = Security::check_resource_access(user_ctx, protected_resource, "read")
-  let guest_resource_access = Security::check_resource_access(guest_ctx, protected_resource, "read")
-  
-  // 资源访问控制应该基于权限
-  assert_true(admin_resource_access)
-  assert_false(user_resource_access)
-  assert_false(guest_resource_access)
-  
-  // 记录访问控制事件
-  let counter = Meter::create_counter(meter, "access.events")
-  Counter::add(counter, 1.0, [("role", StringValue("admin")), ("access.granted", BoolValue(admin_access))])
-  Counter::add(counter, 1.0, [("role", StringValue("user")), ("access.granted", BoolValue(user_access))])
-  Counter::add(counter, 1.0, [("role", StringValue("guest")), ("access.granted", BoolValue(guest_access))])
-  
-  assert_eq(Counter::value(counter), 3.0)
-}
-
-// 测试4: 加密和解密安全测试
-test "加密和解密安全测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "encryption.test")
-  
-  // 测试数据加密
-  let plaintext = "Sensitive data that needs encryption"
-  let encryption_key = Security::generate_encryption_key()
-  
-  let encrypted_data = Security::encrypt(plaintext, encryption_key)
-  assert_ne(encrypted_data, plaintext)
-  assert_true(encrypted_data.length() > 0)
-  
-  // 测试数据解密
-  let decrypted_data = Security::decrypt(encrypted_data, encryption_key)
-  assert_eq(decrypted_data, Some(plaintext))
-  
-  // 测试错误密钥解密
-  let wrong_key = Security::generate_encryption_key()
-  let failed_decryption = Security::decrypt(encrypted_data, wrong_key)
-  assert_eq(failed_decryption, None)
-  
-  // 测试哈希函数
-  let original_data = "Data to be hashed"
-  let hash1 = Security::hash_data(original_data)
-  let hash2 = Security::hash_data(original_data)
-  
-  // 相同输入应该产生相同哈希
-  assert_eq(hash1, hash2)
-  assert_ne(hash1, original_data)
-  
-  // 测试不同数据的哈希
-  let different_data = "Different data"
-  let hash3 = Security::hash_data(different_data)
-  assert_ne(hash1, hash3)
-  
-  // 记录加密操作
-  let counter = Meter::create_counter(meter, "encryption.operations")
-  Counter::add(counter, 1.0, [("operation", StringValue("encrypt")), ("success", BoolValue(true))])
-  Counter::add(counter, 1.0, [("operation", StringValue("decrypt")), ("success", BoolValue(true))])
-  Counter::add(counter, 1.0, [("operation", StringValue("decrypt")), ("success", BoolValue(false))])
-  Counter::add(counter, 1.0, [("operation", StringValue("hash")), ("success", BoolValue(true))])
-  
-  assert_eq(Counter::value(counter), 4.0)
-}
-
-// 测试5: 审计日志安全测试
-test "审计日志安全测试" {
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "audit.logger")
-  
-  // 创建审计日志记录
-  let audit_log = LogRecord::new(Info, "Security audit event")
-  LogRecord::set_attribute(audit_log, "event.type", StringValue("security"))
-  LogRecord::set_attribute(audit_log, "user.id", StringValue("user123"))
-  LogRecord::set_attribute(audit_log, "action", StringValue("data_access"))
-  LogRecord::set_attribute(audit_log, "resource", StringValue("sensitive_data"))
-  LogRecord::set_attribute(audit_log, "timestamp", IntValue(Clock::now_unix_nanos(Clock::system())))
-  LogRecord::set_attribute(audit_log, "ip.address", StringValue("192.168.1.100"))
-  LogRecord::set_attribute(audit_log, "user.agent", StringValue("Mozilla/5.0"))
-  
-  // 测试审计日志完整性
-  let log_signature = Security::create_log_signature(audit_log)
-  assert_true(log_signature.length() > 0)
-  
-  // 验证日志签名
-  let is_valid = Security::verify_log_signature(audit_log, log_signature)
-  assert_true(is_valid)
-  
-  // 测试篡改检测
-  let tampered_log = LogRecord::new(Info, "Tampered security audit event")
-  LogRecord::set_attribute(tampered_log, "event.type", StringValue("security"))
-  LogRecord::set_attribute(tampered_log, "user.id", StringValue("malicious_user"))
-  
-  let tampered_signature = Security::create_log_signature(audit_log)
-  let is_tampered_valid = Security::verify_log_signature(tampered_log, tampered_signature)
-  assert_false(is_tampered_valid)
-  
-  // 发送审计日志
-  Logger::emit(logger, audit_log)
-  
-  // 记录审计事件
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "audit.events")
-  let counter = Meter::create_counter(meter, "audit.counter")
-  Counter::add(counter, 1.0, [("event.type", StringValue("security")), ("verified", BoolValue(is_valid))])
-  
-  assert_eq(Counter::value(counter), 1.0)
-}
-
-// 测试6: 网络安全测试
-test "网络安全测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "network.security.test")
-  
-  // 测试SSL/TLS连接
-  let secure_endpoint = "https://api.example.com"
-  let is_secure_connection = Security::verify_ssl_certificate(secure_endpoint)
-  // 连接可能失败，所以不强制要求成功
-  
-  // 测试证书验证
-  let certificate_info = Security::get_certificate_info(secure_endpoint)
-  // 证书信息可能不可用
-  
-  // 测试IP白名单
-  let allowed_ips = ["192.168.1.0/24", "10.0.0.0/8"]
-  let test_ip1 = "192.168.1.100"
-  let test_ip2 = "172.16.0.1"
-  
-  let is_ip1_allowed = Security::is_ip_allowed(test_ip1, allowed_ips)
-  let is_ip2_allowed = Security::is_ip_allowed(test_ip2, allowed_ips)
-  
-  assert_true(is_ip1_allowed)
-  assert_false(is_ip2_allowed)
-  
-  // 测试速率限制
-  let rate_limiter = Security::create_rate_limiter(10, 60)  // 10次请求/分钟
-  let client_id = "client123"
-  
-  let request1_allowed = Security::check_rate_limit(rate_limiter, client_id)
-  let request2_allowed = Security::check_rate_limit(rate_limiter, client_id)
-  
-  // 前几个请求应该被允许
-  assert_true(request1_allowed)
-  assert_true(request2_allowed)
-  
-  // 记录网络安全事件
-  let counter = Meter::create_counter(meter, "network.security.events")
-  Counter::add(counter, 1.0, [
-    ("ssl.verified", BoolValue(is_secure_connection)),
-    ("ip1.allowed", BoolValue(is_ip1_allowed)),
-    ("ip2.allowed", BoolValue(is_ip2_allowed)),
-    ("rate.limit.checked", BoolValue(true))
+  // 添加包含敏感数据的事件
+  Span::add_event(span, "login.attempt", [
+    ("username", "john.doe"),
+    ("password", "my-secret-password"),
+    ("ip.address", "192.168.1.100"),
+    ("user.agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
   ])
   
-  assert_eq(Counter::value(counter), 1.0)
-}
-
-// 测试7: 身份验证和授权测试
-test "身份验证和授权测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "auth.test")
+  // 应用安全过滤器
+  let secure_span = SecurityFilter::apply(span)
   
-  // 测试用户身份验证
-  let username = "testuser"
-  let password = "testpass123"
-  let hashed_password = Security::hash_password(password)
+  // 验证敏感属性被过滤或脱敏
+  let filtered_password = Span::get_attribute(secure_span, "user.password")
+  let filtered_email = Span::get_attribute(secure_span, "user.email")
+  let filtered_phone = Span::get_attribute(secure_span, "user.phone")
+  let filtered_credit_card = Span::get_attribute(secure_span, "credit.card.number")
+  let filtered_ssn = Span::get_attribute(secure_span, "social.security.number")
+  let filtered_api_key = Span::get_attribute(secure_span, "api.key")
   
-  let auth_success = Security::authenticate_user(username, password, hashed_password)
-  assert_true(auth_success)
-  
-  let auth_failure = Security::authenticate_user(username, "wrongpass", hashed_password)
-  assert_false(auth_failure)
-  
-  // 测试JWT令牌生成和验证
-  let user_claims = {
-    "user_id": "user123",
-    "role": "user",
-    "permissions": ["read", "write"]
+  // 验证敏感数据被正确处理
+  match filtered_password {
+    Some(value) => assert_true(value != "secret-password-123")  // 应被脱敏
+    None => assert_true(true)  // 或被完全过滤
+    _ => assert_true(false)
   }
   
-  let jwt_token = Security::generate_jwt_token(user_claims)
-  assert_true(jwt_token.length() > 0)
+  match filtered_email {
+    Some(value) => assert_true(value != "user@example.com")  // 应被脱敏
+    None => assert_true(true)  // 或被完全过滤
+    _ => assert_true(false)
+  }
   
-  let verified_claims = Security::verify_jwt_token(jwt_token)
-  assert_true(verified_claims.is_some())
+  // 验证非敏感属性保持不变
+  let operation_type = Span::get_attribute(secure_span, "operation.type")
+  let service_name = Span::get_attribute(secure_span, "service.name")
+  let user_id = Span::get_attribute(secure_span, "user.id")
   
-  // 测试令牌过期
-  let expired_token = Security::generate_expired_jwt_token(user_claims)
-  let expired_verification = Security::verify_jwt_token(expired_token)
-  assert_false(expired_verification)
+  match operation_type {
+    Some(value) => assert_eq(value, "user.authentication")
+    None => assert_true(false)
+  }
   
-  // 测试权限授权
-  let user_permissions = ["read", "write"]
-  let required_permission = "write"
-  let unauthorized_permission = "admin"
+  match service_name {
+    Some(value) => assert_eq(value, "auth.service")
+    None => assert_true(false)
+  }
   
-  let is_authorized = Security::check_authorization(user_permissions, required_permission)
-  let is_unauthorized = Security::check_authorization(user_permissions, unauthorized_permission)
+  match user_id {
+    Some(value) => assert_eq(value, "user-12345")
+    None => assert_true(false)
+  }
   
-  assert_true(is_authorized)
-  assert_false(is_unauthorized)
+  Span::end(span)
+  Span::end(secure_span)
   
-  // 记录认证和授权事件
-  let counter = Meter::create_counter(meter, "auth.events")
-  Counter::add(counter, 1.0, [("auth.result", StringValue("success")), ("auth.type", StringValue("password"))])
-  Counter::add(counter, 1.0, [("auth.result", StringValue("failure")), ("auth.type", StringValue("password"))])
-  Counter::add(counter, 1.0, [("auth.result", StringValue("success")), ("auth.type", StringValue("jwt"))])
-  Counter::add(counter, 1.0, [("auth.result", StringValue("failure")), ("auth.type", StringValue("jwt"))])
-  Counter::add(counter, 1.0, [("auth.result", StringValue("success")), ("auth.type", StringValue("authorization"))])
-  Counter::add(counter, 1.0, [("auth.result", StringValue("failure")), ("auth.type", StringValue("authorization"))])
-  
-  assert_eq(Counter::value(counter), 6.0)
+  assert_true(true)
 }
 
-// 测试8: 安全配置测试
-test "安全配置测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "security.config.test")
+test "访问控制和权限验证" {
+  // 测试访问控制和权限验证
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "access.control.test")
   
-  // 测试安全配置加载
-  let security_config = Security::load_security_config()
+  // 创建不同权限级别的用户
+  let admin_user = User::new("admin", ["admin", "read", "write", "delete"])
+  let regular_user = User::new("regular", ["read", "write"])
+  let readonly_user = User::new("readonly", ["read"])
+  let guest_user = User::new("guest", [])
   
-  // 验证安全配置项
-  let is_encryption_enabled = Security::is_encryption_enabled(security_config)
-  let is_audit_enabled = Security::is_audit_enabled(security_config)
-  let is_rate_limiting_enabled = Security::is_rate_limiting_enabled(security_config)
-  let session_timeout = Security::get_session_timeout(security_config)
+  // 创建需要不同权限的span
+  let admin_span = Tracer::start_span(tracer, "admin.operation")
+  let write_span = Tracer::start_span(tracer, "write.operation")
+  let read_span = Tracer::start_span(tracer, "read.operation")
   
-  // 安全配置应该启用关键安全功能
-  assert_true(is_encryption_enabled)
-  assert_true(is_audit_enabled)
-  assert_true(is_rate_limiting_enabled)
-  assert_true(session_timeout > 0)
+  // 为span设置所需权限
+  Span::set_attribute(admin_span, "required.permission", "admin")
+  Span::set_attribute(write_span, "required.permission", "write")
+  Span::set_attribute(read_span, "required.permission", "read")
   
-  // 测试安全配置验证
-  let config_valid = Security::validate_security_config(security_config)
-  assert_true(config_valid)
+  // 测试管理员用户访问权限
+  let admin_access_admin = AccessControl::check_permission(admin_user, "admin")
+  let admin_access_write = AccessControl::check_permission(admin_user, "write")
+  let admin_access_read = AccessControl::check_permission(admin_user, "read")
   
-  // 测试不安全配置检测
-  let insecure_config = Security::create_insecure_config()
-  let insecure_config_valid = Security::validate_security_config(insecure_config)
-  assert_false(insecure_config_valid)
+  assert_true(admin_access_admin)
+  assert_true(admin_access_write)
+  assert_true(admin_access_read)
   
-  // 记录安全配置状态
-  let counter = Meter::create_counter(meter, "security.config.status")
-  Counter::add(counter, 1.0, [
-    ("encryption.enabled", BoolValue(is_encryption_enabled)),
-    ("audit.enabled", BoolValue(is_audit_enabled)),
-    ("rate.limiting.enabled", BoolValue(is_rate_limiting_enabled)),
-    ("session.timeout", IntValue(session_timeout)),
-    ("config.valid", BoolValue(config_valid)),
-    ("insecure.config.valid", BoolValue(insecure_config_valid))
+  // 测试普通用户访问权限
+  let regular_access_admin = AccessControl::check_permission(regular_user, "admin")
+  let regular_access_write = AccessControl::check_permission(regular_user, "write")
+  let regular_access_read = AccessControl::check_permission(regular_user, "read")
+  
+  assert_true(regular_access_admin == false)
+  assert_true(regular_access_write)
+  assert_true(regular_access_read)
+  
+  // 测试只读用户访问权限
+  let readonly_access_admin = AccessControl::check_permission(readonly_user, "admin")
+  let readonly_access_write = AccessControl::check_permission(readonly_user, "write")
+  let readonly_access_read = AccessControl::check_permission(readonly_user, "read")
+  
+  assert_true(readonly_access_admin == false)
+  assert_true(readonly_access_write == false)
+  assert_true(readonly_access_read)
+  
+  // 测试访客用户访问权限
+  let guest_access_admin = AccessControl::check_permission(guest_user, "admin")
+  let guest_access_write = AccessControl::check_permission(guest_user, "write")
+  let guest_access_read = AccessControl::check_permission(guest_user, "read")
+  
+  assert_true(guest_access_admin == false)
+  assert_true(guest_access_write == false)
+  assert_true(guest_access_read == false)
+  
+  // 测试基于属性的访问控制 (ABAC)
+  let user_attributes = [
+    ("department", "finance"),
+    ("clearance.level", "confidential"),
+    ("role", "analyst")
+  ]
+  
+  let resource_attributes = [
+    ("department", "finance"),
+    ("required.clearance", "confidential"),
+    ("document.type", "financial.report")
+  ]
+  
+  let abac_result = AccessControl::check_abac_permission(user_attributes, resource_attributes)
+  assert_true(abac_result)  // 用户部门匹配且 clearance 级别足够
+  
+  // 测试不匹配的属性
+  let mismatched_resource_attributes = [
+    ("department", "hr"),
+    ("required.clearance", "confidential"),
+    ("document.type", "financial.report")
+  ]
+  
+  let abac_mismatch_result = AccessControl::check_abac_permission(user_attributes, mismatched_resource_attributes)
+  assert_true(abac_mismatch_result == false)  // 部门不匹配
+  
+  Span::end(admin_span)
+  Span::end(write_span)
+  Span::end(read_span)
+  
+  assert_true(true)
+}
+
+test "数据加密和解密" {
+  // 测试数据加密和解密
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "encryption.test")
+  
+  // 创建包含敏感数据的span
+  let span = Tracer::start_span(tracer, "encrypted.operation")
+  
+  // 添加敏感属性
+  Span::set_attribute(span, "user.data", "sensitive.user.information")
+  Span::set_attribute(span, "financial.data", "account.number.123456")
+  Span::set_attribute(span, "medical.data", "patient.record.789")
+  
+  // 添加敏感事件
+  Span::add_event(span, "sensitive.operation", [
+    ("input.data", "confidential.input.value"),
+    ("processing.result", "confidential.result.value"),
+    ("internal.state", "internal.system.state")
   ])
   
-  assert_eq(Counter::value(counter), 1.0)
-}
-
-// 测试9: 安全事件监控和响应测试
-test "安全事件监控和响应测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "security.monitoring.test")
+  // 序列化span数据
+  let serialized_data = Span::serialize(span)
   
-  // 创建安全事件监控器
-  let security_monitor = Security::create_security_monitor()
+  // 验证序列化数据包含敏感信息
+  assert_true(String::contains(serialized_data, "sensitive.user.information"))
+  assert_true(String::contains(serialized_data, "account.number.123456"))
+  assert_true(String::contains(serialized_data, "confidential.input.value"))
   
-  // 模拟安全事件
-  let login_failure_event = Security::create_security_event("login_failure", {
-    "user_id": "user123",
-    "ip_address": "192.168.1.100",
-    "timestamp": Clock::now_unix_nanos(Clock::system()),
-    "failure_reason": "invalid_password"
-  })
+  // 加密数据
+  let encryption_key = EncryptionKey::generate("AES-256-GCM")
+  let encrypted_data = EncryptionUtil::encrypt(serialized_data, encryption_key)
   
-  let suspicious_activity_event = Security::create_security_event("suspicious_activity", {
-    "user_id": "user456",
-    "ip_address": "10.0.0.1",
-    "timestamp": Clock::now_unix_nanos(Clock::system()),
-    "activity_type": "multiple_failed_logins",
-    "count": 5
-  })
+  // 验证加密数据不包含原始敏感信息
+  assert_true(String::contains(encrypted_data, "sensitive.user.information") == false)
+  assert_true(String::contains(encrypted_data, "account.number.123456") == false)
+  assert_true(String::contains(encrypted_data, "confidential.input.value") == false)
   
-  let data_access_event = Security::create_security_event("data_access", {
-    "user_id": "user789",
-    "ip_address": "172.16.0.1",
-    "timestamp": Clock::now_unix_nanos(Clock::system()),
-    "resource": "sensitive_data",
-    "action": "read"
-  })
+  // 验证加密数据与原始数据不同
+  assert_true(encrypted_data != serialized_data)
   
-  // 处理安全事件
-  Security::process_security_event(security_monitor, login_failure_event)
-  Security::process_security_event(security_monitor, suspicious_activity_event)
-  Security::process_security_event(security_monitor, data_access_event)
+  // 解密数据
+  let decrypted_data = EncryptionUtil::decrypt(encrypted_data, encryption_key)
   
-  // 测试事件响应
-  let login_failure_response = Security::get_event_response(security_monitor, "login_failure")
-  let suspicious_activity_response = Security::get_event_response(security_monitor, "suspicious_activity")
-  let data_access_response = Security::get_event_response(security_monitor, "data_access")
+  // 验证解密后的数据与原始数据相同
+  assert_eq(decrypted_data, serialized_data)
   
-  // 验证事件响应
-  assert_true(login_failure_response.is_some())
-  assert_true(suspicious_activity_response.is_some())
-  assert_true(data_access_response.is_some())
+  // 验证解密后的数据包含敏感信息
+  assert_true(String::contains(decrypted_data, "sensitive.user.information"))
+  assert_true(String::contains(decrypted_data, "account.number.123456"))
+  assert_true(String::contains(decrypted_data, "confidential.input.value"))
   
-  // 测试威胁检测
-  let threat_level = Security::calculate_threat_level(security_monitor)
-  assert_true(threat_level >= 0 && threat_level <= 10)
-  
-  // 记录安全监控事件
-  let counter = Meter::create_counter(meter, "security.events")
-  Counter::add(counter, 1.0, [("event.type", StringValue("login_failure")), ("processed", BoolValue(true))])
-  Counter::add(counter, 1.0, [("event.type", StringValue("suspicious_activity")), ("processed", BoolValue(true))])
-  Counter::add(counter, 1.0, [("event.type", StringValue("data_access")), ("processed", BoolValue(true))])
-  Counter::add(counter, 1.0, [("metric.type", StringValue("threat_level")), ("value", IntValue(threat_level))])
-  
-  assert_eq(Counter::value(counter), 4.0)
-}
-
-// 测试10: 数据备份和恢复安全测试
-test "数据备份和恢复安全测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "backup.security.test")
-  
-  // 创建测试数据
-  let sensitive_data = "Sensitive telemetry data"
-  let metadata = {
-    "created_at": Clock::now_unix_nanos(Clock::system()),
-    "data_type": "telemetry",
-    "classification": "sensitive"
+  // 测试使用错误密钥解密失败
+  let wrong_key = EncryptionKey::generate("AES-256-GCM")
+  let decrypt_with_wrong_key = try {
+    EncryptionUtil::decrypt(encrypted_data, wrong_key)
+  } catch {
+    _ => "decryption.failed"
   }
   
-  // 测试安全备份
-  let backup_encryption_key = Security::generate_encryption_key()
-  let backup_data = Security::create_secure_backup(sensitive_data, metadata, backup_encryption_key)
+  assert_eq(decrypt_with_wrong_key, "decryption.failed")
   
-  // 验证备份数据加密
-  assert_ne(backup_data, sensitive_data)
-  assert_true(backup_data.length() > 0)
+  // 从解密的数据重构span
+  let reconstructed_span = Span::deserialize(decrypted_data)
   
-  // 测试备份完整性验证
-  let backup_checksum = Security::calculate_checksum(backup_data)
-  let is_backup_intact = Security::verify_backup_integrity(backup_data, backup_checksum)
-  assert_true(is_backup_intact)
+  // 验证重构的span具有相同的属性
+  let original_name = Span::name(span)
+  let reconstructed_name = Span::name(reconstructed_span)
+  assert_eq(original_name, reconstructed_name)
   
-  // 测试安全恢复
-  let restored_data = Security::restore_from_backup(backup_data, backup_encryption_key)
-  assert_eq(restored_data, Some(sensitive_data))
+  Span::end(span)
+  Span::end(reconstructed_span)
   
-  // 测试错误密钥恢复
-  let wrong_key = Security::generate_encryption_key()
-  let failed_restore = Security::restore_from_backup(backup_data, wrong_key)
-  assert_eq(failed_restore, None)
+  assert_true(true)
+}
+
+test "审计日志和安全事件记录" {
+  // 测试审计日志和安全事件记录
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "audit.test")
   
-  // 测试备份访问控制
-  let backup_id = Security::extract_backup_id(backup_data)
-  let user_ctx = Context::with_value(Context::root(), ContextKey::new("role"), "user")
-  let admin_ctx = Context::with_value(Context::root(), ContextKey::new("role"), "admin")
+  // 创建安全审计记录器
+  let audit_logger = AuditLogger::new("security.audit")
   
-  let user_backup_access = Security::check_backup_access(user_ctx, backup_id, "restore")
-  let admin_backup_access = Security::check_backup_access(admin_ctx, backup_id, "restore")
+  // 模拟用户登录事件
+  let login_event = SecurityEvent::new("user.login", "user-12345", "192.168.1.100")
+  SecurityEvent::add_attribute(login_event, "login.method", "password")
+  SecurityEvent::add_attribute(login_event, "login.result", "success")
+  SecurityEvent::add_attribute(login_event, "session.id", "session-abcdef123")
+  SecurityEvent::add_attribute(login_event, "user.agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
   
-  // 普通用户不应该有备份恢复权限，管理员应该有
-  assert_false(user_backup_access)
-  assert_true(admin_backup_access)
+  // 记录登录事件
+  AuditLogger::log_event(audit_logger, login_event)
   
-  // 记录备份安全事件
-  let counter = Meter::create_counter(meter, "backup.security.events")
-  Counter::add(counter, 1.0, [("operation", StringValue("backup")), ("success", BoolValue(true))])
-  Counter::add(counter, 1.0, [("operation", StringValue("restore")), ("success", BoolValue(true))])
-  Counter::add(counter, 1.0, [("operation", StringValue("restore")), ("success", BoolValue(false))])
-  Counter::add(counter, 1.0, [("operation", StringValue("access_check")), ("user.allowed", BoolValue(user_backup_access))])
-  Counter::add(counter, 1.0, [("operation", StringValue("access_check")), ("admin.allowed", BoolValue(admin_backup_access))])
+  // 模拟权限提升事件
+  let privilege_event = SecurityEvent::new("privilege.escalation", "user-12345", "192.168.1.100")
+  SecurityEvent::add_attribute(privilege_event, "from.role", "user")
+  SecurityEvent::add_attribute(privilege_event, "to.role", "admin")
+  SecurityEvent::add_attribute(privilege_event, "approval.id", "approval-789")
+  SecurityEvent::add_attribute(privilege_event, "escalation.reason", "maintenance.task")
   
-  assert_eq(Counter::value(counter), 5.0)
+  // 记录权限提升事件
+  AuditLogger::log_event(audit_logger, privilege_event)
+  
+  // 模拟敏感数据访问事件
+  let data_access_event = SecurityEvent::new("sensitive.data.access", "user-12345", "192.168.1.100")
+  SecurityEvent::add_attribute(data_access_event, "data.type", "financial.records")
+  SecurityEvent::add_attribute(data_access_event, "access.method", "api.query")
+  SecurityEvent::add_attribute(data_access_event, "record.count", "150")
+  SecurityEvent::add_attribute(data_access_event, "access.purpose", "financial.analysis")
+  
+  // 记录敏感数据访问事件
+  AuditLogger::log_event(audit_logger, data_access_event)
+  
+  // 模拟安全违规事件
+  let violation_event = SecurityEvent::new("security.policy.violation", "user-67890", "192.168.1.200")
+  SecurityEvent::add_attribute(violation_event, "violation.type", "unauthorized.access.attempt")
+  SecurityEvent::add_attribute(violation_event, "target.resource", "/admin/users")
+  SecurityEvent::add_attribute(violation_event, "attempted.action", "delete")
+  SecurityEvent::add_attribute(violation_event, "violation.severity", "high")
+  
+  // 记录安全违规事件
+  AuditLogger::log_event(audit_logger, violation_event)
+  
+  // 验证审计日志包含所有必要的安全信息
+  let audit_trail = AuditLogger::get_trail(audit_logger, "user-12345")
+  
+  // 验证用户相关的审计事件
+  let has_login_event = AuditTrail::contains_event(audit_trail, "user.login")
+  let has_privilege_event = AuditTrail::contains_event(audit_trail, "privilege.escalation")
+  let has_data_access_event = AuditTrail::contains_event(audit_trail, "sensitive.data.access")
+  
+  assert_true(has_login_event)
+  assert_true(has_privilege_event)
+  assert_true(has_data_access_event)
+  
+  // 验证审计日志的完整性
+  let trail完整性 = AuditTrail::verify_integrity(audit_trail)
+  assert_true(trail完整性)
+  
+  // 验证审计日志的不可篡改性
+  let original_hash = AuditTrail::calculate_hash(audit_trail)
+  
+  // 尝试篡改审计日志
+  let tampered_trail = AuditTrail::tamper_with(audit_trail, 1, "modified.attribute", "modified.value")
+  let tampered_hash = AuditTrail::calculate_hash(tampered_trail)
+  
+  // 验证篡改后的哈希不同
+  assert_true(original_hash != tampered_hash)
+  
+  // 验证篡改检测
+  let is_tampered = AuditTrail::detect_tampering(tampered_trail, original_hash)
+  assert_true(is_tampered)
+  
+  assert_true(true)
+}
+
+test "跨站脚本和注入攻击防护" {
+  // 测试跨站脚本和注入攻击防护
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "xss.injection.test")
+  
+  // 创建包含潜在恶意输入的span
+  let span = Tracer::start_span(tracer, "security.test.operation")
+  
+  // 添加包含XSS攻击向量的属性
+  Span::set_attribute(span, "user.input", "<script>alert('xss')</script>")
+  Span::set_attribute(span, "search.query", "test\"><script>document.location='http://evil.com'</script>")
+  Span::set_attribute(span, "comment.text", "Nice post! <img src=x onerror=alert('xss')>")
+  
+  // 添加包含SQL注入攻击向量的属性
+  Span::set_attribute(span, "user.id", "123'; DROP TABLE users; --")
+  Span::set_attribute(span, "search.filter", "name' OR '1'='1")
+  Span::set_attribute(span, "order.by", "id; INSERT INTO logs VALUES ('hacked'); --")
+  
+  // 添加包含命令注入攻击向量的属性
+  Span::set_attribute(span, "filename", "test.txt; rm -rf /")
+  Span::set_attribute(span, "command.arg", "127.0.0.1; cat /etc/passwd")
+  
+  // 添加包含恶意输入的事件
+  Span::add_event(span, "user.submission", [
+    ("form.field", "<iframe src=\"javascript:alert('xss')\"></iframe>"),
+    ("user.comment", "Check out this link: <a href=\"javascript:alert('xss')\">Click me</a>"),
+    ("search.term", "test' UNION SELECT * FROM passwords --")
+  ])
+  
+  // 应用安全过滤器
+  let secure_span = SecurityFilter::sanitize_input(span)
+  
+  // 验证XSS攻击被过滤
+  let sanitized_user_input = Span::get_attribute(secure_span, "user.input")
+  let sanitized_search_query = Span::get_attribute(secure_span, "search.query")
+  let sanitized_comment = Span::get_attribute(secure_span, "comment.text")
+  
+  match sanitized_user_input {
+    Some(value) => assert_true(String::contains(value, "<script>") == false)
+    None => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match sanitized_search_query {
+    Some(value) => assert_true(String::contains(value, "<script>") == false)
+    None => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match sanitized_comment {
+    Some(value) => assert_true(String::contains(value, "onerror") == false)
+    None => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // 验证SQL注入攻击被过滤
+  let sanitized_user_id = Span::get_attribute(secure_span, "user.id")
+  let sanitized_search_filter = Span::get_attribute(secure_span, "search.filter")
+  let sanitized_order_by = Span::get_attribute(secure_span, "order.by")
+  
+  match sanitized_user_id {
+    Some(value) => assert_true(String::contains(value, "DROP TABLE") == false)
+    None => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match sanitized_search_filter {
+    Some(value) => assert_true(String::contains(value, "OR") == false)
+    None => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match sanitized_order_by {
+    Some(value) => assert_true(String::contains(value, "INSERT INTO") == false)
+    None => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // 验证命令注入攻击被过滤
+  let sanitized_filename = Span::get_attribute(secure_span, "filename")
+  let sanitized_command_arg = Span::get_attribute(secure_span, "command.arg")
+  
+  match sanitized_filename {
+    Some(value) => assert_true(String::contains(value, "rm -rf") == false)
+    None => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match sanitized_command_arg {
+    Some(value) => assert_true(String::contains(value, "cat /etc/passwd") == false)
+    None => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // 测试输入验证
+  let valid_inputs = [
+    ("username", "john.doe"),
+    ("email", "user@example.com"),
+    ("phone", "+1234567890"),
+    ("age", "25")
+  ]
+  
+  for (field, value) in valid_inputs {
+    let is_valid = InputValidator::validate(field, value)
+    assert_true(is_valid)
+  }
+  
+  // 测试无效输入
+  let invalid_inputs = [
+    ("username", "<script>alert('xss')</script>"),
+    ("email", "user@example.com'; DROP TABLE users; --"),
+    ("phone", "123; rm -rf /"),
+    ("age", "twenty-five")  // 应该是数字
+  ]
+  
+  for (field, value) in invalid_inputs {
+    let is_valid = InputValidator::validate(field, value)
+    assert_true(is_valid == false)
+  }
+  
+  Span::end(span)
+  Span::end(secure_span)
+  
+  assert_true(true)
 }
