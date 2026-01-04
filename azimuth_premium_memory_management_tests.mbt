@@ -1,652 +1,401 @@
-// Azimuth Memory Management and Resource Cleanup Tests
-// This file contains test cases for memory management and resource cleanup
+// Azimuth 高级内存管理和资源清理测试用例
+// 专注于内存泄漏检测、资源生命周期管理和自动清理机制
 
-// Test 1: Resource Lifecycle Management
-test "资源生命周期管理" {
-  // 定义资源类型
-  type Resource[T] = {
-    id: String,
-    data: T,
-    created_at: Int,
-    last_accessed: Int,
-    reference_count: Int
+// 测试1: 自动内存管理验证
+test "自动内存管理验证测试" {
+  let memory_tracker = MemoryTracker::new()
+  let initial_memory = MemoryTracker::get_allocated_memory(memory_tracker)
+  
+  // 创建大量对象
+  let objects = []
+  for i in 0..10000 {
+    let obj = LargeObject::new(1024) // 1KB对象
+    objects.push(obj)
   }
   
-  // 资源池
-  type ResourcePool[T] = {
-    resources: Map[String, Resource[T]],
-    max_size: Int,
-    cleanup_threshold: Int
-  }
+  let peak_memory = MemoryTracker::get_allocated_memory(memory_tracker)
+  assert_true(peak_memory > initial_memory + 10000 * 1024)
   
-  // 创建资源池
-  let create_resource_pool = fn(max_size: Int, cleanup_threshold: Int) {
-    {
-      resources: Map::empty(),
-      max_size,
-      cleanup_threshold
-    }
-  }
+  // 清理对象引用
+  objects.clear()
   
-  // 添加资源到池
-  let add_resource = fn(pool: ResourcePool[T], id: String, data: T) {
-    let now = Time::now()
-    let resource = {
-      id,
-      data,
-      created_at: now,
-      last_accessed: now,
-      reference_count: 1
-    }
-    
-    let updated_resources = Map::insert(pool.resources, id, resource)
-    
-    // 检查是否需要清理
-    let needs_cleanup = updated_resources.size() > pool.cleanup_threshold
-    let final_resources = if needs_cleanup {
-      cleanup_old_resources(updated_resources, pool.max_size)
-    } else {
-      updated_resources
-    }
-    
-    {
-      ...pool,
-      resources: final_resources
-    }
-  }
+  // 触发垃圾回收
+  GarbageCollector::collect()
   
-  // 清理旧资源
-  let cleanup_old_resources = fn(resources: Map[String, Resource[T]], max_size: Int) {
-    // 按最后访问时间排序
-    let resource_list = resources.to_array()
-      .sort(fn(a, b) {
-        let (_, resource_a) = a
-        let (_, resource_b) = b
-        if resource_a.last_accessed < resource_b.last_accessed { -1 }
-        else if resource_a.last_accessed > resource_b.last_accessed { 1 }
-        else { 0 }
-      })
-    
-    // 保留最新的max_size个资源
-    let keep_count = if resource_list.length() > max_size {
-      max_size
-    } else {
-      resource_list.length()
-    }
-    
-    let kept_resources = resource_list.slice(0, keep_count)
-    let result = Map::empty()
-    
-    for (id, resource) in kept_resources {
-      let _ = Map::insert(result, id, resource)
-    }
-    
-    result
-  }
+  let final_memory = MemoryTracker::get_allocated_memory(memory_tracker)
+  let memory_recovered = peak_memory - final_memory
   
-  // 获取资源
-  let get_resource = fn(pool: ResourcePool[T], id: String) {
-    match Map::get(pool.resources, id) {
-      Some(resource) => {
-        // 更新最后访问时间和引用计数
-        let updated_resource = {
-          ...resource,
-          last_accessed: Time::now(),
-          reference_count: resource.reference_count + 1
-        }
-        let updated_resources = Map::insert(pool.resources, id, updated_resource)
-        
-        {
-          pool: {
-            ...pool,
-            resources: updated_resources
-          },
-          resource: Some(updated_resource)
-        }
-      }
-      None => {
-        {
-          pool,
-          resource: None
-        }
-      }
-    }
-  }
-  
-  // 释放资源
-  let release_resource = fn(pool: ResourcePool[T], id: String) {
-    match Map::get(pool.resources, id) {
-      Some(resource) => {
-        let new_ref_count = resource.reference_count - 1
-        
-        if new_ref_count <= 0 {
-          // 完全移除资源
-          let updated_resources = Map::remove(pool.resources, id)
-          {
-            ...pool,
-            resources: updated_resources
-          }
-        } else {
-          // 减少引用计数
-          let updated_resource = {
-            ...resource,
-            reference_count: new_ref_count
-          }
-          let updated_resources = Map::insert(pool.resources, id, updated_resource)
-          {
-            ...pool,
-            resources: updated_resources
-          }
-        }
-      }
-      None => pool
-    }
-  }
-  
-  // 测试资源池创建
-  let pool = create_resource_pool(3, 5)
-  assert_eq(pool.max_size, 3)
-  assert_eq(pool.cleanup_threshold, 5)
-  
-  // 测试添加资源
-  let pool_with_resource = add_resource(pool, "res1", "data1")
-  assert_eq(pool_with_resource.resources.size(), 1)
-  
-  let pool_with_more_resources = add_resource(pool_with_resource, "res2", "data2")
-  let pool_with_even_more = add_resource(pool_with_more_resources, "res3", "data3")
-  
-  // 测试获取资源
-  let get_result = get_resource(pool_with_even_more, "res2")
-  match get_result.resource {
-    Some(resource) => {
-      assert_eq(resource.id, "res2")
-      assert_eq(resource.reference_count, 2)  // 初始为1，获取后+1
-    }
-    None => assert_true(false)
-  }
-  
-  // 测试释放资源
-  let pool_after_release = release_resource(get_result.pool, "res2")
-  match Map::get(pool_after_release.resources, "res2") {
-    Some(resource) => {
-      assert_eq(resource.reference_count, 1)  // 从2减到1
-    }
-    None => assert_true(false)
-  }
-  
-  // 测试完全释放
-  let pool_after_full_release = release_resource(pool_after_release, "res2")
-  match Map::get(pool_after_full_release.resources, "res2") {
-    Some(_) => assert_true(false)  // 应该被移除
-    None => assert_true(true)
-  }
+  // 验证大部分内存被回收
+  assert_true(memory_recovered > 10000 * 1024 * 0.8)
 }
 
-// Test 2: Memory Leak Detection
-test "内存泄漏检测" {
-  // 定义内存使用情况
-  type MemoryUsage = {
-    allocated: Int,
-    freed: Int,
-    peak_usage: Int,
-    allocations: Array[Allocation]
+// 测试2: 资源生命周期管理
+test "资源生命周期管理测试" {
+  let resource_manager = ResourceManager::new()
+  let resource_ids = []
+  
+  // 创建多个资源
+  for i in 0..100 {
+    let resource_id = ResourceManager::create_resource(resource_manager, "test_resource_" + i.to_string())
+    resource_ids.push(resource_id)
+    
+    // 验证资源已创建
+    assert_true(ResourceManager::resource_exists(resource_manager, resource_id))
   }
   
-  type Allocation = {
-    id: String,
-    size: Int,
-    timestamp: Int,
-    freed: Bool
+  // 验证所有资源都存在
+  assert_eq(ResourceManager::get_resource_count(resource_manager), 100)
+  
+  // 删除一半资源
+  for i in 0..50 {
+    ResourceManager::delete_resource(resource_manager, resource_ids[i])
+    assert_false(ResourceManager::resource_exists(resource_manager, resource_ids[i]))
   }
   
-  // 内存跟踪器
-  type MemoryTracker = {
-    usage: MemoryUsage,
-    leak_threshold: Int
-  }
+  // 验证资源计数
+  assert_eq(ResourceManager::get_resource_count(resource_manager), 50)
   
-  // 创建内存跟踪器
-  let create_memory_tracker = fn(leak_threshold: Int) {
-    {
-      usage: {
-        allocated: 0,
-        freed: 0,
-        peak_usage: 0,
-        allocations: []
-      },
-      leak_threshold
-    }
-  }
+  // 清理剩余资源
+  ResourceManager::cleanup_all_resources(resource_manager)
   
-  // 分配内存
-  let allocate_memory = fn(tracker: MemoryTracker, size: Int) {
-    let allocation_id = "alloc-" + Time::now().to_string()
-    let allocation = {
-      id: allocation_id,
-      size,
-      timestamp: Time::now(),
-      freed: false
-    }
-    
-    let new_allocated = tracker.usage.allocated + size
-    let new_peak = if new_allocated > tracker.usage.peak_usage {
-      new_allocated
-    } else {
-      tracker.usage.peak_usage
-    }
-    
-    let updated_usage = {
-      allocated: new_allocated,
-      freed: tracker.usage.freed,
-      peak_usage: new_peak,
-      allocations: tracker.usage.allocations.push(allocation)
-    }
-    
-    {
-      tracker: {
-        ...tracker,
-        usage: updated_usage
-      },
-      allocation_id
-    }
-  }
-  
-  // 释放内存
-  let free_memory = fn(tracker: MemoryTracker, allocation_id: String) {
-    let updated_allocations = tracker.usage.allocations.map(fn(allocation) {
-      if allocation.id == allocation_id && not allocation.freed {
-        {
-          ...allocation,
-          freed: true
-        }
-      } else {
-        allocation
-      }
-    })
-    
-    // 找到要释放的分配
-    let allocation_to_free = tracker.usage.allocations.find(fn(a) { a.id == allocation_id })
-    let freed_size = match allocation_to_free {
-      Some(allocation) => if allocation.freed { 0 } else { allocation.size }
-      None => 0
-    }
-    
-    let updated_usage = {
-      allocated: tracker.usage.allocated,
-      freed: tracker.usage.freed + freed_size,
-      peak_usage: tracker.usage.peak_usage,
-      allocations: updated_allocations
-    }
-    
-    {
-      ...tracker,
-      usage: updated_usage
-    }
-  }
-  
-  // 检测内存泄漏
-  let detect_memory_leaks = fn(tracker: MemoryTracker) {
-    let current_usage = tracker.usage.allocated - tracker.usage.freed
-    let leaked_allocations = tracker.usage.allocations.filter(fn(allocation) {
-      not allocation.freed
-    })
-    
-    let has_leak = current_usage > tracker.leak_threshold
-    
-    {
-      has_leak,
-      current_usage,
-      leaked_allocations,
-      leak_count: leaked_allocations.length()
-    }
-  }
-  
-  // 测试内存跟踪
-  let tracker = create_memory_tracker(100)
-  
-  // 分配内存
-  let result1 = allocate_memory(tracker, 50)
-  let result2 = allocate_memory(result1.tracker, 30)
-  let result3 = allocate_memory(result2.tracker, 25)
-  
-  // 验证分配
-  assert_eq(result3.tracker.usage.allocated, 105)  // 50 + 30 + 25
-  assert_eq(result3.tracker.usage.peak_usage, 105)
-  assert_eq(result3.tracker.usage.allocations.length(), 3)
-  
-  // 释放部分内存
-  let tracker_after_free1 = free_memory(result3.tracker, result1.allocation_id)
-  assert_eq(tracker_after_free1.usage.freed, 50)
-  
-  let tracker_after_free2 = free_memory(tracker_after_free1, result2.allocation_id)
-  assert_eq(tracker_after_free2.usage.freed, 80)  // 50 + 30
-  
-  // 检测内存泄漏
-  let leak_result = detect_memory_leaks(tracker_after_free2)
-  assert_eq(leak_result.current_usage, 25)  // 105 - 80
-  assert_false(leak_result.has_leak)  // 25 < 100 (阈值)
-  assert_eq(leak_result.leak_count, 1)  // 只有一个未释放的分配
-  
-  // 创建泄漏情况
-  let leaky_tracker = create_memory_tracker(10)
-  let leaky_result1 = allocate_memory(leaky_tracker, 20)
-  let leaky_result2 = allocate_memory(leaky_result1.tracker, 15)
-  
-  let leaky_detection = detect_memory_leaks(leaky_result2.tracker)
-  assert_true(leaky_detection.has_leak)  // 35 > 10 (阈值)
-  assert_eq(leaky_detection.leak_count, 2)  // 两个未释放的分配
+  // 验证所有资源被清理
+  assert_eq(ResourceManager::get_resource_count(resource_manager), 0)
 }
 
-// Test 3: Resource Pool with Automatic Cleanup
-test "带自动清理的资源池" {
-  // 定义可清理资源
-  type CleanableResource = {
-    id: String,
-    data: String,
-    created_at: Int,
-    last_accessed: Int,
-    cleanup_fn: Option[() -> Unit]
+// 测试3: 内存泄漏检测
+test "内存泄漏检测测试" {
+  let leak_detector = MemoryLeakDetector::new()
+  LeakDetector::start_monitoring(leak_detector)
+  
+  // 模拟内存泄漏场景
+  let leaked_objects = []
+  for i in 0..1000 {
+    let obj = LeakyObject::new(512) // 512B对象
+    leaked_objects.push(obj)
   }
   
-  // 资源池配置
-  type PoolConfig = {
-    max_size: Int,
-    idle_timeout_ms: Int,
-    cleanup_interval_ms: Int
-  }
+  // 故意不清理一些对象
+  let intentionally_leaked = leaked_objects.slice(0, 100)
+  let properly_managed = leaked_objects.slice(100, 1000)
   
-  // 增强的资源池
-  type EnhancedResourcePool = {
-    resources: Map[String, CleanableResource],
-    config: PoolConfig,
-    last_cleanup: Int
-  }
+  // 清理正确管理的对象
+  properly_managed.clear()
   
-  // 创建增强资源池
-  let create_enhanced_pool = fn(config: PoolConfig) {
-    {
-      resources: Map::empty(),
-      config,
-      last_cleanup: Time::now()
+  // 触发垃圾回收
+  GarbageCollector::collect()
+  
+  // 检测内存泄漏
+  let leak_report = LeakDetector::generate_report(leak_detector)
+  let leaked_memory = LeakReport::get_leaked_memory(leak_report)
+  
+  // 验证检测到预期的内存泄漏
+  assert_true(leaked_memory >= 100 * 512 * 0.8)
+  
+  LeakDetector::stop_monitoring(leak_detector)
+}
+
+// 测试4: 弱引用和循环引用处理
+test "弱引用和循环引用处理测试" {
+  let weak_ref_tracker = WeakReferenceTracker::new()
+  
+  // 创建循环引用对象
+  let obj_a = CyclicObject::new("A")
+  let obj_b = CyclicObject::new("B")
+  
+  // 建立循环引用
+  CyclicObject::set_reference(obj_a, obj_b)
+  CyclicObject::set_reference(obj_b, obj_a)
+  
+  // 创建弱引用
+  let weak_a = WeakReference::new(obj_a)
+  let weak_b = WeakReference::new(obj_b)
+  
+  // 验证弱引用有效
+  assert_true(WeakReference::is_valid(weak_a))
+  assert_true(WeakReference::is_valid(weak_b))
+  
+  // 清除强引用
+  obj_a = None
+  obj_b = None
+  
+  // 触发垃圾回收
+  GarbageCollector::collect()
+  
+  // 验证循环引用被正确回收
+  assert_false(WeakReference::is_valid(weak_a))
+  assert_false(WeakReference::is_valid(weak_b))
+}
+
+// 测试5: 大对象内存管理
+test "大对象内存管理测试" {
+  let large_object_manager = LargeObjectManager::new()
+  let object_sizes = [1024 * 1024, 2 * 1024 * 1024, 5 * 1024 * 1024] // 1MB, 2MB, 5MB
+  let object_handles = []
+  
+  // 创建大对象
+  for size in object_sizes {
+    let handle = LargeObjectManager::allocate(large_object_manager, size)
+    object_handles.push(handle)
+    
+    // 验证对象已分配
+    assert_true(LargeObjectManager::is_allocated(large_object_manager, handle))
+    
+    // 填充数据
+    let data = LargeObjectManager::get_data(large_object_manager, handle)
+    for i in 0..size {
+      data[i] = (i % 256).to_byte()
     }
   }
   
-  // 添加资源
-  let add_cleanable_resource = fn(pool: EnhancedResourcePool, id: String, data: String, cleanup_fn: Option[() -> Unit>) {
-    let now = Time::now()
-    let resource = {
-      id,
-      data,
-      created_at: now,
-      last_accessed: now,
-      cleanup_fn
-    }
-    
-    let updated_resources = Map::insert(pool.resources, id, resource)
-    
-    // 检查是否需要清理
-    let needs_cleanup = (now - pool.last_cleanup) > pool.config.cleanup_interval_ms
-    let final_resources = if needs_cleanup {
-      cleanup_idle_resources(updated_resources, pool.config.idle_timeout_ms, now)
-    } else {
-      updated_resources
-    }
-    
-    {
-      resources: final_resources,
-      config: pool.config,
-      last_cleanup: if needs_cleanup { now } else { pool.last_cleanup }
-    }
+  // 验证内存使用
+  let total_memory = LargeObjectManager::get_total_memory_usage(large_object_manager)
+  let expected_memory = 1024 * 1024 + 2 * 1024 * 1024 + 5 * 1024 * 1024
+  assert_true(total_memory >= expected_memory * 0.9)
+  
+  // 释放大对象
+  for handle in object_handles {
+    LargeObjectManager::deallocate(large_object_manager, handle)
+    assert_false(LargeObjectManager::is_allocated(large_object_manager, handle))
   }
   
-  // 清理空闲资源
-  let cleanup_idle_resources = fn(resources: Map[String, CleanableResource], idle_timeout_ms: Int, now: Int) {
-    let result = Map::empty()
+  // 验证内存被释放
+  let final_memory = LargeObjectManager::get_total_memory_usage(large_object_manager)
+  assert_true(final_memory < expected_memory * 0.1)
+}
+
+// 测试6: 内存池管理
+test "内存池管理测试" {
+  let memory_pool = MemoryPool::new(1024, 100) // 1KB块，100个块
+  let allocated_blocks = []
+  
+  // 分配所有内存块
+  for i in 0..100 {
+    let block = MemoryPool::allocate(memory_pool)
+    allocated_blocks.push(block)
+    assert_true(MemoryPool::is_valid_block(memory_pool, block))
+  }
+  
+  // 验证内存池已满
+  assert_true(MemoryPool::is_full(memory_pool))
+  
+  // 尝试分配更多块（应该失败）
+  let extra_block = MemoryPool::try_allocate(memory_pool)
+  assert_eq(extra_block, None)
+  
+  // 释放一半块
+  for i in 0..50 {
+    MemoryPool::deallocate(memory_pool, allocated_blocks[i])
+  }
+  
+  // 验证内存池有可用空间
+  assert_false(MemoryPool::is_full(memory_pool))
+  assert_eq(MemoryPool::get_available_count(memory_pool), 50)
+  
+  // 重新分配块
+  for i in 0..50 {
+    let block = MemoryPool::allocate(memory_pool)
+    assert_true(MemoryPool::is_valid_block(memory_pool, block))
+  }
+  
+  // 清理所有块
+  for block in allocated_blocks {
+    MemoryPool::deallocate(memory_pool, block)
+  }
+  
+  // 验证所有块都可用
+  assert_eq(MemoryPool::get_available_count(memory_pool), 100)
+}
+
+// 测试7: 智能指针资源管理
+test "智能指针资源管理测试" {
+  let resource_registry = ResourceRegistry::new()
+  let smart_pointers = []
+  
+  // 创建智能指针管理的资源
+  for i in 0..50 {
+    let resource = ExpensiveResource::new("resource_" + i.to_string())
+    let smart_ptr = SmartPointer::new(resource, resource_registry)
+    smart_pointers.push(smart_ptr)
     
-    for (id, resource) in resources {
-      let idle_time = now - resource.last_accessed
+    // 验证资源被注册
+    assert_true(ResourceRegistry::is_resource_registered(resource_registry, resource))
+  }
+  
+  // 验证引用计数
+  for ptr in smart_pointers {
+    assert_eq(SmartPointer::get_reference_count(ptr), 1)
+  }
+  
+  // 创建一些共享引用
+  let shared_pointers = []
+  for i in 0..25 {
+    let shared_ptr = SmartPointer::clone(smart_pointers[i])
+    shared_pointers.push(shared_ptr)
+    assert_eq(SmartPointer::get_reference_count(smart_pointers[i]), 2)
+  }
+  
+  // 清理共享指针
+  shared_pointers.clear()
+  
+  // 验证引用计数减少
+  for i in 0..25 {
+    assert_eq(SmartPointer::get_reference_count(smart_pointers[i]), 1)
+  }
+  
+  // 清理所有智能指针
+  smart_pointers.clear()
+  
+  // 触发资源清理
+  ResourceRegistry::cleanup_unreferenced_resources(resource_registry)
+  
+  // 验证所有资源被清理
+  assert_eq(ResourceRegistry::get_registered_count(resource_registry), 0)
+}
+
+// 测试8: 缓冲区管理器测试
+test "缓冲区管理器测试" {
+  let buffer_manager = BufferManager::new()
+  let buffer_handles = []
+  
+  // 分配不同大小的缓冲区
+  let buffer_sizes = [256, 512, 1024, 2048, 4096]
+  for size in buffer_sizes {
+    for i in 0..10 {
+      let handle = BufferManager::allocate_buffer(buffer_manager, size)
+      buffer_handles.push(handle)
       
-      if idle_time > idle_timeout_ms {
-        // 执行清理函数
-        match resource.cleanup_fn {
-          Some(cleanup_fn) => cleanup_fn()
-          None => ()
-        }
-      } else {
-        // 保留资源
-        let _ = Map::insert(result, id, resource)
-      }
-    }
-    
-    result
-  }
-  
-  // 获取资源
-  let get_cleanable_resource = fn(pool: EnhancedResourcePool, id: String) {
-    match Map::get(pool.resources, id) {
-      Some(resource) => {
-        let updated_resource = {
-          ...resource,
-          last_accessed: Time::now()
-        }
-        let updated_resources = Map::insert(pool.resources, id, updated_resource)
-        
-        {
-          pool: {
-            ...pool,
-            resources: updated_resources
-          },
-          resource: Some(updated_resource)
-        }
-      }
-      None => {
-        {
-          pool,
-          resource: None
-        }
+      // 验证缓冲区有效
+      assert_true(BufferManager::is_buffer_valid(buffer_manager, handle))
+      assert_eq(BufferManager::get_buffer_size(buffer_manager, handle), size)
+      
+      // 写入测试数据
+      let buffer = BufferManager::get_buffer(buffer_manager, handle)
+      for j in 0..size {
+        buffer[j] = ((i + j) % 256).to_byte()
       }
     }
   }
   
-  // 测试增强资源池
-  let config = {
-    max_size: 5,
-    idle_timeout_ms: 1000,
-    cleanup_interval_ms: 500
+  // 验证总内存使用
+  let total_memory = BufferManager::get_total_memory_usage(buffer_manager)
+  let expected_memory = (256 + 512 + 1024 + 2048 + 4096) * 10
+  assert_true(total_memory >= expected_memory * 0.9)
+  
+  // 释放所有缓冲区
+  for handle in buffer_handles {
+    BufferManager::deallocate_buffer(buffer_manager, handle)
+    assert_false(BufferManager::is_buffer_valid(buffer_manager, handle))
   }
   
-  let pool = create_enhanced_pool(config)
-  
-  // 创建清理计数器
-  let mut cleanup_count = 0
-  let test_cleanup_fn = fn() { cleanup_count = cleanup_count + 1 }
-  
-  // 添加资源
-  let pool_with_resource = add_cleanable_resource(pool, "res1", "data1", Some(test_cleanup_fn))
-  assert_eq(pool_with_resource.resources.size(), 1)
-  
-  // 模拟时间流逝（超过空闲超时）
-  let future_time = Time::now() + 1500
-  
-  // 手动触发清理（模拟时间流逝）
-  let resources_after_time = Map::empty()
-  for (id, resource) in pool_with_resource.resources {
-    let updated_resource = {
-      ...resource,
-      last_accessed: resource.created_at  // 保持旧的访问时间
-    }
-    let _ = Map::insert(resources_after_time, id, updated_resource)
-  }
-  
-  let pool_before_cleanup = {
-    ...pool_with_resource,
-    resources: resources_after_time,
-    last_cleanup: future_time - 600  // 触发清理
-  }
-  
-  // 执行清理
-  let cleaned_resources = cleanup_idle_resources(
-    pool_before_cleanup.resources,
-    pool_before_cleanup.config.idle_timeout_ms,
-    future_time
-  )
-  
-  // 验证资源被清理
-  assert_eq(cleaned_resources.size(), 0)
-  
-  // 测试资源访问更新
-  let pool_with_fresh_resource = add_cleanable_resource(pool, "res2", "data2", None)
-  let access_result = get_cleanable_resource(pool_with_fresh_resource, "res2")
-  
-  match access_result.resource {
-    Some(resource) => {
-      assert_eq(resource.id, "res2")
-      assert_true(resource.last_accessed > resource.created_at)
-    }
-    None => assert_true(false)
-  }
+  // 验证内存被释放
+  let final_memory = BufferManager::get_total_memory_usage(buffer_manager)
+  assert_true(final_memory < expected_memory * 0.1)
 }
 
-// Test 4: Memory Pressure Handling
-test "内存压力处理" {
-  // 定义内存压力级别
-  enum MemoryPressure {
-    Normal
-    Warning
-    Critical
-    Emergency
+// 测试9: 延迟清理机制测试
+test "延迟清理机制测试" {
+  let deferred_cleanup_manager = DeferredCleanupManager::new()
+  let cleanup_resources = []
+  
+  // 创建需要延迟清理的资源
+  for i in 0..20 {
+    let resource = CleanupResource::new("deferred_" + i.to_string())
+    let cleanup_handle = DeferredCleanupManager::register_resource(
+      deferred_cleanup_manager, 
+      resource, 
+      CleanupPriority::Low
+    )
+    cleanup_resources.push(cleanup_handle)
   }
   
-  // 内存监控器
-  type MemoryMonitor = {
-    current_usage: Int,
-    total_memory: Int,
-    warning_threshold: Float,
-    critical_threshold: Float,
-    emergency_threshold: Float
+  // 创建高优先级清理资源
+  for i in 0..10 {
+    let resource = CleanupResource::new("urgent_" + i.to_string())
+    let cleanup_handle = DeferredCleanupManager::register_resource(
+      deferred_cleanup_manager, 
+      resource, 
+      CleanupPriority::High
+    )
+    cleanup_resources.push(cleanup_handle)
   }
   
-  // 创建内存监控器
-  let create_memory_monitor = fn(total_memory: Int) {
-    {
-      current_usage: 0,
-      total_memory,
-      warning_threshold: 0.7,    // 70%
-      critical_threshold: 0.85,  // 85%
-      emergency_threshold: 0.95  // 95%
-    }
-  }
+  // 验证资源被注册
+  assert_eq(DeferredCleanupManager::get_pending_count(deferred_cleanup_manager), 30)
   
-  // 更新内存使用情况
-  let update_memory_usage = fn(monitor: MemoryMonitor, usage: Int) {
-    {
-      ...monitor,
-      current_usage: usage
-    }
-  }
+  // 触发高优先级清理
+  DeferredCleanupManager::cleanup_by_priority(deferred_cleanup_manager, CleanupPriority::High)
   
-  // 获取内存压力级别
-  let get_memory_pressure = fn(monitor: MemoryMonitor) {
-    let usage_ratio = monitor.current_usage as Float / monitor.total_memory as Float
-    
-    if usage_ratio >= monitor.emergency_threshold {
-      MemoryPressure::Emergency
-    } else if usage_ratio >= monitor.critical_threshold {
-      MemoryPressure::Critical
-    } else if usage_ratio >= monitor.warning_threshold {
-      MemoryPressure::Warning
-    } else {
-      MemoryPressure::Normal
-    }
-  }
+  // 验证高优先级资源被清理
+  assert_eq(DeferredCleanupManager::get_pending_count(deferred_cleanup_manager), 20)
   
-  // 内存压力响应策略
-  type PressureResponse = {
-    should_gc: Bool,
-    should_clear_cache: Bool,
-    should_reject_allocations: Bool,
-    should_force_cleanup: Bool
-  }
+  // 触发所有清理
+  DeferredCleanupManager::cleanup_all(deferred_cleanup_manager)
   
-  // 获取压力响应
-  let get_pressure_response = fn(pressure: MemoryPressure) {
-    match pressure {
-      MemoryPressure::Normal => {
-        {
-          should_gc: false,
-          should_clear_cache: false,
-          should_reject_allocations: false,
-          should_force_cleanup: false
+  // 验证所有资源被清理
+  assert_eq(DeferredCleanupManager::get_pending_count(deferred_cleanup_manager), 0)
+}
+
+// 测试10: 内存压力测试
+test "内存压力测试" {
+  let stress_test_manager = MemoryStressTestManager::new()
+  let memory_limit = 100 * 1024 * 1024 // 100MB
+  StressTestManager::set_memory_limit(stress_test_manager, memory_limit)
+  
+  let allocation_sizes = [1024, 4096, 16384, 65536] // 1KB, 4KB, 16KB, 64KB
+  let allocated_objects = []
+  let total_allocated = 0
+  
+  // 尝试分配直到接近内存限制
+  for size in allocation_sizes {
+    let mut continue_allocation = true
+    while continue_allocation {
+      let obj = StressTestManager::try_allocate(stress_test_manager, size)
+      match obj {
+        Some(object) => {
+          allocated_objects.push(object)
+          total_allocated = total_allocated + size
+          
+          // 检查是否接近内存限制
+          if total_allocated > memory_limit * 0.9 {
+            continue_allocation = false
+          }
         }
-      }
-      MemoryPressure::Warning => {
-        {
-          should_gc: true,
-          should_clear_cache: false,
-          should_reject_allocations: false,
-          should_force_cleanup: false
-        }
-      }
-      MemoryPressure::Critical => {
-        {
-          should_gc: true,
-          should_clear_cache: true,
-          should_reject_allocations: false,
-          should_force_cleanup: false
-        }
-      }
-      MemoryPressure::Emergency => {
-        {
-          should_gc: true,
-          should_clear_cache: true,
-          should_reject_allocations: true,
-          should_force_cleanup: true
+        None => {
+          continue_allocation = false
         }
       }
     }
   }
   
-  // 测试内存监控
-  let monitor = create_memory_monitor(1000)  // 1000单位内存
+  // 验证内存使用在限制内
+  let actual_memory_usage = StressTestManager::get_memory_usage(stress_test_manager)
+  assert_true(actual_memory_usage <= memory_limit)
   
-  // 正常使用情况
-  let normal_monitor = update_memory_usage(monitor, 500)  // 50%
-  let normal_pressure = get_memory_pressure(normal_monitor)
-  assert_eq(normal_pressure, MemoryPressure::Normal)
+  // 随机释放一些对象
+  let mut freed_count = 0
+  for i in 0..allocated_objects.length() {
+    if i % 3 == 0 {
+      StressTestManager::deallocate(stress_test_manager, allocated_objects[i])
+      freed_count = freed_count + 1
+    }
+  }
   
-  let normal_response = get_pressure_response(normal_pressure)
-  assert_false(normal_response.should_gc)
-  assert_false(normal_response.should_clear_cache)
-  assert_false(normal_response.should_reject_allocations)
+  // 验证内存减少
+  let memory_after_cleanup = StressTestManager::get_memory_usage(stress_test_manager)
+  assert_true(memory_after_cleanup < actual_memory_usage)
   
-  // 警告级别
-  let warning_monitor = update_memory_usage(monitor, 750)  // 75%
-  let warning_pressure = get_memory_pressure(warning_monitor)
-  assert_eq(warning_pressure, MemoryPressure::Warning)
+  // 清理所有对象
+  for obj in allocated_objects {
+    StressTestManager::deallocate(stress_test_manager, obj)
+  }
   
-  let warning_response = get_pressure_response(warning_pressure)
-  assert_true(warning_response.should_gc)
-  assert_false(warning_response.should_clear_cache)
-  assert_false(warning_response.should_reject_allocations)
+  // 验证所有内存被释放
+  let final_memory_usage = StressTestManager::get_memory_usage(stress_test_manager)
+  assert_true(final_memory_usage < memory_limit * 0.1)
   
-  // 关键级别
-  let critical_monitor = update_memory_usage(monitor, 900)  // 90%
-  let critical_pressure = get_memory_pressure(critical_monitor)
-  assert_eq(critical_pressure, MemoryPressure::Critical)
-  
-  let critical_response = get_pressure_response(critical_pressure)
-  assert_true(critical_response.should_gc)
-  assert_true(critical_response.should_clear_cache)
-  assert_false(critical_response.should_reject_allocations)
-  
-  // 紧急级别
-  let emergency_monitor = update_memory_usage(monitor, 980)  // 98%
-  let emergency_pressure = get_memory_pressure(emergency_monitor)
-  assert_eq(emergency_pressure, MemoryPressure::Emergency)
-  
-  let emergency_response = get_pressure_response(emergency_pressure)
-  assert_true(emergency_response.should_gc)
-  assert_true(emergency_response.should_clear_cache)
-  assert_true(emergency_response.should_reject_allocations)
-  assert_true(emergency_response.should_force_cleanup)
+  // 生成压力测试报告
+  let report = StressTestManager::generate_report(stress_test_manager)
+  assert_true(StressTestReport::get_peak_memory(report) > 0)
+  assert_true(StressTestReport::get_allocation_count(report) > 0)
+  assert_true(StressTestReport::get_deallocation_count(report) > 0)
 }
