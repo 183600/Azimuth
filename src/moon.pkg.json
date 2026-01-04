@@ -122,5 +122,6 @@
         "../azimuth_cross_service_telemetry_synchronization_tests.mbt",
         "../azimuth_enhanced_cross_platform_compatibility_tests.mbt",
         "../azimuth_premium_telemetry_tests.mbt",
-        "../azimuth_enhanced_telemetry_system_tests.mbt"]  }
+        "../azimuth_enhanced_telemetry_system_tests.mbt",
+        "../azimuth_enhanced_quality_test_suite.mbt"]  }
 }
