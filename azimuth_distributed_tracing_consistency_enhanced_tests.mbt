@@ -1,148 +1,293 @@
-// Azimuth 分布式追踪一致性增强测试用例
-// 专注于分布式系统中追踪数据的一致性和完整性
+// Azimuth Enhanced Distributed Tracing Consistency Tests
+// 增强版分布式追踪一致性测试，确保跨服务追踪数据的一致性和完整性
 
-// 测试1: 跨服务追踪上下文传播一致性
-test "跨服务追踪上下文传播一致性测试" {
-  let tracer_provider = TracerProvider::new()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "consistency.test")
-  
+test "分布式追踪上下文传播一致性测试" {
   // 创建根追踪上下文
-  let root_span = Tracer::start_span(tracer, "user.request")
-  let root_context = Span::context(root_span)
+  let root_trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
+  let root_span_id = "00f067aa0ba902b7"
+  let root_context = azimuth::SpanContext::new(root_trace_id, root_span_id, true, "rojo=00f067aa0ba902b7")
   
-  // 验证根上下文完整性
-  assert_true(TraceContext::is_valid(root_context))
-  assert_eq(TraceContext::trace_id(root_context).length(), 32)
-  assert_eq(TraceContext::span_id(root_context).length(), 16)
+  // 验证根上下文
+  assert_eq(azimuth::SpanContext::trace_id(root_context), root_trace_id)
+  assert_eq(azimuth::SpanContext::span_id(root_context), root_span_id)
+  assert_true(azimuth::SpanContext::is_sampled(root_context))
+  assert_true(azimuth::SpanContext::is_valid(root_context))
   
-  // 模拟服务间传播
-  let service_a_context = TraceContext::extract_from_headers([
-    ("traceparent", TraceContext::to_string(root_context)),
-    ("x-trace-id", TraceContext::trace_id(root_context))
-  ])
+  // 模拟服务A中的span创建
+  let service_a_span = azimuth::Span::new("service-a-operation", azimuth::SpanKind::Server, root_context)
+  let service_a_context = azimuth::Span::span_context(service_a_span)
   
-  let service_b_context = TraceContext::extract_from_headers([
-    ("traceparent", TraceContext::to_string(service_a_context)),
-    ("x-request-id", "req-12345")
-  ])
+  // 验证服务A的追踪上下文一致性
+  assert_eq(azimuth::SpanContext::trace_id(service_a_context), root_trace_id)
+  assert_not_eq(azimuth::SpanContext::span_id(service_a_context), root_span_id)
+  assert_true(azimuth::SpanContext::is_sampled(service_a_context))
   
-  // 验证追踪ID一致性
-  assert_eq(TraceContext::trace_id(root_context), TraceContext::trace_id(service_a_context))
-  assert_eq(TraceContext::trace_id(root_context), TraceContext::trace_id(service_b_context))
+  // 模拟服务A调用服务B
+  let service_b_span = azimuth::Span::new("service-b-operation", azimuth::SpanKind::Server, service_a_context)
+  let service_b_context = azimuth::Span::span_context(service_b_span)
   
-  // 验证span ID唯一性
-  assert_not_eq(TraceContext::span_id(root_context), TraceContext::span_id(service_a_context))
-  assert_not_eq(TraceContext::span_id(service_a_context), TraceContext::span_id(service_b_context))
+  // 验证服务B的追踪上下文一致性
+  assert_eq(azimuth::SpanContext::trace_id(service_b_context), root_trace_id)
+  assert_not_eq(azimuth::SpanContext::span_id(service_b_context), service_a_context.span_id)
+  assert_true(azimuth::SpanContext::is_sampled(service_b_context))
   
-  Span::end(root_span)
+  // 模拟服务B调用服务C
+  let service_c_span = azimuth::Span::new("service-c-operation", azimuth::SpanKind::Server, service_b_context)
+  let service_c_context = azimuth::Span::span_context(service_c_span)
+  
+  // 验证服务C的追踪上下文一致性
+  assert_eq(azimuth::SpanContext::trace_id(service_c_context), root_trace_id)
+  assert_not_eq(azimuth::SpanContext::span_id(service_c_context), service_b_context.span_id)
+  assert_true(azimuth::SpanContext::is_sampled(service_c_context))
+  
+  // 验证所有span的追踪ID一致
+  assert_eq(azimuth::SpanContext::trace_id(root_context), 
+           azimuth::SpanContext::trace_id(service_a_context))
+  assert_eq(azimuth::SpanContext::trace_id(service_a_context), 
+           azimuth::SpanContext::trace_id(service_b_context))
+  assert_eq(azimuth::SpanContext::trace_id(service_b_context), 
+           azimuth::SpanContext::trace_id(service_c_context))
+  
+  // 验证所有span的span ID唯一
+  assert_not_eq(azimuth::SpanContext::span_id(root_context), 
+                azimuth::SpanContext::span_id(service_a_context))
+  assert_not_eq(azimuth::SpanContext::span_id(service_a_context), 
+                azimuth::SpanContext::span_id(service_b_context))
+  assert_not_eq(azimuth::SpanContext::span_id(service_b_context), 
+                azimuth::SpanContext::span_id(service_c_context))
 }
 
-// 测试2: 分布式追踪采样一致性
-test "分布式追踪采样一致性测试" {
-  let sampler_config = SamplerConfig::new_probabilistic(0.1) // 10%采样率
-  let sampler = Sampler::from_config(sampler_config)
+test "跨服务 baggage 传播一致性测试" {
+  // 创建根 baggage
+  let root_baggage = azimuth::Baggage::new()
+  let updated_baggage = azimuth::Baggage::set_entry(root_baggage, "user.id", "user-12345")
+  let final_baggage = azimuth::Baggage::set_entry(updated_baggage, "request.id", "req-67890")
   
-  let sampled_spans = Array::empty()
-  let unsampled_spans = Array::empty()
-  
-  // 生成大量追踪请求
-  for i = 0; i < 1000; i = i + 1 {
-    let trace_id = TraceId::generate()
-    let sampling_decision = Sampler::should_sample(sampler, trace_id)
-    
-    if sampling_decision {
-      Array::push(sampled_spans, trace_id)
-    } else {
-      Array::push(unsampled_spans, trace_id)
-    }
+  // 验证 baggage 条目
+  match azimuth::Baggage::get_entry(final_baggage, "user.id") {
+    Some(value) => assert_eq(value, "user-12345")
+    None => assert_true(false)
   }
   
-  // 验证采样率的统计一致性
-  let sampled_ratio = sampled_spans.length() / 1000.0
-  assert_true(sampled_ratio > 0.05 && sampled_ratio < 0.15) // 允许5%误差
+  match azimuth::Baggage::get_entry(final_baggage, "request.id") {
+    Some(value) => assert_eq(value, "req-67890")
+    None => assert_true(false)
+  }
   
-  // 验证采样决策的一致性
-  let test_trace_id = TraceId::from_string("1234567890abcdef1234567890abcdef")
-  let decision1 = Sampler::should_sample(sampler, test_trace_id)
-  let decision2 = Sampler::should_sample(sampler, test_trace_id)
-  assert_eq(decision1, decision2) // 相同trace ID应该有相同的采样决策
+  // 模拟服务间 baggage 传播
+  let service_a_baggage = azimuth::Baggage::set_entry(final_baggage, "service.a.timestamp", "1640995200")
+  let service_b_baggage = azimuth::Baggage::set_entry(service_a_baggage, "service.b.timestamp", "1640995260")
+  let service_c_baggage = azimuth::Baggage::set_entry(service_b_baggage, "service.c.timestamp", "1640995320")
+  
+  // 验证 baggage 传播一致性
+  match azimuth::Baggage::get_entry(service_c_baggage, "user.id") {
+    Some(value) => assert_eq(value, "user-12345")
+    None => assert_true(false)
+  }
+  
+  match azimuth::Baggage::get_entry(service_c_baggage, "request.id") {
+    Some(value) => assert_eq(value, "req-67890")
+    None => assert_true(false)
+  }
+  
+  match azimuth::Baggage::get_entry(service_c_baggage, "service.a.timestamp") {
+    Some(value) => assert_eq(value, "1640995200")
+    None => assert_true(false)
+  }
+  
+  match azimuth::Baggage::get_entry(service_c_baggage, "service.b.timestamp") {
+    Some(value) => assert_eq(value, "1640995260")
+    None => assert_true(false)
+  }
+  
+  match azimuth::Baggage::get_entry(service_c_baggage, "service.c.timestamp") {
+    Some(value) => assert_eq(value, "1640995320")
+    None => assert_true(false)
+  }
 }
 
-// 测试3: 分布式追踪时间戳一致性
+test "分布式追踪采样决策一致性测试" {
+  // 测试采样决策在跨服务调用中的一致性
+  let sampled_trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
+  let sampled_span_id = "00f067aa0ba902b7"
+  let sampled_context = azimuth::SpanContext::new(sampled_trace_id, sampled_span_id, true, "")
+  
+  // 验证采样决策传播
+  let service_a_span = azimuth::Span::new("service-a-operation", azimuth::SpanKind::Server, sampled_context)
+  let service_a_context = azimuth::Span::span_context(service_a_span)
+  assert_true(azimuth::SpanContext::is_sampled(service_a_context))
+  
+  let service_b_span = azimuth::Span::new("service-b-operation", azimuth::SpanKind::Server, service_a_context)
+  let service_b_context = azimuth::Span::span_context(service_b_span)
+  assert_true(azimuth::SpanContext::is_sampled(service_b_context))
+  
+  let service_c_span = azimuth::Span::new("service-c-operation", azimuth::SpanKind::Server, service_b_context)
+  let service_c_context = azimuth::Span::span_context(service_c_span)
+  assert_true(azimuth::SpanContext::is_sampled(service_c_context))
+  
+  // 测试非采样决策传播
+  let not_sampled_trace_id = "4bf92f3577b34da6a3ce929d0e0e4737"
+  let not_sampled_span_id = "00f067aa0ba902b8"
+  let not_sampled_context = azimuth::SpanContext::new(not_sampled_trace_id, not_sampled_span_id, false, "")
+  
+  let service_a_not_sampled_span = azimuth::Span::new("service-a-operation", azimuth::SpanKind::Server, not_sampled_context)
+  let service_a_not_sampled_context = azimuth::Span::span_context(service_a_not_sampled_span)
+  assert_false(azimuth::SpanContext::is_sampled(service_a_not_sampled_context))
+  
+  let service_b_not_sampled_span = azimuth::Span::new("service-b-operation", azimuth::SpanKind::Server, service_a_not_sampled_context)
+  let service_b_not_sampled_context = azimuth::Span::span_context(service_b_not_sampled_span)
+  assert_false(azimuth::SpanContext::is_sampled(service_b_not_sampled_context))
+  
+  let service_c_not_sampled_span = azimuth::Span::new("service-c-operation", azimuth::SpanKind::Server, service_b_not_sampled_context)
+  let service_c_not_sampled_context = azimuth::Span::span_context(service_c_not_sampled_span)
+  assert_false(azimuth::SpanContext::is_sampled(service_c_not_sampled_context))
+}
+
 test "分布式追踪时间戳一致性测试" {
-  let time_sync = TimeSynchronizer::new()
-  let tracer_provider = TracerProvider::with_time_sync(time_sync)
-  let tracer = TracerProvider::get_tracer(tracer_provider, "timestamp.consistency")
+  // 测试分布式追踪中时间戳的一致性和顺序
+  let base_time = 1640995200000L // 2022-01-01 00:00:00 UTC
   
-  // 在不同服务节点创建span
-  let service_a_span = Tracer::start_span_with_time(
-    tracer, 
-    "service.a.operation", 
-    TimeSynchronizer::get_synced_time(time_sync, "node-a")
-  )
+  // 创建根 span
+  let root_context = azimuth::SpanContext::new("trace-1", "span-1", true, "")
+  let root_span = azimuth::Span::new("root-operation", azimuth::SpanKind::Server, root_context)
   
-  let service_b_span = Tracer::start_span_with_time(
-    tracer, 
-    "service.b.operation", 
-    TimeSynchronizer::get_synced_time(time_sync, "node-b")
-  )
+  // 设置根 span 时间戳
+  azimuth::Span::set_start_time(root_span, base_time)
+  azimuth::Span::set_end_time(root_span, base_time + 1000L)
   
-  // 验证时间戳顺序逻辑
-  let service_a_start = Span::start_time(service_a_span)
-  let service_b_start = Span::start_time(service_b_span)
+  // 创建子 span
+  let child_context = azimuth::Span::span_context(root_span)
+  let child_span = azimuth::Span::new("child-operation", azimuth::SpanKind::Client, child_context)
   
-  // 模拟服务依赖关系：A调用B
-  Span::add_event(service_a_span, "calling.service.b", Some(service_b_start))
-  Span::add_event(service_b_span, "called.by.service.a", Some(service_a_start))
+  // 设置子 span 时间戳
+  azimuth::Span::set_start_time(child_span, base_time + 100L)
+  azimuth::Span::set_end_time(child_span, base_time + 800L)
   
-  // 验证时间戳关系
-  assert_true(Time::is_after_or_equal(service_b_start, service_a_start))
+  // 验证时间戳顺序
+  assert_true(azimuth::Span::start_time(root_span) <= azimuth::Span::start_time(child_span))
+  assert_true(azimuth::Span::end_time(child_span) <= azimuth::Span::end_time(root_span))
   
-  // 验证时钟偏移在合理范围内
-  let clock_offset = TimeSynchronizer::get_clock_offset(time_sync, "node-a", "node-b")
-  assert_true(Time::duration_ms(clock_offset) < 100) // 偏移小于100ms
+  // 验证持续时间计算
+  let root_duration = azimuth::Span::end_time(root_span) - azimuth::Span::start_time(root_span)
+  let child_duration = azimuth::Span::end_time(child_span) - azimuth::Span::start_time(child_span)
   
-  Span::end(service_a_span)
-  Span::end(service_b_span)
+  assert_eq(root_duration, 1000L)
+  assert_eq(child_duration, 700L)
+  assert_true(child_duration <= root_duration)
+  
+  // 创建孙 span
+  let grandchild_context = azimuth::Span::span_context(child_span)
+  let grandchild_span = azimuth::Span::new("grandchild-operation", azimuth::SpanKind::Internal, grandchild_context)
+  
+  // 设置孙 span 时间戳
+  azimuth::Span::set_start_time(grandchild_span, base_time + 200L)
+  azimuth::Span::set_end_time(grandchild_span, base_time + 600L)
+  
+  // 验证孙 span 时间戳顺序
+  assert_true(azimuth::Span::start_time(child_span) <= azimuth::Span::start_time(grandchild_span))
+  assert_true(azimuth::Span::end_time(grandchild_span) <= azimuth::Span::end_time(child_span))
+  
+  // 验证孙 span 持续时间
+  let grandchild_duration = azimuth::Span::end_time(grandchild_span) - azimuth::Span::start_time(grandchild_span)
+  assert_eq(grandchild_duration, 400L)
+  assert_true(grandchild_duration <= child_duration)
 }
 
-// 测试4: 分布式追踪数据完整性
-test "分布式追踪数据完整性测试" {
-  let trace_collector = TraceCollector::new()
-  let integrity_checker = TraceIntegrityChecker::new()
+test "分布式追踪属性传播一致性测试" {
+  // 测试分布式追踪中属性的传播和一致性
+  let root_context = azimuth::SpanContext::new("trace-1", "span-1", true, "")
+  let root_span = azimuth::Span::new("root-operation", azimuth::SpanKind::Server, root_context)
   
-  // 配置完整性检查规则
-  TraceIntegrityChecker::add_rule(integrity_checker, "parent_span_exists")
-  TraceIntegrityChecker::add_rule(integrity_checker, "timestamp_sequence_valid")
-  TraceIntegrityChecker::add_rule(integrity_checker, "no_orphan_spans")
+  // 设置根 span 属性
+  let root_attrs = azimuth::Attributes::new()
+  azimuth::Attributes::set(root_attrs, "service.name", azimuth::AttributeValue::StringValue("root-service"))
+  azimuth::Attributes::set(root_attrs, "service.version", azimuth::AttributeValue::StringValue("1.0.0"))
+  azimuth::Attributes::set(root_attrs, "operation.type", azimuth::AttributeValue::StringValue("http"))
+  azimuth::Span::set_attributes(root_span, root_attrs)
   
-  // 创建复杂的追踪树结构
-  let root_span = TraceCollector::create_span(trace_collector, "root.operation")
-  let child_span1 = TraceCollector::create_child_span(trace_collector, root_span, "child.operation.1")
-  let child_span2 = TraceCollector::create_child_span(trace_collector, root_span, "child.operation.2")
-  let grandchild_span = TraceCollector::create_child_span(trace_collector, child_span1, "grandchild.operation")
+  // 创建子 span 并继承属性
+  let child_context = azimuth::Span::span_context(root_span)
+  let child_span = azimuth::Span::new("child-operation", azimuth::SpanKind::Client, child_context)
   
-  // 设置span关系
-  Span::set_parent(root_span, None)
-  Span::set_parent(child_span1, Some(root_span))
-  Span::set_parent(child_span2, Some(root_span))
-  Span::set_parent(grandchild_span, Some(child_span1))
+  // 设置子 span 特有属性
+  let child_attrs = azimuth::Attributes::new()
+  azimuth::Attributes::set(child_attrs, "service.name", azimuth::AttributeValue::StringValue("child-service"))
+  azimuth::Attributes::set(child_attrs, "service.version", azimuth::AttributeValue::StringValue("2.0.0"))
+  azimuth::Attributes::set(child_attrs, "target.service", azimuth::AttributeValue::StringValue("external-api"))
+  azimuth::Span::set_attributes(child_span, child_attrs)
   
-  // 完成所有span
-  Span::end(grandchild_span)
-  Span::end(child_span2)
-  Span::end(child_span1)
-  Span::end(root_span)
+  // 验证属性传播
+  let retrieved_root_attrs = azimuth::Span::attributes(root_span)
+  match azimuth::Attributes::get(retrieved_root_attrs, "service.name") {
+    Some(azimuth::AttributeValue::StringValue(value)) => assert_eq(value, "root-service")
+    _ => assert_true(false)
+  }
   
-  // 收集追踪数据
-  let trace_data = TraceCollector::collect(trace_collector)
+  match azimuth::Attributes::get(retrieved_root_attrs, "service.version") {
+    Some(azimuth::AttributeValue::StringValue(value)) => assert_eq(value, "1.0.0")
+    _ => assert_true(false)
+  }
   
-  // 执行完整性检查
-  let integrity_result = TraceIntegrityChecker::validate(integrity_checker, trace_data)
+  let retrieved_child_attrs = azimuth::Span::attributes(child_span)
+  match azimuth::Attributes::get(retrieved_child_attrs, "service.name") {
+    Some(azimuth::AttributeValue::StringValue(value)) => assert_eq(value, "child-service")
+    _ => assert_true(false)
+  }
   
-  // 验证检查结果
-  assert_true(IntegrityResult::is_passed(integrity_result))
-  assert_eq(IntegrityResult::span_count(integrity_result), 4)
-  assert_eq(IntegrityResult::tree_depth(integrity_result), 3)
-  assert_eq(IntegrityResult::orphan_count(integrity_result), 0)
+  match azimuth::Attributes::get(retrieved_child_attrs, "service.version") {
+    Some(azimuth::AttributeValue::StringValue(value)) => assert_eq(value, "2.0.0")
+    _ => assert_true(false)
+  }
+  
+  match azimuth::Attributes::get(retrieved_child_attrs, "target.service") {
+    Some(azimuth::AttributeValue::StringValue(value)) => assert_eq(value, "external-api")
+    _ => assert_true(false)
+  }
+}
+
+test "分布式追踪错误传播一致性测试" {
+  // 测试分布式追踪中错误信息的传播和一致性
+  let root_context = azimuth::SpanContext::new("trace-1", "span-1", true, "")
+  let root_span = azimuth::Span::new("root-operation", azimuth::SpanKind::Server, root_context)
+  
+  // 模拟正常操作
+  azimuth::Span::set_status(root_span, azimuth::StatusCode::Ok, None)
+  
+  // 创建子 span 并模拟错误
+  let child_context = azimuth::Span::span_context(root_span)
+  let child_span = azimuth::Span::new("child-operation", azimuth::SpanKind::Client, child_context)
+  
+  // 设置错误状态
+  azimuth::Span::set_status(child_span, azimuth::StatusCode::Error, Some("Connection timeout"))
+  azimuth::Span::add_event(child_span, "exception", Some([
+    ("exception.type", azimuth::AttributeValue::StringValue("TimeoutException")),
+    ("exception.message", azimuth::AttributeValue::StringValue("Connection timeout after 30 seconds"))
+  ]))
+  
+  // 验证错误状态
+  assert_eq(azimuth::Span::status(child_span), azimuth::StatusCode::Error)
+  
+  // 创建另一个子 span 并模拟不同错误
+  let sibling_context = azimuth::Span::span_context(root_span)
+  let sibling_span = azimuth::Span::new("sibling-operation", azimuth::SpanKind::Server, sibling_context)
+  
+  // 设置不同错误状态
+  azimuth::Span::set_status(sibling_span, azimuth::StatusCode::Error, Some("Invalid request"))
+  azimuth::Span::add_event(sibling_span, "exception", Some([
+    ("exception.type", azimuth::AttributeValue::StringValue("ValidationException")),
+    ("exception.message", azimuth::AttributeValue::StringValue("Invalid request parameters"))
+  ]))
+  
+  // 验证不同错误状态
+  assert_eq(azimuth::Span::status(sibling_span), azimuth::StatusCode::Error)
+  
+  // 验证根 span 状态仍然正常
+  assert_eq(azimuth::Span::status(root_span), azimuth::StatusCode::Ok)
+  
+  // 验证错误事件记录
+  let child_events = azimuth::Span::events(child_span)
+  assert_true(child_events.length() > 0)
+  
+  let sibling_events = azimuth::Span::events(sibling_span)
+  assert_true(sibling_events.length() > 0)
 }
