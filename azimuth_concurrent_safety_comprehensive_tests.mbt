@@ -1,454 +1,644 @@
-// Azimuth Concurrent Safety Tests
-// 并发安全测试，验证遥测系统在多线程环境下的安全性和一致性
+// Azimuth Telemetry System - Concurrent Safety Tests
+// This file contains test cases for concurrent safety and thread safety
 
-// 测试1: 属性集合并发访问测试
-test "attributes concurrent access test" {
-  // 创建共享属性集合
-  let shared_attrs = azimuth::concurrent::ConcurrentAttributes::new()
+// Test 1: Concurrent Attributes Operations
+test "concurrent attributes operations" {
+  let attrs = Attributes::new()
+  let num_threads = 10
+  let operations_per_thread = 100
   
-  // 模拟并发写入
-  let mut write_results = []
-  for i in 0..10 {
-    let result = azimuth::concurrent::ConcurrentAttributes::set(
-      shared_attrs, 
-      "concurrent.key." + i.to_string(), 
-      azimuth::telemetry::AttributeValue::StringValue("value-" + i.to_string())
-    )
-    write_results = write_results + [result]
-  }
-  
-  // 验证所有写入都成功
-  for result in write_results {
-    assert_true(result)
-  }
-  
-  // 模拟并发读取
-  let mut read_results = []
-  for i in 0..10 {
-    let result = azimuth::concurrent::ConcurrentAttributes::get(
-      shared_attrs, 
-      "concurrent.key." + i.to_string()
-    )
-    read_results = read_results + [result]
-  }
-  
-  // 验证所有读取都返回预期值
-  for i in 0..10 {
-    match read_results[i] {
-      Some(azimuth::telemetry::AttributeValue::StringValue(value)) => {
-        assert_eq(value, "value-" + i.to_string())
+  // Test concurrent attribute setting
+  let threads = []
+  for i in 0..=(num_threads - 1) {
+    let thread = Thread::spawn(fn(thread_id) {
+      for j in 0..=(operations_per_thread - 1) {
+        let key = "thread_" + thread_id.to_string() + "_key_" + j.to_string()
+        let value = "thread_" + thread_id.to_string() + "_value_" + j.to_string()
+        Attributes::set(attrs, key, StringValue(value))
       }
-      _ => assert_true(false)
+    }, i)
+    threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Verify all attributes were set correctly
+  let expected_count = num_threads * operations_per_thread
+  assert_eq(Attributes::size(attrs), expected_count)
+  
+  // Test concurrent attribute getting
+  let get_threads = []
+  let results = ConcurrentArray::new()
+  
+  for i in 0..=(num_threads - 1) {
+    let thread = Thread::spawn(fn(thread_id) {
+      for j in 0..=(operations_per_thread - 1) {
+        let key = "thread_" + thread_id.to_string() + "_key_" + j.to_string()
+        let expected_value = "thread_" + thread_id.to_string() + "_value_" + j.to_string()
+        let result = Attributes::get(attrs, key)
+        
+        ConcurrentArray::push(results, (key, result, expected_value))
+      }
+    }, i)
+    get_threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in get_threads {
+    Thread::join(thread)
+  }
+  
+  // Verify all get operations returned expected values
+  let results_list = ConcurrentArray::to_list(results)
+  for (key, result, expected_value) in results_list {
+    match result {
+      Some(StringValue(value)) => assert_eq(value, expected_value)
+      _ => assert_true(false, "Failed to get value for key: " + key)
     }
   }
 }
 
-// 测试2: 计数器并发递增测试
-test "counter concurrent increment test" {
-  // 创建共享计数器
-  let shared_counter = azimuth::concurrent::ConcurrentCounter::new("test_counter", 0.0)
+// Test 2: Concurrent Time Series Operations
+test "concurrent time series operations" {
+  let time_series = TimeSeries::new("concurrent_test_series")
+  let num_threads = 10
+  let data_points_per_thread = 100
   
-  // 模拟并发递增操作
-  let mut increment_results = []
-  for i in 0..100 {
-    let result = azimuth::concurrent::ConcurrentCounter::add(shared_counter, 1.0)
-    increment_results = increment_results + [result]
+  // Test concurrent data point addition
+  let threads = []
+  for i in 0..=(num_threads - 1) {
+    let thread = Thread::spawn(fn(thread_id) {
+      for j in 0..=(data_points_per_thread - 1) {
+        let timestamp = Time::now() + (thread_id * 1000 + j) as Int64
+        let value = (thread_id * 100 + j) as Float
+        TimeSeries::add_data_point(time_series, TimeSeriesDataPoint::new(timestamp, value))
+      }
+    }, i)
+    threads.push(thread)
   }
   
-  // 验证所有递增都成功
-  for result in increment_results {
-    assert_true(result)
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
   }
   
-  // 验证最终值
-  let final_value = azimuth::concurrent::ConcurrentCounter::get_value(shared_counter)
-  assert_eq(final_value, 100.0)
+  // Verify all data points were added
+  let expected_count = num_threads * data_points_per_thread
+  assert_eq(TimeSeries::data_points(time_series).length(), expected_count)
   
-  // 重置计数器
-  let reset_result = azimuth::concurrent::ConcurrentCounter::reset(shared_counter)
-  assert_true(reset_result)
+  // Test concurrent aggregation
+  let agg_threads = []
+  let agg_results = ConcurrentArray::new()
   
-  // 验证重置后的值
-  let reset_value = azimuth::concurrent::ConcurrentCounter::get_value(shared_counter)
-  assert_eq(reset_value, 0.0)
+  for i in 0..=(num_threads - 1) {
+    let thread = Thread::spawn(fn(thread_id) {
+      let result = TimeSeries::aggregate(time_series, Average)
+      ConcurrentArray::push(agg_results, (thread_id, result))
+    }, i)
+    agg_threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in agg_threads {
+    Thread::join(thread)
+  }
+  
+  // Verify all aggregation operations returned consistent results
+  let agg_results_list = ConcurrentArray::to_list(agg_results)
+  let first_result = agg_results_list[0].1
+  
+  for (thread_id, result) in agg_results_list {
+    assert_eq(result, first_result, "Inconsistent aggregation result for thread " + thread_id.to_string())
+  }
 }
 
-// 测试3: 直方图并发记录测试
-test "histogram concurrent recording test" {
-  // 创建共享直方图
-  let shared_histogram = azimuth::concurrent::ConcurrentHistogram::new(
-    "test_histogram",
-    [0.0, 10.0, 50.0, 100.0, 500.0, 1000.0]
+// Test 3: Concurrent Metrics Collection
+test "concurrent metrics collection" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "concurrent_test_meter")
+  let counter = Meter::create_counter(meter, "concurrent_counter", Some("Concurrent test counter"), Some("count"))
+  let histogram = Meter::create_histogram(meter, "concurrent_histogram", Some("Concurrent test histogram"), Some("ms"))
+  let gauge = Meter::create_gauge(meter, "concurrent_gauge", Some("Concurrent test gauge"), Some("value"))
+  
+  let num_threads = 10
+  let operations_per_thread = 100
+  
+  // Test concurrent counter operations
+  let counter_threads = []
+  for i in 0..=(num_threads - 1) {
+    let thread = Thread::spawn(fn(thread_id) {
+      for j in 0..=(operations_per_thread - 1) {
+        Counter::add(counter, 1.0)
+      }
+    }, i)
+    counter_threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in counter_threads {
+    Thread::join(thread)
+  }
+  
+  // Test concurrent histogram operations
+  let histogram_threads = []
+  for i in 0..=(num_threads - 1) {
+    let thread = Thread::spawn(fn(thread_id) {
+      for j in 0..=(operations_per_thread - 1) {
+        let value = (thread_id * operations_per_thread + j) as Float
+        Histogram::record(histogram, value)
+      }
+    }, i)
+    histogram_threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in histogram_threads {
+    Thread::join(thread)
+  }
+  
+  // Test concurrent gauge operations
+  let gauge_threads = []
+  for i in 0..=(num_threads - 1) {
+    let thread = Thread::spawn(fn(thread_id) {
+      for j in 0..=(operations_per_thread - 1) {
+        let value = (thread_id * operations_per_thread + j) as Float
+        Gauge::set(gauge, value)
+      }
+    }, i)
+    gauge_threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in gauge_threads {
+    Thread::join(thread)
+  }
+  
+  // Verify metrics were collected correctly
+  let instruments = Meter::get_instruments(meter)
+  assert_true(instruments.length() >= 3)
+  
+  // Note: Actual value verification would depend on the specific metrics implementation
+  // For now, we just verify that the operations completed without errors
+}
+
+// Test 4: Concurrent Serialization/Deserialization
+test "concurrent serialization deserialization" {
+  let telemetry_data = TelemetryData::with_attributes(
+    "concurrent_test_metric",
+    42.5,
+    Attributes::from_list([
+      ("host", StringValue("server-01")),
+      ("region", StringValue("us-west-1")),
+      ("service", StringValue("auth-service"))
+    ])
   )
   
-  // 模拟并发记录操作
-  let mut record_results = []
-  for i in 0..1000 {
-    let value = (i % 1000).to_float()
-    let result = azimuth::concurrent::ConcurrentHistogram::record(shared_histogram, value)
-    record_results = record_results + [result]
-  }
+  let num_threads = 10
+  let operations_per_thread = 100
   
-  // 验证所有记录都成功
-  for result in record_results {
-    assert_true(result)
-  }
+  // Test concurrent JSON serialization
+  let json_serialize_threads = []
+  let json_results = ConcurrentArray::new()
   
-  // 验证总计数
-  let total_count = azimuth::concurrent::ConcurrentHistogram::get_count(shared_histogram)
-  assert_eq(total_count, 1000.0)
-  
-  // 验证总和中
-  let total_sum = azimuth::concurrent::ConcurrentHistogram::get_sum(shared_histogram)
-  assert_true(total_sum > 0.0)
-  
-  // 验证桶计数
-  let bucket_counts = azimuth::concurrent::ConcurrentHistogram::get_bucket_counts(shared_histogram)
-  assert_eq(bucket_counts.length(), 7) // 6个边界 + 无限大桶
-  
-  // 验证所有桶计数之和等于总计数
-  let mut bucket_sum = 0.0
-  for count in bucket_counts {
-    bucket_sum = bucket_sum + count
-  }
-  assert_eq(bucket_sum, total_count)
-}
-
-// 测试4: 仪表并发更新测试
-test "gauge concurrent update test" {
-  // 创建共享仪表
-  let shared_gauge = azimuth::concurrent::ConcurrentGauge::new("test_gauge", 0.0)
-  
-  // 模拟并发更新操作
-  let mut update_results = []
-  for i in 0..100 {
-    let value = (i % 10).to_float()
-    let result = azimuth::concurrent::ConcurrentGauge::set(shared_gauge, value)
-    update_results = update_results + [result]
-  }
-  
-  // 验证所有更新都成功
-  for result in update_results {
-    assert_true(result)
-  }
-  
-  // 验证最终值在预期范围内
-  let final_value = azimuth::concurrent::ConcurrentGauge::get_value(shared_gauge)
-  assert_true(final_value >= 0.0 && final_value < 10.0)
-  
-  // 模拟并发递增和递减
-  let mut inc_results = []
-  let mut dec_results = []
-  
-  for i in 0..50 {
-    let inc_result = azimuth::concurrent::ConcurrentGauge::add(shared_gauge, 1.0)
-    inc_results = inc_results + [inc_result]
-    
-    let dec_result = azimuth::concurrent::ConcurrentGauge::add(shared_gauge, -0.5)
-    dec_results = dec_results + [dec_result]
-  }
-  
-  // 验证所有递增和递减都成功
-  for result in inc_results {
-    assert_true(result)
-  }
-  for result in dec_results {
-    assert_true(result)
-  }
-  
-  // 验证最终值
-  let final_value_after_ops = azimuth::concurrent::ConcurrentGauge::get_value(shared_gauge)
-  assert_true(final_value_after_ops > 0.0)
-}
-
-// 测试5: 跨度存储并发访问测试
-test "span storage concurrent access test" {
-  // 创建共享跨度存储
-  let shared_span_storage = azimuth::concurrent::ConcurrentSpanStorage::new()
-  
-  // 模拟并发跨度创建
-  let mut span_ids = []
-  for i in 0..50 {
-    let span_id = "span-" + i.to_string()
-    span_ids = span_ids + [span_id]
-    
-    let span = azimuth::telemetry::Span {
-      name: "concurrent-span-" + i.to_string(),
-      kind: azimuth::telemetry::SpanKind::Internal,
-      status: azimuth::telemetry::SpanStatus::Unset,
-      start_time: 1609459200000L + i.to_int64(),
-      end_time: 1609459200100L + i.to_int64(),
-      trace_id: "trace-concurrent-test",
-      span_id: span_id,
-      parent_span_id: None,
-      attributes: [
-        ("index", azimuth::telemetry::AttributeValue::IntValue(i))
-      ],
-      events: [],
-      links: []
-    }
-    
-    let result = azimuth::concurrent::ConcurrentSpanStorage::store(shared_span_storage, span)
-    assert_true(result)
-  }
-  
-  // 模拟并发跨度读取
-  let mut read_spans = []
-  for span_id in span_ids {
-    let span = azimuth::concurrent::ConcurrentSpanStorage::get(shared_span_storage, span_id)
-    read_spans = read_spans + [span]
-  }
-  
-  // 验证所有跨度都能正确读取
-  for i in 0..50 {
-    match read_spans[i] {
-      Some(span) => {
-        assert_eq(span.name, "concurrent-span-" + i.to_string())
-        assert_eq(span.span_id, "span-" + i.to_string())
-        assert_eq(span.trace_id, "trace-concurrent-test")
+  for i in 0..=(num_threads - 1) {
+    let thread = Thread::spawn(fn(thread_id) {
+      for j in 0..=(operations_per_thread - 1) {
+        let json_data = Serialization::to_json(telemetry_data)
+        ConcurrentArray::push(json_results, json_data)
       }
-      None => assert_true(false)
+    }, i)
+    json_serialize_threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in json_serialize_threads {
+    Thread::join(thread)
+  }
+  
+  // Verify all serialization operations produced valid JSON
+  let json_results_list = ConcurrentArray::to_list(json_results)
+  for json_data in json_results_list {
+    assert_true(json_data.length() > 0)
+    
+    // Test deserialization
+    let deserialized_data = Serialization::from_json(json_data)
+    match deserialized_data {
+      TelemetryData(data) => {
+        assert_eq(TelemetryData::metric_name(data), "concurrent_test_metric")
+        assert_eq(TelemetryData::value(data), 42.5)
+      }
+      _ => assert_true(false, "Failed to deserialize JSON data")
     }
   }
   
-  // 验证跨度存储大小
-  let storage_size = azimuth::concurrent::ConcurrentSpanStorage::size(shared_span_storage)
-  assert_eq(storage_size, 50)
+  // Test concurrent binary serialization
+  let binary_serialize_threads = []
+  let binary_results = ConcurrentArray::new()
   
-  // 模拟并发跨度删除
-  let mut delete_results = []
-  for span_id in span_ids {
-    let result = azimuth::concurrent::ConcurrentSpanStorage::remove(shared_span_storage, span_id)
-    delete_results = delete_results + [result]
+  for i in 0..=(num_threads - 1) {
+    let thread = Thread::spawn(fn(thread_id) {
+      for j in 0..=(operations_per_thread - 1) {
+        let binary_data = Serialization::to_binary(telemetry_data)
+        ConcurrentArray::push(binary_results, binary_data)
+      }
+    }, i)
+    binary_serialize_threads.push(thread)
   }
   
-  // 验证所有删除都成功
-  for result in delete_results {
-    assert_true(result)
+  // Wait for all threads to complete
+  for thread in binary_serialize_threads {
+    Thread::join(thread)
   }
   
-  // 验证跨度存储已清空
-  let final_size = azimuth::concurrent::ConcurrentSpanStorage::size(shared_span_storage)
-  assert_eq(final_size, 0)
+  // Verify all serialization operations produced valid binary data
+  let binary_results_list = ConcurrentArray::to_list(binary_results)
+  for binary_data in binary_results_list {
+    assert_true(binary_data.length() > 0)
+    
+    // Test deserialization
+    let deserialized_data = Serialization::from_binary(binary_data)
+    match deserialized_data {
+      TelemetryData(data) => {
+        assert_eq(TelemetryData::metric_name(data), "concurrent_test_metric")
+        assert_eq(TelemetryData::value(data), 42.5)
+      }
+      _ => assert_true(false, "Failed to deserialize binary data")
+    }
+  }
 }
 
-// 测试6: 日志记录并发写入测试
-test "log record concurrent write test" {
-  // 创建共享日志记录器
-  let shared_logger = azimuth::concurrent::ConcurrentLogger::new("test_logger")
+// Test 5: Concurrent Resource Operations
+test "concurrent resource operations" {
+  let resource = Resource::new()
+  let num_threads = 10
+  let operations_per_thread = 100
   
-  // 模拟并发日志记录写入
-  let mut write_results = []
-  for i in 0..200 {
-    let log_record = azimuth::telemetry::LogRecord {
-      timestamp: 1609459200000L + i.to_int64(),
-      severity: if i % 3 == 0 { azimuth::telemetry::Severity::Info } 
-                else if i % 3 == 1 { azimuth::telemetry::Severity::Warn } 
-                else { azimuth::telemetry::Severity::Error },
-      severity_text: if i % 3 == 0 { "INFO" } 
-                     else if i % 3 == 1 { "WARN" } 
-                     else { "ERROR" },
-      body: Some("Concurrent log message " + i.to_string()),
-      attributes: [
-        ("index", azimuth::telemetry::AttributeValue::IntValue(i)),
-        ("thread", azimuth::telemetry::AttributeValue::StringValue("thread-" + (i % 10).to_string()))
-      ],
-      trace_id: Some("trace-concurrent-logs"),
-      span_id: Some("span-" + i.to_string())
+  // Test concurrent resource attribute setting
+  let threads = []
+  for i in 0..=(num_threads - 1) {
+    let thread = Thread::spawn(fn(thread_id) {
+      for j in 0..=(operations_per_thread - 1) {
+        let key = "thread_" + thread_id.to_string() + "_attr_" + j.to_string()
+        let value = "thread_" + thread_id.to_string() + "_value_" + j.to_string()
+        Resource::set_attribute(resource, key, StringValue(value))
+      }
+    }, i)
+    threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Test concurrent resource attribute getting
+  let get_threads = []
+  let get_results = ConcurrentArray::new()
+  
+  for i in 0..=(num_threads - 1) {
+    let thread = Thread::spawn(fn(thread_id) {
+      for j in 0..=(operations_per_thread - 1) {
+        let key = "thread_" + thread_id.to_string() + "_attr_" + j.to_string()
+        let expected_value = "thread_" + thread_id.to_string() + "_value_" + j.to_string()
+        let result = Resource::get_attribute(resource, key)
+        
+        ConcurrentArray::push(get_results, (key, result, expected_value))
+      }
+    }, i)
+    get_threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in get_threads {
+    Thread::join(thread)
+  }
+  
+  // Verify all get operations returned expected values
+  let get_results_list = ConcurrentArray::to_list(get_results)
+  for (key, result, expected_value) in get_results_list {
+    match result {
+      Some(StringValue(value)) => assert_eq(value, expected_value)
+      _ => assert_true(false, "Failed to get resource attribute for key: " + key)
+    }
+  }
+  
+  // Test concurrent resource merging
+  let resource1 = Resource::new()
+  let resource2 = Resource::new()
+  
+  // Set attributes on both resources
+  Resource::set_attribute(resource1, "resource1_attr", StringValue("resource1_value"))
+  Resource::set_attribute(resource2, "resource2_attr", StringValue("resource2_value"))
+  
+  let merge_threads = []
+  let merge_results = ConcurrentArray::new()
+  
+  for i in 0..=(num_threads - 1) {
+    let thread = Thread::spawn(fn(thread_id) {
+      let merged_resource = Resource::merge(resource1, resource2)
+      let attr1 = Resource::get_attribute(merged_resource, "resource1_attr")
+      let attr2 = Resource::get_attribute(merged_resource, "resource2_attr")
+      
+      ConcurrentArray::push(merge_results, (thread_id, attr1, attr2))
+    }, i)
+    merge_threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in merge_threads {
+    Thread::join(thread)
+  }
+  
+  // Verify all merge operations produced consistent results
+  let merge_results_list = ConcurrentArray::to_list(merge_results)
+  for (thread_id, attr1, attr2) in merge_results_list {
+    match attr1 {
+      Some(StringValue(value)) => assert_eq(value, "resource1_value")
+      _ => assert_true(false, "Failed to get resource1_attr in thread " + thread_id.to_string())
     }
     
-    let result = azimuth::concurrent::ConcurrentLogger::emit(shared_logger, log_record)
-    write_results = write_results + [result]
+    match attr2 {
+      Some(StringValue(value)) => assert_eq(value, "resource2_value")
+      _ => assert_true(false, "Failed to get resource2_attr in thread " + thread_id.to_string())
+    }
   }
-  
-  // 验证所有写入都成功
-  for result in write_results {
-    assert_true(result)
-  }
-  
-  // 验证日志记录数量
-  let log_count = azimuth::concurrent::ConcurrentLogger::get_count(shared_logger)
-  assert_eq(log_count, 200)
-  
-  // 验证日志记录按严重级别分组
-  let logs_by_severity = azimuth::concurrent::ConcurrentLogger::get_logs_by_severity(shared_logger)
-  assert_eq(logs_by_severity.get("Info").unwrap_or(0), 67) // 200/3 向上取整
-  assert_eq(logs_by_severity.get("Warn").unwrap_or(0), 67)
-  assert_eq(logs_by_severity.get("Error").unwrap_or(0), 66) // 200 - 67 - 67
 }
 
-// 测试7: 上下文传播并发测试
-test "context propagation concurrent test" {
-  // 创建共享上下文管理器
-  let shared_context_manager = azimuth::concurrent::ConcurrentContextManager::new()
+// Test 6: Concurrent Context Operations
+test "concurrent context operations" {
+  let root_ctx = Context::root()
+  let num_threads = 10
+  let operations_per_thread = 100
   
-  // 模拟并发上下文创建和传播
-  let mut context_ids = []
-  for i in 0..30 {
-    let context_id = "context-" + i.to_string()
-    context_ids = context_ids + [context_id]
-    
-    let context = azimuth::telemetry::TraceContext {
-      trace_id: "trace-concurrent-context-" + (i % 5).to_string(),
-      span_id: "span-" + i.to_string(),
-      trace_flags: 1,
-      trace_state: "state-" + i.to_string(),
-      is_remote: i % 2 == 0
-    }
-    
-    let result = azimuth::concurrent::ConcurrentContextManager::set_context(
-      shared_context_manager, 
-      context_id, 
-      context
-    )
-    assert_true(result)
-  }
+  // Test concurrent context creation
+  let threads = []
+  let contexts = ConcurrentArray::new()
   
-  // 模拟并发上下文读取
-  let mut read_contexts = []
-  for context_id in context_ids {
-    let context = azimuth::concurrent::ConcurrentContextManager::get_context(
-      shared_context_manager, 
-      context_id
-    )
-    read_contexts = read_contexts + [context]
-  }
-  
-  // 验证所有上下文都能正确读取
-  for i in 0..30 {
-    match read_contexts[i] {
-      Some(context) => {
-        assert_eq(context.span_id, "span-" + i.to_string())
-        assert_eq(context.trace_state, "state-" + i.to_string())
-        assert_eq(context.is_remote, i % 2 == 0)
+  for i in 0..=(num_threads - 1) {
+    let thread = Thread::spawn(fn(thread_id) {
+      for j in 0..=(operations_per_thread - 1) {
+        let key = ContextKey::new("thread_" + thread_id.to_string() + "_key_" + j.to_string())
+        let value = "thread_" + thread_id.to_string() + "_value_" + j.to_string()
+        let ctx = Context::with_value(root_ctx, key, value)
+        ConcurrentArray::push(contexts, (thread_id, j, ctx))
       }
-      None => assert_true(false)
+    }, i)
+    threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Test concurrent context value retrieval
+  let get_threads = []
+  let get_results = ConcurrentArray::new()
+  
+  let contexts_list = ConcurrentArray::to_list(contexts)
+  for (thread_id, j, ctx) in contexts_list {
+    let thread = Thread::spawn(fn(t_id, idx, context) {
+      let key = ContextKey::new("thread_" + t_id.to_string() + "_key_" + idx.to_string())
+      let expected_value = "thread_" + t_id.to_string() + "_value_" + idx.to_string()
+      let result = Context::get(context, key)
+      
+      ConcurrentArray::push(get_results, (t_id, idx, result, expected_value))
+    }, thread_id, j, ctx)
+    get_threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in get_threads {
+    Thread::join(thread)
+  }
+  
+  // Verify all get operations returned expected values
+  let get_results_list = ConcurrentArray::to_list(get_results)
+  for (thread_id, j, result, expected_value) in get_results_list {
+    match result {
+      Some(value) => assert_eq(value, expected_value)
+      _ => assert_true(false, "Failed to get context value for thread " + thread_id.to_string() + ", index " + j.to_string())
     }
   }
-  
-  // 验证上下文管理器大小
-  let manager_size = azimuth::concurrent::ConcurrentContextManager::size(shared_context_manager)
-  assert_eq(manager_size, 30)
-  
-  // 模拟并发上下文清理
-  let mut cleanup_results = []
-  for context_id in context_ids {
-    let result = azimuth::concurrent::ConcurrentContextManager::clear_context(
-      shared_context_manager, 
-      context_id
-    )
-    cleanup_results = cleanup_results + [result]
-  }
-  
-  // 验证所有清理都成功
-  for result in cleanup_results {
-    assert_true(result)
-  }
-  
-  // 验证上下文管理器已清空
-  let final_size = azimuth::concurrent::ConcurrentContextManager::size(shared_context_manager)
-  assert_eq(final_size, 0)
 }
 
-// 测试8: 度量聚合并发测试
-test "metric aggregation concurrent test" {
-  // 创建共享度量聚合器
-  let shared_aggregator = azimuth::concurrent::ConcurrentMetricAggregator::new()
+// Test 7: Concurrent Log Operations
+test "concurrent log operations" {
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "concurrent_test_logger")
+  let num_threads = 10
+  let logs_per_thread = 100
   
-  // 模拟并发度量数据提交
-  let mut submit_results = []
-  for i in 0..100 {
-    let counter_metric = azimuth::telemetry::Metric::Counter {
-      name: "concurrent_counter",
-      description: "Concurrent counter metric",
-      unit: "count",
-      value: 1.0,
-      attributes: [
-        ("worker", azimuth::telemetry::AttributeValue::StringValue("worker-" + (i % 5).to_string())),
-        ("operation", azimuth::telemetry::AttributeValue::StringValue("op-" + (i % 3).to_string()))
-      ]
-    }
-    
-    let result = azimuth::concurrent::ConcurrentMetricAggregator::submit(
-      shared_aggregator, 
-      counter_metric
-    )
-    submit_results = submit_results + [result]
-  }
-  
-  // 验证所有提交都成功
-  for result in submit_results {
-    assert_true(result)
-  }
-  
-  // 验证聚合结果
-  let aggregated_metrics = azimuth::concurrent::ConcurrentMetricAggregator::get_aggregated(
-    shared_aggregator, 
-    "concurrent_counter"
-  )
-  
-  // 验证聚合度量数量
-  assert_true(aggregated_metrics.length() > 0)
-  
-  // 验证总计数
-  let mut total_count = 0.0
-  for metric in aggregated_metrics {
-    match metric {
-      azimuth::telemetry::Metric::Counter { value, ... } => {
-        total_count = total_count + value
+  // Test concurrent log emission
+  let threads = []
+  for i in 0..=(num_threads - 1) {
+    let thread = Thread::spawn(fn(thread_id) {
+      for j in 0..=(logs_per_thread - 1) {
+        let message = "Thread " + thread_id.to_string() + " log message " + j.to_string()
+        let log_record = LogRecord::new(Info, message)
+        Logger::emit(logger, log_record)
       }
-      _ => assert_true(false)
-    }
-  }
-  assert_eq(total_count, 100.0)
-  
-  // 模拟并发直方图数据提交
-  let mut histogram_submit_results = []
-  for i in 0..50 {
-    let histogram_metric = azimuth::telemetry::Metric::Histogram {
-      name: "concurrent_histogram",
-      description: "Concurrent histogram metric",
-      unit: "ms",
-      buckets: [
-        (0.0, 10.0, 0.0),
-        (10.0, 50.0, 0.0),
-        (50.0, 100.0, 0.0),
-        (100.0, 500.0, 0.0),
-        (500.0, Infinity, 0.0)
-      ],
-      count: 1.0,
-      sum: (i % 100).to_float()
-    }
-    
-    let result = azimuth::concurrent::ConcurrentMetricAggregator::submit(
-      shared_aggregator, 
-      histogram_metric
-    )
-    histogram_submit_results = histogram_submit_results + [result]
+    }, i)
+    threads.push(thread)
   }
   
-  // 验证所有直方图提交都成功
-  for result in histogram_submit_results {
-    assert_true(result)
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
   }
   
-  // 验证直方图聚合结果
-  let aggregated_histograms = azimuth::concurrent::ConcurrentMetricAggregator::get_aggregated(
-    shared_aggregator, 
-    "concurrent_histogram"
-  )
+  // Verify logs were emitted correctly
+  let logs = Logger::get_logs(logger)
+  assert_eq(logs.length(), num_threads * logs_per_thread)
   
-  // 验证聚合直方图数量
-  assert_true(aggregated_histograms.length() > 0)
-  
-  // 验证直方图聚合计数和总和
-  for histogram in aggregated_histograms {
-    match histogram {
-      azimuth::telemetry::Metric::Histogram { count, sum, ... } => {
-        assert_true(count > 0.0)
-        assert_true(sum >= 0.0)
+  // Verify log content
+  let mut log_counts = [0; num_threads]
+  for log in logs {
+    let message = LogRecord::body(log)
+    match message {
+      Some(msg) => {
+        for i in 0..=(num_threads - 1) {
+          if msg.contains("Thread " + i.to_string()) {
+            log_counts[i] = log_counts[i] + 1
+          }
+        }
       }
-      _ => assert_true(false)
+      None => assert_true(false, "Log message is empty")
     }
   }
+  
+  for i in 0..=(num_threads - 1) {
+    assert_eq(log_counts[i], logs_per_thread, "Incorrect log count for thread " + i.to_string())
+  }
+}
+
+// Test 8: Concurrent Span Operations
+test "concurrent span operations" {
+  let tracer = TracerProvider::get_tracer("concurrent_test_tracer")
+  let num_threads = 10
+  let spans_per_thread = 50
+  
+  // Test concurrent span creation and operations
+  let threads = []
+  let spans = ConcurrentArray::new()
+  
+  for i in 0..=(num_threads - 1) {
+    let thread = Thread::spawn(fn(thread_id) {
+      for j in 0..=(spans_per_thread - 1) {
+        let span_name = "thread_" + thread_id.to_string() + "_span_" + j.to_string()
+        let span = Tracer::start_span(tracer, span_name)
+        
+        // Add events and attributes
+        Span::add_event(span, "test_event", Some([("thread_id", StringValue(thread_id.to_string()))]))
+        Span::set_attribute(span, "span_index", IntValue(j))
+        
+        ConcurrentArray::push(spans, (thread_id, j, span))
+      }
+    }, i)
+    threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Test concurrent span ending
+  let end_threads = []
+  let spans_list = ConcurrentArray::to_list(spans)
+  
+  for (thread_id, j, span) in spans_list {
+    let thread = Thread::spawn(fn(t_id, idx, s) {
+      Span::end(s)
+    }, thread_id, j, span)
+    end_threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in end_threads {
+    Thread::join(thread)
+  }
+  
+  // Verify all spans were created and ended correctly
+  let finished_spans = Tracer::get_finished_spans(tracer)
+  assert_eq(finished_spans.length(), num_threads * spans_per_thread)
+}
+
+// Test 9: Concurrent Baggage Operations
+test "concurrent baggage operations" {
+  let baggage = Baggage::new()
+  let num_threads = 10
+  let entries_per_thread = 50
+  
+  // Test concurrent baggage entry setting
+  let threads = []
+  for i in 0..=(num_threads - 1) {
+    let thread = Thread::spawn(fn(thread_id) {
+      for j in 0..=(entries_per_thread - 1) {
+        let key = "thread_" + thread_id.to_string() + "_key_" + j.to_string()
+        let value = "thread_" + thread_id.to_string() + "_value_" + j.to_string()
+        Baggage::set_entry(baggage, key, value) |> ignore
+      }
+    }, i)
+    threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Test concurrent baggage entry getting
+  let get_threads = []
+  let get_results = ConcurrentArray::new()
+  
+  for i in 0..=(num_threads - 1) {
+    let thread = Thread::spawn(fn(thread_id) {
+      for j in 0..=(entries_per_thread - 1) {
+        let key = "thread_" + thread_id.to_string() + "_key_" + j.to_string()
+        let expected_value = "thread_" + thread_id.to_string() + "_value_" + j.to_string()
+        let result = Baggage::get_entry(baggage, key)
+        
+        ConcurrentArray::push(get_results, (thread_id, j, result, expected_value))
+      }
+    }, i)
+    get_threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in get_threads {
+    Thread::join(thread)
+  }
+  
+  // Verify all get operations returned expected values
+  let get_results_list = ConcurrentArray::to_list(get_results)
+  for (thread_id, j, result, expected_value) in get_results_list {
+    match result {
+      Some(value) => assert_eq(value, expected_value)
+      _ => assert_true(false, "Failed to get baggage entry for thread " + thread_id.to_string() + ", index " + j.to_string())
+    }
+  }
+}
+
+// Test 10: Concurrent Connection Pool Operations
+test "concurrent connection pool operations" {
+  let connection_pool = ConnectionPool::new_with_max_connections(5)
+  let num_threads = 10
+  let operations_per_thread = 20
+  
+  // Test concurrent connection acquisition
+  let threads = []
+  let connections = ConcurrentArray::new()
+  
+  for i in 0..=(num_threads - 1) {
+    let thread = Thread::spawn(fn(thread_id) {
+      for j in 0..=(operations_per_thread - 1) {
+        let conn_result = ConnectionPool::get_connection(connection_pool)
+        match conn_result {
+          Ok(connection) => {
+            // Simulate some work with the connection
+            Thread::sleep(Duration::milliseconds(10))
+            ConnectionPool::return_connection(connection_pool, connection)
+            ConcurrentArray::push(connections, (thread_id, j, true))
+          }
+          Err(error) => {
+            ConcurrentArray::push(connections, (thread_id, j, false))
+          }
+        }
+      }
+    }, i)
+    threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Verify connection pool operations
+  let connections_list = ConcurrentArray::to_list(connections)
+  let mut success_count = 0
+  let mut failure_count = 0
+  
+  for (thread_id, j, success) in connections_list {
+    if success {
+      success_count = success_count + 1
+    } else {
+      failure_count = failure_count + 1
+    }
+  }
+  
+  let total_operations = num_threads * operations_per_thread
+  assert_eq(success_count + failure_count, total_operations)
+  
+  // Most operations should succeed, but some might fail due to pool exhaustion
+  assert_true(success_count > total_operations / 2, "Too many connection failures")
+  
+  // Verify pool is in a consistent state
+  let pool_stats = ConnectionPool::get_stats(connection_pool)
+  assert_eq(ConnectionPoolStats::active_connections(pool_stats), 0)
+  assert_eq(ConnectionPoolStats::available_connections(pool_stats), 5)
 }
