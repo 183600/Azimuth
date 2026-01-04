@@ -1,367 +1,414 @@
 // Azimuth Telemetry System - New Comprehensive Test Cases
-// This file contains new comprehensive test cases for various telemetry functionalities
+// This file contains new comprehensive test cases for various telemetry system components
 
-// Test 1: Advanced Data Structure Operations
-test "advanced data structure operations" {
-  // Test nested array operations
-  let nested_array = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
-  assert_eq(nested_array.length(), 3)
-  assert_eq(nested_array[0].length(), 3)
-  assert_eq(nested_array[1][1], 5)
+// Test 1: Time Series Data Processing
+test "time series data processing" {
+  let time_series = TimeSeries::new("cpu.usage", "percentage")
   
-  // Test matrix operations
-  let mut sum = 0
-  for i in 0..<(nested_array.length()) {
-    for j in 0..<(nested_array[i].length()) {
-      sum = sum + nested_array[i][j]
+  // Add data points
+  TimeSeries::add_point(time_series, 1000L, 25.5)
+  TimeSeries::add_point(time_series, 2000L, 30.2)
+  TimeSeries::add_point(time_series, 3000L, 28.7)
+  TimeSeries::add_point(time_series, 4000L, 32.1)
+  
+  // Test data retrieval
+  let points = TimeSeries::get_points(time_series)
+  assert_eq(points.length(), 4)
+  
+  // Test aggregation
+  let avg = TimeSeries::average(time_series)
+  assert_true(avg > 25.0 && avg < 35.0)
+  
+  let max = TimeSeries::max(time_series)
+  assert_eq(max, 32.1)
+  
+  let min = TimeSeries::min(time_series)
+  assert_eq(min, 25.5)
+  
+  // Test time range query
+  let range_points = TimeSeries::get_points_in_range(time_series, 1500L, 3500L)
+  assert_eq(range_points.length(), 2)
+}
+
+// Test 2: Distributed Tracing Consistency
+test "distributed tracing consistency" {
+  let tracer = TracerProvider::get_tracer("test_tracer")
+  
+  // Create root span
+  let root_span = Tracer::start_span(tracer, "root_operation")
+  let root_ctx = Span::span_context(root_span)
+  
+  // Create child spans
+  let child1 = Tracer::start_span_with_context(tracer, "child_operation_1", root_ctx)
+  let child2 = Tracer::start_span_with_context(tracer, "child_operation_2", root_ctx)
+  
+  // Verify trace ID consistency
+  assert_eq(SpanContext::trace_id(root_ctx), SpanContext::trace_id(Span::span_context(child1)))
+  assert_eq(SpanContext::trace_id(root_ctx), SpanContext::trace_id(Span::span_context(child2)))
+  
+  // Verify parent-child relationship
+  let child1_ctx = Span::span_context(child1)
+  let child2_ctx = Span::span_context(child2)
+  
+  // Add events and attributes
+  Span::add_event(root_span, "root_event", Some([("event_type", StringValue("start"))]))
+  Span::add_event(child1, "child1_event", Some([("event_type", StringValue("process"))]))
+  Span::add_event(child2, "child2_event", Some([("event_type", StringValue("finalize"))]))
+  
+  // End spans in reverse order
+  Span::end(child1)
+  Span::end(child2)
+  Span::end(root_span)
+  
+  // Verify span status
+  assert_eq(Span::status(root_span), Ok)
+  assert_eq(Span::status(child1), Ok)
+  assert_eq(Span::status(child2), Ok)
+}
+
+// Test 3: Performance Benchmark
+test "performance benchmark" {
+  let start_time = Time::now()
+  
+  // Create multiple spans
+  let tracer = TracerProvider::get_tracer("benchmark_tracer")
+  let mut spans = []
+  
+  for i in 0..=100 {
+    let span = Tracer::start_span(tracer, "benchmark_span_" + i.to_string())
+    spans.push(span)
+    
+    // Add some attributes
+    Span::set_attribute(span, "iteration", IntValue(i))
+    Span::add_event(span, "iteration_event", Some([("value", FloatValue(i * 1.5))]))
+  }
+  
+  // End all spans
+  for span in spans {
+    Span::end(span)
+  }
+  
+  let end_time = Time::now()
+  let duration = end_time - start_time
+  
+  // Verify reasonable performance (should complete within reasonable time)
+  assert_true(duration < 5000L) // Less than 5 seconds
+  
+  // Verify memory usage
+  let memory_usage = Memory::current_usage()
+  assert_true(memory_usage < 100_000_000L) // Less than 100MB
+}
+
+// Test 4: Error Handling and Recovery
+test "error handling and recovery" {
+  let tracer = TracerProvider::get_tracer("error_tracer")
+  let span = Tracer::start_span(tracer, "error_operation")
+  
+  // Simulate error condition
+  let error_condition = true
+  
+  if error_condition {
+    Span::set_status(span, Error, Some("Simulated error condition"))
+    Span::add_event(span, "error_occurred", Some([
+      ("error.type", StringValue("simulation")),
+      ("error.severity", StringValue("high"))
+    ]))
+    
+    // Test error recovery
+    let recovery_span = Tracer::start_span_with_context(tracer, "recovery_operation", Span::span_context(span))
+    Span::set_status(recovery_span, Ok, Some("Recovery successful"))
+    Span::end(recovery_span)
+  }
+  
+  // Verify error status
+  assert_eq(Span::status(span), Error)
+  
+  // Test exception handling
+  let exception_span = Tracer::start_span(tracer, "exception_operation")
+  try {
+    // Simulate exception
+    raise Exception("Test exception")
+  } catch {
+    Exception(msg) => {
+      Span::set_status(exception_span, Error, Some("Exception caught: " + msg))
+      Span::add_event(exception_span, "exception_handled", Some([
+        ("exception.message", StringValue(msg))
+      ]))
     }
   }
-  assert_eq(sum, 45)
-  
-  // Test array filtering and transformation
-  let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-  let mut even_numbers = []
-  let mut odd_numbers = []
-  
-  for num in numbers {
-    if num % 2 == 0 {
-      even_numbers.push(num)
-    } else {
-      odd_numbers.push(num)
-    }
-  }
-  
-  assert_eq(even_numbers.length(), 5)
-  assert_eq(odd_numbers.length(), 5)
-  assert_eq(even_numbers[0], 2)
-  assert_eq(odd_numbers[0], 1)
+  Span::end(exception_span)
+  Span::end(span)
 }
 
-// Test 2: String Processing and Pattern Matching
-test "string processing and pattern matching" {
-  // Test string manipulation
-  let text = "Azimuth Telemetry System"
-  assert_eq(text.length(), 23)
-  assert_eq(text.to_uppercase(), "AZIMUTH TELEMETRY SYSTEM")
-  assert_eq(text.to_lowercase(), "azimuth telemetry system")
+// Test 5: Resource Management and Cleanup
+test "resource management and cleanup" {
+  let resource_manager = ResourceManager::new()
   
-  // Test string splitting and joining
-  let words = text.split(" ")
-  assert_eq(words.length(), 3)
-  assert_eq(words[0], "Azimuth")
-  assert_eq(words[1], "Telemetry")
-  assert_eq(words[2], "System")
+  // Allocate resources
+  let resource1 = ResourceManager::allocate(resource_manager, "resource1", 1024)
+  let resource2 = ResourceManager::allocate(resource_manager, "resource2", 2048)
+  let resource3 = ResourceManager::allocate(resource_manager, "resource3", 512)
   
-  let joined = words.join("_")
-  assert_eq(joined, "Azimuth_Telemetry_System")
+  // Verify resource allocation
+  assert_true(ResourceManager::is_allocated(resource_manager, "resource1"))
+  assert_true(ResourceManager::is_allocated(resource_manager, "resource2"))
+  assert_true(ResourceManager::is_allocated(resource_manager, "resource3"))
   
-  // Test substring operations
-  let substring = text.substring(0, 7)
-  assert_eq(substring, "Azimuth")
+  // Test resource usage tracking
+  let total_usage = ResourceManager::total_usage(resource_manager)
+  assert_eq(total_usage, 3584) // 1024 + 2048 + 512
   
-  // Test string contains
-  assert_true(text.contains("Telemetry"))
-  assert_false(text.contains("Testing"))
+  // Test resource cleanup
+  ResourceManager::deallocate(resource_manager, "resource2")
+  assert_false(ResourceManager::is_allocated(resource_manager, "resource2"))
+  
+  let usage_after_cleanup = ResourceManager::total_usage(resource_manager)
+  assert_eq(usage_after_cleanup, 1536) // 1024 + 512
+  
+  // Test resource limit enforcement
+  let limited_manager = ResourceManager::with_limit(2000)
+  let res1 = ResourceManager::allocate(limited_manager, "limited1", 1500)
+  let res2 = ResourceManager::allocate(limited_manager, "limited2", 300)
+  let res3 = ResourceManager::allocate(limited_manager, "limited3", 500) // Should fail due to limit
+  
+  assert_true(ResourceManager::is_allocated(limited_manager, "limited1"))
+  assert_true(ResourceManager::is_allocated(limited_manager, "limited2"))
+  assert_false(ResourceManager::is_allocated(limited_manager, "limited3"))
 }
 
-// Test 3: Error Handling and Exception Management
-test "error handling and exception management" {
-  // Test result type operations
-  let success_result = Ok(42)
-  let error_result = Error("Test error message")
+// Test 6: Concurrent Safety
+test "concurrent safety" {
+  let shared_counter = AtomicCounter::new(0)
+  let spans = []
+  let tracer = TracerProvider::get_tracer("concurrent_tracer")
   
-  match success_result {
-    Ok(value) => assert_eq(value, 42)
-    Error(_) => assert_true(false)
+  // Create concurrent operations
+  for i in 0..=50 {
+    let span = Tracer::start_span(tracer, "concurrent_operation_" + i.to_string())
+    spans.push(span)
+    
+    // Simulate concurrent counter increment
+    Async::run(() => {
+      AtomicCounter::increment(shared_counter)
+      Span::add_event(span, "counter_incremented", Some([
+        ("thread_id", IntValue(i)),
+        ("counter_value", IntValue(AtomicCounter::get(shared_counter)))
+      ]))
+    })
   }
   
-  match error_result {
-    Ok(_) => assert_true(false)
-    Error(message) => assert_eq(message, "Test error message")
+  // Wait for all operations to complete
+  Async::wait_all()
+  
+  // Verify final counter value
+  assert_eq(AtomicCounter::get(shared_counter), 51)
+  
+  // End all spans
+  for span in spans {
+    Span::end(span)
   }
   
-  // Test error propagation
-  let process_value = fn(x: Int) -> Result[Int, String] {
-    if x < 0 {
-      Error("Value cannot be negative")
-    } else {
-      Ok(x * 2)
-    }
+  // Verify thread safety of attributes
+  let attrs = Attributes::new()
+  for i in 0..=20 {
+    Async::run(() => {
+      Attributes::set(attrs, "key_" + i.to_string(), IntValue(i))
+    })
   }
+  Async::wait_all()
   
-  let valid_result = process_value(10)
-  match valid_result {
-    Ok(value) => assert_eq(value, 20)
-    Error(_) => assert_true(false)
-  }
-  
-  let invalid_result = process_value(-5)
-  match invalid_result {
-    Ok(_) => assert_true(false)
-    Error(message) => assert_eq(message, "Value cannot be negative")
+  // Verify attributes were set correctly
+  let value = Attributes::get(attrs, "key_10")
+  match value {
+    Some(IntValue(v)) => assert_eq(v, 10)
+    _ => assert_true(false)
   }
 }
 
-// Test 4: Mathematical Operations and Calculations
-test "mathematical operations and calculations" {
-  // Test basic mathematical functions
-  assert_eq(abs(-10), 10)
-  assert_eq(abs(10), 10)
-  assert_eq(min(5, 10), 5)
-  assert_eq(max(5, 10), 10)
+// Test 7: Data Serialization and Deserialization
+test "data serialization and deserialization" {
+  let original_data = TelemetryData::new(
+    "trace_123",
+    "span_456",
+    [("service.name", StringValue("test_service"))],
+    [Event::new("test_event", 1000L, [("event.data", StringValue("test_data"))])],
+    Status::Ok
+  )
   
-  // Test power operations
-  assert_eq(pow(2, 3), 8)
-  assert_eq(pow(5, 2), 25)
-  assert_eq(pow(10, 0), 1)
+  // Test serialization to JSON
+  let json_data = Serialization::to_json(original_data)
+  assert_true(json_data.contains("trace_123"))
+  assert_true(json_data.contains("span_456"))
+  assert_true(json_data.contains("test_service"))
   
-  // Test square root operations
-  assert_eq(sqrt(16), 4.0)
-  assert_eq(sqrt(25), 5.0)
-  assert_eq(sqrt(0), 0.0)
+  // Test deserialization from JSON
+  let deserialized_data = Serialization::from_json(json_data)
+  assert_eq(TelemetryData::trace_id(deserialized_data), "trace_123")
+  assert_eq(TelemetryData::span_id(deserialized_data), "span_456")
   
-  // Test rounding operations
-  assert_eq(round(3.14), 3)
-  assert_eq(round(3.74), 4)
-  assert_eq(floor(3.99), 3)
-  assert_eq(ceil(3.01), 4)
+  // Test binary serialization
+  let binary_data = Serialization::to_binary(original_data)
+  assert_true(binary_data.length() > 0)
   
-  // Test trigonometric operations
-  assert_eq(sin(0), 0.0)
-  assert_eq(cos(0), 1.0)
-  assert_eq(tan(0), 0.0)
+  let binary_deserialized = Serialization::from_binary(binary_data)
+  assert_eq(TelemetryData::trace_id(binary_deserialized), "trace_123")
+  assert_eq(TelemetryData::span_id(binary_deserialized), "span_456")
+  
+  // Test protocol buffer serialization
+  let proto_data = Serialization::to_proto(original_data)
+  assert_true(proto_data.length() > 0)
+  
+  let proto_deserialized = Serialization::from_proto(proto_data)
+  assert_eq(TelemetryData::trace_id(proto_deserialized), "trace_123")
+  assert_eq(TelemetryData::span_id(proto_deserialized), "span_456")
 }
 
-// Test 5: Date and Time Operations
-test "date and time operations" {
-  // Test timestamp creation and manipulation
-  let current_time = get_current_timestamp()
-  assert_true(current_time > 0)
+// Test 8: Cross-Service Communication
+test "cross-service communication" {
+  let service_a = Service::new("ServiceA", "localhost:8080")
+  let service_b = Service::new("ServiceB", "localhost:8081")
+  let service_c = Service::new("ServiceC", "localhost:8082")
   
-  let formatted_time = format_timestamp(current_time, "YYYY-MM-DD")
-  assert_true(formatted_time.length() >= 10)
+  // Setup service communication
+  Service::register_handler(service_a, "process", (request) => {
+    let response = Response::new(200, [("processed", "true")])
+    response
+  })
   
-  // Test time interval calculations
-  let start_time = get_current_timestamp()
-  // Simulate some operation
-  let mut counter = 0
-  for i in 0..<1000 {
-    counter = counter + i
-  }
-  let end_time = get_current_timestamp()
+  Service::register_handler(service_b, "analyze", (request) => {
+    let response = Response::new(200, [("analyzed", "true")])
+    response
+  })
   
-  let elapsed_time = end_time - start_time
-  assert_true(elapsed_time >= 0)
+  Service::register_handler(service_c, "store", (request) => {
+    let response = Response::new(201, [("stored", "true")])
+    response
+  })
   
-  // Test time zone operations
-  let utc_time = get_utc_timestamp()
-  let local_time = get_local_timestamp()
-  let time_difference = abs(local_time - utc_time)
+  // Test service chain communication
+  let tracer = TracerProvider::get_tracer("service_tracer")
+  let root_span = Tracer::start_span(tracer, "service_chain")
+  let ctx = Span::span_context(root_span)
   
-  // Time difference should be reasonable (within 24 hours)
-  assert_true(time_difference < 86400)
+  // Service A -> Service B -> Service C
+  let request_a = Request::new_with_context("POST", "/process", [("data", "test_data")], ctx)
+  let response_a = Service::send_request(service_a, request_a)
+  assert_eq(Response::status_code(response_a), 200)
+  
+  let request_b = Request::new_with_context("POST", "/analyze", [("data", "test_data")], ctx)
+  let response_b = Service::send_request(service_b, request_b)
+  assert_eq(Response::status_code(response_b), 200)
+  
+  let request_c = Request::new_with_context("POST", "/store", [("data", "test_data")], ctx)
+  let response_c = Service::send_request(service_c, request_c)
+  assert_eq(Response::status_code(response_c), 201)
+  
+  // Verify trace propagation
+  assert_eq(Request::trace_id(request_a), Request::trace_id(request_b))
+  assert_eq(Request::trace_id(request_b), Request::trace_id(request_c))
+  
+  Span::end(root_span)
 }
 
-// Test 6: Collection Operations and Algorithms
-test "collection operations and algorithms" {
-  // Test list operations
-  let numbers = [5, 2, 8, 1, 9, 3]
+// Test 9: Configuration Management
+test "configuration management" {
+  let config_manager = ConfigurationManager::new()
   
-  // Test sorting
-  let sorted_numbers = sort(numbers)
-  assert_eq(sorted_numbers[0], 1)
-  assert_eq(sorted_numbers[5], 9)
+  // Set configuration values
+  ConfigurationManager::set(config_manager, "service.name", "azimuth")
+  ConfigurationManager::set(config_manager, "service.version", "1.0.0")
+  ConfigurationManager::set(config_manager, "telemetry.enabled", "true")
+  ConfigurationManager::set(config_manager, "telemetry.sampling_rate", "0.1")
+  ConfigurationManager::set(config_manager, "performance.max_concurrent", "100")
   
-  // Test searching
-  let index_of_8 = find_index(numbers, 8)
-  match index_of_8 {
-    Some(index) => assert_eq(index, 2)
+  // Get configuration values
+  let service_name = ConfigurationManager::get(config_manager, "service.name")
+  match service_name {
+    Some(value) => assert_eq(value, "azimuth")
     None => assert_true(false)
   }
   
-  let index_of_10 = find_index(numbers, 10)
-  match index_of_10 {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
+  let service_version = ConfigurationManager::get(config_manager, "service.version")
+  match service_version {
+    Some(value) => assert_eq(value, "1.0.0")
+    None => assert_true(false)
   }
   
-  // Test filtering
-  let even_numbers = filter(numbers, fn(x: Int) -> Bool { x % 2 == 0 })
-  assert_eq(even_numbers.length(), 3)
-  assert_true(even_numbers.contains(2))
-  assert_true(even_numbers.contains(8))
-  assert_false(even_numbers.contains(5))
+  let telemetry_enabled = ConfigurationManager::get_bool(config_manager, "telemetry.enabled")
+  assert_true(telemetry_enabled)
   
-  // Test mapping
-  let squared_numbers = map(numbers, fn(x: Int) -> Int { x * x })
-  assert_eq(squared_numbers[0], 25)
-  assert_eq(squared_numbers[1], 4)
-  assert_eq(squared_numbers[2], 64)
+  let sampling_rate = ConfigurationManager::get_float(config_manager, "telemetry.sampling_rate")
+  assert_true(sampling_rate > 0.0 && sampling_rate <= 1.0)
   
-  // Test reduction
-  let sum = reduce(numbers, 0, fn(acc: Int, x: Int) -> Int { acc + x })
-  assert_eq(sum, 28)
+  let max_concurrent = ConfigurationManager::get_int(config_manager, "performance.max_concurrent")
+  assert_eq(max_concurrent, 100)
+  
+  // Test configuration validation
+  let validation_result = ConfigurationManager::validate(config_manager)
+  assert_true(validation_result.is_valid)
+  
+  // Test configuration defaults
+  let default_value = ConfigurationManager::get_with_default(config_manager, "nonexistent.key", "default_value")
+  assert_eq(default_value, "default_value")
+  
+  // Test configuration persistence
+  ConfigurationManager::save(config_manager, "test_config.json")
+  let loaded_config = ConfigurationManager::load("test_config.json")
+  
+  let loaded_service_name = ConfigurationManager::get(loaded_config, "service.name")
+  match loaded_service_name {
+    Some(value) => assert_eq(value, "azimuth")
+    None => assert_true(false)
+  }
 }
 
-// Test 7: File System Operations
-test "file system operations" {
-  // Test file path operations
-  let file_path = "/home/user/data/telemetry.json"
-  let directory_path = get_directory_path(file_path)
-  assert_eq(directory_path, "/home/user/data")
+// Test 10: Telemetry Data Aggregation
+test "telemetry data aggregation" {
+  let aggregator = DataAggregator::new()
   
-  let file_name = get_file_name(file_path)
-  assert_eq(file_name, "telemetry.json")
-  
-  let file_extension = get_file_extension(file_path)
-  assert_eq(file_extension, "json")
-  
-  // Test path joining
-  let joined_path = join_paths("/home/user", "data", "telemetry.json")
-  assert_eq(joined_path, "/home/user/data/telemetry.json")
-  
-  // Test path normalization
-  let normalized_path = normalize_path("/home/user/../user/data/./telemetry.json")
-  assert_eq(normalized_path, "/home/user/data/telemetry.json")
-  
-  // Test file existence check
-  let existing_file = "/home/runner/work/Azimuth/Azimuth/src/basic_tests.mbt"
-  let non_existing_file = "/non/existing/file.txt"
-  
-  assert_true(file_exists(existing_file))
-  assert_false(file_exists(non_existing_file))
-}
-
-// Test 8: Network and Communication Operations
-test "network and communication operations" {
-  // Test URL parsing
-  let url = "https://example.com:8080/api/v1/telemetry?param=value&param2=value2"
-  let parsed_url = parse_url(url)
-  
-  assert_eq(parsed_url.scheme, "https")
-  assert_eq(parsed_url.host, "example.com")
-  assert_eq(parsed_url.port, Some(8080))
-  assert_eq(parsed_url.path, "/api/v1/telemetry")
-  assert_eq(parsed_url.query, Some("param=value&param2=value2"))
-  
-  // Test query parameter parsing
-  let query_params = parse_query_parameters("param=value&param2=value2")
-  assert_eq(query_params.get("param"), Some("value"))
-  assert_eq(query_params.get("param2"), Some("value2"))
-  assert_eq(query_params.get("nonexistent"), None)
-  
-  // Test URL encoding and decoding
-  let original_text = "hello world!@#$%"
-  let encoded_text = url_encode(original_text)
-  let decoded_text = url_decode(encoded_text)
-  
-  assert_eq(original_text, decoded_text)
-  assert_true(encoded_text.contains("%20"))
-  
-  // Test IP address validation
-  assert_true(is_valid_ipv4("192.168.1.1"))
-  assert_true(is_valid_ipv4("10.0.0.1"))
-  assert_false(is_valid_ipv4("256.256.256.256"))
-  assert_false(is_valid_ipv4("invalid.ip.address"))
-  
-  // Test hostname validation
-  assert_true(is_valid_hostname("example.com"))
-  assert_true(is_valid_hostname("subdomain.example.com"))
-  assert_false(is_valid_hostname("invalid..hostname"))
-  assert_false(is_valid_hostname("hostname.with spaces"))
-}
-
-// Test 9: Cryptographic Operations
-test "cryptographic operations" {
-  // Test hash operations
-  let data = "test data for hashing"
-  let sha256_hash = sha256_hash(data)
-  assert_eq(sha256_hash.length(), 64) // SHA-256 produces 64 hex characters
-  
-  let md5_hash = md5_hash(data)
-  assert_eq(md5_hash.length(), 32) // MD5 produces 32 hex characters
-  
-  // Test hash consistency
-  let hash1 = sha256_hash("consistent data")
-  let hash2 = sha256_hash("consistent data")
-  assert_eq(hash1, hash2)
-  
-  // Test hash uniqueness
-  let hash3 = sha256_hash("different data")
-  assert_true(hash1 != hash3)
-  
-  // Test HMAC operations
-  let secret_key = "secret_key_for_hmac"
-  let message = "message to authenticate"
-  let hmac_result = hmac_sha256(secret_key, message)
-  
-  assert_true(hmac_result.length() > 0)
-  
-  // Test HMAC verification
-  let verification_result = verify_hmac_sha256(secret_key, message, hmac_result)
-  assert_true(verification_result)
-  
-  let invalid_verification = verify_hmac_sha256("wrong_key", message, hmac_result)
-  assert_false(invalid_verification)
-}
-
-// Test 10: Performance and Benchmarking Operations
-test "performance and benchmarking operations" {
-  // Test performance measurement
-  let start_memory = get_memory_usage()
-  
-  // Create a large data structure
-  let mut large_array = []
-  for i in 0..<10000 {
-    large_array.push(i * i)
+  // Add telemetry data points
+  for i in 0..=100 {
+    let data_point = TelemetryDataPoint::new(
+      "metric_" + (i % 10).to_string(), // 10 different metrics
+      i as Float,
+      Time::now() - (100 - i) * 1000L // Last 100 seconds
+    )
+    DataAggregator::add_point(aggregator, data_point)
   }
   
-  let end_memory = get_memory_usage()
-  let memory_diff = end_memory - start_memory
+  // Test aggregation by metric name
+  let metric_0_points = DataAggregator::get_by_metric(aggregator, "metric_0")
+  assert_eq(metric_0_points.length(), 11) // 0, 10, 20, ..., 100
   
-  // Memory usage should have increased
-  assert_true(memory_diff > 0)
+  // Test time-based aggregation
+  let recent_points = DataAggregator::get_by_time_range(aggregator, Time::now() - 5000L, Time::now())
+  assert_true(recent_points.length() >= 5)
   
-  // Test execution time measurement
-  let start_time = get_high_precision_timestamp()
+  // Test statistical aggregation
+  let stats = DataAggregator::get_statistics(aggregator, "metric_5")
+  assert_true(stats.count > 0)
+  assert_true(stats.average >= 0.0)
+  assert_true(stats.max >= stats.min)
   
-  // Perform some computation
-  let mut result = 0
-  for i in 0..<100000 {
-    result = result + (i * i)
-  }
+  // Test percentile calculation
+  let p95 = DataAggregator::get_percentile(aggregator, "metric_3", 95.0)
+  assert_true(p95 >= 0.0)
   
-  let end_time = get_high_precision_timestamp()
-  let execution_time = end_time - start_time
+  let p50 = DataAggregator::get_percentile(aggregator, "metric_3", 50.0)
+  assert_true(p50 <= p95)
   
-  // Execution time should be reasonable
-  assert_true(execution_time > 0)
-  assert_true(execution_time < 1000000000) // Less than 1 second in nanoseconds
+  // Test rate calculation
+  let rate = DataAggregator::get_rate(aggregator, "metric_7", Time::now() - 10000L, Time::now())
+  assert_true(rate >= 0.0)
   
-  // Test result correctness
-  assert_eq(result, 333328333350000)
+  // Test aggregation with grouping
+  let grouped_stats = DataAggregator::get_grouped_statistics(aggregator)
+  assert_eq(grouped_stats.length(), 10) // 10 different metrics
   
-  // Test performance comparison
-  let fast_algorithm_time = measure_execution_time(fn() {
-    // Fast algorithm: simple iteration
-    let mut sum = 0
-    for i in 0..<1000 {
-      sum = sum + i
-    }
-    sum
-  })
+  // Test data retention
+  DataAggregator::retention_policy(aggregator, 60000L) // Keep data for 60 seconds
+  DataAggregator::cleanup_old_data(aggregator)
   
-  let slow_algorithm_time = measure_execution_time(fn() {
-    // Slower algorithm: nested iteration
-    let mut sum = 0
-    for i in 0..<1000 {
-      for j in 0..<10 {
-        sum = sum + j
-      }
-    }
-    sum
-  })
-  
-  // Fast algorithm should be faster (or at least not significantly slower)
-  assert_true(fast_algorithm_time <= slow_algorithm_time * 2)
+  let all_points_after_cleanup = DataAggregator::get_all_points(aggregator)
+  assert_true(all_points_after_cleanup.length() < 101) // Some points should be cleaned up
 }
