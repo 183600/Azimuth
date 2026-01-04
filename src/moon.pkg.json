@@ -103,5 +103,6 @@
             "../azimuth_security_privacy_enhanced_tests.mbt",
             "../azimuth_performance_optimization_tests.mbt",
             "../azimuth_premium_quality_test_cases.mbt",
-        "../azimuth_specialized_feature_tests.mbt"]  }
+        "../azimuth_specialized_feature_tests.mbt",
+        "../azimuth_high_quality_premium_tests.mbt"]  }
 }
