@@ -1,738 +1,711 @@
-// Custom Metrics Tests for Azimuth Telemetry System
-// This file contains test cases for custom metrics functionality
+// Azimuth 自定义度量测试用例
+// 测试自定义度量指标和监控系统
 
-// Test 1: Custom Metric Creation and Registration
-test "custom metric creation and registration" {
-  let metrics_registry = MetricsRegistry::new()
+// 测试1: 自定义计数器度量
+test "自定义计数器度量" {
+  // 创建度量提供者
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "custom.metrics.test")
   
-  // Test custom counter creation
-  let custom_counter = CustomMetric::create_counter(
-    metrics_registry,
-    "user_interactions_total",
-    "Total number of user interactions",
-    "interactions"
+  // 创建自定义计数器
+  let request_counter = Meter::create_counter(
+    meter, 
+    "http.requests.total", 
+    Some("Total HTTP requests"), 
+    Some("requests")
   )
   
-  assert_eq(CustomMetric::name(custom_counter), "user_interactions_total")
-  assert_eq(CustomMetric::description(custom_counter), "Total number of user interactions")
-  assert_eq(CustomMetric::unit(custom_counter), "interactions")
-  
-  // Test custom gauge creation
-  let custom_gauge = CustomMetric::create_gauge(
-    metrics_registry,
-    "active_users",
-    "Number of currently active users",
-    "users"
+  let error_counter = Meter::create_counter(
+    meter, 
+    "http.errors.total", 
+    Some("Total HTTP errors"), 
+    Some("errors")
   )
   
-  assert_eq(CustomMetric::name(custom_gauge), "active_users")
-  assert_eq(CustomMetric::description(custom_gauge), "Number of currently active users")
-  assert_eq(CustomMetric::unit(custom_gauge), "users")
+  // 测试基本计数器操作
+  assert_eq(request_counter.name, "http.requests.total")
+  assert_eq(request_counter.description, Some("Total HTTP requests"))
+  assert_eq(request_counter.unit, Some("requests"))
   
-  // Test custom histogram creation
-  let custom_histogram = CustomMetric::create_histogram(
-    metrics_registry,
-    "request_duration_ms",
-    "Request duration in milliseconds",
-    "ms",
-    [1.0, 5.0, 10.0, 25.0, 50.0, 100.0, 250.0, 500.0, 1000.0]
-  )
+  // 增加计数器
+  Counter::add(request_counter, 1.0)
+  Counter::add(request_counter, 5.0)
+  Counter::add(request_counter, 10.0)
   
-  assert_eq(CustomMetric::name(custom_histogram), "request_duration_ms")
-  assert_eq(CustomMetric::bucket_boundaries(custom_histogram).length(), 9)
+  // 测试带属性的计数器增加
+  Counter::add_with_attributes(request_counter, 3.0, [
+    ("method", "GET"),
+    ("status", "200"),
+    ("endpoint", "/api/users")
+  ])
   
-  // Test metric registration
-  let is_registered = MetricsRegistry::is_registered(metrics_registry, "user_interactions_total")
-  assert_true(is_registered)
+  Counter::add_with_attributes(request_counter, 2.0, [
+    ("method", "POST"),
+    ("status", "201"),
+    ("endpoint", "/api/orders")
+  ])
   
-  let registered_metric = MetricsRegistry::get_metric(metrics_registry, "user_interactions_total")
-  assert_true(registered_metric.is_some())
+  Counter::add_with_attributes(request_counter, 1.0, [
+    ("method", "GET"),
+    ("status", "404"),
+    ("endpoint", "/api/unknown")
+  ])
+  
+  // 增加错误计数器
+  Counter::add_with_attributes(error_counter, 1.0, [
+    ("error_type", "ValidationError"),
+    ("endpoint", "/api/users")
+  ])
+  
+  Counter::add_with_attributes(error_counter, 2.0, [
+    ("error_type", "AuthenticationError"),
+    ("endpoint", "/api/auth")
+  ])
+  
+  // 获取度量数据
+  let request_metrics = Counter::get_measurements(request_counter)
+  let error_metrics = Counter::get_measurements(error_counter)
+  
+  // 验证请求度量
+  assert_eq(request_metrics.length(), 4)  // 3个无属性 + 3个有属性（可能合并）
+  
+  // 验证总请求数
+  let total_requests = request_metrics.reduce(fn(acc, measurement) {
+    acc + measurement.value
+  }, 0.0)
+  
+  assert_eq(total_requests, 22.0)  // 1 + 5 + 10 + 3 + 2 + 1
+  
+  // 验证错误度量
+  assert_eq(error_metrics.length(), 2)
+  
+  let total_errors = error_metrics.reduce(fn(acc, measurement) {
+    acc + measurement.value
+  }, 0.0)
+  
+  assert_eq(total_errors, 3.0)  // 1 + 2
+  
+  // 测试计数器重置
+  Counter::reset(request_counter)
+  let reset_metrics = Counter::get_measurements(request_counter)
+  
+  // 验证重置后的度量
+  assert_eq(reset_metrics.length(), 0)
+  
+  // 重新添加数据
+  Counter::add_with_attributes(request_counter, 5.0, [
+    ("method", "GET"),
+    ("status", "200"),
+    ("endpoint", "/api/data")
+  ])
+  
+  let new_metrics = Counter::get_measurements(request_counter)
+  assert_eq(new_metrics.length(), 1)
+  assert_eq(new_metrics[0].value, 5.0)
 }
 
-// Test 2: Metric Operations
-test "metric operations" {
-  let metrics_registry = MetricsRegistry::new()
+// 测试2: 自定义仪表盘度量
+test "自定义仪表盘度量" {
+  // 创建度量提供者
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "gauge.metrics.test")
   
-  // Create metrics for testing
-  let counter = CustomMetric::create_counter(
-    metrics_registry,
-    "api_requests_total",
-    "Total API requests",
-    "requests"
+  // 创建自定义仪表盘
+  let memory_usage_gauge = Meter::create_gauge(
+    meter, 
+    "system.memory.usage", 
+    Some("Memory usage in bytes"), 
+    Some("bytes")
   )
   
-  let gauge = CustomMetric::create_gauge(
-    metrics_registry,
-    "queue_size",
-    "Current queue size",
-    "items"
+  let cpu_usage_gauge = Meter::create_gauge(
+    meter, 
+    "system.cpu.usage", 
+    Some("CPU usage percentage"), 
+    Some("percent")
   )
   
-  let histogram = CustomMetric::create_histogram(
-    metrics_registry,
-    "response_time_ms",
-    "Response time in milliseconds",
-    "ms",
-    [10.0, 50.0, 100.0, 200.0, 500.0]
+  let active_connections_gauge = Meter::create_gauge(
+    meter, 
+    "network.connections.active", 
+    Some("Active network connections"), 
+    Some("connections")
   )
   
-  // Test counter operations
-  CustomMetric::counter_add(counter, 1.0)
-  CustomMetric::counter_add(counter, 5.0)
-  CustomMetric::counter_add(counter, 3.0, [("endpoint", "/api/users")])
+  // 测试仪表盘设置
+  Gauge::set(memory_usage_gauge, 1073741824.0)  // 1GB
+  Gauge::set_with_attributes(cpu_usage_gauge, 75.5, [
+    ("core", "0"),
+    ("mode", "user")
+  ])
   
-  let counter_value = CustomMetric::get_counter_value(counter)
-  assert_eq(counter_value, 9.0) // 1 + 5 + 3
+  Gauge::set_with_attributes(cpu_usage_gauge, 25.0, [
+    ("core", "0"),
+    ("mode", "system")
+  ])
   
-  let labeled_counter_value = CustomMetric::get_counter_value_with_labels(counter, [("endpoint", "/api/users")])
-  assert_eq(labeled_counter_value, 3.0)
+  Gauge::set_with_attributes(cpu_usage_gauge, 60.0, [
+    ("core", "1"),
+    ("mode", "user")
+  ])
   
-  // Test gauge operations
-  CustomMetric::gauge_set(gauge, 10.0)
-  CustomMetric::gauge_add(gauge, 5.0)
-  CustomMetric::gauge_sub(gauge, 2.0)
+  Gauge::set_with_attributes(cpu_usage_gauge, 15.0, [
+    ("core", "1"),
+    ("mode", "system")
+  ])
   
-  let gauge_value = CustomMetric::get_gauge_value(gauge)
-  assert_eq(gauge_value, 13.0) // 10 + 5 - 2
+  Gauge::set(active_connections_gauge, 150.0)
   
-  // Test histogram operations
-  CustomMetric::histogram_observe(histogram, 15.0)
-  CustomMetric::histogram_observe(histogram, 75.0)
-  CustomMetric::histogram_observe(histogram, 150.0, [("status", "200")])
+  // 获取仪表盘度量
+  let memory_metrics = Gauge::get_measurements(memory_usage_gauge)
+  let cpu_metrics = Gauge::get_measurements(cpu_usage_gauge)
+  let connection_metrics = Gauge::get_measurements(active_connections_gauge)
   
-  let histogram_stats = CustomMetric::get_histogram_stats(histogram)
-  assert_eq(histogram_stats.count, 3)
-  assert_eq(histogram_stats.sum, 240.0)
+  // 验证内存度量
+  assert_eq(memory_metrics.length(), 1)
+  assert_eq(memory_metrics[0].value, 1073741824.0)
   
-  let bucket_counts = CustomMetric::get_histogram_bucket_counts(histogram)
-  assert_true(bucket_counts.get("le=10.0") == Some(0.0))
-  assert_true(bucket_counts.get("le=50.0") == Some(1.0))
-  assert_true(bucket_counts.get("le=100.0") == Some(1.0))
-  assert_true(bucket_counts.get("le=200.0") == Some(2.0))
+  // 验证CPU度量
+  assert_eq(cpu_metrics.length(), 4)
+  
+  // 验证特定CPU度量
+  let cpu_core0_user = cpu_metrics.filter(fn(m) {
+    m.attributes.contains(("core", "0")) && m.attributes.contains(("mode", "user"))
+  })
+  
+  assert_eq(cpu_core0_user.length(), 1)
+  assert_eq(cpu_core0_user[0].value, 75.5)
+  
+  // 验证连接度量
+  assert_eq(connection_metrics.length(), 1)
+  assert_eq(connection_metrics[0].value, 150.0)
+  
+  // 测试仪表盘更新
+  Gauge::set(memory_usage_gauge, 2147483648.0)  // 2GB
+  Gauge::set(active_connections_gauge, 175.0)
+  
+  // 获取更新后的度量
+  let updated_memory_metrics = Gauge::get_measurements(memory_usage_gauge)
+  let updated_connection_metrics = Gauge::get_measurements(active_connections_gauge)
+  
+  // 验证更新后的度量
+  assert_eq(updated_memory_metrics[0].value, 2147483648.0)
+  assert_eq(updated_connection_metrics[0].value, 175.0)
+  
+  // 测试仪表盘递增和递减
+  Gauge::increment(memory_usage_gauge, 1073741824.0)  // 增加1GB
+  Gauge::decrement(active_connections_gauge, 25.0)    // 减少25个连接
+  
+  let final_memory_metrics = Gauge::get_measurements(memory_usage_gauge)
+  let final_connection_metrics = Gauge::get_measurements(active_connections_gauge)
+  
+  // 验证递增和递减操作
+  assert_eq(final_memory_metrics[0].value, 3221225472.0)  // 2GB + 1GB
+  assert_eq(final_connection_metrics[0].value, 150.0)     // 175 - 25
 }
 
-// Test 3: Metric Aggregation
-test "metric aggregation" {
-  let metrics_registry = MetricsRegistry::new()
+// 测试3: 自定义直方图度量
+test "自定义直方图度量" {
+  // 创建度量提供者
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "histogram.metrics.test")
   
-  // Create multiple counters for aggregation
-  let login_counter = CustomMetric::create_counter(
-    metrics_registry,
-    "user_logins_total",
-    "Total user logins",
-    "logins"
+  // 创建自定义直方图
+  let response_time_histogram = Meter::create_histogram(
+    meter, 
+    "http.request.duration", 
+    Some("HTTP request duration"), 
+    Some("ms")
   )
   
-  let logout_counter = CustomMetric::create_counter(
-    metrics_registry,
-    "user_logouts_total",
-    "Total user logouts",
-    "logouts"
+  let payload_size_histogram = Meter::create_histogram(
+    meter, 
+    "http.request.size", 
+    Some("HTTP request payload size"), 
+    Some("bytes")
   )
   
-  let registration_counter = CustomMetric::create_counter(
-    metrics_registry,
-    "user_registrations_total",
-    "Total user registrations",
-    "registrations"
-  )
+  // 记录响应时间数据
+  let response_times = [45.2, 123.7, 78.9, 256.1, 89.3, 167.8, 234.5, 12.5, 345.6, 67.8]
   
-  // Add values to counters
-  CustomMetric::counter_add(login_counter, 100.0)
-  CustomMetric::counter_add(logout_counter, 95.0)
-  CustomMetric::counter_add(registration_counter, 25.0)
-  
-  // Test sum aggregation
-  let sum_aggregation = MetricAggregator::sum([login_counter, logout_counter, registration_counter])
-  assert_eq(sum_aggregation, 220.0) // 100 + 95 + 25
-  
-  // Test average aggregation
-  let avg_aggregation = MetricAggregator::average([login_counter, logout_counter, registration_counter])
-  assert_eq(avg_aggregation, 73.33333333333333) // 220 / 3
-  
-  // Test max aggregation
-  let max_aggregation = MetricAggregator::max([login_counter, logout_counter, registration_counter])
-  assert_eq(max_aggregation, 100.0)
-  
-  // Test min aggregation
-  let min_aggregation = MetricAggregator::min([login_counter, logout_counter, registration_counter])
-  assert_eq(min_aggregation, 25.0)
-  
-  // Test percentile aggregation
-  let histogram = CustomMetric::create_histogram(
-    metrics_registry,
-    "response_times",
-    "Response times",
-    "ms",
-    [10.0, 50.0, 100.0, 200.0, 500.0]
-  )
-  
-  // Add histogram observations
-  for i = 1; i <= 100; i = i + 1 {
-    CustomMetric::histogram_observe(histogram, i.to_float())
+  for time in response_times {
+    Histogram::record(response_time_histogram, time)
   }
   
-  let p50 = MetricAggregator::percentile(histogram, 50.0)
-  let p90 = MetricAggregator::percentile(histogram, 90.0)
-  let p95 = MetricAggregator::percentile(histogram, 95.0)
+  // 记录带属性的响应时间
+  Histogram::record_with_attributes(response_time_histogram, 156.8, [
+    ("endpoint", "/api/users"),
+    ("method", "GET")
+  ])
   
-  assert_true(p50 > 45.0 && p50 < 55.0)
-  assert_true(p90 > 85.0 && p90 < 95.0)
-  assert_true(p95 > 90.0 && p95 < 100.0)
-}
-
-// Test 4: Metric Labels and Dimensions
-test "metric labels and dimensions" {
-  let metrics_registry = MetricsRegistry::new()
+  Histogram::record_with_attributes(response_time_histogram, 234.5, [
+    ("endpoint", "/api/orders"),
+    ("method", "POST")
+  ])
   
-  // Create metric with labels
-  let request_counter = CustomMetric::create_counter(
-    metrics_registry,
-    "http_requests_total",
-    "Total HTTP requests",
-    "requests"
-  )
+  Histogram::record_with_attributes(response_time_histogram, 89.7, [
+    ("endpoint", "/api/products"),
+    ("method", "GET")
+  ])
   
-  // Add values with different label combinations
-  CustomMetric::counter_add(request_counter, 10.0, [("method", "GET"), ("status", "200")])
-  CustomMetric::counter_add(request_counter, 5.0, [("method", "GET"), ("status", "404")])
-  CustomMetric::counter_add(request_counter, 3.0, [("method", "POST"), ("status", "200")])
-  CustomMetric::counter_add(request_counter, 2.0, [("method", "POST"), ("status", "500")])
+  // 记录负载大小数据
+  let payload_sizes = [1024.0, 2048.0, 4096.0, 8192.0, 16384.0, 512.0, 256.0, 128.0]
   
-  // Test getting values by label combinations
-  let get_200 = CustomMetric::get_counter_value_with_labels(request_counter, [("method", "GET"), ("status", "200")])
-  let get_404 = CustomMetric::get_counter_value_with_labels(request_counter, [("method", "GET"), ("status", "404")])
-  let post_200 = CustomMetric::get_counter_value_with_labels(request_counter, [("method", "POST"), ("status", "200")])
-  let post_500 = CustomMetric::get_counter_value_with_labels(request_counter, [("method", "POST"), ("status", "500")])
-  
-  assert_eq(get_200, 10.0)
-  assert_eq(get_404, 5.0)
-  assert_eq(post_200, 3.0)
-  assert_eq(post_500, 2.0)
-  
-  // Test aggregation by label
-  let get_total = MetricAggregator::sum_by_label(request_counter, "method", "GET")
-  let post_total = MetricAggregator::sum_by_label(request_counter, "method", "POST")
-  
-  assert_eq(get_total, 15.0) // 10 + 5
-  assert_eq(post_total, 5.0)  // 3 + 2
-  
-  let success_total = MetricAggregator::sum_by_label(request_counter, "status", "200")
-  let error_total = MetricAggregator::sum_by_label(request_counter, "status", "404") + 
-                    MetricAggregator::sum_by_label(request_counter, "status", "500")
-  
-  assert_eq(success_total, 13.0) // 10 + 3
-  assert_eq(error_total, 7.0)    // 5 + 2
-  
-  // Test getting all label combinations
-  let label_combinations = CustomMetric::get_label_combinations(request_counter)
-  assert_eq(label_combinations.length(), 4)
-}
-
-// Test 5: Metric Export and Formatting
-test "metric export and formatting" {
-  let metrics_registry = MetricsRegistry::new()
-  
-  // Create metrics
-  let counter = CustomMetric::create_counter(
-    metrics_registry,
-    "test_counter",
-    "Test counter metric",
-    "items"
-  )
-  
-  let gauge = CustomMetric::create_gauge(
-    metrics_registry,
-    "test_gauge",
-    "Test gauge metric",
-    "units"
-  )
-  
-  let histogram = CustomMetric::create_histogram(
-    metrics_registry,
-    "test_histogram",
-    "Test histogram metric",
-    "ms",
-    [1.0, 5.0, 10.0, 25.0, 50.0]
-  )
-  
-  // Add values
-  CustomMetric::counter_add(counter, 42.0)
-  CustomMetric::gauge_set(gauge, 17.5)
-  CustomMetric::histogram_observe(histogram, 3.0)
-  CustomMetric::histogram_observe(histogram, 7.0)
-  CustomMetric::histogram_observe(histogram, 15.0)
-  
-  // Test Prometheus format export
-  let prometheus_export = MetricsExporter::prometheus_format(metrics_registry)
-  assert_true(prometheus_export.contains("# HELP test_counter Test counter metric"))
-  assert_true(prometheus_export.contains("# TYPE test_counter counter"))
-  assert_true(prometheus_export.contains("test_counter 42"))
-  
-  assert_true(prometheus_export.contains("# HELP test_gauge Test gauge metric"))
-  assert_true(prometheus_export.contains("# TYPE test_gauge gauge"))
-  assert_true(prometheus_export.contains("test_gauge 17.5"))
-  
-  assert_true(prometheus_export.contains("# HELP test_histogram Test histogram metric"))
-  assert_true(prometheus_export.contains("# TYPE test_histogram histogram"))
-  assert_true(prometheus_export.contains("test_histogram_bucket{le=\"1\"} 0"))
-  assert_true(prometheus_export.contains("test_histogram_bucket{le=\"5\"} 1"))
-  assert_true(prometheus_export.contains("test_histogram_bucket{le=\"+Inf\"} 3"))
-  assert_true(prometheus_export.contains("test_histogram_sum 25"))
-  assert_true(prometheus_export.contains("test_histogram_count 3"))
-  
-  // Test JSON format export
-  let json_export = MetricsExporter::json_format(metrics_registry)
-  assert_true(json_export.contains("\"name\":\"test_counter\""))
-  assert_true(json_export.contains("\"value\":42"))
-  assert_true(json_export.contains("\"name\":\"test_gauge\""))
-  assert_true(json_export.contains("\"value\":17.5"))
-  
-  // Test InfluxDB format export
-  let influxdb_export = MetricsExporter::influxdb_format(metrics_registry)
-  assert_true(influxdb_export.contains("test_counter value=42"))
-  assert_true(influxdb_export.contains("test_gauge value=17.5"))
-  
-  // Test Graphite format export
-  let graphite_export = MetricsExporter::graphite_format(metrics_registry)
-  assert_true(graphite_export.contains("test_counter 42"))
-  assert_true(graphite_export.contains("test_gauge 17.5"))
-}
-
-// Test 6: Metric Filtering and Querying
-test "metric filtering and querying" {
-  let metrics_registry = MetricsRegistry::new()
-  
-  // Create metrics with different names and labels
-  let http_requests = CustomMetric::create_counter(
-    metrics_registry,
-    "http_requests_total",
-    "Total HTTP requests",
-    "requests"
-  )
-  
-  let db_queries = CustomMetric::create_counter(
-    metrics_registry,
-    "db_queries_total",
-    "Total database queries",
-    "queries"
-  )
-  
-  let cache_hits = CustomMetric::create_counter(
-    metrics_registry,
-    "cache_hits_total",
-    "Total cache hits",
-    "hits"
-  )
-  
-  // Add values with labels
-  CustomMetric::counter_add(http_requests, 100.0, [("method", "GET"), ("status", "200")])
-  CustomMetric::counter_add(http_requests, 10.0, [("method", "GET"), ("status", "404")])
-  CustomMetric::counter_add(http_requests, 50.0, [("method", "POST"), ("status", "200")])
-  
-  CustomMetric::counter_add(db_queries, 25.0, [("table", "users"), ("operation", "SELECT")])
-  CustomMetric::counter_add(db_queries, 5.0, [("table", "users"), ("operation", "INSERT")])
-  CustomMetric::counter_add(db_queries, 15.0, [("table", "products"), ("operation", "SELECT")])
-  
-  CustomMetric::counter_add(cache_hits, 80.0, [("cache", "redis")])
-  CustomMetric::counter_add(cache_hits, 20.0, [("cache", "memcached")])
-  
-  // Test filtering by metric name pattern
-  let total_metrics = MetricsQuery::filter_by_name_pattern(metrics_registry, "*_total")
-  assert_eq(total_metrics.length(), 3)
-  
-  let http_metrics = MetricsQuery::filter_by_name_pattern(metrics_registry, "http_*")
-  assert_eq(http_metrics.length(), 1)
-  
-  // Test filtering by labels
-  let get_requests = MetricsQuery::filter_by_labels(metrics_registry, [("method", "GET")])
-  assert_eq(get_requests.length(), 1)
-  
-  let user_operations = MetricsQuery::filter_by_labels(metrics_registry, [("table", "users")])
-  assert_eq(user_operations.length(), 1)
-  
-  // Test complex queries
-  let query = MetricQuery::new()
-    .name_pattern("*_total")
-    .label_equals("method", "GET")
-    .label_not_equals("status", "404")
-  
-  let results = MetricsQuery::execute(metrics_registry, query)
-  assert_eq(results.length(), 1)
-  
-  // Test metric value extraction
-  let value = MetricsQuery::get_value(metrics_registry, "http_requests_total", [("method", "GET"), ("status", "200")])
-  assert_eq(value, Some(100.0))
-  
-  // Test time series data
-  let time_series = MetricsQuery::get_time_series(metrics_registry, "http_requests_total", [("method", "GET")])
-  assert_eq(time_series.length(), 2) // Two status codes
-}
-
-// Test 7: Metric Groups and Collections
-test "metric groups and collections" {
-  let metrics_registry = MetricsRegistry::new()
-  
-  // Create metric group
-  let api_metrics = MetricGroup::new("api_metrics", "API-related metrics")
-  
-  // Add metrics to group
-  let request_counter = CustomMetric::create_counter(
-    metrics_registry,
-    "api_requests_total",
-    "Total API requests",
-    "requests"
-  )
-  
-  let response_time = CustomMetric::create_histogram(
-    metrics_registry,
-    "api_response_time_ms",
-    "API response time in milliseconds",
-    "ms",
-    [10.0, 50.0, 100.0, 200.0, 500.0]
-  )
-  
-  let error_rate = CustomMetric::create_gauge(
-    metrics_registry,
-    "api_error_rate",
-    "API error rate",
-    "percentage"
-  )
-  
-  MetricGroup::add_metric(api_metrics, request_counter)
-  MetricGroup::add_metric(api_metrics, response_time)
-  MetricGroup::add_metric(api_metrics, error_rate)
-  
-  // Test group operations
-  let group_metrics = MetricGroup::get_metrics(api_metrics)
-  assert_eq(group_metrics.length(), 3)
-  
-  // Test group aggregation
-  let group_summary = MetricGroup::get_summary(api_metrics)
-  assert_eq(group_summary.metric_count, 3)
-  assert_eq(group_summary.total_count, 0) // Initially zero
-  
-  // Add values to metrics
-  CustomMetric::counter_add(request_counter, 100.0)
-  CustomMetric::histogram_observe(response_time, 50.0)
-  CustomMetric::gauge_set(error_rate, 5.0)
-  
-  let updated_summary = MetricGroup::get_summary(api_metrics)
-  assert_eq(updated_summary.total_count, 102.0) // 100 (counter) + 1 (histogram count) + 1 (gauge)
-  
-  // Test metric collection
-  let collection = MetricCollection::new()
-  MetricCollection::add_group(collection, api_metrics)
-  
-  // Create another group
-  let db_metrics = MetricGroup::new("db_metrics", "Database-related metrics")
-  let db_connections = CustomMetric::create_gauge(
-    metrics_registry,
-    "db_connections",
-    "Active database connections",
-    "connections"
-  )
-  
-  MetricGroup::add_metric(db_metrics, db_connections)
-  MetricCollection::add_group(collection, db_metrics)
-  
-  // Test collection operations
-  let all_groups = MetricCollection::get_groups(collection)
-  assert_eq(all_groups.length(), 2)
-  
-  let all_metrics = MetricCollection::get_all_metrics(collection)
-  assert_eq(all_metrics.length(), 4)
-  
-  // Test collection export
-  let collection_export = MetricCollection::export(collection, ExportFormat::Prometheus)
-  assert_true(collection_export.contains("api_requests_total"))
-  assert_true(collection_export.contains("db_connections"))
-}
-
-// Test 8: Metric Transformations
-test "metric transformations" {
-  let metrics_registry = MetricsRegistry::new()
-  
-  // Create source metrics
-  let request_count = CustomMetric::create_counter(
-    metrics_registry,
-    "request_count",
-    "Total request count",
-    "requests"
-  )
-  
-  let error_count = CustomMetric::create_counter(
-    metrics_registry,
-    "error_count",
-    "Total error count",
-    "errors"
-  )
-  
-  let response_times = CustomMetric::create_histogram(
-    metrics_registry,
-    "response_time_ms",
-    "Response time in milliseconds",
-    "ms",
-    [10.0, 50.0, 100.0, 200.0, 500.0]
-  )
-  
-  // Add values
-  CustomMetric::counter_add(request_count, 1000.0)
-  CustomMetric::counter_add(error_count, 50.0)
-  
-  for i = 1; i <= 100; i = i + 1 {
-    CustomMetric::histogram_observe(response_times, Random::int(1000).to_float())
+  for size in payload_sizes {
+    Histogram::record(payload_size_histogram, size)
   }
   
-  // Test ratio transformation
-  let error_rate = MetricTransformer::ratio(error_count, request_count, "error_rate")
-  let error_rate_value = CustomMetric::get_gauge_value(error_rate)
-  assert_eq(error_rate_value, 0.05) // 50 / 1000
+  // 获取直方图度量
+  let response_time_metrics = Histogram::get_measurements(response_time_histogram)
+  let payload_size_metrics = Histogram::get_measurements(payload_size_histogram)
   
-  // Test rate transformation
-  let request_rate = MetricTransformer::rate(request_count, "request_rate_per_second")
-  assert_true(CustomMetric::get_gauge_value(request_rate) >= 0.0)
+  // 验证响应时间度量
+  assert_eq(response_time_metrics.length(), 4)  // 1个无属性 + 3个有属性
   
-  // Test percentile transformation
-  let p95_response_time = MetricTransformer::percentile(response_times, 95.0, "response_time_p95")
-  assert_true(CustomMetric::get_gauge_value(p95_response_time) > 0.0)
+  // 验证响应时间统计
+  let default_response_times = response_time_metrics.filter(fn(m) {
+    m.attributes.length() == 0
+  })
   
-  // Test derivative transformation
-  let derivative = MetricTransformer::derivative(request_count, "request_derivative")
-  assert_true(CustomMetric::get_gauge_value(derivative) >= 0.0)
+  assert_eq(default_response_times.length(), 1)
   
-  // Test exponential moving average transformation
-  let ema = MetricTransformer::exponential_moving_average(request_count, 0.1, "request_ema")
-  assert_true(CustomMetric::get_gauge_value(ema) >= 0.0)
+  let response_time_stats = default_response_times[0].histogram_stats
+  assert_eq(response_time_stats.count, 10)
+  assert_eq(response_time_stats.sum, 1421.4)
+  assert_eq(response_time_stats.min, 12.5)
+  assert_eq(response_time_stats.max, 345.6)
   
-  // Test custom transformation
-  let custom_metric = MetricTransformer::custom(
-    [request_count, error_count],
-    lambda { values => values[0] - values[1] },
-    "successful_requests"
-  )
+  // 验证特定端点的响应时间
+  let users_endpoint_times = response_time_metrics.filter(fn(m) {
+    m.attributes.contains(("endpoint", "/api/users"))
+  })
   
-  let custom_value = CustomMetric::get_gauge_value(custom_metric)
-  assert_eq(custom_value, 950.0) // 1000 - 50
+  assert_eq(users_endpoint_times.length(), 1)
+  assert_eq(users_endpoint_times[0].histogram_stats.count, 1)
+  assert_eq(users_endpoint_times[0].histogram_stats.sum, 156.8)
+  
+  // 验证负载大小度量
+  assert_eq(payload_size_metrics.length(), 1)
+  
+  let payload_size_stats = payload_size_metrics[0].histogram_stats
+  assert_eq(payload_size_stats.count, 8)
+  assert_eq(payload_size_stats.sum, 33640.0)
+  assert_eq(payload_size_stats.min, 128.0)
+  assert_eq(payload_size_stats.max, 16384.0)
+  
+  // 验证百分位数
+  let p50 = calculate_percentile(response_times, 50.0)
+  let p95 = calculate_percentile(response_times, 95.0)
+  let p99 = calculate_percentile(response_times, 99.0)
+  
+  assert_true(p50 > 70.0 && p50 < 90.0)
+  assert_true(p95 > 200.0 && p95 < 350.0)
+  assert_true(p99 > 300.0 && p99 < 350.0)
 }
 
-// Test 9: Metric Alerts and Thresholds
-test "metric alerts and thresholds" {
-  let metrics_registry = MetricsRegistry::new()
+// 测试4: 自定义度量聚合
+test "自定义度量聚合" {
+  // 创建度量提供者
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "aggregation.metrics.test")
   
-  // Create metrics
-  let cpu_usage = CustomMetric::create_gauge(
-    metrics_registry,
-    "cpu_usage_percentage",
-    "CPU usage percentage",
-    "percentage"
-  )
+  // 创建多个计数器
+  let api_counter = Meter::create_counter(meter, "api.requests", Some("API requests"), Some("requests"))
+  let web_counter = Meter::create_counter(meter, "web.requests", Some("Web requests"), Some("requests"))
+  let mobile_counter = Meter::create_counter(meter, "mobile.requests", Some("Mobile requests"), Some("requests"))
   
-  let memory_usage = CustomMetric::create_gauge(
-    metrics_registry,
-    "memory_usage_percentage",
-    "Memory usage percentage",
-    "percentage"
-  )
+  // 添加不同来源的请求数据
+  Counter::add_with_attributes(api_counter, 100.0, [("endpoint", "/users"), ("method", "GET")])
+  Counter::add_with_attributes(api_counter, 50.0, [("endpoint", "/orders"), ("method", "POST")])
+  Counter::add_with_attributes(api_counter, 75.0, [("endpoint", "/products"), ("method", "GET")])
   
-  let error_rate = CustomMetric::create_gauge(
-    metrics_registry,
-    "error_rate_percentage",
-    "Error rate percentage",
-    "percentage"
-  )
+  Counter::add_with_attributes(web_counter, 200.0, [("page", "/home"), ("method", "GET")])
+  Counter::add_with_attributes(web_counter, 150.0, [("page", "/dashboard"), ("method", "GET")])
+  Counter::add_with_attributes(web_counter, 80.0, [("page", "/profile"), ("method", "GET")])
   
-  // Create alert manager
-  let alert_manager = MetricAlertManager::new()
+  Counter::add_with_attributes(mobile_counter, 120.0, [("screen", "/home"), ("method", "GET")])
+  Counter::add_with_attributes(mobile_counter, 90.0, [("screen", "/search"), ("method", "GET")])
+  Counter::add_with_attributes(mobile_counter, 60.0, [("screen", "/profile"), ("method", "GET")])
   
-  // Define alert rules
-  let cpu_alert = MetricAlert::new(
-    "high_cpu_usage",
-    "cpu_usage_percentage",
-    AlertType::GreaterThan,
-    80.0,
-    AlertSeverity::Warning,
-    "CPU usage is above 80%"
-  )
+  // 创建度量聚合器
+  let aggregator = MetricAggregator()
   
-  let memory_alert = MetricAlert::new(
-    "high_memory_usage",
-    "memory_usage_percentage",
-    AlertType::GreaterThan,
-    90.0,
-    AlertSeverity::Critical,
-    "Memory usage is above 90%"
-  )
+  // 添加度量源
+  aggregator.add_source("api", api_counter)
+  aggregator.add_source("web", web_counter)
+  aggregator.add_source("mobile", mobile_counter)
   
-  let error_rate_alert = MetricAlert::new(
-    "high_error_rate",
-    "error_rate_percentage",
-    AlertType::GreaterThan,
-    5.0,
-    AlertSeverity::Critical,
-    "Error rate is above 5%"
-  )
+  // 测试总和聚合
+  let total_requests = aggregator.sum("requests")
+  assert_eq(total_requests, 925.0)  // 100+50+75+200+150+80+120+90+60
   
-  MetricAlertManager::add_alert(alert_manager, cpu_alert)
-  MetricAlertManager::add_alert(alert_manager, memory_alert)
-  MetricAlertManager::add_alert(alert_manager, error_rate_alert)
+  // 测试按来源分组聚合
+  let requests_by_source = aggregator.group_by_source("requests")
   
-  // Test normal values (no alerts)
-  CustomMetric::gauge_set(cpu_usage, 50.0)
-  CustomMetric::gauge_set(memory_usage, 60.0)
-  CustomMetric::gauge_set(error_rate, 2.0)
+  assert_eq(requests_by_source.length(), 3)
+  assert_eq(requests_by_source.get("api"), Some(225.0))  // 100+50+75
+  assert_eq(requests_by_source.get("web"), Some(430.0))  // 200+150+80
+  assert_eq(requests_by_source.get("mobile"), Some(270.0))  // 120+90+60
   
-  let triggered_alerts = MetricAlertManager::check_alerts(alert_manager, metrics_registry)
-  assert_eq(triggered_alerts.length(), 0)
+  // 测试按属性分组聚合
+  let get_requests = aggregator.filter_by_attribute("method", "GET").sum("requests")
+  let post_requests = aggregator.filter_by_attribute("method", "POST").sum("requests")
   
-  // Test warning alert
-  CustomMetric::gauge_set(cpu_usage, 85.0)
+  assert_eq(get_requests, 875.0)  // 100+75+200+150+80+120+90+60
+  assert_eq(post_requests, 50.0)  // 50
   
-  let warning_alerts = MetricAlertManager::check_alerts(alert_manager, metrics_registry)
-  assert_eq(warning_alerts.length(), 1)
-  assert_eq(warning_alerts[0].alert_name, "high_cpu_usage")
-  assert_eq(warning_alerts[0].severity, AlertSeverity::Warning)
+  // 测试时间窗口聚合
+  let time_window_aggregator = TimeWindowAggregator({
+    window_size_ms: 60000,  // 1分钟窗口
+    max_windows: 10         // 保留10个窗口
+  })
   
-  // Test critical alerts
-  CustomMetric::gauge_set(memory_usage, 95.0)
-  CustomMetric::gauge_set(error_rate, 10.0)
+  // 添加时间序列数据
+  let base_time = get_current_timestamp()
   
-  let critical_alerts = MetricAlertManager::check_alerts(alert_manager, metrics_registry)
-  assert_eq(critical_alerts.length(), 3) // CPU warning + 2 critical alerts
+  for i in 0..5 {
+    let timestamp = base_time + (i * 10000)  // 每10秒一个数据点
+    time_window_aggregator.add_metric("requests", 100.0 + (i * 10.0), timestamp)
+  }
   
-  // Test alert cooldown
-  MetricAlertManager::set_cooldown_period(alert_manager, 60) // 60 seconds
+  // 获取当前窗口的聚合
+  let current_window = time_window_aggregator.get_current_window()
+  assert_eq(current_window.sum, 150.0)  // 最后一个数据点
+  assert_eq(current_window.count, 1)
   
-  CustomMetric::gauge_set(cpu_usage, 40.0) // Back to normal
-  let cooldown_alerts = MetricAlertManager::check_alerts(alert_manager, metrics_registry)
+  // 获取所有窗口的聚合
+  let all_windows = time_window_aggregator.get_all_windows()
+  assert_eq(all_windows.length(), 5)
   
-  // CPU alert should still be in cooldown, but memory and error alerts should trigger
-  assert_eq(cooldown_alerts.length(), 2)
+  // 验证时间序列聚合
+  let total_time_series = all_windows.reduce(fn(acc, window) {
+    acc + window.sum
+  }, 0.0)
   
-  // Test alert history
-  let alert_history = MetricAlertManager::get_alert_history(alert_manager, 10)
-  assert_true(alert_history.length() > 0)
+  assert_eq(total_time_series, 650.0)  // 100+110+120+130+140+150
   
-  // Test alert statistics
-  let alert_stats = MetricAlertManager::get_alert_statistics(alert_manager)
-  assert_true(alert_stats.total_alerts > 0)
-  assert_true(alert_stats.warning_count > 0)
-  assert_true(alert_stats.critical_count > 0)
+  // 测试比率计算
+  let error_counter = Meter::create_counter(meter, "errors.total", Some("Total errors"), Some("errors"))
+  
+  Counter::add_with_attributes(error_counter, 10.0, [("source", "api")])
+  Counter::add_with_attributes(error_counter, 5.0, [("source", "web")])
+  Counter::add_with_attributes(error_counter, 8.0, [("source", "mobile")])
+  
+  aggregator.add_source("errors", error_counter)
+  
+  // 计算错误率
+  let total_errors = aggregator.sum("errors")
+  let error_rate = aggregator.calculate_ratio("errors", "requests")
+  
+  assert_eq(total_errors, 23.0)  // 10+5+8
+  assert_eq(error_rate, 23.0 / 925.0)
+  
+  // 按来源计算错误率
+  let api_error_rate = aggregator.calculate_ratio_for_source("errors", "requests", "api")
+  let web_error_rate = aggregator.calculate_ratio_for_source("errors", "requests", "web")
+  let mobile_error_rate = aggregator.calculate_ratio_for_source("errors", "requests", "mobile")
+  
+  assert_eq(api_error_rate, 10.0 / 225.0)
+  assert_eq(web_error_rate, 5.0 / 430.0)
+  assert_eq(mobile_error_rate, 8.0 / 270.0)
 }
 
-// Test 10: Metric Persistence and Storage
-test "metric persistence and storage" {
-  let metrics_registry = MetricsRegistry::new()
+// 测试5: 自定义度量导出
+test "自定义度量导出" {
+  // 创建度量提供者
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "export.metrics.test")
   
-  // Create metrics
-  let counter = CustomMetric::create_counter(
-    metrics_registry,
-    "persistent_counter",
-    "Persistent counter metric",
-    "items"
-  )
+  // 创建各种类型的度量
+  let counter = Meter::create_counter(meter, "test.counter", Some("Test counter"), Some("items"))
+  let gauge = Meter::create_gauge(meter, "test.gauge", Some("Test gauge"), Some("units"))
+  let histogram = Meter::create_histogram(meter, "test.histogram", Some("Test histogram"), Some("ms"))
   
-  let gauge = CustomMetric::create_gauge(
-    metrics_registry,
-    "persistent_gauge",
-    "Persistent gauge metric",
-    "units"
-  )
+  // 添加度量数据
+  Counter::add_with_attributes(counter, 100.0, [("env", "test")])
+  Gauge::set_with_attributes(gauge, 42.5, [("env", "test")])
+  Histogram::record_with_attributes(histogram, 123.4, [("env", "test")])
   
-  let histogram = CustomMetric::create_histogram(
-    metrics_registry,
-    "persistent_histogram",
-    "Persistent histogram metric",
-    "ms",
-    [1.0, 5.0, 10.0, 25.0, 50.0]
-  )
+  // 测试Prometheus格式导出
+  let prometheus_exporter = PrometheusExporter()
+  let prometheus_output = prometheus_exporter.export(meter)
   
-  // Add values
-  CustomMetric::counter_add(counter, 42.0)
-  CustomMetric::gauge_set(gauge, 17.5)
-  CustomMetric::histogram_observe(histogram, 3.0)
-  CustomMetric::histogram_observe(histogram, 7.0)
-  CustomMetric::histogram_observe(histogram, 15.0)
+  // 验证Prometheus格式
+  assert_true(prometheus_output.contains("# HELP test_counter Test counter"))
+  assert_true(prometheus_output.contains("# TYPE test_counter counter"))
+  assert_true(prometheus_output.contains("test_counter{env=\"test\"} 100"))
   
-  // Test persistence to file
-  let storage = MetricStorage::new_file_storage("/tmp/metrics_backup.json")
-  let save_result = MetricStorage::save(storage, metrics_registry)
-  assert_true(save_result.is_success)
+  assert_true(prometheus_output.contains("# HELP test_gauge Test gauge"))
+  assert_true(prometheus_output.contains("# TYPE test_gauge gauge"))
+  assert_true(prometheus_output.contains("test_gauge{env=\"test\"} 42.5"))
   
-  // Test loading from file
-  let new_registry = MetricsRegistry::new()
-  let load_result = MetricStorage::load(storage, new_registry)
-  assert_true(load_result.is_success)
+  assert_true(prometheus_output.contains("# HELP test_histogram Test histogram"))
+  assert_true(prometheus_output.contains("# TYPE test_histogram histogram"))
+  assert_true(prometheus_output.contains("test_histogram_sum{env=\"test\"} 123.4"))
+  assert_true(prometheus_output.contains("test_histogram_count{env=\"test\"} 1"))
   
-  // Verify loaded metrics
-  let loaded_counter = MetricsRegistry::get_metric(new_registry, "persistent_counter")
-  assert_true(loaded_counter.is_some())
+  // 测试JSON格式导出
+  let json_exporter = JsonExporter()
+  let json_output = json_exporter.export(meter)
   
-  match loaded_counter {
-    Some(metric) => {
-      let loaded_value = CustomMetric::get_counter_value(metric)
-      assert_eq(loaded_value, 42.0)
+  // 验证JSON格式
+  assert_true(json_output.contains("\"test_counter\""))
+  assert_true(json_output.contains("\"test_gauge\""))
+  assert_true(json_output.contains("\"test_histogram\""))
+  assert_true(json_output.contains("\"env\":\"test\""))
+  
+  // 测试InfluxDB格式导出
+  let influxdb_exporter = InfluxDBExporter()
+  let influxdb_output = influxdb_exporter.export(meter)
+  
+  // 验证InfluxDB格式
+  assert_true(influxdb_output.contains("test_counter"))
+  assert_true(influxdb_output.contains("env=test"))
+  assert_true(influxdb_output.contains("value=100"))
+  
+  // 测试自定义格式导出
+  let custom_exporter = CustomExporter({
+    format_template: "{metric_name}.{attribute_key}={attribute_value} {metric_value}",
+    separator: "\n"
+  })
+  
+  let custom_output = custom_exporter.export(meter)
+  
+  // 验证自定义格式
+  assert_true(custom_output.contains("test_counter.env=test 100"))
+  assert_true(custom_output.contains("test_gauge.env=test 42.5"))
+  
+  // 测试批量导出
+  let batch_exporter = BatchExporter({
+    exporters: [prometheus_exporter, json_exporter, influxdb_exporter],
+    output_format: "combined"
+  })
+  
+  let batch_output = batch_exporter.export(meter)
+  
+  // 验证批量导出包含所有格式
+  assert_true(batch_output.contains("# HELP test_counter"))  // Prometheus
+  assert_true(batch_output.contains("\"test_counter\""))      // JSON
+  assert_true(batch_output.contains("test_counter"))         // InfluxDB
+  
+  // 测试带时间戳的导出
+  let timestamped_exporter = TimestampedExporter({
+    base_exporter: prometheus_exporter,
+    timestamp_format: "unix_ms"
+  })
+  
+  let timestamped_output = timestamped_exporter.export(meter)
+  
+  // 验证时间戳包含在输出中
+  assert_true(timestamped_output.contains("# HELP test_counter"))
+  assert_true(timestamped_output.contains("test_counter{env=\"test\"} 100"))
+  assert_true(timestamped_output.contains("timestamp="))
+}
+
+// 测试6: 自定义度量仪表盘
+test "自定义度量仪表盘" {
+  // 创建仪表盘管理器
+  let dashboard_manager = DashboardManager()
+  
+  // 创建仪表盘
+  let system_dashboard = Dashboard({
+    id: "system_overview",
+    name: "System Overview",
+    description: "System performance metrics",
+    refresh_interval_ms: 5000,
+    panels: []
+  })
+  
+  // 添加面板到仪表盘
+  let cpu_panel = Panel({
+    id: "cpu_usage",
+    title: "CPU Usage",
+    type: "gauge_chart",
+    position: { x: 0, y: 0, width: 6, height: 4 },
+    query: "system.cpu.usage",
+    options: {
+      "max": 100,
+      "unit": "percent",
+      "thresholds": [70, 90]
+    }
+  })
+  
+  let memory_panel = Panel({
+    id: "memory_usage",
+    title: "Memory Usage",
+    type: "line_chart",
+    position: { x: 6, y: 0, width: 6, height: 4 },
+    query: "system.memory.usage",
+    options: {
+      "time_range": "1h",
+      "unit": "bytes"
+    }
+  })
+  
+  let request_rate_panel = Panel({
+    id: "request_rate",
+    title: "Request Rate",
+    type: "bar_chart",
+    position: { x: 0, y: 4, width: 12, height: 4 },
+    query: "http.requests.rate",
+    options: {
+      "time_range": "24h",
+      "group_by": "endpoint"
+    }
+  })
+  
+  // 添加面板到仪表盘
+  dashboard_manager.add_panel(system_dashboard, cpu_panel)
+  dashboard_manager.add_panel(system_dashboard, memory_panel)
+  dashboard_manager.add_panel(system_dashboard, request_rate_panel)
+  
+  // 验证仪表盘创建
+  let created_dashboard = dashboard_manager.get_dashboard("system_overview")
+  match created_dashboard {
+    Some(dashboard) => {
+      assert_eq(dashboard.name, "System Overview")
+      assert_eq(dashboard.panels.length(), 3)
     }
     None => assert_true(false)
   }
   
-  let loaded_gauge = MetricsRegistry::get_metric(new_registry, "persistent_gauge")
-  assert_true(loaded_gauge.is_some())
+  // 添加仪表盘到管理器
+  dashboard_manager.add_dashboard(system_dashboard)
   
-  match loaded_gauge {
-    Some(metric) => {
-      let loaded_value = CustomMetric::get_gauge_value(metric)
-      assert_eq(loaded_value, 17.5)
-    }
-    None => assert_true(false)
+  // 测试仪表盘渲染
+  let renderer = DashboardRenderer()
+  let rendered_dashboard = renderer.render(system_dashboard)
+  
+  // 验证渲染结果
+  assert_true(rendered_dashboard.contains("System Overview"))
+  assert_true(rendered_dashboard.contains("CPU Usage"))
+  assert_true(rendered_dashboard.contains("Memory Usage"))
+  assert_true(rendered_dashboard.contains("Request Rate"))
+  
+  // 测试面板数据查询
+  let query_engine = MetricQueryEngine()
+  
+  // 模拟度量数据
+  let mock_metrics = [
+    ("system.cpu.usage", 75.5, [("core", "0")]),
+    ("system.cpu.usage", 60.0, [("core", "1")]),
+    ("system.memory.usage", 4294967296.0, []),
+    ("http.requests.rate", 150.0, [("endpoint", "/api/users")]),
+    ("http.requests.rate", 75.0, [("endpoint", "/api/orders")]),
+    ("http.requests.rate", 200.0, [("endpoint", "/api/products")])
+  ]
+  
+  for metric in mock_metrics {
+    query_engine.add_metric_data(metric.0, metric.1, metric.2)
   }
   
-  // Test database persistence
-  let db_storage = MetricStorage::new_database_storage(
-    "localhost",
-    5432,
-    "metrics_db",
-    "user",
-    "password"
+  // 查询CPU使用率
+  let cpu_data = query_engine.query("system.cpu.usage")
+  assert_eq(cpu_data.length(), 2)
+  
+  // 查询内存使用率
+  let memory_data = query_engine.query("system.memory.usage")
+  assert_eq(memory_data.length(), 1)
+  assert_eq(memory_data[0].value, 4294967296.0)
+  
+  // 查询请求率
+  let request_data = query_engine.query("http.requests.rate")
+  assert_eq(request_data.length(), 3)
+  
+  // 测试聚合查询
+  let avg_cpu = query_engine.aggregate("system.cpu.usage", "avg")
+  let max_memory = query_engine.aggregate("system.memory.usage", "max")
+  let sum_requests = query_engine.aggregate("http.requests.rate", "sum")
+  
+  assert_eq(avg_cpu, 67.75)  // (75.5 + 60.0) / 2
+  assert_eq(max_memory, 4294967296.0)
+  assert_eq(sum_requests, 425.0)  // 150 + 75 + 200
+  
+  // 测试过滤查询
+  let core0_cpu = query_engine.query_with_filter("system.cpu.usage", [("core", "0")])
+  let users_requests = query_engine.query_with_filter("http.requests.rate", [("endpoint", "/api/users")])
+  
+  assert_eq(core0_cpu.length(), 1)
+  assert_eq(core0_cpu[0].value, 75.5)
+  assert_eq(core0_cpu[0].attributes.get("core"), Some("0"))
+  
+  assert_eq(users_requests.length(), 1)
+  assert_eq(users_requests[0].value, 150.0)
+  assert_eq(users_requests[0].attributes.get("endpoint"), Some("/api/users"))
+  
+  // 测试时间序列查询
+  let time_series_data = []
+  let base_time = get_current_timestamp()
+  
+  for i in 0..10 {
+    let timestamp = base_time + (i * 60000)  // 每分钟一个数据点
+    let value = 100.0 + (i * 10.0) + (Random::next() * 20.0 - 10.0)  // 带随机波动的增长趋势
+    time_series_data.push((timestamp, value))
+    query_engine.add_time_series_metric("system.cpu.usage", value, timestamp, [("core", "0")])
+  }
+  
+  // 查询时间序列数据
+  let cpu_time_series = query_engine.query_time_range(
+    "system.cpu.usage", 
+    base_time, 
+    base_time + 600000,  // 10分钟
+    [("core", "0")]
   )
   
-  let db_save_result = MetricStorage::save(db_storage, metrics_registry)
-  assert_true(db_save_result.is_success)
+  assert_eq(cpu_time_series.length(), 10)
   
-  let db_registry = MetricsRegistry::new()
-  let db_load_result = MetricStorage::load(db_storage, db_registry)
-  assert_true(db_load_result.is_success)
+  // 验证时间序列数据
+  for i in 0..cpu_time_series.length() {
+    let data_point = cpu_time_series[i]
+    assert_eq(data_point.timestamp, base_time + (i * 60000))
+    assert_true(data_point.value >= 90.0)  // 100 + (i * 10) - 10
+    assert_true(data_point.value <= 130.0) // 100 + (i * 10) + 10
+  }
   
-  // Test time series storage
-  let ts_storage = MetricStorage::new_time_series_storage(
-    "localhost",
-    8086,
-    "metrics_ts_db",
-    "user",
-    "password"
+  // 测试仪表盘模板
+  let dashboard_template = DashboardTemplate({
+    name: "Service Template",
+    description: "Template for service monitoring",
+    panels: [
+      PanelTemplate({
+        title: "Request Rate",
+        type: "line_chart",
+        query: "{service}.requests.rate",
+        variables: ["service"]
+      }),
+      PanelTemplate({
+        title: "Error Rate",
+        type: "single_stat",
+        query: "{service}.errors.rate",
+        variables: ["service"]
+      }),
+      PanelTemplate({
+        title: "Response Time",
+        type: "histogram",
+        query: "{service}.response.time",
+        variables: ["service"]
+      })
+    ]
+  })
+  
+  // 从模板创建仪表盘
+  let service_dashboard = dashboard_manager.create_from_template(
+    dashboard_template, 
+    [("service", "api_service")]
   )
   
-  // Store time series data points
-  let timestamp = Time::now()
-  MetricStorage::store_time_series_point(ts_storage, "persistent_counter", timestamp, 42.0)
-  MetricStorage::store_time_series_point(ts_storage, "persistent_gauge", timestamp, 17.5)
+  // 验证模板创建的仪表盘
+  assert_eq(service_dashboard.panels.length(), 3)
   
-  // Query time series data
-  let ts_data = MetricStorage::query_time_series(
-    ts_storage,
-    "persistent_counter",
-    timestamp - 3600, // 1 hour ago
-    timestamp
-  )
+  let request_rate_panel = service_dashboard.panels[0]
+  assert_eq(request_rate_panel.title, "Request Rate")
+  assert_eq(request_rate_panel.query, "api_service.requests.rate")
   
-  assert_eq(ts_data.length(), 1)
-  assert_eq(ts_data[0].value, 42.0)
+  let error_rate_panel = service_dashboard.panels[1]
+  assert_eq(error_rate_panel.title, "Error Rate")
+  assert_eq(error_rate_panel.query, "api_service.errors.rate")
   
-  // Test retention policies
-  MetricStorage::set_retention_policy(ts_storage, "persistent_counter", 7 * 24 * 3600) // 7 days
-  MetricStorage::set_retention_policy(ts_storage, "persistent_gauge", 30 * 24 * 3600) // 30 days
-  
-  let retention_policies = MetricStorage::get_retention_policies(ts_storage)
-  assert_eq(retention_policies.get("persistent_counter"), Some(7 * 24 * 3600))
-  assert_eq(retention_policies.get("persistent_gauge"), Some(30 * 24 * 3600))
+  let response_time_panel = service_dashboard.panels[2]
+  assert_eq(response_time_panel.title, "Response Time")
+  assert_eq(response_time_panel.query, "api_service.response.time")
 }

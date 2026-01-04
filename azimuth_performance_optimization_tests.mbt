@@ -1,462 +1,507 @@
-// Azimuth 性能优化测试
-// 全面测试性能相关功能和优化
+// Azimuth 性能优化测试用例
+// 测试系统性能优化和效率改进功能
 
-// 测试1: 算法复杂度测试
-test "算法复杂度测试" {
-  // 测试线性搜索 vs 二分搜索性能差异
-  
-  // 创建有序数组
-  let sorted_array = []
-  for i in 0..=1000 {
-    sorted_array = sorted_array.push(i)
-  }
-  
-  // 线性搜索
-  let linear_search = fn(arr, target) {
-    let mut found = false
-    let mut iterations = 0
-    
-    for item in arr {
-      iterations = iterations + 1
-      if item == target {
-        found = true
-        break
-      }
-    }
-    
-    { found: found, iterations: iterations }
-  }
-  
-  // 二分搜索
-  let binary_search = fn(arr, target) {
-    let mut left = 0
-    let mut right = arr.length() - 1
-    let mut found = false
-    let mut iterations = 0
-    
-    while left <= right {
-      iterations = iterations + 1
-      let mid = (left + right) / 2
-      let mid_value = arr[mid]
-      
-      if mid_value == target {
-        found = true
-        break
-      } else if mid_value < target {
-        left = mid + 1
-      } else {
-        right = mid - 1
-      }
-    }
-    
-    { found: found, iterations: iterations }
-  }
-  
-  // 搜索目标（在数组末尾）
-  let target = 1000
-  
-  let linear_result = linear_search(sorted_array, target)
-  let binary_result = binary_search(sorted_array, target)
-  
-  assert_true(linear_result.found)
-  assert_true(binary_result.found)
-  
-  // 二分搜索应该比线性搜索快得多
-  assert_true(binary_result.iterations < linear_result.iterations)
-  assert_true(binary_result.iterations <= 10) // log2(1000) ≈ 10
-}
-
-// 测试2: 内存使用优化
+// 测试1: 内存使用优化
 test "内存使用优化" {
-  // 测试不同数据结构的内存效率
-  
-  // 使用数组存储大量数据
-  let large_array = []
-  for i in 0..=10000 {
-    large_array = large_array.push(i)
+  // 创建大量数据对象
+  let large_dataset = []
+  for i in 0..10000 {
+    large_dataset = large_dataset.push((
+      "item." + i.to_string(),
+      StructValue({
+        fields = [
+          ("id", IntValue(i)),
+          ("name", StringValue("Item " + i.to_string())),
+          ("value", FloatValue(i * 1.5)),
+          ("active", BoolValue(i % 2 == 0))
+        ]
+      })
+    ))
   }
   
-  // 计算数组元素总和
-  let array_sum = large_array.reduce(fn(acc, x) { acc + x }, 0)
-  assert_eq(array_sum, 10000 * 10001 / 2)
+  // 验证数据集大小
+  assert_eq(large_dataset.length(), 10000)
   
-  // 测试内存重用
-  let mut reusable_array = []
+  // 测试内存高效遍历
+  let mut sum = 0
+  let start_time = get_current_timestamp()
   
-  // 第一次使用
-  for i in 0..=100 {
-    reusable_array = reusable_array.push(i)
-  }
-  
-  let first_sum = reusable_array.reduce(fn(acc, x) { acc + x }, 0)
-  
-  // 清空并重用
-  reusable_array = []
-  
-  // 第二次使用
-  for i in 0..=200 {
-    reusable_array = reusable_array.push(i)
-  }
-  
-  let second_sum = reusable_array.reduce(fn(acc, x) { acc + x }, 0)
-  
-  assert_eq(first_sum, 100 * 101 / 2)
-  assert_eq(second_sum, 200 * 201 / 2)
-}
-
-// 测试3: 缓存机制性能
-test "缓存机制性能" {
-  // 模拟缓存存储
-  let cache = {}
-  
-  // 模拟计算密集型操作
-  let expensive_operation = fn(x) {
-    // 模拟计算时间
-    let mut result = 1
-    for i in 1..=x {
-      result = result * i
-    }
-    result
-  }
-  
-  // 带缓存的操作
-  let cached_operation = fn(x) {
-    if cache.contains(x.to_string()) {
-      cache[x.to_string()]
-    } else {
-      let result = expensive_operation(x)
-      cache[x.to_string()] = result
-      result
-    }
-  }
-  
-  // 第一次调用（计算并缓存）
-  let first_call = cached_operation(10)
-  assert_eq(first_call, 3628800) // 10!
-  
-  // 第二次调用（从缓存获取）
-  let second_call = cached_operation(10)
-  assert_eq(second_call, 3628800)
-  
-  // 验证缓存包含结果
-  assert_true(cache.contains("10"))
-  assert_eq(cache["10"], 3628800)
-}
-
-// 测试4: 批处理优化
-test "批处理优化" {
-  // 模拟单个操作 vs 批处理操作
-  
-  // 单个插入操作
-  let single_inserts = fn(items) {
-    let mut result = []
-    for item in items {
-      result = result.push(item)
-    }
-    result
-  }
-  
-  // 批处理操作
-  let batch_insert = fn(items) {
-    // 在实际场景中，这可能会是一次性批量插入
-    items
-  }
-  
-  let test_items = [1, 2, 3, 4, 5]
-  
-  let single_result = single_inserts(test_items)
-  let batch_result = batch_insert(test_items)
-  
-  assert_eq(single_result, test_items)
-  assert_eq(batch_result, test_items)
-  
-  // 批处理应该更高效（这里我们验证结果一致性）
-  assert_eq(single_result.length(), batch_result.length())
-}
-
-// 测试5: 延迟计算优化
-test "延迟计算优化" {
-  // 模拟延迟计算
-  
-  // 立即计算
-  let immediate_computation = fn() {
-    let mut result = []
-    for i in 0..=100 {
-      result = result.push(i * 2)
-    }
-    result
-  }
-  
-  // 延迟计算（仅在需要时计算）
-  let lazy_computation = fn() {
-    let mut i = 0
-    let mut result = []
-    
-    // 模拟按需生成
-    let generate_next = fn() {
-      if i <= 100 {
-        let value = i * 2
-        i = i + 1
-        Some(value)
-      } else {
-        None
-      }
-    }
-    
-    // 只生成前10个值
-    for _ in 0..=10 {
-      match generate_next() {
-        Some(value) => result = result.push(value)
-        None => break
-      }
-    }
-    
-    result
-  }
-  
-  let immediate_result = immediate_computation()
-  let lazy_result = lazy_computation()
-  
-  assert_eq(immediate_result.length(), 101)
-  assert_eq(lazy_result.length(), 11)
-  
-  // 验证前11个值相同
-  for i in 0..=10 {
-    assert_eq(immediate_result[i], lazy_result[i])
-  }
-}
-
-// 测试6: 并发处理性能
-test "并发处理性能" {
-  // 模拟并发处理vs顺序处理
-  
-  // 顺序处理
-  let sequential_processing = fn(tasks) {
-    let mut results = []
-    for task in tasks {
-      // 模拟任务处理
-      let result = task * 2
-      results = results.push(result)
-    }
-    results
-  }
-  
-  // 并发处理（模拟）
-  let concurrent_processing = fn(tasks) {
-    // 在实际场景中，这会是真正的并发处理
-    let mut results = []
-    for task in tasks {
-      let result = task * 2
-      results = results.push(result)
-    }
-    results
-  }
-  
-  let test_tasks = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-  
-  let sequential_result = sequential_processing(test_tasks)
-  let concurrent_result = concurrent_processing(test_tasks)
-  
-  assert_eq(sequential_result, concurrent_result)
-  assert_eq(sequential_result.length(), 10)
-}
-
-// 测试7: 数据压缩效率
-test "数据压缩效率" {
-  // 模拟数据压缩
-  
-  // 原始数据（有重复模式）
-  let original_data = []
-  for i in 0..=100 {
-    for j in 0..=10 {
-      original_data = original_data.push(i)
-    }
-  }
-  
-  // 简单压缩：运行长度编码
-  let compress_data = fn(data) {
-    let mut compressed = []
-    let mut i = 0
-    
-    while i < data.length() {
-      let current = data[i]
-      let mut count = 1
-      
-      while i + count < data.length() && data[i + count] == current {
-        count = count + 1
-      }
-      
-      compressed = compressed.push({ value: current, count: count })
-      i = i + count
-    }
-    
-    compressed
-  }
-  
-  let compressed_data = compress_data(original_data)
-  
-  // 验证压缩效果
-  assert_true(compressed_data.length() < original_data.length())
-  assert_eq(compressed_data.length(), 101) // 101个不同的值，每个重复10次
-  
-  // 验证第一个压缩块
-  assert_eq(compressed_data[0].value, 0)
-  assert_eq(compressed_data[0].count, 11)
-}
-
-// 测试8: 索引优化查询
-test "索引优化查询" {
-  // 模拟数据库索引优化
-  
-  // 创建记录集合
-  let records = []
-  for i in 0..=1000 {
-    records = records.push({
-      id: i,
-      name: "User" + i.to_string(),
-      age: 20 + (i % 50)
-    })
-  }
-  
-  // 创建索引（按年龄）
-  let age_index = {}
-  for record in records {
-    let age = record.age.to_string()
-    if age_index.contains(age) {
-      let current_list = age_index[age]
-      age_index[age] = current_list.push(record.id)
-    } else {
-      age_index[age] = [record.id]
-    }
-  }
-  
-  // 使用索引查询
-  let query_by_age = fn(target_age) {
-    let age_key = target_age.to_string()
-    if age_index.contains(age_key) {
-      age_index[age_key]
-    } else {
-      []
-    }
-  }
-  
-  // 查询年龄为25的用户
-  let users_age_25 = query_by_age(25)
-  
-  // 验证结果
-  assert_true(users_age_25.length() > 0)
-  
-  // 验证所有返回的记录确实年龄为25
-  for user_id in users_age_25 {
-    assert_eq(records[user_id].age, 25)
-  }
-}
-
-// 测试9: 连接池优化
-test "连接池优化" {
-  // 模拟数据库连接池
-  
-  let pool_size = 5
-  let mut available_connections = []
-  let mut used_connections = {}
-  
-  // 初始化连接池
-  for i in 0..=pool_size {
-    available_connections = available_connections.push("conn" + i.to_string())
-  }
-  
-  // 获取连接
-  let get_connection = fn() {
-    if available_connections.length() > 0 {
-      let conn = available_connections[0]
-      available_connections = available_connections.slice(1)
-      used_connections[conn] = true
-      Some(conn)
-    } else {
-      None
-    }
-  }
-  
-  // 释放连接
-  let release_connection = fn(conn) {
-    if used_connections.contains(conn) {
-      used_connections[conn] = false
-      available_connections = available_connections.push(conn)
-    }
-  }
-  
-  // 获取连接
-  let conn1 = get_connection()
-  let conn2 = get_connection()
-  
-  assert_true(conn1.is_some())
-  assert_true(conn2.is_some())
-  assert_eq(available_connections.length(), 3)
-  
-  // 释放连接
-  release_connection(conn1.unwrap())
-  assert_eq(available_connections.length(), 4)
-}
-
-// 测试10: 缓存淘汰策略
-test "缓存淘汰策略" {
-  // 模拟LRU（最近最少使用）缓存淘汰
-  
-  let cache_size = 3
-  let mut cache = {} // key -> {value: value, last_used: timestamp}
-  let mut current_time = 0
-  
-  // 添加到缓存
-  let add_to_cache = fn(key, value) {
-    current_time = current_time + 1
-    
-    // 如果缓存已满，淘汰最近最少使用的项
-    if cache.length() >= cache_size {
-      let mut oldest_key = ""
-      let mut oldest_time = current_time
-      
-      for k in cache.keys() {
-        if cache[k].last_used < oldest_time {
-          oldest_time = cache[k].last_used
-          oldest_key = k
+  for item in large_dataset {
+    match item.1 {
+      StructValue(struct) => {
+        for field in struct.fields {
+          if field.0 == "value" {
+            match field.1 {
+              FloatValue(v) => sum = sum + int(v)
+              _ => assert_true(false)
+            }
+          }
         }
       }
-      
-      if oldest_key != "" {
-        cache[oldest_key] = { value: null, last_used: 0 } // 标记为已删除
-      }
+      _ => assert_true(false)
     }
-    
-    cache[key] = { value: value, last_used: current_time }
   }
   
-  // 从缓存获取
-  let get_from_cache = fn(key) {
-    current_time = current_time + 1
+  let end_time = get_current_timestamp()
+  let processing_time = end_time - start_time
+  
+  // 验证计算结果
+  assert_eq(sum, 74992500)  // 0 + 1.5 + 3 + 4.5 + ... + 14998.5 的整数部分
+  
+  // 验证处理时间在合理范围内（简化验证）
+  assert_true(processing_time > 0)
+  assert_true(processing_time < 1000000000L)  // 小于1秒
+  
+  // 测试内存释放
+  let cleared_dataset = []
+  assert_eq(cleared_dataset.length(), 0)
+}
+
+// 测试2: 数据处理流水线优化
+test "数据处理流水线优化" {
+  // 创建原始数据
+  let raw_data = []
+  for i in 0..5000 {
+    raw_data = raw_data.push((
+      i,
+      "data_" + i.to_string(),
+      i * 2.5,
+      i % 3 == 0
+    ))
+  }
+  
+  // 优化处理流水线
+  let processed_data = raw_data
+    .filter(fn(item) { item.0 % 10 == 0 })  // 过滤：只保留10的倍数
+    .map(fn(item) { (  // 转换：修改数据结构
+      "processed_" + item.1,
+      item.2 * 1.1,
+      item.3 && (item.0 % 20 == 0)
+    )})
+    .filter(fn(item) { item.2 })  // 过滤：只保留active为true的
+    .map(fn(item) { (  // 转换：最终格式
+      item.0,
+      int(item.1),
+      item.2
+    )})
+  
+  // 验证处理结果
+  assert_eq(processed_data.length(), 250)  // 5000/10 = 500, 500/2 = 250
+  
+  // 验证数据正确性
+  for item in processed_data {
+    // 验证名称前缀
+    assert_true(item.0.contains("processed_"))
     
-    if cache.contains(key) && cache[key].value != null {
-      cache[key].last_used = current_time // 更新使用时间
-      Some(cache[key].value)
+    // 验证数值计算
+    let original_num = item.0.slice(10, item.0.length()).to_int()
+    assert_eq(item.1, int(original_num * 2.5 * 1.1))
+    
+    // 验证布尔值
+    assert_true(item.2)
+  }
+  
+  // 测试性能基准
+  let pipeline_start = get_current_timestamp()
+  
+  let benchmark_result = raw_data
+    .filter(fn(item) { item.0 % 5 == 0 })
+    .map(fn(item) { (item.1, item.2) })
+    .reduce(fn(acc, item) { acc + int(item.2) }, 0)
+  
+  let pipeline_end = get_current_timestamp()
+  let pipeline_time = pipeline_end - pipeline_start
+  
+  // 验证基准结果
+  assert_eq(benchmark_result, 31237500)  // 简化计算结果
+  
+  // 验证流水线性能
+  assert_true(pipeline_time > 0)
+  assert_true(pipeline_time < 500000000L)  // 小于500ms
+}
+
+// 测试3: 缓存机制优化
+test "缓存机制优化" {
+  // 创建缓存系统
+  let cache = Cache::new(1000)  // 最大1000项
+  let mut cache_hits = 0
+  let mut cache_misses = 0
+  
+  // 测试数据
+  let test_keys = []
+  for i in 0..100 {
+    test_keys = test_keys.push("key_" + i.to_string())
+  }
+  
+  // 第一轮：缓存未命中，填充缓存
+  for key in test_keys {
+    if Cache::contains(cache, key) {
+      cache_hits = cache_hits + 1
     } else {
-      None
+      cache_misses = cache_misses + 1
+      let value = "value_for_" + key
+      Cache::set(cache, key, value)
     }
   }
   
-  // 测试缓存操作
-  add_to_cache("a", 1)
-  add_to_cache("b", 2)
-  add_to_cache("c", 3)
+  // 验证第一轮结果
+  assert_eq(cache_hits, 0)
+  assert_eq(cache_misses, 100)
+  assert_eq(Cache::size(cache), 100)
   
-  assert_eq(cache.length(), 3)
-  assert_eq(get_from_cache("a").unwrap(), 1)
+  // 第二轮：缓存命中
+  cache_hits = 0
+  cache_misses = 0
   
-  // 添加第四项，应该淘汰一项
-  add_to_cache("d", 4)
+  for key in test_keys {
+    if Cache::contains(cache, key) {
+      cache_hits = cache_hits + 1
+      let cached_value = Cache::get(cache, key)
+      match cached_value {
+        Some(v) => assert_eq(v, "value_for_" + key)
+        None => assert_true(false)
+      }
+    } else {
+      cache_misses = cache_misses + 1
+    }
+  }
   
-  // 验证缓存大小
-  assert_eq(cache.length(), 4)
+  // 验证第二轮结果
+  assert_eq(cache_hits, 100)
+  assert_eq(cache_misses, 0)
   
-  // 验证最近使用的项仍在缓存中
-  assert_true(get_from_cache("a").is_some()) // 最近访问过
-  assert_true(get_from_cache("d").is_some()) // 刚添加
+  // 测试缓存淘汰策略
+  let overflow_keys = []
+  for i in 100..1200 {
+    overflow_keys = overflow_keys.push("overflow_key_" + i.to_string())
+  }
+  
+  // 添加超过缓存容量的键
+  for key in overflow_keys {
+    Cache::set(cache, key, "overflow_value")
+  }
+  
+  // 验证缓存大小不超过限制
+  assert_true(Cache::size(cache) <= 1000)
+  
+  // 验证原始键可能被淘汰
+  let mut original_keys_found = 0
+  for key in test_keys {
+    if Cache::contains(cache, key) {
+      original_keys_found = original_keys_found + 1
+    }
+  }
+  
+  // 至少应该有一些原始键被淘汰
+  assert_true(original_keys_found < 100)
+  
+  // 验证新键存在
+  let mut new_keys_found = 0
+  for key in overflow_keys.slice(0, 100) {
+    if Cache::contains(cache, key) {
+      new_keys_found = new_keys_found + 1
+    }
+  }
+  
+  assert_true(new_keys_found > 0)
+}
+
+// 测试4: 并发处理优化
+test "并发处理优化" {
+  // 创建大量任务
+  let tasks = []
+  for i in 0..1000 {
+    tasks = tasks.push(Task({
+      id: i,
+      data: "task_data_" + i.to_string(),
+      priority: i % 5,
+      complexity: i % 3
+    }))
+  }
+  
+  // 按优先级分组
+  let priority_groups = tasks.group_by(fn(task) { task.priority })
+  
+  // 验证分组结果
+  assert_eq(priority_groups.size(), 5)
+  
+  for priority in 0..5 {
+    let group = priority_groups.get(priority)
+    match group {
+      Some(tasks) => {
+        // 验证组内所有任务都有相同优先级
+        for task in tasks {
+          assert_eq(task.priority, priority)
+        }
+      }
+      None => assert_true(false)
+    }
+  }
+  
+  // 模拟并发处理
+  let processed_tasks = []
+  let start_time = get_current_timestamp()
+  
+  // 按优先级顺序处理
+  for priority in 0..5 {
+    let group = priority_groups.get(priority)
+    match group {
+      Some(tasks) => {
+        for task in tasks {
+          // 模拟任务处理
+          let processed_task = ProcessedTask({
+            id: task.id,
+            result: "processed_" + task.data,
+            processing_time: task.complexity * 100,
+            timestamp: get_current_timestamp()
+          })
+          processed_tasks = processed_tasks.push(processed_task)
+        }
+      }
+      None => assert_true(false)
+    }
+  }
+  
+  let end_time = get_current_timestamp()
+  let total_processing_time = end_time - start_time
+  
+  // 验证处理结果
+  assert_eq(processed_tasks.length(), 1000)
+  
+  // 验证任务按优先级处理
+  let mut last_priority = -1
+  for task in processed_tasks {
+    let task_priority = task.id % 5
+    assert_true(task_priority >= last_priority)
+    last_priority = task_priority
+  }
+  
+  // 验证处理时间合理
+  assert_true(total_processing_time > 0)
+  assert_true(total_processing_time < 2000000000L)  // 小于2秒
+}
+
+// 测试5: 数据压缩优化
+test "数据压缩优化" {
+  // 创建重复性数据（适合压缩）
+  let repetitive_data = []
+  for i in 0..1000 {
+    repetitive_data = repetitive_data.push((
+      "category_" + (i % 10).to_string(),  // 只有10种不同类别
+      "type_" + (i % 5).to_string(),       // 只有5种不同类型
+      "source_system",                     // 固定值
+      "2025-01-01",                        // 固定日期
+      i                                    // 唯一ID
+    ))
+  }
+  
+  // 测试压缩前的数据大小
+  let original_size = calculate_data_size(repetitive_data)
+  
+  // 压缩数据
+  let compressed_data = compress_data(repetitive_data)
+  let compressed_size = compressed_data.length()
+  
+  // 验证压缩效果
+  assert_true(compressed_size < original_size)
+  let compression_ratio = (original_size - compressed_size) * 100 / original_size
+  assert_true(compression_ratio > 20)  // 至少20%的压缩率
+  
+  // 解压缩数据
+  let decompressed_data = decompress_data(compressed_data)
+  
+  // 验证解压缩后的数据完整性
+  assert_eq(decompressed_data.length(), repetitive_data.length())
+  
+  for i in 0..decompressed_data.length() {
+    assert_eq(decompressed_data[i].0, repetitive_data[i].0)
+    assert_eq(decompressed_data[i].1, repetitive_data[i].1)
+    assert_eq(decompressed_data[i].2, repetitive_data[i].2)
+    assert_eq(decompressed_data[i].3, repetitive_data[i].3)
+    assert_eq(decompressed_data[i].4, repetitive_data[i].4)
+  }
+  
+  // 测试压缩性能
+  let compression_start = get_current_timestamp()
+  let large_dataset = []
+  
+  for i in 0..5000 {
+    large_dataset = large_dataset.push((
+      "metric_" + (i % 50).to_string(),
+      "sensor_" + (i % 20).to_string(),
+      "location_" + (i % 10).to_string(),
+      "device_type_" + (i % 5).to_string(),
+      i * 1.5,
+      i % 2 == 0
+    ))
+  }
+  
+  let compressed_large = compress_data(large_dataset)
+  let compression_end = get_current_timestamp()
+  let compression_time = compression_end - compression_start
+  
+  // 验证压缩性能
+  assert_true(compression_time > 0)
+  assert_true(compression_time < 1000000000L)  // 小于1秒
+  
+  // 验证大数据集压缩效果
+  assert_true(compressed_large.length() < calculate_data_size(large_dataset))
+}
+
+// 测试6: 算法优化
+test "算法优化" {
+  // 创建测试数据
+  let numbers = []
+  for i in 0..10000 {
+    numbers = numbers.push(i * 3 + 7)
+  }
+  
+  // 测试查找算法优化
+  let search_target = 15007  // 应该存在于数组中
+  let missing_target = 15008  // 不应该存在于数组中
+  
+  // 线性搜索
+  let linear_start = get_current_timestamp()
+  let mut linear_found = false
+  for num in numbers {
+    if num == search_target {
+      linear_found = true
+      break
+    }
+  }
+  let linear_end = get_current_timestamp()
+  let linear_time = linear_end - linear_start
+  
+  assert_true(linear_found)
+  
+  // 二分搜索（要求数组已排序）
+  let sorted_numbers = numbers.sort(fn(a, b) { a - b })
+  let binary_start = get_current_timestamp()
+  let binary_found = binary_search(sorted_numbers, search_target)
+  let binary_end = get_current_timestamp()
+  let binary_time = binary_end - binary_start
+  
+  assert_true(binary_found)
+  
+  // 验证二分搜索更快
+  assert_true(binary_time < linear_time)
+  
+  // 测试缺失元素搜索
+  let linear_missing = linear_search(numbers, missing_target)
+  let binary_missing = binary_search(sorted_numbers, missing_target)
+  
+  assert_false(linear_missing)
+  assert_false(binary_missing)
+  
+  // 测试排序算法优化
+  let unsorted_data = []
+  for i in 0..5000 {
+    unsorted_data = unsorted_data.push((5000 - i) * 2)  // 逆序数据
+  }
+  
+  // 测试快速排序
+  let quick_sort_start = get_current_timestamp()
+  let quick_sorted = quick_sort(unsorted_data)
+  let quick_sort_end = get_current_timestamp()
+  let quick_sort_time = quick_sort_end - quick_sort_start
+  
+  // 验证排序正确性
+  assert_true(is_sorted(quick_sorted))
+  
+  // 测试归并排序
+  let merge_sort_start = get_current_timestamp()
+  let merge_sorted = merge_sort(unsorted_data)
+  let merge_sort_end = get_current_timestamp()
+  let merge_sort_time = merge_sort_end - merge_sort_start
+  
+  // 验证排序正确性
+  assert_true(is_sorted(merge_sorted))
+  
+  // 验证两种排序结果一致
+  assert_eq(quick_sorted.length(), merge_sorted.length())
+  for i in 0..quick_sorted.length() {
+    assert_eq(quick_sorted[i], merge_sorted[i])
+  }
+  
+  // 测试聚合算法优化
+  let aggregation_start = get_current_timestamp()
+  let sum = numbers.reduce(fn(acc, x) { acc + x }, 0)
+  let average = sum / numbers.length()
+  let max = numbers.reduce(fn(acc, x) { if x > acc { x } else { acc } }, numbers[0])
+  let min = numbers.reduce(fn(acc, x) { if x < acc { x } else { acc } }, numbers[0])
+  let aggregation_end = get_current_timestamp()
+  let aggregation_time = aggregation_end - aggregation_start
+  
+  // 验证聚合结果
+  assert_eq(sum, 150015000)
+  assert_eq(average, 15001)
+  assert_eq(max, 29999)
+  assert_eq(min, 7)
+  
+  // 验证聚合性能
+  assert_true(aggregation_time > 0)
+  assert_true(aggregation_time < 100000000L)  // 小于100ms
+}
+
+// 测试7: 批处理优化
+test "批处理优化" {
+  // 创建大量小任务
+  let small_tasks = []
+  for i in 0..10000 {
+    small_tasks = small_tasks.push((
+      "task_" + i.to_string(),
+      i % 100,
+      i * 1.25
+    ))
+  }
+  
+  // 单个处理方式
+  let single_start = get_current_timestamp()
+  let mut single_results = []
+  
+  for task in small_tasks {
+    let result = process_single_task(task)
+    single_results = single_results.push(result)
+  }
+  
+  let single_end = get_current_timestamp()
+  let single_time = single_end - single_start
+  
+  // 批处理方式
+  let batch_start = get_current_timestamp()
+  let batch_results = process_batch_tasks(small_tasks, 100)  // 每批100个任务
+  let batch_end = get_current_timestamp()
+  let batch_time = batch_end - batch_start
+  
+  // 验证批处理更高效
+  assert_true(batch_time < single_time)
+  
+  // 验证结果一致性
+  assert_eq(single_results.length(), batch_results.length())
+  
+  // 验证批处理结果正确性
+  for i in 0..batch_results.length() {
+    assert_eq(single_results[i].task_id, batch_results[i].task_id)
+    assert_eq(single_results[i].category, batch_results[i].category)
+    assert_eq(single_results[i].result, batch_results[i].result)
+  }
+  
+  // 测试不同批大小的影响
+  let batch_sizes = [10, 50, 100, 500, 1000]
+  let batch_times = []
+  
+  for size in batch_sizes {
+    let size_start = get_current_timestamp()
+    let size_results = process_batch_tasks(small_tasks, size)
+    let size_end = get_current_timestamp()
+    let size_time = size_end - size_start
+    
+    batch_times = batch_times.push((size, size_time))
+    assert_eq(size_results.length(), single_results.length())
+  }
+  
+  // 验证批大小对性能的影响
+  assert_true(batch_times[0].1 > batch_times[1].1)  // 10 > 50
+  assert_true(batch_times[1].1 > batch_times[2].1)  // 50 > 100
+  // 注意：超过某个点后，批大小增加可能不会带来性能提升
 }

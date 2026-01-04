@@ -1,276 +1,477 @@
-// Azimuth Data Validation Test Suite
-// 数据验证和完整性检查测试用例
+// Azimuth 数据验证测试用例
+// 测试数据验证和完整性检查功能
 
-test "输入数据类型验证" {
-  // 测试输入数据类型验证
-  let valid_string = "azimuth-telemetry"
-  let invalid_string = ""
-  let valid_number = 42
-  let invalid_number = -1
-  let valid_float = 3.14
-  let invalid_float = -0.1
+// 测试1: 输入数据验证
+test "输入数据验证" {
+  // 测试有效数据
+  let valid_data = [
+    ("name", StringValue("azimuth")),
+    ("version", StringValue("1.0.0")),
+    ("port", IntValue(8080)),
+    ("enabled", BoolValue(true)),
+    ("threshold", FloatValue(0.95))
+  ]
   
-  // 字符串验证
-  assert_true(valid_string.length() > 0)
-  assert_true(valid_string.contains("telemetry"))
-  assert_false(invalid_string.length() > 0)
+  // 验证数据完整性
+  assert_eq(valid_data.length(), 5)
   
-  // 整数验证
-  assert_true(valid_number >= 0)
-  assert_false(invalid_number >= 0)
-  
-  // 浮点数验证
-  assert_true(valid_float > 0.0)
-  assert_false(invalid_float > 0.0)
-}
-
-test "遥测数据结构完整性验证" {
-  // 测试遥测数据结构完整性
-  let telemetry_data = @azimuth.TelemetryData {
-    timestamp : 1640995200000L,
-    trace_id : "abcdef1234567890abcdef1234567890",
-    span_id : "1234567890abcdef",
-    parent_span_id : Some("abcdef1234567890"),
-    operation_name : "http.request",
-    status : @azimuth.SpanStatus::Ok,
-    duration_ms : 150L,
-    attributes : [
-      ("http.method", @azimuth.StringValue("GET")),
-      ("http.url", @azimuth.StringValue("/api/users")),
-      ("http.status_code", @azimuth.IntValue(200))
-    ],
-    events : []
-  }
-  
-  // 验证必需字段
-  assert_true(telemetry_data.timestamp > 0L)
-  assert_true(telemetry_data.trace_id.length() == 32)
-  assert_true(telemetry_data.span_id.length() == 16)
-  assert_true(telemetry_data.operation_name.length() > 0)
-  assert_true(telemetry_data.duration_ms >= 0L)
-  
-  // 验证可选字段
-  match telemetry_data.parent_span_id {
-    Some(parent_id) => assert_true(parent_id.length() == 16)
-    None => assert_true(true)
-  }
-  
-  // 验证属性结构
-  assert_true(telemetry_data.attributes.length() >= 3)
-  for attr in telemetry_data.attributes {
-    assert_true(attr.0.length() > 0)
-    match attr.1 {
-      @azimuth.StringValue(v) => assert_true(v.length() > 0)
-      @azimuth.IntValue(v) => assert_true(v >= 0)
-      @azimuth.FloatValue(v) => assert_true(v >= 0.0)
-      @azimuth.BoolValue(v) => assert_true(true)
-    }
-  }
-}
-
-test "配置参数验证" {
-  // 测试配置参数验证
-  let valid_config = @azimuth.TelemetryConfig {
-    service_name : "payment-service",
-    service_version : "2.1.0",
-    sampling_config : @azimuth.SamplingConfig {
-      sampling_type : @azimuth.SamplingType::Probability,
-      probability : 0.1,
-      rate_limit : Some(1000)
-    },
-    exporter_config : @azimuth.ExporterConfig {
-      exporter_type : @azimuth.ExporterType::OTLP,
-      endpoint : "https://otel-collector.example.com:4317",
-      headers : [("Authorization", "Bearer token123")],
-      timeout_ms : 5000,
-      batch_size : 512,
-      max_export_batch_size : 512
-    },
-    resource_attributes : [
-      ("deployment.environment", @azimuth.StringValue("production"))
-    ]
-  }
-  
-  // 验证服务配置
-  assert_true(valid_config.service_name.length() > 0)
-  assert_true(valid_config.service_version.length() > 0)
-  
-  // 验证采样配置
-  match valid_config.sampling_config.sampling_type {
-    @azimuth.SamplingType::Probability => {
-      assert_true(valid_config.sampling_config.probability >= 0.0)
-      assert_true(valid_config.sampling_config.probability <= 1.0)
-    }
-    @azimuth.SamplingType::RateLimit => {
-      match valid_config.sampling_config.rate_limit {
-        Some(limit) => assert_true(limit > 0)
-        None => assert_true(false)
+  // 验证字符串字段
+  for data in valid_data {
+    match data.0 {
+      "name" => {
+        match data.1 {
+          StringValue(v) => {
+            assert_true(v.length() > 0)
+            assert_eq(v, "azimuth")
+          }
+          _ => assert_true(false)
+        }
       }
+      "version" => {
+        match data.1 {
+          StringValue(v) => {
+            assert_true(v.contains("."))
+            assert_eq(v, "1.0.0")
+          }
+          _ => assert_true(false)
+        }
+      }
+      "port" => {
+        match data.1 {
+          IntValue(v) => {
+            assert_true(v > 0)
+            assert_true(v < 65536)
+            assert_eq(v, 8080)
+          }
+          _ => assert_true(false)
+        }
+      }
+      "enabled" => {
+        match data.1 {
+          BoolValue(v) => assert_true(v)
+          _ => assert_true(false)
+        }
+      }
+      "threshold" => {
+        match data.1 {
+          FloatValue(v) => {
+            assert_true(v >= 0.0)
+            assert_true(v <= 1.0)
+            assert_eq(v, 0.95)
+          }
+          _ => assert_true(false)
+        }
+      }
+      _ => assert_true(false)
     }
-    @azimuth.SamplingType::Always => assert_true(true)
-    @azimuth.SamplingType::Never => assert_true(true)
   }
-  
-  // 验证导出器配置
-  match valid_config.exporter_config.exporter_type {
-    @azimuth.ExporterType::OTLP => assert_true(true)
-    @azimuth.ExporterType::Jaeger => assert_true(true)
-    @azimuth.ExporterType::Zipkin => assert_true(true)
-    @azimuth.ExporterType::Prometheus => assert_true(true)
-  }
-  
-  assert_true(valid_config.exporter_config.endpoint.length() > 0)
-  assert_true(valid_config.exporter_config.timeout_ms > 0)
-  assert_true(valid_config.exporter_config.batch_size > 0)
-  assert_true(valid_config.exporter_config.max_export_batch_size > 0)
 }
 
-test "度量数据范围验证" {
-  // 测试度量数据范围验证
-  let counter_metric = @azimuth.CounterMetric {
-    name : "http.requests.total",
-    description : "Total number of HTTP requests",
-    unit : "requests",
-    value : 1000L,
-    attributes : [
-      ("method", @azimuth.StringValue("GET")),
-      ("status", @azimuth.StringValue("200"))
-    ]
-  }
+// 测试2: 边界条件验证
+test "边界条件验证" {
+  // 测试数值边界
+  let max_int = IntValue(2147483647)
+  let min_int = IntValue(-2147483648)
+  let zero_int = IntValue(0)
   
-  let histogram_metric = @azimuth.HistogramMetric {
-    name : "http.request.duration",
-    description : "HTTP request duration in milliseconds",
-    unit : "ms",
-    buckets : [
-      (0.0, 10L),
-      (10.0, 50L),
-      (50.0, 100L),
-      (100.0, 500L),
-      (500.0, 100L)
-    ],
-    sum : 12500.0,
-    count : 100L,
-    attributes : [
-      ("endpoint", @azimuth.StringValue("/api/users"))
-    ]
-  }
-  
-  // 验证计数器指标
-  assert_true(counter_metric.name.length() > 0)
-  assert_true(counter_metric.value >= 0L)
-  assert_true(counter_metric.attributes.length() >= 2)
-  
-  // 验证直方图指标
-  assert_true(histogram_metric.name.length() > 0)
-  assert_true(histogram_metric.count >= 0L)
-  assert_true(histogram_metric.sum >= 0.0)
-  assert_true(histogram_metric.buckets.length() >= 2)
-  
-  // 验证直方图桶边界
-  for i in 0..<(histogram_metric.buckets.length() - 1) {
-    let current_bucket = histogram_metric.buckets[i]
-    let next_bucket = histogram_metric.buckets[i + 1]
-    assert_true(current_bucket.0 < next_bucket.0)
-    assert_true(current_bucket.1 >= 0L)
-  }
-  
-  // 验证最后一个桶
-  let last_bucket = histogram_metric.buckets[histogram_metric.buckets.length() - 1]
-  assert_true(last_bucket.1 >= 0L)
-}
-
-test "日志记录格式验证" {
-  // 测试日志记录格式验证
-  let log_record = @azimuth.LogRecord {
-    timestamp : 1640995200300L,
-    severity : @azimuth.LogSeverity::Info,
-    body : @azimuth.StringValue("User authentication successful"),
-    attributes : [
-      ("user.id", @azimuth.StringValue("user123")),
-      ("auth.method", @azimuth.StringValue("oauth2")),
-      ("client.ip", @azimuth.StringValue("192.168.1.100"))
-    ],
-    trace_id : Some("1234567890abcdef1234567890abcdef"),
-    span_id : Some("auth1234567890")
-  }
-  
-  // 验证时间戳
-  assert_true(log_record.timestamp > 0L)
-  
-  // 验证严重性级别
-  match log_record.severity {
-    @azimuth.LogSeverity::Trace => assert_true(true)
-    @azimuth.LogSeverity::Debug => assert_true(true)
-    @azimuth.LogSeverity::Info => assert_true(true)
-    @azimuth.LogSeverity::Warn => assert_true(true)
-    @azimuth.LogSeverity::Error => assert_true(true)
-    @azimuth.LogSeverity::Fatal => assert_true(true)
-  }
-  
-  // 验证日志主体
-  match log_record.body {
-    @azimuth.StringValue(msg) => assert_true(msg.length() > 0)
+  match max_int {
+    IntValue(v) => assert_eq(v, 2147483647)
     _ => assert_true(false)
   }
   
-  // 验证属性
-  assert_true(log_record.attributes.length() >= 3)
-  for attr in log_record.attributes {
-    assert_true(attr.0.length() > 0)
-    match attr.1 {
-      @azimuth.StringValue(v) => assert_true(v.length() > 0)
-      @azimuth.IntValue(v) => assert_true(true)
-      @azimuth.FloatValue(v) => assert_true(true)
-      @azimuth.BoolValue(v) => assert_true(true)
+  match min_int {
+    IntValue(v) => assert_eq(v, -2147483648)
+    _ => assert_true(false)
+  }
+  
+  match zero_int {
+    IntValue(v) => assert_eq(v, 0)
+    _ => assert_true(false)
+  }
+  
+  // 测试浮点数边界
+  let max_float = FloatValue(3.4028235e+38)
+  let min_float = FloatValue(1.17549435e-38)
+  let inf_float = FloatValue(1.0/0.0)  // 无穷大
+  let nan_float = FloatValue(0.0/0.0)  // 非数字
+  
+  match max_float {
+    FloatValue(v) => assert_true(v > 1.0e+38)
+    _ => assert_true(false)
+  }
+  
+  match min_float {
+    FloatValue(v) => assert_true(v > 0.0 && v < 1.0e-37)
+    _ => assert_true(false)
+  }
+  
+  // 测试字符串边界
+  let empty_string = StringValue("")
+  let long_string = StringValue("a" * 1000)  // 1000个字符的字符串
+  let unicode_string = StringValue("测试Unicode字符🚀")
+  
+  match empty_string {
+    StringValue(v) => assert_eq(v.length(), 0)
+    _ => assert_true(false)
+  }
+  
+  match long_string {
+    StringValue(v) => assert_eq(v.length(), 1000)
+    _ => assert_true(false)
+  }
+  
+  match unicode_string {
+    StringValue(v) => {
+      assert_true(v.contains("测试"))
+      assert_true(v.contains("🚀"))
     }
-  }
-  
-  // 验证追踪关联
-  match log_record.trace_id {
-    Some(trace_id) => assert_true(trace_id.length() == 32)
-    None => assert_true(true)
-  }
-  
-  match log_record.span_id {
-    Some(span_id) => assert_true(span_id.length() == 16)
-    None => assert_true(true)
+    _ => assert_true(false)
   }
 }
 
-test "上下文传播数据验证" {
-  // 测试上下文传播数据验证
-  let context = @azimuth.Context {
-    trace_id : "1234567890abcdef1234567890abcdef",
-    span_id : "abcdef1234567890",
-    baggage : [
-      ("user.id", "user123"),
-      ("request.id", "req-456"),
-      ("trace.sampled", "true")
-    ],
-    entries : [
-      ("correlation.id", "corr-789"),
-      ("session.id", "sess-101112")
+// 测试3: 数据类型转换验证
+test "数据类型转换验证" {
+  // 测试字符串到整数转换
+  let str_int = StringValue("123")
+  let valid_int_result = convert_to_int(str_int)
+  match valid_int_result {
+    Ok(int_val) => assert_eq(int_val, 123)
+    Err(_) => assert_true(false)
+  }
+  
+  let invalid_str_int = StringValue("abc")
+  let invalid_int_result = convert_to_int(invalid_str_int)
+  match invalid_int_result {
+    Ok(_) => assert_true(false)
+    Err(_) => assert_true(true)
+  }
+  
+  // 测试字符串到浮点数转换
+  let str_float = StringValue("3.14159")
+  let valid_float_result = convert_to_float(str_float)
+  match valid_float_result {
+    Ok(float_val) => assert_true(float_val > 3.14 && float_val < 3.15)
+    Err(_) => assert_true(false)
+  }
+  
+  // 测试字符串到布尔值转换
+  let str_bool_true = StringValue("true")
+  let str_bool_false = StringValue("false")
+  let str_bool_invalid = StringValue("maybe")
+  
+  let true_result = convert_to_bool(str_bool_true)
+  match true_result {
+    Ok(bool_val) => assert_true(bool_val)
+    Err(_) => assert_true(false)
+  }
+  
+  let false_result = convert_to_bool(str_bool_false)
+  match false_result {
+    Ok(bool_val) => assert_false(bool_val)
+    Err(_) => assert_true(false)
+  }
+  
+  let invalid_bool_result = convert_to_bool(str_bool_invalid)
+  match invalid_bool_result {
+    Ok(_) => assert_true(false)
+    Err(_) => assert_true(true)
+  }
+}
+
+// 测试4: 数组数据验证
+test "数组数据验证" {
+  // 测试整数数组
+  let int_array = ArrayIntValue([1, 2, 3, 4, 5])
+  match int_array {
+    ArrayIntValue(arr) => {
+      assert_eq(arr.length(), 5)
+      assert_eq(arr[0], 1)
+      assert_eq(arr[4], 5)
+      
+      // 验证数组元素类型
+      for val in arr {
+        assert_true(val > 0)
+        assert_true(val <= 5)
+      }
+      
+      // 验证数组总和
+      let sum = arr.reduce(fn(acc, x) { acc + x }, 0)
+      assert_eq(sum, 15)
+    }
+    _ => assert_true(false)
+  }
+  
+  // 测试字符串数组
+  let string_array = ArrayStringValue(["apple", "banana", "cherry"])
+  match string_array {
+    ArrayStringValue(arr) => {
+      assert_eq(arr.length(), 3)
+      assert_eq(arr[0], "apple")
+      assert_eq(arr[2], "cherry")
+      
+      // 验证字符串非空
+      for str in arr {
+        assert_true(str.length() > 0)
+      }
+      
+      // 验证特定字符串存在
+      assert_true(arr.contains("banana"))
+      assert_false(arr.contains("orange"))
+    }
+    _ => assert_true(false)
+  }
+  
+  // 测试混合类型数组
+  let mixed_array = ArrayMixedValue([
+    IntValue(42),
+    StringValue("hello"),
+    BoolValue(true),
+    FloatValue(3.14)
+  ])
+  match mixed_array {
+    ArrayMixedValue(arr) => {
+      assert_eq(arr.length(), 4)
+      
+      // 验证第一个元素是整数
+      match arr[0] {
+        IntValue(v) => assert_eq(v, 42)
+        _ => assert_true(false)
+      }
+      
+      // 验证第二个元素是字符串
+      match arr[1] {
+        StringValue(v) => assert_eq(v, "hello")
+        _ => assert_true(false)
+      }
+      
+      // 验证第三个元素是布尔值
+      match arr[2] {
+        BoolValue(v) => assert_true(v)
+        _ => assert_true(false)
+      }
+      
+      // 验证第四个元素是浮点数
+      match arr[3] {
+        FloatValue(v) => assert_true(v > 3.1 && v < 3.2)
+        _ => assert_true(false)
+      }
+    }
+    _ => assert_true(false)
+  }
+}
+
+// 测试5: 结构化数据验证
+test "结构化数据验证" {
+  // 创建嵌套数据结构
+  let user_data = StructValue({
+    fields = [
+      ("id", IntValue(123)),
+      ("name", StringValue("John Doe")),
+      ("email", StringValue("john@example.com")),
+      ("profile", StructValue({
+        fields = [
+          ("age", IntValue(30)),
+          ("active", BoolValue(true)),
+          ("preferences", StructValue({
+            fields = [
+              ("theme", StringValue("dark")),
+              ("notifications", BoolValue(false))
+            ]
+          }))
+        ]
+      }))
     ]
+  })
+  
+  // 验证顶层结构
+  match user_data {
+    StructValue(struct) => {
+      assert_eq(struct.fields.length(), 4)
+      
+      // 验证ID字段
+      let id_field = struct.fields[0]
+      assert_eq(id_field.0, "id")
+      match id_field.1 {
+        IntValue(v) => assert_eq(v, 123)
+        _ => assert_true(false)
+      }
+      
+      // 验证name字段
+      let name_field = struct.fields[1]
+      assert_eq(name_field.0, "name")
+      match name_field.1 {
+        StringValue(v) => assert_eq(v, "John Doe")
+        _ => assert_true(false)
+      }
+      
+      // 验证email字段格式
+      let email_field = struct.fields[2]
+      assert_eq(email_field.0, "email")
+      match email_field.1 {
+        StringValue(v) => {
+          assert_true(v.contains("@"))
+          assert_true(v.contains("."))
+        }
+        _ => assert_true(false)
+      }
+      
+      // 验证嵌套profile结构
+      let profile_field = struct.fields[3]
+      assert_eq(profile_field.0, "profile")
+      match profile_field.1 {
+        StructValue(profile) => {
+          assert_eq(profile.fields.length(), 3)
+          
+          // 验证profile中的age
+          let age_field = profile.fields[0]
+          assert_eq(age_field.0, "age")
+          match age_field.1 {
+            IntValue(v) => {
+              assert_true(v >= 0)
+              assert_true(v <= 150)
+              assert_eq(v, 30)
+            }
+            _ => assert_true(false)
+          }
+          
+          // 验证profile中的active
+          let active_field = profile.fields[1]
+          assert_eq(active_field.0, "active")
+          match active_field.1 {
+            BoolValue(v) => assert_true(v)
+            _ => assert_true(false)
+          }
+          
+          // 验证嵌套preferences结构
+          let preferences_field = profile.fields[2]
+          assert_eq(preferences_field.0, "preferences")
+          match preferences_field.1 {
+            StructValue(preferences) => {
+              assert_eq(preferences.fields.length(), 2)
+              
+              // 验证theme
+              let theme_field = preferences.fields[0]
+              assert_eq(theme_field.0, "theme")
+              match theme_field.1 {
+                StringValue(v) => assert_eq(v, "dark")
+                _ => assert_true(false)
+              }
+              
+              // 验证notifications
+              let notifications_field = preferences.fields[1]
+              assert_eq(notifications_field.0, "notifications")
+              match notifications_field.1 {
+                BoolValue(v) => assert_false(v)
+                _ => assert_true(false)
+              }
+            }
+            _ => assert_true(false)
+          }
+        }
+        _ => assert_true(false)
+      }
+    }
+    _ => assert_true(false)
+  }
+}
+
+// 测试6: 数据完整性验证
+test "数据完整性验证" {
+  // 创建测试数据集
+  let dataset = [
+    ("record1", [
+      ("id", IntValue(1)),
+      ("name", StringValue("Record 1")),
+      ("checksum", StringValue("abc123"))
+    ]),
+    ("record2", [
+      ("id", IntValue(2)),
+      ("name", StringValue("Record 2")),
+      ("checksum", StringValue("def456"))
+    ]),
+    ("record3", [
+      ("id", IntValue(3)),
+      ("name", StringValue("Record 3")),
+      ("checksum", StringValue("ghi789"))
+    ])
+  ]
+  
+  // 验证数据集完整性
+  assert_eq(dataset.length(), 3)
+  
+  // 验证每个记录的完整性
+  for record in dataset {
+    let record_name = record.0
+    let record_fields = record.1
+    
+    // 验证记录名称
+    assert_true(record_name.contains("record"))
+    assert_true(record_name.length() > 6)
+    
+    // 验证记录字段数量
+    assert_eq(record_fields.length(), 3)
+    
+    // 验证ID字段存在且唯一
+    let mut id_found = false
+    let mut name_found = false
+    let mut checksum_found = false
+    
+    for field in record_fields {
+      match field.0 {
+        "id" => {
+          id_found = true
+          match field.1 {
+            IntValue(v) => assert_true(v > 0 && v <= 3)
+            _ => assert_true(false)
+          }
+        }
+        "name" => {
+          name_found = true
+          match field.1 {
+            StringValue(v) => {
+              assert_true(v.contains("Record"))
+              assert_true(v.length() > 6)
+            }
+            _ => assert_true(false)
+          }
+        }
+        "checksum" => {
+          checksum_found = true
+          match field.1 {
+            StringValue(v) => assert_eq(v.length(), 6)
+            _ => assert_true(false)
+          }
+        }
+        _ => assert_true(false)
+      }
+    }
+    
+    // 确保所有必需字段都存在
+    assert_true(id_found)
+    assert_true(name_found)
+    assert_true(checksum_found)
   }
   
-  // 验证追踪ID
-  assert_true(context.trace_id.length() == 32)
+  // 验证ID唯一性
+  let ids = dataset.map(fn(record) {
+    for field in record.1 {
+      if field.0 == "id" {
+        match field.1 {
+          IntValue(v) => return v
+          _ => assert_true(false)
+        }
+      }
+    }
+    return -1  // 不应该到达这里
+  })
   
-  // 验证跨度ID
-  assert_true(context.span_id.length() == 16)
+  assert_eq(ids.length(), 3)
+  assert_eq(ids[0], 1)
+  assert_eq(ids[1], 2)
+  assert_eq(ids[2], 3)
   
-  // 验证baggage项
-  assert_true(context.baggage.length() >= 3)
-  for baggage_item in context.baggage {
-    assert_true(baggage_item.0.length() > 0)
-    assert_true(baggage_item.1.length() > 0)
-  }
-  
-  // 验证上下文条目
-  assert_true(context.entries.length() >= 2)
-  for entry in context.entries {
-    assert_true(entry.0.length() > 0)
-    assert_true(entry.1.length() > 0)
-  }
+  // 验证ID唯一性
+  assert_true(ids[0] != ids[1])
+  assert_true(ids[1] != ids[2])
+  assert_true(ids[0] != ids[2])
 }
