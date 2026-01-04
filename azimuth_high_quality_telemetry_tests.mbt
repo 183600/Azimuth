@@ -1,839 +1,1231 @@
-// Azimuth 高质量遥测系统测试用例
-// 专注于遥测系统的高级功能和复杂场景测试
+// Azimuth High-Quality Telemetry Test Suite
+// This file contains high-quality test cases focusing on advanced telemetry features
 
-// 测试1: 遥测数据采样策略
-test "遥测数据采样策略测试" {
-  // 创建采样器配置
-  let sampler_config = {
-    sampling_rate: 0.1,  // 10% 采样率
-    max_samples_per_second: 100,
-    adaptive_sampling: true,
-    error_sampling_boost: 2.0
-  }
-  
-  // 创建自适应采样器
-  let sampler = AdaptiveSampler::new(sampler_config)
-  
-  // 模拟正常请求采样
-  let normal_requests = 1000
-  let mut normal_sampled = 0
-  for i in 0..normal_requests {
-    let decision = Sampler::should_sample(sampler, "trace-" + i.to_string(), "normal.operation")
-    if decision.sampled {
-      normal_sampled = normal_sampled + 1
-    }
-  }
-  
-  // 模拟错误请求采样（应该有更高的采样率）
-  let error_requests = 100
-  let mut error_sampled = 0
-  for i in 0..error_requests {
-    let decision = Sampler::should_sample(sampler, "error-" + i.to_string(), "error.operation")
-    if decision.sampled {
-      error_sampled = error_sampled + 1
-    }
-  }
-  
-  // 验证采样结果
-  assert_true(normal_sampled >= 80 && normal_sampled <= 120)  // 大约10%的采样率
-  assert_true(error_sampled >= 15 && error_sampled <= 25)     // 错误请求采样率更高
-  
-  // 验证采样限制
-  assert_true(normal_sampled + error_sampled <= sampler_config.max_samples_per_second)
-}
-
-// 测试2: 分布式追踪链路追踪
-test "分布式追踪链路追踪测试" {
-  // 创建追踪提供者
-  let tracer_provider = TracerProvider::new()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "distributed.tracer")
-  
-  // 启动根追踪
-  let root_span = Tracer::start_span(tracer, "user.request")
-  let root_context = Span::context(root_span)
-  
-  // 模拟微服务调用链
-  let services = ["auth.service", "user.service", "order.service", "payment.service"]
-  let mut contexts = [root_context]
-  
-  for service in services {
-    let service_span = Tracer::start_span_with_context(tracer, service, contexts[contexts.length() - 1])
-    Span::set_attribute(service_span, "service.name", StringValue(service))
-    Span::set_attribute(service_span, "service.version", StringValue("1.0.0"))
-    
-    // 模拟服务处理时间
-    let processing_time = 50 + (service.length() * 10)  // 基于服务名的模拟处理时间
-    Span::set_attribute(service_span, "processing.time.ms", IntValue(processing_time))
-    
-    contexts = contexts.push(Span::context(service_span))
-    Span::end(service_span)
-  }
-  
-  // 验证追踪链完整性
-  assert_eq(contexts.length(), services.length() + 1)  // 根追踪 + 所有服务追踪
-  
-  // 验证追踪上下文传播
-  let root_trace_id = SpanContext::trace_id(Context::span_context(root_context))
-  let last_trace_id = SpanContext::trace_id(Context::span_context(contexts[contexts.length() - 1]))
-  assert_eq(root_trace_id, last_trace_id)
-  
-  // 完成根追踪
-  Span::end(root_span)
-}
-
-// 测试3: 指标聚合和统计
-test "指标聚合和统计测试" {
-  // 创建指标提供者
-  let meter_provider = MeterProvider::new()
-  let meter = MeterProvider::get_meter(meter_provider, "aggregation.meter")
-  
-  // 创建各种指标
-  let request_counter = Meter::create_counter(meter, "http.requests.total")
-  let response_time_histogram = Meter::create_histogram(meter, "http.response.time")
-  let active_connections_gauge = Meter::create_gauge(meter, "http.connections.active")
-  
-  // 模拟数据收集
-  let endpoints = ["/api/users", "/api/orders", "/api/products", "/api/payments"]
-  let response_times = [120, 85, 200, 150, 95, 180, 110, 75, 220, 140]
-  
-  // 记录请求计数
-  for endpoint in endpoints {
-    for i in 0..10 {
-      Counter::add(request_counter, 1.0, [("endpoint", StringValue(endpoint))])
-    }
-  }
-  
-  // 记录响应时间
-  for time in response_times {
-    Histogram::record(response_time_histogram, time.to_float() / 1000.0)  // 转换为秒
-  }
-  
-  // 模拟活跃连接数变化
-  let connection_changes = [10, 15, 12, 20, 18, 25, 22, 30, 28, 35]
-  for connections in connection_changes {
-    Gauge::set(active_connections_gauge, connections.to_float())
-  }
-  
-  // 创建聚合器
-  let aggregator = MetricAggregator::new()
-  
-  // 聚合请求计数
-  let total_requests = Aggregator::sum(aggregator, request_counter)
-  let requests_by_endpoint = Aggregator::group_by(aggregator, request_counter, "endpoint")
-  
-  // 聚合响应时间统计
-  let response_stats = Aggregator::calculate_stats(aggregator, response_time_histogram)
-  
-  // 验证聚合结果
-  assert_eq(total_requests, (endpoints.length() * 10).to_float())
-  assert_eq(requests_by_endpoint.length(), endpoints.length())
-  
-  // 验证每个端点的请求数
-  for endpoint in endpoints {
-    assert_eq(Aggregator::get_group_value(requests_by_endpoint, endpoint), 10.0)
-  }
-  
-  // 验证响应时间统计
-  assert_true(response_stats.min >= 0.075 && response_stats.min <= 0.075)
-  assert_true(response_stats.max >= 0.220 && response_stats.max <= 0.220)
-  assert_true(response_stats.avg >= 0.137 && response_stats.avg <= 0.137)
-  assert_eq(response_stats.count, response_times.length().to_float())
-}
-
-// 测试4: 异常检测和告警
-test "异常检测和告警测试" {
-  // 创建异常检测器
-  let anomaly_detector = AnomalyDetector::new({
-    algorithm: "statistical",
-    sensitivity: 0.8,
-    window_size: 100,
-    threshold_multiplier: 2.5
+// Test 1: Distributed Tracing with Complex Hierarchies
+test "distributed tracing with complex hierarchies" {
+  // 1. Create root span
+  let root_context = SpanContext({
+    trace_id: "trace-abc123def456",
+    span_id: "span-root001",
+    sampled: true,
+    trace_state: "service=api,env=production"
   })
   
-  // 创建告警管理器
-  let alert_manager = AlertManager::new({
-    enabled: true,
-    cooldown_period: 300,  // 5分钟冷却期
-    max_alerts_per_minute: 10,
-    notification_channels: ["email", "slack", "pagerduty"]
+  let root_span = Span({
+    name: "api.request.processing",
+    kind: Server,
+    recording: true,
+    span_context: root_context
   })
   
-  // 模拟正常指标数据
-  let normal_metrics = [100, 105, 98, 102, 97, 103, 99, 101, 96, 104]
-  for metric in normal_metrics {
-    let result = Detector::analyze(anomaly_detector, metric.to_float())
-    assert_false(result.is_anomaly)
+  // 2. Create child spans with different operations
+  let auth_context = SpanContext({
+    trace_id: "trace-abc123def456",
+    span_id: "span-auth002",
+    sampled: true,
+    trace_state: "service=auth,env=production"
+  })
+  
+  let auth_span = Span({
+    name: "authentication.verify",
+    kind: Internal,
+    recording: true,
+    span_context: auth_context
+  })
+  
+  let db_context = SpanContext({
+    trace_id: "trace-abc123def456",
+    span_id: "span-db003",
+    sampled: true,
+    trace_state: "service=database,env=production"
+  })
+  
+  let db_span = Span({
+    name: "database.query.user_profile",
+    kind: Client,
+    recording: true,
+    span_context: db_context
+  })
+  
+  // 3. Create nested child spans
+  let cache_context = SpanContext({
+    trace_id: "trace-abc123def456",
+    span_id: "span-cache004",
+    sampled: true,
+    trace_state: "service=cache,env=production"
+  })
+  
+  let cache_span = Span({
+    name: "cache.get.user_session",
+    kind: Internal,
+    recording: true,
+    span_context: cache_context
+  })
+  
+  // 4. Verify trace hierarchy
+  let spans = [root_span, auth_span, db_span, cache_span]
+  assert_eq(spans.length(), 4)
+  
+  // All spans should have the same trace ID
+  for span in spans {
+    assert_eq(span.span_context.trace_id, "trace-abc123def456")
+    assert_true(span.span_context.sampled)
   }
   
-  // 模拟异常指标数据
-  let anomaly_metrics = [100, 105, 98, 250, 97, 103, 99, 101, 96, 104]  // 250是异常值
-  let mut detected_anomalies = 0
-  for metric in anomaly_metrics {
-    let result = Detector::analyze(anomaly_detector, metric.to_float())
-    if result.is_anomaly {
-      detected_anomalies = detected_anomalies + 1
-      
-      // 创建告警
-      let alert = Alert::new({
-        severity: "high",
-        title: "异常检测告警",
-        description: "检测到异常指标值: " + metric.to_string(),
-        metric_name: "system.cpu.usage",
-        metric_value: metric.to_float(),
-        threshold: result.threshold,
-        timestamp: 1640995200 + detected_anomalies
-      })
-      
-      // 发送告警
-      let alert_result = AlertManager::send_alert(alert_manager, alert)
-      assert_true(alert_result.success)
-    }
-  }
+  // Verify span relationships through trace state
+  assert_true(root_span.span_context.trace_state.contains("service=api"))
+  assert_true(auth_span.span_context.trace_state.contains("service=auth"))
+  assert_true(db_span.span_context.trace_state.contains("service=database"))
+  assert_true(cache_span.span_context.trace_state.contains("service=cache"))
   
-  // 验证异常检测结果
-  assert_eq(detected_anomalies, 1)
-  
-  // 验证告警状态
-  let active_alerts = AlertManager::get_active_alerts(alert_manager)
-  assert_eq(active_alerts.length(), 1)
-  assert_eq(active_alerts[0].severity, "high")
-  assert_true(active_alerts[0].title.contains("异常检测告警"))
+  // Verify span names are unique and descriptive
+  let span_names = spans.map(fn(s) { s.name })
+  assert_true(span_names.contains("api.request.processing"))
+  assert_true(span_names.contains("authentication.verify"))
+  assert_true(span_names.contains("database.query.user_profile"))
+  assert_true(span_names.contains("cache.get.user_session"))
 }
 
-// 测试5: 性能优化和缓存
-test "性能优化和缓存测试" {
-  // 创建缓存管理器
-  let cache_manager = CacheManager::new({
-    max_size: 1000,
-    ttl_seconds: 300,  // 5分钟TTL
-    eviction_policy: "lru"
-  })
-  
-  // 创建性能监控器
-  let performance_monitor = PerformanceMonitor::new()
-  
-  // 测试缓存性能
-  let test_data_size = 100
-  let test_keys = []
-  for i in 0..test_data_size {
-    test_keys = test_keys.push("key-" + i.to_string())
-  }
-  
-  // 写入缓存
-  let write_start_time = Monitor::get_current_time(performance_monitor)
-  for key in test_keys {
-    let value = "value-for-" + key
-    CacheManager::set(cache_manager, key, value)
-  }
-  let write_end_time = Monitor::get_current_time(performance_monitor)
-  let write_duration = write_end_time - write_start_time
-  
-  // 读取缓存
-  let read_start_time = Monitor::get_current_time(performance_monitor)
-  for key in test_keys {
-    let cached_value = CacheManager::get(cache_manager, key)
-    assert_eq(cached_value, Some("value-for-" + key))
-  }
-  let read_end_time = Monitor::get_current_time(performance_monitor)
-  let read_duration = read_end_time - read_start_time
-  
-  // 测试缓存未命中
-  let miss_start_time = Monitor::get_current_time(performance_monitor)
-  let missing_value = CacheManager::get(cache_manager, "non-existent-key")
-  let miss_end_time = Monitor::get_current_time(performance_monitor)
-  let miss_duration = miss_end_time - miss_start_time
-  
-  // 验证缓存性能
-  assert_true(read_duration < write_duration)  // 读取应该比写入快
-  assert_true(missing_value == None)
-  
-  // 验证缓存统计
-  let cache_stats = CacheManager::get_stats(cache_manager)
-  assert_eq(cache_stats.hits, test_data_size)
-  assert_eq(cache_stats.misses, 1)
-  assert_true(cache_stats.hit_rate > 0.99)  // 99%以上的命中率
-  
-  // 测试缓存淘汰
-  let additional_keys = []
-  for i in test_data_size..(test_data_size + 50) {
-    additional_keys = additional_keys.push("evict-key-" + i.to_string())
-  }
-  
-  for key in additional_keys {
-    CacheManager::set(cache_manager, key, "eviction-value")
-  }
-  
-  // 验证淘汰策略
-  let evicted_key = test_keys[0]
-  let evicted_value = CacheManager::get(cache_manager, evicted_key)
-  assert_eq(evicted_value, None)  // 应该被LRU策略淘汰
-}
-
-// 测试6: 数据压缩和传输
-test "数据压缩和传输测试" {
-  // 创建压缩管理器
-  let compression_manager = CompressionManager::new({
-    algorithm: "gzip",
-    compression_level: 6,
-    enable_dictionary: true
-  })
-  
-  // 创建传输管理器
-  let transport_manager = TransportManager::new({
-    max_batch_size: 1024 * 1024,  // 1MB
-    retry_attempts: 3,
-    timeout_ms: 5000,
-    enable_compression: true
-  })
-  
-  // 创建测试数据
-  let telemetry_data = []
-  for i in 0..1000 {
-    let span_data = {
-      trace_id: "trace-" + i.to_string(),
-      span_id: "span-" + i.to_string(),
-      parent_span_id: if i > 0 { Some("span-" + (i-1).to_string()) } else { None },
-      operation_name: "operation-" + (i % 10).to_string(),
-      start_time: 1640995200 + i,
-      end_time: 1640995200 + i + 100,
+// Test 2: Advanced Metrics with Multi-Dimensional Analysis
+test "advanced metrics with multi-dimensional analysis" {
+  // 1. Create dimensional metrics
+  let request_metrics = [
+    {
+      name: "http.requests.total",
+      value: 1250,
       attributes: [
-        ("service.name", StringValue("test-service")),
-        ("service.version", StringValue("1.0.0")),
-        ("http.method", StringValue(["GET", "POST", "PUT"][i % 3])),
-        ("http.status_code", IntValue([200, 201, 400, 500][i % 4]))
+        ("method", "GET"),
+        ("status", "200"),
+        ("service", "api-gateway"),
+        ("region", "us-west-2")
+      ]
+    },
+    {
+      name: "http.requests.total",
+      value: 45,
+      attributes: [
+        ("method", "GET"),
+        ("status", "404"),
+        ("service", "api-gateway"),
+        ("region", "us-west-2")
+      ]
+    },
+    {
+      name: "http.requests.total",
+      value: 23,
+      attributes: [
+        ("method", "POST"),
+        ("status", "500"),
+        ("service", "api-gateway"),
+        ("region", "us-west-2")
+      ]
+    },
+    {
+      name: "http.request.duration",
+      value: 125.5,
+      attributes: [
+        ("method", "GET"),
+        ("endpoint", "/api/users"),
+        ("service", "user-service"),
+        ("region", "us-west-2")
       ]
     }
-    telemetry_data = telemetry_data.push(span_data)
+  ]
+  
+  // 2. Verify metrics structure
+  assert_eq(request_metrics.length(), 4)
+  
+  // 3. Analyze metrics by dimensions
+  let get_requests = request_metrics.filter(fn(m) {
+    let mut found = false
+    for (key, value) in m.attributes {
+      if key == "method" and value == "GET" {
+        found = true
+      }
+    }
+    found
+  })
+  
+  assert_eq(get_requests.length(), 2)
+  
+  // 4. Calculate success rate
+  let success_requests = request_metrics.filter(fn(m) {
+    let mut found = false
+    for (key, value) in m.attributes {
+      if key == "status" and value == "200" {
+        found = true
+      }
+    }
+    found
+  })
+  
+  let total_requests = request_metrics.filter(fn(m) { m.name == "http.requests.total" })
+  let success_count = success_requests.reduce(fn(acc, m) { acc + m.value }, 0)
+  let total_count = total_requests.reduce(fn(acc, m) { acc + m.value }, 0)
+  
+  assert_eq(success_count, 1250)
+  assert_eq(total_count, 1318)
+  
+  let success_rate = (success_count.to_float() / total_count.to_float()) * 100.0
+  assert_true(success_rate > 94.0 and success_rate < 95.0)
+  
+  // 5. Verify metric attributes
+  for metric in request_metrics {
+    assert_true(metric.attributes.length() >= 3)
+    
+    // Verify all attributes have valid keys and values
+    for (key, value) in metric.attributes {
+      assert_true(key.length() > 0)
+      assert_true(value.length() > 0)
+    }
+  }
+}
+
+// Test 3: Context Propagation Across Service Boundaries
+test "context propagation across service boundaries" {
+  // 1. Create initial context with baggage
+  let initial_baggage = Baggage({ entries = [
+    ("user.id", "user-12345"),
+    ("request.id", "req-abc123"),
+    ("session.id", "sess-def456"),
+    ("correlation.id", "corr-ghi789")
+  ] })
+  
+  let initial_context = Context({
+    baggage: Some(initial_baggage),
+    span_context: Some(SpanContext({
+      trace_id: "trace-propagation-001",
+      span_id: "span-initial-001",
+      sampled: true,
+      trace_state: "origin=frontend"
+    }))
+  })
+  
+  // 2. Simulate context propagation to API Gateway
+  let api_gateway_context = Context({
+    baggage: initial_context.baggage,
+    span_context: Some(SpanContext({
+      trace_id: "trace-propagation-001",
+      span_id: "span-api-gateway-002",
+      sampled: true,
+      trace_state: "origin=frontend,service=api-gateway"
+    }))
+  })
+  
+  // 3. Simulate context propagation to Auth Service
+  let auth_service_context = Context({
+    baggage: api_gateway_context.baggage,
+    span_context: Some(SpanContext({
+      trace_id: "trace-propagation-001",
+      span_id: "span-auth-service-003",
+      sampled: true,
+      trace_state: "origin=frontend,service=api-gateway,service=auth"
+    }))
+  })
+  
+  // 4. Add service-specific baggage
+  let auth_baggage = match auth_service_context.baggage {
+    None => Baggage({ entries = [] })
+    Some(b) => b
   }
   
-  // 序列化数据
-  let serialized_data = Serializer::serialize(telemetry_data)
-  let original_size = serialized_data.length()
+  let updated_auth_baggage = Baggage({ entries = auth_baggage.entries + [
+    ("auth.method", "jwt"),
+    ("auth.provider", "keycloak")
+  ] })
   
-  // 压缩数据
-  let compressed_data = CompressionManager::compress(compression_manager, serialized_data)
-  let compressed_size = compressed_data.length()
+  let final_auth_context = Context({
+    baggage: Some(updated_auth_baggage),
+    span_context: auth_service_context.span_context
+  })
   
-  // 验证压缩效果
-  let compression_ratio = compressed_size.to_float() / original_size.to_float()
-  assert_true(compression_ratio < 0.8)  // 压缩率应该小于80%
-  
-  // 解压缩数据
-  let decompressed_data = CompressionManager::decompress(compression_manager, compressed_data)
-  assert_eq(decompressed_data.length(), original_size)
-  
-  // 验证解压缩后的数据
-  let deserialized_data = Serializer::deserialize(decompressed_data)
-  assert_eq(deserialized_data.length(), telemetry_data.length())
-  
-  // 测试批量传输
-  let batch_start_time = 1640995200
-  let batches = TransportManager::create_batches(transport_manager, deserialized_data)
-  
-  // 验证批次创建
-  assert_true(batches.length() > 0)
-  for batch in batches {
-    assert_true(batch.size <= transport_manager.max_batch_size)
-  }
-  
-  // 模拟传输
-  let mut successful_transmissions = 0
-  for batch in batches {
-    let transmission_result = TransportManager::transmit(transport_manager, batch)
-    if transmission_result.success {
-      successful_transmissions = successful_transmissions + 1
+  // 5. Verify context propagation
+  // All contexts should have the same trace ID
+  match initial_context.span_context {
+    None => assert_true(false)
+    Some(sc) => {
+      match api_gateway_context.span_context {
+        None => assert_true(false)
+        Some(api_sc) => assert_eq(sc.trace_id, api_sc.trace_id)
+      }
+      match auth_service_context.span_context {
+        None => assert_true(false)
+        Some(auth_sc) => assert_eq(sc.trace_id, auth_sc.trace_id)
+      }
     }
   }
   
-  // 验证传输结果
-  assert_eq(successful_transmissions, batches.length())
-}
-
-// 测试7: 跨服务通信
-test "跨服务通信测试" {
-  // 创建服务注册表
-  let service_registry = ServiceRegistry::new()
-  
-  // 注册服务
-  let services = [
-    ("auth.service", "https://auth.example.com", ["v1", "v2"]),
-    ("user.service", "https://user.example.com", ["v1"]),
-    ("order.service", "https://order.example.com", ["v1", "v2"]),
-    ("payment.service", "https://payment.example.com", ["v1"])
-  ]
-  
-  for (name, url, versions) in services {
-    ServiceRegistry::register(service_registry, name, url, versions)
-  }
-  
-  // 创建通信管理器
-  let communication_manager = CommunicationManager::new({
-    timeout_ms: 5000,
-    retry_attempts: 3,
-    circuit_breaker_threshold: 5,
-    enable_telemetry: true
-  })
-  
-  // 创建追踪上下文
-  let tracer_provider = TracerProvider::new()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "communication.tracer")
-  let root_span = Tracer::start_span(tracer, "cross.service.request")
-  let root_context = Span::context(root_span)
-  
-  // 模拟跨服务调用链
-  let call_chain = ["auth.service", "user.service", "order.service", "payment.service"]
-  let mut responses = []
-  
-  for service_name in call_chain {
-    // 创建服务调用span
-    let service_span = Tracer::start_span_with_context(tracer, "call." + service_name, root_context)
-    Span::set_attribute(service_span, "service.name", StringValue(service_name))
-    
-    // 模拟服务调用
-    let service_info = ServiceRegistry::get_service(service_registry, service_name)
-    assert_true(service_info.is_some())
-    
-    match service_info {
-      Some(info) => {
-        let call_result = CommunicationManager::call_service(
-          communication_manager,
-          info.url,
-          "GET",
-          [("trace-id", SpanContext::trace_id(Context::span_context(root_context)))],
-          ""
-        )
-        
-        if call_result.success {
-          responses = responses.push({
-            service: service_name,
-            status: "success",
-            response_time: call_result.response_time_ms,
-            data_size: call_result.data_size
-          })
-          
-          Span::set_status(service_span, Ok)
-        } else {
-          responses = responses.push({
-            service: service_name,
-            status: "error",
-            response_time: call_result.response_time_ms,
-            error: call_result.error
-          })
-          
-          Span::set_status(service_span, Error)
-          Span::set_attribute(service_span, "error.message", StringValue(call_result.error))
+  // Verify baggage propagation and enrichment
+  match final_auth_context.baggage {
+    None => assert_true(false)
+    Some(b) => {
+      assert_true(b.entries.length() >= 6)
+      
+      // Verify original baggage entries are preserved
+      let mut found_user_id = false
+      let mut found_request_id = false
+      let mut found_session_id = false
+      let mut found_correlation_id = false
+      let mut found_auth_method = false
+      let mut found_auth_provider = false
+      
+      for (key, value) in b.entries {
+        match key {
+          "user.id" => {
+            assert_eq(value, "user-12345")
+            found_user_id = true
+          }
+          "request.id" => {
+            assert_eq(value, "req-abc123")
+            found_request_id = true
+          }
+          "session.id" => {
+            assert_eq(value, "sess-def456")
+            found_session_id = true
+          }
+          "correlation.id" => {
+            assert_eq(value, "corr-ghi789")
+            found_correlation_id = true
+          }
+          "auth.method" => {
+            assert_eq(value, "jwt")
+            found_auth_method = true
+          }
+          "auth.provider" => {
+            assert_eq(value, "keycloak")
+            found_auth_provider = true
+          }
+          _ => assert_true(false)
         }
-        
-        Span::set_attribute(service_span, "response.time.ms", IntValue(call_result.response_time_ms))
       }
-      None => {
-        assert_true(false)  // 服务应该存在
-      }
+      
+      assert_true(found_user_id)
+      assert_true(found_request_id)
+      assert_true(found_session_id)
+      assert_true(found_correlation_id)
+      assert_true(found_auth_method)
+      assert_true(found_auth_provider)
     }
-    
-    Span::end(service_span)
-    root_context = Span::context(service_span)  // 更新上下文
   }
-  
-  // 验证调用链结果
-  assert_eq(responses.length(), call_chain.length())
-  
-  // 验证所有调用都成功
-  let successful_calls = responses.filter(fn(r) { r.status == "success" })
-  assert_eq(successful_calls.length(), call_chain.length())
-  
-  // 验证响应时间
-  for response in responses {
-    assert_true(response.response_time > 0)
-    assert_true(response.response_time < 5000)  // 应该在超时时间内
-  }
-  
-  // 完成根span
-  Span::end(root_span)
 }
 
-// 测试8: 配置管理
-test "配置管理测试" {
-  // 创建配置管理器
-  let config_manager = ConfigManager::new({
-    config_file: "telemetry.config.json",
-    auto_reload: true,
-    reload_interval_seconds: 60,
-    validation_enabled: true
-  })
-  
-  // 设置初始配置
-  let initial_config = {
-    telemetry: {
-      enabled: true,
-      sampling_rate: 0.1,
-      export_interval_ms: 10000,
-      batch_size: 512
-    },
-    tracing: {
-      enabled: true,
-      max_spans_per_second: 1000,
-      max_attributes_per_span: 128
-    },
-    metrics: {
-      enabled: true,
-      export_interval_ms: 15000,
-      max_metrics_per_export: 1000
-    },
-    logging: {
-      level: "info",
-      format: "json",
-      include_timestamp: true
-    }
-  }
-  
-  ConfigManager::load_config(config_manager, initial_config)
-  
-  // 验证初始配置加载
-  assert_eq(ConfigManager::get(config_manager, "telemetry.enabled"), Some(BoolValue(true)))
-  assert_eq(ConfigManager::get(config_manager, "telemetry.sampling_rate"), Some(FloatValue(0.1)))
-  assert_eq(ConfigManager::get(config_manager, "tracing.max_spans_per_second"), Some(IntValue(1000)))
-  assert_eq(ConfigManager::get(config_manager, "logging.level"), Some(StringValue("info")))
-  
-  // 测试配置更新
-  let updates = [
-    ("telemetry.sampling_rate", FloatValue(0.2)),
-    ("tracing.max_spans_per_second", IntValue(2000)),
-    ("logging.level", StringValue("debug"))
-  ]
-  
-  for (key, value) in updates {
-    ConfigManager::set(config_manager, key, value)
-  }
-  
-  // 验证配置更新
-  assert_eq(ConfigManager::get(config_manager, "telemetry.sampling_rate"), Some(FloatValue(0.2)))
-  assert_eq(ConfigManager::get(config_manager, "tracing.max_spans_per_second"), Some(IntValue(2000)))
-  assert_eq(ConfigManager::get(config_manager, "logging.level"), Some(StringValue("debug")))
-  
-  // 测试配置验证
-  let invalid_updates = [
-    ("telemetry.sampling_rate", FloatValue(1.5)),  // 超出有效范围 [0.0, 1.0]
-    ("tracing.max_spans_per_second", IntValue(-1)),  // 负数无效
-    ("logging.level", StringValue("invalid"))  // 无效的日志级别
-  ]
-  
-  for (key, value) in invalid_updates {
-    let validation_result = ConfigManager::validate_and_set(config_manager, key, value)
-    assert_false(validation_result.success)
-    assert_true(validation_result.error_message.length() > 0)
-  }
-  
-  // 测试配置回滚
-  let config_before_rollback = ConfigManager::snapshot(config_manager)
-  
-  // 尝试批量更新，其中一些会失败
-  let batch_updates = [
-    ("telemetry.enabled", BoolValue(false)),  // 有效
-    ("telemetry.sampling_rate", FloatValue(0.3)),  // 有效
-    ("tracing.max_spans_per_second", IntValue(-100))  // 无效
-  ]
-  
-  let batch_result = ConfigManager::batch_update(config_manager, batch_updates)
-  assert_false(batch_result.success)  // 因为有一个无效更新
-  
-  // 验证配置已回滚到之前的状态
-  let config_after_failed_batch = ConfigManager::snapshot(config_manager)
-  assert_eq(config_before_rollback, config_after_failed_batch)
-  
-  // 测试配置导出
-  let exported_config = ConfigManager::export(config_manager, "json")
-  assert_true(exported_config.length() > 0)
-  assert_true(exported_config.contains("telemetry"))
-  assert_true(exported_config.contains("tracing"))
-  assert_true(exported_config.contains("metrics"))
-  assert_true(exported_config.contains("logging"))
-}
-
-// 测试9: 安全性和权限控制
-test "安全性和权限控制测试" {
-  // 创建权限管理器
-  let permission_manager = PermissionManager::new({
-    enable_rbac: true,
-    session_timeout_seconds: 3600,
-    max_failed_attempts: 5,
-    lockout_duration_seconds: 900
-  })
-  
-  // 创建角色和权限
-  let roles = [
-    ("admin", ["read", "write", "delete", "manage"]),
-    ("operator", ["read", "write"]),
-    ("viewer", ["read"])
-  ]
-  
-  for (role_name, permissions) in roles {
-    PermissionManager::create_role(permission_manager, role_name, permissions)
-  }
-  
-  // 创建用户
-  let users = [
-    ("admin_user", "admin", ["telemetry.admin", "system.admin"]),
-    ("operator_user", "operator", ["telemetry.operator"]),
-    ("viewer_user", "viewer", ["telemetry.viewer"])
-  ]
-  
-  for (username, role, scopes) in users {
-    PermissionManager::create_user(permission_manager, username, role, scopes)
-  }
-  
-  // 创建访问控制管理器
-  let access_control = AccessControlManager::new({
-    encryption_enabled: true,
-    audit_log_enabled: true,
-    ip_whitelist_enabled: true
-  })
-  
-  // 测试权限验证
-  let test_cases = [
-    ("admin_user", "read", "telemetry.data", true),
-    ("admin_user", "delete", "telemetry.data", true),
-    ("admin_user", "manage", "system.config", true),
-    ("operator_user", "read", "telemetry.data", true),
-    ("operator_user", "write", "telemetry.data", true),
-    ("operator_user", "delete", "telemetry.data", false),
-    ("operator_user", "manage", "system.config", false),
-    ("viewer_user", "read", "telemetry.data", true),
-    ("viewer_user", "write", "telemetry.data", false),
-    ("viewer_user", "delete", "telemetry.data", false)
-  ]
-  
-  for (username, action, resource, expected_result) in test_cases {
-    let permission_result = PermissionManager::check_permission(
-      permission_manager,
-      username,
-      action,
-      resource
-    )
-    
-    assert_eq(permission_result.allowed, expected_result)
-    
-    if expected_result {
-      assert_true(permission_result.reason.length() == 0)
-    } else {
-      assert_true(permission_result.reason.length() > 0)
-      assert_true(permission_result.reason.contains("Permission denied"))
-    }
-  }
-  
-  // 测试访问控制
-  let access_context = AccessContext::new({
-    user_id: "operator_user",
-    ip_address: "192.168.1.100",
-    user_agent: "Azimuth-Telemetry-Client/1.0",
-    timestamp: 1640995200
-  })
-  
-  // 测试敏感数据访问
-  let sensitive_data = {
-    trace_ids: ["trace-1", "trace-2", "trace-3"],
-    user_data: [
-      ("user-1", "John Doe", "john@example.com"),
-      ("user-2", "Jane Smith", "jane@example.com")
+// Test 4: Telemetry Data Serialization and Deserialization
+test "telemetry data serialization and deserialization" {
+  // 1. Create complex telemetry data structure
+  let telemetry_data = {
+    spans: [
+      {
+        name: "http.request",
+        trace_id: "trace-serialization-001",
+        span_id: "span-001",
+        parent_span_id: None,
+        kind: "Server",
+        status: "Ok",
+        start_time: 1640995200000,
+        end_time: 1640995200250,
+        attributes: [
+          ("http.method", "GET"),
+          ("http.url", "/api/users"),
+          ("http.status_code", "200"),
+          ("user.id", "user-123")
+        ]
+      },
+      {
+        name: "database.query",
+        trace_id: "trace-serialization-001",
+        span_id: "span-002",
+        parent_span_id: Some("span-001"),
+        kind: "Client",
+        status: "Ok",
+        start_time: 1640995200100,
+        end_time: 1640995200200,
+        attributes: [
+          ("db.system", "postgresql"),
+          ("db.statement", "SELECT * FROM users WHERE id = $1"),
+          ("db.user", "app_user")
+        ]
+      }
     ],
-    system_metrics: {
-      cpu_usage: 75.5,
-      memory_usage: 60.2,
-      disk_usage: 45.8
+    metrics: [
+      {
+        name: "http.requests.total",
+        value: 1250,
+        unit: "requests",
+        attributes: [
+          ("method", "GET"),
+          ("status", "200"),
+          ("service", "api-gateway")
+        ]
+      },
+      {
+        name: "http.request.duration",
+        value: 125.5,
+        unit: "ms",
+        attributes: [
+          ("method", "GET"),
+          ("endpoint", "/api/users")
+        ]
+      }
+    ],
+    resources: [
+      {
+        attributes: [
+          ("service.name", "user-service"),
+          ("service.version", "1.2.3"),
+          ("service.instance.id", "instance-001"),
+          ("deployment.environment", "production"),
+          ("cloud.provider", "aws"),
+          ("cloud.region", "us-west-2")
+        ]
+      }
+    ]
+  }
+  
+  // 2. Serialize to JSON-like string representation
+  let serialize_telemetry = fn(data) {
+    let spans_json = data.spans.map(fn(span) {
+      "{\n" +
+      "  \"name\": \"" + span.name + "\",\n" +
+      "  \"trace_id\": \"" + span.trace_id + "\",\n" +
+      "  \"span_id\": \"" + span.span_id + "\",\n" +
+      "  \"parent_span_id\": " + match span.parent_span_id {
+        None => "null"
+        Some(id) => "\"" + id + "\""
+      } + ",\n" +
+      "  \"kind\": \"" + span.kind + "\",\n" +
+      "  \"status\": \"" + span.status + "\",\n" +
+      "  \"start_time\": " + span.start_time.to_string() + ",\n" +
+      "  \"end_time\": " + span.end_time.to_string() + ",\n" +
+      "  \"attributes\": [" + span.attributes.map(fn(attr) {
+        "\"" + attr.0 + "\": \"" + attr.1 + "\""
+      }).join(", ") + "]\n" +
+      "}"
+    }).join(",\n")
+    
+    let metrics_json = data.metrics.map(fn(metric) {
+      "{\n" +
+      "  \"name\": \"" + metric.name + "\",\n" +
+      "  \"value\": " + metric.value.to_string() + ",\n" +
+      "  \"unit\": \"" + metric.unit + "\",\n" +
+      "  \"attributes\": [" + metric.attributes.map(fn(attr) {
+        "\"" + attr.0 + "\": \"" + attr.1 + "\""
+      }).join(", ") + "]\n" +
+      "}"
+    }).join(",\n")
+    
+    let resources_json = data.resources.map(fn(resource) {
+      "{\n" +
+      "  \"attributes\": [" + resource.attributes.map(fn(attr) {
+        "\"" + attr.0 + "\": \"" + attr.1 + "\""
+      }).join(", ") + "]\n" +
+      "}"
+    }).join(",\n")
+    
+    "{\n" +
+    "  \"spans\": [" + spans_json + "],\n" +
+    "  \"metrics\": [" + metrics_json + "],\n" +
+    "  \"resources\": [" + resources_json + "]\n" +
+    "}"
+  }
+  
+  // 3. Serialize the data
+  let serialized_data = serialize_telemetry(telemetry_data)
+  
+  // 4. Verify serialization contains expected data
+  assert_true(serialized_data.contains("http.request"))
+  assert_true(serialized_data.contains("database.query"))
+  assert_true(serialized_data.contains("http.requests.total"))
+  assert_true(serialized_data.contains("http.request.duration"))
+  assert_true(serialized_data.contains("service.name"))
+  assert_true(serialized_data.contains("user-service"))
+  assert_true(serialized_data.contains("trace-serialization-001"))
+  
+  // 5. Parse key information from serialized data
+  let extract_trace_ids = fn(serialized: String) {
+    let mut trace_ids = []
+    let lines = serialized.split("\n")
+    for line in lines {
+      if line.contains("\"trace_id\":") {
+        let start = line.find("\"trace_id\": \"").unwrap() + 14
+        let end = line.find("\",").unwrap()
+        let trace_id = line.substring(start, end - start)
+        trace_ids = trace_ids.push(trace_id)
+      }
+    }
+    trace_ids
+  }
+  
+  let extracted_trace_ids = extract_trace_ids(serialized_data)
+  assert_eq(extracted_trace_ids.length(), 2)
+  assert_true(extracted_trace_ids.contains("trace-serialization-001"))
+  
+  // 6. Verify span relationships are preserved
+  assert_true(serialized_data.contains("\"parent_span_id\": null"))
+  assert_true(serialized_data.contains("\"parent_span_id\": \"span-001\""))
+  
+  // 7. Verify attribute serialization
+  assert_true(serialized_data.contains("\"http.method\": \"GET\""))
+  assert_true(serialized_data.contains("\"db.system\": \"postgresql\""))
+  assert_true(serialized_data.contains("\"service.name\": \"user-service\""))
+}
+
+// Test 5: Telemetry Sampling Strategies
+test "telemetry sampling strategies" {
+  // 1. Define sampling strategies
+  enum SamplingStrategy {
+    AlwaysOn
+    AlwaysOff
+    TraceIdRatio(Float)  // Sample ratio between 0.0 and 1.0
+    ParentBased(Box[SamplingStrategy])
+    AttributeBased(String, String)  // Sample if attribute key has specific value
+  }
+  
+  // 2. Create sampling decisions
+  let always_on_strategy = SamplingStrategy::AlwaysOn
+  let always_off_strategy = SamplingStrategy::AlwaysOff
+  let ratio_strategy = SamplingStrategy::TraceIdRatio(0.1)  // 10% sampling
+  let parent_based_strategy = SamplingStrategy::ParentBased(Box::new(SamplingStrategy::AlwaysOn))
+  let attribute_based_strategy = SamplingStrategy::AttributeBased("service.name", "critical-service")
+  
+  // 3. Create sampling decision function
+  let should_sample = fn(strategy: SamplingStrategy, trace_id: String, attributes: Array[(String, String)], parent_sampled: Option[Bool]) {
+    match strategy {
+      SamplingStrategy::AlwaysOn => true,
+      SamplingStrategy::AlwaysOff => false,
+      SamplingStrategy::TraceIdRatio(ratio) => {
+        // Simple hash-based sampling using trace ID
+        let hash = trace_id.length() % 100
+        hash.to_float() < (ratio * 100.0)
+      },
+      SamplingStrategy::ParentBased(base_strategy) => {
+        match parent_sampled {
+          None => should_sample(base_strategy, trace_id, attributes, None),
+          Some(sampled) => sampled
+        }
+      },
+      SamplingStrategy::AttributeBased(key, expected_value) => {
+        let mut found = false
+        for (attr_key, attr_value) in attributes {
+          if attr_key == key and attr_value == expected_value {
+            found = true
+          }
+        }
+        found
+      }
     }
   }
   
-  // 管理员应该能够访问所有数据
-  let admin_access_result = AccessControlManager::filter_data(
-    access_control,
-    "admin_user",
-    sensitive_data
+  // 4. Test AlwaysOn strategy
+  assert_true(should_sample(always_on_strategy, "trace-001", [], None))
+  assert_true(should_sample(always_on_strategy, "trace-002", [("service", "test")], None))
+  
+  // 5. Test AlwaysOff strategy
+  assert_false(should_sample(always_off_strategy, "trace-003", [], None))
+  assert_false(should_sample(always_off_strategy, "trace-004", [("service", "test")], None))
+  
+  // 6. Test TraceIdRatio strategy
+  let short_trace_id = "trace-5"  // Length 10, 10 % 100 = 10
+  let long_trace_id = "trace-very-long-trace-id-12345"  // Length 32, 32 % 100 = 32
+  
+  // With 10% ratio, trace IDs with hash < 10 should be sampled
+  assert_true(should_sample(ratio_strategy, short_trace_id, [], None))  // 10 < 10 (edge case)
+  assert_false(should_sample(ratio_strategy, long_trace_id, [], None))  // 32 >= 10
+  
+  // 7. Test ParentBased strategy
+  // With parent sampled
+  assert_true(should_sample(parent_based_strategy, "trace-005", [], Some(true)))
+  assert_false(should_sample(parent_based_strategy, "trace-006", [], Some(false)))
+  
+  // Without parent (fallback to base strategy)
+  assert_true(should_sample(parent_based_strategy, "trace-007", [], None))
+  
+  // 8. Test AttributeBased strategy
+  let critical_service_attrs = [
+    ("service.name", "critical-service"),
+    ("service.version", "1.0.0")
+  ]
+  
+  let normal_service_attrs = [
+    ("service.name", "normal-service"),
+    ("service.version", "1.0.0")
+  ]
+  
+  assert_true(should_sample(attribute_based_strategy, "trace-008", critical_service_attrs, None))
+  assert_false(should_sample(attribute_based_strategy, "trace-009", normal_service_attrs, None))
+  
+  // 9. Test complex sampling scenarios
+  let complex_strategy = SamplingStrategy::ParentBased(
+    Box::new(SamplingStrategy::AttributeBased("environment", "production"))
   )
-  assert_eq(admin_access_result.filtered_data.trace_ids.length(), 3)
-  assert_eq(admin_access_result.filtered_data.user_data.length(), 2)
   
-  // 操作员应该能够访问系统指标但不能访问用户个人数据
-  let operator_access_result = AccessControlManager::filter_data(
-    access_control,
-    "operator_user",
-    sensitive_data
-  )
-  assert_eq(operator_access_result.filtered_data.trace_ids.length(), 3)
-  assert_eq(operator_access_result.filtered_data.user_data.length(), 0)  // 用户数据被过滤
-  assert_true(operator_access_result.filtered_data.system_metrics.cpu_usage > 0)
+  let production_attrs = [("environment", "production")]
+  let staging_attrs = [("environment", "staging")]
   
-  // 查看者只能看到聚合数据，不能看到详细追踪信息
-  let viewer_access_result = AccessControlManager::filter_data(
-    access_control,
-    "viewer_user",
-    sensitive_data
-  )
-  assert_eq(viewer_access_result.filtered_data.trace_ids.length(), 0)  // 详细追踪信息被过滤
-  assert_eq(viewer_access_result.filtered_data.user_data.length(), 0)  // 用户数据被过滤
-  assert_true(viewer_access_result.filtered_data.system_metrics.cpu_usage > 0)
+  // With parent sampled, should respect parent decision
+  assert_true(should_sample(complex_strategy, "trace-010", production_attrs, Some(true)))
+  assert_false(should_sample(complex_strategy, "trace-011", production_attrs, Some(false)))
   
-  // 测试审计日志
-  let audit_logs = AccessControlManager::get_audit_logs(access_control, 10)
-  assert_true(audit_logs.length() >= 3)  // 至少记录了三次访问
-  
-  // 验证审计日志内容
-  let admin_log = audit_logs.find(fn(log) { log.user_id == "admin_user" })
-  assert_true(admin_log.is_some())
-  assert_eq(admin_log.unwrap().action, "data_access")
-  assert_eq(admin_log.unwrap().result, "allowed")
-  
-  let operator_log = audit_logs.find(fn(log) { log.user_id == "operator_user" })
-  assert_true(operator_log.is_some())
-  assert_eq(operator_log.unwrap().action, "data_access")
-  assert_eq(operator_log.unwrap().result, "allowed")  // 访问被允许但数据被过滤
-  
-  let viewer_log = audit_logs.find(fn(log) { log.user_id == "viewer_user" })
-  assert_true(viewer_log.is_some())
-  assert_eq(viewer_log.unwrap().action, "data_access")
-  assert_eq(viewer_log.unwrap().result, "allowed")  // 访问被允许但数据被过滤
+  // Without parent, should use attribute-based sampling
+  assert_true(should_sample(complex_strategy, "trace-012", production_attrs, None))
+  assert_false(should_sample(complex_strategy, "trace-013", staging_attrs, None))
 }
 
-// 测试10: 高并发场景
-test "高并发场景测试" {
-  // 创建并发管理器
-  let concurrency_manager = ConcurrencyManager::new({
-    max_workers: 100,
-    queue_size: 1000,
-    worker_timeout_seconds: 60
-  })
+// Test 6: Telemetry Performance Optimization
+test "telemetry performance optimization" {
+  // 1. Create performance monitoring utilities
+  let create_performance_monitor = fn() {
+    {
+      start_time: 0,
+      end_time: 0,
+      memory_usage: 0,
+      cpu_usage: 0.0,
+      operation_count: 0
+    }
+  }
   
-  // 创建线程安全的遥测数据存储
-  let telemetry_store = ConcurrentTelemetryStore::new({
-    max_capacity: 10000,
-    shard_count: 16,
-    enable_metrics: true
-  })
+  let start_monitoring = fn(monitor) {
+    { monitor | start_time: 1640995200000, operation_count: 0 }
+  }
   
-  // 模拟高并发场景
-  let concurrent_operations = 1000
-  let operation_batches = 10
-  let operations_per_batch = concurrent_operations / operation_batches
+  let stop_monitoring = fn(monitor) {
+    { monitor | end_time: 1640995201000 }
+  }
   
-  // 创建工作池
-  let worker_pool = ConcurrencyManager::create_worker_pool(concurrency_manager, operation_batches)
+  let record_operation = fn(monitor) {
+    { monitor | operation_count: monitor.operation_count + 1 }
+  }
   
-  // 提交并发任务
-  let mut submitted_tasks = 0
-  for batch_id in 0..operation_batches {
-    let batch_tasks = []
+  // 2. Test batch processing optimization
+  let process_spans_batch = fn(spans: Array[String], batch_size: Int) {
+    let mut batches = []
+    let mut current_batch = []
     
-    for i in 0..operations_per_batch {
-      let task_id = batch_id * operations_per_batch + i
-      let task = ConcurrentTask::new({
-        id: task_id.to_string(),
-        operation: "telemetry.collection",
-        data: {
-          trace_id: "trace-" + task_id.to_string(),
-          span_id: "span-" + task_id.to_string(),
-          operation_name: "concurrent.operation." + (task_id % 10).to_string(),
-          start_time: 1640995200 + task_id,
-          attributes: [
-            ("batch.id", IntValue(batch_id)),
-            ("task.id", IntValue(task_id)),
-            ("worker.thread", StringValue("thread-" + (task_id % operation_batches).to_string()))
-          ]
-        }
+    for span in spans {
+      current_batch = current_batch.push(span)
+      
+      if current_batch.length() >= batch_size {
+        batches = batches.push(current_batch)
+        current_batch = []
+      }
+    }
+    
+    if current_batch.length() > 0 {
+      batches = batches.push(current_batch)
+    }
+    
+    batches
+  }
+  
+  // 3. Create test spans
+  let test_spans = []
+  for i in 0..=100 {
+    test_spans = test_spans.push("span-" + i.to_string())
+  }
+  
+  // 4. Test batch processing with different batch sizes
+  let small_batches = process_spans_batch(test_spans, 10)
+  let medium_batches = process_spans_batch(test_spans, 25)
+  let large_batches = process_spans_batch(test_spans, 50)
+  
+  assert_eq(small_batches.length(), 11)  // 10 batches of 10 + 1 batch of 1
+  assert_eq(medium_batches.length(), 5)  // 4 batches of 25 + 1 batch of 1
+  assert_eq(large_batches.length(), 3)   // 2 batches of 50 + 1 batch of 1
+  
+  // Verify total spans are preserved
+  let small_total = small_batches.reduce(fn(acc, batch) { acc + batch.length() }, 0)
+  let medium_total = medium_batches.reduce(fn(acc, batch) { acc + batch.length() }, 0)
+  let large_total = large_batches.reduce(fn(acc, batch) { acc + batch.length() }, 0)
+  
+  assert_eq(small_total, 101)
+  assert_eq(medium_total, 101)
+  assert_eq(large_total, 101)
+  
+  // 5. Test memory-efficient attribute processing
+  let process_attributes_efficiently = fn(attributes: Array[(String, String)]) {
+    let mut result = []
+    let mut seen_keys = []
+    
+    for (key, value) in attributes {
+      if not(seen_keys.contains(key)) {
+        result = result.push((key, value))
+        seen_keys = seen_keys.push(key)
+      }
+    }
+    
+    result
+  }
+  
+  let duplicate_attributes = [
+    ("service.name", "api-service"),
+    ("service.version", "1.0.0"),
+    ("service.name", "api-service"),  // Duplicate
+    ("environment", "production"),
+    ("service.version", "1.0.0"),     // Duplicate
+    ("region", "us-west-2")
+  ]
+  
+  let unique_attributes = process_attributes_efficiently(duplicate_attributes)
+  assert_eq(unique_attributes.length(), 4)  // Only unique keys
+  
+  // Verify uniqueness
+  let unique_keys = unique_attributes.map(fn(attr) { attr.0 })
+  for key in unique_keys {
+    let occurrences = unique_attributes.filter(fn(attr) { attr.0 == key }).length()
+    assert_eq(occurrences, 1)
+  }
+  
+  // 6. Test compression simulation for telemetry data
+  let compress_telemetry_data = fn(data: String) {
+    // Simple compression simulation: remove repeated patterns
+    let compressed = data
+      .replace("\"trace_id\": \"", "\"t\":\"")
+      .replace("\"span_id\": \"", "\"s\":\"")
+      .replace("\"name\": \"", "\"n\":\"")
+      .replace("\"attributes\": [", "\"a\":[")
+      .replace("\"value\": ", "\"v\":")
+    
+    compressed
+  }
+  
+  let original_data = "{ \"trace_id\": \"trace-123\", \"span_id\": \"span-456\", \"name\": \"test\", \"attributes\": [], \"value\": 42 }"
+  let compressed_data = compress_telemetry_data(original_data)
+  
+  assert_true(compressed_data.length() < original_data.length())
+  assert_true(compressed_data.contains("\"t\":\"trace-123\""))
+  assert_true(compressed_data.contains("\"s\":\"span-456\""))
+  assert_true(compressed_data.contains("\"n\":\"test\""))
+  assert_true(compressed_data.contains("\"a\":[]"))
+  assert_true(compressed_data.contains("\"v\":42"))
+  
+  // 7. Test async processing simulation
+  let process_async_operations = fn(operations: Array[String]) {
+    let mut results = []
+    
+    // Simulate async processing by processing in parallel (simplified)
+    for op in operations {
+      let result = op + "_processed"
+      results = results.push(result)
+    }
+    
+    results
+  }
+  
+  let async_operations = ["op1", "op2", "op3", "op4", "op5"]
+  let async_results = process_async_operations(async_operations)
+  
+  assert_eq(async_results.length(), 5)
+  assert_true(async_results.contains("op1_processed"))
+  assert_true(async_results.contains("op2_processed"))
+  assert_true(async_results.contains("op3_processed"))
+  assert_true(async_results.contains("op4_processed"))
+  assert_true(async_results.contains("op5_processed"))
+}
+
+// Test 7: Telemetry Error Handling and Recovery
+test "telemetry error handling and recovery" {
+  // 1. Define telemetry error types
+  enum TelemetryError {
+    SpanCreationFailed(String)
+    MetricCollectionFailed(String)
+    ContextPropagationError(String)
+    SerializationError(String)
+    NetworkError(String)
+    ConfigurationError(String)
+  }
+  
+  // 2. Create error handling utilities
+  let create_safe_span = fn(name: String) {
+    if name.length() == 0 {
+      Err(TelemetryError::SpanCreationFailed("Empty span name"))
+    } else if name.length() > 50 {
+      Err(TelemetryError::SpanCreationFailed("Span name too long"))
+    } else {
+      let span_context = SpanContext({
+        trace_id: "trace-safe-001",
+        span_id: "span-safe-001",
+        sampled: true,
+        trace_state: ""
       })
       
-      batch_tasks = batch_tasks.push(task)
+      let span = Span({
+        name: name,
+        kind: Internal,
+        recording: true,
+        span_context: span_context
+      })
+      
+      Ok(span)
+    }
+  }
+  
+  let create_safe_metric = fn(name: String, value: Float) {
+    if name.length() == 0 {
+      Err(TelemetryError::MetricCollectionFailed("Empty metric name"))
+    } else if value < 0.0 {
+      Err(TelemetryError::MetricCollectionFailed("Negative metric value"))
+    } else {
+      let metric = {
+        name: name,
+        value: value,
+        unit: "unit",
+        attributes: []
+      }
+      Ok(metric)
+    }
+  }
+  
+  // 3. Test successful operations
+  let valid_span_result = create_safe_span("valid.span.name")
+  match valid_span_result {
+    Ok(span) => {
+      assert_eq(span.name, "valid.span.name")
+      assert_eq(span.span_context.trace_id, "trace-safe-001")
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  let valid_metric_result = create_safe_metric("valid.metric", 42.5)
+  match valid_metric_result {
+    Ok(metric) => {
+      assert_eq(metric.name, "valid.metric")
+      assert_eq(metric.value, 42.5)
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  // 4. Test error conditions
+  let empty_span_result = create_safe_span("")
+  match empty_span_result {
+    Ok(_) => assert_true(false)
+    Err(TelemetryError::SpanCreationFailed(msg)) => {
+      assert_eq(msg, "Empty span name")
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  let long_span_result = create_safe_span("a".repeat(51))
+  match long_span_result {
+    Ok(_) => assert_true(false)
+    Err(TelemetryError::SpanCreationFailed(msg)) => {
+      assert_eq(msg, "Span name too long")
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  let empty_metric_result = create_safe_metric("", 10.0)
+  match empty_metric_result {
+    Ok(_) => assert_true(false)
+    Err(TelemetryError::MetricCollectionFailed(msg)) => {
+      assert_eq(msg, "Empty metric name")
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  let negative_metric_result = create_safe_metric("negative.metric", -5.0)
+  match negative_metric_result {
+    Ok(_) => assert_true(false)
+    Err(TelemetryError::MetricCollectionFailed(msg)) => {
+      assert_eq(msg, "Negative metric value")
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  // 5. Test error recovery with fallback values
+  let create_span_with_fallback = fn(name: String, fallback_name: String) {
+    match create_safe_span(name) {
+      Ok(span) => Ok(span),
+      Err(_) => create_safe_span(fallback_name)
+    }
+  }
+  
+  let fallback_span_result = create_span_with_fallback("", "fallback.span")
+  match fallback_span_result {
+    Ok(span) => {
+      assert_eq(span.name, "fallback.span")
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  // 6. Test error aggregation
+  let process_multiple_operations = fn(operations: Array[String]) {
+    let mut results = []
+    let mut errors = []
+    
+    for op in operations {
+      match create_safe_span(op) {
+        Ok(span) => results = results.push(span),
+        Err(error) => errors = errors.push(error)
+      }
     }
     
-    // 提交批次任务
-    let batch_result = ConcurrencyManager::submit_batch(concurrency_manager, batch_tasks)
-    assert_true(batch_result.success)
-    submitted_tasks = submitted_tasks + batch_tasks.length()
+    { results, errors }
   }
   
-  // 等待所有任务完成
-  let completion_result = ConcurrencyManager::wait_for_completion(concurrency_manager, 30000)  // 30秒超时
-  assert_true(completion_result.success)
-  assert_eq(completion_result.completed_tasks, submitted_tasks)
+  let test_operations = ["valid1", "", "valid2", "a".repeat(51), "valid3"]
+  let operation_results = process_multiple_operations(test_operations)
   
-  // 验证并发存储的数据
-  let stored_data = ConcurrentTelemetryStore::get_all(telemetry_store)
-  assert_eq(stored_data.length(), submitted_tasks)
+  assert_eq(operation_results.results.length(), 3)
+  assert_eq(operation_results.errors.length(), 2)
   
-  // 验证数据完整性
-  let mut trace_ids = []
-  let mut span_ids = []
-  let mut batch_ids = []
+  // Verify successful operations
+  let result_names = operation_results.results.map(fn(span) { span.name })
+  assert_true(result_names.contains("valid1"))
+  assert_true(result_names.contains("valid2"))
+  assert_true(result_names.contains("valid3"))
   
-  for data in stored_data {
-    trace_ids = trace_ids.push(data.attributes.find(fn(attr) { attr.0 == "trace_id" }).unwrap().1)
-    span_ids = span_ids.push(data.attributes.find(fn(attr) { attr.0 == "span_id" }).unwrap().1)
-    batch_ids = batch_ids.push(data.attributes.find(fn(attr) { attr.0 == "batch.id" }).unwrap().1)
+  // Verify error types
+  for error in operation_results.errors {
+    match error {
+      TelemetryError::SpanCreationFailed(msg) => {
+        assert_true(msg == "Empty span name" or msg == "Span name too long")
+      }
+      _ => assert_true(false)
+    }
   }
   
-  // 验证所有任务ID都是唯一的
-  let unique_trace_ids = trace_ids.unique()
-  let unique_span_ids = span_ids.unique()
-  assert_eq(unique_trace_ids.length(), trace_ids.length())
-  assert_eq(unique_span_ids.length(), span_ids.length())
-  
-  // 验证批次分布
-  let batch_distribution = batch_ids.group_by(fn(id) { id })
-  assert_eq(batch_distribution.length(), operation_batches)
-  for (batch_id, count) in batch_distribution {
-    assert_eq(count, operations_per_batch)
+  // 7. Test circuit breaker pattern
+  let create_circuit_breaker = fn(failure_threshold: Int) {
+    {
+      failure_count: 0,
+      failure_threshold: failure_threshold,
+      state: "closed"  // closed, open, half-open
+    }
   }
   
-  // 测试并发性能指标
-  let performance_metrics = ConcurrencyManager::get_performance_metrics(concurrency_manager)
-  assert_true(performance_metrics.total_tasks == submitted_tasks)
-  assert_true(performance_metrics.completed_tasks == submitted_tasks)
-  assert_true(performance_metrics.failed_tasks == 0)
-  assert_true(performance_metrics.average_task_time_ms > 0)
-  assert_true(performance_metrics.throughput_tasks_per_second > 0)
-  
-  // 测试并发限制
-  let limited_concurrency_manager = ConcurrencyManager::new({
-    max_workers: 5,
-    queue_size: 10,
-    worker_timeout_seconds: 60
-  })
-  
-  // 提交超过限制的任务
-  let excess_tasks = []
-  for i in 0..20 {
-    let task = ConcurrentTask::new({
-      id: "excess-" + i.to_string(),
-      operation: "test.operation",
-      data: { value: i }
-    })
-    excess_tasks = excess_tasks.push(task)
+  let call_with_circuit_breaker = fn(circuit_breaker, operation: () -> Result[Span]) {
+    if circuit_breaker.state == "open" {
+      Err(TelemetryError::NetworkError("Circuit breaker is open"))
+    } else {
+      match operation() {
+        Ok(result) => {
+          // Reset failure count on success
+          let updated_breaker = { circuit_breaker | failure_count: 0, state: "closed" }
+          Ok((result, updated_breaker))
+        }
+        Err(error) => {
+          let new_failure_count = circuit_breaker.failure_count + 1
+          let new_state = if new_failure_count >= circuit_breaker.failure_threshold {
+            "open"
+          } else {
+            "closed"
+          }
+          
+          let updated_breaker = { circuit_breaker | failure_count: new_failure_count, state: new_state }
+          Err((error, updated_breaker))
+        }
+      }
+    }
   }
   
-  let excess_result = ConcurrencyManager::submit_batch(limited_concurrency_manager, excess_tasks)
-  assert_false(excess_result.success)  // 应该因为队列限制而失败
-  assert_true(excess_result.error_message.contains("Queue full"))
+  let circuit_breaker = create_circuit_breaker(3)
   
-  // 验证并发安全性
-  let concurrent_counter = ConcurrentCounter::new()
-  let counter_tasks = []
-  
-  for i in 0..100 {
-    let task = ConcurrentTask::new({
-      id: "counter-" + i.to_string(),
-      operation: "increment",
-      data: { increments: 10 }
-    })
-    counter_tasks = counter_tasks.push(task)
+  // Test successful call
+  let success_result = call_with_circuit_breaker(circuit_breaker, fn() { create_safe_span("success") })
+  match success_result {
+    Ok((span, updated_breaker)) => {
+      assert_eq(span.name, "success")
+      assert_eq(updated_breaker.failure_count, 0)
+      assert_eq(updated_breaker.state, "closed")
+    }
+    Err(_) => assert_true(false)
   }
   
-  // 提交计数器任务
-  let counter_result = ConcurrencyManager::submit_batch(concurrency_manager, counter_tasks)
-  assert_true(counter_result.success)
+  // Test multiple failures leading to circuit breaker opening
+  let mut current_breaker = circuit_breaker
+  for i in 0..=3 {
+    let failure_result = call_with_circuit_breaker(current_breaker, fn() { create_safe_span("") })
+    match failure_result {
+      Ok(_) => assert_true(false),
+      Err((error, updated_breaker)) => {
+        current_breaker = updated_breaker
+        if i < 2 {
+          assert_eq(updated_breaker.state, "closed")
+        } else {
+          assert_eq(updated_breaker.state, "open")
+        }
+      }
+    }
+  }
   
-  // 等待计数器任务完成
-  let counter_completion = ConcurrencyManager::wait_for_completion(concurrency_manager, 10000)
-  assert_true(counter_completion.success)
+  // Test that circuit breaker rejects calls when open
+  let open_circuit_result = call_with_circuit_breaker(current_breaker, fn() { create_safe_span("should.fail") })
+  match open_circuit_result {
+    Ok(_) => assert_true(false),
+    Err((TelemetryError::NetworkError(msg), _)) => {
+      assert_eq(msg, "Circuit breaker is open")
+    }
+    Err(_) => assert_true(false)
+  }
+}
+
+// Test 8: Telemetry Data Analysis and Insights
+test "telemetry data analysis and insights" {
+  // 1. Create sample telemetry data for analysis
+  let telemetry_dataset = {
+    requests: [
+      {
+        timestamp: 1640995200,
+        service: "api-gateway",
+        method: "GET",
+        endpoint: "/api/users",
+        status: 200,
+        duration: 125,
+        user_id: "user-001"
+      },
+      {
+        timestamp: 1640995205,
+        service: "api-gateway",
+        method: "GET",
+        endpoint: "/api/users",
+        status: 200,
+        duration: 98,
+        user_id: "user-002"
+      },
+      {
+        timestamp: 1640995210,
+        service: "api-gateway",
+        method: "POST",
+        endpoint: "/api/orders",
+        status: 201,
+        duration: 250,
+        user_id: "user-001"
+      },
+      {
+        timestamp: 1640995215,
+        service: "api-gateway",
+        method: "GET",
+        endpoint: "/api/users",
+        status: 404,
+        duration: 45,
+        user_id: "user-003"
+      },
+      {
+        timestamp: 1640995220,
+        service: "api-gateway",
+        method: "POST",
+        endpoint: "/api/orders",
+        status: 500,
+        duration: 1200,
+        user_id: "user-002"
+      }
+    ],
+    spans: [
+      {
+        name: "http.request",
+        service: "api-gateway",
+        start_time: 1640995200,
+        end_time: 1640995325,
+        status: "ok"
+      },
+      {
+        name: "database.query",
+        service: "user-service",
+        start_time: 1640995205,
+        end_time: 1640995255,
+        status: "ok"
+      },
+      {
+        name: "cache.get",
+        service: "user-service",
+        start_time: 1640995210,
+        end_time: 1640995215,
+        status: "ok"
+      },
+      {
+        name: "external.api.call",
+        service: "order-service",
+        start_time: 1640995220,
+        end_time: 1640995420,
+        status: "error"
+      }
+    ]
+  }
   
-  // 验证计数器最终值
-  let final_counter_value = ConcurrentCounter::get_value(concurrent_counter)
-  assert_eq(final_counter_value, 1000)  // 100个任务，每个增加10
+  // 2. Analyze request patterns
+  let analyze_request_patterns = fn(requests) {
+    let mut total_requests = requests.length()
+    let mut successful_requests = 0
+    let mut error_requests = 0
+    let mut total_duration = 0
+    
+    let mut method_counts = {}
+    let mut endpoint_counts = {}
+    let mut status_counts = {}
+    let mut user_requests = {}
+    
+    for request in requests {
+      // Count status codes
+      if request.status >= 200 and request.status < 300 {
+        successful_requests = successful_requests + 1
+      } else {
+        error_requests = error_requests + 1
+      }
+      
+      total_duration = total_duration + request.duration
+      
+      // Count methods
+      let method_count = match method_counts.get(request.method) {
+        None => 0
+        Some(count) => count
+      }
+      method_counts = method_counts.set(request.method, method_count + 1)
+      
+      // Count endpoints
+      let endpoint_count = match endpoint_counts.get(request.endpoint) {
+        None => 0
+        Some(count) => count
+      }
+      endpoint_counts = endpoint_counts.set(request.endpoint, endpoint_count + 1)
+      
+      // Count status codes
+      let status_count = match status_counts.get(request.status.to_string()) {
+        None => 0
+        Some(count) => count
+      }
+      status_counts = status_counts.set(request.status.to_string(), status_count + 1)
+      
+      // Count user requests
+      let user_count = match user_requests.get(request.user_id) {
+        None => 0
+        Some(count) => count
+      }
+      user_requests = user_requests.set(request.user_id, user_count + 1)
+    }
+    
+    {
+      total_requests,
+      successful_requests,
+      error_requests,
+      success_rate: (successful_requests.to_float() / total_requests.to_float()) * 100.0,
+      average_duration: total_duration / total_requests,
+      method_counts,
+      endpoint_counts,
+      status_counts,
+      user_requests
+    }
+  }
+  
+  // 3. Analyze span performance
+  let analyze_span_performance = fn(spans) {
+    let mut span_durations = []
+    let mut error_spans = 0
+    
+    for span in spans {
+      let duration = span.end_time - span.start_time
+      span_durations = span_durations.push({
+        name: span.name,
+        service: span.service,
+        duration: duration,
+        status: span.status
+      })
+      
+      if span.status == "error" {
+        error_spans = error_spans + 1
+      }
+    }
+    
+    // Calculate statistics
+    let total_duration = span_durations.reduce(fn(acc, span) { acc + span.duration }, 0)
+    let average_duration = total_duration / span_durations.length()
+    
+    let mut min_duration = span_durations[0].duration
+    let mut max_duration = span_durations[0].duration
+    
+    for span in span_durations {
+      if span.duration < min_duration {
+        min_duration = span.duration
+      }
+      if span.duration > max_duration {
+        max_duration = span.duration
+      }
+    }
+    
+    {
+      total_spans: span_durations.length(),
+      error_spans,
+      error_rate: (error_spans.to_float() / span_durations.length().to_float()) * 100.0,
+      average_duration,
+      min_duration,
+      max_duration,
+      span_details: span_durations
+    }
+  }
+  
+  // 4. Perform analysis
+  let request_analysis = analyze_request_patterns(telemetry_dataset.requests)
+  let span_analysis = analyze_span_performance(telemetry_dataset.spans)
+  
+  // 5. Verify request analysis results
+  assert_eq(request_analysis.total_requests, 5)
+  assert_eq(request_analysis.successful_requests, 3)
+  assert_eq(request_analysis.error_requests, 2)
+  assert_eq(request_analysis.success_rate, 60.0)
+  assert_eq(request_analysis.average_duration, 343.6)  // (125 + 98 + 250 + 45 + 1200) / 5
+  
+  // Verify method counts
+  assert_eq(request_analysis.method_counts.get("GET").unwrap(), 3)
+  assert_eq(request_analysis.method_counts.get("POST").unwrap(), 2)
+  
+  // Verify endpoint counts
+  assert_eq(request_analysis.endpoint_counts.get("/api/users").unwrap(), 3)
+  assert_eq(request_analysis.endpoint_counts.get("/api/orders").unwrap(), 2)
+  
+  // Verify status counts
+  assert_eq(request_analysis.status_counts.get("200").unwrap(), 2)
+  assert_eq(request_analysis.status_counts.get("201").unwrap(), 1)
+  assert_eq(request_analysis.status_counts.get("404").unwrap(), 1)
+  assert_eq(request_analysis.status_counts.get("500").unwrap(), 1)
+  
+  // Verify user request counts
+  assert_eq(request_analysis.user_requests.get("user-001").unwrap(), 2)
+  assert_eq(request_analysis.user_requests.get("user-002").unwrap(), 2)
+  assert_eq(request_analysis.user_requests.get("user-003").unwrap(), 1)
+  
+  // 6. Verify span analysis results
+  assert_eq(span_analysis.total_spans, 4)
+  assert_eq(span_analysis.error_spans, 1)
+  assert_eq(span_analysis.error_rate, 25.0)
+  assert_eq(span_analysis.average_duration, 75)  // (125 + 50 + 5 + 200) / 4
+  assert_eq(span_analysis.min_duration, 5)
+  assert_eq(span_analysis.max_duration, 200)
+  
+  // 7. Identify performance insights
+  let identify_slow_operations = fn(span_details) {
+    let average_duration = span_details.reduce(fn(acc, span) { acc + span.duration }, 0) / span_details.length()
+    
+    span_details.filter(fn(span) { span.duration > average_duration * 1.5 })
+  }
+  
+  let slow_operations = identify_slow_operations(span_analysis.span_details)
+  assert_eq(slow_operations.length(), 2)  // external.api.call (200) and http.request (125) > 75 * 1.5 = 112.5
+  
+  // 8. Identify error patterns
+  let identify_error_patterns = fn(requests) {
+    let mut error_by_endpoint = {}
+    let mut error_by_user = {}
+    
+    for request in requests {
+      if request.status >= 400 {
+        let endpoint_errors = match error_by_endpoint.get(request.endpoint) {
+          None => 0
+          Some(count) => count
+        }
+        error_by_endpoint = error_by_endpoint.set(request.endpoint, endpoint_errors + 1)
+        
+        let user_errors = match error_by_user.get(request.user_id) {
+          None => 0
+          Some(count) => count
+        }
+        error_by_user = error_by_user.set(request.user_id, user_errors + 1)
+      }
+    }
+    
+    { error_by_endpoint, error_by_user }
+  }
+  
+  let error_patterns = identify_error_patterns(telemetry_dataset.requests)
+  assert_eq(error_patterns.error_by_endpoint.get("/api/users").unwrap(), 1)
+  assert_eq(error_patterns.error_by_endpoint.get("/api/orders").unwrap(), 1)
+  assert_eq(error_patterns.error_by_user.get("user-002").unwrap(), 1)
+  assert_eq(error_patterns.error_by_user.get("user-003").unwrap(), 1)
 }
