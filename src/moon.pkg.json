@@ -133,5 +133,6 @@
         "../azimuth_premium_quality_test_cases.mbt",
         "../azimuth_enhanced_core_functionality_tests.mbt",
         "../azimuth_essential_tests.mbt",
-        "../azimuth_focused_moonbit_tests.mbt"]  }
+        "../azimuth_focused_moonbit_tests.mbt",
+        "../azimuth_new_comprehensive_test_cases.mbt"]  }
 }
