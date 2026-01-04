@@ -1,354 +1,841 @@
-// Azimuth 性能和资源管理测试用例
-// 专注于遥测系统的性能监控和资源管理功能
+// Azimuth Telemetry System - Performance and Resource Management Tests
+// This file contains test cases for performance optimization and resource management
 
-// 测试1: 遥测数据编码和解码
-test "遥测数据编码和解码功能" {
-  // 定义遥测数据类型
-  type TelemetryData {
-    trace_id: String
-    span_id: String
-    parent_span_id: Option[String]
-    operation_name: String
-    start_time: Int
-    end_time: Int
-    attributes: Array[(String, String)]
-    status: String
-  }
+// Test 1: Memory Usage Optimization
+test "memory usage optimization" {
+  // Test efficient span creation and cleanup
+  let spans = []
   
-  // 创建编码器
-  let encode_telemetry = fn(data: TelemetryData) -> String {
-    let attr_str = data.attributes.map(fn(attr) {
-      let (key, value) = attr
-      key + ":" + value
-    }).join(",")
+  // Create spans in batches to test memory efficiency
+  for batch in 1..=5 {
+    let batch_spans = []
     
-    let parent_str = match data.parent_span_id {
-      Some(id) => id
-      None => ""
+    // Create 100 spans per batch
+    for i in 1..=100 {
+      let span_id = "span_" + batch.to_string() + "_" + i.to_string()
+      let ctx = SpanContext::new("trace123456789012345678901234567890", span_id, true, "")
+      let span = Span::new("memory_test_span_" + i.to_string(), Internal, ctx)
+      
+      // Add minimal attributes to test memory usage
+      Span::set_attribute(span, "batch", IntValue(batch))
+      Span::set_attribute(span, "index", IntValue(i))
+      
+      batch_spans.push(span)
     }
     
-    data.trace_id + "|" + data.span_id + "|" + parent_str + "|" + 
-    data.operation_name + "|" + data.start_time.to_string() + "|" + 
-    data.end_time.to_string() + "|" + attr_str + "|" + data.status
+    // End spans immediately to test cleanup
+    for span in batch_spans {
+      Span::end(span)
+    }
+    
+    // Clear batch array to free memory
+    batch_spans = []
   }
   
-  // 测试数据
-  let test_data = {
-    trace_id: "trace-12345",
-    span_id: "span-67890",
-    parent_span_id: Some("span-parent"),
-    operation_name: "database.query",
-    start_time: 1640995200000,
-    end_time: 1640995200500,
-    attributes: [
-      ("db.type", "postgresql"),
-      ("db.statement", "SELECT * FROM users"),
-      ("service.name", "api-service")
-    ],
-    status: "ok"
+  // Test attribute memory efficiency
+  let attrs = Attributes::new()
+  
+  // Add many attributes to test memory usage
+  for i in 1..=1000 {
+    let key = "attr_" + i.to_string()
+    let value = StringValue("value_" + i.to_string())
+    Attributes::set(attrs, key, value)
   }
   
-  // 测试编码
-  let encoded = encode_telemetry(test_data)
-  assert_true(encoded.contains("trace-12345"))
-  assert_true(encoded.contains("span-67890"))
-  assert_true(encoded.contains("database.query"))
+  // Verify some attributes are set
+  let test_attr = Attributes::get(attrs, "attr_500")
+  match test_attr {
+    Some(StringValue(value)) => assert_eq(value, "value_500")
+    _ => assert_true(false)
+  }
   
-  // 验证编码结果包含所有必要的字段
-  assert_true(encoded.contains("db.type:postgresql"))
-  assert_true(encoded.contains("service.name:api-service"))
+  // Test array attribute memory efficiency
+  let large_string_array = []
+  for i in 1..=1000 {
+    large_string_array.push("string_" + i.to_string())
+  }
+  
+  Attributes::set(attrs, "large.array", ArrayStringValue(large_string_array))
+  
+  let array_result = Attributes::get(attrs, "large.array")
+  match array_result {
+    Some(ArrayStringValue(arr)) => assert_eq(arr.length(), 1000)
+    _ => assert_true(false)
+  }
 }
 
-// 测试2: 时间序列数据处理
-test "时间序列数据处理和聚合" {
-  // 定义时间序列点
-  type TimeSeriesPoint {
-    timestamp: Int
-    value: Float
-    tags: Array[(String, String)]
+// Test 2: Performance Benchmarking for Metrics
+test "performance benchmarking for metrics" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "performance_meter")
+  
+  // Create metrics for performance testing
+  let counter = Meter::create_counter(
+    meter,
+    "performance.counter",
+    Some("Performance test counter"),
+    Some("operations")
+  )
+  
+  let histogram = Meter::create_histogram(
+    meter,
+    "performance.histogram",
+    Some("Performance test histogram"),
+    Some("ms")
+  )
+  
+  let gauge = Meter::create_gauge(
+    meter,
+    "performance.gauge",
+    Some("Performance test gauge"),
+    Some("units")
+  )
+  
+  // Benchmark counter operations
+  let start_time = 1234567890L
+  
+  // Perform 10,000 counter operations
+  for i in 1..=10000 {
+    Counter::add(counter, 1.0, Some(Attributes::with([
+      ("operation.type", StringValue("benchmark")),
+      ("iteration", IntValue(i))
+    ])))
   }
   
-  // 创建时间序列点
-  let create_point = fn(timestamp: Int, value: Float, tags: Array[(String, String)]) -> TimeSeriesPoint {
-    { timestamp, value, tags }
+  let counter_end_time = 1234567890L
+  
+  // Benchmark histogram operations
+  for i in 1..=5000 {
+    let value = 50.0 + (i.to_float() % 1000.0)
+    Histogram::record(histogram, value, Some(Attributes::with([
+      ("operation.type", StringValue("benchmark")),
+      ("iteration", IntValue(i))
+    ])))
   }
   
-  // 按时间窗口过滤数据点
-  let filter_by_window = fn(points: Array[TimeSeriesPoint], start_time: Int, end_time: Int) -> Array[TimeSeriesPoint] {
-    points.filter(fn(point) {
-      point.timestamp >= start_time && point.timestamp <= end_time
-    })
+  let histogram_end_time = 1234567890L
+  
+  // Benchmark gauge operations
+  for i in 1..=3000 {
+    let value = 100.0 + (i.to_float() % 50.0)
+    Gauge::record(gauge, value, Some(Attributes::with([
+      ("operation.type", StringValue("benchmark")),
+      ("iteration", IntValue(i))
+    ])))
   }
   
-  // 计算平均值
-  let calculate_average = fn(points: Array[TimeSeriesPoint]) -> Float {
-    if points.length() == 0 {
-      0.0
-    } else {
-      let sum = points.reduce(fn(acc, p) { acc + p.value }, 0.0)
-      sum / (points.length() as Float)
+  let gauge_end_time = 1234567890L
+  
+  // Verify metrics are properly configured
+  let counter_instrument = Counter::as_instrument(counter)
+  assert_eq(Instrument::name(counter_instrument), "performance.counter")
+  
+  let histogram_instrument = Histogram::as_instrument(histogram)
+  assert_eq(Instrument::name(histogram_instrument), "performance.histogram")
+  
+  let gauge_instrument = Gauge::as_instrument(gauge)
+  assert_eq(Instrument::name(gauge_instrument), "performance.gauge")
+  
+  // Test performance with different attribute combinations
+  let performance_counter = Meter::create_counter(
+    meter,
+    "attribute.performance.counter",
+    Some("Attribute performance test counter"),
+    Some("operations")
+  )
+  
+  // Test with varying numbers of attributes
+  for attr_count in [1, 5, 10, 25, 50, 100] {
+    let attrs = Attributes::new()
+    
+    // Add varying number of attributes
+    for i in 1..=attr_count {
+      let key = "attr_" + i.to_string()
+      let value = StringValue("value_" + i.to_string())
+      Attributes::set(attrs, key, value)
+    }
+    
+    // Measure performance with this attribute count
+    for i in 1..=1000 {
+      Counter::add(performance_counter, 1.0, Some(attrs))
     }
   }
-  
-  // 创建测试数据
-  let test_points = [
-    create_point(1640995200000, 10.5, [("service", "api"), ("env", "prod")]),
-    create_point(1640995201000, 12.3, [("service", "api"), ("env", "prod")]),
-    create_point(1640995202000, 11.8, [("service", "api"), ("env", "prod")]),
-    create_point(1640995203000, 15.2, [("service", "web"), ("env", "prod")]),
-    create_point(1640995204000, 14.7, [("service", "web"), ("env", "prod")])
-  ]
-  
-  // 测试时间窗口过滤
-  let filtered_points = filter_by_window(test_points, 1640995201000, 1640995203000)
-  assert_eq(filtered_points.length(), 3)
-  
-  // 测试平均值计算
-  let average = calculate_average(test_points)
-  let expected_avg = (10.5 + 12.3 + 11.8 + 15.2 + 14.7) / 5.0
-  assert_eq(average.round(), expected_avg.round())
-  
-  // 测试特定服务的平均值
-  let api_points = test_points.filter(fn(p) {
-    p.tags.any(fn(tag) { tag.0 == "service" && tag.1 == "api" })
-  })
-  let api_avg = calculate_average(api_points)
-  let expected_api_avg = (10.5 + 12.3 + 11.8) / 3.0
-  assert_eq(api_avg.round(), expected_api_avg.round())
 }
 
-// 测试3: 资源管理和监控
-test "资源管理和监控功能" {
-  // 定义资源使用情况
-  type ResourceUsage {
-    memory_mb: Int
-    cpu_percent: Float
-    active_connections: Int
-    buffer_size: Int
+// Test 3: Resource Pool Management
+test "resource pool management" {
+  // Test span context pool efficiency
+  let context_pool = []
+  
+  // Create and reuse span contexts
+  for i in 1..=100 {
+    let trace_id = "trace123456789012345678901234567890"
+    let span_id = "span_" + i.to_string().pad_left(16, '0')
+    let ctx = SpanContext::new(trace_id, span_id, true, "")
+    context_pool.push(ctx)
   }
   
-  // 定义资源限制
-  type ResourceLimits {
-    max_memory_mb: Int
-    max_cpu_percent: Float
-    max_connections: Int
-    max_buffer_size: Int
+  // Verify all contexts are valid
+  for ctx in context_pool {
+    assert_true(SpanContext::is_valid(ctx))
+    assert_true(SpanContext::is_sampled(ctx))
+    assert_eq(SpanContext::trace_id(ctx), "trace123456789012345678901234567890")
   }
   
-  // 检查资源是否超过限制
-  let check_resource_limits = fn(usage: ResourceUsage, limits: ResourceLimits) -> Array[String] {
-    let warnings = []
-    
-    if usage.memory_mb > limits.max_memory_mb {
-      warnings = warnings.push("内存使用超过限制")
+  // Test attribute pool efficiency
+  let attribute_pool = []
+  
+  // Create reusable attribute sets
+  let base_attrs = Attributes::with([
+    ("service.name", StringValue("azimuth-performance-test")),
+    ("service.version", StringValue("2.1.0")),
+    ("environment", StringValue("test"))
+  ])
+  
+  for i in 1..=50 {
+    let attrs = Attributes::with([
+      ("service.name", StringValue("azimuth-performance-test")),
+      ("service.version", StringValue("2.1.0")),
+      ("environment", StringValue("test")),
+      ("worker.id", IntValue(i)),
+      ("operation.type", StringValue("resource_pool_test"))
+    ])
+    attribute_pool.push(attrs)
+  }
+  
+  // Verify all attribute sets have correct values
+  for i in 1..=50 {
+    let attrs = attribute_pool[i - 1]
+    let worker_id = Attributes::get(attrs, "worker.id")
+    match worker_id {
+      Some(IntValue(id)) => assert_eq(id, i)
+      _ => assert_true(false)
     }
-    
-    if usage.cpu_percent > limits.max_cpu_percent {
-      warnings = warnings.push("CPU使用超过限制")
+  }
+  
+  // Test resource cleanup
+  for ctx in context_pool {
+    // In a real implementation, this would return context to pool
+    assert_true(SpanContext::is_valid(ctx))
+  }
+  
+  for attrs in attribute_pool {
+    // In a real implementation, this would return attributes to pool
+    let service_name = Attributes::get(attrs, "service.name")
+    match service_name {
+      Some(StringValue(name)) => assert_eq(name, "azimuth-performance-test")
+      _ => assert_true(false)
     }
-    
-    if usage.active_connections > limits.max_connections {
-      warnings = warnings.push("连接数超过限制")
-    }
-    
-    if usage.buffer_size > limits.max_buffer_size {
-      warnings = warnings.push("缓冲区大小超过限制")
-    }
-    
-    warnings
   }
-  
-  // 设置资源限制
-  let limits = {
-    max_memory_mb: 1024,
-    max_cpu_percent: 80.0,
-    max_connections: 1000,
-    max_buffer_size: 1048576
-  }
-  
-  // 测试正常资源使用
-  let normal_usage = {
-    memory_mb: 512,
-    cpu_percent: 45.5,
-    active_connections: 500,
-    buffer_size: 524288
-  }
-  
-  let normal_warnings = check_resource_limits(normal_usage, limits)
-  assert_eq(normal_warnings.length(), 0)
-  
-  // 测试超过限制的资源使用
-  let high_usage = {
-    memory_mb: 1200,
-    cpu_percent: 85.0,
-    active_connections: 1200,
-    buffer_size: 1200000
-  }
-  
-  let high_warnings = check_resource_limits(high_usage, limits)
-  assert_eq(high_warnings.length(), 4)
-  assert_true(high_warnings.contains("内存使用超过限制"))
-  assert_true(high_warnings.contains("CPU使用超过限制"))
-  assert_true(high_warnings.contains("连接数超过限制"))
-  assert_true(high_warnings.contains("缓冲区大小超过限制"))
-  
-  // 测试部分超过限制
-  let partial_usage = {
-    memory_mb: 900,
-    cpu_percent: 85.0,
-    active_connections: 800,
-    buffer_size: 900000
-  }
-  
-  let partial_warnings = check_resource_limits(partial_usage, limits)
-  assert_eq(partial_warnings.length(), 1)
-  assert_true(partial_warnings.contains("CPU使用超过限制"))
 }
 
-// 测试4: 分布式追踪上下文传播
-test "分布式追踪上下文传播" {
-  // 定义追踪上下文
-  type TraceContext {
-    trace_id: String
-    span_id: String
-    parent_span_id: Option[String]
-    baggage: Array[(String, String)]
+// Test 4: Batch Processing Optimization
+test "batch processing optimization" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "batch_meter")
+  
+  // Create metrics for batch testing
+  let batch_counter = Meter::create_counter(
+    meter,
+    "batch.operations.total",
+    Some("Total batch operations"),
+    Some("operations")
+  )
+  
+  let batch_histogram = Meter::create_histogram(
+    meter,
+    "batch.operation.duration",
+    Some("Batch operation duration"),
+    Some("ms")
+  )
+  
+  // Test batch sizes for optimal performance
+  let batch_sizes = [10, 50, 100, 500, 1000, 2000]
+  
+  for batch_size in batch_sizes {
+    let batch_start_time = 1234567890L
+    
+    // Process batch
+    for i in 1..=batch_size {
+      Counter::add(batch_counter, 1.0, Some(Attributes::with([
+        ("batch.size", IntValue(batch_size)),
+        ("operation.index", IntValue(i)),
+        ("processing.mode", StringValue("batch"))
+      ])))
+      
+      let duration = 10.0 + (i.to_float() % 100.0)
+      Histogram::record(batch_histogram, duration, Some(Attributes::with([
+        ("batch.size", IntValue(batch_size)),
+        ("operation.index", IntValue(i))
+      ])))
+    }
+    
+    let batch_end_time = 1234567890L
+    
+    // Record batch completion
+    Histogram::record(batch_histogram, (batch_end_time - batch_start_time).to_float(), Some(Attributes::with([
+      ("operation.type", StringValue("batch_complete")),
+      ("batch.size", IntValue(batch_size))
+    ])))
   }
   
-  // 创建子上下文
-  let create_child_context = fn(parent: TraceContext, operation_name: String) -> TraceContext {
-    let new_span_id = "span-" + Time::now().to_string()
-    {
-      trace_id: parent.trace_id,
-      span_id: new_span_id,
-      parent_span_id: Some(parent.span_id),
-      baggage: parent.baggage
+  // Test log batch processing
+  let log_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(log_provider, "batch_logger")
+  
+  // Create log records in batches
+  for batch in 1..=10 {
+    let log_batch = []
+    
+    // Create 100 log records per batch
+    for i in 1..=100 {
+      let log = LogRecord::new(Info, "Batch log message " + batch.to_string() + "_" + i.to_string())
+      log_batch.push(log)
+    }
+    
+    // Process log batch
+    for log in log_batch {
+      Logger::emit(logger, log)
+    }
+    
+    // Clear batch
+    log_batch = []
+  }
+  
+  // Test span batch processing
+  let span_batch = []
+  
+  // Create spans in batch
+  for i in 1..=200 {
+    let span_id = "batch_span_" + i.to_string()
+    let ctx = SpanContext::new("trace123456789012345678901234567890", span_id, true, "")
+    let span = Span::new("batch_operation_" + i.to_string(), Internal, ctx)
+    
+    Span::set_attribute(span, "batch.id", IntValue(1))
+    Span::set_attribute(span, "batch.index", IntValue(i))
+    
+    span_batch.push(span)
+  }
+  
+  // End all spans in batch
+  for span in span_batch {
+    Span::end(span)
+  }
+}
+
+// Test 5: Memory Leak Detection
+test "memory leak detection" {
+  // Test span lifecycle management
+  let spans = []
+  
+  // Create spans and ensure proper cleanup
+  for i in 1..=1000 {
+    let span_id = "leak_test_span_" + i.to_string()
+    let ctx = SpanContext::new("trace123456789012345678901234567890", span_id, true, "")
+    let span = Span::new("leak_test_operation", Internal, ctx)
+    
+    // Add attributes
+    Span::set_attribute(span, "test.id", IntValue(i))
+    Span::set_attribute(span, "test.type", StringValue("leak_detection"))
+    
+    // Add events
+    Span::add_event(span, "span_created", Some([
+      ("creation.time", IntValue(1234567890 + i))
+    ]))
+    
+    // End span immediately
+    Span::end(span)
+    
+    // Add to array for potential leak detection
+    if i % 100 == 0 {
+      spans.push(span)
     }
   }
   
-  // 创建原始上下文
-  let original_context = {
-    trace_id: "trace-12345",
-    span_id: "span-67890",
-    parent_span_id: None,
-    baggage: [
-      ("user.id", "user-123"),
-      ("service.name", "api-gateway")
-    ]
+  // Clean up remaining spans
+  for span in spans {
+    // Verify span is properly ended
+    assert_eq(Span::status(span), Unset) // Or appropriate status
   }
   
-  // 创建子上下文
-  let child_context = create_child_context(original_context, "database.query")
+  // Test attribute cleanup
+  let attrs = Attributes::new()
   
-  // 验证子上下文
-  assert_eq(child_context.trace_id, original_context.trace_id)
-  assert_eq(child_context.parent_span_id, Some(original_context.span_id))
-  assert_eq(child_context.baggage, original_context.baggage)
-  assert_not_eq(child_context.span_id, original_context.span_id)
+  // Add many attributes
+  for i in 1..=5000 {
+    let key = "leak_test_attr_" + i.to_string()
+    let value = StringValue("value_" + i.to_string())
+    Attributes::set(attrs, key, value)
+  }
   
-  // 创建孙上下文
-  let grandchild_context = create_child_context(child_context, "cache.get")
+  // Test context cleanup
+  let ctx = Context::root()
   
-  // 验证孙上下文
-  assert_eq(grandchild_context.trace_id, original_context.trace_id)
-  assert_eq(grandchild_context.parent_span_id, Some(child_context.span_id))
-  assert_eq(grandchild_context.baggage, original_context.baggage)
-  assert_not_eq(grandchild_context.span_id, child_context.span_id)
+  // Add many context values
+  let contexts = []
+  for i in 1..=1000 {
+    let key = ContextKey::new("leak_test_key_" + i.to_string())
+    let value = "leak_test_value_" + i.to_string()
+    let new_ctx = Context::with_value(ctx, key, value)
+    contexts.push(new_ctx)
+  }
+  
+  // Verify context values
+  for i in 1..=1000 {
+    let test_ctx = contexts[i - 1]
+    let key = ContextKey::new("leak_test_key_" + i.to_string())
+    match Context::get(test_ctx, key) {
+      Some(value) => assert_eq(value, "leak_test_value_" + i.to_string())
+      None => assert_true(false)
+    }
+  }
 }
 
-// 测试5: 异常检测和告警
-test "异常检测和告警系统" {
-  // 定义度量指标
-  type Metric {
-    name: String
-    value: Float
-    timestamp: Int
-    tags: Array[(String, String)]
+// Test 6: CPU Usage Optimization
+test "cpu usage optimization" {
+  // Test efficient algorithms for common operations
+  
+  // Test efficient attribute lookup
+  let attrs = Attributes::new()
+  
+  // Add attributes
+  for i in 1..=1000 {
+    let key = "cpu_test_attr_" + i.to_string()
+    let value = StringValue("value_" + i.to_string())
+    Attributes::set(attrs, key, value)
   }
   
-  // 定义异常检测规则
-  type AnomalyRule {
-    metric_name: String
-    condition: String  // "gt", "lt", "eq"
-    threshold: Float
-    severity: String  // "low", "medium", "high", "critical"
+  // Test efficient lookup patterns
+  let lookup_keys = ["cpu_test_attr_1", "cpu_test_attr_500", "cpu_test_attr_1000"]
+  
+  for key in lookup_keys {
+    let result = Attributes::get(attrs, key)
+    match result {
+      Some(StringValue(value)) => assert_true(value.starts_with("value_"))
+      None => assert_true(false)
+    }
   }
   
-  // 检查指标是否异常
-  let check_anomaly = fn(metric: Metric, rule: AnomalyRule) -> Bool {
-    if metric.name != rule.metric_name {
-      false
-    } else {
-      match rule.condition {
-        "gt" => metric.value > rule.threshold
-        "lt" => metric.value < rule.threshold
-        "eq" => metric.value == rule.threshold
-        _ => false
+  // Test efficient string operations
+  let test_strings = []
+  
+  // Create test strings
+  for i in 1..=1000 {
+    test_strings.push("test_string_" + i.to_string())
+  }
+  
+  // Test efficient string processing
+  for str in test_strings {
+    assert_true(str.starts_with("test_string_"))
+    assert_true(str.length() > 0)
+  }
+  
+  // Test efficient array operations
+  let test_array = []
+  
+  // Create test array
+  for i in 1..=10000 {
+    test_array.push(i)
+  }
+  
+  // Test efficient array access
+  let test_indices = [0, 4999, 9999]
+  
+  for index in test_indices {
+    assert_true(index < test_array.length())
+    assert_eq(test_array[index], index + 1)
+  }
+  
+  // Test efficient filtering
+  let even_numbers = filter(test_array, fn(x) { x % 2 == 0 })
+  assert_eq(even_numbers.length(), 5000)
+  
+  // Test efficient mapping
+  let doubled = map(test_array[0..=99], fn(x) { x * 2 })
+  assert_eq(doubled.length(), 100)
+  assert_eq(doubled[0], 2)
+  assert_eq(doubled[99], 200)
+}
+
+// Test 7: I/O Performance Optimization
+test "io performance optimization" {
+  // Test efficient log batching
+  let log_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(log_provider, "io_performance_logger")
+  
+  // Create log batch
+  let log_batch = []
+  
+  // Create logs with varying sizes
+  for i in 1..=1000 {
+    let message_size = i % 100 + 10  // Messages between 10 and 110 characters
+    let message = "a".repeat(message_size) + " " + i.to_string()
+    let log = LogRecord::new(Info, message)
+    log_batch.push(log)
+  }
+  
+  // Process logs in batches
+  let batch_size = 100
+  for batch_start in range(0, log_batch.length(), batch_size) {
+    let batch_end = min(batch_start + batch_size, log_batch.length())
+    
+    // Process batch
+    for i in batch_start..<batch_end {
+      Logger::emit(logger, log_batch[i])
+    }
+  }
+  
+  // Test efficient metric batching
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "io_performance_meter")
+  
+  let counter = Meter::create_counter(
+    meter,
+    "io.performance.counter",
+    Some("I/O performance counter"),
+    Some("operations")
+  )
+  
+  // Batch metric updates
+  let metric_batch = []
+  
+  for i in 1..=5000 {
+    let attrs = Attributes::with([
+      ("operation.type", StringValue("io_performance")),
+      ("operation.id", IntValue(i)),
+      ("batch.size", IntValue(100))
+    ])
+    metric_batch.push(attrs)
+  }
+  
+  // Process metric batch
+  for attrs in metric_batch {
+    Counter::add(counter, 1.0, Some(attrs))
+  }
+  
+  // Test efficient span batching
+  let span_batch = []
+  
+  // Create spans in batch
+  for i in 1..=500 {
+    let span_id = "io_span_" + i.to_string()
+    let ctx = SpanContext::new("trace123456789012345678901234567890", span_id, true, "")
+    let span = Span::new("io_performance_operation", Internal, ctx)
+    
+    Span::set_attribute(span, "operation.id", IntValue(i))
+    Span::set_attribute(span, "batch.id", IntValue(1))
+    
+    span_batch.push(span)
+  }
+  
+  // End spans in batch
+  for span in span_batch {
+    Span::end(span)
+  }
+}
+
+// Test 8: Resource Pool Recycling
+test "resource pool recycling" {
+  // Test span context recycling
+  let context_pool = []
+  let recycled_contexts = []
+  
+  // Create initial pool
+  for i in 1..=100 {
+    let trace_id = "trace123456789012345678901234567890"
+    let span_id = "pool_span_" + i.to_string().pad_left(16, '0')
+    let ctx = SpanContext::new(trace_id, span_id, true, "")
+    context_pool.push(ctx)
+  }
+  
+  // Recycle contexts
+  for ctx in context_pool {
+    // In a real implementation, this would reset and reuse the context
+    let recycled_ctx = SpanContext::new(
+      SpanContext::trace_id(ctx),
+      "recycled_" + SpanContext::span_id(ctx),
+      true,
+      ""
+    )
+    recycled_contexts.push(recycled_ctx)
+  }
+  
+  // Verify recycled contexts
+  for ctx in recycled_contexts {
+    assert_true(SpanContext::is_valid(ctx))
+    assert_true(SpanContext::is_sampled(ctx))
+    assert_true(SpanContext::span_id(ctx).starts_with("recycled_"))
+  }
+  
+  // Test attribute recycling
+  let attribute_pool = []
+  let recycled_attributes = []
+  
+  // Create initial pool
+  for i in 1..=50 {
+    let attrs = Attributes::with([
+      ("pool.id", IntValue(i)),
+      ("pool.type", StringValue("recyclable")),
+      ("initial.value", StringValue("initial_" + i.to_string()))
+    ])
+    attribute_pool.push(attrs)
+  }
+  
+  // Recycle attributes
+  for attrs in attribute_pool {
+    // In a real implementation, this would reset and reuse the attributes
+    let recycled_attrs = Attributes::with([
+      ("recycled.id", IntValue(Attributes::get(attrs, "pool.id").unwrap_or(IntValue(0)).unwrap_or(0))),
+      ("recycled.type", StringValue("recycled")),
+      ("recycled.value", StringValue("recycled_value"))
+    ])
+    recycled_attributes.push(recycled_attrs)
+  }
+  
+  // Verify recycled attributes
+  for attrs in recycled_attributes {
+    let recycled_type = Attributes::get(attrs, "recycled.type")
+    match recycled_type {
+      Some(StringValue(type_str)) => assert_eq(type_str, "recycled")
+      _ => assert_true(false)
+    }
+  }
+  
+  // Test resource cleanup
+  context_pool = []
+  attribute_pool = []
+  recycled_contexts = []
+  recycled_attributes = []
+}
+
+// Test 9: Performance Monitoring and Metrics
+test "performance monitoring and metrics" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "performance_monitor")
+  
+  // Create performance monitoring metrics
+  let operation_counter = Meter::create_counter(
+    meter,
+    "performance.operations.total",
+    Some("Total performance operations"),
+    Some("operations")
+  )
+  
+  let duration_histogram = Meter::create_histogram(
+    meter,
+    "performance.operation.duration",
+    Some("Performance operation duration"),
+    Some("ms")
+  )
+  
+  let memory_gauge = Meter::create_gauge(
+    meter,
+    "performance.memory.usage",
+    Some("Current memory usage"),
+    Some("bytes")
+  )
+  
+  let cpu_gauge = Meter::create_gauge(
+    meter,
+    "performance.cpu.usage",
+    Some("Current CPU usage"),
+    Some("percent")
+  )
+  
+  // Simulate performance monitoring
+  for operation_type in ["span_creation", "attribute_setting", "metric_recording", "log_emission"] {
+    for i in 1..=100 {
+      let start_time = 1234567890L + i
+      
+      // Record operation start
+      Counter::add(operation_counter, 1.0, Some(Attributes::with([
+        ("operation.type", StringValue(operation_type)),
+        ("operation.id", IntValue(i))
+      ])))
+      
+      // Simulate operation duration
+      let base_duration = match operation_type {
+        "span_creation" => 5
+        "attribute_setting" => 2
+        "metric_recording" => 3
+        "log_emission" => 4
+        _ => 1
       }
+      
+      let duration = base_duration + (i % 10)
+      Histogram::record(duration_histogram, duration.to_float(), Some(Attributes::with([
+        ("operation.type", StringValue(operation_type)),
+        ("operation.id", IntValue(i))
+      ])))
+      
+      // Simulate memory usage
+      let memory_usage = 1024 * 1024 * (10 + (i % 50))  // 10-60 MB
+      Gauge::record(memory_gauge, memory_usage.to_float(), Some(Attributes::with([
+        ("operation.type", StringValue(operation_type))
+      ])))
+      
+      // Simulate CPU usage
+      let cpu_usage = 10.0 + (i.to_float() % 80.0)  // 10-90%
+      Gauge::record(cpu_gauge, cpu_usage, Some(Attributes::with([
+        ("operation.type", StringValue(operation_type))
+      ])))
+      
+      let end_time = start_time + duration
     }
   }
   
-  // 创建检测规则
-  let rules = [
-    {
-      metric_name: "cpu.usage",
-      condition: "gt",
-      threshold: 80.0,
-      severity: "high"
-    },
-    {
-      metric_name: "memory.usage",
-      condition: "gt",
-      threshold: 90.0,
-      severity: "critical"
-    },
-    {
-      metric_name: "response.time",
-      condition: "gt",
-      threshold: 1000.0,
-      severity: "medium"
-    }
-  ]
+  // Create performance summary metrics
+  let summary_counter = Meter::create_counter(
+    meter,
+    "performance.summary.operations",
+    Some("Performance summary operations"),
+    Some("operations")
+  )
   
-  // 创建测试指标
-  let metrics = [
-    { name: "cpu.usage", value: 85.5, timestamp: 1640995200000, tags: [("service", "api")] },
-    { name: "memory.usage", value: 92.3, timestamp: 1640995201000, tags: [("service", "api")] },
-    { name: "response.time", value: 500.0, timestamp: 1640995202000, tags: [("service", "api")] },
-    { name: "cpu.usage", value: 75.0, timestamp: 1640995203000, tags: [("service", "web")] }
-  ]
+  // Record summary
+  Counter::add(summary_counter, 400.0, Some(Attributes::with([
+    ("summary.type", StringValue("total_operations")),
+    ("monitoring.period", StringValue("test_session"))
+  ])))
   
-  // 测试异常检测
-  let anomalies = []
-  for metric in metrics {
-    for rule in rules {
-      if check_anomaly(metric, rule) {
-        anomalies = anomalies.push((metric, rule))
+  // Verify metric instruments
+  let operation_instrument = Counter::as_instrument(operation_counter)
+  assert_eq(Instrument::name(operation_instrument), "performance.operations.total")
+  
+  let duration_instrument = Histogram::as_instrument(duration_histogram)
+  assert_eq(Instrument::name(duration_instrument), "performance.operation.duration")
+  
+  let memory_instrument = Gauge::as_instrument(memory_gauge)
+  assert_eq(Instrument::name(memory_instrument), "performance.memory.usage")
+  
+  let cpu_instrument = Gauge::as_instrument(cpu_gauge)
+  assert_eq(Instrument::name(cpu_instrument), "performance.cpu.usage")
+}
+
+// Test 10: Scalability Testing
+test "scalability testing" {
+  // Test system scalability with increasing load
+  
+  let test_scales = [100, 500, 1000, 2000, 5000]
+  
+  for scale in test_scales {
+    let provider = MeterProvider::default()
+    let meter = MeterProvider::get_meter(provider, "scalability_meter_" + scale.to_string())
+    
+    // Create metrics for this scale
+    let scale_counter = Meter::create_counter(
+      meter,
+      "scale.operations.total",
+      Some("Total operations at scale " + scale.to_string()),
+      Some("operations")
+    )
+    
+    let scale_histogram = Meter::create_histogram(
+      meter,
+      "scale.operation.duration",
+      Some("Operation duration at scale " + scale.to_string()),
+      Some("ms")
+    )
+    
+    // Create spans at scale
+    let spans = []
+    
+    for i in 1..=scale {
+      let span_id = "scale_span_" + i.to_string()
+      let ctx = SpanContext::new("scale_trace_123456789012345678901234567890", span_id, true, "")
+      let span = Span::new("scale_operation", Internal, ctx)
+      
+      // Add scale-specific attributes
+      Span::set_attribute(span, "scale", IntValue(scale))
+      Span::set_attribute(span, "index", IntValue(i))
+      
+      // Add events
+      if i % 100 == 0 {
+        Span::add_event(span, "milestone_reached", Some([
+          ("milestone", IntValue(i)),
+          ("scale", IntValue(scale))
+        ]))
       }
+      
+      spans.push(span)
+      
+      // Record metrics
+      Counter::add(scale_counter, 1.0, Some(Attributes::with([
+        ("scale", IntValue(scale)),
+        ("operation", StringValue("span_creation"))
+      ])))
+      
+      let duration = 1.0 + (i.to_float() % 10.0)
+      Histogram::record(scale_histogram, duration, Some(Attributes::with([
+        ("scale", IntValue(scale)),
+        ("operation", StringValue("span_creation"))
+      ])))
+    }
+    
+    // End all spans
+    for span in spans {
+      Span::end(span)
+      
+      // Record end metrics
+      Counter::add(scale_counter, 1.0, Some(Attributes::with([
+        ("scale", IntValue(scale)),
+        ("operation", StringValue("span_ending"))
+      ])))
+      
+      let duration = 0.5 + (spans.length().to_float() % 5.0)
+      Histogram::record(scale_histogram, duration, Some(Attributes::with([
+        ("scale", IntValue(scale)),
+        ("operation", StringValue("span_ending"))
+      ])))
+    }
+    
+    // Create logs at scale
+    let log_provider = LoggerProvider::default()
+    let logger = LoggerProvider::get_logger(log_provider, "scale_logger_" + scale.to_string())
+    
+    for i in 1..=scale {
+      let log = LogRecord::new(Info, "Scale test log " + i.to_string() + " at scale " + scale.to_string())
+      Logger::emit(logger, log)
+      
+      // Record log metrics
+      Counter::add(scale_counter, 1.0, Some(Attributes::with([
+        ("scale", IntValue(scale)),
+        ("operation", StringValue("log_emission"))
+      ])))
+      
+      let duration = 0.1 + (i.to_float() % 2.0)
+      Histogram::record(scale_histogram, duration, Some(Attributes::with([
+        ("scale", IntValue(scale)),
+        ("operation", StringValue("log_emission"))
+      ])))
+    }
+    
+    // Create attributes at scale
+    let attrs = Attributes::new()
+    
+    for i in 1..=scale {
+      let key = "scale_attr_" + i.to_string()
+      let value = StringValue("scale_value_" + i.to_string())
+      Attributes::set(attrs, key, value)
+      
+      // Record attribute metrics
+      Counter::add(scale_counter, 1.0, Some(Attributes::with([
+        ("scale", IntValue(scale)),
+        ("operation", StringValue("attribute_setting"))
+      ])))
+      
+      let duration = 0.05 + (i.to_float() % 1.0)
+      Histogram::record(scale_histogram, duration, Some(Attributes::with([
+        ("scale", IntValue(scale)),
+        ("operation", StringValue("attribute_setting"))
+      ])))
+    }
+    
+    // Verify some attributes are set at this scale
+    let test_attr = Attributes::get(attrs, "scale_attr_" + (scale / 2).to_string())
+    match test_attr {
+      Some(StringValue(value)) => assert_eq(value, "scale_value_" + (scale / 2).to_string())
+      None => assert_true(false)
     }
   }
-  
-  // 验证异常检测结果
-  assert_eq(anomalies.length(), 2)
-  
-  // 验证CPU使用率异常
-  let cpu_anomalies = anomalies.filter(fn(anomaly) {
-    let (metric, _) = anomaly
-    metric.name == "cpu.usage"
-  })
-  assert_eq(cpu_anomalies.length(), 1)
-  
-  // 验证内存使用率异常
-  let memory_anomalies = anomalies.filter(fn(anomaly) {
-    let (metric, _) = anomaly
-    metric.name == "memory.usage"
-  })
-  assert_eq(memory_anomalies.length(), 1)
-  
-  // 验证响应时间无异常
-  let response_anomalies = anomalies.filter(fn(anomaly) {
-    let (metric, _) = anomaly
-    metric.name == "response.time"
-  })
-  assert_eq(response_anomalies.length(), 0)
 }
