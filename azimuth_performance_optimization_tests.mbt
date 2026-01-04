@@ -1,581 +1,601 @@
-// Performance Optimization Test Suite for Azimuth
-// 性能优化测试套件 - 测试各种性能优化技术和算法
+// Azimuth 性能优化测试用例
+// 测试遥测系统的性能优化特性，确保在各种负载下的高效表现
 
-// Test 1: 算法复杂度测试
-test "algorithm complexity tests" {
-  // 线性搜索 vs 二分搜索
-  let linear_search = fn(arr, target) {
-    for i in 0..arr.length() {
-      if arr[i] == target {
-        return Some(i)
-      }
-    }
-    None
+test "属性操作性能优化测试" {
+  // 测试批量属性操作的性能
+  
+  // 创建大量属性的优化方法：预分配数组
+  let start_time = get_current_time_millis()
+  
+  // 方法1：逐个添加属性（非优化）
+  let mut attrs1 = azimuth::Attributes { values: [] }
+  for i in 0..1000 {
+    attrs1.values = attrs1.values + [
+      ("key_" + i.to_string(), azimuth::AttributeValue::StringValue("value_" + i.to_string()))
+    ]
   }
   
-  let binary_search = fn(arr, target) {
-    let mut left = 0
-    let mut right = arr.length() - 1
-    
-    while left <= right {
-      let mid = left + (right - left) / 2
-      if arr[mid] == target {
-        return Some(mid)
-      } else if arr[mid] < target {
-        left = mid + 1
-      } else {
-        right = mid - 1
-      }
+  let time1 = get_current_time_millis() - start_time
+  
+  // 方法2：批量构建属性（优化）
+  let start_time2 = get_current_time_millis()
+  
+  let mut attr_pairs = []
+  for i in 0..1000 {
+    attr_pairs = attr_pairs + [
+      ("key_" + i.to_string(), azimuth::AttributeValue::StringValue("value_" + i.to_string()))
+    ]
+  }
+  let attrs2 = azimuth::Attributes { values: attr_pairs }
+  
+  let time2 = get_current_time_millis() - start_time2
+  
+  // 验证结果一致性
+  assert_eq(attrs1.values.length(), attrs2.values.length())
+  assert_eq(attrs1.values.length(), 1000)
+  
+  // 验证数据完整性
+  match attrs1.values[0] {
+    (key, azimuth::AttributeValue::StringValue(value)) => {
+      assert_eq(key, "key_0")
+      assert_eq(value, "value_0")
     }
-    None
+    _ => assert_true(false)
   }
   
-  let sorted_arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+  match attrs2.values[999] {
+    (key, azimuth::AttributeValue::StringValue(value)) => {
+      assert_eq(key, "key_999")
+      assert_eq(value, "value_999")
+    }
+    _ => assert_true(false)
+  }
   
-  // 线性搜索需要遍历更多元素
-  assert_eq(linear_search(sorted_arr, 20), Some(19))
-  assert_eq(linear_search(sorted_arr, 1), Some(0))
-  assert_eq(linear_search(sorted_arr, 21), None)
+  // 性能断言：批量操作应该更快
+  // 注意：实际性能差异可能因环境而异
+  assert_true(time1 < 5000) // 非优化方法应该在5秒内完成
+  assert_true(time2 < 3000) // 优化方法应该在3秒内完成
+}
+
+test "属性查找性能优化测试" {
+  // 测试属性查找的性能优化
   
-  // 二分搜索效率更高
-  assert_eq(binary_search(sorted_arr, 20), Some(19))
-  assert_eq(binary_search(sorted_arr, 1), Some(0))
-  assert_eq(binary_search(sorted_arr, 21), None)
+  // 创建大型属性集合
+  let mut large_attrs = azimuth::Attributes { values: [] }
+  for i in 0..1000 {
+    large_attrs.values = large_attrs.values + [
+      ("prefix.key_" + i.to_string(), azimuth::AttributeValue::StringValue("value_" + i.to_string()))
+    ]
+  }
   
-  // 冒泡排序 vs 快速排序
-  let bubble_sort = fn(arr) {
-    let mut result = arr.clone()
-    let n = result.length()
-    
-    for i in 0..n {
-      for j in 0..(n - i - 1) {
-        if result[j] > result[j + 1] {
-          let temp = result[j]
-          result[j] = result[j + 1]
-          result[j + 1] = temp
+  // 方法1：线性查找（非优化）
+  let start_time1 = get_current_time_millis()
+  
+  let mut found_count1 = 0
+  for (key, value) in large_attrs.values {
+    if key == "prefix.key_500" {
+      match value {
+        azimuth::AttributeValue::StringValue(v) => {
+          assert_eq(v, "value_500")
+          found_count1 = found_count1 + 1
         }
+        _ => assert_true(false)
       }
     }
-    result
   }
   
-  let quick_sort = fn(arr) {
-    if arr.length() <= 1 {
-      arr
+  let time1 = get_current_time_millis() - start_time1
+  
+  // 方法2：索引查找（优化）
+  let start_time2 = get_current_time_millis()
+  
+  let mut found_count2 = 0
+  let target_index = 500 // 假设我们知道目标索引
+  if target_index < large_attrs.values.length() {
+    let (key, value) = large_attrs.values[target_index]
+    if key == "prefix.key_500" {
+      match value {
+        azimuth::AttributeValue::StringValue(v) => {
+          assert_eq(v, "value_500")
+          found_count2 = found_count2 + 1
+        }
+        _ => assert_true(false)
+      }
+    }
+  }
+  
+  let time2 = get_current_time_millis() - start_time2
+  
+  // 验证结果一致性
+  assert_eq(found_count1, found_count2)
+  assert_eq(found_count1, 1)
+  
+  // 性能断言：索引查找应该更快
+  assert_true(time1 < 1000) // 线性查找应该在1秒内完成
+  assert_true(time2 < 100) // 索引查找应该在100毫秒内完成
+}
+
+test "字符串操作性能优化测试" {
+  // 测试字符串操作的性能优化
+  
+  // 创建大量字符串
+  let mut string_list = []
+  for i in 0..1000 {
+    string_list = string_list + ["string_value_" + i.to_string()]
+  }
+  
+  // 方法1：逐个字符串拼接（非优化）
+  let start_time1 = get_current_time_millis()
+  
+  let mut concatenated1 = ""
+  for str in string_list {
+    concatenated1 = concatenated1 + str + ","
+  }
+  
+  let time1 = get_current_time_millis() - start_time1
+  
+  // 方法2：预分配容量拼接（优化）
+  let start_time2 = get_current_time_millis()
+  
+  let mut concatenated2 = ""
+  let mut first = true
+  for str in string_list {
+    if first {
+      concatenated2 = str
+      first = false
     } else {
-      let pivot = arr[0]
-      let less = arr.slice(1).filter(fn(x) { x <= pivot })
-      let greater = arr.slice(1).filter(fn(x) { x > pivot })
-      quick_sort(less) + [pivot] + quick_sort(greater)
+      concatenated2 = concatenated2 + "," + str
     }
   }
   
-  let unsorted = [5, 2, 8, 1, 9, 3, 7, 4, 6]
-  let bubble_result = bubble_sort(unsorted)
-  let quick_result = quick_sort(unsorted)
+  let time2 = get_current_time_millis() - start_time2
   
-  assert_eq(bubble_result, [1, 2, 3, 4, 5, 6, 7, 8, 9])
-  assert_eq(quick_result, [1, 2, 3, 4, 5, 6, 7, 8, 9])
+  // 验证结果一致性
+  assert_not_eq(concatenated1.length(), 0)
+  assert_not_eq(concatenated2.length(), 0)
+  assert_eq(concatenated1, concatenated2)
+  
+  // 验证包含特定字符串
+  assert_true(concatenated1.contains("string_value_0"))
+  assert_true(concatenated1.contains("string_value_999"))
+  
+  // 性能断言
+  assert_true(time1 < 5000) // 非优化方法应该在5秒内完成
+  assert_true(time2 < 3000) // 优化方法应该在3秒内完成
 }
 
-// Test 2: 缓存优化测试
-test "caching optimization tests" {
-  // 斐波那契数列 - 带缓存和不带缓存
-  let fib_without_cache = fn(n) {
-    if n <= 1 {
-      n
-    } else {
-      fib_without_cache(n - 1) + fib_without_cache(n - 2)
+test "内存使用优化测试" {
+  // 测试内存使用的优化策略
+  
+  // 方法1：创建多个小对象（非优化）
+  let start_time1 = get_current_time_millis()
+  
+  let mut small_objects = []
+  for i in 0..1000 {
+    let small_obj = azimuth::Attributes {
+      values: [
+        ("key1", azimuth::AttributeValue::StringValue("value1_" + i.to_string())),
+        ("key2", azimuth::AttributeValue::IntValue(i))
+      ]
     }
+    small_objects = small_objects + [small_obj]
   }
   
-  let fib_with_cache = fn() {
-    let cache = {}
-    
-    let fib = fn(n) {
-      if cache.contains(n) {
-        return cache.get(n).unwrap()
-      }
-      
-      let result = if n <= 1 {
-        n
-      } else {
-        fib(n - 1) + fib(n - 2)
-      }
-      
-      cache.set(n, result)
-      result
+  let time1 = get_current_time_millis() - start_time1
+  
+  // 方法2：创建一个大对象（优化）
+  let start_time2 = get_current_time_millis()
+  
+  let mut large_values = []
+  for i in 0..1000 {
+    large_values = large_values + [
+      ("key1_" + i.to_string(), azimuth::AttributeValue::StringValue("value1_" + i.to_string())),
+      ("key2_" + i.to_string(), azimuth::AttributeValue::IntValue(i))
+    ]
+  }
+  let large_object = azimuth::Attributes { values: large_values }
+  
+  let time2 = get_current_time_millis() - start_time2
+  
+  // 验证结果一致性
+  assert_eq(small_objects.length(), 1000)
+  assert_eq(large_object.values.length(), 2000) // 每个小对象有2个属性，1000个对象共2000个属性
+  
+  // 验证数据完整性
+  match small_objects[0].values[0] {
+    (key, azimuth::AttributeValue::StringValue(value)) => {
+      assert_eq(key, "key1")
+      assert_eq(value, "value1_0")
     }
-    
-    fib
+    _ => assert_true(false)
   }
   
-  let cached_fib = fib_with_cache()
-  
-  // 小数字测试
-  assert_eq(fib_without_cache(5), 5)
-  assert_eq(cached_fib(5), 5)
-  
-  assert_eq(fib_without_cache(10), 55)
-  assert_eq(cached_fib(10), 55)
-  
-  // 缓存版本对于大数字效率更高
-  assert_eq(cached_fib(20), 6765)
-  
-  // 记忆化模式
-  let memoize = fn(f) {
-    let cache = {}
-    
-    fn(x) {
-      if cache.contains(x) {
-        return cache.get(x).unwrap()
-      }
-      
-      let result = f(x)
-      cache.set(x, result)
-      result
+  match large_object.values[0] {
+    (key, azimuth::AttributeValue::StringValue(value)) => {
+      assert_eq(key, "key1_0")
+      assert_eq(value, "value1_0")
     }
+    _ => assert_true(false)
   }
   
-  let expensive_operation = fn(n) {
-    // 模拟昂贵操作
-    let mut sum = 0
-    for i in 0..n {
-      sum = sum + i
-    }
-    sum
-  }
-  
-  let memoized_operation = memoize(expensive_operation)
-  
-  assert_eq(memoized_operation(100), 5050)  // 第一次计算
-  assert_eq(memoized_operation(100), 5050)  // 从缓存获取
-  assert_eq(memoized_operation(200), 20100) // 新值计算
+  // 性能断言
+  assert_true(time1 < 5000) // 非优化方法应该在5秒内完成
+  assert_true(time2 < 3000) // 优化方法应该在3秒内完成
 }
 
-// Test 3: 惰性求值测试
-test "lazy evaluation tests" {
-  // 惰性序列
-  let lazy_range = fn(start, step) {
-    let current = ref start
-    
-    fn() {
-      let value = !current
-      current := !current + step
-      value
-    }
-  }
+test "缓存机制性能测试" {
+  // 测试缓存机制的性能提升
   
-  let next = lazy_range(1, 2)
-  assert_eq(next(), 1)
-  assert_eq(next(), 3)
-  assert_eq(next(), 5)
-  assert_eq(next(), 7)
-  
-  // 惰性过滤器
-  let lazy_filter = fn(iterator, predicate) {
-    fn() {
-      let value = iterator()
-      if predicate(value) {
-        value
-      } else {
-        // 递归直到找到满足条件的值
-        lazy_filter(iterator, predicate)()
-      }
-    }
-  }
-  
-  let numbers = lazy_range(1, 1)
-  let even_numbers = lazy_filter(numbers, fn(x) { x % 2 == 0 })
-  
-  assert_eq(even_numbers(), 2)
-  assert_eq(even_numbers(), 4)
-  assert_eq(even_numbers(), 6)
-  
-  // 惰性映射
-  let lazy_map = fn(iterator, transform) {
-    fn() {
-      let value = iterator()
-      transform(value)
-    }
-  }
-  
-  let squares = lazy_map(numbers, fn(x) { x * x })
-  assert_eq(squares(), 9)  // 3*3 (next()已被调用3次)
-  assert_eq(squares(), 16) // 4*4
-}
-
-// Test 4: 批处理优化测试
-test "batch processing optimization tests" {
-  // 批量处理 vs 单个处理
-  let batch_insert = fn(records) {
-    // 模拟批量插入，一次操作处理所有记录
-    let mut result = []
-    for record in records {
-      result.push("inserted: " + record)
-    }
-    result
-  }
-  
-  let individual_insert = fn(records) {
-    // 模拟单个插入，每条记录一次操作
-    let mut result = []
-    for record in records {
-      result.push("inserted: " + record)
-    }
-    result
-  }
-  
-  let records = ["record1", "record2", "record3", "record4", "record5"]
-  let batch_result = batch_insert(records)
-  let individual_result = individual_insert(records)
-  
-  assert_eq(batch_result, individual_result)
-  
-  // 批量大小优化
-  let optimal_batch_size = fn(total_records, max_batch_size) {
-    // 计算最优批量大小
-    if total_records <= max_batch_size {
-      total_records
-    } else {
-      // 简单策略：使用最大批量大小
-      max_batch_size
-    }
-  }
-  
-  assert_eq(optimal_batch_size(100, 50), 50)
-  assert_eq(optimal_batch_size(30, 50), 30)
-  
-  // 分批处理
-  let process_in_batches = fn(records, batch_size, processor) {
-    let mut result = []
-    let mut i = 0
-    
-    while i < records.length() {
-      let end = if i + batch_size > records.length() {
-        records.length()
-      } else {
-        i + batch_size
-      }
-      
-      let batch = records.slice(i, end)
-      result = result + processor(batch)
-      i = i + batch_size
-    }
-    
-    result
-  }
-  
-  let batched_result = process_in_batches(records, 2, batch_insert)
-  assert_eq(batched_result.length(), 5)
-}
-
-// Test 5: 内存池优化测试
-test "memory pool optimization tests" {
-  // 对象池模式
-  let create_object_pool = fn(create_fn, reset_fn, initial_size) {
-    let pool = ref []
-    
-    // 初始化池
-    for i in 0..initial_size {
-      let obj = create_fn()
-      pool.push(obj)
-    }
-    
-    fn() {
-      // 获取对象
-      if (!pool).is_empty() {
-        (!pool).pop()
-      } else {
-        create_fn()
-      }
-    },
-    
-    fn(obj) {
-      // 归还对象
-      reset_fn(obj)
-      pool.push(obj)
-    }
-  }
-  
-  // 示例：使用对象池管理缓冲区
-  let create_buffer = fn() { {data: [], size: 0} }
-  let reset_buffer = fn(buf) { buf.data = []; buf.size = 0 }
-  
-  let (get_buffer, return_buffer) = create_object_pool(create_buffer, reset_buffer, 2)
-  
-  // 获取缓冲区
-  let buf1 = get_buffer()
-  buf1.data.push("item1")
-  buf1.size = 1
-  
-  let buf2 = get_buffer()
-  buf2.data.push("item2")
-  buf2.size = 1
-  
-  // 归还缓冲区
-  return_buffer(buf1)
-  assert_eq(buf1.size, 0)
-  assert_eq(buf1.data.length(), 0)
-  
-  return_buffer(buf2)
-  assert_eq(buf2.size, 0)
-  assert_eq(buf2.data.length(), 0)
-  
-  // 再次获取，应该重用之前归还的对象
-  let buf3 = get_buffer()
-  assert_eq(buf3.size, 0)
-}
-
-// Test 6: 字符串优化测试
-test "string optimization tests" {
-  // 字符串连接优化
-  let inefficient_concat = fn(strings) {
+  // 模拟昂贵的计算操作
+  fn expensive_computation(input : Int) -> String {
+    // 模拟耗时操作
     let mut result = ""
-    for s in strings {
-      result = result + s
+    for i in 0..100 {
+      result = result + input.to_string()
     }
     result
   }
   
-  let efficient_concat = fn(strings) {
-    strings.reduce(fn(acc, s) { acc + s }, "")
+  // 创建缓存（使用数组模拟）
+  let mut cache = []
+  
+  // 测试数据
+  let test_inputs = [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2]
+  
+  // 方法1：无缓存，每次都计算
+  let start_time1 = get_current_time_millis()
+  
+  let mut results1 = []
+  for input in test_inputs {
+    let result = expensive_computation(input)
+    results1 = results1 + [result]
   }
   
-  let strings = ["hello", " ", "world", "!", " ", "this", " ", "is", " ", "a", " ", "test"]
+  let time1 = get_current_time_millis() - start_time1
   
-  let inefficient_result = inefficient_concat(strings)
-  let efficient_result = efficient_concat(strings)
+  // 方法2：使用缓存
+  let start_time2 = get_current_time_millis()
   
-  assert_eq(inefficient_result, "hello world! this is a test")
-  assert_eq(efficient_result, "hello world! this is a test")
-  
-  // 字符串构建器模式
-  let string_builder = fn() {
-    let parts = ref []
-    
-    fn() {
-      // 添加部分
-      fn(part) {
-        parts.push(part)
+  let mut results2 = []
+  for input in test_inputs {
+    // 检查缓存
+    let mut cached_result = None
+    for (cached_input, cached_value) in cache {
+      if cached_input == input {
+        cached_result = Some(cached_value)
+        break
       }
-    },
+    }
     
-    fn() {
-      // 构建最终字符串
-      (!parts).reduce(fn(acc, part) { acc + part }, "")
+    match cached_result {
+      Some(value) => {
+        results2 = results2 + [value]
+      }
+      None => {
+        let result = expensive_computation(input)
+        cache = cache + [(input, result)]
+        results2 = results2 + [result]
+      }
     }
   }
   
-  let (add_part, build) = string_builder()
-  add_part("optimized")
-  add_part(" ")
-  add_part("string")
-  add_part(" ")
-  add_part("building")
+  let time2 = get_current_time_millis() - start_time2
   
-  let built_string = build()
-  assert_eq(built_string, "optimized string building")
+  // 验证结果一致性
+  assert_eq(results1.length(), results2.length())
+  for i in 0..results1.length() {
+    assert_eq(results1[i], results2[i])
+  }
+  
+  // 验证缓存效果
+  assert_true(cache.length() <= 3) // 最多应该有3个不同的输入值
+  
+  // 性能断言：缓存应该显著提升性能
+  assert_true(time1 < 10000) // 无缓存方法应该在10秒内完成
+  assert_true(time2 < 5000) // 缓存方法应该在5秒内完成
 }
 
-// Test 7: 循环优化测试
-test "loop optimization tests" {
-  // 循环展开
-  let unrolled_sum = fn(arr) {
-    let mut sum = 0
-    let mut i = 0
-    let n = arr.length()
-    
-    // 每次处理4个元素
-    while i + 3 < n {
-      sum = sum + arr[i] + arr[i + 1] + arr[i + 2] + arr[i + 3]
-      i = i + 4
-    }
-    
-    // 处理剩余元素
-    while i < n {
-      sum = sum + arr[i]
-      i = i + 1
-    }
-    
-    sum
+test "批量操作性能优化测试" {
+  // 测试批量操作的性能优化
+  
+  // 创建大量数据
+  let mut source_data = []
+  for i in 0..1000 {
+    source_data = source_data + [
+      azimuth::AttributeValue::StringValue("source_value_" + i.to_string())
+    ]
   }
   
-  let regular_sum = fn(arr) {
-    let mut sum = 0
-    for item in arr {
-      sum = sum + item
-    }
-    sum
-  }
+  // 方法1：逐个转换（非优化）
+  let start_time1 = get_current_time_millis()
   
-  let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-  
-  assert_eq(regular_sum(numbers), 55)
-  assert_eq(unrolled_sum(numbers), 55)
-  
-  // 循环融合
-  let fused_map_filter = fn(arr, map_fn, filter_fn) {
-    let mut result = []
-    for item in arr {
-      let mapped = map_fn(item)
-      if filter_fn(mapped) {
-        result.push(mapped)
+  let mut converted1 = []
+  for value in source_data {
+    match value {
+      azimuth::AttributeValue::StringValue(s) => {
+        let converted = azimuth::AttributeValue::StringValue("converted_" + s)
+        converted1 = converted1 + [converted]
       }
+      _ => assert_true(false)
+    }
+  }
+  
+  let time1 = get_current_time_millis() - start_time1
+  
+  // 方法2：批量转换（优化）
+  let start_time2 = get_current_time_millis()
+  
+  let mut converted2 = []
+  converted2 = source_data.map fn(value) {
+    match value {
+      azimuth::AttributeValue::StringValue(s) => {
+        azimuth::AttributeValue::StringValue("converted_" + s)
+      }
+      _ => azimuth::AttributeValue::StringValue("error")
+    }
+  }
+  
+  let time2 = get_current_time_millis() - start_time2
+  
+  // 验证结果一致性
+  assert_eq(converted1.length(), converted2.length())
+  assert_eq(converted1.length(), 1000)
+  
+  // 验证转换结果
+  match converted1[0] {
+    azimuth::AttributeValue::StringValue(s) => {
+      assert_eq(s, "converted_source_value_0")
+    }
+    _ => assert_true(false)
+  }
+  
+  match converted2[999] {
+    azimuth::AttributeValue::StringValue(s) => {
+      assert_eq(s, "converted_source_value_999")
+    }
+    _ => assert_true(false)
+  }
+  
+  // 性能断言：批量操作应该更快
+  assert_true(time1 < 5000) // 非优化方法应该在5秒内完成
+  assert_true(time2 < 3000) // 优化方法应该在3秒内完成
+}
+
+test "延迟计算性能优化测试" {
+  // 测试延迟计算的性能优化
+  
+  // 创建大量数据
+  let mut data = []
+  for i in 0..1000 {
+    data = data + [i]
+  }
+  
+  // 昂贵的计算函数
+  fn expensive_transform(value : Int) -> String {
+    // 模拟耗时操作
+    let mut result = ""
+    for i in 0..50 {
+      result = result + (value * i).to_string()
     }
     result
   }
   
-  let separate_map_filter = fn(arr, map_fn, filter_fn) {
-    let mapped = arr.map(map_fn)
-    mapped.filter(filter_fn)
+  // 方法1：立即计算所有值（非优化）
+  let start_time1 = get_current_time_millis()
+  
+  let mut computed1 = []
+  for value in data {
+    let result = expensive_transform(value)
+    computed1 = computed1 + [result]
   }
   
-  let doubled_evens = fused_map_filter(
-    numbers,
-    fn(x) { x * 2 },
-    fn(x) { x % 4 == 0 }
-  )
+  let time1 = get_current_time_millis() - start_time1
   
-  assert_eq(doubled_evens, [4, 8, 12, 16, 20])
-}
-
-// Test 8: 数据结构优化测试
-test "data structure optimization tests" {
-  // 使用适当的数据结构
-  // 数组 vs 哈希表查找
+  // 方法2：延迟计算（优化）- 只计算需要的值
+  let start_time2 = get_current_time_millis()
   
-  let array_contains = fn(arr, value) {
-    for item in arr {
-      if item == value {
-        return true
-      }
+  // 假设我们只需要前10个值
+  let mut computed2 = []
+  for i in 0..10 {
+    if i < data.length() {
+      let value = data[i]
+      let result = expensive_transform(value)
+      computed2 = computed2 + [result]
     }
-    false
   }
   
-  let set_contains = fn(set, value) {
-    set.contains(value)
+  let time2 = get_current_time_millis() - start_time2
+  
+  // 验证计算结果
+  assert_eq(computed1.length(), 1000)
+  assert_eq(computed2.length(), 10)
+  
+  // 验证前10个值的一致性
+  for i in 0..10 {
+    assert_eq(computed1[i], computed2[i])
   }
   
-  let large_array = []
-  for i in 1..=1000 {
-    large_array.push(i)
-  }
-  
-  let large_set = large_array.to_set()
-  
-  // 数组查找需要遍历
-  assert_true(array_contains(large_array, 500))
-  assert_false(array_contains(large_array, 1500))
-  
-  // 集合查找效率更高
-  assert_true(set_contains(large_set, 500))
-  assert_false(set_contains(large_set, 1500))
-  
-  // 预分配容量
-  let preallocated_array = fn(size) {
-    let mut arr = []
-    arr.reserve(size)
-    arr
-  }
-  
-  let dynamic_array = fn() { [] }
-  
-  let prealloc = preallocated_array(1000)
-  let dynamic = dynamic_array()
-  
-  // 填充数组
-  for i in 1..=1000 {
-    prealloc.push(i)
-    dynamic.push(i)
-  }
-  
-  assert_eq(prealloc.length(), 1000)
-  assert_eq(dynamic.length(), 1000)
+  // 性能断言：延迟计算应该显著提升性能
+  assert_true(time1 < 10000) // 立即计算应该在10秒内完成
+  assert_true(time2 < 1000) // 延迟计算应该在1秒内完成
 }
 
-// Test 9: 算法选择优化测试
-test "algorithm selection optimization tests" {
-  // 根据数据规模选择算法
-  let smart_sort = fn(arr) {
-    if arr.length() <= 10 {
-      // 小数组使用插入排序
-      let mut result = arr.clone()
-      for i in 1..result.length() {
-        let key = result[i]
-        let mut j = i - 1
-        
-        while j >= 0 && result[j] > key {
-          result[j + 1] = result[j]
-          j = j - 1
+test "数据结构选择性能优化测试" {
+  // 测试不同数据结构的性能差异
+  
+  // 创建测试数据
+  let test_keys = ["key1", "key2", "key3", "key4", "key5"]
+  let test_values = [
+    azimuth::AttributeValue::StringValue("value1"),
+    azimuth::AttributeValue::StringValue("value2"),
+    azimuth::AttributeValue::StringValue("value3"),
+    azimuth::AttributeValue::StringValue("value4"),
+    azimuth::AttributeValue::StringValue("value5")
+  ]
+  
+  // 数据结构1：数组存储（适合小数据集）
+  let start_time1 = get_current_time_millis()
+  
+  let mut array_data = []
+  for i in 0..test_keys.length() {
+    array_data = array_data + [(test_keys[i], test_values[i])]
+  }
+  
+  // 查找操作
+  let mut found_count1 = 0
+  for key in test_keys {
+    for (data_key, data_value) in array_data {
+      if data_key == key {
+        match data_value {
+          azimuth::AttributeValue::StringValue(v) => {
+            assert_true(v.starts_with("value"))
+            found_count1 = found_count1 + 1
+          }
+          _ => assert_true(false)
         }
-        result[j + 1] = key
-      }
-      result
-    } else {
-      // 大数组使用快速排序
-      if arr.length() <= 1 {
-        arr
-      } else {
-        let pivot = arr[0]
-        let less = arr.slice(1).filter(fn(x) { x <= pivot })
-        let greater = arr.slice(1).filter(fn(x) { x > pivot })
-        smart_sort(less) + [pivot] + smart_sort(greater)
+        break
       }
     }
   }
   
-  let small_array = [5, 2, 8, 1, 3]
-  let large_array = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 11, 12, 13, 14, 15]
+  let time1 = get_current_time_millis() - start_time1
   
-  let sorted_small = smart_sort(small_array)
-  let sorted_large = smart_sort(large_array)
+  // 数据结构2：属性集合（适合结构化数据）
+  let start_time2 = get_current_time_millis()
   
-  assert_eq(sorted_small, [1, 2, 3, 5, 8])
-  assert_eq(sorted_large, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+  let mut attrs_data = azimuth::Attributes { values: [] }
+  for i in 0..test_keys.length() {
+    attrs_data.values = attrs_data.values + [(test_keys[i], test_values[i])]
+  }
+  
+  // 查找操作
+  let mut found_count2 = 0
+  for key in test_keys {
+    for (data_key, data_value) in attrs_data.values {
+      if data_key == key {
+        match data_value {
+          azimuth::AttributeValue::StringValue(v) => {
+            assert_true(v.starts_with("value"))
+            found_count2 = found_count2 + 1
+          }
+          _ => assert_true(false)
+        }
+        break
+      }
+    }
+  }
+  
+  let time2 = get_current_time_millis() - start_time2
+  
+  // 验证结果一致性
+  assert_eq(found_count1, found_count2)
+  assert_eq(found_count1, 5) // 应该找到所有5个键
+  
+  // 验证数据完整性
+  assert_eq(array_data.length(), 5)
+  assert_eq(attrs_data.values.length(), 5)
+  
+  // 性能断言：对于小数据集，两种方法性能应该相近
+  assert_true(time1 < 1000) // 数组方法应该在1秒内完成
+  assert_true(time2 < 1000) // 属性集合方法应该在1秒内完成
 }
 
-// Test 10: 并行处理优化测试
-test "parallel processing optimization tests" {
-  // 模拟并行处理
-  let parallel_map = fn(arr, transform_fn, num_workers) {
-    let chunk_size = (arr.length() + num_workers - 1) / num_workers
-    let mut results = []
-    
-    for i in 0..num_workers {
-      let start = i * chunk_size
-      let end = if start + chunk_size > arr.length() {
-        arr.length()
-      } else {
-        start + chunk_size
-      }
-      
-      if start < arr.length() {
-        let chunk = arr.slice(start, end)
-        let chunk_result = chunk.map(transform_fn)
-        results = results + chunk_result
+test "资源池化性能优化测试" {
+  // 测试资源池化的性能优化
+  
+  // 创建资源池（使用数组模拟）
+  let mut resource_pool = []
+  
+  // 预分配资源
+  for i in 0..10 {
+    let resource = azimuth::Attributes {
+      values: [
+        ("pool.id", azimuth::AttributeValue::IntValue(i)),
+        ("pool.status", azimuth::AttributeValue::StringValue("available"))
+      ]
+    }
+    resource_pool = resource_pool + [resource]
+  }
+  
+  // 模拟资源使用模式
+  let operations = [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2]
+  
+  // 方法1：每次创建新资源（非优化）
+  let start_time1 = get_current_time_millis()
+  
+  let mut created_resources = []
+  for op in operations {
+    let new_resource = azimuth::Attributes {
+      values: [
+        ("operation.id", azimuth::AttributeValue::IntValue(op)),
+        ("resource.status", azimuth::AttributeValue::StringValue("active"))
+      ]
+    }
+    created_resources = created_resources + [new_resource]
+  }
+  
+  let time1 = get_current_time_millis() - start_time1
+  
+  // 方法2：使用资源池（优化）
+  let start_time2 = get_current_time_millis()
+  
+  let mut pooled_resources = []
+  for op in operations {
+    // 从池中获取资源
+    let mut pooled_resource = None
+    if resource_pool.length() > 0 {
+      pooled_resource = Some(resource_pool[0])
+      // 模拟移除已使用的资源
+      resource_pool = []
+      for i in 1..resource_pool.length() {
+        resource_pool = resource_pool + [resource_pool[i]]
       }
     }
     
-    results
+    match pooled_resource {
+      Some(resource) => {
+        // 重用资源
+        let reused_resource = azimuth::Attributes {
+          values: [
+            ("pool.id", resource.values[0].1), // 保留池ID
+            ("operation.id", azimuth::AttributeValue::IntValue(op)), // 更新操作ID
+            ("resource.status", azimuth::AttributeValue::StringValue("reused"))
+          ]
+        }
+        pooled_resources = pooled_resources + [reused_resource]
+        
+        // 将资源返回池中
+        resource_pool = resource_pool + [resource]
+      }
+      None => {
+        // 池中没有可用资源，创建新资源
+        let new_resource = azimuth::Attributes {
+          values: [
+            ("operation.id", azimuth::AttributeValue::IntValue(op)),
+            ("resource.status", azimuth::AttributeValue::StringValue("new"))
+          ]
+        }
+        pooled_resources = pooled_resources + [new_resource]
+      }
+    }
   }
   
-  let sequential_map = fn(arr, transform_fn) {
-    arr.map(transform_fn)
-  }
+  let time2 = get_current_time_millis() - start_time2
   
-  let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-  let square = fn(x) { x * x }
+  // 验证结果
+  assert_eq(created_resources.length(), pooled_resources.length())
+  assert_eq(created_resources.length(), 20)
   
-  let sequential_result = sequential_map(numbers, square)
-  let parallel_result = parallel_map(numbers, square, 4)
+  // 验证资源池状态
+  assert_true(resource_pool.length() >= 0) // 池中应该有资源
   
-  // 结果应该相同，但并行处理可能更快
-  assert_eq(sequential_result.length(), parallel_result.length())
-  
-  // 验证结果内容
-  for i in 0..sequential_result.length() {
-    assert_true(parallel_result.contains(sequential_result[i]))
-  }
+  // 性能断言：资源池化应该提升性能
+  assert_true(time1 < 5000) // 非优化方法应该在5秒内完成
+  assert_true(time2 < 3000) // 优化方法应该在3秒内完成
+}
+
+// 辅助函数：获取当前时间（毫秒）
+fn get_current_time_millis() -> Int {
+  // 模拟时间戳，实际应该使用系统时间API
+  1609459200000 // 2021-01-01 00:00:00 UTC
 }

@@ -1,591 +1,617 @@
-// Azimuth Configuration Management Tests
-// This file contains test cases for dynamic configuration management and updates
+// Azimuth 配置管理测试用例
+// 测试遥测系统的配置管理功能，包括配置加载、更新、验证和热重载
 
-test "basic configuration loading and validation" {
-  let config = Configuration::new()
+test "基本配置操作测试" {
+  // 创建配置管理器
+  let config_manager = azimuth::ConfigManager::new()
   
-  // Test setting and getting configuration values
-  Configuration::set(config, "service.name", "test_service")
-  Configuration::set(config, "service.version", "1.0.0")
-  Configuration::set(config, "telemetry.enabled", true)
-  Configuration::set(config, "telemetry.sampling_rate", 0.5)
-  Configuration::set(config, "telemetry.max_spans", 1000)
+  // 测试初始状态
+  assert_true(azimuth::ConfigManager::is_empty(config_manager))
   
-  // Test getting configuration values
-  let service_name = Configuration::get_string(config, "service.name")
-  match service_name {
-    Some(name) => assert_eq(name, "test_service")
+  // 添加字符串配置
+  azimuth::ConfigManager::set_string(config_manager, "service.name", "azimuth-telemetry")
+  assert_false(azimuth::ConfigManager::is_empty(config_manager))
+  
+  // 验证字符串配置
+  match azimuth::ConfigManager::get_string(config_manager, "service.name") {
+    Some(value) => assert_eq(value, "azimuth-telemetry")
     None => assert_true(false)
   }
   
-  let service_version = Configuration::get_string(config, "service.version")
-  match service_version {
-    Some(version) => assert_eq(version, "1.0.0")
+  // 添加整数配置
+  azimuth::ConfigManager::set_int(config_manager, "service.port", 8080)
+  
+  // 验证整数配置
+  match azimuth::ConfigManager::get_int(config_manager, "service.port") {
+    Some(value) => assert_eq(value, 8080)
     None => assert_true(false)
   }
   
-  let telemetry_enabled = Configuration::get_bool(config, "telemetry.enabled")
-  match telemetry_enabled {
-    Some(enabled) => assert_true(enabled)
+  // 添加布尔配置
+  azimuth::ConfigManager::set_bool(config_manager, "service.debug", true)
+  
+  // 验证布尔配置
+  match azimuth::ConfigManager::get_bool(config_manager, "service.debug") {
+    Some(value) => assert_true(value)
     None => assert_true(false)
   }
   
-  let sampling_rate = Configuration::get_float(config, "telemetry.sampling_rate")
-  match sampling_rate {
-    Some(rate) => assert_eq(rate, 0.5)
+  // 添加浮点数配置
+  azimuth::ConfigManager::set_float(config_manager, "performance.threshold", 0.95)
+  
+  // 验证浮点数配置
+  match azimuth::ConfigManager::get_float(config_manager, "performance.threshold") {
+    Some(value) => assert_eq(value, 0.95)
     None => assert_true(false)
   }
   
-  let max_spans = Configuration::get_int(config, "telemetry.max_spans")
-  match max_spans {
-    Some(spans) => assert_eq(spans, 1000)
+  // 添加数组配置
+  let string_array = ["endpoint1", "endpoint2", "endpoint3"]
+  azimuth::ConfigManager::set_string_array(config_manager, "telemetry.endpoints", string_array)
+  
+  // 验证数组配置
+  match azimuth::ConfigManager::get_string_array(config_manager, "telemetry.endpoints") {
+    Some(array) => {
+      assert_eq(array.length(), 3)
+      assert_eq(array[0], "endpoint1")
+      assert_eq(array[1], "endpoint2")
+      assert_eq(array[2], "endpoint3")
+    }
     None => assert_true(false)
   }
   
-  // Test getting non-existent configuration value
-  let non_existent = Configuration::get_string(config, "non.existent.key")
-  match non_existent {
+  // 测试配置计数
+  assert_eq(azimuth::ConfigManager::size(config_manager), 5)
+  
+  // 测试配置键列表
+  let keys = azimuth::ConfigManager::get_keys(config_manager)
+  assert_eq(keys.length(), 5)
+  assert_true(keys.contains("service.name"))
+  assert_true(keys.contains("service.port"))
+  assert_true(keys.contains("service.debug"))
+  assert_true(keys.contains("performance.threshold"))
+  assert_true(keys.contains("telemetry.endpoints"))
+  
+  // 测试配置更新
+  azimuth::ConfigManager::set_string(config_manager, "service.name", "updated-telemetry")
+  
+  match azimuth::ConfigManager::get_string(config_manager, "service.name") {
+    Some(value) => assert_eq(value, "updated-telemetry")
+    None => assert_true(false)
+  }
+  
+  // 测试配置删除
+  let removed = azimuth::ConfigManager::remove(config_manager, "service.debug")
+  assert_true(removed)
+  
+  // 验证删除后的状态
+  match azimuth::ConfigManager::get_bool(config_manager, "service.debug") {
     Some(_) => assert_true(false)
     None => assert_true(true)
   }
+  
+  assert_eq(azimuth::ConfigManager::size(config_manager), 4)
 }
 
-test "configuration file loading" {
-  // Create configuration file content
-  let config_content = """
-  {
-    "service": {
-      "name": "file_test_service",
-      "version": "2.0.0",
-      "instance_id": "instance-12345"
+test "嵌套配置测试" {
+  // 创建配置管理器
+  let config_manager = azimuth::ConfigManager::new()
+  
+  // 添加嵌套配置
+  azimuth::ConfigManager::set_string(config_manager, "database.host", "localhost")
+  azimuth::ConfigManager::set_int(config_manager, "database.port", 5432)
+  azimuth::ConfigManager::set_string(config_manager, "database.username", "azimuth_user")
+  azimuth::ConfigManager::set_string(config_manager, "database.password", "secure_password")
+  azimuth::ConfigManager::set_string(config_manager, "database.name", "azimuth_db")
+  
+  azimuth::ConfigManager::set_string(config_manager, "redis.host", "localhost")
+  azimuth::ConfigManager::set_int(config_manager, "redis.port", 6379)
+  azimuth::ConfigManager::set_int(config_manager, "redis.db", 0)
+  
+  azimuth::ConfigManager::set_string(config_manager, "logging.level", "INFO")
+  azimuth::ConfigManager::set_string(config_manager, "logging.format", "json")
+  azimuth::ConfigManager::set_bool(config_manager, "logging.console", true)
+  azimuth::ConfigManager::set_string(config_manager, "logging.file.path", "/var/log/azimuth.log")
+  
+  // 验证嵌套配置
+  match azimuth::ConfigManager::get_string(config_manager, "database.host") {
+    Some(value) => assert_eq(value, "localhost")
+    None => assert_true(false)
+  }
+  
+  match azimuth::ConfigManager::get_int(config_manager, "database.port") {
+    Some(value) => assert_eq(value, 5432)
+    None => assert_true(false)
+  }
+  
+  match azimuth::ConfigManager::get_string(config_manager, "redis.host") {
+    Some(value) => assert_eq(value, "localhost")
+    None => assert_true(false)
+  }
+  
+  match azimuth::ConfigManager::get_int(config_manager, "redis.port") {
+    Some(value) => assert_eq(value, 6379)
+    None => assert_true(false)
+  }
+  
+  match azimuth::ConfigManager::get_string(config_manager, "logging.level") {
+    Some(value) => assert_eq(value, "INFO")
+    None => assert_true(false)
+  }
+  
+  match azimuth::ConfigManager::get_bool(config_manager, "logging.console") {
+    Some(value) => assert_true(value)
+    None => assert_true(false)
+  }
+  
+  // 测试获取配置子集
+  let database_config = azimuth::ConfigManager::get_subset(config_manager, "database")
+  
+  match azimuth::ConfigManager::get_string(database_config, "host") {
+    Some(value) => assert_eq(value, "localhost")
+    None => assert_true(false)
+  }
+  
+  match azimuth::ConfigManager::get_int(database_config, "port") {
+    Some(value) => assert_eq(value, 5432)
+    None => assert_true(false)
+  }
+  
+  // 验证子集不包含其他命名空间的配置
+  match azimuth::ConfigManager::get_string(database_config, "host") {
+    Some(_) => assert_true(true) // database.host存在
+    None => assert_true(false)
+  }
+  
+  // 测试配置合并
+  let override_config = azimuth::ConfigManager::new()
+  azimuth::ConfigManager::set_string(override_config, "database.host", "production-db.example.com")
+  azimuth::ConfigManager::set_int(override_config, "database.max_connections", 100)
+  azimuth::ConfigManager::set_string(override_config, "new.feature", "enabled")
+  
+  // 合并配置
+  let merged_config = azimuth::ConfigManager::merge(config_manager, override_config)
+  
+  // 验证合并结果
+  match azimuth::ConfigManager::get_string(merged_config, "database.host") {
+    Some(value) => assert_eq(value, "production-db.example.com") // 应该被覆盖
+    None => assert_true(false)
+  }
+  
+  match azimuth::ConfigManager::get_int(merged_config, "database.port") {
+    Some(value) => assert_eq(value, 5432) // 应该保留
+    None => assert_true(false)
+  }
+  
+  match azimuth::ConfigManager::get_int(merged_config, "database.max_connections") {
+    Some(value) => assert_eq(value, 100) // 新增的配置
+    None => assert_true(false)
+  }
+  
+  match azimuth::ConfigManager::get_string(merged_config, "new.feature") {
+    Some(value) => assert_eq(value, "enabled") // 新增的配置
+    None => assert_true(false)
+  }
+}
+
+test "配置验证测试" {
+  // 创建配置管理器
+  let config_manager = azimuth::ConfigManager::new()
+  
+  // 添加有效配置
+  azimuth::ConfigManager::set_string(config_manager, "service.name", "azimuth")
+  azimuth::ConfigManager::set_int(config_manager, "service.port", 8080)
+  azimuth::ConfigManager::set_string(config_manager, "service.version", "1.0.0")
+  
+  // 定义验证规则
+  let validation_rules = [
+    azimuth::ValidationRule {
+      key: "service.name",
+      required: true,
+      type: azimuth::ValidationType::String,
+      min_length: Some(1),
+      max_length: Some(100)
     },
-    "telemetry": {
-      "enabled": true,
-      "sampling_rate": 0.75,
-      "max_spans": 2000,
-      "export_interval": 5000
+    azimuth::ValidationRule {
+      key: "service.port",
+      required: true,
+      type: azimuth::ValidationType::Int,
+      min_value: Some(1),
+      max_value: Some(65535)
     },
-    "logging": {
-      "level": "INFO",
-      "format": "json"
+    azimuth::ValidationRule {
+      key: "service.version",
+      required: true,
+      type: azimuth::ValidationType::String,
+      pattern: Some("^\\d+\\.\\d+\\.\\d+$") // 语义版本格式
+    },
+    azimuth::ValidationRule {
+      key: "optional.config",
+      required: false,
+      type: azimuth::ValidationType::String,
+      min_length: Some(1),
+      max_length: Some(50)
+    }
+  ]
+  
+  // 验证配置
+  let validation_result = azimuth::ConfigManager::validate(config_manager, validation_rules)
+  
+  // 验证结果应该成功
+  assert_true(validation_result.is_valid)
+  assert_eq(validation_result.errors.length(), 0)
+  
+  // 添加无效配置
+  azimuth::ConfigManager::set_string(config_manager, "service.name", "") // 空字符串，违反最小长度
+  azimuth::ConfigManager::set_int(config_manager, "service.port", 70000) // 超出最大值
+  
+  // 再次验证
+  let invalid_validation_result = azimuth::ConfigManager::validate(config_manager, validation_rules)
+  
+  // 验证结果应该失败
+  assert_false(invalid_validation_result.is_valid)
+  assert_true(invalid_validation_result.errors.length() >= 2)
+  
+  // 验证错误信息
+  let mut name_error_found = false
+  let mut port_error_found = false
+  
+  for error in invalid_validation_result.errors {
+    if error.key == "service.name" && error.message.contains("min_length") {
+      name_error_found = true
+    }
+    if error.key == "service.port" && error.message.contains("max_value") {
+      port_error_found = true
     }
   }
-  """
   
-  // Write configuration to file
-  let config_file = "/tmp/test_config.json"
-  File::write(config_file, config_content)
+  assert_true(name_error_found)
+  assert_true(port_error_found)
   
-  // Load configuration from file
-  let config = Configuration::load_from_file(config_file)
+  // 修复配置
+  azimuth::ConfigManager::set_string(config_manager, "service.name", "azimuth-fixed")
+  azimuth::ConfigManager::set_int(config_manager, "service.port", 8080)
   
-  // Verify configuration was loaded correctly
-  let service_name = Configuration::get_string(config, "service.name")
-  match service_name {
-    Some(name) => assert_eq(name, "file_test_service")
-    None => assert_true(false)
-  }
+  // 再次验证
+  let fixed_validation_result = azimuth::ConfigManager::validate(config_manager, validation_rules)
   
-  let service_version = Configuration::get_string(config, "service.version")
-  match service_version {
-    Some(version) => assert_eq(version, "2.0.0")
-    None => assert_true(false)
-  }
-  
-  let instance_id = Configuration::get_string(config, "service.instance_id")
-  match instance_id {
-    Some(id) => assert_eq(id, "instance-12345")
-    None => assert_true(false)
-  }
-  
-  let telemetry_enabled = Configuration::get_bool(config, "telemetry.enabled")
-  match telemetry_enabled {
-    Some(enabled) => assert_true(enabled)
-    None => assert_true(false)
-  }
-  
-  let sampling_rate = Configuration::get_float(config, "telemetry.sampling_rate")
-  match sampling_rate {
-    Some(rate) => assert_eq(rate, 0.75)
-    None => assert_true(false)
-  }
-  
-  let max_spans = Configuration::get_int(config, "telemetry.max_spans")
-  match max_spans {
-    Some(spans) => assert_eq(spans, 2000)
-    None => assert_true(false)
-  }
-  
-  let export_interval = Configuration::get_int(config, "telemetry.export_interval")
-  match export_interval {
-    Some(interval) => assert_eq(interval, 5000)
-    None => assert_true(false)
-  }
-  
-  let log_level = Configuration::get_string(config, "logging.level")
-  match log_level {
-    Some(level) => assert_eq(level, "INFO")
-    None => assert_true(false)
-  }
-  
-  let log_format = Configuration::get_string(config, "logging.format")
-  match log_format {
-    Some(format) => assert_eq(format, "json")
-    None => assert_true(false)
-  }
-  
-  // Clean up
-  File::delete(config_file)
+  // 验证结果应该成功
+  assert_true(fixed_validation_result.is_valid)
+  assert_eq(fixed_validation_result.errors.length(), 0)
 }
 
-test "dynamic configuration updates" {
-  let config = Configuration::new()
+test "配置文件加载测试" {
+  // 模拟JSON配置文件内容
+  let json_config = "{    \"service\": {      \"name\": \"azimuth-telemetry\",      \"port\": 8080,      \"debug\": false,      \"version\": \"1.0.0\"    },    \"database\": {      \"host\": \"localhost\",      \"port\": 5432,      \"username\": \"azimuth_user\",      \"password\": \"secure_password\",      \"name\": \"azimuth_db\"    },    \"telemetry\": {      \"enabled\": true,      \"sampling_rate\": 0.1,      \"endpoints\": [\"https://telemetry1.example.com\", \"https://telemetry2.example.com\"]    },    \"logging\": {      \"level\": \"INFO\",      \"format\": \"json\",      \"console\": true,      \"file\": {        \"path\": \"/var/log/azimuth.log\",        \"max_size\": \"100MB\",        \"max_backups\": 5      }    }  }"
   
-  // Set initial configuration
-  Configuration::set(config, "service.name", "dynamic_service")
-  Configuration::set(config, "telemetry.sampling_rate", 0.1)
-  Configuration::set(config, "telemetry.max_spans", 100)
+  // 创建配置管理器并加载JSON配置
+  let config_manager = azimuth::ConfigManager::new()
+  let load_result = azimuth::ConfigManager::load_from_json(config_manager, json_config)
   
-  // Verify initial configuration
-  let service_name = Configuration::get_string(config, "service.name")
-  match service_name {
-    Some(name) => assert_eq(name, "dynamic_service")
+  // 验证加载结果
+  assert_true(load_result.is_success)
+  
+  // 验证加载的配置
+  match azimuth::ConfigManager::get_string(config_manager, "service.name") {
+    Some(value) => assert_eq(value, "azimuth-telemetry")
     None => assert_true(false)
   }
   
-  let sampling_rate = Configuration::get_float(config, "telemetry.sampling_rate")
-  match sampling_rate {
-    Some(rate) => assert_eq(rate, 0.1)
+  match azimuth::ConfigManager::get_int(config_manager, "service.port") {
+    Some(value) => assert_eq(value, 8080)
     None => assert_true(false)
   }
   
-  let max_spans = Configuration::get_int(config, "telemetry.max_spans")
-  match max_spans {
-    Some(spans) => assert_eq(spans, 100)
+  match azimuth::ConfigManager::get_bool(config_manager, "service.debug") {
+    Some(value) => assert_false(value)
     None => assert_true(false)
   }
   
-  // Update configuration
-  Configuration::set(config, "service.name", "updated_service")
-  Configuration::set(config, "telemetry.sampling_rate", 0.9)
-  Configuration::set(config, "telemetry.max_spans", 5000)
-  
-  // Verify updated configuration
-  let updated_service_name = Configuration::get_string(config, "service.name")
-  match updated_service_name {
-    Some(name) => assert_eq(name, "updated_service")
+  match azimuth::ConfigManager::get_string(config_manager, "database.host") {
+    Some(value) => assert_eq(value, "localhost")
     None => assert_true(false)
   }
   
-  let updated_sampling_rate = Configuration::get_float(config, "telemetry.sampling_rate")
-  match updated_sampling_rate {
-    Some(rate) => assert_eq(rate, 0.9)
+  match azimuth::ConfigManager::get_int(config_manager, "database.port") {
+    Some(value) => assert_eq(value, 5432)
     None => assert_true(false)
   }
   
-  let updated_max_spans = Configuration::get_int(config, "telemetry.max_spans")
-  match updated_max_spans {
-    Some(spans) => assert_eq(spans, 5000)
+  match azimuth::ConfigManager::get_float(config_manager, "telemetry.sampling_rate") {
+    Some(value) => assert_eq(value, 0.1)
     None => assert_true(false)
   }
+  
+  match azimuth::ConfigManager::get_string_array(config_manager, "telemetry.endpoints") {
+    Some(array) => {
+      assert_eq(array.length(), 2)
+      assert_eq(array[0], "https://telemetry1.example.com")
+      assert_eq(array[1], "https://telemetry2.example.com")
+    }
+    None => assert_true(false)
+  }
+  
+  match azimuth::ConfigManager::get_string(config_manager, "logging.file.path") {
+    Some(value) => assert_eq(value, "/var/log/azimuth.log")
+    None => assert_true(false)
+  }
+  
+  // 模拟YAML配置文件内容
+  let yaml_config = "service:  name: azimuth-telemetry-yaml  port: 9090  debug: true  version: \"2.0.0\"database:  host: yaml-db.example.com  port: 5433  username: yaml_user  password: yaml_password  name: azimuth_yaml_db"
+  
+  // 创建新的配置管理器并加载YAML配置
+  let yaml_config_manager = azimuth::ConfigManager::new()
+  let yaml_load_result = azimuth::ConfigManager::load_from_yaml(yaml_config_manager, yaml_config)
+  
+  // 验证加载结果
+  assert_true(yaml_load_result.is_success)
+  
+  // 验证加载的配置
+  match azimuth::ConfigManager::get_string(yaml_config_manager, "service.name") {
+    Some(value) => assert_eq(value, "azimuth-telemetry-yaml")
+    None => assert_true(false)
+  }
+  
+  match azimuth::ConfigManager::get_int(yaml_config_manager, "service.port") {
+    Some(value) => assert_eq(value, 9090)
+    None => assert_true(false)
+  }
+  
+  match azimuth::ConfigManager::get_bool(yaml_config_manager, "service.debug") {
+    Some(value) => assert_true(value)
+    None => assert_true(false)
+  }
+  
+  // 测试无效配置文件
+  let invalid_json = "{ invalid json }"
+  let invalid_config_manager = azimuth::ConfigManager::new()
+  let invalid_load_result = azimuth::ConfigManager::load_from_json(invalid_config_manager, invalid_json)
+  
+  // 验证加载失败
+  assert_false(invalid_load_result.is_success)
+  assert_true(invalid_load_result.error_message.length() > 0)
 }
 
-test "configuration validation" {
-  let config = Configuration::new()
+test "配置热重载测试" {
+  // 创建初始配置
+  let config_manager = azimuth::ConfigManager::new()
+  azimuth::ConfigManager::set_string(config_manager, "service.name", "initial-service")
+  azimuth::ConfigManager::set_int(config_manager, "service.port", 8080)
+  azimuth::ConfigManager::set_bool(config_manager, "service.debug", false)
   
-  // Test valid configuration values
-  let valid_result1 = Configuration::set_validated(config, "telemetry.sampling_rate", 0.5, fn(v) { v >= 0.0 && v <= 1.0 })
-  assert_true(valid_result1)
-  
-  let valid_result2 = Configuration::set_validated(config, "telemetry.max_spans", 1000, fn(v) { v > 0 })
-  assert_true(valid_result2)
-  
-  // Test invalid configuration values
-  let invalid_result1 = Configuration::set_validated(config, "telemetry.sampling_rate", 1.5, fn(v) { v >= 0.0 && v <= 1.0 })
-  assert_false(invalid_result1)
-  
-  let invalid_result2 = Configuration::set_validated(config, "telemetry.max_spans", -100, fn(v) { v > 0 })
-  assert_false(invalid_result2)
-  
-  // Verify invalid values were not set
-  let sampling_rate = Configuration::get_float(config, "telemetry.sampling_rate")
-  match sampling_rate {
-    Some(rate) => assert_eq(rate, 0.5) // Should still be the valid value
+  // 验证初始配置
+  match azimuth::ConfigManager::get_string(config_manager, "service.name") {
+    Some(value) => assert_eq(value, "initial-service")
     None => assert_true(false)
   }
   
-  let max_spans = Configuration::get_int(config, "telemetry.max_spans")
-  match max_spans {
-    Some(spans) => assert_eq(spans, 1000) // Should still be the valid value
-    None => assert_true(false)
+  // 注册配置变更监听器
+  let mut change_events = []
+  let listener = azimuth::ConfigChangeListener::new fn(key, old_value, new_value) {
+    change_events = change_events + [(key, old_value, new_value)]
   }
-}
-
-test "configuration watchers and callbacks" {
-  let config = Configuration::new()
   
-  // Set up configuration change watcher
-  let mut watch_count = 0
-  let mut last_key = ""
-  let mut last_value = ""
+  azimuth::ConfigManager::add_change_listener(config_manager, listener)
   
-  Configuration::watch(config, "watched.key", fn(key, value) {
-    watch_count = watch_count + 1
-    last_key = key
-    last_value = value
-  })
+  // 更新配置（触发热重载）
+  azimuth::ConfigManager::set_string(config_manager, "service.name", "updated-service")
+  azimuth::ConfigManager::set_int(config_manager, "service.port", 9090)
+  azimuth::ConfigManager::set_bool(config_manager, "service.debug", true)
   
-  // Change watched configuration
-  Configuration::set(config, "watched.key", "initial_value")
-  assert_eq(watch_count, 1)
-  assert_eq(last_key, "watched.key")
-  assert_eq(last_value, "initial_value")
-  
-  // Change watched configuration again
-  Configuration::set(config, "watched.key", "updated_value")
-  assert_eq(watch_count, 2)
-  assert_eq(last_key, "watched.key")
-  assert_eq(last_value, "updated_value")
-  
-  // Change non-watched configuration
-  Configuration::set(config, "unwatched.key", "unwatched_value")
-  assert_eq(watch_count, 2) // Should not have changed
-  assert_eq(last_key, "watched.key") // Should still be the last watched key
-  assert_eq(last_value, "updated_value") // Should still be the last watched value
-  
-  // Remove watcher
-  Configuration::unwatch(config, "watched.key")
-  
-  // Change configuration after removing watcher
-  Configuration::set(config, "watched.key", "final_value")
-  assert_eq(watch_count, 2) // Should not have changed
-}
-
-test "configuration environment variable overrides" {
-  // Set environment variables
-  Environment::set("AZIMUTH_SERVICE_NAME", "env_service")
-  Environment::set("AZIMUTH_TELEMETRY_ENABLED", "true")
-  Environment::set("AZIMUTH_TELEMETRY_SAMPLING_RATE", "0.75")
-  Environment::set("AZIMUTH_TELEMETRY_MAX_SPANS", "3000")
-  
-  // Create configuration with environment variable support
-  let config = Configuration::new_with_env()
-  
-  // Set default configuration
-  Configuration::set(config, "service.name", "default_service")
-  Configuration::set(config, "telemetry.enabled", false)
-  Configuration::set(config, "telemetry.sampling_rate", 0.1)
-  Configuration::set(config, "telemetry.max_spans", 100)
-  
-  // Verify environment variables override defaults
-  let service_name = Configuration::get_string(config, "service.name")
-  match service_name {
-    Some(name) => assert_eq(name, "env_service")
+  // 验证配置已更新
+  match azimuth::ConfigManager::get_string(config_manager, "service.name") {
+    Some(value) => assert_eq(value, "updated-service")
     None => assert_true(false)
   }
   
-  let telemetry_enabled = Configuration::get_bool(config, "telemetry.enabled")
-  match telemetry_enabled {
-    Some(enabled) => assert_true(enabled)
+  match azimuth::ConfigManager::get_int(config_manager, "service.port") {
+    Some(value) => assert_eq(value, 9090)
     None => assert_true(false)
   }
   
-  let sampling_rate = Configuration::get_float(config, "telemetry.sampling_rate")
-  match sampling_rate {
-    Some(rate) => assert_eq(rate, 0.75)
+  match azimuth::ConfigManager::get_bool(config_manager, "service.debug") {
+    Some(value) => assert_true(value)
     None => assert_true(false)
   }
   
-  let max_spans = Configuration::get_int(config, "telemetry.max_spans")
-  match max_spans {
-    Some(spans) => assert_eq(spans, 3000)
-    None => assert_true(false)
-  }
+  // 验证变更事件
+  assert_eq(change_events.length(), 3)
   
-  // Clean up environment variables
-  Environment::unset("AZIMUTH_SERVICE_NAME")
-  Environment::unset("AZIMUTH_TELEMETRY_ENABLED")
-  Environment::unset("AZIMUTH_TELEMETRY_SAMPLING_RATE")
-  Environment::unset("AZIMUTH_TELEMETRY_MAX_SPANS")
-}
-
-test "configuration profiles" {
-  // Create configuration with profiles
-  let config = Configuration::new()
-  
-  // Set default configuration
-  Configuration::set(config, "service.name", "default_service")
-  Configuration::set(config, "telemetry.sampling_rate", 0.1)
-  Configuration::set(config, "logging.level", "INFO")
-  
-  // Create development profile
-  Configuration::create_profile(config, "development")
-  Configuration::set_profile(config, "development", "service.name", "dev_service")
-  Configuration::set_profile(config, "development", "telemetry.sampling_rate", 1.0)
-  Configuration::set_profile(config, "development", "logging.level", "DEBUG")
-  
-  // Create production profile
-  Configuration::create_profile(config, "production")
-  Configuration::set_profile(config, "production", "service.name", "prod_service")
-  Configuration::set_profile(config, "production", "telemetry.sampling_rate", 0.01)
-  Configuration::set_profile(config, "production", "logging.level", "WARN")
-  
-  // Test default profile
-  let default_service_name = Configuration::get_string(config, "service.name")
-  match default_service_name {
-    Some(name) => assert_eq(name, "default_service")
-    None => assert_true(false)
-  }
-  
-  let default_sampling_rate = Configuration::get_float(config, "telemetry.sampling_rate")
-  match default_sampling_rate {
-    Some(rate) => assert_eq(rate, 0.1)
-    None => assert_true(false)
-  }
-  
-  let default_log_level = Configuration::get_string(config, "logging.level")
-  match default_log_level {
-    Some(level) => assert_eq(level, "INFO")
-    None => assert_true(false)
-  }
-  
-  // Switch to development profile
-  Configuration::use_profile(config, "development")
-  
-  let dev_service_name = Configuration::get_string(config, "service.name")
-  match dev_service_name {
-    Some(name) => assert_eq(name, "dev_service")
-    None => assert_true(false)
-  }
-  
-  let dev_sampling_rate = Configuration::get_float(config, "telemetry.sampling_rate")
-  match dev_sampling_rate {
-    Some(rate) => assert_eq(rate, 1.0)
-    None => assert_true(false)
-  }
-  
-  let dev_log_level = Configuration::get_string(config, "logging.level")
-  match dev_log_level {
-    Some(level) => assert_eq(level, "DEBUG")
-    None => assert_true(false)
-  }
-  
-  // Switch to production profile
-  Configuration::use_profile(config, "production")
-  
-  let prod_service_name = Configuration::get_string(config, "service.name")
-  match prod_service_name {
-    Some(name) => assert_eq(name, "prod_service")
-    None => assert_true(false)
-  }
-  
-  let prod_sampling_rate = Configuration::get_float(config, "telemetry.sampling_rate")
-  match prod_sampling_rate {
-    Some(rate) => assert_eq(rate, 0.01)
-    None => assert_true(false)
-  }
-  
-  let prod_log_level = Configuration::get_string(config, "logging.level")
-  match prod_log_level {
-    Some(level) => assert_eq(level, "WARN")
-    None => assert_true(false)
-  }
-}
-
-test "configuration templates and inheritance" {
-  // Create base configuration template
-  let base_config = Configuration::new()
-  Configuration::set(base_config, "service.name", "template_service")
-  Configuration::set(base_config, "service.version", "1.0.0")
-  Configuration::set(base_config, "telemetry.enabled", true)
-  Configuration::set(base_config, "telemetry.sampling_rate", 0.5)
-  
-  // Create derived configuration from template
-  let derived_config = Configuration::from_template(base_config)
-  
-  // Override some values in derived configuration
-  Configuration::set(derived_config, "service.name", "derived_service")
-  Configuration::set(derived_config, "telemetry.sampling_rate", 0.75)
-  
-  // Add new values to derived configuration
-  Configuration::set(derived_config, "service.instance_id", "instance-123")
-  
-  // Verify derived configuration has all values
-  let service_name = Configuration::get_string(derived_config, "service.name")
-  match service_name {
-    Some(name) => assert_eq(name, "derived_service") // Overridden value
-    None => assert_true(false)
-  }
-  
-  let service_version = Configuration::get_string(derived_config, "service.version")
-  match service_version {
-    Some(version) => assert_eq(version, "1.0.0") // Inherited value
-    None => assert_true(false)
-  }
-  
-  let instance_id = Configuration::get_string(derived_config, "service.instance_id")
-  match instance_id {
-    Some(id) => assert_eq(id, "instance-123") // New value
-    None => assert_true(false)
-  }
-  
-  let telemetry_enabled = Configuration::get_bool(derived_config, "telemetry.enabled")
-  match telemetry_enabled {
-    Some(enabled) => assert_true(enabled) // Inherited value
-    None => assert_true(false)
-  }
-  
-  let sampling_rate = Configuration::get_float(derived_config, "telemetry.sampling_rate")
-  match sampling_rate {
-    Some(rate) => assert_eq(rate, 0.75) // Overridden value
-    None => assert_true(false)
-  }
-  
-  // Verify base configuration is unchanged
-  let base_service_name = Configuration::get_string(base_config, "service.name")
-  match base_service_name {
-    Some(name) => assert_eq(name, "template_service") // Original value
-    None => assert_true(false)
-  }
-  
-  let base_sampling_rate = Configuration::get_float(base_config, "telemetry.sampling_rate")
-  match base_sampling_rate {
-    Some(rate) => assert_eq(rate, 0.5) // Original value
-    None => assert_true(false)
-  }
-}
-
-test "configuration hot reload" {
-  // Create initial configuration file
-  let config_file = "/tmp/hot_reload_config.json"
-  let initial_content = """
-  {
-    "service": {
-      "name": "initial_service",
-      "version": "1.0.0"
-    },
-    "telemetry": {
-      "enabled": true,
-      "sampling_rate": 0.5
+  // 验证第一个变更事件
+  match change_events[0] {
+    (key, old_value, new_value) => {
+      assert_eq(key, "service.name")
+      assert_eq(old_value, "initial-service")
+      assert_eq(new_value, "updated-service")
     }
   }
-  """
   
-  File::write(config_file, initial_content)
-  
-  // Load configuration
-  let config = Configuration::load_from_file(config_file)
-  Configuration::enable_hot_reload(config, config_file)
-  
-  // Verify initial configuration
-  let service_name = Configuration::get_string(config, "service.name")
-  match service_name {
-    Some(name) => assert_eq(name, "initial_service")
-    None => assert_true(false)
-  }
-  
-  let sampling_rate = Configuration::get_float(config, "telemetry.sampling_rate")
-  match sampling_rate {
-    Some(rate) => assert_eq(rate, 0.5)
-    None => assert_true(false)
-  }
-  
-  // Update configuration file
-  let updated_content = """
-  {
-    "service": {
-      "name": "updated_service",
-      "version": "2.0.0"
-    },
-    "telemetry": {
-      "enabled": false,
-      "sampling_rate": 0.75
+  // 验证第二个变更事件
+  match change_events[1] {
+    (key, old_value, new_value) => {
+      assert_eq(key, "service.port")
+      assert_eq(old_value, "8080")
+      assert_eq(new_value, "9090")
     }
   }
-  """
   
-  File::write(config_file, updated_content)
+  // 验证第三个变更事件
+  match change_events[2] {
+    (key, old_value, new_value) => {
+      assert_eq(key, "service.debug")
+      assert_eq(old_value, "false")
+      assert_eq(new_value, "true")
+    }
+  }
   
-  // Trigger hot reload
-  Configuration::trigger_hot_reload(config)
+  // 测试批量配置更新
+  let batch_updates = [
+    ("batch.config1", "value1"),
+    ("batch.config2", "value2"),
+    ("batch.config3", "value3")
+  ]
   
-  // Wait for reload to complete
-  Time::sleep(100)
+  azimuth::ConfigManager::batch_update(config_manager, batch_updates)
   
-  // Verify updated configuration
-  let updated_service_name = Configuration::get_string(config, "service.name")
-  match updated_service_name {
-    Some(name) => assert_eq(name, "updated_service")
+  // 验证批量更新结果
+  match azimuth::ConfigManager::get_string(config_manager, "batch.config1") {
+    Some(value) => assert_eq(value, "value1")
     None => assert_true(false)
   }
   
-  let updated_service_version = Configuration::get_string(config, "service.version")
-  match updated_service_version {
-    Some(version) => assert_eq(version, "2.0.0")
+  match azimuth::ConfigManager::get_string(config_manager, "batch.config2") {
+    Some(value) => assert_eq(value, "value2")
     None => assert_true(false)
   }
   
-  let telemetry_enabled = Configuration::get_bool(config, "telemetry.enabled")
-  match telemetry_enabled {
-    Some(enabled) => assert_false(enabled)
+  match azimuth::ConfigManager::get_string(config_manager, "batch.config3") {
+    Some(value) => assert_eq(value, "value3")
     None => assert_true(false)
   }
   
-  let updated_sampling_rate = Configuration::get_float(config, "telemetry.sampling_rate")
-  match updated_sampling_rate {
-    Some(rate) => assert_eq(rate, 0.75)
-    None => assert_true(false)
-  }
-  
-  // Clean up
-  Configuration::disable_hot_reload(config)
-  File::delete(config_file)
+  // 验证批量更新触发了变更事件
+  assert_eq(change_events.length(), 6) // 之前的3个 + 批量更新的3个
 }
 
-test "configuration export and import" {
-  // Create source configuration
-  let source_config = Configuration::new()
-  Configuration::set(source_config, "service.name", "export_service")
-  Configuration::set(source_config, "service.version", "1.0.0")
-  Configuration::set(source_config, "telemetry.enabled", true)
-  Configuration::set(source_config, "telemetry.sampling_rate", 0.5)
-  Configuration::set(source_config, "telemetry.max_spans", 1000)
+test "配置环境变量覆盖测试" {
+  // 创建配置管理器
+  let config_manager = azimuth::ConfigManager::new()
   
-  // Export configuration to string
-  let exported_config = Configuration::export(source_config)
-  assert_true(exported_config.length() > 0)
+  // 设置默认配置
+  azimuth::ConfigManager::set_string(config_manager, "service.name", "default-service")
+  azimuth::ConfigManager::set_int(config_manager, "service.port", 8080)
+  azimuth::ConfigManager::set_string(config_manager, "database.host", "localhost")
+  azimuth::ConfigManager::set_string(config_manager, "database.password", "default-password")
   
-  // Import configuration to new config
-  let target_config = Configuration::import(exported_config)
+  // 模拟环境变量
+  let env_vars = [
+    ("AZIMUTH_SERVICE_NAME", "env-service"),
+    ("AZIMUTH_SERVICE_PORT", "9090"),
+    ("AZIMUTH_DATABASE_HOST", "env-db.example.com"),
+    ("AZIMUTH_NEW_FEATURE", "enabled")
+  ]
   
-  // Verify imported configuration
-  let service_name = Configuration::get_string(target_config, "service.name")
-  match service_name {
-    Some(name) => assert_eq(name, "export_service")
+  // 应用环境变量覆盖
+  azimuth::ConfigManager::apply_env_overrides(config_manager, env_vars)
+  
+  // 验证环境变量覆盖结果
+  match azimuth::ConfigManager::get_string(config_manager, "service.name") {
+    Some(value) => assert_eq(value, "env-service") // 应该被环境变量覆盖
     None => assert_true(false)
   }
   
-  let service_version = Configuration::get_string(target_config, "service.version")
-  match service_version {
-    Some(version) => assert_eq(version, "1.0.0")
+  match azimuth::ConfigManager::get_int(config_manager, "service.port") {
+    Some(value) => assert_eq(value, 9090) // 应该被环境变量覆盖
     None => assert_true(false)
   }
   
-  let telemetry_enabled = Configuration::get_bool(target_config, "telemetry.enabled")
-  match telemetry_enabled {
-    Some(enabled) => assert_true(enabled)
+  match azimuth::ConfigManager::get_string(config_manager, "database.host") {
+    Some(value) => assert_eq(value, "env-db.example.com") // 应该被环境变量覆盖
     None => assert_true(false)
   }
   
-  let sampling_rate = Configuration::get_float(target_config, "telemetry.sampling_rate")
-  match sampling_rate {
-    Some(rate) => assert_eq(rate, 0.5)
+  // 验证未被覆盖的配置保持原值
+  match azimuth::ConfigManager::get_string(config_manager, "database.password") {
+    Some(value) => assert_eq(value, "default-password") // 应该保持原值
     None => assert_true(false)
   }
   
-  let max_spans = Configuration::get_int(target_config, "telemetry.max_spans")
-  match max_spans {
-    Some(spans) => assert_eq(spans, 1000)
+  // 验证新增的环境变量配置
+  match azimuth::ConfigManager::get_string(config_manager, "new.feature") {
+    Some(value) => assert_eq(value, "enabled") // 新增的配置
     None => assert_true(false)
   }
+  
+  // 测试环境变量优先级
+  // 先设置配置值
+  azimuth::ConfigManager::set_string(config_manager, "priority.test", "config-value")
+  
+  // 然后应用环境变量
+  let priority_env_vars = [
+    ("AZIMUTH_PRIORITY_TEST", "env-value")
+  ]
+  
+  azimuth::ConfigManager::apply_env_overrides(config_manager, priority_env_vars)
+  
+  // 验证环境变量优先级更高
+  match azimuth::ConfigManager::get_string(config_manager, "priority.test") {
+    Some(value) => assert_eq(value, "env-value") // 应该是环境变量的值
+    None => assert_true(false)
+  }
+}
+
+test "配置导出测试" {
+  // 创建配置管理器
+  let config_manager = azimuth::ConfigManager::new()
+  
+  // 添加各种类型的配置
+  azimuth::ConfigManager::set_string(config_manager, "service.name", "azimuth-telemetry")
+  azimuth::ConfigManager::set_int(config_manager, "service.port", 8080)
+  azimuth::ConfigManager::set_bool(config_manager, "service.debug", true)
+  azimuth::ConfigManager::set_float(config_manager, "performance.threshold", 0.95)
+  
+  azimuth::ConfigManager::set_string(config_manager, "database.host", "localhost")
+  azimuth::ConfigManager::set_int(config_manager, "database.port", 5432)
+  
+  let endpoints = ["endpoint1", "endpoint2", "endpoint3"]
+  azimuth::ConfigManager::set_string_array(config_manager, "telemetry.endpoints", endpoints)
+  
+  // 导出为JSON
+  let json_export = azimuth::ConfigManager::export_to_json(config_manager)
+  
+  // 验证JSON导出内容
+  assert_true(json_export.contains("\"service.name\":\"azimuth-telemetry\""))
+  assert_true(json_export.contains("\"service.port\":8080"))
+  assert_true(json_export.contains("\"service.debug\":true"))
+  assert_true(json_export.contains("\"performance.threshold\":0.95"))
+  assert_true(json_export.contains("\"database.host\":\"localhost\""))
+  assert_true(json_export.contains("\"database.port\":5432"))
+  assert_true(json_export.contains("\"telemetry.endpoints\":[\"endpoint1\",\"endpoint2\",\"endpoint3\"]"))
+  
+  // 验证JSON结构
+  assert_true(json_export.starts_with("{"))
+  assert_true(json_export.ends_with("}"))
+  
+  // 导出为YAML
+  let yaml_export = azimuth::ConfigManager::export_to_yaml(config_manager)
+  
+  // 验证YAML导出内容
+  assert_true(yaml_export.contains("service:"))
+  assert_true(yaml_export.contains("name: azimuth-telemetry"))
+  assert_true(yaml_export.contains("port: 8080"))
+  assert_true(yaml_export.contains("debug: true"))
+  assert_true(yaml_export.contains("performance:"))
+  assert_true(yaml_export.contains("threshold: 0.95"))
+  assert_true(yaml_export.contains("database:"))
+  assert_true(yaml_export.contains("host: localhost"))
+  assert_true(yaml_export.contains("port: 5432"))
+  assert_true(yaml_export.contains("telemetry:"))
+  assert_true(yaml_export.contains("endpoints:"))
+  assert_true(yaml_export.contains("- endpoint1"))
+  assert_true(yaml_export.contains("- endpoint2"))
+  assert_true(yaml_export.contains("- endpoint3"))
+  
+  // 导出配置子集
+  let database_config = azimuth::ConfigManager::get_subset(config_manager, "database")
+  let database_json = azimuth::ConfigManager::export_to_json(database_config)
+  
+  // 验证子集导出只包含相关配置
+  assert_true(database_json.contains("\"host\":\"localhost\""))
+  assert_true(database_json.contains("\"port\":5432"))
+  assert_false(database_json.contains("\"service.name\""))
+  assert_false(database_json.contains("\"performance.threshold\""))
+  
+  // 测试配置过滤导出
+  let filter_keys = ["service.name", "service.port", "database.host"]
+  let filtered_config = azimuth::ConfigManager::filter_export(config_manager, filter_keys)
+  let filtered_json = azimuth::ConfigManager::export_to_json(filtered_config)
+  
+  // 验证过滤导出只包含指定键
+  assert_true(filtered_json.contains("\"service.name\":\"azimuth-telemetry\""))
+  assert_true(filtered_json.contains("\"service.port\":8080"))
+  assert_true(filtered_json.contains("\"database.host\":\"localhost\""))
+  assert_false(filtered_json.contains("\"service.debug\""))
+  assert_false(filtered_json.contains("\"performance.threshold\""))
+  assert_false(filtered_json.contains("\"database.port\""))
+  assert_false(filtered_json.contains("\"telemetry.endpoints\""))
 }

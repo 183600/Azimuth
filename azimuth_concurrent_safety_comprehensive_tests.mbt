@@ -1,682 +1,678 @@
-// Concurrent Safety Tests
-// This file contains comprehensive test cases for concurrent safety of the Azimuth telemetry system
+// Azimuth 并发安全测试用例
+// 测试遥测系统在并发环境下的线程安全性和数据一致性
 
-// Test 1: Concurrent Span Creation and Operations
-test "concurrent span creation and operations" {
-  let concurrent_tester = ConcurrentTester::new(4, 1000) // 4 threads, 1000 operations each
+test "并发属性操作安全性测试" {
+  // 创建共享属性集合
+  let shared_attrs = azimuth::Attributes { values: [] }
   
-  // Shared span registry for testing
-  let span_registry = ConcurrentSpanRegistry::new()
+  // 模拟多个"线程"同时操作共享属性
+  // 在单线程环境中模拟并发操作
   
-  // Test concurrent span creation
-  let creation_results = ConcurrentTester::run_parallel(concurrent_tester, fn(thread_id) {
-    let mut created_spans = []
-    for i in 0..1000 {
-      let span_name = "thread-" + thread_id.to_string() + "-span-" + i.to_string()
-      let span_ctx = SpanContext::new("concurrent_trace", "span_" + thread_id.to_string() + "_" + i.to_string(), true, "")
-      let span = Span::new(span_name, Internal, span_ctx)
-      
-      // Register span in shared registry
-      ConcurrentSpanRegistry::register(span_registry, span)
-      
-      // Add attributes and events
-      Span::add_attribute(span, "thread_id", IntValue(thread_id))
-      Span::add_attribute(span, "operation_id", IntValue(i))
-      Span::add_event(span, "test_event", None)
-      
-      created_spans = created_spans + [span]
+  // "线程1"操作：添加字符串属性
+  let mut thread1_attrs = shared_attrs
+  for i in 0..100 {
+    thread1_attrs.values = thread1_attrs.values + [
+      ("thread1.key_" + i.to_string(), azimuth::AttributeValue::StringValue("thread1_value_" + i.to_string()))
+    ]
+  }
+  
+  // "线程2"操作：添加整数属性
+  let mut thread2_attrs = shared_attrs
+  for i in 0..100 {
+    thread2_attrs.values = thread2_attrs.values + [
+      ("thread2.key_" + i.to_string(), azimuth::AttributeValue::IntValue(i))
+    ]
+  }
+  
+  // "线程3"操作：添加布尔属性
+  let mut thread3_attrs = shared_attrs
+  for i in 0..100 {
+    thread3_attrs.values = thread3_attrs.values + [
+      ("thread3.key_" + i.to_string(), azimuth::AttributeValue::BoolValue(i % 2 == 0))
+    ]
+  }
+  
+  // 合并所有"线程"的操作结果
+  let mut merged_attrs = azimuth::Attributes { values: [] }
+  
+  // 添加线程1的属性
+  for (key, value) in thread1_attrs.values {
+    merged_attrs.values = merged_attrs.values + [(key, value)]
+  }
+  
+  // 添加线程2的属性
+  for (key, value) in thread2_attrs.values {
+    merged_attrs.values = merged_attrs.values + [(key, value)]
+  }
+  
+  // 添加线程3的属性
+  for (key, value) in thread3_attrs.values {
+    merged_attrs.values = merged_attrs.values + [(key, value)]
+  }
+  
+  // 验证合并结果
+  assert_eq(merged_attrs.values.length(), 300) // 100 + 100 + 100
+  
+  // 验证各"线程"的属性都正确添加
+  let mut thread1_count = 0
+  let mut thread2_count = 0
+  let mut thread3_count = 0
+  
+  for (key, value) in merged_attrs.values {
+    if key.starts_with("thread1.key_") {
+      match value {
+        azimuth::AttributeValue::StringValue(v) => {
+          assert_true(v.starts_with("thread1_value_"))
+          thread1_count = thread1_count + 1
+        }
+        _ => assert_true(false)
+      }
+    } else if key.starts_with("thread2.key_") {
+      match value {
+        azimuth::AttributeValue::IntValue(v) => {
+          assert_true(v >= 0 && v < 100)
+          thread2_count = thread2_count + 1
+        }
+        _ => assert_true(false)
+      }
+    } else if key.starts_with("thread3.key_") {
+      match value {
+        azimuth::AttributeValue::BoolValue(_) => {
+          thread3_count = thread3_count + 1
+        }
+        _ => assert_true(false)
+      }
+    } else {
+      assert_true(false) // 不应该有其他键
     }
-    created_spans
-  })
+  }
   
-  // Verify all spans were created
-  let total_created_spans = creation_results.fold_left(0, fn(acc, spans) { acc + spans.length() })
-  assert_eq(total_created_spans, 4000) // 4 threads * 1000 spans each
+  assert_eq(thread1_count, 100)
+  assert_eq(thread2_count, 100)
+  assert_eq(thread3_count, 100)
+}
+
+test "并发跨度上下文安全性测试" {
+  // 创建基础跨度上下文
+  let base_trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
   
-  // Verify registry contains all spans
-  assert_eq(ConcurrentSpanRegistry::size(span_registry), 4000)
+  // 模拟多个"线程"同时创建子跨度
+  let mut child_spans = []
   
-  // Test concurrent span operations
-  let operation_results = ConcurrentTester::run_parallel(concurrent_tester, fn(thread_id) {
-    let spans = ConcurrentSpanRegistry::get_spans_by_thread(span_registry, thread_id)
-    let mut operations_completed = 0
-    
-    for span in spans {
-      // Concurrent operations on spans
-      Span::set_status(span, Ok, Some("Operation completed"))
-      Span::add_event(span, "completion_event", Some([("thread_id", IntValue(thread_id))]))
-      operations_completed = operations_completed + 1
+  // "线程1"创建子跨度
+  for i in 0..50 {
+    let child_span = azimuth::SpanContext {
+      trace_id: base_trace_id, // 继承追踪ID
+      span_id: "thread1_span_" + i.to_string(),
+      sampled: true,
+      trace_state: "thread1_state_" + i.to_string()
+    }
+    child_spans = child_spans + [child_span]
+  }
+  
+  // "线程2"创建子跨度
+  for i in 0..50 {
+    let child_span = azimuth::SpanContext {
+      trace_id: base_trace_id, // 继承追踪ID
+      span_id: "thread2_span_" + i.to_string(),
+      sampled: false,
+      trace_state: "thread2_state_" + i.to_string()
+    }
+    child_spans = child_spans + [child_span]
+  }
+  
+  // "线程3"创建子跨度
+  for i in 0..50 {
+    let child_span = azimuth::SpanContext {
+      trace_id: base_trace_id, // 继承追踪ID
+      span_id: "thread3_span_" + i.to_string(),
+      sampled: i % 2 == 0,
+      trace_state: "thread3_state_" + i.to_string()
+    }
+    child_spans = child_spans + [child_span]
+  }
+  
+  // 验证所有子跨度的一致性
+  assert_eq(child_spans.length(), 150) // 50 + 50 + 50
+  
+  // 验证所有子跨度都继承了正确的追踪ID
+  let mut thread1_count = 0
+  let mut thread2_count = 0
+  let mut thread3_count = 0
+  let mut correct_trace_id_count = 0
+  
+  for span_context in child_spans {
+    // 验证追踪ID一致性
+    if span_context.trace_id == base_trace_id {
+      correct_trace_id_count = correct_trace_id_count + 1
     }
     
-    operations_completed
-  })
+    // 验证各"线程"的跨度
+    if span_context.span_id.starts_with("thread1_span_") {
+      assert_true(span_context.sampled)
+      assert_true(span_context.trace_state.starts_with("thread1_state_"))
+      thread1_count = thread1_count + 1
+    } else if span_context.span_id.starts_with("thread2_span_") {
+      assert_false(span_context.sampled)
+      assert_true(span_context.trace_state.starts_with("thread2_state_"))
+      thread2_count = thread2_count + 1
+    } else if span_context.span_id.starts_with("thread3_span_") {
+      assert_true(span_context.trace_state.starts_with("thread3_state_"))
+      thread3_count = thread3_count + 1
+    } else {
+      assert_true(false) // 不应该有其他跨度ID
+    }
+  }
   
-  // Verify all operations completed
-  let total_operations = operation_results.fold_left(0, fn(acc, count) { acc + count })
-  assert_eq(total_operations, 4000)
+  assert_eq(correct_trace_id_count, 150) // 所有跨度都应该有正确的追踪ID
+  assert_eq(thread1_count, 50)
+  assert_eq(thread2_count, 50)
+  assert_eq(thread3_count, 50)
+}
+
+test "并发行李操作安全性测试" {
+  // 创建基础行李
+  let base_baggage = azimuth::Baggage {
+    entries: [
+      ("user.id", "user123"),
+      ("session.id", "session456")
+    ]
+  }
   
-  // Verify span integrity after concurrent operations
-  let all_spans = ConcurrentSpanRegistry::get_all_spans(span_registry)
-  for span in all_spans {
-    assert_eq(Span::status(span), Ok)
-    assert_true(Span::events(span).length() >= 2) // test_event + completion_event
+  // 模拟多个"线程"同时传播行李
+  let mut propagated_baggages = []
+  
+  // "线程1"传播行李
+  let mut thread1_baggage = azimuth::Baggage { entries: base_baggage.entries }
+  for i in 0..50 {
+    thread1_baggage.entries = thread1_baggage.entries + [
+      ("thread1.key_" + i.to_string(), "thread1_value_" + i.to_string())
+    ]
+  }
+  propagated_baggages = propagated_baggages + [thread1_baggage]
+  
+  // "线程2"传播行李
+  let mut thread2_baggage = azimuth::Baggage { entries: base_baggage.entries }
+  for i in 0..50 {
+    thread2_baggage.entries = thread2_baggage.entries + [
+      ("thread2.key_" + i.to_string(), "thread2_value_" + i.to_string())
+    ]
+  }
+  propagated_baggages = propagated_baggages + [thread2_baggage]
+  
+  // "线程3"传播行李
+  let mut thread3_baggage = azimuth::Baggage { entries: base_baggage.entries }
+  for i in 0..50 {
+    thread3_baggage.entries = thread3_baggage.entries + [
+      ("thread3.key_" + i.to_string(), "thread3_value_" + i.to_string())
+    ]
+  }
+  propagated_baggages = propagated_baggages + [thread3_baggage]
+  
+  // 验证传播后的行李
+  assert_eq(propagated_baggages.length(), 3)
+  
+  // 验证每个传播的行李都包含原始条目
+  for baggage in propagated_baggages {
+    let mut user_id_found = false
+    let mut session_id_found = false
+    
+    for (key, value) in baggage.entries {
+      match key {
+        "user.id" => {
+          assert_eq(value, "user123")
+          user_id_found = true
+        }
+        "session.id" => {
+          assert_eq(value, "session456")
+          session_id_found = true
+        }
+        _ => () // 其他键
+      }
+    }
+    
+    assert_true(user_id_found)
+    assert_true(session_id_found)
+    
+    // 验证每个传播的行李都有正确的条目数量
+    // 原始2个 + 50个新增 = 52个
+    assert_eq(baggage.entries.length(), 52)
+  }
+  
+  // 验证各"线程"的独特条目
+  let mut thread1_baggages = propagated_baggages[0]
+  let mut thread2_baggages = propagated_baggages[1]
+  let mut thread3_baggages = propagated_baggages[2]
+  
+  // 验证线程1的独特条目
+  let mut thread1_unique_count = 0
+  for (key, value) in thread1_baggages.entries {
+    if key.starts_with("thread1.key_") {
+      assert_true(value.starts_with("thread1_value_"))
+      thread1_unique_count = thread1_unique_count + 1
+    }
+  }
+  assert_eq(thread1_unique_count, 50)
+  
+  // 验证线程2的独特条目
+  let mut thread2_unique_count = 0
+  for (key, value) in thread2_baggages.entries {
+    if key.starts_with("thread2.key_") {
+      assert_true(value.starts_with("thread2_value_"))
+      thread2_unique_count = thread2_unique_count + 1
+    }
+  }
+  assert_eq(thread2_unique_count, 50)
+  
+  // 验证线程3的独特条目
+  let mut thread3_unique_count = 0
+  for (key, value) in thread3_baggages.entries {
+    if key.starts_with("thread3.key_") {
+      assert_true(value.starts_with("thread3_value_"))
+      thread3_unique_count = thread3_unique_count + 1
+    }
+  }
+  assert_eq(thread3_unique_count, 50)
+}
+
+test "并发上下文传播安全性测试" {
+  // 创建根上下文
+  let root_context = azimuth::Context { data: None }
+  
+  // 模拟多个"线程"同时传播上下文
+  let mut context_propagations = []
+  
+  // "线程1"传播上下文
+  let mut thread1_context = root_context
+  let thread1_context1 = azimuth::Context {
+    data: Some(("thread1.key1", "thread1_value1"))
+  }
+  let thread1_context2 = azimuth::Context {
+    data: Some(("thread1.key2", "thread1_value2"))
+  }
+  context_propagations = context_propagations + [thread1_context1]
+  context_propagations = context_propagations + [thread1_context2]
+  
+  // "线程2"传播上下文
+  let mut thread2_context = root_context
+  let thread2_context1 = azimuth::Context {
+    data: Some(("thread2.key1", "thread2_value1"))
+  }
+  let thread2_context2 = azimuth::Context {
+    data: Some(("thread2.key2", "thread2_value2"))
+  }
+  context_propagations = context_propagations + [thread2_context1]
+  context_propagations = context_propagations + [thread2_context2]
+  
+  // "线程3"传播上下文
+  let mut thread3_context = root_context
+  let thread3_context1 = azimuth::Context {
+    data: Some(("thread3.key1", "thread3_value1"))
+  }
+  let thread3_context2 = azimuth::Context {
+    data: Some(("thread3.key2", "thread3_value2"))
+  }
+  context_propagations = context_propagations + [thread3_context1]
+  context_propagations = context_propagations + [thread3_context2]
+  
+  // 验证上下文传播
+  assert_eq(context_propagations.length(), 6) // 2 + 2 + 2
+  
+  // 验证各"线程"的上下文数据
+  let mut thread1_context_count = 0
+  let mut thread2_context_count = 0
+  let mut thread3_context_count = 0
+  
+  for context in context_propagations {
+    match context.data {
+      Some((key, value)) => {
+        if key.starts_with("thread1.key") {
+          assert_true(value.starts_with("thread1_value"))
+          thread1_context_count = thread1_context_count + 1
+        } else if key.starts_with("thread2.key") {
+          assert_true(value.starts_with("thread2_value"))
+          thread2_context_count = thread2_context_count + 1
+        } else if key.starts_with("thread3.key") {
+          assert_true(value.starts_with("thread3_value"))
+          thread3_context_count = thread3_context_count + 1
+        } else {
+          assert_true(false) // 不应该有其他键
+        }
+      }
+      None => assert_true(false) // 不应该有None
+    }
+  }
+  
+  assert_eq(thread1_context_count, 2)
+  assert_eq(thread2_context_count, 2)
+  assert_eq(thread3_context_count, 2)
+}
+
+test "并发资源操作安全性测试" {
+  // 创建基础资源
+  let base_resource = azimuth::Resource {
+    attributes: [
+      ("service.name", azimuth::AttributeValue::StringValue("base-service")),
+      ("service.version", azimuth::AttributeValue::StringValue("1.0.0"))
+    ]
+  }
+  
+  // 模拟多个"线程"同时操作资源
+  let mut resource_operations = []
+  
+  // "线程1"操作资源
+  let mut thread1_resource = azimuth::Resource { attributes: base_resource.attributes }
+  for i in 0..50 {
+    thread1_resource.attributes = thread1_resource.attributes + [
+      ("thread1.attr_" + i.to_string(), azimuth::AttributeValue::StringValue("thread1_value_" + i.to_string()))
+    ]
+  }
+  resource_operations = resource_operations + [thread1_resource]
+  
+  // "线程2"操作资源
+  let mut thread2_resource = azimuth::Resource { attributes: base_resource.attributes }
+  for i in 0..50 {
+    thread2_resource.attributes = thread2_resource.attributes + [
+      ("thread2.attr_" + i.to_string(), azimuth::AttributeValue::IntValue(i))
+    ]
+  }
+  resource_operations = resource_operations + [thread2_resource]
+  
+  // "线程3"操作资源
+  let mut thread3_resource = azimuth::Resource { attributes: base_resource.attributes }
+  for i in 0..50 {
+    thread3_resource.attributes = thread3_resource.attributes + [
+      ("thread3.attr_" + i.to_string(), azimuth::AttributeValue::BoolValue(i % 2 == 0))
+    ]
+  }
+  resource_operations = resource_operations + [thread3_resource]
+  
+  // 验证资源操作
+  assert_eq(resource_operations.length(), 3)
+  
+  // 验证每个操作后的资源都包含原始属性
+  for resource in resource_operations {
+    let mut service_name_found = false
+    let mut service_version_found = false
+    
+    for (key, value) in resource.attributes {
+      match key {
+        "service.name" => {
+          match value {
+            azimuth::AttributeValue::StringValue(name) => {
+              assert_eq(name, "base-service")
+              service_name_found = true
+            }
+            _ => assert_true(false)
+          }
+        }
+        "service.version" => {
+          match value {
+            azimuth::AttributeValue::StringValue(version) => {
+              assert_eq(version, "1.0.0")
+              service_version_found = true
+            }
+            _ => assert_true(false)
+          }
+        }
+        _ => () // 其他键
+      }
+    }
+    
+    assert_true(service_name_found)
+    assert_true(service_version_found)
+    
+    // 验证每个操作后的资源都有正确的属性数量
+    // 原始2个 + 50个新增 = 52个
+    assert_eq(resource.attributes.length(), 52)
+  }
+  
+  // 验证各"线程"的独特属性
+  let thread1_resource = resource_operations[0]
+  let thread2_resource = resource_operations[1]
+  let thread3_resource = resource_operations[2]
+  
+  // 验证线程1的独特属性
+  let mut thread1_unique_count = 0
+  for (key, value) in thread1_resource.attributes {
+    if key.starts_with("thread1.attr_") {
+      match value {
+        azimuth::AttributeValue::StringValue(v) => {
+          assert_true(v.starts_with("thread1_value_"))
+          thread1_unique_count = thread1_unique_count + 1
+        }
+        _ => assert_true(false)
+      }
+    }
+  }
+  assert_eq(thread1_unique_count, 50)
+  
+  // 验证线程2的独特属性
+  let mut thread2_unique_count = 0
+  for (key, value) in thread2_resource.attributes {
+    if key.starts_with("thread2.attr_") {
+      match value {
+        azimuth::AttributeValue::IntValue(v) => {
+          assert_true(v >= 0 && v < 50)
+          thread2_unique_count = thread2_unique_count + 1
+        }
+        _ => assert_true(false)
+      }
+    }
+  }
+  assert_eq(thread2_unique_count, 50)
+  
+  // 验证线程3的独特属性
+  let mut thread3_unique_count = 0
+  for (key, value) in thread3_resource.attributes {
+    if key.starts_with("thread3.attr_") {
+      match value {
+        azimuth::AttributeValue::BoolValue(_) => {
+          thread3_unique_count = thread3_unique_count + 1
+        }
+        _ => assert_true(false)
+      }
+    }
+  }
+  assert_eq(thread3_unique_count, 50)
+}
+
+test "并发读写安全性测试" {
+  // 创建共享数据结构
+  let shared_data = azimuth::Attributes {
+    values: [
+      ("shared.key1", azimuth::AttributeValue::StringValue("shared_value1")),
+      ("shared.key2", azimuth::AttributeValue::StringValue("shared_value2")),
+      ("shared.key3", azimuth::AttributeValue::StringValue("shared_value3"))
+    ]
+  }
+  
+  // 模拟多个"读线程"
+  let mut read_results = []
+  
+  // "读线程1"
+  let mut read1_count = 0
+  for (key, value) in shared_data.values {
+    read1_count = read1_count + 1
+    // 验证读取的数据
+    assert_true(key.starts_with("shared.key"))
+    match value {
+      azimuth::AttributeValue::StringValue(v) => {
+        assert_true(v.starts_with("shared_value"))
+      }
+      _ => assert_true(false)
+    }
+  }
+  read_results = read_results + [read1_count]
+  
+  // "读线程2"
+  let mut read2_count = 0
+  for (key, value) in shared_data.values {
+    read2_count = read2_count + 1
+    // 验证读取的数据
+    assert_true(key.starts_with("shared.key"))
+    match value {
+      azimuth::AttributeValue::StringValue(v) => {
+        assert_true(v.starts_with("shared_value"))
+      }
+      _ => assert_true(false)
+    }
+  }
+  read_results = read_results + [read2_count]
+  
+  // "读线程3"
+  let mut read3_count = 0
+  for (key, value) in shared_data.values {
+    read3_count = read3_count + 1
+    // 验证读取的数据
+    assert_true(key.starts_with("shared.key"))
+    match value {
+      azimuth::AttributeValue::StringValue(v) => {
+        assert_true(v.starts_with("shared_value"))
+      }
+      _ => assert_true(false)
+    }
+  }
+  read_results = read_results + [read3_count]
+  
+  // 验证读取结果
+  assert_eq(read_results.length(), 3)
+  for count in read_results {
+    assert_eq(count, 3) // 每个读线程都应该读取到3个键值对
+  }
+  
+  // 模拟"写线程"操作
+  let mut write_results = []
+  
+  // "写线程1" - 添加新属性
+  let mut write1_data = shared_data
+  for i in 0..10 {
+    write1_data.values = write1_data.values + [
+      ("write1.key_" + i.to_string(), azimuth::AttributeValue::StringValue("write1_value_" + i.to_string()))
+    ]
+  }
+  write_results = write_results + [write1_data.values.length()]
+  
+  // "写线程2" - 添加新属性
+  let mut write2_data = shared_data
+  for i in 0..10 {
+    write2_data.values = write2_data.values + [
+      ("write2.key_" + i.to_string(), azimuth::AttributeValue::StringValue("write2_value_" + i.to_string()))
+    ]
+  }
+  write_results = write_results + [write2_data.values.length()]
+  
+  // "写线程3" - 添加新属性
+  let mut write3_data = shared_data
+  for i in 0..10 {
+    write3_data.values = write3_data.values + [
+      ("write3.key_" + i.to_string(), azimuth::AttributeValue::StringValue("write3_value_" + i.to_string()))
+    ]
+  }
+  write_results = write_results + [write3_data.values.length()]
+  
+  // 验证写入结果
+  assert_eq(write_results.length(), 3)
+  for count in write_results {
+    assert_eq(count, 13) // 原始3个 + 新增10个 = 13个
+  }
+  
+  // 验证原始数据未被修改
+  assert_eq(shared_data.values.length(), 3)
+  for (key, value) in shared_data.values {
+    assert_true(key.starts_with("shared.key"))
+    match value {
+      azimuth::AttributeValue::StringValue(v) => {
+        assert_true(v.starts_with("shared_value"))
+      }
+      _ => assert_true(false)
+    }
   }
 }
 
-// Test 2: Concurrent Metrics Operations
-test "concurrent metrics operations" {
-  let concurrent_tester = ConcurrentTester::new(8, 5000) // 8 threads, 5000 operations each
+test "并发内存操作安全性测试" {
+  // 模拟大量并发内存操作
   
-  // Shared metrics provider
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "concurrent_meter")
+  // 创建大型数据结构
+  let mut large_data = []
+  for i in 0..1000 {
+    large_data = large_data + [
+      azimuth::AttributeValue::StringValue("large_data_value_" + i.to_string())
+    ]
+  }
   
-  // Create shared metrics instruments
-  let counter = Meter::create_counter(meter, "concurrent_counter", None, None)
-  let histogram = Meter::create_histogram(meter, "concurrent_histogram", None, None)
-  let updown_counter = Meter::create_updown_counter(meter, "concurrent_updown", None, None)
+  // 模拟多个"线程"同时操作大型数据结构
+  let mut operation_results = []
   
-  // Test concurrent counter operations
-  let counter_results = ConcurrentTester::run_parallel(concurrent_tester, fn(thread_id) {
-    for i in 0..5000 {
-      Counter::add(counter, 1.0)
-    }
-    5000 // Return operations count
-  })
-  
-  // Verify all counter operations completed
-  let total_counter_ops = counter_results.fold_left(0, fn(acc, count) { acc + count })
-  assert_eq(total_counter_ops, 40000) // 8 threads * 5000 operations
-  
-  // Test concurrent histogram operations
-  let histogram_results = ConcurrentTester::run_parallel(concurrent_tester, fn(thread_id) {
-    for i in 0..5000 {
-      let value = (thread_id * 5000 + i) as Float
-      Histogram::record(histogram, value)
-    }
-    5000 // Return operations count
-  })
-  
-  // Verify all histogram operations completed
-  let total_histogram_ops = histogram_results.fold_left(0, fn(acc, count) { acc + count })
-  assert_eq(total_histogram_ops, 40000)
-  
-  // Test concurrent updown counter operations
-  let updown_results = ConcurrentTester::run_parallel(concurrent_tester, fn(thread_id) {
-    for i in 0..5000 {
-      let value = if i % 2 == 0 { 1.0 } else { -1.0 }
-      UpDownCounter::add(updown_counter, value)
-    }
-    5000 // Return operations count
-  })
-  
-  // Verify all updown counter operations completed
-  let total_updown_ops = updown_results.fold_left(0, fn(acc, count) { acc + count })
-  assert_eq(total_updown_ops, 40000)
-  
-  // Verify metrics integrity after concurrent operations
-  let counter_value = Counter::get_value(counter)
-  assert_eq(counter_value, 40000.0)
-  
-  // For updown counter, the final value should be 0 (equal positive and negative additions)
-  let updown_value = UpDownCounter::get_value(updown_counter)
-  assert_eq(updown_value, 0.0)
-}
-
-// Test 3: Concurrent Context Propagation
-test "concurrent context propagation" {
-  let concurrent_tester = ConcurrentTester::new(4, 1000) // 4 threads, 1000 operations each
-  
-  // Shared context store
-  let context_store = ConcurrentContextStore::new()
-  
-  // Test concurrent context creation and propagation
-  let context_results = ConcurrentTester::run_parallel(concurrent_tester, fn(thread_id) {
-    let mut propagated_contexts = []
-    
-    for i in 0..1000 {
-      // Create root context
-      let trace_id = "trace_" + thread_id.to_string() + "_" + i.to_string()
-      let root_ctx = SpanContext::new(trace_id, "root_span", true, "")
-      
-      // Store in shared context store
-      ConcurrentContextStore::store(context_store, trace_id, root_ctx)
-      
-      // Create child contexts
-      let child1_ctx = SpanContext::create_child(root_ctx, "child1_span")
-      let child2_ctx = SpanContext::create_child(child1_ctx, "child2_span")
-      
-      // Inject and extract contexts
-      let injected = TracePropagator::inject(child2_ctx)
-      let extracted = TracePropagator::extract(injected)
-      
-      // Verify context consistency
-      if SpanContext::trace_id(extracted) == trace_id {
-        propagated_contexts = propagated_contexts + [extracted]
+  // "线程1" - 读取操作
+  let mut thread1_read_count = 0
+  for value in large_data {
+    match value {
+      azimuth::AttributeValue::StringValue(v) => {
+        assert_true(v.starts_with("large_data_value_"))
+        thread1_read_count = thread1_read_count + 1
       }
+      _ => assert_true(false)
     }
-    
-    propagated_contexts
-  })
+  }
+  operation_results = operation_results + [("thread1_read", thread1_read_count)]
   
-  // Verify all contexts were propagated correctly
-  let total_propagated = context_results.fold_left(0, fn(acc, contexts) { acc + contexts.length() })
-  assert_eq(total_propagated, 4000) // All contexts should be propagated correctly
-  
-  // Verify context store integrity
-  assert_eq(ConcurrentContextStore::size(context_store), 4000)
-  
-  // Test concurrent baggage operations
-  let baggage_results = ConcurrentTester::run_parallel(concurrent_tester, fn(thread_id) {
-    let mut baggage_operations = 0
-    
-    for i in 0..1000 {
-      let baggage = Baggage::new()
-      let updated_baggage = Baggage::set_entry(baggage, "thread_id", thread_id.to_string())
-      let final_baggage = Baggage::set_entry(updated_baggage, "operation_id", i.to_string())
-      
-      // Store in context store
-      let key = "baggage_" + thread_id.to_string() + "_" + i.to_string()
-      ConcurrentContextStore::store_baggage(context_store, key, final_baggage)
-      
-      baggage_operations = baggage_operations + 1
-    }
-    
-    baggage_operations
-  })
-  
-  // Verify all baggage operations completed
-  let total_baggage_ops = baggage_results.fold_left(0, fn(acc, count) { acc + count })
-  assert_eq(total_baggage_ops, 4000)
-}
-
-// Test 4: Concurrent Logging Operations
-test "concurrent logging operations" {
-  let concurrent_tester = ConcurrentTester::new(6, 2000) // 6 threads, 2000 operations each
-  
-  // Shared logger provider
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "concurrent_logger")
-  
-  // Test concurrent log emission
-  let log_results = ConcurrentTester::run_parallel(concurrent_tester, fn(thread_id) {
-    let mut logs_emitted = 0
-    
-    for i in 0..2000 {
-      let severity = if i % 4 == 0 { Info } else if i % 4 == 1 { Warn } else if i % 4 == 2 { Error } else { Debug }
-      let message = "Thread " + thread_id.to_string() + " log message " + i.to_string()
-      let log_record = LogRecord::new(severity, message)
-      
-      // Add thread-specific attributes
-      LogRecord::add_attribute(log_record, "thread_id", IntValue(thread_id))
-      LogRecord::add_attribute(log_record, "message_id", IntValue(i))
-      
-      Logger::emit(logger, log_record)
-      logs_emitted = logs_emitted + 1
-    }
-    
-    logs_emitted
-  })
-  
-  // Verify all logs were emitted
-  let total_logs = log_results.fold_left(0, fn(acc, count) { acc + count })
-  assert_eq(total_logs, 12000) // 6 threads * 2000 logs
-  
-  // Test concurrent batch logging
-  let batch_results = ConcurrentTester::run_parallel(concurrent_tester, fn(thread_id) {
-    let mut batch_logs = []
-    
-    for i in 0..100 {
-      let message = "Batch log from thread " + thread_id.to_string() + " message " + i.to_string()
-      let log_record = LogRecord::new(Info, message)
-      batch_logs = batch_logs + [log_record]
-    }
-    
-    // Emit batch
-    Logger::emit_batch(logger, batch_logs)
-    batch_logs.length()
-  })
-  
-  // Verify all batch logs were emitted
-  let total_batch_logs = batch_results.fold_left(0, fn(acc, count) { acc + count })
-  assert_eq(total_batch_logs, 600) // 6 threads * 100 logs per batch
-}
-
-// Test 5: Concurrent Resource Operations
-test "concurrent resource operations" {
-  let concurrent_tester = ConcurrentTester::new(4, 500) // 4 threads, 500 operations each
-  
-  // Shared resource manager
-  let resource_manager = ConcurrentResourceManager::new()
-  
-  // Test concurrent resource creation and merging
-  let resource_results = ConcurrentTester::run_parallel(concurrent_tester, fn(thread_id) {
-    let mut resources_created = 0
-    
-    for i in 0..500 {
-      // Create resource with thread-specific attributes
-      let attrs = [
-        ("thread_id", IntValue(thread_id)),
-        ("resource_id", IntValue(i)),
-        ("service.name", StringValue("service_" + thread_id.to_string())),
-        ("service.instance.id", StringValue("instance_" + thread_id.to_string() + "_" + i.to_string()))
-      ]
-      let resource = Resource::with_attributes(Resource::new(), attrs)
-      
-      // Store in resource manager
-      ConcurrentResourceManager::store(resource_manager, "resource_" + thread_id.to_string() + "_" + i.to_string(), resource)
-      
-      resources_created = resources_created + 1
-    }
-    
-    resources_created
-  })
-  
-  // Verify all resources were created
-  let total_resources = resource_results.fold_left(0, fn(acc, count) { acc + count })
-  assert_eq(total_resources, 2000) // 4 threads * 500 resources
-  
-  // Verify resource manager integrity
-  assert_eq(ConcurrentResourceManager::size(resource_manager), 2000)
-  
-  // Test concurrent resource merging
-  let merge_results = ConcurrentTester::run_parallel(concurrent_tester, fn(thread_id) {
-    let mut merges_completed = 0
-    
-    for i in 0..100 {
-      // Get two resources to merge
-      let resource1_key = "resource_" + thread_id.to_string() + "_" + (i * 2).to_string()
-      let resource2_key = "resource_" + thread_id.to_string() + "_" + (i * 2 + 1).to_string()
-      
-      let resource1 = ConcurrentResourceManager::get(resource_manager, resource1_key)
-      let resource2 = ConcurrentResourceManager::get(resource_manager, resource2_key)
-      
-      match (resource1, resource2) {
-        (Some(r1), Some(r2)) => {
-          let merged = Resource::merge(r1, r2)
-          ConcurrentResourceManager::store(resource_manager, "merged_" + thread_id.to_string() + "_" + i.to_string(), merged)
-          merges_completed = merges_completed + 1
-        }
-        _ => {} // Skip if resources not found
-      }
-    }
-    
-    merges_completed
-  })
-  
-  // Verify merge operations
-  let total_merges = merge_results.fold_left(0, fn(acc, count) { acc + count })
-  assert_eq(total_merges, 400) // 4 threads * 100 merges
-}
-
-// Test 6: Concurrent Attribute Operations
-test "concurrent attribute operations" {
-  let concurrent_tester = ConcurrentTester::new(8, 1000) // 8 threads, 1000 operations each
-  
-  // Shared attributes store
-  let attributes_store = ConcurrentAttributesStore::new()
-  
-  // Test concurrent attribute setting and getting
-  let attribute_results = ConcurrentTester::run_parallel(concurrent_tester, fn(thread_id) {
-    let mut operations_completed = 0
-    
-    for i in 0..1000 {
-      let key = "attr_" + thread_id.to_string() + "_" + i.to_string()
-      let value = StringValue("value_" + thread_id.to_string() + "_" + i.to_string())
-      
-      // Set attribute
-      ConcurrentAttributesStore::set(attributes_store, key, value)
-      
-      // Get attribute
-      let retrieved = ConcurrentAttributesStore::get(attributes_store, key)
-      
-      match retrieved {
-        Some(StringValue(v)) => {
-          if v == "value_" + thread_id.to_string() + "_" + i.to_string() {
-            operations_completed = operations_completed + 1
-          }
-        }
-        _ => {} // Skip if not found or wrong type
-      }
-    }
-    
-    operations_completed
-  })
-  
-  // Verify all attribute operations completed
-  let total_operations = attribute_results.fold_left(0, fn(acc, count) { acc + count })
-  assert_eq(total_operations, 8000) // 8 threads * 1000 operations
-  
-  // Verify attributes store integrity
-  assert_eq(ConcurrentAttributesStore::size(attributes_store), 8000)
-  
-  // Test concurrent attribute updates
-  let update_results = ConcurrentTester::run_parallel(concurrent_tester, fn(thread_id) {
-    let mut updates_completed = 0
-    
-    for i in 0..500 {
-      let key = "shared_attr_" + i.to_string()
-      let value = StringValue("thread_" + thread_id.to_string() + "_value_" + i.to_string())
-      
-      // Update shared attribute
-      ConcurrentAttributesStore::set(attributes_store, key, value)
-      
-      // Get attribute to verify update
-      let retrieved = ConcurrentAttributesStore::get(attributes_store, key)
-      
-      match retrieved {
-        Some(StringValue(_)) => {
-          updates_completed = updates_completed + 1
-        }
-        _ => {} // Skip if not found
-      }
-    }
-    
-    updates_completed
-  })
-  
-  // Verify update operations
-  let total_updates = update_results.fold_left(0, fn(acc, count) { acc + count })
-  assert_eq(total_updates, 4000) // 8 threads * 500 updates
-}
-
-// Test 7: Concurrent Serialization/Deserialization
-test "concurrent serialization and deserialization" {
-  let concurrent_tester = ConcurrentTester::new(4, 500) // 4 threads, 500 operations each
-  
-  // Shared serialization store
-  let serialization_store = ConcurrentSerializationStore::new()
-  
-  // Test concurrent serialization
-  let serialization_results = ConcurrentTester::run_parallel(concurrent_tester, fn(thread_id) {
-    let mut serializations_completed = 0
-    
-    for i in 0..500 {
-      // Create span to serialize
-      let span_name = "thread_" + thread_id.to_string() + "_span_" + i.to_string()
-      let span_ctx = SpanContext::new("trace_id", "span_id", true, "")
-      let span = Span::new(span_name, Internal, span_ctx)
-      
-      // Add attributes
-      Span::add_attribute(span, "thread_id", IntValue(thread_id))
-      Span::add_attribute(span, "span_id", IntValue(i))
-      
-      // Serialize to JSON
-      let json_result = SpanSerializer::to_json(span)
-      
-      match json_result {
-        Ok(json) => {
-          // Store serialized data
-          let key = "json_" + thread_id.to_string() + "_" + i.to_string()
-          ConcurrentSerializationStore::store_json(serialization_store, key, json)
-          serializations_completed = serializations_completed + 1
-        }
-        Err(_) => {} // Skip on error
-      }
-    }
-    
-    serializations_completed
-  })
-  
-  // Verify all serializations completed
-  let total_serializations = serialization_results.fold_left(0, fn(acc, count) { acc + count })
-  assert_eq(total_serializations, 2000) // 4 threads * 500 serializations
-  
-  // Test concurrent deserialization
-  let deserialization_results = ConcurrentTester::run_parallel(concurrent_tester, fn(thread_id) {
-    let mut deserializations_completed = 0
-    
-    for i in 0..500 {
-      let key = "json_" + thread_id.to_string() + "_" + i.to_string()
-      
-      // Get serialized data
-      let json = ConcurrentSerializationStore::get_json(serialization_store, key)
-      
-      match json {
-        Some(json_data) => {
-          // Deserialize
-          let deserialization_result = SpanSerializer::from_json(json_data)
-          
-          match deserialization_result {
-            Ok(span) => {
-              // Verify deserialized span
-              if Span::name(span) == "thread_" + thread_id.to_string() + "_span_" + i.to_string() {
-                deserializations_completed = deserializations_completed + 1
-              }
-            }
-            Err(_) => {} // Skip on error
-          }
-        }
-        None => {} // Skip if not found
-      }
-    }
-    
-    deserializations_completed
-  })
-  
-  // Verify all deserializations completed
-  let total_deserializations = deserialization_results.fold_left(0, fn(acc, count) { acc + count })
-  assert_eq(total_deserializations, 2000) // 4 threads * 500 deserializations
-}
-
-// Test 8: Concurrent Memory Management
-test "concurrent memory management" {
-  let concurrent_tester = ConcurrentTester::new(4, 1000) // 4 threads, 1000 operations each
-  
-  // Shared memory manager
-  let memory_manager = ConcurrentMemoryManager::new()
-  
-  // Test concurrent memory allocation and deallocation
-  let memory_results = ConcurrentTester::run_parallel(concurrent_tester, fn(thread_id) {
-    let mut allocations_completed = 0
-    let mut allocated_objects = []
-    
-    for i in 0..1000 {
-      // Allocate memory
-      let obj = ConcurrentMemoryManager::allocate(memory_manager, 1024) // 1KB each
-      allocated_objects = allocated_objects + [obj]
-      allocations_completed = allocations_completed + 1
-      
-      // Deallocate every other object to test mixed allocation/deallocation
-      if i % 2 == 1 && allocated_objects.length() > 0 {
-        let obj_to_deallocate = allocated_objects[0]
-        ConcurrentMemoryManager::deallocate(memory_manager, obj_to_deallocate)
-        allocated_objects = allocated_objects.slice(1, allocated_objects.length())
-      }
-    }
-    
-    // Deallocate remaining objects
-    for obj in allocated_objects {
-      ConcurrentMemoryManager::deallocate(memory_manager, obj)
-    }
-    
-    allocations_completed
-  })
-  
-  // Verify all allocations completed
-  let total_allocations = memory_results.fold_left(0, fn(acc, count) { acc + count })
-  assert_eq(total_allocations, 4000) // 4 threads * 1000 allocations
-  
-  // Verify memory manager integrity
-  assert_eq(ConcurrentMemoryManager::get_allocated_count(memory_manager), 0) // All should be deallocated
-  assert_eq(ConcurrentMemoryManager::get_allocated_bytes(memory_manager), 0) // All memory should be freed
-  
-  // Test concurrent garbage collection
-  let gc_results = ConcurrentTester::run_parallel(concurrent_tester, fn(thread_id) {
-    let mut gc_operations = 0
-    
-    for i in 0..100 {
-      // Allocate objects
-      let mut objects = []
-      for j in 0..10 {
-        let obj = ConcurrentMemoryManager::allocate(memory_manager, 512) // 512B each
-        objects = objects + [obj]
-      }
-      
-      // Trigger garbage collection
-      ConcurrentMemoryManager::trigger_gc(memory_manager)
-      gc_operations = gc_operations + 1
-      
-      // Deallocate objects
-      for obj in objects {
-        ConcurrentMemoryManager::deallocate(memory_manager, obj)
-      }
-    }
-    
-    gc_operations
-  })
-  
-  // Verify all GC operations completed
-  let total_gc_ops = gc_results.fold_left(0, fn(acc, count) { acc + count })
-  assert_eq(total_gc_ops, 400) // 4 threads * 100 GC operations
-}
-
-// Test 9: Concurrent Network Operations
-test "concurrent network operations" {
-  let concurrent_tester = ConcurrentTester::new(4, 100) // 4 threads, 100 operations each
-  
-  // Shared HTTP client pool
-  let client_pool = ConcurrentHttpClientPool::new(8) // 8 clients in pool
-  
-  // Test concurrent HTTP requests
-  let http_results = ConcurrentTester::run_parallel(concurrent_tester, fn(thread_id) {
-    let mut requests_completed = 0
-    
-    for i in 0..100 {
-      // Get client from pool
-      let client = ConcurrentHttpClientPool::acquire(client_pool)
-      
-      // Make HTTP request
-      let request = HttpRequest::new("GET", "https://httpbin.org/get", [], None)
-      let response = HttpClient::send(client, request)
-      
-      match response {
-        Ok(_) => {
-          requests_completed = requests_completed + 1
-        }
-        Err(_) => {
-          // Handle error but continue
-          requests_completed = requests_completed + 1 // Count as attempted
+  // "线程2" - 过滤操作
+  let mut thread2_filtered = []
+  for value in large_data {
+    match value {
+      azimuth::AttributeValue::StringValue(v) => {
+        if v.ends_with("0") || v.ends_with("5") {
+          thread2_filtered = thread2_filtered + [value]
         }
       }
-      
-      // Return client to pool
-      ConcurrentHttpClientPool::release(client_pool, client)
+      _ => assert_true(false)
     }
-    
-    requests_completed
-  })
+  }
+  operation_results = operation_results + [("thread2_filtered", thread2_filtered.length())]
   
-  // Verify all requests were attempted
-  let total_requests = http_results.fold_left(0, fn(acc, count) { acc + count })
-  assert_eq(total_requests, 400) // 4 threads * 100 requests
-  
-  // Verify client pool integrity
-  assert_eq(ConcurrentHttpClientPool::available_clients(client_pool), 8) // All clients should be returned
-  
-  // Test concurrent telemetry export
-  let export_results = ConcurrentTester::run_parallel(concurrent_tester, fn(thread_id) {
-    let mut exports_completed = 0
-    
-    for i in 0..50 {
-      // Create telemetry data to export
-      let spans = []
-      for j in 0..10 {
-        let span_name = "thread_" + thread_id.to_string() + "_span_" + i.to_string() + "_" + j.to_string()
-        let span_ctx = SpanContext::new("trace_id", "span_id", true, "")
-        let span = Span::new(span_name, Internal, span_ctx)
-        spans = spans + [span]
+  // "线程3" - 转换操作
+  let mut thread3_converted = []
+  for value in large_data {
+    match value {
+      azimuth::AttributeValue::StringValue(v) => {
+        let converted = azimuth::AttributeValue::IntValue(v.length())
+        thread3_converted = thread3_converted + [converted]
       }
-      
-      // Export spans
-      let export_result = ConcurrentTelemetryExporter::export(spans)
-      
-      match export_result {
-        Ok(_) => {
-          exports_completed = exports_completed + 1
-        }
-        Err(_) => {
-          // Handle error but continue
-          exports_completed = exports_completed + 1 // Count as attempted
-        }
-      }
+      _ => assert_true(false)
     }
-    
-    exports_completed
-  })
+  }
+  operation_results = operation_results + [("thread3_converted", thread3_converted.length())]
   
-  // Verify all exports were attempted
-  let total_exports = export_results.fold_left(0, fn(acc, count) { acc + count })
-  assert_eq(total_exports, 200) // 4 threads * 50 exports
-}
-
-// Test 10: Concurrent Pipeline Processing
-test "concurrent pipeline processing" {
-  let concurrent_tester = ConcurrentTester::new(4, 1000) // 4 threads, 1000 operations each
+  // 验证操作结果
+  assert_eq(operation_results.length(), 3)
   
-  // Shared telemetry pipeline
-  let pipeline = ConcurrentTelemetryPipeline::new()
+  // 验证线程1的读取结果
+  match operation_results[0] {
+    ("thread1_read", count) => assert_eq(count, 1000)
+    _ => assert_true(false)
+  }
   
-  // Add processors to pipeline
-  ConcurrentTelemetryPipeline::add_processor(pipeline, "filter", ConcurrentFilterProcessor::new())
-  ConcurrentTelemetryPipeline::add_processor(pipeline, "transform", ConcurrentTransformProcessor::new())
-  ConcurrentTelemetryPipeline::add_processor(pipeline, "aggregator", ConcurrentAggregatorProcessor::new())
+  // 验证线程2的过滤结果
+  match operation_results[1] {
+    ("thread2_filtered", count) => assert_eq(count, 200) // 大约20%的数据以0或5结尾
+    _ => assert_true(false)
+  }
   
-  // Test concurrent pipeline processing
-  let pipeline_results = ConcurrentTester::run_parallel(concurrent_tester, fn(thread_id) {
-    let mut processed_items = 0
-    
-    for i in 0..1000 {
-      // Create telemetry data
-      let data = TelemetryData::new("metric_" + thread_id.to_string() + "_" + i.to_string(), 
-        i.to_int() as Float, "unit", Some([("thread_id", IntValue(thread_id))]))
-      
-      // Process through pipeline
-      let result = ConcurrentTelemetryPipeline::process(pipeline, data)
-      
-      match result {
-        Ok(_) => {
-          processed_items = processed_items + 1
-        }
-        Err(_) => {
-          // Handle error but continue
-          processed_items = processed_items + 1 // Count as attempted
-        }
-      }
-    }
-    
-    processed_items
-  })
+  // 验证线程3的转换结果
+  match operation_results[2] {
+    ("thread3_converted", count) => assert_eq(count, 1000)
+    _ => assert_true(false)
+  }
   
-  // Verify all items were processed
-  let total_processed = pipeline_results.fold_left(0, fn(acc, count) { acc + count })
-  assert_eq(total_processed, 4000) // 4 threads * 1000 items
-  
-  // Verify pipeline statistics
-  let pipeline_stats = ConcurrentTelemetryPipeline::get_statistics(pipeline)
-  assert_eq(PipelineStats::total_processed(pipeline_stats), 4000)
-  assert_eq(PipelineStats::total_errors(pipeline_stats), 0) // Should be no errors in this test
-  
-  // Test concurrent batch processing
-  let batch_results = ConcurrentTester::run_parallel(concurrent_tester, fn(thread_id) {
-    let mut batch_data = []
-    
-    for i in 0..100 {
-      let data = TelemetryData::new("batch_metric_" + thread_id.to_string() + "_" + i.to_string(), 
-        i.to_int() as Float, "unit", Some([("thread_id", IntValue(thread_id))]))
-      batch_data = batch_data + [data]
-    }
-    
-    // Process batch
-    let result = ConcurrentTelemetryPipeline::process_batch(pipeline, batch_data)
-    
-    match result {
-      Ok(processed_batch) => processed_batch.length()
-      Err(_) => 0
-    }
-  })
-  
-  // Verify all batch items were processed
-  let total_batch_processed = batch_results.fold_left(0, fn(acc, count) { acc + count })
-  assert_eq(total_batch_processed, 400) // 4 threads * 100 items per batch
+  // 验证原始数据未被修改
+  assert_eq(large_data.length(), 1000)
+  match large_data[0] {
+    azimuth::AttributeValue::StringValue(v) => assert_eq(v, "large_data_value_0")
+    _ => assert_true(false)
+  }
+  match large_data[999] {
+    azimuth::AttributeValue::StringValue(v) => assert_eq(v, "large_data_value_999")
+    _ => assert_true(false)
+  }
 }

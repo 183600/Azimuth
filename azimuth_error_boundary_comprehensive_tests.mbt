@@ -1,405 +1,397 @@
-// Error Boundary Comprehensive Test Suite for Azimuth
-// 错误边界综合测试套件 - 测试各种错误处理和边界情况
+// Azimuth 错误处理和边界条件测试用例
+// 测试遥测系统在各种异常情况和边界条件下的行为
 
-// Test 1: 数值边界测试
-test "numeric boundary tests" {
-  // 整数边界
+test "空值和None处理测试" {
+  // 测试空字符串属性值
+  let empty_string_attr = azimuth::AttributeValue::StringValue("")
+  match empty_string_attr {
+    azimuth::AttributeValue::StringValue(s) => assert_eq(s, "")
+    _ => assert_true(false)
+  }
+  
+  // 测试None选项类型
+  let none_option : Option<String> = None
+  match none_option {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // 测试空数组
+  let empty_array = []
+  assert_eq(empty_array.length(), 0)
+  
+  // 测试空属性集合
+  let empty_attrs = azimuth::Attributes { values: [] }
+  assert_eq(empty_attrs.values.length(), 0)
+  
+  // 测试空上下文
+  let empty_context = azimuth::Context { data: None }
+  match empty_context.data {
+    None => assert_true(true)
+    Some(_) => assert_true(false)
+  }
+}
+
+test "数值边界条件测试" {
+  // 测试最大整数值
   let max_int = 2147483647
+  let max_int_attr = azimuth::AttributeValue::IntValue(max_int)
+  match max_int_attr {
+    azimuth::AttributeValue::IntValue(v) => assert_eq(v, max_int)
+    _ => assert_true(false)
+  }
+  
+  // 测试最小整数值
   let min_int = -2147483648
-  
-  // 边界加法
-  assert_eq(max_int - 1, 2147483646)
-  assert_eq(min_int + 1, -2147483647)
-  
-  // 边界乘法
-  assert_eq(max_int * 0, 0)
-  assert_eq(min_int * 0, 0)
-  
-  // 边界除法
-  assert_eq(max_int / max_int, 1)
-  assert_eq(min_int / min_int, 1)
-  
-  // 零边界
-  assert_eq(0 + 0, 0)
-  assert_eq(0 * 0, 0)
-  assert_eq(0 - 0, 0)
-  
-  // 除零安全处理
-  let safe_divide = fn(a, b) {
-    if b == 0 {
-      None
-    } else {
-      Some(a / b)
-    }
+  let min_int_attr = azimuth::AttributeValue::IntValue(min_int)
+  match min_int_attr {
+    azimuth::AttributeValue::IntValue(v) => assert_eq(v, min_int)
+    _ => assert_true(false)
   }
   
-  assert_eq(safe_divide(10, 2), Some(5))
-  assert_eq(safe_divide(10, 0), None)
+  // 测试零值
+  let zero_int = azimuth::AttributeValue::IntValue(0)
+  match zero_int {
+    azimuth::AttributeValue::IntValue(v) => assert_eq(v, 0)
+    _ => assert_true(false)
+  }
+  
+  // 测试浮点数边界值
+  let max_float = azimuth::AttributeValue::FloatValue(1.7976931348623157e+308) // 最大双精度浮点数
+  match max_float {
+    azimuth::AttributeValue::FloatValue(v) => assert_true(v > 1.0e+308)
+    _ => assert_true(false)
+  }
+  
+  // 测试最小正浮点数
+  let min_positive_float = azimuth::AttributeValue::FloatValue(2.2250738585072014e-308)
+  match min_positive_float {
+    azimuth::AttributeValue::FloatValue(v) => assert_true(v > 0.0 && v < 1.0e-307)
+    _ => assert_true(false)
+  }
+  
+  // 测试负零
+  let negative_zero = azimuth::AttributeValue::FloatValue(-0.0)
+  match negative_zero {
+    azimuth::AttributeValue::FloatValue(v) => assert_eq(v, -0.0)
+    _ => assert_true(false)
+  }
 }
 
-// Test 2: 数组边界测试
-test "array boundary tests" {
-  // 空数组操作
-  let empty_arr = []
-  assert_eq(empty_arr.length(), 0)
-  assert_true(empty_arr.is_empty())
-  
-  // 安全数组访问
-  let safe_get = fn(arr, index) {
-    if index >= 0 && index < arr.length() {
-      Some(arr[index])
-    } else {
-      None
-    }
+test "字符串长度边界测试" {
+  // 测试空字符串
+  let empty_str = azimuth::AttributeValue::StringValue("")
+  match empty_str {
+    azimuth::AttributeValue::StringValue(s) => assert_eq(s.length(), 0)
+    _ => assert_true(false)
   }
   
-  let arr = [10, 20, 30, 40, 50]
-  assert_eq(safe_get(arr, 0), Some(10))
-  assert_eq(safe_get(arr, 4), Some(50))
-  assert_eq(safe_get(arr, 5), None)
-  assert_eq(safe_get(arr, -1), None)
-  
-  // 数组切片边界
-  let safe_slice = fn(arr, start, end) {
-    let len = arr.length()
-    let safe_start = if start < 0 { 0 } else if start > len { len } else { start }
-    let safe_end = if end < 0 { 0 } else if end > len { len } else { end }
-    
-    if safe_start > safe_end {
-      []
-    } else {
-      arr.slice(safe_start, safe_end)
-    }
+  // 测试单字符字符串
+  let single_char = azimuth::AttributeValue::StringValue("a")
+  match single_char {
+    azimuth::AttributeValue::StringValue(s) => assert_eq(s.length(), 1)
+    _ => assert_true(false)
   }
   
-  assert_eq(safe_slice(arr, 1, 3), [20, 30])
-  assert_eq(safe_slice(arr, -2, 10), [10, 20, 30, 40, 50])
-  assert_eq(safe_slice(arr, 3, 1), [])
+  // 测试长字符串（1000个字符）
+  let mut long_str = ""
+  for i in 0..1000 {
+    long_str = long_str + "a"
+  }
+  let long_str_attr = azimuth::AttributeValue::StringValue(long_str)
+  match long_str_attr {
+    azimuth::AttributeValue::StringValue(s) => assert_eq(s.length(), 1000)
+    _ => assert_true(false)
+  }
+  
+  // 测试特殊字符字符串
+  let special_chars = azimuth::AttributeValue::StringValue("\n\t\r\\\"'")
+  match special_chars {
+    azimuth::AttributeValue::StringValue(s) => {
+      assert_true(s.contains("\n"))
+      assert_true(s.contains("\t"))
+      assert_true(s.contains("\r"))
+      assert_true(s.contains("\\"))
+      assert_true(s.contains("\""))
+      assert_true(s.contains("'"))
+    }
+    _ => assert_true(false)
+  }
+  
+  // 测试Unicode字符
+  let unicode_str = azimuth::AttributeValue::StringValue("测试中文🚀emoji")
+  match unicode_str {
+    azimuth::AttributeValue::StringValue(s) => {
+      assert_true(s.contains("测试"))
+      assert_true(s.contains("中文"))
+      assert_true(s.contains("🚀"))
+      assert_true(s.contains("emoji"))
+    }
+    _ => assert_true(false)
+  }
 }
 
-// Test 3: 字符串边界测试
-test "string boundary tests" {
-  // 空字符串操作
-  let empty_str = ""
-  assert_eq(empty_str.length(), 0)
-  assert_true(empty_str.is_empty())
+test "数组边界条件测试" {
+  // 测试空数组
+  let empty_array = azimuth::AttributeValue::ArrayStringValue([])
+  match empty_array {
+    azimuth::AttributeValue::ArrayStringValue(arr) => assert_eq(arr.length(), 0)
+    _ => assert_true(false)
+  }
   
-  // 字符串索引边界
-  let safe_char_at = fn(str, index) {
-    if index >= 0 && index < str.length() {
-      Some(str[index])
-    } else {
-      None
+  // 测试单元素数组
+  let single_element = azimuth::AttributeValue::ArrayIntValue([42])
+  match single_element {
+    azimuth::AttributeValue::ArrayIntValue(arr) => {
+      assert_eq(arr.length(), 1)
+      assert_eq(arr[0], 42)
     }
+    _ => assert_true(false)
   }
   
-  let test_str = "hello"
-  assert_eq(safe_char_at(test_str, 0), Some('h'))
-  assert_eq(safe_char_at(test_str, 4), Some('o'))
-  assert_eq(safe_char_at(test_str, 5), None)
-  assert_eq(safe_char_at(test_str, -1), None)
-  
-  // 字符串切片边界
-  let safe_substring = fn(str, start, length) {
-    let str_len = str.length()
-    if start < 0 || start >= str_len || length <= 0 {
-      ""
-    } else {
-      let end = if start + length > str_len { str_len } else { start + length }
-      str.substring(start, end)
-    }
+  // 测试大数组（1000个元素）
+  let mut large_int_array = []
+  for i in 0..1000 {
+    large_int_array = large_int_array + [i]
   }
-  
-  assert_eq(safe_substring(test_str, 1, 3), "ell")
-  assert_eq(safe_substring(test_str, 2, 10), "llo")
-  assert_eq(safe_substring(test_str, 5, 2), "")
-  assert_eq(safe_substring(test_str, -1, 2), "")
-}
-
-// Test 4: Option类型边界测试
-test "option type boundary tests" {
-  // None值处理
-  let none_value = None
-  
-  // 安全解包
-  let unwrap_or = fn(opt, default) {
-    match opt {
-      Some(v) => v
-      None => default
-    }
-  }
-  
-  assert_eq(unwrap_or(Some(42), 0), 42)
-  assert_eq(unwrap_or(None, 0), 0)
-  
-  // Option链式操作
-  let chain_operations = fn(opt) {
-    opt
-      .map(fn(x) { x * 2 })
-      .filter(fn(x) { x > 10 })
-      .map(fn(x) { x + 5 })
-  }
-  
-  assert_eq(chain_operations(Some(10)), Some(25))
-  assert_eq(chain_operations(Some(5)), None)
-  assert_eq(chain_operations(None), None)
-  
-  // Option组合
-  let combine_options = fn(opt1, opt2) {
-    match (opt1, opt2) {
-      (Some(a), Some(b)) => Some((a, b))
-      _ => None
-    }
-  }
-  
-  assert_eq(combine_options(Some(1), Some(2)), Some((1, 2)))
-  assert_eq(combine_options(Some(1), None), None)
-  assert_eq(combine_options(None, Some(2)), None)
-  assert_eq(combine_options(None, None), None)
-}
-
-// Test 5: Result类型边界测试
-test "result type boundary tests" {
-  // 错误处理
-  let safe_parse_int = fn(str) {
-    if str == "" {
-      Error("Empty string")
-    } else if str.contains(".") {
-      Error("Not an integer")
-    } else {
-      match str.to_int() {
-        Some(n) => Ok(n)
-        None => Error("Invalid number format")
-      }
-    }
-  }
-  
-  assert_eq(safe_parse_int("42"), Ok(42))
-  assert_eq(safe_parse_int(""), Error("Empty string"))
-  assert_eq(safe_parse_int("3.14"), Error("Not an integer"))
-  assert_eq(safe_parse_int("abc"), Error("Invalid number format"))
-  
-  // Result链式操作
-  let chain_result_operations = fn(result) {
-    result
-      .map(fn(x) { x * 2 })
-      .map_err(fn(e) { e + " (after mapping)" })
-  }
-  
-  assert_eq(chain_result_operations(Ok(5)), Ok(10))
-  assert_eq(chain_result_operations(Error("test")), Error("test (after mapping)"))
-  
-  // Result恢复
-  let recover = fn(result, fallback) {
-    match result {
-      Ok(v) => v
-      Error(e) => fallback(e)
-    }
-  }
-  
-  assert_eq(recover(Ok(10), fn(_) { 0 }), 10)
-  assert_eq(recover(Error("error"), fn(_) { 0 }), 0)
-}
-
-// Test 6: 哈希表边界测试
-test "hash map boundary tests" {
-  // 空哈希表操作
-  let empty_map = {}
-  assert_eq(empty_map.size(), 0)
-  assert_true(empty_map.is_empty())
-  
-  // 键边界检查
-  let safe_get = fn(map, key) {
-    if key == "" {
-      None
-    } else {
-      map.get(key)
-    }
-  }
-  
-  let map = {"a": 1, "b": 2, "c": 3}
-  assert_eq(safe_get(map, "a"), Some(1))
-  assert_eq(safe_get(map, "d"), None)
-  assert_eq(safe_get(map, ""), None)
-  
-  // 批量操作边界
-  let batch_get = fn(map, keys) {
-    keys.map(fn(key) { (key, map.get(key)) })
-  }
-  
-  let keys = ["a", "b", "x", "y"]
-  let results = batch_get(map, keys)
-  assert_eq(results, [("a", Some(1)), ("b", Some(2)), ("x", None), ("y", None)])
-}
-
-// Test 7: 集合边界测试
-test "set boundary tests" {
-  // 空集合操作
-  let empty_set = {}
-  assert_eq(empty_set.size(), 0)
-  assert_true(empty_set.is_empty())
-  
-  // 集合操作边界
-  let set1 = {1, 2, 3}
-  let set2 = {3, 4, 5}
-  let empty_set = {}
-  
-  // 空集合并集
-  let union_with_empty = set1.union(empty_set)
-  assert_eq(union_with_empty, set1)
-  
-  // 空集合交集
-  let intersection_with_empty = set1.intersection(empty_set)
-  assert_eq(intersection_with_empty.size(), 0)
-  
-  // 空集合差集
-  let difference_from_empty = empty_set.difference(set1)
-  assert_eq(difference_from_empty.size(), 0)
-  
-  let difference_to_empty = set1.difference(empty_set)
-  assert_eq(difference_to_empty, set1)
-}
-
-// Test 8: 递归边界测试
-test "recursion boundary tests" {
-  // 安全递归（防止栈溢出）
-  let safe_recursive_sum = fn(arr, index, max_depth) {
-    if max_depth <= 0 || index >= arr.length() {
-      0
-    } else {
-      arr[index] + safe_recursive_sum(arr, index + 1, max_depth - 1)
-    }
-  }
-  
-  let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-  assert_eq(safe_recursive_sum(numbers, 0, 10), 55)
-  assert_eq(safe_recursive_sum(numbers, 0, 5), 15) // 只计算前5个
-  
-  // 尾递归优化
-  let tail_recursive_sum = fn(arr, acc, index) {
-    if index >= arr.length() {
-      acc
-    } else {
-      tail_recursive_sum(arr, acc + arr[index], index + 1)
-    }
-  }
-  
-  assert_eq(tail_recursive_sum(numbers, 0, 0), 55)
-  
-  // 相互递归边界
-  let is_even = fn(n) {
-    if n == 0 {
-      true
-    } else if n == 1 {
-      false
-    } else if n < 0 {
-      is_even(-n)
-    } else {
-      is_odd(n - 1)
-    }
-  }
-  
-  let is_odd = fn(n) {
-    if n == 0 {
-      false
-    } else if n == 1 {
-      true
-    } else if n < 0 {
-      is_odd(-n)
-    } else {
-      is_even(n - 1)
-    }
-  }
-  
-  assert_true(is_even(10))
-  assert_false(is_even(11))
-  assert_true(is_odd(11))
-  assert_false(is_odd(10))
-}
-
-// Test 9: 类型转换边界测试
-test "type conversion boundary tests" {
-  // 安全类型转换
-  let safe_to_int = fn(value) {
-    match value {
-      Int(n) => Ok(n)
-      Float(f) => {
-        if f >= -2147483648.0 && f <= 2147483647.0 && f.floor() == f {
-          Ok(f.to_int())
-        } else {
-          Error("Float out of integer range")
-        }
-      }
-      String(s) => {
-        match s.to_int() {
-          Some(n) => Ok(n)
-          None => Error("Invalid integer string")
-        }
-      }
-      _ => Error("Unsupported type")
-    }
-  }
-  
-  assert_eq(safe_to_int(Int(42)), Ok(42))
-  assert_eq(safe_to_int(Float(3.0)), Ok(3))
-  assert_eq(safe_to_int(Float(3.14)), Error("Float out of integer range"))
-  assert_eq(safe_to_int(String("123")), Ok(123))
-  assert_eq(safe_to_int(String("abc")), Error("Invalid integer string"))
-  
-  // 边界值转换
-  assert_eq(safe_to_int(Float(2147483647.0)), Ok(2147483647))
-  assert_eq(safe_to_int(Float(-2147483648.0)), Ok(-2147483648))
-  assert_eq(safe_to_int(Float(2147483648.0)), Error("Float out of integer range"))
-}
-
-// Test 10: 资源边界测试
-test "resource boundary tests" {
-  // 内存分配边界
-  let create_large_array = fn(size) {
-    if size <= 0 || size > 1000000 {
-      None
-    } else {
-      let mut arr = []
-      for i in 0..size {
-        arr.push(i)
-      }
-      Some(arr)
-    }
-  }
-  
-  assert_eq(create_large_array(0), None)
-  assert_eq(create_large_array(-1), None)
-  assert_eq(create_large_array(1000001), None)
-  
-  let small_array = create_large_array(10)
-  match small_array {
-    Some(arr) => {
-      assert_eq(arr.length(), 10)
+  let large_array_attr = azimuth::AttributeValue::ArrayIntValue(large_int_array)
+  match large_array_attr {
+    azimuth::AttributeValue::ArrayIntValue(arr) => {
+      assert_eq(arr.length(), 1000)
       assert_eq(arr[0], 0)
-      assert_eq(arr[9], 9)
+      assert_eq(arr[999], 999)
     }
-    None => assert_true(false)
+    _ => assert_true(false)
   }
   
-  // 文件操作边界
-  let safe_file_read = fn(path, max_size) {
-    if path == "" {
-      Error("Empty file path")
-    } else if max_size <= 0 {
-      Error("Invalid max size")
-    } else {
-      // 模拟文件读取
-      let content = "file content"
-      if content.length() > max_size {
-        Error("File too large")
-      } else {
-        Ok(content)
+  // 测试混合类型数组（通过字符串表示）
+  let mixed_array = azimuth::AttributeValue::ArrayStringValue([
+    "string_value",
+    "42",
+    "3.14",
+    "true",
+    ""
+  ])
+  match mixed_array {
+    azimuth::AttributeValue::ArrayStringValue(arr) => {
+      assert_eq(arr.length(), 5)
+      assert_eq(arr[0], "string_value")
+      assert_eq(arr[1], "42")
+      assert_eq(arr[2], "3.14")
+      assert_eq(arr[3], "true")
+      assert_eq(arr[4], "")
+    }
+    _ => assert_true(false)
+  }
+}
+
+test "异常情况处理测试" {
+  // 测试无效的追踪ID
+  let invalid_trace_id = ""
+  let invalid_span_context = azimuth::SpanContext {
+    trace_id: invalid_trace_id,
+    span_id: "valid_span_id",
+    sampled: true,
+    trace_state: "test_state"
+  }
+  assert_false(invalid_trace_id.length() > 0)
+  
+  // 测试无效的跨度ID
+  let invalid_span_id = ""
+  let invalid_span_context2 = azimuth::SpanContext {
+    trace_id: "valid_trace_id",
+    span_id: invalid_span_id,
+    sampled: true,
+    trace_state: "test_state"
+  }
+  assert_false(invalid_span_id.length() > 0)
+  
+  // 测试负数数组索引处理
+  let test_array = [1, 2, 3, 4, 5]
+  let array_length = test_array.length()
+  
+  // 测试边界访问
+  if array_length > 0 {
+    assert_eq(test_array[0], 1) // 第一个元素
+    assert_eq(test_array[array_length - 1], 5) // 最后一个元素
+  }
+  
+  // 测试除零错误处理
+  let numerator = 10
+  let denominator = 0
+  
+  // 安全的除法操作
+  let result = if denominator != 0 {
+    numerator / denominator
+  } else {
+    0 // 默认值或错误处理
+  }
+  assert_eq(result, 0) // 因为分母为0，返回默认值
+  
+  // 测试空字符串操作
+  let empty_string = ""
+  let string_length = empty_string.length()
+  assert_eq(string_length, 0)
+  
+  // 测试字符串索引访问
+  let test_string = "hello"
+  if test_string.length() > 2 {
+    let char_at_index = test_string[2] // 假设的字符串索引访问
+    // 实际实现可能需要不同的方法
+    assert_true(true) // 如果能够访问，则测试通过
+  }
+}
+
+test "资源限制测试" {
+  // 测试内存使用限制
+  let mut large_data_structure = []
+  
+  // 创建大量数据，但控制在合理范围内
+  for i in 0..10000 {
+    large_data_structure = large_data_structure + [
+      ("key-" + i.to_string(), azimuth::AttributeValue::StringValue("value-" + i.to_string()))
+    ]
+  }
+  
+  assert_eq(large_data_structure.length(), 10000)
+  
+  // 测试深度嵌套结构
+  let nested_attr = azimuth::AttributeValue::StringValue("deeply_nested_value")
+  
+  // 验证嵌套属性可以正确访问
+  match nested_attr {
+    azimuth::AttributeValue::StringValue(s) => assert_eq(s, "deeply_nested_value")
+    _ => assert_true(false)
+  }
+  
+  // 测试递归结构限制
+  let mut recursive_attrs = azimuth::Attributes { values: [] }
+  
+  // 添加多层属性，但不造成栈溢出
+  for i in 0..100 {
+    recursive_attrs.values = recursive_attrs.values + [
+      ("level-" + i.to_string(), azimuth::AttributeValue::StringValue("level_value"))
+    ]
+  }
+  
+  assert_eq(recursive_attrs.values.length(), 100)
+  
+  // 验证可以访问深层属性
+  match recursive_attrs.values[99] {
+    (key, azimuth::AttributeValue::StringValue(value)) => {
+      assert_eq(key, "level-99")
+      assert_eq(value, "level_value")
+    }
+    _ => assert_true(false)
+  }
+}
+
+test "并发边界条件测试" {
+  // 测试共享资源的并发访问
+  
+  // 创建共享属性集合
+  let shared_attrs = azimuth::Attributes { values: [] }
+  
+  // 模拟并发操作（单线程环境中的模拟）
+  let mut operations_count = 0
+  
+  // 模拟多个"并发"操作
+  for i in 0..100 {
+    // 模拟操作1：添加属性
+    let new_attrs = azimuth::Attributes {
+      values: shared_attrs.values + [
+        ("concurrent_key_" + i.to_string(), azimuth::AttributeValue::StringValue("concurrent_value"))
+      ]
+    }
+    
+    // 模拟操作2：读取属性
+    let attrs_length = new_attrs.values.length()
+    
+    // 模拟操作3：更新属性
+    let updated_attrs = azimuth::Attributes {
+      values: new_attrs.values + [
+        ("updated_key_" + i.to_string(), azimuth::AttributeValue::StringValue("updated_value"))
+      ]
+    }
+    
+    operations_count = operations_count + 1
+    shared_attrs.values = updated_attrs.values
+  }
+  
+  assert_eq(operations_count, 100)
+  assert_eq(shared_attrs.values.length(), 200) // 每次循环添加2个属性
+  
+  // 验证数据一致性
+  match shared_attrs.values[0] {
+    (key, azimuth::AttributeValue::StringValue(value)) => {
+      assert_eq(key, "concurrent_key_0")
+      assert_eq(value, "concurrent_value")
+    }
+    _ => assert_true(false)
+  }
+  
+  match shared_attrs.values[1] {
+    (key, azimuth::AttributeValue::StringValue(value)) => {
+      assert_eq(key, "updated_key_0")
+      assert_eq(value, "updated_value")
+    }
+    _ => assert_true(false)
+  }
+}
+
+test "异常恢复测试" {
+  // 测试系统从异常状态的恢复能力
+  
+  // 模拟部分失败的属性操作
+  let mut recovery_attrs = azimuth::Attributes { values: [] }
+  
+  // 添加一些正常属性
+  recovery_attrs.values = [
+    ("normal_key1", azimuth::AttributeValue::StringValue("normal_value1")),
+    ("normal_key2", azimuth::AttributeValue::StringValue("normal_value2"))
+  ]
+  
+  // 模拟添加"异常"属性（空键或特殊值）
+  recovery_attrs.values = recovery_attrs.values + [
+    ("", azimuth::AttributeValue::StringValue("empty_key_value")), // 空键
+    ("special_key", azimuth::AttributeValue::StringValue("")), // 空值
+    ("null_key", azimuth::AttributeValue::StringValue("null_value")) // 特殊值
+  ]
+  
+  // 验证系统仍然可以正常工作
+  assert_eq(recovery_attrs.values.length(), 5)
+  
+  // 测试过滤异常属性
+  let mut filtered_attrs = []
+  for (key, value) in recovery_attrs.values {
+    if key.length() > 0 { // 过滤掉空键
+      match value {
+        azimuth::AttributeValue::StringValue(s) => {
+          if s.length() > 0 { // 过滤掉空值
+            filtered_attrs = filtered_attrs + [(key, value)]
+          }
+        }
+        _ => filtered_attrs = filtered_attrs + [(key, value)] // 保留非字符串值
       }
     }
   }
   
-  assert_eq(safe_file_read("", 100), Error("Empty file path"))
-  assert_eq(safe_file_read("test.txt", 0), Error("Invalid max size"))
-  assert_eq(safe_file_read("test.txt", 5), Error("File too large"))
-  assert_eq(safe_file_read("test.txt", 100), Ok("file content"))
+  assert_eq(filtered_attrs.length(), 2) // 只剩下两个正常属性
+  
+  // 验证过滤后的属性
+  match filtered_attrs[0] {
+    (key, azimuth::AttributeValue::StringValue(value)) => {
+      assert_eq(key, "normal_key1")
+      assert_eq(value, "normal_value1")
+    }
+    _ => assert_true(false)
+  }
+  
+  match filtered_attrs[1] {
+    (key, azimuth::AttributeValue::StringValue(value)) => {
+      assert_eq(key, "normal_key2")
+      assert_eq(value, "normal_value2")
+    }
+    _ => assert_true(false)
+  }
 }

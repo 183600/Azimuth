@@ -1,453 +1,672 @@
-// 安全性测试用例
-// 测试Azimuth遥测系统的安全性功能
+// Azimuth 安全性测试用例
+// 测试遥测系统的安全功能，包括数据加密、访问控制、身份验证和安全审计
 
-test "敏感数据过滤和脱敏" {
-  // 测试敏感数据的过滤和脱敏
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "security.test")
+test "数据加密测试" {
+  // 创建加密管理器
+  let encryption_manager = azimuth::EncryptionManager::new("encryption-key-12345678901234567890")
   
-  // 创建包含敏感数据的span
-  let span = Tracer::start_span(tracer, "secure.operation")
+  // 测试字符串加密
+  let original_string = "sensitive telemetry data"
+  let encrypted_string = azimuth::EncryptionManager::encrypt_string(encryption_manager, original_string)
   
-  // 添加正常属性
-  Span::set_attribute(span, "operation.type", "user.authentication")
-  Span::set_attribute(span, "service.name", "auth.service")
-  Span::set_attribute(span, "user.id", "user-12345")
+  // 验证加密结果
+  assert_not_eq(encrypted_string, original_string)
+  assert_true(encrypted_string.length() > 0)
+  assert_false(encrypted_string.contains("sensitive"))
+  assert_false(encrypted_string.contains("telemetry"))
+  assert_false(encrypted_string.contains("data"))
   
-  // 添加敏感属性（应被过滤或脱敏）
-  Span::set_attribute(span, "user.password", "secret-password-123")
-  Span::set_attribute(span, "user.email", "user@example.com")
-  Span::set_attribute(span, "user.phone", "+1234567890")
-  Span::set_attribute(span, "credit.card.number", "4111-1111-1111-1111")
-  Span::set_attribute(span, "social.security.number", "123-45-6789")
-  Span::set_attribute(span, "api.key", "sk-1234567890abcdef")
+  // 测试字符串解密
+  let decrypted_string = azimuth::EncryptionManager::decrypt_string(encryption_manager, encrypted_string)
   
-  // 添加包含敏感数据的事件
-  Span::add_event(span, "login.attempt", [
-    ("username", "john.doe"),
-    ("password", "my-secret-password"),
-    ("ip.address", "192.168.1.100"),
-    ("user.agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
-  ])
+  // 验证解密结果
+  assert_eq(decrypted_string, original_string)
   
-  // 应用安全过滤器
-  let secure_span = SecurityFilter::apply(span)
+  // 测试整数加密
+  let original_int = 123456789
+  let encrypted_int = azimuth::EncryptionManager::encrypt_int(encryption_manager, original_int)
   
-  // 验证敏感属性被过滤或脱敏
-  let filtered_password = Span::get_attribute(secure_span, "user.password")
-  let filtered_email = Span::get_attribute(secure_span, "user.email")
-  let filtered_phone = Span::get_attribute(secure_span, "user.phone")
-  let filtered_credit_card = Span::get_attribute(secure_span, "credit.card.number")
-  let filtered_ssn = Span::get_attribute(secure_span, "social.security.number")
-  let filtered_api_key = Span::get_attribute(secure_span, "api.key")
+  // 验证整数加密结果
+  assert_not_eq(encrypted_int, original_int)
   
-  // 验证敏感数据被正确处理
-  match filtered_password {
-    Some(value) => assert_true(value != "secret-password-123")  // 应被脱敏
-    None => assert_true(true)  // 或被完全过滤
-    _ => assert_true(false)
+  // 测试整数解密
+  let decrypted_int = azimuth::EncryptionManager::decrypt_int(encryption_manager, encrypted_int)
+  
+  // 验证整数解密结果
+  assert_eq(decrypted_int, original_int)
+  
+  // 测试布尔值加密
+  let original_bool = true
+  let encrypted_bool = azimuth::EncryptionManager::encrypt_bool(encryption_manager, original_bool)
+  
+  // 验证布尔值加密结果
+  assert_not_eq(encrypted_bool, original_bool)
+  
+  // 测试布尔值解密
+  let decrypted_bool = azimuth::EncryptionManager::decrypt_bool(encryption_manager, encrypted_bool)
+  
+  // 验证布尔值解密结果
+  assert_eq(decrypted_bool, original_bool)
+  
+  // 测试浮点数加密
+  let original_float = 3.14159265359
+  let encrypted_float = azimuth::EncryptionManager::encrypt_float(encryption_manager, original_float)
+  
+  // 验证浮点数加密结果
+  assert_not_eq(encrypted_float, original_float)
+  
+  // 测试浮点数解密
+  let decrypted_float = azimuth::EncryptionManager::decrypt_float(encryption_manager, encrypted_float)
+  
+  // 验证浮点数解密结果
+  assert_eq(decrypted_float, original_float)
+  
+  // 测试数组加密
+  let original_array = ["item1", "item2", "item3"]
+  let encrypted_array = azimuth::EncryptionManager::encrypt_string_array(encryption_manager, original_array)
+  
+  // 验证数组加密结果
+  assert_not_eq(encrypted_array.length(), original_array.length())
+  
+  // 测试数组解密
+  let decrypted_array = azimuth::EncryptionManager::decrypt_string_array(encryption_manager, encrypted_array)
+  
+  // 验证数组解密结果
+  assert_eq(decrypted_array.length(), original_array.length())
+  for i in 0..decrypted_array.length() {
+    assert_eq(decrypted_array[i], original_array[i])
   }
-  
-  match filtered_email {
-    Some(value) => assert_true(value != "user@example.com")  // 应被脱敏
-    None => assert_true(true)  // 或被完全过滤
-    _ => assert_true(false)
-  }
-  
-  // 验证非敏感属性保持不变
-  let operation_type = Span::get_attribute(secure_span, "operation.type")
-  let service_name = Span::get_attribute(secure_span, "service.name")
-  let user_id = Span::get_attribute(secure_span, "user.id")
-  
-  match operation_type {
-    Some(value) => assert_eq(value, "user.authentication")
-    None => assert_true(false)
-  }
-  
-  match service_name {
-    Some(value) => assert_eq(value, "auth.service")
-    None => assert_true(false)
-  }
-  
-  match user_id {
-    Some(value) => assert_eq(value, "user-12345")
-    None => assert_true(false)
-  }
-  
-  Span::end(span)
-  Span::end(secure_span)
-  
-  assert_true(true)
 }
 
-test "访问控制和权限验证" {
-  // 测试访问控制和权限验证
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "access.control.test")
+test "访问控制测试" {
+  // 创建访问控制管理器
+  let access_manager = azimuth::AccessControlManager::new()
   
-  // 创建不同权限级别的用户
-  let admin_user = User::new("admin", ["admin", "read", "write", "delete"])
-  let regular_user = User::new("regular", ["read", "write"])
-  let readonly_user = User::new("readonly", ["read"])
-  let guest_user = User::new("guest", [])
+  // 定义角色和权限
+  let admin_role = "admin"
+  let operator_role = "operator"
+  let viewer_role = "viewer"
   
-  // 创建需要不同权限的span
-  let admin_span = Tracer::start_span(tracer, "admin.operation")
-  let write_span = Tracer::start_span(tracer, "write.operation")
-  let read_span = Tracer::start_span(tracer, "read.operation")
-  
-  // 为span设置所需权限
-  Span::set_attribute(admin_span, "required.permission", "admin")
-  Span::set_attribute(write_span, "required.permission", "write")
-  Span::set_attribute(read_span, "required.permission", "read")
-  
-  // 测试管理员用户访问权限
-  let admin_access_admin = AccessControl::check_permission(admin_user, "admin")
-  let admin_access_write = AccessControl::check_permission(admin_user, "write")
-  let admin_access_read = AccessControl::check_permission(admin_user, "read")
-  
-  assert_true(admin_access_admin)
-  assert_true(admin_access_write)
-  assert_true(admin_access_read)
-  
-  // 测试普通用户访问权限
-  let regular_access_admin = AccessControl::check_permission(regular_user, "admin")
-  let regular_access_write = AccessControl::check_permission(regular_user, "write")
-  let regular_access_read = AccessControl::check_permission(regular_user, "read")
-  
-  assert_true(regular_access_admin == false)
-  assert_true(regular_access_write)
-  assert_true(regular_access_read)
-  
-  // 测试只读用户访问权限
-  let readonly_access_admin = AccessControl::check_permission(readonly_user, "admin")
-  let readonly_access_write = AccessControl::check_permission(readonly_user, "write")
-  let readonly_access_read = AccessControl::check_permission(readonly_user, "read")
-  
-  assert_true(readonly_access_admin == false)
-  assert_true(readonly_access_write == false)
-  assert_true(readonly_access_read)
-  
-  // 测试访客用户访问权限
-  let guest_access_admin = AccessControl::check_permission(guest_user, "admin")
-  let guest_access_write = AccessControl::check_permission(guest_user, "write")
-  let guest_access_read = AccessControl::check_permission(guest_user, "read")
-  
-  assert_true(guest_access_admin == false)
-  assert_true(guest_access_write == false)
-  assert_true(guest_access_read == false)
-  
-  // 测试基于属性的访问控制 (ABAC)
-  let user_attributes = [
-    ("department", "finance"),
-    ("clearance.level", "confidential"),
-    ("role", "analyst")
+  let permissions = [
+    (admin_role, ["telemetry.read", "telemetry.write", "telemetry.delete", "config.read", "config.write", "user.manage"]),
+    (operator_role, ["telemetry.read", "telemetry.write", "config.read"]),
+    (viewer_role, ["telemetry.read"])
   ]
   
-  let resource_attributes = [
-    ("department", "finance"),
-    ("required.clearance", "confidential"),
-    ("document.type", "financial.report")
-  ]
+  // 配置权限
+  for (role, perms) in permissions {
+    for perm in perms {
+      azimuth::AccessControlManager::grant_permission(access_manager, role, perm)
+    }
+  }
   
-  let abac_result = AccessControl::check_abac_permission(user_attributes, resource_attributes)
-  assert_true(abac_result)  // 用户部门匹配且 clearance 级别足够
+  // 创建用户
+  let admin_user = "admin_user"
+  let operator_user = "operator_user"
+  let viewer_user = "viewer_user"
   
-  // 测试不匹配的属性
-  let mismatched_resource_attributes = [
-    ("department", "hr"),
-    ("required.clearance", "confidential"),
-    ("document.type", "financial.report")
-  ]
+  azimuth::AccessControlManager::assign_role(access_manager, admin_user, admin_role)
+  azimuth::AccessControlManager::assign_role(access_manager, operator_user, operator_role)
+  azimuth::AccessControlManager::assign_role(access_manager, viewer_user, viewer_role)
   
-  let abac_mismatch_result = AccessControl::check_abac_permission(user_attributes, mismatched_resource_attributes)
-  assert_true(abac_mismatch_result == false)  // 部门不匹配
+  // 测试管理员权限
+  assert_true(azimuth::AccessControlManager::has_permission(access_manager, admin_user, "telemetry.read"))
+  assert_true(azimuth::AccessControlManager::has_permission(access_manager, admin_user, "telemetry.write"))
+  assert_true(azimuth::AccessControlManager::has_permission(access_manager, admin_user, "telemetry.delete"))
+  assert_true(azimuth::AccessControlManager::has_permission(access_manager, admin_user, "config.read"))
+  assert_true(azimuth::AccessControlManager::has_permission(access_manager, admin_user, "config.write"))
+  assert_true(azimuth::AccessControlManager::has_permission(access_manager, admin_user, "user.manage"))
   
-  Span::end(admin_span)
-  Span::end(write_span)
-  Span::end(read_span)
+  // 测试操作员权限
+  assert_false(azimuth::AccessControlManager::has_permission(access_manager, operator_user, "telemetry.delete"))
+  assert_false(azimuth::AccessControlManager::has_permission(access_manager, operator_user, "config.write"))
+  assert_false(azimuth::AccessControlManager::has_permission(access_manager, operator_user, "user.manage"))
   
-  assert_true(true)
+  assert_true(azimuth::AccessControlManager::has_permission(access_manager, operator_user, "telemetry.read"))
+  assert_true(azimuth::AccessControlManager::has_permission(access_manager, operator_user, "telemetry.write"))
+  assert_true(azimuth::AccessControlManager::has_permission(access_manager, operator_user, "config.read"))
+  
+  // 测试查看者权限
+  assert_false(azimuth::AccessControlManager::has_permission(access_manager, viewer_user, "telemetry.write"))
+  assert_false(azimuth::AccessControlManager::has_permission(access_manager, viewer_user, "telemetry.delete"))
+  assert_false(azimuth::AccessControlManager::has_permission(access_manager, viewer_user, "config.read"))
+  assert_false(azimuth::AccessControlManager::has_permission(access_manager, viewer_user, "config.write"))
+  assert_false(azimuth::AccessControlManager::has_permission(access_manager, viewer_user, "user.manage"))
+  
+  assert_true(azimuth::AccessControlManager::has_permission(access_manager, viewer_user, "telemetry.read"))
+  
+  // 测试用户不存在的情况
+  assert_false(azimuth::AccessControlManager::has_permission(access_manager, "nonexistent_user", "telemetry.read"))
+  
+  // 测试角色变更
+  azimuth::AccessControlManager::assign_role(access_manager, viewer_user, operator_role)
+  
+  // 验证角色变更后的权限
+  assert_true(azimuth::AccessControlManager::has_permission(access_manager, viewer_user, "telemetry.write"))
+  assert_true(azimuth::AccessControlManager::has_permission(access_manager, viewer_user, "config.read"))
+  
+  // 测试权限撤销
+  azimuth::AccessControlManager::revoke_permission(access_manager, operator_role, "config.read")
+  
+  // 验证权限撤销后的状态
+  assert_false(azimuth::AccessControlManager::has_permission(access_manager, operator_user, "config.read"))
+  assert_false(azimuth::AccessControlManager::has_permission(access_manager, viewer_user, "config.read"))
+  
+  // 测试角色移除
+  azimuth::AccessControlManager::remove_role(access_manager, viewer_user)
+  
+  // 验证角色移除后的状态
+  assert_false(azimuth::AccessControlManager::has_permission(access_manager, viewer_user, "telemetry.read"))
 }
 
-test "数据加密和解密" {
-  // 测试数据加密和解密
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "encryption.test")
+test "身份验证测试" {
+  // 创建身份验证管理器
+  let auth_manager = azimuth::AuthenticationManager::new()
   
-  // 创建包含敏感数据的span
-  let span = Tracer::start_span(tracer, "encrypted.operation")
+  // 创建用户
+  let username = "testuser"
+  let password = "securepassword123"
+  let email = "testuser@example.com"
   
-  // 添加敏感属性
-  Span::set_attribute(span, "user.data", "sensitive.user.information")
-  Span::set_attribute(span, "financial.data", "account.number.123456")
-  Span::set_attribute(span, "medical.data", "patient.record.789")
+  azimuth::AuthenticationManager::create_user(auth_manager, username, password, email)
   
-  // 添加敏感事件
-  Span::add_event(span, "sensitive.operation", [
-    ("input.data", "confidential.input.value"),
-    ("processing.result", "confidential.result.value"),
-    ("internal.state", "internal.system.state")
-  ])
+  // 测试用户认证
+  let auth_result = azimuth::AuthenticationManager::authenticate(auth_manager, username, password)
   
-  // 序列化span数据
-  let serialized_data = Span::serialize(span)
+  // 验证认证结果
+  assert_true(auth_result.is_success)
+  assert_not_eq(auth_result.token, "")
+  assert_eq(auth_result.user.username, username)
+  assert_eq(auth_result.user.email, email)
+  assert_true(auth_result.user.is_active)
+  assert_false(auth_result.user.is_locked)
   
-  // 验证序列化数据包含敏感信息
-  assert_true(String::contains(serialized_data, "sensitive.user.information"))
-  assert_true(String::contains(serialized_data, "account.number.123456"))
-  assert_true(String::contains(serialized_data, "confidential.input.value"))
+  // 测试错误密码认证
+  let wrong_auth_result = azimuth::AuthenticationManager::authenticate(auth_manager, username, "wrongpassword")
   
-  // 加密数据
-  let encryption_key = EncryptionKey::generate("AES-256-GCM")
-  let encrypted_data = EncryptionUtil::encrypt(serialized_data, encryption_key)
+  // 验证错误密码认证结果
+  assert_false(wrong_auth_result.is_success)
+  assert_eq(wrong_auth_result.token, "")
+  assert_eq(wrong_auth_result.error, "Invalid credentials")
   
-  // 验证加密数据不包含原始敏感信息
-  assert_true(String::contains(encrypted_data, "sensitive.user.information") == false)
-  assert_true(String::contains(encrypted_data, "account.number.123456") == false)
-  assert_true(String::contains(encrypted_data, "confidential.input.value") == false)
+  // 测试不存在用户认证
+  let nonexistent_auth_result = azimuth::AuthenticationManager::authenticate(auth_manager, "nonexistent", password)
   
-  // 验证加密数据与原始数据不同
-  assert_true(encrypted_data != serialized_data)
+  // 验证不存在用户认证结果
+  assert_false(nonexistent_auth_result.is_success)
+  assert_eq(nonexistent_auth_result.token, "")
+  assert_eq(nonexistent_auth_result.error, "User not found")
   
-  // 解密数据
-  let decrypted_data = EncryptionUtil::decrypt(encrypted_data, encryption_key)
+  // 测试令牌验证
+  let token = auth_result.token
+  let token_validation = azimuth::AuthenticationManager::validate_token(auth_manager, token)
   
-  // 验证解密后的数据与原始数据相同
-  assert_eq(decrypted_data, serialized_data)
+  // 验证令牌验证结果
+  assert_true(token_validation.is_valid)
+  assert_eq(token_validation.username, username)
+  assert_true(token_validation.expires_at > get_current_time())
   
-  // 验证解密后的数据包含敏感信息
-  assert_true(String::contains(decrypted_data, "sensitive.user.information"))
-  assert_true(String::contains(decrypted_data, "account.number.123456"))
-  assert_true(String::contains(decrypted_data, "confidential.input.value"))
+  // 测试无效令牌验证
+  let invalid_token_validation = azimuth::AuthenticationManager::validate_token(auth_manager, "invalid-token")
   
-  // 测试使用错误密钥解密失败
-  let wrong_key = EncryptionKey::generate("AES-256-GCM")
-  let decrypt_with_wrong_key = try {
-    EncryptionUtil::decrypt(encrypted_data, wrong_key)
-  } catch {
-    _ => "decryption.failed"
+  // 验证无效令牌验证结果
+  assert_false(invalid_token_validation.is_valid)
+  assert_eq(invalid_token_validation.error, "Invalid token")
+  
+  // 测试令牌刷新
+  let refresh_result = azimuth::AuthenticationManager::refresh_token(auth_manager, token)
+  
+  // 验证令牌刷新结果
+  assert_true(refresh_result.is_success)
+  assert_not_eq(refresh_result.new_token, "")
+  assert_not_eq(refresh_result.new_token, token)
+  assert_true(refresh_result.expires_at > token_validation.expires_at)
+  
+  // 测试旧令牌失效
+  let old_token_validation = azimuth::AuthenticationManager::validate_token(auth_manager, token)
+  
+  // 验证旧令牌已失效
+  assert_false(old_token_validation.is_valid)
+  
+  // 测试用户锁定
+  // 多次失败登录
+  for i in 0..5 {
+    let failed_auth = azimuth::AuthenticationManager::authenticate(auth_manager, username, "wrongpassword")
+    assert_false(failed_auth.is_success)
   }
   
-  assert_eq(decrypt_with_wrong_key, "decryption.failed")
+  // 验证用户已锁定
+  let locked_auth_result = azimuth::AuthenticationManager::authenticate(auth_manager, username, password)
+  assert_false(locked_auth_result.is_success)
+  assert_eq(locked_auth_result.error, "Account locked")
   
-  // 从解密的数据重构span
-  let reconstructed_span = Span::deserialize(decrypted_data)
+  // 测试用户解锁
+  azimuth::AuthenticationManager::unlock_user(auth_manager, username)
   
-  // 验证重构的span具有相同的属性
-  let original_name = Span::name(span)
-  let reconstructed_name = Span::name(reconstructed_span)
-  assert_eq(original_name, reconstructed_name)
-  
-  Span::end(span)
-  Span::end(reconstructed_span)
-  
-  assert_true(true)
+  // 验证用户解锁后可以正常认证
+  let unlocked_auth_result = azimuth::AuthenticationManager::authenticate(auth_manager, username, password)
+  assert_true(unlocked_auth_result.is_success)
 }
 
-test "审计日志和安全事件记录" {
-  // 测试审计日志和安全事件记录
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "audit.test")
+test "安全审计测试" {
+  // 创建安全审计管理器
+  let audit_manager = azimuth::SecurityAuditManager::new()
   
-  // 创建安全审计记录器
-  let audit_logger = AuditLogger::new("security.audit")
+  // 记录安全事件
+  let login_event = azimuth::SecurityEvent {
+    timestamp: get_current_time(),
+    event_type: azimuth::SecurityEventType::UserLogin,
+    user_id: Some("testuser"),
+    resource: None,
+    action: Some("login"),
+    result: azimuth::SecurityEventResult::Success,
+    details: "User logged in successfully",
+    ip_address: Some("192.168.1.100"),
+    user_agent: Some("Azimuth-Client/1.0")
+  }
   
-  // 模拟用户登录事件
-  let login_event = SecurityEvent::new("user.login", "user-12345", "192.168.1.100")
-  SecurityEvent::add_attribute(login_event, "login.method", "password")
-  SecurityEvent::add_attribute(login_event, "login.result", "success")
-  SecurityEvent::add_attribute(login_event, "session.id", "session-abcdef123")
-  SecurityEvent::add_attribute(login_event, "user.agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+  azimuth::SecurityAuditManager::log_event(audit_manager, login_event)
   
-  // 记录登录事件
-  AuditLogger::log_event(audit_logger, login_event)
+  // 记录权限检查事件
+  let permission_check_event = azimuth::SecurityEvent {
+    timestamp: get_current_time(),
+    event_type: azimuth::SecurityEventType::PermissionCheck,
+    user_id: Some("testuser"),
+    resource: Some("telemetry.data"),
+    action: Some("read"),
+    result: azimuth::SecurityEventResult::Success,
+    details: "Permission check passed",
+    ip_address: Some("192.168.1.100"),
+    user_agent: Some("Azimuth-Client/1.0")
+  }
   
-  // 模拟权限提升事件
-  let privilege_event = SecurityEvent::new("privilege.escalation", "user-12345", "192.168.1.100")
-  SecurityEvent::add_attribute(privilege_event, "from.role", "user")
-  SecurityEvent::add_attribute(privilege_event, "to.role", "admin")
-  SecurityEvent::add_attribute(privilege_event, "approval.id", "approval-789")
-  SecurityEvent::add_attribute(privilege_event, "escalation.reason", "maintenance.task")
+  azimuth::SecurityAuditManager::log_event(audit_manager, permission_check_event)
   
-  // 记录权限提升事件
-  AuditLogger::log_event(audit_logger, privilege_event)
+  // 记录认证失败事件
+  let auth_failure_event = azimuth::SecurityEvent {
+    timestamp: get_current_time(),
+    event_type: azimuth::SecurityEventType::AuthenticationFailure,
+    user_id: Some("testuser"),
+    resource: None,
+    action: Some("login"),
+    result: azimuth::SecurityEventResult::Failure,
+    details: "Invalid password provided",
+    ip_address: Some("192.168.1.100"),
+    user_agent: Some("Azimuth-Client/1.0")
+  }
   
-  // 模拟敏感数据访问事件
-  let data_access_event = SecurityEvent::new("sensitive.data.access", "user-12345", "192.168.1.100")
-  SecurityEvent::add_attribute(data_access_event, "data.type", "financial.records")
-  SecurityEvent::add_attribute(data_access_event, "access.method", "api.query")
-  SecurityEvent::add_attribute(data_access_event, "record.count", "150")
-  SecurityEvent::add_attribute(data_access_event, "access.purpose", "financial.analysis")
+  azimuth::SecurityAuditManager::log_event(audit_manager, auth_failure_event)
   
-  // 记录敏感数据访问事件
-  AuditLogger::log_event(audit_logger, data_access_event)
+  // 记录数据访问事件
+  let data_access_event = azimuth::SecurityEvent {
+    timestamp: get_current_time(),
+    event_type: azimuth::SecurityEventType::DataAccess,
+    user_id: Some("testuser"),
+    resource: Some("sensitive.telemetry"),
+    action: Some("read"),
+    result: azimuth::SecurityEventResult::Success,
+    details: "Accessed sensitive telemetry data",
+    ip_address: Some("192.168.1.100"),
+    user_agent: Some("Azimuth-Client/1.0")
+  }
   
-  // 模拟安全违规事件
-  let violation_event = SecurityEvent::new("security.policy.violation", "user-67890", "192.168.1.200")
-  SecurityEvent::add_attribute(violation_event, "violation.type", "unauthorized.access.attempt")
-  SecurityEvent::add_attribute(violation_event, "target.resource", "/admin/users")
-  SecurityEvent::add_attribute(violation_event, "attempted.action", "delete")
-  SecurityEvent::add_attribute(violation_event, "violation.severity", "high")
+  azimuth::SecurityAuditManager::log_event(audit_manager, data_access_event)
   
-  // 记录安全违规事件
-  AuditLogger::log_event(audit_logger, violation_event)
+  // 测试事件查询
+  let all_events = azimuth::SecurityAuditManager::get_all_events(audit_manager)
   
-  // 验证审计日志包含所有必要的安全信息
-  let audit_trail = AuditLogger::get_trail(audit_logger, "user-12345")
+  // 验证事件数量
+  assert_eq(all_events.length(), 4)
   
-  // 验证用户相关的审计事件
-  let has_login_event = AuditTrail::contains_event(audit_trail, "user.login")
-  let has_privilege_event = AuditTrail::contains_event(audit_trail, "privilege.escalation")
-  let has_data_access_event = AuditTrail::contains_event(audit_trail, "sensitive.data.access")
+  // 验证事件类型
+  let mut login_events = 0
+  let mut permission_check_events = 0
+  let mut auth_failure_events = 0
+  let mut data_access_events = 0
   
-  assert_true(has_login_event)
-  assert_true(has_privilege_event)
-  assert_true(has_data_access_event)
+  for event in all_events {
+    match event.event_type {
+      azimuth::SecurityEventType::UserLogin => login_events = login_events + 1
+      azimuth::SecurityEventType::PermissionCheck => permission_check_events = permission_check_events + 1
+      azimuth::SecurityEventType::AuthenticationFailure => auth_failure_events = auth_failure_events + 1
+      azimuth::SecurityEventType::DataAccess => data_access_events = data_access_events + 1
+      _ => () // 其他事件类型
+    }
+  }
   
-  // 验证审计日志的完整性
-  let trail完整性 = AuditTrail::verify_integrity(audit_trail)
-  assert_true(trail完整性)
+  assert_eq(login_events, 1)
+  assert_eq(permission_check_events, 1)
+  assert_eq(auth_failure_events, 1)
+  assert_eq(data_access_events, 1)
   
-  // 验证审计日志的不可篡改性
-  let original_hash = AuditTrail::calculate_hash(audit_trail)
+  // 测试按用户查询事件
+  let user_events = azimuth::SecurityAuditManager::get_events_by_user(audit_manager, "testuser")
   
-  // 尝试篡改审计日志
-  let tampered_trail = AuditTrail::tamper_with(audit_trail, 1, "modified.attribute", "modified.value")
-  let tampered_hash = AuditTrail::calculate_hash(tampered_trail)
+  // 验证用户事件数量
+  assert_eq(user_events.length(), 4)
   
-  // 验证篡改后的哈希不同
-  assert_true(original_hash != tampered_hash)
+  // 测试按事件类型查询事件
+  let failure_events = azimuth::SecurityAuditManager::get_events_by_type(audit_manager, azimuth::SecurityEventType::AuthenticationFailure)
   
-  // 验证篡改检测
-  let is_tampered = AuditTrail::detect_tampering(tampered_trail, original_hash)
-  assert_true(is_tampered)
+  // 验证失败事件数量
+  assert_eq(failure_events.length(), 1)
   
-  assert_true(true)
+  // 验证失败事件详情
+  let failure_event = failure_events[0]
+  assert_eq(failure_event.user_id, Some("testuser"))
+  assert_eq(failure_event.result, azimuth::SecurityEventResult::Failure)
+  assert_eq(failure_event.details, "Invalid password provided")
+  
+  // 测试按时间范围查询事件
+  let start_time = get_current_time() - 3600 // 1小时前
+  let end_time = get_current_time() + 3600 // 1小时后
+  let time_range_events = azimuth::SecurityAuditManager::get_events_by_time_range(audit_manager, start_time, end_time)
+  
+  // 验证时间范围内事件数量
+  assert_eq(time_range_events.length(), 4)
+  
+  // 测试安全报告生成
+  let security_report = azimuth::SecurityAuditManager::generate_security_report(audit_manager)
+  
+  // 验证安全报告内容
+  assert_true(security_report.total_events > 0)
+  assert_true(security_report.successful_events > 0)
+  assert_true(security_report.failed_events > 0)
+  assert_true(security_report.unique_users > 0)
+  assert_true(security_report.report_generated_at > 0)
+  
+  // 测试异常活动检测
+  let suspicious_activities = azimuth::SecurityAuditManager::detect_suspicious_activities(audit_manager)
+  
+  // 验证异常活动检测结果
+  assert_true(suspicious_activities.length() >= 0)
 }
 
-test "跨站脚本和注入攻击防护" {
-  // 测试跨站脚本和注入攻击防护
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "xss.injection.test")
+test "敏感数据处理测试" {
+  // 创建敏感数据管理器
+  let sensitive_manager = azimuth::SensitiveDataManager::new()
   
-  // 创建包含潜在恶意输入的span
-  let span = Tracer::start_span(tracer, "security.test.operation")
-  
-  // 添加包含XSS攻击向量的属性
-  Span::set_attribute(span, "user.input", "<script>alert('xss')</script>")
-  Span::set_attribute(span, "search.query", "test\"><script>document.location='http://evil.com'</script>")
-  Span::set_attribute(span, "comment.text", "Nice post! <img src=x onerror=alert('xss')>")
-  
-  // 添加包含SQL注入攻击向量的属性
-  Span::set_attribute(span, "user.id", "123'; DROP TABLE users; --")
-  Span::set_attribute(span, "search.filter", "name' OR '1'='1")
-  Span::set_attribute(span, "order.by", "id; INSERT INTO logs VALUES ('hacked'); --")
-  
-  // 添加包含命令注入攻击向量的属性
-  Span::set_attribute(span, "filename", "test.txt; rm -rf /")
-  Span::set_attribute(span, "command.arg", "127.0.0.1; cat /etc/passwd")
-  
-  // 添加包含恶意输入的事件
-  Span::add_event(span, "user.submission", [
-    ("form.field", "<iframe src=\"javascript:alert('xss')\"></iframe>"),
-    ("user.comment", "Check out this link: <a href=\"javascript:alert('xss')\">Click me</a>"),
-    ("search.term", "test' UNION SELECT * FROM passwords --")
-  ])
-  
-  // 应用安全过滤器
-  let secure_span = SecurityFilter::sanitize_input(span)
-  
-  // 验证XSS攻击被过滤
-  let sanitized_user_input = Span::get_attribute(secure_span, "user.input")
-  let sanitized_search_query = Span::get_attribute(secure_span, "search.query")
-  let sanitized_comment = Span::get_attribute(secure_span, "comment.text")
-  
-  match sanitized_user_input {
-    Some(value) => assert_true(String::contains(value, "<script>") == false)
-    None => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match sanitized_search_query {
-    Some(value) => assert_true(String::contains(value, "<script>") == false)
-    None => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match sanitized_comment {
-    Some(value) => assert_true(String::contains(value, "onerror") == false)
-    None => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  // 验证SQL注入攻击被过滤
-  let sanitized_user_id = Span::get_attribute(secure_span, "user.id")
-  let sanitized_search_filter = Span::get_attribute(secure_span, "search.filter")
-  let sanitized_order_by = Span::get_attribute(secure_span, "order.by")
-  
-  match sanitized_user_id {
-    Some(value) => assert_true(String::contains(value, "DROP TABLE") == false)
-    None => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match sanitized_search_filter {
-    Some(value) => assert_true(String::contains(value, "OR") == false)
-    None => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match sanitized_order_by {
-    Some(value) => assert_true(String::contains(value, "INSERT INTO") == false)
-    None => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  // 验证命令注入攻击被过滤
-  let sanitized_filename = Span::get_attribute(secure_span, "filename")
-  let sanitized_command_arg = Span::get_attribute(secure_span, "command.arg")
-  
-  match sanitized_filename {
-    Some(value) => assert_true(String::contains(value, "rm -rf") == false)
-    None => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match sanitized_command_arg {
-    Some(value) => assert_true(String::contains(value, "cat /etc/passwd") == false)
-    None => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  // 测试输入验证
-  let valid_inputs = [
-    ("username", "john.doe"),
-    ("email", "user@example.com"),
-    ("phone", "+1234567890"),
-    ("age", "25")
+  // 定义敏感数据类型
+  let pii_types = [
+    "email.address",
+    "phone.number",
+    "social.security.number",
+    "credit.card.number",
+    "bank.account.number"
   ]
   
-  for (field, value) in valid_inputs {
-    let is_valid = InputValidator::validate(field, value)
-    assert_true(is_valid)
+  // 注册敏感数据类型
+  for pii_type in pii_types {
+    azimuth::SensitiveDataManager::register_sensitive_type(sensitive_manager, pii_type)
   }
   
-  // 测试无效输入
-  let invalid_inputs = [
-    ("username", "<script>alert('xss')</script>"),
-    ("email", "user@example.com'; DROP TABLE users; --"),
-    ("phone", "123; rm -rf /"),
-    ("age", "twenty-five")  // 应该是数字
+  // 创建包含敏感数据的属性
+  let sensitive_attrs = azimuth::Attributes {
+    values: [
+      ("user.email", azimuth::AttributeValue::StringValue("user@example.com")),
+      ("user.phone", azimuth::AttributeValue::StringValue("+1-555-123-4567")),
+      ("user.ssn", azimuth::AttributeValue::StringValue("123-45-6789")),
+      ("payment.cc", azimuth::AttributeValue::StringValue("4111-1111-1111-1111")),
+      ("payment.account", azimuth::AttributeValue::StringValue("123456789")),
+      ("user.name", azimuth::AttributeValue::StringValue("John Doe")),
+      ("user.age", azimuth::AttributeValue::IntValue(30)),
+      ("user.active", azimuth::AttributeValue::BoolValue(true))
+    ]
+  }
+  
+  // 测试敏感数据检测
+  let sensitive_fields = azimuth::SensitiveDataManager::detect_sensitive_data(sensitive_manager, sensitive_attrs)
+  
+  // 验证敏感数据检测结果
+  assert_eq(sensitive_fields.length(), 5)
+  assert_true(sensitive_fields.contains("user.email"))
+  assert_true(sensitive_fields.contains("user.phone"))
+  assert_true(sensitive_fields.contains("user.ssn"))
+  assert_true(sensitive_fields.contains("payment.cc"))
+  assert_true(sensitive_fields.contains("payment.account"))
+  
+  // 测试敏感数据脱敏
+  let sanitized_attrs = azimuth::SensitiveDataManager::sanitize_data(sensitive_manager, sensitive_attrs)
+  
+  // 验证敏感数据脱敏结果
+  for (key, value) in sanitized_attrs.values {
+    if sensitive_fields.contains(key) {
+      match value {
+        azimuth::AttributeValue::StringValue(sanitized_value) => {
+          // 验证敏感数据已被脱敏
+          assert_false(sanitized_value.contains("@")) // 邮箱
+          assert_false(sanitized_value.contains("-")) // 电话、SSN、信用卡
+          assert_true(sanitized_value.contains("***")) // 脱敏标记
+        }
+        _ => assert_true(false)
+      }
+    }
+  }
+  
+  // 验证非敏感数据未被修改
+  let mut name_found = false
+  let mut age_found = false
+  let mut active_found = false
+  
+  for (key, value) in sanitized_attrs.values {
+    match key {
+      "user.name" => {
+        match value {
+          azimuth::AttributeValue::StringValue(name) => {
+            assert_eq(name, "John Doe")
+            name_found = true
+          }
+          _ => assert_true(false)
+        }
+      }
+      "user.age" => {
+        match value {
+          azimuth::AttributeValue::IntValue(age) => {
+            assert_eq(age, 30)
+            age_found = true
+          }
+          _ => assert_true(false)
+        }
+      }
+      "user.active" => {
+        match value {
+          azimuth::AttributeValue::BoolValue(active) => {
+            assert_true(active)
+            active_found = true
+          }
+          _ => assert_true(false)
+        }
+      }
+      _ => () // 其他键
+    }
+  }
+  
+  assert_true(name_found)
+  assert_true(age_found)
+  assert_true(active_found)
+  
+  // 测试敏感数据加密
+  let encrypted_attrs = azimuth::SensitiveDataManager::encrypt_sensitive_data(sensitive_manager, sensitive_attrs)
+  
+  // 验证敏感数据加密结果
+  for (key, value) in encrypted_attrs.values {
+    if sensitive_fields.contains(key) {
+      match value {
+        azimuth::AttributeValue::StringValue(encrypted_value) => {
+          // 验证敏感数据已被加密
+          assert_not_eq(encrypted_value.length(), 0)
+          assert_false(encrypted_value.contains("@"))
+          assert_false(encrypted_value.contains("user"))
+          assert_false(encrypted_value.contains("example"))
+        }
+        _ => assert_true(false)
+      }
+    }
+  }
+  
+  // 测试敏感数据解密
+  let decrypted_attrs = azimuth::SensitiveDataManager::decrypt_sensitive_data(sensitive_manager, encrypted_attrs)
+  
+  // 验证敏感数据解密结果
+  assert_eq(decrypted_attrs.values.length(), sensitive_attrs.values.length())
+  
+  for i in 0..decrypted_attrs.values.length() {
+    let (decrypted_key, decrypted_value) = decrypted_attrs.values[i]
+    let (original_key, original_value) = sensitive_attrs.values[i]
+    
+    assert_eq(decrypted_key, original_key)
+    
+    // 验证解密后的值与原始值一致
+    match (decrypted_value, original_value) {
+      (azimuth::AttributeValue::StringValue(d), azimuth::AttributeValue::StringValue(o)) => {
+        assert_eq(d, o)
+      }
+      (azimuth::AttributeValue::IntValue(d), azimuth::AttributeValue::IntValue(o)) => {
+        assert_eq(d, o)
+      }
+      (azimuth::AttributeValue::BoolValue(d), azimuth::AttributeValue::BoolValue(o)) => {
+        assert_eq(d, o)
+      }
+      _ => assert_true(false) // 类型不匹配
+    }
+  }
+}
+
+test "网络安全测试" {
+  // 创建网络安全管理器
+  let security_manager = azimuth::NetworkSecurityManager::new()
+  
+  // 测试IP白名单
+  let allowed_ips = ["192.168.1.0/24", "10.0.0.0/8", "172.16.0.0/12"]
+  
+  for ip in allowed_ips {
+    azimuth::NetworkSecurityManager::add_allowed_ip(security_manager, ip)
+  }
+  
+  // 测试IP访问检查
+  assert_true(azimuth::NetworkSecurityManager::is_ip_allowed(security_manager, "192.168.1.100"))
+  assert_true(azimuth::NetworkSecurityManager::is_ip_allowed(security_manager, "10.0.0.50"))
+  assert_true(azimuth::NetworkSecurityManager::is_ip_allowed(security_manager, "172.16.5.10"))
+  
+  assert_false(azimuth::NetworkSecurityManager::is_ip_allowed(security_manager, "8.8.8.8"))
+  assert_false(azimuth::NetworkSecurityManager::is_ip_allowed(security_manager, "203.0.113.1"))
+  
+  // 测试IP黑名单
+  let blocked_ips = ["203.0.113.0/24", "198.51.100.0/24"]
+  
+  for ip in blocked_ips {
+    azimuth::NetworkSecurityManager::add_blocked_ip(security_manager, ip)
+  }
+  
+  // 测试黑名单IP访问检查
+  assert_false(azimuth::NetworkSecurityManager::is_ip_allowed(security_manager, "203.0.113.5"))
+  assert_false(azimuth::NetworkSecurityManager::is_ip_allowed(security_manager, "198.51.100.10"))
+  
+  // 测试请求频率限制
+  let rate_limit_config = azimuth::RateLimitConfig {
+    max_requests_per_minute: 60,
+    max_requests_per_hour: 1000,
+    max_requests_per_day: 10000
+  }
+  
+  azimuth::NetworkSecurityManager::configure_rate_limit(security_manager, "testuser", rate_limit_config)
+  
+  // 测试正常请求频率
+  for i in 0..30 {
+    let request_result = azimuth::NetworkSecurityManager::check_rate_limit(security_manager, "testuser")
+    assert_true(request_result.allowed)
+  }
+  
+  // 测试超出频率限制
+  for i in 0..100 {
+    let request_result = azimuth::NetworkSecurityManager::check_rate_limit(security_manager, "testuser")
+    // 在某个点应该超出限制
+    if !request_result.allowed {
+      assert_eq(request_result.reason, "Rate limit exceeded")
+      break
+    }
+  }
+  
+  // 测试TLS证书验证
+  let valid_cert = azimuth::CertificateInfo {
+    subject: "CN=telemetry.example.com",
+    issuer: "CN=Example CA",
+    serial_number: "123456789",
+    not_before: 1609459200, // 2021-01-01 00:00:00 UTC
+    not_after: 1640995200, // 2022-01-01 00:00:00 UTC
+    fingerprint: "AB:CD:EF:12:34:56:78:90:AB:CD:EF:12:34:56:78:90"
+  }
+  
+  let cert_validation = azimuth::NetworkSecurityManager::validate_certificate(security_manager, valid_cert)
+  
+  // 验证证书验证结果
+  assert_true(cert_validation.is_valid)
+  assert_eq(cert_validation.subject, "CN=telemetry.example.com")
+  
+  // 测试过期证书
+  let expired_cert = azimuth::CertificateInfo {
+    subject: "CN=expired.example.com",
+    issuer: "CN=Example CA",
+    serial_number: "987654321",
+    not_before: 1609459200, // 2021-01-01 00:00:00 UTC
+    not_after: 1612137600, // 2021-02-01 00:00:00 UTC
+    fingerprint: "FE:DC:BA:09:87:65:43:21:FE:DC:BA:09:87:65:43:21"
+  }
+  
+  let expired_cert_validation = azimuth::NetworkSecurityManager::validate_certificate(security_manager, expired_cert)
+  
+  // 验证过期证书验证结果
+  assert_false(expired_cert_validation.is_valid)
+  assert_eq(expired_cert_validation.error, "Certificate has expired")
+  
+  // 测试自签名证书
+  let self_signed_cert = azimuth::CertificateInfo {
+    subject: "CN=self-signed.example.com",
+    issuer: "CN=self-signed.example.com", // 自签名：subject和issuer相同
+    serial_number: "555666777",
+    not_before: 1609459200, // 2021-01-01 00:00:00 UTC
+    not_after: 1640995200, // 2022-01-01 00:00:00 UTC
+    fingerprint: "11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00"
+  }
+  
+  let self_signed_validation = azimuth::NetworkSecurityManager::validate_certificate(security_manager, self_signed_cert)
+  
+  // 验证自签名证书验证结果
+  assert_false(self_signed_validation.is_valid)
+  assert_eq(self_signed_validation.error, "Self-signed certificate not allowed")
+  
+  // 测试安全头部配置
+  let security_headers = [
+    ("Strict-Transport-Security", "max-age=31536000; includeSubDomains"),
+    ("Content-Security-Policy", "default-src 'self'"),
+    ("X-Content-Type-Options", "nosniff"),
+    ("X-Frame-Options", "DENY"),
+    ("X-XSS-Protection", "1; mode=block")
   ]
   
-  for (field, value) in invalid_inputs {
-    let is_valid = InputValidator::validate(field, value)
-    assert_true(is_valid == false)
+  for (header, value) in security_headers {
+    azimuth::NetworkSecurityManager::add_security_header(security_manager, header, value)
   }
   
-  Span::end(span)
-  Span::end(secure_span)
+  // 验证安全头部配置
+  let configured_headers = azimuth::NetworkSecurityManager::get_security_headers(security_manager)
   
-  assert_true(true)
+  assert_eq(configured_headers.length(), 5)
+  
+  for (header, value) in security_headers {
+    let mut header_found = false
+    for (configured_header, configured_value) in configured_headers {
+      if configured_header == header && configured_value == value {
+        header_found = true
+        break
+      }
+    }
+    assert_true(header_found)
+  }
+}
+
+// 辅助函数：获取当前时间（秒）
+fn get_current_time() -> Int {
+  // 模拟时间戳，实际应该使用系统时间API
+  1609459200 // 2021-01-01 00:00:00 UTC
 }
