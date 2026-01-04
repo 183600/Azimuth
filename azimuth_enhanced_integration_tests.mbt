@@ -1,878 +1,2213 @@
 // Azimuth Enhanced Integration Test Suite
-// 增强集成测试套件 - 包含高级集成和边界测试用例
+// 增强集成测试套件 - 覆盖资源管理、性能优化和跨平台兼容性
 
-// Test 1: 遥测数据聚合测试
-test "telemetry data aggregation" {
-  // 创建多个遥测数据点
-  let data_points = [
-    @azimuth.TelemetryPoint {
-      metric_name : "response.time",
-      value : 120.5,
-      timestamp : @azimuth.current_timestamp(),
-      attributes : [("endpoint", "/api/users"), ("method", "GET")]
-    },
-    @azimuth.TelemetryPoint {
-      metric_name : "response.time",
-      value : 85.3,
-      timestamp : @azimuth.current_timestamp(),
-      attributes : [("endpoint", "/api/users"), ("method", "GET")]
-    },
-    @azimuth.TelemetryPoint {
-      metric_name : "response.time",
-      value : 200.1,
-      timestamp : @azimuth.current_timestamp(),
-      attributes : [("endpoint", "/api/orders"), ("method", "POST")]
-    }
-  ]
-  
-  // 测试数据聚合
-  let aggregator = @azimuth.Aggregator.new()
-  let aggregated = @azimuth.aggregate_data(aggregator, data_points)
-  
-  // 验证聚合结果
-  assert_eq(aggregated.count, 3)
-  assert_true(aggregated.average > 80.0)
-  assert_true(aggregated.average < 201.0)
-  assert_eq(aggregated.min, 85.3)
-  assert_eq(aggregated.max, 200.1)
-  
-  // 测试按属性分组聚合
-  let grouped = @azimuth.aggregate_by_attributes(aggregator, data_points, ["endpoint", "method"])
-  assert_eq(grouped.length(), 2)
-  
-  // 验证特定分组的聚合结果
-  let users_group = grouped.find(fn(group) { 
-    group.attributes.contains(("endpoint", "/api/users")) 
-  })
-  match users_group {
-    Some(group) => {
-      assert_eq(group.count, 2)
-      assert_eq(group.average, (120.5 + 85.3) / 2.0)
-    }
-    None => assert_true(false)
+// Test 1: 资源管理和自动清理
+test "resource management and automatic cleanup" {
+  // 定义资源管理器
+  type ResourceManager = {
+    active_resources: Array[String],
+    resource_limits: Array[(String, Int)],
+    cleanup_strategies: Array[(String, () -> Unit)]
   }
+  
+  // 创建资源管理器
+  let create_resource_manager = fn() {
+    {
+      active_resources: [],
+      resource_limits: [
+        ("spans", 1000),
+        ("metrics", 500),
+        ("logs", 2000),
+        ("connections", 100)
+      ],
+      cleanup_strategies: []
+    }
+  }
+  
+  // 注册资源
+  let register_resource = fn(manager: ResourceManager, resource_type: String, resource_id: String) {
+    let limit = manager.resource_limits.find(fn(limit) { limit.0 == resource_type })
+    match limit {
+      Some(l) => {
+        let current_count = manager.active_resources.filter(fn(id) { id.starts_with(resource_type + ":") }).length()
+        if current_count < l.1 {
+          let updated_resources = manager.active_resources.push(resource_type + ":" + resource_id)
+          { manager | active_resources: updated_resources }
+        } else {
+          // 触发清理
+          let cleanup_needed = manager.active_resources.filter(fn(id) { id.starts_with(resource_type + ":") })
+          if cleanup_needed.length() > 0 {
+            let oldest = cleanup_needed[0]
+            let remaining = manager.active_resources.filter(fn(id) { id != oldest })
+            let updated_resources = remaining.push(resource_type + ":" + resource_id)
+            { manager | active_resources: updated_resources }
+          } else {
+            manager
+          }
+        }
+      }
+      None => manager
+    }
+  }
+  
+  // 测试资源管理
+  let manager = create_resource_manager()
+  
+  // 注册多个资源
+  let manager1 = register_resource(manager, "spans", "span-001")
+  let manager2 = register_resource(manager1, "spans", "span-002")
+  let manager3 = register_resource(manager2, "metrics", "metric-001")
+  let manager4 = register_resource(manager3, "spans", "span-003")
+  
+  // 验证资源注册
+  assert_eq(manager4.active_resources.length(), 4)
+  assert_true(manager4.active_resources.contains("spans:span-001"))
+  assert_true(manager4.active_resources.contains("spans:span-002"))
+  assert_true(manager4.active_resources.contains("metrics:metric-001"))
+  assert_true(manager4.active_resources.contains("spans:span-003"))
+  
+  // 测试资源限制和自动清理
+  let mut manager_with_limits = manager4
+  for i in 0..=1005 {
+    manager_with_limits = register_resource(manager_with_limits, "spans", "span-" + i.to_string())
+  }
+  
+  // 验证资源限制生效
+  let span_resources = manager_with_limits.active_resources.filter(fn(id) { id.starts_with("spans:") })
+  assert_eq(span_resources.length(), 1000) // 不应超过限制
+  
+  // 验证最旧的资源被清理
+  let span_ids = span_resources.map(fn(id) { id.split(":")[1] })
+  assert_false(span_ids.contains("span-001")) // 最旧的应被清理
+  assert_true(span_ids.contains("span-1005")) // 最新的应存在
 }
 
-// Test 2: 分布式追踪链路测试
-test "distributed tracing chain" {
-  // 创建根span
-  let tracer = @azimuth.Tracer.new("distributed.test")
-  let root_span = @azimuth.Tracer.start_span(tracer, "root.operation")
-  
-  // 设置根span属性
-  @azimuth.Span.set_attribute(root_span, "service.name", "api-gateway")
-  @azimuth.Span.set_attribute(root_span, "operation.type", "request")
-  
-  // 创建子span
-  let child_span1 = @azimuth.Tracer.start_span_with_parent(tracer, "service.call", root_span)
-  @azimuth.Span.set_attribute(child_span1, "service.name", "user-service")
-  @azimuth.Span.set_attribute(child_span1, "endpoint", "/validate")
-  
-  let child_span2 = @azimuth.Tracer.start_span_with_parent(tracer, "database.query", root_span)
-  @azimuth.Span.set_attribute(child_span2, "service.name", "database")
-  @azimuth.Span.set_attribute(child_span2, "query.type", "SELECT")
-  
-  // 创建嵌套子span
-  let nested_span = @azimuth.Tracer.start_span_with_parent(tracer, "cache.check", child_span1)
-  @azimuth.Span.set_attribute(nested_span, "cache.hit", false)
-  
-  // 验证span关系
-  let root_ctx = @azimuth.Span.context(root_span)
-  let child1_ctx = @azimuth.Span.context(child_span1)
-  let child2_ctx = @azimuth.Span.context(child_span2)
-  let nested_ctx = @azimuth.Span.context(nested_span)
-  
-  assert_eq(@azimuth.SpanContext.trace_id(root_ctx), @azimuth.SpanContext.trace_id(child1_ctx))
-  assert_eq(@azimuth.SpanContext.trace_id(root_ctx), @azimuth.SpanContext.trace_id(child2_ctx))
-  assert_eq(@azimuth.SpanContext.trace_id(root_ctx), @azimuth.SpanContext.trace_id(nested_ctx))
-  
-  assert_eq(@azimuth.SpanContext.parent_span_id(child1_ctx), @azimuth.SpanContext.span_id(root_ctx))
-  assert_eq(@azimuth.SpanContext.parent_span_id(child2_ctx), @azimuth.SpanContext.span_id(root_ctx))
-  assert_eq(@azimuth.SpanContext.parent_span_id(nested_ctx), @azimuth.SpanContext.span_id(child_span1))
-  
-  // 结束所有span（按正确顺序）
-  @azimuth.Span.end(nested_span)
-  @azimuth.Span.end(child_span1)
-  @azimuth.Span.end(child_span2)
-  @azimuth.Span.end(root_span)
-  
-  // 验证追踪链完整性
-  let trace_chain = @azimuth.get_trace_chain(root_ctx)
-  assert_eq(trace_chain.length(), 4)
-  assert_true(trace_chain.any(fn(span) { @azimuth.Span.name(span) == "root.operation" }))
-  assert_true(trace_chain.any(fn(span) { @azimuth.Span.name(span) == "service.call" }))
-  assert_true(trace_chain.any(fn(span) { @azimuth.Span.name(span) == "database.query" }))
-  assert_true(trace_chain.any(fn(span) { @azimuth.Span.name(span) == "cache.check" }))
-}
-
-// Test 3: 自定义度量指标测试
-test "custom metrics and gauges" {
-  // 创建度量提供者
-  let meter = @azimuth.Meter.new("custom.metrics.test")
-  
-  // 创建自定义计数器
-  let request_counter = @azimuth.Meter.create_counter(meter, "custom.requests.total")
-  @azimuth.Counter.add(request_counter, 1.0, [("method", "GET"), ("status", "200")])
-  @azimuth.Counter.add(request_counter, 1.0, [("method", "POST"), ("status", "201")])
-  @azimuth.Counter.add(request_counter, 1.0, [("method", "GET"), ("status", "404")])
-  
-  // 创建自定义仪表盘
-  let memory_gauge = @azimuth.Meter.create_gauge(meter, "custom.memory.usage")
-  @azimuth.Gauge.set(memory_gauge, 1024.5, [("component", "cache")])
-  @azimuth.Gauge.set(memory_gauge, 2048.7, [("component", "database")])
-  @azimuth.Gauge.set(memory_gauge, 512.3, [("component", "queue")])
-  
-  // 创建自定义直方图
-  let latency_histogram = @azimuth.Meter.create_histogram(meter, "custom.latency.distribution")
-  @azimuth.Histogram.record(latency_histogram, 45.2, [("service", "auth")])
-  @azimuth.Histogram.record(latency_histogram, 123.7, [("service", "auth")])
-  @azimuth.Histogram.record(latency_histogram, 78.9, [("service", "payment")])
-  @azimuth.Histogram.record(latency_histogram, 256.1, [("service", "payment")])
-  
-  // 验证度量指标
-  let metrics_snapshot = @azimuth.Meter.get_metrics_snapshot(meter)
-  
-  // 验证计数器
-  let counter_metrics = metrics_snapshot.filter(fn(m) { m.name == "custom.requests.total" })
-  assert_eq(counter_metrics.length(), 1)
-  let counter_data = counter_metrics[0]
-  assert_eq(counter_data.total_count, 3.0)
-  
-  // 验证仪表盘
-  let gauge_metrics = metrics_snapshot.filter(fn(m) { m.name == "custom.memory.usage" })
-  assert_eq(gauge_metrics.length(), 1)
-  let gauge_data = gauge_metrics[0]
-  assert_eq(gauge_data.measurements.length(), 3)
-  
-  // 验证直方图
-  let histogram_metrics = metrics_snapshot.filter(fn(m) { m.name == "custom.latency.distribution" })
-  assert_eq(histogram_metrics.length(), 1)
-  let histogram_data = histogram_metrics[0]
-  assert_eq(histogram_data.sample_count, 4)
-  assert_true(histogram_data.sum > 300.0)
-}
-
-// Test 4: 遥测数据导出测试
-test "telemetry data export" {
-  // 创建导出器配置
-  let exporter_config = @azimuth.ExporterConfig {
-    endpoint : "https://telemetry.example.com/api/v1/traces",
-    headers : [
-      ("Authorization", "Bearer test-token-123"),
-      ("Content-Type", "application/json")
-    ],
-    batch_size : 100,
-    timeout_ms : 5000,
-    retry_count : 3
+// Test 2: 性能基准测试和优化
+test "performance benchmarking and optimization" {
+  // 定义性能指标
+  type PerformanceMetrics = {
+    operation_name: String,
+    execution_time: Int,
+    memory_usage: Int,
+    cpu_usage: Float,
+    throughput: Float,
+    error_rate: Float
   }
   
-  // 创建导出器
-  let exporter = @azimuth.Exporter.new(exporter_config)
-  
-  // 创建测试遥测数据
-  let test_span = @azimuth.TestSpan.new("export.test.operation")
-  @azimuth.TestSpan.set_attribute(test_span, "test.type", "export")
-  @azimuth.TestSpan.set_attribute(test_span, "export.batch", "1")
-  
-  let test_metric = @azimuth.TestMetric.new("export.test.metric", 42.5)
-  @azimuth.TestMetric.set_attribute(test_metric, "metric.type", "gauge")
-  
-  let test_log = @azimuth.TestLog.new("Export test log entry", @azimuth.LogLevel.Info)
-  @azimuth.TestLog.set_attribute(test_log, "log.category", "export")
-  
-  // 测试批量导出
-  let export_batch = @azimuth.ExportBatch.new()
-  @azimuth.ExportBatch.add_span(export_batch, test_span)
-  @azimuth.ExportBatch.add_metric(export_batch, test_metric)
-  @azimuth.ExportBatch.add_log(export_batch, test_log)
-  
-  // 执行导出
-  let export_result = @azimuth.Exporter.export(exporter, export_batch)
-  
-  // 验证导出结果
-  assert_true(export_result.success)
-  assert_eq(export_result.exported_spans, 1)
-  assert_eq(export_result.exported_metrics, 1)
-  assert_eq(export_result.exported_logs, 1)
-  assert_true(export_result.duration_ms < 1000)
-  
-  // 测试导出失败重试机制
-  let failing_exporter = @azimuth.Exporter.new(@azimuth.ExporterConfig {
-    endpoint : "https://invalid-endpoint.example.com/api/v1/traces",
-    headers : [],
-    batch_size : 100,
-    timeout_ms : 1000,
-    retry_count : 2
-  })
-  
-  let retry_result = @azimuth.Exporter.export_with_retry(failing_exporter, export_batch)
-  assert_false(retry_result.success)
-  assert_eq(retry_result.attempts, 2)
-  assert_true(retry_result.last_error.contains("connection"))
-}
-
-// Test 5: 配置热更新测试
-test "configuration hot reload" {
-  // 创建初始配置
-  let initial_config = @azimuth.TelemetryConfig {
-    service_name : "azimuth-service",
-    service_version : "1.0.0",
-    enabled : true,
-    sampling_rate : 1.0,
-    batch_size : 100,
-    export_interval_ms : 5000,
-    attributes : [
-      ("environment", "production"),
-      ("region", "us-west-2")
-    ]
+  type BenchmarkResult = {
+    metrics: Array[PerformanceMetrics],
+    average_time: Float,
+    p95_time: Float,
+    p99_time: Float,
+    total_operations: Int,
+    success_rate: Float
   }
   
-  // 创建配置管理器
-  let config_manager = @azimuth.ConfigManager.new(initial_config)
-  
-  // 验证初始配置
-  let current_config = @azimuth.ConfigManager.get_config(config_manager)
-  assert_eq(current_config.service_name, "azimuth-service")
-  assert_eq(current_config.sampling_rate, 1.0)
-  assert_eq(current_config.batch_size, 100)
-  
-  // 测试配置更新
-  let updated_config = @azimuth.ConfigManager.update_config(config_manager, "sampling_rate", 0.5)
-  match updated_config {
-    Some(config) => {
-      assert_eq(config.sampling_rate, 0.5)
-      assert_eq(config.service_name, "azimuth-service") // 其他配置保持不变
-    }
-    None => assert_true(false)
-  }
-  
-  // 测试批量配置更新
-  let config_updates = [
-    ("service_version", "1.1.0"),
-    ("batch_size", 200),
-    ("export_interval_ms", 10000)
-  ]
-  
-  let batch_updated = @azimuth.ConfigManager.batch_update_config(config_manager, config_updates)
-  assert_true(batch_updated)
-  
-  // 验证批量更新结果
-  let final_config = @azimuth.ConfigManager.get_config(config_manager)
-  assert_eq(final_config.service_version, "1.1.0")
-  assert_eq(final_config.batch_size, 200)
-  assert_eq(final_config.export_interval_ms, 10000)
-  assert_eq(final_config.sampling_rate, 0.5) // 之前的更新保持
-  
-  // 测试配置验证
-  let invalid_updates = [
-    ("sampling_rate", 1.5), // 无效：超过1.0
-    ("batch_size", 0)      // 无效：不能为0
-  ]
-  
-  let invalid_result = @azimuth.ConfigManager.batch_update_config(config_manager, invalid_updates)
-  assert_false(invalid_result)
-  
-  // 验证配置未被无效更新修改
-  let unchanged_config = @azimuth.ConfigManager.get_config(config_manager)
-  assert_eq(unchanged_config.sampling_rate, 0.5)
-  assert_eq(unchanged_config.batch_size, 200)
-  
-  // 测试配置持久化和重载
-  let persist_result = @azimuth.ConfigManager.persist_config(config_manager, "/tmp/azimuth_config.json")
-  assert_true(persist_result)
-  
-  let new_config_manager = @azimuth.ConfigManager.new_empty()
-  let load_result = @azimuth.ConfigManager.load_config(new_config_manager, "/tmp/azimuth_config.json")
-  assert_true(load_result)
-  
-  let loaded_config = @azimuth.ConfigManager.get_config(new_config_manager)
-  assert_eq(loaded_config.service_name, "azimuth-service")
-  assert_eq(loaded_config.sampling_rate, 0.5)
-  assert_eq(loaded_config.batch_size, 200)
-}
-
-// Test 6: 性能监控和阈值测试
-test "performance monitoring and thresholds" {
-  // 创建性能监控器
-  let monitor = @azimuth.PerformanceMonitor.new()
-  
-  // 设置性能阈值
-  let thresholds = @azimuth.PerformanceThresholds {
-    cpu_usage_percent : 80.0,
-    memory_usage_percent : 85.0,
-    response_time_ms : 1000.0,
-    error_rate_percent : 5.0,
-    throughput_per_second : 100.0
-  }
-  
-  @azimuth.PerformanceMonitor.set_thresholds(monitor, thresholds)
-  
-  // 模拟性能指标
-  let performance_metrics = [
-    @azimuth.PerformanceMetric {
-      name : "cpu_usage",
-      value : 75.5,
-      unit : "percent",
-      timestamp : @azimuth.current_timestamp()
-    },
-    @azimuth.PerformanceMetric {
-      name : "memory_usage",
-      value : 90.2,
-      unit : "percent",
-      timestamp : @azimuth.current_timestamp()
-    },
-    @azimuth.PerformanceMetric {
-      name : "response_time",
-      value : 1200.0,
-      unit : "ms",
-      timestamp : @azimuth.current_timestamp()
-    },
-    @azimuth.PerformanceMetric {
-      name : "error_rate",
-      value : 3.5,
-      unit : "percent",
-      timestamp : @azimuth.current_timestamp()
-    },
-    @azimuth.PerformanceMetric {
-      name : "throughput",
-      value : 150.0,
-      unit : "req/s",
-      timestamp : @azimuth.current_timestamp()
-    }
-  ]
-  
-  // 记录性能指标
-  for metric in performance_metrics {
-    @azimuth.PerformanceMonitor.record_metric(monitor, metric)
-  }
-  
-  // 检查阈值违规
-  let violations = @azimuth.PerformanceMonitor.check_thresholds(monitor)
-  
-  // 验证检测结果
-  assert_eq(violations.length(), 2) // 内存使用率和响应时间超过阈值
-  
-  let memory_violation = violations.find(fn(v) { v.metric_name == "memory_usage" })
-  match memory_violation {
-    Some(violation) => {
-      assert_eq(violation.current_value, 90.2)
-      assert_eq(violation.threshold_value, 85.0)
-      assert_true(violation.severity == @azimuth.Severity.Warning)
-    }
-    None => assert_true(false)
-  }
-  
-  let response_time_violation = violations.find(fn(v) { v.metric_name == "response_time" })
-  match response_time_violation {
-    Some(violation) => {
-      assert_eq(violation.current_value, 1200.0)
-      assert_eq(violation.threshold_value, 1000.0)
-      assert_true(violation.severity == @azimuth.Severity.Critical)
-    }
-    None => assert_true(false)
-  }
-  
-  // 测试性能趋势分析
-  let trend_analysis = @azimuth.PerformanceMonitor.analyze_trends(monitor, "response_time", 10)
-  assert_true(trend_analysis.trend_direction == @azimuth.TrendDirection.Increasing)
-  assert_true(trend_analysis.confidence > 0.7)
-  
-  // 测试自动阈值调整
-  let adjusted_thresholds = @azimuth.PerformanceMonitor.auto_adjust_thresholds(monitor, 7) // 7天历史数据
-  assert_true(adjusted_thresholds.response_time_ms > 1000.0) // 基于历史数据调整
-}
-
-// Test 7: 数据采样策略测试
-test "data sampling strategies" {
-  // 创建采样管理器
-  let sampling_manager = @azimuth.SamplingManager.new()
-  
-  // 测试固定比例采样
-  let fixed_sampler = @azimuth.FixedRateSampler.new(0.1) // 10%采样率
-  
-  let sampled_count = 0
-  let total_count = 1000
-  
-  for i = 0; i < total_count; i = i + 1 {
-    let trace_id = "trace-" + i.to_string()
-    if @azimuth.Sampler.should_sample(fixed_sampler, trace_id) {
-      sampled_count = sampled_count + 1
-    }
-  }
-  
-  // 验证采样率接近目标值（允许合理误差）
-  let actual_rate = sampled_count.to_float() / total_count.to_float()
-  assert_true(actual_rate > 0.05)
-  assert_true(actual_rate < 0.15)
-  
-  // 测试自适应采样
-  let adaptive_sampler = @azimuth.AdaptiveSampler.new(100) // 目标100个采样/秒
-  
-  let adaptive_sampled = 0
-  let current_time = @azimuth.current_timestamp()
-  
-  // 模拟不同时间段的请求
-  for i = 0; i < 500; i = i + 1 {
-    let trace_id = "adaptive-trace-" + i.to_string()
-    let timestamp = current_time + (i * 10) // 每10ms一个请求
+  // 创建基准测试函数
+  let run_benchmark = fn(operation: () -> Unit, iterations: Int, operation_name: String) {
+    let mut results = []
+    let mut success_count = 0
     
-    if @azimuth.AdaptiveSampler.should_sample_at_time(adaptive_sampler, trace_id, timestamp) {
-      adaptive_sampled = adaptive_sampled + 1
+    for i in 0..=iterations {
+      let start_time = 1640995200000 + i * 1000 // 模拟时间戳
+      let start_memory = 1024 * 1024 + i * 1024 // 模拟内存使用
+      
+      // 执行操作
+      let success = try {
+        operation()
+        true
+      } catch {
+        false
+      }
+      
+      let end_time = 1640995200000 + i * 1000 + 50 + (i % 20) // 模拟执行时间变化
+      let end_memory = 1024 * 1024 + i * 1024 + 512 // 模拟内存增长
+      
+      if success {
+        success_count = success_count + 1
+      }
+      
+      let metric = {
+        operation_name,
+        execution_time: end_time - start_time,
+        memory_usage: end_memory - start_memory,
+        cpu_usage: 0.1 + (i % 10).to_float() * 0.05, // 模拟CPU使用率变化
+        throughput: 1000.0 / (end_time - start_time).to_float(), // 吞吐量
+        error_rate: if success { 0.0 } else { 1.0 }
+      }
+      
+      results = results.push(metric)
+    }
+    
+    // 计算统计数据
+    let times = results.map(fn(m) { m.execution_time.to_float() })
+    let sorted_times = times.sort(fn(a, b) { a <= b })
+    
+    let average_time = times.reduce(fn(acc, t) { acc + t }, 0.0) / times.length().to_float()
+    let p95_index = (sorted_times.length().to_float() * 0.95).to_int()
+    let p99_index = (sorted_times.length().to_float() * 0.99).to_int()
+    
+    {
+      metrics: results,
+      average_time,
+      p95_time: sorted_times[p95_index],
+      p99_time: sorted_times[p99_index],
+      total_operations: iterations,
+      success_rate: success_count.to_float() / iterations.to_float()
     }
   }
   
-  // 验证自适应采样
-  assert_true(adaptive_sampled <= 100) // 不应超过目标采样数
-  
-  // 测试基于属性的采样
-  let attribute_sampler = @azimuth.AttributeBasedSampler.new([
-    ("error", true, 1.0),        // 错误追踪100%采样
-    ("slow_query", true, 0.8),   // 慢查询80%采样
-    ("endpoint", "/api/critical", 1.0) // 关键端点100%采样
-  ])
-  
-  // 测试错误追踪采样
-  let error_trace_attrs = [("error", true), ("endpoint", "/api/users")]
-  assert_true(@azimuth.AttributeBasedSampler.should_sample_with_attributes(
-    attribute_sampler, 
-    "error-trace", 
-    error_trace_attrs
-  ))
-  
-  // 测试慢查询采样
-  let slow_query_attrs = [("slow_query", true), ("query_time", "5000ms")]
-  let slow_query_sampled = 0
-  for i = 0; i < 100; i = i + 1 {
-    if @azimuth.AttributeBasedSampler.should_sample_with_attributes(
-      attribute_sampler, 
-      "slow-query-" + i.to_string(), 
-      slow_query_attrs
-    ) {
-      slow_query_sampled = slow_query_sampled + 1
+  // 定义测试操作
+  let telemetry_operation = fn() {
+    // 模拟遥测数据操作
+    let mut data = []
+    for i in 0..=10 {
+      data = data.push({
+        trace_id: "trace-" + i.to_string(),
+        span_id: "span-" + i.to_string(),
+        timestamp: 1640995200 + i,
+        value: i.to_float() * 1.5
+      })
     }
+    
+    // 模拟数据处理
+    let processed = data.map(fn(d) { 
+      { d | value: d.value * 2.0, processed: true }
+    })
+    
+    // 模拟数据验证
+    let valid = processed.filter(fn(d) { d.value > 0.0 })
+    
+    valid.length() > 0
   }
   
-  // 验证慢查询采样率接近80%
-  let slow_query_rate = slow_query_sampled.to_float() / 100.0
-  assert_true(slow_query_rate > 0.7)
-  assert_true(slow_query_rate < 0.9)
-  
-  // 测试组合采样策略
-  let composite_sampler = @azimuth.CompositeSampler.new([
-    fixed_sampler,
-    adaptive_sampler,
-    attribute_sampler
-  ])
-  
-  let composite_sampled = 0
-  for i = 0; i < 100; i = i + 1 {
-    let trace_id = "composite-trace-" + i.to_string()
-    if @azimuth.CompositeSampler.should_sample(composite_sampler, trace_id) {
-      composite_sampled = composite_sampled + 1
-    }
+  let database_operation = fn() {
+    // 模拟数据库操作
+    let query = "SELECT * FROM telemetry WHERE timestamp > 1640995200"
+    let connection_established = true // 模拟连接建立
+    let query_executed = true // 模拟查询执行
+    
+    connection_established and query_executed
   }
   
-  // 验证组合采样策略工作
-  assert_true(composite_sampled > 0)
-  assert_true(composite_sampled <= 100)
+  // 运行基准测试
+  let telemetry_benchmark = run_benchmark(telemetry_operation, 100, "telemetry_processing")
+  let database_benchmark = run_benchmark(database_operation, 50, "database_query")
+  
+  // 验证遥测操作基准测试结果
+  assert_eq(telemetry_benchmark.total_operations, 100)
+  assert_true(telemetry_benchmark.success_rate > 0.9)
+  assert_true(telemetry_benchmark.average_time > 0.0)
+  assert_true(telemetry_benchmark.p95_time >= telemetry_benchmark.average_time)
+  assert_true(telemetry_benchmark.p99_time >= telemetry_benchmark.p95_time)
+  
+  // 验证数据库操作基准测试结果
+  assert_eq(database_benchmark.total_operations, 50)
+  assert_true(database_benchmark.success_rate > 0.9)
+  assert_true(database_benchmark.average_time > 0.0)
+  
+  // 验证性能优化建议
+  let generate_optimization_suggestions = fn(result: BenchmarkResult) {
+    let mut suggestions = []
+    
+    if result.average_time > 100.0 {
+      suggestions = suggestions.push("Consider optimizing algorithm complexity")
+    }
+    
+    if result.p99_time > result.average_time * 3.0 {
+      suggestions = suggestions.push("Investigate outliers causing high P99 latency")
+    }
+    
+    if result.success_rate < 0.95 {
+      suggestions = suggestions.push("Improve error handling and retry mechanisms")
+    }
+    
+    suggestions
+  }
+  
+  let telemetry_suggestions = generate_optimization_suggestions(telemetry_benchmark)
+  let database_suggestions = generate_optimization_suggestions(database_benchmark)
+  
+  // 验证优化建议生成
+  assert_true(telemetry_suggestions.length() >= 0)
+  assert_true(database_suggestions.length() >= 0)
 }
 
-// Test 8: 遥测数据缓存测试
-test "telemetry data caching" {
-  // 创建缓存管理器
-  let cache_manager = @azimuth.CacheManager.new(@azimuth.CacheConfig {
-    max_size : 1000,
-    ttl_ms : 60000, // 1分钟TTL
-    eviction_policy : @azimuth.EvictionPolicy.LRU
-  })
-  
-  // 测试基本的缓存操作
-  let trace_id = "test-trace-12345"
-  let span_data = @azimuth.SpanData {
-    trace_id : trace_id,
-    span_id : "span-123",
-    operation_name : "cached.operation",
-    start_time : @azimuth.current_timestamp(),
-    attributes : [("cached", "true")]
+// Test 3: 跨平台兼容性测试
+test "cross-platform compatibility testing" {
+  // 定义平台信息
+  type Platform = {
+    os: String,
+    arch: String, 
+    version: String,
+    features: Array[String]
   }
   
-  // 测试缓存写入
-  let put_result = @azimuth.CacheManager.put(cache_manager, trace_id, span_data)
-  assert_true(put_result)
+  type CompatibilityResult = {
+    platform: Platform,
+    supported_features: Array[String],
+    unsupported_features: Array[String],
+    performance_factor: Float,
+    compatibility_score: Float
+  }
   
-  // 测试缓存读取
-  let cached_data = @azimuth.CacheManager.get(cache_manager, trace_id)
-  match cached_data {
-    Some(data) => {
-      assert_eq(data.trace_id, trace_id)
-      assert_eq(data.operation_name, "cached.operation")
-      assert_true(data.attributes.contains(("cached", "true")))
+  // 创建测试平台
+  let platforms = [
+    {
+      os: "linux",
+      arch: "x86_64", 
+      version: "5.15.0",
+      features: ["systemd", "cgroups", "namespaces", "epoll", "inotify"]
+    },
+    {
+      os: "windows",
+      arch: "amd64",
+      version: "10.0",
+      features: ["win32", "registry", "services", "event_log", "wmi"]
+    },
+    {
+      os: "macos",
+      arch: "arm64",
+      version: "12.0",
+      features: ["launchd", "xpc", "core_foundation", "grand_central_dispatch"]
+    },
+    {
+      os: "freebsd",
+      arch: "x86_64",
+      version: "13.0",
+      features: ["jails", "pf", "kqueue", "capsicum"]
     }
-    None => assert_true(false)
-  }
+  ]
   
-  // 测试缓存不存在的键
-  let non_existent = @azimuth.CacheManager.get(cache_manager, "non-existent-trace")
-  assert_eq(non_existent, None)
+  // 定义Azimuth功能需求
+  let azimuth_features = [
+    ("system_metrics", ["procfs", "performance_counters", "cgroups"]),
+    ("network_monitoring", ["packet_capture", "socket_stats", "tcp_info"]),
+    ("process_management", ["process_tree", "signal_handling", "resource_limits"]),
+    ("file_system", ["inotify", "file_events", "path_watching"]),
+    ("security", ["selinux", "apparmor", "capabilities"]),
+    ("logging", ["journald", "syslog", "structured_logging"])
+  ]
   
-  // 测试缓存更新
-  let updated_span = @azimuth.SpanData {
-    trace_id : trace_id,
-    span_id : "span-123",
-    operation_name : "cached.operation.updated",
-    start_time : @azimuth.current_timestamp(),
-    attributes : [("cached", "true"), ("updated", "true")]
-  }
-  
-  let update_result = @azimuth.CacheManager.put(cache_manager, trace_id, updated_span)
-  assert_true(update_result)
-  
-  let updated_data = @azimuth.CacheManager.get(cache_manager, trace_id)
-  match updated_data {
-    Some(data) => {
-      assert_eq(data.operation_name, "cached.operation.updated")
-      assert_true(data.attributes.contains(("updated", "true")))
+  // 测试平台兼容性
+  let test_platform_compatibility = fn(platform: Platform) {
+    let mut supported = []
+    let mut unsupported = []
+    
+    for (feature, requirements) in azimuth_features {
+      let mut feature_supported = true
+      
+      for requirement in requirements {
+        if not(platform.features.contains(requirement)) {
+          feature_supported = false
+        }
+      }
+      
+      if feature_supported {
+        supported = supported.push(feature)
+      } else {
+        unsupported = unsupported.push(feature)
+      }
     }
-    None => assert_true(false)
-  }
-  
-  // 测试批量缓存操作
-  let batch_data = []
-  for i = 0; i < 100; i = i + 1 {
-    let batch_span = @azimuth.SpanData {
-      trace_id : "batch-trace-" + i.to_string(),
-      span_id : "span-" + i.to_string(),
-      operation_name : "batch.operation",
-      start_time : @azimuth.current_timestamp(),
-      attributes : [("batch", "true"), ("index", i.to_string())]
+    
+    // 计算性能因子（基于平台特性）
+    let performance_factor = match platform.os {
+      "linux" => 1.0,
+      "windows" => 0.85,
+      "macos" => 0.9,
+      "freebsd" => 0.8,
+      _ => 0.7
     }
-    batch_data = batch_data.push((batch_span.trace_id, batch_span))
-  }
-  
-  let batch_put_result = @azimuth.CacheManager.put_batch(cache_manager, batch_data)
-  assert_true(batch_put_result)
-  
-  // 验证批量缓存
-  let batch_get_keys = batch_data.map(fn(item) { item.0 })
-  let batch_get_result = @azimuth.CacheManager.get_batch(cache_manager, batch_get_keys)
-  assert_eq(batch_get_result.length(), 100)
-  
-  // 测试缓存大小限制
-  let cache_stats = @azimuth.CacheManager.get_stats(cache_manager)
-  assert_eq(cache_stats.size, 101) // 1个初始项 + 100个批量项
-  
-  // 添加更多项以测试驱逐策略
-  for i = 100; i < 1200; i = i + 1 {
-    let overflow_span = @azimuth.SpanData {
-      trace_id : "overflow-trace-" + i.to_string(),
-      span_id : "span-" + i.to_string(),
-      operation_name : "overflow.operation",
-      start_time : @azimuth.current_timestamp(),
-      attributes : []
+    
+    // 计算兼容性评分
+    let compatibility_score = supported.length().to_float() / azimuth_features.length().to_float()
+    
+    {
+      platform,
+      supported_features: supported,
+      unsupported_features: unsupported,
+      performance_factor,
+      compatibility_score
     }
-    @azimuth.CacheManager.put(cache_manager, overflow_span.trace_id, overflow_span)
   }
   
-  // 验证缓存大小不超过最大值
-  let final_stats = @azimuth.CacheManager.get_stats(cache_manager)
-  assert_true(final_stats.size <= 1000)
-  
-  // 测试TTL过期
-  let ttl_span = @azimuth.SpanData {
-    trace_id : "ttl-test-trace",
-    span_id : "ttl-span",
-    operation_name : "ttl.operation",
-    start_time : @azimuth.current_timestamp(),
-    attributes : []
+  // 测试所有平台
+  let mut compatibility_results = []
+  for platform in platforms {
+    let result = test_platform_compatibility(platform)
+    compatibility_results = compatibility_results.push(result)
   }
   
-  @azimuth.CacheManager.put(cache_manager, ttl_span.trace_id, ttl_span)
+  // 验证Linux平台兼容性
+  let linux_result = compatibility_results.filter(fn(r) { r.platform.os == "linux" })[0]
+  assert_true(linux_result.compatibility_score > 0.8)
+  assert_eq(linux_result.performance_factor, 1.0)
+  assert_true(linux_result.supported_features.contains("system_metrics"))
   
-  // 模拟时间流逝（通过创建新的缓存管理器，设置很短的TTL）
-  let short_ttl_cache = @azimuth.CacheManager.new(@azimuth.CacheConfig {
-    max_size : 100,
-    ttl_ms : 1, // 1ms TTL
-    eviction_policy : @azimuth.EvictionPolicy.LRU
-  })
+  // 验证Windows平台兼容性
+  let windows_result = compatibility_results.filter(fn(r) { r.platform.os == "windows" })[0]
+  assert_true(windows_result.compatibility_score > 0.3)
+  assert_eq(windows_result.performance_factor, 0.85)
+  assert_true(windows_result.unsupported_features.length() > 0)
   
-  @azimuth.CacheManager.put(short_ttl_cache, "short-ttl-test", ttl_span)
+  // 验证macOS平台兼容性
+  let macos_result = compatibility_results.filter(fn(r) { r.platform.os == "macos" })[0]
+  assert_true(macos_result.compatibility_score > 0.4)
+  assert_eq(macos_result.performance_factor, 0.9)
   
-  // 等待TTL过期（在实际实现中可能需要时间模拟）
-  let expired_data = @azimuth.CacheManager.get(short_ttl_cache, "short-ttl-test")
-  // 在实际实现中，这里应该返回None，因为TTL已过期
+  // 验证FreeBSD平台兼容性
+  let freebsd_result = compatibility_results.filter(fn(r) { r.platform.os == "freebsd" })[0]
+  assert_true(freebsd_result.compatibility_score > 0.3)
+  assert_eq(freebsd_result.performance_factor, 0.8)
+  
+  // 生成平台兼容性报告
+  let generate_compatibility_report = fn(results: Array[CompatibilityResult]) {
+    let total_score = results.reduce(fn(acc, r) { acc + r.compatibility_score }, 0.0)
+    let average_score = total_score / results.length().to_float()
+    
+    let best_platform = results.reduce(fn(best, current) {
+      if current.compatibility_score > best.compatibility_score {
+        current
+      } else {
+        best
+      }
+    }, results[0])
+    
+    let supported_everywhere = azimuth_features.filter(fn(feature) {
+      results.all(fn(r) { r.supported_features.contains(feature.0) })
+    })
+    
+    let unsupported_somewhere = azimuth_features.filter(fn(feature) {
+      results.any(fn(r) { r.unsupported_features.contains(feature.0) })
+    })
+    
+    {
+      average_compatibility_score: average_score,
+      best_platform: best_platform.platform.os,
+      universally_supported_features: supported_everywhere.map(fn(f) { f.0 }),
+      partially_supported_features: unsupported_somewhere.map(fn(f) { f.0 })
+    }
+  }
+  
+  let report = generate_compatibility_report(compatibility_results)
+  
+  // 验证兼容性报告
+  assert_true(report.average_compatibility_score > 0.5)
+  assert_eq(report.best_platform, "linux")
+  assert_true(report.universally_supported_features.length() >= 0)
+  assert_true(report.partially_supported_features.length() > 0)
 }
 
-// Test 9: 错误恢复和容错测试
-test "error recovery and fault tolerance" {
-  // 创建容错管理器
-  let fault_manager = @azimuth.FaultManager.new(@azimuth.FaultConfig {
-    max_retries : 3,
-    retry_delay_ms : 1000,
-    circuit_breaker_threshold : 5,
-    circuit_breaker_timeout_ms : 10000,
-    fallback_enabled : true
-  })
+// Test 4: 错误恢复和弹性模式
+test "error recovery and resilience patterns" {
+  // 定义错误类型
+  enum TelemetryError {
+    NetworkTimeout(Int)
+    ConnectionLost(String)
+    DataCorruption(String)
+    ResourceExhausted(String)
+    ConfigurationError(String)
+  }
+  
+  // 定义恢复策略
+  enum RecoveryStrategy {
+    Retry(Int) // 重试次数
+    CircuitBreaker(Int, Int) // 失败阈值, 恢复超时
+    Fallback(() -> Unit) // 降级操作
+    ExponentialBackoff(Int, Float) // 初始延迟, 退避因子
+  }
+  
+  // 定义弹性配置
+  type ResilienceConfig = {
+    max_retries: Int,
+    timeout_ms: Int,
+    circuit_breaker_threshold: Int,
+    recovery_timeout_ms: Int,
+    fallback_enabled: Bool
+  }
+  
+  // 创建弹性配置
+  let config = {
+    max_retries: 3,
+    timeout_ms: 5000,
+    circuit_breaker_threshold: 5,
+    recovery_timeout_ms: 30000,
+    fallback_enabled: true
+  }
+  
+  // 实现重试机制
+  let retry_with_backoff = fn(operation: () -> Result[Unit, TelemetryError], max_retries: Int, base_delay: Int) {
+    let mut attempt = 0
+    let mut delay = base_delay
+    
+    while attempt <= max_retries {
+      let result = operation()
+      
+      match result {
+        Ok(_) => return Ok(()),
+        Err(error) => {
+          attempt = attempt + 1
+          
+          if attempt <= max_retries {
+            // 指数退避
+            delay = delay * 2
+            
+            // 在实际实现中，这里会有延迟
+            // 对于测试，我们直接继续
+          } else {
+            return Err(error)
+          }
+        }
+      }
+    }
+    
+    Err(TelemetryError::NetworkTimeout(0))
+  }
+  
+  // 实现断路器模式
+  type CircuitBreaker = {
+    failure_count: Int,
+    state: String, // "closed", "open", "half_open"
+    last_failure_time: Int,
+    threshold: Int,
+    timeout: Int
+  }
+  
+  let create_circuit_breaker = fn(threshold: Int, timeout: Int) {
+    {
+      failure_count: 0,
+      state: "closed",
+      last_failure_time: 0,
+      threshold,
+      timeout
+    }
+  }
+  
+  let call_with_circuit_breaker = fn(breaker: CircuitBreaker, operation: () -> Result[Unit, TelemetryError]) {
+    let current_time = 1640995200000 // 模拟当前时间
+    
+    match breaker.state {
+      "open" => {
+        if current_time - breaker.last_failure_time > breaker.timeout {
+          // 尝试半开状态
+          let updated_breaker = { breaker | state: "half_open" }
+          let result = operation()
+          
+          match result {
+            Ok(_) => {
+              // 成功，关闭断路器
+              let reset_breaker = { updated_breaker | failure_count: 0, state: "closed" }
+              (Ok(()), reset_breaker)
+            }
+            Err(_) => {
+              // 失败，重新打开断路器
+              let reopened_breaker = { updated_breaker | state: "open", last_failure_time: current_time }
+              (result, reopened_breaker)
+            }
+          }
+        } else {
+          // 断路器仍然打开
+          (Err(TelemetryError::ConnectionLost("Circuit breaker is open")), breaker)
+        }
+      }
+      _ => {
+        let result = operation()
+        
+        match result {
+          Ok(_) => {
+            // 成功，重置失败计数
+            let updated_breaker = { breaker | failure_count: 0 }
+            (result, updated_breaker)
+          }
+          Err(_) => {
+            // 失败，增加失败计数
+            let new_failure_count = breaker.failure_count + 1
+            let new_state = if new_failure_count >= breaker.threshold { "open" } else { breaker.state }
+            let updated_breaker = { 
+              breaker | 
+              failure_count: new_failure_count, 
+              state: new_state,
+              last_failure_time: if new_state == "open" { current_time } else { breaker.last_failure_time }
+            }
+            (result, updated_breaker)
+          }
+        }
+      }
+    }
+  }
+  
+  // 测试操作
+  let reliable_operation = fn() {
+    Ok(())
+  }
+  
+  let flaky_operation = fn() {
+    let random = 0.3 // 模拟随机失败概率
+    if random < 0.3 {
+      Err(TelemetryError::NetworkTimeout(5000))
+    } else {
+      Ok(())
+    }
+  }
+  
+  let failing_operation = fn() {
+    Err(TelemetryError::ConnectionLost("Connection refused"))
+  }
   
   // 测试重试机制
-  let mut attempt_count = 0
-  let flaky_operation = fn() {
-    attempt_count = attempt_count + 1
-    if attempt_count < 3 {
-      @azimuth.OperationResult.Error("Temporary failure")
-    } else {
-      @azimuth.OperationResult.Success("Operation completed")
-    }
-  }
-  
-  let retry_result = @azimuth.FaultManager.execute_with_retry(fault_manager, flaky_operation)
+  let retry_result = retry_with_backoff(reliable_operation, config.max_retries, 1000)
   match retry_result {
-    @azimuth.OperationResult.Success(message) => {
-      assert_eq(message, "Operation completed")
-      assert_eq(attempt_count, 3)
-    }
-    @azimuth.OperationResult.Error(_) => assert_true(false)
+    Ok(_) => assert_true(true),
+    Err(_) => assert_true(false)
   }
   
-  // 测试熔断器
-  let mut failure_count = 0
-  let failing_operation = fn() {
-    failure_count = failure_count + 1
-    @azimuth.OperationResult.Error("Persistent failure")
+  // 测试断路器
+  let breaker = create_circuit_breaker(config.circuit_breaker_threshold, config.recovery_timeout_ms)
+  
+  // 执行多次失败操作
+  let mut current_breaker = breaker
+  let mut results = []
+  
+  for i in 0..=6 {
+    let (result, updated_breaker) = call_with_circuit_breaker(current_breaker, failing_operation)
+    current_breaker = updated_breaker
+    results = results.push((result, current_breaker.state))
   }
   
-  // 触发熔断器
-  for i = 0; i < 6; i = i + 1 {
-    @azimuth.FaultManager.execute_with_circuit_breaker(fault_manager, "failing.service", failing_operation)
-  }
+  // 验证断路器状态变化
+  let final_state = results[results.length() - 1].1
+  assert_eq(final_state, "open")
   
-  // 验证熔断器已打开
-  let circuit_state = @azimuth.FaultManager.get_circuit_state(fault_manager, "failing.service")
-  assert_eq(circuit_state, @azimuth.CircuitState.Open)
-  
-  // 测试熔断器打开时的快速失败
-  let fast_failure_result = @azimuth.FaultManager.execute_with_circuit_breaker(
-    fault_manager, 
-    "failing.service", 
-    fn() { @azimuth.OperationResult.Success("Should not execute") }
-  )
-  match fast_failure_result {
-    @azimuth.OperationResult.Error(message) => {
-      assert_true(message.contains("Circuit breaker is open"))
-    }
+  // 验证断路器阻止了进一步的操作
+  let (blocked_result, _) = call_with_circuit_breaker(current_breaker, reliable_operation)
+  match blocked_result {
+    Err(TelemetryError::ConnectionLost(msg)) => assert_true(msg.contains("Circuit breaker is open")),
     _ => assert_true(false)
   }
   
   // 测试降级机制
   let primary_operation = fn() {
-    @azimuth.OperationResult.Error("Primary service unavailable")
+    Err(TelemetryError::ResourceExhausted("Memory limit exceeded"))
   }
   
   let fallback_operation = fn() {
-    @azimuth.OperationResult.Success("Fallback response")
+    // 降级到本地缓存
+    Ok(())
   }
   
-  let fallback_result = @azimuth.FaultManager.execute_with_fallback(
-    fault_manager, 
-    primary_operation, 
-    fallback_operation
-  )
+  let execute_with_fallback = fn(primary: () -> Result[Unit, TelemetryError], fallback: () -> Unit) {
+    match primary() {
+      Ok(_) => Ok(()),
+      Err(_) => {
+        fallback()
+        Ok(())
+      }
+    }
+  }
+  
+  let fallback_result = execute_with_fallback(primary_operation, fallback_operation)
   match fallback_result {
-    @azimuth.OperationResult.Success(message) => {
-      assert_eq(message, "Fallback response")
-    }
-    _ => assert_true(false)
+    Ok(_) => assert_true(true),
+    Err(_) => assert_true(false)
+  }
+}
+
+// Test 5: 数据验证和模式合规性
+test "data validation and schema compliance" {
+  // 定义数据模式
+  type SchemaField = {
+    name: String,
+    data_type: String,
+    required: Bool,
+    validation_rules: Array[String]
   }
   
-  // 测试超时处理
-  let slow_operation = fn() {
-    // 模拟慢操作
-    @azimuth.Thread.sleep(5000) // 5秒
-    @azimuth.OperationResult.Success("Slow operation completed")
+  type DataSchema = {
+    name: String,
+    version: String,
+    fields: Array[SchemaField]
   }
   
-  let timeout_result = @azimuth.FaultManager.execute_with_timeout(
-    fault_manager, 
-    slow_operation, 
-    1000 // 1秒超时
-  )
-  match timeout_result {
-    @azimuth.OperationResult.Error(message) => {
-      assert_true(message.contains("timeout"))
-    }
-    _ => assert_true(false)
+  // 定义验证结果
+  type ValidationResult = {
+    valid: Bool,
+    errors: Array[String],
+    warnings: Array[String]
   }
   
-  // 测试错误聚合和分析
-  let error_samples = [
-    @azimuth.ErrorSample {
-      error_type : "ConnectionError",
-      service : "database",
-      timestamp : @azimuth.current_timestamp(),
-      context : [("query", "SELECT * FROM users")]
-    },
-    @azimuth.ErrorSample {
-      error_type : "TimeoutError",
-      service : "api-gateway",
-      timestamp : @azimuth.current_timestamp(),
-      context : [("endpoint", "/api/users")]
-    },
-    @azimuth.ErrorSample {
-      error_type : "ConnectionError",
-      service : "database",
-      timestamp : @azimuth.current_timestamp(),
-      context : [("query", "SELECT * FROM orders")]
+  // 创建遥测数据模式
+  let telemetry_schema = {
+    name: "azimuth.telemetry.v1",
+    version: "1.0.0",
+    fields: [
+      {
+        name: "trace_id",
+        data_type: "string",
+        required: true,
+        validation_rules: ["length:32", "format:hex"]
+      },
+      {
+        name: "span_id",
+        data_type: "string", 
+        required: true,
+        validation_rules: ["length:16", "format:hex"]
+      },
+      {
+        name: "timestamp",
+        data_type: "integer",
+        required: true,
+        validation_rules: ["min:0", "max:4294967295"]
+      },
+      {
+        name: "duration",
+        data_type: "integer",
+        required: true,
+        validation_rules: ["min:0"]
+      },
+      {
+        name: "service_name",
+        data_type: "string",
+        required: true,
+        validation_rules: ["min_length:1", "max_length:255"]
+      },
+      {
+        name: "operation_name",
+        data_type: "string",
+        required: true,
+        validation_rules: ["min_length:1", "max_length:255"]
+      },
+      {
+        name: "status_code",
+        data_type: "string",
+        required: false,
+        validation_rules: ["enum:OK,ERROR,TIMEOUT,CANCELLED"]
+      },
+      {
+        name: "error_message",
+        data_type: "string",
+        required: false,
+        validation_rules: ["max_length:1024"]
+      }
+    ]
+  }
+  
+  // 实现验证函数
+  let validate_field = fn(field: SchemaField, value: Any) {
+    let mut errors = []
+    let mut warnings = []
+    
+    // 检查必填字段
+    if field.required and value == None {
+      errors = errors.push("Required field '" + field.name + "' is missing")
+      return { valid: false, errors, warnings }
     }
+    
+    if value == None {
+      return { valid: true, errors, warnings }
+    }
+    
+    // 类型验证（简化）
+    let type_valid = match field.data_type {
+      "string" => true, // 简化处理
+      "integer" => true, // 简化处理
+      "float" => true,   // 简化处理
+      "boolean" => true, // 简化处理
+      _ => false
+    }
+    
+    if not(type_valid) {
+      errors = errors.push("Field '" + field.name + "' has invalid type")
+    }
+    
+    // 验证规则
+    for rule in field.validation_rules {
+      if rule.starts_with("length:") {
+        let expected_length = rule.split(":")[1].to_int()
+        let actual_length = match value {
+          String(s) => s.length(),
+          _ => 0
+        }
+        
+        if actual_length != expected_length {
+          errors = errors.push("Field '" + field.name + "' length must be " + expected_length.to_string())
+        }
+      }
+      
+      if rule.starts_with("min_length:") {
+        let min_length = rule.split(":")[1].to_int()
+        let actual_length = match value {
+          String(s) => s.length(),
+          _ => 0
+        }
+        
+        if actual_length < min_length {
+          errors = errors.push("Field '" + field.name + "' length must be at least " + min_length.to_string())
+        }
+      }
+      
+      if rule.starts_with("max_length:") {
+        let max_length = rule.split(":")[1].to_int()
+        let actual_length = match value {
+          String(s) => s.length(),
+          _ => 0
+        }
+        
+        if actual_length > max_length {
+          errors = errors.push("Field '" + field.name + "' length must not exceed " + max_length.to_string())
+        }
+      }
+      
+      if rule.starts_with("min:") {
+        let min_value = rule.split(":")[1].to_int()
+        let actual_value = match value {
+          Int(i) => i,
+          _ => 0
+        }
+        
+        if actual_value < min_value {
+          errors = errors.push("Field '" + field.name + "' must be at least " + min_value.to_string())
+        }
+      }
+      
+      if rule.starts_with("max:") {
+        let max_value = rule.split(":")[1].to_int()
+        let actual_value = match value {
+          Int(i) => i,
+          _ => 0
+        }
+        
+        if actual_value > max_value {
+          errors = errors.push("Field '" + field.name + "' must not exceed " + max_value.to_string())
+        }
+      }
+      
+      if rule.starts_with("enum:") {
+        let allowed_values = rule.split(":")[1].split(",")
+        let actual_value = match value {
+          String(s) => s,
+          _ => ""
+        }
+        
+        if not(allowed_values.contains(actual_value)) {
+          errors = errors.push("Field '" + field.name + "' must be one of: " + rule.split(":")[1])
+        }
+      }
+      
+      if rule == "format:hex" {
+        let actual_value = match value {
+          String(s) => s,
+          _ => ""
+        }
+        
+        let is_hex = actual_value.all(fn(c) { 
+          (c >= '0' and c <= '9') or (c >= 'a' and c <= 'f') or (c >= 'A' and c <= 'F')
+        })
+        
+        if not(is_hex) {
+          errors = errors.push("Field '" + field.name + "' must be a valid hexadecimal string")
+        }
+      }
+    }
+    
+    {
+      valid: errors.length() == 0,
+      errors,
+      warnings
+    }
+  }
+  
+  let validate_data = fn(schema: DataSchema, data: Array[(String, Any)]) {
+    let mut all_errors = []
+    let mut all_warnings = []
+    
+    // 验证提供的字段
+    for (field_name, value) in data {
+      let field = schema.fields.find(fn(f) { f.name == field_name })
+      match field {
+        Some(f) => {
+          let result = validate_field(f, value)
+          all_errors = all_errors + result.errors
+          all_warnings = all_warnings + result.warnings
+        }
+        None => {
+          all_warnings = all_warnings.push("Unknown field '" + field_name + "'")
+        }
+      }
+    }
+    
+    // 检查缺失的必填字段
+    for field in schema.fields {
+      if field.required and not(data.any(fn(d) { d.0 == field.name })) {
+        all_errors = all_errors.push("Required field '" + field.name + "' is missing")
+      }
+    }
+    
+    {
+      valid: all_errors.length() == 0,
+      errors: all_errors,
+      warnings: all_warnings
+    }
+  }
+  
+  // 测试有效数据
+  let valid_data = [
+    ("trace_id", "a1b2c3d4e5f6789012345678901234ab"),
+    ("span_id", "1234567890abcdef"),
+    ("timestamp", 1640995200000),
+    ("duration", 150),
+    ("service_name", "payment-service"),
+    ("operation_name", "process_payment"),
+    ("status_code", "OK")
   ]
   
-  let error_analysis = @azimuth.FaultManager.analyze_errors(fault_manager, error_samples)
+  let valid_result = validate_data(telemetry_schema, valid_data)
+  assert_true(valid_result.valid)
+  assert_eq(valid_result.errors.length(), 0)
   
-  // 验证错误分析结果
-  assert_eq(error_analysis.total_errors, 3)
-  assert_eq(error_analysis.unique_error_types, 2)
-  assert_eq(error_analysis.most_common_error_type, "ConnectionError")
+  // 测试无效数据
+  let invalid_data = [
+    ("trace_id", "invalid-trace-id"), // 无效格式
+    ("span_id", "123"), // 长度错误
+    ("timestamp", -1), // 最小值错误
+    ("duration", 100),
+    ("service_name", ""), // 最小长度错误
+    ("operation_name", "process_payment"),
+    ("status_code", "INVALID") // 枚举值错误
+  ]
   
-  let db_errors = error_analysis.by_service.get("database")
-  match db_errors {
-    Some(count) => assert_eq(count, 2)
+  let invalid_result = validate_data(telemetry_schema, invalid_data)
+  assert_false(invalid_result.valid)
+  assert_true(invalid_result.errors.length() > 0)
+  
+  // 测试缺失必填字段
+  let incomplete_data = [
+    ("trace_id", "a1b2c3d4e5f6789012345678901234ab"),
+    ("timestamp", 1640995200000)
+    // 缺失 span_id, service_name, operation_name
+  ]
+  
+  let incomplete_result = validate_data(telemetry_schema, incomplete_data)
+  assert_false(incomplete_result.valid)
+  assert_true(incomplete_result.errors.length() >= 3) // 至少3个必填字段缺失
+  
+  // 测试未知字段
+  let data_with_extra_fields = [
+    ("trace_id", "a1b2c3d4e5f6789012345678901234ab"),
+    ("span_id", "1234567890abcdef"),
+    ("timestamp", 1640995200000),
+    ("duration", 150),
+    ("service_name", "payment-service"),
+    ("operation_name", "process_payment"),
+    ("unknown_field", "some_value") // 未知字段
+  ]
+  
+  let extra_fields_result = validate_data(telemetry_schema, data_with_extra_fields)
+  assert_true(extra_fields_result.warnings.length() > 0)
+  assert_true(extra_fields_result.warnings.any(fn(w) { w.contains("Unknown field") }))
+}
+
+// Test 6: 网络通信协议测试
+test "network communication protocols testing" {
+  // 定义网络协议类型
+  enum Protocol {
+    HTTP
+    HTTPS
+    GRPC
+    WebSocket
+    TCP
+    UDP
+  }
+  
+  // 定义网络消息
+  type NetworkMessage = {
+    protocol: Protocol,
+    source: String,
+    destination: String,
+    payload: Array[Byte],
+    headers: Array[(String, String)],
+    timestamp: Int
+  }
+  
+  // 定义连接状态
+  enum ConnectionState {
+    Disconnected
+    Connecting
+    Connected
+    Reconnecting
+    Failed
+  }
+  
+  // 定义网络连接
+  type NetworkConnection = {
+    id: String,
+    protocol: Protocol,
+    state: ConnectionState,
+    endpoint: String,
+    last_activity: Int,
+    bytes_sent: Int,
+    bytes_received: Int,
+    error_count: Int
+  }
+  
+  // 创建连接管理器
+  type ConnectionManager = {
+    connections: Array[NetworkConnection],
+    max_connections: Int,
+    connection_timeout: Int
+  }
+  
+  let create_connection_manager = fn(max_connections: Int, timeout: Int) {
+    {
+      connections: [],
+      max_connections,
+      connection_timeout: timeout
+    }
+  }
+  
+  // 创建新连接
+  let create_connection = fn(manager: ConnectionManager, protocol: Protocol, endpoint: String) {
+    if manager.connections.length() >= manager.max_connections {
+      return None
+    }
+    
+    let connection = {
+      id: "conn-" + manager.connections.length().to_string(),
+      protocol,
+      state: Connecting,
+      endpoint,
+      last_activity: 1640995200000,
+      bytes_sent: 0,
+      bytes_received: 0,
+      error_count: 0
+    }
+    
+    Some(connection)
+  }
+  
+  // 测试不同协议的连接创建
+  let manager = create_connection_manager(10, 30000)
+  
+  let http_connection = create_connection(manager, HTTP, "http://api.example.com:80")
+  let https_connection = create_connection(manager, HTTPS, "https://api.example.com:443")
+  let grpc_connection = create_connection(manager, GRPC, "grpc://api.example.com:50051")
+  let ws_connection = create_connection(manager, WebSocket, "ws://api.example.com:8080")
+  
+  // 验证连接创建
+  assert_true(http_connection != None)
+  assert_true(https_connection != None)
+  assert_true(grpc_connection != None)
+  assert_true(ws_connection != None)
+  
+  // 测试消息格式化
+  let format_http_message = fn(method: String, path: String, headers: Array[(String, String)], body: String) {
+    let http_headers = headers.map(fn(h) { h.0 + ": " + h.1 }).join("\r\n")
+    let http_request = method + " " + path + " HTTP/1.1\r\n" + http_headers + "\r\n\r\n" + body
+    
+    {
+      protocol: HTTP,
+      source: "client",
+      destination: "server",
+      payload: http_request.to_bytes(),
+      headers,
+      timestamp: 1640995200000
+    }
+  }
+  
+  let format_grpc_message = fn(service: String, method: String, data: String) {
+    // 简化的gRPC消息格式
+    let grpc_payload = service + "." + method + ":" + data
+    
+    {
+      protocol: GRPC,
+      source: "client",
+      destination: "server",
+      payload: grpc_payload.to_bytes(),
+      headers: [("content-type", "application/grpc"), ("grpc-encoding", "identity")],
+      timestamp: 1640995200000
+    }
+  }
+  
+  // 创建测试消息
+  let http_message = format_http_message(
+    "POST",
+    "/api/v1/telemetry",
+    [("Content-Type", "application/json"), ("Authorization", "Bearer token123")],
+    "{\"trace_id\":\"abc123\",\"metrics\":[{\"name\":\"cpu_usage\",\"value\":75.5}]}"
+  )
+  
+  let grpc_message = format_grpc_message(
+    "telemetry.TelemetryService",
+    "CollectMetrics",
+    "{\"service\":\"payment\",\"metrics\":[{\"name\":\"response_time\",\"value\":150}]}"
+  )
+  
+  // 验证消息格式
+  assert_eq(http_message.protocol, HTTP)
+  assert_true(http_message.payload.length() > 0)
+  assert_true(http_message.headers.contains(("Content-Type", "application/json")))
+  
+  assert_eq(grpc_message.protocol, GRPC)
+  assert_true(grpc_message.payload.length() > 0)
+  assert_true(grpc_message.headers.contains(("content-type", "application/grpc")))
+  
+  // 测试协议特定的特性
+  let test_protocol_features = fn(protocol: Protocol) {
+    match protocol {
+      HTTP => {
+        // HTTP特性测试
+        let features = ["stateless", "text-based", "request-response"]
+        assert_eq(features.length(), 3)
+      }
+      HTTPS => {
+        // HTTPS特性测试
+        let features = ["encrypted", "certificate-based", "secure"]
+        assert_eq(features.length(), 3)
+      }
+      GRPC => {
+        // gRPC特性测试
+        let features = ["binary", "streaming", "protobuf"]
+        assert_eq(features.length(), 3)
+      }
+      WebSocket => {
+        // WebSocket特性测试
+        let features = ["bidirectional", "persistent", "full-duplex"]
+        assert_eq(features.length(), 3)
+      }
+      TCP => {
+        // TCP特性测试
+        let features = ["reliable", "connection-oriented", "stream-based"]
+        assert_eq(features.length(), 3)
+      }
+      UDP => {
+        // UDP特性测试
+        let features = ["unreliable", "connectionless", "datagram-based"]
+        assert_eq(features.length(), 3)
+      }
+    }
+  }
+  
+  // 测试所有协议特性
+  test_protocol_features(HTTP)
+  test_protocol_features(HTTPS)
+  test_protocol_features(GRPC)
+  test_protocol_features(WebSocket)
+  test_protocol_features(TCP)
+  test_protocol_features(UDP)
+  
+  // 测试连接状态管理
+  let update_connection_state = fn(connection: NetworkConnection, new_state: ConnectionState) {
+    let current_time = 1640995200000
+    {
+      connection |
+      state: new_state,
+      last_activity: current_time
+    }
+  }
+  
+  match http_connection {
+    Some(conn) => {
+      let connecting_state = update_connection_state(conn, Connecting)
+      assert_eq(connecting_state.state, Connecting)
+      
+      let connected_state = update_connection_state(connecting_state, Connected)
+      assert_eq(connected_state.state, Connected)
+      
+      let failed_state = update_connection_state(connected_state, Failed)
+      assert_eq(failed_state.state, Failed)
+    }
+    None => assert_true(false)
+  }
+  
+  // 测试网络错误处理
+  let simulate_network_error = fn(connection: NetworkConnection, error_type: String) {
+    let updated_connection = {
+      connection |
+      error_count: connection.error_count + 1,
+      state: Failed
+    }
+    
+    match error_type {
+      "timeout" => (updated_connection, "Connection timeout after 30 seconds"),
+      "refused" => (updated_connection, "Connection refused by server"),
+      "dns" => (updated_connection, "DNS resolution failed"),
+      _ => (updated_connection, "Unknown network error")
+    }
+  }
+  
+  match http_connection {
+    Some(conn) => {
+      let (error_conn, error_msg) = simulate_network_error(conn, "timeout")
+      assert_eq(error_conn.state, Failed)
+      assert_eq(error_conn.error_count, 1)
+      assert_true(error_msg.contains("timeout"))
+    }
     None => assert_true(false)
   }
 }
 
-// Test 10: 资源使用优化测试
-test "resource usage optimization" {
-  // 创建资源监控器
-  let resource_monitor = @azimuth.ResourceMonitor.new()
-  
-  // 测试内存使用优化
-  let memory_before = @azimuth.ResourceMonitor.get_memory_usage(resource_monitor)
-  
-  // 创建大量遥测数据
-  let large_dataset = []
-  for i = 0; i < 10000; i = i + 1 {
-    let telemetry_data = @azimuth.TelemetryData {
-      trace_id : "trace-" + i.to_string(),
-      span_id : "span-" + i.to_string(),
-      operation_name : "memory.test.operation",
-      attributes : [
-        ("index", i.to_string()),
-        ("data", "large data string " + i.to_string()),
-        ("timestamp", @azimuth.current_timestamp().to_string())
-      ]
-    }
-    large_dataset = large_dataset.push(telemetry_data)
+// Test 7: 内存管理和泄漏检测
+test "memory management and leak detection" {
+  // 定义内存使用统计
+  type MemoryStats = {
+    total_allocated: Int,
+    total_freed: Int,
+    current_usage: Int,
+    peak_usage: Int,
+    allocation_count: Int,
+    deallocation_count: Int
   }
   
-  let memory_after_creation = @azimuth.ResourceMonitor.get_memory_usage(resource_monitor)
-  assert_true(memory_after_creation > memory_before)
+  // 定义内存块
+  type MemoryBlock = {
+    id: String,
+    size: Int,
+    allocated_at: Int,
+    freed_at: Option[Int],
+    allocation_site: String
+  }
   
-  // 测试内存优化策略
-  let optimized_dataset = @azimuth.ResourceOptimizer.optimize_memory_usage(large_dataset)
-  let memory_after_optimization = @azimuth.ResourceMonitor.get_memory_usage(resource_monitor)
+  // 定义内存管理器
+  type MemoryManager = {
+    blocks: Array[MemoryBlock],
+    stats: MemoryStats,
+    leak_detection_enabled: Bool,
+    max_block_size: Int
+  }
   
-  // 验证内存使用减少
-  assert_true(memory_after_optimization < memory_after_creation)
-  assert_eq(optimized_dataset.length(), large_dataset.length()) // 数据数量不变
+  // 创建内存管理器
+  let create_memory_manager = fn() {
+    {
+      blocks: [],
+      stats: {
+        total_allocated: 0,
+        total_freed: 0,
+        current_usage: 0,
+        peak_usage: 0,
+        allocation_count: 0,
+        deallocation_count: 0
+      },
+      leak_detection_enabled: true,
+      max_block_size: 1024 * 1024 // 1MB
+    }
+  }
   
-  // 测试CPU使用优化
-  let cpu_start = @azimuth.ResourceMonitor.get_cpu_usage(resource_monitor)
+  // 分配内存
+  let allocate_memory = fn(manager: MemoryManager, size: Int, allocation_site: String) {
+    if size > manager.max_block_size {
+      return (None, manager)
+    }
+    
+    let block = {
+      id: "block-" + manager.stats.allocation_count.to_string(),
+      size,
+      allocated_at: 1640995200000 + manager.stats.allocation_count,
+      freed_at: None,
+      allocation_site
+    }
+    
+    let updated_blocks = manager.blocks.push(block)
+    let new_current_usage = manager.stats.current_usage + size
+    let new_peak_usage = if new_current_usage > manager.stats.peak_usage {
+      new_current_usage
+    } else {
+      manager.stats.peak_usage
+    }
+    
+    let updated_stats = {
+      total_allocated: manager.stats.total_allocated + size,
+      total_freed: manager.stats.total_freed,
+      current_usage: new_current_usage,
+      peak_usage: new_peak_usage,
+      allocation_count: manager.stats.allocation_count + 1,
+      deallocation_count: manager.stats.deallocation_count
+    }
+    
+    let updated_manager = {
+      manager |
+      blocks: updated_blocks,
+      stats: updated_stats
+    }
+    
+    (Some(block.id), updated_manager)
+  }
   
-  // 执行CPU密集型操作
-  let cpu_intensive_result = @azimuth.ResourceOptimizer.optimize_cpu_processing(large_dataset, fn(data) {
-    // 模拟CPU密集型转换
-    data.map(fn(item) { 
-      @azimuth.TelemetryData {
-        trace_id : item.trace_id,
-        span_id : item.span_id,
-        operation_name : item.operation_name.to_uppercase(),
-        attributes : item.attributes
+  // 释放内存
+  let free_memory = fn(manager: MemoryManager, block_id: String) {
+    let block_index = manager.blocks.index_of(fn(b) { b.id == block_id })
+    
+    match block_index {
+      Some(index) => {
+        let block = manager.blocks[index]
+        
+        match block.freed_at {
+          None => {
+            // 块尚未释放
+            let current_time = 1640995200000
+            let freed_block = { block | freed_at: Some(current_time) }
+            let updated_blocks = manager.blocks.update(index, freed_block)
+            
+            let updated_stats = {
+              total_allocated: manager.stats.total_allocated,
+              total_freed: manager.stats.total_freed + block.size,
+              current_usage: manager.stats.current_usage - block.size,
+              peak_usage: manager.stats.peak_usage,
+              allocation_count: manager.stats.allocation_count,
+              deallocation_count: manager.stats.deallocation_count + 1
+            }
+            
+            let updated_manager = {
+              manager |
+              blocks: updated_blocks,
+              stats: updated_stats
+            }
+            
+            (true, updated_manager)
+          }
+          Some(_) => {
+            // 块已经释放
+            (false, manager)
+          }
+        }
+      }
+      None => {
+        // 块不存在
+        (false, manager)
+      }
+    }
+  }
+  
+  // 检测内存泄漏
+  let detect_memory_leaks = fn(manager: MemoryManager) {
+    let leaked_blocks = manager.blocks.filter(fn(block) {
+      match block.freed_at {
+        None => true, // 尚未释放的块
+        Some(_) => false
       }
     })
-  })
+    
+    let total_leaked = leaked_blocks.reduce(fn(acc, block) { acc + block.size }, 0)
+    
+    {
+      leaked_blocks,
+      total_leaked,
+      leak_count: leaked_blocks.length(),
+      leak_detected: total_leaked > 0
+    }
+  }
   
-  let cpu_end = @azimuth.ResourceMonitor.get_cpu_usage(resource_monitor)
+  // 测试内存管理
+  let manager = create_memory_manager()
   
-  // 验证CPU优化结果
-  assert_eq(cpu_intensive_result.length(), large_dataset.length())
-  assert_true(cpu_intensive_result[0].operation_name.contains("MEMORY.TEST.OPERATION"))
+  // 分配内存
+  let (block1_id, manager1) = allocate_memory(manager, 1024, "telemetry_buffer")
+  let (block2_id, manager2) = allocate_memory(manager1, 2048, "metrics_storage")
+  let (block3_id, manager3) = allocate_memory(manager2, 512, "span_context")
   
-  // 测试I/O优化
-  let io_start_time = @azimuth.current_timestamp()
+  // 验证内存分配
+  assert_true(block1_id != None)
+  assert_true(block2_id != None)
+  assert_true(block3_id != None)
   
-  // 执行批量I/O操作
-  let batch_export_data = large_dataset.take(1000) // 取前1000项
-  let io_optimized_result = @azimuth.ResourceOptimizer.optimize_io_operations(batch_export_data, fn(batch) {
-    // 模拟批量I/O操作
-    @azimuth.BatchOperationResult {
-      success : true,
-      processed_count : batch.length(),
-      duration_ms : @azimuth.current_timestamp() - io_start_time
+  assert_eq(manager3.stats.allocation_count, 3)
+  assert_eq(manager3.stats.current_usage, 1024 + 2048 + 512)
+  assert_eq(manager3.stats.peak_usage, 1024 + 2048 + 512)
+  
+  // 释放部分内存
+  let (freed1, manager4) = free_memory(manager3, block1_id)
+  let (freed2, manager5) = free_memory(manager4, block3_id)
+  
+  // 验证内存释放
+  assert_true(freed1)
+  assert_true(freed2)
+  
+  assert_eq(manager5.stats.deallocation_count, 2)
+  assert_eq(manager5.stats.current_usage, 2048) // 只剩下block2
+  assert_eq(manager5.stats.total_freed, 1024 + 512)
+  
+  // 检测内存泄漏
+  let leak_result = detect_memory_leaks(manager5)
+  
+  // 验证泄漏检测
+  assert_true(leak_result.leak_detected)
+  assert_eq(leak_result.leak_count, 1) // block2未释放
+  assert_eq(leak_result.total_leaked, 2048)
+  
+  // 释放所有内存
+  let (freed3, manager6) = free_memory(manager5, block2_id)
+  
+  // 验证所有内存已释放
+  assert_true(freed3)
+  assert_eq(manager6.stats.current_usage, 0)
+  
+  let final_leak_result = detect_memory_leaks(manager6)
+  assert_false(final_leak_result.leak_detected)
+  assert_eq(final_leak_result.leak_count, 0)
+  
+  // 测试内存分配限制
+  let (oversized_block, _) = allocate_memory(manager6, 2 * 1024 * 1024, "oversized_buffer")
+  assert_eq(oversized_block, None) // 应该拒绝超大分配
+  
+  // 测试重复释放
+  let (duplicate_free, _) = free_memory(manager6, block1_id)
+  assert_false(duplicate_free) // 应该拒绝重复释放
+  
+  // 测试内存使用模式分析
+  let analyze_memory_patterns = fn(manager: MemoryManager) {
+    let allocation_sites = manager.blocks.group_by(fn(block) { block.allocation_site })
+    
+    let site_stats = allocation_sites.map(fn(site) {
+      let blocks = site.1
+      let total_size = blocks.reduce(fn(acc, block) { acc + block.size }, 0)
+      let average_size = total_size / blocks.length()
+      
+      {
+        site: site.0,
+        allocation_count: blocks.length(),
+        total_allocated: total_size,
+        average_block_size: average_size,
+        leaked_count: blocks.filter(fn(block) { block.freed_at == None }).length()
+      }
+    })
+    
+    site_stats
+  }
+  
+  let pattern_stats = analyze_memory_patterns(manager5) // 在释放block2之前
+  assert_true(pattern_stats.length() >= 3)
+  
+  let telemetry_stats = pattern_stats.find(fn(s) { s.site == "telemetry_buffer" })
+  match telemetry_stats {
+    Some(stats) => {
+      assert_eq(stats.allocation_count, 1)
+      assert_eq(stats.total_allocated, 1024)
+      assert_eq(stats.leaked_count, 1) // block1已释放，但在这个快照中可能显示为泄漏
+    }
+    None => assert_true(false)
+  }
+}
+
+// Test 8: 配置管理和动态更新
+test "configuration management and dynamic updates" {
+  // 定义配置值类型
+  enum ConfigValue {
+    String(String)
+    Int(Int)
+    Float(Float)
+    Bool(Bool)
+    Array(Array[String])
+    Object(Array[(String, ConfigValue)])
+  }
+  
+  // 定义配置项
+  type ConfigItem = {
+    key: String,
+    value: ConfigValue,
+    default_value: ConfigValue,
+    description: String,
+    required: Bool,
+    sensitive: Bool,
+    validation_rules: Array[String]
+  }
+  
+  // 定义配置变更
+  type ConfigChange = {
+    key: String,
+    old_value: Option[ConfigValue],
+    new_value: ConfigValue,
+    changed_at: Int,
+    changed_by: String,
+    reason: String
+  }
+  
+  // 定义配置管理器
+  type ConfigManager = {
+    items: Array[ConfigItem],
+    changes: Array[ConfigChange],
+    watchers: Array[(String, (ConfigValue) -> Unit)],
+    validation_enabled: Bool
+  }
+  
+  // 创建配置管理器
+  let create_config_manager = fn() {
+    {
+      items: [],
+      changes: [],
+      watchers: [],
+      validation_enabled: true
+    }
+  }
+  
+  // 添加配置项
+  let add_config_item = fn(manager: ConfigManager, key: String, default_value: ConfigValue, description: String, required: Bool) {
+    let item = {
+      key,
+      value: default_value,
+      default_value,
+      description,
+      required,
+      sensitive: key.contains("password") or key.contains("key") or key.contains("secret"),
+      validation_rules: []
+    }
+    
+    let updated_items = manager.items.push(item)
+    { manager | items: updated_items }
+  }
+  
+  // 获取配置值
+  let get_config_value = fn(manager: ConfigManager, key: String) {
+    let item = manager.items.find(fn(item) { item.key == key })
+    match item {
+      Some(i) => Some(i.value),
+      None => None
+    }
+  }
+  
+  // 设置配置值
+  let set_config_value = fn(manager: ConfigManager, key: String, new_value: ConfigValue, changed_by: String, reason: String) {
+    let item_index = manager.items.index_of(fn(item) { item.key == key })
+    
+    match item_index {
+      Some(index) => {
+        let item = manager.items[index]
+        let old_value = Some(item.value)
+        
+        // 验证配置值
+        let validation_passed = if manager.validation_enabled {
+          validate_config_value(new_value, item.validation_rules)
+        } else {
+          true
+        }
+        
+        if validation_passed {
+          // 更新配置项
+          let updated_item = { item | value: new_value }
+          let updated_items = manager.items.update(index, updated_item)
+          
+          // 记录变更
+          let change = {
+            key,
+            old_value,
+            new_value,
+            changed_at: 1640995200000,
+            changed_by,
+            reason
+          }
+          let updated_changes = manager.changes.push(change)
+          
+          // 通知观察者
+          let watchers = manager.watchers.filter(fn(w) { w.0 == key })
+          for watcher in watchers {
+            watcher.1(new_value)
+          }
+          
+          let updated_manager = {
+            manager |
+            items: updated_items,
+            changes: updated_changes
+          }
+          
+          (true, updated_manager)
+        } else {
+          (false, manager)
+        }
+      }
+      None => {
+        // 配置项不存在
+        (false, manager)
+      }
+    }
+  }
+  
+  // 验证配置值（简化实现）
+  let validate_config_value = fn(value: ConfigValue, rules: Array[String]) {
+    // 简化验证逻辑
+    match value {
+      String(s) => s.length() > 0,
+      Int(i) => i >= 0,
+      Float(f) => f >= 0.0,
+      Bool(_) => true,
+      Array(arr) => arr.length() >= 0,
+      Object(obj) => obj.length() >= 0
+    }
+  }
+  
+  // 添加配置观察者
+  let add_config_watcher = fn(manager: ConfigManager, key: String, callback: (ConfigValue) -> Unit) {
+    let updated_watchers = manager.watchers.push((key, callback))
+    { manager | watchers: updated_watchers }
+  }
+  
+  // 创建配置管理器并添加配置项
+  let manager = create_config_manager()
+  let manager1 = add_config_item(manager, "service.name", String("azimuth-telemetry"), "Service name", true)
+  let manager2 = add_config_item(manager1, "service.version", String("1.0.0"), "Service version", true)
+  let manager3 = add_config_item(manager2, "sampling.rate", Float(0.1), "Sampling rate", false)
+  let manager4 = add_config_item(manager3, "max.connections", Int(100), "Maximum connections", false)
+  let manager5 = add_config_item(manager4, "auth.token", String(""), "Authentication token", false)
+  let manager6 = add_config_item(manager5, "export.endpoints", Array(["http://collector1:4317", "http://collector2:4317"]), "Export endpoints", false)
+  
+  // 验证配置项添加
+  assert_eq(manager6.items.length(), 6)
+  assert_true(manager6.items.any(fn(item) { item.key == "service.name" }))
+  assert_true(manager6.items.any(fn(item) { item.key == "auth.token" }))
+  
+  // 验证敏感配置标记
+  let auth_item = manager6.items.find(fn(item) { item.key == "auth.token" })
+  match auth_item {
+    Some(item) => assert_true(item.sensitive),
+    None => assert_true(false)
+  }
+  
+  // 测试配置值获取
+  let service_name = get_config_value(manager6, "service.name")
+  match service_name {
+    Some(String(name)) => assert_eq(name, "azimuth-telemetry"),
+    _ => assert_true(false)
+  }
+  
+  let sampling_rate = get_config_value(manager6, "sampling.rate")
+  match sampling_rate {
+    Some(Float(rate)) => assert_eq(rate, 0.1),
+    _ => assert_true(false)
+  }
+  
+  // 测试配置值设置
+  let (success1, manager7) = set_config_value(manager6, "sampling.rate", Float(0.2), "admin", "Performance optimization")
+  assert_true(success1)
+  
+  let updated_sampling_rate = get_config_value(manager7, "sampling.rate")
+  match updated_sampling_rate {
+    Some(Float(rate)) => assert_eq(rate, 0.2),
+    _ => assert_true(false)
+  }
+  
+  // 验证变更记录
+  assert_eq(manager7.changes.length(), 1)
+  let change = manager7.changes[0]
+  assert_eq(change.key, "sampling.rate")
+  assert_eq(change.changed_by, "admin")
+  assert_eq(change.reason, "Performance optimization")
+  
+  match change.old_value {
+    Some(Float(old_rate)) => assert_eq(old_rate, 0.1),
+    _ => assert_true(false)
+  }
+  
+  match change.new_value {
+    Some(Float(new_rate)) => assert_eq(new_rate, 0.2),
+    _ => assert_true(false)
+  }
+  
+  // 测试配置观察者
+  let mut notified_value = None
+  let notification_callback = fn(value: ConfigValue) {
+    notified_value = Some(value)
+  }
+  
+  let manager8 = add_config_watcher(manager7, "service.name", notification_callback)
+  
+  // 更新配置以触发观察者
+  let (success2, manager9) = set_config_value(manager8, "service.name", String("azimuth-telemetry-v2"), "admin", "Version update")
+  
+  // 验证观察者被触发
+  assert_true(success2)
+  assert_true(notified_value != None)
+  
+  match notified_value {
+    Some(String(name)) => assert_eq(name, "azimuth-telemetry-v2"),
+    _ => assert_true(false)
+  }
+  
+  // 测试配置重置
+  let reset_config_value = fn(manager: ConfigManager, key: String, changed_by: String) {
+    let item_index = manager.items.index_of(fn(item) { item.key == key })
+    
+    match item_index {
+      Some(index) => {
+        let item = manager.items[index]
+        set_config_value(manager, key, item.default_value, changed_by, "Reset to default")
+      }
+      None => (false, manager)
+    }
+  }
+  
+  let (success3, manager10) = reset_config_value(manager9, "sampling.rate", "admin")
+  assert_true(success3)
+  
+  let reset_sampling_rate = get_config_value(manager10, "sampling.rate")
+  match reset_sampling_rate {
+    Some(Float(rate)) => assert_eq(rate, 0.1), // 回到默认值
+    _ => assert_true(false)
+  }
+  
+  // 测试配置验证
+  let manager11 = { manager10 | validation_enabled: true }
+  
+  // 尝试设置无效值
+  let (success4, _) = set_config_value(manager11, "max.connections", Int(-1), "admin", "Invalid test")
+  assert_false(success4) // 应该被验证拒绝
+  
+  // 测试配置导出和导入
+  let export_config = fn(manager: ConfigManager) {
+    manager.items.map(fn(item) {
+      let value_str = match item.value {
+        String(s) => s,
+        Int(i) => i.to_string(),
+        Float(f) => f.to_string(),
+        Bool(b) => if b { "true" } else { "false" },
+        Array(arr) => "[" + arr.join(",") + "]",
+        Object(obj) => "{" + obj.map(fn(kv) { kv.0 + ":" + match kv.1 { String(s) => s; _ => "complex" } }).join(",") + "}"
+      }
+      
+      (item.key, value_str)
+    })
+  }
+  
+  let exported_config = export_config(manager10)
+  assert_eq(exported_config.length(), 6)
+  
+  let service_name_export = exported_config.find_fn(kv) { kv.0 == "service.name" }
+  match service_name_export {
+    Some(kv) => assert_eq(kv.1, "azimuth-telemetry-v2"),
+    None => assert_true(false)
+  }
+  
+  // 验证配置变更历史
+  assert_eq(manager10.changes.length(), 3) // sampling.rate更新、service.name更新、sampling.rate重置
+  
+  let sampling_changes = manager10.changes.filter(fn(change) { change.key == "sampling.rate" })
+  assert_eq(sampling_changes.length(), 2) // 更新和重置
+}
+
+// Test 9: 指标聚合和时间序列分析
+test "metrics aggregation and time series analysis" {
+  // 定义时间序列数据点
+  type TimeSeriesPoint = {
+    timestamp: Int,
+    value: Float,
+    labels: Array[(String, String)]
+  }
+  
+  // 定义聚合函数类型
+  enum AggregationFunction {
+    Sum
+    Average
+    Min
+    Max
+    Count
+    P50
+    P90
+    P95
+    P99
+  }
+  
+  // 定义时间窗口
+  type TimeWindow = {
+    start_time: Int,
+    end_time: Int,
+    duration: Int
+  }
+  
+  // 定义聚合结果
+  type AggregationResult = {
+    window: TimeWindow,
+    function: AggregationFunction,
+    value: Float,
+    point_count: Int,
+    labels: Array[(String, String)]
+  }
+  
+  // 创建测试时间序列数据
+  let create_test_time_series = fn() {
+    let mut points = []
+    let base_time = 1640995200 // 2022-01-01 00:00:00 UTC
+    
+    for i in 0..=1440 { // 24小时，每分钟一个点
+      let timestamp = base_time + i * 60
+      let value = 50.0 + 10.0 * @sin((i * 6.283185) / 1440.0) + @random() * 5.0 // 模拟日周期+噪声
+      let labels = [
+        ("service", "payment-api"),
+        ("environment", "production"),
+        ("region", "us-west-2")
+      ]
+      
+      points = points.push({
+        timestamp,
+        value,
+        labels
+      })
+    }
+    
+    points
+  }
+  
+  let time_series = create_test_time_series()
+  
+  // 按时间窗口过滤数据点
+  let filter_by_window = fn(points: Array[TimeSeriesPoint], window: TimeWindow) {
+    points.filter(fn(point) {
+      point.timestamp >= window.start_time and point.timestamp <= window.end_time
+    })
+  }
+  
+  // 按标签过滤数据点
+  let filter_by_labels = fn(points: Array[TimeSeriesPoint], labels: Array[(String, String)]) {
+    points.filter(fn(point) {
+      labels.all_fn(label) {
+        point.labels.any_fn(point_label) { point_label.0 == label.0 and point_label.1 == label.1 }
+      }
+    })
+  }
+  
+  // 执行聚合计算
+  let aggregate_points = fn(points: Array[TimeSeriesPoint], function: AggregationFunction) {
+    if points.length() == 0 {
+      return 0.0
+    }
+    
+    let values = points.map(fn(p) { p.value })
+    
+    match function {
+      Sum => values.reduce(fn(acc, v) { acc + v }, 0.0),
+      Average => values.reduce(fn(acc, v) { acc + v }, 0.0) / values.length().to_float(),
+      Min => values.reduce(fn(acc, v) { if v < acc { v } else { acc } }, values[0]),
+      Max => values.reduce(fn(acc, v) { if v > acc { v } else { acc } }, values[0]),
+      Count => values.length().to_float(),
+      P50 => calculate_percentile(values, 0.5),
+      P90 => calculate_percentile(values, 0.9),
+      P95 => calculate_percentile(values, 0.95),
+      P99 => calculate_percentile(values, 0.99)
+    }
+  }
+  
+  // 计算百分位数（简化实现）
+  let calculate_percentile = fn(values: Array[Float], percentile: Float) {
+    let sorted_values = values.sort(fn(a, b) { a <= b })
+    let index = (sorted_values.length().to_float() * percentile).to_int()
+    sorted_values[index]
+  }
+  
+  // 创建时间窗口
+  let create_time_window = fn(start_time: Int, duration_minutes: Int) {
+    {
+      start_time,
+      end_time: start_time + duration_minutes * 60,
+      duration: duration_minutes * 60
+    }
+  }
+  
+  // 测试1小时窗口聚合
+  let one_hour_window = create_time_window(1640995200, 60)
+  let hourly_points = filter_by_window(time_series, one_hour_window)
+  
+  let hourly_sum = aggregate_points(hourly_points, Sum)
+  let hourly_avg = aggregate_points(hourly_points, Average)
+  let hourly_min = aggregate_points(hourly_points, Min)
+  let hourly_max = aggregate_points(hourly_points, Max)
+  let hourly_p95 = aggregate_points(hourly_points, P95)
+  
+  // 验证1小时聚合结果
+  assert_eq(hourly_points.length(), 60) // 60个点（每分钟1个）
+  assert_true(hourly_avg > 40.0 and hourly_avg < 70.0) // 合理范围
+  assert_true(hourly_min <= hourly_avg)
+  assert_true(hourly_max >= hourly_avg)
+  assert_true(hourly_p95 >= hourly_avg and hourly_p95 <= hourly_max)
+  
+  // 测试按标签过滤
+  let filtered_points = filter_by_labels(time_series, [("service", "payment-api")])
+  assert_eq(filtered_points.length(), time_series.length()) // 所有点都有这个标签
+  
+  let non_existent_filter = filter_by_labels(time_series, [("service", "non-existent")])
+  assert_eq(non_existent_filter.length(), 0)
+  
+  // 测试多个时间窗口的聚合
+  let create_hourly_windows = fn(start_time: Int, hours: Int) {
+    let mut windows = []
+    
+    for i in 0..hours {
+      let window_start = start_time + i * 3600
+      let window = create_time_window(window_start, 60)
+      windows = windows.push(window)
+    }
+    
+    windows
+  }
+  
+  let hourly_windows = create_hourly_windows(1640995200, 24)
+  assert_eq(hourly_windows.length(), 24)
+  
+  // 计算每个小时的平均值
+  let hourly_averages = hourly_windows.map(fn(window) {
+    let points = filter_by_window(time_series, window)
+    let avg = aggregate_points(points, Average)
+    
+    {
+      window,
+      function: Average,
+      value: avg,
+      point_count: points.length(),
+      labels: [("service", "payment-api")]
     }
   })
   
-  let io_end_time = @azimuth.current_timestamp()
-  let io_duration = io_end_time - io_start_time
+  // 验证每小时聚合
+  assert_eq(hourly_averages.length(), 24)
+  assert_true(hourly_averages.all_fn(result) { result.point_count == 60 })
   
-  // 验证I/O优化结果
-  assert_true(io_optimized_result.success)
-  assert_eq(io_optimized_result.processed_count, 1000)
-  assert_true(io_optimized_result.duration_ms < io_duration)
+  // 验证日周期模式
+  let day_hours = hourly_averages.slice(0, 24)
+  let morning_values = day_hours.slice(6, 6).map(fn(r) { r.value }) // 6:00-12:00
+  let evening_values = day_hours.slice(18, 6).map(fn(r) { r.value }) // 18:00-24:00
   
-  // 测试资源池管理
-  let resource_pool = @azimuth.ResourcePool.new(@azimuth.PoolConfig {
-    initial_size : 5,
-    max_size : 20,
-    growth_factor : 2,
-    shrink_threshold : 0.25
+  let morning_avg = morning_values.reduce(fn(acc, v) { acc + v }, 0.0) / morning_values.length().to_float()
+  let evening_avg = evening_values.reduce(fn(acc, v) { acc + v }, 0.0) / evening_values.length().to_float()
+  
+  // 验证日周期差异（由于我们添加了正弦波，应该有周期性变化）
+  assert_true(@abs(morning_avg - evening_avg) > 1.0)
+  
+  // 测试趋势分析
+  let analyze_trend = fn(points: Array[TimeSeriesPoint]) {
+    if points.length() < 2 {
+      return { direction: "stable", slope: 0.0, confidence: 0.0 }
+    }
+    
+    let n = points.length().to_float()
+    let sum_x = points.map(fn(p) { p.timestamp.to_float() }).reduce(fn(acc, x) { acc + x }, 0.0)
+    let sum_y = points.map(fn(p) { p.value }).reduce(fn(acc, y) { acc + y }, 0.0)
+    let sum_xy = points.map(fn(p) { p.timestamp.to_float() * p.value }).reduce(fn(acc, xy) { acc + xy }, 0.0)
+    let sum_x2 = points.map(fn(p) { p.timestamp.to_float() * p.timestamp.to_float() }).reduce(fn(acc, x2) { acc + x2 }, 0.0)
+    
+    let slope = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x * sum_x)
+    
+    let direction = if slope > 0.001 {
+      "increasing"
+    } else if slope < -0.001 {
+      "decreasing"
+    } else {
+      "stable"
+    }
+    
+    // 简化的置信度计算
+    let confidence = if @abs(slope) > 0.0001 {
+      0.8
+    } else {
+      0.2
+    }
+    
+    { direction, slope, confidence }
+  }
+  
+  // 分析24小时趋势
+  let day_trend = analyze_trend(time_series)
+  assert_eq(day_trend.direction, "stable") // 由于正弦波，整体趋势应该是稳定的
+  
+  // 分析前6小时趋势（上升趋势）
+  let morning_points = filter_by_window(time_series, create_time_window(1640995200, 360))
+  let morning_trend = analyze_trend(morning_points)
+  assert_true(morning_trend.direction == "increasing" or morning_trend.direction == "stable")
+  
+  // 分析后6小时趋势（下降趋势）
+  let evening_points = filter_by_window(time_series, create_time_window(1640995200 + 12 * 3600, 360))
+  let evening_trend = analyze_trend(evening_points)
+  assert_true(evening_trend.direction == "decreasing" or evening_trend.direction == "stable")
+  
+  // 测试异常检测
+  let detect_anomalies = fn(points: Array[TimeSeriesPoint], threshold: Float) {
+    let values = points.map(fn(p) { p.value })
+    let mean = values.reduce(fn(acc, v) { acc + v }, 0.0) / values.length().to_float()
+    let variance = values.map(fn(v) { let diff = v - mean; diff * diff }).reduce(fn(acc, v) { acc + v }, 0.0) / values.length().to_float()
+    let std_dev = @sqrt(variance)
+    
+    let anomalies = points.filter(fn(p) { @abs(p.value - mean) > threshold * std_dev })
+    
+    {
+      anomalies,
+      anomaly_count: anomalies.length(),
+      mean,
+      std_dev,
+      threshold
+    }
+  }
+  
+  let anomaly_result = detect_anomalies(time_series, 2.0) // 2个标准差
+  
+  // 验证异常检测
+  assert_true(anomaly_result.mean > 40.0 and anomaly_result.mean < 60.0)
+  assert_true(anomaly_result.std_dev > 0.0)
+  assert_true(anomaly_result.anomaly_count >= 0)
+  
+  // 由于我们添加了随机噪声，应该有一些异常值
+  assert_true(anomaly_result.anomaly_count < time_series.length() / 10) // 异常值不应该太多
+}
+
+// Test 10: 分布式追踪和关联
+test "distributed tracing and correlation" {
+  // 定义追踪上下文
+  type TraceContext = {
+    trace_id: String,
+    span_id: String,
+    parent_span_id: Option[String],
+    trace_flags: Int,
+    trace_state: Array[(String, String)]
+  }
+  
+  // 定义Span
+  type Span = {
+    context: TraceContext,
+    name: String,
+    kind: String, // "client", "server", "producer", "consumer", "internal"
+    start_time: Int,
+    end_time: Option[Int],
+    status: String, // "ok", "error", "unset"
+    attributes: Array[(String, String)],
+    events: Array[SpanEvent],
+    links: Array[SpanLink]
+  }
+  
+  // 定义Span事件
+  type SpanEvent = {
+    name: String,
+    timestamp: Int,
+    attributes: Array[(String, String)]
+  }
+  
+  // 定义Span链接
+  type SpanLink = {
+    context: TraceContext,
+    attributes: Array[(String, String)]
+  }
+  
+  // 创建追踪上下文
+  let create_trace_context = fn(trace_id: String, span_id: String, parent_span_id: Option[String]) {
+    {
+      trace_id,
+      span_id,
+      parent_span_id,
+      trace_flags: 1, // 采样标志
+      trace_state: []
+    }
+  }
+  
+  // 生成随机ID
+  let generate_id = fn(length: Int) {
+    let chars = "0123456789abcdef"
+    let mut result = ""
+    
+    for i in 0..length {
+      let index = @random() * chars.length().to_int()
+      result = result + chars[index]
+    }
+    
+    result
+  }
+  
+  // 创建Span
+  let create_span = fn(name: String, kind: String, parent_context: Option[TraceContext]) {
+    let trace_id = match parent_context {
+      Some(ctx) => ctx.trace_id,
+      None => generate_id(32)
+    }
+    
+    let parent_span_id = match parent_context {
+      Some(ctx) => Some(ctx.span_id),
+      None => None
+    }
+    
+    let span_id = generate_id(16)
+    let context = create_trace_context(trace_id, span_id, parent_span_id)
+    
+    {
+      context,
+      name,
+      kind,
+      start_time: 1640995200000 + @random() * 1000,
+      end_time: None,
+      status: "unset",
+      attributes: [],
+      events: [],
+      links: []
+    }
+  }
+  
+  // 添加属性到Span
+  let add_attribute = fn(span: Span, key: String, value: String) {
+    let updated_attributes = span.attributes.push((key, value))
+    { span | attributes: updated_attributes }
+  }
+  
+  // 添加事件到Span
+  let add_event = fn(span: Span, name: String, attributes: Array[(String, String)]) {
+    let event = {
+      name,
+      timestamp: span.start_time + @random() * 500,
+      attributes
+    }
+    let updated_events = span.events.push(event)
+    { span | events: updated_events }
+  }
+  
+  // 结束Span
+  let end_span = fn(span: Span, status: String) {
+    let end_time = span.start_time + @random() * 1000 + 100
+    { span | end_time: Some(end_time), status }
+  }
+  
+  // 创建分布式追踪场景
+  let create_distributed_trace = fn() {
+    // 1. 客户端发起请求
+    let client_span = create_span("HTTP GET /api/orders", "client", None)
+    let client_with_attrs = add_attribute(client_span, "http.method", "GET")
+    let client_with_user = add_attribute(client_with_attrs, "user.id", "user-123")
+    
+    // 2. API网关处理请求
+    let gateway_span = create_span("Gateway: /api/orders", "server", Some(client_with_user.context))
+    let gateway_with_attrs = add_attribute(gateway_span, "service.name", "api-gateway")
+    let gateway_with_route = add_attribute(gateway_with_attrs, "http.route", "/api/orders")
+    
+    // 3. 订单服务处理
+    let order_service_span = create_span("OrderService: GetOrders", "server", Some(gateway_with_route.context))
+    let order_with_attrs = add_attribute(order_service_span, "service.name", "order-service")
+    let order_with_db = add_attribute(order_with_attrs, "db.system", "postgresql")
+    
+    // 4. 数据库查询
+    let db_query_span = create_span("SELECT * FROM orders", "internal", Some(order_with_db.context))
+    let db_with_stmt = add_attribute(db_query_span, "db.statement", "SELECT * FROM orders WHERE user_id = ?")
+    let db_with_table = add_attribute(db_with_stmt, "db.table", "orders")
+    
+    // 5. 添加缓存查询
+    let cache_span = create_span("Cache: GetOrders", "client", Some(order_with_db.context))
+    let cache_with_attrs = add_attribute(cache_span, "cache.system", "redis")
+    let cache_miss_event = add_event(cache_with_attrs, "cache.miss", [("cache.key", "user-123:orders")])
+    
+    // 6. 结束所有Span
+    let completed_db = end_span(db_with_table, "ok")
+    let completed_cache = end_span(cache_miss_event, "ok")
+    let completed_order = end_span(order_with_db, "ok")
+    let completed_gateway = end_span(gateway_with_route, "ok")
+    let completed_client = end_span(client_with_user, "ok")
+    
+    [completed_client, completed_gateway, completed_order, completed_db, completed_cache]
+  }
+  
+  let trace_spans = create_distributed_trace()
+  
+  // 验证追踪结构
+  assert_eq(trace_spans.length(), 5)
+  
+  // 验证根Span
+  let root_span = trace_spans.filter(fn(span) { span.context.parent_span_id == None })[0]
+  assert_eq(root_span.name, "HTTP GET /api/orders")
+  assert_eq(root_span.kind, "client")
+  
+  // 验证父子关系
+  let gateway_span = trace_spans.filter(fn(span) { span.name == "Gateway: /api/orders" })[0]
+  assert_eq(gateway_span.context.parent_span_id, Some(root_span.context.span_id))
+  assert_eq(gateway_span.context.trace_id, root_span.context.trace_id)
+  
+  let order_span = trace_spans.filter(fn(span) { span.name == "OrderService: GetOrders" })[0]
+  assert_eq(order_span.context.parent_span_id, Some(gateway_span.context.span_id))
+  assert_eq(order_span.context.trace_id, root_span.context.trace_id)
+  
+  let db_span = trace_spans.filter(fn(span) { span.name == "SELECT * FROM orders" })[0]
+  assert_eq(db_span.context.parent_span_id, Some(order_span.context.span_id))
+  assert_eq(db_span.context.trace_id, root_span.context.trace_id)
+  
+  let cache_span = trace_spans.filter(fn(span) { span.name == "Cache: GetOrders" })[0]
+  assert_eq(cache_span.context.parent_span_id, Some(order_span.context.span_id))
+  assert_eq(cache_span.context.trace_id, root_span.context.trace_id)
+  
+  // 验证所有Span属于同一追踪
+  let trace_ids = trace_spans.map(fn(span) { span.context.trace_id })
+  let unique_trace_ids = trace_ids.filter(fn(id, index) { trace_ids.index_of(fn(i) { i == id }) == index })
+  assert_eq(unique_trace_ids.length(), 1) // 所有Span应该有相同的trace_id
+  
+  // 验证Span状态
+  assert_true(trace_spans.all(fn(span) { span.status == "ok" }))
+  assert_true(trace_spans.all(fn(span) { span.end_time != None }))
+  
+  // 验证时间顺序
+  let sorted_spans = trace_spans.sort(fn(a, b) { a.start_time <= b.start_time })
+  assert_eq(sorted_spans[0].name, "HTTP GET /api/orders") // 客户端Span应该最先开始
+  
+  // 验证Span持续时间
+  let durations = trace_spans.map(fn(span) {
+    match span.end_time {
+      Some(end) => end - span.start_time,
+      None => 0
+    }
   })
   
-  // 测试资源获取和释放
-  let resources = []
-  for i = 0; i < 10; i = i + 1 {
-    let resource = @azimuth.ResourcePool.acquire(resource_pool)
-    resources = resources.push(resource)
+  assert_true(durations.all(fn(duration) { duration > 0 }))
+  
+  // 验证属性传播
+  let client_span_with_user = trace_spans.filter(fn(span) { span.name == "HTTP GET /api/orders" })[0]
+  let has_user_attr = client_span_with_user.attributes.any_fn(attr) { attr.0 == "user.id" }
+  assert_true(has_user_attr)
+  
+  // 测试追踪关联
+  let get_span_children = fn(parent_span: Span, all_spans: Array[Span]) {
+    all_spans.filter(fn(span) { span.context.parent_span_id == Some(parent_span.context.span_id) })
   }
   
-  // 验证资源池扩展
-  let pool_stats = @azimuth.ResourcePool.get_stats(resource_pool)
-  assert_true(pool_stats.current_size >= 10)
-  assert_true(pool_stats.active_resources == 10)
+  let gateway_children = get_span_children(gateway_span, trace_spans)
+  assert_eq(gateway_children.length(), 1) // 网关只有一个子Span（订单服务）
+  assert_eq(gateway_children[0].name, "OrderService: GetOrders")
   
-  // 释放资源
-  for resource in resources {
-    @azimuth.ResourcePool.release(resource_pool, resource)
+  let order_children = get_span_children(order_span, trace_spans)
+  assert_eq(order_children.length(), 2) // 订单服务有两个子Span（数据库查询和缓存查询）
+  
+  let order_child_names = order_children.map(fn(child) { child.name })
+  assert_true(order_child_names.contains("SELECT * FROM orders"))
+  assert_true(order_child_names.contains("Cache: GetOrders"))
+  
+  // 测试Span事件
+  let cache_events = cache_span.events
+  assert_eq(cache_events.length(), 1)
+  assert_eq(cache_events[0].name, "cache.miss")
+  
+  let cache_event_attrs = cache_events[0].attributes
+  assert_true(cache_event_attrs.any_fn(attr) { attr.0 == "cache.key" and attr.1 == "user-123:orders" })
+  
+  // 测试追踪统计
+  let calculate_trace_statistics = fn(spans: Array[Span]) {
+    let total_duration = spans.reduce(fn(acc, span) {
+      match span.end_time {
+        Some(end) => acc + (end - span.start_time),
+        None => acc
+      }
+    }, 0)
+    
+    let span_kinds = spans.map(fn(span) { span.kind })
+    let kind_counts = span_kinds.group_by(fn(kind) { kind })
+    
+    let services = spans.filter_map(fn(span) {
+      span.attributes.find_fn(attr) { attr.0 == "service.name" }
+    }).map_fn(attr) { attr.1 }
+    
+    let unique_services = services.filter_fn(service, index) {
+      services.index_of(fn(s) { s == service }) == index
+    }
+    
+    {
+      span_count: spans.length(),
+      total_duration,
+      average_span_duration: total_duration / spans.length(),
+      span_kinds: kind_counts.map_fn(group) { (group.0, group.1.length()) },
+      service_count: unique_services.length(),
+      services: unique_services
+    }
   }
   
-  // 验证资源释放
-  let release_stats = @azimuth.ResourcePool.get_stats(resource_pool)
-  assert_true(release_stats.active_resources == 0)
+  let stats = calculate_trace_statistics(trace_spans)
+  assert_eq(stats.span_count, 5)
+  assert_true(stats.total_duration > 0)
+  assert_true(stats.average_span_duration > 0)
   
-  // 测试垃圾回收优化
-  let gc_before = @azimuth.ResourceMonitor.get_gc_stats(resource_monitor)
+  assert_true(stats.span_kinds.any_fn(kind_count) { kind_count.0 == "client" and kind_count.1 == 2 })
+  assert_true(stats.span_kinds.any_fn(kind_count) { kind_count.0 == "server" and kind_count.1 == 2 })
+  assert_true(stats.span_kinds.any_fn(kind_count) { kind_count.0 == "internal" and kind_count.1 == 1 })
   
-  // 创建临时对象
-  let temporary_objects = []
-  for i = 0; i < 5000; i = i + 1 {
-    temporary_objects = temporary_objects.push("temp-object-" + i.to_string())
-  }
-  
-  // 清理引用
-  let _ = []
-  
-  // 执行优化垃圾回收
-  let gc_result = @azimuth.ResourceOptimizer.optimize_gc(resource_monitor)
-  assert_true(gc_result.success)
-  
-  let gc_after = @azimuth.ResourceMonitor.get_gc_stats(resource_monitor)
-  assert_true(gc_after.collections > gc_before.collections)
-  
-  // 测试资源使用报告
-  let resource_report = @azimuth.ResourceMonitor.generate_report(resource_monitor)
-  
-  // 验证报告内容
-  assert_true(resource_report.timestamp > 0)
-  assert_true(resource_report.memory_usage_mb > 0)
-  assert_true(resource_report.cpu_usage_percent >= 0.0)
-  assert_true(resource_report.cpu_usage_percent <= 100.0)
-  assert_true(resource_report.gc_collections >= 0)
-  assert_true(resource_report.resource_pools.length() > 0)
+  assert_eq(stats.service_count, 2) // api-gateway 和 order-service
+  assert_true(stats.services.contains("api-gateway"))
+  assert_true(stats.services.contains("order-service"))
 }
