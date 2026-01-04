@@ -1,886 +1,1252 @@
-// Azimuth Data Consistency Validation Test Suite
-// 数据一致性验证测试用例
+// Azimuth 遥测数据一致性验证测试用例
+// 专注于数据一致性检查、完整性验证、跨服务数据同步等功能
 
-// 测试1: 数据完整性校验
-test "数据完整性校验测试" {
-  // 校验和计算器
-  struct ChecksumCalculator {
-    algorithm : String
+// 测试1: 遥测数据完整性验证
+test "遥测数据完整性验证功能" {
+  // 定义数据完整性规则
+  enum IntegrityRuleType {
+    NotNull        // 非空检查
+    RangeCheck     // 范围检查
+    FormatCheck    // 格式检查
+    Referential    // 引用完整性
+    Uniqueness     // 唯一性检查
+    Consistency    // 一致性检查
   }
   
-  fn ChecksumCalculator::new(algorithm : String) -> ChecksumCalculator {
-    ChecksumCalculator::{ algorithm }
+  // 定义验证规则
+  type IntegrityRule = {
+    id: String
+    name: String
+    rule_type: IntegrityRuleType
+    field: String
+    parameters: Map[String, String]
+    severity: String
+    description: String
   }
   
-  fn ChecksumCalculator::calculate(calculator : ChecksumCalculator, data : Array[Byte]) -> Int {
-    match calculator.algorithm {
-      "simple" => {
-        // 简单校验和：所有字节的总和
-        let mut sum = 0
-        for byte in data {
-          sum = sum + byte.to_int()
-        }
-        sum % 256  // 限制在0-255范围内
+  // 定义验证结果
+  type ValidationResult = {
+    rule_id: String
+    passed: Bool
+    violation_count: Int
+    affected_records: Array[Int]
+    error_message: String
+    severity: String
+  }
+  
+  // 定义数据记录
+  type DataRecord = {
+    id: String
+    timestamp: Int
+    trace_id: String
+    span_id: String
+    parent_span_id: Option[String]
+    service_name: String
+    operation_name: String
+    duration_ms: Int
+    status: String
+    tags: Map[String, String]
+  }
+  
+  // 非空检查
+  let check_not_null = fn(records: Array[DataRecord], field: String) -> ValidationResult {
+    let mut violations = []
+    
+    for i in 0..records.length() {
+      let record = records[i]
+      let is_null = match field {
+        "id" => record.id == "",
+        "trace_id" => record.trace_id == "",
+        "span_id" => record.span_id == "",
+        "service_name" => record.service_name == "",
+        "operation_name" => record.operation_name == "",
+        "status" => record.status == "",
+        _ => false
       }
-      "weighted" => {
-        // 加权校验和：位置加权
-        let mut sum = 0
-        for i in 0..data.length() {
-          sum = sum + (data[i].to_int() * (i + 1))
-        }
-        sum % 256
+      
+      if is_null {
+        violations = violations.push(i)
       }
-      "xor" => {
-        // XOR校验和
-        let mut result = 0
-        for byte in data {
-          result = result ^ byte.to_int()
-        }
-        result
-      }
-      _ => 0
-    }
-  }
-  
-  // 数据块
-  struct DataBlock {
-    id : String
-    data : Array[Byte]
-    checksum : Int
-    timestamp : Int64
-  }
-  
-  fn DataBlock::new(id : String, data : Array[Byte], calculator : ChecksumCalculator) -> DataBlock {
-    let checksum = ChecksumCalculator::calculate(calculator, data)
-    DataBlock::{ id, data, checksum, timestamp: 1640995200000000000L }
-  }
-  
-  fn DataBlock::verify(block : DataBlock, calculator : ChecksumCalculator) -> Bool {
-    let calculated_checksum = ChecksumCalculator::calculate(calculator, block.data)
-    calculated_checksum == block.checksum
-  }
-  
-  // 测试校验和计算
-  let simple_calc = ChecksumCalculator::new("simple")
-  let weighted_calc = ChecksumCalculator::new("weighted")
-  let xor_calc = ChecksumCalculator::new("xor")
-  
-  let test_data = [1, 2, 3, 4, 5]
-  
-  // 简单校验和：1+2+3+4+5 = 15
-  assert_eq(ChecksumCalculator::calculate(simple_calc, test_data), 15)
-  
-  // 加权校验和：1*1 + 2*2 + 3*3 + 4*4 + 5*5 = 55
-  assert_eq(ChecksumCalculator::calculate(weighted_calc, test_data), 55)
-  
-  // XOR校验和：1^2^3^4^5
-  let xor_result = ChecksumCalculator::calculate(xor_calc, test_data)
-  assert_true(xor_result >= 0 && xor_result <= 255)
-  
-  // 测试数据块创建和验证
-  let block1 = DataBlock::new("block-1", test_data, simple_calc)
-  assert_eq(block1.id, "block-1")
-  assert_eq(block1.data, test_data)
-  assert_eq(block1.checksum, 15)
-  assert_true(DataBlock::verify(block1, simple_calc))
-  
-  // 测试数据损坏检测
-  let corrupted_data = [1, 2, 3, 4, 6]  // 最后一个字节被修改
-  let corrupted_block = DataBlock::{ 
-    id: "block-1", 
-    data: corrupted_data, 
-    checksum: 15,  // 原始校验和
-    timestamp: 1640995200000000000L 
-  }
-  
-  assert_false(DataBlock::verify(corrupted_block, simple_calc))
-  
-  // 测试不同算法的验证
-  let block2 = DataBlock::new("block-2", test_data, weighted_calc)
-  assert_true(DataBlock::verify(block2, weighted_calc))
-  assert_false(DataBlock::verify(block2, simple_calc))  // 使用错误的算法应该失败
-  
-  let block3 = DataBlock::new("block-3", test_data, xor_calc)
-  assert_true(DataBlock::verify(block3, xor_calc))
-  assert_false(DataBlock::verify(block3, weighted_calc))  // 使用错误的算法应该失败
-}
-
-// 测试2: 数据版本控制
-test "数据版本控制测试" {
-  // 版本信息
-  struct Version {
-    major : Int
-    minor : Int
-    patch : Int
-  }
-  
-  fn Version::new(major : Int, minor : Int, patch : Int) -> Version {
-    Version::{ major, minor, patch }
-  }
-  
-  fn Version::to_string(version : Version) -> String {
-    version.major.to_string() + "." + version.minor.to_string() + "." + version.patch.to_string()
-  }
-  
-  fn Version::compare(v1 : Version, v2 : Version) -> Int {
-    if v1.major != v2.major {
-      if v1.major > v2.major { 1 } else { -1 }
-    } else if v1.minor != v2.minor {
-      if v1.minor > v2.minor { 1 } else { -1 }
-    } else if v1.patch != v2.patch {
-      if v1.patch > v2.patch { 1 } else { -1 }
-    } else {
-      0
-    }
-  }
-  
-  // 版本化数据
-  struct VersionedData[T] {
-    data : T
-    version : Version
-    timestamp : Int64
-    metadata : Array[(String, String)]
-  }
-  
-  fn VersionedData::new[T](data : T, version : Version) -> VersionedData[T] {
-    VersionedData::{ data, version, timestamp: 1640995200000000000L, metadata: [] }
-  }
-  
-  fn VersionedData::with_metadata[T](data : T, version : Version, metadata : Array[(String, String)]) -> VersionedData[T] {
-    VersionedData::{ data, version, timestamp: 1640995200000000000L, metadata }
-  }
-  
-  // 版本兼容性检查器
-  struct CompatibilityChecker {
-    current_version : Version
-    min_compatible_version : Version
-  }
-  
-  fn CompatibilityChecker::new(current : Version, min_compatible : Version) -> CompatibilityChecker {
-    CompatibilityChecker::{ current_version: current, min_compatible_version: min_compatible }
-  }
-  
-  fn CompatibilityChecker::is_compatible(checker : CompatibilityChecker, version : Version) -> Bool {
-    Version::compare(version, checker.min_compatible_version) >= 0 && 
-    Version::compare(version, checker.current_version) <= 0
-  }
-  
-  // 测试版本操作
-  let v1 = Version::new(1, 0, 0)
-  let v2 = Version::new(1, 2, 3)
-  let v3 = Version::new(2, 0, 0)
-  
-  assert_eq(Version::to_string(v1), "1.0.0")
-  assert_eq(Version::to_string(v2), "1.2.3")
-  assert_eq(Version::to_string(v3), "2.0.0")
-  
-  assert_eq(Version::compare(v1, v2), -1)  // v1 < v2
-  assert_eq(Version::compare(v2, v1), 1)   // v2 > v1
-  assert_eq(Version::compare(v1, v1), 0)   // v1 == v1
-  assert_eq(Version::compare(v3, v2), 1)   // v3 > v2
-  
-  // 测试版本化数据
-  let data_v1 = VersionedData::new("old-data", v1)
-  assert_eq(data_v1.data, "old-data")
-  assert_eq(data_v1.version, v1)
-  
-  let data_v2 = VersionedData::with_metadata("new-data", v2, [("feature", "advanced")])
-  assert_eq(data_v2.data, "new-data")
-  assert_eq(data_v2.version, v2)
-  assert_eq(data_v2.metadata.length(), 1)
-  
-  // 测试兼容性检查
-  let checker = CompatibilityChecker::new(v3, v1)  // 当前版本2.0.0，最小兼容1.0.0
-  
-  assert_true(CompatibilityChecker::is_compatible(checker, v1))  // 1.0.0 >= 1.0.0
-  assert_true(CompatibilityChecker::is_compatible(checker, v2))  // 1.2.3 >= 1.0.0
-  assert_true(CompatibilityChecker::is_compatible(checker, v3))  // 2.0.0 <= 2.0.0
-  
-  let v0 = Version::new(0, 9, 0)
-  assert_false(CompatibilityChecker::is_compatible(checker, v0))  // 0.9.0 < 1.0.0
-  
-  let v4 = Version::new(2, 1, 0)
-  assert_false(CompatibilityChecker::is_compatible(checker, v4))  // 2.1.0 > 2.0.0
-}
-
-// 测试3: 事务一致性
-test "事务一致性测试" {
-  // 事务状态
-  enum TransactionState {
-    Active
-    Committed
-    Aborted
-  }
-  
-  // 操作类型
-  enum OperationType {
-    Create
-    Update
-    Delete
-  }
-  
-  // 操作记录
-  struct Operation {
-    op_type : OperationType
-    target : String
-    old_value : Option[String]
-    new_value : Option[String]
-  }
-  
-  // 事务
-  struct Transaction {
-    id : String
-    state : TransactionState
-    operations : Array[Operation]
-    start_time : Int64
-  }
-  
-  fn Transaction::new(id : String) -> Transaction {
-    Transaction::{
-      id,
-      state: TransactionState::Active,
-      operations: [],
-      start_time: 1640995200000000000L
-    }
-  }
-  
-  fn Transaction::add_operation(transaction : Transaction, op_type : OperationType, target : String, old_value : Option[String], new_value : Option[String]) -> Transaction {
-    if transaction.state != TransactionState::Active {
-      return transaction  // 只能为活动事务添加操作
     }
     
-    let operation = Operation::{ op_type, target, old_value, new_value }
-    Transaction::{
-      id: transaction.id,
-      state: transaction.state,
-      operations: transaction.operations.push(operation),
-      start_time: transaction.start_time
+    {
+      rule_id: "not_null_" + field,
+      passed: violations.length() == 0,
+      violation_count: violations.length(),
+      affected_records: violations,
+      error_message: if violations.length() > 0 { "字段 " + field + " 不能为空" } else { "" },
+      severity: "high"
     }
   }
   
-  fn Transaction::commit(transaction : Transaction) -> Transaction {
-    if transaction.state != TransactionState::Active {
-      return transaction
+  // 范围检查
+  let check_range = fn(records: Array[DataRecord], field: String, min_value: Int, max_value: Int) -> ValidationResult {
+    let mut violations = []
+    
+    for i in 0..records.length() {
+      let record = records[i]
+      let value = match field {
+        "duration_ms" => record.duration_ms,
+        "timestamp" => record.timestamp,
+        _ => 0
+      }
+      
+      if value < min_value || value > max_value {
+        violations = violations.push(i)
+      }
     }
     
-    Transaction::{ 
-      id: transaction.id, 
-      state: TransactionState::Committed, 
-      operations: transaction.operations, 
-      start_time: transaction.start_time 
+    {
+      rule_id: "range_" + field,
+      passed: violations.length() == 0,
+      violation_count: violations.length(),
+      affected_records: violations,
+      error_message: if violations.length() > 0 { 
+        "字段 " + field + " 的值应在 " + min_value.to_string() + " 到 " + max_value.to_string() + " 范围内" 
+      } else { "" },
+      severity: "medium"
     }
   }
   
-  fn Transaction::abort(transaction : Transaction) -> Transaction {
-    if transaction.state != TransactionState::Active {
-      return transaction
+  // 格式检查
+  let check_format = fn(records: Array[DataRecord], field: String, pattern: String) -> ValidationResult {
+    let mut violations = []
+    
+    for i in 0..records.length() {
+      let record = records[i]
+      let value = match field {
+        "id" => record.id,
+        "trace_id" => record.trace_id,
+        "span_id" => record.span_id,
+        "status" => record.status,
+        _ => ""
+      }
+      
+      let is_valid = match pattern {
+        "uuid" => value.length() == 36 && value[8] == '-' && value[13] == '-' && value[18] == '-' && value[23] == '-',
+        "trace_id_format" => value.starts_with("trace-") && value.length() > 10,
+        "span_id_format" => value.starts_with("span-") && value.length() > 8,
+        "status_values" => value == "ok" || value == "error" || value == "timeout",
+        _ => false
+      }
+      
+      if not(is_valid) {
+        violations = violations.push(i)
+      }
     }
     
-    Transaction::{ 
-      id: transaction.id, 
-      state: TransactionState::Aborted, 
-      operations: transaction.operations, 
-      start_time: transaction.start_time 
+    {
+      rule_id: "format_" + field,
+      passed: violations.length() == 0,
+      violation_count: violations.length(),
+      affected_records: violations,
+      error_message: if violations.length() > 0 { "字段 " + field + " 的格式不符合要求" } else { "" },
+      severity: "medium"
     }
   }
   
-  // 事务管理器
-  struct TransactionManager {
-    active_transactions : Array[Transaction]
-    committed_transactions : Array[Transaction]
-    data : Array[(String, String)]  // 简化的数据存储
-  }
-  
-  fn TransactionManager::new() -> TransactionManager {
-    TransactionManager::{
-      active_transactions: [],
-      committed_transactions: [],
-      data: []
+  // 引用完整性检查
+  let check_referential_integrity = fn(records: Array[DataRecord]) -> ValidationResult {
+    let mut violations = []
+    
+    // 收集所有有效的span_id
+    let mut valid_span_ids = []
+    for record in records {
+      valid_span_ids = valid_span_ids.push(record.span_id)
     }
-  }
-  
-  fn TransactionManager::begin_transaction(manager : TransactionManager, id : String) -> TransactionManager {
-    let transaction = Transaction::new(id)
-    TransactionManager::{
-      active_transactions: manager.active_transactions.push(transaction),
-      committed_transactions: manager.committed_transactions,
-      data: manager.data
-    }
-  }
-  
-  fn TransactionManager::commit_transaction(manager : TransactionManager, id : String) -> TransactionManager {
-    // 找到指定的事务
-    match manager.active_transactions.find_index(fn(t) { t.id == id }) {
-      None => manager
-      Some(index) => {
-        let transaction = manager.active_transactions[index]
-        let committed_transaction = Transaction::commit(transaction)
-        
-        // 应用事务操作到数据存储
-        let mut updated_data = manager.data
-        for operation in committed_transaction.operations {
-          match operation.op_type {
-            OperationType::Create => {
-              match operation.new_value {
-                Some(value) => updated_data = updated_data.push((operation.target, value))
-                None => ()
-              }
-            }
-            OperationType::Update => {
-              match operation.new_value {
-                Some(value) => {
-                  let mut found = false
-                  let mut temp_data = []
-                  for (key, val) in updated_data {
-                    if key == operation.target {
-                      temp_data = temp_data.push((key, value))
-                      found = true
-                    } else {
-                      temp_data = temp_data.push((key, val))
-                    }
-                  }
-                  if found {
-                    updated_data = temp_data
-                  }
-                }
-                None => ()
-              }
-            }
-            OperationType::Delete => {
-              updated_data = updated_data.filter(fn(pair) { pair.0 != operation.target })
-            }
+    
+    // 检查parent_span_id是否存在于span_id中
+    for i in 0..records.length() {
+      let record = records[i]
+      
+      match record.parent_span_id {
+        Some(parent_id) => {
+          if not(valid_span_ids.contains(parent_id)) {
+            violations = violations.push(i)
           }
-        }
-        
-        // 更新事务列表
-        let mut updated_active = manager.active_transactions
-        updated_active.remove(index)
-        
-        TransactionManager::{
-          active_transactions: updated_active,
-          committed_transactions: manager.committed_transactions.push(committed_transaction),
-          data: updated_data
-        }
+        },
+        None => {}
       }
     }
-  }
-  
-  fn TransactionManager::abort_transaction(manager : TransactionManager, id : String) -> TransactionManager {
-    match manager.active_transactions.find_index(fn(t) { t.id == id }) {
-      None => manager
-      Some(index) => {
-        let transaction = manager.active_transactions[index]
-        let aborted_transaction = Transaction::abort(transaction)
-        
-        // 更新事务列表（不应用操作）
-        let mut updated_active = manager.active_transactions
-        updated_active.remove(index)
-        
-        TransactionManager::{
-          active_transactions: updated_active,
-          committed_transactions: manager.committed_transactions.push(aborted_transaction),
-          data: manager.data
-        }
-      }
-    }
-  }
-  
-  fn TransactionManager::get_data(manager : TransactionManager, key : String) -> Option[String] {
-    for (k, v) in manager.data {
-      if k == key {
-        return Some(v)
-      }
-    }
-    None
-  }
-  
-  // 测试事务管理
-  let manager = TransactionManager::new()
-  assert_eq(manager.active_transactions.length(), 0)
-  assert_eq(manager.committed_transactions.length(), 0)
-  assert_eq(manager.data.length(), 0)
-  
-  // 开始事务
-  let manager1 = TransactionManager::begin_transaction(manager, "tx-1")
-  assert_eq(manager1.active_transactions.length(), 1)
-  
-  // 获取事务并添加操作
-  let transaction = manager1.active_transactions[0]
-  let tx_with_ops = Transaction::add_operation(transaction, OperationType::Create, "key-1", None, Some("value-1"))
-  
-  // 更新管理器中的事务
-  let mut updated_active = manager1.active_transactions
-  updated_active[0] = tx_with_ops
-  let manager2 = TransactionManager::{ 
-    active_transactions: updated_active, 
-    committed_transactions: manager1.committed_transactions, 
-    data: manager1.data 
-  }
-  
-  // 提交事务
-  let manager3 = TransactionManager::commit_transaction(manager2, "tx-1")
-  assert_eq(manager3.active_transactions.length(), 0)
-  assert_eq(manager3.committed_transactions.length(), 1)
-  assert_eq(manager3.data.length(), 1)
-  assert_eq(TransactionManager::get_data(manager3, "key-1"), Some("value-1"))
-  
-  // 开始另一个事务
-  let manager4 = TransactionManager::begin_transaction(manager3, "tx-2");
-  let manager5 = TransactionManager::begin_transaction(manager4, "tx-3")
-  
-  assert_eq(manager5.active_transactions.length(), 2)
-  
-  // 为tx-2添加操作
-  let tx2 = manager5.active_transactions[0]
-  let tx2_with_ops = Transaction::add_operation(tx2, OperationType::Update, "key-1", Some("value-1"), Some("value-2"))
-  
-  // 为tx-3添加操作
-  let tx3 = manager5.active_transactions[1]
-  let tx3_with_ops = Transaction::add_operation(tx3, OperationType::Create, "key-2", None, Some("value-3"))
-  
-  // 更新管理器
-  let mut updated_active2 = manager5.active_transactions
-  updated_active2[0] = tx2_with_ops
-  updated_active2[1] = tx3_with_ops
-  let manager6 = TransactionManager::{ 
-    active_transactions: updated_active2, 
-    committed_transactions: manager5.committed_transactions, 
-    data: manager5.data 
-  }
-  
-  // 提交tx-2
-  let manager7 = TransactionManager::commit_transaction(manager6, "tx-2")
-  assert_eq(manager7.active_transactions.length(), 1)
-  assert_eq(manager7.data.length(), 1)
-  assert_eq(TransactionManager::get_data(manager7, "key-1"), Some("value-2"))  // 值已更新
-  
-  // 中止tx-3
-  let manager8 = TransactionManager::abort_transaction(manager7, "tx-3")
-  assert_eq(manager8.active_transactions.length(), 0)
-  assert_eq(manager8.committed_transactions.length(), 3)
-  assert_eq(manager8.data.length(), 1)  // tx-3的操作没有应用
-  assert_eq(TransactionManager::get_data(manager8, "key-2"), None)  // key-2不存在
-}
-
-// 测试4: 数据同步验证
-test "数据同步验证测试" {
-  // 同步状态
-  enum SyncStatus {
-    InSync
-    OutOfSync
-    Syncing
-    Error
-  }
-  
-  // 数据副本
-  struct DataReplica {
-    id : String
-    data : Array[(String, String)]
-    version : Int
-    last_sync : Int64
-    status : SyncStatus
-  }
-  
-  fn DataReplica::new(id : String) -> DataReplica {
-    DataReplica::{
-      id,
-      data: [],
-      version: 0,
-      last_sync: 0L,
-      status: SyncStatus::InSync
-    }
-  }
-  
-  fn DataReplica::update_data(replica : DataReplica, key : String, value : String) -> DataReplica {
-    let mut updated_data = []
-    let mut found = false
     
-    for (k, v) in replica.data {
-      if k == key {
-        updated_data = updated_data.push((key, value))
-        found = true
+    {
+      rule_id: "referential_parent_span",
+      passed: violations.length() == 0,
+      violation_count: violations.length(),
+      affected_records: violations,
+      error_message: if violations.length() > 0 { "parent_span_id 引用了不存在的 span_id" } else { "" },
+      severity: "high"
+    }
+  }
+  
+  // 唯一性检查
+  let check_uniqueness = fn(records: Array[DataRecord], field: String) -> ValidationResult {
+    let mut seen_values = []
+    let mut violations = []
+    
+    for i in 0..records.length() {
+      let record = records[i]
+      let value = match field {
+        "id" => record.id,
+        "span_id" => record.span_id,
+        _ => ""
+      }
+      
+      if seen_values.contains(value) {
+        violations = violations.push(i)
       } else {
-        updated_data = updated_data.push((k, v))
+        seen_values = seen_values.push(value)
       }
     }
     
-    if !found {
-      updated_data = updated_data.push((key, value))
+    {
+      rule_id: "unique_" + field,
+      passed: violations.length() == 0,
+      violation_count: violations.length(),
+      affected_records: violations,
+      error_message: if violations.length() > 0 { "字段 " + field + " 必须是唯一的" } else { "" },
+      severity: "high"
     }
+  }
+  
+  // 一致性检查
+  let check_consistency = fn(records: Array[DataRecord]) -> ValidationResult {
+    let mut violations = []
     
-    DataReplica::{
-      id: replica.id,
-      data: updated_data,
-      version: replica.version + 1,
-      last_sync: replica.last_sync,
-      status: SyncStatus::OutOfSync
-    }
-  }
-  
-  fn DataReplica::get_value(replica : DataReplica, key : String) -> Option[String] {
-    for (k, v) in replica.data {
-      if k == key {
-        return Some(v)
-      }
-    }
-    None
-  }
-  
-  // 同步管理器
-  struct SyncManager {
-    primary : DataReplica
-    replicas : Array[DataReplica]
-    sync_history : Array[(String, Int64, Bool)]  // (replica_id, timestamp, success)
-  }
-  
-  fn SyncManager::new(primary_id : String) -> SyncManager {
-    SyncManager::{
-      primary: DataReplica::new(primary_id),
-      replicas: [],
-      sync_history: []
-    }
-  }
-  
-  fn SyncManager::add_replica(manager : SyncManager, replica_id : String) -> SyncManager {
-    let replica = DataReplica::new(replica_id)
-    SyncManager::{
-      primary: manager.primary,
-      replicas: manager.replicas.push(replica),
-      sync_history: manager.sync_history
-    }
-  }
-  
-  fn SyncManager::update_primary(manager : SyncManager, key : String, value : String) -> SyncManager {
-    let updated_primary = DataReplica::update_data(manager.primary, key, value)
-    
-    // 将所有副本标记为不同步
-    let mut updated_replicas = []
-    for replica in manager.replicas {
-      updated_replicas = updated_replicas.push(DataReplica::{
-        id: replica.id,
-        data: replica.data,
-        version: replica.version,
-        last_sync: replica.last_sync,
-        status: SyncStatus::OutOfSync
-      })
-    }
-    
-    SyncManager::{
-      primary: updated_primary,
-      replicas: updated_replicas,
-      sync_history: manager.sync_history
-    }
-  }
-  
-  fn SyncManager::sync_replica(manager : SyncManager, replica_id : String, timestamp : Int64) -> SyncManager {
-    // 查找副本
-    match manager.replicas.find_index(fn(r) { r.id == replica_id }) {
-      None => manager
-      Some(index) => {
-        let replica = manager.replicas[index]
-        
-        // 执行同步（简单复制主副本的数据）
-        let synced_replica = DataReplica::{
-          id: replica.id,
-          data: manager.primary.data,
-          version: manager.primary.version,
-          last_sync: timestamp,
-          status: SyncStatus::InSync
-        }
-        
-        // 更新副本列表
-        let mut updated_replicas = manager.replicas
-        updated_replicas[index] = synced_replica
-        
-        // 记录同步历史
-        let updated_history = manager.sync_history.push((replica_id, timestamp, true))
-        
-        SyncManager::{
-          primary: manager.primary,
-          replicas: updated_replicas,
-          sync_history: updated_history
-        }
-      }
-    }
-  }
-  
-  fn SyncManager::verify_consistency(manager : SyncManager) -> Array[String] {
-    let mut inconsistent_replicas = []
-    
-    for replica in manager.replicas {
-      // 检查版本
-      if replica.version != manager.primary.version {
-        inconsistent_replicas = inconsistent_replicas.push(replica.id)
-        continue
-      }
+    for i in 0..records.length() {
+      let record = records[i]
       
-      // 检查数据内容
-      if replica.data.length() != manager.primary.data.length() {
-        inconsistent_replicas = inconsistent_replicas.push(replica.id)
-        continue
-      }
-      
-      // 检查每个键值对
-      let mut data_match = true
-      for (key, value) in manager.primary.data {
-        match DataReplica::get_value(replica, key) {
-          Some(replica_value) => {
-            if replica_value != value {
-              data_match = false
-              break
-            }
+      // 检查时间一致性：子span的开始时间应该不早于父span
+      match record.parent_span_id {
+        Some(parent_id) => {
+          let parent_record = records.find(fn(r) { r.span_id == parent_id })
+          match parent_record {
+            Some(parent) => {
+              if record.timestamp < parent.timestamp {
+                violations = violations.push(i)
+              }
+            },
+            None => {}
           }
-          None => {
-            data_match = false
-            break
-          }
-        }
+        },
+        None => {}
       }
       
-      if !data_match {
-        inconsistent_replicas = inconsistent_replicas.push(replica.id)
+      // 检查状态一致性：如果duration为0，状态应该是ok
+      if record.duration_ms == 0 && record.status != "ok" {
+        violations = violations.push(i)
       }
     }
     
-    inconsistent_replicas
+    {
+      rule_id: "consistency_checks",
+      passed: violations.length() == 0,
+      violation_count: violations.length(),
+      affected_records: violations,
+      error_message: if violations.length() > 0 { "数据一致性检查失败" } else { "" },
+      severity: "medium"
+    }
   }
   
-  // 测试同步管理
-  let manager = SyncManager::new("primary")
-  let manager1 = SyncManager::add_replica(manager, "replica-1")
-  let manager2 = SyncManager::add_replica(manager1, "replica-2")
-  
-  assert_eq(manager2.replicas.length(), 2)
-  assert_eq(manager2.primary.version, 0)
-  assert_eq(manager2.replicas[0].version, 0)
-  assert_eq(manager2.replicas[1].version, 0)
-  
-  // 验证初始一致性
-  let inconsistent1 = SyncManager::verify_consistency(manager2)
-  assert_eq(inconsistent1.length(), 0)
-  
-  // 更新主副本
-  let manager3 = SyncManager::update_primary(manager2, "key-1", "value-1")
-  assert_eq(manager3.primary.version, 1)
-  assert_eq(manager3.primary.data.length(), 1)
-  
-  // 副本应该被标记为不同步
-  assert_eq(manager3.replicas[0].status, SyncStatus::OutOfSync)
-  assert_eq(manager3.replicas[1].status, SyncStatus::OutOfSync)
-  
-  // 验证不一致性
-  let inconsistent2 = SyncManager::verify_consistency(manager3)
-  assert_eq(inconsistent2.length(), 2)  // 两个副本都不同步
-  
-  // 同步第一个副本
-  let manager4 = SyncManager::sync_replica(manager3, "replica-1", 1640995200000000000L)
-  assert_eq(manager4.replicas[0].version, 1)
-  assert_eq(manager4.replicas[0].status, SyncStatus::InSync)
-  assert_eq(manager4.replicas[0].data.length(), 1)
-  assert_eq(DataReplica::get_value(manager4.replicas[0], "key-1"), Some("value-1"))
-  
-  // 验证部分一致性
-  let inconsistent3 = SyncManager::verify_consistency(manager4)
-  assert_eq(inconsistent3.length(), 1)  // 只有replica-2不同步
-  
-  // 同步第二个副本
-  let manager5 = SyncManager::sync_replica(manager4, "replica-2", 1640995200000001000L)
-  assert_eq(manager5.replicas[1].version, 1)
-  assert_eq(manager5.replicas[1].status, SyncStatus::InSync)
-  
-  // 验证完全一致性
-  let inconsistent4 = SyncManager::verify_consistency(manager5)
-  assert_eq(inconsistent4.length(), 0)
-  
-  // 再次更新主副本
-  let manager6 = SyncManager::update_primary(manager5, "key-2", "value-2")
-  assert_eq(manager6.primary.version, 2)
-  assert_eq(manager6.primary.data.length(), 2)
-  
-  // 验证再次不一致
-  let inconsistent5 = SyncManager::verify_consistency(manager6)
-  assert_eq(inconsistent5.length(), 2)
-}
-
-// 测试5: 数据约束验证
-test "数据约束验证测试" {
-  // 约束类型
-  enum ConstraintType {
-    NotNull
-    Unique
-    MinLength(Int)
-    MaxLength(Int)
-    Range(Int, Int)
-    Pattern(String)  // 简化的正则表达式
-    Custom((String) -> Bool)
+  // 运行完整性验证
+  let run_integrity_validation = fn(records: Array[DataRecord], rules: Array[IntegrityRule]) -> Array[ValidationResult] {
+    let mut results = []
+    
+    for rule in rules {
+      let result = match rule.rule_type {
+        IntegrityRuleType::NotNull => check_not_null(records, rule.field),
+        IntegrityRuleType::RangeCheck => {
+          let min_value = match Map::get(rule.parameters, "min") {
+            Some(value) => value.to_int(),
+            None => 0
+          }
+          let max_value = match Map::get(rule.parameters, "max") {
+            Some(value) => value.to_int(),
+            None => 999999
+          }
+          check_range(records, rule.field, min_value, max_value)
+        },
+        IntegrityRuleType::FormatCheck => {
+          let pattern = match Map::get(rule.parameters, "pattern") {
+            Some(value) => value,
+            None => ""
+          }
+          check_format(records, rule.field, pattern)
+        },
+        IntegrityRuleType::Referential => check_referential_integrity(records),
+        IntegrityRuleType::Uniqueness => check_uniqueness(records, rule.field),
+        IntegrityRuleType::Consistency => check_consistency(records)
+      }
+      
+      results = results.push(result)
+    }
+    
+    results
   }
   
-  // 约束定义
-  struct Constraint {
-    name : String
-    constraint_type : ConstraintType
-    error_message : String
-  }
+  // 创建测试数据
+  let test_records = [
+    {
+      id: "record-001",
+      timestamp: 1640995200000,
+      trace_id: "trace-12345",
+      span_id: "span-001",
+      parent_span_id: None,
+      service_name: "auth-service",
+      operation_name: "login",
+      duration_ms: 120,
+      status: "ok",
+      tags: Map::from([("user.id", "user123"), ("ip", "192.168.1.1")])
+    },
+    {
+      id: "record-002",
+      timestamp: 1640995200050,
+      trace_id: "trace-12345",
+      span_id: "span-002",
+      parent_span_id: Some("span-001"),
+      service_name: "auth-service",
+      operation_name: "validate_credentials",
+      duration_ms: 80,
+      status: "ok",
+      tags: Map::from([("user.id", "user123")])
+    },
+    {
+      id: "record-003",
+      timestamp: 1640995200100,
+      trace_id: "trace-67890",
+      span_id: "span-003",
+      parent_span_id: None,
+      service_name: "payment-service",
+      operation_name: "process_payment",
+      duration_ms: 500,
+      status: "error",
+      tags: Map::from([("payment.id", "pay123"), ("error.code", "CARD_DECLINED")])
+    },
+    {
+      id: "", // 空ID，应该违反非空规则
+      timestamp: 1640995200150,
+      trace_id: "invalid_trace", // 无效的trace_id格式
+      span_id: "span-001", // 重复的span_id，应该违反唯一性规则
+      parent_span_id: Some("span-999"), // 不存在的父span，应该违反引用完整性
+      service_name: "",
+      operation_name: "test",
+      duration_ms: -10, // 负数持续时间，应该违反范围检查
+      status: "unknown", // 无效状态，应该违反格式检查
+      tags: Map::from([])
+    },
+    {
+      id: "record-005",
+      timestamp: 1640995000000, // 早于父span的时间戳，应该违反一致性检查
+      trace_id: "trace-12345",
+      span_id: "span-005",
+      parent_span_id: Some("span-001"),
+      service_name: "user-service",
+      operation_name: "get_profile",
+      duration_ms: 0, // 持续时间为0但状态不是ok，应该违反一致性检查
+      status: "timeout",
+      tags: Map::from([("user.id", "user123")])
+    }
+  ]
   
-  fn Constraint::new(name : String, constraint_type : ConstraintType, error_message : String) -> Constraint {
-    Constraint::{ name, constraint_type, error_message }
-  }
+  // 创建验证规则
+  let integrity_rules = [
+    {
+      id: "rule-001",
+      name: "ID不能为空",
+      rule_type: IntegrityRuleType::NotNull,
+      field: "id",
+      parameters: Map::empty(),
+      severity: "high",
+      description: "记录ID不能为空"
+    },
+    {
+      id: "rule-002",
+      name: "持续时间范围检查",
+      rule_type: IntegrityRuleType::RangeCheck,
+      field: "duration_ms",
+      parameters: Map::from([("min", "0"), ("max", "300000")]),
+      severity: "medium",
+      description: "持续时间必须在0到300000毫秒之间"
+    },
+    {
+      id: "rule-003",
+      name: "Trace ID格式检查",
+      rule_type: IntegrityRuleType::FormatCheck,
+      field: "trace_id",
+      parameters: Map::from([("pattern", "trace_id_format")]),
+      severity: "medium",
+      description: "Trace ID必须符合格式要求"
+    },
+    {
+      id: "rule-004",
+      name: "Span ID唯一性检查",
+      rule_type: IntegrityRuleType::Uniqueness,
+      field: "span_id",
+      parameters: Map::empty(),
+      severity: "high",
+      description: "Span ID必须唯一"
+    },
+    {
+      id: "rule-005",
+      name: "引用完整性检查",
+      rule_type: IntegrityRuleType::Referential,
+      field: "",
+      parameters: Map::empty(),
+      severity: "high",
+      description: "Parent span ID必须引用存在的span"
+    },
+    {
+      id: "rule-006",
+      name: "状态格式检查",
+      rule_type: IntegrityRuleType::FormatCheck,
+      field: "status",
+      parameters: Map::from([("pattern", "status_values")]),
+      severity: "medium",
+      description: "状态值必须是ok、error或timeout之一"
+    },
+    {
+      id: "rule-007",
+      name: "一致性检查",
+      rule_type: IntegrityRuleType::Consistency,
+      field: "",
+      parameters: Map::empty(),
+      severity: "medium",
+      description: "检查数据一致性"
+    }
+  ]
+  
+  // 运行完整性验证
+  let validation_results = run_integrity_validation(test_records, integrity_rules)
   
   // 验证结果
-  struct ValidationResult {
-    is_valid : Bool
-    errors : Array[String]
+  assert_eq(validation_results.length(), 7)
+  
+  // 检查非空规则：应该失败（record-004的ID为空）
+  let not_null_result = validation_results.find(fn(r) { r.rule_id == "not_null_id" })
+  match not_null_result {
+    Some(result) => {
+      assert_false(result.passed)
+      assert_eq(result.violation_count, 1)
+      assert_eq(result.affected_records[0], 3) // record-004的索引
+    },
+    None => assert_true(false)
   }
   
-  fn ValidationResult::new() -> ValidationResult {
-    ValidationResult::{ is_valid: true, errors: [] }
+  // 检查范围规则：应该失败（record-004的持续时间为负数）
+  let range_result = validation_results.find(fn(r) { r.rule_id == "range_duration_ms" })
+  match range_result {
+    Some(result) => {
+      assert_false(result.passed)
+      assert_eq(result.violation_count, 1)
+      assert_eq(result.affected_records[0], 3) // record-004的索引
+    },
+    None => assert_true(false)
   }
   
-  fn ValidationResult::add_error(result : ValidationResult, error : String) -> ValidationResult {
-    ValidationResult::{
-      is_valid: false,
-      errors: result.errors.push(error)
-    }
+  // 检查格式规则：应该失败（record-004的trace_id和status格式无效）
+  let trace_format_result = validation_results.find(fn(r) { r.rule_id == "format_trace_id" })
+  match trace_format_result {
+    Some(result) => {
+      assert_false(result.passed)
+      assert_eq(result.violation_count, 1)
+      assert_eq(result.affected_records[0], 3) // record-004的索引
+    },
+    None => assert_true(false)
   }
   
-  // 约束验证器
-  struct ConstraintValidator {
-    constraints : Array[Constraint]
+  let status_format_result = validation_results.find(fn(r) { r.rule_id == "format_status" })
+  match status_format_result {
+    Some(result) => {
+      assert_false(result.passed)
+      assert_eq(result.violation_count, 1)
+      assert_eq(result.affected_records[0], 3) // record-004的索引
+    },
+    None => assert_true(false)
   }
   
-  fn ConstraintValidator::new() -> ConstraintValidator {
-    ConstraintValidator::{ constraints: [] }
+  // 检查唯一性规则：应该失败（span-001重复）
+  let uniqueness_result = validation_results.find(fn(r) { r.rule_id == "unique_span_id" })
+  match uniqueness_result {
+    Some(result) => {
+      assert_false(result.passed)
+      assert_eq(result.violation_count, 1)
+      assert_eq(result.affected_records[0], 3) // record-004的索引
+    },
+    None => assert_true(false)
   }
   
-  fn ConstraintValidator::add_constraint(validator : ConstraintValidator, constraint : Constraint) -> ConstraintValidator {
-    ConstraintValidator::{
-      constraints: validator.constraints.push(constraint)
-    }
+  // 检查引用完整性：应该失败（span-999不存在）
+  let referential_result = validation_results.find(fn(r) { r.rule_id == "referential_parent_span" })
+  match referential_result {
+    Some(result) => {
+      assert_false(result.passed)
+      assert_eq(result.violation_count, 1)
+      assert_eq(result.affected_records[0], 3) // record-004的索引
+    },
+    None => assert_true(false)
   }
   
-  fn ConstraintValidator::validate_string(validator : ConstraintValidator, value : String) -> ValidationResult {
-    let mut result = ValidationResult::new()
+  // 检查一致性规则：应该失败（record-005的时间戳早于父span，且持续时间为0但状态不是ok）
+  let consistency_result = validation_results.find(fn(r) { r.rule_id == "consistency_checks" })
+  match consistency_result {
+    Some(result) => {
+      assert_false(result.passed)
+      assert_eq(result.violation_count, 2) // record-004和record-005
+    },
+    None => assert_true(false)
+  }
+}
+
+// 测试2: 跨服务数据一致性验证
+test "跨服务数据一致性验证功能" {
+  // 定义服务数据记录
+  type ServiceDataRecord = {
+    service_name: String
+    trace_id: String
+    span_id: String
+    parent_span_id: Option[String]
+    operation_name: String
+    timestamp: Int
+    duration_ms: Int
+    status: String
+    tags: Map[String, String]
+  }
+  
+  // 定义跨服务一致性检查结果
+  type CrossServiceConsistencyResult = {
+    check_type: String
+    passed: Bool
+    affected_traces: Array[String]
+    affected_services: Array[String]
+    description: String
+    severity: String
+  }
+  
+  // 检查追踪链完整性
+  let check_trace_chain_completeness = fn(service_data: Array[ServiceDataRecord>) -> CrossServiceConsistencyResult {
+    // 按trace_id分组
+    let mut trace_groups = Map::empty()
     
-    for constraint in validator.constraints {
-      let is_valid = match constraint.constraint_type {
-        ConstraintType::NotNull => value.length() > 0
-        ConstraintType::MinLength(min) => value.length() >= min
-        ConstraintType::MaxLength(max) => value.length() <= max
-        ConstraintType::Pattern(pattern) => {
-          // 简化的模式匹配
-          if pattern == "email" {
-            value.contains("@") && value.contains(".")
-          } else if pattern == "phone" {
-            value.length() >= 10 && value.chars().all(fn(c) { c.is_digit() || c == '-' })
-          } else {
-            true  // 未知模式，总是通过
+    for record in service_data {
+      let current_traces = match Map::get(trace_groups, record.trace_id) {
+        Some(traces) => traces,
+        None => []
+      }
+      
+      trace_groups = Map::insert(trace_groups, record.trace_id, current_traces.push(record))
+    }
+    
+    let mut incomplete_traces = []
+    let mut affected_services = []
+    
+    for (trace_id, records) in trace_groups.to_array() {
+      // 检查是否有根span（没有父span的span）
+      let root_spans = records.filter(fn(r) { r.parent_span_id == None })
+      
+      if root_spans.length() == 0 {
+        incomplete_traces = incomplete_traces.push(trace_id)
+        
+        // 收集涉及的服务
+        for record in records {
+          if not(affected_services.contains(record.service_name)) {
+            affected_services = affected_services.push(record.service_name)
           }
         }
-        ConstraintType::Custom(validator_fn) => validator_fn(value)
-        _ => true  // 不适用于字符串的约束
       }
       
-      if !is_valid {
-        result = ValidationResult::add_error(result, constraint.error_message)
+      // 检查是否有断开的链
+      let mut span_ids = []
+      let mut parent_span_ids = []
+      
+      for record in records {
+        span_ids = span_ids.push(record.span_id)
+        
+        match record.parent_span_id {
+          Some(parent_id) => {
+            parent_span_ids = parent_span_ids.push(parent_id)
+          },
+          None => {}
+        }
+      }
+      
+      // 检查是否有父span_id不在span_ids中
+      for parent_id in parent_span_ids {
+        if not(span_ids.contains(parent_id)) {
+          if not(incomplete_traces.contains(trace_id)) {
+            incomplete_traces = incomplete_traces.push(trace_id)
+          }
+          
+          // 收集涉及的服务
+          for record in records {
+            if not(affected_services.contains(record.service_name)) {
+              affected_services = affected_services.push(record.service_name)
+            }
+          }
+        }
       }
     }
     
-    result
+    {
+      check_type: "trace_chain_completeness",
+      passed: incomplete_traces.length() == 0,
+      affected_traces: incomplete_traces,
+      affected_services,
+      description: if incomplete_traces.length() > 0 { "追踪链不完整，缺少根span或有断开的链" } else { "追踪链完整" },
+      severity: "high"
+    }
   }
   
-  fn ConstraintValidator::validate_int(validator : ConstraintValidator, value : Int) -> ValidationResult {
-    let mut result = ValidationResult::new()
+  // 检查跨服务时间一致性
+  let check_cross_service_time_consistency = fn(service_data: Array[ServiceDataRecord], max_time_diff_ms: Int) -> CrossServiceConsistencyResult {
+    // 按trace_id分组
+    let mut trace_groups = Map::empty()
     
-    for constraint in validator.constraints {
-      let is_valid = match constraint.constraint_type {
-        ConstraintType::Range(min, max) => value >= min && value <= max
-        ConstraintType::Custom(validator_fn) => validator_fn(value.to_string())
-        _ => true  // 不适用于整数的约束
+    for record in service_data {
+      let current_traces = match Map::get(trace_groups, record.trace_id) {
+        Some(traces) => traces,
+        None => []
       }
       
-      if !is_valid {
-        result = ValidationResult::add_error(result, constraint.error_message)
+      trace_groups = Map::insert(trace_groups, record.trace_id, current_traces.push(record))
+    }
+    
+    let mut inconsistent_traces = []
+    let mut affected_services = []
+    
+    for (trace_id, records) in trace_groups.to_array() {
+      // 按时间戳排序
+      let sorted_records = records.sort_by(fn(a, b) { a.timestamp - b.timestamp })
+      
+      // 检查时间戳顺序是否合理
+      let mut time_inconsistencies = 0
+      
+      for i in 1..sorted_records.length() {
+        let current = sorted_records[i]
+        let previous = sorted_records[i - 1]
+        
+        // 检查子span是否在父span之后开始
+        match current.parent_span_id {
+          Some(parent_id) => {
+            let parent_record = sorted_records.find(fn(r) { r.span_id == parent_id })
+            match parent_record {
+              Some(parent) => {
+                if current.timestamp < parent.timestamp {
+                  time_inconsistencies = time_inconsistencies + 1
+                }
+              },
+              None => {}
+            }
+          },
+          None => {}
+        }
+        
+        // 检查相邻span的时间差是否过大
+        let time_diff = (current.timestamp - previous.timestamp).abs()
+        if time_diff > max_time_diff_ms {
+          time_inconsistencies = time_inconsistencies + 1
+        }
+      }
+      
+      if time_inconsistencies > 0 {
+        inconsistent_traces = inconsistent_traces.push(trace_id)
+        
+        // 收集涉及的服务
+        for record in records {
+          if not(affected_services.contains(record.service_name)) {
+            affected_services = affected_services.push(record.service_name)
+          }
+        }
       }
     }
     
-    result
+    {
+      check_type: "cross_service_time_consistency",
+      passed: inconsistent_traces.length() == 0,
+      affected_traces: inconsistent_traces,
+      affected_services,
+      description: if inconsistent_traces.length() > 0 { "跨服务时间戳不一致" } else { "跨服务时间戳一致" },
+      severity: "medium"
+    }
   }
   
-  // 测试约束验证
-  let validator = ConstraintValidator::new()
+  // 检查跨服务标签一致性
+  let check_cross_service_tag_consistency = fn(service_data: Array[ServiceDataRecord], required_tags: Array[String]) -> CrossServiceConsistencyResult {
+    // 按trace_id分组
+    let mut trace_groups = Map::empty()
+    
+    for record in service_data {
+      let current_traces = match Map::get(trace_groups, record.trace_id) {
+        Some(traces) => traces,
+        None => []
+      }
+      
+      trace_groups = Map::insert(trace_groups, record.trace_id, current_traces.push(record))
+    }
+    
+    let mut inconsistent_traces = []
+    let mut affected_services = []
+    
+    for (trace_id, records) in trace_groups.to_array() {
+      // 检查每个必需的标签
+      let mut tag_inconsistencies = 0
+      
+      for tag in required_tags {
+        // 收集同一trace中所有服务的该标签值
+        let mut tag_values = Map::empty()
+        
+        for record in records {
+          let tag_value = match Map::get(record.tags, tag) {
+            Some(value) => value,
+            None => ""
+          }
+          
+          if tag_value != "" {
+            let current_values = match Map::get(tag_values, tag_value) {
+              Some(values) => values,
+              None => []
+            }
+            
+            tag_values = Map::insert(tag_values, tag_value, current_values.push(record.service_name))
+          }
+        }
+        
+        // 如果同一个trace中有不同的标签值，则认为不一致
+        if tag_values.size() > 1 {
+          tag_inconsistencies = tag_inconsistencies + 1
+        }
+      }
+      
+      if tag_inconsistencies > 0 {
+        inconsistent_traces = inconsistent_traces.push(trace_id)
+        
+        // 收集涉及的服务
+        for record in records {
+          if not(affected_services.contains(record.service_name)) {
+            affected_services = affected_services.push(record.service_name)
+          }
+        }
+      }
+    }
+    
+    {
+      check_type: "cross_service_tag_consistency",
+      passed: inconsistent_traces.length() == 0,
+      affected_traces: inconsistent_traces,
+      affected_services,
+      description: if inconsistent_traces.length() > 0 { "跨服务标签不一致" } else { "跨服务标签一致" },
+      severity: "low"
+    }
+  }
   
-  // 添加字符串约束
-  let not_null_constraint = Constraint::new("not_null", ConstraintType::NotNull, "值不能为空")
-  let min_length_constraint = Constraint::new("min_length", ConstraintType::MinLength(5), "长度不能少于5个字符")
-  let max_length_constraint = Constraint::new("max_length", ConstraintType::MaxLength(20), "长度不能超过20个字符")
-  let email_constraint = Constraint::new("email", ConstraintType::Pattern("email"), "必须是有效的邮箱地址")
+  // 运行跨服务一致性检查
+  let run_cross_service_consistency_checks = fn(service_data: Array[ServiceDataRecord]) -> Array[CrossServiceConsistencyResult] {
+    let mut results = []
+    
+    // 检查追踪链完整性
+    let trace_chain_result = check_trace_chain_completeness(service_data)
+    results = results.push(trace_chain_result)
+    
+    // 检查跨服务时间一致性
+    let time_consistency_result = check_cross_service_time_consistency(service_data, 5000) // 5秒最大时间差
+    results = results.push(time_consistency_result)
+    
+    // 检查跨服务标签一致性
+    let tag_consistency_result = check_cross_service_tag_consistency(service_data, ["user.id", "request.id"])
+    results = results.push(tag_consistency_result)
+    
+    results
+  }
   
-  let string_validator = ConstraintValidator::add_constraint(
-    ConstraintValidator::add_constraint(
-      ConstraintValidator::add_constraint(
-        ConstraintValidator::add_constraint(validator, not_null_constraint),
-        min_length_constraint
-      ),
-      max_length_constraint
-    ),
-    email_constraint
-  )
+  // 创建测试数据
+  let service_data_records = [
+    // 正常的追踪链
+    {
+      service_name: "api-gateway",
+      trace_id: "trace-001",
+      span_id: "span-001",
+      parent_span_id: None,
+      operation_name: "handle_request",
+      timestamp: 1640995200000,
+      duration_ms: 100,
+      status: "ok",
+      tags: Map::from([("user.id", "user123"), ("request.id", "req001")])
+    },
+    {
+      service_name: "auth-service",
+      trace_id: "trace-001",
+      span_id: "span-002",
+      parent_span_id: Some("span-001"),
+      operation_name: "authenticate",
+      timestamp: 1640995200050,
+      duration_ms: 80,
+      status: "ok",
+      tags: Map::from([("user.id", "user123"), ("request.id", "req001")])
+    },
+    {
+      service_name: "user-service",
+      trace_id: "trace-001",
+      span_id: "span-003",
+      parent_span_id: Some("span-001"),
+      operation_name: "get_user",
+      timestamp: 1640995200100,
+      duration_ms: 60,
+      status: "ok",
+      tags: Map::from([("user.id", "user123"), ("request.id", "req001")])
+    },
+    
+    // 不完整的追踪链 - 缺少根span
+    {
+      service_name: "auth-service",
+      trace_id: "trace-002",
+      span_id: "span-004",
+      parent_span_id: Some("span-999"), // 不存在的父span
+      operation_name: "authenticate",
+      timestamp: 1640995202000,
+      duration_ms: 90,
+      status: "ok",
+      tags: Map::from([("user.id", "user456"), ("request.id", "req002")])
+    },
+    {
+      service_name: "user-service",
+      trace_id: "trace-002",
+      span_id: "span-005",
+      parent_span_id: Some("span-004"),
+      operation_name: "get_user",
+      timestamp: 1640995202050,
+      duration_ms: 70,
+      status: "ok",
+      tags: Map::from([("user.id", "user456"), ("request.id", "req002")])
+    },
+    
+    // 时间不一致的追踪链
+    {
+      service_name: "api-gateway",
+      trace_id: "trace-003",
+      span_id: "span-006",
+      parent_span_id: None,
+      operation_name: "handle_request",
+      timestamp: 1640995203000,
+      duration_ms: 100,
+      status: "ok",
+      tags: Map::from([("user.id", "user789"), ("request.id", "req003")])
+    },
+    {
+      service_name: "payment-service",
+      trace_id: "trace-003",
+      span_id: "span-007",
+      parent_span_id: Some("span-006"),
+      operation_name: "process_payment",
+      timestamp: 1640995202500, // 早于父span的时间戳
+      duration_ms: 200,
+      status: "ok",
+      tags: Map::from([("user.id", "user789"), ("request.id", "req003")])
+    },
+    
+    // 标签不一致的追踪链
+    {
+      service_name: "api-gateway",
+      trace_id: "trace-004",
+      span_id: "span-008",
+      parent_span_id: None,
+      operation_name: "handle_request",
+      timestamp: 1640995204000,
+      duration_ms: 100,
+      status: "ok",
+      tags: Map::from([("user.id", "user001"), ("request.id", "req004")])
+    },
+    {
+      service_name: "order-service",
+      trace_id: "trace-004",
+      span_id: "span-009",
+      parent_span_id: Some("span-008"),
+      operation_name: "create_order",
+      timestamp: 1640995204050,
+      duration_ms: 150,
+      status: "ok",
+      tags: Map::from([("user.id", "user002"), ("request.id", "req004")]) // 不同的user.id
+    }
+  ]
   
-  // 测试有效字符串
-  let valid_email = "user@example.com"
-  let result1 = ConstraintValidator::validate_string(string_validator, valid_email)
-  assert_true(result1.is_valid)
-  assert_eq(result1.errors.length(), 0)
+  // 运行跨服务一致性检查
+  let consistency_results = run_cross_service_consistency_checks(service_data_records)
   
-  // 测试无效字符串（太短）
-  let short_email = "a@b.c"
-  let result2 = ConstraintValidator::validate_string(string_validator, short_email)
-  assert_false(result2.is_valid)
-  assert_true(result2.errors.length() > 0)
-  assert_true(result2.errors.any(fn(err) { err.contains("长度不能少于5个字符") }))
+  // 验证结果
+  assert_eq(consistency_results.length(), 3)
   
-  // 测试无效字符串（不是邮箱）
-  let not_email = "not-an-email"
-  let result3 = ConstraintValidator::validate_string(string_validator, not_email)
-  assert_false(result3.is_valid)
-  assert_true(result3.errors.any(fn(err) { err.contains("必须是有效的邮箱地址") }))
+  // 检查追踪链完整性结果
+  let trace_chain_result = consistency_results.find(fn(r) { r.check_type == "trace_chain_completeness" })
+  match trace_chain_result {
+    Some(result) => {
+      assert_false(result.passed) // 应该失败，因为trace-002缺少根span
+      assert_true(result.affected_traces.contains("trace-002"))
+      assert_true(result.affected_services.contains("auth-service"))
+      assert_true(result.affected_services.contains("user-service"))
+    },
+    None => assert_true(false)
+  }
   
-  // 测试无效字符串（空字符串）
-  let empty_string = ""
-  let result4 = ConstraintValidator::validate_string(string_validator, empty_string)
-  assert_false(result4.is_valid)
-  assert_true(result4.errors.any(fn(err) { err.contains("值不能为空") }))
+  // 检查跨服务时间一致性结果
+  let time_consistency_result = consistency_results.find(fn(r) { r.check_type == "cross_service_time_consistency" })
+  match time_consistency_result {
+    Some(result) => {
+      assert_false(result.passed) // 应该失败，因为trace-003有时间不一致
+      assert_true(result.affected_traces.contains("trace-003"))
+      assert_true(result.affected_services.contains("api-gateway"))
+      assert_true(result.affected_services.contains("payment-service"))
+    },
+    None => assert_true(false)
+  }
   
-  // 添加整数约束
-  let range_constraint = Constraint::new("range", ConstraintType::Range(1, 100), "值必须在1到100之间")
+  // 检查跨服务标签一致性结果
+  let tag_consistency_result = consistency_results.find(fn(r) { r.check_type == "cross_service_tag_consistency" })
+  match tag_consistency_result {
+    Some(result) => {
+      assert_false(result.passed) // 应该失败，因为trace-004的user.id不一致
+      assert_true(result.affected_traces.contains("trace-004"))
+      assert_true(result.affected_services.contains("api-gateway"))
+      assert_true(result.affected_services.contains("order-service"))
+    },
+    None => assert_true(false)
+  }
+}
+
+// 测试3: 数据版本控制与一致性恢复
+test "数据版本控制与一致性恢复功能" {
+  // 定义数据版本
+  type DataVersion = {
+    version_id: String
+    timestamp: Int
+    description: String
+    checksum: String
+    is_consistent: Bool
+  }
   
-  let int_validator = ConstraintValidator::add_constraint(ConstraintValidator::new(), range_constraint)
+  // 定义数据变更记录
+  type DataChange = {
+    change_id: String
+    record_id: String
+    field: String
+    old_value: String
+    new_value: String
+    change_timestamp: Int
+    version_id: String
+    change_reason: String
+  }
   
-  // 测试有效整数
-  let valid_int = 50
-  let result5 = ConstraintValidator::validate_int(int_validator, valid_int)
-  assert_true(result5.is_valid)
-  assert_eq(result5.errors.length(), 0)
+  // 定义一致性恢复策略
+  enum RecoveryStrategy {
+    Rollback         // 回滚到上一个一致版本
+    ForwardRecovery  // 前向恢复，应用后续变更
+    ManualResolution // 手动解决
+    Ignore           // 忽略不一致
+  }
   
-  // 测试无效整数（超出范围）
-  let invalid_int = 150
-  let result6 = ConstraintValidator::validate_int(int_validator, invalid_int)
-  assert_false(result6.is_valid)
-  assert_true(result6.errors.any(fn(err) { err.contains("值必须在1到100之间") }))
+  // 定义恢复计划
+  type RecoveryPlan = {
+    inconsistency_id: String
+    strategy: RecoveryStrategy
+    target_version: Option[String]
+    steps: Array[String]
+    estimated_impact: String
+  }
   
-  // 测试自定义约束
-  let custom_constraint = Constraint::new("custom", ConstraintType::Custom(fn(s) { s.starts_with("prefix") }), "必须以'prefix'开头")
+  // 计算数据校验和
+  let calculate_checksum = fn(data: Array[Map[String, String]]) -> String {
+    // 简化的校验和计算
+    let concatenated = data.reduce(fn(acc, record) => {
+      let record_str = record.to_array().reduce(fn(rec_acc, pair) => {
+        let (key, value) = pair
+        rec_acc + key + ":" + value + ";"
+      }, "")
+      acc + record_str
+    }, "")
+    
+    // 简化的哈希：使用字符串长度和第一个/最后一个字符
+    let length = concatenated.length()
+    let first_char = if length > 0 { concatenated[0] } else { '0' }
+    let last_char = if length > 0 { concatenated[length - 1] } else { '0' }
+    
+    "checksum-" + length.to_string() + "-" + first_char.to_string() + "-" + last_char.to_string()
+  }
   
-  let custom_validator = ConstraintValidator::add_constraint(ConstraintValidator::new(), custom_constraint)
+  // 检测数据不一致
+  let detect_inconsistencies = fn(data: Array[Map[String, String]], expected_checksum: String) -> Array[String] {
+    let actual_checksum = calculate_checksum(data)
+    
+    if actual_checksum != expected_checksum {
+      // 简化的不一致检测：返回一些假设的不一致ID
+      ["inconsistency-001", "inconsistency-002"]
+    } else {
+      []
+    }
+  }
   
-  // 测试自定义约束（有效）
-  let valid_custom = "prefix-value"
-  let result7 = ConstraintValidator::validate_string(custom_validator, valid_custom)
-  assert_true(result7.is_valid)
+  // 创建数据版本
+  let create_data_version = fn(data: Array[Map[String, String]], description: String, expected_checksum: String) -> DataVersion {
+    let checksum = calculate_checksum(data)
+    let is_consistent = checksum == expected_checksum
+    
+    {
+      version_id: "version-" + (1640995200).to_string(),
+      timestamp: 1640995200,
+      description,
+      checksum,
+      is_consistent
+    }
+  }
   
-  // 测试自定义约束（无效）
-  let invalid_custom = "value-without-prefix"
-  let result8 = ConstraintValidator::validate_string(custom_validator, invalid_custom)
-  assert_false(result8.is_valid)
-  assert_true(result8.errors.any(fn(err) { err.contains("必须以'prefix'开头") }))
+  // 记录数据变更
+  let record_data_change = fn(record_id: String, field: String, old_value: String, new_value: String, version_id: String, reason: String) -> DataChange {
+    {
+      change_id: "change-" + (1640995200).to_string(),
+      record_id,
+      field,
+      old_value,
+      new_value,
+      change_timestamp: 1640995200,
+      version_id,
+      change_reason: reason
+    }
+  }
+  
+  // 生成恢复计划
+  let generate_recovery_plan = fn(inconsistency_id: String, available_versions: Array[DataVersion], changes: Array[DataChange]) -> RecoveryPlan {
+    // 查找最近的一致版本
+    let consistent_versions = available_versions.filter(fn(v) { v.is_consistent })
+    
+    let (strategy, target_version) = if consistent_versions.length() > 0 {
+      // 找到最新的一致版本
+      let latest_consistent = consistent_versions.reduce(fn(acc, v) => {
+        if v.timestamp > acc.timestamp { v } else { acc }
+      }, consistent_versions[0])
+      
+      (RecoveryStrategy::Rollback, Some(latest_consistent.version_id))
+    } else {
+      (RecoveryStrategy::ManualResolution, None)
+    }
+    
+    // 生成恢复步骤
+    let steps = match strategy {
+      RecoveryStrategy::Rollback => {
+        target_version.map(fn(version) => {
+          // 查找需要回滚的变更
+          let rollback_changes = changes.filter(fn(c) { c.version_id > version })
+          
+          [
+            "1. 识别需要回滚的变更",
+            "2. 备份当前数据状态",
+            "3. 应用回滚操作到版本 " + version,
+            "4. 验证数据一致性",
+            "5. 更新元数据"
+          ]
+        }).unwrap_or([])
+      },
+      RecoveryStrategy::ForwardRecovery => {
+        [
+          "1. 识别不一致的数据",
+          "2. 应用前向修复",
+          "3. 验证修复结果",
+          "4. 更新数据版本"
+        ]
+      },
+      RecoveryStrategy::ManualResolution => {
+        [
+          "1. 标记不一致的数据",
+          "2. 通知数据管理员",
+          "3. 手动审查和修复",
+          "4. 验证修复结果"
+        ]
+      },
+      RecoveryStrategy::Ignore => {
+        [
+          "1. 记录不一致问题",
+          "2. 监控后续影响",
+          "3. 定期检查是否自动解决"
+        ]
+      }
+    }
+    
+    // 估算影响
+    let estimated_impact = match strategy {
+      RecoveryStrategy::Rollback => "可能影响最近的数据变更",
+      RecoveryStrategy::ForwardRecovery => "可能影响数据完整性",
+      RecoveryStrategy::ManualResolution => "需要人工干预，解决时间不确定",
+      RecoveryStrategy::Ignore => "可能导致后续数据分析错误"
+    }
+    
+    {
+      inconsistency_id,
+      strategy,
+      target_version,
+      steps,
+      estimated_impact
+    }
+  }
+  
+  // 执行恢复操作
+  let execute_recovery = fn(data: Array[Map[String, String]], plan: RecoveryPlan) -> Array[Map[String, String]] {
+    match plan.strategy {
+      RecoveryStrategy::Rollback => {
+        // 简化的回滚操作：返回一个模拟的"已回滚"数据集
+        data.map(fn(record) => {
+          let mut updated_record = record
+          updated_record = Map::insert(updated_record, "recovery_status", "rolled_back")
+          updated_record = Map::insert(updated_record, "recovery_timestamp", "1640995300")
+          updated_record
+        })
+      },
+      RecoveryStrategy::ForwardRecovery => {
+        // 简化的前向恢复：标记并修复不一致的数据
+        data.map(fn(record) => {
+          let mut updated_record = record
+          
+          // 检查是否有不一致的字段
+          let status = match Map::get(record, "status") {
+            Some(s) => s,
+            None => ""
+          }
+          
+          if status == "inconsistent" {
+            updated_record = Map::insert(updated_record, "status", "fixed")
+            updated_record = Map::insert(updated_record, "recovery_status", "forward_recovered")
+          }
+          
+          updated_record
+        })
+      },
+      RecoveryStrategy::ManualResolution => {
+        // 标记需要手动解决的数据
+        data.map(fn(record) => {
+          let mut updated_record = record
+          updated_record = Map::insert(updated_record, "recovery_status", "requires_manual_resolution")
+          updated_record
+        })
+      },
+      RecoveryStrategy::Ignore => {
+        // 不做任何更改，只添加标记
+        data.map(fn(record) => {
+          let mut updated_record = record
+          updated_record = Map::insert(updated_record, "recovery_status", "inconsistency_ignored")
+          updated_record
+        })
+      }
+    }
+  }
+  
+  // 创建测试数据
+  let initial_data = [
+    Map::from([
+      ("id", "record-001"),
+      ("trace_id", "trace-001"),
+      ("service_name", "auth-service"),
+      ("status", "ok"),
+      ("timestamp", "1640995200000")
+    ]),
+    Map::from([
+      ("id", "record-002"),
+      ("trace_id", "trace-001"),
+      ("service_name", "user-service"),
+      ("status", "ok"),
+      ("timestamp", "1640995200050")
+    ])
+  ]
+  
+  // 创建初始版本
+  let initial_checksum = calculate_checksum(initial_data)
+  let version1 = create_data_version(initial_data, "Initial version", initial_checksum)
+  
+  // 模拟数据变更
+  let updated_data = [
+    Map::from([
+      ("id", "record-001"),
+      ("trace_id", "trace-001"),
+      ("service_name", "auth-service"),
+      ("status", "ok"),
+      ("timestamp", "1640995200000")
+    ]),
+    Map::from([
+      ("id", "record-002"),
+      ("trace_id", "trace-001"),
+      ("service_name", "user-service"),
+      ("status", "error"), // 状态变更
+      ("timestamp", "1640995200050")
+    ])
+  ]
+  
+  let changes = [
+    record_data_change("record-002", "status", "ok", "error", "version-1640995201", "Error occurred during processing")
+  ]
+  
+  // 创建更新版本
+  let updated_checksum = "checksum-invalid" // 模拟不一致的校验和
+  let version2 = create_data_version(updated_data, "Updated with error", updated_checksum)
+  
+  // 检测不一致
+  let inconsistencies = detect_inconsistencies(updated_data, initial_checksum)
+  
+  // 验证不一致检测
+  assert_true(inconsistencies.length() > 0)
+  
+  // 生成恢复计划
+  let available_versions = [version1, version2]
+  let recovery_plan = generate_recovery_plan(inconsistencies[0], available_versions, changes)
+  
+  // 验证恢复计划
+  assert_eq(recovery_plan.inconsistency_id, inconsistencies[0])
+  assert_eq(recovery_plan.strategy, RecoveryStrategy::Rollback)
+  assert_eq(recovery_plan.target_version, Some(version1.version_id))
+  assert_true(recovery_plan.steps.length() > 0)
+  
+  // 执行恢复
+  let recovered_data = execute_recovery(updated_data, recovery_plan)
+  
+  // 验证恢复结果
+  assert_eq(recovered_data.length(), updated_data.length())
+  
+  for record in recovered_data {
+    let recovery_status = match Map::get(record, "recovery_status") {
+      Some(status) => status,
+      None => ""
+    }
+    
+    assert_eq(recovery_status, "rolled_back")
+  }
+  
+  // 测试前向恢复策略
+  let forward_recovery_plan = {
+    inconsistency_id: inconsistencies[0],
+    strategy: RecoveryStrategy::ForwardRecovery,
+    target_version: None,
+    steps: [],
+    estimated_impact: ""
+  }
+  
+  let forward_recovered_data = execute_recovery(updated_data, forward_recovery_plan)
+  
+  // 验证前向恢复结果
+  let inconsistent_record = forward_recovered_data.find(fn(record) => {
+    match Map::get(record, "status") {
+      Some(status) => status == "error",
+      None => false
+    }
+  })
+  
+  match inconsistent_record {
+    Some(record) => {
+      let recovery_status = match Map::get(record, "recovery_status") {
+        Some(status) => status,
+        None => ""
+      }
+      
+      assert_eq(recovery_status, "forward_recovered")
+      
+      let status = match Map::get(record, "status") {
+        Some(status) => status,
+        None => ""
+      }
+      
+      assert_eq(status, "fixed")
+    },
+    None => assert_true(false)
+  }
 }
