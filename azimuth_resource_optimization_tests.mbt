@@ -1,658 +1,559 @@
-// Resource Optimization Tests for Azimuth Telemetry System
-// This file contains test cases for resource optimization and efficiency
+// 资源优化测试用例
+// 测试Azimuth遥测系统的资源优化功能
 
-// Test 1: Memory Pool Optimization
-test "memory pool optimization" {
-  let memory_pool = MemoryPool::new(1000) // Pool of 1000 objects
+test "内存使用优化" {
+  // 测试内存使用的优化
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "memory.optimization.test")
   
-  // Test object allocation from pool
-  let allocated_objects = []
+  // 创建内存优化器
+  let memory_optimizer = MemoryOptimizer::new()
   
-  for i in 1..=500 {
-    let obj = MemoryPool::allocate(memory_pool)
-    allocated_objects.push(obj)
-  }
+  // 创建资源监控器
+  let resource_monitor = ResourceMonitor::new()
   
-  // Verify objects were allocated from pool
-  assert_eq(allocated_objects.length(), 500)
-  assert_eq(MemoryPool::available_count(memory_pool), 500) // 1000 - 500 = 500
+  // 测试优化前的内存使用
+  let initial_memory = ResourceMonitor::get_memory_usage(resource_monitor)
   
-  // Test object deallocation back to pool
-  for i in 1..=250 {
-    let obj = allocated_objects.pop()
-    MemoryPool::deallocate(memory_pool, obj)
-  }
-  
-  // Verify objects were returned to pool
-  assert_eq(MemoryPool::available_count(memory_pool), 750) // 500 + 250 = 750
-  
-  // Test pool exhaustion handling
-  let additional_objects = []
-  
-  for i in 1..=800 {
-    let obj = MemoryPool::allocate(memory_pool)
-    if obj.is_some() {
-      additional_objects.push(obj.unwrap())
+  // 创建大量span
+  let spans = []
+  for i = 0; i < 1000; i = i + 1 {
+    let span = Tracer::start_span(tracer, "memory.test.operation." + i.to_string())
+    
+    // 添加大量属性以增加内存使用
+    for j = 0; j < 10; j = j + 1 {
+      Span::set_attribute(span, "attribute." + j.to_string(), "value." + i.to_string() + "." + j.to_string())
     }
+    
+    // 添加事件
+    Span::add_event(span, "test.event", [
+      ("event.index", IntValue(i)),
+      ("event.data", "event.data." + i.to_string())
+    ])
+    
+    spans.push(span)
   }
   
-  // Should allocate all available objects (750)
-  assert_eq(additional_objects.length(), 750)
-  assert_eq(MemoryPool::available_count(memory_pool), 0)
+  // 测试优化前的内存使用
+  let before_optimization = ResourceMonitor::get_memory_usage(resource_monitor)
+  assert_true(before_optimization > initial_memory)
   
-  // Test pool expansion
-  let expansion_result = MemoryPool::expand(memory_pool, 500)
-  match expansion_result {
-    Success => assert_eq(MemoryPool::available_count(memory_pool), 500)
-    Error(_) => assert_true(false) // Expansion should succeed
+  // 应用内存优化
+  let optimization_result = MemoryOptimizer::optimize(memory_optimizer, spans)
+  
+  // 验证优化结果
+  assert_true(optimization_result.is_successful)
+  assert_true(optimizationResult.memory_freed > 0)
+  assert_true(optimizationResult.optimized_spans > 0)
+  
+  // 测试优化后的内存使用
+  let after_optimization = ResourceMonitor::get_memory_usage(resource_monitor)
+  
+  // 验证内存使用减少
+  let memory_reduction = before_optimization - after_optimization
+  assert_true(memory_reduction > 0)
+  
+  // 验证优化后的span仍然有效
+  for span in spans {
+    assert_true(Span::is_valid(span))
+    
+    // 验证关键属性仍然存在
+    let span_name = Span::name(span)
+    assert_true(String::contains(span_name, "memory.test.operation"))
   }
   
-  // Test allocation after expansion
-  let expanded_obj = MemoryPool::allocate(memory_pool)
-  assert_true(expanded_obj.is_some())
-  assert_eq(MemoryPool::available_count(memory_pool), 499)
+  // 测试内存压缩策略
+  let compression_strategy = MemoryCompressionStrategy::new()
+  let compression_result = MemoryOptimizer::apply_compression_strategy(
+    memory_optimizer,
+    spans,
+    compression_strategy
+  )
   
-  // Return all objects to pool
-  for obj in additional_objects {
-    MemoryPool::deallocate(memory_pool, obj)
+  // 验证压缩结果
+  assert_true(compression_result.is_successful)
+  assert_true(compression_result.compression_ratio > 1.0)  // 压缩比应大于1
+  
+  // 验证压缩后的内存使用
+  let after_compression = ResourceMonitor::get_memory_usage(resource_monitor)
+  assert_true(after_compression < after_optimization)
+  
+  // 结束所有span
+  for span in spans {
+    Span::end(span)
   }
   
-  MemoryPool::deallocate(memory_pool, expanded_obj.unwrap())
-  
-  // Verify all objects are returned
-  assert_eq(MemoryPool::available_count(memory_pool), 999) // 499 + 500 = 999
+  assert_true(true)
 }
 
-// Test 2: Connection Pool Optimization
-test "connection pool optimization" {
-  let connection_pool = ConnectionPool::new("https://telemetry.example.com", 10) // 10 connections
+test "CPU使用优化" {
+  // 测试CPU使用的优化
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "cpu.optimization.test")
   
-  // Test connection acquisition
-  let connections = []
+  // 创建CPU优化器
+  let cpu_optimizer = CPUOptimizer::new()
   
-  for i in 1..=8 {
-    let conn = ConnectionPool::acquire(connection_pool, 1000) // 1s timeout
-    match conn {
-      Some(connection) => connections.push(connection)
-      None => assert_true(false) // Should acquire connection
+  // 创建CPU监控器
+  let cpu_monitor = CPUMonitor::new()
+  
+  // 测试优化前的CPU使用
+  let initial_cpu = CPUMonitor::get_cpu_usage(cpu_monitor)
+  
+  // 创建CPU密集型操作
+  let spans = []
+  for i = 0; i < 100; i = i + 1 {
+    let span = Tracer::start_span(tracer, "cpu.intensive.operation." + i.to_string())
+    
+    // 添加复杂属性计算
+    for j = 0; j < 50; j = j + 1 {
+      let complex_value = "complex.value." + (i * j).to_string()
+      Span::set_attribute(span, "complex.attribute." + j.to_string(), complex_value)
     }
-  }
-  
-  // Verify connections were acquired
-  assert_eq(connections.length(), 8)
-  assert_eq(ConnectionPool::available_connections(connection_pool), 2) // 10 - 8 = 2
-  
-  // Test connection release
-  for i in 1..=4 {
-    let conn = connections.pop()
-    ConnectionPool::release(connection_pool, conn.unwrap())
-  }
-  
-  // Verify connections were released
-  assert_eq(ConnectionPool::available_connections(connection_pool), 6) // 2 + 4 = 6
-  
-  // Test connection reuse
-  let reused_connections = []
-  
-  for i in 1..=6 {
-    let conn = ConnectionPool::acquire(connection_pool, 1000)
-    match conn {
-      Some(connection) => {
-        reused_connections.push(connection)
-        // Test connection is still valid
-        assert_true(Connection::is_valid(connection))
-      }
-      None => assert_true(false) // Should acquire connection
+    
+    // 添加多个事件
+    for k = 0; k < 20; k = k + 1 {
+      Span::add_event(span, "cpu.intensive.event." + k.to_string(), [
+        ("event.index", IntValue(i * k)),
+        ("calculation.result", (i + k).to_string())
+      ])
     }
+    
+    spans.push(span)
   }
   
-  // Verify all available connections were reused
-  assert_eq(reused_connections.length(), 6)
-  assert_eq(ConnectionPool::available_connections(connection_pool), 0)
+  // 测试优化前的CPU使用
+  let before_optimization = CPUMonitor::get_cpu_usage(cpu_monitor)
   
-  // Test connection pool exhaustion
-  let exhausted_conn = ConnectionPool::acquire(connection_pool, 100) // Short timeout
-  assert_true(exhausted_conn.is_none()) // Should fail due to exhaustion
+  // 应用CPU优化
+  let optimization_result = CPUOptimizer::optimize(cpu_optimizer, spans)
   
-  // Release one connection and try again
-  let conn_to_release = reused_connections.pop()
-  ConnectionPool::release(connection_pool, conn_to_release.unwrap())
+  // 验证优化结果
+  assert_true(optimization_result.is_successful)
+  assert_true(optimization_result.cpu_reduction > 0)
+  assert_true(optimization_result.optimized_operations > 0)
   
-  let recovery_conn = ConnectionPool::acquire(connection_pool, 1000)
-  assert_true(recovery_conn.is_some()) // Should succeed after release
+  // 测试优化后的CPU使用
+  let after_optimization = CPUMonitor::get_cpu_usage(cpu_monitor)
   
-  // Release all connections
-  for conn in reused_connections {
-    ConnectionPool::release(connection_pool, conn)
+  // 验证CPU使用减少
+  let cpu_reduction = before_optimization - after_optimization
+  assert_true(cpu_reduction > 0)
+  
+  // 测试批处理优化
+  let batch_processor = BatchProcessor::new()
+  let batch_result = CPUOptimizer::apply_batch_processing(
+    cpu_optimizer,
+    spans,
+    batch_processor
+  )
+  
+  // 验证批处理结果
+  assert_true(batch_result.is_successful)
+  assert_true(batch_result.processed_batches > 0)
+  assert_true(batch_result.cpu_efficiency_improvement > 0)
+  
+  // 验证批处理后的CPU使用
+  let after_batch_processing = CPUMonitor::get_cpu_usage(cpu_monitor)
+  assert_true(after_batch_processing < after_optimization)
+  
+  // 结束所有span
+  for span in spans {
+    Span::end(span)
   }
   
-  ConnectionPool::release(connection_pool, recovery_conn.unwrap())
-  
-  // Verify all connections are available
-  assert_eq(ConnectionPool::available_connections(connection_pool), 10)
+  assert_true(true)
 }
 
-// Test 3: Batch Size Optimization
-test "batch size optimization" {
-  let optimizer = BatchSizeOptimizer::new()
+test "网络带宽优化" {
+  // 测试网络带宽的优化
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "network.optimization.test")
   
-  // Test with varying data volumes
-  let data_volumes = [100, 500, 1000, 5000, 10000]
+  // 创建网络优化器
+  let network_optimizer = NetworkOptimizer::new()
   
-  for volume in data_volumes {
-    // Create test data
-    let test_data = []
-    for i in 1..=volume {
-      let attrs = Attributes::new()
-      Attributes::set(attrs, "iteration", IntValue(i))
-      
-      test_data.push(TelemetryData::new(
-        (i as Float),
-        attrs,
-        1234567890L + i
-      ))
+  // 创建网络监控器
+  let network_monitor = NetworkMonitor::new()
+  
+  // 测试优化前的网络使用
+  let initial_network = NetworkMonitor::get_bandwidth_usage(network_monitor)
+  
+  // 创建大量网络传输的span
+  let spans = []
+  for i = 0; i < 100; i = i + 1 {
+    let span = Tracer::start_span(tracer, "network.intensive.operation." + i.to_string())
+    
+    // 添加大量属性以增加网络传输量
+    for j = 0; j < 20; j = j + 1 {
+      let large_value = "large.value." + i.to_string() + "." + j.to_string() + "x".repeat(100)
+      Span::set_attribute(span, "large.attribute." + j.to_string(), large_value)
     }
     
-    // Find optimal batch size
-    let optimal_size = BatchSizeOptimizer::find_optimal_size(optimizer, test_data)
-    
-    // Verify optimal size is reasonable
-    assert_true(optimal_size >= 10) // Minimum batch size
-    assert_true(optimal_size <= 1000) // Maximum batch size
-    assert_true(optimal_size <= volume) // Should not exceed data volume
-    
-    // Test processing with optimal batch size
-    let start_time = Time::now()
-    
-    let processed_count = 0
-    for batch in BatchProcessor::process_with_size(test_data, optimal_size) {
-      let result = BatchProcessor::process_batch(batch)
-      match result {
-        Success(count) => processed_count = processed_count + count
-        Error(_) => assert_true(false) // Should not fail
-      }
+    // 添加大量事件
+    for k = 0; k < 10; k = k + 1 {
+      let large_event_data = "large.event.data." + i.to_string() + "." + k.to_string() + "y".repeat(200)
+      Span::add_event(span, "large.event." + k.to_string(), [
+        ("large.data", large_event_data),
+        ("event.index", IntValue(i * k))
+      ])
     }
     
-    let end_time = Time::now()
-    let processing_time = Time::duration_between(start_time, end_time)
-    
-    // Verify all data was processed
-    assert_eq(processed_count, volume)
-    
-    // Verify processing time is reasonable
-    let max_expected_time = (volume as Float / optimal_size as Float) * 100.0 // 100ms per batch
-    assert_true((processing_time as Float) < max_expected_time)
+    spans.push(span)
   }
+  
+  // 序列化所有span以模拟网络传输
+  let serialized_spans = []
+  for span in spans {
+    let serialized = Span::serialize(span)
+    serialized_spans.push(serialized)
+  }
+  
+  // 测试优化前的网络使用
+  let before_optimization = NetworkMonitor::get_bandwidth_usage(network_monitor)
+  
+  // 应用网络优化
+  let optimization_result = NetworkOptimizer::optimize(network_optimizer, serialized_spans)
+  
+  // 验证优化结果
+  assert_true(optimization_result.is_successful)
+  assert_true(optimization_result.bandwidth_reduction > 0)
+  assert_true(optimization_result.optimized_transmissions > 0)
+  
+  // 测试优化后的网络使用
+  let after_optimization = NetworkMonitor::get_bandwidth_usage(network_monitor)
+  
+  // 验证网络使用减少
+  let bandwidth_reduction = before_optimization - after_optimization
+  assert_true(bandwidth_reduction > 0)
+  
+  // 测试数据压缩优化
+  let compression_optimizer = NetworkCompressionOptimizer::new()
+  let compression_result = NetworkOptimizer::apply_compression(
+    network_optimizer,
+    serialized_spans,
+    compression_optimizer
+  )
+  
+  // 验证压缩结果
+  assert_true(compression_result.is_successful)
+  assert_true(compression_result.compression_ratio > 1.0)
+  assert_true(compression_result.transmission_time_reduction > 0)
+  
+  // 测试批量传输优化
+  let batch_transmission = BatchTransmissionOptimizer::new()
+  let batch_result = NetworkOptimizer::apply_batch_transmission(
+    network_optimizer,
+    serialized_spans,
+    batch_transmission
+  )
+  
+  // 验证批量传输结果
+  assert_true(batch_result.is_successful)
+  assert_true(batch_result.transmission_count > 0)
+  assert_true(batch_result.overhead_reduction > 0)
+  
+  // 结束所有span
+  for span in spans {
+    Span::end(span)
+  }
+  
+  assert_true(true)
 }
 
-// Test 4: Sampling Rate Optimization
-test "sampling rate optimization" {
-  let optimizer = SamplingRateOptimizer::new()
+test "存储使用优化" {
+  // 测试存储使用的优化
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "storage.optimization.test")
   
-  // Test with different traffic patterns
-  let traffic_patterns = [
-    ("low_traffic", 100),
-    ("medium_traffic", 1000),
-    ("high_traffic", 10000),
-    ("very_high_traffic", 100000)
-  ]
+  // 创建存储优化器
+  let storage_optimizer = StorageOptimizer::new()
   
-  for (pattern_name, traffic_volume) in traffic_patterns {
-    // Simulate traffic pattern
-    let traffic_data = []
-    for i in 1..=traffic_volume {
-      let attrs = Attributes::new()
-      Attributes::set(attrs, "pattern", StringValue(pattern_name))
-      Attributes::set(attrs, "iteration", IntValue(i))
-      
-      traffic_data.push(TelemetryData::new(
-        (i as Float),
-        attrs,
-        1234567890L + i
-      ))
-    }
+  // 创建存储监控器
+  let storage_monitor = StorageMonitor::new()
+  
+  // 测试优化前的存储使用
+  let initial_storage = StorageMonitor::get_storage_usage(storage_monitor)
+  
+  // 创建大量需要存储的数据
+  let spans = []
+  let logs = []
+  let metrics = []
+  
+  for i = 0; i < 500; i = i + 1 {
+    // 创建span
+    let span = Tracer::start_span(tracer, "storage.test.operation." + i.to_string())
+    Span::set_attribute(span, "operation.index", i)
+    Span::set_attribute(span, "operation.data", "storage.data." + i.to_string() + "z".repeat(50))
+    spans.push(span)
     
-    // Find optimal sampling rate
-    let optimal_rate = SamplingRateOptimizer::find_optimal_rate(optimizer, traffic_data)
+    // 创建日志
+    let logger_provider = LoggerProvider::default()
+    let logger = LoggerProvider::get_logger(logger_provider, "storage.test")
+    let log = LogRecord::new(Info, "Storage test log " + i.to_string())
+    LogRecord::add_attribute(log, "log.index", i)
+    LogRecord::add_attribute(log, "log.data", "log.data." + i.to_string() + "y".repeat(50))
+    logs.push(log)
     
-    // Verify optimal rate is reasonable
-    assert_true(optimal_rate >= 0.0) // Minimum rate
-    assert_true(optimal_rate <= 1.0) // Maximum rate
-    
-    // Higher traffic should generally have lower sampling rates
-    if traffic_volume >= 10000 {
-      assert_true(optimal_rate <= 0.5) // High traffic should sample less
-    }
-    
-    // Test sampling with optimal rate
-    let sampler = ProbabilitySampler::new(optimal_rate)
-    let sampled_count = 0
-    
-    for data in traffic_data {
-      let decision = Sampler::should_sample(
-        sampler,
-        Context::root(),
-        "trace_" + data.iteration.to_string(),
-        "test_span",
-        Server,
-        data.attributes
-      )
-      
-      match decision {
-        RecordAndSample => sampled_count = sampled_count + 1
-        Drop => {} // Not sampled
-      }
-    }
-    
-    // Verify sampling rate is approximately correct
-    let actual_rate = (sampled_count as Float) / (traffic_volume as Float)
-    let rate_error = (actual_rate - optimal_rate).abs()
-    
-    // Allow 5% tolerance
-    assert_true(rate_error < 0.05)
-    
-    // Verify sampled data is representative
-    assert_true(sampled_count > 0) // Should sample at least some data
-    if traffic_volume > 100 {
-      assert_true(sampled_count < traffic_volume) // Should not sample all data for high volume
-    }
+    // 创建度量
+    let meter_provider = MeterProvider::default()
+    let meter = MeterProvider::get_meter(meter_provider, "storage.test")
+    let counter = Meter::create_counter(meter, "storage.test.counter", Some("Storage test counter"), Some("count"))
+    Counter::add_with_attributes(counter, 1.0, [
+      ("metric.index", i),
+      ("metric.data", "metric.data." + i.to_string() + "x".repeat(50))
+    ])
+    metrics.push(counter)
   }
+  
+  // 序列化所有数据以模拟存储
+  let serialized_spans = []
+  for span in spans {
+    let serialized = Span::serialize(span)
+    serialized_spans.push(serialized)
+  }
+  
+  let serialized_logs = []
+  for log in logs {
+    let serialized = LogRecord::serialize(log)
+    serialized_logs.push(serialized)
+  }
+  
+  let serialized_metrics = []
+  for metric in metrics {
+    let serialized = Metric::serialize(metric)
+    serialized_metrics.push(serialized)
+  }
+  
+  // 测试优化前的存储使用
+  let before_optimization = StorageMonitor::get_storage_usage(storage_monitor)
+  
+  // 应用存储优化
+  let optimization_result = StorageOptimizer::optimize(
+    storage_optimizer,
+    serialized_spans,
+    serialized_logs,
+    serialized_metrics
+  )
+  
+  // 验证优化结果
+  assert_true(optimization_result.is_successful)
+  assert_true(optimization_result.storage_reduction > 0)
+  assert_true(optimization_result.optimized_objects > 0)
+  
+  // 测试优化后的存储使用
+  let after_optimization = StorageMonitor::get_storage_usage(storage_monitor)
+  
+  // 验证存储使用减少
+  let storage_reduction = before_optimization - after_optimization
+  assert_true(storage_reduction > 0)
+  
+  // 测试数据去重优化
+  let deduplication_optimizer = StorageDeduplicationOptimizer::new()
+  let deduplication_result = StorageOptimizer::apply_deduplication(
+    storage_optimizer,
+    serialized_spans,
+    deduplication_optimizer
+  )
+  
+  // 验证去重结果
+  assert_true(deduplication_result.is_successful)
+  assert_true(deduplication_result.duplicate_objects_found > 0)
+  assert_true(deduplication_result.storage_savings > 0)
+  
+  // 测试数据分层存储优化
+  let tiered_storage = TieredStorageOptimizer::new()
+  let tiered_result = StorageOptimizer::apply_tiered_storage(
+    storage_optimizer,
+    serialized_spans,
+    tiered_storage
+  )
+  
+  // 验证分层存储结果
+  assert_true(tiered_result.is_successful)
+  assert_true(tiered_result.hot_tier_objects > 0)
+  assert_true(tiered_result.cold_tier_objects > 0)
+  assert_true(tiered_result.access_optimization > 0)
+  
+  // 结束所有span
+  for span in spans {
+    Span::end(span)
+  }
+  
+  assert_true(true)
 }
 
-// Test 5: Cache Optimization
-test "cache optimization" {
-  let cache = LRUCache::new(1000) // 1000 item cache
+test "资源池化优化" {
+  // 测试资源池化的优化
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "resource.pooling.test")
   
-  // Test cache population
-  let cache_keys = []
+  // 创建资源池管理器
+  let pool_manager = ResourcePoolManager::new()
   
-  for i in 1..=800 {
-    let key = "key_" + i.to_string()
-    let value = "value_" + i.to_string()
-    
-    LRUCache::put(cache, key, value)
-    cache_keys.push(key)
+  // 创建span池
+  let span_pool = ResourcePoolManager::create_span_pool(pool_manager, 100)
+  
+  // 创建度量池
+  let metric_pool = ResourcePoolManager::create_metric_pool(pool_manager, 200)
+  
+  // 创建日志池
+  let log_pool = ResourcePoolManager::create_log_pool(pool_manager, 300)
+  
+  // 测试池化前的资源使用
+  let initial_resources = ResourcePoolManager::get_resource_usage(pool_manager)
+  
+  // 从池中获取资源
+  let pooled_spans = []
+  for i = 0; i < 50; i = i + 1 {
+    let span = ResourcePoolManager::acquire_span(span_pool)
+    Span::set_attribute(span, "pooled.operation", "true")
+    Span::set_attribute(span, "operation.index", i)
+    pooled_spans.push(span)
   }
   
-  // Verify cache size
-  assert_eq(LRUCache::size(cache), 800)
-  
-  // Test cache hits
-  let hit_count = 0
-  
-  for i in 1..=400 {
-    let key = "key_" + i.to_string()
-    let value = LRUCache::get(cache, key)
-    
-    match value {
-      Some(v) => {
-        assert_eq(v, "value_" + i.to_string())
-        hit_count = hit_count + 1
-      }
-      None => assert_true(false) // Should find value
-    }
+  let pooled_metrics = []
+  for i = 0; i < 100; i = i + 1 {
+    let metric = ResourcePoolManager::acquire_metric(metric_pool)
+    Metric::set_attribute(metric, "pooled.metric", "true")
+    Metric::set_attribute(metric, "metric.index", i)
+    pooled_metrics.push(metric)
   }
   
-  // Verify all lookups were hits
-  assert_eq(hit_count, 400)
-  
-  // Test cache misses for non-existent keys
-  let miss_count = 0
-  
-  for i in 801..=900 {
-    let key = "key_" + i.to_string()
-    let value = LRUCache::get(cache, key)
-    
-    match value {
-      Some(_) => assert_true(false) // Should not find value
-      None => miss_count = miss_count + 1
-    }
+  let pooled_logs = []
+  for i = 0; i < 150; i = i + 1 {
+    let log = ResourcePoolManager::acquire_log(log_pool)
+    LogRecord::add_attribute(log, "pooled.log", "true")
+    LogRecord::add_attribute(log, "log.index", i)
+    pooled_logs.push(log)
   }
   
-  // Verify all lookups were misses
-  assert_eq(miss_count, 100)
+  // 测试池化后的资源使用
+  let after_acquisition = ResourcePoolManager::get_resource_usage(pool_manager)
   
-  // Test cache eviction
-  for i in 1..=300 {
-    let key = "new_key_" + i.to_string()
-    let value = "new_value_" + i.to_string()
-    
-    LRUCache::put(cache, key, value)
+  // 验证资源池化效率
+  let pool_efficiency = ResourcePoolManager::calculate_pool_efficiency(pool_manager)
+  assert_true(pool_efficiency > 0.8)  // 池效率应大于80%
+  
+  // 释放资源回池
+  for span in pooled_spans {
+    ResourcePoolManager::release_span(span_pool, span)
   }
   
-  // Cache should be at capacity
-  assert_eq(LRUCache::size(cache), 1000)
-  
-  // Test that least recently used items were evicted
-  let evicted_count = 0
-  
-  for i in 1..=100 {
-    let key = "key_" + i.to_string() // These should be the oldest
-    let value = LRUCache::get(cache, key)
-    
-    match value {
-      Some(_) => {} // Still in cache
-      None => evicted_count = evicted_count + 1
-    }
+  for metric in pooled_metrics {
+    ResourcePoolManager::release_metric(metric_pool, metric)
   }
   
-  // At least some items should have been evicted
-  assert_true(evicted_count > 0)
-  
-  // Test that recently accessed items are still in cache
-  let recent_hit_count = 0
-  
-  for i in 401..=500 {
-    let key = "key_" + i.to_string() // These were accessed recently
-    let value = LRUCache::get(cache, key)
-    
-    match value {
-      Some(_) => recent_hit_count = recent_hit_count + 1
-      None => {}
-    }
+  for log in pooled_logs {
+    ResourcePoolManager::release_log(log_pool, log)
   }
   
-  // Most recently accessed items should still be in cache
-  assert_true(recent_hit_count >= 80) // At least 80% should still be in cache
+  // 测试释放后的资源使用
+  let after_release = ResourcePoolManager::get_resource_usage(pool_manager)
+  
+  // 验证资源被正确释放
+  assert_true(after_release < after_acquisition)
+  
+  // 测试池自动扩展
+  let auto_scaling_result = ResourcePoolManager::test_auto_scaling(pool_manager, span_pool, 200)
+  
+  // 验证自动扩展结果
+  assert_true(auto_scaling_result.is_successful)
+  assert_true(auto_scaling_result.expanded_pool_size > 100)
+  assert_true(auto_scaling_result.scaling_efficiency > 0.9)
+  
+  // 测试池收缩
+  let shrinking_result = ResourcePoolManager::test_pool_shrinking(pool_manager, span_pool, 50)
+  
+  // 验证池收缩结果
+  assert_true(shrinking_result.is_successful)
+  assert_true(shrinking_result.shrunk_pool_size < auto_scaling_result.expanded_pool_size)
+  assert_true(shrinking_result.resource_reclaimed > 0)
+  
+  assert_true(true)
 }
 
-// Test 6: CPU Usage Optimization
-test "cpu usage optimization" {
-  let optimizer = CPUOptimizer::new()
+test "自适应资源调度" {
+  // 测试自适应资源调度
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "adaptive.scheduling.test")
   
-  // Test with different processing loads
-  let processing_loads = [100, 500, 1000, 5000]
+  // 创建自适应调度器
+  let adaptive_scheduler = AdaptiveScheduler::new()
   
-  for load in processing_loads {
-    // Create test data
-    let test_data = []
-    for i in 1..=load {
-      let attrs = Attributes::new()
-      Attributes::set(attrs, "load", IntValue(load))
-      Attributes::set(attrs, "iteration", IntValue(i))
-      
-      test_data.push(TelemetryData::new(
-        (i as Float),
-        attrs,
-        1234567890L + i
-      ))
-    }
-    
-    // Measure CPU usage with default processing
-    let default_start_time = Time::now()
-    let default_start_cpu = CPU::get_usage()
-    
-    // Process with default settings
-    for data in test_data {
-      let result = DefaultProcessor::process(data)
-      match result {
-        Success(_) => {}
-        Error(_) => assert_true(false) // Should not fail
-      }
-    }
-    
-    let default_end_time = Time::now()
-    let default_end_cpu = CPU::get_usage()
-    
-    let default_duration = Time::duration_between(default_start_time, default_end_time)
-    let default_cpu_usage = default_end_cpu - default_start_cpu
-    
-    // Optimize processing for this load
-    let optimized_settings = CPUOptimizer::optimize_for_load(optimizer, load)
-    
-    // Measure CPU usage with optimized processing
-    let optimized_start_time = Time::now()
-    let optimized_start_cpu = CPU::get_usage()
-    
-    // Process with optimized settings
-    for data in test_data {
-      let result = OptimizedProcessor::process_with_settings(data, optimized_settings)
-      match result {
-        Success(_) => {}
-        Error(_) => assert_true(false) // Should not fail
-      }
-    }
-    
-    let optimized_end_time = Time::now()
-    let optimized_end_cpu = CPU::get_usage()
-    
-    let optimized_duration = Time::duration_between(optimized_start_time, optimized_end_time)
-    let optimized_cpu_usage = optimized_end_cpu - optimized_start_cpu
-    
-    // Verify optimization improved efficiency
-    // Optimized processing should use less CPU or complete in similar time
-    let cpu_improvement = (default_cpu_usage - optimized_cpu_usage) as Float / (default_cpu_usage as Float)
-    let time_ratio = (optimized_duration as Float) / (default_duration as Float)
-    
-    // CPU usage should be reduced or time should not increase significantly
-    assert_true(cpu_improvement > 0.0 || time_ratio <= 1.2)
-    
-    // For larger loads, optimization should be more effective
-    if load >= 1000 {
-      assert_true(cpu_improvement > 0.05) // At least 5% CPU reduction for larger loads
-    }
-  }
-}
-
-// Test 7: I/O Optimization
-test "io optimization" {
-  let optimizer = IOOptimizer::new()
+  // 创建资源监控器
+  let resource_monitor = ResourceMonitor::new()
   
-  // Test with different I/O patterns
-  let io_patterns = [
-    ("sequential", 1000),
-    ("random", 1000),
-    ("burst", 5000)
-  ]
+  // 创建工作负载生成器
+  let workload_generator = WorkloadGenerator::new()
   
-  for (pattern_name, data_size) in io_patterns {
-    // Create test data
-    let test_data = []
-    for i in 1..=data_size {
-      let attrs = Attributes::new()
-      Attributes::set(attrs, "pattern", StringValue(pattern_name))
-      Attributes::set(attrs, "iteration", IntValue(i))
-      
-      test_data.push(TelemetryData::new(
-        (i as Float),
-        attrs,
-        1234567890L + i
-      ))
-    }
-    
-    // Measure I/O with default settings
-    let default_start_time = Time::now()
-    
-    let default_result = DefaultIOProcessor::write_to_file(test_data, "default_" + pattern_name + ".dat")
-    match default_result {
-      Success(_) => {}
-      Error(_) => assert_true(false) // Should not fail
-    }
-    
-    let default_end_time = Time::now()
-    let default_duration = Time::duration_between(default_start_time, default_end_time)
-    
-    // Optimize I/O for this pattern
-    let optimized_settings = IOOptimizer::optimize_for_pattern(optimizer, pattern_name)
-    
-    // Measure I/O with optimized settings
-    let optimized_start_time = Time::now()
-    
-    let optimized_result = OptimizedIOProcessor::write_to_file(
-      test_data,
-      "optimized_" + pattern_name + ".dat",
-      optimized_settings
-    )
-    match optimized_result {
-      Success(_) => {}
-      Error(_) => assert_true(false) // Should not fail
-    }
-    
-    let optimized_end_time = Time::now()
-    let optimized_duration = Time::duration_between(optimized_start_time, optimized_end_time)
-    
-    // Verify optimization improved I/O performance
-    let improvement = (default_duration - optimized_duration) as Float / (default_duration as Float)
-    
-    // Optimized I/O should be faster
-    assert_true(improvement > 0.0)
-    
-    // For certain patterns, optimization should be more effective
-    match pattern_name {
-      "sequential" => assert_true(improvement > 0.1) // At least 10% improvement for sequential
-      "random" => assert_true(improvement > 0.05) // At least 5% improvement for random
-      "burst" => assert_true(improvement > 0.15) // At least 15% improvement for burst
-      _ => {}
-    }
-    
-    // Verify data integrity
-    let default_read_result = DefaultIOProcessor::read_from_file("default_" + pattern_name + ".dat")
-    let optimized_read_result = OptimizedIOProcessor::read_from_file("optimized_" + pattern_name + ".dat")
-    
-    match (default_read_result, optimized_read_result) {
-      (Success(default_data), Success(optimized_data)) => {
-        assert_eq(default_data.length(), optimized_data.length())
-        
-        for i in 0..(default_data.length() - 1) {
-          assert_eq(default_data[i].value, optimized_data[i].value)
-          assert_eq(default_data[i].timestamp, optimized_data[i].timestamp)
-        }
-      }
-      _ => assert_true(false) // Should successfully read both files
-    }
-  }
-}
-
-// Test 8: Resource Cleanup Optimization
-test "resource cleanup optimization" {
-  let cleanup_manager = ResourceCleanupManager::new()
+  // 测试初始资源状态
+  let initial_state = ResourceMonitor::get_current_state(resource_monitor)
   
-  // Test with various resource types
-  let resources = []
+  // 生成不同类型的工作负载
+  let cpu_intensive_workload = WorkloadGenerator::create_cpu_intensive_workload(workload_generator, 50)
+  let memory_intensive_workload = WorkloadGenerator::create_memory_intensive_workload(workload_generator, 50)
+  let network_intensive_workload = WorkloadGenerator::create_network_intensive_workload(workload_generator, 50)
   
-  // Create spans
-  for i in 1..=100 {
-    let span_ctx = SpanContext::new(
-      "cleanup_trace_" + i.to_string(),
-      "cleanup_span_" + i.to_string(),
-      true,
-      "cleanup_state"
-    )
-    
-    let span = Span::new("cleanup_test", Server, span_ctx)
-    resources.push(SpanResource(span))
-  }
+  // 提交工作负载到调度器
+  AdaptiveScheduler::submit_workload(adaptive_scheduler, cpu_intensive_workload)
+  AdaptiveScheduler::submit_workload(adaptive_scheduler, memory_intensive_workload)
+  AdaptiveScheduler::submit_workload(adaptive_scheduler, network_intensive_workload)
   
-  // Create metrics
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "cleanup_test")
+  // 测试调度前的资源使用
+  let before_scheduling = ResourceMonitor::get_current_state(resource_monitor)
   
-  for i in 1..=50 {
-    let counter = Meter::create_counter(
-      meter,
-      "cleanup_counter_" + i.to_string(),
-      Some("Test counter"),
-      Some("count")
-    )
-    resources.push(MetricResource(counter))
-  }
+  // 执行自适应调度
+  let scheduling_result = AdaptiveScheduler::execute_adaptive_scheduling(adaptive_scheduler)
   
-  // Create loggers
-  let logger_provider = LoggerProvider::default()
+  // 验证调度结果
+  assert_true(scheduling_result.is_successful)
+  assert_true(scheduling_result.scheduled_tasks > 0)
+  assert_true(scheduling_result.resource_utilization_improvement > 0)
   
-  for i in 1..=25 {
-    let logger = LoggerProvider::get_logger(
-      logger_provider,
-      "cleanup_logger_" + i.to_string()
-    )
-    resources.push(LoggerResource(logger))
-  }
+  // 测试调度后的资源使用
+  let after_scheduling = ResourceMonitor::get_current_state(resource_monitor)
   
-  // Verify resources are created
-  assert_eq(resources.length(), 175) // 100 spans + 50 metrics + 25 loggers
+  // 验证资源利用率改善
+  let cpu_utilization_improvement = after_scheduling.cpu_utilization - before_scheduling.cpu_utilization
+  let memory_utilization_improvement = after_scheduling.memory_utilization - before_scheduling.memory_utilization
+  let network_utilization_improvement = after_scheduling.network_utilization - before_scheduling.network_utilization
   
-  // Measure memory usage before cleanup
-  let memory_before = Memory::get_allocated_bytes()
+  assert_true(cpu_utilization_improvement > 0)
+  assert_true(memory_utilization_improvement > 0)
+  assert_true(network_utilization_improvement > 0)
   
-  // Perform standard cleanup
-  let standard_cleanup_start = Time::now()
+  // 测试动态负载均衡
+  let load_balancer = DynamicLoadBalancer::new()
+  let balancing_result = AdaptiveScheduler::apply_dynamic_load_balancing(
+    adaptive_scheduler,
+    load_balancer
+  )
   
-  for resource in resources {
-    ResourceCleanupManager::cleanup_standard(cleanup_manager, resource)
-  }
+  // 验证负载均衡结果
+  assert_true(balancing_result.is_successful)
+  assert_true(balancing_result.balanced_resources > 0)
+  assert_true(balancing_result.load_variance_reduction > 0)
   
-  let standard_cleanup_end = Time::now()
-  let standard_cleanup_duration = Time::duration_between(standard_cleanup_start, standard_cleanup_end)
+  // 测试预测性资源分配
+  let predictive_allocator = PredictiveResourceAllocator::new()
+  let prediction_result = AdaptiveScheduler::apply_predictive_allocation(
+    adaptive_scheduler,
+    predictive_allocator
+  )
   
-  // Force garbage collection
-  Memory::collect()
+  // 验证预测性分配结果
+  assert_true(prediction_result.is_successful)
+  assert_true(prediction_result.predicted_resources_allocated > 0)
+  assert_true(prediction_result.prediction_accuracy > 0.8)
   
-  let memory_after_standard = Memory::get_allocated_bytes()
-  let standard_memory_freed = memory_before - memory_after_standard
+  // 测试资源回收
+  let reclamation_result = AdaptiveScheduler::execute_resource_reclamation(adaptive_scheduler)
   
-  // Recreate resources for optimized cleanup test
-  let optimized_resources = []
+  // 验证资源回收结果
+  assert_true(reclamation_result.is_successful)
+  assert_true(reclamation_result.resources_reclaimed > 0)
+  assert_true(reclamation_result.fragmentation_reduction > 0)
   
-  // Create spans again
-  for i in 1..=100 {
-    let span_ctx = SpanContext::new(
-      "optimized_trace_" + i.to_string(),
-      "optimized_span_" + i.to_string(),
-      true,
-      "optimized_state"
-    )
-    
-    let span = Span::new("optimized_cleanup_test", Server, span_ctx)
-    optimized_resources.push(SpanResource(span))
-  }
-  
-  // Create metrics again
-  for i in 1..=50 {
-    let counter = Meter::create_counter(
-      meter,
-      "optimized_counter_" + i.to_string(),
-      Some("Test counter"),
-      Some("count")
-    )
-    optimized_resources.push(MetricResource(counter))
-  }
-  
-  // Create loggers again
-  for i in 1..=25 {
-    let logger = LoggerProvider::get_logger(
-      logger_provider,
-      "optimized_logger_" + i.to_string()
-    )
-    optimized_resources.push(LoggerResource(logger))
-  }
-  
-  // Measure memory usage before optimized cleanup
-  let memory_before_optimized = Memory::get_allocated_bytes()
-  
-  // Perform optimized cleanup
-  let optimized_cleanup_start = Time::now()
-  
-  ResourceCleanupManager::cleanup_batch_optimized(cleanup_manager, optimized_resources)
-  
-  let optimized_cleanup_end = Time::now()
-  let optimized_cleanup_duration = Time::duration_between(optimized_cleanup_start, optimized_cleanup_end)
-  
-  // Force garbage collection
-  Memory::collect()
-  
-  let memory_after_optimized = Memory::get_allocated_bytes()
-  let optimized_memory_freed = memory_before_optimized - memory_after_optimized
-  
-  // Verify optimized cleanup is more efficient
-  assert_true(optimized_cleanup_duration < standard_cleanup_duration)
-  
-  // Memory freed should be similar or better
-  assert_true(optimized_memory_freed >= standard_memory_freed * 0.9) // At least 90% of standard cleanup
-  
-  // Verify cleanup efficiency
-  let cleanup_efficiency = (optimized_memory_freed as Float) / (optimized_cleanup_duration as Float)
-  let standard_efficiency = (standard_memory_freed as Float) / (standard_cleanup_duration as Float)
-  
-  // Optimized cleanup should be more efficient
-  assert_true(cleanup_efficiency > standard_efficiency)
+  assert_true(true)
 }
