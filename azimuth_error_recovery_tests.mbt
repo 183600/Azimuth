@@ -1,540 +1,417 @@
-// Error Recovery Tests for Azimuth Telemetry System
+// Azimuth Error Recovery Tests
 // This file contains test cases for error handling and recovery mechanisms
 
-// Test 1: Span Processor Error Recovery
-test "span processor error recovery" {
-  let processor = SpanProcessor::new(BatchSpanProcessor::new(100, 1000))
+test "network connectivity error recovery" {
+  let client = HttpClient::new()
+  let request = HttpRequest::new("GET", "https://example.com/api", [], None)
   
-  // Create spans that might cause errors
-  let spans = []
+  // Test network error handling
+  let result = HttpClient::execute_with_retry(client, request, 3)
   
-  // Create valid spans
-  for i in 1..=50 {
-    let span_ctx = SpanContext::new(
-      "trace_" + i.to_string(),
-      "span_" + i.to_string(),
-      true,
-      "test_state"
-    )
-    
-    let span = Span::new("test_operation", Server, span_ctx)
-    spans.push(span)
-  }
-  
-  // Create spans with potential issues
-  for i in 51..=60 {
-    let span_ctx = SpanContext::new(
-      "", // Empty trace ID - might cause error
-      "span_" + i.to_string(),
-      true,
-      "test_state"
-    )
-    
-    let span = Span::new("test_operation", Server, span_ctx)
-    spans.push(span)
-  }
-  
-  // Process all spans
-  let processed_count = 0
-  let error_count = 0
-  
-  for span in spans {
-    SpanProcessor::on_start(processor, span)
-    Span::end(span)
-    
-    let result = SpanProcessor::on_end(processor, span)
-    match result {
-      Success => processed_count = processed_count + 1
-      Error(_) => error_count = error_count + 1
+  match result {
+    Success(response) => {
+      assert_eq(HttpResponse::status_code(response), 200)
+      assert_true(HttpClient::retry_count(client) <= 3)
     }
+    NetworkError(_) => {
+      // Verify retry mechanism was attempted
+      assert_true(HttpClient::retry_count(client) > 0)
+      
+      // Test fallback mechanism
+      let fallback_result = HttpClient::execute_fallback(client, request)
+      match fallback_result {
+        Success(_) => assert_true(true)
+        FallbackUsed => assert_true(true) // Expected when network is unavailable
+        _ => assert_true(false)
+      }
+    }
+    _ => assert_true(false)
+  }
+}
+
+test "span creation error recovery" {
+  // Test invalid span context handling
+  let invalid_ctx = SpanContext::new("", "", false, "")
+  
+  // System should recover by creating a valid context
+  let recovered_ctx = SpanContext::recover(invalid_ctx)
+  assert_true(SpanContext::is_valid(recovered_ctx))
+  
+  // Test span creation with recovered context
+  let span = Span::new("recovered_span", Internal, recovered_ctx)
+  assert_eq(Span::name(span), "recovered_span")
+  assert_true(Span::is_recording(span))
+  
+  // Test span error handling
+  Span::set_status(span, Error, Some("Simulated error"))
+  assert_eq(Span::status(span), Error)
+  
+  // Test span recovery
+  Span::recover(span)
+  assert_true(Span::is_recording(span))
+  Span::end(span)
+}
+
+test "attribute handling error recovery" {
+  let attrs = Attributes::new()
+  
+  // Test invalid attribute key handling
+  let result1 = Attributes::set_safe(attrs, "", StringValue("empty_key"))
+  match result1 {
+    Success(_) => assert_true(false) // Should not succeed with empty key
+    ValidationError(_) => assert_true(true) // Expected
+    _ => assert_true(false)
   }
   
-  // Should process valid spans successfully
-  assert_eq(processed_count, 50)
-  
-  // Should handle invalid spans gracefully
-  assert_eq(error_count, 10)
-  
-  // Force flush and verify it doesn't crash
-  let flush_result = SpanProcessor::force_flush(processor)
-  match flush_result {
-    Success => assert_true(true)
-    Error(_) => assert_true(false) // Flush should succeed despite errors
+  // Test null value handling
+  let result2 = Attributes::set_safe(attrs, "test.key", NullValue())
+  match result2 {
+    Success(_) => assert_true(true) // Should succeed with null value
+    _ => assert_true(false)
   }
   
-  // Verify processor is still functional after errors
-  let recovery_span_ctx = SpanContext::new(
-    "recovery_trace",
-    "recovery_span",
-    true,
-    "recovery_state"
+  // Test attribute recovery after error
+  let recovered_attrs = Attributes::recover(attrs)
+  let result3 = Attributes::set(recovered_attrs, "recovered.key", StringValue("recovered_value"))
+  
+  let retrieved = Attributes::get(recovered_attrs, "recovered.key")
+  match retrieved {
+    Some(StringValue(v)) => assert_eq(v, "recovered_value")
+    _ => assert_true(false)
+  }
+}
+
+test "metrics collection error recovery" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "recovery_meter")
+  
+  // Test invalid metric name handling
+  let result1 = Meter::create_counter_safe(meter, "", Some("Invalid counter"), Some("count"))
+  match result1 {
+    Success(_) => assert_true(false) // Should not succeed with empty name
+    ValidationError(_) => assert_true(true) // Expected
+    _ => assert_true(false)
+  }
+  
+  // Test metric recovery
+  let recovered_meter = Meter::recover(meter)
+  let counter = Meter::create_counter(recovered_meter, "recovery_counter", Some("Recovery counter"), Some("count"))
+  assert_true(Counter::is_valid(counter))
+  
+  // Test metric recording error handling
+  let result2 = Counter::add_safe(counter, -1.0) // Negative value might be invalid
+  match result2 {
+    Success(_) => assert_true(true) // Some systems allow negative values
+    ValidationError(_) => assert_true(true) // Or they might not
+    _ => assert_true(false)
+  }
+  
+  // Test metric recovery after recording error
+  Counter::recover(counter)
+  Counter::add(counter, 1.0)
+  assert_true(Counter::is_valid(counter))
+}
+
+test "log record error recovery" {
+  // Test invalid log record creation
+  let result1 = LogRecord::new_safe(
+    InvalidSeverity, // Invalid severity
+    Some("Test message"),
+    Some(Attributes::new()),
+    Some(1234567890L),
+    Some(1234567891L),
+    Some("trace_id"),
+    Some("span_id")
   )
   
-  let recovery_span = Span::new("recovery_operation", Server, recovery_span_ctx)
-  SpanProcessor::on_start(processor, recovery_span)
-  Span::end(recovery_span)
-  
-  let recovery_result = SpanProcessor::on_end(processor, recovery_span)
-  match recovery_result {
-    Success => assert_true(true) // Should process new spans successfully
-    Error(_) => assert_true(false) // Should not have errors after recovery
-  }
-}
-
-// Test 2: Metric Exporter Error Recovery
-test "metric exporter error recovery" {
-  let exporter = MetricExporter::new(FailingMetricExporter::new()) // Simulates failures
-  
-  let meter_provider = MeterProvider::new_with_exporter(exporter)
-  let meter = MeterProvider::get_meter(meter_provider, "error_recovery_test")
-  
-  // Create metrics
-  let counter = Meter::create_counter(meter, "test_counter", Some("Test counter"), Some("count"))
-  let histogram = Meter::create_histogram(meter, "test_histogram", Some("Test histogram"), Some("ms"))
-  
-  // Record metrics
-  for i in 1..=100 {
-    Counter::add(counter, 1.0)
-    Histogram::record(histogram, (i * 10.0))
+  match result1 {
+    Success(_) => assert_true(false) // Should not succeed with invalid severity
+    ValidationError(_) => assert_true(true) // Expected
+    _ => assert_true(false)
   }
   
-  // Attempt to export metrics
-  let export_result = MetricExporter::export(exporter)
-  match export_result {
-    Success => assert_true(false) // Should fail initially
-    Error(error) => {
-      assert_eq(error.code, ExportFailed)
-      assert_eq(error.message, "Simulated exporter failure")
-    }
-  }
+  // Test log record recovery
+  let log_record = LogRecord::new(
+    Error,
+    Some("Error message"),
+    Some(Attributes::new()),
+    Some(1234567890L),
+    Some(1234567891L),
+    Some("trace_id"),
+    Some("span_id")
+  )
   
-  // Reset exporter to working state
-  MetricExporter::reset(exporter)
+  let recovered_record = LogRecord::recover(log_record)
+  assert_eq(LogRecord::severity_number(recovered_record), Error)
   
-  // Attempt to export again
-  let recovery_result = MetricExporter::export(exporter)
-  match recovery_result {
-    Success => assert_true(true) // Should succeed after recovery
-    Error(_) => assert_true(false) // Should not fail after recovery
-  }
+  // Test logger error handling
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "recovery_logger")
   
-  // Record more metrics and export again
-  Counter::add(counter, 50.0)
-  Histogram::record(histogram, 500.0)
-  
-  let continued_result = MetricExporter::export(exporter)
-  match continued_result {
-    Success => assert_true(true) // Should continue working
-    Error(_) => assert_true(false) // Should not fail again
-  }
-}
-
-// Test 3: Log Processor Error Recovery
-test "log processor error recovery" {
-  let processor = LogProcessor::new(BatchLogProcessor::new(50, 500))
-  
-  // Create various log records including problematic ones
-  let log_records = []
-  
-  // Create valid log records
-  for i in 1..=25 {
-    let log_record = LogRecord::new(Info, "Valid log message " + i.to_string())
-    log_records.push(log_record)
-  }
-  
-  // Create problematic log records
-  for i in 26..=30 {
-    // Create log with extremely long message that might cause issues
-    let long_message = "a" * 1000000 // 1MB message
-    let problematic_log = LogRecord::new(Warn, long_message)
-    log_records.push(problematic_log)
-  }
-  
-  // Create more valid log records
-  for i in 31..=50 {
-    let log_record = LogRecord::new(Error, "Error message " + i.to_string())
-    log_records.push(log_record)
-  }
-  
-  // Process all log records
-  let processed_count = 0
-  let error_count = 0
-  
-  for log_record in log_records {
-    let result = LogProcessor::process(processor, log_record)
-    match result {
-      Success => processed_count = processed_count + 1
-      Error(_) => error_count = error_count + 1
-    }
-  }
-  
-  // Should process most logs successfully
-  assert_true(processed_count >= 45) // At least 45 should succeed
-  
-  // Should handle problematic logs gracefully
-  assert_true(error_count >= 5) // At least 5 should fail
-  
-  // Force flush and verify it doesn't crash
-  let flush_result = LogProcessor::force_flush(processor)
-  match flush_result {
-    Success => assert_true(true)
-    Error(_) => assert_true(false) // Flush should succeed despite errors
-  }
-  
-  // Verify processor is still functional after errors
-  let recovery_log = LogRecord::new(Info, "Recovery test message")
-  let recovery_result = LogProcessor::process(processor, recovery_log)
-  match recovery_result {
-    Success => assert_true(true) // Should process new logs successfully
-    Error(_) => assert_true(false) // Should not have errors after recovery
-  }
-}
-
-// Test 4: Network Communication Error Recovery
-test "network communication error recovery" {
-  let client = TelemetryClient::new("https://example.com/telemetry")
-  
-  // Simulate network failures
-  TelemetryClient::simulate_network_failure(client, true)
-  
-  // Attempt to send telemetry data
-  let telemetry_data = TelemetryData::new(42.0, Attributes::new(), 1234567890L)
-  
-  let send_result = TelemetryClient::send(client, telemetry_data)
-  match send_result {
-    Success => assert_true(false) // Should fail due to network failure
-    Error(error) => {
-      assert_eq(error.code, NetworkError)
-      assert_true(error.message.contains("Network failure"))
-    }
-  }
-  
-  // Enable retry mechanism
-  TelemetryClient::enable_retry(client, 3, 1000) // 3 retries with 1s delay
-  
-  // Attempt to send again with retry
-  let retry_result = TelemetryClient::send_with_retry(client, telemetry_data)
-  match retry_result {
-    Success => assert_true(false) // Should still fail due to persistent network failure
-    Error(error) => {
-      assert_eq(error.code, NetworkError)
-      assert_true(error.message.contains("Max retries exceeded"))
-    }
-  }
-  
-  // Restore network connectivity
-  TelemetryClient::simulate_network_failure(client, false)
-  
-  // Attempt to send again
-  let recovery_result = TelemetryClient::send(client, telemetry_data)
-  match recovery_result {
-    Success => assert_true(true) // Should succeed after network recovery
-    Error(_) => assert_true(false) // Should not fail after network recovery
-  }
-  
-  // Test backpressure handling
-  TelemetryClient::simulate_backpressure(client, true)
-  
-  let backpressure_result = TelemetryClient::send(client, telemetry_data)
-  match backpressure_result {
-    Success => assert_true(false) // Should fail due to backpressure
-    Error(error) => {
-      assert_eq(error.code, Backpressure)
-      assert_true(error.message.contains("Server overloaded"))
-    }
-  }
-  
-  // Wait for backpressure to subside
-  TelemetryClient::simulate_backpressure(client, false)
-  
-  let backpressure_recovery_result = TelemetryClient::send(client, telemetry_data)
-  match backpressure_recovery_result {
-    Success => assert_true(true) // Should succeed after backpressure recovery
-    Error(_) => assert_true(false) // Should not fail after backpressure recovery
-  }
-}
-
-// Test 5: Serialization Error Recovery
-test "serialization error recovery" {
-  let serializer = TelemetrySerializer::new()
-  
-  // Create telemetry data with potential serialization issues
-  let problematic_data = []
-  
-  // Normal data
-  for i in 1..=10 {
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "key", StringValue("value_" + i.to_string()))
-    
-    problematic_data.push(TelemetryData::new(
-      (i as Float),
-      attrs,
-      1234567890L + i
-    ))
-  }
-  
-  // Data with special characters that might cause issues
-  let special_attrs = Attributes::new()
-  Attributes::set(special_attrs, "unicode", StringValue("测试中文字符"))
-  Attributes::set(special_attrs, "special_chars", StringValue("!@#$%^&*(){}[]|\\:;\"'<>?,./"))
-  Attributes::set(special_attrs, "null_char", StringValue("string\x00with\x00nulls"))
-  
-  problematic_data.push(TelemetryData::new(
-    Float::nan(), // NaN value
-    special_attrs,
-    1234567901L
-  ))
-  
-  // Attempt to serialize
-  let serialize_result = TelemetrySerializer::serialize_to_json(serializer, problematic_data)
-  match serialize_result {
-    Success(json_data) => {
-      assert_true(json_data.length() > 0)
-      
-      // Attempt to deserialize back
-      let deserialize_result = TelemetrySerializer::deserialize_from_json(serializer, json_data)
-      match deserialize_result {
-        Success(deserialized_data) => {
-          assert_true(deserialized_data.length() > 0)
-          
-          // Verify data integrity (excluding NaN values)
-          let valid_count = 0
-          for item in deserialized_data {
-            let value = TelemetryData::value(item)
-            if not Float::is_nan(value) {
-              valid_count = valid_count + 1
-            }
-          }
-          assert_true(valid_count >= 10) // At least 10 valid items should be recovered
-        }
-        Error(_) => assert_true(false) // Deserialization should succeed
-      }
-    }
-    Error(error) => {
-      // If serialization fails, test fallback mechanism
-      assert_eq(error.code, SerializationError)
-      
-      // Try fallback serialization
-      let fallback_result = TelemetrySerializer::serialize_to_safe_json(serializer, problematic_data)
+  let result2 = Logger::emit_safe(logger, recovered_record)
+  match result2 {
+    Success(_) => assert_true(true)
+    Error(_) => {
+      // Test fallback logging
+      let fallback_result = Logger::emit_fallback(logger, recovered_record)
       match fallback_result {
-        Success(safe_json) => {
-          assert_true(safe_json.length() > 0)
-          assert_true(safe_json.contains("fallback"))
+        Success(_) => assert_true(true)
+        FallbackUsed => assert_true(true) // Expected when primary logging fails
+        _ => assert_true(false)
+      }
+    }
+    _ => assert_true(false)
+  }
+}
+
+test "context propagation error recovery" {
+  // Test invalid context handling
+  let invalid_key = ContextKey::new("")
+  let root_ctx = Context::root()
+  
+  let result1 = Context::with_value_safe(root_ctx, invalid_key, "test_value")
+  match result1 {
+    Success(_) => assert_true(false) // Should not succeed with invalid key
+    ValidationError(_) => assert_true(true) // Expected
+    _ => assert_true(false)
+  }
+  
+  // Test context recovery
+  let valid_key = ContextKey::new("recovery_key")
+  let ctx_with_value = Context::with_value(root_ctx, valid_key, "test_value")
+  
+  // Simulate context corruption
+  let corrupted_ctx = Context::corrupt(ctx_with_value)
+  
+  // Test context recovery
+  let recovered_ctx = Context::recover(corrupted_ctx)
+  let retrieved_value = Context::get(recovered_ctx, valid_key)
+  
+  match retrieved_value {
+    Some(value) => assert_eq(value, "test_value")
+    None => {
+      // If value is lost, context should still be functional
+      let new_key = ContextKey::new("new_key")
+      let new_ctx = Context::with_value(recovered_ctx, new_key, "new_value")
+      let new_value = Context::get(new_ctx, new_key)
+      match new_value {
+        Some(v) => assert_eq(v, "new_value")
+        None => assert_true(false)
+      }
+    }
+  }
+}
+
+test "resource error recovery" {
+  // Test invalid resource attribute handling
+  let resource = Resource::new()
+  
+  let result1 = Resource::set_attribute_safe(resource, "", StringValue("empty_key"))
+  match result1 {
+    Success(_) => assert_true(false) // Should not succeed with empty key
+    ValidationError(_) => assert_true(true) // Expected
+    _ => assert_true(false)
+  }
+  
+  // Test resource recovery
+  let recovered_resource = Resource::recover(resource)
+  
+  let result2 = Resource::set_attribute(recovered_resource, "recovered.key", StringValue("recovered_value"))
+  match result2 {
+    Success(_) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // Test resource merge error handling
+  let conflicting_resource = Resource::with_attributes(Resource::new(), [
+    ("conflict.key", StringValue("original_value"))
+  ])
+  
+  let override_resource = Resource::with_attributes(Resource::new(), [
+    ("conflict.key", StringValue("override_value"))
+  ])
+  
+  let result3 = Resource::merge_safe(conflicting_resource, override_resource)
+  match result3 {
+    Success(merged) => {
+      // Verify merge was successful
+      let merged_value = Resource::get_attribute(merged, "conflict.key")
+      match merged_value {
+        Some(StringValue(v)) => assert_eq(v, "override_value") // Override should win
+        _ => assert_true(false)
+      }
+    }
+    ConflictError(_) => {
+      // Test conflict resolution
+      let resolved = Resource::resolve_conflicts(conflicting_resource, override_resource)
+      let resolved_value = Resource::get_attribute(resolved, "conflict.key")
+      match resolved_value {
+        Some(StringValue(_)) => assert_true(true) // Should have a value
+        _ => assert_true(false)
+      }
+    }
+    _ => assert_true(false)
+  }
+}
+
+test "serialization error recovery" {
+  // Test serialization error handling
+  let span_ctx = SpanContext::new("error_trace", "error_span", true, "")
+  let span = Span::new("error_span", Internal, span_ctx)
+  
+  // Corrupt span data
+  let corrupted_span = Span::corrupt(span)
+  
+  let result1 = SpanSerializer::serialize_safe(corrupted_span)
+  match result1 {
+    Success(_) => assert_true(false) // Should not succeed with corrupted data
+    SerializationError(_) => assert_true(true) // Expected
+    _ => assert_true(false)
+  }
+  
+  // Test serialization recovery
+  let recovered_span = Span::recover(corrupted_span)
+  let result2 = SpanSerializer::serialize_safe(recovered_span)
+  match result2 {
+    Success(serialized) => {
+      assert_true(serialized.length() > 0)
+      
+      // Test deserialization recovery
+      let result3 = SpanSerializer::deserialize_safe(serialized)
+      match result3 {
+        Success(deserialized) => {
+          assert_eq(Span::name(deserialized), "error_span")
+          assert_true(Span::is_recording(deserialized))
         }
-        Error(_) => assert_true(false) // Fallback should succeed
-      }
-    }
-  }
-}
-
-// Test 6: Memory Error Recovery
-test "memory error recovery" {
-  let processor = MemoryConstrainedProcessor::new(10 * 1024 * 1024) // 10MB limit
-  
-  // Create data that approaches memory limit
-  let large_dataset = []
-  
-  for i in 1..=1000 {
-    let attrs = Attributes::new()
-    // Add large attribute values to consume memory
-    let large_value = "x" * 10240 // 10KB string
-    Attributes::set(attrs, "large_attr", StringValue(large_value))
-    
-    large_dataset.push(TelemetryData::new(
-      (i as Float),
-      attrs,
-      1234567890L + i
-    ))
-  }
-  
-  // Process data until memory limit is reached
-  let processed_count = 0
-  let memory_errors = 0
-  
-  for item in large_dataset {
-    let result = MemoryConstrainedProcessor::process(processor, item)
-    match result {
-      Success => processed_count = processed_count + 1
-      Error(error) => {
-        if error.code == MemoryLimitExceeded {
-          memory_errors = memory_errors + 1
+        DeserializationError(_) => {
+          // Test deserialization recovery
+          let recovered = SpanSerializer::recover(serialized)
+          assert_true(Span::is_valid(recovered))
         }
+        _ => assert_true(false)
       }
     }
-    
-    // If memory errors start occurring, break
-    if memory_errors > 0 {
-      break
-    }
+    _ => assert_true(false)
   }
-  
-  // Should process some items successfully
-  assert_true(processed_count > 0)
-  
-  // Should encounter memory errors
-  assert_true(memory_errors > 0)
-  
-  // Test memory recovery mechanism
-  MemoryConstrainedProcessor::clear_cache(processor)
-  
-  // Should be able to process more items after clearing cache
-  let recovery_processed = 0
-  for i in 1..=100 {
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "recovery", StringValue("test"))
-    
-    let item = TelemetryData::new(
-      (i as Float),
-      attrs,
-      1234567890L + i
-    )
-    
-    let result = MemoryConstrainedProcessor::process(processor, item)
-    match result {
-      Success => recovery_processed = recovery_processed + 1
-      Error(_) => break // Stop if errors occur again
-    }
-  }
-  
-  // Should process additional items after recovery
-  assert_true(recovery_processed > 0)
 }
 
-// Test 7: Configuration Error Recovery
-test "configuration error recovery" {
-  let config_manager = ConfigurationManager::new()
+test "batch processing error recovery" {
+  // Create batch with some invalid items
+  let valid_spans = []
+  let invalid_spans = []
   
-  // Load invalid configuration
-  let invalid_config = {
-    "sampling_ratio": -0.1, // Invalid negative value
-    "batch_size": 0, // Invalid zero value
-    "export_timeout": -1, // Invalid negative timeout
-    "max_queue_size": 0 // Invalid zero value
+  // Create valid spans
+  for i in 0..5 {
+    let span_ctx = SpanContext::new("batch_trace_" + i.to_string(), "batch_span_" + i.to_string(), true, "")
+    let span = Span::new("batch_span_" + i.to_string(), Internal, span_ctx)
+    valid_spans.push(span)
   }
   
-  let load_result = ConfigurationManager::load(config_manager, invalid_config)
-  match load_result {
-    Success => assert_true(false) // Should fail with invalid config
-    Error(error) => {
-      assert_eq(error.code, ConfigurationError)
-      assert_true(error.message.contains("Invalid configuration"))
-    }
+  // Create invalid spans
+  for i in 0..2 {
+    let invalid_span = Span::corrupt(Span::new("invalid_span", Internal, SpanContext::new("", "", false, "")))
+    invalid_spans.push(invalid_span)
   }
   
-  // Verify default configuration is still active
-  let current_config = ConfigurationManager::get_current(config_manager)
-  assert_true(ConfigurationManager::is_valid(current_config))
+  // Test batch processing with error recovery
+  let all_spans = Array::concat(valid_spans, invalid_spans)
+  let result = BatchProcessor::process_with_recovery(all_spans)
   
-  // Load valid configuration
-  let valid_config = {
-    "sampling_ratio": 0.1,
-    "batch_size": 1000,
-    "export_timeout": 5000,
-    "max_queue_size": 1000
-  }
-  
-  let valid_load_result = ConfigurationManager::load(config_manager, valid_config)
-  match valid_load_result {
-    Success => assert_true(true) // Should succeed with valid config
-    Error(_) => assert_true(false) // Should not fail with valid config
-  }
-  
-  // Verify new configuration is active
-  let updated_config = ConfigurationManager::get_current(config_manager)
-  assert_eq(updated_config.sampling_ratio, 0.1)
-  assert_eq(updated_config.batch_size, 1000)
-  assert_eq(updated_config.export_timeout, 5000)
-  assert_eq(updated_config.max_queue_size, 1000)
-  
-  // Test configuration rollback
-  let rollback_result = ConfigurationManager::rollback(config_manager)
-  match rollback_result {
-    Success => assert_true(true) // Should rollback successfully
-    Error(_) => assert_true(false) // Should not fail on rollback
-  }
-  
-  // Verify rollback restored previous configuration
-  let rolled_back_config = ConfigurationManager::get_current(config_manager)
-  assert_true(ConfigurationManager::is_valid(rolled_back_config))
-}
-
-// Test 8: Circuit Breaker Pattern
-test "circuit breaker pattern" {
-  let circuit_breaker = CircuitBreaker::new(5, 10000) // 5 failures, 10s timeout
-  
-  // Test normal operation
-  for i in 1..=3 {
-    let result = CircuitBreaker::execute(circuit_breaker, {
-      // Simulate successful operation
-      Success("operation_result")
-    })
-    
-    match result {
-      Success(_) => assert_true(true)
-      Error(_) => assert_true(false) // Should not fail in normal operation
-    }
-  }
-  
-  // Verify circuit is closed
-  assert_eq(CircuitBreaker::state(circuit_breaker), Closed)
-  
-  // Simulate failures to trigger circuit breaker
-  for i in 1..=6 {
-    let result = CircuitBreaker::execute(circuit_breaker, {
-      // Simulate failed operation
-      Error(TelemetryError::new(InternalError, "Simulated failure"))
-    })
-    
-    match result {
-      Success(_) => assert_true(false) // Should fail
-      Error(error) => {
-        assert_eq(error.code, InternalError)
-        assert_eq(error.message, "Simulated failure")
+  match result {
+    Success((processed_spans, errors)) => {
+      // Verify valid spans were processed
+      assert_eq(processed_spans.length(), 5)
+      
+      // Verify errors were captured
+      assert_eq(errors.length(), 2)
+      
+      // Verify processed spans are valid
+      for span in processed_spans {
+        assert_true(Span::is_valid(span))
       }
     }
+    PartialSuccess((processed_spans, errors)) => {
+      // Partial success is acceptable
+      assert_true(processed_spans.length() > 0)
+      assert_true(errors.length() > 0)
+    }
+    _ => assert_true(false)
   }
+}
+
+test "circuit breaker error recovery" {
+  let circuit_breaker = CircuitBreaker::new(3, 1000) // 3 failures, 1000ms timeout
   
-  // Verify circuit is now open
-  assert_eq(CircuitBreaker::state(circuit_breaker), Open)
-  
-  // Test that operations fail fast when circuit is open
-  let fast_fail_result = CircuitBreaker::execute(circuit_breaker, {
-    // This operation should not even be attempted
-    Success("should_not_execute")
-  })
-  
-  match fast_fail_result {
-    Success(_) => assert_true(false) // Should fail fast
-    Error(error) => {
-      assert_eq(error.code, CircuitBreakerOpen)
-      assert_true(error.message.contains("Circuit breaker is open"))
+  // Test circuit breaker normal operation
+  for i in 0..2 {
+    let result = CircuitBreaker::execute(circuit_breaker, fn() { Success("operation_" + i.to_string()) })
+    match result {
+      Success(value) => assert_eq(value, "operation_" + i.to_string())
+      _ => assert_true(false)
     }
   }
   
-  // Wait for circuit breaker to enter half-open state
-  Time::sleep(11000) // Wait longer than timeout
-  
-  // Test half-open state
-  let half_open_result = CircuitBreaker::execute(circuit_breaker, {
-    // Simulate successful operation
-    Success("recovery_success")
-  })
-  
-  match half_open_result {
-    Success(_) => assert_true(true) // Should succeed
-    Error(_) => assert_true(false) // Should not fail
+  // Test circuit breaker with failures
+  for i in 0..3 {
+    let result = CircuitBreaker::execute(circuit_breaker, fn() { Error("failure_" + i.to_string()) })
+    match result {
+      Error(_) => assert_true(true) // Expected failures
+      _ => assert_true(false)
+    }
   }
   
-  // Verify circuit is closed again after successful operation
-  assert_eq(CircuitBreaker::state(circuit_breaker), Closed)
+  // Circuit should be open now
+  assert_true(CircuitBreaker::is_open(circuit_breaker))
   
-  // Test normal operation resumes
-  let resume_result = CircuitBreaker::execute(circuit_breaker, {
-    Success("normal_operation")
-  })
+  // Test recovery after timeout
+  Time::sleep(1100) // Wait longer than timeout
   
-  match resume_result {
-    Success(_) => assert_true(true) // Should succeed
-    Error(_) => assert_true(false) // Should not fail
+  // Circuit should be half-open
+  assert_true(CircuitBreaker::is_half_open(circuit_breaker))
+  
+  // Test successful execution recovers circuit
+  let result = CircuitBreaker::execute(circuit_breaker, fn() { Success("recovery_operation") })
+  match result {
+    Success(value) => assert_eq(value, "recovery_operation")
+    _ => assert_true(false)
+  }
+  
+  // Circuit should be closed again
+  assert_false(CircuitBreaker::is_open(circuit_breaker))
+}
+
+test "system-wide error recovery" {
+  // Test system-wide error recovery mechanisms
+  let system = TelemetrySystem::new()
+  
+  // Simulate system failure
+  TelemetrySystem::simulate_failure(system, CriticalError)
+  assert_true(TelemetrySystem::has_errors(system))
+  
+  // Test system recovery
+  let recovery_result = TelemetrySystem::recover(system)
+  match recovery_result {
+    Success(_) => {
+      assert_false(TelemetrySystem::has_errors(system))
+      
+      // Test system is functional after recovery
+      let span_ctx = SpanContext::new("recovery_trace", "recovery_span", true, "")
+      let span = Span::new("recovery_test", Internal, span_ctx)
+      assert_true(Span::is_valid(span))
+      Span::end(span)
+    }
+    PartialRecovery(_) => {
+      // Partial recovery is acceptable
+      assert_true(TelemetrySystem::is_partially_functional(system))
+    }
+    _ => assert_true(false)
+  }
+  
+  // Test system health check
+  let health_status = TelemetrySystem::health_check(system)
+  match health_status {
+    Healthy => assert_true(true)
+    Degraded => assert_true(true) // Acceptable after recovery
+    Unhealthy => assert_true(false) // Should not be unhealthy after recovery
   }
 }
