@@ -1,471 +1,499 @@
-// Azimuth Performance Benchmark Comprehensive Tests
-// 性能基准综合测试用例
+// Azimuth Telemetry System - Comprehensive Performance Benchmark Tests
+// This file contains comprehensive test cases for performance benchmarking
 
-// 测试1: 度量操作性能基准
-test "度量操作性能基准" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "performance.benchmark.metrics")
+// Test 1: Span Creation Performance
+test "span creation performance benchmark" {
+  // Benchmark span creation with different attribute counts
+  let iterations = 1000
+  let trace_ctx = SpanContext::new("perf_trace_001", "perf_root", true, "")
   
-  // 创建不同类型的度量指标
-  let counter = Meter::create_counter(meter, "benchmark.counter")
-  let histogram = Meter::create_histogram(meter, "benchmark.histogram", Some("基准测试直方图"), Some("ms"))
-  let gauge = Meter::create_gauge(meter, "benchmark.gauge", Some("基准测试仪表"), Some("units"))
-  
-  // 性能测试：大量度量操作
-  let operation_count = 10000
-  
-  // 记录开始时间
-  let start_time = 0 // 简化时间戳
-  
-  // 执行大量度量操作
-  for i in 1..=operation_count {
-    // 计数器操作
-    Counter::add(counter, 1.0)
-    
-    // 直方图操作
-    let histogram_value = 10.0 + (i.to_float() % 100.0)
-    Histogram::record(histogram, histogram_value)
-    
-    // 仪表操作
-    let gauge_value = 50.0 + (Float::sin(i.to_float() * 0.01) * 25.0)
-    Gauge::record(gauge, gauge_value)
-    
-    // 每1000次操作记录一次性能指标
-    if i % 1000 == 0 {
-      let perf_attrs = [
-        ("benchmark.operation", StringValue("metrics.batch")),
-        ("batch.size", IntValue(1000)),
-        ("batch.number", IntValue(i / 1000)),
-        ("operation.count", IntValue(i))
-      ]
-      Counter::add(counter, 0.0, Some(Attributes::{ values: perf_attrs }))
-    }
-  }
-  
-  // 记录结束时间
-  let end_time = 0 // 简化时间戳
-  let total_duration = end_time - start_time
-  
-  // 记录性能结果
-  let perf_result_attrs = [
-    ("benchmark.type", StringValue("metrics.operations")),
-    ("total.operations", IntValue(operation_count)),
-    ("total.duration", IntValue(total_duration)),
-    ("operations.per.second", FloatValue(operation_count.to_float() / total_duration.to_float()))
-  ]
-  Counter::add(counter, 0.0, Some(Attributes::{ values: perf_result_attrs }))
-  
-  // 验证度量指标属性
-  assert_eq(counter.name, "benchmark.counter")
-  assert_eq(histogram.name, "benchmark.histogram")
-  assert_eq(gauge.name, "benchmark.gauge")
-}
-
-// 测试2: Span操作性能基准
-test "Span操作性能基准" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "performance.benchmark.spans")
-  
-  // 性能测试：大量Span创建和操作
-  let span_count = 5000
-  
-  // 记录开始时间
-  let start_time = 0
-  
-  // 创建根Span
-  let root_span = Tracer::start_span(tracer, "performance.benchmark.root")
-  
-  // 执行大量Span操作
-  for i in 1..=span_count {
-    // 创建子Span
-    let span_name = "benchmark.span." + i.to_string()
-    let span = Tracer::start_span(tracer, span_name)
-    
-    // 设置Span属性
-    let span_attrs = [
-      ("span.index", IntValue(i)),
-      ("span.batch", IntValue((i - 1) / 100 + 1)),
-      ("span.type", StringValue("benchmark"))
-    ]
-    Span::set_attributes(span, span_attrs)
-    
-    // 添加事件
-    let event_attrs = [
-      ("event.type", StringValue("operation")),
-      ("event.data", StringValue("benchmark.data." + i.to_string()))
-    ]
-    Span::add_event(span, "benchmark.event", Some(event_attrs))
-    
-    // 结束Span
+  // Benchmark 1: Minimal span creation
+  let start_time = Performance::current_time_millis()
+  for i in 0..iterations {
+    let span = Span::new("minimal_span", Internal, trace_ctx)
     Span::end(span)
-    
-    // 每1000个Span记录一次性能指标
-    if i % 1000 == 0 {
-      let batch_span = Tracer::start_span(tracer, "benchmark.batch." + (i / 1000).to_string())
-      let batch_attrs = [
-        ("batch.size", IntValue(1000)),
-        ("batch.number", IntValue(i / 1000)),
-        ("total.spans", IntValue(i))
-      ]
-      Span::set_attributes(batch_span, batch_attrs)
-      Span::end(batch_span)
-    }
   }
+  let minimal_time = Performance::current_time_millis() - start_time
   
-  // 结束根Span
-  Span::end(root_span)
+  // Verify minimal span creation is within reasonable time (should be < 100ms for 1000 iterations)
+  assert_true(minimal_time < 100, "Minimal span creation should be fast")
   
-  // 记录结束时间
-  let end_time = 0
-  let total_duration = end_time - start_time
+  // Benchmark 2: Span creation with attributes
+  let start_time_attrs = Performance::current_time_millis()
+  for i in 0..iterations {
+    let span = Span::new("attr_span", Internal, trace_ctx)
+    Span::add_attribute(span, "iteration", IntValue(i))
+    Span::add_attribute(span, "operation.type", StringValue("benchmark"))
+    Span::add_attribute(span, "service.name", StringValue("performance_test"))
+    Span::end(span)
+  }
+  let attrs_time = Performance::current_time_millis() - start_time_attrs
   
-  // 记录性能结果
-  let perf_span = Tracer::start_span(tracer, "performance.results")
-  let perf_attrs = [
-    ("benchmark.type", StringValue("span.operations")),
-    ("total.spans", IntValue(span_count)),
-    ("total.duration", IntValue(total_duration)),
-    ("spans.per.second", FloatValue(span_count.to_float() / total_duration.to_float()))
-  ]
-  Span::set_attributes(perf_span, perf_attrs)
-  Span::end(perf_span)
+  // Verify span creation with attributes is within reasonable time
+  assert_true(attrs_time < 200, "Span creation with attributes should be reasonably fast")
+  
+  // Benchmark 3: Span creation with events
+  let start_time_events = Performance::current_time_millis()
+  for i in 0..iterations {
+    let span = Span::new("event_span", Internal, trace_ctx)
+    Span::add_event(span, "operation_started", Some([("iteration", IntValue(i))]))
+    Span::add_event(span, "operation_completed", Some([("duration", IntValue(i * 2))]))
+    Span::end(span)
+  }
+  let events_time = Performance::current_time_millis() - start_time_events
+  
+  // Verify span creation with events is within reasonable time
+  assert_true(events_time < 300, "Span creation with events should be reasonably fast")
+  
+  // Performance comparison
+  let attrs_overhead = attrs_time - minimal_time
+  let events_overhead = events_time - minimal_time
+  
+  // Verify overhead is reasonable
+  assert_true(attrs_overhead < minimal_time * 2, "Attribute overhead should be reasonable")
+  assert_true(events_overhead < minimal_time * 3, "Event overhead should be reasonable")
 }
 
-// 测试3: 日志记录性能基准
-test "日志记录性能基准" {
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "performance.benchmark.logging")
+// Test 2: Attribute Operations Performance
+test "attribute operations performance benchmark" {
+  let iterations = 1000
+  let attrs = Attributes::new()
   
-  // 性能测试：大量日志记录
-  let log_count = 8000
+  // Benchmark 1: Attribute setting performance
+  let start_time_set = Performance::current_time_millis()
+  for i in 0..iterations {
+    Attributes::set(attrs, "key_" + i.to_string(), IntValue(i))
+  }
+  let set_time = Performance::current_time_millis() - start_time_set
   
-  // 记录开始时间
-  let start_time = 0
+  // Verify attribute setting is within reasonable time
+  assert_true(set_time < 100, "Attribute setting should be fast")
   
-  // 执行大量日志记录
-  for i in 1..=log_count {
-    // 创建日志属性
-    let log_attrs = Attributes::new()
-    Attributes::set(log_attrs, "log.index", IntValue(i))
-    Attributes::set(log_attrs, "log.batch", IntValue((i - 1) / 1000 + 1))
-    Attributes::set(log_attrs, "log.component", StringValue("benchmark"))
-    
-    // 确定日志级别
-    let log_level = match i % 4 {
-      0 => Info,
-      1 => Warn,
-      2 => Error,
-      _ => Debug
+  // Benchmark 2: Attribute getting performance
+  let start_time_get = Performance::current_time_millis()
+  for i in 0..iterations {
+    let result = Attributes::get(attrs, "key_" + i.to_string())
+    match result {
+      Some(IntValue(value)) => assert_eq(value, i)
+      _ => assert_true(false)
+    }
+  }
+  let get_time = Performance::current_time_millis() - start_time_get
+  
+  // Verify attribute getting is within reasonable time
+  assert_true(get_time < 100, "Attribute getting should be fast")
+  
+  // Benchmark 3: Mixed attribute operations
+  let mixed_attrs = Attributes::new()
+  let start_time_mixed = Performance::current_time_millis()
+  for i in 0..iterations {
+    if i % 3 == 0 {
+      Attributes::set(mixed_attrs, "mixed_key_" + i.to_string(), StringValue("value_" + i.to_string()))
+    } else if i % 3 == 1 {
+      Attributes::set(mixed_attrs, "mixed_key_" + i.to_string(), FloatValue(i * 3.14))
+    } else {
+      Attributes::set(mixed_attrs, "mixed_key_" + i.to_string(), BoolValue(i % 2 == 0))
     }
     
-    // 创建日志消息
-    let log_message = "Benchmark log message " + i.to_string() + " for performance testing"
-    
-    // 创建日志记录
-    let log_record = LogRecord::new_with_context(
-      log_level,
-      Some(log_message),
-      Some(log_attrs),
-      None,
-      None,
-      None,
-      None,
-      None
+    // Get some existing attributes
+    if i > 10 {
+      let result = Attributes::get(mixed_attrs, "mixed_key_" + (i - 10).to_string())
+      assert_true(result.is_some())
+    }
+  }
+  let mixed_time = Performance::current_time_millis() - start_time_mixed
+  
+  // Verify mixed operations are within reasonable time
+  assert_true(mixed_time < 200, "Mixed attribute operations should be reasonably fast")
+}
+
+// Test 3: Metrics Collection Performance
+test "metrics collection performance benchmark" {
+  let iterations = 1000
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "performance_meter")
+  
+  // Create instruments
+  let counter = Meter::create_counter(meter, "performance_counter", Some("Performance counter"), Some("count"))
+  let histogram = Meter::create_histogram(meter, "performance_histogram", Some("Performance histogram"), Some("ms"))
+  let updown_counter = Meter::create_updown_counter(meter, "performance_updown", Some("Performance updown counter"), Some("value"))
+  
+  // Benchmark 1: Counter operations
+  let start_time_counter = Performance::current_time_millis()
+  for i in 0..iterations {
+    Counter::add(counter, 1.0)
+    Counter::add(counter, i.to_float(), Some([("iteration", IntValue(i))]))
+  }
+  let counter_time = Performance::current_time_millis() - start_time_counter
+  
+  // Verify counter operations are within reasonable time
+  assert_true(counter_time < 100, "Counter operations should be fast")
+  
+  // Benchmark 2: Histogram operations
+  let start_time_histogram = Performance::current_time_millis()
+  for i in 0..iterations {
+    Histogram::record(histogram, i.to_float())
+    Histogram::record(histogram, i * 2.5, Some([("iteration", IntValue(i))]))
+  }
+  let histogram_time = Performance::current_time_millis() - start_time_histogram
+  
+  // Verify histogram operations are within reasonable time
+  assert_true(histogram_time < 150, "Histogram operations should be reasonably fast")
+  
+  // Benchmark 3: UpDownCounter operations
+  let start_time_updown = Performance::current_time_millis()
+  for i in 0..iterations {
+    UpDownCounter::add(updown_counter, 1.0)
+    UpDownCounter::add(updown_counter, -0.5, Some([("iteration", IntValue(i))]))
+  }
+  let updown_time = Performance::current_time_millis() - start_time_updown
+  
+  // Verify updown counter operations are within reasonable time
+  assert_true(updown_time < 100, "UpDownCounter operations should be fast")
+  
+  // Benchmark 4: Metrics collection
+  let start_time_collect = Performance::current_time_millis()
+  let metric_data = Meter::collect(meter)
+  let collect_time = Performance::current_time_millis() - start_time_collect
+  
+  // Verify metrics collection is within reasonable time
+  assert_true(collect_time < 50, "Metrics collection should be fast")
+  
+  // Verify collected metrics contain expected data
+  let metrics = MetricData::metrics(metric_data)
+  assert_true(metrics.length() >= 3)
+}
+
+// Test 4: Serialization Performance
+test "serialization performance benchmark" {
+  let iterations = 100
+  
+  // Create test data
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "string.key", StringValue("test_value"))
+  Attributes::set(attrs, "int.key", IntValue(42))
+  Attributes::set(attrs, "float.key", FloatValue(3.14))
+  Attributes::set(attrs, "bool.key", BoolValue(true))
+  Attributes::set(attrs, "array.string.key", ArrayStringValue(["a", "b", "c"]))
+  Attributes::set(attrs, "array.int.key", ArrayIntValue([1, 2, 3, 4, 5]))
+  
+  let span_ctx = SpanContext::new("serialization_trace", "serialization_span", true, "")
+  let span = Span::new("serialization_test", Internal, span_ctx)
+  Span::add_attribute(span, "test.attr", StringValue("test_value"))
+  Span::add_event(span, "test_event", Some([("event.attr", IntValue(123))]))
+  
+  // Benchmark 1: Attribute serialization
+  let start_time_attr_serialization = Performance::current_time_millis()
+  for i in 0..iterations {
+    let serialized = Attributes::serialize(attrs)
+    let deserialized = Attributes::deserialize(serialized)
+  }
+  let attr_serialization_time = Performance::current_time_millis() - start_time_attr_serialization
+  
+  // Verify attribute serialization is within reasonable time
+  assert_true(attr_serialization_time < 100, "Attribute serialization should be reasonably fast")
+  
+  // Benchmark 2: Span serialization
+  let start_time_span_serialization = Performance::current_time_millis()
+  for i in 0..iterations {
+    let serialized = Span::serialize(span)
+    let deserialized = Span::deserialize(serialized)
+  }
+  let span_serialization_time = Performance::current_time_millis() - start_time_span_serialization
+  
+  // Verify span serialization is within reasonable time
+  assert_true(span_serialization_time < 200, "Span serialization should be reasonably fast")
+  
+  // Benchmark 3: Span context serialization
+  let start_time_ctx_serialization = Performance::current_time_millis()
+  for i in 0..iterations {
+    let serialized = SpanContext::serialize(span_ctx)
+    let deserialized = SpanContext::deserialize(serialized)
+  }
+  let ctx_serialization_time = Performance::current_time_millis() - start_time_ctx_serialization
+  
+  // Verify span context serialization is within reasonable time
+  assert_true(ctx_serialization_time < 50, "Span context serialization should be fast")
+  
+  // Performance comparison
+  let avg_attr_time = attr_serialization_time.to_float() / iterations.to_float()
+  let avg_span_time = span_serialization_time.to_float() / iterations.to_float()
+  let avg_ctx_time = ctx_serialization_time.to_float() / iterations.to_float()
+  
+  // Verify average operation times are reasonable
+  assert_true(avg_attr_time < 1.0, "Average attribute serialization time should be < 1ms")
+  assert_true(avg_span_time < 2.0, "Average span serialization time should be < 2ms")
+  assert_true(avg_ctx_time < 0.5, "Average span context serialization time should be < 0.5ms")
+}
+
+// Test 5: Context Propagation Performance
+test "context propagation performance benchmark" {
+  let iterations = 1000
+  let root_ctx = SpanContext::new("context_perf_trace", "context_perf_root", true, "")
+  let baggage = Baggage::new()
+  let baggage_with_data = Baggage::set_entry(baggage, "user.id", "user123")
+  let baggage_final = Baggage::set_entry(baggage_with_data, "request.id", "req456")
+  
+  // Benchmark 1: Context creation
+  let start_time_ctx_creation = Performance::current_time_millis()
+  for i in 0..iterations {
+    let ctx = SpanContext::new("trace_" + i.to_string(), "span_" + i.to_string(), true, "")
+  }
+  let ctx_creation_time = Performance::current_time_millis() - start_time_ctx_creation
+  
+  // Verify context creation is within reasonable time
+  assert_true(ctx_creation_time < 100, "Context creation should be fast")
+  
+  // Benchmark 2: Context propagation
+  let start_time_ctx_propagation = Performance::current_time_millis()
+  for i in 0..iterations {
+    let child_ctx = SpanContext::new(
+      SpanContext::trace_id(root_ctx),
+      "child_span_" + i.to_string(),
+      SpanContext::is_sampled(root_ctx),
+      ""
     )
-    
-    // 发射日志
-    Logger::emit(logger, log_record)
-    
-    // 每1000条日志记录一次性能指标
-    if i % 1000 == 0 {
-      let perf_log_attrs = Attributes::new()
-      Attributes::set(perf_log_attrs, "benchmark.operation", StringValue("logging.batch"))
-      Attributes::set(perf_log_attrs, "batch.size", IntValue(1000))
-      Attributes::set(perf_log_attrs, "batch.number", IntValue(i / 1000))
-      
-      let perf_log_record = LogRecord::new_with_context(
-        Info,
-        Some("Logging batch performance checkpoint"),
-        Some(perf_log_attrs),
-        None,
-        None,
-        None,
-        None,
-        None
-      )
-      Logger::emit(logger, perf_log_record)
+  }
+  let ctx_propagation_time = Performance::current_time_millis() - start_time_ctx_propagation
+  
+  // Verify context propagation is within reasonable time
+  assert_true(ctx_propagation_time < 100, "Context propagation should be fast")
+  
+  // Benchmark 3: Baggage operations
+  let start_time_baggage_ops = Performance::current_time_millis()
+  for i in 0..iterations {
+    let updated_baggage = Baggage::set_entry(baggage_final, "iteration", i.to_string())
+    let value = Baggage::get_entry(updated_baggage, "user.id")
+    match value {
+      Some(v) => assert_eq(v, "user123")
+      None => assert_true(false)
     }
   }
+  let baggage_ops_time = Performance::current_time_millis() - start_time_baggage_ops
   
-  // 记录结束时间
-  let end_time = 0
-  let total_duration = end_time - start_time
-  
-  // 记录性能结果
-  let perf_result_attrs = Attributes::new()
-  Attributes::set(perf_result_attrs, "benchmark.type", StringValue("logging.operations"))
-  Attributes::set(perf_result_attrs, "total.logs", IntValue(log_count))
-  Attributes::set(perf_result_attrs, "total.duration", IntValue(total_duration))
-  Attributes::set(perf_result_attrs, "logs.per.second", FloatValue(log_count.to_float() / total_duration.to_float()))
-  
-  let perf_log_record = LogRecord::new_with_context(
-    Info,
-    Some("Logging performance benchmark completed"),
-    Some(perf_result_attrs),
-    None,
-    None,
-    None,
-    None,
-    None
-  )
-  Logger::emit(logger, perf_log_record)
+  // Verify baggage operations are within reasonable time
+  assert_true(baggage_ops_time < 150, "Baggage operations should be reasonably fast")
 }
 
-// 测试4: 上下文操作性能基准
-test "上下文操作性能基准" {
-  let root_ctx = Context::root()
+// Test 6: Memory Usage Performance
+test "memory usage performance benchmark" {
+  let initial_memory = Performance::get_memory_usage()
   
-  // 性能测试：大量上下文操作
-  let context_count = 6000
+  // Create a large number of spans
+  let spans = []
+  let iterations = 100
+  let trace_ctx = SpanContext::new("memory_trace", "memory_root", true, "")
   
-  // 记录开始时间
-  let start_time = 0
-  
-  // 执行大量上下文操作
-  for i in 1..=context_count {
-    // 创建上下文键
-    let key1 = ContextKey::new("benchmark.key." + i.to_string())
-    let key2 = ContextKey::new("batch.key." + ((i - 1) / 100 + 1).to_string())
-    let key3 = ContextKey::new("type.key.benchmark")
-    
-    // 设置上下文值
-    let ctx1 = Context::with_value(root_ctx, key1, "value." + i.to_string())
-    let ctx2 = Context::with_value(ctx1, key2, "batch." + ((i - 1) / 100 + 1).to_string())
-    let ctx3 = Context::with_value(ctx2, key3, "benchmark.type")
-    
-    // 获取上下文值
-    let value1 = Context::get(ctx3, key1)
-    let value2 = Context::get(ctx3, key2)
-    let value3 = Context::get(ctx3, key3)
-    
-    // 验证上下文值
-    assert_eq(value1, Some("value." + i.to_string()))
-    assert_eq(value2, Some("batch." + ((i - 1) / 100 + 1).to_string()))
-    assert_eq(value3, Some("benchmark.type"))
-    
-    // 每1000次操作记录一次性能指标
-    if i % 1000 == 0 {
-      let perf_key = ContextKey::new("performance.checkpoint")
-      let ctx_with_perf = Context::with_value(ctx3, perf_key, "checkpoint." + (i / 1000).to_string())
-      let perf_value = Context::get(ctx_with_perf, perf_key)
-      assert_eq(perf_value, Some("checkpoint." + (i / 1000).to_string()))
-    }
+  for i in 0..iterations {
+    let span = Span::new("memory_test_span_" + i.to_string(), Internal, trace_ctx)
+    Span::add_attribute(span, "iteration", IntValue(i))
+    Span::add_attribute(span, "operation.type", StringValue("memory_test"))
+    Span::add_event(span, "test_event", Some([("event_data", StringValue("test_data_" + i.to_string()))]))
+    spans.push(span)
   }
   
-  // 记录结束时间
-  let end_time = 0
-  let total_duration = end_time - start_time
+  let after_creation_memory = Performance::get_memory_usage()
+  let memory_increase = after_creation_memory - initial_memory
   
-  // 验证性能结果
-  assert_true(context_count > 0)
-  assert_true(total_duration >= 0)
+  // Verify memory increase is reasonable (should be < 10MB for 100 spans)
+  assert_true(memory_increase < 10 * 1024 * 1024, "Memory usage should be reasonable")
+  
+  // Clean up spans
+  for span in spans {
+    Span::end(span)
+  }
+  
+  // Force garbage collection if available
+  Performance::force_gc()
+  
+  let after_cleanup_memory = Performance::get_memory_usage()
+  let memory_after_cleanup = after_cleanup_memory - initial_memory
+  
+  // Verify memory is properly cleaned up (should be significantly reduced)
+  assert_true(memory_after_cleanup < memory_increase * 0.5, "Memory should be properly cleaned up")
 }
 
-// 测试5: 资源操作性能基准
-test "资源操作性能基准" {
-  let resource = Resource::new()
+// Test 7: Concurrent Operations Performance
+test "concurrent operations performance benchmark" {
+  let iterations = 100
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "concurrent_meter")
+  let counter = Meter::create_counter(meter, "concurrent_counter", Some("Concurrent counter"), Some("count"))
   
-  // 性能测试：大量资源操作
-  let resource_count = 4000
+  // Benchmark concurrent span creation
+  let start_time_concurrent_spans = Performance::current_time_millis()
   
-  // 记录开始时间
-  let start_time = 0
-  
-  // 执行大量资源操作
-  for i in 1..=resource_count {
-    // 创建资源属性
-    let resource_attrs = [
-      ("resource.id", StringValue("resource." + i.to_string())),
-      ("resource.type", StringValue("benchmark.resource")),
-      ("resource.batch", IntValue((i - 1) / 100 + 1)),
-      ("resource.timestamp", IntValue(1234567890 + i))
-    ]
-    
-    // 创建带有属性的资源
-    let resource_with_attrs = Resource::with_attributes(resource, resource_attrs)
-    
-    // 获取资源属性
-    let resource_id = Resource::get_attribute(resource_with_attrs, "resource.id")
-    let resource_type = Resource::get_attribute(resource_with_attrs, "resource.type")
-    let resource_batch = Resource::get_attribute(resource_with_attrs, "resource.batch")
-    
-    // 验证资源属性
-    match resource_id {
-      Some(StringValue(id)) => assert_eq(id, "resource." + i.to_string())
-      _ => assert_true(false)
-    }
-    
-    match resource_type {
-      Some(StringValue(t)) => assert_eq(t, "benchmark.resource")
-      _ => assert_true(false)
-    }
-    
-    match resource_batch {
-      Some(IntValue(batch)) => assert_eq(batch, (i - 1) / 100 + 1)
-      _ => assert_true(false)
-    }
-    
-    // 每1000次操作测试资源合并
-    if i % 1000 == 0 {
-      let merge_attrs = [
-        ("merge.operation", StringValue("benchmark.merge")),
-        ("merge.batch", IntValue(i / 1000)),
-        ("merge.timestamp", IntValue(1234567890 + i))
-      ]
-      let merge_resource = Resource::with_attributes(Resource::new(), merge_attrs)
-      let merged_resource = Resource::merge(resource_with_attrs, merge_resource)
-      
-      // 验证合并后的资源
-      let merged_op = Resource::get_attribute(merged_resource, "merge.operation")
-      match merged_op {
-        Some(StringValue(op)) => assert_eq(op, "benchmark.merge")
-        _ => assert_true(false)
-      }
-    }
+  // Simulate concurrent operations
+  for i in 0..iterations {
+    let trace_ctx = SpanContext::new("concurrent_trace_" + i.to_string(), "concurrent_root_" + i.to_string(), true, "")
+    let span = Span::new("concurrent_span_" + i.to_string(), Internal, trace_ctx)
+    Span::add_attribute(span, "thread.id", IntValue(i))
+    Span::end(span)
   }
   
-  // 记录结束时间
-  let end_time = 0
-  let total_duration = end_time - start_time
+  let concurrent_spans_time = Performance::current_time_millis() - start_time_concurrent_spans
   
-  // 验证性能结果
-  assert_true(resource_count > 0)
-  assert_true(total_duration >= 0)
+  // Verify concurrent span creation is within reasonable time
+  assert_true(concurrent_spans_time < 200, "Concurrent span creation should be reasonably fast")
+  
+  // Benchmark concurrent metrics operations
+  let start_time_concurrent_metrics = Performance::current_time_millis()
+  
+  for i in 0..iterations {
+    Counter::add(counter, 1.0, Some([("thread.id", IntValue(i))]))
+  }
+  
+  let concurrent_metrics_time = Performance::current_time_millis() - start_time_concurrent_metrics
+  
+  // Verify concurrent metrics operations are within reasonable time
+  assert_true(concurrent_metrics_time < 100, "Concurrent metrics operations should be fast")
 }
 
-// 测试6: 内存使用性能基准
-test "内存使用性能基准" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "performance.benchmark.memory")
+// Test 8: Large Payload Performance
+test "large payload performance benchmark" {
+  let iterations = 10
+  let large_string_size = 10000
+  let large_string = "x".repeat(large_string_size)
+  let large_array = Array::init(large_string_size, fn(i) { i })
   
-  // 创建内存监控指标
-  let memory_usage = Meter::create_gauge(meter, "memory.usage", Some("内存使用量"), Some("bytes"))
-  let memory_allocations = Meter::create_counter(meter, "memory.allocations", Some("内存分配次数"), Some("count"))
+  // Benchmark 1: Large string attribute
+  let start_time_large_string = Performance::current_time_millis()
+  for i in 0..iterations {
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "large.string", StringValue(large_string))
+    let serialized = Attributes::serialize(attrs)
+    let deserialized = Attributes::deserialize(serialized)
+  }
+  let large_string_time = Performance::current_time_millis() - start_time_large_string
   
-  // 记录开始时间
-  let start_time = 0
+  // Verify large string attribute handling is within reasonable time
+  assert_true(large_string_time < 1000, "Large string attribute handling should be reasonably fast")
   
-  // 模拟内存密集型操作
-  let data_structures = []
+  // Benchmark 2: Large array attribute
+  let start_time_large_array = Performance::current_time_millis()
+  for i in 0..iterations {
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "large.array", ArrayIntValue(large_array))
+    let serialized = Attributes::serialize(attrs)
+    let deserialized = Attributes::deserialize(serialized)
+  }
+  let large_array_time = Performance::current_time_millis() - start_time_large_array
   
-  for i in 1..=3000 {
-    // 模拟内存分配
-    let data_size = 1024 * (i % 10 + 1) // 1KB到10KB
-    Counter::add(memory_allocations, 1.0)
+  // Verify large array attribute handling is within reasonable time
+  assert_true(large_array_time < 1000, "Large array attribute handling should be reasonably fast")
+  
+  // Benchmark 3: Large span with many events
+  let trace_ctx = SpanContext::new("large_payload_trace", "large_payload_root", true, "")
+  let start_time_large_span = Performance::current_time_millis()
+  
+  for i in 0..iterations {
+    let span = Span::new("large_span", Internal, trace_ctx)
     
-    // 记录内存使用量
-    let current_memory = 1024 * 1024 * (i.to_float() / 1000.0) // 模拟递增的内存使用
-    Gauge::record(memory_usage, current_memory)
-    
-    // 模拟数据结构创建
-    let data_structure = {
-      "id": i,
-      "size": data_size,
-      "timestamp": 1234567890 + i,
-      "data": "x" * data_size
+    // Add many events
+    for j in 0..100 {
+      Span::add_event(span, "event_" + j.to_string(), Some([
+        ("event.data", StringValue("large_event_data_" + j.to_string())),
+        ("iteration", IntValue(j))
+      ]))
     }
     
-    // 每1000次操作记录内存统计
-    if i % 1000 == 0 {
-      let memory_attrs = [
-        ("operation.type", StringValue("memory.benchmark")),
-        ("operation.count", IntValue(i)),
-        ("data.structures", IntValue(data_structures.length())),
-        ("current.memory", FloatValue(current_memory))
-      ]
-      Counter::add(memory_allocations, 0.0, Some(Attributes::{ values: memory_attrs }))
-    }
+    let serialized = Span::serialize(span)
+    let deserialized = Span::deserialize(serialized)
   }
   
-  // 记录结束时间
-  let end_time = 0
-  let total_duration = end_time - start_time
+  let large_span_time = Performance::current_time_millis() - start_time_large_span
   
-  // 记录最终内存统计
-  let final_memory_attrs = [
-    ("benchmark.type", StringValue("memory.operations")),
-    ("total.operations", IntValue(3000)),
-    ("total.duration", IntValue(total_duration)),
-    ("final.memory.usage", FloatValue(1024.0 * 1024.0 * 3.0))
-  ]
-  Counter::add(memory_allocations, 0.0, Some(Attributes::{ values: final_memory_attrs }))
-  
-  // 验证内存指标属性
-  assert_eq(memory_usage.name, "memory.usage")
-  assert_eq(memory_usage.description, Some("内存使用量"))
-  assert_eq(memory_usage.unit, Some("bytes"))
-  assert_eq(memory_allocations.name, "memory.allocations")
-  assert_eq(memory_allocations.description, Some("内存分配次数"))
-  assert_eq(memory_allocations.unit, Some("count"))
+  // Verify large span handling is within reasonable time
+  assert_true(large_span_time < 2000, "Large span handling should be reasonably fast")
 }
 
-// 测试7: CPU密集型操作性能基准
-test "CPU密集型操作性能基准" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "performance.benchmark.cpu")
+// Test 9: High Frequency Operations Performance
+test "high frequency operations performance benchmark" {
+  let high_frequency_iterations = 10000
+  let trace_ctx = SpanContext::new("high_freq_trace", "high_freq_root", true, "")
   
-  // 创建CPU监控指标
-  let cpu_usage = Meter::create_histogram(meter, "cpu.usage", Some("CPU使用率"), Some("percent"))
-  let cpu_operations = Meter::create_counter(meter, "cpu.operations", Some("CPU操作次数"), Some("count"))
+  // Benchmark high frequency span creation
+  let start_time_high_freq = Performance::current_time_millis()
   
-  // 记录开始时间
-  let start_time = 0
-  
-  // 模拟CPU密集型操作
-  for i in 1..=2000 {
-    // 模拟计算密集型任务
-    let mut result = 0.0
-    for j in 1..=100 {
-      result = result + (i.to_float() * j.to_float()).sqrt()
-    }
-    
-    // 记录CPU使用率
-    let cpu_percent = 50.0 + (Float::sin(i.to_float() * 0.01) * 40.0)
-    Histogram::record(cpu_usage, cpu_percent)
-    
-    // 记录CPU操作
-    Counter::add(cpu_operations, 1.0)
-    
-    // 每500次操作记录CPU统计
-    if i % 500 == 0 {
-      let cpu_attrs = [
-        ("operation.type", StringValue("cpu.benchmark")),
-        ("operation.count", IntValue(i)),
-        ("calculation.result", FloatValue(result)),
-        ("cpu.percent", FloatValue(cpu_percent))
-      ]
-      Counter::add(cpu_operations, 0.0, Some(Attributes::{ values: cpu_attrs }))
-    }
+  for i in 0..high_frequency_iterations {
+    let span = Span::new("high_freq_span", Internal, trace_ctx)
+    Span::add_attribute(span, "iteration", IntValue(i))
+    Span::end(span)
   }
   
-  // 记录结束时间
-  let end_time = 0
-  let total_duration = end_time - start_time
+  let high_freq_time = Performance::current_time_millis() - start_time_high_freq
   
-  // 记录最终CPU统计
-  let final_cpu_attrs = [
-    ("benchmark.type", StringValue("cpu.operations")),
-    ("total.operations", IntValue(2000)),
-    ("total.duration", IntValue(total_duration)),
-    ("average.cpu.usage", FloatValue(70.5))
-  ]
-  Counter::add(cpu_operations, 0.0, Some(Attributes::{ values: final_cpu_attrs }))
+  // Verify high frequency operations are within reasonable time
+  assert_true(high_freq_time < 1000, "High frequency operations should be fast")
   
-  // 验证CPU指标属性
-  assert_eq(cpu_usage.name, "cpu.usage")
-  assert_eq(cpu_usage.description, Some("CPU使用率"))
-  assert_eq(cpu_usage.unit, Some("percent"))
-  assert_eq(cpu_operations.name, "cpu.operations")
-  assert_eq(cpu_operations.description, Some("CPU操作次数"))
-  assert_eq(cpu_operations.unit, Some("count"))
+  // Calculate operations per second
+  let ops_per_second = high_frequency_iterations.to_float() / (high_freq_time.to_float() / 1000.0)
+  
+  // Verify we can handle at least 1000 operations per second
+  assert_true(ops_per_second >= 1000.0, "Should handle at least 1000 ops/sec")
+}
+
+// Test 10: Resource Usage Under Load
+test "resource usage under load benchmark" {
+  let initial_memory = Performance::get_memory_usage()
+  let initial_cpu = Performance::get_cpu_usage()
+  
+  let load_iterations = 500
+  let trace_ctx = SpanContext::new("load_trace", "load_root", true, "")
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "load_meter")
+  let counter = Meter::create_counter(meter, "load_counter", Some("Load counter"), Some("count"))
+  let histogram = Meter::create_histogram(meter, "load_histogram", Some("Load histogram"), Some("ms"))
+  
+  // Apply load
+  for i in 0..load_iterations {
+    // Create spans
+    let span = Span::new("load_span_" + i.to_string(), Internal, trace_ctx)
+    Span::add_attribute(span, "iteration", IntValue(i))
+    Span::add_attribute(span, "operation.type", StringValue("load_test"))
+    Span::add_event(span, "load_event", Some([("event_data", StringValue("load_test_data"))]))
+    
+    // Record metrics
+    Counter::add(counter, 1.0, Some([("iteration", IntValue(i))]))
+    Histogram::record(histogram, i.to_float(), Some([("iteration", IntValue(i))]))
+    
+    // Create and manipulate attributes
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "load.iteration", IntValue(i))
+    Attributes::set(attrs, "load.operation", StringValue("test"))
+    Attributes::set(attrs, "load.timestamp", IntValue(Performance::current_time_millis()))
+    
+    // Serialize/deserialize
+    let serialized_attrs = Attributes::serialize(attrs)
+    let deserialized_attrs = Attributes::deserialize(serialized_attrs)
+    
+    Span::end(span)
+  }
+  
+  let final_memory = Performance::get_memory_usage()
+  let final_cpu = Performance::get_cpu_usage()
+  
+  let memory_increase = final_memory - initial_memory
+  let cpu_increase = final_cpu - initial_cpu
+  
+  // Verify resource usage is reasonable
+  assert_true(memory_increase < 50 * 1024 * 1024, "Memory increase should be < 50MB under load")
+  assert_true(cpu_increase < 80.0, "CPU usage should be reasonable under load")
+  
+  // Collect metrics
+  let metric_data = Meter::collect(meter)
+  let metrics = MetricData::metrics(metric_data)
+  
+  // Verify metrics were collected correctly
+  assert_true(metrics.length() >= 2)
+  
+  // Check if we can still operate efficiently after load
+  let post_load_start = Performance::current_time_millis()
+  let post_load_span = Span::new("post_load_span", Internal, trace_ctx)
+  Span::add_attribute(post_load_span, "test.type", StringValue("post_load"))
+  Span::end(post_load_span)
+  let post_load_time = Performance::current_time_millis() - post_load_start
+  
+  // Verify operations are still efficient after load
+  assert_true(post_load_time < 10, "Operations should remain efficient after load")
 }
