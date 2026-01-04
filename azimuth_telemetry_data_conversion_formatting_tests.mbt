@@ -1,465 +1,398 @@
-// Azimuth Telemetry System - Data Conversion and Formatting Tests
-// This file contains comprehensive test cases for telemetry data conversion and formatting
+// Azimuth Telemetry Data Conversion and Formatting Tests
+// 遥测数据转换和格式化测试，验证数据在不同格式间的转换和输出格式
 
-// Test 1: Attribute Value Type Conversion Tests
-test "attribute value type conversion" {
-  // Test string to int conversion
-  let string_int = StringValue("42")
-  let converted_int = AttributeValue::to_int(string_int)
-  match converted_int {
-    Some(i) => assert_eq(i, 42)
-    None => assert_true(false)
-  }
+// 测试1: 属性值类型转换测试
+test "attribute value type conversion tests" {
+  // 测试字符串属性值转换
+  let string_attr = azimuth::telemetry::AttributeValue::StringValue("test_value")
+  let string_to_json = azimuth::telemetry::format::attribute_to_json(string_attr)
+  assert_eq(string_to_json, "\"test_value\"")
   
-  // Test string to float conversion
-  let string_float = StringValue("3.14")
-  let converted_float = AttributeValue::to_float(string_float)
-  match converted_float {
-    Some(f) => assert_eq(f, 3.14)
-    None => assert_true(false)
-  }
+  let string_to_string = azimuth::telemetry::format::attribute_to_string(string_attr)
+  assert_eq(string_to_string, "test_value")
   
-  // Test string to bool conversion
-  let string_bool_true = StringValue("true")
-  let converted_bool_true = AttributeValue::to_bool(string_bool_true)
-  match converted_bool_true {
-    Some(b) => assert_true(b)
-    None => assert_true(false)
-  }
+  // 测试整数属性值转换
+  let int_attr = azimuth::telemetry::AttributeValue::IntValue(42)
+  let int_to_json = azimuth::telemetry::format::attribute_to_json(int_attr)
+  assert_eq(int_to_json, "42")
   
-  let string_bool_false = StringValue("false")
-  let converted_bool_false = AttributeValue::to_bool(string_bool_false)
-  match converted_bool_false {
-    Some(b) => assert_false(b)
-    None => assert_true(false)
-  }
+  let int_to_string = azimuth::telemetry::format::attribute_to_string(int_attr)
+  assert_eq(int_to_string, "42")
   
-  // Test int to string conversion
-  let int_value = IntValue(123)
-  let converted_string = AttributeValue::to_string(int_value)
-  match converted_string {
-    Some(s) => assert_eq(s, "123")
-    None => assert_true(false)
-  }
+  // 测试浮点数属性值转换
+  let float_attr = azimuth::telemetry::AttributeValue::FloatValue(3.14159)
+  let float_to_json = azimuth::telemetry::format::attribute_to_json(float_attr)
+  assert_eq(float_to_json, "3.14159")
   
-  // Test float to string conversion
-  let float_value = FloatValue(2.718)
-  let converted_float_string = AttributeValue::to_string(float_value)
-  match converted_float_string {
-    Some(s) => assert_eq(s, "2.718")
-    None => assert_true(false)
-  }
+  let float_to_string = azimuth::telemetry::format::attribute_to_string(float_attr)
+  assert_eq(float_to_string, "3.14159")
   
-  // Test bool to string conversion
-  let bool_value = BoolValue(true)
-  let converted_bool_string = AttributeValue::to_string(bool_value)
-  match converted_bool_string {
-    Some(s) => assert_eq(s, "true")
-    None => assert_true(false)
-  }
+  // 测试布尔属性值转换
+  let bool_attr = azimuth::telemetry::AttributeValue::BoolValue(true)
+  let bool_to_json = azimuth::telemetry::format::attribute_to_json(bool_attr)
+  assert_eq(bool_to_json, "true")
+  
+  let bool_to_string = azimuth::telemetry::format::attribute_to_string(bool_attr)
+  assert_eq(bool_to_string, "true")
+  
+  // 测试数组字符串属性值转换
+  let array_string_attr = azimuth::telemetry::AttributeValue::ArrayStringValue(["a", "b", "c"])
+  let array_string_to_json = azimuth::telemetry::format::attribute_to_json(array_string_attr)
+  assert_eq(array_string_to_json, "[\"a\",\"b\",\"c\"]")
+  
+  let array_string_to_string = azimuth::telemetry::format::attribute_to_string(array_string_attr)
+  assert_eq(array_string_to_string, "[a, b, c]")
+  
+  // 测试数组整数属性值转换
+  let array_int_attr = azimuth::telemetry::AttributeValue::ArrayIntValue([1, 2, 3, 4, 5])
+  let array_int_to_json = azimuth::telemetry::format::attribute_to_json(array_int_attr)
+  assert_eq(array_int_to_json, "[1,2,3,4,5]")
+  
+  let array_int_to_string = azimuth::telemetry::format::attribute_to_string(array_int_attr)
+  assert_eq(array_int_to_string, "[1, 2, 3, 4, 5]")
 }
 
-// Test 2: JSON Serialization and Deserialization
-test "json serialization and deserialization" {
-  // Create test attributes
-  let attrs = Attributes::new()
-  Attributes::set(attrs, "service.name", StringValue("test-service"))
-  Attributes::set(attrs, "service.version", StringValue("1.0.0"))
-  Attributes::set(attrs, "port", IntValue(8080))
-  Attributes::set(attrs, "enabled", BoolValue(true))
-  Attributes::set(attrs, "weight", FloatValue(0.95))
-  
-  // Serialize to JSON
-  let json_str = Attributes::to_json(attrs)
-  
-  // Verify JSON contains expected fields
-  assert_true(json_str.contains("\"service.name\""))
-  assert_true(json_str.contains("\"test-service\""))
-  assert_true(json_str.contains("\"service.version\""))
-  assert_true(json_str.contains("\"1.0.0\""))
-  assert_true(json_str.contains("\"port\""))
-  assert_true(json_str.contains("8080"))
-  assert_true(json_str.contains("\"enabled\""))
-  assert_true(json_str.contains("true"))
-  assert_true(json_str.contains("\"weight\""))
-  assert_true(json_str.contains("0.95"))
-  
-  // Deserialize from JSON
-  let deserialized_attrs = Attributes::from_json(json_str)
-  
-  // Verify deserialized attributes
-  let service_name = Attributes::get(deserialized_attrs, "service.name")
-  match service_name {
-    Some(StringValue(name)) => assert_eq(name, "test-service")
-    _ => assert_true(false)
+// 测试2: 度量数据序列化测试
+test "metric data serialization tests" {
+  // 测试计数器度量序列化
+  let counter_metric = azimuth::telemetry::Metric::Counter {
+    name: "http_requests_total",
+    description: "Total number of HTTP requests",
+    unit: "requests",
+    value: 1250.0,
+    attributes: [
+      ("method", azimuth::telemetry::AttributeValue::StringValue("GET")),
+      ("status", azimuth::telemetry::AttributeValue::StringValue("200"))
+    ]
   }
   
-  let service_version = Attributes::get(deserialized_attrs, "service.version")
-  match service_version {
-    Some(StringValue(version)) => assert_eq(version, "1.0.0")
-    _ => assert_true(false)
+  let counter_json = azimuth::telemetry::format::metric_to_json(counter_metric)
+  assert_true(counter_json.contains("\"name\":\"http_requests_total\""))
+  assert_true(counter_json.contains("\"value\":1250"))
+  assert_true(counter_json.contains("\"unit\":\"requests\""))
+  assert_true(counter_json.contains("\"method\":\"GET\""))
+  assert_true(counter_json.contains("\"status\":\"200\""))
+  
+  // 测试直方图度量序列化
+  let histogram_metric = azimuth::telemetry::Metric::Histogram {
+    name: "request_duration_seconds",
+    description: "Request duration in seconds",
+    unit: "seconds",
+    buckets: [
+      (0.0, 0.1, 120.0),
+      (0.1, 0.5, 280.0),
+      (0.5, 1.0, 450.0),
+      (1.0, 5.0, 130.0),
+      (5.0, Infinity, 20.0)
+    ],
+    count: 1000.0,
+    sum: 875.5
   }
   
-  let port = Attributes::get(deserialized_attrs, "port")
-  match port {
-    Some(IntValue(p)) => assert_eq(p, 8080)
-    _ => assert_true(false)
+  let histogram_json = azimuth::telemetry::format::metric_to_json(histogram_metric)
+  assert_true(histogram_json.contains("\"name\":\"request_duration_seconds\""))
+  assert_true(histogram_json.contains("\"count\":1000"))
+  assert_true(histogram_json.contains("\"sum\":875.5"))
+  assert_true(histogram_json.contains("\"buckets\""))
+  
+  // 测试仪表度量序列化
+  let gauge_metric = azimuth::telemetry::Metric::Gauge {
+    name: "memory_usage_bytes",
+    description: "Current memory usage in bytes",
+    unit: "bytes",
+    value: 1073741824.0, // 1GB
+    attributes: [
+      ("instance", azimuth::telemetry::AttributeValue::StringValue("server-1")),
+      ("region", azimuth::telemetry::AttributeValue::StringValue("us-west-2"))
+    ]
   }
   
-  let enabled = Attributes::get(deserialized_attrs, "enabled")
-  match enabled {
-    Some(BoolValue(e)) => assert_true(e)
-    _ => assert_true(false)
-  }
-  
-  let weight = Attributes::get(deserialized_attrs, "weight")
-  match weight {
-    Some(FloatValue(w)) => assert_eq(w, 0.95)
-    _ => assert_true(false)
-  }
+  let gauge_json = azimuth::telemetry::format::metric_to_json(gauge_metric)
+  assert_true(gauge_json.contains("\"name\":\"memory_usage_bytes\""))
+  assert_true(gauge_json.contains("\"value\":1073741824"))
+  assert_true(gauge_json.contains("\"instance\":\"server-1\""))
+  assert_true(gauge_json.contains("\"region\":\"us-west-2\""))
 }
 
-// Test 3: XML Serialization and Deserialization
-test "xml serialization and deserialization" {
-  // Create test span context
-  let span_ctx = SpanContext::new("trace-123", "span-456", true, "test-state")
+// 测试3: 日志记录格式化测试
+test "log record formatting tests" {
+  // 测试信息级别日志格式化
+  let info_log = azimuth::telemetry::LogRecord {
+    timestamp: 1609459200000L,
+    severity: azimuth::telemetry::Severity::Info,
+    severity_text: "INFO",
+    body: Some("User login successful"),
+    attributes: [
+      ("user.id", azimuth::telemetry::AttributeValue::StringValue("user-12345")),
+      ("ip.address", azimuth::telemetry::AttributeValue::StringValue("192.168.1.100")),
+      ("success", azimuth::telemetry::AttributeValue::BoolValue(true))
+    ],
+    trace_id: Some("4bf92f3577b34da6a3ce929d0e0e4736"),
+    span_id: Some("00f067aa0ba902b7")
+  }
   
-  // Serialize to XML
-  let xml_str = SpanContext::to_xml(span_ctx)
+  let log_json = azimuth::telemetry::format::log_to_json(info_log)
+  assert_true(log_json.contains("\"timestamp\":1609459200000"))
+  assert_true(log_json.contains("\"severity\":\"INFO\""))
+  assert_true(log_json.contains("\"body\":\"User login successful\""))
+  assert_true(log_json.contains("\"trace_id\":\"4bf92f3577b34da6a3ce929d0e0e4736\""))
+  assert_true(log_json.contains("\"span_id\":\"00f067aa0ba902b7\""))
   
-  // Verify XML contains expected fields
-  assert_true(xml_str.contains("<trace_id>trace-123</trace_id>"))
-  assert_true(xml_str.contains("<span_id>span-456</span_id>"))
-  assert_true(xml_str.contains("<sampled>true</sampled>"))
-  assert_true(xml_str.contains("<trace_state>test-state</trace_state>"))
+  // 测试错误级别日志格式化
+  let error_log = azimuth::telemetry::LogRecord {
+    timestamp: 1609459260000L,
+    severity: azimuth::telemetry::Severity::Error,
+    severity_text: "ERROR",
+    body: Some("Database connection failed"),
+    attributes: [
+      ("error.code", azimuth::telemetry::AttributeValue::IntValue(5003)),
+      ("retry.count", azimuth::telemetry::AttributeValue::IntValue(3)),
+      ("database.name", azimuth::telemetry::AttributeValue::StringValue("production_db"))
+    ],
+    trace_id: Some("4bf92f3577b34da6a3ce929d0e0e4736"),
+    span_id: Some("00f067aa0ba902b7")
+  }
   
-  // Deserialize from XML
-  let deserialized_ctx = SpanContext::from_xml(xml_str)
+  let error_log_json = azimuth::telemetry::format::log_to_json(error_log)
+  assert_true(error_log_json.contains("\"severity\":\"ERROR\""))
+  assert_true(error_log_json.contains("\"body\":\"Database connection failed\""))
+  assert_true(error_log_json.contains("\"error.code\":5003"))
+  assert_true(error_log_json.contains("\"retry.count\":3"))
+  assert_true(error_log_json.contains("\"database.name\":\"production_db\""))
   
-  // Verify deserialized context
-  assert_eq(SpanContext::trace_id(deserialized_ctx), "trace-123")
-  assert_eq(SpanContext::span_id(deserialized_ctx), "span-456")
-  assert_true(SpanContext::is_sampled(deserialized_ctx))
-  assert_eq(SpanContext::trace_state(deserialized_ctx), "test-state")
+  // 测试日志记录转换为纯文本格式
+  let log_text = azimuth::telemetry::format::log_to_text(info_log)
+  assert_true(log_text.contains("2021-01-01T00:00:00Z"))
+  assert_true(log_text.contains("[INFO]"))
+  assert_true(log_text.contains("User login successful"))
+  assert_true(log_text.contains("user.id=user-12345"))
 }
 
-// Test 4: CSV Formatting and Parsing
-test "csv formatting and parsing" {
-  // Create test metrics data
-  let metrics_data = [
-    ("timestamp", "metric_name", "value", "tags"),
-    ("2023-01-01T00:00:00Z", "cpu.usage", "75.5", "host:server1,region:us-east"),
-    ("2023-01-01T00:01:00Z", "memory.usage", "62.3", "host:server1,region:us-east"),
-    ("2023-01-01T00:02:00Z", "disk.usage", "45.8", "host:server1,region:us-east")
-  ]
+// 测试4: 跨度数据格式化测试
+test "span data formatting tests" {
+  // 测试跨度数据JSON格式化
+  let span = azimuth::telemetry::Span {
+    name: "HTTP GET /api/users",
+    kind: azimuth::telemetry::SpanKind::Server,
+    status: azimuth::telemetry::SpanStatus::Ok,
+    start_time: 1609459200000L,
+    end_time: 1609459200150L,
+    trace_id: "4bf92f3577b34da6a3ce929d0e0e4736",
+    span_id: "00f067aa0ba902b7",
+    parent_span_id: Some("b7ad6b7169203331"),
+    attributes: [
+      ("http.method", azimuth::telemetry::AttributeValue::StringValue("GET")),
+      ("http.url", azimuth::telemetry::AttributeValue::StringValue("/api/users")),
+      ("http.status_code", azimuth::telemetry::AttributeValue::IntValue(200))
+    ],
+    events: [
+      {
+        timestamp: 1609459200050L,
+        name: "database.query",
+        attributes: [
+          ("db.statement", azimuth::telemetry::AttributeValue::StringValue("SELECT * FROM users")),
+          ("db.duration", azimuth::telemetry::AttributeValue::FloatValue(25.5))
+        ]
+      }
+    ],
+    links: []
+  }
   
-  // Format to CSV
-  let csv_str = Metrics::to_csv(metrics_data)
+  let span_json = azimuth::telemetry::format::span_to_json(span)
+  assert_true(span_json.contains("\"name\":\"HTTP GET /api/users\""))
+  assert_true(span_json.contains("\"kind\":\"Server\""))
+  assert_true(span_json.contains("\"status\":\"Ok\""))
+  assert_true(span_json.contains("\"trace_id\":\"4bf92f3577b34da6a3ce929d0e0e4736\""))
+  assert_true(span_json.contains("\"span_id\":\"00f067aa0ba902b7\""))
+  assert_true(span_json.contains("\"duration\":150"))
+  assert_true(span_json.contains("\"http.method\":\"GET\""))
+  assert_true(span_json.contains("\"http.status_code\":200"))
+  assert_true(span_json.contains("\"events\""))
   
-  // Verify CSV format
-  assert_true(csv_str.contains("timestamp,metric_name,value,tags"))
-  assert_true(csv_str.contains("2023-01-01T00:00:00Z,cpu.usage,75.5,host:server1,region:us-east"))
-  assert_true(csv_str.contains("2023-01-01T00:01:00Z,memory.usage,62.3,host:server1,region:us-east"))
-  assert_true(csv_str.contains("2023-01-01T00:02:00Z,disk.usage,45.8,host:server1,region:us-east"))
-  
-  // Parse from CSV
-  let parsed_data = Metrics::from_csv(csv_str)
-  
-  // Verify parsed data
-  assert_eq(parsed_data.length(), 4) // Header + 3 data rows
-  
-  // Check first data row
-  let first_row = parsed_data[1]
-  assert_eq(first_row[0], "2023-01-01T00:00:00Z")
-  assert_eq(first_row[1], "cpu.usage")
-  assert_eq(first_row[2], "75.5")
-  assert_eq(first_row[3], "host:server1,region:us-east")
-  
-  // Check last data row
-  let last_row = parsed_data[3]
-  assert_eq(last_row[0], "2023-01-01T00:02:00Z")
-  assert_eq(last_row[1], "disk.usage")
-  assert_eq(last_row[2], "45.8")
-  assert_eq(last_row[3], "host:server1,region:us-east")
+  // 测试跨度数据转换为纯文本格式
+  let span_text = azimuth::telemetry::format::span_to_text(span)
+  assert_true(span_text.contains("HTTP GET /api/users"))
+  assert_true(span_text.contains("Server"))
+  assert_true(span_text.contains("Duration: 150ms"))
+  assert_true(span_text.contains("Trace ID: 4bf92f3577b34da6a3ce929d0e0e4736"))
+  assert_true(span_text.contains("Span ID: 00f067aa0ba902b7"))
+  assert_true(span_text.contains("database.query"))
 }
 
-// Test 5: Protocol Buffers Serialization
-test "protocol buffers serialization" {
-  // Create test log record
-  let log_record = LogRecord::new(
-    Error,
-    "Test error message",
-    Some([("error.code", IntValue(500)), ("error.type", StringValue("InternalError"))])
-  )
-  
-  // Serialize to protocol buffers
-  let proto_bytes = LogRecord::to_proto(log_record)
-  
-  // Verify proto bytes are not empty
-  assert_true(proto_bytes.length() > 0)
-  
-  // Deserialize from protocol buffers
-  let deserialized_log = LogRecord::from_proto(proto_bytes)
-  
-  // Verify deserialized log record
-  assert_eq(LogRecord::severity_number(deserialized_log), Error)
-  match LogRecord::body(deserialized_log) {
-    Some(body) => assert_eq(body, "Test error message")
-    None => assert_true(false)
+// 测试5: 资源数据格式化测试
+test "resource data formatting tests" {
+  // 测试服务资源格式化
+  let service_resource = azimuth::telemetry::Resource {
+    attributes: [
+      ("service.name", azimuth::telemetry::AttributeValue::StringValue("payment-service")),
+      ("service.version", azimuth::telemetry::AttributeValue::StringValue("2.3.1")),
+      ("service.instance.id", azimuth::telemetry::AttributeValue::StringValue("instance-abc123")),
+      ("deployment.environment", azimuth::telemetry::AttributeValue::StringValue("prod"))
+    ]
   }
   
-  // Verify attributes
-  let error_code = LogRecord::get_attribute(deserialized_log, "error.code")
-  match error_code {
-    Some(IntValue(code)) => assert_eq(code, 500)
-    _ => assert_true(false)
+  let resource_json = azimuth::telemetry::format::resource_to_json(service_resource)
+  assert_true(resource_json.contains("\"service.name\":\"payment-service\""))
+  assert_true(resource_json.contains("\"service.version\":\"2.3.1\""))
+  assert_true(resource_json.contains("\"service.instance.id\":\"instance-abc123\""))
+  assert_true(resource_json.contains("\"deployment.environment\":\"prod\""))
+  
+  // 测试主机资源格式化
+  let host_resource = azimuth::telemetry::Resource {
+    attributes: [
+      ("host.name", azimuth::telemetry::AttributeValue::StringValue("web-server-01")),
+      ("host.arch", azimuth::telemetry::AttributeValue::StringValue("amd64")),
+      ("host.os.type", azimuth::telemetry::AttributeValue::StringValue("linux")),
+      ("host.cpu.count", azimuth::telemetry::AttributeValue::IntValue(8)),
+      ("host.memory.available", azimuth::telemetry::AttributeValue::IntValue(16777216000))
+    ]
   }
   
-  let error_type = LogRecord::get_attribute(deserialized_log, "error.type")
-  match error_type {
-    Some(StringValue(type_str)) => assert_eq(type_str, "InternalError")
-    _ => assert_true(false)
-  }
+  let host_resource_json = azimuth::telemetry::format::resource_to_json(host_resource)
+  assert_true(host_resource_json.contains("\"host.name\":\"web-server-01\""))
+  assert_true(host_resource_json.contains("\"host.arch\":\"amd64\""))
+  assert_true(host_resource_json.contains("\"host.os.type\":\"linux\""))
+  assert_true(host_resource_json.contains("\"host.cpu.count\":8"))
+  assert_true(host_resource_json.contains("\"host.memory.available\":16777216000"))
+  
+  // 测试资源数据转换为纯文本格式
+  let resource_text = azimuth::telemetry::format::resource_to_text(service_resource)
+  assert_true(resource_text.contains("service.name=payment-service"))
+  assert_true(resource_text.contains("service.version=2.3.1"))
+  assert_true(resource_text.contains("service.instance.id=instance-abc123"))
+  assert_true(resource_text.contains("deployment.environment=prod"))
 }
 
-// Test 6: MessagePack Serialization
-test "messagepack serialization" {
-  // Create test resource
-  let resource = Resource::with_attributes(Resource::new(), [
-    ("service.name", StringValue("test-service")),
-    ("service.instance.id", StringValue("instance-123")),
-    ("service.namespace", StringValue("production")),
-    ("service.version", StringValue("2.1.0")),
-    ("host.name", StringValue("host-001")),
-    ("host.ip", StringValue("192.168.1.100")),
-    ("os.type", StringValue("linux")),
-    ("os.version", StringValue("5.15.0")),
-    ("process.pid", IntValue(12345)),
-    ("process.executable.name", StringValue("/usr/bin/test-service"))
-  ])
-  
-  // Serialize to MessagePack
-  let msgpack_bytes = Resource::to_msgpack(resource)
-  
-  // Verify MessagePack bytes are not empty
-  assert_true(msgpack_bytes.length() > 0)
-  
-  // Deserialize from MessagePack
-  let deserialized_resource = Resource::from_msgpack(msgpack_bytes)
-  
-  // Verify deserialized resource attributes
-  let service_name = Resource::get_attribute(deserialized_resource, "service.name")
-  match service_name {
-    Some(StringValue(name)) => assert_eq(name, "test-service")
-    _ => assert_true(false)
+// 测试6: 追踪上下文格式化测试
+test "trace context formatting tests" {
+  // 测试追踪上下文格式化
+  let trace_context = azimuth::telemetry::TraceContext {
+    trace_id: "4bf92f3577b34da6a3ce929d0e0e4736",
+    span_id: "00f067aa0ba902b7",
+    trace_flags: 1,
+    trace_state: "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE",
+    is_remote: false
   }
   
-  let service_instance_id = Resource::get_attribute(deserialized_resource, "service.instance.id")
-  match service_instance_id {
-    Some(StringValue(id)) => assert_eq(id, "instance-123")
-    _ => assert_true(false)
+  let trace_context_json = azimuth::telemetry::format::trace_context_to_json(trace_context)
+  assert_true(trace_context_json.contains("\"trace_id\":\"4bf92f3577b34da6a3ce929d0e0e4736\""))
+  assert_true(trace_context_json.contains("\"span_id\":\"00f067aa0ba902b7\""))
+  assert_true(trace_context_json.contains("\"trace_flags\":1"))
+  assert_true(trace_context_json.contains("\"trace_state\":\"rojo=00f067aa0ba902b7,congo=t61rcWkgMzE\""))
+  assert_true(trace_context_json.contains("\"is_remote\":false"))
+  
+  // 测试追踪上下文转换为W3C traceparent格式
+  let traceparent = azimuth::telemetry::format::trace_context_to_traceparent(trace_context)
+  assert_eq(traceparent, "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01")
+  
+  // 测试 baggage 上下文格式化
+  let baggage_context = azimuth::telemetry::BaggageContext {
+    entries: [
+      {
+        key: "user.id",
+        value: "user-12345",
+        metadata: Some({
+          properties: [
+            ("propagate", "true"),
+            ("ttl", "3600")
+          ]
+        })
+      },
+      {
+        key: "request.id",
+        value: "req-abcde",
+        metadata: None
+      }
+    ]
   }
   
-  let service_namespace = Resource::get_attribute(deserialized_resource, "service.namespace")
-  match service_namespace {
-    Some(StringValue(ns)) => assert_eq(ns, "production")
-    _ => assert_true(false)
-  }
-  
-  let service_version = Resource::get_attribute(deserialized_resource, "service.version")
-  match service_version {
-    Some(StringValue(version)) => assert_eq(version, "2.1.0")
-    _ => assert_true(false)
-  }
-  
-  let host_name = Resource::get_attribute(deserialized_resource, "host.name")
-  match host_name {
-    Some(StringValue(name)) => assert_eq(name, "host-001")
-    _ => assert_true(false)
-  }
-  
-  let process_pid = Resource::get_attribute(deserialized_resource, "process.pid")
-  match process_pid {
-    Some(IntValue(pid)) => assert_eq(pid, 12345)
-    _ => assert_true(false)
-  }
+  let baggage_header = azimuth::telemetry::format::baggage_to_header(baggage_context)
+  assert_true(baggage_header.contains("user.id=user-12345"))
+  assert_true(baggage_header.contains("request.id=req-abcde"))
+  assert_true(baggage_header.contains("propagate=true"))
+  assert_true(baggage_header.contains("ttl=3600"))
 }
 
-// Test 7: Custom Formatting Functions
-test "custom formatting functions" {
-  // Create test span
-  let span_ctx = SpanContext::new("trace-789", "span-012", true, "custom-state")
-  let span = Span::new("test-operation", Client, span_ctx)
-  Span::add_event(span, "operation.started", Some([("component", StringValue("test"))]))
-  Span::add_event(span, "operation.completed", Some([("component", StringValue("test"))]))
+// 测试7: 时间戳格式化测试
+test "timestamp formatting tests" {
+  // 测试Unix时间戳转换为ISO 8601格式
+  let timestamp = 1609459200000L // 2021-01-01 00:00:00 UTC
+  let iso8601 = azimuth::telemetry::format::timestamp_to_iso8601(timestamp)
+  assert_eq(iso8601, "2021-01-01T00:00:00Z")
   
-  // Format span as human-readable text
-  let text_format = Span::format_as_text(span)
+  // 测试Unix时间戳转换为RFC 3339格式
+  let rfc3339 = azimuth::telemetry::format::timestamp_to_rfc3339(timestamp)
+  assert_eq(rfc3339, "2021-01-01T00:00:00Z")
   
-  // Verify text format contains expected information
-  assert_true(text_format.contains("test-operation"))
-  assert_true(text_format.contains("Client"))
-  assert_true(text_format.contains("trace-789"))
-  assert_true(text_format.contains("span-012"))
-  assert_true(text_format.contains("operation.started"))
-  assert_true(text_format.contains("operation.completed"))
+  // 测试Unix时间戳转换为人类可读格式
+  let human_readable = azimuth::telemetry::format::timestamp_to_human_readable(timestamp)
+  assert_eq(human_readable, "2021-01-01 00:00:00 UTC")
   
-  // Format span as compact string
-  let compact_format = Span::format_as_compact(span)
+  // 测试带毫秒的时间戳格式化
+  let timestamp_with_ms = 1609459200123L
+  let iso8601_with_ms = azimuth::telemetry::format::timestamp_to_iso8601(timestamp_with_ms)
+  assert_eq(iso8601_with_ms, "2021-01-01T00:00:00.123Z")
   
-  // Verify compact format is shorter than text format
-  assert_true(compact_format.length() < text_format.length())
-  assert_true(compact_format.contains("test-operation"))
-  assert_true(compact_format.contains("trace-789"))
+  // 测试当前时间戳格式化
+  let current_timestamp = azimuth::telemetry::format::get_current_timestamp()
+  assert_true(current_timestamp > 1609459200000L) // 确保时间戳是合理的
   
-  // Format span as detailed debug string
-  let debug_format = Span::format_as_debug(span)
-  
-  // Verify debug format contains more detailed information
-  assert_true(debug_format.length() > text_format.length())
-  assert_true(debug_format.contains("trace-789"))
-  assert_true(debug_format.contains("span-012"))
-  assert_true(debug_format.contains("custom-state"))
+  let current_iso8601 = azimuth::telemetry::format::timestamp_to_iso8601(current_timestamp)
+  assert_true(current_iso8601.length() > 0)
+  assert_true(current_iso8601.contains("T"))
+  assert_true(current_iso8601.contains("Z"))
 }
 
-// Test 8: Data Validation During Conversion
-test "data validation during conversion" {
-  // Test invalid string to int conversion
-  let invalid_int_string = StringValue("not-a-number")
-  let invalid_int_result = AttributeValue::to_int(invalid_int_string)
-  match invalid_int_result {
-    Some(_) => assert_true(false) // Should not succeed
-    None => assert_true(true) // Expected to fail
-  }
+// 测试8: 数据转换边界条件测试
+test "data conversion edge cases tests" {
+  // 测试空字符串属性值转换
+  let empty_string_attr = azimuth::telemetry::AttributeValue::StringValue("")
+  let empty_string_to_json = azimuth::telemetry::format::attribute_to_json(empty_string_attr)
+  assert_eq(empty_string_to_json, "\"\"")
   
-  // Test invalid string to float conversion
-  let invalid_float_string = StringValue("also-not-a-number")
-  let invalid_float_result = AttributeValue::to_float(invalid_float_string)
-  match invalid_float_result {
-    Some(_) => assert_true(false) // Should not succeed
-    None => assert_true(true) // Expected to fail
-  }
+  let empty_string_to_string = azimuth::telemetry::format::attribute_to_string(empty_string_attr)
+  assert_eq(empty_string_to_string, "")
   
-  // Test invalid string to bool conversion
-  let invalid_bool_string = StringValue("maybe")
-  let invalid_bool_result = AttributeValue::to_bool(invalid_bool_string)
-  match invalid_bool_result {
-    Some(_) => assert_true(false) // Should not succeed
-    None => assert_true(true) // Expected to fail
-  }
+  // 测试零值属性值转换
+  let zero_int_attr = azimuth::telemetry::AttributeValue::IntValue(0)
+  let zero_int_to_json = azimuth::telemetry::format::attribute_to_json(zero_int_attr)
+  assert_eq(zero_int_to_json, "0")
   
-  // Test out-of-range values
-  let large_int_string = StringValue("999999999999999999999999999999")
-  let large_int_result = AttributeValue::to_int(large_int_string)
-  match large_int_result {
-    Some(_) => assert_true(false) // Should not succeed due to overflow
-    None => assert_true(true) // Expected to fail
-  }
+  let zero_float_attr = azimuth::telemetry::AttributeValue::FloatValue(0.0)
+  let zero_float_to_json = azimuth::telemetry::format::attribute_to_json(zero_float_attr)
+  assert_eq(zero_float_to_json, "0.0")
   
-  // Test special float values
-  let infinity_string = StringValue("infinity")
-  let infinity_result = AttributeValue::to_float(infinity_string)
-  match infinity_result {
-    Some(f) => assert_true(f.is_infinity())
-    None => assert_true(false) // Should handle infinity
-  }
+  // 测试负数属性值转换
+  let negative_int_attr = azimuth::telemetry::AttributeValue::IntValue(-42)
+  let negative_int_to_json = azimuth::telemetry::format::attribute_to_json(negative_int_attr)
+  assert_eq(negative_int_to_json, "-42")
   
-  let nan_string = StringValue("nan")
-  let nan_result = AttributeValue::to_float(nan_string)
-  match nan_result {
-    Some(f) => assert_true(f.is_nan())
-    None => assert_true(false) // Should handle NaN
-  }
-}
-
-// Test 9: Batch Conversion Operations
-test "batch conversion operations" {
-  // Create array of attribute values
-  let values = [
-    StringValue("42"),
-    StringValue("3.14"),
-    StringValue("true"),
-    StringValue("test-string"),
-    IntValue(100),
-    FloatValue(2.718),
-    BoolValue(false)
-  ]
+  let negative_float_attr = azimuth::telemetry::AttributeValue::FloatValue(-3.14)
+  let negative_float_to_json = azimuth::telemetry::format::attribute_to_json(negative_float_attr)
+  assert_eq(negative_float_to_json, "-3.14")
   
-  // Batch convert all to strings
-  let string_values = AttributeValue::batch_to_string(values)
+  // 测试空数组属性值转换
+  let empty_array_attr = azimuth::telemetry::AttributeValue::ArrayStringValue([])
+  let empty_array_to_json = azimuth::telemetry::format::attribute_to_json(empty_array_attr)
+  assert_eq(empty_array_to_json, "[]")
   
-  // Verify conversions
-  assert_eq(string_values.length(), 7)
-  assert_eq(string_values[0], Some("42"))
-  assert_eq(string_values[1], Some("3.14"))
-  assert_eq(string_values[2], Some("true"))
-  assert_eq(string_values[3], Some("test-string"))
-  assert_eq(string_values[4], Some("100"))
-  assert_eq(string_values[5], Some("2.718"))
-  assert_eq(string_values[6], Some("false"))
+  let empty_array_to_string = azimuth::telemetry::format::attribute_to_string(empty_array_attr)
+  assert_eq(empty_array_to_string, "[]")
   
-  // Batch convert string values to appropriate types
-  let string_values_for_conversion = [
-    StringValue("123"),
-    StringValue("456.789"),
-    StringValue("false"),
-    StringValue("another-string")
-  ]
+  // 测试包含特殊字符的字符串属性值转换
+  let special_chars_attr = azimuth::telemetry::AttributeValue::StringValue("Hello \"World\"!\nNew line\tTab")
+  let special_chars_to_json = azimuth::telemetry::format::attribute_to_json(special_chars_attr)
+  assert_true(special_chars_to_json.contains("\\\""))
+  assert_true(special_chars_to_json.contains("\\n"))
+  assert_true(special_chars_to_json.contains("\\t"))
   
-  let converted_values = AttributeValue::batch_auto_convert(string_values_for_conversion)
+  // 测试非常大的数值转换
+  let large_int_attr = azimuth::telemetry::AttributeValue::IntValue(9223372036854775807) // Int64最大值
+  let large_int_to_json = azimuth::telemetry::format::attribute_to_json(large_int_attr)
+  assert_eq(large_int_to_json, "9223372036854775807")
   
-  // Verify auto-conversions
-  assert_eq(converted_values.length(), 4)
-  match converted_values[0] {
-    IntValue(i) => assert_eq(i, 123)
-    _ => assert_true(false)
-  }
-  
-  match converted_values[1] {
-    FloatValue(f) => assert_eq(f, 456.789)
-    _ => assert_true(false)
-  }
-  
-  match converted_values[2] {
-    BoolValue(b) => assert_false(b)
-    _ => assert_true(false)
-  }
-  
-  match converted_values[3] {
-    StringValue(s) => assert_eq(s, "another-string")
-    _ => assert_true(false)
-  }
-}
-
-// Test 10: Format Preserving Transformations
-test "format preserving transformations" {
-  // Create test data with specific formatting
-  let formatted_json = "{\"service\":{\"name\":\"test-service\",\"version\":\"1.0.0\"},\"metrics\":{\"cpu\":75.5,\"memory\":62.3}}"
-  
-  // Parse and preserve formatting
-  let parsed_data = DataFormat::parse_with_formatting(formatted_json)
-  
-  // Modify data
-  let modified_data = DataFormat::set_value(parsed_data, "service.version", StringValue("1.0.1"))
-  let modified_data = DataFormat::set_value(modified_data, "metrics.disk", FloatValue(45.8))
-  
-  // Serialize back preserving original formatting
-  let reformatted_json = DataFormat::serialize_with_formatting(modified_data)
-  
-  // Verify data was updated but formatting preserved
-  assert_true(reformatted_json.contains("\"service\":{\"name\":\"test-service\",\"version\":\"1.0.1\""))
-  assert_true(reformatted_json.contains("\"metrics\":{\"cpu\":75.5,\"memory\":62.3,\"disk\":45.8}"))
-  
-  // Test with XML formatting
-  let formatted_xml = "<service><name>test-service</name><version>1.0.0</version></service><metrics><cpu>75.5</cpu><memory>62.3</memory></metrics>"
-  
-  let parsed_xml = DataFormat::parse_xml_with_formatting(formatted_xml)
-  let modified_xml = DataFormat::set_xml_value(parsed_xml, "version", "1.0.1")
-  let modified_xml = DataFormat::add_xml_element(modified_xml, "disk", "45.8")
-  let reformatted_xml = DataFormat::serialize_xml_with_formatting(modified_xml)
-  
-  // Verify XML was updated but formatting preserved
-  assert_true(reformatted_xml.contains("<name>test-service</name>"))
-  assert_true(reformatted_xml.contains("<version>1.0.1</version>"))
-  assert_true(reformatted_xml.contains("<disk>45.8</disk>"))
+  let large_float_attr = azimuth::telemetry::AttributeValue::FloatValue(1.7976931348623157e+308) // Float64最大值
+  let large_float_to_json = azimuth::telemetry::format::attribute_to_json(large_float_attr)
+  assert_true(large_float_to_json.contains("1.7976931348623157"))
+  assert_true(large_float_to_json.contains("e+308"))
 }
