@@ -1,358 +1,390 @@
-// Data Integrity Validation Tests for Azimuth Telemetry System
-// This file contains tests to verify data integrity and consistency
+// Azimuth Telemetry System - Data Integrity Validation Tests
+// This file contains comprehensive test cases for telemetry data integrity validation
 
-test "attribute value consistency" {
-  let attrs = Attributes::new()
+// Test 1: Trace Data Integrity Validation
+test "trace data integrity validation" {
+  let tracer_provider = TracerProvider::new()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "integrity_tracer")
   
-  // Set various attribute types
-  Attributes::set(attrs, "string.key", StringValue("test.value"))
-  Attributes::set(attrs, "int.key", IntValue(42))
-  Attributes::set(attrs, "float.key", FloatValue(3.14159))
-  Attributes::set(attrs, "bool.key", BoolValue(true))
+  // Create a trace with multiple spans
+  let root_span = Tracer::start_span(tracer, "root_operation")
+  let root_ctx = Span::span_context(root_span)
   
-  // Verify consistency through multiple retrievals
-  for i in 0..=10 {
-    let string_result = Attributes::get(attrs, "string.key")
-    let int_result = Attributes::get(attrs, "int.key")
-    let float_result = Attributes::get(attrs, "float.key")
-    let bool_result = Attributes::get(attrs, "bool.key")
-    
-    match string_result {
-      Some(StringValue(s)) => assert_eq(s, "test.value")
-      _ => assert_true(false)
-    }
-    
-    match int_result {
-      Some(IntValue(v)) => assert_eq(v, 42)
-      _ => assert_true(false)
-    }
-    
-    match float_result {
-      Some(FloatValue(v)) => assert_true(v > 3.14 && v < 3.15)
-      _ => assert_true(false)
-    }
-    
-    match bool_result {
-      Some(BoolValue(v)) => assert_true(v)
-      _ => assert_true(false)
-    }
-  }
-}
-
-test "context data integrity" {
-  let ctx = Context::root()
-  let key1 = ContextKey::new("integrity.key1")
-  let key2 = ContextKey::new("integrity.key2")
-  let key3 = ContextKey::new("integrity.key3")
+  // Add attributes to root span
+  Span::set_attribute(root_span, "user.id", StringValue("12345"))
+  Span::set_attribute(root_span, "operation.type", StringValue("data_processing"))
   
-  // Set context values
-  let ctx1 = Context::with_value(ctx, key1, "value1")
-  let ctx2 = Context::with_value(ctx1, key2, "value2")
-  let ctx3 = Context::with_value(ctx2, key3, "value3")
+  // Create child spans
+  let child_span1 = Tracer::start_span_with_context(
+    tracer,
+    "child_operation_1",
+    Some(root_ctx),
+    Some(Internal)
+  )
+  Span::set_attribute(child_span1, "sub.operation", StringValue("validation"))
+  Span::add_event(child_span1, "validation_started")
   
-  // Verify all values are preserved
-  let value1 = Context::get(ctx3, key1)
-  let value2 = Context::get(ctx3, key2)
-  let value3 = Context::get(ctx3, key3)
+  let child_span2 = Tracer::start_span_with_context(
+    tracer,
+    "child_operation_2",
+    Some(root_ctx),
+    Some(Internal)
+  )
+  Span::set_attribute(child_span2, "sub.operation", StringValue("transformation"))
+  Span::add_event(child_span2, "transformation_started")
   
-  assert_eq(value1, Some("value1"))
-  assert_eq(value2, Some("value2"))
-  assert_eq(value3, Some("value3"))
+  // End spans
+  Span::add_event(child_span1, "validation_completed")
+  Span::end(child_span1)
   
-  // Verify original context is unchanged
-  let original_value1 = Context::get(ctx1, key1)
-  let original_value2 = Context::get(ctx1, key2)
+  Span::add_event(child_span2, "transformation_completed")
+  Span::end(child_span2)
   
-  assert_eq(original_value1, Some("value1"))
-  assert_eq(original_value2, None)
-}
-
-test "span context trace integrity" {
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let span_id = "b7ad6b7169203331"
-  let trace_state = "key1=value1,key2=value2"
+  Span::end(root_span)
   
-  let span_ctx = SpanContext::new(trace_id, span_id, true, trace_state)
-  
-  // Verify trace ID integrity
-  assert_eq(SpanContext::trace_id(span_ctx), trace_id)
-  assert_eq(SpanContext::span_id(span_ctx), span_id)
-  assert_true(SpanContext::is_sampled(span_ctx))
-  
-  // Create multiple spans with same trace context
-  let span1_ctx = SpanContext::new(trace_id, "span1111111111111", true, trace_state)
-  let span2_ctx = SpanContext::new(trace_id, "span2222222222222", true, trace_state)
-  
-  // Verify trace ID consistency across spans
-  assert_eq(SpanContext::trace_id(span1_ctx), trace_id)
-  assert_eq(SpanContext::trace_id(span2_ctx), trace_id)
-  
-  // Verify span ID uniqueness
-  assert_true(SpanContext::span_id(span1_ctx) != SpanContext::span_id(span2_ctx))
-}
-
-test "baggage entry integrity" {
-  let baggage = Baggage::new()
-  
-  // Add multiple entries
-  let baggage1 = Baggage::set_entry(baggage, "key1", "value1")
-  let baggage2 = Baggage::set_entry(baggage1, "key2", "value2")
-  let baggage3 = Baggage::set_entry(baggage2, "key3", "value3")
-  
-  // Verify all entries are preserved
-  let value1 = Baggage::get_entry(baggage3, "key1")
-  let value2 = Baggage::get_entry(baggage3, "key2")
-  let value3 = Baggage::get_entry(baggage3, "key3")
-  
-  assert_eq(value1, Some("value1"))
-  assert_eq(value2, Some("value2"))
-  assert_eq(value3, Some("value3"))
-  
-  // Test entry removal integrity
-  let baggage4 = Baggage::remove_entry(baggage3, "key2")
-  
-  let value1_after_removal = Baggage::get_entry(baggage4, "key1")
-  let value2_after_removal = Baggage::get_entry(baggage4, "key2")
-  let value3_after_removal = Baggage::get_entry(baggage4, "key3")
-  
-  assert_eq(value1_after_removal, Some("value1"))
-  assert_eq(value2_after_removal, None)
-  assert_eq(value3_after_removal, Some("value3"))
-}
-
-test "resource attribute integrity" {
-  let resource = Resource::new()
-  
-  // Create attributes
-  let attrs = [
-    ("service.name", StringValue("test-service")),
-    ("service.version", StringValue("1.0.0")),
-    ("service.instance.id", StringValue("instance-123")),
-    ("host.name", StringValue("test-host"))
-  ]
-  
-  let resource_with_attrs = Resource::with_attributes(resource, attrs)
-  
-  // Verify all attributes are present and correct
-  let service_name = Resource::get_attribute(resource_with_attrs, "service.name")
-  let service_version = Resource::get_attribute(resource_with_attrs, "service.version")
-  let instance_id = Resource::get_attribute(resource_with_attrs, "service.instance.id")
-  let host_name = Resource::get_attribute(resource_with_attrs, "host.name")
-  
-  match service_name {
-    Some(StringValue(s)) => assert_eq(s, "test-service")
-    _ => assert_true(false)
-  }
-  
-  match service_version {
-    Some(StringValue(s)) => assert_eq(s, "1.0.0")
-    _ => assert_true(false)
-  }
-  
-  match instance_id {
-    Some(StringValue(s)) => assert_eq(s, "instance-123")
-    _ => assert_true(false)
-  }
-  
-  match host_name {
-    Some(StringValue(s)) => assert_eq(s, "test-host")
-    _ => assert_true(false)
-  }
-  
-  // Test resource merge integrity
-  let resource2 = Resource::new()
-  let attrs2 = [
-    ("environment", StringValue("production")),
-    ("service.name", StringValue("overridden-service"))  // This should override
-  ]
-  
-  let resource2_with_attrs = Resource::with_attributes(resource2, attrs2)
-  let merged = Resource::merge(resource_with_attrs, resource2_with_attrs)
-  
-  // Verify merge results
-  let merged_service_name = Resource::get_attribute(merged, "service.name")
-  let merged_environment = Resource::get_attribute(merged, "environment")
-  let merged_host_name = Resource::get_attribute(merged, "host.name")
-  
-  match merged_service_name {
-    Some(StringValue(s)) => assert_eq(s, "overridden-service")
-    _ => assert_true(false)
-  }
-  
-  match merged_environment {
-    Some(StringValue(s)) => assert_eq(s, "production")
-    _ => assert_true(false)
-  }
-  
-  match merged_host_name {
-    Some(StringValue(s)) => assert_eq(s, "test-host")
-    _ => assert_true(false)
-  }
-}
-
-test "log record data integrity" {
-  let timestamp = 1234567890L
-  let observed_timestamp = 1234567891L
-  let trace_id = "trace123456789"
-  let span_id = "span123456789"
-  
-  let record = LogRecord::new_with_context(
-    Error,
-    Some("Error occurred"),
-    Some(Attributes::new()),
-    Some(timestamp),
-    Some(observed_timestamp),
-    Some(trace_id),
-    Some(span_id),
-    Some(Context::root())
+  // Validate trace integrity
+  let trace_validator = TraceIntegrityValidator::new()
+  let validation_result = TraceIntegrityValidator::validate_trace(
+    trace_validator,
+    root_span
   )
   
-  // Verify all fields are preserved
-  assert_eq(LogRecord::severity_number(record), Error)
-  assert_eq(LogRecord::body(record), Some("Error occurred"))
-  assert_eq(LogRecord::trace_id(record), Some(trace_id))
-  assert_eq(LogRecord::span_id(record), Some(span_id))
+  // Verify validation results
+  assert_true(validation_result.is_valid)
+  assert_eq(validation_result.span_count, 3) // root + 2 children
+  assert_eq(validation_result.error_count, 0)
+  
+  // Verify parent-child relationships
+  assert_true(TraceIntegrityValidator::has_parent_child_relationship(
+    trace_validator,
+    root_span,
+    child_span1
+  ))
+  assert_true(TraceIntegrityValidator::has_parent_child_relationship(
+    trace_validator,
+    root_span,
+    child_span2
+  ))
+  
+  // Verify attribute integrity
+  let root_attributes = Span::attributes(root_span)
+  assert_true(SpanAttributes::contains(root_attributes, "user.id"))
+  assert_true(SpanAttributes::contains(root_attributes, "operation.type"))
+  match SpanAttributes::get(root_attributes, "user.id") {
+    Some(StringValue(user_id)) => assert_eq(user_id, "12345")
+    None => assert_true(false)
+  }
 }
 
-test "instrument type integrity" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "integrity-test")
+// Test 2: Metrics Data Integrity Validation
+test "metrics data integrity validation" {
+  let meter_provider = MeterProvider::new()
+  let meter = MeterProvider::get_meter(meter_provider, "integrity_meter")
   
-  // Create instruments with same name but different types
-  let counter = Meter::create_counter(meter, "test.metric")
-  let histogram = Meter::create_histogram(meter, "test.metric")
-  let updown_counter = Meter::create_updown_counter(meter, "test.metric")
-  let gauge = Meter::create_gauge(meter, "test.metric")
+  // Create metrics
+  let counter = Meter::create_counter(
+    meter,
+    "operation_count",
+    Some("Total number of operations"),
+    Some("count")
+  )
   
-  // Verify instrument names are preserved
-  assert_eq(counter.name, "test.metric")
-  assert_eq(histogram.name, "test.metric")
-  assert_eq(updown_counter.name, "test.metric")
-  assert_eq(gauge.name, "test.metric")
+  let histogram = Meter::create_histogram(
+    meter,
+    "operation_duration",
+    Some("Operation duration in milliseconds"),
+    Some("ms")
+  )
   
-  // Verify instrument types through conversion
-  let counter_as_instrument = Counter(counter.name, counter.description, counter.unit)
-  let histogram_as_instrument = Histogram::as_instrument(histogram)
-  
-  assert_eq(Instrument::name(counter_as_instrument), "test.metric")
-  assert_eq(Instrument::name(histogram_as_instrument), "test.metric")
-}
-
-test "propagation data integrity" {
-  let carrier = TextMapCarrier::new()
-  let propagator = CompositePropagator::new([W3CTraceContextPropagator::new()])
-  let ctx = Context::root()
-  
-  // Add context value
-  let key = ContextKey::new("test.key")
-  let ctx_with_value = Context::with_value(ctx, key, "test.value")
-  
-  // Inject context
-  CompositePropagator::inject(propagator, ctx_with_value, carrier)
-  
-  // Extract context
-  let extracted_ctx = CompositePropagator::extract(propagator, carrier)
-  
-  // Verify injected value can be retrieved
-  let injected_value = Context::get(extracted_ctx, ContextKey::new("extracted"))
-  assert_eq(injected_value, Some("true"))
-  
-  // Verify original context value is preserved (if implementation supports it)
-  let original_value = Context::get(extracted_ctx, key)
-  // Note: In simplified implementation, this might not work
-  // assert_eq(original_value, Some("test.value"))
-}
-
-test "HTTP data integrity" {
-  let headers = [
-    ("Content-Type", "application/json"),
-    ("Accept", "application/json"),
-    ("Authorization", "Bearer token123")
-  ]
-  
-  let body = "{\"key\":\"value\",\"number\":42}"
-  
-  let request = HttpRequest::new("POST", "https://api.example.com/data", headers, Some(body))
-  
-  // Verify request integrity
-  assert_eq(HttpRequest::http_method(request), "POST")
-  assert_eq(HttpRequest::url(request), "https://api.example.com/data")
-  assert_eq(HttpRequest::body(request), Some(body))
-  
-  let response_headers = [("Content-Type", "application/json"), ("X-Request-ID", "req-123")]
-  let response_body = "{\"success\":true,\"id\":123}"
-  
-  let response = HttpResponse::new(200, response_headers, Some(response_body))
-  
-  // Verify response integrity
-  assert_eq(HttpResponse::status_code(response), 200)
-  assert_eq(HttpResponse::body(response), Some(response_body))
-}
-
-test "array data integrity" {
+  // Record metric data
   let attrs = Attributes::new()
+  Attributes::set(attrs, "operation.type", StringValue("database"))
+  Attributes::set(attrs, "operation.status", StringValue("success"))
   
-  // Test string arrays
-  let string_array = ["item1", "item2", "item3"]
-  Attributes::set(attrs, "string.array", ArrayStringValue(string_array))
+  // Record counter values
+  Counter::add(counter, 1.0, Some(attrs))
+  Counter::add(counter, 1.0, Some(attrs))
+  Counter::add(counter, 1.0, Some(attrs))
   
-  // Test int arrays
-  let int_array = [1, 2, 3, 4, 5]
-  Attributes::set(attrs, "int.array", ArrayIntValue(int_array))
+  // Record histogram values
+  Histogram::record(histogram, 100.0, Some(attrs))
+  Histogram::record(histogram, 150.0, Some(attrs))
+  Histogram::record(histogram, 200.0, Some(attrs))
   
-  // Verify array integrity
-  let string_result = Attributes::get(attrs, "string.array")
-  let int_result = Attributes::get(attrs, "int.array")
+  // Validate metrics integrity
+  let metrics_validator = MetricsIntegrityValidator::new()
+  let counter_validation = MetricsIntegrityValidator::validate_counter(
+    metrics_validator,
+    counter
+  )
   
-  match string_result {
-    Some(ArrayStringValue(arr)) => {
-      assert_eq(arr.length(), 3)
-      assert_eq(arr[0], "item1")
-      assert_eq(arr[1], "item2")
-      assert_eq(arr[2], "item3")
-    }
-    _ => assert_true(false)
-  }
+  // Verify counter validation
+  assert_true(counter_validation.is_valid)
+  assert_eq(counter_validation.value, 3.0)
+  assert_eq(counter_validation.attribute_count, 2)
   
-  match int_result {
-    Some(ArrayIntValue(arr)) => {
-      assert_eq(arr.length(), 5)
-      assert_eq(arr[0], 1)
-      assert_eq(arr[1], 2)
-      assert_eq(arr[2], 3)
-      assert_eq(arr[3], 4)
-      assert_eq(arr[4], 5)
-    }
-    _ => assert_true(false)
-  }
+  let histogram_validation = MetricsIntegrityValidator::validate_histogram(
+    metrics_validator,
+    histogram
+  )
+  
+  // Verify histogram validation
+  assert_true(histogram_validation.is_valid)
+  assert_eq(histogram_validation.count, 3)
+  assert_eq(histogram_validation.sum, 450.0) // 100 + 150 + 200
+  assert_eq(histogram_validation.min, 100.0)
+  assert_eq(histogram_validation.max, 200.0)
+  
+  // Validate attribute consistency across metrics
+  let attribute_consistency = MetricsIntegrityValidator::validate_attribute_consistency(
+    metrics_validator,
+    [counter, histogram]
+  )
+  
+  assert_true(attribute_consistency.is_consistent)
 }
 
-test "span lifecycle integrity" {
-  let provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(provider, "integrity-test")
+// Test 3: Log Data Integrity Validation
+test "log data integrity validation" {
+  let logger_provider = LoggerProvider::new()
+  let logger = LoggerProvider::get_logger(logger_provider, "integrity_logger")
   
-  let span = Tracer::start_span(tracer, "integrity-span")
+  // Create log records with different severity levels
+  let info_log = LogRecord::new(Info, "Processing started")
+  LogRecord::add_attribute(info_log, "operation.id", StringValue("op-123"))
+  LogRecord::add_attribute(info_log, "user.id", StringValue("user-456"))
   
-  // Verify initial state
-  assert_eq(Span::name(span), "integrity-span")
-  assert_true(Span::is_recording(span))
-  assert_eq(Span::status(span), Unset)
+  let warning_log = LogRecord::new(Warn, "High memory usage detected")
+  LogRecord::add_attribute(warning_log, "memory.usage", FloatValue(85.5))
+  LogRecord::add_attribute(warning_log, "threshold", FloatValue(80.0))
   
-  // Add event and set status
-  Span::add_event(span, "test.event", Some([("key", StringValue("value"))]))
-  Span::set_status(span, Error, Some("Test error"))
+  let error_log = LogRecord::new(Error, "Database connection failed")
+  LogRecord::add_attribute(error_log, "error.code", IntValue(500))
+  LogRecord::add_attribute(error_log, "error.message", StringValue("Connection timeout"))
+  LogRecord::add_attribute(error_log, "retry.count", IntValue(3))
   
-  // Verify state changes
-  assert_true(Span::is_recording(span))  // Should still be recording before end
+  // Emit logs
+  Logger::emit(logger, info_log)
+  Logger::emit(logger, warning_log)
+  Logger::emit(logger, error_log)
   
-  // End span
-  Span::end(span)
+  // Validate log integrity
+  let log_validator = LogIntegrityValidator::new()
+  let log_validation = LogIntegrityValidator::validate_logs(
+    log_validator,
+    [info_log, warning_log, error_log]
+  )
   
-  // Verify final state
-  // Note: In simplified implementation, recording might not change
-  // assert_false(Span::is_recording(span))
+  // Verify log validation
+  assert_true(log_validation.is_valid)
+  assert_eq(log_validation.log_count, 3)
+  assert_eq(log_validation.severity_distribution.get(Info), Some(1))
+  assert_eq(log_validation.severity_distribution.get(Warn), Some(1))
+  assert_eq(log_validation.severity_distribution.get(Error), Some(1))
   
-  // Verify span context is preserved
-  let span_ctx = Span::span_context(span)
-  assert_true(SpanContext::is_valid(span_ctx))
+  // Verify attribute integrity for each log
+  let info_attributes = LogRecord::attributes(info_log)
+  assert_true(LogAttributes::contains(info_attributes, "operation.id"))
+  assert_true(LogAttributes::contains(info_attributes, "user.id"))
+  
+  let warning_attributes = LogRecord::attributes(warning_log)
+  assert_true(LogAttributes::contains(warning_attributes, "memory.usage"))
+  assert_true(LogAttributes::contains(warning_attributes, "threshold"))
+  
+  let error_attributes = LogRecord::attributes(error_log)
+  assert_true(LogAttributes::contains(error_attributes, "error.code"))
+  assert_true(LogAttributes::contains(error_attributes, "error.message"))
+  assert_true(LogAttributes::contains(error_attributes, "retry.count"))
+}
+
+// Test 4: End-to-End Data Integrity Validation
+test "end-to-end data integrity validation" {
+  let tracer_provider = TracerProvider::new()
+  let meter_provider = MeterProvider::new()
+  let logger_provider = LoggerProvider::new()
+  
+  let tracer = TracerProvider::get_tracer(tracer_provider, "e2e_tracer")
+  let meter = MeterProvider::get_meter(meter_provider, "e2e_meter")
+  let logger = LoggerProvider::get_logger(logger_provider, "e2e_logger")
+  
+  // Simulate end-to-end operation with all telemetry types
+  let root_span = Tracer::start_span(tracer, "end_to_end_operation")
+  let root_ctx = Span::span_context(root_span)
+  
+  // Add metrics
+  let operation_counter = Meter::create_counter(meter, "e2e.operations")
+  let duration_histogram = Meter::create_histogram(meter, "e2e.duration")
+  
+  Counter::add(operation_counter, 1.0)
+  Histogram::record(duration_histogram, 250.0)
+  
+  // Add logs
+  let start_log = LogRecord::new(Info, "Operation started")
+  LogRecord::add_attribute(start_log, "trace.id", StringValue(SpanContext::trace_id(root_ctx)))
+  LogRecord::add_attribute(start_log, "span.id", StringValue(SpanContext::span_id(root_ctx)))
+  Logger::emit(logger, start_log)
+  
+  // Create child operation
+  let child_span = Tracer::start_span_with_context(
+    tracer,
+    "child_operation",
+    Some(root_ctx),
+    Some(Internal)
+  )
+  
+  // Add more metrics
+  Counter::add(operation_counter, 1.0)
+  Histogram::record(duration_histogram, 150.0)
+  
+  // Add more logs
+  let child_log = LogRecord::new(Info, "Child operation completed")
+  LogRecord::add_attribute(child_log, "trace.id", StringValue(SpanContext::trace_id(root_ctx)))
+  LogRecord::add_attribute(child_log, "span.id", StringValue(SpanContext::span_id(child_span)))
+  Logger::emit(logger, child_log)
+  
+  Span::end(child_span)
+  
+  // Complete operation
+  let end_log = LogRecord::new(Info, "Operation completed")
+  LogRecord::add_attribute(end_log, "trace.id", StringValue(SpanContext::trace_id(root_ctx)))
+  LogRecord::add_attribute(end_log, "span.id", StringValue(SpanContext::span_id(root_ctx)))
+  Logger::emit(logger, end_log)
+  
+  Span::end(root_span)
+  
+  // Validate end-to-end integrity
+  let e2e_validator = EndToEndIntegrityValidator::new()
+  let e2e_validation = EndToEndIntegrityValidator::validate_operation(
+    e2e_validator,
+    root_span,
+    [operation_counter, duration_histogram],
+    [start_log, child_log, end_log]
+  )
+  
+  // Verify end-to-end validation
+  assert_true(e2e_validation.is_valid)
+  assert_eq(e2e_validation.span_count, 2)
+  assert_eq(e2e_validation.metric_count, 2)
+  assert_eq(e2e_validation.log_count, 3)
+  
+  // Verify trace consistency across all telemetry types
+  assert_true(e2e_validation.has_consistent_trace_ids)
+  assert_true(e2e_validation.has_valid_parent_child_relationships)
+  assert_true(e2e_validation.has_chronological_ordering)
+}
+
+// Test 5: Data Corruption Detection
+test "data corruption detection" {
+  let tracer_provider = TracerProvider::new()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "corruption_tracer")
+  
+  // Create a normal span
+  let normal_span = Tracer::start_span(tracer, "normal_operation")
+  Span::set_attribute(normal_span, "status", StringValue("success"))
+  Span::add_event(normal_span, "operation_completed")
+  Span::end(normal_span)
+  
+  // Simulate corrupted span data
+  let corrupted_span = Tracer::start_span(tracer, "corrupted_operation")
+  
+  // Manually corrupt the span data (in a real scenario, this might happen due to
+  // network issues, storage problems, etc.)
+  let corrupted_span_data = Span::span_data(corrupted_span)
+  
+  // Simulate corruption by setting invalid values
+  SpanData::set_trace_id(corrupted_span_data, "") // Empty trace ID
+  SpanData::set_span_id(corrupted_span_data, "") // Empty span ID
+  SpanData::set_start_time(corrupted_span_data, -1) // Invalid timestamp
+  
+  Span::end(corrupted_span)
+  
+  // Validate and detect corruption
+  let corruption_detector = DataCorruptionDetector::new()
+  let normal_validation = DataCorruptionDetector::validate_span(
+    corruption_detector,
+    normal_span
+  )
+  
+  let corrupted_validation = DataCorruptionDetector::validate_span(
+    corruption_detector,
+    corrupted_span
+  )
+  
+  // Verify corruption detection
+  assert_true(normal_validation.is_valid)
+  assert_false(corrupted_validation.is_valid)
+  
+  // Verify specific corruption issues are detected
+  assert_true(corrupted_validation.issues.contains("empty_trace_id"))
+  assert_true(corrupted_validation.issues.contains("empty_span_id"))
+  assert_true(corrupted_validation.issues.contains("invalid_timestamp"))
+}
+
+// Test 6: Data Consistency Under High Load
+test "data consistency under high load" {
+  let tracer_provider = TracerProvider::new()
+  let meter_provider = MeterProvider::new()
+  let logger_provider = LoggerProvider::new()
+  
+  let tracer = TracerProvider::get_tracer(tracer_provider, "load_tracer")
+  let meter = MeterProvider::get_meter(meter_provider, "load_meter")
+  let logger = LoggerProvider::get_logger(logger_provider, "load_logger")
+  
+  // Create metrics for load testing
+  let load_counter = Meter::create_counter(meter, "load.operations")
+  let load_histogram = Meter::create_histogram(meter, "load.duration")
+  
+  // Simulate high load operations
+  let operation_count = 1000
+  let spans = []
+  let logs = []
+  
+  for i in 0..operation_count {
+    // Create span
+    let span = Tracer::start_span(tracer, "load_operation_" + i.to_string())
+    
+    // Add attributes
+    Span::set_attribute(span, "operation.id", IntValue(i))
+    Span::set_attribute(span, "load.test", BoolValue(true))
+    
+    // Add metrics
+    Counter::add(load_counter, 1.0)
+    Histogram::record(load_histogram, 50.0 + (i % 100))
+    
+    // Add logs
+    let log = LogRecord::new(Info, "Load operation " + i.to_string())
+    LogRecord::add_attribute(log, "operation.id", IntValue(i))
+    Logger::emit(logger, log)
+    
+    spans.push(span)
+    logs.push(log)
+    
+    // End span
+    Span::end(span)
+  }
+  
+  // Validate data consistency under high load
+  let load_validator = LoadConsistencyValidator::new()
+  let load_validation = LoadConsistencyValidator::validate_high_load_operation(
+    load_validator,
+    spans,
+    [load_counter, load_histogram],
+    logs
+  )
+  
+  // Verify load validation
+  assert_true(load_validation.is_valid)
+  assert_eq(load_validation.processed_span_count, operation_count)
+  assert_eq(load_validation.processed_log_count, operation_count)
+  
+  // Verify metrics consistency
+  assert_eq(load_validation.counter_value, operation_count)
+  assert_eq(load_validation.histogram_count, operation_count)
+  
+  // Verify no data loss or corruption
+  assert_eq(load_validation.data_loss_count, 0)
+  assert_eq(load_validation.corruption_count, 0)
+  
+  // Verify performance under load
+  assert_true(load_validation.average_processing_time < 100.0) // Less than 100ms per operation
 }
