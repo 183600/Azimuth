@@ -1,446 +1,474 @@
-// Azimuth Telemetry System - Cross-Service Propagation Tests
-// This file contains comprehensive test cases for cross-service propagation functionality
+// Azimuth Cross-Service Propagation Tests
+// This file contains high-quality test cases for cross-service propagation
 
-// Test 1: Trace Context Propagation
-test "trace context propagation" {
-  // Create initial trace context
+// Test 1: HTTP Header Trace Context Propagation
+test "http header trace context propagation" {
+  // Test case 1: W3C Trace Context format
   let trace_id = "0af7651916cd43dd8448eb211c80319c"
   let span_id = "b7ad6b7169203331"
-  let parent_span = SpanContext::new(trace_id, span_id, true, "")
+  let parent_span_id = "00f067aa0ba902b7"
   
-  // Create propagator
-  let propagator = TraceContextPropagator::new()
+  let span_ctx = SpanContext::new(trace_id, span_id, true, "http_test_state")
   
-  // Inject context into carrier
-  let carrier = TextMapCarrier::new()
-  propagator.inject(parent_span, carrier)
+  // Extract HTTP headers
+  let headers = HttpPropagator::extract_headers(span_ctx)
   
-  // Verify injected headers
-  let trace_header = TextMapCarrier::get(carrier, "traceparent")
-  match trace_header {
-    Some(header) => {
-      assert_true(header.contains("00-" + trace_id))
-      assert_true(header.contains("-" + span_id))
-      assert_true(header.contains("-01"))
+  // Verify traceparent header
+  let traceparent = HttpPropagator::get_header(headers, "traceparent")
+  match traceparent {
+    Some(value) => {
+      // Format: 00-trace_id-span_id-flags
+      let expected = "00-" + trace_id + "-" + span_id + "-01"
+      assert_eq(value, expected)
     }
     None => assert_true(false)
   }
   
-  let state_header = TextMapCarrier::get(carrier, "tracestate")
-  match state_header {
-    Some(_) => assert_true(true)
-    None => assert_true(true) // Optional header
+  // Verify tracestate header
+  let tracestate = HttpPropagator::get_header(headers, "tracestate")
+  match tracestate {
+    Some(value) => {
+      // Should contain state information
+      assert_true(value.length() > 0)
+    }
+    None => {
+      // tracestate is optional
+      assert_true(true)
+    }
   }
   
-  // Extract context from carrier
-  let extracted_span = propagator.extract(carrier)
+  // Test case 2: Inject context into HTTP request
+  let request_headers = [
+    ("Content-Type", "application/json"),
+    ("Authorization", "Bearer token123")
+  ]
   
-  // Verify extracted context matches original
-  assert_eq(SpanContext::trace_id(extracted_span), trace_id)
-  assert_eq(SpanContext::span_id(extracted_span), span_id)
-  assert_true(SpanContext::is_sampled(extracted_span))
+  let request = HttpRequest::new("GET", "https://api.example.com/data", request_headers, None)
+  let injected_request = HttpPropagator::inject_context(request, span_ctx)
+  
+  // Verify headers are injected
+  let injected_traceparent = HttpPropagator::get_header(HttpRequest::headers(injected_request), "traceparent")
+  match injected_traceparent {
+    Some(value) => {
+      let expected = "00-" + trace_id + "-" + span_id + "-01"
+      assert_eq(value, expected)
+    }
+    None => assert_true(false)
+  }
+  
+  // Test case 3: Extract context from HTTP request
+  let incoming_headers = [
+    ("traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"),
+    ("tracestate", "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE"),
+    ("Content-Type", "application/json")
+  ]
+  
+  let incoming_request = HttpRequest::new("POST", "/api/process", incoming_headers, Some("request data"))
+  let extracted_ctx = HttpPropagator::extract_context(incoming_request)
+  
+  // Verify extracted context
+  assert_eq(SpanContext::trace_id(extracted_ctx), trace_id)
+  assert_eq(SpanContext::span_id(extracted_ctx), span_id)
+  assert_true(SpanContext::is_sampled(extracted_ctx))
+  
+  // Test case 4: B3 format propagation
+  let b3_headers = HttpPropagator::extract_b3_headers(span_ctx)
+  
+  let b3_trace_id = HttpPropagator::get_header(b3_headers, "X-B3-TraceId")
+  match b3_trace_id {
+    Some(value) => assert_eq(value, trace_id)
+    None => assert_true(false)
+  }
+  
+  let b3_span_id = HttpPropagator::get_header(b3_headers, "X-B3-SpanId")
+  match b3_span_id {
+    Some(value) => assert_eq(value, span_id)
+    None => assert_true(false)
+  }
+  
+  let b3_sampled = HttpPropagator::get_header(b3_headers, "X-B3-Sampled")
+  match b3_sampled {
+    Some(value) => assert_eq(value, "1")
+    None => assert_true(false)
+  }
 }
 
-// Test 2: Baggage Propagation
-test "baggage propagation" {
-  // Create baggage with entries
-  let baggage = Baggage::new()
-  let updated_baggage = Baggage::set_entry(baggage, "user.id", "12345")
-  let updated_baggage = Baggage::set_entry(updated_baggage, "session.id", "abcdef")
-  let updated_baggage = Baggage::set_entry(updated_baggage, "request.id", "req-123")
+// Test 2: Baggage Propagation Across Services
+test "baggage propagation across services" {
+  // Test case 1: Initial baggage setup
+  let initial_baggage = Baggage::new()
+  let baggage_with_user = Baggage::set_entry(initial_baggage, "user.id", "user123")
+  let baggage_with_session = Baggage::set_entry(baggage_with_user, "session.id", "session456")
+  let baggage_with_tenant = Baggage::set_entry(baggage_with_session, "tenant.id", "tenant789")
   
-  // Create propagator
-  let propagator = BaggagePropagator::new()
+  // Test case 2: Service A adds service-specific baggage
+  let service_a_baggage = Baggage::set_entry(baggage_with_tenant, "service.a.version", "1.2.3")
+  let service_a_baggage_with_request = Baggage::set_entry(service_a_baggage, "request.id", "req123")
   
-  // Inject baggage into carrier
-  let carrier = TextMapCarrier::new()
-  propagator.inject(updated_baggage, carrier)
+  // Propagate to Service B
+  let service_b_headers = BaggagePropagator::extract_headers(service_a_baggage_with_request)
+  let service_b_baggage = BaggagePropagator::extract_from_headers(service_b_headers)
   
-  // Verify injected baggage header
-  let baggage_header = TextMapCarrier::get(carrier, "baggage")
-  match baggage_header {
-    Some(header) => {
-      assert_true(header.contains("user.id=12345"))
-      assert_true(header.contains("session.id=abcdef"))
-      assert_true(header.contains("request.id=req-123"))
-    }
-    None => assert_true(false)
-  }
-  
-  // Extract baggage from carrier
-  let extracted_baggage = propagator.extract(carrier)
-  
-  // Verify extracted baggage entries
-  let user_id = Baggage::get_entry(extracted_baggage, "user.id")
+  // Verify baggage propagated to Service B
+  let user_id = Baggage::get_entry(service_b_baggage, "user.id")
   match user_id {
-    Some(value) => assert_eq(value, "12345")
+    Some(value) => assert_eq(value, "user123")
     None => assert_true(false)
   }
   
-  let session_id = Baggage::get_entry(extracted_baggage, "session.id")
+  let session_id = Baggage::get_entry(service_b_baggage, "session.id")
   match session_id {
-    Some(value) => assert_eq(value, "abcdef")
+    Some(value) => assert_eq(value, "session456")
     None => assert_true(false)
   }
   
-  let request_id = Baggage::get_entry(extracted_baggage, "request.id")
-  match request_id {
-    Some(value) => assert_eq(value, "req-123")
-    None => assert_true(false)
-  }
-}
-
-// Test 3: Correlation Context Propagation
-test "correlation context propagation" {
-  // Create correlation context
-  let correlation_context = CorrelationContext::new()
-  let updated_context = CorrelationContext::set_value(correlation_context, "correlation.id", "corr-12345")
-  let updated_context = CorrelationContext::set_value(updated_context, "business.transaction", "order-processing")
-  let updated_context = CorrelationContext::set_value(updated_context, "tenant.id", "tenant-001")
-  
-  // Create propagator
-  let propagator = CorrelationContextPropagator::new()
-  
-  // Inject context into carrier
-  let carrier = TextMapCarrier::new()
-  propagator.inject(updated_context, carrier)
-  
-  // Verify injected correlation headers
-  let correlation_header = TextMapCarrier::get(carrier, "correlation-context")
-  match correlation_header {
-    Some(header) => {
-      assert_true(header.contains("correlation.id=corr-12345"))
-      assert_true(header.contains("business.transaction=order-processing"))
-      assert_true(header.contains("tenant.id=tenant-001"))
-    }
-    None => assert_true(false)
-  }
-  
-  // Extract context from carrier
-  let extracted_context = propagator.extract(carrier)
-  
-  // Verify extracted context values
-  let correlation_id = CorrelationContext::get_value(extracted_context, "correlation.id")
-  match correlation_id {
-    Some(value) => assert_eq(value, "corr-12345")
-    None => assert_true(false)
-  }
-  
-  let business_transaction = CorrelationContext::get_value(extracted_context, "business.transaction")
-  match business_transaction {
-    Some(value) => assert_eq(value, "order-processing")
-    None => assert_true(false)
-  }
-  
-  let tenant_id = CorrelationContext::get_value(extracted_context, "tenant.id")
+  let tenant_id = Baggage::get_entry(service_b_baggage, "tenant.id")
   match tenant_id {
-    Some(value) => assert_eq(value, "tenant-001")
+    Some(value) => assert_eq(value, "tenant789")
     None => assert_true(false)
+  }
+  
+  let service_a_version = Baggage::get_entry(service_b_baggage, "service.a.version")
+  match service_a_version {
+    Some(value) => assert_eq(value, "1.2.3")
+    None => assert_true(false)
+  }
+  
+  // Test case 3: Service B adds its own baggage
+  let service_b_baggage_enhanced = Baggage::set_entry(service_b_baggage, "service.b.version", "2.3.4")
+  let service_b_baggage_with_operation = Baggage::set_entry(service_b_baggage_enhanced, "operation.type", "data_processing")
+  
+  // Propagate to Service C
+  let service_c_headers = BaggagePropagator::extract_headers(service_b_baggage_with_operation)
+  let service_c_baggage = BaggagePropagator::extract_from_headers(service_c_headers)
+  
+  // Verify all baggage propagated to Service C
+  let service_b_version = Baggage::get_entry(service_c_baggage, "service.b.version")
+  match service_b_version {
+    Some(value) => assert_eq(value, "2.3.4")
+    None => assert_true(false)
+  }
+  
+  let operation_type = Baggage::get_entry(service_c_baggage, "operation.type")
+  match operation_type {
+    Some(value) => assert_eq(value, "data_processing")
+    None => assert_true(false)
+  }
+  
+  // Test case 4: Service C adds final baggage
+  let service_c_baggage_final = Baggage::set_entry(service_c_baggage, "service.c.version", "3.4.5")
+  let service_c_baggage_with_result = Baggage::set_entry(service_c_baggage_final, "operation.result", "success")
+  
+  // Verify final baggage contains all entries
+  let final_entries = [
+    ("user.id", "user123"),
+    ("session.id", "session456"),
+    ("tenant.id", "tenant789"),
+    ("service.a.version", "1.2.3"),
+    ("request.id", "req123"),
+    ("service.b.version", "2.3.4"),
+    ("operation.type", "data_processing"),
+    ("service.c.version", "3.4.5"),
+    ("operation.result", "success")
+  ]
+  
+  for (key, expected_value) in final_entries {
+    let value = Baggage::get_entry(service_c_baggage_with_result, key)
+    match value {
+      Some(actual_value) => assert_eq(actual_value, expected_value)
+      None => assert_true(false)
+    }
   }
 }
 
-// Test 4: Composite Propagation
-test "composite propagation" {
-  // Create trace context
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let span_id = "b7ad6b7169203331"
-  let span_context = SpanContext::new(trace_id, span_id, true, "")
+// Test 3: Message Queue Trace Context Propagation
+test "message queue trace context propagation" {
+  // Test case 1: Producer injects trace context into message
+  let trace_id = "msg_trace_12345"
+  let span_id = "msg_span_67890"
+  let span_ctx = SpanContext::new(trace_id, span_id, true, "message_test_state")
   
-  // Create baggage
-  let baggage = Baggage::new()
-  let baggage = Baggage::set_entry(baggage, "user.id", "12345")
+  let message_payload = "{ \"event\": \"user_created\", \"user_id\": 12345 }"
+  let message_headers = [
+    ("Content-Type", "application/json"),
+    ("Message-Type", "event")
+  ]
   
-  // Create correlation context
-  let correlation_context = CorrelationContext::new()
-  let correlation_context = CorrelationContext::set_value(correlation_context, "correlation.id", "corr-12345")
+  let message = Message::new("user.events", message_payload, message_headers)
+  let traced_message = MessagePropagator::inject_context(message, span_ctx)
   
-  // Create composite propagator
-  let composite_propagator = CompositePropagator::new([
-    TraceContextPropagator::new(),
-    BaggagePropagator::new(),
-    CorrelationContextPropagator::new()
-  ])
-  
-  // Create context with all components
-  let context = Context::with_value(Context::root(), ContextKey::new("span_context"), span_context)
-  let context = Context::with_value(context, ContextKey::new("baggage"), baggage)
-  let context = Context::with_value(context, ContextKey::new("correlation_context"), correlation_context)
-  
-  // Inject all contexts into carrier
-  let carrier = TextMapCarrier::new()
-  composite_propagator.inject(context, carrier)
-  
-  // Verify all headers were injected
-  assert_true(TextMapCarrier::contains_key(carrier, "traceparent"))
-  assert_true(TextMapCarrier::contains_key(carrier, "baggage"))
-  assert_true(TextMapCarrier::contains_key(carrier, "correlation-context"))
-  
-  // Extract all contexts from carrier
-  let extracted_context = composite_propagator.extract(carrier)
-  
-  // Verify trace context was extracted
-  let extracted_span = Context::get_value(extracted_context, ContextKey::new("span_context"))
-  match extracted_span {
-    Some(span_ctx) => {
-      assert_eq(SpanContext::trace_id(span_ctx), trace_id)
-      assert_eq(SpanContext::span_id(span_ctx), span_id)
-    }
-    None => assert_true(false)
-  }
-  
-  // Verify baggage was extracted
-  let extracted_baggage = Context::get_value(extracted_context, ContextKey::new("baggage"))
-  match extracted_baggage {
-    Some(bag) => {
-      let user_id = Baggage::get_entry(bag, "user.id")
-      match user_id {
-        Some(value) => assert_eq(value, "12345")
-        None => assert_true(false)
-      }
-    }
-    None => assert_true(false)
-  }
-  
-  // Verify correlation context was extracted
-  let extracted_correlation = Context::get_value(extracted_context, ContextKey::new("correlation_context"))
-  match extracted_correlation {
-    Some(correlation) => {
-      let correlation_id = CorrelationContext::get_value(correlation, "correlation.id")
-      match correlation_id {
-        Some(value) => assert_eq(value, "corr-12345")
-        None => assert_true(false)
-      }
-    }
-    None => assert_true(false)
-  }
-}
-
-// Test 5: HTTP Header Propagation
-test "http header propagation" {
-  // Create trace context
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let span_id = "b7ad6b7169203331"
-  let span_context = SpanContext::new(trace_id, span_id, true, "")
-  
-  // Create baggage
-  let baggage = Baggage::new()
-  let baggage = Baggage::set_entry(baggage, "user.id", "12345")
-  
-  // Create HTTP headers carrier
-  let http_headers = HttpHeaders::new()
-  
-  // Create propagator
-  let propagator = CompositePropagator::new([
-    TraceContextPropagator::new(),
-    BaggagePropagator::new()
-  ])
-  
-  // Create context
-  let context = Context::with_value(Context::root(), ContextKey::new("span_context"), span_context)
-  let context = Context::with_value(context, ContextKey::new("baggage"), baggage)
-  
-  // Inject into HTTP headers
-  propagator.inject(context, http_headers)
-  
-  // Verify HTTP headers
-  assert_true(HttpHeaders::contains(http_headers, "traceparent"))
-  assert_true(HttpHeaders::contains(http_headers, "baggage"))
-  
-  let trace_header = HttpHeaders::get(http_headers, "traceparent")
+  // Verify trace context is injected into message
+  let traced_headers = Message::headers(traced_message)
+  let trace_header = MessagePropagator::get_header(traced_headers, "traceparent")
   match trace_header {
-    Some(header) => {
-      assert_true(header.contains("00-" + trace_id))
-      assert_true(header.contains("-" + span_id))
+    Some(value) => {
+      let expected = "00-" + trace_id + "-" + span_id + "-01"
+      assert_eq(value, expected)
     }
     None => assert_true(false)
   }
   
-  let baggage_header = HttpHeaders::get(http_headers, "baggage")
-  match baggage_header {
-    Some(header) => assert_true(header.contains("user.id=12345"))
-    None => assert_true(false)
-  }
+  // Test case 2: Consumer extracts trace context from message
+  let consumer_span_ctx = MessagePropagator::extract_context(traced_message)
   
-  // Extract from HTTP headers
-  let extracted_context = propagator.extract(http_headers)
+  // Verify extracted context
+  assert_eq(SpanContext::trace_id(consumer_span_ctx), trace_id)
+  assert_eq(SpanContext::span_id(consumer_span_ctx), span_id)
+  assert_true(SpanContext::is_sampled(consumer_span_ctx))
   
-  // Verify extraction
-  let extracted_span = Context::get_value(extracted_context, ContextKey::new("span_context"))
-  match extracted_span {
-    Some(span_ctx) => {
-      assert_eq(SpanContext::trace_id(span_ctx), trace_id)
-      assert_eq(SpanContext::span_id(span_ctx), span_id)
+  // Test case 3: Consumer creates child span and propagates to next service
+  let consumer_span_id = "consumer_span_abc123"
+  let consumer_span = SpanContext::new(trace_id, consumer_span_id, true, "consumer_state")
+  
+  // Create new message for next service
+  let next_message_payload = "{ \"action\": \"process_user\", \"user_id\": 12345 }"
+  let next_message_headers = [
+    ("Content-Type", "application/json"),
+    ("Action-Type", "command")
+  ]
+  
+  let next_message = Message::new("user.commands", next_message_payload, next_message_headers)
+  let next_traced_message = MessagePropagator::inject_context(next_message, consumer_span)
+  
+  // Verify next message has correct trace context
+  let next_traced_headers = Message::headers(next_traced_message)
+  let next_trace_header = MessagePropagator::get_header(next_traced_headers, "traceparent")
+  match next_trace_header {
+    Some(value) => {
+      let expected = "00-" + trace_id + "-" + consumer_span_id + "-01"
+      assert_eq(value, expected)
     }
     None => assert_true(false)
   }
-}
-
-// Test 6: Message Queue Propagation
-test "message queue propagation" {
-  // Create trace context
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let span_id = "b7ad6b7169203331"
-  let span_context = SpanContext::new(trace_id, span_id, true, "")
   
-  // Create baggage
+  // Test case 4: Message with baggage
   let baggage = Baggage::new()
-  let baggage = Baggage::set_entry(baggage, "user.id", "12345")
+  let baggage_with_correlation = Baggage::set_entry(baggage, "correlation.id", "corr123")
+  let baggage_with_priority = Baggage::set_entry(baggage_with_correlation, "message.priority", "high")
   
-  // Create message properties carrier
-  let message_properties = MessageProperties::new()
+  let message_with_baggage = Message::new("priority.events", "{ \"event\": \"high_priority\" }", [])
+  let traced_message_with_baggage = MessagePropagator::inject_context_with_baggage(
+    message_with_baggage, 
+    span_ctx, 
+    baggage_with_priority
+  )
   
-  // Create propagator
-  let propagator = CompositePropagator::new([
-    TraceContextPropagator::new(),
-    BaggagePropagator::new()
-  ])
+  // Extract and verify baggage
+  let extracted_baggage = MessagePropagator::extract_baggage(traced_message_with_baggage)
   
-  // Create context
-  let context = Context::with_value(Context::root(), ContextKey::new("span_context"), span_context)
-  let context = Context::with_value(context, ContextKey::new("baggage"), baggage)
+  let correlation_id = Baggage::get_entry(extracted_baggage, "correlation.id")
+  match correlation_id {
+    Some(value) => assert_eq(value, "corr123")
+    None => assert_true(false)
+  }
   
-  // Inject into message properties
-  propagator.inject(context, message_properties)
+  let message_priority = Baggage::get_entry(extracted_baggage, "message.priority")
+  match message_priority {
+    Some(value) => assert_eq(value, "high")
+    None => assert_true(false)
+  }
+}
+
+// Test 4: gRPC Metadata Trace Context Propagation
+test "grpc metadata trace context propagation" {
+  // Test case 1: Client injects trace context into gRPC metadata
+  let trace_id = "grpc_trace_98765"
+  let span_id = "grpc_span_43210"
+  let span_ctx = SpanContext::new(trace_id, span_id, true, "grpc_test_state")
   
-  // Verify message properties
-  assert_true(MessageProperties::contains_key(message_properties, "traceparent"))
-  assert_true(MessageProperties::contains_key(message_properties, "baggage"))
+  let initial_metadata = [
+    ("authorization", "Bearer grpc_token"),
+    ("user-agent", "grpc-client/1.0.0")
+  ]
   
-  let trace_prop = MessageProperties::get(message_properties, "traceparent")
-  match trace_prop {
-    Some(prop) => {
-      assert_true(prop.contains("00-" + trace_id))
-      assert_true(prop.contains("-" + span_id))
+  let call_metadata = GrpcPropagator::inject_context(initial_metadata, span_ctx)
+  
+  // Verify trace context is injected into metadata
+  let traceparent_meta = GrpcPropagator::get_metadata(call_metadata, "traceparent")
+  match traceparent_meta {
+    Some(value) => {
+      let expected = "00-" + trace_id + "-" + span_id + "-01"
+      assert_eq(value, expected)
     }
     None => assert_true(false)
   }
   
-  let baggage_prop = MessageProperties::get(message_properties, "baggage")
-  match baggage_prop {
-    Some(prop) => assert_true(prop.contains("user.id=12345"))
+  // Test case 2: Server extracts trace context from gRPC metadata
+  let server_span_ctx = GrpcPropagator::extract_context(call_metadata)
+  
+  // Verify extracted context
+  assert_eq(SpanContext::trace_id(server_span_ctx), trace_id)
+  assert_eq(SpanContext::span_id(server_span_ctx), span_id)
+  assert_true(SpanContext::is_sampled(server_span_ctx))
+  
+  // Test case 3: Server creates child span for processing
+  let server_span_id = "server_span_56789"
+  let server_span = SpanContext::new(trace_id, server_span_id, true, "server_processing_state")
+  
+  // Server makes downstream gRPC call
+  let downstream_metadata = [
+    ("deadline", "2023-01-01T00:00:00Z"),
+    ("timeout", "30s")
+  ]
+  
+  let downstream_call_metadata = GrpcPropagator::inject_context(downstream_metadata, server_span)
+  
+  // Verify downstream call has correct trace context
+  let downstream_traceparent = GrpcPropagator::get_metadata(downstream_call_metadata, "traceparent")
+  match downstream_traceparent {
+    Some(value) => {
+      let expected = "00-" + trace_id + "-" + server_span_id + "-01"
+      assert_eq(value, expected)
+    }
     None => assert_true(false)
   }
   
-  // Extract from message properties
-  let extracted_context = propagator.extract(message_properties)
+  // Test case 4: gRPC with binary metadata
+  let binary_data = [0x01, 0x02, 0x03, 0x04]
+  let binary_metadata = GrpcPropagator::create_binary_metadata("binary-data", binary_data)
   
-  // Verify extraction
-  let extracted_span = Context::get_value(extracted_context, ContextKey::new("span_context"))
-  match extracted_span {
-    Some(span_ctx) => {
-      assert_eq(SpanContext::trace_id(span_ctx), trace_id)
-      assert_eq(SpanContext::span_id(span_ctx), span_id)
+  let mixed_metadata = Array::append(call_metadata, binary_metadata)
+  let mixed_metadata_with_trace = GrpcPropagator::inject_context(mixed_metadata, span_ctx)
+  
+  // Verify binary metadata is preserved
+  let preserved_binary = GrpcPropagator::get_binary_metadata(mixed_metadata_with_trace, "binary-data")
+  match preserved_binary {
+    Some(data) => assert_eq(data, binary_data)
+    None => assert_true(false)
+  }
+  
+  // Verify trace context is still present
+  let mixed_traceparent = GrpcPropagator::get_metadata(mixed_metadata_with_trace, "traceparent")
+  match mixed_traceparent {
+    Some(value) => {
+      let expected = "00-" + trace_id + "-" + span_id + "-01"
+      assert_eq(value, expected)
     }
     None => assert_true(false)
   }
 }
 
-// Test 7: Cross-Service Trace Continuity
-test "cross-service trace continuity" {
-  // Service A: Create initial span
-  let service_a_tracer = TracerProvider::get_tracer("service-a")
-  let root_span = Tracer::start_span(service_a_tracer, "root-operation")
-  let root_context = Span::span_context(root_span)
+// Test 5: Cross-Protocol Trace Context Propagation
+test "cross-protocol trace context propagation" {
+  // Test case 1: HTTP to gRPC propagation
+  let http_trace_id = "cross_protocol_trace_001"
+  let http_span_id = "cross_protocol_span_001"
+  let http_span_ctx = SpanContext::new(http_trace_id, http_span_id, true, "http_to_grpc")
   
-  // Propagate context to Service B
-  let carrier = TextMapCarrier::new()
-  let propagator = TraceContextPropagator::new()
-  propagator.inject(root_context, carrier)
+  // HTTP request with trace context
+  let http_headers = [
+    ("traceparent", "00-" + http_trace_id + "-" + http_span_id + "-01"),
+    ("tracestate", "rojo=00f067aa0ba902b7"),
+    ("Content-Type", "application/json")
+  ]
   
-  // Service B: Extract context and create child span
-  let extracted_context = propagator.extract(carrier)
-  let service_b_tracer = TracerProvider::get_tracer("service-b")
-  let child_span = Tracer::start_span_with_context(service_b_tracer, "child-operation", extracted_context)
-  let child_context = Span::span_context(child_span)
+  let http_request = HttpRequest::new("POST", "/api/process", http_headers, Some("request data"))
+  let extracted_http_ctx = HttpPropagator::extract_context(http_request)
   
-  // Verify trace continuity
-  assert_eq(SpanContext::trace_id(root_context), SpanContext::trace_id(child_context))
-  assert_neq(SpanContext::span_id(root_context), SpanContext::span_id(child_context))
+  // Convert to gRPC metadata
+  let grpc_metadata = GrpcPropagator::convert_from_http_context(extracted_http_ctx)
+  let grpc_traceparent = GrpcPropagator::get_metadata(grpc_metadata, "traceparent")
+  match grpc_traceparent {
+    Some(value) => {
+      let expected = "00-" + http_trace_id + "-" + http_span_id + "-01"
+      assert_eq(value, expected)
+    }
+    None => assert_true(false)
+  }
   
-  // Propagate context to Service C
-  let carrier2 = TextMapCarrier::new()
-  propagator.inject(child_context, carrier2)
+  // Test case 2: gRPC to Message Queue propagation
+  let grpc_trace_id = "cross_protocol_trace_002"
+  let grpc_span_id = "cross_protocol_span_002"
+  let grpc_span_ctx = SpanContext::new(grpc_trace_id, grpc_span_id, true, "grpc_to_mq")
   
-  // Service C: Extract context and create grandchild span
-  let extracted_context2 = propagator.extract(carrier2)
-  let service_c_tracer = TracerProvider::get_tracer("service-c")
-  let grandchild_span = Tracer::start_span_with_context(service_c_tracer, "grandchild-operation", extracted_context2)
-  let grandchild_context = Span::span_context(grandchild_span)
+  let grpc_metadata = [
+    ("traceparent", "00-" + grpc_trace_id + "-" + grpc_span_id + "-01"),
+    ("authorization", "Bearer grpc_token")
+  ]
   
-  // Verify trace continuity across all services
-  assert_eq(SpanContext::trace_id(root_context), SpanContext::trace_id(grandchild_context))
-  assert_neq(SpanContext::span_id(root_context), SpanContext::span_id(grandchild_context))
-  assert_neq(SpanContext::span_id(child_context), SpanContext::span_id(grandchild_context))
+  let extracted_grpc_ctx = GrpcPropagator::extract_context(grpc_metadata)
   
-  // End all spans
-  Span::end(grandchild_span)
-  Span::end(child_span)
-  Span::end(root_span)
-}
-
-// Test 8: Propagation with Custom Headers
-test "propagation with custom headers" {
-  // Create custom propagator
-  let custom_propagator = CustomPropagator::new("x-custom-trace", "x-custom-baggage")
+  // Convert to message headers
+  let message_headers = MessagePropagator::convert_from_grpc_context(extracted_grpc_ctx)
+  let message = Message::new("test.topic", "test payload", message_headers)
+  let message_trace_header = MessagePropagator::get_header(Message::headers(message), "traceparent")
+  match message_trace_header {
+    Some(value) => {
+      let expected = "00-" + grpc_trace_id + "-" + grpc_span_id + "-01"
+      assert_eq(value, expected)
+    }
+    None => assert_true(false)
+  }
   
-  // Create trace context
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let span_id = "b7ad6b7169203331"
-  let span_context = SpanContext::new(trace_id, span_id, true, "")
+  // Test case 3: Message Queue to HTTP propagation
+  let mq_trace_id = "cross_protocol_trace_003"
+  let mq_span_id = "cross_protocol_span_003"
+  let mq_span_ctx = SpanContext::new(mq_trace_id, mq_span_id, true, "mq_to_http")
   
-  // Create baggage
+  let mq_headers = [
+    ("traceparent", "00-" + mq_trace_id + "-" + mq_span_id + "-01"),
+    ("Content-Type", "application/json")
+  ]
+  
+  let mq_message = Message::new("events.topic", "event data", mq_headers)
+  let extracted_mq_ctx = MessagePropagator::extract_context(mq_message)
+  
+  // Convert to HTTP headers
+  let http_headers_from_mq = HttpPropagator::convert_from_message_context(extracted_mq_ctx)
+  let http_request_from_mq = HttpRequest::new("POST", "/api/events", http_headers_from_mq, Some("event data"))
+  let http_trace_header = HttpPropagator::get_header(HttpRequest::headers(http_request_from_mq), "traceparent")
+  match http_trace_header {
+    Some(value) => {
+      let expected = "00-" + mq_trace_id + "-" + mq_span_id + "-01"
+      assert_eq(value, expected)
+    }
+    None => assert_true(false)
+  }
+  
+  // Test case 4: Baggage propagation across protocols
   let baggage = Baggage::new()
-  let baggage = Baggage::set_entry(baggage, "custom.key", "custom.value")
+  let baggage_with_user = Baggage::set_entry(baggage, "user.id", "user456")
+  let baggage_with_session = Baggage::set_entry(baggage_with_user, "session.id", "session789")
   
-  // Create context
-  let context = Context::with_value(Context::root(), ContextKey::new("span_context"), span_context)
-  let context = Context::with_value(context, ContextKey::new("baggage"), baggage)
+  // Start with HTTP
+  let http_request_with_baggage = HttpRequest::new("GET", "/api/data", [], None)
+  let http_with_baggage = HttpPropagator::inject_context_with_baggage(
+    http_request_with_baggage, 
+    http_span_ctx, 
+    baggage_with_session
+  )
   
-  // Inject with custom headers
-  let carrier = TextMapCarrier::new()
-  custom_propagator.inject(context, carrier)
+  // Extract baggage from HTTP
+  let http_extracted_baggage = HttpPropagator::extract_baggage(http_with_baggage)
   
-  // Verify custom headers
-  assert_true(TextMapCarrier::contains_key(carrier, "x-custom-trace"))
-  assert_true(TextMapCarrier::contains_key(carrier, "x-custom-baggage"))
+  // Convert to gRPC
+  let grpc_with_baggage = GrpcPropagator::convert_from_http_context_with_baggage(
+    http_span_ctx, 
+    http_extracted_baggage
+  )
   
-  let custom_trace = TextMapCarrier::get(carrier, "x-custom-trace")
-  match custom_trace {
-    Some(header) => {
-      assert_true(header.contains(trace_id))
-      assert_true(header.contains(span_id))
-    }
+  // Extract baggage from gRPC
+  let grpc_extracted_baggage = GrpcPropagator::extract_baggage(grpc_with_baggage)
+  
+  // Convert to Message Queue
+  let message_with_baggage = MessagePropagator::convert_from_grpc_context_with_baggage(
+    http_span_ctx, 
+    grpc_extracted_baggage
+  )
+  
+  // Extract baggage from Message Queue
+  let mq_extracted_baggage = MessagePropagator::extract_baggage(message_with_baggage)
+  
+  // Verify baggage is preserved across all protocols
+  let final_user_id = Baggage::get_entry(mq_extracted_baggage, "user.id")
+  match final_user_id {
+    Some(value) => assert_eq(value, "user456")
     None => assert_true(false)
   }
   
-  let custom_baggage = TextMapCarrier::get(carrier, "x-custom-baggage")
-  match custom_baggage {
-    Some(header) => assert_true(header.contains("custom.key=custom.value"))
-    None => assert_true(false)
-  }
-  
-  // Extract with custom headers
-  let extracted_context = custom_propagator.extract(carrier)
-  
-  // Verify extraction
-  let extracted_span = Context::get_value(extracted_context, ContextKey::new("span_context"))
-  match extracted_span {
-    Some(span_ctx) => {
-      assert_eq(SpanContext::trace_id(span_ctx), trace_id)
-      assert_eq(SpanContext::span_id(span_ctx), span_id)
-    }
-    None => assert_true(false)
-  }
-  
-  let extracted_baggage = Context::get_value(extracted_context, ContextKey::new("baggage"))
-  match extracted_baggage {
-    Some(bag) => {
-      let custom_value = Baggage::get_entry(bag, "custom.key")
-      match custom_value {
-        Some(value) => assert_eq(value, "custom.value")
-        None => assert_true(false)
-      }
-    }
+  let final_session_id = Baggage::get_entry(mq_extracted_baggage, "session.id")
+  match final_session_id {
+    Some(value) => assert_eq(value, "session789")
     None => assert_true(false)
   }
 }
