@@ -1,710 +1,542 @@
-// Azimuth Telemetry System - Configuration Management Dynamic Update Tests
-// This file contains test cases for configuration management and dynamic update functionality
+// Azimuth Configuration Management and Dynamic Update Test Suite
+// 测试配置管理和动态更新功能，确保系统配置的灵活性和可靠性
 
-// Test 1: Basic Configuration Loading and Retrieval
-test "basic configuration loading and retrieval" {
-  // Create a configuration manager
+test "基础配置管理测试" {
+  // 创建配置管理器
   let config_manager = ConfigManager::new()
   
-  // Load configuration from a map
-  let config_data = [
-    ("service.name", "azimuth-telemetry"),
-    ("service.version", "1.0.0"),
-    ("server.port", "8080"),
-    ("server.host", "localhost"),
-    ("database.url", "postgresql://localhost:5432/azimuth"),
-    ("log.level", "info"),
-    ("feature.flags.new_ui", "true"),
-    ("feature.flags.advanced_analytics", "false")
-  ]
+  // 测试空配置
+  assert_eq(ConfigManager::size(config_manager), 0)
+  assert_true(ConfigManager::is_empty(config_manager))
   
-  ConfigManager::load_from_map(config_manager, config_data)
+  // 添加配置项
+  ConfigManager::set(config_manager, "service.name", "payment-service")
+  ConfigManager::set(config_manager, "service.version", "2.1.0")
+  ConfigManager::set(config_manager, "service.port", 8080)
+  ConfigManager::set(config_manager, "service.enabled", true)
   
-  // Test retrieving configuration values
-  assert_eq(ConfigManager::get_string(config_manager, "service.name"), "azimuth-telemetry")
-  assert_eq(ConfigManager::get_string(config_manager, "service.version"), "1.0.0")
-  assert_eq(ConfigManager::get_int(config_manager, "server.port"), 8080)
-  assert_eq(ConfigManager::get_string(config_manager, "server.host"), "localhost")
-  assert_eq(ConfigManager::get_string(config_manager, "database.url"), "postgresql://localhost:5432/azimuth")
-  assert_eq(ConfigManager::get_string(config_manager, "log.level"), "info")
-  assert_true(ConfigManager::get_bool(config_manager, "feature.flags.new_ui"))
-  assert_false(ConfigManager::get_bool(config_manager, "feature.flags.advanced_analytics"))
+  // 验证配置项数量
+  assert_eq(ConfigManager::size(config_manager), 4)
+  assert_false(ConfigManager::is_empty(config_manager))
   
-  // Test default values
-  assert_eq(ConfigManager::get_string_with_default(config_manager, "nonexistent.key", "default"), "default")
-  assert_eq(ConfigManager::get_int_with_default(config_manager, "nonexistent.int", 42), 42)
-  assert_true(ConfigManager::get_bool_with_default(config_manager, "nonexistent.bool", true))
+  // 获取配置项
+  let service_name = ConfigManager::get_string(config_manager, "service.name")
+  match service_name {
+    Some(name) => assert_eq(name, "payment-service")
+    None => assert_true(false)
+  }
   
-  // Test checking if key exists
-  assert_true(ConfigManager::has_key(config_manager, "service.name"))
-  assert_true(ConfigManager::has_key(config_manager, "server.port"))
-  assert_false(ConfigManager::has_key(config_manager, "nonexistent.key"))
+  let service_version = ConfigManager::get_string(config_manager, "service.version")
+  match service_version {
+    Some(version) => assert_eq(version, "2.1.0")
+    None => assert_true(false)
+  }
+  
+  let service_port = ConfigManager::get_int(config_manager, "service.port")
+  match service_port {
+    Some(port) => assert_eq(port, 8080)
+    None => assert_true(false)
+  }
+  
+  let service_enabled = ConfigManager::get_bool(config_manager, "service.enabled")
+  match service_enabled {
+    Some(enabled) => assert_true(enabled)
+    None => assert_true(false)
+  }
+  
+  // 获取不存在的配置项
+  let non_existent = ConfigManager::get_string(config_manager, "non.existent.key")
+  match non_existent {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // 测试配置项存在性检查
+  assert_true(ConfigManager::contains(config_manager, "service.name"))
+  assert_false(ConfigManager::contains(config_manager, "non.existent.key"))
+  
+  // 删除配置项
+  ConfigManager::remove(config_manager, "service.enabled")
+  assert_eq(ConfigManager::size(config_manager), 3)
+  assert_false(ConfigManager::contains(config_manager, "service.enabled"))
 }
 
-// Test 2: Configuration File Loading
-test "configuration file loading" {
-  // Create a configuration manager
+test "配置层次结构测试" {
+  // 创建分层的配置管理器
+  let config_manager = HierarchicalConfigManager::new()
+  
+  // 添加不同层级的配置
+  HierarchicalConfigManager::set(config_manager, "service.name", "payment-service", "default")
+  HierarchicalConfigManager::set(config_manager, "service.port", 8080, "default")
+  HierarchicalConfigManager::set(config_manager, "service.port", 9090, "production") // 覆盖默认值
+  HierarchicalConfigManager::set(config_manager, "service.debug", true, "development")
+  HierarchicalConfigManager::set(config_manager, "service.debug", false, "production")
+  
+  // 设置当前环境
+  HierarchicalConfigManager::set_environment(config_manager, "production")
+  
+  // 获取配置项（应使用当前环境的值）
+  let service_name = HierarchicalConfigManager::get_string(config_manager, "service.name")
+  match service_name {
+    Some(name) => assert_eq(name, "payment-service") // 来自default环境
+    None => assert_true(false)
+  }
+  
+  let service_port = HierarchicalConfigManager::get_int(config_manager, "service.port")
+  match service_port {
+    Some(port) => assert_eq(port, 9090) // 来自production环境
+    None => assert_true(false)
+  }
+  
+  let service_debug = HierarchicalConfigManager::get_bool(config_manager, "service.debug")
+  match service_debug {
+    Some(debug) => assert_false(debug) // 来自production环境
+    None => assert_true(false)
+  }
+  
+  // 切换环境
+  HierarchicalConfigManager::set_environment(config_manager, "development")
+  
+  // 获取配置项（应使用新环境的值）
+  let service_debug_dev = HierarchicalConfigManager::get_bool(config_manager, "service.debug")
+  match service_debug_dev {
+    Some(debug) => assert_true(debug) // 来自development环境
+    None => assert_true(false)
+  }
+  
+  let service_port_dev = HierarchicalConfigManager::get_int(config_manager, "service.port")
+  match service_port_dev {
+    Some(port) => assert_eq(port, 8080) // 来自default环境（development环境没有设置）
+    None => assert_true(false)
+  }
+}
+
+test "配置文件加载测试" {
+  // 创建配置管理器
   let config_manager = ConfigManager::new()
   
-  // Create a temporary configuration file
-  let config_content = "{
-    \"service\": {
-      \"name\": \"azimuth-telemetry\",
-      \"version\": \"1.0.0\",
-      \"environment\": \"production\"
-    },
-    \"server\": {
-      \"port\": 8080,
-      \"host\": \"0.0.0.0\",
-      \"ssl\": {
-        \"enabled\": true,
-        \"cert_path\": \"/etc/ssl/certs/azimuth.crt\",
-        \"key_path\": \"/etc/ssl/private/azimuth.key\"
-      }
-    },
-    \"database\": {
-      \"url\": \"postgresql://db.example.com:5432/azimuth_prod\",
-      \"pool_size\": 20,
-      \"timeout_ms\": 5000
-    },
-    \"logging\": {
-      \"level\": \"warn\",
-      \"format\": \"json\",
-      \"outputs\": [\"console\", \"file\"]
-    },
-    \"feature_flags\": {
-      \"new_ui\": true,
-      \"advanced_analytics\": false,
-      \"beta_features\": true
+  // 创建测试配置文件内容
+  let json_config = "{\n    \"service\": {\n      \"name\": \"payment-service\",\n      \"version\": \"2.1.0\",\n      \"port\": 8080,\n      \"enabled\": true,\n      \"features\": [\"api\", \"webhook\", \"reporting\"]\n    },\n    \"database\": {\n      \"host\": \"localhost\",\n      \"port\": 5432,\n      \"name\": \"payment_db\",\n      \"ssl\": false\n    },\n    \"logging\": {\n      \"level\": \"info\",\n      \"format\": \"json\"\n    }\n  }"
+  
+  // 从JSON加载配置
+  let load_result = ConfigManager::load_from_json(config_manager, json_config)
+  assert_true(load_result)
+  
+  // 验证配置项已加载
+  let service_name = ConfigManager::get_string(config_manager, "service.name")
+  match service_name {
+    Some(name) => assert_eq(name, "payment-service")
+    None => assert_true(false)
+  }
+  
+  let service_port = ConfigManager::get_int(config_manager, "service.port")
+  match service_port {
+    Some(port) => assert_eq(port, 8080)
+    None => assert_true(false)
+  }
+  
+  let service_enabled = ConfigManager::get_bool(config_manager, "service.enabled")
+  match service_enabled {
+    Some(enabled) => assert_true(enabled)
+    None => assert_true(false)
+  }
+  
+  let database_host = ConfigManager::get_string(config_manager, "database.host")
+  match database_host {
+    Some(host) => assert_eq(host, "localhost")
+    None => assert_true(false)
+  }
+  
+  // 测试数组配置项
+  let service_features = ConfigManager::get_string_array(config_manager, "service.features")
+  match service_features {
+    Some(features) => {
+      assert_eq(features.length(), 3)
+      assert_eq(features[0], "api")
+      assert_eq(features[1], "webhook")
+      assert_eq(features[2], "reporting")
     }
-  }"
+    None => assert_true(false)
+  }
   
-  let temp_file = TempFile::create_with_content(config_content)
-  
-  // Load configuration from file
-  let load_result = ConfigManager::load_from_file(config_manager, TempFile::path(temp_file))
-  assert_true(ConfigManager::is_successful(load_result))
-  
-  // Test nested configuration values
-  assert_eq(ConfigManager::get_string(config_manager, "service.name"), "azimuth-telemetry")
-  assert_eq(ConfigManager::get_string(config_manager, "service.version"), "1.0.0")
-  assert_eq(ConfigManager::get_string(config_manager, "service.environment"), "production")
-  
-  assert_eq(ConfigManager::get_int(config_manager, "server.port"), 8080)
-  assert_eq(ConfigManager::get_string(config_manager, "server.host"), "0.0.0.0")
-  assert_true(ConfigManager::get_bool(config_manager, "server.ssl.enabled"))
-  assert_eq(ConfigManager::get_string(config_manager, "server.ssl.cert_path"), "/etc/ssl/certs/azimuth.crt")
-  
-  assert_eq(ConfigManager::get_string(config_manager, "database.url"), "postgresql://db.example.com:5432/azimuth_prod")
-  assert_eq(ConfigManager::get_int(config_manager, "database.pool_size"), 20)
-  assert_eq(ConfigManager::get_int(config_manager, "database.timeout_ms"), 5000)
-  
-  assert_eq(ConfigManager::get_string(config_manager, "logging.level"), "warn")
-  assert_eq(ConfigManager::get_string(config_manager, "logging.format"), "json")
-  
-  // Test array values
-  let log_outputs = ConfigManager::get_string_array(config_manager, "logging.outputs")
-  assert_eq(log_outputs.length(), 2)
-  assert_eq(log_outputs[0], "console")
-  assert_eq(log_outputs[1], "file")
-  
-  // Clean up
-  TempFile::delete(temp_file)
+  // 测试无效JSON
+  let invalid_json = "{ invalid json }"
+  let invalid_load_result = ConfigManager::load_from_json(config_manager, invalid_json)
+  assert_false(invalid_load_result)
 }
 
-// Test 3: Dynamic Configuration Updates
-test "dynamic configuration updates" {
-  // Create a configuration manager
-  let config_manager = ConfigManager::new()
+test "配置验证测试" {
+  // 创建带验证规则的配置管理器
+  let config_manager = ValidatingConfigManager::new()
   
-  // Load initial configuration
-  let initial_config = [
-    ("service.name", "azimuth-telemetry"),
-    ("server.port", "8080"),
-    ("log.level", "info"),
-    ("feature.flags.new_ui", "true")
-  ]
+  // 添加验证规则
+  ValidatingConfigManager::add_rule(config_manager, "service.port", 
+    ValidationRule::range(1, 65535))
+  ValidatingConfigManager::add_rule(config_manager, "service.name", 
+    ValidationRule::non_empty())
+  ValidatingConfigManager::add_rule(config_manager, "service.version", 
+    ValidationRule::regex("^\\d+\\.\\d+\\.\\d+$")) // 语义版本号
+  ValidatingConfigManager::add_rule(config_manager, "database.connection_pool_size", 
+    ValidationRule::range(1, 100))
   
-  ConfigManager::load_from_map(config_manager, initial_config)
+  // 测试有效配置
+  let valid_result = ValidatingConfigManager::set(config_manager, "service.port", 8080)
+  assert_true(valid_result)
   
-  // Verify initial values
-  assert_eq(ConfigManager::get_string(config_manager, "service.name"), "azimuth-telemetry")
-  assert_eq(ConfigManager::get_int(config_manager, "server.port"), 8080)
-  assert_eq(ConfigManager::get_string(config_manager, "log.level"), "info")
-  assert_true(ConfigManager::get_bool(config_manager, "feature.flags.new_ui"))
+  let valid_result = ValidatingConfigManager::set(config_manager, "service.name", "payment-service")
+  assert_true(valid_result)
   
-  // Register configuration change listeners
+  let valid_result = ValidatingConfigManager::set(config_manager, "service.version", "2.1.0")
+  assert_true(valid_result)
+  
+  let valid_result = ValidatingConfigManager::set(config_manager, "database.connection_pool_size", 10)
+  assert_true(valid_result)
+  
+  // 测试无效配置
+  let invalid_result = ValidatingConfigManager::set(config_manager, "service.port", 70000) // 超出范围
+  assert_false(invalid_result)
+  
+  let invalid_result = ValidatingConfigManager::set(config_manager, "service.name", "") // 空字符串
+  assert_false(invalid_result)
+  
+  let invalid_result = ValidatingConfigManager::set(config_manager, "service.version", "2.1") // 不匹配正则
+  assert_false(invalid_result)
+  
+  let invalid_result = ValidatingConfigManager::set(config_manager, "database.connection_pool_size", 0) // 小于最小值
+  assert_false(invalid_result)
+  
+  // 验证所有配置
+  let validation_result = ValidatingConfigManager::validate_all(config_manager)
+  assert_true(validation_result.is_valid)
+  
+  // 添加无效配置
+  ValidatingConfigManager::set_without_validation(config_manager, "service.port", 70000)
+  
+  // 再次验证所有配置
+  let validation_result = ValidatingConfigManager::validate_all(config_manager)
+  assert_false(validation_result.is_valid)
+  assert_eq(validation_result.errors.length(), 1)
+  assert_true(validation_result.errors[0].contains("service.port"))
+}
+
+test "动态配置更新测试" {
+  // 创建动态配置管理器
+  let config_manager = DynamicConfigManager::new()
+  
+  // 添加配置项
+  DynamicConfigManager::set(config_manager, "service.name", "payment-service")
+  DynamicConfigManager::set(config_manager, "service.port", 8080)
+  DynamicConfigManager::set(config_manager, "service.enabled", true)
+  
+  // 添加配置变更监听器
   let mut change_events = []
-  
-  ConfigManager::add_change_listener(config_manager, "service.name", |old_value, new_value| {
-    change_events.push(("service.name", old_value, new_value))
+  DynamicConfigManager::add_listener(config_manager, |key, old_value, new_value| {
+    change_events = change_events + [(key, old_value, new_value)]
   })
   
-  ConfigManager::add_change_listener(config_manager, "server.port", |old_value, new_value| {
-    change_events.push(("server.port", old_value, new_value))
-  })
+  // 更新配置项
+  DynamicConfigManager::set(config_manager, "service.port", 9090)
+  DynamicConfigManager::set(config_manager, "service.enabled", false)
   
-  // Update configuration values
-  ConfigManager::set_string(config_manager, "service.name", "azimuth-telemetry-v2")
-  ConfigManager::set_int(config_manager, "server.port", 9090)
-  ConfigManager::set_string(config_manager, "log.level", "debug")
-  ConfigManager::set_bool(config_manager, "feature.flags.new_ui", false)
+  // 验证变更事件
+  assert_eq(change_events.length(), 2)
+  assert_eq(change_events[0].0, "service.port")
+  assert_eq(change_events[0].1, "8080")
+  assert_eq(change_events[0].2, "9090")
   
-  // Verify updated values
-  assert_eq(ConfigManager::get_string(config_manager, "service.name"), "azimuth-telemetry-v2")
-  assert_eq(ConfigManager::get_int(config_manager, "server.port"), 9090)
-  assert_eq(ConfigManager::get_string(config_manager, "log.level"), "debug")
-  assert_false(ConfigManager::get_bool(config_manager, "feature.flags.new_ui"))
+  assert_eq(change_events[1].0, "service.enabled")
+  assert_eq(change_events[1].1, "true")
+  assert_eq(change_events[1].2, "false")
   
-  // Verify change events were fired
-  assert_eq(change_events.length(), 2)  // Only for registered listeners
-  
-  assert_eq(change_events[0].0, "service.name")
-  assert_eq(change_events[0].1, "azimuth-telemetry")  // Old value
-  assert_eq(change_events[0].2, "azimuth-telemetry-v2")  // New value
-  
-  assert_eq(change_events[1].0, "server.port")
-  assert_eq(change_events[1].1, "8080")  // Old value
-  assert_eq(change_events[1].2, "9090")  // New value
-}
-
-// Test 4: Configuration Validation
-test "configuration validation" {
-  // Create a configuration manager with validation rules
-  let config_manager = ConfigManager::new()
-  
-  // Add validation rules
-  ConfigManager::add_validation_rule(config_manager, "server.port", ValidationRule::IntRange(1, 65535))
-  ConfigManager::add_validation_rule(config_manager, "log.level", ValidationRule::Enum(["debug", "info", "warn", "error"]))
-  ConfigManager::add_validation_rule(config_manager, "service.name", ValidationRule::NonEmpty)
-  ConfigManager::add_validation_rule(config_manager, "database.pool_size", ValidationRule::MinValue(1))
-  
-  // Load valid configuration
-  let valid_config = [
-    ("service.name", "azimuth-telemetry"),
-    ("server.port", "8080"),
-    ("log.level", "info"),
-    ("database.pool_size", "10")
-  ]
-  
-  let valid_result = ConfigManager::load_with_validation(config_manager, valid_config)
-  assert_true(ConfigManager::is_valid(valid_result))
-  
-  // Try to load invalid configuration
-  let invalid_config = [
-    ("service.name", ""),  // Empty string
-    ("server.port", "70000"),  // Out of range
-    ("log.level", "invalid"),  // Not in enum
-    ("database.pool_size", "0")  // Below minimum
-  ]
-  
-  let invalid_result = ConfigManager::load_with_validation(config_manager, invalid_config)
-  assert_false(ConfigManager::is_valid(invalid_result))
-  
-  // Check validation errors
-  let validation_errors = ConfigManager::get_validation_errors(invalid_result)
-  assert_eq(validation_errors.length(), 4)
-  
-  let service_name_error = ConfigManager::get_error_for_key(invalid_result, "service.name")
-  match service_name_error {
-    Some(error) => assert_eq(ValidationError::get_message(error), "Value cannot be empty")
+  // 验证配置值已更新
+  let service_port = DynamicConfigManager::get_int(config_manager, "service.port")
+  match service_port {
+    Some(port) => assert_eq(port, 9090)
     None => assert_true(false)
   }
   
-  let server_port_error = ConfigManager::get_error_for_key(invalid_result, "server.port")
-  match server_port_error {
-    Some(error) => assert_eq(ValidationError::get_message(error), "Value must be between 1 and 65535")
+  let service_enabled = DynamicConfigManager::get_bool(config_manager, "service.enabled")
+  match service_enabled {
+    Some(enabled) => assert_false(enabled)
     None => assert_true(false)
   }
   
-  // Test validation on update
-  ConfigManager::load_with_validation(config_manager, valid_config)  // Load valid config first
+  // 测试批量更新
+  let updates = [
+    ("service.name", "order-service"),
+    ("service.version", "3.0.0"),
+    ("service.debug", true)
+  ]
+  DynamicConfigManager::set_batch(config_manager, updates)
   
-  // Try to update with invalid value
-  let update_result = ConfigManager::set_with_validation(config_manager, "server.port", "99999")
-  assert_false(ConfigManager::is_successful(update_result))
+  // 验证批量更新触发了变更事件
+  assert_eq(change_events.length(), 5)
+  assert_eq(change_events[2].0, "service.name")
+  assert_eq(change_events[2].1, "payment-service")
+  assert_eq(change_events[2].2, "order-service")
   
-  // Verify value was not updated
-  assert_eq(ConfigManager::get_int(config_manager, "server.port"), 8080)
+  assert_eq(change_events[3].0, "service.version")
+  assert_eq(change_events[3].1, "")
+  assert_eq(change_events[3].2, "3.0.0")
   
-  // Update with valid value
-  let valid_update = ConfigManager::set_with_validation(config_manager, "server.port", "9090")
-  assert_true(ConfigManager::is_successful(valid_update))
-  
-  // Verify value was updated
-  assert_eq(ConfigManager::get_int(config_manager, "server.port"), 9090)
+  assert_eq(change_events[4].0, "service.debug")
+  assert_eq(change_events[4].1, "")
+  assert_eq(change_events[4].2, "true")
 }
 
-// Test 5: Configuration Environment Override
-test "configuration environment override" {
-  // Create a configuration manager with environment override
-  let config_manager = ConfigManager::new()
-  ConfigManager::enable_environment_override(config_manager, true)
-  ConfigManager::set_env_prefix(config_manager, "AZIMUTH_")
+test "配置热重载测试" {
+  // 创建配置文件路径
+  let config_file = "/tmp/azimuth_test_config.json"
   
-  // Load base configuration
-  let base_config = [
-    ("service.name", "azimuth-telemetry"),
-    ("server.port", "8080"),
-    ("log.level", "info"),
-    ("database.url", "postgresql://localhost:5432/azimuth")
-  ]
+  // 创建初始配置文件
+  let initial_config = "{\n    \"service\": {\n      \"name\": \"payment-service\",\n      \"port\": 8080,\n      \"enabled\": true\n    },\n    \"database\": {\n      \"host\": \"localhost\",\n      \"port\": 5432\n    }\n  }"
   
-  ConfigManager::load_from_map(config_manager, base_config)
+  File::write(config_file, initial_config)
   
-  // Set environment variables
-  Env::set("AZIMUTH_SERVICE_NAME", "azimuth-production")
-  Env::set("AZIMUTH_SERVER_PORT", "9090")
-  Env::set("AZIMUTH_LOG_LEVEL", "debug")
-  Env::set("AZIMUTH_FEATURE_FLAGS_NEW_UI", "true")
+  // 创建热重载配置管理器
+  let config_manager = HotReloadConfigManager::new(config_file)
   
-  // Reload configuration with environment overrides
-  ConfigManager::reload_with_env_overrides(config_manager)
+  // 加载初始配置
+  HotReloadConfigManager::load(config_manager)
   
-  // Verify environment overrides were applied
-  assert_eq(ConfigManager::get_string(config_manager, "service.name"), "azimuth-production")  // Overridden
-  assert_eq(ConfigManager::get_int(config_manager, "server.port"), 9090)  // Overridden
-  assert_eq(ConfigManager::get_string(config_manager, "log.level"), "debug")  // Overridden
-  assert_eq(ConfigManager::get_string(config_manager, "database.url"), "postgresql://localhost:5432/azimuth")  // Not overridden
+  // 验证初始配置
+  let service_name = HotReloadConfigManager::get_string(config_manager, "service.name")
+  match service_name {
+    Some(name) => assert_eq(name, "payment-service")
+    None => assert_true(false)
+  }
   
-  // Test new key from environment
-  assert_true(ConfigManager::has_key(config_manager, "feature.flags.new_ui"))
-  assert_true(ConfigManager::get_bool(config_manager, "feature.flags.new_ui"))
+  let service_port = HotReloadConfigManager::get_int(config_manager, "service.port")
+  match service_port {
+    Some(port) => assert_eq(port, 8080)
+    None => assert_true(false)
+  }
   
-  // Test environment-specific configuration
-  ConfigManager::set_environment(config_manager, "production")
-  
-  let prod_config = [
-    ("service.name", "azimuth-telemetry"),
-    ("server.port", "8080"),
-    ("debug.enabled", "false")
-  ]
-  
-  ConfigManager::load_from_map(config_manager, prod_config)
-  
-  // Load environment-specific overrides
-  let prod_overrides = [
-    ("server.port", "443"),
-    ("debug.enabled", "false"),
-    ("monitoring.enabled", "true")
-  ]
-  
-  ConfigManager::load_environment_overrides(config_manager, "production", prod_overrides)
-  
-  assert_eq(ConfigManager::get_int(config_manager, "server.port"), 443)  // Overridden
-  assert_false(ConfigManager::get_bool(config_manager, "debug.enabled"))  // Overridden
-  assert_true(ConfigManager::get_bool(config_manager, "monitoring.enabled"))  // New key
-  
-  // Clean up environment variables
-  Env::unset("AZIMUTH_SERVICE_NAME")
-  Env::unset("AZIMUTH_SERVER_PORT")
-  Env::unset("AZIMUTH_LOG_LEVEL")
-  Env::unset("AZIMUTH_FEATURE_FLAGS_NEW_UI")
-}
-
-// Test 6: Configuration Hot Reload
-test "configuration hot reload" {
-  // Create a configuration manager with hot reload enabled
-  let config_manager = ConfigManager::new()
-  ConfigManager::enable_hot_reload(config_manager, true)
-  
-  // Create a temporary configuration file
-  let initial_config = "{
-    \"service\": {
-      \"name\": \"azimuth-telemetry\",
-      \"version\": \"1.0.0\"
-    },
-    \"server\": {
-      \"port\": 8080,
-      \"host\": \"localhost\"
-    }
-  }"
-  
-  let temp_file = TempFile::create_with_content(initial_config)
-  let file_path = TempFile::path(temp_file)
-  
-  // Load initial configuration
-  ConfigManager::load_from_file(config_manager, file_path)
-  
-  // Verify initial values
-  assert_eq(ConfigManager::get_string(config_manager, "service.name"), "azimuth-telemetry")
-  assert_eq(ConfigManager::get_string(config_manager, "service.version"), "1.0.0")
-  assert_eq(ConfigManager::get_int(config_manager, "server.port"), 8080)
-  assert_eq(ConfigManager::get_string(config_manager, "server.host"), "localhost")
-  
-  // Register hot reload listener
+  // 添加重载监听器
   let mut reload_events = []
-  
-  ConfigManager::add_reload_listener(config_manager, |changes| {
-    reload_events.push(changes)
+  HotReloadConfigManager::add_reload_listener(config_manager, || {
+    reload_events = reload_events + [Time::now()]
   })
   
-  // Update configuration file
-  let updated_config = "{
-    \"service\": {
-      \"name\": \"azimuth-telemetry-v2\",
-      \"version\": \"1.1.0\"
-    },
-    \"server\": {
-      \"port\": 9090,
-      \"host\": \"0.0.0.0\"
-    },
-    \"feature_flags\": {
-      \"new_ui\": true
-    }
-  }"
+  // 更新配置文件
+  let updated_config = "{\n    \"service\": {\n      \"name\": \"order-service\",\n      \"port\": 9090,\n      \"enabled\": true\n    },\n    \"database\": {\n      \"host\": \"db.example.com\",\n      \"port\": 5432\n    }\n  }"
   
-  TempFile::update_content(temp_file, updated_config)
+  File::write(config_file, updated_config)
   
-  // Trigger hot reload
-  let reload_result = ConfigManager::hot_reload(config_manager)
-  assert_true(ConfigManager::is_successful(reload_result))
+  // 触发热重载
+  HotReloadConfigManager::reload(config_manager)
   
-  // Verify values were updated
-  assert_eq(ConfigManager::get_string(config_manager, "service.name"), "azimuth-telemetry-v2")
-  assert_eq(ConfigManager::get_string(config_manager, "service.version"), "1.1.0")
-  assert_eq(ConfigManager::get_int(config_manager, "server.port"), 9090)
-  assert_eq(ConfigManager::get_string(config_manager, "server.host"), "0.0.0.0")
-  assert_true(ConfigManager::has_key(config_manager, "feature_flags.new_ui"))
-  assert_true(ConfigManager::get_bool(config_manager, "feature_flags.new_ui"))
-  
-  // Verify reload event was fired
+  // 验证重载事件
   assert_eq(reload_events.length(), 1)
   
-  let changes = reload_events[0]
-  assert_true(changes.contains("service.name"))
-  assert_true(changes.contains("service.version"))
-  assert_true(changes.contains("server.port"))
-  assert_true(changes.contains("server.host"))
-  assert_true(changes.contains("feature_flags.new_ui"))
-  
-  // Test reload with invalid configuration
-  let invalid_config = "{
-    \"service\": {
-      \"name\": \"azimuth-telemetry\"
-    },
-    \"server\": {
-      \"port\": \"invalid_port\"
-    }
-  }"
-  
-  TempFile::update_content(temp_file, invalid_config)
-  
-  let invalid_reload_result = ConfigManager::hot_reload(config_manager)
-  assert_false(ConfigManager::is_successful(invalid_reload_result))
-  
-  // Verify values were not changed
-  assert_eq(ConfigManager::get_string(config_manager, "service.name"), "azimuth-telemetry-v2")
-  assert_eq(ConfigManager::get_int(config_manager, "server.port"), 9090)
-  
-  // Clean up
-  TempFile::delete(temp_file)
-}
-
-// Test 7: Configuration Versioning and Rollback
-test "configuration versioning and rollback" {
-  // Create a configuration manager with versioning enabled
-  let config_manager = ConfigManager::new()
-  ConfigManager::enable_versioning(config_manager, true)
-  ConfigManager::set_max_versions(config_manager, 5)
-  
-  // Load initial configuration (version 1)
-  let v1_config = [
-    ("service.name", "azimuth-telemetry"),
-    ("server.port", "8080"),
-    ("log.level", "info")
-  ]
-  
-  ConfigManager::load_from_map(config_manager, v1_config)
-  
-  // Verify version 1
-  assert_eq(ConfigManager::get_current_version(config_manager), 1)
-  assert_eq(ConfigManager::get_string(config_manager, "service.name"), "azimuth-telemetry")
-  assert_eq(ConfigManager::get_int(config_manager, "server.port"), 8080)
-  
-  // Update configuration (version 2)
-  ConfigManager::set_string(config_manager, "service.name", "azimuth-telemetry-v2")
-  ConfigManager::set_int(config_manager, "server.port", 9090)
-  
-  // Verify version 2
-  assert_eq(ConfigManager::get_current_version(config_manager), 2)
-  assert_eq(ConfigManager::get_string(config_manager, "service.name"), "azimuth-telemetry-v2")
-  assert_eq(ConfigManager::get_int(config_manager, "server.port"), 9090)
-  
-  // Update configuration again (version 3)
-  ConfigManager::set_string(config_manager, "service.name", "azimuth-telemetry-v3")
-  ConfigManager::set_string(config_manager, "log.level", "debug")
-  
-  // Verify version 3
-  assert_eq(ConfigManager::get_current_version(config_manager), 3)
-  assert_eq(ConfigManager::get_string(config_manager, "service.name"), "azimuth-telemetry-v3")
-  assert_eq(ConfigManager::get_string(config_manager, "log.level"), "debug")
-  
-  // Test rollback to version 2
-  let rollback_result = ConfigManager::rollback_to_version(config_manager, 2)
-  assert_true(ConfigManager::is_successful(rollback_result))
-  
-  // Verify rollback to version 2
-  assert_eq(ConfigManager::get_current_version(config_manager), 2)
-  assert_eq(ConfigManager::get_string(config_manager, "service.name"), "azimuth-telemetry-v2")
-  assert_eq(ConfigManager::get_int(config_manager, "server.port"), 9090)
-  assert_eq(ConfigManager::get_string(config_manager, "log.level"), "info")  // From version 2
-  
-  // Create a new version after rollback (version 4)
-  ConfigManager::set_string(config_manager, "service.name", "azimuth-telemetry-v4")
-  
-  // Verify new version
-  assert_eq(ConfigManager::get_current_version(config_manager), 4)
-  assert_eq(ConfigManager::get_string(config_manager, "service.name"), "azimuth-telemetry-v4")
-  
-  // Test version history
-  let version_history = ConfigManager::get_version_history(config_manager)
-  assert_eq(version_history.length(), 4)  // Versions 1-4
-  
-  // Test version diff
-  let diff = ConfigManager::diff_versions(config_manager, 3, 4)
-  assert_true(diff.contains("service.name"))
-  assert_true(diff.contains("log.level"))
-  
-  // Test exceeding max versions
-  ConfigManager::set_string(config_manager, "service.name", "azimuth-telemetry-v5")  // Version 5
-  ConfigManager::set_string(config_manager, "service.name", "azimuth-telemetry-v6")  // Version 6
-  
-  // Should still only keep 5 versions (2-6)
-  let updated_history = ConfigManager::get_version_history(config_manager)
-  assert_eq(updated_history.length(), 5)  // Versions 2-6
-}
-
-// Test 8: Configuration Encryption
-test "configuration encryption" {
-  // Create a configuration manager with encryption
-  let config_manager = ConfigManager::new()
-  ConfigManager::enable_encryption(config_manager, true)
-  
-  // Set encryption key
-  let encryption_key = "my-secret-encryption-key-32-chars"
-  ConfigManager::set_encryption_key(config_manager, encryption_key)
-  
-  // Mark sensitive keys
-  ConfigManager::mark_sensitive(config_manager, "database.password")
-  ConfigManager::mark_sensitive(config_manager, "api.secret")
-  ConfigManager::mark_sensitive(config_manager, "auth.token")
-  
-  // Load configuration with sensitive values
-  let config_with_secrets = [
-    ("service.name", "azimuth-telemetry"),
-    ("database.url", "postgresql://localhost:5432/azimuth"),
-    ("database.password", "super-secret-password"),
-    ("api.key", "public-api-key"),
-    ("api.secret", "secret-api-key"),
-    ("auth.token", "jwt-auth-token")
-  ]
-  
-  ConfigManager::load_from_map(config_manager, config_with_secrets)
-  
-  // Verify sensitive values are encrypted in storage
-  let encrypted_password = ConfigManager::get_raw_value(config_manager, "database.password")
-  assert_not_eq(encrypted_password, "super-secret-password")  // Should be encrypted
-  assert_true(encrypted_password.length() > "super-secret-password".length())  // Encrypted values are longer
-  
-  // Verify values are decrypted when retrieved
-  assert_eq(ConfigManager::get_string(config_manager, "database.password"), "super-secret-password")
-  assert_eq(ConfigManager::get_string(config_manager, "api.secret"), "secret-api-key")
-  assert_eq(ConfigManager::get_string(config_manager, "auth.token"), "jwt-auth-token")
-  
-  // Verify non-sensitive values are not encrypted
-  let non_encrypted_name = ConfigManager::get_raw_value(config_manager, "service.name")
-  assert_eq(non_encrypted_name, "azimuth-telemetry")  // Should not be encrypted
-  
-  // Test configuration export with encrypted values
-  let exported_config = ConfigManager::export_config(config_manager, true)  // Include encrypted
-  assert_true(exported_config.contains("database.password"))  // Should contain encrypted field
-  
-  // Test configuration export without sensitive values
-  let safe_export = ConfigManager::export_config_safe(config_manager)  // Exclude sensitive
-  assert_false(safe_export.contains("database.password"))  // Should not contain sensitive field
-  assert_false(safe_export.contains("api.secret"))
-  assert_false(safe_export.contains("auth.token"))
-  assert_true(safe_export.contains("service.name"))  // Should contain non-sensitive fields
-  
-  // Test changing encryption key
-  let new_key = "my-new-secret-encryption-key-32-chars"
-  let reencrypt_result = ConfigManager::change_encryption_key(config_manager, new_key)
-  assert_true(ConfigManager::is_successful(reencrypt_result))
-  
-  // Verify values are still accessible with new key
-  assert_eq(ConfigManager::get_string(config_manager, "database.password"), "super-secret-password")
-  assert_eq(ConfigManager::get_string(config_manager, "api.secret"), "secret-api-key")
-}
-
-// Test 9: Configuration Templates and Inheritance
-test "configuration templates and inheritance" {
-  // Create a configuration manager
-  let config_manager = ConfigManager::new()
-  
-  // Define base template
-  let base_template = [
-    ("service.name", "azimuth-telemetry"),
-    ("service.version", "1.0.0"),
-    ("server.port", "8080"),
-    ("server.host", "localhost"),
-    ("log.level", "info"),
-    ("log.format", "json")
-  ]
-  
-  ConfigManager::create_template(config_manager, "base", base_template)
-  
-  // Define production template that extends base
-  let production_overrides = [
-    ("server.port", "443"),
-    ("server.host", "0.0.0.0"),
-    ("log.level", "warn"),
-    ("monitoring.enabled", "true"),
-    ("ssl.enabled", "true")
-  ]
-  
-  ConfigManager::create_template_with_inheritance(config_manager, "production", "base", production_overrides)
-  
-  // Define development template that extends base
-  let development_overrides = [
-    ("server.port", "3000"),
-    ("log.level", "debug"),
-    ("hot_reload.enabled", "true"),
-    ("debug.enabled", "true")
-  ]
-  
-  ConfigManager::create_template_with_inheritance(config_manager, "development", "base", development_overrides)
-  
-  // Test loading from base template
-  ConfigManager::load_from_template(config_manager, "base")
-  
-  assert_eq(ConfigManager::get_string(config_manager, "service.name"), "azimuth-telemetry")
-  assert_eq(ConfigManager::get_string(config_manager, "service.version"), "1.0.0")
-  assert_eq(ConfigManager::get_int(config_manager, "server.port"), 8080)
-  assert_eq(ConfigManager::get_string(config_manager, "server.host"), "localhost")
-  assert_eq(ConfigManager::get_string(config_manager, "log.level"), "info")
-  assert_eq(ConfigManager::get_string(config_manager, "log.format"), "json")
-  
-  // Test loading from production template
-  ConfigManager::load_from_template(config_manager, "production")
-  
-  // Should have base values + production overrides
-  assert_eq(ConfigManager::get_string(config_manager, "service.name"), "azimuth-telemetry")  // From base
-  assert_eq(ConfigManager::get_string(config_manager, "service.version"), "1.0.0")        // From base
-  assert_eq(ConfigManager::get_int(config_manager, "server.port"), 443)                  // Override
-  assert_eq(ConfigManager::get_string(config_manager, "server.host"), "0.0.0.0")         // Override
-  assert_eq(ConfigManager::get_string(config_manager, "log.level"), "warn")               // Override
-  assert_eq(ConfigManager::get_string(config_manager, "log.format"), "json")             // From base
-  assert_true(ConfigManager::get_bool(config_manager, "monitoring.enabled"))            // Production only
-  assert_true(ConfigManager::get_bool(config_manager, "ssl.enabled"))                   // Production only
-  
-  // Test loading from development template
-  ConfigManager::load_from_template(config_manager, "development")
-  
-  // Should have base values + development overrides
-  assert_eq(ConfigManager::get_string(config_manager, "service.name"), "azimuth-telemetry")  // From base
-  assert_eq(ConfigManager::get_string(config_manager, "service.version"), "1.0.0")        // From base
-  assert_eq(ConfigManager::get_int(config_manager, "server.port"), 3000)                  // Override
-  assert_eq(ConfigManager::get_string(config_manager, "server.host"), "localhost")        // From base
-  assert_eq(ConfigManager::get_string(config_manager, "log.level"), "debug")              // Override
-  assert_eq(ConfigManager::get_string(config_manager, "log.format"), "json")              // From base
-  assert_true(ConfigManager::get_bool(config_manager, "hot_reload.enabled"))              // Development only
-  assert_true(ConfigManager::get_bool(config_manager, "debug.enabled"))                   // Development only
-  
-  // Test multi-level inheritance
-  let staging_overrides = [
-    ("server.host", "staging.example.com"),
-    ("log.level", "info")
-  ]
-  
-  ConfigManager::create_template_with_inheritance(config_manager, "staging", "production", staging_overrides)
-  ConfigManager::load_from_template(config_manager, "staging")
-  
-  // Should have base + production + staging overrides
-  assert_eq(ConfigManager::get_string(config_manager, "service.name"), "azimuth-telemetry")  // From base
-  assert_eq(ConfigManager::get_int(config_manager, "server.port"), 443)                     // From production
-  assert_eq(ConfigManager::get_string(config_manager, "server.host"), "staging.example.com") // Staging override
-  assert_eq(ConfigManager::get_string(config_manager, "log.level"), "info")                 // Staging override
-  assert_true(ConfigManager::get_bool(config_manager, "ssl.enabled"))                       // From production
-}
-
-// Test 10: Configuration Metrics and Monitoring
-test "configuration metrics and monitoring" {
-  // Create a configuration manager with metrics enabled
-  let config_manager = ConfigManager::new()
-  ConfigManager::enable_metrics(config_manager, true)
-  
-  // Load initial configuration
-  let initial_config = [
-    ("service.name", "azimuth-telemetry"),
-    ("server.port", "8080"),
-    ("log.level", "info")
-  ]
-  
-  ConfigManager::load_from_map(config_manager, initial_config)
-  
-  // Perform various configuration operations
-  for i in 0..10 {
-    ConfigManager::set_string(config_manager, "temp.key" + i.to_string(), "value" + i.to_string())
-  }
-  
-  // Update some values
-  ConfigManager::set_int(config_manager, "server.port", 9090)
-  ConfigManager::set_string(config_manager, "log.level", "debug")
-  
-  // Retrieve some values
-  ConfigManager::get_string(config_manager, "service.name")
-  ConfigManager::get_int(config_manager, "server.port")
-  ConfigManager::get_string(config_manager, "log.level")
-  
-  // Test non-existent key
-  ConfigManager::get_string_with_default(config_manager, "nonexistent.key", "default")
-  
-  // Get configuration metrics
-  let metrics = ConfigManager::get_metrics(config_manager)
-  
-  // Verify metrics
-  assert_eq(ConfigMetrics::get_total_keys(metrics), 13)  // 3 initial + 10 temp keys
-  assert_eq(ConfigMetrics::get_set_operations(metrics), 12)  // 3 initial + 10 temp + 2 updates
-  assert_eq(ConfigMetrics::get_get_operations(metrics), 4)   // 3 gets + 1 get with default
-  
-  // Test key-specific metrics
-  let service_name_metrics = ConfigManager::get_key_metrics(config_manager, "service.name")
-  assert_eq(KeyMetrics::get_get_count(service_name_metrics), 1)
-  assert_eq(KeyMetrics::get_set_count(service_name_metrics), 1)
-  
-  let server_port_metrics = ConfigManager::get_key_metrics(config_manager, "server.port")
-  assert_eq(KeyMetrics::get_get_count(server_port_metrics), 1)
-  assert_eq(KeyMetrics::get_set_count(server_port_metrics), 2)  // Initial load + update
-  
-  // Test most accessed keys
-  let most_accessed = ConfigManager::get_most_accessed_keys(config_manager, 5)
-  assert_true(most_accessed.length() > 0)
-  assert_eq(most_accessed[0].0, "service.name")  // Most accessed
-  
-  // Test configuration change history
-  let change_history = ConfigManager::get_change_history(config_manager)
-  assert_true(change_history.length() >= 2)  // At least port and log level changes
-  
-  // Verify change details
-  let port_change = change_history.find(|change| change.key == "server.port")
-  match port_change {
-    Some(change) => {
-      assert_eq(change.old_value, "8080")
-      assert_eq(change.new_value, "9090")
-      assert_true(change.timestamp > 0)
-    }
+  // 验证配置已更新
+  let updated_service_name = HotReloadConfigManager::get_string(config_manager, "service.name")
+  match updated_service_name {
+    Some(name) => assert_eq(name, "order-service")
     None => assert_true(false)
   }
   
-  // Test configuration performance metrics
-  let performance_metrics = ConfigManager::get_performance_metrics(config_manager)
-  assert_true(PerformanceMetrics::get_avg_get_time(performance_metrics) >= 0)
-  assert_true(PerformanceMetrics::get_avg_set_time(performance_metrics) >= 0)
+  let updated_service_port = HotReloadConfigManager::get_int(config_manager, "service.port")
+  match updated_service_port {
+    Some(port) => assert_eq(port, 9090)
+    None => assert_true(false)
+  }
   
-  // Test configuration health metrics
-  let health_metrics = ConfigManager::get_health_metrics(config_manager)
-  assert_true(HealthMetrics::is_healthy(health_metrics))
-  assert_eq(HealthMetrics::get_last_load_time(health_metrics), ConfigManager::get_last_load_time(config_manager))
-  assert_eq(HealthMetrics::get_last_reload_time(health_metrics), ConfigManager::get_last_reload_time(config_manager))
+  let updated_db_host = HotReloadConfigManager::get_string(config_manager, "database.host")
+  match updated_db_host {
+    Some(host) => assert_eq(host, "db.example.com")
+    None => assert_true(false)
+  }
+  
+  // 清理测试文件
+  File::delete(config_file)
+}
+
+test "配置加密测试" {
+  // 创建加密配置管理器
+  let config_manager = EncryptedConfigManager::new("encryption_key_123456789")
+  
+  // 添加敏感配置项
+  EncryptedConfigManager::set_sensitive(config_manager, "database.password", "super_secret_password")
+  EncryptedConfigManager::set_sensitive(config_manager, "api.key", "sk-1234567890abcdef")
+  EncryptedConfigManager::set(config_manager, "service.name", "payment-service") // 非敏感配置
+  
+  // 获取敏感配置项
+  let db_password = EncryptedConfigManager::get_string(config_manager, "database.password")
+  match db_password {
+    Some(password) => assert_eq(password, "super_secret_password")
+    None => assert_true(false)
+  }
+  
+  let api_key = EncryptedConfigManager::get_string(config_manager, "api.key")
+  match api_key {
+    Some(key) => assert_eq(key, "sk-1234567890abcdef")
+    None => assert_true(false)
+  }
+  
+  // 获取非敏感配置项
+  let service_name = EncryptedConfigManager::get_string(config_manager, "service.name")
+  match service_name {
+    Some(name) => assert_eq(name, "payment-service")
+    None => assert_true(false)
+  }
+  
+  // 导出配置（敏感项应被加密）
+  let exported_config = EncryptedConfigManager::export(config_manager)
+  
+  // 验证敏感项已加密
+  assert_false(exported_config.contains("super_secret_password"))
+  assert_false(exported_config.contains("sk-1234567890abcdef"))
+  assert_true(exported_config.contains("payment-service")) // 非敏感项应保持原样
+  
+  // 创建新的配置管理器并导入配置
+  let new_config_manager = EncryptedConfigManager::new("encryption_key_123456789")
+  let import_result = EncryptedConfigManager::import(new_config_manager, exported_config)
+  assert_true(import_result)
+  
+  // 验证导入的配置
+  let imported_db_password = EncryptedConfigManager::get_string(new_config_manager, "database.password")
+  match imported_db_password {
+    Some(password) => assert_eq(password, "super_secret_password")
+    None => assert_true(false)
+  }
+  
+  let imported_api_key = EncryptedConfigManager::get_string(new_config_manager, "api.key")
+  match imported_api_key {
+    Some(key) => assert_eq(key, "sk-1234567890abcdef")
+    None => assert_true(false)
+  }
+}
+
+test "配置模板测试" {
+  // 创建配置模板管理器
+  let template_manager = ConfigTemplateManager::new()
+  
+  // 定义配置模板
+  let service_template = "{\n    \"name\": \"{{service_name}}\",\n    \"version\": \"{{service_version}}\",\n    \"port\": {{service_port}},\n    \"enabled\": {{service_enabled}},\n    \"features\": [{{#each features}}\"{{this}}\"{{#unless @last}},{{/unless}}{{/each}}]\n  }"
+  
+  // 注册模板
+  ConfigTemplateManager::register_template(template_manager, "service", service_template)
+  
+  // 定义模板数据
+  let template_data = {
+    "service_name": "payment-service",
+    "service_version": "2.1.0",
+    "service_port": 8080,
+    "service_enabled": true,
+    "features": ["api", "webhook", "reporting"]
+  }
+  
+  // 渲染模板
+  let rendered_config = ConfigTemplateManager::render(template_manager, "service", template_data)
+  
+  // 验证渲染结果
+  assert_true(rendered_config.contains("\"name\": \"payment-service\""))
+  assert_true(rendered_config.contains("\"version\": \"2.1.0\""))
+  assert_true(rendered_config.contains("\"port\": 8080"))
+  assert_true(rendered_config.contains("\"enabled\": true"))
+  assert_true(rendered_config.contains("\"features\": [\"api\",\"webhook\",\"reporting\"]"))
+  
+  // 使用渲染的配置创建配置管理器
+  let config_manager = ConfigManager::new()
+  let load_result = ConfigManager::load_from_json(config_manager, rendered_config)
+  assert_true(load_result)
+  
+  // 验证配置项
+  let service_name = ConfigManager::get_string(config_manager, "name")
+  match service_name {
+    Some(name) => assert_eq(name, "payment-service")
+    None => assert_true(false)
+  }
+  
+  let service_port = ConfigManager::get_int(config_manager, "port")
+  match service_port {
+    Some(port) => assert_eq(port, 8080)
+    None => assert_true(false)
+  }
+  
+  let service_features = ConfigManager::get_string_array(config_manager, "features")
+  match service_features {
+    Some(features) => {
+      assert_eq(features.length(), 3)
+      assert_eq(features[0], "api")
+      assert_eq(features[1], "webhook")
+      assert_eq(features[2], "reporting")
+    }
+    None => assert_true(false)
+  }
+}
+
+test "配置合并测试" {
+  // 创建配置管理器
+  let base_config = ConfigManager::new()
+  
+  // 添加基础配置
+  ConfigManager::set(base_config, "service.name", "payment-service")
+  ConfigManager::set(base_config, "service.version", "2.1.0")
+  ConfigManager::set(base_config, "service.port", 8080)
+  ConfigManager::set(base_config, "service.enabled", true)
+  ConfigManager::set(base_config, "database.host", "localhost")
+  ConfigManager::set(base_config, "database.port", 5432)
+  
+  // 创建覆盖配置
+  let override_config = ConfigManager::new()
+  
+  // 添加覆盖配置
+  ConfigManager::set(override_config, "service.port", 9090) // 覆盖基础配置
+  ConfigManager::set(override_config, "service.debug", true) // 新增配置
+  ConfigManager::set(override_config, "database.host", "db.example.com") // 覆盖基础配置
+  ConfigManager::set(override_config, "database.ssl", true) // 新增配置
+  
+  // 合并配置
+  let merged_config = ConfigManager::merge(base_config, override_config)
+  
+  // 验证合并结果
+  let service_name = ConfigManager::get_string(merged_config, "service.name")
+  match service_name {
+    Some(name) => assert_eq(name, "payment-service") // 来自基础配置
+    None => assert_true(false)
+  }
+  
+  let service_version = ConfigManager::get_string(merged_config, "service.version")
+  match service_version {
+    Some(version) => assert_eq(version, "2.1.0") // 来自基础配置
+    None => assert_true(false)
+  }
+  
+  let service_port = ConfigManager::get_int(merged_config, "service.port")
+  match service_port {
+    Some(port) => assert_eq(port, 9090) // 来自覆盖配置
+    None => assert_true(false)
+  }
+  
+  let service_enabled = ConfigManager::get_bool(merged_config, "service.enabled")
+  match service_enabled {
+    Some(enabled) => assert_true(enabled) // 来自基础配置
+    None => assert_true(false)
+  }
+  
+  let service_debug = ConfigManager::get_bool(merged_config, "service.debug")
+  match service_debug {
+    Some(debug) => assert_true(debug) // 来自覆盖配置
+    None => assert_true(false)
+  }
+  
+  let database_host = ConfigManager::get_string(merged_config, "database.host")
+  match database_host {
+    Some(host) => assert_eq(host, "db.example.com") // 来自覆盖配置
+    None => assert_true(false)
+  }
+  
+  let database_port = ConfigManager::get_int(merged_config, "database.port")
+  match database_port {
+    Some(port) => assert_eq(port, 5432) // 来自基础配置
+    None => assert_true(false)
+  }
+  
+  let database_ssl = ConfigManager::get_bool(merged_config, "database.ssl")
+  match database_ssl {
+    Some(ssl) => assert_true(ssl) // 来自覆盖配置
+    None => assert_true(false)
+  }
 }

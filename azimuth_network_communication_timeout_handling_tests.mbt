@@ -1,620 +1,442 @@
-// Azimuth 网络通信和超时处理测试用例
-// 专注于测试网络连接、超时机制、重试策略和错误恢复
+// Azimuth Network Communication and Timeout Handling Test Suite
+// 测试网络通信和超时处理功能，确保系统在网络环境下的稳定性和可靠性
 
-// 测试1: 基础网络连接和超时
-test "基础网络连接和超时" {
-  // 1. 创建网络连接管理器
-  let network_manager = NetworkManager::new()
+test "HTTP客户端基础通信测试" {
+  // 创建HTTP客户端
+  let http_client = HttpClient::new()
   
-  // 2. 配置连接参数
-  let connection_config = ConnectionConfig({
-    host: "telemetry.example.com",
-    port: 8080,
-    protocol: "http",
-    timeout_ms: 5000,
-    retry_attempts: 3,
-    retry_delay_ms: 1000
-  })
-  
-  // 3. 测试成功连接
-  let connection_result = NetworkManager::connect(network_manager, connection_config)
-  assert_true(connection_result.success)
-  assert_not_nil(connection_result.connection_id)
-  
-  // 4. 测试连接状态
-  let connection_id = connection_result.connection_id!
-  assert_true(NetworkManager::is_connected(network_manager, connection_id))
-  assert_eq(NetworkManager::get_connection_info(network_manager, connection_id).host, "telemetry.example.com")
-  assert_eq(NetworkManager::get_connection_info(network_manager, connection_id).port, 8080)
-  
-  // 5. 测试数据发送
-  let telemetry_data = TelemetryPacket({
-    trace_id: "trace-123456789",
-    span_id: "span-987654321",
-    metrics: [("cpu_usage", 75.5), ("memory_usage", 60.2)],
-    timestamp: 1735689600000000000L
-  })
-  
-  let send_result = NetworkManager::send_data(network_manager, connection_id, telemetry_data)
-  assert_true(send_result.success)
-  assert_eq(send_result.bytes_sent, telemetry_data.size())
-  
-  // 6. 测试连接关闭
-  let close_result = NetworkManager::close_connection(network_manager, connection_id)
-  assert_true(close_result.success)
-  assert_false(NetworkManager::is_connected(network_manager, connection_id))
-}
-
-// 测试2: 连接超时处理
-test "连接超时处理" {
-  // 1. 创建网络连接管理器
-  let network_manager = NetworkManager::new()
-  
-  // 2. 配置短超时连接（模拟超时场景）
-  let timeout_config = ConnectionConfig({
-    host: "slow-server.example.com",
-    port: 8080,
-    protocol: "http",
-    timeout_ms: 100, // 非常短的超时
-    retry_attempts: 2,
-    retry_delay_ms: 50
-  })
-  
-  // 3. 测试连接超时
-  let timeout_result = NetworkManager::connect(network_manager, timeout_config)
-  assert_false(timeout_result.success)
-  assert_eq(timeout_result.error.type, "connection_timeout")
-  assert_true(timeout_result.error.message.contains("timeout"))
-  
-  // 4. 测试连接超时统计
-  let timeout_stats = NetworkManager::get_timeout_stats(network_manager)
-  assert_eq(timeout_stats.connection_timeouts, 1)
-  assert_eq(timeout_stats.total_connection_attempts, 1)
-  
-  // 5. 测试不同超时设置
-  let configs = [
-    (50, "very_short"),
-    (100, "short"),
-    (500, "medium"),
-    (1000, "long"),
-    (5000, "very_long")
+  // 测试GET请求
+  let get_headers = [
+    ("Accept", "application/json"),
+    ("User-Agent", "Azimuth-Telemetry/1.0")
   ]
+  let get_request = HttpRequest::new("GET", "https://httpbin.org/get", get_headers, None)
   
-  for (timeout_ms, config_name) in configs {
-    let test_config = ConnectionConfig({
-      host: "test-server-" + config_name + ".example.com",
-      port: 8080,
-      protocol: "http",
-      timeout_ms: timeout_ms,
-      retry_attempts: 1,
-      retry_delay_ms: 10
-    })
-    
-    let start_time = Time::now()
-    let result = NetworkManager::connect(network_manager, test_config)
-    let end_time = Time::now()
-    let actual_duration = end_time - start_time
-    
-    if not(result.success) and result.error.type == "connection_timeout" {
-      // 验证实际超时时间接近配置的超时时间（允许一定误差）
-      assert_true(actual_duration >= timeout_ms)
-      assert_true(actual_duration <= timeout_ms + 500) // 允许500ms误差
-    }
+  let get_response = HttpClient::send_request(http_client, get_request)
+  
+  // 验证GET响应
+  assert_eq(HttpResponse::status_code(get_response), 200)
+  match HttpResponse::body(get_response) {
+    Some(body) => assert_true(body.contains("\"url\":"))
+    None => assert_true(false)
   }
   
-  // 6. 测试超时事件记录
-  let timeout_events = NetworkManager::get_timeout_events(network_manager)
-  assert_true(timeout_events.length() > 0)
+  // 测试POST请求
+  let post_headers = [
+    ("Content-Type", "application/json"),
+    ("User-Agent", "Azimuth-Telemetry/1.0")
+  ]
+  let post_body = "{\"key\": \"value\", \"number\": 42}"
+  let post_request = HttpRequest::new("POST", "https://httpbin.org/post", post_headers, Some(post_body))
   
-  for event in timeout_events {
-    assert_eq(event.event_type, "connection_timeout")
-    assert_not_nil(event.timestamp)
-    assert_not_nil(event.config.host)
-    assert_true(event.actual_timeout_ms >= event.config.timeout_ms)
+  let post_response = HttpClient::send_request(http_client, post_request)
+  
+  // 验证POST响应
+  assert_eq(HttpResponse::status_code(post_response), 200)
+  match HttpResponse::body(post_response) {
+    Some(body) => assert_true(body.contains("\"key\": \"value\""))
+    None => assert_true(false)
   }
 }
 
-// 测试3: 数据传输超时处理
-test "数据传输超时处理" {
-  // 1. 创建网络连接管理器
-  let network_manager = NetworkManager::new()
+test "网络连接超时处理测试" {
+  // 创建带超时设置的HTTP客户端
+  let http_client = HttpClient::with_timeout(5000) // 5秒超时
   
-  // 2. 建立连接
-  let connection_config = ConnectionConfig({
-    host: "telemetry.example.com",
-    port: 8080,
-    protocol: "http",
-    timeout_ms: 5000,
-    retry_attempts: 3,
-    retry_delay_ms: 1000
-  })
+  // 测试正常请求（应在超时前完成）
+  let normal_headers = [
+    ("User-Agent", "Azimuth-Telemetry/1.0")
+  ]
+  let normal_request = HttpRequest::new("GET", "https://httpbin.org/delay/1", normal_headers, None)
   
-  let connection_result = NetworkManager::connect(network_manager, connection_config)
-  assert_true(connection_result.success)
-  let connection_id = connection_result.connection_id!
+  let start_time = Time::now()
+  let normal_response = HttpClient::send_request(http_client, normal_request)
+  let end_time = Time::now()
+  let normal_duration = end_time - start_time
   
-  // 3. 创建大量数据（模拟传输超时）
-  let large_data = TelemetryPacket({
-    trace_id: "trace-" + "x".repeat(1000),
-    span_id: "span-" + "y".repeat(1000),
-    metrics: [
-      for i in 0..=1000 {
-        ("metric_" + i.to_string(), i as Float * 0.1)
-      }
-    ],
-    timestamp: 1735689600000000000L
-  })
+  // 验证正常请求成功完成
+  assert_eq(HttpResponse::status_code(normal_response), 200)
+  assert_true(normal_duration < 5000) // 应在5秒内完成
+  assert_true(normal_duration >= 1000) // 但至少需要1秒（服务器延迟）
   
-  // 4. 配置短传输超时
-  let transfer_config = TransferConfig({
-    connection_id: connection_id,
-    timeout_ms: 100, // 非常短的传输超时
-    chunk_size: 1024,
-    max_retries: 1
-  })
+  // 测试超时请求（应超时）
+  let timeout_headers = [
+    ("User-Agent", "Azimuth-Telemetry/1.0")
+  ]
+  let timeout_request = HttpRequest::new("GET", "https://httpbin.org/delay/10", timeout_headers, None)
   
-  // 5. 测试传输超时
-  let transfer_result = NetworkManager::send_data_with_config(network_manager, large_data, transfer_config)
-  assert_false(transfer_result.success)
-  assert_eq(transfer_result.error.type, "transfer_timeout")
+  let start_time = Time::now()
+  let timeout_response = HttpClient::send_request(http_client, timeout_request)
+  let end_time = Time::now()
+  let timeout_duration = end_time - start_time
   
-  // 6. 测试部分传输统计
-  assert_true(transfer_result.bytes_transferred < large_data.size())
-  assert_true(transfer_result.bytes_transferred > 0)
-  
-  // 7. 测试传输超时统计
-  let transfer_stats = NetworkManager::get_transfer_stats(network_manager)
-  assert_eq(transfer_stats.transfer_timeouts, 1)
-  assert_eq(transfer_stats.partial_transfers, 1)
-  assert_true(transfer_stats.total_bytes_attempted > transfer_stats.total_bytes_successful)
-  
-  // 8. 测试传输恢复
-  let resume_config = TransferConfig({
-    connection_id: connection_id,
-    timeout_ms: 5000, // 更长的超时
-    chunk_size: 512,
-    max_retries: 3,
-    resume_from_byte: transfer_result.bytes_transferred
-  })
-  
-  let resume_result = NetworkManager::resume_transfer(network_manager, large_data, resume_config)
-  assert_true(resume_result.success)
-  assert_eq(resume_result.bytes_transferred, large_data.size())
-  
-  // 9. 清理连接
-  NetworkManager::close_connection(network_manager, connection_id)
+  // 验证超时请求正确处理
+  assert_eq(HttpResponse::status_code(timeout_response), 408) // 408 Request Timeout
+  assert_true(timeout_duration >= 5000) // 应等待至少5秒
+  assert_true(timeout_duration < 10000) // 但不应超过10秒
 }
 
-// 测试4: 自动重试机制
-test "自动重试机制" {
-  // 1. 创建网络连接管理器
-  let network_manager = NetworkManager::new()
+test "网络重试机制测试" {
+  // 创建带重试机制的HTTP客户端
+  let retry_config = RetryConfig::new(3, 1000) // 最多重试3次，每次间隔1秒
+  let http_client = HttpClient::with_retry(retry_config)
   
-  // 2. 模拟不稳定的连接
-  let unstable_config = ConnectionConfig({
-    host: "unstable.example.com",
-    port: 8080,
-    protocol: "http",
-    timeout_ms: 1000,
-    retry_attempts: 5,
-    retry_delay_ms: 500,
-    backoff_multiplier: 2.0
-  })
+  // 测试成功请求（不应重试）
+  let success_headers = [
+    ("User-Agent", "Azimuth-Telemetry/1.0")
+  ]
+  let success_request = HttpRequest::new("GET", "https://httpbin.org/status/200", success_headers, None)
   
-  // 3. 配置失败模拟器
-  let failure_simulator = FailureSimulator::new()
-  FailureSimulator::set_failure_pattern(failure_simulator, [
-    (1, true),   // 第一次尝试失败
-    (2, true),   // 第二次尝试失败
-    (3, false),  // 第三次尝试成功
-    (4, false),  // 后续尝试成功
-    (5, false)
-  ])
+  let success_response = HttpClient::send_request(http_client, success_request)
   
-  // 4. 测试带重试的连接
-  let retry_result = NetworkManager::connect_with_retry(network_manager, unstable_config, failure_simulator)
-  assert_true(retry_result.success)
-  assert_eq(retry_result.attempts, 3)
+  // 验证成功请求
+  assert_eq(HttpResponse::status_code(success_response), 200)
+  assert_eq(HttpClient::get_retry_count(http_client), 0) // 不应重试
   
-  // 5. 验证重试延迟
-  assert_eq(retry_result.retry_delays[0], 500)   // 第一次重试延迟
-  assert_eq(retry_result.retry_delays[1], 1000)  // 第二次重试延迟（指数退避）
+  // 测试可重试错误（应重试）
+  let retry_headers = [
+    ("User-Agent", "Azimuth-Telemetry/1.0")
+  ]
+  let retry_request = HttpRequest::new("GET", "https://httpbin.org/status/500", retry_headers, None)
   
-  // 6. 测试重试统计
-  let retry_stats = NetworkManager::get_retry_stats(network_manager)
-  assert_eq(retry_stats.total_retry_attempts, 2)
-  assert_eq(retry_stats.successful_retries, 1)
-  assert_eq(retry_stats.retry_success_rate, 0.5)
+  let retry_response = HttpClient::send_request(http_client, retry_request)
   
-  // 7. 测试所有尝试都失败的情况
-  let always_fail_config = ConnectionConfig({
-    host: "always-fail.example.com",
-    port: 8080,
-    protocol: "http",
-    timeout_ms: 1000,
-    retry_attempts: 3,
-    retry_delay_ms: 200,
-    backoff_multiplier: 1.5
-  })
+  // 验证重试机制
+  assert_eq(HttpResponse::status_code(retry_response), 500) // 服务器错误，重试后仍失败
+  assert_eq(HttpClient::get_retry_count(http_client), 3) // 应重试3次
   
-  FailureSimulator::set_failure_pattern(failure_simulator, [
-    (1, true),
-    (2, true),
-    (3, true)
-  ])
+  // 测试不可重试错误（不应重试）
+  let no_retry_headers = [
+    ("User-Agent", "Azimuth-Telemetry/1.0")
+  ]
+  let no_retry_request = HttpRequest::new("GET", "https://httpbin.org/status/400", no_retry_headers, None)
   
-  let fail_result = NetworkManager::connect_with_retry(network_manager, always_fail_config, failure_simulator)
-  assert_false(fail_result.success)
-  assert_eq(fail_result.attempts, 3)
-  assert_eq(fail_result.error.type, "all_attempts_failed")
+  let no_retry_response = HttpClient::send_request(http_client, no_retry_request)
   
-  // 8. 测试重试事件记录
-  let retry_events = NetworkManager::get_retry_events(network_manager)
-  assert_true(retry_events.length() >= 3)
-  
-  let fail_events = retry_events.filter(fn(event) { event.config.host == "always-fail.example.com" })
-  assert_eq(fail_events.length(), 3)
-  
-  for i in 0..fail_events.length() {
-    assert_eq(fail_events[i].attempt_number, i + 1)
-    assert_true(fail_events[i].failed)
-  }
+  // 验证不重试机制
+  assert_eq(HttpResponse::status_code(no_retry_response), 400) // 客户端错误，不应重试
+  assert_eq(HttpClient::get_retry_count(http_client), 0) // 不应重试
 }
 
-// 测试5: 连接池管理
-test "连接池管理" {
-  // 1. 创建连接池管理器
-  let connection_pool = ConnectionPool::new()
+test "网络断路器模式测试" {
+  // 创建断路器
+  let circuit_breaker = CircuitBreaker::new(5, 10000) // 5次失败后打开，10秒后尝试半开
   
-  // 2. 配置连接池
-  ConnectionPool::configure(connection_pool, PoolConfig({
-    max_connections: 10,
-    min_connections: 2,
-    connection_timeout_ms: 5000,
-    idle_timeout_ms: 30000,
-    health_check_interval_ms: 10000
-  }))
+  // 创建带断路器的HTTP客户端
+  let http_client = HttpClient::with_circuit_breaker(circuit_breaker)
   
-  // 3. 测试连接池初始化
-  assert_eq(ConnectionPool::get_active_connections(connection_pool), 0)
-  assert_eq(ConnectionPool::get_idle_connections(connection_pool), 0)
+  // 测试初始状态（断路器关闭）
+  assert_eq(CircuitBreaker::state(circuit_breaker), CircuitBreakerState::Closed)
+  assert_true(CircuitBreaker::is_available(circuit_breaker))
   
-  // 4. 测试连接获取
-  let connections = []
-  for i in 0..=5 {
-    let connection = ConnectionPool::acquire_connection(connection_pool, "telemetry.example.com", 8080)
-    assert_not_nil(connection)
-    connections.push(connection)
+  // 发送成功请求
+  let success_headers = [
+    ("User-Agent", "Azimuth-Telemetry/1.0")
+  ]
+  let success_request = HttpRequest::new("GET", "https://httpbin.org/status/200", success_headers, None)
+  
+  let success_response = HttpClient::send_request(http_client, success_request)
+  
+  // 验证成功请求
+  assert_eq(HttpResponse::status_code(success_response), 200)
+  assert_eq(CircuitBreaker::state(circuit_breaker), CircuitBreakerState::Closed) // 仍关闭
+  
+  // 发送多次失败请求
+  let failure_headers = [
+    ("User-Agent", "Azimuth-Telemetry/1.0")
+  ]
+  let failure_request = HttpRequest::new("GET", "https://httpbin.org/status/500", failure_headers, None)
+  
+  for i in 0..=4 {
+    let failure_response = HttpClient::send_request(http_client, failure_request)
+    assert_eq(HttpResponse::status_code(failure_response), 500)
+    CircuitBreaker::record_failure(circuit_breaker)
   }
   
-  // 5. 验证连接池状态
-  assert_eq(ConnectionPool::get_active_connections(connection_pool), 5)
-  assert_eq(ConnectionPool::get_idle_connections(connection_pool), 0)
+  // 验证断路器打开
+  assert_eq(CircuitBreaker::state(circuit_breaker), CircuitBreakerState::Open)
+  assert_false(CircuitBreaker::is_available(circuit_breaker))
   
-  // 6. 测试连接释放
-  for connection in connections {
-    ConnectionPool::release_connection(connection_pool, connection)
+  // 测试断路器打开时的请求
+  let open_response = HttpClient::send_request(http_client, success_request)
+  
+  // 验证断路器打开时的响应
+  assert_eq(HttpResponse::status_code(open_response), 503) // 503 Service Unavailable
+  
+  // 等待断路器半开
+  Time::sleep(11000) // 等待11秒（超过10秒超时）
+  
+  // 测试半开状态
+  assert_eq(CircuitBreaker::state(circuit_breaker), CircuitBreakerState::HalfOpen)
+  
+  // 发送成功请求
+  let half_open_response = HttpClient::send_request(http_client, success_request)
+  
+  // 验证半开状态下的成功请求
+  assert_eq(HttpResponse::status_code(half_open_response), 200)
+  CircuitBreaker::record_success(circuit_breaker)
+  
+  // 验证断路器关闭
+  assert_eq(CircuitBreaker::state(circuit_breaker), CircuitBreakerState::Closed)
+  assert_true(CircuitBreaker::is_available(circuit_breaker))
+}
+
+test "网络连接池测试" {
+  // 创建连接池
+  let connection_pool = ConnectionPool::new(10) // 最大10个连接
+  
+  // 创建带连接池的HTTP客户端
+  let http_client = HttpClient::with_connection_pool(connection_pool)
+  
+  // 测试并发请求
+  let requests = []
+  let responses = []
+  
+  for i in 0..=20 {
+    let headers = [
+      ("User-Agent", "Azimuth-Telemetry/1.0"),
+      ("X-Request-ID", i.to_string())
+    ]
+    let request = HttpRequest::new("GET", "https://httpbin.org/delay/1", headers, None)
+    requests = requests + [request]
   }
   
-  // 7. 验证连接释放后的状态
-  assert_eq(ConnectionPool::get_active_connections(connection_pool), 0)
-  assert_eq(ConnectionPool::get_idle_connections(connection_pool), 5)
+  // 并发发送请求
+  let start_time = Time::now()
+  responses = HttpClient::send_requests_concurrent(http_client, requests)
+  let end_time = Time::now()
+  let total_time = end_time - start_time
   
-  // 8. 测试连接重用
-  let reused_connection = ConnectionPool::acquire_connection(connection_pool, "telemetry.example.com", 8080)
-  assert_not_nil(reused_connection)
-  assert_eq(ConnectionPool::get_active_connections(connection_pool), 1)
-  assert_eq(ConnectionPool::get_idle_connections(connection_pool), 4)
+  // 验证所有请求成功
+  assert_eq(responses.length(), 21)
+  for response in responses {
+    assert_eq(HttpResponse::status_code(response), 200)
+  }
   
-  // 9. 测试连接超时清理
-  ConnectionPool::advance_time(connection_pool, 35000) // 超过空闲超时时间
-  ConnectionPool::cleanup_idle_connections(connection_pool)
+  // 验证连接池提高了效率（21个1秒延迟的请求应该在远少于21秒的时间内完成）
+  assert_true(total_time < 15000) // 应在15秒内完成
   
-  // 10. 验证超时清理结果
-  assert_eq(ConnectionPool::get_idle_connections(connection_pool), 0)
-  
-  // 11. 测试连接健康检查
-  let unhealthy_connection = ConnectionPool::acquire_connection(connection_pool, "unhealthy.example.com", 8080)
-  ConnectionPool::simulate_connection_failure(unhealthy_connection)
-  ConnectionPool::release_connection(connection_pool, unhealthy_connection)
-  
-  ConnectionPool::perform_health_check(connection_pool)
-  assert_eq(ConnectionPool::get_idle_connections(connection_pool), 0) // 不健康连接被移除
-  
-  // 12. 测试连接池统计
+  // 验证连接池统计
   let pool_stats = ConnectionPool::get_stats(connection_pool)
-  assert_eq(pool_stats.total_acquired, 7)
-  assert_eq(pool_stats.total_released, 7)
-  assert_eq(pool_stats.connections_created, 6)
-  assert_eq(pool_stats.connections_reused, 1)
-  assert_eq(pool_stats.connections_timeout, 4)
-  assert_eq(pool_stats.connections_failed_health_check, 1)
+  assert_true(pool_stats.active_connections <= 10) // 活跃连接不超过10
+  assert_true(pool_stats.total_requests >= 21) // 总请求数至少21
+  assert_true(pool_stats.reused_connections > 0) // 有连接被重用
 }
 
-// 测试6: 网络错误分类和处理
-test "网络错误分类和处理" {
-  // 1. 创建网络错误处理器
-  let error_handler = NetworkErrorHandler::new()
+test "网络压缩传输测试" {
+  // 创建支持压缩的HTTP客户端
+  let http_client = HttpClient::with_compression()
   
-  // 2. 配置错误处理策略
-  NetworkErrorHandler::configure_error_strategy(error_handler, "connection_refused", ErrorStrategy::RetryWithBackoff)
-  NetworkErrorHandler::configure_error_strategy(error_handler, "connection_timeout", ErrorStrategy::RetryWithBackoff)
-  NetworkErrorHandler::configure_error_strategy(error_handler, "dns_resolution_failed", ErrorStrategy::FailImmediately)
-  NetworkErrorHandler::configure_error_strategy(error_handler, "ssl_handshake_failed", ErrorStrategy::FailImmediately)
-  NetworkErrorHandler::configure_error_strategy(error_handler, "transfer_timeout", ErrorStrategy::ResumeTransfer)
-  NetworkErrorHandler::configure_error_strategy(error_handler, "server_error_5xx", ErrorStrategy::RetryWithBackoff)
-  NetworkErrorHandler::configure_error_strategy(error_handler, "client_error_4xx", ErrorStrategy::FailImmediately)
+  // 创建大型请求体
+  let large_body = "x" * 100000 // 100KB数据
   
-  // 3. 测试错误分类
-  let test_errors = [
-    ("Connection refused", "connection_refused", true),
-    ("DNS resolution failed", "dns_resolution_failed", false),
-    ("SSL handshake failed", "ssl_handshake_failed", false),
-    ("Transfer timeout", "transfer_timeout", true),
-    ("Server error 500", "server_error_5xx", true),
-    ("Client error 404", "client_error_4xx", false)
+  // 测试压缩传输
+  let headers = [
+    ("Content-Type", "text/plain"),
+    ("Accept-Encoding", "gzip, deflate"),
+    ("User-Agent", "Azimuth-Telemetry/1.0")
   ]
+  let request = HttpRequest::new("POST", "https://httpbin.org/post", headers, Some(large_body))
   
-  for (message, error_type, should_retry) in test_errors {
-    let error = NetworkError::new(error_type, message)
-    let classification = NetworkErrorHandler::classify_error(error_handler, error)
-    let strategy = NetworkErrorHandler::get_error_strategy(error_handler, error_type)
-    
-    assert_eq(classification.type, error_type)
-    assert_eq(strategy.should_retry, should_retry)
+  let start_time = Time::now()
+  let response = HttpClient::send_request(http_client, request)
+  let end_time = Time::now()
+  let transmission_time = end_time - start_time
+  
+  // 验证响应
+  assert_eq(HttpResponse::status_code(response), 200)
+  
+  // 检查响应是否包含压缩信息
+  match HttpResponse::body(response) {
+    Some(body) => {
+      // 验证服务器接收到了完整数据
+      assert_true(body.contains("\"data\":"))
+      assert_true(body.contains("x".repeat(100))) // 至少包含部分数据
+    }
+    None => assert_true(false)
   }
   
-  // 4. 测试错误恢复策略
-  let recoverable_errors = [
-    NetworkError::new("connection_timeout", "Connection timeout after 5000ms"),
-    NetworkError::new("server_error_5xx", "Internal server error 500"),
-    NetworkError::new("transfer_timeout", "Transfer timeout after 10000ms")
-  ]
+  // 测试未压缩传输（比较性能）
+  let uncompressed_client = HttpClient::without_compression()
+  let uncompressed_request = HttpRequest::new("POST", "https://httpbin.org/post", headers, Some(large_body))
   
-  for error in recoverable_errors {
-    let recovery_action = NetworkErrorHandler::get_recovery_action(error_handler, error)
-    assert_not_nil(recovery_action)
-    assert_true(recovery_action.type == "retry" || recovery_action.type == "resume")
-  }
+  let start_time = Time::now()
+  let uncompressed_response = HttpClient::send_request(uncompressed_client, uncompressed_request)
+  let end_time = Time::now()
+  let uncompressed_time = end_time - start_time
   
-  // 5. 测试不可恢复错误
-  let non_recoverable_errors = [
-    NetworkError::new("dns_resolution_failed", "DNS resolution failed"),
-    NetworkError::new("ssl_handshake_failed", "SSL handshake failed"),
-    NetworkError::new("client_error_4xx", "Not found 404")
-  ]
-  
-  for error in non_recoverable_errors {
-    let recovery_action = NetworkErrorHandler::get_recovery_action(error_handler, error)
-    assert_not_nil(recovery_action)
-    assert_eq(recovery_action.type, "fail")
-  }
-  
-  // 6. 测试错误统计
-  for error in recoverable_errors + non_recoverable_errors {
-    NetworkErrorHandler::record_error(error_handler, error)
-  }
-  
-  let error_stats = NetworkErrorHandler::get_error_stats(error_handler)
-  assert_eq(error_stats.total_errors, 6)
-  assert_eq(error_stats.recoverable_errors, 3)
-  assert_eq(error_stats.non_recoverable_errors, 3)
-  
-  // 7. 测试错误率监控
-  let error_rate = NetworkErrorHandler::get_error_rate(error_handler, 60000) // 最近1分钟
-  assert_true(error_rate > 0.0)
-  assert_true(error_rate <= 1.0)
-  
-  // 8. 测试错误阈值告警
-  NetworkErrorHandler::set_error_threshold(error_handler, 0.5) // 50%错误率阈值
-  let alert_triggered = NetworkErrorHandler::check_error_threshold(error_handler)
-  assert_true(alert_triggered) // 6个错误中有3个是不可恢复的，错误率50%
+  // 验证压缩传输更快
+  assert_true(transmission_time < uncompressed_time)
 }
 
-// 测试7: 网络性能监控
-test "网络性能监控" {
-  // 1. 创建网络性能监控器
-  let performance_monitor = NetworkPerformanceMonitor::new()
+test "网络认证和安全测试" {
+  // 创建HTTP客户端
+  let http_client = HttpClient::new()
   
-  // 2. 模拟网络操作
-  let operations = [
-    ("small_data", 1024, 50),      // 1KB数据，50ms延迟
-    ("medium_data", 10240, 200),   // 10KB数据，200ms延迟
-    ("large_data", 102400, 800),   // 100KB数据，800ms延迟
-    ("huge_data", 1024000, 3000)   // 1MB数据，3000ms延迟
+  // 测试基本认证
+  let basic_auth_headers = [
+    ("Authorization", "Basic " + Base64::encode("user:password")),
+    ("User-Agent", "Azimuth-Telemetry/1.0")
   ]
+  let basic_auth_request = HttpRequest::new("GET", "https://httpbin.org/basic-auth/user/password", basic_auth_headers, None)
   
-  for (name, size, latency) in operations {
-    // 模拟连接建立
-    let connection_start = Time::now()
-    Time::sleep(10) // 模拟连接时间
-    let connection_end = Time::now()
-    
-    // 模拟数据传输
-    let transfer_start = Time::now()
-    Time::sleep(latency)
-    let transfer_end = Time::now()
-    
-    // 记录性能指标
-    NetworkPerformanceMonitor::record_connection_time(
-      performance_monitor,
-      name,
-      connection_end - connection_start
-    )
-    
-    NetworkPerformanceMonitor::record_transfer_performance(
-      performance_monitor,
-      name,
-      size,
-      transfer_end - transfer_start
-    )
+  let basic_auth_response = HttpClient::send_request(http_client, basic_auth_request)
+  
+  // 验证基本认证
+  assert_eq(HttpResponse::status_code(basic_auth_response), 200)
+  match HttpResponse::body(basic_auth_response) {
+    Some(body) => assert_true(body.contains("\"authenticated\": true"))
+    None => assert_true(false)
   }
   
-  // 3. 测试性能统计
-  let connection_stats = NetworkPerformanceMonitor::get_connection_stats(performance_monitor)
-  assert_eq(connection_stats.total_connections, 4)
-  assert_true(connection_stats.avg_connection_time > 0)
-  assert_true(connection_stats.min_connection_time > 0)
-  assert_true(connection_stats.max_connection_time >= connection_stats.min_connection_time)
+  // 测试Bearer Token认证
+  let bearer_auth_headers = [
+    ("Authorization", "Bearer test-token"),
+    ("User-Agent", "Azimuth-Telemetry/1.0")
+  ]
+  let bearer_auth_request = HttpRequest::new("GET", "https://httpbin.org/bearer", bearer_auth_headers, None)
   
-  let transfer_stats = NetworkPerformanceMonitor::get_transfer_stats(performance_monitor)
-  assert_eq(transfer_stats.total_transfers, 4)
-  assert_eq(transfer_stats.total_bytes, 1034494) // 1KB + 10KB + 100KB + 1MB
-  assert_true(transfer_stats.avg_throughput > 0)
-  assert_true(transfer_stats.min_throughput > 0)
-  assert_true(transfer_stats.max_throughput >= transfer_stats.min_throughput)
+  let bearer_auth_response = HttpClient::send_request(http_client, bearer_auth_request)
   
-  // 4. 测试性能趋势分析
-  let performance_trend = NetworkPerformanceMonitor::analyze_performance_trend(performance_monitor, 300000) // 最近5分钟
-  assert_not_nil(performance_trend)
+  // 验证Bearer Token认证
+  assert_eq(HttpResponse::status_code(bearer_auth_response), 200)
+  match HttpResponse::body(bearer_auth_response) {
+    Some(body) => assert_true(body.contains("\"authenticated\": true"))
+    None => assert_true(false)
+  }
   
-  // 验证趋势数据
-  assert_true(performance_trend.connection_time_trend.length() > 0)
-  assert_true(performance_trend.throughput_trend.length() > 0)
-  assert_true(performance_trend.latency_trend.length() > 0)
+  // 测试API密钥认证
+  let api_key_headers = [
+    ("X-API-Key", "test-api-key"),
+    ("User-Agent", "Azimuth-Telemetry/1.0")
+  ]
+  let api_key_request = HttpRequest::new("GET", "https://httpbin.org/headers", api_key_headers, None)
   
-  // 5. 测试性能异常检测
-  // 添加一个异常慢的操作
-  NetworkPerformanceMonitor::record_transfer_performance(
-    performance_monitor,
-    "anomaly_slow",
-    1024,
-    5000 // 异常高的延迟
-  )
+  let api_key_response = HttpClient::send_request(http_client, api_key_request)
   
-  let anomalies = NetworkPerformanceMonitor::detect_performance_anomalies(performance_monitor)
-  assert_true(anomalies.length() > 0)
-  
-  // 验证异常检测结果
-  let slow_anomalies = anomalies.filter(fn(anomaly) { anomaly.type == "high_latency" })
-  assert_true(slow_anomalies.length() > 0)
-  
-  // 6. 测试性能报告生成
-  let performance_report = NetworkPerformanceMonitor::generate_performance_report(performance_monitor)
-  assert_not_nil(performance_report)
-  
-  // 验证报告内容
-  assert_true(performance_report.contains("Connection Statistics"))
-  assert_true(performance_report.contains("Transfer Statistics"))
-  assert_true(performance_report.contains("Performance Trends"))
-  assert_true(performance_report.contains("Detected Anomalies"))
-  
-  // 7. 测试性能阈值告警
-  NetworkPerformanceMonitor::set_latency_threshold(performance_monitor, 1000) // 1秒延迟阈值
-  NetworkPerformanceMonitor::set_throughput_threshold(performance_monitor, 10000) // 10KB/s吞吐量阈值
-  
-  let threshold_alerts = NetworkPerformanceMonitor::check_performance_thresholds(performance_monitor)
-  assert_true(threshold_alerts.length() > 0)
-  
-  // 验证告警内容
-  let latency_alerts = threshold_alerts.filter(fn(alert) { alert.type == "high_latency" })
-  let throughput_alerts = threshold_alerts.filter(fn(alert) { alert.type == "low_throughput" })
-  
-  assert_true(latency_alerts.length() > 0) // 应该有高延迟告警
-  // 吞吐量告警取决于实际测试环境
+  // 验证API密钥认证
+  assert_eq(HttpResponse::status_code(api_key_response), 200)
+  match HttpResponse::body(api_key_response) {
+    Some(body) => assert_true(body.contains("\"X-Api-Key\": \"test-api-key\""))
+    None => assert_true(false)
+  }
 }
 
-// 测试8: 网络负载均衡
-test "网络负载均衡" {
-  // 1. 创建负载均衡器
-  let load_balancer = LoadBalancer::new()
+test "网络请求和响应拦截测试" {
+  // 创建HTTP客户端
+  let http_client = HttpClient::new()
   
-  // 2. 配置服务器池
-  let servers = [
-    ServerConfig({ host: "server1.example.com", port: 8080, weight: 1, health: "healthy" }),
-    ServerConfig({ host: "server2.example.com", port: 8080, weight: 2, health: "healthy" }),
-    ServerConfig({ host: "server3.example.com", port: 8080, weight: 1, health: "healthy" })
+  // 添加请求拦截器
+  HttpClient::add_request_interceptor(http_client, |request| {
+    // 添加通用头
+    HttpRequest::add_header(request, "X-Request-ID", UUID::generate().to_string())
+    HttpRequest::add_header(request, "X-Timestamp", Time::now().to_string())
+    request
+  })
+  
+  // 添加响应拦截器
+  HttpClient::add_response_interceptor(http_client, |response| {
+    // 记录响应时间
+    HttpResponse::add_header(response, "X-Response-Time", Time::now().to_string())
+    response
+  })
+  
+  // 发送请求
+  let headers = [
+    ("User-Agent", "Azimuth-Telemetry/1.0")
   ]
+  let request = HttpRequest::new("GET", "https://httpbin.org/headers", headers, None)
   
-  for server in servers {
-    LoadBalancer::add_server(load_balancer, server)
+  let response = HttpClient::send_request(http_client, request)
+  
+  // 验证请求拦截器工作
+  assert_eq(HttpResponse::status_code(response), 200)
+  match HttpResponse::body(response) {
+    Some(body) => {
+      // 验证请求拦截器添加的头
+      assert_true(body.contains("\"X-Request-ID\""))
+      assert_true(body.contains("\"X-Timestamp\""))
+    }
+    None => assert_true(false)
+  }
+}
+
+test "网络错误处理测试" {
+  // 创建HTTP客户端
+  let http_client = HttpClient::new()
+  
+  // 测试DNS解析失败
+  let dns_error_request = HttpRequest::new("GET", "https://nonexistent-domain-12345.com", [], None)
+  
+  let dns_error_response = HttpClient::send_request(http_client, dns_error_request)
+  
+  // 验证DNS错误处理
+  assert_eq(HttpResponse::status_code(dns_error_response), 0) // 连接错误
+  match HttpResponse::error(dns_error_response) {
+    Some(error) => assert_true(error.contains("DNS") || error.contains("resolve"))
+    None => assert_true(false)
   }
   
-  // 3. 测试轮询策略
-  LoadBalancer::set_strategy(load_balancer, LoadBalanceStrategy::RoundRobin)
+  // 测试连接拒绝
+  let connection_refused_request = HttpRequest::new("GET", "https://localhost:12345", [], None)
   
-  let round_robin_selections = []
-  for i in 0..=9 {
-    let selected_server = LoadBalancer::select_server(load_balancer)
-    round_robin_selections.push(selected_server.host)
+  let connection_refused_response = HttpClient::send_request(http_client, connection_refused_request)
+  
+  // 验证连接拒绝处理
+  assert_eq(HttpResponse::status_code(connection_refused_response), 0) // 连接错误
+  match HttpResponse::error(connection_refused_response) {
+    Some(error) => assert_true(error.contains("connection") || error.contains("refused"))
+    None => assert_true(false)
   }
   
-  // 验证轮询分布
-  assert_eq(round_robin_selections[0], "server1.example.com")
-  assert_eq(round_robin_selections[1], "server2.example.com")
-  assert_eq(round_robin_selections[2], "server3.example.com")
-  assert_eq(round_robin_selections[3], "server1.example.com")
-  assert_eq(round_robin_selections[4], "server2.example.com")
+  // 测试SSL/TLS错误
+  let ssl_error_request = HttpRequest::new("GET", "https://expired.badssl.com", [], None)
   
-  // 4. 测试加权轮询策略
-  LoadBalancer::set_strategy(load_balancer, LoadBalanceStrategy::WeightedRoundRobin)
+  let ssl_error_response = HttpClient::send_request(http_client, ssl_error_request)
   
-  let weighted_selections = []
-  for i in 0..=9 {
-    let selected_server = LoadBalancer::select_server(load_balancer)
-    weighted_selections.push(selected_server.host)
+  // 验证SSL/TLS错误处理
+  assert_eq(HttpResponse::status_code(ssl_error_response), 0) // 连接错误
+  match HttpResponse::error(ssl_error_response) {
+    Some(error) => assert_true(error.contains("SSL") || error.contains("certificate") || error.contains("TLS"))
+    None => assert_true(false)
+  }
+}
+
+test "网络流量控制和限速测试" {
+  // 创建带流量控制的HTTP客户端
+  let rate_limiter = RateLimiter::new(5, 1000) // 每秒最多5个请求
+  let http_client = HttpClient::with_rate_limiter(rate_limiter)
+  
+  // 发送多个请求
+  let requests = []
+  let responses = []
+  
+  for i in 0..=10 {
+    let headers = [
+      ("User-Agent", "Azimuth-Telemetry/1.0"),
+      ("X-Request-ID", i.to_string())
+    ]
+    let request = HttpRequest::new("GET", "https://httpbin.org/delay/0", headers, None)
+    requests = requests + [request]
   }
   
-  // 验证加权分布（server2应该被选中更多次）
-  let server1_count = weighted_selections.filter(fn(host) { host == "server1.example.com" }).length()
-  let server2_count = weighted_selections.filter(fn(host) { host == "server2.example.com" }).length()
-  let server3_count = weighted_selections.filter(fn(host) { host == "server3.example.com" }).length()
+  // 并发发送请求
+  let start_time = Time::now()
+  responses = HttpClient::send_requests_concurrent(http_client, requests)
+  let end_time = Time::now()
+  let total_time = end_time - start_time
   
-  assert_eq(server1_count, 3)
-  assert_eq(server2_count, 4) // 权重为2，应该被选中更多次
-  assert_eq(server3_count, 3)
-  
-  // 5. 测试最少连接策略
-  LoadBalancer::set_strategy(load_balancer, LoadBalanceStrategy::LeastConnections)
-  
-  // 模拟连接数
-  LoadBalancer::set_server_connections(load_balancer, "server1.example.com", 5)
-  LoadBalancer::set_server_connections(load_balancer, "server2.example.com", 2)
-  LoadBalancer::set_server_connections(load_balancer, "server3.example.com", 8)
-  
-  let least_conn_server = LoadBalancer::select_server(load_balancer)
-  assert_eq(least_conn_server.host, "server2.example.com") // 连接数最少
-  
-  // 6. 测试健康检查和故障转移
-  // 标记server2为不健康
-  LoadBalancer::set_server_health(load_balancer, "server2.example.com", "unhealthy")
-  
-  let healthy_servers = LoadBalancer::get_healthy_servers(load_balancer)
-  assert_eq(healthy_servers.length(), 2)
-  assert_true(healthy_servers.any(fn(server) { server.host == "server1.example.com" }))
-  assert_true(healthy_servers.any(fn(server) { server.host == "server3.example.com" }))
-  assert_false(healthy_servers.any(fn(server) { server.host == "server2.example.com" }))
-  
-  // 验证故障转移
-  let failover_server = LoadBalancer::select_server(load_balancer)
-  assert_true(failover_server.host == "server1.example.com" || failover_server.host == "server3.example.com")
-  
-  // 7. 测试负载均衡统计
-  let lb_stats = LoadBalancer::get_stats(load_balancer)
-  assert_eq(lb_stats.total_requests, 10 + 10 + 1 + 1) // 轮询 + 加权 + 最少连接 + 故障转移
-  assert_eq(lb_stats.server_stats["server1.example.com"].requests, 4) // 轮询2 + 加权3 + 最少连接0 + 故障转移1
-  assert_eq(lb_stats.server_stats["server2.example.com"].requests, 4) // 轮询2 + 加权4 + 最少连接1 + 故障转移0
-  assert_eq(lb_stats.server_stats["server3.example.com"].requests, 4) // 轮询2 + 加权3 + 最少连接0 + 故障转移1
-  
-  // 8. 测试动态权重调整
-  LoadBalancer::adjust_server_weight(load_balancer, "server1.example.com", 3)
-  LoadBalancer::adjust_server_weight(load_balancer, "server3.example.com", 2)
-  
-  // 恢复server2健康状态
-  LoadBalancer::set_server_health(load_balancer, "server2.example.com", "healthy")
-  
-  let adjusted_selections = []
-  for i in 0..=5 {
-    let selected_server = LoadBalancer::select_server(load_balancer)
-    adjusted_selections.push(selected_server.host)
+  // 验证所有请求成功
+  assert_eq(responses.length(), 11)
+  for response in responses {
+    assert_eq(HttpResponse::status_code(response), 200)
   }
   
-  // 验证权重调整后的分布
-  let adj_server1_count = adjusted_selections.filter(fn(host) { host == "server1.example.com" }).length()
-  let adj_server2_count = adjusted_selections.filter(fn(host) { host == "server2.example.com" }).length()
-  let adj_server3_count = adjusted_selections.filter(fn(host) { host == "server3.example.com" }).length()
+  // 验证限速工作（11个请求，每秒5个，应该需要至少2秒）
+  assert_true(total_time >= 2000)
   
-  assert_eq(adj_server1_count, 2)
-  assert_eq(adj_server2_count, 1)
-  assert_eq(adj_server3_count, 3)
+  // 验证限速器统计
+  let limiter_stats = RateLimiter::get_stats(rate_limiter)
+  assert_eq(limiter_stats.total_requests, 11)
+  assert_true(limiter_stats.throttled_requests > 0) // 应该有请求被限速
 }
