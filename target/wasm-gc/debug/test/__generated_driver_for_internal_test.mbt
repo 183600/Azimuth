@@ -2552,6 +2552,13 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_617a696d7574685f7072656d69756d5f6572726f725f626f756e646172795f74657374732e6d6274_6, ["null none handling"]),
     7: (__test_617a696d7574685f7072656d69756d5f6572726f725f626f756e646172795f74657374732e6d6274_7, ["state machine error recovery"]),
   },
+  "azimuth_premium_error_boundary_handling_tests.mbt": {
+    0: (__test_617a696d7574685f7072656d69756d5f6572726f725f626f756e646172795f68616e646c696e675f74657374732e6d6274_0, ["error boundary with exception handling"]),
+    1: (__test_617a696d7574685f7072656d69756d5f6572726f725f626f756e646172795f68616e646c696e675f74657374732e6d6274_1, ["circuit breaker pattern implementation"]),
+    2: (__test_617a696d7574685f7072656d69756d5f6572726f725f626f756e646172795f68616e646c696e675f74657374732e6d6274_2, ["fallback mechanism implementation"]),
+    3: (__test_617a696d7574685f7072656d69756d5f6572726f725f626f756e646172795f68616e646c696e675f74657374732e6d6274_3, ["error recovery and self-healing mechanisms"]),
+    4: (__test_617a696d7574685f7072656d69756d5f6572726f725f626f756e646172795f68616e646c696e675f74657374732e6d6274_4, ["error aggregation and alerting"]),
+  },
   "azimuth_premium_distributed_tracing_tests.mbt": {
     0: (__test_617a696d7574685f7072656d69756d5f64697374726962757465645f74726163696e675f74657374732e6d6274_0, ["comprehensive distributed trace context management"]),
     1: (__test_617a696d7574685f7072656d69756d5f64697374726962757465645f74726163696e675f74657374732e6d6274_1, ["trace chain reconstruction and analysis"]),
