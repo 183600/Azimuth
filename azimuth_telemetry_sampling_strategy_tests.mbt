@@ -1,303 +1,484 @@
-// 遥测数据采样策略测试 - Telemetry Data Sampling Strategy Tests
-// 专注于各种采样策略的正确性和性能表现
+// Azimuth 遥测数据采样策略测试用例
+// 专注于测试不同的采样策略和算法
 
+// 测试1: 固定比例采样策略
 test "固定比例采样策略测试" {
-  // 测试固定比例采样策略（例如：采样10%的请求）
-  let sample_rate = 0.1
-  let total_requests = 1000
-  let sampled_count = 0
+  // 创建固定比例采样器
+  let sampler = FixedRateSampler::new(0.1)  // 10% 采样率
   
-  // 模拟1000个请求，检查采样比例
-  for i = 0; i < total_requests; i = i + 1 {
-    let trace_id = "trace_" + i.to_string()
-    let should_sample = i.to_double() < total_requests.to_double() * sample_rate
-    
-    if should_sample {
-      sampled_count = sampled_count + 1
+  // 测试采样决策
+  let decision1 = Sampler::should_sample(sampler, "trace-001", "span-001", "operation.name")
+  let decision2 = Sampler::should_sample(sampler, "trace-002", "span-002", "operation.name")
+  let decision3 = Sampler::should_sample(sampler, "trace-003", "span-003", "operation.name")
+  
+  // 验证采样决策
+  match decision1 {
+    Decision::RecordAndSample => assert_true(true)
+    Decision::Drop => assert_true(true)  // 两种决策都可能，取决于实现
+    Decision::RecordOnly => assert_true(false)  // 固定采样器不应该返回此决策
+  }
+  
+  // 验证采样器属性
+  let attributes = Sampler::get_attributes(sampler)
+  assert_eq(attributes.get("sampler.type"), Some("fixed_rate"))
+  assert_eq(attributes.get("sampler.rate"), Some("0.1"))
+}
+
+// 测试2: 基于概率的采样策略
+test "基于概率的采样策略测试" {
+  // 创建概率采样器
+  let sampler = ProbabilitySampler::new(0.25)  // 25% 采样率
+  
+  // 测试多个采样决策
+  let decisions = []
+  for i in 1..=100 {
+    let trace_id = "trace-" + i.to_string()
+    let span_id = "span-" + i.to_string()
+    let decision = Sampler::should_sample(sampler, trace_id, span_id, "test.operation")
+    decisions = decisions.push(decision)
+  }
+  
+  // 统计采样结果
+  let mut sampled_count = 0
+  let mut dropped_count = 0
+  
+  for decision in decisions {
+    match decision {
+      Decision::RecordAndSample => sampled_count = sampled_count + 1
+      Decision::Drop => dropped_count = dropped_count + 1
+      Decision::RecordOnly => assert_true(false)  // 概率采样器不应该返回此决策
     }
   }
   
-  // 验证采样数量在合理范围内（允许±5%的误差）
-  let expected_min = (total_requests.to_double() * (sample_rate - 0.05)).to_int()
-  let expected_max = (total_requests.to_double() * (sample_rate + 0.05)).to_int()
+  // 验证采样率在合理范围内 (20% - 30%)
+  let actual_rate = sampled_count.to_float() / 100.0
+  assert_true(actual_rate >= 0.2 and actual_rate <= 0.3)
   
-  assert_true(sampled_count >= expected_min && sampled_count <= expected_max)
-  assert_eq(sampled_count, 100) // 简化实现的精确结果
+  // 验证采样器属性
+  let attributes = Sampler::get_attributes(sampler)
+  assert_eq(attributes.get("sampler.type"), Some("probability"))
+  assert_eq(attributes.get("sampler.rate"), Some("0.25"))
 }
 
-test "基于属性的动态采样策略测试" {
-  // 测试基于请求属性的动态采样策略
-  let test_requests = [
-    ("GET", "/api/public/data", "anonymous", false),     // 公共数据，不采样
-    ("POST", "/api/user/login", "anonymous", true),      // 登录请求，采样
-    ("GET", "/api/user/profile", "user123", true),       // 用户数据，采样
-    ("POST", "/api/admin/settings", "admin", true),      // 管理操作，采样
-    ("GET", "/api/health", "anonymous", false),          // 健康检查，不采样
-    ("POST", "/api/payment/process", "user456", true),    // 支付处理，采样
-    ("GET", "/api/public/catalog", "anonymous", false),  // 公共目录，不采样
-    ("DELETE", "/api/user/delete", "user789", true)      // 删除操作，采样
+// 测试3: 基于父级的采样策略
+test "基于父级的采样策略测试" {
+  // 创建父级感知采样器
+  let sampler = ParentBasedSampler::new(ProbabilitySampler::new(0.5))
+  
+  // 测试有父span且父span被采样的情况
+  let parent_context = SpanContext::new("parent-trace", "parent-span", true, "")
+  let decision_with_sampled_parent = Sampler::should_sample_with_parent(
+    sampler, 
+    "child-trace", 
+    "child-span", 
+    "child.operation", 
+    Some(parent_context)
+  )
+  
+  // 子span应该跟随父span的采样决策
+  match decision_with_sampled_parent {
+    Decision::RecordAndSample => assert_true(true)
+    Decision::Drop => assert_true(false)
+    Decision::RecordOnly => assert_true(false)
+  }
+  
+  // 测试有父span但父span未被采样的情况
+  let unsampled_parent_context = SpanContext::new("parent-trace", "parent-span", false, "")
+  let decision_with_unsampled_parent = Sampler::should_sample_with_parent(
+    sampler, 
+    "child-trace", 
+    "child-span", 
+    "child.operation", 
+    Some(unsampled_parent_context)
+  )
+  
+  // 子span应该跟随父span的采样决策
+  match decision_with_unsampled_parent {
+    Decision::RecordAndSample => assert_true(false)
+    Decision::Drop => assert_true(true)
+    Decision::RecordOnly => assert_true(false)
+  }
+  
+  // 测试无父span的情况
+  let decision_without_parent = Sampler::should_sample_with_parent(
+    sampler, 
+    "root-trace", 
+    "root-span", 
+    "root.operation", 
+    None
+  )
+  
+  // 无父span时应该使用根采样器
+  match decision_without_parent {
+    Decision::RecordAndSample => assert_true(true)  // 可能被采样
+    Decision::Drop => assert_true(true)  // 也可能不被采样
+    Decision::RecordOnly => assert_true(false)  // 根采样器不应该返回此决策
+  }
+}
+
+// 测试4: 基于属性的采样策略
+test "基于属性的采样策略测试" {
+  // 创建属性采样器
+  let sampler = AttributeBasedSampler::new([
+    ("service.name", "critical.service"),
+    ("operation.type", "database.query"),
+    ("user.premium", "true")
+  ])
+  
+  // 测试匹配所有属性的情况
+  let matching_attributes = [
+    ("service.name", StringValue("critical.service")),
+    ("operation.type", StringValue("database.query")),
+    ("user.premium", StringValue("true")),
+    ("extra.attr", StringValue("extra.value"))
   ]
   
-  let sampled_requests = []
-  let not_sampled_requests = []
+  let decision_matching = Sampler::should_sample_with_attributes(
+    sampler, 
+    "trace-001", 
+    "span-001", 
+    "matched.operation", 
+    matching_attributes
+  )
   
-  for request in test_requests {
-    let method = request.0
-    let endpoint = request.1
-    let user = request.2
-    let should_sample = request.3
-    
-    let sampled_count = sampled_requests.length()
-    
-    // 模拟采样决策逻辑
-    let actual_sampled = 
-      if method == "GET" && endpoint.contains("/api/public") {
-        false
-      } else if endpoint == "/api/health" {
-        false
-      } else if user == "admin" || method == "DELETE" {
-        true
-      } else if method == "POST" && !endpoint.contains("/login") {
-        true
-      } else {
-        sampled_count % 3 == 0 // 其他情况每3个采样1个
-      }
-    
-    if actual_sampled {
-      sampled_requests.push((method, endpoint, user))
-    } else {
-      not_sampled_requests.push((method, endpoint, user))
-    }
+  // 匹配所有关键属性应该被采样
+  match decision_matching {
+    Decision::RecordAndSample => assert_true(true)
+    Decision::Drop => assert_true(false)
+    Decision::RecordOnly => assert_true(false)
   }
   
-  // 验证采样决策符合预期
-  assert_eq(sampled_requests.length(), 5)
-  assert_eq(not_sampled_requests.length(), 3)
+  // 测试部分匹配属性的情况
+  let partial_attributes = [
+    ("service.name", StringValue("critical.service")),
+    ("operation.type", StringValue("http.request")),
+    ("user.premium", StringValue("false"))
+  ]
   
-  // 验证关键请求都被采样
-  assert_true(sampled_requests.some(fn(req) { req.1 == "/api/admin/settings" }))
-  assert_true(sampled_requests.some(fn(req) { req.1 == "/api/payment/process" }))
-  assert_true(sampled_requests.some(fn(req) { req.1 == "/api/user/delete" }))
+  let decision_partial = Sampler::should_sample_with_attributes(
+    sampler, 
+    "trace-002", 
+    "span-002", 
+    "partial.operation", 
+    partial_attributes
+  )
   
-  // 验证不需要采样的请求未被采样
-  assert_true(not_sampled_requests.some(fn(req) { req.1 == "/api/health" }))
-  assert_true(not_sampled_requests.some(fn(req) { req.1 == "/api/public/data" }))
+  // 部分匹配不应该被采样
+  match decision_partial {
+    Decision::RecordAndSample => assert_true(false)
+    Decision::Drop => assert_true(true)
+    Decision::RecordOnly => assert_true(false)
+  }
+  
+  // 测试不匹配任何属性的情况
+  let no_match_attributes = [
+    ("service.name", StringValue("regular.service")),
+    ("operation.type", StringValue("http.request"))
+  ]
+  
+  let decision_no_match = Sampler::should_sample_with_attributes(
+    sampler, 
+    "trace-003", 
+    "span-003", 
+    "no.match.operation", 
+    no_match_attributes
+  )
+  
+  // 不匹配任何属性不应该被采样
+  match decision_no_match {
+    Decision::RecordAndSample => assert_true(false)
+    Decision::Drop => assert_true(true)
+    Decision::RecordOnly => assert_true(false)
+  }
 }
 
+// 测试5: 自适应采样策略
 test "自适应采样策略测试" {
-  // 测试自适应采样策略，根据系统负载动态调整采样率
-  let base_sample_rate = 0.1
-  let high_load_threshold = 1000  // 每秒请求数
-  let low_load_threshold = 100    // 每秒请求数
+  // 创建自适应采样器
+  let sampler = AdaptiveSampler::new(0.1, 1000, 10000)  // 初始10%，最小1000，最大10000
   
-  // 模拟不同负载下的采样率调整
-  let load_scenarios = [
-    (50, 0.2),    // 低负载，提高采样率
-    (200, 0.15),  // 中低负载，略微提高采样率
-    (500, 0.1),   // 中等负载，使用基础采样率
-    (1200, 0.05), // 高负载，降低采样率
-    (2000, 0.02), // 极高负载，大幅降低采样率
-    (80, 0.2)     // 回到低负载，恢复高采样率
-  ]
-  
-  let adjusted_sample_rates = []
-  
-  for scenario in load_scenarios {
-    let current_load = scenario.0
-    let expected_rate = scenario.1
-    
-    // 模拟自适应采样率计算
-    let adjusted_rate = 
-      if current_load < low_load_threshold {
-        base_sample_rate * 2.0
-      } else if current_load > high_load_threshold {
-        base_sample_rate * 0.5
-      } else {
-        base_sample_rate
-      }
-    
-    adjusted_sample_rates.push(adjusted_rate)
+  // 模拟低流量情况下的采样
+  let low_traffic_decisions = []
+  for i in 1..=100 {
+    let trace_id = "low-traffic-" + i.to_string()
+    let decision = Sampler::should_sample(sampler, trace_id, "span-" + i.to_string(), "low.traffic.operation")
+    low_traffic_decisions = low_traffic_decisions.push(decision)
   }
   
-  // 验证采样率调整符合预期
-  assert_eq(adjusted_sample_rates.length(), 6)
-  assert_eq(adjusted_sample_rates[0], 0.2)  // 低负载
-  assert_eq(adjusted_sample_rates[1], 0.1)  // 中低负载（简化实现）
-  assert_eq(adjusted_sample_rates[2], 0.1)  // 中等负载
-  assert_eq(adjusted_sample_rates[3], 0.05) // 高负载
-  assert_eq(adjusted_sample_rates[4], 0.05) // 极高负载（简化实现）
-  assert_eq(adjusted_sample_rates[5], 0.2)  // 回到低负载
+  // 统计低流量采样结果
+  let mut low_traffic_sampled = 0
+  for decision in low_traffic_decisions {
+    match decision {
+      Decision::RecordAndSample => low_traffic_sampled = low_traffic_sampled + 1
+      _ => {}
+    }
+  }
+  
+  // 低流量时应该提高采样率
+  let low_traffic_rate = low_traffic_sampled.to_float() / 100.0
+  assert_true(low_traffic_rate >= 0.1)  // 应该大于等于初始采样率
+  
+  // 模拟高流量情况下的采样
+  let high_traffic_decisions = []
+  for i in 1..=10000 {
+    let trace_id = "high-traffic-" + i.to_string()
+    let decision = Sampler::should_sample(sampler, trace_id, "span-" + i.to_string(), "high.traffic.operation")
+    high_traffic_decisions = high_traffic_decisions.push(decision)
+  }
+  
+  // 统计高流量采样结果
+  let mut high_traffic_sampled = 0
+  for decision in high_traffic_decisions {
+    match decision {
+      Decision::RecordAndSample => high_traffic_sampled = high_traffic_sampled + 1
+      _ => {}
+    }
+  }
+  
+  // 高流量时应该降低采样率
+  let high_traffic_rate = high_traffic_sampled.to_float() / 10000.0
+  assert_true(high_traffic_rate <= 0.1)  // 应该小于等于初始采样率
 }
 
-test "采样决策一致性测试" {
-  // 测试相同trace_id的请求采样决策一致性
-  let trace_id = "consistent_trace_12345"
-  let sample_decisions = []
+// 测试6: 采样器组合策略
+test "采样器组合策略测试" {
+  // 创建多个采样器
+  let sampler1 = FixedRateSampler::new(0.2)  // 20% 固定采样
+  let sampler2 = AttributeBasedSampler::new([("service.critical", "true")])  // 基于属性采样
+  let sampler3 = ProbabilitySampler::new(0.3)  // 30% 概率采样
   
-  // 对同一trace的多个span进行采样决策
-  for i = 0; i < 10; i = i + 1 {
-    let span_id = "span_" + i.to_string()
-    let parent_span_id = if i > 0 { "span_" + (i-1).to_string() } else { "" }
-    
-    // 模拟采样决策：基于trace_id的哈希值确保一致性
-    let should_sample = trace_id.hash() % 10 < 3 // 30%采样率
-    
-    sample_decisions.push(should_sample)
+  // 创建组合采样器 (OR 逻辑)
+  let or_sampler = CompositeSampler::or([sampler1, sampler2, sampler3])
+  
+  // 测试不满足任何条件的情况
+  let decision_none = Sampler::should_sample_with_attributes(
+    or_sampler, 
+    "trace-001", 
+    "span-001", 
+    "regular.operation", 
+    [("service.critical", StringValue("false"))]
+  )
+  
+  // OR逻辑：至少一个采样器同意就采样
+  match decision_none {
+    Decision::RecordAndSample => assert_true(true)  // 可能被概率采样器采样
+    Decision::Drop => assert_true(true)  // 也可能所有采样器都拒绝
+    Decision::RecordOnly => assert_true(false)
   }
   
-  // 验证所有采样决策一致
-  let first_decision = sample_decisions[0]
-  for decision in sample_decisions {
-    assert_eq(decision, first_decision)
+  // 测试满足属性条件的情况
+  let decision_attr = Sampler::should_sample_with_attributes(
+    or_sampler, 
+    "trace-002", 
+    "span-002", 
+    "critical.operation", 
+    [("service.critical", StringValue("true"))]
+  )
+  
+  // OR逻辑：满足属性条件应该被采样
+  match decision_attr {
+    Decision::RecordAndSample => assert_true(true)
+    Decision::Drop => assert_true(false)
+    Decision::RecordOnly => assert_true(false)
   }
   
-  // 测试不同trace_id的采样决策差异
-  let different_traces = ["trace_a", "trace_b", "trace_c", "trace_d", "trace_e"]
-  let trace_decisions = []
+  // 创建组合采样器 (AND 逻辑)
+  let and_sampler = CompositeSampler::and([sampler1, sampler2])
   
-  for trace in different_traces {
-    let should_sample = trace.hash() % 10 < 3
-    trace_decisions.push(should_sample)
+  // 测试满足所有条件的情况
+  let decision_all = Sampler::should_sample_with_attributes(
+    and_sampler, 
+    "trace-003", 
+    "span-003", 
+    "all.conditions.operation", 
+    [("service.critical", StringValue("true"))]
+  )
+  
+  // AND逻辑：所有采样器同意才采样
+  match decision_all {
+    Decision::RecordAndSample => assert_true(true)  // 可能被采样
+    Decision::Drop => assert_true(true)  // 也可能不被采样
+    Decision::RecordOnly => assert_true(false)
   }
   
-  // 验证不同trace可能有不同的采样决策
-  let unique_decisions = trace_decisions.to_set()
-  assert_true(unique_decisions.size() >= 1) // 至少有一种决策
+  // 测试不满足所有条件的情况
+  let decision_not_all = Sampler::should_sample_with_attributes(
+    and_sampler, 
+    "trace-004", 
+    "span-004", 
+    "partial.conditions.operation", 
+    [("service.critical", StringValue("false"))]
+  )
+  
+  // AND逻辑：不满足所有条件不应该被采样
+  match decision_not_all {
+    Decision::RecordAndSample => assert_true(false)
+    Decision::Drop => assert_true(true)
+    Decision::RecordOnly => assert_true(false)
+  }
 }
 
-test "采样性能基准测试" {
-  // 测试采样决策的性能
-  let request_count = 10000
+// 测试7: 采样器动态配置
+test "采样器动态配置测试" {
+  // 创建可配置采样器
+  let sampler = ConfigurableSampler::new(FixedRateSampler::new(0.1))
+  
+  // 验证初始配置
+  let initial_decision = Sampler::should_sample(sampler, "trace-001", "span-001", "test.operation")
+  match initial_decision {
+    Decision::RecordAndSample => assert_true(true)
+    Decision::Drop => assert_true(true)
+    Decision::RecordOnly => assert_true(false)
+  }
+  
+  // 动态更新采样器配置
+  let new_sampler = ProbabilitySampler::new(0.5)
+  ConfigurableSampler::update(sampler, new_sampler)
+  
+  // 验证更新后的配置
+  let updated_decision = Sampler::should_sample(sampler, "trace-002", "span-002", "test.operation")
+  match updated_decision {
+    Decision::RecordAndSample => assert_true(true)
+    Decision::Drop => assert_true(true)
+    Decision::RecordOnly => assert_true(false)
+  }
+  
+  // 验证配置历史
+  let config_history = ConfigurableSampler::get_config_history(sampler)
+  assert_eq(config_history.length(), 2)  // 初始配置 + 更新配置
+  
+  // 验证当前配置类型
+  let current_config = ConfigurableSampler::get_current_config(sampler)
+  assert_eq(current_config.get("sampler.type"), Some("probability"))
+}
+
+// 测试8: 采样器性能测试
+test "采样器性能测试" {
+  // 创建不同类型的采样器
+  let fixed_sampler = FixedRateSampler::new(0.1)
+  let prob_sampler = ProbabilitySampler::new(0.1)
+  let attr_sampler = AttributeBasedSampler::new([("service.critical", "true")])
+  
+  // 测试固定采样器性能
   let start_time = Clock::now_unix_nanos(Clock::system())
-  
-  let sampled_count = 0
-  for i = 0; i < request_count; i = i + 1 {
-    let trace_id = "perf_trace_" + i.to_string()
-    
-    // 模拟快速采样决策
-    let should_sample = trace_id.length() % 10 < 3 // 简单的采样算法
-    
-    if should_sample {
-      sampled_count = sampled_count + 1
-    }
+  for i in 1..=10000 {
+    let trace_id = "perf-fixed-" + i.to_string()
+    Sampler::should_sample(fixed_sampler, trace_id, "span-" + i.to_string(), "perf.operation")
   }
-  
   let end_time = Clock::now_unix_nanos(Clock::system())
-  let duration_ns = end_time - start_time
-  let duration_ms = duration_ns / 1000000L
+  let fixed_duration = end_time - start_time
   
-  // 验证性能指标：10000个采样决策应在100ms内完成
-  assert_true(duration_ms < 100L)
+  // 测试概率采样器性能
+  let start_time = Clock::now_unix_nanos(Clock::system())
+  for i in 1..=10000 {
+    let trace_id = "perf-prob-" + i.to_string()
+    Sampler::should_sample(prob_sampler, trace_id, "span-" + i.to_string(), "perf.operation")
+  }
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  let prob_duration = end_time - start_time
   
-  // 验证采样比例合理
-  let sample_rate = sampled_count.to_double() / request_count.to_double()
-  assert_true(sample_rate > 0.25 && sample_rate < 0.35) // 期望约30%
+  // 测试属性采样器性能
+  let start_time = Clock::now_unix_nanos(Clock::system())
+  for i in 1..=10000 {
+    let trace_id = "perf-attr-" + i.to_string()
+    Sampler::should_sample_with_attributes(
+      attr_sampler, 
+      trace_id, 
+      "span-" + i.to_string(), 
+      "perf.operation", 
+      [("service.critical", StringValue("true"))]
+    )
+  }
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  let attr_duration = end_time - start_time
+  
+  // 验证性能在合理范围内
+  assert_true(fixed_duration < 1000000000L)  // 小于1秒
+  assert_true(prob_duration < 1000000000L)   // 小于1秒
+  assert_true(attr_duration < 2000000000L)   // 属性采样可能稍慢，但仍应小于2秒
+  
+  // 验证相对性能
+  assert_true(fixed_duration <= prob_duration)  // 固定采样应该比概率采样快
+  assert_true(prob_duration <= attr_duration)   // 概率采样应该比属性采样快
 }
 
-test "采样策略组合测试" {
-  // 测试多种采样策略的组合使用
-  let requests = [
-    ("GET", "/api/public/data", "anonymous", "low_priority"),
-    ("POST", "/api/user/login", "anonymous", "high_priority"),
-    ("GET", "/api/user/profile", "user123", "medium_priority"),
-    ("POST", "/api/admin/settings", "admin", "critical_priority"),
-    ("GET", "/api/health", "anonymous", "low_priority"),
-    ("POST", "/api/payment/process", "user456", "critical_priority"),
-    ("GET", "/api/public/catalog", "anonymous", "low_priority"),
-    ("DELETE", "/api/user/delete", "user789", "high_priority")
-  ]
+// 测试9: 采样器错误处理
+test "采样器错误处理测试" {
+  // 创建会抛出异常的采样器
+  let sampler = FaultySampler::new()
   
-  let sampled_requests = []
+  // 测试采样器异常处理
+  let decision = Sampler::should_sample(sampler, "trace-001", "span-001", "faulty.operation")
   
-  for request in requests {
-    let method = request.0
-    let endpoint = request.1
-    let user = request.2
-    let priority = request.3
-    
-    // 组合采样策略：优先级 + 固定比例 + 属性过滤
-    let priority_sample_rate = 
-      if priority == "critical_priority" { 1.0 }
-      else if priority == "high_priority" { 0.8 }
-      else if priority == "medium_priority" { 0.3 }
-      else { 0.1 }
-    
-    let attribute_filtered = 
-      if endpoint.contains("/api/public") && priority == "low_priority" {
-        false
-      } else {
-        true
-      }
-    
-    let final_sampled = 
-      if !attribute_filtered {
-        false
-      } else {
-        // 基于优先级的采样率
-        let hash_value = (endpoint + user).hash()
-        let threshold = (priority_sample_rate * 100.0).to_int()
-        hash_value % 100 < threshold
-      }
-    
-    if final_sampled {
-      sampled_requests.push((method, endpoint, user, priority))
-    }
+  // 异常情况下应该返回默认决策
+  match decision {
+    Decision::RecordAndSample => assert_true(false)
+    Decision::Drop => assert_true(true)  // 默认应该丢弃
+    Decision::RecordOnly => assert_true(false)
   }
   
-  // 验证采样结果
-  assert_eq(sampled_requests.length(), 5) // 根据策略，应该采样5个请求
+  // 验证错误计数
+  let error_count = FaultySampler::get_error_count(sampler)
+  assert_true(error_count > 0)
   
-  // 验证关键请求都被采样
-  assert_true(sampled_requests.some(fn(req) { req.3 == "critical_priority" && req.1 == "/api/admin/settings" }))
-  assert_true(sampled_requests.some(fn(req) { req.3 == "critical_priority" && req.1 == "/api/payment/process" }))
+  // 测试采样器恢复
+  FaultySampler::recover(sampler)
+  let recovered_decision = Sampler::should_sample(sampler, "trace-002", "span-002", "recovered.operation")
   
-  // 验证低优先级的公共请求未被采样
-  assert_false(sampled_requests.some(fn(req) { req.1 == "/api/public/data" }))
-  assert_false(sampled_requests.some(fn(req) { req.1 == "/api/public/catalog" }))
+  // 恢复后应该正常工作
+  match recovered_decision {
+    Decision::RecordAndSample => assert_true(true)
+    Decision::Drop => assert_true(true)
+    Decision::RecordOnly => assert_true(false)
+  }
 }
 
-test "采样配置动态更新测试" {
-  // 测试采样配置的动态更新能力
-  let initial_sample_rate = 0.1
-  let updated_sample_rate = 0.3
-  let requests = []
+// 测试10: 采样器边界条件测试
+test "采样器边界条件测试" {
+  // 测试极端采样率
+  let always_sampler = FixedRateSampler::new(1.0)  // 100% 采样
+  let never_sampler = FixedRateSampler::new(0.0)   // 0% 采样
   
-  // 生成测试请求
-  for i = 0; i < 100; i = i + 1 {
-    requests.push("request_" + i.to_string())
-  }
-  
-  // 使用初始采样率处理前50个请求
-  let initial_sampled = []
-  for i = 0; i < 50; i = i + 1 {
-    let request = requests[i]
-    let should_sample = request.hash() % 100 < (initial_sample_rate * 100.0).to_int()
-    if should_sample {
-      initial_sampled.push(request)
+  // 测试总是采样
+  for i in 1..=100 {
+    let decision = Sampler::should_sample(always_sampler, "always-trace", "always-span", "always.operation")
+    match decision {
+      Decision::RecordAndSample => assert_true(true)
+      _ => assert_true(false)
     }
   }
   
-  // 更新采样率
-  let current_sample_rate = updated_sample_rate
-  
-  // 使用更新后的采样率处理后50个请求
-  let updated_sampled = []
-  for i = 50; i < 100; i = i + 1 {
-    let request = requests[i]
-    let should_sample = request.hash() % 100 < (current_sample_rate * 100.0).to_int()
-    if should_sample {
-      updated_sampled.push(request)
+  // 测试从不采样
+  for i in 1..=100 {
+    let decision = Sampler::should_sample(never_sampler, "never-trace", "never-span", "never.operation")
+    match decision {
+      Decision::Drop => assert_true(true)
+      _ => assert_true(false)
     }
   }
   
-  // 验证采样率更新生效
-  let initial_rate = initial_sampled.length().to_double() / 50.0
-  let updated_rate = updated_sampled.length().to_double() / 50.0
+  // 测试空字符串参数
+  let empty_decision = Sampler::should_sample(always_sampler, "", "", "")
+  match empty_decision {
+    Decision::RecordAndSample => assert_true(true)
+    _ => assert_true(false)
+  }
   
-  assert_true(initial_rate < 0.15) // 初始约10%
-  assert_true(updated_rate > 0.25) // 更新后约30%
+  // 测试极长字符串参数
+  let long_trace_id = "a".repeat(1000)
+  let long_span_id = "b".repeat(1000)
+  let long_operation = "c".repeat(1000)
+  let long_decision = Sampler::should_sample(always_sampler, long_trace_id, long_span_id, long_operation)
+  match long_decision {
+    Decision::RecordAndSample => assert_true(true)
+    _ => assert_true(false)
+  }
   
-  // 验证配置更新不影响已处理的请求
-  assert_eq(initial_sampled.length(), 5) // 10% of 50
-  assert_eq(updated_sampled.length(), 15) // 30% of 50
+  // 测试特殊字符
+  let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
+  let special_decision = Sampler::should_sample(always_sampler, special_chars, special_chars, special_chars)
+  match special_decision {
+    Decision::RecordAndSample => assert_true(true)
+    _ => assert_true(false)
+  }
 }
