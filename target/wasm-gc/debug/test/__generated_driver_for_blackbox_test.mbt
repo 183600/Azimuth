@@ -534,6 +534,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_premium_serialization_edge_cases.mbt": {
   },
+  "azimuth_premium_serialization_deserialization_tests.mbt": {
+  },
   "azimuth_premium_security_authentication_tests.mbt": {
   },
   "azimuth_premium_resource_management_tests.mbt": {
