@@ -1,708 +1,561 @@
-// Azimuth 并发安全性和线程安全测试
-// 测试系统在并发环境下的安全性和数据一致性
+// Azimuth Telemetry System - Concurrent Safety and Thread Safety Tests
+// This file contains comprehensive test cases for concurrent operations and thread safety
 
-// 测试1: 并发计数器安全操作
-test "并发计数器安全操作" {
-  // 定义线程安全的计数器
-  type AtomicCounter = {
-    value: Int,
-    lock: Bool
-  }
+// Test 1: Thread-Safe Span Operations
+test "thread-safe span operations" {
+  let span_manager = ThreadSafeSpanManager::new()
   
-  // 创建原子计数器
-  let create_counter = fn(initial_value: Int) -> AtomicCounter {
-    {
-      value: initial_value,
-      lock: false
-    }
-  }
-  
-  // 原子递增操作
-  let atomic_increment = fn(counter: AtomicCounter) -> AtomicCounter {
-    // 模拟获取锁
-    if counter.lock {
-      // 如果锁已被获取，返回原计数器(简化实现)
-      return counter
-    }
-    
-    // 获取锁，更新值，释放锁
-    {
-      value: counter.value + 1,
-      lock: false
-    }
-  }
-  
-  // 原子递减操作
-  let atomic_decrement = fn(counter: AtomicCounter) -> AtomicCounter {
-    // 模拟获取锁
-    if counter.lock {
-      // 如果锁已被获取，返回原计数器(简化实现)
-      return counter
-    }
-    
-    // 获取锁，更新值，释放锁
-    {
-      value: counter.value - 1,
-      lock: false
-    }
-  }
-  
-  // 创建计数器
-  let mut counter = create_counter(0)
-  
-  // 模拟并发递增操作
-  for i = 0; i < 100; i = i + 1 {
-    counter = atomic_increment(counter)
-  }
-  
-  // 验证最终值
-  assert_eq(counter.value, 100)
-  
-  // 模拟并发递减操作
-  for i = 0; i < 50; i = i + 1 {
-    counter = atomic_decrement(counter)
-  }
-  
-  // 验证最终值
-  assert_eq(counter.value, 50)
-}
-
-// 测试2: 并发集合安全操作
-test "并发集合安全操作" {
-  // 定义线程安全的集合
-  type ConcurrentSet[T] = {
-    items: Array[T],
-    lock: Bool
-  }
-  
-  // 创建并发集合
-  let create_concurrent_set = fn() -> ConcurrentSet[String] {
-    {
-      items: [],
-      lock: false
-    }
-  }
-  
-  // 线程安全的添加操作
-  let safe_add = fn(set: ConcurrentSet[String], item: String) -> ConcurrentSet[String] {
-    // 模拟获取锁
-    if set.lock {
-      return set
-    }
-    
-    // 检查项是否已存在
-    let exists = set.items.any(fn(existing) { existing == item })
-    
-    if exists {
-      return set
-    }
-    
-    // 添加新项
-    {
-      items: set.items.push(item),
-      lock: false
-    }
-  }
-  
-  // 线程安全的移除操作
-  let safe_remove = fn(set: ConcurrentSet[String], item: String) -> ConcurrentSet[String] {
-    // 模拟获取锁
-    if set.lock {
-      return set
-    }
-    
-    // 移除项
-    {
-      items: set.items.filter(fn(existing) { existing != item }),
-      lock: false
-    }
-  }
-  
-  // 线程安全的包含检查
-  let safe_contains = fn(set: ConcurrentSet[String], item: String) -> Bool {
-    // 模拟获取锁(读操作可以并发)
-    set.items.any(fn(existing) { existing == item })
-  }
-  
-  // 创建并发集合
-  let mut concurrent_set = create_concurrent_set()
-  
-  // 添加多个项
-  let items_to_add = ["item1", "item2", "item3", "item4", "item5"]
-  for item in items_to_add {
-    concurrent_set = safe_add(concurrent_set, item)
-  }
-  
-  // 验证所有项都已添加
-  assert_eq(concurrent_set.items.length(), 5)
-  for item in items_to_add {
-    assert_true(safe_contains(concurrent_set, item))
-  }
-  
-  // 尝试添加重复项
-  let original_length = concurrent_set.items.length()
-  concurrent_set = safe_add(concurrent_set, "item2")  // 已存在的项
-  assert_eq(concurrent_set.items.length(), original_length)  // 长度不应变化
-  
-  // 移除项
-  concurrent_set = safe_remove(concurrent_set, "item3")
-  assert_eq(concurrent_set.items.length(), 4)
-  assert_false(safe_contains(concurrent_set, "item3"))
-  assert_true(safe_contains(concurrent_set, "item1"))
-  assert_true(safe_contains(concurrent_set, "item2"))
-}
-
-// 测试3: 并发映射安全操作
-test "并发映射安全操作" {
-  // 定义线程安全的映射
-  type ConcurrentMap[K, V] = {
-    entries: Array[(K, V)>,
-    lock: Bool
-  }
-  
-  // 创建并发映射
-  let create_concurrent_map = fn() -> ConcurrentMap[String, Int] {
-    {
-      entries: [],
-      lock: false
-    }
-  }
-  
-  // 线程安全的设置操作
-  let safe_set = fn(map: ConcurrentMap[String, Int], key: String, value: Int) -> ConcurrentMap[String, Int] {
-    // 模拟获取锁
-    if map.lock {
-      return map
-    }
-    
-    // 检查键是否已存在
-    let exists = map.entries.any(fn((k, _)) { k == key })
-    
-    if exists {
-      // 更新现有键
-      let new_entries = map.entries.map(fn((k, v)) {
-        if k == key { (k, value) } else { (k, v) }
-      })
-      {
-        entries: new_entries,
-        lock: false
-      }
-    } else {
-      // 添加新键值对
-      {
-        entries: map.entries.push((key, value)),
-        lock: false
-      }
-    }
-  }
-  
-  // 线程安全的获取操作
-  let safe_get = fn(map: ConcurrentMap[String, Int], key: String) -> Option[Int] {
-    // 模拟获取锁(读操作可以并发)
-    for (k, v) in map.entries {
-      if k == key {
-        return Some(v)
-      }
-    }
-    None
-  }
-  
-  // 线程安全的删除操作
-  let safe_delete = fn(map: ConcurrentMap[String, Int], key: String) -> ConcurrentMap[String, Int] {
-    // 模拟获取锁
-    if map.lock {
-      return map
-    }
-    
-    {
-      entries: map.entries.filter(fn((k, _)) { k != key }),
-      lock: false
-    }
-  }
-  
-  // 创建并发映射
-  let mut concurrent_map = create_concurrent_map()
-  
-  // 设置多个键值对
-  concurrent_map = safe_set(concurrent_map, "key1", 100)
-  concurrent_map = safe_set(concurrent_map, "key2", 200)
-  concurrent_map = safe_set(concurrent_map, "key3", 300)
-  
-  // 验证键值对
-  assert_eq(concurrent_map.entries.length(), 3)
-  assert_eq(safe_get(concurrent_map, "key1"), Some(100))
-  assert_eq(safe_get(concurrent_map, "key2"), Some(200))
-  assert_eq(safe_get(concurrent_map, "key3"), Some(300))
-  assert_eq(safe_get(concurrent_map, "key4"), None)
-  
-  // 更新现有键
-  concurrent_map = safe_set(concurrent_map, "key2", 250)
-  assert_eq(concurrent_map.entries.length(), 3)  // 长度不应变化
-  assert_eq(safe_get(concurrent_map, "key2"), Some(250))
-  
-  // 删除键
-  concurrent_map = safe_delete(concurrent_map, "key1")
-  assert_eq(concurrent_map.entries.length(), 2)
-  assert_eq(safe_get(concurrent_map, "key1"), None)
-  assert_eq(safe_get(concurrent_map, "key2"), Some(250))
-  assert_eq(safe_get(concurrent_map, "key3"), Some(300))
-}
-
-// 测试4: 并发队列安全操作
-test "并发队列安全操作" {
-  // 定义线程安全的队列
-  type ConcurrentQueue[T] = {
-    items: Array[T>,
-    head: Int,
-    tail: Int,
-    lock: Bool
-  }
-  
-  // 创建并发队列
-  let create_concurrent_queue = fn(capacity: Int) -> ConcurrentQueue[String] {
-    {
-      items: Array::with_capacity(capacity),
-      head: 0,
-      tail: 0,
-      lock: false
-    }
-  }
-  
-  // 线程安全的入队操作
-  let safe_enqueue = fn(queue: ConcurrentQueue[String], item: String) -> ConcurrentQueue[String] {
-    // 模拟获取锁
-    if queue.lock {
-      return queue
-    }
-    
-    // 检查队列是否已满(简化实现)
-    if queue.items.length() >= 100 {  // 假设最大容量为100
-      return queue
-    }
-    
-    // 添加项到队列尾部
-    {
-      items: queue.items.push(item),
-      head: queue.head,
-      tail: queue.tail + 1,
-      lock: false
-    }
-  }
-  
-  // 线程安全的出队操作
-  let safe_dequeue = fn(queue: ConcurrentQueue[String>) -> (ConcurrentQueue[String], Option[String]) {
-    // 模拟获取锁
-    if queue.lock {
-      return (queue, None)
-    }
-    
-    // 检查队列是否为空
-    if queue.items.length() == 0 {
-      return (queue, None)
-    }
-    
-    // 移除队列头部项
-    let item = queue.items[0]
-    let new_items = queue.items.slice(1, queue.items.length())
-    
-    ({
-      items: new_items,
-      head: queue.head + 1,
-      tail: queue.tail,
-      lock: false
-    }, Some(item))
-  }
-  
-  // 创建并发队列
-  let mut queue = create_concurrent_queue(10)
-  
-  // 入队多个项
-  let items_to_enqueue = ["item1", "item2", "item3", "item4", "item5"]
-  for item in items_to_enqueue {
-    queue = safe_enqueue(queue, item)
-  }
-  
-  // 验证队列长度
-  assert_eq(queue.items.length(), 5)
-  
-  // 出队所有项并验证顺序
-  let mut dequeued_items = []
-  for i = 0; i < 5; i = i + 1 {
-    let (new_queue, item) = safe_dequeue(queue)
-    queue = new_queue
-    match item {
-      Some(value) => dequeued_items = dequeued_items.push(value)
-      None => assert_true(false)  // 不应该为空
-    }
-  }
-  
-  // 验证出队顺序与入队顺序一致
-  assert_eq(dequeued_items, items_to_enqueue)
-  
-  // 验证队列现在为空
-  assert_eq(queue.items.length(), 0)
-  
-  // 尝试从空队列出队
-  let (new_queue, item) = safe_dequeue(queue)
-  queue = new_queue
-  assert_eq(item, None)
-}
-
-// 测试5: 并发资源池管理
-test "并发资源池管理" {
-  // 定义资源
-  type Resource = {
-    id: String,
-    in_use: Bool,
-    created_at: Int
-  }
-  
-  // 定义资源池
-  type ResourcePool = {
-    resources: Array[Resource>,
-    max_size: Int,
-    lock: Bool
-  }
-  
-  // 创建资源池
-  let create_resource_pool = fn(max_size: Int) -> ResourcePool {
-    {
-      resources: [],
-      max_size: max_size,
-      lock: false
-    }
-  }
-  
-  // 创建资源
-  let create_resource = fn(id: String) -> Resource {
-    {
-      id: id,
-      in_use: false,
-      created_at: Time::now()
-    }
-  }
-  
-  // 从池中获取资源
-  let acquire_resource = fn(pool: ResourcePool) -> (ResourcePool, Option[Resource]) {
-    // 模拟获取锁
-    if pool.lock {
-      return (pool, None)
-    }
-    
-    // 查找可用资源
-    for resource in pool.resources {
-      if !resource.in_use {
-        // 标记资源为使用中
-        let updated_resources = pool.resources.map(fn(r) {
-          if r.id == resource.id {
-            { id: r.id, in_use: true, created_at: r.created_at }
-          } else {
-            r
-          }
-        })
+  // Test concurrent span creation
+  let threads = []
+  for i in 0..=10 {
+    let thread_id = "thread_" + i.to_string()
+    let thread = Thread::spawn(fn() {
+      for j in 0..=100 {
+        let span_ctx = SpanContext::new("trace123", thread_id + "_span_" + j.to_string(), true, "active")
+        let span = ThreadSafeSpanManager::create_span(span_manager, "concurrent_operation", Internal, span_ctx)
         
-        return ({
-          resources: updated_resources,
-          max_size: pool.max_size,
-          lock: false
-        }, Some(resource))
-      }
-    }
-    
-    // 没有可用资源，检查是否可以创建新资源
-    if pool.resources.length() < pool.max_size {
-      let new_resource = create_resource("resource-" + pool.resources.length().to_string())
-      let updated_resource = { id: new_resource.id, in_use: true, created_at: new_resource.created_at }
-      
-      return ({
-        resources: pool.resources.push(updated_resource),
-        max_size: pool.max_size,
-        lock: false
-      }, Some(updated_resource))
-    }
-    
-    // 无法获取资源
-    (pool, None)
-  }
-  
-  // 释放资源回池中
-  let release_resource = fn(pool: ResourcePool, resource_id: String) -> ResourcePool {
-    // 模拟获取锁
-    if pool.lock {
-      return pool
-    }
-    
-    // 查找资源并标记为未使用
-    let updated_resources = pool.resources.map(fn(r) {
-      if r.id == resource_id {
-        { id: r.id, in_use: false, created_at: r.created_at }
-      } else {
-        r
+        // Concurrent attribute setting
+        ThreadSafeSpanManager::set_attribute(span_manager, span, "thread.id", StringValue(thread_id))
+        ThreadSafeSpanManager::set_attribute(span_manager, span, "iteration", IntValue(j))
+        
+        // Concurrent event addition
+        ThreadSafeSpanManager::add_event(span_manager, span, "operation_step", Some([
+          ("step", IntValue(j)),
+          ("thread", StringValue(thread_id))
+        ]))
+        
+        ThreadSafeSpanManager::end_span(span_manager, span)
       }
     })
-    
-    {
-      resources: updated_resources,
-      max_size: pool.max_size,
-      lock: false
-    }
+    threads.push(thread)
   }
   
-  // 创建资源池
-  let mut pool = create_resource_pool(3)
-  
-  // 获取资源
-  let (new_pool1, resource1) = acquire_resource(pool)
-  pool = new_pool1
-  match resource1 {
-    Some(r) => {
-      assert_eq(r.id, "resource-0")
-      assert_true(r.in_use)
-    }
-    None => assert_true(false)
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
   }
   
-  // 获取更多资源
-  let (new_pool2, resource2) = acquire_resource(pool)
-  pool = new_pool2
-  match resource2 {
-    Some(r) => {
-      assert_eq(r.id, "resource-1")
-      assert_true(r.in_use)
-    }
-    None => assert_true(false)
-  }
-  
-  let (new_pool3, resource3) = acquire_resource(pool)
-  pool = new_pool3
-  match resource3 {
-    Some(r) => {
-      assert_eq(r.id, "resource-2")
-      assert_true(r.in_use)
-    }
-    None => assert_true(false)
-  }
-  
-  // 验证池中有3个资源，都在使用中
-  assert_eq(pool.resources.length(), 3)
-  assert_true(pool.resources.all(fn(r) { r.in_use }))
-  
-  // 尝试获取更多资源(应该失败，因为池已满)
-  let (new_pool4, resource4) = acquire_resource(pool)
-  pool = new_pool4
-  assert_eq(resource4, None)
-  
-  // 释放一个资源
-  pool = release_resource(pool, "resource-1")
-  
-  // 验证资源已释放
-  let resource1_released = pool.resources.find(fn(r) { r.id == "resource-1" })
-  match resource1_released {
-    Some(r) => assert_false(r.in_use)
-    None => assert_true(false)
-  }
-  
-  // 再次尝试获取资源(应该成功，获取到已释放的资源)
-  let (new_pool5, resource5) = acquire_resource(pool)
-  pool = new_pool5
-  match resource5 {
-    Some(r) => assert_eq(r.id, "resource-1")  // 应该是之前释放的资源
-    None => assert_true(false)
-  }
-  
-  // 验证池中仍然有3个资源
-  assert_eq(pool.resources.length(), 3)
+  // Verify all spans were created and processed correctly
+  let stats = ThreadSafeSpanManager::get_stats(span_manager)
+  assert_eq(stats.total_spans_created, 1100) // 11 threads * 100 spans each
+  assert_eq(stats.total_spans_ended, 1100)
+  assert_eq(stats.concurrent_operations, 11)
 }
 
-// 测试6: 并发任务执行和同步
-test "并发任务执行和同步" {
-  // 定义任务状态
-  enum TaskStatus {
-    Pending
-    Running
-    Completed
-    Failed
-  }
+// Test 2: Thread-Safe Metrics Collection
+test "thread-safe metrics collection" {
+  let metrics_manager = ThreadSafeMetricsManager::new()
   
-  // 定义任务
-  type Task = {
-    id: String,
-    status: TaskStatus,
-    result: Option[String],
-    error: Option[String]
-  }
+  // Create shared metrics
+  let counter = ThreadSafeMetricsManager::create_counter(metrics_manager, "concurrent_operations", 
+    Some("Concurrent operations count"), Some("operations"))
+  let histogram = ThreadSafeMetricsManager::create_histogram(metrics_manager, "operation_duration",
+    Some("Operation duration"), Some("milliseconds"))
   
-  // 定义任务执行器
-  type TaskExecutor = {
-    tasks: Array[Task>,
-    max_concurrent: Int,
-    running_count: Int,
-    lock: Bool
-  }
-  
-  // 创建任务执行器
-  let create_task_executor = fn(max_concurrent: Int) -> TaskExecutor {
-    {
-      tasks: [],
-      max_concurrent: max_concurrent,
-      running_count: 0,
-      lock: false
-    }
-  }
-  
-  // 创建任务
-  let create_task = fn(id: String) -> Task {
-    {
-      id: id,
-      status: TaskStatus::Pending,
-      result: None,
-      error: None
-    }
-  }
-  
-  // 提交任务
-  let submit_task = fn(executor: TaskExecutor, task: Task) -> TaskExecutor {
-    // 模拟获取锁
-    if executor.lock {
-      return executor
-    }
-    
-    {
-      tasks: executor.tasks.push(task),
-      max_concurrent: executor.max_concurrent,
-      running_count: executor.running_count,
-      lock: false
-    }
-  }
-  
-  // 执行任务(简化实现)
-  let execute_tasks = fn(executor: TaskExecutor) -> TaskExecutor {
-    // 模拟获取锁
-    if executor.lock {
-      return executor
-    }
-    
-    // 计算可以启动的任务数
-    let pending_tasks = executor.tasks.filter(fn(t) {
-      match t.status {
-        TaskStatus::Pending => true
-        _ => false
+  // Test concurrent metric updates
+  let threads = []
+  for i in 0..=20 {
+    let thread_id = "metrics_thread_" + i.to_string()
+    let thread = Thread::spawn(fn() {
+      for j in 0..=50 {
+        // Concurrent counter increments
+        ThreadSafeMetricsManager::counter_add(metrics_manager, counter, 1.0, Some([
+          ("thread.id", StringValue(thread_id)),
+          ("operation.type", StringValue("concurrent_test"))
+        ]))
+        
+        // Concurrent histogram recordings
+        let duration = (j % 10 + 1).to_float() * 10.0 // 10ms to 100ms
+        ThreadSafeMetricsManager::histogram_record(metrics_manager, histogram, duration, Some([
+          ("thread.id", StringValue(thread_id))
+        ]))
       }
     })
-    
-    let available_slots = executor.max_concurrent - executor.running_count
-    let tasks_to_start = if available_slots > 0 {
-      pending_tasks.take(available_slots)
-    } else {
-      []
-    }
-    
-    // 更新任务状态
-    let mut updated_tasks = executor.tasks
-    let mut new_running_count = executor.running_count
-    
-    for task in tasks_to_start {
-      // 模拟任务执行
-      let task_result = "result-" + task.id
-      let updated_task = {
-        id: task.id,
-        status: TaskStatus::Completed,
-        result: Some(task_result),
-        error: None
-      }
-      
-      // 替换任务
-      updated_tasks = updated_tasks.map(fn(t) {
-        if t.id == task.id {
-          updated_task
-        } else {
-          t
-        }
-      })
-      
-      new_running_count = new_running_count - 1  // 任务已完成
-    }
-    
-    {
-      tasks: updated_tasks,
-      max_concurrent: executor.max_concurrent,
-      running_count: new_running_count,
-      lock: false
-    }
+    threads.push(thread)
   }
   
-  // 创建任务执行器
-  let mut executor = create_task_executor(2)
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
   
-  // 提交多个任务
-  let task1 = create_task("task1")
-  let task2 = create_task("task2")
-  let task3 = create_task("task3")
-  let task4 = create_task("task4")
+  // Verify metrics integrity
+  let counter_snapshot = ThreadSafeMetricsManager::get_counter_snapshot(metrics_manager, counter)
+  assert_eq(counter_snapshot.total_value, 1050.0) // 21 threads * 50 operations
   
-  executor = submit_task(executor, task1)
-  executor = submit_task(executor, task2)
-  executor = submit_task(executor, task3)
-  executor = submit_task(executor, task4)
+  let histogram_snapshot = ThreadSafeMetricsManager::get_histogram_snapshot(metrics_manager, histogram)
+  assert_eq(histogram_snapshot.total_count, 1050)
+  assert_true(histogram_snapshot.sum > 0.0)
   
-  // 验证任务已提交
-  assert_eq(executor.tasks.length(), 4)
-  assert_true(executor.tasks.all(fn(t) {
-    match t.status {
-      TaskStatus::Pending => true
-      _ => false
-    }
-  }))
+  // Verify no data corruption occurred
+  let metrics_stats = ThreadSafeMetricsManager::get_stats(metrics_manager)
+  assert_eq(metrics_stats.total_metric_updates, 2100) // 1050 counter + 1050 histogram
+  assert_eq(metrics_stats.concurrent_writers, 21)
+}
+
+// Test 3: Thread-Safe Log Emission
+test "thread-safe log emission" {
+  let log_manager = ThreadSafeLogManager::new()
   
-  // 执行任务
-  executor = execute_tasks(executor)
+  // Test concurrent log emission
+  let threads = []
+  for i in 0..=15 {
+    let thread_id = "log_thread_" + i.to_string()
+    let thread = Thread::spawn(fn() {
+      for j in 0..=30 {
+        let severity = match j % 4 {
+          0 => Info,
+          1 => Warn,
+          2 => Error,
+          _ => Debug
+        }
+        
+        let log_record = LogRecord::new_with_attributes(
+          severity,
+          "Log message from " + thread_id + " iteration " + j.to_string(),
+          [
+            ("thread.id", StringValue(thread_id)),
+            ("iteration", IntValue(j)),
+            ("timestamp", IntValue(1234567890 + j))
+          ]
+        )
+        
+        ThreadSafeLogManager::emit_log(log_manager, log_record)
+      }
+    })
+    threads.push(thread)
+  }
   
-  // 验证任务执行结果
-  let completed_tasks = executor.tasks.filter(fn(t) {
-    match t.status {
-      TaskStatus::Completed => true
-      _ => false
-    }
-  })
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
   
-  let pending_tasks = executor.tasks.filter(fn(t) {
-    match t.status {
-      TaskStatus::Pending => true
-      _ => false
-    }
-  })
+  // Verify log integrity
+  let log_stats = ThreadSafeLogManager::get_stats(log_manager)
+  assert_eq(log_stats.total_logs_emitted, 480) // 16 threads * 30 logs each
+  assert_eq(log_stats.concurrent_emitters, 16)
   
-  // 由于最大并发数为2，应该有2个任务完成，2个任务仍在等待
-  assert_eq(completed_tasks.length(), 2)
-  assert_eq(pending_tasks.length(), 2)
+  // Verify log count by severity
+  let info_count = ThreadSafeLogManager::get_log_count_by_severity(log_manager, Info)
+  let warn_count = ThreadSafeLogManager::get_log_count_by_severity(log_manager, Warn)
+  let error_count = ThreadSafeLogManager::get_log_count_by_severity(log_manager, Error)
+  let debug_count = ThreadSafeLogManager::get_log_count_by_severity(log_manager, Debug)
   
-  // 再次执行任务
-  executor = execute_tasks(executor)
+  assert_eq(info_count, 120)
+  assert_eq(warn_count, 120)
+  assert_eq(error_count, 120)
+  assert_eq(debug_count, 120)
+}
+
+// Test 4: Thread-Safe Context Propagation
+test "thread-safe context propagation" {
+  let context_manager = ThreadSafeContextManager::new()
   
-  // 验证所有任务都已完成
-  let all_completed = executor.tasks.all(fn(t) {
-    match t.status {
-      TaskStatus::Completed => true
-      _ => false
-    }
-  })
+  // Create initial context with baggage
+  let root_ctx = Context::root()
+  let correlation_key = ContextKey::new("correlation_id")
+  let initial_ctx = Context::with_value(root_ctx, correlation_key, "global_correlation_123")
   
-  assert_true(all_completed)
+  // Test concurrent context propagation
+  let threads = []
+  for i in 0..=8 {
+    let thread_id = "ctx_thread_" + i.to_string()
+    let thread = Thread::spawn(fn() {
+      // Each thread gets a copy of the initial context
+      let thread_ctx = ThreadSafeContextManager::copy_context(context_manager, initial_ctx)
+      
+      // Add thread-specific baggage
+      let thread_key = ContextKey::new("thread_id")
+      let thread_ctx = Context::with_value(thread_ctx, thread_key, thread_id)
+      
+      for j in 0..=20 {
+        // Create nested context for each operation
+        let operation_key = ContextKey::new("operation_id")
+        let operation_ctx = Context::with_value(thread_ctx, operation_key, "op_" + j.to_string())
+        
+        // Verify all context values are accessible
+        let correlation_value = Context::get(operation_ctx, correlation_key)
+        match correlation_value {
+          Some(value) => assert_eq(value, "global_correlation_123")
+          None => assert_true(false)
+        }
+        
+        let thread_value = Context::get(operation_ctx, thread_key)
+        match thread_value {
+          Some(value) => assert_eq(value, thread_id)
+          None => assert_true(false)
+        }
+        
+        let operation_value = Context::get(operation_ctx, operation_key)
+        match operation_value {
+          Some(value) => assert_eq(value, "op_" + j.to_string())
+          None => assert_true(false)
+        }
+      }
+    })
+    threads.push(thread)
+  }
   
-  // 验证任务结果
-  let task1_result = executor.tasks.find(fn(t) { t.id == "task1" })
-  match task1_result {
-    Some(t) => {
-      match t.status {
-        TaskStatus::Completed => {
-          match t.result {
-            Some(result) => assert_eq(result, "result-task1")
-            None => assert_true(false)
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Verify context manager statistics
+  let ctx_stats = ThreadSafeContextManager::get_stats(context_manager)
+  assert_eq(ctx_stats.total_context_copies, 9)
+  assert_eq(ctx_stats.total_context_creations, 189) // 9 threads * 21 contexts each
+  assert_eq(ctx_stats.concurrent_context_operations, 9)
+}
+
+// Test 5: Thread-Safe Resource Pool
+test "thread-safe resource pool" {
+  let resource_pool = ThreadSafeResourcePool::new(10) // 10 resources in pool
+  
+  // Test concurrent resource acquisition and release
+  let threads = []
+  for i in 0..=20 {
+    let thread_id = "pool_thread_" + i.to_string()
+    let thread = Thread::spawn(fn() {
+      for j in 0..=10 {
+        // Acquire resource from pool
+        let resource = ThreadSafeResourcePool::acquire(resource_pool, 5000) // 5s timeout
+        match resource {
+          Some(res) => {
+            // Simulate resource usage
+            Thread::sleep(10) // 10ms operation
+            
+            // Verify resource is valid
+            assert_true(ThreadSafeResourcePool::is_resource_valid(res))
+            
+            // Release resource back to pool
+            ThreadSafeResourcePool::release(resource_pool, res)
+          }
+          None => {
+            // Handle timeout case
+            assert_true(true) // Expected under high contention
           }
         }
-        _ => assert_true(false)
       }
-    }
-    None => assert_true(false)
+    })
+    threads.push(thread)
   }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Verify pool integrity
+  let pool_stats = ThreadSafeResourcePool::get_stats(resource_pool)
+  assert_eq(pool_stats.total_acquisitions, 210) // 21 threads * 10 acquisitions
+  assert_eq(pool_stats.total_releases, pool_stats.total_acquisitions - pool_stats.timeouts)
+  assert_eq(pool_stats.available_resources, 10) // All resources should be returned
+  assert_true(pool_stats.max_concurrent_acquisitions <= 10)
+}
+
+// Test 6: Thread-Safe Batch Processing
+test "thread-safe batch processing" {
+  let batch_processor = ThreadSafeBatchProcessor::new(100, 1000) // 100 items max, 1s timeout
+  
+  // Test concurrent batch submission
+  let threads = []
+  for i in 0..=12 {
+    let thread_id = "batch_thread_" + i.to_string()
+    let thread = Thread::spawn(fn() {
+      for j in 0..=25 {
+        let item = BatchItem::new(thread_id + "_item_" + j.to_string(), [
+          ("thread.id", StringValue(thread_id)),
+          ("item.index", IntValue(j)),
+          ("timestamp", IntValue(1234567890 + j))
+        ])
+        
+        ThreadSafeBatchProcessor::submit_item(batch_processor, item)
+      }
+    })
+    threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Force process remaining items
+  ThreadSafeBatchProcessor::flush(batch_processor)
+  
+  // Verify batch processing integrity
+  let batch_stats = ThreadSafeBatchProcessor::get_stats(batch_processor)
+  assert_eq(batch_stats.total_items_submitted, 325) // 13 threads * 25 items
+  assert_eq(batch_stats.total_items_processed, 325)
+  assert_eq(batch_stats.total_batches_created, 4) // 325 items / 100 per batch = 4 batches
+  assert_true(batch_stats.concurrent_submitters == 13)
+}
+
+// Test 7: Thread-Safe Cache Operations
+test "thread-safe cache operations" {
+  let cache = ThreadSafeCache::new(1000) // 1000 item capacity
+  
+  // Test concurrent cache operations
+  let threads = []
+  for i in 0..=16 {
+    let thread_id = "cache_thread_" + i.to_string()
+    let thread = Thread::spawn(fn() {
+      for j in 0..=50 {
+        let key = thread_id + "_key_" + j.to_string()
+        let value = thread_id + "_value_" + j.to_string()
+        
+        // Concurrent cache put
+        ThreadSafeCache::put(cache, key, value)
+        
+        // Concurrent cache get
+        let retrieved_value = ThreadSafeCache::get(cache, key)
+        match retrieved_value {
+          Some(v) => assert_eq(v, value)
+          None => assert_true(false)
+        }
+        
+        // Test cache size consistency
+        if j % 10 == 0 {
+          let cache_size = ThreadSafeCache::size(cache)
+          assert_true(cache_size > 0)
+          assert_true(cache_size <= 1000)
+        }
+      }
+    })
+    threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in threads {
+    Thread::join(thread)
+  }
+  
+  // Verify cache integrity
+  let cache_stats = ThreadSafeCache::get_stats(cache)
+  assert_eq(cache_stats.total_puts, 850) // 17 threads * 50 puts
+  assert_eq(cache_stats.total_gets, 850)
+  assert_eq(cache_stats.cache_hits, 850) // All gets should hit since we put then get immediately
+  assert_true(cache_stats.concurrent_operations == 17)
+}
+
+// Test 8: Thread-Safe Queue Operations
+test "thread-safe queue operations" {
+  let queue = ThreadSafeQueue::new()
+  
+  // Test concurrent enqueue and dequeue
+  let producer_threads = []
+  let consumer_threads = []
+  
+  // Start producer threads
+  for i in 0..=5 {
+    let thread_id = "producer_" + i.to_string()
+    let thread = Thread::spawn(fn() {
+      for j in 0..=40 {
+        let item = QueueItem::new(thread_id + "_item_" + j.to_string(), [
+          ("producer", StringValue(thread_id)),
+          ("index", IntValue(j))
+        ])
+        ThreadSafeQueue::enqueue(queue, item)
+      }
+    })
+    producer_threads.push(thread)
+  }
+  
+  // Start consumer threads
+  let consumed_count = AtomicInt::new(0)
+  for i in 0..=3 {
+    let thread = Thread::spawn(fn() {
+      let local_count = 0
+      while local_count < 60 {
+        let item = ThreadSafeQueue::dequeue(queue, 1000) // 1s timeout
+        match item {
+          Some(queue_item) => {
+            local_count = local_count + 1
+            AtomicInt::increment(consumed_count)
+          }
+          None => {
+            // No item available, continue trying
+          }
+        }
+      }
+    })
+    consumer_threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in producer_threads {
+    Thread::join(thread)
+  }
+  
+  for thread in consumer_threads {
+    Thread::join(thread)
+  }
+  
+  // Verify queue integrity
+  let queue_stats = ThreadSafeQueue::get_stats(queue)
+  assert_eq(queue_stats.total_enqueued, 240) // 6 producers * 40 items
+  assert_eq(queue_stats.total_dequeued, AtomicInt::get(consumed_count))
+  assert_eq(queue_stats.remaining_items, queue_stats.total_enqueued - queue_stats.total_dequeued)
+  assert_true(queue_stats.concurrent_producers == 6)
+  assert_true(queue_stats.concurrent_consumers == 4)
+}
+
+// Test 9: Thread-Safe Atomic Operations
+test "thread-safe atomic operations" {
+  let atomic_counter = ThreadSafeAtomicCounter::new(0)
+  let atomic_map = ThreadSafeAtomicMap::new()
+  
+  // Test concurrent atomic counter operations
+  let counter_threads = []
+  for i in 0..=10 {
+    let thread = Thread::spawn(fn() {
+      for j in 0..=100 {
+        // Concurrent increments
+        ThreadSafeAtomicCounter::increment(atomic_counter)
+        
+        // Concurrent adds
+        ThreadSafeAtomicCounter::add(atomic_counter, j)
+        
+        // Concurrent compare and swap
+        let current = ThreadSafeAtomicCounter::get(atomic_counter)
+        if current % 2 == 0 {
+          ThreadSafeAtomicCounter::compare_and_swap(atomic_counter, current, current + 10)
+        }
+      }
+    })
+    counter_threads.push(thread)
+  }
+  
+  // Test concurrent map operations
+  let map_threads = []
+  for i in 0..=8 {
+    let thread_id = "map_thread_" + i.to_string()
+    let thread = Thread::spawn(fn() {
+      for j in 0..=50 {
+        let key = thread_id + "_key_" + j.to_string()
+        let value = "value_" + j.to_string()
+        
+        // Concurrent map put
+        ThreadSafeAtomicMap::put(atomic_map, key, value)
+        
+        // Concurrent map get
+        let retrieved_value = ThreadSafeAtomicMap::get(atomic_map, key)
+        match retrieved_value {
+          Some(v) => assert_eq(v, value)
+          None => assert_true(false)
+        }
+        
+        // Test map size
+        if j % 10 == 0 {
+          let map_size = ThreadSafeAtomicMap::size(atomic_map)
+          assert_true(map_size > 0)
+        }
+      }
+    })
+    map_threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in counter_threads {
+    Thread::join(thread)
+  }
+  
+  for thread in map_threads {
+    Thread::join(thread)
+  }
+  
+  // Verify atomic operations integrity
+  let final_counter_value = ThreadSafeAtomicCounter::get(atomic_counter)
+  assert_true(final_counter_value > 0)
+  
+  let map_size = ThreadSafeAtomicMap::size(atomic_map)
+  assert_eq(map_size, 450) // 9 threads * 50 keys
+  
+  let atomic_stats = ThreadSafeAtomicOperations::get_stats(atomic_counter, atomic_map)
+  assert_eq(atomic_stats.total_counter_operations, 2310) // 11 threads * 101 increments + 11 threads * 101 adds
+  assert_eq(atomic_stats.total_map_operations, 900) // 9 threads * 50 puts + 9 threads * 50 gets
+}
+
+// Test 10: Thread-Safe Lock-Free Data Structures
+test "thread-safe lock-free data structures" {
+  let lock_free_stack = LockFreeStack::new()
+  let lock_free_queue = LockFreeQueue::new()
+  
+  // Test concurrent lock-free stack operations
+  let stack_threads = []
+  for i in 0..=12 {
+    let thread_id = "stack_thread_" + i.to_string()
+    let thread = Thread::spawn(fn() {
+      // Push operations
+      for j in 0..=30 {
+        let item = StackItem::new(thread_id + "_item_" + j.to_string())
+        LockFreeStack::push(lock_free_stack, item)
+      }
+      
+      // Pop operations
+      let popped_count = 0
+      for j in 0..=20 {
+        let item = LockFreeStack::pop(lock_free_stack)
+        match item {
+          Some(_) => popped_count = popped_count + 1
+          None => break // Stack empty
+        }
+      }
+    })
+    stack_threads.push(thread)
+  }
+  
+  // Test concurrent lock-free queue operations
+  let queue_threads = []
+  for i in 0..=8 {
+    let thread_id = "lf_queue_thread_" + i.to_string()
+    let thread = Thread::spawn(fn() {
+      // Enqueue operations
+      for j in 0..=25 {
+        let item = QueueItem::new(thread_id + "_item_" + j.to_string())
+        LockFreeQueue::enqueue(lock_free_queue, item)
+      }
+      
+      // Dequeue operations
+      let dequeued_count = 0
+      for j in 0..=15 {
+        let item = LockFreeQueue::dequeue(lock_free_queue)
+        match item {
+          Some(_) => dequeued_count = dequeued_count + 1
+          None => break // Queue empty
+        }
+      }
+    })
+    queue_threads.push(thread)
+  }
+  
+  // Wait for all threads to complete
+  for thread in stack_threads {
+    Thread::join(thread)
+  }
+  
+  for thread in queue_threads {
+    Thread::join(thread)
+  }
+  
+  // Verify lock-free data structures integrity
+  let stack_stats = LockFreeStack::get_stats(lock_free_stack)
+  assert_eq(stack_stats.total_pushes, 390) // 13 threads * 30 pushes
+  assert_true(stack_stats.total_pops > 0)
+  assert_true(stack_stats.total_pops <= stack_stats.total_pushes)
+  assert_eq(stack_stats.remaining_items, stack_stats.total_pushes - stack_stats.total_pops)
+  
+  let queue_stats = LockFreeQueue::get_stats(lock_free_queue)
+  assert_eq(queue_stats.total_enqueues, 225) // 9 threads * 25 enqueues
+  assert_true(queue_stats.total_dequeues > 0)
+  assert_true(queue_stats.total_dequeues <= queue_stats.total_enqueues)
+  assert_eq(queue_stats.remaining_items, queue_stats.total_enqueues - queue_stats.total_dequeues)
+  
+  // Verify no memory corruption or data races occurred
+  let lock_free_stats = LockFreeDataStructures::get_combined_stats(lock_free_stack, lock_free_queue)
+  assert_true(lock_free_stats.total_operations > 0)
+  assert_eq(lock_free_stats.concurrent_threads, 22) // 13 stack + 9 queue threads
+  assert_true(lock_free_stats.no_corruption_detected)
 }

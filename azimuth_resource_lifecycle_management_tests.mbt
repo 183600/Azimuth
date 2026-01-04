@@ -1,609 +1,600 @@
-// Azimuth 资源生命周期管理测试
-// 全面测试资源获取、使用和释放机制
+// Azimuth Telemetry System - Resource Lifecycle Management Tests
+// This file contains comprehensive test cases for resource management and lifecycle
 
-// 测试1: 基本资源获取和释放
-test "基本资源获取和释放" {
-  // 模拟资源池
-  let mut available_resources = ["resource1", "resource2", "resource3"]
-  let mut used_resources = {}
+// Test 1: Span Lifecycle Management
+test "span lifecycle management" {
+  let lifecycle_manager = SpanLifecycleManager::new()
   
-  // 获取资源
-  let acquire_resource = fn() {
-    if available_resources.length() > 0 {
-      let resource = available_resources[0]
-      available_resources = available_resources.slice(1)
-      used_resources[resource] = true
-      Some(resource)
+  // Test span creation and initialization
+  let span_ctx = SpanContext::new("trace123", "span456", true, "active")
+  let span = SpanLifecycleManager::create_span(lifecycle_manager, "test_operation", Internal, span_ctx)
+  
+  assert_eq(Span::name(span), "test_operation")
+  assert_eq(Span::kind(span), Internal)
+  assert_true(Span::is_recording(span))
+  assert_eq(Span::status(span), Unset)
+  
+  // Test span state transitions
+  SpanLifecycleManager::set_status(lifecycle_manager, span, Ok, Some("Operation completed"))
+  assert_eq(Span::status(span), Ok)
+  
+  // Test span event lifecycle
+  let event_id = SpanLifecycleManager::add_event(lifecycle_manager, span, "operation_started", 
+    Some([("component", StringValue("auth"))]))
+  assert_true(event_id > 0)
+  
+  // Test event retrieval
+  let events = SpanLifecycleManager::get_events(lifecycle_manager, span)
+  assert_eq(events.length(), 1)
+  assert_eq(events[0].name, "operation_started")
+  
+  // Test span attribute lifecycle
+  SpanLifecycleManager::set_attribute(lifecycle_manager, span, "user.id", StringValue("user123"))
+  SpanLifecycleManager::set_attribute(lifecycle_manager, span, "operation.type", StringValue("authentication"))
+  
+  let attributes = SpanLifecycleManager::get_attributes(lifecycle_manager, span)
+  assert_eq(attributes.length(), 2)
+  
+  // Test span termination
+  SpanLifecycleManager::end_span(lifecycle_manager, span)
+  assert_false(Span::is_recording(span))
+  
+  // Test span lifecycle statistics
+  let stats = SpanLifecycleManager::get_stats(lifecycle_manager)
+  assert_eq(stats.total_spans_created, 1)
+  assert_eq(stats.total_spans_ended, 1)
+  assert_eq(stats.total_events_added, 1)
+  assert_eq(stats.total_attributes_set, 2)
+}
+
+// Test 2: Resource Pool Management
+test "resource pool management" {
+  let resource_pool = ResourcePool::new(
+    5,  // Min resources
+    20, // Max resources
+    30000 // Resource timeout (ms)
+  )
+  
+  // Test resource acquisition
+  let resources = []
+  for i in 0..=10 {
+    let resource = ResourcePool::acquire(resource_pool)
+    match resource {
+      Some(res) => {
+        assert_true(ResourcePool::is_valid(res))
+        resources.push(res)
+      }
+      None => assert_true(false)
+    }
+  }
+  
+  // Test pool statistics during usage
+  let stats = ResourcePool::get_stats(resource_pool)
+  assert_eq(stats.active_resources, 11)
+  assert_eq(stats.available_resources, 0)
+  assert_eq(stats.total_acquisitions, 11)
+  
+  // Test resource release
+  for resource in resources {
+    ResourcePool::release(resource_pool, resource)
+  }
+  
+  // Verify resources are returned to pool
+  let after_release_stats = ResourcePool::get_stats(resource_pool)
+  assert_eq(after_release_stats.active_resources, 0)
+  assert_eq(after_release_stats.available_resources, 11)
+  assert_eq(after_release_stats.total_releases, 11)
+  
+  // Test resource cleanup
+  ResourcePool::cleanup_idle_resources(resource_pool, 60000) // 1 minute idle timeout
+  let cleanup_stats = ResourcePool::get_stats(resource_pool)
+  assert_true(cleanup_stats.cleaned_up_resources >= 0)
+}
+
+// Test 3: Memory Lifecycle Management
+test "memory lifecycle management" {
+  let memory_manager = MemoryManager::new()
+  
+  // Test memory allocation tracking
+  let initial_memory = MemoryManager::get_allocated_memory(memory_manager)
+  
+  // Allocate memory blocks
+  let memory_blocks = []
+  for i in 0..=100 {
+    let block = MemoryManager::allocate(memory_manager, 1024 * (i + 1)) // 1KB to 101KB
+    memory_blocks.push(block)
+  }
+  
+  let allocated_memory = MemoryManager::get_allocated_memory(memory_manager)
+  assert_true(allocated_memory > initial_memory)
+  
+  // Test memory block lifecycle
+  for block in memory_blocks {
+    assert_true(MemoryManager::is_allocated(block))
+    assert_true(MemoryManager::get_size(block) > 0)
+  }
+  
+  // Test memory deallocation
+  for block in memory_blocks {
+    MemoryManager::deallocate(memory_manager, block)
+  }
+  
+  let deallocated_memory = MemoryManager::get_allocated_memory(memory_manager)
+  assert_true(deallocated_memory <= allocated_memory)
+  
+  // Test garbage collection
+  MemoryManager::force_gc(memory_manager)
+  let gc_memory = MemoryManager::get_allocated_memory(memory_manager)
+  assert_true(gc_memory <= deallocated_memory)
+  
+  // Test memory pressure handling
+  MemoryManager::simulate_pressure(memory_manager, 0.8) // 80% memory usage
+  let pressure_handled = MemoryManager::handle_memory_pressure(memory_manager)
+  assert_true(pressure_handled)
+  
+  let memory_stats = MemoryManager::get_stats(memory_manager)
+  assert_true(memory_stats.total_allocated > 0)
+  assert_true(memory_stats.total_deallocated > 0)
+  assert_true(memory_stats.gc_triggered > 0)
+}
+
+// Test 4: Connection Lifecycle Management
+test "connection lifecycle management" {
+  let connection_manager = ConnectionManager::new()
+  
+  // Test connection creation
+  let connections = []
+  for i in 0..=5 {
+    let connection = ConnectionManager::create_connection(connection_manager, 
+      "conn_" + i.to_string(), "localhost", 8080 + i)
+    connections.push(connection)
+  }
+  
+  // Test connection state management
+  for connection in connections {
+    assert_eq(ConnectionManager::get_state(connection_manager, connection), Created)
+    
+    // Activate connection
+    ConnectionManager::activate(connection_manager, connection)
+    assert_eq(ConnectionManager::get_state(connection_manager, connection), Active)
+    
+    // Test connection health
+    let health = ConnectionManager::check_health(connection_manager, connection)
+    assert_true(health.is_healthy)
+  }
+  
+  // Test connection pooling
+  let pool = ConnectionManager::create_pool(connection_manager, "test_pool", 3, 10)
+  
+  for connection in connections {
+    ConnectionManager::add_to_pool(connection_manager, pool, connection)
+  }
+  
+  let pool_stats = ConnectionManager::get_pool_stats(connection_manager, pool)
+  assert_eq(pool_stats.total_connections, 6)
+  assert_eq(pool_stats.active_connections, 6)
+  assert_eq(pool_stats.available_connections, 6)
+  
+  // Test connection retrieval from pool
+  let pooled_connection = ConnectionManager::get_from_pool(connection_manager, pool)
+  match pooled_connection {
+    Some(conn) => {
+      assert_eq(ConnectionManager::get_state(connection_manager, conn), Active)
+      assert_eq(ConnectionManager::get_pool_stats(connection_manager, pool).active_connections, 1)
+      assert_eq(ConnectionManager::get_pool_stats(connection_manager, pool).available_connections, 5)
+    }
+    None => assert_true(false)
+  }
+  
+  // Test connection lifecycle cleanup
+  ConnectionManager::cleanup_stale_connections(connection_manager, pool, 300000) // 5 minutes
+  let cleanup_stats = ConnectionManager::get_pool_stats(connection_manager, pool)
+  assert_true(cleanup_stats.cleaned_up_connections >= 0)
+}
+
+// Test 5: Component Lifecycle Management
+test "component lifecycle management" {
+  let component_manager = ComponentManager::new()
+  
+  // Test component registration
+  let telemetry_component = ComponentManager::register_component(component_manager, 
+    "telemetry", TelemetryComponent::new())
+  
+  let metrics_component = ComponentManager::register_component(component_manager, 
+    "metrics", MetricsComponent::new())
+  
+  let logging_component = ComponentManager::register_component(component_manager, 
+    "logging", LoggingComponent::new())
+  
+  // Test component initialization
+  ComponentManager::initialize_component(component_manager, telemetry_component)
+  ComponentManager::initialize_component(component_manager, metrics_component)
+  ComponentManager::initialize_component(component_manager, logging_component)
+  
+  assert_eq(ComponentManager::get_state(component_manager, telemetry_component), Initialized)
+  assert_eq(ComponentManager::get_state(component_manager, metrics_component), Initialized)
+  assert_eq(ComponentManager::get_state(component_manager, logging_component), Initialized)
+  
+  // Test component start
+  ComponentManager::start_component(component_manager, telemetry_component)
+  ComponentManager::start_component(component_manager, metrics_component)
+  ComponentManager::start_component(component_manager, logging_component)
+  
+  assert_eq(ComponentManager::get_state(component_manager, telemetry_component), Running)
+  assert_eq(ComponentManager::get_state(component_manager, metrics_component), Running)
+  assert_eq(ComponentManager::get_state(component_manager, logging_component), Running)
+  
+  // Test component dependencies
+  ComponentManager::add_dependency(component_manager, telemetry_component, metrics_component)
+  ComponentManager::add_dependency(component_manager, telemetry_component, logging_component)
+  
+  let dependencies = ComponentManager::get_dependencies(component_manager, telemetry_component)
+  assert_eq(dependencies.length(), 2)
+  assert_true(dependencies.contains(metrics_component))
+  assert_true(dependencies.contains(logging_component))
+  
+  // Test component stop
+  ComponentManager::stop_component(component_manager, telemetry_component)
+  assert_eq(ComponentManager::get_state(component_manager, telemetry_component), Stopped)
+  
+  // Test component shutdown
+  ComponentManager::shutdown_component(component_manager, telemetry_component)
+  ComponentManager::shutdown_component(component_manager, metrics_component)
+  ComponentManager::shutdown_component(component_manager, logging_component)
+  
+  assert_eq(ComponentManager::get_state(component_manager, telemetry_component), Shutdown)
+  assert_eq(ComponentManager::get_state(component_manager, metrics_component), Shutdown)
+  assert_eq(ComponentManager::get_state(component_manager, logging_component), Shutdown)
+  
+  // Test component lifecycle statistics
+  let lifecycle_stats = ComponentManager::get_lifecycle_stats(component_manager)
+  assert_eq(lifecycle_stats.total_components, 3)
+  assert_eq(lifecycle_stats.initialized_components, 3)
+  assert_eq(lifecycle_stats.running_components, 0)
+  assert_eq(lifecycle_stats.shutdown_components, 3)
+}
+
+// Test 6: Buffer Lifecycle Management
+test "buffer lifecycle management" {
+  let buffer_manager = BufferManager::new()
+  
+  // Test buffer creation
+  let buffers = []
+  for i in 0..=10 {
+    let buffer = BufferManager::create_buffer(buffer_manager, 1024 * (i + 1))
+    buffers.push(buffer)
+  }
+  
+  // Test buffer state management
+  for buffer in buffers {
+    assert_eq(BufferManager::get_state(buffer_manager, buffer), Empty)
+    
+    // Write data to buffer
+    let data = "test data for buffer"
+    BufferManager::write(buffer_manager, buffer, data)
+    assert_eq(BufferManager::get_state(buffer_manager, buffer), Data)
+    
+    // Read data from buffer
+    let read_data = BufferManager::read(buffer_manager, buffer)
+    match read_data {
+      Some(content) => assert_eq(content, data)
+      None => assert_true(false)
+    }
+  }
+  
+  // Test buffer pooling
+  let buffer_pool = BufferManager::create_pool(buffer_manager, 1024, 50) // 1KB buffers, 50 pool size
+  
+  for buffer in buffers {
+    BufferManager::return_to_pool(buffer_manager, buffer_pool, buffer)
+  }
+  
+  let pool_stats = BufferManager::get_pool_stats(buffer_manager, buffer_pool)
+  assert_eq(pool_stats.total_buffers, 11)
+  assert_eq(pool_stats.available_buffers, 11)
+  
+  // Test buffer reuse
+  let reused_buffers = []
+  for i in 0..=5 {
+    let buffer = BufferManager::get_from_pool(buffer_manager, buffer_pool)
+    match buffer {
+      Some(buf) => {
+        assert_eq(BufferManager::get_state(buffer_manager, buf), Empty)
+        reused_buffers.push(buf)
+      }
+      None => assert_true(false)
+    }
+  }
+  
+  // Test buffer cleanup
+  for buffer in reused_buffers {
+    BufferManager::cleanup(buffer_manager, buffer)
+  }
+  
+  BufferManager::cleanup_pool(buffer_manager, buffer_pool)
+  let cleanup_stats = BufferManager::get_pool_stats(buffer_manager, buffer_pool)
+  assert_true(cleanup_stats.cleaned_up_buffers > 0)
+}
+
+// Test 7: Timer Lifecycle Management
+test "timer lifecycle management" {
+  let timer_manager = TimerManager::new()
+  
+  // Test timer creation
+  let timers = []
+  for i in 0..=5 {
+    let timer = TimerManager::create_timer(timer_manager, 
+      "timer_" + i.to_string(), 1000 * (i + 1)) // 1s to 6s timers
+    timers.push(timer)
+  }
+  
+  // Test timer state management
+  for timer in timers {
+    assert_eq(TimerManager::get_state(timer_manager, timer), Created)
+    
+    // Start timer
+    TimerManager::start(timer_manager, timer)
+    assert_eq(TimerManager::get_state(timer_manager, timer), Running)
+    
+    // Test timer remaining time
+    let remaining = TimerManager::get_remaining_time(timer_manager, timer)
+    assert_true(remaining > 0)
+  }
+  
+  // Test timer cancellation
+  TimerManager::cancel(timer_manager, timers[0])
+  assert_eq(TimerManager::get_state(timer_manager, timers[0]), Cancelled)
+  
+  // Test timer completion simulation
+  TimerManager::simulate_completion(timer_manager, timers[1])
+  assert_eq(TimerManager::get_state(timer_manager, timers[1]), Completed)
+  
+  // Test timer reset
+  TimerManager::reset(timer_manager, timers[2], 2000) // Reset to 2s
+  assert_eq(TimerManager::get_state(timer_manager, timers[2]), Running)
+  assert_eq(TimerManager::get_duration(timer_manager, timers[2]), 2000)
+  
+  // Test timer cleanup
+  for timer in timers {
+    TimerManager::cleanup(timer_manager, timer)
+  }
+  
+  // Test timer lifecycle statistics
+  let timer_stats = TimerManager::get_stats(timer_manager)
+  assert_eq(timer_stats.total_timers_created, 6)
+  assert_eq(timer_stats.total_timers_started, 5)
+  assert_eq(timer_stats.total_timers_cancelled, 1)
+  assert_eq(timer_stats.total_timers_completed, 1)
+  assert_eq(timer_stats.total_timers_cleaned_up, 6)
+}
+
+// Test 8: File Handle Lifecycle Management
+test "file handle lifecycle management" {
+  let file_manager = FileManager::new()
+  
+  // Test file handle creation
+  let file_handles = []
+  for i in 0..=3 {
+    let file_handle = FileManager::open_file(file_manager, 
+      "test_file_" + i.to_string() + ".log", "write")
+    file_handles.push(file_handle)
+  }
+  
+  // Test file handle state management
+  for handle in file_handles {
+    assert_eq(FileManager::get_state(file_manager, handle), Open)
+    
+    // Write to file
+    FileManager::write(file_manager, handle, "Test log entry\n")
+    
+    // Test file position
+    let position = FileManager::get_position(file_manager, handle)
+    assert_true(position > 0)
+  }
+  
+  // Test file handle pooling
+  let file_pool = FileManager::create_pool(file_manager, "log_files", 10)
+  
+  for handle in file_handles {
+    FileManager::return_to_pool(file_manager, file_pool, handle)
+  }
+  
+  let pool_stats = FileManager::get_pool_stats(file_manager, file_pool)
+  assert_eq(pool_stats.total_handles, 4)
+  assert_eq(pool_stats.available_handles, 4)
+  
+  // Test file handle reuse
+  let reused_handles = []
+  for i in 0..=2 {
+    let handle = FileManager::get_from_pool(file_manager, file_pool, 
+      "reuse_file_" + i.to_string() + ".log")
+    match handle {
+      Some(h) => {
+        assert_eq(FileManager::get_state(file_manager, h), Open)
+        reused_handles.push(h)
+      }
+      None => assert_true(false)
+    }
+  }
+  
+  // Test file handle flush and sync
+  for handle in reused_handles {
+    FileManager::flush(file_manager, handle)
+    FileManager::sync(file_manager, handle)
+  }
+  
+  // Test file handle closure
+  for handle in reused_handles {
+    FileManager::close(file_manager, handle)
+    assert_eq(FileManager::get_state(file_manager, handle), Closed)
+  }
+  
+  // Test file cleanup
+  FileManager::cleanup_pool(file_manager, file_pool)
+  let cleanup_stats = FileManager::get_pool_stats(file_manager, file_pool)
+  assert_true(cleanup_stats.closed_handles > 0)
+}
+
+// Test 9: Service Lifecycle Management
+test "service lifecycle management" {
+  let service_manager = ServiceManager::new()
+  
+  // Test service registration
+  let telemetry_service = ServiceManager::register_service(service_manager, 
+    "telemetry_service", TelemetryService::new())
+  
+  let monitoring_service = ServiceManager::register_service(service_manager, 
+    "monitoring_service", MonitoringService::new())
+  
+  // Test service configuration
+  ServiceManager::configure_service(service_manager, telemetry_service, [
+    ("service.name", StringValue("azimuth-telemetry")),
+    ("service.version", StringValue("1.0.0")),
+    ("service.port", IntValue(8080))
+  ])
+  
+  ServiceManager::configure_service(service_manager, monitoring_service, [
+    ("service.name", StringValue("azimuth-monitoring")),
+    ("service.version", StringValue("1.0.0")),
+    ("service.port", IntValue(8081))
+  ])
+  
+  // Test service initialization
+  ServiceManager::initialize_service(service_manager, telemetry_service)
+  ServiceManager::initialize_service(service_manager, monitoring_service)
+  
+  assert_eq(ServiceManager::get_state(service_manager, telemetry_service), Initialized)
+  assert_eq(ServiceManager::get_state(service_manager, monitoring_service), Initialized)
+  
+  // Test service start
+  ServiceManager::start_service(service_manager, telemetry_service)
+  ServiceManager::start_service(service_manager, monitoring_service)
+  
+  assert_eq(ServiceManager::get_state(service_manager, telemetry_service), Running)
+  assert_eq(ServiceManager::get_state(service_manager, monitoring_service), Running)
+  
+  // Test service health monitoring
+  let telemetry_health = ServiceManager::check_health(service_manager, telemetry_service)
+  let monitoring_health = ServiceManager::check_health(service_manager, monitoring_service)
+  
+  assert_true(telemetry_health.is_healthy)
+  assert_true(monitoring_health.is_healthy)
+  
+  // Test service restart
+  ServiceManager::restart_service(service_manager, telemetry_service)
+  assert_eq(ServiceManager::get_state(service_manager, telemetry_service), Running)
+  
+  // Test service stop
+  ServiceManager::stop_service(service_manager, telemetry_service)
+  ServiceManager::stop_service(service_manager, monitoring_service)
+  
+  assert_eq(ServiceManager::get_state(service_manager, telemetry_service), Stopped)
+  assert_eq(ServiceManager::get_state(service_manager, monitoring_service), Stopped)
+  
+  // Test service shutdown
+  ServiceManager::shutdown_service(service_manager, telemetry_service)
+  ServiceManager::shutdown_service(service_manager, monitoring_service)
+  
+  assert_eq(ServiceManager::get_state(service_manager, telemetry_service), Shutdown)
+  assert_eq(ServiceManager::get_state(service_manager, monitoring_service), Shutdown)
+  
+  // Test service lifecycle statistics
+  let service_stats = ServiceManager::get_lifecycle_stats(service_manager)
+  assert_eq(service_stats.total_services, 2)
+  assert_eq(service_stats.running_services, 0)
+  assert_eq(service_stats.shutdown_services, 2)
+  assert_true(service_stats.total_restarts > 0)
+}
+
+// Test 10: Resource Leak Detection
+test "resource leak detection" {
+  let leak_detector = LeakDetector::new()
+  
+  // Test span leak detection
+  LeakDetector::start_span_tracking(leak_detector)
+  
+  let leaked_spans = []
+  for i in 0..=10 {
+    let span_ctx = SpanContext::new("leak_test", "span_" + i.to_string(), true, "active")
+    let span = Span::new("leaked_span", Internal, span_ctx)
+    
+    // Don't end some spans to simulate leaks
+    if i % 3 != 0 {
+      Span::end(span)
     } else {
-      None
+      leaked_spans.push(span)
     }
   }
   
-  // 释放资源
-  let release_resource = fn(resource) {
-    if used_resources.contains(resource) {
-      used_resources[resource] = false
-      available_resources = available_resources.push(resource)
-    }
-  }
+  let span_leak_report = LeakDetector::detect_span_leaks(leak_detector)
+  assert_eq(span_leak_report.leaked_spans, 4) // spans 0, 3, 6, 9
   
-  // 测试资源获取
-  let resource1 = acquire_resource()
-  let resource2 = acquire_resource()
+  // Test memory leak detection
+  LeakDetector::start_memory_tracking(leak_detector)
   
-  assert_true(resource1.is_some())
-  assert_true(resource2.is_some())
-  assert_eq(available_resources.length(), 1)
-  assert_eq(used_resources.length(), 2)
-  
-  // 测试资源释放
-  release_resource(resource1.unwrap())
-  assert_eq(available_resources.length(), 2)
-  assert_eq(used_resources[resource1.unwrap()], false)
-}
-
-// 测试2: 资源自动清理
-test "资源自动清理" {
-  // 模拟资源使用追踪
-  let mut active_resources = {}
-  let mut cleanup_log = []
-  
-  // 资源使用包装器
-  let use_resource = fn(resource_name, operation) {
-    // 标记资源为活动状态
-    active_resources[resource_name] = true
+  let allocated_blocks = []
+  for i in 0..=20 {
+    let block = LeakDetector::allocate_tracked(leak_detector, 1024 * (i + 1))
     
-    // 执行操作
-    let result = operation()
-    
-    // 自动清理
-    active_resources[resource_name] = false
-    cleanup_log = cleanup_log.push("Cleaned up: " + resource_name)
-    
-    result
-  }
-  
-  // 测试资源使用和自动清理
-  let result = use_resource("database_connection", fn() {
-    "Operation completed"
-  })
-  
-  assert_eq(result, "Operation completed")
-  assert_eq(active_resources["database_connection"], false)
-  assert_eq(cleanup_log.length(), 1)
-  assert_eq(cleanup_log[0], "Cleaned up: database_connection")
-}
-
-// 测试3: 资源泄漏检测
-test "资源泄漏检测" {
-  // 资源追踪器
-  let mut allocated_resources = {}
-  let mut leaked_resources = []
-  
-  // 分配资源
-  let allocate_resource = fn(resource_id) {
-    allocated_resources[resource_id] = {
-      allocated: true,
-      timestamp: 1640995200
-    }
-    resource_id
-  }
-  
-  // 释放资源
-  let deallocate_resource = fn(resource_id) {
-    if allocated_resources.contains(resource_id) {
-      allocated_resources[resource_id].allocated = false
-    }
-  }
-  
-  // 检测资源泄漏
-  let detect_leaks = fn() {
-    leaked_resources = []
-    
-    for resource_id in allocated_resources.keys() {
-      if allocated_resources[resource_id].allocated {
-        leaked_resources = leaked_resources.push(resource_id)
-      }
-    }
-    
-    leaked_resources
-  }
-  
-  // 测试资源分配和释放
-  let resource1 = allocate_resource("res1")
-  let resource2 = allocate_resource("res2")
-  let resource3 = allocate_resource("res3")
-  
-  // 只释放部分资源
-  deallocate_resource(resource2)
-  
-  // 检测泄漏
-  let leaks = detect_leaks()
-  
-  assert_eq(leaks.length(), 2)
-  assert_true(leaks.contains("res1"))
-  assert_true(leaks.contains("res3"))
-  assert_false(leaks.contains("res2"))
-}
-
-// 测试4: 资源池管理
-test "资源池管理" {
-  // 资源池配置
-  let pool_config = {
-    min_size: 2,
-    max_size: 5,
-    growth_factor: 2
-  }
-  
-  // 资源池状态
-  let mut pool_resources = ["conn1", "conn2"] // 初始大小
-  let mut pool_created = 2
-  let mut pool_acquired = 0
-  
-  // 从池中获取资源
-  let pool_acquire = fn() {
-    if pool_resources.length() > 0 {
-      let resource = pool_resources[0]
-      pool_resources = pool_resources.slice(1)
-      pool_acquired = pool_acquired + 1
-      Some(resource)
-    } else if pool_created < pool_config.max_size {
-      // 创建新资源
-      pool_created = pool_created + 1
-      pool_acquired = pool_acquired + 1
-      Some("conn" + pool_created.to_string())
+    // Don't free some blocks to simulate leaks
+    if i % 4 != 0 {
+      LeakDetector::free_tracked(leak_detector, block)
     } else {
-      None
+      allocated_blocks.push(block)
     }
   }
   
-  // 归还资源到池
-  let pool_release = fn(resource) {
-    pool_resources = pool_resources.push(resource)
-    pool_acquired = pool_acquired - 1
-  }
+  let memory_leak_report = LeakDetector::detect_memory_leaks(leak_detector)
+  assert_eq(memory_leak_report.leaked_blocks, 6) // blocks 0, 4, 8, 12, 16, 20
+  assert_true(memory_leak_report.total_leaked_bytes > 0)
   
-  // 测试资源池操作
-  let res1 = pool_acquire()
-  let res2 = pool_acquire()
+  // Test connection leak detection
+  LeakDetector::start_connection_tracking(leak_detector)
   
-  assert_true(res1.is_some())
-  assert_true(res2.is_some())
-  assert_eq(pool_resources.length(), 0)
-  assert_eq(pool_acquired, 2)
-  
-  // 获取更多资源，触发池增长
-  let res3 = pool_acquire()
-  let res4 = pool_acquire()
-  let res5 = pool_acquire()
-  
-  assert_true(res3.is_some())
-  assert_true(res4.is_some())
-  assert_true(res5.is_some())
-  assert_eq(pool_created, 5) // 达到最大大小
-  
-  // 尝试获取超出池大小的资源
-  let res6 = pool_acquire()
-  assert_true(res6.is_none())
-  
-  // 归还资源
-  pool_release(res1.unwrap())
-  pool_release(res2.unwrap())
-  
-  assert_eq(pool_resources.length(), 2)
-  assert_eq(pool_acquired, 3)
-}
-
-// 测试5: 资源使用统计
-test "资源使用统计" {
-  // 资源使用统计
-  let mut resource_stats = {
-    total_allocated: 0,
-    total_deallocated: 0,
-    peak_usage: 0,
-    current_usage: 0
-  }
-  
-  // 分配资源
-  let allocate_with_stats = fn() {
-    resource_stats.total_allocated = resource_stats.total_allocated + 1
-    resource_stats.current_usage = resource_stats.current_usage + 1
+  let leaked_connections = []
+  for i in 0..=8 {
+    let connection = LeakDetector::create_tracked_connection(leak_detector, 
+      "conn_" + i.to_string())
     
-    if resource_stats.current_usage > resource_stats.peak_usage {
-      resource_stats.peak_usage = resource_stats.current_usage
-    }
-    
-    "resource" + resource_stats.total_allocated.to_string()
-  }
-  
-  // 释放资源
-  let deallocate_with_stats = fn() {
-    resource_stats.total_deallocated = resource_stats.total_deallocated + 1
-    resource_stats.current_usage = resource_stats.current_usage - 1
-  }
-  
-  // 测试资源使用统计
-  let res1 = allocate_with_stats()
-  let res2 = allocate_with_stats()
-  let res3 = allocate_with_stats()
-  
-  assert_eq(resource_stats.total_allocated, 3)
-  assert_eq(resource_stats.total_deallocated, 0)
-  assert_eq(resource_stats.current_usage, 3)
-  assert_eq(resource_stats.peak_usage, 3)
-  
-  deallocate_with_stats()
-  
-  assert_eq(resource_stats.total_deallocated, 1)
-  assert_eq(resource_stats.current_usage, 2)
-  assert_eq(resource_stats.peak_usage, 3) // 峰值保持不变
-  
-  // 分配更多资源
-  let res4 = allocate_with_stats()
-  let res5 = allocate_with_stats()
-  
-  assert_eq(resource_stats.total_allocated, 5)
-  assert_eq(resource_stats.current_usage, 4)
-  assert_eq(resource_stats.peak_usage, 4) // 新的峰值
-}
-
-// 测试6: 资源依赖管理
-test "资源依赖管理" {
-  // 资源依赖图
-  let mut resource_dependencies = {}
-  let mut resource_status = {}
-  
-  // 添加资源依赖
-  let add_dependency = fn(resource, dependency) {
-    if resource_dependencies.contains(resource) {
-      let current_deps = resource_dependencies[resource]
-      resource_dependencies[resource] = current_deps.push(dependency)
+    // Don't close some connections to simulate leaks
+    if i % 3 != 0 {
+      LeakDetector::close_tracked_connection(leak_detector, connection)
     } else {
-      resource_dependencies[resource] = [dependency]
-    }
-    resource_status[resource] = "active"
-    resource_status[dependency] = "active"
-  }
-  
-  // 释放资源（包括依赖）
-  let release_with_dependencies = fn(resource) {
-    if resource_status[resource] == "active" {
-      // 首先释放依赖
-      if resource_dependencies.contains(resource) {
-        for dep in resource_dependencies[resource] {
-          if resource_status[dep] == "active" {
-            resource_status[dep] = "released"
-          }
-        }
-      }
-      
-      // 然后释放资源本身
-      resource_status[resource] = "released"
+      leaked_connections.push(connection)
     }
   }
   
-  // 测试资源依赖
-  add_dependency("web_server", "database_connection")
-  add_dependency("web_server", "cache_connection")
-  add_dependency("database_connection", "connection_pool")
+  let connection_leak_report = LeakDetector::detect_connection_leaks(leak_detector)
+  assert_eq(connection_leak_report.leaked_connections, 3) // connections 0, 3, 6
   
-  // 验证依赖关系
-  assert_eq(resource_dependencies["web_server"].length(), 2)
-  assert_true(resource_dependencies["web_server"].contains("database_connection"))
-  assert_true(resource_dependencies["web_server"].contains("cache_connection"))
-  assert_eq(resource_dependencies["database_connection"].length(), 1)
-  assert_true(resource_dependencies["database_connection"].contains("connection_pool"))
-  
-  // 释放资源
-  release_with_dependencies("web_server")
-  
-  // 验证资源释放
-  assert_eq(resource_status["web_server"], "released")
-  assert_eq(resource_status["database_connection"], "released")
-  assert_eq(resource_status["cache_connection"], "released")
-  assert_eq(resource_status["connection_pool"], "released")
-}
-
-// 测试7: 资源超时管理
-test "资源超时管理" {
-  // 资源超时配置
-  let timeout_config = {
-    default_timeout: 30, // 秒
-    warning_threshold: 20 // 秒
+  // Test resource cleanup
+  for span in leaked_spans {
+    Span::end(span)
   }
   
-  // 资源使用记录
-  let mut resource_usage = {}
-  
-  // 开始使用资源
-  let start_using = fn(resource_id) {
-    let current_time = 1640995200
-    resource_usage[resource_id] = {
-      start_time: current_time,
-      last_activity: current_time,
-      timeout: timeout_config.default_timeout
-    }
+  for block in allocated_blocks {
+    LeakDetector::free_tracked(leak_detector, block)
   }
   
-  // 更新活动时间
-  let update_activity = fn(resource_id) {
-    let current_time = 1640995250 // 50秒后
-    if resource_usage.contains(resource_id) {
-      resource_usage[resource_id].last_activity = current_time
-    }
+  for connection in leaked_connections {
+    LeakDetector::close_tracked_connection(leak_detector, connection)
   }
   
-  // 检查超时资源
-  let check_timeouts = fn() {
-    let current_time = 1640995250 // 50秒后
-    let timed_out_resources = []
-    
-    for resource_id in resource_usage.keys() {
-      let usage = resource_usage[resource_id]
-      let elapsed = current_time - usage.last_activity
-      
-      if elapsed > usage.timeout {
-        timed_out_resources = timed_out_resources.push(resource_id)
-      }
-    }
-    
-    timed_out_resources
-  }
+  // Verify no leaks after cleanup
+  let final_span_report = LeakDetector::detect_span_leaks(leak_detector)
+  assert_eq(final_span_report.leaked_spans, 0)
   
-  // 测试资源超时
-  start_using("resource1")
-  start_using("resource2")
+  let final_memory_report = LeakDetector::detect_memory_leaks(leak_detector)
+  assert_eq(final_memory_report.leaked_blocks, 0)
   
-  // 更新一个资源的活动时间
-  update_activity("resource2")
+  let final_connection_report = LeakDetector::detect_connection_leaks(leak_detector)
+  assert_eq(final_connection_report.leaked_connections, 0)
   
-  // 检查超时
-  let timed_out = check_timeouts()
-  
-  assert_eq(timed_out.length(), 1)
-  assert_eq(timed_out[0], "resource1")
-  assert_false(timed_out.contains("resource2"))
-}
-
-// 测试8: 资源优先级管理
-test "资源优先级管理" {
-  // 资源优先级
-  enum Priority {
-    Critical
-    High
-    Normal
-    Low
-  }
-  
-  // 资源队列
-  let mut resource_queue = []
-  let mut allocated_resources = {}
-  
-  // 请求资源
-  let request_resource = fn(resource_id, priority) {
-    let request = {
-      id: resource_id,
-      priority: priority,
-      timestamp: 1640995200
-    }
-    
-    // 按优先级插入
-    let mut inserted = false
-    let mut new_queue = []
-    
-    for existing in resource_queue {
-      if !inserted && priority_higher(priority, existing.priority) {
-        new_queue = new_queue.push(request)
-        inserted = true
-      }
-      new_queue = new_queue.push(existing)
-    }
-    
-    if !inserted {
-      new_queue = new_queue.push(request)
-    }
-    
-    resource_queue = new_queue
-  }
-  
-  // 优先级比较
-  let priority_higher = fn(p1, p2) {
-    match (p1, p2) {
-      (Priority::Critical, _) => true
-      (Priority::High, Priority::Critical) => false
-      (Priority::High, Priority::Normal | Priority::Low) => true
-      (Priority::Normal, Priority::Critical | Priority::High) => false
-      (Priority::Normal, Priority::Low) => true
-      (Priority::Low, _) => false
-    }
-  }
-  
-  // 分配资源
-  let allocate_resources = fn(count) {
-    let allocated = []
-    
-    for i in 0..=count {
-      if resource_queue.length() > 0 {
-        let request = resource_queue[0]
-        resource_queue = resource_queue.slice(1)
-        allocated_resources[request.id] = true
-        allocated = allocated.push(request.id)
-      }
-    }
-    
-    allocated
-  }
-  
-  // 测试资源优先级
-  request_resource("low1", Priority::Low)
-  request_resource("high1", Priority::High)
-  request_resource("critical1", Priority::Critical)
-  request_resource("normal1", Priority::Normal)
-  
-  // 分配资源（应该按优先级顺序）
-  let allocated = allocate_resources(3)
-  
-  assert_eq(allocated.length(), 3)
-  assert_eq(allocated[0], "critical1") // 最高优先级
-  assert_eq(allocated[1], "high1") // 次高优先级
-  assert_eq(allocated[2], "normal1") // 普通优先级
-  
-  // 低优先级资源仍在队列中
-  assert_eq(resource_queue.length(), 1)
-  assert_eq(resource_queue[0].id, "low1")
-}
-
-// 测试9: 资源健康检查
-test "资源健康检查" {
-  // 资源健康状态
-  let mut resource_health = {}
-  
-  // 注册资源
-  let register_resource = fn(resource_id) {
-    resource_health[resource_id] = {
-      status: "healthy",
-      last_check: 1640995200,
-      failure_count: 0
-    }
-  }
-  
-  // 更新健康状态
-  let update_health = fn(resource_id, is_healthy) {
-    if resource_health.contains(resource_id) {
-      let current_time = 1640995250
-      let health = resource_health[resource_id]
-      
-      if is_healthy {
-        health.status = "healthy"
-        health.failure_count = 0
-      } else {
-        health.failure_count = health.failure_count + 1
-        if health.failure_count >= 3 {
-          health.status = "unhealthy"
-        } else {
-          health.status = "degraded"
-        }
-      }
-      
-      health.last_check = current_time
-    }
-  }
-  
-  // 获取不健康资源
-  let get_unhealthy_resources = fn() {
-    let unhealthy = []
-    
-    for resource_id in resource_health.keys() {
-      if resource_health[resource_id].status != "healthy" {
-        unhealthy = unhealthy.push(resource_id)
-      }
-    }
-    
-    unhealthy
-  }
-  
-  // 测试资源健康检查
-  register_resource("db1")
-  register_resource("cache1")
-  register_resource("api1")
-  
-  // 模拟健康检查
-  update_health("db1", true)  // 健康
-  update_health("cache1", false) // 失败1次
-  update_health("cache1", false) // 失败2次
-  update_health("api1", false)   // 失败1次
-  
-  // 验证健康状态
-  assert_eq(resource_health["db1"].status, "healthy")
-  assert_eq(resource_health["cache1"].status, "degraded")
-  assert_eq(resource_health["api1"].status, "degraded")
-  
-  // 再次失败cache1，应该变为不健康
-  update_health("cache1", false)
-  assert_eq(resource_health["cache1"].status, "unhealthy")
-  
-  // 获取不健康资源
-  let unhealthy = get_unhealthy_resources()
-  assert_eq(unhealthy.length(), 1)
-  assert_eq(unhealthy[0], "cache1")
-}
-
-// 测试10: 资源使用模式分析
-test "资源使用模式分析" {
-  // 资源使用记录
-  let mut usage_records = []
-  
-  // 记录资源使用
-  let record_usage = fn(resource_type, duration) {
-    let record = {
-      resource_type: resource_type,
-      duration: duration,
-      timestamp: 1640995200
-    }
-    usage_records = usage_records.push(record)
-  }
-  
-  // 记录一些使用数据
-  record_usage("database", 100)
-  record_usage("cache", 50)
-  record_usage("database", 200)
-  record_usage("api", 300)
-  record_usage("cache", 75)
-  record_usage("database", 150)
-  
-  // 分析使用模式
-  let analyze_usage = fn() {
-    let analysis = {}
-    
-    for record in usage_records {
-      let resource_type = record.resource_type
-      
-      if analysis.contains(resource_type) {
-        let stats = analysis[resource_type]
-        stats.count = stats.count + 1
-        stats.total_duration = stats.total_duration + record.duration
-        stats.avg_duration = stats.total_duration / stats.count
-        
-        if record.duration > stats.max_duration {
-          stats.max_duration = record.duration
-        }
-        
-        if stats.min_duration == 0 || record.duration < stats.min_duration {
-          stats.min_duration = record.duration
-        }
-      } else {
-        analysis[resource_type] = {
-          count: 1,
-          total_duration: record.duration,
-          avg_duration: record.duration,
-          max_duration: record.duration,
-          min_duration: record.duration
-        }
-      }
-    }
-    
-    analysis
-  }
-  
-  // 分析使用模式
-  let analysis = analyze_usage()
-  
-  // 验证分析结果
-  assert_eq(analysis["database"].count, 3)
-  assert_eq(analysis["database"].total_duration, 450)
-  assert_eq(analysis["database"].avg_duration, 150)
-  assert_eq(analysis["database"].max_duration, 200)
-  assert_eq(analysis["database"].min_duration, 100)
-  
-  assert_eq(analysis["cache"].count, 2)
-  assert_eq(analysis["cache"].total_duration, 125)
-  assert_eq(analysis["cache"].avg_duration, 62)
-  assert_eq(analysis["cache"].max_duration, 75)
-  assert_eq(analysis["cache"].min_duration, 50)
-  
-  assert_eq(analysis["api"].count, 1)
-  assert_eq(analysis["api"].total_duration, 300)
-  assert_eq(analysis["api"].avg_duration, 300)
-  assert_eq(analysis["api"].max_duration, 300)
-  assert_eq(analysis["api"].min_duration, 300)
+  // Test leak detection statistics
+  let leak_stats = LeakDetector::get_stats(leak_detector)
+  assert_true(leak_stats.total_spans_tracked > 0)
+  assert_true(leak_stats.total_memory_blocks_tracked > 0)
+  assert_true(leak_stats.total_connections_tracked > 0)
+  assert_true(leak_stats.leaks_detected > 0)
+  assert_true(leak_stats.leaks_resolved > 0)
 }
