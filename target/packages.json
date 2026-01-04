@@ -9,6 +9,19 @@
       "root": "azimuth/telemetry",
       "rel": "",
       "files": {
+        "/home/runner/work/Azimuth/Azimuth/azimuth_accessibility_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/azimuth_adaptive_configuration_tests.mbt": {
           "backend": [
             "Wasm",
@@ -309,6 +322,19 @@
           ]
         },
         "/home/runner/work/Azimuth/Azimuth/azimuth_advanced_data_pipeline_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_advanced_data_processing_tests.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
@@ -971,6 +997,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_api_integration_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/azimuth_async_concurrent_tests.mbt": {
           "backend": [
             "Wasm",
@@ -1140,6 +1179,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_boundary_condition_edge_case_comprehensive_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/azimuth_boundary_condition_edge_case_tests.mbt": {
           "backend": [
             "Wasm",
@@ -1258,6 +1310,19 @@
           ]
         },
         "/home/runner/work/Azimuth/Azimuth/azimuth_caching_mechanism_comprehensive_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_caching_mechanism_strategy_comprehensive_tests.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
@@ -1582,19 +1647,6 @@
             "Debug"
           ]
         },
-        "/home/runner/work/Azimuth/Azimuth/azimuth_comprehensive_new_tests.mbt": {
-          "backend": [
-            "Wasm",
-            "WasmGC",
-            "Js",
-            "Native",
-            "LLVM"
-          ],
-          "optlevel": [
-            "Release",
-            "Debug"
-          ]
-        },
         "/home/runner/work/Azimuth/Azimuth/azimuth_comprehensive_system_tests.mbt": {
           "backend": [
             "Wasm",
@@ -1791,6 +1843,19 @@
           ]
         },
         "/home/runner/work/Azimuth/Azimuth/azimuth_concurrent_processing_enhanced_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_concurrent_processing_tests.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
@@ -2025,6 +2090,19 @@
           ]
         },
         "/home/runner/work/Azimuth/Azimuth/azimuth_config_validation_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_configuration_management_advanced_tests.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
@@ -2739,6 +2817,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_data_compression_optimized_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/azimuth_data_compression_tests.mbt": {
           "backend": [
             "Wasm",
@@ -2766,6 +2857,19 @@
           ]
         },
         "/home/runner/work/Azimuth/Azimuth/azimuth_data_compression_transmission_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_data_consistency_comprehensive_tests.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
@@ -3025,6 +3129,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_data_serialization_advanced_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/azimuth_data_serialization_comprehensive_tests.mbt": {
           "backend": [
             "Wasm",
@@ -3247,6 +3364,19 @@
           ]
         },
         "/home/runner/work/Azimuth/Azimuth/azimuth_data_visualization_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_database_operations_tests.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
@@ -3845,6 +3975,19 @@
           ]
         },
         "/home/runner/work/Azimuth/Azimuth/azimuth_enhanced_comprehensive_system_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_enhanced_comprehensive_test_cases.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
@@ -4884,6 +5027,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_file_io_operations_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/azimuth_filesystem_operations_tests.mbt": {
           "backend": [
             "Wasm",
@@ -5261,6 +5417,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_high_quality_cross_platform_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/azimuth_high_quality_cross_service_tests.mbt": {
           "backend": [
             "Wasm",
@@ -5288,6 +5457,19 @@
           ]
         },
         "/home/runner/work/Azimuth/Azimuth/azimuth_high_quality_data_processing_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_high_quality_distributed_tracing_tests.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
@@ -5417,6 +5599,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_high_quality_memory_management_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/azimuth_high_quality_metrics_aggregation_tests.mbt": {
           "backend": [
             "Wasm",
@@ -5431,6 +5626,19 @@
           ]
         },
         "/home/runner/work/Azimuth/Azimuth/azimuth_high_quality_moonbit_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_high_quality_performance_benchmark_tests.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
@@ -5508,6 +5716,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_high_quality_realtime_streaming_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/azimuth_high_quality_resource_constraint_tests.mbt": {
           "backend": [
             "Wasm",
@@ -5522,6 +5743,19 @@
           ]
         },
         "/home/runner/work/Azimuth/Azimuth/azimuth_high_quality_resource_merge_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_high_quality_security_privacy_tests.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
@@ -5600,6 +5834,19 @@
           ]
         },
         "/home/runner/work/Azimuth/Azimuth/azimuth_high_quality_telemetry_integrity_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_high_quality_telemetry_serialization_tests.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
@@ -6029,6 +6276,19 @@
           ]
         },
         "/home/runner/work/Azimuth/Azimuth/azimuth_machine_learning_integration_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_machine_learning_tests.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
@@ -7445,6 +7705,32 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_performance_optimization_benchmark_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_performance_optimization_comprehensive_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/azimuth_performance_optimization_enhanced_tests.mbt": {
           "backend": [
             "Wasm",
@@ -8108,6 +8394,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_premium_data_structures_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/azimuth_premium_data_type_conversion_tests.mbt": {
           "backend": [
             "Wasm",
@@ -8369,6 +8668,19 @@
           ]
         },
         "/home/runner/work/Azimuth/Azimuth/azimuth_premium_performance_optimization_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_premium_performance_resource_tests.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
@@ -9213,6 +9525,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_resource_optimization_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/azimuth_resource_utilization_optimization_tests.mbt": {
           "backend": [
             "Wasm",
@@ -9877,6 +10202,19 @@
           ]
         },
         "/home/runner/work/Azimuth/Azimuth/azimuth_specialized_focused_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_specialized_high_quality_tests.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
@@ -10812,6 +11150,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_telemetry_performance_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/azimuth_telemetry_privacy_protection_tests.mbt": {
           "backend": [
             "Wasm",
@@ -11293,6 +11644,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_type_conversion_enhanced_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/azimuth_type_system_functional_programming_tests.mbt": {
           "backend": [
             "Wasm",
@@ -11440,6 +11804,19 @@
       "wbtest-files": {},
       "test-files": {
         "/home/runner/work/Azimuth/Azimuth/azimuth_new_simple_test.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_simple_new_test.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
@@ -13192,6 +13569,19 @@
           ]
         },
         "/home/runner/work/Azimuth/Azimuth/src/azimuth_performance_resource_management_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/src/azimuth_premium_advanced_test_cases.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
