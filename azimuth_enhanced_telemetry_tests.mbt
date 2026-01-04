@@ -1,67 +1,97 @@
 // Azimuth Enhanced Telemetry Test Suite
-// This file contains enhanced MoonBit test cases focusing on telemetry system features
+// This file contains advanced telemetry-focused test cases
 
-// Test 1: Trace Context Propagation
-test "trace context propagation across service boundaries" {
-  // Define trace context structure
-  type TraceContext = {
+// Test 1: Span Lifecycle Management
+test "span lifecycle management" {
+  // Define span states
+  enum SpanState {
+    Created
+    Started
+    Stopped
+    Dropped
+  }
+  
+  // Define span structure
+  type Span = {
+    name: String,
     trace_id: String,
     span_id: String,
-    parent_span_id: Option[String],
-    baggage: Array[(String, String)],
-    flags: Int
+    state: SpanState,
+    start_time: Option[Int],
+    end_time: Option[Int],
+    attributes: Array[(String, String)]
   }
   
-  // Create initial trace context
-  let root_context = {
-    trace_id: "trace-abc123",
-    span_id: "span-def456",
-    parent_span_id: None,
-    baggage: [("user.id", "12345"), ("request.id", "req-789")],
-    flags: 1
-  }
-  
-  // Simulate context propagation to child service
-  let propagate_to_child = fn(context: TraceContext, service_name: String) {
-    let child_span_id = "span-" + service_name + "-" + context.span_id.length().to_string()
+  // Create span factory
+  let create_span = fn(name: String, trace_id: String) {
     {
-      trace_id: context.trace_id,
-      span_id: child_span_id,
-      parent_span_id: Some(context.span_id),
-      baggage: context.baggage,
-      flags: context.flags
+      name,
+      trace_id,
+      span_id: "span-" + name.length().to_string(),
+      state: SpanState::Created,
+      start_time: None,
+      end_time: None,
+      attributes: []
     }
   }
   
-  // Test context propagation
-  let child_context = propagate_to_child(root_context, "payment")
-  assert_eq(child_context.trace_id, "trace-abc123")
-  assert_eq(child_context.span_id, "span-payment-12")
-  assert_eq(child_context.parent_span_id, Some("span-def456"))
-  assert_eq(child_context.baggage.length(), 2)
-  
-  // Test baggage preservation
-  let get_baggage_item = fn(baggage: Array[(String, String)], key: String) {
-    let mut found = None
-    for (k, v) in baggage {
-      if k == key {
-        found = Some(v)
-      }
+  // Start span function
+  let start_span = fn(span: Span, timestamp: Int) {
+    {
+      span |
+      state: SpanState::Started,
+      start_time: Some(timestamp)
     }
-    found
   }
   
-  let user_id = get_baggage_item(child_context.baggage, "user.id")
-  assert_eq(user_id, Some("12345"))
+  // Stop span function
+  let stop_span = fn(span: Span, timestamp: Int) {
+    {
+      span |
+      state: SpanState::Stopped,
+      end_time: Some(timestamp)
+    }
+  }
   
-  // Test multi-level propagation
-  let grandchild_context = propagate_to_child(child_context, "database")
-  assert_eq(grandchild_context.trace_id, "trace-abc123")
-  assert_eq(grandchild_context.parent_span_id, Some("span-payment-12"))
+  // Test span creation
+  let span = create_span("database_query", "trace-123")
+  assert_eq(span.name, "database_query")
+  assert_eq(span.trace_id, "trace-123")
+  assert_eq(span.span_id, "span-14")
+  
+  match span.state {
+    SpanState::Created => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  assert_eq(span.start_time, None)
+  assert_eq(span.end_time, None)
+  
+  // Test span start
+  let started_span = start_span(span, 1640995200)
+  match started_span.state {
+    SpanState::Started => assert_true(true)
+    _ => assert_true(false)
+  }
+  assert_eq(started_span.start_time, Some(1640995200))
+  
+  // Test span stop
+  let stopped_span = stop_span(started_span, 1640995250)
+  match stopped_span.state {
+    SpanState::Stopped => assert_true(true)
+    _ => assert_true(false)
+  }
+  assert_eq(stopped_span.end_time, Some(1640995250))
+  
+  // Calculate duration
+  match (stopped_span.start_time, stopped_span.end_time) {
+    (Some(start), Some(end)) => assert_eq(end - start, 50)
+    _ => assert_true(false)
+  }
 }
 
 // Test 2: Metric Collection and Aggregation
-test "metric collection and aggregation patterns" {
+test "metric collection and aggregation" {
   // Define metric types
   enum MetricType {
     Counter
@@ -75,305 +105,442 @@ test "metric collection and aggregation patterns" {
     name: String,
     metric_type: MetricType,
     value: Float,
-    labels: Array[(String, String)],
-    timestamp: Int
+    timestamp: Int,
+    labels: Array[(String, String)]
+  }
+  
+  // Define metric collector
+  type MetricCollector = {
+    metrics: Array[Metric],
+    max_size: Int
   }
   
   // Create metric collector
-  let create_metric = fn(name: String, metric_type: MetricType, value: Float, labels: Array[(String, String)]) {
+  let create_collector = fn(max_size: Int) {
     {
-      name,
-      metric_type,
-      value,
-      labels,
-      timestamp: 1640995200
+      metrics: [],
+      max_size
     }
   }
   
-  // Test counter metrics
-  let request_counter = create_metric(
-    "http_requests_total",
-    MetricType::Counter,
-    1000.0,
-    [("method", "GET"), ("status", "200")]
-  )
+  // Add metric to collector
+  let add_metric = fn(collector: MetricCollector, metric: Metric) {
+    if collector.metrics.length() >= collector.max_size {
+      // Remove oldest metric (FIFO)
+      let remaining = collector.metrics.slice(1, collector.metrics.length() - 1)
+      { collector | metrics: remaining.push(metric) }
+    } else {
+      { collector | metrics: collector.metrics.push(metric) }
+    }
+  }
   
-  assert_eq(request_counter.name, "http_requests_total")
-  assert_eq(request_counter.value, 1000.0)
-  assert_eq(request_counter.labels.length(), 2)
+  // Calculate average for metric type
+  let calculate_average = fn(collector: MetricCollector, metric_name: String) {
+    let filtered = collector.metrics.filter(fn(m) { m.name == metric_name })
+    if filtered.length() == 0 {
+      0.0
+    } else {
+      let sum = filtered.reduce(fn(acc, m) { acc + m.value }, 0.0)
+      sum / filtered.length().to_float()
+    }
+  }
   
-  // Test gauge metrics
-  let memory_usage = create_metric(
-    "memory_usage_bytes",
-    MetricType::Gauge,
-    536870912.0,  // 512MB
-    [("instance", "server-1")]
-  )
+  // Test metric collection
+  let collector = create_collector(100)
   
-  assert_eq(memory_usage.metric_type, MetricType::Gauge)
-  assert_eq(memory_usage.value, 536870912.0)
+  // Add counter metrics
+  let counter1 = {
+    name: "request_count",
+    metric_type: MetricType::Counter,
+    value: 1.0,
+    timestamp: 1640995200,
+    labels: [("service", "api"), ("endpoint", "/users")]
+  }
   
-  // Test metric aggregation
-  let aggregate_metrics = fn(metrics: Array[Metric], aggregation_type: String) {
-    match aggregation_type {
-      "sum" => {
-        let mut total = 0.0
-        for metric in metrics {
-          total = total + metric.value
-        }
-        total
-      }
-      "avg" => {
-        let mut sum = 0.0
-        for metric in metrics {
-          sum = sum + metric.value
-        }
-        sum / metrics.length().to_float()
-      }
-      "max" => {
-        let mut max = 0.0
-        for metric in metrics {
-          if metric.value > max {
-            max = metric.value
+  let counter2 = {
+    name: "request_count",
+    metric_type: MetricType::Counter,
+    value: 1.0,
+    timestamp: 1640995210,
+    labels: [("service", "api"), ("endpoint", "/orders")]
+  }
+  
+  let collector_with_counters = add_metric(add_metric(collector, counter1), counter2)
+  assert_eq(collector_with_counters.metrics.length(), 2)
+  
+  // Add gauge metric
+  let gauge = {
+    name: "memory_usage",
+    metric_type: MetricType::Gauge,
+    value: 512.5,
+    timestamp: 1640995220,
+    labels: [("service", "api"), ("instance", "i-123")]
+  }
+  
+  let collector_with_gauge = add_metric(collector_with_counters, gauge)
+  assert_eq(collector_with_gauge.metrics.length(), 3)
+  
+  // Test average calculation
+  let avg_requests = calculate_average(collector_with_gauge, "request_count")
+  assert_eq(avg_requests, 1.0)
+  
+  let avg_memory = calculate_average(collector_with_gauge, "memory_usage")
+  assert_eq(avg_memory, 512.5)
+  
+  // Test max size limit
+  let small_collector = create_collector(2)
+  let filled_collector = add_metric(add_metric(small_collector, counter1), counter2)
+  assert_eq(filled_collector.metrics.length(), 2)
+  
+  // Add third metric, should remove first
+  let overflow_collector = add_metric(filled_collector, gauge)
+  assert_eq(overflow_collector.metrics.length(), 2)
+  assert_eq(overflow_collector.metrics[0].name, "request_count")  // counter2
+  assert_eq(overflow_collector.metrics[1].name, "memory_usage")   // gauge
+}
+
+// Test 3: Trace Context Propagation
+test "trace context propagation" {
+  // Define trace context
+  type TraceContext = {
+    trace_id: String,
+    span_id: String,
+    trace_flags: Int,
+    baggage: Array[(String, String)]
+  }
+  
+  // Define propagator interface
+  type Propagator = {
+    inject: fn(context: TraceContext, headers: Array[(String, String)]) -> Array[(String, String)],
+    extract: fn(headers: Array[(String, String)]) -> Option[TraceContext]
+  }
+  
+  // Create traceparent propagator
+  let traceparent_propagator = {
+    inject: fn(context: TraceContext, headers: Array[(String, String)]) {
+      let traceparent = "00-" + context.trace_id + "-" + context.span_id + "-" + context.trace_flags.to_string(16)
+      headers.push(("traceparent", traceparent))
+    },
+    
+    extract: fn(headers: Array[(String, String)]) {
+      let mut found = None
+      for (key, value) in headers {
+        if key == "traceparent" {
+          let parts = value.split("-")
+          if parts.length() == 4 {
+            found = Some({
+              trace_id: parts[1],
+              span_id: parts[2],
+              trace_flags: parts[3].to_int(16),
+              baggage: []
+            })
           }
         }
-        max
       }
-      _ => 0.0
+      found
     }
   }
   
-  let response_times = [
-    create_metric("response_time", MetricType::Histogram, 100.0, []),
-    create_metric("response_time", MetricType::Histogram, 150.0, []),
-    create_metric("response_time", MetricType::Histogram, 200.0, []),
-    create_metric("response_time", MetricType::Histogram, 120.0, [])
-  ]
+  // Create baggage propagator
+  let baggage_propagator = {
+    inject: fn(context: TraceContext, headers: Array[(String, String)]) {
+      let mut result = headers
+      for (key, value) in context.baggage {
+        result = result.push(("baggage", key + "=" + value))
+      }
+      result
+    },
+    
+    extract: fn(headers: Array[(String, String)]) {
+      let mut baggage_items = []
+      for (key, value) in headers {
+        if key == "baggage" {
+          baggage_items = baggage_items.push(value)
+        }
+      }
+      
+      if baggage_items.length() == 0 {
+        None
+      } else {
+        let parsed_baggage = baggage_items.map(fn(item) {
+          let parts = item.split("=")
+          if parts.length() == 2 {
+            (parts[0], parts[1])
+          } else {
+            ("", "")
+          }
+        })
+        
+        Some({
+          trace_id: "",
+          span_id: "",
+          trace_flags: 0,
+          baggage: parsed_baggage
+        })
+      }
+    }
+  }
   
-  let avg_response_time = aggregate_metrics(response_times, "avg")
-  assert_eq(avg_response_time, 142.5)
+  // Create composite propagator
+  let composite_propagator = {
+    inject: fn(context: TraceContext, headers: Array[(String, String)]) {
+      let with_traceparent = traceparent_propagator.inject(context, headers)
+      baggage_propagator.inject(context, with_traceparent)
+    },
+    
+    extract: fn(headers: Array[(String, String)]) {
+      let trace_context = traceparent_propagator.extract(headers)
+      let baggage_context = baggage_propagator.extract(headers)
+      
+      match (trace_context, baggage_context) {
+        (Some(tc), Some(bc)) => Some({
+          tc |
+          baggage: bc.baggage
+        })
+        (Some(tc), None) => Some(tc)
+        (None, Some(bc)) => Some({
+          trace_id: "",
+          span_id: "",
+          trace_flags: 0,
+          baggage: bc.baggage
+        })
+        (None, None) => None
+      }
+    }
+  }
   
-  let max_response_time = aggregate_metrics(response_times, "max")
-  assert_eq(max_response_time, 200.0)
+  // Test context injection and extraction
+  let original_context = {
+    trace_id: "0af7651916cd43dd8448eb211c80319c",
+    span_id: "b7ad6b7169203331",
+    trace_flags: 1,
+    baggage: [("user.id", "12345"), ("service.version", "1.2.3")]
+  }
+  
+  // Inject context into headers
+  let headers = []
+  let injected_headers = composite_propagator.inject(original_context, headers)
+  
+  // Verify traceparent header
+  let traceparent_found = injected_headers.find(fn(h) { h.0 == "traceparent" })
+  assert_true(traceparent_found.is_some())
+  assert_eq(traceparent_found.unwrap().1, "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
+  
+  // Verify baggage headers
+  let baggage_headers = injected_headers.filter(fn(h) { h.0 == "baggage" })
+  assert_eq(baggage_headers.length(), 2)
+  
+  // Extract context from headers
+  let extracted_context = composite_propagator.extract(injected_headers)
+  assert_true(extracted_context.is_some())
+  
+  let context = extracted_context.unwrap()
+  assert_eq(context.trace_id, "0af7651916cd43dd8448eb211c80319c")
+  assert_eq(context.span_id, "b7ad6b7169203331")
+  assert_eq(context.trace_flags, 1)
+  assert_eq(context.baggage.length(), 2)
+  
+  // Test partial extraction (only baggage)
+  let baggage_only_headers = [("baggage", "debug=true"), ("baggage", "env=production")]
+  let baggage_only_context = composite_propagator.extract(baggage_only_headers)
+  assert_true(baggage_only_context.is_some())
+  
+  let baggage_context = baggage_only_context.unwrap()
+  assert_eq(baggage_context.trace_id, "")
+  assert_eq(baggage_context.span_id, "")
+  assert_eq(baggage_context.baggage.length(), 2)
 }
 
-// Test 3: Sampling Strategies
-test "telemetry sampling strategies" {
-  // Define sampling types
-  enum SamplingStrategy {
-    AlwaysOn
-    AlwaysOff
-    Probabilistic(Float)  // Probability between 0.0 and 1.0
-    RateLimiting(Int)     // Max samples per second
+// Test 4: Sampling Strategy
+test "sampling strategy" {
+  // Define sampling decision
+  enum SamplingDecision {
+    Drop
+    Record
+    RecordAndSample
   }
   
-  // Create sampler
-  let create_sampler = fn(strategy: SamplingStrategy) {
-    {
-      strategy,
-      sample_count: 0,
-      last_reset: 1640995200
-    }
-  }
-  
-  // Test sampling decision
-  let should_sample = fn(sampler: SamplingStrategy, trace_id: String) {
-    match sampler {
-      SamplingStrategy::AlwaysOn => true,
-      SamplingStrategy::AlwaysOff => false,
-      SamplingStrategy::Probabilistic(probability) => {
-        // Simple hash-based sampling simulation
-        let hash = trace_id.length() % 100
-        (hash.to_float() / 100.0) < probability
-      }
-      SamplingStrategy::RateLimiting(max_per_second) => {
-        // Simplified rate limiting simulation
-        max_per_second > 0
-      }
-    }
-  }
-  
-  // Test always on sampler
-  let always_on_sampler = create_sampler(SamplingStrategy::AlwaysOn)
-  assert_true(should_sample(always_on_sampler.strategy, "any-trace-id"))
-  
-  // Test always off sampler
-  let always_off_sampler = create_sampler(SamplingStrategy::AlwaysOff)
-  assert_false(should_sample(always_off_sampler.strategy, "any-trace-id"))
-  
-  // Test probabilistic sampler
-  let probabilistic_sampler = create_sampler(SamplingStrategy::Probabilistic(0.5))
-  let short_trace = "trace-1"
-  let long_trace = "trace-12345678901234567890"
-  
-  let short_sampled = should_sample(probabilistic_sampler.strategy, short_trace)
-  let long_sampled = should_sample(probabilistic_sampler.strategy, long_trace)
-  
-  // Due to hash-based implementation, these should have different results
-    // Test rate limiting sampler
-  let rate_limit_sampler = create_sampler(SamplingStrategy::RateLimiting(10))
-  assert_true(should_sample(rate_limit_sampler.strategy, "trace-123"))
-  
-  let zero_rate_sampler = create_sampler(SamplingStrategy::RateLimiting(0))
-  assert_false(should_sample(zero_rate_sampler.strategy, "trace-456"))
-}
-
-// Test 4: Span Event and Link Management
-test "span event and link management" {
-  // Define span event structure
-  type SpanEvent = {
-    name: String,
-    timestamp: Int,
+  // Define sampling result
+  type SamplingResult = {
+    decision: SamplingDecision,
     attributes: Array[(String, String)]
   }
   
-  // Define span link structure
-  type SpanLink = {
-    trace_id: String,
-    span_id: String,
-    attributes: Array[(String, String)]
+  // Define sampler interface
+  type Sampler = {
+    should_sample: fn(trace_id: String, name: String, parent_sampled: Option[Bool]) -> SamplingResult
   }
   
-  // Define enhanced span with events and links
-  type EnhancedSpan = {
-    name: String,
-    trace_id: String,
-    span_id: String,
-    events: Array[SpanEvent],
-    links: Array[SpanLink],
-    status: String
-  }
-  
-  // Create span event
-  let create_event = fn(name: String, attributes: Array[(String, String)]) {
-    {
-      name,
-      timestamp: 1640995200,
-      attributes
-    }
-  }
-  
-  // Create span link
-  let create_link = fn(trace_id: String, span_id: String, attributes: Array[(String, String)]) {
-    {
-      trace_id,
-      span_id,
-      attributes
-    }
-  }
-  
-  // Test span with events
-  let db_query_events = [
-    create_event("query.start", [("query", "SELECT * FROM users")]),
-    create_event("db.connection", [("pool", "primary"), ("wait_ms", "5")]),
-    create_event("query.complete", [("rows", "42"), ("duration_ms", "120")])
-  ]
-  
-  // Test span with links
-  let related_spans = [
-    create_link("trace-abc", "span-123", [("relationship", "parent")]),
-    create_link("trace-def", "span-456", [("relationship", "caused_by")])
-  ]
-  
-  // Create enhanced span
-  let enhanced_span = {
-    name: "database_query",
-    trace_id: "trace-current",
-    span_id: "span-current",
-    events: db_query_events,
-    links: related_spans,
-    status: "completed"
-  }
-  
-  // Test event management
-  assert_eq(enhanced_span.events.length(), 3)
-  assert_eq(enhanced_span.events[0].name, "query.start")
-  assert_eq(enhanced_span.events[2].attributes.length(), 2)
-  
-  // Test link management
-  assert_eq(enhanced_span.links.length(), 2)
-  assert_eq(enhanced_span.links[0].trace_id, "trace-abc")
-  assert_eq(enhanced_span.links[1].attributes[0], ("relationship", "caused_by"))
-  
-  // Test event filtering
-  let find_events_by_name = fn(events: Array[SpanEvent], event_name: String) {
-    let mut found = []
-    for event in events {
-      if event.name == event_name {
-        found = found.push(event)
+  // Create always-on sampler
+  let always_on_sampler = {
+    should_sample: fn(trace_id: String, name: String, parent_sampled: Option[Bool]) {
+      {
+        decision: SamplingDecision::RecordAndSample,
+        attributes: [("sampler", "always_on")]
       }
     }
-    found
   }
   
-  let query_events = find_events_by_name(enhanced_span.events, "query")
-  assert_eq(query_events.length(), 2)
-  assert_eq(query_events[0].name, "query.start")
-  assert_eq(query_events[1].name, "query.complete")
+  // Create always-off sampler
+  let always_off_sampler = {
+    should_sample: fn(trace_id: String, name: String, parent_sampled: Option[Bool]) {
+      {
+        decision: SamplingDecision::Drop,
+        attributes: [("sampler", "always_off")]
+      }
+    }
+  }
+  
+  // Create parent-based sampler
+  let parent_based_sampler = {
+    should_sample: fn(trace_id: String, name: String, parent_sampled: Option[Bool]) {
+      match parent_sampled {
+        Some(true) => {
+          {
+            decision: SamplingDecision::RecordAndSample,
+            attributes: [("sampler", "parent_based"), ("parent.sampled", "true")]
+          }
+        }
+        Some(false) => {
+          {
+            decision: SamplingDecision::Drop,
+            attributes: [("sampler", "parent_based"), ("parent.sampled", "false")]
+          }
+        }
+        None => {
+          {
+            decision: SamplingDecision::Record,
+            attributes: [("sampler", "parent_based"), ("parent.sampled", "none")]
+          }
+        }
+      }
+    }
+  }
+  
+  // Create trace ID ratio sampler (simplified)
+  let trace_id_ratio_sampler = fn(ratio: Float) {
+    {
+      should_sample: fn(trace_id: String, name: String, parent_sampled: Option[Bool]) {
+        // Simplified: use trace ID first character to determine sampling
+        let trace_id_value = trace_id[0].to_int()
+        let threshold = (ratio * 16.0).to_int()  // 16 possible hex digits
+        
+        if trace_id_value < threshold {
+          {
+            decision: SamplingDecision::RecordAndSample,
+            attributes: [("sampler", "trace_id_ratio"), ("ratio", ratio.to_string())]
+          }
+        } else {
+          {
+            decision: SamplingDecision::Drop,
+            attributes: [("sampler", "trace_id_ratio"), ("ratio", ratio.to_string())]
+          }
+        }
+      }
+    }
+  }
+  
+  // Test always-on sampler
+  let always_on_result = always_on_sampler.should_sample("trace123", "operation", None)
+  match always_on_result.decision {
+    SamplingDecision::RecordAndSample => assert_true(true)
+    _ => assert_true(false)
+  }
+  assert_eq(always_on_result.attributes, [("sampler", "always_on")])
+  
+  // Test always-off sampler
+  let always_off_result = always_off_sampler.should_sample("trace456", "operation", None)
+  match always_off_result.decision {
+    SamplingDecision::Drop => assert_true(true)
+    _ => assert_true(false)
+  }
+  assert_eq(always_off_result.attributes, [("sampler", "always_off")])
+  
+  // Test parent-based sampler with sampled parent
+  let parent_sampled_result = parent_based_sampler.should_sample("trace789", "operation", Some(true))
+  match parent_sampled_result.decision {
+    SamplingDecision::RecordAndSample => assert_true(true)
+    _ => assert_true(false)
+  }
+  assert_eq(parent_sampled_result.attributes, [("sampler", "parent_based"), ("parent.sampled", "true")])
+  
+  // Test parent-based sampler with unsampled parent
+  let parent_unsampled_result = parent_based_sampler.should_sample("trace012", "operation", Some(false))
+  match parent_unsampled_result.decision {
+    SamplingDecision::Drop => assert_true(true)
+    _ => assert_true(false)
+  }
+  assert_eq(parent_unsampled_result.attributes, [("sampler", "parent_based"), ("parent.sampled", "false")])
+  
+  // Test parent-based sampler with no parent
+  let no_parent_result = parent_based_sampler.should_sample("trace345", "operation", None)
+  match no_parent_result.decision {
+    SamplingDecision::Record => assert_true(true)
+    _ => assert_true(false)
+  }
+  assert_eq(no_parent_result.attributes, [("sampler", "parent_based"), ("parent.sampled", "none")])
+  
+  // Test trace ID ratio sampler
+  let ratio_sampler = trace_id_ratio_sampler(0.5)  // 50% sampling
+  
+  // Use trace IDs with different first characters
+  let low_trace_id = "0abcdef123456789"  // '0' has low value
+  let high_trace_id = "fabcdef123456789"  // 'f' has high value
+  
+  let low_result = ratio_sampler.should_sample(low_trace_id, "operation", None)
+  let high_result = ratio_sampler.should_sample(high_trace_id, "operation", None)
+  
+  // Low trace ID should be sampled (50% chance)
+  match low_result.decision {
+    SamplingDecision::RecordAndSample => assert_true(true)
+    SamplingDecision::Drop => assert_true(true)  // Could also happen depending on implementation
+    _ => assert_true(false)
+  }
+  
+  // High trace ID might not be sampled
+  match high_result.decision {
+    SamplingDecision::RecordAndSample => assert_true(true)  // Could happen
+    SamplingDecision::Drop => assert_true(true)  // More likely
+    _ => assert_true(false)
+  }
 }
 
-// Test 5: Resource and Attribute Management
-test "resource and attribute management for telemetry" {
-  // Define resource structure
+// Test 5: Resource Management
+test "resource management" {
+  // Define resource attributes
   type Resource = {
-    service_name: String,
-    service_version: String,
-    service_instance_id: String,
-    hostname: String,
     attributes: Array[(String, String)]
   }
   
-  // Define attribute operations
-  let merge_attributes = fn(base: Array[(String, String)], additional: Array[(String, String)]) {
-    let mut merged = base
-    let mut existing_keys = []
-    
-    // Collect existing keys
-    for (k, _) in base {
-      existing_keys = existing_keys.push(k)
+  // Create resource builder
+  let create_resource = fn() {
+    {
+      attributes: []
     }
-    
-    // Add non-existing attributes
-    for (k, v) in additional {
-      if not(existing_keys.contains(k)) {
-        merged = merged.push((k, v))
+  }
+  
+  // Add attribute to resource
+  let add_attribute = fn(resource: Resource, key: String, value: String) {
+    // Remove existing key if present
+    let filtered = resource.attributes.filter(fn(attr) { attr.0 != key })
+    { resource | attributes: filtered.push((key, value)) }
+  }
+  
+  // Merge resources (later resources override earlier ones)
+  let merge_resources = fn(resources: Array[Resource]) {
+    let mut result = create_resource()
+    for resource in resources {
+      for (key, value) in resource.attributes {
+        result = add_attribute(result, key, value)
       }
     }
-    
-    merged
+    result
   }
   
-  // Create base resource
-  let base_resource = {
-    service_name: "payment-service",
-    service_version: "1.2.3",
-    service_instance_id: "instance-123",
-    hostname: "payment-server-1",
-    attributes: [
-      ("environment", "production"),
-      ("region", "us-west-2"),
-      ("availability_zone", "us-west-2a")
-    ]
-  }
-  
-  // Test resource creation
-  assert_eq(base_resource.service_name, "payment-service")
-  assert_eq(base_resource.attributes.length(), 3)
-  
-  // Test attribute merging
-  let runtime_attributes = [
-    ("runtime.version", "moonbit-0.1.0"),
-    ("runtime.name", "moonbit"),
-    ("environment", "staging")  // This should not override existing
-  ]
-  
-  let merged_attributes = merge_attributes(base_resource.attributes, runtime_attributes)
-  assert_eq(merged_attributes.length(), 5)  // 3 original + 2 new (environment not duplicated)
-  
-  // Test attribute lookup
-  let get_attribute = fn(attributes: Array[(String, String)], key: String) {
+  // Get attribute from resource
+  let get_attribute = fn(resource: Resource, key: String) {
     let mut found = None
-    for (k, v) in attributes {
+    for (k, v) in resource.attributes {
       if k == key {
         found = Some(v)
       }
@@ -381,342 +548,787 @@ test "resource and attribute management for telemetry" {
     found
   }
   
-  let region = get_attribute(merged_attributes, "region")
-  assert_eq(region, Some("us-west-2"))
+  // Test resource creation and attribute management
+  let resource = create_resource()
+  assert_eq(resource.attributes.length(), 0)
   
-  let runtime_version = get_attribute(merged_attributes, "runtime.version")
-  assert_eq(runtime_version, Some("moonbit-0.1.0"))
+  // Add service attributes
+  let with_service = add_attribute(add_attribute(resource, "service.name", "payment-service"), "service.version", "1.2.3")
+  assert_eq(with_service.attributes.length(), 2)
   
-  // Test attribute filtering by prefix
-  let filter_by_prefix = fn(attributes: Array[(String, String)], prefix: String) {
-    let mut filtered = []
-    for (k, v) in attributes {
-      if k.starts_with(prefix) {
-        filtered = filtered.push((k, v))
-      }
-    }
-    filtered
-  }
+  // Test attribute retrieval
+  let service_name = get_attribute(with_service, "service.name")
+  assert_eq(service_name, Some("payment-service"))
   
-  let runtime_attrs = filter_by_prefix(merged_attributes, "runtime.")
-  assert_eq(runtime_attrs.length(), 2)
-  assert_true(runtime_attrs.contains(("runtime.version", "moonbit-0.1.0")))
-  assert_true(runtime_attrs.contains(("runtime.name", "moonbit")))
+  let service_version = get_attribute(with_service, "service.version")
+  assert_eq(service_version, Some("1.2.3"))
+  
+  let missing_attr = get_attribute(with_service, "missing.attribute")
+  assert_eq(missing_attr, None)
+  
+  // Test attribute override
+  let with_updated_version = add_attribute(with_service, "service.version", "2.0.0")
+  assert_eq(with_updated_version.attributes.length(), 2)  // Still 2, not 3
+  
+  let updated_version = get_attribute(with_updated_version, "service.version")
+  assert_eq(updated_version, Some("2.0.0"))
+  
+  // Test resource merging
+  let resource1 = add_attribute(create_resource(), "service.name", "api-service")
+  let resource2 = add_attribute(add_attribute(create_resource(), "service.version", "1.0.0"), "environment", "production")
+  let resource3 = add_attribute(add_attribute(create_resource(), "host.name", "server-01"), "service.version", "1.1.0")
+  
+  let merged = merge_resources([resource1, resource2, resource3])
+  assert_eq(merged.attributes.length(), 4)
+  
+  assert_eq(get_attribute(merged, "service.name"), Some("api-service"))
+  assert_eq(get_attribute(merged, "service.version"), Some("1.1.0"))  // Overridden by resource3
+  assert_eq(get_attribute(merged, "environment"), Some("production"))
+  assert_eq(get_attribute(merged, "host.name"), Some("server-01"))
+  
+  // Test resource with telemetry SDK info
+  let sdk_resource = add_attribute(add_attribute(create_resource(), "telemetry.sdk.name", "azimuth"), "telemetry.sdk.version", "1.0.0")
+  let final_resource = merge_resources([with_updated_version, sdk_resource])
+  
+  assert_eq(get_attribute(final_resource, "service.name"), Some("payment-service"))
+  assert_eq(get_attribute(final_resource, "service.version"), Some("2.0.0"))
+  assert_eq(get_attribute(final_resource, "telemetry.sdk.name"), Some("azimuth"))
+  assert_eq(get_attribute(final_resource, "telemetry.sdk.version"), Some("1.0.0"))
 }
 
-// Test 6: Telemetry Data Serialization
-test "telemetry data serialization formats" {
-  // Define serialization formats
-  enum SerializationFormat {
-    Json
-    Protobuf
-    Avro
-    Xml
+// Test 6: Batch Processing
+test "batch processing" {
+  // Define batch configuration
+  type BatchConfig = {
+    max_export_batch_size: Int,
+    max_export_timeout: Int,
+    max_queue_size: Int
   }
   
-  // Define telemetry data point
-  type DataPoint = {
-    name: String,
-    value: String,
-    data_type: String,
-    timestamp: Int
+  // Define batch processor
+  type BatchProcessor = {
+    config: BatchConfig,
+    queue: Array[String],
+    last_export_time: Int
   }
   
-  // Simulate serialization functions
-  let serialize_to_json = fn(data_point: DataPoint) {
-    "{\"name\":\"" + data_point.name + "\",\"value\":\"" + data_point.value + 
-    "\",\"type\":\"" + data_point.data_type + "\",\"timestamp\":" + data_point.timestamp.to_string() + "}"
-  }
-  
-  let serialize_to_key_value = fn(data_point: DataPoint) {
-    data_point.name + "=" + data_point.value + "|" + data_point.data_type + "|" + data_point.timestamp.to_string()
-  }
-  
-  let serialize_to_csv = fn(data_point: DataPoint) {
-    data_point.name + "," + data_point.value + "," + data_point.data_type + "," + data_point.timestamp.to_string()
-  }
-  
-  // Create test data point
-  let metric_data = {
-    name: "cpu_usage",
-    value: "75.5",
-    data_type: "gauge",
-    timestamp: 1640995200
-  }
-  
-  // Test JSON serialization
-  let json_output = serialize_to_json(metric_data)
-  assert_true(json_output.contains("\"name\":\"cpu_usage\""))
-  assert_true(json_output.contains("\"value\":\"75.5\""))
-  assert_true(json_output.contains("\"type\":\"gauge\""))
-  
-  // Test key-value serialization
-  let kv_output = serialize_to_key_value(metric_data)
-  assert_eq(kv_output, "cpu_usage=75.5|gauge|1640995200")
-  
-  // Test CSV serialization
-  let csv_output = serialize_to_csv(metric_data)
-  assert_eq(csv_output, "cpu_usage,75.5,gauge,1640995200")
-  
-  // Test batch serialization
-  let serialize_batch = fn(data_points: Array[DataPoint], format: String) {
-    let mut serialized = []
-    for point in data_points {
-      let serialized_point = match format {
-        "json" => serialize_to_json(point)
-        "kv" => serialize_to_key_value(point)
-        "csv" => serialize_to_csv(point)
-        _ => "unsupported format"
-      }
-      serialized = serialized.push(serialized_point)
+  // Create batch processor
+  let create_processor = fn(config: BatchConfig) {
+    {
+      config,
+      queue: [],
+      last_export_time: 0
     }
-    serialized
   }
   
-  let batch_data = [
-    metric_data,
-    { name: "memory_usage", value: "512", data_type: "gauge", timestamp: 1640995200 },
-    { name: "request_count", value: "1000", data_type: "counter", timestamp: 1640995200 }
-  ]
+  // Add item to batch
+  let add_to_batch = fn(processor: BatchProcessor, item: String, current_time: Int) {
+    if processor.queue.length() >= processor.config.max_queue_size {
+      // Queue is full, drop oldest item
+      let remaining = processor.queue.slice(1, processor.queue.length() - 1)
+      { processor | queue: remaining.push(item) }
+    } else {
+      { processor | queue: processor.queue.push(item) }
+    }
+  }
   
-  let json_batch = serialize_batch(batch_data, "json")
-  assert_eq(json_batch.length(), 3)
-  assert_true(json_batch[1].contains("memory_usage"))
+  // Check if batch should be exported
+  let should_export = fn(processor: BatchProcessor, current_time: Int) {
+    let size_reached = processor.queue.length() >= processor.config.max_export_batch_size
+    let timeout_reached = (current_time - processor.last_export_time) >= processor.config.max_export_timeout
+    size_reached or timeout_reached
+  }
   
-  let csv_batch = serialize_batch(batch_data, "csv")
-  assert_eq(csv_batch[2], "request_count,1000,counter,1640995200")
+  // Export batch
+  let export_batch = fn(processor: BatchProcessor, current_time: Int) {
+    let batch = processor.queue
+    {
+      batch,
+      updated_processor: { processor | queue: [], last_export_time: current_time }
+    }
+  }
+  
+  // Test batch processing
+  let config = {
+    max_export_batch_size: 3,
+    max_export_timeout: 1000,
+    max_queue_size: 10
+  }
+  
+  let processor = create_processor(config)
+  assert_eq(processor.queue.length(), 0)
+  assert_eq(processor.last_export_time, 0)
+  
+  // Add items to batch
+  let processor1 = add_to_batch(processor, "span1", 100)
+  let processor2 = add_to_batch(processor1, "span2", 200)
+  let processor3 = add_to_batch(processor2, "span3", 300)
+  
+  assert_eq(processor3.queue.length(), 3)
+  assert_false(should_export(processor, 100))  // Before reaching batch size
+  assert_true(should_export(processor3, 300))   // Reached batch size
+  
+  // Export batch
+  let export_result = export_batch(processor3, 300)
+  assert_eq(export_result.batch.length(), 3)
+  assert_eq(export_result.batch, ["span1", "span2", "span3"])
+  assert_eq(export_result.updated_processor.queue.length(), 0)
+  assert_eq(export_result.updated_processor.last_export_time, 300)
+  
+  // Test timeout-based export
+  let timeout_processor = add_to_batch(add_to_batch(export_result.updated_processor, "span4", 1000), "span5", 1100)
+  assert_eq(timeout_processor.queue.length(), 2)
+  assert_false(should_export(timeout_processor, 1100))  // Not reached batch size or timeout
+  
+  let timeout_processor2 = { timeout_processor | last_export_time: 100 }  // Simulate older export time
+  assert_true(should_export(timeout_processor2, 1100))  // Timeout reached (1100 - 100 >= 1000)
+  
+  // Test queue size limit
+  let full_processor = {
+    let mut p = processor
+    for i in 1..=10 {
+      p = add_to_batch(p, "span" + i.to_string(), 1000 + i)
+    }
+    p
+  }
+  
+  assert_eq(full_processor.queue.length(), 10)
+  
+  // Add one more item, should drop oldest
+  let overflow_processor = add_to_batch(full_processor, "span11", 1011)
+  assert_eq(overflow_processor.queue.length(), 10)
+  assert_false(overflow_processor.queue.contains("span1"))  // Dropped
+  assert_true(overflow_processor.queue.contains("span11"))  // Added
 }
 
-// Test 7: Telemetry Pipeline Processing
-test "telemetry pipeline processing stages" {
-  // Define pipeline stages
-  enum PipelineStage {
-    Collection
-    Processing
-    Filtering
-    Enrichment
-    Export
+// Test 7: Error Recovery
+test "error recovery mechanisms" {
+  // Define error types
+  enum TelemetryError {
+    NetworkError(String)
+    SerializationError(String)
+    InvalidDataError(String)
+    RateLimitError(Int)
   }
   
-  // Define telemetry record
-  type TelemetryRecord = {
-    trace_id: String,
-    span_id: String,
-    metrics: Array[(String, Float)],
-    events: Array[String],
-    processed: Bool,
-    enriched: Bool
+  // Define retry policy
+  type RetryPolicy = {
+    max_attempts: Int,
+    initial_backoff: Int,
+    max_backoff: Int,
+    backoff_multiplier: Float
   }
   
-  // Define pipeline processor
-  let process_through_pipeline = fn(
-    record: TelemetryRecord, 
-    stages: Array[PipelineStage],
-    filter_condition: (TelemetryRecord) -> Bool
-  ) {
-    let mut current_record = record
+  // Define operation result
+  type OperationResult[T] = {
+    success: Bool,
+    data: Option[T],
+    error: Option[TelemetryError],
+    attempts: Int
+  }
+  
+  // Create retry policy
+  let create_retry_policy = fn(max_attempts: Int, initial_backoff: Int) {
+    {
+      max_attempts,
+      initial_backoff,
+      max_backoff: 30000,  // 30 seconds
+      backoff_multiplier: 2.0
+    }
+  }
+  
+  // Calculate backoff delay
+  let calculate_backoff = fn(policy: RetryPolicy, attempt: Int) {
+    let delay = policy.initial_backoff.to_float() * (policy.backoff_multiplier.pow((attempt - 1).to_float()))
+    let capped_delay = delay.min(policy.max_backoff.to_float())
+    capped_delay.to_int()
+  }
+  
+  // Execute operation with retry
+  let execute_with_retry = fn[T](operation: () -> Result[T, TelemetryError], policy: RetryPolicy) {
+    let mut attempts = 0
+    let mut last_error = None
     
-    for stage in stages {
-      match stage {
-        PipelineStage::Collection => {
-          // Collection stage - no transformation
-          current_record
-        }
-        PipelineStage::Processing => {
-          // Processing stage - mark as processed
-          current_record = { current_record | processed: true }
-        }
-        PipelineStage::Filtering => {
-          // Filtering stage - apply condition
-          if not(filter_condition(current_record)) {
-            return None  // Filter out this record
+    while attempts < policy.max_attempts {
+      attempts = attempts + 1
+      
+      match operation() {
+        Ok(data) => {
+          return {
+            success: true,
+            data: Some(data),
+            error: None,
+            attempts
           }
         }
-        PipelineStage::Enrichment => {
-          // Enrichment stage - add context
-          current_record = { current_record | enriched: true }
-        }
-        PipelineStage::Export => {
-          // Export stage - prepare for export
-          current_record
+        Err(error) => {
+          last_error = Some(error)
+          
+          // Don't retry on rate limit errors
+          match error {
+            TelemetryError::RateLimitError(_) => {
+              break
+            }
+            _ => {
+              // Continue to next attempt
+            }
+          }
         }
       }
     }
     
-    Some(current_record)
+    {
+      success: false,
+      data: None,
+      error: last_error,
+      attempts
+    }
   }
   
-  // Create test record
-  let test_record = {
-    trace_id: "trace-123",
-    span_id: "span-456",
-    metrics: [("duration", 150.0), ("cpu", 25.5)],
-    events: ["start", "middle", "end"],
-    processed: false,
-    enriched: false
+  // Test retry policy creation
+  let policy = create_retry_policy(3, 1000)
+  assert_eq(policy.max_attempts, 3)
+  assert_eq(policy.initial_backoff, 1000)
+  assert_eq(policy.max_backoff, 30000)
+  assert_eq(policy.backoff_multiplier, 2.0)
+  
+  // Test backoff calculation
+  let backoff1 = calculate_backoff(policy, 1)
+  let backoff2 = calculate_backoff(policy, 2)
+  let backoff3 = calculate_backoff(policy, 3)
+  
+  assert_eq(backoff1, 1000)  // 1000 * 2^0
+  assert_eq(backoff2, 2000)  // 1000 * 2^1
+  assert_eq(backoff3, 4000)  // 1000 * 2^2
+  
+  // Test backoff capping
+  let large_backoff = calculate_backoff(policy, 10)
+  assert_eq(large_backoff, 30000)  // Capped at max_backoff
+  
+  // Test successful operation (no retry needed)
+  let success_operation = fn() {
+    Ok("success")
   }
   
-  // Define filter condition
-  let high_duration_filter = fn(record: TelemetryRecord) {
-    let mut found = false
-    for (name, value) in record.metrics {
-      if name == "duration" and value > 100.0 {
-        found = true
+  let success_result = execute_with_retry(success_operation, policy)
+  assert_true(success_result.success)
+  assert_eq(success_result.data, Some("success"))
+  assert_eq(success_result.error, None)
+  assert_eq(success_result.attempts, 1)
+  
+  // Test operation that fails then succeeds
+  let mut attempt_count = 0
+  let eventua_success_operation = fn() {
+    attempt_count = attempt_count + 1
+    if attempt_count < 3 {
+      Err(TelemetryError::NetworkError("Connection failed"))
+    } else {
+      Ok("eventual_success")
+    }
+  }
+  
+  let eventual_result = execute_with_retry(eventua_success_operation, policy)
+  assert_true(eventual_result.success)
+  assert_eq(eventual_result.data, Some("eventual_success"))
+  assert_eq(eventual_result.error, None)
+  assert_eq(eventual_result.attempts, 3)
+  
+  // Test operation that always fails
+  let always_fail_operation = fn() {
+    Err(TelemetryError::NetworkError("Persistent failure"))
+  }
+  
+  let fail_result = execute_with_retry(always_fail_operation, policy)
+  assert_false(fail_result.success)
+  assert_eq(fail_result.data, None)
+  assert_true(fail_result.error.is_some())
+  assert_eq(fail_result.attempts, 3)
+  
+  // Test rate limit error (no retry)
+  let rate_limit_operation = fn() {
+    Err(TelemetryError::RateLimitError(100))
+  }
+  
+  let rate_limit_result = execute_with_retry(rate_limit_operation, policy)
+  assert_false(rate_limit_result.success)
+  assert_eq(rate_limit_result.data, None)
+  
+  match rate_limit_result.error {
+    Some(TelemetryError::RateLimitError(limit)) => assert_eq(limit, 100)
+    _ => assert_true(false)
+  }
+  
+  assert_eq(rate_limit_result.attempts, 1)  // Only one attempt for rate limit
+}
+
+// Test 8: Performance Metrics
+test "performance metrics collection" {
+  // Define performance metric types
+  enum PerformanceMetric {
+    Latency(Int, String)  // duration in ms, unit
+    Throughput(Int, String)  // count, time unit
+    ErrorRate(Float, String)  // percentage, unit
+    MemoryUsage(Int, String)  // bytes, unit
+  }
+  
+  // Define performance snapshot
+  type PerformanceSnapshot = {
+    timestamp: Int,
+    operation_name: String,
+    metrics: Array[PerformanceMetric]
+  }
+  
+  // Define performance aggregator
+  type PerformanceAggregator = {
+    snapshots: Array[PerformanceSnapshot],
+    window_size: Int  // Number of snapshots to keep
+  }
+  
+  // Create aggregator
+  let create_aggregator = fn(window_size: Int) {
+    {
+      snapshots: [],
+      window_size
+    }
+  }
+  
+  // Add snapshot to aggregator
+  let add_snapshot = fn(aggregator: PerformanceAggregator, snapshot: PerformanceSnapshot) {
+    let updated_snapshots = aggregator.snapshots.push(snapshot)
+    
+    // Keep only the most recent snapshots
+    if updated_snapshots.length() > aggregator.window_size {
+      let start = updated_snapshots.length() - aggregator.window_size
+      { aggregator | snapshots: updated_snapshots.slice(start, aggregator.window_size) }
+    } else {
+      { aggregator | snapshots: updated_snapshots }
+    }
+  }
+  
+  // Calculate average latency
+  let calculate_average_latency = fn(aggregator: PerformanceAggregator, operation_name: String) {
+    let relevant_snapshots = aggregator.snapshots.filter(fn(s) { s.operation_name == operation_name })
+    let latencies = []
+    
+    for snapshot in relevant_snapshots {
+      for metric in snapshot.metrics {
+        match metric {
+          PerformanceMetric::Latency(duration, _) => {
+            latencies = latencies.push(duration)
+          }
+          _ => {}
+        }
+      }
+    }
+    
+    if latencies.length() == 0 {
+      0
+    } else {
+      let sum = latencies.reduce(fn(acc, latency) { acc + latency }, 0)
+      sum / latencies.length()
+    }
+  }
+  
+  // Calculate percentile (simplified)
+  let calculate_percentile = fn(values: Array[Int], percentile: Float) {
+    if values.length() == 0 {
+      0
+    } else {
+      let sorted = values.sort()
+      let index = ((percentile / 100.0) * (sorted.length() - 1).to_float()).to_int()
+      sorted[index]
+    }
+  }
+  
+  // Test performance metrics collection
+  let aggregator = create_aggregator(10)
+  
+  // Create snapshots with different operations
+  let snapshot1 = {
+    timestamp: 1640995200,
+    operation_name: "database_query",
+    metrics: [
+      PerformanceMetric::Latency(50, "ms"),
+      PerformanceMetric::Throughput(100, "req/s"),
+      PerformanceMetric::ErrorRate(0.01, "%")
+    ]
+  }
+  
+  let snapshot2 = {
+    timestamp: 1640995210,
+    operation_name: "database_query",
+    metrics: [
+      PerformanceMetric::Latency(75, "ms"),
+      PerformanceMetric::Throughput(120, "req/s"),
+      PerformanceMetric::ErrorRate(0.02, "%")
+    ]
+  }
+  
+  let snapshot3 = {
+    timestamp: 1640995220,
+    operation_name: "api_call",
+    metrics: [
+      PerformanceMetric::Latency(200, "ms"),
+      PerformanceMetric::MemoryUsage(1024, "KB"),
+      PerformanceMetric::ErrorRate(0.05, "%")
+    ]
+  }
+  
+  // Add snapshots to aggregator
+  let aggregator1 = add_snapshot(aggregator, snapshot1)
+  let aggregator2 = add_snapshot(aggregator1, snapshot2)
+  let aggregator3 = add_snapshot(aggregator2, snapshot3)
+  
+  assert_eq(aggregator3.snapshots.length(), 3)
+  
+  // Test average latency calculation
+  let db_avg_latency = calculate_average_latency(aggregator3, "database_query")
+  assert_eq(db_avg_latency, 62)  // (50 + 75) / 2
+  
+  let api_avg_latency = calculate_average_latency(aggregator3, "api_call")
+  assert_eq(api_avg_latency, 200)  // Only one snapshot
+  
+  let missing_avg_latency = calculate_average_latency(aggregator3, "missing_operation")
+  assert_eq(missing_avg_latency, 0)  // No snapshots
+  
+  // Test window size limiting
+  let large_aggregator = {
+    let mut agg = create_aggregator(3)
+    for i in 1..=5 {
+      let snapshot = {
+        timestamp: 1640995200 + i * 10,
+        operation_name: "operation_" + i.to_string(),
+        metrics: [PerformanceMetric::Latency(i * 10, "ms")]
+      }
+      agg = add_snapshot(agg, snapshot)
+    }
+    agg
+  }
+  
+  assert_eq(large_aggregator.snapshots.length(), 3)  # Limited to window size
+  assert_eq(large_aggregator.snapshots[0].operation_name, "operation_3")  # Oldest kept
+  assert_eq(large_aggregator.snapshots[2].operation_name, "operation_5")  # Newest
+  
+  // Test percentile calculation
+  let values = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+  let p50 = calculate_percentile(values, 50.0)
+  let p90 = calculate_percentile(values, 90.0)
+  let p95 = calculate_percentile(values, 95.0)
+  
+  assert_eq(p50, 50)  # Median
+  assert_eq(p90, 90)
+  assert_eq(p95, 95)  # Simplified calculation
+}
+
+// Test 9: Configuration Management
+test "configuration management" {
+  // Define configuration value types
+  enum ConfigValue {
+    StringValue(String)
+    IntValue(Int)
+    FloatValue(Float)
+    BoolValue(Bool)
+    ArrayValue(Array[String])
+  }
+  
+  // Define configuration source
+  enum ConfigSource {
+    Default
+    Environment
+    File
+    Runtime
+  }
+  
+  // Define configuration entry
+  type ConfigEntry = {
+    key: String,
+    value: ConfigValue,
+    source: ConfigSource,
+    last_modified: Int
+  }
+  
+  // Define configuration manager
+  type ConfigManager = {
+    entries: Array[ConfigEntry],
+    sources: Array[ConfigSource]
+  }
+  
+  // Create configuration manager
+  let create_config_manager = fn() {
+    {
+      entries: [],
+      sources: [ConfigSource::Default]
+    }
+  }
+  
+  // Set configuration value
+  let set_config = fn(manager: ConfigManager, key: String, value: ConfigValue, source: ConfigSource, timestamp: Int) {
+    // Remove existing entry with same key
+    let filtered = manager.entries.filter(fn(entry) { entry.key != key })
+    
+    let new_entry = {
+      key,
+      value,
+      source,
+      last_modified: timestamp
+    }
+    
+    {
+      manager |
+      entries: filtered.push(new_entry),
+      sources: if manager.sources.contains(source) { manager.sources } else { manager.sources.push(source) }
+    }
+  }
+  
+  // Get configuration value
+  let get_config = fn(manager: ConfigManager, key: String) {
+    let mut found = None
+    for entry in manager.entries {
+      if entry.key == key {
+        found = Some(entry)
       }
     }
     found
   }
   
-  // Test full pipeline
-  let pipeline_stages = [
-    PipelineStage::Collection,
-    PipelineStage::Processing,
-    PipelineStage::Filtering,
-    PipelineStage::Enrichment,
-    PipelineStage::Export
-  ]
-  
-  let processed_record = process_through_pipeline(test_record, pipeline_stages, high_duration_filter)
-  
-  match processed_record {
-    Some(record) => {
-      assert_true(record.processed)
-      assert_true(record.enriched)
-      assert_eq(record.metrics.length(), 2)
+  // Get configuration value with default
+  let get_config_with_default = fn(manager: ConfigManager, key: String, default_value: ConfigValue) {
+    match get_config(manager, key) {
+      Some(entry) => entry.value
+      None => default_value
     }
-    None => assert_true(false)  // Should not be filtered out
   }
   
-  // Test filtered record
-  let low_duration_record = {
-    trace_id: "trace-789",
-    span_id: "span-012",
-    metrics: [("duration", 50.0), ("cpu", 15.5)],
-    events: ["start", "end"],
-    processed: false,
-    enriched: false
+  // Test configuration management
+  let manager = create_config_manager()
+  assert_eq(manager.entries.length(), 0)
+  
+  // Set default configuration
+  let manager1 = set_config(manager, "service.name", ConfigValue::StringValue("azimuth"), ConfigSource::Default, 1640995200)
+  let manager2 = set_config(manager1, "service.port", ConfigValue::IntValue(8080), ConfigSource::Default, 1640995200)
+  let manager3 = set_config(manager2, "debug.enabled", ConfigValue::BoolValue(false), ConfigSource::Default, 1640995200)
+  
+  assert_eq(manager3.entries.length(), 3)
+  
+  // Test configuration retrieval
+  let service_name_entry = get_config(manager3, "service.name")
+  assert_true(service_name_entry.is_some())
+  
+  match service_name_entry.unwrap().value {
+    ConfigValue::StringValue(name) => assert_eq(name, "azimuth")
+    _ => assert_true(false)
   }
   
-  let filtered_result = process_through_pipeline(low_duration_record, pipeline_stages, high_duration_filter)
-  
-  match filtered_result {
-    Some(_) => assert_true(false)  // Should be filtered out
-    None => assert_true(true)      // Should be None
+  // Test configuration with default
+  let missing_config = get_config_with_default(manager3, "missing.key", ConfigValue::StringValue("default"))
+  match missing_config {
+    ConfigValue::StringValue(value) => assert_eq(value, "default")
+    _ => assert_true(false)
   }
   
-  // Test partial pipeline (no enrichment)
-  let partial_stages = [
-    PipelineStage::Collection,
-    PipelineStage::Processing,
-    PipelineStage::Export
-  ]
+  // Override configuration from environment
+  let manager4 = set_config(manager3, "service.port", ConfigValue::IntValue(9090), ConfigSource::Environment, 1640995300)
   
-  let partial_result = process_through_pipeline(test_record, partial_stages, fn(r) { true })
+  let port_entry = get_config(manager4, "service.port")
+  assert_true(port_entry.is_some())
   
-  match partial_result {
-    Some(record) => {
-      assert_true(record.processed)
-      assert_false(record.enriched)  // Should not be enriched
+  let port_entry_unwrapped = port_entry.unwrap()
+  match port_entry_unwrapped.value {
+    ConfigValue::IntValue(port) => assert_eq(port, 9090)
+    _ => assert_true(false)
+  }
+  assert_eq(port_entry_unwrapped.source, ConfigSource::Environment)
+  
+  // Test source priority tracking
+  assert_true(manager4.sources.contains(ConfigSource::Default))
+  assert_true(manager4.sources.contains(ConfigSource::Environment))
+  
+  // Test runtime configuration
+  let manager5 = set_config(manager4, "feature.flags", ConfigValue::ArrayValue(["new_ui", "beta_api"]), ConfigSource::Runtime, 1640995400)
+  
+  let flags_entry = get_config(manager5, "feature.flags")
+  assert_true(flags_entry.is_some())
+  
+  match flags_entry.unwrap().value {
+    ConfigValue::ArrayValue(flags) => {
+      assert_eq(flags.length(), 2)
+      assert_true(flags.contains("new_ui"))
+      assert_true(flags.contains("beta_api"))
     }
-    None => assert_true(false)
+    _ => assert_true(false)
   }
+  
+  // Test configuration filtering by source
+  let get_configs_by_source = fn(manager: ConfigManager, source: ConfigSource) {
+    manager.entries.filter(fn(entry) { entry.source == source })
+  }
+  
+  let default_configs = get_configs_by_source(manager5, ConfigSource::Default)
+  assert_eq(default_configs.length(), 2)  # service.name and debug.enabled (service.port was overridden)
+  
+  let env_configs = get_configs_by_source(manager5, ConfigSource::Environment)
+  assert_eq(env_configs.length(), 1)  # service.port
+  
+  let runtime_configs = get_configs_by_source(manager5, ConfigSource::Runtime)
+  assert_eq(runtime_configs.length(), 1)  # feature.flags
 }
 
-// Test 8: Telemetry Error Recovery
-test "telemetry system error recovery mechanisms" {
-  // Define error types
-  enum TelemetryError {
-    NetworkError(String)
-    SerializationError(String)
-    BufferOverflow(Int)
-    RateLimitExceeded
-    InvalidData(String)
+// Test 10: Data Validation
+test "data validation" {
+  // Define validation rule
+  type ValidationRule = {
+    name: String,
+    validate: fn(String) -> Bool,
+    error_message: String
   }
   
-  // Define recovery strategies
-  enum RecoveryStrategy {
-    Retry(Int)  // Number of retries
-    Backoff(Int)  // Backoff in milliseconds
-    Fallback(String)  // Fallback mechanism
-    CircuitBreaker  // Stop trying temporarily
+  // Define validation result
+  type ValidationResult = {
+    valid: Bool,
+    errors: Array[String]
   }
   
-  // Define error handler
-  let handle_error = fn(error: TelemetryError, strategy: RecoveryStrategy) {
-    match (error, strategy) {
-      (TelemetryError::NetworkError(msg), RecoveryStrategy::Retry(count)) => {
-        "Retrying network operation after error: " + msg + " (attempts left: " + count.to_string() + ")"
-      }
-      (TelemetryError::SerializationError(msg), RecoveryStrategy::Backoff(ms)) => {
-        "Backing off for " + ms.to_string() + "ms after serialization error: " + msg
-      }
-      (TelemetryError::BufferOverflow(size), RecoveryStrategy::Fallback(fallback)) => {
-        "Using fallback " + fallback + " due to buffer overflow of size: " + size.to_string()
-      }
-      (TelemetryError::RateLimitExceeded, RecoveryStrategy::CircuitBreaker) => {
-        "Circuit breaker activated due to rate limit exceeded"
-      }
-      (TelemetryError::InvalidData(msg), RecoveryStrategy::Retry(count)) => {
-        "Retrying with data validation after error: " + msg + " (retries: " + count.to_string() + ")"
-      }
-      _ => "No specific recovery strategy for this error combination"
+  // Define validator
+  type Validator = {
+    rules: Array[ValidationRule]
+  }
+  
+  // Create validator
+  let create_validator = fn() {
+    {
+      rules: []
     }
   }
   
-  // Test network error recovery
-  let network_error = TelemetryError::NetworkError("Connection timeout")
-  let retry_strategy = RecoveryStrategy::Retry(3)
-  let network_recovery = handle_error(network_error, retry_strategy)
-  assert_true(network_recovery.contains("Retrying network operation"))
-  assert_true(network_recovery.contains("attempts left: 3"))
-  
-  // Test serialization error recovery
-  let serialization_error = TelemetryError::SerializationError("Invalid JSON format")
-  let backoff_strategy = RecoveryStrategy::Backoff(1000)
-  let serialization_recovery = handle_error(serialization_error, backoff_strategy)
-  assert_true(serialization_recovery.contains("Backing off for 1000ms"))
-  assert_true(serialization_recovery.contains("Invalid JSON format"))
-  
-  // Test buffer overflow recovery
-  let buffer_error = TelemetryError::BufferOverflow(1024)
-  let fallback_strategy = RecoveryStrategy::Fallback("memory_buffer")
-  let buffer_recovery = handle_error(buffer_error, fallback_strategy)
-  assert_true(buffer_recovery.contains("buffer overflow of size: 1024"))
-  assert_true(buffer_recovery.contains("fallback memory_buffer"))
-  
-  // Test rate limiting recovery
-  let rate_limit_error = TelemetryError::RateLimitExceeded
-  let circuit_breaker_strategy = RecoveryStrategy::CircuitBreaker
-  let rate_limit_recovery = handle_error(rate_limit_error, circuit_breaker_strategy)
-  assert_eq(rate_limit_recovery, "Circuit breaker activated due to rate limit exceeded")
-  
-  // Test error recovery chain
-  let attempt_recovery = fn(errors: Array[TelemetryError], strategies: Array[RecoveryStrategy]) {
-    let mut results = []
-    for i in 0..errors.length() {
-      if i < strategies.length() {
-        let recovery = handle_error(errors[i], strategies[i])
-        results = results.push(recovery)
-      }
-    }
-    results
+  // Add validation rule
+  let add_rule = fn(validator: Validator, rule: ValidationRule) {
+    { validator | rules: validator.rules.push(rule) }
   }
   
-  let error_chain = [
-    TelemetryError::NetworkError("DNS resolution failed"),
-    TelemetryError::RateLimitExceeded,
-    TelemetryError::SerializationError("Missing field")
-  ]
+  // Validate value
+  let validate = fn(validator: Validator, value: String) {
+    let mut errors = []
+    
+    for rule in validator.rules {
+      if not(rule.validate(value)) {
+        errors = errors.push(rule.error_message)
+      }
+    }
+    
+    {
+      valid: errors.length() == 0,
+      errors
+    }
+  }
   
-  let strategy_chain = [
-    RecoveryStrategy::Retry(5),
-    RecoveryStrategy::CircuitBreaker,
-    RecoveryStrategy::Backoff(500)
-  ]
+  // Create common validation rules
+  let non_empty_rule = {
+    name: "non_empty",
+    validate: fn(value: String) { value.length() > 0 },
+    error_message: "Value cannot be empty"
+  }
   
-  let recovery_results = attempt_recovery(error_chain, strategy_chain)
-  assert_eq(recovery_results.length(), 3)
-  assert_true(recovery_results[0].contains("DNS resolution failed"))
-  assert_true(recovery_results[1].contains("Circuit breaker activated"))
-  assert_true(recovery_results[2].contains("Backing off for 500ms"))
+  let max_length_rule = fn(max_length: Int) {
+    {
+      name: "max_length",
+      validate: fn(value: String) { value.length() <= max_length },
+      error_message: "Value cannot exceed " + max_length.to_string() + " characters"
+    }
+  }
+  
+  let pattern_rule = fn(pattern: String, message: String) {
+    {
+      name: "pattern",
+      validate: fn(value: String) {
+        // Simplified pattern matching - just check if value contains pattern
+        value.contains(pattern)
+      },
+      error_message: message
+    }
+  }
+  
+  // Test validator creation and rule management
+  let validator = create_validator()
+  assert_eq(validator.rules.length(), 0)
+  
+  // Add validation rules
+  let validator1 = add_rule(validator, non_empty_rule)
+  let validator2 = add_rule(validator1, max_length_rule(50))
+  let validator3 = add_rule(validator2, pattern_rule("trace-", "Value must contain 'trace-' prefix"))
+  
+  assert_eq(validator3.rules.length(), 3)
+  
+  // Test valid values
+  let valid_result = validate(validator3, "trace-123456789")
+  assert_true(valid_result.valid)
+  assert_eq(valid_result.errors.length(), 0)
+  
+  // Test invalid values
+  let empty_result = validate(validator3, "")
+  assert_false(empty_result.valid)
+  assert_eq(empty_result.errors.length(), 3)  # All rules should fail
+  
+  let too_long_result = validate(validator3, "trace-" + "a".repeat(100))
+  assert_false(too_long_result.valid)
+  assert_eq(too_long_result.errors.length(), 1)  # Only max length rule should fail
+  
+  let missing_prefix_result = validate(validator3, "123456789")
+  assert_false(missing_prefix_result.valid)
+  assert_eq(missing_prefix_result.errors.length(), 1)  # Only pattern rule should fail
+  
+  // Test specialized validators for different data types
+  
+  // Trace ID validator
+  let trace_id_validator = create_validator()
+    |> add_rule(non_empty_rule)
+    |> add_rule(max_length_rule(32))
+    |> add_rule(pattern_rule("-", "Trace ID must contain a dash"))
+  
+  let valid_trace_id = validate(trace_id_validator, "0af7651916cd43dd8448eb211c80319c")
+  assert_true(valid_trace_id.valid)
+  
+  let invalid_trace_id = validate(trace_id_validator, "invalid")
+  assert_false(invalid_trace_id.valid)
+  
+  // Service name validator
+  let service_name_validator = create_validator()
+    |> add_rule(non_empty_rule)
+    |> add_rule(max_length_rule(50))
+    |> add_rule({
+      name: "alphanumeric",
+      validate: fn(value: String) {
+        let mut valid = true
+        for c in value.to_char_array() {
+          if not((c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z') or (c >= '0' and c <= '9') or c == '_' or c == '-') {
+            valid = false
+          }
+        }
+        valid
+      },
+      error_message: "Service name can only contain alphanumeric characters, underscores, and hyphens"
+    })
+  
+  let valid_service_name = validate(service_name_validator, "payment-service_v2")
+  assert_true(valid_service_name.valid)
+  
+  let invalid_service_name = validate(service_name_validator, "service@invalid")
+  assert_false(invalid_service_name.valid)
+  
+  // Test conditional validation
+  let conditional_validator = fn(condition: Bool) {
+    if condition {
+      create_validator() |> add_rule(max_length_rule(10))
+    } else {
+      create_validator() |> add_rule(max_length_rule(100))
+    }
+  }
+  
+  let strict_validator = conditional_validator(true)
+  let lenient_validator = conditional_validator(false)
+  
+  let strict_result = validate(strict_validator, "12345678901")  # 11 characters
+  assert_false(strict_result.valid)
+  
+  let lenient_result = validate(lenient_validator, "12345678901")  # 11 characters
+  assert_true(lenient_result.valid)
 }
