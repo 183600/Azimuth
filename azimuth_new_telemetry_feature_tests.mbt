@@ -1,721 +1,811 @@
-// Azimuth New Telemetry Feature Tests
-// 新的遥测功能测试套件，专注于遥测系统的高级特性和实际应用场景
+// Azimuth Telemetry System - New Feature Tests
+// This file contains 10 new test cases focusing on advanced telemetry features
 
-// 测试1: 遥测数据聚合和分析
-test "遥测数据聚合和分析测试" {
-  let tracer_provider = azimuth::TracerProvider::default()
-  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "aggregation-test")
-  let meter_provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(meter_provider, "aggregation-metrics")
+// Test 1: Real-time Telemetry Data Streaming
+test "real-time telemetry data streaming" {
+  // Test stream initialization
+  let telemetry_stream = TelemetryStream::new("real-time-metrics", 1000)
+  assert_true(TelemetryStream::is_active(telemetry_stream))
+  assert_eq(TelemetryStream::buffer_size(telemetry_stream), 1000)
   
-  // 创建聚合器
-  let aggregator = azimuth::TelemetryAggregator::new()
+  // Test data ingestion
+  let metric1 = TelemetryMetric::new("cpu_usage", 75.5, "percentage")
+  let metric2 = TelemetryMetric::new("memory_usage", 1024.0, "megabytes")
+  let metric3 = TelemetryMetric::new("disk_io", 150.2, "megabytes_per_second")
   
-  // 创建多个Span用于聚合
-  let spans = []
-  for i in 0..50 {
-    let span = azimuth::Tracer::start_span(tracer, "aggregation-span-" + i.to_string())
-    
-    // 添加不同类型的属性
-    azimuth::Span::set_attribute(span, "operation.type", 
-      azimuth::StringValue(if i % 3 == 0 { "read" } else if i % 3 == 1 { "write" } else { "update" }))
-    azimuth::Span::set_attribute(span, "service.component", 
-      azimuth::StringValue("component-" + (i % 5).to_string()))
-    azimuth::Span::set_attribute(span, "latency.ms", 
-        azimuth::IntValue(10 + (i % 100)))
-    
-    // 添加事件
-    azimuth::Span::add_event(span, "operation-completed", 
-      Some([("result", azimuth::StringValue(if i % 10 == 0 { "error" } else { "success" }))]))
-    
-    spans.push(span)
+  TelemetryStream::ingest(telemetry_stream, metric1)
+  TelemetryStream::ingest(telemetry_stream, metric2)
+  TelemetryStream::ingest(telemetry_stream, metric3)
+  
+  assert_eq(TelemetryStream::count(telemetry_stream), 3)
+  
+  // Test stream processing
+  let processor = StreamProcessor::new()
+    .with_filter(fn(metric) { metric.value > 100.0 })
+    .with_aggregation("avg")
+  
+  let processed_data = TelemetryStream::process(telemetry_stream, processor)
+  assert_eq(processed_data.length(), 2) // memory_usage and disk_io
+  
+  // Test stream subscription
+  let subscriber = StreamSubscriber::new("dashboard-client")
+  TelemetryStream::subscribe(telemetry_stream, subscriber)
+  
+  assert_true(TelemetryStream::has_subscriber(telemetry_stream, "dashboard-client"))
+  assert_eq(TelemetryStream::subscriber_count(telemetry_stream), 1)
+  
+  // Test stream shutdown
+  TelemetryStream::shutdown(telemetry_stream)
+  assert_false(TelemetryStream::is_active(telemetry_stream))
+}
+
+// Test 2: Distributed Tracing Across Services
+test "distributed tracing across services" {
+  // Test trace context creation
+  let trace_context = TraceContext::new("trace-12345", "span-67890", "parent-abcde")
+  assert_eq(TraceContext::trace_id(trace_context), "trace-12345")
+  assert_eq(TraceContext::span_id(trace_context), "span-67890")
+  assert_eq(TraceContext::parent_span_id(trace_context), "parent-abcde")
+  
+  // Test span creation with context
+  let api_gateway_span = TraceSpan::new("api-gateway-request", trace_context)
+    .with_attribute("service.name", "api-gateway")
+    .with_attribute("http.method", "GET")
+    .with_attribute("http.url", "/api/users")
+  
+  TraceSpan::start(api_gateway_span)
+  assert_true(TraceSpan::is_recording(api_gateway_span))
+  
+  // Test child span creation
+  let user_service_context = TraceContext::create_child(trace_context, "span-defgh")
+  let user_service_span = TraceSpan::new("user-service-query", user_service_context)
+    .with_attribute("service.name", "user-service")
+    .with_attribute("db.query", "SELECT * FROM users WHERE id = ?")
+  
+  TraceSpan::start(user_service_span)
+  
+  // Test span events
+  TraceSpan::add_event(api_gateway_span, "request_received", Some([
+    ("timestamp", "1640995200000"),
+    ("client.ip", "192.168.1.100")
+  ]))
+  
+  TraceSpan::add_event(user_service_span, "db_query_started", Some([
+    ("timestamp", "1640995200100"),
+    ("db.connection", "conn-12345")
+  ]))
+  
+  // Test span completion
+  TraceSpan::end(user_service_span)
+  assert_false(TraceSpan::is_recording(user_service_span))
+  
+  TraceSpan::end(api_gateway_span)
+  assert_false(TraceSpan::is_recording(api_gateway_span))
+  
+  // Test trace collection
+  let trace_collector = TraceCollector::new()
+  TraceCollector::collect_span(trace_collector, api_gateway_span)
+  TraceCollector::collect_span(trace_collector, user_service_span)
+  
+  let trace = TraceCollector::get_trace(trace_collector, "trace-12345")
+  assert_eq(Trace::span_count(trace), 2)
+  assert_true(Trace::has_span_with_name(trace, "api-gateway-request"))
+  assert_true(Trace::has_span_with_name(trace, "user-service-query"))
+}
+
+// Test 3: Adaptive Sampling Strategies
+test "adaptive sampling strategies" {
+  // Test fixed rate sampling
+  let fixed_sampler = FixedRateSampler::new(0.1) // 10% sampling rate
+  assert_eq(FixedRateSampler::get_rate(fixed_sampler), 0.1)
+  
+  let sampled_count = { mut count: 0 }
+  let total_count = 1000
+  
+  for i in 0..total_count {
+    let trace_id = "trace-" + i.to_string()
+    if FixedRateSampler::should_sample(fixed_sampler, trace_id) {
+      sampled_count.count = sampled_count.count + 1
+    }
   }
   
-  // 执行聚合
-  let aggregation_result = azimuth::TelemetryAggregator::aggregate_spans(aggregator, spans)
+  // Should be approximately 10% of total
+  let sampled_percentage = sampled_count.count * 100 / total_count
+  assert_true(sampled_percentage >= 8 && sampled_percentage <= 12)
   
-  // 验证聚合结果
-  let operation_stats = azimuth::AggregationResult::get_attribute_stats(aggregation_result, "operation.type")
-  assert_true(azimuth::AttributeStats::count(operation_stats, "read") > 0)
-  assert_true(azimuth::AttributeStats::count(operation_stats, "write") > 0)
-  assert_true(azimuth::AttributeStats::count(operation_stats, "update") > 0)
+  // Test adaptive sampling based on error rates
+  let adaptive_sampler = AdaptiveSampler::new()
+    .with_base_rate(0.05)
+    .with_max_rate(0.5)
+    .with_error_threshold(0.1)
   
-  let component_stats = azimuth::AggregationResult::get_attribute_stats(aggregation_result, "service.component")
-  assert_eq(azimuth::AttributeStats::unique_values(component_stats), 5)
+  // Simulate normal operation (low error rate)
+  AdaptiveSampler::update_error_rate(adaptive_sampler, 0.02)
+  assert_eq(AdaptiveSampler::get_current_rate(adaptive_sampler), 0.05)
   
-  let latency_stats = azimuth::AggregationResult::get_numeric_stats(aggregation_result, "latency.ms")
-  assert_true(azimuth::NumericStats::average(latency_stats) >= 10.0)
-  assert_true(azimuth::NumericStats::average(latency_stats) <= 109.0)
+  // Simulate high error rate
+  AdaptiveSampler::update_error_rate(adaptive_sampler, 0.15)
+  assert_true(AdaptiveSampler::get_current_rate(adaptive_sampler) > 0.05)
   
-  // 验证事件统计
-  let event_stats = azimuth::AggregationResult::get_event_stats(aggregation_result)
-  assert_eq(azimuth::EventStats::total_events(event_stats), 50)
-  assert_true(azimuth::EventStats::event_count(event_stats, "operation-completed") > 0)
+  // Test priority-based sampling
+  let priority_sampler = PrioritySampler::new()
+    .with_priority_rule("critical", 1.0) // Always sample critical traces
+    .with_priority_rule("high", 0.5)     // Sample 50% of high priority traces
+    .with_priority_rule("normal", 0.1)   // Sample 10% of normal priority traces
+  
+  assert_true(PrioritySampler::should_sample(priority_sampler, "trace-critical", "critical"))
+  assert_false(PrioritySampler::should_sample(priority_sampler, "trace-normal", "normal"))
+  
+  // Test sampling decision recording
+  let sampling_recorder = SamplingRecorder::new()
+  SamplingRecorder::record_decision(sampling_recorder, "trace-1", true, "fixed-rate")
+  SamplingRecorder::record_decision(sampling_recorder, "trace-2", false, "fixed-rate")
+  SamplingRecorder::record_decision(sampling_recorder, "trace-3", true, "adaptive")
+  
+  assert_eq(SamplingRecorder::get_sampled_count(sampling_recorder), 2)
+  assert_eq(SamplingRecorder::get_discarded_count(sampling_recorder), 1)
+  
+  let decisions = SamplingRecorder::get_decisions_by_strategy(sampling_recorder, "fixed-rate")
+  assert_eq(decisions.length(), 2)
 }
 
-// 测试2: 分布式追踪的上下文传播
-test "分布式追踪上下文传播测试" {
-  let tracer_provider = azimuth::TracerProvider::default()
+// Test 4: Metrics Aggregation and Downsampling
+test "metrics aggregation and downsampling" {
+  // Test time-series metrics creation
+  let time_series = TimeSeries::new("response_time", "milliseconds")
   
-  // 创建父服务追踪器
-  let parent_tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "parent-service")
-  let parent_span = azimuth::Tracer::start_span(parent_tracer, "parent-operation")
-  let parent_context = azimuth::Span::span_context(parent_span)
+  // Add data points over time
+  TimeSeries::add_point(time_series, 1640995200000, 120.5)
+  TimeSeries::add_point(time_series, 1640995260000, 135.2)
+  TimeSeries::add_point(time_series, 1640995320000, 98.7)
+  TimeSeries::add_point(time_series, 1640995380000, 145.3)
+  TimeSeries::add_point(time_series, 1640995440000, 110.8)
   
-  // 创建上下文传播器
-  let propagator = azimuth::TraceContextPropagator::new()
+  assert_eq(TimeSeries::point_count(time_series), 5)
   
-  // 注入上下文到载体
-  let carrier = azimuth::TextMapCarrier::new()
-  azimuth::TraceContextPropagator::inject(propagator, parent_context, carrier)
+  // Test aggregation functions
+  let aggregator = TimeSeriesAggregator::new()
   
-  // 验证上下文被正确注入
-  let trace_id_header = azimuth::TextMapCarrier::get(carrier, "traceparent")
-  assert_true(trace_id_header != None)
+  let avg_response_time = TimeSeriesAggregator::aggregate(aggregator, time_series, "avg")
+  assert_true(avg_response_time > 120.0 && avg_response_time < 125.0)
   
-  // 创建子服务追踪器
-  let child_tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "child-service")
+  let max_response_time = TimeSeriesAggregator::aggregate(aggregator, time_series, "max")
+  assert_eq(max_response_time, 145.3)
   
-  // 从载体提取上下文
-  let extracted_context = azimuth::TraceContextPropagator::extract(propagator, carrier)
+  let min_response_time = TimeSeriesAggregator::aggregate(aggregator, time_series, "min")
+  assert_eq(min_response_time, 98.7)
   
-  // 验证上下文被正确提取
-  assert_eq(azimuth::SpanContext::trace_id(extracted_context), 
-    azimuth::SpanContext::trace_id(parent_context))
+  // Test time window aggregation
+  let window_aggregator = WindowAggregator::new(300000) // 5-minute windows
+  let aggregated_series = WindowAggregator::aggregate_by_window(window_aggregator, time_series, "avg")
   
-  // 创建子Span，使用提取的上下文作为父上下文
-  let child_span = azimuth::Tracer::start_span_with_context(child_tracer, "child-operation", extracted_context)
-  let child_context = azimuth::Span::span_context(child_span)
+  assert_eq(aggregated_series.length(), 1) // All points fall within one 5-minute window
   
-  // 验证父子关系
-  assert_eq(azimuth::SpanContext::trace_id(child_context), 
-    azimuth::SpanContext::trace_id(parent_context))
-  assert_true(azimuth::SpanContext::is_remote_parent(child_context))
+  // Test downsampling
+  let downsampler = Downsampler::new()
+    .with_target_interval(600000) // 10-minute intervals
+    .with_aggregation_strategy("avg")
   
-  // 验证Span链接
-  let links = azimuth::Span::links(child_span)
-  assert_true(links.length() > 0)
+  let downsampled_series = Downsampler::downsample(downsampler, time_series)
+  assert_eq(downsampled_series.length(), 1) // Downsampled to one 10-minute point
   
-  // 结束Span
-  azimuth::Span::end(child_span)
-  azimuth::Span::end(parent_span)
+  // Test percentile calculations
+  let percentile_calculator = PercentileCalculator::new()
+  
+  let p50 = PercentileCalculator::calculate(percentile_calculator, time_series, 50.0)
+  let p95 = PercentileCalculator::calculate(percentile_calculator, time_series, 95.0)
+  let p99 = PercentileCalculator::calculate(percentile_calculator, time_series, 99.0)
+  
+  assert_true(p50 > 110.0 && p50 < 130.0)
+  assert_true(p95 > 140.0)
+  assert_eq(p99, 145.3) // Maximum value for 99th percentile with 5 data points
 }
 
-// 测试3: 度量数据的实时计算
-test "度量数据实时计算测试" {
-  let meter_provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(meter_provider, "realtime-metrics")
+// Test 5: Anomaly Detection in Telemetry Data
+test "anomaly detection in telemetry data" {
+  // Test statistical anomaly detection
+  let statistical_detector = StatisticalAnomalyDetector::new()
+    .with_threshold(2.0) // 2 standard deviations
+    .with_window_size(100)
   
-  // 创建实时计算器
-  let realtime_calculator = azimuth::RealtimeCalculator::new()
+  // Generate normal data
+  let normal_data = [100.0, 102.0, 98.0, 101.0, 99.0, 103.0, 97.0, 100.0, 102.0, 98.0]
   
-  // 创建各种度量仪器
-  let request_counter = azimuth::Meter::create_counter(meter, "http.requests.total")
-  let response_time_histogram = azimuth::Meter::create_histogram(meter, "http.response.time")
-  let active_connections_gauge = azimuth::Meter::create_gauge(meter, "http.active.connections")
-  let error_rate_meter = azimuth::Meter::create_meter(meter, "http.error.rate")
+  for value in normal_data {
+    StatisticalAnomalyDetector::add_point(statistical_detector, value)
+  }
   
-  // 模拟实时数据流
+  // Test normal point
+  let normal_result = StatisticalAnomalyDetector::is_anomaly(statistical_detector, 101.5)
+  assert_false(normal_result)
+  
+  // Test anomalous point
+  let anomaly_result = StatisticalAnomalyDetector::is_anomaly(statistical_detector, 150.0)
+  assert_true(anomaly_result)
+  
+  // Test machine learning-based anomaly detection
+  let ml_detector = MLAnomalyDetector::new()
+    .with_algorithm("isolation_forest")
+    .with_training_window(1000)
+  
+  // Train the detector with normal data
+  for i in 0..500 {
+    let value = 100.0 + (i % 20) - 10.0 // Values between 90 and 110
+    MLAnomalyDetector::train(ml_detector, value)
+  }
+  
+  MLAnomalyDetector::build_model(ml_detector)
+  
+  // Test with normal data
+  let normal_ml_result = MLAnomalyDetector::is_anomaly(ml_detector, 105.0)
+  assert_false(normal_ml_result)
+  
+  // Test with anomalous data
+  let anomaly_ml_result = MLAnomalyDetector::is_anomaly(ml_detector, 200.0)
+  assert_true(anomaly_ml_result)
+  
+  // Test seasonal anomaly detection
+  let seasonal_detector = SeasonalAnomalyDetector::new()
+    .with_seasonality_period(86400000) // Daily seasonality
+    .with_threshold(1.5)
+  
+  // Add data points with daily pattern
+  let base_timestamp = 1640995200000 // 2022-01-01 00:00:00 UTC
+  
+  for day in 0..7 {
+    for hour in 0..24 {
+      let timestamp = base_timestamp + (day * 86400000) + (hour * 3600000)
+      let value = 50.0 + 30.0 * ((hour as Float) / 24.0).sin() // Daily pattern
+      SeasonalAnomalyDetector::add_point(seasonal_detector, timestamp, value)
+    }
+  }
+  
+  // Test normal seasonal point
+  let normal_seasonal_result = SeasonalAnomalyDetector::is_anomaly(
+    seasonal_detector, 
+    base_timestamp + 43200000, // Noon
+    65.0
+  )
+  assert_false(normal_seasonal_result)
+  
+  // Test anomalous seasonal point
+  let anomaly_seasonal_result = SeasonalAnomalyDetector::is_anomaly(
+    seasonal_detector, 
+    base_timestamp + 43200000, // Noon
+    120.0
+  )
+  assert_true(anomaly_seasonal_result)
+  
+  // Test anomaly alerting
+  let alert_manager = AnomalyAlertManager::new()
+    .with_alert_threshold(3) // Alert after 3 anomalies
+    .with_reset_interval(3600000) // Reset after 1 hour
+  
+  AnomalyAlertManager::record_anomaly(alert_manager, "metric1", 1640995200000)
+  AnomalyAlertManager::record_anomaly(alert_manager, "metric1", 1640995300000)
+  AnomalyAlertManager::record_anomaly(alert_manager, "metric1", 1640995400000)
+  
+  assert_true(AnomalyAlertManager::should_alert(alert_manager, "metric1"))
+  
+  let alert = AnomalyAlertManager::create_alert(alert_manager, "metric1")
+  assert_eq(alert.metric_name, "metric1")
+  assert_eq(alert.anomaly_count, 3)
+}
+
+// Test 6: Telemetry Data Compression and Transmission
+test "telemetry data compression and transmission" {
+  // Test telemetry data serialization
+  let telemetry_batch = TelemetryBatch::new("batch-12345")
+  
+  let span1 = TelemetrySpan::new("operation1", 1640995200000, 1640995250000)
+    .with_attribute("service", "api")
+    .with_attribute("user.id", "12345")
+  
+  let span2 = TelemetrySpan::new("operation2", 1640995300000, 1640995350000)
+    .with_attribute("service", "database")
+    .with_attribute("query.type", "select")
+  
+  let metric1 = TelemetryMetric::new("cpu_usage", 75.5, "percentage")
+    .with_timestamp(1640995200000)
+    .with_tags([("host", "server1"), ("region", "us-west")])
+  
+  let metric2 = TelemetryMetric::new("memory_usage", 4096.0, "megabytes")
+    .with_timestamp(1640995250000)
+    .with_tags([("host", "server1"), ("region", "us-west")])
+  
+  TelemetryBatch::add_span(telemetry_batch, span1)
+  TelemetryBatch::add_span(telemetry_batch, span2)
+  TelemetryBatch::add_metric(telemetry_batch, metric1)
+  TelemetryBatch::add_metric(telemetry_batch, metric2)
+  
+  assert_eq(TelemetryBatch::span_count(telemetry_batch), 2)
+  assert_eq(TelemetryBatch::metric_count(telemetry_batch), 2)
+  
+  // Test JSON serialization
+  let json_serializer = JsonTelemetrySerializer::new()
+  let json_data = JsonTelemetrySerializer::serialize(json_serializer, telemetry_batch)
+  assert_true(json_data.length() > 0)
+  
+  // Test protobuf serialization
+  let protobuf_serializer = ProtobufTelemetrySerializer::new()
+  let protobuf_data = ProtobufTelemetrySerializer::serialize(protobuf_serializer, telemetry_batch)
+  assert_true(protobuf_data.length() > 0)
+  
+  // Test compression
+  let gzip_compressor = GzipCompressor::new()
+  let compressed_json = GzipCompressor::compress(gzip_compressor, json_data)
+  
+  assert_true(compressed_json.length() < json_data.length())
+  
+  // Test decompression
+  let decompressed_json = GzipCompressor::decompress(gzip_compressor, compressed_json)
+  assert_eq(decompressed_json, json_data)
+  
+  // Test transmission queue
+  let transmission_queue = TransmissionQueue::new(1000, 100) // Max 1000 items, batch size 100
+  
+  TransmissionQueue::add_batch(transmission_queue, telemetry_batch)
+  assert_eq(TransmissionQueue::size(transmission_queue), 1)
+  
+  // Test batch transmission
+  let transmitter = TelemetryTransmitter::new("https://telemetry.example.com/api/v1/traces")
+    .with_retry_policy(ExponentialBackoffRetryPolicy::new(3, 1000))
+    .with_compression(true)
+    .with_timeout(5000)
+  
+  let transmission_result = TelemetryTransmitter::transmit(transmitter, telemetry_batch)
+  assert_true(transmission_result.success)
+  
+  // Test async transmission
+  let async_transmitter = AsyncTelemetryTransmitter::new("https://telemetry.example.com/api/v1/metrics")
+    .with_concurrency(4)
+    .with_queue_size(10000)
+  
+  let async_result = AsyncTelemetryTransmitter::transmit_async(async_transmitter, telemetry_batch)
+  assert_true(async_result.queued)
+  
+  // Test transmission failure handling
+  let failing_transmitter = FailingTelemetryTransmitter::new("https://invalid.example.com")
+    .with_failure_rate(1.0) // Always fail
+  
+  let failure_result = TelemetryTransmitter::transmit(failing_transmitter, telemetry_batch)
+  assert_false(failure_result.success)
+  assert_true(failure_result.error_message.length() > 0)
+}
+
+// Test 7: Telemetry Data Retention and Archival
+test "telemetry data retention and archival" {
+  // Test retention policy creation
+  let retention_policy = RetentionPolicy::new()
+    .with_span_retention_days(7)
+    .with_metric_retention_days(30)
+    .with_log_retention_days(14)
+    .with_archive_after_days(3)
+  
+  assert_eq(RetentionPolicy::get_span_retention_days(retention_policy), 7)
+  assert_eq(RetentionPolicy::get_metric_retention_days(retention_policy), 30)
+  assert_eq(RetentionPolicy::get_archive_after_days(retention_policy), 3)
+  
+  // Test data lifecycle management
+  let lifecycle_manager = DataLifecycleManager::new(retention_policy)
+  
+  // Create test data with different ages
+  let current_time = 1640995200000 // 2022-01-01 00:00:00 UTC
+  let old_span_time = current_time - (8 * 86400000) // 8 days ago (should be expired)
+  let recent_span_time = current_time - (3 * 86400000) // 3 days ago (should be archived)
+  let very_recent_span_time = current_time - (1 * 86400000) // 1 day ago (should be active)
+  
+  let old_span = TelemetrySpan::new("old_operation", old_span_time, old_span_time + 1000)
+  let recent_span = TelemetrySpan::new("recent_operation", recent_span_time, recent_span_time + 1000)
+  let very_recent_span = TelemetrySpan::new("very_recent_operation", very_recent_span_time, very_recent_span_time + 1000)
+  
+  DataLifecycleManager::add_span(lifecycle_manager, old_span)
+  DataLifecycleManager::add_span(lifecycle_manager, recent_span)
+  DataLifecycleManager::add_span(lifecycle_manager, very_recent_span)
+  
+  // Test lifecycle processing
+  let lifecycle_result = DataLifecycleManager::process(lifecycle_manager, current_time)
+  
+  assert_eq(lifecycle_result.expired_count, 1) // old_span should be expired
+  assert_eq(lifecycle_result.archived_count, 1) // recent_span should be archived
+  assert_eq(lifecycle_result.active_count, 1) // very_recent_span should remain active
+  
+  // Test archival storage
+  let archival_storage = ArchivalStorage::new("s3://telemetry-archive/")
+    .with_compression("gzip")
+    .with_encryption(true)
+  
+  let archival_id = ArchivalStorage::archive(archival_storage, recent_span)
+  assert_true(archival_id.length() > 0)
+  
+  // Test archival retrieval
+  let retrieved_span = ArchivalStorage::retrieve(archival_storage, archival_id)
+  assert_eq(retrieved_span.name, recent_span.name)
+  assert_eq(retrieved_span.start_time, recent_span.start_time)
+  
+  // Test retention enforcement
+  let retention_enforcer = RetentionEnforcer::new(retention_policy)
+  
+  // Add more test data
   for i in 0..100 {
-    // 模拟HTTP请求
-    azimuth::Counter::add(request_counter, 1.0)
-    
-    // 模拟响应时间
-    let response_time = 50.0 + (@random() * 200.0)
-    azimuth::Histogram::record(response_time_histogram, response_time)
-    
-    // 模拟活跃连接数变化
-    let active_connections = 10 + (@random() * 90.0)
-    azimuth::Gauge::record(active_connections_gauge, active_connections)
-    
-    // 模拟错误率
-    if @random() < 0.05 {  // 5%错误率
-      azimuth::Meter::record(error_rate_meter, 1.0)
-    }
-    
-    // 每10个数据点执行一次实时计算
-    if i % 10 == 0 {
-      let calculation_result = azimuth::RealtimeCalculator::calculate_metrics(realtime_calculator, [
-        request_counter,
-        response_time_histogram,
-        active_connections_gauge,
-        error_rate_meter
-      ])
-      
-      // 验证计算结果
-      let total_requests = azimuth::CalculationResult::get_counter_value(calculation_result, "http.requests.total")
-      assert_true(total_requests > 0.0)
-      
-      let avg_response_time = azimuth::CalculationResult::get_histogram_average(calculation_result, "http.response.time")
-      assert_true(avg_response_time >= 50.0)
-      assert_true(avg_response_time <= 250.0)
-      
-      let current_connections = azimuth::CalculationResult::get_gauge_value(calculation_result, "http.active.connections")
-      assert_true(current_connections >= 10.0)
-      assert_true(current_connections <= 100.0)
-    }
-  }
-}
-
-// 测试4: 日志记录的结构化处理
-test "日志记录结构化处理测试" {
-  let logger_provider = azimuth::LoggerProvider::default()
-  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "structured-logging-test")
-  
-  // 创建结构化日志处理器
-  let structured_handler = azimuth::StructuredLogHandler::new()
-  
-  // 创建不同级别的结构化日志
-  let debug_log = azimuth::LogRecord::new_with_attributes(
-    azimuth::Debug,
-    Some("调试信息"),
-    Some([
-      ("component", azimuth::StringValue("auth-service")),
-      ("user.id", azimuth::StringValue("user-123")),
-      ("operation", azimuth::StringValue("token-validation")),
-      ("debug.details", azimuth::StringValue("Token signature verified"))
-    ])
-  )
-  
-  let info_log = azimuth::LogRecord::new_with_attributes(
-    azimuth::Info,
-    Some("用户登录成功"),
-    Some([
-      ("component", azimuth::StringValue("auth-service")),
-      ("user.id", azimuth::StringValue("user-123")),
-      ("ip.address", azimuth::StringValue("192.168.1.100")),
-      ("user.agent", azimuth::StringValue("Mozilla/5.0...")),
-      ("session.id", azimuth::StringValue("sess-456"))
-    ])
-  )
-  
-  let warning_log = azimuth::LogRecord::new_with_attributes(
-    azimuth::Warn,
-    Some("API调用频率接近限制"),
-    Some([
-      ("component", azimuth::StringValue("rate-limiter")),
-      ("client.id", azimuth::StringValue("client-789")),
-      ("current.rate", azimuth::IntValue(95)),
-      ("limit.rate", azimuth::IntValue(100)),
-      ("time.window", azimuth::StringValue("1m"))
-    ])
-  )
-  
-  let error_log = azimuth::LogRecord::new_with_attributes(
-    azimuth::Error,
-    Some("数据库连接失败"),
-    Some([
-      ("component", azimuth::StringValue("database")),
-      ("error.code", azimuth::StringValue("DB_CONN_FAILED")),
-      ("retry.count", azimuth::IntValue(3)),
-      ("connection.pool", azimuth::StringValue("primary")),
-      ("error.stack", azimuth::StringValue("ConnectionTimeoutException..."))
-    ])
-  )
-  
-  // 处理结构化日志
-  let processed_logs = []
-  processed_logs.push(azimuth::StructuredLogHandler::process(structured_handler, debug_log))
-  processed_logs.push(azimuth::StructuredLogHandler::process(structured_handler, info_log))
-  processed_logs.push(azimuth::StructuredLogHandler::process(structured_handler, warning_log))
-  processed_logs.push(azimuth::StructuredLogHandler::process(structured_handler, error_log))
-  
-  // 发出日志
-  for log in processed_logs {
-    azimuth::Logger::emit(logger, log)
+    let timestamp = current_time - (i * 86400000)
+    let span = TelemetrySpan::new("operation_" + i.to_string(), timestamp, timestamp + 1000)
+    RetentionEnforcer::add_data(retention_enforcer, span)
   }
   
-  // 验证日志结构化处理
-  let log_analyzer = azimuth::LogAnalyzer::new()
-  let analysis_result = azimuth::LogAnalyzer::analyze_logs(log_analyzer, processed_logs)
+  let enforcement_result = RetentionEnforcer::enforce(retention_enforcer, current_time)
+  assert_true(enforcement_result.deleted_count > 0)
+  assert_true(enforcement_result.archived_count > 0)
   
-  // 验证日志级别分布
-  let level_distribution = azimuth::AnalysisResult::get_level_distribution(analysis_result)
-  assert_eq(azimuth::LevelDistribution::count(level_distribution, azimuth::Debug), 1)
-  assert_eq(azimuth::LevelDistribution::count(level_distribution, azimuth::Info), 1)
-  assert_eq(azimuth::LevelDistribution::count(level_distribution, azimuth::Warn), 1)
-  assert_eq(azimuth::LevelDistribution::count(level_distribution, azimuth::Error), 1)
+  // Test data purging
+  let purge_manager = DataPurgeManager::new()
+    .with_purge_policy("strict") // Delete expired data immediately
+    .with_batch_size(1000)
   
-  // 验证组件分布
-  let component_distribution = azimuth::AnalysisResult::get_component_distribution(analysis_result)
-  assert_eq(azimuth::ComponentDistribution::count(component_distribution, "auth-service"), 2)
-  assert_eq(azimuth::ComponentDistribution::count(component_distribution, "rate-limiter"), 1)
-  assert_eq(azimuth::ComponentDistribution::count(component_distribution, "database"), 1)
+  let purge_result = DataPurgeManager::purge_expired_data(purge_manager, current_time)
+  assert_true(purge_result.purged_count > 0)
+  assert_eq(purge_result.error_count, 0)
 }
 
-// 测试5: 资源监控和性能指标
-test "资源监控和性能指标测试" {
-  let meter_provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(meter_provider, "resource-monitoring")
+// Test 8: Telemetry Configuration Management
+test "telemetry configuration management" {
+  // Test configuration source management
+  let config_manager = TelemetryConfigManager::new()
   
-  // 创建资源监控器
-  let resource_monitor = azimuth::ResourceMonitor::new()
+  // Add file configuration source
+  let file_config_source = FileConfigSource::new("/etc/telemetry/config.json")
+  TelemetryConfigManager::add_source(config_manager, file_config_source)
   
-  // 创建资源指标
-  let cpu_usage = azimuth::Meter::create_gauge(meter, "system.cpu.usage")
-  let memory_usage = azimuth::Meter::create_gauge(meter, "system.memory.usage")
-  let disk_io = azimuth::Meter::create_counter(meter, "system.disk.io")
-  let network_io = azimuth::Meter::create_counter(meter, "system.network.io")
-  let thread_count = azimuth::Meter::create_gauge(meter, "system.thread.count")
+  // Add environment configuration source
+  let env_config_source = EnvironmentConfigSource::new("TELEMETRY_")
+  TelemetryConfigManager::add_source(config_manager, env_config_source)
   
-  // 模拟资源监控数据收集
-  for i in 0..20 {
-    // 模拟CPU使用率
-    let cpu_percent = 20.0 + (@random() * 60.0)
-    azimuth::Gauge::record(cpu_usage, cpu_percent)
-    
-    // 模拟内存使用率
-    let memory_percent = 30.0 + (@random() * 50.0)
-    azimuth::Gauge::record(memory_usage, memory_percent)
-    
-    // 模拟磁盘I/O
-    let disk_read_bytes = (@random() * 1000000.0).to_int()
-    let disk_write_bytes = (@random() * 500000.0).to_int()
-    azimuth::Counter::add(disk_io, (disk_read_bytes + disk_write_bytes).to_double())
-    
-    // 模拟网络I/O
-    let network_recv_bytes = (@random() * 500000.0).to_int()
-    let network_sent_bytes = (@random() * 300000.0).to_int()
-    azimuth::Counter::add(network_io, (network_recv_bytes + network_sent_bytes).to_double())
-    
-    // 模拟线程数
-    let thread_num = 50 + (@random() * 100.0)
-    azimuth::Gauge::record(thread_count, thread_num)
-    
-    // 每隔几个周期进行资源分析
-    if i % 5 == 0 {
-      let resource_snapshot = azimuth::ResourceMonitor::create_snapshot(resource_monitor, [
-        cpu_usage,
-        memory_usage,
-        disk_io,
-        network_io,
-        thread_count
-      ])
-      
-      // 验证资源快照
-      assert_true(azimuth::ResourceSnapshot::cpu_usage(resource_snapshot) >= 20.0)
-      assert_true(azimuth::ResourceSnapshot::cpu_usage(resource_snapshot) <= 80.0)
-      
-      assert_true(azimuth::ResourceSnapshot::memory_usage(resource_snapshot) >= 30.0)
-      assert_true(azimuth::ResourceSnapshot::memory_usage(resource_snapshot) <= 80.0)
-      
-      assert_true(azimuth::ResourceSnapshot::thread_count(resource_snapshot) >= 50.0)
-      assert_true(azimuth::ResourceSnapshot::thread_count(resource_snapshot) <= 150.0)
-      
-      // 检查资源警告
-      let warnings = azimuth::ResourceMonitor::check_resource_warnings(resource_monitor, resource_snapshot)
-      if azimuth::ResourceSnapshot::cpu_usage(resource_snapshot) > 70.0 {
-        assert_true(warnings.length() > 0)
-      }
-    }
+  // Add remote configuration source
+  let remote_config_source = RemoteConfigSource::new("https://config.example.com/telemetry")
+    .with_refresh_interval(300000) // 5 minutes
+    .with_timeout(5000)
+  
+  TelemetryConfigManager::add_source(config_manager, remote_config_source)
+  
+  // Test configuration loading
+  let config = TelemetryConfigManager::load_config(config_manager)
+  assert_true(TelemetryConfig::is_valid(config))
+  
+  // Test configuration values
+  match TelemetryConfig::get_string(config, "service.name") {
+    Some(name) => assert_eq(name, "azimuth-telemetry")
+    None => assert_true(false)
   }
   
-  // 生成资源使用报告
-  let resource_report = azimuth::ResourceMonitor::generate_report(resource_monitor)
-  
-  // 验证报告内容
-  assert_true(azimuth::ResourceReport::contains_metric(resource_report, "system.cpu.usage"))
-  assert_true(azimuth::ResourceReport::contains_metric(resource_report, "system.memory.usage"))
-  assert_true(azimuth::ResourceReport::contains_metric(resource_report, "system.disk.io"))
-  assert_true(azimuth::ResourceReport::contains_metric(resource_report, "system.network.io"))
-  assert_true(azimuth::ResourceReport::contains_metric(resource_report, "system.thread.count"))
-}
-
-// 测试6: 错误处理和异常追踪
-test "错误处理和异常追踪测试" {
-  let tracer_provider = azimuth::TracerProvider::default()
-  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "error-tracking-test")
-  let logger_provider = azimuth::LoggerProvider::default()
-  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "error-logging")
-  
-  // 创建错误追踪器
-  let error_tracker = azimuth::ErrorTracker::new()
-  
-  // 模拟不同类型的错误
-  let errors = []
-  
-  // 网络错误
-  let network_error_span = azimuth::Tracer::start_span(tracer, "network-operation")
-  azimuth::Span::set_attribute(network_error_span, "error.type", azimuth::StringValue("NetworkTimeout"))
-  azimuth::Span::set_attribute(network_error_span, "error.message", 
-    azimuth::StringValue("Connection timeout after 30 seconds"))
-  azimuth::Span::set_attribute(network_error_span, "retry.count", azimuth::IntValue(3))
-  azimuth::Span::set_status(network_error_span, azimuth::Error, 
-    Some("Network operation failed"))
-  azimuth::Span::add_event(network_error_span, "exception", 
-    Some([
-      ("exception.type", azimuth::StringValue("TimeoutException")),
-      ("exception.message", azimuth::StringValue("Read timed out")),
-      ("stack.trace", azimuth::StringValue("at NetworkService.request..."))
-    ]))
-  errors.push(network_error_span)
-  
-  // 数据库错误
-  let db_error_span = azimuth::Tracer::start_span(tracer, "database-operation")
-  azimuth::Span::set_attribute(db_error_span, "error.type", azimuth::StringValue("DatabaseError"))
-  azimuth::Span::set_attribute(db_error_span, "error.message", 
-    azimuth::StringValue("Connection pool exhausted"))
-  azimuth::Span::set_attribute(db_error_span, "pool.size", azimuth::IntValue(10))
-  azimuth::Span::set_attribute(db_error_span, "active.connections", azimuth::IntValue(10))
-  azimuth::Span::set_status(db_error_span, azimuth::Error, 
-    Some("Database operation failed"))
-  errors.push(db_error_span)
-  
-  // 业务逻辑错误
-  let business_error_span = azimuth::Tracer::start_span(tracer, "business-operation")
-  azimuth::Span::set_attribute(business_error_span, "error.type", azimuth::StringValue("ValidationError"))
-  azimuth::Span::set_attribute(business_error_span, "error.message", 
-    azimuth::StringValue("Invalid user input"))
-  azimuth::Span::set_attribute(business_error_span, "field.name", azimuth::StringValue("email"))
-  azimuth::Span::set_attribute(business_error_span, "field.value", azimuth::StringValue("invalid-email"))
-  azimuth::Span::set_status(business_error_span, azimuth::Error, 
-    Some("Validation failed"))
-  errors.push(business_error_span)
-  
-  // 分析错误模式
-  let error_analysis = azimuth::ErrorTracker::analyze_errors(error_tracker, errors)
-  
-  // 验证错误分析结果
-  let error_types = azimuth::ErrorAnalysis::get_error_types(error_analysis)
-  assert_true(azimuth::ErrorTypeDistribution::count(error_types, "NetworkTimeout") > 0)
-  assert_true(azimuth::ErrorTypeDistribution::count(error_types, "DatabaseError") > 0)
-  assert_true(azimuth::ErrorTypeDistribution::count(error_types, "ValidationError") > 0)
-  
-  // 验证错误严重性分析
-  let severity_analysis = azimuth::ErrorAnalysis::get_severity_analysis(error_analysis)
-  assert_true(azimuth::SeverityAnalysis::error_count(severity_analysis, azimuth::Error) >= 3)
-  
-  // 生成错误报告
-  let error_report = azimuth::ErrorTracker::generate_error_report(error_tracker, errors)
-  
-  // 验证错误报告
-  assert_true(azimuth::ErrorReport::contains_error_type(error_report, "NetworkTimeout"))
-  assert_true(azimuth::ErrorReport::contains_error_type(error_report, "DatabaseError"))
-  assert_true(azimuth::ErrorReport::contains_error_type(error_report, "ValidationError"))
-  
-  // 结束所有错误Span
-  for error in errors {
-    azimuth::Span::end(error)
-  }
-}
-
-// 测试7: 自定义遥测仪表板
-test "自定义遥测仪表板测试" {
-  let meter_provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(meter_provider, "dashboard-metrics")
-  
-  // 创建仪表板构建器
-  let dashboard_builder = azimuth::DashboardBuilder::new()
-  
-  // 创建度量数据
-  let request_rate = azimuth::Meter::create_counter(meter, "http.requests.rate")
-  let error_rate = azimuth::Meter::create_counter(meter, "http.errors.rate")
-  let response_time = azimuth::Meter::create_histogram(meter, "http.response.time")
-  let active_users = azimuth::Meter::create_gauge(meter, "users.active")
-  
-  // 生成示例数据
-  for i in 0..60 {  // 模拟60个时间点
-    // 请求率
-    let requests = 100.0 + (@random() * 50.0)
-    azimuth::Counter::add(request_rate, requests)
-    
-    // 错误率
-    if @random() < 0.02 {  // 2%错误率
-      azimuth::Counter::add(error_rate, 1.0)
-    }
-    
-    // 响应时间
-    let resp_time = 50.0 + (@random() * 150.0)
-    azimuth::Histogram::record(response_time, resp_time)
-    
-    // 活跃用户
-    let users = 500.0 + (@random() * 200.0)
-    azimuth::Gauge::record(active_users, users)
+  match TelemetryConfig::get_int(config, "service.port") {
+    Some(port) => assert_eq(port, 8080)
+    None => assert_true(false)
   }
   
-  // 添加仪表板组件
-  azimuth::DashboardBuilder::add_timeseries_chart(dashboard_builder, 
-    "请求率趋势", "http.requests.rate", "requests/second")
-  azimuth::DashboardBuilder::add_timeseries_chart(dashboard_builder, 
-    "错误率趋势", "http.errors.rate", "errors/second")
-  azimuth::DashboardBuilder::add_histogram_chart(dashboard_builder, 
-    "响应时间分布", "http.response.time", "milliseconds")
-  azimuth::DashboardBuilder::add_gauge_chart(dashboard_builder, 
-    "活跃用户", "users.active", "users")
+  match TelemetryConfig::get_bool(config, "tracing.enabled") {
+    Some(enabled) => assert_true(enabled)
+    None => assert_true(false)
+  }
   
-  // 添加自定义指标计算
-  azimuth::DashboardBuilder::add_calculated_metric(dashboard_builder, 
-    "成功率", fn(metrics) {
-      let total_requests = azimuth::MetricData::get_counter_value(metrics, "http.requests.rate")
-      let total_errors = azimuth::MetricData::get_counter_value(metrics, "http.errors.rate")
-      if total_requests > 0.0 {
-        ((total_requests - total_errors) / total_requests) * 100.0
-      } else {
-        100.0
-      }
-    }, "percent")
+  // Test configuration validation
+  let config_validator = TelemetryConfigValidator::new()
   
-  // 构建仪表板
-  let dashboard = azimuth::DashboardBuilder::build(dashboard_builder)
+  ConfigValidator::add_rule(config_validator, "service.port", ConfigRule::int_range(1, 65535))
+  ConfigValidator::add_rule(config_validator, "sampling.rate", ConfigRule::float_range(0.0, 1.0))
+  ConfigValidator::add_rule(config_validator, "collector.endpoint", ConfigRule::url_format())
   
-  // 验证仪表板结构
-  let charts = azimuth::Dashboard::get_charts(dashboard)
-  assert_eq(charts.length(), 4)  // 4个图表
+  let validation_result = ConfigValidator::validate(config_validator, config)
+  assert_true(validation_result.is_valid)
   
-  let calculated_metrics = azimuth::Dashboard::get_calculated_metrics(dashboard)
-  assert_eq(calculated_metrics.length(), 1)  // 1个计算指标
+  // Test configuration hot reload
+  let hot_reload_manager = HotReloadConfigManager::new(config_manager)
+    .with_watch_files(true)
+    .with_poll_interval(10000) // 10 seconds
   
-  // 生成仪表板数据
-  let dashboard_data = azimuth::Dashboard::generate_data(dashboard)
+  HotReloadConfigManager::start_watching(hot_reload_manager)
+  assert_true(HotReloadConfigManager::is_watching(hot_reload_manager))
   
-  // 验证仪表板数据
-  assert_true(azimuth::DashboardData::contains_metric(dashboard_data, "http.requests.rate"))
-  assert_true(azimuth::DashboardData::contains_metric(dashboard_data, "http.errors.rate"))
-  assert_true(azimuth::DashboardData::contains_metric(dashboard_data, "http.response.time"))
-  assert_true(azimuth::DashboardData::contains_metric(dashboard_data, "users.active"))
-  assert_true(azimuth::DashboardData::contains_calculated_metric(dashboard_data, "成功率"))
+  // Simulate configuration change
+  let change_listener = TestConfigChangeListener::new()
+  HotReloadConfigManager::add_listener(hot_reload_manager, change_listener)
   
-  // 验证计算指标
-  let success_rate = azimuth::DashboardData::get_calculated_metric_value(dashboard_data, "成功率")
-  assert_true(success_rate >= 0.0)
-  assert_true(success_rate <= 100.0)
+  // Simulate file change
+  HotReloadConfigManager::simulate_file_change(hot_reload_manager, "/etc/telemetry/config.json")
+  
+  // Verify change was detected
+  assert_true(TestConfigChangeListener::was_notified(change_listener))
+  
+  // Test configuration profiles
+  let profile_manager = ConfigProfileManager::new()
+  
+  ProfileManager::add_profile(profile_manager, "development", [
+    ("log.level", "debug"),
+    ("sampling.rate", "1.0"),
+    ("metrics.export.interval", "10000")
+  ])
+  
+  ProfileManager::add_profile(profile_manager, "production", [
+    ("log.level", "info"),
+    ("sampling.rate", "0.1"),
+    ("metrics.export.interval", "60000")
+  ])
+  
+  ProfileManager::set_active_profile(profile_manager, "development")
+  assert_eq(ProfileManager::get_active_profile(profile_manager), "development")
+  
+  match ProfileManager::get_setting(profile_manager, "log.level") {
+    Some(level) => assert_eq(level, "debug")
+    None => assert_true(false)
+  }
+  
+  // Test configuration encryption
+  let encrypted_config_manager = EncryptedConfigManager::new("encryption-key-12345")
+  
+  EncryptedConfigManager::set_string(encrypted_config_manager, "api.key", "secret-api-key")
+  EncryptedConfigManager::set_string(encrypted_config_manager, "database.password", "secret-password")
+  
+  match EncryptedConfigManager::get_string(encrypted_config_manager, "api.key") {
+    Some(key) => assert_eq(key, "secret-api-key")
+    None => assert_true(false)
+  }
+  
+  // Test configuration export/import
+  let config_exporter = ConfigExporter::new()
+  let exported_config = ConfigExporter::export_to_json(config_exporter, config)
+  assert_true(exported_config.length() > 0)
+  
+  let config_importer = ConfigImporter::new()
+  let imported_config = ConfigImporter::import_from_json(config_importer, exported_config)
+  assert_true(TelemetryConfig::is_valid(imported_config))
 }
 
-// 测试8: 遥测数据的质量保证
-test "遥测数据质量保证测试" {
-  let tracer_provider = azimuth::TracerProvider::default()
-  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "quality-assurance-test")
+// Test 9: Telemetry Dashboard Integration
+test "telemetry dashboard integration" {
+  // Test dashboard data provider
+  let dashboard_provider = DashboardDataProvider::new()
+    .with_cache_duration(60000) // 1 minute cache
+    .with_max_series(1000)
   
-  // 创建数据质量检查器
-  let quality_checker = azimuth::DataQualityChecker::new()
+  // Add time series data
+  let cpu_series = TimeSeries::new("cpu_usage", "percentage")
+  let memory_series = TimeSeries::new("memory_usage", "percentage")
+  let disk_series = TimeSeries::new("disk_io", "megabytes_per_second")
   
-  // 配置质量规则
-  azimuth::DataQualityChecker::add_rule(quality_checker, 
-    azimuth::QualityRule::required_attribute("service.name"))
-  azimuth::DataQualityChecker::add_rule(quality_checker, 
-    azimuth::QualityRule::required_attribute("operation.name"))
-  azimuth::DataQualityChecker::add_rule(quality_checker, 
-    azimuth::QualityRule::max_span_duration(60000))  // 最大60秒
-  azimuth::DataQualityChecker::add_rule(quality_checker, 
-    azimuth::QualityRule::max_attributes_count(50))  // 最多50个属性
+  // Add data points for the last hour
+  let base_time = 1640995200000 // 2022-01-01 00:00:00 UTC
   
-  // 创建不同质量的Span
-  let good_span = azimuth::Tracer::start_span(tracer, "good-quality-span")
-  azimuth::Span::set_attribute(good_span, "service.name", azimuth::StringValue("user-service"))
-  azimuth::Span::set_attribute(good_span, "operation.name", azimuth::StringValue("get-user"))
-  azimuth::Span::set_attribute(good_span, "user.id", azimuth::StringValue("user-123"))
-  
-  let bad_span_missing_attrs = azimuth::Tracer::start_span(tracer, "bad-missing-attrs")
-  azimuth::Span::set_attribute(bad_span_missing_attrs, "some.attr", azimuth::StringValue("some.value"))
-  // 缺少必需的service.name和operation.name
-  
-  let bad_span_too_long = azimuth::Tracer::start_span(tracer, "bad-too-long")
-  azimuth::Span::set_attribute(bad_span_too_long, "service.name", azimuth::StringValue("order-service"))
-  azimuth::Span::set_attribute(bad_span_too_long, "operation.name", azimuth::StringValue("process-order"))
-  // 模拟长时间运行的Span（在实际实现中需要特殊处理）
-  
-  let bad_span_too_many_attrs = azimuth::Tracer::start_span(tracer, "bad-too-many-attrs")
-  azimuth::Span::set_attribute(bad_span_too_many_attrs, "service.name", azimuth::StringValue("payment-service"))
-  azimuth::Span::set_attribute(bad_span_too_many_attrs, "operation.name", azimuth::StringValue("process-payment"))
-  // 添加过多属性
   for i in 0..60 {
-    azimuth::Span::set_attribute(bad_span_too_many_attrs, 
-      "attr." + i.to_string(), azimuth::StringValue("value-" + i.to_string()))
+    let timestamp = base_time + (i * 60000) // 1-minute intervals
+    
+    TimeSeries::add_point(cpu_series, timestamp, 50.0 + 20.0 * ((i as Float) / 60.0))
+    TimeSeries::add_point(memory_series, timestamp, 60.0 + 15.0 * ((i as Float) / 60.0))
+    TimeSeries::add_point(disk_series, timestamp, 100.0 + 50.0 * ((i as Float) / 60.0))
   }
   
-  let spans = [good_span, bad_span_missing_attrs, bad_span_too_long, bad_span_too_many_attrs]
+  DashboardDataProvider::add_series(dashboard_provider, cpu_series)
+  DashboardDataProvider::add_series(dashboard_provider, memory_series)
+  DashboardDataProvider::add_series(dashboard_provider, disk_series)
   
-  // 执行质量检查
-  let quality_report = azimuth::DataQualityChecker::check_spans(quality_checker, spans)
+  // Test dashboard query API
+  let query = DashboardQuery::new()
+    .with_time_range(base_time, base_time + 3600000) // 1 hour
+    .with_series_filter("cpu_usage")
+    .with_aggregation("avg")
+    .with_interval(300000) // 5-minute intervals
   
-  // 验证质量报告
-  let total_spans = azimuth::QualityReport::total_spans(quality_report)
-  assert_eq(total_spans, 4)
+  let query_result = DashboardDataProvider::query(dashboard_provider, query)
+  assert_eq(query_result.series.length(), 1)
+  assert_eq(query_result.series[0].name, "cpu_usage")
+  assert_eq(query_result.series[0].points.length(), 12) // 60 minutes / 5-minute intervals
   
-  let passed_spans = azimuth::QualityReport::passed_spans(quality_report)
-  assert_eq(passed_spans, 1)  // 只有good_span应该通过
+  // Test dashboard alert configuration
+  let alert_config = DashboardAlertConfig::new()
+    .with_threshold("cpu_usage", 80.0, "greater_than")
+    .with_threshold("memory_usage", 90.0, "greater_than")
+    .with_threshold("disk_io", 200.0, "greater_than")
+    .with_notification_channels(["email", "slack"])
   
-  let failed_spans = azimuth::QualityReport::failed_spans(quality_report)
-  assert_eq(failed_spans, 3)  // 其他3个应该失败
+  DashboardAlertConfig::add_recipient(alert_config, "email", "admin@example.com")
+  DashboardAlertConfig::add_recipient(alert_config, "slack", "#telemetry-alerts")
   
-  // 验证具体的质量问题
-  let missing_attr_issues = azimuth::QualityReport::get_issues_by_type(quality_report, "missing_attribute")
-  assert_true(missing_attr_issues.length() > 0)
+  // Test alert evaluation
+  let alert_evaluator = DashboardAlertEvaluator::new(alert_config)
   
-  let too_long_issues = azimuth::QualityReport::get_issues_by_type(quality_report, "span_too_long")
-  assert_true(too_long_issues.length() > 0)
+  // Add data points that would trigger alerts
+  TimeSeries::add_point(cpu_series, base_time + 3600000, 85.0) // Above threshold
+  TimeSeries::add_point(memory_series, base_time + 3600000, 95.0) // Above threshold
   
-  let too_many_attrs_issues = azimuth::QualityReport::get_issues_by_type(quality_report, "too_many_attributes")
-  assert_true(too_many_attrs_issues.length() > 0)
+  let alert_results = DashboardAlertEvaluator::evaluate(alert_evaluator, dashboard_provider)
+  assert_eq(alert_results.length(), 2) // cpu_usage and memory_usage alerts
   
-  // 结束所有Span
-  for span in spans {
-    azimuth::Span::end(span)
-  }
+  // Test dashboard widget configuration
+  let widget_config = DashboardWidgetConfig::new()
+  
+  let cpu_chart_widget = WidgetConfig::chart("CPU Usage")
+    .with_series("cpu_usage")
+    .with_chart_type("line")
+    .with_time_range("1h")
+    .with_refresh_interval(30000) // 30 seconds
+  
+  let memory_gauge_widget = WidgetConfig::gauge("Memory Usage")
+    .with_series("memory_usage")
+    .with_min_value(0.0)
+    .with_max_value(100.0)
+    .with_thresholds([70.0, 85.0, 95.0])
+  
+  let top_spans_widget = WidgetConfig::table("Top Spans by Duration")
+    .with_query("SELECT span_name, avg(duration) FROM spans GROUP BY span_name ORDER BY avg(duration) DESC LIMIT 10")
+    .with_columns(["span_name", "avg_duration"])
+  
+  DashboardWidgetConfig::add_widget(widget_config, cpu_chart_widget)
+  DashboardWidgetConfig::add_widget(widget_config, memory_gauge_widget)
+  DashboardWidgetConfig::add_widget(widget_config, top_spans_widget)
+  
+  assert_eq(DashboardWidgetConfig::widget_count(widget_config), 3)
+  
+  // Test dashboard rendering
+  let dashboard_renderer = DashboardRenderer::new()
+    .with_theme("dark")
+    .with_width(1200)
+    .with_height(800)
+  
+  let rendered_dashboard = DashboardRenderer::render(dashboard_renderer, widget_config, dashboard_provider)
+  assert_true(rendered_dashboard.length() > 0)
+  
+  // Test dashboard export
+  let dashboard_exporter = DashboardExporter::new()
+  
+  let pdf_export = DashboardExporter::export_to_pdf(dashboard_exporter, rendered_dashboard)
+  assert_true(pdf_export.length() > 0)
+  
+  let png_export = DashboardExporter::export_to_png(dashboard_exporter, rendered_dashboard)
+  assert_true(png_export.length() > 0)
 }
 
-// 测试9: 多环境遥测配置
-test "多环境遥测配置测试" {
-  // 创建不同环境的配置
-  let dev_config = azimuth::EnvironmentConfig::new("development")
-  azimuth::EnvironmentConfig::set_sampling_rate(dev_config, 1.0)  // 开发环境100%采样
-  azimuth::EnvironmentConfig::set_export_interval(dev_config, 5000)  // 5秒导出间隔
-  azimuth::EnvironmentConfig::enable_debug_mode(dev_config, true)
+// Test 10: Telemetry Security and Privacy
+test "telemetry security and privacy" {
+  // Test sensitive data detection
+  let sensitive_data_detector = SensitiveDataDetector::new()
+    .with_credit_card_detection(true)
+    .with_email_detection(true)
+    .with_phone_detection(true)
+    .with_ssn_detection(true)
   
-  let staging_config = azimuth::EnvironmentConfig::new("staging")
-  azimuth::EnvironmentConfig::set_sampling_rate(staging_config, 0.5)  // 预发布环境50%采样
-  azimuth::EnvironmentConfig::set_export_interval(staging_config, 10000)  // 10秒导出间隔
-  azimuth::EnvironmentConfig::enable_debug_mode(staging_config, false)
+  let telemetry_data = TelemetryData::new()
+    .with_attribute("user.email", "user@example.com")
+    .with_attribute("user.phone", "+1234567890")
+    .with_attribute("payment.card", "4111-1111-1111-1111")
+    .with_attribute("user.id", "12345")
+    .with_attribute("request.path", "/api/users")
   
-  let prod_config = azimuth::EnvironmentConfig::new("production")
-  azimuth::EnvironmentConfig::set_sampling_rate(prod_config, 0.1)  // 生产环境10%采样
-  azimuth::EnvironmentConfig::set_export_interval(prod_config, 30000)  // 30秒导出间隔
-  azimuth::EnvironmentConfig::enable_debug_mode(prod_config, false)
+  let detection_result = SensitiveDataDetector::detect(sensitive_data_detector, telemetry_data)
+  assert_eq(detection_result.sensitive_fields.length(), 3) // email, phone, credit card
+  assert_true(detection_result.sensitive_fields.contains("user.email"))
+  assert_true(detection_result.sensitive_fields.contains("user.phone"))
+  assert_true(detection_result.sensitive_fields.contains("payment.card"))
   
-  // 创建多环境配置管理器
-  let config_manager = azimuth::MultiEnvironmentConfigManager::new()
-  azimuth::MultiEnvironmentConfigManager::add_config(config_manager, "dev", dev_config)
-  azimuth::MultiEnvironmentConfigManager::add_config(config_manager, "staging", staging_config)
-  azimuth::MultiEnvironmentConfigManager::add_config(config_manager, "prod", prod_config)
+  // Test data redaction
+  let data_redactor = DataRedactor::new()
+    .with_redaction_strategy("partial") // Show first and last characters
+    .with_redaction_char("*")
   
-  // 测试不同环境的配置
-  let environments = ["dev", "staging", "prod"]
-  let telemetry_data = []
+  let redacted_data = DataRedactor::redact(data_redactor, telemetry_data, detection_result.sensitive_fields)
   
-  for env in environments {
-    let config = azimuth::MultiEnvironmentConfigManager::get_config(config_manager, env)
-    let env_name = azimuth::EnvironmentConfig::environment_name(config)
-    
-    // 创建环境特定的追踪器
-    let tracer_provider = azimuth::TracerProvider::with_config(config)
-    let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, env + "-service")
-    
-    // 创建测试Span
-    let span = azimuth::Tracer::start_span(tracer, env + "-operation")
-    azimuth::Span::set_attribute(span, "environment", azimuth::StringValue(env_name))
-    azimuth::Span::set_attribute(span, "sampling.rate", 
-      azimuth::FloatValue(azimuth::EnvironmentConfig::sampling_rate(config)))
-    azimuth::Span::set_attribute(span, "export.interval", 
-      azimuth::IntValue(azimuth::EnvironmentConfig::export_interval(config)))
-    
-    telemetry_data.push(span)
+  match TelemetryData::get_attribute(redacted_data, "user.email") {
+    Some(email) => assert_eq(email, "u***l@example.com")
+    None => assert_true(false)
   }
   
-  // 验证不同环境的配置差异
-  let dev_span = telemetry_data[0]
-  let staging_span = telemetry_data[1]
-  let prod_span = telemetry_data[2]
-  
-  let dev_attrs = azimuth::Span::attributes(dev_span)
-  let staging_attrs = azimuth::Span::attributes(staging_span)
-  let prod_attrs = azimuth::Span::attributes(prod_span)
-  
-  // 验证采样率
-  assert_eq(azimuth::Attributes::get(dev_attrs, "sampling.rate"), 
-    Some(azimuth::FloatValue(1.0)))
-  assert_eq(azimuth::Attributes::get(staging_attrs, "sampling.rate"), 
-    Some(azimuth::FloatValue(0.5)))
-  assert_eq(azimuth::Attributes::get(prod_attrs, "sampling.rate"), 
-    Some(azimuth::FloatValue(0.1)))
-  
-  // 验证导出间隔
-  assert_eq(azimuth::Attributes::get(dev_attrs, "export.interval"), 
-    Some(azimuth::IntValue(5000)))
-  assert_eq(azimuth::Attributes::get(staging_attrs, "export.interval"), 
-    Some(azimuth::IntValue(10000)))
-  assert_eq(azimuth::Attributes::get(prod_attrs, "export.interval"), 
-    Some(azimuth::IntValue(30000)))
-  
-  // 结束所有Span
-  for span in telemetry_data {
-    azimuth::Span::end(span)
-  }
-}
-
-// 测试10: 遥测数据的生命周期管理
-test "遥测数据生命周期管理测试" {
-  let tracer_provider = azimuth::TracerProvider::default()
-  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "lifecycle-test")
-  
-  // 创建生命周期管理器
-  let lifecycle_manager = azimuth::TelemetryLifecycleManager::new()
-  
-  // 配置生命周期策略
-  let lifecycle_policy = azimuth::LifecyclePolicy::new()
-  azimuth::LifecyclePolicy::set_hot_data_ttl(lifecycle_policy, 3600)  // 热数据1小时
-  azimuth::LifecyclePolicy::set_warm_data_ttl(lifecycle_policy, 86400)  // 温数据1天
-  azimuth::LifecyclePolicy::set_cold_data_ttl(lifecycle_policy, 2592000)  // 冷数据30天
-  azimuth::LifecyclePolicy::enable_auto_cleanup(lifecycle_policy, true)
-  
-  azimuth::TelemetryLifecycleManager::set_policy(lifecycle_manager, lifecycle_policy)
-  
-  // 创建不同时间的Span数据
-  let current_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let hour_in_nanos = 60 * 60 * 1000000000L
-  let day_in_nanos = 24 * hour_in_nanos
-  
-  let hot_data_spans = []
-  let warm_data_spans = []
-  let cold_data_spans = []
-  let expired_data_spans = []
-  
-  // 生成热数据 (最近1小时内)
-  for i in 0..10 {
-    let span_time = current_time - (i.to_long() * hour_in_nanos / 10)
-    let span = azimuth::Tracer::start_span_with_time(tracer, "hot-data-" + i.to_string(), span_time)
-    azimuth::Span::set_attribute(span, "data.tier", azimuth::StringValue("hot"))
-    hot_data_spans.push(span)
+  match TelemetryData::get_attribute(redacted_data, "user.phone") {
+    Some(phone) => assert_eq(phone, "+1******90")
+    None => assert_true(false)
   }
   
-  // 生成温数据 (1-24小时前)
-  for i in 0..10 {
-    let span_time = current_time - ((1 + i).to_long() * hour_in_nanos)
-    let span = azimuth::Tracer::start_span_with_time(tracer, "warm-data-" + i.to_string(), span_time)
-    azimuth::Span::set_attribute(span, "data.tier", azimuth::StringValue("warm"))
-    warm_data_spans.push(span)
+  match TelemetryData::get_attribute(redacted_data, "payment.card") {
+    Some(card) => assert_eq(card, "4***1")
+    None => assert_true(false)
   }
   
-  // 生成冷数据 (1-30天前)
-  for i in 0..10 {
-    let span_time = current_time - ((1 + i).to_long() * day_in_nanos)
-    let span = azimuth::Tracer::start_span_with_time(tracer, "cold-data-" + i.to_string(), span_time)
-    azimuth::Span::set_attribute(span, "data.tier", azimuth::StringValue("cold"))
-    cold_data_spans.push(span)
+  // Non-sensitive fields should remain unchanged
+  match TelemetryData::get_attribute(redacted_data, "user.id") {
+    Some(id) => assert_eq(id, "12345")
+    None => assert_true(false)
   }
   
-  // 生成过期数据 (超过30天前)
-  for i in 0..5 {
-    let span_time = current_time - ((31 + i).to_long() * day_in_nanos)
-    let span = azimuth::Tracer::start_span_with_time(tracer, "expired-data-" + i.to_string(), span_time)
-    azimuth::Span::set_attribute(span, "data.tier", azimuth::StringValue("expired"))
-    expired_data_spans.push(span)
+  // Test data encryption
+  let encryption_manager = EncryptionManager::new("encryption-key-12345")
+    .with_algorithm("aes-256-gcm")
+  
+  let sensitive_fields = ["user.email", "user.phone", "payment.card"]
+  let encrypted_data = EncryptionManager::encrypt_fields(encryption_manager, telemetry_data, sensitive_fields)
+  
+  // Encrypted fields should be unreadable
+  match TelemetryData::get_attribute(encrypted_data, "user.email") {
+    Some(encrypted_email) => assert_true(encrypted_email.length() > 0)
+    None => assert_true(false)
   }
   
-  // 执行生命周期管理
-  let all_spans = hot_data_spans + warm_data_spans + cold_data_spans + expired_data_spans
-  let lifecycle_result = azimuth::TelemetryLifecycleManager::process_spans(lifecycle_manager, all_spans)
+  // Test data decryption
+  let decrypted_data = EncryptionManager::decrypt_fields(encryption_manager, encrypted_data, sensitive_fields)
   
-  // 验证生命周期处理结果
-  let hot_data_count = azimuth::LifecycleResult::get_data_count(lifecycle_result, "hot")
-  let warm_data_count = azimuth::LifecycleResult::get_data_count(lifecycle_result, "warm")
-  let cold_data_count = azimuth::LifecycleResult::get_data_count(lifecycle_result, "cold")
-  let expired_data_count = azimuth::LifecycleResult::get_data_count(lifecycle_result, "expired")
-  
-  assert_eq(hot_data_count, 10)
-  assert_eq(warm_data_count, 10)
-  assert_eq(cold_data_count, 10)
-  assert_eq(expired_data_count, 0)  // 过期数据应该被清理
-  
-  // 验证清理操作
-  let cleanup_operations = azimuth::LifecycleResult::get_cleanup_operations(lifecycle_result)
-  assert_true(cleanup_operations.length() >= 5)  // 至少5个过期数据被清理
-  
-  // 验证数据迁移
-  let migration_operations = azimuth::LifecycleResult::get_migration_operations(lifecycle_result)
-  assert_true(migration_operations.length() > 0)  // 应该有数据迁移操作
-  
-  // 结束所有Span
-  for span in all_spans {
-    azimuth::Span::end(span)
+  match TelemetryData::get_attribute(decrypted_data, "user.email") {
+    Some(email) => assert_eq(email, "user@example.com")
+    None => assert_true(false)
   }
+  
+  // Test data access control
+  let access_controller = DataAccessController::new()
+  
+  // Define access policies
+  AccessController::add_policy(access_controller, "admin", ["*"]) // Full access
+  AccessController::add_policy(access_controller, "analyst", ["user.id", "request.path"]) // Limited access
+  AccessController::add_policy(access_controller, "viewer", ["request.path"]) // Minimal access
+  
+  // Test access control for different roles
+  let admin_access = AccessController::check_access(access_controller, "admin", telemetry_data)
+  assert_true(admin_access.can_access_all)
+  
+  let analyst_access = AccessController::check_access(access_controller, "analyst", telemetry_data)
+  assert_false(analyst_access.can_access_all)
+  assert_true(analyst_access.allowed_fields.contains("user.id"))
+  assert_true(analyst_access.allowed_fields.contains("request.path"))
+  assert_false(analyst_access.allowed_fields.contains("user.email"))
+  
+  let viewer_access = AccessController::check_access(access_controller, "viewer", telemetry_data)
+  assert_false(viewer_access.can_access_all)
+  assert_true(viewer_access.allowed_fields.contains("request.path"))
+  assert_false(viewer_access.allowed_fields.contains("user.id"))
+  
+  // Test data anonymization
+  let anonymizer = DataAnonymizer::new()
+    .with_hash_salt("anonymization-salt")
+    .with_pseudonymization(true)
+  
+  let anonymized_data = DataAnonymizer::anonymize(anonymizer, telemetry_data)
+  
+  // Pseudonymized fields should be consistent but not reveal original values
+  match TelemetryData::get_attribute(anonymized_data, "user.id") {
+    Some(anonymized_id) => {
+      assert_true(anonymized_id.length() > 0)
+      assert_false(anonymized_id == "12345")
+    }
+    None => assert_true(false)
+  }
+  
+  // Test data retention based on privacy regulations
+  let privacy_retention_manager = PrivacyRetentionManager::new()
+    .with_gdpr_retention_days(365) // GDPR: 1 year
+    .with_ccpa_retention_days(365) // CCPA: 1 year
+    .with_pii_auto_delete(true)
+  
+  let pii_data = PIIContainer::new()
+    .with_field("user.email", "user@example.com")
+    .with_field("user.phone", "+1234567890")
+    .with_timestamp(1640995200000) // 2022-01-01
+  
+  // Test if data should be retained
+  let current_time = 1640995200000 + (400 * 86400000) // 400 days later
+  let should_retain = PrivacyRetentionManager::should_retain(privacy_retention_manager, pii_data, current_time)
+  assert_false(should_retain) // Should be deleted after 365 days
+  
+  // Test consent management
+  let consent_manager = ConsentManager::new()
+  
+  ConsentManager::record_consent(consent_manager, "user-123", "analytics", true)
+  ConsentManager::record_consent(consent_manager, "user-123", "marketing", false)
+  ConsentManager::record_consent(consent_manager, "user-123", "personalization", true)
+  
+  assert_true(ConsentManager::has_consent(consent_manager, "user-123", "analytics"))
+  assert_false(ConsentManager::has_consent(consent_manager, "user-123", "marketing"))
+  assert_true(ConsentManager::has_consent(consent_manager, "user-123", "personalization"))
+  
+  // Test consent withdrawal
+  ConsentManager::withdraw_consent(consent_manager, "user-123", "analytics")
+  assert_false(ConsentManager::has_consent(consent_manager, "user-123", "analytics"))
+  
+  // Test data deletion based on consent withdrawal
+  let consent_deletion_manager = ConsentDeletionManager::new()
+  let deletion_result = ConsentDeletionManager::delete_user_data(consent_deletion_manager, "user-123")
+  assert_true(deletion_result.success)
+  assert_true(deletion_result.deleted_records > 0)
 }
