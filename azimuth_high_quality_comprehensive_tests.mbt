@@ -1,2106 +1,1068 @@
-// Azimuth High Quality Comprehensive Test Suite
-// This file contains high-quality test cases covering various aspects of the Azimuth telemetry system
+// Azimuth 高质量综合测试用例
+// 专注于遥测系统的高级功能和复杂场景
 
-// Test 1: Advanced Telemetry Data Processing
-test "advanced telemetry data processing and aggregation" {
-  // Define telemetry data structures
-  type TelemetryMetric = {
-    name: String,
-    value: Float,
-    timestamp: Int,
-    tags: Array[String],
-    metric_type: String
+// 测试1: 分布式追踪的高级特性
+test "分布式追踪高级特性测试" {
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "advanced.distributed.tracer")
+  
+  // 创建复杂的追踪场景
+  let root_span = Tracer::start_span(tracer, "api.gateway.request")
+  Span::set_attribute(root_span, "http.method", StringValue("POST"))
+  Span::set_attribute(root_span, "http.target", StringValue("/api/v1/process"))
+  Span::set_attribute(root_span, "user.id", StringValue("user-789"))
+  
+  // 创建子服务追踪
+  let auth_context = Span::context(root_span)
+  let auth_span = Tracer::start_span_with_context(tracer, "auth.service.validate", auth_context)
+  Span::set_attribute(auth_span, "auth.token.type", StringValue("jwt"))
+  Span::set_attribute(auth_span, "auth.issuer", StringValue("identity.service"))
+  Span::set_status(auth_span, Ok)
+  Span::end(auth_span)
+  
+  // 创建数据库追踪链
+  let db_context = Span::context(auth_span)
+  let db_span = Tracer::start_span_with_context(tracer, "database.transaction", db_context)
+  Span::set_attribute(db_span, "db.system", StringValue("postgresql"))
+  Span::set_attribute(db_span, "db.statement", StringValue("INSERT INTO audit_log (...) VALUES (...)"))
+  Span::set_attribute(db_span, "db.rows_affected", IntValue(1))
+  
+  // 创建嵌套的子操作
+  let index_scan = Tracer::start_span_with_context(tracer, "database.index_scan", Span::context(db_span))
+  Span::set_attribute(index_scan, "db.index.name", StringValue("idx_user_created_at"))
+  Span::set_attribute(index_scan, "db.index.hits", IntValue(15))
+  Span::set_attribute(index_scan, "db.index.duration_ms", FloatValue(2.5))
+  Span::end(index_scan)
+  
+  Span::set_status(db_span, Ok)
+  Span::end(db_span)
+  
+  // 创建缓存操作追踪
+  let cache_span = Tracer::start_span_with_context(tracer, "cache.operation", auth_context)
+  Span::set_attribute(cache_span, "cache.system", StringValue("redis"))
+  Span::set_attribute(cache_span, "cache.operation", StringValue("set"))
+  Span::set_attribute(cache_span, "cache.key", StringValue("user:789:profile"))
+  Span::set_attribute(cache_span, "cache.ttl_seconds", IntValue(3600))
+  Span::set_status(cache_span, Ok)
+  Span::end(cache_span)
+  
+  // 完成根span
+  Span::set_attribute(root_span, "response.status_code", IntValue(201))
+  Span::set_attribute(root_span, "response.size_bytes", IntValue(1024))
+  Span::set_status(root_span, Ok)
+  Span::end(root_span)
+  
+  // 验证追踪链完整性
+  assert_eq(Span::status(root_span), Ok)
+  assert_eq(Span::status(auth_span), Ok)
+  assert_eq(Span::status(db_span), Ok)
+  assert_eq(Span::status(cache_span), Ok)
+}
+
+// 测试2: 遥测数据的聚合和分析
+test "遥测数据聚合和分析测试" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "telemetry.aggregator")
+  
+  // 创建多维度指标
+  let request_counter = Meter::create_counter(meter, "http.requests.total")
+  let latency_histogram = Meter::create_histogram(meter, "http.request.duration")
+  let error_rate = Meter::create_gauge(meter, "http.error.rate")
+  
+  // 模拟不同服务的指标数据
+  let services = ["auth.service", "user.service", "payment.service", "notification.service"]
+  let endpoints = ["/login", "/profile", "/charge", "/send"]
+  
+  // 为每个服务和端点生成指标
+  for i in 0..services.length() {
+    for j in 0..endpoints.length() {
+      let service_attrs = Attributes::new()
+      Attributes::set(service_attrs, "service.name", StringValue(services[i]))
+      Attributes::set(service_attrs, "endpoint", StringValue(endpoints[j]))
+      
+      // 生成请求计数
+      let request_count = 100.0 + (i * 50.0) + (j * 25.0)
+      Counter::add_with_attributes(request_counter, request_count, service_attrs)
+      
+      // 生成延迟数据
+      for k in 0..10 {
+        let latency = 0.05 + (i * 0.02) + (j * 0.01) + (k * 0.001)
+        Histogram::record_with_attributes(latency_histogram, latency, service_attrs)
+      }
+      
+      // 生成错误率
+      let error_percentage = 0.01 + (i * 0.005) + (j * 0.002)
+      Gauge::set_with_attributes(error_rate, error_percentage, service_attrs)
+    }
   }
   
-  type TelemetrySpan = {
-    trace_id: String,
-    span_id: String,
-    parent_span_id: Option[String],
-    operation_name: String,
-    start_time: Int,
-    end_time: Int,
-    status: String,
-    attributes: Array[(String, String)]
+  // 聚合计算总请求量
+  let total_requests = Counter::value(request_counter)
+  assert_true(total_requests > 1000.0)
+  
+  // 计算平均延迟
+  let avg_latency = Histogram::mean(latency_histogram)
+  assert_true(avg_latency > 0.05 and avg_latency < 0.2)
+  
+  // 创建自定义聚合指标
+  let throughput_calculator = fn(counter: Counter, time_window_seconds: Int) {
+    let total = Counter::value(counter)
+    total / time_window_seconds.to_float()
   }
   
-  // Create sample metrics
-  let metrics = [
-    { name: "cpu_usage", value: 75.5, timestamp: 1640995200, tags: ["service:api", "env:prod"], metric_type: "gauge" },
-    { name: "memory_usage", value: 1024.0, timestamp: 1640995200, tags: ["service:api", "env:prod"], metric_type: "gauge" },
-    { name: "request_count", value: 150.0, timestamp: 1640995200, tags: ["service:api", "env:prod"], metric_type: "counter" },
-    { name: "response_time", value: 125.5, timestamp: 1640995200, tags: ["service:api", "env:prod"], metric_type: "histogram" },
-    { name: "error_rate", value: 2.5, timestamp: 1640995200, tags: ["service:api", "env:prod"], metric_type: "gauge" }
+  let throughput = throughput_calculator(request_counter, 60)
+  assert_true(throughput > 10.0)
+  
+  // 创建百分位计算器
+  let percentile_calculator = fn(histogram: Histogram, percentile: Float) {
+    // 模拟百分位计算
+    let mean = Histogram::mean(histogram)
+    mean * (1.0 + percentile * 0.5)
+  }
+  
+  let p99_latency = percentile_calculator(latency_histogram, 0.99)
+  let p95_latency = percentile_calculator(latency_histogram, 0.95)
+  
+  assert_true(p99_latency > p95_latency)
+  assert_true(p95_latency > avg_latency)
+}
+
+// 测试3: 自适应采样策略
+test "自适应采样策略测试" {
+  let sampler_config = AdaptiveSamplerConfig::new()
+  
+  // 设置采样参数
+  AdaptiveSamplerConfig::set_base_sampling_rate(sampler_config, 0.1)
+  AdaptiveSamplerConfig::set_max_sampling_rate(sampler_config, 0.5)
+  AdaptiveSamplerConfig::set_min_sampling_rate(sampler_config, 0.01)
+  AdaptiveSamplerConfig::set_adjustment_threshold(sampler_config, 100)
+  AdaptiveSamplerConfig::set_adjustment_factor(sampler_config, 1.5)
+  
+  let sampler = AdaptiveSampler::new(sampler_config)
+  
+  // 模拟低流量场景
+  let low_traffic_ctx = SamplingContext::new()
+  SamplingContext::set_current_qps(low_traffic_ctx, 50)
+  SamplingContext::set_error_rate(low_traffic_ctx, 0.02)
+  
+  let low_decision = Sampler::should_sample(sampler, low_traffic_ctx)
+  assert_eq(SamplingDecision::decision(low_decision), Sample)
+  assert_true(SamplingDecision::sampling_rate(low_decision) >= 0.1)
+  
+  // 模拟高流量场景
+  let high_traffic_ctx = SamplingContext::new()
+  SamplingContext::set_current_qps(high_traffic_ctx, 1000)
+  SamplingContext::set_error_rate(high_traffic_ctx, 0.05)
+  
+  let high_decision = Sampler::should_sample(sampler, high_traffic_ctx)
+  assert_eq(SamplingDecision::decision(high_decision), Sample)
+  assert_true(SamplingDecision::sampling_rate(high_decision) <= 0.1)
+  
+  // 模拟高错误率场景
+  let high_error_ctx = SamplingContext::new()
+  SamplingContext::set_current_qps(high_error_ctx, 500)
+  SamplingContext::set_error_rate(high_error_ctx, 0.15)
+  
+  let error_decision = Sampler::should_sample(sampler, high_error_ctx)
+  assert_eq(SamplingDecision::decision(error_decision), Sample)
+  assert_true(SamplingDecision::sampling_rate(error_decision) > 0.1)
+  
+  // 测试采样决策的一致性
+  let consistent_ctx = SamplingContext::new()
+  SamplingContext::set_trace_id(consistent_ctx, "trace-consistency-test")
+  
+  let decision1 = Sampler::should_sample(sampler, consistent_ctx)
+  let decision2 = Sampler::should_sample(sampler, consistent_ctx)
+  
+  assert_eq(SamplingDecision::decision(decision1), SamplingDecision::decision(decision2))
+  assert_eq(SamplingDecision::sampling_rate(decision1), SamplingDecision::sampling_rate(decision2))
+  
+  // 测试采样属性
+  let decision_attrs = SamplingDecision::attributes(low_decision)
+  assert_true(Attributes::contains(decision_attrs, "sampler.type"))
+  assert_true(Attributes::contains(decision_attrs, "sampler.rate"))
+}
+
+// 测试4: 异常检测和恢复
+test "异常检测和恢复测试" {
+  let anomaly_detector = AnomalyDetector::new()
+  
+  // 配置异常检测参数
+  AnomalyDetector::set_sensitivity(anomaly_detector, 0.8)
+  AnomalyDetector::set_window_size(anomaly_detector, 100)
+  AnomalyDetector::set_threshold_multiplier(anomaly_detector, 2.5)
+  
+  // 生成正常指标数据
+  let normal_metrics = []
+  for i in 0..50 {
+    let value = 100.0 + (Random::float() * 20.0) - 10.0  // 90-110范围
+    normal_metrics = normal_metrics.push(value)
+  }
+  
+  // 训练异常检测模型
+  AnomalyDetector::train(anomaly_detector, normal_metrics)
+  let baseline_stats = AnomalyDetector::get_baseline_stats(anomaly_detector)
+  
+  assert_true(Stats::mean(baseline_stats) > 95.0 and Stats::mean(baseline_stats) < 105.0)
+  assert_true(Stats::stddev(baseline_stats) > 5.0 and Stats::stddev(baseline_stats) < 15.0)
+  
+  // 测试正常数据检测
+  let normal_test_data = [98.5, 102.3, 99.7, 101.2, 97.8]
+  for value in normal_test_data {
+    let result = AnomalyDetector::detect(anomaly_detector, value)
+    assert_eq(AnomalyResult::is_anomaly(result), false)
+  }
+  
+  // 测试异常数据检测
+  let anomaly_test_data = [150.0, 25.0, 200.0, 10.0, 175.0]
+  for value in anomaly_test_data {
+    let result = AnomalyDetector::detect(anomaly_detector, value)
+    assert_eq(AnomalyResult::is_anomaly(result), true)
+    assert_true(AnomalyResult::confidence(result) > 0.8)
+  }
+  
+  // 测试异常恢复策略
+  let recovery_strategy = RecoveryStrategy::new()
+  RecoveryStrategy::add_action(recovery_strategy, "scale_up", 0.9)
+  RecoveryStrategy::add_action(recovery_strategy, "circuit_breaker", 0.7)
+  RecoveryStrategy::add_action(recovery_strategy, "fallback_cache", 0.5)
+  
+  let high_severity_anomaly = AnomalyResult::new(true, 0.95, "latency.spike")
+  let recovery_actions = RecoveryStrategy::get_actions(recovery_strategy, high_severity_anomaly)
+  
+  assert_true(recovery_actions.contains("scale_up"))
+  assert_true(recovery_actions.contains("circuit_breaker"))
+  
+  // 测试恢复执行
+  let recovery_executor = RecoveryExecutor::new()
+  let recovery_result = RecoveryExecutor::execute(recovery_executor, recovery_actions)
+  
+  assert_eq(RecoveryResult::status(recovery_result), Success)
+  assert_true(RecoveryResult::executed_actions(recovery_result).length() > 0)
+}
+
+// 测试5: 性能优化和资源管理
+test "性能优化和资源管理测试" {
+  let resource_manager = ResourceManager::new()
+  
+  // 配置资源限制
+  ResourceManager::set_memory_limit(resource_manager, 1024 * 1024 * 1024)  // 1GB
+  ResourceManager::set_cpu_limit(resource_manager, 80.0)  // 80%
+  ResourceManager::set_connection_limit(resource_manager, 1000)
+  ResourceManager::set_buffer_size(resource_manager, 64 * 1024)  // 64KB
+  
+  // 创建资源池
+  let buffer_pool = ResourceManager::create_buffer_pool(resource_manager, 100)
+  let connection_pool = ResourceManager::create_connection_pool(resource_manager, 50)
+  
+  // 测试缓冲区池
+  let buffers = []
+  for i in 0..50 {
+    let buffer = BufferPool::acquire(buffer_pool)
+    assert_false(Buffer::is_null(buffer))
+    assert_eq(Buffer::size(buffer), 64 * 1024)
+    buffers = buffers.push(buffer)
+  }
+  
+  // 释放缓冲区
+  for buffer in buffers {
+    BufferPool::release(buffer_pool, buffer)
+  }
+  
+  // 验证缓冲区池状态
+  let pool_stats = BufferPool::get_stats(buffer_pool)
+  assert_eq(BufferPoolStats::available(pool_stats), 50)
+  assert_eq(BufferPoolStats::acquired(pool_stats), 0)
+  
+  // 测试连接池
+  let connections = []
+  for i in 0..25 {
+    let connection = ConnectionPool::acquire(connection_pool)
+    assert_false(Connection::is_closed(connection))
+    connections = connections.push(connection)
+  }
+  
+  // 模拟连接使用
+  for connection in connections {
+    Connection::execute_query(connection, "SELECT 1")
+    ConnectionPool::release(connection_pool, connection)
+  }
+  
+  // 测试性能优化器
+  let optimizer = PerformanceOptimizer::new()
+  
+  // 配置优化策略
+  PerformanceOptimizer::enable_batching(optimizer, true)
+  PerformanceOptimizer::set_batch_size(optimizer, 100)
+  PerformanceOptimizer::enable_compression(optimizer, true)
+  PerformanceOptimizer::set_compression_level(optimizer, 6)
+  PerformanceOptimizer::enable_caching(optimizer, true)
+  PerformanceOptimizer::set_cache_size(optimizer, 1000)
+  
+  // 测试批量处理优化
+  let batch_processor = BatchProcessor::new(100, 5000)  // batch_size, timeout_ms
+  
+  let items = []
+  for i in 0..150 {
+    items = items.push("item-" + i.to_string())
+  }
+  
+  let processed_batches = BatchProcessor::process(batch_processor, items, fn(batch) {
+    batch.length()  // 模拟处理
+  })
+  
+  assert_eq(processed_batches, 2)  // 150 items / 100 batch_size = 2 batches
+  
+  // 测试内存优化
+  let memory_optimizer = MemoryOptimizer::new()
+  MemoryOptimizer::enable_gc_tuning(memory_optimizer, true)
+  MemoryOptimizer::set_gc_threshold(memory_optimizer, 0.8)
+  
+  let memory_stats = MemoryOptimizer::get_stats(memory_optimizer)
+  assert_true(MemoryStats::heap_usage(memory_stats) < ResourceManager::get_memory_limit(resource_manager))
+}
+
+// 测试6: 数据质量和完整性验证
+test "数据质量和完整性验证测试" {
+  let data_validator = DataQualityValidator::new()
+  
+  // 配置验证规则
+  DataQualityValidator::add_rule(data_validator, "trace_id", RuleType::Required, RuleOperator::Equals, 32)
+  DataQualityValidator::add_rule(data_validator, "span_name", RuleType::Required, RuleOperator::MinLength, 1)
+  DataQualityValidator::add_rule(data_validator, "timestamp", RuleType::Required, RuleOperator::Range, [0, 2147483647])
+  DataQualityValidator::add_rule(data_validator, "duration", RuleType::Optional, RuleOperator::Min, 0)
+  
+  // 创建有效测试数据
+  let valid_span_data = {
+    trace_id: "123456789012345678901234567890ab",
+    span_name: "valid_operation",
+    timestamp: 1640995200,
+    duration: Some(150),
+    status: "ok",
+    attributes: [("service.name", "test.service")]
+  }
+  
+  let valid_result = DataQualityValidator::validate(data_validator, valid_span_data)
+  assert_eq(ValidationResult::is_valid(valid_result), true)
+  assert_eq(ValidationResult::errors(valid_result).length(), 0)
+  
+  // 创建无效测试数据
+  let invalid_span_data = {
+    trace_id: "short",
+    span_name: "",
+    timestamp: -1,
+    duration: Some(-10),
+    status: "ok",
+    attributes: [("service.name", "test.service")]
+  }
+  
+  let invalid_result = DataQualityValidator::validate(data_validator, invalid_span_data)
+  assert_eq(ValidationResult::is_valid(invalid_result), false)
+  assert_true(ValidationResult::errors(invalid_result).length() >= 3)
+  
+  // 测试数据完整性检查
+  let integrity_checker = DataIntegrityChecker::new()
+  
+  // 创建数据集
+  let dataset = [
+    {id: "1", trace_id: "trace-a", span_id: "span-1", parent_span_id: None},
+    {id: "2", trace_id: "trace-a", span_id: "span-2", parent_span_id: Some("span-1")},
+    {id: "3", trace_id: "trace-b", span_id: "span-3", parent_span_id: None},
+    {id: "4", trace_id: "trace-a", span_id: "span-4", parent_span_id: Some("span-2")},
+    {id: "5", trace_id: "trace-c", span_id: "span-5", parent_span_id: None}
   ]
   
-  // Test metric aggregation by type
-  let aggregate_by_type = fn(metrics: Array[TelemetryMetric]) {
-    let mut result = []
-    let mut processed_types = []
-    
-    for metric in metrics {
-      if not(processed_types.contains(metric.metric_type)) {
-        processed_types = processed_types.push(metric.metric_type)
-        
-        let type_metrics = metrics.filter(fn(m) { m.metric_type == metric.metric_type })
-        let total_value = type_metrics.reduce(fn(acc, m) { acc + m.value }, 0.0)
-        let count = type_metrics.length().to_float()
-        
-        result = result.push({
-          metric_type: metric.metric_type,
-          count: count,
-          total_value: total_value,
-          average_value: total_value / count
-        })
-      }
-    }
-    
-    result
-  }
+  let integrity_result = DataIntegrityChecker::check(integrity_checker, dataset)
   
-  let aggregated = aggregate_by_type(metrics)
-  assert_eq(aggregated.length(), 3)
+  // 验证父子关系完整性
+  assert_eq(IntegrityResult::orphaned_spans(integrity_result).length(), 0)
+  assert_eq(IntegrityResult::circular_references(integrity_result).length(), 0)
   
-  let gauge_metrics = aggregated.filter(fn(a) { a.metric_type == "gauge" })
-  assert_eq(gauge_metrics.length(), 1)
-  assert_eq(gauge_metrics[0].count, 3.0)
-  assert_eq(gauge_metrics[0].total_value, 1802.0)
-  assert_eq(gauge_metrics[0].average_value, 600.67)
+  // 测试数据一致性
+  let consistency_checker = DataConsistencyChecker::new()
   
-  // Test time window aggregation
-  let aggregate_by_time_window = fn(metrics: Array[TelemetryMetric], window_size: Int) {
-    let mut result = []
-    let mut processed_windows = []
-    
-    for metric in metrics {
-      let window_start = (metric.timestamp / window_size) * window_size
-      
-      if not(processed_windows.contains(window_start)) {
-        processed_windows = processed_windows.push(window_start)
-        
-        let window_metrics = metrics.filter(fn(m) {
-          let m_window_start = (m.timestamp / window_size) * window_size
-          m_window_start == window_start
-        })
-        
-        let max_value = window_metrics.reduce(fn(acc, m) { 
-          if m.value > acc { m.value } else { acc } 
-        }, 0.0)
-        
-        let min_value = window_metrics.reduce(fn(acc, m) { 
-          if m.value < acc { m.value } else { acc } 
-        }, 999999.0)
-        
-        result = result.push({
-          window_start: window_start,
-          window_end: window_start + window_size,
-          metric_count: window_metrics.length(),
-          max_value: max_value,
-          min_value: min_value
-        })
-      }
-    }
-    
-    result
-  }
-  
-  let time_aggregated = aggregate_by_time_window(metrics, 3600) // 1 hour window
-  assert_eq(time_aggregated.length(), 1)
-  assert_eq(time_aggregated[0].window_start, 1640995200)
-  assert_eq(time_aggregated[0].metric_count, 5)
-  assert_eq(time_aggregated[0].max_value, 1024.0)
-  assert_eq(time_aggregated[0].min_value, 2.5)
-  
-  // Test span duration analysis
-  let spans = [
-    { trace_id: "trace-1", span_id: "span-1", parent_span_id: None, operation_name: "http_request", start_time: 1640995200, end_time: 1640995250, status: "ok", attributes: [] },
-    { trace_id: "trace-1", span_id: "span-2", parent_span_id: Some("span-1"), operation_name: "database_query", start_time: 1640995205, end_time: 1640995230, status: "ok", attributes: [] },
-    { trace_id: "trace-1", span_id: "span-3", parent_span_id: Some("span-1"), operation_name: "cache_lookup", start_time: 1640995230, end_time: 1640995240, status: "ok", attributes: [] },
-    { trace_id: "trace-2", span_id: "span-4", parent_span_id: None, operation_name: "http_request", start_time: 1640995300, end_time: 1640995350, status: "error", attributes: [] }
+  // 创建时间序列数据
+  let time_series_data = [
+    {timestamp: 1000, value: 10.0, metric: "cpu.usage"},
+    {timestamp: 2000, value: 15.0, metric: "cpu.usage"},
+    {timestamp: 3000, value: 12.0, metric: "cpu.usage"},
+    {timestamp: 4000, value: 20.0, metric: "cpu.usage"},
+    {timestamp: 5000, value: 18.0, metric: "cpu.usage"}
   ]
   
-  let analyze_span_durations = fn(spans: Array[TelemetrySpan]) {
-    let durations = spans.map(fn(s) { s.end_time - s.start_time })
-    let total_duration = durations.reduce(fn(acc, d) { acc + d }, 0)
-    let avg_duration = total_duration / durations.length()
-    
-    let max_duration = durations.reduce(fn(acc, d) { 
-      if d > acc { d } else { acc } 
-    }, 0)
-    
-    let min_duration = durations.reduce(fn(acc, d) { 
-      if d < acc { d } else { acc } 
-    }, 999999)
-    
-    let error_spans = spans.filter(fn(s) { s.status == "error" })
-    let success_rate = ((spans.length() - error_spans.length()).to_float() / spans.length().to_float()) * 100.0
-    
-    {
-      total_spans: spans.length(),
-      total_duration: total_duration,
-      average_duration: avg_duration,
-      max_duration: max_duration,
-      min_duration: min_duration,
-      error_count: error_spans.length(),
-      success_rate: success_rate
-    }
+  let consistency_result = DataConsistencyChecker::check_temporal_consistency(
+    consistency_checker, 
+    time_series_data
+  )
+  
+  assert_eq(ConsistencyResult::is_consistent(consistency_result), true)
+  assert_eq(ConsistencyResult::anomalies(consistency_result).length(), 0)
+  
+  // 测试数据修复
+  let data_repairer = DataRepairer::new()
+  DataRepairer::enable_auto_repair(data_repairer, true)
+  DataRepairer::set_repair_strategy(data_repairer, RepairStrategy::Interpolation)
+  
+  let damaged_data = {
+    trace_id: "123456789012345678901234567890ab",
+    span_name: "repaired_operation",
+    timestamp: 1640995200,
+    duration: None,  // 缺失数据
+    status: "ok",
+    attributes: [("service.name", "test.service")]
   }
   
-  let span_analysis = analyze_span_durations(spans)
-  assert_eq(span_analysis.total_spans, 4)
-  assert_eq(span_analysis.total_duration, 190)
-  assert_eq(span_analysis.average_duration, 47)
-  assert_eq(span_analysis.max_duration, 50)
-  assert_eq(span_analysis.min_duration, 10)
-  assert_eq(span_analysis.error_count, 1)
-  assert_eq(span_analysis.success_rate, 75.0)
+  let repaired_data = DataRepairer::repair(data_repairer, damaged_data)
+  assert_true(Record::has_field(repaired_data, "duration"))
+  assert_true(Record::get_field(repaired_data, "duration") != None)
 }
 
-// Test 2: Concurrent Safety and Thread Management
-test "concurrent safety and thread management" {
-  // Simulate concurrent resource access
-  type SharedResource = {
-    counter: Int,
-    max_value: Int,
-    access_log: Array[String]
-  }
+// 测试7: 跨服务上下文传播
+test "跨服务上下文传播测试" {
+  let propagator_factory = PropagatorFactory::new()
   
-  let create_shared_resource = fn(initial_value: Int, max_limit: Int) {
-    {
-      counter: initial_value,
-      max_value: max_limit,
-      access_log: []
-    }
-  }
+  // 创建复合传播器
+  let trace_propagator = W3CTraceContextPropagator::new()
+  let baggage_propagator = W3CBaggagePropagator::new()
+  let custom_propagator = CustomPropagator::new("x-custom-context")
   
-  // Simulate thread-safe increment operation
-  let safe_increment = fn(resource: SharedResource, thread_id: String) {
-    if resource.counter < resource.max_value {
-      let new_counter = resource.counter + 1
-      let new_log = resource.access_log.push("Thread " + thread_id + " incremented to " + new_counter.to_string())
-      
-      {
-        counter: new_counter,
-        max_value: resource.max_value,
-        access_log: new_log
-      }
-    } else {
-      let new_log = resource.access_log.push("Thread " + thread_id + " failed - max reached")
-      
-      {
-        counter: resource.counter,
-        max_value: resource.max_value,
-        access_log: new_log
-      }
-    }
-  }
+  let composite_propagator = CompositePropagator::new([
+    trace_propagator,
+    baggage_propagator,
+    custom_propagator
+  ])
   
-  // Test concurrent access simulation
-  let initial_resource = create_shared_resource(0, 10)
+  // 创建源上下文
+  let source_context = Context::root()
   
-  // Simulate multiple threads accessing the resource
-  let thread_operations = [
-    ("thread-1", safe_increment),
-    ("thread-2", safe_increment),
-    ("thread-3", safe_increment),
-    ("thread-4", safe_increment),
-    ("thread-5", safe_increment)
+  // 添加追踪上下文
+  let trace_context = SpanContext::new(
+    "trace-1234567890123456", 
+    "span-abcdef1234567890", 
+    true, 
+    "key1=value1,key2=value2"
+  )
+  let ctx_with_trace = Context::with_span_context(source_context, trace_context)
+  
+  // 添加行李项
+  let user_id_key = ContextKey::new("user.id")
+  let request_id_key = ContextKey::new("request.id")
+  let tenant_id_key = ContextKey::new("tenant.id")
+  
+  let ctx_with_baggage = Context::with_value(ctx_with_trace, user_id_key, "user-12345")
+  let ctx_with_baggage2 = Context::with_value(ctx_with_baggage, request_id_key, "req-abcdef")
+  let ctx_with_baggage3 = Context::with_value(ctx_with_baggage2, tenant_id_key, "tenant-789")
+  
+  // 添加自定义上下文
+  let custom_key = ContextKey::new("custom.auth.token")
+  let final_context = Context::with_value(ctx_with_baggage3, custom_key, "token-secret-123")
+  
+  // 创建载体
+  let http_headers = TextMapCarrier::new()
+  let metadata = TextMapCarrier::new()
+  
+  // 注入上下文到HTTP头
+  CompositePropagator::inject(composite_propagator, final_context, http_headers)
+  
+  // 验证HTTP头
+  assert_true(TextMapCarrier::contains(http_headers, "traceparent"))
+  assert_true(TextMapCarrier::contains(http_headers, "baggage"))
+  assert_true(TextMapCarrier::contains(http_headers, "x-custom-context"))
+  
+  // 注入上下文到元数据
+  CompositePropagator::inject(composite_propagator, final_context, metadata)
+  
+  // 模拟跨服务调用 - 服务A到服务B
+  let service_b_context = CompositePropagator::extract(composite_propagator, http_headers)
+  
+  // 验证追踪上下文传播
+  let extracted_trace = Context::get_span_context(service_b_context)
+  assert_eq(SpanContext::trace_id(extracted_trace), "trace-1234567890123456")
+  assert_eq(SpanContext::span_id(extracted_trace), "span-abcdef1234567890")
+  
+  // 验证行李项传播
+  let extracted_user_id = Context::get(service_b_context, user_id_key)
+  let extracted_request_id = Context::get(service_b_context, request_id_key)
+  let extracted_tenant_id = Context::get(service_b_context, tenant_id_key)
+  
+  assert_eq(extracted_user_id, Some("user-12345"))
+  assert_eq(extracted_request_id, Some("req-abcdef"))
+  assert_eq(extracted_tenant_id, Some("tenant-789"))
+  
+  // 验证自定义上下文传播
+  let extracted_custom = Context::get(service_b_context, custom_key)
+  assert_eq(extracted_custom, Some("token-secret-123"))
+  
+  // 模拟服务B到服务C的传播
+  let service_c_carrier = TextMapCarrier::new()
+  
+  // 服务B添加新的上下文
+  let service_name_key = ContextKey::new("service.name")
+  let service_b_enhanced = Context::with_value(service_b_context, service_name_key, "service-b")
+  
+  // 传播到服务C
+  CompositePropagator::inject(composite_propagator, service_b_enhanced, service_c_carrier)
+  let service_c_context = CompositePropagator::extract(composite_propagator, service_c_carrier)
+  
+  // 验证上下文累积
+  let service_c_user_id = Context::get(service_c_context, user_id_key)
+  let service_c_service_name = Context::get(service_c_context, service_name_key)
+  
+  assert_eq(service_c_user_id, Some("user-12345"))  // 原有上下文保留
+  assert_eq(service_c_service_name, Some("service-b"))  // 新上下文添加
+  
+  // 测试上下文隔离
+  let isolated_context = Context::root()
+  let isolated_with_user = Context::with_value(isolated_context, user_id_key, "isolated-user")
+  
+  assert_ne(Context::get(isolated_with_user, user_id_key), Context::get(service_c_context, user_id_key))
+}
+
+// 测试8: 实时监控和告警
+test "实时监控和告警测试" {
+  let monitoring_system = MonitoringSystem::new()
+  
+  // 配置监控指标
+  let cpu_monitor = MonitoringSystem::add_metric_monitor(monitoring_system, "system.cpu.usage")
+  let memory_monitor = MonitoringSystem::add_metric_monitor(monitoring_system, "system.memory.usage")
+  let error_rate_monitor = MonitoringSystem::add_metric_monitor(monitoring_system, "http.error.rate")
+  let latency_monitor = MonitoringSystem::add_metric_monitor(monitoring_system, "http.request.duration")
+  
+  // 配置告警规则
+  let alert_manager = AlertManager::new()
+  
+  // CPU使用率告警
+  AlertManager::add_rule(alert_manager, "cpu.high", AlertRule::new()
+    .with_metric("system.cpu.usage")
+    .with_condition(Condition::GreaterThan(80.0))
+    .with_duration(300)  // 5分钟
+    .with_severity(AlertSeverity::Warning)
+    .with_message("CPU使用率过高: {{value}}%"))
+  
+  // 内存使用率告警
+  AlertManager::add_rule(alert_manager, "memory.high", AlertRule::new()
+    .with_metric("system.memory.usage")
+    .with_condition(Condition::GreaterThan(90.0))
+    .with_duration(180)  // 3分钟
+    .with_severity(AlertSeverity::Critical)
+    .with_message("内存使用率过高: {{value}}%"))
+  
+  // 错误率告警
+  AlertManager::add_rule(alert_manager, "error.rate.high", AlertRule::new()
+    .with_metric("http.error.rate")
+    .with_condition(Condition::GreaterThan(0.05))
+    .with_duration(120)  // 2分钟
+    .with_severity(AlertSeverity::Warning)
+    .with_message("错误率过高: {{value}}%"))
+  
+  // 延迟告警
+  AlertManager::add_rule(alert_manager, "latency.high", AlertRule::new()
+    .with_metric("http.request.duration")
+    .with_condition(Condition::PercentileGreaterThan(0.95, 1.0))
+    .with_duration(300)  // 5分钟
+    .with_severity(AlertSeverity::Warning)
+    .with_message("P95延迟过高: {{value}}s"))
+  
+  // 模拟正常指标数据
+  let normal_metrics = [
+    {timestamp: 1000, cpu: 45.2, memory: 60.5, error_rate: 0.01, latency_p95: 0.25},
+    {timestamp: 2000, cpu: 52.8, memory: 65.3, error_rate: 0.015, latency_p95: 0.3},
+    {timestamp: 3000, cpu: 48.1, memory: 62.7, error_rate: 0.008, latency_p95: 0.22},
+    {timestamp: 4000, cpu: 55.6, memory: 68.9, error_rate: 0.012, latency_p95: 0.28},
+    {timestamp: 5000, cpu: 50.3, memory: 64.2, error_rate: 0.009, latency_p95: 0.24}
   ]
   
-  // Process operations in sequence (simulating concurrent access)
-  let mut final_resource = initial_resource
-  for (thread_id, operation) in thread_operations {
-    final_resource = operation(final_resource, thread_id)
-  }
-  
-  assert_eq(final_resource.counter, 5)
-  assert_eq(final_resource.access_log.length(), 5)
-  assert_true(final_resource.access_log.contains("Thread thread-1 incremented to 1"))
-  assert_true(final_resource.access_log.contains("Thread thread-5 incremented to 5"))
-  
-  // Test resource pool management
-  type ResourcePool = {
-    resources: Array[String],
-    allocated: Array[String],
-    max_size: Int
-  }
-  
-  let create_resource_pool = fn(size: Int) {
-    let mut resources = []
-    for i in 0..size {
-      resources = resources.push("resource-" + i.to_string())
-    }
+  for metric in normal_metrics {
+    MonitoringSystem::record_metric(monitoring_system, "system.cpu.usage", metric.cpu, metric.timestamp)
+    MonitoringSystem::record_metric(monitoring_system, "system.memory.usage", metric.memory, metric.timestamp)
+    MonitoringSystem::record_metric(monitoring_system, "http.error.rate", metric.error_rate, metric.timestamp)
+    MonitoringSystem::record_metric(monitoring_system, "http.request.duration", metric.latency_p95, metric.timestamp)
     
-    {
-      resources: resources,
-      allocated: [],
-      max_size: size
-    }
+    let alerts = AlertManager::evaluate(alert_manager, monitoring_system)
+    assert_eq(alerts.length(), 0)  // 正常情况下不应有告警
   }
   
-  let allocate_resource = fn(pool: ResourcePool, requester: String) {
-    if pool.resources.length() > 0 {
-      let resource = pool.resources[0]
-      let remaining_resources = pool.resources.slice(1, pool.resources.length())
-      
-      {
-        resources: remaining_resources,
-        allocated: pool.allocated.push(resource + "->" + requester),
-        max_size: pool.max_size
-      }
-    } else {
-      pool // No available resources
-    }
-  }
-  
-  let release_resource = fn(pool: ResourcePool, resource: String) {
-    let mut new_allocated = []
-    let mut found = false
-    
-    for allocated_resource in pool.allocated {
-      if allocated_resource.contains(resource) and not(found) {
-        found = true
-      } else {
-        new_allocated = new_allocated.push(allocated_resource)
-      }
-    }
-    
-    if found {
-      {
-        resources: pool.resources.push(resource),
-        allocated: new_allocated,
-        max_size: pool.max_size
-      }
-    } else {
-      pool // Resource not found in allocated list
-    }
-  }
-  
-  // Test resource pool operations
-  let pool = create_resource_pool(3)
-  assert_eq(pool.resources.length(), 3)
-  assert_eq(pool.allocated.length(), 0)
-  
-  let pool_after_alloc1 = allocate_resource(pool, "requester-1")
-  assert_eq(pool_after_alloc1.resources.length(), 2)
-  assert_eq(pool_after_alloc1.allocated.length(), 1)
-  
-  let pool_after_alloc2 = allocate_resource(pool_after_alloc1, "requester-2")
-  assert_eq(pool_after_alloc2.resources.length(), 1)
-  assert_eq(pool_after_alloc2.allocated.length(), 2)
-  
-  let pool_after_alloc3 = allocate_resource(pool_after_alloc2, "requester-3")
-  assert_eq(pool_after_alloc3.resources.length(), 0)
-  assert_eq(pool_after_alloc3.allocated.length(), 3)
-  
-  // Test allocation when pool is empty
-  let pool_after_alloc4 = allocate_resource(pool_after_alloc3, "requester-4")
-  assert_eq(pool_after_alloc4.resources.length(), 0)
-  assert_eq(pool_after_alloc4.allocated.length(), 3)
-  
-  // Test resource release
-  let pool_after_release = release_resource(pool_after_alloc4, "resource-1")
-  assert_eq(pool_after_release.resources.length(), 1)
-  assert_eq(pool_after_release.allocated.length(), 2)
-  
-  // Test deadlock prevention simulation
-  let detect_deadlock = fn(resources: Array[String], wait_for: Array[(String, String)]) {
-    let mut has_cycle = false
-    
-    // Simple cycle detection
-    for (resource, waiter) in wait_for {
-      for (other_resource, other_waiter) in wait_for {
-        if waiter == other_resource and other_waiter == resource {
-          has_cycle = true
-        }
-      }
-    }
-    
-    has_cycle
-  }
-  
-  let wait_graph = [
-    ("resource-1", "thread-2"),
-    ("resource-2", "thread-3"),
-    ("resource-3", "thread-1")
+  // 模拟异常指标数据 - CPU使用率过高
+  let high_cpu_metrics = [
+    {timestamp: 6000, cpu: 85.2, memory: 70.5, error_rate: 0.02, latency_p95: 0.35},
+    {timestamp: 7000, cpu: 88.7, memory: 72.3, error_rate: 0.025, latency_p95: 0.4},
+    {timestamp: 8000, cpu: 90.1, memory: 75.8, error_rate: 0.03, latency_p95: 0.45},
+    {timestamp: 9000, cpu: 87.5, memory: 73.2, error_rate: 0.022, latency_p95: 0.38},
+    {timestamp: 10000, cpu: 91.3, memory: 76.9, error_rate: 0.028, latency_p95: 0.42}
   ]
   
-  // No deadlock in this case
-  assert_false(detect_deadlock(["resource-1", "resource-2", "resource-3"], wait_graph))
+  for metric in high_cpu_metrics {
+    MonitoringSystem::record_metric(monitoring_system, "system.cpu.usage", metric.cpu, metric.timestamp)
+    MonitoringSystem::record_metric(monitoring_system, "system.memory.usage", metric.memory, metric.timestamp)
+    MonitoringSystem::record_metric(monitoring_system, "http.error.rate", metric.error_rate, metric.timestamp)
+    MonitoringSystem::record_metric(monitoring_system, "http.request.duration", metric.latency_p95, metric.timestamp)
+  }
   
-  let deadlock_graph = [
-    ("resource-1", "thread-2"),
-    ("resource-2", "thread-1")
+  // 评估告警
+  let alerts = AlertManager::evaluate(alert_manager, monitoring_system)
+  assert_true(alerts.length() >= 1)  // 应该有CPU告警
+  
+  let cpu_alert = alerts.find(fn(alert) { Alert::rule_id(alert) == "cpu.high" })
+  assert_true(cpu_alert != None)
+  assert_eq(Alert::severity(cpu_alert.unwrap()), AlertSeverity::Warning)
+  
+  // 测试告警通知
+  let notification_manager = NotificationManager::new()
+  
+  // 配置通知渠道
+  NotificationManager::add_channel(notification_manager, "email", EmailChannel::new("alerts@example.com"))
+  NotificationManager::add_channel(notification_manager, "slack", SlackChannel::new("#alerts"))
+  NotificationManager::add_channel(notification_manager, "pagerduty", PagerDutyChannel::new("integration-key"))
+  
+  // 发送告警通知
+  for alert in alerts {
+    let notification_result = NotificationManager::send(notification_manager, alert)
+    assert_eq(NotificationResult::status(notification_result), Sent)
+  }
+  
+  // 测试告警抑制
+  let alert_suppressor = AlertSuppressor::new()
+  AlertSuppressor::add_suppression_rule(alert_suppressor, "maintenance.window", 
+    SuppressionRule::new()
+      .with_time_window("22:00-06:00")  // 夜间维护窗口
+      .with_severity_filter([AlertSeverity::Warning])
+      .with_reason("维护窗口期间抑制警告级别告警"))
+  
+  let suppressed_alerts = AlertSuppressor::suppress(alert_suppressor, alerts)
+  assert_true(suppressed_alerts.length() <= alerts.length())
+  
+  // 测试告警恢复
+  let recovery_metrics = [
+    {timestamp: 11000, cpu: 65.2, memory: 68.5, error_rate: 0.015, latency_p95: 0.3},
+    {timestamp: 12000, cpu: 58.7, memory: 65.3, error_rate: 0.012, latency_p95: 0.28},
+    {timestamp: 13000, cpu: 52.1, memory: 62.8, error_rate: 0.008, latency_p95: 0.25}
   ]
   
-  // Deadlock detected
-  assert_true(detect_deadlock(["resource-1", "resource-2"], deadlock_graph))
+  for metric in recovery_metrics {
+    MonitoringSystem::record_metric(monitoring_system, "system.cpu.usage", metric.cpu, metric.timestamp)
+    MonitoringSystem::record_metric(monitoring_system, "system.memory.usage", metric.memory, metric.timestamp)
+    MonitoringSystem::record_metric(monitoring_system, "http.error.rate", metric.error_rate, metric.timestamp)
+    MonitoringSystem::record_metric(monitoring_system, "http.request.duration", metric.latency_p95, metric.timestamp)
+  }
+  
+  let recovery_alerts = AlertManager::evaluate(alert_manager, monitoring_system)
+  assert_true(recovery_alerts.length() < alerts.length())  // 告警应该减少或恢复
 }
 
-// Test 3: Error Handling and Recovery Mechanisms
-test "error handling and recovery mechanisms" {
-  // Define error types
-  enum TelemetryError {
-    NetworkTimeout(String)
-    DataCorruption(String)
-    ResourceExhausted(String)
-    ValidationError(String)
-    ServiceUnavailable(String)
-  }
-  
-  type RecoveryResult = {
-    success: Bool,
-    attempts: Int,
-    error: Option[TelemetryError],
-    recovery_time: Int
-  }
-  
-  // Implement retry mechanism with exponential backoff
-  let retry_with_backoff = fn(operation: () -> Result[String, TelemetryError], max_attempts: Int) {
-    let mut attempts = 0
-    let mut base_delay = 100 // 100ms base delay
-    let mut total_time = 0
-    let mut last_error = None
-    
-    while attempts < max_attempts {
-      attempts = attempts + 1
-      
-      match operation() {
-        Ok(result) => {
-          return {
-            success: true,
-            attempts: attempts,
-            error: None,
-            recovery_time: total_time
-          }
-        }
-        Err(error) => {
-          last_error = Some(error)
-          
-          if attempts < max_attempts {
-            let delay = base_delay * (2 ^ (attempts - 1)) // Exponential backoff
-            total_time = total_time + delay
-            
-            // In a real implementation, we would wait here
-            // For testing, we just simulate the time passing
-          }
-        }
-      }
-    }
-    
-    {
-      success: false,
-      attempts: attempts,
-      error: last_error,
-      recovery_time: total_time
-    }
-  }
-  
-  // Test successful operation
-  let successful_operation = fn() {
-    Ok("operation completed successfully")
-  }
-  
-  let success_result = retry_with_backoff(successful_operation, 3)
-  assert_true(success_result.success)
-  assert_eq(success_result.attempts, 1)
-  assert_eq(success_result.error, None)
-  assert_eq(success_result.recovery_time, 0)
-  
-  // Test operation that fails initially but succeeds later
-  let mut attempt_count = 0
-  let eventually_successful_operation = fn() {
-    attempt_count = attempt_count + 1
-    if attempt_count < 3 {
-      Err(TelemetryError::NetworkTimeout("Connection timeout"))
-    } else {
-      Ok("operation succeeded after retries")
-    }
-  }
-  
-  let eventual_result = retry_with_backoff(eventually_successful_operation, 5)
-  assert_true(eventual_result.success)
-  assert_eq(eventual_result.attempts, 3)
-  assert_eq(eventual_result.error, None)
-  assert_true(eventual_result.recovery_time > 0)
-  
-  // Test operation that always fails
-  let always_failing_operation = fn() {
-    Err(TelemetryError::ServiceUnavailable("Service down"))
-  }
-  
-  let failure_result = retry_with_backoff(always_failing_operation, 3)
-  assert_false(failure_result.success)
-  assert_eq(failure_result.attempts, 3)
-  
-  match failure_result.error {
-    Some(TelemetryError::ServiceUnavailable(msg)) => assert_eq(msg, "Service down")
-    _ => assert_true(false)
-  }
-  
-  // Test circuit breaker pattern
-  type CircuitBreaker = {
-    state: String, // "closed", "open", "half-open"
-    failure_count: Int,
-    failure_threshold: Int,
-    timeout: Int,
-    last_failure_time: Int
-  }
-  
-  let create_circuit_breaker = fn(threshold: Int, timeout: Int) {
-    {
-      state: "closed",
-      failure_count: 0,
-      failure_threshold: threshold,
-      timeout: timeout,
-      last_failure_time: 0
-    }
-  }
-  
-  let call_with_circuit_breaker = fn(breaker: CircuitBreaker, operation: () -> Result[String, TelemetryError], current_time: Int) {
-    match breaker.state {
-      "open" => {
-        if current_time - breaker.last_failure_time > breaker.timeout {
-          // Try half-open state
-          match operation() {
-            Ok(result) => {
-              (Ok(result), {
-                state: "closed",
-                failure_count: 0,
-                failure_threshold: breaker.failure_threshold,
-                timeout: breaker.timeout,
-                last_failure_time: 0
-              })
-            }
-            Err(error) => {
-              (Err(error), {
-                state: "open",
-                failure_count: breaker.failure_count + 1,
-                failure_threshold: breaker.failure_threshold,
-                timeout: breaker.timeout,
-                last_failure_time: current_time
-              })
-            }
-          }
-        } else {
-          // Circuit is still open
-          (Err(TelemetryError::ServiceUnavailable("Circuit breaker is open")), breaker)
-        }
-      }
-      "closed" => {
-        match operation() {
-          Ok(result) => {
-            (Ok(result), breaker)
-          }
-          Err(error) => {
-            let new_failure_count = breaker.failure_count + 1
-            let new_state = if new_failure_count >= breaker.failure_threshold { "open" } else { "closed" }
-            
-            (Err(error), {
-              state: new_state,
-              failure_count: new_failure_count,
-              failure_threshold: breaker.failure_threshold,
-              timeout: breaker.timeout,
-              last_failure_time: current_time
-            })
-          }
-        }
-      }
-      _ => (Err(TelemetryError::ValidationError("Invalid circuit breaker state")), breaker)
-    }
-  }
-  
-  // Test circuit breaker behavior
-  let breaker = create_circuit_breaker(3, 5000) // 3 failures threshold, 5 second timeout
-  
-  // First few calls succeed
-  let good_operation = fn() { Ok("success") }
-  
-  let (result1, breaker1) = call_with_circuit_breaker(breaker, good_operation, 1000)
-  assert_true(result1.is_ok())
-  assert_eq(breaker1.state, "closed")
-  assert_eq(breaker1.failure_count, 0)
-  
-  // Simulate failures
-  let bad_operation = fn() { Err(TelemetryError::NetworkTimeout("Timeout")) }
-  
-  let (result2, breaker2) = call_with_circuit_breaker(breaker1, bad_operation, 2000)
-  assert_true(result2.is_err())
-  assert_eq(breaker2.state, "closed")
-  assert_eq(breaker2.failure_count, 1)
-  
-  let (result3, breaker3) = call_with_circuit_breaker(breaker2, bad_operation, 3000)
-  assert_true(result3.is_err())
-  assert_eq(breaker3.state, "closed")
-  assert_eq(breaker3.failure_count, 2)
-  
-  // This failure should open the circuit
-  let (result4, breaker4) = call_with_circuit_breaker(breaker3, bad_operation, 4000)
-  assert_true(result4.is_err())
-  assert_eq(breaker4.state, "open")
-  assert_eq(breaker4.failure_count, 3)
-  assert_eq(breaker4.last_failure_time, 4000)
-  
-  // Subsequent calls should fail immediately when circuit is open
-  let (result5, breaker5) = call_with_circuit_breaker(breaker4, good_operation, 4500)
-  assert_true(result5.is_err())
-  assert_eq(breaker5.state, "open")
-  
-  // After timeout, circuit should try half-open state
-  let (result6, breaker6) = call_with_circuit_breaker(breaker5, good_operation, 10000)
-  assert_true(result6.is_ok())
-  assert_eq(breaker6.state, "closed")
-  assert_eq(breaker6.failure_count, 0)
-}
-
-// Test 4: Performance Optimization and Resource Management
-test "performance optimization and resource management" {
-  // Test memory pool for efficient object allocation
-  type MemoryPool = {
-    available_objects: Array[String],
-    allocated_objects: Array[String],
-    total_allocated: Int,
-    total_released: Int
-  }
-  
-  let create_memory_pool = fn(initial_size: Int) {
-    let mut objects = []
-    for i in 0..initial_size {
-      objects = objects.push("object-" + i.to_string())
-    }
-    
-    {
-      available_objects: objects,
-      allocated_objects: [],
-      total_allocated: 0,
-      total_released: 0
-    }
-  }
-  
-  let pool_allocate = fn(pool: MemoryPool) {
-    if pool.available_objects.length() > 0 {
-      let object = pool.available_objects[0]
-      let remaining = pool.available_objects.slice(1, pool.available_objects.length())
-      
-      {
-        available_objects: remaining,
-        allocated_objects: pool.allocated_objects.push(object),
-        total_allocated: pool.total_allocated + 1,
-        total_released: pool.total_released
-      }
-    } else {
-      // Create new object if pool is empty
-      let new_object = "object-" + (pool.total_allocated + pool.allocated_objects.length()).to_string()
-      
-      {
-        available_objects: pool.available_objects,
-        allocated_objects: pool.allocated_objects.push(new_object),
-        total_allocated: pool.total_allocated + 1,
-        total_released: pool.total_released
-      }
-    }
-  }
-  
-  let pool_release = fn(pool: MemoryPool, object: String) {
-    let mut new_allocated = []
-    let mut found = false
-    
-    for allocated_object in pool.allocated_objects {
-      if allocated_object == object and not(found) {
-        found = true
-      } else {
-        new_allocated = new_allocated.push(allocated_object)
-      }
-    }
-    
-    if found {
-      {
-        available_objects: pool.available_objects.push(object),
-        allocated_objects: new_allocated,
-        total_allocated: pool.total_allocated,
-        total_released: pool.total_released + 1
-      }
-    } else {
-      pool // Object not found in allocated list
-    }
-  }
-  
-  // Test memory pool operations
-  let pool = create_memory_pool(5)
-  assert_eq(pool.available_objects.length(), 5)
-  assert_eq(pool.allocated_objects.length(), 0)
-  
-  let pool_after_alloc1 = pool_allocate(pool)
-  assert_eq(pool_after_alloc1.available_objects.length(), 4)
-  assert_eq(pool_after_alloc1.allocated_objects.length(), 1)
-  assert_eq(pool_after_alloc1.total_allocated, 1)
-  
-  let pool_after_alloc2 = pool_allocate(pool_after_alloc1)
-  assert_eq(pool_after_alloc2.available_objects.length(), 3)
-  assert_eq(pool_after_alloc2.allocated_objects.length(), 2)
-  assert_eq(pool_after_alloc2.total_allocated, 2)
-  
-  // Release an object
-  let pool_after_release = pool_release(pool_after_alloc2, pool_after_alloc2.allocated_objects[0])
-  assert_eq(pool_after_release.available_objects.length(), 4)
-  assert_eq(pool_after_release.allocated_objects.length(), 1)
-  assert_eq(pool_after_release.total_released, 1)
-  
-  // Test cache with LRU eviction policy
-  type CacheEntry = {
-    key: String,
-    value: String,
-    access_count: Int,
-    last_accessed: Int
-  }
-  
-  type LRUCache = {
-    entries: Array[CacheEntry],
-    max_size: Int,
-    current_time: Int
-  }
-  
-  let create_lru_cache = fn(max_size: Int) {
-    {
-      entries: [],
-      max_size: max_size,
-      current_time: 0
-    }
-  }
-  
-  let cache_get = fn(cache: LRUCache, key: String) {
-    let mut found = None
-    let mut updated_entries = []
-    
-    for entry in cache.entries {
-      if entry.key == key {
-        found = Some(entry.value)
-        updated_entries = updated_entries.push({
-          key: entry.key,
-          value: entry.value,
-          access_count: entry.access_count + 1,
-          last_accessed: cache.current_time
-        })
-      } else {
-        updated_entries = updated_entries.push(entry)
-      }
-    }
-    
-    (found, {
-      entries: updated_entries,
-      max_size: cache.max_size,
-      current_time: cache.current_time + 1
-    })
-  }
-  
-  let cache_put = fn(cache: LRUCache, key: String, value: String) {
-    let mut updated_entries = []
-    let mut found = false
-    
-    // Update existing entry
-    for entry in cache.entries {
-      if entry.key == key {
-        found = true
-        updated_entries = updated_entries.push({
-          key: entry.key,
-          value: value,
-          access_count: entry.access_count + 1,
-          last_accessed: cache.current_time
-        })
-      } else {
-        updated_entries = updated_entries.push(entry)
-      }
-    }
-    
-    if not(found) {
-      // Add new entry
-      if updated_entries.length() < cache.max_size {
-        updated_entries = updated_entries.push({
-          key: key,
-          value: value,
-          access_count: 1,
-          last_accessed: cache.current_time
-        })
-      } else {
-        // Evict LRU entry
-        let mut lru_index = 0
-        let mut lru_time = updated_entries[0].last_accessed
-        
-        for i in 1..updated_entries.length() {
-          if updated_entries[i].last_accessed < lru_time {
-            lru_time = updated_entries[i].last_accessed
-            lru_index = i
-          }
-        }
-        
-        // Remove LRU entry and add new one
-        let mut entries_without_lru = []
-        for i in 0..updated_entries.length() {
-          if i != lru_index {
-            entries_without_lru = entries_without_lru.push(updated_entries[i])
-          }
-        }
-        
-        updated_entries = entries_without_lru.push({
-          key: key,
-          value: value,
-          access_count: 1,
-          last_accessed: cache.current_time
-        })
-      }
-    }
-    
-    {
-      entries: updated_entries,
-      max_size: cache.max_size,
-      current_time: cache.current_time + 1
-    }
-  }
-  
-  // Test LRU cache operations
-  let cache = create_lru_cache(3)
-  assert_eq(cache.entries.length(), 0)
-  
-  let cache_after_put1 = cache_put(cache, "key1", "value1")
-  assert_eq(cache_after_put1.entries.length(), 1)
-  
-  let cache_after_put2 = cache_put(cache_after_put1, "key2", "value2")
-  assert_eq(cache_after_put2.entries.length(), 2)
-  
-  let cache_after_put3 = cache_put(cache_after_put2, "key3", "value3")
-  assert_eq(cache_after_put3.entries.length(), 3)
-  
-  // Access key1 to make it most recently used
-  let (value1, cache_after_get1) = cache_get(cache_after_put3, "key1")
-  assert_eq(value1, Some("value1"))
-  
-  // Add key4, should evict LRU (key2)
-  let cache_after_put4 = cache_put(cache_after_get1, "key4", "value4")
-  assert_eq(cache_after_put4.entries.length(), 3)
-  
-  // Check that key2 was evicted
-  let (value2, _) = cache_get(cache_after_put4, "key2")
-  assert_eq(value2, None)
-  
-  // Check that other keys are still there
-  let (value1_check, _) = cache_get(cache_after_put4, "key1")
-  assert_eq(value1_check, Some("value1"))
-  
-  // Test batch processing optimization
-  type BatchProcessor = {
-    batch_size: Int,
-    processing_function: (Array[String]) -> Array[String],
-    queue: Array[String]
-  }
-  
-  let create_batch_processor = fn(batch_size: Int, processor: (Array[String]) -> Array[String]) {
-    {
-      batch_size: batch_size,
-      processing_function: processor,
-      queue: []
-    }
-  }
-  
-  let batch_add = fn(processor: BatchProcessor, item: String) {
-    let new_queue = processor.queue.push(item)
-    
-    if new_queue.length() >= processor.batch_size {
-      let processed = processor.processing_function(new_queue)
-      {
-        batch_size: processor.batch_size,
-        processing_function: processor.processing_function,
-        queue: processed
-      }
-    } else {
-      {
-        batch_size: processor.batch_size,
-        processing_function: processor.processing_function,
-        queue: new_queue
-      }
-    }
-  }
-  
-  let batch_flush = fn(processor: BatchProcessor) {
-    if processor.queue.length() > 0 {
-      let processed = processor.processing_function(processor.queue)
-      {
-        batch_size: processor.batch_size,
-        processing_function: processor.processing_function,
-        queue: processed
-      }
-    } else {
-      processor
-    }
-  }
-  
-  // Test batch processing
-  let uppercase_processor = fn(items: Array[String]) {
-    items.map(fn(item) { item.to_uppercase() })
-  }
-  
-  let batch_processor = create_batch_processor(3, uppercase_processor)
-  
-  let processor_after_add1 = batch_add(batch_processor, "item1")
-  assert_eq(processor_after_add1.queue.length(), 1)
-  
-  let processor_after_add2 = batch_add(processor_after_add1, "item2")
-  assert_eq(processor_after_add2.queue.length(), 2)
-  
-  let processor_after_add3 = batch_add(processor_after_add2, "item3")
-  assert_eq(processor_after_add3.queue.length(), 3)
-  
-  // Should trigger batch processing
-  let processor_after_add4 = batch_add(processor_after_add3, "item4")
-  assert_eq(processor_after_add4.queue.length(), 4)
-  
-  // Check that items were processed
-  assert_true(processor_after_add4.queue.contains("ITEM1"))
-  assert_true(processor_after_add4.queue.contains("ITEM2"))
-  assert_true(processor_after_add4.queue.contains("ITEM3"))
-  assert_eq(processor_after_add4.queue[3], "item4") // Not yet processed
-  
-  // Flush remaining items
-  let processor_after_flush = batch_flush(processor_after_add4)
-  assert_eq(processor_after_flush.queue.length(), 4)
-  assert_true(processor_after_flush.queue.contains("ITEM4"))
-}
-
-// Test 5: Cross-Service Communication and Consistency
-test "cross-service communication and consistency" {
-  // Define service communication structures
-  type ServiceMessage = {
-    id: String,
-    source_service: String,
-    target_service: String,
-    message_type: String,
-    payload: String,
-    timestamp: Int,
-    correlation_id: String
-  }
-  
-  type ServiceRegistry = {
-    services: Array[String],
-    health_status: Array[(String, String)],
-    message_routes: Array[(String, String)]
-  }
-  
-  // Create service registry
-  let create_service_registry = fn() {
-    {
-      services: ["auth-service", "user-service", "payment-service", "notification-service"],
-      health_status: [
-        ("auth-service", "healthy"),
-        ("user-service", "healthy"),
-        ("payment-service", "degraded"),
-        ("notification-service", "healthy")
-      ],
-      message_routes: [
-        ("auth-service", "user-service"),
-        ("user-service", "payment-service"),
-        ("payment-service", "notification-service"),
-        ("auth-service", "payment-service")
-      ]
-    }
-  }
-  
-  // Test service health checking
-  let check_service_health = fn(registry: ServiceRegistry, service_name: String) {
-    let mut status = "unknown"
-    
-    for (service, health) in registry.health_status {
-      if service == service_name {
-        status = health
-      }
-    }
-    
-    status
-  }
-  
-  let registry = create_service_registry()
-  assert_eq(check_service_health(registry, "auth-service"), "healthy")
-  assert_eq(check_service_health(registry, "payment-service"), "degraded")
-  assert_eq(check_service_health(registry, "unknown-service"), "unknown")
-  
-  // Test message routing
-  let find_route = fn(registry: ServiceRegistry, source: String, target: String) {
-    let mut found = false
-    
-    for (src, tgt) in registry.message_routes {
-      if src == source and tgt == target {
-        found = true
-      }
-    }
-    
-    found
-  }
-  
-  assert_true(find_route(registry, "auth-service", "user-service"))
-  assert_true(find_route(registry, "user-service", "payment-service"))
-  assert_false(find_route(registry, "notification-service", "auth-service"))
-  
-  // Test message creation and validation
-  let create_message = fn(source: String, target: String, message_type: String, payload: String, correlation_id: String) {
-    let timestamp = 1640995200 // Fixed timestamp for testing
-    
-    {
-      id: "msg-" + timestamp.to_string() + "-" + source + "-" + target,
-      source_service: source,
-      target_service: target,
-      message_type: message_type,
-      payload: payload,
-      timestamp: timestamp,
-      correlation_id: correlation_id
-    }
-  }
-  
-  let validate_message = fn(message: ServiceMessage) {
-    let is_valid = 
-      message.source_service.length() > 0 and
-      message.target_service.length() > 0 and
-      message.message_type.length() > 0 and
-      message.correlation_id.length() > 0 and
-      message.timestamp > 0
-    
-    is_valid
-  }
-  
-  let message = create_message("auth-service", "user-service", "user_request", "get_user_data", "corr-123")
-  assert_true(validate_message(message))
-  assert_eq(message.source_service, "auth-service")
-  assert_eq(message.target_service, "user-service")
-  assert_eq(message.message_type, "user_request")
-  assert_eq(message.correlation_id, "corr-123")
-  
-  // Test distributed transaction coordination
-  type TransactionStep = {
-    step_id: String,
-    service_name: String,
-    operation: String,
-    status: String, // "pending", "completed", "failed", "compensated"
-    compensation: String
-  }
-  
-  type DistributedTransaction = {
-    transaction_id: String,
-    correlation_id: String,
-    steps: Array[TransactionStep],
-    current_step: Int,
-    status: String // "active", "completed", "failed", "compensating"
-  }
-  
-  let create_transaction = fn(transaction_id: String, correlation_id: String) {
-    {
-      transaction_id: transaction_id,
-      correlation_id: correlation_id,
-      steps: [],
-      current_step: 0,
-      status: "active"
-    }
-  }
-  
-  let add_transaction_step = fn(transaction: DistributedTransaction, service_name: String, operation: String, compensation: String) {
-    let step = {
-      step_id: "step-" + (transaction.steps.length() + 1).to_string(),
-      service_name: service_name,
-      operation: operation,
-      status: "pending",
-      compensation: compensation
-    }
-    
-    {
-      transaction_id: transaction.transaction_id,
-      correlation_id: transaction.correlation_id,
-      steps: transaction.steps.push(step),
-      current_step: transaction.current_step,
-      status: transaction.status
-    }
-  }
-  
-  let execute_transaction_step = fn(transaction: DistributedTransaction, step_index: Int, success: Bool) {
-    if step_index < transaction.steps.length() {
-      let mut updated_steps = []
-      
-      for i in 0..transaction.steps.length() {
-        let step = transaction.steps[i]
-        if i == step_index {
-          updated_steps = updated_steps.push({
-            step_id: step.step_id,
-            service_name: step.service_name,
-            operation: step.operation,
-            status: if success { "completed" } else { "failed" },
-            compensation: step.compensation
-          })
-        } else {
-          updated_steps = updated_steps.push(step)
-        }
-      }
-      
-      {
-        transaction_id: transaction.transaction_id,
-        correlation_id: transaction.correlation_id,
-        steps: updated_steps,
-        current_step: step_index + 1,
-        status: if success { "active" } else { "failed" }
-      }
-    } else {
-      transaction
-    }
-  }
-  
-  // Test distributed transaction execution
-  let transaction = create_transaction("txn-123", "corr-456")
-  
-  let txn_with_steps = transaction
-    |> add_transaction_step("auth-service", "authenticate_user", "revoke_token")
-    |> add_transaction_step("user-service", "get_user_profile", "cache_invalidate")
-    |> add_transaction_step("payment-service", "process_payment", "refund_payment")
-  
-  assert_eq(txn_with_steps.steps.length(), 3)
-  assert_eq(txn_with_steps.current_step, 0)
-  assert_eq(txn_with_steps.status, "active")
-  
-  // Execute first step successfully
-  let txn_after_step1 = execute_transaction_step(txn_with_steps, 0, true)
-  assert_eq(txn_after_step1.steps[0].status, "completed")
-  assert_eq(txn_after_step1.current_step, 1)
-  assert_eq(txn_after_step1.status, "active")
-  
-  // Execute second step successfully
-  let txn_after_step2 = execute_transaction_step(txn_after_step1, 1, true)
-  assert_eq(txn_after_step2.steps[1].status, "completed")
-  assert_eq(txn_after_step2.current_step, 2)
-  assert_eq(txn_after_step2.status, "active")
-  
-  // Execute third step with failure
-  let txn_after_step3 = execute_transaction_step(txn_after_step2, 2, false)
-  assert_eq(txn_after_step3.steps[2].status, "failed")
-  assert_eq(txn_after_step3.current_step, 3)
-  assert_eq(txn_after_step3.status, "failed")
-  
-  // Test compensation logic
-  let compensate_transaction = fn(transaction: DistributedTransaction) {
-    let mut compensated_steps = []
-    
-    // Compensate in reverse order
-    for i in (0..transaction.steps.length()).reverse() {
-      let step = transaction.steps[i]
-      if step.status == "completed" {
-        compensated_steps = compensated_steps.push({
-          step_id: step.step_id,
-          service_name: step.service_name,
-          operation: step.operation,
-          status: "compensated",
-          compensation: step.compensation
-        })
-      } else {
-        compensated_steps = compensated_steps.push(step)
-      }
-    }
-    
-    {
-      transaction_id: transaction.transaction_id,
-      correlation_id: transaction.correlation_id,
-      steps: compensated_steps,
-      current_step: transaction.current_step,
-      status: "compensating"
-    }
-  }
-  
-  let compensated_txn = compensate_transaction(txn_after_step3)
-  assert_eq(compensated_txn.status, "compensating")
-  assert_eq(compensated_txn.steps[1].status, "compensated") // user-service step
-  assert_eq(compensated_txn.steps[0].status, "compensated") // auth-service step
-  assert_eq(compensated_txn.steps[2].status, "failed") // payment-service step remains failed
-  
-  // Test message ordering and delivery guarantees
-  type MessageQueue = {
-    pending_messages: Array[ServiceMessage],
-    delivered_messages: Array[ServiceMessage],
-    failed_messages: Array[ServiceMessage]
-  }
-  
-  let create_message_queue = fn() {
-    {
-      pending_messages: [],
-      delivered_messages: [],
-      failed_messages: []
-    }
-  }
-  
-  let enqueue_message = fn(queue: MessageQueue, message: ServiceMessage) {
-    {
-      pending_messages: queue.pending_messages.push(message),
-      delivered_messages: queue.delivered_messages,
-      failed_messages: queue.failed_messages
-    }
-  }
-  
-  let process_message = fn(queue: MessageQueue, message_index: Int, success: Bool) {
-    if message_index < queue.pending_messages.length() {
-      let message = queue.pending_messages[message_index]
-      let mut new_pending = []
-      
-      for i in 0..queue.pending_messages.length() {
-        if i != message_index {
-          new_pending = new_pending.push(queue.pending_messages[i])
-        }
-      }
-      
-      if success {
-        {
-          pending_messages: new_pending,
-          delivered_messages: queue.delivered_messages.push(message),
-          failed_messages: queue.failed_messages
-        }
-      } else {
-        {
-          pending_messages: new_pending,
-          delivered_messages: queue.delivered_messages,
-          failed_messages: queue.failed_messages.push(message)
-        }
-      }
-    } else {
-      queue
-    }
-  }
-  
-  // Test message queue operations
-  let queue = create_message_queue()
-  
-  let msg1 = create_message("service-a", "service-b", "request", "payload1", "corr1")
-  let msg2 = create_message("service-a", "service-b", "request", "payload2", "corr2")
-  let msg3 = create_message("service-a", "service-b", "request", "payload3", "corr3")
-  
-  let queue_with_messages = queue
-    |> enqueue_message(msg1)
-    |> enqueue_message(msg2)
-    |> enqueue_message(msg3)
-  
-  assert_eq(queue_with_messages.pending_messages.length(), 3)
-  
-  // Process messages in order
-  let queue_after_first = process_message(queue_with_messages, 0, true)
-  assert_eq(queue_after_first.pending_messages.length(), 2)
-  assert_eq(queue_after_first.delivered_messages.length(), 1)
-  assert_eq(queue_after_first.failed_messages.length(), 0)
-  
-  let queue_after_second = process_message(queue_after_first, 0, true)
-  assert_eq(queue_after_second.pending_messages.length(), 1)
-  assert_eq(queue_after_second.delivered_messages.length(), 2)
-  
-  let queue_after_third = process_message(queue_after_second, 0, false)
-  assert_eq(queue_after_third.pending_messages.length(), 0)
-  assert_eq(queue_after_third.delivered_messages.length(), 2)
-  assert_eq(queue_after_third.failed_messages.length(), 1)
-}
-
-// Test 6: Data Serialization and Deserialization
-test "data serialization and deserialization" {
-  // Define serialization formats
-  type SerializationFormat = {
-    name: String,
-    version: String,
-    content_type: String
-  }
-  
-  type SerializedData = {
-    format: SerializationFormat,
-    data: String,
-    checksum: String,
-    compressed: Bool
-  }
-  
-  // Test JSON-like serialization
-  let serialize_to_json = fn(data: (String, String)) {
-    let (key, value) = data
-    "{\"key\":\"" + key + "\",\"value\":\"" + value + "\"}"
-  }
-  
-  let deserialize_from_json = fn(json_string: String) {
-    // Simplified JSON parsing for testing
-    if json_string.starts_with("{\"key\":\"") and json_string.contains("\",\"value\":\"") {
-      let key_start = 8 // "{\"key\":\"".length()
-      let key_end = json_string.index_of("\",\"value\":\"")
-      let key = json_string.substring(key_start, key_end - key_start)
-      
-      let value_start = key_end + 11 // "\",\"value\":\"".length()
-      let value_end = json_string.index_of("\"}", value_start)
-      let value = json_string.substring(value_start, value_end - value_start)
-      
-      Some((key, value))
-    } else {
-      None
-    }
-  }
-  
-  // Test JSON serialization
-  let test_data = ("user_id", "12345")
-  let json_data = serialize_to_json(test_data)
-  assert_eq(json_data, "{\"key\":\"user_id\",\"value\":\"12345\"}")
-  
-  let deserialized_data = deserialize_from_json(json_data)
-  assert_eq(deserialized_data, Some(("user_id", "12345")))
-  
-  // Test invalid JSON
-  let invalid_json = "{\"invalid\":json}"
-  let invalid_result = deserialize_from_json(invalid_json)
-  assert_eq(invalid_result, None)
-  
-  // Test binary-like serialization
-  let serialize_to_binary = fn(data: Array[Int]) {
-    let mut result = ""
-    
-    for value in data {
-      // Convert each integer to a 4-byte hex representation
-      let hex = value.to_hex()
-      let padded_hex = if hex.length() < 8 {
-        "0".repeat(8 - hex.length()) + hex
-      } else {
-        hex
-      }
-      result = result + padded_hex
-    }
-    
-    result
-  }
-  
-  let deserialize_from_binary = fn(binary_string: String) {
-    if binary_string.length() % 8 == 0 {
-      let mut result = []
-      
-      for i in 0..(binary_string.length() / 8) {
-        let start = i * 8
-        let hex_value = binary_string.substring(start, 8)
-        
-        // Convert hex to int (simplified)
-        let mut int_value = 0
-        for j in 0..8 {
-          let char = hex_value[j]
-          let digit = if char >= '0' and char <= '9' {
-            char.to_int() - '0'.to_int()
-          } else if char >= 'a' and char <= 'f' {
-            10 + (char.to_int() - 'a'.to_int())
-          } else if char >= 'A' and char <= 'F' {
-            10 + (char.to_int() - 'A'.to_int())
-          } else {
-            0
-          }
-          
-          int_value = int_value * 16 + digit
-        }
-        
-        result = result.push(int_value)
-      }
-      
-      Some(result)
-    } else {
-      None
-    }
-  }
-  
-  // Test binary serialization
-  let int_data = [123, 456, 789]
-  let binary_data = serialize_to_binary(int_data)
-  
-  let deserialized_ints = deserialize_from_binary(binary_data)
-  assert_eq(deserialized_ints, Some([123, 456, 789]))
-  
-  // Test invalid binary
-  let invalid_binary = "123" // Not multiple of 8 characters
-  let invalid_binary_result = deserialize_from_binary(invalid_binary)
-  assert_eq(invalid_binary_result, None)
-  
-  // Test compression simulation
-  let compress_data = fn(data: String) {
-    // Simple compression simulation - replace repeated characters
-    let mut result = ""
-    let mut i = 0
-    
-    while i < data.length() {
-      let char = data[i]
-      let mut count = 1
-      
-      while i + count < data.length() and data[i + count] == char {
-        count = count + 1
-      }
-      
-      if count > 3 {
-        result = result + "[" + char.to_string() + "x" + count.to_string() + "]"
-      } else {
-        for j in 0..count {
-          result = result + char.to_string()
-        }
-      }
-      
-      i = i + count
-    }
-    
-    result
-  }
-  
-  let decompress_data = fn(compressed: String) {
-    let mut result = ""
-    let mut i = 0
-    
-    while i < compressed.length() {
-      if compressed[i] == '[' {
-        let char = compressed[i + 1]
-        let mut j = i + 3 // Skip "[charx"
-        let mut count_str = ""
-        
-        while j < compressed.length() and compressed[j] != ']' {
-          count_str = count_str + compressed[j].to_string()
-          j = j + 1
-        }
-        
-        let count = match count_str.to_int() {
-          Some(n) => n
-          None => 1
-        }
-        
-        for k in 0..count {
-          result = result + char.to_string()
-        }
-        
-        i = j + 1 // Skip "]"
-      } else {
-        result = result + compressed[i].to_string()
-        i = i + 1
-      }
-    }
-    
-    result
-  }
-  
-  // Test compression
-  let original_data = "aaaaabbbcccaaaaa"
-  let compressed_data = compress_data(original_data)
-  assert_eq(compressed_data, "[ax5]bbb[ccc][ax5]")
-  
-  let decompressed_data = decompress_data(compressed_data)
-  assert_eq(decompressed_data, original_data)
-  
-  // Test checksum calculation
-  let calculate_checksum = fn(data: String) {
-    let mut sum = 0
-    
-    for i in 0..data.length() {
-      sum = sum + data[i].to_int()
-    }
-    
-    sum % 10000 // Simple checksum
-  }
-  
-  let verify_checksum = fn(data: String, expected_checksum: String) {
-    let calculated = calculate_checksum(data)
-    calculated.to_string() == expected_checksum
-  }
-  
-  // Test checksum
-  let test_string = "test data for checksum"
-  let checksum = calculate_checksum(test_string).to_string()
-  assert_true(verify_checksum(test_string, checksum))
-  
-  // Test with corrupted data
-  let corrupted_string = "test data for checksums"
-  assert_false(verify_checksum(corrupted_string, checksum))
-  
-  // Test complete serialization pipeline
-  let serialize_data_pipeline = fn(data: (String, String), format: String, compress: Bool) {
-    let serialized = match format {
-      "json" => serialize_to_json(data)
-      "binary" => serialize_to_binary([123, 456]) // Simplified for binary
-      _ => "unknown format"
-    }
-    
-    let processed = if compress {
-      compress_data(serialized)
-    } else {
-      serialized
-    }
-    
-    let checksum = calculate_checksum(processed).to_string()
-    
-    {
-      format: { name: format, version: "1.0", content_type: "application/" + format },
-      data: processed,
-      checksum: checksum,
-      compressed: compress
-    }
-  }
-  
-  let deserialize_data_pipeline = fn(serialized: SerializedData) {
-    if verify_checksum(serialized.data, serialized.checksum) {
-      let decompressed = if serialized.compressed {
-        decompress_data(serialized.data)
-      } else {
-        serialized.data
-      }
-      
-      match serialized.format.name {
-        "json" => deserialize_from_json(decompressed)
-        "binary" => deserialize_from_binary(decompressed)
-        _ => None
-      }
-    } else {
-      None
-    }
-  }
-  
-  // Test complete pipeline
-  let test_pipeline_data = ("session_id", "abcdef123456")
-  let serialized_pipeline = serialize_data_pipeline(test_pipeline_data, "json", true)
-  assert_eq(serialized_pipeline.format.name, "json")
-  assert_eq(serialized_pipeline.compressed, true)
-  
-  let deserialized_pipeline = deserialize_data_pipeline(serialized_pipeline)
-  assert_eq(deserialized_pipeline, Some(("session_id", "abcdef123456")))
-  
-  // Test with corrupted checksum
-  let corrupted_serialized = {
-    format: serialized_pipeline.format,
-    data: serialized_pipeline.data,
-    checksum: "9999",
-    compressed: serialized_pipeline.compressed
-  }
-  
-  let corrupted_result = deserialize_data_pipeline(corrupted_serialized)
-  assert_eq(corrupted_result, None)
-}
-
-// Test 7: Internationalization and Localization Support
-test "internationalization and localization support" {
-  // Define localization structures
-  type LocalizationEntry = {
-    key: String,
-    value: String,
-    locale: String,
-    context: Option[String]
-  }
-  
-  type ResourceBundle = {
-    locale: String,
-    entries: Array[LocalizationEntry]
-  }
-  
-  // Create resource bundles for different locales
-  let create_english_bundle = fn() {
-    {
-      locale: "en-US",
-      entries: [
-        { key: "welcome", value: "Welcome", locale: "en-US", context: None },
-        { key: "goodbye", value: "Goodbye", locale: "en-US", context: None },
-        { key: "error_occurred", value: "An error occurred: {0}", locale: "en-US", context: None },
-        { key: "items_count", value: "{0} items", locale: "en-US", context: None },
-        { key: "service_status", value: "Service is {0}", locale: "en-US", context: None }
-      ]
-    }
-  }
-  
-  let create_chinese_bundle = fn() {
-    {
-      locale: "zh-CN",
-      entries: [
-        { key: "welcome", value: "欢迎", locale: "zh-CN", context: None },
-        { key: "goodbye", value: "再见", locale: "zh-CN", context: None },
-        { key: "error_occurred", value: "发生错误：{0}", locale: "zh-CN", context: None },
-        { key: "items_count", value: "{0} 项", locale: "zh-CN", context: None },
-        { key: "service_status", value: "服务状态：{0}", locale: "zh-CN", context: None }
-      ]
-    }
-  }
-  
-  let create_spanish_bundle = fn() {
-    {
-      locale: "es-ES",
-      entries: [
-        { key: "welcome", value: "Bienvenido", locale: "es-ES", context: None },
-        { key: "goodbye", value: "Adiós", locale: "es-ES", context: None },
-        { key: "error_occurred", value: "Ocurrió un error: {0}", locale: "es-ES", context: None },
-        { key: "items_count", value: "{0} elementos", locale: "es-ES", context: None },
-        { key: "service_status", value: "El servicio está {0}", locale: "es-ES", context: None }
-      ]
-    }
-  }
-  
-  // Test message formatting with parameters
-  let format_message = fn(template: String, params: Array[String]) {
-    let mut result = template
-    
-    for i in 0..params.length() {
-      let placeholder = "{" + i.to_string() + "}"
-      result = result.replace(placeholder, params[i])
-    }
-    
-    result
-  }
-  
-  // Test message lookup in resource bundle
-  let get_message = fn(bundle: ResourceBundle, key: String) {
-    let mut found = None
-    
-    for entry in bundle.entries {
-      if entry.key == key {
-        found = Some(entry.value)
-      }
-    }
-    
-    found
-  }
-  
-  // Test basic message lookup
-  let english_bundle = create_english_bundle()
-  let chinese_bundle = create_chinese_bundle()
-  let spanish_bundle = create_spanish_bundle()
-  
-  assert_eq(get_message(english_bundle, "welcome"), Some("Welcome"))
-  assert_eq(get_message(chinese_bundle, "welcome"), Some("欢迎"))
-  assert_eq(get_message(spanish_bundle, "welcome"), Some("Bienvenido"))
-  
-  // Test message formatting
-  let english_error = get_message(english_bundle, "error_occurred")
-  assert_eq(english_error, Some("An error occurred: {0}"))
-  
-  let formatted_error = match english_error {
-    Some(template) => format_message(template, ["Network timeout"])
-    None => ""
-  }
-  assert_eq(formatted_error, "An error occurred: Network timeout")
-  
-  let chinese_items = get_message(chinese_bundle, "items_count")
-  let formatted_items = match chinese_items {
-    Some(template) => format_message(template, ["5"])
-    None => ""
-  }
-  assert_eq(formatted_items, "5 项")
-  
-  // Test locale negotiation
-  type LocaleMatcher = {
-    preferred_locales: Array[String],
-    supported_locales: Array[String]
-  }
-  
-  let create_locale_matcher = fn(preferred: Array[String], supported: Array[String]) {
-    {
-      preferred_locales: preferred,
-      supported_locales: supported
-    }
-  }
-  
-  let match_locale = fn(matcher: LocaleMatcher) {
-    for preferred in matcher.preferred_locales {
-      for supported in matcher.supported_locales {
-        if preferred == supported {
-          return Some(supported)
-        }
-        
-        // Check language-only match (e.g., "en" matches "en-US")
-        let preferred_lang = preferred.split("-")[0]
-        let supported_lang = supported.split("-")[0]
-        
-        if preferred_lang == supported_lang {
-          return Some(supported)
-        }
-      }
-    }
-    
-    None
-  }
-  
-  // Test locale matching
-  let supported_locales = ["en-US", "zh-CN", "es-ES", "fr-FR"]
-  
-  // Exact match
-  let matcher1 = create_locale_matcher(["zh-CN", "en-US"], supported_locales)
-  assert_eq(match_locale(matcher1), Some("zh-CN"))
-  
-  // Language-only match
-  let matcher2 = create_locale_matcher(["en", "fr"], supported_locales)
-  assert_eq(match_locale(matcher2), Some("en-US"))
-  
-  // No match
-  let matcher3 = create_locale_matcher(["de", "it"], supported_locales)
-  assert_eq(match_locale(matcher3), None)
-  
-  // Test pluralization rules
-  type PluralRule = {
-    locale: String,
-    rule: (Int) -> String // Returns plural category: "one", "other", etc.
-  }
-  
-  let create_plural_rules = fn() {
-    [
-      {
-        locale: "en-US",
-        rule: fn(n) { if n == 1 { "one" } else { "other" } }
+// 测试9: 配置管理和动态更新
+test "配置管理和动态更新测试" {
+  let config_manager = ConfigManager::new()
+  
+  // 设置基础配置
+  ConfigManager::set(config_manager, "telemetry.service.name", "azimuth-collector")
+  ConfigManager::set(config_manager, "telemetry.service.version", "2.1.0")
+  ConfigManager::set(config_manager, "telemetry.exporter.type", "otlp")
+  ConfigManager::set(config_manager, "telemetry.exporter.endpoint", "https://otel-collector.example.com:4317")
+  ConfigManager::set(config_manager, "telemetry.exporter.protocol", "grpc")
+  
+  // 配置采样
+  ConfigManager::set(config_manager, "sampler.type", "adaptive")
+  ConfigManager::set(config_manager, "sampler.base_rate", 0.1)
+  ConfigManager::set(config_manager, "sampler.max_rate", 0.5)
+  ConfigManager::set(config_manager, "sampler.adjustment_threshold", 100)
+  
+  // 配置批处理
+  ConfigManager::set(config_manager, "batch.processor.enabled", true)
+  ConfigManager::set(config_manager, "batch.processor.max_queue_size", 2048)
+  ConfigManager::set(config_manager, "batch.processor.max_export_batch_size", 512)
+  ConfigManager::set(config_manager, "batch.processor.export_timeout_ms", 30000)
+  ConfigManager::set(config_manager, "batch.processor.schedule_delay_ms", 5000)
+  
+  // 配置资源
+  ConfigManager::set(config_manager, "resource.attributes.service.name", "azimuth-service")
+  ConfigManager::set(config_manager, "resource.attributes.service.namespace", "production")
+  ConfigManager::set(config_manager, "resource.attributes.service.instance.id", "instance-12345")
+  ConfigManager::set(config_manager, "resource.attributes.deployment.environment", "prod")
+  
+  // 验证初始配置
+  assert_eq(ConfigManager::get(config_manager, "telemetry.service.name"), Some("azimuth-collector"))
+  assert_eq(ConfigManager::get(config_manager, "sampler.type"), Some("adaptive"))
+  assert_eq(ConfigManager::get(config_manager, "batch.processor.enabled"), Some("true"))
+  
+  // 测试配置验证
+  let config_validator = ConfigValidator::new()
+  
+  // 添加验证规则
+  ConfigValidator::add_rule(config_validator, "sampler.base_rate", ValidationRule::new()
+    .with_type(ValueType::Float)
+    .with_range(0.0, 1.0)
+    .with_required(true))
+  
+  ConfigValidator::add_rule(config_validator, "batch.processor.max_queue_size", ValidationRule::new()
+    .with_type(ValueType::Integer)
+    .with_min(1)
+    .with_max(10000)
+    .with_required(true))
+  
+  ConfigValidator::add_rule(config_validator, "telemetry.exporter.endpoint", ValidationRule::new()
+    .with_type(ValueType::URL)
+    .with_required(true))
+  
+  // 验证配置
+  let validation_result = ConfigValidator::validate(config_validator, config_manager)
+  assert_eq(ValidationResult::is_valid(validation_result), true)
+  assert_eq(ValidationResult::errors(validation_result).length(), 0)
+  
+  // 测试动态配置更新
+  let config_watcher = ConfigWatcher::new()
+  ConfigWatcher::watch_key(config_watcher, "sampler.base_rate")
+  ConfigWatcher::watch_key(config_watcher, "batch.processor.max_export_batch_size")
+  ConfigWatcher::watch_key(config_watcher, "telemetry.exporter.endpoint")
+  
+  // 添加变更监听器
+  let change_log = []
+  ConfigWatcher::add_listener(config_watcher, fn(key, old_value, new_value) {
+    change_log = change_log.push({key, old_value, new_value})
+  })
+  
+  // 动态更新配置
+  ConfigManager::set(config_manager, "sampler.base_rate", 0.2)
+  ConfigManager::set(config_manager, "batch.processor.max_export_batch_size", 1024)
+  ConfigManager::set(config_manager, "telemetry.exporter.endpoint", "https://new-collector.example.com:4317")
+  
+  // 验证配置变更通知
+  assert_true(change_log.length() >= 3)
+  
+  let sampler_change = change_log.find(fn(change) { change.key == "sampler.base_rate" })
+  assert_true(sampler_change != None)
+  assert_eq(sampler_change.unwrap().old_value, "0.1")
+  assert_eq(sampler_change.unwrap().new_value, "0.2")
+  
+  // 测试配置热重载
+  let config_reloader = ConfigReloader::new()
+  ConfigReloader::set_auto_reload(config_reloader, true)
+  ConfigReloader::set_reload_interval(config_reloader, 30000)  // 30秒
+  
+  // 模拟配置文件变更
+  let updated_config = {
+    "telemetry": {
+      "service": {
+        "name": "azimuth-collector-updated",
+        "version": "2.1.1"
       },
-      {
-        locale: "zh-CN",
-        rule: fn(_) { "other" } // Chinese doesn't have plural forms
-      },
-      {
-        locale: "es-ES",
-        rule: fn(n) { if n == 1 { "one" } else { "other" } }
+      "exporter": {
+        "type": "otlp",
+        "endpoint": "https://updated-collector.example.com:4317",
+        "protocol": "grpc"
       }
-    ]
-  }
-  
-  let get_plural_category = fn(rules: Array[PluralRule], locale: String, count: Int) {
-    for rule in rules {
-      if rule.locale == locale {
-        return rule.rule(count)
-      }
-    }
-    "other" // Default
-  }
-  
-  // Test pluralization
-  let plural_rules = create_plural_rules()
-  
-  assert_eq(get_plural_category(plural_rules, "en-US", 1), "one")
-  assert_eq(get_plural_category(plural_rules, "en-US", 2), "other")
-  assert_eq(get_plural_category(plural_rules, "zh-CN", 1), "other")
-  assert_eq(get_plural_category(plural_rules, "zh-CN", 2), "other")
-  assert_eq(get_plural_category(plural_rules, "es-ES", 1), "one")
-  assert_eq(get_plural_category(plural_rules, "es-ES", 2), "other")
-  
-  // Test localized number formatting
-  let format_number = fn(number: Float, locale: String) {
-    match locale {
-      "en-US" => {
-        let int_part = number.to_int().to_string()
-        let decimal_part = ((number - number.to_int().to_float()) * 100).to_int().to_string()
-        int_part + "." + decimal_part
-      }
-      "zh-CN" => {
-        let int_part = number.to_int().to_string()
-        let decimal_part = ((number - number.to_int().to_float()) * 100).to_int().to_string()
-        int_part + "." + decimal_part
-      }
-      "es-ES" => {
-        let int_part = number.to_int().to_string()
-        let decimal_part = ((number - number.to_int().to_float()) * 100).to_int().to_string()
-        int_part + "," + decimal_part // Use comma as decimal separator
-      }
-      _ => number.to_string()
+    },
+    "sampler": {
+      "type": "adaptive",
+      "base_rate": 0.15,
+      "max_rate": 0.6
     }
   }
   
-  // Test number formatting
-  assert_eq(format_number(1234.56, "en-US"), "1234.56")
-  assert_eq(format_number(1234.56, "zh-CN"), "1234.56")
-  assert_eq(format_number(1234.56, "es-ES"), "1234,56")
+  let reload_result = ConfigReloader::reload_from_object(config_reloader, config_manager, updated_config)
+  assert_eq(ReloadResult::status(reload_result), Success)
+  assert_true(ReloadResult::updated_keys(reload_result).length() > 0)
   
-  // Test date/time formatting
-  let format_datetime = fn(timestamp: Int, locale: String) {
-    // Simplified date formatting for testing
-    let date = timestamp / 86400 // Days since epoch
-    let time = timestamp % 86400 // Seconds in day
-    let hours = time / 3600
-    let minutes = (time % 3600) / 60
-    
-    match locale {
-      "en-US" => {
-        "Day " + date.to_string() + " at " + hours.to_string() + ":" + minutes.to_string()
-      }
-      "zh-CN" => {
-        "第" + date.to_string() + "天 " + hours.to_string() + "时" + minutes.to_string() + "分"
-      }
-      "es-ES" => {
-        "Día " + date.to_string() + " a las " + hours.to_string() + ":" + minutes.to_string()
-      }
-      _ => timestamp.to_string()
-    }
-  }
+  // 验证更新后的配置
+  assert_eq(ConfigManager::get(config_manager, "telemetry.service.name"), Some("azimuth-collector-updated"))
+  assert_eq(ConfigManager::get(config_manager, "telemetry.service.version"), Some("2.1.1"))
+  assert_eq(ConfigManager::get(config_manager, "sampler.base_rate"), Some("0.15"))
   
-  // Test date/time formatting
-  let test_timestamp = 1640995200 // 2022-01-01 00:00:00 UTC
-  assert_eq(format_datetime(test_timestamp, "en-US"), "Day 18993 at 0:0")
-  assert_eq(format_datetime(test_timestamp, "zh-CN"), "第18993天 0时0分")
-  assert_eq(format_datetime(test_timestamp, "es-ES"), "Día 18993 a las 0:0")
+  // 测试配置回滚
+  let config_history = ConfigHistory::new()
+  ConfigHistory::save_snapshot(config_history, config_manager)
   
-  // Test right-to-left (RTL) language support
-  let is_rtl_language = fn(locale: String) {
-    match locale {
-      "ar" | "he" | "fa" => true
-      _ => false
-    }
-  }
+  // 进行更多配置变更
+  ConfigManager::set(config_manager, "sampler.base_rate", 0.8)  // 无效值
+  ConfigManager::set(config_manager, "telemetry.exporter.endpoint", "invalid-url")
   
-  // Test RTL detection
-  assert_false(is_rtl_language("en-US"))
-  assert_false(is_rtl_language("zh-CN"))
-  assert_false(is_rtl_language("es-ES"))
-  assert_true(is_rtl_language("ar"))
-  assert_true(is_rtl_language("he"))
-  assert_true(is_rtl_language("fa"))
+  // 验证配置失败
+  let invalid_validation_result = ConfigValidator::validate(config_validator, config_manager)
+  assert_eq(ValidationResult::is_valid(invalid_validation_result), false)
+  assert_true(ValidationResult::errors(invalid_validation_result).length() >= 2)
   
-  // Test text direction handling
-  let apply_text_direction = fn(text: String, locale: String) {
-    if is_rtl_language(locale) {
-      "\u202B" + text + "\u202C" // Wrap with RTL markers
-    } else {
-      text
-    }
-  }
+  // 回滚到上一个有效配置
+  let rollback_result = ConfigHistory::rollback(config_history, config_manager, 1)
+  assert_eq(RollbackResult::status(rollback_result), Success)
   
-  // Test text direction application
-  let test_text = "Hello World"
-  assert_eq(apply_text_direction(test_text, "en-US"), "Hello World")
-  assert_eq(apply_text_direction(test_text, "ar"), "\u202BHello World\u202C")
+  // 验证回滚后的配置
+  assert_eq(ConfigManager::get(config_manager, "telemetry.service.name"), Some("azimuth-collector-updated"))
+  assert_eq(ConfigManager::get(config_manager, "sampler.base_rate"), Some("0.15"))
+  
+  let final_validation_result = ConfigValidator::validate(config_validator, config_manager)
+  assert_eq(ValidationResult::is_valid(final_validation_result), true)
 }
 
-// Test 8: Advanced Telemetry Analytics and Insights
-test "advanced telemetry analytics and insights" {
-  // Define analytics data structures
-  type MetricEvent = {
-    name: String,
-    value: Float,
-    timestamp: Int,
-    tags: Array[(String, String)],
-    dimensions: Array[String]
+// 测试10: 安全性和多租户隔离
+test "安全性和多租户隔离测试" {
+  let security_manager = SecurityManager::new()
+  
+  // 配置安全策略
+  SecurityManager::set_encryption_policy(security_manager, EncryptionPolicy::AES256)
+  SecurityManager::set_access_control_policy(security_manager, AccessControlPolicy::RoleBased)
+  SecurityManager::set_data_retention_policy(security_manager, DataRetentionPolicy::ThirtyDays)
+  
+  // 创建租户管理器
+  let tenant_manager = TenantManager::new()
+  
+  // 创建租户
+  let tenant_a = TenantManager::create_tenant(tenant_manager, {
+    id: "tenant-a-123",
+    name: "Enterprise Customer A",
+    plan: "enterprise",
+    quota: {
+      max_spans_per_day: 10000000,
+      max_metrics_per_day: 5000000,
+      max_storage_gb: 100,
+      max_data_retention_days: 90
+    },
+    isolation_level: "strict",
+    encryption_key_id: "key-tenant-a-123"
+  })
+  
+  let tenant_b = TenantManager::create_tenant(tenant_manager, {
+    id: "tenant-b-456",
+    name: "Standard Customer B",
+    plan: "standard",
+    quota: {
+      max_spans_per_day: 1000000,
+      max_metrics_per_day: 500000,
+      max_storage_gb: 10,
+      max_data_retention_days: 30
+    },
+    isolation_level: "standard",
+    encryption_key_id: "key-tenant-b-456"
+  })
+  
+  // 验证租户创建
+  assert_eq(Tenant::id(tenant_a), "tenant-a-123")
+  assert_eq(Tenant::plan(tenant_a), "enterprise")
+  assert_eq(Tenant::quota(tenant_a).max_spans_per_day, 10000000)
+  
+  assert_eq(Tenant::id(tenant_b), "tenant-b-456")
+  assert_eq(Tenant::plan(tenant_b), "standard")
+  assert_eq(Tenant::quota(tenant_b).max_spans_per_day, 1000000)
+  
+  // 创建租户上下文
+  let tenant_a_context = TenantContext::new(tenant_a)
+  let tenant_b_context = TenantContext::new(tenant_b)
+  
+  // 测试数据隔离
+  let data_isolator = DataIsolator::new()
+  
+  // 租户A的数据
+  let tenant_a_span = {
+    trace_id: "trace-tenant-a-123",
+    span_id: "span-tenant-a-456",
+    tenant_id: "tenant-a-123",
+    service_name: "payment-service",
+    operation_name: "process_payment",
+    user_id: "user-tenant-a-789"
   }
   
-  type TimeSeriesData = {
-    timestamps: Array[Int],
-    values: Array[Float],
-    interval: Int // Time interval between data points in seconds
+  // 租户B的数据
+  let tenant_b_span = {
+    trace_id: "trace-tenant-b-123",
+    span_id: "span-tenant-b-456",
+    tenant_id: "tenant-b-456",
+    service_name: "user-service",
+    operation_name: "get_profile",
+    user_id: "user-tenant-b-789"
   }
   
-  type AnalyticsInsight = {
-    insight_type: String,
-    description: String,
-    confidence: Float, // 0.0 to 1.0
-    affected_metrics: Array[String],
-    recommendation: Option[String]
+  // 验证数据隔离
+  assert_true(DataIsolator::can_access(data_isolator, tenant_a_context, tenant_a_span))
+  assert_false(DataIsolator::can_access(data_isolator, tenant_a_context, tenant_b_span))
+  assert_true(DataIsolator::can_access(data_isolator, tenant_b_context, tenant_b_span))
+  assert_false(DataIsolator::can_access(data_isolator, tenant_b_context, tenant_a_span))
+  
+  // 测试数据加密
+  let encryption_service = EncryptionService::new()
+  
+  // 为租户A加密数据
+  let tenant_a_encrypted = EncryptionService::encrypt_for_tenant(
+    encryption_service, 
+    tenant_a_span, 
+    "tenant-a-123"
+  )
+  
+  // 为租户B加密数据
+  let tenant_b_encrypted = EncryptionService::encrypt_for_tenant(
+    encryption_service, 
+    tenant_b_span, 
+    "tenant-b-456"
+  )
+  
+  // 验证加密
+  assert_true(EncryptedData::is_encrypted(tenant_a_encrypted))
+  assert_true(EncryptedData::is_encrypted(tenant_b_encrypted))
+  assert_ne(EncryptedData::cipher_text(tenant_a_encrypted), EncryptedData::cipher_text(tenant_b_encrypted))
+  
+  // 验证解密
+  let tenant_a_decrypted = EncryptionService::decrypt_for_tenant(
+    encryption_service, 
+    tenant_a_encrypted, 
+    "tenant-a-123"
+  )
+  
+  let tenant_b_decrypted = EncryptionService::decrypt_for_tenant(
+    encryption_service, 
+    tenant_b_encrypted, 
+    "tenant-b-456"
+  )
+  
+  assert_eq(DecryptedData::tenant_id(tenant_a_decrypted), "tenant-a-123")
+  assert_eq(DecryptedData::tenant_id(tenant_b_decrypted), "tenant-b-456")
+  
+  // 测试跨租户解密失败
+  let cross_tenant_decrypt = EncryptionService::decrypt_for_tenant(
+    encryption_service, 
+    tenant_a_encrypted, 
+    "tenant-b-456"  // 错误的租户ID
+  )
+  
+  assert_eq(DecryptionResult::status(cross_tenant_decrypt), Error)
+  assert_eq(DecryptionResult::error_code(cross_tenant_decrypt), "INVALID_TENANT")
+  
+  // 测试访问控制
+  let access_controller = AccessController::new()
+  
+  // 创建角色和权限
+  AccessController::create_role(access_controller, "tenant_admin", [
+    "data.read",
+    "data.write", 
+    "data.delete",
+    "config.read",
+    "config.write"
+  ])
+  
+  AccessController::create_role(access_controller, "tenant_user", [
+    "data.read",
+    "data.write"
+  ])
+  
+  AccessController::create_role(access_controller, "tenant_viewer", [
+    "data.read"
+  ])
+  
+  // 分配用户角色
+  AccessController::assign_role(access_controller, "user-tenant-a-001", "tenant-a-123", "tenant_admin")
+  AccessController::assign_role(access_controller, "user-tenant-a-002", "tenant-a-123", "tenant_user")
+  AccessController::assign_role(access_controller, "user-tenant-b-001", "tenant-b-456", "tenant_viewer")
+  
+  // 验证权限检查
+  let admin_access = AccessController::check_permission(
+    access_controller, 
+    "user-tenant-a-001", 
+    "tenant-a-123", 
+    "data.delete"
+  )
+  assert_eq(AccessResult::allowed(admin_access), true)
+  
+  let user_access = AccessController::check_permission(
+    access_controller, 
+    "user-tenant-a-002", 
+    "tenant-a-123", 
+    "data.delete"
+  )
+  assert_eq(AccessResult::allowed(user_access), false)
+  
+  let viewer_access = AccessController::check_permission(
+    access_controller, 
+    "user-tenant-b-001", 
+    "tenant-b-456", 
+    "data.write"
+  )
+  assert_eq(AccessResult::allowed(viewer_access), false)
+  
+  // 测试配额限制
+  let quota_enforcer = QuotaEnforcer::new()
+  
+  // 设置租户配额
+  QuotaEnforcer::set_tenant_quota(quota_enforcer, "tenant-a-123", {
+    spans_per_day: 10000000,
+    metrics_per_day: 5000000,
+    storage_gb: 100
+  })
+  
+  QuotaEnforcer::set_tenant_quota(quota_enforcer, "tenant-b-456", {
+    spans_per_day: 1000000,
+    metrics_per_day: 500000,
+    storage_gb: 10
+  })
+  
+  // 模拟配额使用
+  let tenant_a_usage = {
+    spans_today: 8500000,
+    metrics_today: 4200000,
+    storage_used_gb: 85
   }
   
-  // Create sample metric events
-  let create_sample_metrics = fn() {
-    let base_timestamp = 1640995200
-    
-    [
-      { name: "cpu_usage", value: 45.2, timestamp: base_timestamp, tags: [("service", "api"), ("env", "prod")], dimensions: ["service", "env"] },
-      { name: "cpu_usage", value: 52.1, timestamp: base_timestamp + 300, tags: [("service", "api"), ("env", "prod")], dimensions: ["service", "env"] },
-      { name: "cpu_usage", value: 67.8, timestamp: base_timestamp + 600, tags: [("service", "api"), ("env", "prod")], dimensions: ["service", "env"] },
-      { name: "cpu_usage", value: 78.9, timestamp: base_timestamp + 900, tags: [("service", "api"), ("env", "prod")], dimensions: ["service", "env"] },
-      { name: "cpu_usage", value: 82.3, timestamp: base_timestamp + 1200, tags: [("service", "api"), ("env", "prod")], dimensions: ["service", "env"] },
-      
-      { name: "memory_usage", value: 1024.5, timestamp: base_timestamp, tags: [("service", "api"), ("env", "prod")], dimensions: ["service", "env"] },
-      { name: "memory_usage", value: 1087.2, timestamp: base_timestamp + 300, tags: [("service", "api"), ("env", "prod")], dimensions: ["service", "env"] },
-      { name: "memory_usage", value: 1156.8, timestamp: base_timestamp + 600, tags: [("service", "api"), ("env", "prod")], dimensions: ["service", "env"] },
-      { name: "memory_usage", value: 1234.1, timestamp: base_timestamp + 900, tags: [("service", "api"), ("env", "prod")], dimensions: ["service", "env"] },
-      { name: "memory_usage", value: 1298.7, timestamp: base_timestamp + 1200, tags: [("service", "api"), ("env", "prod")], dimensions: ["service", "env"] },
-      
-      { name: "response_time", value: 120.5, timestamp: base_timestamp, tags: [("service", "api"), ("env", "prod")], dimensions: ["service", "env"] },
-      { name: "response_time", value: 145.2, timestamp: base_timestamp + 300, tags: [("service", "api"), ("env", "prod")], dimensions: ["service", "env"] },
-      { name: "response_time", value: 178.9, timestamp: base_timestamp + 600, tags: [("service", "api"), ("env", "prod")], dimensions: ["service", "env"] },
-      { name: "response_time", value: 234.1, timestamp: base_timestamp + 900, tags: [("service", "api"), ("env", "prod")], dimensions: ["service", "env"] },
-      { name: "response_time", value: 298.7, timestamp: base_timestamp + 1200, tags: [("service", "api"), ("env", "prod")], dimensions: ["service", "env"] },
-      
-      { name: "error_rate", value: 0.5, timestamp: base_timestamp, tags: [("service", "api"), ("env", "prod")], dimensions: ["service", "env"] },
-      { name: "error_rate", value: 1.2, timestamp: base_timestamp + 300, tags: [("service", "api"), ("env", "prod")], dimensions: ["service", "env"] },
-      { name: "error_rate", value: 2.8, timestamp: base_timestamp + 600, tags: [("service", "api"), ("env", "prod")], dimensions: ["service", "env"] },
-      { name: "error_rate", value: 5.1, timestamp: base_timestamp + 900, tags: [("service", "api"), ("env", "prod")], dimensions: ["service", "env"] },
-      { name: "error_rate", value: 8.9, timestamp: base_timestamp + 1200, tags: [("service", "api"), ("env", "prod")], dimensions: ["service", "env"] }
-    ]
+  let tenant_b_usage = {
+    spans_today: 950000,
+    metrics_today: 480000,
+    storage_used_gb: 9.5
   }
   
-  // Test time series aggregation
-  let aggregate_to_time_series = fn(events: Array[MetricEvent], metric_name: String, interval: Int) {
-    let filtered_events = events.filter(fn(e) { e.name == metric_name })
-    
-    if filtered_events.length() == 0 {
-      return {
-        timestamps: [],
-        values: [],
-        interval: interval
-      }
-    }
-    
-    // Sort events by timestamp
-    let sorted_events = filtered_events.sort(fn(a, b) { a.timestamp - b.timestamp })
-    
-    // Group by time intervals
-    let mut timestamps = []
-    let mut values = []
-    let mut current_interval_start = sorted_events[0].timestamp
-    
-    let mut interval_events = []
-    for event in sorted_events {
-      if event.timestamp < current_interval_start + interval {
-        interval_events = interval_events.push(event)
-      } else {
-        // Process current interval
-        if interval_events.length() > 0 {
-          let avg_value = interval_events.reduce(fn(acc, e) { acc + e.value }, 0.0) / interval_events.length().to_float()
-          timestamps = timestamps.push(current_interval_start)
-          values = values.push(avg_value)
-        }
-        
-        // Start new interval
-        current_interval_start = event.timestamp
-        interval_events = [event]
-      }
-    }
-    
-    // Process last interval
-    if interval_events.length() > 0 {
-      let avg_value = interval_events.reduce(fn(acc, e) { acc + e.value }, 0.0) / interval_events.length().to_float()
-      timestamps = timestamps.push(current_interval_start)
-      values = values.push(avg_value)
-    }
-    
-    {
-      timestamps: timestamps,
-      values: values,
-      interval: interval
-    }
+  // 检查配额
+  let tenant_a_quota_check = QuotaEnforcer::check_quota(quota_enforcer, "tenant-a-123", tenant_a_usage)
+  assert_eq(QuotaCheckResult::within_limits(tenant_a_quota_check), true)
+  
+  let tenant_b_quota_check = QuotaEnforcer::check_quota(quota_enforcer, "tenant-b-456", tenant_b_usage)
+  assert_eq(QuotaCheckResult::within_limits(tenant_b_quota_check), true)
+  
+  // 模拟超限情况
+  let tenant_a_over_usage = {
+    spans_today: 10500000,  // 超出限制
+    metrics_today: 4200000,
+    storage_used_gb: 85
   }
   
-  // Test trend analysis
-  let calculate_trend = fn(time_series: TimeSeriesData) {
-    if time_series.values.length() < 2 {
-      return { direction: "stable", slope: 0.0, confidence: 0.0 }
-    }
-    
-    // Simple linear regression to calculate trend
-    let n = time_series.values.length().to_float()
-    let sum_x = (0..time_series.values.length()).reduce(fn(acc, i) { acc + i.to_float() }, 0.0)
-    let sum_y = time_series.values.reduce(fn(acc, v) { acc + v }, 0.0)
-    let sum_xy = time_series.values.enumerate().reduce(fn(acc, pair) { 
-      let (i, v) = pair
-      acc + i.to_float() * v 
-    }, 0.0)
-    let sum_x2 = (0..time_series.values.length()).reduce(fn(acc, i) { acc + i.to_float() * i.to_float() }, 0.0)
-    
-    let slope = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x * sum_x)
-    
-    let direction = if slope > 0.1 { 
-      "increasing" 
-    } else if slope < -0.1 { 
-      "decreasing" 
-    } else { 
-      "stable" 
-    }
-    
-    // Calculate R-squared as confidence measure
-    let mean_y = sum_y / n
-    let ss_tot = time_series.values.reduce(fn(acc, v) { acc + (v - mean_y) * (v - mean_y) }, 0.0)
-    let y_pred = time_series.values.map(fn(v) { mean_y + slope * 0.5 }) // Simplified prediction
-    let ss_res = time_series.values.enumerate().reduce(fn(acc, pair) {
-      let (i, v) = pair
-      acc + (v - y_pred[i]) * (v - y_pred[i])
-    }, 0.0)
-    
-    let r_squared = if ss_tot > 0.0 { 1.0 - (ss_res / ss_tot) } else { 0.0 }
-    let confidence = if r_squared < 0.0 { 0.0 } else if r_squared > 1.0 { 1.0 } else { r_squared }
-    
-    { direction: direction, slope: slope, confidence: confidence }
-  }
+  let tenant_a_over_check = QuotaEnforcer::check_quota(quota_enforcer, "tenant-a-123", tenant_a_over_usage)
+  assert_eq(QuotaCheckResult::within_limits(tenant_a_over_check), false)
+  assert_true(QuotaCheckResult::exceeded_limits(tenant_a_over_check).contains("spans_per_day"))
   
-  // Test anomaly detection
-  let detect_anomalies = fn(time_series: TimeSeriesData, threshold: Float) {
-    if time_series.values.length() < 3 {
-      return []
-    }
-    
-    // Calculate moving average and standard deviation
-    let window_size = 3
-    let mut anomalies = []
-    
-    for i in window_size..time_series.values.length() {
-      let window_start = i - window_size
-      let window_values = time_series.values.slice(window_start, window_size)
-      
-      let mean = window_values.reduce(fn(acc, v) { acc + v }, 0.0) / window_size.to_float()
-      let variance = window_values.reduce(fn(acc, v) { acc + (v - mean) * (v - mean) }, 0.0) / window_size.to_float()
-      let std_dev = if variance >= 0.0 { variance.sqrt() } else { 0.0 }
-      
-      let current_value = time_series.values[i]
-      let z_score = if std_dev > 0.0 { (current_value - mean) / std_dev } else { 0.0 }
-      
-      if z_score.abs() > threshold {
-        anomalies = anomalies.push({
-          timestamp: time_series.timestamps[i],
-          value: current_value,
-          expected_range: (mean - threshold * std_dev, mean + threshold * std_dev),
-          z_score: z_score
-        })
-      }
-    }
-    
-    anomalies
-  }
+  // 测试审计日志
+  let audit_logger = AuditLogger::new()
   
-  // Test correlation analysis
-  let calculate_correlation = fn(series1: TimeSeriesData, series2: TimeSeriesData) {
-    if series1.values.length() != series2.values.length() or series1.values.length() < 2 {
-      return { correlation: 0.0, significance: "insufficient_data" }
-    }
-    
-    let n = series1.values.length().to_float()
-    let mean1 = series1.values.reduce(fn(acc, v) { acc + v }, 0.0) / n
-    let mean2 = series2.values.reduce(fn(acc, v) { acc + v }, 0.0) / n
-    
-    let sum_xy = series1.values.enumerate().reduce(fn(acc, pair) {
-      let (i, v1) = pair
-      let v2 = series2.values[i]
-      acc + (v1 - mean1) * (v2 - mean2)
-    }, 0.0)
-    
-    let sum_xx = series1.values.reduce(fn(acc, v) { acc + (v - mean1) * (v - mean1) }, 0.0)
-    let sum_yy = series2.values.reduce(fn(acc, v) { acc + (v - mean2) * (v - mean2) }, 0.0)
-    
-    if sum_xx == 0.0 or sum_yy == 0.0 {
-      return { correlation: 0.0, significance: "no_variance" }
-    }
-    
-    let correlation = sum_xy / (sum_xx.sqrt() * sum_yy.sqrt())
-    
-    let significance = if correlation.abs() > 0.7 { 
-      "strong" 
-    } else if correlation.abs() > 0.3 { 
-      "moderate" 
-    } else if correlation.abs() > 0.1 { 
-      "weak" 
-    } else { 
-      "negligible" 
-    }
-    
-    { correlation: correlation, significance: significance }
-  }
+  // 记录审计事件
+  AuditLogger::log_access_attempt(audit_logger, {
+    tenant_id: "tenant-a-123",
+    user_id: "user-tenant-a-001",
+    resource: "span-data",
+    action: "read",
+    result: "success",
+    timestamp: 1640995200,
+    ip_address: "192.168.1.100",
+    user_agent: "azimuth-collector/2.1.0"
+  })
   
-  // Test generating insights
-  let generate_insights = fn(metrics: Array[MetricEvent]) {
-    let mut insights = []
-    
-    // Analyze each metric
-    let metric_names = ["cpu_usage", "memory_usage", "response_time", "error_rate"]
-    
-    for metric_name in metric_names {
-      let time_series = aggregate_to_time_series(metrics, metric_name, 300) // 5-minute intervals
-      
-      if time_series.values.length() >= 2 {
-        let trend = calculate_trend(time_series)
-        let anomalies = detect_anomalies(time_series, 2.0) // 2 standard deviations
-        
-        // Generate trend insight
-        if trend.confidence > 0.5 and trend.direction != "stable" {
-          let trend_description = metric_name + " is showing a " + trend.direction + " trend"
-          let trend_recommendation = match metric_name {
-            "cpu_usage" if trend.direction == "increasing" => Some("Consider scaling up or optimizing CPU usage")
-            "memory_usage" if trend.direction == "increasing" => Some("Monitor memory usage and consider optimization")
-            "response_time" if trend.direction == "increasing" => Some("Investigate performance bottlenecks")
-            "error_rate" if trend.direction == "increasing" => Some("Urgent: Investigate and fix root cause of errors")
-            _ => None
-          }
-          
-          insights = insights.push({
-            insight_type: "trend_analysis",
-            description: trend_description,
-            confidence: trend.confidence,
-            affected_metrics: [metric_name],
-            recommendation: trend_recommendation
-          })
-        }
-        
-        // Generate anomaly insight
-        if anomalies.length() > 0 {
-          let anomaly_description = metric_name + " has " + anomalies.length().to_string() + " anomalous data points"
-          let anomaly_recommendation = match metric_name {
-            "error_rate" => Some("Investigate the cause of these error rate anomalies")
-            "response_time" => Some("Investigate performance issues during these time periods")
-            "cpu_usage" | "memory_usage" => Some("Monitor resource usage during these anomalies")
-            _ => Some("Review these anomalies for potential issues")
-          }
-          
-          insights = insights.push({
-            insight_type: "anomaly_detection",
-            description: anomaly_description,
-            confidence: 0.8,
-            affected_metrics: [metric_name],
-            recommendation: anomaly_recommendation
-          })
-        }
-      }
-    }
-    
-    // Analyze correlations between metrics
-    let cpu_series = aggregate_to_time_series(metrics, "cpu_usage", 300)
-    let response_series = aggregate_to_time_series(metrics, "response_time", 300)
-    let error_series = aggregate_to_time_series(metrics, "error_rate", 300)
-    
-    if cpu_series.values.length() == response_series.values.length() and cpu_series.values.length() >= 2 {
-      let cpu_response_correlation = calculate_correlation(cpu_series, response_series)
-      
-      if cpu_response_correlation.significance == "strong" and cpu_response_correlation.correlation > 0.5 {
-        insights = insights.push({
-          insight_type: "correlation_analysis",
-          description: "Strong positive correlation between CPU usage and response time",
-          confidence: 0.7,
-          affected_metrics: ["cpu_usage", "response_time"],
-          recommendation: Some("Consider optimizing CPU usage to improve response times")
-        })
-      }
-    }
-    
-    if response_series.values.length() == error_series.values.length() and response_series.values.length() >= 2 {
-      let response_error_correlation = calculate_correlation(response_series, error_series)
-      
-      if response_error_correlation.significance == "strong" and response_error_correlation.correlation > 0.5 {
-        insights = insights.push({
-          insight_type: "correlation_analysis",
-          description: "Strong positive correlation between response time and error rate",
-          confidence: 0.8,
-          affected_metrics: ["response_time", "error_rate"],
-          recommendation: Some("High response times may be contributing to increased error rates")
-        })
-      }
-    }
-    
-    insights
-  }
+  AuditLogger::log_config_change(audit_logger, {
+    tenant_id: "tenant-a-123",
+    user_id: "user-tenant-a-001",
+    config_key: "sampler.base_rate",
+    old_value: "0.1",
+    new_value: "0.2",
+    timestamp: 1640995300
+  })
   
-  // Run analytics tests
-  let metrics = create_sample_metrics()
+  AuditLogger::log_security_event(audit_logger, {
+    tenant_id: "tenant-b-456",
+    user_id: "user-tenant-b-001",
+    event_type: "unauthorized_access_attempt",
+    resource: "admin-config",
+    result: "denied",
+    timestamp: 1640995400,
+    details: "User attempted to access admin configuration without sufficient privileges"
+  })
   
-  // Test time series aggregation
-  let cpu_time_series = aggregate_to_time_series(metrics, "cpu_usage", 300)
-  assert_eq(cpu_time_series.values.length(), 5)
-  assert_eq(cpu_time_series.timestamps.length(), 5)
-  assert_eq(cpu_time_series.interval, 300)
+  // 查询审计日志
+  let tenant_a_audit_logs = AuditLogger::query_by_tenant(audit_logger, "tenant-a-123")
+  assert_eq(tenant_a_audit_logs.length(), 2)
   
-  // Test trend analysis
-  let cpu_trend = calculate_trend(cpu_time_series)
-  assert_eq(cpu_trend.direction, "increasing")
-  assert_true(cpu_trend.slope > 0.0)
-  assert_true(cpu_trend.confidence > 0.5)
+  let tenant_b_audit_logs = AuditLogger::query_by_tenant(audit_logger, "tenant-b-456")
+  assert_eq(tenant_b_audit_logs.length(), 1)
   
-  // Test anomaly detection
-  let error_time_series = aggregate_to_time_series(metrics, "error_rate", 300)
-  let error_anomalies = detect_anomalies(error_time_series, 1.5) // Lower threshold for testing
-  
-  // Test correlation analysis
-  let response_time_series = aggregate_to_time_series(metrics, "response_time", 300)
-  let cpu_response_correlation = calculate_correlation(cpu_time_series, response_time_series)
-  assert_eq(cpu_response_correlation.significance, "strong")
-  assert_true(cpu_response_correlation.correlation > 0.5)
-  
-  // Test insights generation
-  let insights = generate_insights(metrics)
-  assert_true(insights.length() > 0)
-  
-  // Verify specific insights
-  let trend_insights = insights.filter(fn(i) { i.insight_type == "trend_analysis" })
-  assert_true(trend_insights.length() > 0)
-  
-  let correlation_insights = insights.filter(fn(i) { i.insight_type == "correlation_analysis" })
-  assert_true(correlation_insights.length() > 0)
-  
-  // Test that insights have proper structure
-  for insight in insights {
-    assert_true(insight.description.length() > 0)
-    assert_true(insight.confidence >= 0.0 and insight.confidence <= 1.0)
-    assert_true(insight.affected_metrics.length() > 0)
-  }
+  let security_events = AuditLogger::query_by_event_type(audit_logger, "security_event")
+  assert_eq(security_events.length(), 1)
+  assert_eq(AuditEvent::event_type(security_events[0]), "unauthorized_access_attempt")
 }

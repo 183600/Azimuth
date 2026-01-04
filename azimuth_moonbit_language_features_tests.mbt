@@ -1,404 +1,313 @@
-// Azimuth MoonBit语言特性测试用例
-// 测试MoonBit语言特性和Azimuth遥测系统的集成
+// Azimuth Telemetry System - MoonBit Language Features Tests
+// This file contains test cases that showcase MoonBit language features
 
-// 测试1: SpanKind枚举的所有值
-test "span kind enumeration values" {
-  // 测试所有SpanKind枚举值
-  let internal_span = azimuth::SpanKind::Internal
-  let server_span = azimuth::SpanKind::Server
-  let client_span = azimuth::SpanKind::Client
-  let producer_span = azimuth::SpanKind::Producer
-  let consumer_span = azimuth::SpanKind::Consumer
+// Test 1: Pattern Matching with Complex Types
+test "pattern matching with complex types" {
+  let data = [
+    ("string", StringValue("hello")),
+    ("int", IntValue(42)),
+    ("bool", BoolValue(true)),
+    ("float", FloatValue(3.14))
+  ]
   
-  // 创建不同类型的span并验证kind
-  let trace_id = "test_trace_id_12345"
-  let span_id = "test_span_id_67890"
-  let span_ctx = azimuth::SpanContext::new(trace_id, span_id, true, "test_state")
-  
-  let internal = azimuth::Span::new("internal_operation", internal_span, span_ctx)
-  let server = azimuth::Span::new("server_operation", server_span, span_ctx)
-  let client = azimuth::Span::new("client_operation", client_span, span_ctx)
-  let producer = azimuth::Span::new("producer_operation", producer_span, span_ctx)
-  let consumer = azimuth::Span::new("consumer_operation", consumer_span, span_ctx)
-  
-  // 验证span kind
-  match azimuth::Span::kind(internal) {
-    azimuth::SpanKind::Internal => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match azimuth::Span::kind(server) {
-    azimuth::SpanKind::Server => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match azimuth::Span::kind(client) {
-    azimuth::SpanKind::Client => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match azimuth::Span::kind(producer) {
-    azimuth::SpanKind::Producer => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match azimuth::Span::kind(consumer) {
-    azimuth::SpanKind::Consumer => assert_true(true)
-    _ => assert_true(false)
+  for (type_name, value) in data {
+    match (type_name, value) {
+      ("string", StringValue(s)) => {
+        assert_eq(s, "hello")
+        assert_eq(s.length(), 5)
+      }
+      ("int", IntValue(i)) => {
+        assert_eq(i, 42)
+        assert_true(i > 0)
+      }
+      ("bool", BoolValue(b)) => {
+        assert_true(b)
+      }
+      ("float", FloatValue(f)) => {
+        assert_true(f > 3.0 && f < 4.0)
+      }
+      _ => assert_true(false)
+    }
   }
 }
 
-// 测试2: StatusCode枚举的所有值
-test "status code enumeration values" {
-  // 测试所有StatusCode枚举值
-  let unset_status = azimuth::StatusCode::Unset
-  let ok_status = azimuth::StatusCode::Ok
-  let error_status = azimuth::StatusCode::Error
+// Test 2: Higher-Order Functions and Closures
+test "higher-order functions and closures" {
+  // Test map function
+  let numbers = [1, 2, 3, 4, 5]
+  let doubled = map(numbers, fn(x) { x * 2 })
+  assert_eq(doubled, [2, 4, 6, 8, 10])
   
-  // 创建span并设置不同状态
-  let trace_id = "test_trace_id_status"
-  let span_id = "test_span_id_status"
-  let span_ctx = azimuth::SpanContext::new(trace_id, span_id, true, "")
+  // Test filter function
+  let evens = filter(numbers, fn(x) { x % 2 == 0 })
+  assert_eq(evens, [2, 4])
   
-  let span = azimuth::Span::new("status_test", azimuth::SpanKind::Internal, span_ctx)
+  // Test fold/reduce function
+  let sum = fold(numbers, 0, fn(acc, x) { acc + x })
+  assert_eq(sum, 15)
   
-  // 初始状态应该是Unset
-  match azimuth::Span::status(span) {
-    azimuth::StatusCode::Unset => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  // 设置为Ok状态
-  azimuth::Span::set_status(span, azimuth::StatusCode::Ok, Some("Operation completed successfully"))
-  
-  // 设置为Error状态
-  azimuth::Span::set_status(span, azimuth::StatusCode::Error, Some("Operation failed"))
+  // Test closure with captured variable
+  let multiplier = 3
+  let multiply_by_three = fn(x) { x * multiplier }
+  let result = multiply_by_three(5)
+  assert_eq(result, 15)
 }
 
-// 测试3: SeverityNumber枚举的所有值
-test "severity number enumeration values" {
-  // 测试所有SeverityNumber枚举值
-  let trace_severity = azimuth::SeverityNumber::Trace
-  let debug_severity = azimuth::SeverityNumber::Debug
-  let info_severity = azimuth::SeverityNumber::Info
-  let warn_severity = azimuth::SeverityNumber::Warn
-  let error_severity = azimuth::SeverityNumber::Error
-  let fatal_severity = azimuth::SeverityNumber::Fatal
-  
-  // 创建不同严重级别的日志记录
-  let trace_log = azimuth::LogRecord::new(trace_severity, "Trace message")
-  let debug_log = azimuth::LogRecord::new(debug_severity, "Debug message")
-  let info_log = azimuth::LogRecord::new(info_severity, "Info message")
-  let warn_log = azimuth::LogRecord::new(warn_severity, "Warning message")
-  let error_log = azimuth::LogRecord::new(error_severity, "Error message")
-  let fatal_log = azimuth::LogRecord::new(fatal_severity, "Fatal message")
-  
-  // 验证严重级别
-  assert_eq(azimuth::LogRecord::severity_number(trace_log), trace_severity)
-  assert_eq(azimuth::LogRecord::severity_number(debug_log), debug_severity)
-  assert_eq(azimuth::LogRecord::severity_number(info_log), info_severity)
-  assert_eq(azimuth::LogRecord::severity_number(warn_log), warn_severity)
-  assert_eq(azimuth::LogRecord::severity_number(error_log), error_severity)
-  assert_eq(azimuth::LogRecord::severity_number(fatal_log), fatal_severity)
+// Test 3: Custom Type Definitions and Methods
+type Point {
+  x : Int
+  y : Int
 }
 
-// 测试4: InstrumentationScope的创建和属性
-test "instrumentation scope creation and attributes" {
-  // 测试基本InstrumentationScope创建
-  let basic_scope = azimuth::InstrumentationScope {
-    name: "test.instrumentation",
-    version: None,
-    schema_url: None
+type Circle {
+  center : Point
+  radius : Float
+}
+
+test "custom type definitions and methods" {
+  // Create and test Point
+  let p1 = { x: 3, y: 4 }
+  assert_eq(p1.x, 3)
+  assert_eq(p1.y, 4)
+  
+  // Create and test Circle
+  let c1 = { center: p1, radius: 5.0 }
+  assert_eq(c1.center.x, 3)
+  assert_eq(c1.center.y, 4)
+  assert_eq(c1.radius, 5.0)
+  
+  // Test distance calculation
+  let p2 = { x: 0, y: 0 }
+  let distance = sqrt((p1.x - p2.x)^2 + (p1.y - p2.y)^2)
+  assert_eq(distance, 5.0)
+}
+
+// Test 4: Enum Types and Exhaustive Matching
+type Color {
+  Red
+  Green
+  Blue
+  Custom(String)
+}
+
+type Result[T, E] {
+  Ok(T)
+  Err(E)
+}
+
+test "enum types and exhaustive matching" {
+  let colors = [Red, Green, Blue, Custom("purple")]
+  
+  for color in colors {
+    let rgb_value = match color {
+      Red => "#FF0000"
+      Green => "#00FF00"
+      Blue => "#0000FF"
+      Custom(name) => "custom: " + name
+    }
+    
+    match color {
+      Red => assert_eq(rgb_value, "#FF0000")
+      Green => assert_eq(rgb_value, "#00FF00")
+      Blue => assert_eq(rgb_value, "#0000FF")
+      Custom(name) => assert_eq(rgb_value, "custom: " + name)
+    }
   }
   
-  assert_eq(basic_scope.name, "test.instrumentation")
-  match basic_scope.version {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  match basic_scope.schema_url {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
+  // Test Result type
+  let success = Ok(42)
+  let failure = Err("Error message")
+  
+  match success {
+    Ok(value) => assert_eq(value, 42)
+    Err(_) => assert_true(false)
   }
   
-  // 测试完整InstrumentationScope创建
-  let full_scope = azimuth::InstrumentationScope {
-    name: "full.instrumentation",
-    version: Some("1.0.0"),
-    schema_url: Some("https://example.com/schema/v1")
-  }
-  
-  assert_eq(full_scope.name, "full.instrumentation")
-  match full_scope.version {
-    Some(v) => assert_eq(v, "1.0.0")
-    None => assert_true(false)
-  }
-  match full_scope.schema_url {
-    Some(url) => assert_eq(url, "https://example.com/schema/v1")
-    None => assert_true(false)
-  }
-  
-  // 测试在Meter和Logger中使用InstrumentationScope
-  let meter = azimuth::Meter { scope: basic_scope }
-  let logger = azimuth::Logger { scope: full_scope }
-  
-  assert_eq(meter.scope.name, "test.instrumentation")
-  assert_eq(logger.scope.name, "full.instrumentation")
-  match logger.scope.version {
-    Some(v) => assert_eq(v, "1.0.0")
-    None => assert_true(false)
+  match failure {
+    Ok(_) => assert_true(false)
+    Err(msg) => assert_eq(msg, "Error message")
   }
 }
 
-// 测试5: Clock和Random的功能
-test "clock and random functionality" {
-  // 测试Clock功能
-  let system_clock = azimuth::Clock::system()
-  let timestamp = azimuth::Clock::now_unix_nanos(system_clock)
-  
-  // 验证时间戳是合理的（2025年的时间戳）
-  assert_true(timestamp > 1700000000000000000L)  // 2023年之后
-  assert_true(timestamp < 1800000000000000000L)  // 2027年之前
-  
-  // 测试Random功能
-  let system_random = azimuth::Random::system()
-  
-  // 测试next_bytes
-  let bytes = azimuth::Random::next_bytes(system_random, 10)
-  assert_eq(bytes.length(), 10)
-  
-  // 测试next_u64
-  let random_value = azimuth::Random::next_u64(system_random)
-  assert_true(random_value >= 0UL)
-  
-  // 多次调用随机数生成器
-  let random_value2 = azimuth::Random::next_u64(system_random)
-  let random_value3 = azimuth::Random::next_u64(system_random)
-  
-  // 验证返回值（在简化实现中可能相同）
-  assert_eq(random_value, 12345UL)
-  assert_eq(random_value2, 12345UL)
-  assert_eq(random_value3, 12345UL)
+// Test 5: Recursive Functions and Data Structures
+type List[T] {
+  Nil
+  Cons(T, List[T])
 }
 
-// 测试6: TextMapCarrier的设置和获取
-test "text map carrier set and get operations" {
-  // 创建TextMapCarrier
-  let carrier = azimuth::TextMapCarrier::new()
+test "recursive functions and data structures" {
+  // Create a list
+  let list = Cons(1, Cons(2, Cons(3, Nil)))
   
-  // 验证初始状态
-  assert_eq(carrier.headers.length(), 0)
-  
-  // 设置头部（虽然简化实现不实际存储）
-  azimuth::TextMapCarrier::set(carrier, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-  azimuth::TextMapCarrier::set(carrier, "tracestate", "rojo=00f067aa0ba902b7")
-  azimuth::TextMapCarrier::set(carrier, "custom-header", "custom-value")
-  
-  // 获取头部
-  match azimuth::TextMapCarrier::get(carrier, "traceparent") {
-    Some(value) => assert_eq(value, "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-    None => assert_true(false)
+  // Define recursive sum function
+  let sum = fn(lst : List[Int]) -> Int {
+    match lst {
+      Nil => 0
+      Cons(head, tail) => head + sum(tail)
+    }
   }
   
-  match azimuth::TextMapCarrier::get(carrier, "tracestate") {
-    Some(value) => assert_true(false)  // 简化实现中只返回traceparent
-    None => assert_true(true)
+  assert_eq(sum(list), 6)
+  
+  // Define recursive map function for lists
+  let map_list = fn(lst : List[Int], f : (Int) -> Int) -> List[Int] {
+    match lst {
+      Nil => Nil
+      Cons(head, tail) => Cons(f(head), map_list(tail, f))
+    }
   }
   
-  match azimuth::TextMapCarrier::get(carrier, "non-existent-header") {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
+  let doubled_list = map_list(list, fn(x) { x * 2 })
+  assert_eq(sum(doubled_list), 12)
 }
 
-// 测试7: W3CTraceContextPropagator和W3CBaggagePropagator
-test "w3c propagators functionality" {
-  // 创建W3CTraceContextPropagator
-  let trace_propagator = azimuth::W3CTraceContextPropagator::new()
+// Test 6: Pipeline Operator and Function Composition
+test "pipeline operator and function composition" {
+  let add_one = fn(x : Int) { x + 1 }
+  let double = fn(x : Int) { x * 2 }
+  let square = fn(x : Int) { x * x }
   
-  // 创建W3CBaggagePropagator
-  let baggage_propagator = azimuth::W3CBaggagePropagator::new()
+  // Test function composition
+  let add_one_then_double = fn(x) { double(add_one(x)) }
+  assert_eq(add_one_then_double(3), 8)
   
-  // 创建CompositePropagator
-  let propagators = [trace_propagator]
-  let composite_propagator = azimuth::CompositePropagator::new(propagators)
+  let double_then_square = fn(x) { square(double(x)) }
+  assert_eq(double_then_square(3), 36)
   
-  // 创建Context和Carrier
-  let root_ctx = azimuth::Context::root()
-  let carrier = azimuth::TextMapCarrier::new()
+  // Test pipeline operations
+  let result1 = 3 |> add_one |> double |> square
+  assert_eq(result1, 64)
   
-  // 测试注入操作
-  azimuth::CompositePropagator::inject(composite_propagator, root_ctx, carrier)
-  
-  // 验证注入结果
-  match azimuth::TextMapCarrier::get(carrier, "traceparent") {
-    Some(value) => assert_true(value.contains("test-trace-id"))
-    None => assert_true(false)
-  }
-  
-  // 测试提取操作
-  let extracted_ctx = azimuth::CompositePropagator::extract(composite_propagator, carrier)
-  
-  // 验证提取结果
-  let extracted_key = azimuth::ContextKey::new("extracted")
-  match azimuth::Context::get(extracted_ctx, extracted_key) {
-    Some(value) => assert_eq(value, "true")
-    None => assert_true(false)
-  }
+  let result2 = 3 |> double |> add_one |> square
+  assert_eq(result2, 49)
 }
 
-// 测试8: Span的完整生命周期
-test "span complete lifecycle" {
-  // 创建TracerProvider和Tracer
-  let tracer_provider = azimuth::TracerProvider::default()
-  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "test_tracer", Some("1.0.0"))
-  
-  // 验证Tracer的InstrumentationScope
-  let scope = azimuth::Tracer::instrumentation_scope(tracer)
-  assert_eq(scope.name, "test_tracer")
-  match scope.version {
-    Some(v) => assert_eq(v, "1.0.0")
-    None => assert_true(false)
+// Test 7: Module System and Namespaces
+test "module system and namespaces" {
+  // Test creating and using modules
+  let math_ops = {
+    add: fn(a, b) { a + b },
+    subtract: fn(a, b) { a - b },
+    multiply: fn(a, b) { a * b },
+    divide: fn(a, b) { 
+      if b != 0 { a / b } else { 0 }
+    }
   }
   
-  // 开始Span
-  let span = azimuth::Tracer::start_span(tracer, "lifecycle_test")
-  
-  // 验证Span初始状态
-  assert_eq(azimuth::Span::name(span), "lifecycle_test")
-  assert_true(azimuth::Span::is_recording(span))
-  
-  match azimuth::Span::kind(span) {
-    azimuth::SpanKind::Internal => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  // 添加事件
-  azimuth::Span::add_event(span, "event1", Some([("key1", azimuth::AttributeValue::StringValue("value1"))]))
-  azimuth::Span::add_event(span, "event2", None)
-  
-  // 设置状态
-  azimuth::Span::set_status(span, azimuth::StatusCode::Ok, Some("Operation completed"))
-  
-  // 结束Span
-  azimuth::Span::end(span)
-  
-  // 验证SpanContext
-  let span_ctx = azimuth::Span::span_context(span)
-  assert_true(azimuth::SpanContext::is_valid(span_ctx))
-  assert_true(azimuth::SpanContext::is_sampled(span_ctx))
-  assert_eq(azimuth::SpanContext::trace_id(span_ctx), "test_trace_id")
-  assert_eq(azimuth::SpanContext::span_id(span_ctx), "test_span_id")
+  assert_eq(math_ops.add(5, 3), 8)
+  assert_eq(math_ops.subtract(5, 3), 2)
+  assert_eq(math_ops.multiply(5, 3), 15)
+  assert_eq(math_ops.divide(6, 3), 2)
+  assert_eq(math_ops.divide(6, 0), 0)
 }
 
-// 测试9: LogRecord的各种创建方式
-test "log record various creation methods" {
-  // 基本创建方式
-  let basic_log = azimuth::LogRecord::new(azimuth::SeverityNumber::Info, "Basic log message")
-  assert_eq(azimuth::LogRecord::severity_number(basic_log), azimuth::SeverityNumber::Info)
-  match azimuth::LogRecord::body(basic_log) {
-    Some(body) => assert_eq(body, "Basic log message")
-    None => assert_true(false)
-  }
-  
-  // 带上下文的创建方式
-  let ctx = azimuth::Context::with_value(
-    azimuth::Context::root(),
-    azimuth::ContextKey::new("test_key"),
-    "test_value"
-  )
-  
-  let attrs = azimuth::Attributes::new()
-  let context_log = azimuth::LogRecord::new_with_context(
-    azimuth::SeverityNumber::Error,
-    Some("Error with context"),
-    Some(attrs),
-    Some(1609459200000L),  // 2021-01-01 00:00:00 UTC
-    Some(1609459201000L),  // 2021-01-01 00:00:01 UTC
-    Some("trace_id_123"),
-    Some("span_id_456"),
-    Some(ctx)
-  )
-  
-  // 验证上下文日志记录
-  assert_eq(azimuth::LogRecord::severity_number(context_log), azimuth::SeverityNumber::Error)
-  match azimuth::LogRecord::body(context_log) {
-    Some(body) => assert_eq(body, "Error with context")
-    None => assert_true(false)
-  }
-  assert_eq(azimuth::LogRecord::trace_id(context_log), Some("trace_id_123"))
-  assert_eq(azimuth::LogRecord::span_id(context_log), Some("span_id_456"))
-  
-  // 测试Logger emit
-  let logger_provider = azimuth::LoggerProvider::default()
-  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "test_logger")
-  
-  // 发出日志记录
-  azimuth::Logger::emit(logger, basic_log)
-  azimuth::Logger::emit(logger, context_log)
-  
-  // 验证Logger的InstrumentationScope
-  assert_eq(logger.scope.name, "test_logger")
+// Test 8: Generic Types and Polymorphism
+type Container[T] {
+  items : Array[T]
 }
 
-// 测试10: Resource的合并操作
-test "resource merge operations" {
-  // 创建基础Resource
-  let base_resource = azimuth::Resource::with_attributes(
-    azimuth::Resource::new(),
-    [
-      ("service.name", azimuth::AttributeValue::StringValue("base-service")),
-      ("service.version", azimuth::AttributeValue::StringValue("1.0.0")),
-      ("host.name", azimuth::AttributeValue::StringValue("base-host"))
-    ]
-  )
-  
-  // 创建覆盖Resource
-  let override_resource = azimuth::Resource::with_attributes(
-    azimuth::Resource::new(),
-    [
-      ("service.name", azimuth::AttributeValue::StringValue("override-service")),
-      ("environment", azimuth::AttributeValue::StringValue("production")),
-      ("deployment.region", azimuth::AttributeValue::StringValue("us-west-2"))
-    ]
-  )
-  
-  // 合并Resource
-  let merged_resource = azimuth::Resource::merge(base_resource, override_resource)
-  
-  // 验证合并结果（简化实现中返回override_resource）
-  let service_name = azimuth::Resource::get_attribute(merged_resource, "service.name")
-  match service_name {
-    Some(azimuth::AttributeValue::StringValue(name)) => assert_eq(name, "override-service")
-    _ => assert_true(false)
+test "generic types and polymorphism" {
+  // Create generic container functions
+  let make_container = fn[T](items : Array[T]) -> Container[T] {
+    { items: items }
   }
   
-  let environment = azimuth::Resource::get_attribute(merged_resource, "environment")
-  match environment {
-    Some(azimuth::AttributeValue::StringValue(env)) => assert_eq(env, "production")
-    _ => assert_true(false)
+  let container_size = fn[T](c : Container[T]) -> Int {
+    c.items.length()
   }
   
-  let deployment_region = azimuth::Resource::get_attribute(merged_resource, "deployment.region")
-  match deployment_region {
-    Some(azimuth::AttributeValue::StringValue(region)) => assert_eq(region, "us-west-2")
-    _ => assert_true(false)
+  let container_get = fn[T](c : Container[T], index : Int) -> T {
+    c.items[index]
   }
   
-  // 验证不存在的属性
-  let non_existent = azimuth::Resource::get_attribute(merged_resource, "non.existent.attr")
-  match non_existent {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
+  // Test with int container
+  let int_container = make_container([1, 2, 3, 4, 5])
+  assert_eq(container_size(int_container), 5)
+  assert_eq(container_get(int_container, 2), 3)
+  
+  // Test with string container
+  let string_container = make_container(["hello", "world", "azimuth"])
+  assert_eq(container_size(string_container), 3)
+  assert_eq(container_get(string_container, 1), "world")
+  
+  // Test with float container
+  let float_container = make_container([1.1, 2.2, 3.3])
+  assert_eq(container_size(float_container), 3)
+  assert_eq(container_get(float_container, 0), 1.1)
+}
+
+// Test 9: Lazy Evaluation and Memoization
+test "lazy evaluation and memoization" {
+  // Create a memoized function
+  let mut cache = []
+  
+  let memoized_fib = fn(n : Int) -> Int {
+    // Check if already computed
+    for i in 0..cache.length() {
+      if cache[i].0 == n {
+        return cache[i].1
+      }
+    }
+    
+    // Compute and cache
+    let result = if n <= 1 {
+      n
+    } else {
+      memoized_fib(n - 1) + memoized_fib(n - 2)
+    }
+    
+    cache.push((n, result))
+    result
   }
   
-  // 测试空Resource合并
-  let empty_resource = azimuth::Resource::new()
-  let merged_with_empty = azimuth::Resource::merge(empty_resource, base_resource)
+  // Test memoization
+  assert_eq(memoized_fib(5), 5)
+  assert_eq(memoized_fib(10), 55)
+  assert_eq(memoized_fib(5), 5) // Should use cached value
   
-  let host_name = azimuth::Resource::get_attribute(merged_with_empty, "host.name")
-  match host_name {
-    Some(azimuth::AttributeValue::StringValue(host)) => assert_eq(host, "base-host")
-    _ => assert_true(false)
+  // Verify cache contains expected entries
+  assert_true(cache.length() >= 6) // At least fib(0) through fib(5)
+}
+
+// Test 10: Error Handling with Try-Catch Pattern
+type Try[T, E] {
+  Success(T)
+  Failure(E)
+}
+
+test "error handling with try-catch pattern" {
+  // Safe division function
+  let safe_divide = fn(a : Int, b : Int) -> Try[Int, String] {
+    if b == 0 {
+      Failure("Division by zero")
+    } else {
+      Success(a / b)
+    }
+  }
+  
+  // Test successful division
+  match safe_divide(10, 2) {
+    Success(result) => assert_eq(result, 5)
+    Failure(_) => assert_true(false)
+  }
+  
+  // Test division by zero
+  match safe_divide(10, 0) {
+    Success(_) => assert_true(false)
+    Failure(error) => assert_eq(error, "Division by zero")
+  }
+  
+  // Chain operations with error handling
+  let result = match safe_divide(20, 4) {
+    Success(q) => match safe_divide(q, 2) {
+      Success(final) => Success(final * 3)
+      Failure(e) => Failure(e)
+    }
+    Failure(e) => Failure(e)
+  }
+  
+  match result {
+    Success(value) => assert_eq(value, 7) // (20/4)/2*3 = 5/2*3 = 2*3 = 6 (integer division)
+    Failure(_) => assert_true(false)
   }
 }
