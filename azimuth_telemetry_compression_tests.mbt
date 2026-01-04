@@ -1,532 +1,301 @@
-// Azimuth Telemetry Data Compression Tests
-// This file contains test cases for telemetry data compression functionality
+// 遥测数据压缩测试用例
+// 测试Azimuth遥测系统的数据压缩功能
 
-// Test 1: Basic Telemetry Data Compression
-test "basic telemetry data compression" {
-  // Define compression algorithms
-  enum CompressionAlgorithm {
-    Gzip
-    Deflate
-    Lz4
-    Snappy
+test "span数据压缩和解压缩" {
+  // 测试span数据的压缩和解压缩
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "compression.test")
+  
+  // 创建包含大量属性的span
+  let span = Tracer::start_span(tracer, "large.data.operation")
+  
+  // 添加大量属性以测试压缩效果
+  Span::set_attribute(span, "operation.type", "data.processing")
+  Span::set_attribute(span, "operation.duration", 1500)
+  Span::set_attribute(span, "operation.size", 1048576)
+  Span::set_attribute(span, "operation.complexity", "high")
+  Span::set_attribute(span, "operation.priority", "critical")
+  Span::set_attribute(span, "service.name", "data.processor")
+  Span::set_attribute(span, "service.version", "2.1.0")
+  Span::set_attribute(span, "service.environment", "production")
+  Span::set_attribute(span, "host.name", "prod-server-01")
+  Span::set_attribute(span, "host.region", "us-west-2")
+  Span::set_attribute(span, "container.id", "container-abc123")
+  Span::set_attribute(span, "pod.name", "data-processor-7f8d9")
+  Span::set_attribute(span, "namespace", "production")
+  
+  // 添加多个事件以增加数据量
+  for i = 0; i < 10; i = i + 1 {
+    Span::add_event(span, "operation.step." + i.to_string(), [
+      ("step.index", IntValue(i)),
+      ("step.duration", IntValue(100 + i * 10)),
+      ("step.status", StringValue("completed"))
+    ])
   }
   
-  // Define compressed data structure
-  type CompressedData = {
-    algorithm: CompressionAlgorithm,
-    original_size: Int,
-    compressed_size: Int,
-    data: Array[Byte]
-  }
+  // 序列化span数据
+  let serialized_data = Span::serialize(span)
   
-  // Define telemetry span data
-  type TelemetrySpan = {
-    trace_id: String,
-    span_id: String,
-    parent_span_id: Option[String],
-    operation_name: String,
-    start_time: Int,
-    end_time: Int,
-    status: String,
-    attributes: Array[(String, String)]
-  }
+  // 验证序列化数据不为空
+  assert_true(String::length(serialized_data) > 0)
   
-  // Create sample telemetry span
-  let span = {
-    trace_id: "trace-12345678901234567890123456789012",
-    span_id: "span-1234567890123456",
-    parent_span_id: Some("span-1234567890123455"),
-    operation_name: "http.request.get.user.profile",
-    start_time: 1640995200000,
-    end_time: 1640995200250,
-    status: "ok",
-    attributes: [
-      ("http.method", "GET"),
-      ("http.url", "/api/v1/users/12345/profile"),
-      ("http.status_code", "200"),
-      ("user.id", "12345"),
-      ("service.name", "user-service"),
-      ("service.version", "1.2.3"),
-      ("deployment.environment", "production")
-    ]
-  }
+  // 压缩数据
+  let compressed_data = CompressionUtil::compress(serialized_data)
   
-  // Simulate compression function
-  let compress_data = fn(data: String, algorithm: CompressionAlgorithm) {
-    // Simulate different compression ratios for different algorithms
-    let compression_ratio = match algorithm {
-      CompressionAlgorithm::Gzip => 0.35
-      CompressionAlgorithm::Deflate => 0.40
-      CompressionAlgorithm::Lz4 => 0.55
-      CompressionAlgorithm::Snappy => 0.60
-    }
-    
-    let original_size = data.length()
-    let compressed_size = (original_size.to_float() * compression_ratio).to_int()
-    
-    // Create mock compressed data (just for testing)
-    let mut compressed_data = []
-    for i in 0..compressed_size {
-      compressed_data = compressed_data.push((i % 256).to_byte())
-    }
-    
-    {
-      algorithm,
-      original_size,
-      compressed_size,
-      data: compressed_data
-    }
-  }
+  // 验证压缩后的数据小于原始数据
+  assert_true(String::length(compressed_data) < String::length(serialized_data))
   
-  // Serialize span to string (simplified)
-  let serialize_span = fn(span: TelemetrySpan) {
-    let mut result = span.trace_id + "|" + span.span_id + "|"
-    
-    match span.parent_span_id {
-      Some(parent_id) => result = result + parent_id
-      None => result = result + ""
-    }
-    
-    result = result + "|" + span.operation_name + "|" + 
-             span.start_time.to_string() + "|" + 
-             span.end_time.to_string() + "|" + 
-             span.status
-    
-    for (key, value) in span.attributes {
-      result = result + "|" + key + "=" + value
-    }
-    
-    result
-  }
+  // 解压缩数据
+  let decompressed_data = CompressionUtil::decompress(compressed_data)
   
-  // Serialize the span
-  let serialized_span = serialize_span(span)
-  assert_true(serialized_span.length() > 0)
+  // 验证解压缩后的数据与原始数据相同
+  assert_eq(decompressed_data, serialized_data)
   
-  // Test compression with different algorithms
-  let gzip_compressed = compress_data(serialized_span, CompressionAlgorithm::Gzip)
-  let deflate_compressed = compress_data(serialized_span, CompressionAlgorithm::Deflate)
-  let lz4_compressed = compress_data(serialized_span, CompressionAlgorithm::Lz4)
-  let snappy_compressed = compress_data(serialized_span, CompressionAlgorithm::Snappy)
+  // 从解压缩的数据重构span
+  let reconstructed_span = Span::deserialize(decompressed_data)
   
-  // Verify compression results
-  assert_eq(gzip_compressed.original_size, serialized_span.length())
-  assert_eq(deflate_compressed.original_size, serialized_span.length())
-  assert_eq(lz4_compressed.original_size, serialized_span.length())
-  assert_eq(snappy_compressed.original_size, serialized_span.length())
+  // 验证重构的span具有相同的属性
+  let original_name = Span::name(span)
+  let reconstructed_name = Span::name(reconstructed_span)
+  assert_eq(original_name, reconstructed_name)
   
-  // Verify compression reduced size
-  assert_true(gzip_compressed.compressed_size < gzip_compressed.original_size)
-  assert_true(deflate_compressed.compressed_size < deflate_compressed.original_size)
-  assert_true(lz4_compressed.compressed_size < lz4_compressed.original_size)
-  assert_true(snappy_compressed.compressed_size < snappy_compressed.original_size)
+  Span::end(span)
+  Span::end(reconstructed_span)
   
-  // Verify compression algorithms are correctly identified
-  match gzip_compressed.algorithm {
-    CompressionAlgorithm::Gzip => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match deflate_compressed.algorithm {
-    CompressionAlgorithm::Deflate => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match lz4_compressed.algorithm {
-    CompressionAlgorithm::Lz4 => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match snappy_compressed.algorithm {
-    CompressionAlgorithm::Snappy => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  // Verify compression efficiency (gzip should be most efficient)
-  assert_true(gzip_compressed.compressed_size <= deflate_compressed.compressed_size)
-  assert_true(deflate_compressed.compressed_size <= lz4_compressed.compressed_size)
-  assert_true(lz4_compressed.compressed_size <= snappy_compressed.compressed_size)
-  
-  // Calculate compression ratios
-  let gzip_ratio = gzip_compressed.compressed_size.to_float() / gzip_compressed.original_size.to_float()
-  let deflate_ratio = deflate_compressed.compressed_size.to_float() / deflate_compressed.original_size.to_float()
-  let lz4_ratio = lz4_compressed.compressed_size.to_float() / lz4_compressed.original_size.to_float()
-  let snappy_ratio = snappy_compressed.compressed_size.to_float() / snappy_compressed.original_size.to_float()
-  
-  // Verify compression ratios are within expected ranges
-  assert_true(gzip_ratio >= 0.3 and gzip_ratio <= 0.4)
-  assert_true(deflate_ratio >= 0.35 and deflate_ratio <= 0.45)
-  assert_true(lz4_ratio >= 0.5 and lz4_ratio <= 0.6)
-  assert_true(snappy_ratio >= 0.55 and snappy_ratio <= 0.65)
+  assert_true(true)
 }
 
-// Test 2: Batch Telemetry Data Compression
-test "batch telemetry data compression" {
-  // Define batch compression configuration
-  type BatchCompressionConfig = {
-    algorithm: String,  // "gzip", "deflate", "lz4", "snappy"
-    batch_size: Int,    // Number of spans in each batch
-    compression_level: Int  // 1-9, higher means more compression but slower
-  }
+test "遥测批量数据压缩" {
+  // 测试批量遥测数据的压缩
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "batch.compression.test")
   
-  // Define batch compression result
-  type BatchCompressionResult = {
-    original_count: Int,
-    original_size: Int,
-    compressed_size: Int,
-    compression_ratio: Float,
-    compression_time_ms: Int,
-    batches: Array[Array[Byte]]
-  }
-  
-  // Create sample telemetry spans
-  let create_test_span = fn(id: Int) {
-    {
-      trace_id: "trace-12345678901234567890123456789012",
-      span_id: "span-" + id.to_string(),
-      parent_span_id: if id > 1 { Some("span-" + (id - 1).to_string()) } else { None },
-      operation_name: "operation." + id.to_string(),
-      start_time: 1640995200000 + (id * 100),
-      end_time: 1640995200000 + (id * 100) + 50,
-      status: if id % 10 == 0 { "error" } else { "ok" },
-      attributes: [
-        ("service.name", "test-service"),
-        ("service.version", "1.0.0"),
-        ("span.index", id.to_string()),
-        ("data.size", (1000 + id).to_string())
-      ]
-    }
-  }
-  
-  // Create test spans
+  // 创建多个span
   let spans = []
-  for i in 1..=100 {
-    spans = spans.push(create_test_span(i))
-  }
-  assert_eq(spans.length(), 100)
-  
-  // Serialize spans function
-  let serialize_spans = fn(spans: Array[T]) {
-    let mut result = []
-    for span in spans {
-      let serialized = span.trace_id + "|" + span.span_id + "|" + 
-                      span.operation_name + "|" + 
-                      span.start_time.to_string() + "|" + 
-                      span.end_time.to_string() + "|" + span.status
-      
-      for (key, value) in span.attributes {
-        serialized = serialized + "|" + key + "=" + value
-      }
-      
-      result = result.push(serialized)
-    }
-    result
+  for i = 0; i < 50; i = i + 1 {
+    let span = Tracer::start_span(tracer, "batch.operation." + i.to_string())
+    Span::set_attribute(span, "batch.id", "batch-001")
+    Span::set_attribute(span, "operation.index", i)
+    Span::set_attribute(span, "operation.type", "batch.processing")
+    spans.push(span)
   }
   
-  // Serialize all spans
-  let serialized_spans = serialize_spans(spans)
-  let total_original_size = serialized_spans.reduce(fn(acc, span) { acc + span.length() }, 0)
+  // 批量序列化span数据
+  let batch_data = SpanBatch::serialize_batch(spans)
   
-  // Batch compression function
-  let batch_compress = fn(spans: Array[String], config: BatchCompressionConfig) {
-    let start_time = 1640995200000  // Mock current time
-    
-    // Split spans into batches
-    let mut batches = []
-    let mut current_batch = []
-    
-    for span in spans {
-      current_batch = current_batch.push(span)
-      
-      if current_batch.length() >= config.batch_size {
-        batches = batches.push(current_batch)
-        current_batch = []
-      }
-    }
-    
-    // Add the last batch if it's not empty
-    if current_batch.length() > 0 {
-      batches = batches.push(current_batch)
-    }
-    
-    // Compress each batch
-    let mut compressed_batches = []
-    let mut total_compressed_size = 0
-    
-    for batch in batches {
-      let batch_data = batch.join("\n")
-      
-      // Simulate compression based on algorithm and level
-      let base_ratio = match config.algorithm {
-        "gzip" => 0.35
-        "deflate" => 0.40
-        "lz4" => 0.55
-        "snappy" => 0.60
-        _ => 0.50
-      }
-      
-      // Adjust ratio based on compression level (1-9)
-      let level_adjustment = (config.compression_level - 5) * 0.02
-      let compression_ratio = (base_ratio - level_adjustment).max(0.2).min(0.8)
-      
-      let compressed_size = (batch_data.length().to_float() * compression_ratio).to_int()
-      total_compressed_size = total_compressed_size + compressed_size
-      
-      // Create mock compressed data
-      let mut compressed_data = []
-      for i in 0..compressed_size {
-        compressed_data = compressed_data.push((i % 256).to_byte())
-      }
-      
-      compressed_batches = compressed_batches.push(compressed_data)
-    }
-    
-    let end_time = start_time + 250  // Mock compression time
-    
-    {
-      original_count: spans.length(),
-      original_size: total_original_size,
-      compressed_size: total_compressed_size,
-      compression_ratio: total_compressed_size.to_float() / total_original_size.to_float(),
-      compression_time_ms: end_time - start_time,
-      batches: compressed_batches
-    }
+  // 验证批量数据不为空
+  assert_true(String::length(batch_data) > 0)
+  
+  // 使用不同的压缩算法进行压缩
+  let gzip_compressed = CompressionUtil::compress_with_algorithm(batch_data, "gzip")
+  let lz4_compressed = CompressionUtil::compress_with_algorithm(batch_data, "lz4")
+  let brotli_compressed = CompressionUtil::compress_with_algorithm(batch_data, "brotli")
+  
+  // 验证所有压缩算法都能有效压缩数据
+  assert_true(String::length(gzip_compressed) < String::length(batch_data))
+  assert_true(String::length(lz4_compressed) < String::length(batch_data))
+  assert_true(String::length(brotli_compressed) < String::length(batch_data))
+  
+  // 测试压缩比
+  let gzip_ratio = String::length(gzip_compressed).to_float() / String::length(batch_data).to_float()
+  let lz4_ratio = String::length(lz4_compressed).to_float() / String::length(batch_data).to_float()
+  let brotli_ratio = String::length(brotli_compressed).to_float() / String::length(batch_data).to_float()
+  
+  // 验证压缩比合理（至少压缩20%）
+  assert_true(gzip_ratio < 0.8)
+  assert_true(lz4_ratio < 0.8)
+  assert_true(brotli_ratio < 0.8)
+  
+  // 测试解压缩
+  let gzip_decompressed = CompressionUtil::decompress_with_algorithm(gzip_compressed, "gzip")
+  let lz4_decompressed = CompressionUtil::decompress_with_algorithm(lz4_compressed, "lz4")
+  let brotli_decompressed = CompressionUtil::decompress_with_algorithm(brotli_compressed, "brotli")
+  
+  // 验证解压缩后的数据与原始数据相同
+  assert_eq(gzip_decompressed, batch_data)
+  assert_eq(lz4_decompressed, batch_data)
+  assert_eq(brotli_decompressed, batch_data)
+  
+  // 结束所有span
+  for span in spans {
+    Span::end(span)
   }
   
-  // Test different compression configurations
-  let gzip_config = { algorithm: "gzip", batch_size: 10, compression_level: 6 }
-  let deflate_config = { algorithm: "deflate", batch_size: 20, compression_level: 6 }
-  let lz4_config = { algorithm: "lz4", batch_size: 25, compression_level: 3 }
-  let snappy_config = { algorithm: "snappy", batch_size: 50, compression_level: 3 }
-  
-  // Compress with different configurations
-  let gzip_result = batch_compress(serialized_spans, gzip_config)
-  let deflate_result = batch_compress(serialized_spans, deflate_config)
-  let lz4_result = batch_compress(serialized_spans, lz4_config)
-  let snappy_result = batch_compress(serialized_spans, snappy_config)
-  
-  // Verify compression results
-  assert_eq(gzip_result.original_count, 100)
-  assert_eq(deflate_result.original_count, 100)
-  assert_eq(lz4_result.original_count, 100)
-  assert_eq(snappy_result.original_count, 100)
-  
-  assert_eq(gzip_result.original_size, total_original_size)
-  assert_eq(deflate_result.original_size, total_original_size)
-  assert_eq(lz4_result.original_size, total_original_size)
-  assert_eq(snappy_result.original_size, total_original_size)
-  
-  // Verify compression reduced size
-  assert_true(gzip_result.compressed_size < gzip_result.original_size)
-  assert_true(deflate_result.compressed_size < deflate_result.original_size)
-  assert_true(lz4_result.compressed_size < lz4_result.original_size)
-  assert_true(snappy_result.compressed_size < snappy_result.original_size)
-  
-  // Verify batch counts
-  assert_eq(gzip_result.batches.length(), 10)  // 100 spans / 10 batch_size
-  assert_eq(deflate_result.batches.length(), 5)  // 100 spans / 20 batch_size
-  assert_eq(lz4_result.batches.length(), 4)  // 100 spans / 25 batch_size (last batch smaller)
-  assert_eq(snappy_result.batches.length(), 2)  // 100 spans / 50 batch_size
-  
-  // Verify compression ratios
-  assert_true(gzip_result.compression_ratio >= 0.3 and gzip_result.compression_ratio <= 0.4)
-  assert_true(deflate_result.compression_ratio >= 0.35 and deflate_result.compression_ratio <= 0.45)
-  assert_true(lz4_result.compression_ratio >= 0.5 and lz4_result.compression_ratio <= 0.6)
-  assert_true(snappy_result.compression_ratio >= 0.55 and snappy_result.compression_ratio <= 0.65)
-  
-  // Verify compression time is reasonable
-  assert_true(gzip_result.compression_time_ms > 0 and gzip_result.compression_time_ms <= 1000)
-  assert_true(deflate_result.compression_time_ms > 0 and deflate_result.compression_time_ms <= 1000)
-  assert_true(lz4_result.compression_time_ms > 0 and lz4_result.compression_time_ms <= 1000)
-  assert_true(snappy_result.compression_time_ms > 0 and snappy_result.compression_time_ms <= 1000)
-  
-  // Compare compression efficiency
-  assert_true(gzip_result.compression_ratio <= deflate_result.compression_ratio)
-  assert_true(deflate_result.compression_ratio <= lz4_result.compression_ratio)
-  assert_true(lz4_result.compression_ratio <= snappy_result.compression_ratio)
-  
-  // Compare compression speed (snappy should be fastest)
-  assert_true(snappy_result.compression_time_ms <= lz4_result.compression_time_ms)
-  assert_true(lz4_result.compression_time_ms <= deflate_result.compression_time_ms)
-  assert_true(deflate_result.compression_time_ms <= gzip_result.compression_time_ms)
+  assert_true(true)
 }
 
-// Test 3: Adaptive Compression Strategy
-test "adaptive compression strategy" {
-  // Define data characteristics
-  type DataCharacteristics = {
-    entropy: Float,        // 0.0-1.0, higher means more random/less compressible
-    size: Int,             // Size in bytes
-    repetition: Float      // 0.0-1.0, higher means more repetitive patterns
+test "度量数据压缩效率" {
+  // 测试度量数据的压缩效率
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "metrics.compression.test")
+  
+  // 创建多个度量
+  let request_counter = Meter::create_counter(meter, "http.requests.total", Some("Total HTTP requests"), Some("count"))
+  let response_histogram = Meter::create_histogram(meter, "http.response.duration", Some("HTTP response duration"), Some("ms"))
+  let active_gauge = Meter::create_gauge(meter, "active.connections", Some("Active connections"), Some("connections"))
+  
+  // 生成大量度量数据点
+  for i = 0; i < 1000; i = i + 1 {
+    Counter::add_with_attributes(request_counter, 1.0, [
+      ("method", i % 2 == 0 ? "GET" : "POST"),
+      ("status", i % 5 == 0 ? "500" : "200"),
+      ("endpoint", "/api/resource/" + (i % 10).to_string())
+    ])
+    
+    Histogram::record_with_attributes(response_histogram, (50 + i % 200).to_float(), [
+      ("method", i % 2 == 0 ? "GET" : "POST"),
+      ("endpoint", "/api/resource/" + (i % 10).to_string())
+    ])
+    
+    Gauge::set_with_attributes(active_gauge, (100 + i % 50).to_float(), [
+      ("server", "server-" + (i % 5).to_string()),
+      ("region", i % 2 == 0 ? "us-east-1" : "us-west-2")
+    ])
   }
   
-  // Define compression recommendation
-  type CompressionRecommendation = {
-    algorithm: String,
-    level: Int,
-    expected_ratio: Float,
-    reason: String
+  // 序列化度量数据
+  let metrics_data = MetricsBatch::serialize_metrics([request_counter, response_histogram, active_gauge])
+  
+  // 验证度量数据不为空
+  assert_true(String::length(metrics_data) > 0)
+  
+  // 压缩度量数据
+  let compressed_metrics = CompressionUtil::compress(metrics_data)
+  
+  // 验证压缩效果
+  let compression_ratio = String::length(compressed_metrics).to_float() / String::length(metrics_data).to_float()
+  assert_true(compression_ratio < 0.7)  // 至少压缩30%
+  
+  // 解压缩度量数据
+  let decompressed_metrics = CompressionUtil::decompress(compressed_metrics)
+  
+  // 验证解压缩后的数据与原始数据相同
+  assert_eq(decompressed_metrics, metrics_data)
+  
+  // 从解压缩的数据重构度量
+  let reconstructed_metrics = MetricsBatch::deserialize_metrics(decompressed_metrics)
+  
+  // 验证重构的度量数量正确
+  assert_eq(Array::length(reconstructed_metrics), 3)
+  
+  assert_true(true)
+}
+
+test "日志数据压缩和过滤" {
+  // 测试日志数据的压缩和过滤
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "log.compression.test")
+  
+  // 创建大量日志记录
+  let logs = []
+  for i = 0; i < 500; i = i + 1 {
+    let severity = i % 4 == 0 ? Error : (i % 3 == 0 ? Warn : (i % 2 == 0 ? Info : Debug))
+    let log = LogRecord::new(severity, "Log message " + i.to_string())
+    
+    LogRecord::add_attribute(log, "log.index", i)
+    LogRecord::add_attribute(log, "service.name", "log-generator")
+    LogRecord::add_attribute(log, "service.instance", "instance-" + (i % 3).to_string())
+    
+    // 为错误日志添加额外属性
+    if severity == Error {
+      LogRecord::add_attribute(log, "error.type", "ProcessingError")
+      LogRecord::add_attribute(log, "error.code", "ERR_" + (1000 + i).to_string())
+      LogRecord::add_attribute(log, "stack.trace", "at com.example.Processor.process(Processor.java:" + (100 + i).to_string() + ")")
+    }
+    
+    logs.push(log)
   }
   
-  // Analyze data characteristics
-  let analyze_data = fn(data: String) {
-    // Calculate entropy (simplified)
-    let char_counts = {}
-    let mut total_chars = 0
-    
-    for char in data.to_char_array() {
-      let count = match char_counts.get(char) {
-        Some(c) => c + 1
-        None => 1
-      }
-      char_counts = char_counts.set(char, count)
-      total_chars = total_chars + 1
-    }
-    
-    let mut entropy = 0.0
-    for (_, count) in char_counts {
-      let probability = count.to_float() / total_chars.to_float()
-      entropy = entropy - (probability * probability.log2())
-    }
-    
-    // Normalize entropy to 0-1 range (max entropy for ASCII is ~7 bits)
-    entropy = entropy / 7.0
-    
-    // Calculate repetition (simplified - count consecutive repeated chars)
-    let mut repetitions = 0
-    let mut total_pairs = 0
-    
-    for i in 0..(data.length() - 1) {
-      if data[i] == data[i + 1] {
-        repetitions = repetitions + 1
-      }
-      total_pairs = total_pairs + 1
-    }
-    
-    let repetition = repetitions.to_float() / total_pairs.to_float()
-    
-    {
-      entropy,
-      size: data.length(),
-      repetition
-    }
-  }
+  // 序列化日志数据
+  let logs_data = LogBatch::serialize_logs(logs)
   
-  // Recommend compression algorithm based on data characteristics
-  let recommend_compression = fn(characteristics: DataCharacteristics) {
-    if characteristics.size < 100 {
-      // Small data, use fast compression
-      {
-        algorithm: "snappy",
-        level: 3,
-        expected_ratio: 0.8,
-        reason: "Small data size, prioritize speed over ratio"
-      }
-    } else if characteristics.entropy > 0.8 {
-      // High entropy (random data), use fast compression
-      {
-        algorithm: "lz4",
-        level: 1,
-        expected_ratio: 0.7,
-        reason: "High entropy data, compression will be limited"
-      }
-    } else if characteristics.repetition > 0.3 {
-      // High repetition, use best compression
-      {
-        algorithm: "gzip",
-        level: 9,
-        expected_ratio: 0.3,
-        reason: "High repetition data, maximize compression ratio"
-      }
-    } else if characteristics.entropy < 0.5 {
-      // Low entropy, use good compression
-      {
-        algorithm: "deflate",
-        level: 6,
-        expected_ratio: 0.4,
-        reason: "Low entropy data, good compression expected"
-      }
-    } else {
-      // Balanced approach
-      {
-        algorithm: "gzip",
-        level: 6,
-        expected_ratio: 0.5,
-        reason: "Balanced characteristics, use standard compression"
-      }
-    }
-  }
+  // 验证日志数据不为空
+  assert_true(String::length(logs_data) > 0)
   
-  // Test with different data patterns
+  // 压缩日志数据
+  let compressed_logs = CompressionUtil::compress(logs_data)
   
-  // 1. Highly repetitive data
-  let repetitive_data = "pattern123456789".repeat(100)
-  let repetitive_chars = analyze_data(repetitive_data)
-  let repetitive_recommendation = recommend_compression(repetitive_chars)
+  // 验证压缩效果
+  assert_true(String::length(compressed_logs) < String::length(logs_data))
   
-  assert_eq(repetitive_recommendation.algorithm, "gzip")
-  assert_eq(repetitive_recommendation.level, 9)
-  assert_eq(repetitive_recommendation.expected_ratio, 0.3)
-  assert_eq(repetitive_recommendation.reason, "High repetition data, maximize compression ratio")
+  // 解压缩日志数据
+  let decompressed_logs = CompressionUtil::decompress(compressed_logs)
   
-  // 2. Random-like data (high entropy)
-  let random_like_data = "xYz123!@#abcDEF456ghiJKL789mnoPQR012stuVWX345"
-  let random_chars = analyze_data(random_like_data)
-  let random_recommendation = recommend_compression(random_chars)
+  // 验证解压缩后的数据与原始数据相同
+  assert_eq(decompressed_logs, logs_data)
   
-  assert_eq(random_recommendation.algorithm, "lz4")
-  assert_eq(random_recommendation.level, 1)
-  assert_eq(random_recommendation.expected_ratio, 0.7)
-  assert_eq(random_recommendation.reason, "High entropy data, compression will be limited")
+  // 测试日志过滤和压缩
+  let error_logs = Array::filter(logs, fn(log) { LogRecord::severity_number(log) == Error })
+  let error_logs_data = LogBatch::serialize_logs(error_logs)
+  let compressed_error_logs = CompressionUtil::compress(error_logs_data)
   
-  // 3. Small data
-  let small_data = "small"
-  let small_chars = analyze_data(small_data)
-  let small_recommendation = recommend_compression(small_chars)
+  // 验证过滤后的压缩效果更好
+  let full_compression_ratio = String::length(compressed_logs).to_float() / String::length(logs_data).to_float()
+  let error_compression_ratio = String::length(compressed_error_logs).to_float() / String::length(error_logs_data).to_float()
   
-  assert_eq(small_recommendation.algorithm, "snappy")
-  assert_eq(small_recommendation.level, 3)
-  assert_eq(small_recommendation.expected_ratio, 0.8)
-  assert_eq(small_recommendation.reason, "Small data size, prioritize speed over ratio")
+  // 错误日志通常包含更多结构化数据，压缩比可能更好
+  assert_true(full_compression_ratio < 0.8)
+  assert_true(error_compression_ratio < 0.8)
   
-  // 4. Low entropy data
-  let low_entropy_data = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
-  let low_entropy_chars = analyze_data(low_entropy_data)
-  let low_entropy_recommendation = recommend_compression(low_entropy_chars)
+  assert_true(true)
+}
+
+test "增量压缩和差异更新" {
+  // 测试增量压缩和差异更新
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "incremental.compression.test")
   
-  assert_eq(low_entropy_recommendation.algorithm, "deflate")
-  assert_eq(low_entropy_recommendation.level, 6)
-  assert_eq(low_entropy_recommendation.expected_ratio, 0.4)
-  assert_eq(low_entropy_recommendation.reason, "Low entropy data, good compression expected")
+  // 创建基础span数据
+  let base_span = Tracer::start_span(tracer, "base.operation")
+  Span::set_attribute(base_span, "operation.type", "base")
+  Span::set_attribute(base_span, "operation.version", "1.0.0")
+  Span::set_attribute(base_span, "service.name", "base.service")
   
-  // 5. Balanced data
-  let balanced_data = "The quick brown fox jumps over the lazy dog. " +
-                     "The quick brown fox jumps over the lazy dog. " +
-                     "Pack my box with five dozen liquor jugs."
-  let balanced_chars = analyze_data(balanced_data)
-  let balanced_recommendation = recommend_compression(balanced_chars)
+  // 序列化并压缩基础数据
+  let base_serialized = Span::serialize(base_span)
+  let base_compressed = CompressionUtil::compress(base_serialized)
   
-  assert_eq(balanced_recommendation.algorithm, "gzip")
-  assert_eq(balanced_recommendation.level, 6)
-  assert_eq(balanced_recommendation.expected_ratio, 0.5)
-  assert_eq(balanced_recommendation.reason, "Balanced characteristics, use standard compression")
+  // 创建更新后的span数据
+  let updated_span = Tracer::start_span(tracer, "base.operation")
+  Span::set_attribute(updated_span, "operation.type", "base")
+  Span::set_attribute(updated_span, "operation.version", "1.1.0")  // 版本更新
+  Span::set_attribute(updated_span, "service.name", "base.service")
+  Span::set_attribute(updated_span, "operation.feature", "new.feature")  // 新增属性
   
-  // Verify characteristics calculations
-  assert_true(repetitive_chars.repetition > 0.3)
-  assert_true(random_chars.entropy > 0.8)
-  assert_true(small_chars.size < 100)
-  assert_true(low_entropy_chars.entropy < 0.5)
+  // 序列化更新后的数据
+  let updated_serialized = Span::serialize(updated_span)
   
-  // Verify all recommendations have valid values
-  assert_true(repetitive_recommendation.level >= 1 and repetitive_recommendation.level <= 9)
-  assert_true(random_recommendation.level >= 1 and random_recommendation.level <= 9)
-  assert_true(small_recommendation.level >= 1 and small_recommendation.level <= 9)
-  assert_true(low_entropy_recommendation.level >= 1 and low_entropy_recommendation.level <= 9)
-  assert_true(balanced_recommendation.level >= 1 and balanced_recommendation.level <= 9)
+  // 计算差异
+  let diff = CompressionUtil::calculate_diff(base_serialized, updated_serialized)
   
-  assert_true(repetitive_recommendation.expected_ratio > 0.0 and repetitive_recommendation.expected_ratio < 1.0)
-  assert_true(random_recommendation.expected_ratio > 0.0 and random_recommendation.expected_ratio < 1.0)
-  assert_true(small_recommendation.expected_ratio > 0.0 and small_recommendation.expected_ratio < 1.0)
-  assert_true(low_entropy_recommendation.expected_ratio > 0.0 and low_entropy_recommendation.expected_ratio < 1.0)
-  assert_true(balanced_recommendation.expected_ratio > 0.0 and balanced_recommendation.expected_ratio < 1.0)
+  // 验证差异数据小于完整更新数据
+  assert_true(String::length(diff) < String::length(updated_serialized))
+  
+  // 压缩差异数据
+  let compressed_diff = CompressionUtil::compress(diff)
+  
+  // 验证压缩后的差异数据更小
+  assert_true(String::length(compressed_diff) < String::length(diff))
+  
+  // 解压缩差异数据
+  let decompressed_diff = CompressionUtil::decompress(compressed_diff)
+  
+  // 应用差异到基础数据
+  let reconstructed_updated = CompressionUtil::apply_diff(base_serialized, decompressed_diff)
+  
+  // 验证重构的数据与更新后的数据相同
+  assert_eq(reconstructed_updated, updated_serialized)
+  
+  // 从重构的数据创建span
+  let reconstructed_span = Span::deserialize(reconstructed_updated)
+  
+  // 验证重构的span具有更新后的属性
+  let reconstructed_name = Span::name(reconstructed_span)
+  assert_eq(reconstructed_name, "base.operation")
+  
+  Span::end(base_span)
+  Span::end(updated_span)
+  Span::end(reconstructed_span)
+  
+  assert_true(true)
 }
