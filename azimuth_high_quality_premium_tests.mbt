@@ -1,200 +1,123 @@
-// Azimuth 高级优质测试套件
-// 专注于测试遥测系统的核心功能和边界情况
+// Azimuth Premium High-Quality Test Suite
+// This file contains 10 high-quality test cases for the Azimuth telemetry system
 
-// 测试1: 遥测数据序列化和反序列化
-test "遥测数据序列化和反序列化功能" {
-  // 1. 定义遥测数据类型
-  enum TelemetryValue {
-    IntValue(Int)
-    FloatValue(Float)
-    StringValue(String)
-    BoolValue(Bool)
-    ArrayValue(Array[TelemetryValue])
+// Test 1: Telemetry Data Collection and Aggregation
+test "telemetry data collection and aggregation" {
+  // Define telemetry data types
+  type Metric = {
+    name: String,
+    value: Float,
+    unit: String,
+    timestamp: Int,
+    tags: Array[String]
   }
   
-  // 2. 创建复杂的遥测数据结构
-  let original_data = [
-    ("service.name", StringValue("payment-service")),
-    ("service.version", StringValue("1.2.3")),
-    ("request.count", IntValue(1000)),
-    ("response.time", FloatValue(125.5)),
-    ("error.rate", FloatValue(0.01)),
-    ("healthy", BoolValue(true)),
-    ("endpoints", ArrayValue([
-      StringValue("/api/pay"),
-      StringValue("/api/validate"),
-      StringValue("/api/status")
-    ])),
-    ("metrics", ArrayValue([
-      IntValue(100),
-      IntValue(200),
-      IntValue(300)
-    ]))
-  ]
-  
-  // 3. 模拟序列化过程
-  let serialize_telemetry_value = fn(value: TelemetryValue) {
-    match value {
-      IntValue(v) => "int:" + v.to_string()
-      FloatValue(v) => "float:" + v.to_string()
-      StringValue(v) => "string:" + v
-      BoolValue(v) => "bool:" + (if v { "true" } else { "false" })
-      ArrayValue(arr) => {
-        let serialized_elements = arr.map(serialize_telemetry_value)
-        "array:[" + serialized_elements.join(",") + "]"
-      }
-    }
-  }
-  
-  // 4. 模拟反序列化过程
-  let deserialize_telemetry_value = fn(serialized: String) {
-    if serialized.starts_with("int:") {
-      let number_str = serialized.substring(4, serialized.length() - 4)
-      IntValue(number_str.to_int())
-    } else if serialized.starts_with("float:") {
-      let number_str = serialized.substring(6, serialized.length() - 6)
-      FloatValue(number_str.to_float())
-    } else if serialized.starts_with("string:") {
-      let str_value = serialized.substring(7, serialized.length() - 7)
-      StringValue(str_value)
-    } else if serialized.starts_with("bool:") {
-      let bool_str = serialized.substring(5, serialized.length() - 5)
-      BoolValue(bool_str == "true")
-    } else if serialized.starts_with("array:[") {
-      let inner = serialized.substring(7, serialized.length() - 8)
-      if inner.length() == 0 {
-        ArrayValue([])
-      } else {
-        // 简化的数组反序列化
-        ArrayValue([IntValue(1)])  // 简化实现
-      }
-    } else {
-      StringValue("unknown")
-    }
-  }
-  
-  // 5. 执行序列化
-  let serialized_data = original_data.map(fn(item) {
-    (item.0, serialize_telemetry_value(item.1))
-  })
-  
-  // 6. 验证序列化结果
-  assert_eq(serialized_data.length(), original_data.length())
-  assert_eq(serialized_data[0].0, "service.name")
-  assert_eq(serialized_data[0].1, "string:payment-service")
-  assert_eq(serialized_data[2].0, "request.count")
-  assert_eq(serialized_data[2].1, "int:1000")
-  
-  // 7. 执行反序列化
-  let deserialized_data = serialized_data.map(fn(item) {
-    (item.0, deserialize_telemetry_value(item.1))
-  })
-  
-  // 8. 验证反序列化结果
-  assert_eq(deserialized_data.length(), original_data.length())
-  
-  // 验证具体值
-  match deserialized_data[0].1 {
-    StringValue(v) => assert_eq(v, "payment-service")
-    _ => assert_true(false)
-  }
-  
-  match deserialized_data[2].1 {
-    IntValue(v) => assert_eq(v, 1000)
-    _ => assert_true(false)
-  }
-  
-  match deserialized_data[3].1 {
-    FloatValue(v) => assert_true(v > 125.0 && v < 126.0)
-    _ => assert_true(false)
-  }
-  
-  match deserialized_data[4].1 {
-    FloatValue(v) => assert_true(v > 0.009 && v < 0.011)
-    _ => assert_true(false)
-  }
-  
-  match deserialized_data[5].1 {
-    BoolValue(v) => assert_true(v)
-    _ => assert_true(false)
-  }
-}
-
-// 测试2: 跨服务上下文传播
-test "跨服务上下文传播机制" {
-  // 1. 定义上下文结构
-  type TraceContext = {
+  type Span = {
     trace_id: String,
     span_id: String,
     parent_span_id: Option[String],
-    baggage: Array[(String, String)],
-    trace_flags: Int
+    operation_name: String,
+    start_time: Int,
+    end_time: Int,
+    status: String,
+    attributes: Array[(String, String)]
   }
   
-  // 2. 创建初始上下文
-  let initial_context = TraceContext({
-    trace_id: "trace-1234567890",
-    span_id: "span-1111111111",
-    parent_span_id: None,
-    baggage: [
-      ("user.id", "user-12345"),
-      ("request.id", "req-67890"),
-      ("service.version", "1.2.3")
-    ],
-    trace_flags: 1
-  })
+  type TelemetryData = {
+    metrics: Array[Metric],
+    spans: Array[Span],
+    logs: Array[String]
+  }
   
-  // 3. 模拟服务A创建子上下文
-  let service_a_context = TraceContext({
-    trace_id: initial_context.trace_id,  // 继承追踪ID
-    span_id: "span-2222222222",          // 新的跨度ID
-    parent_span_id: Some(initial_context.span_id),  // 设置父跨度ID
-    baggage: initial_context.baggage,    // 继承行李属性
-    trace_flags: initial_context.trace_flags  // 继承追踪标志
-  })
+  // Create sample metrics
+  let cpu_metric = {
+    name: "cpu_usage",
+    value: 75.5,
+    unit: "percent",
+    timestamp: 1640995200,
+    tags: ["host:server1", "region:us-west"]
+  }
   
-  // 4. 服务A添加新的行李属性
-  let service_a_context_with_baggage = TraceContext({
-    trace_id: service_a_context.trace_id,
-    span_id: service_a_context.span_id,
-    parent_span_id: service_a_context.parent_span_id,
-    baggage: service_a_context.baggage.push(("service.a.operation", "process_payment")),
-    trace_flags: service_a_context.trace_flags
-  })
+  let memory_metric = {
+    name: "memory_usage",
+    value: 1024.0,
+    unit: "mb",
+    timestamp: 1640995200,
+    tags: ["host:server1", "region:us-west"]
+  }
   
-  // 5. 模拟服务B创建子上下文
-  let service_b_context = TraceContext({
-    trace_id: service_a_context_with_baggage.trace_id,  // 继承追踪ID
-    span_id: "span-3333333333",                         // 新的跨度ID
-    parent_span_id: Some(service_a_context_with_baggage.span_id),  // 设置父跨度ID
-    baggage: service_a_context_with_baggage.baggage,    // 继承行李属性
-    trace_flags: service_a_context_with_baggage.trace_flags  // 继承追踪标志
-  })
+  // Create sample span
+  let db_span = {
+    trace_id: "trace-12345",
+    span_id: "span-67890",
+    parent_span_id: Some("span-11111"),
+    operation_name: "database_query",
+    start_time: 1640995200,
+    end_time: 1640995250,
+    status: "ok",
+    attributes: [
+      ("db.type", "postgresql"),
+      ("db.statement", "SELECT * FROM users"),
+      ("db.duration", "50")
+    ]
+  }
   
-  // 6. 服务B添加新的行李属性
-  let service_b_context_with_baggage = TraceContext({
-    trace_id: service_b_context.trace_id,
-    span_id: service_b_context.span_id,
-    parent_span_id: service_b_context.parent_span_id,
-    baggage: service_b_context.baggage.push(("service.b.operation", "validate_payment")),
-    trace_flags: service_b_context.trace_flags
-  })
+  // Create telemetry data collection
+  let telemetry_data = {
+    metrics: [cpu_metric, memory_metric],
+    spans: [db_span],
+    logs: ["Application started", "Database connected"]
+  }
   
-  // 7. 验证上下文传播
-  assert_eq(initial_context.trace_id, service_a_context_with_baggage.trace_id)
-  assert_eq(initial_context.trace_id, service_b_context_with_baggage.trace_id)
+  // Test metric aggregation
+  let aggregate_metrics = fn(metrics: Array[Metric]) {
+    let mut total_value = 0.0
+    let mut count = 0
+    
+    for metric in metrics {
+      total_value = total_value + metric.value
+      count = count + 1
+    }
+    
+    if count > 0 {
+      total_value / count.to_float()
+    } else {
+      0.0
+    }
+  }
   
-  // 8. 验证父子关系
-  assert_eq(service_a_context_with_baggage.parent_span_id, Some(initial_context.span_id))
-  assert_eq(service_b_context_with_baggage.parent_span_id, Some(service_a_context_with_baggage.span_id))
+  let avg_metric_value = aggregate_metrics(telemetry_data.metrics)
+  assert_eq(avg_metric_value, 549.75)  // (75.5 + 1024.0) / 2
   
-  // 9. 验证行李属性传播
-  assert_eq(service_b_context_with_baggage.baggage.length(), 5)  // 3个初始 + 2个新增
+  // Test span duration calculation
+  let calculate_span_duration = fn(span: Span) {
+    span.end_time - span.start_time
+  }
   
-  // 验证初始行李属性存在
-  let find_baggage_item = fn(baggage: Array[(String, String)], key: String) {
+  let db_duration = calculate_span_duration(db_span)
+  assert_eq(db_duration, 50)
+  
+  // Test filtering metrics by tags
+  let filter_by_tag = fn(metrics: Array[Metric], tag: String) {
+    let mut filtered = []
+    for metric in metrics {
+      if metric.tags.contains(tag) {
+        filtered = filtered.push(metric)
+      }
+    }
+    filtered
+  }
+  
+  let host_filtered = filter_by_tag(telemetry_data.metrics, "host:server1")
+  assert_eq(host_filtered.length(), 2)
+  
+  let region_filtered = filter_by_tag(telemetry_data.metrics, "region:us-east")
+  assert_eq(region_filtered.length(), 0)
+  
+  // Test span attribute lookup
+  let get_attribute = fn(span: Span, key: String) {
     let mut found = None
-    for (k, v) in baggage {
+    for (k, v) in span.attributes {
       if k == key {
         found = Some(v)
       }
@@ -202,1771 +125,2967 @@ test "跨服务上下文传播机制" {
     found
   }
   
-  assert_eq(find_baggage_item(service_b_context_with_baggage.baggage, "user.id"), Some("user-12345"))
-  assert_eq(find_baggage_item(service_b_context_with_baggage.baggage, "request.id"), Some("req-67890"))
-  assert_eq(find_baggage_item(service_b_context_with_baggage.baggage, "service.version"), Some("1.2.3"))
+  let db_type = get_attribute(db_span, "db.type")
+  assert_eq(db_type, Some("postgresql"))
   
-  // 验证新增行李属性
-  assert_eq(find_baggage_item(service_b_context_with_baggage.baggage, "service.a.operation"), Some("process_payment"))
-  assert_eq(find_baggage_item(service_b_context_with_baggage.baggage, "service.b.operation"), Some("validate_payment"))
-  
-  // 10. 验证追踪标志传播
-  assert_eq(initial_context.trace_flags, service_a_context_with_baggage.trace_flags)
-  assert_eq(initial_context.trace_flags, service_b_context_with_baggage.trace_flags)
+  let missing_attr = get_attribute(db_span, "missing.key")
+  assert_eq(missing_attr, None)
 }
 
-// 测试3: 内存泄漏检测
-test "内存泄漏检测和资源清理" {
-  // 1. 定义资源管理器
-  type ResourceManager = {
-    allocated_resources: Array[String],
-    max_resources: Int,
-    cleanup_called: Bool
+// Test 2: Cross-Service Distributed Tracing
+test "cross-service distributed tracing" {
+  // Define distributed tracing types
+  type TraceContext = {
+    trace_id: String,
+    span_id: String,
+    baggage: Array[(String, String)]
   }
   
-  // 2. 创建资源管理器
-  let resource_manager = ResourceManager({
-    allocated_resources: [],
-    max_resources: 100,
-    cleanup_called: false
-  })
-  
-  // 3. 模拟资源分配函数
-  let allocate_resource = fn(manager: ResourceManager, resource_id: String) {
-    if manager.allocated_resources.length() < manager.max_resources {
-      ResourceManager({
-        allocated_resources: manager.allocated_resources.push(resource_id),
-        max_resources: manager.max_resources,
-        cleanup_called: manager.cleanup_called
-      })
-    } else {
-      manager  // 资源达到上限，不分配
-    }
+  type ServiceSpan = {
+    service_name: String,
+    operation: String,
+    context: TraceContext,
+    start_time: Int,
+    end_time: Int,
+    children: Array[ServiceSpan]
   }
   
-  // 4. 模拟资源释放函数
-  let release_resource = fn(manager: ResourceManager, resource_id: String) {
-    let filtered_resources = manager.allocated_resources.filter(fn(id) { id != resource_id })
-    ResourceManager({
-      allocated_resources: filtered_resources,
-      max_resources: manager.max_resources,
-      cleanup_called: manager.cleanup_called
-    })
+  type DistributedTrace = {
+    root_span: ServiceSpan,
+    all_spans: Array[ServiceSpan]
   }
   
-  // 5. 模拟资源清理函数
-  let cleanup_resources = fn(manager: ResourceManager) {
-    ResourceManager({
-      allocated_resources: [],
-      max_resources: manager.max_resources,
-      cleanup_called: true
-    })
-  }
-  
-  // 6. 分配资源
-  let manager1 = allocate_resource(resource_manager, "resource-1")
-  let manager2 = allocate_resource(manager1, "resource-2")
-  let manager3 = allocate_resource(manager2, "resource-3")
-  
-  // 7. 验证资源分配
-  assert_eq(manager3.allocated_resources.length(), 3)
-  assert_true(manager3.allocated_resources.contains("resource-1"))
-  assert_true(manager3.allocated_resources.contains("resource-2"))
-  assert_true(manager3.allocated_resources.contains("resource-3"))
-  assert_false(manager3.cleanup_called)
-  
-  // 8. 释放部分资源
-  let manager4 = release_resource(manager3, "resource-2")
-  
-  // 9. 验证部分资源释放
-  assert_eq(manager4.allocated_resources.length(), 2)
-  assert_true(manager4.allocated_resources.contains("resource-1"))
-  assert_false(manager4.allocated_resources.contains("resource-2"))
-  assert_true(manager4.allocated_resources.contains("resource-3"))
-  assert_false(manager4.cleanup_called)
-  
-  // 10. 执行资源清理
-  let manager5 = cleanup_resources(manager4)
-  
-  // 11. 验证资源清理
-  assert_eq(manager5.allocated_resources.length(), 0)
-  assert_true(manager5.cleanup_called)
-  
-  // 12. 模拟内存泄漏检测
-  let detect_memory_leak = fn(manager_before: ResourceManager, manager_after: ResourceManager) {
-    let leak_detected = manager_before.allocated_resources.length() > 0 && 
-                       manager_after.allocated_resources.length() > 0 &&
-                       manager_before.allocated_resources.length() == manager_after.allocated_resources.length()
-    leak_detected
-  }
-  
-  // 13. 测试内存泄漏检测
-  let leak_before_cleanup = detect_memory_leak(manager4, manager4)  // 没有清理，应该检测到泄漏
-  let leak_after_cleanup = detect_memory_leak(manager5, manager5)   // 已清理，不应该检测到泄漏
-  
-  assert_true(leak_before_cleanup)
-  assert_false(leak_after_cleanup)
-}
-
-// 测试4: 异常恢复机制
-test "异常恢复和容错机制" {
-  // 1. 定义异常类型
-  enum TelemetryException {
-    NetworkError(String)
-    SerializationError(String)
-    TimeoutError(Int)
-    ResourceExhaustedError(String)
-    UnknownError(String)
-  }
-  
-  // 2. 定义操作结果类型
-  type OperationResult[T] = {
-    success: Bool,
-    data: Option[T],
-    error: Option[TelemetryException],
-    retry_count: Int
-  }
-  
-  // 3. 创建成功结果
-  let create_success = fn(data: T) {
-    OperationResult({
-      success: true,
-      data: Some(data),
-      error: None,
-      retry_count: 0
-    })
-  }
-  
-  // 4. 创建错误结果
-  let create_error = fn(error: TelemetryException, retry_count: Int) {
-    OperationResult({
-      success: false,
-      data: None,
-      error: Some(error),
-      retry_count
-    })
-  }
-  
-  // 5. 模拟可重试操作
-  let retryable_operation = fn(attempt: Int) {
-    match attempt {
-      1 => create_error(TelemetryException::NetworkError("Connection refused"), 1)
-      2 => create_error(TelemetryException::TimeoutError(5000), 2)
-      3 => create_success("Operation completed successfully")
-      _ => create_error(TelemetryException::UnknownError("Unexpected error"), attempt)
-    }
-  }
-  
-  // 6. 实现重试机制
-  let execute_with_retry = fn(operation: Int -> OperationResult[String], max_retries: Int) {
-    let mut result = operation(1)
-    let mut attempt = 1
-    
-    while not(result.success) and attempt < max_retries {
-      attempt = attempt + 1
-      result = operation(attempt)
-    }
-    
-    result
-  }
-  
-  // 7. 执行带重试的操作
-  let retry_result = execute_with_retry(retryable_operation, 5)
-  
-  // 8. 验证重试结果
-  assert_true(retry_result.success)
-  assert_eq(retry_result.data, Some("Operation completed successfully"))
-  assert_eq(retry_result.error, None)
-  assert_eq(retry_result.retry_count, 0)  // 成功时重试计数为0
-  
-  // 9. 测试重试次数限制
-  let always_failing_operation = fn(attempt: Int) {
-    create_error(TelemetryException::NetworkError("Persistent failure"), attempt)
-  }
-  
-  let failure_result = execute_with_retry(always_failing_operation, 3)
-  
-  // 10. 验证失败结果
-  assert_false(failure_result.success)
-  assert_eq(failure_result.data, None)
-  assert_true(failure_result.error.is_some())
-  
-  match failure_result.error {
-    Some(TelemetryException::NetworkError(msg)) => assert_eq(msg, "Persistent failure")
-    _ => assert_true(false)
-  }
-  
-  // 11. 测试断路器模式
-  type CircuitBreaker = {
-    failure_count: Int,
-    failure_threshold: Int,
-    state: String  // "closed", "open", "half-open"
-    last_failure_time: Int
-  }
-  
-  // 12. 创建断路器
-  let circuit_breaker = CircuitBreaker({
-    failure_count: 0,
-    failure_threshold: 3,
-    state: "closed",
-    last_failure_time: 0
-  })
-  
-  // 13. 模拟断路器操作
-  let circuit_breaker_operation = fn(breaker: CircuitBreaker, operation_success: Bool) {
-    match breaker.state {
-      "open" => {
-        // 断路器打开，直接返回失败
-        (breaker, create_error(TelemetryException::ResourceExhaustedError("Circuit breaker is open"), 0))
-      }
-      "closed" => {
-        if operation_success {
-          // 操作成功，重置失败计数
-          let reset_breaker = CircuitBreaker({
-            failure_count: 0,
-            failure_threshold: breaker.failure_threshold,
-            state: "closed",
-            last_failure_time: 0
-          })
-          (reset_breaker, create_success("Operation succeeded"))
-        } else {
-          // 操作失败，增加失败计数
-          let new_failure_count = breaker.failure_count + 1
-          let new_state = if new_failure_count >= breaker.failure_threshold { "open" } else { "closed" }
-          let updated_breaker = CircuitBreaker({
-            failure_count: new_failure_count,
-            failure_threshold: breaker.failure_threshold,
-            state: new_state,
-            last_failure_time: 1640995200  // 当前时间戳
-          })
-          (updated_breaker, create_error(TelemetryException::NetworkError("Operation failed"), 0))
-        }
-      }
-      _ => (breaker, create_error(TelemetryException::UnknownError("Invalid circuit breaker state"), 0))
-    }
-  }
-  
-  // 14. 测试断路器状态转换
-  let (breaker1, result1) = circuit_breaker_operation(circuit_breaker, false)  // 第一次失败
-  assert_false(result1.success)
-  assert_eq(breaker1.failure_count, 1)
-  assert_eq(breaker1.state, "closed")
-  
-  let (breaker2, result2) = circuit_breaker_operation(breaker1, false)  // 第二次失败
-  assert_false(result2.success)
-  assert_eq(breaker2.failure_count, 2)
-  assert_eq(breaker2.state, "closed")
-  
-  let (breaker3, result3) = circuit_breaker_operation(breaker2, false)  // 第三次失败，触发断路器打开
-  assert_false(result3.success)
-  assert_eq(breaker3.failure_count, 3)
-  assert_eq(breaker3.state, "open")
-  
-  let (breaker4, result4) = circuit_breaker_operation(breaker3, true)   // 断路器已打开，即使操作成功也被拒绝
-  assert_false(result4.success)
-  match result4.error {
-    Some(TelemetryException::ResourceExhaustedError(msg)) => assert_eq(msg, "Circuit breaker is open")
-    _ => assert_true(false)
-  }
-  assert_eq(breaker4.state, "open")  // 状态不变
-}
-
-// 测试5: 数据完整性验证
-test "数据完整性验证和校验机制" {
-  // 1. 定义数据校验器类型
-  type DataValidator = {
-    name: String,
-    validate: String -> Bool,
-    error_message: String
-  }
-  
-  // 2. 创建校验器集合
-  let validators = [
-    DataValidator({
-      name: "non_empty",
-      validate: fn(s) { s.length() > 0 },
-      error_message: "String cannot be empty"
-    }),
-    DataValidator({
-      name: "max_length_100",
-      validate: fn(s) { s.length() <= 100 },
-      error_message: "String length cannot exceed 100 characters"
-    }),
-    DataValidator({
-      name: "alphanumeric",
-      validate: fn(s) {
-        let mut is_valid = true
-        for i in 0..s.length() {
-          let c = s[i]
-          if not((c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z') or (c >= '0' and c <= '9')) {
-            is_valid = false
-          }
-        }
-        is_valid
-      },
-      error_message: "String must contain only alphanumeric characters"
-    }),
-    DataValidator({
-      name: "no_special_chars",
-      validate: fn(s) { not(s.contains("@") or s.contains("#") or s.contains("$")) },
-      error_message: "String cannot contain special characters"
-    })
-  ]
-  
-  // 3. 定义校验结果类型
-  type ValidationResult = {
-    is_valid: Bool,
-    errors: Array[String]
-  }
-  
-  // 4. 实现校验函数
-  let validate_string = fn(input: String, validator_list: Array[DataValidator]) {
-    let mut errors = []
-    
-    for validator in validator_list {
-      if not(validator.validate(input)) {
-        errors = errors.push(validator.error_message)
-      }
-    }
-    
-    ValidationResult({
-      is_valid: errors.length() == 0,
-      errors
-    })
-  }
-  
-  // 5. 测试有效数据
-  let valid_input = "ValidTrace123"
-  let valid_result = validate_string(valid_input, validators)
-  
-  assert_true(valid_result.is_valid)
-  assert_eq(valid_result.errors.length(), 0)
-  
-  // 6. 测试无效数据 - 空字符串
-  let empty_input = ""
-  let empty_result = validate_string(empty_input, validators)
-  
-  assert_false(empty_result.is_valid)
-  assert_eq(empty_result.errors.length(), 2)  // non_empty 和 alphanumeric 校验失败
-  
-  // 7. 测试无效数据 - 超长字符串
-  let long_input = "a".repeat(101)
-  let long_result = validate_string(long_input, validators)
-  
-  assert_false(long_result.is_valid)
-  assert_eq(long_result.errors.length(), 1)  // max_length_100 校验失败
-  assert_true(long_result.errors.contains("String length cannot exceed 100 characters"))
-  
-  // 8. 测试无效数据 - 包含特殊字符
-  let special_input = "Trace@123"
-  let special_result = validate_string(special_input, validators)
-  
-  assert_false(special_result.is_valid)
-  assert_eq(special_result.errors.length(), 1)  // no_special_chars 校验失败
-  assert_true(special_result.errors.contains("String cannot contain special characters"))
-  
-  // 9. 测试复合校验错误
-  let complex_invalid = "@"
-  let complex_result = validate_string(complex_invalid, validators)
-  
-  assert_false(complex_result.is_valid)
-  assert_eq(complex_result.errors.length(), 3)  // non_empty, alphanumeric, no_special_chars 校验失败
-  
-  // 10. 实现数据校验和修复
-  type DataRepairResult = {
-    original: String,
-    repaired: String,
-    repairs_applied: Array[String]
-  }
-  
-  let repair_string = fn(input: String) {
-    let mut repaired = input
-    let mut repairs = []
-    
-    // 修复空字符串
-    if repaired.length() == 0 {
-      repaired = "default"
-      repairs = repairs.push("Replaced empty string with default")
-    }
-    
-    // 修复超长字符串
-    if repaired.length() > 100 {
-      repaired = repaired.substring(0, 100)
-      repairs = repairs.push("Truncated string to maximum length")
-    }
-    
-    // 移除特殊字符
-    let has_special_chars = repaired.contains("@") or repaired.contains("#") or repaired.contains("$")
-    if has_special_chars {
-      repaired = repaired.replace("@", "").replace("#", "").replace("$", "")
-      repairs = repairs.push("Removed special characters")
-    }
-    
-    DataRepairResult({
-      original: input,
-      repaired,
-      repairs_applied: repairs
-    })
-  }
-  
-  // 11. 测试数据修复
-  let repair_result1 = repair_string("")
-  assert_eq(repair_result1.original, "")
-  assert_eq(repair_result1.repaired, "default")
-  assert_eq(repair_result1.repairs_applied.length(), 1)
-  
-  let repair_result2 = repair_string("Trace@123#")
-  assert_eq(repair_result2.original, "Trace@123#")
-  assert_eq(repair_result2.repaired, "Trace123")
-  assert_eq(repair_result2.repairs_applied.length(), 1)
-  
-  let repair_result3 = repair_string("a".repeat(105) + "@")
-  assert_eq(repair_result3.original.length(), 106)
-  assert_eq(repair_result3.repaired.length(), 100)
-  assert_eq(repair_result3.repairs_applied.length(), 2)
-  
-  // 12. 验证修复后的数据
-  let repaired_valid_result = validate_string(repair_result3.repaired, validators)
-  assert_true(repaired_valid_result.is_valid)
-}
-
-// 测试6: 实时流处理
-test "实时流处理和数据分析" {
-  // 1. 定义遥测事件类型
-  enum TelemetryEvent {
-    MetricEvent(String, Float)  // (metric_name, value)
-    LogEvent(String, String)    // (log_level, message)
-    TraceEvent(String, String)  // (trace_id, span_id)
-    ErrorEvent(String, String)  // (error_type, error_message)
-  }
-  
-  // 2. 创建事件流
-  let event_stream = [
-    TelemetryEvent::MetricEvent("cpu.usage", 0.65),
-    TelemetryEvent::MetricEvent("memory.usage", 0.78),
-    TelemetryEvent::LogEvent("INFO", "Service started"),
-    TelemetryEvent::TraceEvent("trace-123", "span-456"),
-    TelemetryEvent::MetricEvent("cpu.usage", 0.72),
-    TelemetryEvent::MetricEvent("memory.usage", 0.82),
-    TelemetryEvent::ErrorEvent("TimeoutError", "Database connection timeout"),
-    TelemetryEvent::LogEvent("WARN", "High memory usage detected"),
-    TelemetryEvent::MetricEvent("cpu.usage", 0.68),
-    TelemetryEvent::MetricEvent("memory.usage", 0.75),
-    TelemetryEvent::LogEvent("INFO", "Service recovered"),
-    TelemetryEvent::TraceEvent("trace-123", "span-789")
-  ]
-  
-  // 3. 定义流处理器
-  type StreamProcessor[T] = {
-    filter: TelemetryEvent -> Bool,
-    transform: TelemetryEvent -> T,
-    aggregate: Array[T] -> T
-  }
-  
-  // 4. 实现流处理函数
-  let process_stream = fn(events: Array[TelemetryEvent], processor: StreamProcessor[T]) {
-    let filtered_events = events.filter(processor.filter)
-    let transformed_events = filtered_events.map(processor.transform)
-    processor.aggregate(transformed_events)
-  }
-  
-  // 5. 处理CPU使用率指标
-  let cpu_processor = StreamProcessor({
-    filter: fn(event) {
-      match event {
-        TelemetryEvent::MetricEvent(name, _) => name == "cpu.usage"
-        _ => false
-      }
-    },
-    transform: fn(event) {
-      match event {
-        TelemetryEvent::MetricEvent(_, value) => value
-        _ => 0.0
-      }
-    },
-    aggregate: fn(values) {
-      let sum = values.reduce(fn(acc, v) { acc + v }, 0.0)
-      sum / values.length().to_float()
-    }
-  })
-  
-  let cpu_average = process_stream(event_stream, cpu_processor)
-  assert_true(cpu_average > 0.68 && cpu_average < 0.69)  // (0.65 + 0.72 + 0.68) / 3
-  
-  // 6. 处理内存使用率指标
-  let memory_processor = StreamProcessor({
-    filter: fn(event) {
-      match event {
-        TelemetryEvent::MetricEvent(name, _) => name == "memory.usage"
-        _ => false
-      }
-    },
-    transform: fn(event) {
-      match event {
-        TelemetryEvent::MetricEvent(_, value) => value
-        _ => 0.0
-      }
-    },
-    aggregate: fn(values) {
-      let max = values.reduce(fn(acc, v) { if v > acc { v } else { acc } }, 0.0)
-      max
-    }
-  })
-  
-  let memory_max = process_stream(event_stream, memory_processor)
-  assert_eq(memory_max, 0.82)  // 最大值为0.82
-  
-  // 7. 处理日志事件
-  type LogSummary = {
-    info_count: Int,
-    warn_count: Int,
-    error_count: Int
-  }
-  
-  let log_processor = StreamProcessor({
-    filter: fn(event) {
-      match event {
-        TelemetryEvent::LogEvent(_, _) => true
-        _ => false
-      }
-    },
-    transform: fn(event) {
-      match event {
-        TelemetryEvent::LogEvent(level, _) => level
-        _ => "UNKNOWN"
-      }
-    },
-    aggregate: fn(levels) {
-      let mut summary = LogSummary({ info_count: 0, warn_count: 0, error_count: 0 })
-      
-      for level in levels {
-        match level {
-          "INFO" => summary = { summary | info_count: summary.info_count + 1 }
-          "WARN" => summary = { summary | warn_count: summary.warn_count + 1 }
-          "ERROR" => summary = { summary | error_count: summary.error_count + 1 }
-          _ => {}  // 忽略未知级别
-        }
-      }
-      
-      summary
-    }
-  })
-  
-  let log_summary = process_stream(event_stream, log_processor)
-  assert_eq(log_summary.info_count, 2)
-  assert_eq(log_summary.warn_count, 1)
-  assert_eq(log_summary.error_count, 0)
-  
-  // 8. 处理错误事件
-  let error_processor = StreamProcessor({
-    filter: fn(event) {
-      match event {
-        TelemetryEvent::ErrorEvent(_, _) => true
-        _ => false
-      }
-    },
-    transform: fn(event) {
-      match event {
-        TelemetryEvent::ErrorEvent(error_type, _) => error_type
-        _ => "UnknownError"
-      }
-    },
-    aggregate: fn(error_types) {
-      error_types
-    }
-  })
-  
-  let error_types = process_stream(event_stream, error_processor)
-  assert_eq(error_types.length(), 1)
-  assert_eq(error_types[0], "TimeoutError")
-  
-  // 9. 处理追踪事件
-  type TraceSummary = {
-    trace_ids: Array[String],
-    span_count: Int
-  }
-  
-  let trace_processor = StreamProcessor({
-    filter: fn(event) {
-      match event {
-        TelemetryEvent::TraceEvent(_, _) => true
-        _ => false
-      }
-    },
-    transform: fn(event) {
-      match event {
-        TelemetryEvent::TraceEvent(trace_id, span_id) => (trace_id, span_id)
-        _ => ("", "")
-      }
-    },
-    aggregate: fn(trace_spans) {
-      let mut trace_ids = []
-      for (trace_id, _) in trace_spans {
-        if not(trace_ids.contains(trace_id)) {
-          trace_ids = trace_ids.push(trace_id)
-        }
-      }
-      
-      TraceSummary({
-        trace_ids,
-        span_count: trace_spans.length()
-      })
-    }
-  })
-  
-  let trace_summary = process_stream(event_stream, trace_processor)
-  assert_eq(trace_summary.trace_ids.length(), 1)
-  assert_eq(trace_summary.trace_ids[0], "trace-123")
-  assert_eq(trace_summary.span_count, 2)
-  
-  // 10. 实现窗口化流处理
-  type WindowedResult[T] = {
-    window_start: Int,
-    window_end: Int,
-    results: Array[T]
-  }
-  
-  let process_windowed_stream = fn(events: Array[TelemetryEvent], window_size: Int, processor: StreamProcessor[T]) {
-    let mut results = []
-    
-    for i in 0..events.length() {
-      if i + window_size <= events.length() {
-        let window = events.slice(i, i + window_size)
-        let window_result = process_stream(window, processor)
-        results = results.push(WindowedResult({
-          window_start: i,
-          window_end: i + window_size - 1,
-          results: [window_result]
-        }))
-      }
-    }
-    
-    results
-  }
-  
-  // 11. 测试窗口化处理
-  let windowed_cpu_results = process_windowed_stream(event_stream, 3, cpu_processor)
-  assert_eq(windowed_cpu_results.length(), 10)  // 12个事件，窗口大小3，有10个窗口
-  
-  // 验证第一个窗口的结果
-  let first_window = windowed_cpu_results[0]
-  assert_eq(first_window.window_start, 0)
-  assert_eq(first_window.window_end, 2)
-  assert_eq(first_window.results.length(), 1)
-  assert_eq(first_window.results[0], 0.65)  // 第一个窗口只有0.65一个CPU指标
-}
-
-// 测试7: 资源限制处理
-test "资源限制处理和优雅降级" {
-  // 1. 定义资源限制配置
-  type ResourceLimits = {
-    max_memory_mb: Int,
-    max_cpu_percent: Int,
-    max_disk_space_mb: Int,
-    max_network_requests_per_second: Int
-  }
-  
-  // 2. 定义资源使用情况
-  type ResourceUsage = {
-    memory_mb: Int,
-    cpu_percent: Int,
-    disk_space_mb: Int,
-    network_requests_per_second: Int
-  }
-  
-  // 3. 定义降级策略
-  enum DegradationStrategy {
-    NoOp           // 不执行任何操作
-    ReduceSampling // 降低采样率
-    CacheOnly      // 只使用缓存
-    RejectRequests // 拒绝新请求
-    Shutdown       // 关闭服务
-  }
-  
-  // 4. 创建资源限制配置
-  let limits = ResourceLimits({
-    max_memory_mb: 1024,
-    max_cpu_percent: 80,
-    max_disk_space_mb: 2048,
-    max_network_requests_per_second: 1000
-  })
-  
-  // 5. 实现资源监控函数
-  let check_resource_limits = fn(usage: ResourceUsage, limits: ResourceLimits) {
-    let memory_exceeded = usage.memory_mb > limits.max_memory_mb
-    let cpu_exceeded = usage.cpu_percent > limits.max_cpu_percent
-    let disk_exceeded = usage.disk_space_mb > limits.max_disk_space_mb
-    let network_exceeded = usage.network_requests_per_second > limits.max_network_requests_per_second
-    
+  // Create trace context propagation
+  let create_child_context = fn(parent_context: TraceContext, new_span_id: String) {
     {
-      memory_exceeded,
-      cpu_exceeded,
-      disk_exceeded,
-      network_exceeded,
-      any_exceeded: memory_exceeded or cpu_exceeded or disk_exceeded or network_exceeded
+      trace_id: parent_context.trace_id,
+      span_id: new_span_id,
+      baggage: parent_context.baggage
     }
   }
   
-  // 6. 实现降级策略选择函数
-  let select_degradation_strategy = fn(exceeded_resources: { memory_exceeded: Bool, cpu_exceeded: Bool, disk_exceeded: Bool, network_exceeded: Bool, any_exceeded: Bool }) {
-    match (exceeded_resources.memory_exceeded, exceeded_resources.cpu_exceeded, exceeded_resources.disk_exceeded, exceeded_resources.network_exceeded) {
-      (true, true, _, _) => DegradationStrategy::RejectRequests  // 内存和CPU都超限
-      (true, _, _, _) => DegradationStrategy::CacheOnly         // 内存超限
-      (_, true, _, _) => DegradationStrategy::ReduceSampling    // CPU超限
-      (_, _, true, _) => DegradationStrategy::RejectRequests    // 磁盘超限
-      (_, _, _, true) => DegradationStrategy::ReduceSampling    // 网络超限
-      (_, _, _, _) => DegradationStrategy::NoOp                 // 无超限
+  let add_baggage_item = fn(context: TraceContext, key: String, value: String) {
+    let mut new_baggage = context.baggage
+    new_baggage = new_baggage.push((key, value))
+    {
+      trace_id: context.trace_id,
+      span_id: context.span_id,
+      baggage: new_baggage
     }
   }
   
-  // 7. 测试正常资源使用情况
-  let normal_usage = ResourceUsage({
-    memory_mb: 512,
-    cpu_percent: 40,
-    disk_space_mb: 1024,
-    network_requests_per_second: 500
-  })
-  
-  let normal_check = check_resource_limits(normal_usage, limits)
-  assert_false(normal_check.any_exceeded)
-  assert_false(normal_check.memory_exceeded)
-  assert_false(normal_check.cpu_exceeded)
-  assert_false(normal_check.disk_exceeded)
-  assert_false(normal_check.network_exceeded)
-  
-  let normal_strategy = select_degradation_strategy(normal_check)
-  match normal_strategy {
-    DegradationStrategy::NoOp => assert_true(true)
-    _ => assert_true(false)
+  // Create root span for API Gateway
+  let root_context = {
+    trace_id: "trace-abc123",
+    span_id: "span-root",
+    baggage: [
+      ("user.id", "user-456"),
+      ("request.id", "req-789")
+    ]
   }
   
-  // 8. 测试内存超限情况
-  let memory_exceeded_usage = ResourceUsage({
-    memory_mb: 1536,  // 超过1024MB限制
-    cpu_percent: 40,
-    disk_space_mb: 1024,
-    network_requests_per_second: 500
-  })
-  
-  let memory_check = check_resource_limits(memory_exceeded_usage, limits)
-  assert_true(memory_check.any_exceeded)
-  assert_true(memory_check.memory_exceeded)
-  assert_false(memory_check.cpu_exceeded)
-  assert_false(memory_check.disk_exceeded)
-  assert_false(memory_check.network_exceeded)
-  
-  let memory_strategy = select_degradation_strategy(memory_check)
-  match memory_strategy {
-    DegradationStrategy::CacheOnly => assert_true(true)
-    _ => assert_true(false)
+  let api_gateway_span = {
+    service_name: "api-gateway",
+    operation: "process_request",
+    context: root_context,
+    start_time: 1640995200,
+    end_time: 1640995210,
+    children: []
   }
   
-  // 9. 测试CPU超限情况
-  let cpu_exceeded_usage = ResourceUsage({
-    memory_mb: 512,
-    cpu_percent: 90,  // 超过80%限制
-    disk_space_mb: 1024,
-    network_requests_per_second: 500
-  })
+  // Create child span for Auth Service
+  let auth_context = create_child_context(root_context, "span-auth")
+  let auth_context_with_baggage = add_baggage_item(auth_context, "auth.method", "jwt")
   
-  let cpu_check = check_resource_limits(cpu_exceeded_usage, limits)
-  assert_true(cpu_check.any_exceeded)
-  assert_false(cpu_check.memory_exceeded)
-  assert_true(cpu_check.cpu_exceeded)
-  assert_false(cpu_check.disk_exceeded)
-  assert_false(cpu_check.network_exceeded)
-  
-  let cpu_strategy = select_degradation_strategy(cpu_check)
-  match cpu_strategy {
-    DegradationStrategy::ReduceSampling => assert_true(true)
-    _ => assert_true(false)
+  let auth_span = {
+    service_name: "auth-service",
+    operation: "authenticate_token",
+    context: auth_context_with_baggage,
+    start_time: 1640995201,
+    end_time: 1640995205,
+    children: []
   }
   
-  // 10. 测试多重超限情况
-  let multiple_exceeded_usage = ResourceUsage({
-    memory_mb: 1536,  // 超过1024MB限制
-    cpu_percent: 90,   // 超过80%限制
-    disk_space_mb: 1024,
-    network_requests_per_second: 500
-  })
-  
-  let multiple_check = check_resource_limits(multiple_exceeded_usage, limits)
-  assert_true(multiple_check.any_exceeded)
-  assert_true(multiple_check.memory_exceeded)
-  assert_true(multiple_check.cpu_exceeded)
-  assert_false(multiple_check.disk_exceeded)
-  assert_false(multiple_check.network_exceeded)
-  
-  let multiple_strategy = select_degradation_strategy(multiple_check)
-  match multiple_strategy {
-    DegradationStrategy::RejectRequests => assert_true(true)
-    _ => assert_true(false)
+  // Create child span for User Service
+  let user_context = create_child_context(root_context, "span-user")
+  let user_span = {
+    service_name: "user-service",
+    operation: "get_user_profile",
+    context: user_context,
+    start_time: 1640995206,
+    end_time: 1640995208,
+    children: []
   }
   
-  // 11. 实现降级操作执行函数
-  type DegradationResult = {
-    strategy: DegradationStrategy,
-    success: Bool,
-    message: String
+  // Build distributed trace
+  let api_with_children = {
+    service_name: api_gateway_span.service_name,
+    operation: api_gateway_span.operation,
+    context: api_gateway_span.context,
+    start_time: api_gateway_span.start_time,
+    end_time: api_gateway_span.end_time,
+    children: [auth_span, user_span]
   }
   
-  let execute_degradation_strategy = fn(strategy: DegradationStrategy) {
-    match strategy {
-      DegradationStrategy::NoOp => {
-        DegradationResult({
-          strategy,
-          success: true,
-          message: "No degradation needed"
-        })
-      }
-      DegradationStrategy::ReduceSampling => {
-        DegradationResult({
-          strategy,
-          success: true,
-          message: "Reduced sampling rate from 100% to 50%"
-        })
-      }
-      DegradationStrategy::CacheOnly => {
-        DegradationResult({
-          strategy,
-          success: true,
-          message: "Switched to cache-only mode"
-        })
-      }
-      DegradationStrategy::RejectRequests => {
-        DegradationResult({
-          strategy,
-          success: true,
-          message: "Rejecting new requests, serving cached responses"
-        })
-      }
-      DegradationStrategy::Shutdown => {
-        DegradationResult({
-          strategy,
-          success: true,
-          message: "Initiating graceful shutdown"
-        })
+  let distributed_trace = {
+    root_span: api_with_children,
+    all_spans: [api_with_children, auth_span, user_span]
+  }
+  
+  // Test trace consistency
+  let validate_trace_consistency = fn(trace: DistributedTrace) {
+    let root_trace_id = trace.root_span.context.trace_id
+    let mut consistent = true
+    
+    for span in trace.all_spans {
+      if span.context.trace_id != root_trace_id {
+        consistent = false
       }
     }
+    
+    consistent
   }
   
-  // 12. 测试降级操作执行
-  let memory_degradation = execute_degradation_strategy(memory_strategy)
-  assert_true(memory_degradation.success)
-  assert_eq(memory_degradation.message, "Switched to cache-only mode")
+  assert_true(validate_trace_consistency(distributed_trace))
   
-  let cpu_degradation = execute_degradation_strategy(cpu_strategy)
-  assert_true(cpu_degradation.success)
-  assert_eq(cpu_degradation.message, "Reduced sampling rate from 100% to 50%")
-  
-  let multiple_degradation = execute_degradation_strategy(multiple_strategy)
-  assert_true(multiple_degradation.success)
-  assert_eq(multiple_degradation.message, "Rejecting new requests, serving cached responses")
-}
-
-// 测试8: 多租户隔离
-test "多租户隔离和数据安全" {
-  // 1. 定义租户类型
-  type Tenant = {
-    id: String,
-    name: String,
-    tier: String,  // "basic", "premium", "enterprise"
-    resource_limits: TenantResourceLimits
-  }
-  
-  // 2. 定义租户资源限制
-  type TenantResourceLimits = {
-    max_spans_per_second: Int,
-    max_metrics_per_minute: Int,
-    max_storage_mb: Int,
-    max_retention_days: Int
-  }
-  
-  // 3. 定义租户数据
-  type TenantData = {
-    tenant_id: String,
-    data_type: String,  // "span", "metric", "log"
-    data: String,
-    timestamp: Int
-  }
-  
-  // 4. 创建租户
-  let tenants = [
-    Tenant({
-      id: "tenant-001",
-      name: "Acme Corp",
-      tier: "enterprise",
-      resource_limits: TenantResourceLimits({
-        max_spans_per_second: 10000,
-        max_metrics_per_minute: 60000,
-        max_storage_mb: 10240,
-        max_retention_days: 90
-      })
-    }),
-    Tenant({
-      id: "tenant-002",
-      name: "Startup Inc",
-      tier: "premium",
-      resource_limits: TenantResourceLimits({
-        max_spans_per_second: 1000,
-        max_metrics_per_minute: 6000,
-        max_storage_mb: 1024,
-        max_retention_days: 30
-      })
-    }),
-    Tenant({
-      id: "tenant-003",
-      name: "Small Business",
-      tier: "basic",
-      resource_limits: TenantResourceLimits({
-        max_spans_per_second: 100,
-        max_metrics_per_minute: 600,
-        max_storage_mb: 100,
-        max_retention_days: 7
-      })
-    })
-  ]
-  
-  // 5. 创建租户数据
-  let tenant_data = [
-    TenantData({
-      tenant_id: "tenant-001",
-      data_type: "span",
-      data: "trace-123-span-456",
-      timestamp: 1640995200
-    }),
-    TenantData({
-      tenant_id: "tenant-002",
-      data_type: "metric",
-      data: "cpu.usage:0.75",
-      timestamp: 1640995201
-    }),
-    TenantData({
-      tenant_id: "tenant-001",
-      data_type: "log",
-      data: "INFO: Service started",
-      timestamp: 1640995202
-    }),
-    TenantData({
-      tenant_id: "tenant-003",
-      data_type: "span",
-      data: "trace-789-span-012",
-      timestamp: 1640995203
-    }),
-    TenantData({
-      tenant_id: "tenant-002",
-      data_type: "span",
-      data: "trace-345-span-678",
-      timestamp: 1640995204
-    })
-  ]
-  
-  // 6. 实现租户查找函数
-  let find_tenant = fn(tenant_id: String, tenant_list: Array[Tenant]) {
+  // Test baggage propagation
+  let get_baggage_value = fn(context: TraceContext, key: String) {
     let mut found = None
-    for tenant in tenant_list {
-      if tenant.id == tenant_id {
-        found = Some(tenant)
+    for (k, v) in context.baggage {
+      if k == key {
+        found = Some(v)
       }
     }
     found
   }
   
-  // 7. 实现数据隔离函数
-  let filter_data_by_tenant = fn(data_list: Array[TenantData], tenant_id: String) {
-    data_list.filter(fn(data) { data.tenant_id == tenant_id })
+  let user_id_in_auth = get_baggage_value(auth_span.context, "user.id")
+  assert_eq(user_id_in_auth, Some("user-456"))
+  
+  let auth_method = get_baggage_value(auth_span.context, "auth.method")
+  assert_eq(auth_method, Some("jwt"))
+  
+  // Test trace timeline analysis
+  let get_trace_duration = fn(trace: DistributedTrace) {
+    trace.root_span.end_time - trace.root_span.start_time
   }
   
-  // 8. 测试租户查找
-  let tenant1 = find_tenant("tenant-001", tenants)
-  assert_true(tenant1.is_some())
-  match tenant1 {
-    Some(t) => {
-      assert_eq(t.id, "tenant-001")
-      assert_eq(t.name, "Acme Corp")
-      assert_eq(t.tier, "enterprise")
+  let trace_duration = get_trace_duration(distributed_trace)
+  assert_eq(trace_duration, 10)
+  
+  // Test service dependency analysis
+  let get_service_dependencies = fn(trace: DistributedTrace) {
+    let mut dependencies = []
+    for span in trace.all_spans {
+      if span.children.length() > 0 {
+        for child in span.children {
+          dependencies = dependencies.push((span.service_name, child.service_name))
+        }
+      }
     }
-    None => assert_true(false)
+    dependencies
   }
   
-  let tenant_nonexistent = find_tenant("tenant-999", tenants)
-  assert_true(tenant_nonexistent.is_none())
+  let dependencies = get_service_dependencies(distributed_trace)
+  assert_eq(dependencies.length(), 2)
+  assert_true(dependencies.contains(("api-gateway", "auth-service")))
+  assert_true(dependencies.contains(("api-gateway", "user-service")))
   
-  // 9. 测试数据隔离
-  let tenant1_data = filter_data_by_tenant(tenant_data, "tenant-001")
-  assert_eq(tenant1_data.length(), 2)
-  assert_eq(tenant1_data[0].tenant_id, "tenant-001")
-  assert_eq(tenant1_data[1].tenant_id, "tenant-001")
-  assert_true(tenant1_data[0].data_type == "span")
-  assert_true(tenant1_data[1].data_type == "log")
-  
-  let tenant2_data = filter_data_by_tenant(tenant_data, "tenant-002")
-  assert_eq(tenant2_data.length(), 2)
-  assert_eq(tenant2_data[0].tenant_id, "tenant-002")
-  assert_eq(tenant2_data[1].tenant_id, "tenant-002")
-  assert_true(tenant2_data[0].data_type == "metric")
-  assert_true(tenant2_data[1].data_type == "span")
-  
-  let tenant3_data = filter_data_by_tenant(tenant_data, "tenant-003")
-  assert_eq(tenant3_data.length(), 1)
-  assert_eq(tenant3_data[0].tenant_id, "tenant-003")
-  assert_true(tenant3_data[0].data_type == "span")
-  
-  // 10. 实现资源限制检查函数
-  type ResourceUsage = {
-    spans_per_second: Int,
-    metrics_per_minute: Int,
-    storage_mb: Int,
-    retention_days: Int
+  // Test critical path analysis
+  let get_critical_path = fn(trace: DistributedTrace) {
+    let mut critical_path = []
+    let mut current_span = trace.root_span
+    
+    while true {
+      critical_path = critical_path.push(current_span.service_name + ":" + current_span.operation)
+      
+      if current_span.children.length() > 0 {
+        // Find the child with the longest duration
+        let mut longest_child = current_span.children[0]
+        let mut longest_duration = longest_child.end_time - longest_child.start_time
+        
+        for child in current_span.children {
+          let duration = child.end_time - child.start_time
+          if duration > longest_duration {
+            longest_duration = duration
+            longest_child = child
+          }
+        }
+        
+        current_span = longest_child
+      } else {
+        break
+      }
+    }
+    
+    critical_path
   }
   
-  let check_tenant_resource_limits = fn(usage: ResourceUsage, limits: TenantResourceLimits) {
+  let critical_path = get_critical_path(distributed_trace)
+  assert_eq(critical_path.length(), 3)
+  assert_eq(critical_path[0], "api-gateway:process_request")
+  assert_eq(critical_path[1], "auth-service:authenticate_token")  // Longer duration (4ms vs 2ms)
+}
+
+// Test 3: Performance Monitoring and Benchmarking
+test "performance monitoring and benchmarking" {
+  // Define performance monitoring types
+  type PerformanceMetric = {
+    name: String,
+    value: Float,
+    threshold: Float,
+    unit: String,
+    timestamp: Int
+  }
+  
+  type BenchmarkResult = {
+    test_name: String,
+    execution_time: Int,
+    memory_usage: Int,
+    cpu_usage: Float,
+    passed: Bool
+  }
+  
+  type PerformanceReport = {
+    metrics: Array[PerformanceMetric],
+    benchmarks: Array[BenchmarkResult],
+    overall_score: Float
+  }
+  
+  // Create performance thresholds
+  let performance_thresholds = [
+    ("response_time", 100.0, "ms"),
+    ("memory_usage", 512.0, "mb"),
+    ("cpu_usage", 80.0, "percent"),
+    ("error_rate", 5.0, "percent")
+  ]
+  
+  // Simulate performance metrics collection
+  let collect_metrics = fn() {
+    let current_time = 1640995200
+    
+    [
+      {
+        name: "response_time",
+        value: 85.5,
+        threshold: 100.0,
+        unit: "ms",
+        timestamp: current_time
+      },
+      {
+        name: "memory_usage",
+        value: 425.0,
+        threshold: 512.0,
+        unit: "mb",
+        timestamp: current_time
+      },
+      {
+        name: "cpu_usage",
+        value: 65.2,
+        threshold: 80.0,
+        unit: "percent",
+        timestamp: current_time
+      },
+      {
+        name: "error_rate",
+        value: 2.1,
+        threshold: 5.0,
+        unit: "percent",
+        timestamp: current_time
+      }
+    ]
+  }
+  
+  // Test performance evaluation
+  let evaluate_performance = fn(metrics: Array[PerformanceMetric]) {
+    let mut passed_count = 0
+    let mut total_count = 0
+    
+    for metric in metrics {
+      total_count = total_count + 1
+      if metric.value <= metric.threshold {
+        passed_count = passed_count + 1
+      }
+    }
+    
+    if total_count > 0 {
+      passed_count.to_float() / total_count.to_float()
+    } else {
+      0.0
+    }
+  }
+  
+  let metrics = collect_metrics()
+  let performance_score = evaluate_performance(metrics)
+  assert_eq(performance_score, 1.0)  // All metrics within thresholds
+  
+  // Test benchmark execution simulation
+  let run_benchmark = fn(test_name: String, complexity: Int) {
+    let base_time = 10
+    let base_memory = 50
+    let base_cpu = 20.0
+    
+    // Simulate execution based on complexity
+    let execution_time = base_time * complexity
+    let memory_usage = base_memory * complexity
+    let cpu_usage = base_cpu * complexity.to_float()
+    
+    // Determine if benchmark passed based on thresholds
+    let passed = execution_time < 1000 and memory_usage < 1000 and cpu_usage < 90.0
+    
     {
-      spans_within_limit: usage.spans_per_second <= limits.max_spans_per_second,
-      metrics_within_limit: usage.metrics_per_minute <= limits.max_metrics_per_minute,
-      storage_within_limit: usage.storage_mb <= limits.max_storage_mb,
-      retention_within_limit: usage.retention_days <= limits.max_retention_days,
-      all_within_limit: usage.spans_per_second <= limits.max_spans_per_second &&
-                       usage.metrics_per_minute <= limits.max_metrics_per_minute &&
-                       usage.storage_mb <= limits.max_storage_mb &&
-                       usage.retention_days <= limits.max_retention_days
+      test_name,
+      execution_time,
+      memory_usage,
+      cpu_usage,
+      passed
     }
   }
   
-  // 11. 测试企业级租户资源限制
-  match tenant1 {
-    Some(t) => {
-      let enterprise_usage = ResourceUsage({
-        spans_per_second: 8000,   // 低于10000限制
-        metrics_per_minute: 50000, // 低于60000限制
-        storage_mb: 8192,          // 低于10240限制
-        retention_days: 60         // 低于90限制
-      })
-      
-      let enterprise_check = check_tenant_resource_limits(enterprise_usage, t.resource_limits)
-      assert_true(enterprise_check.all_within_limit)
-      assert_true(enterprise_check.spans_within_limit)
-      assert_true(enterprise_check.metrics_within_limit)
-      assert_true(enterprise_check.storage_within_limit)
-      assert_true(enterprise_check.retention_within_limit)
-      
-      // 测试超限情况
-      let enterprise_exceeded_usage = ResourceUsage({
-        spans_per_second: 12000,  // 超过10000限制
-        metrics_per_minute: 50000,
-        storage_mb: 8192,
-        retention_days: 60
-      })
-      
-      let enterprise_exceeded_check = check_tenant_resource_limits(enterprise_exceeded_usage, t.resource_limits)
-      assert_false(enterprise_exceeded_check.all_within_limit)
-      assert_false(enterprise_exceeded_check.spans_within_limit)
-      assert_true(enterprise_exceeded_check.metrics_within_limit)
-      assert_true(enterprise_exceeded_check.storage_within_limit)
-      assert_true(enterprise_exceeded_check.retention_within_limit)
+  let benchmarks = [
+    run_benchmark("simple_operation", 1),
+    run_benchmark("medium_complexity", 5),
+    run_benchmark("high_complexity", 10)
+  ]
+  
+  // Test benchmark analysis
+  let analyze_benchmarks = fn(results: Array[BenchmarkResult]) {
+    let mut passed = 0
+    let mut total_time = 0
+    let mut total_memory = 0
+    let mut total_cpu = 0.0
+    
+    for result in results {
+      if result.passed {
+        passed = passed + 1
+      }
+      total_time = total_time + result.execution_time
+      total_memory = total_memory + result.memory_usage
+      total_cpu = total_cpu + result.cpu_usage
     }
-    None => assert_true(false)
-  }
-  
-  // 12. 测试基础级租户资源限制
-  let tenant3_found = find_tenant("tenant-003", tenants)
-  match tenant3_found {
-    Some(t) => {
-      let basic_usage = ResourceUsage({
-        spans_per_second: 90,  // 低于100限制
-        metrics_per_minute: 500, // 低于600限制
-        storage_mb: 80,         // 低于100限制
-        retention_days: 5       // 低于7限制
-      })
-      
-      let basic_check = check_tenant_resource_limits(basic_usage, t.resource_limits)
-      assert_true(basic_check.all_within_limit)
+    
+    let count = results.length()
+    {
+      pass_rate: passed.to_float() / count.to_float(),
+      avg_execution_time: total_time / count,
+      avg_memory_usage: total_memory / count,
+      avg_cpu_usage: total_cpu / count.to_float()
     }
-    None => assert_true(false)
   }
   
-  // 13. 实现数据访问控制
-  type AccessRequest = {
-    tenant_id: String,
-    requested_data_type: String,
-    requester_id: String
+  let benchmark_analysis = analyze_benchmarks(benchmarks)
+  assert_eq(benchmark_analysis.pass_rate, 1.0)  // All benchmarks passed
+  assert_eq(benchmark_analysis.avg_execution_time, 60)  // (10 + 50 + 100) / 3
+  assert_eq(benchmark_analysis.avg_memory_usage, 300)  // (50 + 250 + 500) / 3
+  assert_eq(benchmark_analysis.avg_cpu_usage, 90.0)  // (20 + 100 + 200) / 3
+  
+  // Test performance trend analysis
+  let analyze_trend = fn(current: Float, previous: Float) {
+    if current < previous {
+      "improving"
+    } else if current > previous * 1.1 {
+      "degrading"
+    } else {
+      "stable"
+    }
   }
   
-  type AccessResult = {
-    allowed: Bool,
-    reason: String
+  let current_response_time = 85.5
+  let previous_response_time = 92.0
+  let response_time_trend = analyze_trend(current_response_time, previous_response_time)
+  assert_eq(response_time_trend, "improving")
+  
+  let current_memory = 425.0
+  let previous_memory = 380.0
+  let memory_trend = analyze_trend(current_memory, previous_memory)
+  assert_eq(memory_trend, "stable")
+  
+  // Test performance alerting
+  let check_alerts = fn(metrics: Array[PerformanceMetric]) {
+    let mut alerts = []
+    for metric in metrics {
+      if metric.value > metric.threshold {
+        alerts = alerts.push(metric.name + " exceeded threshold: " + 
+                         metric.value.to_string() + " > " + 
+                         metric.threshold.to_string())
+      }
+    }
+    alerts
   }
   
-  let check_data_access = fn(request: AccessRequest, tenants: Array[Tenant]) {
-    match find_tenant(request.tenant_id, tenants) {
-      None => AccessResult({
-        allowed: false,
-        reason: "Tenant not found"
-      })
-      Some(tenant) => {
-        // 简化的访问控制逻辑：只有租户自己可以访问自己的数据
-        if request.requester_id.starts_with(request.tenant_id) {
-          AccessResult({
-            allowed: true,
-            reason: "Access granted"
-          })
-        } else {
-          AccessResult({
-            allowed: false,
-            reason: "Unauthorized access to tenant data"
-          })
+  // Create metrics with one exceeding threshold
+  let metrics_with_alert = [
+    {
+      name: "response_time",
+      value: 120.0,  // Exceeds threshold
+      threshold: 100.0,
+      unit: "ms",
+      timestamp: 1640995200
+    },
+    {
+      name: "memory_usage",
+      value: 425.0,  // Within threshold
+      threshold: 512.0,
+      unit: "mb",
+      timestamp: 1640995200
+    }
+  ]
+  
+  let alerts = check_alerts(metrics_with_alert)
+  assert_eq(alerts.length(), 1)
+  assert_true(alerts[0].contains("response_time exceeded threshold"))
+  
+  // Create comprehensive performance report
+  let performance_report = {
+    metrics,
+    benchmarks,
+    overall_score: performance_score
+  }
+  
+  assert_eq(performance_report.metrics.length(), 4)
+  assert_eq(performance_report.benchmarks.length(), 3)
+  assert_eq(performance_report.overall_score, 1.0)
+}
+
+// Test 4: Advanced Error Handling and Recovery
+test "advanced error handling and recovery" {
+  // Define error types
+  enum TelemetryError {
+    NetworkTimeout(String, Int)
+    SerializationError(String)
+    ValidationError(String)
+    ResourceExhausted(String, Int)
+    ServiceUnavailable(String)
+    CircuitBreakerOpen(String)
+  }
+  
+  // Define result type
+  type TelemetryResult[T] = {
+    success: Bool,
+    data: Option[T],
+    error: Option[TelemetryError],
+    retry_count: Int
+  }
+  
+  // Define retry strategy
+  type RetryStrategy = {
+    max_attempts: Int,
+    base_delay: Int,
+    max_delay: Int,
+    backoff_multiplier: Float
+  }
+  
+  // Create retry strategy
+  let retry_strategy = {
+    max_attempts: 3,
+    base_delay: 100,
+    max_delay: 1000,
+    backoff_multiplier: 2.0
+  }
+  
+  // Test error classification
+  let classify_error = fn(error: TelemetryError) {
+    match error {
+      TelemetryError::NetworkTimeout(_, _) => "retryable"
+      TelemetryError::SerializationError(_) => "retryable"
+      TelemetryError::ValidationError(_) => "non_retryable"
+      TelemetryError::ResourceExhausted(_, _) => "retryable"
+      TelemetryError::ServiceUnavailable(_) => "retryable"
+      TelemetryError::CircuitBreakerOpen(_) => "non_retryable"
+    }
+  }
+  
+  let network_error = TelemetryError::NetworkTimeout("api.service", 5000)
+  let validation_error = TelemetryError::ValidationError("Invalid span ID")
+  
+  assert_eq(classify_error(network_error), "retryable")
+  assert_eq(classify_error(validation_error), "non_retryable")
+  
+  // Test retry delay calculation
+  let calculate_retry_delay = fn(attempt: Int, strategy: RetryStrategy) {
+    let delay = strategy.base_delay * (strategy.backoff_multiplier.pow(attempt - 1)).to_int()
+    if delay > strategy.max_delay {
+      strategy.max_delay
+    } else {
+      delay
+    }
+  }
+  
+  let delay1 = calculate_retry_delay(1, retry_strategy)
+  let delay2 = calculate_retry_delay(2, retry_strategy)
+  let delay3 = calculate_retry_delay(3, retry_strategy)
+  
+  assert_eq(delay1, 100)
+  assert_eq(delay2, 200)
+  assert_eq(delay3, 400)
+  
+  // Test error recovery with fallback
+  let execute_with_fallback = fn(primary: () -> TelemetryResult[String], 
+                                fallback: () -> TelemetryResult[String]) {
+    let primary_result = primary()
+    if primary_result.success {
+      primary_result
+    } else {
+      match classify_error(primary_result.error.unwrap()) {
+        "retryable" => fallback()
+        "non_retryable" => primary_result
+        _ => primary_result
+      }
+    }
+  }
+  
+  // Simulate operations
+  let failing_operation = fn() {
+    {
+      success: false,
+      data: None,
+      error: Some(TelemetryError::NetworkTimeout("service.api", 5000)),
+      retry_count: 0
+    }
+  }
+  
+  let fallback_operation = fn() {
+    {
+      success: true,
+      data: Some("fallback_result"),
+      error: None,
+      retry_count: 0
+    }
+  }
+  
+  let result_with_fallback = execute_with_fallback(failing_operation, fallback_operation)
+  assert_true(result_with_fallback.success)
+  assert_eq(result_with_fallback.data, Some("fallback_result"))
+  
+  // Test circuit breaker pattern
+  type CircuitBreaker = {
+    failure_count: Int,
+    failure_threshold: Int,
+    state: String,  // "closed", "open", "half_open"
+    last_failure_time: Int
+  }
+  
+  let create_circuit_breaker = fn(threshold: Int) {
+    {
+      failure_count: 0,
+      failure_threshold: threshold,
+      state: "closed",
+      last_failure_time: 0
+    }
+  }
+  
+  let circuit_breaker = create_circuit_breaker(3)
+  
+  // Test circuit breaker state transitions
+  let update_circuit_breaker = fn(cb: CircuitBreaker, success: Bool, current_time: Int) {
+    if success {
+      if cb.state == "half_open" {
+        {
+          failure_count: 0,
+          failure_threshold: cb.failure_threshold,
+          state: "closed",
+          last_failure_time: cb.last_failure_time
+        }
+      } else {
+        {
+          failure_count: 0,
+          failure_threshold: cb.failure_threshold,
+          state: cb.state,
+          last_failure_time: cb.last_failure_time
+        }
+      }
+    } else {
+      let new_failure_count = cb.failure_count + 1
+      if new_failure_count >= cb.failure_threshold {
+        {
+          failure_count: new_failure_count,
+          failure_threshold: cb.failure_threshold,
+          state: "open",
+          last_failure_time: current_time
+        }
+      } else {
+        {
+          failure_count: new_failure_count,
+          failure_threshold: cb.failure_threshold,
+          state: cb.state,
+          last_failure_time: current_time
         }
       }
     }
   }
   
-  // 14. 测试数据访问控制
-  let valid_access_request = AccessRequest({
-    tenant_id: "tenant-001",
-    requested_data_type: "span",
-    requester_id: "tenant-001-user-123"
-  })
+  // Simulate circuit breaker operations
+  let cb_after_failure1 = update_circuit_breaker(circuit_breaker, false, 1640995200)
+  assert_eq(cb_after_failure1.failure_count, 1)
+  assert_eq(cb_after_failure1.state, "closed")
   
-  let valid_access_result = check_data_access(valid_access_request, tenants)
-  assert_true(valid_access_result.allowed)
-  assert_eq(valid_access_result.reason, "Access granted")
+  let cb_after_failure2 = update_circuit_breaker(cb_after_failure1, false, 1640995200)
+  assert_eq(cb_after_failure2.failure_count, 2)
+  assert_eq(cb_after_failure2.state, "closed")
   
-  let invalid_access_request = AccessRequest({
-    tenant_id: "tenant-001",
-    requested_data_type: "span",
-    requester_id: "tenant-002-user-456"  // 不同租户的用户
-  })
+  let cb_after_failure3 = update_circuit_breaker(cb_after_failure2, false, 1640995200)
+  assert_eq(cb_after_failure3.failure_count, 3)
+  assert_eq(cb_after_failure3.state, "open")
   
-  let invalid_access_result = check_data_access(invalid_access_request, tenants)
-  assert_false(invalid_access_result.allowed)
-  assert_eq(invalid_access_result.reason, "Unauthorized access to tenant data")
-  
-  let nonexistent_tenant_request = AccessRequest({
-    tenant_id: "tenant-999",
-    requested_data_type: "span",
-    requester_id: "tenant-999-user-789"
-  })
-  
-  let nonexistent_tenant_result = check_data_access(nonexistent_tenant_request, tenants)
-  assert_false(nonexistent_tenant_result.allowed)
-  assert_eq(nonexistent_tenant_result.reason, "Tenant not found")
-}
-
-// 测试9: 自适应采样策略
-test "自适应采样策略和动态调整" {
-  // 1. 定义采样策略类型
-  enum SamplingStrategy {
-    AlwaysOn       // 总是采样
-    AlwaysOff      // 总是不采样
-    Probabilistic(Float)  // 概率采样
-    RateLimiting(Int)     // 速率限制采样（每秒最多采样数）
-    Adaptive        // 自适应采样
+  // Test error aggregation and reporting
+  type ErrorReport = {
+    total_errors: Int,
+    error_types: Array[(String, Int)],
+    most_common_error: String,
+    error_rate: Float
   }
   
-  // 2. 定义采样决策
-  type SamplingDecision = {
-    sample: Bool,
-    strategy: SamplingStrategy,
+  let aggregate_errors = fn(errors: Array[TelemetryError], total_operations: Int) {
+    let mut error_counts = []
+    let mut counted_errors = []
+    
+    for error in errors {
+      let error_type = match error {
+        TelemetryError::NetworkTimeout(_, _) => "NetworkTimeout"
+        TelemetryError::SerializationError(_) => "SerializationError"
+        TelemetryError::ValidationError(_) => "ValidationError"
+        TelemetryError::ResourceExhausted(_, _) => "ResourceExhausted"
+        TelemetryError::ServiceUnavailable(_) => "ServiceUnavailable"
+        TelemetryError::CircuitBreakerOpen(_) => "CircuitBreakerOpen"
+      }
+      
+      if not(counted_errors.contains(error_type)) {
+        counted_errors = counted_errors.push(error_type)
+        let mut count = 0
+        for e in errors {
+          let e_type = match e {
+            TelemetryError::NetworkTimeout(_, _) => "NetworkTimeout"
+            TelemetryError::SerializationError(_) => "SerializationError"
+            TelemetryError::ValidationError(_) => "ValidationError"
+            TelemetryError::ResourceExhausted(_, _) => "ResourceExhausted"
+            TelemetryError::ServiceUnavailable(_) => "ServiceUnavailable"
+            TelemetryError::CircuitBreakerOpen(_) => "CircuitBreakerOpen"
+          }
+          if e_type == error_type {
+            count = count + 1
+          }
+        }
+        error_counts = error_counts.push((error_type, count))
+      }
+    }
+    
+    let mut most_common = ""
+    let mut max_count = 0
+    for (error_type, count) in error_counts {
+      if count > max_count {
+        max_count = count
+        most_common = error_type
+      }
+    }
+    
+    {
+      total_errors: errors.length(),
+      error_types: error_counts,
+      most_common_error: most_common,
+      error_rate: errors.length().to_float() / total_operations.to_float()
+    }
+  }
+  
+  let sample_errors = [
+    TelemetryError::NetworkTimeout("service1", 5000),
+    TelemetryError::NetworkTimeout("service2", 3000),
+    TelemetryError::ValidationError("invalid_id"),
+    TelemetryError::NetworkTimeout("service3", 2000),
+    TelemetryError::ServiceUnavailable("service4")
+  ]
+  
+  let error_report = aggregate_errors(sample_errors, 100)
+  assert_eq(error_report.total_errors, 5)
+  assert_eq(error_report.most_common_error, "NetworkTimeout")
+  assert_eq(error_report.error_rate, 0.05)
+  
+  // Test resilience metrics
+  let calculate_resilience_score = fn(successful_operations: Int, total_operations: Int, 
+                                    recovery_time: Int, max_acceptable_recovery_time: Int) {
+    let availability_score = successful_operations.to_float() / total_operations.to_float()
+    let recovery_score = if recovery_time <= max_acceptable_recovery_time {
+      1.0
+    } else {
+      max_acceptable_recovery_time.to_float() / recovery_time.to_float()
+    }
+    
+    (availability_score + recovery_score) / 2.0
+  }
+  
+  let resilience_score = calculate_resilience_score(95, 100, 30, 60)
+  assert_eq(resilience_score, 0.975)  // (0.95 + 1.0) / 2.0
+}
+
+// Test 5: Data Serialization and Deserialization
+test "data serialization and deserialization" {
+  // Define serialization formats
+  enum SerializationFormat {
+    JSON
+    XML
+    Binary
+    CSV
+  }
+  
+  // Define telemetry data types for serialization
+  type TelemetryEvent = {
+    event_id: String,
+    event_type: String,
+    timestamp: Int,
+    source: String,
+    data: Array[(String, String)]
+  }
+  
+  type SerializedData = {
+    format: SerializationFormat,
+    data: String,
+    size: Int,
+    compressed: Bool
+  }
+  
+  // Create sample telemetry event
+  let telemetry_event = {
+    event_id: "event-12345",
+    event_type: "span_completed",
+    timestamp: 1640995200,
+    source: "payment-service",
+    data: [
+      ("trace_id", "trace-abc123"),
+      ("span_id", "span-def456"),
+      ("operation", "process_payment"),
+      ("duration", "250"),
+      ("status", "success")
+    ]
+  }
+  
+  // Test JSON serialization
+  let serialize_to_json = fn(event: TelemetryEvent) {
+    let json_string = "{" +
+      "\"event_id\":\"" + event.event_id + "\"," +
+      "\"event_type\":\"" + event.event_type + "\"," +
+      "\"timestamp\":" + event.timestamp.to_string() + "," +
+      "\"source\":\"" + event.source + "\"," +
+      "\"data\":{"
+    
+    let mut data_parts = []
+    for (key, value) in event.data {
+      data_parts = data_parts.push("\"" + key + "\":\"" + value + "\"")
+    }
+    
+    json_string + data_parts.join(",") + "}}"
+  }
+  
+  let json_data = serialize_to_json(telemetry_event)
+  assert_true(json_data.contains("\"event_id\":\"event-12345\""))
+  assert_true(json_data.contains("\"event_type\":\"span_completed\""))
+  assert_true(json_data.contains("\"timestamp\":1640995200"))
+  assert_true(json_data.contains("\"source\":\"payment-service\""))
+  assert_true(json_data.contains("\"trace_id\":\"trace-abc123\""))
+  
+  // Test XML serialization
+  let serialize_to_xml = fn(event: TelemetryEvent) {
+    let xml_string = "<telemetry_event>" +
+      "<event_id>" + event.event_id + "</event_id>" +
+      "<event_type>" + event.event_type + "</event_type>" +
+      "<timestamp>" + event.timestamp.to_string() + "</timestamp>" +
+      "<source>" + event.source + "</source>" +
+      "<data>"
+    
+    let mut data_elements = []
+    for (key, value) in event.data {
+      data_elements = data_elements.push("<" + key + ">" + value + "</" + key + ">")
+    }
+    
+    xml_string + data_elements.join("") + "</data></telemetry_event>"
+  }
+  
+  let xml_data = serialize_to_xml(telemetry_event)
+  assert_true(xml_data.contains("<event_id>event-12345</event_id>"))
+  assert_true(xml_data.contains("<event_type>span_completed</event_type>"))
+  assert_true(xml_data.contains("<timestamp>1640995200</timestamp>"))
+  assert_true(xml_data.contains("<source>payment-service</source>"))
+  assert_true(xml_data.contains("<trace_id>trace-abc123</trace_id>"))
+  
+  // Test CSV serialization
+  let serialize_to_csv = fn(event: TelemetryEvent) {
+    let headers = "event_id,event_type,timestamp,source," + 
+                 event.data.map(fn(pair) { pair.0 }).join(",")
+    
+    let values = event.event_id + "," + event.event_type + "," + 
+                event.timestamp.to_string() + "," + event.source + "," +
+                event.data.map(fn(pair) { pair.1 }).join(",")
+    
+    headers + "\n" + values
+  }
+  
+  let csv_data = serialize_to_csv(telemetry_event)
+  assert_true(csv_data.contains("event_id,event_type,timestamp,source"))
+  assert_true(csv_data.contains("trace_id,span_id,operation,duration,status"))
+  assert_true(csv_data.contains("event-12345,span_completed,1640995200,payment-service"))
+  assert_true(csv_data.contains("trace-abc123,span-def456,process_payment,250,success"))
+  
+  // Test compression simulation
+  let compress_data = fn(data: String) {
+    // Simple compression simulation: remove repeated characters
+    let mut compressed = ""
+    let mut i = 0
+    
+    while i < data.length() {
+      let current_char = data[i]
+      let mut count = 1
+      
+      while i + count < data.length() and data[i + count] == current_char {
+        count = count + 1
+      }
+      
+      if count > 3 {
+        compressed = compressed + current_char.to_string() + "[" + count.to_string() + "]"
+      } else {
+        for j in 0..count {
+          compressed = compressed + current_char.to_string()
+        }
+      }
+      
+      i = i + count
+    }
+    
+    compressed
+  }
+  
+  let compressible_data = "aaaaabbbbcccccddddd"
+  let compressed_data = compress_data(compressible_data)
+  assert_eq(compressed_data, "a[5]b[4]c[5]d[5]")
+  
+  // Test serialization format comparison
+  let compare_formats = fn(event: TelemetryEvent) {
+    let json_size = serialize_to_json(event).length()
+    let xml_size = serialize_to_xml(event).length()
+    let csv_size = serialize_to_csv(event).length()
+    
+    [
+      ("JSON", json_size),
+      ("XML", xml_size),
+      ("CSV", csv_size)
+    ].sort_by(fn(pair1, pair2) { 
+      if pair1.1 < pair2.1 { -1 } else if pair1.1 > pair2.1 { 1 } else { 0 }
+    })
+  }
+  
+  let format_comparison = compare_formats(telemetry_event)
+  assert_eq(format_comparison[0].0, "CSV")  // CSV should be most compact
+  assert_eq(format_comparison[2].0, "XML")  // XML should be most verbose
+  
+  // Test deserialization validation
+  let validate_serialized_data = fn(data: String, format: SerializationFormat) {
+    let mut valid = true
+    let mut errors = []
+    
+    match format {
+      SerializationFormat::JSON => {
+        if not(data.starts_with("{")) or not(data.ends_with("}")) {
+          valid = false
+          errors = errors.push("Invalid JSON structure")
+        }
+      }
+      SerializationFormat::XML => {
+        if not(data.starts_with("<")) or not(data.ends_with(">")) {
+          valid = false
+          errors = errors.push("Invalid XML structure")
+        }
+      }
+      SerializationFormat::CSV => {
+        if not(data.contains(",")) {
+          valid = false
+          errors = errors.push("Invalid CSV format")
+        }
+      }
+      SerializationFormat::Binary => {
+        // Binary validation would be more complex
+        valid = true
+      }
+    }
+    
+    {
+      valid,
+      errors
+    }
+  }
+  
+  let json_validation = validate_serialized_data(json_data, SerializationFormat::JSON)
+  assert_true(json_validation.valid)
+  assert_eq(json_validation.errors.length(), 0)
+  
+  let invalid_json = "{invalid json"
+  let invalid_json_validation = validate_serialized_data(invalid_json, SerializationFormat::JSON)
+  assert_false(invalid_json_validation.valid)
+  assert_eq(invalid_json_validation.errors.length(), 1)
+  
+  // Test serialization performance
+  let benchmark_serialization = fn(event: TelemetryEvent, iterations: Int) {
+    let start_time = 1640995200
+    
+    // JSON serialization
+    let mut json_results = []
+    for i in 0..iterations {
+      let result = serialize_to_json(event)
+      json_results = json_results.push(result)
+    }
+    
+    // XML serialization
+    let mut xml_results = []
+    for i in 0..iterations {
+      let result = serialize_to_xml(event)
+      xml_results = xml_results.push(result)
+    }
+    
+    // CSV serialization
+    let mut csv_results = []
+    for i in 0..iterations {
+      let result = serialize_to_csv(event)
+      csv_results = csv_results.push(result)
+    }
+    
+    let end_time = 1640995300  // Simulated end time
+    
+    {
+      json_count: json_results.length(),
+      xml_count: xml_results.length(),
+      csv_count: csv_results.length(),
+      duration: end_time - start_time
+    }
+  }
+  
+  let serialization_benchmark = benchmark_serialization(telemetry_event, 10)
+  assert_eq(serialization_benchmark.json_count, 10)
+  assert_eq(serialization_benchmark.xml_count, 10)
+  assert_eq(serialization_benchmark.csv_count, 10)
+  assert_eq(serialization_benchmark.duration, 100)
+  
+  // Create serialized data records
+  let serialized_json = {
+    format: SerializationFormat::JSON,
+    data: json_data,
+    size: json_data.length(),
+    compressed: false
+  }
+  
+  let serialized_xml = {
+    format: SerializationFormat::XML,
+    data: xml_data,
+    size: xml_data.length(),
+    compressed: false
+  }
+  
+  let serialized_csv = {
+    format: SerializationFormat::CSV,
+    data: csv_data,
+    size: csv_data.length(),
+    compressed: false
+  }
+  
+  assert_true(serialized_json.size > 0)
+  assert_true(serialized_xml.size > 0)
+  assert_true(serialized_csv.size > 0)
+  assert_eq(serialized_json.format, SerializationFormat::JSON)
+  assert_eq(serialized_xml.format, SerializationFormat::XML)
+  assert_eq(serialized_csv.format, SerializationFormat::CSV)
+}
+
+// Test 6: Resource Management and Lifecycle
+test "resource management and lifecycle" {
+  // Define resource types
+  type Resource = {
+    id: String,
+    name: String,
+    resource_type: String,
+    allocated: Bool,
+    allocation_time: Int,
+    last_accessed: Int,
+    usage_count: Int
+  }
+  
+  type ResourceManager = {
+    resources: Array[Resource],
+    max_resources: Int,
+    allocation_strategy: String
+  }
+  
+  // Create resource manager
+  let create_resource_manager = fn(max_resources: Int, strategy: String) {
+    {
+      resources: [],
+      max_resources,
+      allocation_strategy: strategy
+    }
+  }
+  
+  let resource_manager = create_resource_manager(10, "least_recently_used")
+  
+  // Test resource allocation
+  let allocate_resource = fn(manager: ResourceManager, name: String, resource_type: String) {
+    if manager.resources.length() >= manager.max_resources {
+      None
+    } else {
+      let current_time = 1640995200
+      let new_resource = {
+        id: "res-" + manager.resources.length().to_string(),
+        name,
+        resource_type,
+        allocated: true,
+        allocation_time: current_time,
+        last_accessed: current_time,
+        usage_count: 0
+      }
+      
+      Some(new_resource)
+    }
+  }
+  
+  let db_connection = allocate_resource(resource_manager, "db_connection", "database")
+  assert_true(db_connection.is_some())
+  
+  match db_connection {
+    Some(resource) => {
+      assert_eq(resource.name, "db_connection")
+      assert_eq(resource.resource_type, "database")
+      assert_true(resource.allocated)
+      assert_eq(resource.usage_count, 0)
+    }
+    None => assert_true(false)
+  }
+  
+  // Test resource deallocation
+  let deallocate_resource = fn(manager: ResourceManager, resource_id: String) {
+    let mut updated_resources = []
+    let mut found = false
+    
+    for resource in manager.resources {
+      if resource.id == resource_id {
+        found = true
+        updated_resources = updated_resources.push({
+          id: resource.id,
+          name: resource.name,
+          resource_type: resource.resource_type,
+          allocated: false,
+          allocation_time: resource.allocation_time,
+          last_accessed: resource.last_accessed,
+          usage_count: resource.usage_count
+        })
+      } else {
+        updated_resources = updated_resources.push(resource)
+      }
+    }
+    
+    {
+      resources: updated_resources,
+      max_resources: manager.max_resources,
+      allocation_strategy: manager.allocation_strategy
+    }
+  }
+  
+  // Test resource usage tracking
+  let track_resource_usage = fn(resource: Resource, current_time: Int) {
+    {
+      id: resource.id,
+      name: resource.name,
+      resource_type: resource.resource_type,
+      allocated: resource.allocated,
+      allocation_time: resource.allocation_time,
+      last_accessed: current_time,
+      usage_count: resource.usage_count + 1
+    }
+  }
+  
+  // Simulate resource usage
+  match db_connection {
+    Some(resource) => {
+      let updated_resource = track_resource_usage(resource, 1640995250)
+      assert_eq(updated_resource.usage_count, 1)
+      assert_eq(updated_resource.last_accessed, 1640995250)
+    }
+    None => assert_true(false)
+  }
+  
+  // Test resource cleanup based on LRU strategy
+  let cleanup_unused_resources = fn(manager: ResourceManager, max_idle_time: Int, current_time: Int) {
+    let mut active_resources = []
+    let mut cleaned_resources = []
+    
+    for resource in manager.resources {
+      if resource.allocated and (current_time - resource.last_accessed) > max_idle_time {
+        cleaned_resources = cleaned_resources.push(resource.id)
+      } else {
+        active_resources = active_resources.push(resource)
+      }
+    }
+    
+    {
+      resources: active_resources,
+      max_resources: manager.max_resources,
+      allocation_strategy: manager.allocation_strategy
+    }
+  }
+  
+  // Test resource pool management
+  type ResourcePool = {
+    available: Array[Resource],
+    in_use: Array[Resource],
+    max_size: Int
+  }
+  
+  let create_resource_pool = fn(max_size: Int) {
+    {
+      available: [],
+      in_use: [],
+      max_size
+    }
+  }
+  
+  let acquire_from_pool = fn(pool: ResourcePool, resource_type: String) {
+    if pool.available.length() > 0 {
+      let resource = pool.available[0]
+      let remaining_available = pool.available.slice(1)
+      
+      {
+        available: remaining_available,
+        in_use: pool.in_use.push(resource),
+        max_size: pool.max_size
+      }
+    } else if pool.available.length() + pool.in_use.length() < pool.max_size {
+      let new_resource = {
+        id: "pool-" + (pool.available.length() + pool.in_use.length()).to_string(),
+        name: "pooled_resource",
+        resource_type,
+        allocated: true,
+        allocation_time: 1640995200,
+        last_accessed: 1640995200,
+        usage_count: 0
+      }
+      
+      {
+        available: pool.available,
+        in_use: pool.in_use.push(new_resource),
+        max_size: pool.max_size
+      }
+    } else {
+      pool  // No available resources and at max capacity
+    }
+  }
+  
+  let release_to_pool = fn(pool: ResourcePool, resource_id: String) {
+    let mut updated_in_use = []
+    let mut released_resource = None
+    
+    for resource in pool.in_use {
+      if resource.id == resource_id {
+        released_resource = Some({
+          id: resource.id,
+          name: resource.name,
+          resource_type: resource.resource_type,
+          allocated: false,
+          allocation_time: resource.allocation_time,
+          last_accessed: resource.last_accessed,
+          usage_count: resource.usage_count
+        })
+      } else {
+        updated_in_use = updated_in_use.push(resource)
+      }
+    }
+    
+    match released_resource {
+      Some(resource) => {
+        {
+          available: pool.available.push(resource),
+          in_use: updated_in_use,
+          max_size: pool.max_size
+        }
+      }
+      None => pool
+    }
+  }
+  
+  // Test resource pool operations
+  let resource_pool = create_resource_pool(5)
+  let pool_after_acquire = acquire_from_pool(resource_pool, "database")
+  assert_eq(pool_after_acquire.in_use.length(), 1)
+  assert_eq(pool_after_acquire.available.length(), 0)
+  
+  let pool_after_release = release_to_pool(pool_after_acquire, "pool-0")
+  assert_eq(pool_after_release.in_use.length(), 0)
+  assert_eq(pool_after_release.available.length(), 1)
+  
+  // Test resource monitoring and metrics
+  type ResourceMetrics = {
+    total_resources: Int,
+    allocated_resources: Int,
+    utilization_rate: Float,
+    average_usage_count: Float,
+    oldest_resource_age: Int
+  }
+  
+  let calculate_resource_metrics = fn(manager: ResourceManager, current_time: Int) {
+    let total = manager.resources.length()
+    let allocated = manager.resources.filter(fn(r) { r.allocated }).length()
+    
+    let utilization_rate = if total > 0 {
+      allocated.to_float() / total.to_float()
+    } else {
+      0.0
+    }
+    
+    let total_usage = manager.resources.reduce(fn(acc, r) { acc + r.usage_count }, 0)
+    let average_usage = if total > 0 {
+      total_usage.to_float() / total.to_float()
+    } else {
+      0.0
+    }
+    
+    let oldest_age = if total > 0 {
+      current_time - manager.resources.reduce(fn(acc, r) { 
+        if r.allocation_time < acc { r.allocation_time } else { acc } 
+      }, current_time)
+    } else {
+      0
+    }
+    
+    {
+      total_resources: total,
+      allocated_resources: allocated,
+      utilization_rate,
+      average_usage_count: average_usage,
+      oldest_resource_age: oldest_age
+    }
+  }
+  
+  // Test resource leak detection
+  let detect_resource_leaks = fn(manager: ResourceManager, max_age: Int, current_time: Int) {
+    let mut leaked_resources = []
+    
+    for resource in manager.resources {
+      if resource.allocated and (current_time - resource.allocation_time) > max_age {
+        leaked_resources = leaked_resources.push(resource.id)
+      }
+    }
+    
+    leaked_resources
+  }
+  
+  // Test resource optimization recommendations
+  let generate_optimization_recommendations = fn(metrics: ResourceMetrics) {
+    let mut recommendations = []
+    
+    if metrics.utilization_rate < 0.5 {
+      recommendations = recommendations.push("Consider reducing resource pool size")
+    } else if metrics.utilization_rate > 0.9 {
+      recommendations = recommendations.push("Consider increasing resource pool size")
+    }
+    
+    if metrics.average_usage_count < 1.0 {
+      recommendations = recommendations.push("Resources are underutilized")
+    }
+    
+    if metrics.oldest_resource_age > 3600 {
+      recommendations = recommendations.push("Some resources have been allocated for a long time")
+    }
+    
+    recommendations
+  }
+  
+  // Create a populated resource manager for testing
+  let populated_manager = {
+    resources: [
+      {
+        id: "res-0",
+        name: "db_connection_1",
+        resource_type: "database",
+        allocated: true,
+        allocation_time: 1640995000,
+        last_accessed: 1640995200,
+        usage_count: 5
+      },
+      {
+        id: "res-1",
+        name: "cache_connection",
+        resource_type: "cache",
+        allocated: true,
+        allocation_time: 1640995100,
+        last_accessed: 1640995250,
+        usage_count: 10
+      },
+      {
+        id: "res-2",
+        name: "db_connection_2",
+        resource_type: "database",
+        allocated: false,
+        allocation_time: 1640995000,
+        last_accessed: 1640995100,
+        usage_count: 2
+      }
+    ],
+    max_resources: 10,
+    allocation_strategy: "least_recently_used"
+  }
+  
+  let resource_metrics = calculate_resource_metrics(populated_manager, 1640995300)
+  assert_eq(resource_metrics.total_resources, 3)
+  assert_eq(resource_metrics.allocated_resources, 2)
+  assert_eq(resource_metrics.utilization_rate, 2.0 / 3.0)
+  assert_eq(resource_metrics.average_usage_count, (5 + 10 + 2).to_float() / 3.0)
+  
+  let leaked_resources = detect_resource_leaks(populated_manager, 1000, 1640995300)
+  assert_eq(leaked_resources.length(), 2)  // Both allocated resources are older than 1000 seconds
+  
+  let recommendations = generate_optimization_recommendations(resource_metrics)
+  assert_eq(recommendations.length(), 0)  // No recommendations needed for healthy metrics
+}
+
+// Test 7: Concurrent Safety and Thread Management
+test "concurrent safety and thread management" {
+  // Define concurrent operation types
+  type ConcurrentOperation = {
+    operation_id: String,
+    operation_type: String,
+    thread_id: String,
+    start_time: Int,
+    end_time: Int,
+    status: String,
+    resource_accessed: Array[String]
+  }
+  
+  type ThreadSafetyMetrics = {
+    total_operations: Int,
+    concurrent_operations: Int,
+    resource_conflicts: Int,
+    deadlock_detected: Bool,
+    average_execution_time: Float
+  }
+  
+  type Lock = {
+    lock_id: String,
+    resource_id: String,
+    thread_id: String,
+    acquired_time: Int,
+    lock_type: String  // "read", "write", "exclusive"
+  }
+  
+  // Create sample concurrent operations
+  let operation1 = {
+    operation_id: "op-1",
+    operation_type: "read",
+    thread_id: "thread-1",
+    start_time: 1640995200,
+    end_time: 1640995210,
+    status: "completed",
+    resource_accessed: ["resource-1", "resource-2"]
+  }
+  
+  let operation2 = {
+    operation_id: "op-2",
+    operation_type: "write",
+    thread_id: "thread-2",
+    start_time: 1640995205,
+    end_time: 1640995220,
+    status: "completed",
+    resource_accessed: ["resource-2", "resource-3"]
+  }
+  
+  let operation3 = {
+    operation_id: "op-3",
+    operation_type: "read",
+    thread_id: "thread-3",
+    start_time: 1640995208,
+    end_time: 1640995215,
+    status: "completed",
+    resource_accessed: ["resource-1"]
+  }
+  
+  let concurrent_operations = [operation1, operation2, operation3]
+  
+  // Test concurrent operation analysis
+  let analyze_concurrency = fn(operations: Array[ConcurrentOperation]) {
+    let mut max_concurrent = 0
+    let mut concurrent_count = 0
+    let mut resource_access_counts = []
+    
+    // Count concurrent operations at each time point
+    for time in 1640995200..=1640995220 {
+      concurrent_count = 0
+      for op in operations {
+        if time >= op.start_time and time <= op.end_time {
+          concurrent_count = concurrent_count + 1
+        }
+      }
+      if concurrent_count > max_concurrent {
+        max_concurrent = concurrent_count
+      }
+    }
+    
+    // Analyze resource access patterns
+    for op in operations {
+      for resource in op.resource_accessed {
+        let mut found = false
+        let mut updated_counts = []
+        
+        for (res, count) in resource_access_counts {
+          if res == resource {
+            updated_counts = updated_counts.push((res, count + 1))
+            found = true
+          } else {
+            updated_counts = updated_counts.push((res, count))
+          }
+        }
+        
+        if not(found) {
+          updated_counts = updated_counts.push((resource, 1))
+        }
+        
+        resource_access_counts = updated_counts
+      }
+    }
+    
+    // Detect potential resource conflicts
+    let mut conflicts = 0
+    for (resource, count) in resource_access_counts {
+      if count > 1 {
+        conflicts = conflicts + 1
+      }
+    }
+    
+    {
+      max_concurrent_operations: max_concurrent,
+      resource_conflicts: conflicts,
+      resource_access_counts
+    }
+  }
+  
+  let concurrency_analysis = analyze_concurrency(concurrent_operations)
+  assert_eq(concurrency_analysis.max_concurrent_operations, 3)  // All three overlap
+  assert_eq(concurrency_analysis.resource_conflicts, 2)  // resource-1 and resource-2 accessed by multiple operations
+  
+  // Test lock management
+  let acquire_lock = fn(locks: Array[Lock], resource_id: String, thread_id: String, lock_type: String, current_time: Int) {
+    // Check if lock can be acquired
+    let mut can_acquire = true
+    let mut blocking_lock = None
+    
+    for lock in locks {
+      if lock.resource_id == resource_id {
+        // Check lock compatibility
+        match (lock.lock_type, lock_type) {
+          ("read", "read") => can_acquire = true  // Multiple reads allowed
+          ("read", "write") => can_acquire = false
+          ("write", "read") => can_acquire = false
+          ("write", "write") => can_acquire = false
+          _ => can_acquire = false
+        }
+        
+        if not(can_acquire) {
+          blocking_lock = Some(lock)
+          break
+        }
+      }
+    }
+    
+    if can_acquire {
+      let new_lock = {
+        lock_id: "lock-" + locks.length().to_string(),
+        resource_id,
+        thread_id,
+        acquired_time: current_time,
+        lock_type
+      }
+      
+      {
+        acquired: true,
+        locks: locks.push(new_lock),
+        blocking_lock
+      }
+    } else {
+      {
+        acquired: false,
+        locks,
+        blocking_lock
+      }
+    }
+  }
+  
+  let release_lock = fn(locks: Array[Lock], lock_id: String) {
+    let mut updated_locks = []
+    let mut released = false
+    
+    for lock in locks {
+      if lock.lock_id == lock_id {
+        released = true
+      } else {
+        updated_locks = updated_locks.push(lock)
+      }
+    }
+    
+    {
+      released,
+      locks: updated_locks
+    }
+  }
+  
+  // Test lock acquisition and release
+  let initial_locks = []
+  
+  let lock_result1 = acquire_lock(initial_locks, "resource-1", "thread-1", "read", 1640995200)
+  assert_true(lock_result1.acquired)
+  assert_eq(lock_result1.locks.length(), 1)
+  
+  let lock_result2 = acquire_lock(lock_result1.locks, "resource-1", "thread-2", "read", 1640995205)
+  assert_true(lock_result2.acquired)  // Multiple reads should be allowed
+  assert_eq(lock_result2.locks.length(), 2)
+  
+  let lock_result3 = acquire_lock(lock_result2.locks, "resource-1", "thread-3", "write", 1640995210)
+  assert_false(lock_result3.acquired)  // Write should be blocked by read locks
+  assert_true(lock_result3.blocking_lock.is_some())
+  
+  // Test deadlock detection
+  let detect_deadlock = fn(locks: Array[Lock], waiting_operations: Array[(String, String, String)]) {
+    // waiting_operations: (thread_id, resource_id, lock_type)
+    let mut deadlock_detected = false
+    let mut deadlock_cycle = []
+    
+    // Simple deadlock detection: check for circular wait
+    for waiting_op in waiting_operations {
+      let (waiting_thread, waiting_resource, _) = waiting_op
+      
+      // Find thread holding the waiting resource
+      let mut holding_thread = None
+      for lock in locks {
+        if lock.resource_id == waiting_resource {
+          holding_thread = Some(lock.thread_id)
+        }
+      }
+      
+      match holding_thread {
+        Some(holder) => {
+          // Check if holder is waiting for a resource held by waiting_thread
+          for other_waiting in waiting_operations {
+            let (other_thread, other_resource, _) = other_waiting
+            if other_thread == holder {
+              for lock in locks {
+                if lock.resource_id == other_resource and lock.thread_id == waiting_thread {
+                  deadlock_detected = true
+                  deadlock_cycle = [waiting_thread, holder, waiting_thread]
+                }
+              }
+            }
+          }
+        }
+        None => {}
+      }
+    }
+    
+    {
+      deadlock_detected,
+      deadlock_cycle
+    }
+  }
+  
+  // Test deadlock scenario
+  let deadlock_locks = [
+    {
+      lock_id: "lock-1",
+      resource_id: "resource-1",
+      thread_id: "thread-1",
+      acquired_time: 1640995200,
+      lock_type: "write"
+    },
+    {
+      lock_id: "lock-2",
+      resource_id: "resource-2",
+      thread_id: "thread-2",
+      acquired_time: 1640995205,
+      lock_type: "write"
+    }
+  ]
+  
+  let waiting_operations = [
+    ("thread-1", "resource-2", "write"),  // thread-1 waits for resource-2 held by thread-2
+    ("thread-2", "resource-1", "write")   // thread-2 waits for resource-1 held by thread-1
+  ]
+  
+  let deadlock_result = detect_deadlock(deadlock_locks, waiting_operations)
+  assert_true(deadlock_result.deadlock_detected)
+  assert_eq(deadlock_result.deadlock_cycle.length(), 3)
+  
+  // Test thread safety metrics calculation
+  let calculate_thread_safety_metrics = fn(operations: Array[ConcurrentOperation], locks: Array[Lock]) {
+    let total_ops = operations.length()
+    
+    // Calculate concurrent operations
+    let mut concurrent_ops = 0
+    for i in 0..operations.length() {
+      for j in i + 1..operations.length() {
+        let op1 = operations[i]
+        let op2 = operations[j]
+        
+        // Check if operations overlap in time
+        if (op1.start_time <= op2.end_time) and (op2.start_time <= op1.end_time) {
+          concurrent_ops = concurrent_ops + 1
+        }
+      }
+    }
+    
+    // Calculate resource conflicts
+    let mut resource_conflicts = 0
+    let resource_access_map = []
+    
+    for op in operations {
+      for resource in op.resource_accessed {
+        let mut found = false
+        let mut updated_map = []
+        
+        for (res, ops) in resource_access_map {
+          if res == resource {
+            updated_map = updated_map.push((res, ops.push(op.operation_id)))
+            found = true
+          } else {
+            updated_map = updated_map.push((res, ops))
+          }
+        }
+        
+        if not(found) {
+          updated_map = updated_map.push((resource, [op.operation_id]))
+        }
+        
+        resource_access_map = updated_map
+      }
+    }
+    
+    for (resource, ops) in resource_access_map {
+      if ops.length() > 1 {
+        resource_conflicts = resource_conflicts + 1
+      }
+    }
+    
+    // Calculate average execution time
+    let total_time = operations.reduce(fn(acc, op) { 
+      acc + (op.end_time - op.start_time) 
+    }, 0)
+    
+    let avg_time = if total_ops > 0 {
+      total_time.to_float() / total_ops.to_float()
+    } else {
+      0.0
+    }
+    
+    {
+      total_operations: total_ops,
+      concurrent_operations: concurrent_ops,
+      resource_conflicts,
+      deadlock_detected: false,
+      average_execution_time: avg_time
+    }
+  }
+  
+  let thread_safety_metrics = calculate_thread_safety_metrics(concurrent_operations, [])
+  assert_eq(thread_safety_metrics.total_operations, 3)
+  assert_eq(thread_safety_metrics.concurrent_operations, 3)  // All pairs overlap
+  assert_eq(thread_safety_metrics.resource_conflicts, 2)
+  assert_eq(thread_safety_metrics.average_execution_time, (10 + 15 + 7).to_float() / 3.0)
+  
+  // Test race condition detection
+  let detect_race_conditions = fn(operations: Array[ConcurrentOperation]) {
+    let mut race_conditions = []
+    
+    // Look for operations that access the same resource with different types
+    for i in 0..operations.length() {
+      for j in i + 1..operations.length() {
+        let op1 = operations[i]
+        let op2 = operations[j]
+        
+        // Check if operations overlap in time
+        if (op1.start_time <= op2.end_time) and (op2.start_time <= op1.end_time) {
+          // Check if they access the same resources
+          for resource1 in op1.resource_accessed {
+            for resource2 in op2.resource_accessed {
+              if resource1 == resource2 and op1.operation_type != op2.operation_type {
+                race_conditions = race_conditions.push({
+                  resource: resource1,
+                  operation1: op1.operation_id,
+                  operation2: op2.operation_id,
+                  operation_types: (op1.operation_type, op2.operation_type)
+                })
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    race_conditions
+  }
+  
+  let race_conditions = detect_race_conditions(concurrent_operations)
+  assert_eq(race_conditions.length(), 2)  // resource-2 has read/write conflict, resource-1 has read/read (no conflict)
+}
+
+// Test 8: Configuration Management and Dynamic Updates
+test "configuration management and dynamic updates" {
+  // Define configuration types
+  type ConfigValue = {
+    key: String,
+    value: String,
+    value_type: String,  // "string", "int", "float", "bool", "array"
+    default_value: String,
+    description: String,
+    required: Bool,
+    sensitive: Bool
+  }
+  
+  type Configuration = {
+    name: String,
+    version: String,
+    values: Array[ConfigValue],
+    last_updated: Int,
+    environment: String
+  }
+  
+  type ConfigChange = {
+    key: String,
+    old_value: String,
+    new_value: String,
+    changed_by: String,
+    timestamp: Int,
     reason: String
   }
   
-  // 3. 定义系统负载指标
-  type SystemLoad = {
-    cpu_usage: Float,
-    memory_usage: Float,
-    request_rate: Int,  // 每秒请求数
-    error_rate: Float   // 错误率
+  // Create base configuration
+  let base_config_values = [
+    {
+      key: "service.name",
+      value: "azimuth-telemetry",
+      value_type: "string",
+      default_value: "azimuth-telemetry",
+      description: "Name of the telemetry service",
+      required: true,
+      sensitive: false
+    },
+    {
+      key: "service.port",
+      value: "8080",
+      value_type: "int",
+      default_value: "8080",
+      description: "Port number for the service",
+      required: true,
+      sensitive: false
+    },
+    {
+      key: "database.url",
+      value: "postgresql://localhost:5432/telemetry",
+      value_type: "string",
+      default_value: "postgresql://localhost:5432/telemetry",
+      description: "Database connection URL",
+      required: true,
+      sensitive: true
+    },
+    {
+      key: "log.level",
+      value: "info",
+      value_type: "string",
+      default_value: "info",
+      description: "Logging level",
+      required: false,
+      sensitive: false
+    },
+    {
+      key: "metrics.enabled",
+      value: "true",
+      value_type: "bool",
+      default_value: "true",
+      description: "Enable metrics collection",
+      required: false,
+      sensitive: false
+    }
+  ]
+  
+  let base_configuration = {
+    name: "azimuth-config",
+    version: "1.0.0",
+    values: base_config_values,
+    last_updated: 1640995200,
+    environment: "development"
   }
   
-  // 4. 定义自适应采样配置
-  type AdaptiveSamplingConfig = {
-    low_load_threshold: Float,
-    high_load_threshold: Float,
-    low_error_threshold: Float,
-    high_error_threshold: Float,
-    base_sampling_rate: Float,
-    max_sampling_rate: Float,
-    min_sampling_rate: Float
-  }
-  
-  // 5. 创建自适应采样配置
-  let adaptive_config = AdaptiveSamplingConfig({
-    low_load_threshold: 0.3,      // CPU/内存使用率低于30%认为低负载
-    high_load_threshold: 0.8,     // CPU/内存使用率高于80%认为高负载
-    low_error_threshold: 0.01,    // 错误率低于1%认为低错误率
-    high_error_threshold: 0.1,    // 错误率高于10%认为高错误率
-    base_sampling_rate: 0.1,      // 基础采样率10%
-    max_sampling_rate: 1.0,       // 最大采样率100%
-    min_sampling_rate: 0.01       // 最小采样率1%
-  })
-  
-  // 6. 实现概率采样决策
-  let probabilistic_sampling = fn(sampling_rate: Float) {
-    let random_value = 0.5  // 简化的随机值，实际应该使用真实随机数生成器
-    SamplingDecision({
-      sample: random_value <= sampling_rate,
-      strategy: SamplingStrategy::Probabilistic(sampling_rate),
-      reason: "Probabilistic sampling with rate: " + sampling_rate.to_string()
-    })
-  }
-  
-  // 7. 实现速率限制采样决策
-  let rate_limiting_sampling = fn(max_samples_per_second: Int, current_samples: Int) {
-    SamplingDecision({
-      sample: current_samples < max_samples_per_second,
-      strategy: SamplingStrategy::RateLimiting(max_samples_per_second),
-      reason: "Rate limiting sampling: " + current_samples.to_string() + "/" + max_samples_per_second.to_string()
-    })
-  }
-  
-  // 8. 实现自适应采样决策
-  let adaptive_sampling = fn(load: SystemLoad, config: AdaptiveSamplingConfig, current_sampling_rate: Float) {
-    let avg_load = (load.cpu_usage + load.memory_usage) / 2.0
-    
-    let new_sampling_rate = if avg_load > config.high_load_threshold or load.error_rate > config.high_error_threshold {
-      // 高负载或高错误率，降低采样率
-      let reduced_rate = current_sampling_rate * 0.5
-      if reduced_rate < config.min_sampling_rate {
-        config.min_sampling_rate
-      } else {
-        reduced_rate
+  // Test configuration value lookup
+  let get_config_value = fn(config: Configuration, key: String) {
+    let mut found = None
+    for value in config.values {
+      if value.key == key {
+        found = Some(value)
       }
-    } else if avg_load < config.low_load_threshold and load.error_rate < config.low_error_threshold {
-      // 低负载和低错误率，提高采样率
-      let increased_rate = current_sampling_rate * 1.5
-      if increased_rate > config.max_sampling_rate {
-        config.max_sampling_rate
+    }
+    found
+  }
+  
+  let service_name = get_config_value(base_configuration, "service.name")
+  assert_true(service_name.is_some())
+  
+  match service_name {
+    Some(value) => {
+      assert_eq(value.key, "service.name")
+      assert_eq(value.value, "azimuth-telemetry")
+      assert_eq(value.value_type, "string")
+      assert_true(value.required)
+      assert_false(value.sensitive)
+    }
+    None => assert_true(false)
+  }
+  
+  let missing_config = get_config_value(base_configuration, "missing.key")
+  assert_true(missing_config.is_none())
+  
+  // Test configuration validation
+  let validate_configuration = fn(config: Configuration) {
+    let mut errors = []
+    let mut warnings = []
+    
+    // Check required values
+    for value in config.values {
+      if value.required and (value.value == "" or value.value == value.default_value) {
+        errors = errors.push("Required configuration missing: " + value.key)
+      }
+      
+      // Validate value types
+      match value.value_type {
+        "int" => {
+          let parsed = value.value.to_int()
+          if parsed.is_none() {
+            errors = errors.push("Invalid integer value for " + value.key)
+          }
+        }
+        "float" => {
+          let parsed = value.value.to_float()
+          if parsed.is_none() {
+            errors = errors.push("Invalid float value for " + value.key)
+          }
+        }
+        "bool" => {
+          if value.value != "true" and value.value != "false" {
+            errors = errors.push("Invalid boolean value for " + value.key)
+          }
+        }
+        _ => {}
+      }
+    }
+    
+    // Check for deprecated values
+    if config.environment == "production" and get_config_value(config, "log.level").unwrap().value == "debug" {
+      warnings = warnings.push("Debug logging in production environment")
+    }
+    
+    {
+      valid: errors.length() == 0,
+      errors,
+      warnings
+    }
+  }
+  
+  let config_validation = validate_configuration(base_configuration)
+  assert_true(config_validation.valid)
+  assert_eq(config_validation.errors.length(), 0)
+  assert_eq(config_validation.warnings.length(), 0)
+  
+  // Test configuration update
+  let update_config_value = fn(config: Configuration, key: String, new_value: String, changed_by: String, reason: String) {
+    let mut updated_values = []
+    let mut old_value = ""
+    let mut found = false
+    
+    for value in config.values {
+      if value.key == key {
+        old_value = value.value
+        updated_values = updated_values.push({
+          key: value.key,
+          value: new_value,
+          value_type: value.value_type,
+          default_value: value.default_value,
+          description: value.description,
+          required: value.required,
+          sensitive: value.sensitive
+        })
+        found = true
       } else {
-        increased_rate
+        updated_values = updated_values.push(value)
+      }
+    }
+    
+    if found {
+      {
+        configuration: {
+          name: config.name,
+          version: config.version,
+          values: updated_values,
+          last_updated: 1640995250,
+          environment: config.environment
+        },
+        change: Some({
+          key,
+          old_value,
+          new_value,
+          changed_by,
+          timestamp: 1640995250,
+          reason
+        })
       }
     } else {
-      // 中等负载，保持当前采样率
-      current_sampling_rate
-    }
-    
-    let reason = "Adaptive sampling adjusted from " + current_sampling_rate.to_string() + 
-                " to " + new_sampling_rate.to_string() + 
-                " based on load: " + avg_load.to_string() + 
-                " and error rate: " + load.error_rate.to_string()
-    
-    SamplingDecision({
-      sample: true,  // 自适应采样总是尝试采样
-      strategy: SamplingStrategy::Adaptive,
-      reason
-    })
-  }
-  
-  // 9. 测试概率采样
-  let high_rate_decision = probabilistic_sampling(0.8)
-  assert_true(high_rate_decision.sample)
-  match high_rate_decision.strategy {
-    SamplingStrategy::Probabilistic(rate) => assert_eq(rate, 0.8)
-    _ => assert_true(false)
-  }
-  
-  let low_rate_decision = probabilistic_sampling(0.1)
-  assert_false(low_rate_decision.sample)  // 由于随机值是0.5 > 0.1
-  match low_rate_decision.strategy {
-    SamplingStrategy::Probabilistic(rate) => assert_eq(rate, 0.1)
-    _ => assert_true(false)
-  }
-  
-  // 10. 测试速率限制采样
-  let within_limit_decision = rate_limiting_sampling(100, 50)
-  assert_true(within_limit_decision.sample)
-  match within_limit_decision.strategy {
-    SamplingStrategy::RateLimiting(limit) => assert_eq(limit, 100)
-    _ => assert_true(false)
-  }
-  
-  let exceeded_limit_decision = rate_limiting_sampling(100, 150)
-  assert_false(exceeded_limit_decision.sample)
-  match exceeded_limit_decision.strategy {
-    SamplingStrategy::RateLimiting(limit) => assert_eq(limit, 100)
-    _ => assert_true(false)
-  }
-  
-  // 11. 测试自适应采样 - 高负载情况
-  let high_load = SystemLoad({
-    cpu_usage: 0.9,        // 高CPU使用率
-    memory_usage: 0.85,     // 高内存使用率
-    request_rate: 5000,     // 高请求率
-    error_rate: 0.05        // 中等错误率
-  })
-  
-  let high_load_decision = adaptive_sampling(high_load, adaptive_config, 0.2)
-  assert_true(high_load_decision.sample)
-  assert_true(high_load_decision.reason.contains("reduced"))
-  match high_load_decision.strategy {
-    SamplingStrategy::Adaptive => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  // 12. 测试自适应采样 - 低负载情况
-  let low_load = SystemLoad({
-    cpu_usage: 0.2,        // 低CPU使用率
-    memory_usage: 0.25,     // 低内存使用率
-    request_rate: 500,      // 低请求率
-    error_rate: 0.005       // 低错误率
-  })
-  
-  let low_load_decision = adaptive_sampling(low_load, adaptive_config, 0.1)
-  assert_true(low_load_decision.sample)
-  assert_true(low_load_decision.reason.contains("increased"))
-  match low_load_decision.strategy {
-    SamplingStrategy::Adaptive => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  // 13. 测试自适应采样 - 高错误率情况
-  let high_error_load = SystemLoad({
-    cpu_usage: 0.5,        // 中等CPU使用率
-    memory_usage: 0.6,     // 中等内存使用率
-    request_rate: 2000,     // 中等请求率
-    error_rate: 0.15        // 高错误率
-  })
-  
-  let high_error_decision = adaptive_sampling(high_error_load, adaptive_config, 0.3)
-  assert_true(high_error_decision.sample)
-  assert_true(high_error_decision.reason.contains("reduced"))
-  
-  // 14. 实现采样策略管理器
-  type SamplingManager = {
-    current_strategy: SamplingStrategy,
-    current_sampling_rate: Float,
-    samples_this_second: Int,
-    max_samples_per_second: Int,
-    adaptive_config: AdaptiveSamplingConfig
-  }
-  
-  // 15. 创建采样管理器
-  let sampling_manager = SamplingManager({
-    current_strategy: SamplingStrategy::Adaptive,
-    current_sampling_rate: 0.1,
-    samples_this_second: 0,
-    max_samples_per_second: 1000,
-    adaptive_config
-  })
-  
-  // 16. 实现采样决策函数
-  let make_sampling_decision = fn(manager: SamplingManager, load: SystemLoad) {
-    match manager.current_strategy {
-      SamplingStrategy::AlwaysOn => SamplingDecision({
-        sample: true,
-        strategy: SamplingStrategy::AlwaysOn,
-        reason: "Always-on sampling"
-      })
-      SamplingStrategy::AlwaysOff => SamplingDecision({
-        sample: false,
-        strategy: SamplingStrategy::AlwaysOff,
-        reason: "Always-off sampling"
-      })
-      SamplingStrategy::Probabilistic(rate) => probabilistic_sampling(rate)
-      SamplingStrategy::RateLimiting(limit) => rate_limiting_sampling(limit, manager.samples_this_second)
-      SamplingStrategy::Adaptive => adaptive_sampling(load, manager.adaptive_config, manager.current_sampling_rate)
+      {
+        configuration: config,
+        change: None
+      }
     }
   }
   
-  // 17. 测试采样管理器
-  let adaptive_decision = make_sampling_decision(sampling_manager, high_load)
-  assert_true(adaptive_decision.sample)
-  match adaptive_decision.strategy {
-    SamplingStrategy::Adaptive => assert_true(true)
-    _ => assert_true(false)
+  let config_update = update_config_value(base_configuration, "service.port", "9090", "admin", "Port conflict resolution")
+  assert_true(config_update.change.is_some())
+  
+  match config_update.change {
+    Some(change) => {
+      assert_eq(change.key, "service.port")
+      assert_eq(change.old_value, "8080")
+      assert_eq(change.new_value, "9090")
+      assert_eq(change.changed_by, "admin")
+      assert_eq(change.reason, "Port conflict resolution")
+    }
+    None => assert_true(false)
   }
   
-  // 18. 实现策略切换逻辑
-  let switch_sampling_strategy = fn(manager: SamplingManager, new_strategy: SamplingStrategy) {
-    SamplingManager({
-      current_strategy: new_strategy,
-      current_sampling_rate: manager.current_sampling_rate,
-      samples_this_second: manager.samples_this_second,
-      max_samples_per_second: manager.max_samples_per_second,
-      adaptive_config: manager.adaptive_config
-    })
+  // Test configuration rollback
+  let rollback_config_change = fn(config: Configuration, change: ConfigChange, original_config: Configuration) {
+    let rollback_result = update_config_value(config, change.key, change.old_value, "system", "Rollback: " + change.reason)
+    
+    match rollback_result.change {
+      Some(rollback_change) => {
+        {
+          configuration: rollback_result.configuration,
+          rollback_change: Some(rollback_change),
+          success: true
+        }
+      }
+      None => {
+        {
+          configuration: config,
+          rollback_change: None,
+          success: false
+        }
+      }
+    }
   }
   
-  // 19. 测试策略切换
-  let prob_manager = switch_sampling_strategy(sampling_manager, SamplingStrategy::Probabilistic(0.5))
-  match prob_manager.current_strategy {
-    SamplingStrategy::Probabilistic(rate) => assert_eq(rate, 0.5)
-    _ => assert_true(false)
+  // Test configuration inheritance
+  let inherit_configuration = fn(base_config: Configuration, override_config: Configuration) {
+    let mut merged_values = []
+    let processed_keys = []
+    
+    // Start with base configuration
+    for value in base_config.values {
+      merged_values = merged_values.push(value)
+      processed_keys = processed_keys.push(value.key)
+    }
+    
+    // Apply overrides
+    for value in override_config.values {
+      if not(processed_keys.contains(value.key)) {
+        merged_values = merged_values.push(value)
+      } else {
+        // Replace existing value
+        let mut updated_values = []
+        for merged_value in merged_values {
+          if merged_value.key == value.key {
+            updated_values = updated_values.push(value)
+          } else {
+            updated_values = updated_values.push(merged_value)
+          }
+        }
+        merged_values = updated_values
+      }
+    }
+    
+    {
+      name: base_config.name + "-merged",
+      version: base_config.version,
+      values: merged_values,
+      last_updated: 1640995300,
+      environment: base_config.environment
+    }
   }
   
-  let prob_decision = make_sampling_decision(prob_manager, low_load)
-  assert_true(prob_decision.sample)  // 随机值0.5 <= 0.5
-  match prob_decision.strategy {
-    SamplingStrategy::Probabilistic(rate) => assert_eq(rate, 0.5)
-    _ => assert_true(false)
+  // Test configuration environment-specific overrides
+  let get_environment_config = fn(config: Configuration, environment: String) {
+    let mut env_values = []
+    
+    for value in config.values {
+      let env_value = match environment {
+        "development" => {
+          match value.key {
+            "log.level" => "debug"
+            "metrics.enabled" => "true"
+            _ => value.value
+          }
+        }
+        "production" => {
+          match value.key {
+            "log.level" => "warn"
+            "metrics.enabled" => "true"
+            _ => value.value
+          }
+        }
+        "testing" => {
+          match value.key {
+            "log.level" => "error"
+            "metrics.enabled" => "false"
+            _ => value.value
+          }
+        }
+        _ => value.value
+      }
+      
+      env_values = env_values.push({
+        key: value.key,
+        value: env_value,
+        value_type: value.value_type,
+        default_value: value.default_value,
+        description: value.description,
+        required: value.required,
+        sensitive: value.sensitive
+      })
+    }
+    
+    {
+      name: config.name + "-" + environment,
+      version: config.version,
+      values: env_values,
+      last_updated: config.last_updated,
+      environment
+    }
   }
+  
+  let dev_config = get_environment_config(base_configuration, "development")
+  let prod_config = get_environment_config(base_configuration, "production")
+  let test_config = get_environment_config(base_configuration, "testing")
+  
+  let dev_log_level = get_config_value(dev_config, "log.level")
+  let prod_log_level = get_config_value(prod_config, "log.level")
+  let test_log_level = get_config_value(test_config, "log.level")
+  
+  assert_eq(dev_log_level.unwrap().value, "debug")
+  assert_eq(prod_log_level.unwrap().value, "warn")
+  assert_eq(test_log_level.unwrap().value, "error")
+  
+  // Test configuration change tracking
+  type ConfigHistory = {
+    configuration: Configuration,
+    changes: Array[ConfigChange]
+  }
+  
+  let track_config_changes = fn(history: ConfigHistory, new_change: ConfigChange) {
+    {
+      configuration: history.configuration,
+      changes: history.changes.push(new_change)
+    }
+  }
+  
+  let get_config_history = fn(history: ConfigHistory, key: String) {
+    history.changes.filter(fn(change) { change.key == key })
+  }
+  
+  // Test configuration diff
+  let diff_configurations = fn(config1: Configuration, config2: Configuration) {
+    let mut differences = []
+    
+    for value1 in config1.values {
+      match get_config_value(config2, value1.key) {
+        Some(value2) => {
+          if value1.value != value2.value {
+            differences = differences.push({
+              key: value1.key,
+              value1: value1.value,
+              value2: value2.value,
+              change_type: "modified"
+            })
+          }
+        }
+        None => {
+          differences = differences.push({
+            key: value1.key,
+            value1: value1.value,
+            value2: "",
+            change_type: "removed"
+          })
+        }
+      }
+    }
+    
+    for value2 in config2.values {
+      if get_config_value(config1, value2.key).is_none() {
+        differences = differences.push({
+          key: value2.key,
+          value1: "",
+          value2: value2.value,
+          change_type: "added"
+        })
+      }
+    }
+    
+    differences
+  }
+  
+  // Test configuration export/import
+  let export_configuration = fn(config: Configuration, format: String) {
+    match format {
+      "json" => {
+        let json_string = "{" +
+          "\"name\":\"" + config.name + "\"," +
+          "\"version\":\"" + config.version + "\"," +
+          "\"environment\":\"" + config.environment + "\"," +
+          "\"last_updated\":" + config.last_updated.to_string() + "," +
+          "\"values\":{"
+        
+        let mut value_pairs = []
+        for value in config.values {
+          value_pairs = value_pairs.push("\"" + value.key + "\":\"" + value.value + "\"")
+        }
+        
+        json_string + value_pairs.join(",") + "}}"
+      }
+      "properties" => {
+        let mut lines = []
+        for value in config.values {
+          lines = lines.push(value.key + "=" + value.value)
+        }
+        lines.join("\n")
+      }
+      _ => "Unsupported format"
+    }
+  }
+  
+  let json_export = export_configuration(base_configuration, "json")
+  assert_true(json_export.contains("\"name\":\"azimuth-config\""))
+  assert_true(json_export.contains("\"service.name\":\"azimuth-telemetry\""))
+  
+  let properties_export = export_configuration(base_configuration, "properties")
+  assert_true(properties_export.contains("service.name=azimuth-telemetry"))
+  assert_true(properties_export.contains("service.port=8080"))
 }
 
-// 测试10: 遥测数据聚合
-test "遥测数据聚合和统计分析" {
-  // 1. 定义遥测数据点类型
-  enum TelemetryDataPoint {
-    Counter(String, Int)      // (metric_name, value)
-    Gauge(String, Float)      // (metric_name, value)
-    Histogram(String, Array[Float])  // (metric_name, values)
-    Summary(String, Float, Float, Float, Int)  // (metric_name, sum, count, min, max)
+// Test 9: Advanced Caching Mechanisms
+test "advanced caching mechanisms" {
+  // Define cache types
+  type CacheEntry = {
+    key: String,
+    value: String,
+    created_time: Int,
+    last_accessed: Int,
+    access_count: Int,
+    size: Int,
+    ttl: Int  // Time to live in seconds
   }
   
-  // 2. 定义聚合结果类型
-  type AggregationResult = {
-    metric_name: String,
-    aggregation_type: String,  // "sum", "avg", "min", "max", "count", "percentile"
+  type Cache = {
+    entries: Array[CacheEntry],
+    max_size: Int,
+    max_memory: Int,
+    eviction_policy: String,  // "lru", "lfu", "ttl", "random"
+    current_memory: Int
+  }
+  
+  type CacheMetrics = {
+    hits: Int,
+    misses: Int,
+    evictions: Int,
+    hit_rate: Float,
+    average_access_time: Float
+  }
+  
+  // Create cache
+  let create_cache = fn(max_size: Int, max_memory: Int, eviction_policy: String) {
+    {
+      entries: [],
+      max_size,
+      max_memory,
+      eviction_policy,
+      current_memory: 0
+    }
+  }
+  
+  let cache = create_cache(100, 1024 * 1024, "lru")  // 100 entries, 1MB memory
+  
+  // Test cache entry creation
+  let create_cache_entry = fn(key: String, value: String, ttl: Int, current_time: Int) {
+    {
+      key,
+      value,
+      created_time: current_time,
+      last_accessed: current_time,
+      access_count: 0,
+      size: key.length() + value.length(),
+      ttl
+    }
+  }
+  
+  // Test cache put operation
+  let cache_put = fn(cache: Cache, key: String, value: String, ttl: Int, current_time: Int) {
+    let new_entry = create_cache_entry(key, value, ttl, current_time)
+    
+    // Check if entry already exists
+    let mut existing_index = -1
+    for i in 0..cache.entries.length() {
+      if cache.entries[i].key == key {
+        existing_index = i
+      }
+    }
+    
+    if existing_index >= 0 {
+      // Update existing entry
+      let mut updated_entries = []
+      for i in 0..cache.entries.length() {
+        if i == existing_index {
+          updated_entries = updated_entries.push(new_entry)
+        } else {
+          updated_entries = updated_entries.push(cache.entries[i])
+        }
+      }
+      
+      {
+        entries: updated_entries,
+        max_size: cache.max_size,
+        max_memory: cache.max_memory,
+        eviction_policy: cache.eviction_policy,
+        current_memory: cache.current_memory - cache.entries[existing_index].size + new_entry.size
+      }
+    } else {
+      // Add new entry
+      if cache.entries.length() < cache.max_size and 
+         cache.current_memory + new_entry.size <= cache.max_memory {
+        {
+          entries: cache.entries.push(new_entry),
+          max_size: cache.max_size,
+          max_memory: cache.max_memory,
+          eviction_policy: cache.eviction_policy,
+          current_memory: cache.current_memory + new_entry.size
+        }
+      } else {
+        // Need to evict entries
+        cache  // Simplified - would implement eviction logic
+      }
+    }
+  }
+  
+  // Test cache get operation
+  let cache_get = fn(cache: Cache, key: String, current_time: Int) {
+    let mut found_entry = None
+    let mut found_index = -1
+    
+    for i in 0..cache.entries.length() {
+      if cache.entries[i].key == key {
+        // Check TTL
+        if (current_time - cache.entries[i].created_time) <= cache.entries[i].ttl {
+          found_entry = Some(cache.entries[i])
+          found_index = i
+        }
+      }
+    }
+    
+    match found_entry {
+      Some(entry) => {
+        // Update access information
+        let updated_entry = {
+          key: entry.key,
+          value: entry.value,
+          created_time: entry.created_time,
+          last_accessed: current_time,
+          access_count: entry.access_count + 1,
+          size: entry.size,
+          ttl: entry.ttl
+        }
+        
+        let mut updated_entries = []
+        for i in 0..cache.entries.length() {
+          if i == found_index {
+            updated_entries = updated_entries.push(updated_entry)
+          } else {
+            updated_entries = updated_entries.push(cache.entries[i])
+          }
+        }
+        
+        {
+          cache: {
+            entries: updated_entries,
+            max_size: cache.max_size,
+            max_memory: cache.max_memory,
+            eviction_policy: cache.eviction_policy,
+            current_memory: cache.current_memory
+          },
+          value: Some(entry.value),
+          hit: true
+        }
+      }
+      None => {
+        {
+          cache,
+          value: None,
+          hit: false
+        }
+      }
+    }
+  }
+  
+  // Test cache operations
+  let cache_after_put = cache_put(cache, "user:123", "John Doe", 3600, 1640995200)
+  assert_eq(cache_after_put.entries.length(), 1)
+  
+  let get_result = cache_get(cache_after_put, "user:123", 1640995250)
+  assert_true(get_result.hit)
+  assert_eq(get_result.value, Some("John Doe"))
+  assert_eq(get_result.cache.entries[0].access_count, 1)
+  assert_eq(get_result.cache.entries[0].last_accessed, 1640995250)
+  
+  let get_missing = cache_get(cache_after_put, "user:456", 1640995250)
+  assert_false(get_missing.hit)
+  assert_eq(get_missing.value, None)
+  
+  // Test TTL expiration
+  let expired_get = cache_get(cache_after_put, "user:123", 1640995200 + 3700)  // After TTL
+  assert_false(expired_get.hit)
+  assert_eq(expired_get.value, None)
+  
+  // Test LRU eviction
+  let evict_lru = fn(cache: Cache) {
+    if cache.entries.length() == 0 {
+      cache
+    } else {
+      // Find least recently used entry
+      let mut lru_index = 0
+      let mut lru_time = cache.entries[0].last_accessed
+      
+      for i in 1..cache.entries.length() {
+        if cache.entries[i].last_accessed < lru_time {
+          lru_time = cache.entries[i].last_accessed
+          lru_index = i
+        }
+      }
+      
+      // Remove LRU entry
+      let mut updated_entries = []
+      let evicted_size = cache.entries[lru_index].size
+      
+      for i in 0..cache.entries.length() {
+        if i != lru_index {
+          updated_entries = updated_entries.push(cache.entries[i])
+        }
+      }
+      
+      {
+        entries: updated_entries,
+        max_size: cache.max_size,
+        max_memory: cache.max_memory,
+        eviction_policy: cache.eviction_policy,
+        current_memory: cache.current_memory - evicted_size
+      }
+    }
+  }
+  
+  // Test LFU eviction
+  let evict_lfu = fn(cache: Cache) {
+    if cache.entries.length() == 0 {
+      cache
+    } else {
+      // Find least frequently used entry
+      let mut lfu_index = 0
+      let mut lfu_count = cache.entries[0].access_count
+      
+      for i in 1..cache.entries.length() {
+        if cache.entries[i].access_count < lfu_count {
+          lfu_count = cache.entries[i].access_count
+          lfu_index = i
+        }
+      }
+      
+      // Remove LFU entry
+      let mut updated_entries = []
+      let evicted_size = cache.entries[lfu_index].size
+      
+      for i in 0..cache.entries.length() {
+        if i != lfu_index {
+          updated_entries = updated_entries.push(cache.entries[i])
+        }
+      }
+      
+      {
+        entries: updated_entries,
+        max_size: cache.max_size,
+        max_memory: cache.max_memory,
+        eviction_policy: cache.eviction_policy,
+        current_memory: cache.current_memory - evicted_size
+      }
+    }
+  }
+  
+  // Test cache statistics
+  let calculate_cache_stats = fn(metrics: CacheMetrics) {
+    let total_requests = metrics.hits + metrics.misses
+    let hit_rate = if total_requests > 0 {
+      metrics.hits.to_float() / total_requests.to_float()
+    } else {
+      0.0
+    }
+    
+    {
+      hit_rate,
+      total_requests,
+      eviction_rate: if total_requests > 0 {
+        metrics.evictions.to_float() / total_requests.to_float()
+      } else {
+        0.0
+      }
+    }
+  }
+  
+  // Test cache warming
+  let warm_cache = fn(cache: Cache, data: Array[(String, String)], ttl: Int, current_time: Int) {
+    let mut warmed_cache = cache
+    
+    for (key, value) in data {
+      warmed_cache = cache_put(warmed_cache, key, value, ttl, current_time)
+    }
+    
+    warmed_cache
+  }
+  
+  // Test cache invalidation
+  let invalidate_cache_entry = fn(cache: Cache, key: String) {
+    let mut updated_entries = []
+    let mut removed_size = 0
+    
+    for entry in cache.entries {
+      if entry.key != key {
+        updated_entries = updated_entries.push(entry)
+      } else {
+        removed_size = entry.size
+      }
+    }
+    
+    {
+      entries: updated_entries,
+      max_size: cache.max_size,
+      max_memory: cache.max_memory,
+      eviction_policy: cache.eviction_policy,
+      current_memory: cache.current_memory - removed_size
+    }
+  }
+  
+  let invalidate_by_pattern = fn(cache: Cache, pattern: String) {
+    let mut updated_entries = []
+    let mut removed_size = 0
+    
+    for entry in cache.entries {
+      if not(entry.key.contains(pattern)) {
+        updated_entries = updated_entries.push(entry)
+      } else {
+        removed_size = removed_size + entry.size
+      }
+    }
+    
+    {
+      entries: updated_entries,
+      max_size: cache.max_size,
+      max_memory: cache.max_memory,
+      eviction_policy: cache.eviction_policy,
+      current_memory: cache.current_memory - removed_size
+    }
+  }
+  
+  // Test cache performance optimization
+  let optimize_cache_performance = fn(cache: Cache) {
+    // Analyze access patterns and suggest optimizations
+    let mut hot_keys = []
+    let mut cold_keys = []
+    
+    for entry in cache.entries {
+      if entry.access_count > 10 {
+        hot_keys = hot_keys.push(entry.key)
+      } else if entry.access_count < 2 {
+        cold_keys = cold_keys.push(entry.key)
+      }
+    }
+    
+    {
+      hot_keys,
+      cold_keys,
+      optimization_suggestions: [
+        if hot_keys.length() > 0 {
+          "Consider increasing TTL for hot keys: " + hot_keys.join(", ")
+        } else {
+          ""
+        },
+        if cold_keys.length() > 0 {
+          "Consider preloading or removing cold keys: " + cold_keys.join(", ")
+        } else {
+          ""
+        }
+      ].filter(fn(s) { s != "" })
+    }
+  }
+  
+  // Create a populated cache for testing
+  let populated_cache = {
+    let mut cache = create_cache(10, 1024, "lru")
+    cache = cache_put(cache, "key1", "value1", 3600, 1640995200)
+    cache = cache_put(cache, "key2", "value2", 3600, 1640995210)
+    cache = cache_put(cache, "key3", "value3", 3600, 1640995220)
+    
+    // Simulate access patterns
+    let get1 = cache_get(cache, "key1", 1640995230)
+    cache = get1.cache
+    
+    let get2 = cache_get(cache, "key1", 1640995240)
+    cache = get2.cache
+    
+    let get3 = cache_get(cache, "key2", 1640995250)
+    cache = get3.cache
+    
+    cache
+  }
+  
+  assert_eq(populated_cache.entries.length(), 3)
+  
+  // Test cache metrics calculation
+  let cache_metrics = {
+    hits: 15,
+    misses: 5,
+    evictions: 2,
+    hit_rate: 0.0,  // Will be calculated
+    average_access_time: 2.5
+  }
+  
+  let stats = calculate_cache_stats(cache_metrics)
+  assert_eq(stats.hit_rate, 0.75)  // 15 / (15 + 5)
+  assert_eq(stats.total_requests, 20)
+  assert_eq(stats.eviction_rate, 0.1)  // 2 / 20
+  
+  // Test cache invalidation
+  let cache_after_invalidation = invalidate_cache_entry(populated_cache, "key2")
+  assert_eq(cache_after_invalidation.entries.length(), 2)
+  
+  let cache_after_pattern_invalidation = invalidate_by_pattern(populated_cache, "key1")
+  assert_eq(cache_after_pattern_invalidation.entries.length(), 2)  // key1 removed, key2 and key3 remain
+}
+
+// Test 10: Advanced Data Analysis and Pattern Recognition
+test "advanced data analysis and pattern recognition" {
+  // Define data analysis types
+  type DataPoint = {
+    timestamp: Int,
     value: Float,
-    timestamp: Int
+    metadata: Array[(String, String)]
   }
   
-  // 3. 创建遥测数据点
-  let telemetry_data = [
-    TelemetryDataPoint::Counter("request.total", 100),
-    TelemetryDataPoint::Counter("request.total", 150),
-    TelemetryDataPoint::Counter("request.total", 200),
-    TelemetryDataPoint::Gauge("cpu.usage", 0.65),
-    TelemetryDataPoint::Gauge("cpu.usage", 0.72),
-    TelemetryDataPoint::Gauge("cpu.usage", 0.68),
-    TelemetryDataPoint::Histogram("response.time", [100.0, 150.0, 200.0, 250.0, 300.0]),
-    TelemetryDataPoint::Histogram("response.time", [120.0, 180.0, 220.0, 280.0, 320.0]),
-    TelemetryDataPoint::Summary("memory.usage", 1024.0, 512.0, 256.0, 2048.0, 4),
-    TelemetryDataPoint::Summary("memory.usage", 1536.0, 768.0, 384.0, 3072.0, 4)
-  ]
-  
-  // 4. 实现计数器聚合函数
-  let aggregate_counters = fn(data_points: Array[TelemetryDataPoint], metric_name: String) {
-    let counters = data_points.filter(fn(dp) {
-      match dp {
-        TelemetryDataPoint::Counter(name, _) => name == metric_name
-        _ => false
-      }
-    })
-    
-    let sum = counters.reduce(fn(acc, dp) {
-      match dp {
-        TelemetryDataPoint::Counter(_, value) => acc + value
-        _ => acc
-      }
-    }, 0)
-    
-    let count = counters.length()
-    let avg = sum / count
-    
-    [
-      AggregationResult({
-        metric_name,
-        aggregation_type: "sum",
-        value: sum.to_float(),
-        timestamp: 1640995200
-      }),
-      AggregationResult({
-        metric_name,
-        aggregation_type: "count",
-        value: count.to_float(),
-        timestamp: 1640995200
-      }),
-      AggregationResult({
-        metric_name,
-        aggregation_type: "avg",
-        value: avg.to_float(),
-        timestamp: 1640995200
-      })
-    ]
+  type TimeSeries = {
+    name: String,
+    data_points: Array[DataPoint],
+    unit: String
   }
   
-  // 5. 实现仪表盘聚合函数
-  let aggregate_gauges = fn(data_points: Array[TelemetryDataPoint], metric_name: String) {
-    let gauges = data_points.filter(fn(dp) {
-      match dp {
-        TelemetryDataPoint::Gauge(name, _) => name == metric_name
-        _ => false
-      }
-    })
-    
-    let values = gauges.map(fn(dp) {
-      match dp {
-        TelemetryDataPoint::Gauge(_, value) => value
-        _ => 0.0
-      }
-    })
-    
-    let sum = values.reduce(fn(acc, v) { acc + v }, 0.0)
-    let count = values.length().to_float()
-    let avg = sum / count
-    let min = values.reduce(fn(acc, v) { if v < acc { v } else { acc } }, 999999.0)
-    let max = values.reduce(fn(acc, v) { if v > acc { v } else { acc } }, 0.0)
-    
-    [
-      AggregationResult({
-        metric_name,
-        aggregation_type: "avg",
-        value: avg,
-        timestamp: 1640995200
-      }),
-      AggregationResult({
-        metric_name,
-        aggregation_type: "min",
-        value: min,
-        timestamp: 1640995200
-      }),
-      AggregationResult({
-        metric_name,
-        aggregation_type: "max",
-        value: max,
-        timestamp: 1640995200
-      }),
-      AggregationResult({
-        metric_name,
-        aggregation_type: "latest",
-        value: values[values.length() - 1],
-        timestamp: 1640995200
-      })
-    ]
+  type Anomaly = {
+    timestamp: Int,
+    value: Float,
+    expected_range: (Float, Float),
+    severity: String,  // "low", "medium", "high"
+    description: String
   }
   
-  // 6. 实现直方图聚合函数
-  let aggregate_histograms = fn(data_points: Array[TelemetryDataPoint], metric_name: String) {
-    let histograms = data_points.filter(fn(dp) {
-      match dp {
-        TelemetryDataPoint::Histogram(name, _) => name == metric_name
-        _ => false
-      }
-    })
-    
-    let all_values = histograms.reduce(fn(acc, dp) {
-      match dp {
-        TelemetryDataPoint::Histogram(_, values) => acc + values
-        _ => acc
-      }
-    }, [] as Array[Float])
-    
-    let count = all_values.length()
-    let sum = all_values.reduce(fn(acc, v) { acc + v }, 0.0)
-    let avg = sum / count.to_float()
-    
-    // 计算百分位数（简化版）
-    let sorted_values = all_values.sort(fn(a, b) { if a < b { -1 } else if a > b { 1 } else { 0 } })
-    let p50_index = (count / 2).min(count - 1)
-    let p95_index = ((count * 95) / 100).min(count - 1)
-    let p99_index = ((count * 99) / 100).min(count - 1)
-    
-    let p50 = sorted_values[p50_index]
-    let p95 = sorted_values[p95_index]
-    let p99 = sorted_values[p99_index]
-    
-    [
-      AggregationResult({
-        metric_name,
-        aggregation_type: "count",
-        value: count.to_float(),
-        timestamp: 1640995200
-      }),
-      AggregationResult({
-        metric_name,
-        aggregation_type: "sum",
-        value: sum,
-        timestamp: 1640995200
-      }),
-      AggregationResult({
-        metric_name,
-        aggregation_type: "avg",
-        value: avg,
-        timestamp: 1640995200
-      }),
-      AggregationResult({
-        metric_name,
-        aggregation_type: "p50",
-        value: p50,
-        timestamp: 1640995200
-      }),
-      AggregationResult({
-        metric_name,
-        aggregation_type: "p95",
-        value: p95,
-        timestamp: 1640995200
-      }),
-      AggregationResult({
-        metric_name,
-        aggregation_type: "p99",
-        value: p99,
-        timestamp: 1640995200
-      })
-    ]
+  type Pattern = {
+    pattern_type: String,
+    confidence: Float,
+    description: String,
+    time_range: (Int, Int)
   }
   
-  // 7. 实现摘要聚合函数
-  let aggregate_summaries = fn(data_points: Array[TelemetryDataPoint], metric_name: String) {
-    let summaries = data_points.filter(fn(dp) {
-      match dp {
-        TelemetryDataPoint::Summary(name, _, _, _, _) => name == metric_name
-        _ => false
-      }
-    })
+  // Create sample time series data
+  let create_time_series = fn(name: String, values: Array[Float], start_time: Int, interval: Int) {
+    let mut data_points = []
     
-    let total_sum = summaries.reduce(fn(acc, dp) {
-      match dp {
-        TelemetryDataPoint::Summary(_, sum, _, _, _) => acc + sum
-        _ => acc
-      }
-    }, 0.0)
-    
-    let total_count = summaries.reduce(fn(acc, dp) {
-      match dp {
-        TelemetryDataPoint::Summary(_, _, count, _, _) => acc + count
-        _ => acc
-      }
-    }, 0)
-    
-    let all_mins = summaries.map(fn(dp) {
-      match dp {
-        TelemetryDataPoint::Summary(_, _, _, min, _) => min
-        _ => 0.0
-      }
-    })
-    
-    let all_maxs = summaries.map(fn(dp) {
-      match dp {
-        TelemetryDataPoint::Summary(_, _, _, _, max) => max
-        _ => 0.0
-      }
-    })
-    
-    let global_min = all_mins.reduce(fn(acc, v) { if v < acc { v } else { acc } }, 999999.0)
-    let global_max = all_maxs.reduce(fn(acc, v) { if v > acc { v } else { acc } }, 0.0)
-    
-    [
-      AggregationResult({
-        metric_name,
-        aggregation_type: "sum",
-        value: total_sum,
-        timestamp: 1640995200
-      }),
-      AggregationResult({
-        metric_name,
-        aggregation_type: "count",
-        value: total_count.to_float(),
-        timestamp: 1640995200
-      }),
-      AggregationResult({
-        metric_name,
-        aggregation_type: "avg",
-        value: total_sum / total_count.to_float(),
-        timestamp: 1640995200
-      }),
-      AggregationResult({
-        metric_name,
-        aggregation_type: "min",
-        value: global_min,
-        timestamp: 1640995200
-      }),
-      AggregationResult({
-        metric_name,
-        aggregation_type: "max",
-        value: global_max,
-        timestamp: 1640995200
-      })
-    ]
-  }
-  
-  // 8. 测试计数器聚合
-  let counter_results = aggregate_counters(telemetry_data, "request.total")
-  assert_eq(counter_results.length(), 3)
-  
-  let sum_result = counter_results.filter(fn(r) { r.aggregation_type == "sum" })[0]
-  assert_eq(sum_result.value, 450.0)  // 100 + 150 + 200
-  
-  let count_result = counter_results.filter(fn(r) { r.aggregation_type == "count" })[0]
-  assert_eq(count_result.value, 3.0)
-  
-  let avg_result = counter_results.filter(fn(r) { r.aggregation_type == "avg" })[0]
-  assert_eq(avg_result.value, 150.0)  // 450 / 3
-  
-  // 9. 测试仪表盘聚合
-  let gauge_results = aggregate_gauges(telemetry_data, "cpu.usage")
-  assert_eq(gauge_results.length(), 4)
-  
-  let avg_result = gauge_results.filter(fn(r) { r.aggregation_type == "avg" })[0]
-  assert_true(avg_result.value > 0.68 && avg_result.value < 0.69)  // (0.65 + 0.72 + 0.68) / 3
-  
-  let min_result = gauge_results.filter(fn(r) { r.aggregation_type == "min" })[0]
-  assert_eq(min_result.value, 0.65)
-  
-  let max_result = gauge_results.filter(fn(r) { r.aggregation_type == "max" })[0]
-  assert_eq(max_result.value, 0.72)
-  
-  let latest_result = gauge_results.filter(fn(r) { r.aggregation_type == "latest" })[0]
-  assert_eq(latest_result.value, 0.68)
-  
-  // 10. 测试直方图聚合
-  let histogram_results = aggregate_histograms(telemetry_data, "response.time")
-  assert_eq(histogram_results.length(), 6)
-  
-  let count_result = histogram_results.filter(fn(r) { r.aggregation_type == "count" })[0]
-  assert_eq(count_result.value, 10.0)  // 5个值 + 5个值
-  
-  let sum_result = histogram_results.filter(fn(r) { r.aggregation_type == "sum" })[0]
-  assert_eq(sum_result.value, 2120.0)  // (100+150+200+250+300) + (120+180+220+280+320)
-  
-  let avg_result = histogram_results.filter(fn(r) { r.aggregation_type == "avg" })[0]
-  assert_eq(avg_result.value, 212.0)  // 2120 / 10
-  
-  // 11. 测试摘要聚合
-  let summary_results = aggregate_summaries(telemetry_data, "memory.usage")
-  assert_eq(summary_results.length(), 5)
-  
-  let sum_result = summary_results.filter(fn(r) { r.aggregation_type == "sum" })[0]
-  assert_eq(sum_result.value, 2560.0)  // 1024 + 1536
-  
-  let count_result = summary_results.filter(fn(r) { r.aggregation_type == "count" })[0]
-  assert_eq(count_result.value, 8.0)  // 4 + 4
-  
-  let avg_result = summary_results.filter(fn(r) { r.aggregation_type == "avg" })[0]
-  assert_eq(avg_result.value, 320.0)  // 2560 / 8
-  
-  let min_result = summary_results.filter(fn(r) { r.aggregation_type == "min" })[0]
-  assert_eq(min_result.value, 256.0)  // min(256, 384)
-  
-  let max_result = summary_results.filter(fn(r) { r.aggregation_type == "max" })[0]
-  assert_eq(max_result.value, 3072.0)  // max(2048, 3072)
-  
-  // 12. 实现时间窗口聚合
-  type TimeWindowedData = {
-    data_point: TelemetryDataPoint,
-    timestamp: Int
-  }
-  
-  let aggregate_by_time_window = fn(data_points: Array[TimeWindowedData], window_size_seconds: Int, aggregation_fn: Array[TelemetryDataPoint] -> Array[AggregationResult]) {
-    let mut windows = []
-    
-    // 简化的时间窗口处理：假设所有数据点都在同一窗口内
-    let telemetry_only = data_points.map(fn(d) { d.data_point })
-    let aggregated = aggregation_fn(telemetry_only)
-    
-    for result in aggregated {
-      windows = windows.push({
-        window_start: 1640995200,
-        window_end: 1640995200 + window_size_seconds,
-        results: [result]
+    for i in 0..values.length() {
+      data_points = data_points.push({
+        timestamp: start_time + i * interval,
+        value: values[i],
+        metadata: []
       })
     }
     
-    windows
+    {
+      name,
+      data_points,
+      unit: "ms"
+    }
   }
   
-  // 13. 测试时间窗口聚合
-  let time_windowed_data = [
-    { data_point: telemetry_data[0], timestamp: 1640995200 },
-    { data_point: telemetry_data[1], timestamp: 1640995201 },
-    { data_point: telemetry_data[2], timestamp: 1640995202 }
-  ]
+  let response_times = [120.0, 125.0, 118.0, 130.0, 500.0, 122.0, 115.0, 128.0, 121.0, 124.0]
+  let response_time_series = create_time_series("response_time", response_times, 1640995200, 60)
   
-  let windowed_results = aggregate_by_time_window(
-    time_windowed_data, 
-    60,  // 60秒窗口
-    fn(points) { aggregate_counters(points, "request.total") }
-  )
+  // Test statistical analysis
+  let calculate_statistics = fn(data: Array[Float]) {
+    if data.length() == 0 {
+      {
+        mean: 0.0,
+        median: 0.0,
+        min: 0.0,
+        max: 0.0,
+        std_dev: 0.0,
+        variance: 0.0
+      }
+    } else {
+      // Calculate mean
+      let sum = data.reduce(fn(acc, x) { acc + x }, 0.0)
+      let mean = sum / data.length().to_float()
+      
+      // Calculate min and max
+      let mut min = data[0]
+      let mut max = data[0]
+      
+      for value in data {
+        if value < min {
+          min = value
+        }
+        if value > max {
+          max = value
+        }
+      }
+      
+      // Calculate median
+      let sorted_data = data.sort(fn(a, b) { 
+        if a < b { -1 } else if a > b { 1 } else { 0 }
+      })
+      
+      let median = if sorted_data.length() % 2 == 0 {
+        let mid = sorted_data.length() / 2
+        (sorted_data[mid - 1] + sorted_data[mid]) / 2.0
+      } else {
+        sorted_data[sorted_data.length() / 2]
+      }
+      
+      // Calculate variance and standard deviation
+      let variance = data.reduce(fn(acc, x) { 
+        acc + (x - mean) * (x - mean) 
+      }, 0.0) / data.length().to_float()
+      
+      let std_dev = variance.sqrt()
+      
+      {
+        mean,
+        median,
+        min,
+        max,
+        std_dev,
+        variance
+      }
+    }
+  }
   
-  assert_eq(windowed_results.length(), 3)  // 3个聚合结果
-  assert_eq(windowed_results[0].window_start, 1640995200)
-  assert_eq(windowed_results[0].window_end, 1640995260)
+  let stats = calculate_statistics(response_times)
+  
+  // Expected: mean ≈ 162.3 (including the outlier 500.0)
+  assert_eq(stats.mean, (120.0 + 125.0 + 118.0 + 130.0 + 500.0 + 122.0 + 115.0 + 128.0 + 121.0 + 124.0) / 10.0)
+  assert_eq(stats.min, 115.0)
+  assert_eq(stats.max, 500.0)
+  
+  // Test anomaly detection
+  let detect_anomalies = fn(series: TimeSeries, threshold_multiplier: Float) {
+    let values = series.data_points.map(fn(dp) { dp.value })
+    let stats = calculate_statistics(values)
+    
+    let mut anomalies = []
+    let threshold = stats.std_dev * threshold_multiplier
+    
+    for data_point in series.data_points {
+      let deviation = (data_point.value - stats.mean).abs()
+      if deviation > threshold {
+        let severity = if deviation > threshold * 2.0 {
+          "high"
+        } else if deviation > threshold * 1.5 {
+          "medium"
+        } else {
+          "low"
+        }
+        
+        anomalies = anomalies.push({
+          timestamp: data_point.timestamp,
+          value: data_point.value,
+          expected_range: (stats.mean - threshold, stats.mean + threshold),
+          severity,
+          description: "Value deviates from expected range"
+        })
+      }
+    }
+    
+    anomalies
+  }
+  
+  let anomalies = detect_anomalies(response_time_series, 2.0)
+  assert_eq(anomalies.length(), 1)  // Only the 500.0 value should be detected
+  assert_eq(anomalies[0].value, 500.0)
+  assert_eq(anomalies[0].severity, "high")
+  
+  // Test trend analysis
+  enum Trend {
+    Increasing
+    Decreasing
+    Stable
+    Volatile
+  }
+  
+  let analyze_trend = fn(series: TimeSeries, window_size: Int) {
+    if series.data_points.length() < window_size {
+      Trend::Stable
+    } else {
+      let mut increasing_count = 0
+      let mut decreasing_count = 0
+      
+      for i in window_size..series.data_points.length() {
+        let current = series.data_points[i].value
+        let previous = series.data_points[i - window_size].value
+        
+        if current > previous * 1.05 {  // 5% increase threshold
+          increasing_count = increasing_count + 1
+        } else if current < previous * 0.95 {  // 5% decrease threshold
+          decreasing_count = decreasing_count + 1
+        }
+      }
+      
+      let total_comparisons = series.data_points.length() - window_size
+      let increasing_ratio = increasing_count.to_float() / total_comparisons.to_float()
+      let decreasing_ratio = decreasing_count.to_float() / total_comparisons.to_float()
+      
+      if increasing_ratio > 0.6 {
+        Trend::Increasing
+      } else if decreasing_ratio > 0.6 {
+        Trend::Decreasing
+      } else if (increasing_ratio + decreasing_ratio) > 0.7 {
+        Trend::Volatile
+      } else {
+        Trend::Stable
+      }
+    }
+  }
+  
+  let trend = analyze_trend(response_time_series, 2)
+  assert_eq(trend, Trend::Stable)  // Overall trend is stable despite one outlier
+  
+  // Test pattern recognition
+  let recognize_patterns = fn(series: TimeSeries) {
+    let values = series.data_points.map(fn(dp) { dp.value })
+    let mut patterns = []
+    
+    // Detect spike pattern
+    let stats = calculate_statistics(values)
+    let spike_threshold = stats.mean + stats.std_dev * 3.0
+    
+    for i in 1..values.length() - 1 {
+      if values[i] > spike_threshold and 
+         values[i-1] < spike_threshold and 
+         values[i+1] < spike_threshold {
+        patterns = patterns.push({
+          pattern_type: "spike",
+          confidence: 0.8,
+          description: "Temporary spike in values",
+          time_range: (series.data_points[i-1].timestamp, series.data_points[i+1].timestamp)
+        })
+      }
+    }
+    
+    // Detect gradual increase pattern
+    let mut consecutive_increases = 0
+    let mut max_consecutive_increases = 0
+    
+    for i in 1..values.length() {
+      if values[i] > values[i-1] {
+        consecutive_increases = consecutive_increases + 1
+        if consecutive_increases > max_consecutive_increases {
+          max_consecutive_increases = consecutive_increases
+        }
+      } else {
+        consecutive_increases = 0
+      }
+    }
+    
+    if max_consecutive_increases >= 3 {
+      patterns = patterns.push({
+        pattern_type: "gradual_increase",
+        confidence: 0.7,
+        description: "Values show gradual increase over time",
+        time_range: (series.data_points[0].timestamp, series.data_points[series.data_points.length() - 1].timestamp)
+      })
+    }
+    
+    patterns
+  }
+  
+  let patterns = recognize_patterns(response_time_series)
+  assert_eq(patterns.length(), 1)  // Should detect the spike pattern
+  assert_eq(patterns[0].pattern_type, "spike")
+  
+  // Test correlation analysis
+  let calculate_correlation = fn(series1: TimeSeries, series2: TimeSeries) {
+    if series1.data_points.length() != series2.data_points.length() {
+      0.0  // Cannot calculate correlation for different lengths
+    } else {
+      let values1 = series1.data_points.map(fn(dp) { dp.value })
+      let values2 = series2.data_points.map(fn(dp) { dp.value })
+      
+      let stats1 = calculate_statistics(values1)
+      let stats2 = calculate_statistics(values2)
+      
+      let mut numerator = 0.0
+      let mut denominator1 = 0.0
+      let mut denominator2 = 0.0
+      
+      for i in 0..values1.length() {
+        let diff1 = values1[i] - stats1.mean
+        let diff2 = values2[i] - stats2.mean
+        
+        numerator = numerator + diff1 * diff2
+        denominator1 = denominator1 + diff1 * diff1
+        denominator2 = denominator2 + diff2 * diff2
+      }
+      
+      if denominator1 > 0.0 and denominator2 > 0.0 {
+        numerator / (denominator1.sqrt() * denominator2.sqrt())
+      } else {
+        0.0
+      }
+    }
+  }
+  
+  // Create correlated data for testing
+  let cpu_usage = [45.0, 48.0, 44.0, 52.0, 75.0, 47.0, 43.0, 50.0, 46.0, 49.0]
+  let cpu_series = create_time_series("cpu_usage", cpu_usage, 1640995200, 60)
+  
+  let correlation = calculate_correlation(response_time_series, cpu_series)
+  assert_true(correlation > 0.8)  // Should be highly correlated due to the spike
+  
+  // Test forecasting
+  let simple_forecast = fn(series: TimeSeries, forecast_periods: Int) {
+    let values = series.data_points.map(fn(dp) { dp.value })
+    let stats = calculate_statistics(values)
+    
+    // Simple moving average forecast
+    let window_size = 3
+    let mut forecasts = []
+    
+    if values.length() >= window_size {
+      for i in 0..forecast_periods {
+        let start_index = values.length() - window_size + i
+        let end_index = values.length() + i
+        
+        if start_index >= 0 and end_index <= values.length() {
+          let window_sum = values.slice(start_index, end_index).reduce(fn(acc, x) { acc + x }, 0.0)
+          let forecast_value = window_sum / window_size.to_float()
+          
+          forecasts = forecasts.push({
+            timestamp: series.data_points[series.data_points.length() - 1].timestamp + (i + 1) * 60,
+            value: forecast_value,
+            metadata: [("forecast", "true"), ("method", "moving_average")]
+          })
+        }
+      }
+    }
+    
+    forecasts
+  }
+  
+  let forecasts = simple_forecast(response_time_series, 3)
+  assert_eq(forecasts.length(), 3)
+  
+  // Test seasonality detection
+  let detect_seasonality = fn(series: TimeSeries, period: Int) {
+    if series.data_points.length() < period * 2 {
+      false
+    } else {
+      let values = series.data_points.map(fn(dp) { dp.value })
+      let mut seasonal_correlations = []
+      
+      for lag in 1..=period {
+        let mut correlation_sum = 0.0
+        let count = values.length() - lag
+        
+        for i in 0..count {
+          correlation_sum = correlation_sum + values[i] * values[i + lag]
+        }
+        
+        if count > 0 {
+          seasonal_correlations = seasonal_correlations.push(correlation_sum / count.to_float())
+        }
+      }
+      
+      // Check if any lag shows strong correlation
+      seasonal_correlations.any(fn(c) { c > 0.7 })
+    }
+  }
+  
+  // Test data aggregation
+  let aggregate_data = fn(series: TimeSeries, aggregation_type: String, window_size: Int) {
+    let values = series.data_points.map(fn(dp) { dp.value })
+    let mut aggregated = []
+    
+    for i in 0..values.length() by window_size {
+      let end = if i + window_size < values.length() {
+        i + window_size
+      } else {
+        values.length()
+      }
+      
+      let window = values.slice(i, end)
+      
+      let aggregated_value = match aggregation_type {
+        "mean" => calculate_statistics(window).mean
+        "sum" => window.reduce(fn(acc, x) { acc + x }, 0.0)
+        "min" => calculate_statistics(window).min
+        "max" => calculate_statistics(window).max
+        _ => calculate_statistics(window).mean
+      }
+      
+      aggregated = aggregated.push({
+        timestamp: series.data_points[i].timestamp,
+        value: aggregated_value,
+        metadata: [("aggregated", "true"), ("type", aggregation_type)]
+      })
+    }
+    
+    aggregated
+  }
+  
+  let aggregated_data = aggregate_data(response_time_series, "mean", 3)
+  assert_eq(aggregated_data.length(), 4)  // 10 values with window size 3 = 4 aggregates
+  
+  // Test outlier removal
+  let remove_outliers = fn(series: TimeSeries, threshold_multiplier: Float) {
+    let values = series.data_points.map(fn(dp) { dp.value })
+    let stats = calculate_statistics(values)
+    let threshold = stats.std_dev * threshold_multiplier
+    
+    let mut filtered_data_points = []
+    
+    for data_point in series.data_points {
+      let deviation = (data_point.value - stats.mean).abs()
+      if deviation <= threshold {
+        filtered_data_points = filtered_data_points.push(data_point)
+      }
+    }
+    
+    {
+      name: series.name + "_filtered",
+      data_points: filtered_data_points,
+      unit: series.unit
+    }
+  }
+  
+  let filtered_series = remove_outliers(response_time_series, 2.0)
+  assert_eq(filtered_series.data_points.length(), 9)  // One outlier removed
+  
+  // Verify the outlier was removed
+  let filtered_values = filtered_series.data_points.map(fn(dp) { dp.value })
+  assert_false(filtered_values.contains(500.0))
 }
