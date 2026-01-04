@@ -1,790 +1,1696 @@
-// Azimuth 数据完整性验证测试用例
-// 专注于测试数据在传输、存储和处理过程中的完整性验证机制
+// Azimuth 遥测数据完整性验证测试用例
+// 包含遥测数据的完整性检查、校验和验证和数据修复
 
-// 测试1: 校验和验证
-test "数据校验和验证功能" {
-  // 1. 测试简单校验和计算
-  let test_data = "Hello, World!"
-  let checksum1 = calculate_simple_checksum(test_data)
-  let checksum2 = calculate_simple_checksum(test_data)
-  
-  // 验证相同数据产生相同校验和
-  assert_eq(checksum1, checksum2)
-  
-  // 验证不同数据产生不同校验和
-  let different_data = "Hello, World"
-  let checksum3 = calculate_simple_checksum(different_data)
-  assert_true(checksum1 != checksum3)
-  
-  // 2. 测试CRC32校验和
-  let crc1 = calculate_crc32(test_data)
-  let crc2 = calculate_crc32(test_data)
-  
-  // 验证相同数据产生相同CRC
-  assert_eq(crc1, crc2)
-  
-  // 验证不同数据产生不同CRC
-  let crc3 = calculate_crc32(different_data)
-  assert_true(crc1 != crc3)
-  
-  // 3. 测试大数据校验和
-  let large_data = "x" * 1000000
-  let large_checksum1 = calculate_simple_checksum(large_data)
-  let large_checksum2 = calculate_simple_checksum(large_data)
-  
-  // 验证大数据校验和一致性
-  assert_eq(large_checksum1, large_checksum2)
-  
-  // 4. 测试空数据校验和
-  let empty_data = ""
-  let empty_checksum = calculate_simple_checksum(empty_data)
-  assert_true(empty_checksum >= 0)
-  
-  // 5. 测试校验和验证过程
-  let data_blocks = [
-    "Block 1: This is test data",
-    "Block 2: More test data",
-    "Block 3: Final test block"
-  ]
-  
-  let block_checksums = []
-  for block in data_blocks {
-    let checksum = calculate_simple_checksum(block)
-    block_checksums = block_checksums.push(checksum)
+// 测试1: 基础数据完整性检查
+test "基础数据完整性检查" {
+  // 定义完整性检查结果
+  type IntegrityResult = {
+    is_valid: Bool,
+    error_message: Option<String>,
+    details: Array[String>
   }
   
-  // 验证每个数据块的完整性
-  for i in 0..data_blocks.length() {
-    let calculated = calculate_simple_checksum(data_blocks[i])
-    let expected = block_checksums[i]
-    assert_eq(calculated, expected)
+  // 定义数据验证器
+  type DataValidator = {
+    name: String,
+    validate: fn(TelemetryData) -> IntegrityResult
   }
   
-  // 6. 测试数据损坏检测
-  let original_data = "Important data that must not be corrupted"
-  let original_checksum = calculate_simple_checksum(original_data)
+  // 定义遥测数据结构
+  type TelemetryData = {
+    timestamp: Int,
+    trace_id: String,
+    span_id: String,
+    operation_name: String,
+    status: String,
+    attributes: Array<(String, String)>
+  }
   
-  // 模拟数据损坏
-  let corrupted_data = "Important data that must not be corruptEd"  // 改变一个字符
-  let corrupted_checksum = calculate_simple_checksum(corrupted_data)
+  // 创建数据验证器
+  let create_validator = fn(name: String, validation_fn: (TelemetryData) -> IntegrityResult) {
+    {
+      name,
+      validate: validation_fn
+    }
+  }
   
-  // 验证能够检测到数据损坏
-  assert_true(original_checksum != corrupted_checksum)
-}
-
-// 测试2: 哈希验证
-test "数据哈希验证功能" {
-  // 1. 测试MD5哈希
-  let test_data = "Test data for hashing"
-  let md5_hash1 = calculate_md5(test_data)
-  let md5_hash2 = calculate_md5(test_data)
-  
-  // 验证相同数据产生相同哈希
-  assert_eq(md5_hash1, md5_hash2)
-  
-  // 验证不同数据产生不同哈希
-  let different_data = "Test data for hashinG"  // 改变一个字符
-  let md5_hash3 = calculate_md5(different_data)
-  assert_true(md5_hash1 != md5_hash3)
-  
-  // 2. 测试SHA256哈希
-  let sha256_hash1 = calculate_sha256(test_data)
-  let sha256_hash2 = calculate_sha256(test_data)
-  
-  // 验证相同数据产生相同哈希
-  assert_eq(sha256_hash1, sha256_hash2)
-  
-  // 验证不同数据产生不同哈希
-  let sha256_hash3 = calculate_sha256(different_data)
-  assert_true(sha256_hash1 != sha256_hash3)
-  
-  // 3. 测试哈希长度一致性
-  assert_eq(md5_hash1.length(), 32)  // MD5产生32位十六进制字符串
-  assert_eq(sha256_hash1.length(), 64)  // SHA256产生64位十六进制字符串
-  
-  // 4. 测试哈希碰撞概率（简化测试）
-  let hash_set = {}
-  let collision_count = 0
-  let test_strings = []
-  
-  // 生成1000个不同的字符串并检查哈希碰撞
-  for i in 0..1000 {
-    let test_str = "test_string_" + i.to_string()
-    test_strings = test_strings.push(test_str)
-    let hash = calculate_md5(test_str)
+  // 时间戳验证器
+  let timestamp_validator = create_validator("timestamp", fn(data) {
+    let current_time = Time::now()
+    let time_diff = current_time - data.timestamp
     
-    match hash_set.get(hash) {
-      Some(_) => collision_count = collision_count + 1
-      None => hash_set = hash_set.set(hash, true)
+    if time_diff < 0 {
+      {
+        is_valid: false,
+        error_message: Some("Timestamp is in the future"),
+        details: ["Timestamp: " + data.timestamp.to_string(), "Current time: " + current_time.to_string()]
+      }
+    } else if time_diff > 86400000 {  // 超过24小时
+      {
+        is_valid: false,
+        error_message: Some("Timestamp is too old"),
+        details: ["Age: " + time_diff.to_string() + "ms"]
+      }
+    } else {
+      {
+        is_valid: true,
+        error_message: None,
+        details: ["Timestamp is valid"]
+      }
+    }
+  })
+  
+  // Trace ID验证器
+  let trace_id_validator = create_validator("trace_id", fn(data) {
+    if data.trace_id.length() != 32 {
+      {
+        is_valid: false,
+        error_message: Some("Invalid trace ID length"),
+        details: ["Expected: 32 characters", "Actual: " + data.trace_id.length().to_string()]
+      }
+    } else if not(data.trace_id.chars().all(fn(c) { 
+      (c >= '0' and c <= '9') or (c >= 'a' and c <= 'f') 
+    })) {
+      {
+        is_valid: false,
+        error_message: Some("Trace ID contains invalid characters"),
+        details: ["Expected: hexadecimal characters (0-9, a-f)"]
+      }
+    } else {
+      {
+        is_valid: true,
+        error_message: None,
+        details: ["Trace ID is valid"]
+      }
+    }
+  })
+  
+  // Span ID验证器
+  let span_id_validator = create_validator("span_id", fn(data) {
+    if data.span_id.length() != 16 {
+      {
+        is_valid: false,
+        error_message: Some("Invalid span ID length"),
+        details: ["Expected: 16 characters", "Actual: " + data.span_id.length().to_string()]
+      }
+    } else if not(data.span_id.chars().all(fn(c) { 
+      (c >= '0' and c <= '9') or (c >= 'a' and c <= 'f') 
+    })) {
+      {
+        is_valid: false,
+        error_message: Some("Span ID contains invalid characters"),
+        details: ["Expected: hexadecimal characters (0-9, a-f)"]
+      }
+    } else {
+      {
+        is_valid: true,
+        error_message: None,
+        details: ["Span ID is valid"]
+      }
+    }
+  })
+  
+  // 操作名称验证器
+  let operation_name_validator = create_validator("operation_name", fn(data) {
+    if data.operation_name.length() == 0 {
+      {
+        is_valid: false,
+        error_message: Some("Operation name is empty"),
+        details: []
+      }
+    } else if data.operation_name.length() > 100 {
+      {
+        is_valid: false,
+        error_message: Some("Operation name is too long"),
+        details: ["Maximum: 100 characters", "Actual: " + data.operation_name.length().to_string()]
+      }
+    } else {
+      {
+        is_valid: true,
+        error_message: None,
+        details: ["Operation name is valid"]
+      }
+    }
+  })
+  
+  // 状态验证器
+  let status_validator = create_validator("status", fn(data) {
+    let valid_statuses = ["ok", "error", "timeout", "cancelled"]
+    
+    if not(valid_statuses.contains(data.status)) {
+      {
+        is_valid: false,
+        error_message: Some("Invalid status"),
+        details: ["Valid statuses: " + valid_statuses.join(", "), "Actual: " + data.status]
+      }
+    } else {
+      {
+        is_valid: true,
+        error_message: None,
+        details: ["Status is valid"]
+      }
+    }
+  })
+  
+  // 运行所有验证器
+  let run_validations = fn(data: TelemetryData, validators: Array[DataValidator>) {
+    let mut results = []
+    
+    for validator in validators {
+      let result = validator.validate(data)
+      results = results.push({
+        validator_name: validator.name,
+        result
+      })
+    }
+    
+    results
+  }
+  
+  // 获取整体完整性结果
+  let get_overall_integrity = fn(validation_results: Array<(String, IntegrityResult)>) {
+    let mut is_valid = true
+    let mut all_errors = []
+    let mut all_details = []
+    
+    for (validator_name, result) in validation_results {
+      if not(result.is_valid) {
+        is_valid = false
+        
+        match result.error_message {
+          Some(error) => {
+            all_errors = all_errors.push(validator_name + ": " + error)
+          }
+          None => {}
+        }
+      }
+      
+      for detail in result.details {
+        all_details = all_details.push(validator_name + ": " + detail)
+      }
+    }
+    
+    {
+      is_valid,
+      error_message: if all_errors.length() > 0 { 
+        Some(all_errors.join("; ")) 
+      } else { 
+        None 
+      },
+      details: all_details
     }
   }
   
-  // 验证碰撞概率很低（理想情况下应该为0）
-  assert_true(collision_count < 5)  // 允许少量碰撞
+  // 创建测试数据
+  let valid_data = {
+    timestamp: Time::now() - 1000,  // 1秒前
+    trace_id: "1234567890abcdef1234567890abcdef",
+    span_id: "1234567890abcdef",
+    operation_name: "database_query",
+    status: "ok",
+    attributes: [
+      ("db.system", "postgresql"),
+      ("db.statement", "SELECT * FROM users")
+    ]
+  }
   
-  // 5. 测试哈希验证过程
-  let important_data = "Critical system configuration data"
-  let stored_hash = calculate_sha256(important_data)
-  
-  // 模拟后续验证过程
-  let retrieved_data = "Critical system configuration data"
-  let calculated_hash = calculate_sha256(retrieved_data)
-  
-  // 验证数据完整性
-  assert_eq(stored_hash, calculated_hash)
-  
-  // 模拟数据被篡改
-  let tampered_data = "Critical system configuration data "
-  let tampered_hash = calculate_sha256(tampered_data)
-  
-  // 验证能够检测到篡改
-  assert_true(stored_hash != tampered_hash)
-}
-
-// 测试3: 数字签名验证
-test "数字签名验证功能" {
-  // 1. 生成密钥对
-  let key_pair = generate_rsa_key_pair(2048)
-  let private_key = key_pair.private_key
-  let public_key = key_pair.public_key
-  
-  // 2. 测试签名生成
-  let message = "This is a message to be signed"
-  let signature = sign_data(private_key, message)
-  
-  // 验证签名不为空
-  assert_true(signature.length() > 0)
-  
-  // 3. 测试签名验证
-  let is_valid = verify_signature(public_key, message, signature)
-  assert_true(is_valid)
-  
-  // 4. 测试错误消息的签名验证
-  let wrong_message = "This is a wrong message"
-  let is_invalid = verify_signature(public_key, wrong_message, signature)
-  assert_false(is_invalid)
-  
-  // 5. 测试错误公钥的签名验证
-  let wrong_key_pair = generate_rsa_key_pair(2048)
-  let wrong_public_key = wrong_key_pair.public_key
-  let is_wrong_key_valid = verify_signature(wrong_public_key, message, signature)
-  assert_false(is_wrong_key_valid)
-  
-  // 6. 测试多个消息的签名和验证
-  let messages = [
-    "First message",
-    "Second message",
-    "Third message",
-    "Fourth message",
-    "Fifth message"
+  let validators = [
+    timestamp_validator,
+    trace_id_validator,
+    span_id_validator,
+    operation_name_validator,
+    status_validator
   ]
   
-  let signatures = []
-  for msg in messages {
-    let sig = sign_data(private_key, msg)
-    signatures = signatures.push(sig)
+  // 测试有效数据
+  let valid_results = run_validations(valid_data, validators)
+  let valid_overall = get_overall_integrity(valid_results)
+  
+  assert_true(valid_overall.is_valid)
+  assert_eq(valid_overall.error_message, None)
+  
+  // 测试无效时间戳
+  let future_data = {
+    timestamp: Time::now() + 10000,  // 未来时间
+    trace_id: "1234567890abcdef1234567890abcdef",
+    span_id: "1234567890abcdef",
+    operation_name: "database_query",
+    status: "ok",
+    attributes: []
   }
   
-  // 验证所有签名
-  for i in 0..messages.length() {
-    let valid = verify_signature(public_key, messages[i], signatures[i])
-    assert_true(valid)
+  let future_results = run_validations(future_data, validators)
+  let future_overall = get_overall_integrity(future_results)
+  
+  assert_false(future_overall.is_valid)
+  assert_eq(future_overall.error_message, Some("timestamp: Timestamp is in the future"))
+  
+  // 测试无效Trace ID
+  let invalid_trace_data = {
+    timestamp: Time::now() - 1000,
+    trace_id: "invalid-trace-id",
+    span_id: "1234567890abcdef",
+    operation_name: "database_query",
+    status: "ok",
+    attributes: []
   }
   
-  // 7. 测试签名唯一性
-  let same_message = "This is a message to be signed"
-  let signature1 = sign_data(private_key, same_message)
-  let signature2 = sign_data(private_key, same_message)
+  let invalid_trace_results = run_validations(invalid_trace_data, validators)
+  let invalid_trace_overall = get_overall_integrity(invalid_trace_results)
   
-  // 验证相同消息的签名可能不同（取决于签名算法）
-  // 但都应该能通过验证
-  let valid1 = verify_signature(public_key, same_message, signature1)
-  let valid2 = verify_signature(public_key, same_message, signature2)
-  assert_true(valid1)
-  assert_true(valid2)
+  assert_false(invalid_trace_overall.is_valid)
+  assert_eq(invalid_trace_overall.error_message, Some("trace_id: Invalid trace ID length"))
+  
+  // 测试多个错误
+  let multiple_errors_data = {
+    timestamp: Time::now() + 10000,  // 未来时间
+    trace_id: "invalid",  // 无效Trace ID
+    span_id: "12345",  // 无效Span ID
+    operation_name: "",  // 空操作名称
+    status: "invalid",  // 无效状态
+    attributes: []
+  }
+  
+  let multiple_errors_results = run_validations(multiple_errors_data, validators)
+  let multiple_errors_overall = get_overall_integrity(multiple_errors_results)
+  
+  assert_false(multiple_errors_overall.is_valid)
+  assert_true(multiple_errors_overall.error_message.unwrap().contains("timestamp:"))
+  assert_true(multiple_errors_overall.error_message.unwrap().contains("trace_id:"))
+  assert_true(multiple_errors_overall.error_message.unwrap().contains("span_id:"))
+  assert_true(multiple_errors_overall.error_message.unwrap().contains("operation_name:"))
+  assert_true(multiple_errors_overall.error_message.unwrap().contains("status:"))
 }
 
-// 测试4: 数据传输完整性
-test "数据传输完整性验证" {
-  // 1. 模拟数据传输过程
-  let original_data = "Important data that needs to be transmitted safely"
-  let data_checksum = calculate_crc32(original_data)
-  
-  // 模拟发送方添加校验和
-  let transmitted_package = {
-    "data": original_data,
-    "checksum": data_checksum,
-    "timestamp": get_current_time(),
-    "sender_id": "sender_123"
+// 测试2: 校验和验证
+test "校验和验证" {
+  // 定义校验和计算器
+  type ChecksumCalculator = {
+    name: String,
+    calculate: fn(Array[Int>) -> Int
   }
   
-  // 模拟接收方验证
-  let received_data = transmitted_package.data
-  let received_checksum = transmitted_package.checksum
-  let calculated_checksum = calculate_crc32(received_data)
-  
-  // 验证数据完整性
-  assert_eq(received_checksum, calculated_checksum)
-  
-  // 2. 测试数据包损坏检测
-  let corrupted_package = {
-    "data": original_data + "x",  // 添加额外字符
-    "checksum": data_checksum,
-    "timestamp": get_current_time(),
-    "sender_id": "sender_123"
+  // 定义校验和验证结果
+  type ChecksumResult = {
+    expected: Int,
+    actual: Int,
+    is_valid: Bool
   }
   
-  let corrupted_data_checksum = calculate_crc32(corrupted_package.data)
-  
-  // 验证能够检测到损坏
-  assert_true(corrupted_package.checksum != corrupted_data_checksum)
-  
-  // 3. 测试分块传输完整性
-  let large_data = "This is a large piece of data that needs to be transmitted in chunks"
-  let chunk_size = 20
-  let chunks = split_into_chunks(large_data, chunk_size)
-  
-  // 为每个块计算校验和
-  let chunk_packages = []
-  for i in 0..chunks.length() {
-    let chunk = chunks[i]
-    let checksum = calculate_crc32(chunk)
-    let package = {
-      "chunk_id": i,
-      "data": chunk,
-      "checksum": checksum,
-      "total_chunks": chunks.length()
+  // 简单求和校验和
+  let sum_calculator = {
+    name: "sum",
+    calculate: fn(data: Array<Int>) {
+      let mut sum = 0
+      for value in data {
+        sum = sum + value
+      }
+      sum % 10000  // 限制在4位数
     }
-    chunk_packages = chunk_packages.push(package)
   }
   
-  // 验证所有块
-  for pkg in chunk_packages {
-    let calculated = calculate_crc32(pkg.data)
-    assert_eq(pkg.checksum, calculated)
-  }
-  
-  // 4. 测试数据重组完整性
-  let reassembled_data = reassemble_chunks(chunk_packages)
-  assert_eq(reassembled_data, large_data)
-  
-  // 5. 测试网络传输模拟
-  let network_messages = [
-    { "sequence": 1, "data": "Message 1", "checksum": calculate_crc32("Message 1") },
-    { "sequence": 2, "data": "Message 2", "checksum": calculate_crc32("Message 2") },
-    { "sequence": 3, "data": "Message 3", "checksum": calculate_crc32("Message 3") }
-  ]
-  
-  // 模拟消息乱序到达
-  let received_out_of_order = [network_messages[2], network_messages[0], network_messages[1]]
-  
-  // 按序列号重新排序
-  let sorted_messages = received_out_of_order.sort(fn(a, b) { a.sequence < b.sequence })
-  
-  // 验证消息顺序和完整性
-  assert_eq(sorted_messages[0].sequence, 1)
-  assert_eq(sorted_messages[1].sequence, 2)
-  assert_eq(sorted_messages[2].sequence, 3)
-  
-  // 验证每条消息的完整性
-  for msg in sorted_messages {
-    let calculated = calculate_crc32(msg.data)
-    assert_eq(msg.checksum, calculated)
-  }
-}
-
-// 测试5: 数据存储完整性
-test "数据存储完整性验证" {
-  // 1. 测试数据库记录完整性
-  let records = [
-    { "id": 1, "name": "Alice", "email": "alice@example.com", "checksum": "" },
-    { "id": 2, "name": "Bob", "email": "bob@example.com", "checksum": "" },
-    { "id": 3, "name": "Charlie", "email": "charlie@example.com", "checksum": "" }
-  ]
-  
-  // 为每条记录计算校验和
-  let records_with_checksum = []
-  for record in records {
-    let record_data = record.id.to_string() + record.name + record.email
-    let checksum = calculate_md5(record_data)
-    let updated_record = { 
-      "id": record.id, 
-      "name": record.name, 
-      "email": record.email, 
-      "checksum": checksum 
+  // XOR校验和
+  let xor_calculator = {
+    name: "xor",
+    calculate: fn(data: Array[Int>) {
+      let mut result = 0
+      for value in data {
+        result = result ^ value
+      }
+      result
     }
-    records_with_checksum = records_with_checksum.push(updated_record)
   }
   
-  // 验证记录完整性
-  for record in records_with_checksum {
-    let record_data = record.id.to_string() + record.name + record.email
-    let calculated_checksum = calculate_md5(record_data)
-    assert_eq(record.checksum, calculated_checksum)
+  // CRC8简化版校验和
+  let crc8_calculator = {
+    name: "crc8",
+    calculate: fn(data: Array[Int>) {
+      let mut crc = 0
+      let polynomial = 0x07
+      
+      for byte in data {
+        crc = crc ^ byte
+        for i in 0..8 {
+          if crc & 0x80 != 0 {
+            crc = (crc << 1) ^ polynomial
+          } else {
+            crc = crc << 1
+          }
+        }
+      }
+      
+      crc & 0xFF
+    }
   }
   
-  // 2. 测试文件存储完整性
-  let file_content = "This is the content of a file that needs integrity protection"
-  let file_checksum = calculate_sha256(file_content)
-  
-  // 模拟文件元数据
-  let file_metadata = {
-    "filename": "important_file.txt",
-    "size": file_content.length(),
-    "checksum": file_checksum,
-    "created_at": get_current_time(),
-    "modified_at": get_current_time()
+  // 计算校验和
+  let calculate_checksum = fn(data: Array[Int>, calculator: ChecksumCalculator) {
+    calculator.calculate(data)
   }
   
-  // 模拟文件读取和验证
-  let read_content = file_content
-  let read_checksum = calculate_sha256(read_content)
-  
-  // 验证文件完整性
-  assert_eq(file_metadata.checksum, read_checksum)
-  
-  // 3. 测试备份完整性
-  let original_data = "Critical business data"
-  let backup_data = original_data  // 模拟备份
-  let original_checksum = calculate_crc32(original_data)
-  let backup_checksum = calculate_crc32(backup_data)
-  
-  // 验证备份完整性
-  assert_eq(original_checksum, backup_checksum)
-  
-  // 4. 测试数据归档完整性
-  let archived_data = [
-    { "name": "doc1.txt", "content": "Document 1 content", "checksum": "" },
-    { "name": "doc2.txt", "content": "Document 2 content", "checksum": "" },
-    { "name": "doc3.txt", "content": "Document 3 content", "checksum": "" }
-  ]
-  
-  // 计算归档校验和
-  let archived_with_checksum = []
-  for doc in archived_data {
-    let checksum = calculate_md5(doc.content)
-    let updated_doc = { "name": doc.name, "content": doc.content, "checksum": checksum }
-    archived_with_checksum = archived_with_checksum.push(updated_doc)
+  // 验证校验和
+  let verify_checksum = fn(data: Array[Int], expected: Int, calculator: ChecksumCalculator) {
+    let actual = calculate_checksum(data, calculator)
+    
+    {
+      expected,
+      actual,
+      is_valid: actual == expected
+    }
   }
   
-  // 计算整体归档校验和
-  let archive_manifest = {
-    "files": archived_with_checksum,
-    "total_files": archived_with_checksum.length(),
-    "archive_checksum": ""
+  // 将字符串转换为字节数组
+  let string_to_bytes = fn(s: String) {
+    let mut bytes = []
+    for c in s.to_char_array() {
+      bytes = bytes.push(c.to_int())
+    }
+    bytes
   }
   
-  let all_content = ""
-  for doc in archived_with_checksum {
-    all_content = all_content + doc.content
+  // 将遥测数据转换为字节数组
+  let telemetry_to_bytes = fn(data: TelemetryData) {
+    let mut bytes = []
+    
+    // 添加时间戳（8字节）
+    let timestamp = data.timestamp
+    for i in 0..8 {
+      bytes = bytes.push((timestamp >> (i * 8)) & 0xFF)
+    }
+    
+    // 添加Trace ID
+    let trace_id_bytes = string_to_bytes(data.trace_id)
+    bytes = bytes + trace_id_bytes
+    
+    // 添加Span ID
+    let span_id_bytes = string_to_bytes(data.span_id)
+    bytes = bytes + span_id_bytes
+    
+    // 添加操作名称
+    let operation_bytes = string_to_bytes(data.operation_name)
+    bytes = bytes + operation_bytes
+    
+    bytes
   }
-  let archive_checksum = calculate_sha256(all_content)
-  let final_manifest = { 
-    "files": archive_manifest.files, 
-    "total_files": archive_manifest.total_files, 
-    "archive_checksum": archive_checksum 
+  
+  // 为遥测数据添加校验和
+  let add_checksum_to_telemetry = fn(data: TelemetryData, calculator: ChecksumCalculator) {
+    let data_bytes = telemetry_to_bytes(data)
+    let checksum = calculate_checksum(data_bytes, calculator)
+    
+    {
+      data,
+      checksum,
+      calculator_name: calculator.name
+    }
   }
   
-  // 验证归档完整性
-  let calculated_archive_checksum = calculate_sha256(all_content)
-  assert_eq(final_manifest.archive_checksum, calculated_archive_checksum)
+  // 验证带校验和的遥测数据
+  let verify_telemetry_checksum = fn(
+    data_with_checksum: (TelemetryData, Int, String), 
+    calculator: ChecksumCalculator
+  ) {
+    let (data, expected_checksum, calculator_name) = data_with_checksum
+    
+    if calculator_name != calculator.name {
+      return {
+        expected: expected_checksum,
+        actual: 0,
+        is_valid: false
+      }
+    }
+    
+    let data_bytes = telemetry_to_bytes(data)
+    verify_checksum(data_bytes, expected_checksum, calculator)
+  }
   
-  // 5. 测试数据压缩完整性
-  let compressible_data = "AAAAABBBBBCCCCCDDDDD" * 100
-  let original_checksum = calculate_crc32(compressible_data)
+  // 使用前一个测试的类型
+  type TelemetryData = {
+    timestamp: Int,
+    trace_id: String,
+    span_id: String,
+    operation_name: String,
+    status: String,
+    attributes: Array<(String, String)>
+  }
   
-  // 模拟压缩
-  let compressed_data = compress_data(compressible_data)
-  let compressed_checksum = calculate_crc32(compressed_data)
+  // 创建测试数据
+  let test_data = {
+    timestamp: 1640995200000,
+    trace_id: "1234567890abcdef1234567890abcdef",
+    span_id: "1234567890abcdef",
+    operation_name: "database_query",
+    status: "ok",
+    attributes: [
+      ("db.system", "postgresql"),
+      ("db.statement", "SELECT * FROM users")
+    ]
+  }
   
-  // 验证压缩后数据不同（压缩应该改变数据）
-  assert_true(original_checksum != compressed_checksum)
+  // 测试校验和计算
+  let data_bytes = telemetry_to_bytes(test_data)
   
-  // 模拟解压缩
-  let decompressed_data = decompress_data(compressed_data)
-  let decompressed_checksum = calculate_crc32(decompressed_data)
+  let sum_checksum = calculate_checksum(data_bytes, sum_calculator)
+  let xor_checksum = calculate_checksum(data_bytes, xor_calculator)
+  let crc8_checksum = calculate_checksum(data_bytes, crc8_calculator)
   
-  // 验证解压缩后数据与原始数据相同
-  assert_eq(original_checksum, decompressed_checksum)
-  assert_eq(compressible_data, decompressed_data)
+  // 验证校验和不相同
+  assert_true(sum_checksum != xor_checksum)
+  assert_true(xor_checksum != crc8_checksum)
+  assert_true(sum_checksum != crc8_checksum)
+  
+  // 测试校验和验证
+  let sum_result = verify_checksum(data_bytes, sum_checksum, sum_calculator)
+  let xor_result = verify_checksum(data_bytes, xor_checksum, xor_calculator)
+  let crc8_result = verify_checksum(data_bytes, crc8_checksum, crc8_calculator)
+  
+  assert_true(sum_result.is_valid)
+  assert_eq(sum_result.expected, sum_result.actual)
+  
+  assert_true(xor_result.is_valid)
+  assert_eq(xor_result.expected, xor_result.actual)
+  
+  assert_true(crc8_result.is_valid)
+  assert_eq(crc8_result.expected, crc8_result.actual)
+  
+  // 测试错误校验和
+  let wrong_sum_result = verify_checksum(data_bytes, sum_checksum + 1, sum_calculator)
+  assert_false(wrong_sum_result.is_valid)
+  assert_ne(wrong_sum_result.expected, wrong_sum_result.actual)
+  
+  // 测试遥测数据校验和
+  let telemetry_with_sum = add_checksum_to_telemetry(test_data, sum_calculator)
+  let telemetry_with_xor = add_checksum_to_telemetry(test_data, xor_calculator)
+  let telemetry_with_crc8 = add_checksum_to_telemetry(test_data, crc8_calculator)
+  
+  // 验证遥测数据校验和
+  let verify_sum_result = verify_telemetry_checksum(telemetry_with_sum, sum_calculator)
+  let verify_xor_result = verify_telemetry_checksum(telemetry_with_xor, xor_calculator)
+  let verify_crc8_result = verify_telemetry_checksum(telemetry_with_crc8, crc8_calculator)
+  
+  assert_true(verify_sum_result.is_valid)
+  assert_true(verify_xor_result.is_valid)
+  assert_true(verify_crc8_result.is_valid)
+  
+  // 测试不同计算器验证
+  let cross_verify_result = verify_telemetry_checksum(telemetry_with_sum, xor_calculator)
+  assert_false(cross_verify_result.is_valid)  // 使用不同的计算器
+  
+  // 测试数据篡改检测
+  let tampered_data = {
+    timestamp: test_data.timestamp,
+    trace_id: test_data.trace_id,
+    span_id: "1234567890abcdee",  // 篡改Span ID
+    operation_name: test_data.operation_name,
+    status: test_data.status,
+    attributes: test_data.attributes
+  }
+  
+  let tampered_with_sum = add_checksum_to_telemetry(tampered_data, sum_calculator)
+  let tampered_verify_result = verify_telemetry_checksum(tampered_with_sum, sum_calculator)
+  
+  // 注意：这里我们为篡改后的数据重新计算了校验和，所以验证会通过
+  // 在实际场景中，我们会使用原始数据的校验和来验证篡改后的数据
+  assert_true(tampered_verify_result.is_valid)
+  
+  // 正确的篡改检测应该是：
+  let original_telemetry_with_sum = add_checksum_to_telemetry(test_data, sum_calculator)
+  let tampered_data_bytes = telemetry_to_bytes(tampered_data)
+  let tampered_detection_result = verify_checksum(
+    tampered_data_bytes, 
+    original_telemetry_with_sum.1,  // 使用原始数据的校验和
+    sum_calculator
+  )
+  
+  assert_false(tampered_detection_result.is_valid)
 }
 
-// 测试6: 数据完整性修复
-test "数据完整性修复功能" {
-  // 1. 测试奇偶校验修复
-  let data_blocks = [
-    [1, 2, 3, 4],
-    [5, 6, 7, 8],
-    [9, 10, 11, 12]
-  ]
-  
-  // 计算奇偶校验块
-  let parity_block = calculate_parity_block(data_blocks)
-  
-  // 模拟数据损坏
-  let corrupted_blocks = [
-    [1, 2, 3, 4],      // 正常
-    [5, 99, 7, 8],     // 损坏（第二个元素被改为99）
-    [9, 10, 11, 12]    // 正常
-  ]
-  
-  // 使用奇偶校验修复损坏的数据
-  let repaired_blocks = repair_with_parity(corrupted_blocks, parity_block)
-  
-  // 验证修复结果
-  assert_eq(repaired_blocks[0], data_blocks[0])
-  assert_eq(repaired_blocks[1], data_blocks[1])  // 应该被修复
-  assert_eq(repaired_blocks[2], data_blocks[2])
-  
-  // 2. 测试冗余备份修复
-  let primary_data = "Primary data copy"
-  let backup_data = "Primary data copy"  // 相同的备份
-  let tertiary_data = "Primary data copy"  // 三重备份
-  
-  // 模拟主数据损坏
-  let corrupted_primary = "Primary data copY"  // 损坏
-  
-  // 使用备份修复
-  let repaired_data = repair_from_backup(corrupted_primary, backup_data, tertiary_data)
-  
-  // 验证修复结果
-  assert_eq(repaired_data, primary_data)
-  
-  // 3. 测试纠错码修复
-  let original_message = "Error correction test"
-  let encoded_data = encode_with_ecc(original_message)
-  
-  // 模拟传输错误（翻转一些位）
-  let corrupted_encoded = introduce_errors(encoded_data, 2)
-  
-  // 使用纠错码修复
-  let repaired_encoded = repair_with_ecc(corrupted_encoded)
-  let decoded_message = decode_from_ecc(repaired_encoded)
-  
-  // 验证修复结果（假设可以修复少量错误）
-  assert_eq(decoded_message, original_message)
-  
-  // 4. 测试校验和修复
-  let data_with_checksum = add_checksum_to_data("Test message")
-  let corrupted_data_with_checksum = corrupt_data_with_checksum(data_with_checksum)
-  
-  // 尝试修复
-  let repair_result = attempt_checksum_repair(corrupted_data_with_checksum)
-  
-  // 验证修复结果
-  match repair_result {
-    Some(repaired) => assert_eq(repaired.data, "Test message")
-    None => assert_true(false)  // 修复应该成功
+// 测试3: 数据序列化和反序列化完整性
+test "数据序列化和反序列化完整性" {
+  // 定义序列化结果
+  type SerializationResult = {
+    success: Bool,
+    data: Array[Int>,
+    error_message: Option<String>
   }
   
-  // 5. 测试多重验证修复
-  let critical_data = "Critical system data"
-  let verification_layers = [
-    calculate_crc32(critical_data),
-    calculate_md5(critical_data),
-    calculate_sha256(critical_data)
-  ]
-  
-  // 模拟多层验证
-  let corrupted_data = "Critical system data "  // 添加空格
-  let layer1_valid = verification_layers[0] == calculate_crc32(corrupted_data)
-  let layer2_valid = verification_layers[1] == calculate_md5(corrupted_data)
-  let layer3_valid = verification_layers[2] == calculate_sha256(corrupted_data)
-  
-  // 所有层都应该检测到损坏
-  assert_false(layer1_valid)
-  assert_false(layer2_valid)
-  assert_false(layer3_valid)
-  
-  // 使用原始数据修复
-  let final_repair = repair_with_multiple_verification(corrupted_data, verification_layers)
-  assert_eq(final_repair, critical_data)
-}
-
-// 辅助函数实现
-func calculate_simple_checksum(data : String) -> Int {
-  let mut sum = 0
-  for i in 0..data.length() {
-    sum = sum + data[i].to_int()
+  // 定义反序列化结果
+  type DeserializationResult = {
+    success: Bool,
+    data: Option[TelemetryData>,
+    error_message: Option<String>
   }
-  return sum % 65536  // 返回16位校验和
-}
-
-func calculate_crc32(data : String) -> Int {
-  // 简化的CRC32实现
-  let mut crc = 0xFFFFFFFF
-  let polynomial = 0xEDB88320
   
-  for i in 0..data.length() {
-    crc = crc ^ data[i].to_int()
-    for j in 0..8 {
-      if crc & 1 != 0 {
-        crc = (crc >> 1) ^ polynomial
-      } else {
-        crc = crc >> 1
+  // 定义完整性验证结果
+  type SerializationIntegrityResult = {
+    serialization_success: Bool,
+    deserialization_success: Bool,
+    data_integrity: Bool,
+    error_message: Option<String>
+  }
+  
+  // 简化的序列化函数
+  let serialize_telemetry = fn(data: TelemetryData) {
+    let mut serialized = []
+    
+    try {
+      // 序列化时间戳（8字节）
+      let timestamp = data.timestamp
+      for i in 0..8 {
+        serialized = serialized.push((timestamp >> (i * 8)) & 0xFF)
+      }
+      
+      // 序列化字符串长度和内容
+      let serialize_string = fn(s: String) {
+        serialized = serialized.push(s.length())
+        for c in s.to_char_array() {
+          serialized = serialized.push(c.to_int())
+        }
+      }
+      
+      // 序列化Trace ID
+      serialize_string(data.trace_id)
+      
+      // 序列化Span ID
+      serialize_string(data.span_id)
+      
+      // 序列化操作名称
+      serialize_string(data.operation_name)
+      
+      // 序列化状态
+      serialize_string(data.status)
+      
+      // 序列化属性数量
+      serialized = serialized.push(data.attributes.length())
+      
+      // 序列化每个属性
+      for (key, value) in data.attributes {
+        serialize_string(key)
+        serialize_string(value)
+      }
+      
+      {
+        success: true,
+        data: serialized,
+        error_message: None
+      }
+    } catch {
+      {
+        success: false,
+        data: [],
+        error_message: Some("Serialization failed")
       }
     }
   }
   
-  return crc ^ 0xFFFFFFFF
-}
-
-func calculate_md5(data : String) -> String {
-  // 简化的MD5实现，返回固定长度的哈希
-  let mut hash = ""
-  let mut sum = 0
-  
-  for i in 0..data.length() {
-    sum = sum + data[i].to_int()
-  }
-  
-  // 生成32位十六进制字符串
-  for i in 0..32 {
-    let digit = (sum * (i + 1)) % 16
-    hash = hash + digit.to_hex_string()
-  }
-  
-  return hash
-}
-
-func calculate_sha256(data : String) -> String {
-  // 简化的SHA256实现，返回固定长度的哈希
-  let mut hash = ""
-  let mut sum = 0
-  
-  for i in 0..data.length() {
-    sum = sum + data[i].to_int() * (i + 1)
-  }
-  
-  // 生成64位十六进制字符串
-  for i in 0..64 {
-    let digit = (sum * (i + 1) * 7) % 16
-    hash = hash + digit.to_hex_string()
-  }
-  
-  return hash
-}
-
-func generate_rsa_key_pair(key_size : Int) -> { private_key : String, public_key : String } {
-  // 简化的RSA密钥对生成
-  return {
-    "private_key": "private_key_" + key_size.to_string(),
-    "public_key": "public_key_" + key_size.to_string()
-  }
-}
-
-func sign_data(private_key : String, message : String) -> String {
-  // 简化的数字签名实现
-  return "signature_" + calculate_sha256(private_key + message)
-}
-
-func verify_signature(public_key : String, message : String, signature : String) -> Bool {
-  // 简化的签名验证实现
-  let expected_signature = "signature_" + calculate_sha256(public_key + message)
-  return signature == expected_signature
-}
-
-func split_into_chunks(data : String, chunk_size : Int) -> Array[String] {
-  let mut chunks = []
-  let mut i = 0
-  
-  while i < data.length() {
-    let end = min(i + chunk_size, data.length())
-    chunks = chunks.push(data.substring(i, end - i))
-    i = end
-  }
-  
-  return chunks
-}
-
-func reassemble_chunks(packages : Array[Map[String, Any]]) -> String {
-  let sorted_packages = packages.sort(fn(a, b) { a.get("chunk_id") < b.get("chunk_id") })
-  let mut result = ""
-  
-  for pkg in sorted_packages {
-    match pkg.get("data") {
-      Some(data) => result = result + data
-      None => assert_true(false)
+  // 简化的反序列化函数
+  let deserialize_telemetry = fn(bytes: Array<Int>) {
+    try {
+      let mut index = 0
+      
+      // 反序列化时间戳
+      let mut timestamp = 0
+      for i in 0..8 {
+        timestamp = timestamp | (bytes[index + i] << (i * 8))
+      }
+      index = index + 8
+      
+      // 反序列化字符串的辅助函数
+      let deserialize_string = fn() {
+        if index >= bytes.length() {
+          return ""
+        }
+        
+        let length = bytes[index]
+        index = index + 1
+        
+        let mut result = ""
+        for i in 0..length {
+          if index + i < bytes.length() {
+            result = result + (bytes[index + i] as Char).to_string()
+          }
+        }
+        index = index + length
+        
+        result
+      }
+      
+      // 反序列化Trace ID
+      let trace_id = deserialize_string()
+      
+      // 反序列化Span ID
+      let span_id = deserialize_string()
+      
+      // 反序列化操作名称
+      let operation_name = deserialize_string()
+      
+      // 反序列化状态
+      let status = deserialize_string()
+      
+      // 反序列化属性数量
+      let attributes_count = if index < bytes.length() { bytes[index] } else { 0 }
+      index = index + 1
+      
+      // 反序列化属性
+      let mut attributes = []
+      for i in 0..attributes_count {
+        let key = deserialize_string()
+        let value = deserialize_string()
+        attributes = attributes.push((key, value))
+      }
+      
+      {
+        success: true,
+        data: Some({
+          timestamp,
+          trace_id,
+          span_id,
+          operation_name,
+          status,
+          attributes
+        }),
+        error_message: None
+      }
+    } catch {
+      {
+        success: false,
+        data: None,
+        error_message: Some("Deserialization failed")
+      }
     }
   }
   
-  return result
-}
-
-func calculate_parity_block(data_blocks : Array[Array[Int]]) -> Array[Int] {
-  if data_blocks.length() == 0 {
-    return []
-  }
-  
-  let block_size = data_blocks[0].length()
-  let mut parity_block = []
-  
-  for i in 0..block_size {
-    let mut parity = 0
-    for block in data_blocks {
-      parity = parity ^ block[i]  // 异或运算
-    }
-    parity_block = parity_block.push(parity)
-  }
-  
-  return parity_block
-}
-
-func repair_with_parity(corrupted_blocks : Array[Array[Int]], parity_block : Array[Int]) -> Array[Array[Int]] {
-  let mut repaired_blocks = []
-  
-  for block in corrupted_blocks {
-    let mut repaired_block = []
-    let mut corruption_detected = false
+  // 验证序列化/反序列化完整性
+  let verify_serialization_integrity = fn(data: TelemetryData) {
+    // 序列化
+    let serialization_result = serialize_telemetry(data)
     
-    for i in 0..block.length() {
-      // 简化的损坏检测和修复
-      if block[i] > 100 {  // 假设大于100的值是损坏的
-        repaired_block = repaired_block.push(parity_block[i])
-        corruption_detected = true
-      } else {
-        repaired_block = repaired_block.push(block[i])
+    if not(serialization_result.success) {
+      return {
+        serialization_success: false,
+        deserialization_success: false,
+        data_integrity: false,
+        error_message: serialization_result.error_message
       }
     }
     
-    repaired_blocks = repaired_blocks.push(repaired_block)
-  }
-  
-  return repaired_blocks
-}
-
-func repair_from_backup(corrupted : String, backup : String, tertiary : String) -> String {
-  // 简化的备份修复逻辑
-  if corrupted != backup && backup == tertiary {
-    return backup  // 备份和三重备份一致，使用备份
-  } else if corrupted != tertiary && backup == tertiary {
-    return tertiary  // 备份和三重备份一致，使用三重备份
-  } else {
-    return corrupted  // 无法确定哪个是正确的，返回原始数据
-  }
-}
-
-func encode_with_ecc(data : String) -> String {
-  // 简化的纠错码编码
-  return data + "_ecc_encoded"
-}
-
-func introduce_errors(encoded_data : String, error_count : Int) -> String {
-  // 简化的错误引入
-  let mut result = encoded_data
-  
-  for i in 0..error_count {
-    if i < result.length() {
-      let char_code = result[i].to_int()
-      let flipped_char = String::from_code_point(char_code ^ 1)  // 翻转一位
-      result = result.substring(0, i) + flipped_char + result.substring(i + 1, result.length() - i - 1)
-    }
-  }
-  
-  return result
-}
-
-func repair_with_ecc(corrupted_data : String) -> String {
-  // 简化的纠错码修复
-  if corrupted_data.contains("_ecc_encoded") {
-    return corrupted_data.replace("_ecc_encoded", "")
-  }
-  return corrupted_data
-}
-
-func decode_from_ecc(encoded_data : String) -> String {
-  // 简化的纠错码解码
-  return encoded_data
-}
-
-func add_checksum_to_data(data : String) -> { data : String, checksum : Int } {
-  return {
-    "data": data,
-    "checksum": calculate_simple_checksum(data)
-  }
-}
-
-func corrupt_data_with_checksum(data_with_checksum : { data : String, checksum : Int }) -> { data : String, checksum : Int } {
-  return {
-    "data": data_with_checksum.data + "x",  // 添加字符损坏数据
-    "checksum": data_with_checksum.checksum  // 保持原始校验和
-  }
-}
-
-func attempt_checksum_repair(corrupted_data : { data : String, checksum : Int }) -> Option[{ data : String, checksum : Int }] {
-  // 简化的校验和修复尝试
-  let calculated_checksum = calculate_simple_checksum(corrupted_data.data)
-  
-  if calculated_checksum != corrupted_data.checksum {
-    // 尝试移除最后添加的字符
-    let repaired_data = corrupted_data.data.substring(0, corrupted_data.data.length() - 1)
-    let repaired_checksum = calculate_simple_checksum(repaired_data)
+    // 反序列化
+    let deserialization_result = deserialize_telemetry(serialization_result.data)
     
-    if repaired_checksum == corrupted_data.checksum {
-      return Some({ "data": repaired_data, "checksum": repaired_checksum })
+    if not(deserialization_result.success) {
+      return {
+        serialization_success: true,
+        deserialization_success: false,
+        data_integrity: false,
+        error_message: deserialization_result.error_message
+      }
+    }
+    
+    // 验证数据完整性
+    match deserialization_result.data {
+      Some(deserialized_data) => {
+        let data_integrity = 
+          data.timestamp == deserialized_data.timestamp &&
+          data.trace_id == deserialized_data.trace_id &&
+          data.span_id == deserialized_data.span_id &&
+          data.operation_name == deserialized_data.operation_name &&
+          data.status == deserialized_data.status &&
+          data.attributes.length() == deserialized_data.attributes.length()
+        
+        {
+          serialization_success: true,
+          deserialization_success: true,
+          data_integrity,
+          error_message: if data_integrity { None } else { Some("Data integrity check failed") }
+        }
+      }
+      None => {
+        {
+          serialization_success: true,
+          deserialization_success: false,
+          data_integrity: false,
+          error_message: Some("No deserialized data available")
+        }
+      }
     }
   }
   
-  return None
-}
-
-func repair_with_multiple_verification(corrupted_data : String, verification_layers : Array[Int]) -> String {
-  // 简化的多重验证修复
-  // 在实际实现中，这里会尝试多种修复策略
-  
-  // 简单的修复策略：移除末尾的空格
-  let trimmed = corrupted_data.trim()
-  
-  let crc_valid = verification_layers[0] == calculate_crc32(trimmed)
-  let md5_valid = verification_layers[1] == calculate_md5(trimmed)
-  let sha256_valid = verification_layers[2] == calculate_sha256(trimmed)
-  
-  if crc_valid && md5_valid && sha256_valid {
-    return trimmed
+  // 使用前一个测试的类型
+  type TelemetryData = {
+    timestamp: Int,
+    trace_id: String,
+    span_id: String,
+    operation_name: String,
+    status: String,
+    attributes: Array<(String, String)>
   }
   
-  return corrupted_data  // 无法修复，返回原始数据
-}
-
-func compress_data(data : String) -> String {
-  // 简化的数据压缩
-  return data.replace("A", "1").replace("B", "2").replace("C", "3").replace("D", "4")
-}
-
-func decompress_data(compressed_data : String) -> String {
-  // 简化的数据解压缩
-  return compressed_data.replace("1", "A").replace("2", "B").replace("3", "C").replace("4", "D")
-}
-
-// 简化的时间函数
-func get_current_time() -> Int {
-  return 1000000000  // 返回固定的时间戳用于测试
-}
-
-// 简化的字符串和数字转换函数
-func Int::to_hex_string(self : Int) -> String {
-  let hex_chars = "0123456789abcdef"
-  return hex_chars[self % 16].to_string()
-}
-
-func String::to_int(self : String) -> Int {
-  return 0  // 简化实现
-}
-
-func String::from_code_point(code_point : Int) -> String {
-  return "x"  // 简化实现
-}
-
-func String::trim(self : String) -> String {
-  if self.ends_with(" ") {
-    return self.substring(0, self.length() - 1)
+  // 创建测试数据
+  let simple_data = {
+    timestamp: 1640995200000,
+    trace_id: "1234567890abcdef1234567890abcdef",
+    span_id: "1234567890abcdef",
+    operation_name: "simple_operation",
+    status: "ok",
+    attributes: []
   }
-  return self
+  
+  let complex_data = {
+    timestamp: 1640995250000,
+    trace_id: "abcdef1234567890abcdef1234567890",
+    span_id: "abcdef1234567890",
+    operation_name: "complex_database_query_with_parameters",
+    status: "error",
+    attributes: [
+      ("db.system", "postgresql"),
+      ("db.statement", "SELECT * FROM users WHERE id = $1 AND status = $2"),
+      ("db.user", "azimuth"),
+      ("error.type", "connection_timeout"),
+      ("retry.count", "3"),
+      ("custom.tag.1", "value1"),
+      ("custom.tag.2", "value2")
+    ]
+  }
+  
+  // 测试简单数据的序列化/反序列化完整性
+  let simple_integrity = verify_serialization_integrity(simple_data)
+  assert_true(simple_integrity.serialization_success)
+  assert_true(simple_integrity.deserialization_success)
+  assert_true(simple_integrity.data_integrity)
+  assert_eq(simple_integrity.error_message, None)
+  
+  // 测试复杂数据的序列化/反序列化完整性
+  let complex_integrity = verify_serialization_integrity(complex_data)
+  assert_true(complex_integrity.serialization_success)
+  assert_true(complex_integrity.deserialization_success)
+  assert_true(complex_integrity.data_integrity)
+  assert_eq(complex_integrity.error_message, None)
+  
+  // 测试边界情况
+  let empty_operation_data = {
+    timestamp: 1640995300000,
+    trace_id: "11112222333344445555666677778888",
+    span_id: "1111222233334444",
+    operation_name: "",
+    status: "ok",
+    attributes: []
+  }
+  
+  let empty_operation_integrity = verify_serialization_integrity(empty_operation_data)
+  assert_true(empty_operation_integrity.serialization_success)
+  assert_true(empty_operation_integrity.deserialization_success)
+  assert_true(empty_operation_integrity.data_integrity)
+  
+  // 测试许多属性
+  let many_attributes_data = {
+    timestamp: 1640995350000,
+    trace_id: "88887777666655554444333322221111",
+    span_id: "8888777766665555",
+    operation_name: "operation_with_many_attributes",
+    status: "ok",
+    attributes: [
+      ("attr.1", "value1"),
+      ("attr.2", "value2"),
+      ("attr.3", "value3"),
+      ("attr.4", "value4"),
+      ("attr.5", "value5"),
+      ("attr.6", "value6"),
+      ("attr.7", "value7"),
+      ("attr.8", "value8"),
+      ("attr.9", "value9"),
+      ("attr.10", "value10")
+    ]
+  }
+  
+  let many_attributes_integrity = verify_serialization_integrity(many_attributes_data)
+  assert_true(many_attributes_integrity.serialization_success)
+  assert_true(many_attributes_integrity.deserialization_success)
+  assert_true(many_attributes_integrity.data_integrity)
+  
+  // 测试数据篡改检测
+  let serialization_result = serialize_telemetry(simple_data)
+  assert_true(serialization_result.success)
+  
+  // 篡改序列化数据
+  let mut tampered_bytes = serialization_result.data
+  if tampered_bytes.length() > 10 {
+    tampered_bytes[10] = tampered_bytes[10] + 1  // 修改一个字节
+  }
+  
+  let tampered_deserialization = deserialize_telemetry(tampered_bytes)
+  
+  // 篡改后的数据可能仍然可以反序列化，但内容可能不正确
+  // 这取决于篡改的位置和程度
+  
+  // 测试截断数据
+  let truncated_bytes = serialization_result.data.slice(0, serialization_result.data.length() / 2)
+  let truncated_deserialization = deserialize_telemetry(truncated_bytes)
+  
+  // 截断的数据应该导致反序列化失败
+  assert_false(truncated_deserialization.success)
+  assert_eq(truncated_deserialization.error_message, Some("Deserialization failed"))
 }
 
-func String::ends_with(self : String, suffix : String) -> Bool {
-  if self.length() < suffix.length() {
-    return false
+// 测试4: 数据修复和恢复
+test "数据修复和恢复" {
+  // 定义修复策略
+  enum RepairStrategy {
+    DropInvalid  // 丢弃无效数据
+    UseDefault   // 使用默认值
+    Interpolate   // 插值修复
+    Regenerate   // 重新生成
   }
-  return self.substring(self.length() - suffix.length(), suffix.length()) == suffix
+  
+  // 定义修复规则
+  type RepairRule = {
+    field_name: String,
+    strategy: RepairStrategy,
+    default_value: Option<String>,
+    validator: fn(String) -> Bool
+  }
+  
+  // 定义修复结果
+  type RepairResult = {
+    success: Bool,
+    repaired_data: Option[TelemetryData>,
+    repair_actions: Array<String>,
+    error_message: Option<String>
+  }
+  
+  // 创建修复规则
+  let create_repair_rule = fn(
+    field_name: String, 
+    strategy: RepairStrategy, 
+    default_value: Option<String>,
+    validator: (String) -> Bool
+  ) {
+    {
+      field_name,
+      strategy,
+      default_value,
+      validator
+    }
+  }
+  
+  // 修复遥测数据
+  let repair_telemetry_data = fn(data: TelemetryData, rules: Array[RepairRule>) {
+    let mut repaired_data = data
+    let mut repair_actions = []
+    let mut success = true
+    
+    for rule in rules {
+      let field_value = match rule.field_name {
+        "trace_id" => data.trace_id
+        "span_id" => data.span_id
+        "operation_name" => data.operation_name
+        "status" => data.status
+        _ => ""
+      }
+      
+      if not(rule.validator(field_value)) {
+        // 字段值无效，需要修复
+        match rule.strategy {
+          RepairStrategy::DropInvalid => {
+            return {
+              success: false,
+              repaired_data: None,
+              repair_actions,
+              error_message: Some("Data dropped due to invalid " + rule.field_name)
+            }
+          }
+          RepairStrategy::UseDefault => {
+            match rule.default_value {
+              Some(default_value) => {
+                repair_actions = repair_actions.push(
+                  "Replaced " + rule.field_name + " with default value"
+                )
+                
+                repaired_data = match rule.field_name {
+                  "trace_id" => {
+                    trace_id: default_value,
+                    span_id: repaired_data.span_id,
+                    operation_name: repaired_data.operation_name,
+                    status: repaired_data.status,
+                    timestamp: repaired_data.timestamp,
+                    attributes: repaired_data.attributes
+                  }
+                  "span_id" => {
+                    trace_id: repaired_data.trace_id,
+                    span_id: default_value,
+                    operation_name: repaired_data.operation_name,
+                    status: repaired_data.status,
+                    timestamp: repaired_data.timestamp,
+                    attributes: repaired_data.attributes
+                  }
+                  "operation_name" => {
+                    trace_id: repaired_data.trace_id,
+                    span_id: repaired_data.span_id,
+                    operation_name: default_value,
+                    status: repaired_data.status,
+                    timestamp: repaired_data.timestamp,
+                    attributes: repaired_data.attributes
+                  }
+                  "status" => {
+                    trace_id: repaired_data.trace_id,
+                    span_id: repaired_data.span_id,
+                    operation_name: repaired_data.operation_name,
+                    status: default_value,
+                    timestamp: repaired_data.timestamp,
+                    attributes: repaired_data.attributes
+                  }
+                  _ => repaired_data
+                }
+              }
+              None => {
+                success = false
+                repair_actions = repair_actions.push(
+                  "No default value available for " + rule.field_name
+                )
+              }
+            }
+          }
+          RepairStrategy::Interpolate => {
+            // 简化的插值修复：基于模式生成新值
+            let interpolated_value = match rule.field_name {
+              "trace_id" => {
+                // 生成有效的Trace ID
+                let mut new_trace_id = ""
+                for i in 0..32 {
+                  let digit = (Time::now() + i) % 16
+                  new_trace_id = new_trace_id + "0123456789abcdef"[digit]
+                }
+                new_trace_id
+              }
+              "span_id" => {
+                // 生成有效的Span ID
+                let mut new_span_id = ""
+                for i in 0..16 {
+                  let digit = (Time::now() + i + 100) % 16
+                  new_span_id = new_span_id + "0123456789abcdef"[digit]
+                }
+                new_span_id
+              }
+              "operation_name" => "repaired_operation"
+              "status" => "ok"
+              _ => field_value
+            }
+            
+            repair_actions = repair_actions.push(
+              "Interpolated new value for " + rule.field_name
+            )
+            
+            repaired_data = match rule.field_name {
+              "trace_id" => {
+                trace_id: interpolated_value,
+                span_id: repaired_data.span_id,
+                operation_name: repaired_data.operation_name,
+                status: repaired_data.status,
+                timestamp: repaired_data.timestamp,
+                attributes: repaired_data.attributes
+              }
+              "span_id" => {
+                trace_id: repaired_data.trace_id,
+                span_id: interpolated_value,
+                operation_name: repaired_data.operation_name,
+                status: repaired_data.status,
+                timestamp: repaired_data.timestamp,
+                attributes: repaired_data.attributes
+              }
+              "operation_name" => {
+                trace_id: repaired_data.trace_id,
+                span_id: repaired_data.span_id,
+                operation_name: interpolated_value,
+                status: repaired_data.status,
+                timestamp: repaired_data.timestamp,
+                attributes: repaired_data.attributes
+              }
+              "status" => {
+                trace_id: repaired_data.trace_id,
+                span_id: repaired_data.span_id,
+                operation_name: repaired_data.operation_name,
+                status: interpolated_value,
+                timestamp: repaired_data.timestamp,
+                attributes: repaired_data.attributes
+              }
+              _ => repaired_data
+            }
+          }
+          RepairStrategy::Regenerate => {
+            // 重新生成整个数据项
+            repair_actions = repair_actions.push(
+              "Regenerated " + rule.field_name
+            )
+            
+            repaired_data = match rule.field_name {
+              "trace_id" => {
+                // 生成新的有效Trace ID
+                let mut new_trace_id = ""
+                for i in 0..32 {
+                  let digit = (Time::now() + i) % 16
+                  new_trace_id = new_trace_id + "0123456789abcdef"[digit]
+                }
+                {
+                  trace_id: new_trace_id,
+                  span_id: repaired_data.span_id,
+                  operation_name: repaired_data.operation_name,
+                  status: repaired_data.status,
+                  timestamp: repaired_data.timestamp,
+                  attributes: repaired_data.attributes
+                }
+              }
+              "span_id" => {
+                // 生成新的有效Span ID
+                let mut new_span_id = ""
+                for i in 0..16 {
+                  let digit = (Time::now() + i + 100) % 16
+                  new_span_id = new_span_id + "0123456789abcdef"[digit]
+                }
+                {
+                  trace_id: repaired_data.trace_id,
+                  span_id: new_span_id,
+                  operation_name: repaired_data.operation_name,
+                  status: repaired_data.status,
+                  timestamp: repaired_data.timestamp,
+                  attributes: repaired_data.attributes
+                }
+              }
+              _ => repaired_data
+            }
+          }
+        }
+      }
+    }
+    
+    {
+      success,
+      repaired_data: Some(repaired_data),
+      repair_actions,
+      error_message: if success { None } else { Some("Repair failed") }
+    }
+  }
+  
+  // 使用前一个测试的类型
+  type TelemetryData = {
+    timestamp: Int,
+    trace_id: String,
+    span_id: String,
+    operation_name: String,
+    status: String,
+    attributes: Array<(String, String)>
+  }
+  
+  // 创建验证函数
+  let validate_trace_id = fn(trace_id: String) {
+    trace_id.length() == 32 && 
+    trace_id.chars().all(fn(c) { (c >= '0' and c <= '9') or (c >= 'a' and c <= 'f') })
+  }
+  
+  let validate_span_id = fn(span_id: String) {
+    span_id.length() == 16 && 
+    span_id.chars().all(fn(c) { (c >= '0' and c <= '9') or (c >= 'a' and c <= 'f') })
+  }
+  
+  let validate_operation_name = fn(operation_name: String) {
+    operation_name.length() > 0 && operation_name.length() <= 100
+  }
+  
+  let validate_status = fn(status: String) {
+    ["ok", "error", "timeout", "cancelled"].contains(status)
+  }
+  
+  // 创建修复规则
+  let repair_rules = [
+    create_repair_rule(
+      "trace_id", 
+      RepairStrategy::Regenerate, 
+      None, 
+      validate_trace_id
+    ),
+    create_repair_rule(
+      "span_id", 
+      RepairStrategy::Interpolate, 
+      None, 
+      validate_span_id
+    ),
+    create_repair_rule(
+      "operation_name", 
+      RepairStrategy::UseDefault, 
+      Some("default_operation"), 
+      validate_operation_name
+    ),
+    create_repair_rule(
+      "status", 
+      RepairStrategy::UseDefault, 
+      Some("ok"), 
+      validate_status
+    )
+  ]
+  
+  // 测试修复无效Trace ID
+  let invalid_trace_data = {
+    timestamp: 1640995200000,
+    trace_id: "invalid_trace_id",  // 无效Trace ID
+    span_id: "1234567890abcdef",
+    operation_name: "database_query",
+    status: "ok",
+    attributes: []
+  }
+  
+  let trace_repair_result = repair_telemetry_data(invalid_trace_data, repair_rules)
+  assert_true(trace_repair_result.success)
+  assert_true(trace_repair_result.repair_actions.length() > 0)
+  
+  match trace_repair_result.repaired_data {
+    Some(repaired_data) => {
+      assert_true(validate_trace_id(repaired_data.trace_id))
+      assert_eq(repaired_data.span_id, "1234567890abcdef")
+      assert_eq(repaired_data.operation_name, "database_query")
+      assert_eq(repaired_data.status, "ok")
+    }
+    None => assert_true(false)
+  }
+  
+  // 测试修复多个无效字段
+  let multiple_invalid_data = {
+    timestamp: 1640995250000,
+    trace_id: "invalid",  // 无效Trace ID
+    span_id: "123",       // 无效Span ID
+    operation_name: "",   // 无效操作名称
+    status: "invalid",    // 无效状态
+    attributes: []
+  }
+  
+  let multiple_repair_result = repair_telemetry_data(multiple_invalid_data, repair_rules)
+  assert_true(multiple_repair_result.success)
+  assert_eq(multiple_repair_result.repair_actions.length(), 4)  // 4个字段被修复
+  
+  match multiple_repair_result.repaired_data {
+    Some(repaired_data) => {
+      assert_true(validate_trace_id(repaired_data.trace_id))
+      assert_true(validate_span_id(repaired_data.span_id))
+      assert_eq(repaired_data.operation_name, "default_operation")
+      assert_eq(repaired_data.status, "ok")
+    }
+    None => assert_true(false)
+  }
+  
+  // 测试DropInvalid策略
+  let drop_rules = [
+    create_repair_rule(
+      "trace_id", 
+      RepairStrategy::DropInvalid, 
+      None, 
+      validate_trace_id
+    )
+  ]
+  
+  let drop_repair_result = repair_telemetry_data(invalid_trace_data, drop_rules)
+  assert_false(drop_repair_result.success)
+  assert_eq(drop_repair_result.repaired_data, None)
+  assert_eq(drop_repair_result.error_message, Some("Data dropped due to invalid trace_id"))
+  
+  // 测试有效数据（无需修复）
+  let valid_data = {
+    timestamp: 1640995300000,
+    trace_id: "1234567890abcdef1234567890abcdef",
+    span_id: "1234567890abcdef",
+    operation_name: "valid_operation",
+    status: "ok",
+    attributes: []
+  }
+  
+  let valid_repair_result = repair_telemetry_data(valid_data, repair_rules)
+  assert_true(valid_repair_result.success)
+  assert_eq(valid_repair_result.repair_actions.length(), 0)  // 无需修复
+  
+  match valid_repair_result.repaired_data {
+    Some(repaired_data) => {
+      assert_eq(repaired_data.trace_id, valid_data.trace_id)
+      assert_eq(repaired_data.span_id, valid_data.span_id)
+      assert_eq(repaired_data.operation_name, valid_data.operation_name)
+      assert_eq(repaired_data.status, valid_data.status)
+    }
+    None => assert_true(false)
+  }
+}
+
+// 测试5: 批量数据完整性验证
+test "批量数据完整性验证" {
+  // 定义批量验证结果
+  type BatchValidationResult = {
+    total_count: Int,
+    valid_count: Int,
+    invalid_count: Int,
+    repaired_count: Int,
+    dropped_count: Int,
+    validation_details: Array<(Int, String, String)>  // (index, status, message)
+  }
+  
+  // 定义批量修复策略
+  type BatchRepairStrategy = {
+    max_repair_attempts: Int,
+    repair_threshold: Float,  // 0.0-1.0，超过此比例则丢弃整个批次
+    individual_repair: Bool    // 是否逐个修复
+  }
+  
+  // 批量验证遥测数据
+  let batch_validate_telemetry = fn(data_batch: Array[TelemetryData>, validators: Array<DataValidator>) {
+    let mut valid_count = 0
+    let mut invalid_count = 0
+    let mut validation_details = []
+    
+    for i in 0..data_batch.length() {
+      let data = data_batch[i]
+      
+      // 运行验证
+      let validation_results = run_validations(data, validators)
+      let overall_result = get_overall_integrity(validation_results)
+      
+      if overall_result.is_valid {
+        valid_count = valid_count + 1
+        validation_details = validation_details.push((
+          i, 
+          "valid", 
+          "All validations passed"
+        ))
+      } else {
+        invalid_count = invalid_count + 1
+        validation_details = validation_details.push((
+          i, 
+          "invalid", 
+          overall_result.error_message.unwrap_or("Validation failed")
+        ))
+      }
+    }
+    
+    {
+      total_count: data_batch.length(),
+      valid_count,
+      invalid_count,
+      repaired_count: 0,
+      dropped_count: 0,
+      validation_details
+    }
+  }
+  
+  // 批量修复遥测数据
+  let batch_repair_telemetry = fn(
+    data_batch: Array[TelemetryData>, 
+    repair_rules: Array<RepairRule>,
+    strategy: BatchRepairStrategy
+  ) {
+    let mut repaired_batch = []
+    let mut repaired_count = 0
+    let mut dropped_count = 0
+    let mut validation_details = []
+    
+    // 计算无效数据比例
+    let initial_validation = batch_validate_telemetry(data_batch, [])
+    let invalid_ratio = (initial_validation.invalid_count as Float) / (initial_validation.total_count as Float)
+    
+    // 如果无效比例超过阈值，丢弃整个批次
+    if invalid_ratio > strategy.repair_threshold {
+      for i in 0..data_batch.length() {
+        validation_details = validation_details.push((
+          i, 
+          "dropped", 
+          "Batch dropped due to high invalid ratio: " + (invalid_ratio * 100.0).to_string() + "%"
+        ))
+      }
+      
+      return {
+        total_count: data_batch.length(),
+        valid_count: 0,
+        invalid_count: 0,
+        repaired_count: 0,
+        dropped_count: data_batch.length(),
+        validation_details
+      }
+    }
+    
+    // 逐个修复数据
+    if strategy.individual_repair {
+      for i in 0..data_batch.length() {
+        let data = data_batch[i]
+        let repair_result = repair_telemetry_data(data, repair_rules)
+        
+        if repair_result.success {
+          match repair_result.repaired_data {
+            Some(repaired_data) => {
+              repaired_batch = repaired_batch.push(repaired_data)
+              repaired_count = repaired_count + 1
+              validation_details = validation_details.push((
+                i, 
+                "repaired", 
+                "Data repaired: " + repair_result.repair_actions.join(", ")
+              ))
+            }
+            None => {
+              dropped_count = dropped_count + 1
+              validation_details = validation_details.push((
+                i, 
+                "dropped", 
+                "Data dropped after repair failure"
+              ))
+            }
+          }
+        } else {
+          dropped_count = dropped_count + 1
+          validation_details = validation_details.push((
+            i, 
+            "dropped", 
+            "Data dropped: " + repair_result.error_message.unwrap_or("Repair failed")
+          ))
+        }
+      }
+    } else {
+      // 不进行个体修复，直接保留有效数据
+      repaired_batch = data_batch
+      repaired_count = initial_validation.valid_count
+      dropped_count = initial_validation.invalid_count
+      
+      // 更新验证详情
+      for i in 0..initial_validation.validation_details.length() {
+        let (index, status, message) = initial_validation.validation_details[i]
+        if status == "invalid" {
+          validation_details = validation_details.push((
+            index, 
+            "dropped", 
+            "Data dropped: " + message
+          ))
+        } else {
+          validation_details = validation_details.push((
+            index, 
+            "kept", 
+            "Data kept: " + message
+          ))
+        }
+      }
+    }
+    
+    {
+      total_count: data_batch.length(),
+      valid_count: repaired_count,
+      invalid_count: 0,
+      repaired_count,
+      dropped_count,
+      validation_details
+    }
+  }
+  
+  // 使用前一个测试的类型和函数
+  type TelemetryData = {
+    timestamp: Int,
+    trace_id: String,
+    span_id: String,
+    operation_name: String,
+    status: String,
+    attributes: Array<(String, String)>
+  }
+  
+  type DataValidator = {
+    name: String,
+    validate: fn(TelemetryData) -> IntegrityResult
+  }
+  
+  type IntegrityResult = {
+    is_valid: Bool,
+    error_message: Option<String>,
+    details: Array[String>
+  }
+  
+  type RepairRule = {
+    field_name: String,
+    strategy: RepairStrategy,
+    default_value: Option<String>,
+    validator: fn(String) -> Bool
+  }
+  
+  enum RepairStrategy {
+    DropInvalid
+    UseDefault
+    Interpolate
+    Regenerate
+  }
+  
+  let run_validations = fn(data: TelemetryData, validators: Array<DataValidator>) {
+    let mut results = []
+    
+    for validator in validators {
+      let result = validator.validate(data)
+      results = results.push({
+        validator_name: validator.name,
+        result
+      })
+    }
+    
+    results
+  }
+  
+  let get_overall_integrity = fn(validation_results: Array<(String, IntegrityResult)>) {
+    let mut is_valid = true
+    let mut all_errors = []
+    let mut all_details = []
+    
+    for (validator_name, result) in validation_results {
+      if not(result.is_valid) {
+        is_valid = false
+        
+        match result.error_message {
+          Some(error) => {
+            all_errors = all_errors.push(validator_name + ": " + error)
+          }
+          None => {}
+        }
+      }
+      
+      for detail in result.details {
+        all_details = all_details.push(validator_name + ": " + detail)
+      }
+    }
+    
+    {
+      is_valid,
+      error_message: if all_errors.length() > 0 { 
+        Some(all_errors.join("; ")) 
+      } else { 
+        None 
+      },
+      details: all_details
+    }
+  }
+  
+  let repair_telemetry_data = fn(data: TelemetryData, rules: Array[RepairRule>) {
+    let mut repaired_data = data
+    let mut repair_actions = []
+    let mut success = true
+    
+    for rule in rules {
+      let field_value = match rule.field_name {
+        "trace_id" => data.trace_id
+        "span_id" => data.span_id
+        "operation_name" => data.operation_name
+        "status" => data.status
+        _ => ""
+      }
+      
+      if not(rule.validator(field_value)) {
+        match rule.strategy {
+          RepairStrategy::UseDefault => {
+            match rule.default_value {
+              Some(default_value) => {
+                repair_actions = repair_actions.push(
+                  "Replaced " + rule.field_name + " with default value"
+                )
+                
+                repaired_data = match rule.field_name {
+                  "operation_name" => {
+                    trace_id: repaired_data.trace_id,
+                    span_id: repaired_data.span_id,
+                    operation_name: default_value,
+                    status: repaired_data.status,
+                    timestamp: repaired_data.timestamp,
+                    attributes: repaired_data.attributes
+                  }
+                  "status" => {
+                    trace_id: repaired_data.trace_id,
+                    span_id: repaired_data.span_id,
+                    operation_name: repaired_data.operation_name,
+                    status: default_value,
+                    timestamp: repaired_data.timestamp,
+                    attributes: repaired_data.attributes
+                  }
+                  _ => repaired_data
+                }
+              }
+              None => {
+                success = false
+                repair_actions = repair_actions.push(
+                  "No default value available for " + rule.field_name
+                )
+              }
+            }
+          }
+          _ => {}  // 简化处理
+        }
+      }
+    }
+    
+    {
+      success,
+      repaired_data: Some(repaired_data),
+      repair_actions,
+      error_message: if success { None } else { Some("Repair failed") }
+    }
+  }
+  
+  // 创建简单的验证器
+  let basic_validator = {
+    name: "basic",
+    validate: fn(data: TelemetryData) {
+      if data.trace_id.length() != 32 || data.span_id.length() != 16 || data.operation_name.length() == 0 {
+        {
+          is_valid: false,
+          error_message: Some("Basic validation failed"),
+          details: []
+        }
+      } else {
+        {
+          is_valid: true,
+          error_message: None,
+          details: []
+        }
+      }
+    }
+  }
+  
+  // 创建修复规则
+  let repair_rules = [
+    {
+      field_name: "operation_name",
+      strategy: RepairStrategy::UseDefault,
+      default_value: Some("repaired_operation"),
+      validator: fn(name) { name.length() > 0 }
+    },
+    {
+      field_name: "status",
+      strategy: RepairStrategy::UseDefault,
+      default_value: Some("ok"),
+      validator: fn(status) { ["ok", "error", "timeout", "cancelled"].contains(status) }
+    }
+  ]
+  
+  // 创建测试批次
+  let test_batch = [
+    {
+      timestamp: 1640995200000,
+      trace_id: "1234567890abcdef1234567890abcdef",
+      span_id: "1234567890abcdef",
+      operation_name: "valid_operation",
+      status: "ok",
+      attributes: []
+    },
+    {
+      timestamp: 1640995250000,
+      trace_id: "invalid",  // 无效Trace ID
+      span_id: "123",       // 无效Span ID
+      operation_name: "",   // 无效操作名称
+      status: "invalid",    // 无效状态
+      attributes: []
+    },
+    {
+      timestamp: 1640995300000,
+      trace_id: "abcdef1234567890abcdef1234567890",
+      span_id: "abcdef1234567890",
+      operation_name: "another_valid_operation",
+      status: "error",
+      attributes: []
+    }
+  ]
+  
+  // 测试批量验证
+  let batch_validation = batch_validate_telemetry(test_batch, [basic_validator])
+  assert_eq(batch_validation.total_count, 3)
+  assert_eq(batch_validation.valid_count, 2)
+  assert_eq(batch_validation.invalid_count, 1)
+  assert_eq(batch_validation.validation_details.length(), 3)
+  
+  // 测试批量修复 - 个体修复
+  let individual_repair_strategy = {
+    max_repair_attempts: 3,
+    repair_threshold: 0.8,  // 80%
+    individual_repair: true
+  }
+  
+  let individual_repair_result = batch_repair_telemetry(
+    test_batch, 
+    repair_rules, 
+    individual_repair_strategy
+  )
+  
+  assert_eq(individual_repair_result.total_count, 3)
+  assert_eq(individual_repair_result.repaired_count, 3)  // 所有数据都被修复
+  assert_eq(individual_repair_result.dropped_count, 0)
+  
+  // 测试批量修复 - 不进行个体修复
+  let no_individual_repair_strategy = {
+    max_repair_attempts: 3,
+    repair_threshold: 0.8,  // 80%
+    individual_repair: false
+  }
+  
+  let no_individual_repair_result = batch_repair_telemetry(
+    test_batch, 
+    repair_rules, 
+    no_individual_repair_strategy
+  )
+  
+  assert_eq(no_individual_repair_result.total_count, 3)
+  assert_eq(no_individual_repair_result.valid_count, 2)
+  assert_eq(no_individual_repair_result.dropped_count, 1)
+  
+  // 测试高无效比例批次丢弃
+  let high_invalid_batch = [
+    test_batch[0],  // 有效
+    test_batch[1],  // 无效
+    {
+      timestamp: 1640995350000,
+      trace_id: "invalid2",
+      span_id: "456",
+      operation_name: "",
+      status: "bad",
+      attributes: []
+    }
+  ]
+  
+  let high_invalid_repair_result = batch_repair_telemetry(
+    high_invalid_batch, 
+    repair_rules, 
+    individual_repair_strategy
+  )
+  
+  // 根据修复策略，结果可能不同
+  assert_eq(high_invalid_repair_result.total_count, 3)
+  
+  // 测试极端情况 - 全部无效
+  let all_invalid_batch = [
+    test_batch[1],  // 无效
+    {
+      timestamp: 1640995400000,
+      trace_id: "invalid3",
+      span_id: "789",
+      operation_name: "",
+      status: "worse",
+      attributes: []
+    }
+  ]
+  
+  let all_invalid_repair_result = batch_repair_telemetry(
+    all_invalid_batch, 
+    repair_rules, 
+    individual_repair_strategy
+  )
+  
+  assert_eq(all_invalid_repair_result.total_count, 2)
+  // 根据修复策略，结果可能不同
 }
