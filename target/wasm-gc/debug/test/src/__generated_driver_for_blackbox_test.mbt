@@ -89,6 +89,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_premium_resource_optimization_tests.mbt": {
   },
+  "azimuth_premium_advanced_test_cases.mbt": {
+  },
   "azimuth_performance_resource_management_tests.mbt": {
   },
   "azimuth_performance_benchmark_tests.mbt": {

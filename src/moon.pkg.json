@@ -48,6 +48,7 @@
         "azimuth_telemetry_serialization_tests.mbt", 
         "azimuth_error_handling_tests.mbt", 
         "azimuth_concurrent_safety_tests.mbt", 
+        "azimuth_premium_advanced_test_cases.mbt", 
         "azimuth_performance_benchmark_tests.mbt", 
         "azimuth_integration_tests.mbt", 
         "azimuth_advanced_feature_tests.mbt", 
