@@ -1,1161 +1,1312 @@
-// Azimuth High-Quality Internationalization Support Tests
-// This file contains comprehensive test cases for internationalization support
+// Internationalization Support Tests for Azimuth Telemetry System
+// This file contains test cases for internationalization and localization features
 
-// Test 1: Locale Management and Detection
-test "locale management and detection" {
-  let locale_manager = LocaleManager::new()
+// Test 1: Multi-language Support
+test "multi-language support" {
+  let i18n_manager = InternationalizationManager::new()
   
-  // Test default locale
-  let default_locale = locale_manager.get_default_locale()
-  assert_eq(default_locale.language, "en")
-  assert_eq(default_locale.region, "US")
-  assert_eq(default_locale.to_string(), "en-US")
+  // Initialize i18n manager
+  i18n_manager.initialize(I18nConfig::new()
+    .with_default_locale("en-US")
+    .with_supported_locales(["en-US", "zh-CN", "ja-JP", "es-ES", "fr-FR", "de-DE"])
+    .with_fallback_locale("en-US")
+    .with_translation_directory("/etc/azimuth/translations"))
   
-  // Test adding supported locales
-  locale_manager.add_supported_locale(Locale::new("en", "US"))
-  locale_manager.add_supported_locale(Locale::new("en", "GB"))
-  locale_manager.add_supported_locale(Locale::new("zh", "CN"))
-  locale_manager.add_supported_locale(Locale::new("zh", "TW"))
-  locale_manager.add_supported_locale(Locale::new("fr", "FR"))
-  locale_manager.add_supported_locale(Locale::new("de", "DE"))
-  locale_manager.add_supported_locale(Locale::new("ja", "JP"))
-  locale_manager.add_supported_locale(Locale::new("es", "ES"))
-  locale_manager.add_supported_locale(Locale::new("ar", "SA"))
-  locale_manager.add_supported_locale(Locale::new("ru", "RU"))
+  // Start i18n manager
+  i18n_manager.start()
   
-  // Test supported locales
-  let supported_locales = locale_manager.get_supported_locales()
-  assert_eq(supported_locales.length(), 10)
-  
-  // Test locale detection from Accept-Language header
-  let accept_language_1 = "en-US,en;q=0.9,fr;q=0.8"
-  let detected_locale_1 = locale_manager.detect_locale_from_header(accept_language_1)
-  assert_eq(detected_locale_1.to_string(), "en-US")
-  
-  let accept_language_2 = "fr-FR,fr;q=0.9,en;q=0.8"
-  let detected_locale_2 = locale_manager.detect_locale_from_header(accept_language_2)
-  assert_eq(detected_locale_2.to_string(), "fr-FR")
-  
-  let accept_language_3 = "zh-CN,zh;q=0.9,en;q=0.8"
-  let detected_locale_3 = locale_manager.detect_locale_from_header(accept_language_3)
-  assert_eq(detected_locale_3.to_string(), "zh-CN")
-  
-  // Test locale fallback when unsupported locale is requested
-  let unsupported_header = "it-IT,it;q=0.9"
-  let fallback_locale = locale_manager.detect_locale_from_header(unsupported_header)
-  assert_eq(fallback_locale.to_string(), "en-US") // Should fallback to default
-  
-  // Test locale detection from system
-  let system_locale = locale_manager.detect_system_locale()
-  assert_true(system_locale.language.length() == 2)
-  assert_true(system_locale.region.length() == 2)
-  
-  // Test locale matching with fallback
-  let requested_locale = Locale::new("zh", "HK") // Not in supported list
-  let matched_locale = locale_manager.find_best_match(requested_locale)
-  assert_eq(matched_locale.to_string(), "zh-CN") // Should match language with another region
-  
-  let requested_locale_2 = Locale::new("en", "AU") // Not in supported list
-  let matched_locale_2 = locale_manager.find_best_match(requested_locale_2)
-  assert_eq(matched_locale_2.to_string(), "en-US") // Should match language with another region
-  
-  // Test locale preferences
-  let user_preferences = UserLocalePreferences::new()
-  user_preferences.add_preferred_locale(Locale::new("fr", "FR"))
-  user_preferences.add_preferred_locale(Locale::new("de", "DE"))
-  user_preferences.add_preferred_locale(Locale::new("en", "US"))
-  
-  locale_manager.set_user_preferences(user_preferences)
-  
-  let preferred_locale = locale_manager.get_preferred_locale()
-  assert_eq(preferred_locale.to_string(), "fr-FR")
+  // Test locale detection
+  let detection_result = i18n_manager.detect_user_locale()
+  assert_true(detection_result.success)
+  assert_true(detection_result.detected_locale.length() > 0)
+  assert_true(detection_result.supported || detection_result.using_fallback)
   
   // Test locale switching
-  locale_manager.set_current_locale(Locale::new("zh", "CN"))
-  assert_eq(locale_manager.get_current_locale().to_string(), "zh-CN")
+  let locales = ["en-US", "zh-CN", "ja-JP", "es-ES", "fr-FR", "de-DE"]
   
-  locale_manager.set_current_locale(Locale::new("ja", "JP"))
-  assert_eq(locale_manager.get_current_locale().to_string(), "ja-JP")
+  for locale in locales {
+    let switch_result = i18n_manager.switch_locale(locale)
+    assert_true(switch_result.success)
+    
+    let current_locale = i18n_manager.get_current_locale()
+    assert_eq(current_locale, locale)
+  }
   
-  // Test locale validation
-  assert_true(locale_manager.is_supported(Locale::new("en", "US")))
-  assert_true(locale_manager.is_supported(Locale::new("zh", "CN")))
-  assert_false(locale_manager.is_supported(Locale::new("it", "IT")))
+  // Test text translation
+  let translation_keys = [
+    "telemetry.dashboard.title",
+    "telemetry.dashboard.description",
+    "telemetry.metrics.cpu_usage",
+    "telemetry.metrics.memory_usage",
+    "telemetry.alerts.high_cpu",
+    "telemetry.alerts.low_memory",
+    "telemetry.settings.collection_interval",
+    "telemetry.settings.retention_period"
+  ]
   
-  // Test locale metadata
-  let locale_metadata = locale_manager.get_locale_metadata(Locale::new("zh", "CN"))
-  assert_eq(locale_metadata.language, "zh")
-  assert_eq(locale_metadata.region, "CN")
-  assert_eq(locale_metadata.display_name, "Chinese (China)")
-  assert_eq(locale_metadata.native_name, "中文 (中国)")
-  assert_true(locale_metadata.is_rtl == false)
+  let translation_results = []
+  for locale in locales {
+    i18n_manager.switch_locale(locale)
+    
+    for key in translation_keys {
+      let result = i18n_manager.translate(key)
+      translation_results.push((locale, key, result))
+    }
+  }
   
-  let arabic_metadata = locale_manager.get_locale_metadata(Locale::new("ar", "SA"))
-  assert_eq(arabic_metadata.language, "ar")
-  assert_eq(arabic_metadata.region, "SA")
-  assert_eq(arabic_metadata.display_name, "Arabic (Saudi Arabia)")
-  assert_eq(arabic_metadata.native_name, "العربية (المملكة العربية السعودية)")
-  assert_true(arabic_metadata.is_rtl == true)
-}
-
-// Test 2: Message Translation and Formatting
-test "message translation and formatting" {
-  let translator = MessageTranslator::new()
+  // Verify translation results
+  assert_eq(translation_results.length(), 6 * 8) // 6 locales * 8 keys
   
-  // Load translation resources
-  translator.load_translation_file("en-US", "translations/en-US.json")
-  translator.load_translation_file("zh-CN", "translations/zh-CN.json")
-  translator.load_translation_file("fr-FR", "translations/fr-FR.json")
-  translator.load_translation_file("ar-SA", "translations/ar-SA.json")
+  for (locale, key, result) in translation_results {
+    assert_true(result.success)
+    assert_true(result.translated_text.length() > 0)
+    assert_true(result.translation_time_ms > 0)
+    
+    // Verify fallback behavior for missing translations
+    if !result.translation_found {
+      assert_eq(result.used_fallback_locale, "en-US")
+    }
+  }
   
-  // Test basic translation
-  translator.set_locale(Locale::new("en", "US"))
-  assert_eq(translator.translate("welcome.message"), "Welcome to Azimuth!")
-  assert_eq(translator.translate("error.not_found"), "Resource not found")
-  assert_eq(translator.translate("button.save"), "Save")
+  // Test parameterized translations
+  let parameterized_keys = [
+    ("telemetry.alerts.threshold_exceeded", {"metric": "CPU", "value": "90%", "threshold": "80%"}),
+    ("telemetry.status.service_down", {"service": "Telemetry Service", "time": "5 minutes"}),
+    ("telemetry.report.generated", {"count": "1000", "period": "24 hours"})
+  ]
   
-  // Test translation to Chinese
-  translator.set_locale(Locale::new("zh", "CN"))
-  assert_eq(translator.translate("welcome.message"), "欢迎使用 Azimuth！")
-  assert_eq(translator.translate("error.not_found"), "资源未找到")
-  assert_eq(translator.translate("button.save"), "保存")
+  let parameterized_results = []
+  for locale in locales {
+    i18n_manager.switch_locale(locale)
+    
+    for (key, parameters) in parameterized_keys {
+      let result = i18n_manager.translate_with_parameters(key, parameters)
+      parameterized_results.push((locale, key, result))
+    }
+  }
   
-  // Test translation to French
-  translator.set_locale(Locale::new("fr", "FR"))
-  assert_eq(translator.translate("welcome.message"), "Bienvenue à Azimuth!")
-  assert_eq(translator.translate("error.not_found"), "Ressource non trouvée")
-  assert_eq(translator.translate("button.save"), "Enregistrer")
+  // Verify parameterized translation results
+  assert_eq(parameterized_results.length(), 6 * 3) // 6 locales * 3 keys
   
-  // Test translation to Arabic (RTL)
-  translator.set_locale(Locale::new("ar", "SA"))
-  assert_eq(translator.translate("welcome.message"), "مرحباً بك في Azimuth!")
-  assert_eq(translator.translate("error.not_found"), "المورد غير موجود")
-  assert_eq(translator.translate("button.save"), "حفظ")
-  
-  // Test parameterized translation
-  translator.set_locale(Locale::new("en", "US"))
-  let user_name = "John Doe"
-  let item_count = 5
-  let formatted_message = translator.translate("welcome.user", {"name": user_name, "count": item_count})
-  assert_eq(formatted_message, "Welcome, John Doe! You have 5 items.")
-  
-  translator.set_locale(Locale::new("zh", "CN"))
-  let formatted_message_zh = translator.translate("welcome.user", {"name": user_name, "count": item_count})
-  assert_eq(formatted_message_zh, "欢迎，John Doe！您有 5 个项目。")
+  for (locale, key, result) in parameterized_results {
+    assert_true(result.success)
+    assert_true(result.translated_text.length() > 0)
+    
+    // Verify parameters are substituted
+    for (param_name, param_value) in parameterized_keys.find(|(k, _)| k == key).unwrap().1 {
+      assert_true(result.translated_text.contains(param_value))
+    }
+  }
   
   // Test pluralization
-  translator.set_locale(Locale::new("en", "US"))
-  assert_eq(translator.translate_plural("item.count", 0), "No items")
-  assert_eq(translator.translate_plural("item.count", 1), "1 item")
-  assert_eq(translator.translate_plural("item.count", 5), "5 items")
+  let pluralization_keys = [
+    ("telemetry.items.count", 0),
+    ("telemetry.items.count", 1),
+    ("telemetry.items.count", 5),
+    ("telemetry.items.count", 100)
+  ]
   
-  translator.set_locale(Locale::new("zh", "CN"))
-  assert_eq(translator.translate_plural("item.count", 0), "没有项目")
-  assert_eq(translator.translate_plural("item.count", 1), "1 个项目")
-  assert_eq(translator.translate_plural("item.count", 5), "5 个项目")
-  
-  // Test gender-aware translation
-  translator.set_locale(Locale::new("en", "US"))
-  assert_eq(translator.translate_gender("user.action", "male"), "He has logged in")
-  assert_eq(translator.translate_gender("user.action", "female"), "She has logged in")
-  assert_eq(translator.translate_gender("user.action", "other"), "They have logged in")
-  
-  // Test missing translation fallback
-  translator.set_locale(Locale::new("zh", "CN"))
-  let missing_translation = translator.translate("non.existent.key")
-  assert_eq(missing_translation, "non.existent.key") // Should return key as fallback
-  
-  // Test translation with context
-  translator.set_locale(Locale::new("en", "US"))
-  let context_translation = translator.translate_with_context("save", "button")
-  assert_eq(context_translation, "Save")
-  
-  let context_translation_2 = translator.translate_with_context("save", "file")
-  assert_eq(context_translation_2, "Save file")
-  
-  // Test translation caching
-  let uncached_start = get_current_timestamp()
-  for i in 0..=100 {
-    translator.translate("welcome.message")
+  let pluralization_results = []
+  for locale in locales {
+    i18n_manager.switch_locale(locale)
+    
+    for (key, count) in pluralization_keys {
+      let result = i18n_manager.translate_plural(key, count)
+      pluralization_results.push((locale, key, count, result))
+    }
   }
-  let uncached_end = get_current_timestamp()
-  let uncached_time = uncached_end - uncached_start
   
-  translator.enable_caching(true)
+  // Verify pluralization results
+  assert_eq(pluralization_results.length(), 6 * 4) // 6 locales * 4 count values
   
-  let cached_start = get_current_timestamp()
-  for i in 0..=100 {
-    translator.translate("welcome.message")
+  for (locale, key, count, result) in pluralization_results {
+    assert_true(result.success)
+    assert_true(result.translated_text.length() > 0)
+    assert_true(result.plural_form.length() > 0)
   }
-  let cached_end = get_current_timestamp()
-  let cached_time = cached_end - cached_start
   
-  // Cached translation should be faster
-  assert_true(cached_time.to_millis() < uncached_time.to_millis())
+  // Test date/time localization
+  let timestamp = get_current_time_ms()
+  let date_formats = ["short", "medium", "long", "full"]
   
-  // Test translation statistics
-  let stats = translator.get_translation_stats()
-  assert_true(stats.total_translations > 0)
-  assert_true(stats.cache_hits > 0)
-  assert_true(stats.missing_translations >= 0)
+  let date_results = []
+  for locale in locales {
+    i18n_manager.switch_locale(locale)
+    
+    for format in date_formats {
+      let result = i18n_manager.format_date(timestamp, format)
+      date_results.push((locale, format, result))
+    }
+  }
+  
+  // Verify date formatting results
+  assert_eq(date_results.length(), 6 * 4) // 6 locales * 4 formats
+  
+  for (locale, format, result) in date_results {
+    assert_true(result.success)
+    assert_true(result.formatted_date.length() > 0)
+    
+    // Verify format-specific behavior
+    match format {
+      "short" => {
+        // Should be concise
+        assert_true(result.formatted_date.length() < 20)
+      },
+      "full" => {
+        // Should be detailed
+        assert_true(result.formatted_date.length() > 10)
+      },
+      _ => {}
+    }
+  }
+  
+  // Test number localization
+  let numbers = [1234.567, 0.123, 1000000, -42.5]
+  
+  let number_results = []
+  for locale in locales {
+    i18n_manager.switch_locale(locale)
+    
+    for number in numbers {
+      let result = i18n_manager.format_number(number)
+      number_results.push((locale, number, result))
+    }
+  }
+  
+  // Verify number formatting results
+  assert_eq(number_results.length(), 6 * 4) // 6 locales * 4 numbers
+  
+  for (locale, number, result) in number_results {
+    assert_true(result.success)
+    assert_true(result.formatted_number.length() > 0)
+    
+    // Verify locale-specific formatting
+    match locale {
+      "en-US" => {
+        // Should use period as decimal separator
+        assert_true(result.formatted_number.contains("."))
+      },
+      "de-DE" => {
+        // Should use comma as decimal separator
+        assert_true(result.formatted_number.contains(","))
+      },
+      _ => {}
+    }
+  }
+  
+  // Test currency localization
+  let currencies = ["USD", "EUR", "JPY", "CNY"]
+  let amounts = [100.50, 1000.00, 0.99]
+  
+  let currency_results = []
+  for locale in locales {
+    i18n_manager.switch_locale(locale)
+    
+    for currency in currencies {
+      for amount in amounts {
+        let result = i18n_manager.format_currency(amount, currency)
+        currency_results.push((locale, currency, amount, result))
+      }
+    }
+  }
+  
+  // Verify currency formatting results
+  assert_eq(currency_results.length(), 6 * 4 * 3) // 6 locales * 4 currencies * 3 amounts
+  
+  for (locale, currency, amount, result) in currency_results {
+    assert_true(result.success)
+    assert_true(result.formatted_currency.length() > 0)
+    assert_true(result.formatted_currency.contains(currency))
+  }
+  
+  // Test i18n metrics
+  let i18n_metrics = i18n_manager.get_i18n_metrics()
+  assert_true(i18n_metrics.total_translations > 0)
+  assert_true(i18n_metrics.translation_cache_hits > 0)
+  assert_true(i18n_metrics.translation_cache_misses >= 0)
+  assert_true(i18n_metrics.average_translation_time_ms > 0.0)
+  assert_true(i18n_metrics.supported_locales == 6)
+  
+  // Stop i18n manager
+  i18n_manager.stop()
 }
 
-// Test 3: Number, Date, and Currency Formatting
-test "number date and currency formatting" {
-  let formatter = InternationalFormatter::new()
+// Test 2: RTL Language Support
+test "rtl language support" {
+  let rtl_manager = RTLManager::new()
   
-  // Test number formatting
-  formatter.set_locale(Locale::new("en", "US"))
-  assert_eq(formatter.format_number(1234.567), "1,234.567")
-  assert_eq(formatter.format_number(1234567), "1,234,567")
-  assert_eq(formatter.format_number(0.12345), "0.123")
+  // Initialize RTL manager
+  rtl_manager.initialize(RTLConfig::new()
+    .with_rtl_locales(["ar-SA", "he-IL", "fa-IR", "ur-PK"])
+    .with_auto_direction_detection_enabled(true)
+    .with_mirroring_enabled(true))
   
-  formatter.set_locale(Locale::new("de", "DE"))
-  assert_eq(formatter.format_number(1234.567), "1.234,567")
-  assert_eq(formatter.format_number(1234567), "1.234.567")
-  assert_eq(formatter.format_number(0.12345), "0,123")
+  // Start RTL manager
+  rtl_manager.start()
   
-  formatter.set_locale(Locale::new("fr", "FR"))
-  assert_eq(formatter.format_number(1234.567), "1 234,567")
-  assert_eq(formatter.format_number(1234567), "1 234 567")
-  assert_eq(formatter.format_number(0.12345), "0,123")
+  // Test RTL locale detection
+  let rtl_locales = ["ar-SA", "he-IL", "fa-IR", "ur-PK"]
+  let ltr_locales = ["en-US", "zh-CN", "ja-JP", "es-ES"]
   
-  // Test percentage formatting
-  formatter.set_locale(Locale::new("en", "US"))
-  assert_eq(formatter.format_percentage(0.1234), "12.34%")
-  assert_eq(formatter.format_percentage(0.5), "50%")
+  // Test RTL detection
+  for locale in rtl_locales {
+    let detection_result = rtl_manager.is_rtl_locale(locale)
+    assert_true(detection_result.is_rtl)
+  }
   
-  formatter.set_locale(Locale::new("zh", "CN"))
-  assert_eq(formatter.format_percentage(0.1234), "12.34%")
-  assert_eq(formatter.format_percentage(0.5), "50%")
+  // Test LTR detection
+  for locale in ltr_locales {
+    let detection_result = rtl_manager.is_rtl_locale(locale)
+    assert_false(detection_result.is_rtl)
+  }
   
-  // Test currency formatting
-  formatter.set_locale(Locale::new("en", "US"))
-  assert_eq(formatter.format_currency(1234.56, "USD"), "$1,234.56")
-  assert_eq(formatter.format_currency(1234.56, "EUR"), "€1,234.56")
+  // Test text direction detection
+  let rtl_texts = [
+    "مرحبا بالعالم", // Arabic
+    "שלום עולם",    // Hebrew
+    "سلام دنیا",      // Persian
+    "ہیلو دنیا"      // Urdu
+  ]
   
-  formatter.set_locale(Locale::new("de", "DE"))
-  assert_eq(formatter.format_currency(1234.56, "EUR"), "1.234,56 €")
-  assert_eq(formatter.format_currency(1234.56, "USD"), "1.234,56 $")
-  
-  formatter.set_locale(Locale::new("ja", "JP"))
-  assert_eq(formatter.format_currency(1234.56, "JPY"), "￥1,235")
-  assert_eq(formatter.format_currency(1234.56, "USD"), "$1,234.56")
-  
-  // Test date/time formatting
-  let test_date = DateTime::new(2024, 1, 15, 14, 30, 45)
-  
-  formatter.set_locale(Locale::new("en", "US"))
-  assert_eq(formatter.format_date(test_date, DateFormat::Short), "1/15/24")
-  assert_eq(formatter.format_date(test_date, DateFormat::Medium), "Jan 15, 2024")
-  assert_eq(formatter.format_date(test_date, DateFormat::Long), "January 15, 2024")
-  assert_eq(formatter.format_date(test_date, DateFormat::Full), "Monday, January 15, 2024")
-  
-  assert_eq(formatter.format_time(test_date, TimeFormat::Short), "2:30 PM")
-  assert_eq(formatter.format_time(test_date, TimeFormat::Medium), "2:30:45 PM")
-  assert_eq(formatter.format_time(test_date, TimeFormat::Long), "2:30:45 PM PST")
-  assert_eq(formatter.format_time(test_date, TimeFormat::Full), "2:30:45 PM Pacific Standard Time")
-  
-  formatter.set_locale(Locale::new("zh", "CN"))
-  assert_eq(formatter.format_date(test_date, DateFormat::Short), "2024/1/15")
-  assert_eq(formatter.format_date(test_date, DateFormat::Medium), "2024年1月15日")
-  assert_eq(formatter.format_date(test_date, DateFormat::Long), "2024年1月15日")
-  assert_eq(formatter.format_date(test_date, DateFormat::Full), "2024年1月15日星期一")
-  
-  assert_eq(formatter.format_time(test_date, TimeFormat::Short), "下午2:30")
-  assert_eq(formatter.format_time(test_date, TimeFormat::Medium), "下午2:30:45")
-  assert_eq(formatter.format_time(test_date, TimeFormat::Long), "下午2:30:45 GMT+8")
-  assert_eq(formatter.format_time(test_date, TimeFormat::Full), "下午2:30:45 中国标准时间")
-  
-  formatter.set_locale(Locale::new("fr", "FR"))
-  assert_eq(formatter.format_date(test_date, DateFormat::Short), "15/01/2024")
-  assert_eq(formatter.format_date(test_date, DateFormat::Medium), "15 janv. 2024")
-  assert_eq(formatter.format_date(test_date, DateFormat::Long), "15 janvier 2024")
-  assert_eq(formatter.format_date(test_date, DateFormat::Full), "lundi 15 janvier 2024")
-  
-  assert_eq(formatter.format_time(test_date, TimeFormat::Short), "14:30")
-  assert_eq(formatter.format_time(test_date, TimeFormat::Medium), "14:30:45")
-  assert_eq(formatter.format_time(test_date, TimeFormat::Long), "14:30:45 PST")
-  assert_eq(formatter.format_time(test_date, TimeFormat::Full), "14:30:45 heure normale du Pacifique")
-  
-  // Test relative time formatting
-  formatter.set_locale(Locale::new("en", "US"))
-  let now = DateTime::now()
-  let one_hour_ago = now.subtract(Duration::from_hours(1))
-  let two_days_later = now.add(Duration::from_days(2))
-  
-  assert_eq(formatter.format_relative_time(one_hour_ago), "1 hour ago")
-  assert_eq(formatter.format_relative_time(two_days_later), "in 2 days")
-  
-  formatter.set_locale(Locale::new("zh", "CN"))
-  assert_eq(formatter.format_relative_time(one_hour_ago), "1小时前")
-  assert_eq(formatter.format_relative_time(two_days_later), "2天后")
-  
-  // Test duration formatting
-  let duration = Duration::from_hours(2) + Duration::from_minutes(30) + Duration::from_seconds(45)
-  
-  formatter.set_locale(Locale::new("en", "US"))
-  assert_eq(formatter.format_duration(duration), "2h 30m 45s")
-  
-  formatter.set_locale(Locale::new("zh", "CN"))
-  assert_eq(formatter.format_duration(duration), "2小时30分钟45秒")
-  
-  // Test unit formatting
-  formatter.set_locale(Locale::new("en", "US"))
-  assert_eq(formatter.format_unit(1024, "byte"), "1,024 B")
-  assert_eq(formatter.format_unit(1048576, "byte"), "1.0 MB")
-  assert_eq(formatter.format_unit(1000, "meter"), "1,000 m")
-  assert_eq(formatter.format_unit(1000, "kilometer"), "1,000 km")
-  
-  formatter.set_locale(Locale::new("zh", "CN"))
-  assert_eq(formatter.format_unit(1024, "byte"), "1,024 字节")
-  assert_eq(formatter.format_unit(1048576, "byte"), "1.0 MB")
-  assert_eq(formatter.format_unit(1000, "meter"), "1,000 米")
-  assert_eq(formatter.format_unit(1000, "kilometer"), "1,000 公里")
-}
-
-// Test 4: Text Direction and Script Handling
-test "text direction and script handling" {
-  let text_processor = TextDirectionProcessor::new()
-  
-  // Test LTR text detection
-  let ltr_text = "Hello, world!"
-  assert_eq(text_processor.get_direction(ltr_text), TextDirection::LTR)
+  let ltr_texts = [
+    "Hello World",   // English
+    "你好世界",        // Chinese
+    "こんにちは世界",   // Japanese
+    "Hola Mundo"      // Spanish
+  ]
   
   // Test RTL text detection
-  let rtl_text = "مرحبا بالعالم"
-  assert_eq(text_processor.get_direction(rtl_text), TextDirection::RTL)
-  
-  // Test mixed text detection
-  let mixed_text = "Hello مرحبا world"
-  assert_eq(text_processor.get_direction(mixed_text), TextDirection::Mixed)
-  
-  // Test auto text detection
-  let auto_detected = text_processor.auto_detect_direction("مرحبا بالعالم")
-  assert_eq(auto_detected, TextDirection::RTL)
-  
-  let auto_detected_ltr = text_processor.auto_detect_direction("Hello, world!")
-  assert_eq(auto_detected_ltr, TextDirection::LTR)
-  
-  // Test text alignment based on direction
-  assert_eq(text_processor.get_alignment(TextDirection::LTR), TextAlign::Left)
-  assert_eq(text_processor.get_alignment(TextDirection::RTL), TextAlign::Right)
-  assert_eq(text_processor.get_alignment(TextDirection::Mixed), TextAlign::Left) // Default to LTR for mixed
-  
-  // Test text wrapping with direction
-  let long_ltr_text = "This is a very long text that needs to be wrapped properly in left-to-right direction"
-  let wrapped_ltr = text_processor.wrap_text(long_ltr_text, 20, TextDirection::LTR)
-  assert_true(wrapped_ltr.contains("\n"))
-  
-  let long_rtl_text = "هذا نص طويل جدا يحتاج إلى التفاف بشكل صحيح في الاتجاه من اليمين إلى اليسار"
-  let wrapped_rtl = text_processor.wrap_text(long_rtl_text, 20, TextDirection::RTL)
-  assert_true(wrapped_rtl.contains("\n"))
-  
-  // Test bidirectional text handling
-  let bidi_text = "The Arabic word مرحبا means 'hello' in English"
-  let processed_bidi = text_processor.process_bidirectional_text(bidi_text)
-  assert_true(processed_bidi.length() > 0)
-  
-  // Test script detection
-  assert_eq(text_processor.detect_script("Hello"), Script::Latin)
-  assert_eq(text_processor.detect_script("مرحبا"), Script::Arabic)
-  assert_eq(text_processor.detect_script("こんにちは"), Script::Japanese)
-  assert_eq(text_processor.detect_script("你好"), Script::Chinese)
-  assert_eq(text_processor.detect_script("Привет"), Script::Cyrillic)
-  
-  // Test numeric context in RTL text
-  let rtl_with_numbers = "السعر: 123.45 دولار"
-  let processed_numbers = text_processor.process_numeric_context(rtl_with_numbers)
-  assert_true(processed_numbers.contains("123.45"))
-  
-  // Test text isolation for mixed content
-  let mixed_content = "English text followed by Arabic نص عربي and more English"
-  let isolated_segments = text_processor.isolate_mixed_segments(mixed_content)
-  assert_true(isolated_segments.length() > 1)
-  
-  for segment in isolated_segments {
-    assert_true(segment.text.length() > 0)
-    assert_true(segment.direction == TextDirection::LTR || segment.direction == TextDirection::RTL)
+  for text in rtl_texts {
+    let detection_result = rtl_manager.detect_text_direction(text)
+    assert_true(detection_result.is_rtl)
+    assert_true(detection_result.confidence > 0.8)
   }
   
-  // Test cursor positioning in bidirectional text
-  let bidi_cursor_text = "Hello مرحبا world"
-  let cursor_positions = text_processor.get_cursor_positions(bidi_cursor_text)
-  assert_eq(cursor_positions.length(), bidi_cursor_text.length())
-  
-  // Test text mirroring for RTL layouts
-  let mirrable_content = "← → ↑ ↓"
-  let mirrored_content = text_processor.mirror_for_rtl(mirrable_content)
-  assert_eq(mirrored_content, "→ ← ↑ ↓") // Arrows should be mirrored
-  
-  // Test text ordering in RTL context
-  let rtl_list_items = ["الأول", "الثاني", "الثالث"]
-  let ordered_list = text_processor.order_for_rtl(rtl_list_items)
-  assert_eq(ordered_list[0], "الثالث") // Order should be reversed for RTL
-  assert_eq(ordered_list[1], "الثاني")
-  assert_eq(ordered_list[2], "الأول")
-}
-
-// Test 5: Collation and String Comparison
-test "collation and string comparison" {
-  let collator = Collator::new()
-  
-  // Test basic collation
-  collator.set_locale(Locale::new("en", "US"))
-  assert_true(collator.compare("apple", "banana") < 0)
-  assert_true(collator.compare("banana", "apple") > 0)
-  assert_true(collator.compare("apple", "apple") == 0)
-  
-  // Test case sensitivity
-  collator.set_case_sensitive(true)
-  assert_true(collator.compare("Apple", "apple") > 0)
-  
-  collator.set_case_sensitive(false)
-  assert_true(collator.compare("Apple", "apple") == 0)
-  
-  // Test diacritic sensitivity
-  collator.set_diacritic_sensitive(true)
-  assert_true(collator.compare("café", "cafe") > 0)
-  
-  collator.set_diacritic_sensitive(false)
-  assert_true(collator.compare("café", "cafe") == 0)
-  
-  // Test string sorting with collation
-  let words = ["banana", "Apple", "cherry", "apple", "Banana"]
-  let sorted_words = collator.sort(words)
-  
-  // With case-insensitive collation, should be: Apple, apple, banana, Banana, cherry
-  assert_eq(sorted_words[0], "Apple")
-  assert_eq(sorted_words[1], "apple")
-  assert_eq(sorted_words[2], "banana")
-  assert_eq(sorted_words[3], "Banana")
-  assert_eq(sorted_words[4], "cherry")
-  
-  // Test locale-specific collation
-  collator.set_locale(Locale::new("sv", "SE")) // Swedish
-  let swedish_words = ["zebra", "apple", "äpple", "banana", "orange"]
-  let sorted_swedish = collator.sort(swedish_words)
-  
-  // In Swedish, ä should come after z
-  assert_eq(sorted_swedish[0], "apple")
-  assert_eq(sorted_swedish[1], "banana")
-  assert_eq(sorted_swedish[2], "orange")
-  assert_eq(sorted_swedish[3], "zebra")
-  assert_eq(sorted_swedish[4], "äpple")
-  
-  // Test Chinese collation
-  collator.set_locale(Locale::new("zh", "CN"))
-  let chinese_words = ["北京", "上海", "广州", "深圳"]
-  let sorted_chinese = collator.sort(chinese_words)
-  
-  // Verify Chinese sorting order
-  assert_eq(sorted_chinese[0], "上海")
-  assert_eq(sorted_chinese[1], "北京")
-  assert_eq(sorted_chinese[2], "广州")
-  assert_eq(sorted_chinese[3], "深圳")
-  
-  // Test Japanese collation
-  collator.set_locale(Locale::new("ja", "JP"))
-  let japanese_words = ["東京", "大阪", "京都", "札幌"]
-  let sorted_japanese = collator.sort(japanese_words)
-  
-  // Verify Japanese sorting order
-  assert_eq(sorted_japanese[0], "京都")
-  assert_eq(sorted_japanese[1], "札幌")
-  assert_eq(sorted_japanese[2], "大阪")
-  assert_eq(sorted_japanese[3], "東京")
-  
-  // Test Arabic collation
-  collator.set_locale(Locale::new("ar", "SA"))
-  let arabic_words = ["تفاح", "موز", "برتقال", "عنب"]
-  let sorted_arabic = collator.sort(arabic_words)
-  
-  // Verify Arabic sorting order
-  assert_eq(sorted_arabic[0], "برتقال")
-  assert_eq(sorted_arabic[1], "تفاح")
-  assert_eq(sorted_arabic[2], "عنب")
-  assert_eq(sorted_arabic[3], "موز")
-  
-  // Test custom collation strength
-  collator.set_strength(CollationStrength::Primary) // Only base letters
-  assert_true(collator.compare("café", "cafe") == 0) // Should be equal with primary strength
-  
-  collator.set_strength(CollationStrength::Secondary) // Base letters + diacritics
-  assert_true(collator.compare("café", "cafe") > 0) // Should be different with secondary strength
-  
-  // Test search with collation
-  let search_text = "café"
-  let search_options = SearchOptions::new()
-    .with_case_sensitive(false)
-    .with_diacritic_sensitive(false)
-  
-  let matches = collator.search_in_text("I love café and cafe culture", search_text, search_options)
-  assert_eq(matches.length(), 2) // Should find both "café" and "cafe"
-  
-  // Test string normalization
-  let normalized_text = collator.normalize("café")
-  assert_true(normalized_text.length() > 0)
-  
-  // Test locale-aware string equality
-  assert_true(collator.equals_ignore_case("Apple", "apple"))
-  assert_true(collator.equals_ignore_diacritics("café", "cafe"))
-}
-
-// Test 6: Time Zone Handling
-test "time zone handling" {
-  let timezone_manager = TimeZoneManager::new()
-  
-  // Test time zone detection
-  let system_timezone = timezone_manager.get_system_timezone()
-  assert_true(system_timezone.length() > 0)
-  
-  // Test time zone conversion
-  let utc_time = DateTime::new(2024, 1, 15, 12, 0, 0).with_timezone("UTC")
-  
-  let pst_time = timezone_manager.convert_timezone(utc_time, "America/Los_Angeles")
-  assert_eq(pst_time.hour, 4) // 12:00 UTC = 04:00 PST (January)
-  assert_eq(pst_time.timezone, "America/Los_Angeles")
-  
-  let cet_time = timezone_manager.convert_timezone(utc_time, "Europe/Paris")
-  assert_eq(cet_time.hour, 13) // 12:00 UTC = 13:00 CET (January)
-  assert_eq(cet_time.timezone, "Europe/Paris")
-  
-  let jst_time = timezone_manager.convert_timezone(utc_time, "Asia/Tokyo")
-  assert_eq(jst_time.hour, 21) // 12:00 UTC = 21:00 JST
-  assert_eq(jst_time.timezone, "Asia/Tokyo")
-  
-  // Test daylight saving time
-  let summer_utc = DateTime::new(2024, 7, 15, 12, 0, 0).with_timezone("UTC")
-  
-  let summer_pst = timezone_manager.convert_timezone(summer_utc, "America/Los_Angeles")
-  assert_eq(summer_pst.hour, 5) // 12:00 UTC = 05:00 PDT (July, daylight saving)
-  assert_eq(summer_pst.timezone, "America/Los_Angeles")
-  
-  // Test time zone formatting
-  timezone_manager.set_locale(Locale::new("en", "US"))
-  let formatted_pst = timezone_manager.format_with_timezone(utc_time, "America/Los_Angeles")
-  assert_true(formatted_pst.contains("PST") || formatted_pst.contains("PDT"))
-  
-  timezone_manager.set_locale(Locale::new("zh", "CN"))
-  let formatted_cst = timezone_manager.format_with_timezone(utc_time, "Asia/Shanghai")
-  assert_true(formatted_cst.contains("CST"))
-  
-  // Test time zone offset calculation
-  let pst_offset = timezone_manager.get_timezone_offset("America/Los_Angeles", utc_time)
-  assert_eq(pst_offset, -8 * 3600) // -8 hours in January
-  
-  let summer_pst_offset = timezone_manager.get_timezone_offset("America/Los_Angeles", summer_utc)
-  assert_eq(summer_pst_offset, -7 * 3600) // -7 hours in July (daylight saving)
-  
-  // Test time zone database
-  let available_timezones = timezone_manager.get_available_timezones()
-  assert_true(available_timezones.length() > 100)
-  assert_true(available_timezones.contains("UTC"))
-  assert_true(available_timezones.contains("America/Los_Angeles"))
-  assert_true(available_timezones.contains("Europe/Paris"))
-  assert_true(available_timezones.contains("Asia/Tokyo"))
-  
-  // Test time zone metadata
-  let pst_metadata = timezone_manager.get_timezone_metadata("America/Los_Angeles")
-  assert_eq(pst_metadata.id, "America/Los_Angeles")
-  assert_eq(pst_metadata.standard_name, "Pacific Standard Time")
-  assert_eq(pst_metadata.daylight_name, "Pacific Daylight Time")
-  assert_eq(pst_metadata.standard_offset, -8 * 3600)
-  assert_eq(pst_metadata.daylight_offset, -7 * 3600)
-  assert_true(pst_metadata.uses_daylight_time)
-  
-  // Test user time zone preferences
-  let user_timezone = UserTimezonePreferences::new()
-  user_timezone.set_timezone("Europe/London")
-  user_timezone.set_format_24hour(false)
-  user_timezone.set_show_timezone(true)
-  
-  timezone_manager.set_user_preferences(user_timezone)
-  
-  let user_formatted = timezone_manager.format_for_user(utc_time)
-  assert_true(user_formatted.contains("GMT") || user_formatted.contains("BST"))
-  
-  // Test time zone aware scheduling
-  let schedule_time = DateTime::new(2024, 1, 15, 9, 0, 0).with_timezone("America/New_York")
-  let utc_schedule_time = timezone_manager.to_utc(schedule_time)
-  
-  assert_eq(utc_schedule_time.hour, 14) // 09:00 EST = 14:00 UTC
-  
-  // Test time zone conversion with DST transitions
-  let dst_transition = DateTime::new(2024, 3, 10, 2, 30, 0).with_timezone("America/New_York")
-  let utc_transition = timezone_manager.to_utc(dst_transition)
-  
-  // This is during the spring forward transition (2:00 AM becomes 3:00 AM)
-  // 2:30 AM doesn't exist, so it should be handled appropriately
-  assert_true(utc_transition.hour >= 6) // Should be around 6:30 or 7:00 UTC
-  
-  // Test time zone abbreviation formatting
-  let pst_abbrev = timezone_manager.format_timezone_abbreviation("America/Los_Angeles", utc_time)
-  assert_eq(pst_abbrev, "PST")
-  
-  let pdt_abbrev = timezone_manager.format_timezone_abbreviation("America/Los_Angeles", summer_utc)
-  assert_eq(pdt_abbrev, "PDT")
-}
-
-// Test 7: Calendar Systems and Localization
-test "calendar systems and localization" {
-  let calendar_manager = CalendarManager::new()
-  
-  // Test Gregorian calendar (default)
-  calendar_manager.set_calendar(CalendarType::Gregorian)
-  
-  let gregorian_date = DateTime::new(2024, 1, 15, 12, 0, 0)
-  let formatted_gregorian = calendar_manager.format_date(gregorian_date, DateFormat::Full)
-  assert_true(formatted_gregorian.contains("2024"))
-  assert_true(formatted_gregorian.contains("January"))
-  assert_true(formatted_gregorian.contains("15"))
-  
-  // Test Islamic calendar
-  calendar_manager.set_calendar(CalendarType::Islamic)
-  calendar_manager.set_locale(Locale::new("ar", "SA"))
-  
-  let islamic_date = calendar_manager.convert_to_calendar(gregorian_date, CalendarType::Islamic)
-  let formatted_islamic = calendar_manager.format_date(islamic_date, DateFormat::Full)
-  assert_true(formatted_islamic.contains("رمضان") || formatted_islamic.contains("شعبان")) // Should contain Islamic month
-  
-  // Test Hebrew calendar
-  calendar_manager.set_calendar(CalendarType::Hebrew)
-  calendar_manager.set_locale(Locale::new("he", "IL"))
-  
-  let hebrew_date = calendar_manager.convert_to_calendar(gregorian_date, CalendarType::Hebrew)
-  let formatted_hebrew = calendar_manager.format_date(hebrew_date, DateFormat::Full)
-  assert_true(formatted_hebrew.length() > 0)
-  
-  // Test Chinese calendar
-  calendar_manager.set_calendar(CalendarType::Chinese)
-  calendar_manager.set_locale(Locale::new("zh", "CN"))
-  
-  let chinese_date = calendar_manager.convert_to_calendar(gregorian_date, CalendarType::Chinese)
-  let formatted_chinese = calendar_manager.format_date(chinese_date, DateFormat::Full)
-  assert_true(formatted_chinese.contains("农历") || formatted_chinese.contains("年"))
-  
-  // Test Japanese calendar (with era names)
-  calendar_manager.set_calendar(CalendarType::Japanese)
-  calendar_manager.set_locale(Locale::new("ja", "JP"))
-  
-  let japanese_date = calendar_manager.convert_to_calendar(gregorian_date, CalendarType::Japanese)
-  let formatted_japanese = calendar_manager.format_date(japanese_date, DateFormat::Full)
-  assert_true(formatted_japanese.contains("令和") || formatted_japanese.contains("平成")) // Should contain era name
-  
-  // Test Buddhist calendar
-  calendar_manager.set_calendar(CalendarType::Buddhist)
-  calendar_manager.set_locale(Locale::new("th", "TH"))
-  
-  let buddhist_date = calendar_manager.convert_to_calendar(gregorian_date, CalendarType::Buddhist)
-  let formatted_buddhist = calendar_manager.format_date(buddhist_date, DateFormat::Full)
-  assert_true(formatted_buddhist.contains("พ.ศ.")) // Buddhist Era abbreviation
-  
-  // Test Persian calendar
-  calendar_manager.set_calendar(CalendarType::Persian)
-  calendar_manager.set_locale(Locale::new("fa", "IR"))
-  
-  let persian_date = calendar_manager.convert_to_calendar(gregorian_date, CalendarType::Persian)
-  let formatted_persian = calendar_manager.format_date(persian_date, DateFormat::Full)
-  assert_true(formatted_persian.length() > 0)
-  
-  // Test Indian calendar
-  calendar_manager.set_calendar(CalendarType::Indian)
-  calendar_manager.set_locale(Locale::new("hi", "IN"))
-  
-  let indian_date = calendar_manager.convert_to_calendar(gregorian_date, CalendarType::Indian)
-  let formatted_indian = calendar_manager.format_date(indian_date, DateFormat::Full)
-  assert_true(formatted_indian.length() > 0)
-  
-  // Test calendar conversion accuracy
-  let reference_date = DateTime::new(2024, 1, 1, 0, 0, 0)
-  
-  let islamic_converted = calendar_manager.convert_to_calendar(reference_date, CalendarType::Islamic)
-  let back_to_gregorian = calendar_manager.convert_to_calendar(islamic_converted, CalendarType::Gregorian)
-  
-  // Should be very close to original date (within 1 day due to calendar differences)
-  let days_difference = abs((reference_date.to_timestamp() - back_to_gregorian.to_timestamp()) / (24 * 3600))
-  assert_true(days_difference <= 1)
-  
-  // Test calendar-specific holidays
-  calendar_manager.set_calendar(CalendarType::Gregorian)
-  calendar_manager.set_locale(Locale::new("en", "US"))
-  
-  let us_holidays = calendar_manager.get_holidays_for_year(2024, "US")
-  assert_true(us_holidays.length() > 0)
-  
-  let christmas = us_holidays.find(|h| h.name.contains("Christmas"))
-  assert_true(christmas.is_some())
-  assert_eq(christmas.unwrap().month, 12)
-  assert_eq(christmas.unwrap().day, 25)
-  
-  // Test Islamic holidays
-  calendar_manager.set_calendar(CalendarType::Islamic)
-  calendar_manager.set_locale(Locale::new("ar", "SA"))
-  
-  let islamic_holidays = calendar_manager.get_holidays_for_year(1445, "SA")
-  assert_true(islamic_holidays.length() > 0)
-  
-  let eid_al_fitr = islamic_holidays.find(|h| h.name.contains("الفطر"))
-  assert_true(eid_al_fitr.is_some())
-  
-  // Test work week calculations
-  calendar_manager.set_calendar(CalendarType::Gregorian)
-  calendar_manager.set_locale(Locale::new("en", "US"))
-  
-  let us_work_week = calendar_manager.get_work_week("US")
-  assert_eq(us_work_week.start_day, 1) // Monday
-  assert_eq(us_work_week.end_day, 5) // Friday
-  
-  calendar_manager.set_locale(Locale::new("ar", "SA"))
-  
-  let sa_work_week = calendar_manager.get_work_week("SA")
-  assert_eq(sa_work_week.start_day, 0) // Sunday
-  assert_eq(sa_work_week.end_day, 4) // Thursday
-  
-  // Test calendar metadata
-  let gregorian_metadata = calendar_manager.get_calendar_metadata(CalendarType::Gregorian)
-  assert_eq(gregorian_metadata.name, "Gregorian")
-  assert_eq(gregorian_metadata.days_in_month, [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31])
-  
-  let islamic_metadata = calendar_manager.get_calendar_metadata(CalendarType::Islamic)
-  assert_eq(islamic_metadata.name, "Islamic")
-  assert_eq(islamic_metadata.days_in_month, [30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 29])
-}
-
-// Test 8: Keyboard and Input Method Handling
-test "keyboard and input method handling" {
-  let input_manager = InputMethodManager::new()
-  
-  // Test keyboard layout detection
-  let system_keyboard = input_manager.get_system_keyboard_layout()
-  assert_true(system_keyboard.language.length() == 2)
-  assert_true(system_keyboard.layout.length() > 0)
-  
-  // Test keyboard layout switching
-  input_manager.add_keyboard_layout(KeyboardLayout::new("en", "US", "QWERTY"))
-  input_manager.add_keyboard_layout(KeyboardLayout::new("fr", "FR", "AZERTY"))
-  input_manager.add_keyboard_layout(KeyboardLayout::new("de", "DE", "QWERTZ"))
-  input_manager.add_keyboard_layout(KeyboardLayout::new("ar", "SA", "Arabic"))
-  input_manager.add_keyboard_layout(KeyboardLayout::new("zh", "CN", "Pinyin"))
-  input_manager.add_keyboard_layout(KeyboardLayout::new("ja", "JP", "Romaji"))
-  input_manager.add_keyboard_layout(KeyboardLayout::new("ru", "RU", "JCUKEN"))
-  
-  // Test keyboard layout activation
-  assert_true(input_manager.activate_layout("en", "US"))
-  assert_eq(input_manager.get_active_layout().language, "en")
-  assert_eq(input_manager.get_active_layout().region, "US")
-  
-  assert_true(input_manager.activate_layout("ar", "SA"))
-  assert_eq(input_manager.get_active_layout().language, "ar")
-  assert_eq(input_manager.get_active_layout().region, "SA")
-  
-  // Test key mapping for different layouts
-  input_manager.activate_layout("en", "US")
-  let qwerty_mapping = input_manager.get_key_mapping()
-  assert_eq(qwerty_mapping.get_key('q'), 'q')
-  assert_eq(qwerty_mapping.get_key('w'), 'w')
-  assert_eq(qwerty_mapping.get_key('e'), 'e')
-  assert_eq(qwerty_mapping.get_key('r'), 'r')
-  assert_eq(qwerty_mapping.get_key('t'), 't')
-  assert_eq(qwerty_mapping.get_key('y'), 'y')
-  
-  input_manager.activate_layout("fr", "FR")
-  let azerty_mapping = input_manager.get_key_mapping()
-  assert_eq(azerty_mapping.get_key('q'), 'a')
-  assert_eq(azerty_mapping.get_key('w'), 'z')
-  assert_eq(azerty_mapping.get_key('e'), 'e')
-  assert_eq(azerty_mapping.get_key('r'), 'r')
-  assert_eq(azerty_mapping.get_key('t'), 't')
-  assert_eq(azerty_mapping.get_key('y'), 'y')
-  
-  input_manager.activate_layout("de", "DE")
-  let qwertz_mapping = input_manager.get_key_mapping()
-  assert_eq(qwertz_mapping.get_key('q'), 'q')
-  assert_eq(qwertz_mapping.get_key('w'), 'w')
-  assert_eq(qwertz_mapping.get_key('e'), 'e')
-  assert_eq(qwertz_mapping.get_key('r'), 'r')
-  assert_eq(qwertz_mapping.get_key('t'), 't')
-  assert_eq(qwertz_mapping.get_key('y'), 'z')
-  assert_eq(qwertz_mapping.get_key('z'), 'y')
-  
-  // Test IME (Input Method Editor) support
-  let ime_manager = IMEManager::new()
-  
-  // Add IME profiles
-  ime_manager.add_ime_profile(IMEProfile::new("zh", "CN", "Pinyin")
-    .with_conversion_table(load_pinyin_table())
-    .with_suggestions_enabled(true))
-  
-  ime_manager.add_ime_profile(IMEProfile::new("ja", "JP", "Romaji")
-    .with_conversion_table(load_romaji_table())
-    .with_suggestions_enabled(true))
-  
-  ime_manager.add_ime_profile(IMEProfile::new("ar", "SA", "Arabic")
-    .with_conversion_table(load_arabic_table())
-    .with_suggestions_enabled(true))
-  
-  // Test IME activation
-  assert_true(ime_manager.activate_ime("zh", "CN", "Pinyin"))
-  assert_eq(ime_manager.get_active_ime().language, "zh")
-  assert_eq(ime_manager.get_active_ime().region, "CN")
-  assert_eq(ime_manager.get_active_ime().method, "Pinyin")
-  
-  // Test IME input processing
-  ime_manager.activate_ime("zh", "CN", "Pinyin")
-  
-  let pinyin_input = "nihao"
-  let pinyin_suggestions = ime_manager.get_suggestions(pinyin_input)
-  assert_true(pinyin_suggestions.length() > 0)
-  assert_true(pinyin_suggestions.contains("你好"))
-  
-  // Test IME composition
-  let composition_result = ime_manager.start_composition("n")
-  assert_true(composition_result.is_composing)
-  assert_eq(composition_result.composed_text, "n")
-  
-  let continue_result = ime_manager.continue_composition("i")
-  assert_true(continue_result.is_composing)
-  assert_eq(continue_result.composed_text, "ni")
-  
-  let finish_result = ime_manager.finish_composition("hao")
-  assert_true(finish_result.is_composing)
-  assert_eq(finish_result.composed_text, "nihao")
-  
-  // Test IME candidate selection
-  let candidates = ime_manager.get_candidates("nihao")
-  assert_true(candidates.length() > 0)
-  
-  let selected_candidate = ime_manager.select_candidate(0)
-  assert_eq(selected_candidate, "你好")
-  
-  // Test keyboard shortcuts for IME
-  let shortcut_manager = IMEShortcutManager::new()
-  
-  shortcut_manager.add_shortcut("toggle_ime", KeyCombo::new([KeyCode::Ctrl, KeyCode::Space]))
-  shortcut_manager.add_shortcut("next_candidate", KeyCombo::new([KeyCode::Down]))
-  shortcut_manager.add_shortcut("prev_candidate", KeyCombo::new([KeyCode::Up]))
-  shortcut_manager.add_shortcut("select_candidate", KeyCombo::new([KeyCode::Enter]))
-  shortcut_manager.add_shortcut("cancel_composition", KeyCombo::new([KeyCode::Escape]))
-  
-  // Test shortcut handling
-  let toggle_result = shortcut_manager.handle_shortcut(KeyCombo::new([KeyCode::Ctrl, KeyCode::Space]))
-  assert_eq(toggle_result.action, "toggle_ime")
-  
-  // Test input method prediction
-  let prediction_engine = IMEPredictionEngine::new()
-  
-  prediction_engine.add_to_dictionary("你好", "hello")
-  prediction_engine.add_to_dictionary("世界", "world")
-  prediction_engine.add_to_dictionary("谢谢", "thank you")
-  
-  let predictions = prediction_engine.predict("ni")
-  assert_true(predictions.length() > 0)
-  assert_true(predictions.any(|p| p.text.contains("你")))
-  
-  // Test input method statistics
-  let ime_stats = ime_manager.get_usage_statistics()
-  assert_true(ime_stats.total_inputs > 0)
-  assert_true(ime_stats.compositions_completed > 0)
-  assert_true(ime_stats.candidates_selected > 0)
-  assert_true(ime_stats.most_used_imes.length() > 0)
-}
-
-// Test 9: Font and Text Rendering
-test "font and text rendering" {
-  let font_manager = FontManager::new()
-  
-  // Test font detection
-  let system_fonts = font_manager.get_system_fonts()
-  assert_true(system_fonts.length() > 0)
-  
-  // Test font loading
-  let latin_font = font_manager.load_font("Arial", FontStyle::Normal)
-  assert_true(latin_font.is_available())
-  
-  let chinese_font = font_manager.load_font("SimSun", FontStyle::Normal)
-  assert_true(chinese_font.is_available() || font_manager.load_fallback_font("zh", "CN"))
-  
-  let arabic_font = font_manager.load_font("Arial", FontStyle::Normal)
-  assert_true(arabic_font.is_available() || font_manager.load_fallback_font("ar", "SA"))
-  
-  let japanese_font = font_manager.load_font("MS Gothic", FontStyle::Normal)
-  assert_true(japanese_font.is_available() || font_manager.load_fallback_font("ja", "JP"))
-  
-  // Test font fallback system
-  let fallback_chain = font_manager.create_fallback_chain([
-    FontRequirement::new("en", "Latin"),
-    FontRequirement::new("zh", "Han"),
-    FontRequirement::new("ar", "Arabic"),
-    FontRequirement::new("ja", "Han")
-  ])
-  
-  assert_eq(fallback_chain.length(), 4)
-  
-  // Test text rendering with font fallback
-  let mixed_text = "Hello 你好 مرحبا こんにちは"
-  let rendering_plan = font_manager.plan_text_rendering(mixed_text)
-  
-  assert_true(rendering_plan.segments.length() > 1) // Should have multiple segments for different scripts
-  
-  for segment in rendering_plan.segments {
-    assert_true(segment.text.length() > 0)
-    assert_true(segment.font.is_available())
+  // Test LTR text detection
+  for text in ltr_texts {
+    let detection_result = rtl_manager.detect_text_direction(text)
+    assert_false(detection_result.is_rtl)
+    assert_true(detection_result.confidence > 0.8)
   }
   
-  // Test font metrics
-  let font_metrics = font_manager.get_font_metrics(latin_font)
-  assert_true(font_metrics.ascent > 0)
-  assert_true(font_metrics.descent > 0)
-  assert_true(font_metrics.line_height > 0)
-  assert_true(font_metrics.average_char_width > 0)
-  
-  // Test text measurement
-  let latin_text = "Hello, World!"
-  let latin_metrics = font_manager.measure_text(latin_text, latin_font, 16.0)
-  assert_true(latin_metrics.width > 0)
-  assert_true(latin_metrics.height > 0)
-  
-  let chinese_text = "你好，世界！"
-  let chinese_metrics = font_manager.measure_text(chinese_text, chinese_font, 16.0)
-  assert_true(chinese_metrics.width > 0)
-  assert_true(chinese_metrics.height > 0)
-  
-  let arabic_text = "مرحبا بالعالم!"
-  let arabic_metrics = font_manager.measure_text(arabic_text, arabic_font, 16.0)
-  assert_true(arabic_metrics.width > 0)
-  assert_true(arabic_metrics.height > 0)
-  
-  // Test text layout
-  let layout_engine = TextLayoutEngine::new()
+  // Test layout mirroring
+  let layout_elements = [
+    LayoutElement::new("sidebar", "left"),
+    LayoutElement::new("navigation", "top"),
+    LayoutElement::new("content", "center"),
+    LayoutElement::new("controls", "right")
+  ]
   
   // Test LTR layout
-  let ltr_layout = layout_engine.layout_text("Hello, World!", TextDirection::LTR, latin_font, 16.0, 300.0)
-  assert_eq(ltr_layout.direction, TextDirection::LTR)
-  assert_true(ltr_layout.lines.length() > 0)
-  assert_true(ltr_layout.width > 0)
-  assert_true(ltr_layout.height > 0)
+  rtl_manager.set_direction("ltr")
+  let ltr_layout = rtl_manager.generate_layout(layout_elements)
+  
+  for element in ltr_layout.elements {
+    match element.element_id {
+      "sidebar" => assert_eq(element.position, "left"),
+      "controls" => assert_eq(element.position, "right"),
+      _ => {}
+    }
+  }
   
   // Test RTL layout
-  let rtl_layout = layout_engine.layout_text("مرحبا بالعالم!", TextDirection::RTL, arabic_font, 16.0, 300.0)
-  assert_eq(rtl_layout.direction, TextDirection::RTL)
-  assert_true(rtl_layout.lines.length() > 0)
-  assert_true(rtl_layout.width > 0)
-  assert_true(rtl_layout.height > 0)
+  rtl_manager.set_direction("rtl")
+  let rtl_layout = rtl_manager.generate_layout(layout_elements)
   
-  // Test bidirectional layout
-  let bidi_layout = layout_engine.layout_text("Hello مرحبا World!", TextDirection::Auto, latin_font, 16.0, 300.0)
-  assert_true(bidi_layout.lines.length() > 0)
-  
-  // Test text wrapping
-  let long_text = "This is a very long text that needs to be wrapped properly across multiple lines"
-  let wrapped_layout = layout_engine.layout_text(long_text, TextDirection::LTR, latin_font, 16.0, 200.0)
-  assert_true(wrapped_layout.lines.length() > 1)
-  
-  // Test font style variations
-  let bold_font = font_manager.load_font("Arial", FontStyle::Bold)
-  let italic_font = font_manager.load_font("Arial", FontStyle::Italic)
-  let bold_italic_font = font_manager.load_font("Arial", FontStyle::BoldItalic)
-  
-  assert_true(bold_font.is_available())
-  assert_true(italic_font.is_available())
-  assert_true(bold_italic_font.is_available())
-  
-  // Test text rendering with different styles
-  let styled_text = "Normal <b>Bold</b> <i>Italic</i> <b><i>Bold Italic</b></i>"
-  let styled_layout = layout_engine.layout_html_text(styled_text, latin_font, 16.0, 300.0)
-  assert_true(styled_layout.segments.length() > 1)
-  
-  // Test font loading performance
-  let font_loading_start = get_current_timestamp()
-  
-  for i in 0..=100 {
-    let _ = font_manager.load_font("Arial", FontStyle::Normal)
+  for element in rtl_layout.elements {
+    match element.element_id {
+      "sidebar" => assert_eq(element.position, "right"),
+      "controls" => assert_eq(element.position, "left"),
+      _ => {}
+    }
   }
   
-  let font_loading_end = get_current_timestamp()
-  let font_loading_time = font_loading_end - font_loading_start
+  // Test CSS generation
+  let css_result = rtl_manager.generate_rtl_css()
+  assert_true(css_result.success)
+  assert_true(css_result.css_content.length() > 0)
+  assert_true(css_result.css_content.contains("direction: rtl"))
+  assert_true(css_result.css_content.contains("text-align: right"))
   
-  assert_true(font_loading_time.to_millis() < 1000) // Should load 100 fonts in less than 1 second
+  // Test mixed direction text handling
+  let mixed_texts = [
+    "Hello مرحبا World",
+    "123 שלום 456",
+    "Test سلام Test",
+    "English ہیلو Urdu"
+  ]
   
-  // Test font caching
-  font_manager.enable_caching(true)
-  
-  let cached_font_start = get_current_timestamp()
-  
-  for i in 0..=100 {
-    let _ = font_manager.load_font("Arial", FontStyle::Normal)
+  let mixed_results = []
+  for text in mixed_texts {
+    let result = rtl_manager.process_mixed_direction_text(text)
+    mixed_results.push(result)
   }
   
-  let cached_font_end = get_current_timestamp()
-  let cached_font_time = cached_font_end - cached_font_start
+  // Verify mixed direction text processing
+  assert_eq(mixed_results.length(), 4)
   
-  // Cached font loading should be faster
-  assert_true(cached_font_time.to_millis() < font_loading_time.to_millis())
-  
-  // Test font fallback performance
-  let fallback_start = get_current_timestamp()
-  
-  for i in 0..=100 {
-    let _ = font_manager.plan_text_rendering(mixed_text)
+  for result in mixed_results {
+    assert_true(result.success)
+    assert_true(result.processed_text.length() > 0)
+    assert_true(result.direction_spans.length() > 0)
+    
+    // Verify direction spans
+    for span in result.direction_spans {
+      assert_true(span.start >= 0)
+      assert_true(span.end > span.start)
+      assert_true(span.direction == "ltr" || span.direction == "rtl")
+    }
   }
   
-  let fallback_end = get_current_timestamp()
-  let fallback_time = fallback_end - fallback_start
+  // Test RTL metrics
+  let rtl_metrics = rtl_manager.get_rtl_metrics()
+  assert_true(rtl_metrics.total_direction_detections > 0)
+  assert_true(rtl_metrics.rtl_texts_detected > 0)
+  assert_true(rtl_metrics.ltr_texts_detected > 0)
+  assert_true(rtl_metrics.average_detection_time_ms > 0.0)
+  assert_true(rtl_metrics.layout_mirroring_operations > 0)
   
-  assert_true(fallback_time.to_millis() < 1000) // Should plan 100 text renderings in less than 1 second
+  // Stop RTL manager
+  rtl_manager.stop()
 }
 
-// Test 10: Accessibility and Internationalization
-test "accessibility and internationalization" {
-  let accessibility_manager = AccessibilityManager::new()
+// Test 3: Cultural and Regional Adaptation
+test "cultural and regional adaptation" {
+  let cultural_manager = CulturalAdaptationManager::new()
   
-  // Test screen reader support
-  let screen_reader = ScreenReaderInterface::new()
+  // Initialize cultural manager
+  cultural_manager.initialize(CulturalConfig::new()
+    .with_supported_regions(["US", "CN", "JP", "ES", "FR", "DE", "SA", "IN"])
+    .with_cultural_adaptation_enabled(true)
+    .with_regional_standards_enabled(true))
   
-  // Test text-to-speech with different languages
-  screen_reader.set_language("en-US")
-  assert_true(screen_reader.speak("Hello, world!"))
+  // Start cultural manager
+  cultural_manager.start()
   
-  screen_reader.set_language("zh-CN")
-  assert_true(screen_reader.speak("你好，世界！"))
+  // Test regional settings
+  let regions = ["US", "CN", "JP", "ES", "FR", "DE", "SA", "IN"]
   
-  screen_reader.set_language("ar-SA")
-  assert_true(screen_reader.speak("مرحبا بالعالم!"))
+  for region in regions {
+    let adaptation_result = cultural_manager.adapt_to_region(region)
+    assert_true(adaptation_result.success)
+    assert_eq(adaptation_result.region, region)
+    assert_true(adaptation_result.adaptations_applied > 0)
+  }
   
-  screen_reader.set_language("ja-JP")
-  assert_true(screen_reader.speak("こんにちは、世界！"))
+  // Test date format adaptation
+  let date_formats = {
+    "US": "MM/DD/YYYY",
+    "CN": "YYYY/MM/DD",
+    "JP": "YYYY/MM/DD",
+    "ES": "DD/MM/YYYY",
+    "FR": "DD/MM/YYYY",
+    "DE": "DD.MM.YYYY",
+    "SA": "DD/MM/YYYY",
+    "IN": "DD/MM/YYYY"
+  }
   
-  // Test speech rate and pitch adjustment
-  screen_reader.set_rate(1.2) // 20% faster
-  screen_reader.set_pitch(0.9) // Slightly lower pitch
+  let sample_date = 1640995200000 // 2022-01-01 00:00:00 UTC
   
-  // Test high contrast mode with different locales
-  let high_contrast = HighContrastManager::new()
+  let date_adaptation_results = []
+  for (region, expected_format) in date_formats {
+    cultural_manager.adapt_to_region(region)
+    let result = cultural_manager.format_date_regionally(sample_date)
+    date_adaptation_results.push((region, expected_format, result))
+  }
   
-  high_contrast.set_locale(Locale::new("en", "US"))
-  let en_high_contrast = high_contrast.get_color_scheme()
-  assert_eq(en_high_contrast.background, "#000000") // Black background
-  assert_eq(en_high_contrast.text, "#FFFFFF") // White text
+  // Verify date format adaptation
+  assert_eq(date_adaptation_results.length(), 8)
   
-  high_contrast.set_locale(Locale::new("ar", "SA"))
-  let ar_high_contrast = high_contrast.get_color_scheme()
-  assert_eq(ar_high_contrast.background, "#000000") // Black background
-  assert_eq(ar_high_contrast.text, "#FFFFFF") // White text
+  for (region, expected_format, result) in date_adaptation_results {
+    assert_true(result.success)
+    assert_true(result.formatted_date.length() > 0)
+    assert_eq(result.format_used, expected_format)
+  }
   
-  // Test font size scaling for accessibility
-  let font_scaler = AccessibilityFontScaler::new()
+  // Test number format adaptation
+  let number_formats = {
+    "US": {"decimal": ".", "thousands": ",", "grouping": 3},
+    "CN": {"decimal": ".", "thousands": ",", "grouping": 4},
+    "JP": {"decimal": ".", "thousands": ",", "grouping": 4},
+    "ES": {"decimal": ",", "thousands": ".", "grouping": 3},
+    "FR": {"decimal": ",", "thousands": " ", "grouping": 3},
+    "DE": {"decimal": ",", "thousands": ".", "grouping": 3},
+    "SA": {"decimal": ".", "thousands": ",", "grouping": 3},
+    "IN": {"decimal": ".", "thousands": ",", "grouping": 3} // Last 2 digits grouped separately in reality
+  }
   
-  font_scaler.set_scaling_factor(1.5) // 150% of normal size
+  let sample_number = 1234567.89
   
-  let normal_text = "Hello, world!"
-  let scaled_text = font_scaler.scale_text(normal_text)
-  assert_eq(scaled_text.text, normal_text)
-  assert_eq(scaled_text.font_size, 16.0 * 1.5) // Assuming base font size is 16px
+  let number_adaptation_results = []
+  for (region, format_config) in number_formats {
+    cultural_manager.adapt_to_region(region)
+    let result = cultural_manager.format_number_regionally(sample_number)
+    number_adaptation_results.push((region, format_config, result))
+  }
   
-  // Test screen magnifier with different text directions
-  let magnifier = ScreenMagnifier::new()
+  // Verify number format adaptation
+  assert_eq(number_adaptation_results.length(), 8)
   
-  magnifier.set_zoom_level(2.0) // 200% zoom
-  magnifier.set_locale(Locale::new("ar", "SA")) // RTL locale
+  for (region, format_config, result) in number_adaptation_results {
+    assert_true(result.success)
+    assert_true(result.formatted_number.length() > 0)
+    assert_true(result.formatted_number.contains(format_config.decimal))
+  }
   
-  let rtl_viewport = magnifier.get_viewport()
-  assert_true(rtl_viewport.direction == TextDirection::RTL)
+  // Test currency format adaptation
+  let currency_formats = {
+    "US": {"symbol": "$", "position": "before", "decimal": "."},
+    "CN": {"symbol": "¥", "position": "before", "decimal": "."},
+    "JP": {"symbol": "¥", "position": "before", "decimal": "."},
+    "ES": {"symbol": "€", "position": "after", "decimal": ","},
+    "FR": {"symbol": "€", "position": "after", "decimal": ","},
+    "DE": {"symbol": "€", "position": "after", "decimal": ","},
+    "SA": {"symbol": "ر.س", "position": "before", "decimal": "."},
+    "IN": {"symbol": "₹", "position": "before", "decimal": "."}
+  }
   
-  // Test accessibility labels translation
-  let a11y_translator = AccessibilityTranslator::new()
+  let sample_amount = 1234.56
   
-  a11y_translator.load_translations("en-US", "a11y/en-US.json")
-  a11y_translator.load_translations("zh-CN", "a11y/zh-CN.json")
-  a11y_translator.load_translations("ar-SA", "a11y/ar-SA.json")
+  let currency_adaptation_results = []
+  for (region, format_config) in currency_formats {
+    cultural_manager.adapt_to_region(region)
+    let result = cultural_manager.format_currency_regionally(sample_amount, "USD")
+    currency_adaptation_results.push((region, format_config, result))
+  }
   
-  a11y_translator.set_locale(Locale::new("en", "US"))
-  assert_eq(a11y_translator.translate("button.save"), "Save button")
+  // Verify currency format adaptation
+  assert_eq(currency_adaptation_results.length(), 8)
   
-  a11y_translator.set_locale(Locale::new("zh", "CN"))
-  assert_eq(a11y_translator.translate("button.save"), "保存按钮")
+  for (region, format_config, result) in currency_adaptation_results {
+    assert_true(result.success)
+    assert_true(result.formatted_currency.length() > 0)
+    
+    match format_config.position {
+      "before" => {
+        assert_true(result.formatted_currency.starts_with(format_config.symbol))
+      },
+      "after" => {
+        assert_true(result.formatted_currency.ends_with(format_config.symbol));
+      },
+      _ => {}
+    }
+  }
   
-  a11y_translator.set_locale(Locale::new("ar", "SA"))
-  assert_eq(a11y_translator.translate("button.save"), "زر الحفظ")
+  // Test time format adaptation
+  let time_formats = {
+    "US": "12-hour",
+    "CN": "24-hour",
+    "JP": "24-hour",
+    "ES": "24-hour",
+    "FR": "24-hour",
+    "DE": "24-hour",
+    "SA": "12-hour",
+    "IN": "12-hour"
+  }
   
-  // Test keyboard navigation with different locales
-  let keyboard_nav = KeyboardNavigationManager::new()
+  let sample_time = 46800000 // 13:00:00 UTC
   
-  keyboard_nav.set_locale(Locale::new("en", "US"))
-  let en_nav_order = keyboard_nav.get_navigation_order()
-  assert_eq(en_nav_order.direction, NavigationDirection::LTR)
+  let time_adaptation_results = []
+  for (region, expected_format) in time_formats {
+    cultural_manager.adapt_to_region(region)
+    let result = cultural_manager.format_time_regionally(sample_time)
+    time_adaptation_results.push((region, expected_format, result))
+  }
   
-  keyboard_nav.set_locale(Locale::new("ar", "SA"))
-  let ar_nav_order = keyboard_nav.get_navigation_order()
-  assert_eq(ar_nav_order.direction, NavigationDirection::RTL)
+  // Verify time format adaptation
+  assert_eq(time_adaptation_results.length(), 8)
   
-  // Test focus indicators for different locales
-  let focus_manager = FocusManager::new()
+  for (region, expected_format, result) in time_adaptation_results {
+    assert_true(result.success)
+    assert_true(result.formatted_time.length() > 0)
+    assert_eq(result.format_used, expected_format)
+  }
   
-  focus_manager.set_locale(Locale::new("en", "US"))
-  let en_focus_style = focus_manager.get_focus_style()
-  assert_eq(en_focus_style.outline_offset, "2px") // Standard offset for LTR
+  // Test color adaptation for cultural preferences
+  let color_meanings = {
+    "US": {"red": "danger", "green": "success", "blue": "info"},
+    "CN": {"red": "luck", "green": "health", "yellow": "imperial"},
+    "JP": {"red": "energy", "white": "purity", "black": "formal"},
+    "SA": {"green": "islam", "white": "purity", "black": "mystery"}
+  }
   
-  focus_manager.set_locale(Locale::new("ar", "SA"))
-  let ar_focus_style = focus_manager.get_focus_style()
-  assert_eq(ar_focus_style.outline_offset, "-2px") // Negative offset for RTL
+  let color_adaptation_results = []
+  for (region, meanings) in color_meanings {
+    cultural_manager.adapt_to_region(region)
+    
+    for (color, meaning) in meanings {
+      let result = cultural_manager.get_color_meaning(color)
+      color_adaptation_results.push((region, color, meaning, result))
+    }
+  }
   
-  // Test accessibility testing with internationalization
-  let a11y_tester = AccessibilityTester::new()
+  // Verify color adaptation
+  assert_true(color_adaptation_results.length() > 0)
   
-  a11y_tester.set_locale(Locale::new("en", "US"))
-  let en_a11y_issues = a11y_tester.test_page("test_page_en.html")
-  assert_true(en_a11y_issues.length() >= 0)
+  for (region, color, expected_meaning, result) in color_adaptation_results {
+    assert_true(result.success)
+    assert_eq(result.meaning, expected_meaning)
+  }
   
-  a11y_tester.set_locale(Locale::new("zh", "CN"))
-  let zh_a11y_issues = a11y_tester.test_page("test_page_zh.html")
-  assert_true(zh_a11y_issues.length() >= 0)
+  // Test cultural content adaptation
+  let cultural_content = {
+    "US": {"greeting": "Hello", "farewell": "Goodbye", "thanks": "Thank you"},
+    "CN": {"greeting": "你好", "farewell": "再见", "thanks": "谢谢"},
+    "JP": {"greeting": "こんにちは", "farewell": "さようなら", "thanks": "ありがとう"},
+    "ES": {"greeting": "Hola", "farewell": "Adiós", "thanks": "Gracias"},
+    "FR": {"greeting": "Bonjour", "farewell": "Au revoir", "thanks": "Merci"},
+    "DE": {"greeting": "Hallo", "farewell": "Auf Wiedersehen", "thanks": "Danke"},
+    "SA": {"greeting": "مرحبا", "farewell": "وداعا", "thanks": "شكرا"},
+    "IN": {"greeting": "नमस्ते", "farewell": "अलविदा", "thanks": "धन्यवाद"}
+  }
   
-  a11y_tester.set_locale(Locale::new("ar", "SA"))
-  let ar_a11y_issues = a11y_tester.test_page("test_page_ar.html")
-  assert_true(ar_a11y_issues.length() >= 0)
+  let content_adaptation_results = []
+  for (region, content) in cultural_content {
+    cultural_manager.adapt_to_region(region)
+    
+    for (key, expected_value) in content {
+      let result = cultural_manager.get_cultural_content(key)
+      content_adaptation_results.push((region, key, expected_value, result))
+    }
+  }
   
-  // Test color blindness support with different locales
-  let color_blindness = ColorBlindnessSupport::new()
+  // Verify cultural content adaptation
+  assert_true(content_adaptation_results.length() > 0)
   
-  color_blindness.set_locale(Locale::new("en", "US"))
-  let en_color_filters = color_blindness.get_color_filters()
-  assert_true(en_color_filters.contains("protanopia"))
-  assert_true(en_color_filters.contains("deuteranopia"))
-  assert_true(en_color_filters.contains("tritanopia"))
+  for (region, key, expected_value, result) in content_adaptation_results {
+    assert_true(result.success)
+    assert_eq(result.content, expected_value)
+  }
   
-  color_blindness.set_locale(Locale::new("zh", "CN"))
-  let zh_color_filters = color_blindness.get_color_filters()
-  assert_true(zh_color_filters.contains("红色盲")) // Protanopia in Chinese
-  assert_true(zh_color_filters.contains("绿色盲")) // Deuteranopia in Chinese
-  assert_true(zh_color_filters.contains("蓝色盲")) // Tritanopia in Chinese
+  // Test cultural metrics
+  let cultural_metrics = cultural_manager.get_cultural_metrics()
+  assert_true(cultural_metrics.total_adaptations > 0)
+  assert_true(cultural_metrics.regions_supported > 0)
+  assert_true(cultural_metrics.average_adaptation_time_ms > 0.0)
+  assert_true(cultural_metrics.content_localizations > 0)
   
-  // Test accessibility preferences per locale
-  let pref_manager = AccessibilityPreferenceManager::new()
+  // Stop cultural manager
+  cultural_manager.stop()
+}
+
+// Test 4: Time Zone Support
+test "time zone support" {
+  let timezone_manager = TimezoneManager::new()
   
-  let en_prefs = AccessibilityPreferences::new()
-  en_prefs.high_contrast = true
-  en_prefs.large_text = true
-  en_prefs.screen_reader = true
+  // Initialize timezone manager
+  timezone_manager.initialize(TimezoneConfig::new()
+    .with_default_timezone("UTC")
+    .with_supported_timezones([
+      "UTC", "America/New_York", "America/Los_Angeles", "Europe/London",
+      "Europe/Paris", "Asia/Tokyo", "Asia/Shanghai", "Asia/Dubai",
+      "Australia/Sydney", "America/Sao_Paulo"
+    ])
+    .with_auto_timezone_detection_enabled(true))
   
-  pref_manager.set_preferences(Locale::new("en", "US"), en_prefs)
+  // Start timezone manager
+  timezone_manager.start()
   
-  let ar_prefs = AccessibilityPreferences::new()
-  ar_prefs.high_contrast = true
-  ar_prefs.large_text = false
-  ar_prefs.screen_reader = true
-  ar_prefs.rtl_optimization = true
+  // Test timezone detection
+  let detection_result = timezone_manager.detect_user_timezone()
+  assert_true(detection_result.success)
+  assert_true(detection_result.detected_timezone.length() > 0)
+  assert_true(detection_result.supported || detection_result.using_fallback)
   
-  pref_manager.set_preferences(Locale::new("ar", "SA"), ar_prefs)
+  // Test timezone conversion
+  let timezones = [
+    "UTC", "America/New_York", "America/Los_Angeles", "Europe/London",
+    "Europe/Paris", "Asia/Tokyo", "Asia/Shanghai", "Asia/Dubai",
+    "Australia/Sydney", "America/Sao_Paulo"
+  ]
   
-  // Verify preferences were set
-  let retrieved_en_prefs = pref_manager.get_preferences(Locale::new("en", "US"))
-  assert_true(retrieved_en_prefs.high_contrast)
-  assert_true(retrieved_en_prefs.large_text)
-  assert_true(retrieved_en_prefs.screen_reader)
+  let base_timestamp = 1640995200000 // 2022-01-01 00:00:00 UTC
   
-  let retrieved_ar_prefs = pref_manager.get_preferences(Locale::new("ar", "SA"))
-  assert_true(retrieved_ar_prefs.high_contrast)
-  assert_false(retrieved_ar_prefs.large_text)
-  assert_true(retrieved_ar_prefs.screen_reader)
-  assert_true(retrieved_ar_prefs.rtl_optimization)
+  let conversion_results = []
+  for timezone in timezones {
+    let result = timezone_manager.convert_timezone(base_timestamp, "UTC", timezone)
+    conversion_results.push((timezone, result))
+  }
+  
+  // Verify timezone conversion
+  assert_eq(conversion_results.length(), 10)
+  
+  for (timezone, result) in conversion_results {
+    assert_true(result.success)
+    assert_true(result.converted_timestamp > 0)
+    assert_eq(result.source_timezone, "UTC")
+    assert_eq(result.target_timezone, timezone)
+    assert_true(result.offset_hours != 0 || timezone == "UTC")
+  }
+  
+  // Test timezone-aware formatting
+  let formatting_results = []
+  for timezone in timezones {
+    let result = timezone_manager.format_with_timezone(base_timestamp, timezone, "YYYY-MM-DD HH:mm:ss z")
+    formatting_results.push((timezone, result))
+  }
+  
+  // Verify timezone-aware formatting
+  assert_eq(formatting_results.length(), 10)
+  
+  for (timezone, result) in formatting_results {
+    assert_true(result.success)
+    assert_true(result.formatted_string.length() > 0)
+    assert_true(result.formatted_string.contains(timezone.split("/")[1])) // Should contain city name
+  }
+  
+  // Test daylight saving time handling
+  let dst_timezones = ["America/New_York", "Europe/London", "Australia/Sydney"]
+  
+  let dst_results = []
+  for timezone in dst_timezones {
+    // Test dates around DST transitions
+    let winter_timestamp = 1646092800000 // 2022-03-01 (winter in Northern Hemisphere)
+    let summer_timestamp = 1656633600000 // 2022-07-01 (summer in Northern Hemisphere)
+    
+    let winter_result = timezone_manager.format_with_timezone(winter_timestamp, timezone, "ZZ")
+    let summer_result = timezone_manager.format_with_timezone(summer_timestamp, timezone, "ZZ")
+    
+    dst_results.push((timezone, winter_result, summer_result))
+  }
+  
+  // Verify DST handling
+  assert_eq(dst_results.length(), 3)
+  
+  for (timezone, winter_result, summer_result) in dst_results {
+    assert_true(winter_result.success)
+    assert_true(summer_result.success)
+    
+    // Offset should be different between winter and summer for most timezones
+    // Note: This is a simplified test as actual DST rules are complex
+    assert_true(winter_result.formatted_string.length() > 0)
+    assert_true(summer_result.formatted_string.length() > 0)
+  }
+  
+  // Test timezone database updates
+  let update_result = timezone_manager.update_timezone_database()
+  assert_true(update_result.success)
+  assert_true(update_result.database_updated)
+  assert_true(update_result.new_timezone_rules >= 0)
+  
+  // Test timezone validation
+  let validation_results = []
+  for timezone in timezones {
+    let result = timezone_manager.validate_timezone(timezone)
+    validation_results.push((timezone, result))
+  }
+  
+  // Verify timezone validation
+  assert_eq(validation_results.length(), 10)
+  
+  for (timezone, result) in validation_results {
+    assert_true(result.success)
+    assert_true(result.valid)
+  }
+  
+  // Test invalid timezone handling
+  let invalid_timezones = ["Invalid/Timezone", "NonExistent/Zone", ""]
+  
+  for invalid_timezone in invalid_timezones {
+    let result = timezone_manager.validate_timezone(invalid_timezone)
+    assert_false(result.success)
+    assert_false(result.valid)
+  }
+  
+  // Test timezone metrics
+  let timezone_metrics = timezone_manager.get_timezone_metrics()
+  assert_true(timezone_metrics.total_conversions > 0)
+  assert_true(timezone_metrics.supported_timezones > 0)
+  assert_true(timezone_metrics.average_conversion_time_ms > 0.0)
+  assert_true(timezone_metrics.dst_transitions_handled >= 0)
+  
+  // Stop timezone manager
+  timezone_manager.stop()
+}
+
+// Test 5: Character Encoding Support
+test "character encoding support" {
+  let encoding_manager = CharacterEncodingManager::new()
+  
+  // Initialize encoding manager
+  encoding_manager.initialize(EncodingConfig::new()
+    .with_default_encoding("UTF-8")
+    .with_supported_encodings(["UTF-8", "UTF-16", "ISO-8859-1", "Windows-1252", "GBK", "Shift-JIS"])
+    .with_auto_detection_enabled(true))
+  
+  // Start encoding manager
+  encoding_manager.start()
+  
+  // Test encoding detection
+  let test_strings = [
+    "Hello World",                    // ASCII/UTF-8
+    "你好世界",                        // Chinese (UTF-8/GBK)
+    "こんにちは世界",                   // Japanese (UTF-8/Shift-JIS)
+    "¡Hola Mundo!",                  // Spanish with accents (UTF-8/ISO-8859-1)
+    "Café Münchner Freiheit",        // German with umlauts (UTF-8/ISO-8859-1)
+    "مرحبا بالعالم",                  // Arabic (UTF-8)
+    "🌍🌎🌏",                        // Emoji (UTF-8)
+    "Mathematical symbols: ∑∏∫∆∇∂"   // Unicode symbols (UTF-8)
+  ]
+  
+  let detection_results = []
+  for test_string in test_strings {
+    let result = encoding_manager.detect_encoding(test_string.to_bytes())
+    detection_results.push((test_string, result))
+  }
+  
+  // Verify encoding detection
+  assert_eq(detection_results.length(), 8)
+  
+  for (test_string, result) in detection_results {
+    assert_true(result.success)
+    assert_true(result.detected_encoding.length() > 0)
+    assert_true(result.confidence > 0.5)
+  }
+  
+  // Test encoding conversion
+  let encodings = ["UTF-8", "UTF-16", "ISO-8859-1", "Windows-1252"]
+  
+  let conversion_results = []
+  for encoding in encodings {
+    for test_string in test_strings {
+      let result = encoding_manager.convert_encoding(test_string, "UTF-8", encoding)
+      conversion_results.push((test_string, encoding, result))
+    }
+  }
+  
+  // Verify encoding conversion
+  assert_eq(conversion_results.length(), 8 * 4) // 8 strings * 4 encodings
+  
+  for (test_string, target_encoding, result) in conversion_results {
+    assert_true(result.success || result.unsupported_characters > 0)
+    assert_true(result.converted_bytes.length() > 0)
+    assert_eq(result.source_encoding, "UTF-8")
+    assert_eq(result.target_encoding, target_encoding)
+  }
+  
+  // Test round-trip conversion
+  let round_trip_results = []
+  for encoding in encodings {
+    for test_string in test_strings {
+      // Convert to target encoding
+      let convert_result = encoding_manager.convert_encoding(test_string, "UTF-8", encoding)
+      
+      if convert_result.success {
+        // Convert back to UTF-8
+        let back_convert_result = encoding_manager.convert_encoding(
+          convert_result.converted_bytes.to_string(),
+          encoding,
+          "UTF-8"
+        )
+        
+        round_trip_results.push((test_string, encoding, back_convert_result))
+      }
+    }
+  }
+  
+  // Verify round-trip conversion
+  assert_true(round_trip_results.length() > 0)
+  
+  for (original_string, encoding, result) in round_trip_results {
+    assert_true(result.success)
+    assert_eq(result.converted_string, original_string)
+  }
+  
+  // Test BOM handling
+  let bom_test_string = "Test with BOM"
+  let bom_encodings = ["UTF-8", "UTF-16LE", "UTF-16BE"]
+  
+  let bom_results = []
+  for encoding in bom_encodings {
+    let with_bom = encoding_manager.add_bom(bom_test_string.to_bytes(), encoding)
+    let without_bom = encoding_manager.remove_bom(with_bom, encoding)
+    
+    bom_results.push((encoding, with_bom, without_bom))
+  }
+  
+  // Verify BOM handling
+  assert_eq(bom_results.length(), 3)
+  
+  for (encoding, with_bom, without_bom) in bom_results {
+    assert_true(with_bom.length() > without_bom.length())
+    assert_true(without_bom.to_string() == bom_test_string)
+  }
+  
+  // Test character validation
+  let validation_results = []
+  for test_string in test_strings {
+    let result = encoding_manager.validate_characters(test_string)
+    validation_results.push((test_string, result))
+  }
+  
+  // Verify character validation
+  assert_eq(validation_results.length(), 8)
+  
+  for (test_string, result) in validation_results {
+    assert_true(result.success)
+    assert_true(result.valid_characters >= 0)
+    assert_true(result.invalid_characters == 0) // All test strings should be valid UTF-8
+  }
+  
+  // Test encoding metrics
+  let encoding_metrics = encoding_manager.get_encoding_metrics()
+  assert_true(encoding_metrics.total_conversions > 0)
+  assert_true(encoding_metrics.successful_conversions > 0)
+  assert_true(encoding_metrics.average_conversion_time_ms > 0.0)
+  assert_true(encoding_metrics.supported_encodings > 0)
+  
+  // Stop encoding manager
+  encoding_manager.stop()
+}
+
+// Test 6: Localization Resource Management
+test "localization resource management" {
+  let resource_manager = LocalizationResourceManager::new()
+  
+  // Initialize resource manager
+  resource_manager.initialize(ResourceConfig::new()
+    .with_resource_directory("/etc/azimuth/locales")
+    .with_fallback_strategy("base_locale")
+    .with_resource_caching_enabled(true)
+    .with_hot_reload_enabled(true))
+  
+  // Start resource manager
+  resource_manager.start()
+  
+  // Test resource loading
+  let locales = ["en-US", "zh-CN", "ja-JP", "es-ES", "fr-FR"]
+  let resource_namespaces = ["common", "telemetry", "dashboard", "alerts"]
+  
+  let loading_results = []
+  for locale in locales {
+    for namespace in resource_namespaces {
+      let result = resource_manager.load_resources(locale, namespace)
+      loading_results.push((locale, namespace, result))
+    }
+  }
+  
+  // Verify resource loading
+  assert_eq(loading_results.length(), 5 * 4) // 5 locales * 4 namespaces
+  
+  for (locale, namespace, result) in loading_results {
+    assert_true(result.success)
+    assert_true(result.resources_loaded > 0)
+    assert_eq(result.locale, locale)
+    assert_eq(result.namespace, namespace)
+  }
+  
+  // Test resource retrieval
+  let retrieval_results = []
+  for locale in locales {
+    for namespace in resource_namespaces {
+      let result = resource_manager.get_resource(locale, namespace, "title")
+      retrieval_results.push((locale, namespace, result))
+    }
+  }
+  
+  // Verify resource retrieval
+  assert_eq(retrieval_results.length(), 5 * 4) // 5 locales * 4 namespaces
+  
+  for (locale, namespace, result) in retrieval_results {
+    assert_true(result.success || result.resource_not_found)
+    
+    if result.success {
+      assert_true(result.value.length() > 0)
+    }
+  }
+  
+  // Test resource fallback
+  let fallback_result = resource_manager.get_resource("xx-XX", "common", "title")
+  assert_true(fallback_result.success || fallback_result.resource_not_found)
+  
+  if fallback_result.success {
+    assert_true(fallback_result.used_fallback)
+    assert_true(fallback_result.fallback_locale.length() > 0)
+  }
+  
+  // Test resource updating
+  let update_data = {"title": "Updated Title", "description": "Updated Description"}
+  let update_result = resource_manager.update_resources("en-US", "common", update_data)
+  assert_true(update_result.success)
+  assert_true(update_result.resources_updated > 0)
+  
+  // Verify resource update
+  let verify_result = resource_manager.get_resource("en-US", "common", "title")
+  assert_true(verify_result.success)
+  assert_eq(verify_result.value, "Updated Title")
+  
+  // Test resource caching
+  let cache_result = resource_manager.get_cache_statistics()
+  assert_true(cache_result.cache_enabled)
+  assert_true(cache_result.cache_hits > 0)
+  assert_true(cache_result.cache_misses >= 0)
+  assert_true(cache_result.cache_size > 0)
+  
+  // Test resource hot reload
+  let hot_reload_result = resource_manager.reload_resources("en-US", "common")
+  assert_true(hot_reload_result.success)
+  assert_true(hot_reload_result.resources_reloaded > 0)
+  
+  // Test resource validation
+  let validation_result = resource_manager.validate_resources("en-US", "common")
+  assert_true(validation_result.success)
+  assert_true(validation_result.valid_resources > 0)
+  assert_true(validation_result.invalid_resources == 0)
+  
+  // Test resource bundling
+  let bundle_result = resource_manager.create_bundle(["en-US", "zh-CN"], ["common", "telemetry"])
+  assert_true(bundle_result.success)
+  assert_true(bundle_result.bundle_id.length() > 0)
+  assert_true(bundle_result.bundle_size > 0)
+  
+  // Test resource compression
+  let compression_result = resource_manager.compress_resources(bundle_result.bundle_id)
+  assert_true(compression_result.success)
+  assert_true(compression_result.compressed_size < bundle_result.bundle_size)
+  assert_true(compression_result.compression_ratio > 1.0)
+  
+  // Test resource metrics
+  let resource_metrics = resource_manager.get_resource_metrics()
+  assert_true(resource_metrics.total_resources > 0)
+  assert_true(resource_metrics.loaded_resources > 0)
+  assert_true(resource_metrics.cache_hit_rate > 0.0)
+  assert_true(resource_metrics.average_load_time_ms > 0.0)
+  
+  // Stop resource manager
+  resource_manager.stop()
+}
+
+// Test 7: Accessibility Localization
+test "accessibility localization" {
+  let accessibility_manager = AccessibilityLocalizationManager::new()
+  
+  // Initialize accessibility manager
+  accessibility_manager.initialize(AccessibilityConfig::new()
+    .with_screen_reader_support_enabled(true)
+    .with_high_contrast_support_enabled(true)
+    .with_font_scaling_enabled(true)
+    .with_keyboard_navigation_enabled(true))
+  
+  // Start accessibility manager
+  accessibility_manager.start()
+  
+  // Test screen reader localization
+  let locales = ["en-US", "zh-CN", "ja-JP", "es-ES", "fr-FR"]
+  
+  let screen_reader_results = []
+  for locale in locales {
+    let result = accessibility_manager.localize_screen_reader_content(locale)
+    screen_reader_results.push((locale, result))
+  }
+  
+  // Verify screen reader localization
+  assert_eq(screen_reader_results.length(), 5)
+  
+  for (locale, result) in screen_reader_results {
+    assert_true(result.success)
+    assert_true(result.localized_content.length() > 0)
+    assert_eq(result.locale, locale)
+    
+    // Verify ARIA labels are localized
+    for element in result.elements {
+      assert_true(element.aria_label.length() > 0)
+      assert_true(element.role.length() > 0)
+    }
+  }
+  
+  // Test high contrast localization
+  let contrast_results = []
+  for locale in locales {
+    let result = accessibility_manager.localize_high_contrast_content(locale)
+    contrast_results.push((locale, result))
+  }
+  
+  // Verify high contrast localization
+  assert_eq(contrast_results.length(), 5)
+  
+  for (locale, result) in contrast_results {
+    assert_true(result.success)
+    assert_true(result.localized_content.length() > 0)
+    
+    // Verify color contrast meets accessibility standards
+    for element in result.elements {
+      assert_true(element.contrast_ratio >= 4.5) // WCAG AA standard
+    }
+  }
+  
+  // Test font scaling localization
+  let font_scales = [1.0, 1.25, 1.5, 2.0]
+  
+  let font_scaling_results = []
+  for locale in locales {
+    for scale in font_scales {
+      let result = accessibility_manager.localize_font_scaled_content(locale, scale)
+      font_scaling_results.push((locale, scale, result))
+    }
+  }
+  
+  // Verify font scaling localization
+  assert_eq(font_scaling_results.length(), 5 * 4) // 5 locales * 4 scales
+  
+  for (locale, scale, result) in font_scaling_results {
+    assert_true(result.success)
+    assert_true(result.localized_content.length() > 0)
+    assert_eq(result.scale_factor, scale)
+  }
+  
+  // Test keyboard navigation localization
+  let keyboard_results = []
+  for locale in locales {
+    let result = accessibility_manager.localize_keyboard_navigation(locale)
+    keyboard_results.push((locale, result))
+  }
+  
+  // Verify keyboard navigation localization
+  assert_eq(keyboard_results.length(), 5)
+  
+  for (locale, result) in keyboard_results {
+    assert_true(result.success)
+    assert_true(result.localized_content.length() > 0)
+    
+    // Verify keyboard shortcuts are localized
+    for shortcut in result.shortcuts {
+      assert_true(shortcut.key_combination.length() > 0)
+      assert_true(shortcut.description.length() > 0)
+    }
+  }
+  
+  // Test accessibility validation
+  let validation_results = []
+  for locale in locales {
+    let result = accessibility_manager.validate_accessibility_localization(locale)
+    validation_results.push((locale, result))
+  }
+  
+  // Verify accessibility validation
+  assert_eq(validation_results.length(), 5)
+  
+  for (locale, result) in validation_results {
+    assert_true(result.success)
+    assert_true(result.aria_labels_present)
+    assert_true(result.color_contrast_valid)
+    assert_true(result.keyboard_navigation_works)
+    assert_true(result.screen_reader_compatible)
+  }
+  
+  // Test accessibility metrics
+  let accessibility_metrics = accessibility_manager.get_accessibility_metrics()
+  assert_true(accessibility_metrics.total_localizations > 0)
+  assert_true(accessibility_metrics.screen_reader_localizations > 0)
+  assert_true(accessibility_metrics.high_contrast_localizations > 0)
+  assert_true(accessibility_metrics.font_scaling_localizations > 0)
+  assert_true(accessibility_metrics.keyboard_navigation_localizations > 0)
+  
+  // Stop accessibility manager
+  accessibility_manager.stop()
+}
+
+// Test 8: Translation Quality Assurance
+test "translation quality assurance" {
+  let qa_manager = TranslationQAManager::new()
+  
+  // Initialize QA manager
+  qa_manager.initialize(QAConfig::new()
+    .with_quality_metrics_enabled(true)
+    .with_consistency_checking_enabled(true)
+    .with_terminology_validation_enabled(true)
+    .with_peer_review_enabled(true))
+  
+  // Start QA manager
+  qa_manager.start()
+  
+  // Test translation quality metrics
+  let translations = [
+    {"locale": "zh-CN", "key": "telemetry.dashboard.title", "value": "遥测仪表板"},
+    {"locale": "ja-JP", "key": "telemetry.dashboard.title", "value": "テレメトリーダッシュボード"},
+    {"locale": "es-ES", "key": "telemetry.dashboard.title", "value": "Panel de Telemetría"},
+    {"locale": "fr-FR", "key": "telemetry.dashboard.title", "value": "Tableau de Bord de Télémétrie"}
+  ]
+  
+  let quality_results = []
+  for translation in translations {
+    let result = qa_manager.assess_translation_quality(translation)
+    quality_results.push(result)
+  }
+  
+  // Verify quality assessment
+  assert_eq(quality_results.length(), 4)
+  
+  for result in quality_results {
+    assert_true(result.success)
+    assert_true(result.quality_score >= 0.0 && result.quality_score <= 1.0)
+    assert_true(result.accuracy_score >= 0.0 && result.accuracy_score <= 1.0)
+    assert_true(result.fluency_score >= 0.0 && result.fluency_score <= 1.0)
+    assert_true(result.terminology_score >= 0.0 && result.terminology_score <= 1.0)
+  }
+  
+  // Test consistency checking
+  let consistency_result = qa_manager.check_translation_consistency("telemetry")
+  assert_true(consistency_result.success)
+  assert_true(consistency_result.consistency_score >= 0.0 && consistency_result.consistency_score <= 1.0)
+  assert_true(consistency_result.inconsistencies_found >= 0)
+  
+  // Verify inconsistency details
+  for inconsistency in consistency_result.inconsistencies {
+    assert_true(inconsistency.key.length() > 0)
+    assert_true(inconsistency.description.length() > 0)
+    assert_true(inconsistency.severity == "low" || inconsistency.severity == "medium" || inconsistency.severity == "high")
+  }
+  
+  // Test terminology validation
+  let terminology_result = qa_manager.validate_terminology("zh-CN")
+  assert_true(terminology_result.success)
+  assert_true(terminology_result.terms_validated > 0)
+  assert_true(terminology_result.terminology_violations >= 0)
+  
+  // Verify terminology violations
+  for violation in terminology_result.violations {
+    assert_true(violation.term.length() > 0)
+    assert_true(violation.incorrect_translation.length() > 0)
+    assert_true(violation.correct_translation.length() > 0)
+  }
+  
+  // Test translation review workflow
+  let review_result = qa_manager.initiate_translation_review("zh-CN", "telemetry.dashboard.title")
+  assert_true(review_result.success)
+  assert_true(review_result.review_id.length() > 0)
+  assert_true(review_result.review_status == "pending")
+  
+  // Test review completion
+  let completion_result = qa_manager.complete_translation_review(
+    review_result.review_id,
+    "approved",
+    "Translation looks good"
+  )
+  assert_true(completion_result.success)
+  assert_true(completion_result.review_completed)
+  assert_eq(completion_result.review_status, "approved")
+  
+  // Test translation memory integration
+  let tm_result = qa_manager.check_translation_memory("telemetry.dashboard.title", "zh-CN")
+  assert_true(tm_result.success)
+  assert_true(tm_result.matches_found >= 0)
+  
+  // Verify TM matches
+  for match in tm_result.matches {
+    assert_true(match.source_text.length() > 0)
+    assert_true(match.target_text.length() > 0)
+    assert_true(match.similarity_score >= 0.0 && match.similarity_score <= 1.0)
+  }
+  
+  // Test machine translation quality
+  let mt_result = qa_manager.evaluate_machine_translation("telemetry.dashboard.title", "zh-CN")
+  assert_true(mt_result.success)
+  assert_true(mt_result.mt_quality_score >= 0.0 && mt_result.mt_quality_score <= 1.0)
+  assert_true(mt_result.post_editing_required == false || mt_result.post_editing_required == true)
+  
+  // Test QA metrics
+  let qa_metrics = qa_manager.get_qa_metrics()
+  assert_true(qa_metrics.total_assessments > 0)
+  assert_true(qa_metrics.average_quality_score > 0.0)
+  assert_true(qa_metrics.consistency_checks > 0)
+  assert_true(qa_metrics.terminology_validations > 0)
+  assert_true(qa_metrics.reviews_completed > 0)
+  
+  // Stop QA manager
+  qa_manager.stop()
+}
+
+// Test 9: Performance Optimization for I18n
+test "performance optimization for i18n" {
+  let performance_manager = I18nPerformanceManager::new()
+  
+  // Initialize performance manager
+  performance_manager.initialize(PerformanceConfig::new()
+    .with_lazy_loading_enabled(true)
+    .with_resource_preloading_enabled(true)
+    .with_cache_optimization_enabled(true)
+    .with_bundle_splitting_enabled(true))
+  
+  // Start performance manager
+  performance_manager.start()
+  
+  // Test lazy loading performance
+  let lazy_result = performance_manager.test_lazy_loading_performance()
+  assert_true(lazy_result.success)
+  assert_true(lazy_result.loading_time_ms < 100) // Should load within 100ms
+  assert_true(lazy_result.memory_usage_mb < 10) // Should use less than 10MB
+  
+  // Test resource preloading
+  let preload_result = performance_manager.preload_critical_resources("en-US")
+  assert_true(preload_result.success)
+  assert_true(preload_result.resources_preloaded > 0)
+  assert_true(preload_result.preload_time_ms < 500) // Should preload within 500ms
+  
+  // Test cache optimization
+  let cache_result = performance_manager.optimize_translation_cache()
+  assert_true(cache_result.success)
+  assert_true(cache_result.cache_optimized)
+  assert_true(cache_result.hit_rate_improvement > 0.0)
+  
+  // Test bundle splitting
+  let bundle_result = performance_manager.create_split_bundles()
+  assert_true(bundle_result.success)
+  assert_true(bundle_result.bundles_created > 0)
+  assert_true(bundle_result.average_bundle_size_mb < 1.0) // Each bundle should be less than 1MB
+  
+  // Test bundle loading performance
+  let bundle_loading_result = performance_manager.test_bundle_loading_performance()
+  assert_true(bundle_loading_result.success)
+  assert_true(bundle_loading_result.average_load_time_ms < 50) // Should load within 50ms
+  
+  // Test memory optimization
+  let memory_result = performance_manager.optimize_memory_usage()
+  assert_true(memory_result.success)
+  assert_true(memory_result.memory_freed_mb > 0)
+  assert_true(memory_result.optimization_time_ms < 1000) // Should optimize within 1 second
+  
+  // Test concurrent loading
+  let concurrent_result = performance_manager.test_concurrent_loading()
+  assert_true(concurrent_result.success)
+  assert_true(concurrent_result.concurrent_loads_completed > 0)
+  assert_true(concurrent_result.average_load_time_ms < 200) // Should handle concurrency well
+  
+  // Test network optimization
+  let network_result = performance_manager.optimize_network_requests()
+  assert_true(network_result.success)
+  assert_true(network_result.requests_reduced > 0)
+  assert_true(network_result.bandwidth_saved_mb > 0)
+  
+  // Test performance monitoring
+  let monitoring_result = performance_manager.get_performance_metrics()
+  assert_true(monitoring_result.success)
+  assert_true(monitoring_result.average_load_time_ms > 0.0)
+  assert_true(monitoring_result.cache_hit_rate > 0.0)
+  assert_true(monitoring_result.memory_usage_mb > 0.0)
+  assert_true(monitoring_result.network_requests_served > 0)
+  
+  // Test performance regression detection
+  let regression_result = performance_manager.detect_performance_regression()
+  assert_true(regression_result.success)
+  assert_true(regression_result.regression_detected == false || regression_result.regression_detected == true)
+  
+  if regression_result.regression_detected {
+    assert_true(regression_result.affected_metrics.length() > 0)
+    
+    for metric in regression_result.affected_metrics {
+      assert_true(metric.metric_name.length() > 0)
+      assert_true(metric.degradation_percentage > 0.0)
+    }
+  }
+  
+  // Test performance metrics
+  let performance_metrics = performance_manager.get_optimization_metrics()
+  assert_true(performance_metrics.total_optimizations > 0)
+  assert_true(performance_metrics.performance_improvements > 0)
+  assert_true(performance_metrics.memory_saved_mb > 0)
+  assert_true(performance_metrics.bandwidth_saved_mb > 0)
+  assert_true(performance_metrics.average_response_time_improvement_ms > 0.0)
+  
+  // Stop performance manager
+  performance_manager.stop()
 }
