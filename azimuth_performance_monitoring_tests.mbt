@@ -1,360 +1,562 @@
 // Azimuth Telemetry System - Performance Monitoring Tests
-// This file contains test cases for performance monitoring functionality
+// This file contains comprehensive test cases for performance monitoring functionality
 
 // Test 1: CPU Performance Monitoring
 test "cpu performance monitoring" {
   let monitor = PerformanceMonitor::new()
   
-  // Test CPU usage measurement
-  let cpu_usage = monitor.measure_cpu_usage()
-  assert_true(cpu_usage >= 0.0)
-  assert_true(cpu_usage <= 100.0)
+  // Start CPU monitoring
+  let cpu_monitor = PerformanceMonitor::start_cpu_monitoring(monitor, 100) // 100ms interval
   
-  // Test CPU time measurement
-  let start_time = monitor.get_cpu_time()
+  // Simulate CPU-intensive work
+  let start_time = Time::now()
+  let mut result = 1
   
-  // Simulate some CPU work
-  let mut sum = 0
-  for i in 0..=10000 {
-    sum = sum + i
+  for i in 1..=100000 {
+    result = result * i
+    if result > 1000000 {
+      result = result / 1000
+    }
   }
   
-  let end_time = monitor.get_cpu_time()
-  let cpu_time_diff = end_time - start_time
-  assert_true(cpu_time_diff > 0)
+  let end_time = Time::now()
+  let work_duration = end_time - start_time
   
-  // Test CPU core information
-  let cpu_cores = monitor.get_cpu_cores()
-  assert_true(cpu_cores > 0)
+  // Stop CPU monitoring
+  let cpu_metrics = PerformanceMonitor::stop_cpu_monitoring(cpu_monitor)
   
-  // Test CPU frequency measurement
-  let cpu_frequency = monitor.get_cpu_frequency()
-  assert_true(cpu_frequency > 0.0)
+  // Verify CPU metrics
+  match cpu_metrics {
+    CpuMetrics(usage_percentage, user_time, system_time, idle_time) => {
+      assert_true(usage_percentage >= 0.0 && usage_percentage <= 100.0)
+      assert_true(user_time > 0)
+      assert_true(system_time >= 0)
+      assert_true(idle_time >= 0)
+    }
+    _ => assert_true(false)
+  }
+  
+  // Verify work duration is reasonable
+  assert_true(work_duration > 0L)
+  assert_true(work_duration < 10000L) // Less than 10 seconds
 }
 
 // Test 2: Memory Performance Monitoring
 test "memory performance monitoring" {
   let monitor = PerformanceMonitor::new()
   
-  // Test memory usage measurement
-  let memory_usage = monitor.measure_memory_usage()
-  assert_true(memory_usage.total > 0)
-  assert_true(memory_usage.used >= 0)
-  assert_true(memory_usage.free > 0)
-  assert_true(memory_usage.used <= memory_usage.total)
+  // Start memory monitoring
+  let memory_monitor = PerformanceMonitor::start_memory_monitoring(monitor, 100) // 100ms interval
   
-  // Test heap memory measurement
-  let heap_before = monitor.get_heap_memory()
+  // Simulate memory-intensive work
+  let large_arrays = []
   
-  // Allocate some memory
-  let large_array = Array::init(10000, 0)
-  for i in 0..large_array.length() {
-    large_array[i] = i
-  }
-  
-  let heap_after = monitor.get_heap_memory()
-  assert_true(heap_after.used >= heap_before.used)
-  
-  // Test memory leak detection
-  let leak_detector = MemoryLeakDetector::new()
-  leak_detector.start_monitoring()
-  
-  // Simulate potential memory leak
-  let mut leaky_data = []
-  for i in 0..=100 {
-    leaky_data = leaky_data.push([i, i+1, i+2, i+3, i+4])
-  }
-  
-  let leak_report = leak_detector.stop_monitoring()
-  assert_true(leak_report.memory_growth > 0)
-  
-  // Test garbage collection monitoring
-  let gc_before = monitor.get_gc_stats()
-  monitor.trigger_gc()
-  let gc_after = monitor.get_gc_stats()
-  
-  assert_true(gc_after.collections >= gc_before.collections)
-}
-
-// Test 3: Network Performance Monitoring
-test "network performance monitoring" {
-  let monitor = PerformanceMonitor::new()
-  
-  // Test network interface detection
-  let interfaces = monitor.get_network_interfaces()
-  assert_true(interfaces.length() > 0)
-  
-  // Test network throughput measurement
-  let throughput_before = monitor.get_network_throughput()
-  
-  // Simulate network activity
-  let client = HttpClient::new()
-  let request = HttpRequest::new("GET", "https://httpbin.org/json", [], None)
-  let response = HttpClient::send(client, request)
-  
-  let throughput_after = monitor.get_network_throughput()
-  
-  // Verify throughput increased
-  assert_true(throughput_after.bytes_sent >= throughput_before.bytes_sent)
-  assert_true(throughput_after.bytes_received >= throughput_before.bytes_received)
-  
-  // Test connection pool monitoring
-  let pool_stats = monitor.get_connection_pool_stats()
-  assert_true(pool_stats.active_connections >= 0)
-  assert_true(pool_stats.idle_connections >= 0)
-  assert_true(pool_stats.total_connections >= pool_stats.active_connections)
-  
-  // Test latency measurement
-  let latency = monitor.measure_network_latency("https://httpbin.org")
-  assert_true(latency > 0)
-  assert_true(latency < 10000) // Should be less than 10 seconds
-}
-
-// Test 4: Disk I/O Performance Monitoring
-test "disk io performance monitoring" {
-  let monitor = PerformanceMonitor::new()
-  
-  // Test disk space measurement
-  let disk_space = monitor.get_disk_space("/")
-  assert_true(disk_space.total > 0)
-  assert_true(disk_space.used >= 0)
-  assert_true(disk_space.free > 0)
-  assert_true(disk_space.used <= disk_space.total)
-  
-  // Test disk I/O measurement
-  let io_before = monitor.get_disk_io_stats()
-  
-  // Simulate disk I/O
-  let test_data = "Performance test data".repeat(1000)
-  let temp_file = "/tmp/perf_test.dat"
-  
-  // Write test
-  let file = File::open_for_writing(temp_file)
-  File::write(file, test_data)
-  File::close(file)
-  
-  // Read test
-  let file = File::open_for_reading(temp_file)
-  let read_data = File::read_all(file)
-  File::close(file)
-  
-  let io_after = monitor.get_disk_io_stats()
-  
-  // Verify I/O statistics
-  assert_true(io_after.bytes_written >= io_before.bytes_written)
-  assert_true(io_after.bytes_read >= io_before.bytes_read)
-  assert_true(io_after.write_operations >= io_before.write_operations)
-  assert_true(io_after.read_operations >= io_before.read_operations)
-  
-  // Test file system performance
-  let fs_perf = monitor.measure_filesystem_performance("/")
-  assert_true(fs_perf.avg_read_time > 0)
-  assert_true(fs_perf.avg_write_time > 0)
-  assert_true(fs_perf.iops >= 0)
-}
-
-// Test 5: Application Performance Monitoring
-test "application performance monitoring" {
-  let monitor = PerformanceMonitor::new()
-  
-  // Test request processing time
-  let start_time = monitor.get_current_time()
-  
-  // Simulate application processing
-  let mut result = 1
-  for i in 1..=1000 {
-    result = result * i
-  }
-  
-  let end_time = monitor.get_current_time()
-  let processing_time = end_time - start_time
-  assert_true(processing_time > 0)
-  
-  // Test throughput measurement
-  let throughput_monitor = ThroughputMonitor::new()
-  throughput_monitor.start()
-  
-  // Simulate request processing
-  for i in 0..=100 {
-    // Simulate processing time
-    let mut dummy = 0
-    for j in 0..=100 {
-      dummy = dummy + j
+  for i in 0..=10 {
+    let large_array = []
+    for j in 0..=10000 {
+      large_array.push(j * i)
     }
-    throughput_monitor.record_request()
+    large_arrays.push(large_array)
   }
   
-  let throughput = throughput_monitor.stop()
-  assert_true(throughput.requests_per_second > 0)
-  
-  // Test response time distribution
-  let response_time_monitor = ResponseTimeMonitor::new()
-  
-  // Record various response times
-  response_time_monitor.record(10)   // 10ms
-  response_time_monitor.record(25)   // 25ms
-  response_time_monitor.record(50)   // 50ms
-  response_time_monitor.record(100)  // 100ms
-  response_time_monitor.record(200)  // 200ms
-  
-  let stats = response_time_monitor.get_statistics()
-  assert_eq(stats.count, 5)
-  assert_eq(stats.min, 10)
-  assert_eq(stats.max, 200)
-  assert_eq(stats.p50, 50)  // Median
-  assert_eq(stats.p95, 200) // 95th percentile
-  assert_eq(stats.p99, 200) // 99th percentile
-}
-
-// Test 6: Database Performance Monitoring
-test "database performance monitoring" {
-  let monitor = PerformanceMonitor::new()
-  
-  // Test database connection monitoring
-  let db_monitor = DatabaseMonitor::new("test_connection_string")
-  
-  // Test connection pool metrics
-  let pool_metrics = db_monitor.get_connection_pool_metrics()
-  assert_true(pool_metrics.active_connections >= 0)
-  assert_true(pool_metrics.idle_connections >= 0)
-  assert_true(pool_metrics.total_connections >= pool_metrics.active_connections)
-  
-  // Test query performance
-  let query_start = monitor.get_current_time()
-  
-  // Simulate database query
-  let query_result = db_monitor.execute_query("SELECT * FROM test_table WHERE id = 1")
-  
-  let query_end = monitor.get_current_time()
-  let query_time = query_end - query_start
-  assert_true(query_time > 0)
-  
-  // Test query statistics
-  let query_stats = db_monitor.get_query_statistics()
-  assert_true(query_stats.total_queries >= 0)
-  assert_true(query_stats.avg_query_time > 0)
-  assert_true(query_stats.slow_queries >= 0)
-  
-  // Test transaction monitoring
-  let tx_start = monitor.get_current_time()
-  
-  // Simulate transaction
-  db_monitor.begin_transaction()
-  db_monitor.execute_query("INSERT INTO test_table VALUES (1, 'test')")
-  db_monitor.execute_query("UPDATE test_table SET name = 'updated' WHERE id = 1")
-  db_monitor.commit_transaction()
-  
-  let tx_end = monitor.get_current_time()
-  let tx_time = tx_end - tx_start
-  assert_true(tx_time > 0)
-  
-  // Test deadlock detection
-  let deadlock_detector = DeadlockDetector::new()
-  let deadlock_report = deadlock_detector.check_for_deadlocks()
-  assert_true(deadlock_report.deadlock_count >= 0)
-}
-
-// Test 7: Cache Performance Monitoring
-test "cache performance monitoring" {
-  let monitor = PerformanceMonitor::new()
-  let cache = Cache::new(1000) // Max 1000 items
-  
-  // Test cache hit ratio
-  let cache_monitor = CacheMonitor::new(cache)
-  
-  // Populate cache
-  for i in 0..=100 {
-    Cache::set(cache, "key_" + i.to_string(), "value_" + i.to_string())
-  }
-  
-  // Test cache hits
-  for i in 0..=50 {
-    let value = Cache::get(cache, "key_" + i.to_string())
-    match value {
-      Some(_) => cache_monitor.record_hit()
-      None => cache_monitor.record_miss()
+  // Process arrays
+  let mut total_sum = 0
+  for array in large_arrays {
+    for value in array {
+      total_sum = total_sum + value
     }
   }
   
-  // Test cache misses
-  for i in 101..=150 {
-    let value = Cache::get(cache, "key_" + i.to_string())
-    match value {
-      Some(_) => cache_monitor.record_hit()
-      None => cache_monitor.record_miss()
+  // Stop memory monitoring
+  let memory_metrics = PerformanceMonitor::stop_memory_monitoring(memory_monitor)
+  
+  // Verify memory metrics
+  match memory_metrics {
+    MemoryMetrics(total_used, heap_used, stack_used, gc_count) => {
+      assert_true(total_used > 0)
+      assert_true(heap_used > 0)
+      assert_true(stack_used >= 0)
+      assert_true(gc_count >= 0)
+    }
+    _ => assert_true(false)
+  }
+  
+  // Verify calculation result
+  assert_true(total_sum > 0)
+}
+
+// Test 3: Response Time Monitoring
+test "response time monitoring" {
+  let monitor = PerformanceMonitor::new()
+  
+  // Create response time tracker
+  let tracker = PerformanceMonitor::create_response_time_tracker(monitor, "api_operations")
+  
+  // Simulate operations with different response times
+  let operations = [
+    ("fast_operation", 10L),
+    ("medium_operation", 100L),
+    ("slow_operation", 500L),
+    ("very_slow_operation", 1000L)
+  ]
+  
+  for (operation_name, duration) in operations {
+    let start_time = Time::now()
+    
+    // Simulate operation
+    Time::sleep(duration)
+    
+    let end_time = Time::now()
+    let actual_duration = end_time - start_time
+    
+    // Record response time
+    ResponseTimeTracker::record(tracker, operation_name, actual_duration)
+  }
+  
+  // Get response time statistics
+  let stats = ResponseTimeTracker::get_statistics(tracker, "medium_operation")
+  
+  match stats {
+    ResponseTimeStats(count, min, max, average, p50, p95, p99) => {
+      assert_eq(count, 1)
+      assert_eq(min, 100L)
+      assert_eq(max, 100L)
+      assert_eq(average, 100L)
+      assert_eq(p50, 100L)
+      assert_eq(p95, 100L)
+      assert_eq(p99, 100L)
+    }
+    _ => assert_true(false)
+  }
+  
+  // Get overall statistics
+  let overall_stats = ResponseTimeTracker::get_overall_statistics(tracker)
+  
+  match overall_stats {
+    OverallStats(total_operations, total_duration, average_duration) => {
+      assert_eq(total_operations, 4)
+      assert_eq(total_duration, 1610L) // 10 + 100 + 500 + 1000
+      assert_eq(average_duration, 402.5) // 1610 / 4
+    }
+    _ => assert_true(false)
+  }
+}
+
+// Test 4: Throughput Monitoring
+test "throughput monitoring" {
+  let monitor = PerformanceMonitor::new()
+  
+  // Create throughput tracker
+  let tracker = PerformanceMonitor::create_throughput_tracker(monitor, "data_processing")
+  
+  // Simulate data processing
+  let start_time = Time::now()
+  let processed_items = 0
+  
+  for i in 0..=1000 {
+    // Simulate processing an item
+    Time::sleep(1L) // 1ms per item
+    ThroughputTracker::record_item(tracker, "item_" + i.to_string())
+    processed_items = processed_items + 1
+  }
+  
+  let end_time = Time::now()
+  let total_duration = (end_time - start_time) as Float / 1000.0 // Convert to seconds
+  
+  // Get throughput statistics
+  let stats = ThroughputTracker::get_statistics(tracker)
+  
+  match stats {
+    ThroughputStats(items_processed, duration_seconds, items_per_second) => {
+      assert_eq(items_processed, 1001)
+      assert_true(duration_seconds >= total_duration * 0.9 && duration_seconds <= total_duration * 1.1)
+      assert_true(items_per_second > 0.0)
+    }
+    _ => assert_true(false)
+  }
+}
+
+// Test 5: Error Rate Monitoring
+test "error rate monitoring" {
+  let monitor = PerformanceMonitor::new()
+  
+  // Create error rate tracker
+  let tracker = PerformanceMonitor::create_error_rate_tracker(monitor, "api_errors")
+  
+  // Simulate operations with errors
+  let operations = [
+    ("success_operation", true),
+    ("error_operation", false),
+    ("success_operation", true),
+    ("success_operation", true),
+    ("error_operation", false),
+    ("success_operation", true),
+    ("error_operation", false),
+    ("success_operation", true),
+    ("success_operation", true),
+    ("success_operation", true)
+  ]
+  
+  for (operation_name, success) in operations {
+    ErrorRateTracker::record_operation(tracker, operation_name, success)
+  }
+  
+  // Get error rate statistics
+  let stats = ErrorRateTracker::get_statistics(tracker, "error_operation")
+  
+  match stats {
+    ErrorRateStats(total_operations, error_count, success_count, error_rate) => {
+      assert_eq(total_operations, 3)
+      assert_eq(error_count, 3)
+      assert_eq(success_count, 0)
+      assert_eq(error_rate, 1.0) // 100% error rate
+    }
+    _ => assert_true(false)
+  }
+  
+  // Get overall statistics
+  let overall_stats = ErrorRateTracker::get_overall_statistics(tracker)
+  
+  match overall_stats {
+    OverallErrorRateStats(total_operations, total_errors, overall_error_rate) => {
+      assert_eq(total_operations, 10)
+      assert_eq(total_errors, 3)
+      assert_eq(overall_error_rate, 0.3) // 30% error rate
+    }
+    _ => assert_true(false)
+  }
+}
+
+// Test 6: Resource Utilization Monitoring
+test "resource utilization monitoring" {
+  let monitor = PerformanceMonitor::new()
+  
+  // Start resource monitoring
+  let resource_monitor = PerformanceMonitor::start_resource_monitoring(monitor, 200) // 200ms interval
+  
+  // Simulate resource-intensive operations
+  let threads = []
+  
+  for i in 0..=5 {
+    let thread_data = {
+      thread_id: i,
+      work_items: 1000,
+      results: []
+    }
+    threads.push(thread_data)
+  }
+  
+  // Process work in each thread
+  for thread in threads {
+    for i in 0..=thread.work_items {
+      // Simulate CPU and memory work
+      let result = i * thread.thread_id
+      thread.results.push(result)
     }
   }
   
-  let cache_stats = cache_monitor.get_statistics()
-  assert_eq(cache_stats.hits, 51)
-  assert_eq(cache_stats.misses, 50)
-  assert_true(cache_stats.hit_ratio > 0.5)
+  // Stop resource monitoring
+  let resource_metrics = PerformanceMonitor::stop_resource_monitoring(resource_monitor)
   
-  // Test eviction monitoring
-  let eviction_monitor = EvictionMonitor::new()
-  
-  // Fill cache beyond capacity
-  for i in 0..=1200 {
-    Cache::set(cache, "overflow_key_" + i.to_string(), "overflow_value_" + i.to_string())
+  // Verify resource metrics
+  match resource_metrics {
+    ResourceMetrics(cpu_usage, memory_usage, disk_io, network_io, thread_count) => {
+      assert_true(cpu_usage >= 0.0 && cpu_usage <= 100.0)
+      assert_true(memory_usage > 0)
+      assert_true(disk_io.read_bytes >= 0)
+      assert_true(disk_io.write_bytes >= 0)
+      assert_true(network_io.bytes_sent >= 0)
+      assert_true(network_io.bytes_received >= 0)
+      assert_true(thread_count >= 0)
+    }
+    _ => assert_true(false)
   }
-  
-  let eviction_stats = eviction_monitor.get_statistics()
-  assert_true(eviction_stats.evictions > 0)
-  assert_true(eviction_stats.eviction_rate > 0.0)
-  
-  // Test cache performance metrics
-  let perf_metrics = cache_monitor.get_performance_metrics()
-  assert_true(perf_metrics.avg_get_time > 0)
-  assert_true(perf_metrics.avg_set_time > 0)
-  assert_true(perf_metrics.memory_usage > 0)
 }
 
-// Test 8: Performance Threshold Monitoring
-test "performance threshold monitoring" {
+// Test 7: Performance Threshold Alerting
+test "performance threshold alerting" {
   let monitor = PerformanceMonitor::new()
-  let threshold_monitor = ThresholdMonitor::new()
+  
+  // Create alerting system
+  let alerting = PerformanceMonitor::create_alerting_system(monitor)
   
   // Set performance thresholds
-  threshold_monitor.set_cpu_threshold(80.0)      // 80% CPU
-  threshold_monitor.set_memory_threshold(90.0)   // 90% memory
-  threshold_monitor.set_response_time_threshold(1000) // 1000ms response time
+  AlertingSystem::set_response_time_threshold(alerting, "api_operation", 500L) // 500ms
+  AlertingSystem::set_error_rate_threshold(alerting, "api_operation", 0.1) // 10%
+  AlertingSystem::set_cpu_usage_threshold(alerting, 80.0) // 80%
+  AlertingSystem::set_memory_usage_threshold(alerting, 90.0) // 90%
   
-  // Test threshold monitoring
-  let metrics = monitor.collect_all_metrics()
-  
-  // Check CPU threshold
-  let cpu_alert = threshold_monitor.check_cpu_threshold(metrics.cpu_usage)
-  if metrics.cpu_usage > 80.0 {
-    assert_true(cpu_alert.triggered)
-    assert_eq(cpu_alert.metric_name, "cpu_usage")
-    assert_eq(cpu_alert.threshold, 80.0)
-    assert_eq(cpu_alert.actual_value, metrics.cpu_usage)
+  // Simulate normal operations
+  for i in 0..=5 {
+    let start_time = Time::now()
+    Time::sleep(100L) // 100ms operation
+    let end_time = Time::now()
+    
+    AlertingSystem::record_operation(alerting, "api_operation", end_time - start_time, true)
   }
   
-  // Check memory threshold
-  let memory_usage_percent = (metrics.memory_usage.used.to_double() / metrics.memory_usage.total.to_double()) * 100.0
-  let memory_alert = threshold_monitor.check_memory_threshold(memory_usage_percent)
+  // Check for alerts (should be none)
+  let alerts1 = AlertingSystem::get_active_alerts(alerting)
+  assert_eq(alerts1.length(), 0)
   
-  if memory_usage_percent > 90.0 {
-    assert_true(memory_alert.triggered)
-    assert_eq(memory_alert.metric_name, "memory_usage")
-    assert_eq(memory_alert.threshold, 90.0)
-    assert_eq(memory_alert.actual_value, memory_usage_percent)
+  // Simulate slow operations
+  for i in 0..=3 {
+    let start_time = Time::now()
+    Time::sleep(600L) // 600ms operation (exceeds threshold)
+    let end_time = Time::now()
+    
+    AlertingSystem::record_operation(alerting, "api_operation", end_time - start_time, true)
   }
   
-  // Test custom threshold
-  threshold_monitor.set_custom_threshold("custom_metric", 50.0, GreaterThan)
+  // Check for response time alerts
+  let alerts2 = AlertingSystem::get_active_alerts(alerting)
+  assert_true(alerts2.length() > 0)
   
-  let custom_alert = threshold_monitor.check_custom_threshold("custom_metric", 75.0)
-  assert_true(custom_alert.triggered)
-  assert_eq(custom_alert.metric_name, "custom_metric")
-  assert_eq(custom_alert.threshold, 50.0)
-  assert_eq(custom_alert.actual_value, 75.0)
+  let response_time_alerts = alerts2.filter(|a| Alert::type(a) == ResponseTimeThreshold)
+  assert_true(response_time_alerts.length() > 0)
   
-  // Test threshold history
-  threshold_monitor.record_threshold_event(cpu_alert)
-  threshold_monitor.record_threshold_event(memory_alert)
+  // Simulate errors
+  for i in 0..=5 {
+    let start_time = Time::now()
+    Time::sleep(100L)
+    let end_time = Time::now()
+    
+    AlertingSystem::record_operation(alerting, "api_operation", end_time - start_time, false)
+  }
   
-  let history = threshold_monitor.get_threshold_history()
-  assert_true(history.length() >= 2)
+  // Check for error rate alerts
+  let alerts3 = AlertingSystem::get_active_alerts(alerting)
+  let error_rate_alerts = alerts3.filter(|a| Alert::type(a) == ErrorRateThreshold)
+  assert_true(error_rate_alerts.length() > 0)
+}
+
+// Test 8: Performance Trend Analysis
+test "performance trend analysis" {
+  let monitor = PerformanceMonitor::new()
+  
+  // Create trend analyzer
+  let analyzer = PerformanceMonitor::create_trend_analyzer(monitor, "performance_trends")
+  
+  // Simulate performance data over time
+  let base_time = 1609459200L // 2021-01-01 00:00:00
+  
+  for day in 0..=30 {
+    let timestamp = base_time + (day * 86400L) // Add days
+    
+    // Simulate daily performance metrics
+    let response_time = 100L + (day * 2L) // Gradually increasing
+    let error_rate = 0.05 + (day as Float * 0.001) // Gradually increasing
+    let throughput = 1000.0 - (day as Float * 10.0) // Gradually decreasing
+    
+    TrendAnalyzer::add_data_point(analyzer, timestamp, response_time, error_rate, throughput)
+  }
+  
+  // Analyze trends
+  let response_time_trend = TrendAnalyzer::analyze_response_time_trend(analyzer)
+  match response_time_trend {
+    Trend(slope, correlation, direction) => {
+      assert_true(slope > 0.0) // Increasing trend
+      assert_true(correlation > 0.8) // Strong correlation
+      assert_eq(direction, Increasing)
+    }
+    _ => assert_true(false)
+  }
+  
+  let error_rate_trend = TrendAnalyzer::analyze_error_rate_trend(analyzer)
+  match error_rate_trend {
+    Trend(slope, correlation, direction) => {
+      assert_true(slope > 0.0) // Increasing trend
+      assert_true(correlation > 0.8) // Strong correlation
+      assert_eq(direction, Increasing)
+    }
+    _ => assert_true(false)
+  }
+  
+  let throughput_trend = TrendAnalyzer::analyze_throughput_trend(analyzer)
+  match throughput_trend {
+    Trend(slope, correlation, direction) => {
+      assert_true(slope < 0.0) // Decreasing trend
+      assert_true(correlation > 0.8) // Strong correlation
+      assert_eq(direction, Decreasing)
+    }
+    _ => assert_true(false)
+  }
+  
+  // Get trend summary
+  let summary = TrendAnalyzer::get_trend_summary(analyzer)
+  match summary {
+    TrendSummary(response_trend, error_trend, throughput_trend, overall_health) => {
+      assert_eq(response_trend, Deteriorating)
+      assert_eq(error_trend, Deteriorating)
+      assert_eq(throughput_trend, Deteriorating)
+      assert_eq(overall_health, Poor)
+    }
+    _ => assert_true(false)
+  }
+}
+
+// Test 9: Performance Profiling
+test "performance profiling" {
+  let monitor = PerformanceMonitor::new()
+  
+  // Create profiler
+  let profiler = PerformanceMonitor::create_profiler(monitor, "function_profiler")
+  
+  // Start profiling
+  Profiler::start(profiler)
+  
+  // Simulate functions with different performance characteristics
+  let fast_function = || {
+    let mut result = 0
+    for i in 0..=1000 {
+      result = result + i
+    }
+    result
+  }
+  
+  let slow_function = || {
+    let mut result = 1
+    for i in 1..=10000 {
+      result = result * i
+      if result > 1000000 {
+        result = result / 1000
+      }
+    }
+    result
+  }
+  
+  let memory_intensive_function = || {
+    let arrays = []
+    for i in 0..=10 {
+      let array = []
+      for j in 0..=5000 {
+        array.push(i * j)
+      }
+      arrays.push(array)
+    }
+    arrays.length()
+  }
+  
+  // Profile functions
+  for i in 0..=10 {
+    Profiler::profile_function(profiler, "fast_function", fast_function)
+  }
+  
+  for i in 0..=5 {
+    Profiler::profile_function(profiler, "slow_function", slow_function)
+  }
+  
+  for i in 0..=3 {
+    Profiler::profile_function(profiler, "memory_intensive_function", memory_intensive_function)
+  }
+  
+  // Stop profiling
+  let profile_results = Profiler::stop(profiler)
+  
+  // Analyze profile results
+  let fast_stats = ProfileResults::get_function_stats(profile_results, "fast_function")
+  match fast_stats {
+    FunctionProfileStats(call_count, total_time, average_time, self_time) => {
+      assert_eq(call_count, 11)
+      assert_true(total_time > 0)
+      assert_true(average_time > 0)
+      assert_true(self_time > 0)
+    }
+    _ => assert_true(false)
+  }
+  
+  let slow_stats = ProfileResults::get_function_stats(profile_results, "slow_function")
+  match slow_stats {
+    FunctionProfileStats(call_count, total_time, average_time, self_time) => {
+      assert_eq(call_count, 6)
+      assert_true(total_time > 0)
+      assert_true(average_time > 0)
+      assert_true(self_time > 0)
+    }
+    _ => assert_true(false)
+  }
+  
+  // Compare function performance
+  let comparison = ProfileResults::compare_functions(profile_results, "fast_function", "slow_function")
+  match comparison {
+    FunctionComparison(ratio, faster_function) => {
+      assert_true(ratio > 1.0) // slow_function should be slower
+      assert_eq(faster_function, "fast_function")
+    }
+    _ => assert_true(false)
+  }
+}
+
+// Test 10: Performance Baseline Comparison
+test "performance baseline comparison" {
+  let monitor = PerformanceMonitor::new()
+  
+  // Create baseline comparator
+  let comparator = PerformanceMonitor::create_baseline_comparator(monitor, "baseline_comparison")
+  
+  // Set performance baselines
+  let baseline_metrics = PerformanceBaseline::new([
+    ("api_response_time", BaselineValue::ResponseTime(100L)),
+    ("error_rate", BaselineValue::ErrorRate(0.05)),
+    ("throughput", BaselineValue::Throughput(1000.0)),
+    ("cpu_usage", BaselineValue::CpuUsage(50.0)),
+    ("memory_usage", BaselineValue::MemoryUsage(60.0))
+  ])
+  
+  BaselineComparator::set_baseline(comparator, baseline_metrics)
+  
+  // Simulate current performance metrics
+  let current_metrics = CurrentMetrics::new([
+    ("api_response_time", CurrentValue::ResponseTime(120L)), // 20% slower
+    ("error_rate", CurrentValue::ErrorRate(0.08)), // 60% higher
+    ("throughput", CurrentValue::Throughput(900.0)), // 10% lower
+    ("cpu_usage", CurrentValue::CpuUsage(65.0)), // 30% higher
+    ("memory_usage", CurrentValue::MemoryUsage(55.0)) // 8% lower
+  ])
+  
+  // Compare with baseline
+  let comparison_results = BaselineComparator::compare_with_baseline(comparator, current_metrics)
+  
+  // Verify comparison results
+  assert_eq(comparison_results.length(), 5)
+  
+  let response_time_result = comparison_results.find(|r| MetricComparison::metric_name(r) == "api_response_time")
+  match response_time_result {
+    Some(result) => {
+      assert_eq(MetricComparison::deviation_percentage(result), 20.0)
+      assert_eq(MetricComparison::status(result), Degraded)
+    }
+    None => assert_true(false)
+  }
+  
+  let error_rate_result = comparison_results.find(|r| MetricComparison::metric_name(r) == "error_rate")
+  match error_rate_result {
+    Some(result) => {
+      assert_eq(MetricComparison::deviation_percentage(result), 60.0)
+      assert_eq(MetricComparison::status(result), Degraded)
+    }
+    None => assert_true(false)
+  }
+  
+  let memory_usage_result = comparison_results.find(|r| MetricComparison::metric_name(r) == "memory_usage")
+  match memory_usage_result {
+    Some(result) => {
+      assert_eq(MetricComparison::deviation_percentage(result), -8.33) // Negative means improvement
+      assert_eq(MetricComparison::status(result), Improved)
+    }
+    None => assert_true(false)
+  }
+  
+  // Get overall comparison summary
+  let summary = BaselineComparator::get_comparison_summary(comparator)
+  match summary {
+    ComparisonSummary(total_metrics, improved_count, degraded_count, unchanged_count, overall_status) => {
+      assert_eq(total_metrics, 5)
+      assert_eq(improved_count, 1)
+      assert_eq(degraded_count, 4)
+      assert_eq(unchanged_count, 0)
+      assert_eq(overall_status, Degraded)
+    }
+    _ => assert_true(false)
+  }
 }

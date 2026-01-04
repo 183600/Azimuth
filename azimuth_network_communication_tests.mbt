@@ -1,706 +1,758 @@
-// Network Communication Tests for Azimuth Telemetry System
-// This file contains test cases for network communication and data transmission
+// Azimuth Telemetry System - Network Communication Tests
+// This file contains comprehensive test cases for network communication functionality
 
-// Test 1: HTTP Client Telemetry Integration
-test "http client telemetry integration" {
-  let telemetry_client = HttpClient::with_telemetry("https://api.example.com")
+// Test 1: Basic HTTP Client Operations
+test "basic http client operations" {
+  let http_client = HttpClient::new()
   
-  // Create telemetry context
-  let span_ctx = SpanContext::new(
-    "http_trace_001",
-    "http_span_001",
-    true,
-    "http_state"
-  )
+  // Test HTTP GET request
+  let get_request = HttpRequest::new("GET", "https://httpbin.org/get", [], None)
+  let get_response = HttpClient::send_request(http_client, get_request)
   
-  let ctx = Context::with_value(
-    Context::root(),
-    ContextKey::new("span_context"),
-    span_ctx
-  )
-  
-  // Test HTTP GET request with telemetry
-  let headers = [
-    ("Accept", "application/json"),
-    ("User-Agent", "Azimuth-Telemetry/1.0")
-  ]
-  
-  let request = HttpRequest::with_context(
-    "GET",
-    "https://api.example.com/data",
-    headers,
-    None,
-    ctx
-  )
-  
-  let response_result = HttpClient::execute(telemetry_client, request)
-  
-  match response_result {
-    Success(response) => {
+  match get_response {
+    Ok(response) => {
       assert_eq(HttpResponse::status_code(response), 200)
+      assert_true(HttpResponse::body(response).length() > 0)
       
-      // Verify telemetry attributes were added
-      let telemetry_headers = HttpResponse::headers(response)
-      assert_true(telemetry_headers.contains("traceparent"))
-      assert_true(telemetry_headers.contains("tracestate"))
-      
-      // Verify response body
-      match HttpResponse::body(response) {
-        Some(body) => assert_true(body.length() > 0)
+      let content_type = HttpResponse::get_header(response, "content-type")
+      match content_type {
+        Some(header) => assert_true(header.contains("application/json"))
         None => assert_true(false)
       }
     }
-    Error(error) => {
-      // For testing purposes, we'll accept network errors
-      assert_true(error.code == NetworkError || error.code == TimeoutError)
+    Err(error) => assert_true(false)
+  }
+  
+  // Test HTTP POST request
+  let post_headers = [
+    ("Content-Type", "application/json")
+  ]
+  let post_body = "{\"key\": \"value\", \"number\": 42}"
+  let post_request = HttpRequest::new("POST", "https://httpbin.org/post", post_headers, Some(post_body))
+  let post_response = HttpClient::send_request(http_client, post_request)
+  
+  match post_response {
+    Ok(response) => {
+      assert_eq(HttpResponse::status_code(response), 200)
+      assert_true(HttpResponse::body(response).length() > 0)
+    }
+    Err(error) => assert_true(false)
+  }
+  
+  // Test HTTP PUT request
+  let put_headers = [
+    ("Content-Type", "application/json")
+  ]
+  let put_body = "{\"updated\": true}"
+  let put_request = HttpRequest::new("PUT", "https://httpbin.org/put", put_headers, Some(put_body))
+  let put_response = HttpClient::send_request(http_client, put_request)
+  
+  match put_response {
+    Ok(response) => {
+      assert_eq(HttpResponse::status_code(response), 200)
+      assert_true(HttpResponse::body(response).length() > 0)
+    }
+    Err(error) => assert_true(false)
+  }
+  
+  // Test HTTP DELETE request
+  let delete_request = HttpRequest::new("DELETE", "https://httpbin.org/delete", [], None)
+  let delete_response = HttpClient::send_request(http_client, delete_request)
+  
+  match delete_response {
+    Ok(response) => {
+      assert_eq(HttpResponse::status_code(response), 200)
+      assert_true(HttpResponse::body(response).length() > 0)
+    }
+    Err(error) => assert_true(false)
+  }
+}
+
+// Test 2: HTTP Client Configuration and Timeouts
+test "http client configuration and timeouts" {
+  let config = HttpClientConfig::new()
+    .with_timeout(5000L) // 5 seconds timeout
+    .with_max_retries(3)
+    .with_user_agent("Azimuth-Telemetry/1.0")
+    .with_follow_redirects(true)
+    .with_max_redirects(5)
+    .with_verify_ssl(true)
+  
+  let http_client = HttpClient::with_config(config)
+  
+  // Test timeout with slow endpoint
+  let slow_request = HttpRequest::new("GET", "https://httpbin.org/delay/10", [], None) // 10 second delay
+  let slow_response = HttpClient::send_request(http_client, slow_request)
+  
+  match slow_response {
+    Err(NetworkError(TimeoutError)) => assert_true(true) // Should timeout
+    Ok(_) => assert_true(false)
+    Err(_) => assert_true(false)
+  }
+  
+  // Test retry with failing endpoint
+  let retry_request = HttpRequest::new("GET", "https://httpbin.org/status/500", [], None) // 500 error
+  let retry_response = HttpClient::send_request(http_client, retry_request)
+  
+  match retry_response {
+    Ok(response) => {
+      // Should still get 500 after retries
+      assert_eq(HttpResponse::status_code(response), 500)
+    }
+    Err(error) => assert_true(false)
+  }
+  
+  // Test user agent header
+  let user_agent_request = HttpRequest::new("GET", "https://httpbin.org/user-agent", [], None)
+  let user_agent_response = HttpClient::send_request(http_client, user_agent_request)
+  
+  match user_agent_response {
+    Ok(response) => {
+      assert_eq(HttpResponse::status_code(response), 200)
+      let body = HttpResponse::body(response)
+      assert_true(body.contains("Azimuth-Telemetry/1.0"))
+    }
+    Err(error) => assert_true(false)
+  }
+  
+  // Test redirect following
+  let redirect_request = HttpRequest::new("GET", "https://httpbin.org/redirect/2", [], None) // 2 redirects
+  let redirect_response = HttpClient::send_request(http_client, redirect_request)
+  
+  match redirect_response {
+    Ok(response) => {
+      assert_eq(HttpResponse::status_code(response), 200)
+    }
+    Err(error) => assert_true(false)
+  }
+}
+
+// Test 3: WebSocket Communication
+test "websocket communication" {
+  let websocket_client = WebSocketClient::new()
+  
+  // Test WebSocket connection
+  let connection_result = WebSocketClient::connect(websocket_client, "wss://echo.websocket.org")
+  
+  match connection_result {
+    Ok(connection) => {
+      assert_true(WebSocketConnection::is_connected(connection))
+      
+      // Test sending text message
+      let text_message = "Hello WebSocket!"
+      let send_result = WebSocketConnection::send_text(connection, text_message)
+      assert_true(send_result)
+      
+      // Test receiving text message
+      let received_message = WebSocketConnection::receive_text(connection)
+      match received_message {
+        Some(message) => assert_eq(message, text_message)
+        None => assert_true(false)
+      }
+      
+      // Test sending binary message
+      let binary_data = [0x48, 0x65, 0x6C, 0x6C, 0x6F] // "Hello" in bytes
+      let binary_send_result = WebSocketConnection::send_binary(connection, binary_data)
+      assert_true(binary_send_result)
+      
+      // Test receiving binary message
+      let received_binary = WebSocketConnection::receive_binary(connection)
+      match received_binary {
+        Some(data) => assert_eq(data, binary_data)
+        None => assert_true(false)
+      }
+      
+      // Test ping/pong
+      let ping_result = WebSocketConnection::ping(connection)
+      assert_true(ping_result)
+      
+      let pong_result = WebSocketConnection::wait_for_pong(connection, 5000L)
+      assert_true(pong_result)
+      
+      // Close connection
+      WebSocketConnection::close(connection)
+      assert_false(WebSocketConnection::is_connected(connection))
+    }
+    Err(error) => assert_true(false)
+  }
+}
+
+// Test 4: HTTP/2 Support
+test "http2 support" {
+  let http2_client = HttpClient::new()
+    .with_http2_support(true)
+  
+  // Test HTTP/2 request
+  let http2_request = HttpRequest::new("GET", "https://http2.org", [], None)
+  let http2_response = HttpClient::send_request(http2_client, http2_request)
+  
+  match http2_response {
+    Ok(response) => {
+      assert_eq(HttpResponse::status_code(response), 200)
+      
+      // Check if HTTP/2 was used
+      let http_version = HttpResponse::get_http_version(response)
+      assert_eq(http_version, "HTTP/2")
+    }
+    Err(error) => assert_true(false)
+  }
+  
+  // Test server push
+  let push_request = HttpRequest::new("GET", "https://http2.org/serverpush", [], None)
+  let push_response = HttpClient::send_request(http2_client, push_request)
+  
+  match push_response {
+    Ok(response) => {
+      assert_eq(HttpResponse::status_code(response), 200)
+      
+      // Check for pushed resources
+      let pushed_resources = HttpResponse::get_pushed_resources(response)
+      assert_true(pushed_resources.length() >= 0)
+    }
+    Err(error) => assert_true(false)
+  }
+  
+  // Test multiplexing
+  let requests = []
+  for i in 0..=5 {
+    let request = HttpRequest::new("GET", "https://http2.org", [], None)
+    requests.push(request)
+  }
+  
+  let start_time = Time::now()
+  let responses = []
+  
+  // Send all requests concurrently
+  for request in requests {
+    let response = HttpClient::send_request(http2_client, request)
+    responses.push(response)
+  }
+  
+  let end_time = Time::now()
+  let total_time = end_time - start_time
+  
+  // Check all responses
+  for response in responses {
+    match response {
+      Ok(resp) => assert_eq(HttpResponse::status_code(resp), 200)
+      Err(error) => assert_true(false)
     }
   }
   
-  // Test HTTP POST request with telemetry
-  let post_headers = [
-    ("Content-Type", "application/json"),
-    ("Authorization", "Bearer token123")
+  // HTTP/2 should be faster for multiple concurrent requests
+  assert_true(total_time < 10000L) // Less than 10 seconds
+}
+
+// Test 5: Network Resilience and Retry Logic
+test "network resilience and retry logic" {
+  let retry_config = RetryConfig::new()
+    .with_max_attempts(5)
+    .with_initial_delay(1000L) // 1 second
+    .with_max_delay(10000L) // 10 seconds
+    .with_backoff_multiplier(2.0)
+    .with_retryable_status_codes([408, 429, 500, 502, 503, 504])
+    .with_retryable_errors([NetworkTimeoutError, ConnectionError])
+  
+  let resilient_client = HttpClient::new()
+    .with_retry_config(retry_config)
+  
+  // Test retry with 503 error
+  let retry_request = HttpRequest::new("GET", "https://httpbin.org/status/503", [], None)
+  let retry_response = HttpClient::send_request(resilient_client, retry_request)
+  
+  match retry_response {
+    Ok(response) => {
+      // Should still get 503 after all retries
+      assert_eq(HttpResponse::status_code(response), 503)
+    }
+    Err(error) => assert_true(false)
+  }
+  
+  // Test retry with 429 error (rate limited)
+  let rate_limit_request = HttpRequest::new("GET", "https://httpbin.org/status/429", [], None)
+  let rate_limit_response = HttpClient::send_request(resilient_client, rate_limit_request)
+  
+  match rate_limit_response {
+    Ok(response) => {
+      // Should still get 429 after all retries
+      assert_eq(HttpResponse::status_code(response), 429)
+    }
+    Err(error) => assert_true(false)
+  }
+  
+  // Test circuit breaker
+  let circuit_breaker = CircuitBreaker::new()
+    .with_failure_threshold(5)
+    .with_timeout(30000L) // 30 seconds
+    .with_half_open_max_calls(3)
+  
+  let circuit_breaker_client = HttpClient::new()
+    .with_circuit_breaker(circuit_breaker)
+  
+  // Trigger circuit breaker with multiple failures
+  for i in 0..=6 {
+    let failing_request = HttpRequest::new("GET", "https://httpbin.org/status/500", [], None)
+    let failing_response = HttpClient::send_request(circuit_breaker_client, failing_request)
+    
+    if i < 5 {
+      match failing_response {
+        Ok(response) => assert_eq(HttpResponse::status_code(response), 500)
+        Err(error) => assert_true(false)
+      }
+    } else {
+      match failing_response {
+        Ok(_) => assert_true(false) // Should be blocked by circuit breaker
+        Err(CircuitBreakerOpenError) => assert_true(true)
+        Err(_) => assert_true(false)
+      }
+    }
+  }
+}
+
+// Test 6: Network Metrics and Telemetry
+test "network metrics and telemetry" {
+  let telemetry_client = HttpClient::new()
+    .with_telemetry_enabled(true)
+  
+  // Send some requests to generate metrics
+  let requests = [
+    HttpRequest::new("GET", "https://httpbin.org/get", [], None),
+    HttpRequest::new("GET", "https://httpbin.org/status/200", [], None),
+    HttpRequest::new("GET", "https://httpbin.org/delay/1", [], None),
+    HttpRequest::new("GET", "https://httpbin.org/status/404", [], None),
+    HttpRequest::new("GET", "https://httpbin.org/status/500", [], None)
   ]
   
-  let post_body = "{\"key\":\"value\",\"timestamp\":1234567890}"
-  
-  let post_request = HttpRequest::with_context(
-    "POST",
-    "https://api.example.com/data",
-    post_headers,
-    Some(post_body),
-    ctx
-  )
-  
-  let post_response_result = HttpClient::execute(telemetry_client, post_request)
-  
-  match post_response_result {
-    Success(response) => {
-      assert_eq(HttpResponse::status_code(response), 201)
-      
-      // Verify telemetry attributes
-      let telemetry_headers = HttpResponse::headers(response)
-      assert_true(telemetry_headers.contains("traceparent"))
-      assert_true(telemetry_headers.contains("tracestate"))
-    }
-    Error(error) => {
-      // For testing purposes, we'll accept network errors
-      assert_true(error.code == NetworkError || error.code == TimeoutError)
-    }
+  for request in requests {
+    HttpClient::send_request(telemetry_client, request)
   }
   
-  // Verify telemetry metrics were recorded
-  let metrics = HttpClient::get_telemetry_metrics(telemetry_client)
-  assert_true(metrics.request_count >= 2) // At least 2 requests
-  assert_true(metrics.success_count >= 0) // May be 0 if network errors occurred
-  assert_true(metrics.error_count >= 0) // May be > 0 if network errors occurred
-  assert_true(metrics.total_response_time >= 0.0)
+  // Get network metrics
+  let metrics = HttpClient::get_metrics(telemetry_client)
+  
+  match metrics {
+    NetworkMetrics(total_requests, successful_requests, failed_requests, average_response_time, total_bytes_sent, total_bytes_received) => {
+      assert_eq(total_requests, 5)
+      assert_eq(successful_requests, 4) // All should succeed even 404 and 500
+      assert_eq(failed_requests, 0)
+      assert_true(average_response_time > 0)
+      assert_true(total_bytes_sent > 0)
+      assert_true(total_bytes_received > 0)
+    }
+    _ => assert_true(false)
+  }
+  
+  // Get per-host metrics
+  let host_metrics = HttpClient::get_host_metrics(telemetry_client, "httpbin.org")
+  
+  match host_metrics {
+    HostNetworkMetrics(requests, success_rate, average_response_time, error_rate) => {
+      assert_eq(requests, 5)
+      assert_eq(success_rate, 1.0)
+      assert_true(average_response_time > 0)
+      assert_eq(error_rate, 0.0)
+    }
+    _ => assert_true(false)
+  }
+  
+  // Get status code distribution
+  let status_distribution = HttpClient::get_status_distribution(telemetry_client)
+  
+  match status_distribution {
+    StatusCodeDistribution(distribution) => {
+      assert_true(distribution.contains(200))
+      assert_true(distribution.contains(404))
+      assert_true(distribution.contains(500))
+      assert_eq(distribution.get(200, 0), 3) // get, status/200, delay/1
+      assert_eq(distribution.get(404, 0), 1)
+      assert_eq(distribution.get(500, 0), 1)
+    }
+    _ => assert_true(false)
+  }
+  
+  // Export metrics in Prometheus format
+  let prometheus_metrics = HttpClient::export_metrics(telemetry_client, "prometheus")
+  assert_true(prometheus_metrics.length() > 0)
+  assert_true(prometheus_metrics.contains("http_requests_total"))
+  assert_true(prometheus_metrics.contains("http_request_duration_seconds"))
+  
+  // Export metrics in JSON format
+  let json_metrics = HttpClient::export_metrics(telemetry_client, "json")
+  assert_true(json_metrics.length() > 0)
 }
 
-// Test 2: Retry Mechanism with Exponential Backoff
-test "retry mechanism with exponential backoff" {
-  let retry_config = RetryConfig::new_with_exponential_backoff(
-    5,      // max retries
-    100,    // initial delay in ms
-    2.0,    // backoff multiplier
-    10000   // max delay in ms
-  )
+// Test 7: Network Security and Authentication
+test "network security and authentication" {
+  // Test basic authentication
+  let basic_auth_client = HttpClient::new()
+    .with_basic_auth("user", "pass")
   
-  let client = HttpClient::with_retry("https://api.example.com", retry_config)
+  let basic_auth_request = HttpRequest::new("GET", "https://httpbin.org/basic-auth/user/pass", [], None)
+  let basic_auth_response = HttpClient::send_request(basic_auth_client, basic_auth_request)
   
-  // Test request that fails initially but succeeds after retries
-  let attempt_count = 0
-  
-  let request = HttpRequest::new(
-    "GET",
-    "https://api.example.com/flaky",
-    [],
-    None
-  )
-  
-  let response_result = HttpClient::execute_with_callback(client, request, {
-    attempt_count = attempt_count + 1
-    
-    // Simulate failure for first 2 attempts, success for 3rd
-    if attempt_count <= 2 {
-      Error(TelemetryError::new(NetworkError, "Simulated network failure"))
-    } else {
-      let response = HttpResponse::new(200, [], Some("Success after retries"))
-      Success(response)
-    }
-  })
-  
-  match response_result {
-    Success(response) => {
+  match basic_auth_response {
+    Ok(response) => {
       assert_eq(HttpResponse::status_code(response), 200)
-      assert_eq(attempt_count, 3) // Should have made 3 attempts
+      let body = HttpResponse::body(response)
+      assert_true(body.contains("\"authenticated\": true"))
     }
-    Error(_) => assert_true(false) // Should succeed after retries
+    Err(error) => assert_true(false)
   }
   
-  // Test request that always fails
-  let always_fail_count = 0
+  // Test bearer token authentication
+  let bearer_auth_client = HttpClient::new()
+    .with_bearer_token("test-token")
   
-  let failing_request = HttpRequest::new(
-    "GET",
-    "https://api.example.com/always-fail",
-    [],
-    None
-  )
+  let bearer_auth_request = HttpRequest::new("GET", "https://httpbin.org/bearer", [], None)
+  let bearer_auth_response = HttpClient::send_request(bearer_auth_client, bearer_auth_request)
   
-  let failing_response_result = HttpClient::execute_with_callback(client, failing_request, {
-    always_fail_count = always_fail_count + 1
-    Error(TelemetryError::new(NetworkError, "Persistent network failure"))
-  })
+  match bearer_auth_response {
+    Ok(response) => {
+      assert_eq(HttpResponse::status_code(response), 200)
+      let body = HttpResponse::body(response)
+      assert_true(body.contains("\"authenticated\": true"))
+    }
+    Err(error) => assert_true(false)
+  }
   
-  match failing_response_result {
-    Success(_) => assert_true(false) // Should not succeed
-    Error(error) => {
-      assert_eq(error.code, NetworkError)
-      assert_eq(always_fail_count, 6) // Should have made 6 attempts (1 initial + 5 retries)
+  // Test API key authentication
+  let api_key_client = HttpClient::new()
+    .with_api_key("X-API-Key", "test-api-key")
+  
+  let api_key_request = HttpRequest::new("GET", "https://httpbin.org/headers", [], None)
+  let api_key_response = HttpClient::send_request(api_key_client, api_key_request)
+  
+  match api_key_response {
+    Ok(response) => {
+      assert_eq(HttpResponse::status_code(response), 200)
+      let body = HttpResponse::body(response)
+      assert_true(body.contains("X-API-Key"))
+      assert_true(body.contains("test-api-key"))
+    }
+    Err(error) => assert_true(false)
+  }
+  
+  // Test SSL/TLS verification
+  let tls_client = HttpClient::new()
+    .with_verify_ssl(true)
+    .with_cert_file("/path/to/cert.pem")
+    .with_key_file("/path/to/key.pem")
+  
+  let tls_request = HttpRequest::new("GET", "https://httpbin.org/get", [], None)
+  let tls_response = HttpClient::send_request(tls_client, tls_request)
+  
+  match tls_response {
+    Ok(response) => {
+      assert_eq(HttpResponse::status_code(response), 200)
+    }
+    Err(error) => {
+      // May fail if cert files don't exist, which is expected in test environment
+      assert_true(error.contains("certificate") || error.contains("file"))
     }
   }
   
-  // Verify retry statistics
-  let retry_stats = HttpClient::get_retry_statistics(client)
-  assert_eq(retry_stats.total_retries, 5) // 2 for first request + 5 for second request
-  assert_eq(retry_stats.successful_retries, 2) // 2 retries led to success
-  assert_eq(retry_stats.failed_retries, 3) // 3 retries still failed
+  // Test request signing
+  let signing_client = HttpClient::new()
+    .with_request_signer(HMACSHA256Signer::new("secret-key"))
+  
+  let signed_request = HttpRequest::new("GET", "https://httpbin.org/get", [], None)
+  let signed_response = HttpClient::send_request(signing_client, signed_request)
+  
+  match signed_response {
+    Ok(response) => {
+      assert_eq(HttpResponse::status_code(response), 200)
+      
+      // Check if signature header was added
+      let signature = HttpResponse::get_header(response, "X-Signature")
+      match signature {
+        Some(sig) => assert_true(sig.length() > 0)
+        None => assert_true(false)
+      }
+    }
+    Err(error) => assert_true(false)
+  }
 }
 
-// Test 3: Circuit Breaker Pattern for Network Calls
-test "circuit breaker pattern for network calls" {
-  let circuit_breaker_config = CircuitBreakerConfig::new(
-    5,      // failure threshold
-    10000,  // timeout in ms
-    5000    // half-open max calls
-  )
-  
-  let client = HttpClient::with_circuit_breaker(
-    "https://api.example.com",
-    circuit_breaker_config
-  )
-  
-  // Test normal operation
-  for i in 1..=3 {
-    let request = HttpRequest::new(
-      "GET",
-      "https://api.example.com/normal",
-      [],
-      None
-    )
-    
-    let response_result = HttpClient::execute_with_callback(client, request, {
-      let response = HttpResponse::new(200, [], Some("Normal operation"))
-      Success(response)
-    })
-    
-    match response_result {
-      Success(response) => assert_eq(HttpResponse::status_code(response), 200)
-      Error(_) => assert_true(false) // Should not fail
-    }
-  }
-  
-  // Verify circuit is closed
-  let circuit_state = HttpClient::get_circuit_breaker_state(client)
-  assert_eq(circuit_state, Closed)
-  
-  // Test failures to trigger circuit breaker
-  for i in 1..=6 {
-    let request = HttpRequest::new(
-      "GET",
-      "https://api.example.com/failing",
-      [],
-      None
-    )
-    
-    let response_result = HttpClient::execute_with_callback(client, request, {
-      Error(TelemetryError::new(NetworkError, "Simulated failure"))
-    })
-    
-    match response_result {
-      Success(_) => assert_true(false) // Should fail
-      Error(error) => assert_eq(error.code, NetworkError)
-    }
-  }
-  
-  // Verify circuit is now open
-  let open_circuit_state = HttpClient::get_circuit_breaker_state(client)
-  assert_eq(open_circuit_state, Open)
-  
-  // Test that requests fail fast when circuit is open
-  let fast_fail_request = HttpRequest::new(
-    "GET",
-    "https://api.example.com/fast-fail",
-    [],
-    None
-  )
-  
-  let fast_fail_result = HttpClient::execute(client, fast_fail_request)
-  
-  match fast_fail_result {
-    Success(_) => assert_true(false) // Should fail fast
-    Error(error) => assert_eq(error.code, CircuitBreakerOpen)
-  }
-  
-  // Wait for circuit to enter half-open state
-  Thread::sleep(11000) // Wait longer than timeout
-  
-  // Test half-open state
-  let half_open_request = HttpRequest::new(
-    "GET",
-    "https://api.example.com/half-open",
-    [],
-    None
-  )
-  
-  let half_open_result = HttpClient::execute_with_callback(client, half_open_request, {
-    let response = HttpResponse::new(200, [], Some("Half-open success"))
-    Success(response)
-  })
-  
-  match half_open_result {
-    Success(response) => assert_eq(HttpResponse::status_code(response), 200)
-    Error(_) => assert_true(false) // Should succeed in half-open state
-  }
-  
-  // Verify circuit is closed again after successful operation
-  let closed_circuit_state = HttpClient::get_circuit_breaker_state(client)
-  assert_eq(closed_circuit_state, Closed)
-}
-
-// Test 4: Connection Pooling and Keep-Alive
+// Test 8: Connection Pooling and Keep-Alive
 test "connection pooling and keep-alive" {
-  let pool_config = ConnectionPoolConfig::new(
-    10,     // max connections
-    30000,  // connection timeout in ms
-    60000   // keep-alive timeout in ms
-  )
+  let pool_config = ConnectionPoolConfig::new()
+    .with_max_connections(10)
+    .with_max_idle_connections(5)
+    .with_max_idle_time(30000L) // 30 seconds
+    .with_keep_alive(true)
+    .with_keep_alive_timeout(60000L) // 1 minute
   
-  let client = HttpClient::with_connection_pool(
-    "https://api.example.com",
-    pool_config
-  )
+  let pooled_client = HttpClient::new()
+    .with_connection_pool(pool_config)
   
-  // Test multiple requests to use connection pooling
+  // Send multiple requests to the same host
   let requests = []
-  
-  for i in 1..=20 {
-    let request = HttpRequest::new(
-      "GET",
-      "https://api.example.com/data/" + i.to_string(),
-      [],
-      None
-    )
+  for i in 0..=10 {
+    let request = HttpRequest::new("GET", "https://httpbin.org/get", [], None)
     requests.push(request)
   }
   
   let responses = []
-  
   for request in requests {
-    let response_result = HttpClient::execute_with_callback(client, request, {
-      let response = HttpResponse::new(200, [], Some("Response for " + request.url))
-      Success(response)
-    })
-    
-    match response_result {
-      Success(response) => responses.push(response)
-      Error(_) => assert_true(false) // Should not fail
-    }
+    let response = HttpClient::send_request(pooled_client, request)
+    responses.push(response)
   }
   
-  // Verify all requests succeeded
-  assert_eq(responses.length(), 20)
-  
+  // Check all responses
   for response in responses {
-    assert_eq(HttpResponse::status_code(response), 200)
-    match HttpResponse::body(response) {
-      Some(body) => assert_true(body.contains("Response for"))
-      None => assert_true(false)
+    match response {
+      Ok(resp) => assert_eq(HttpResponse::status_code(resp), 200)
+      Err(error) => assert_true(false)
     }
   }
   
-  // Verify connection pool statistics
-  let pool_stats = HttpClient::get_connection_pool_stats(client)
-  assert_eq(pool_stats.total_requests, 20)
-  assert_eq(pool_stats.active_connections, 0) // All connections should be returned to pool
-  assert_true(pool_stats.pool_connections <= 10) // Should not exceed max connections
-  assert_true(pool_stats.reused_connections > 0) // Some connections should be reused
-  assert_true(pool_stats.new_connections > 0) // Some new connections should be created
-}
-
-// Test 5: Request/Response Compression
-test "request/response compression" {
-  let compression_config = CompressionConfig::new(
-    Gzip,   // compression type
-    1024    // compression threshold in bytes
-  )
+  // Check connection pool statistics
+  let pool_stats = HttpClient::get_connection_pool_stats(pooled_client)
   
-  let client = HttpClient::with_compression(
-    "https://api.example.com",
-    compression_config
-  )
+  match pool_stats {
+    ConnectionPoolStats(total_connections, active_connections, idle_connections, created_connections, closed_connections) => {
+      assert_true(total_connections > 0)
+      assert_true(active_connections >= 0)
+      assert_true(idle_connections >= 0)
+      assert_true(created_connections > 0)
+    }
+    _ => assert_true(false)
+  }
   
-  // Test request compression
-  let large_body = "{\"data\":\"" + "x" * 2000 + "\"}" // > 1KB to trigger compression
+  // Test connection reuse
+  let reuse_request1 = HttpRequest::new("GET", "https://httpbin.org/get", [], None)
+  let reuse_response1 = HttpClient::send_request(pooled_client, reuse_request1)
   
-  let compressed_request = HttpRequest::new(
-    "POST",
-    "https://api.example.com/compress",
-    [
-      ("Content-Type", "application/json"),
-      ("Accept-Encoding", "gzip, deflate")
-    ],
-    Some(large_body)
-  )
+  let reuse_request2 = HttpRequest::new("GET", "https://httpbin.org/get", [], None)
+  let reuse_response2 = HttpClient::send_request(pooled_client, reuse_request2)
   
-  let compressed_response_result = HttpClient::execute_with_callback(client, compressed_request, {
-    // Verify request was compressed
-    let received_body = HttpClient::get_last_request_body()
-    assert_true(received_body.length() < large_body.length()) // Should be compressed
-    
-    let response = HttpResponse::new(
-      201,
-      [("Content-Encoding", "gzip")],
-      Some("{\"status\":\"success\"}")
-    )
-    Success(response)
-  })
-  
-  match compressed_response_result {
-    Success(response) => {
-      assert_eq(HttpResponse::status_code(response), 201)
+  match (reuse_response1, reuse_response2) {
+    (Ok(resp1), Ok(resp2)) => {
+      assert_eq(HttpResponse::status_code(resp1), 200)
+      assert_eq(HttpResponse::status_code(resp2), 200)
       
-      // Verify response was decompressed
-      match HttpResponse::body(response) {
-        Some(body) => assert_eq(body, "{\"status\":\"success\"}")
-        None => assert_true(false)
-      }
+      // Check if connection was reused
+      let connection_id1 = HttpResponse::get_connection_id(resp1)
+      let connection_id2 = HttpResponse::get_connection_id(resp2)
+      assert_eq(connection_id1, connection_id2)
     }
-    Error(_) => assert_true(false) // Should not fail
-  }
-  
-  // Test small request that shouldn't be compressed
-  let small_body = "{\"small\":\"data\"}" // < 1KB
-  
-  let small_request = HttpRequest::new(
-    "POST",
-    "https://api.example.com/small",
-    [("Content-Type", "application/json")],
-    Some(small_body)
-  )
-  
-  let small_response_result = HttpClient::execute_with_callback(client, small_request, {
-    // Verify request was not compressed
-    let received_body = HttpClient::get_last_request_body()
-    assert_eq(received_body.length(), small_body.length()) // Should not be compressed
-    
-    let response = HttpResponse::new(200, [], Some("OK"))
-    Success(response)
-  })
-  
-  match small_response_result {
-    Success(response) => assert_eq(HttpResponse::status_code(response), 200)
-    Error(_) => assert_true(false) // Should not fail
-  }
-  
-  // Verify compression statistics
-  let compression_stats = HttpClient::get_compression_stats(client)
-  assert_eq(compression_stats.compressed_requests, 1)
-  assert_eq(compression_stats.uncompressed_requests, 1)
-  assert_eq(compression_stats.decompressed_responses, 1)
-  assert_true(compression_stats.total_compression_ratio > 0.0)
-}
-
-// Test 6: Timeout Handling
-test "timeout handling" {
-  let timeout_config = TimeoutConfig::new(
-    1000,   // connection timeout in ms
-    5000    // read timeout in ms
-  )
-  
-  let client = HttpClient::with_timeouts(
-    "https://api.example.com",
-    timeout_config
-  )
-  
-  // Test connection timeout
-  let connection_timeout_request = HttpRequest::new(
-    "GET",
-    "https://timeout.example.com/slow-connect",
-    [],
-    None
-  )
-  
-  let connection_timeout_result = HttpClient::execute_with_callback(client, connection_timeout_request, {
-    // Simulate slow connection
-    Thread::sleep(2000) // 2s, longer than 1s timeout
-    let response = HttpResponse::new(200, [], Some("Should not reach here"))
-    Success(response)
-  })
-  
-  match connection_timeout_result {
-    Success(_) => assert_true(false) // Should timeout
-    Error(error) => assert_eq(error.code, TimeoutError)
-  }
-  
-  // Test read timeout
-  let read_timeout_request = HttpRequest::new(
-    "GET",
-    "https://timeout.example.com/slow-response",
-    [],
-    None
-  )
-  
-  let read_timeout_result = HttpClient::execute_with_callback(client, read_timeout_request, {
-    // Simulate slow response
-    Thread::sleep(6000) // 6s, longer than 5s timeout
-    let response = HttpResponse::new(200, [], Some("Should not reach here"))
-    Success(response)
-  })
-  
-  match read_timeout_result {
-    Success(_) => assert_true(false) // Should timeout
-    Error(error) => assert_eq(error.code, TimeoutError)
-  }
-  
-  // Test normal operation within timeout
-  let normal_request = HttpRequest::new(
-    "GET",
-    "https://api.example.com/normal",
-    [],
-    None
-  )
-  
-  let normal_result = HttpClient::execute_with_callback(client, normal_request, {
-    // Simulate normal response time
-    Thread::sleep(500) // 500ms, within both timeouts
-    let response = HttpResponse::new(200, [], Some("Normal response"))
-    Success(response)
-  })
-  
-  match normal_result {
-    Success(response) => {
-      assert_eq(HttpResponse::status_code(response), 200)
-      match HttpResponse::body(response) {
-        Some(body) => assert_eq(body, "Normal response")
-        None => assert_true(false)
-      }
-    }
-    Error(_) => assert_true(false) // Should not timeout
-  }
-  
-  // Verify timeout statistics
-  let timeout_stats = HttpClient::get_timeout_stats(client)
-  assert_eq(timeout_stats.connection_timeouts, 1)
-  assert_eq(timeout_stats.read_timeouts, 1)
-  assert_eq(timeout_stats.successful_requests, 1)
-}
-
-// Test 7: SSL/TLS Configuration
-test "ssl_tls configuration" {
-  let tls_config = TLSConfig::new(
-    true,   // verify certificates
-    10,     // TLS version
-    ["TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384"], // cipher suites
-    ["HSTS", "Certificate Transparency"] // security features
-  )
-  
-  let client = HttpClient::with_tls(
-    "https://secure.example.com",
-    tls_config
-  )
-  
-  // Test secure request
-  let secure_request = HttpRequest::new(
-    "GET",
-    "https://secure.example.com/data",
-    [],
-    None
-  )
-  
-  let secure_result = HttpClient::execute_with_callback(client, secure_request, {
-    // Verify TLS configuration is applied
-    let tls_info = HttpClient::get_tls_info()
-    assert_true(tls_info.version >= 10)
-    assert_true(tls_info.cipher_suite.contains("AES"))
-    
-    let response = HttpResponse::new(200, [], Some("Secure response"))
-    Success(response)
-  })
-  
-  match secure_result {
-    Success(response) => {
-      assert_eq(HttpResponse::status_code(response), 200)
-      match HttpResponse::body(response) {
-        Some(body) => assert_eq(body, "Secure response")
-        None => assert_true(false)
-      }
-    }
-    Error(error) => {
-      // For testing purposes, we'll accept TLS errors
-      assert_true(error.code == TLSError || error.code == NetworkError)
-    }
-  }
-  
-  // Test request to invalid certificate (should fail with verification enabled)
-  let invalid_cert_request = HttpRequest::new(
-    "GET",
-    "https://invalid-cert.example.com",
-    [],
-    None
-  )
-  
-  let invalid_cert_result = HttpClient::execute_with_callback(client, invalid_cert_request, {
-    // Simulate invalid certificate
-    Error(TelemetryError::new(TLSError, "Invalid certificate"))
-  })
-  
-  match invalid_cert_result {
-    Success(_) => assert_true(false) // Should fail with invalid certificate
-    Error(error) => assert_eq(error.code, TLSError)
-  }
-  
-  // Test with certificate verification disabled
-  let no_verify_client = HttpClient::with_no_verify("https://invalid-cert.example.com")
-  
-  let no_verify_result = HttpClient::execute_with_callback(no_verify_client, invalid_cert_request, {
-    let response = HttpResponse::new(200, [], Some("Success with no verification"))
-    Success(response)
-  })
-  
-  match no_verify_result {
-    Success(response) => {
-      assert_eq(HttpResponse::status_code(response), 200)
-      match HttpResponse::body(response) {
-        Some(body) => assert_eq(body, "Success with no verification")
-        None => assert_true(false)
-      }
-    }
-    Error(_) => assert_true(false) // Should succeed with no verification
+    _ => assert_true(false)
   }
 }
 
-// Test 8: Proxy Configuration
-test "proxy configuration" {
-  let proxy_config = ProxyConfig::new(
-    "http://proxy.example.com:8080",
-    None,   // no authentication
-    ["localhost", "127.0.0.1", "*.local"]  // bypass list
-  )
+// Test 9: Network Proxy Support
+test "network proxy support" {
+  // Test HTTP proxy
+  let http_proxy_config = ProxyConfig::new()
+    .with_type(HttpProxy)
+    .with_host("proxy.example.com")
+    .with_port(8080)
+    .with_auth("proxy-user", "proxy-pass")
   
-  let client = HttpClient::with_proxy(
-    "https://api.example.com",
-    proxy_config
-  )
+  let http_proxy_client = HttpClient::new()
+    .with_proxy(http_proxy_config)
   
-  // Test request through proxy
-  let proxy_request = HttpRequest::new(
-    "GET",
-    "https://api.example.com/proxy-test",
-    [],
-    None
-  )
+  let proxy_request = HttpRequest::new("GET", "https://httpbin.org/get", [], None)
+  let proxy_response = HttpClient::send_request(http_proxy_client, proxy_request)
   
-  let proxy_result = HttpClient::execute_with_callback(client, proxy_request, {
-    // Verify proxy is used
-    let proxy_info = HttpClient::get_proxy_info()
-    assert_true(proxy_info.used_proxy)
-    assert_eq(proxy_info.proxy_host, "proxy.example.com")
-    assert_eq(proxy_info.proxy_port, 8080)
-    
-    let response = HttpResponse::new(200, [], Some("Proxy response"))
-    Success(response)
-  })
+  // May fail if proxy doesn't exist, which is expected in test environment
+  match proxy_response {
+    Ok(response) => assert_eq(HttpResponse::status_code(response), 200)
+    Err(error) => assert_true(error.contains("proxy") || error.contains("connection"))
+  }
   
-  match proxy_result {
-    Success(response) => {
+  // Test SOCKS proxy
+  let socks_proxy_config = ProxyConfig::new()
+    .with_type(SocksProxy)
+    .with_host("socks.example.com")
+    .with_port(1080)
+  
+  let socks_proxy_client = HttpClient::new()
+    .with_proxy(socks_proxy_config)
+  
+  let socks_request = HttpRequest::new("GET", "https://httpbin.org/get", [], None)
+  let socks_response = HttpClient::send_request(socks_proxy_client, socks_request)
+  
+  // May fail if proxy doesn't exist, which is expected in test environment
+  match socks_response {
+    Ok(response) => assert_eq(HttpResponse::status_code(response), 200)
+    Err(error) => assert_true(error.contains("proxy") || error.contains("connection"))
+  }
+  
+  // Test proxy bypass rules
+  let bypass_proxy_config = ProxyConfig::new()
+    .with_type(HttpProxy)
+    .with_host("proxy.example.com")
+    .with_port(8080)
+    .with_bypass_rules(["localhost", "127.0.0.1", "*.local"])
+  
+  let bypass_proxy_client = HttpClient::new()
+    .with_proxy(bypass_proxy_config)
+  
+  let bypass_request = HttpRequest::new("GET", "https://httpbin.org/get", [], None)
+  let bypass_response = HttpClient::send_request(bypass_proxy_client, bypass_request)
+  
+  // Should use proxy for httpbin.org
+  match bypass_response {
+    Ok(response) => assert_eq(HttpResponse::status_code(response), 200)
+    Err(error) => assert_true(error.contains("proxy") || error.contains("connection"))
+  }
+  
+  // Test PAC (Proxy Auto-Configuration) script
+  let pac_config = ProxyConfig::new()
+    .with_type(PacProxy)
+    .with_pac_url("http://proxy.example.com/proxy.pac")
+  
+  let pac_client = HttpClient::new()
+    .with_proxy(pac_config)
+  
+  let pac_request = HttpRequest::new("GET", "https://httpbin.org/get", [], None)
+  let pac_response = HttpClient::send_request(pac_client, pac_request)
+  
+  // May fail if PAC script doesn't exist, which is expected in test environment
+  match pac_response {
+    Ok(response) => assert_eq(HttpResponse::status_code(response), 200)
+    Err(error) => assert_true(error.contains("proxy") || error.contains("pac"))
+  }
+}
+
+// Test 10: Network Performance Optimization
+test "network performance optimization" {
+  // Test compression
+  let compression_client = HttpClient::new()
+    .with_compression(true)
+    .with_compression_algorithms(["gzip", "deflate", "br"])
+  
+  let compression_request = HttpRequest::new("GET", "https://httpbin.org/gzip", [], None)
+  let compression_response = HttpClient::send_request(compression_client, compression_request)
+  
+  match compression_response {
+    Ok(response) => {
       assert_eq(HttpResponse::status_code(response), 200)
-      match HttpResponse::body(response) {
-        Some(body) => assert_eq(body, "Proxy response")
+      
+      // Check if response was compressed
+      let content_encoding = HttpResponse::get_header(response, "content-encoding")
+      match content_encoding {
+        Some(encoding) => assert_true(encoding == "gzip" || encoding == "deflate" || encoding == "br")
         None => assert_true(false)
       }
     }
-    Error(error) => {
-      // For testing purposes, we'll accept proxy errors
-      assert_true(error.code == ProxyError || error.code == NetworkError)
+    Err(error) => assert_true(false)
+  }
+  
+  // Test HTTP pipelining
+  let pipelining_client = HttpClient::new()
+    .with_http_pipelining(true)
+    .with_pipeline_depth(5)
+  
+  let pipeline_requests = []
+  for i in 0..=5 {
+    let request = HttpRequest::new("GET", "https://httpbin.org/get", [], None)
+    pipeline_requests.push(request)
+  }
+  
+  let start_time = Time::now()
+  let pipeline_responses = []
+  
+  // Send all requests in pipeline
+  for request in pipeline_requests {
+    let response = HttpClient::send_request(pipelining_client, request)
+    pipeline_responses.push(response)
+  }
+  
+  let end_time = Time::now()
+  let pipeline_time = end_time - start_time
+  
+  // Check all responses
+  for response in pipeline_responses {
+    match response {
+      Ok(resp) => assert_eq(HttpResponse::status_code(resp), 200)
+      Err(error) => assert_true(false)
     }
   }
   
-  // Test request to bypassed host (should not use proxy)
-  let bypass_request = HttpRequest::new(
-    "GET",
-    "https://localhost.local/api",
-    [],
-    None
-  )
+  // Test parallel requests
+  let parallel_client = HttpClient::new()
+    .with_max_parallel_requests(10)
   
-  let bypass_result = HttpClient::execute_with_callback(client, bypass_request, {
-    // Verify proxy is not used
-    let proxy_info = HttpClient::get_proxy_info()
-    assert_false(proxy_info.used_proxy)
-    
-    let response = HttpResponse::new(200, [], Some("Direct response"))
-    Success(response)
-  })
+  let parallel_requests = []
+  for i in 0..=10 {
+    let request = HttpRequest::new("GET", "https://httpbin.org/delay/" + i.to_string(), [], None)
+    parallel_requests.push(request)
+  }
   
-  match bypass_result {
-    Success(response) => {
+  let start_time_parallel = Time::now()
+  let parallel_responses = HttpClient::send_parallel(parallel_client, parallel_requests)
+  let end_time_parallel = Time::now()
+  let parallel_time = end_time_parallel - start_time_parallel
+  
+  // Check all responses
+  for response in parallel_responses {
+    match response {
+      Ok(resp) => assert_eq(HttpResponse::status_code(resp), 200)
+      Err(error) => assert_true(false)
+    }
+  }
+  
+  // Parallel should be faster than sequential for these requests
+  assert_true(parallel_time < pipeline_time)
+  
+  // Test request caching
+  let cache_config = CacheConfig::new()
+    .with_max_size(100)
+    .with_ttl(60000L) // 1 minute
+    .with_cacheable_methods(["GET"])
+    .with_cacheable_status_codes([200, 304])
+  
+  let cache_client = HttpClient::new()
+    .with_cache(cache_config)
+  
+  // First request
+  let cache_request1 = HttpRequest::new("GET", "https://httpbin.org/cache", [], None)
+  let cache_response1 = HttpClient::send_request(cache_client, cache_request1)
+  
+  match cache_response1 {
+    Ok(response) => {
       assert_eq(HttpResponse::status_code(response), 200)
-      match HttpResponse::body(response) {
-        Some(body) => assert_eq(body, "Direct response")
+      
+      // Check if response is cacheable
+      let cache_control = HttpResponse::get_header(response, "cache-control")
+      match cache_control {
+        Some(control) => assert_true(control.contains("max-age"))
         None => assert_true(false)
       }
     }
-    Error(_) => assert_true(false) // Should not fail
+    Err(error) => assert_true(false)
   }
   
-  // Test proxy with authentication
-  let auth_proxy_config = ProxyConfig::new(
-    "http://auth-proxy.example.com:8080",
-    Some(("proxy_user", "proxy_password")),
-    []
-  )
+  // Second request should hit cache
+  let cache_request2 = HttpRequest::new("GET", "https://httpbin.org/cache", [], None)
+  let cache_response2 = HttpClient::send_request(cache_client, cache_request2)
   
-  let auth_client = HttpClient::with_proxy(
-    "https://api.example.com",
-    auth_proxy_config
-  )
-  
-  let auth_request = HttpRequest::new(
-    "GET",
-    "https://api.example.com/auth-proxy-test",
-    [],
-    None
-  )
-  
-  let auth_result = HttpClient::execute_with_callback(auth_client, auth_request, {
-    // Verify proxy authentication is used
-    let proxy_info = HttpClient::get_proxy_info()
-    assert_true(proxy_info.used_proxy)
-    assert_true(proxy_info.proxy_authenticated)
-    
-    let response = HttpResponse::new(200, [], Some("Authenticated proxy response"))
-    Success(response)
-  })
-  
-  match auth_result {
-    Success(response) => {
+  match cache_response2 {
+    Ok(response) => {
       assert_eq(HttpResponse::status_code(response), 200)
-      match HttpResponse::body(response) {
-        Some(body) => assert_eq(body, "Authenticated proxy response")
+      
+      // Check if response came from cache
+      let x_cache = HttpResponse::get_header(response, "x-cache")
+      match x_cache {
+        Some(cache) => assert_eq(cache, "HIT")
         None => assert_true(false)
       }
     }
-    Error(error) => {
-      // For testing purposes, we'll accept proxy errors
-      assert_true(error.code == ProxyError || error.code == NetworkError)
-    }
+    Err(error) => assert_true(false)
   }
   
-  // Verify proxy statistics
-  let proxy_stats = HttpClient::get_proxy_stats(client)
-  assert_eq(proxy_stats.proxy_requests, 1)
-  assert_eq(proxy_stats.direct_requests, 1)
-  assert_eq(proxy_stats.authenticated_proxy_requests, 1)
+  // Get cache statistics
+  let cache_stats = HttpClient::get_cache_stats(cache_client)
+  
+  match cache_stats {
+    CacheStats(hits, misses, hit_ratio, size) => {
+      assert_eq(hits, 1)
+      assert_eq(misses, 1)
+      assert_eq(hit_ratio, 0.5)
+      assert_eq(size, 1)
+    }
+    _ => assert_true(false)
+  }
 }

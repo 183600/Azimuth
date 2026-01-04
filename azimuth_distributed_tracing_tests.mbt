@@ -1,391 +1,507 @@
-// Azimuth 分布式追踪测试用例
-// 测试分布式追踪系统的核心功能和跨服务追踪
+// Azimuth Telemetry System - Distributed Tracing Tests
+// This file contains comprehensive test cases for distributed tracing functionality
 
-// 测试1: 追踪上下文创建和传播
-test "分布式追踪上下文创建和传播" {
-  // 创建追踪上下文
-  let trace_id = "trace-abc123def456"
-  let span_id = "span-789xyz"
-  let parent_span_id = "span-parent123"
+// Test 1: Basic Distributed Trace Creation
+test "basic distributed trace creation" {
+  let tracer = TracerProvider::get_tracer("distributed_tracing_test")
   
-  // 验证追踪ID格式
-  assert_eq(trace_id.length(), 16)
-  assert_true(trace_id.starts_with("trace-"))
+  // Create root span
+  let root_span = Tracer::start_span(tracer, "root_operation")
+  let root_ctx = Span::span_context(root_span)
   
-  // 验证跨度ID格式
-  assert_eq(span_id.length(), 11)
-  assert_true(span_id.starts_with("span-"))
+  // Test root span properties
+  assert_eq(Span::name(root_span), "root_operation")
+  assert_eq(Span::kind(root_span), Internal)
+  assert_true(Span::is_recording(root_span))
+  assert_true(SpanContext::is_valid(root_ctx))
+  assert_true(SpanContext::is_sampled(root_ctx))
   
-  // 验证父跨度ID格式
-  assert_eq(parent_span_id.length(), 13)
-  assert_true(parent_span_id.starts_with("span-"))
+  // Add attributes to root span
+  Span::set_attribute(root_span, "service.name", StringValue("test_service"))
+  Span::set_attribute(root_span, "operation.type", StringValue("root"))
   
-  // 测试追踪上下文传播
-  let baggage_items = [
-    ("user.id", "12345"),
-    ("request.id", "req-67890"),
-    ("service.version", "1.2.3")
-  ]
+  // Add events to root span
+  Span::add_event(root_span, "operation_started", Some([
+    ("timestamp", IntValue(1609459200L)),
+    ("initiator", StringValue("test_suite"))
+  ]))
   
-  // 验证行李项数量
-  assert_eq(baggage_items.length(), 3)
+  // End root span
+  Span::end(root_span)
   
-  // 验证特定行李项
-  let user_id_found = baggage_items.any(fn(item) {
-    let (key, value) = item
-    key == "user.id" && value == "12345"
-  })
-  assert_true(user_id_found)
-  
-  let request_id_found = baggage_items.any(fn(item) {
-    let (key, value) = item
-    key == "request.id" && value == "req-67890"
-  })
-  assert_true(request_id_found)
+  // Verify span is no longer recording
+  assert_false(Span::is_recording(root_span))
 }
 
-// 测试2: 跨服务追踪链
-test "跨服务追踪链完整性" {
-  // 模拟服务调用链
-  let service_chain = [
-    ("gateway", "span-001", "trace-001"),
-    ("auth", "span-002", "trace-001"),
-    ("user-service", "span-003", "trace-001"),
-    ("order-service", "span-004", "trace-001"),
-    ("payment-service", "span-005", "trace-001")
-  ]
+// Test 2: Parent-Child Span Relationships
+test "parent-child span relationships" {
+  let tracer = TracerProvider::get_tracer("parent_child_test")
   
-  // 验证所有服务使用相同的追踪ID
-  let trace_ids = service_chain.map(fn(item) { item.2 })
-  let unique_trace_ids = trace_ids.filter(fn(id, index) {
-    trace_ids.index_of(id) == index
-  })
-  assert_eq(unique_trace_ids.length(), 1)
-  assert_eq(unique_trace_ids[0], "trace-001")
+  // Create parent span
+  let parent_span = Tracer::start_span(tracer, "parent_operation")
+  let parent_ctx = Span::span_context(parent_span)
   
-  // 验证跨度ID唯一性
-  let span_ids = service_chain.map(fn(item) { item.1 })
-  let unique_span_ids = span_ids.filter(fn(id, index) {
-    span_ids.index_of(id) == index
-  })
-  assert_eq(unique_span_ids.length(), 5)
+  // Create child span with explicit parent
+  let child_span = Tracer::start_span_with_context(
+    tracer,
+    "child_operation",
+    Some(parent_ctx)
+  )
   
-  // 验证服务调用顺序
-  assert_eq(service_chain[0].0, "gateway")
-  assert_eq(service_chain[1].0, "auth")
-  assert_eq(service_chain[2].0, "user-service")
-  assert_eq(service_chain[3].0, "order-service")
-  assert_eq(service_chain[4].0, "payment-service")
-}
-
-// 测试3: 追踪采样策略
-test "追踪采样策略验证" {
-  // 定义采样策略配置
-  let sampling_config = {
-    default_rate: 0.1,  // 10%默认采样率
-    service_specific_rates: [
-      ("payment-service", 1.0),  // 100%采样率
-      ("auth-service", 0.5),     // 50%采样率
-      ("logging-service", 0.01)  // 1%采样率
-    ]
-  }
+  let child_ctx = Span::span_context(child_span)
   
-  // 验证默认采样率
-  assert_eq(sampling_config.default_rate, 0.1)
-  assert_true(sampling_config.default_rate >= 0.0)
-  assert_true(sampling_config.default_rate <= 1.0)
+  // Verify parent-child relationship
+  assert_eq(SpanContext::trace_id(child_ctx), SpanContext::trace_id(parent_ctx))
+  assert_true(SpanContext::span_id(child_ctx) != SpanContext::span_id(parent_ctx))
   
-  // 验证服务特定采样率
-  let payment_rate = match sampling_config.service_specific_rates.find(fn(rate) { rate.0 == "payment-service" }) {
-    Some((_, rate)) => rate
-    None => 0.0
-  }
-  assert_eq(payment_rate, 1.0)
-  
-  let auth_rate = match sampling_config.service_specific_rates.find(fn(rate) { rate.0 == "auth-service" }) {
-    Some((_, rate)) => rate
-    None => 0.0
-  }
-  assert_eq(auth_rate, 0.5)
-  
-  // 模拟采样决策
-  let should_sample = fn(service_name: String, trace_id: String) -> Bool {
-    let service_rate = match sampling_config.service_specific_rates.find(fn(rate) { rate.0 == service_name }) {
-      Some((_, rate)) => rate
-      None => sampling_config.default_rate
-    }
-    
-    // 简化的采样算法：基于trace_id的哈希值
-    let hash = trace_id.chars().reduce(0, fn(acc, char) { acc + char.to_int() })
-    let normalized = (hash % 100) as Float / 100.0
-    normalized <= service_rate
-  }
-  
-  // 测试采样决策
-  let payment_sampled = should_sample("payment-service", "trace-12345")
-  assert_true(payment_sampled)  // 支付服务应该总是采样
-  
-  let auth_sampled = should_sample("auth-service", "trace-67890")
-  // 取决于trace_id的哈希值，这里只验证返回布尔值
-  assert_true(auth_sampled || not(auth_sampled))
-  
-  let default_sampled = should_sample("unknown-service", "trace-11111")
-  // 取决于trace_id的哈希值，这里只验证返回布尔值
-  assert_true(default_sampled || not(default_sampled))
-}
-
-// 测试4: 追踪数据完整性
-test "追踪数据完整性验证" {
-  // 创建追踪数据结构
-  let span_data = {
-    trace_id: "trace-data-123",
-    span_id: "span-data-456",
-    parent_span_id: Some("span-parent-789"),
-    operation_name: "database.query",
-    start_time: 1640995200000,
-    end_time: 1640995250000,
-    status: "ok",
-    tags: [
-      ("db.type", "postgresql"),
-      ("db.statement", "SELECT * FROM users"),
-      ("service.name", "user-service")
-    ],
-    events: [
-      { timestamp: 1640995220000, name: "db.query.start", attributes: [] },
-      { timestamp: 1640995245000, name: "db.query.complete", attributes: [("rows.count", "42")] }
-    ]
-  }
-  
-  // 验证基本字段
-  assert_eq(span_data.trace_id, "trace-data-123")
-  assert_eq(span_data.span_id, "span-data-456")
-  assert_eq(span_data.operation_name, "database.query")
-  assert_eq(span_data.status, "ok")
-  
-  // 验证时间戳
-  assert_true(span_data.start_time > 0)
-  assert_true(span_data.end_time > span_data.start_time)
-  let duration = span_data.end_time - span_data.start_time
-  assert_eq(duration, 50000)  // 50秒
-  
-  // 验证父跨度ID
-  match span_data.parent_span_id {
-    Some(parent_id) => assert_eq(parent_id, "span-parent-789")
+  // Check if parent context is properly set
+  let parent_span_ctx = Span::parent_span_context(child_span)
+  match parent_span_ctx {
+    Some(ctx) => assert_eq(SpanContext::span_id(ctx), SpanContext::span_id(parent_ctx))
     None => assert_true(false)
   }
   
-  // 验证标签
-  assert_eq(span_data.tags.length(), 3)
-  let db_type_tag = span_data.tags.find(fn(tag) { tag.0 == "db.type" })
-  match db_type_tag {
-    Some((_, value)) => assert_eq(value, "postgresql")
+  // Add nested child
+  let grandchild_span = Tracer::start_span_with_context(
+    tracer,
+    "grandchild_operation",
+    Some(child_ctx)
+  )
+  
+  let grandchild_ctx = Span::span_context(grandchild_span)
+  
+  // Verify trace consistency across generations
+  assert_eq(SpanContext::trace_id(grandchild_ctx), SpanContext::trace_id(parent_ctx))
+  assert_eq(SpanContext::trace_id(grandchild_ctx), SpanContext::trace_id(child_ctx))
+  
+  // End spans in reverse order
+  Span::end(grandchild_span)
+  Span::end(child_span)
+  Span::end(parent_span)
+}
+
+// Test 3: Cross-Service Trace Propagation
+test "cross-service trace propagation" {
+  let tracer = TracerProvider::get_tracer("cross_service_test")
+  
+  // Service A: Create initial span
+  let service_a_span = Tracer::start_span(tracer, "service_a_operation")
+  let service_a_ctx = Span::span_context(service_a_span)
+  
+  // Extract context for propagation
+  let propagator = TraceContextPropagator::new()
+  let headers = []
+  let injected_headers = TraceContextPropagator::inject(propagator, service_a_ctx, headers)
+  
+  // Verify headers contain trace information
+  let trace_header = injected_headers.find(|h| h.0 == "traceparent")
+  match trace_header {
+    Some((_, value)) => assert_true(value.length() > 0)
     None => assert_true(false)
   }
   
-  // 验证事件
-  assert_eq(span_data.events.length(), 2)
-  assert_eq(span_data.events[0].name, "db.query.start")
-  assert_eq(span_data.events[1].name, "db.query.complete")
-  
-  // 验证事件属性
-  let complete_event = span_data.events[1]
-  let rows_count_attr = complete_event.attributes.find(fn(attr) { attr.0 == "rows.count" })
-  match rows_count_attr {
-    Some((_, value)) => assert_eq(value, "42")
-    None => assert_true(false)
-  }
-}
-
-// 测试5: 追踪性能指标
-test "追踪性能指标计算" {
-  // 创建性能测试数据
-  let spans = [
-    { trace_id: "trace-perf-001", span_id: "span-001", duration_ms: 100, service: "gateway" },
-    { trace_id: "trace-perf-001", span_id: "span-002", duration_ms: 250, service: "auth" },
-    { trace_id: "trace-perf-001", span_id: "span-003", duration_ms: 150, service: "user-service" },
-    { trace_id: "trace-perf-001", span_id: "span-004", duration_ms: 300, service: "order-service" },
-    { trace_id: "trace-perf-001", span_id: "span-005", duration_ms: 200, service: "payment-service" }
-  ]
-  
-  // 计算总持续时间
-  let total_duration = spans.reduce(fn(acc, span) { acc + span.duration_ms }, 0)
-  assert_eq(total_duration, 1000)
-  
-  // 计算平均持续时间
-  let avg_duration = total_duration / spans.length()
-  assert_eq(avg_duration, 200)
-  
-  // 找出最慢的服务
-  let slowest_span = spans.reduce(fn(acc, span) {
-    if span.duration_ms > acc.duration_ms { span } else { acc }
-  }, spans[0])
-  assert_eq(slowest_span.service, "order-service")
-  assert_eq(slowest_span.duration_ms, 300)
-  
-  // 找出最快的服务
-  let fastest_span = spans.reduce(fn(acc, span) {
-    if span.duration_ms < acc.duration_ms { span } else { acc }
-  }, spans[0])
-  assert_eq(fastest_span.service, "gateway")
-  assert_eq(fastest_span.duration_ms, 100)
-  
-  // 计算服务性能分布
-  let service_performance = spans.reduce(fn(acc, span) {
-    let current = match acc.get(span.service) {
-      Some(value) => value
-      None => 0
-    }
-    acc.insert(span.service, current + span.duration_ms)
-    acc
-  }, {})
-  
-  // 验证服务性能
-  let gateway_duration = match service_performance.get("gateway") {
-    Some(duration) => duration
-    None => 0
-  }
-  assert_eq(gateway_duration, 100)
-  
-  let auth_duration = match service_performance.get("auth") {
-    Some(duration) => duration
-    None => 0
-  }
-  assert_eq(auth_duration, 250)
-}
-
-// 测试6: 追踪错误处理
-test "追踪错误处理和恢复" {
-  // 定义错误类型
-  enum TraceError {
-    InvalidTraceId(String)
-    SpanNotFound(String)
-    ContextPropagationFailed(String)
-    SamplingError(String)
-  }
-  
-  // 创建错误处理函数
-  let handle_trace_error = fn(error: TraceError) -> String {
-    match error {
-      TraceError::InvalidTraceId(id) => "无效的追踪ID: " + id
-      TraceError::SpanNotFound(id) => "跨度未找到: " + id
-      TraceError::ContextPropagationFailed(msg) => "上下文传播失败: " + msg
-      TraceError::SamplingError(msg) => "采样错误: " + msg
-    }
-  }
-  
-  // 测试错误处理
-  let invalid_id_error = TraceError::InvalidTraceId("")
-  let error_msg1 = handle_trace_error(invalid_id_error)
-  assert_eq(error_msg1, "无效的追踪ID: ")
-  
-  let span_not_found_error = TraceError::SpanNotFound("span-missing")
-  let error_msg2 = handle_trace_error(span_not_found_error)
-  assert_eq(error_msg2, "跨度未找到: span-missing")
-  
-  let context_error = TraceError::ContextPropagationFailed("网络超时")
-  let error_msg3 = handle_trace_error(context_error)
-  assert_eq(error_msg3, "上下文传播失败: 网络超时")
-  
-  let sampling_error = TraceError::SamplingError("采样率配置错误")
-  let error_msg4 = handle_trace_error(sampling_error)
-  assert_eq(error_msg4, "采样错误: 采样率配置错误")
-  
-  // 测试错误恢复策略
-  let error_recovery = fn(error: TraceError) -> Bool {
-    match error {
-      TraceError::InvalidTraceId(_) => false  // 无法恢复
-      TraceError::SpanNotFound(_) => true    // 可以重试
-      TraceError::ContextPropagationFailed(_) => true  // 可以重试
-      TraceError::SamplingError(_) => false  // 需要重新配置
-    }
-  }
-  
-  assert_false(error_recovery(invalid_id_error))
-  assert_true(error_recovery(span_not_found_error))
-  assert_true(error_recovery(context_error))
-  assert_false(error_recovery(sampling_error))
-}
-
-// 测试7: 追踪数据序列化
-test "追踪数据序列化和反序列化" {
-  // 创建追踪数据
-  let trace_data = {
-    trace_id: "trace-serialize-123",
-    spans: [
-      {
-        span_id: "span-001",
-        operation_name: "http.request",
-        start_time: 1640995200000,
-        duration_ms: 150,
-        tags: [("http.method", "GET"), ("http.url", "/api/users")]
-      },
-      {
-        span_id: "span-002",
-        operation_name: "database.query",
-        start_time: 1640995200100,
-        duration_ms: 80,
-        tags: [("db.type", "mysql"), ("db.table", "users")]
-      }
-    ]
-  }
-  
-  // 模拟序列化为JSON字符串
-  let serialize_to_json = fn(data) {
-    let json_str = "{"
-    json_str = json_str + "\"trace_id\":\"" + data.trace_id + "\","
-    json_str = json_str + "\"spans\":["
-    
-    for i in 0..data.spans.length() {
-      let span = data.spans[i]
-      json_str = json_str + "{"
-      json_str = json_str + "\"span_id\":\"" + span.span_id + "\","
-      json_str = json_str + "\"operation_name\":\"" + span.operation_name + "\","
-      json_str = json_str + "\"start_time\":" + span.start_time.to_string() + ","
-      json_str = json_str + "\"duration_ms\":" + span.duration_ms.to_string() + ","
-      json_str = json_str + "\"tags\":["
+  // Service B: Extract context from headers
+  let extracted_ctx = TraceContextPropagator::extract(propagator, injected_headers)
+  match extracted_ctx {
+    Some(ctx) => {
+      // Verify trace continuity
+      assert_eq(SpanContext::trace_id(ctx), SpanContext::trace_id(service_a_ctx))
+      assert_true(SpanContext::is_valid(ctx))
       
-      for j in 0..span.tags.length() {
-        let tag = span.tags[j]
-        json_str = json_str + "{\"key\":\"" + tag.0 + "\",\"value\":\"" + tag.1 + "\"}"
-        if j < span.tags.length() - 1 {
-          json_str = json_str + ","
-        }
+      // Create span in Service B with extracted context
+      let service_b_span = Tracer::start_span_with_context(
+        tracer,
+        "service_b_operation",
+        Some(ctx)
+      )
+      
+      let service_b_ctx = Span::span_context(service_b_span)
+      
+      // Verify parent-child relationship across services
+      assert_eq(SpanContext::trace_id(service_b_ctx), SpanContext::trace_id(service_a_ctx))
+      
+      // Add service-specific attributes
+      Span::set_attribute(service_a_span, "service.name", StringValue("service_a"))
+      Span::set_attribute(service_b_span, "service.name", StringValue("service_b"))
+      
+      Span::end(service_b_span)
+    }
+    None => assert_true(false)
+  }
+  
+  Span::end(service_a_span)
+}
+
+// Test 4: Distributed Trace Sampling
+test "distributed trace sampling" {
+  // Test with always-on sampler
+  let always_on_sampler = AlwaysOnSampler::new()
+  let tracer1 = TracerProvider::get_tracer_with_sampler("always_on_test", always_on_sampler)
+  
+  let span1 = Tracer::start_span(tracer1, "always_on_operation")
+  let ctx1 = Span::span_context(span1)
+  
+  assert_true(SpanContext::is_sampled(ctx1))
+  Span::end(span1)
+  
+  // Test with always-off sampler
+  let always_off_sampler = AlwaysOffSampler::new()
+  let tracer2 = TracerProvider::get_tracer_with_sampler("always_off_test", always_off_sampler)
+  
+  let span2 = Tracer::start_span(tracer2, "always_off_operation")
+  let ctx2 = Span::span_context(span2)
+  
+  assert_false(SpanContext::is_sampled(ctx2))
+  Span::end(span2)
+  
+  // Test with trace ID ratio sampler
+  let ratio_sampler = TraceIdRatioBasedSampler::new(0.5) // 50% sampling
+  let tracer3 = TracerProvider::get_tracer_with_sampler("ratio_test", ratio_sampler)
+  
+  let sampled_count = { mut count: 0 }
+  let total_spans = 100
+  
+  for i in 0..=total_spans {
+    let span = Tracer::start_span(tracer3, "ratio_operation_" + i.to_string())
+    let ctx = Span::span_context(span)
+    
+    if SpanContext::is_sampled(ctx) {
+      sampled_count.count = sampled_count.count + 1
+    }
+    
+    Span::end(span)
+  }
+  
+  // Verify approximately 50% sampling rate
+  let sampling_rate = (sampled_count.count as Float) / ((total_spans + 1) as Float)
+  assert_true(sampling_rate > 0.3 && sampling_rate < 0.7)
+}
+
+// Test 5: Distributed Trace Baggage
+test "distributed trace baggage" {
+  let tracer = TracerProvider::get_tracer("baggage_test")
+  
+  // Create initial span with baggage
+  let span = Tracer::start_span(tracer, "baggage_operation")
+  let ctx = Span::span_context(span)
+  
+  // Add baggage items
+  let baggage1 = Baggage::set_entry(Baggage::new(), "user.id", "12345")
+  let baggage2 = Baggage::set_entry(baggage1, "request.id", "req-67890")
+  let baggage3 = Baggage::set_entry(baggage2, "tenant.id", "tenant-abc")
+  
+  // Create context with baggage
+  let ctx_with_baggage = Context::with_value(Context::root(), BaggageKey::new(), baggage3)
+  
+  // Propagate baggage to child span
+  let child_span = Tracer::start_span_with_context(tracer, "child_operation", Some(ctx))
+  let child_ctx = Span::span_context(child_span)
+  
+  // Verify baggage is accessible in child context
+  let child_baggage = Context::get_value(ctx_with_baggage, BaggageKey::new())
+  match child_baggage {
+    Some(b) => {
+      let user_id = Baggage::get_entry(b, "user.id")
+      match user_id {
+        Some(value) => assert_eq(value, "12345")
+        None => assert_true(false)
       }
       
-      json_str = json_str + "]}"
-      if i < data.spans.length() - 1 {
-        json_str = json_str + ","
+      let request_id = Baggage::get_entry(b, "request.id")
+      match request_id {
+        Some(value) => assert_eq(value, "req-67890")
+        None => assert_true(false)
+      }
+      
+      let tenant_id = Baggage::get_entry(b, "tenant.id")
+      match tenant_id {
+        Some(value) => assert_eq(value, "tenant-abc")
+        None => assert_true(false)
       }
     }
+    None => assert_true(false)
+  }
+  
+  Span::end(child_span)
+  Span::end(span)
+}
+
+// Test 6: Distributed Trace Links
+test "distributed trace links" {
+  let tracer = TracerProvider::get_tracer("links_test")
+  
+  // Create a span to link to
+  let linked_span = Tracer::start_span(tracer, "linked_operation")
+  let linked_ctx = Span::span_context(linked_span)
+  Span::end(linked_span)
+  
+  // Create a new span with links
+  let links = [SpanLink::new(linked_ctx, Some([
+    ("link.type", StringValue("causality")),
+    ("link.reason", StringValue("dependency"))
+  ]))]
+  
+  let linked_span2 = Tracer::start_span_with_links(
+    tracer,
+    "operation_with_links",
+    links
+  )
+  
+  // Verify links are properly attached
+  let span_links = Span::links(linked_span2)
+  assert_eq(span_links.length(), 1)
+  
+  let first_link = span_links[0]
+  assert_eq(SpanContext::trace_id(SpanLink::context(first_link)), SpanContext::trace_id(linked_ctx))
+  assert_eq(SpanContext::span_id(SpanLink::context(first_link)), SpanContext::span_id(linked_ctx))
+  
+  let link_attributes = SpanLink::attributes(first_link)
+  match link_attributes {
+    Some(attrs) => {
+      let link_type = Attributes::get(attrs, "link.type")
+      match link_type {
+        Some(StringValue(value)) => assert_eq(value, "causality")
+        _ => assert_true(false)
+      }
+      
+      let link_reason = Attributes::get(attrs, "link.reason")
+      match link_reason {
+        Some(StringValue(value)) => assert_eq(value, "dependency")
+        _ => assert_true(false)
+      }
+    }
+    None => assert_true(false)
+  }
+  
+  Span::end(linked_span2)
+}
+
+// Test 7: Distributed Trace Events
+test "distributed trace events" {
+  let tracer = TracerProvider::get_tracer("events_test")
+  
+  let span = Tracer::start_span(tracer, "event_operation")
+  
+  // Add events with different severity levels
+  Span::add_event(span, "operation_started", Some([
+    ("timestamp", IntValue(1609459200L)),
+    ("component", StringValue("auth"))
+  ]))
+  
+  Span::add_event_with_timestamp(
+    span,
+    "authentication_completed",
+    1609459210L,
+    Some([
+      ("user.id", StringValue("12345")),
+      ("auth.method", StringValue("oauth2")),
+      ("duration_ms", IntValue(150))
+    ])
+  )
+  
+  Span::add_event_with_timestamp(
+    span,
+    "database_query_executed",
+    1609459225L,
+    Some([
+      ("query.type", StringValue("SELECT")),
+      ("table.name", StringValue("users")),
+      ("duration_ms", IntValue(45)),
+      ("rows_affected", IntValue(1))
+    ])
+  )
+  
+  Span::add_event_with_timestamp(
+    span,
+    "operation_completed",
+    1609459230L,
+    Some([
+      ("status", StringValue("success")),
+      ("total_duration_ms", IntValue(200))
+    ])
+  )
+  
+  // Verify events are recorded
+  let events = Span::events(span)
+  assert_eq(events.length(), 4)
+  
+  // Check first event
+  let first_event = events[0]
+  assert_eq(SpanEvent::name(first_event), "operation_started")
+  assert_eq(SpanEvent::timestamp(first_event), 1609459200L)
+  
+  let first_event_attrs = SpanEvent::attributes(first_event)
+  match first_event_attrs {
+    Some(attrs) => {
+      let component = Attributes::get(attrs, "component")
+      match component {
+        Some(StringValue(value)) => assert_eq(value, "auth")
+        _ => assert_true(false)
+      }
+    }
+    None => assert_true(false)
+  }
+  
+  // Check last event
+  let last_event = events[3]
+  assert_eq(SpanEvent::name(last_event), "operation_completed")
+  assert_eq(SpanEvent::timestamp(last_event), 1609459230L)
+  
+  Span::end(span)
+}
+
+// Test 8: Distributed Trace Status
+test "distributed trace status" {
+  let tracer = TracerProvider::get_tracer("status_test")
+  
+  // Test successful operation
+  let success_span = Tracer::start_span(tracer, "successful_operation")
+  
+  // Add some events
+  Span::add_event(success_span, "operation_started")
+  Span::add_event(success_span, "operation_completed")
+  
+  // Set success status
+  Span::set_status(success_span, Ok, Some("Operation completed successfully"))
+  
+  assert_eq(Span::status(success_span), Ok)
+  
+  let status_message = Span::status_message(success_span)
+  match status_message {
+    Some(message) => assert_eq(message, "Operation completed successfully")
+    None => assert_true(false)
+  }
+  
+  Span::end(success_span)
+  
+  // Test failed operation
+  let error_span = Tracer::start_span(tracer, "failed_operation")
+  
+  // Add events
+  Span::add_event(error_span, "operation_started")
+  Span::add_event(error_span, "error_occurred", Some([
+    ("error.type", StringValue("ValidationError")),
+    ("error.message", StringValue("Invalid input parameter"))
+  ]))
+  
+  // Set error status
+  Span::set_status(error_span, Error, Some("Validation failed"))
+  
+  assert_eq(Span::status(error_span), Error)
+  
+  let error_message = Span::status_message(error_span)
+  match error_message {
+    Some(message) => assert_eq(message, "Validation failed")
+    None => assert_true(false)
+  }
+  
+  Span::end(error_span)
+}
+
+// Test 9: Distributed Trace Export
+test "distributed trace export" {
+  let tracer = TracerProvider::get_tracer("export_test")
+  
+  // Create a span with rich data
+  let span = Tracer::start_span(tracer, "export_operation")
+  
+  // Add attributes
+  Span::set_attribute(span, "service.name", StringValue("test_service"))
+  Span::set_attribute(span, "service.version", StringValue("1.0.0"))
+  Span::set_attribute(span, "operation.type", StringValue("export"))
+  
+  // Add events
+  Span::add_event(span, "export_started")
+  Span::add_event(span, "data_processed", Some([
+    ("records.count", IntValue(1000)),
+    ("processing_time_ms", IntValue(250))
+  ]))
+  
+  // Set status
+  Span::set_status(span, Ok, Some("Export completed"))
+  
+  Span::end(span)
+  
+  // Export span data
+  let exporter = SpanExporter::new()
+  let export_result = SpanExporter::export_span(exporter, span)
+  
+  match export_result {
+    Success(export_data) => {
+      assert_eq(export_data.span_name, "export_operation")
+      assert_eq(export_data.status, Ok)
+      assert_true(export_data.attributes.length() > 0)
+      assert_true(export_data.events.length() > 0)
+    }
+    Error(err) => assert_true(false)
+  }
+  
+  // Test batch export
+  let spans = []
+  
+  for i in 0..=5 {
+    let batch_span = Tracer::start_span(tracer, "batch_operation_" + i.to_string())
+    Span::set_attribute(batch_span, "batch.index", IntValue(i))
+    Span::end(batch_span)
+    spans.push(batch_span)
+  }
+  
+  let batch_export_result = SpanExporter::export_batch(exporter, spans)
+  match batch_export_result {
+    Success(batch_data) => assert_eq(batch_data.length(), 6)
+    Error(_) => assert_true(false)
+  }
+}
+
+// Test 10: Distributed Trace Performance
+test "distributed trace performance" {
+  let tracer = TracerProvider::get_tracer("performance_test")
+  
+  // Test span creation performance
+  let start_time = Time::now()
+  let span_count = 1000
+  
+  for i in 0..=span_count {
+    let span = Tracer::start_span(tracer, "performance_operation_" + i.to_string())
+    Span::set_attribute(span, "index", IntValue(i))
     
-    json_str = json_str + "]}"
+    // Add some events
+    if i % 10 == 0 {
+      Span::add_event(span, "milestone_reached", Some([
+        ("milestone", IntValue(i / 10))
+      ]))
+    }
+    
+    Span::end(span)
   }
   
-  // 序列化数据
-  let json_data = serialize_to_json(trace_data)
+  let end_time = Time::now()
+  let duration = end_time - start_time
   
-  // 验证序列化结果
-  assert_true(json_data.contains("\"trace_id\":\"trace-serialize-123\""))
-  assert_true(json_data.contains("\"span_id\":\"span-001\""))
-  assert_true(json_data.contains("\"operation_name\":\"http.request\""))
-  assert_true(json_data.contains("\"http.method\",\"GET\""))
-  assert_true(json_data.contains("\"db.type\",\"mysql\""))
+  // Performance should be reasonable for 1000 spans
+  assert_true(duration < 10000L) // Less than 10 seconds
   
-  // 模拟从JSON反序列化
-  let extract_field = fn(json: String, field: String) -> String {
-    let pattern = "\"" + field + "\":\""
-    let start_index = json.index_of(pattern) + pattern.length()
-    let end_index = json.index_of("\"", start_index)
-    json.substring(start_index, end_index - start_index)
+  // Test memory usage
+  let memory_usage = TracerProvider::get_memory_usage(tracer)
+  assert_true(memory_usage < 10000000) // Less than 10MB
+  
+  // Test concurrent span creation
+  let concurrent_start = Time::now()
+  let concurrent_spans = []
+  
+  for i in 0..=100 {
+    let span = Tracer::start_span(tracer, "concurrent_operation_" + i.to_string())
+    concurrent_spans.push(span)
   }
   
-  // 验证反序列化结果
-  let extracted_trace_id = extract_field(json_data, "trace_id")
-  assert_eq(extracted_trace_id, "trace-serialize-123")
+  // End all spans
+  for span in concurrent_spans {
+    Span::end(span)
+  }
   
-  // 验证JSON结构
-  assert_true(json_data.starts_with("{"))
-  assert_true(json_data.ends_with("}"))
-  assert_eq(json_data.chars().filter(fn(c) { c == '{' }).count(), 3)
-  assert_eq(json_data.chars().filter(fn(c) { c == '}' }).count(), 3)
+  let concurrent_end = Time::now()
+  let concurrent_duration = concurrent_end - concurrent_start
+  
+  // Concurrent operations should be efficient
+  assert_true(concurrent_duration < 5000L) // Less than 5 seconds
 }
