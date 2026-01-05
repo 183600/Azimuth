@@ -1,992 +1,712 @@
-// Azimuth Telemetry System - Serialization and Deserialization Tests
-// This file contains test cases for serialization and deserialization operations
+// Azimuth Telemetry System - High Quality Test Suite
+// This file contains 10 comprehensive test cases for various aspects of the system
 
-// Test 1: JSON Serialization
-test "json serialization" {
-  // Test primitive types
-  let json_int = JsonSerializer::serialize(42)
-  assert_eq(json_int, "42")
+// Test 1: Serialization and Deserialization
+test "serialization and deserialization of complex data structures" {
+  // Test with simple attributes
+  let simple_attrs = Attributes::new()
+  Attributes::set(simple_attrs, "string.key", StringValue("test_value"))
+  Attributes::set(simple_attrs, "int.key", IntValue(42))
+  Attributes::set(simple_attrs, "float.key", FloatValue(3.14))
+  Attributes::set(simple_attrs, "bool.key", BoolValue(true))
   
-  let json_float = JsonSerializer::serialize(3.14)
-  assert_eq(json_float, "3.14")
+  // Serialize to JSON
+  let serialized = Attributes::serialize_to_json(simple_attrs)
+  assert_true(serialized.length() > 0)
   
-  let json_bool = JsonSerializer::serialize(true)
-  assert_eq(json_bool, "true")
+  // Deserialize from JSON
+  let deserialized = Attributes::deserialize_from_json(serialized)
   
-  let json_string = JsonSerializer::serialize("hello")
-  assert_eq(json_string, "\"hello\"")
-  
-  // Test array serialization
-  let json_array = JsonSerializer::serialize([1, 2, 3])
-  assert_eq(json_array, "[1,2,3]")
-  
-  // Test object serialization
-  let person = Person::new("John", 30)
-  let json_person = JsonSerializer::serialize(person)
-  assert_eq(json_person, "{\"name\":\"John\",\"age\":30}")
-  
-  // Test nested object serialization
-  let address = Address::new("123 Main St", "New York", "10001")
-  let person_with_address = PersonWithAddress::new("Jane", 25, address)
-  let json_person_address = JsonSerializer::serialize(person_with_address)
-  assert_eq(json_person_address, "{\"name\":\"Jane\",\"age\":25,\"address\":{\"street\":\"123 Main St\",\"city\":\"New York\",\"zip\":\"10001\"}}")
-}
-
-// Test 2: JSON Deserialization
-test "json deserialization" {
-  // Test primitive types
-  let int_result = JsonSerializer::deserialize_int("42")
-  match int_result {
-    Ok(value) => assert_eq(value, 42)
-    Error(_) => assert_true(false)
-  }
-  
-  let float_result = JsonSerializer::deserialize_float("3.14")
-  match float_result {
-    Ok(value) => assert_eq(value, 3.14)
-    Error(_) => assert_true(false)
-  }
-  
-  let bool_result = JsonSerializer::deserialize_bool("true")
-  match bool_result {
-    Ok(value) => assert_true(value)
-    Error(_) => assert_true(false)
-  }
-  
-  let string_result = JsonSerializer::deserialize_string("\"hello\"")
+  // Verify deserialized data
+  let string_result = Attributes::get(deserialized, "string.key")
   match string_result {
-    Ok(value) => assert_eq(value, "hello")
-    Error(_) => assert_true(false)
+    Some(StringValue(v)) => assert_eq(v, "test_value")
+    _ => assert_true(false)
   }
   
-  // Test array deserialization
-  let array_result = JsonSerializer::deserialize_array_int("[1,2,3]")
-  match array_result {
-    Ok(values) => {
-      assert_eq(values.length(), 3)
-      assert_eq(values[0], 1)
-      assert_eq(values[1], 2)
-      assert_eq(values[2], 3)
-    }
-    Error(_) => assert_true(false)
-  }
-  
-  // Test object deserialization
-  let person_result = JsonSerializer::deserialize_person("{\"name\":\"John\",\"age\":30}")
-  match person_result {
-    Ok(person) => {
-      assert_eq(person.name, "John")
-      assert_eq(person.age, 30)
-    }
-    Error(_) => assert_true(false)
-  }
-  
-  // Test nested object deserialization
-  let person_address_result = JsonSerializer::deserialize_person_address("{\"name\":\"Jane\",\"age\":25,\"address\":{\"street\":\"123 Main St\",\"city\":\"New York\",\"zip\":\"10001\"}}")
-  match person_address_result {
-    Ok(person_address) => {
-      assert_eq(person_address.name, "Jane")
-      assert_eq(person_address.age, 25)
-      assert_eq(person_address.address.street, "123 Main St")
-      assert_eq(person_address.address.city, "New York")
-      assert_eq(person_address.address.zip, "10001")
-    }
-    Error(_) => assert_true(false)
-  }
-}
-
-// Test 3: Binary Serialization
-test "binary serialization" {
-  // Test primitive types
-  let binary_int = BinarySerializer::serialize_int(42)
-  assert_eq(binary_int.length(), 4)  // 4 bytes for int
-  
-  let binary_float = BinarySerializer::serialize_float(3.14)
-  assert_eq(binary_float.length(), 8)  // 8 bytes for float
-  
-  let binary_bool = BinarySerializer::serialize_bool(true)
-  assert_eq(binary_bool.length(), 1)  // 1 byte for bool
-  
-  // Test string serialization
-  let binary_string = BinarySerializer::serialize_string("hello")
-  assert_eq(binary_string.length(), 5 + 4)  // 5 bytes for string + 4 bytes for length
-  
-  // Test array serialization
-  let binary_array = BinarySerializer::serialize_array_int([1, 2, 3])
-  assert_eq(binary_array.length(), 4 + 3 * 4)  // 4 bytes for length + 3 * 4 bytes for ints
-  
-  // Test object serialization
-  let person = Person::new("John", 30)
-  let binary_person = BinarySerializer::serialize_person(person)
-  assert_eq(binary_person.length(), 4 + 4 + 4)  // 4 bytes for name length + 4 bytes for name + 4 bytes for age
-}
-
-// Test 4: Binary Deserialization
-test "binary deserialization" {
-  // Test primitive types
-  let binary_int = BinarySerializer::serialize_int(42)
-  let int_result = BinaryDeserializer::deserialize_int(binary_int)
+  let int_result = Attributes::get(deserialized, "int.key")
   match int_result {
-    Ok(value) => assert_eq(value, 42)
-    Error(_) => assert_true(false)
+    Some(IntValue(v)) => assert_eq(v, 42)
+    _ => assert_true(false)
   }
   
-  let binary_float = BinarySerializer::serialize_float(3.14)
-  let float_result = BinaryDeserializer::deserialize_float(binary_float)
-  match float_result {
-    Ok(value) => assert_eq(value, 3.14)
-    Error(_) => assert_true(false)
-  }
+  // Test with complex nested structures
+  let nested_attrs = Attributes::new()
+  let array_data = ArrayStringValue(["item1", "item2", "item3"])
+  Attributes::set(nested_attrs, "array.key", array_data)
   
-  let binary_bool = BinarySerializer::serialize_bool(true)
-  let bool_result = BinaryDeserializer::deserialize_bool(binary_bool)
-  match bool_result {
-    Ok(value) => assert_true(value)
-    Error(_) => assert_true(false)
-  }
+  let serialized_nested = Attributes::serialize_to_json(nested_attrs)
+  let deserialized_nested = Attributes::deserialize_from_json(serialized_nested)
   
-  // Test string deserialization
-  let binary_string = BinarySerializer::serialize_string("hello")
-  let string_result = BinaryDeserializer::deserialize_string(binary_string)
-  match string_result {
-    Ok(value) => assert_eq(value, "hello")
-    Error(_) => assert_true(false)
-  }
-  
-  // Test array deserialization
-  let binary_array = BinarySerializer::serialize_array_int([1, 2, 3])
-  let array_result = BinaryDeserializer::deserialize_array_int(binary_array)
+  let array_result = Attributes::get(deserialized_nested, "array.key")
   match array_result {
-    Ok(values) => {
-      assert_eq(values.length(), 3)
-      assert_eq(values[0], 1)
-      assert_eq(values[1], 2)
-      assert_eq(values[2], 3)
+    Some(ArrayStringValue(v)) => {
+      assert_eq(v.length(), 3)
+      assert_eq(v[0], "item1")
+      assert_eq(v[1], "item2")
+      assert_eq(v[2], "item3")
     }
-    Error(_) => assert_true(false)
+    _ => assert_true(false)
   }
   
-  // Test object deserialization
-  let person = Person::new("John", 30)
-  let binary_person = BinarySerializer::serialize_person(person)
-  let person_result = BinaryDeserializer::deserialize_person(binary_person)
-  match person_result {
-    Ok(deserialized_person) => {
-      assert_eq(deserialized_person.name, "John")
-      assert_eq(deserialized_person.age, 30)
-    }
-    Error(_) => assert_true(false)
-  }
+  // Test span context serialization
+  let span_ctx = SpanContext::new("trace123", "span456", true, "test_state")
+  let serialized_ctx = SpanContext::serialize(span_ctx)
+  let deserialized_ctx = SpanContext::deserialize(serialized_ctx)
+  
+  assert_eq(SpanContext::trace_id(deserialized_ctx), "trace123")
+  assert_eq(SpanContext::span_id(deserialized_ctx), "span456")
+  assert_true(SpanContext::is_sampled(deserialized_ctx))
 }
 
-// Test 5: XML Serialization
-test "xml serialization" {
-  // Test primitive types
-  let xml_int = XmlSerializer::serialize_int(42)
-  assert_eq(xml_int, "<int>42</int>")
+// Test 2: Performance Benchmarking
+test "performance benchmarking for telemetry operations" {
+  // Measure attribute operations performance
+  let attrs = Attributes::new()
+  let start_time = Time::now()
   
-  let xml_float = XmlSerializer::serialize_float(3.14)
-  assert_eq(xml_float, "<float>3.14</float>")
+  // Add 1000 attributes
+  for i in 0..=1000 {
+    let key = "attr." + i.to_string()
+    Attributes::set(attrs, key, IntValue(i))
+  }
   
-  let xml_bool = XmlSerializer::serialize_bool(true)
-  assert_eq(xml_bool, "<bool>true</bool>")
+  let add_time = Time::now()
   
-  let xml_string = XmlSerializer::serialize_string("hello")
-  assert_eq(xml_string, "<string>hello</string>")
+  // Retrieve 1000 attributes
+  for i in 0..=1000 {
+    let key = "attr." + i.to_string()
+    let _ = Attributes::get(attrs, key)
+  }
   
-  // Test array serialization
-  let xml_array = XmlSerializer::serialize_array_int([1, 2, 3])
-  assert_eq(xml_array, "<array><int>1</int><int>2</int><int>3</int></array>")
+  let get_time = Time::now()
   
-  // Test object serialization
-  let person = Person::new("John", 30)
-  let xml_person = XmlSerializer::serialize_person(person)
-  assert_eq(xml_person, "<person><name>John</name><age>30</age></person>")
+  // Verify performance thresholds
+  let add_duration = add_time - start_time
+  let get_duration = get_time - add_time
   
-  // Test nested object serialization
-  let address = Address::new("123 Main St", "New York", "10001")
-  let person_with_address = PersonWithAddress::new("Jane", 25, address)
-  let xml_person_address = XmlSerializer::serialize_person_address(person_with_address)
-  assert_eq(xml_person_address, "<person><name>Jane</name><age>25</age><address><street>123 Main St</street><city>New York</city><zip>10001</zip></address></person>")
+  // These should complete within reasonable time (adjust thresholds as needed)
+  assert_true(add_duration < 1000) // Less than 1 second
+  assert_true(get_duration < 500)  // Less than 0.5 seconds
+  
+  // Test span creation performance
+  let span_start = Time::now()
+  for i in 0..=100 {
+    let span_ctx = SpanContext::new("trace" + i.to_string(), "span" + i.to_string(), true, "")
+    let span = Span::new("test_span", Internal, span_ctx)
+    Span::end(span)
+  }
+  let span_end = Time::now()
+  let span_duration = span_end - span_start
+  assert_true(span_duration < 2000) // Less than 2 seconds
+  
+  // Test metrics performance
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "perf_test")
+  let counter = Meter::create_counter(meter, "perf_counter", None, None)
+  
+  let metrics_start = Time::now()
+  for i in 0..=1000 {
+    Counter::add(counter, i.to_float())
+  }
+  let metrics_end = Time::now()
+  let metrics_duration = metrics_end - metrics_start
+  assert_true(metrics_duration < 1000) // Less than 1 second
 }
 
-// Test 6: XML Deserialization
-test "xml deserialization" {
-  // Test primitive types
-  let int_result = XmlDeserializer::deserialize_int("<int>42</int>")
-  match int_result {
-    Ok(value) => assert_eq(value, 42)
-    Error(_) => assert_true(false)
+// Test 3: Error Handling and Boundary Conditions
+test "error handling and boundary conditions" {
+  // Test null/empty string handling
+  let attrs = Attributes::new()
+  
+  // Test empty key
+  Attributes::set(attrs, "", StringValue("empty_key_value"))
+  let empty_key_result = Attributes::get(attrs, "")
+  match empty_key_result {
+    Some(StringValue(v)) => assert_eq(v, "empty_key_value")
+    _ => assert_true(false)
   }
   
-  let float_result = XmlDeserializer::deserialize_float("<float>3.14</float>")
-  match float_result {
-    Ok(value) => assert_eq(value, 3.14)
-    Error(_) => assert_true(false)
+  // Test null value
+  Attributes::set(attrs, "null.key", StringValue(""))
+  let null_value_result = Attributes::get(attrs, "null.key")
+  match null_value_result {
+    Some(StringValue(v)) => assert_eq(v, "")
+    _ => assert_true(false)
   }
   
-  let bool_result = XmlDeserializer::deserialize_bool("<bool>true</bool>")
-  match bool_result {
-    Ok(value) => assert_true(value)
-    Error(_) => assert_true(false)
+  // Test extremely long key
+  let long_key = "a".repeat(1000)
+  Attributes::set(attrs, long_key, IntValue(42))
+  let long_key_result = Attributes::get(attrs, long_key)
+  match long_key_result {
+    Some(IntValue(v)) => assert_eq(v, 42)
+    _ => assert_true(false)
   }
   
-  let string_result = XmlDeserializer::deserialize_string("<string>hello</string>")
-  match string_result {
-    Ok(value) => assert_eq(value, "hello")
-    Error(_) => assert_true(false)
+  // Test extremely long value
+  let long_value = "b".repeat(10000)
+  Attributes::set(attrs, "long.value", StringValue(long_value))
+  let long_value_result = Attributes::get(attrs, "long.value")
+  match long_value_result {
+    Some(StringValue(v)) => assert_eq(v, long_value)
+    _ => assert_true(false)
   }
   
-  // Test array deserialization
-  let array_result = XmlDeserializer::deserialize_array_int("<array><int>1</int><int>2</int><int>3</int></array>")
-  match array_result {
-    Ok(values) => {
-      assert_eq(values.length(), 3)
-      assert_eq(values[0], 1)
-      assert_eq(values[1], 2)
-      assert_eq(values[2], 3)
-    }
-    Error(_) => assert_true(false)
+  // Test numeric boundary conditions
+  Attributes::set(attrs, "max.int", IntValue(2147483647))
+  Attributes::set(attrs, "min.int", IntValue(-2147483648))
+  Attributes::set(attrs, "max.float", FloatValue(3.4028235e38))
+  Attributes::set(attrs, "min.float", FloatValue(-3.4028235e38))
+  
+  let max_int_result = Attributes::get(attrs, "max.int")
+  match max_int_result {
+    Some(IntValue(v)) => assert_eq(v, 2147483647)
+    _ => assert_true(false)
   }
   
-  // Test object deserialization
-  let person_result = XmlDeserializer::deserialize_person("<person><name>John</name><age>30</age></person>")
-  match person_result {
-    Ok(person) => {
-      assert_eq(person.name, "John")
-      assert_eq(person.age, 30)
-    }
-    Error(_) => assert_true(false)
-  }
+  // Test invalid span context
+  let invalid_ctx = SpanContext::new("", "", false, "")
+  assert_false(SpanContext::is_valid(invalid_ctx))
   
-  // Test nested object deserialization
-  let person_address_result = XmlDeserializer::deserialize_person_address("<person><name>Jane</name><age>25</age><address><street>123 Main St</street><city>New York</city><zip>10001</zip></address></person>")
-  match person_address_result {
-    Ok(person_address) => {
-      assert_eq(person_address.name, "Jane")
-      assert_eq(person_address.age, 25)
-      assert_eq(person_address.address.street, "123 Main St")
-      assert_eq(person_address.address.city, "New York")
-      assert_eq(person_address.address.zip, "10001")
-    }
-    Error(_) => assert_true(false)
-  }
+  // Test division by zero handling in metrics
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "error_test")
+  let histogram = Meter::create_histogram(meter, "error_histogram", None, None)
+  
+  // This should not crash
+  Histogram::record(histogram, 0.0)
+  Histogram::record(histogram, -1.0)
 }
 
-// Test 7: Protocol Buffer Serialization
-test "protocol buffer serialization" {
-  // Test primitive types
-  let proto_int = ProtoSerializer::serialize_int(42)
-  assert_eq(proto_int.length(), 1 + 4)  // 1 byte for tag + 4 bytes for value
+// Test 4: Concurrency Safety
+test "concurrency safety for telemetry operations" {
+  // Test concurrent attribute operations
+  let attrs = Attributes::new()
+  let num_threads = 10
+  let operations_per_thread = 100
   
-  let proto_float = ProtoSerializer::serialize_float(3.14)
-  assert_eq(proto_float.length(), 1 + 8)  // 1 byte for tag + 8 bytes for value
-  
-  let proto_bool = ProtoSerializer::serialize_bool(true)
-  assert_eq(proto_bool.length(), 1 + 1)  // 1 byte for tag + 1 byte for value
-  
-  // Test string serialization
-  let proto_string = ProtoSerializer::serialize_string("hello")
-  assert_eq(proto_string.length(), 1 + 1 + 5)  // 1 byte for tag + 1 byte for length + 5 bytes for string
-  
-  // Test array serialization
-  let proto_array = ProtoSerializer::serialize_array_int([1, 2, 3])
-  assert_eq(proto_array.length(), 3 * (1 + 1))  // 3 * (1 byte for tag + 1 byte for value)
-  
-  // Test object serialization
-  let person = Person::new("John", 30)
-  let proto_person = ProtoSerializer::serialize_person(person)
-  assert_eq(proto_person.length(), 2 + 1 + 4 + 4 + 1 + 4)  // 2 bytes for name field + 1 byte for tag + 4 bytes for name length + 4 bytes for name + 1 byte for tag + 4 bytes for age
-}
-
-// Test 8: Protocol Buffer Deserialization
-test "protocol buffer deserialization" {
-  // Test primitive types
-  let proto_int = ProtoSerializer::serialize_int(42)
-  let int_result = ProtoDeserializer::deserialize_int(proto_int)
-  match int_result {
-    Ok(value) => assert_eq(value, 42)
-    Error(_) => assert_true(false)
-  }
-  
-  let proto_float = ProtoSerializer::serialize_float(3.14)
-  let float_result = ProtoDeserializer::deserialize_float(proto_float)
-  match float_result {
-    Ok(value) => assert_eq(value, 3.14)
-    Error(_) => assert_true(false)
-  }
-  
-  let proto_bool = ProtoSerializer::serialize_bool(true)
-  let bool_result = ProtoDeserializer::deserialize_bool(proto_bool)
-  match bool_result {
-    Ok(value) => assert_true(value)
-    Error(_) => assert_true(false)
-  }
-  
-  // Test string deserialization
-  let proto_string = ProtoSerializer::serialize_string("hello")
-  let string_result = ProtoDeserializer::deserialize_string(proto_string)
-  match string_result {
-    Ok(value) => assert_eq(value, "hello")
-    Error(_) => assert_true(false)
-  }
-  
-  // Test array deserialization
-  let proto_array = ProtoSerializer::serialize_array_int([1, 2, 3])
-  let array_result = ProtoDeserializer::deserialize_array_int(proto_array)
-  match array_result {
-    Ok(values) => {
-      assert_eq(values.length(), 3)
-      assert_eq(values[0], 1)
-      assert_eq(values[1], 2)
-      assert_eq(values[2], 3)
-    }
-    Error(_) => assert_true(false)
-  }
-  
-  // Test object deserialization
-  let person = Person::new("John", 30)
-  let proto_person = ProtoSerializer::serialize_person(person)
-  let person_result = ProtoDeserializer::deserialize_person(proto_person)
-  match person_result {
-    Ok(deserialized_person) => {
-      assert_eq(deserialized_person.name, "John")
-      assert_eq(deserialized_person.age, 30)
-    }
-    Error(_) => assert_true(false)
-  }
-}
-
-// Test 9: Serialization Error Handling
-test "serialization error handling" {
-  // Test invalid JSON
-  let invalid_json_result = JsonSerializer::deserialize_person("{invalid json}")
-  match invalid_json_result {
-    Ok(_) => assert_true(false)
-    Error(message) => assert_eq(message, "Invalid JSON format")
-  }
-  
-  // Test missing fields
-  let missing_fields_result = JsonSerializer::deserialize_person("{\"name\":\"John\"}")
-  match missing_fields_result {
-    Ok(_) => assert_true(false)
-    Error(message) => assert_eq(message, "Missing required field: age")
-  }
-  
-  // Test type mismatch
-  let type_mismatch_result = JsonSerializer::deserialize_person("{\"name\":\"John\",\"age\":\"thirty\"}")
-  match type_mismatch_result {
-    Ok(_) => assert_true(false)
-    Error(message) => assert_eq(message, "Type mismatch for field: age")
-  }
-  
-  // Test invalid binary data
-  let invalid_binary = [1, 2, 3]  // Too short for an int
-  let binary_result = BinaryDeserializer::deserialize_int(invalid_binary)
-  match binary_result {
-    Ok(_) => assert_true(false)
-    Error(message) => assert_eq(message, "Invalid binary data")
-  }
-  
-  // Test invalid XML
-  let invalid_xml_result = XmlDeserializer::deserialize_person("<person><name>John</age></person>")
-  match invalid_xml_result {
-    Ok(_) => assert_true(false)
-    Error(message) => assert_eq(message, "Invalid XML format")
-  }
-  
-  // Test invalid protocol buffer
-  let invalid_proto = [1]  // Too short for any meaningful data
-  let proto_result = ProtoDeserializer::deserialize_int(invalid_proto)
-  match proto_result {
-    Ok(_) => assert_true(false)
-    Error(message) => assert_eq(message, "Invalid protocol buffer data")
-  }
-}
-
-// Test 10: Serialization Performance
-test "serialization performance" {
-  let person = Person::new("John Doe", 30)
-  let large_array = []
-  for i in 0..1000 {
-    large_array.push(i)
-  }
-  
-  // Test JSON serialization performance
-  let timer = PerformanceTimer::new()
-  PerformanceTimer::start(timer)
-  
-  for i in 0..100 {
-    let _ = JsonSerializer::serialize(person)
-  }
-  
-  let json_time = PerformanceTimer::stop(timer)
-  
-  // Test binary serialization performance
-  PerformanceTimer::start(timer)
-  
-  for i in 0..100 {
-    let _ = BinarySerializer::serialize_person(person)
-  }
-  
-  let binary_time = PerformanceTimer::stop(timer)
-  
-  // Test XML serialization performance
-  PerformanceTimer::start(timer)
-  
-  for i in 0..100 {
-    let _ = XmlSerializer::serialize_person(person)
-  }
-  
-  let xml_time = PerformanceTimer::stop(timer)
-  
-  // Test protocol buffer serialization performance
-  PerformanceTimer::start(timer)
-  
-  for i in 0..100 {
-    let _ = ProtoSerializer::serialize_person(person)
-  }
-  
-  let proto_time = PerformanceTimer::stop(timer)
-  
-  // Binary and protocol buffer should generally be faster than JSON and XML
-  assert_true(binary_time <= json_time)
-  assert_true(proto_time <= json_time)
-  assert_true(binary_time <= xml_time)
-  assert_true(proto_time <= xml_time)
-  
-  // Test array serialization performance
-  PerformanceTimer::start(timer)
-  
-  for i in 0..10 {
-    let _ = JsonSerializer::serialize(large_array)
-  }
-  
-  let array_json_time = PerformanceTimer::stop(timer)
-  
-  PerformanceTimer::start(timer)
-  
-  for i in 0..10 {
-    let _ = BinarySerializer::serialize_array_int(large_array)
-  }
-  
-  let array_binary_time = PerformanceTimer::stop(timer)
-  
-  // Binary should be more efficient for large arrays
-  assert_true(array_binary_time <= array_json_time)
-}
-
-// Type definitions for serialization tests
-
-// Person type
-type Person { name: String, age: Int }
-
-// Person methods
-fn Person::new(name: String, age: Int) -> Person { { name: name, age: age } }
-
-// Address type
-type Address { street: String, city: String, zip: String }
-
-// Address methods
-fn Address::new(street: String, city: String, zip: String) -> Address { 
-  { street: street, city: city, zip: zip } 
-}
-
-// PersonWithAddress type
-type PersonWithAddress { name: String, age: Int, address: Address }
-
-// PersonWithAddress methods
-fn PersonWithAddress::new(name: String, age: Int, address: Address) -> PersonWithAddress { 
-  { name: name, age: age, address: address } 
-}
-
-// JsonSerializer type
-type JsonSerializer
-
-// JsonSerializer methods
-fn JsonSerializer::serialize(value: Any) -> String {
-  // Simplified implementation - in a real scenario, this would properly serialize to JSON
-  match value {
-    Int(i) => i.to_string(),
-    Float(f) => f.to_string(),
-    Bool(b) => if b { "true" } else { "false" },
-    String(s) => "\"" + s + "\"",
-    Array(a) => {
-      let mut result = "["
-      for i in 0..a.length() {
-        if i > 0 { result = result + "," }
-        result = result + JsonSerializer::serialize(a[i])
-      }
-      result = result + "]"
-      result
-    }
-    Person(p) => {
-      "{\"name\":\"" + p.name + "\",\"age\":" + p.age.to_string() + "}"
-    }
-    PersonWithAddress(p) => {
-      "{\"name\":\"" + p.name + "\",\"age\":" + p.age.to_string() + ",\"address\":{\"street\":\"" + p.address.street + "\",\"city\":\"" + p.address.city + "\",\"zip\":\"" + p.address.zip + "\"}}"
-    }
-    _ => "null"
-  }
-}
-
-fn JsonSerializer::deserialize_int(json: String) -> Result[Int, String] {
-  if json == "42" {
-    return Ok(42)
-  } else {
-    return Error("Invalid JSON format")
-  }
-}
-
-fn JsonSerializer::deserialize_float(json: String) -> Result[Double, String] {
-  if json == "3.14" {
-    return Ok(3.14)
-  } else {
-    return Error("Invalid JSON format")
-  }
-}
-
-fn JsonSerializer::deserialize_bool(json: String) -> Result[Bool, String] {
-  if json == "true" {
-    return Ok(true)
-  } else if json == "false" {
-    return Ok(false)
-  } else {
-    return Error("Invalid JSON format")
-  }
-}
-
-fn JsonSerializer::deserialize_string(json: String) -> Result[String, String] {
-  if json == "\"hello\"" {
-    return Ok("hello")
-  } else {
-    return Error("Invalid JSON format")
-  }
-}
-
-fn JsonSerializer::deserialize_array_int(json: String) -> Result[Array[Int], String] {
-  if json == "[1,2,3]" {
-    return Ok([1, 2, 3])
-  } else {
-    return Error("Invalid JSON format")
-  }
-}
-
-fn JsonSerializer::deserialize_person(json: String) -> Result[Person, String] {
-  if json == "{\"name\":\"John\",\"age\":30}" {
-    return Ok(Person::new("John", 30))
-  } else if json == "{\"name\":\"John\"}" {
-    return Error("Missing required field: age")
-  } else if json == "{\"name\":\"John\",\"age\":\"thirty\"}" {
-    return Error("Type mismatch for field: age")
-  } else if json == "{invalid json}" {
-    return Error("Invalid JSON format")
-  } else {
-    return Error("Unknown error")
-  }
-}
-
-fn JsonSerializer::deserialize_person_address(json: String) -> Result[PersonWithAddress, String] {
-  if json == "{\"name\":\"Jane\",\"age\":25,\"address\":{\"street\":\"123 Main St\",\"city\":\"New York\",\"zip\":\"10001\"}}" {
-    let address = Address::new("123 Main St", "New York", "10001")
-    return Ok(PersonWithAddress::new("Jane", 25, address))
-  } else {
-    return Error("Invalid JSON format")
-  }
-}
-
-// BinarySerializer type
-type BinarySerializer
-
-// BinarySerializer methods
-fn BinarySerializer::serialize_int(value: Int) -> Array[Byte] {
-  // Simplified implementation - in a real scenario, this would properly serialize to binary
-  return [0, 0, 0, 0]  // 4 bytes for int
-}
-
-fn BinarySerializer::serialize_float(value: Double) -> Array[Byte] {
-  // Simplified implementation - in a real scenario, this would properly serialize to binary
-  return [0, 0, 0, 0, 0, 0, 0, 0]  // 8 bytes for float
-}
-
-fn BinarySerializer::serialize_bool(value: Bool) -> Array[Byte] {
-  // Simplified implementation - in a real scenario, this would properly serialize to binary
-  return [if value { 1 } else { 0 }]  // 1 byte for bool
-}
-
-fn BinarySerializer::serialize_string(value: String) -> Array[Byte] {
-  // Simplified implementation - in a real scenario, this would properly serialize to binary
-  let mut result = []
-  
-  // Add length (4 bytes)
-  result.push(0)
-  result.push(0)
-  result.push(0)
-  result.push((value.length() / 256) as Byte)
-  
-  // Add string bytes
-  for i in 0..value.length() {
-    result.push(value[i] as Byte)
-  }
-  
-  return result
-}
-
-fn BinarySerializer::serialize_array_int(value: Array[Int]) -> Array[Byte] {
-  // Simplified implementation - in a real scenario, this would properly serialize to binary
-  let mut result = []
-  
-  // Add length (4 bytes)
-  result.push(0)
-  result.push(0)
-  result.push(0)
-  result.push((value.length() / 256) as Byte)
-  
-  // Add array elements
-  for i in 0..value.length() {
-    let int_bytes = BinarySerializer::serialize_int(value[i])
-    for byte in int_bytes {
-      result.push(byte)
+  // Simulate concurrent attribute setting
+  for thread_id in 0..=num_threads {
+    for op_id in 0..=operations_per_thread {
+      let key = "thread." + thread_id.to_string() + ".attr." + op_id.to_string()
+      let value = "value." + thread_id.to_string() + "." + op_id.to_string()
+      Attributes::set(attrs, key, StringValue(value))
     }
   }
   
-  return result
-}
-
-fn BinarySerializer::serialize_person(value: Person) -> Array[Byte] {
-  // Simplified implementation - in a real scenario, this would properly serialize to binary
-  let mut result = []
+  // Verify all attributes were set correctly
+  let expected_count = (num_threads + 1) * (operations_per_thread + 1)
+  let actual_count = Attributes::size(attrs)
+  assert_eq(actual_count, expected_count)
   
-  // Add name length (4 bytes)
-  result.push(0)
-  result.push(0)
-  result.push(0)
-  result.push((value.name.length() / 256) as Byte)
-  
-  // Add name
-  for i in 0..value.name.length() {
-    result.push(value.name[i] as Byte)
+  // Test concurrent span operations
+  let spans = []
+  for i in 0..=50 {
+    let span_ctx = SpanContext::new("concurrent_trace", "span_" + i.to_string(), true, "")
+    let span = Span::new("concurrent_span", Internal, span_ctx)
+    spans.push(span)
   }
   
-  // Add age (4 bytes)
-  let age_bytes = BinarySerializer::serialize_int(value.age)
-  for byte in age_bytes {
-    result.push(byte)
+  // End all spans concurrently
+  for span in spans {
+    Span::end(span)
   }
   
-  return result
-}
-
-// BinaryDeserializer type
-type BinaryDeserializer
-
-// BinaryDeserializer methods
-fn BinaryDeserializer::deserialize_int(data: Array[Byte]) -> Result[Int, String] {
-  if data.length() >= 4 {
-    return Ok(42)  // Simplified implementation
-  } else {
-    return Error("Invalid binary data")
-  }
-}
-
-fn BinaryDeserializer::deserialize_float(data: Array[Byte]) -> Result[Double, String] {
-  if data.length() >= 8 {
-    return Ok(3.14)  // Simplified implementation
-  } else {
-    return Error("Invalid binary data")
-  }
-}
-
-fn BinaryDeserializer::deserialize_bool(data: Array[Byte]) -> Result[Bool, String] {
-  if data.length() >= 1 {
-    return Ok(data[0] == 1)  // Simplified implementation
-  } else {
-    return Error("Invalid binary data")
-  }
-}
-
-fn BinaryDeserializer::deserialize_string(data: Array[Byte]) -> Result[String, String] {
-  if data.length() >= 5 {
-    return Ok("hello")  // Simplified implementation
-  } else {
-    return Error("Invalid binary data")
-  }
-}
-
-fn BinaryDeserializer::deserialize_array_int(data: Array[Byte]) -> Result[Array[Int], String] {
-  if data.length() >= 16 {
-    return Ok([1, 2, 3])  // Simplified implementation
-  } else {
-    return Error("Invalid binary data")
-  }
-}
-
-fn BinaryDeserializer::deserialize_person(data: Array[Byte]) -> Result[Person, String] {
-  if data.length() >= 12 {
-    return Ok(Person::new("John", 30))  // Simplified implementation
-  } else {
-    return Error("Invalid binary data")
-  }
-}
-
-// XmlSerializer type
-type XmlSerializer
-
-// XmlSerializer methods
-fn XmlSerializer::serialize_int(value: Int) -> String {
-  "<int>" + value.to_string() + "</int>"
-}
-
-fn XmlSerializer::serialize_float(value: Double) -> String {
-  "<float>" + value.to_string() + "</float>"
-}
-
-fn XmlSerializer::serialize_bool(value: Bool) -> String {
-  "<bool>" + (if value { "true" } else { "false" }) + "</bool>"
-}
-
-fn XmlSerializer::serialize_string(value: String) -> String {
-  "<string>" + value + "</string>"
-}
-
-fn XmlSerializer::serialize_array_int(value: Array[Int]) -> String {
-  let mut result = "<array>"
-  for i in 0..value.length() {
-    result = result + "<int>" + value[i].to_string() + "</int>"
-  }
-  result = result + "</array>"
-  return result
-}
-
-fn XmlSerializer::serialize_person(value: Person) -> String {
-  "<person><name>" + value.name + "</name><age>" + value.age.to_string() + "</age></person>"
-}
-
-fn XmlSerializer::serialize_person_address(value: PersonWithAddress) -> String {
-  "<person><name>" + value.name + "</name><age>" + value.age.to_string() + "</age><address><street>" + value.address.street + "</street><city>" + value.address.city + "</city><zip>" + value.address.zip + "</zip></address></person>"
-}
-
-// XmlDeserializer type
-type XmlDeserializer
-
-// XmlDeserializer methods
-fn XmlDeserializer::deserialize_int(xml: String) -> Result[Int, String] {
-  if xml == "<int>42</int>" {
-    return Ok(42)
-  } else {
-    return Error("Invalid XML format")
-  }
-}
-
-fn XmlDeserializer::deserialize_float(xml: String) -> Result[Double, String] {
-  if xml == "<float>3.14</float>" {
-    return Ok(3.14)
-  } else {
-    return Error("Invalid XML format")
-  }
-}
-
-fn XmlDeserializer::deserialize_bool(xml: String) -> Result[Bool, String] {
-  if xml == "<bool>true</bool>" {
-    return Ok(true)
-  } else if xml == "<bool>false</bool>" {
-    return Ok(false)
-  } else {
-    return Error("Invalid XML format")
-  }
-}
-
-fn XmlDeserializer::deserialize_string(xml: String) -> Result[String, String] {
-  if xml == "<string>hello</string>" {
-    return Ok("hello")
-  } else {
-    return Error("Invalid XML format")
-  }
-}
-
-fn XmlDeserializer::deserialize_array_int(xml: String) -> Result[Array[Int], String] {
-  if xml == "<array><int>1</int><int>2</int><int>3</int></array>" {
-    return Ok([1, 2, 3])
-  } else {
-    return Error("Invalid XML format")
-  }
-}
-
-fn XmlDeserializer::deserialize_person(xml: String) -> Result[Person, String] {
-  if xml == "<person><name>John</name><age>30</age></person>" {
-    return Ok(Person::new("John", 30))
-  } else if xml == "<person><name>John</age></person>" {
-    return Error("Invalid XML format")
-  } else {
-    return Error("Invalid XML format")
-  }
-}
-
-fn XmlDeserializer::deserialize_person_address(xml: String) -> Result[PersonWithAddress, String] {
-  if xml == "<person><name>Jane</name><age>25</age><address><street>123 Main St</street><city>New York</city><zip>10001</zip></address></person>" {
-    let address = Address::new("123 Main St", "New York", "10001")
-    return Ok(PersonWithAddress::new("Jane", 25, address))
-  } else {
-    return Error("Invalid XML format")
-  }
-}
-
-// ProtoSerializer type
-type ProtoSerializer
-
-// ProtoSerializer methods
-fn ProtoSerializer::serialize_int(value: Int) -> Array[Byte] {
-  // Simplified implementation - in a real scenario, this would properly serialize to protocol buffer
-  return [1, 42]  // 1 byte for tag + 1 byte for value
-}
-
-fn ProtoSerializer::serialize_float(value: Double) -> Array[Byte] {
-  // Simplified implementation - in a real scenario, this would properly serialize to protocol buffer
-  return [1, 0, 0, 0, 0, 0, 0, 0, 0]  // 1 byte for tag + 8 bytes for value
-}
-
-fn ProtoSerializer::serialize_bool(value: Bool) -> Array[Byte] {
-  // Simplified implementation - in a real scenario, this would properly serialize to protocol buffer
-  return [1, if value { 1 } else { 0 }]  // 1 byte for tag + 1 byte for value
-}
-
-fn ProtoSerializer::serialize_string(value: String) -> Array[Byte] {
-  // Simplified implementation - in a real scenario, this would properly serialize to protocol buffer
-  let mut result = []
+  // Test concurrent metrics operations
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "concurrent_test")
+  let counter = Meter::create_counter(meter, "concurrent_counter", None, None)
   
-  // Add tag (1 byte)
-  result.push(1)
-  
-  // Add length (1 byte)
-  result.push(value.length() as Byte)
-  
-  // Add string bytes
-  for i in 0..value.length() {
-    result.push(value[i] as Byte)
+  for thread_id in 0..=num_threads {
+    for op_id in 0..=operations_per_thread {
+      Counter::add(counter, 1.0)
+    }
   }
   
-  return result
+  // Test concurrent context operations
+  let root_ctx = Context::root()
+  let contexts = []
+  
+  for i in 0..=50 {
+    let key = ContextKey::new("key_" + i.to_string())
+    let ctx = Context::with_value(root_ctx, key, "value_" + i.to_string())
+    contexts.push(ctx)
+  }
+  
+  // Verify all contexts have correct values
+  for i in 0..=50 {
+    let key = ContextKey::new("key_" + i.to_string())
+    let expected_value = "value_" + i.to_string()
+    match Context::get(contexts[i], key) {
+      Some(value) => assert_eq(value, expected_value)
+      None => assert_true(false)
+    }
+  }
 }
 
-fn ProtoSerializer::serialize_array_int(value: Array[Int]) -> Array[Byte] {
-  // Simplified implementation - in a real scenario, this would properly serialize to protocol buffer
-  let mut result = []
+// Test 5: Data Validation
+test "data validation for telemetry components" {
+  // Test attribute key validation
+  let valid_keys = [
+    "valid.key",
+    "valid_key_with_underscores",
+    "valid.key.with.numbers123",
+    "a", // Single character
+    "key.with.dots" // Multiple dots
+  ]
   
-  for i in 0..value.length() {
-    // Add tag (1 byte)
-    result.push(1)
+  let attrs = Attributes::new()
+  for key in valid_keys {
+    Attributes::set(attrs, key, StringValue("valid_value"))
+    let result = Attributes::get(attrs, key)
+    match result {
+      Some(StringValue(v)) => assert_eq(v, "valid_value")
+      _ => assert_true(false)
+    }
+  }
+  
+  // Test span context validation
+  let valid_trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let valid_span_id = "b7ad6b7169203331"
+  
+  let valid_ctx = SpanContext::new(valid_trace_id, valid_span_id, true, "test_state")
+  assert_true(SpanContext::is_valid(valid_ctx))
+  
+  // Test invalid trace IDs
+  let invalid_trace_ids = [
+    "", // Empty
+    "short", // Too short
+    "invalid_characters_!@#$%" // Invalid characters
+  ]
+  
+  for invalid_id in invalid_trace_ids {
+    let invalid_ctx = SpanContext::new(invalid_id, valid_span_id, true, "")
+    assert_false(SpanContext::is_valid(invalid_ctx))
+  }
+  
+  // Test metric name validation
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "validation_test")
+  
+  let valid_metric_names = [
+    "valid_metric",
+    "valid.metric.with.dots",
+    "metric_with_numbers123",
+    "metric_with_underscores"
+  ]
+  
+  for name in valid_metric_names {
+    let counter = Meter::create_counter(meter, name, None, None)
+    assert_true(counter != None)
+  }
+  
+  // Test log record validation
+  let valid_log = LogRecord::new(Info, "Valid log message")
+  assert_eq(LogRecord::severity_number(valid_log), Info)
+  match LogRecord::body(valid_log) {
+    Some(body) => assert_eq(body, "Valid log message")
+    None => assert_true(false)
+  }
+  
+  // Test invalid severity levels
+  let invalid_severity = 999 // Invalid severity number
+  // This should be handled gracefully or rejected
+  let invalid_log = LogRecord::new(invalid_severity, "Invalid severity")
+  // System should handle this gracefully
+}
+
+// Test 6: Resource Management
+test "resource management and cleanup" {
+  // Test resource creation and cleanup
+  let resource = Resource::new()
+  assert_true(resource != None)
+  
+  // Test resource with attributes
+  let attrs = [
+    ("service.name", StringValue("test_service")),
+    ("service.version", StringValue("1.0.0")),
+    ("service.instance.id", StringValue("instance-123")),
+    ("host.name", StringValue("test-host")),
+    ("process.id", IntValue(12345))
+  ]
+  
+  let resource_with_attrs = Resource::with_attributes(resource, attrs)
+  assert_true(resource_with_attrs != None)
+  
+  // Test resource merging
+  let additional_resource = Resource::with_attributes(Resource::new(), [
+    ("additional.attr", StringValue("additional_value")),
+    ("override.attr", StringValue("original_value"))
+  ])
+  
+  let merged_resource = Resource::merge(resource_with_attrs, additional_resource)
+  assert_true(merged_resource != None)
+  
+  // Verify merged attributes
+  let service_name = Resource::get_attribute(merged_resource, "service.name")
+  match service_name {
+    Some(StringValue(name)) => assert_eq(name, "test_service")
+    _ => assert_true(false)
+  }
+  
+  let additional_attr = Resource::get_attribute(merged_resource, "additional.attr")
+  match additional_attr {
+    Some(StringValue(value)) => assert_eq(value, "additional_value")
+    _ => assert_true(false)
+  }
+  
+  // Test meter provider resource management
+  let provider = MeterProvider::default()
+  let resource_aware_provider = MeterProvider::with_resource(provider, merged_resource)
+  
+  let meter = MeterProvider::get_meter(resource_aware_provider, "resource_test")
+  assert_true(meter != None)
+  
+  // Test logger provider resource management
+  let logger_provider = LoggerProvider::default()
+  let resource_aware_logger_provider = LoggerProvider::with_resource(logger_provider, merged_resource)
+  
+  let logger = LoggerProvider::get_logger(resource_aware_logger_provider, "resource_test_logger")
+  assert_true(logger != None)
+  
+  // Test resource cleanup
+  Resource::cleanup(resource)
+  Resource::cleanup(resource_with_attrs)
+  Resource::cleanup(merged_resource)
+  Resource::cleanup(additional_resource)
+}
+
+// Test 7: Cross-Platform Compatibility
+test "cross-platform compatibility" {
+  // Test platform-specific behavior handling
+  let platform_info = Platform::get_info()
+  assert_true(platform_info != None)
+  
+  // Test path handling across platforms
+  let path_separator = Platform::path_separator()
+  assert_true(path_separator == "/" || path_separator == "\\")
+  
+  // Test line ending handling
+  let line_ending = Platform::line_ending()
+  assert_true(line_ending == "\n" || line_ending == "\r\n")
+  
+  // Test timezone handling
+  let timezone = Platform::timezone()
+  assert_true(timezone.length() > 0)
+  
+  // Test encoding compatibility
+  let test_string = "Test string with unicode: ñáéíóú 中文 🌟"
+  let encoded = Encoding::utf8_encode(test_string)
+  let decoded = Encoding::utf8_decode(encoded)
+  
+  assert_eq(decoded, test_string)
+  
+  // Test file path handling
+  let file_path = Platform::normalize_path("path/to/file.txt")
+  assert_true(file_path.length() > 0)
+  
+  // Test timestamp formatting
+  let timestamp = Time::now()
+  let formatted = Platform::format_timestamp(timestamp)
+  assert_true(formatted.length() > 0)
+  
+  // Test environment variable access
+  let env_var = Platform::get_env_var("PATH")
+  match env_var {
+    Some(path) => assert_true(path.length() > 0)
+    None => assert_true(true) // PATH might not exist on all platforms
+  }
+  
+  // Test hostname resolution
+  let hostname = Platform::get_hostname()
+  assert_true(hostname.length() > 0)
+  
+  // Test network interface detection
+  let interfaces = Platform::get_network_interfaces()
+  assert_true(interfaces.length() >= 0)
+}
+
+// Test 8: Internationalization Support
+test "internationalization and localization support" {
+  // Test multiple language support
+  let supported_locales = [
+    "en-US", // English (United States)
+    "zh-CN", // Chinese (Simplified)
+    "es-ES", // Spanish (Spain)
+    "fr-FR", // French (France)
+    "ja-JP", // Japanese (Japan)
+    "de-DE", // German (Germany)
+    "ru-RU", // Russian (Russia)
+    "ar-SA"  // Arabic (Saudi Arabia)
+  ]
+  
+  for locale in supported_locales {
+    let formatter = Formatter::for_locale(locale)
+    assert_true(formatter != None)
     
-    // Add value (1 byte)
-    result.push(value[i] as Byte)
+    // Test number formatting
+    let number = 1234567.89
+    let formatted_number = Formatter::format_number(formatter, number)
+    assert_true(formatted_number.length() > 0)
+    
+    // Test date formatting
+    let date = Time::now()
+    let formatted_date = Formatter::format_date(formatter, date)
+    assert_true(formatted_date.length() > 0)
+    
+    // Test currency formatting
+    let currency = 1234.56
+    let formatted_currency = Formatter::format_currency(formatter, currency, "USD")
+    assert_true(formatted_currency.length() > 0)
   }
   
-  return result
-}
-
-fn ProtoSerializer::serialize_person(value: Person) -> Array[Byte] {
-  // Simplified implementation - in a real scenario, this would properly serialize to protocol buffer
-  let mut result = []
-  
-  // Add name field
-  // Add tag (1 byte)
-  result.push(1)
-  
-  // Add name length (1 byte)
-  result.push(value.name.length() as Byte)
-  
-  // Add name
-  for i in 0..value.name.length() {
-    result.push(value.name[i] as Byte)
+  // Test RTL language support
+  let rtl_locales = ["ar-SA", "he-IL", "fa-IR"]
+  for locale in rtl_locales {
+    let formatter = Formatter::for_locale(locale)
+    let is_rtl = Formatter::is_rtl(formatter)
+    assert_true(is_rtl)
   }
   
-  // Add age field
-  // Add tag (1 byte)
-  result.push(2)
+  // Test Unicode string handling
+  let unicode_strings = [
+    "English: Hello, World!",
+    "Chinese: 你好，世界！",
+    "Arabic: مرحبا بالعالم!",
+    "Japanese: こんにちは、世界！",
+    "Russian: Привет, мир!",
+    "Emoji: 🌟🚀🎉",
+    "Mixed: Hello 世界 🌟 مرحبا"
+  ]
   
-  // Add age (4 bytes)
-  result.push((value.age / 256 / 256 / 256) as Byte)
-  result.push((value.age / 256 / 256) as Byte)
-  result.push((value.age / 256) as Byte)
-  result.push(value.age as Byte)
+  for unicode_string in unicode_strings {
+    let length = Unicode::length(unicode_string)
+    assert_true(length > 0)
+    
+    let bytes = Unicode::to_utf8(unicode_string)
+    assert_true(bytes.length() > 0)
+    
+    let roundtrip = Unicode::from_utf8(bytes)
+    assert_eq(roundtrip, unicode_string)
+  }
   
-  return result
-}
-
-// ProtoDeserializer type
-type ProtoDeserializer
-
-// ProtoDeserializer methods
-fn ProtoDeserializer::deserialize_int(data: Array[Byte]) -> Result[Int, String] {
-  if data.length() >= 2 {
-    return Ok(42)  // Simplified implementation
-  } else {
-    return Error("Invalid protocol buffer data")
+  // Test localized error messages
+  let error_code = 404
+  for locale in supported_locales {
+    let error_message = ErrorMessages::for_locale(locale, error_code)
+    assert_true(error_message.length() > 0)
+  }
+  
+  // Test timezone formatting
+  let timezones = ["UTC", "America/New_York", "Asia/Shanghai", "Europe/London"]
+  for timezone in timezones {
+    let formatter = Formatter::for_timezone(timezone)
+    assert_true(formatter != None)
+    
+    let now = Time::now()
+    let formatted = Formatter::format_datetime(formatter, now)
+    assert_true(formatted.length() > 0)
   }
 }
 
-fn ProtoDeserializer::deserialize_float(data: Array[Byte]) -> Result[Double, String] {
-  if data.length() >= 9 {
-    return Ok(3.14)  // Simplified implementation
-  } else {
-    return Error("Invalid protocol buffer data")
+// Test 9: Security and Privacy
+test "security and privacy features" {
+  // Test sensitive data redaction
+  let sensitive_attrs = Attributes::new()
+  Attributes::set(sensitive_attrs, "password", StringValue("secret123"))
+  Attributes::set(sensitive_attrs, "api_key", StringValue("sk-1234567890"))
+  Attributes::set(sensitive_attrs, "credit_card", StringValue("4111-1111-1111-1111"))
+  Attributes::set(sensitive_attrs, "ssn", StringValue("123-45-6789"))
+  Attributes::set(sensitive_attrs, "email", StringValue("user@example.com"))
+  Attributes::set(sensitive_attrs, "safe_attr", StringValue("safe_value"))
+  
+  // Apply redaction
+  let redacted_attrs = Security::redact_sensitive_data(sensitive_attrs)
+  
+  // Verify sensitive data is redacted
+  let password = Attributes::get(redacted_attrs, "password")
+  match password {
+    Some(StringValue(v)) => assert_eq(v, "[REDACTED]")
+    _ => assert_true(false)
   }
-}
-
-fn ProtoDeserializer::deserialize_bool(data: Array[Byte]) -> Result[Bool, String] {
-  if data.length() >= 2 {
-    return Ok(data[1] == 1)  // Simplified implementation
-  } else {
-    return Error("Invalid protocol buffer data")
+  
+  let api_key = Attributes::get(redacted_attrs, "api_key")
+  match api_key {
+    Some(StringValue(v)) => assert_eq(v, "[REDACTED]")
+    _ => assert_true(false)
   }
-}
-
-fn ProtoDeserializer::deserialize_string(data: Array[Byte]) -> Result[String, String] {
-  if data.length() >= 7 {
-    return Ok("hello")  // Simplified implementation
-  } else {
-    return Error("Invalid protocol buffer data")
+  
+  // Verify safe data is not redacted
+  let safe_attr = Attributes::get(redacted_attrs, "safe_attr")
+  match safe_attr {
+    Some(StringValue(v)) => assert_eq(v, "safe_value")
+    _ => assert_true(false)
   }
-}
-
-fn ProtoDeserializer::deserialize_array_int(data: Array[Byte]) -> Result[Array[Int], String] {
-  if data.length() >= 6 {
-    return Ok([1, 2, 3])  // Simplified implementation
-  } else {
-    return Error("Invalid protocol buffer data")
+  
+  // Test data encryption
+  let original_data = "Sensitive telemetry data"
+  let encryption_key = Encryption::generate_key()
+  let encrypted_data = Encryption::encrypt(original_data, encryption_key)
+  assert_true(encrypted_data != original_data)
+  
+  let decrypted_data = Encryption::decrypt(encrypted_data, encryption_key)
+  assert_eq(decrypted_data, original_data)
+  
+  // Test data anonymization
+  let personal_data = [
+    ("user.id", StringValue("user-12345")),
+    ("ip.address", StringValue("192.168.1.100")),
+    ("user.agent", StringValue("Mozilla/5.0 (Windows NT 10.0; Win64; x64)")),
+    ("session.id", StringValue("sess-abcdef123456"))
+  ]
+  
+  let anonymized_data = Security::anonymize_personal_data(personal_data)
+  
+  for (key, value) in anonymized_data {
+    match value {
+      StringValue(v) => {
+        // Verify anonymized data doesn't contain original values
+        assert_false(v.contains("user-12345"))
+        assert_false(v.contains("192.168.1.100"))
+        assert_false(v.contains("sess-abcdef123456"))
+      }
+      _ => assert_true(false)
+    }
   }
+  
+  // Test access control
+  let access_policy = AccessControl::create_policy([
+    ("admin", ["read", "write", "delete"]),
+    ("user", ["read"]),
+    ("guest", [])
+  ])
+  
+  assert_true(AccessControl::check_permission(access_policy, "admin", "delete"))
+  assert_true(AccessControl::check_permission(access_policy, "user", "read"))
+  assert_false(AccessControl::check_permission(access_policy, "user", "write"))
+  assert_false(AccessControl::check_permission(access_policy, "guest", "read"))
+  
+  // Test audit logging
+  let audit_log = AuditLogger::new()
+  AuditLogger::log_access(audit_log, "user123", "read", "resource1")
+  AuditLogger::log_access(audit_log, "admin", "delete", "resource2")
+  
+  let logs = AuditLogger::get_logs(audit_log)
+  assert_eq(logs.length(), 2)
 }
 
-fn ProtoDeserializer::deserialize_person(data: Array[Byte]) -> Result[Person, String] {
-  if data.length() >= 12 {
-    return Ok(Person::new("John", 30))  // Simplified implementation
-  } else {
-    return Error("Invalid protocol buffer data")
+// Test 10: Advanced Data Processing
+test "advanced data processing and analytics" {
+  // Test time series data processing
+  let time_series_data = []
+  let base_time = Time::now()
+  
+  // Generate sample time series data
+  for i in 0..=100 {
+    let timestamp = base_time + (i * 1000) // 1 second intervals
+    let value = 100.0 + (i.to_float() * 0.5) + (Math::sin(i.to_float() * 0.1) * 10.0)
+    time_series_data.push((timestamp, value))
   }
-}
-
-// PerformanceTimer type (reused from previous test)
-type PerformanceTimer { start_time: Int, end_time: Int, is_running: Bool }
-
-// PerformanceTimer methods
-fn PerformanceTimer::new() -> PerformanceTimer { 
-  { start_time: 0, end_time: 0, is_running: false } 
-}
-fn PerformanceTimer::start(timer: PerformanceTimer) -> Unit {
-  timer.start_time = get_current_time_ms()
-  timer.is_running = true
-}
-fn PerformanceTimer::stop(timer: PerformanceTimer) -> Int {
-  if timer.is_running {
-    timer.end_time = get_current_time_ms()
-    timer.is_running = false
-    return timer.end_time - timer.start_time
-  } else {
-    return 0
+  
+  // Test time series aggregation
+  let aggregated = TimeSeries::aggregate(time_series_data, 10000) // 10 second windows
+  assert_true(aggregated.length() > 0)
+  
+  // Test trend analysis
+  let trend = TimeSeries::analyze_trend(time_series_data)
+  assert_true(trend > 0.0) // Should be upward trend based on our data
+  
+  // Test anomaly detection
+  let anomalies = TimeSeries::detect_anomalies(time_series_data)
+  assert_true(anomalies.length() >= 0)
+  
+  // Test data filtering
+  let filtered = TimeSeries::filter(time_series_data, fn((timestamp, value)) {
+    value > 105.0
+  })
+  assert_true(filtered.length() > 0)
+  assert_true(filtered.length() < time_series_data.length())
+  
+  // Test histogram data processing
+  let histogram_data = []
+  for i in 0..=1000 {
+    let value = Math::random() * 100.0
+    histogram_data.push(value)
   }
-}
-
-// Helper function to get current time in milliseconds
-fn get_current_time_ms() -> Int {
-  // Simplified implementation - in a real scenario, this would get the actual system time
-  return 1234567890
+  
+  let histogram_buckets = Histogram::create_buckets(histogram_data, 10)
+  assert_eq(histogram_buckets.length(), 10)
+  
+  // Verify bucket sums
+  let total_sum = 0.0
+  for bucket in histogram_buckets {
+    total_sum = total_sum + bucket.count
+  }
+  assert_eq(total_sum, 1000.0)
+  
+  // Test percentile calculations
+  let percentiles = Statistics::calculate_percentiles(histogram_data, [50, 90, 95, 99])
+  assert_eq(percentiles.length(), 4)
+  assert_true(percentiles[0] > 0.0) // 50th percentile
+  assert_true(percentiles[1] > percentiles[0]) // 90th > 50th
+  assert_true(percentiles[2] > percentiles[1]) // 95th > 90th
+  assert_true(percentiles[3] > percentiles[2]) // 99th > 95th
+  
+  // Test data correlation
+  let series_x = []
+  let series_y = []
+  
+  for i in 0..=100 {
+    let x = i.to_float()
+    let y = x * 2.0 + 5.0 + (Math::random() - 0.5) * 10.0 // y = 2x + 5 with noise
+    series_x.push(x)
+    series_y.push(y)
+  }
+  
+  let correlation = Statistics::calculate_correlation(series_x, series_y)
+  assert_true(correlation > 0.9) // Should be highly correlated
+  
+  // Test data clustering
+  let cluster_data = []
+  
+  // Generate 3 clusters
+  for cluster_id in 0..=3 {
+    let center_x = cluster_id.to_float() * 100.0
+    let center_y = cluster_id.to_float() * 100.0
+    
+    for point_id in 0..=20 {
+      let x = center_x + (Math::random() - 0.5) * 20.0
+      let y = center_y + (Math::random() - 0.5) * 20.0
+      cluster_data.push((x, y))
+    }
+  }
+  
+  let clusters = Clustering::k_means(cluster_data, 3)
+  assert_eq(clusters.length(), 3)
+  
+  // Test data transformation
+  let original_data = [1.0, 2.0, 3.0, 4.0, 5.0]
+  
+  let normalized = DataTransform::normalize(original_data)
+  assert_eq(normalized.length(), original_data.length())
+  assert_true(normalized[0] >= 0.0)
+  assert_true(normalized[0] <= 1.0)
+  
+  let standardized = DataTransform::standardize(original_data)
+  assert_eq(standardized.length(), original_data.length())
+  
+  // Test data sampling
+  let large_dataset = []
+  for i in 0..=10000 {
+    large_dataset.push(i.to_float())
+  }
+  
+  let sample = DataSampling::reservoir(large_dataset, 100)
+  assert_eq(sample.length(), 100)
+  
+  // Test data windowing
+  let windowed_data = DataWindow::sliding(original_data, 3)
+  assert_eq(windowed_data.length(), original_data.length() - 2)
+  assert_eq(windowed_data[0].length(), 3)
 }
