@@ -13,6 +13,7 @@ import Azimuth.Telemetry
 import AdditionalSpec (spec)
 import ExtendedSpec (spec)
 import NewTestSpec (spec)
+import EnhancedTestSpec (spec)
 
 main :: IO ()
 main = hspec $ do
@@ -491,3 +492,6 @@ main = hspec $ do
   
   -- 添加NewTestSpec的测试套件
   NewTestSpec.spec
+  
+  -- 添加EnhancedTestSpec的测试套件
+  EnhancedTestSpec.spec
