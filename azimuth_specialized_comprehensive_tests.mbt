@@ -1,777 +1,455 @@
-// Azimuth 高级MoonBit测试用例
-// 覆盖遥测系统的核心功能和边界情况
+// Azimuth 专业 MoonBit 测试用例
+// 专注于遥测系统的核心功能和高级特性
 
-test "属性值类型转换和验证" {
-  // 测试不同类型的属性值创建和转换
-  let string_attr = StringValue("test.value")
-  let int_attr = IntValue(42)
-  let float_attr = FloatValue(3.14159)
-  let bool_attr = BoolValue(true)
-  let array_string_attr = ArrayStringValue(["item1", "item2", "item3"])
-  let array_int_attr = ArrayIntValue([1, 2, 3, 4, 5])
+// 测试1: 遥测上下文传播机制
+test "遥测上下文传播机制测试" {
+  // 创建上下文传播器
+  let propagator = TextMapPropagator::new()
   
-  // 验证属性值类型
-  match string_attr {
-    StringValue(v) => assert_eq(v, "test.value")
-    _ => assert_true(false)
-  }
+  // 创建原始上下文
+  let original_context = Context::current()
+  let trace_id = "trace-1234567890"
+  let span_id = "span-0987654321"
   
-  match int_attr {
-    IntValue(v) => assert_eq(v, 42)
-    _ => assert_true(false)
-  }
+  // 设置上下文信息
+  let span_context = SpanContext::new(trace_id, span_id, true, true)
+  let context_with_span = Context::with_span(original_context, span_context)
   
-  match float_attr {
-    FloatValue(v) => assert_true(v > 3.14 && v < 3.15)
-    _ => assert_true(false)
-  }
-  
-  match bool_attr {
-    BoolValue(v) => assert_true(v)
-    _ => assert_true(false)
-  }
-  
-  match array_string_attr {
-    ArrayStringValue(arr) => {
-      assert_eq(arr.length(), 3)
-      assert_eq(arr[0], "item1")
-      assert_eq(arr[1], "item2")
-      assert_eq(arr[2], "item3")
-    }
-    _ => assert_true(false)
-  }
-  
-  match array_int_attr {
-    ArrayIntValue(arr) => {
-      assert_eq(arr.length(), 5)
-      assert_eq(arr[0], 1)
-      assert_eq(arr[4], 5)
-    }
-    _ => assert_true(false)
-  }
-  
-  // 测试属性操作
-  let attrs = Attributes::new()
-  Attributes::set(attrs, "string.key", string_attr)
-  Attributes::set(attrs, "int.key", int_attr)
-  Attributes::set(attrs, "float.key", float_attr)
-  Attributes::set(attrs, "bool.key", bool_attr)
-  
-  // 验证属性获取
-  let retrieved_string = Attributes::get(attrs, "string.key")
-  let retrieved_int = Attributes::get(attrs, "int.key")
-  let retrieved_float = Attributes::get(attrs, "float.key")
-  let retrieved_bool = Attributes::get(attrs, "bool.key")
-  let missing = Attributes::get(attrs, "missing.key")
-  
-  match retrieved_string {
-    Some(StringValue(v)) => assert_eq(v, "test_value")
-    _ => assert_true(false)
-  }
-  
-  match retrieved_int {
-    Some(IntValue(v)) => assert_eq(v, 42)
-    _ => assert_true(false)
-  }
-  
-  match missing {
-    None => assert_true(true)
-    _ => assert_true(false)
-  }
-}
-
-test "传播器注入和提取功能" {
-  // 测试传播器的注入功能
-  let trace_propagator = W3CTraceContextPropagator::new()
-  let baggage_propagator = W3CBaggagePropagator::new()
-  
-  // 创建复合传播器
-  let propagators = [trace_propagator]
-  let composite_propagator = CompositePropagator::new(propagators)
-  
-  // 创建上下文
-  let ctx = Context::root()
-  let enriched_ctx = Context::with_value(ctx, ContextKey::new("trace.id"), "trace-12345")
-  
-  // 创建载体
+  // 创建载体用于传播
   let carrier = TextMapCarrier::new()
   
-  // 测试注入
-  CompositePropagator::inject(composite_propagator, enriched_ctx, carrier)
+  // 注入上下文到载体
+  TextMapPropagator::inject(propagator, context_with_span, carrier)
   
-  // 验证注入的值
-  let injected_trace = TextMapCarrier::get(carrier, "traceparent")
-  match injected_trace {
-    Some(trace_value) => assert_true(trace_value.length() > 0)
-    None => assert_true(false)
-  }
+  // 验证注入的上下文
+  let trace_header = TextMapCarrier::get(carrier, "traceparent")
+  assert_true(trace_header.is_some())
   
-  // 测试提取
-  let extract_carrier = TextMapCarrier::new()
-  let extracted_ctx = CompositePropagator::extract(composite_propagator, extract_carrier)
+  // 从载体提取上下文
+  let extracted_context = TextMapPropagator::extract(propagator, carrier)
+  let extracted_span = Context::span(extracted_context)
   
   // 验证提取的上下文
-  let extracted_value = Context::get(extracted_ctx, ContextKey::new("extracted"))
-  match extracted_value {
-    Some(v) => assert_eq(v, "true")
-    None => assert_true(false)
-  }
+  assert_eq(SpanContext::trace_id(extracted_span), trace_id)
+  assert_eq(SpanContext::span_id(extracted_span), span_id)
+  assert_true(SpanContext::is_sampled(extracted_span))
 }
 
-test "时间戳和时钟功能" {
-  // 测试时钟功能
-  let clock = Clock::system()
+// 测试2: 遥测数据序列化和反序列化
+test "遥测数据序列化和反序列化测试" {
+  // 创建遥测数据
+  let telemetry_data = TelemetryData::new()
+  TelemetryData::add_attribute(telemetry_data, "service.name", "payment-service")
+  TelemetryData::add_attribute(telemetry_data, "service.version", "1.2.3")
+  TelemetryData::add_attribute(telemetry_data, "environment", "production")
+  TelemetryData::add_metric(telemetry_data, "request.duration", 125.5)
+  TelemetryData::add_metric(telemetry_data, "memory.usage", 512.0)
   
-  // 获取当前时间戳
-  let timestamp = Clock::now_unix_nanos(clock)
+  // 序列化为JSON
+  let json_serializer = JsonSerializer::new()
+  let serialized_data = JsonSerializer::serialize(json_serializer, telemetry_data)
   
-  // 验证时间戳是合理的（2025年的时间戳）
-  assert_true(timestamp > 1700000000000000000L)
-  assert_true(timestamp < 1800000000000000000L)
+  // 验证序列化结果
+  assert_true(serialized_data.contains("payment-service"))
+  assert_true(serialized_data.contains("1.2.3"))
+  assert_true(serialized_data.contains("production"))
+  assert_true(serialized_data.contains("125.5"))
+  assert_true(serialized_data.contains("512.0"))
   
-  // 测试带有时间戳的日志记录
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "timestamp.test")
+  // 反序列化
+  let deserialized_data = JsonSerializer::deserialize(json_serializer, serialized_data)
   
-  let timestamped_log = LogRecord::new_with_context(
-    Error,
-    Some("Timestamped error message"),
-    None,
-    Some(timestamp),
-    Some(timestamp + 1000000L),  // 观察时间稍晚
-    Some("trace-12345"),
-    Some("span-67890"),
-    Some(Context::root())
-  )
-  
-  // 验证时间戳
-  assert_eq(LogRecord::trace_id(timestamped_log), Some("trace-12345"))
-  assert_eq(LogRecord::span_id(timestamped_log), Some("span-67890"))
-  assert_eq(LogRecord::severity_number(timestamped_log), Error)
-  assert_eq(LogRecord::body(timestamped_log), Some("Timestamped error message"))
-  
-  // 发射日志
-  Logger::emit(logger, timestamped_log)
-  
-  // 测试多个时间戳
-  let timestamps = []
-  for i in 0..=5 {
-    let ts = Clock::now_unix_nanos(clock)
-    timestamps = timestamps.push(ts)
-  }
-  
-  // 验证时间戳是递增的（或至少不递减）
-  for i in 1..=timestamps.length() - 1 {
-    assert_true(timestamps[i] >= timestamps[i-1])
-  }
+  // 验证反序列化结果
+  assert_eq(TelemetryData::get_attribute(deserialized_data, "service.name"), Some("payment-service"))
+  assert_eq(TelemetryData::get_attribute(deserialized_data, "service.version"), Some("1.2.3"))
+  assert_eq(TelemetryData::get_attribute(deserialized_data, "environment"), Some("production"))
+  assert_eq(TelemetryData::get_metric(deserialized_data, "request.duration"), Some(125.5))
+  assert_eq(TelemetryData::get_metric(deserialized_data, "memory.usage"), Some(512.0))
 }
 
-test "HTTP客户端操作和遥测集成" {
-  // 测试HTTP客户端创建和操作
-  let client = HttpClient::new()
+// 测试3: 遥测数据采样策略
+test "遥测数据采样策略测试" {
+  // 创建采样器
+  let probability_sampler = ProbabilitySampler::new(0.5) // 50%采样率
+  let always_on_sampler = AlwaysOnSampler::new()
+  let always_off_sampler = AlwaysOffSampler::new()
   
-  // 创建HTTP请求
-  let headers = [
-    ("Content-Type", "application/json"),
-    ("Authorization", "Bearer token123"),
-    ("X-Trace-ID", "trace-12345")
+  // 创建采样上下文
+  let sampling_context = SamplingContext::new()
+  SamplingContext::set_trace_id(sampling_context, "trace-1234567890")
+  SamplingContext::set_span_name(sampling_context, "test.operation")
+  
+  // 测试概率采样
+  let sampled_count = { mut count: 0 }
+  for i in 0..1000 {
+    let decision = ProbabilitySampler::should_sample(probability_sampler, sampling_context)
+    if decision == SamplingDecision::RecordAndSample {
+      sampled_count.count = sampled_count.count + 1
+    }
+  }
+  
+  // 验证概率采样结果（应该在40%-60%之间）
+  let sample_rate = sampled_count.count.to_float() / 1000.0
+  assert_true(sample_rate > 0.4 && sample_rate < 0.6)
+  
+  // 测试始终开启采样
+  let always_on_decision = AlwaysOnSampler::should_sample(always_on_sampler, sampling_context)
+  assert_eq(always_on_decision, SamplingDecision::RecordAndSample)
+  
+  // 测试始终关闭采样
+  let always_off_decision = AlwaysOffSampler::should_sample(always_off_sampler, sampling_context)
+  assert_eq(always_off_decision, SamplingDecision::Drop)
+}
+
+// 测试4: 遥测数据批处理和缓冲
+test "遥测数据批处理和缓冲测试" {
+  // 创建批处理器
+  let batch_processor = BatchProcessor::new(10, 5000) // 10条记录或5秒超时
+  
+  // 创建遥测记录
+  let records = []
+  for i in 0..15 {
+    let record = TelemetryRecord::new()
+    TelemetryRecord::set_name(record, "operation." + i.to_string())
+    TelemetryRecord::set_duration(record, (i * 10).to_int())
+    TelemetryRecord::set_status(record, Ok)
+    records = records.push(record)
+  }
+  
+  // 添加记录到批处理器
+  for record in records {
+    BatchProcessor::add_record(batch_processor, record)
+  }
+  
+  // 验证批处理结果
+  let batch_count = BatchProcessor::get_batch_count(batch_processor)
+  assert_eq(batch_count, 2) // 15条记录应该分成2批（10条和5条）
+  
+  // 获取第一批记录
+  let first_batch = BatchProcessor::get_batch(batch_processor, 0)
+  assert_eq(first_batch.length(), 10)
+  
+  // 获取第二批记录
+  let second_batch = BatchProcessor::get_batch(batch_processor, 1)
+  assert_eq(second_batch.length(), 5)
+  
+  // 测试缓冲区管理
+  let buffer_size = BatchProcessor::get_buffer_size(batch_processor)
+  assert_true(buffer_size >= 15) // 缓冲区应该能容纳所有记录
+}
+
+// 测试5: 遥测数据压缩和传输优化
+test "遥测数据压缩和传输优化测试" {
+  // 创建大量遥测数据
+  let large_dataset = TelemetryDataset::new()
+  for i in 0..1000 {
+    let record = TelemetryRecord::new()
+    TelemetryRecord::set_name(record, "operation." + i.to_string())
+    TelemetryRecord::set_attribute(record, "index", i.to_string())
+    TelemetryRecord::set_attribute(record, "category", "test")
+    TelemetryRecord::set_metric(record, "value", i.to_float())
+    TelemetryDataset::add_record(large_dataset, record)
+  }
+  
+  // 序列化数据
+  let serializer = JsonSerializer::new()
+  let uncompressed_data = JsonSerializer::serialize_dataset(serializer, large_dataset)
+  let uncompressed_size = uncompressed_data.length()
+  
+  // 压缩数据
+  let compressor = GzipCompressor::new()
+  let compressed_data = GzipCompressor::compress(compressor, uncompressed_data)
+  let compressed_size = compressed_data.length()
+  
+  // 验证压缩效果
+  assert_true(compressed_size < uncompressed_size)
+  let compression_ratio = compressed_size.to_float() / uncompressed_size.to_float()
+  assert_true(compression_ratio < 0.8) // 压缩率应该至少达到20%
+  
+  // 解压缩数据
+  let decompressed_data = GzipCompressor::decompress(compressor, compressed_data)
+  assert_eq(decompressed_data.length(), uncompressed_size)
+  
+  // 验证解压缩后的数据完整性
+  let decompressed_dataset = JsonSerializer::deserialize_dataset(serializer, decompressed_data)
+  assert_eq(TelemetryDataset::record_count(decompressed_dataset), 1000)
+}
+
+// 测试6: 遥测数据关联和链接分析
+test "遥测数据关联和链接分析测试" {
+  // 创建关联分析器
+  let correlation_analyzer = CorrelationAnalyzer::new()
+  
+  // 添加遥测数据点
+  let data_points = [
+    ("trace-001", "span-001", "service.a", "operation.a", 100),
+    ("trace-001", "span-002", "service.b", "operation.b", 50),
+    ("trace-002", "span-003", "service.a", "operation.a", 120),
+    ("trace-002", "span-004", "service.c", "operation.c", 200),
+    ("trace-003", "span-005", "service.b", "operation.b", 75),
+    ("trace-003", "span-006", "service.c", "operation.c", 180)
   ]
   
-  let request = HttpRequest::new(
-    "GET",
-    "https://api.example.com/data",
-    headers,
-    Some("{\"query\":\"test\"}")
-  )
+  for (trace_id, span_id, service, operation, duration) in data_points {
+    let data_point = TelemetryDataPoint::new()
+    TelemetryDataPoint::set_trace_id(data_point, trace_id)
+    TelemetryDataPoint::set_span_id(data_point, span_id)
+    TelemetryDataPoint::set_service(data_point, service)
+    TelemetryDataPoint::set_operation(data_point, operation)
+    TelemetryDataPoint::set_duration(data_point, duration)
+    CorrelationAnalyzer::add_data_point(correlation_analyzer, data_point)
+  }
   
-  // 验证请求属性
-  assert_eq(HttpRequest::http_method(request), "GET")
-  assert_eq(HttpRequest::url(request), "https://api.example.com/data")
-  assert_eq(HttpRequest::body(request), Some("{\"query\":\"test\"}"))
+  // 分析服务间关联
+  let service_correlations = CorrelationAnalyzer::analyze_service_correlations(correlation_analyzer)
+  assert_true(service_correlations.length() > 0)
   
-  // 创建HTTP响应
-  let response_headers = [
-    ("Content-Type", "application/json"),
-    ("X-Request-ID", "req-67890")
+  // 验证特定服务关联
+  let a_to_b_correlation = CorrelationAnalyzer::get_service_correlation(correlation_analyzer, "service.a", "service.b")
+  assert_true(a_to_b_correlation > 0.0)
+  
+  // 分析操作链路
+  let operation_chains = CorrelationAnalyzer::analyze_operation_chains(correlation_analyzer)
+  assert_true(operation_chains.length() > 0)
+  
+  // 检测异常模式
+  let anomalies = CorrelationAnalyzer::detect_anomalies(correlation_analyzer)
+  assert_true(anomalies.length() >= 0) // 可能有也可能没有异常
+}
+
+// 测试7: 遥测数据实时监控和警报
+test "遥测数据实时监控和警报测试" {
+  // 创建监控器
+  let monitor = RealTimeMonitor::new()
+  
+  // 创建警报规则
+  let latency_alert = AlertRule::new("high.latency")
+  AlertRule::set_metric(latency_alert, "request.duration")
+  AlertRule::set_threshold(latency_alert, 1000.0) // 1秒阈值
+  AlertRule::set_operator(latency_alert, AlertOperator::GreaterThan)
+  AlertRule::set_severity(latency_alert, AlertSeverity::Warning)
+  
+  let error_rate_alert = AlertRule::new("high.error.rate")
+  AlertRule::set_metric(error_rate_alert, "error.rate")
+  AlertRule::set_threshold(error_rate_alert, 0.05) // 5%错误率阈值
+  AlertRule::set_operator(error_rate_alert, AlertOperator::GreaterThan)
+  AlertRule::set_severity(error_rate_alert, AlertSeverity::Critical)
+  
+  // 注册警报规则
+  RealTimeMonitor::add_alert_rule(monitor, latency_alert)
+  RealTimeMonitor::add_alert_rule(monitor, error_rate_alert)
+  
+  // 模拟正常数据
+  let normal_metrics = [
+    ("request.duration", 150.0),
+    ("error.rate", 0.01),
+    ("throughput", 1000.0)
   ]
   
-  let response = HttpResponse::new(
-    200,
-    response_headers,
-    Some("{\"result\":\"success\",\"data\":[1,2,3]}")
-  )
+  for (metric, value) in normal_metrics {
+    RealTimeMonitor::process_metric(monitor, metric, value)
+  }
   
-  // 验证响应属性
-  assert_eq(HttpResponse::status_code(response), 200)
-  assert_eq(HttpResponse::body(response), Some("{\"result\":\"success\",\"data\":[1,2,3]}"))
+  // 验证没有警报触发
+  assert_eq(RealTimeMonitor::get_active_alert_count(monitor), 0)
   
-  // 测试遥测集成
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "http.client")
-  
-  let http_span = Tracer::start_span(tracer, "HTTP GET")
-  Span::set_attribute(http_span, "http.method", "GET")
-  Span::set_attribute(http_span, "http.url", "https://api.example.com/data")
-  Span::set_attribute(http_span, "http.status_code", 200)
-  Span::set_attribute(http_span, "net.host.name", "api.example.com")
-  
-  // 添加HTTP事件
-  Span::add_event(http_span, "http.request.started", [
-    ("content.length", IntValue(17))
-  ])
-  Span::add_event(http_span, "http.response.completed", [
-    ("status.code", IntValue(200)),
-    ("response.size", IntValue(38))
-  ])
-  
-  Span::end(http_span)
-  
-  // 测试度量记录
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "http.metrics")
-  
-  let request_counter = Meter::create_counter(meter, "http.requests.total")
-  Counter::add_with_attributes(request_counter, 1.0, [
-    ("method", "GET"),
-    ("status.code", "200"),
-    ("host.name", "api.example.com")
-  ])
-  
-  let response_time_histogram = Meter::create_histogram(meter, "http.request.duration")
-  Histogram::record_with_attributes(response_time_histogram, 125.5, [
-    ("method", "GET"),
-    ("status.code", "200")
-  ])
-}
-
-test "资源合并策略和优先级" {
-  // 测试基础资源
-  let base_resource = Resource::new()
-  let base_attributes = [
-    ("service.name", StringValue("payment-service")),
-    ("service.version", StringValue("1.2.3")),
-    ("deployment.environment", StringValue("production")),
-    ("host.name", StringValue("prod-server-01")),
-    ("region", StringValue("us-east-1"))
+  // 模拟异常数据
+  let abnormal_metrics = [
+    ("request.duration", 1200.0), // 超过延迟阈值
+    ("error.rate", 0.08), // 超过错误率阈值
+    ("throughput", 500.0)
   ]
-  let resource_with_base = Resource::with_attributes(base_resource, base_attributes)
   
-  // 测试覆盖资源
-  let override_resource = Resource::new()
-  let override_attributes = [
-    ("service.name", StringValue("payment-service")),  // 相同键，不同值
-    ("service.instance.id", StringValue("instance-987")),
-    ("host.name", StringValue("prod-server-02")),      // 相同键，不同值
-    ("availability.zone", StringValue("us-east-1a")),
-    ("region", StringValue("us-west-2"))              // 相同键，不同值
+  for (metric, value) in abnormal_metrics {
+    RealTimeMonitor::process_metric(monitor, metric, value)
+  }
+  
+  // 验证警报触发
+  assert_eq(RealTimeMonitor::get_active_alert_count(monitor), 2)
+  
+  // 获取警报详情
+  let alerts = RealTimeMonitor::get_active_alerts(monitor)
+  assert_eq(alerts.length(), 2)
+  
+  // 验证警报内容
+  let latency_alert_triggered = alerts.find(fn(alert) { Alert::rule_name(alert) == "high.latency" })
+  let error_rate_alert_triggered = alerts.find(fn(alert) { Alert::rule_name(alert) == "high.error.rate" })
+  
+  assert_true(latency_alert_triggered.is_some())
+  assert_true(error_rate_alert_triggered.is_some())
+}
+
+// 测试8: 遥测数据多维度分析
+test "遥测数据多维度分析测试" {
+  // 创建多维度分析器
+  let analyzer = MultiDimensionalAnalyzer::new()
+  
+  // 添加维度
+  MultiDimensionalAnalyzer::add_dimension(analyzer, "service")
+  MultiDimensionalAnalyzer::add_dimension(analyzer, "operation")
+  MultiDimensionalAnalyzer::add_dimension(analyzer, "region")
+  MultiDimensionalAnalyzer::add_dimension(analyzer, "environment")
+  
+  // 添加多维度数据点
+  let data_points = [
+    ("service.a", "operation.1", "us-west", "production", 100.0),
+    ("service.a", "operation.2", "us-west", "production", 150.0),
+    ("service.a", "operation.1", "us-east", "staging", 120.0),
+    ("service.b", "operation.1", "us-west", "production", 200.0),
+    ("service.b", "operation.3", "eu-west", "production", 180.0),
+    ("service.c", "operation.2", "us-east", "staging", 90.0),
+    ("service.c", "operation.1", "eu-west", "production", 110.0)
   ]
-  let resource_with_override = Resource::with_attributes(override_resource, override_attributes)
   
-  // 测试合并策略
-  let merged_resource = Resource::merge(resource_with_base, resource_with_override)
-  
-  // 验证合并结果
-  let service_name = Resource::get_attribute(merged_resource, "service.name")
-  let service_version = Resource::get_attribute(merged_resource, "service.version")
-  let instance_id = Resource::get_attribute(merged_resource, "service.instance.id")
-  let host_name = Resource::get_attribute(merged_resource, "host.name")
-  let environment = Resource::get_attribute(merged_resource, "deployment.environment")
-  let availability_zone = Resource::get_attribute(merged_resource, "availability.zone")
-  let region = Resource::get_attribute(merged_resource, "region")
-  
-  // 在简化实现中，这些都会是None，但在实际实现中应该有值
-  match service_name {
-    None => assert_true(true)
-    Some(_) => assert_true(false)
+  for (service, operation, region, environment, value) in data_points {
+    let dimensions = [
+      ("service", service),
+      ("operation", operation),
+      ("region", region),
+      ("environment", environment)
+    ]
+    MultiDimensionalAnalyzer::add_data_point(analyzer, dimensions, value)
   }
   
-  match instance_id {
-    None => assert_true(true)
-    Some(_) => assert_true(false)
-  }
+  // 按服务维度分析
+  let service_analysis = MultiDimensionalAnalyzer::analyze_by_dimension(analyzer, "service")
+  assert_eq(service_analysis.length(), 3) // 三个服务
   
-  // 测试多级合并
-  let tertiary_resource = Resource::new()
-  let tertiary_attributes = [
-    ("service.version", StringValue("2.0.0")),        // 覆盖版本
-    ("deployment.environment", StringValue("staging")), // 覆盖环境
-    ("feature.flags", StringValue("new-ui,beta-api")),
-    ("cost.center", StringValue("engineering"))
-  ]
-  let resource_with_tertiary = Resource::with_attributes(tertiary_resource, tertiary_attributes)
+  // 验证特定服务分析
+  let service_a_stats = MultiDimensionalAnalyzer::get_dimension_stats(analyzer, "service", "service.a")
+  assert_eq(service_a_stats.count, 3)
+  assert_eq(service_a_stats.sum, 370.0) // 100 + 150 + 120
+  assert_eq(service_a_stats.average, 370.0 / 3.0)
   
-  let final_merged = Resource::merge(merged_resource, resource_with_tertiary)
+  // 多维度交叉分析
+  let cross_analysis = MultiDimensionalAnalyzer::cross_analyze(analyzer, ["service", "environment"])
+  assert_true(cross_analysis.length() > 0)
   
-  // 验证最终合并结果
-  let final_version = Resource::get_attribute(final_merged, "service.version")
-  let final_environment = Resource::get_attribute(final_merged, "deployment.environment")
-  let final_feature_flags = Resource::get_attribute(final_merged, "feature.flags")
-  let final_cost_center = Resource::get_attribute(final_merged, "cost.center")
-  
-  match final_feature_flags {
-    None => assert_true(true)
-    Some(_) => assert_true(false)
-  }
+  // 验证交叉分析结果
+  let prod_service_a = MultiDimensionalAnalyzer::get_cross_stats(analyzer, ["service", "environment"], ["service.a", "production"])
+  assert_eq(prod_service_a.count, 2) // service.a在production环境有2个数据点
+  assert_eq(prod_service_a.sum, 250.0) // 100 + 150
 }
 
-test "Baggage传播和上下文管理" {
-  // 测试Baggage创建和操作
-  let baggage = Baggage::new()
+// 测试9: 遥测数据自适应采样
+test "遥测数据自适应采样测试" {
+  // 创建自适应采样器
+  let adaptive_sampler = AdaptiveSampler::new()
   
-  // 添加baggage条目
-  let baggage_with_user = Baggage::set_entry(baggage, "user.id", "user-12345")
-  let baggage_with_session = Baggage::set_entry(baggage_with_user, "session.id", "session-67890")
-  let baggage_with_tenant = Baggage::set_entry(baggage_with_session, "tenant.id", "tenant-abc")
+  // 配置自适应采样参数
+  AdaptiveSampler::set_base_probability(adaptive_sampler, 0.1) // 基础10%采样率
+  AdaptiveSampler::set_max_probability(adaptive_sampler, 0.5) // 最大50%采样率
+  AdaptiveSampler::set_error_threshold(adaptive_sampler, 0.05) // 5%错误率阈值
+  AdaptiveSampler::set_latency_threshold(adaptive_sampler, 1000.0) // 1秒延迟阈值
   
-  // 验证baggage条目
-  let user_id = Baggage::get_entry(baggage_with_tenant, "user.id")
-  let session_id = Baggage::get_entry(baggage_with_tenant, "session.id")
-  let tenant_id = Baggage::get_entry(baggage_with_tenant, "tenant.id")
-  let missing_entry = Baggage::get_entry(baggage_with_tenant, "missing.key")
+  // 创建采样上下文
+  let sampling_context = SamplingContext::new()
+  SamplingContext::set_trace_id(sampling_context, "trace-adaptive-test")
   
-  match user_id {
-    None => assert_true(true)  // 简化实现
-    Some(_) => assert_true(false)
+  // 模拟正常情况下的采样
+  let normal_samples = { mut count: 0 }
+  for i in 0..100 {
+    SamplingContext::set_error_rate(sampling_context, 0.01) // 1%错误率
+    SamplingContext::set_latency(sampling_context, 100.0) // 100ms延迟
+    
+    let decision = AdaptiveSampler::should_sample(adaptive_sampler, sampling_context)
+    if decision == SamplingDecision::RecordAndSample {
+      normal_samples.count = normal_samples.count + 1
+    }
   }
   
-  match missing_entry {
-    None => assert_true(true)
-    Some(_) => assert_true(false)
+  // 正常情况下采样率应该接近基础采样率
+  let normal_sample_rate = normal_samples.count.to_float() / 100.0
+  assert_true(normal_sample_rate > 0.05 && normal_sample_rate < 0.15)
+  
+  // 模拟高错误率情况
+  let high_error_samples = { mut count: 0 }
+  for i in 0..100 {
+    SamplingContext::set_error_rate(sampling_context, 0.1) // 10%错误率（超过阈值）
+    SamplingContext::set_latency(sampling_context, 100.0) // 100ms延迟
+    
+    let decision = AdaptiveSampler::should_sample(adaptive_sampler, sampling_context)
+    if decision == SamplingDecision::RecordAndSample {
+      high_error_samples.count = high_error_samples.count + 1
+    }
   }
   
-  // 测试baggage条目移除
-  let baggage_without_session = Baggage::remove_entry(baggage_with_tenant, "session.id")
-  let removed_session = Baggage::get_entry(baggage_without_session, "session.id")
-  let retained_user = Baggage::get_entry(baggage_without_session, "user.id")
+  // 高错误率情况下采样率应该提高
+  let high_error_sample_rate = high_error_samples.count.to_float() / 100.0
+  assert_true(high_error_sample_rate > normal_sample_rate)
   
-  match removed_session {
-    None => assert_true(true)  // 简化实现
-    Some(_) => assert_true(false)
+  // 模拟高延迟情况
+  let high_latency_samples = { mut count: 0 }
+  for i in 0..100 {
+    SamplingContext::set_error_rate(sampling_context, 0.01) // 1%错误率
+    SamplingContext::set_latency(sampling_context, 1200.0) // 1200ms延迟（超过阈值）
+    
+    let decision = AdaptiveSampler::should_sample(adaptive_sampler, sampling_context)
+    if decision == SamplingDecision::RecordAndSample {
+      high_latency_samples.count = high_latency_samples.count + 1
+    }
   }
   
-  // 测试baggage与上下文集成
-  let ctx = Context::root()
-  let baggage_key = ContextKey::new("baggage")
-  let ctx_with_baggage = Context::with_value(ctx, baggage_key, "user.id=user-12345,session.id=session-67890")
-  
-  // 验证上下文中的baggage
-  let retrieved_baggage = Context::get(ctx_with_baggage, baggage_key)
-  match retrieved_baggage {
-    Some(b) => assert_true(b.contains("user.id"))
-    None => assert_true(false)
-  }
-  
-  // 测试baggage传播
-  let trace_propagator = W3CTraceContextPropagator::new()
-  let baggage_propagator = W3CBaggagePropagator::new()
-  
-  let propagators = [trace_propagator]
-  let composite_propagator = CompositePropagator::new(propagators)
-  
-  let carrier = TextMapCarrier::new()
-  CompositePropagator::inject(composite_propagator, ctx_with_baggage, carrier)
-  
-  // 验证baggage在载体中的传播
-  let injected_baggage = TextMapCarrier::get(carrier, "baggage")
-  match injected_baggage {
-    None => assert_true(true)  // 简化实现
-    Some(_) => assert_true(false)
-  }
+  // 高延迟情况下采样率应该提高
+  let high_latency_sample_rate = high_latency_samples.count.to_float() / 100.0
+  assert_true(high_latency_sample_rate > normal_sample_rate)
 }
 
-test "度量仪器类型转换和操作" {
-  // 测试不同类型的度量仪器
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "instrument.test")
+// 测试10: 遥测数据持久化和存储优化
+test "遥测数据持久化和存储优化测试" {
+  // 创建存储管理器
+  let storage_manager = TelemetryStorageManager::new()
   
-  // 创建计数器
-  let request_counter = Meter::create_counter(
-    meter, 
-    "http.requests.total", 
-    Some("Total HTTP requests"), 
-    Some("count")
-  )
+  // 配置存储策略
+  TelemetryStorageManager::set_retention_period(storage_manager, 7 * 24 * 3600) // 7天保留期
+  TelemetryStorageManager::set_compression_enabled(storage_manager, true)
+  TelemetryStorageManager::set_indexing_enabled(storage_manager, true)
   
-  // 创建直方图
-  let response_time_histogram = Meter::create_histogram(
-    meter, 
-    "http.request.duration", 
-    Some("HTTP request duration"), 
-    Some("ms")
-  )
-  
-  // 创建上下计数器
-  let active_connections = Meter::create_updown_counter(
-    meter, 
-    "http.active_connections", 
-    Some("Active HTTP connections"), 
-    Some("connections")
-  )
-  
-  // 创建仪表
-  let memory_usage = Meter::create_gauge(
-    meter, 
-    "process.memory.usage", 
-    Some("Process memory usage"), 
-    Some("bytes")
-  )
-  
-  // 测试仪器转换为通用Instrument类型
-  let counter_instrument = Counter(request_counter.name, request_counter.description, request_counter.unit)
-  let histogram_instrument = Histogram(response_time_histogram.name, response_time_histogram.description, response_time_histogram.unit)
-  
-  // 验证仪器名称
-  assert_eq(Instrument::name(counter_instrument), "http.requests.total")
-  assert_eq(Instrument::name(histogram_instrument), "http.request.duration")
-  
-  // 验证仪器描述
-  assert_eq(Instrument::description(counter_instrument), Some("Total HTTP requests"))
-  assert_eq(Instrument::description(histogram_instrument), Some("HTTP request duration"))
-  
-  // 验证仪器单位
-  assert_eq(Instrument::unit(counter_instrument), Some("count"))
-  assert_eq(Instrument::unit(histogram_instrument), Some("ms"))
-  
-  // 测试度量记录
-  Counter::add(request_counter, 10.0)
-  Counter::add_with_attributes(request_counter, 5.0, [
-    ("method", "GET"),
-    ("status.code", "200")
-  ])
-  Counter::add_with_attributes(request_counter, 2.0, [
-    ("method", "POST"),
-    ("status.code", "201")
-  ])
-  
-  Histogram::record(response_time_histogram, 125.5)
-  Histogram::record_with_attributes(response_time_histogram, 89.3, [
-    ("endpoint", "/api/users"),
-    ("method", "GET")
-  ])
-  
-  UpDownCounter::add(active_connections, 1.0)
-  UpDownCounter::add(active_connections, 3.0)
-  UpDownCounter::add(active_connections, -1.0)  // 连接关闭
-  
-  Gauge::create(memory_usage, 1024.0 * 1024.0 * 512.0)  // 512MB
-  
-  // 测试仪器属性
-  assert_eq(request_counter.name, "http.requests.total")
-  assert_eq(request_counter.description, Some("Total HTTP requests"))
-  assert_eq(request_counter.unit, Some("count"))
-  
-  assert_eq(response_time_histogram.name, "http.request.duration")
-  assert_eq(response_time_histogram.description, Some("HTTP request duration"))
-  assert_eq(response_time_histogram.unit, Some("ms"))
-  
-  assert_eq(active_connections.name, "http.active_connections")
-  assert_eq(memory_usage.name, "process.memory.usage")
-}
-
-test "日志上下文相关性和追踪集成" {
-  // 测试日志与追踪上下文的集成
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "logging.test")
-  
-  // 创建span
-  let parent_span = Tracer::start_span(tracer, "parent.operation")
-  let parent_ctx = Span::span_context(parent_span)
-  
-  let child_span = Tracer::start_span(tracer, "child.operation")
-  let child_ctx = Span::span_context(child_span)
-  
-  // 创建带有追踪上下文的日志记录
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "contextual.logger")
-  
-  // 创建父操作日志
-  let parent_log = LogRecord::new_with_context(
-    Info,
-    Some("Parent operation started"),
-    Some(Attributes::new()),
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some(SpanContext::trace_id(parent_ctx)),
-    Some(SpanContext::span_id(parent_ctx)),
-    Some(Context::root())
-  )
-  
-  // 创建子操作日志
-  let child_log = LogRecord::new_with_context(
-    Info,
-    Some("Child operation executed"),
-    Some(Attributes::new()),
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some(SpanContext::trace_id(child_ctx)),
-    Some(SpanContext::span_id(child_ctx)),
-    Some(Context::root())
-  )
-  
-  // 验证日志与追踪的关联
-  assert_eq(LogRecord::trace_id(parent_log), Some(SpanContext::trace_id(parent_ctx)))
-  assert_eq(LogRecord::span_id(parent_log), Some(SpanContext::span_id(parent_ctx)))
-  
-  assert_eq(LogRecord::trace_id(child_log), Some(SpanContext::trace_id(child_ctx)))
-  assert_eq(LogRecord::span_id(child_log), Some(SpanContext::span_id(child_ctx)))
-  
-  // 测试带有属性的日志记录
-  let error_log = LogRecord::new_with_context(
-    Error,
-    Some("Operation failed with validation error"),
-    Some(Attributes::new()),
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some(SpanContext::trace_id(parent_ctx)),
-    Some(SpanContext::span_id(parent_ctx)),
-    Some(Context::root())
-  )
-  
-  // 添加属性到日志记录
-  LogRecord::add_attribute(error_log, "error.type", "ValidationError")
-  LogRecord::add_attribute(error_log, "error.code", "ERR_001")
-  LogRecord::add_attribute(error_log, "retry.count", "3")
-  
-  // 测试不同严重性级别的日志
-  let trace_log = LogRecord::new_with_context(
-    Trace,
-    Some("Detailed trace information"),
-    None,
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some(SpanContext::trace_id(parent_ctx)),
-    Some(SpanContext::span_id(parent_ctx)),
-    Some(Context::root())
-  )
-  
-  let debug_log = LogRecord::new_with_context(
-    Debug,
-    Some("Debug information"),
-    None,
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some(SpanContext::trace_id(parent_ctx)),
-    Some(SpanContext::span_id(parent_ctx)),
-    Some(Context::root())
-  )
-  
-  let warn_log = LogRecord::new_with_context(
-    Warn,
-    Some("Warning condition detected"),
-    None,
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some(SpanContext::trace_id(parent_ctx)),
-    Some(SpanContext::span_id(parent_ctx)),
-    Some(Context::root())
-  )
-  
-  let fatal_log = LogRecord::new_with_context(
-    Fatal,
-    Some("Fatal system error"),
-    None,
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some(SpanContext::trace_id(parent_ctx)),
-    Some(SpanContext::span_id(parent_ctx)),
-    Some(Context::root())
-  )
-  
-  // 验证日志严重性级别
-  assert_eq(LogRecord::severity_number(trace_log), Trace)
-  assert_eq(LogRecord::severity_number(debug_log), Debug)
-  assert_eq(LogRecord::severity_number(parent_log), Info)
-  assert_eq(LogRecord::severity_number(warn_log), Warn)
-  assert_eq(LogRecord::severity_number(error_log), Error)
-  assert_eq(LogRecord::severity_number(fatal_log), Fatal)
-  
-  // 发射所有日志记录
-  Logger::emit(logger, parent_log)
-  Logger::emit(logger, child_log)
-  Logger::emit(logger, error_log)
-  Logger::emit(logger, trace_log)
-  Logger::emit(logger, debug_log)
-  Logger::emit(logger, warn_log)
-  Logger::emit(logger, fatal_log)
-  
-  // 结束span
-  Span::end(child_span)
-  Span::end(parent_span)
-}
-
-test "Span层级关系和父子链接" {
-  // 测试Span的层级关系
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "hierarchy.test")
-  
-  // 创建根span
-  let root_span = Tracer::start_span(tracer, "root.operation")
-  let root_ctx = Span::span_context(root_span)
-  
-  // 设置根span属性
-  Span::set_attribute(root_span, "operation.type", "root")
-  Span::set_attribute(root_span, "service.name", "main-service")
-  
-  // 添加根span事件
-  Span::add_event(root_span, "operation.started", [
-    ("timestamp", "2025-01-02T10:00:00Z")
-  ])
-  
-  // 创建子span
-  let child_span1 = Tracer::start_span(tracer, "child.operation.1")
-  let child_ctx1 = Span::span_context(child_span1)
-  
-  Span::set_attribute(child_span1, "operation.type", "child")
-  Span::set_attribute(child_span1, "parent.id", SpanContext::span_id(root_ctx))
-  
-  // 创建另一个子span
-  let child_span2 = Tracer::start_span(tracer, "child.operation.2")
-  let child_ctx2 = Span::span_context(child_span2)
-  
-  Span::set_attribute(child_span2, "operation.type", "child")
-  Span::set_attribute(child_span2, "parent.id", SpanContext::span_id(root_ctx))
-  
-  // 创建孙span
-  let grandchild_span = Tracer::start_span(tracer, "grandchild.operation")
-  let grandchild_ctx = Span::span_context(grandchild_span)
-  
-  Span::set_attribute(grandchild_span, "operation.type", "grandchild")
-  Span::set_attribute(grandchild_span, "parent.id", SpanContext::span_id(child_ctx1))
-  
-  // 验证span上下文
-  assert_true(SpanContext::is_valid(root_ctx))
-  assert_true(SpanContext::is_valid(child_ctx1))
-  assert_true(SpanContext::is_valid(child_ctx2))
-  assert_true(SpanContext::is_valid(grandchild_ctx))
-  
-  // 验证span属性
-  assert_eq(Span::name(root_span), "root.operation")
-  assert_eq(Span::name(child_span1), "child.operation.1")
-  assert_eq(Span::name(child_span2), "child.operation.2")
-  assert_eq(Span::name(grandchild_span), "grandchild.operation")
-  
-  // 验证span类型
-  assert_eq(Span::kind(root_span), Internal)
-  assert_eq(Span::kind(child_span1), Internal)
-  assert_eq(Span::kind(child_span2), Internal)
-  assert_eq(Span::kind(grandchild_span), Internal)
-  
-  // 测试span状态
-  assert_true(Span::is_recording(root_span))
-  assert_true(Span::is_recording(child_span1))
-  assert_true(Span::is_recording(child_span2))
-  assert_true(Span::is_recording(grandchild_span))
-  
-  // 添加span事件
-  Span::add_event(child_span1, "child.operation.started", [
-    ("parent.trace.id", SpanContext::trace_id(root_ctx))
-  ])
-  
-  Span::add_event(grandchild_span, "grandchild.operation.started", [
-    ("parent.trace.id", SpanContext::trace_id(child_ctx1)),
-    ("root.trace.id", SpanContext::trace_id(root_ctx))
-  ])
-  
-  // 设置span状态
-  Span::set_status(child_span1, Ok, Some("Child operation completed successfully"))
-  Span::set_status(grandchild_span, Error, Some("Grandchild operation failed"))
-  
-  // 验证span状态
-  assert_eq(Span::status(child_span1), Ok)  // 简化实现
-  assert_eq(Span::status(grandchild_span), Unset)  // 简化实现
-  
-  // 按正确顺序结束span（先结束子span，再结束父span）
-  Span::end(grandchild_span)
-  Span::end(child_span1)
-  Span::end(child_span2)
-  Span::end(root_span)
-  
-  // 验证span结束后仍然可以访问上下文
-  let ended_root_ctx = Span::span_context(root_span)
-  assert_true(SpanContext::is_valid(ended_root_ctx))
-  assert_eq(SpanContext::trace_id(ended_root_ctx), SpanContext::trace_id(root_ctx))
-}
-
-test "随机数生成和统计分布" {
-  // 测试随机数生成器
-  let random = Random::system()
-  
-  // 测试随机字节生成
-  let bytes_8 = Random::next_bytes(random, 8)
-  let bytes_16 = Random::next_bytes(random, 16)
-  let bytes_32 = Random::next_bytes(random, 32)
-  
-  // 验证字节长度
-  assert_eq(bytes_8.length(), 0)  // 简化实现返回空数组
-  assert_eq(bytes_16.length(), 0)
-  assert_eq(bytes_32.length(), 0)
-  
-  // 测试随机数生成
-  let random1 = Random::next_u64(random)
-  let random2 = Random::next_u64(random)
-  let random3 = Random::next_u64(random)
-  
-  // 验证随机数是合理的（简化实现中都是固定值）
-  assert_eq(random1, 12345UL)
-  assert_eq(random2, 12345UL)
-  assert_eq(random3, 12345UL)
-  
-  // 测试随机数分布
-  let random_values = []
-  for i in 0..=100 {
-    let value = Random::next_u64(random)
-    random_values = random_values.push(value)
+  // 创建测试数据
+  let test_data = TelemetryDataset::new()
+  for i in 0..100 {
+    let record = TelemetryRecord::new()
+    TelemetryRecord::set_name(record, "test.operation." + i.to_string())
+    TelemetryRecord::set_timestamp(record, 1640995200 + i * 60) // 每分钟一个记录
+    TelemetryRecord::set_attribute(record, "service", "test.service")
+    TelemetryRecord::set_metric(record, "duration", (i * 10).to_float())
+    TelemetryDataset::add_record(test_data, record)
   }
   
-  // 验证随机数范围（简化实现中所有值都相同）
-  let min_value = random_values.reduce(fn(acc, x) { if x < acc { x } else { acc } }, random_values[0])
-  let max_value = random_values.reduce(fn(acc, x) { if x > acc { x } else { acc } }, random_values[0])
+  // 存储数据
+  let storage_id = TelemetryStorageManager::store(storage_manager, test_data)
+  assert_true(storage_id.is_some())
   
-  assert_eq(min_value, 12345UL)
-  assert_eq(max_value, 12345UL)
+  // 验证数据存储
+  let is_stored = TelemetryStorageManager::exists(storage_manager, storage_id.unwrap())
+  assert_true(is_stored)
   
-  // 测试随机数在遥测中的使用
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "random.test")
+  // 检索数据
+  let retrieved_data = TelemetryStorageManager::retrieve(storage_manager, storage_id.unwrap())
+  assert_true(retrieved_data.is_some())
   
-  // 使用随机数生成唯一ID
-  let trace_id = "trace-" + random1.to_string()
-  let span_id = "span-" + random2.to_string()
+  // 验证检索的数据
+  let retrieved_dataset = retrieved_data.unwrap()
+  assert_eq(TelemetryDataset::record_count(retrieved_dataset), 100)
   
-  let random_span = Tracer::start_span(tracer, "random.operation")
-  Span::set_attribute(random_span, "trace.id", trace_id)
-  Span::set_attribute(random_span, "span.id", span_id)
+  // 测试查询功能
+  let query = TelemetryQuery::new()
+  TelemetryQuery::add_attribute_filter(query, "service", "test.service")
+  TelemetryQuery::add_time_range(query, 1640995200, 1640995200 + 99 * 60)
   
-  // 测试随机采样
-  let sample_rate = 0.5  // 50%采样率
-  let sample_value = (Random::next_u64(random) % 100UL).to_int() / 100.0
-  let should_sample = sample_value < sample_rate
+  let query_results = TelemetryStorageManager::query(storage_manager, query)
+  assert_eq(query_results.length(), 100)
   
-  if should_sample {
-    Span::set_attribute(random_span, "sampling.decision", "sampled")
-  } else {
-    Span::set_attribute(random_span, "sampling.decision", "not_sampled")
-  }
+  // 测试数据压缩存储
+  let uncompressed_size = TelemetryDataset::get_size(test_data)
+  let compressed_size = TelemetryStorageManager::get_compressed_size(storage_manager, storage_id.unwrap())
+  assert_true(compressed_size < uncompressed_size)
   
-  // 测试随机延迟（用于测试目的）
-  let delay_ms = (Random::next_u64(random) % 1000UL).to_int()
-  Span::set_attribute(random_span, "test.delay.ms", delay_ms)
+  // 测试数据过期清理
+  TelemetryStorageManager::set_retention_period(storage_manager, 0) // 立即过期
+  TelemetryStorageManager::cleanup_expired_data(storage_manager)
   
-  // 测试随机负载生成
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "random.metrics")
-  
-  let load_histogram = Meter::create_histogram(meter, "test.generated.load")
-  
-  for i in 0..=10 {
-    let load_value = (Random::next_u64(random) % 1000UL).to_double()
-    Histogram::record(load_histogram, load_value)
-  }
-  
-  Span::end(random_span)
-  
-  // 验证随机数生成器的确定性（简化实现）
-  let deterministic_random = Random::system()
-  let deterministic_value = Random::next_u64(deterministic_random)
-  assert_eq(deterministic_value, 12345UL)
+  // 验证数据已清理
+  let is_expired = TelemetryStorageManager::exists(storage_manager, storage_id.unwrap())
+  assert_false(is_expired)
 }
