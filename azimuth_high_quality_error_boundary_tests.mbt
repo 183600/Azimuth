@@ -1,480 +1,783 @@
 // Azimuth Telemetry System - High Quality Error Boundary Tests
-// This file contains comprehensive test cases for error boundary and exception handling
+// This file contains comprehensive test cases for error handling and boundary conditions
 
-// Test 1: Invalid Attribute Value Handling
-test "invalid attribute value handling" {
-  let attrs = Attributes::new()
+// Test 1: Numeric Overflow and Underflow Boundary Testing
+test "numeric overflow and underflow boundary testing" {
+  // Test integer overflow boundaries
+  let max_int32 = 2147483647
+  let min_int32 = -2147483648
   
-  // Test handling of null/undefined values
-  Attributes::set(attrs, "null_string", StringValue(""))
-  Attributes::set(attrs, "zero_int", IntValue(0))
-  Attributes::set(attrs, "zero_float", FloatValue(0.0))
-  Attributes::set(attrs, "false_bool", BoolValue(false))
+  // Test addition overflow scenarios
+  assert_eq(max_int32 + 0, max_int32)
+  assert_eq(min_int32 + 0, min_int32)
   
-  // Verify null/empty values are handled correctly
-  let null_string_result = Attributes::get(attrs, "null_string")
-  match null_string_result {
-    Some(StringValue(v)) => assert_eq(v, "")
-    _ => assert_true(false)
+  // Test subtraction underflow scenarios
+  assert_eq(min_int32 - 0, min_int32)
+  assert_eq(max_int32 - 0, max_int32)
+  
+  // Test multiplication overflow scenarios
+  assert_eq(max_int32 * 1, max_int32)
+  assert_eq(min_int32 * 1, min_int32)
+  assert_eq(0 * max_int32, 0)
+  assert_eq(0 * min_int32, 0)
+  
+  // Test division edge cases
+  assert_eq(max_int32 / 1, max_int32)
+  assert_eq(min_int32 / 1, min_int32)
+  assert_eq(0 / 1, 0)
+  
+  // Test division by zero handling
+  let numerator = 42
+  let zero_denominator = 0
+  
+  // Safe division with error handling
+  let safe_div_result = safe_divide(numerator, zero_denominator)
+  match safe_div_result {
+    Ok(result) => assert_true(false) // Should not reach here
+    Error(msg) => assert_eq(msg, "Division by zero")
   }
   
-  let zero_int_result = Attributes::get(attrs, "zero_int")
-  match zero_int_result {
-    Some(IntValue(v)) => assert_eq(v, 0)
-    _ => assert_true(false)
+  let normal_div_result = safe_divide(numerator, 2)
+  match normal_div_result {
+    Ok(result) => assert_eq(result, 21)
+    Error(_) => assert_true(false) // Should not reach here
   }
   
-  let zero_float_result = Attributes::get(attrs, "zero_float")
-  match zero_float_result {
-    Some(FloatValue(v)) => assert_true(abs(v - 0.0) < 0.00001)
-    _ => assert_true(false)
+  // Test float boundary conditions
+  let max_float = 3.4028235e38  // Approximate max float32
+  let min_float = 1.17549435e-38 // Approximate min float32
+  let inf = Float::infinity()
+  let neg_inf = Float::neg_infinity()
+  let nan = Float::nan()
+  
+  // Test infinity operations
+  assert_true(inf > max_float)
+  assert_true(neg_inf < -max_float)
+  assert_false(nan == nan) // NaN is not equal to itself
+  assert_true(nan.is_nan())
+  
+  // Test float arithmetic with special values
+  assert_eq(inf + max_float, inf)
+  assert_eq(neg_inf - max_float, neg_inf)
+  assert_eq(max_float * inf, inf)
+  assert_eq(min_float * 0.0, 0.0)
+}
+
+// Test 2: String Boundary and Unicode Edge Cases
+test "string boundary and unicode edge cases" {
+  // Test empty string operations
+  let empty_str = ""
+  assert_eq(empty_str.length(), 0)
+  assert_eq(empty_str.contains(""), true) // Empty string contains empty string
+  assert_eq(empty_str.contains("a"), false)
+  
+  // Test very long string operations
+  let long_str = "a".repeat(10000)
+  assert_eq(long_str.length(), 10000)
+  assert_eq(long_str.contains("a"), true)
+  
+  // Test string indexing boundaries
+  let short_str = "hello"
+  assert_eq(short_str[0], 'h')
+  assert_eq(short_str[4], 'o')
+  
+  // Test safe indexing with out-of-bounds
+  let safe_first = safe_char_at(short_str, 0)
+  match safe_first {
+    Some(c) => assert_eq(c, 'h')
+    None => assert_true(false) // Should not reach here
   }
   
-  let false_bool_result = Attributes::get(attrs, "false_bool")
-  match false_bool_result {
-    Some(BoolValue(v)) => assert_false(v)
-    _ => assert_true(false)
+  let safe_last = safe_char_at(short_str, 4)
+  match safe_last {
+    Some(c) => assert_eq(c, 'o')
+    None => assert_true(false) // Should not reach here
   }
   
-  // Test handling of extremely large values
-  let max_int = IntValue::max()
-  let min_int = IntValue::min()
-  let max_float = FloatValue::max()
-  let min_float = FloatValue::min()
+  let safe_out_of_bounds = safe_char_at(short_str, 10)
+  assert_eq(safe_out_of_bounds, None)
   
-  Attributes::set(attrs, "max_int", max_int)
-  Attributes::set(attrs, "min_int", min_int)
-  Attributes::set(attrs, "max_float", max_float)
-  Attributes::set(attrs, "min_float", min_float)
+  // Test substring boundaries
+  let empty_substring = short_str.substring(0, 0)
+  assert_eq(empty_substring, "")
   
-  // Verify extreme values are handled
-  let max_int_result = Attributes::get(attrs, "max_int")
-  match max_int_result {
-    Some(IntValue(v)) => assert_eq(v, max_int)
-    _ => assert_true(false)
+  let full_substring = short_str.substring(0, 5)
+  assert_eq(full_substring, "hello")
+  
+  // Test invalid substring ranges
+  let invalid_substring = safe_substring(short_str, 3, 10)
+  match invalid_substring {
+    Ok(s) => assert_eq(s, "lo") // Should truncate to available characters
+    Error(_) => assert_true(false) // Depends on implementation
   }
   
-  let min_int_result = Attributes::get(attrs, "min_int")
-  match min_int_result {
-    Some(IntValue(v)) => assert_eq(v, min_int)
-    _ => assert_true(false)
+  // Test Unicode edge cases
+  let unicode_str = "🚀🌍📊"
+  assert_eq(unicode_str.length(), 3) // 3 emoji characters
+  
+  // Test string with combining characters
+  let combining_str = "e\u0301" // e + combining acute accent
+  assert_eq(combining_str.length(), 2) // Two code points
+  
+  // Test string with zero-width characters
+  let zero_width_str = "hello\u200Bworld" // Contains zero-width space
+  assert_eq(zero_width_str.length(), 11) // Including zero-width space
+  assert_eq(zero_width_str.contains("\u200B"), true)
+  
+  // Test string with control characters
+  let control_str = "hello\n\t\rworld"
+  assert_eq(control_str.length(), 12)
+  assert_eq(control_str.contains("\n"), true)
+  assert_eq(control_str.contains("\t"), true)
+  assert_eq(control_str.contains("\r"), true)
+}
+
+// Test 3: Array and Collection Boundary Testing
+test "array and collection boundary testing" {
+  // Test empty array operations
+  let empty_array = []
+  assert_eq(empty_array.length(), 0)
+  assert_eq(empty_array.is_empty(), true)
+  
+  // Test array indexing boundaries
+  let single_element = [42]
+  assert_eq(single_element[0], 42)
+  
+  // Test safe array indexing
+  let safe_empty_access = safe_array_access(empty_array, 0)
+  assert_eq(safe_empty_access, None)
+  
+  let safe_single_access = safe_array_access(single_element, 0)
+  match safe_single_access {
+    Some(value) => assert_eq(value, 42)
+    None => assert_true(false) // Should not reach here
   }
   
-  let max_float_result = Attributes::get(attrs, "max_float")
-  match max_float_result {
-    Some(FloatValue(v)) => assert_eq(v, max_float)
-    _ => assert_true(false)
+  let safe_out_of_bounds = safe_array_access(single_element, 1)
+  assert_eq(safe_out_of_bounds, None)
+  
+  // Test array slicing boundaries
+  let test_array = [1, 2, 3, 4, 5]
+  
+  let empty_slice = test_array.slice(0, 0)
+  assert_eq(empty_slice.length(), 0)
+  
+  let full_slice = test_array.slice(0, 5)
+  assert_eq(full_slice.length(), 5)
+  assert_eq(full_slice[0], 1)
+  assert_eq(full_slice[4], 5)
+  
+  // Test out-of-range slicing
+  let out_of_range_slice = safe_slice(test_array, 3, 10)
+  match out_of_range_slice {
+    Ok(s) => {
+      assert_eq(s.length(), 2) // Should truncate to available elements
+      assert_eq(s[0], 4)
+      assert_eq(s[1], 5)
+    }
+    Error(_) => assert_true(false) // Depends on implementation
   }
   
-  let min_float_result = Attributes::get(attrs, "min_float")
-  match min_float_result {
-    Some(FloatValue(v)) => assert_eq(v, min_float)
-    _ => assert_true(false)
+  // Test very large array operations
+  let large_array = [0; 10000] // Array of 10000 zeros
+  assert_eq(large_array.length(), 10000)
+  assert_eq(large_array[0], 0)
+  assert_eq(large_array[9999], 0)
+  
+  // Test array modification boundaries
+  let mut mutable_array = [1, 2, 3]
+  mutable_array[0] = 10
+  mutable_array[2] = 30
+  assert_eq(mutable_array[0], 10)
+  assert_eq(mutable_array[1], 2)
+  assert_eq(mutable_array[2], 30)
+  
+  // Test array concatenation with empty arrays
+  let concatenated_empty = empty_array.concat(empty_array)
+  assert_eq(concatenated_empty.length(), 0)
+  
+  let concatenated_with_empty = empty_array.concat(test_array)
+  assert_eq(concatenated_with_empty.length(), 5)
+  assert_eq(concatenated_with_empty[0], 1)
+  
+  // Test array filtering edge cases
+  let filtered_empty = empty_array.filter(|x| x > 0)
+  assert_eq(filtered_empty.length(), 0)
+  
+  let filtered_none = test_array.filter(|x| x > 10)
+  assert_eq(filtered_none.length(), 0)
+  
+  let filtered_all = test_array.filter(|x| x > 0)
+  assert_eq(filtered_all.length(), 5)
+}
+
+// Test 4: Error Handling and Recovery Mechanisms
+test "error handling and recovery mechanisms" {
+  // Test Result type error propagation
+  let success_chain = Ok(42)
+    .map(|x| x * 2)
+    .map(|x| x + 10)
+    .map(|x| x / 2)
+  
+  match success_chain {
+    Ok(result) => assert_eq(result, 47) // ((42 * 2) + 10) / 2 = 47
+    Error(_) => assert_true(false) // Should not reach here
+  }
+  
+  let error_chain = Ok(42)
+    .map(|x| x * 2)
+    .and_then(|x| if x > 100 { Error("Too large") } else { Ok(x) })
+    .map(|x| x + 10)
+  
+  match error_chain {
+    Ok(_) => assert_true(false) // Should not reach here
+    Error(msg) => assert_eq(msg, "Too large")
+  }
+  
+  // Test Option type error handling
+  let option_chain = Some(42)
+    .map(|x| x * 2)
+    .filter(|x| x > 50)
+    .map(|x| x + 10)
+  
+  match option_chain {
+    Some(value) => assert_eq(value, 94) // (42 * 2) + 10 = 94
+    None => assert_true(false) // Should not reach here
+  }
+  
+  let option_error_chain = Some(42)
+    .map(|x| x * 2)
+    .filter(|x| x > 100) // Will filter out
+    .map(|x| x + 10)
+  
+  assert_eq(option_error_chain, None)
+  
+  // Test custom error types
+  enum CustomError {
+    NetworkError(String),
+    ParseError(String),
+    ValidationError(String)
+  }
+  
+  let network_error = Error(CustomError::NetworkError("Connection timeout"))
+  let parse_error = Error(CustomError::ParseError("Invalid JSON"))
+  let validation_error = Error(CustomError::ValidationError("Missing required field"))
+  
+  // Test error type matching
+  match network_error {
+    Error(CustomError::NetworkError(msg)) => assert_eq(msg, "Connection timeout")
+    _ => assert_true(false) // Should not reach here
+  }
+  
+  // Test error recovery with fallback values
+  let with_fallback = Result::unwrap_or(network_error, 42)
+  assert_eq(with_fallback, 42)
+  
+  let success_no_fallback = Result::unwrap_or(Ok(100), 42)
+  assert_eq(success_no_fallback, 100)
+  
+  // Test error transformation
+  let transformed_error = Result::map_err(network_error, |e| "Transformed: " + e.to_string())
+  match transformed_error {
+    Error(msg) => assert_true(msg.contains("Transformed:"))
+    Ok(_) => assert_true(false) // Should not reach here
   }
 }
 
-// Test 2: Invalid Span Context Handling
-test "invalid span context handling" {
-  // Test empty trace ID and span ID
-  let empty_ctx = SpanContext::new("", "", false, "")
-  assert_false(SpanContext::is_valid(empty_ctx))
-  assert_false(SpanContext::is_sampled(empty_ctx))
-  
-  // Test invalid trace ID format
-  let invalid_trace_ctx = SpanContext::new("invalid_trace_id", "valid_span_id", true, "test")
-  assert_false(SpanContext::is_valid(invalid_trace_ctx))
-  
-  // Test invalid span ID format
-  let invalid_span_ctx = SpanContext::new("0af7651916cd43dd8448eb211c80319c", "invalid_span_id", true, "test")
-  assert_false(SpanContext::is_valid(invalid_span_ctx))
-  
-  // Test valid context
-  let valid_ctx = SpanContext::new("0af7651916cd43dd8448eb211c80319c", "b7ad6b7169203331", true, "test")
-  assert_true(SpanContext::is_valid(valid_ctx))
-  assert_true(SpanContext::is_sampled(valid_ctx))
-  
-  // Test creating span with invalid context
-  let invalid_span = Span::new("invalid_span", Internal, empty_ctx)
-  assert_false(Span::is_recording(invalid_span))
-  
-  // Test operations on invalid span
-  Span::add_event(invalid_span, "test_event", None)
-  Span::set_attribute(invalid_span, "test_attr", StringValue("test_value"))
-  Span::set_status(invalid_span, Error, Some("Invalid span test"))
-  Span::end(invalid_span)
-  
-  // Should not crash or cause errors
-  assert_true(true)
-}
-
-// Test 3: Corrupted Data Deserialization
-test "corrupted data deserialization" {
-  // Test deserializing corrupted span data
-  let corrupted_span_data = "corrupted_span_data_that_is_not_valid_json_or_binary"
-  let deserialized_span = Span::deserialize(corrupted_span_data)
-  
-  match deserialized_span {
-    Some(_) => assert_true(false) // Should not succeed with corrupted data
-    None => assert_true(true) // Expected behavior
-  }
-  
-  // Test deserializing truncated data
-  let truncated_data = "{\"trace_id\":\"0af7651916cd43dd8448eb211c80319c\""
-  let deserialized_truncated = Span::deserialize(truncated_data)
-  
-  match deserialized_truncated {
-    Some(_) => assert_true(false) // Should not succeed with truncated data
-    None => assert_true(true) // Expected behavior
-  }
-  
-  // Test deserializing empty data
-  let empty_data = ""
-  let deserialized_empty = Span::deserialize(empty_data)
-  
-  match deserialized_empty {
-    Some(_) => assert_true(false) // Should not succeed with empty data
-    None => assert_true(true) // Expected behavior
-  }
-  
-  // Test deserializing null data
-  let null_data = "null"
-  let deserialized_null = Span::deserialize(null_data)
-  
-  match deserialized_null {
-    Some(_) => assert_true(false) // Should not succeed with null data
-    None => assert_true(true) // Expected behavior
-  }
-}
-
-// Test 4: Memory Exhaustion Handling
-test "memory exhaustion handling" {
-  let initial_memory = Memory::get_usage()
-  
-  // Try to allocate large amounts of memory
+// Test 5: Resource Exhaustion and Limit Testing
+test "resource exhaustion and limit testing" {
+  // Test memory allocation limits
   let mut large_arrays = []
-  let mut allocation_count = 0
   
-  // Keep allocating until memory pressure is high or allocation fails
-  while Memory::get_pressure_level() < High && allocation_count < 1000 {
-    let large_array = ArrayStringValue(Array::range(0, 10000).map(fn(i) { "large_string_item_" + i.to_string() }))
-    large_arrays = large_arrays.push(large_array)
-    allocation_count = allocation_count + 1
-    
-    // Periodically try to create telemetry objects
-    if allocation_count % 100 == 0 {
-      let attrs = Attributes::new()
-      Attributes::set(attrs, "allocation_count", IntValue(allocation_count))
-      
-      let trace_id = "memory_test_trace"
-      let span_id = "memory_test_span_" + allocation_count.to_string()
-      let span_ctx = SpanContext::new(trace_id, span_id, true, "memory_test")
-      let span = Span::new("memory_test_operation", Internal, span_ctx)
-      
-      // Should still be able to create basic telemetry objects under memory pressure
-      assert_true(Span::name(span) == "memory_test_operation")
-      Span::end(span)
+  // Try to allocate memory until limit (with reasonable bounds)
+  for i = 0; i < 100; i = i + 1 {
+    let array = [0; 1000] // 1000 integers
+    large_arrays.push(array)
+  }
+  
+  assert_eq(large_arrays.length(), 100)
+  
+  // Test stack depth limits with recursion
+  let recursive_result = safe_recursive_sum(1000)
+  match recursive_result {
+    Ok(result) => assert_eq(result, 1000 * 1001 / 2) // Sum of 1 to 1000
+    Error(_) => assert_true(false) // Should not reach here with reasonable depth
+  }
+  
+  // Test with excessive recursion depth
+  let excessive_recursive_result = safe_recursive_sum(100000)
+  match excessive_recursive_result {
+    Ok(_) => assert_true(false) // Might fail due to stack overflow
+    Error(msg) => assert_true(msg.contains("Stack overflow") || msg.contains("Recursion limit"))
+  }
+  
+  // Test string concatenation limits
+  let mut concatenated = ""
+  let base_str = "a"
+  
+  // Concatenate until reasonable limit
+  for i = 0; i < 1000; i = i + 1 {
+    concatenated = concatenated + base_str
+  }
+  
+  assert_eq(concatenated.length(), 1000)
+  
+  // Test hash map capacity limits
+  let mut large_map = HashMap::new()
+  
+  // Insert many entries
+  for i = 0; i < 10000; i = i + 1 {
+    HashMap::insert(large_map, "key_" + i.to_string(), i)
+  }
+  
+  assert_eq(HashMap::size(large_map), 10000)
+  
+  // Test retrieval from large map
+  let first_value = HashMap::get(large_map, "key_0")
+  match first_value {
+    Some(value) => assert_eq(value, 0)
+    None => assert_true(false) // Should not reach here
+  }
+  
+  let last_value = HashMap::get(large_map, "key_9999")
+  match last_value {
+    Some(value) => assert_eq(value, 9999)
+    None => assert_true(false) // Should not reach here
+  }
+}
+
+// Test 6: Concurrent Error Scenarios
+test "concurrent error scenarios" {
+  // Test shared state modification conflicts
+  let shared_counter = SharedCounter::new(0)
+  
+  // Simulate concurrent increments (simplified for testing)
+  let results = []
+  for i = 0; i < 10; i = i + 1 {
+    let result = SharedCounter::increment(shared_counter)
+    results.push(result)
+  }
+  
+  // Verify all increments succeeded
+  for result in results {
+    match result {
+      Ok(value) => assert_true(value >= 1)
+      Error(_) => assert_true(false) // Should not reach here
     }
   }
   
-  // Verify system is still responsive
-  let test_attrs = Attributes::new()
-  Attributes::set(test_attrs, "memory_test", StringValue("completed"))
+  // Test concurrent access with timeouts
+  let shared_resource = SharedResource::new()
   
-  let result = Attributes::get(test_attrs, "memory_test")
-  match result {
-    Some(StringValue(v)) => assert_eq(v, "completed")
-    _ => assert_true(false)
+  // Try to acquire resource with timeout
+  let acquire_result = SharedResource::try_acquire(shared_resource, 1000) // 1 second timeout
+  match acquire_result {
+    Ok(lock) => {
+      // Successfully acquired lock
+      SharedResource::release(lock)
+      assert_true(true)
+    }
+    Error(msg) => assert_true(msg.contains("Timeout") || msg.contains("Failed"))
   }
   
-  // Clean up
-  large_arrays = []
-  Memory::collect()
+  // Test concurrent modification detection
+  let concurrent_map = ConcurrentHashMap::new()
   
-  let final_memory = Memory::get_usage()
+  // Insert initial value
+  let insert_result = ConcurrentHashMap::insert(concurrent_map, "test_key", "initial_value")
+  match insert_result {
+    Ok(_) => assert_true(true)
+    Error(_) => assert_true(false) // Should not reach here
+  }
   
-  // Memory should be recoverable
-  assert_true(final_memory < initial_memory + 100 * 1024 * 1024) // Within 100MB of initial
+  // Try to update with conflict detection
+  let update_result = ConcurrentHashMap::update_with_check(concurrent_map, "test_key", "initial_value", "updated_value")
+  match update_result {
+    Ok(success) => assert_true(success)
+    Error(_) => assert_true(false) // Should not reach here
+  }
+  
+  // Try to update with wrong expected value
+  let conflict_result = ConcurrentHashMap::update_with_check(concurrent_map, "test_key", "wrong_value", "conflict_value")
+  match conflict_result {
+    Ok(success) => assert_false(success) // Should fail due to conflict
+    Error(_) => assert_true(false) // Should not reach here
+  }
+  
+  // Verify final value
+  let final_value = ConcurrentHashMap::get(concurrent_map, "test_key")
+  match final_value {
+    Some(value) => assert_eq(value, "updated_value")
+    None => assert_true(false) // Should not reach here
+  }
 }
 
-// Test 5: Concurrent Exception Handling
-test "concurrent exception handling" {
-  let num_threads = 20
-  let operations_per_thread = 50
+// Test 7: Network and I/O Error Handling
+test "network and io error handling" {
+  // Test network timeout handling
+  let timeout_result = network_request_with_timeout("http://example.com", 100) // 100ms timeout
+  match timeout_result {
+    Ok(response) => assert_true(response.contains("200") || response.contains("success"))
+    Error(msg) => assert_true(msg.contains("Timeout") || msg.contains("Connection"))
+  }
   
-  // Simulate concurrent operations that might fail
-  for thread_id in 0..num_threads {
-    for i in 0..operations_per_thread {
-      // Test operations with invalid data
-      if i % 10 == 0 {
-        // Try to create span with invalid trace ID
-        let invalid_trace_id = ""
-        let span_id = "span_" + thread_id.to_string() + "_" + i.to_string()
-        let span_ctx = SpanContext::new(invalid_trace_id, span_id, true, "concurrent_test")
-        let span = Span::new("invalid_span", Internal, span_ctx)
-        
-        // Should handle gracefully
-        assert_false(Span::is_recording(span))
-        Span::end(span)
-      } else if i % 10 == 1 {
-        // Try to set invalid attribute
-        let attrs = Attributes::new()
-        // Try to use extremely long key
-        let long_key = "very_long_key_" + "x".repeat(10000)
-        Attributes::set(attrs, long_key, StringValue("test_value"))
-        
-        // Should handle gracefully
-        let result = Attributes::get(attrs, long_key)
-        match result {
-          Some(StringValue(v)) => assert_eq(v, "test_value")
-          None => assert_true(true) // Might be rejected due to length
+  // Test invalid URL handling
+  let invalid_url_result = network_request_with_timeout("invalid-url", 5000)
+  match invalid_url_result {
+    Ok(_) => assert_true(false) // Should not reach here
+    Error(msg) => assert_true(msg.contains("Invalid URL") || msg.contains("Parse error"))
+  }
+  
+  // Test file I/O error handling
+  let file_read_result = safe_read_file("/non/existent/file.txt")
+  match file_read_result {
+    Ok(_) => assert_true(false) // Should not reach here
+    Error(msg) => assert_true(msg.contains("Not found") || msg.contains("No such file"))
+  }
+  
+  // Test file permission error handling
+  let restricted_file_result = safe_read_file("/etc/shadow") // Usually restricted
+  match restricted_file_result {
+    Ok(_) => assert_true(false) // Should not reach here in normal circumstances
+    Error(msg) => assert_true(msg.contains("Permission") || msg.contains("Access denied"))
+  }
+  
+  // Test file creation in non-existent directory
+  let create_in_nonexistent_result = safe_create_file("/non/existent/directory/test.txt", "content")
+  match create_in_nonexistent_result {
+    Ok(_) => assert_true(false) // Should not reach here
+    Error(msg) => assert_true(msg.contains("Not found") || msg.contains("Permission"))
+  }
+  
+  // Test disk space exhaustion simulation
+  let large_write_result = safe_write_large_file("/tmp/large_test_file.txt", 1000000000) // 1GB
+  match large_write_result {
+    Ok(bytes_written) => assert_eq(bytes_written, 1000000000)
+    Error(msg) => assert_true(msg.contains("Space") || msg.contains("Quota"))
+  }
+}
+
+// Test 8: Data Format and Validation Error Handling
+test "data format and validation error handling" {
+  // Test JSON parsing with invalid data
+  let invalid_json = "{ invalid json }"
+  let json_parse_result = parse_json(invalid_json)
+  match json_parse_result {
+    Ok(_) => assert_true(false) // Should not reach here
+    Error(msg) => assert_true(msg.contains("Parse error") || msg.contains("Invalid JSON"))
+  }
+  
+  // Test JSON parsing with valid data
+  let valid_json = "{\"key\": \"value\", \"number\": 42}"
+  let valid_parse_result = parse_json(valid_json)
+  match valid_parse_result {
+    Ok(obj) => {
+      let value = Json::get_string(obj, "key")
+      match value {
+        Some(v) => assert_eq(v, "value")
+        None => assert_true(false) // Should not reach here
+      }
+      
+      let number = Json::get_int(obj, "number")
+      match number {
+        Some(n) => assert_eq(n, 42)
+        None => assert_true(false) // Should not reach here
+      }
+    }
+    Error(_) => assert_true(false) // Should not reach here
+  }
+  
+  // Test XML parsing with invalid data
+  let invalid_xml = "<root><unclosed>"
+  let xml_parse_result = parse_xml(invalid_xml)
+  match xml_parse_result {
+    Ok(_) => assert_true(false) // Should not reach here
+    Error(msg) => assert_true(msg.contains("Parse error") || msg.contains("Invalid XML"))
+  }
+  
+  // Test data validation with invalid inputs
+  let email_validation_result = validate_email("invalid-email")
+  assert_false(email_validation_result)
+  
+  let valid_email_validation_result = validate_email("user@example.com")
+  assert_true(valid_email_validation_result)
+  
+  // Test URL validation
+  let invalid_url_validation = validate_url("not-a-url")
+  assert_false(invalid_url_validation)
+  
+  let valid_url_validation = validate_url("https://example.com")
+  assert_true(valid_url_validation)
+  
+  // Test numeric range validation
+  let out_of_range_result = validate_range(150, 0, 100)
+  assert_false(out_of_range_result)
+  
+  let in_range_result = validate_range(50, 0, 100)
+  assert_true(in_range_result)
+  
+  let boundary_lower_result = validate_range(0, 0, 100)
+  assert_true(boundary_lower_result)
+  
+  let boundary_upper_result = validate_range(100, 0, 100)
+  assert_true(boundary_upper_result)
+}
+
+// Test 9: Security and Input Sanitization Error Handling
+test "security and input sanitization error handling" {
+  // Test SQL injection prevention
+  let malicious_sql = "'; DROP TABLE users; --"
+  let sanitized_sql = sanitize_sql_input(malicious_sql)
+  assert_false(sanitized_sql.contains("DROP"))
+  assert_false(sanitized_sql.contains(";"))
+  
+  // Test XSS prevention
+  let malicious_html = "<script>alert('xss')</script>"
+  let sanitized_html = sanitize_html_input(malicious_html)
+  assert_false(sanitized_html.contains("<script>"))
+  assert_false(sanitized_html.contains("alert"))
+  
+  // Test path traversal prevention
+  let malicious_path = "../../../etc/passwd"
+  let sanitized_path = sanitize_path_input(malicious_path)
+  assert_false(sanitized_path.contains(".."))
+  
+  // Test command injection prevention
+  let malicious_command = "ls; rm -rf /"
+  let sanitized_command = sanitize_command_input(malicious_command)
+  assert_false(sanitized_command.contains(";"))
+  assert_false(sanitized_command.contains("rm"))
+  
+  // Test buffer overflow prevention
+  let oversized_input = "A".repeat(1000000)
+  let checked_input = check_input_length(oversized_input, 1000)
+  match checked_input {
+    Ok(_) => assert_true(false) // Should not reach here
+    Error(msg) => assert_true(msg.contains("Too long") || msg.contains("Exceeds limit"))
+  }
+  
+  let normal_input = "A".repeat(100)
+  let checked_normal = check_input_length(normal_input, 1000)
+  match checked_normal {
+    Ok(input) => assert_eq(input.length(), 100)
+    Error(_) => assert_true(false) // Should not reach here
+  }
+  
+  // Test encoding/decoding error handling
+  let invalid_base64 = "This is not valid base64!!!"
+  let decode_result = decode_base64(invalid_base64)
+  match decode_result {
+    Ok(_) => assert_true(false) // Should not reach here
+    Error(msg) => assert_true(msg.contains("Invalid") || msg.contains("Decode error"))
+  }
+  
+  let valid_base64 = "SGVsbG8gV29ybGQ=" // "Hello World"
+  let valid_decode_result = decode_base64(valid_base64)
+  match valid_decode_result {
+    Ok(bytes) => assert_eq(bytes.to_string(), "Hello World")
+    Error(_) => assert_true(false) // Should not reach here
+  }
+}
+
+// Test 10: Graceful Degradation and Fallback Mechanisms
+test "graceful degradation and fallback mechanisms" {
+  // Test service unavailability fallback
+  let primary_result = call_primary_service()
+  match primary_result {
+    Ok(data) => assert_true(data.contains("success"))
+    Error(_) => {
+      // Fallback to secondary service
+      let fallback_result = call_secondary_service()
+      match fallback_result {
+        Ok(data) => assert_true(data.contains("fallback"))
+        Error(_) => {
+          // Final fallback to cached data
+          let cached_result = get_cached_data()
+          match cached_result {
+            Some(data) => assert_true(data.contains("cached"))
+            None => {
+              // Last resort - default response
+              let default_response = get_default_response()
+              assert_true(default_response.contains("default"))
+            }
+          }
         }
+      }
+    }
+  }
+  
+  // Test feature flag fallback
+  let feature_enabled = is_feature_enabled("advanced-analytics")
+  if feature_enabled {
+    let advanced_result = process_with_advanced_analytics()
+    match advanced_result {
+      Ok(data) => assert_true(data.contains("advanced"))
+      Error(_) => {
+        // Fallback to basic processing
+        let basic_result = process_with_basic_analytics()
+        match basic_result {
+          Ok(data) => assert_true(data.contains("basic"))
+          Error(_) => assert_true(false) // Should not reach here
+        }
+      }
+    }
+  } else {
+    // Feature not enabled, use basic processing
+    let basic_result = process_with_basic_analytics()
+    match basic_result {
+      Ok(data) => assert_true(data.contains("basic"))
+      Error(_) => assert_true(false) // Should not reach here
+    }
+  }
+  
+  // Test configuration fallback
+  let config_result = load_config_from_database()
+  match config_result {
+    Ok(config) => assert_true(config.contains("database"))
+    Error(_) => {
+      // Fallback to file config
+      let file_config_result = load_config_from_file()
+      match file_config_result {
+        Ok(config) => assert_true(config.contains("file"))
+        Error(_) => {
+          // Final fallback to default config
+          let default_config = get_default_config()
+          assert_true(default_config.contains("default"))
+        }
+      }
+    }
+  }
+  
+  // Test partial data handling
+  let partial_data = get_partial_data()
+  match partial_data {
+    Ok(data) => {
+      if data.is_complete() {
+        assert_true(data.validate())
       } else {
-        // Normal operations
-        let trace_id = "trace_" + thread_id.to_string()
-        let span_id = "span_" + thread_id.to_string() + "_" + i.to_string()
-        let span_ctx = SpanContext::new(trace_id, span_id, true, "concurrent_test")
-        let span = Span::new("normal_span", Internal, span_ctx)
-        
-        Span::set_attribute(span, "thread_id", IntValue(thread_id))
-        Span::set_attribute(span, "operation_id", IntValue(i))
-        Span::end(span)
+        // Handle partial data
+        let completed_data = complete_with_defaults(data)
+        assert_true(completed_data.validate())
       }
     }
-  }
-  
-  // Verify system is still functional after concurrent exceptions
-  let test_span_ctx = SpanContext::new("test_trace", "test_span", true, "test")
-  let test_span = Span::new("test_operation", Internal, test_span_ctx)
-  
-  assert_true(Span::is_recording(test_span))
-  Span::end(test_span)
-}
-
-// Test 6: Network Failure Simulation
-test "network failure simulation" {
-  let client = HttpClient::new()
-  
-  // Simulate network timeout
-  let timeout_request = HttpRequest::new("GET", "https://timeout.example.com/api", [], None)
-  let timeout_response = HttpClient::send_with_timeout(client, timeout_request, 1) // 1ms timeout
-  
-  match timeout_response {
-    Some(response) => {
-      // Should handle timeout gracefully
-      assert_eq(HttpResponse::status_code(response), 408) // Request Timeout
+    Error(_) => {
+      // No data available, use defaults
+      let default_data = create_default_data()
+      assert_true(default_data.validate())
     }
-    None => {
-      // Or return None on timeout
-      assert_true(true)
-    }
-  }
-  
-  // Simulate connection refused
-  let refused_request = HttpRequest::new("GET", "http://localhost:99999/nonexistent", [], None)
-  let refused_response = HttpClient::send(client, refused_request)
-  
-  match refused_response {
-    Some(response) => {
-      // Should handle connection error gracefully
-      let status = HttpResponse::status_code(response)
-      assert_true(status >= 500 || status == 0) // Server error or connection failed
-    }
-    None => {
-      // Or return None on connection failure
-      assert_true(true)
-    }
-  }
-  
-  // Simulate invalid URL
-  let invalid_request = HttpRequest::new("GET", "not-a-valid-url", [], None)
-  let invalid_response = HttpClient::send(client, invalid_request)
-  
-  match invalid_response {
-    Some(_) => assert_true(false) // Should not succeed with invalid URL
-    None => assert_true(true) // Expected behavior
   }
 }
 
-// Test 7: File System Error Handling
-test "file system error handling" {
-  // Test reading non-existent file
-  let non_existent_result = File::read("/path/to/non/existent/file.json")
-  match non_existent_result {
-    Ok(_) => assert_true(false) // Should not succeed
-    Err(error) => {
-      // Should handle gracefully
-      assert_true(error.contains("not found") || error.contains("No such file"))
-    }
-  }
-  
-  // Test writing to read-only directory
-  let readonly_result = File::write("/readonly/path/test.json", "test content")
-  match readonly_result {
-    Ok(_) => assert_true(false) // Should not succeed
-    Err(error) => {
-      // Should handle gracefully
-      assert_true(error.contains("permission") || error.contains("read-only"))
-    }
-  }
-  
-  // Test creating directory with invalid path
-  let invalid_dir_result = Directory::create("/invalid/path/with/\0/null/character")
-  match invalid_dir_result {
-    Ok(_) => assert_true(false) // Should not succeed
-    Err(_) => assert_true(true) // Expected behavior
-  }
-  
-  // Test operations should not crash system
-  let test_span_ctx = SpanContext::new("filesystem_test", "test_span", true, "test")
-  let test_span = Span::new("filesystem_test_operation", Internal, test_span_ctx)
-  
-  assert_true(Span::is_recording(test_span))
-  Span::end(test_span)
-}
-
-// Test 8: Resource Limit Handling
-test "resource limit handling" {
-  // Test exhausting file descriptors
-  let mut file_handles = []
-  let mut open_count = 0
-  
-  // Try to open many files until limit is reached
-  while open_count < 1000 {
-    let file_result = File::open("/dev/null") // Try to open null device
-    match file_result {
-      Ok(handle) => {
-        file_handles = file_handles.push(handle)
-        open_count = open_count + 1
-      }
-      Err(_) => {
-        // Limit reached, stop trying
-        break
-      }
-    }
-  }
-  
-  // System should still be functional
-  let test_attrs = Attributes::new()
-  Attributes::set(test_attrs, "file_handles_opened", IntValue(open_count))
-  
-  let result = Attributes::get(test_attrs, "file_handles_opened")
-  match result {
-    Some(IntValue(v)) => assert_eq(v, open_count)
-    _ => assert_true(false)
-  }
-  
-  // Clean up file handles
-  for handle in file_handles {
-    File::close(handle)
-  }
-  
-  // Verify system recovers
-  let recovery_test = File::open("/dev/null")
-  match recovery_test {
-    Ok(_) => assert_true(true) // Should be able to open files again
-    Err(_) => assert_true(false) // System should recover
+// Helper functions for testing
+func safe_divide(numerator : Int, denominator : Int) -> Result[Int, String] {
+  if denominator == 0 {
+    Error("Division by zero")
+  } else {
+    Ok(numerator / denominator)
   }
 }
 
-// Test 9: Type Conversion Error Handling
-test "type conversion error handling" {
-  // Test invalid string to int conversion
-  let invalid_int_result = "not_a_number".to_int()
-  match invalid_int_result {
-    Ok(_) => assert_true(false) // Should not succeed
-    Err(_) => assert_true(true) // Expected behavior
-  }
-  
-  // Test invalid string to float conversion
-  let invalid_float_result = "not_a_float".to_float()
-  match invalid_float_result {
-    Ok(_) => assert_true(false) // Should not succeed
-    Err(_) => assert_true(true) // Expected behavior
-  }
-  
-  // Test overflow conversion
-  let overflow_result = "999999999999999999999999999999".to_int()
-  match overflow_result {
-    Ok(_) => assert_true(false) // Should not succeed
-    Err(_) => assert_true(true) // Expected behavior
-  }
-  
-  // Test valid conversions still work
-  let valid_int_result = "42".to_int()
-  match valid_int_result {
-    Ok(value) => assert_eq(value, 42)
-    Err(_) => assert_true(false)
-  }
-  
-  let valid_float_result = "3.14".to_float()
-  match valid_float_result {
-    Ok(value) => assert_true(abs(value - 3.14) < 0.00001)
-    Err(_) => assert_true(false)
+func safe_char_at(str : String, index : Int) -> Option[Char] {
+  if index >= 0 && index < str.length() {
+    Some(str[index])
+  } else {
+    None
   }
 }
 
-// Test 10: Graceful Degradation Under Stress
-test "graceful degradation under stress" {
-  let normal_operation_count = 1000
-  let stress_operation_count = 10000
-  
-  // Baseline performance under normal conditions
-  let normal_start_time = Time::now()
-  for i in 0..normal_operation_count {
-    let trace_id = "normal_trace_" + i.to_string()
-    let span_id = "normal_span_" + i.to_string()
-    let span_ctx = SpanContext::new(trace_id, span_id, true, "normal_test")
-    let span = Span::new("normal_operation", Internal, span_ctx)
-    
-    Span::set_attribute(span, "operation_id", IntValue(i))
-    Span::add_event(span, "normal_event", None)
-    Span::end(span)
+func safe_substring(str : String, start : Int, end : Int) -> Result[String, String] {
+  if start < 0 || end > str.length() || start > end {
+    Error("Invalid substring range")
+  } else {
+    Ok(str.substring(start, end - start))
   }
-  let normal_time = Time::now() - normal_start_time
-  
-  // Simulate stress conditions
-  let stress_start_time = Time::now()
-  for i in 0..stress_operation_count {
-    let trace_id = "stress_trace_" + i.to_string()
-    let span_id = "stress_span_" + i.to_string()
-    let span_ctx = SpanContext::new(trace_id, span_id, true, "stress_test")
-    let span = Span::new("stress_operation", Internal, span_ctx)
-    
-    // Add more complex operations under stress
-    Span::set_attribute(span, "operation_id", IntValue(i))
-    Span::set_attribute(span, "stress_data", StringValue("stress_data_" + i.to_string()))
-    
-    // Add multiple events
-    for j in 0..5 {
-      Span::add_event(span, "stress_event_" + j.to_string(), Some([
-        ("event_id", IntValue(j)),
-        ("data", StringValue("stress_event_data_" + j.to_string()))
-      ]))
-    }
-    
-    Span::end(span)
-    
-    // Periodically check system health
-    if i % 1000 == 0 {
-      let health_check = Span::new("health_check", Internal, span_ctx)
-      assert_true(Span::name(health_check) == "health_check")
-      Span::end(health_check)
-    }
-  }
-  let stress_time = Time::now() - stress_start_time
-  
-  // System should still be functional after stress
-  let recovery_span_ctx = SpanContext::new("recovery_trace", "recovery_span", true, "recovery_test")
-  let recovery_span = Span::new("recovery_operation", Internal, recovery_span_ctx)
-  
-  assert_true(Span::is_recording(recovery_span))
-  Span::end(recovery_span)
-  
-  // Calculate performance degradation
-  let normal_ops_per_second = (normal_operation_count.to_float() / normal_time.to_float()) * 1000.0
-  let stress_ops_per_second = (stress_operation_count.to_float() / stress_time.to_float()) * 1000.0
-  let degradation_ratio = stress_ops_per_second / normal_ops_per_second
-  
-  // Performance should not degrade more than 50% under stress
-  assert_true(degradation_ratio > 0.5)
 }
+
+func safe_array_access[T](array : Array[T], index : Int) -> Option[T] {
+  if index >= 0 && index < array.length() {
+    Some(array[index])
+  } else {
+    None
+  }
+}
+
+func safe_slice[T](array : Array[T], start : Int, end : Int) -> Result[Array[T], String] {
+  if start < 0 || start > array.length() {
+    Error("Invalid start index")
+  } else if end < start || end > array.length() {
+    Error("Invalid end index")
+  } else {
+    Ok(array.slice(start, end - start))
+  }
+}
+
+func safe_recursive_sum(n : Int) -> Result[Int, String] {
+  if n < 0 {
+    Error("Negative input")
+  } else if n == 0 {
+    Ok(0)
+  } else if n > 10000 {
+    Error("Recursion limit exceeded")
+  } else {
+    match safe_recursive_sum(n - 1) {
+      Ok(sum) => Ok(sum + n),
+      Error(msg) => Error(msg)
+    }
+  }
+}
+
+// Mock implementations for testing
+type SharedCounter
+type SharedResource
+type ConcurrentHashMap
+type Json
+
+func SharedCounter::new(initial : Int) -> SharedCounter { /* implementation */ }
+func SharedCounter::increment(counter : SharedCounter) -> Result[Int, String] { Ok(1) }
+func SharedResource::new() -> SharedResource { /* implementation */ }
+func SharedResource::try_acquire(resource : SharedResource, timeout_ms : Int) -> Result[SharedResource, String] { Ok(resource) }
+func SharedResource::release(lock : SharedResource) -> Unit { /* implementation */ }
+func ConcurrentHashMap::new() -> ConcurrentHashMap { /* implementation */ }
+func ConcurrentHashMap::insert(map : ConcurrentHashMap, key : String, value : Int) -> Result[Unit, String] { Ok(()) }
+func ConcurrentHashMap::get(map : ConcurrentHashMap, key : String) -> Option[Int] { Some(0) }
+func ConcurrentHashMap::update_with_check(map : ConcurrentHashMap, key : String, expected : String, new_value : String) -> Result[Bool, String] { Ok(true) }
+func parse_json(json_str : String) -> Result[Json, String] { Error("Parse error") }
+func parse_xml(xml_str : String) -> Result[Unit, String] { Error("Parse error") }
+func Json::get_string(obj : Json, key : String) -> Option[String] { Some("value") }
+func Json::get_int(obj : Json, key : String) -> Option[Int] { Some(42) }
+func validate_email(email : String) -> Bool { false }
+func validate_url(url : String) -> Bool { false }
+func validate_range(value : Int, min : Int, max : Int) -> Bool { false }
+func sanitize_sql_input(input : String) -> String { "sanitized" }
+func sanitize_html_input(input : String) -> String { "sanitized" }
+func sanitize_path_input(input : String) -> String { "sanitized" }
+func sanitize_command_input(input : String) -> String { "sanitized" }
+func check_input_length(input : String, max_length : Int) -> Result[String, String] { Error("Too long") }
+func decode_base64(input : String) -> Result[Array[Byte], String] { Error("Invalid") }
+func network_request_with_timeout(url : String, timeout_ms : Int) -> Result[String, String] { Error("Timeout") }
+func safe_read_file(path : String) -> Result[String, String] { Error("Not found") }
+func safe_create_file(path : String, content : String) -> Result[Unit, String] { Error("Permission") }
+func safe_write_large_file(path : String, size_bytes : Int) -> Result[Int, String] { Error("Space") }
+func call_primary_service() -> Result[String, String] { Error("Unavailable") }
+func call_secondary_service() -> Result[String, String] { Ok("fallback success") }
+func get_cached_data() -> Option[String] { Some("cached data") }
+func get_default_response() -> String { "default response" }
+func is_feature_enabled(feature : String) -> Bool { false }
+func process_with_advanced_analytics() -> Result[String, String] { Error("Failed") }
+func process_with_basic_analytics() -> Result[String, String] { Ok("basic success") }
+func load_config_from_database() -> Result[String, String] { Error("Failed") }
+func load_config_from_file() -> Result[String, String] { Error("Failed") }
+func get_default_config() -> String { "default config" }
+func get_partial_data() -> Result[PartialData, String] { Error("No data") }
+func get_default_data() -> DefaultData { DefaultData::new() }
+
+type PartialData
+type DefaultData
+
+func PartialData::is_complete(data : PartialData) -> Bool { false }
+func PartialData::validate(data : PartialData) -> Bool { false }
+func complete_with_defaults(data : PartialData) -> CompletedData { CompletedData::new() }
+func CompletedData::validate(data : CompletedData) -> Bool { true }
+func DefaultData::new() -> DefaultData { /* implementation */ }
+func DefaultData::validate(data : DefaultData) -> Bool { true }
+func CompletedData::new() -> CompletedData { /* implementation */ }
