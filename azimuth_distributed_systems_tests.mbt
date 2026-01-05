@@ -1,1541 +1,701 @@
-// Distributed Systems Tests for Azimuth Telemetry System
-// This file contains test cases for distributed systems functionality
+// Azimuth 分布式系统测试用例
+// 专注于分布式系统功能和协调
 
-// Test 1: Distributed Tracing Context Propagation
-test "distributed tracing context propagation" {
-  // Define trace context
-  type TraceContext = {
-    trace_id: String,
-    span_id: String,
-    parent_span_id: Option[String],
-    baggage: Array[(String, String)]
-  }
-  
-  // Create trace context
-  let create_trace_context = fn(trace_id: String, span_id: String, parent_span_id: Option[String]) {
-    {
-      trace_id,
-      span_id,
-      parent_span_id,
-      baggage: []
-    }
-  }
-  
-  // Add baggage item
-  let add_baggage = fn(context: TraceContext, key: String, value: String) {
-    let updated_baggage = context.baggage.push((key, value))
-    { context | baggage: updated_baggage }
-  }
-  
-  // Extract trace context from headers
-  let extract_from_headers = fn(headers: Array[(String, String)]) {
-    let mut trace_id = None
-    let mut span_id = None
-    let mut parent_span_id = None
-    let mut baggage = []
+// 测试1: 分布式一致性哈希
+test "分布式一致性哈希" {
+  // 模拟一致性哈希环实现
+  let create_hash_ring = fn(nodes: Array<String>, replicas: Int) {
+    let mut ring = []
     
-    for (key, value) in headers {
-      match key {
-        "x-trace-id" => trace_id = Some(value)
-        "x-span-id" => span_id = Some(value)
-        "x-parent-span-id" => parent_span_id = Some(value)
-        "x-baggage" => {
-          // Parse baggage items (key=value, key2=value2)
-          let items = value.split(",")
-          for item in items {
-            let parts = item.split("=")
-            if parts.length() == 2 {
-              baggage = baggage.push((parts[0], parts[1]))
-            }
-          }
-        }
-        _ => ()
+    // 为每个节点创建多个虚拟节点
+    for node in nodes {
+      let mut i = 0
+      while i < replicas {
+        // 模拟哈希：节点名+副本编号的简单哈希
+        let virtual_node_key = node + "-" + i.to_string()
+        let hash_value = virtual_node_key.length() * 31 + i  // 简单哈希函数
+        
+        ring = ring.push({
+          node: node,
+          virtual_id: virtual_node_key,
+          hash: hash_value
+        })
+        i = i + 1
       }
     }
     
-    match (trace_id, span_id) {
-      (Some(tid), Some(sid)) => Some({
-        trace_id: tid,
-        span_id: sid,
-        parent_span_id,
-        baggage
-      })
-      _ => None
-    }
-  }
-  
-  // Inject trace context into headers
-  let inject_to_headers = fn(context: TraceContext) {
-    let headers = [
-      ("x-trace-id", context.trace_id),
-      ("x-span-id", context.span_id)
-    ]
-    
-    let headers_with_parent = match context.parent_span_id {
-      Some(parent_id) => headers.push(("x-parent-span-id", parent_id))
-      None => headers
+    // 按哈希值排序
+    let mut sorted = true
+    let mut temp = ring
+    while sorted {
+      sorted = false
+      let mut i = 0
+      while i < temp.length() - 1 {
+        if temp[i].hash > temp[i + 1].hash {
+          let swap = temp[i]
+          temp[i] = temp[i + 1]
+          temp[i + 1] = swap
+          sorted = true
+        }
+        i = i + 1
+      }
     }
     
-    // Add baggage
-    let baggage_string = context.baggage.map(fn((k, v)) { k + "=" + v }).join(",")
-    if baggage_string.length() > 0 {
-      headers_with_parent.push(("x-baggage", baggage_string))
-    } else {
-      headers_with_parent
+    temp
+  }
+  
+  let find_node = fn(ring: Array<{ node: String, virtual_id: String, hash: Int }>, key: String) {
+    if ring.length() == 0 {
+      return None
+    }
+    
+    // 计算键的哈希值
+    let key_hash = key.length() * 17  // 简单哈希函数
+    
+    // 在环上找到第一个节点，其哈希值大于等于键的哈希值
+    for node_info in ring {
+      if node_info.hash >= key_hash {
+        return Some(node_info.node)
+      }
+    }
+    
+    // 如果没找到，返回环上的第一个节点（环形结构）
+    Some(ring[0].node)
+  }
+  
+  // 测试一致性哈希
+  let nodes = ["node1", "node2", "node3", "node4"]
+  let ring = create_hash_ring(nodes, 3)  // 每个节点3个副本
+  
+  assert_eq(ring.length(), 12)  // 4个节点 * 3个副本
+  
+  // 测试键分布
+  let keys = ["user:123", "user:456", "session:789", "cache:abc"]
+  let mut key_distribution = {}
+  
+  for key in keys {
+    let node = find_node(ring, key)
+    match node {
+      Some(n) => {
+        if not(key_distribution.contains_key(n)) {
+          key_distribution[n] = []
+        }
+        key_distribution[n] = key_distribution[n].push(key)
+      }
+      None => ()
     }
   }
   
-  // Test creating trace context
-  let trace_context = create_trace_context("trace-12345", "span-67890", None)
-  assert_eq(trace_context.trace_id, "trace-12345")
-  assert_eq(trace_context.span_id, "span-67890")
-  assert_eq(trace_context.parent_span_id, None)
-  assert_eq(trace_context.baggage.length(), 0)
+  // 验证所有键都被分配了
+  let mut total_keys = 0
+  for (_, keys_list) in key_distribution {
+    total_keys = total_keys + keys_list.length()
+  }
+  assert_eq(total_keys, keys.length())
   
-  // Test adding baggage
-  let context_with_baggage = add_baggage(trace_context, "user.id", "user-123")
-  let context_with_more_baggage = add_baggage(context_with_baggage, "service.version", "1.0.0")
+  // 测试节点添加后的重新分布
+  let new_nodes = ["node1", "node2", "node3", "node4", "node5"]
+  let new_ring = create_hash_ring(new_nodes, 3)
   
-  assert_eq(context_with_more_baggage.baggage.length(), 2)
-  assert_true(context_with_more_baggage.baggage.contains(("user.id", "user-123")))
-  assert_true(context_with_more_baggage.baggage.contains(("service.version", "1.0.0")))
-  
-  // Test injection and extraction
-  let headers = inject_to_headers(context_with_more_baggage)
-  
-  assert_eq(headers.length(), 4)
-  assert_true(headers.contains(("x-trace-id", "trace-12345")))
-  assert_true(headers.contains(("x-span-id", "span-67890")))
-  assert_true(headers.contains(("x-baggage", "user.id=user-123,service.version=1.0.0")))
-  
-  let extracted_context = extract_from_headers(headers)
-  
-  match extracted_context {
-    Some(context) => {
-      assert_eq(context.trace_id, "trace-12345")
-      assert_eq(context.span_id, "span-67890")
-      assert_eq(context.parent_span_id, None)
-      assert_eq(context.baggage.length(), 2)
-      assert_true(context.baggage.contains(("user.id", "user-123")))
-      assert_true(context.baggage.contains(("service.version", "1.0.0")))
+  let mut redistributed_keys = 0
+  for key in keys {
+    let old_node = find_node(ring, key)
+    let new_node = find_node(new_ring, key)
+    
+    match (old_node, new_node) {
+      (Some(old), Some(new)) => {
+        if old != new {
+          redistributed_keys = redistributed_keys + 1
+        }
+      }
+      _ => ()
     }
-    None => assert_true(false)
   }
   
-  // Test parent span propagation
-  let child_context = create_trace_context("trace-12345", "span-abcde", Some("span-67890"))
-  let child_headers = inject_to_headers(child_context)
-  
-  assert_eq(child_headers.length(), 3)
-  assert_true(child_headers.contains(("x-trace-id", "trace-12345")))
-  assert_true(child_headers.contains(("x-span-id", "span-abcde")))
-  assert_true(child_headers.contains(("x-parent-span-id", "span-67890")))
+  // 添加节点后，只有部分键需要重新分布
+  assert_true(redistributed_keys < keys.length())
+  assert_true(redistributed_keys > 0)  // 至少有一些键会重新分布
 }
 
-// Test 2: Service Mesh Communication
-test "service mesh communication patterns" {
-  // Define service endpoint
-  type ServiceEndpoint = {
-    name: String,
-    host: String,
-    port: Int,
-    protocol: String
-  }
-  
-  // Define service call
-  type ServiceCall = {
-    source: String,
-    destination: ServiceEndpoint,
-    method: String,
-    path: String,
-    headers: Array[(String, String)],
-    timestamp: Int
-  }
-  
-  // Create service endpoint
-  let create_endpoint = fn(name: String, host: String, port: Int, protocol: String) {
-    { name, host, port, protocol }
-  }
-  
-  // Create service call
-  let create_call = fn(source: String, destination: ServiceEndpoint, method: String, path: String, headers: Array[(String, String)], timestamp: Int) {
+// 测试2: 分布式锁实现
+test "分布式锁实现" {
+  // 模拟分布式锁
+  let create_distributed_lock = fn(lock_name: String, ttl: Int) {
     {
-      source,
-      destination,
-      method,
-      path,
-      headers,
-      timestamp
-    }
-  }
-  
-  // Define service mesh
-  type ServiceMesh = {
-    services: Array[ServiceEndpoint],
-    calls: Array[ServiceCall]
-  }
-  
-  // Add service to mesh
-  let add_service = fn(mesh: ServiceMesh, service: ServiceEndpoint) {
-    let updated_services = mesh.services.push(service)
-    { mesh | services: updated_services }
-  }
-  
-  // Record service call
-  let record_call = fn(mesh: ServiceMesh, call: ServiceCall) {
-    let updated_calls = mesh.calls.push(call)
-    { mesh | calls: updated_calls }
-  }
-  
-  // Find service by name
-  let find_service = fn(mesh: ServiceMesh, name: String) {
-    mesh.services.find(fn(s) { s.name == name })
-  }
-  
-  // Get calls from/to a service
-  let get_service_calls = fn(mesh: ServiceMesh, service_name: String) {
-    mesh.calls.filter(fn(c) { 
-      c.source == service_name or c.destination.name == service_name 
-    })
-  }
-  
-  // Create service mesh
-  let mut mesh = { services: [], calls: [] }
-  
-  // Add services
-  let api_service = create_endpoint("api-service", "api.example.com", 8080, "http")
-  let user_service = create_endpoint("user-service", "user.example.com", 8081, "http")
-  let order_service = create_endpoint("order-service", "order.example.com", 8082, "http")
-  let payment_service = create_endpoint("payment-service", "payment.example.com", 8083, "http")
-  
-  mesh = add_service(mesh, api_service)
-  mesh = add_service(mesh, user_service)
-  mesh = add_service(mesh, order_service)
-  mesh = add_service(mesh, payment_service)
-  
-  // Verify services
-  assert_eq(mesh.services.length(), 4)
-  assert_eq(find_service(mesh, "api-service").unwrap().host, "api.example.com")
-  assert_eq(find_service(mesh, "payment-service").unwrap().port, 8083)
-  
-  // Record service calls
-  let call1 = create_call(
-    "api-service",
-    user_service,
-    "GET",
-    "/users/123",
-    [("x-trace-id", "trace-123"), ("x-span-id", "span-456")],
-    1640995200
-  )
-  
-  let call2 = create_call(
-    "api-service",
-    order_service,
-    "POST",
-    "/orders",
-    [("x-trace-id", "trace-123"), ("x-span-id", "span-789")],
-    1640995205
-  )
-  
-  let call3 = create_call(
-    "order-service",
-    payment_service,
-    "POST",
-    "/payments",
-    [("x-trace-id", "trace-123"), ("x-span-id", "span-abc")],
-    1640995210
-  )
-  
-  mesh = record_call(mesh, call1)
-  mesh = record_call(mesh, call2)
-  mesh = record_call(mesh, call3)
-  
-  // Verify calls
-  assert_eq(mesh.calls.length(), 3)
-  
-  // Get API service calls
-  let api_calls = get_service_calls(mesh, "api-service")
-  assert_eq(api_calls.length(), 2)
-  assert_eq(api_calls[0].destination.name, "user-service")
-  assert_eq(api_calls[1].destination.name, "order-service")
-  
-  // Get payment service calls
-  let payment_calls = get_service_calls(mesh, "payment-service")
-  assert_eq(payment_calls.length(), 1)
-  assert_eq(payment_calls[0].source, "order-service")
-  
-  // Analyze call patterns
-  let analyze_call_patterns = fn(mesh: ServiceMesh) {
-    let mut patterns = []
-    
-    for service in mesh.services {
-      let outgoing = mesh.calls.filter(fn(c) { c.source == service.name })
-      let incoming = mesh.calls.filter(fn(c) { c.destination.name == service.name })
-      
-      patterns = patterns.push({
-        service: service.name,
-        outgoing_calls: outgoing.length(),
-        incoming_calls: incoming.length(),
-        total_calls: outgoing.length() + incoming.length()
-      })
-    }
-    
-    patterns
-  }
-  
-  let patterns = analyze_call_patterns(mesh)
-  
-  // Verify patterns
-  assert_eq(patterns.length(), 4)
-  
-  let api_pattern = patterns.find(fn(p) { p.service == "api-service" }).unwrap()
-  assert_eq(api_pattern.outgoing_calls, 2)
-  assert_eq(api_pattern.incoming_calls, 0)
-  assert_eq(api_pattern.total_calls, 2)
-  
-  let payment_pattern = patterns.find(fn(p) { p.service == "payment-service" }).unwrap()
-  assert_eq(payment_pattern.outgoing_calls, 0)
-  assert_eq(payment_pattern.incoming_calls, 1)
-  assert_eq(payment_pattern.total_calls, 1)
-  
-  let order_pattern = patterns.find(fn(p) { p.service == "order-service" }).unwrap()
-  assert_eq(order_pattern.outgoing_calls, 1)
-  assert_eq(order_pattern.incoming_calls, 1)
-  assert_eq(order_pattern.total_calls, 2)
-}
-
-// Test 3: Distributed Consistency
-test "distributed consistency mechanisms" {
-  // Define consistency level
-  enum ConsistencyLevel {
-    Strong
-    Eventual
-    Weak
-    ReadYourWrites
-  }
-  
-  // Define data replica
-  type DataReplica = {
-    id: String,
-    host: String,
-    port: Int,
-    last_updated: Int,
-    version: Int,
-    is_online: Bool
-  }
-  
-  // Define replication operation
-  type ReplicationOperation = {
-    operation_id: String,
-    key: String,
-    value: String,
-    replicas: Array[String],
-    consistency_level: ConsistencyLevel,
-    timestamp: Int
-  }
-  
-  // Create data replica
-  let create_replica = fn(id: String, host: String, port: Int) {
-    {
-      id,
-      host,
-      port,
-      last_updated: 0,
-      version: 0,
-      is_online: true
-    }
-  }
-  
-  // Create replication operation
-  let create_operation = fn(operation_id: String, key: String, value: String, replicas: Array[String], consistency_level: ConsistencyLevel, timestamp: Int) {
-    {
-      operation_id,
-      key,
-      value,
-      replicas,
-      consistency_level,
-      timestamp
-    }
-  }
-  
-  // Define distributed system
-  type DistributedSystem = {
-    replicas: Array[DataReplica],
-    operations: Array[ReplicationOperation],
-    quorum_size: Int
-  }
-  
-  // Add replica to system
-  let add_replica = fn(system: DistributedSystem, replica: DataReplica) {
-    let updated_replicas = system.replicas.push(replica)
-    { system | replicas: updated_replicas }
-  }
-  
-  // Record operation
-  let record_operation = fn(system: DistributedSystem, operation: ReplicationOperation) {
-    let updated_operations = system.operations.push(operation)
-    { system | operations: updated_operations }
-  }
-  
-  // Calculate quorum size
-  let calculate_quorum = fn(replica_count: Int) {
-    (replica_count / 2) + 1
-  }
-  
-  // Check if operation meets consistency requirements
-  let check_consistency = fn(system: DistributedSystem, operation: ReplicationOperation) {
-    let required_replicas = match operation.consistency_level {
-      ConsistencyLevel::Strong => system.replicas.length()
-      ConsistencyLevel::ReadYourWrites => calculate_quorum(system.replicas.length())
-      ConsistencyLevel::Eventual => calculate_quorum(system.replicas.length())
-      ConsistencyLevel::Weak => 1
-    }
-    
-    operation.replicas.length() >= required_replicas
-  }
-  
-  // Create distributed system
-  let replica1 = create_replica("replica-1", "db1.example.com", 5432)
-  let replica2 = create_replica("replica-2", "db2.example.com", 5432)
-  let replica3 = create_replica("replica-3", "db3.example.com", 5432)
-  let replica4 = create_replica("replica-4", "db4.example.com", 5432)
-  let replica5 = create_replica("replica-5", "db5.example.com", 5432)
-  
-  let quorum_size = calculate_quorum(5)
-  let system = {
-    replicas: [replica1, replica2, replica3, replica4, replica5],
-    operations: [],
-    quorum_size
-  }
-  
-  // Verify quorum calculation
-  assert_eq(quorum_size, 3)  // (5 / 2) + 1 = 3
-  assert_eq(system.replicas.length(), 5)
-  
-  // Test consistency levels
-  let strong_op = create_operation(
-    "op-123",
-    "user:123",
-    "updated_data",
-    ["replica-1", "replica-2", "replica-3", "replica-4", "replica-5"],
-    ConsistencyLevel::Strong,
-    1640995200
-  )
-  
-  let eventual_op = create_operation(
-    "op-456",
-    "user:456",
-    "more_data",
-    ["replica-1", "replica-2", "replica-3"],
-    ConsistencyLevel::Eventual,
-    1640995205
-  )
-  
-  let weak_op = create_operation(
-    "op-789",
-    "user:789",
-    "less_data",
-    ["replica-1"],
-    ConsistencyLevel::Weak,
-    1640995210
-  )
-  
-  // Check consistency requirements
-  assert_true(check_consistency(system, strong_op))  // All 5 replicas for strong
-  assert_true(check_consistency(system, eventual_op))  // 3 replicas for eventual (quorum)
-  assert_true(check_consistency(system, weak_op))  // 1 replica for weak
-  
-  // Test insufficient replicas
-  let insufficient_strong = create_operation(
-    "op-abc",
-    "user:abc",
-    "data",
-    ["replica-1", "replica-2", "replica-3"],
-    ConsistencyLevel::Strong,
-    1640995215
-  )
-  
-  assert_false(check_consistency(system, insufficient_strong))  // Only 3 replicas, need 5 for strong
-  
-  // Simulate replica failure
-  let simulate_replica_failure = fn(system: DistributedSystem, replica_id: String) {
-    let updated_replicas = system.replicas.map(fn(r) {
-      if r.id == replica_id {
-        { r | is_online: false }
-      } else {
-        r
-      }
-    })
-    
-    let online_replicas = updated_replicas.filter(fn(r) { r.is_online })
-    let new_quorum = calculate_quorum(online_replicas.length())
-    
-    {
-      replicas: updated_replicas,
-      operations: system.operations,
-      quorum_size: new_quorum
-    }
-  }
-  
-  let failed_system = simulate_replica_failure(system, "replica-3")
-  let online_replicas = failed_system.replicas.filter(fn(r) { r.is_online })
-  
-  assert_eq(online_replicas.length(), 4)
-  assert_eq(failed_system.quorum_size, 3)  // (4 / 2) + 1 = 3
-  
-  // Check consistency with failed replica
-  assert_false(check_consistency(failed_system, strong_op))  // Only 4 online replicas, need 5 for strong
-  assert_true(check_consistency(failed_system, eventual_op))  // 3 replicas still meet quorum
-}
-
-// Test 4: Circuit Breaker Pattern
-test "circuit breaker pattern implementation" {
-  // Define circuit breaker state
-  enum CircuitState {
-    Closed
-    Open
-    HalfOpen
-  }
-  
-  // Define circuit breaker configuration
-  type CircuitBreakerConfig = {
-    failure_threshold: Int,
-    recovery_timeout: Int,
-    expected_exception_threshold: Int
-  }
-  
-  // Define circuit breaker
-  type CircuitBreaker = {
-    name: String,
-    state: CircuitState,
-    failure_count: Int,
-    last_failure_time: Int,
-    success_count: Int,
-    config: CircuitBreakerConfig
-  }
-  
-  // Create circuit breaker
-  let create_circuit_breaker = fn(name: String, config: CircuitBreakerConfig) {
-    {
-      name,
-      state: CircuitState::Closed,
-      failure_count: 0,
-      last_failure_time: 0,
-      success_count: 0,
-      config
-    }
-  }
-  
-  // Record success
-  let record_success = fn(breaker: CircuitBreaker) {
-    match breaker.state {
-      CircuitState::Closed => {
-        { breaker | failure_count: 0, success_count: breaker.success_count + 1 }
-      }
-      CircuitState::HalfOpen => {
-        if breaker.success_count + 1 >= breaker.config.expected_exception_threshold {
-          { breaker | state: CircuitState::Closed, failure_count: 0, success_count: 0 }
-        } else {
-          { breaker | success_count: breaker.success_count + 1 }
-        }
-      }
-      CircuitState::Open => breaker  // Can't succeed when open
-    }
-  }
-  
-  // Record failure
-  let record_failure = fn(breaker: CircuitBreaker, current_time: Int) {
-    match breaker.state {
-      CircuitState::Closed => {
-        let new_failure_count = breaker.failure_count + 1
-        if new_failure_count >= breaker.config.failure_threshold {
-          { breaker | 
-            state: CircuitState::Open, 
-            failure_count: new_failure_count, 
-            last_failure_time: current_time,
-            success_count: 0
-          }
-        } else {
-          { breaker | failure_count: new_failure_count }
-        }
-      }
-      CircuitState::HalfOpen => {
-        { breaker | 
-          state: CircuitState::Open, 
-          failure_count: breaker.failure_count + 1, 
-          last_failure_time: current_time,
-          success_count: 0
-        }
-      }
-      CircuitState::Open => {
-        { breaker | last_failure_time: current_time }
-      }
-    }
-  }
-  
-  // Check if circuit allows requests
-  let allow_request = fn(breaker: CircuitBreaker, current_time: Int) {
-    match breaker.state {
-      CircuitState::Closed => true
-      CircuitState::Open => {
-        if current_time - breaker.last_failure_time >= breaker.config.recovery_timeout {
-          false  // Should transition to half-open, but that's handled elsewhere
-        } else {
-          false
-        }
-      }
-      CircuitState::HalfOpen => true
-    }
-  }
-  
-  // Try to transition to half-open
-  let try_transition_to_half_open = fn(breaker: CircuitBreaker, current_time: Int) {
-    match breaker.state {
-      CircuitState::Open => {
-        if current_time - breaker.last_failure_time >= breaker.config.recovery_timeout {
-          { breaker | state: CircuitState::HalfOpen, success_count: 0 }
-        } else {
-          breaker
-        }
-      }
-      _ => breaker
-    }
-  }
-  
-  // Create circuit breaker configuration
-  let config = {
-    failure_threshold: 3,
-    recovery_timeout: 60000,  // 60 seconds in milliseconds
-    expected_exception_threshold: 2
-  }
-  
-  // Create circuit breaker
-  let breaker = create_circuit_breaker("api-service", config)
-  
-  // Verify initial state
-  match breaker.state {
-    CircuitState::Closed => assert_true(true)
-    _ => assert_true(false)
-  }
-  assert_eq(breaker.failure_count, 0)
-  assert_eq(breaker.success_count, 0)
-  
-  // Record successes
-  let mut updated_breaker = record_success(breaker)
-  updated_breaker = record_success(updated_breaker)
-  updated_breaker = record_success(updated_breaker)
-  
-  // Should still be closed with no failures
-  match updated_breaker.state {
-    CircuitState::Closed => assert_true(true)
-    _ => assert_true(false)
-  }
-  assert_eq(updated_breaker.failure_count, 0)
-  assert_eq(updated_breaker.success_count, 3)
-  
-  // Record failures to trip the circuit
-  updated_breaker = record_failure(updated_breaker, 1640995200)
-  updated_breaker = record_failure(updated_breaker, 1640995205)
-  updated_breaker = record_failure(updated_breaker, 1640995210)
-  
-  // Should now be open
-  match updated_breaker.state {
-    CircuitState::Open => assert_true(true)
-    _ => assert_true(false)
-  }
-  assert_eq(updated_breaker.failure_count, 3)
-  assert_eq(updated_breaker.last_failure_time, 1640995210)
-  
-  // Should not allow requests when open
-  assert_false(allow_request(updated_breaker, 1640995215))
-  
-  // Try to transition to half-open (not enough time passed)
-  let still_open = try_transition_to_half_open(updated_breaker, 1640995250)
-  match still_open.state {
-    CircuitState::Open => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  // Transition to half-open (enough time passed)
-  let half_open = try_transition_to_half_open(updated_breaker, 1640995270)  // 60 seconds passed
-  match half_open.state {
-    CircuitState::HalfOpen => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  // Should allow requests when half-open
-  assert_true(allow_request(half_open, 1640995275))
-  
-  // Record successes in half-open to close the circuit
-  let closing_breaker = record_success(half_open)
-  let closed_breaker = record_success(closing_breaker)
-  
-  // Should now be closed again
-  match closed_breaker.state {
-    CircuitState::Closed => assert_true(true)
-    _ => assert_true(false)
-  }
-  assert_eq(closed_breaker.failure_count, 0)
-  assert_eq(closed_breaker.success_count, 0)
-  
-  // Test failure in half-open reopens circuit
-  let reopened = record_failure(half_open, 1640995280)
-  match reopened.state {
-    CircuitState::Open => assert_true(true)
-    _ => assert_true(false)
-  }
-}
-
-// Test 5: Distributed Locking
-test "distributed locking mechanisms" {
-  // Define lock
-  type DistributedLock = {
-    resource: String,
-    owner: String,
-    acquired_at: Int,
-    expires_at: Int,
-    is_active: Bool
-  }
-  
-  // Define lock request
-  type LockRequest = {
-    resource: String,
-    requester: String,
-    ttl: Int,  // Time to live in seconds
-    timestamp: Int
-  }
-  
-  // Create lock
-  let create_lock = fn(resource: String, owner: String, ttl: Int, current_time: Int) {
-    {
-      resource,
-      owner,
-      acquired_at: current_time,
-      expires_at: current_time + ttl,
-      is_active: true
-    }
-  }
-  
-  // Check if lock is expired
-  let is_expired = fn(lock: DistributedLock, current_time: Int) {
-    current_time >= lock.expires_at
-  }
-  
-  // Try to acquire lock
-  let try_acquire_lock = fn(existing_lock: Option[DistributedLock], request: LockRequest) {
-    match existing_lock {
-      Some(lock) => {
-        if is_expired(lock, request.timestamp) {
-          // Lock is expired, can acquire new one
-          Some(create_lock(request.resource, request.requester, request.ttl, request.timestamp))
-        } else {
-          // Lock is still active
-          None
-        }
-      }
-      None => {
-        // No existing lock, can acquire new one
-        Some(create_lock(request.resource, request.requester, request.ttl, request.timestamp))
-      }
-    }
-  }
-  
-  // Release lock
-  let release_lock = fn(lock: DistributedLock, requester: String) {
-    if lock.owner == requester and lock.is_active {
-      { lock | is_active: false }
-    } else {
-      lock
-    }
-  }
-  
-  // Define lock manager
-  type LockManager = {
-    locks: Array[DistributedLock]
-  }
-  
-  // Find lock for resource
-  let find_lock = fn(manager: LockManager, resource: String) {
-    manager.locks.find(fn(l) { l.resource == resource and l.is_active })
-  }
-  
-  // Add or update lock
-  let upsert_lock = fn(manager: LockManager, lock: DistributedLock) {
-    let filtered = manager.locks.filter(fn(l) { not(l.resource == lock.resource and l.is_active) })
-    { locks: filtered.push(lock) }
-  }
-  
-  // Request lock
-  let request_lock = fn(manager: LockManager, request: LockRequest) {
-    let existing_lock = find_lock(manager, request.resource)
-    let new_lock = try_acquire_lock(existing_lock, request)
-    
-    match new_lock {
-      Some(lock) => {
-        let updated_manager = upsert_lock(manager, lock)
-        (updated_manager, Some(lock))
-      }
-      None => (manager, None)
-    }
-  }
-  
-  // Create lock manager
-  let manager = { locks: [] }
-  
-  // Create lock requests
-  let request1 = {
-    resource: "resource-1",
-    requester: "service-1",
-    ttl: 60,  // 60 seconds
-    timestamp: 1640995200
-  }
-  
-  let request2 = {
-    resource: "resource-1",
-    requester: "service-2",
-    ttl: 60,
-    timestamp: 1640995205
-  }
-  
-  let request3 = {
-    resource: "resource-2",
-    requester: "service-1",
-    ttl: 60,
-    timestamp: 1640995210
-  }
-  
-  // Test initial lock acquisition
-  let (manager1, lock1) = request_lock(manager, request1)
-  
-  match lock1 {
-    Some(l) => {
-      assert_eq(l.resource, "resource-1")
-      assert_eq(l.owner, "service-1")
-      assert_eq(l.acquired_at, 1640995200)
-      assert_eq(l.expires_at, 1640995260)
-      assert_true(l.is_active)
-    }
-    None => assert_true(false)
-  }
-  
-  // Test lock contention
-  let (manager2, lock2) = request_lock(manager1, request2)
-  
-  assert_eq(lock2, None)  // Should not get lock, already held by service-1
-  
-  // Test different resource
-  let (manager3, lock3) = request_lock(manager2, request3)
-  
-  match lock3 {
-    Some(l) => {
-      assert_eq(l.resource, "resource-2")
-      assert_eq(l.owner, "service-1")
-      assert_eq(l.acquired_at, 1640995210)
-      assert_eq(l.expires_at, 1640995270)
-      assert_true(l.is_active)
-    }
-    None => assert_true(false)
-  }
-  
-  // Test lock expiration
-  let expired_request = {
-    resource: "resource-1",
-    requester: "service-2",
-    ttl: 60,
-    timestamp: 1640995270  // After first lock expires
-  }
-  
-  let (manager4, lock4) = request_lock(manager3, expired_request)
-  
-  match lock4 {
-    Some(l) => {
-      assert_eq(l.resource, "resource-1")
-      assert_eq(l.owner, "service-2")
-      assert_eq(l.acquired_at, 1640995270)
-      assert_eq(l.expires_at, 1640995330)
-      assert_true(l.is_active)
-    }
-    None => assert_true(false)
-  }
-  
-  // Test lock release
-  match find_lock(manager4, "resource-2") {
-    Some(lock) => {
-      let released_lock = release_lock(lock, "service-1")
-      assert_false(released_lock.is_active)
-      
-      let updated_manager = upsert_lock(manager4, released_lock)
-      
-      // Should be able to acquire released lock
-      let release_request = {
-        resource: "resource-2",
-        requester: "service-3",
-        ttl: 60,
-        timestamp: 1640995275
-      }
-      
-      let (_, new_lock) = request_lock(updated_manager, release_request)
-      
-      match new_lock {
-        Some(l) => {
-          assert_eq(l.resource, "resource-2")
-          assert_eq(l.owner, "service-3")
-          assert_true(l.is_active)
-        }
-        None => assert_true(false)
-      }
-    }
-    None => assert_true(false)
-  }
-}
-
-// Test 6: Event Sourcing
-test "event sourcing patterns" {
-  // Define event
-  type Event = {
-    id: String,
-    aggregate_id: String,
-    event_type: String,
-    data: String,
-    timestamp: Int,
-    version: Int
-  }
-  
-  // Define aggregate
-  type Aggregate = {
-    id: String,
-    type: String,
-    version: Int,
-    data: String
-  }
-  
-  // Create event
-  let create_event = fn(id: String, aggregate_id: String, event_type: String, data: String, timestamp: Int, version: Int) {
-    {
-      id,
-      aggregate_id,
-      event_type,
-      data,
-      timestamp,
-      version
-    }
-  }
-  
-  // Create aggregate
-  let create_aggregate = fn(id: String, type: String) {
-    {
-      id,
-      type,
-      version: 0,
-      data: "{}"
-    }
-  }
-  
-  // Apply event to aggregate
-  let apply_event = fn(aggregate: Aggregate, event: Event) {
-    if aggregate.id == event.aggregate_id and event.version == aggregate.version + 1 {
-      {
-        id: aggregate.id,
-        type: aggregate.type,
-        version: event.version,
-        data: event.data  // In a real system, this would be more complex
-      }
-    } else {
-      aggregate  // Event doesn't apply
-    }
-  }
-  
-  // Define event store
-  type EventStore = {
-    events: Array[Event]
-  }
-  
-  // Save event
-  let save_event = fn(store: EventStore, event: Event) {
-    let updated_events = store.events.push(event)
-    { events: updated_events }
-  }
-  
-  // Get events for aggregate
-  let get_events = fn(store: EventStore, aggregate_id: String) {
-    store.events.filter(fn(e) { e.aggregate_id == aggregate_id })
-  }
-  
-  // Rebuild aggregate from events
-  let rebuild_aggregate = fn(store: EventStore, aggregate_id: String, aggregate_type: String) {
-    let events = get_events(store, aggregate_id)
-    let sorted_events = events.sort(fn(a, b) { a.version <= b.version })
-    
-    let mut aggregate = create_aggregate(aggregate_id, aggregate_type)
-    
-    for event in sorted_events {
-      aggregate = apply_event(aggregate, event)
-    }
-    
-    aggregate
-  }
-  
-  // Create event store
-  let store = { events: [] }
-  
-  // Create events for a user aggregate
-  let user_created = create_event(
-    "event-1",
-    "user-123",
-    "UserCreated",
-    "{\"name\":\"John Doe\",\"email\":\"john@example.com\"}",
-    1640995200,
-    1
-  )
-  
-  let user_updated = create_event(
-    "event-2",
-    "user-123",
-    "UserUpdated",
-    "{\"name\":\"John Smith\",\"email\":\"john.smith@example.com\"}",
-    1640995210,
-    2
-  )
-  
-  let user_address_added = create_event(
-    "event-3",
-    "user-123",
-    "UserAddressAdded",
-    "{\"street\":\"123 Main St\",\"city\":\"Anytown\",\"state\":\"CA\",\"zip\":\"12345\"}",
-    1640995220,
-    3
-  )
-  
-  // Save events
-  let store1 = save_event(store, user_created)
-  let store2 = save_event(store1, user_updated)
-  let store3 = save_event(store2, user_address_added)
-  
-  // Verify events saved
-  assert_eq(store3.events.length(), 3)
-  
-  // Get events for aggregate
-  let user_events = get_events(store3, "user-123")
-  assert_eq(user_events.length(), 3)
-  
-  // Rebuild aggregate from events
-  let user_aggregate = rebuild_aggregate(store3, "user-123", "User")
-  
-  assert_eq(user_aggregate.id, "user-123")
-  assert_eq(user_aggregate.type, "User")
-  assert_eq(user_aggregate.version, 3)
-  assert_eq(user_aggregate.data, "{\"street\":\"123 Main St\",\"city\":\"Anytown\",\"state\":\"CA\",\"zip\":\"12345\"}")
-  
-  // Test event ordering
-  let sorted_events = user_events.sort(fn(a, b) { a.version <= b.version })
-  assert_eq(sorted_events[0].event_type, "UserCreated")
-  assert_eq(sorted_events[1].event_type, "UserUpdated")
-  assert_eq(sorted_events[2].event_type, "UserAddressAdded")
-  
-  // Test concurrent events (should maintain version order)
-  let concurrent_event = create_event(
-    "event-4",
-    "user-123",
-    "UserPasswordChanged",
-    "{\"password\":\"new_hashed_password\"}",
-    1640995230,
-    4
-  )
-  
-  let store4 = save_event(store3, concurrent_event)
-  let updated_user = rebuild_aggregate(store4, "user-123", "User")
-  
-  assert_eq(updated_user.version, 4)
-  assert_eq(updated_user.data, "{\"password\":\"new_hashed_password\"}")
-  
-  // Test snapshot functionality
-  let create_snapshot = fn(aggregate: Aggregate, timestamp: Int) {
-    {
-      aggregate_id: aggregate.id,
-      aggregate_type: aggregate.type,
-      data: aggregate.data,
-      version: aggregate.version,
-      timestamp
-    }
-  }
-  
-  let snapshot = create_snapshot(updated_user, 1640995240)
-  
-  assert_eq(snapshot.aggregate_id, "user-123")
-  assert_eq(snapshot.aggregate_type, "User")
-  assert_eq(snapshot.version, 4)
-  assert_eq(snapshot.data, "{\"password\":\"new_hashed_password\"}")
-}
-
-// Test 7: Distributed Cache Coordination
-test "distributed cache coordination" {
-  // Define cache entry
-  type CacheEntry = {
-    key: String,
-    value: String,
-    timestamp: Int,
-    ttl: Int,
-    version: Int
-  }
-  
-  // Define cache node
-  type CacheNode = {
-    id: String,
-    host: String,
-    port: Int,
-    entries: Array[CacheEntry],
-    is_active: Bool
-  }
-  
-  // Define cache invalidation message
-  type InvalidationMessage = {
-    key: String,
-    node_id: String,
-    timestamp: Int,
-    version: Int
-  }
-  
-  // Create cache node
-  let create_cache_node = fn(id: String, host: String, port: Int) {
-    {
-      id,
-      host,
-      port,
-      entries: [],
-      is_active: true
-    }
-  }
-  
-  // Create cache entry
-  let create_cache_entry = fn(key: String, value: String, timestamp: Int, ttl: Int, version: Int) {
-    {
-      key,
-      value,
-      timestamp,
+      lock_name,
       ttl,
-      version
+      holder: None,
+      expiration_time: None,
+      acquisition_count: 0
     }
   }
   
-  // Check if entry is expired
-  let is_expired = fn(entry: CacheEntry, current_time: Int) {
-    current_time >= entry.timestamp + entry.ttl
-  }
-  
-  // Add entry to cache
-  let add_entry = fn(node: CacheNode, entry: CacheEntry) {
-    let filtered = node.entries.filter(fn(e) { not(e.key == entry.key) })
-    let updated_entries = filtered.push(entry)
-    { node | entries: updated_entries }
-  }
-  
-  // Get entry from cache
-  let get_entry = fn(node: CacheNode, key: String, current_time: Int) {
-    node.entries.find(fn(e) { 
-      e.key == key and not(is_expired(e, current_time))
-    })
-  }
-  
-  // Define cache cluster
-  type CacheCluster = {
-    nodes: Array[CacheNode],
-    invalidation_messages: Array[InvalidationMessage]
-  }
-  
-  // Add node to cluster
-  let add_node = fn(cluster: CacheCluster, node: CacheNode) {
-    let updated_nodes = cluster.nodes.push(node)
-    { cluster | nodes: updated_nodes }
-  }
-  
-  // Invalidate entry across cluster
-  let invalidate_entry = fn(cluster: CacheCluster, key: String, node_id: String, timestamp: Int, version: Int) {
-    let message = {
-      key,
-      node_id,
-      timestamp,
-      version
-    }
-    
-    let updated_messages = cluster.invalidation_messages.push(message)
-    
-    // Apply invalidation to all nodes
-    let updated_nodes = cluster.nodes.map(fn(node) {
-      let filtered_entries = node.entries.filter(fn(e) { 
-        not(e.key == key and e.version < version)
-      })
-      { node | entries: filtered_entries }
-    })
-    
-    {
-      nodes: updated_nodes,
-      invalidation_messages: updated_messages
-    }
-  }
-  
-  // Get entry from cluster (try local node first, then other nodes)
-  let get_cluster_entry = fn(cluster: CacheCluster, key: String, current_time: Int, preferred_node_id: String) {
-    // Try preferred node first
-    let preferred_node = cluster.nodes.find(fn(n) { n.id == preferred_node_id and n.is_active })
-    
-    match preferred_node {
-      Some(node) => {
-        match get_entry(node, key, current_time) {
-          Some(entry) => Some(entry)
-          None => {
-            // Try other nodes
-            let other_nodes = cluster.nodes.filter(fn(n) { n.id != preferred_node_id and n.is_active })
-            
-            let mut found_entry = None
-            for node in other_nodes {
-              match get_entry(node, key, current_time) {
-                Some(entry) => {
-                  found_entry = Some(entry)
+  let acquire_lock = fn(lock: { lock_name: String, ttl: Int, holder: Option[String>, expiration_time: Option[Int>, acquisition_count: Int }, requester: String, current_time: Int) {
+    match lock.expiration_time {
+      Some(expiration) => {
+        if current_time >= expiration {
+          // 锁已过期，可以获取
+          let new_lock = {
+            lock |
+            holder: Some(requester),
+            expiration_time: Some(current_time + lock.ttl),
+            acquisition_count: lock.acquisition_count + 1
+          }
+          (true, new_lock)
+        } else {
+          // 锁仍有效，检查是否是同一请求者
+          match lock.holder {
+            Some(holder) => {
+              if holder == requester {
+                // 同一请求者，延长锁
+                let new_lock = {
+                  lock |
+                  expiration_time: Some(current_time + lock.ttl)
                 }
-                None => ()
+                (true, new_lock)
+              } else {
+                // 不同请求者，获取失败
+                (false, lock)
               }
             }
-            
-            found_entry
+            None => (false, lock)
           }
         }
       }
       None => {
-        // Preferred node not found, try any active node
-        let active_nodes = cluster.nodes.filter(fn(n) { n.is_active })
+        // 锁未被持有，可以获取
+        let new_lock = {
+          lock |
+          holder: Some(requester),
+          expiration_time: Some(current_time + lock.ttl),
+          acquisition_count: lock.acquisition_count + 1
+        }
+        (true, new_lock)
+      }
+    }
+  }
+  
+  let release_lock = fn(lock: { lock_name: String, ttl: Int, holder: Option[String>, expiration_time: Option[Int], acquisition_count: Int }, requester: String) {
+    match lock.holder {
+      Some(holder) => {
+        if holder == requester {
+          // 持有者释放锁
+          let new_lock = {
+            lock |
+            holder: None,
+            expiration_time: None
+          }
+          new_lock
+        } else {
+          // 非持有者尝试释放
+          lock
+        }
+      }
+      None => lock  // 锁未被持有
+    }
+  }
+  
+  // 测试分布式锁
+  let lock = create_distributed_lock("resource_lock", 30)  // 30秒TTL
+  let base_time = 1640995200
+  
+  // 客户端1获取锁
+  let (success1, lock1) = acquire_lock(lock, "client1", base_time)
+  assert_true(success1)
+  assert_eq(lock1.holder, Some("client1"))
+  assert_eq(lock1.expiration_time, Some(base_time + 30))
+  assert_eq(lock1.acquisition_count, 1)
+  
+  // 客户端2尝试获取锁（应该失败）
+  let (success2, lock2) = acquire_lock(lock1, "client2", base_time + 10)
+  assert_false(success2)
+  assert_eq(lock2.holder, Some("client1"))  // 锁仍由客户端1持有
+  
+  // 客户端1释放锁
+  let lock3 = release_lock(lock2, "client1")
+  assert_eq(lock3.holder, None)
+  assert_eq(lock3.expiration_time, None)
+  
+  // 客户端2现在可以获取锁
+  let (success3, lock4) = acquire_lock(lock3, "client2", base_time + 20)
+  assert_true(success3)
+  assert_eq(lock4.holder, Some("client2"))
+  
+  // 测试锁过期
+  let (success4, lock5) = acquire_lock(lock4, "client3", base_time + 100)  // 锁已过期
+  assert_true(success4)
+  assert_eq(lock5.holder, Some("client3"))
+  assert_eq(lock5.expiration_time, Some(base_time + 100 + 30))
+  
+  // 测试锁续期
+  let (success5, lock6) = acquire_lock(lock5, "client3", base_time + 110)  // 同一客户端续期
+  assert_true(success5)
+  assert_eq(lock6.holder, Some("client3"))
+  assert_eq(lock6.expiration_time, Some(base_time + 110 + 30))
+  
+  // 测试非持有者释放锁（应该失败）
+  let lock7 = release_lock(lock6, "client1")  // 非持有者尝试释放
+  assert_eq(lock7.holder, Some("client3"))  // 锁仍由客户端3持有
+}
+
+// 测试3: 分布式事务协调
+test "分布式事务协调" {
+  // 模拟两阶段提交
+  let create_transaction = fn(transaction_id: String, participants: Array<String>) {
+    {
+      transaction_id,
+      participants,
+      status: "prepared",  // prepared, committed, aborted
+      votes: {},
+      phase: "prepare"  // prepare, commit, abort
+    }
+  }
+  
+  let prepare_phase = fn(transaction: { transaction_id: String, participants: Array[String>, status: String, votes: { String: Bool }, phase: String }) {
+    let mut updated_votes = transaction.votes
+    let mut all_vote_commit = true
+    
+    // 模拟所有参与者投票
+    for participant in transaction.participants {
+      // 简化：随机决定投票结果，这里假设前一半投同意，后一半投反对
+      let vote_commit = if transaction.participants.index_of(participant) < transaction.participants.length() / 2 {
+        true
+      } else {
+        false
+      }
+      
+      updated_votes[participant] = vote_commit
+      
+      if not(vote_commit) {
+        all_vote_commit = false
+      }
+    }
+    
+    let next_phase = if all_vote_commit { "commit" } else { "abort" }
+    let next_status = if all_vote_commit { "committed" } else { "aborted" }
+    
+    {
+      transaction |
+      votes: updated_votes,
+      phase: next_phase,
+      status: next_status
+    }
+  }
+  
+  let commit_phase = fn(transaction: { transaction_id: String, participants: Array[String>, status: String, votes: { String: Bool }, phase: String }) {
+    if transaction.phase == "commit" {
+      // 执行提交操作
+      {
+        transaction |
+        phase: "completed"
+      }
+    } else {
+      transaction
+    }
+  }
+  
+  let abort_phase = fn(transaction: { transaction_id: String, participants: Array[String>, status: String, votes: { String: Bool }, phase: String }) {
+    if transaction.phase == "abort" {
+      // 执行回滚操作
+      {
+        transaction |
+        phase: "completed"
+      }
+    } else {
+      transaction
+    }
+  }
+  
+  // 测试成功的事务
+  let participants1 = ["serviceA", "serviceB", "serviceC", "serviceD"]
+  let transaction1 = create_transaction("tx123", participants1)
+  
+  // 准备阶段
+  let prepared_tx1 = prepare_phase(transaction1)
+  assert_eq(prepared_tx1.phase, "commit")
+  assert_eq(prepared_tx1.status, "committed")
+  
+  // 提交阶段
+  let committed_tx1 = commit_phase(prepared_tx1)
+  assert_eq(committed_tx1.phase, "completed")
+  assert_eq(committed_tx1.status, "committed")
+  
+  // 测试失败的事务
+  let participants2 = ["serviceX", "serviceY"]  // 只有2个参与者
+  let transaction2 = create_transaction("tx456", participants2)
+  
+  // 准备阶段
+  let prepared_tx2 = prepare_phase(transaction2)
+  assert_eq(prepared_tx2.phase, "abort")
+  assert_eq(prepared_tx2.status, "aborted")
+  
+  // 中止阶段
+  let aborted_tx2 = abort_phase(prepared_tx2)
+  assert_eq(aborted_tx2.phase, "completed")
+  assert_eq(aborted_tx2.status, "aborted")
+  
+  // 测试补偿事务（Saga模式）
+  let create_saga_transaction = fn(transaction_id: String, steps: Array<{ name: String, service: String, compensate: String }>) {
+    {
+      transaction_id,
+      steps,
+      completed_steps: [],
+      compensating: false,
+      status: "running"  // running, completed, failed
+    }
+  }
+  
+  let execute_saga_step = fn(saga: { transaction_id: String, steps: Array<{ name: String, service: String, compensate: String }>, completed_steps: Array<String>, compensating: Bool, status: String }, step_name: String, success: Bool) {
+    if saga.compensating {
+      // 补偿模式
+      let step_index = saga.steps.index_of(fn(s) { s.name == step_name })
+      if step_index >= 0 && step_index < saga.completed_steps.length() {
+        // 执行补偿操作
+        let new_completed = []
+        for i in 0..saga.completed_steps.length() {
+          if saga.completed_steps[i] != step_name {
+            new_completed = new_completed.push(saga.completed_steps[i])
+          }
+        }
         
-        let mut found_entry = None
-        for node in active_nodes {
-          match get_entry(node, key, current_time) {
-            Some(entry) => {
-              found_entry = Some(entry)
+        {
+          saga |
+          completed_steps: new_completed
+        }
+      } else {
+        saga
+      }
+    } else {
+      // 正常执行模式
+      if success {
+        // 步骤成功，添加到已完成步骤
+        let new_completed = saga.completed_steps.push(step_name)
+        let all_completed = new_completed.length() == saga.steps.length()
+        
+        {
+          saga |
+          completed_steps: new_completed,
+          status: if all_completed { "completed" } else { "running" }
+        }
+      } else {
+        // 步骤失败，开始补偿
+        {
+          saga |
+          compensating: true,
+          status: "failed"
+        }
+      }
+    }
+  }
+  
+  // 测试Saga事务
+  let saga_steps = [
+    { name: "reserve_inventory", service: "inventory", compensate: "release_inventory" },
+    { name: "process_payment", service: "payment", compensate: "refund_payment" },
+    { name: "update_order", service: "order", compensate: "cancel_order" }
+  ]
+  
+  let saga = create_saga_transaction("saga789", saga_steps)
+  
+  // 执行步骤
+  let saga1 = execute_saga_step(saga, "reserve_inventory", true)
+  assert_eq(saga1.completed_steps, ["reserve_inventory"])
+  assert_eq(saga1.status, "running")
+  
+  let saga2 = execute_saga_step(saga1, "process_payment", false)  // 支付失败
+  assert_eq(saga2.completed_steps, ["reserve_inventory"])
+  assert_eq(saga2.status, "failed")
+  assert_true(saga2.compensating)
+  
+  // 执行补偿
+  let saga3 = execute_saga_step(saga2, "reserve_inventory", true)  // 补偿库存预留
+  assert_eq(saga3.completed_steps, [])
+  assert_true(saga3.compensating)
+}
+
+// 测试4: 分布式配置管理
+test "分布式配置管理" {
+  // 模拟分布式配置中心
+  let create_config_center = fn() {
+    {
+      configs: {},
+      version: 0,
+      subscribers: []
+    }
+  }
+  
+  let set_config = fn(center: { configs: { String: String }, version: Int, subscribers: Array<String> }, key: String, value: String) {
+    let mut updated_configs = center.configs
+    updated_configs[key] = value
+    
+    {
+      center |
+      configs: updated_configs,
+      version: center.version + 1
+    }
+  }
+  
+  let get_config = fn(center: { configs: { String: String }, version: Int, subscribers: Array<String> }, key: String) {
+    match center.configs[key] {
+      Some(value) => Some(value)
+      None => None
+    }
+  }
+  
+  let subscribe = fn(center: { configs: { String: String }, version: Int, subscribers: Array<String> }, subscriber: String) {
+    if not(center.subscribers.contains(subscriber)) {
+      {
+        center |
+        subscribers: center.subscribers.push(subscriber)
+      }
+    } else {
+      center
+    }
+  }
+  
+  let notify_subscribers = fn(center: { configs: { String: String }, version: Int, subscribers: Array<String> }, changed_key: String) {
+    let mut notifications = []
+    
+    for subscriber in center.subscribers {
+      notifications = notifications.push({
+        subscriber,
+        key: changed_key,
+        version: center.version,
+        value: center.configs[changed_key]
+      })
+    }
+    
+    notifications
+  }
+  
+  // 测试配置中心
+  let mut center = create_config_center()
+  
+  // 设置配置
+  center = set_config(center, "database.url", "jdbc:mysql://localhost:3306/azimuth")
+  center = set_config(center, "cache.ttl", "300")
+  center = set_config(center, "service.timeout", "5000")
+  
+  assert_eq(center.version, 3)
+  
+  // 获取配置
+  let db_url = get_config(center, "database.url")
+  let cache_ttl = get_config(center, "cache.ttl")
+  let missing_config = get_config(center, "missing.key")
+  
+  assert_eq(db_url, Some("jdbc:mysql://localhost:3306/azimuth"))
+  assert_eq(cache_ttl, Some("300"))
+  assert_eq(missing_config, None)
+  
+  // 订阅配置变更
+  center = subscribe(center, "service1")
+  center = subscribe(center, "service2")
+  
+  assert_eq(center.subscribers.length(), 2)
+  
+  // 更新配置并通知订阅者
+  center = set_config(center, "cache.ttl", "600")  // 更新缓存TTL
+  let notifications = notify_subscribers(center, "cache.ttl")
+  
+  assert_eq(notifications.length(), 2)
+  assert_eq(notifications[0].key, "cache.ttl")
+  assert_eq(notifications[0].value, Some("600"))
+  assert_eq(notifications[0].version, 4)
+  
+  // 测试配置继承和覆盖
+  let create_hierarchy_config = fn(base_configs: { String: String }, env_configs: { String: String }, app_configs: { String: String }) {
+    let mut merged = {}
+    
+    // 合并基础配置
+    for (key, value) in base_configs {
+      merged[key] = value
+    }
+    
+    // 环境配置覆盖基础配置
+    for (key, value) in env_configs {
+      merged[key] = value
+    }
+    
+    // 应用配置覆盖环境配置
+    for (key, value) in app_configs {
+      merged[key] = value
+    }
+    
+    merged
+  }
+  
+  let base_configs = {
+    "database.url": "jdbc:mysql://default:3306/db",
+    "cache.size": "100",
+    "log.level": "INFO"
+  }
+  
+  let env_configs = {
+    "database.url": "jdbc:mysql://prod:3306/db",
+    "cache.size": "500"
+  }
+  
+  let app_configs = {
+    "log.level": "DEBUG"
+  }
+  
+  let merged_configs = create_hierarchy_config(base_configs, env_configs, app_configs)
+  
+  assert_eq(merged_configs["database.url"], "jdbc:mysql://prod:3306/db")  // 环境配置覆盖
+  assert_eq(merged_configs["cache.size"], "500")  // 环境配置覆盖
+  assert_eq(merged_configs["log.level"], "DEBUG")  // 应用配置覆盖
+}
+
+// 测试5: 分布式服务发现
+test "分布式服务发现" {
+  // 模拟服务注册中心
+  let create_service_registry = fn() {
+    {
+      services: {},  // service_name -> [instances]
+      health_checks: {}  // instance_id -> health_status
+    }
+  }
+  
+  let register_service = fn(registry: { services: { String: Array[String> }, health_checks: { String: Bool }>, service_name: String, instance_id: String, address: String) {
+    let mut updated_services = registry.services
+    let mut instances = []
+    
+    // 获取现有实例
+    match updated_services[service_name] {
+      Some(existing_instances) => instances = existing_instances
+      None => ()
+    }
+    
+    // 添加新实例
+    if not(instances.contains(instance_id)) {
+      instances = instances.push(instance_id)
+    }
+    
+    updated_services[service_name] = instances
+    
+    let mut updated_health_checks = registry.health_checks
+    updated_health_checks[instance_id] = true  // 初始状态为健康
+    
+    {
+      registry |
+      services: updated_services,
+      health_checks: updated_health_checks
+    }
+  }
+  
+  let discover_service = fn(registry: { services: { String: Array<String> }, health_checks: { String: Bool }>, service_name: String) {
+    match registry.services[service_name] {
+      Some(instances) => {
+        // 只返回健康的实例
+        let mut healthy_instances = []
+        for instance in instances {
+          match registry.health_checks[instance] {
+            Some(healthy) => {
+              if healthy {
+                healthy_instances = healthy_instances.push(instance)
+              }
             }
             None => ()
           }
         }
-        
-        found_entry
+        healthy_instances
       }
+      None => []
     }
   }
   
-  // Create cache cluster
-  let node1 = create_cache_node("cache-1", "cache1.example.com", 11211)
-  let node2 = create_cache_node("cache-2", "cache2.example.com", 11211)
-  let node3 = create_cache_node("cache-3", "cache3.example.com", 11211)
-  
-  let cluster = {
-    nodes: [node1, node2, node3],
-    invalidation_messages: []
-  }
-  
-  // Create cache entries
-  let entry1 = create_cache_entry("user:123", "user_data_123", 1640995200, 3600, 1)
-  let entry2 = create_cache_entry("user:456", "user_data_456", 1640995205, 3600, 1)
-  let entry3 = create_cache_entry("product:789", "product_data_789", 1640995210, 3600, 1)
-  
-  // Add entries to different nodes
-  let node1_with_entry = add_entry(cluster.nodes[0], entry1)
-  let node2_with_entry = add_entry(cluster.nodes[1], entry2)
-  let node3_with_entry = add_entry(cluster.nodes[2], entry3)
-  
-  let cluster_with_entries = {
-    nodes: [node1_with_entry, node2_with_entry, node3_with_entry],
-    invalidation_messages: cluster.invalidation_messages
-  }
-  
-  // Test getting entries from preferred node
-  let entry_from_node1 = get_cluster_entry(cluster_with_entries, "user:123", 1640995250, "cache-1")
-  match entry_from_node1 {
-    Some(entry) => {
-      assert_eq(entry.key, "user:123")
-      assert_eq(entry.value, "user_data_123")
-      assert_eq(entry.version, 1)
-    }
-    None => assert_true(false)
-  }
-  
-  // Test getting entries from other nodes when not in preferred
-  let entry_from_other = get_cluster_entry(cluster_with_entries, "user:456", 1640995250, "cache-1")
-  match entry_from_other {
-    Some(entry) => {
-      assert_eq(entry.key, "user:456")
-      assert_eq(entry.value, "user_data_456")
-      assert_eq(entry.version, 1)
-    }
-    None => assert_true(false)
-  }
-  
-  // Test cache invalidation
-  let updated_entry = create_cache_entry("user:123", "updated_user_data_123", 1640995300, 3600, 2)
-  
-  // Add updated entry to node2
-  let node2_with_updated = add_entry(cluster_with_entries.nodes[1], updated_entry)
-  
-  let cluster_with_update = {
-    nodes: [cluster_with_entries.nodes[0], node2_with_updated, cluster_with_entries.nodes[2]],
-    invalidation_messages: cluster_with_entries.invalidation_messages
-  }
-  
-  // Invalidate old version
-  let cluster_after_invalidation = invalidate_entry(cluster_with_update, "user:123", "cache-2", 1640995305, 2)
-  
-  // Check that old version is invalidated
-  let old_entry = get_cluster_entry(cluster_after_invalidation, "user:123", 1640995310, "cache-1")
-  match old_entry {
-    Some(entry) => {
-      // Should get the updated version, not the old one
-      assert_eq(entry.value, "updated_user_data_123")
-      assert_eq(entry.version, 2)
-    }
-    None => assert_true(false)
-  }
-  
-  // Test expired entry
-  let expired_entry = create_cache_entry("temp:data", "temp_value", 1640995000, 300, 1)  // 5 minute TTL, expired
-  
-  let node_with_expired = add_entry(cluster_after_invalidation.nodes[0], expired_entry)
-  let cluster_with_expired = {
-    nodes: [node_with_expired, cluster_after_invalidation.nodes[1], cluster_after_invalidation.nodes[2]],
-    invalidation_messages: cluster_after_invalidation.invalidation_messages
-  }
-  
-  let expired_result = get_cluster_entry(cluster_with_expired, "temp:data", 1640995400, "cache-1")
-  assert_eq(expired_result, None)  // Should be None because entry is expired
-}
-
-// Test 8: Leader Election
-test "leader election in distributed systems" {
-  // Define node state
-  enum NodeState {
-    Follower
-    Candidate
-    Leader
-  }
-  
-  // Define node
-  type Node = {
-    id: String,
-    host: String,
-    port: Int,
-    state: NodeState,
-    term: Int,
-    voted_for: Option[String],
-    last_heartbeat: Int
-  }
-  
-  // Define vote request
-  type VoteRequest = {
-    candidate_id: String,
-    term: Int,
-    last_log_index: Int,
-    last_log_term: Int
-  }
-  
-  // Define vote response
-  type VoteResponse = {
-    term: Int,
-    vote_granted: Bool
-  }
-  
-  // Create node
-  let create_node = fn(id: String, host: String, port: Int) {
-    {
-      id,
-      host,
-      port,
-      state: NodeState::Follower,
-      term: 0,
-      voted_for: None,
-      last_heartbeat: 0
-    }
-  }
-  
-  // Start election
-  let start_election = fn(node: Node, current_time: Int) {
-    {
-      node |
-      state: NodeState::Candidate,
-      term: node.term + 1,
-      voted_for: Some(node.id),
-      last_heartbeat: current_time
-    }
-  }
-  
-  // Become leader
-  let become_leader = fn(node: Node, current_time: Int) {
-    {
-      node |
-      state: NodeState::Leader,
-      last_heartbeat: current_time
-    }
-  }
-  
-  // Become follower
-  let become_follower = fn(node: Node, term: Int, current_time: Int) {
-    {
-      node |
-      state: NodeState::Follower,
-      term: term,
-      voted_for: None,
-      last_heartbeat: current_time
-    }
-  }
-  
-  // Handle vote request
-  let handle_vote_request = fn(node: Node, request: VoteRequest, current_time: Int) {
-    let mut vote_granted = false
-    let mut updated_node = node
+  let update_health_status = fn(registry: { services: { String: Array<String> }, health_checks: { String: Bool }>, instance_id: String, healthy: Bool) {
+    let mut updated_health_checks = registry.health_checks
+    updated_health_checks[instance_id] = healthy
     
-    if request.term > node.term {
-      // Higher term, become follower
-      updated_node = become_follower(node, request.term, current_time)
+    {
+      registry |
+      health_checks: updated_health_checks
+    }
+  }
+  
+  let deregister_service = fn(registry: { services: { String: Array<String> }, health_checks: { String: Bool }>, service_name: String, instance_id: String) {
+    let mut updated_services = registry.services
+    let mut updated_health_checks = registry.health_checks
+    
+    // 从服务列表中移除实例
+    match updated_services[service_name] {
+      Some(instances) => {
+        let mut new_instances = []
+        for instance in instances {
+          if instance != instance_id {
+            new_instances = new_instances.push(instance)
+          }
+        }
+        updated_services[service_name] = new_instances
+      }
+      None => ()
     }
     
-    if (request.term >= updated_node.term and 
-        (updated_node.voted_for.is_none() or updated_node.voted_for.unwrap() == request.candidate_id)) {
-      vote_granted = true
-      updated_node = { updated_node | voted_for: Some(request.candidate_id) }
+    // 移除健康检查
+    updated_health_checks.remove(instance_id)
+    
+    {
+      registry |
+      services: updated_services,
+      health_checks: updated_health_checks
+    }
+  }
+  
+  // 测试服务注册中心
+  let mut registry = create_service_registry()
+  
+  // 注册服务实例
+  registry = register_service(registry, "user-service", "user-1", "http://localhost:8001")
+  registry = register_service(registry, "user-service", "user-2", "http://localhost:8002")
+  registry = register_service(registry, "order-service", "order-1", "http://localhost:9001")
+  
+  // 发现服务
+  let user_instances = discover_service(registry, "user-service")
+  let order_instances = discover_service(registry, "order-service")
+  let missing_instances = discover_service(registry, "payment-service")
+  
+  assert_eq(user_instances.length(), 2)
+  assert_eq(order_instances.length(), 1)
+  assert_eq(missing_instances.length(), 0)
+  
+  // 测试健康检查
+  registry = update_health_status(registry, "user-2", false)  // user-2 不健康
+  
+  let healthy_user_instances = discover_service(registry, "user-service")
+  assert_eq(healthy_user_instances.length(), 1)
+  assert_true(healthy_user_instances.contains("user-1"))
+  assert_false(healthy_user_instances.contains("user-2"))
+  
+  // 测试负载均衡（轮询）
+  let round_robin_lb = fn(instances: Array<String>, request_count: Int) {
+    let mut selections = []
+    let mut i = 0
+    
+    while i < request_count {
+      if instances.length() > 0 {
+        let index = i % instances.length()
+        selections = selections.push(instances[index])
+      }
+      i = i + 1
     }
     
-    (updated_node, {
-      term: updated_node.term,
-      vote_granted
-    })
+    selections
   }
   
-  // Handle heartbeat
-  let handle_heartbeat = fn(node: Node, leader_term: Int, current_time: Int) {
-    if leader_term >= node.term {
-      become_follower(node, leader_term, current_time)
-    } else {
-      node
-    }
-  }
+  let lb_selections = round_robin_lb(healthy_user_instances, 5)
+  assert_eq(lb_selections, ["user-1", "user-1", "user-1", "user-1", "user-1"])  // 只有一个健康实例
   
-  // Check if election should start
-  let should_start_election = fn(node: Node, current_time: Int, election_timeout: Int) {
-    node.state != NodeState::Leader and 
-    current_time - node.last_heartbeat > election_timeout
-  }
+  // 恢复user-2的健康状态
+  registry = update_health_status(registry, "user-2", true)
+  let all_user_instances = discover_service(registry, "user-service")
   
-  // Define cluster
-  type Cluster = {
-    nodes: Array[Node]
-  }
+  let lb_selections2 = round_robin_lb(all_user_instances, 4)
+  assert_eq(lb_selections2, ["user-1", "user-2", "user-1", "user-2"])  // 轮询分配
   
-  // Create cluster
-  let node1 = create_node("node-1", "node1.example.com", 8001)
-  let node2 = create_node("node-2", "node2.example.com", 8002)
-  let node3 = create_node("node-3", "node3.example.com", 8003)
-  let node4 = create_node("node-4", "node4.example.com", 8004)
-  let node5 = create_node("node-5", "node5.example.com", 8005)
-  
-  let cluster = {
-    nodes: [node1, node2, node3, node4, node5]
-  }
-  
-  // Start election on node1
-  let candidate1 = start_election(cluster.nodes[0], 1640995200)
-  
-  match candidate1.state {
-    NodeState::Candidate => assert_true(true)
-    _ => assert_true(false)
-  }
-  assert_eq(candidate1.term, 1)
-  assert_eq(candidate1.voted_for.unwrap(), "node-1")
-  
-  // Node1 requests votes from other nodes
-  let vote_request = {
-    candidate_id: "node-1",
-    term: 1,
-    last_log_index: 100,
-    last_log_term: 0
-  }
-  
-  // Process vote requests
-  let mut responses = []
-  let mut updated_nodes = [candidate1]
-  
-  for i in 1..cluster.nodes.length() {
-    let (updated_node, response) = handle_vote_request(cluster.nodes[i], vote_request, 1640995205)
-    updated_nodes = updated_nodes.push(updated_node)
-    responses = responses.push(response)
-  }
-  
-  // Count votes
-  let votes_granted = responses.filter(fn(r) { r.vote_granted }).length()
-  
-  // Node1 voted for itself, so add 1
-  let total_votes = votes_granted + 1
-  
-  // Should have majority (3 out of 5)
-  assert_eq(total_votes, 3)
-  
-  // Node1 becomes leader
-  let leader1 = become_leader(updated_nodes[0], 1640995210)
-  
-  match leader1.state {
-    NodeState::Leader => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  // Leader sends heartbeats
-  let mut heartbeat_nodes = [leader1]
-  
-  for i in 1..updated_nodes.length() {
-    let follower = handle_heartbeat(updated_nodes[i], leader1.term, 1640995215)
-    heartbeat_nodes = heartbeat_nodes.push(follower)
-  }
-  
-  // Verify followers updated their terms and heartbeat times
-  for i in 1..heartbeat_nodes.length() {
-    match heartbeat_nodes[i].state {
-      NodeState::Follower => assert_true(true)
-      _ => assert_true(false)
-    }
-    assert_eq(heartbeat_nodes[i].term, 1)
-    assert_eq(heartbeat_nodes[i].last_heartbeat, 1640995215)
-  }
-  
-  // Simulate leader failure
-  let election_timeout = 10000  // 10 seconds
-  
-  // Followers detect leader failure and start new election
-  let mut new_candidates = []
-  
-  for i in 1..heartbeat_nodes.length() {
-    if should_start_election(heartbeat_nodes[i], 1640995225, election_timeout) {
-      let candidate = start_election(heartbeat_nodes[i], 1640995225)
-      new_candidates = new_candidates.push(candidate)
-    } else {
-      new_candidates = new_candidates.push(heartbeat_nodes[i])
-    }
-  }
-  
-  // Should have at least one new candidate
-  assert_true(new_candidates.filter(fn(n) { 
-    match n.state {
-      NodeState::Candidate => true
-      _ => false
-    }
-  }).length() > 0)
-  
-  // Find the candidate with highest term
-  let highest_term_candidate = new_candidates.reduce(fn(acc, node) {
-    if node.term > acc.term {
-      node
-    } else {
-      acc
-    }
-  }, new_candidates[0])
-  
-  // This candidate should win the election
-  let new_leader = become_leader(highest_term_candidate, 1640995230)
-  
-  match new_leader.state {
-    NodeState::Leader => assert_true(true)
-    _ => assert_true(false)
-  }
-  assert_eq(new_leader.term, 2)  # Should be higher than previous term
+  // 测试服务注销
+  registry = deregister_service(registry, "user-service", "user-1")
+  let remaining_user_instances = discover_service(registry, "user-service")
+  assert_eq(remaining_user_instances.length(), 1)
+  assert_true(remaining_user_instances.contains("user-2"))
 }
