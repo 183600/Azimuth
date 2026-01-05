@@ -215,5 +215,6 @@
         "../azimuth_i18n_globalization_comprehensive_tests.mbt",
         "../azimuth_realtime_stream_processing_comprehensive_tests.mbt",
         "../azimuth_ml_integration_advanced_tests.mbt",
-        "azimuth_comprehensive_essentials_tests.mbt"]  }
+        "azimuth_comprehensive_essentials_tests.mbt",
+        "../azimuth_new_moonbit_feature_tests.mbt"]  }
 }
