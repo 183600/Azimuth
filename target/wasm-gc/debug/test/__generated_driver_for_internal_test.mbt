@@ -5306,6 +5306,12 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_617a696d7574685f6d656d6f72795f6c65616b5f646574656374696f6e5f7265736f757263655f636c65616e75705f74657374732e6d6274_8, ["long-running resource leak detection"]),
     9: (__test_617a696d7574685f6d656d6f72795f6c65616b5f646574656374696f6e5f7265736f757263655f636c65616e75705f74657374732e6d6274_9, ["resource cleanup under error conditions"]),
   },
+  "azimuth_memory_efficient_telemetry_tests.mbt": {
+    0: (__test_617a696d7574685f6d656d6f72795f656666696369656e745f74656c656d657472795f74657374732e6d6274_0, ["memory-efficient telemetry data structures"]),
+    1: (__test_617a696d7574685f6d656d6f72795f656666696369656e745f74656c656d657472795f74657374732e6d6274_1, ["memory pool management for telemetry"]),
+    2: (__test_617a696d7574685f6d656d6f72795f656666696369656e745f74656c656d657472795f74657374732e6d6274_2, ["memory-efficient telemetry compression"]),
+    3: (__test_617a696d7574685f6d656d6f72795f656666696369656e745f74656c656d657472795f74657374732e6d6274_3, ["memory-efficient telemetry streaming"]),
+  },
   "azimuth_memory_efficiency_tests.mbt": {
     0: (__test_617a696d7574685f6d656d6f72795f656666696369656e63795f74657374732e6d6274_0, ["memory pool management"]),
     1: (__test_617a696d7574685f6d656d6f72795f656666696369656e63795f74657374732e6d6274_1, ["memory allocation strategies"]),
