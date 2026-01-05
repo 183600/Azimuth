@@ -1,1312 +1,785 @@
-// Azimuth Data Validation Test Suite
-// This file contains test cases for data validation and integrity checks
+// Azimuth Data Validation Tests
+// This file contains comprehensive test cases for data validation scenarios in the Azimuth telemetry system
 
-// Test 1: Schema Validation
-test "schema validation for telemetry data" {
-  // Define validation result
-  type ValidationResult = {
-    is_valid: Bool,
-    errors: Array[String],
-    warnings: Array[String]
+// Test 1: Input Validation for Telemetry Data
+test "telemetry data input validation" {
+  // Define validation rules
+  let validate_span_name = fn(name: String) {
+    let length = name.length()
+    length >= 1 and length <= 128 and name != ""
   }
   
-  // Define field validator
-  type FieldValidator = {
-    field_name: String,
-    required: Bool,
-    validator: (String) -> Bool,
-    error_message: String
+  let validate_trace_id = fn(trace_id: String) {
+    let length = trace_id.length()
+    length == 16 or length == 32  // 8-byte or 16-byte hex strings
   }
   
-  // Define schema
-  type Schema = {
-    name: String,
-    validators: Array[FieldValidator>
+  let validate_metric_value = fn(value: Float) {
+    value >= 0.0 and value <= 1000000.0  // Reasonable range for metrics
   }
   
-  // Create successful validation result
-  let success = fn() {
-    {
-      is_valid: true,
-      errors: [],
-      warnings: []
-    }
-  }
+  // Test valid inputs
+  assert_true(validate_span_name("database_query"))
+  assert_true(validate_span_name("a"))  // Minimum length
+  assert_true(validate_span_name("a".repeat(128)))  // Maximum length
   
-  // Create validation result with errors
-  let failure = fn(errors: Array[String>) {
-    {
-      is_valid: false,
-      errors,
-      warnings: []
-    }
-  }
+  assert_true(validate_trace_id("1234567890abcdef"))  // 16 chars
+  assert_true(validate_trace_id("1234567890abcdef1234567890abcdef"))  // 32 chars
   
-  // Validate string is not empty
-  let validate_non_empty = fn(value: String) {
-    value.length() > 0
-  }
+  assert_true(validate_metric_value(0.0))
+  assert_true(validate_metric_value(500.5))
+  assert_true(validate_metric_value(1000000.0))
   
-  // Validate string matches pattern
-  let validate_pattern = fn(pattern: String) {
-    fn(value: String) {
-      // Simplified pattern matching
-      if pattern == "trace_id" {
-        value.starts_with("trace-") && value.length() == 16
-      } else if pattern == "span_id" {
-        value.starts_with("span-") && value.length() == 15
-      } else if pattern == "timestamp" {
-        value.chars().all(fn(c) { c >= '0' && c <= '9' })
+  // Test invalid inputs
+  assert_false(validate_span_name(""))  // Empty string
+  assert_false(validate_span_name("a".repeat(129)))  // Too long
+  
+  assert_false(validate_trace_id("short"))  // Too short
+  assert_false(validate_trace_id("1234567890abcde"))  // 15 chars
+  assert_false(validate_trace_id("1234567890abcdef1234567890abcde"))  // 31 chars
+  assert_false(validate_trace_id("1234567890abcde!"))  // Invalid character
+  
+  assert_false(validate_metric_value(-1.0))
+  assert_false(validate_metric_value(1000000.1))
+}
+
+// Test 2: Data Type Conversion and Validation
+test "data type conversion and validation" {
+  // String to integer conversion with validation
+  let safe_string_to_int = fn(s: String) {
+    let mut result = 0
+    let mut valid = true
+    let chars = s.to_char_array()
+    
+    for i in 0..chars.length() {
+      let c = chars[i]
+      if c >= '0' and c <= '9' {
+        result = result * 10 + (c.to_int() - '0'.to_int())
       } else {
-        true
+        valid = false
+        break
       }
     }
+    
+    if valid { Some(result) } else { None }
   }
   
-  // Validate numeric range
-  let validate_range = fn(min: Int, max: Int) {
-    fn(value: String) {
-      match value.parse_int() {
-        Some(num) => num >= min && num <= max
+  // Test valid conversions
+  assert_eq(safe_string_to_int("0"), Some(0))
+  assert_eq(safe_string_to_int("42"), Some(42))
+  assert_eq(safe_string_to_int("123456789"), Some(123456789))
+  
+  // Test invalid conversions
+  assert_eq(safe_string_to_int(""), None)
+  assert_eq(safe_string_to_int("-1"), None)  // Negative not supported
+  assert_eq(safe_string_to_int("12.34"), None)  // Decimal not supported
+  assert_eq(safe_string_to_int("abc"), None)  // Non-numeric
+  assert_eq(safe_string_to_int("12a34"), None)  // Mixed content
+  
+  // Float to string conversion with precision control
+  let float_to_string = fn(value: Float, precision: Int) {
+    let scaled = value * (10.0 ^ precision.to_float())
+    let rounded = scaled.round()
+    let int_part = (rounded / (10.0 ^ precision.to_float())).to_int()
+    let decimal_part = (rounded % (10.0 ^ precision.to_float())).to_int()
+    
+    int_part.to_string() + "." + decimal_part.to_string()
+  }
+  
+  assert_eq(float_to_string(3.14159, 2), "3.14")
+  assert_eq(float_to_string(2.5, 1), "2.5")
+  assert_eq(float_to_string(1.0, 3), "1.0")
+  
+  // Boolean string conversion
+  let string_to_bool = fn(s: String) {
+    match s.to_lowercase() {
+      "true" => Some(true),
+      "false" => Some(false),
+      "1" => Some(true),
+      "0" => Some(false),
+      "yes" => Some(true),
+      "no" => Some(false),
+      _ => None
+    }
+  }
+  
+  assert_eq(string_to_bool("true"), Some(true))
+  assert_eq(string_to_bool("TRUE"), Some(true))  // Case insensitive
+  assert_eq(string_to_bool("1"), Some(true))
+  assert_eq(string_to_bool("yes"), Some(true))
+  
+  assert_eq(string_to_bool("false"), Some(false))
+  assert_eq(string_to_bool("0"), Some(false))
+  assert_eq(string_to_bool("no"), Some(false))
+  
+  assert_eq(string_to_bool("maybe"), None)
+  assert_eq(string_to_bool(""), None)
+}
+
+// Test 3: Range and Boundary Validation
+test "range and boundary validation" {
+  // Numeric range validation
+  let validate_range = fn(value: Int, min: Int, max: Int) {
+    value >= min and value <= max
+  }
+  
+  // Test range validation
+  assert_true(validate_range(5, 1, 10))
+  assert_true(validate_range(1, 1, 10))  // At minimum
+  assert_true(validate_range(10, 1, 10))  // At maximum
+  
+  assert_false(validate_range(0, 1, 10))  // Below minimum
+  assert_false(validate_range(11, 1, 10))  // Above maximum
+  
+  // Date range validation
+  let validate_date_range = fn(start: Int, end: Int, max_duration: Int) {
+    let duration = end - start
+    duration >= 0 and duration <= max_duration
+  }
+  
+  let base_time = 1640995200  // 2022-01-01 00:00:00 UTC
+  let one_day = 86400  // Seconds in a day
+  let one_week = 604800  // Seconds in a week
+  
+  assert_true(validate_date_range(base_time, base_time + one_day, one_week))
+  assert_true(validate_date_range(base_time, base_time + one_week, one_week))  // At maximum
+  
+  assert_false(validate_date_range(base_time + one_day, base_time, one_week))  // Negative duration
+  assert_false(validate_date_range(base_time, base_time + one_week + 1, one_week))  // Exceeds maximum
+  
+  // Array length validation
+  let validate_array_length = fn(arr: Array[String], min: Int, max: Int) {
+    let length = arr.length()
+    length >= min and length <= max
+  }
+  
+  let empty_array = []
+  let small_array = ["a", "b", "c"]
+  let large_array = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+  
+  assert_true(validate_array_length(empty_array, 0, 10))
+  assert_true(validate_array_length(small_array, 1, 10))
+  assert_true(validate_array_length(large_array, 5, 15))
+  
+  assert_false(validate_array_length(empty_array, 1, 10))  // Below minimum
+  assert_false(validate_array_length(large_array, 1, 5))  // Above maximum
+}
+
+// Test 4: Format Validation
+test "format validation" {
+  // Email format validation
+  let validate_email = fn(email: String) {
+    let parts = email.split("@")
+    if parts.length() != 2 { return false }
+    
+    let local = parts[0]
+    let domain = parts[1]
+    
+    // Basic checks
+    local.length() > 0 and domain.length() > 0 and
+    domain.contains(".") and not(email.contains(" "))
+  }
+  
+  assert_true(validate_email("user@example.com"))
+  assert_true(validate_email("test.email+tag@domain.co.uk"))
+  
+  assert_false(validate_email("invalid-email"))  // Missing @
+  assert_false(validate_email("@domain.com"))  // Empty local part
+  assert_false(validate_email("user@"))  // Empty domain
+  assert_false(validate_email("user@domain"))  // Domain missing dot
+  assert_false(validate_email("user name@domain.com"))  // Contains space
+  
+  // URL format validation
+  let validate_url = fn(url: String) {
+    let protocols = ["http://", "https://", "ftp://"]
+    let has_valid_protocol = protocols.any(fn(p) { url.starts_with(p) })
+    
+    if not(has_valid_protocol) { return false }
+    
+    let without_protocol = protocols.reduce(fn(acc, p) {
+      if acc.starts_with(p) { acc.substring(p.length(), acc.length() - p.length()) } else { acc }
+    }, url)
+    
+    without_protocol.length() > 0 and without_protocol.contains(".")
+  }
+  
+  assert_true(validate_url("http://example.com"))
+  assert_true(validate_url("https://api.example.com/v1"))
+  assert_true(validate_url("ftp://files.example.org"))
+  
+  assert_false(validate_url("example.com"))  // Missing protocol
+  assert_false(validate_url("http://"))  // Missing domain
+  assert_false(validate_url("http://localhost"))  // No dot in domain
+  
+  // IP address validation
+  let validate_ip = fn(ip: String) {
+    let parts = ip.split(".")
+    if parts.length() != 4 { return false }
+    
+    parts.all(fn(part) {
+      match safe_string_to_int(part) {
+        Some(num) => num >= 0 and num <= 255
         None => false
       }
+    })
+  }
+  
+  assert_true(validate_ip("192.168.1.1"))
+  assert_true(validate_ip("0.0.0.0"))
+  assert_true(validate_ip("255.255.255.255"))
+  assert_true(validate_ip("10.0.0.1"))
+  
+  assert_false(validate_ip("192.168.1"))  // Too few parts
+  assert_false(validate_ip("192.168.1.1.1"))  // Too many parts
+  assert_false(validate_ip("256.168.1.1"))  // Octet too large
+  assert_false(validate_ip("192.168.-1.1"))  // Negative octet
+  assert_false(validate_ip("192.168.a.1"))  // Non-numeric octet
+}
+
+// Test 5: Business Rule Validation
+test "business rule validation" {
+  // Service dependency validation
+  let validate_service_dependencies = fn(services: Array[String], dependencies: Array[(String, String)]) {
+    // Check that all dependencies reference existing services
+    dependencies.all(fn(dep) {
+      let (service, depends_on) = dep
+      services.contains(service) and services.contains(depends_on)
+    })
+  }
+  
+  let services = ["auth", "database", "cache", "api"]
+  let valid_deps = [("api", "auth"), ("api", "database"), ("auth", "database")]
+  let invalid_deps = [("api", "auth"), ("api", "external_service")]  // external_service doesn't exist
+  
+  assert_true(validate_service_dependencies(services, valid_deps))
+  assert_false(validate_service_dependencies(services, invalid_deps))
+  
+  // Circular dependency detection
+  let has_circular_dependency = fn(services: Array[String], dependencies: Array[(String, String)]) {
+    let mut visited = []
+    let mut recursion_stack = []
+    
+    let visit = fn(service: String) {
+      if recursion_stack.contains(service) {
+        return true  // Circular dependency found
+      }
+      
+      if visited.contains(service) {
+        return false  // Already processed
+      }
+      
+      recursion_stack = recursion_stack.push(service)
+      
+      let mut has_cycle = false
+      for (from, to) in dependencies {
+        if from == service {
+          if visit(to) {
+            has_cycle = true
+          }
+        }
+      }
+      
+      recursion_stack = recursion_stack.filter(fn(s) { s != service })
+      visited = visited.push(service)
+      
+      has_cycle
+    }
+    
+    services.any(visit)
+  }
+  
+  let no_cycle_deps = [("api", "auth"), ("auth", "database")]
+  let cycle_deps = [("api", "auth"), ("auth", "api")]  // Circular
+  
+  assert_false(has_circular_dependency(services, no_cycle_deps))
+  assert_true(has_circular_dependency(services, cycle_deps))
+  
+  // Resource quota validation
+  let validate_resource_quotas = fn(resources: Array[(String, Int)>, quotas: Array[(String, Int)>) {
+    resources.all(fn(resource) {
+      let (name, usage) = resource
+      match quotas.find(fn(q) { q.0 == name }) {
+        Some((_, limit)) => usage <= limit
+        None => false  // No quota defined
+      }
+    })
+  }
+  
+  let quotas = [("cpu", 1000), ("memory", 4096), ("disk", 10240)]
+  let valid_usage = [("cpu", 500), ("memory", 2048), ("disk", 5120)]
+  let invalid_usage = [("cpu", 1500), ("memory", 2048), ("disk", 5120)]  // CPU exceeds quota
+  
+  assert_true(validate_resource_quotas(valid_usage, quotas))
+  assert_false(validate_resource_quotas(invalid_usage, quotas))
+}
+
+// Test 6: Data Consistency Validation
+test "data consistency validation" {
+  // Referential integrity validation
+  let validate_referential_integrity = fn(
+    spans: Array[(String, String)>,  // (span_id, trace_id)
+    parent_refs: Array<(String, String)>  // (span_id, parent_span_id)
+  ) {
+    parent_refs.all(fn(ref) {
+      let (span_id, parent_id) = ref
+      
+      // Check that span exists
+      let span_exists = spans.any(fn(s) { s.0 == span_id })
+      if not(span_exists) { return false }
+      
+      // Check that parent exists (if not root)
+      if parent_id != "" {
+        spans.any(fn(s) { s.0 == parent_id })
+      } else {
+        true  // Root span, no parent required
+      }
+    })
+  }
+  
+  let spans = [
+    ("span-1", "trace-1"),
+    ("span-2", "trace-1"),
+    ("span-3", "trace-1"),
+    ("span-4", "trace-2")
+  ]
+  
+  let valid_refs = [
+    ("span-2", "span-1"),
+    ("span-3", "span-2"),
+    ("span-4", "")  // Root span
+  ]
+  
+  let invalid_refs = [
+    ("span-2", "span-1"),
+    ("span-3", "span-99"),  // Non-existent parent
+    ("span-4", "")
+  ]
+  
+  assert_true(validate_referential_integrity(spans, valid_refs))
+  assert_false(validate_referential_integrity(spans, invalid_refs))
+  
+  // Temporal consistency validation
+  let validate_temporal_consistency = fn(events: Array[(String, Int)>) {
+    // Events should be in chronological order
+    let events_sorted = events.sort_by(fn(e) { e.1 })
+    events == events_sorted
+  }
+  
+  let valid_events = [
+    ("start", 1000),
+    ("process", 1010),
+    ("complete", 1020)
+  ]
+  
+  let invalid_events = [
+    ("start", 1000),
+    ("complete", 1020),
+    ("process", 1010)  // Out of order
+  ]
+  
+  assert_true(validate_temporal_consistency(valid_events))
+  assert_false(validate_temporal_consistency(invalid_events))
+  
+  // Statistical consistency validation
+  let validate_statistical_consistency = fn(
+    metrics: Array[(String, Float)>,
+    aggregates: Array[(String, Float)>
+  ) {
+    // Check that aggregates are consistent with individual metrics
+    let total_sum = metrics.reduce(fn(acc, m) { acc + m.1 }, 0.0)
+    let count = metrics.length().to_float()
+    let avg = total_sum / count
+    
+    match aggregates.find(fn(a) { a.0 == "sum" }) {
+      Some((_, sum)) => sum == total_sum
+      None => false
+    } and match aggregates.find(fn(a) { a.0 == "avg" }) {
+      Some((_, avg_val)) => avg_val == avg
+      None => false
     }
   }
   
-  // Create telemetry span schema
-  let span_schema = {
-    name: "telemetry_span",
-    validators: [
-      {
-        field_name: "trace_id",
-        required: true,
-        validator: validate_pattern("trace_id"),
-        error_message: "Invalid trace ID format"
-      },
-      {
-        field_name: "span_id",
-        required: true,
-        validator: validate_pattern("span_id"),
-        error_message: "Invalid span ID format"
-      },
-      {
-        field_name: "operation_name",
-        required: true,
-        validator: validate_non_empty,
-        error_message: "Operation name cannot be empty"
-      },
-      {
-        field_name: "start_time",
-        required: true,
-        validator: validate_pattern("timestamp"),
-        error_message: "Invalid start time format"
-      },
-      {
-        field_name: "duration_ms",
-        required: false,
-        validator: validate_range(0, 3600000),  // Max 1 hour
-        error_message: "Duration must be between 0 and 3600000ms"
+  let metrics = [("metric1", 10.0), ("metric2", 20.0), ("metric3", 30.0)]
+  let valid_aggregates = [("sum", 60.0), ("avg", 20.0)]
+  let invalid_aggregates = [("sum", 60.0), ("avg", 25.0)]  // Wrong average
+  
+  assert_true(validate_statistical_consistency(metrics, valid_aggregates))
+  assert_false(validate_statistical_consistency(metrics, invalid_aggregates))
+}
+
+// Test 7: Security Validation
+test "security validation" {
+  // Input sanitization
+  let sanitize_string = fn(input: String) {
+    let mut result = ""
+    let chars = input.to_char_array()
+    
+    for i in 0..chars.length() {
+      let c = chars[i]
+      // Allow only alphanumeric and basic punctuation
+      if (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z') or 
+         (c >= '0' and c <= '9') or c == '_' or c == '-' or c == '.' {
+        result = result + c.to_string()
       }
-    ]
+    }
+    
+    result
   }
   
-  // Validate data against schema
-  let validate_schema = fn(data: Array[(String, String)>, schema: Schema) {
-    let mut errors = []
-    let mut warnings = []
+  assert_eq(sanitize_string("valid_string123"), "valid_string123")
+  assert_eq(sanitize_string("invalid@string#"), "invalidstring")  // Special chars removed
+  assert_eq(sanitize_string("spaces are not allowed"), "spacesarenotallowed")
+  
+  // SQL injection detection
+  let contains_sql_injection = fn(input: String) {
+    let sql_patterns = [
+      "SELECT", "INSERT", "UPDATE", "DELETE", "DROP", "UNION",
+      "OR 1=1", "AND 1=1", "--", "/*", "*/", "xp_", "sp_"
+    ]
     
-    for validator in schema.validators {
-      let field_value = data.find(fn(field) { field.0 == validator.field_name })
+    let upper_input = input.to_uppercase()
+    sql_patterns.any(fn(pattern) { upper_input.contains(pattern) })
+  }
+  
+  assert_false(contains_sql_injection("normal input"))
+  assert_false(contains_sql_injection("user123"))
+  
+  assert_true(contains_sql_injection("SELECT * FROM users"))
+  assert_true(contains_sql_injection("1' OR 1=1 --"))
+  assert_true(contains_sql_injection("DROP TABLE users"))
+  
+  // XSS detection
+  let contains_xss = fn(input: String) {
+    let xss_patterns = [
+      "<script>", "</script>", "javascript:", "onload=", "onerror=",
+      "onclick=", "onmouseover=", "alert(", "document.cookie"
+    ]
+    
+    let lower_input = input.to_lowercase()
+    xss_patterns.any(fn(pattern) { lower_input.contains(pattern) })
+  }
+  
+  assert_false(contains_xss("normal text"))
+  assert_false(contains_xss("user@example.com"))
+  
+  assert_true(contains_xss("<script>alert('xss')</script>"))
+  assert_true(contains_xss("<img onload='alert(1)'>"))
+  assert_true(contains_xss("javascript:alert('xss')"))
+  
+  // Path traversal detection
+  let contains_path_traversal = fn(input: String) {
+    let traversal_patterns = ["../", "..\\", "%2e%2e%2f", "%2e%2e\\", "..%2f"]
+    traversal_patterns.any(fn(pattern) { input.to_lowercase().contains(pattern) })
+  }
+  
+  assert_false(contains_path_traversal("normal/path/file.txt"))
+  assert_false(contains_path_traversal("config.json"))
+  
+  assert_true(contains_path_traversal("../../../etc/passwd"))
+  assert_true(contains_path_traversal("..\\..\\windows\\system32"))
+  assert_true(contains_path_traversal("%2e%2e%2f%2e%2e%2f"))
+}
+
+// Test 8: Performance Validation
+test "performance validation" {
+  // Response time validation
+  let validate_response_time = fn(response_time: Int, threshold: Int) {
+    response_time <= threshold
+  }
+  
+  assert_true(validate_response_time(100, 200))  // Within threshold
+  assert_true(validate_response_time(200, 200))  // At threshold
+  
+  assert_false(validate_response_time(300, 200))  // Exceeds threshold
+  
+  // Throughput validation
+  let validate_throughput = fn(requests: Int, duration_ms: Int, min_throughput: Float) {
+    let duration_s = duration_ms.to_float() / 1000.0
+    let throughput = requests.to_float() / duration_s
+    throughput >= min_throughput
+  }
+  
+  assert_true(validate_throughput(1000, 1000, 1000.0))  // 1000 req/s
+  assert_true(validate_throughput(500, 500, 1000.0))    // 1000 req/s
+  
+  assert_false(validate_throughput(500, 1000, 1000.0))  // 500 req/s
+  
+  // Memory usage validation
+  let validate_memory_usage = fn(used_mb: Int, total_mb: Int, max_usage_percent: Float) {
+    let usage_percent = used_mb.to_float() / total_mb.to_float() * 100.0
+    usage_percent <= max_usage_percent
+  }
+  
+  assert_true(validate_memory_usage(512, 4096, 20.0))  // 12.5% usage
+  assert_true(validate_memory_usage(819, 4096, 20.0))  // 20% usage
+  
+  assert_false(validate_memory_usage(1024, 4096, 20.0))  // 25% usage
+  
+  // CPU usage validation
+  let validate_cpu_usage = fn(usage_percent: Float, max_allowed: Float) {
+    usage_percent <= max_allowed
+  }
+  
+  assert_true(validate_cpu_usage(50.0, 80.0))
+  assert_true(validate_cpu_usage(80.0, 80.0))
+  
+  assert_false(validate_cpu_usage(90.0, 80.0))
+  
+  // Error rate validation
+  let validate_error_rate = fn(total_requests: Int, error_requests: Int, max_error_rate: Float) {
+    if total_requests == 0 { return true }  // No requests, no errors
+    let error_rate = error_requests.to_float() / total_requests.to_float() * 100.0
+    error_rate <= max_error_rate
+  }
+  
+  assert_true(validate_error_rate(1000, 10, 1.0))   // 1% error rate
+  assert_true(validate_error_rate(1000, 5, 1.0))    // 0.5% error rate
+  
+  assert_false(validate_error_rate(1000, 20, 1.0))  // 2% error rate
+  assert_true(validate_error_rate(0, 0, 1.0))       // No requests
+}
+
+// Test 9: Configuration Validation
+test "configuration validation" {
+  // Port number validation
+  let validate_port = fn(port: Int) {
+    port >= 1 and port <= 65535
+  }
+  
+  assert_true(validate_port(80))    // HTTP
+  assert_true(validate_port(443))   // HTTPS
+  assert_true(validate_port(8080))  // Alternative HTTP
+  assert_true(validate_port(65535)) // Maximum port
+  
+  assert_false(validate_port(0))    // Too low
+  assert_false(validate_port(65536))// Too high
+  assert_false(validate_port(-1))   // Negative
+  
+  // Timeout validation
+  let validate_timeout = fn(timeout_ms: Int, min_ms: Int, max_ms: Int) {
+    timeout_ms >= min_ms and timeout_ms <= max_ms
+  }
+  
+  assert_true(validate_timeout(5000, 1000, 30000))  // 5 seconds
+  assert_true(validate_timeout(1000, 1000, 30000))  // At minimum
+  assert_true(validate_timeout(30000, 1000, 30000)) // At maximum
+  
+  assert_false(validate_timeout(500, 1000, 30000))   // Below minimum
+  assert_false(validate_timeout(60000, 1000, 30000)) // Above maximum
+  
+  // Log level validation
+  let validate_log_level = fn(level: String) {
+    let valid_levels = ["TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"]
+    valid_levels.contains(level.to_uppercase())
+  }
+  
+  assert_true(validate_log_level("INFO"))
+  assert_true(validate_log_level("info"))  // Case insensitive
+  assert_true(validate_log_level("ERROR"))
+  assert_true(validate_log_level("debug"))
+  
+  assert_false(validate_log_level("VERBOSE"))
+  assert_false(validate_log_level("WARNING"))  // Should be WARN
+  assert_false(validate_log_level(""))
+  
+  // Configuration completeness validation
+  let validate_config_completeness = fn(
+    config: Array[(String, String)>,
+    required_fields: Array[String]
+  ) {
+    required_fields.all(fn(field) {
+      config.any(fn(item) { item.0 == field and item.1 != "" })
+    })
+  }
+  
+  let config = [
+    ("host", "localhost"),
+    ("port", "8080"),
+    ("database_url", "postgresql://localhost/db"),
+    ("log_level", "INFO")
+  ]
+  
+  let required_fields = ["host", "port", "database_url"]
+  let missing_fields = ["host", "port", "database_url", "auth_token"]
+  
+  assert_true(validate_config_completeness(config, required_fields))
+  assert_false(validate_config_completeness(config, missing_fields))
+  
+  // Configuration consistency validation
+  let validate_config_consistency = fn(config: Array[(String, String)>) {
+    // Check for consistent SSL configuration
+    let ssl_enabled = config.any(fn(item) { item.0 == "ssl_enabled" and item.1 == "true" })
+    let has_cert = config.any(fn(item) { item.0 == "ssl_cert_path" and item.1 != "" })
+    let has_key = config.any(fn(item) { item.0 == "ssl_key_path" and item.1 != "" })
+    
+    // If SSL is enabled, both cert and key should be present
+    if ssl_enabled {
+      has_cert and has_key
+    } else {
+      true  // SSL not enabled, no requirement
+    }
+  }
+  
+  let ssl_config = [
+    ("ssl_enabled", "true"),
+    ("ssl_cert_path", "/path/to/cert.pem"),
+    ("ssl_key_path", "/path/to/key.pem")
+  ]
+  
+  let incomplete_ssl_config = [
+    ("ssl_enabled", "true"),
+    ("ssl_cert_path", "/path/to/cert.pem")
+    // Missing ssl_key_path
+  ]
+  
+  let no_ssl_config = [
+    ("ssl_enabled", "false")
+  ]
+  
+  assert_true(validate_config_consistency(ssl_config))
+  assert_false(validate_config_consistency(incomplete_ssl_config))
+  assert_true(validate_config_consistency(no_ssl_config))
+}
+
+// Test 10: Data Transformation Validation
+test "data transformation validation" {
+  // Data normalization
+  let normalize_string = fn(input: String) {
+    input.trim().to_lowercase()
+  }
+  
+  assert_eq(normalize_string("  Hello World  "), "hello world")
+  assert_eq(normalize_string("TEST STRING"), "test string")
+  assert_eq(normalize_string("  Mixed CASE  "), "mixed case")
+  
+  // Data aggregation validation
+  let validate_aggregation = fn(
+    values: Array[Float],
+    aggregation_type: String,
+    expected: Float
+  ) {
+    let actual = match aggregation_type {
+      "sum" => values.reduce(fn(acc, v) { acc + v }, 0.0)
+      "avg" => {
+        let sum = values.reduce(fn(acc, v) { acc + v }, 0.0)
+        sum / values.length().to_float()
+      }
+      "min" => values.reduce(fn(acc, v) { if v < acc { v } else { acc }, values[0])
+      "max" => values.reduce(fn(acc, v) { if v > acc { v } else { acc }, values[0])
+      _ => 0.0
+    }
+    
+    // Allow for small floating point differences
+    (actual - expected).abs() < 0.0001
+  }
+  
+  let values = [1.0, 2.0, 3.0, 4.0, 5.0]
+  
+  assert_true(validate_aggregation(values, "sum", 15.0))
+  assert_true(validate_aggregation(values, "avg", 3.0))
+  assert_true(validate_aggregation(values, "min", 1.0))
+  assert_true(validate_aggregation(values, "max", 5.0))
+  
+  // Data transformation validation
+  let validate_transformation = fn(input: Array[Int], transform: Int -> Int, expected: Array[Int]) {
+    let actual = input.map(transform)
+    actual == expected
+  }
+  
+  let numbers = [1, 2, 3, 4, 5]
+  
+  assert_true(validate_transformation(
+    numbers,
+    fn(x) { x * 2 },
+    [2, 4, 6, 8, 10]
+  ))
+  
+  assert_true(validate_transformation(
+    numbers,
+    fn(x) { x + 1 },
+    [2, 3, 4, 5, 6]
+  ))
+  
+  assert_true(validate_transformation(
+    numbers,
+    fn(x) { x * x },
+    [1, 4, 9, 16, 25]
+  ))
+  
+  // Data filtering validation
+  let validate_filtering = fn(
+    input: Array[Int],
+    predicate: Int -> Bool,
+    expected: Array[Int]
+  ) {
+    let actual = input.filter(predicate)
+    actual == expected
+  }
+  
+  assert_true(validate_filtering(
+    numbers,
+    fn(x) { x % 2 == 0 },
+    [2, 4]
+  ))
+  
+  assert_true(validate_filtering(
+    numbers,
+    fn(x) { x > 3 },
+    [4, 5]
+  ))
+  
+  assert_true(validate_filtering(
+    numbers,
+    fn(x) { x < 5 },
+    [1, 2, 3, 4]
+  ))
+  
+  // Data grouping validation
+  let validate_grouping = fn(
+    items: Array[(String, Int)>,
+    key_fn: (String, Int) -> String,
+    expected_groups: Array[(String, Array[Int])>
+  ) {
+    // Create groups
+    let mut groups = []
+    
+    for item in items {
+      let (name, value) = item
+      let key = key_fn(name, value)
       
-      match field_value {
-        Some((_, value)) => {
-          if not(validator.validator(value)) {
-            errors = errors.push(validator.field_name + ": " + validator.error_message)
-          }
+      match groups.find_index(fn(g) { g.0 == key }) {
+        Some(index) => {
+          let (group_key, group_values) = groups[index]
+          groups = groups.set(index, (group_key, group_values.push(value)))
         }
         None => {
-          if validator.required {
-            errors = errors.push("Missing required field: " + validator.field_name)
-          }
+          groups = groups.push((key, [value]))
         }
       }
     }
     
-    {
-      is_valid: errors.length() == 0,
-      errors,
-      warnings
-    }
-  }
-  
-  // Test valid data
-  let valid_data = [
-    ("trace_id", "trace-1234567890"),
-    ("span_id", "span-098765432"),
-    ("operation_name", "database_query"),
-    ("start_time", "1640995200"),
-    ("duration_ms", "250")
-  ]
-  
-  let valid_result = validate_schema(valid_data, span_schema)
-  assert_true(valid_result.is_valid)
-  assert_eq(valid_result.errors.length(), 0)
-  
-  // Test invalid data
-  let invalid_data = [
-    ("trace_id", "invalid-trace"),  // Invalid format
-    ("span_id", "span-123"),        // Too short
-    ("operation_name", ""),         // Empty
-    ("start_time", "not-a-number")  // Invalid timestamp
-  ]
-  
-  let invalid_result = validate_schema(invalid_data, span_schema)
-  assert_false(invalid_result.is_valid)
-  assert_eq(invalid_result.errors.length(), 4)
-  assert_true(invalid_result.errors[0].contains("Invalid trace ID"))
-  assert_true(invalid_result.errors[1].contains("Invalid span ID"))
-  assert_true(invalid_result.errors[2].contains("Operation name cannot be empty"))
-  assert_true(invalid_result.errors[3].contains("Invalid start time"))
-  
-  // Test missing required fields
-  let incomplete_data = [
-    ("trace_id", "trace-1234567890"),
-    // Missing span_id and operation_name
-    ("start_time", "1640995200")
-  ]
-  
-  let incomplete_result = validate_schema(incomplete_data, span_schema)
-  assert_false(incomplete_result.is_valid)
-  assert_eq(incomplete_result.errors.length(), 2)
-  assert_true(incomplete_result.errors[0].contains("Missing required field: span_id"))
-  assert_true(incomplete_result.errors[1].contains("Missing required field: operation_name"))
-  
-  // Test optional field validation
-  let data_with_optional = [
-    ("trace_id", "trace-1234567890"),
-    ("span_id", "span-098765432"),
-    ("operation_name", "database_query"),
-    ("start_time", "1640995200"),
-    ("duration_ms", "5000")  // Valid optional field
-  ]
-  
-  let optional_result = validate_schema(data_with_optional, span_schema)
-  assert_true(optional_result.is_valid)
-  
-  // Test invalid optional field
-  let data_with_invalid_optional = [
-    ("trace_id", "trace-1234567890"),
-    ("span_id", "span-098765432"),
-    ("operation_name", "database_query"),
-    ("start_time", "1640995200"),
-    ("duration_ms", "5000000")  // Exceeds max
-  ]
-  
-  let invalid_optional_result = validate_schema(data_with_invalid_optional, span_schema)
-  assert_false(invalid_optional_result.is_valid)
-  assert_eq(invalid_optional_result.errors.length(), 1)
-  assert_true(invalid_optional_result.errors[0].contains("Duration must be between 0 and 3600000ms"))
-}
-
-// Test 2: Type Validation and Conversion
-test "type validation and conversion operations" {
-  // Define validation result with converted value
-  type TypeValidationResult[T] = {
-    is_valid: Bool,
-    value: Option[T],
-    error: Option[String]
-  }
-  
-  // Validate and convert to integer
-  let validate_int = fn(value: String, min: Option[Int>, max: Option<Int>) {
-    match value.parse_int() {
-      Some(int_value) => {
-        let min_valid = match min {
-          Some(m) => int_value >= m
-          None => true
-        }
-        
-        let max_valid = match max {
-          Some(m) => int_value <= m
-          None => true
-        }
-        
-        if min_valid && max_valid {
-          {
-            is_valid: true,
-            value: Some(int_value),
-            error: None
-          }
-        } else {
-          {
-            is_valid: false,
-            value: None,
-            error: Some("Value out of range")
-          }
-        }
-      }
-      None => {
-        {
-          is_valid: false,
-          value: None,
-          error: Some("Invalid integer format")
-        }
-      }
-    }
-  }
-  
-  // Validate and convert to float
-  let validate_float = fn(value: String, min: Option[Float>, max: Option[Float>) {
-    match value.parse_float() {
-      Some(float_value) => {
-        let min_valid = match min {
-          Some(m) => float_value >= m
-          None => true
-        }
-        
-        let max_valid = match max {
-          Some(m) => float_value <= m
-          None => true
-        }
-        
-        if min_valid && max_valid {
-          {
-            is_valid: true,
-            value: Some(float_value),
-            error: None
-          }
-        } else {
-          {
-            is_valid: false,
-            value: None,
-            error: Some("Value out of range")
-          }
-        }
-      }
-      None => {
-        {
-          is_valid: false,
-          value: None,
-          error: Some("Invalid float format")
-        }
-      }
-    }
-  }
-  
-  // Validate boolean
-  let validate_bool = fn(value: String) {
-    let lower_value = value.to_lowercase()
-    if lower_value == "true" || lower_value == "1" || lower_value == "yes" {
-      {
-        is_valid: true,
-        value: Some(true),
-        error: None
-      }
-    } else if lower_value == "false" || lower_value == "0" || lower_value == "no" {
-      {
-        is_valid: true,
-        value: Some(false),
-        error: None
-      }
-    } else {
-      {
-        is_valid: false,
-        value: None,
-        error: Some("Invalid boolean format")
-      }
-    }
-  }
-  
-  // Validate timestamp
-  let validate_timestamp = fn(value: String) {
-    match value.parse_int() {
-      Some(timestamp) => {
-        // Check if timestamp is in reasonable range (2000 to 2030)
-        if timestamp >= 946684800 && timestamp <= 1893456000 {
-          {
-            is_valid: true,
-            value: Some(timestamp),
-            error: None
-          }
-        } else {
-          {
-            is_valid: false,
-            value: None,
-            error: Some("Timestamp out of valid range")
-          }
-        }
-      }
-      None => {
-        {
-          is_valid: false,
-          value: None,
-          error: Some("Invalid timestamp format")
-        }
-      }
-    }
-  }
-  
-  // Test integer validation
-  let valid_int = validate_int("42", Some(0), Some(100))
-  assert_true(valid_int.is_valid)
-  assert_eq(valid_int.value, Some(42))
-  
-  let invalid_int_range = validate_int("150", Some(0), Some(100))
-  assert_false(invalid_int_range.is_valid)
-  assert_eq(invalid_int_range.error, Some("Value out of range"))
-  
-  let invalid_int_format = validate_int("not-a-number", Some(0), Some(100))
-  assert_false(invalid_int_format.is_valid)
-  assert_eq(invalid_int_format.error, Some("Invalid integer format"))
-  
-  // Test float validation
-  let valid_float = validate_float("3.14", Some(0.0), Some(10.0))
-  assert_true(valid_float.is_valid)
-  assert_eq(valid_float.value, Some(3.14))
-  
-  let invalid_float_range = validate_float("15.5", Some(0.0), Some(10.0))
-  assert_false(invalid_float_range.is_valid)
-  assert_eq(invalid_float_range.error, Some("Value out of range"))
-  
-  // Test boolean validation
-  let true_values = ["true", "TRUE", "1", "yes", "YES"]
-  for true_val in true_values {
-    let result = validate_bool(true_val)
-    assert_true(result.is_valid)
-    assert_eq(result.value, Some(true))
-  }
-  
-  let false_values = ["false", "FALSE", "0", "no", "NO"]
-  for false_val in false_values {
-    let result = validate_bool(false_val)
-    assert_true(result.is_valid)
-    assert_eq(result.value, Some(false))
-  }
-  
-  let invalid_bool = validate_bool("maybe")
-  assert_false(invalid_bool.is_valid)
-  assert_eq(invalid_bool.error, Some("Invalid boolean format"))
-  
-  // Test timestamp validation
-  let valid_timestamp = validate_timestamp("1640995200")  // 2022-01-01
-  assert_true(valid_timestamp.is_valid)
-  assert_eq(valid_timestamp.value, Some(1640995200))
-  
-  let old_timestamp = validate_timestamp("500000000")  // 1985-11-05
-  assert_false(old_timestamp.is_valid)
-  assert_eq(old_timestamp.error, Some("Timestamp out of valid range"))
-  
-  let future_timestamp = validate_timestamp("2000000000")  // 2033-05-18
-  assert_false(future_timestamp.is_valid)
-  assert_eq(future_timestamp.error, Some("Timestamp out of valid range"))
-  
-  // Test array validation
-  let validate_array = fn(value: String, item_validator: (String) -> TypeValidationResult[String>) {
-    if value.starts_with("[") && value.ends_with("]") {
-      let content = value.substring(1, value.length() - 2)
-      if content.length() == 0 {
-        {
-          is_valid: true,
-          value: Some([]),
-          error: None
-        }
-      } else {
-        let items = content.split(",")
-        let mut validated_items = []
-        let mut has_errors = false
-        let mut errors = []
-        
-        for item in items {
-          let trimmed = item.trim()
-          let item_result = item_validator(trimmed)
-          
-          if item_result.is_valid {
-            match item_result.value {
-              Some(v) => validated_items = validated_items.push(v)
-              None => {}
-            }
-          } else {
-            has_errors = true
-            match item_result.error {
-              Some(e) => errors = errors.push(e)
-              None => {}
-            }
-          }
-        }
-        
-        if has_errors {
-          {
-            is_valid: false,
-            value: None,
-            error: Some("Array contains invalid items: " + errors.join(", "))
-          }
-        } else {
-          {
-            is_valid: true,
-            value: Some(validated_items),
-            error: None
-          }
-        }
-      }
-    } else {
-      {
-        is_valid: false,
-        value: None,
-        error: Some("Invalid array format")
-      }
-    }
-  }
-  
-  // Test array validation
-  let string_validator = fn(s: String) {
-    {
-      is_valid: s.length() > 0,
-      value: Some(s),
-      error: if s.length() == 0 { Some("Empty string") } else { None }
-    }
-  }
-  
-  let valid_array = validate_array("[item1,item2,item3]", string_validator)
-  assert_true(valid_array.is_valid)
-  assert_eq(valid_array.value, Some(["item1", "item2", "item3"]))
-  
-  let invalid_array_format = validate_array("item1,item2,item3", string_validator)
-  assert_false(invalid_array_format.is_valid)
-  assert_eq(invalid_array_format.error, Some("Invalid array format"))
-  
-  let empty_array = validate_array("[]", string_validator)
-  assert_true(empty_array.is_valid)
-  assert_eq(empty_array.value, Some([]))
-}
-
-// Test 3: Business Rule Validation
-test "business rule validation for telemetry constraints" {
-  // Define business rule
-  type BusinessRule = {
-    rule_id: String,
-    name: String,
-    description: String,
-    validator: (Array[(String, String)>) -> Bool,
-    error_message: String
-  }
-  
-  // Define rule engine
-  type RuleEngine = {
-    rules: Array[BusinessRule>
-  }
-  
-  // Create rule engine
-  let create_rule_engine = fn(rules: Array[BusinessRule>) {
-    { rules }
-  }
-  
-  // Validate data against business rules
-  let validate_business_rules = fn(data: Array[(String, String)>, engine: RuleEngine) {
-    let mut violations = []
+    // Sort groups by key for comparison
+    let sorted_groups = groups.sort_by(fn(g) { g.0 })
+    let sorted_expected = expected_groups.sort_by(fn(g) { g.0 })
     
-    for rule in engine.rules {
-      if not(rule.validator(data)) {
-        violations = violations.push({
-          rule_id: rule.rule_id,
-          name: rule.name,
-          error_message: rule.error_message
-        })
-      }
-    }
-    
-    {
-      is_valid: violations.length() == 0,
-      violations
-    }
+    sorted_groups == sorted_expected
   }
   
-  // Get field value from data
-  let get_field = fn(data: Array[(String, String)>, field_name: String) {
-    data.find(fn(field) { field.0 == field_name })
-  }
-  
-  // Define business rules for telemetry data
-  let telemetry_rules = [
-    {
-      rule_id: "span_duration_check",
-      name: "Span Duration Validation",
-      description: "Span duration should be positive and reasonable",
-      validator: fn(data: Array[(String, String)>) {
-        match get_field(data, "start_time") {
-          Some((_, start_str)) => {
-            match get_field(data, "end_time") {
-              Some((_, end_str)) => {
-                match (start_str.parse_int(), end_str.parse_int()) {
-                  (Some(start), Some(end)) => {
-                    let duration = end - start
-                    duration > 0 && duration <= 3600000  // Max 1 hour
-                  }
-                  _ => false
-                }
-              }
-              None => true  // End time is optional
-            }
-          }
-          None => false
-        }
-      },
-      error_message: "Span duration must be positive and less than 1 hour"
-    },
-    {
-      rule_id: "trace_hierarchy_check",
-      name: "Trace Hierarchy Validation",
-      description: "Child spans must have parent span in same trace",
-      validator: fn(data: Array[(String, String)>) {
-        match get_field(data, "trace_id") {
-          Some((_, trace_id)) => {
-            match get_field(data, "parent_span_id") {
-              Some((_, parent_span_id)) => {
-                // In a real implementation, this would check if parent span exists
-                parent_span_id.starts_with("span-")
-              }
-              None => true  // Root span doesn't need parent
-            }
-          }
-          None => false
-        }
-      },
-      error_message: "Parent span ID must be valid when present"
-    },
-    {
-      rule_id: "service_name_check",
-      name: "Service Name Validation",
-      description: "Service name should follow naming conventions",
-      validator: fn(data: Array[(String, String)>) {
-        match get_field(data, "service_name") {
-          Some((_, service_name)) => {
-            // Service names should be lowercase with hyphens
-            service_name.length() > 0 && 
-            service_name.chars().all(fn(c) { 
-              (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-'
-            })
-          }
-          None => false
-        }
-      },
-      error_message: "Service name must be lowercase with hyphens only"
-    },
-    {
-      rule_id: "status_code_check",
-      name: "Status Code Validation",
-      description: "HTTP status codes should be in valid range",
-      validator: fn(data: Array[(String, String)>) {
-        match get_field(data, "http.status_code") {
-          Some((_, status_str)) => {
-            match status_str.parse_int() {
-              Some(status) => status >= 100 && status < 600
-              None => false
-            }
-          }
-          None => true  // Status code is optional
-        }
-      },
-      error_message: "HTTP status code must be between 100 and 599"
-    }
+  let items = [
+    ("apple", 1),
+    ("banana", 2),
+    ("apple", 3),
+    ("orange", 4),
+    ("banana", 5)
   ]
   
-  // Create rule engine
-  let rule_engine = create_rule_engine(telemetry_rules)
-  
-  // Test valid telemetry data
-  let valid_telemetry = [
-    ("trace_id", "trace-1234567890"),
-    ("span_id", "span-098765432"),
-    ("parent_span_id", "span-123456789"),
-    ("service_name", "user-service"),
-    ("start_time", "1640995200"),
-    ("end_time", "1640995250"),
-    ("http.status_code", "200")
-  ]
-  
-  let valid_result = validate_business_rules(valid_telemetry, rule_engine)
-  assert_true(valid_result.is_valid)
-  assert_eq(valid_result.violations.length(), 0)
-  
-  // Test invalid span duration
-  let invalid_duration = [
-    ("trace_id", "trace-1234567890"),
-    ("span_id", "span-098765432"),
-    ("service_name", "user-service"),
-    ("start_time", "1640995250"),  // After end time
-    ("end_time", "1640995200")
-  ]
-  
-  let duration_result = validate_business_rules(invalid_duration, rule_engine)
-  assert_false(duration_result.is_valid)
-  assert_eq(duration_result.violations.length(), 1)
-  assert_eq(duration_result.violations[0].rule_id, "span_duration_check")
-  
-  // Test invalid service name
-  let invalid_service = [
-    ("trace_id", "trace-1234567890"),
-    ("span_id", "span-098765432"),
-    ("service_name", "User-Service"),  // Contains uppercase
-    ("start_time", "1640995200")
-  ]
-  
-  let service_result = validate_business_rules(invalid_service, rule_engine)
-  assert_false(service_result.is_valid)
-  assert_eq(service_result.violations.length(), 1)
-  assert_eq(service_result.violations[0].rule_id, "service_name_check")
-  
-  // Test invalid HTTP status code
-  let invalid_status = [
-    ("trace_id", "trace-1234567890"),
-    ("span_id", "span-098765432"),
-    ("service_name", "user-service"),
-    ("start_time", "1640995200"),
-    ("http.status_code", "999")  // Invalid status code
-  ]
-  
-  let status_result = validate_business_rules(invalid_status, rule_engine)
-  assert_false(status_result.is_valid)
-  assert_eq(status_result.violations.length(), 1)
-  assert_eq(status_result.violations[0].rule_id, "status_code_check")
-  
-  // Test multiple violations
-  let multiple_violations = [
-    ("trace_id", "trace-1234567890"),
-    ("span_id", "span-098765432"),
-    ("service_name", "User_Service"),  // Invalid: contains underscore
-    ("start_time", "1640995250"),     // After end time
-    ("end_time", "1640995200"),
-    ("http.status_code", "999")        // Invalid status code
-  ]
-  
-  let multiple_result = validate_business_rules(multiple_violations, rule_engine)
-  assert_false(multiple_result.is_valid)
-  assert_eq(multiple_result.violations.length(), 3)
-  
-  let violation_ids = multiple_result.violations.map(fn(v) { v.rule_id })
-  assert_true(violation_ids.contains("span_duration_check"))
-  assert_true(violation_ids.contains("service_name_check"))
-  assert_true(violation_ids.contains("status_code_check"))
-  
-  // Test conditional validation
-  let conditional_rules = [
-    {
-      rule_id: "error_span_check",
-      name: "Error Span Validation",
-      description: "Error spans should have error information",
-      validator: fn(data: Array[(String, String)>) {
-        match get_field(data, "status") {
-          Some((_, status)) => {
-            if status == "error" {
-              // Error spans should have error.message or error.type
-              let has_error_message = get_field(data, "error.message").is_some()
-              let has_error_type = get_field(data, "error.type").is_some()
-              has_error_message || has_error_type
-            } else {
-              true  // Non-error spans don't need error info
-            }
-          }
-          None => true
-        }
-      },
-      error_message: "Error spans must include error.message or error.type"
-    }
-  ]
-  
-  let conditional_engine = create_rule_engine(conditional_rules)
-  
-  // Test valid error span
-  let valid_error_span = [
-    ("trace_id", "trace-1234567890"),
-    ("span_id", "span-098765432"),
-    ("status", "error"),
-    ("error.message", "Database connection failed")
-  ]
-  
-  let valid_error_result = validate_business_rules(valid_error_span, conditional_engine)
-  assert_true(valid_error_result.is_valid)
-  
-  // Test invalid error span (missing error info)
-  let invalid_error_span = [
-    ("trace_id", "trace-1234567890"),
-    ("span_id", "span-098765432"),
-    ("status", "error")
-    // Missing error information
-  ]
-  
-  let invalid_error_result = validate_business_rules(invalid_error_span, conditional_engine)
-  assert_false(invalid_error_result.is_valid)
-  assert_eq(invalid_error_result.violations.length(), 1)
-  assert_eq(invalid_error_result.violations[0].rule_id, "error_span_check")
-}
-
-// Test 4: Data Consistency Validation
-test "data consistency validation across related records" {
-  // Define consistency check
-  type ConsistencyCheck = {
-    check_id: String,
-    name: String,
-    description: String,
-    validator: (Array[Array[(String, String)>>) -> Bool,
-    error_message: String
-  }
-  
-  // Define consistency validator
-  type ConsistencyValidator = {
-    checks: Array[ConsistencyCheck>
-  }
-  
-  // Create consistency validator
-  let create_consistency_validator = fn(checks: Array[ConsistencyCheck>) {
-    { checks }
-  }
-  
-  // Validate consistency across multiple records
-  let validate_consistency = fn(records: Array[Array[(String, String)>>, validator: ConsistencyValidator) {
-    let mut violations = []
-    
-    for check in validator.checks {
-      if not(check.validator(records)) {
-        violations = violations.push({
-          check_id: check.check_id,
-          name: check.name,
-          error_message: check.error_message
-        })
-      }
-    }
-    
-    {
-      is_consistent: violations.length() == 0,
-      violations
-    }
-  }
-  
-  // Define consistency checks for trace data
-  let consistency_checks = [
-    {
-      check_id: "trace_id_consistency",
-      name: "Trace ID Consistency",
-      description: "All spans in a trace should have the same trace ID",
-      validator: fn(records: Array[Array[(String, String)>>) {
-        if records.length() <= 1 {
-          true
-        } else {
-          let first_trace_id = records[0].find(fn(f) { f.0 == "trace_id" })
-          match first_trace_id {
-            Some((_, trace_id)) => {
-              records.all(fn(record) {
-                match record.find(fn(f) { f.0 == "trace_id" }) {
-                  Some((_, id)) => id == trace_id
-                  None => false
-                }
-              })
-            }
-            None => false
-          }
-        }
-      },
-      error_message: "All spans must have the same trace ID"
-    },
-    {
-      check_id: "parent_child_consistency",
-      name: "Parent-Child Consistency",
-      description: "Child spans should start after parent span",
-      validator: fn(records: Array[Array[(String, String)>>) {
-        // Create a map of span_id to span data
-        let span_map = {}
-        for record in records {
-          match record.find(fn(f) { f.0 == "span_id" }) {
-            Some((_, span_id)) => {
-              span_map = span_map.set(span_id, record)
-            }
-            None => {}
-          }
-        }
-        
-        // Check each span's parent relationship
-        records.all(fn(record) {
-          match record.find(fn(f) { f.0 == "parent_span_id" }) {
-            Some((_, parent_id)) => {
-              match span_map.get(parent_id) {
-                Some(parent_record) => {
-                  match (record.find(fn(f) { f.0 == "start_time" }), parent_record.find(fn(f) { f.0 == "start_time" })) {
-                    (Some((_, child_start_str)), Some((_, parent_start_str))) => {
-                      match (child_start_str.parse_int(), parent_start_str.parse_int()) {
-                        (Some(child_start), Some(parent_start)) => child_start >= parent_start
-                        _ => false
-                      }
-                    }
-                    _ => false
-                  }
-                }
-                None => false  // Parent span not found
-              }
-            }
-            None => true  // Root span has no parent
-          }
-        })
-      },
-      error_message: "Child spans must start after their parent span"
-    },
-    {
-      check_id: "timeline_consistency",
-      name: "Timeline Consistency",
-      description: "Span timestamps should be within reasonable time bounds",
-      validator: fn(records: Array[Array[(String, String)>>) {
-        if records.length() == 0 {
-          true
-        } else {
-          // Find earliest and latest timestamps
-          let mut timestamps = []
-          for record in records {
-            match record.find(fn(f) { f.0 == "start_time" }) {
-              Some((_, time_str)) => {
-                match time_str.parse_int() {
-                  Some(time) => timestamps = timestamps.push(time)
-                  None => {}
-                }
-              }
-              None => {}
-            }
-          }
-          
-          if timestamps.length() == 0 {
-            false
-          } else {
-            let min_time = timestamps.reduce(fn(min, time) { if time < min { time } else { min } }, timestamps[0])
-            let max_time = timestamps.reduce(fn(max, time) { if time > max { time } else { max } }, timestamps[0])
-            
-            // Check if all spans are within 24 hours
-            (max_time - min_time) <= 86400
-          }
-        }
-      },
-      error_message: "All spans should be within 24 hours of each other"
-    }
-  ]
-  
-  // Create consistency validator
-  let consistency_validator = create_consistency_validator(consistency_checks)
-  
-  // Test consistent trace data
-  let consistent_trace = [
+  assert_true(validate_grouping(
+    items,
+    fn(name, _) { name },
     [
-      ("trace_id", "trace-1234567890"),
-      ("span_id", "span-111111111"),
-      ("parent_span_id", ""),
-      ("service_name", "api-gateway"),
-      ("start_time", "1640995200"),
-      ("end_time", "1640995250")
-    ],
-    [
-      ("trace_id", "trace-1234567890"),
-      ("span_id", "span-222222222"),
-      ("parent_span_id", "span-111111111"),
-      ("service_name", "auth-service"),
-      ("start_time", "1640995210"),
-      ("end_time", "1640995230")
-    ],
-    [
-      ("trace_id", "trace-1234567890"),
-      ("span_id", "span-333333333"),
-      ("parent_span_id", "span-222222222"),
-      ("service_name", "user-service"),
-      ("start_time", "1640995220"),
-      ("end_time", "1640995240")
+      ("apple", [1, 3]),
+      ("banana", [2, 5]),
+      ("orange", [4])
     ]
-  ]
-  
-  let consistent_result = validate_consistency(consistent_trace, consistency_validator)
-  assert_true(consistent_result.is_consistent)
-  assert_eq(consistent_result.violations.length(), 0)
-  
-  // Test inconsistent trace IDs
-  let inconsistent_trace_ids = [
-    [
-      ("trace_id", "trace-1234567890"),
-      ("span_id", "span-111111111"),
-      ("service_name", "api-gateway"),
-      ("start_time", "1640995200")
-    ],
-    [
-      ("trace_id", "trace-0987654321"),  // Different trace ID
-      ("span_id", "span-222222222"),
-      ("service_name", "auth-service"),
-      ("start_time", "1640995210")
-    ]
-  ]
-  
-  let trace_id_result = validate_consistency(inconsistent_trace_ids, consistency_validator)
-  assert_false(trace_id_result.is_consistent)
-  assert_eq(trace_id_result.violations.length(), 1)
-  assert_eq(trace_id_result.violations[0].check_id, "trace_id_consistency")
-  
-  // Test parent-child inconsistency
-  let parent_child_inconsistent = [
-    [
-      ("trace_id", "trace-1234567890"),
-      ("span_id", "span-111111111"),
-      ("service_name", "api-gateway"),
-      ("start_time", "1640995200")
-    ],
-    [
-      ("trace_id", "trace-1234567890"),
-      ("span_id", "span-222222222"),
-      ("parent_span_id", "span-111111111"),
-      ("service_name", "auth-service"),
-      ("start_time", "1640995190")  // Before parent
-    ]
-  ]
-  
-  let parent_child_result = validate_consistency(parent_child_inconsistent, consistency_validator)
-  assert_false(parent_child_result.is_consistent)
-  assert_eq(parent_child_result.violations.length(), 1)
-  assert_eq(parent_child_result.violations[0].check_id, "parent_child_consistency")
-  
-  // Test timeline inconsistency
-  let timeline_inconsistent = [
-    [
-      ("trace_id", "trace-1234567890"),
-      ("span_id", "span-111111111"),
-      ("service_name", "api-gateway"),
-      ("start_time", "1640995200")  // Day 1
-    ],
-    [
-      ("trace_id", "trace-1234567890"),
-      ("span_id", "span-222222222"),
-      ("service_name", "auth-service"),
-      ("start_time", "1641081600")  // Day 2 (24 hours later)
-    ]
-  ]
-  
-  let timeline_result = validate_consistency(timeline_inconsistent, consistency_validator)
-  assert_false(timeline_result.is_consistent)
-  assert_eq(timeline_result.violations.length(), 1)
-  assert_eq(timeline_result.violations[0].check_id, "timeline_consistency")
-  
-  // Test multiple consistency violations
-  let multiple_violations_trace = [
-    [
-      ("trace_id", "trace-1234567890"),
-      ("span_id", "span-111111111"),
-      ("service_name", "api-gateway"),
-      ("start_time", "1640995200")
-    ],
-    [
-      ("trace_id", "trace-0987654321"),  // Different trace ID
-      ("span_id", "span-222222222"),
-      ("parent_span_id", "span-111111111"),
-      ("service_name", "auth-service"),
-      ("start_time", "1640995190")  // Before parent
-    ],
-    [
-      ("trace_id", "trace-1234567890"),
-      ("span_id", "span-333333333"),
-      ("service_name", "user-service"),
-      ("start_time", "1641081600")  // 24 hours later
-    ]
-  ]
-  
-  let multiple_violations_result = validate_consistency(multiple_violations_trace, consistency_validator)
-  assert_false(multiple_violations_result.is_consistent)
-  assert_eq(multiple_violations_result.violations.length(), 3)
-  
-  let violation_ids = multiple_violations_result.violations.map(fn(v) { v.check_id })
-  assert_true(violation_ids.contains("trace_id_consistency"))
-  assert_true(violation_ids.contains("parent_child_consistency"))
-  assert_true(violation_ids.contains("timeline_consistency"))
-}
-
-// Test 5: Data Quality Metrics
-test "data quality metrics and scoring" {
-  // Define data quality dimension
-  enum QualityDimension {
-    Completeness
-    Accuracy
-    Consistency
-    Validity
-    Timeliness
-  }
-  
-  // Define quality metric
-  type QualityMetric = {
-    dimension: QualityDimension,
-    score: Float,  // 0.0 to 1.0
-    weight: Float, // Importance weight
-    details: String
-  }
-  
-  // Define quality assessment
-  type QualityAssessment = {
-    overall_score: Float,
-    metrics: Array[QualityMetric>,
-    recommendations: Array[String]
-  }
-  
-  // Calculate completeness score
-  let calculate_completeness = fn(data: Array[(String, String)>, required_fields: Array<String>) {
-    let present_fields = data.map(fn(field) { field.0 })
-    let missing_fields = required_fields.filter(fn(field) { 
-      not(present_fields.contains(field)) 
-    })
-    
-    let completeness_score = if required_fields.length() > 0 {
-      (required_fields.length() - missing_fields.length()) as Float / required_fields.length() as Float
-    } else {
-      1.0
-    }
-    
-    {
-      dimension: QualityDimension::Completeness,
-      score: completeness_score,
-      weight: 0.3,
-      details: "Missing fields: " + missing_fields.join(", ")
-    }
-  }
-  
-  // Calculate accuracy score
-  let calculate_accuracy = fn(data: Array[(String, String)>) {
-    let mut accuracy_issues = 0
-    let mut total_fields = 0
-    
-    for field in data {
-      total_fields = total_fields + 1
-      
-      // Check for common accuracy issues
-      if field.0 == "email" && not(field.1.contains("@")) {
-        accuracy_issues = accuracy_issues + 1
-      } else if field.0 == "phone" && field.1.length() < 10 {
-        accuracy_issues = accuracy_issues + 1
-      } else if field.0 == "url" && not(field.1.starts_with("http")) {
-        accuracy_issues = accuracy_issues + 1
-      }
-    }
-    
-    let accuracy_score = if total_fields > 0 {
-      (total_fields - accuracy_issues) as Float / total_fields as Float
-    } else {
-      1.0
-    }
-    
-    {
-      dimension: QualityDimension::Accuracy,
-      score: accuracy_score,
-      weight: 0.25,
-      details: "Accuracy issues found: " + accuracy_issues.to_string()
-    }
-  }
-  
-  // Calculate validity score
-  let calculate_validity = fn(data: Array[(String, String)>, validators: Array<(String, (String) -> Bool)>) {
-    let mut validity_issues = 0
-    let mut total_validations = 0
-    
-    for (field_name, validator) in validators {
-      match data.find(fn(f) { f.0 == field_name }) {
-        Some((_, value)) => {
-          total_validations = total_validations + 1
-          if not(validator(value)) {
-            validity_issues = validity_issues + 1
-          }
-        }
-        None => {}  // Skip validation for missing fields
-      }
-    }
-    
-    let validity_score = if total_validations > 0 {
-      (total_validations - validity_issues) as Float / total_validations as Float
-    } else {
-      1.0
-    }
-    
-    {
-      dimension: QualityDimension::Validity,
-      score: validity_score,
-      weight: 0.25,
-      details: "Validity issues: " + validity_issues.to_string() + "/" + total_validations.to_string()
-    }
-  }
-  
-  // Calculate timeliness score
-  let calculate_timeliness = fn(data: Array[(String, String)>, current_time: Int, max_age_seconds: Int) {
-    match data.find(fn(f) { f.0 == "timestamp" }) {
-      Some((_, timestamp_str)) => {
-        match timestamp_str.parse_int() {
-          Some(timestamp) => {
-            let age = current_time - timestamp
-            if age <= 0 {
-              // Future timestamp
-              {
-                dimension: QualityDimension::Timeliness,
-                score: 0.0,
-                weight: 0.2,
-                details: "Timestamp is in the future"
-              }
-            } else if age <= max_age_seconds {
-              // Recent data
-              let timeliness_score = 1.0 - (age as Float / max_age_seconds as Float) * 0.5
-              {
-                dimension: QualityDimension::Timeliness,
-                score: timeliness_score,
-                weight: 0.2,
-                details: "Data age: " + age.to_string() + " seconds"
-              }
-            } else {
-              // Old data
-              {
-                dimension: QualityDimension::Timeliness,
-                score: 0.1,
-                weight: 0.2,
-                details: "Data is too old: " + age.to_string() + " seconds"
-              }
-            }
-          }
-          None => {
-            {
-              dimension: QualityDimension::Timeliness,
-              score: 0.0,
-              weight: 0.2,
-              details: "Invalid timestamp format"
-            }
-          }
-        }
-      }
-      None => {
-        {
-          dimension: QualityDimension::Timeliness,
-          score: 0.5,
-          weight: 0.2,
-          details: "No timestamp provided"
-        }
-      }
-    }
-  }
-  
-  // Calculate overall quality score
-  let calculate_overall_quality = fn(metrics: Array[QualityMetric>) {
-    let weighted_sum = metrics.reduce(fn(sum, metric) {
-      sum + (metric.score * metric.weight)
-    }, 0.0)
-    
-    let total_weight = metrics.reduce(fn(sum, metric) { sum + metric.weight }, 0.0)
-    
-    if total_weight > 0.0 {
-      weighted_sum / total_weight
-    } else {
-      0.0
-    }
-  }
-  
-  // Generate recommendations based on quality assessment
-  let generate_recommendations = fn(metrics: Array[QualityMetric>) {
-    let mut recommendations = []
-    
-    for metric in metrics {
-      if metric.score < 0.7 {
-        match metric.dimension {
-          QualityDimension::Completeness => {
-            recommendations = recommendations.push("Improve data completeness by ensuring all required fields are populated")
-          }
-          QualityDimension::Accuracy => {
-            recommendations = recommendations.push("Enhance data accuracy through validation rules and data cleansing")
-          }
-          QualityDimension::Consistency => {
-            recommendations = recommendations.push("Ensure data consistency across related records and systems")
-          }
-          QualityDimension::Validity => {
-            recommendations = recommendations.push("Strengthen validation rules to ensure data format compliance")
-          }
-          QualityDimension::Timeliness => {
-            recommendations = recommendations.push("Optimize data collection and processing to improve timeliness")
-          }
-        }
-      }
-    }
-    
-    recommendations
-  }
-  
-  // Test quality assessment
-  let test_data = [
-    ("trace_id", "trace-1234567890"),
-    ("span_id", "span-098765432"),
-    ("service_name", "user-service"),
-    ("email", "user@example.com"),
-    ("timestamp", "1640995200")
-  ]
-  
-  let required_fields = ["trace_id", "span_id", "service_name", "operation_name", "start_time"]
-  
-  let validators = [
-    ("trace_id", fn(value: String) { value.starts_with("trace-") && value.length() == 16 }),
-    ("span_id", fn(value: String) { value.starts_with("span-") && value.length() == 15 }),
-    ("email", fn(value: String) { value.contains("@") })
-  ]
-  
-  let current_time = 1640995300
-  let max_age = 3600  // 1 hour
-  
-  // Calculate quality metrics
-  let completeness = calculate_completeness(test_data, required_fields)
-  let accuracy = calculate_accuracy(test_data)
-  let validity = calculate_validity(test_data, validators)
-  let timeliness = calculate_timeliness(test_data, current_time, max_age)
-  
-  let metrics = [completeness, accuracy, validity, timeliness]
-  
-  // Test individual metrics
-  assert_eq(completeness.dimension, QualityDimension::Completeness)
-  assert_eq(completeness.score, 0.6)  // 3 out of 5 required fields present
-  assert_eq(completeness.weight, 0.3)
-  
-  assert_eq(accuracy.dimension, QualityDimension::Accuracy)
-  assert_eq(accuracy.score, 1.0)  // No accuracy issues found
-  assert_eq(accuracy.weight, 0.25)
-  
-  assert_eq(validity.dimension, QualityDimension::Validity)
-  assert_eq(validity.score, 1.0)  // All validations pass
-  assert_eq(validity.weight, 0.25)
-  
-  assert_eq(timeliness.dimension, QualityDimension::Timeliness)
-  assert_eq(timeliness.score, 0.9972)  // Very recent data
-  assert_eq(timeliness.weight, 0.2)
-  
-  // Calculate overall quality score
-  let overall_score = calculate_overall_quality(metrics)
-  assert_true(overall_score > 0.8)  // Should be high quality
-  assert_true(overall_score < 1.0)  // But not perfect due to completeness
-  
-  // Generate recommendations
-  let recommendations = generate_recommendations(metrics)
-  assert_eq(recommendations.length(), 1)
-  assert_true(recommendations[0].contains("completeness"))
-  
-  // Create quality assessment
-  let assessment = {
-    overall_score,
-    metrics,
-    recommendations
-  }
-  
-  assert_eq(assessment.overall_score, overall_score)
-  assert_eq(assessment.metrics.length(), 4)
-  assert_eq(assessment.recommendations.length(), 1)
-  
-  // Test low quality data
-  let low_quality_data = [
-    ("trace_id", "invalid"),  // Invalid format
-    ("email", "not-an-email"),  // Invalid email
-    ("timestamp", "0")  // Very old timestamp
-  ]
-  
-  let low_completeness = calculate_completeness(low_quality_data, required_fields)
-  let low_accuracy = calculate_accuracy(low_quality_data)
-  let low_validity = calculate_validity(low_quality_data, validators)
-  let low_timeliness = calculate_timeliness(low_quality_data, current_time, max_age)
-  
-  let low_metrics = [low_completeness, low_accuracy, low_validity, low_timeliness]
-  let low_overall = calculate_overall_quality(low_metrics)
-  let low_recommendations = generate_recommendations(low_metrics)
-  
-  assert_true(low_overall < 0.5)  // Should be low quality
-  assert_eq(low_recommendations.length(), 4)  // All dimensions need improvement
+  ))
 }
