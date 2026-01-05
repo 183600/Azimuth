@@ -2132,6 +2132,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_async_concurrent_tests.mbt": {
   },
+  "azimuth_archive_retrieval_visualization_tests.mbt": {
+  },
   "azimuth_api_integration_tests.mbt": {
   },
   "azimuth_anomaly_detection_recovery_tests.mbt": {
