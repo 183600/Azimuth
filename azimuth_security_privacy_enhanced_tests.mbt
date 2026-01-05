@@ -1,380 +1,451 @@
-// Azimuth Telemetry System - Security and Privacy Enhanced Tests
+// Azimuth Telemetry System - Enhanced Security and Privacy Tests
 // This file contains comprehensive test cases for security and privacy features
 
-// Test 1: Sensitive Data Filtering
-test "sensitive data filtering in attributes" {
-  let attrs = Attributes::new()
-  
-  // Set sensitive attributes
-  Attributes::set(attrs, "password", StringValue("secret123"))
-  Attributes::set(attrs, "api_key", StringValue("sk-1234567890abcdef"))
-  Attributes::set(attrs, "credit_card", StringValue("4111-1111-1111-1111"))
-  Attributes::set(attrs, "ssn", StringValue("123-45-6789"))
-  Attributes::set(attrs, "email", StringValue("user@example.com"))
-  Attributes::set(attrs, "phone", StringValue("+1-555-123-4567"))
-  
-  // Set non-sensitive attributes
-  Attributes::set(attrs, "user_id", StringValue("user_123"))
-  Attributes::set(attrs, "session_id", StringValue("session_456"))
-  Attributes::set(attrs, "request_id", StringValue("req_789"))
-  
-  // Apply sensitive data filtering
-  let filtered_attrs = Security::filter_sensitive_data(attrs)
-  
-  // Verify sensitive data is filtered
-  let password = Attributes::get(filtered_attrs, "password")
-  match password {
-    Some(StringValue(v)) => assert_eq(v, "***")
-    _ => assert_true(false)
-  }
-  
-  let api_key = Attributes::get(filtered_attrs, "api_key")
-  match api_key {
-    Some(StringValue(v)) => assert_eq(v, "***")
-    _ => assert_true(false)
-  }
-  
-  let credit_card = Attributes::get(filtered_attrs, "credit_card")
-  match credit_card {
-    Some(StringValue(v)) => assert_eq(v, "****-****-****-****")
-    _ => assert_true(false)
-  }
-  
-  let ssn = Attributes::get(filtered_attrs, "ssn")
-  match ssn {
-    Some(StringValue(v)) => assert_eq(v, "***-**-****")
-    _ => assert_true(false)
-  }
-  
-  // Verify non-sensitive data is preserved
-  let user_id = Attributes::get(filtered_attrs, "user_id")
-  match user_id {
-    Some(StringValue(v)) => assert_eq(v, "user_123")
-    _ => assert_true(false)
-  }
-}
-
-// Test 2: Data Encryption and Decryption
+// Test 1: Data Encryption and Decryption
 test "data encryption and decryption" {
-  let encryption_key = EncryptionKey::generate()
+  // Test encryption of sensitive telemetry data
+  let encryption_key = EncryptionKey::generate("AES-256-GCM")
+  let encryptor = DataEncryptor::new(encryption_key)
   
-  // Test string encryption
-  let original_string = "Sensitive telemetry data"
-  let encrypted_string = Encryption::encrypt_string(original_string, encryption_key)
-  let decrypted_string = Encryption::decrypt_string(encrypted_string, encryption_key)
+  // Test with different data types
+  let sensitive_data = [
+    ("user_email", "user@example.com"),
+    ("credit_card", "4111-1111-1111-1111"),
+    ("ssn", "123-45-6789"),
+    ("api_key", "sk_test_4242424242424242"),
+    ("password", "SuperSecretPassword123!")
+  ]
   
-  assert_eq(original_string, decrypted_string)
-  assert_true(encrypted_string != original_string)
-  
-  // Test attribute encryption
-  let attrs = Attributes::new()
-  Attributes::set(attrs, "sensitive_data", StringValue("confidential information"))
-  Attributes::set(attrs, "non_sensitive_data", StringValue("public information"))
-  
-  let encrypted_attrs = Encryption::encrypt_attributes(attrs, encryption_key)
-  let decrypted_attrs = Encryption::decrypt_attributes(encrypted_attrs, encryption_key)
-  
-  // Verify decrypted attributes match original
-  let sensitive_data = Attributes::get(decrypted_attrs, "sensitive_data")
-  match sensitive_data {
-    Some(StringValue(v)) => assert_eq(v, "confidential information")
-    _ => assert_true(false)
-  }
-  
-  let non_sensitive_data = Attributes::get(decrypted_attrs, "non_sensitive_data")
-  match non_sensitive_data {
-    Some(StringValue(v)) => assert_eq(v, "public information")
-    _ => assert_true(false)
+  for (field_name, plain_text) in sensitive_data {
+    // Encrypt the data
+    let encrypted_data = Encryptor::encrypt(encryptor, plain_text)
+    assert_true(encrypted_data != plain_text)
+    assert_true(encrypted_data.length() > 0)
+    
+    // Decrypt the data
+    let decrypted_data = Encryptor::decrypt(encryptor, encrypted_data)
+    assert_eq(decrypted_data, plain_text)
+    
+    // Verify encrypted data doesn't contain plain text
+    assert_false(encrypted_data.contains(plain_text))
+    assert_false(encrypted_data.contains(field_name))
   }
 }
 
-// Test 3: Access Control
-test "access control for telemetry data" {
-  let access_policy = AccessPolicy::new()
+// Test 2: Personal Data Redaction
+test "personal data redaction" {
+  // Test automatic redaction of personal data
+  let redactor = PersonalDataRedactor::new()
+  
+  // Test data with personal information
+  let telemetry_data = [
+    ("user_action", "User john.doe@example.com performed login from IP 192.168.1.100"),
+    ("payment_info", "Payment of $99.99 with card ending in 1234 for user ID 45678"),
+    ("search_query", "Search for 'John Smith' in New York, phone: 555-123-4567"),
+    ("error_message", "Failed to authenticate user with email alice@example.com and SSN ***-**-6789")
+  ]
+  
+  let expected_redacted = [
+    ("user_action", "User ***@***.*** performed login from IP ***.***.***.***"),
+    ("payment_info", "Payment of $99.99 with card ending in **** for user ID *****"),
+    ("search_query", "Search for '*** *****' in ***, phone: ***-***-****"),
+    ("error_message", "Failed to authenticate user with email ***@***.*** and SSN ***-**-****")
+  ]
+  
+  for i = 0; i < telemetry_data.length(); i = i + 1 {
+    let (field_name, data) = telemetry_data[i]
+    let (_, expected) = expected_redacted[i]
+    
+    let redacted_data = Redactor::redact(redactor, data)
+    assert_eq(redacted_data, expected)
+    
+    // Verify no personal data remains
+    assert_false(redacted_data.contains("@example.com"))
+    assert_false(redacted_data.contains("192.168.1.100"))
+    assert_false(redacted_data.contains("1234"))
+    assert_false(redacted_data.contains("45678"))
+    assert_false(redacted_data.contains("John Smith"))
+    assert_false(redacted_data.contains("New York"))
+    assert_false(redacted_data.contains("555-123-4567"))
+    assert_false(redacted_data.contains("6789"))
+  }
+}
+
+// Test 3: Access Control and Authorization
+test "access control and authorization" {
+  // Test role-based access control for telemetry data
+  let access_manager = AccessControlManager::new()
   
   // Define roles and permissions
-  AccessPolicy::add_role(access_policy, "admin", ["read", "write", "delete"])
-  AccessPolicy::add_role(access_policy, "analyst", ["read"])
-  AccessPolicy::add_role(access_policy, "viewer", ["read:limited"])
+  let roles = [
+    ("admin", ["read", "write", "delete", "export"]),
+    ("analyst", ["read", "export"]),
+    ("viewer", ["read"]),
+    ("guest", [])
+  ]
   
-  // Create users with roles
-  let admin_user = User::new("admin_user", "admin")
-  let analyst_user = User::new("analyst_user", "analyst")
-  let viewer_user = User::new("viewer_user", "viewer")
+  // Create users with different roles
+  let users = [
+    ("admin_user", "admin"),
+    ("analyst_user", "analyst"),
+    ("viewer_user", "viewer"),
+    ("guest_user", "guest")
+  ]
   
-  // Create telemetry data with access levels
-  let telemetry_data = TelemetryData::new()
-  TelemetryData::set_access_level(telemetry_data, "confidential")
+  // Define telemetry resources
+  let resources = [
+    "user_metrics",
+    "performance_data",
+    "error_logs",
+    "sensitive_events"
+  ]
   
-  // Test access control
-  assert_true(AccessControl::can_access(admin_user, telemetry_data, "read"))
-  assert_true(AccessControl::can_access(analyst_user, telemetry_data, "read"))
-  assert_false(AccessControl::can_access(viewer_user, telemetry_data, "read"))
-  
-  assert_true(AccessControl::can_access(admin_user, telemetry_data, "write"))
-  assert_false(AccessControl::can_access(analyst_user, telemetry_data, "write"))
-  assert_false(AccessControl::can_access(viewer_user, telemetry_data, "write"))
-  
-  assert_true(AccessControl::can_access(admin_user, telemetry_data, "delete"))
-  assert_false(AccessControl::can_access(analyst_user, telemetry_data, "delete"))
-  assert_false(AccessControl::can_access(viewer_user, telemetry_data, "delete"))
+  // Test access permissions
+  for (user_id, role) in users {
+    for resource in resources {
+      // Test read access
+      let can_read = AccessManager::check_permission(access_manager, user_id, resource, "read")
+      let expected_read = roles.find(|(r, _)| r == role).unwrap().1.contains("read")
+      assert_eq(can_read, expected_read)
+      
+      // Test write access
+      let can_write = AccessManager::check_permission(access_manager, user_id, resource, "write")
+      let expected_write = roles.find(|(r, _)| r == role).unwrap().1.contains("write")
+      assert_eq(can_write, expected_write)
+      
+      // Test delete access
+      let can_delete = AccessManager::check_permission(access_manager, user_id, resource, "delete")
+      let expected_delete = roles.find(|(r, _)| r == role).unwrap().1.contains("delete")
+      assert_eq(can_delete, expected_delete)
+    }
+  }
 }
 
-// Test 4: Data Retention Policy
-test "data retention policy enforcement" {
-  let retention_policy = RetentionPolicy::new()
+// Test 4: Data Retention and Expiration
+test "data retention and expiration" {
+  // Test data retention policies
+  let retention_manager = DataRetentionManager::new()
   
-  // Set retention rules
-  RetentionPolicy::set_rule(retention_policy, "trace_data", 30) // 30 days
-  RetentionPolicy::set_rule(retention_policy, "metric_data", 90) // 90 days
-  RetentionPolicy::set_rule(retention_policy, "log_data", 7) // 7 days
+  // Define retention policies
+  let policies = [
+    ("user_activity", 30),      // 30 days
+    ("performance_metrics", 90), // 90 days
+    ("error_logs", 365),        // 1 year
+    ("audit_trail", 2555)       // 7 years
+  ]
   
-  // Create telemetry data with timestamps
-  let current_time = current_time_seconds()
-  let old_trace_time = current_time - (40 * 24 * 60 * 60) // 40 days ago
-  let recent_metric_time = current_time - (10 * 24 * 60 * 60) // 10 days ago
-  let old_log_time = current_time - (10 * 24 * 60 * 60) // 10 days ago
+  // Create test data with different timestamps
+  let current_time = Clock::now()
+  let test_data = [
+    ("user_activity", current_time - (40 * 24 * 60 * 60 * 1000)),    // 40 days ago
+    ("performance_metrics", current_time - (100 * 24 * 60 * 60 * 1000)), // 100 days ago
+    ("error_logs", current_time - (400 * 24 * 60 * 60 * 1000)),     // 400 days ago
+    ("audit_trail", current_time - (3000 * 24 * 60 * 60 * 1000))    // 3000 days ago
+  ]
   
-  let trace_data = TelemetryData::with_timestamp("trace", old_trace_time)
-  let metric_data = TelemetryData::with_timestamp("metric", recent_metric_time)
-  let log_data = TelemetryData::with_timestamp("log", old_log_time)
+  // Check which data should be expired
+  for (data_type, timestamp) in test_data {
+    let retention_days = policies.find(|(dt, _)| dt == data_type).unwrap().1
+    let expiration_time = timestamp + (retention_days * 24 * 60 * 60 * 1000)
+    
+    let is_expired = current_time > expiration_time
+    let should_be_expired = RetentionManager::is_expired(retention_manager, data_type, timestamp)
+    
+    assert_eq(is_expired, should_be_expired)
+  }
   
-  // Apply retention policy
-  let should_retain_trace = RetentionPolicy::should_retain(retention_policy, trace_data)
-  let should_retain_metric = RetentionPolicy::should_retain(retention_policy, metric_data)
-  let should_retain_log = RetentionPolicy::should_retain(retention_policy, log_data)
+  // Test data cleanup
+  let expired_data = test_data.filter(|(data_type, timestamp)| {
+    RetentionManager::is_expired(retention_manager, data_type, timestamp)
+  })
   
-  // Verify retention decisions
-  assert_false(should_retain_trace) // Trace data is older than 30 days
-  assert_true(should_retain_metric) // Metric data is newer than 90 days
-  assert_false(should_retain_log) // Log data is older than 7 days
+  assert_eq(expired_data.length(), 3) // user_activity, performance_metrics, error_logs should be expired
+  
+  // Test retention policy enforcement
+  let cleanup_count = RetentionManager::enforce_retention_policies(retention_manager, test_data)
+  assert_eq(cleanup_count, 3)
 }
 
 // Test 5: Secure Data Transmission
 test "secure data transmission" {
-  let client = SecureHttpClient::new()
+  // Test secure transmission of telemetry data
+  let secure_transmitter = SecureTransmitter::new()
   
-  // Test secure HTTP request
-  let headers = [
-    ("Authorization", "Bearer secure_token"),
-    ("Content-Type", "application/json")
-  ]
-  let request = SecureHttpRequest::new(
-    "POST", 
-    "https://secure.example.com/api/telemetry", 
-    headers, 
-    Some("encrypted_telemetry_data"),
-    true // Use HTTPS
-  )
+  // Create telemetry data
+  let telemetry_payload = TelemetryPayload::new()
+  TelemetryPayload::add_span(telemetry_payload, create_test_span("secure-span"))
+  TelemetryPayload::add_metric(telemetry_payload, "test.metric", 42.5)
+  TelemetryPayload::add_log(telemetry_payload, "test log message")
   
-  // Verify request is secure
-  assert_true(SecureHttpRequest::is_secure(request))
-  assert_eq(SecureHttpRequest::http_method(request), "POST")
-  assert_eq(SecureHttpRequest::url(request), "https://secure.example.com/api/telemetry")
+  // Test transmission with TLS
+  let tls_transmitter = SecureTransmitter::with_tls(secure_transmitter, "TLS-1.3")
+  let transmission_result = SecureTransmitter::transmit(tls_transmitter, telemetry_payload, "https://secure-telemetry.example.com")
   
-  // Test TLS verification
-  assert_true(SecureHttpClient::verify_tls_certificate(client, "secure.example.com"))
-  assert_false(SecureHttpClient::verify_tls_certificate(client, "unsecure.example.com"))
+  assert_true(transmission_result.success)
+  assert_true(transmission_result.encrypted)
+  assert_true(transmission_result.authenticated)
+  
+  // Test transmission with mutual TLS
+  let mtls_transmitter = SecureTransmitter::with_mutual_tls(secure_transmitter, "client.crt", "client.key")
+  let mtls_result = SecureTransmitter::transmit(mtls_transmitter, telemetry_payload, "https://secure-telemetry.example.com")
+  
+  assert_true(mtls_result.success)
+  assert_true(mtls_result.encrypted)
+  assert_true(mtls_result.authenticated)
+  assert_true(mtls_result.client_authenticated)
+  
+  // Test transmission failure with insecure endpoint
+  let insecure_result = SecureTransmitter::transmit(tls_transmitter, telemetry_payload, "http://insecure-telemetry.example.com")
+  assert_false(insecure_result.success)
+  assert_eq(insecure_result.error, "Insecure transmission protocol rejected")
 }
 
 // Test 6: Audit Logging
-test "audit logging for security events" {
+test "audit logging" {
+  // Test comprehensive audit logging
   let audit_logger = AuditLogger::new()
   
-  // Log security events
-  AuditLogger::log_access(audit_logger, "user_123", "telemetry_data_456", "read", true)
-  AuditLogger::log_access(audit_logger, "user_789", "telemetry_data_456", "write", false)
-  AuditLogger::log_access(audit_logger, "admin_user", "telemetry_data_456", "delete", true)
+  // Test audit events
+  let audit_events = [
+    ("user_login", "user123", "success", "User logged in from IP 192.168.1.100"),
+    ("data_access", "analyst1", "success", "Accessed performance metrics for date range 2023-01-01 to 2023-01-31"),
+    ("permission_denied", "viewer1", "failure", "Attempted to delete sensitive telemetry data"),
+    ("data_export", "admin1", "success", "Exported telemetry data to file export_20230131.csv"),
+    ("config_change", "admin1", "success", "Updated retention policy for error logs from 90 to 365 days")
+  ]
   
-  // Retrieve audit logs
-  let access_logs = AuditLogger::get_access_logs(audit_logger, "telemetry_data_456")
+  for (event_type, user_id, result, description) in audit_events {
+    let audit_event = AuditEvent::new(event_type, user_id, result, description)
+    AuditLogger::log_event(audit_logger, audit_event)
+  }
   
-  // Verify audit logs are recorded
-  assert_eq(access_logs.length(), 3)
+  // Verify audit log entries
+  let audit_logs = AuditLogger::get_logs(audit_logger)
+  assert_eq(audit_logs.length(), 5)
   
-  // Verify specific log entries
-  let first_log = access_logs[0]
-  assert_eq(AuditLog::user_id(first_log), "user_123")
-  assert_eq(AuditLog::resource_id(first_log), "telemetry_data_456")
-  assert_eq(AuditLog::action(first_log), "read")
-  assert_true(AuditLog::success(first_log))
+  for i = 0; i < audit_logs.length(); i = i + 1 {
+    let (event_type, user_id, result, description) = audit_events[i]
+    let log_entry = audit_logs[i]
+    
+    assert_eq(log_entry.event_type, event_type)
+    assert_eq(log_entry.user_id, user_id)
+    assert_eq(log_entry.result, result)
+    assert_eq(log_entry.description, description)
+    assert_true(log_entry.timestamp > 0)
+    assert_true(log_entry.signature.length() > 0) // Should be digitally signed
+  }
   
-  let second_log = access_logs[1]
-  assert_eq(AuditLog::user_id(second_log), "user_789")
-  assert_eq(AuditLog::resource_id(second_log), "telemetry_data_456")
-  assert_eq(AuditLog::action(second_log), "write")
-  assert_false(AuditLog::success(second_log))
+  // Test audit log integrity
+  let is_intact = AuditLogger::verify_integrity(audit_logger)
+  assert_true(is_intact)
+  
+  // Test audit log tampering detection
+  AuditLogger::tamper_with_log(audit_logger, 2)
+  let is_tampered = AuditLogger::verify_integrity(audit_logger)
+  assert_false(is_tampered)
 }
 
-// Test 7: Data Anonymization
-test "data anonymization for privacy" {
-  let pii_data = PII::new()
+// Test 7: Privacy-Preserving Analytics
+test "privacy-preserving analytics" {
+  // Test privacy-preserving analytics techniques
+  let privacy_analyzer = PrivacyAnalyzer::new()
   
-  // Add PII data
-  PII::add_field(pii_data, "name", "John Doe")
-  PII::add_field(pii_data, "email", "john.doe@example.com")
-  PII::add_field(pii_data, "phone", "+1-555-123-4567")
-  PII::add_field(pii_data, "address", "123 Main St, Anytown, USA")
+  // Test data anonymization
+  let personal_data = [
+    ("email", "john.doe@example.com"),
+    ("phone", "555-123-4567"),
+    ("ip_address", "192.168.1.100"),
+    ("user_id", "12345")
+  ]
   
-  // Anonymize PII data
-  let anonymized_data = Privacy::anonymize_pii(pii_data)
-  
-  // Verify PII is anonymized
-  let name = PII::get_field(anonymized_data, "name")
-  match name {
-    Some(v) => assert_eq(v, "REDACTED")
-    None => assert_true(false)
+  for (field_type, value) in personal_data {
+    let anonymized = PrivacyAnalyzer::anonymize(privacy_analyzer, field_type, value)
+    assert_true(anonymized != value)
+    assert_true(anonymized.length() > 0)
+    
+    // Verify anonymization is consistent
+    let anonymized_again = PrivacyAnalyzer::anonymize(privacy_analyzer, field_type, value)
+    assert_eq(anonymized, anonymized_again)
   }
   
-  let email = PII::get_field(anonymized_data, "email")
-  match email {
-    Some(v) => assert_eq(v, "****@****.com")
-    None => assert_true(false)
-  }
+  // Test differential privacy
+  let sensitive_values = [10, 15, 20, 25, 30, 35, 40, 45, 50]
+  let epsilon = 1.0 // Privacy parameter
   
-  let phone = PII::get_field(anonymized_data, "phone")
-  match phone {
-    Some(v) => assert_eq(v, "***-***-****")
-    None => assert_true(false)
-  }
+  let noisy_average = PrivacyAnalyzer::noisy_average(privacy_analyzer, sensitive_values, epsilon)
+  let actual_average = sensitive_values.reduce(|acc, val| acc + val, 0) / sensitive_values.length()
   
-  let address = PII::get_field(anonymized_data, "address")
-  match address {
-    Some(v) => assert_eq(v, "REDACTED")
-    None => assert_true(false)
-  }
+  // Verify noisy average is close to actual average but not exactly the same
+  assert_true(noisy_average > actual_average - 5.0)
+  assert_true(noisy_average < actual_average + 5.0)
+  assert_true(noisy_average != actual_average.to_float())
+  
+  // Test k-anonymity
+  let quasi_identifiers = [
+    ("age", "25-30"),
+    ("zip_code", "12345"),
+    ("gender", "M")
+  ]
+  
+  let is_k_anonymous = PrivacyAnalyzer::check_k_anonymity(privacy_analyzer, quasi_identifiers, 5)
+  assert_true(is_k_anonymous)
 }
 
-// Test 8: Secure Configuration Management
-test "secure configuration management" {
-  let config_manager = SecureConfigManager::new()
+// Test 8: Security Incident Detection
+test "security incident detection" {
+  // Test security incident detection
+  let incident_detector = SecurityIncidentDetector::new()
   
-  // Set secure configuration
-  SecureConfigManager::set(config_manager, "database.password", "secure_db_password", true)
-  SecureConfigManager::set(config_manager, "api.secret_key", "secure_api_key", true)
-  SecureConfigManager::set(config_manager, "service.port", "8080", false)
-  SecureConfigManager::set(config_manager, "service.name", "azimuth", false)
+  // Test normal telemetry patterns
+  let normal_patterns = [
+    ("user_login", 10),     // 10 logins per minute
+    ("data_access", 50),    // 50 data accesses per minute
+    ("api_calls", 100),     // 100 API calls per minute
+    ("error_rate", 0.01)    // 1% error rate
+  ]
   
-  // Verify secure configuration is encrypted
-  let db_password = SecureConfigManager::get(config_manager, "database.password")
-  match db_password {
-    Some(v) => assert_eq(v, "secure_db_password")
-    None => assert_true(false)
+  // Test anomaly detection
+  let anomaly_patterns = [
+    ("user_login", 1000),   // 1000 logins per minute (potential brute force)
+    ("data_access", 10000), // 10000 data accesses per minute (potential data scraping)
+    ("api_calls", 5000),    // 5000 API calls per minute (potential DDoS)
+    ("error_rate", 0.5)     // 50% error rate (potential system issue)
+  ]
+  
+  // Verify normal patterns don't trigger incidents
+  for (metric, value) in normal_patterns {
+    let incident = IncidentDetector::analyze_pattern(incident_detector, metric, value)
+    assert_true(incident.is_none())
   }
   
-  let api_key = SecureConfigManager::get(config_manager, "api.secret_key")
-  match api_key {
-    Some(v) => assert_eq(v, "secure_api_key")
-    None => assert_true(false)
+  // Verify anomaly patterns trigger incidents
+  for (metric, value) in anomaly_patterns {
+    let incident = IncidentDetector::analyze_pattern(incident_detector, metric, value)
+    assert_true(incident.is_some())
+    
+    let detected_incident = incident.unwrap()
+    assert_true(detected_incident.severity >= 5) // Should be high severity
+    assert_true(detected_incident.description.length() > 0)
+    assert_true(detected_incident.timestamp > 0)
   }
   
-  // Verify non-secure configuration is stored as-is
-  let port = SecureConfigManager::get(config_manager, "service.port")
-  match port {
-    Some(v) => assert_eq(v, "8080")
-    None => assert_true(false)
-  }
+  // Test incident correlation
+  let correlated_incident = IncidentDetector::correlate_incidents(incident_detector, [
+    ("user_login", 1000),
+    ("error_rate", 0.5)
+  ])
   
-  let name = SecureConfigManager::get(config_manager, "service.name")
-  match name {
-    Some(v) => assert_eq(v, "azimuth")
-    None => assert_true(false)
-  }
-  
-  // Test configuration access control
-  let privileged_user = User::new("admin", "admin")
-  let regular_user = User::new("user", "user")
-  
-  assert_true(SecureConfigManager::can_access(config_manager, privileged_user, "database.password"))
-  assert_false(SecureConfigManager::can_access(config_manager, regular_user, "database.password"))
-  assert_true(SecureConfigManager::can_access(config_manager, regular_user, "service.port"))
+  assert_true(correlated_incident.is_some())
+  assert_eq(correlated_incident.unwrap().incident_type, "brute_force_attack")
 }
 
-// Test 9: Security Threat Detection
-test "security threat detection" {
-  let threat_detector = ThreatDetector::new()
-  
-  // Configure threat detection rules
-  ThreatDetector::add_rule(threat_detector, "unusual_access_pattern", 
-    "Detects unusual access patterns that may indicate unauthorized access")
-  ThreatDetector::add_rule(threat_detector, "data_exfiltration", 
-    "Detects potential data exfiltration attempts")
-  ThreatDetector::add_rule(threat_detector, "privilege_escalation", 
-    "Detects potential privilege escalation attempts")
-  
-  // Simulate security events
-  let normal_access = SecurityEvent::new("user_123", "telemetry_data", "read", true)
-  let unusual_access = SecurityEvent::new("user_456", "telemetry_data", "read", true)
-  let failed_access = SecurityEvent::new("user_789", "sensitive_data", "write", false)
-  
-  // Add events to detector
-  ThreatDetector::add_event(threat_detector, normal_access)
-  ThreatDetector::add_event(threat_detector, unusual_access)
-  ThreatDetector::add_event(threat_detector, failed_access)
-  
-  // Simulate multiple unusual accesses from the same user
-  for i in 0..10 {
-    let event = SecurityEvent::new("user_456", "telemetry_data", "read", true)
-    ThreatDetector::add_event(threat_detector, event)
-  }
-  
-  // Detect threats
-  let threats = ThreatDetector::detect_threats(threat_detector)
-  
-  // Verify threats are detected
-  assert_true(threats.length() > 0)
-  
-  // Verify specific threat types
-  let has_unusual_access = threats.any(fn(threat) { Threat::type(threat) == "unusual_access_pattern" })
-  assert_true(has_unusual_access)
-}
-
-// Test 10: Compliance with Privacy Regulations
-test "compliance with privacy regulations" {
+// Test 9: Compliance Verification
+test "compliance verification" {
+  // Test compliance with privacy regulations
   let compliance_checker = ComplianceChecker::new()
   
-  // Configure compliance rules for GDPR
-  ComplianceChecker::add_regulation(compliance_checker, "GDPR", [
-    "right_to_access",
-    "right_to_rectification",
-    "right_to_erasure",
-    "right_to_portability",
-    "privacy_by_design"
-  ])
+  // Test GDPR compliance
+  let gdpr_requirements = [
+    ("data_minimization", true),
+    ("purpose_limitation", true),
+    ("storage_limitation", true),
+    ("accuracy", true),
+    ("security", true),
+    ("accountability", true)
+  ]
   
-  // Configure compliance rules for CCPA
-  ComplianceChecker::add_regulation(compliance_checker, "CCPA", [
-    "right_to_know",
-    "right_to_delete",
-    "right_to_opt_out",
-    "right_to_non_discrimination"
-  ])
+  for (requirement, expected) in gdpr_requirements {
+    let is_compliant = ComplianceChecker::check_gdpr_requirement(compliance_checker, requirement)
+    assert_eq(is_compliant, expected)
+  }
   
-  // Create telemetry data with compliance metadata
-  let telemetry_data = TelemetryData::new()
-  TelemetryData::add_compliance_metadata(telemetry_data, "GDPR", [
-    "lawful_basis:consent",
-    "data_subject:john_doe",
-    "retention_period:365_days"
-  ])
-  TelemetryData::add_compliance_metadata(telemetry_data, "CCPA", [
-    "data_category:activity_data",
-    "business_purpose:analytics",
-    "sold:false"
-  ])
+  // Test CCPA compliance
+  let ccpa_requirements = [
+    ("right_to_know", true),
+    ("right_to_delete", true),
+    ("right_to_opt_out", true),
+    ("right_to_non_discrimination", true)
+  ]
   
-  // Check compliance
-  let gdpr_compliance = ComplianceChecker::check_compliance(compliance_checker, telemetry_data, "GDPR")
-  let ccpa_compliance = ComplianceChecker::check_compliance(compliance_checker, telemetry_data, "CCPA")
+  for (requirement, expected) in ccpa_requirements {
+    let is_compliant = ComplianceChecker::check_ccpa_requirement(compliance_checker, requirement)
+    assert_eq(is_compliant, expected)
+  }
   
-  // Verify compliance results
-  assert_true(gdpr_compliance.is_compliant)
-  assert_true(ccpa_compliance.is_compliant)
+  // Test HIPAA compliance
+  let hipaa_requirements = [
+    ("administrative_safeguards", true),
+    ("physical_safeguards", true),
+    ("technical_safeguards", true),
+    ("breach_notification", true)
+  ]
   
-  // Verify specific compliance requirements
-  let has_right_to_erasure = gdpr_compliance.requirements.contains("right_to_erasure")
-  assert_true(has_right_to_erasure)
+  for (requirement, expected) in hipaa_requirements {
+    let is_compliant = ComplianceChecker::check_hipaa_requirement(compliance_checker, requirement)
+    assert_eq(is_compliant, expected)
+  }
   
-  let has_right_to_delete = ccpa_compliance.requirements.contains("right_to_delete")
-  assert_true(has_right_to_delete)
+  // Generate compliance report
+  let compliance_report = ComplianceChecker::generate_report(compliance_checker)
+  assert_true(compliance_report.gdpr_compliant)
+  assert_true(compliance_report.ccpa_compliant)
+  assert_true(compliance_report.hipaa_compliant)
+  assert_true(compliance_report.overall_score >= 95)
+}
+
+// Test 10: Security Configuration Validation
+test "security configuration validation" {
+  // Test security configuration validation
+  let config_validator = SecurityConfigValidator::new()
+  
+  // Test secure configurations
+  let secure_configs = [
+    ("encryption_algorithm", "AES-256-GCM"),
+    ("tls_version", "TLS-1.3"),
+    ("key_derivation", "PBKDF2"),
+    ("hash_algorithm", "SHA-256"),
+    ("password_policy", "min_length=12,complexity=high"),
+    ("session_timeout", "30"),
+    ("max_login_attempts", "5")
+  ]
+  
+  for (config_name, config_value) in secure_configs {
+    let is_valid = ConfigValidator::validate_config(config_validator, config_name, config_value)
+    assert_true(is_valid)
+  }
+  
+  // Test insecure configurations
+  let insecure_configs = [
+    ("encryption_algorithm", "DES"),
+    ("tls_version", "SSL-3.0"),
+    ("key_derivation", "MD5"),
+    ("hash_algorithm", "MD5"),
+    ("password_policy", "min_length=6,complexity=low"),
+    ("session_timeout", "1440"), // 24 hours
+    ("max_login_attempts", "100")
+  ]
+  
+  for (config_name, config_value) in insecure_configs {
+    let is_valid = ConfigValidator::validate_config(config_validator, config_name, config_value)
+    assert_false(is_valid)
+  }
+  
+  // Test configuration recommendations
+  let recommendations = ConfigValidator::get_recommendations(config_validator, insecure_configs)
+  assert_true(recommendations.length() > 0)
+  
+  for recommendation in recommendations {
+    assert_true(recommendation.config_name.length() > 0)
+    assert_true(recommendation.current_value.length() > 0)
+    assert_true(recommendation.recommended_value.length() > 0)
+    assert_true(recommendation.reason.length() > 0)
+  }
+}
+
+// Helper function
+func create_test_span(name : String) -> Span {
+  let tracer = TracerProvider::get_tracer("test-tracer")
+  let span = Tracer::start_span(tracer, name)
+  Span::set_attribute(span, "test_attribute", StringValue("test_value"))
+  span
 }
