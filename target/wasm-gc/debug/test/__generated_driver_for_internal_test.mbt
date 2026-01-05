@@ -68,6 +68,13 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     7: (__test_617a696d7574685f776f726b696e675f74657374732e6d6274_7, ["multi-tenant data isolation"]),
     8: (__test_617a696d7574685f776f726b696e675f74657374732e6d6274_8, ["real-time stream processing"]),
   },
+  "azimuth_websocket_communication_tests.mbt": {
+    0: (__test_617a696d7574685f776562736f636b65745f636f6d6d756e69636174696f6e5f74657374732e6d6274_0, ["websocket connection establishment and management"]),
+    1: (__test_617a696d7574685f776562736f636b65745f636f6d6d756e69636174696f6e5f74657374732e6d6274_1, ["websocket message sending and receiving"]),
+    2: (__test_617a696d7574685f776562736f636b65745f636f6d6d756e69636174696f6e5f74657374732e6d6274_2, ["websocket telemetry data streaming"]),
+    3: (__test_617a696d7574685f776562736f636b65745f636f6d6d756e69636174696f6e5f74657374732e6d6274_3, ["websocket reconnection logic and resilience"]),
+    4: (__test_617a696d7574685f776562736f636b65745f636f6d6d756e69636174696f6e5f74657374732e6d6274_4, ["websocket authentication and security"]),
+  },
   "azimuth_webassembly_platform_compatibility_tests.mbt": {
     0: (__test_617a696d7574685f776562617373656d626c795f706c6174666f726d5f636f6d7061746962696c6974795f74657374732e6d6274_0, ["webassembly module loading and initialization"]),
     1: (__test_617a696d7574685f776562617373656d626c795f706c6174666f726d5f636f6d7061746962696c6974795f74657374732e6d6274_1, ["webassembly cross-platform compatibility"]),
