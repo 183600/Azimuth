@@ -5879,6 +5879,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_617a696d7574685f666f63757365645f696e746567726174696f6e5f74657374732e6d6274_8, ["resource structure operations"]),
     9: (__test_617a696d7574685f666f63757365645f696e746567726174696f6e5f74657374732e6d6274_9, ["instrumentation scope operations"]),
   },
+  "azimuth_focused_enhanced_tests.mbt": {
+    0: (__test_617a696d7574685f666f63757365645f656e68616e6365645f74657374732e6d6274_0, ["span lifecycle with proper resource cleanup"]),
+    1: (__test_617a696d7574685f666f63757365645f656e68616e6365645f74657374732e6d6274_1, ["metrics aggregation and accuracy validation"]),
+    2: (__test_617a696d7574685f666f63757365645f656e68616e6365645f74657374732e6d6274_2, ["cross-service context propagation integrity"]),
+    3: (__test_617a696d7574685f666f63757365645f656e68616e6365645f74657374732e6d6274_3, ["structured logging with correlation and sampling"]),
+    4: (__test_617a696d7574685f666f63757365645f656e68616e6365645f74657374732e6d6274_4, ["resource attribute merging and conflict resolution"]),
+    5: (__test_617a696d7574685f666f63757365645f656e68616e6365645f74657374732e6d6274_5, ["concurrent telemetry operations safety"]),
+    6: (__test_617a696d7574685f666f63757365645f656e68616e6365645f74657374732e6d6274_6, ["telemetry pipeline performance under load"]),
+    7: (__test_617a696d7574685f666f63757365645f656e68616e6365645f74657374732e6d6274_7, ["error handling and telemetry resilience"]),
+  },
   "azimuth_focused_edge_case_tests.mbt": {
     0: (__test_617a696d7574685f666f63757365645f656467655f636173655f74657374732e6d6274_0, ["空属性和空值处理测试"]),
     1: (__test_617a696d7574685f666f63757365645f656467655f636173655f74657374732e6d6274_1, ["极长字符串属性处理测试"]),

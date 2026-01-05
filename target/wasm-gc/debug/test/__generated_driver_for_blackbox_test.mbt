@@ -1246,6 +1246,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_focused_integration_tests.mbt": {
   },
+  "azimuth_focused_enhanced_tests.mbt": {
+  },
   "azimuth_focused_edge_case_tests.mbt": {
   },
   "azimuth_fixed_new_tests.mbt": {
