@@ -612,6 +612,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_premium_time_series_analysis_tests.mbt": {
   },
+  "azimuth_premium_test_cases.mbt": {
+  },
   "azimuth_premium_telemetry_tests.mbt": {
   },
   "azimuth_premium_telemetry_system_tests.mbt": {
