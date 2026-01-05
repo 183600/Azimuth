@@ -1,528 +1,459 @@
-// 阿兹米克安全加密测试用例
-// 专注于遥测数据的安全传输、加密存储和隐私保护功能
+// Azimuth Telemetry System - Security and Encryption Tests
+// This file contains test cases for security and encryption functionality
 
-// 测试1: 基本数据加密和解密
-test "基本数据加密和解密测试" {
-  let encryption_service = EncryptionService::new()
+// Test 1: Data Encryption and Decryption
+test "data encryption and decryption" {
+  // Create an encryption key
+  let key = EncryptionKey::generate(AES256)
+  assert_eq(EncryptionKey::algorithm(key), AES256)
+  assert_eq(EncryptionKey::size(key), 32) // 256 bits = 32 bytes
   
-  // 生成加密密钥
-  let encryption_key = EncryptionService::generate_key(encryption_service, "AES-256-GCM")
-  assert_true(encryption_key.length() > 0)
+  // Test string encryption
+  let plaintext = "This is sensitive telemetry data that must be encrypted"
+  let encrypted_data = Encryption::encrypt(key, plaintext.to_bytes())
   
-  // 测试字符串加密
-  let plaintext_data = "sensitive.telemetry.data"
-  let encrypted_data = EncryptionService::encrypt(encryption_service, plaintext_data, encryption_key)
-  
-  // 验证加密结果
+  // Verify encrypted data is different from plaintext
   assert_true(encrypted_data.length() > 0)
-  assert_neq(encrypted_data, plaintext_data) // 加密后应该与原文不同
+  assert_neq(encrypted_data.to_string(), plaintext)
   
-  // 测试解密
-  let decrypted_data = EncryptionService::decrypt(encryption_service, encrypted_data, encryption_key)
-  assert_eq(decrypted_data, plaintext_data) // 解密后应该与原文相同
+  // Test decryption
+  let decrypted_data = Encryption::decrypt(key, encrypted_data)
+  let decrypted_text = decrypted_data.to_string()
+  assert_eq(decrypted_text, plaintext)
   
-  // 测试二进制数据加密
-  let binary_data = [0x01, 0x02, 0x03, 0x04, 0x05]
-  let encrypted_binary = EncryptionService::encrypt_binary(encryption_service, binary_data, encryption_key)
-  let decrypted_binary = EncryptionService::decrypt_binary(encryption_service, encrypted_binary, encryption_key)
+  // Test binary data encryption
+  let binary_data = [0x00, 0x01, 0x02, 0x03, 0xFF, 0xFE, 0xFD, 0xFC] * 16
+  let encrypted_binary = Encryption::encrypt(key, binary_data)
+  let decrypted_binary = Encryption::decrypt(key, encrypted_binary)
+  assert_eq(decrypted_binary, binary_data)
   
-  // 验证二进制数据加密解密
-  assert_eq(decrypted_binary.length(), binary_data.length())
-  for i in 0..binary_data.length() {
-    assert_eq(decrypted_binary[i], binary_data[i])
-  }
+  // Test with different key sizes
+  let aes128_key = EncryptionKey::generate(AES128)
+  let aes192_key = EncryptionKey::generate(AES192)
+  
+  let encrypted_128 = Encryption::encrypt(aes128_key, plaintext.to_bytes())
+  let encrypted_192 = Encryption::encrypt(aes192_key, plaintext.to_bytes())
+  
+  let decrypted_128 = Encryption::decrypt(aes128_key, encrypted_128)
+  let decrypted_192 = Encryption::decrypt(aes192_key, encrypted_192)
+  
+  assert_eq(decrypted_128.to_string(), plaintext)
+  assert_eq(decrypted_192.to_string(), plaintext)
 }
 
-// 测试2: 遥测数据端到端加密
-test "遥测数据端到端加密测试" {
-  let telemetry_service = TelemetryService::new()
-  let encryption_service = EncryptionService::new()
+// Test 2: Asymmetric Encryption
+test "asymmetric encryption" {
+  // Generate RSA key pair
+  let key_pair = RSAKeyPair::generate(2048)
+  let public_key = RSAKeyPair::public_key(key_pair)
+  let private_key = RSAKeyPair::private_key(key_pair)
   
-  // 创建加密的遥测服务
-  let secure_telemetry = SecureTelemetryService::new(telemetry_service, encryption_service)
+  // Test encryption with public key and decryption with private key
+  let plaintext = "This is data encrypted with a public key"
+  let encrypted_data = RSAEncryption::encrypt(public_key, plaintext.to_bytes())
+  let decrypted_data = RSAEncryption::decrypt(private_key, encrypted_data)
+  assert_eq(decrypted_data.to_string(), plaintext)
   
-  // 生成密钥对（发送方和接收方）
-  let sender_key = EncryptionService::generate_key(encryption_service, "RSA-2048")
-  let receiver_key = EncryptionService::generate_key(encryption_service, "RSA-2048")
+  // Test signing with private key and verification with public key
+  let message = "This is a message to be signed"
+  let signature = RSASignature::sign(private_key, message.to_bytes())
+  let is_valid = RSASignature::verify(public_key, message.to_bytes(), signature)
+  assert_true(is_valid)
   
-  // 创建遥测数据
-  let telemetry_data = TelemetryData::new()
-  TelemetryData::add_metric(telemetry_data, "cpu.usage", 75.5)
-  TelemetryData::add_metric(telemetry_data, "memory.usage", 62.3)
-  TelemetryData::add_attribute(telemetry_data, "user.id", "user-12345")
-  TelemetryData::add_attribute(telemetry_data, "session.id", "session-67890")
+  // Test with tampered message
+  let tampered_message = "This is a tampered message"
+  let is_tampered_valid = RSASignature::verify(public_key, tampered_message.to_bytes(), signature)
+  assert_false(is_tampered_valid)
   
-  // 发送方加密遥测数据
-  let encrypted_telemetry = SecureTelemetryService::encrypt_data(secure_telemetry, telemetry_data, receiver_key.public_key)
+  // Test with different key sizes
+  let key_pair_4096 = RSAKeyPair::generate(4096)
+  let public_key_4096 = RSAKeyPair::public_key(key_pair_4096)
+  let private_key_4096 = RSAKeyPair::private_key(key_pair_4096)
   
-  // 验证加密后的数据
-  assert_true(encrypted_telemetry.length() > 0)
-  assert_neq(encrypted_telemetry, telemetry_data.to_string())
-  
-  // 接收方解密遥测数据
-  let decrypted_telemetry = SecureTelemetryService::decrypt_data(secure_telemetry, encrypted_telemetry, receiver_key.private_key)
-  
-  // 验证解密后的数据完整性
-  assert_eq(TelemetryData::metric_count(decrypted_telemetry), 2)
-  assert_eq(TelemetryData::attribute_count(decrypted_telemetry), 2)
-  
-  let cpu_usage = TelemetryData::get_metric(decrypted_telemetry, "cpu.usage")
-  match cpu_usage {
-    Some(value) => assert_eq(value, 75.5)
-    None => assert_true(false)
-  }
-  
-  let user_id = TelemetryData::get_attribute(decrypted_telemetry, "user.id")
-  match user_id {
-    Some(StringValue(id)) => assert_eq(id, "user-12345")
-    None => assert_true(false)
-  }
+  let encrypted_4096 = RSAEncryption::encrypt(public_key_4096, plaintext.to_bytes())
+  let decrypted_4096 = RSAEncryption::decrypt(private_key_4096, encrypted_4096)
+  assert_eq(decrypted_4096.to_string(), plaintext)
 }
 
-// 测试3: 遥测数据传输安全
-test "遥测数据传输安全测试" {
-  let secure_channel = SecureChannel::new()
-  let encryption_service = EncryptionService::new()
-  
-  // 创建安全通信通道
-  let channel_key = EncryptionService::generate_key(encryption_service, "AES-256-GCM")
-  SecureChannel::configure_encryption(secure_channel, channel_key)
-  
-  // 创建遥测数据包
-  let telemetry_packet = TelemetryPacket::new()
-  TelemetryPacket::add_span_data(telemetry_packet, SpanData::new("trace-123", "span-456", "service.operation"))
-  TelemetryPacket::add_metric_data(telemetry_packet, MetricData::new("response.time", 125.5))
-  TelemetryPacket::add_log_data(telemetry_packet, LogData::new("info", "Operation completed successfully"))
-  
-  // 序列化数据包
-  let serialized_packet = TelemetryPacket::serialize(telemetry_packet)
-  
-  // 加密数据包
-  let encrypted_packet = SecureChannel::encrypt_packet(secure_channel, serialized_packet)
-  
-  // 添加完整性校验
-  let packet_with_integrity = SecureChannel::add_integrity_check(secure_channel, encrypted_packet)
-  
-  // 模拟网络传输
-  let transmitted_packet = packet_with_integrity
-  
-  // 接收方验证完整性
-  let integrity_valid = SecureChannel::verify_integrity(secure_channel, transmitted_packet)
-  assert_true(integrity_valid)
-  
-  // 解密数据包
-  let decrypted_packet = SecureChannel::decrypt_packet(secure_channel, transmitted_packet)
-  
-  // 反序列化数据包
-  let deserialized_packet = TelemetryPacket::deserialize(decrypted_packet)
-  
-  // 验证数据包完整性
-  assert_eq(TelemetryPacket::span_count(deserialized_packet), 1)
-  assert_eq(TelemetryPacket::metric_count(deserialized_packet), 1)
-  assert_eq(TelemetryPacket::log_count(deserialized_packet), 1)
-  
-  // 验证具体数据内容
-  let span_data = TelemetryPacket::get_span_data(deserialized_packet, 0)
-  assert_eq(SpanData::trace_id(span_data), "trace-123")
-  assert_eq(SpanData::span_id(span_data), "span-456")
-  
-  let metric_data = TelemetryPacket::get_metric_data(deserialized_packet, 0)
-  assert_eq(MetricData::name(metric_data), "response.time")
-  assert_eq(MetricData::value(metric_data), 125.5)
-  
-  let log_data = TelemetryPacket::get_log_data(deserialized_packet, 0)
-  assert_eq(LogData::level(log_data), "info")
-  assert_eq(LogData::message(log_data), "Operation completed successfully")
-}
-
-// 测试4: 敏感数据脱敏和匿名化
-test "敏感数据脱敏和匿名化测试" {
-  let privacy_service = PrivacyService::new()
-  
-  // 配置脱敏规则
-  PrivacyService::add_masking_rule(privacy_service, "user.email", "email")
-  PrivacyService::add_masking_rule(privacy_service, "user.phone", "phone")
-  PrivacyService::add_masking_rule(privacy_service, "credit.card", "credit_card")
-  PrivacyService::add_anonymization_rule(privacy_service, "user.id", "hash")
-  PrivacyService::add_anonymization_rule(privacy_service, "ip.address", "tokenize")
-  
-  // 创建包含敏感信息的遥测数据
-  let sensitive_data = TelemetryData::new()
-  TelemetryData::add_attribute(sensitive_data, "user.email", "john.doe@example.com")
-  TelemetryData::add_attribute(sensitive_data, "user.phone", "+1-555-123-4567")
-  TelemetryData::add_attribute(sensitive_data, "credit.card", "4532-1234-5678-9012")
-  TelemetryData::add_attribute(sensitive_data, "user.id", "user-12345")
-  TelemetryData::add_attribute(sensitive_data, "ip.address", "192.168.1.100")
-  TelemetryData::add_attribute(sensitive_data, "non.sensitive", "public.data")
-  
-  // 应用脱敏处理
-  let masked_data = PrivacyService::apply_masking(privacy_service, sensitive_data)
-  
-  // 验证脱敏结果
-  let masked_email = TelemetryData::get_attribute(masked_data, "user.email")
-  match masked_email {
-    Some(StringValue(email)) => {
-      assert_eq(email, "j***.***@example.com") // 邮箱脱敏格式
-    }
-    None => assert_true(false)
-  }
-  
-  let masked_phone = TelemetryData::get_attribute(masked_data, "user.phone")
-  match masked_phone {
-    Some(StringValue(phone)) => {
-      assert_eq(phone, "+1-***-***-4567") // 电话脱敏格式
-    }
-    None => assert_true(false)
-  }
-  
-  let masked_card = TelemetryData::get_attribute(masked_data, "credit.card")
-  match masked_card {
-    Some(StringValue(card)) => {
-      assert_eq(card, "****-****-****-9012") // 信用卡脱敏格式
-    }
-    None => assert_true(false)
-  }
-  
-  // 应用匿名化处理
-  let anonymized_data = PrivacyService::apply_anonymization(privacy_service, sensitive_data)
-  
-  // 验证匿名化结果
-  let anonymized_user_id = TelemetryData::get_attribute(anonymized_data, "user.id")
-  match anonymized_user_id {
-    Some(StringValue(user_id)) => {
-      assert_neq(user_id, "user-12345") // 应该被哈希化
-      assert_eq(user_id.length(), 64) // SHA-256哈希长度
-    }
-    None => assert_true(false)
-  }
-  
-  let anonymized_ip = TelemetryData::get_attribute(anonymized_data, "ip.address")
-  match anonymized_ip {
-    Some(StringValue(ip)) => {
-      assert_neq(ip, "192.168.1.100") // 应该被令牌化
-      assert_true(ip.starts_with("token-")) // 令牌化格式
-    }
-    None => assert_true(false)
-  }
-  
-  // 验证非敏感数据未被修改
-  let non_sensitive = TelemetryData::get_attribute(anonymized_data, "non.sensitive")
-  match non_sensitive {
-    Some(StringValue(data)) => assert_eq(data, "public.data")
-    None => assert_true(false)
-  }
-}
-
-// 测试5: 访问控制和权限管理
-test "访问控制和权限管理测试" {
-  let access_control = AccessControl::new()
-  
-  // 创建角色和权限
-  let admin_role = Role::new("admin")
-  let analyst_role = Role::new("analyst")
-  let viewer_role = Role::new("viewer")
-  
-  // 定义权限
-  let read_permission = Permission::new("telemetry.read")
-  let write_permission = Permission::new("telemetry.write")
-  let delete_permission = Permission::new("telemetry.delete")
-  let admin_permission = Permission::new("telemetry.admin")
-  
-  // 分配权限给角色
-  Role::add_permission(admin_role, read_permission)
-  Role::add_permission(admin_role, write_permission)
-  Role::add_permission(admin_role, delete_permission)
-  Role::add_permission(admin_role, admin_permission)
-  
-  Role::add_permission(analyst_role, read_permission)
-  Role::add_permission(analyst_role, write_permission)
-  
-  Role::add_permission(viewer_role, read_permission)
-  
-  // 注册角色
-  AccessControl::register_role(access_control, admin_role)
-  AccessControl::register_role(access_control, analyst_role)
-  AccessControl::register_role(access_control, viewer_role)
-  
-  // 创建用户
-  let admin_user = User::new("admin-user")
-  let analyst_user = User::new("analyst-user")
-  let viewer_user = User::new("viewer-user")
-  
-  // 分配角色给用户
-  AccessControl::assign_role(access_control, admin_user, "admin")
-  AccessControl::assign_role(access_control, analyst_user, "analyst")
-  AccessControl::assign_role(access_control, viewer_user, "viewer")
-  
-  // 创建遥测数据
-  let telemetry_data = TelemetryData::new()
-  TelemetryData::add_metric(telemetry_data, "cpu.usage", 75.5)
-  TelemetryData::add_attribute(telemetry_data, "sensitive.data", "confidential")
-  
-  // 测试访问权限
-  // 管理员应该有所有权限
-  assert_true(AccessControl::has_permission(access_control, admin_user, "telemetry.read"))
-  assert_true(AccessControl::has_permission(access_control, admin_user, "telemetry.write"))
-  assert_true(AccessControl::has_permission(access_control, admin_user, "telemetry.delete"))
-  assert_true(AccessControl::has_permission(access_control, admin_user, "telemetry.admin"))
-  
-  // 分析师应该有读写权限
-  assert_true(AccessControl::has_permission(access_control, analyst_user, "telemetry.read"))
-  assert_true(AccessControl::has_permission(access_control, analyst_user, "telemetry.write"))
-  assert_false(AccessControl::has_permission(access_control, analyst_user, "telemetry.delete"))
-  assert_false(AccessControl::has_permission(access_control, analyst_user, "telemetry.admin"))
-  
-  // 查看者应该只有读权限
-  assert_true(AccessControl::has_permission(access_control, viewer_user, "telemetry.read"))
-  assert_false(AccessControl::has_permission(access_control, viewer_user, "telemetry.write"))
-  assert_false(AccessControl::has_permission(access_control, viewer_user, "telemetry.delete"))
-  assert_false(AccessControl::has_permission(access_control, viewer_user, "telemetry.admin"))
-  
-  // 测试数据访问控制
-  let secured_data = SecuredTelemetryData::new(telemetry_data)
-  SecuredTelemetryData::set_access_policy(secured_data, AccessPolicy::role_based("telemetry.read"))
-  
-  // 验证数据访问
-  assert_true(SecuredTelemetryData::can_access(secured_data, admin_user))
-  assert_true(SecuredTelemetryData::can_access(secured_data, analyst_user))
-  assert_true(SecuredTelemetryData::can_access(secured_data, viewer_user))
-  
-  // 创建更严格的数据访问策略
-  let restricted_data = SecuredTelemetryData::new(telemetry_data)
-  SecuredTelemetryData::set_access_policy(restricted_data, AccessPolicy::role_based("telemetry.admin"))
-  
-  // 验证受限数据访问
-  assert_true(SecuredTelemetryData::can_access(restricted_data, admin_user))
-  assert_false(SecuredTelemetryData::can_access(restricted_data, analyst_user))
-  assert_false(SecuredTelemetryData::can_access(restricted_data, viewer_user))
-}
-
-// 测试6: 审计日志和合规性
-test "审计日志和合规性测试" {
-  let audit_service = AuditService::new()
-  let compliance_checker = ComplianceChecker::new()
-  
-  // 配置审计规则
-  AuditService::log_data_access(audit_service, true)
-  AuditService::log_data_modification(audit_service, true)
-  AuditService::log_permission_changes(audit_service, true)
-  AuditService::log_authentication_events(audit_service, true)
-  
-  // 配置合规性规则（GDPR、HIPAA等）
-  ComplianceChecker::add_standard(compliance_checker, "GDPR")
-  ComplianceChecker::add_standard(compliance_checker, "HIPAA")
-  ComplianceChecker::add_data_retention_policy(compliance_checker, "telemetry.data", 2555) // 7年
-  
-  // 创建用户操作
-  let user = User::new("test-user")
-  let sensitive_data = TelemetryData::new()
-  TelemetryData::add_attribute(sensitive_data, "personal.data", "john.doe@example.com")
-  
-  // 记录数据访问
-  let access_event = AuditEvent::data_access(user, "telemetry.data.123", "read")
-  AuditService::record_event(audit_service, access_event)
-  
-  // 记录数据修改
-  let modification_event = AuditEvent::data_modification(user, "telemetry.data.123", "update", [
-    ("cpu.usage", "75.5"),
-    ("memory.usage", "62.3")
-  ])
-  AuditService::record_event(audit_service, modification_event)
-  
-  // 记录权限变更
-  let permission_event = AuditEvent::permission_change("admin-user", "analyst-user", "telemetry.write", "grant")
-  AuditService::record_event(audit_service, permission_event)
-  
-  // 记录认证事件
-  let auth_event = AuditEvent::authentication(user, "login", "success", "192.168.1.100")
-  AuditService::record_event(audit_service, auth_event)
-  
-  // 获取审计日志
-  let audit_logs = AuditService::get_logs(audit_service)
-  assert_eq(audit_logs.length(), 4)
-  
-  // 验证审计日志内容
-  let access_log = audit_logs[0]
-  assert_eq(AuditEvent::event_type(access_log), "data_access")
-  assert_eq(AuditEvent::user_id(access_log), "test-user")
-  assert_eq(AuditEvent::resource_id(access_log), "telemetry.data.123")
-  assert_eq(AuditEvent::action(access_log), "read")
-  
-  // 测试合规性检查
-  let compliance_report = ComplianceChecker::check_compliance(compliance_checker, audit_logs)
-  
-  // 验证合规性报告
-  assert_true(ComplianceReport::is_compliant(compliance_report, "GDPR"))
-  assert_true(ComplianceReport::is_compliant(compliance_report, "HIPAA"))
-  
-  // 测试数据保留策略
-  let old_timestamp = Timestamp::now() - (2555 * 24 * 60 * 60 * 1000) // 7年前
-  let old_data = TelemetryData::with_timestamp(sensitive_data, old_timestamp)
-  
-  let should_retain = ComplianceChecker::should_retain_data(compliance_checker, old_data, "telemetry.data")
-  assert_true(should_retain) // 7年内的数据应该保留
-  
-  // 测试过期数据
-  let very_old_timestamp = Timestamp::now() - (3000 * 24 * 60 * 60 * 1000) // 超过7年
-  let very_old_data = TelemetryData::with_timestamp(sensitive_data, very_old_timestamp)
-  
-  let should_retain_old = ComplianceChecker::should_retain_data(compliance_checker, very_old_data, "telemetry.data")
-  assert_false(should_retain_old) // 超过7年的数据应该删除
-}
-
-// 测试7: 密钥管理和轮换
-test "密钥管理和轮换测试" {
+// Test 3: Key Management
+test "key management" {
+  // Create a key manager
   let key_manager = KeyManager::new()
   
-  // 创建主密钥
-  let master_key = KeyManager::create_master_key(key_manager, "AES-256")
-  assert_true(KeyManager::is_valid_key(master_key))
+  // Generate and store a symmetric key
+  let key_id = KeyManager::generate_key(key_manager, AES256, "telemetry_encryption")
+  assert_true(key_id.length() > 0)
   
-  // 创建数据加密密钥
-  let dek1 = KeyManager::create_data_encryption_key(key_manager, master_key)
-  let dek2 = KeyManager::create_data_encryption_key(key_manager, master_key)
+  // Retrieve the key
+  let retrieved_key = KeyManager::get_key(key_manager, key_id)
+  assert_true(retrieved_key.is_some())
   
-  // 验证密钥不同
-  assert_neq(KeyManager::key_id(dek1), KeyManager::key_id(dek2))
+  match retrieved_key {
+    Some(key) => {
+      assert_eq(EncryptionKey::algorithm(key), AES256)
+      assert_eq(EncryptionKey::size(key), 32)
+    }
+    None => assert_true(false)
+  }
   
-  // 使用密钥加密数据
-  let encryption_service = EncryptionService::new()
-  let plaintext = "sensitive.telemetry.data"
+  // Test key rotation
+  let new_key_id = KeyManager::rotate_key(key_manager, key_id)
+  assert_neq(new_key_id, key_id)
   
-  let encrypted1 = EncryptionService::encrypt(encryption_service, plaintext, KeyManager::get_key_bytes(dek1))
-  let encrypted2 = EncryptionService::encrypt(encryption_service, plaintext, KeyManager::get_key_bytes(dek2))
+  // Old key should still be available for decryption but marked as deprecated
+  let old_key = KeyManager::get_key(key_manager, key_id)
+  assert_true(old_key.is_some())
   
-  // 验证不同密钥产生不同密文
-  assert_neq(encrypted1, encrypted2)
+  match old_key {
+    Some(key) => assert_true(EncryptionKey::is_deprecated(key))
+    None => assert_true(false)
+  }
   
-  // 测试密钥轮换
-  let key_rotation_policy = KeyRotationPolicy::new()
-  KeyRotationPolicy::set_rotation_interval(key_rotation_policy, 86400 * 30) // 30天
-  KeyRotationPolicy::set_max_key_age(key_rotation_policy, 86400 * 90) // 90天
+  // New key should be active
+  let new_key = KeyManager::get_key(key_manager, new_key_id)
+  assert_true(new_key.is_some())
   
-  KeyManager::set_rotation_policy(key_manager, key_rotation_policy)
+  match new_key {
+    Some(key) => assert_false(EncryptionKey::is_deprecated(key))
+    None => assert_true(false)
+  }
   
-  // 模拟密钥轮换
-  let old_dek = dek1
-  let new_dek = KeyManager::rotate_key(key_manager, old_dek, master_key)
+  // Test key expiration
+  let expiring_key_id = KeyManager::generate_key_with_ttl(key_manager, AES128, "temp_key", 3600) // 1 hour TTL
+  let expiring_key = KeyManager::get_key(key_manager, expiring_key_id)
   
-  // 验证新密钥
-  assert_neq(KeyManager::key_id(old_dek), KeyManager::key_id(new_dek))
-  assert_true(KeyManager::is_valid_key(new_dek))
+  match expiring_key {
+    Some(key) => {
+      assert_false(EncryptionKey::is_expired(key))
+      // Simulate expiration for testing
+      EncryptionKey::set_expiration(key, 0L) // Expired now
+      assert_true(EncryptionKey::is_expired(key))
+    }
+    None => assert_true(false)
+  }
   
-  // 测试密钥版本和解密兼容性
-  let key_store = KeyStore::new()
-  KeyStore::store_key(key_store, dek1)
-  KeyStore::store_key(key_store, new_dek)
+  // Test key deletion
+  let delete_result = KeyManager::delete_key(key_manager, key_id)
+  assert_true(delete_result.is_ok())
   
-  // 使用新密钥加密
-  let new_encrypted = EncryptionService::encrypt(encryption_service, plaintext, KeyManager::get_key_bytes(new_dek))
-  
-  // 使用密钥存储解密（自动选择正确密钥）
-  let decrypted1 = KeyStore::decrypt_with_stored_key(key_store, encrypted1)
-  let decrypted2 = KeyStore::decrypt_with_stored_key(key_store, new_encrypted)
-  
-  // 验证解密结果
-  assert_eq(decrypted1, plaintext)
-  assert_eq(decrypted2, plaintext)
-  
-  // 测试密钥撤销
-  KeyManager::revoke_key(key_manager, dek2)
-  assert_false(KeyManager::is_active(dek2))
-  assert_true(KeyManager::is_active(dek1))
-  assert_true(KeyManager::is_active(new_dek))
-  
-  // 测试密钥销毁
-  KeyManager::destroy_key(key_manager, dek2)
-  assert_false(KeyManager::exists(key_manager, KeyManager::key_id(dek2)))
+  let deleted_key = KeyManager::get_key(key_manager, key_id)
+  assert_true(deleted_key.is_none())
 }
 
-// 测试8: 安全威胁检测和防护
-test "安全威胁检测和防护测试" {
-  let threat_detector = ThreatDetector::new()
-  let security_monitor = SecurityMonitor::new()
+// Test 4: Secure Hash Functions
+test "secure hash functions" {
+  // Test SHA-256
+  let data = "This is data to be hashed"
+  let sha256_hash = Hash::sha256(data.to_bytes())
+  assert_eq(sha256_hash.length(), 32) // 256 bits = 32 bytes
   
-  // 配置威胁检测规则
-  ThreatDetector::add_rule(threat_detector, ThreatRule::abnormal_access_pattern())
-  ThreatDetector::add_rule(threat_detector, ThreatRule::data_exfiltration())
-  ThreatDetector::add_rule(threat_detector, ThreatRule::privilege_escalation())
-  ThreatDetector::add_rule(threat_detector, ThreatRule::unusual_encryption_usage())
+  // Verify hash consistency
+  let sha256_hash_again = Hash::sha256(data.to_bytes())
+  assert_eq(sha256_hash, sha256_hash_again)
   
-  // 配置安全监控
-  SecurityMonitor::enable_real_time_detection(security_monitor, true)
-  SecurityMonitor::set_alert_threshold(security_monitor, 3) // 3个事件触发警报
+  // Test SHA-512
+  let sha512_hash = Hash::sha512(data.to_bytes())
+  assert_eq(sha512_hash.length(), 64) // 512 bits = 64 bytes
   
-  // 模拟正常访问模式
-  let normal_user = User::new("normal-user")
-  for i in 1..=5 {
-    let access_event = AccessEvent::new(normal_user, "telemetry.data." + i.to_string(), "read")
-    SecurityMonitor::process_access_event(security_monitor, access_event)
+  // Test SHA-1 (for legacy compatibility)
+  let sha1_hash = Hash::sha1(data.to_bytes())
+  assert_eq(sha1_hash.length(), 20) // 160 bits = 20 bytes
+  
+  // Test MD5 (for legacy compatibility, not recommended for security)
+  let md5_hash = Hash::md5(data.to_bytes())
+  assert_eq(md5_hash.length(), 16) // 128 bits = 16 bytes
+  
+  // Test HMAC
+  let hmac_key = "hmac_secret_key"
+  let hmac_sha256 = HMAC::sha256(hmac_key.to_bytes(), data.to_bytes())
+  assert_eq(hmac_sha256.length(), 32)
+  
+  // Verify HMAC consistency
+  let hmac_sha256_again = HMAC::sha256(hmac_key.to_bytes(), data.to_bytes())
+  assert_eq(hmac_sha256, hmac_sha256_again)
+  
+  // Test with different HMAC algorithms
+  let hmac_sha1 = HMAC::sha1(hmac_key.to_bytes(), data.to_bytes())
+  assert_eq(hmac_sha1.length(), 20)
+  
+  let hmac_sha512 = HMAC::sha512(hmac_key.to_bytes(), data.to_bytes())
+  assert_eq(hmac_sha512.length(), 64)
+}
+
+// Test 5: Telemetry Data Security
+test "telemetry data security" {
+  // Create a secure telemetry processor
+  let key = EncryptionKey::generate(AES256)
+  let secure_processor = SecureTelemetryProcessor::new(key)
+  
+  // Create telemetry data with sensitive information
+  let telemetry_data = TelemetryData::new()
+  
+  // Add metrics
+  TelemetryData::add_metric(telemetry_data, "cpu.usage", 75.5)
+  TelemetryData::add_metric(telemetry_data, "memory.usage", 60.2)
+  
+  // Add events with potentially sensitive data
+  let sensitive_attrs = Attributes::new()
+  Attributes::set(sensitive_attrs, "user_id", StringValue("user-12345"))
+  Attributes::set(sensitive_attrs, "ip_address", StringValue("192.168.1.100"))
+  Attributes::set(sensitive_attrs, "session_token", StringValue("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"))
+  
+  TelemetryData::add_event(telemetry_data, "user.login", sensitive_attrs)
+  
+  // Encrypt sensitive fields
+  let secure_config = SecureTelemetryConfig::new()
+  SecureTelemetryConfig::add_encrypted_field(secure_config, "user_id")
+  SecureTelemetryConfig::add_encrypted_field(secure_config, "ip_address")
+  SecureTelemetryConfig::add_encrypted_field(secure_config, "session_token")
+  
+  let encrypted_data = SecureTelemetryProcessor::encrypt_fields(secure_processor, telemetry_data, secure_config)
+  
+  // Verify sensitive fields are encrypted
+  let encrypted_events = TelemetryData::events(encrypted_data)
+  assert_eq(encrypted_events.length(), 1)
+  
+  let encrypted_event = encrypted_events[0]
+  let encrypted_attrs = TelemetryEvent::attributes(encrypted_event)
+  
+  let user_id_value = Attributes::get(encrypted_attrs, "user_id")
+  match user_id_value {
+    Some(StringValue(value)) => {
+      // Should be encrypted, not the original value
+      assert_neq(value, "user-12345")
+      assert_true(value.length() > 20) // Encrypted values are typically longer
+    }
+    _ => assert_true(false)
   }
   
-  // 验证正常访问不触发威胁
-  let normal_threats = ThreatDetector::detect_threats(threat_detector, SecurityMonitor::get_events(security_monitor))
-  assert_eq(normal_threats.length(), 0)
+  // Decrypt the data
+  let decrypted_data = SecureTelemetryProcessor::decrypt_fields(secure_processor, encrypted_data, secure_config)
   
-  // 模拟异常访问模式
-  let suspicious_user = User::new("suspicious-user")
-  for i in 1..=100 {
-    let access_event = AccessEvent::new(suspicious_user, "sensitive.data." + i.to_string(), "read")
-    SecurityMonitor::process_access_event(security_monitor, access_event)
+  // Verify sensitive fields are decrypted back to original values
+  let decrypted_events = TelemetryData::events(decrypted_data)
+  assert_eq(decrypted_events.length(), 1)
+  
+  let decrypted_event = decrypted_events[0]
+  let decrypted_attrs = TelemetryEvent::attributes(decrypted_event)
+  
+  let decrypted_user_id = Attributes::get(decrypted_attrs, "user_id")
+  match decrypted_user_id {
+    Some(StringValue(value)) => assert_eq(value, "user-12345")
+    _ => assert_true(false)
   }
   
-  // 检测异常访问模式
-  let suspicious_events = SecurityMonitor::get_events_by_user(security_monitor, suspicious_user)
-  let detected_threats = ThreatDetector::detect_threats(threat_detector, suspicious_events)
+  let decrypted_ip = Attributes::get(decrypted_attrs, "ip_address")
+  match decrypted_ip {
+    Some(StringValue(value)) => assert_eq(value, "192.168.1.100")
+    _ => assert_true(false)
+  }
   
-  // 验证威胁检测
-  assert_true(detected_threats.length() > 0)
+  let decrypted_token = Attributes::get(decrypted_attrs, "session_token")
+  match decrypted_token {
+    Some(StringValue(value)) => assert_eq(value, "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9")
+    _ => assert_true(false)
+  }
+}
+
+// Test 6: Access Control
+test "access control" {
+  // Create an access control manager
+  let access_manager = AccessControlManager::new()
   
-  let abnormal_access_threat = detected_threats.find(fn(threat) {
-    Threat::type(threat) == "abnormal_access_pattern"
-  })
-  assert_true(abnormal_access_threat.is_some())
+  // Define roles
+  AccessControlManager::add_role(access_manager, "admin", ["read", "write", "delete", "manage"])
+  AccessControlManager::add_role(access_manager, "analyst", ["read", "write"])
+  AccessControlManager::add_role(access_manager, "viewer", ["read"])
   
-  // 模拟数据渗漏
-  let exfiltration_user = User::new("exfiltration-user")
-  let large_data_events = []
-  for i in 1..=10 {
-    let large_data = TelemetryData::new()
-    TelemetryData::add_large_binary_data(large_data, "x".repeat(1000000)) // 1MB数据
+  // Define users
+  AccessControlManager::add_user(access_manager, "user1", ["admin"])
+  AccessControlManager::add_user(access_manager, "user2", ["analyst"])
+  AccessControlManager::add_user(access_manager, "user3", ["viewer"])
+  
+  // Test permissions
+  assert_true(AccessControlManager::has_permission(access_manager, "user1", "read"))
+  assert_true(AccessControlManager::has_permission(access_manager, "user1", "write"))
+  assert_true(AccessControlManager::has_permission(access_manager, "user1", "delete"))
+  assert_true(AccessControlManager::has_permission(access_manager, "user1", "manage"))
+  
+  assert_true(AccessControlManager::has_permission(access_manager, "user2", "read"))
+  assert_true(AccessControlManager::has_permission(access_manager, "user2", "write"))
+  assert_false(AccessControlManager::has_permission(access_manager, "user2", "delete"))
+  assert_false(AccessControlManager::has_permission(access_manager, "user2", "manage"))
+  
+  assert_true(AccessControlManager::has_permission(access_manager, "user3", "read"))
+  assert_false(AccessControlManager::has_permission(access_manager, "user3", "write"))
+  assert_false(AccessControlManager::has_permission(access_manager, "user3", "delete"))
+  assert_false(AccessControlManager::has_permission(access_manager, "user3", "manage"))
+  
+  // Test resource-based access control
+  AccessControlManager::add_resource_rule(access_manager, "telemetry.data", "admin", ["read", "write", "delete"])
+  AccessControlManager::add_resource_rule(access_manager, "telemetry.data", "analyst", ["read"])
+  AccessControlManager::add_resource_rule(access_manager, "telemetry.config", "admin", ["read", "write", "delete"])
+  
+  assert_true(AccessControlManager::can_access_resource(access_manager, "user1", "telemetry.data", "read"))
+  assert_true(AccessControlManager::can_access_resource(access_manager, "user1", "telemetry.data", "write"))
+  assert_true(AccessControlManager::can_access_resource(access_manager, "user1", "telemetry.data", "delete"))
+  
+  assert_true(AccessControlManager::can_access_resource(access_manager, "user2", "telemetry.data", "read"))
+  assert_false(AccessControlManager::can_access_resource(access_manager, "user2", "telemetry.data", "write"))
+  
+  assert_false(AccessControlManager::can_access_resource(access_manager, "user3", "telemetry.data", "read"))
+  
+  assert_true(AccessControlManager::can_access_resource(access_manager, "user1", "telemetry.config", "read"))
+  assert_false(AccessControlManager::can_access_resource(access_manager, "user2", "telemetry.config", "read"))
+}
+
+// Test 7: Secure Transport
+test "secure transport" {
+  // Create a secure transport client
+  let tls_config = TLSConfig::new()
+  TLSConfig::set_verify_mode(tls_config, RequirePeerCertificate)
+  TLSConfig::add_ca_certificate(tls_config, "ca_cert.pem")
+  
+  let secure_client = SecureTransportClient::new(tls_config)
+  
+  // Test secure connection establishment
+  let server_url = "https://secure-telemetry.example.com:443"
+  let connection_result = SecureTransportClient::connect(secure_client, server_url)
+  
+  match connection_result {
+    Ok(connection) => {
+      // Verify connection is secure
+      assert_true(SecureTransportClient::is_secure(connection))
+      
+      // Get connection details
+      let connection_info = SecureTransportClient::get_connection_info(connection)
+      assert_eq(connection_info.protocol, "TLS")
+      assert_true(connection_info.cipher_suite.length() > 0)
+      assert_true(connection_info.peer_certificate.length() > 0)
+      
+      // Test secure data transmission
+      let telemetry_data = TelemetryData::new()
+      TelemetryData::add_metric(telemetry_data, "test.metric", 42.0)
+      
+      let send_result = SecureTransportClient::send_telemetry(connection, telemetry_data)
+      assert_true(send_result.is_ok())
+      
+      // Test secure data reception
+      let receive_result = SecureTransportClient::receive_telemetry(connection)
+      match receive_result {
+        Ok(received_data) => {
+          // Verify received data integrity
+          assert_true(TelemetryData::has_metric(received_data, "test.metric"))
+        }
+        Err(_) => assert_true(false)
+      }
+      
+      // Close the connection
+      SecureTransportClient::close(connection)
+    }
+    Err(_) => assert_true(false) // Connection should succeed
+  }
+  
+  // Test mutual TLS
+  let mtls_config = MTLSConfig::new()
+  MTLSConfig::set_client_certificate(mtls_config, "client_cert.pem")
+  MTLSConfig::set_client_private_key(mtls_config, "client_key.pem")
+  MTLSConfig::add_ca_certificate(mtls_config, "ca_cert.pem")
+  
+  let mtls_client = SecureTransportClient::with_mtls(mtls_config)
+  
+  let mtls_connection_result = SecureTransportClient::connect(mtls_client, server_url)
+  match mtls_connection_result {
+    Ok(connection) => {
+      // Verify mutual TLS is active
+      assert_true(SecureTransportClient::is_mutual_tls(connection))
+      
+      // Test client authentication
+      let auth_result = SecureTransportClient::authenticate(connection)
+      assert_true(auth_result.is_ok())
+      
+      SecureTransportClient::close(connection)
+    }
+    Err(_) => assert_true(false) // Connection should succeed
+  }
+}
+
+// Test 8: Security Audit Logging
+test "security audit logging" {
+  // Create a security audit logger
+  let audit_logger = SecurityAuditLogger::new()
+  SecurityAuditLogger::set_log_level(audit_logger, Security)
+  
+  // Log security events
+  let login_event = SecurityEvent::new(
+    "user.login",
+    "user1",
+    "192.168.1.100",
+    "User logged in successfully"
+  )
+  SecurityAuditLogger::log_event(audit_logger, login_event)
+  
+  let access_denied_event = SecurityEvent::new(
+    "access.denied",
+    "user2",
+    "192.168.1.101",
+    "Access denied to resource telemetry.config"
+  )
+  SecurityAuditLogger::log_event(audit_logger, access_denied_event)
+  
+  let data_access_event = SecurityEvent::new(
+    "data.access",
+    "user1",
+    "192.168.1.100",
+    "Accessed telemetry data for service-a"
+  )
+  SecurityAuditLogger::log_event(audit_logger, data_access_event)
+  
+  // Query audit logs
+  let all_events = SecurityAuditLogger::get_all_events(audit_logger)
+  assert_eq(all_events.length(), 3)
+  
+  // Query by user
+  let user1_events = SecurityAuditLogger::get_events_by_user(audit_logger, "user1")
+  assert_eq(user1_events.length(), 2)
+  
+  let user2_events = SecurityAuditLogger::get_events_by_user(audit_logger, "user2")
+  assert_eq(user2_events.length(), 1)
+  
+  // Query by event type
+  let login_events = SecurityAuditLogger::get_events_by_type(audit_logger, "user.login")
+  assert_eq(login_events.length(), 1)
+  
+  let access_denied_events = SecurityAuditLogger::get_events_by_type(audit_logger, "access.denied")
+  assert_eq(access_denied_events.length(), 1)
+  
+  // Query by time range
+  let now = Time::now()
+  let one_hour_ago = now - 3600000L // 1 hour ago in milliseconds
+  
+  let recent_events = SecurityAuditLogger::get_events_by_time_range(audit_logger, one_hour_ago, now)
+  assert_eq(recent_events.length(), 3) // All events should be recent
+  
+  // Verify event details
+  let first_event = all_events[0]
+  assert_eq(SecurityEvent::event_type(first_event), "user.login")
+  assert_eq(SecurityEvent::user_id(first_event), "user1")
+  assert_eq(SecurityEvent::ip_address(first_event), "192.168.1.100")
+  assert_eq(SecurityEvent::description(first_event), "User logged in successfully")
+  
+  // Test event serialization
+  let serialized_events = SecurityAuditLogger::serialize_events(audit_logger, all_events)
+  assert_true(serialized_events.length() > 0)
+  
+  // Test event deserialization
+  let deserialized_events = SecurityAuditLogger::deserialize_events(audit_logger, serialized_events)
+  assert_eq(deserialized_events.length(), all_events.length())
+  
+  // Verify deserialized events match original
+  for i in 0..=2 {
+    let original = all_events[i]
+    let deserialized = deserialized_events[i]
     
-    let export_event = ExportEvent::new(exfiltration_user, large_data, "external.system")
-    large_data_events = large_data_events.push(export_event)
-    SecurityMonitor::process_export_event(security_monitor, export_event)
+    assert_eq(SecurityEvent::event_type(original), SecurityEvent::event_type(deserialized))
+    assert_eq(SecurityEvent::user_id(original), SecurityEvent::user_id(deserialized))
+    assert_eq(SecurityEvent::ip_address(original), SecurityEvent::ip_address(deserialized))
+    assert_eq(SecurityEvent::description(original), SecurityEvent::description(deserialized))
   }
-  
-  // 检测数据渗漏
-  let exfiltration_threats = ThreatDetector::detect_threats(threat_detector, SecurityMonitor::get_export_events(security_monitor))
-  assert_true(exfiltration_threats.length() > 0)
-  
-  let data_exfiltration_threat = exfiltration_threats.find(fn(threat) {
-    Threat::type(threat) == "data_exfiltration"
-  })
-  assert_true(data_exfiltration_threat.is_some())
-  
-  // 测试自动防护响应
-  let auto_response = AutoResponse::new()
-  AutoResponse::add_action(auto_response, "abnormal_access_pattern", "block_user")
-  AutoResponse::add_action(auto_response, "data_exfiltration", "quarantine_data")
-  
-  // 应用自动响应
-  for threat in detected_threats.concat(exfiltration_threats) {
-    AutoResponse::execute(auto_response, threat)
-  }
-  
-  // 验证防护措施
-  assert_true(User::is_blocked(suspicious_user))
-  assert_true(Data::is_quarantined("large_binary_data"))
-  
-  // 测试安全警报生成
-  let security_alerts = SecurityMonitor::generate_alerts(security_monitor)
-  assert_true(security_alerts.length() > 0)
-  
-  let high_severity_alert = security_alerts.find(fn(alert) {
-    SecurityAlert::severity(alert) == "high"
-  })
-  assert_true(high_severity_alert.is_some())
 }
