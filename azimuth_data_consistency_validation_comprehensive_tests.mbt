@@ -1,549 +1,424 @@
-// Azimuth 数据一致性验证综合测试
-// 测试遥测系统在各种场景下的数据一致性保证
+// Azimuth Telemetry System - Data Consistency Validation Comprehensive Tests
+// This file contains comprehensive test cases for data consistency validation
 
-test "属性数据一致性测试" {
-  // 创建属性集合
-  let attrs = azimuth::Attributes::new()
+// Test 1: Trace Context Consistency
+test "trace context consistency across services" {
+  let trace_consistency_validator = TraceConsistencyValidator::new()
   
-  // 设置初始属性
-  azimuth::Attributes::set(attrs, "string_key", azimuth::AttributeValue::StringValue("initial_value"))
-  azimuth::Attributes::set(attrs, "int_key", azimuth::AttributeValue::IntValue(42))
-  azimuth::Attributes::set(attrs, "float_key", azimuth::AttributeValue::FloatValue(3.14))
-  azimuth::Attributes::set(attrs, "bool_key", azimuth::AttributeValue::BoolValue(true))
+  // Create a trace with multiple spans
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let root_span = Span::new("root_span", Server, SpanContext::new(trace_id, "root_span_id", true, ""))
   
-  // 验证属性一致性
-  let string_result = azimuth::Attributes::get(attrs, "string_key")
-  match string_result {
-    Some(azimuth::AttributeValue::StringValue(value)) => assert_eq(value, "initial_value")
-    _ => assert_true(false)
-  }
+  let child_span1 = Span::new("child_span1", Client, SpanContext::new(trace_id, "child_span1_id", true, ""))
+  let child_span2 = Span::new("child_span2", Internal, SpanContext::new(trace_id, "child_span2_id", true, ""))
   
-  let int_result = azimuth::Attributes::get(attrs, "int_key")
-  match int_result {
-    Some(azimuth::AttributeValue::IntValue(value)) => assert_eq(value, 42)
-    _ => assert_true(false)
-  }
+  // Set parent-child relationships
+  Span::set_parent(child_span1, root_span)
+  Span::set_parent(child_span2, root_span)
   
-  let float_result = azimuth::Attributes::get(attrs, "float_key")
-  match float_result {
-    Some(azimuth::AttributeValue::FloatValue(value)) => assert_eq(value, 3.14)
-    _ => assert_true(false)
-  }
+  // Add spans to validator
+  trace_consistency_validator.add_span(root_span)
+  trace_consistency_validator.add_span(child_span1)
+  trace_consistency_validator.add_span(child_span2)
   
-  let bool_result = azimuth::Attributes::get(attrs, "bool_key")
-  match bool_result {
-    Some(azimuth::AttributeValue::BoolValue(value)) => assert_true(value)
-    _ => assert_true(false)
-  }
+  // Validate trace consistency
+  let validation_result = trace_consistency_validator.validate()
   
-  // 更新属性并验证一致性
-  azimuth::Attributes::set(attrs, "string_key", azimuth::AttributeValue::StringValue("updated_value"))
-  azimuth::Attributes::set(attrs, "int_key", azimuth::AttributeValue::IntValue(100))
+  // Verify validation passes
+  assert_true(validation_result.is_consistent)
+  assert_eq(validation_result.trace_id, trace_id)
+  assert_eq(validation_result.span_count, 3)
   
-  // 验证更新后的一致性
-  let updated_string_result = azimuth::Attributes::get(attrs, "string_key")
-  match updated_string_result {
-    Some(azimuth::AttributeValue::StringValue(value)) => assert_eq(value, "updated_value")
-    _ => assert_true(false)
-  }
+  // Test inconsistent trace
+  let inconsistent_span = Span::new("inconsistent_span", Internal, SpanContext::new("different_trace_id", "inconsistent_span_id", true, ""))
+  trace_consistency_validator.add_span(inconsistent_span)
   
-  let updated_int_result = azimuth::Attributes::get(attrs, "int_key")
-  match updated_int_result {
-    Some(azimuth::AttributeValue::IntValue(value)) => assert_eq(value, 100)
-    _ => assert_true(false)
-  }
-  
-  // 验证未修改的属性保持一致
-  let unchanged_float_result = azimuth::Attributes::get(attrs, "float_key")
-  match unchanged_float_result {
-    Some(azimuth::AttributeValue::FloatValue(value)) => assert_eq(value, 3.14)
-    _ => assert_true(false)
-  }
-  
-  let unchanged_bool_result = azimuth::Attributes::get(attrs, "bool_key")
-  match unchanged_bool_result {
-    Some(azimuth::AttributeValue::BoolValue(value)) => assert_true(value)
-    _ => assert_true(false)
-  }
+  let inconsistent_validation = trace_consistency_validator.validate()
+  assert_false(inconsistent_validation.is_consistent)
+  assert_eq(inconsistent_validation.errors.length(), 1)
+  assert_eq(inconsistent_validation.errors[0], "Trace ID mismatch: expected 0af7651916cd43dd8448eb211c80319c, found different_trace_id")
 }
 
-test "跨度上下文一致性测试" {
-  // 创建跨度上下文
-  let original_trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
-  let original_span_id = "00f067aa0ba902b7"
-  let original_sampled = true
-  let original_trace_state = "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE"
+// Test 2: Metric Data Consistency
+test "metric data consistency validation" {
+  let metric_consistency_validator = MetricConsistencyValidator::new()
   
-  let span_ctx = azimuth::SpanContext::new(
-    original_trace_id,
-    original_span_id,
-    original_sampled,
-    original_trace_state
-  )
+  // Create metrics with consistent data types
+  let counter_metric = Metric::new_counter("request_count", "Total number of requests", "count")
+  Metric::add_data_point(counter_metric, DataPoint::new(100.0, Attributes::new()))
+  Metric::add_data_point(counter_metric, DataPoint::new(200.0, Attributes::new()))
   
-  // 验证上下文一致性
-  assert_eq(azimuth::SpanContext::trace_id(span_ctx), original_trace_id)
-  assert_eq(azimuth::SpanContext::span_id(span_ctx), original_span_id)
-  assert_eq(azimuth::SpanContext::is_sampled(span_ctx), original_sampled)
-  assert_eq(azimuth::SpanContext::trace_state(span_ctx), original_trace_state)
+  let histogram_metric = Metric::new_histogram("request_duration", "Request duration", "ms")
+  Metric::add_data_point(histogram_metric, DataPoint::new(50.0, Attributes::new()))
+  Metric::add_data_point(histogram_metric, DataPoint::new(100.0, Attributes::new()))
   
-  // 创建基于此上下文的跨度
-  let span = azimuth::Span::new("test_span", azimuth::Internal, span_ctx)
+  // Add metrics to validator
+  metric_consistency_validator.add_metric(counter_metric)
+  metric_consistency_validator.add_metric(histogram_metric)
   
-  // 验证跨度上下文一致性
-  let retrieved_ctx = azimuth::Span::span_context(span)
-  assert_eq(azimuth::SpanContext::trace_id(retrieved_ctx), original_trace_id)
-  assert_eq(azimuth::SpanContext::span_id(retrieved_ctx), original_span_id)
-  assert_eq(azimuth::SpanContext::is_sampled(retrieved_ctx), original_sampled)
-  assert_eq(azimuth::SpanContext::trace_state(retrieved_ctx), original_trace_state)
+  // Validate metric consistency
+  let validation_result = metric_consistency_validator.validate()
   
-  // 验证跨度状态一致性
-  assert_eq(azimuth::Span::name(span), "test_span")
-  match azimuth::Span::kind(span) {
-    azimuth::Internal => assert_true(true)
-    _ => assert_true(false)
-  }
-  assert_true(azimuth::Span::is_recording(span))
-  assert_eq(azimuth::Span::status(span), azimuth::Unset)
+  // Verify validation passes
+  assert_true(validation_result.is_consistent)
+  assert_eq(validation_result.metric_count, 2)
+  
+  // Test inconsistent metric data type
+  let inconsistent_metric = Metric::new_counter("inconsistent_metric", "Inconsistent metric", "count")
+  Metric::add_data_point(inconsistent_metric, DataPoint::new("invalid_string_value", Attributes::new())) // String value for counter
+  
+  metric_consistency_validator.add_metric(inconsistent_metric)
+  
+  let inconsistent_validation = metric_consistency_validator.validate()
+  assert_false(inconsistent_validation.is_consistent)
+  assert_eq(inconsistent_validation.errors.length(), 1)
+  assert_true(inconsistent_validation.errors[0].contains("Data type mismatch"))
 }
 
-test "指标聚合一致性测试" {
-  let provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(provider, "consistency_test")
+// Test 3: Log Record Consistency
+test "log record consistency validation" {
+  let log_consistency_validator = LogConsistencyValidator::new()
   
-  // 创建指标
-  let counter = azimuth::Meter::create_counter(meter, "test_counter", Some("Test counter"), Some("count"))
-  let histogram = azimuth::Meter::create_histogram(meter, "test_histogram", Some("Test histogram"), Some("ms"))
-  let updown_counter = azimuth::Meter::create_updown_counter(meter, "test_updown", Some("Test updown counter"), Some("value"))
+  // Create consistent log records
+  let log_record1 = LogRecord::new(Info, "User login successful")
+  LogRecord::set_timestamp(log_record1, 1234567890L)
+  LogRecord::set_trace_id(log_record1, "trace_id_123")
+  LogRecord::set_span_id(log_record1, "span_id_123")
   
-  // 执行指标操作
-  let attrs = azimuth::Attributes::new()
-  azimuth::Attributes::set(attrs, "operation", azimuth::AttributeValue::StringValue("test"))
+  let log_record2 = LogRecord::new(Error, "Database connection failed")
+  LogRecord::set_timestamp(log_record2, 1234567891L)
+  LogRecord::set_trace_id(log_record2, "trace_id_123")
+  LogRecord::set_span_id(log_record2, "span_id_456")
   
-  // 计数器操作
-  azimuth::Counter::add(counter, 1.0)
-  azimuth::Counter::add(counter, 2.5, Some(attrs))
-  azimuth::Counter::add(counter, 3.0)
+  // Add log records to validator
+  log_consistency_validator.add_log_record(log_record1)
+  log_consistency_validator.add_log_record(log_record2)
   
-  // 直方图操作
-  azimuth::Histogram::record(histogram, 100.0)
-  azimuth::Histogram::record(histogram, 200.5, Some(attrs))
-  azimuth::Histogram::record(histogram, 150.0)
+  // Validate log consistency
+  let validation_result = log_consistency_validator.validate()
   
-  // 上下计数器操作
-  azimuth::UpDownCounter::add(updown_counter, 10.0)
-  azimuth::UpDownCounter::add(updown_counter, -5.0, Some(attrs))
-  azimuth::UpDownCounter::add(updown_counter, 15.0)
+  // Verify validation passes
+  assert_true(validation_result.is_consistent)
+  assert_eq(validation_result.log_count, 2)
   
-  // 验证指标一致性（简化验证，实际实现需要检查指标值）
-  let counter_instrument = azimuth::Histogram::as_instrument(counter)
-  assert_eq(azimuth::Instrument::name(counter_instrument), "test_counter")
-  assert_eq(azimuth::Instrument::description(counter_instrument), Some("Test counter"))
-  assert_eq(azimuth::Instrument::unit(counter_instrument), Some("count"))
+  // Test inconsistent log timestamp (log before span creation)
+  let inconsistent_log = LogRecord::new(Info, "Inconsistent timestamp")
+  LogRecord::set_timestamp(inconsistent_log, 1234567889L) // Before span creation
+  LogRecord::set_trace_id(inconsistent_log, "trace_id_123")
+  LogRecord::set_span_id(inconsistent_log, "span_id_123")
   
-  let histogram_instrument = azimuth::Histogram::as_instrument(histogram)
-  assert_eq(azimuth::Instrument::name(histogram_instrument), "test_histogram")
-  assert_eq(azimuth::Instrument::description(histogram_instrument), Some("Test histogram"))
-  assert_eq(azimuth::Instrument::unit(histogram_instrument), Some("ms"))
+  log_consistency_validator.add_log_record(inconsistent_log)
   
-  let updown_instrument = azimuth::Histogram::as_instrument(updown_counter)
-  assert_eq(azimuth::Instrument::name(updown_instrument), "test_updown")
-  assert_eq(azimuth::Instrument::description(updown_instrument), Some("Test updown counter"))
-  assert_eq(azimuth::Instrument::unit(updown_instrument), Some("value"))
+  let inconsistent_validation = log_consistency_validator.validate()
+  assert_false(inconsistent_validation.is_consistent)
+  assert_eq(inconsistent_validation.errors.length(), 1)
+  assert_true(inconsistent_validation.errors[0].contains("Timestamp inconsistency"))
 }
 
-test "日志记录一致性测试" {
-  let provider = azimuth::LoggerProvider::default()
-  let logger = azimuth::LoggerProvider::get_logger(provider, "consistency_logger")
+// Test 4: Attribute Consistency
+test "attribute consistency validation" {
+  let attribute_consistency_validator = AttributeConsistencyValidator::new()
   
-  // 创建日志记录
-  let attrs = azimuth::Attributes::new()
-  azimuth::Attributes::set(attrs, "component", azimuth::AttributeValue::StringValue("test"))
-  azimuth::Attributes::set(attrs, "version", azimuth::AttributeValue::StringValue("1.0.0"))
+  // Define attribute schema
+  let schema = AttributeSchema::new()
+  AttributeSchema::add_attribute(schema, "user_id", AttributeType::String, true) // Required
+  AttributeSchema::add_attribute(schema, "request_id", AttributeType::String, true) // Required
+  AttributeSchema::add_attribute(schema, "response_time", AttributeType::Float, false) // Optional
+  AttributeSchema::add_attribute(schema, "success", AttributeType::Boolean, false) // Optional
   
-  let log_record = azimuth::LogRecord::new_with_context(
-    azimuth::Info,
-    Some("Consistency test log message"),
-    Some(attrs),
-    Some(1234567890L),
-    Some(1234567891L),
-    Some("trace_id_123"),
-    Some("span_id_456"),
-    None
-  )
+  attribute_consistency_validator.set_schema(schema)
   
-  // 验证日志记录一致性
-  assert_eq(azimuth::LogRecord::severity_number(log_record), azimuth::Info)
-  match azimuth::LogRecord::body(log_record) {
-    Some(body) => assert_eq(body, "Consistency test log message")
-    None => assert_true(false)
-  }
-  assert_eq(azimuth::LogRecord::trace_id(log_record), Some("trace_id_123"))
-  assert_eq(azimuth::LogRecord::span_id(log_record), Some("span_id_456"))
+  // Create attributes with consistent data
+  let consistent_attrs = Attributes::new()
+  Attributes::set(consistent_attrs, "user_id", StringValue("user_123"))
+  Attributes::set(consistent_attrs, "request_id", StringValue("req_456"))
+  Attributes::set(consistent_attrs, "response_time", FloatValue(250.5))
+  Attributes::set(consistent_attrs, "success", BoolValue(true))
   
-  // 发送日志记录
-  azimuth::Logger::emit(logger, log_record)
+  // Validate consistent attributes
+  let consistent_result = attribute_consistency_validator.validate(consistent_attrs)
+  assert_true(consistent_result.is_consistent)
   
-  // 创建另一个日志记录并验证独立性
-  let another_log_record = azimuth::LogRecord::new(
-    azimuth::Error,
-    "Another consistency test message"
-  )
+  // Test missing required attribute
+  let missing_required_attrs = Attributes::new()
+  Attributes::set(missing_required_attrs, "user_id", StringValue("user_123"))
+  // Missing required "request_id" attribute
   
-  // 验证第二个日志记录不受第一个影响
-  assert_eq(azimuth::LogRecord::severity_number(another_log_record), azimuth::Error)
-  match azimuth::LogRecord::body(another_log_record) {
-    Some(body) => assert_eq(body, "Another consistency test message")
-    None => assert_true(false)
-  }
-  assert_eq(azimuth::LogRecord::trace_id(another_log_record), None)
-  assert_eq(azimuth::LogRecord::span_id(another_log_record), None)
+  let missing_result = attribute_consistency_validator.validate(missing_required_attrs)
+  assert_false(missing_result.is_consistent)
+  assert_eq(missing_result.errors.length(), 1)
+  assert_true(missing_result.errors[0].contains("Missing required attribute: request_id"))
+  
+  // Test incorrect attribute type
+  let incorrect_type_attrs = Attributes::new()
+  Attributes::set(incorrect_type_attrs, "user_id", StringValue("user_123"))
+  Attributes::set(incorrect_type_attrs, "request_id", StringValue("req_456"))
+  Attributes::set(incorrect_type_attrs, "response_time", StringValue("250.5")) // String instead of Float
+  
+  let incorrect_type_result = attribute_consistency_validator.validate(incorrect_type_attrs)
+  assert_false(incorrect_type_result.is_consistent)
+  assert_eq(incorrect_type_result.errors.length(), 1)
+  assert_true(incorrect_type_result.errors[0].contains("Type mismatch for attribute: response_time"))
 }
 
-test "上下文传播一致性测试" {
-  // 创建根上下文
-  let root_ctx = azimuth::Context::root()
+// Test 5: Cross-Service Data Consistency
+test "cross-service data consistency validation" {
+  let cross_service_validator = CrossServiceConsistencyValidator::new()
   
-  // 添加上下文值
-  let key1 = azimuth::ContextKey::new("key1")
-  let key2 = azimuth::ContextKey::new("key2")
-  let key3 = azimuth::ContextKey::new("key3")
+  // Define service topology
+  let topology = ServiceTopology::new()
+  ServiceTopology::add_service(topology, "api-gateway")
+  ServiceTopology::add_service(topology, "user-service")
+  ServiceTopology::add_service(topology, "order-service")
+  ServiceTopology::add_dependency(topology, "api-gateway", "user-service")
+  ServiceTopology::add_dependency(topology, "api-gateway", "order-service")
   
-  let ctx1 = azimuth::Context::with_value(root_ctx, key1, "value1")
-  let ctx2 = azimuth::Context::with_value(ctx1, key2, "value2")
-  let ctx3 = azimuth::Context::with_value(ctx2, key3, "value3")
+  cross_service_validator.set_topology(topology)
   
-  // 验证上下文传播一致性
-  match azimuth::Context::get(ctx3, key1) {
-    Some(value) => assert_eq(value, "value1")
-    None => assert_true(false)
-  }
+  // Create telemetry data from different services
+  let api_gateway_span = Span::new("api-request", Server, SpanContext::new("trace_123", "span_1", true, ""))
+  Span::set_service_name(api_gateway_span, "api-gateway")
   
-  match azimuth::Context::get(ctx3, key2) {
-    Some(value) => assert_eq(value, "value2")
-    None => assert_true(false)
-  }
+  let user_service_span = Span::new("user-lookup", Client, SpanContext::new("trace_123", "span_2", true, ""))
+  Span::set_service_name(user_service_span, "user-service")
+  Span::set_parent(user_service_span, api_gateway_span)
   
-  match azimuth::Context::get(ctx3, key3) {
-    Some(value) => assert_eq(value, "value3")
-    None => assert_true(false)
-  }
+  let order_service_span = Span::new("order-create", Client, SpanContext::new("trace_123", "span_3", true, ""))
+  Span::set_service_name(order_service_span, "order-service")
+  Span::set_parent(order_service_span, api_gateway_span)
   
-  // 验证上下文独立性
-  let another_key = azimuth::ContextKey::new("another_key")
-  let ctx4 = azimuth::Context::with_value(ctx3, another_key, "another_value")
+  // Add spans to validator
+  cross_service_validator.add_span(api_gateway_span)
+  cross_service_validator.add_span(user_service_span)
+  cross_service_validator.add_span(order_service_span)
   
-  // 验证新上下文包含所有原有值
-  match azimuth::Context::get(ctx4, key1) {
-    Some(value) => assert_eq(value, "value1")
-    None => assert_true(false)
-  }
+  // Validate cross-service consistency
+  let validation_result = cross_service_validator.validate()
   
-  match azimuth::Context::get(ctx4, key2) {
-    Some(value) => assert_eq(value, "value2")
-    None => assert_true(false)
-  }
+  // Verify validation passes
+  assert_true(validation_result.is_consistent)
+  assert_eq(validation_result.service_count, 3)
+  assert_eq(validation_result.span_count, 3)
   
-  match azimuth::Context::get(ctx4, key3) {
-    Some(value) => assert_eq(value, "value3")
-    None => assert_true(false)
-  }
+  // Test inconsistent service relationship
+  let orphan_span = Span::new("orphan-operation", Internal, SpanContext::new("trace_123", "span_4", true, ""))
+  Span::set_service_name(orphan_span, "unknown-service") // Service not in topology
   
-  match azimuth::Context::get(ctx4, another_key) {
-    Some(value) => assert_eq(value, "another_value")
-    None => assert_true(false)
-  }
+  cross_service_validator.add_span(orphan_span)
   
-  // 验证原上下文不受新上下文影响
-  match azimuth::Context::get(ctx3, another_key) {
-    Some(_) => assert_true(false) // 原上下文不应包含新键
-    None => assert_true(true)
-  }
+  let inconsistent_validation = cross_service_validator.validate()
+  assert_false(inconsistent_validation.is_consistent)
+  assert_eq(inconsistent_validation.errors.length(), 1)
+  assert_true(inconsistent_validation.errors[0].contains("Unknown service: unknown-service"))
 }
 
-test "资源合并一致性测试" {
-  // 创建第一个资源
-  let resource1 = azimuth::Resource::with_attributes(azimuth::Resource::new(), [
-    ("service.name", azimuth::AttributeValue::StringValue("service1")),
-    ("service.version", azimuth::AttributeValue::StringValue("1.0.0")),
-    ("host.name", azimuth::AttributeValue::StringValue("host1"))
-  ])
+// Test 6: Temporal Consistency
+test "temporal consistency validation" {
+  let temporal_consistency_validator = TemporalConsistencyValidator::new()
   
-  // 创建第二个资源
-  let resource2 = azimuth::Resource::with_attributes(azimuth::Resource::new(), [
-    ("service.name", azimuth::AttributeValue::StringValue("service2")), // 冲突键
-    ("deployment.environment", azimuth::AttributeValue::StringValue("production")),
-    ("host.name", azimuth::AttributeValue::StringValue("host2")) // 冲突键
-  ])
+  // Create spans with consistent timestamps
+  let root_span = Span::new("root_operation", Server, SpanContext::new("trace_123", "span_1", true, ""))
+  Span::set_start_time(root_span, 1000L)
+  Span::set_end_time(root_span, 1500L)
   
-  // 合并资源
-  let merged_resource = azimuth::Resource::merge(resource1, resource2)
+  let child_span1 = Span::new("child_operation1", Client, SpanContext::new("trace_123", "span_2", true, ""))
+  Span::set_start_time(child_span1, 1100L)
+  Span::set_end_time(child_span1, 1300L)
+  Span::set_parent(child_span1, root_span)
   
-  // 验证合并结果一致性（第二个资源应该覆盖第一个资源的冲突键）
-  let service_name = azimuth::Resource::get_attribute(merged_resource, "service.name")
-  match service_name {
-    Some(azimuth::AttributeValue::StringValue(name)) => assert_eq(name, "service2")
-    _ => assert_true(false)
-  }
+  let child_span2 = Span::new("child_operation2", Client, SpanContext::new("trace_123", "span_3", true, ""))
+  Span::set_start_time(child_span2, 1300L)
+  Span::set_end_time(child_span2, 1400L)
+  Span::set_parent(child_span2, root_span)
   
-  let service_version = azimuth::Resource::get_attribute(merged_resource, "service.version")
-  match service_version {
-    Some(azimuth::AttributeValue::StringValue(version)) => assert_eq(version, "1.0.0")
-    _ => assert_true(false)
-  }
+  // Add spans to validator
+  temporal_consistency_validator.add_span(root_span)
+  temporal_consistency_validator.add_span(child_span1)
+  temporal_consistency_validator.add_span(child_span2)
   
-  let host_name = azimuth::Resource::get_attribute(merged_resource, "host.name")
-  match host_name {
-    Some(azimuth::AttributeValue::StringValue(name)) => assert_eq(name, "host2")
-    _ => assert_true(false)
-  }
+  // Validate temporal consistency
+  let validation_result = temporal_consistency_validator.validate()
   
-  let environment = azimuth::Resource::get_attribute(merged_resource, "deployment.environment")
-  match environment {
-    Some(azimuth::AttributeValue::StringValue(env)) => assert_eq(env, "production")
-    _ => assert_true(false)
-  }
+  // Verify validation passes
+  assert_true(validation_result.is_consistent)
   
-  // 验证原资源不受合并影响
-  let original_service_name = azimuth::Resource::get_attribute(resource1, "service.name")
-  match original_service_name {
-    Some(azimuth::AttributeValue::StringValue(name)) => assert_eq(name, "service1")
-    _ => assert_true(false)
-  }
+  // Test temporal inconsistency (child span starts before parent)
+  let inconsistent_span = Span::new("inconsistent_operation", Client, SpanContext::new("trace_123", "span_4", true, ""))
+  Span::set_start_time(inconsistent_span, 900L) // Before parent span starts
+  Span::set_end_time(inconsistent_span, 1000L)
+  Span::set_parent(inconsistent_span, root_span)
   
-  let original_service_name2 = azimuth::Resource::get_attribute(resource2, "service.name")
-  match original_service_name2 {
-    Some(azimuth::AttributeValue::StringValue(name)) => assert_eq(name, "service2")
-    _ => assert_true(false)
-  }
+  temporal_consistency_validator.add_span(inconsistent_span)
+  
+  let inconsistent_validation = temporal_consistency_validator.validate()
+  assert_false(inconsistent_validation.is_consistent)
+  assert_eq(inconsistent_validation.errors.length(), 1)
+  assert_true(inconsistent_validation.errors[0].contains("Temporal inconsistency"))
 }
 
-test "序列化反序列化一致性测试" {
-  // 创建测试数据
-  let attrs = azimuth::Attributes::new()
-  azimuth::Attributes::set(attrs, "string.key", azimuth::AttributeValue::StringValue("test_value"))
-  azimuth::Attributes::set(attrs, "int.key", azimuth::AttributeValue::IntValue(42))
-  azimuth::Attributes::set(attrs, "float.key", azimuth::AttributeValue::FloatValue(3.14))
-  azimuth::Attributes::set(attrs, "bool.key", azimuth::AttributeValue::BoolValue(true))
+// Test 7: Causal Consistency
+test "causal consistency validation" {
+  let causal_consistency_validator = CausalConsistencyValidator::new()
   
-  // 模拟序列化过程
-  let serialize_attributes = fn(attrs: azimuth::Attributes) -> String {
-    let mut result = "{"
-    let keys = ["string.key", "int.key", "float.key", "bool.key"]
-    
-    for i in 0..keys.length() {
-      if i > 0 {
-        result = result + ","
-      }
-      
-      let key = keys[i]
-      let value = azimuth::Attributes::get(attrs, key)
-      
-      result = result + "\"" + key + "\":"
-      
-      match value {
-        Some(azimuth::AttributeValue::StringValue(s)) => {
-          result = result + "\"string:" + s + "\""
-        }
-        Some(azimuth::AttributeValue::IntValue(i)) => {
-          result = result + "\"int:" + i.to_string() + "\""
-        }
-        Some(azimuth::AttributeValue::FloatValue(f)) => {
-          result = result + "\"float:" + f.to_string() + "\""
-        }
-        Some(azimuth::AttributeValue::BoolValue(b)) => {
-          if b {
-            result = result + "\"bool:true\""
-          } else {
-            result = result + "\"bool:false\""
-          }
-        }
-        _ => {
-          result = result + "\"null\""
-        }
-      }
-    }
-    
-    result = result + "}"
-    result
-  }
+  // Create operations with causal relationships
+  let operation1 = Operation::new("create_user", 1L)
+  Operation::add_causal_predecessor(operation1, [])
   
-  // 模拟反序列化过程
-  let deserialize_attributes = fn(serialized: String) -> azimuth::Attributes {
-    let attrs = azimuth::Attributes::new()
-    
-    if serialized.contains("\"string.key\":\"string:test_value\"") {
-      azimuth::Attributes::set(attrs, "string.key", azimuth::AttributeValue::StringValue("test_value"))
-    }
-    
-    if serialized.contains("\"int.key\":\"int:42\"") {
-      azimuth::Attributes::set(attrs, "int.key", azimuth::AttributeValue::IntValue(42))
-    }
-    
-    if serialized.contains("\"float.key\":\"float:3.14\"") {
-      azimuth::Attributes::set(attrs, "float.key", azimuth::AttributeValue::FloatValue(3.14))
-    }
-    
-    if serialized.contains("\"bool.key\":\"bool:true\"") {
-      azimuth::Attributes::set(attrs, "bool.key", azimuth::AttributeValue::BoolValue(true))
-    }
-    
-    attrs
-  }
+  let operation2 = Operation::new("update_user", 2L)
+  Operation::add_causal_predecessor(operation2, [1L]) // Depends on operation1
   
-  // 执行序列化和反序列化
-  let serialized = serialize_attributes(attrs)
-  let deserialized = deserialize_attributes(serialized)
+  let operation3 = Operation::new("delete_user", 3L)
+  Operation::add_causal_predecessor(operation3, [1L, 2L]) // Depends on operation1 and operation2
   
-  // 验证一致性
-  let original_string = azimuth::Attributes::get(attrs, "string.key")
-  let deserialized_string = azimuth::Attributes::get(deserialized, "string.key")
+  // Add operations to validator
+  causal_consistency_validator.add_operation(operation1)
+  causal_consistency_validator.add_operation(operation2)
+  causal_consistency_validator.add_operation(operation3)
   
-  match (original_string, deserialized_string) {
-    (Some(azimuth::AttributeValue::StringValue(orig)), Some(azimuth::AttributeValue::StringValue(deser))) => {
-      assert_eq(orig, deser)
-    }
-    _ => assert_true(false)
-  }
+  // Validate causal consistency
+  let validation_result = causal_consistency_validator.validate()
   
-  let original_int = azimuth::Attributes::get(attrs, "int.key")
-  let deserialized_int = azimuth::Attributes::get(deserialized, "int.key")
+  // Verify validation passes
+  assert_true(validation_result.is_consistent)
   
-  match (original_int, deserialized_int) {
-    (Some(azimuth::AttributeValue::IntValue(orig)), Some(azimuth::AttributeValue::IntValue(deser))) => {
-      assert_eq(orig, deser)
-    }
-    _ => assert_true(false)
-  }
+  // Test causal inconsistency (missing predecessor)
+  let orphaned_operation = Operation::new("orphaned_operation", 4L)
+  Operation::add_causal_predecessor(orphaned_operation, [5L]) // Depends on non-existent operation
   
-  let original_float = azimuth::Attributes::get(attrs, "float.key")
-  let deserialized_float = azimuth::Attributes::get(deserialized, "float.key")
+  causal_consistency_validator.add_operation(orphaned_operation)
   
-  match (original_float, deserialized_float) {
-    (Some(azimuth::AttributeValue::FloatValue(orig)), Some(azimuth::AttributeValue::FloatValue(deser))) => {
-      assert_eq(orig, deser)
-    }
-    _ => assert_true(false)
-  }
-  
-  let original_bool = azimuth::Attributes::get(attrs, "bool.key")
-  let deserialized_bool = azimuth::Attributes::get(deserialized, "bool.key")
-  
-  match (original_bool, deserialized_bool) {
-    (Some(azimuth::AttributeValue::BoolValue(orig)), Some(azimuth::AttributeValue::BoolValue(deser))) => {
-      assert_eq(orig, deser)
-    }
-    _ => assert_true(false)
-  }
+  let inconsistent_validation = causal_consistency_validator.validate()
+  assert_false(inconsistent_validation.is_consistent)
+  assert_eq(inconsistent_validation.errors.length(), 1)
+  assert_true(inconsistent_validation.errors[0].contains("Missing causal predecessor"))
 }
 
-test "时间序列数据一致性测试" {
-  // 创建时间序列数据点
-  let data_points = [
-    (1000L, 10.5),
-    (2000L, 15.2),
-    (3000L, 12.8),
-    (4000L, 18.3),
-    (5000L, 20.1)
-  ]
+// Test 8: Data Integrity Consistency
+test "data integrity consistency validation" {
+  let data_integrity_validator = DataIntegrityValidator::new()
   
-  // 验证时间序列数据一致性
-  for i in 0..data_points.length() {
-    let (timestamp, value) = data_points[i]
-    
-    // 验证时间戳递增
-    if i > 0 {
-      let (prev_timestamp, _) = data_points[i - 1]
-      assert_true(timestamp > prev_timestamp)
-    }
-    
-    // 验证值在合理范围内
-    assert_true(value >= 0.0)
-    assert_true(value <= 100.0)
-  }
+  // Create telemetry data with integrity checksums
+  let telemetry_data = TelemetryData::new()
+  TelemetryData::add_span(telemetry_data, Span::new("test_span", Internal, SpanContext::new("trace_123", "span_1", true, "")))
+  TelemetryData::add_metric(telemetry_data, Metric::new_counter("test_counter", "Test counter", "count"))
+  TelemetryData::add_log(telemetry_data, LogRecord::new(Info, "Test log"))
   
-  // 计算聚合值并验证一致性
-  let mut sum = 0.0
-  let mut count = 0
+  // Calculate and set integrity checksum
+  let checksum = DataIntegrity::calculate_checksum(telemetry_data)
+  TelemetryData::set_integrity_checksum(telemetry_data, checksum)
   
-  for (_, value) in data_points {
-    sum = sum + value
-    count = count + 1
-  }
+  // Validate data integrity
+  let validation_result = data_integrity_validator.validate(telemetry_data)
   
-  let average = sum / count.to_float()
+  // Verify validation passes
+  assert_true(validation_result.is_integrity_preserved)
   
-  // 验证平均值在最小值和最大值之间
-  let min_value = 10.5
-  let max_value = 20.1
+  // Test data corruption
+  let corrupted_data = TelemetryData::clone(telemetry_data)
+  TelemetryData::corrupt_data(corrupted_data) // Simulate data corruption
   
-  assert_true(average >= min_value)
-  assert_true(average <= max_value)
-  
-  // 验证总和等于各值之和
-  let expected_sum = 10.5 + 15.2 + 12.8 + 18.3 + 20.1
-  assert_true((sum - expected_sum).abs() < 0.001)
+  let corrupted_validation = data_integrity_validator.validate(corrupted_data)
+  assert_false(corrupted_validation.is_integrity_preserved)
+  assert_eq(corrupted_validation.errors.length(), 1)
+  assert_true(corrupted_validation.errors[0].contains("Checksum mismatch"))
 }
 
-test "分布式追踪一致性测试" {
-  // 创建根跨度
-  let root_trace_id = "1234567890abcdef1234567890abcdef"
-  let root_span_id = "1234567890abcdef"
-  let root_ctx = azimuth::SpanContext::new(root_trace_id, root_span_id, true, "")
-  let root_span = azimuth::Span::new("root_operation", azimuth::Server, root_ctx)
+// Test 9: Semantic Consistency
+test "semantic consistency validation" {
+  let semantic_consistency_validator = SemanticConsistencyValidator::new()
   
-  // 创建子跨度
-  let child1_span_id = "abcdef1234567890"
-  let child1_ctx = azimuth::SpanContext::new(root_trace_id, child1_span_id, true, "")
-  let child1_span = azimuth::Span::new("child_operation_1", azimuth::Client, child1_ctx)
+  // Define semantic rules
+  let semantic_rules = SemanticRules::new()
+  SemanticRules::add_rule(semantic_rules, "HTTP status codes", fn(attrs) {
+    match Attributes::get(attrs, "http.status_code") {
+      Some(IntValue(code)) => code >= 100 && code < 600
+      _ => false
+    }
+  })
   
-  let child2_span_id = "fedcba0987654321"
-  let child2_ctx = azimuth::SpanContext::new(root_trace_id, child2_span_id, true, "")
-  let child2_span = azimuth::Span::new("child_operation_2", azimuth::Internal, child2_ctx)
+  SemanticRules::add_rule(semantic_rules, "Response time", fn(attrs) {
+    match Attributes::get(attrs, "response_time") {
+      Some(FloatValue(time)) => time >= 0.0
+      _ => false
+    }
+  })
   
-  // 验证分布式追踪一致性
-  // 所有跨度应该有相同的trace_id
-  assert_eq(azimuth::SpanContext::trace_id(azimuth::Span::span_context(root_span)), root_trace_id)
-  assert_eq(azimuth::SpanContext::trace_id(azimuth::Span::span_context(child1_span)), root_trace_id)
-  assert_eq(azimuth::SpanContext::trace_id(azimuth::Span::span_context(child2_span)), root_trace_id)
+  semantic_consistency_validator.set_rules(semantic_rules)
   
-  // 每个跨度应该有唯一的span_id
-  assert_eq(azimuth::SpanContext::span_id(azimuth::Span::span_context(root_span)), root_span_id)
-  assert_eq(azimuth::SpanContext::span_id(azimuth::Span::span_context(child1_span)), child1_span_id)
-  assert_eq(azimuth::SpanContext::span_id(azimuth::Span::span_context(child2_span)), child2_span_id)
+  // Create attributes with semantically consistent data
+  let consistent_attrs = Attributes::new()
+  Attributes::set(consistent_attrs, "http.status_code", IntValue(200))
+  Attributes::set(consistent_attrs, "response_time", FloatValue(150.5))
   
-  // 验证span_id不同
-  assert_true(root_span_id != child1_span_id)
-  assert_true(root_span_id != child2_span_id)
-  assert_true(child1_span_id != child2_span_id)
+  // Validate semantic consistency
+  let consistent_result = semantic_consistency_validator.validate(consistent_attrs)
+  assert_true(consistent_result.is_semantically_consistent)
   
-  // 添加事件并验证一致性
-  azimuth::Span::add_event(root_span, "root_event", Some([("event_type", azimuth::AttributeValue::StringValue("start"))]))
-  azimuth::Span::add_event(child1_span, "child1_event", Some([("event_type", azimuth::AttributeValue::StringValue("process"))]))
-  azimuth::Span::add_event(child2_span, "child2_event", Some([("event_type", azimuth::AttributeValue::StringValue("process"))]))
+  // Create attributes with semantically inconsistent data
+  let inconsistent_attrs = Attributes::new()
+  Attributes::set(inconsistent_attrs, "http.status_code", IntValue(999)) // Invalid HTTP status code
+  Attributes::set(inconsistent_attrs, "response_time", FloatValue(-10.5)) // Negative response time
   
-  // 结束跨度
-  azimuth::Span::end(child1_span)
-  azimuth::Span::end(child2_span)
-  azimuth::Span::end(root_span)
+  let inconsistent_result = semantic_consistency_validator.validate(inconsistent_attrs)
+  assert_false(inconsistent_result.is_semantically_consistent)
+  assert_eq(inconsistent_result.errors.length(), 2)
+  assert_true(inconsistent_result.errors[0].contains("HTTP status codes"))
+  assert_true(inconsistent_result.errors[1].contains("Response time"))
+}
+
+// Test 10: Distributed Transaction Consistency
+test "distributed transaction consistency validation" {
+  let distributed_transaction_validator = DistributedTransactionValidator::new()
   
-  // 验证跨度状态一致性
-  assert_eq(azimuth::Span::name(root_span), "root_operation")
-  assert_eq(azimuth::Span::name(child1_span), "child_operation_1")
-  assert_eq(azimuth::Span::name(child2_span), "child_operation_2")
+  // Create a distributed transaction with multiple participants
+  let transaction = DistributedTransaction::new("txn_123")
   
-  match azimuth::Span::kind(root_span) {
-    azimuth::Server => assert_true(true)
-    _ => assert_true(false)
-  }
+  let participant1 = TransactionParticipant::new("account-service", "account_123")
+  TransactionParticipant::set_operation(participant1, "debit", 100.0)
   
-  match azimuth::Span::kind(child1_span) {
-    azimuth::Client => assert_true(true)
-    _ => assert_true(false)
-  }
+  let participant2 = TransactionParticipant::new("order-service", "order_456")
+  TransactionParticipant::set_operation(participant2, "create", 100.0)
   
-  match azimuth::Span::kind(child2_span) {
-    azimuth::Internal => assert_true(true)
-    _ => assert_true(false)
-  }
+  let participant3 = TransactionParticipant::new("inventory-service", "item_789")
+  TransactionParticipant::set_operation(participant3, "reserve", 1)
+  
+  // Add participants to transaction
+  DistributedTransaction::add_participant(transaction, participant1)
+  DistributedTransaction::add_participant(transaction, participant2)
+  DistributedTransaction::add_participant(transaction, participant3)
+  
+  // Set transaction state to committed
+  DistributedTransaction::set_state(transaction, Committed)
+  
+  // Add transaction to validator
+  distributed_transaction_validator.add_transaction(transaction)
+  
+  // Validate distributed transaction consistency
+  let validation_result = distributed_transaction_validator.validate()
+  
+  // Verify validation passes
+  assert_true(validation_result.is_consistent)
+  assert_eq(validation_result.participant_count, 3)
+  
+  // Test inconsistent transaction state (participants in different states)
+  let inconsistent_transaction = DistributedTransaction::new("txn_456")
+  
+  let consistent_participant = TransactionParticipant::new("account-service", "account_789")
+  TransactionParticipant::set_operation(consistent_participant, "credit", 50.0)
+  TransactionParticipant::set_state(consistent_participant, Committed)
+  
+  let inconsistent_participant = TransactionParticipant::new("order-service", "order_123")
+  TransactionParticipant::set_operation(inconsistent_participant, "cancel", 50.0)
+  TransactionParticipant::set_state(inconsistent_participant, Aborted) // Different state
+  
+  DistributedTransaction::add_participant(inconsistent_transaction, consistent_participant)
+  DistributedTransaction::add_participant(inconsistent_transaction, inconsistent_participant)
+  DistributedTransaction::set_state(inconsistent_transaction, Committed)
+  
+  distributed_transaction_validator.add_transaction(inconsistent_transaction)
+  
+  let inconsistent_validation = distributed_transaction_validator.validate()
+  assert_false(inconsistent_validation.is_consistent)
+  assert_eq(inconsistent_validation.errors.length(), 1)
+  assert_true(inconsistent_validation.errors[0].contains("Participant state mismatch"))
 }

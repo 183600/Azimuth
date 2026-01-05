@@ -390,6 +390,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_serialization_deserialization_tests.mbt": {
   },
+  "azimuth_serialization_deserialization_quality_tests.mbt": {
+  },
   "azimuth_serialization_deserialization_integrity_tests.mbt": {
   },
   "azimuth_serialization_deserialization_enhanced_tests.mbt": {
@@ -451,6 +453,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_resource_management_tests.mbt": {
   },
   "azimuth_resource_management_strategy_tests.mbt": {
+  },
+  "azimuth_resource_management_quality_tests.mbt": {
   },
   "azimuth_resource_management_optimization_tests.mbt": {
   },
@@ -785,6 +789,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_performance_benchmark_resource_tests.mbt": {
   },
   "azimuth_performance_benchmark_resource_limits_tests.mbt": {
+  },
+  "azimuth_performance_benchmark_quality_tests.mbt": {
   },
   "azimuth_performance_benchmark_comprehensive_tests.mbt": {
   },
@@ -1148,6 +1154,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_high_quality_cross_platform_tests.mbt": {
   },
+  "azimuth_high_quality_core_tests.mbt": {
+  },
   "azimuth_high_quality_context_propagation_tests.mbt": {
   },
   "azimuth_high_quality_concurrent_safety_tests.mbt": {
@@ -1263,6 +1271,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_error_handling_resilience_tests.mbt": {
   },
   "azimuth_error_handling_recovery_tests.mbt": {
+  },
+  "azimuth_error_handling_recovery_quality_tests.mbt": {
   },
   "azimuth_error_handling_recovery_enhanced_tests.mbt": {
   },
@@ -1713,6 +1723,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_concurrent_safety_tests.mbt": {
   },
   "azimuth_concurrent_safety_resource_management_tests.mbt": {
+  },
+  "azimuth_concurrent_safety_quality_tests.mbt": {
   },
   "azimuth_concurrent_safety_enhanced_tests.mbt": {
   },

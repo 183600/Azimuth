@@ -155,5 +155,15 @@
         "../azimuth_resource_management_efficiency_tests.mbt",
         "../azimuth_security_encryption_tests.mbt",
         "../azimuth_new_telemetry_feature_tests.mbt",
-        "../azimuth_premium_high_quality_tests.mbt"]  }
+        "../azimuth_premium_high_quality_tests.mbt",
+        "../azimuth_serialization_deserialization_quality_tests.mbt",
+        "../azimuth_concurrent_safety_quality_tests.mbt",
+        "../azimuth_performance_benchmark_quality_tests.mbt",
+        "../azimuth_error_handling_recovery_quality_tests.mbt",
+        "../azimuth_resource_management_quality_tests.mbt",
+        "../azimuth_configuration_management_quality_tests.mbt",
+        "../azimuth_caching_mechanism_quality_tests.mbt",
+        "../azimuth_internationalization_support_quality_tests.mbt",
+        "../azimuth_time_series_data_processing_quality_tests.mbt",
+        "../azimuth_security_quality_tests.mbt"]  }
 }

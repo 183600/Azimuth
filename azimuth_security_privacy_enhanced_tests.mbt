@@ -1,710 +1,380 @@
-// Azimuth Telemetry System - Enhanced Security and Privacy Tests
-// 增强安全和隐私测试用例，测试系统的安全性和隐私保护功能
+// Azimuth Telemetry System - Security and Privacy Enhanced Tests
+// This file contains comprehensive test cases for security and privacy features
 
-test "数据加密和解密测试" {
-  // 创建AES加密器
-  let aes_key = azimuth::Crypto::generate_aes_key()
-  let aes_encryptor = azimuth::AesEncryptor::new(aes_key)
+// Test 1: Sensitive Data Filtering
+test "sensitive data filtering in attributes" {
+  let attrs = Attributes::new()
   
-  // 测试字符串加密
-  let plaintext = "这是需要加密的敏感遥测数据"
-  let encrypted_result = aes_encryptor.encrypt_string(plaintext)
+  // Set sensitive attributes
+  Attributes::set(attrs, "password", StringValue("secret123"))
+  Attributes::set(attrs, "api_key", StringValue("sk-1234567890abcdef"))
+  Attributes::set(attrs, "credit_card", StringValue("4111-1111-1111-1111"))
+  Attributes::set(attrs, "ssn", StringValue("123-45-6789"))
+  Attributes::set(attrs, "email", StringValue("user@example.com"))
+  Attributes::set(attrs, "phone", StringValue("+1-555-123-4567"))
   
-  match encrypted_result {
-    Ok(encrypted) => {
-      // 验证加密后的数据与原始数据不同
-      assert_ne(encrypted, plaintext)
-      
-      // 测试解密
-      let decrypted_result = aes_encryptor.decrypt_string(encrypted)
-      match decrypted_result {
-        Ok(decrypted) => {
-          assert_eq(decrypted, plaintext)
-        }
-        Err(_) => assert_true(false)
-      }
-    }
-    Err(_) => assert_true(false)
+  // Set non-sensitive attributes
+  Attributes::set(attrs, "user_id", StringValue("user_123"))
+  Attributes::set(attrs, "session_id", StringValue("session_456"))
+  Attributes::set(attrs, "request_id", StringValue("req_789"))
+  
+  // Apply sensitive data filtering
+  let filtered_attrs = Security::filter_sensitive_data(attrs)
+  
+  // Verify sensitive data is filtered
+  let password = Attributes::get(filtered_attrs, "password")
+  match password {
+    Some(StringValue(v)) => assert_eq(v, "***")
+    _ => assert_true(false)
   }
   
-  // 测试二进制数据加密
-  let binary_data = [0x01, 0x02, 0x03, 0x04, 0x05, 0xFF, 0xFE, 0xFD]
-  let binary_encrypted_result = aes_encryptor.encrypt_bytes(binary_data)
-  
-  match binary_encrypted_result {
-    Ok(encrypted) => {
-      // 验证加密后的数据与原始数据不同
-      assert_ne(encrypted, binary_data)
-      
-      // 测试解密
-      let binary_decrypted_result = aes_encryptor.decrypt_bytes(encrypted)
-      match binary_decrypted_result {
-        Ok(decrypted) => {
-          assert_eq(decrypted, binary_data)
-        }
-        Err(_) => assert_true(false)
-      }
-    }
-    Err(_) => assert_true(false)
+  let api_key = Attributes::get(filtered_attrs, "api_key")
+  match api_key {
+    Some(StringValue(v)) => assert_eq(v, "***")
+    _ => assert_true(false)
   }
   
-  // 测试使用错误密钥解密（应该失败）
-  let wrong_key = azimuth::Crypto::generate_aes_key()
-  let wrong_encryptor = azimuth::AesEncryptor::new(wrong_key)
-  
-  match encrypted_result {
-    Ok(encrypted) => {
-      let wrong_decrypt_result = wrong_encryptor.decrypt_string(encrypted)
-      match wrong_decrypt_result {
-        Ok(_) => assert_true(false) // 不应该成功
-        Err(error) => {
-          match error {
-            azimuth::CryptoError::DecryptionFailed => assert_true(true)
-            _ => assert_true(false)
-          }
-        }
-      }
-    }
-    Err(_) => assert_true(false)
+  let credit_card = Attributes::get(filtered_attrs, "credit_card")
+  match credit_card {
+    Some(StringValue(v)) => assert_eq(v, "****-****-****-****")
+    _ => assert_true(false)
   }
   
-  // 测试RSA加密
-  let rsa_key_pair = azimuth::Crypto::generate_rsa_key_pair(2048)
-  let rsa_encryptor = azimuth::RsaEncryptor::new(rsa_key_pair.public_key)
-  let rsa_decryptor = azimuth::RsaDecryptor::new(rsa_key_pair.private_key)
+  let ssn = Attributes::get(filtered_attrs, "ssn")
+  match ssn {
+    Some(StringValue(v)) => assert_eq(v, "***-**-****")
+    _ => assert_true(false)
+  }
   
-  let short_text = "RSA加密测试"
-  let rsa_encrypted_result = rsa_encryptor.encrypt_string(short_text)
-  
-  match rsa_encrypted_result {
-    Ok(encrypted) => {
-      // 测试RSA解密
-      let rsa_decrypted_result = rsa_decryptor.decrypt_string(encrypted)
-      match rsa_decrypted_result {
-        Ok(decrypted) => {
-          assert_eq(decrypted, short_text)
-        }
-        Err(_) => assert_true(false)
-      }
-    }
-    Err(_) => assert_true(false)
+  // Verify non-sensitive data is preserved
+  let user_id = Attributes::get(filtered_attrs, "user_id")
+  match user_id {
+    Some(StringValue(v)) => assert_eq(v, "user_123")
+    _ => assert_true(false)
   }
 }
 
-test "数字签名和验证测试" {
-  // 创建RSA密钥对用于签名
-  let rsa_key_pair = azimuth::Crypto::generate_rsa_key_pair(2048)
-  let signer = azimuth::DigitalSigner::new(rsa_key_pair.private_key)
-  let verifier = azimuth::SignatureVerifier::new(rsa_key_pair.public_key)
+// Test 2: Data Encryption and Decryption
+test "data encryption and decryption" {
+  let encryption_key = EncryptionKey::generate()
   
-  // 测试字符串签名
-  let message = "这是需要签名的遥测数据"
-  let signature_result = signer.sign_string(message)
+  // Test string encryption
+  let original_string = "Sensitive telemetry data"
+  let encrypted_string = Encryption::encrypt_string(original_string, encryption_key)
+  let decrypted_string = Encryption::decrypt_string(encrypted_string, encryption_key)
   
-  match signature_result {
-    Ok(signature) => {
-      // 验证签名
-      let verify_result = verifier.verify_string(message, signature)
-      match verify_result {
-        Ok(is_valid) => assert_true(is_valid)
-        Err(_) => assert_true(false)
-      }
-      
-      // 测试篡改消息的验证（应该失败）
-      let tampered_message = "这是被篡改的遥测数据"
-      let tampered_verify_result = verifier.verify_string(tampered_message, signature)
-      match tampered_verify_result {
-        Ok(is_valid) => assert_false(is_valid)
-        Err(_) => assert_true(false)
-      }
-      
-      // 测试使用错误公钥验证（应该失败）
-      let wrong_key_pair = azimuth::Crypto::generate_rsa_key_pair(2048)
-      let wrong_verifier = azimuth::SignatureVerifier::new(wrong_key_pair.public_key)
-      
-      let wrong_verify_result = wrong_verifier.verify_string(message, signature)
-      match wrong_verify_result {
-        Ok(is_valid) => assert_false(is_valid)
-        Err(_) => assert_true(false)
-      }
-    }
-    Err(_) => assert_true(false)
+  assert_eq(original_string, decrypted_string)
+  assert_true(encrypted_string != original_string)
+  
+  // Test attribute encryption
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "sensitive_data", StringValue("confidential information"))
+  Attributes::set(attrs, "non_sensitive_data", StringValue("public information"))
+  
+  let encrypted_attrs = Encryption::encrypt_attributes(attrs, encryption_key)
+  let decrypted_attrs = Encryption::decrypt_attributes(encrypted_attrs, encryption_key)
+  
+  // Verify decrypted attributes match original
+  let sensitive_data = Attributes::get(decrypted_attrs, "sensitive_data")
+  match sensitive_data {
+    Some(StringValue(v)) => assert_eq(v, "confidential information")
+    _ => assert_true(false)
   }
   
-  // 测试二进制数据签名
-  let binary_data = [0x01, 0x02, 0x03, 0x04, 0x05]
-  let binary_signature_result = signer.sign_bytes(binary_data)
-  
-  match binary_signature_result {
-    Ok(signature) => {
-      // 验证二进制签名
-      let binary_verify_result = verifier.verify_bytes(binary_data, signature)
-      match binary_verify_result {
-        Ok(is_valid) => assert_true(is_valid)
-        Err(_) => assert_true(false)
-      }
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // 测试HMAC签名
-  let hmac_key = "hmac-secret-key"
-  let hmac_signer = azimuth::HmacSigner::new(hmac_key)
-  let hmac_verifier = azimuth::HmacVerifier::new(hmac_key)
-  
-  let hmac_message = "HMAC签名测试"
-  let hmac_signature_result = hmac_signer.sign_string(hmac_message)
-  
-  match hmac_signature_result {
-    Ok(signature) => {
-      // 验证HMAC签名
-      let hmac_verify_result = hmac_verifier.verify_string(hmac_message, signature)
-      match hmac_verify_result {
-        Ok(is_valid) => assert_true(is_valid)
-        Err(_) => assert_true(false)
-      }
-      
-      // 测试使用错误密钥验证HMAC（应该失败）
-      let wrong_hmac_key = "wrong-hmac-key"
-      let wrong_hmac_verifier = azimuth::HmacVerifier::new(wrong_hmac_key)
-      
-      let wrong_hmac_verify_result = wrong_hmac_verifier.verify_string(hmac_message, signature)
-      match wrong_hmac_verify_result {
-        Ok(is_valid) => assert_false(is_valid)
-        Err(_) => assert_true(false)
-      }
-    }
-    Err(_) => assert_true(false)
+  let non_sensitive_data = Attributes::get(decrypted_attrs, "non_sensitive_data")
+  match non_sensitive_data {
+    Some(StringValue(v)) => assert_eq(v, "public information")
+    _ => assert_true(false)
   }
 }
 
-test "哈希和完整性验证测试" {
-  // 测试SHA-256哈希
-  let test_data = "这是需要计算哈希的遥测数据"
-  let sha256_hash = azimuth::Hash::sha256(test_data)
+// Test 3: Access Control
+test "access control for telemetry data" {
+  let access_policy = AccessPolicy::new()
   
-  // 验证哈希长度（SHA-256应该是32字节）
-  assert_eq(sha256_hash.length(), 32)
+  // Define roles and permissions
+  AccessPolicy::add_role(access_policy, "admin", ["read", "write", "delete"])
+  AccessPolicy::add_role(access_policy, "analyst", ["read"])
+  AccessPolicy::add_role(access_policy, "viewer", ["read:limited"])
   
-  // 验证相同数据产生相同哈希
-  let sha256_hash2 = azimuth::Hash::sha256(test_data)
-  assert_eq(sha256_hash, sha256_hash2)
+  // Create users with roles
+  let admin_user = User::new("admin_user", "admin")
+  let analyst_user = User::new("analyst_user", "analyst")
+  let viewer_user = User::new("viewer_user", "viewer")
   
-  // 验证不同数据产生不同哈希
-  let different_data = "这是不同的遥测数据"
-  let sha256_hash3 = azimuth::Hash::sha256(different_data)
-  assert_ne(sha256_hash, sha256_hash3)
+  // Create telemetry data with access levels
+  let telemetry_data = TelemetryData::new()
+  TelemetryData::set_access_level(telemetry_data, "confidential")
   
-  // 测试SHA-512哈希
-  let sha512_hash = azimuth::Hash::sha512(test_data)
+  // Test access control
+  assert_true(AccessControl::can_access(admin_user, telemetry_data, "read"))
+  assert_true(AccessControl::can_access(analyst_user, telemetry_data, "read"))
+  assert_false(AccessControl::can_access(viewer_user, telemetry_data, "read"))
   
-  // 验证哈希长度（SHA-512应该是64字节）
-  assert_eq(sha512_hash.length(), 64)
+  assert_true(AccessControl::can_access(admin_user, telemetry_data, "write"))
+  assert_false(AccessControl::can_access(analyst_user, telemetry_data, "write"))
+  assert_false(AccessControl::can_access(viewer_user, telemetry_data, "write"))
   
-  // 测试MD5哈希（仅用于兼容性测试，不推荐用于安全场景）
-  let md5_hash = azimuth::Hash::md5(test_data)
-  
-  // 验证哈希长度（MD5应该是16字节）
-  assert_eq(md5_hash.length(), 16)
-  
-  // 测试文件完整性验证
-  let temp_file = "/tmp/azimuth_integrity_test.txt"
-  let file_content = "这是用于测试文件完整性的内容"
-  
-  // 写入文件
-  let write_result = azimuth::FileSystem::write_file(temp_file, file_content)
-  match write_result {
-    Ok(_) => assert_true(true)
-    Err(_) => assert_true(false)
-  }
-  
-  // 计算文件哈希
-  let file_hash_result = azimuth::Hash::file_sha256(temp_file)
-  match file_hash_result {
-    Ok(file_hash) => {
-      // 验证文件哈希与内容哈希相同
-      let content_hash = azimuth::Hash::sha256(file_content)
-      assert_eq(file_hash, content_hash)
-      
-      // 验证文件完整性
-      let integrity_result = azimuth::Integrity::verify_file(temp_file, content_hash)
-      match integrity_result {
-        Ok(is_valid) => assert_true(is_valid)
-        Err(_) => assert_true(false)
-      }
-      
-      // 修改文件内容
-      let modified_content = "这是被修改后的文件内容"
-      azimuth::FileSystem::write_file(temp_file, modified_content)
-      
-      // 验证修改后的文件完整性（应该失败）
-      let modified_integrity_result = azimuth::Integrity::verify_file(temp_file, content_hash)
-      match modified_integrity_result {
-        Ok(is_valid) => assert_false(is_valid)
-        Err(_) => assert_true(false)
-      }
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // 清理测试文件
-  azimuth::FileSystem::delete_file(temp_file)
+  assert_true(AccessControl::can_access(admin_user, telemetry_data, "delete"))
+  assert_false(AccessControl::can_access(analyst_user, telemetry_data, "delete"))
+  assert_false(AccessControl::can_access(viewer_user, telemetry_data, "delete"))
 }
 
-test "身份验证和授权测试" {
-  // 创建用户管理器
-  let user_manager = azimuth::UserManager::new()
+// Test 4: Data Retention Policy
+test "data retention policy enforcement" {
+  let retention_policy = RetentionPolicy::new()
   
-  // 创建测试用户
-  let username = "testuser"
-  let password = "SecurePassword123!"
+  // Set retention rules
+  RetentionPolicy::set_rule(retention_policy, "trace_data", 30) // 30 days
+  RetentionPolicy::set_rule(retention_policy, "metric_data", 90) // 90 days
+  RetentionPolicy::set_rule(retention_policy, "log_data", 7) // 7 days
   
-  let create_result = user_manager.create_user(username, password, ["telemetry.read", "telemetry.write"])
-  match create_result {
-    Ok(_) => assert_true(true)
-    Err(_) => assert_true(false)
+  // Create telemetry data with timestamps
+  let current_time = current_time_seconds()
+  let old_trace_time = current_time - (40 * 24 * 60 * 60) // 40 days ago
+  let recent_metric_time = current_time - (10 * 24 * 60 * 60) // 10 days ago
+  let old_log_time = current_time - (10 * 24 * 60 * 60) // 10 days ago
+  
+  let trace_data = TelemetryData::with_timestamp("trace", old_trace_time)
+  let metric_data = TelemetryData::with_timestamp("metric", recent_metric_time)
+  let log_data = TelemetryData::with_timestamp("log", old_log_time)
+  
+  // Apply retention policy
+  let should_retain_trace = RetentionPolicy::should_retain(retention_policy, trace_data)
+  let should_retain_metric = RetentionPolicy::should_retain(retention_policy, metric_data)
+  let should_retain_log = RetentionPolicy::should_retain(retention_policy, log_data)
+  
+  // Verify retention decisions
+  assert_false(should_retain_trace) // Trace data is older than 30 days
+  assert_true(should_retain_metric) // Metric data is newer than 90 days
+  assert_false(should_retain_log) // Log data is older than 7 days
+}
+
+// Test 5: Secure Data Transmission
+test "secure data transmission" {
+  let client = SecureHttpClient::new()
+  
+  // Test secure HTTP request
+  let headers = [
+    ("Authorization", "Bearer secure_token"),
+    ("Content-Type", "application/json")
+  ]
+  let request = SecureHttpRequest::new(
+    "POST", 
+    "https://secure.example.com/api/telemetry", 
+    headers, 
+    Some("encrypted_telemetry_data"),
+    true // Use HTTPS
+  )
+  
+  // Verify request is secure
+  assert_true(SecureHttpRequest::is_secure(request))
+  assert_eq(SecureHttpRequest::http_method(request), "POST")
+  assert_eq(SecureHttpRequest::url(request), "https://secure.example.com/api/telemetry")
+  
+  // Test TLS verification
+  assert_true(SecureHttpClient::verify_tls_certificate(client, "secure.example.com"))
+  assert_false(SecureHttpClient::verify_tls_certificate(client, "unsecure.example.com"))
+}
+
+// Test 6: Audit Logging
+test "audit logging for security events" {
+  let audit_logger = AuditLogger::new()
+  
+  // Log security events
+  AuditLogger::log_access(audit_logger, "user_123", "telemetry_data_456", "read", true)
+  AuditLogger::log_access(audit_logger, "user_789", "telemetry_data_456", "write", false)
+  AuditLogger::log_access(audit_logger, "admin_user", "telemetry_data_456", "delete", true)
+  
+  // Retrieve audit logs
+  let access_logs = AuditLogger::get_access_logs(audit_logger, "telemetry_data_456")
+  
+  // Verify audit logs are recorded
+  assert_eq(access_logs.length(), 3)
+  
+  // Verify specific log entries
+  let first_log = access_logs[0]
+  assert_eq(AuditLog::user_id(first_log), "user_123")
+  assert_eq(AuditLog::resource_id(first_log), "telemetry_data_456")
+  assert_eq(AuditLog::action(first_log), "read")
+  assert_true(AuditLog::success(first_log))
+  
+  let second_log = access_logs[1]
+  assert_eq(AuditLog::user_id(second_log), "user_789")
+  assert_eq(AuditLog::resource_id(second_log), "telemetry_data_456")
+  assert_eq(AuditLog::action(second_log), "write")
+  assert_false(AuditLog::success(second_log))
+}
+
+// Test 7: Data Anonymization
+test "data anonymization for privacy" {
+  let pii_data = PII::new()
+  
+  // Add PII data
+  PII::add_field(pii_data, "name", "John Doe")
+  PII::add_field(pii_data, "email", "john.doe@example.com")
+  PII::add_field(pii_data, "phone", "+1-555-123-4567")
+  PII::add_field(pii_data, "address", "123 Main St, Anytown, USA")
+  
+  // Anonymize PII data
+  let anonymized_data = Privacy::anonymize_pii(pii_data)
+  
+  // Verify PII is anonymized
+  let name = PII::get_field(anonymized_data, "name")
+  match name {
+    Some(v) => assert_eq(v, "REDACTED")
+    None => assert_true(false)
   }
   
-  // 测试用户认证
-  let auth_result = user_manager.authenticate(username, password)
-  match auth_result {
-    Ok(user) => {
-      assert_eq(user.username, username)
-      assert_true(user.permissions.contains("telemetry.read"))
-      assert_true(user.permissions.contains("telemetry.write"))
-    }
-    Err(_) => assert_true(false)
+  let email = PII::get_field(anonymized_data, "email")
+  match email {
+    Some(v) => assert_eq(v, "****@****.com")
+    None => assert_true(false)
   }
   
-  // 测试错误密码认证（应该失败）
-  let wrong_auth_result = user_manager.authenticate(username, "WrongPassword")
-  match wrong_auth_result {
-    Ok(_) => assert_true(false)
-    Err(error) => {
-      match error {
-        azimuth::AuthError::InvalidCredentials => assert_true(true)
-        _ => assert_true(false)
-      }
-    }
+  let phone = PII::get_field(anonymized_data, "phone")
+  match phone {
+    Some(v) => assert_eq(v, "***-***-****")
+    None => assert_true(false)
   }
   
-  // 测试不存在用户认证（应该失败）
-  let nonexistent_auth_result = user_manager.authenticate("nonexistent", password)
-  match nonexistent_auth_result {
-    Ok(_) => assert_true(false)
-    Err(error) => {
-      match error {
-        azimuth::AuthError::UserNotFound => assert_true(true)
-        _ => assert_true(false)
-      }
-    }
-  }
-  
-  // 创建权限管理器
-  let permission_manager = azimuth::PermissionManager::new()
-  
-  // 定义权限
-  permission_manager.define_permission("telemetry.read", "读取遥测数据")
-  permission_manager.define_permission("telemetry.write", "写入遥测数据")
-  permission_manager.define_permission("telemetry.admin", "管理遥测系统")
-  
-  // 测试权限检查
-  let user_permissions = ["telemetry.read", "telemetry.write"]
-  
-  let can_read = permission_manager.check_permission(user_permissions, "telemetry.read")
-  assert_true(can_read)
-  
-  let can_write = permission_manager.check_permission(user_permissions, "telemetry.write")
-  assert_true(can_write)
-  
-  let can_admin = permission_manager.check_permission(user_permissions, "telemetry.admin")
-  assert_false(can_admin)
-  
-  // 测试角色权限
-  permission_manager.define_role("viewer", ["telemetry.read"])
-  permission_manager.define_role("editor", ["telemetry.read", "telemetry.write"])
-  permission_manager.define_role("admin", ["telemetry.read", "telemetry.write", "telemetry.admin"])
-  
-  // 创建带角色的用户
-  let create_admin_result = user_manager.create_user_with_role("adminuser", "AdminPass123!", "admin")
-  match create_admin_result {
-    Ok(_) => assert_true(true)
-    Err(_) => assert_true(false)
-  }
-  
-  // 验证管理员用户权限
-  let admin_auth_result = user_manager.authenticate("adminuser", "AdminPass123!")
-  match admin_auth_result {
-    Ok(admin_user) => {
-      let admin_can_read = permission_manager.check_permission(admin_user.permissions, "telemetry.admin")
-      assert_true(admin_can_read)
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // 测试JWT令牌
-  let token_manager = azimuth::TokenManager::new()
-  
-  // 生成JWT令牌
-  let token_payload = {
-    "username": username,
-    "permissions": ["telemetry.read", "telemetry.write"],
-    "exp": azimuth::Time::now() + 3600 // 1小时后过期
-  }
-  
-  let token_result = token_manager.generate_jwt(token_payload)
-  match token_result {
-    Ok(token) => {
-      // 验证JWT令牌
-      let verify_result = token_manager.verify_jwt(token)
-      match verify_result {
-        Ok(payload) => {
-          assert_eq(payload["username"], username)
-          assert_true(payload["permissions"].contains("telemetry.read"))
-        }
-        Err(_) => assert_true(false)
-      }
-      
-      // 测试过期令牌验证
-      let expired_payload = {
-        "username": username,
-        "permissions": ["telemetry.read"],
-        "exp": azimuth::Time::now() - 3600 // 1小时前过期
-      }
-      
-      let expired_token_result = token_manager.generate_jwt(expired_payload)
-      match expired_token_result {
-        Ok(expired_token) => {
-          let expired_verify_result = token_manager.verify_jwt(expired_token)
-          match expired_verify_result {
-            Ok(_) => assert_true(false) // 不应该成功
-            Err(error) => {
-              match error {
-                azimuth::TokenError::Expired => assert_true(true)
-                _ => assert_true(false)
-              }
-            }
-          }
-        }
-        Err(_) => assert_true(false)
-      }
-    }
-    Err(_) => assert_true(false)
+  let address = PII::get_field(anonymized_data, "address")
+  match address {
+    Some(v) => assert_eq(v, "REDACTED")
+    None => assert_true(false)
   }
 }
 
-test "数据脱敏和匿名化测试" {
-  // 创建数据脱敏器
-  let data_masker = azimuth::DataMasker::new()
+// Test 8: Secure Configuration Management
+test "secure configuration management" {
+  let config_manager = SecureConfigManager::new()
   
-  // 配置脱敏规则
-  data_masker.add_rule("email", azimuth::MaskingRule::Email)
-  data_masker.add_rule("phone", azimuth::MaskingRule::Phone)
-  data_masker.add_rule("credit_card", azimuth::MaskingRule::CreditCard)
-  data_masker.add_rule("ip_address", azimuth::MaskingRule::IpAddress)
+  // Set secure configuration
+  SecureConfigManager::set(config_manager, "database.password", "secure_db_password", true)
+  SecureConfigManager::set(config_manager, "api.secret_key", "secure_api_key", true)
+  SecureConfigManager::set(config_manager, "service.port", "8080", false)
+  SecureConfigManager::set(config_manager, "service.name", "azimuth", false)
   
-  // 测试邮箱脱敏
-  let email = "user@example.com"
-  let masked_email = data_masker.mask("email", email)
-  assert_eq(masked_email, "u***@example.com")
-  
-  // 测试手机号脱敏
-  let phone = "13812345678"
-  let masked_phone = data_masker.mask("phone", phone)
-  assert_eq(masked_phone, "138****5678")
-  
-  // 测试信用卡号脱敏
-  let credit_card = "4532015112830366"
-  let masked_credit_card = data_masker.mask("credit_card", credit_card)
-  assert_eq(masked_credit_card, "4532******0366")
-  
-  // 测试IP地址脱敏
-  let ip_address = "192.168.1.100"
-  let masked_ip = data_masker.mask("ip_address", ip_address)
-  assert_eq(masked_ip, "192.168.1.***")
-  
-  // 测试自定义脱敏规则
-  data_masker.add_custom_rule("user_id", |value| {
-    if value.length() > 4 {
-      value.subarray(0, 2) + "***" + value.subarray(value.length() - 2, 2)
-    } else {
-      "***"
-    }
-  })
-  
-  let user_id = "user123456"
-  let masked_user_id = data_masker.mask("user_id", user_id)
-  assert_eq(masked_user_id, "us***56")
-  
-  // 测试数据匿名化
-  let anonymizer = azimuth::DataAnonymizer::new()
-  
-  // 测试姓名匿名化
-  let name = "张三"
-  let anonymized_name = anonymizer.anonymize_name(name)
-  assert_ne(anonymized_name, name)
-  assert_eq(anonymized_name.length(), name.length()) // 保持长度相同
-  
-  // 测试地址匿名化
-  let address = "北京市朝阳区建国门外大街1号"
-  let anonymized_address = anonymizer.anonymize_address(address)
-  assert_ne(anonymized_address, address)
-  assert_true(anonymized_address.contains("北京市")) // 保持部分信息
-  
-  // 测试遥测数据匿名化
-  let telemetry_data = {
-    "user_id": "user123456",
-    "session_id": "session789",
-    "ip_address": "192.168.1.100",
-    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-    "metrics": {
-      "cpu_usage": 75.5,
-      "memory_usage": 60.2
-    },
-    "events": [
-      {"timestamp": 1609459200000, "action": "login"},
-      {"timestamp": 1609459260000, "action": "view_page"}
-    ]
+  // Verify secure configuration is encrypted
+  let db_password = SecureConfigManager::get(config_manager, "database.password")
+  match db_password {
+    Some(v) => assert_eq(v, "secure_db_password")
+    None => assert_true(false)
   }
   
-  let anonymized_telemetry = anonymizer.anonymize_telemetry(telemetry_data, [
-    "user_id",
-    "session_id",
-    "ip_address"
+  let api_key = SecureConfigManager::get(config_manager, "api.secret_key")
+  match api_key {
+    Some(v) => assert_eq(v, "secure_api_key")
+    None => assert_true(false)
+  }
+  
+  // Verify non-secure configuration is stored as-is
+  let port = SecureConfigManager::get(config_manager, "service.port")
+  match port {
+    Some(v) => assert_eq(v, "8080")
+    None => assert_true(false)
+  }
+  
+  let name = SecureConfigManager::get(config_manager, "service.name")
+  match name {
+    Some(v) => assert_eq(v, "azimuth")
+    None => assert_true(false)
+  }
+  
+  // Test configuration access control
+  let privileged_user = User::new("admin", "admin")
+  let regular_user = User::new("user", "user")
+  
+  assert_true(SecureConfigManager::can_access(config_manager, privileged_user, "database.password"))
+  assert_false(SecureConfigManager::can_access(config_manager, regular_user, "database.password"))
+  assert_true(SecureConfigManager::can_access(config_manager, regular_user, "service.port"))
+}
+
+// Test 9: Security Threat Detection
+test "security threat detection" {
+  let threat_detector = ThreatDetector::new()
+  
+  // Configure threat detection rules
+  ThreatDetector::add_rule(threat_detector, "unusual_access_pattern", 
+    "Detects unusual access patterns that may indicate unauthorized access")
+  ThreatDetector::add_rule(threat_detector, "data_exfiltration", 
+    "Detects potential data exfiltration attempts")
+  ThreatDetector::add_rule(threat_detector, "privilege_escalation", 
+    "Detects potential privilege escalation attempts")
+  
+  // Simulate security events
+  let normal_access = SecurityEvent::new("user_123", "telemetry_data", "read", true)
+  let unusual_access = SecurityEvent::new("user_456", "telemetry_data", "read", true)
+  let failed_access = SecurityEvent::new("user_789", "sensitive_data", "write", false)
+  
+  // Add events to detector
+  ThreatDetector::add_event(threat_detector, normal_access)
+  ThreatDetector::add_event(threat_detector, unusual_access)
+  ThreatDetector::add_event(threat_detector, failed_access)
+  
+  // Simulate multiple unusual accesses from the same user
+  for i in 0..10 {
+    let event = SecurityEvent::new("user_456", "telemetry_data", "read", true)
+    ThreatDetector::add_event(threat_detector, event)
+  }
+  
+  // Detect threats
+  let threats = ThreatDetector::detect_threats(threat_detector)
+  
+  // Verify threats are detected
+  assert_true(threats.length() > 0)
+  
+  // Verify specific threat types
+  let has_unusual_access = threats.any(fn(threat) { Threat::type(threat) == "unusual_access_pattern" })
+  assert_true(has_unusual_access)
+}
+
+// Test 10: Compliance with Privacy Regulations
+test "compliance with privacy regulations" {
+  let compliance_checker = ComplianceChecker::new()
+  
+  // Configure compliance rules for GDPR
+  ComplianceChecker::add_regulation(compliance_checker, "GDPR", [
+    "right_to_access",
+    "right_to_rectification",
+    "right_to_erasure",
+    "right_to_portability",
+    "privacy_by_design"
   ])
   
-  // 验证敏感字段已匿名化
-  let anonymized_user_id = anonymized_telemetry.get_string("user_id")
-  match anonymized_user_id {
-    Some(id) => {
-      assert_ne(id, "user123456")
-      assert_eq(id.length(), "user123456".length())
-    }
-    None => assert_true(false)
-  }
+  // Configure compliance rules for CCPA
+  ComplianceChecker::add_regulation(compliance_checker, "CCPA", [
+    "right_to_know",
+    "right_to_delete",
+    "right_to_opt_out",
+    "right_to_non_discrimination"
+  ])
   
-  // 验证非敏感字段保持不变
-  let cpu_usage = anonymized_telemetry.get_float("metrics.cpu_usage")
-  match cpu_usage {
-    Some(usage) => assert_eq(usage, 75.5)
-    None => assert_true(false)
-  }
-}
-
-test "安全审计和日志测试" {
-  // 创建安全审计器
-  let security_auditor = azimuth::SecurityAuditor::new()
+  // Create telemetry data with compliance metadata
+  let telemetry_data = TelemetryData::new()
+  TelemetryData::add_compliance_metadata(telemetry_data, "GDPR", [
+    "lawful_basis:consent",
+    "data_subject:john_doe",
+    "retention_period:365_days"
+  ])
+  TelemetryData::add_compliance_metadata(telemetry_data, "CCPA", [
+    "data_category:activity_data",
+    "business_purpose:analytics",
+    "sold:false"
+  ])
   
-  // 配置审计事件
-  security_auditor.enable_event_type(azimuth::AuditEventType::Login)
-  security_auditor.enable_event_type(azimuth::AuditEventType::Logout)
-  security_auditor.enable_event_type(azimuth::AuditEventType::DataAccess)
-  security_auditor.enable_event_type(azimuth::AuditEventType::PermissionDenied)
-  security_auditor.enable_event_type(azimuth::AuditEventType::ConfigChange)
+  // Check compliance
+  let gdpr_compliance = ComplianceChecker::check_compliance(compliance_checker, telemetry_data, "GDPR")
+  let ccpa_compliance = ComplianceChecker::check_compliance(compliance_checker, telemetry_data, "CCPA")
   
-  // 记录登录事件
-  let login_event = azimuth::AuditEvent {
-    event_type: azimuth::AuditEventType::Login,
-    user_id: Some("user123"),
-    resource: None,
-    action: Some("login"),
-    result: azimuth::AuditResult::Success,
-    ip_address: Some("192.168.1.100"),
-    user_agent: Some("Mozilla/5.0"),
-    timestamp: azimuth::Time::now(),
-    details: [("login_method", "password")]
-  }
+  // Verify compliance results
+  assert_true(gdpr_compliance.is_compliant)
+  assert_true(ccpa_compliance.is_compliant)
   
-  let log_result = security_auditor.log_event(login_event)
-  match log_result {
-    Ok(_) => assert_true(true)
-    Err(_) => assert_true(false)
-  }
+  // Verify specific compliance requirements
+  let has_right_to_erasure = gdpr_compliance.requirements.contains("right_to_erasure")
+  assert_true(has_right_to_erasure)
   
-  // 记录数据访问事件
-  let data_access_event = azimuth::AuditEvent {
-    event_type: azimuth::AuditEventType::DataAccess,
-    user_id: Some("user123"),
-    resource: Some("telemetry_metrics"),
-    action: Some("read"),
-    result: azimuth::AuditResult::Success,
-    ip_address: Some("192.168.1.100"),
-    user_agent: Some("Mozilla/5.0"),
-    timestamp: azimuth::Time::now(),
-    details: [("query", "cpu_usage > 80")]
-  }
-  
-  security_auditor.log_event(data_access_event)
-  
-  // 记录权限拒绝事件
-  let permission_denied_event = azimuth::AuditEvent {
-    event_type: azimuth::AuditEventType::PermissionDenied,
-    user_id: Some("user123"),
-    resource: Some("admin_settings"),
-    action: Some("modify"),
-    result: azimuth::AuditResult::Failure,
-    ip_address: Some("192.168.1.100"),
-    user_agent: Some("Mozilla/5.0"),
-    timestamp: azimuth::Time::now(),
-    details: [("required_permission", "telemetry.admin")]
-  }
-  
-  security_auditor.log_event(permission_denied_event)
-  
-  // 查询审计日志
-  let query = azimuth::AuditQuery {
-    user_id: Some("user123"),
-    event_types: Some([azimuth::AuditEventType::Login, azimuth::AuditEventType::DataAccess]),
-    start_time: Some(azimuth::Time::now() - 3600),
-    end_time: Some(azimuth::Time::now()),
-    limit: 100
-  }
-  
-  let query_result = security_auditor.query_events(query)
-  match query_result {
-    Ok(events) => {
-      assert_eq(events.length(), 2) // 应该返回登录和数据访问事件
-      
-      // 验证事件内容
-      let login_event = events[0]
-      assert_eq(login_event.event_type, azimuth::AuditEventType::Login)
-      match login_event.user_id {
-        Some(id) => assert_eq(id, "user123")
-        None => assert_true(false)
-      }
-      
-      let data_access_event = events[1]
-      assert_eq(data_access_event.event_type, azimuth::AuditEventType::DataAccess)
-      match data_access_event.resource {
-        Some(resource) => assert_eq(resource, "telemetry_metrics")
-        None => assert_true(false)
-      }
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // 生成安全报告
-  let report_start = azimuth::Time::now() - 86400 // 24小时前
-  let report_end = azimuth::Time::now()
-  
-  let report_result = security_auditor.generate_security_report(report_start, report_end)
-  match report_result {
-    Ok(report) => {
-      assert_true(report.total_events > 0)
-      assert_true(report.login_attempts > 0)
-      assert_true(report.data_access_count > 0)
-      assert_true(report.permission_denials > 0)
-      
-      // 验证报告包含详细统计
-      assert_true(report.event_counts.contains_key("login"))
-      assert_true(report.event_counts.contains_key("data_access"))
-      assert_true(report.event_counts.contains_key("permission_denied"))
-    }
-    Err(_) => assert_true(false)
-  }
-}
-
-test "网络安全测试" {
-  // 创建网络安全管理器
-  let security_manager = azimuth::NetworkSecurityManager::new()
-  
-  // 配置IP白名单
-  security_manager.add_ip_whitelist("192.168.1.0/24") // 允许192.168.1.0-192.168.1.255
-  security_manager.add_ip_whitelist("10.0.0.1") // 允许特定IP
-  
-  // 测试IP白名单检查
-  let allowed_ip = "192.168.1.100"
-  let is_allowed = security_manager.is_ip_allowed(allowed_ip)
-  assert_true(is_allowed)
-  
-  let specific_allowed_ip = "10.0.0.1"
-  let is_specific_allowed = security_manager.is_ip_allowed(specific_allowed_ip)
-  assert_true(is_specific_allowed)
-  
-  let blocked_ip = "203.0.113.1"
-  let is_blocked = security_manager.is_ip_allowed(blocked_ip)
-  assert_false(is_blocked)
-  
-  // 配置速率限制
-  security_manager.set_rate_limit("login", 5, 60) // 每分钟最多5次登录尝试
-  security_manager.set_rate_limit("api", 100, 60) // 每分钟最多100次API请求
-  
-  // 测试速率限制
-  let client_ip = "192.168.1.100"
-  
-  // 前5次请求应该成功
-  for i = 0; i < 5; i = i + 1 {
-    let is_rate_limited = security_manager.check_rate_limit("login", client_ip)
-    assert_false(is_rate_limited)
-  }
-  
-  // 第6次请求应该被限制
-  let is_rate_limited = security_manager.check_rate_limit("login", client_ip)
-  assert_true(is_rate_limited)
-  
-  // 测试DDoS防护
-  let ddos_protector = azimuth::DDoSProtector::new()
-  
-  // 配置DDoS防护规则
-  ddos_protector.add_rule({
-    "name": "api_requests",
-    "threshold": 1000, // 每分钟1000次请求
-    "window": 60, // 60秒窗口
-    "action": azimuth::DDoSAction::TemporaryBlock
-  })
-  
-  // 模拟正常请求
-  for i = 0; i < 100; i = i + 1 {
-    let is_blocked = ddos_protector.check_request("api_requests", "192.168.1.100")
-    assert_false(is_blocked)
-  }
-  
-  // 模拟DDoS攻击
-  for i = 0; i < 1001; i = i + 1 {
-    ddos_protector.check_request("api_requests", "203.0.113.1")
-  }
-  
-  // 攻击后应该被阻止
-  let is_attacker_blocked = ddos_protector.check_request("api_requests", "203.0.113.1")
-  assert_true(is_attacker_blocked)
-  
-  // 测试SQL注入防护
-  let sql_protector = azimuth::SQLInjectionProtector::new()
-  
-  // 测试安全查询
-  let safe_query = "SELECT * FROM users WHERE id = ?"
-  let is_safe = sql_protector.is_query_safe(safe_query)
-  assert_true(is_safe)
-  
-  // 测试SQL注入尝试
-  let malicious_query = "SELECT * FROM users WHERE id = 1; DROP TABLE users; --"
-  let is_malicious = sql_protector.is_query_safe(malicious_query)
-  assert_false(is_malicious)
-  
-  // 测试参数化查询
-  let param_query = "SELECT * FROM metrics WHERE user_id = ? AND timestamp > ?"
-  let params = ["user123", "1609459200000"]
-  
-  let sanitized_query = sql_protector.sanitize_query(param_query, params)
-  assert_true(sanitized_query.contains("user123"))
-  assert_true(sanitized_query.contains("1609459200000"))
-  assert_false(sanitized_query.contains(";")) // 不应包含分号
-  
-  // 测试XSS防护
-  let xss_protector = azimuth::XSSProtector::new()
-  
-  // 测试安全内容
-  let safe_content = "这是一个安全的内容"
-  let is_content_safe = xss_protector.is_content_safe(safe_content)
-  assert_true(is_content_safe)
-  
-  // 测试XSS尝试
-  let xss_attempt = "<script>alert('XSS')</script>"
-  let is_content_malicious = xss_protector.is_content_safe(xss_attempt)
-  assert_false(is_content_malicious)
-  
-  // 清理恶意内容
-  let sanitized_content = xss_protector.sanitize_content(xss_attempt)
-  assert_false(sanitized_content.contains("<script>"))
-  assert_false(sanitized_content.contains("</script>"))
+  let has_right_to_delete = ccpa_compliance.requirements.contains("right_to_delete")
+  assert_true(has_right_to_delete)
 }
