@@ -225,5 +225,6 @@
         "../azimuth_high_quality_comprehensive_test_suite.mbt",
         "../azimuth_essential_feature_tests.mbt",
         "../azimuth_high_quality_comprehensive_test_cases.mbt",
-        "../azimuth_advanced_quality_tests.mbt"]  }
+        "../azimuth_advanced_quality_tests.mbt",
+        "../azimuth_new_test_cases.mbt"]  }
 }
