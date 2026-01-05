@@ -22,7 +22,7 @@ spec = do
     describe "Configuration Management" $ do
       it "should validate and merge configurations" $ do
         let baseConfig = defaultConfig
-            customConfig = TelemetryConfig "custom-service" "2.0.0" False True True
+            customConfig = TelemetryConfig "custom-service" "2.0.0" False True True False
             -- 模拟配置合并
             mergedConfig = customConfig { enableLogging = enableLogging baseConfig }
         
@@ -34,9 +34,9 @@ spec = do
       
       it "should handle configuration validation" $ do
         let validConfigs = 
-              [ TelemetryConfig "service" "1.0.0" True True True
-              , TelemetryConfig "" "" False False False
-              , TelemetryConfig "test" "0.0.1" True False True
+              [ TelemetryConfig "service" "1.0.0" True True True False
+              , TelemetryConfig "" "" False False False False
+              , TelemetryConfig "test" "0.0.1" True False True False
               ]
         
         -- 验证所有配置都是有效的
@@ -167,7 +167,7 @@ spec = do
       
       it "should handle configuration invariants" $ property $
         \(name :: String) (version :: String) ->
-          let config = TelemetryConfig (pack name) (pack version) True True True
+          let config = TelemetryConfig (pack name) (pack version) True True True False
           in (Text.null (serviceName config)) == (null name) &&
              (Text.null (serviceVersion config)) == (null version)
 
@@ -250,8 +250,8 @@ spec = do
         -- 尝试使用不同配置初始化
         let configs = 
               [ defaultConfig
-              , TelemetryConfig "error-test" "1.0.0" True True True
-              , TelemetryConfig "" "" False False False
+              , TelemetryConfig "error-test" "1.0.0" True True True False
+              , TelemetryConfig "" "" False False False False
               ]
         
         results <- mapM (\config -> do

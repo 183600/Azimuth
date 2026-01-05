@@ -193,7 +193,7 @@ spec = do
         logger <- createLogger "hot-reload-logger" Info
         
         -- 模拟配置更新
-        let newConfig = TelemetryConfig "updated-service" "2.0.0" False True True
+        let newConfig = TelemetryConfig "updated-service" "2.0.0" False True True True
         
         -- 应用新配置
         result <- try $ initTelemetry newConfig
@@ -212,8 +212,8 @@ spec = do
       
       it "should validate configuration before applying" $ do
         let validConfigs = 
-              [ TelemetryConfig "valid-service" "1.0.0" True True True
-              , TelemetryConfig "another-valid" "2.1.0" False True False
+              [ TelemetryConfig "valid-service" "1.0.0" True True True False
+              , TelemetryConfig "another-valid" "2.1.0" False True False False
               ]
         
         results <- mapM (\config -> do
@@ -449,7 +449,7 @@ spec = do
       
       it "should handle edge cases in configuration" $ property $
         \(name :: String) (version :: String) ->
-          let config = TelemetryConfig (pack name) (pack version) True True True
+          let config = TelemetryConfig (pack name) (pack version) True True True False
           in unpack (serviceName config) == name &&
              unpack (serviceVersion config) == version &&
              enableMetrics config == True &&

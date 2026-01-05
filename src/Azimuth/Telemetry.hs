@@ -35,6 +35,7 @@ import Numeric (showHex)
 import Control.Concurrent.MVar
 import Control.Concurrent (myThreadId, ThreadId)
 import Data.Hashable (hash)
+import Control.Monad (when)
 import Prelude hiding (id)
 
 -- | Global trace context storage
@@ -47,6 +48,16 @@ traceContext = unsafePerformIO (newMVar Nothing)
 spanCounter :: IORef Int
 spanCounter = unsafePerformIO (newIORef 0)
 
+-- | Global configuration reference
+{-# NOINLINE globalConfig #-}
+globalConfig :: IORef TelemetryConfig
+globalConfig = unsafePerformIO (newIORef defaultConfig)
+
+-- | Global log counter for rate limiting
+{-# NOINLINE logCounter #-}
+logCounter :: IORef Int
+logCounter = unsafePerformIO (newIORef 0)
+
 -- | Configuration for telemetry system
 data TelemetryConfig = TelemetryConfig
     { serviceName :: Text
@@ -54,6 +65,7 @@ data TelemetryConfig = TelemetryConfig
     , enableMetrics :: Bool
     , enableTracing :: Bool
     , enableLogging :: Bool
+    , enableDebugOutput :: Bool
     } deriving (Show, Eq)
 
 -- | Default telemetry configuration
@@ -64,22 +76,30 @@ defaultConfig = TelemetryConfig
     , enableMetrics = True
     , enableTracing = True
     , enableLogging = True
+    , enableDebugOutput = True
     }
 
 -- | Initialize telemetry system
 initTelemetry :: TelemetryConfig -> IO ()
 initTelemetry config = do
-    putStrLn $ "Initializing telemetry for service: " ++ show (serviceName config)
+    when (enableDebugOutput config) $
+        putStrLn $ "Initializing telemetry for service: " ++ show (serviceName config)
+    -- Save configuration globally
+    writeIORef globalConfig config
     -- Clear trace context on initialization
     modifyMVar_ traceContext (\_ -> return Nothing)
     -- Reset span counter
     writeIORef spanCounter 0
+    -- Reset log counter
+    writeIORef logCounter 0
     -- Implementation would go here
 
 -- | Shutdown telemetry system
 shutdownTelemetry :: IO ()
 shutdownTelemetry = do
-    putStrLn "Shutting down telemetry system"
+    config <- readIORef globalConfig
+    when (enableDebugOutput config) $
+        putStrLn "Shutting down telemetry system"
     -- Clear trace context on shutdown
     modifyMVar_ traceContext (\_ -> return Nothing)
     -- Reset span counter
@@ -139,8 +159,13 @@ createMetricWithInitialValue name unit initialValue = do
 -- | Record a metric value
 recordMetric :: Metric -> Double -> IO ()
 recordMetric metric value = do
-    putStrLn $ "Recording metric: " ++ show (metricName metric) ++ " = " ++ show value
-    swapMVar (metricValueRef metric) value
+    config <- readIORef globalConfig
+    when (enableDebugOutput config) $ do
+        count <- atomicModifyIORef' logCounter (\c -> (c + 1, c + 1))
+        -- Only log every 100th operation to reduce output in high-frequency scenarios
+        when (count `mod` 100 == 0) $
+            putStrLn $ "Recording metric: " ++ show (metricName metric) ++ " = " ++ show value ++ " (count: " ++ show count ++ ")"
+    modifyMVar_ (metricValueRef metric) (\currentValue -> return (currentValue + value))
     return ()
 
 -- | Unsafe get metric value (for testing only)
@@ -174,7 +199,12 @@ createSpan name = do
 -- | Finish a span
 finishSpan :: Span -> IO ()
 finishSpan span = do
-    putStrLn $ "Finishing span: " ++ show (spanName span)
+    config <- readIORef globalConfig
+    when (enableDebugOutput config) $ do
+        count <- atomicModifyIORef' logCounter (\c -> (c + 1, c + 1))
+        -- Only log every 100th operation to reduce output in high-frequency scenarios
+        when (count `mod` 100 == 0) $
+            putStrLn $ "Finishing span: " ++ show (spanName span) ++ " (count: " ++ show count ++ ")"
     -- Implementation would go here
 
 -- | Log levels
@@ -193,5 +223,10 @@ createLogger name level = return $ Logger name level
 -- | Log a message
 logMessage :: Logger -> LogLevel -> Text -> IO ()
 logMessage logger level message = do
-    putStrLn $ "[" ++ show (loggerLevel logger) ++ "] " ++ show (loggerName logger) ++ ": " ++ show message
+    config <- readIORef globalConfig
+    when (enableDebugOutput config) $ do
+        count <- atomicModifyIORef' logCounter (\c -> (c + 1, c + 1))
+        -- Only log every 100th operation to reduce output in high-frequency scenarios
+        when (count `mod` 100 == 0) $
+            putStrLn $ "[" ++ show (loggerLevel logger) ++ "] " ++ show (loggerName logger) ++ ": " ++ show message ++ " (count: " ++ show count ++ ")"
     -- Implementation would go here

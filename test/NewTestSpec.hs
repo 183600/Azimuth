@@ -143,8 +143,8 @@ spec = do
       
       it "should handle tenant-specific configurations" $ do
         -- Create configurations for different tenants
-        let tenant1Config = TelemetryConfig "tenant1-service" "1.0.0" True False True
-            tenant2Config = TelemetryConfig "tenant2-service" "2.0.0" False True True
+        let tenant1Config = TelemetryConfig "tenant1-service" "1.0.0" True False True False
+            tenant2Config = TelemetryConfig "tenant2-service" "2.0.0" False True True False
         
         -- 测试租户1配置
         initTelemetry tenant1Config

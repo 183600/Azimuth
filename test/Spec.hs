@@ -14,6 +14,7 @@ import AdditionalSpec (spec)
 import ExtendedSpec (spec)
 import NewTestSpec (spec)
 import EnhancedTestSpec (spec)
+import QuickCheckSpec (spec)
 
 main :: IO ()
 main = hspec $ do
@@ -22,7 +23,7 @@ main = hspec $ do
     -- 配置验证测试
     describe "TelemetryConfig" $ do
       it "should validate config fields" $ do
-        let config = TelemetryConfig "test-service" "1.0.0" True False True
+        let config = TelemetryConfig "test-service" "1.0.0" True False True False
         serviceName config `shouldBe` "test-service"
         serviceVersion config `shouldBe` "1.0.0"
         enableMetrics config `shouldBe` True
@@ -30,7 +31,7 @@ main = hspec $ do
         enableLogging config `shouldBe` True
       
       it "should create custom config" $ do
-        let customConfig = TelemetryConfig "custom-service" "2.0.0" False True True
+        let customConfig = TelemetryConfig "custom-service" "2.0.0" False True True False
         initTelemetry customConfig `shouldReturn` ()
         shutdownTelemetry `shouldReturn` ()
     
@@ -224,7 +225,7 @@ main = hspec $ do
       describe "TelemetryConfig properties" $ do
         it "should preserve config fields after creation" $ property $
           \(name :: String) (version :: String) (metrics :: Bool) (tracing :: Bool) (logging :: Bool) ->
-            let config = TelemetryConfig (pack name) (pack version) metrics tracing logging
+            let config = TelemetryConfig (pack name) (pack version) metrics tracing logging False
             in unpack (serviceName config) == name &&
                unpack (serviceVersion config) == version &&
                enableMetrics config == metrics &&
@@ -233,7 +234,7 @@ main = hspec $ do
         
         it "should handle empty strings in config" $ property $
           \(_ :: String) ->
-            let config = TelemetryConfig "" "" True True True
+            let config = TelemetryConfig "" "" True True True False
             in serviceName config == "" &&
                serviceVersion config == "" &&
                enableMetrics config == True &&
@@ -495,3 +496,6 @@ main = hspec $ do
   
   -- 添加EnhancedTestSpec的测试套件
   EnhancedTestSpec.spec
+  
+  -- 添加QuickCheckSpec的测试套件
+  QuickCheckSpec.spec

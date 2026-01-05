@@ -16,6 +16,7 @@ import Data.Time.Clock (getCurrentTime, diffUTCTime, UTCTime)
 import Data.Time.Calendar (Day(..))
 import Data.Time.LocalTime (TimeZone, getCurrentTimeZone, utcToLocalTime)
 import System.IO.Unsafe (unsafePerformIO)
+import System.Random (randomIO)
 import Text.Read (readMaybe)
 import Prelude hiding (id)
 
@@ -48,9 +49,9 @@ spec = describe "Enhanced Telemetry Tests" $ do
       recordMetric metric 30.0
       recordMetric metric 40.0
       
-      -- 验证最终值是最后一个记录的值
+      -- 验证最终值是所有记录值的总和
       finalValue <- metricValue metric
-      finalValue `shouldBe` 40.0
+      finalValue `shouldBe` 100.0
     
     it "should handle floating point precision in aggregation" $ do
       metric <- createMetric "precision-test" "ms"
@@ -61,8 +62,8 @@ spec = describe "Enhanced Telemetry Tests" $ do
       recordMetric metric 0.3
       
       finalValue <- metricValue metric
-      -- 允许一定的浮点误差
-      finalValue `shouldSatisfy` (\v -> abs (v - 0.3) < 0.0001)
+      -- 允许一定的浮点误差，现在期望总和0.6
+      finalValue `shouldSatisfy` (\v -> abs (v - 0.6) < 0.0001)
     
     it "should aggregate metrics with different units" $ do
       countMetric <- createMetric "request-count" "count"
@@ -199,7 +200,7 @@ spec = describe "Enhanced Telemetry Tests" $ do
       shutdownTelemetry
       
       -- 使用新配置重新初始化
-      let newConfig = TelemetryConfig "updated-service" "2.0.0" False True True
+      let newConfig = TelemetryConfig "updated-service" "2.0.0" False True True False
       initTelemetry newConfig
       
       -- 验证新配置生效
@@ -262,7 +263,7 @@ spec = describe "Enhanced Telemetry Tests" $ do
       
       -- 验证时间数据可以正确处理
       let localTime = utcToLocalTime currentTimezone currentTime
-      length (show localTime) `shouldBe` (> 0)
+      length (show localTime) `shouldSatisfy` (> 0)
       
       -- 验证时间差计算
       threadDelay 1000000  -- 等待1秒
@@ -280,9 +281,9 @@ spec = describe "Enhanced Telemetry Tests" $ do
       threadDelay 100000  -- 等待100ms
       recordMetric metric 30.0
       
-      -- 验证最终值
+      -- 验证最终值是所有记录值的总和
       finalValue <- metricValue metric
-      finalValue `shouldBe` 30.0
+      finalValue `shouldBe` 60.0
 
   -- 8. 批量操作性能测试
   describe "Batch Operations Performance" $ do
@@ -296,9 +297,9 @@ spec = describe "Enhanced Telemetry Tests" $ do
       -- 测试批量操作性能
       sequence_ $ map (recordMetric metric) values
       
-      -- 验证最终值
+      -- 验证最终值是所有记录值的总和
       finalValue <- metricValue metric
-      finalValue `shouldBe` fromIntegral batchSize
+      finalValue `shouldBe` sum values
     
     it "should handle batch span creation efficiently" $ do
       -- 批量创建span
@@ -323,15 +324,17 @@ spec = describe "Enhanced Telemetry Tests" $ do
   -- 9. QuickCheck测试遥测数据的数学属性
   describe "QuickCheck Mathematical Properties" $ do
     it "should maintain metric value ordering" $ property $
-      \values :: [Double] ->
-        let sortedValues = sort values
+      \values -> 
+        let sortedValues = sort (values :: [Double])
             nonEmpty = not (null sortedValues)
-        in when nonEmpty $ do
-          let metric = unsafePerformIO $ createMetricWithInitialValue "ordering-test" "count" 0.0
-          sequence_ $ map (\v -> unsafePerformIO $ recordMetric metric v) sortedValues
-          let finalValue = unsafePerformIO $ metricValue metric
-              expectedValue = last sortedValues
-          finalValue `shouldBe` expectedValue
+        in if nonEmpty 
+           then unsafePerformIO $ do
+             metric <- createMetricWithInitialValue "ordering-test" "count" 0.0
+             sequence_ $ map (\v -> recordMetric metric v) sortedValues
+             finalValue <- metricValue metric
+             let expectedValue = sum sortedValues
+             return (finalValue == expectedValue)
+           else True
     
     it "should preserve span identity properties" $ property $
       \(name :: String) ->
@@ -349,18 +352,21 @@ spec = describe "Enhanced Telemetry Tests" $ do
         in length (nub levelNames) == length levels  -- 所有级别都不同
     
     it "should handle metric value commutativity" $ property $
-      \value1 value2 :: (Double, Double) ->
-        let (v1, v2) = value1
-            metric1 = unsafePerformIO $ createMetricWithInitialValue "commutative-test-1" "count" 0.0
-            metric2 = unsafePerformIO $ createMetricWithInitialValue "commutative-test-2" "count" 0.0
+      \value1 -> 
+        let (v1, v2) = value1 :: (Double, Double)
         in unsafePerformIO $ do
+          metric1 <- createMetricWithInitialValue "commutative-test-1" "count" 0.0
+          metric2 <- createMetricWithInitialValue "commutative-test-2" "count" 0.0
           recordMetric metric1 v1
           recordMetric metric1 v2
           recordMetric metric2 v2
           recordMetric metric2 v1
           val1 <- metricValue metric1
           val2 <- metricValue metric2
-          return (val1 == val2)
+          -- 处理浮点数精度问题，特别是-0.0和0.0的情况
+          let normalized1 = if val1 == 0.0 then 0.0 else val1
+              normalized2 = if val2 == 0.0 then 0.0 else val2
+          return (normalized1 == normalized2)
 
   -- 10. 错误恢复和容错机制测试
   describe "Error Recovery and Fault Tolerance" $ do
