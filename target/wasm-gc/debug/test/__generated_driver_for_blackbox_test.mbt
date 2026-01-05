@@ -664,6 +664,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_real_time_alerting_system_tests.mbt": {
   },
+  "azimuth_quantum_computing_tests.mbt": {
+  },
   "azimuth_quality_enhanced_test_suite.mbt": {
   },
   "azimuth_premium_visualization_tests.mbt": {
@@ -883,6 +885,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_premium_advanced_concurrency_tests.mbt": {
   },
   "azimuth_premium_adaptive_threshold_tests.mbt": {
+  },
+  "azimuth_predictive_analysis_tests.mbt": {
   },
   "azimuth_practical_test_cases.mbt": {
   },
