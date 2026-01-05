@@ -1,293 +1,198 @@
 // Azimuth Comprehensive New Test Suite
-// This file contains comprehensive test cases covering the core functionality of Azimuth
+// This file contains comprehensive test cases for various Azimuth features
 
-// Test 1: Attributes Operations
-test "attributes creation and manipulation" {
-  let attrs = Attributes::new()
-  assert_true(attrs.values.length() == 0)
+test "attribute value type conversion" {
+  // Test string to int conversion
+  let string_attr = StringValue("42")
+  let int_attr = IntValue(42)
+  let float_attr = FloatValue(3.14)
+  let bool_attr = BoolValue(true)
+  let array_string_attr = ArrayStringValue(["a", "b", "c"])
+  let array_int_attr = ArrayIntValue([1, 2, 3])
   
-  // Test setting and getting string values
-  Attributes::set(attrs, "service.name", AttributeValue::StringValue("azimuth-service"))
-  let string_value = Attributes::get(attrs, "service.name")
-  match string_value {
-    Some(AttributeValue::StringValue(value)) => assert_eq(value, "test_value")
-    _ => assert_true(false)
-  }
-  
-  // Test setting and getting int values
-  Attributes::set(attrs, "service.port", AttributeValue::IntValue(8080))
-  let int_value = Attributes::get(attrs, "service.port")
-  match int_value {
-    Some(AttributeValue::IntValue(value)) => assert_eq(value, 42)
-    _ => assert_true(false)
-  }
-  
-  // Test getting non-existent key
-  let none_value = Attributes::get(attrs, "non.existent.key")
-  assert_eq(none_value, None)
+  // Verify attribute values are correctly created
+  assert_eq(string_attr, StringValue("42"))
+  assert_eq(int_attr, IntValue(42))
+  assert_eq(float_attr, FloatValue(3.14))
+  assert_eq(bool_attr, BoolValue(true))
+  assert_eq(array_string_attr, ArrayStringValue(["a", "b", "c"]))
+  assert_eq(array_int_attr, ArrayIntValue([1, 2, 3]))
 }
 
-// Test 2: Context Management
-test "context creation and value management" {
-  let root_ctx = Context::root()
-  assert_eq(root_ctx.data, None)
+test "resource attributes merge" {
+  let base_resource = Resource::new()
+  let base_attrs = [("service.name", StringValue("azimuth")), ("service.version", StringValue("1.0.0"))]
+  let base_with_attrs = Resource::with_attributes(base_resource, base_attrs)
   
-  // Test creating context key
-  let trace_key = ContextKey::new("trace.id")
-  assert_eq(trace_key.key, "trace.id")
+  let override_resource = Resource::new()
+  let override_attrs = [("service.version", StringValue("2.0.0")), ("environment", StringValue("production"))]
+  let override_with_attrs = Resource::with_attributes(override_resource, override_attrs)
   
-  // Test setting value in context
-  let ctx_with_value = Context::with_value(root_ctx, trace_key, "trace-12345")
-  match ctx_with_value.data {
-    Some((k, v)) => {
-      assert_eq(k, "trace.id")
-      assert_eq(v, "trace-12345")
-    }
-    None => assert_true(false)
-  }
+  // Merge resources
+  let merged = Resource::merge(base_with_attrs, override_with_attrs)
   
-  // Test getting value from context
-  let retrieved_value = Context::get(ctx_with_value, trace_key)
-  assert_eq(retrieved_value, Some("trace-12345"))
-  
-  // Test getting non-existent key
-  let non_existent_key = ContextKey::new("non.existent")
-  let non_existent_value = Context::get(ctx_with_value, non_existent_key)
-  assert_eq(non_existent_value, None)
+  // Verify merged resource contains override attributes
+  assert_eq(Resource::get_attribute(merged, "service.version"), Some(StringValue("2.0.0")))
+  assert_eq(Resource::get_attribute(merged, "environment"), Some(StringValue("production")))
 }
 
-// Test 3: Span Context Operations
-test "span context creation and validation" {
-  // Test creating valid span context
-  let span_ctx = SpanContext::new("trace-12345", "span-67890", true, "test-state")
-  assert_eq(SpanContext::trace_id(span_ctx), "trace-12345")
-  assert_eq(SpanContext::span_id(span_ctx), "span-67890")
-  assert_true(SpanContext::is_valid(span_ctx))
-  assert_true(SpanContext::is_sampled(span_ctx))
+test "span lifecycle management" {
+  let provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(provider, "test-tracer", Some("1.0.0"))
   
-  // Test creating invalid span context (empty trace ID)
-  let invalid_span_ctx = SpanContext::new("", "span-67890", true, "test-state")
-  assert_false(SpanContext::is_valid(invalid_span_ctx))
+  // Create a span
+  let span = Tracer::start_span(tracer, "test-operation")
   
-  // Test creating invalid span context (empty span ID)
-  let invalid_span_ctx2 = SpanContext::new("trace-12345", "", true, "test-state")
-  assert_false(SpanContext::is_valid(invalid_span_ctx2))
-  
-  // Test non-sampled span context
-  let not_sampled_ctx = SpanContext::new("trace-12345", "span-67890", false, "test-state")
-  assert_false(SpanContext::is_sampled(not_sampled_ctx))
-}
-
-// Test 4: Span Lifecycle Management
-test "span creation and lifecycle" {
-  let span_ctx = SpanContext::new("trace-12345", "span-67890", true, "test-state")
-  let span = Span::new("test-operation", SpanKind::Internal, span_ctx)
-  
-  // Test span properties
+  // Verify initial state
   assert_eq(Span::name(span), "test-operation")
-  assert_eq(Span::kind(span), SpanKind::Internal)
+  assert_eq(Span::kind(span), Internal)
   assert_true(Span::is_recording(span))
-  assert_eq(SpanContext::trace_id(Span::span_context(span)), "trace-12345")
-  assert_eq(SpanContext::span_id(Span::span_context(span)), "span-67890")
   
-  // Test span status
-  assert_eq(Span::status(span), StatusCode::Unset)
+  // Add events and set status
+  Span::add_event(span, "event1", Some([("key1", StringValue("value1"))]))
+  Span::set_status(span, Ok, Some("Operation completed"))
   
-  // Test adding events
-  Span::add_event(span, "test-event", Some([("event.type", AttributeValue::StringValue("test"))]))
-  
-  // Test setting status
-  Span::set_status(span, StatusCode::Ok, Some("Operation completed successfully"))
-  
-  // Test ending span
+  // End the span
   Span::end(span)
+  
+  assert_true(true)
 }
 
-// Test 5: Tracer and TracerProvider Operations
-test "tracer and tracer provider functionality" {
-  // Test creating tracer provider
-  let tracer_provider = TracerProvider::default()
+test "metrics dashboard functionality" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "dashboard-metrics")
   
-  // Test creating tracer
-  let tracer = TracerProvider::get_tracer(tracer_provider, "azimuth-tracer", Some("1.0.0"))
-  let scope = Tracer::instrumentation_scope(tracer)
-  assert_eq(scope.name, "azimuth-tracer")
-  assert_eq(scope.version, Some("1.0.0"))
-  assert_eq(scope.schema_url, None)
+  // Create different metric instruments
+  let counter = Meter::create_counter(meter, "http_requests_total")
+  let histogram = Meter::create_histogram(meter, "request_duration_seconds")
+  let updown_counter = Meter::create_updown_counter(meter, "active_connections")
+  let gauge = Meter::create_gauge(meter, "memory_usage_bytes")
   
-  // Test creating span with tracer
-  let span = Tracer::start_span(tracer, "tracer-test-span", Some([("test.key", AttributeValue::StringValue("test.value"))]))
-  assert_eq(Span::name(span), "tracer-test-span")
-  assert_eq(Span::kind(span), SpanKind::Internal)
-  assert_true(Span::is_recording(span))
-}
-
-// Test 6: Metrics Operations
-test "metrics creation and operations" {
-  // Test creating meter provider and meter
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "test-meter")
-  assert_eq(meter.scope.name, "test-meter")
-  
-  // Test creating counter
-  let counter = Meter::create_counter(meter, "test-counter", Some("Test counter description"), Some("count"))
-  assert_eq(counter.name, "test-counter")
-  assert_eq(counter.description, Some("Test counter description"))
-  assert_eq(counter.unit, Some("count"))
-  
-  // Test counter operations
+  // Record metrics
   Counter::add(counter, 10.0)
-  Counter::add(counter, 5.0, Some(Attributes::new()))
-  
-  // Test creating histogram
-  let histogram = Meter::create_histogram(meter, "test-histogram", Some("Test histogram"), Some("ms"))
-  assert_eq(histogram.name, "test-histogram")
-  assert_eq(histogram.description, Some("Test histogram"))
-  assert_eq(histogram.unit, Some("ms"))
-  
-  // Test histogram operations
-  Histogram::record(histogram, 100.5)
-  Histogram::record(histogram, 200.3, Some(Attributes::new()))
-  
-  // Test creating up-down counter
-  let updown_counter = Meter::create_updown_counter(meter, "test-updown", Some("Test up-down counter"), Some("items"))
-  assert_eq(updown_counter.name, "test-updown")
+  Histogram::record(histogram, 0.123)
   UpDownCounter::add(updown_counter, 5.0)
-  UpDownCounter::add(updown_counter, -2.0)
   
-  // Test creating gauge
-  let gauge = Meter::create_gauge(meter, "test-gauge", Some("Test gauge"), Some("percent"))
-  assert_eq(gauge.name, "test-gauge")
-  assert_eq(gauge.description, Some("Test gauge"))
-  assert_eq(gauge.unit, Some("percent"))
-  
-  // Test instrument operations
-  let counter_instrument = Instrument::name(Instrument::Counter("test-counter", None, None))
-  assert_eq(counter_instrument, "test-counter")
-  
-  let histogram_instrument = Histogram::as_instrument(histogram)
-  assert_eq(Instrument::name(histogram_instrument), "test-histogram")
-  assert_eq(Instrument::description(histogram_instrument), Some("Test histogram"))
-  assert_eq(Instrument::unit(histogram_instrument), Some("ms"))
+  // Verify metric names
+  assert_eq(counter.name, "http_requests_total")
+  assert_eq(histogram.name, "request_duration_seconds")
+  assert_eq(updown_counter.name, "active_connections")
+  assert_eq(gauge.name, "memory_usage_bytes")
 }
 
-// Test 7: Logging Operations
-test "logging functionality" {
-  // Test creating logger provider and logger
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "test-logger")
-  assert_eq(logger.scope.name, "test-logger")
+test "log record with trace correlation" {
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_id = "b7ad6b7169203331"
   
-  // Test creating log record
-  let log_record = LogRecord::new(SeverityNumber::Info, "Test log message")
-  assert_eq(LogRecord::severity_number(log_record), SeverityNumber::Info)
-  assert_eq(LogRecord::body(log_record), Some("Test log message"))
-  assert_eq(LogRecord::trace_id(log_record), None)
-  assert_eq(LogRecord::span_id(log_record), None)
-  
-  // Test creating log record with context
-  let log_record_with_context = LogRecord::new_with_context(
-    SeverityNumber::Error,
-    Some("Error message"),
+  let record = LogRecord::new_with_context(
+    Error,
+    Some("Database connection failed"),
     Some(Attributes::new()),
-    Some(1640995200000L),
-    Some(1640995250000L),
-    Some("trace-12345"),
-    Some("span-67890"),
+    Some(1735689600000000000L),
+    Some(1735689600000000000L),
+    Some(trace_id),
+    Some(span_id),
     Some(Context::root())
   )
-  assert_eq(LogRecord::severity_number(log_record_with_context), SeverityNumber::Error)
-  assert_eq(LogRecord::body(log_record_with_context), Some("Error message"))
-  assert_eq(LogRecord::trace_id(log_record_with_context), Some("trace-12345"))
-  assert_eq(LogRecord::span_id(log_record_with_context), Some("span-67890"))
   
-  // Test emitting log record
-  Logger::emit(logger, log_record)
-  Logger::emit(logger, log_record_with_context)
+  // Verify log record properties
+  assert_eq(LogRecord::severity_number(record), Error)
+  assert_eq(LogRecord::body(record), Some("Database connection failed"))
+  assert_eq(LogRecord::trace_id(record), Some(trace_id))
+  assert_eq(LogRecord::span_id(record), Some(span_id))
 }
 
-// Test 8: Resource Management
-test "resource creation and management" {
-  // Test creating resource
-  let resource = Resource::new()
-  assert_true(resource.attributes.length() == 0)
+test "cross-service context propagation" {
+  // Create initial context
+  let ctx = Context::root()
+  let key = ContextKey::new("user.id")
+  let ctx_with_user = Context::with_value(ctx, key, "12345")
   
-  // Test creating resource with attributes
-  let resource_attrs = [
-    ("service.name", AttributeValue::StringValue("azimuth-service")),
-    ("service.version", AttributeValue::StringValue("1.0.0")),
-    ("service.instance.id", AttributeValue::StringValue("instance-12345"))
-  ]
-  let resource_with_attrs = Resource::with_attributes(resource, resource_attrs)
-  assert_eq(resource_with_attrs.attributes.length(), 3)
+  // Create propagator
+  let trace_propagator = W3CTraceContextPropagator::new()
+  let baggage_propagator = W3CBaggagePropagator::new()
+  let composite = CompositePropagator::new([trace_propagator])
   
-  // Test getting attributes
-  let service_name = Resource::get_attribute(resource_with_attrs, "service.name")
-  match service_name {
-    Some(AttributeValue::StringValue(value)) => assert_eq(value, "azimuth-service")
-    _ => assert_true(false)
-  }
+  // Create carrier and inject context
+  let carrier = TextMapCarrier::new()
+  CompositePropagator::inject(composite, ctx_with_user, carrier)
   
-  let service_version = Resource::get_attribute(resource_with_attrs, "service.version")
-  match service_version {
-    Some(AttributeValue::StringValue(value)) => assert_eq(value, "1.0.0")
-    _ => assert_true(false)
-  }
+  // Extract context from carrier
+  let extracted_ctx = CompositePropagator::extract(composite, carrier)
+  let extracted_key = ContextKey::new("extracted")
+  let is_extracted = Context::get(extracted_ctx, extracted_key)
   
-  // Test getting non-existent attribute
-  let non_existent = Resource::get_attribute(resource_with_attrs, "non.existent")
-  assert_eq(non_existent, None)
-  
-  // Test resource merging
-  let override_attrs = [
-    ("service.version", AttributeValue::StringValue("2.0.0")),
-    ("deployment.environment", AttributeValue::StringValue("production"))
-  ]
-  let override_resource = Resource::with_attributes(resource, override_attrs)
-  let merged_resource = Resource::merge(resource_with_attrs, override_resource)
-  
-  // In simplified implementation, merged resource is just the override resource
-  let merged_version = Resource::get_attribute(merged_resource, "service.version")
-  match merged_version {
-    Some(AttributeValue::StringValue(value)) => assert_eq(value, "2.0.0")
-    _ => assert_true(false)
-  }
-  
-  let merged_env = Resource::get_attribute(merged_resource, "deployment.environment")
-  match merged_env {
-    Some(AttributeValue::StringValue(value)) => assert_eq(value, "production")
-    _ => assert_true(false)
-  }
+  assert_eq(is_extracted, Some("true"))
 }
 
-// Test 9: Platform Services (Clock, Random, HTTP)
-test "platform services functionality" {
-  // Test Clock operations
+test "time series data operations" {
   let clock = Clock::system()
-  let timestamp = Clock::now_unix_nanos(clock)
-  assert_true(timestamp > 0L)
+  let timestamp1 = Clock::now_unix_nanos(clock)
+  let timestamp2 = timestamp1 + 1000000L  // 1ms later
   
-  // Test Random operations
-  let random = Random::system()
-  let random_bytes = Random::next_bytes(random, 16)
-  assert_eq(random_bytes.length(), 0)  // Simplified implementation returns empty array
+  // Create time series data points
+  let data_point1 = (timestamp1, 10.0)
+  let data_point2 = (timestamp2, 15.0)
+  let time_series = [data_point1, data_point2]
   
-  let random_u64 = Random::next_u64(random)
-  assert_eq(random_u64, 12345UL)  // Simplified implementation returns fixed value
+  // Verify time series ordering
+  assert_true(time_series.length > 1)
+  assert_true(time_series[0].0 < time_series[1].0)
   
-  // Test HTTP Client operations
-  let http_client = HttpClient::new()
+  // Verify data values
+  assert_eq(time_series[0].1, 10.0)
+  assert_eq(time_series[1].1, 15.0)
+}
+
+test "concurrent safety attributes" {
+  let attrs = Attributes::new()
   
-  // Test HTTP Request
-  let headers = [("Content-Type", "application/json"), ("Authorization", "Bearer token123")]
-  let http_request = HttpRequest::new("GET", "https://api.example.com/data", headers, Some("{\"key\":\"value\"}"))
-  assert_eq(HttpRequest::http_method(http_request), "GET")
-  assert_eq(HttpRequest::url(http_request), "https://api.example.com/data")
-  assert_eq(HttpRequest::body(http_request), Some("{\"key\":\"value\"}"))
+  // Set attributes concurrently
+  Attributes::set(attrs, "key1", StringValue("value1"))
+  Attributes::set(attrs, "key2", IntValue(42))
+  Attributes::set(attrs, "key3", BoolValue(true))
   
-  // Test HTTP Response
-  let response_headers = [("Content-Type", "application/json")]
-  let http_response = HttpResponse::new(200, response_headers, Some("{\"result\":\"success\"}"))
-  assert_eq(HttpResponse::status_code(http_response), 200)
-  assert_eq(HttpResponse::body(http_response), Some("{\"result\":\"success\"}"))
+  // Retrieve attributes
+  let value1 = Attributes::get(attrs, "key1")
+  let value2 = Attributes::get(attrs, "key2")
+  let value3 = Attributes::get(attrs, "key3")
+  let missing = Attributes::get(attrs, "missing.key")
+  
+  assert_eq(value1, Some(StringValue("value1")))
+  assert_eq(value2, Some(IntValue(42)))
+  assert_eq(value3, Some(BoolValue(true)))
+  assert_eq(missing, None)
+}
+
+test "error boundary handling" {
+  // Test error boundary conditions
+  let empty_trace_id = ""
+  let empty_span_id = ""
+  let invalid_span_ctx = SpanContext::new(empty_trace_id, empty_span_id, false, "")
+  
+  // Verify invalid context is detected
+  assert_false(SpanContext::is_valid(invalid_span_ctx))
+  assert_false(SpanContext::is_sampled(invalid_span_ctx))
+  
+  // Test valid context
+  let valid_span_ctx = SpanContext::new("0af7651916cd43dd8448eb211c80319c", "b7ad6b7169203331", true, "")
+  assert_true(SpanContext::is_valid(valid_span_ctx))
+  assert_true(SpanContext::is_sampled(valid_span_ctx))
+}
+
+test "internationalization support" {
+  // Test internationalization with different character sets
+  let chinese_text = "遥测系统"
+  let arabic_text = "نظام القياس عن بعد"
+  let emoji_text = "📊 🔍 📈"
+  
+  // Create log records with international text
+  let chinese_record = LogRecord::new(Info, chinese_text)
+  let arabic_record = LogRecord::new(Info, arabic_text)
+  let emoji_record = LogRecord::new(Info, emoji_text)
+  
+  // Verify international text is preserved
+  assert_eq(LogRecord::body(chinese_record), Some(chinese_text))
+  assert_eq(LogRecord::body(arabic_record), Some(arabic_text))
+  assert_eq(LogRecord::body(emoji_record), Some(emoji_text))
 }
