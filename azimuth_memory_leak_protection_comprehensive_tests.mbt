@@ -1,476 +1,540 @@
-// Azimuth 内存泄漏防护测试用例
-// 专注于测试内存管理、资源清理和内存泄漏检测机制
+// Azimuth Memory Leak Protection Comprehensive Tests
+// This file contains comprehensive test cases for memory leak detection, prevention, and resource cleanup
 
-// 测试1: 对象生命周期管理
-test "对象生命周期管理" {
-  // 模拟对象创建和销毁
-  let object_lifecycle = [
-    {object_id: "obj1", created_at: 1640995200000L, destroyed_at: None},
-    {object_id: "obj2", created_at: 1640995260000L, destroyed_at: Some(1640995320000L)},
-    {object_id: "obj3", created_at: 1640995380000L, destroyed_at: None},
-    {object_id: "obj4", created_at: 1640995440000L, destroyed_at: Some(1640995500000L)},
-    {object_id: "obj5", created_at: 1640995560000L, destroyed_at: None}
-  ]
+// Test 1: Span Lifecycle Memory Management
+test "span lifecycle memory management" {
+  let leak_detector = MemoryLeakDetector::new()
+  let initial_memory = MemoryMonitor::get_current_usage()
   
-  // 统计活跃对象和已销毁对象
-  let active_objects = object_lifecycle.filter(fn(obj) { 
-    match obj.destroyed_at {
-      None => true
-      Some(_) => false
-    }
-  })
+  // Create and properly manage spans
+  let managed_spans = []
   
-  let destroyed_objects = object_lifecycle.filter(fn(obj) { 
-    match obj.destroyed_at {
-      None => false
-      Some(_) => true
-    }
-  })
-  
-  // 验证对象统计
-  assert_eq(active_objects.length(), 3)
-  assert_eq(destroyed_objects.length(), 2)
-  
-  // 验证活跃对象ID
-  assert_true(active_objects.any(fn(obj) { obj.object_id == "obj1" }))
-  assert_true(active_objects.any(fn(obj) { obj.object_id == "obj3" }))
-  assert_true(active_objects.any(fn(obj) { obj.object_id == "obj5" }))
-  
-  // 验证已销毁对象ID
-  assert_true(destroyed_objects.any(fn(obj) { obj.object_id == "obj2" }))
-  assert_true(destroyed_objects.any(fn(obj) { obj.object_id == "obj4" }))
-  
-  // 计算对象生命周期
-  let lifecycles = destroyed_objects.map(fn(obj) {
-    match obj.destroyed_at {
-      Some(destroyed) => {
-        {
-          object_id: obj.object_id,
-          lifetime_ms: destroyed - obj.created_at
-        }
-      }
-      None => {
-        {
-          object_id: obj.object_id,
-          lifetime_ms: 0
-        }
-      }
-    }
-  })
-  
-  // 验证生命周期计算
-  assert_eq(lifecycles.length(), 2)
-  assert_eq(lifecycles[0].object_id, "obj2")
-  assert_eq(lifecycles[0].lifetime_ms, 60000L)  // 1640995320000 - 1640995260000
-}
-
-// 测试2: 内存池管理
-test "内存池管理" {
-  // 模拟内存池状态
-  let memory_pool = {
-    total_size_mb: 1024,
-    allocated_blocks: [
-      {block_id: "block1", size_mb: 128, in_use: true},
-      {block_id: "block2", size_mb: 256, in_use: true},
-      {block_id: "block3", size_mb: 64, in_use: false},
-      {block_id: "block4", size_mb: 128, in_use: true},
-      {block_id: "block5", size_mb: 32, in_use: false}
-    ]
+  for i in 0..=1000 {
+    let span = Span::new("test_span_" + i.to_string(), Internal, SpanContext::empty())
+    Span::add_event(span, "test_event", None)
+    Span::set_attribute(span, "test_attr", StringValue("test_value"))
+    managed_spans.push(span)
   }
   
-  // 计算内存使用情况
-  let total_allocated = memory_pool.allocated_blocks.fold(0, fn(acc, block) { 
-    acc + block.size_mb 
-  })
+  let after_creation_memory = MemoryMonitor::get_current_usage()
+  let creation_memory_increase = after_creation_memory - initial_memory
   
-  let used_memory = memory_pool.allocated_blocks.fold(0, fn(acc, block) { 
-    if block.in_use { acc + block.size_mb } else { acc } 
-  })
+  // Properly end and cleanup spans
+  for span in managed_spans {
+    Span::end(span)
+    Span::cleanup(span)
+  }
   
-  let free_memory = total_allocated - used_memory
+  // Force garbage collection
+  MemoryMonitor::force_gc()
+  let after_cleanup_memory = MemoryMonitor::get_current_usage()
   
-  // 验证内存计算
-  assert_eq(total_allocated, 608)  // 128 + 256 + 64 + 128 + 32
-  assert_eq(used_memory, 512)      // 128 + 256 + 128
-  assert_eq(free_memory, 96)       // 64 + 32
+  // Memory should be released after cleanup
+  let memory_released = after_creation_memory - after_cleanup_memory
+  assert_true(memory_released > creation_memory_increase * 0.8) // At least 80% should be released
   
-  // 计算内存利用率
-  let utilization_rate = (used_memory.to_double() / total_allocated.to_double()) * 100.0
-  assert_eq(utilization_rate, 84.21052631578947)  // 512/608 * 100
+  // Verify no span leaks detected
+  let leak_report = MemoryLeakDetector::analyze(leak_detector)
+  assert_eq(leak_report.span_leaks, 0)
+}
+
+// Test 2: Attribute Collection Memory Management
+test "attribute collection memory management" {
+  let leak_detector = MemoryLeakDetector::new()
   
-  // 模拟内存块释放
-  let release_block = fn(pool: {total_size_mb: Int, allocated_blocks: Array[{block_id: String, size_mb: Int, in_use: Bool}]}, block_id: String) {
-    let updated_blocks = pool.allocated_blocks.map(fn(block) {
-      if block.block_id == block_id {
-        {block_id: block.block_id, size_mb: block.size_mb, in_use: false}
-      } else {
-        block
-      }
-    })
+  // Test attribute creation and cleanup
+  let attribute_collections = []
+  
+  for i in 0..=500 {
+    let attrs = Attributes::new()
     
-    {
-      total_size_mb: pool.total_size_mb,
-      allocated_blocks: updated_blocks
-    }
-  }
-  
-  // 释放block2
-  let updated_pool = release_block(memory_pool, "block2")
-  
-  // 验证释放结果
-  let released_block = updated_pool.allocated_blocks.find_fn(fn(block) { 
-    block.block_id == "block2" 
-  })
-  
-  match released_block {
-    Some(block) => assert_false(block.in_use)
-    None => assert_true(false)
-  }
-  
-  // 重新计算使用情况
-  let new_used_memory = updated_pool.allocated_blocks.fold(0, fn(acc, block) { 
-    if block.in_use { acc + block.size_mb } else { acc } 
-  })
-  
-  assert_eq(new_used_memory, 256)  // 128 + 128 (block2已释放)
-}
-
-// 测试3: 引用计数管理
-test "引用计数管理" {
-  // 模拟对象引用计数
-  let reference_counts = [
-    {object_id: "obj1", ref_count: 3, last_accessed: 1640995200000L},
-    {object_id: "obj2", ref_count: 1, last_accessed: 1640995260000L},
-    {object_id: "obj3", ref_count: 0, last_accessed: 1640995320000L},
-    {object_id: "obj4", ref_count: 2, last_accessed: 1640995380000L},
-    {object_id: "obj5", ref_count: 0, last_accessed: 1640995440000L}
-  ]
-  
-  // 找出可以回收的对象（引用计数为0）
-  let collectible_objects = reference_counts.filter(fn(obj) { obj.ref_count == 0 })
-  
-  // 验证可回收对象
-  assert_eq(collectible_objects.length(), 2)
-  assert_true(collectible_objects.any(fn(obj) { obj.object_id == "obj3" }))
-  assert_true(collectible_objects.any(fn(obj) { obj.object_id == "obj5" }))
-  
-  // 模拟引用计数操作
-  let increment_ref = fn(refs: Array[{object_id: String, ref_count: Int, last_accessed: Int}], object_id: String) {
-    refs.map(fn(obj) {
-      if obj.object_id == object_id {
-        {object_id: obj.object_id, ref_count: obj.ref_count + 1, last_accessed: obj.last_accessed}
-      } else {
-        obj
-      }
-    })
-  }
-  
-  let decrement_ref = fn(refs: Array[{object_id: String, ref_count: Int, last_accessed: Int}], object_id: String) {
-    refs.map(fn(obj) {
-      if obj.object_id == object_id && obj.ref_count > 0 {
-        {object_id: obj.object_id, ref_count: obj.ref_count - 1, last_accessed: obj.last_accessed}
-      } else {
-        obj
-      }
-    })
-  }
-  
-  // 增加obj2的引用计数
-  let updated_refs1 = increment_ref(reference_counts, "obj2")
-  let obj2_updated = updated_refs1.find_fn(fn(obj) { obj.object_id == "obj2" })
-  
-  match obj2_updated {
-    Some(obj) => assert_eq(obj.ref_count, 2)  // 从1增加到2
-    None => assert_true(false)
-  }
-  
-  // 减少obj1的引用计数
-  let updated_refs2 = decrement_ref(updated_refs1, "obj1")
-  let obj1_updated = updated_refs2.find_fn(fn(obj) { obj.object_id == "obj1" })
-  
-  match obj1_updated {
-    Some(obj) => assert_eq(obj.ref_count, 2)  // 从3减少到2
-    None => assert_true(false)
-  }
-  
-  // 减少obj2的引用计数两次，使其变为0
-  let updated_refs3 = decrement_ref(updated_refs2, "obj2")
-  let updated_refs4 = decrement_ref(updated_refs3, "obj2")
-  let obj2_final = updated_refs4.find_fn(fn(obj) { obj.object_id == "obj2" })
-  
-  match obj2_final {
-    Some(obj) => assert_eq(obj.ref_count, 0)  // 从2减少到0
-    None => assert_true(false)
-  }
-  
-  // 验证新的可回收对象
-  let new_collectible = updated_refs4.filter(fn(obj) { obj.ref_count == 0 })
-  assert_eq(new_collectible.length(), 3)  // obj2, obj3, obj5
-}
-
-// 测试4: 缓存过期和清理
-test "缓存过期和清理" {
-  // 模拟缓存条目
-  let cache_entries = [
-    {key: "user:123", value: "user_data_123", created_at: 1640995200000L, last_accessed: 1640995200000L, ttl_seconds: 3600},
-    {key: "config:app", value: "app_config", created_at: 1640995000000L, last_accessed: 1640995200000L, ttl_seconds: 300},  // 已过期
-    {key: "session:456", value: "session_data_456", created_at: 1640995300000L, last_accessed: 1640995400000L, ttl_seconds: 1800},
-    {key: "token:789", value: "token_data_789", created_at: 1640995100000L, last_accessed: 1640995100000L, ttl_seconds: 600}  // 已过期
-  ]
-  
-  // 当前时间
-  let current_time = 1640995500000L  // 2022-01-01 00:05:00
-  
-  // 检查过期条目
-  let is_expired = fn(entry: {key: String, value: String, created_at: Int, last_accessed: Int, ttl_seconds: Int}) -> Bool {
-    let expiry_time = (entry.created_at / 1000L) + entry.ttl_seconds.to_long()
-    let current_time_seconds = current_time / 1000L
-    expiry_time < current_time_seconds
-  }
-  
-  // 找出过期条目
-  let expired_entries = cache_entries.filter(is_expired)
-  let valid_entries = cache_entries.filter(fn(entry) { not is_expired(entry) })
-  
-  // 验证过期检测
-  assert_eq(expired_entries.length(), 2)
-  assert_eq(valid_entries.length(), 2)
-  
-  // 验证过期的键
-  assert_true(expired_entries.any(fn(entry) { entry.key == "config:app" }))
-  assert_true(expired_entries.any(fn(entry) { entry.key == "token:789" }))
-  
-  // 验证有效的键
-  assert_true(valid_entries.any(fn(entry) { entry.key == "user:123" }))
-  assert_true(valid_entries.any(fn(entry) { entry.key == "session:456" }))
-  
-  // 计算缓存命中率相关指标
-  let cache_stats = {
-    total_entries: cache_entries.length(),
-    expired_entries: expired_entries.length(),
-    valid_entries: valid_entries.length(),
-    expiration_rate: (expired_entries.length().to_double() / cache_entries.length().to_double()) * 100.0
-  }
-  
-  // 验证缓存统计
-  assert_eq(cache_stats.total_entries, 4)
-  assert_eq(cache_stats.expired_entries, 2)
-  assert_eq(cache_stats.valid_entries, 2)
-  assert_eq(cache_stats.expiration_rate, 50.0)
-  
-  // 模拟缓存清理
-  let cleanup_cache = fn(entries: Array[{key: String, value: String, created_at: Int, last_accessed: Int, ttl_seconds: Int}]) {
-    entries.filter(fn(entry) { not is_expired(entry) })
-  }
-  
-  let cleaned_cache = cleanup_cache(cache_entries)
-  
-  // 验证清理结果
-  assert_eq(cleaned_cache.length(), 2)
-  assert_true(cleaned_cache.all(fn(entry) { not is_expired(entry) }))
-}
-
-// 测试5: 内存泄漏检测
-test "内存泄漏检测" {
-  // 模拟内存使用快照
-  let memory_snapshots = [
-    {timestamp: 1640995200000L, heap_used_mb: 256, heap_total_mb: 512, non_heap_mb: 128},
-    {timestamp: 1640995260000L, heap_used_mb: 280, heap_total_mb: 512, non_heap_mb: 128},
-    {timestamp: 1640995320000L, heap_used_mb: 320, heap_used_mb: 512, non_heap_mb: 130},
-    {timestamp: 1640995380000L, heap_used_mb: 380, heap_total_mb: 512, non_heap_mb: 132},
-    {timestamp: 1640995440000L, heap_used_mb: 420, heap_total_mb: 512, non_heap_mb: 134},
-    {timestamp: 1640995500000L, heap_used_mb: 450, heap_total_mb: 512, non_heap_mb: 136}
-  ]
-  
-  // 定义内存泄漏检测阈值
-  let leak_detection_thresholds = {
-    growth_rate_percent: 20.0,    // 20%增长率
-    consecutive_growth_periods: 3,  // 连续3个周期增长
-    min_heap_size_mb: 400         // 最小堆大小
-  }
-  
-  // 计算内存增长率
-  let memory_growth_rates = memory_snapshots.slice(1).map_with_index(fn(i, snapshot) {
-    let prev_snapshot = memory_snapshots[i]
-    let growth_mb = snapshot.heap_used_mb - prev_snapshot.heap_used_mb
-    let growth_rate = (growth_mb.to_double() / prev_snapshot.heap_used_mb.to_double()) * 100.0
+    // Add various types of attributes
+    Attributes::set(attrs, "string_attr", StringValue("value_" + i.to_string()))
+    Attributes::set(attrs, "int_attr", IntValue(i))
+    Attributes::set(attrs, "float_attr", FloatValue(i.to_float() * 3.14))
+    Attributes::set(attrs, "bool_attr", BoolValue(i % 2 == 0))
     
-    {
-      timestamp: snapshot.timestamp,
-      growth_mb: growth_mb,
-      growth_rate: growth_rate
+    // Add array attributes
+    let string_array = Array::new(10)
+    for j in 0..=9 {
+      string_array.push("array_value_" + j.to_string())
     }
-  })
+    Attributes::set(attrs, "string_array", ArrayStringValue(string_array))
+    
+    attribute_collections.push(attrs)
+  }
   
-  // 验证增长率计算
-  assert_eq(memory_growth_rates.length(), 5)
-  assert_eq(memory_growth_rates[0].growth_mb, 24)   // 280 - 256
-  assert_eq(memory_growth_rates[1].growth_mb, 40)   // 320 - 280
-  assert_eq(memory_growth_rates[2].growth_mb, 60)   // 380 - 320
-  assert_eq(memory_growth_rates[3].growth_mb, 40)   // 420 - 380
-  assert_eq(memory_growth_rates[4].growth_mb, 30)   // 450 - 420
+  // Verify attributes are properly stored
+  for attrs in attribute_collections {
+    let string_attr = Attributes::get(attrs, "string_attr")
+    match string_attr {
+      Some(StringValue(_)) => assert_true(true)
+      _ => assert_true(false)
+    }
+  }
   
-  // 检测连续增长周期
-  let consecutive_growth = memory_growth_rates.fold(
-    {current_count: 0, max_count: 0}, 
-    fn(acc, growth) {
-      let new_count = if growth.growth_mb > 0 { 
-        acc.current_count + 1 
-      } else { 
-        0 
+  // Cleanup attribute collections
+  for attrs in attribute_collections {
+    Attributes::cleanup(attrs)
+  }
+  
+  // Force garbage collection
+  MemoryMonitor::force_gc()
+  
+  // Verify no attribute leaks detected
+  let leak_report = MemoryLeakDetector::analyze(leak_detector)
+  assert_eq(leak_report.attribute_leaks, 0)
+}
+
+// Test 3: Metrics Memory Management
+test "metrics memory management" {
+  let leak_detector = MemoryLeakDetector::new()
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "test_meter")
+  
+  // Create various metric instruments
+  let metrics = []
+  
+  for i in 0..=100 {
+    let counter = Meter::create_counter(
+      meter,
+      "counter_" + i.to_string(),
+      Some("Test counter " + i.to_string()),
+      Some("count")
+    )
+    
+    let histogram = Meter::create_histogram(
+      meter,
+      "histogram_" + i.to_string(),
+      Some("Test histogram " + i.to_string()),
+      Some("ms")
+    )
+    
+    let gauge = Meter::create_gauge(
+      meter,
+      "gauge_" + i.to_string(),
+      Some("Test gauge " + i.to_string()),
+      Some("value")
+    )
+    
+    metrics.push((counter, histogram, gauge))
+  }
+  
+  // Record metrics
+  for (counter, histogram, gauge) in metrics {
+    Counter::add(counter, 1.0)
+    Histogram::record(histogram, 100.0)
+    
+    // Simulate metric updates
+    for j in 0..=10 {
+      Counter::add(counter, j.to_float())
+      Histogram::record(histogram, j.to_float() * 10.0)
+    }
+  }
+  
+  // Cleanup metrics
+  for (counter, histogram, gauge) in metrics {
+    Counter::cleanup(counter)
+    Histogram::cleanup(histogram)
+    Gauge::cleanup(gauge)
+  }
+  
+  // Force garbage collection
+  MemoryMonitor::force_gc()
+  
+  // Verify no metric leaks detected
+  let leak_report = MemoryLeakDetector::analyze(leak_detector)
+  assert_eq(leak_report.metric_leaks, 0)
+}
+
+// Test 4: Log Record Memory Management
+test "log record memory management" {
+  let leak_detector = MemoryLeakDetector::new()
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "test_logger")
+  
+  // Create and emit log records
+  let log_records = []
+  
+  for i in 0..=1000 {
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "log_id", IntValue(i))
+    Attributes::set(attrs, "component", StringValue("test_component"))
+    
+    let log_record = LogRecord::new_with_context(
+      if i % 4 == 0 { Error } else if i % 2 == 0 { Warn } else { Info },
+      Some("Test log message " + i.to_string()),
+      Some(attrs),
+      Some(1609459200000L + (i * 1000L)), // Timestamp
+      Some(1609459200000L + (i * 1000L) + 100L), // Observed timestamp
+      Some("trace_id_" + (i % 10).to_string()),
+      Some("span_id_" + i.to_string()),
+      None
+    )
+    
+    log_records.push(log_record)
+  }
+  
+  // Emit log records
+  for log_record in log_records {
+    Logger::emit(logger, log_record)
+  }
+  
+  // Cleanup log records
+  for log_record in log_records {
+    LogRecord::cleanup(log_record)
+  }
+  
+  // Force garbage collection
+  MemoryMonitor::force_gc()
+  
+  // Verify no log record leaks detected
+  let leak_report = MemoryLeakDetector::analyze(leak_detector)
+  assert_eq(leak_report.log_leaks, 0)
+}
+
+// Test 5: Resource Pool Memory Management
+test "resource pool memory management" {
+  let leak_detector = MemoryLeakDetector::new()
+  
+  // Create resource pools
+  let span_pool = ResourcePool::new(|| => Span::new("pooled_span", Internal, SpanContext::empty()), 100)
+  let attribute_pool = ResourcePool::new(|| => Attributes::new(), 200)
+  
+  // Acquire and release resources
+  let acquired_resources = []
+  
+  // Test normal acquire/release cycle
+  for i in 0..=500 {
+    // Acquire resources
+    let span = ResourcePool::acquire(span_pool)
+    let attrs = ResourcePool::acquire(attribute_pool)
+    
+    // Use resources
+    Span::add_event(span, "test_event", None)
+    Attributes::set(attrs, "test_attr", StringValue("test_value"))
+    
+    acquired_resources.push((span, attrs))
+    
+    // Release some resources
+    if i % 3 == 0 {
+      let (release_span, release_attrs) = acquired_resources.remove(0)
+      ResourcePool::release(span_pool, release_span)
+      ResourcePool::release(attribute_pool, release_attrs)
+    }
+  }
+  
+  // Release all remaining resources
+  for (span, attrs) in acquired_resources {
+    ResourcePool::release(span_pool, span)
+    ResourcePool::release(attribute_pool, attrs)
+  }
+  
+  // Cleanup pools
+  ResourcePool::cleanup(span_pool)
+  ResourcePool::cleanup(attribute_pool)
+  
+  // Force garbage collection
+  MemoryMonitor::force_gc()
+  
+  // Verify no resource pool leaks detected
+  let leak_report = MemoryLeakDetector::analyze(leak_detector)
+  assert_eq(leak_report.resource_pool_leaks, 0)
+}
+
+// Test 6: Circular Reference Detection and Prevention
+test "circular reference detection and prevention" {
+  let leak_detector = MemoryLeakDetector::new()
+  
+  // Create objects with potential circular references
+  let span_a = Span::new("span_a", Internal, SpanContext::empty())
+  let span_b = Span::new("span_b", Internal, SpanContext::empty())
+  
+  // Create circular reference through links
+  Span::add_link(span_a, SpanLink::new(Span::span_context(span_b), None, None))
+  Span::add_link(span_b, SpanLink::new(Span::span_context(span_a), None, None))
+  
+  // Create circular reference through events
+  let event_attrs_a = Attributes::new()
+  Attributes::set(event_attrs_a, "linked_span", StringValue("span_b"))
+  Span::add_event(span_a, "linked_to_b", Some(event_attrs_a))
+  
+  let event_attrs_b = Attributes::new()
+  Attributes::set(event_attrs_b, "linked_span", StringValue("span_a"))
+  Span::add_event(span_b, "linked_to_a", Some(event_attrs_b))
+  
+  // Test circular reference detection
+  let circular_refs = MemoryLeakDetector::detect_circular_references(leak_detector)
+  assert_true(circular_refs.length() >= 2)
+  
+  // Test circular reference cleanup
+  Span::break_circular_references(span_a)
+  Span::break_circular_references(span_b)
+  
+  // Verify circular references are broken
+  let circular_refs_after_cleanup = MemoryLeakDetector::detect_circular_references(leak_detector)
+  assert_true(circular_refs_after_cleanup.length() < circular_refs.length())
+  
+  // End and cleanup spans
+  Span::end(span_a)
+  Span::end(span_b)
+  Span::cleanup(span_a)
+  Span::cleanup(span_b)
+  
+  // Force garbage collection
+  MemoryMonitor::force_gc()
+  
+  // Verify no leaks from circular references
+  let leak_report = MemoryLeakDetector::analyze(leak_detector)
+  assert_eq(leak_report.circular_reference_leaks, 0)
+}
+
+// Test 7: Large Object Memory Management
+test "large object memory management" {
+  let leak_detector = MemoryLeakDetector::new()
+  let initial_memory = MemoryMonitor::get_current_usage()
+  
+  // Create large objects
+  let large_objects = []
+  
+  for i in 0..=10 {
+    // Create span with many attributes
+    let span = Span::new("large_span_" + i.to_string(), Internal, SpanContext::empty())
+    
+    // Add many attributes
+    for j in 0..=1000 {
+      Attributes::set(
+        Span::attributes(span),
+        "attr_" + j.to_string(),
+        StringValue("large_value_" + j.to_string() + "_with_additional_data_to_increase_size")
+      )
+    }
+    
+    // Add many events
+    for j in 0..=500 {
+      let event_attrs = Attributes::new()
+      for k in 0..=10 {
+        Attributes::set(
+          event_attrs,
+          "event_attr_" + k.to_string(),
+          StringValue("event_value_" + k.to_string())
+        )
       }
-      let new_max = if new_count > acc.max_count { new_count } else { acc.max_count }
+      Span::add_event(span, "event_" + j.to_string(), Some(event_attrs))
+    }
+    
+    large_objects.push(span)
+  }
+  
+  let after_creation_memory = MemoryMonitor::get_current_usage()
+  let memory_increase = after_creation_memory - initial_memory
+  
+  // Verify significant memory usage
+  assert_true(memory_increase > 100 * 1024 * 1024) // At least 100MB increase
+  
+  // Cleanup large objects
+  for span in large_objects {
+    Span::end(span)
+    Span::cleanup(span)
+  }
+  
+  // Force garbage collection
+  MemoryMonitor::force_gc()
+  let after_cleanup_memory = MemoryMonitor::get_current_usage()
+  
+  // Verify most memory is released
+  let memory_released = after_creation_memory - after_cleanup_memory
+  assert_true(memory_released > memory_increase * 0.8) // At least 80% released
+  
+  // Verify no large object leaks
+  let leak_report = MemoryLeakDetector::analyze(leak_detector)
+  assert_eq(leak_report.large_object_leaks, 0)
+}
+
+// Test 8: Memory Pressure Response
+test "memory pressure response" {
+  let memory_monitor = MemoryMonitor::new()
+  let leak_detector = MemoryLeakDetector::new()
+  
+  // Configure memory pressure handling
+  MemoryMonitor::set_threshold(memory_monitor, 100 * 1024 * 1024) // 100MB threshold
+  MemoryMonitor::enable_auto_cleanup(memory_monitor, true)
+  
+  // Create memory pressure
+  let pressure_objects = []
+  
+  for i in 0..=1000 {
+    let span = Span::new("pressure_span_" + i.to_string(), Internal, SpanContext::empty())
+    
+    // Add significant data to each span
+    for j in 0..=100 {
+      Attributes::set(
+        Span::attributes(span),
+        "pressure_attr_" + j.to_string(),
+        StringValue("pressure_value_" + j.to_string() + "_with_lots_of_data_to_increase_memory_usage")
+      )
+    }
+    
+    pressure_objects.push(span)
+    
+    // Check if memory pressure is detected
+    if MemoryMonitor::is_under_pressure(memory_monitor) {
+      // Verify automatic cleanup is triggered
+      let cleanup_triggered = MemoryMonitor::auto_cleanup_triggered(memory_monitor)
+      assert_true(cleanup_triggered)
       
-      {current_count: new_count, max_count: new_max}
+      // Break out of the loop
+      break
     }
-  )
-  
-  // 验证连续增长检测
-  assert_eq(consecutive_growth.max_count, 5)  // 所有周期都在增长
-  
-  // 判断是否存在内存泄漏
-  let latest_snapshot = memory_snapshots[memory_snapshots.length() - 1]
-  let has_leak = latest_snapshot.heap_used_mb >= leak_detection_thresholds.min_heap_size_mb &&
-                consecutive_growth.max_count >= leak_detection_thresholds.consecutive_growth_periods
-  
-  assert_true(has_leak)
-  
-  // 模拟内存泄漏警告
-  let leak_warning = {
-    detected_at: latest_snapshot.timestamp,
-    heap_used_mb: latest_snapshot.heap_used_mb,
-    consecutive_growth_periods: consecutive_growth.max_count,
-    severity: if latest_snapshot.heap_used_mb > 480 { "critical" } else { "warning" }
   }
   
-  // 验证警告信息
-  assert_eq(leak_warning.detected_at, 1640995500000L)
-  assert_eq(leak_warning.heap_used_mb, 450)
-  assert_eq(leak_warning.consecutive_growth_periods, 5)
-  assert_eq(leak_warning.severity, "warning")
+  // Verify memory pressure was detected
+  assert_true(MemoryMonitor::is_under_pressure(memory_monitor))
+  
+  // Cleanup remaining objects
+  for span in pressure_objects {
+    Span::end(span)
+    Span::cleanup(span)
+  }
+  
+  // Force garbage collection
+  MemoryMonitor::force_gc()
+  
+  // Verify memory pressure is resolved
+  assert_false(MemoryMonitor::is_under_pressure(memory_monitor))
+  
+  // Verify no leaks during pressure handling
+  let leak_report = MemoryLeakDetector::analyze(leak_detector)
+  assert_true(leak_report.total_leaks() < 10) // Allow for minimal leaks during pressure
 }
 
-// 测试6: 资源自动回收机制
-test "资源自动回收机制" {
-  // 模拟资源注册表
-  let resource_registry = {
-    resources: [
-      {
-        resource_id: "res1",
-        type: "database_connection",
-        created_at: 1640995200000L,
-        last_used: 1640995400000L,
-        max_idle_time_ms: 300000,  // 5分钟
-        auto_cleanup: true
-      },
-      {
-        resource_id: "res2",
-        type: "file_handle",
-        created_at: 1640995300000L,
-        last_used: 1640995300000L,
-        max_idle_time_ms: 60000,   // 1分钟
-        auto_cleanup: true
-      },
-      {
-        resource_id: "res3",
-        type: "memory_buffer",
-        created_at: 1640995450000L,
-        last_used: 1640995500000L,
-        max_idle_time_ms: 120000,  // 2分钟
-        auto_cleanup: true
-      },
-      {
-        resource_id: "res4",
-        type: "network_socket",
-        created_at: 1640995200000L,
-        last_used: 1640995350000L,
-        max_idle_time_ms: 180000,  // 3分钟
-        auto_cleanup: false  // 手动管理
-      }
-    ]
-  }
+// Test 9: Weak Reference Memory Management
+test "weak reference memory management" {
+  let leak_detector = MemoryLeakDetector::new()
   
-  // 当前时间
-  let current_time = 1640995600000L  // 2022-01-01 00:10:00
+  // Create objects with weak references
+  let strong_refs = []
+  let weak_refs = []
   
-  // 检查资源是否空闲超时
-  let is_idle_timeout = fn(resource: {
-    resource_id: String,
-    type: String,
-    created_at: Int,
-    last_used: Int,
-    max_idle_time_ms: Int,
-    auto_cleanup: Bool
-  }) -> Bool {
-    let idle_time = current_time - resource.last_used
-    idle_time > resource.max_idle_time_ms && resource.auto_cleanup
-  }
-  
-  // 找出需要清理的资源
-  let resources_to_cleanup = resource_registry.resources.filter(is_idle_timeout)
-  
-  // 验证空闲超时检测
-  assert_eq(resources_to_cleanup.length(), 2)
-  
-  // res1: 空闲时间 = 1640995600000 - 1640995400000 = 200000ms < 300000ms，不应清理
-  // res2: 空闲时间 = 1640995600000 - 1640995300000 = 300000ms = 60000ms，应清理
-  // res3: 空闲时间 = 1640995600000 - 1640995500000 = 100000ms < 120000ms，不应清理
-  // res4: auto_cleanup = false，不应自动清理
-  
-  // 重新计算，修正上面的错误
-  let res2_idle_time = current_time - 1640995300000L  // 300000ms
-  let res3_idle_time = current_time - 1640995500000L  // 100000ms
-  
-  // 实际上res2应该被清理（300000ms > 60000ms）
-  // res3不应该被清理（100000ms < 120000ms）
-  // res1不应该被清理（200000ms < 300000ms）
-  
-  // 让我们重新检查结果
-  let res2_in_cleanup = resources_to_cleanup.any(fn(res) { res.resource_id == "res2" })
-  assert_true(res2_in_cleanup)
-  
-  // 模拟资源清理
-  let cleanup_resources = fn(registry: {resources: Array[{
-    resource_id: String,
-    type: String,
-    created_at: Int,
-    last_used: Int,
-    max_idle_time_ms: Int,
-    auto_cleanup: Bool
-  }]}) {
-    let remaining_resources = registry.resources.filter(fn(resource) { 
-      not is_idle_timeout(resource) 
-    })
+  for i in 0..=100 {
+    let span = Span::new("weak_ref_span_" + i.to_string(), Internal, SpanContext::empty())
+    strong_refs.push(span)
     
-    {resources: remaining_resources}
+    // Create weak reference
+    let weak_ref = WeakReference::new(span)
+    weak_refs.push(weak_ref)
   }
   
-  let cleaned_registry = cleanup_resources(resource_registry)
-  
-  // 验证清理结果
-  assert_eq(cleaned_registry.resources.length(), 3)  // 应该有3个资源剩余
-  
-  // 验证res2已被清理
-  let res2_remaining = cleaned_registry.resources.any(fn(res) { res.resource_id == "res2" })
-  assert_false(res2_remaining)
-  
-  // 验证其他资源仍然存在
-  assert_true(cleaned_registry.resources.any(fn(res) { res.resource_id == "res1" }))
-  assert_true(cleaned_registry.resources.any(fn(res) { res.resource_id == "res3" }))
-  assert_true(cleaned_registry.resources.any(fn(res) { res.resource_id == "res4" }))
-  
-  // 计算清理统计
-  let cleanup_stats = {
-    total_resources: resource_registry.resources.length(),
-    cleaned_resources: resource_registry.resources.length() - cleaned_registry.resources.length(),
-    remaining_resources: cleaned_registry.resources.length(),
-    cleanup_rate: ((resource_registry.resources.length() - cleaned_registry.resources.length()).to_double() / 
-                   resource_registry.resources.length().to_double()) * 100.0
+  // Verify weak references are valid
+  for weak_ref in weak_refs {
+    assert_true(WeakReference::is_valid(weak_ref))
+    
+    match WeakReference::upgrade(weak_ref) {
+      Some(_) => assert_true(true)
+      None => assert_true(false)
+    }
   }
   
-  // 验证清理统计
-  assert_eq(cleanup_stats.total_resources, 4)
-  assert_eq(cleanup_stats.cleaned_resources, 1)
-  assert_eq(cleanup_stats.remaining_resources, 3)
-  assert_eq(cleanup_stats.cleanup_rate, 25.0)
+  // Clear strong references
+  strong_refs.clear()
+  
+  // Force garbage collection
+  MemoryMonitor::force_gc()
+  
+  // Verify weak references are invalidated
+  let mut invalid_count = 0
+  for weak_ref in weak_refs {
+    if !WeakReference::is_valid(weak_ref) {
+      invalid_count = invalid_count + 1
+    }
+    
+    match WeakReference::upgrade(weak_ref) {
+      Some(_) => assert_true(false) // Should not be able to upgrade
+      None => assert_true(true)
+    }
+  }
+  
+  // Most weak references should be invalidated
+  assert_true(invalid_count > 90)
+  
+  // Cleanup weak references
+  for weak_ref in weak_refs {
+    WeakReference::cleanup(weak_ref)
+  }
+  
+  // Verify no weak reference leaks
+  let leak_report = MemoryLeakDetector::analyze(leak_detector)
+  assert_eq(leak_report.weak_reference_leaks, 0)
+}
+
+// Test 10: Cache Memory Management
+test "cache memory management" {
+  let leak_detector = MemoryLeakDetector::new()
+  
+  // Create caches with different eviction policies
+  let lru_cache = LRUCache::new(1000)
+  let lfu_cache = LFUCache::new(1000)
+  let ttl_cache = TTLCache::new(1000, 60000L) // 1 minute TTL
+  
+  // Fill caches with data
+  for i in 0..=2000 {
+    let key = "key_" + i.to_string()
+    let value = "value_" + i.to_string() + "_with_additional_data_to_increase_size"
+    
+    LRUCache::put(lru_cache, key, value)
+    LFUCache::put(lfu_cache, key, value)
+    TTLCache::put(ttl_cache, key, value)
+  }
+  
+  // Verify cache sizes are maintained
+  assert_eq(LRUCache::size(lru_cache), 1000)
+  assert_eq(LFUCache::size(lfu_cache), 1000)
+  assert_true(TTLCache::size(ttl_cache) <= 1000)
+  
+  // Test cache eviction
+  for i in 0..=500 {
+    let key = "eviction_key_" + i.to_string()
+    let value = "eviction_value_" + i.to_string()
+    
+    LRUCache::put(lru_cache, key, value)
+    LFUCache::put(lfu_cache, key, value)
+    TTLCache::put(ttl_cache, key, value)
+  }
+  
+  // Verify cache sizes are still maintained
+  assert_eq(LRUCache::size(lru_cache), 1000)
+  assert_eq(LFUCache::size(lfu_cache), 1000)
+  
+  // Test TTL expiration
+  Time::sleep(61000L) // Wait for TTL to expire
+  
+  // Access caches to trigger cleanup
+  for i in 0..=100 {
+    let key = "key_" + i.to_string()
+    LRUCache::get(lru_cache, key)
+    LFUCache::get(lfu_cache, key)
+    TTLCache::get(ttl_cache, key)
+  }
+  
+  // TTL cache should have expired entries
+  assert_true(TTLCache::size(ttl_cache) < 1000)
+  
+  // Cleanup caches
+  LRUCache::cleanup(lru_cache)
+  LFUCache::cleanup(lfu_cache)
+  TTLCache::cleanup(ttl_cache)
+  
+  // Force garbage collection
+  MemoryMonitor::force_gc()
+  
+  // Verify no cache leaks
+  let leak_report = MemoryLeakDetector::analyze(leak_detector)
+  assert_eq(leak_report.cache_leaks, 0)
+}
+
+// Helper functions
+fn min(a : Float, b : Float, c : Float) -> Float {
+  if a <= b && a <= c { a }
+  else if b <= a && b <= c { b }
+  else { c }
 }
