@@ -390,6 +390,18 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     3: (__test_617a696d7574685f6d696e696d616c5f74657374732e6d6274_3, ["array operations"]),
     4: (__test_617a696d7574685f6d696e696d616c5f74657374732e6d6274_4, ["option type handling"]),
   },
+  "azimuth_metrics_collection_tests.mbt": {
+    0: (__test_617a696d7574685f6d6574726963735f636f6c6c656374696f6e5f74657374732e6d6274_0, ["counter metrics"]),
+    1: (__test_617a696d7574685f6d6574726963735f636f6c6c656374696f6e5f74657374732e6d6274_1, ["gauge metrics"]),
+    2: (__test_617a696d7574685f6d6574726963735f636f6c6c656374696f6e5f74657374732e6d6274_2, ["histogram metrics"]),
+    3: (__test_617a696d7574685f6d6574726963735f636f6c6c656374696f6e5f74657374732e6d6274_3, ["summary metrics"]),
+    4: (__test_617a696d7574685f6d6574726963735f636f6c6c656374696f6e5f74657374732e6d6274_4, ["metric aggregation"]),
+    5: (__test_617a696d7574685f6d6574726963735f636f6c6c656374696f6e5f74657374732e6d6274_5, ["metric labels and attributes"]),
+    6: (__test_617a696d7574685f6d6574726963735f636f6c6c656374696f6e5f74657374732e6d6274_6, ["metric collection intervals"]),
+    7: (__test_617a696d7574685f6d6574726963735f636f6c6c656374696f6e5f74657374732e6d6274_7, ["metric export formats"]),
+    8: (__test_617a696d7574685f6d6574726963735f636f6c6c656374696f6e5f74657374732e6d6274_8, ["metric storage and retention"]),
+    9: (__test_617a696d7574685f6d6574726963735f636f6c6c656374696f6e5f74657374732e6d6274_9, ["metric performance and optimization"]),
+  },
   "azimuth_memory_management_tests.mbt": {
     0: (__test_617a696d7574685f6d656d6f72795f6d616e6167656d656e745f74657374732e6d6274_0, ["memory pool allocation and deallocation"]),
     1: (__test_617a696d7574685f6d656d6f72795f6d616e6167656d656e745f74657374732e6d6274_1, ["garbage collection optimization"]),
