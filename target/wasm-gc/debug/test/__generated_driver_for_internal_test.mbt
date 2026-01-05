@@ -4258,6 +4258,13 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     3: (__test_617a696d7574685f6e65775f6d6574726963735f636f6c6c656374696f6e5f74657374732e6d6274_3, ["metrics aggregation operations"]),
     4: (__test_617a696d7574685f6e65775f6d6574726963735f636f6c6c656374696f6e5f74657374732e6d6274_4, ["metrics rate calculation operations"]),
   },
+  "azimuth_new_logging_correlation_tests.mbt": {
+    0: (__test_617a696d7574685f6e65775f6c6f6767696e675f636f7272656c6174696f6e5f74657374732e6d6274_0, ["log record creation and basic operations"]),
+    1: (__test_617a696d7574685f6e65775f6c6f6767696e675f636f7272656c6174696f6e5f74657374732e6d6274_1, ["log severity levels operations"]),
+    2: (__test_617a696d7574685f6e65775f6c6f6767696e675f636f7272656c6174696f6e5f74657374732e6d6274_2, ["log and trace correlation operations"]),
+    3: (__test_617a696d7574685f6e65775f6c6f6767696e675f636f7272656c6174696f6e5f74657374732e6d6274_3, ["log aggregation and analysis operations"]),
+    4: (__test_617a696d7574685f6e65775f6c6f6767696e675f636f7272656c6174696f6e5f74657374732e6d6274_4, ["log filtering and search operations"]),
+  },
   "azimuth_new_log_record_tests.mbt": {
     0: (__test_617a696d7574685f6e65775f6c6f675f7265636f72645f74657374732e6d6274_0, ["basic log record creation and properties"]),
     1: (__test_617a696d7574685f6e65775f6c6f675f7265636f72645f74657374732e6d6274_1, ["log record with full context"]),
@@ -4372,6 +4379,13 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     5: (__test_617a696d7574685f6e65775f636f6e746578745f70726f7061676174696f6e5f74657374732e6d6274_5, ["text map carrier with trace headers"]),
     6: (__test_617a696d7574685f6e65775f636f6e746578745f70726f7061676174696f6e5f74657374732e6d6274_6, ["cross-service context propagation"]),
     7: (__test_617a696d7574685f6e65775f636f6e746578745f70726f7061676174696f6e5f74657374732e6d6274_7, ["context propagation with baggage"]),
+  },
+  "azimuth_new_context_propagation_boundary_tests.mbt": {
+    0: (__test_617a696d7574685f6e65775f636f6e746578745f70726f7061676174696f6e5f626f756e646172795f74657374732e6d6274_0, ["cross-service context propagation operations"]),
+    1: (__test_617a696d7574685f6e65775f636f6e746578745f70726f7061676174696f6e5f626f756e646172795f74657374732e6d6274_1, ["context propagation with baggage mutations"]),
+    2: (__test_617a696d7574685f6e65775f636f6e746578745f70726f7061676174696f6e5f626f756e646172795f74657374732e6d6274_2, ["context propagation across process boundaries"]),
+    3: (__test_617a696d7574685f6e65775f636f6e746578745f70726f7061676174696f6e5f626f756e646172795f74657374732e6d6274_3, ["context propagation with sampling decisions"]),
+    4: (__test_617a696d7574685f6e65775f636f6e746578745f70726f7061676174696f6e5f626f756e646172795f74657374732e6d6274_4, ["context propagation security boundaries"]),
   },
   "azimuth_new_comprehensive_tests.mbt": {
     0: (__test_617a696d7574685f6e65775f636f6d70726568656e736976655f74657374732e6d6274_0, ["遥测数据序列化和反序列化"]),
