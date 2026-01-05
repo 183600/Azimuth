@@ -1,582 +1,694 @@
-// Memory Management and Resource Cleanup Tests
-// This file contains comprehensive test cases for memory management and resource cleanup
+// Azimuth Memory Management Resource Cleanup Tests
+// This file contains test cases for memory management and resource cleanup functionality
 
-// Test 1: Span Memory Management
-test "span memory management" {
-  let memory_tracker = MemoryTracker::new()
+// Test 1: Basic Memory Allocation and Deallocation
+test "basic memory allocation and deallocation" {
+  let memory_manager = MemoryManager::new()
   
-  // Record baseline memory
-  let baseline_memory = MemoryTracker::get_current_usage(memory_tracker)
+  // Test basic allocation
+  let ptr1 = MemoryManager::allocate(memory_manager, 1024)  // 1KB
+  assert_eq(ptr1 != null, true)
   
-  // Create a large number of spans
-  let mut spans = []
-  for i in 0..10000 {
-    let span_name = "memory_test_span_" + i.to_string()
-    let span_ctx = SpanContext::new("memory_test_trace", "span_" + i.to_string(), true, "")
-    let span = Span::new(span_name, Internal, span_ctx)
-    
-    // Add attributes and events
-    Span::add_attribute(span, "index", IntValue(i))
-    Span::add_event(span, "test_event", Some([("index", IntValue(i))]))
-    
-    spans = spans + [span]
-  }
+  let ptr2 = MemoryManager::allocate(memory_manager, 2048)  // 2KB
+  assert_eq(ptr2 != null, true)
   
-  // Check memory after span creation
-  let after_creation = MemoryTracker::get_current_usage(memory_tracker)
-  let memory_increase = MemoryTracker::calculate_increase(baseline_memory, after_creation)
+  // Test memory usage tracking
+  let initial_usage = MemoryManager::get_usage(memory_manager)
+  assert_eq(initial_usage.allocated_bytes, 3072)  // 1024 + 2048
+  assert_eq(initial_usage.allocated_blocks, 2)
   
-  // Verify memory usage is reasonable
-  let memory_per_span = memory_increase / 10000
-  assert_true(memory_per_span < 1000) // Less than 1KB per span
+  // Test deallocation
+  MemoryManager::deallocate(memory_manager, ptr1)
   
-  // Clear references to spans
-  spans = []
+  let after_dealloc = MemoryManager::get_usage(memory_manager)
+  assert_eq(after_dealloc.allocated_bytes, 2048)
+  assert_eq(after_dealloc.allocated_blocks, 1)
   
-  // Force garbage collection
-  MemoryTracker::force_gc(memory_tracker)
+  // Test deallocation of remaining block
+  MemoryManager::deallocate(memory_manager, ptr2)
   
-  // Check memory after cleanup
-  let after_cleanup = MemoryTracker::get_current_usage(memory_tracker)
-  let memory_decrease = MemoryTracker::calculate_decrease(after_creation, after_cleanup)
+  let final_usage = MemoryManager::get_usage(memory_manager)
+  assert_eq(final_usage.allocated_bytes, 0)
+  assert_eq(final_usage.allocated_blocks, 0)
   
-  // Verify most memory is reclaimed
-  let reclamation_rate = (memory_decrease as Float) / (memory_increase as Float)
-  assert_true(reclamation_rate > 0.8) // At least 80% of memory should be reclaimed
+  // Test allocation with alignment
+  let aligned_ptr = MemoryManager::allocate_aligned(memory_manager, 4096, 16)  // 4KB aligned to 16 bytes
+  assert_eq(aligned_ptr != null, true)
+  assert_eq(aligned_ptr % 16, 0)  // Should be aligned to 16 bytes
   
-  // Verify no memory leaks
-  let final_memory = MemoryTracker::get_current_usage(memory_tracker)
-  let final_increase = MemoryTracker::calculate_increase(baseline_memory, final_memory)
-  assert_true(final_increase < 1024 * 1024) // Less than 1MB increase from baseline
+  MemoryManager::deallocate_aligned(memory_manager, aligned_ptr)
 }
 
-// Test 2: Metrics Memory Management
-test "metrics memory management" {
-  let memory_tracker = MemoryTracker::new()
+// Test 2: Memory Pool Management
+test "memory pool management" {
+  let pool_manager = MemoryPoolManager::new()
   
-  // Record baseline memory
-  let baseline_memory = MemoryTracker::get_current_usage(memory_tracker)
+  // Create a memory pool with fixed block size
+  let pool = MemoryPool::new(pool_manager, 1024, 10)  // 1KB blocks, 10 blocks initially
   
-  // Create metrics provider with many instruments
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "memory_test_meter")
+  // Test pool allocation
+  let block1 = MemoryPool::allocate(pool)
+  assert_eq(block1 != null, true)
   
-  let mut counters = []
-  let mut histograms = []
-  let mut updown_counters = []
+  let block2 = MemoryPool::allocate(pool)
+  assert_eq(block2 != null, true)
   
-  // Create many metric instruments
-  for i in 0..1000 {
-    let counter = Meter::create_counter(meter, "counter_" + i.to_string(), None, None)
-    counters = counters + [counter]
-    
-    let histogram = Meter::create_histogram(meter, "histogram_" + i.to_string(), None, None)
-    histograms = histograms + [histogram]
-    
-    let updown_counter = Meter::create_updown_counter(meter, "updown_" + i.to_string(), None, None)
-    updown_counters = updown_counters + [updown_counter]
+  // Test pool statistics
+  let stats = MemoryPool::get_statistics(pool)
+  assert_eq(stats.allocated_blocks, 2)
+  assert_eq(stats.free_blocks, 8)
+  assert_eq(stats.total_blocks, 10)
+  
+  // Test block deallocation back to pool
+  MemoryPool::deallocate(pool, block1)
+  
+  let after_dealloc_stats = MemoryPool::get_statistics(pool)
+  assert_eq(after_dealloc_stats.allocated_blocks, 1)
+  assert_eq(after_dealloc_stats.free_blocks, 9)
+  
+  // Test pool exhaustion and expansion
+  let remaining_blocks = []
+  for i = 0; i < 9; i = i + 1 {
+    let block = MemoryPool::allocate(pool)
+    assert_eq(block != null, true)
+    remaining_blocks.push(block)
   }
   
-  // Record many metric values
-  for i in 0..1000 {
-    for j in 0..100 {
-      Counter::add(counters[i], j.to_int() as Float)
-      Histogram::record(histograms[i], j.to_int() as Float)
-      UpDownCounter::add(updown_counters[i], j.to_int() as Float)
+  // Pool should now be exhausted
+  let exhausted_block = MemoryPool::allocate(pool)
+  assert_eq(exhausted_block != null, false)  // Should fail
+  
+  // Return one block to pool
+  MemoryPool::deallocate(pool, remaining_blocks[0])
+  
+  // Should now be able to allocate again
+  let new_block = MemoryPool::allocate(pool)
+  assert_eq(new_block != null, true)
+  
+  // Clean up remaining blocks
+  for i = 1; i < remaining_blocks.length(); i = i + 1 {
+    MemoryPool::deallocate(pool, remaining_blocks[i])
+  }
+  MemoryPool::deallocate(pool, new_block)
+  
+  // Test pool destruction
+  MemoryPool::destroy(pool)
+}
+
+// Test 3: Smart Pointers and RAII
+test "smart pointers and raii" {
+  // Test unique pointer
+  let resource = "test_resource"
+  let unique_ptr = UniquePtr::new(resource)
+  
+  assert_eq(UniquePtr::get(unique_ptr), resource)
+  assert_eq(UniquePtr::is_valid(unique_ptr), true)
+  
+  // Test unique pointer move semantics
+  let moved_ptr = UniquePtr::move(unique_ptr)
+  assert_eq(UniquePtr::is_valid(unique_ptr), false)  // Original is now invalid
+  assert_eq(UniquePtr::is_valid(moved_ptr), true)
+  assert_eq(UniquePtr::get(moved_ptr), resource)
+  
+  // Test unique pointer reset
+  let new_resource = "new_resource"
+  UniquePtr::reset(moved_ptr, new_resource)
+  assert_eq(UniquePtr::get(moved_ptr), new_resource)
+  
+  // Test shared pointer
+  let shared_resource = "shared_resource"
+  let shared_ptr1 = SharedPtr::new(shared_resource)
+  
+  assert_eq(SharedPtr::use_count(shared_ptr1), 1)
+  assert_eq(SharedPtr::get(shared_ptr1), shared_resource)
+  
+  // Create another shared pointer to same resource
+  let shared_ptr2 = SharedPtr::copy(shared_ptr1)
+  
+  assert_eq(SharedPtr::use_count(shared_ptr1), 2)
+  assert_eq(SharedPtr::use_count(shared_ptr2), 2)
+  assert_eq(SharedPtr::get(shared_ptr1), SharedPtr::get(shared_ptr2))
+  
+  // Test weak pointer
+  let weak_ptr = WeakPtr::from_shared(shared_ptr1)
+  assert_eq(WeakPtr::expired(weak_ptr), false)
+  
+  // Destroy one shared pointer
+  SharedPtr::destroy(shared_ptr1)
+  
+  assert_eq(SharedPtr::use_count(shared_ptr2), 1)
+  assert_eq(WeakPtr::expired(weak_ptr), false)
+  
+  // Destroy the last shared pointer
+  SharedPtr::destroy(shared_ptr2)
+  
+  assert_eq(WeakPtr::expired(weak_ptr), true)
+  
+  // Test custom deleter with smart pointer
+  let mut deletion_called = false
+  let custom_deleter = fn(resource) {
+    deletion_called = true
+    assert_eq(resource, "custom_deletable_resource")
+  }
+  
+  let custom_resource = "custom_deletable_resource"
+  let custom_ptr = UniquePtr::with_deleter(custom_resource, custom_deleter)
+  
+  // When custom_ptr goes out of scope, deleter should be called
+  UniquePtr::destroy(custom_ptr)
+  assert_eq(deletion_called, true)
+}
+
+// Test 4: Resource Leak Detection
+test "resource leak detection" {
+  let leak_detector = LeakDetector::new()
+  leak_detector.enable()
+  
+  // Test memory leak detection
+  let leaked_ptr = MemoryManager::allocate(leak_detector.get_memory_manager(), 1024)
+  
+  // Don't deallocate - should be detected as leak
+  let leaks = LeakDetector::detect_leaks(leak_detector)
+  assert_eq(leaks.length(), 1)
+  assert_eq(leaks[0].size, 1024)
+  assert_eq(leaks[0].type, LeakType::Memory)
+  
+  // Fix the leak
+  MemoryManager::deallocate(leak_detector.get_memory_manager(), leaked_ptr)
+  
+  let no_leaks = LeakDetector::detect_leaks(leak_detector)
+  assert_eq(no_leaks.length(), 0)
+  
+  // Test file handle leak detection
+  let file_manager = FileManager::new()
+  leak_detector.register_file_manager(file_manager)
+  
+  let file1 = FileManager::open(file_manager, "test1.txt", "w")
+  let file2 = FileManager::open(file_manager, "test2.txt", "w")
+  
+  // Close only one file handle
+  FileManager::close(file_manager, file1)
+  
+  let file_leaks = LeakDetector::detect_file_leaks(leak_detector)
+  assert_eq(file_leaks.length(), 1)
+  assert_eq(file_leaks[0].path, "test2.txt")
+  
+  // Close remaining file
+  FileManager::close(file_manager, file2)
+  
+  let no_file_leaks = LeakDetector::detect_file_leaks(leak_detector)
+  assert_eq(no_file_leaks.length(), 0)
+  
+  // Test automatic leak detection on scope exit
+  {
+    let scoped_leak_detector = ScopedLeakDetector::new()
+    let auto_leaked_ptr = MemoryManager::allocate(scoped_leak_detector.get_memory_manager(), 512)
+    
+    // Don't explicitly deallocate - should be automatically detected when scope exits
+  }
+  
+  // Scoped leak detector should have detected the leak
+  let scoped_leak_report = ScopedLeakDetector::get_report()
+  assert_eq(scoped_leak_report.leaks_found, 1)
+}
+
+// Test 5: Memory Usage Monitoring and Profiling
+test "memory usage monitoring and profiling" {
+  let memory_profiler = MemoryProfiler::new()
+  memory_profiler.start_profiling()
+  
+  // Allocate some memory
+  let ptr1 = MemoryManager::allocate(memory_profiler.get_memory_manager(), 1024)
+  let ptr2 = MemoryManager::allocate(memory_profiler.get_memory_manager(), 2048)
+  
+  // Create allocation markers
+  memory_profiler.add_marker("test_allocation_1")
+  
+  let ptr3 = MemoryManager::allocate(memory_profiler.get_memory_manager(), 4096)
+  
+  memory_profiler.add_marker("test_allocation_2")
+  
+  let ptr4 = MemoryManager::allocate(memory_profiler.get_memory_manager(), 8192)
+  
+  // Deallocate some memory
+  MemoryManager::deallocate(memory_profiler.get_memory_manager(), ptr2)
+  
+  memory_profiler.add_marker("deallocation_1")
+  
+  MemoryManager::deallocate(memory_profiler.get_memory_manager(), ptr4)
+  
+  // Stop profiling and get report
+  memory_profiler.stop_profiling()
+  let profile_report = memory_profiler.get_profile_report()
+  
+  assert_eq(profile_report.total_allocated, 15360)  // 1024 + 2048 + 4096 + 8192
+  assert_eq(profile_report.total_deallocated, 10240)  // 2048 + 8192
+  assert_eq(profile_report.current_usage, 5120)     // 1024 + 4096
+  assert_eq(profile_report.peak_usage, 15360)
+  
+  // Test memory fragmentation analysis
+  let fragmentation = memory_profiler.analyze_fragmentation()
+  assert_eq(fragmentation.total_blocks, 2)
+  assert_eq(fragmentation.fragmentation_index >= 0.0, true)
+  assert_eq(fragmentation.fragmentation_index <= 1.0, true)
+  
+  // Test allocation size distribution
+  let size_distribution = memory_profiler.get_size_distribution()
+  assert_eq(size_distribution.get("1KB"), Some(1))
+  assert_eq(size_distribution.get("2KB"), Some(0))  // Deallocated
+  assert_eq(size_distribution.get("4KB"), Some(1))
+  assert_eq(size_distribution.get("8KB"), Some(0))  // Deallocated
+  
+  // Clean up remaining allocations
+  MemoryManager::deallocate(memory_profiler.get_memory_manager(), ptr1)
+  MemoryManager::deallocate(memory_profiler.get_memory_manager(), ptr3)
+  
+  // Test memory pressure monitoring
+  let pressure_monitor = MemoryPressureMonitor::new()
+  pressure_monitor.set_threshold(0.8)  // Alert at 80% memory usage
+  
+  // Simulate memory pressure
+  let large_allocations = []
+  let total_memory = 1000000  // Simulate 1MB total memory
+  
+  // Allocate up to threshold
+  for i = 0; i < 8; i = i + 1 {
+    let ptr = MemoryManager::allocate(pressure_monitor.get_memory_manager(), 100000)  // 100KB each
+    large_allocations.push(ptr)
+  }
+  
+  // Should be at 80% threshold
+  assert_eq(pressure_monitor.is_pressure_detected(), true)
+  
+  // Get pressure level
+  let pressure_level = pressure_monitor.get_pressure_level()
+  assert_eq(pressure_level, PressureLevel::High)
+  
+  // Clean up
+  for ptr in large_allocations {
+    MemoryManager::deallocate(pressure_monitor.get_memory_manager(), ptr)
+  }
+}
+
+// Test 6: Garbage Collection
+test "garbage collection" {
+  let gc = GarbageCollector::new()
+  
+  // Create some garbage objects
+  let obj1 = gc.allocate_object("object1")
+  let obj2 = gc.allocate_object("object2")
+  let obj3 = gc.allocate_object("object3")
+  
+  // Create references between objects
+  gc.add_reference(obj1, obj2)  // obj1 references obj2
+  gc.add_reference(obj2, obj3)  // obj2 references obj3
+  
+  // Drop reference to obj1 (making obj1, obj2, obj3 reachable through obj1)
+  let root_set = [obj1]
+  
+  // Run garbage collection
+  let gc_stats = gc.collect(root_set)
+  
+  assert_eq(gc_stats.objects_collected, 0)  // No objects should be collected
+  assert_eq(gc_stats.objects_remaining, 3)
+  
+  // Remove reference to obj1 from root set
+  let empty_root_set = []
+  
+  // Run garbage collection again
+  let gc_stats2 = gc.collect(empty_root_set)
+  
+  // All objects should be collected as they're no longer reachable
+  assert_eq(gc_stats2.objects_collected, 3)
+  assert_eq(gc_stats2.objects_remaining, 0)
+  
+  // Test generational garbage collection
+  let generational_gc = GenerationalGC::new()
+  
+  // Create objects in different generations
+  let gen0_obj1 = generational_gc.allocate_object("gen0_1")
+  let gen0_obj2 = generational_gc.allocate_object("gen0_2")
+  
+  // Run minor GC (only gen0)
+  let minor_gc_stats = generational_gc.collect_minor([gen0_obj1])
+  
+  assert_eq(minor_gc_stats.objects_collected, 1)  // gen0_2 should be collected
+  assert_eq(minor_gc_stats.objects_remaining, 1)
+  
+  // Promote surviving object to gen1
+  generational_gc.promote(gen0_obj1)
+  
+  // Create new gen0 objects
+  let gen0_obj3 = generational_gc.allocate_object("gen0_3")
+  let gen0_obj4 = generational_gc.allocate_object("gen0_4")
+  
+  // Run major GC (all generations)
+  let major_gc_stats = generational_gc.collect_major([gen0_obj3])
+  
+  assert_eq(major_gc_stats.objects_collected, 2)  // gen0_obj4 and promoted gen0_obj1
+  assert_eq(major_gc_stats.objects_remaining, 1)
+  
+  // Test GC tuning
+  gc.set_collection_threshold(100)  // Collect after 100 allocations
+  gc.set_collection_strategy(GCStrategy::Incremental)
+  
+  // Create many objects to trigger automatic collection
+  let many_objects = []
+  for i = 0; i < 150; i = i + 1 {
+    let obj = gc.allocate_object("object_" + i.to_string())
+    many_objects.push(obj)
+  }
+  
+  // GC should have automatically triggered
+  let auto_gc_stats = gc.get_last_collection_stats()
+  assert_eq(auto_gc_stats.was_automatic, true)
+}
+
+// Test 7: Resource Lifetime Management
+test "resource lifetime management" {
+  let resource_manager = ResourceManager::new()
+  
+  // Test scoped resource
+  let scoped_resource = ScopedResource::new(resource_manager, "test_resource")
+  
+  assert_eq(ScopedResource::is_valid(scoped_resource), true)
+  assert_eq(ScopedResource::get(scoped_resource), "test_resource")
+  
+  // Test resource transfer
+  let transferred_resource = ScopedResource::transfer(scoped_resource)
+  assert_eq(ScopedResource::is_valid(scoped_resource), false)  // Original is invalid
+  assert_eq(ScopedResource::is_valid(transferred_resource), true)
+  
+  // Test resource pool
+  let resource_pool = ResourcePool::new(|| { "pooled_resource" })
+  
+  let pooled1 = ResourcePool::acquire(resource_pool)
+  let pooled2 = ResourcePool::acquire(resource_pool)
+  
+  assert_eq(pooled1 != null, true)
+  assert_eq(pooled2 != null, true)
+  
+  // Return resources to pool
+  ResourcePool::release(resource_pool, pooled1)
+  ResourcePool::release(resource_pool, pooled2)
+  
+  // Pool statistics
+  let pool_stats = ResourcePool::get_statistics(resource_pool)
+  assert_eq(pool_stats.available_resources, 2)
+  assert_eq(pool_stats.acquired_resources, 0)
+  
+  // Test lazy resource initialization
+  let mut init_called = false
+  let lazy_resource = LazyResource::new(|| {
+    init_called = true
+    return "lazy_initialized_resource"
+  })
+  
+  assert_eq(init_called, false)  // Not initialized yet
+  
+  let resource = LazyResource::get(lazy_resource)
+  assert_eq(init_called, true)    // Now initialized
+  assert_eq(resource, "lazy_initialized_resource")
+  
+  // Subsequent access should not reinitialize
+  init_called = false
+  let resource2 = LazyResource::get(lazy_resource)
+  assert_eq(init_called, false)  // Not reinitialized
+  assert_eq(resource2, "lazy_initialized_resource")
+  
+  // Test resource dependency management
+  let dependency_manager = ResourceDependencyManager::new()
+  
+  let resource_a = dependency_manager.create_resource("resource_a")
+  let resource_b = dependency_manager.create_resource("resource_b")
+  let resource_c = dependency_manager.create_resource("resource_c")
+  
+  // Set up dependencies: c depends on b, b depends on a
+  dependency_manager.add_dependency(resource_b, resource_a)
+  dependency_manager.add_dependency(resource_c, resource_b)
+  
+  // Try to release resource_a (should fail due to dependencies)
+  let release_result = dependency_manager.try_release(resource_a)
+  assert_eq(release_result, false)
+  
+  // Release in correct order
+  dependency_manager.release(resource_c)
+  dependency_manager.release(resource_b)
+  let final_release = dependency_manager.try_release(resource_a)
+  assert_eq(final_release, true)
+}
+
+// Test 8: Memory Safety and Bounds Checking
+test "memory safety and bounds checking" {
+  let safe_memory_manager = SafeMemoryManager::new()
+  
+  // Test bounds-checked allocation
+  let safe_array = SafeMemoryManager::allocate_array(safe_memory_manager, 10, 4)  // 10 elements of 4 bytes each
+  
+  // Test safe access
+  let value = SafeMemoryManager::get_array_element(safe_array, 5)
+  assert_eq(value != null, true)
+  
+  // Test bounds checking (should panic or return error for out-of-bounds)
+  let out_of_bounds_result = SafeMemoryManager::get_array_element_safe(safe_array, 15)
+  match out_of_bounds_result {
+    Ok(_) => assert_true(false)  // Should fail
+    Err(error) => assert_eq(error.type, MemoryError::OutOfBounds)
+  }
+  
+  // Test safe write
+  SafeMemoryManager::set_array_element(safe_array, 3, 42)
+  let retrieved_value = SafeMemoryManager::get_array_element(safe_array, 3)
+  assert_eq(retrieved_value, 42)
+  
+  // Test buffer overflow protection
+  let buffer = SafeMemoryManager::allocate_buffer(safe_memory_manager, 100)
+  
+  let safe_write_result = SafeMemoryManager::write_to_buffer_safe(buffer, "test_data", 0)
+  match safe_write_result {
+    Ok(bytes_written) => assert_eq(bytes_written, 9)  // "test_data" length
+    Err(_) => assert_true(false)
+  }
+  
+  // Write beyond buffer bounds should fail
+  let overflow_result = SafeMemoryManager::write_to_buffer_safe(buffer, "x" * 200, 0)
+  match overflow_result {
+    Ok(_) => assert_true(false)  // Should fail
+    Err(error) => assert_eq(error.type, MemoryError::BufferOverflow)
+  }
+  
+  // Test memory sanitization
+  let sensitive_data = "sensitive_information"
+  let secure_buffer = SafeMemoryManager::allocate_secure_buffer(safe_memory_manager, 100)
+  
+  SafeMemoryManager::write_to_buffer(secure_buffer, sensitive_data, 0)
+  
+  // Verify data is written
+  let read_data = SafeMemoryManager::read_from_buffer(secure_buffer, 0, sensitive_data.length())
+  assert_eq(read_data, sensitive_data)
+  
+  // Sanitize buffer
+  SafeMemoryManager::sanitize_buffer(secure_buffer)
+  
+  // Verify data is no longer readable
+  let sanitized_data = SafeMemoryManager::read_from_buffer(secure_buffer, 0, sensitive_data.length())
+  assert_eq(sanitized_data != sensitive_data, true)
+  
+  // Test memory guard pages
+  let guarded_memory = SafeMemoryManager::allocate_with_guard_pages(safe_memory_manager, 1024)
+  
+  // Access within bounds should work
+  let in_bounds_access = SafeMemoryManager::access_safe(guarded_memory, 512)
+  assert_eq(in_bounds_access.is_ok(), true)
+  
+  // Access near guard page should fail
+  let near_guard_access = SafeMemoryManager::access_safe(guarded_memory, 1024)
+  assert_eq(near_guard_access.is_err(), true)
+  
+  // Clean up
+  SafeMemoryManager::deallocate_array(safe_memory_manager, safe_array)
+  SafeMemoryManager::deallocate_buffer(safe_memory_manager, buffer)
+  SafeMemoryManager::deallocate_secure_buffer(safe_memory_manager, secure_buffer)
+  SafeMemoryManager::deallocate_with_guard_pages(safe_memory_manager, guarded_memory)
+}
+
+// Test 9: Memory Mapping and Virtual Memory
+test "memory mapping and virtual memory" {
+  let virtual_memory_manager = VirtualMemoryManager::new()
+  
+  // Test virtual memory allocation
+  let vm_region = VirtualMemoryManager::allocate_region(virtual_memory_manager, 4096 * 16)  // 16 pages
+  assert_eq(vm_region != null, true)
+  assert_eq(VirtualMemoryManager::get_region_size(vm_region), 4096 * 16)
+  
+  // Test memory protection
+  VirtualMemoryManager::protect_region(vm_region, MemoryProtection::ReadWrite)
+  
+  // Write to region
+  VirtualMemoryManager::write_to_region(vm_region, 0, "test_data")
+  
+  // Read from region
+  let read_data = VirtualMemoryManager::read_from_region(vm_region, 0, 9)
+  assert_eq(read_data, "test_data")
+  
+  // Change protection to read-only
+  VirtualMemoryManager::protect_region(vm_region, MemoryProtection::ReadOnly)
+  
+  // Try to write to read-only region (should fail)
+  let write_result = VirtualMemoryManager::try_write_to_region(vm_region, 0, "new_data")
+  assert_eq(write_result.is_err(), true)
+  
+  // Test memory mapping
+  let temp_file = TempFile::new("test_mmap")
+  TempFile::write(temp_file, "mapped_data_content")
+  
+  let mapped_memory = VirtualMemoryManager::map_file(virtual_memory_manager, temp_file)
+  assert_eq(mapped_memory != null, true)
+  
+  // Read mapped memory
+  let mapped_content = VirtualMemoryManager::read_from_region(mapped_memory, 0, 19)
+  assert_eq(mapped_content, "mapped_data_content")
+  
+  // Modify mapped memory
+  VirtualMemoryManager::write_to_region(mapped_memory, 0, "modified_data")
+  
+  // Unmap
+  VirtualMemoryManager::unmap_region(virtual_memory_manager, mapped_memory)
+  
+  // Test huge pages
+  let huge_page_region = VirtualMemoryManager::allocate_huge_pages(virtual_memory_manager, 4096 * 256)  // 256 huge pages
+  assert_eq(huge_page_region != null, true)
+  
+  // Check if region uses huge pages
+  let is_huge_page = VirtualMemoryManager::is_huge_page_region(huge_page_region)
+  assert_eq(is_huge_page, true)
+  
+  // Test address space layout randomization (ASLR)
+  let regions = []
+  for i = 0; i < 10; i = i + 1 {
+    let region = VirtualMemoryManager::allocate_region(virtual_memory_manager, 4096)
+    regions.push(region)
+  }
+  
+  // Check that regions have different addresses (ASLR working)
+  let mut addresses = []
+  for region in regions {
+    addresses.push(VirtualMemoryManager::get_region_address(region))
+  }
+  
+  // Sort addresses and check for uniqueness
+  addresses.sort()
+  let mut all_unique = true
+  for i = 1; i < addresses.length(); i = i + 1 {
+    if addresses[i] == addresses[i-1] {
+      all_unique = false
+      break
     }
   }
+  assert_eq(all_unique, true)
   
-  // Check memory after metrics operations
-  let after_metrics = MemoryTracker::get_current_usage(memory_tracker)
-  let metrics_memory_increase = MemoryTracker::calculate_increase(baseline_memory, after_metrics)
-  
-  // Verify memory usage is reasonable
-  let memory_per_instrument = metrics_memory_increase / 3000 // 1000 of each type
-  assert_true(memory_per_instrument < 2000) // Less than 2KB per instrument
-  
-  // Clear references
-  counters = []
-  histograms = []
-  updown_counters = []
-  
-  // Force garbage collection
-  MemoryTracker::force_gc(memory_tracker)
-  
-  // Check memory after cleanup
-  let after_metrics_cleanup = MemoryTracker::get_current_usage(memory_tracker)
-  let metrics_memory_decrease = MemoryTracker::calculate_decrease(after_metrics, after_metrics_cleanup)
-  
-  // Verify most memory is reclaimed
-  let metrics_reclamation_rate = (metrics_memory_decrease as Float) / (metrics_memory_increase as Float)
-  assert_true(metrics_reclamation_rate > 0.7) // At least 70% of memory should be reclaimed
+  // Clean up
+  VirtualMemoryManager::deallocate_region(virtual_memory_manager, vm_region)
+  VirtualMemoryManager::deallocate_region(virtual_memory_manager, huge_page_region)
+  for region in regions {
+    VirtualMemoryManager::deallocate_region(virtual_memory_manager, region)
+  }
+  TempFile::delete(temp_file)
 }
 
-// Test 3: Log Record Memory Management
-test "log record memory management" {
-  let memory_tracker = MemoryTracker::new()
+// Test 10: Memory-Efficient Data Structures
+test "memory efficient data structures" {
+  // Test compact string storage
+  let compact_strings = CompactStringSet::new()
   
-  // Record baseline memory
-  let baseline_memory = MemoryTracker::get_current_usage(memory_tracker)
-  
-  // Create logger
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "memory_test_logger")
-  
-  // Create and emit many log records
-  for i in 0..10000 {
-    let message = "Log message " + i.to_string() + " with some additional content to increase memory usage"
-    let log_record = LogRecord::new(Info, message)
-    
-    // Add attributes
-    LogRecord::add_attribute(log_record, "index", IntValue(i))
-    LogRecord::add_attribute(log_record, "thread", StringValue("test_thread"))
-    
-    Logger::emit(logger, log_record)
+  // Add many strings
+  for i = 0; i < 1000; i = i + 1 {
+    CompactStringSet::add(compact_strings, "string_" + i.to_string())
   }
   
-  // Check memory after logging
-  let after_logging = MemoryTracker::get_current_usage(memory_tracker)
-  let logging_memory_increase = MemoryTracker::calculate_increase(baseline_memory, after_logging)
+  // Check memory usage
+  let memory_usage = CompactStringSet::get_memory_usage(compact_strings)
+  assert_eq(memory_usage.used_bytes < 100000, true)  // Should be compact
   
-  // Verify memory usage is reasonable
-  let memory_per_log = logging_memory_increase / 10000
-  assert_true(memory_per_log < 500) // Less than 500 bytes per log
+  // Test string interning
+  let string_interner = StringInterner::new()
   
-  // Test log buffer cleanup
-  Logger::clear_buffers(logger)
+  let interned1 = StringInterner::intern(string_interner, "frequently_used_string")
+  let interned2 = StringInterner::intern(string_interner, "frequently_used_string")
+  let interned3 = StringInterner::intern(string_interner, "another_string")
   
-  // Force garbage collection
-  MemoryTracker::force_gc(memory_tracker)
+  // interned1 and interned2 should point to same memory
+  assert_eq(interned1 == interned2, true)
+  assert_eq(interned2 == interned3, false)
   
-  // Check memory after cleanup
-  let after_log_cleanup = MemoryTracker::get_current_usage(memory_tracker)
-  let log_memory_decrease = MemoryTracker::calculate_decrease(after_logging, after_log_cleanup)
+  // Check interner statistics
+  let interner_stats = StringInterner::get_statistics(string_interner)
+  assert_eq(interner_stats.unique_strings, 2)
+  assert_eq(interner_stats.total_interns, 3)
   
-  // Verify most memory is reclaimed
-  let log_reclamation_rate = (log_memory_decrease as Float) / (logging_memory_increase as Float)
-  assert_true(log_reclamation_rate > 0.8) // At least 80% of memory should be reclaimed
-}
-
-// Test 4: Context and Baggage Memory Management
-test "context and baggage memory management" {
-  let memory_tracker = MemoryTracker::new()
+  // Test memory-efficient hash map
+  let compact_map = CompactHashMap::new()
   
-  // Record baseline memory
-  let baseline_memory = MemoryTracker::get_current_usage(memory_tracker)
-  
-  // Create many contexts with baggage
-  let mut contexts = []
-  let mut baggage_items = []
-  
-  for i in 0..5000 {
-    // Create context
-    let trace_id = "trace_" + i.to_string()
-    let span_id = "span_" + i.to_string()
-    let span_ctx = SpanContext::new(trace_id, span_id, true, "")
-    
-    // Create baggage with many entries
-    let baggage = Baggage::new()
-    let mut updated_baggage = baggage
-    
-    for j in 0..10 {
-      let key = "baggage_key_" + j.to_string()
-      let value = "baggage_value_" + i.to_string() + "_" + j.to_string()
-      updated_baggage = Baggage::set_entry(updated_baggage, key, value)
-    }
-    
-    // Create context with baggage
-    let ctx_with_baggage = SpanContext::with_baggage(trace_id, span_id, true, updated_baggage)
-    
-    contexts = contexts + [ctx_with_baggage]
-    baggage_items = baggage_items + [updated_baggage]
+  // Add many key-value pairs
+  for i = 0; i < 1000; i = i + 1 {
+    CompactHashMap::insert(compact_map, "key_" + i.to_string(), "value_" + i.to_string())
   }
   
-  // Check memory after context creation
-  let after_contexts = MemoryTracker::get_current_usage(memory_tracker)
-  let context_memory_increase = MemoryTracker::calculate_increase(baseline_memory, after_contexts)
+  let map_memory_usage = CompactHashMap::get_memory_usage(compact_map)
+  assert_eq(map_memory_usage.used_bytes < 200000, true)  // Should be compact
   
-  // Verify memory usage is reasonable
-  let memory_per_context = context_memory_increase / 5000
-  assert_true(memory_per_context < 1500) // Less than 1.5KB per context
+  // Test sparse array
+  let sparse_array = SparseArray::new(10000)  // Capacity for 10000 elements
   
-  // Clear references
-  contexts = []
-  baggage_items = []
+  // Set only a few elements
+  SparseArray::set(sparse_array, 100, "value_at_100")
+  SparseArray::set(sparse_array, 5000, "value_at_5000")
+  SparseArray::set(sparse_array, 9999, "value_at_9999")
   
-  // Force garbage collection
-  MemoryTracker::force_gc(memory_tracker)
+  // Memory usage should be proportional to actual elements, not capacity
+  let sparse_memory_usage = SparseArray::get_memory_usage(sparse_array)
+  assert_eq(sparse_memory_usage.used_bytes < 10000, true)  // Much less than 10000 * element_size
   
-  // Check memory after cleanup
-  let after_context_cleanup = MemoryTracker::get_current_usage(memory_tracker)
-  let context_memory_decrease = MemoryTracker::calculate_decrease(after_contexts, after_context_cleanup)
+  // Verify values
+  assert_eq(SparseArray::get(sparse_array, 100), Some("value_at_100"))
+  assert_eq(SparseArray::get(sparse_array, 5000), Some("value_at_5000"))
+  assert_eq(SparseArray::get(sparse_array, 9999), Some("value_at_9999"))
+  assert_eq(SparseArray::get(sparse_array, 200), None)
   
-  // Verify most memory is reclaimed
-  let context_reclamation_rate = (context_memory_decrease as Float) / (context_memory_increase as Float)
-  assert_true(context_reclamation_rate > 0.8) // At least 80% of memory should be reclaimed
-}
-
-// Test 5: Resource Memory Management
-test "resource memory management" {
-  let memory_tracker = MemoryTracker::new()
+  // Test memory-efficient bitmap
+  let bitmap = Bitmap::new(10000)  // 10000 bits
   
-  // Record baseline memory
-  let baseline_memory = MemoryTracker::get_current_usage(memory_tracker)
+  // Set some bits
+  Bitmap::set(bitmap, 100)
+  Bitmap::set(bitmap, 5000)
+  Bitmap::set(bitmap, 9999)
   
-  // Create many resources with attributes
-  let mut resources = []
+  // Memory usage should be minimal (10000 bits = 1250 bytes)
+  let bitmap_memory_usage = Bitmap::get_memory_usage(bitmap)
+  assert_eq(bitmap_memory_usage.used_bytes, 1250)
   
-  for i in 0..2000 {
-    // Create resource with many attributes
-    let mut attrs = []
-    
-    for j in 0..20 {
-      let key = "attr_" + j.to_string()
-      let value = StringValue("value_" + i.to_string() + "_" + j.to_string())
-      attrs = attrs + [(key, value)]
-    }
-    
-    let resource = Resource::with_attributes(Resource::new(), attrs)
-    resources = resources + [resource]
+  // Verify bits
+  assert_eq(Bitmap::is_set(bitmap, 100), true)
+  assert_eq(Bitmap::is_set(bitmap, 5000), true)
+  assert_eq(Bitmap::is_set(bitmap, 9999), true)
+  assert_eq(Bitmap::is_set(bitmap, 200), false)
+  
+  // Test memory pool for small objects
+  let small_object_pool = SmallObjectPool::new()
+  
+  let small_objects = []
+  for i = 0; i < 1000; i = i + 1 {
+    let obj = SmallObjectPool::allocate(small_object_pool, 64)  // 64-byte objects
+    small_objects.push(obj)
   }
   
-  // Check memory after resource creation
-  let after_resources = MemoryTracker::get_current_usage(memory_tracker)
-  let resource_memory_increase = MemoryTracker::calculate_increase(baseline_memory, after_resources)
+  let pool_memory_usage = SmallObjectPool::get_memory_usage(small_object_pool)
   
-  // Verify memory usage is reasonable
-  let memory_per_resource = resource_memory_increase / 2000
-  assert_true(memory_per_resource < 2000) // Less than 2KB per resource
+  // Should have much less overhead than individual allocations
+  assert_eq(pool_memory_usage.overhead_bytes < 10000, true)
   
-  // Test resource merging
-  let merged_resources = []
-  for i in 0..1000 {
-    let merged = Resource::merge(resources[i * 2], resources[i * 2 + 1])
-    merged_resources = merged_resources + [merged]
+  // Clean up
+  for obj in small_objects {
+    SmallObjectPool::deallocate(small_object_pool, obj)
   }
-  
-  // Check memory after merging
-  let after_merging = MemoryTracker::get_current_usage(memory_tracker)
-  let merging_memory_increase = MemoryTracker::calculate_increase(after_resources, after_merging)
-  
-  // Clear references
-  resources = []
-  merged_resources = []
-  
-  // Force garbage collection
-  MemoryTracker::force_gc(memory_tracker)
-  
-  // Check memory after cleanup
-  let after_resource_cleanup = MemoryTracker::get_current_usage(memory_tracker)
-  let resource_memory_decrease = MemoryTracker::calculate_decrease(after_merging, after_resource_cleanup)
-  
-  // Verify most memory is reclaimed
-  let resource_reclamation_rate = (resource_memory_decrease as Float) / 
-    ((resource_memory_increase + merging_memory_increase) as Float)
-  assert_true(resource_reclamation_rate > 0.7) // At least 70% of memory should be reclaimed
-}
-
-// Test 6: Attribute Memory Management
-test "attribute memory management" {
-  let memory_tracker = MemoryTracker::new()
-  
-  // Record baseline memory
-  let baseline_memory = MemoryTracker::get_current_usage(memory_tracker)
-  
-  // Create many attributes of different types
-  let mut attributes = []
-  
-  for i in 0..10000 {
-    // String attributes
-    let string_attr = StringValue("string_value_" + i.to_string())
-    attributes = attributes + [string_attr]
-    
-    // Int attributes
-    let int_attr = IntValue(i)
-    attributes = attributes + [int_attr]
-    
-    // Float attributes
-    let float_attr = FloatValue(i.to_int() as Float * 1.5)
-    attributes = attributes + [float_attr]
-    
-    // Bool attributes
-    let bool_attr = BoolValue(i % 2 == 0)
-    attributes = attributes + [bool_attr]
-    
-    // Array attributes
-    let array_attr = ArrayStringValue(["item1", "item2", "item3"])
-    attributes = attributes + [array_attr]
-  }
-  
-  // Check memory after attribute creation
-  let after_attributes = MemoryTracker::get_current_usage(memory_tracker)
-  let attribute_memory_increase = MemoryTracker::calculate_increase(baseline_memory, after_attributes)
-  
-  // Verify memory usage is reasonable
-  let memory_per_attribute = attribute_memory_increase / 50000 // 10000 * 5 attributes each
-  assert_true(memory_per_attribute < 200) // Less than 200 bytes per attribute
-  
-  // Clear references
-  attributes = []
-  
-  // Force garbage collection
-  MemoryTracker::force_gc(memory_tracker)
-  
-  // Check memory after cleanup
-  let after_attribute_cleanup = MemoryTracker::get_current_usage(memory_tracker)
-  let attribute_memory_decrease = MemoryTracker::calculate_decrease(after_attributes, after_attribute_cleanup)
-  
-  // Verify most memory is reclaimed
-  let attribute_reclamation_rate = (attribute_memory_decrease as Float) / (attribute_memory_increase as Float)
-  assert_true(attribute_reclamation_rate > 0.8) // At least 80% of memory should be reclaimed
-}
-
-// Test 7: Serialization Buffer Memory Management
-test "serialization buffer memory management" {
-  let memory_tracker = MemoryTracker::new()
-  
-  // Record baseline memory
-  let baseline_memory = MemoryTracker::get_current_usage(memory_tracker)
-  
-  // Create spans for serialization
-  let mut spans = []
-  for i in 0..1000 {
-    let span_name = "serialization_test_span_" + i.to_string()
-    let span_ctx = SpanContext::new("trace_id", "span_id", true, "")
-    let span = Span::new(span_name, Internal, span_ctx)
-    
-    // Add many attributes and events
-    for j in 0..10 {
-      Span::add_attribute(span, "attr_" + j.to_string(), StringValue("value_" + j.to_string()))
-      Span::add_event(span, "event_" + j.to_string(), Some([("event_attr", StringValue("event_value"))]))
-    }
-    
-    spans = spans + [span]
-  }
-  
-  // Serialize spans to JSON
-  let mut json_buffers = []
-  for span in spans {
-    let json = SpanSerializer::to_json(span)
-    json_buffers = json_buffers + [json]
-  }
-  
-  // Check memory after JSON serialization
-  let after_json_serialization = MemoryTracker::get_current_usage(memory_tracker)
-  let json_memory_increase = MemoryTracker::calculate_increase(baseline_memory, after_json_serialization)
-  
-  // Verify memory usage is reasonable
-  let memory_per_json_buffer = json_memory_increase / 1000
-  assert_true(memory_per_json_buffer < 5000) // Less than 5KB per JSON buffer
-  
-  // Serialize spans to binary
-  let mut binary_buffers = []
-  for span in spans {
-    let binary = SpanSerializer::to_binary(span)
-    binary_buffers = binary_buffers + [binary]
-  }
-  
-  // Check memory after binary serialization
-  let after_binary_serialization = MemoryTracker::get_current_usage(memory_tracker)
-  let binary_memory_increase = MemoryTracker::calculate_increase(after_json_serialization, after_binary_serialization)
-  
-  // Verify binary is more compact than JSON
-  let memory_per_binary_buffer = binary_memory_increase / 1000
-  assert_true(memory_per_binary_buffer < memory_per_json_buffer) // Binary should be more compact
-  
-  // Clear references
-  spans = []
-  json_buffers = []
-  binary_buffers = []
-  
-  // Force garbage collection
-  MemoryTracker::force_gc(memory_tracker)
-  
-  // Check memory after cleanup
-  let after_serialization_cleanup = MemoryTracker::get_current_usage(memory_tracker)
-  let serialization_memory_decrease = MemoryTracker::calculate_decrease(after_binary_serialization, after_serialization_cleanup)
-  
-  // Verify most memory is reclaimed
-  let total_serialization_memory = json_memory_increase + binary_memory_increase
-  let serialization_reclamation_rate = (serialization_memory_decrease as Float) / (total_serialization_memory as Float)
-  assert_true(serialization_reclamation_rate > 0.8) // At least 80% of memory should be reclaimed
-}
-
-// Test 8: Telemetry Pipeline Memory Management
-test "telemetry pipeline memory management" {
-  let memory_tracker = MemoryTracker::new()
-  
-  // Record baseline memory
-  let baseline_memory = MemoryTracker::get_current_usage(memory_tracker)
-  
-  // Create telemetry pipeline
-  let pipeline = TelemetryPipeline::new()
-  
-  // Add processors
-  TelemetryPipeline::add_processor(pipeline, MemoryFilterProcessor::new())
-  TelemetryPipeline::add_processor(pipeline, MemoryTransformProcessor::new())
-  TelemetryPipeline::add_processor(pipeline, MemoryAggregatorProcessor::new())
-  
-  // Process large amount of telemetry data
-  for i in 0..5000 {
-    let data = TelemetryData::new("metric_" + i.to_string(), i.to_int() as Float, "unit", 
-      Some([("index", IntValue(i))]))
-    
-    TelemetryPipeline::process(pipeline, data)
-  }
-  
-  // Check memory after processing
-  let after_processing = MemoryTracker::get_current_usage(memory_tracker)
-  let processing_memory_increase = MemoryTracker::calculate_increase(baseline_memory, after_processing)
-  
-  // Verify memory usage is reasonable
-  let memory_per_item = processing_memory_increase / 5000
-  assert_true(memory_per_item < 1000) // Less than 1KB per processed item
-  
-  // Clear pipeline buffers
-  TelemetryPipeline::clear_buffers(pipeline)
-  
-  // Force garbage collection
-  MemoryTracker::force_gc(memory_tracker)
-  
-  // Check memory after cleanup
-  let after_pipeline_cleanup = MemoryTracker::get_current_usage(memory_tracker)
-  let pipeline_memory_decrease = MemoryTracker::calculate_decrease(after_processing, after_pipeline_cleanup)
-  
-  // Verify most memory is reclaimed
-  let pipeline_reclamation_rate = (pipeline_memory_decrease as Float) / (processing_memory_increase as Float)
-  assert_true(pipeline_reclamation_rate > 0.8) // At least 80% of memory should be reclaimed
-}
-
-// Test 9: Memory Leak Detection
-test "memory leak detection" {
-  let leak_detector = MemoryLeakDetector::new()
-  
-  // Start leak detection
-  MemoryLeakDetector::start(leak_detector)
-  
-  // Perform operations that might leak memory
-  let mut potential_leaks = []
-  
-  for i in 0..1000 {
-    // Create objects that might not be properly cleaned up
-    let span = Span::new("leak_test_span", Internal, SpanContext::new("trace_id", "span_id", true, ""))
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "index", IntValue(i))
-    
-    // Simulate potential leak by not properly cleaning up
-    potential_leaks = potential_leaks + [(span, attrs)]
-  }
-  
-  // Intentionally don't clean up half of the objects
-  let cleaned_objects = potential_leaks.slice(0, 500)
-  let leaked_objects = potential_leaks.slice(500, 1000)
-  
-  // Clean up only half of the objects
-  for (span, attrs) in cleaned_objects {
-    // Proper cleanup
-    Span::end(span)
-    Attributes::clear(attrs)
-  }
-  
-  // Run leak detection
-  let leak_report = MemoryLeakDetector::analyze(leak_detector)
-  
-  // Verify leak detection
-  assert_true(MemoryLeakReport::potential_leaks_detected(leak_report))
-  assert_eq(MemoryLeakReport::leaked_object_count(leak_report), 500) // Should detect 500 leaked objects
-  
-  // Clean up remaining objects
-  for (span, attrs) in leaked_objects {
-    Span::end(span)
-    Attributes::clear(attrs)
-  }
-  
-  // Run leak detection again
-  let final_leak_report = MemoryLeakDetector::analyze(leak_detector)
-  
-  // Verify no more leaks
-  assert_false(MemoryLeakReport::potential_leaks_detected(final_leak_report))
-  assert_eq(MemoryLeakReport::leaked_object_count(final_leak_report), 0)
-}
-
-// Test 10: Resource Pool Management
-test "resource pool management" {
-  let resource_pool = ResourcePool::new(100) // Pool with 100 resources
-  
-  // Test resource acquisition and release
-  let acquired_resources = []
-  
-  // Acquire all resources
-  for i in 0..100 {
-    let resource = ResourcePool::acquire(resource_pool)
-    assert_true(resource.is_some()) // Should be able to acquire
-    acquired_resources = acquired_resources + [resource.unwrap()]
-  }
-  
-  // Verify pool is empty
-  assert_true(ResourcePool::acquire(resource_pool).is_none()) // Should not be able to acquire more
-  
-  // Release half of the resources
-  for i in 0..50 {
-    ResourcePool::release(resource_pool, acquired_resources[i])
-  }
-  
-  // Verify pool has available resources
-  assert_eq(ResourcePool::available_count(resource_pool), 50)
-  
-  // Acquire resources again
-  let reacquired_resources = []
-  for i in 0..50 {
-    let resource = ResourcePool::acquire(resource_pool)
-    assert_true(resource.is_some()) // Should be able to acquire
-    reacquired_resources = reacquired_resources + [resource.unwrap()]
-  }
-  
-  // Verify pool is empty again
-  assert_true(ResourcePool::acquire(resource_pool).is_none()) // Should not be able to acquire more
-  
-  // Release all resources
-  for i in 50..100 {
-    ResourcePool::release(resource_pool, acquired_resources[i])
-  }
-  
-  for resource in reacquired_resources {
-    ResourcePool::release(resource_pool, resource)
-  }
-  
-  // Verify all resources are available
-  assert_eq(ResourcePool::available_count(resource_pool), 100)
-  
-  // Test resource pool memory efficiency
-  let memory_tracker = MemoryTracker::new()
-  let baseline_memory = MemoryTracker::get_current_usage(memory_tracker)
-  
-  // Create many resource pools
-  let mut pools = []
-  for i in 0..10 {
-    let pool = ResourcePool::new(1000) // Large pools
-    pools = pools + [pool]
-  }
-  
-  // Check memory after pool creation
-  let after_pools = MemoryTracker::get_current_usage(memory_tracker)
-  let pools_memory_increase = MemoryTracker::calculate_increase(baseline_memory, after_pools)
-  
-  // Verify memory usage is reasonable
-  let memory_per_pool = pools_memory_increase / 10
-  assert_true(memory_per_pool < 1024 * 1024) // Less than 1MB per pool
-  
-  // Clear references
-  pools = []
-  
-  // Force garbage collection
-  MemoryTracker::force_gc(memory_tracker)
-  
-  // Check memory after cleanup
-  let after_pool_cleanup = MemoryTracker::get_current_usage(memory_tracker)
-  let pool_memory_decrease = MemoryTracker::calculate_decrease(after_pools, after_pool_cleanup)
-  
-  // Verify most memory is reclaimed
-  let pool_reclamation_rate = (pool_memory_decrease as Float) / (pools_memory_increase as Float)
-  assert_true(pool_reclamation_rate > 0.8) // At least 80% of memory should be reclaimed
 }
