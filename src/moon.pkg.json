@@ -165,5 +165,6 @@
         "../azimuth_caching_mechanism_quality_tests.mbt",
         "../azimuth_internationalization_support_quality_tests.mbt",
         "../azimuth_time_series_data_processing_quality_tests.mbt",
-        "../azimuth_security_quality_tests.mbt"]  }
+        "../azimuth_security_quality_tests.mbt",
+        "../azimuth_specialized_quality_tests.mbt"]  }
 }
