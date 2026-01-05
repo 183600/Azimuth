@@ -2176,6 +2176,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_advanced_time_series_tests.mbt": {
   },
+  "azimuth_advanced_telemetry_validation_tests.mbt": {
+  },
   "azimuth_advanced_telemetry_test_cases.mbt": {
   },
   "azimuth_advanced_telemetry_system_tests.mbt": {
