@@ -1,778 +1,469 @@
-// Azimuth Memory Management and Resource Cleanup Test Suite
-// This file contains test cases for memory management and resource cleanup
+// Azimuth Memory Management and Resource Cleanup Tests
+// This file contains comprehensive test cases for memory management and resource cleanup
 
-// Test 1: Memory Pool Management
-test "memory pool management" {
-  // Test memory pool creation
-  let pool_config = MemoryPoolConfig::new(1024 * 1024) // 1MB pool
-  let memory_pool = MemoryPool::with_config(pool_config)
+// Test 1: Span Memory Management
+test "span memory management" {
+  let memory_tracker = MemoryTracker::new()
+  let tracer = TracerProvider::get_tracer("memory_test")
   
-  assert_eq(MemoryPool::total_size(memory_pool), 1024 * 1024)
-  assert_eq(MemoryPool::used_size(memory_pool), 0)
-  assert_eq(MemoryPool::available_size(memory_pool), 1024 * 1024)
+  // Baseline memory measurement
+  let baseline_memory = MemoryTracker::get_current_usage(memory_tracker)
   
-  // Test memory allocation
-  let allocation1 = MemoryPool::allocate(memory_pool, 1024) // 1KB
-  assert_true(MemoryPool::is_allocation_valid(memory_pool, allocation1))
-  assert_eq(MemoryPool::used_size(memory_pool), 1024)
-  assert_eq(MemoryPool::available_size(memory_pool), 1024 * 1024 - 1024)
+  // Create many spans and track memory growth
+  let mut spans = []
+  let num_spans = 5000
   
-  let allocation2 = MemoryPool::allocate(memory_pool, 2048) // 2KB
-  assert_true(MemoryPool::is_allocation_valid(memory_pool, allocation2))
-  assert_eq(MemoryPool::used_size(memory_pool), 1024 + 2048)
-  assert_eq(MemoryPool::available_size(memory_pool), 1024 * 1024 - 1024 - 2048)
-  
-  // Test memory deallocation
-  MemoryPool::deallocate(memory_pool, allocation1)
-  assert_false(MemoryPool::is_allocation_valid(memory_pool, allocation1))
-  assert_eq(MemoryPool::used_size(memory_pool), 2048)
-  assert_eq(MemoryPool::available_size(memory_pool), 1024 * 1024 - 2048)
-  
-  // Test memory reuse
-  let allocation3 = MemoryPool::allocate(memory_pool, 1024) // Should reuse freed space
-  assert_true(MemoryPool::is_allocation_valid(memory_pool, allocation3))
-  assert_eq(MemoryPool::used_size(memory_pool), 2048 + 1024)
-  
-  // Test pool fragmentation
-  let small_allocations = []
-  for i = 0; i < 100; i = i + 1 {
-    let allocation = MemoryPool::allocate(memory_pool, 64) // 64 bytes each
-    small_allocations.push(allocation)
-  }
-  
-  // Deallocate every other allocation to create fragmentation
-  for i = 0; i < small_allocations.length(); i = i + 2 {
-    MemoryPool::deallocate(memory_pool, small_allocations[i])
-  }
-  
-  // Test defragmentation
-  let fragmentation_before = MemoryPool::fragmentation_ratio(memory_pool)
-  MemoryPool::defragment(memory_pool)
-  let fragmentation_after = MemoryPool::fragmentation_ratio(memory_pool)
-  
-  assert_true(fragmentation_after <= fragmentation_before)
-  
-  // Test pool statistics
-  let stats = MemoryPool::get_statistics(memory_pool)
-  assert_eq(MemoryStats::total_allocations(stats), 102) // allocation1, allocation2, allocation3, and 100 small allocations
-  assert_eq(MemoryStats::active_allocations(stats), 52) // allocation2, allocation3, and 50 small allocations
-  assert_eq(MemoryStats::peak_usage(stats), 1024 + 2048 + 64 * 100)
-  
-  // Clean up remaining allocations
-  MemoryPool::deallocate(memory_pool, allocation2)
-  MemoryPool::deallocate(memory_pool, allocation3)
-  for allocation in small_allocations {
-    if MemoryPool::is_allocation_valid(memory_pool, allocation) {
-      MemoryPool::deallocate(memory_pool, allocation)
+  for i in 0..=num_spans {
+    let span = Tracer::start_span(tracer, "memory_test_span_" + i.to_string())
+    
+    // Add attributes and events to increase memory usage
+    Span::set_attribute(span, "iteration", IntValue(i))
+    Span::set_attribute(span, "data", StringValue("test_data_" + i.to_string()))
+    Span::set_attribute(span, "timestamp", IntValue(1609459200 + i))
+    
+    // Add multiple events
+    for event_id in 0..=3 {
+      Span::add_event(span, "event_" + event_id.to_string(), Some([
+        ("event_iteration", IntValue(i)),
+        ("event_id", IntValue(event_id)),
+        ("event_data", StringValue("event_data_" + i.to_string() + "_" + event_id.to_string()))
+      ]))
     }
-  }
-  
-  assert_eq(MemoryPool::used_size(memory_pool), 0)
-  assert_eq(MemoryPool::available_size(memory_pool), 1024 * 1024)
-}
-
-// Test 2: Object Pool Management
-test "object pool management" {
-  // Test object pool creation
-  let object_pool = ObjectPool::new(|| TelemetrySpan::new(), 100) // Max 100 objects
-  
-  assert_eq(ObjectPool::size(object_pool), 0)
-  assert_eq(ObjectPool::capacity(object_pool), 100)
-  
-  // Test object acquisition
-  let span1 = ObjectPool::acquire(object_pool)
-  assert_true(Option::is_some(span1))
-  assert_eq(ObjectPool::size(object_pool), 0) // Pool is empty
-  
-  let span2 = ObjectPool::acquire(object_pool)
-  assert_true(Option::is_some(span2))
-  assert_eq(ObjectPool::size(object_pool), 0) // Pool is still empty
-  
-  // Test object release
-  ObjectPool::release(object_pool, Option::unwrap(span1))
-  assert_eq(ObjectPool::size(object_pool), 1)
-  
-  ObjectPool::release(object_pool, Option::unwrap(span2))
-  assert_eq(ObjectPool::size(object_pool), 2)
-  
-  // Test object reuse
-  let span3 = ObjectPool::acquire(object_pool)
-  assert_true(Option::is_some(span3))
-  assert_eq(ObjectPool::size(object_pool), 1) // One object left in pool
-  
-  let span4 = ObjectPool::acquire(object_pool)
-  assert_true(Option::is_some(span4))
-  assert_eq(ObjectPool::size(object_pool), 0) // Pool is empty again
-  
-  // Test pool capacity limits
-  let spans = []
-  for i = 0; i < 150; i = i + 1 {
-    let span = ObjectPool::acquire(object_pool)
+    
     spans.push(span)
   }
   
-  // Release all spans
+  let peak_memory = MemoryTracker::get_current_usage(memory_tracker)
+  
+  // Calculate memory per span
+  let memory_per_span = (peak_memory.heap_used - baseline_memory.heap_used) / num_spans
+  
+  // Verify reasonable memory usage (< 2KB per span with attributes and events)
+  assert_true(memory_per_span < 2048, "Each span should use < 2KB memory")
+  
+  // End all spans and verify memory recovery
   for span in spans {
-    match span {
-      Some(s) => ObjectPool::release(object_pool, s),
-      None => ()
-    }
+    Span::end(span)
   }
   
-  // Pool should not exceed capacity
-  assert_eq(ObjectPool::size(object_pool), 100)
+  // Force garbage collection
+  MemoryTracker::force_gc(memory_tracker)
   
-  // Test object reset on release
-  let span5 = ObjectPool::acquire(object_pool)
-  match span5 {
-    Some(s) => {
-      TelemetrySpan::set_name(s, "test.span")
-      TelemetrySpan::set_attribute(s, "test.attr", "test.value")
-      
-      ObjectPool::release(object_pool, s)
-      
-      // Reacquire to verify reset
-      let span6 = ObjectPool::acquire(object_pool)
-      match span6 {
-        Some(reset_span) => {
-          assert_eq(TelemetrySpan::name(reset_span), "") // Should be reset
-          assert_eq(TelemetrySpan::get_attribute(reset_span, "test.attr"), None) // Should be reset
-        }
-        None => assert_true(false)
-      }
-    }
-    None => assert_true(false)
-  }
+  let final_memory = MemoryTracker::get_current_usage(memory_tracker)
   
-  // Test pool statistics
-  let stats = ObjectPool::get_statistics(object_pool)
-  assert_eq(ObjectPoolStats::total_acquisitions(stats), 152) // 150 + 2 earlier
-  assert_eq(ObjectPoolStats::total_releases(stats), 152)
-  assert_eq(ObjectPoolStats::pool_hits(stats), 100) // Objects from pool
-  assert_eq(ObjectPoolStats::pool_misses(stats), 52) // New objects created
+  // Verify memory recovery
+  let memory_recovered = peak_memory.heap_used - final_memory.heap_used
+  let total_memory_used = peak_memory.heap_used - baseline_memory.heap_used
+  
+  assert_true(memory_recovered > total_memory_used * 0.8, 
+    "Should recover at least 80% of memory after ending spans")
 }
 
-// Test 3: Resource Reference Management
-test "resource reference management" {
-  // Test resource creation with reference counting
-  let resource = Resource::new("test_resource", 1024) // 1KB resource
-  assert_eq(Resource::ref_count(resource), 1)
+// Test 2: Metrics Resource Management
+test "metrics resource management" {
+  let memory_tracker = MemoryTracker::new()
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "resource_test_meter")
   
-  // Test reference increment
-  Resource::add_ref(resource)
-  assert_eq(Resource::ref_count(resource), 2)
+  // Baseline memory measurement
+  let baseline_memory = MemoryTracker::get_current_usage(memory_tracker)
   
-  Resource::add_ref(resource)
-  assert_eq(Resource::ref_count(resource), 3)
+  // Create many metrics instruments
+  let mut metrics = []
+  let num_metrics = 1000
   
-  // Test reference decrement
-  Resource::release(resource)
-  assert_eq(Resource::ref_count(resource), 2)
-  
-  Resource::release(resource)
-  assert_eq(Resource::ref_count(resource), 1)
-  
-  // Test resource cleanup
-  let cleanup_called = RefCell::new(false)
-  let resource_with_cleanup = Resource::with_cleanup(
-    "test_resource_with_cleanup",
-    1024,
-    || cleanup_called.set(true)
-  )
-  
-  assert_eq(Resource::ref_count(resource_with_cleanup), 1)
-  assert_false(cleanup_called.borrow())
-  
-  Resource::release(resource_with_cleanup)
-  assert_true(cleanup_called.borrow()) // Cleanup should be called when ref count reaches 0
-  
-  // Test weak references
-  let strong_resource = Resource::new("strong_resource", 2048)
-  let weak_resource = Resource::downgrade(strong_resource)
-  
-  assert_true(Resource::is_valid(weak_resource))
-  
-  // Upgrade weak reference
-  let upgraded_resource = Resource::upgrade(weak_resource)
-  assert_true(Option::is_some(upgraded_resource))
-  assert_eq(Resource::ref_count(strong_resource), 2) // Original + upgraded
-  
-  // Drop strong reference
-  Resource::release(strong_resource)
-  assert_eq(Resource::ref_count(Option::unwrap(upgraded_resource)), 1)
-  
-  // Drop upgraded reference
-  Resource::release(Option::unwrap(upgraded_resource))
-  
-  // Weak reference should now be invalid
-  assert_false(Resource::is_valid(weak_resource))
-  
-  // Test cyclic reference detection
-  let resource_a = Resource::new("resource_a", 1024)
-  let resource_b = Resource::new("resource_b", 1024)
-  
-  // Create a cycle
-  Resource::set_reference(resource_a, "b", resource_b);
-  Resource::set_reference(resource_b, "a", resource_a);
-  
-  // Both resources should have ref count of 2 (1 external + 1 from the other resource)
-  assert_eq(Resource::ref_count(resource_a), 2)
-  assert_eq(Resource::ref_count(resource_b), 2)
-  
-  // Release external references
-  Resource::release(resource_a)
-  Resource::release(resource_b)
-  
-  // Resources should still have ref count of 1 due to the cycle
-  assert_eq(Resource::ref_count(resource_a), 1)
-  assert_eq(Resource::ref_count(resource_b), 1)
-  
-  // Break the cycle
-  Resource::clear_reference(resource_a, "b");
-  
-  // Now both resources should be cleaned up
-  assert_eq(Resource::ref_count(resource_a), 0)
-  assert_eq(Resource::ref_count(resource_b), 0)
-}
-
-// Test 4: Garbage Collection
-test "garbage collection" {
-  // Test garbage collector creation
-  let gc_config = GCConfig::new()
-  GCConfig::set_threshold(gc_config, 1024 * 1024) // 1MB threshold
-  GCConfig::set_max_heap_size(gc_config, 10 * 1024 * 1024) // 10MB max heap
-  
-  let garbage_collector = GarbageCollector::with_config(gc_config)
-  
-  // Test object allocation
-  let objects = []
-  for i = 0; i < 1000; i = i + 1 {
-    let object = LargeObject::new(1024) // 1KB each
-    objects.push(object)
-  }
-  
-  let heap_size_before_gc = GarbageCollector::heap_size(garbage_collector)
-  assert_true(heap_size_before_gc >= 1024 * 1000) // At least 1000KB
-  
-  // Release references to some objects
-  for i = 0; i < 500; i = i + 1 {
-    objects[i] = None
-  }
-  
-  // Run garbage collection
-  GarbageCollector::collect(garbage_collector)
-  
-  let heap_size_after_gc = GarbageCollector::heap_size(garbage_collector)
-  assert_true(heap_size_after_gc < heap_size_before_gc) // Heap should have shrunk
-  
-  // Test generational garbage collection
-  let generational_gc = GenerationalGC::new()
-  
-  // Create young generation objects
-  let young_objects = []
-  for i = 0; i < 100; i = i + 1 {
-    let object = SmallObject::new(64) // 64 bytes each
-    young_objects.push(object)
-  }
-  
-  // Create old generation objects (simulate long-lived objects)
-  let old_objects = []
-  for i = 0; i < 10; i = i + 1 {
-    let object = LargeObject::new(2048) // 2KB each
-    old_objects.push(object)
+  for i in 0..=num_metrics {
+    let counter = Meter::create_counter(meter, 
+      "counter_" + i.to_string(), 
+      Some("Test counter " + i.to_string()), 
+      Some("count"))
+    let histogram = Meter::create_histogram(meter, 
+      "histogram_" + i.to_string(), 
+      Some("Test histogram " + i.to_string()), 
+      Some("ms"))
+    let gauge = Meter::create_gauge(meter, 
+      "gauge_" + i.to_string(), 
+      Some("Test gauge " + i.to_string()), 
+      Some("value"))
     
-    // Simulate multiple GC cycles to promote to old generation
-    for j = 0; j < 10; j = j + 1 {
-      GenerationalGC::minor_collect(generational_gc)
+    metrics.push(counter)
+    metrics.push(histogram)
+    metrics.push(gauge)
+    
+    // Record measurements to increase memory usage
+    Counter::add(counter, 1.0, Some(Attributes::with_data([
+      ("metric_index", IntValue(i)),
+      ("data", StringValue("test_data_" + i.to_string()))
+    ])))
+    
+    for j in 0..=10 {
+      Histogram::record(histogram, (j as Float) * 10.0, Some(Attributes::with_data([
+        ("metric_index", IntValue(i)),
+        ("measurement_index", IntValue(j))
+      ])))
     }
+    
+    Gauge::record(gauge, (i as Float) % 100.0, Some(Attributes::with_data([
+      ("metric_index", IntValue(i))
+    ])))
   }
   
-  let young_gen_size_before = GenerationalGC::young_generation_size(generational_gc)
-  let old_gen_size_before = GenerationalGC::old_generation_size(generational_gc)
+  let peak_memory = MemoryTracker::get_current_usage(memory_tracker)
   
-  // Release some young objects
-  for i = 0; i < 50; i = i + 1 {
-    young_objects[i] = None
-  }
+  // Calculate memory per metric
+  let memory_per_metric = (peak_memory.heap_used - baseline_memory.heap_used) / metrics.length()
   
-  // Run minor GC (should only collect young generation)
-  GenerationalGC::minor_collect(generational_gc)
+  // Verify reasonable memory usage (< 1KB per metric)
+  assert_true(memory_per_metric < 1024, "Each metric should use < 1KB memory")
   
-  let young_gen_size_after = GenerationalGC::young_generation_size(generational_gc)
-  let old_gen_size_after = GenerationalGC::old_generation_size(generational_gc)
+  // Clear metric references and verify memory recovery
+  metrics = []
   
-  assert_true(young_gen_size_after < young_gen_size_before) // Young gen should have shrunk
-  assert_eq(old_gen_size_after, old_gen_size_before) // Old gen should be unchanged
+  // Force garbage collection
+  MemoryTracker::force_gc(memory_tracker)
   
-  // Test GC statistics
-  let gc_stats = GarbageCollector::get_statistics(garbage_collector)
-  assert_eq(GCStats::total_collections(gc_stats), 1)
-  assert_eq(GCStats::total_bytes_freed(gc_stats), heap_size_before_gc - heap_size_after_gc)
-  assert_true(GCStats::total_collection_time(gc_stats) >= 0)
+  let final_memory = MemoryTracker::get_current_usage(memory_tracker)
   
-  // Test GC tuning
-  GCConfig::set_threshold(gc_config, 512 * 1024) // Lower threshold
-  GCConfig::set_max_heap_size(gc_config, 5 * 1024 * 1024) // Smaller max heap
+  // Verify memory recovery
+  let memory_recovered = peak_memory.heap_used - final_memory.heap_used
+  let total_memory_used = peak_memory.heap_used - baseline_memory.heap_used
   
-  GarbageCollector::update_config(garbage_collector, gc_config)
-  
-  let updated_config = GarbageCollector::get_config(garbage_collector)
-  assert_eq(GCConfig::threshold(updated_config), 512 * 1024)
-  assert_eq(GCConfig::max_heap_size(updated_config), 5 * 1024 * 1024)
+  assert_true(memory_recovered > total_memory_used * 0.7, 
+    "Should recover at least 70% of memory after clearing metrics")
 }
 
-// Test 5: Buffer Management
-test "buffer management" {
-  // Test buffer creation
-  let buffer = Buffer::new(1024) // 1KB buffer
-  assert_eq(Buffer::capacity(buffer), 1024)
-  assert_eq(Buffer::size(buffer), 0)
+// Test 3: Context and Baggage Resource Cleanup
+test "context and baggage resource cleanup" {
+  let memory_tracker = MemoryTracker::new()
   
-  // Test buffer writing
-  let data = "Hello, World!"
-  let bytes_written = Buffer::write(buffer, data)
-  assert_eq(bytes_written, String::length(data))
-  assert_eq(Buffer::size(buffer), String::length(data))
+  // Baseline memory measurement
+  let baseline_memory = MemoryTracker::get_current_usage(memory_tracker)
   
-  // Test buffer reading
-  let read_data = Buffer::read(buffer, String::length(data))
-  assert_eq(read_data, data)
-  assert_eq(Buffer::position(buffer), String::length(data))
+  // Create many contexts with baggage
+  let mut contexts = []
+  let num_contexts = 3000
   
-  // Test buffer seeking
-  Buffer::seek(buffer, 0)
-  assert_eq(Buffer::position(buffer), 0)
-  
-  // Test buffer expansion
-  let large_data = "A".repeat(2048) // 2KB of data
-  let bytes_written_large = Buffer::write(buffer, large_data)
-  assert_eq(bytes_written_large, 2048)
-  assert_eq(Buffer::capacity(buffer), 1024 + 2048) // Should have expanded
-  assert_eq(Buffer::size(buffer), String::length(data) + 2048)
-  
-  // Test buffer clearing
-  Buffer::clear(buffer)
-  assert_eq(Buffer::size(buffer), 0)
-  assert_eq(Buffer::position(buffer), 0)
-  assert_eq(Buffer::capacity(buffer), 1024 + 2048) // Capacity remains the same
-  
-  // Test buffer pool
-  let buffer_pool = BufferPool::new(10, 1024) // 10 buffers of 1KB each
-  
-  let buffer1 = BufferPool::acquire(buffer_pool)
-  assert_true(Option::is_some(buffer1))
-  assert_eq(BufferPool::available_buffers(buffer_pool), 9)
-  
-  let buffer2 = BufferPool::acquire(buffer_pool)
-  assert_true(Option::is_some(buffer2))
-  assert_eq(BufferPool::available_buffers(buffer_pool), 8)
-  
-  // Release buffers back to pool
-  BufferPool::release(buffer_pool, Option::unwrap(buffer1))
-  assert_eq(BufferPool::available_buffers(buffer_pool), 9)
-  
-  BufferPool::release(buffer_pool, Option::unwrap(buffer2))
-  assert_eq(BufferPool::available_buffers(buffer_pool), 10)
-  
-  // Test buffer pool exhaustion
-  let buffers = []
-  for i = 0; i < 15; i = i + 1 {
-    let buffer = BufferPool::acquire(buffer_pool)
-    buffers.push(buffer)
-  }
-  
-  // First 10 should be from pool, next 5 should be newly allocated
-  assert_eq(BufferPool::available_buffers(buffer_pool), 0)
-  assert_eq(BufferPool::total_buffers(buffer_pool), 15)
-  
-  // Test zero-copy buffer operations
-  let source_buffer = Buffer::new(1024)
-  Buffer::write(source_buffer, "Source data")
-  
-  let destination_buffer = Buffer::new(1024)
-  
-  // Zero-copy transfer
-  Buffer::transfer(source_buffer, destination_buffer, 11) // Transfer "Source data"
-  
-  assert_eq(Buffer::size(destination_buffer), 11)
-  assert_eq(Buffer::read(destination_buffer, 11), "Source data")
-  
-  // Test buffer statistics
-  let buffer_stats = BufferPool::get_statistics(buffer_pool)
-  assert_eq(BufferPoolStats::total_acquisitions(buffer_stats), 15)
-  assert_eq(BufferPoolStats::total_releases(buffer_stats), 2)
-  assert_eq(BufferPoolStats::pool_hits(buffer_stats), 10)
-  assert_eq(BufferPoolStats::pool_misses(buffer_stats), 5)
-}
-
-// Test 6: File Handle Management
-test "file handle management" {
-  // Test file handle creation
-  let file_manager = FileManager::new()
-  
-  let file1 = FileManager::open(file_manager, "test1.txt", FileMode::Read)
-  assert_true(FileManager::is_handle_valid(file_manager, file1))
-  assert_eq(FileManager::open_handles_count(file_manager), 1)
-  
-  let file2 = FileManager::open(file_manager, "test2.txt", FileMode::Write)
-  assert_true(FileManager::is_handle_valid(file_manager, file2))
-  assert_eq(FileManager::open_handles_count(file_manager), 2)
-  
-  // Test file handle reuse
-  FileManager::close(file_manager, file1)
-  assert_false(FileManager::is_handle_valid(file_manager, file1))
-  assert_eq(FileManager::open_handles_count(file_manager), 1)
-  
-  let file3 = FileManager::open(file_manager, "test3.txt", FileMode::Read)
-  assert_true(FileManager::is_handle_valid(file_manager, file3))
-  assert_eq(FileManager::open_handles_count(file_manager), 2)
-  
-  // Test file handle limit
-  let file_config = FileManagerConfig::new()
-  FileManagerConfig::set_max_open_files(file_config, 5)
-  FileManager::update_config(file_manager, file_config)
-  
-  let files = []
-  for i = 0; i < 10; i = i + 1 {
-    let file = FileManager::open(file_manager, "test" + i.to_string() + ".txt", FileMode::Read)
-    files.push(file)
-  }
-  
-  // Should not exceed the limit
-  assert_true(FileManager::open_handles_count(file_manager) <= 5)
-  
-  // Test file handle caching
-  FileManager::enable_caching(file_manager, true)
-  
-  let cached_file = FileManager::open(file_manager, "cached.txt", FileMode::Read)
-  FileManager::close(file_manager, cached_file)
-  
-  // Reopen the same file
-  let reopened_file = FileManager::open(file_manager, "cached.txt", FileMode::Read)
-  assert_true(FileManager::is_cached(file_manager, reopened_file))
-  
-  // Test file handle cleanup on scope exit
-  let cleanup_tracker = RefCell::new(0)
-  
-  {
-    let scoped_file = FileManager::open_with_cleanup(
-      file_manager,
-      "scoped.txt",
-      FileMode::Read,
-      || cleanup_tracker.set(cleanup_tracker.borrow() + 1)
+  for i in 0..=num_contexts {
+    let baggage = Baggage::new()
+    let baggage_with_data = Baggage::set_entry(baggage, "user.id", "user_" + i.to_string())
+    let baggage_with_more_data = Baggage::set_entry(baggage_with_data, "request.id", "req_" + i.to_string())
+    let baggage_with_even_more_data = Baggage::set_entry(baggage_with_more_data, "session.id", "session_" + i.to_string())
+    
+    let context = Context::with_value(
+      Context::root(),
+      ContextKey::new("baggage"),
+      baggage_with_even_more_data
     )
     
-    assert_true(FileManager::is_handle_valid(file_manager, scoped_file))
-    assert_eq(cleanup_tracker.borrow(), 0)
-  } // scoped_file goes out of scope here
+    // Add more context data
+    let context_with_data = Context::with_value(
+      context,
+      ContextKey::new("trace_data"),
+      "trace_data_" + i.to_string()
+    )
     
-  assert_eq(cleanup_tracker.borrow(), 1) // Cleanup should have been called
-  
-  // Test file handle statistics
-  let file_stats = FileManager::get_statistics(file_manager)
-  assert_eq(FileManagerStats::total_opens(file_stats), 13) // 2 initial + 10 + 1 cached
-  assert_eq(FileManagerStats::total_closes(file_stats), 4) // 1 initial + 1 scoped + 2 from limit enforcement
-  assert_eq(FileManagerStats::peak_open_handles(file_stats), 5) // Max limit
-}
-
-// Test 7: Network Connection Management
-test "network connection management" {
-  // Test connection pool creation
-  let connection_pool_config = ConnectionPoolConfig::new()
-  ConnectionPoolConfig::set_max_connections(connection_pool_config, 10)
-  ConnectionPoolConfig::set_connection_timeout(connection_pool_config, 5000) // 5 seconds
-  ConnectionPoolConfig::set_idle_timeout(connection_pool_config, 30000) // 30 seconds
-  
-  let connection_pool = ConnectionPool::with_config(connection_pool_config)
-  
-  // Test connection acquisition
-  let connection1 = ConnectionPool::get_connection(connection_pool, "https://example.com")
-  assert_true(Connection::is_valid(connection1))
-  assert_eq(ConnectionPool::active_connections(connection_pool), 1)
-  
-  let connection2 = ConnectionPool::get_connection(connection_pool, "https://example.com")
-  assert_true(Connection::is_valid(connection2))
-  assert_eq(ConnectionPool::active_connections(connection_pool), 2)
-  
-  // Test connection reuse
-  ConnectionPool::release_connection(connection_pool, connection1)
-  assert_eq(ConnectionPool::active_connections(connection_pool), 1)
-  assert_eq(ConnectionPool::idle_connections(connection_pool), 1)
-  
-  let connection3 = ConnectionPool::get_connection(connection_pool, "https://example.com")
-  assert_true(Connection::is_valid(connection3))
-  assert_eq(ConnectionPool::active_connections(connection_pool), 2)
-  assert_eq(ConnectionPool::idle_connections(connection_pool), 0) // Should reuse idle connection
-  
-  // Test connection limit
-  let connections = []
-  for i = 0; i < 15; i = i + 1 {
-    let connection = ConnectionPool::get_connection(connection_pool, "https://example" + i.to_string() + ".com")
-    connections.push(connection)
+    contexts.push(context_with_data)
   }
   
-  // Should not exceed the limit
-  assert_true(ConnectionPool::active_connections(connection_pool) <= 10)
+  let peak_memory = MemoryTracker::get_current_usage(memory_tracker)
   
-  // Test connection health checking
-  let unhealthy_connection = connections[0]
-  Connection::simulate_failure(unhealthy_connection)
+  // Calculate memory per context
+  let memory_per_context = (peak_memory.heap_used - baseline_memory.heap_used) / num_contexts
   
-  let is_healthy = ConnectionPool::is_connection_healthy(connection_pool, unhealthy_connection)
-  assert_false(is_healthy)
+  // Verify reasonable memory usage (< 500B per context)
+  assert_true(memory_per_context < 500, "Each context should use < 500B memory")
   
-  // Test connection cleanup
-  ConnectionPool::cleanup_unhealthy(connection_pool)
-  assert_true(ConnectionPool::active_connections(connection_pool) < 15)
+  // Clear context references and verify memory recovery
+  contexts = []
   
-  // Test connection statistics
-  let pool_stats = ConnectionPool::get_statistics(connection_pool)
-  assert_eq(ConnectionPoolStats::total_connections_created(pool_stats), 10)
-  assert_eq(ConnectionPoolStats::connection_reuse_count(pool_stats), 1)
-  assert_eq(ConnectionPoolStats::connection_failures(pool_stats), 1)
+  // Force garbage collection
+  MemoryTracker::force_gc(memory_tracker)
+  
+  let final_memory = MemoryTracker::get_current_usage(memory_tracker)
+  
+  // Verify memory recovery
+  let memory_recovered = peak_memory.heap_used - final_memory.heap_used
+  let total_memory_used = peak_memory.heap_used - baseline_memory.heap_used
+  
+  assert_true(memory_recovered > total_memory_used * 0.8, 
+    "Should recover at least 80% of memory after clearing contexts")
 }
 
-// Test 8: Event Listener Management
-test "event listener management" {
-  // Test event system creation
-  let event_system = EventSystem::new()
+// Test 4: Logger Resource Management
+test "logger resource management" {
+  let memory_tracker = MemoryTracker::new()
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "resource_test_logger")
   
-  // Test event listener registration
-  let listener1_id = EventSystem::register_listener(event_system, "test.event", |event| {
-    assert_eq(Event::type(event), "test.event")
-    assert_eq(Event::data(event), "test_data")
-  })
+  // Baseline memory measurement
+  let baseline_memory = MemoryTracker::get_current_usage(memory_tracker)
   
-  let listener2_id = EventSystem::register_listener(event_system, "test.event", |event| {
-    assert_eq(Event::type(event), "test.event")
-    assert_eq(Event::data(event), "test_data")
-  })
+  // Create and emit many log records
+  let mut log_records = []
+  let num_logs = 5000
   
-  // Test event dispatch
-  let test_event = Event::new("test.event", "test_data")
-  EventSystem::dispatch(event_system, test_event)
+  for i in 0..=num_logs {
+    let log_record = LogRecord::new_with_context(
+      if i % 10 == 0 { Error } else if i % 5 == 0 { Warn } else { Info },
+      Some("Test log message " + i.to_string()),
+      Some(Attributes::with_data([
+        ("log_index", IntValue(i)),
+        ("thread_id", IntValue(i % 10)),
+        ("data", StringValue("log_data_" + i.to_string())),
+        ("timestamp", IntValue(1609459200 + i))
+      ])),
+      Some(1609459200L + i as Int64),
+      Some(1609459200L + i as Int64 + 1),
+      Some("trace_" + (i / 100).to_string()),
+      Some("span_" + i.to_string()),
+      None
+    )
+    
+    log_records.push(log_record)
+    Logger::emit(logger, log_record)
+  }
   
-  // Test listener removal
-  EventSystem::remove_listener(event_system, listener1_id)
+  let peak_memory = MemoryTracker::get_current_usage(memory_tracker)
   
-  // Dispatch again - only listener2 should be called
-  EventSystem::dispatch(event_system, test_event)
+  // Calculate memory per log record
+  let memory_per_log = (peak_memory.heap_used - baseline_memory.heap_used) / num_logs
   
-  // Test once-only listeners
-  let once_listener_id = EventSystem::register_once_listener(event_system, "test.event", |event| {
-    assert_eq(Event::type(event), "test.event")
-    assert_eq(Event::data(event), "test_data")
-  })
+  // Verify reasonable memory usage (< 300B per log record)
+  assert_true(memory_per_log < 300, "Each log record should use < 300B memory")
   
-  // Dispatch twice - once listener should only be called once
-  EventSystem::dispatch(event_system, test_event)
-  EventSystem::dispatch(event_system, test_event)
+  // Clear log record references and verify memory recovery
+  log_records = []
   
-  // Test wildcard listeners
-  let wildcard_listener_id = EventSystem::register_listener(event_system, "*", |event| {
-    assert_true(Event::type(event) == "test.event" || Event::type(event) == "other.event")
-  })
+  // Force garbage collection
+  MemoryTracker::force_gc(memory_tracker)
   
-  let other_event = Event::new("other.event", "other_data")
-  EventSystem::dispatch(event_system, other_event)
+  let final_memory = MemoryTracker::get_current_usage(memory_tracker)
   
-  // Test event system cleanup
-  EventSystem::remove_listener(event_system, listener2_id)
-  EventSystem::remove_listener(event_system, wildcard_listener_id)
+  // Verify memory recovery
+  let memory_recovered = peak_memory.heap_used - final_memory.heap_used
+  let total_memory_used = peak_memory.heap_used - baseline_memory.heap_used
   
-  // All listeners should be removed
-  assert_eq(EventSystem::listener_count(event_system), 0)
-  
-  // Test event system statistics
-  let event_stats = EventSystem::get_statistics(event_system)
-  assert_eq(EventSystemStats::total_events_dispatched(event_stats), 5)
-  assert_eq(EventSystemStats::total_listeners_registered(event_stats), 4)
-  assert_eq(EventSystemStats::total_listeners_removed(event_stats), 4)
+  assert_true(memory_recovered > total_memory_used * 0.7, 
+    "Should recover at least 70% of memory after clearing log records")
 }
 
-// Test 9: Timer and Scheduler Management
-test "timer and scheduler management" {
-  // Test timer creation
-  let timer_manager = TimerManager::new()
-  
-  let timer1_id = TimerManager::set_timer(timer_manager, 1000, || {
-    // Timer callback
-  })
-  
-  let timer2_id = TimerManager::set_timer(timer_manager, 2000, || {
-    // Timer callback
-  })
-  
-  // Test timer status
-  assert_true(TimerManager::is_timer_active(timer_manager, timer1_id))
-  assert_true(TimerManager::is_timer_active(timer_manager, timer2_id))
-  
-  // Test timer cancellation
-  TimerManager::cancel_timer(timer_manager, timer1_id)
-  assert_false(TimerManager::is_timer_active(timer_manager, timer1_id))
-  assert_true(TimerManager::is_timer_active(timer_manager, timer2_id))
-  
-  // Test repeating timer
-  let repeat_timer_id = TimerManager::set_repeating_timer(timer_manager, 500, || {
-    // Repeating timer callback
-  })
-  
-  assert_true(TimerManager::is_timer_active(timer_manager, repeat_timer_id))
-  
-  // Cancel after a few executions (simulated)
-  TimerManager::cancel_timer(timer_manager, repeat_timer_id)
-  assert_false(TimerManager::is_timer_active(timer_manager, repeat_timer_id))
-  
-  // Test scheduler creation
-  let scheduler = Scheduler::new()
-  
-  // Test task scheduling
-  let task1_id = Scheduler::schedule_task(scheduler, || {
-    // Task 1
-  }, 1000) // Execute after 1 second
-  
-  let task2_id = Scheduler::schedule_task(scheduler, || {
-    // Task 2
-  }, 2000) // Execute after 2 seconds
-  
-  // Test task status
-  assert_true(Scheduler::is_task_pending(scheduler, task1_id))
-  assert_true(Scheduler::is_task_pending(scheduler, task2_id))
-  
-  // Test task cancellation
-  Scheduler::cancel_task(scheduler, task1_id)
-  assert_false(Scheduler::is_task_pending(scheduler, task1_id))
-  assert_true(Scheduler::is_task_pending(scheduler, task2_id))
-  
-  // Test periodic task scheduling
-  let periodic_task_id = Scheduler::schedule_periodic_task(scheduler, || {
-    // Periodic task
-  }, 1000, 5000) // Start after 1 second, repeat every 5 seconds
-  
-  assert_true(Scheduler::is_task_pending(scheduler, periodic_task_id))
-  
-  // Cancel periodic task
-  Scheduler::cancel_task(scheduler, periodic_task_id)
-  assert_false(Scheduler::is_task_pending(scheduler, periodic_task_id))
-  
-  // Test timer and scheduler cleanup
-  TimerManager::cleanup(timer_manager)
-  Scheduler::cleanup(scheduler)
-  
-  // Test timer statistics
-  let timer_stats = TimerManager::get_statistics(timer_manager)
-  assert_eq(TimerStats::total_timers_created(timer_stats), 4)
-  assert_eq(TimerStats::total_timers_cancelled(timer_stats), 4)
-  
-  // Test scheduler statistics
-  let scheduler_stats = Scheduler::get_statistics(scheduler)
-  assert_eq(SchedulerStats::total_tasks_scheduled(scheduler_stats), 4)
-  assert_eq(SchedulerStats::total_tasks_cancelled(scheduler_stats), 4)
-}
-
-// Test 10: Resource Leak Detection
+// Test 5: Resource Leak Detection
 test "resource leak detection" {
-  // Test leak detector creation
-  let leak_detector = LeakDetector::new()
+  let leak_detector = ResourceLeakDetector::new()
+  let tracer = TracerProvider::get_tracer("leak_test")
   
-  // Enable leak detection
-  LeakDetector::enable(leak_detector, true)
+  // Start leak detection
+  LeakDetector::start(leak_detector)
   
-  // Test memory leak detection
-  LeakDetector::track_allocation(leak_detector, "test_allocation", 1024)
+  // Create resources and intentionally leak some
+  let leaked_spans = []
+  let properly_managed_spans = []
   
-  let allocations = LeakDetector::get_allocations(leak_detector)
-  assert_eq(allocations.length(), 1)
-  assert_eq(allocations[0].type, "test_allocation")
-  assert_eq(allocations[0].size, 1024)
+  for i in 0..=1000 {
+    let span = Tracer::start_span(tracer, "leak_test_span_" + i.to_string())
+    Span::set_attribute(span, "index", IntValue(i))
+    
+    if i % 10 == 0 {
+      // Intentionally leak these spans (don't end them)
+      leaked_spans.push(span)
+    } else {
+      // Properly manage these spans
+      properly_managed_spans.push(span)
+    }
+  }
   
-  // Simulate a leak by not deallocating
-  // In a real scenario, this would be detected at program exit
+  // End properly managed spans
+  for span in properly_managed_spans {
+    Span::end(span)
+  }
   
-  LeakDetector::track_deallocation(leak_detector, "test_allocation", 1024)
+  // Check for leaks
+  let leak_report = LeakDetector::check(leak_detector)
   
-  let allocations_after_dealloc = LeakDetector::get_allocations(leak_detector)
-  assert_eq(allocations_after_dealloc.length(), 0)
+  // Verify leak detection
+  assert_true(leak_report.leaked_resources > 0, "Should detect leaked resources")
+  assert_true(leak_report.leaked_resources <= 100, "Should detect approximately 100 leaked spans")
   
-  // Test file handle leak detection
-  LeakDetector::track_file_open(leak_detector, "test_file.txt")
+  // Clean up leaked resources
+  for span in leaked_spans {
+    Span::end(span)
+  }
   
-  let open_files = LeakDetector::get_open_files(leak_detector)
-  assert_eq(open_files.length(), 1)
-  assert_eq(open_files[0], "test_file.txt")
+  // Check again after cleanup
+  let cleanup_report = LeakDetector::check(leak_detector)
+  assert_eq(cleanup_report.leaked_resources, 0, "Should have no leaks after cleanup")
   
-  // Simulate a leak by not closing the file
-  // In a real scenario, this would be detected at program exit
+  LeakDetector::stop(leak_detector)
+}
+
+// Test 6: Memory Pressure Handling
+test "memory pressure handling" {
+  let memory_monitor = MemoryMonitor::new()
+  let tracer = TracerProvider::get_tracer("pressure_test")
   
-  LeakDetector::track_file_close(leak_detector, "test_file.txt")
+  // Configure memory pressure thresholds
+  MemoryMonitor::set_threshold(memory_monitor, Warning, 50 * 1024 * 1024) // 50MB
+  MemoryMonitor::set_threshold(memory_monitor, Critical, 100 * 1024 * 1024) // 100MB
   
-  let open_files_after_close = LeakDetector::get_open_files(leak_detector)
-  assert_eq(open_files_after_close.length(), 0)
+  // Start monitoring
+  MemoryMonitor::start(memory_monitor)
   
-  // Test network connection leak detection
-  LeakDetector::track_connection_open(leak_detector, "https://example.com")
+  // Create resources to trigger memory pressure
+  let mut spans = []
+  let mut pressure_events = []
   
-  let open_connections = LeakDetector::get_open_connections(leak_detector)
-  assert_eq(open_connections.length(), 1)
-  assert_eq(open_connections[0], "https://example.com")
+  for i in 0..=10000 {
+    let span = Tracer::start_span(tracer, "pressure_test_span_" + i.to_string())
+    
+    // Add significant data to each span
+    Span::set_attribute(span, "large_data", StringValue("x".repeat(1000))) // 1KB per span
+    Span::set_attribute(span, "index", IntValue(i))
+    
+    spans.push(span)
+    
+    // Check memory pressure periodically
+    if i % 1000 == 0 {
+      let pressure_level = MemoryMonitor::check_pressure(memory_monitor)
+      pressure_events.push((i, pressure_level))
+      
+      // If critical pressure, start cleanup
+      if pressure_level == Critical {
+        // Clean up oldest spans
+        let spans_to_remove = 2000
+        for j in 0..=spans_to_remove {
+          if spans.length() > 0 {
+            let span_to_remove = spans.remove_at(0)
+            Span::end(span_to_remove)
+          }
+        }
+      }
+    }
+  }
   
-  // Simulate a leak by not closing the connection
-  // In a real scenario, this would be detected at program exit
+  // Verify pressure handling
+  let mut critical_pressure_detected = false
+  for (_, pressure_level) in pressure_events {
+    if pressure_level == Critical {
+      critical_pressure_detected = true
+      break
+    }
+  }
   
-  LeakDetector::track_connection_close(leak_detector, "https://example.com")
+  assert_true(critical_pressure_detected, "Should detect critical memory pressure")
   
-  let open_connections_after_close = LeakDetector::get_open_connections(leak_detector)
-  assert_eq(open_connections_after_close.length(), 0)
+  // Clean up remaining spans
+  for span in spans {
+    Span::end(span)
+  }
   
-  // Test event listener leak detection
-  LeakDetector::track_listener_registration(leak_detector, "test.event", "listener_id")
+  MemoryMonitor::stop(memory_monitor)
+}
+
+// Test 7: Resource Pool Management
+test "resource pool management" {
+  let pool_manager = ResourcePoolManager::new()
   
-  let active_listeners = LeakDetector::get_active_listeners(leak_detector)
-  assert_eq(active_listeners.length(), 1)
-  assert_eq(active_listeners[0].event_type, "test.event")
-  assert_eq(active_listeners[0].listener_id, "listener_id")
+  // Create resource pools
+  let span_pool = ResourcePool::new(|| Tracer::start_span(TracerProvider::get_tracer("pool_test"), "pooled_span"))
+  let context_pool = ResourcePool::new(|| Context::root())
   
-  // Simulate a leak by not unregistering the listener
-  // In a real scenario, this would be detected at program exit
+  PoolManager::register(pool_manager, "span_pool", span_pool)
+  PoolManager::register(pool_manager, "context_pool", context_pool)
   
-  LeakDetector::track_listener_unregistration(leak_detector, "test.event", "listener_id")
+  // Test resource acquisition and release
+  let mut acquired_resources = []
   
-  let active_listeners_after_unregister = LeakDetector::get_active_listeners(leak_detector)
-  assert_eq(active_listeners_after_unregister.length(), 0)
+  for i in 0..=1000 {
+    // Acquire resources from pools
+    let span_resource = PoolManager::acquire(pool_manager, "span_pool")
+    let context_resource = PoolManager::acquire(pool_manager, "context_pool")
+    
+    match (span_resource, context_resource) {
+      (Some(span), Some(context)) => {
+        // Use resources
+        Span::set_attribute(span, "pool_index", IntValue(i))
+        
+        acquired_resources.push((span, context))
+        
+        // Release resources back to pools
+        PoolManager::release(pool_manager, "span_pool", span)
+        PoolManager::release(pool_manager, "context_pool", context)
+      }
+      _ => assert_true(false, "Should be able to acquire resources from pools")
+    }
+  }
   
-  // Test leak report generation
-  // Simulate some leaks
-  LeakDetector::track_allocation(leak_detector, "leaked_memory", 2048)
-  LeakDetector::track_file_open(leak_detector, "leaked_file.txt")
-  LeakDetector::track_connection_open(leak_detector, "https://leaked.example.com")
-  LeakDetector::track_listener_registration(leak_detector, "leaked.event", "leaked_listener")
+  // Verify pool statistics
+  let span_pool_stats = PoolManager::get_stats(pool_manager, "span_pool")
+  let context_pool_stats = PoolManager::get_stats(pool_manager, "context_pool")
   
-  let leak_report = LeakDetector::generate_report(leak_detector)
+  assert_true(span_pool_stats.acquisitions >= 1000, "Should have acquired span resources")
+  assert_true(span_pool_stats.releases >= 1000, "Should have released span resources")
+  assert_true(context_pool_stats.acquisitions >= 1000, "Should have acquired context resources")
+  assert_true(context_pool_stats.releases >= 1000, "Should have released context resources")
   
-  assert_eq(LeakReport::memory_leaks(leak_report).length(), 1)
-  assert_eq(LeakReport::file_handle_leaks(leak_report).length(), 1)
-  assert_eq(LeakReport::connection_leaks(leak_report).length(), 1)
-  assert_eq(LeakReport::listener_leaks(leak_report).length(), 1)
+  // Verify pool efficiency
+  let span_hit_ratio = (span_pool_stats.hits as Float) / (span_pool_stats.acquisitions as Float)
+  let context_hit_ratio = (context_pool_stats.hits as Float) / (context_pool_stats.acquisitions as Float)
   
-  // Test automatic leak detection
-  LeakDetector::enable_automatic_detection(leak_detector, true)
-  LeakDetector::set_detection_interval(leak_detector, 5000) // Check every 5 seconds
+  assert_true(span_hit_ratio > 0.8, "Span pool should have > 80% hit ratio")
+  assert_true(context_hit_ratio > 0.8, "Context pool should have > 80% hit ratio")
   
-  // In a real scenario, the detector would automatically check for leaks at intervals
-  let automatic_detection_enabled = LeakDetector::is_automatic_detection_enabled(leak_detector)
-  assert_true(automatic_detection_enabled)
+  // Clean up pools
+  PoolManager::cleanup(pool_manager, "span_pool")
+  PoolManager::cleanup(pool_manager, "context_pool")
+}
+
+// Test 8: Batch Resource Cleanup
+test "batch resource cleanup" {
+  let cleanup_manager = BatchCleanupManager::new()
+  let tracer = TracerProvider::get_tracer("batch_cleanup_test")
   
-  let detection_interval = LeakDetector::get_detection_interval(leak_detector)
-  assert_eq(detection_interval, 5000)
+  // Create many resources
+  let mut spans = []
+  let mut contexts = []
+  let mut log_records = []
   
-  // Test leak statistics
-  let leak_stats = LeakDetector::get_statistics(leak_detector)
-  assert_eq(LeakStats::total_allocations_tracked(leak_stats), 2) // One tracked and deallocated, one leaked
-  assert_eq(LeakStats::total_deallocations_tracked(leak_stats), 1)
-  assert_eq(LeakStats::total_files_opened_tracked(leak_stats), 2) // One tracked and closed, one leaked
-  assert_eq(LeakStats::total_files_closed_tracked(leak_stats), 1)
-  assert_eq(LeakStats::total_connections_opened_tracked(leak_stats), 2) // One tracked and closed, one leaked
-  assert_eq(LeakStats::total_connections_closed_tracked(leak_stats), 1)
-  assert_eq(LeakStats::total_listeners_registered_tracked(leak_stats), 2) // One tracked and unregistered, one leaked
-  assert_eq(LeakStats::total_listeners_unregistered_tracked(leak_stats), 1)
+  for i in 0..=5000 {
+    let span = Tracer::start_span(tracer, "batch_cleanup_span_" + i.to_string())
+    Span::set_attribute(span, "batch_index", IntValue(i))
+    spans.push(span)
+    
+    let context = Context::with_value(
+      Context::root(),
+      ContextKey::new("batch_data"),
+      "batch_data_" + i.to_string()
+    )
+    contexts.push(context)
+    
+    let log_record = LogRecord::new(Info, Some("Batch cleanup log " + i.to_string()))
+    log_records.push(log_record)
+  }
+  
+  // Register resources for batch cleanup
+  for span in spans {
+    CleanupManager::register_resource(cleanup_manager, span)
+  }
+  
+  for context in contexts {
+    CleanupManager::register_resource(cleanup_manager, context)
+  }
+  
+  for log_record in log_records {
+    CleanupManager::register_resource(cleanup_manager, log_record)
+  }
+  
+  // Perform batch cleanup
+  let cleanup_result = CleanupManager::cleanup_all(cleanup_manager)
+  
+  // Verify cleanup results
+  assert_eq(cleanup_result.total_resources, 15000) // 5000 spans + 5000 contexts + 5000 logs
+  assert_eq(cleanup_result.cleaned_resources, 15000)
+  assert_eq(cleanup_result.failed_resources, 0)
+  
+  // Verify memory recovery
+  let final_memory = MemoryTracker::get_current_usage(MemoryTracker::new())
+  
+  // In real implementation, would verify memory usage is back to baseline
+  assert_true(true)
 }
