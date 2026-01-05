@@ -5201,6 +5201,10 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_617a696d7574685f6d6f6f6e6269745f616476616e6365645f66656174757265735f74657374732e6d6274_8, ["advanced recursive algorithms"]),
     9: (__test_617a696d7574685f6d6f6f6e6269745f616476616e6365645f66656174757265735f74657374732e6d6274_9, ["advanced state management patterns"]),
   },
+  "azimuth_monitoring_visualization_tests.mbt": {
+    0: (__test_617a696d7574685f6d6f6e69746f72696e675f76697375616c697a6174696f6e5f74657374732e6d6274_0, ["monitoring and alerting"]),
+    1: (__test_617a696d7574685f6d6f6e69746f72696e675f76697375616c697a6174696f6e5f74657374732e6d6274_1, ["data analysis and visualization"]),
+  },
   "azimuth_ml_integration_advanced_tests.mbt": {
     0: (__test_617a696d7574685f6d6c5f696e746567726174696f6e5f616476616e6365645f74657374732e6d6274_0, ["anomaly detection in telemetry data"]),
     1: (__test_617a696d7574685f6d6c5f696e746567726174696f6e5f616476616e6365645f74657374732e6d6274_1, ["predictive analytics for resource usage"]),
@@ -11660,6 +11664,11 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     5: (__test_617a696d7574685f616476616e6365645f646174615f636f6e76657273696f6e5f74657374732e6d6274_5, ["advanced type system conversions"]),
     6: (__test_617a696d7574685f616476616e6365645f646174615f636f6e76657273696f6e5f74657374732e6d6274_6, ["data validation during conversion"]),
     7: (__test_617a696d7574685f616476616e6365645f646174615f636f6e76657273696f6e5f74657374732e6d6274_7, ["performance-optimized conversions"]),
+  },
+  "azimuth_advanced_data_compression_tests.mbt": {
+    0: (__test_617a696d7574685f616476616e6365645f646174615f636f6d7072657373696f6e5f74657374732e6d6274_0, ["遥测数据压缩算法性能比较"]),
+    1: (__test_617a696d7574685f616476616e6365645f646174615f636f6d7072657373696f6e5f74657374732e6d6274_1, ["基于数据特征的自适应压缩策略"]),
+    2: (__test_617a696d7574685f616476616e6365645f646174615f636f6d7072657373696f6e5f74657374732e6d6274_2, ["遥测数据增量压缩和差分压缩技术"]),
   },
   "azimuth_advanced_data_analytics_tests.mbt": {
     0: (__test_617a696d7574685f616476616e6365645f646174615f616e616c79746963735f74657374732e6d6274_0, ["time series analysis and forecasting"]),
