@@ -1,740 +1,618 @@
 // Azimuth Performance Monitoring Tests
 // This file contains test cases for performance monitoring functionality
 
-// Test 1: CPU Performance Monitoring
-test "cpu performance monitoring" {
-  // Define CPU metrics types
-  type CPUMetrics = {
+// Test 1: Performance Metrics Collection
+test "performance metrics collection" {
+  // Define performance metric types
+  type PerformanceMetric = {
+    name: String,
+    value: Float,
+    unit: String,
     timestamp: Int,
-    cpu_usage_percent: Float,
-    load_average_1min: Float,
-    load_average_5min: Float,
-    load_average_15min: Float,
-    context_switches: Int,
-    processes_running: Int,
-    processes_total: Int
+    tags: Array[String]
   }
   
-  type CPUAlertThresholds = {
-    warning_percent: Float,
-    critical_percent: Float,
-    warning_load_average: Float,
-    critical_load_average: Float
-  }
-  
-  // Create sample CPU metrics
+  // Create sample performance metrics
   let cpu_metrics = [
-    {
-      timestamp: 1640995200,
-      cpu_usage_percent: 25.5,
-      load_average_1min: 0.8,
-      load_average_5min: 0.7,
-      load_average_15min: 0.6,
-      context_switches: 1250,
-      processes_running: 2,
-      processes_total: 156
-    },
-    {
-      timestamp: 1640995260,
-      cpu_usage_percent: 45.2,
-      load_average_1min: 1.2,
-      load_average_5min: 0.9,
-      load_average_15min: 0.7,
-      context_switches: 1580,
-      processes_running: 3,
-      processes_total: 158
-    },
-    {
-      timestamp: 1640995320,
-      cpu_usage_percent: 85.7,
-      load_average_1min: 2.5,
-      load_average_5min: 1.8,
-      load_average_15min: 1.2,
-      context_switches: 2350,
-      processes_running: 5,
-      processes_total: 160
-    }
+    { name: "cpu_usage", value: 45.2, unit: "percent", timestamp: 1640995200, tags: ["host:server1", "region:us-west"] },
+    { name: "cpu_usage", value: 52.7, unit: "percent", timestamp: 1640995260, tags: ["host:server1", "region:us-west"] },
+    { name: "cpu_usage", value: 48.3, unit: "percent", timestamp: 1640995320, tags: ["host:server1", "region:us-west"] }
   ]
   
-  // Define alert thresholds
-  let alert_thresholds = {
-    warning_percent: 70.0,
-    critical_percent: 90.0,
-    warning_load_average: 2.0,
-    critical_load_average: 3.0
-  }
-  
-  // Define CPU monitoring function
-  let monitor_cpu = fn(metrics: CPUMetrics, thresholds: CPUAlertThresholds) {
-    let mut alerts = []
-    
-    // Check CPU usage
-    if metrics.cpu_usage_percent >= thresholds.critical_percent {
-      alerts = alerts.push("CRITICAL: CPU usage at " + metrics.cpu_usage_percent.to_string() + "%")
-    } else if metrics.cpu_usage_percent >= thresholds.warning_percent {
-      alerts = alerts.push("WARNING: CPU usage at " + metrics.cpu_usage_percent.to_string() + "%")
-    }
-    
-    // Check load average
-    if metrics.load_average_1min >= thresholds.critical_load_average {
-      alerts = alerts.push("CRITICAL: Load average at " + metrics.load_average_1min.to_string())
-    } else if metrics.load_average_1min >= thresholds.warning_load_average {
-      alerts = alerts.push("WARNING: Load average at " + metrics.load_average_1min.to_string())
-    }
-    
-    // Check for excessive context switches
-    if metrics.context_switches > 2000 {
-      alerts = alerts.push("WARNING: High context switches: " + metrics.context_switches.to_string())
-    }
-    
-    {
-      metrics: metrics,
-      alerts: alerts,
-      status: if alerts.length() > 0 { "alert" } else { "normal" }
-    }
-  }
-  
-  // Monitor each CPU metric
-  let monitoring_results = cpu_metrics.map(fn(m) { monitor_cpu(m, alert_thresholds) })
-  
-  // Verify the results
-  assert_eq(monitoring_results.length(), 3)
-  
-  // First metric should be normal
-  assert_eq(monitoring_results[0].status, "normal")
-  assert_eq(monitoring_results[0].alerts.length(), 0)
-  
-  // Second metric should have warning
-  assert_eq(monitoring_results[1].status, "alert")
-  assert_eq(monitoring_results[1].alerts.length(), 1)
-  assert_true(monitoring_results[1].alerts[0].contains("WARNING: CPU usage"))
-  
-  // Third metric should have multiple alerts
-  assert_eq(monitoring_results[2].status, "alert")
-  assert_eq(monitoring_results[2].alerts.length(), 3)
-  assert_true(monitoring_results[2].alerts.some(fn(a) { a.contains("CRITICAL: CPU usage") }))
-  assert_true(monitoring_results[2].alerts.some(fn(a) { a.contains("WARNING: Load average") }))
-  assert_true(monitoring_results[2].alerts.some(fn(a) { a.contains("WARNING: High context switches") }))
-}
-
-// Test 2: Memory Performance Monitoring
-test "memory performance monitoring" {
-  // Define memory metrics types
-  type MemoryMetrics = {
-    timestamp: Int,
-    total_memory_mb: Int,
-    used_memory_mb: Int,
-    free_memory_mb: Int,
-    cached_memory_mb: Int,
-    swap_total_mb: Int,
-    swap_used_mb: Int,
-    swap_free_mb: Int,
-    page_faults: Int
-  }
-  
-  type MemoryAlertThresholds = {
-    warning_percent: Float,
-    critical_percent: Float,
-    swap_warning_percent: Float,
-    swap_critical_percent: Float
-  }
-  
-  // Create sample memory metrics
   let memory_metrics = [
-    {
-      timestamp: 1640995200,
-      total_memory_mb: 8192,
-      used_memory_mb: 4096,
-      free_memory_mb: 2048,
-      cached_memory_mb: 2048,
-      swap_total_mb: 2048,
-      swap_used_mb: 0,
-      swap_free_mb: 2048,
-      page_faults: 125
-    },
-    {
-      timestamp: 1640995260,
-      total_memory_mb: 8192,
-      used_memory_mb: 6144,
-      free_memory_mb: 1024,
-      cached_memory_mb: 1024,
-      swap_total_mb: 2048,
-      swap_used_mb: 512,
-      swap_free_mb: 1536,
-      page_faults: 250
-    },
-    {
-      timestamp: 1640995320,
-      total_memory_mb: 8192,
-      used_memory_mb: 7680,
-      free_memory_mb: 256,
-      cached_memory_mb: 256,
-      swap_total_mb: 2048,
-      swap_used_mb: 1024,
-      swap_free_mb: 1024,
-      page_faults: 500
-    }
+    { name: "memory_usage", value: 67.8, unit: "percent", timestamp: 1640995200, tags: ["host:server1", "region:us-west"] },
+    { name: "memory_usage", value: 69.4, unit: "percent", timestamp: 1640995260, tags: ["host:server1", "region:us-west"] },
+    { name: "memory_usage", value: 71.2, unit: "percent", timestamp: 1640995320, tags: ["host:server1", "region:us-west"] }
   ]
   
-  // Define alert thresholds
-  let memory_alert_thresholds = {
-    warning_percent: 75.0,
-    critical_percent: 90.0,
-    swap_warning_percent: 25.0,
-    swap_critical_percent: 50.0
+  let disk_metrics = [
+    { name: "disk_usage", value: 34.5, unit: "percent", timestamp: 1640995200, tags: ["host:server1", "region:us-west"] },
+    { name: "disk_usage", value: 34.6, unit: "percent", timestamp: 1640995260, tags: ["host:server1", "region:us-west"] },
+    { name: "disk_usage", value: 34.7, unit: "percent", timestamp: 1640995320, tags: ["host:server1", "region:us-west"] }
+  ]
+  
+  // Collect all metrics
+  let all_metrics = cpu_metrics + memory_metrics + disk_metrics
+  assert_eq(all_metrics.length(), 9)
+  
+  // Filter metrics by name
+  let filter_by_name = fn(metrics: Array[PerformanceMetric], name: String) {
+    metrics.filter(fn(m) { m.name == name })
   }
   
-  // Define memory monitoring function
-  let monitor_memory = fn(metrics: MemoryMetrics, thresholds: MemoryAlertThresholds) {
-    let mut alerts = []
-    
-    // Calculate memory usage percentage
-    let memory_usage_percent = (metrics.used_memory_mb.to_float() / metrics.total_memory_mb.to_float()) * 100.0
-    
-    // Check memory usage
-    if memory_usage_percent >= thresholds.critical_percent {
-      alerts = alerts.push("CRITICAL: Memory usage at " + memory_usage_percent.to_string() + "%")
-    } else if memory_usage_percent >= thresholds.warning_percent {
-      alerts = alerts.push("WARNING: Memory usage at " + memory_usage_percent.to_string() + "%")
-    }
-    
-    // Calculate swap usage percentage
-    let swap_usage_percent = if metrics.swap_total_mb > 0 {
-      (metrics.swap_used_mb.to_float() / metrics.swap_total_mb.to_float()) * 100.0
+  let cpu_only = filter_by_name(all_metrics, "cpu_usage")
+  assert_eq(cpu_only.length(), 3)
+  
+  // Filter metrics by time range
+  let filter_by_time_range = fn(metrics: Array[PerformanceMetric], start: Int, end: Int) {
+    metrics.filter(fn(m) { m.timestamp >= start and m.timestamp <= end })
+  }
+  
+  let time_filtered = filter_by_time_range(all_metrics, 1640995200, 1640995260)
+  assert_eq(time_filtered.length(), 6)
+  
+  // Filter metrics by tags
+  let filter_by_tags = fn(metrics: Array[PerformanceMetric], tags: Array[String]) {
+    metrics.filter(fn(m) { 
+      tags.all_fn(tag) { m.tags.contains(tag) }
+    })
+  }
+  
+  let region_filtered = filter_by_tags(all_metrics, ["region:us-west"])
+  assert_eq(region_filtered.length(), 9)
+  
+  // Calculate statistics for a metric
+  let calculate_stats = fn(metrics: Array[PerformanceMetric]) {
+    if metrics.length() == 0 {
+      { min: 0.0, max: 0.0, avg: 0.0, count: 0 }
     } else {
-      0.0
-    }
-    
-    // Check swap usage
-    if swap_usage_percent >= thresholds.swap_critical_percent {
-      alerts = alerts.push("CRITICAL: Swap usage at " + swap_usage_percent.to_string() + "%")
-    } else if swap_usage_percent >= thresholds.swap_warning_percent {
-      alerts = alerts.push("WARNING: Swap usage at " + swap_usage_percent.to_string() + "%")
-    }
-    
-    // Check for excessive page faults
-    if metrics.page_faults > 300 {
-      alerts = alerts.push("WARNING: High page faults: " + metrics.page_faults.to_string())
-    }
-    
-    {
-      metrics: metrics,
-      memory_usage_percent: memory_usage_percent,
-      swap_usage_percent: swap_usage_percent,
-      alerts: alerts,
-      status: if alerts.length() > 0 { "alert" } else { "normal" }
+      let values = metrics.map(fn(m) { m.value })
+      let sum = values.reduce(fn(acc, v) { acc + v }, 0.0)
+      let min = values.reduce(fn(acc, v) { if v < acc { v } else { acc } }, values[0])
+      let max = values.reduce(fn(acc, v) { if v > acc { v } else { acc } }, values[0])
+      
+      {
+        min: min,
+        max: max,
+        avg: sum / values.length().to_float(),
+        count: values.length()
+      }
     }
   }
   
-  // Monitor each memory metric
-  let memory_monitoring_results = memory_metrics.map(fn(m) { monitor_memory(m, memory_alert_thresholds) })
-  
-  // Verify the results
-  assert_eq(memory_monitoring_results.length(), 3)
-  
-  // First metric should be normal
-  assert_eq(memory_monitoring_results[0].status, "normal")
-  assert_eq(memory_monitoring_results[0].memory_usage_percent, 50.0)
-  assert_eq(memory_monitoring_results[0].swap_usage_percent, 0.0)
-  assert_eq(memory_monitoring_results[0].alerts.length(), 0)
-  
-  // Second metric should have warnings
-  assert_eq(memory_monitoring_results[1].status, "alert")
-  assert_eq(memory_monitoring_results[1].memory_usage_percent, 75.0)
-  assert_eq(memory_monitoring_results[1].swap_usage_percent, 25.0)
-  assert_eq(memory_monitoring_results[1].alerts.length(), 2)
-  assert_true(memory_monitoring_results[1].alerts.some(fn(a) { a.contains("WARNING: Memory usage") }))
-  assert_true(memory_monitoring_results[1].alerts.some(fn(a) { a.contains("WARNING: Swap usage") }))
-  
-  // Third metric should have critical alerts
-  assert_eq(memory_monitoring_results[2].status, "alert")
-  assert_eq(memory_monitoring_results[2].memory_usage_percent, 93.75)
-  assert_eq(memory_monitoring_results[2].swap_usage_percent, 50.0)
-  assert_eq(memory_monitoring_results[2].alerts.length(), 3)
-  assert_true(memory_monitoring_results[2].alerts.some(fn(a) { a.contains("CRITICAL: Memory usage") }))
-  assert_true(memory_monitoring_results[2].alerts.some(fn(a) { a.contains("CRITICAL: Swap usage") }))
-  assert_true(memory_monitoring_results[2].alerts.some(fn(a) { a.contains("WARNING: High page faults") }))
+  let cpu_stats = calculate_stats(cpu_only)
+  assert_eq(cpu_stats.count, 3)
+  assert_eq(cpu_stats.min, 45.2)
+  assert_eq(cpu_stats.max, 52.7)
+  assert_eq(cpu_stats.avg, (45.2 + 52.7 + 48.3) / 3.0)
 }
 
-// Test 3: Disk I/O Performance Monitoring
-test "disk i/o performance monitoring" {
-  // Define disk I/O metrics types
-  type DiskIOMetrics = {
-    timestamp: Int,
-    device_name: String,
-    read_bytes_per_sec: Int,
-    write_bytes_per_sec: Int,
-    read_ops_per_sec: Int,
-    write_ops_per_sec: Int,
-    avg_queue_size: Float,
-    avg_wait_time_ms: Float,
-    utilization_percent: Float
+// Test 2: Performance Threshold Monitoring
+test "performance threshold monitoring" {
+  type Threshold = {
+    metric_name: String,
+    warning_threshold: Float,
+    critical_threshold: Float,
+    operator: String  // "gt", "lt", "eq"
   }
   
-  type DiskIOAlertThresholds = {
-    read_throughput_warning_mb: Int,
-    read_throughput_critical_mb: Int,
-    write_throughput_warning_mb: Int,
-    write_throughput_critical_mb: Int,
-    wait_time_warning_ms: Float,
-    wait_time_critical_ms: Float,
-    utilization_warning_percent: Float,
-    utilization_critical_percent: Float
+  type Alert = {
+    metric_name: String,
+    current_value: Float,
+    threshold_value: Float,
+    severity: String,  // "warning", "critical"
+    timestamp: Int
   }
   
-  // Create sample disk I/O metrics
-  let disk_io_metrics = [
-    {
-      timestamp: 1640995200,
-      device_name: "/dev/sda",
-      read_bytes_per_sec: 1048576,    // 1 MB/s
-      write_bytes_per_sec: 2097152,   // 2 MB/s
-      read_ops_per_sec: 100,
-      write_ops_per_sec: 150,
-      avg_queue_size: 0.5,
-      avg_wait_time_ms: 2.5,
-      utilization_percent: 15.0
-    },
-    {
-      timestamp: 1640995260,
-      device_name: "/dev/sda",
-      read_bytes_per_sec: 10485760,   // 10 MB/s
-      write_bytes_per_sec: 20971520,  // 20 MB/s
-      read_ops_per_sec: 500,
-      write_ops_per_sec: 750,
-      avg_queue_size: 2.0,
-      avg_wait_time_ms: 10.0,
-      utilization_percent: 60.0
-    },
-    {
-      timestamp: 1640995320,
-      device_name: "/dev/sda",
-      read_bytes_per_sec: 52428800,   // 50 MB/s
-      write_bytes_per_sec: 104857600, // 100 MB/s
-      read_ops_per_sec: 1000,
-      write_ops_per_sec: 1500,
-      avg_queue_size: 5.0,
-      avg_wait_time_ms: 25.0,
-      utilization_percent: 95.0
-    }
+  // Define monitoring thresholds
+  let thresholds = [
+    { metric_name: "cpu_usage", warning_threshold: 70.0, critical_threshold: 90.0, operator: "gt" },
+    { metric_name: "memory_usage", warning_threshold: 80.0, critical_threshold: 95.0, operator: "gt" },
+    { metric_name: "disk_usage", warning_threshold: 80.0, critical_threshold: 90.0, operator: "gt" },
+    { metric_name: "response_time", warning_threshold: 1000.0, critical_threshold: 5000.0, operator: "gt" },
+    { metric_name: "availability", warning_threshold: 99.0, critical_threshold: 95.0, operator: "lt" }
   ]
   
-  // Define alert thresholds
-  let disk_io_alert_thresholds = {
-    read_throughput_warning_mb: 20,   // 20 MB/s
-    read_throughput_critical_mb: 40,  // 40 MB/s
-    write_throughput_warning_mb: 40,  // 40 MB/s
-    write_throughput_critical_mb: 80, // 80 MB/s
-    wait_time_warning_ms: 10.0,
-    wait_time_critical_ms: 20.0,
-    utilization_warning_percent: 70.0,
-    utilization_critical_percent: 90.0
-  }
+  // Create sample metrics
+  let current_metrics = [
+    { name: "cpu_usage", value: 75.5, unit: "percent", timestamp: 1640995200, tags: [] },
+    { name: "memory_usage", value: 85.2, unit: "percent", timestamp: 1640995200, tags: [] },
+    { name: "disk_usage", value: 45.3, unit: "percent", timestamp: 1640995200, tags: [] },
+    { name: "response_time", value: 2500.0, unit: "ms", timestamp: 1640995200, tags: [] },
+    { name: "availability", value: 97.5, unit: "percent", timestamp: 1640995200, tags: [] }
+  ]
   
-  // Define disk I/O monitoring function
-  let monitor_disk_io = fn(metrics: DiskIOMetrics, thresholds: DiskIOAlertThresholds) {
+  // Check thresholds and generate alerts
+  let check_thresholds = fn(metrics: Array[PerformanceMetric], thresholds: Array[Threshold]) {
     let mut alerts = []
     
-    // Convert bytes per second to MB per second
-    let read_throughput_mb = metrics.read_bytes_per_sec / 1048576
-    let write_throughput_mb = metrics.write_bytes_per_sec / 1048576
-    
-    // Check read throughput
-    if read_throughput_mb >= thresholds.read_throughput_critical_mb {
-      alerts = alerts.push("CRITICAL: High read throughput: " + read_throughput_mb.to_string() + " MB/s")
-    } else if read_throughput_mb >= thresholds.read_throughput_warning_mb {
-      alerts = alerts.push("WARNING: High read throughput: " + read_throughput_mb.to_string() + " MB/s")
+    for metric in metrics {
+      let threshold = thresholds.find(fn(t) { t.metric_name == metric.name })
+      
+      match threshold {
+        Some(th) => {
+          let warning_violated = match th.operator {
+            "gt" => metric.value > th.warning_threshold
+            "lt" => metric.value < th.warning_threshold
+            "eq" => metric.value == th.warning_threshold
+            _ => false
+          }
+          
+          let critical_violated = match th.operator {
+            "gt" => metric.value > th.critical_threshold
+            "lt" => metric.value < th.critical_threshold
+            "eq" => metric.value == th.critical_threshold
+            _ => false
+          }
+          
+          if critical_violated {
+            alerts = alerts.push({
+              metric_name: metric.name,
+              current_value: metric.value,
+              threshold_value: th.critical_threshold,
+              severity: "critical",
+              timestamp: metric.timestamp
+            })
+          } else if warning_violated {
+            alerts = alerts.push({
+              metric_name: metric.name,
+              current_value: metric.value,
+              threshold_value: th.warning_threshold,
+              severity: "warning",
+              timestamp: metric.timestamp
+            })
+          }
+        }
+        None => {} // No threshold defined for this metric
+      }
     }
     
-    // Check write throughput
-    if write_throughput_mb >= thresholds.write_throughput_critical_mb {
-      alerts = alerts.push("CRITICAL: High write throughput: " + write_throughput_mb.to_string() + " MB/s")
-    } else if write_throughput_mb >= thresholds.write_throughput_warning_mb {
-      alerts = alerts.push("WARNING: High write throughput: " + write_throughput_mb.to_string() + " MB/s")
-    }
-    
-    // Check wait time
-    if metrics.avg_wait_time_ms >= thresholds.wait_time_critical_ms {
-      alerts = alerts.push("CRITICAL: High wait time: " + metrics.avg_wait_time_ms.to_string() + " ms")
-    } else if metrics.avg_wait_time_ms >= thresholds.wait_time_warning_ms {
-      alerts = alerts.push("WARNING: High wait time: " + metrics.avg_wait_time_ms.to_string() + " ms")
-    }
-    
-    // Check utilization
-    if metrics.utilization_percent >= thresholds.utilization_critical_percent {
-      alerts = alerts.push("CRITICAL: High utilization: " + metrics.utilization_percent.to_string() + "%")
-    } else if metrics.utilization_percent >= thresholds.utilization_warning_percent {
-      alerts = alerts.push("WARNING: High utilization: " + metrics.utilization_percent.to_string() + "%")
-    }
-    
-    {
-      metrics: metrics,
-      read_throughput_mb: read_throughput_mb,
-      write_throughput_mb: write_throughput_mb,
-      alerts: alerts,
-      status: if alerts.length() > 0 { "alert" } else { "normal" }
-    }
+    alerts
   }
   
-  // Monitor each disk I/O metric
-  let disk_io_monitoring_results = disk_io_metrics.map(fn(m) { monitor_disk_io(m, disk_io_alert_thresholds) })
+  let alerts = check_thresholds(current_metrics, thresholds)
+  assert_eq(alerts.length(), 4)
   
-  // Verify the results
-  assert_eq(disk_io_monitoring_results.length(), 3)
+  // Verify CPU usage alert (warning)
+  let cpu_alert = alerts.find(fn(a) { a.metric_name == "cpu_usage" })
+  match cpu_alert {
+    Some(alert) => {
+      assert_eq(alert.severity, "warning")
+      assert_eq(alert.current_value, 75.5)
+      assert_eq(alert.threshold_value, 70.0)
+    }
+    None => assert_true(false)
+  }
   
-  // First metric should be normal
-  assert_eq(disk_io_monitoring_results[0].status, "normal")
-  assert_eq(disk_io_monitoring_results[0].read_throughput_mb, 1)
-  assert_eq(disk_io_monitoring_results[0].write_throughput_mb, 2)
-  assert_eq(disk_io_monitoring_results[0].alerts.length(), 0)
+  // Verify memory usage alert (warning)
+  let memory_alert = alerts.find(fn(a) { a.metric_name == "memory_usage" })
+  match memory_alert {
+    Some(alert) => {
+      assert_eq(alert.severity, "warning")
+      assert_eq(alert.current_value, 85.2)
+      assert_eq(alert.threshold_value, 80.0)
+    }
+    None => assert_true(false)
+  }
   
-  // Second metric should have warnings
-  assert_eq(disk_io_monitoring_results[1].status, "alert")
-  assert_eq(disk_io_monitoring_results[1].read_throughput_mb, 10)
-  assert_eq(disk_io_monitoring_results[1].write_throughput_mb, 20)
-  assert_eq(disk_io_monitoring_results[1].alerts.length(), 2)
-  assert_true(disk_io_monitoring_results[1].alerts.some(fn(a) { a.contains("WARNING: High wait time") }))
-  assert_true(disk_io_monitoring_results[1].alerts.some(fn(a) { a.contains("WARNING: High utilization") }))
+  // Verify response time alert (warning)
+  let response_time_alert = alerts.find(fn(a) { a.metric_name == "response_time" })
+  match response_time_alert {
+    Some(alert) => {
+      assert_eq(alert.severity, "warning")
+      assert_eq(alert.current_value, 2500.0)
+      assert_eq(alert.threshold_value, 1000.0)
+    }
+    None => assert_true(false)
+  }
   
-  // Third metric should have critical alerts
-  assert_eq(disk_io_monitoring_results[2].status, "alert")
-  assert_eq(disk_io_monitoring_results[2].read_throughput_mb, 50)
-  assert_eq(disk_io_monitoring_results[2].write_throughput_mb, 100)
-  assert_eq(disk_io_monitoring_results[2].alerts.length(), 5)
-  assert_true(disk_io_monitoring_results[2].alerts.some(fn(a) { a.contains("CRITICAL: High read throughput") }))
-  assert_true(disk_io_monitoring_results[2].alerts.some(fn(a) { a.contains("CRITICAL: High write throughput") }))
-  assert_true(disk_io_monitoring_results[2].alerts.some(fn(a) { a.contains("CRITICAL: High wait time") }))
-  assert_true(disk_io_monitoring_results[2].alerts.some(fn(a) { a.contains("CRITICAL: High utilization") }))
+  // Verify availability alert (critical)
+  let availability_alert = alerts.find(fn(a) { a.metric_name == "availability" })
+  match availability_alert {
+    Some(alert) => {
+      assert_eq(alert.severity, "critical")
+      assert_eq(alert.current_value, 97.5)
+      assert_eq(alert.threshold_value, 95.0)
+    }
+    None => assert_true(false)
+  }
+  
+  // No disk usage alert (below threshold)
+  let disk_alert = alerts.find(fn(a) { a.metric_name == "disk_usage" })
+  assert_eq(disk_alert, None)
 }
 
-// Test 4: Network Performance Monitoring
-test "network performance monitoring" {
-  // Define network metrics types
-  type NetworkMetrics = {
+// Test 3: Performance Trend Analysis
+test "performance trend analysis" {
+  type DataPoint = {
     timestamp: Int,
-    interface_name: String,
-    bytes_received_per_sec: Int,
-    bytes_sent_per_sec: Int,
-    packets_received_per_sec: Int,
-    packets_sent_per_sec: Int,
-    errors_in: Int,
-    errors_out: Int,
-    drops_in: Int,
-    drops_out: Int
+    value: Float
   }
   
-  type NetworkAlertThresholds = {
-    bandwidth_warning_mb: Int,
-    bandwidth_critical_mb: Int,
-    packet_rate_warning: Int,
-    packet_rate_critical: Int,
-    error_rate_warning_percent: Float,
-    error_rate_critical_percent: Float
+  type TrendAnalysis = {
+    direction: String,  // "increasing", "decreasing", "stable"
+    slope: Float,
+    confidence: Float,
+    prediction: Float
   }
   
-  // Create sample network metrics
-  let network_metrics = [
-    {
-      timestamp: 1640995200,
-      interface_name: "eth0",
-      bytes_received_per_sec: 1048576,    // 1 MB/s
-      bytes_sent_per_sec: 2097152,       // 2 MB/s
-      packets_received_per_sec: 1000,
-      packets_sent_per_sec: 1500,
-      errors_in: 0,
-      errors_out: 0,
-      drops_in: 0,
-      drops_out: 0
-    },
-    {
-      timestamp: 1640995260,
-      interface_name: "eth0",
-      bytes_received_per_sec: 20971520,   // 20 MB/s
-      bytes_sent_per_sec: 31457280,      // 30 MB/s
-      packets_received_per_sec: 10000,
-      packets_sent_per_sec: 15000,
-      errors_in: 5,
-      errors_out: 3,
-      drops_in: 2,
-      drops_out: 1
-    },
-    {
-      timestamp: 1640995320,
-      interface_name: "eth0",
-      bytes_received_per_sec: 52428800,   // 50 MB/s
-      bytes_sent_per_sec: 73400320,      // 70 MB/s
-      packets_received_per_sec: 25000,
-      packets_sent_per_sec: 35000,
-      errors_in: 50,
-      errors_out: 30,
-      drops_in: 20,
-      drops_out: 10
-    }
+  // Create sample time series data
+  let cpu_data = [
+    { timestamp: 1640995200, value: 45.2 },
+    { timestamp: 1640995260, value: 47.8 },
+    { timestamp: 1640995320, value: 50.3 },
+    { timestamp: 1640995380, value: 52.1 },
+    { timestamp: 1640995440, value: 54.7 },
+    { timestamp: 1640995500, value: 57.2 },
+    { timestamp: 1640995560, value: 59.8 },
+    { timestamp: 1640995620, value: 62.4 }
   ]
   
-  // Define alert thresholds
-  let network_alert_thresholds = {
-    bandwidth_warning_mb: 40,   // 40 MB/s
-    bandwidth_critical_mb: 80,  // 80 MB/s
-    packet_rate_warning: 20000, // 20,000 packets/s
-    packet_rate_critical: 40000, // 40,000 packets/s
-    error_rate_warning_percent: 0.1, // 0.1%
-    error_rate_critical_percent: 0.5  // 0.5%
-  }
-  
-  // Define network monitoring function
-  let monitor_network = fn(metrics: NetworkMetrics, thresholds: NetworkAlertThresholds) {
-    let mut alerts = []
-    
-    // Convert bytes per second to MB per second
-    let receive_throughput_mb = metrics.bytes_received_per_sec / 1048576
-    let send_throughput_mb = metrics.bytes_sent_per_sec / 1048576
-    let total_throughput_mb = receive_throughput_mb + send_throughput_mb
-    
-    // Check bandwidth
-    if total_throughput_mb >= thresholds.bandwidth_critical_mb {
-      alerts = alerts.push("CRITICAL: High bandwidth usage: " + total_throughput_mb.to_string() + " MB/s")
-    } else if total_throughput_mb >= thresholds.bandwidth_warning_mb {
-      alerts = alerts.push("WARNING: High bandwidth usage: " + total_throughput_mb.to_string() + " MB/s")
-    }
-    
-    // Check packet rate
-    let total_packet_rate = metrics.packets_received_per_sec + metrics.packets_sent_per_sec
-    if total_packet_rate >= thresholds.packet_rate_critical {
-      alerts = alerts.push("CRITICAL: High packet rate: " + total_packet_rate.to_string() + " packets/s")
-    } else if total_packet_rate >= thresholds.packet_rate_warning {
-      alerts = alerts.push("WARNING: High packet rate: " + total_packet_rate.to_string() + " packets/s")
-    }
-    
-    // Calculate error rate
-    let total_packets = metrics.packets_received_per_sec + metrics.packets_sent_per_sec
-    let total_errors = metrics.errors_in + metrics.errors_out
-    let error_rate = if total_packets > 0 {
-      (total_errors.to_float() / total_packets.to_float()) * 100.0
+  // Simple linear regression for trend analysis
+  let calculate_trend = fn(data: Array[DataPoint]) {
+    if data.length() < 2 {
+      { direction: "stable", slope: 0.0, confidence: 0.0, prediction: 0.0 }
     } else {
-      0.0
-    }
-    
-    // Check error rate
-    if error_rate >= thresholds.error_rate_critical_percent {
-      alerts = alerts.push("CRITICAL: High error rate: " + error_rate.to_string() + "%")
-    } else if error_rate >= thresholds.error_rate_warning_percent {
-      alerts = alerts.push("WARNING: High error rate: " + error_rate.to_string() + "%")
-    }
-    
-    // Check for drops
-    let total_drops = metrics.drops_in + metrics.drops_out
-    if total_drops > 0 {
-      alerts = alerts.push("WARNING: Packet drops detected: " + total_drops.to_string())
-    }
-    
-    {
-      metrics: metrics,
-      total_throughput_mb: total_throughput_mb,
-      total_packet_rate: total_packet_rate,
-      error_rate: error_rate,
-      alerts: alerts,
-      status: if alerts.length() > 0 { "alert" } else { "normal" }
+      // Calculate slope using simple linear regression
+      let n = data.length().to_float()
+      let sum_x = data.reduce(fn(acc, dp) { acc + dp.timestamp.to_float() }, 0.0)
+      let sum_y = data.reduce(fn(acc, dp) { acc + dp.value }, 0.0)
+      let sum_xy = data.reduce(fn(acc, dp) { acc + dp.timestamp.to_float() * dp.value }, 0.0)
+      let sum_x2 = data.reduce(fn(acc, dp) { acc + dp.timestamp.to_float() * dp.timestamp.to_float() }, 0.0)
+      
+      let slope = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x * sum_x)
+      let intercept = (sum_y - slope * sum_x) / n
+      
+      // Calculate correlation coefficient for confidence
+      let mean_x = sum_x / n
+      let mean_y = sum_y / n
+      let numerator = data.reduce(fn(acc, dp) { 
+        acc + (dp.timestamp.to_float() - mean_x) * (dp.value - mean_y) 
+      }, 0.0)
+      
+      let sum_xx = data.reduce(fn(acc, dp) { 
+        acc + (dp.timestamp.to_float() - mean_x) * (dp.timestamp.to_float() - mean_x) 
+      }, 0.0)
+      
+      let sum_yy = data.reduce(fn(acc, dp) { 
+        acc + (dp.value - mean_y) * (dp.value - mean_y) 
+      }, 0.0)
+      
+      let correlation = if sum_xx == 0.0 or sum_yy == 0.0 {
+        0.0
+      } else {
+        numerator / (sum_xx * sum_yy).sqrt()
+      }
+      
+      let confidence = correlation.abs()
+      
+      // Determine direction
+      let direction = if slope.abs() < 0.001 {
+        "stable"
+      } else if slope > 0 {
+        "increasing"
+      } else {
+        "decreasing"
+      }
+      
+      // Predict next value
+      let last_timestamp = data[data.length() - 1].timestamp
+      let next_timestamp = last_timestamp + 60 // Next time point
+      let prediction = slope * next_timestamp.to_float() + intercept
+      
+      {
+        direction: direction,
+        slope: slope,
+        confidence: confidence,
+        prediction: prediction
+      }
     }
   }
   
-  // Monitor each network metric
-  let network_monitoring_results = network_metrics.map(fn(m) { monitor_network(m, network_alert_thresholds) })
+  let cpu_trend = calculate_trend(cpu_data)
+  assert_eq(cpu_trend.direction, "increasing")
+  assert_true(cpu_trend.slope > 0)
+  assert_true(cpu_trend.confidence > 0.8) // High confidence due to clear trend
+  assert_true(cpu_trend.prediction > cpu_data[cpu_data.length() - 1].value) // Prediction higher than last value
   
-  // Verify the results
-  assert_eq(network_monitoring_results.length(), 3)
-  
-  // First metric should be normal
-  assert_eq(network_monitoring_results[0].status, "normal")
-  assert_eq(network_monitoring_results[0].total_throughput_mb, 3)
-  assert_eq(network_monitoring_results[0].total_packet_rate, 2500)
-  assert_eq(network_monitoring_results[0].error_rate, 0.0)
-  assert_eq(network_monitoring_results[0].alerts.length(), 0)
-  
-  // Second metric should have warnings
-  assert_eq(network_monitoring_results[1].status, "alert")
-  assert_eq(network_monitoring_results[1].total_throughput_mb, 50)
-  assert_eq(network_monitoring_results[1].total_packet_rate, 25000)
-  assert_eq(network_monitoring_results[1].error_rate, 0.032)
-  assert_eq(network_monitoring_results[1].alerts.length(), 3)
-  assert_true(network_monitoring_results[1].alerts.some(fn(a) { a.contains("WARNING: High bandwidth usage") }))
-  assert_true(network_monitoring_results[1].alerts.some(fn(a) { a.contains("WARNING: High packet rate") }))
-  assert_true(network_monitoring_results[1].alerts.some(fn(a) { a.contains("WARNING: Packet drops detected") }))
-  
-  // Third metric should have critical alerts
-  assert_eq(network_monitoring_results[2].status, "alert")
-  assert_eq(network_monitoring_results[2].total_throughput_mb, 120)
-  assert_eq(network_monitoring_results[2].total_packet_rate, 60000)
-  assert_eq(network_monitoring_results[2].error_rate, 0.16)
-  assert_eq(network_monitoring_results[2].alerts.length(), 4)
-  assert_true(network_monitoring_results[2].alerts.some(fn(a) { a.contains("CRITICAL: High bandwidth usage") }))
-  assert_true(network_monitoring_results[2].alerts.some(fn(a) { a.contains("CRITICAL: High packet rate") }))
-  assert_true(network_monitoring_results[2].alerts.some(fn(a) { a.contains("WARNING: High error rate") }))
-  assert_true(network_monitoring_results[2].alerts.some(fn(a) { a.contains("WARNING: Packet drops detected") }))
-}
-
-// Test 5: Application Performance Monitoring
-test "application performance monitoring" {
-  // Define application metrics types
-  type ApplicationMetrics = {
-    timestamp: Int,
-    service_name: String,
-    request_rate: Int,              // requests per second
-    response_time_avg_ms: Float,    // average response time
-    response_time_p95_ms: Float,    // 95th percentile response time
-    response_time_p99_ms: Float,    // 99th percentile response time
-    error_rate_percent: Float,      // error rate percentage
-    active_connections: Int,
-    thread_pool_active: Int,
-    thread_pool_size: Int,
-    gc_pause_time_ms: Float         // garbage collection pause time
-  }
-  
-  type ApplicationAlertThresholds = {
-    response_time_warning_ms: Float,
-    response_time_critical_ms: Float,
-    p99_response_time_warning_ms: Float,
-    p99_response_time_critical_ms: Float,
-    error_rate_warning_percent: Float,
-    error_rate_critical_percent: Float,
-    thread_pool_usage_warning_percent: Float,
-    thread_pool_usage_critical_percent: Float,
-    gc_pause_warning_ms: Float,
-    gc_pause_critical_ms: Float
-  }
-  
-  // Create sample application metrics
-  let application_metrics = [
-    {
-      timestamp: 1640995200,
-      service_name: "payment-service",
-      request_rate: 100,
-      response_time_avg_ms: 50.0,
-      response_time_p95_ms: 75.0,
-      response_time_p99_ms: 100.0,
-      error_rate_percent: 0.5,
-      active_connections: 25,
-      thread_pool_active: 10,
-      thread_pool_size: 50,
-      gc_pause_time_ms: 5.0
-    },
-    {
-      timestamp: 1640995260,
-      service_name: "payment-service",
-      request_rate: 500,
-      response_time_avg_ms: 150.0,
-      response_time_p95_ms: 250.0,
-      response_time_p99_ms: 400.0,
-      error_rate_percent: 2.0,
-      active_connections: 100,
-      thread_pool_active: 35,
-      thread_pool_size: 50,
-      gc_pause_time_ms: 15.0
-    },
-    {
-      timestamp: 1640995320,
-      service_name: "payment-service",
-      request_rate: 1000,
-      response_time_avg_ms: 500.0,
-      response_time_p95_ms: 800.0,
-      response_time_p99_ms: 1200.0,
-      error_rate_percent: 10.0,
-      active_connections: 200,
-      thread_pool_active: 48,
-      thread_pool_size: 50,
-      gc_pause_time_ms: 50.0
-    }
+  // Test with decreasing data
+  let memory_data = [
+    { timestamp: 1640995200, value: 85.2 },
+    { timestamp: 1640995260, value: 83.7 },
+    { timestamp: 1640995320, value: 81.4 },
+    { timestamp: 1640995380, value: 79.8 },
+    { timestamp: 1640995440, value: 78.1 },
+    { timestamp: 1640995500, value: 76.5 },
+    { timestamp: 1640995560, value: 74.9 },
+    { timestamp: 1640995620, value: 73.2 }
   ]
   
-  // Define alert thresholds
-  let application_alert_thresholds = {
-    response_time_warning_ms: 100.0,
-    response_time_critical_ms: 300.0,
-    p99_response_time_warning_ms: 500.0,
-    p99_response_time_critical_ms: 1000.0,
-    error_rate_warning_percent: 1.0,
-    error_rate_critical_percent: 5.0,
-    thread_pool_usage_warning_percent: 70.0,
-    thread_pool_usage_critical_percent: 90.0,
-    gc_pause_warning_ms: 20.0,
-    gc_pause_critical_ms: 40.0
+  let memory_trend = calculate_trend(memory_data)
+  assert_eq(memory_trend.direction, "decreasing")
+  assert_true(memory_trend.slope < 0)
+  assert_true(memory_trend.confidence > 0.8)
+  assert_true(memory_trend.prediction < memory_data[memory_data.length() - 1].value)
+  
+  // Test with stable data
+  let stable_data = [
+    { timestamp: 1640995200, value: 50.1 },
+    { timestamp: 1640995260, value: 50.3 },
+    { timestamp: 1640995320, value: 49.9 },
+    { timestamp: 1640995380, value: 50.2 },
+    { timestamp: 1640995440, value: 50.0 },
+    { timestamp: 1640995500, value: 49.8 },
+    { timestamp: 1640995560, value: 50.1 },
+    { timestamp: 1640995620, value: 49.9 }
+  ]
+  
+  let stable_trend = calculate_trend(stable_data)
+  assert_eq(stable_trend.direction, "stable")
+  assert_true(stable_trend.slope.abs() < 0.1)
+}
+
+// Test 4: Performance Baseline Comparison
+test "performance baseline comparison" {
+  type BaselineMetric = {
+    name: String,
+    baseline_value: Float,
+    tolerance_percent: Float,
+    unit: String
   }
   
-  // Define application monitoring function
-  let monitor_application = fn(metrics: ApplicationMetrics, thresholds: ApplicationAlertThresholds) {
-    let mut alerts = []
-    
-    // Check average response time
-    if metrics.response_time_avg_ms >= thresholds.response_time_critical_ms {
-      alerts = alerts.push("CRITICAL: High avg response time: " + metrics.response_time_avg_ms.to_string() + "ms")
-    } else if metrics.response_time_avg_ms >= thresholds.response_time_warning_ms {
-      alerts = alerts.push("WARNING: High avg response time: " + metrics.response_time_avg_ms.to_string() + "ms")
-    }
-    
-    // Check P99 response time
-    if metrics.response_time_p99_ms >= thresholds.p99_response_time_critical_ms {
-      alerts = alerts.push("CRITICAL: High P99 response time: " + metrics.response_time_p99_ms.to_string() + "ms")
-    } else if metrics.response_time_p99_ms >= thresholds.p99_response_time_warning_ms {
-      alerts = alerts.push("WARNING: High P99 response time: " + metrics.response_time_p99_ms.to_string() + "ms")
-    }
-    
-    // Check error rate
-    if metrics.error_rate_percent >= thresholds.error_rate_critical_percent {
-      alerts = alerts.push("CRITICAL: High error rate: " + metrics.error_rate_percent.to_string() + "%")
-    } else if metrics.error_rate_percent >= thresholds.error_rate_warning_percent {
-      alerts = alerts.push("WARNING: High error rate: " + metrics.error_rate_percent.to_string() + "%")
-    }
-    
-    // Check thread pool usage
-    let thread_pool_usage_percent = (metrics.thread_pool_active.to_float() / metrics.thread_pool_size.to_float()) * 100.0
-    if thread_pool_usage_percent >= thresholds.thread_pool_usage_critical_percent {
-      alerts = alerts.push("CRITICAL: High thread pool usage: " + thread_pool_usage_percent.to_string() + "%")
-    } else if thread_pool_usage_percent >= thresholds.thread_pool_usage_warning_percent {
-      alerts = alerts.push("WARNING: High thread pool usage: " + thread_pool_usage_percent.to_string() + "%")
-    }
-    
-    // Check GC pause time
-    if metrics.gc_pause_time_ms >= thresholds.gc_pause_critical_ms {
-      alerts = alerts.push("CRITICAL: High GC pause time: " + metrics.gc_pause_time_ms.to_string() + "ms")
-    } else if metrics.gc_pause_time_ms >= thresholds.gc_pause_warning_ms {
-      alerts = alerts.push("WARNING: High GC pause time: " + metrics.gc_pause_time_ms.to_string() + "ms")
-    }
-    
-    {
-      metrics: metrics,
-      thread_pool_usage_percent: thread_pool_usage_percent,
-      alerts: alerts,
-      status: if alerts.length() > 0 { "alert" } else { "normal" }
-    }
+  type ComparisonResult = {
+    name: String,
+    current_value: Float,
+    baseline_value: Float,
+    deviation_percent: Float,
+    status: String  // "within_baseline", "warning", "critical"
   }
   
-  // Monitor each application metric
-  let application_monitoring_results = application_metrics.map(fn(m) { monitor_application(m, application_alert_thresholds) })
+  // Define performance baselines
+  let baselines = [
+    { name: "cpu_usage", baseline_value: 50.0, tolerance_percent: 20.0, unit: "percent" },
+    { name: "memory_usage", baseline_value: 70.0, tolerance_percent: 15.0, unit: "percent" },
+    { name: "response_time", baseline_value: 500.0, tolerance_percent: 50.0, unit: "ms" },
+    { name: "throughput", baseline_value: 1000.0, tolerance_percent: 25.0, unit: "req/s" }
+  ]
   
-  // Verify the results
-  assert_eq(application_monitoring_results.length(), 3)
+  // Current performance metrics
+  let current_metrics = [
+    { name: "cpu_usage", value: 55.0, unit: "percent", timestamp: 1640995200, tags: [] },
+    { name: "memory_usage", value: 85.0, unit: "percent", timestamp: 1640995200, tags: [] },
+    { name: "response_time", value: 800.0, unit: "ms", timestamp: 1640995200, tags: [] },
+    { name: "throughput", value: 900.0, unit: "req/s", timestamp: 1640995200, tags: [] }
+  ]
   
-  // First metric should be normal
-  assert_eq(application_monitoring_results[0].status, "normal")
-  assert_eq(application_monitoring_results[0].thread_pool_usage_percent, 20.0)
-  assert_eq(application_monitoring_results[0].alerts.length(), 0)
+  // Compare current metrics with baselines
+  let compare_with_baseline = fn(current: Array[PerformanceMetric], baselines: Array[BaselineMetric]) {
+    let mut results = []
+    
+    for metric in current {
+      let baseline = baselines.find(fn(b) { b.name == metric.name })
+      
+      match baseline {
+        Some(bl) => {
+          let deviation = if bl.baseline_value == 0.0 {
+            0.0
+          } else {
+            ((metric.value - bl.baseline_value) / bl.baseline_value) * 100.0
+          }
+          
+          let abs_deviation = deviation.abs()
+          let status = if abs_deviation <= bl.tolerance_percent {
+            "within_baseline"
+          } else if abs_deviation <= bl.tolerance_percent * 2.0 {
+            "warning"
+          } else {
+            "critical"
+          }
+          
+          results = results.push({
+            name: metric.name,
+            current_value: metric.value,
+            baseline_value: bl.baseline_value,
+            deviation_percent: deviation,
+            status: status
+          })
+        }
+        None => {} // No baseline for this metric
+      }
+    }
+    
+    results
+  }
   
-  // Second metric should have warnings
-  assert_eq(application_monitoring_results[1].status, "alert")
-  assert_eq(application_monitoring_results[1].thread_pool_usage_percent, 70.0)
-  assert_eq(application_monitoring_results[1].alerts.length(), 4)
-  assert_true(application_monitoring_results[1].alerts.some(fn(a) { a.contains("WARNING: High avg response time") }))
-  assert_true(application_monitoring_results[1].alerts.some(fn(a) { a.contains("WARNING: High P99 response time") }))
-  assert_true(application_monitoring_results[1].alerts.some(fn(a) { a.contains("WARNING: High error rate") }))
-  assert_true(application_monitoring_results[1].alerts.some(fn(a) { a.contains("WARNING: High thread pool usage") }))
+  let comparisons = compare_with_baseline(current_metrics, baselines)
+  assert_eq(comparisons.length(), 4)
   
-  // Third metric should have critical alerts
-  assert_eq(application_monitoring_results[2].status, "alert")
-  assert_eq(application_monitoring_results[2].thread_pool_usage_percent, 96.0)
-  assert_eq(application_monitoring_results[2].alerts.length(), 5)
-  assert_true(application_monitoring_results[2].alerts.some(fn(a) { a.contains("CRITICAL: High avg response time") }))
-  assert_true(application_monitoring_results[2].alerts.some(fn(a) { a.contains("CRITICAL: High P99 response time") }))
-  assert_true(application_monitoring_results[2].alerts.some(fn(a) { a.contains("CRITICAL: High error rate") }))
-  assert_true(application_monitoring_results[2].alerts.some(fn(a) { a.contains("CRITICAL: High thread pool usage") }))
-  assert_true(application_monitoring_results[2].alerts.some(fn(a) { a.contains("CRITICAL: High GC pause time") }))
+  // Check CPU usage comparison (within tolerance)
+  let cpu_comparison = comparisons.find(fn(c) { c.name == "cpu_usage" })
+  match cpu_comparison {
+    Some(comp) => {
+      assert_eq(comp.current_value, 55.0)
+      assert_eq(comp.baseline_value, 50.0)
+      assert_eq(comp.deviation_percent, 10.0)
+      assert_eq(comp.status, "within_baseline")
+    }
+    None => assert_true(false)
+  }
+  
+  // Check memory usage comparison (warning)
+  let memory_comparison = comparisons.find(fn(c) { c.name == "memory_usage" })
+  match memory_comparison {
+    Some(comp) => {
+      assert_eq(comp.current_value, 85.0)
+      assert_eq(comp.baseline_value, 70.0)
+      assert_eq(comp.deviation_percent, 21.43) // 15/70 * 100 ≈ 21.43%
+      assert_eq(comp.status, "warning")
+    }
+    None => assert_true(false)
+  }
+  
+  // Check response time comparison (warning)
+  let response_time_comparison = comparisons.find(fn(c) { c.name == "response_time" })
+  match response_time_comparison {
+    Some(comp) => {
+      assert_eq(comp.current_value, 800.0)
+      assert_eq(comp.baseline_value, 500.0)
+      assert_eq(comp.deviation_percent, 60.0)
+      assert_eq(comp.status, "warning")
+    }
+    None => assert_true(false)
+  }
+  
+  // Check throughput comparison (within tolerance)
+  let throughput_comparison = comparisons.find(fn(c) { c.name == "throughput" })
+  match throughput_comparison {
+    Some(comp) => {
+      assert_eq(comp.current_value, 900.0)
+      assert_eq(comp.baseline_value, 1000.0)
+      assert_eq(comp.deviation_percent, -10.0)
+      assert_eq(comp.status, "within_baseline")
+    }
+    None => assert_true(false)
+  }
+}
+
+// Test 5: Performance Anomaly Detection
+test "performance anomaly detection" {
+  type AnomalyDetector = {
+    threshold_multiplier: Float,
+    window_size: Int
+  }
+  
+  type AnomalyResult = {
+    timestamp: Int,
+    value: Float,
+    expected_range: (Float, Float),
+    is_anomaly: Bool,
+    anomaly_score: Float
+  }
+  
+  // Create sample metrics with some anomalies
+  let metrics_data = [
+    { timestamp: 1640995200, value: 45.2 },
+    { timestamp: 1640995260, value: 47.8 },
+    { timestamp: 1640995320, value: 46.5 },
+    { timestamp: 1640995380, value: 48.1 },
+    { timestamp: 1640995440, value: 47.3 },
+    { timestamp: 1640995500, value: 78.9 }, // Anomaly
+    { timestamp: 1640995560, value: 49.2 },
+    { timestamp: 1640995620, value: 46.8 },
+    { timestamp: 1640995680, value: 47.5 },
+    { timestamp: 1640995740, value: 48.3 },
+    { timestamp: 1640995800, value: 12.1 }, // Another anomaly
+    { timestamp: 1640995860, value: 47.9 }
+  ]
+  
+  // Statistical anomaly detection using moving window
+  let detect_anomalies = fn(data: Array[DataPoint], detector: AnomalyDetector) {
+    let mut results = []
+    
+    for i in 0..data.length() {
+      let point = data[i]
+      
+      // Calculate statistics from window (excluding current point if possible)
+      let window_start = if i >= detector.window_size { i - detector.window_size } else { 0 }
+      let window_end = if i > 0 { i - 1 } else { 0 }
+      
+      let window_data = if window_start <= window_end {
+        let mut window = []
+        for j in window_start..=window_end {
+          window = window.push(data[j])
+        }
+        window
+      } else {
+        [] // No window data available
+      }
+      
+      if window_data.length() > 0 {
+        let values = window_data.map(fn(dp) { dp.value })
+        let mean = values.reduce(fn(acc, v) { acc + v }, 0.0) / values.length().to_float()
+        
+        let variance = values.reduce(fn(acc, v) { 
+          acc + (v - mean) * (v - mean) 
+        }, 0.0) / values.length().to_float()
+        
+        let std_dev = variance.sqrt()
+        let threshold = detector.threshold_multiplier * std_dev
+        
+        let expected_min = mean - threshold
+        let expected_max = mean + threshold
+        
+        let is_anomaly = point.value < expected_min or point.value > expected_max
+        
+        // Calculate anomaly score (how many standard deviations from mean)
+        let anomaly_score = if std_dev == 0.0 {
+          0.0
+        } else {
+          (point.value - mean).abs() / std_dev
+        }
+        
+        results = results.push({
+          timestamp: point.timestamp,
+          value: point.value,
+          expected_range: (expected_min, expected_max),
+          is_anomaly: is_anomaly,
+          anomaly_score: anomaly_score
+        })
+      } else {
+        // Not enough data for detection
+        results = results.push({
+          timestamp: point.timestamp,
+          value: point.value,
+          expected_range: (0.0, 0.0),
+          is_anomaly: false,
+          anomaly_score: 0.0
+        })
+      }
+    }
+    
+    results
+  }
+  
+  let detector = { threshold_multiplier: 2.0, window_size: 5 }
+  let anomaly_results = detect_anomalies(metrics_data, detector)
+  
+  // Find anomalies
+  let anomalies = anomaly_results.filter(fn(r) { r.is_anomaly })
+  assert_true(anomalies.length() >= 2) // Should detect at least the two obvious anomalies
+  
+  // Check first anomaly (value 78.9)
+  let first_anomaly = anomalies.find(fn(a) { a.value == 78.9 })
+  match first_anomaly {
+    Some(anomaly) => {
+      assert_true(anomaly.is_anomaly)
+      assert_true(anomaly.anomaly_score > 2.0)
+      assert_true(anomaly.value > anomaly.expected_range.1)
+    }
+    None => assert_true(false)
+  }
+  
+  // Check second anomaly (value 12.1)
+  let second_anomaly = anomalies.find(fn(a) { a.value == 12.1 })
+  match second_anomaly {
+    Some(anomaly) => {
+      assert_true(anomaly.is_anomaly)
+      assert_true(anomaly.anomaly_score > 2.0)
+      assert_true(anomaly.value < anomaly.expected_range.0)
+    }
+    None => assert_true(false)
+  }
+  
+  // Verify normal values are not flagged as anomalies
+  let normal_values = anomaly_results.filter(fn(r) { not(r.is_anomaly) })
+  assert_true(normal_values.length() > 0)
+  
+  // Check a normal value
+  let normal_value = normal_values.find(fn(r) { r.value == 47.8 })
+  match normal_value {
+    Some(normal) => {
+      assert_false(normal.is_anomaly)
+      assert_true(normal.anomaly_score < 2.0)
+      assert_true(normal.value >= normal.expected_range.0)
+      assert_true(normal.value <= normal.expected_range.1)
+    }
+    None => assert_true(false)
+  }
 }
