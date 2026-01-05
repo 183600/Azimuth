@@ -1,483 +1,509 @@
-// Azimuth 数据处理和转换测试
-// 专注于测试数据处理、转换和验证功能
+// Azimuth Data Processing Transformation Tests
+// This file contains comprehensive tests for data processing and transformation operations
 
-// 测试1: 数据类型转换
-test "数据类型转换测试" {
-  // 整数到字符串转换
-  let int_to_string = Int.to_string(42)
-  assert_eq(int_to_string, "42")
+// Test 1: Data Type Conversion Operations
+test "data type conversion operations" {
+  // Test string to numeric conversions
+  let string_int = "42"
+  let string_float = "3.14159"
+  let string_bool = "true"
   
-  let negative_int_to_string = Int.to_string(-100)
-  assert_eq(negative_int_to_string, "-100")
-  
-  // 字符串到整数转换
-  let string_to_int = "123"
-  match Int.parse(string_to_int) {
-    Some(value) => assert_eq(value, 123)
+  let converted_int = DataTypeConverter::string_to_int(string_int)
+  match converted_int {
+    Some(value) => assert_eq(value, 42)
     None => assert_true(false)
   }
   
-  let negative_string_to_int = "-456"
-  match Int.parse(negative_string_to_int) {
-    Some(value) => assert_eq(value, -456)
+  let converted_float = DataTypeConverter::string_to_float(string_float)
+  match converted_float {
+    Some(value) => assert_true(Math::abs(value - 3.14159) < 0.00001)
     None => assert_true(false)
   }
   
-  // 无效字符串转换
-  let invalid_string = "abc"
-  match Int.parse(invalid_string) {
+  let converted_bool = DataTypeConverter::string_to_bool(string_bool)
+  match converted_bool {
+    Some(value) => assert_true(value)
+    None => assert_true(false)
+  }
+  
+  // Test numeric to string conversions
+  let int_value = 123
+  let float_value = 456.789
+  let bool_value = false
+  
+  let int_to_string = DataTypeConverter::int_to_string(int_value)
+  assert_eq(int_to_string, "123")
+  
+  let float_to_string = DataTypeConverter::float_to_string(float_value)
+  assert_true(float_to_string.contains("456.789"))
+  
+  let bool_to_string = DataTypeConverter::bool_to_string(bool_value)
+  assert_eq(bool_to_string, "false")
+  
+  // Test invalid conversions
+  let invalid_int = "not_a_number"
+  let invalid_int_result = DataTypeConverter::string_to_int(invalid_int)
+  match invalid_int_result {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  let invalid_bool = "maybe"
+  let invalid_bool_result = DataTypeConverter::string_to_bool(invalid_bool)
+  match invalid_bool_result {
     Some(_) => assert_true(false)
     None => assert_true(true)
   }
 }
 
-// 测试2: 数据集合操作
-test "数据集合操作测试" {
-  // 列表创建和操作
-  let empty_list = []
-  assert_eq(empty_list.length(), 0)
+// Test 2: Data Format Transformation
+test "data format transformation" {
+  // Create test data in different formats
+  let json_data = "{\"name\":\"test\",\"value\":42,\"active\":true}"
+  let xml_data = "<data><name>test</name><value>42</value><active>true</active></data>"
+  let csv_data = "name,value,active\ntest,42,true"
   
-  let number_list = [1, 2, 3, 4, 5]
-  assert_eq(number_list.length(), 5)
-  assert_eq(number_list[0], 1)
-  assert_eq(number_list[4], 5)
-  
-  // 列表过滤
-  let filtered_list = number_list.filter(fn(x) { x > 3 })
-  assert_eq(filtered_list.length(), 2)
-  assert_eq(filtered_list[0], 4)
-  assert_eq(filtered_list[1], 5)
-  
-  // 列表映射
-  let mapped_list = number_list.map(fn(x) { x * 2 })
-  assert_eq(mapped_list.length(), 5)
-  assert_eq(mapped_list[0], 2)
-  assert_eq(mapped_list[4], 10)
-  
-  // 列表求和
-  let sum = number_list.reduce(0, fn(acc, x) { acc + x })
-  assert_eq(sum, 15)
-}
-
-// 测试3: 数据验证
-test "数据验证测试" {
-  // 邮箱格式验证
-  let valid_emails = ["test@example.com", "user.name@domain.co.uk", "user+tag@example.org"]
-  let invalid_emails = ["invalid-email", "@example.com", "user@", "user@.com"]
-  
-  for email in valid_emails {
-    assert_true(validate_email(email))
-  }
-  
-  for email in invalid_emails {
-    assert_false(validate_email(email))
-  }
-  
-  // 手机号码验证
-  let valid_phone_numbers = ["1234567890", "+11234567890", "0123456789"]
-  let invalid_phone_numbers = ["123", "abc1234567", "123456789012345"]
-  
-  for phone in valid_phone_numbers {
-    assert_true(validate_phone_number(phone))
-  }
-  
-  for phone in invalid_phone_numbers {
-    assert_false(validate_phone_number(phone))
-  }
-}
-
-// 测试4: 数据压缩和解压
-test "数据压缩和解压测试" {
-  // 简单字符串压缩
-  let original_data = "This is a test string for compression testing"
-  let compressed_data = compress_data(original_data)
-  
-  // 验证压缩后的数据长度小于原始数据
-  assert_true(compressed_data.length() < original_data.length())
-  
-  // 解压并验证数据一致性
-  let decompressed_data = decompress_data(compressed_data)
-  assert_eq(decompressed_data, original_data)
-  
-  // 空字符串压缩测试
-  let empty_string = ""
-  let compressed_empty = compress_data(empty_string)
-  let decompressed_empty = decompress_data(compressed_empty)
-  assert_eq(decompressed_empty, empty_string)
-  
-  // 重复字符压缩测试
-  let repetitive_data = "AAAAABBBBBCCCCCDDDDD"
-  let compressed_repetitive = compress_data(repetitive_data)
-  let decompressed_repetitive = decompress_data(compressed_repetitive)
-  assert_eq(decompressed_repetitive, repetitive_data)
-}
-
-// 测试5: 数据格式转换
-test "数据格式转换测试" {
-  // JSON 格式转换
-  let json_data = "{\"name\":\"John\",\"age\":30,\"city\":\"New York\"}"
-  let parsed_data = parse_json(json_data)
-  
-  match parsed_data {
-    JsonObject(obj) => {
-      match obj["name"] {
-        Some(JsonString(name)) => assert_eq(name, "John")
-        _ => assert_true(false)
-      }
-      match obj["age"] {
-        Some(JsonNumber(age)) => assert_eq(age, 30.0)
-        _ => assert_true(false)
-      }
-      match obj["city"] {
-        Some(JsonString(city)) => assert_eq(city, "New York")
-        _ => assert_true(false)
-      }
+  // Test JSON to object transformation
+  let json_obj = FormatTransformer::json_to_object(json_data)
+  match json_obj {
+    Some(obj) => {
+      assert_eq(Object::get_string(obj, "name"), Some("test"))
+      assert_eq(Object::get_int(obj, "value"), Some(42))
+      assert_eq(Object::get_bool(obj, "active"), Some(true))
     }
-    _ => assert_true(false)
+    None => assert_true(false)
   }
   
-  // XML 格式转换
-  let xml_data = "<person><name>John</name><age>30</age><city>New York</city></person>"
-  let parsed_xml = parse_xml(xml_data)
-  
-  match parsed_xml {
-    XmlElement("person", _, children) => {
-      assert_eq(children.length(), 3)
-      match children[0] {
-        XmlElement("name", _, [XmlText(name)]) => assert_eq(name, "John")
-        _ => assert_true(false)
-      }
-      match children[1] {
-        XmlElement("age", _, [XmlText(age)]) => assert_eq(age, "30")
-        _ => assert_true(false)
-      }
-      match children[2] {
-        XmlElement("city", _, [XmlText(city)]) => assert_eq(city, "New York")
-        _ => assert_true(false)
-      }
+  // Test XML to object transformation
+  let xml_obj = FormatTransformer::xml_to_object(xml_data)
+  match xml_obj {
+    Some(obj) => {
+      assert_eq(Object::get_string(obj, "name"), Some("test"))
+      assert_eq(Object::get_int(obj, "value"), Some(42))
+      assert_eq(Object::get_bool(obj, "active"), Some(true))
     }
-    _ => assert_true(false)
-  }
-}
-
-// 辅助函数：邮箱验证
-fn validate_email(email : String) -> Bool {
-  // 简化的邮箱验证逻辑
-  let has_at = email.contains("@")
-  let has_dot_after_at = {
-    match email.index_of("@") {
-      Some(at_index) => {
-        let domain_part = email.substring(at_index + 1, email.length() - at_index - 1)
-        domain_part.contains(".")
-      }
-      None => false
-    }
-  }
-  has_at && has_dot_after_at
-}
-
-// 辅助函数：手机号码验证
-fn validate_phone_number(phone : String) -> Bool {
-  // 简化的手机号码验证逻辑
-  let digits_only = phone.filter(fn(c) { c >= '0' && c <= '9' })
-  digits_only.length() >= 10 && digits_only.length() <= 15
-}
-
-// 辅助函数：数据压缩
-fn compress_data(data : String) -> String {
-  // 简化的压缩逻辑（实际项目中应使用专业压缩算法）
-  let compressed = []
-  let i = 0
-  while i < data.length() {
-    let current_char = data[i]
-    let count = 1
-    
-    // 计算连续相同字符的数量
-    while i + count < data.length() && data[i + count] == current_char {
-      count = count + 1
-    }
-    
-    // 如果字符重复次数大于等于3，使用压缩格式
-    if count >= 3 {
-      compressed.push('{')
-      compressed.push(current_char)
-      compressed.push(Int.to_string(count))
-      compressed.push('}')
-    } else {
-      // 否则直接添加字符
-      let j = 0
-      while j < count {
-        compressed.push(current_char)
-        j = j + 1
-      }
-    }
-    
-    i = i + count
+    None => assert_true(false)
   }
   
-  String.from_array(compressed)
-}
-
-// 辅助函数：数据解压
-fn decompress_data(compressed : String) -> String {
-  // 简化的解压逻辑
-  let decompressed = []
-  let i = 0
-  
-  while i < compressed.length() {
-    if compressed[i] == '{' {
-      // 压缩格式：{字符X次数}
-      if i + 2 < compressed.length() {
-        let char_to_repeat = compressed[i + 1]
-        let count_str = ""
-        let j = i + 2
-        
-        // 提取次数
-        while j < compressed.length() && compressed[j] != '}' {
-          count_str = count_str + compressed[j]
-          j = j + 1
-        }
-        
-        match Int.parse(count_str) {
-          Some(count) => {
-            let k = 0
-            while k < count {
-              decompressed.push(char_to_repeat)
-              k = k + 1
-            }
-          }
-          None => {
-            // 如果解析失败，直接添加原始字符
-            decompressed.push(compressed[i])
-          }
-        }
-        
-        i = j + 1
-      } else {
-        decompressed.push(compressed[i])
-        i = i + 1
-      }
-    } else {
-      // 普通字符，直接添加
-      decompressed.push(compressed[i])
-      i = i + 1
+  // Test CSV to array transformation
+  let csv_array = FormatTransformer::csv_to_array(csv_data)
+  match csv_array {
+    Some(array) => {
+      assert_eq(array.length(), 2) // Header + 1 data row
+      assert_eq(array[0].length(), 3) // 3 columns
+      assert_eq(array[0][0], "name")
+      assert_eq(array[0][1], "value")
+      assert_eq(array[0][2], "active")
+      assert_eq(array[1][0], "test")
+      assert_eq(array[1][1], "42")
+      assert_eq(array[1][2], "true")
     }
+    None => assert_true(false)
   }
   
-  String.from_array(decompressed)
-}
-
-// JSON 数据类型定义
-type JsonValue {
-  JsonString(String)
-  JsonNumber(Float)
-  JsonBoolean(Bool)
-  JsonArray(Array[JsonValue])
-  JsonObject(Array[(String, JsonValue)])
-  JsonNull
-}
-
-// 辅助函数：解析 JSON
-fn parse_json(json : String) -> JsonValue {
-  // 简化的 JSON 解析逻辑
-  if json.length() > 0 && json[0] == '{' && json[json.length() - 1] == '}' {
-    let inner = json.substring(1, json.length() - 2)
-    let pairs = split_json_pairs(inner)
-    let obj = []
-    
-    for pair in pairs {
-      match split_key_value(pair) {
-        Some((key, value)) => {
-          obj.push((key, parse_json_value(value)))
-        }
-        None => {}
-      }
-    }
-    
-    JsonObject(obj)
-  } else {
-    JsonNull
-  }
-}
-
-// 辅助函数：解析 JSON 值
-fn parse_json_value(value : String) -> JsonValue {
-  let trimmed = value.trim()
+  // Test object to JSON transformation
+  let test_obj = Object::new()
+  Object::set_string(test_obj, "name", "transformed")
+  Object::set_int(test_obj, "value", 100)
+  Object::set_bool(test_obj, "active", false)
   
-  if trimmed.length() > 0 && trimmed[0] == '"' && trimmed[trimmed.length() - 1] == '"' {
-    // 字符串值
-    JsonString(trimmed.substring(1, trimmed.length() - 2))
-  } else if trimmed == "true" {
-    JsonBoolean(true)
-  } else if trimmed == "false" {
-    JsonBoolean(false)
-  } else if trimmed == "null" {
-    JsonNull
-  } else {
-    // 尝试解析为数字
-    match Float.parse(trimmed) {
-      Some(num) => JsonNumber(num)
-      None => JsonString(trimmed)
-    }
-  }
+  let transformed_json = FormatTransformer::object_to_json(test_obj)
+  assert_true(transformed_json.contains("transformed"))
+  assert_true(transformed_json.contains("100"))
+  assert_true(transformed_json.contains("false"))
 }
 
-// 辅助函数：分割 JSON 键值对
-fn split_json_pairs(pairs_str : String) -> Array[String] {
-  let pairs = []
-  let current = ""
-  let in_string = false
-  let i = 0
+// Test 3: Data Aggregation and Grouping
+test "data aggregation and grouping operations" {
+  // Create test data
+  let data_points = [
+    DataPoint::new("category_a", 10.0, "region_1"),
+    DataPoint::new("category_b", 20.0, "region_1"),
+    DataPoint::new("category_a", 15.0, "region_2"),
+    DataPoint::new("category_c", 25.0, "region_2"),
+    DataPoint::new("category_b", 30.0, "region_3"),
+    DataPoint::new("category_a", 12.0, "region_3")
+  ]
   
-  while i < pairs_str.length() {
-    let c = pairs_str[i]
-    
-    if c == '"' && (i == 0 || pairs_str[i - 1] != '\\') {
-      in_string = !in_string
+  // Test grouping by category
+  let grouped_by_category = DataAggregator::group_by(data_points, func(dp) { DataPoint::category(dp) })
+  
+  assert_eq(grouped_by_category.length(), 3) // 3 categories
+  
+  let category_a = grouped_by_category.get("category_a")
+  match category_a {
+    Some(points) => {
+      assert_eq(points.length(), 3)
+      assert_eq(points[0].value, 10.0)
+      assert_eq(points[1].value, 15.0)
+      assert_eq(points[2].value, 12.0)
     }
-    
-    if c == ',' && !in_string {
-      pairs.push(current.trim())
-      current = ""
-    } else {
-      current = current + c
-    }
-    
-    i = i + 1
+    None => assert_true(false)
   }
   
-  if current.length() > 0 {
-    pairs.push(current.trim())
+  // Test aggregation functions
+  let category_a_sum = DataAggregator::sum(category_a.unwrap())
+  assert_eq(category_a_sum, 37.0)
+  
+  let category_a_avg = DataAggregator::average(category_a.unwrap())
+  assert_true(Math::abs(category_a_avg - 12.3333333333) < 0.00001)
+  
+  let category_a_max = DataAggregator::max(category_a.unwrap())
+  assert_eq(category_a_max, 15.0)
+  
+  let category_a_min = DataAggregator::min(category_a.unwrap())
+  assert_eq(category_a_min, 10.0)
+  
+  // Test multi-level grouping
+  let multi_grouped = DataAggregator::multi_level_group(
+    data_points,
+    [func(dp) { DataPoint::category(dp) }, func(dp) { DataPoint::region(dp) }]
+  )
+  
+  assert_true(multi_grouped.length() > 0)
+}
+
+// Test 4: Data Filtering and Transformation Pipeline
+test "data filtering and transformation pipeline" {
+  // Create test data
+  let raw_data = [
+    RawDataItem::new("item_1", 100, "active", "2023-01-01"),
+    RawDataItem::new("item_2", 200, "inactive", "2023-01-02"),
+    RawDataItem::new("item_3", 150, "active", "2023-01-03"),
+    RawDataItem::new("item_4", 50, "pending", "2023-01-04"),
+    RawDataItem::new("item_5", 300, "active", "2023-01-05")
+  ]
+  
+  // Create transformation pipeline
+  let pipeline = DataPipeline::new()
+  
+  // Add filter stage
+  DataPipeline::add_filter(pipeline, func(item) {
+    RawDataItem::status(item) == "active"
+  })
+  
+  // Add transformation stage
+  DataPipeline::add_transform(pipeline, func(item) {
+    let new_value = RawDataItem::value(item) * 1.1 // Apply 10% increase
+    let new_status = "processed"
+    RawDataItem::update(item, new_value, new_status)
+  })
+  
+  // Add sorting stage
+  DataPipeline::add_sort(pipeline, func(item1, item2) {
+    RawDataItem::value(item1) - RawDataItem::value(item2)
+  })
+  
+  // Execute pipeline
+  let processed_data = DataPipeline::execute(pipeline, raw_data)
+  
+  // Verify results
+  assert_eq(processed_data.length(), 3) // Only active items
+  
+  // Check values are transformed (10% increase)
+  assert_eq(processed_data[0].value, 110.0) // 100 * 1.1
+  assert_eq(processed_data[1].value, 165.0) // 150 * 1.1
+  assert_eq(processed_data[2].value, 330.0) // 300 * 1.1
+  
+  // Check status is updated
+  for item in processed_data {
+    assert_eq(item.status, "processed")
   }
   
-  pairs
+  // Check sorting (ascending by value)
+  assert_true(processed_data[0].value <= processed_data[1].value)
+  assert_true(processed_data[1].value <= processed_data[2].value)
 }
 
-// 辅助函数：分割键和值
-fn split_key_value(pair : String) -> Option[(String, String)] {
-  match pair.index_of(":") {
-    Some(colon_index) => {
-      let key = pair.substring(0, colon_index).trim()
-      let value = pair.substring(colon_index + 1, pair.length() - colon_index - 1).trim()
-      Some((key, value))
-    }
-    None => None
-  }
-}
-
-// XML 数据类型定义
-type XmlElement {
-  XmlElement(String, Array[(String, String)], Array[XmlContent])
-}
-
-type XmlContent {
-  XmlElement(XmlElement)
-  XmlText(String)
-  XmlComment(String)
-}
-
-// 辅助函数：解析 XML
-fn parse_xml(xml : String) -> XmlElement {
-  // 简化的 XML 解析逻辑
-  if xml.length() > 0 && xml[0] == '<' && xml[xml.length() - 1] == '>' {
-    match find_tag_name(xml) {
-      Some(tag_name) => {
-        let inner_content = extract_inner_content(xml, tag_name)
-        let children = parse_xml_content(inner_content)
-        XmlElement(tag_name, [], children)
-      }
-      None => XmlElement("root", [], [])
-    }
-  } else {
-    XmlElement("root", [], [])
-  }
-}
-
-// 辅助函数：查找标签名
-fn find_tag_name(xml : String) -> Option[String] {
-  if xml.length() > 1 && xml[0] == '<' {
-    let i = 1
-    let tag_name = ""
-    
-    while i < xml.length() && xml[i] != ' ' && xml[i] != '>' {
-      tag_name = tag_name + xml[i]
-      i = i + 1
-    }
-    
-    Some(tag_name)
-  } else {
-    None
-  }
-}
-
-// 辅助函数：提取内部内容
-fn extract_inner_content(xml : String, tag_name : String) -> String {
-  let start_tag = "<" + tag_name + ">"
-  let end_tag = "</" + tag_name + ">"
+// Test 5: Data Validation and Cleaning
+test "data validation and cleaning operations" {
+  // Create test data with various issues
+  let dirty_data = [
+    DirtyDataItem::new("valid_item", 42, "valid@email.com", "2023-01-01"),
+    DirtyDataItem::new("", 0, "invalid_email", "2023-13-45"), // Invalid name, email, date
+    DirtyDataItem::new("null_value_item", -1, "", "2023-02-30"), // Negative value, empty email, invalid date
+    DirtyDataItem::new("valid_item_2", 100, "another@valid.com", "2023-01-15"),
+    DirtyDataItem::new("whitespace_item", 50, "  spaced@email.com  ", " 2023-01-20 ") // Whitespace issues
+  ]
   
-  match xml.index_of(start_tag) {
-    Some(start_index) => {
-      let content_start = start_index + start_tag.length()
-      match xml.index_of(end_tag) {
-        Some(end_index) => {
-          xml.substring(content_start, end_index - content_start)
-        }
-        None => ""
-      }
-    }
-    None => ""
-  }
+  // Create validation rules
+  let validator = DataValidator::new()
+  
+  DataValidator::add_rule(validator, "name", ValidationRule::non_empty())
+  DataValidator::add_rule(validator, "value", ValidationRule::min_value(0))
+  DataValidator::add_rule(validator, "email", ValidationRule::email_format())
+  DataValidator::add_rule(validator, "date", ValidationRule::date_format())
+  
+  // Validate data
+  let validation_results = DataValidator::validate(validator, dirty_data)
+  
+  // Check validation results
+  assert_eq(validation_results.length(), 5)
+  assert_true(validation_results[0].is_valid) // First item is valid
+  assert_false(validation_results[1].is_valid) // Second item has multiple issues
+  assert_false(validation_results[2].is_valid) // Third item has multiple issues
+  assert_true(validation_results[3].is_valid) // Fourth item is valid
+  assert_false(validation_results[4].is_valid) // Fifth item has whitespace issues
+  
+  // Clean data
+  let cleaned_data = DataCleaner::clean(dirty_data)
+  
+  // Verify cleaning results
+  assert_eq(cleaned_data.length(), 5)
+  
+  // Check whitespace trimming
+  assert_eq(cleaned_data[4].name, "whitespace_item")
+  assert_eq(cleaned_data[4].email, "spaced@email.com")
+  assert_eq(cleaned_data[4].date, "2023-01-20")
+  
+  // Check default values for invalid data
+  assert_eq(cleaned_data[1].name, "default_name")
+  assert_eq(cleaned_data[1].value, 0) // Default for negative values
+  assert_eq(cleaned_data[1].email, "default@example.com")
+  assert_eq(cleaned_data[1].date, "2023-01-01") // Default date
 }
 
-// 辅助函数：解析 XML 内容
-fn parse_xml_content(content : String) -> Array[XmlContent] {
-  let children = []
-  let i = 0
+// Test 6: Data Normalization and Standardization
+test "data normalization and standardization operations" {
+  // Create test data with different scales
+  let raw_measurements = [
+    Measurement::new("temperature", 25.0, "celsius"),
+    Measurement::new("temperature", 77.0, "fahrenheit"),
+    Measurement::new("temperature", 298.15, "kelvin"),
+    Measurement::new("pressure", 101325.0, "pascal"),
+    Measurement::new("pressure", 1.01325, "bar"),
+    Measurement::new("pressure", 760.0, "mmhg")
+  ]
   
-  while i < content.length() {
-    if content[i] == '<' {
-      // 处理元素
-      match find_element_end(content, i) {
-        Some(end_index) => {
-          let element_str = content.substring(i, end_index - i)
-          let element = parse_xml(element_str)
-          children.push(XmlElement(element))
-          i = end_index
-        }
-        None => {
-          i = i + 1
-        }
-      }
-    } else {
-      // 处理文本
-      let text_start = i
-      while i < content.length() && content[i] != '<' {
-        i = i + 1
-      }
-      let text = content.substring(text_start, i - text_start).trim()
-      if text.length() > 0 {
-        children.push(XmlText(text))
-      }
+  // Create normalizer
+  let normalizer = DataNormalizer::new()
+  
+  // Add normalization rules
+  DataNormalizer::add_rule(normalizer, "temperature", func(m) {
+    match Measurement::unit(m) {
+      "celsius" => Measurement::value(m)
+      "fahrenheit" => (Measurement::value(m) - 32.0) * 5.0 / 9.0
+      "kelvin" => Measurement::value(m) - 273.15
+      _ => Measurement::value(m)
     }
-  }
+  })
   
-  children
+  DataNormalizer::add_rule(normalizer, "pressure", func(m) {
+    match Measurement::unit(m) {
+      "pascal" => Measurement::value(m)
+      "bar" => Measurement::value(m) * 100000.0
+      "mmhg" => Measurement::value(m) * 133.322
+      _ => Measurement::value(m)
+    }
+  })
+  
+  // Normalize data
+  let normalized_data = DataNormalizer::normalize(normalizer, raw_measurements)
+  
+  // Verify normalization results
+  assert_eq(normalized_data.length(), 6)
+  
+  // Check temperature normalization (all in Celsius)
+  assert_true(Math::abs(normalized_data[0].value - 25.0) < 0.01) // Already Celsius
+  assert_true(Math::abs(normalized_data[1].value - 25.0) < 0.01) // 77°F = 25°C
+  assert_true(Math::abs(normalized_data[2].value - 25.0) < 0.01) // 298.15K = 25°C
+  
+  // Check pressure normalization (all in Pascal)
+  assert_true(Math::abs(normalized_data[3].value - 101325.0) < 1.0) // Already Pascal
+  assert_true(Math::abs(normalized_data[4].value - 101325.0) < 1.0) // 1.01325 bar = 101325 Pa
+  assert_true(Math::abs(normalized_data[5].value - 101325.0) < 1.0) // 760 mmHg = 101325 Pa
+  
+  // Test standardization (z-score normalization)
+  let values = [10.0, 20.0, 30.0, 40.0, 50.0]
+  let standardized_values = DataStandardizer::z_score(values)
+  
+  assert_eq(standardized_values.length(), 5)
+  assert_true(Math::abs(standardized_values[2]) < 0.01) // Mean should be close to 0
+  assert_true(Math::abs(standardized_values[0] + 1.264911064) < 0.01) // First value z-score
+  assert_true(Math::abs(standardized_values[4] - 1.264911064) < 0.01) // Last value z-score
 }
 
-// 辅助函数：查找元素结束位置
-fn find_element_end(content : String, start : Int) -> Option[Int] {
-  if content[start] != '<' {
-    None
-  } else {
-    match find_tag_name(content.substring(start, content.length() - start)) {
-      Some(tag_name) => {
-        let end_tag = "</" + tag_name + ">"
-        match content.index_of(end_tag) {
-          Some(end_index) => Some(end_index + end_tag.length())
-          None => None
-        }
-      }
+// Test 7: Data Enrichment and Augmentation
+test "data enrichment and augmentation operations" {
+  // Create base test data
+  let base_data = [
+    BaseDataItem::new("user_1", "New York", 100.0),
+    BaseDataItem::new("user_2", "London", 150.0),
+    BaseDataItem::new("user_3", "Tokyo", 200.0),
+    BaseDataItem::new("user_4", "Paris", 120.0)
+  ]
+  
+  // Create enrichment sources
+  let location_data = [
+    ("New York", "USA", "North America", 8419000),
+    ("London", "UK", "Europe", 8982000),
+    ("Tokyo", "Japan", "Asia", 13929000),
+    ("Paris", "France", "Europe", 2141000)
+  ]
+  
+  let category_ranges = [
+    ("low", 0.0, 130.0),
+    ("medium", 130.0, 170.0),
+    ("high", 170.0, 1000.0)
+  ]
+  
+  // Create enricher
+  let enricher = DataEnricher::new()
+  
+  // Add enrichment functions
+  DataEnricher::add_function(enricher, "country", func(item) {
+    let city = BaseDataItem::location(item)
+    match location_data.find(func((loc, _, _, _)) { loc == city }) {
+      Some((_, country, _, _)) => Some(StringValue(country))
       None => None
     }
+  })
+  
+  DataEnricher::add_function(enricher, "continent", func(item) {
+    let city = BaseDataItem::location(item)
+    match location_data.find(func((loc, _, _, _)) { loc == city }) {
+      Some((_, _, continent, _)) => Some(StringValue(continent))
+      None => None
+    }
+  })
+  
+  DataEnricher::add_function(enricher, "population", func(item) {
+    let city = BaseDataItem::location(item)
+    match location_data.find(func((loc, _, _, _)) { loc == city }) {
+      Some((_, _, _, population)) => Some(IntValue(population))
+      None => None
+    }
+  })
+  
+  DataEnricher::add_function(enricher, "category", func(item) {
+    let value = BaseDataItem::value(item)
+    match category_ranges.find(func((_, min, max)) { value >= min && value < max }) {
+      Some((category, _, _)) => Some(StringValue(category))
+      None => None
+    }
+  })
+  
+  // Enrich data
+  let enriched_data = DataEnricher::enrich(enricher, base_data)
+  
+  // Verify enrichment results
+  assert_eq(enriched_data.length(), 4)
+  
+  // Check first item (New York)
+  assert_eq(EnrichedDataItem::get_string(enriched_data[0], "country"), Some("USA"))
+  assert_eq(EnrichedDataItem::get_string(enriched_data[0], "continent"), Some("North America"))
+  assert_eq(EnrichedDataItem::get_int(enriched_data[0], "population"), Some(8419000))
+  assert_eq(EnrichedDataItem::get_string(enriched_data[0], "category"), Some("low"))
+  
+  // Check second item (London)
+  assert_eq(EnrichedDataItem::get_string(enriched_data[1], "country"), Some("UK"))
+  assert_eq(EnrichedDataItem::get_string(enriched_data[1], "continent"), Some("Europe"))
+  assert_eq(EnrichedDataItem::get_int(enriched_data[1], "population"), Some(8982000))
+  assert_eq(EnrichedDataItem::get_string(enriched_data[1], "category"), Some("medium"))
+  
+  // Check third item (Tokyo)
+  assert_eq(EnrichedDataItem::get_string(enriched_data[2], "country"), Some("Japan"))
+  assert_eq(EnrichedDataItem::get_string(enriched_data[2], "continent"), Some("Asia"))
+  assert_eq(EnrichedDataItem::get_int(enriched_data[2], "population"), Some(13929000))
+  assert_eq(EnrichedDataItem::get_string(enriched_data[2], "category"), Some("high"))
+}
+
+// Test 8: Complex Data Transformation Workflows
+test "complex data transformation workflows" {
+  // Create raw input data
+  let raw_sales_data = [
+    SalesRecord::new("2023-01-01", "Product A", 100.0, 5, "North", "Online"),
+    SalesRecord::new("2023-01-02", "Product B", 150.0, 3, "South", "Retail"),
+    SalesRecord::new("2023-01-03", "Product A", 95.0, 8, "East", "Online"),
+    SalesRecord::new("2023-01-04", "Product C", 200.0, 2, "West", "Retail"),
+    SalesRecord::new("2023-01-05", "Product B", 160.0, 4, "North", "Online")
+  ]
+  
+  // Create complex transformation workflow
+  let workflow = DataWorkflow::new()
+  
+  // Stage 1: Data validation
+  DataWorkflow::add_stage(workflow, "validation", func(data) {
+    data.filter(func(record) {
+      SalesRecord::price(record) > 0 && 
+      SalesRecord::quantity(record) > 0 &&
+      SalesRecord::date(record).length() == 10
+    })
+  })
+  
+  // Stage 2: Calculate derived fields
+  DataWorkflow::add_stage(workflow, "derivation", func(data) {
+    data.map(func(record) {
+      let total_value = SalesRecord::price(record) * SalesRecord::quantity(record).to_float()
+      let discount = if total_value > 400.0 { total_value * 0.1 } else { 0.0 }
+      let final_value = total_value - discount
+      SalesRecord::add_derived_fields(record, total_value, discount, final_value)
+    })
+  })
+  
+  // Stage 3: Categorization
+  DataWorkflow::add_stage(workflow, "categorization", func(data) {
+    data.map(func(record) {
+      let category = match SalesRecord::final_value(record) {
+        v if v < 200.0 => "Low Value"
+        v if v < 500.0 => "Medium Value"
+        _ => "High Value"
+      }
+      SalesRecord::set_category(record, category)
+    })
+  })
+  
+  // Stage 4: Aggregation
+  DataWorkflow::add_stage(workflow, "aggregation", func(data) {
+    let grouped = DataAggregator::group_by(data, func(record) { 
+      SalesRecord::product(record) 
+    })
+    
+    grouped.map(func((product, records)) {
+      let total_revenue = records.map(func(r) { SalesRecord::final_value(r) }).sum()
+      let total_quantity = records.map(func(r) { SalesRecord::quantity(r) }).sum()
+      let avg_price = total_revenue / total_quantity.to_float()
+      
+      AggregatedSalesData::new(product, total_revenue, total_quantity, avg_price)
+    })
+  })
+  
+  // Execute workflow
+  let final_results = DataWorkflow::execute(workflow, raw_sales_data)
+  
+  // Verify workflow results
+  assert_eq(final_results.length(), 3) // 3 unique products
+  
+  // Check Product A aggregation
+  let product_a = final_results.find(func(data) { AggregatedSalesData::product(data) == "Product A" })
+  match product_a {
+    Some(data) => {
+      assert_eq(AggregatedSalesData::total_quantity(data), 13) // 5 + 8
+      assert_true(Math::abs(AggregatedSalesData::total_revenue(data) - 1210.0) < 0.01) // (100*5 + 95*8) - discounts
+      assert_true(Math::abs(AggregatedSalesData::avg_price(data) - 93.0769) < 0.01)
+    }
+    None => assert_true(false)
+  }
+  
+  // Check Product B aggregation
+  let product_b = final_results.find(func(data) { AggregatedSalesData::product(data) == "Product B" })
+  match product_b {
+    Some(data) => {
+      assert_eq(AggregatedSalesData::total_quantity(data), 7) // 3 + 4
+      assert_true(Math::abs(AggregatedSalesData::total_revenue(data) - 1035.0) < 0.01) // (150*3 + 160*4) - discounts
+      assert_true(Math::abs(AggregatedSalesData::avg_price(data) - 147.8571) < 0.01)
+    }
+    None => assert_true(false)
+  }
+  
+  // Check Product C aggregation
+  let product_c = final_results.find(func(data) { AggregatedSalesData::product(data) == "Product C" })
+  match product_c {
+    Some(data) => {
+      assert_eq(AggregatedSalesData::total_quantity(data), 2)
+      assert_true(Math::abs(AggregatedSalesData::total_revenue(data) - 400.0) < 0.01) // 200*2 - discount
+      assert_true(Math::abs(AggregatedSalesData::avg_price(data) - 200.0) < 0.01)
+    }
+    None => assert_true(false)
   }
 }
