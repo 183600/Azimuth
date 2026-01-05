@@ -6462,6 +6462,13 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     7: (__test_617a696d7574685f6865616c7468636172655f74656c656d657472795f74657374732e6d6274_7, ["healthcare telemetry error handling"]),
     8: (__test_617a696d7574685f6865616c7468636172655f74656c656d657472795f74657374732e6d6274_8, ["healthcare telemetry data persistence"]),
   },
+  "azimuth_graphql_api_tests.mbt": {
+    0: (__test_617a696d7574685f6772617068716c5f6170695f74657374732e6d6274_0, ["graphql schema definition and validation"]),
+    1: (__test_617a696d7574685f6772617068716c5f6170695f74657374732e6d6274_1, ["graphql query parsing and execution"]),
+    2: (__test_617a696d7574685f6772617068716c5f6170695f74657374732e6d6274_2, ["graphql telemetry data resolvers"]),
+    3: (__test_617a696d7574685f6772617068716c5f6170695f74657374732e6d6274_3, ["graphql mutations for telemetry data"]),
+    4: (__test_617a696d7574685f6772617068716c5f6170695f74657374732e6d6274_4, ["graphql subscription for real-time telemetry"]),
+  },
   "azimuth_gauge_detailed_tests.mbt": {
     0: (__test_617a696d7574685f67617567655f64657461696c65645f74657374732e6d6274_0, ["基本Gauge创建和属性测试"]),
     1: (__test_617a696d7574685f67617567655f64657461696c65645f74657374732e6d6274_1, ["Gauge值设置和更新测试"]),
