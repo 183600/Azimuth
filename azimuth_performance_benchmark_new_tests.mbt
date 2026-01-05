@@ -1,647 +1,490 @@
-// Azimuth Performance Benchmark Tests
-// This file contains test cases for performance benchmarking of telemetry operations
+// Azimuth Telemetry System - Performance Benchmark Tests
+// This file contains test cases for performance benchmarking functionality
 
-// Test 1: Span Creation Performance
-test "span creation performance benchmark" {
-  // Measure span creation time
-  let start_time = current_timestamp_millis()
-  let span_count = 10000
+// Test 1: Metrics Collection Performance
+test "metrics collection performance" {
+  let benchmark = Benchmark::new("metrics_collection")
+  let iterations = 10000
+  let metrics_collector = MetricsCollector::new()
   
-  // Create spans in a loop
-  let mut spans = []
-  for i in 0..span_count {
-    let span_id = "span_" + i.to_string()
-    let trace_id = "trace_perf_test"
-    let span_context = SpanContext::new(trace_id, span_id, true, "performance_test")
-    let span = Span::new("operation_" + i.to_string(), Internal, span_context)
-    spans = spans.push(span)
-  }
-  
-  let end_time = current_timestamp_millis()
-  let total_time = end_time - start_time
-  let avg_time_per_span = total_time.to_float() / span_count.to_float()
-  
-  // Performance assertions
-  assert_true(total_time < 5000)  // Should complete within 5 seconds
-  assert_true(avg_time_per_span < 0.5)  // Each span should take less than 0.5ms
-  assert_eq(spans.length(), span_count)
-  
-  // Verify span properties
-  for i in 0..10 {
-    let span = spans[i]
-    assert_eq(Span::name(span), "operation_" + i.to_string())
-    let span_ctx = Span::span_context(span)
-    assert_eq(SpanContext::trace_id(span_ctx), "trace_perf_test")
-    assert_eq(SpanContext::span_id(span_ctx), "span_" + i.to_string())
-  }
-}
-
-// Test 2: Metric Recording Performance
-test "metric recording performance benchmark" {
-  // Setup metric provider
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "performance_meter")
-  
-  // Create different metric types
-  let counter = Meter::create_counter(meter, "perf_counter", Some("Performance counter"), Some("count"))
-  let histogram = Meter::create_histogram(meter, "perf_histogram", Some("Performance histogram"), Some("ms"))
-  let gauge = Meter::create_gauge(meter, "perf_gauge", Some("Performance gauge"), Some("value"))
-  
-  // Measure metric recording performance
-  let start_time = current_timestamp_millis()
-  let operation_count = 50000
-  
-  // Record metrics
-  for i in 0..operation_count {
-    Counter::add(counter, 1.0)
-    Histogram::record(histogram, (i % 1000).to_float())
-    if i % 100 == 0 {
-      Gauge::record(gauge, i.to_float())
+  // Benchmark counter operations
+  let counter_time = Benchmark::measure(benchmark, @() {
+    for i in 0..<iterations {
+      MetricsCollector::record_counter(metrics_collector, "test_counter", i.to_float())
     }
-  }
+  })
   
-  let end_time = current_timestamp_millis()
-  let total_time = end_time - start_time
-  let avg_time_per_operation = total_time.to_float() / operation_count.to_float()
+  // Verify performance is acceptable (should complete in reasonable time)
+  assert_true(counter_time < 1000.0) // Less than 1 second
   
-  // Performance assertions
-  assert_true(total_time < 3000)  // Should complete within 3 seconds
-  assert_true(avg_time_per_operation < 0.06)  // Each operation should take less than 0.06ms
+  // Benchmark histogram operations
+  let histogram_time = Benchmark::measure(benchmark, @() {
+    for i in 0..<iterations {
+      MetricsCollector::record_histogram(metrics_collector, "test_histogram", i.to_float())
+    }
+  })
   
-  // Verify metric counts
-  assert_eq(operation_count, 50000)
+  assert_true(histogram_time < 1000.0) // Less than 1 second
   
-  // Gauge should have been recorded 500 times (every 100 operations)
-  // Note: This is a simplified check, actual implementation may vary
+  // Benchmark gauge operations
+  let gauge_time = Benchmark::measure(benchmark, @() {
+    for i in 0..<iterations {
+      MetricsCollector::record_gauge(metrics_collector, "test_gauge", i.to_float())
+    }
+  })
+  
+  assert_true(gauge_time < 1000.0) // Less than 1 second
+  
+  // Verify data was collected correctly
+  let metrics_data = MetricsCollector::get_data(metrics_collector)
+  assert_true(metrics_data.length() >= iterations * 3) // 3 metrics per iteration
 }
 
-// Test 3: Attribute Operations Performance
-test "attribute operations performance benchmark" {
-  // Test attribute setting and getting performance
-  let attribute_count = 20000
-  let start_time = current_timestamp_millis()
+// Test 2: Span Operations Performance
+test "span operations performance" {
+  let benchmark = Benchmark::new("span_operations")
+  let iterations = 5000
+  let trace_collector = TraceCollector::new()
   
-  // Create attributes and set values
-  let attrs = Attributes::new()
-  for i in 0..attribute_count {
-    let key = "attr_" + i.to_string()
-    let value = StringValue("value_" + i.to_string())
-    Attributes::set(attrs, key, value)
-  }
+  // Benchmark span creation
+  let span_creation_time = Benchmark::measure(benchmark, @() {
+    for i in 0..<iterations {
+      let span_name = "operation_" + i.to_string()
+      TraceCollector::create_span(trace_collector, span_name, "parent_" + i.to_string())
+    }
+  })
   
-  let set_end_time = current_timestamp_millis()
-  let set_time = set_end_time - start_time
+  assert_true(span_creation_time < 1000.0) // Less than 1 second
   
-  // Get all attributes
-  for i in 0..attribute_count {
-    let key = "attr_" + i.to_string()
-    let _ = Attributes::get(attrs, key)
-  }
-  
-  let get_end_time = current_timestamp_millis()
-  let get_time = get_end_time - set_end_time
-  
-  // Performance assertions
-  assert_true(set_time < 2000)  // Setting should complete within 2 seconds
-  assert_true(get_time < 1000)  // Getting should complete within 1 second
-  
-  let avg_set_time = set_time.to_float() / attribute_count.to_float()
-  let avg_get_time = get_time.to_float() / attribute_count.to_float()
-  
-  assert_true(avg_set_time < 0.1)  // Each set should take less than 0.1ms
-  assert_true(avg_get_time < 0.05)  // Each get should take less than 0.05ms
-  
-  // Verify some attributes
-  let result_0 = Attributes::get(attrs, "attr_0")
-  match result_0 {
-    Some(StringValue(v)) => assert_eq(v, "value_0")
-    _ => assert_true(false)
-  }
-  
-  let result_9999 = Attributes::get(attrs, "attr_9999")
-  match result_9999 {
-    Some(StringValue(v)) => assert_eq(v, "value_9999")
-    _ => assert_true(false)
-  }
-  
-  let non_existent = Attributes::get(attrs, "non_existent")
-  match non_existent {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-}
-
-// Test 4: Context Propagation Performance
-test "context propagation performance benchmark" {
-  // Test context creation and propagation performance
-  let context_count = 10000
-  let start_time = current_timestamp_millis()
-  
-  // Create root context
-  let root_ctx = Context::root()
-  
-  // Create contexts with values
-  let mut contexts = []
-  for i in 0..context_count {
-    let key = ContextKey::new("key_" + i.to_string())
-    let ctx = Context::with_value(root_ctx, key, "value_" + i.to_string())
-    contexts = contexts.push(ctx)
-  }
-  
-  let create_end_time = current_timestamp_millis()
-  let create_time = create_end_time - start_time
-  
-  // Test context value retrieval
-  for i in 0..context_count {
-    let ctx = contexts[i]
-    let key = ContextKey::new("key_" + i.to_string())
-    let _ = Context::get(ctx, key)
-  }
-  
-  let retrieve_end_time = current_timestamp_millis()
-  let retrieve_time = retrieve_end_time - create_end_time
-  
-  // Performance assertions
-  assert_true(create_time < 3000)  // Creation should complete within 3 seconds
-  assert_true(retrieve_time < 2000)  // Retrieval should complete within 2 seconds
-  
-  let avg_create_time = create_time.to_float() / context_count.to_float()
-  let avg_retrieve_time = retrieve_time.to_float() / context_count.to_float()
-  
-  assert_true(avg_create_time < 0.3)  // Each creation should take less than 0.3ms
-  assert_true(avg_retrieve_time < 0.2)  // Each retrieval should take less than 0.2ms
-  
-  // Verify some context values
-  let ctx_0 = contexts[0]
-  let key_0 = ContextKey::new("key_0")
-  let value_0 = Context::get(ctx_0, key_0)
-  match value_0 {
-    Some(v) => assert_eq(v, "value_0")
-    None => assert_true(false)
-  }
-  
-  let ctx_999 = contexts[999]
-  let key_999 = ContextKey::new("key_999")
-  let value_999 = Context::get(ctx_999, key_999)
-  match value_999 {
-    Some(v) => assert_eq(v, "value_999")
-    None => assert_true(false)
-  }
-}
-
-// Test 5: Serialization Performance
-test "serialization performance benchmark" {
-  // Test span serialization performance
-  let span_count = 5000
+  // Benchmark span event addition
   let spans = []
-  
-  // Create test spans
-  for i in 0..span_count {
-    let span_id = "span_" + i.to_string()
-    let trace_id = "trace_serialization_test"
-    let span_context = SpanContext::new(trace_id, span_id, true, "serialization_test")
-    let span = Span::new("operation_" + i.to_string(), Internal, span_context)
-    spans = spans.push(span)
+  for i in 0..<100 {
+    spans.push(TraceCollector::create_span(trace_collector, "test_span_" + i.to_string(), "parent"))
   }
   
-  // Measure serialization time
-  let start_time = current_timestamp_millis()
-  let serialized_data = []
+  let event_addition_time = Benchmark::measure(benchmark, @() {
+    for span in spans {
+      for i in 0..<50 {
+        TraceCollector::add_event(span, "event_" + i.to_string())
+      }
+    }
+  })
   
-  for span in spans {
-    // Simulate span serialization
-    let span_name = Span::name(span)
-    let span_ctx = Span::span_context(span)
-    let serialized = span_name + "|" + SpanContext::trace_id(span_ctx) + "|" + SpanContext::span_id(span_ctx)
-    serialized_data = serialized_data.push(serialized)
-  }
+  assert_true(event_addition_time < 1000.0) // Less than 1 second
   
-  let serialize_end_time = current_timestamp_millis()
-  let serialize_time = serialize_end_time - start_time
+  // Benchmark span completion
+  let span_completion_time = Benchmark::measure(benchmark, @() {
+    for span in spans {
+      TraceCollector::finish_span(span)
+    }
+  })
   
-  // Measure deserialization time
-  let start_deserialize_time = current_timestamp_millis()
-  
-  for data in serialized_data {
-    // Simulate span deserialization
-    let parts = data.split("|")
-    // In real implementation, this would reconstruct the span
-    assert_eq(parts.length(), 3)
-  }
-  
-  let end_deserialize_time = current_timestamp_millis()
-  let deserialize_time = end_deserialize_time - start_deserialize_time
-  
-  // Performance assertions
-  assert_true(serialize_time < 2000)  // Serialization should complete within 2 seconds
-  assert_true(deserialize_time < 1000)  // Deserialization should complete within 1 second
-  
-  let avg_serialize_time = serialize_time.to_float() / span_count.to_float()
-  let avg_deserialize_time = deserialize_time.to_float() / span_count.to_float()
-  
-  assert_true(avg_serialize_time < 0.4)  // Each serialization should take less than 0.4ms
-  assert_true(avg_deserialize_time < 0.2)  // Each deserialization should take less than 0.2ms
-  
-  // Verify serialized data
-  assert_eq(serialized_data.length(), span_count)
-  assert_eq(serialized_data[0], "operation_0|trace_serialization_test|span_0")
-  assert_eq(serialized_data[span_count - 1], "operation_" + (span_count - 1).to_string() + "|trace_serialization_test|span_" + (span_count - 1).to_string())
+  assert_true(span_completion_time < 1000.0) // Less than 1 second
 }
 
-// Test 6: Memory Usage Benchmark
-test "memory usage benchmark" {
-  // Test memory usage for different telemetry operations
-  let initial_memory = get_memory_usage()
+// Test 3: Data Processing Performance
+test "data processing performance" {
+  let benchmark = Benchmark::new("data_processing")
+  let data_size = 10000
+  let data_processor = DataProcessor::new()
   
-  // Create spans and measure memory growth
-  let span_count = 10000
-  let spans = []
-  
-  for i in 0..span_count {
-    let span_id = "span_" + i.to_string()
-    let trace_id = "trace_memory_test_" + (i % 100).to_string()
-    let span_context = SpanContext::new(trace_id, span_id, true, "memory_test")
-    let span = Span::new("operation_" + i.to_string(), Internal, span_context)
-    spans = spans.push(span)
-    
-    // Add events and attributes to increase memory usage
-    Span::add_event(span, "event_" + i.to_string(), Some([("event_attr", StringValue("value_" + i.to_string()))]))
+  // Generate test data
+  let test_data = []
+  for i in 0..<data_size {
+    test_data.push(DataPoint::new(
+      "metric_" + (i % 100).to_string(), 
+      i.to_float(), 
+      [("env", if i % 2 == 0 { "production" } else { "staging" })]
+    ))
   }
   
-  let after_spans_memory = get_memory_usage()
-  let span_memory_increase = after_spans_memory - initial_memory
+  // Benchmark data addition
+  let addition_time = Benchmark::measure(benchmark, @() {
+    for point in test_data {
+      DataProcessor::add_data_point(data_processor, point)
+    }
+  })
   
-  // Create metrics and measure memory growth
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "memory_meter")
+  assert_true(addition_time < 1000.0) // Less than 1 second
   
-  let metrics = []
-  for i in 0..1000 {
-    let counter = Meter::create_counter(meter, "counter_" + i.to_string(), Some("Counter " + i.to_string()), Some("count"))
-    let histogram = Meter::create_histogram(meter, "histogram_" + i.to_string(), Some("Histogram " + i.to_string()), Some("ms"))
-    metrics = metrics.push((counter, histogram))
-    
-    // Record values
-    Counter::add(counter, i.to_float())
-    Histogram::record(histogram, (i % 100).to_float())
-  }
+  // Benchmark data filtering
+  let filtering_time = Benchmark::measure(benchmark, @() {
+    let _ = DataProcessor::filter_by_attribute(data_processor, "env", "production")
+  })
   
-  let after_metrics_memory = get_memory_usage()
-  let metrics_memory_increase = after_metrics_memory - after_spans_memory
+  assert_true(filtering_time < 500.0) // Less than 0.5 seconds
   
-  // Create attributes and measure memory growth
-  let attributes_list = []
-  for i in 0..5000 {
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "attr_" + i.to_string(), StringValue("value_" + i.to_string()))
-    Attributes::set(attrs, "int_attr_" + i.to_string(), IntValue(i))
-    attributes_list = attributes_list.push(attrs)
-  }
+  // Benchmark data aggregation
+  let aggregation_time = Benchmark::measure(benchmark, @() {
+    let _ = DataProcessor::aggregate_by_metric(data_processor)
+  })
   
-  let after_attributes_memory = get_memory_usage()
-  let attributes_memory_increase = after_attributes_memory - after_metrics_memory
-  let total_memory_increase = after_attributes_memory - initial_memory
-  
-  // Memory usage assertions
-  assert_true(span_memory_increase > 0)
-  assert_true(metrics_memory_increase > 0)
-  assert_true(attributes_memory_increase > 0)
-  
-  // Calculate average memory per entity
-  let avg_memory_per_span = span_memory_increase.to_float() / span_count.to_float()
-  let avg_memory_per_metric = metrics_memory_increase.to_float() / (1000 * 2).to_float()  // 1000 counters + 1000 histograms
-  let avg_memory_per_attribute = attributes_memory_increase.to_float() / (5000 * 2).to_float()  // 5000 attrs with 2 values each
-  
-  // Reasonable memory usage per entity
-  assert_true(avg_memory_per_span < 1000)  // Less than 1KB per span
-  assert_true(avg_memory_per_metric < 500)  // Less than 500B per metric
-  assert_true(avg_memory_per_attribute < 200)  // Less than 200B per attribute
-  
-  // Verify data integrity
-  assert_eq(spans.length(), span_count)
-  assert_eq(metrics.length(), 1000)
-  assert_eq(attributes_list.length(), 5000)
-  
-  // Clean up to free memory
-  // In a real implementation, there would be explicit cleanup
+  assert_true(aggregation_time < 500.0) // Less than 0.5 seconds
 }
 
-// Test 7: Concurrent Operations Performance
-test "concurrent operations performance benchmark" {
-  // Simulate concurrent telemetry operations
-  let thread_count = 10
+// Test 4: Serialization Performance
+test "serialization performance" {
+  let benchmark = Benchmark::new("serialization")
+  let iterations = 1000
+  let serializer = JsonSerializer::new()
+  
+  // Create test data
+  let test_objects = []
+  for i in 0..<iterations {
+    test_objects.push(TestObject::new(
+      "object_" + i.to_string(),
+      i,
+      i.to_float(),
+      ["tag1", "tag2", "tag3"]
+    ))
+  }
+  
+  // Benchmark serialization
+  let serialization_time = Benchmark::measure(benchmark, @() {
+    for obj in test_objects {
+      let _ = JsonSerializer::serialize(serializer, obj)
+    }
+  })
+  
+  assert_true(serialization_time < 1000.0) // Less than 1 second
+  
+  // Benchmark deserialization
+  let serialized_objects = []
+  for obj in test_objects {
+    serialized_objects.push(JsonSerializer::serialize(serializer, obj))
+  }
+  
+  let deserialization_time = Benchmark::measure(benchmark, @() {
+    for serialized in serialized_objects {
+      let _ = JsonSerializer::deserialize(serializer, serialized)
+    }
+  })
+  
+  assert_true(deserialization_time < 1000.0) // Less than 1 second
+}
+
+// Test 5: Memory Usage Performance
+test "memory usage performance" {
+  let memory_profiler = MemoryProfiler::new()
+  let initial_memory = MemoryProfiler::get_usage(memory_profiler)
+  
+  // Create large data structure
+  let large_data = []
+  for i in 0..<10000 {
+    large_data.push(DataPoint::new(
+      "metric_" + i.to_string(),
+      i.to_float(),
+      [("env", "production"), ("service", "test"), ("version", "1.0.0")]
+    ))
+  }
+  
+  let after_creation_memory = MemoryProfiler::get_usage(memory_profiler)
+  
+  // Verify memory usage is reasonable
+  let memory_increase = after_creation_memory - initial_memory
+  assert_true(memory_increase > 0) // Memory should increase
+  assert_true(memory_increase < 100 * 1024 * 1024) // Less than 100MB
+  
+  // Clear data and verify memory is released
+  large_data.clear()
+  MemoryProfiler::force_gc(memory_profiler)
+  
+  let after_cleanup_memory = MemoryProfiler::get_usage(memory_profiler)
+  let memory_released = after_creation_memory - after_cleanup_memory
+  
+  // At least some memory should be released
+  assert_true(memory_released > memory_increase * 0.5) // At least 50% released
+}
+
+// Test 6: Concurrent Performance
+test "concurrent performance" {
+  let benchmark = Benchmark::new("concurrent_performance")
+  let num_threads = 10
   let operations_per_thread = 1000
-  let start_time = current_timestamp_millis()
+  let concurrent_metrics = ConcurrentMetrics::new()
   
-  // Simulate concurrent span creation
-  let results = []
-  for thread_id in 0..thread_count {
-    let thread_start_time = current_timestamp_millis()
-    
-    // Each "thread" creates spans
-    let thread_spans = []
-    for i in 0..operations_per_thread {
-      let span_id = "span_" + thread_id.to_string() + "_" + i.to_string()
-      let trace_id = "trace_concurrent_" + thread_id.to_string()
-      let span_context = SpanContext::new(trace_id, span_id, true, "concurrent_test")
-      let span = Span::new("operation_" + i.to_string(), Internal, span_context)
-      thread_spans = thread_spans.push(span)
-    }
-    
-    let thread_end_time = current_timestamp_millis()
-    results = results.push((thread_spans, thread_end_time - thread_start_time))
-  }
+  // Benchmark concurrent counter operations
+  let threads = []
+  let start_time = Time::now()
   
-  let end_time = current_timestamp_millis()
-  let total_time = end_time - start_time
-  
-  // Calculate statistics
-  let total_spans = results.reduce(fn(acc, result) { acc + result.0.length() }, 0)
-  let total_thread_time = results.reduce(fn(acc, result) { acc + result.1 }, 0)
-  let avg_thread_time = total_thread_time.to_float() / thread_count.to_float()
-  let avg_time_per_span = total_time.to_float() / total_spans.to_float()
-  
-  // Performance assertions
-  assert_eq(total_spans, thread_count * operations_per_thread)
-  assert_true(total_time < 10000)  // Should complete within 10 seconds
-  assert_true(avg_time_per_span < 1.0)  // Each span should take less than 1ms on average
-  
-  // Verify thread results
-  for result in results {
-    assert_eq(result.0.length(), operations_per_thread)
-    
-    // Verify first and last spans in each thread
-    let first_span = result.0[0]
-    let first_span_ctx = Span::span_context(first_span)
-    assert_true(SpanContext::trace_id(first_span_ctx).starts_with("trace_concurrent_"))
-    assert_eq(Span::name(first_span), "operation_0")
-    
-    let last_span = result.0[operations_per_thread - 1]
-    let last_span_ctx = Span::span_context(last_span)
-    assert_true(SpanContext::trace_id(last_span_ctx).starts_with("trace_concurrent_"))
-    assert_eq(Span::name(last_span), "operation_" + (operations_per_thread - 1).to_string())
-  }
-}
-
-// Test 8: Throughput Benchmark
-test "throughput benchmark" {
-  // Measure telemetry system throughput
-  let test_duration_seconds = 5
-  let start_time = current_timestamp_seconds()
-  let end_time = start_time + test_duration_seconds
-  
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "throughput_meter")
-  let counter = Meter::create_counter(meter, "throughput_counter", Some("Throughput counter"), Some("count"))
-  let histogram = Meter::create_histogram(meter, "throughput_histogram", Some("Throughput histogram"), Some("ms"))
-  
-  let operation_count = 0
-  let current_time = current_timestamp_seconds()
-  
-  // Run operations for specified duration
-  while current_time < end_time {
-    Counter::add(counter, 1.0)
-    Histogram::record(histogram, (current_time % 100).to_float())
-    operation_count = operation_count + 1
-    current_time = current_timestamp_seconds()
-  }
-  
-  let actual_duration = current_timestamp_seconds() - start_time
-  let throughput = operation_count.to_float() / actual_duration.to_float()
-  
-  // Throughput assertions
-  assert_true(actual_duration >= test_duration_seconds)
-  assert_true(operation_count > 0)
-  assert_true(throughput > 1000)  // Should handle at least 1000 operations per second
-  
-  // Calculate operations per second
-  let ops_per_second = throughput
-  assert_true(ops_per_second > 1000)
-  
-  // Verify metrics were recorded
-  assert_true(operation_count > 0)
-  
-  // Performance should be consistent
-  assert_true(throughput > 1000)  // Minimum throughput requirement
-}
-
-// Test 9: Large Dataset Performance
-test "large dataset performance benchmark" {
-  // Test performance with large datasets
-  let large_span_count = 50000
-  
-  // Create a large number of spans
-  let start_time = current_timestamp_millis()
-  let large_spans = []
-  
-  for i in 0..large_span_count {
-    let span_id = "span_" + i.to_string()
-    let trace_id = "trace_large_" + (i % 1000).to_string()
-    let span_context = SpanContext::new(trace_id, span_id, true, "large_dataset_test")
-    let span = Span::new("operation_" + i.to_string(), Internal, span_context)
-    
-    // Add multiple events to each span
-    for j in 0..5 {
-      Span::add_event(span, "event_" + j.to_string(), Some([("event_attr", StringValue("value_" + i.to_string() + "_" + j.to_string()))]))
-    }
-    
-    large_spans = large_spans.push(span)
-  }
-  
-  let creation_end_time = current_timestamp_millis()
-  let creation_time = creation_end_time - start_time
-  
-  // Process the large dataset
-  let process_start_time = current_timestamp_millis()
-  
-  // Group spans by trace
-  let traces = {}
-  for span in large_spans {
-    let span_ctx = Span::span_context(span)
-    let trace_id = SpanContext::trace_id(span_ctx)
-    
-    match traces.get(trace_id) {
-      Some(trace_spans) => {
-        traces[trace_id] = trace_spans.push(span)
+  for i in 0..<num_threads {
+    let thread = Thread::spawn(@() {
+      for j in 0..<operations_per_thread {
+        ConcurrentMetrics::increment_counter(concurrent_metrics, "concurrent_counter")
       }
-      None => {
-        traces[trace_id] = [span]
-      }
-    }
-  }
-  
-  // Calculate statistics for each trace
-  let trace_stats = []
-  for (trace_id, trace_spans) in traces {
-    let durations = trace_spans.map(fn(span) {
-      let span_ctx = Span::span_context(span)
-      // Simulate duration calculation
-      100 + (trace_id.length() + SpanContext::span_id(span_ctx).length())
     })
-    
-    let avg_duration = durations.reduce(fn(acc, x) { acc + x }, 0) / durations.length()
-    trace_stats = trace_stats.push((trace_id, trace_spans.length(), avg_duration))
+    threads.push(thread)
   }
   
-  let process_end_time = current_timestamp_millis()
-  let process_time = process_end_time - process_start_time
+  for thread in threads {
+    Thread::join(thread)
+  }
   
-  // Performance assertions
-  assert_true(creation_time < 15000)  // Creation should complete within 15 seconds
-  assert_true(process_time < 10000)  // Processing should complete within 10 seconds
+  let end_time = Time::now()
+  let concurrent_time = end_time - start_time
   
-  let avg_creation_time = creation_time.to_float() / large_span_count.to_float()
-  let avg_process_time = process_time.to_float() / large_span_count.to_float()
+  // Verify concurrent performance
+  assert_true(concurrent_time < 2000.0) // Less than 2 seconds
   
-  assert_true(avg_creation_time < 0.3)  // Each span should take less than 0.3ms to create
-  assert_true(avg_process_time < 0.2)  // Each span should take less than 0.2ms to process
+  // Verify final counter value
+  let counter_value = ConcurrentMetrics::get_counter(concurrent_metrics, "concurrent_counter")
+  assert_eq(counter_value, num_threads * operations_per_thread)
   
-  // Verify data integrity
-  assert_eq(large_spans.length(), large_span_count)
+  // Compare with sequential performance
+  let sequential_metrics = ConcurrentMetrics::new()
+  let sequential_start = Time::now()
+  
+  for i in 0..<(num_threads * operations_per_thread) {
+    ConcurrentMetrics::increment_counter(sequential_metrics, "sequential_counter")
+  }
+  
+  let sequential_end = Time::now()
+  let sequential_time = sequential_end - sequential_start
+  
+  // Concurrent should be faster or at least not significantly slower
+  let performance_ratio = concurrent_time / sequential_time
+  assert_true(performance_ratio < 2.0) // Concurrent should not be more than 2x slower
+}
+
+// Test 7: Cache Performance
+test "cache performance" {
+  let benchmark = Benchmark::new("cache_performance")
+  let cache = ConcurrentCache::new(1000)
+  let iterations = 10000
+  
+  // Populate cache
+  for i in 0..<1000 {
+    ConcurrentCache::put(cache, "key_" + i.to_string(), "value_" + i.to_string())
+  }
+  
+  // Benchmark cache hits
+  let hit_time = Benchmark::measure(benchmark, @() {
+    for i in 0..<iterations {
+      let key = "key_" + (i % 1000).to_string()
+      let _ = ConcurrentCache::get(cache, key)
+    }
+  })
+  
+  assert_true(hit_time < 500.0) // Less than 0.5 seconds
+  
+  // Benchmark cache misses
+  let miss_time = Benchmark::measure(benchmark, @() {
+    for i in 0..<iterations {
+      let key = "missing_key_" + i.to_string()
+      let _ = ConcurrentCache::get(cache, key)
+    }
+  })
+  
+  assert_true(miss_time < 500.0) // Less than 0.5 seconds
+  
+  // Cache hits should be faster than misses
+  assert_true(hit_time < miss_time)
+  
+  // Benchmark cache writes
+  let write_time = Benchmark::measure(benchmark, @() {
+    for i in 0..<iterations {
+      let key = "write_key_" + i.to_string()
+      let value = "write_value_" + i.to_string()
+      ConcurrentCache::put(cache, key, value)
+    }
+  })
+  
+  assert_true(write_time < 1000.0) // Less than 1 second
+}
+
+// Test 8: Network Performance
+test "network performance" {
+  let benchmark = Benchmark::new("network_performance")
+  let mock_server = MockHttpServer::new()
+  let client = HttpClient::new()
+  
+  // Start mock server
+  MockHttpServer::start(mock_server, 8080)
+  MockHttpServer::add_endpoint(mock_server, "/api/test", "GET", {"status": "ok"})
+  
+  // Benchmark HTTP requests
+  let request_time = Benchmark::measure(benchmark, @() {
+    for i in 0..<100 {
+      let response = HttpClient::get(client, "http://localhost:8080/api/test")
+      match response {
+        Ok(_) => assert_true(true)
+        Err(_) => assert_true(false)
+      }
+    }
+  })
+  
+  assert_true(request_time < 5000.0) // Less than 5 seconds
+  
+  // Benchmark concurrent requests
+  let concurrent_request_time = Benchmark::measure(benchmark, @() {
+    let threads = []
+    for i in 0..<10 {
+      let thread = Thread::spawn(@() {
+        for j in 0..<10 {
+          let response = HttpClient::get(client, "http://localhost:8080/api/test")
+          match response {
+            Ok(_) => assert_true(true)
+            Err(_) => assert_true(false)
+          }
+        }
+      })
+      threads.push(thread)
+    }
+    
+    for thread in threads {
+      Thread::join(thread)
+    }
+  })
+  
+  assert_true(concurrent_request_time < 5000.0) // Less than 5 seconds
+  
+  // Concurrent should be faster than sequential
+  assert_true(concurrent_request_time < request_time)
+  
+  // Stop mock server
+  MockHttpServer::stop(mock_server)
+}
+
+// Test 9: Database Performance
+test "database performance" {
+  let benchmark = Benchmark::new("database_performance")
+  let db = InMemoryDatabase::new()
+  let iterations = 1000
+  
+  // Benchmark database inserts
+  let insert_time = Benchmark::measure(benchmark, @() {
+    for i in 0..<iterations {
+      let record = DatabaseRecord::new(
+        "id_" + i.to_string(),
+        {"name": "record_" + i.to_string(), "value": i.to_string()}
+      )
+      InMemoryDatabase::insert(db, "test_table", record)
+    }
+  })
+  
+  assert_true(insert_time < 1000.0) // Less than 1 second
+  
+  // Benchmark database queries
+  let query_time = Benchmark::measure(benchmark, @() {
+    for i in 0..<iterations {
+      let id = "id_" + i.to_string()
+      let _ = InMemoryDatabase::get(db, "test_table", id)
+    }
+  })
+  
+  assert_true(query_time < 1000.0) // Less than 1 second
+  
+  // Benchmark database updates
+  let update_time = Benchmark::measure(benchmark, @() {
+    for i in 0..<iterations {
+      let id = "id_" + i.to_string()
+      let updates = {"value": (i * 2).to_string()}
+      InMemoryDatabase::update(db, "test_table", id, updates)
+    }
+  })
+  
+  assert_true(update_time < 1000.0) // Less than 1 second
+  
+  // Benchmark database deletes
+  let delete_time = Benchmark::measure(benchmark, @() {
+    for i in 0..<iterations {
+      let id = "id_" + i.to_string()
+      InMemoryDatabase::delete(db, "test_table", id)
+    }
+  })
+  
+  assert_true(delete_time < 1000.0) // Less than 1 second
+}
+
+// Test 10: End-to-End Performance
+test "end-to-end performance" {
+  let benchmark = Benchmark::new("end_to_end_performance")
+  let telemetry_system = TelemetrySystem::new()
+  
+  // Configure system with realistic settings
+  TelemetrySystem::configure(telemetry_system, {
+    "metrics.batch_size": 100,
+    "metrics.flush_interval": 1000, // 1 second
+    "traces.sample_rate": 0.1, // 10% sampling
+    "logs.buffer_size": 1000
+  })
+  
+  // Start the system
+  TelemetrySystem::start(telemetry_system)
+  
+  // Simulate realistic workload
+  let workload_time = Benchmark::measure(benchmark, @() {
+    let threads = []
+    
+    // Metrics generation thread
+    let metrics_thread = Thread::spawn(@() {
+      for i in 0..<5000 {
+        TelemetrySystem::record_metric(telemetry_system, "request_count", 1.0)
+        TelemetrySystem::record_metric(telemetry_system, "response_time", 100.0 + (i % 200).to_float())
+        
+        // Add some delay to simulate realistic timing
+        if i % 100 == 0 {
+          Thread::sleep(1)
+        }
+      }
+    })
+    threads.push(metrics_thread)
+    
+    // Tracing thread
+    let tracing_thread = Thread::spawn(@() {
+      for i in 0..<1000 {
+        let span = TelemetrySystem::start_span(telemetry_system, "operation_" + i.to_string())
+        TelemetrySystem::add_event(telemetry_system, span, "event_" + i.to_string())
+        TelemetrySystem::end_span(telemetry_system, span)
+        
+        // Add some delay to simulate realistic timing
+        if i % 50 == 0 {
+          Thread::sleep(1)
+        }
+      }
+    })
+    threads.push(tracing_thread)
+    
+    // Logging thread
+    let logging_thread = Thread::spawn(@() {
+      for i in 0..<2000 {
+        let severity = if i % 4 == 0 { Info } else if i % 4 == 1 { Warn } else if i % 4 == 2 { Error } else { Debug }
+        TelemetrySystem::log(telemetry_system, severity, "Log message " + i.to_string())
+        
+        // Add some delay to simulate realistic timing
+        if i % 100 == 0 {
+          Thread::sleep(1)
+        }
+      }
+    })
+    threads.push(logging_thread)
+    
+    // Wait for all threads to complete
+    for thread in threads {
+      Thread::join(thread)
+    }
+  })
+  
+  // Wait for system to flush all data
+  Thread::sleep(2000)
+  
+  // Stop the system
+  TelemetrySystem::stop(telemetry_system)
+  
+  // Verify performance is acceptable
+  assert_true(workload_time < 10000.0) // Less than 10 seconds
+  
+  // Verify data was processed correctly
+  let metrics = TelemetrySystem::get_metrics(telemetry_system)
+  let traces = TelemetrySystem::get_traces(telemetry_system)
+  let logs = TelemetrySystem::get_logs(telemetry_system)
+  
+  assert_true(metrics.length() > 0)
   assert_true(traces.length() > 0)
-  assert_eq(trace_stats.length(), traces.length())
+  assert_true(logs.length() > 0)
   
-  // Verify trace grouping
-  let total_spans_in_traces = trace_stats.reduce(fn(acc, stat) { acc + stat.1 }, 0)
-  assert_eq(total_spans_in_traces, large_span_count)
-  
-  // Verify each trace has reasonable statistics
-  for stat in trace_stats {
-    assert_true(stat.1 > 0)  // Each trace should have at least one span
-    assert_true(stat.2 > 0)  // Average duration should be positive
-  }
-}
-
-// Test 10: Resource Usage Under Load
-test "resource usage under load benchmark" {
-  // Monitor resource usage under high load
-  let initial_memory = get_memory_usage()
-  let initial_cpu = get_cpu_usage()
-  
-  // Create high load scenario
-  let load_duration_seconds = 3
-  let start_time = current_timestamp_seconds()
-  let end_time = start_time + load_duration_seconds
-  
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "load_meter")
-  
-  let counters = []
-  let histograms = []
-  let spans = []
-  let attributes_list = []
-  
-  // Create resources
-  for i in 0..100 {
-    let counter = Meter::create_counter(meter, "load_counter_" + i.to_string(), Some("Load counter " + i.to_string()), Some("count"))
-    let histogram = Meter::create_histogram(meter, "load_histogram_" + i.to_string(), Some("Load histogram " + i.to_string()), Some("ms"))
-    counters = counters.push(counter)
-    histograms = histograms.push(histogram)
-  }
-  
-  // Generate load
-  let operation_count = 0
-  let current_time = current_timestamp_seconds()
-  
-  while current_time < end_time {
-    // Record metrics
-    for i in 0..100 {
-      Counter::add(counters[i], 1.0)
-      Histogram::record(histograms[i], (i % 100).to_float())
-    }
-    
-    // Create spans
-    for i in 0..10 {
-      let span_id = "load_span_" + operation_count.to_string() + "_" + i.to_string()
-      let trace_id = "trace_load_" + (operation_count % 100).to_string()
-      let span_context = SpanContext::new(trace_id, span_id, true, "load_test")
-      let span = Span::new("load_operation_" + i.to_string(), Internal, span_context)
-      spans = spans.push(span)
-      
-      // Add attributes
-      let attrs = Attributes::new()
-      Attributes::set(attrs, "load_attr", StringValue("value_" + i.to_string()))
-      Attributes::set(attrs, "load_int", IntValue(operation_count + i))
-      attributes_list = attributes_list.push(attrs)
-    }
-    
-    operation_count = operation_count + 1
-    current_time = current_timestamp_seconds()
-  }
-  
-  let final_memory = get_memory_usage()
-  let final_cpu = get_cpu_usage()
-  
-  let memory_increase = final_memory - initial_memory
-  let cpu_increase = final_cpu - initial_cpu
-  let actual_duration = current_timestamp_seconds() - start_time
-  
-  // Resource usage assertions
-  assert_true(actual_duration >= load_duration_seconds)
-  assert_true(operation_count > 0)
-  assert_eq(counters.length(), 100)
-  assert_eq(histograms.length(), 100)
-  assert_eq(spans.length(), operation_count * 10)
-  assert_eq(attributes_list.length(), operation_count * 10)
-  
-  // Calculate resource usage per operation
-  let memory_per_operation = memory_increase.to_float() / operation_count.to_float()
-  let operations_per_second = operation_count.to_float() / actual_duration.to_float()
-  
-  // Reasonable resource usage
-  assert_true(memory_per_operation < 5000)  // Less than 5KB per operation
-  assert_true(operations_per_second > 100)  // At least 100 operations per second under load
-  
-  // Verify data integrity
-  for counter in counters {
-    // In a real implementation, we would verify counter values
-    assert_true(true)
-  }
-  
-  for histogram in histograms {
-    // In a real implementation, we would verify histogram values
-    assert_true(true)
-  }
-  
-  for span in spans {
-    // Verify span properties
-    let span_name = Span::name(span)
-    assert_true(span_name.starts_with("load_operation_"))
-  }
-  
-  for attrs in attributes_list {
-    // Verify attributes
-    let load_attr = Attributes::get(attrs, "load_attr")
-    match load_attr {
-      Some(StringValue(_)) => assert_true(true)
-      _ => assert_true(false)
-    }
-    
-    let load_int = Attributes::get(attrs, "load_int")
-    match load_int {
-      Some(IntValue(_)) => assert_true(true)
-      _ => assert_true(false)
-    }
-  }
-}
-
-// Helper functions for benchmarking
-fn current_timestamp_millis() -> Int {
-  // In a real implementation, this would return the current timestamp in milliseconds
-  1640995200000
-}
-
-fn current_timestamp_seconds() -> Int {
-  // In a real implementation, this would return the current timestamp in seconds
-  1640995200
-}
-
-fn get_memory_usage() -> Int {
-  // In a real implementation, this would return the current memory usage in bytes
-  1000000
-}
-
-fn get_cpu_usage() -> Float {
-  // In a real implementation, this would return the current CPU usage percentage
-  25.0
+  // Verify system resource usage
+  let resource_usage = TelemetrySystem::get_resource_usage(telemetry_system)
+  assert_true(resource_usage.cpu_usage < 80.0) // Less than 80% CPU
+  assert_true(resource_usage.memory_usage < 100 * 1024 * 1024) // Less than 100MB memory
 }
