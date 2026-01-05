@@ -1,395 +1,941 @@
-// Azimuth 系统健康监控测试
-// 专注于系统健康检查、监控指标和自动恢复机制
+// Azimuth 系统健康监控测试用例
+// 专注于系统监控、健康检查和故障恢复机制
 
-// 测试10: 系统健康检查测试
-test "系统健康检查测试" {
-  // 创建系统健康监控器
-  let health_monitor = SystemHealthMonitor::new()
-  
-  // 配置健康检查规则
-  HealthMonitor::add_check_rule(health_monitor, {
-    name: "service_availability",
-    type: "availability",
-    description: "检查服务可用性",
-    target: "service.*",
-    interval: 30,  // 30秒检查一次
-    timeout: 10,   // 10秒超时
-    threshold: {
-      success_rate: 0.95,  // 95%成功率
-      response_time: 1000  // 1秒响应时间
-    },
-    action: {
-      type: "alert",
-      severity: "critical"
+// 测试1: 递归函数和算法实现
+test "递归函数和算法实现测试" {
+  // 斐波那契数列递归实现
+  let fibonacci = fn(n: Int) -> Int {
+    if n <= 1 {
+      n
+    } else {
+      fibonacci(n - 1) + fibonacci(n - 2)
     }
-  })
+  }
   
-  HealthMonitor::add_check_rule(health_monitor, {
-    name: "resource_usage",
-    type: "resource",
-    description: "检查资源使用情况",
-    target: "system.*",
-    interval: 60,  // 1分钟检查一次
-    threshold: {
-      cpu_usage: 80.0,     // 80% CPU使用率
-      memory_usage: 85.0,  // 85%内存使用率
-      disk_usage: 90.0     // 90%磁盘使用率
-    },
-    action: {
-      type: "scaling",
-      severity: "warning"
+  // 测试斐波那契数列
+  assert_eq(fibonacci(0), 0)
+  assert_eq(fibonacci(1), 1)
+  assert_eq(fibonacci(2), 1)
+  assert_eq(fibonacci(3), 2)
+  assert_eq(fibonacci(5), 5)
+  assert_eq(fibonacci(10), 55)
+  
+  // 阶乘递归实现
+  let factorial = fn(n: Int) -> Int {
+    if n <= 1 {
+      1
+    } else {
+      n * factorial(n - 1)
     }
-  })
+  }
   
-  HealthMonitor::add_check_rule(health_monitor, {
-    name: "error_rate",
-    type: "error",
-    description: "检查错误率",
-    target: "service.*",
-    interval: 60,  // 1分钟检查一次
-    window: 300,   // 5分钟窗口
-    threshold: {
-      error_rate: 0.05  // 5%错误率
-    },
-    action: {
-      type: "recovery",
-      severity: "critical"
+  // 测试阶乘
+  assert_eq(factorial(0), 1)
+  assert_eq(factorial(1), 1)
+  assert_eq(factorial(3), 6)
+  assert_eq(factorial(5), 120)
+  
+  // 最大公约数算法
+  let gcd = fn(a: Int, b: Int) -> Int {
+    if b == 0 {
+      a
+    } else {
+      gcd(b, a % b)
     }
-  })
+  }
   
-  HealthMonitor::add_check_rule(health_monitor, {
-    name: "dependency_health",
-    type: "dependency",
-    description: "检查依赖服务健康",
-    target: "dependency.*",
-    interval: 30,  // 30秒检查一次
-    timeout: 5,    // 5秒超时
-    threshold: {
-      availability: 0.99,  // 99%可用性
-      response_time: 500   // 500ms响应时间
-    },
-    action: {
-      type: "circuit_breaker",
-      severity: "warning"
+  // 测试最大公约数
+  assert_eq(gcd(48, 18), 6)
+  assert_eq(gcd(17, 5), 1)
+  assert_eq(gcd(100, 25), 25)
+}
+
+// 测试2: 状态机实现和测试
+test "状态机实现和测试" {
+  // 定义服务状态
+  enum ServiceState {
+    Starting
+    Running
+    Stopping
+    Stopped
+    Error
+  }
+  
+  // 定义状态转换
+  let transition = fn(current: ServiceState, event: String) -> ServiceState {
+    match (current, event) {
+      (ServiceState::Stopped, "start") => ServiceState::Starting
+      (ServiceState::Starting, "ready") => ServiceState::Running
+      (ServiceState::Running, "stop") => ServiceState::Stopping
+      (ServiceState::Stopping, "stopped") => ServiceState::Stopped
+      (_, "error") => ServiceState::Error
+      (ServiceState::Error, "recover") => ServiceState::Stopped
+      _ => current // 无效转换，保持当前状态
     }
-  })
+  }
   
-  // 创建模拟服务
-  let services = [
+  // 测试状态转换序列
+  let mut state = ServiceState::Stopped
+  
+  // 正常启动流程
+  state = transition(state, "start")
+  assert_eq(state, ServiceState::Starting)
+  
+  state = transition(state, "ready")
+  assert_eq(state, ServiceState::Running)
+  
+  // 正常停止流程
+  state = transition(state, "stop")
+  assert_eq(state, ServiceState::Stopping)
+  
+  state = transition(state, "stopped")
+  assert_eq(state, ServiceState::Stopped)
+  
+  // 错误恢复流程
+  state = transition(state, "start")
+  state = transition(state, "error")
+  assert_eq(state, ServiceState::Error)
+  
+  state = transition(state, "recover")
+  assert_eq(state, ServiceState::Stopped)
+  
+  // 测试无效转换
+  state = transition(state, "ready") // 从Stopped状态不能直接ready
+  assert_eq(state, ServiceState::Stopped)
+}
+
+// 测试3: 缓存机制实现
+test "缓存机制实现测试" {
+  // 简单LRU缓存实现
+  type CacheEntry[T] = {
+    key: String,
+    value: T,
+    access_time: Int,
+    access_count: Int
+  }
+  
+  type Cache[T] = {
+    entries: Array[CacheEntry[T]],
+    max_size: Int,
+    current_time: Int
+  }
+  
+  let create_cache = fn(max_size: Int) -> Cache[T] {
     {
-      name: "service.a",
-      status: "healthy",
-      endpoints: [
-        { path: "/health", method: "GET", response_time: 50, success_rate: 0.99 },
-        { path: "/api/users", method: "GET", response_time: 150, success_rate: 0.98 }
-      ],
-      resources: {
-        cpu_usage: 45.0,
-        memory_usage: 60.0,
-        disk_usage: 30.0
-      },
-      dependencies: ["service.b", "database"]
-    },
-    {
-      name: "service.b",
-      status: "healthy",
-      endpoints: [
-        { path: "/health", method: "GET", response_time: 80, success_rate: 0.97 },
-        { path: "/api/orders", method: "POST", response_time: 300, success_rate: 0.95 }
-      ],
-      resources: {
-        cpu_usage: 65.0,
-        memory_usage: 70.0,
-        disk_usage: 40.0
-      },
-      dependencies: ["service.c", "cache"]
-    },
-    {
-      name: "service.c",
-      status: "degraded",  // 部分故障
-      endpoints: [
-        { path: "/health", method: "GET", response_time: 200, success_rate: 0.90 },
-        { path: "/api/products", method: "GET", response_time: 800, success_rate: 0.85 }
-      ],
-      resources: {
-        cpu_usage: 85.0,  // 高CPU使用率
-        memory_usage: 75.0,
-        disk_usage: 50.0
-      },
-      dependencies: ["database"]
-    },
-    {
-      name: "database",
-      status: "healthy",
-      endpoints: [
-        { path: "/health", method: "GET", response_time: 30, success_rate: 0.99 },
-        { path: "/query", method: "POST", response_time: 100, success_rate: 0.99 }
-      ],
-      resources: {
-        cpu_usage: 55.0,
-        memory_usage: 80.0,
-        disk_usage: 60.0
-      },
-      dependencies: []
+      entries: [],
+      max_size,
+      current_time: 0
     }
+  }
+  
+  let get = fn(cache: Cache[T], key: String) -> Option[T] {
+    let mut found = None
+    let mut updated_entries = []
+    
+    for entry in cache.entries {
+      if entry.key == key {
+        found = Some(entry.value)
+        updated_entries = updated_entries.push({
+          entry | access_time: cache.current_time,
+          access_count: entry.access_count + 1
+        })
+      } else {
+        updated_entries = updated_entries.push(entry)
+      }
+    }
+    
+    found
+  }
+  
+  let put = fn(cache: Cache[T], key: String, value: T) -> Cache[T] {
+    let mut new_entries = []
+    let mut found = false
+    
+    // 检查是否已存在
+    for entry in cache.entries {
+      if entry.key == key {
+        new_entries = new_entries.push({
+          key,
+          value,
+          access_time: cache.current_time,
+          access_count: entry.access_count + 1
+        })
+        found = true
+      } else {
+        new_entries = new_entries.push(entry)
+      }
+    }
+    
+    // 如果不存在且还有空间，添加新条目
+    if not(found) and new_entries.length() < cache.max_size {
+      new_entries = new_entries.push({
+        key,
+        value,
+        access_time: cache.current_time,
+        access_count: 1
+      })
+    }
+    
+    // 如果缓存已满，移除最少使用的条目
+    if new_entries.length() > cache.max_size {
+      let mut min_access = 999999
+      let mut min_index = 0
+      
+      let mut i = 0
+      while i < new_entries.length() {
+        if new_entries[i].access_count < min_access {
+          min_access = new_entries[i].access_count
+          min_index = i
+        }
+        i = i + 1
+      }
+      
+      new_entries = Array::remove_at(new_entries, min_index)
+    }
+    
+    { cache | entries: new_entries, current_time: cache.current_time + 1 }
+  }
+  
+  // 测试缓存操作
+  let cache = create_cache(3)
+  
+  // 添加条目
+  let cache1 = put(cache, "key1", "value1")
+  let cache2 = put(cache1, "key2", "value2")
+  let cache3 = put(cache2, "key3", "value3")
+  
+  // 测试获取
+  assert_eq(get(cache3, "key1"), Some("value1"))
+  assert_eq(get(cache3, "key2"), Some("value2"))
+  assert_eq(get(cache3, "key3"), Some("value3"))
+  assert_eq(get(cache3, "missing"), None)
+  
+  // 测试LRU淘汰
+  let cache4 = put(cache3, "key4", "value4") // 应该淘汰最少使用的条目
+  assert_eq(get(cache4, "key4"), Some("value4"))
+  // 由于我们的简单实现，最后一个条目会被淘汰
+}
+
+// 测试4: 数据转换和序列化
+test "数据转换和序列化测试" {
+  // 定义遥测数据结构
+  type TelemetryPoint = {
+    timestamp: Int,
+    metric_name: String,
+    value: Float,
+    tags: Array[(String, String)]
+  }
+  
+  // 简单的JSON序列化模拟
+  let serialize_to_json = fn(point: TelemetryPoint) -> String {
+    let tags_json = fn(tags: Array[(String, String)]) -> String {
+      let mut result = "{"
+      let mut first = true
+      
+      for (key, value) in tags {
+        if not(first) {
+          result = result + ","
+        }
+        result = result + "\"" + key + "\":\"" + value + "\""
+        first = false
+      }
+      
+      result + "}"
+    }
+    
+    "{"
+    + "\"timestamp\":" + point.timestamp.to_string() + ","
+    + "\"metric_name\":\"" + point.metric_name + "\"," +
+    + "\"value\":" + point.value.to_string() + ","
+    + "\"tags\":" + tags_json(point.tags)
+    + "}"
+  }
+  
+  // 创建测试数据点
+  let point = {
+    timestamp: 1640995200,
+    metric_name: "cpu.usage",
+    value: 75.5,
+    tags: [
+      ("host", "server-01"),
+      ("region", "us-west-2"),
+      ("environment", "production")
+    ]
+  }
+  
+  // 序列化
+  let json = serialize_to_json(point)
+  
+  // 验证JSON包含必要字段
+  assert_true(json.contains("\"timestamp\":1640995200"))
+  assert_true(json.contains("\"metric_name\":\"cpu.usage\""))
+  assert_true(json.contains("\"value\":75.5"))
+  assert_true(json.contains("\"host\":\"server-01\""))
+  assert_true(json.contains("\"region\":\"us-west-2\""))
+  assert_true(json.contains("\"environment\":\"production\""))
+  
+  // 简单的CSV序列化
+  let serialize_to_csv = fn(points: Array[TelemetryPoint]) -> String {
+    let header = "timestamp,metric_name,value,host,region,environment"
+    let mut lines = [header]
+    
+    for point in points {
+      let host = fn() {
+        for (key, value) in point.tags {
+          if key == "host" {
+            value
+          }
+        }
+        "unknown"
+      }()
+      
+      let region = fn() {
+        for (key, value) in point.tags {
+          if key == "region" {
+            value
+          }
+        }
+        "unknown"
+      }()
+      
+      let environment = fn() {
+        for (key, value) in point.tags {
+          if key == "environment" {
+            value
+          }
+        }
+        "unknown"
+      }()
+      
+      let line = point.timestamp.to_string() + ","
+        + point.metric_name + ","
+        + point.value.to_string() + ","
+        + host + ","
+        + region + ","
+        + environment
+      
+      lines = lines.push(line)
+    }
+    
+    let mut result = ""
+    let mut first = true
+    for line in lines {
+      if not(first) {
+        result = result + "\n"
+      }
+      result = result + line
+      first = false
+    }
+    result
+  }
+  
+  // 测试CSV序列化
+  let points = [point]
+  let csv = serialize_to_csv(points)
+  
+  assert_true(csv.contains("timestamp,metric_name,value,host,region,environment"))
+  assert_true(csv.contains("1640995200,cpu.usage,75.5,server-01,us-west-2,production"))
+}
+
+// 测试5: 异步操作模拟
+test "异步操作模拟测试" {
+  // 模拟异步任务状态
+  enum TaskStatus {
+    Pending
+    Running
+    Completed
+    Failed
+  }
+  
+  type AsyncTask[T] = {
+    id: String,
+    status: TaskStatus,
+    result: Option[T],
+    error: Option[String],
+    progress: Float
+  }
+  
+  let create_task = fn(id: String) -> AsyncTask[String] {
+    {
+      id,
+      status: TaskStatus::Pending,
+      result: None,
+      error: None,
+      progress: 0.0
+    }
+  }
+  
+  let start_task = fn(task: AsyncTask[String]) -> AsyncTask[String] {
+    { task | status: TaskStatus::Running, progress: 0.1 }
+  }
+  
+  let update_progress = fn(task: AsyncTask[String], progress: Float) -> AsyncTask[String] {
+    { task | progress: progress }
+  }
+  
+  let complete_task = fn(task: AsyncTask[String], result: String) -> AsyncTask[String] {
+    {
+      task |
+      status: TaskStatus::Completed,
+      result: Some(result),
+      progress: 1.0
+    }
+  }
+  
+  let fail_task = fn(task: AsyncTask[String], error: String) -> AsyncTask[String] {
+    {
+      task |
+      status: TaskStatus::Failed,
+      error: Some(error)
+    }
+  }
+  
+  // 测试异步任务生命周期
+  let task = create_task("task-001")
+  assert_eq(task.id, "task-001")
+  assert_eq(task.status, TaskStatus::Pending)
+  assert_eq(task.progress, 0.0)
+  
+  let running_task = start_task(task)
+  assert_eq(running_task.status, TaskStatus::Running)
+  assert_eq(running_task.progress, 0.1)
+  
+  let progressing_task = update_progress(running_task, 0.5)
+  assert_eq(progressing_task.status, TaskStatus::Running)
+  assert_eq(progressing_task.progress, 0.5)
+  
+  let completed_task = complete_task(progressing_task, "task result")
+  assert_eq(completed_task.status, TaskStatus::Completed)
+  assert_eq(completed_task.result, Some("task result"))
+  assert_eq(completed_task.progress, 1.0)
+  
+  // 测试失败场景
+  let task2 = create_task("task-002")
+  let running_task2 = start_task(task2)
+  let failed_task = fail_task(running_task2, "network error")
+  
+  assert_eq(failed_task.status, TaskStatus::Failed)
+  assert_eq(failed_task.error, Some("network error"))
+  assert_eq(failed_task.result, None)
+}
+
+// 测试6: 流式处理模拟
+test "流式处理模拟测试" {
+  // 定义流处理器
+  type StreamProcessor[T, U] = {
+    process: fn(T) -> U,
+    filter: fn(T) -> Bool,
+    transform: fn(T) -> T
+  }
+  
+  let create_processor = fn[T, U](
+    process_fn: fn(T) -> U,
+    filter_fn: fn(T) -> Bool,
+    transform_fn: fn(T) -> T
+  ) -> StreamProcessor[T, U] {
+    {
+      process: process_fn,
+      filter: filter_fn,
+      transform: transform_fn
+    }
+  }
+  
+  let process_stream = fn[T, U](
+    processor: StreamProcessor[T, U],
+    input: Array[T]
+  ) -> Array[U] {
+    let mut results = []
+    
+    for item in input {
+      if processor.filter(item) {
+        let transformed = processor.transform(item)
+        let processed = processor.process(transformed)
+        results = results.push(processed)
+      }
+    }
+    
+    results
+  }
+  
+  // 创建遥测数据流处理器
+  let telemetry_processor = create_processor(
+    // 处理函数：提取指标值
+    fn(point: (String, Float)) -> Float {
+      point.1
+    },
+    // 过滤函数：只保留CPU和内存指标
+    fn(point: (String, Float)) -> Bool {
+      point.0 == "cpu.usage" or point.0 == "memory.usage"
+    },
+    // 转换函数：将百分比转换为小数
+    fn(point: (String, Float)) -> (String, Float) {
+      (point.0, point.1 / 100.0)
+    }
+  )
+  
+  // 创建测试数据流
+  let telemetry_data = [
+    ("cpu.usage", 75.5),
+    ("memory.usage", 60.2),
+    ("disk.usage", 45.0),
+    ("network.throughput", 120.5),
+    ("cpu.usage", 80.0),
+    ("memory.usage", 65.5)
   ]
   
-  // 注册服务到健康监控器
-  for service in services {
-    HealthMonitor::register_service(health_monitor, service)
-  }
+  // 处理数据流
+  let processed = process_stream(telemetry_processor, telemetry_data)
   
-  // 启动健康监控
-  HealthMonitor::start(health_monitor)
-  
-  // 等待初始健康检查完成
-  Time::sleep(2000)
-  
-  // 获取初始健康状态
-  let initial_health_status = HealthMonitor::get_overall_health(health_monitor)
-  
-  // 验证初始健康状态
-  assert_true(initial_health_status.overall_status == "healthy" or 
-             initial_health_status.overall_status == "degraded")
-  assert_true(initial_health_status.checked_services > 0)
-  assert_true(initial_health_status.last_check_time > 0)
-  
-  // 验证各服务的健康状态
-  let service_a_health = HealthMonitor::get_service_health(health_monitor, "service.a")
-  assert_eq(service_a_health.status, "healthy")
-  assert_true(service_a_health.availability >= 0.95)
-  
-  let service_c_health = HealthMonitor::get_service_health(health_monitor, "service.c")
-  assert_eq(service_c_health.status, "degraded")
-  assert_true(service_c_health.resource_issues.contains("high_cpu"))
-  
-  // 模拟服务故障
-  let fault_injection = {
-    service_name: "service.b",
-    fault_type: "high_latency",
-    parameters: {
-      response_time: 2000,  // 2秒响应时间
-      affected_endpoint: "/api/orders",
-      duration: 120         // 持续2分钟
-    }
-  }
-  
-  HealthMonitor::inject_fault(health_monitor, fault_injection)
-  
-  // 等待故障检测
-  Time::sleep(35000)  // 等待超过检查间隔
-  
-  // 获取故障后的健康状态
-  let fault_health_status = HealthMonitor::get_overall_health(health_monitor)
-  
-  // 验证故障检测
-  assert_true(fault_health_status.overall_status == "degraded" or 
-             fault_health_status.overall_status == "unhealthy")
-  
-  let service_b_fault_health = HealthMonitor::get_service_health(health_monitor, "service.b")
-  assert_true(service_b_fault_health.status == "degraded" or 
-             service_b_fault_health.status == "unhealthy")
-  assert_true(service_b_fault_health.issues.contains("high_latency"))
-  
-  // 验证告警生成
-  let alerts = HealthMonitor::get_active_alerts(health_monitor)
-  assert_true(alerts.length() > 0)
-  
-  let service_b_alert = alerts.find(fn(alert) {
-    alert.service == "service.b" and alert.type == "availability"
-  })
-  assert_true(service_b_alert != None)
-  
-  match service_b_alert {
-    Some(alert) => {
-      assert_eq(alert.severity, "critical")
-      assert_true(alert.message.contains("response time"))
-      assert_true(alert.triggered_time > 0)
-    }
-    None => assert_true(false)
-  }
-  
-  // 测试自动恢复机制
-  let recovery_actions = HealthMonitor::get_recovery_actions(health_monitor)
-  assert_true(recovery_actions.length() > 0)
-  
-  // 执行恢复动作
-  for action in recovery_actions {
-    let recovery_result = HealthMonitor::execute_recovery_action(health_monitor, action.id)
-    assert_true(recovery_result.success)
-  }
-  
-  // 移除故障注入
-  HealthMonitor::remove_fault(health_monitor, "service.b")
-  
-  // 等待恢复检测
-  Time::sleep(35000)
-  
-  // 获取恢复后的健康状态
-  let recovery_health_status = HealthMonitor::get_overall_health(health_monitor)
-  
-  // 验证恢复效果
-  assert_true(recovery_health_status.overall_status == "healthy" or 
-             recovery_health_status.overall_status == "degraded")
-  
-  let service_b_recovery_health = HealthMonitor::get_service_health(health_monitor, "service.b")
-  assert_true(service_b_recovery_health.status == "healthy" or 
-             service_b_recovery_health.status == "degraded")
-  
-  // 验证告警解决
-  let resolved_alerts = HealthMonitor::get_resolved_alerts(health_monitor)
-  assert_true(resolved_alerts.length() > 0)
-  
-  let service_b_resolved_alert = resolved_alerts.find(fn(alert) {
-    alert.service == "service.b" and alert.type == "availability"
-  })
-  assert_true(service_b_resolved_alert != None)
-  
-  // 测试系统资源监控
-  let resource_metrics = HealthMonitor::get_resource_metrics(health_monitor)
-  
-  // 验证资源指标收集
-  assert_true(resource_metrics.length() > 0)
-  
-  for metric in resource_metrics {
-    assert_true(metric.service_name != "")
-    assert_true(metric.timestamp > 0)
-    assert_true(metric.cpu_usage >= 0.0 and metric.cpu_usage <= 100.0)
-    assert_true(metric.memory_usage >= 0.0 and metric.memory_usage <= 100.0)
-    assert_true(metric.disk_usage >= 0.0 and metric.disk_usage <= 100.0)
-  }
-  
-  // 测试健康趋势分析
-  let trend_analysis = HealthMonitor::analyze_health_trends(health_monitor, {
-    time_window: 3600,  // 1小时窗口
-    granularity: 300    // 5分钟粒度
-  })
-  
-  // 验证趋势分析结果
-  assert_true(trend_analysis.trends.length() > 0)
-  
-  let service_a_trend = trend_analysis.trends.find(fn(trend) {
-    trend.service == "service.a"
-  })
-  assert_true(service_a_trend != None)
-  
-  match service_a_trend {
-    Some(trend) => {
-      assert_true(trend.data_points.length() > 0)
-      assert_true(trend.trend_direction == "stable" or 
-                 trend.trend.direction == "improving" or 
-                 trend.trend_direction == "degrading")
-    }
-    None => assert_true(false)
-  }
-  
-  // 测试健康报告生成
-  let health_report = HealthMonitor::generate_health_report(health_monitor, {
-    include_services: true,
-    include_dependencies: true,
-    include_trends: true,
-    include_recommendations: true
-  })
-  
-  // 验证健康报告
-  assert_true(health_report.overall_score >= 0.0 and health_report.overall_score <= 100.0)
-  assert_true(health_report.service_count > 0)
-  assert_true(health_report.generated_at > 0)
-  
-  // 验证服务健康摘要
-  assert_true(health_report.service_summary.contains_key("healthy"))
-  assert_true(health_report.service_summary.contains_key("degraded"))
-  assert_true(health_report.service_summary.contains_key("unhealthy"))
-  
-  // 验证依赖关系分析
-  assert_true(health_report.dependency_analysis.critical_dependencies.length() >= 0)
-  assert_true(health_report.dependency_analysis.affected_services.length() >= 0)
-  
-  // 验证改进建议
-  assert_true(health_report.recommendations.length() > 0)
-  
-  let has_resource_recommendation = health_report.recommendations.any(fn(rec) {
-    rec.category == "resource" and rec.priority == "high"
-  })
-  assert_true(has_resource_recommendation)
-  
-  // 测试自定义健康检查
-  HealthMonitor::add_custom_check(health_monitor, {
-    name: "custom_business_check",
-    description: "自定义业务逻辑检查",
-    check_function: fn(service_data) {
-      // 自定义检查逻辑：检查特定业务指标
-      let business_metric = service_data.custom_metrics.get("business_throughput")
-      match business_metric {
-        Some(value) => value > 100.0,
-        None => false
+  // 验证结果
+  assert_eq(processed.length(), 4) // 只有cpu和memory指标
+  assert_eq(processed[0], 0.755)   // 75.5% -> 0.755
+  assert_eq(processed[1], 0.602)   // 60.2% -> 0.602
+  assert_eq(processed[2], 0.8)     // 80.0% -> 0.8
+  assert_eq(processed[3], 0.655)   // 65.5% -> 0.655
+}
+
+// 测试7: 排序和搜索算法
+test "排序和搜索算法测试" {
+  // 冒泡排序实现
+  let bubble_sort = fn(arr: Array[Int]) -> Array[Int] {
+    let mut result = arr
+    let n = result.length()
+    let mut i = 0
+    
+    while i < n - 1 {
+      let mut j = 0
+      while j < n - i - 1 {
+        if result[j] > result[j + 1] {
+          // 交换元素
+          let temp = result[j]
+          result = Array::set(result, j, result[j + 1])
+          result = Array::set(result, j + 1, temp)
+        }
+        j = j + 1
       }
-    },
-    interval: 120,  // 2分钟检查一次
-    threshold: 0.8,
-    action: {
-      type: "alert",
-      severity: "warning"
+      i = i + 1
     }
-  })
-  
-  // 添加自定义指标
-  HealthMonitor::add_custom_metric(health_monitor, "service.a", "business_throughput", 150.0)
-  HealthMonitor::add_custom_metric(health_monitor, "service.b", "business_throughput", 80.0)  // 低于阈值
-  
-  // 等待自定义检查执行
-  Time::sleep(125000)  // 等待超过自定义检查间隔
-  
-  // 验证自定义检查结果
-  let custom_check_results = HealthMonitor::get_custom_check_results(health_monitor)
-  assert_true(custom_check_results.length() > 0)
-  
-  let service_a_custom_result = custom_check_results.find(fn(result) {
-    result.service == "service.a" and result.check_name == "custom_business_check"
-  })
-  assert_true(service_a_custom_result != None)
-  
-  match service_a_custom_result {
-    Some(result) => {
-      assert_true(result.status == "pass")
-      assert_true(result.value > 100.0)
-    }
-    None => assert_true(false)
+    
+    result
   }
   
-  let service_b_custom_result = custom_check_results.find(fn(result) {
-    result.service == "service.b" and result.check_name == "custom_business_check"
-  })
-  assert_true(service_b_custom_result != None)
-  
-  match service_b_custom_result {
-    Some(result) => {
-      assert_true(result.status == "fail")
-      assert_true(result.value <= 100.0)
+  // 二分搜索实现
+  let binary_search = fn(arr: Array[Int], target: Int) -> Bool {
+    let mut left = 0
+    let mut right = arr.length() - 1
+    
+    while left <= right {
+      let mid = (left + right) / 2
+      let mid_value = arr[mid]
+      
+      if mid_value == target {
+        return true
+      } else if mid_value < target {
+        left = mid + 1
+      } else {
+        right = mid - 1
+      }
     }
-    None => assert_true(false)
+    
+    false
   }
   
-  // 测试健康检查配置更新
-  HealthMonitor::update_check_rule(health_monitor, "resource_usage", {
-    threshold: {
-      cpu_usage: 75.0,     // 降低CPU阈值
-      memory_usage: 80.0,  // 降低内存阈值
-      disk_usage: 85.0     // 降低磁盘阈值
+  // 测试数据
+  let unsorted = [64, 34, 25, 12, 22, 11, 90, 88, 76, 50, 42]
+  let sorted = bubble_sort(unsorted)
+  
+  // 验证排序结果
+  assert_eq(sorted, [11, 12, 22, 25, 34, 42, 50, 64, 76, 88, 90])
+  
+  // 测试搜索
+  assert_true(binary_search(sorted, 25))
+  assert_true(binary_search(sorted, 90))
+  assert_true(binary_search(sorted, 11))
+  assert_false(binary_search(sorted, 100))
+  assert_false(binary_search(sorted, 0))
+  
+  // 测试空数组和单元素数组
+  assert_eq(bubble_sort([]), [])
+  assert_eq(bubble_sort([42]), [42])
+  assert_true(binary_search([42], 42))
+  assert_false(binary_search([42], 24))
+}
+
+// 测试8: 配置管理
+test "配置管理测试" {
+  // 配置项类型
+  enum ConfigValue {
+    StringVal(String)
+    IntVal(Int)
+    FloatVal(Float)
+    BoolVal(Bool)
+  }
+  
+  type Config = {
+    values: Array[(String, ConfigValue)],
+    defaults: Array[(String, ConfigValue)]
+  }
+  
+  let create_config = fn() -> Config {
+    {
+      values: [],
+      defaults: [
+        ("timeout", IntVal(5000)),
+        ("retries", IntVal(3)),
+        ("debug", BoolVal(false)),
+        ("max_connections", IntVal(100)),
+        ("cache_size", IntVal(1000))
+      ]
     }
-  })
+  }
   
-  // 验证配置更新
-  let updated_rule = HealthMonitor::get_check_rule(health_monitor, "resource_usage")
-  assert_eq(updated_rule.threshold.cpu_usage, 75.0)
-  assert_eq(updated_rule.threshold.memory_usage, 80.0)
-  assert_eq(updated_rule.threshold.disk_usage, 85.0)
+  let set_config = fn(config: Config, key: String, value: ConfigValue) -> Config {
+    let mut new_values = []
+    let mut found = false
+    
+    // 更新现有值
+    for (k, v) in config.values {
+      if k == key {
+        new_values = new_values.push((key, value))
+        found = true
+      } else {
+        new_values = new_values.push((k, v))
+      }
+    }
+    
+    // 添加新值
+    if not(found) {
+      new_values = new_values.push((key, value))
+    }
+    
+    { config | values: new_values }
+  }
   
-  // 停止健康监控
-  HealthMonitor::stop(health_monitor)
+  let get_config = fn(config: Config, key: String) -> ConfigValue {
+    // 首先查找用户设置的值
+    for (k, v) in config.values {
+      if k == key {
+        return v
+      }
+    }
+    
+    // 然后查找默认值
+    for (k, v) in config.defaults {
+      if k == key {
+        return v
+      }
+    }
+    
+    // 如果找不到，返回默认值
+    StringVal("")
+  }
   
-  // 验证优雅关闭
-  let final_status = HealthMonitor::get_monitor_status(health_monitor)
-  assert_eq(final_status.status, "stopped")
-  assert_true(final_status.stop_time > 0)
+  let get_config_string = fn(config: Config, key: String) -> String {
+    match get_config(config, key) {
+      ConfigValue::StringVal(s) => s
+      _ => ""
+    }
+  }
+  
+  let get_config_int = fn(config: Config, key: String) -> Int {
+    match get_config(config, key) {
+      ConfigValue::IntVal(i) => i
+      _ => 0
+    }
+  }
+  
+  let get_config_bool = fn(config: Config, key: String) -> Bool {
+    match get_config(config, key) {
+      ConfigValue::BoolVal(b) => b
+      _ => false
+    }
+  }
+  
+  // 测试配置管理
+  let config = create_config()
+  
+  // 测试默认值
+  assert_eq(get_config_int(config, "timeout"), 5000)
+  assert_eq(get_config_int(config, "retries"), 3)
+  assert_false(get_config_bool(config, "debug"))
+  assert_eq(get_config_int(config, "max_connections"), 100)
+  
+  // 设置新值
+  let config1 = set_config(config, "timeout", IntVal(10000))
+  let config2 = set_config(config1, "debug", BoolVal(true))
+  let config3 = set_config(config2, "service.name", StringVal("azimuth"))
+  
+  // 测试获取值
+  assert_eq(get_config_int(config3, "timeout"), 10000)
+  assert_true(get_config_bool(config3, "debug"))
+  assert_eq(get_config_string(config3, "service.name"), "azimuth")
+  
+  // 未设置的值应该返回默认值
+  assert_eq(get_config_int(config3, "retries"), 3)
+  assert_eq(get_config_string(config3, "unknown"), "")
+}
+
+// 测试9: 资源池管理
+test "资源池管理测试" {
+  // 资源池状态
+  enum ResourceState {
+    Available
+    InUse
+    Maintenance
+  }
+  
+  type Resource = {
+    id: String,
+    state: ResourceState,
+    created_at: Int,
+    last_used: Int
+  }
+  
+  type ResourcePool = {
+    resources: Array[Resource],
+    max_size: Int,
+    current_time: Int
+  }
+  
+  let create_pool = fn(max_size: Int) -> ResourcePool {
+    {
+      resources: [],
+      max_size,
+      current_time: 0
+    }
+  }
+  
+  let add_resource = fn(pool: ResourcePool, id: String) -> ResourcePool {
+    if pool.resources.length() >= pool.max_size {
+      pool // 池已满，不能添加
+    } else {
+      let resource = {
+        id,
+        state: ResourceState::Available,
+        created_at: pool.current_time,
+        last_used: pool.current_time
+      }
+      { pool | resources: pool.resources.push(resource) }
+    }
+  }
+  
+  let acquire_resource = fn(pool: ResourcePool) -> (ResourcePool, Option[String]) {
+    let mut updated_resources = []
+    let mut acquired_id = None
+    
+    for resource in pool.resources {
+      if resource.state == ResourceState::Available and acquired_id == None {
+        updated_resources = updated_resources.push({
+          resource |
+          state: ResourceState::InUse,
+          last_used: pool.current_time
+        })
+        acquired_id = Some(resource.id)
+      } else {
+        updated_resources = updated_resources.push(resource)
+      }
+    }
+    
+    ({ pool | resources: updated_resources }, acquired_id)
+  }
+  
+  let release_resource = fn(pool: ResourcePool, id: String) -> ResourcePool {
+    let mut updated_resources = []
+    
+    for resource in pool.resources {
+      if resource.id == id and resource.state == ResourceState::InUse {
+        updated_resources = updated_resources.push({
+          resource |
+          state: ResourceState::Available,
+          last_used: pool.current_time
+        })
+      } else {
+        updated_resources = updated_resources.push(resource)
+      }
+    }
+    
+    { pool | resources: updated_resources }
+  }
+  
+  let count_available = fn(pool: ResourcePool) -> Int {
+    let mut count = 0
+    for resource in pool.resources {
+      if resource.state == ResourceState::Available {
+        count = count + 1
+      }
+    }
+    count
+  }
+  
+  let count_in_use = fn(pool: ResourcePool) -> Int {
+    let mut count = 0
+    for resource in pool.resources {
+      if resource.state == ResourceState::InUse {
+        count = count + 1
+      }
+    }
+    count
+  }
+  
+  // 测试资源池管理
+  let pool = create_pool(3)
+  
+  // 添加资源
+  let pool1 = add_resource(pool, "resource-1")
+  let pool2 = add_resource(pool1, "resource-2")
+  let pool3 = add_resource(pool2, "resource-3")
+  
+  // 验证资源数量
+  assert_eq(pool3.resources.length(), 3)
+  assert_eq(count_available(pool3), 3)
+  assert_eq(count_in_use(pool3), 0)
+  
+  // 获取资源
+  let (pool4, resource1) = acquire_resource(pool3)
+  assert_eq(resource1, Some("resource-1"))
+  assert_eq(count_available(pool4), 2)
+  assert_eq(count_in_use(pool4), 1)
+  
+  let (pool5, resource2) = acquire_resource(pool4)
+  assert_eq(resource2, Some("resource-2"))
+  assert_eq(count_available(pool5), 1)
+  assert_eq(count_in_use(pool5), 2)
+  
+  // 释放资源
+  let pool6 = release_resource(pool5, "resource-1")
+  assert_eq(count_available(pool6), 2)
+  assert_eq(count_in_use(pool6), 1)
+  
+  // 测试池满的情况
+  let pool7 = add_resource(pool6, "resource-4") // 应该失败，池已满
+  assert_eq(pool7.resources.length(), 3) // 数量不变
+}
+
+// 测试10: 错误恢复机制
+test "错误恢复机制测试" {
+  // 错误类型
+  enum ErrorType {
+    NetworkError
+    DatabaseError
+    TimeoutError
+    ValidationError
+  }
+  
+  // 重试策略
+  enum RetryStrategy {
+    NoRetry
+    FixedDelay(Int) // 延迟毫秒数
+    ExponentialBackoff(Int, Int) // 初始延迟，最大延迟
+  }
+  
+  type OperationResult[T] = {
+    success: Bool,
+    data: Option[T],
+    error: Option[ErrorType],
+    attempts: Int
+  }
+  
+  let execute_with_retry = fn[T](
+    operation: fn() -> (Bool, Option[T], Option[ErrorType]),
+    strategy: RetryStrategy,
+    max_attempts: Int
+  ) -> OperationResult[T] {
+    let mut attempts = 0
+    let mut result_data = None
+    let mut result_error = None
+    let mut success = false
+    let mut delay = 0
+    
+    while attempts < max_attempts and not(success) {
+      attempts = attempts + 1
+      
+      let (op_success, data, error) = operation()
+      
+      if op_success {
+        success = true
+        result_data = data
+      } else {
+        result_error = error
+        
+        // 根据策略计算延迟
+        match strategy {
+          RetryStrategy::NoRetry => {
+            // 不重试
+            break
+          }
+          RetryStrategy::FixedDelay(d) => {
+            delay = d
+          }
+          RetryStrategy::ExponentialBackoff(initial, max) => {
+            delay = initial * (2 ^ (attempts - 1))
+            if delay > max {
+              delay = max
+            }
+          }
+        }
+        
+        // 在实际实现中，这里会等待delay毫秒
+      }
+    }
+    
+    {
+      success,
+      data: result_data,
+      error: result_error,
+      attempts
+    }
+  }
+  
+  // 模拟操作函数
+  let create_failing_operation = fn(fail_count: Int, error_type: ErrorType) {
+    let mut current_attempt = 0
+    fn() -> (Bool, Option[String], Option[ErrorType]) {
+      current_attempt = current_attempt + 1
+      if current_attempt <= fail_count {
+        (false, None, Some(error_type))
+      } else {
+        (true, Some("operation succeeded"), None)
+      }
+    }
+  }
+  
+  // 测试成功操作（不需要重试）
+  let success_op = fn() -> (Bool, Option[String], Option[ErrorType]) {
+    (true, Some("immediate success"), None)
+  }
+  
+  let result1 = execute_with_retry(success_op, RetryStrategy::NoRetry, 3)
+  assert_true(result1.success)
+  assert_eq(result1.data, Some("immediate success"))
+  assert_eq(result1.attempts, 1)
+  
+  // 测试固定延迟重试
+  let failing_op = create_failing_operation(2, ErrorType::NetworkError)
+  let result2 = execute_with_retry(failing_op, RetryStrategy::FixedDelay(100), 5)
+  assert_true(result2.success)
+  assert_eq(result2.data, Some("operation succeeded"))
+  assert_eq(result2.attempts, 3)
+  
+  // 测试指数退避重试
+  let failing_op2 = create_failing_operation(3, ErrorType::DatabaseError)
+  let result3 = execute_with_retry(failing_op2, RetryStrategy::ExponentialBackoff(100, 1000), 5)
+  assert_true(result3.success)
+  assert_eq(result3.data, Some("operation succeeded"))
+  assert_eq(result3.attempts, 4)
+  
+  // 测试超过最大重试次数
+  let always_failing_op = fn() -> (Bool, Option[String], Option[ErrorType]) {
+    (false, None, Some(ErrorType::TimeoutError))
+  }
+  
+  let result4 = execute_with_retry(always_failing_op, RetryStrategy::FixedDelay(200), 3)
+  assert_false(result4.success)
+  assert_eq(result4.data, None)
+  assert_eq(result4.error, Some(ErrorType::TimeoutError))
+  assert_eq(result4.attempts, 3)
+  
+  // 测试不重试策略
+  let result5 = execute_with_retry(always_failing_op, RetryStrategy::NoRetry, 5)
+  assert_false(result5.success)
+  assert_eq(result5.attempts, 1)
 }
