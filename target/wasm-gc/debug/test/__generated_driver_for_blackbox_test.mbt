@@ -74,6 +74,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_voice_stream_telemetry_tests.mbt": {
   },
+  "azimuth_visualization_dashboard_tests.mbt": {
+  },
   "azimuth_utility_functions_tests.mbt": {
   },
   "azimuth_user_interface_tests.mbt": {
