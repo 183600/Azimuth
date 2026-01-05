@@ -456,6 +456,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_serialization_performance_tests.mbt": {
   },
+  "azimuth_serialization_new_tests.mbt": {
+  },
   "azimuth_serialization_high_quality_tests.mbt": {
   },
   "azimuth_serialization_format_tests.mbt": {
