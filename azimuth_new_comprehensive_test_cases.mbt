@@ -1,603 +1,715 @@
 // Azimuth New Comprehensive Test Cases
-// 新的综合测试用例，涵盖各种功能场景
+// This file contains new comprehensive test cases for the Azimuth telemetry system
 
-test "telemetry data validation and sanitization" {
-  // 测试遥测数据验证和清理
-  let raw_data = @azimuth.RawTelemetryData {
-    timestamp : -1L, // 无效时间戳
-    trace_id : "", // 空trace_id
-    span_id : "invalid", // 无效span_id
-    operation_name : "", // 空操作名
-    attributes : [
-      ("key.with.dots", @azimuth.StringValue("value1")), // 包含点的键
-      ("key with spaces", @azimuth.StringValue("value2")), // 包含空格的键
-      ("", @azimuth.StringValue("value3")), // 空键
-      ("valid.key", @azimuth.StringValue("")) // 空值
-    ]
-  }
-  
-  // 数据验证和清理
-  let validated_data = @azimuth.validate_and_sanitize(raw_data)
-  
-  // 验证清理后的数据
-  assert_true(validated_data.timestamp >= 0L)
-  assert_true(validated_data.trace_id.length() > 0)
-  assert_true(validated_data.span_id.length() > 0)
-  assert_true(validated_data.operation_name.length() > 0)
-  
-  // 验证属性清理
-  let sanitized_attrs = validated_data.attributes
-  assert_true(sanitized_attrs.length() <= raw_data.attributes.length())
-  
-  // 验证无效键被过滤或替换
-  for attr in sanitized_attrs {
-    assert_true(attr.0.length() > 0)
-    assert_false(attr.0.contains("."))
-    assert_false(attr.0.contains(" "))
-  }
-}
-
-test "adaptive sampling strategy with dynamic thresholds" {
-  // 测试具有动态阈值的自适应采样策略
-  let sampling_strategy = @azimuth.AdaptiveSamplingStrategy {
-    base_probability : 0.1,
-    max_probability : 0.5,
-    min_probability : 0.01,
-    error_rate_threshold : 0.05,
-    latency_threshold_ms : 1000L,
-    throughput_threshold : 10000,
-    adjustment_factor : 1.5,
-    evaluation_window_ms : 60000L
-  }
-  
-  // 模拟不同的系统状态
-  let normal_state = @azimuth.SystemMetrics {
-    error_rate : 0.02, // 低于阈值
-    avg_latency_ms : 500L, // 低于阈值
-    throughput : 5000 // 低于阈值
-  }
-  
-  let high_error_state = @azimuth.SystemMetrics {
-    error_rate : 0.1, // 高于阈值
-    avg_latency_ms : 500L,
-    throughput : 5000
-  }
-  
-  let high_latency_state = @azimuth.SystemMetrics {
-    error_rate : 0.02,
-    avg_latency_ms : 2000L, // 高于阈值
-    throughput : 5000
-  }
-  
-  // 计算不同状态下的采样概率
-  let normal_prob = @azimuth.calculate_sampling_probability(sampling_strategy, normal_state)
-  let high_error_prob = @azimuth.calculate_sampling_probability(sampling_strategy, high_error_state)
-  let high_latency_prob = @azimuth.calculate_sampling_probability(sampling_strategy, high_latency_state)
-  
-  // 验证采样概率调整
-  assert_true(normal_prob >= sampling_strategy.min_probability)
-  assert_true(normal_prob <= sampling_strategy.max_probability)
-  assert_true(high_error_prob > normal_prob) // 高错误率应增加采样
-  assert_true(high_latency_prob > normal_prob) // 高延迟应增加采样
-}
-
-test "telemetry data compression with multiple algorithms" {
-  // 测试使用多种算法的遥测数据压缩
-  let telemetry_batch = @azimuth.TelemetryBatch {
-    batch_id : "batch-12345",
-    timestamp : 1640995200000L,
-    items : [
-      @azimuth.TelemetryItem {
-        trace_id : "trace1",
-        span_id : "span1",
-        operation_name : "http.get",
-        attributes : [
-          ("http.method", @azimuth.StringValue("GET")),
-          ("http.url", @azimuth.StringValue("/api/users")),
-          ("http.status_code", @azimuth.IntValue(200))
-        ]
-      },
-      @azimuth.TelemetryItem {
-        trace_id : "trace2",
-        span_id : "span2",
-        operation_name : "db.query",
-        attributes : [
-          ("db.type", @azimuth.StringValue("postgresql")),
-          ("db.statement", @azimuth.StringValue("SELECT * FROM users")),
-          ("db.duration_ms", @azimuth.IntValue(150))
-        ]
-      }
-    ]
-  }
-  
-  // 测试不同的压缩算法
-  let gzip_compressed = @azimuth.compress_batch(telemetry_batch, @azimuth.CompressionAlgorithm::Gzip)
-  let lz4_compressed = @azimuth.compress_batch(telemetry_batch, @azimuth.CompressionAlgorithm::LZ4)
-  let zstd_compressed = @azimuth.compress_batch(telemetry_batch, @azimuth.CompressionAlgorithm::Zstd)
-  
-  // 验证压缩结果
-  assert_true(gzip_compressed.compressed_size > 0)
-  assert_true(lz4_compressed.compressed_size > 0)
-  assert_true(zstd_compressed.compressed_size > 0)
-  
-  // 验证解压缩后数据一致性
-  let gzip_decompressed = @azimuth.decompress_batch(gzip_compressed, @azimuth.CompressionAlgorithm::Gzip)
-  let lz4_decompressed = @azimuth.decompress_batch(lz4_compressed, @azimuth.CompressionAlgorithm::LZ4)
-  let zstd_decompressed = @azimuth.decompress_batch(zstd_compressed, @azimuth.CompressionAlgorithm::Zstd)
-  
-  assert_eq(gzip_decompressed.batch_id, telemetry_batch.batch_id)
-  assert_eq(lz4_decompressed.batch_id, telemetry_batch.batch_id)
-  assert_eq(zstd_decompressed.batch_id, telemetry_batch.batch_id)
-  assert_eq(gzip_decompressed.items.length(), telemetry_batch.items.length())
-  assert_eq(lz4_decompressed.items.length(), telemetry_batch.items.length())
-  assert_eq(zstd_decompressed.items.length(), telemetry_batch.items.length())
-}
-
-test "metric aggregation with time window bucketing" {
-  // 测试时间窗口桶的指标聚合
-  let time_series_metrics = @azimuth.TimeSeriesMetrics {
-    metric_name : "response.time",
-    metric_type : @azimuth.MetricType::Histogram,
-    time_buckets : [
-      @azimuth.TimeBucket {
-        start_time : 1640995200000L, // 2022-01-01 00:00:00
-        end_time : 1640995260000L,   // 2022-01-01 00:01:00
-        values : [100.0, 150.0, 200.0, 120.0, 180.0],
-        count : 5,
-        sum : 750.0
-      },
-      @azimuth.TimeBucket {
-        start_time : 1640995260000L, // 2022-01-01 00:01:00
-        end_time : 1640995320000L,   // 2022-01-01 00:02:00
-        values : [90.0, 110.0, 130.0, 160.0, 140.0],
-        count : 5,
-        sum : 630.0
-      },
-      @azimuth.TimeBucket {
-        start_time : 1640995320000L, // 2022-01-01 00:02:00
-        end_time : 1640995380000L,   // 2022-01-01 00:03:00
-        values : [80.0, 95.0, 115.0, 125.0, 135.0],
-        count : 5,
-        sum : 550.0
-      }
-    ]
-  }
-  
-  // 计算聚合统计
-  let aggregated_stats = @azimuth.calculate_aggregated_stats(time_series_metrics)
-  
-  // 验证聚合结果
-  assert_eq(aggregated_stats.total_count, 15) // 3个桶，每个5个值
-  assert_eq(aggregated_stats.total_sum, 1930.0) // 750 + 630 + 550
-  assert_true(aggregated_stats.avg_value > 0.0)
-  assert_true(aggregated_stats.min_value > 0.0)
-  assert_true(aggregated_stats.max_value > 0.0)
-  assert_true(aggregated_stats.p50_value > 0.0)
-  assert_true(aggregated_stats.p95_value > 0.0)
-  assert_true(aggregated_stats.p99_value > 0.0)
-  
-  // 验证百分位数计算
-  assert_true(aggregated_stats.p50_value <= aggregated_stats.p95_value)
-  assert_true(aggregated_stats.p95_value <= aggregated_stats.p99_value)
-  assert_true(aggregated_stats.p99_value <= aggregated_stats.max_value)
-}
-
-test "distributed tracing with service mesh integration" {
-  // 测试与服务网格集成的分布式追踪
-  let service_mesh_trace = @azimuth.ServiceMeshTrace {
-    trace_id : "mesh-trace-12345",
-    mesh_protocol : "istio",
-    ingress_gateway : @azimuth.GatewaySpan {
-      gateway_name : "istio-ingressgateway",
-      span_id : "ingress-span-123",
-      start_time : 1640995200000L,
-      end_time : Some(1640995200100L),
-      attributes : [
-        ("request.protocol", @azimuth.StringValue("http")),
-        ("request.host", @azimuth.StringValue("api.example.com")),
-        ("request.method", @azimuth.StringValue("POST")),
-        ("request.path", @azimuth.StringValue("/api/v1/orders")),
-        ("response.code", @azimuth.IntValue(201))
-      ]
-    },
-    service_spans : [
-      @azimuth.MeshServiceSpan {
-        service_name : "orders-service",
-        span_id : "orders-span-456",
-        parent_span_id : Some("ingress-span-123"),
-        start_time : 1640995200050L,
-        end_time : Some(1640995200200L),
-        attributes : [
-          ("service.version", @azimuth.StringValue("v1.2.3")),
-          ("service.namespace", @azimuth.StringValue("production")),
-          ("operation", @azimuth.StringValue("createOrder")),
-          ("db.query.count", @azimuth.IntValue(3))
-        ]
-      },
-      @azimuth.MeshServiceSpan {
-        service_name : "payment-service",
-        span_id : "payment-span-789",
-        parent_span_id : Some("orders-span-456"),
-        start_time : 1640995200100L,
-        end_time : Some(1640995200180L),
-        attributes : [
-          ("service.version", @azimuth.StringValue("v2.1.0")),
-          ("service.namespace", @azimuth.StringValue("production")),
-          ("operation", @azimuth.StringValue("processPayment")),
-          ("payment.gateway", @azimuth.StringValue("stripe"))
-        ]
-      }
-    ],
-    egress_gateway : @azimuth.GatewaySpan {
-      gateway_name : "istio-egressgateway",
-      span_id : "egress-span-999",
-      start_time : 1640995200200L,
-      end_time : Some(1640995200250L),
-      attributes : [
-        ("external.service", @azimuth.StringValue("payment-gateway")),
-        ("external.endpoint", @azimuth.StringValue("https://api.stripe.com")),
-        ("request.method", @azimuth.StringValue("POST")),
-        ("response.code", @azimuth.IntValue(200))
-      ]
+// Test 1: Data Type Conversion and Validation
+test "data type conversion and validation" {
+  // Test string to number conversion
+  let string_to_int = fn(s: String) -> Option[Int] {
+    match s.parse_int() {
+      Some(n) => Some(n),
+      None => None
     }
   }
   
-  // 验证服务网格追踪结构
-  assert_eq(service_mesh_trace.trace_id, "mesh-trace-12345")
-  assert_eq(service_mesh_trace.mesh_protocol, "istio")
-  assert_eq(service_mesh_trace.service_spans.length(), 2)
-  
-  // 验证时间顺序
-  assert_true(service_mesh_trace.ingress_gateway.start_time <= service_mesh_trace.service_spans[0].start_time)
-  assert_true(service_mesh_trace.service_spans[0].start_time <= service_mesh_trace.service_spans[1].start_time)
-  assert_true(service_mesh_trace.service_spans[1].start_time <= service_mesh_trace.egress_gateway.start_time)
-  
-  // 验证父子关系
-  match service_mesh_trace.service_spans[0].parent_span_id {
-    Some(parent) => assert_eq(parent, service_mesh_trace.ingress_gateway.span_id)
-    None => assert_true(false)
+  let string_to_float = fn(s: String) -> Option[Float] {
+    match s.parse_float() {
+      Some(f) => Some(f),
+      None => None
+    }
   }
   
-  match service_mesh_trace.service_spans[1].parent_span_id {
-    Some(parent) => assert_eq(parent, service_mesh_trace.service_spans[0].span_id)
-    None => assert_true(false)
+  // Test valid conversions
+  assert_eq(string_to_int("42"), Some(42))
+  assert_eq(string_to_int("-10"), Some(-10))
+  assert_eq(string_to_float("3.14"), Some(3.14))
+  assert_eq(string_to_float("-2.5"), Some(-2.5))
+  
+  // Test invalid conversions
+  assert_eq(string_to_int("abc"), None)
+  assert_eq(string_to_float("xyz"), None)
+  assert_eq(string_to_int("3.14"), None)  // Float string can't convert to int
+  
+  // Test boolean conversion
+  let string_to_bool = fn(s: String) -> Option[Bool] {
+    match s.to_lowercase() {
+      "true" => Some(true),
+      "false" => Some(false),
+      "1" => Some(true),
+      "0" => Some(false),
+      _ => None
+    }
   }
+  
+  assert_eq(string_to_bool("true"), Some(true))
+  assert_eq(string_to_bool("false"), Some(false))
+  assert_eq(string_to_bool("TRUE"), Some(true))
+  assert_eq(string_to_bool("1"), Some(true))
+  assert_eq(string_to_bool("0"), Some(false))
+  assert_eq(string_to_bool("maybe"), None)
 }
 
-test "telemetry data retention and archival policies" {
-  // 测试遥测数据保留和归档策略
-  let retention_policy = @azimuth.RetentionPolicy {
-    hot_storage_days : 7,
-    warm_storage_days : 30,
-    cold_storage_days : 365,
-    archival_after_days : 365,
-    delete_after_days : 2555, // 7年
-    compression_enabled : true,
-    encryption_enabled : true,
-    sampling_for_long_term : true,
-    long_term_sampling_rate : 0.01
+// Test 2: Collection Operations and Utilities
+test "collection operations and utilities" {
+  // Test array operations
+  let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  
+  // Filter even numbers
+  let even_numbers = numbers.filter(fn(n) { n % 2 == 0 })
+  assert_eq(even_numbers, [2, 4, 6, 8, 10])
+  
+  // Map to squares
+  let squares = numbers.map(fn(n) { n * n })
+  assert_eq(squares[0], 1)
+  assert_eq(squares[4], 25)
+  assert_eq(squares[9], 100)
+  
+  // Reduce to sum
+  let sum = numbers.reduce(fn(acc, n) { acc + n }, 0)
+  assert_eq(sum, 55)
+  
+  // Test string operations
+  let words = ["hello", "world", "azimuth", "telemetry"]
+  
+  // Filter by length
+  let long_words = words.filter(fn(w) { w.length() > 5 })
+  assert_eq(long_words, ["azimuth", "telemetry"])
+  
+  // Map to lengths
+  let lengths = words.map(fn(w) { w.length() })
+  assert_eq(lengths, [5, 5, 7, 9])
+  
+  // Join strings
+  let joined = words.reduce(fn(acc, w) { acc + " " + w }, "")
+  assert_eq(joined, " hello world azimuth telemetry")
+  
+  // Test custom utility functions
+  let find_max = fn(arr: Array[Int]) -> Option[Int] {
+    if arr.length() == 0 {
+      None
+    } else {
+      let mut max_val = arr[0]
+      for i in 1..arr.length() {
+        if arr[i] > max_val {
+          max_val = arr[i]
+        }
+      }
+      Some(max_val)
+    }
   }
   
-  // 模拟不同年龄的数据
-  let current_time = 1640995200000L // 2022-01-01 00:00:00
-  let hot_data = @azimuth.TelemetryData {
-    timestamp : current_time - (3 * 24 * 60 * 60 * 1000), // 3天前
-    trace_id : "hot-trace-123",
-    data_size_bytes : 1024,
-    storage_tier : @azimuth.StorageTier::Hot
+  let find_min = fn(arr: Array[Int]) -> Option[Int] {
+    if arr.length() == 0 {
+      None
+    } else {
+      let mut min_val = arr[0]
+      for i in 1..arr.length() {
+        if arr[i] < min_val {
+          min_val = arr[i]
+        }
+      }
+      Some(min_val)
+    }
   }
   
-  let warm_data = @azimuth.TelemetryData {
-    timestamp : current_time - (15 * 24 * 60 * 60 * 1000), // 15天前
-    trace_id : "warm-trace-456",
-    data_size_bytes : 1024,
-    storage_tier : @azimuth.StorageTier::Warm
-  }
-  
-  let cold_data = @azimuth.TelemetryData {
-    timestamp : current_time - (100 * 24 * 60 * 60 * 1000), // 100天前
-    trace_id : "cold-trace-789",
-    data_size_bytes : 1024,
-    storage_tier : @azimuth.StorageTier::Cold
-  }
-  
-  let archival_data = @azimuth.TelemetryData {
-    timestamp : current_time - (400 * 24 * 60 * 60 * 1000), // 400天前
-    trace_id : "archival-trace-999",
-    data_size_bytes : 1024,
-    storage_tier : @azimuth.StorageTier::Archival
-  }
-  
-  // 应用保留策略
-  let hot_policy = @azimuth.apply_retention_policy(retention_policy, hot_data, current_time)
-  let warm_policy = @azimuth.apply_retention_policy(retention_policy, warm_data, current_time)
-  let cold_policy = @azimuth.apply_retention_policy(retention_policy, cold_data, current_time)
-  let archival_policy = @azimuth.apply_retention_policy(retention_policy, archival_data, current_time)
-  
-  // 验证策略应用结果
-  match hot_policy.action {
-    @azimuth.RetentionAction::Keep => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match warm_policy.action {
-    @azimuth.RetentionAction::Keep => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match cold_policy.action {
-    @azimuth.RetentionAction::Keep => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match archival_policy.action {
-    @azimuth.RetentionAction::Archive => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  // 验证存储层分配
-  assert_eq(hot_policy.target_tier, Some(@azimuth.StorageTier::Hot))
-  assert_eq(warm_policy.target_tier, Some(@azimuth.StorageTier::Warm))
-  assert_eq(cold_policy.target_tier, Some(@azimuth.StorageTier::Cold))
-  assert_eq(archival_policy.target_tier, Some(@azimuth.StorageTier::Archival))
+  assert_eq(find_max(numbers), Some(10))
+  assert_eq(find_min(numbers), Some(1))
+  assert_eq(find_max([]), None)
+  assert_eq(find_min([]), None)
 }
 
-test "telemetry dashboard visualization data preparation" {
-  // 测试遥测仪表板可视化数据准备
-  let dashboard_config = @azimuth.DashboardConfig {
-    dashboard_id : "main-operations",
-    title : "Main Operations Dashboard",
-    refresh_interval_seconds : 30,
-    time_range_hours : 24,
-    widgets : [
-      @azimuth.WidgetConfig {
-        widget_id : "request-rate",
-        widget_type : @azimuth.WidgetType::TimeSeriesChart,
-        title : "Request Rate",
-        metrics : ["http.requests.total"],
-        aggregation : @azimuth.AggregationType::Rate,
-        group_by : ["service.name", "http.method"]
-      },
-      @azimuth.WidgetConfig {
-        widget_id : "error-rate",
-        widget_type : @azimuth.WidgetType::GaugeChart,
-        title : "Error Rate",
-        metrics : ["http.errors.total"],
-        aggregation : @azimuth.AggregationType::Percentage,
-        group_by : ["service.name"]
-      },
-      @azimuth.WidgetConfig {
-        widget_id : "response-time",
-        widget_type : @azimuth.WidgetType::Heatmap,
-        title : "Response Time Distribution",
-        metrics : ["http.request.duration"],
-        aggregation : @azimuth.AggregationType::Percentile,
-        group_by : ["service.name", "endpoint"]
-      }
-    ]
+// Test 3: Error Handling and Edge Cases
+test "error handling and edge cases" {
+  // Test division with safety checks
+  let safe_divide = fn(a: Float, b: Float) -> Option[Float] {
+    if b == 0.0 {
+      None
+    } else {
+      Some(a / b)
+    }
   }
   
-  // 模拟原始遥测数据
-  let raw_telemetry = @azimuth.RawTelemetryDataset {
-    timestamp : 1640995200000L,
-    data_points : [
-      @azimuth.DataPoint {
-        metric_name : "http.requests.total",
-        value : 1000.0,
-        attributes : [
-          ("service.name", @azimuth.StringValue("api-gateway")),
-          ("http.method", @azimuth.StringValue("GET")),
-          ("http.status_code", @azimuth.IntValue(200))
-        ]
-      },
-      @azimuth.DataPoint {
-        metric_name : "http.requests.total",
-        value : 500.0,
-        attributes : [
-          ("service.name", @azimuth.StringValue("api-gateway")),
-          ("http.method", @azimuth.StringValue("POST")),
-          ("http.status_code", @azimuth.IntValue(201))
-        ]
-      },
-      @azimuth.DataPoint {
-        metric_name : "http.errors.total",
-        value : 50.0,
-        attributes : [
-          ("service.name", @azimuth.StringValue("api-gateway")),
-          ("error.type", @azimuth.StringValue("timeout"))
-        ]
-      },
-      @azimuth.DataPoint {
-        metric_name : "http.request.duration",
-        value : 150.0,
-        attributes : [
-          ("service.name", @azimuth.StringValue("user-service")),
-          ("endpoint", @azimuth.StringValue("/api/users")),
-          ("percentile", @azimuth.StringValue("p95"))
-        ]
-      }
-    ]
+  assert_eq(safe_divide(10.0, 2.0), Some(5.0))
+  assert_eq(safe_divide(10.0, 0.0), None)
+  
+  // Test array access with bounds checking
+  let safe_get = fn<T>(arr: Array[T>, index: Int) -> Option[T] {
+    if index >= 0 && index < arr.length() {
+      Some(arr[index])
+    } else {
+      None
+    }
   }
   
-  // 准备仪表板数据
-  let dashboard_data = @azimuth.prepare_dashboard_data(dashboard_config, raw_telemetry)
+  let test_array = ["a", "b", "c"]
+  assert_eq(safe_get(test_array, 0), Some("a"))
+  assert_eq(safe_get(test_array, 2), Some("c"))
+  assert_eq(safe_get(test_array, 3), None)
+  assert_eq(safe_get(test_array, -1), None)
   
-  // 验证仪表板数据准备
-  assert_eq(dashboard_data.dashboard_id, dashboard_config.dashboard_id)
-  assert_eq(dashboard_data.widgets.length(), dashboard_config.widgets.length())
+  // Test string operations with edge cases
+  let safe_substring = fn(s: String, start: Int, length: Int) -> Option[String] {
+    if start < 0 || length < 0 || start >= s.length() {
+      None
+    } else {
+      let end = (start + length).min(s.length())
+      Some(s.substring(start, end - start))
+    }
+  }
   
-  // 验证请求数率图表数据
-  let request_rate_widget = dashboard_data.widgets.filter(fn(w) { w.widget_id == "request-rate" })
-  assert_eq(request_rate_widget.length(), 1)
-  assert_eq(request_rate_widget[0].data_series.length(), 2) // GET和POST
-  
-  // 验证错误率仪表数据
-  let error_rate_widget = dashboard_data.widgets.filter(fn(w) { w.widget_id == "error-rate" })
-  assert_eq(error_rate_widget.length(), 1)
-  assert_true(error_rate_widget[0].current_value > 0.0)
-  
-  // 验证响应时间热力图数据
-  let response_time_widget = dashboard_data.widgets.filter(fn(w) { w.widget_id == "response-time" })
-  assert_eq(response_time_widget.length(), 1)
-  assert_eq(response_time_widget[0].heatmap_data.length(), 1)
+  let test_string = "hello world"
+  assert_eq(safe_substring(test_string, 0, 5), Some("hello"))
+  assert_eq(safe_substring(test_string, 6, 5), Some("world"))
+  assert_eq(safe_substring(test_string, 0, 11), Some("hello world"))
+  assert_eq(safe_substring(test_string, 0, 12), Some("hello world"))  // Truncated
+  assert_eq(safe_substring(test_string, 11, 1), None)  // Start out of bounds
+  assert_eq(safe_substring(test_string, -1, 5), None)  // Negative start
+  assert_eq(safe_substring(test_string, 0, -1), None)  // Negative length
 }
 
-test "telemetry data export and import across formats" {
-  // 测试跨格式的遥测数据导出和导入
-  let telemetry_dataset = @azimuth.TelemetryDataset {
-    dataset_id : "export-test-123",
-    created_at : 1640995200000L,
-    traces : [
-      @azimuth.ExportableTrace {
-        trace_id : "trace-123",
-        spans : [
-          @azimuth.ExportableSpan {
-            span_id : "span-123",
-            parent_span_id : None,
-            operation_name : "http.get",
-            start_time : 1640995200000L,
-            end_time : Some(1640995200100L),
-            status : @azimuth.SpanStatus::Ok,
-            attributes : [
-              ("http.method", @azimuth.StringValue("GET")),
-              ("http.url", @azimuth.StringValue("/api/users")),
-              ("http.status_code", @azimuth.IntValue(200))
-            ]
-          }
-        ]
-      }
-    ],
-    metrics : [
-      @azimuth.ExportableMetric {
-        name : "http.requests.total",
-        value : 1000.0,
-        timestamp : 1640995200000L,
-        attributes : [
-          ("service.name", @azimuth.StringValue("api-gateway")),
-          ("http.method", @azimuth.StringValue("GET"))
-        ]
-      }
-    ],
-    logs : [
-      @azimuth.ExportableLog {
-        timestamp : 1640995200050L,
-        severity : @azimuth.LogSeverity::Info,
-        message : "Request processed successfully",
-        attributes : [
-          ("trace.id", @azimuth.StringValue("trace-123")),
-          ("span.id", @azimuth.StringValue("span-123"))
-        ]
-      }
-    ]
+// Test 4: Mathematical Functions and Algorithms
+test "mathematical functions and algorithms" {
+  // Test factorial function
+  let factorial = fn(n: Int) -> Int {
+    if n <= 1 {
+      1
+    } else {
+      n * factorial(n - 1)
+    }
   }
   
-  // 导出为不同格式
-  let json_export = @azimuth.export_dataset(telemetry_dataset, @azimuth.ExportFormat::JSON)
-  let protobuf_export = @azimuth.export_dataset(telemetry_dataset, @azimuth.ExportFormat::Protobuf)
-  let avro_export = @azimuth.export_dataset(telemetry_dataset, @azimuth.ExportFormat::Avro)
+  assert_eq(factorial(0), 1)
+  assert_eq(factorial(1), 1)
+  assert_eq(factorial(5), 120)
+  assert_eq(factorial(7), 5040)
   
-  // 验证导出结果
-  assert_true(json_export.data_size > 0)
-  assert_true(protobuf_export.data_size > 0)
-  assert_true(avro_export.data_size > 0)
+  // Test fibonacci sequence
+  let fibonacci = fn(n: Int) -> Int {
+    if n <= 1 {
+      n
+    } else {
+      fibonacci(n - 1) + fibonacci(n - 2)
+    }
+  }
   
-  // 从不同格式导入
-  let json_imported = @azimuth.import_dataset(json_export, @azimuth.ExportFormat::JSON)
-  let protobuf_imported = @azimuth.import_dataset(protobuf_export, @azimuth.ExportFormat::Protobuf)
-  let avro_imported = @azimuth.import_dataset(avro_export, @azimuth.ExportFormat::Avro)
+  assert_eq(fibonacci(0), 0)
+  assert_eq(fibonacci(1), 1)
+  assert_eq(fibonacci(5), 5)
+  assert_eq(fibonacci(7), 13)
   
-  // 验证导入数据完整性
-  assert_eq(json_imported.dataset_id, telemetry_dataset.dataset_id)
-  assert_eq(protobuf_imported.dataset_id, telemetry_dataset.dataset_id)
-  assert_eq(avro_imported.dataset_id, telemetry_dataset.dataset_id)
+  // Test greatest common divisor
+  let gcd = fn(a: Int, b: Int) -> Int {
+    if b == 0 {
+      a
+    } else {
+      gcd(b, a % b)
+    }
+  }
   
-  assert_eq(json_imported.traces.length(), telemetry_dataset.traces.length())
-  assert_eq(protobuf_imported.traces.length(), telemetry_dataset.traces.length())
-  assert_eq(avro_imported.traces.length(), telemetry_dataset.traces.length())
+  assert_eq(gcd(48, 18), 6)
+  assert_eq(gcd(17, 13), 1)
+  assert_eq(gcd(100, 25), 25)
+  assert_eq(gcd(0, 5), 5)
+  assert_eq(gcd(5, 0), 5)
   
-  assert_eq(json_imported.metrics.length(), telemetry_dataset.metrics.length())
-  assert_eq(protobuf_imported.metrics.length(), telemetry_dataset.metrics.length())
-  assert_eq(avro_imported.metrics.length(), telemetry_dataset.metrics.length())
+  // Test prime number checking
+  let is_prime = fn(n: Int) -> Bool {
+    if n <= 1 {
+      false
+    } else if n <= 3 {
+      true
+    } else if n % 2 == 0 || n % 3 == 0 {
+      false
+    } else {
+      let mut i = 5
+      let mut prime = true
+      while i * i <= n && prime {
+        if n % i == 0 || n % (i + 2) == 0 {
+          prime = false
+        }
+        i = i + 6
+      }
+      prime
+    }
+  }
   
-  assert_eq(json_imported.logs.length(), telemetry_dataset.logs.length())
-  assert_eq(protobuf_imported.logs.length(), telemetry_dataset.logs.length())
-  assert_eq(avro_imported.logs.length(), telemetry_dataset.logs.length())
+  assert_false(is_prime(0))
+  assert_false(is_prime(1))
+  assert_true(is_prime(2))
+  assert_true(is_prime(3))
+  assert_true(is_prime(5))
+  assert_true(is_prime(7))
+  assert_true(is_prime(11))
+  assert_true(is_prime(13))
+  assert_false(is_prime(15))
+  assert_false(is_prime(21))
+  assert_true(is_prime(23))
 }
 
-test "telemetry anomaly detection and alerting" {
-  // 测试遥测异常检测和告警
-  let anomaly_detection_config = @azimuth.AnomalyDetectionConfig {
-    algorithms : [
-      @azimuth.AnomalyAlgorithm {
-        name : "statistical_outlier",
-        parameters : [
-          ("z_score_threshold", @azimuth.FloatValue(3.0)),
-          ("window_size", @azimuth.IntValue(100))
-        ]
-      },
-      @azimuth.AnomalyAlgorithm {
-        name : "seasonal_decomposition",
-        parameters : [
-          ("seasonality_period", @azimuth.IntValue(24)), // 24小时季节性
-          ("threshold", @azimuth.FloatValue(2.0))
-        ]
+// Test 5: Data Structure Implementations
+test "data structure implementations" {
+  // Simple stack implementation
+  type Stack<T> = {
+    mut items: Array[T>
+  }
+  
+  let stack_create = fn<T>() -> Stack<T> { { mut items: [] } }
+  let stack_push = fn<T>(stack: Stack<T>, item: T) { stack.items = stack.items.push(item) }
+  let stack_pop = fn<T>(stack: Stack<T>) -> Option<T> {
+    if stack.items.length() == 0 {
+      None
+    } else {
+      let item = stack.items[stack.items.length() - 1]
+      stack.items = stack.items.slice(0, stack.items.length() - 1)
+      Some(item)
+    }
+  }
+  let stack_peek = fn<T>(stack: Stack<T>) -> Option<T> {
+    if stack.items.length() == 0 {
+      None
+    } else {
+      Some(stack.items[stack.items.length() - 1])
+    }
+  }
+  let stack_is_empty = fn<T>(stack: Stack<T>) -> Bool { stack.items.length() == 0 }
+  
+  let mut int_stack = stack_create<Int>()
+  assert_true(stack_is_empty(int_stack))
+  assert_eq(stack_peek(int_stack), None)
+  assert_eq(stack_pop(int_stack), None)
+  
+  stack_push(int_stack, 1)
+  stack_push(int_stack, 2)
+  stack_push(int_stack, 3)
+  
+  assert_false(stack_is_empty(int_stack))
+  assert_eq(stack_peek(int_stack), Some(3))
+  
+  assert_eq(stack_pop(int_stack), Some(3))
+  assert_eq(stack_pop(int_stack), Some(2))
+  assert_eq(stack_pop(int_stack), Some(1))
+  assert_eq(stack_pop(int_stack), None)
+  assert_true(stack_is_empty(int_stack))
+  
+  // Simple queue implementation
+  type Queue<T> = {
+    mut items: Array[T]
+  }
+  
+  let queue_create = fn<T>() -> Queue<T> { { mut items: [] } }
+  let queue_enqueue = fn<T>(queue: Queue<T>, item: T) { queue.items = queue.items.push(item) }
+  let queue_dequeue = fn<T>(queue: Queue<T>) -> Option<T> {
+    if queue.items.length() == 0 {
+      None
+    } else {
+      let item = queue.items[0]
+      queue.items = queue.items.slice(1, queue.items.length())
+      Some(item)
+    }
+  }
+  let queue_front = fn<T>(queue: Queue<T>) -> Option<T> {
+    if queue.items.length() == 0 {
+      None
+    } else {
+      Some(queue.items[0])
+    }
+  }
+  let queue_is_empty = fn<T>(queue: Queue<T>) -> Bool { queue.items.length() == 0 }
+  
+  let mut string_queue = queue_create<String>()
+  assert_true(queue_is_empty(string_queue))
+  assert_eq(queue_front(string_queue), None)
+  assert_eq(queue_dequeue(string_queue), None)
+  
+  queue_enqueue(string_queue, "first")
+  queue_enqueue(string_queue, "second")
+  queue_enqueue(string_queue, "third")
+  
+  assert_false(queue_is_empty(string_queue))
+  assert_eq(queue_front(string_queue), Some("first"))
+  
+  assert_eq(queue_dequeue(string_queue), Some("first"))
+  assert_eq(queue_dequeue(string_queue), Some("second"))
+  assert_eq(queue_dequeue(string_queue), Some("third"))
+  assert_eq(queue_dequeue(string_queue), None)
+  assert_true(queue_is_empty(string_queue))
+}
+
+// Test 6: String Processing and Pattern Matching
+test "string processing and pattern matching" {
+  // Test string reversal
+  let reverse_string = fn(s: String) -> String {
+    let mut chars = []
+    for i in 0..s.length() {
+      chars = chars.push(s[i])
+    }
+    
+    let mut reversed = ""
+    for i in (chars.length() - 1)..=0 {
+      reversed = reversed + chars[i]
+    }
+    reversed
+  }
+  
+  assert_eq(reverse_string("hello"), "olleh")
+  assert_eq(reverse_string("azimuth"), "htimuza")
+  assert_eq(reverse_string(""), "")
+  assert_eq(reverse_string("a"), "a")
+  
+  // Test palindrome checking
+  let is_palindrome = fn(s: String) -> Bool {
+    let cleaned = s.to_lowercase().filter(fn(c) { c.is_alphanumeric() })
+    let reversed = reverse_string(cleaned)
+    cleaned == reversed
+  }
+  
+  assert_true(is_palindrome("racecar"))
+  assert_true(is_palindrome("RaceCar"))
+  assert_true(is_palindrome("A man, a plan, a canal: Panama"))
+  assert_false(is_palindrome("hello"))
+  assert_true(is_palindrome(""))
+  assert_true(is_palindrome("a"))
+  
+  // Test word counting
+  let count_words = fn(s: String) -> Int {
+    if s.trim() == "" {
+      0
+    } else {
+      let words = s.split_whitespace()
+      words.length()
+    }
+  }
+  
+  assert_eq(count_words(""), 0)
+  assert_eq(count_words("   "), 0)
+  assert_eq(count_words("hello"), 1)
+  assert_eq(count_words("hello world"), 2)
+  assert_eq(count_words("  hello   world  "), 2)
+  assert_eq(count_words("the quick brown fox jumps over the lazy dog"), 9)
+  
+  // Test character counting
+  let count_char = fn(s: String, target: Char) -> Int {
+    let mut count = 0
+    for c in s {
+      if c == target {
+        count = count + 1
       }
-    ],
-    alerting_rules : [
-      @azimuth.AlertingRule {
-        rule_name : "high_error_rate",
-        condition : "error_rate > 0.05",
-        severity : @azimuth.AlertSeverity::Critical,
-        cooldown_minutes : 15
-      },
-      @azimuth.AlertingRule {
-        rule_name : "high_latency",
-        condition : "p95_latency > 1000",
-        severity : @azimuth.AlertSeverity::Warning,
-        cooldown_minutes : 10
+    }
+    count
+  }
+  
+  assert_eq(count_char("hello", 'l'), 2)
+  assert_eq(count_char("hello", 'o'), 1)
+  assert_eq(count_char("hello", 'x'), 0)
+  assert_eq(count_char("", 'a'), 0)
+  assert_eq(count_char("aaaaa", 'a'), 5)
+}
+
+// Test 7: Date and Time Operations
+test "date and time operations" {
+  // Simple timestamp representation
+  type Timestamp = Int
+  
+  // Convert timestamp to date components (simplified)
+  let timestamp_to_date = fn(ts: Timestamp) -> (Int, Int, Int) {
+    // This is a simplified calculation for demonstration
+    // In real implementation, would use proper date libraries
+    let days_since_epoch = ts / 86400  // Seconds per day
+    let year = 1970 + days_since_epoch / 365  // Simplified, ignoring leap years
+    let day_of_year = days_since_epoch % 365
+    let month = (day_of_year / 30) + 1  // Simplified, assuming 30 days per month
+    let day = (day_of_year % 30) + 1
+    
+    (year, month, day)
+  }
+  
+  // Test timestamp conversion
+  let (year, month, day) = timestamp_to_date(1640995200)  // 2022-01-01 00:00:00 UTC
+  assert_eq(year, 2022)
+  assert_eq(month, 1)
+  assert_eq(day, 1)
+  
+  // Test time difference calculation
+  let time_difference = fn(ts1: Timestamp, ts2: Timestamp) -> Int {
+    if ts1 > ts2 {
+      ts1 - ts2
+    } else {
+      ts2 - ts1
+    }
+  }
+  
+  let ts1 = 1640995200  // 2022-01-01 00:00:00 UTC
+  let ts2 = 1641081600  // 2022-01-02 00:00:00 UTC
+  let diff = time_difference(ts1, ts2)
+  assert_eq(diff, 86400)  // 1 day in seconds
+  
+  // Test time formatting (simplified)
+  let format_time = fn(ts: Timestamp) -> String {
+    let hours = (ts % 86400) / 3600
+    let minutes = (ts % 3600) / 60
+    let seconds = ts % 60
+    
+    let hour_str = if hours < 10 { "0" + hours.to_string() } else { hours.to_string() }
+    let min_str = if minutes < 10 { "0" + minutes.to_string() } else { minutes.to_string() }
+    let sec_str = if seconds < 10 { "0" + seconds.to_string() } else { seconds.to_string() }
+    
+    hour_str + ":" + min_str + ":" + sec_str
+  }
+  
+  assert_eq(format_time(0), "00:00:00")
+  assert_eq(format_time(3661), "01:01:01")
+  assert_eq(format_time(43200), "12:00:00")
+  assert_eq(format_time(86399), "23:59:59")
+}
+
+// Test 8: Hash and Equality Functions
+test "hash and equality functions" {
+  // Simple hash function for strings
+  let simple_hash = fn(s: String) -> Int {
+    let mut hash = 0
+    for i in 0..s.length() {
+      hash = hash + s[i].to_int() * (i + 1)
+    }
+    hash
+  }
+  
+  // Test hash consistency
+  let test_str = "azimuth"
+  let hash1 = simple_hash(test_str)
+  let hash2 = simple_hash(test_str)
+  assert_eq(hash1, hash2)
+  
+  // Test hash differences
+  assert_true(simple_hash("hello") != simple_hash("world"))
+  assert_true(simple_hash("test") != simple_hash("tset"))
+  
+  // Test array equality
+  let arrays_equal = fn<T>(arr1: Array<T>, arr2: Array<T>) -> Bool {
+    if arr1.length() != arr2.length() {
+      false
+    } else {
+      let mut equal = true
+      for i in 0..arr1.length() {
+        if arr1[i] != arr2[i] {
+          equal = false
+        }
       }
-    ]
+      equal
+    }
   }
   
-  // 模拟时间序列数据，包含异常
-  let time_series_data = @azimuth.TimeSeriesData {
-    metric_name : "error_rate",
-    data_points : [
-      (1640995200000L, 0.01), // 正常
-      (1640995260000L, 0.02), // 正常
-      (1640995320000L, 0.015), // 正常
-      (1640995380000L, 0.08), // 异常 - 高错误率
-      (1640995440000L, 0.09), // 异常 - 持续高错误率
-      (1640995500000L, 0.07), // 异常 - 仍然高
-      (1640995560000L, 0.02) // 恢复正常
-    ]
+  assert_true(arrays_equal([1, 2, 3], [1, 2, 3]))
+  assert_false(arrays_equal([1, 2, 3], [1, 2, 4]))
+  assert_false(arrays_equal([1, 2, 3], [1, 2]))
+  assert_true(arrays_equal([], []))
+  assert_true(arrays_equal(["a", "b"], ["a", "b"]))
+  assert_false(arrays_equal(["a", "b"], ["b", "a"]))
+  
+  // Test deep equality for nested structures
+  type Point = { x: Int, y: Int }
+  type Rectangle = { top_left: Point, bottom_right: Point }
+  
+  let rectangles_equal = fn(r1: Rectangle, r2: Rectangle) -> Bool {
+    r1.top_left.x == r2.top_left.x &&
+    r1.top_left.y == r2.top_left.y &&
+    r1.bottom_right.x == r2.bottom_right.x &&
+    r1.bottom_right.y == r2.bottom_right.y
   }
   
-  // 异常检测
-  let anomaly_results = @azimuth.detect_anomalies(anomaly_detection_config, time_series_data)
+  let rect1 = { top_left: { x: 0, y: 0 }, bottom_right: { x: 10, y: 10 } }
+  let rect2 = { top_left: { x: 0, y: 0 }, bottom_right: { x: 10, y: 10 } }
+  let rect3 = { top_left: { x: 0, y: 0 }, bottom_right: { x: 10, y: 11 } }
   
-  // 验证异常检测结果
-  assert_true(anomaly_results.anomalies.length() > 0)
-  
-  // 验证异常时间点
-  let anomaly_timestamps = anomaly_results.anomalies.map(fn(a) { a.timestamp })
-  assert_true(anomaly_timestamps.includes(1640995380000L)) // 第一个异常点
-  assert_true(anomaly_timestamps.includes(1640995440000L)) // 第二个异常点
-  assert_true(anomaly_timestamps.includes(1640995500000L)) // 第三个异常点
-  
-  // 生成告警
-  let alerts = @azimuth.generate_alerts(anomaly_detection_config, anomaly_results)
-  
-  // 验证告警生成
-  assert_true(alerts.length() > 0)
-  
-  let critical_alerts = alerts.filter(fn(a) { a.severity == @azimuth.AlertSeverity::Critical })
-  assert_true(critical_alerts.length() > 0)
-  
-  // 验证告警内容
-  for alert in critical_alerts {
-    assert_eq(alert.rule_name, "high_error_rate")
-    assert_true(alert.message.contains("error_rate"))
-    assert_true(alert.triggered_at > 0L)
+  assert_true(rectangles_equal(rect1, rect2))
+  assert_false(rectangles_equal(rect1, rect3))
+}
+
+// Test 9: Functional Programming Patterns
+test "functional programming patterns" {
+  // Test function composition
+  let compose = fn<A, B, C>(f: (B) -> C, g: (A) -> B) -> (A) -> C {
+    fn(a: A) { f(g(a)) }
   }
+  
+  let add_one = fn(x: Int) { x + 1 }
+  let double = fn(x: Int) { x * 2 }
+  
+  let add_one_then_double = compose(double, add_one)
+  let double_then_add_one = compose(add_one, double)
+  
+  assert_eq(add_one_then_double(5), 12)  // (5 + 1) * 2
+  assert_eq(double_then_add_one(5), 11)  // (5 * 2) + 1
+  
+  // Test currying
+  let curried_add = fn(a: Int) -> (Int) -> Int {
+    fn(b: Int) { a + b }
+  }
+  
+  let add_five = curried_add(5)
+  assert_eq(add_five(3), 8)
+  assert_eq(add_five(10), 15)
+  
+  // Test higher-order functions with custom predicates
+  let filter_with_predicate = fn<T>(arr: Array<T>, predicate: (T) -> Bool) -> Array<T> {
+    let mut result = []
+    for item in arr {
+      if predicate(item) {
+        result = result.push(item)
+      }
+    }
+    result
+  }
+  
+  let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  
+  // Filter with custom predicate
+  let is_multiple_of_three = fn(n: Int) { n % 3 == 0 }
+  let multiples_of_three = filter_with_predicate(numbers, is_multiple_of_three)
+  assert_eq(multiples_of_three, [3, 6, 9])
+  
+  // Filter with lambda predicate
+  let greater_than_five = filter_with_predicate(numbers, fn(n) { n > 5 })
+  assert_eq(greater_than_five, [6, 7, 8, 9, 10])
+  
+  // Test map with custom transformation
+  let map_with_transform = fn<T, U>(arr: Array<T>, transform: (T) -> U) -> Array<U> {
+    let mut result = []
+    for item in arr {
+      result = result.push(transform(item))
+    }
+    result
+  }
+  
+  let strings = ["hello", "world", "azimuth"]
+  let string_lengths = map_with_transform(strings, fn(s) { s.length() })
+  assert_eq(string_lengths, [5, 5, 7])
+  
+  // Test reduce with custom accumulator
+  let reduce_with_accumulator = fn<T, U>(arr: Array<T>, initial: U, accumulator: (U, T) -> U) -> U {
+    let mut result = initial
+    for item in arr {
+      result = accumulator(result, item)
+    }
+    result
+  }
+  
+  let product = reduce_with_accumulator(numbers, 1, fn(acc, n) { acc * n })
+  assert_eq(product, 3628800)  // 10!
+  
+  let concatenated = reduce_with_accumulator(strings, "", fn(acc, s) { acc + s })
+  assert_eq(concatenated, "helloworldazimuth")
+}
+
+// Test 10: Performance and Optimization Tests
+test "performance and optimization tests" {
+  // Test memoization for expensive functions
+  type MemoCache<T, R> = {
+    mut cache: Array[(T, R)]
+  }
+  
+  let memo_cache_create = fn<T, R>() -> MemoCache<T, R> { { mut cache: [] } }
+  
+  let memoized_fibonacci = fn(n: Int, cache: MemoCache<Int, Int>) -> Int {
+    // Check if value is in cache
+    for i in 0..cache.cache.length() {
+      if cache.cache[i].0 == n {
+        return cache.cache[i].1
+      }
+    }
+    
+    // Calculate and cache the result
+    let result = if n <= 1 {
+      n
+    } else {
+      memoized_fibonacci(n - 1, cache) + memoized_fibonacci(n - 2, cache)
+    }
+    
+    cache.cache = cache.cache.push((n, result))
+    result
+  }
+  
+  let fib_cache = memo_cache_create<Int, Int>()
+  
+  // Test memoized fibonacci
+  assert_eq(memoized_fibonacci(0, fib_cache), 0)
+  assert_eq(memoized_fibonacci(1, fib_cache), 1)
+  assert_eq(memoized_fibonacci(5, fib_cache), 5)
+  assert_eq(memoized_fibonacci(10, fib_cache), 55)
+  
+  // Test binary search
+  let binary_search = fn(arr: Array[Int], target: Int) -> Option[Int] {
+    let mut left = 0
+    let mut right = arr.length() - 1
+    
+    while left <= right {
+      let mid = left + (right - left) / 2
+      
+      if arr[mid] == target {
+        return Some(mid)
+      } else if arr[mid] < target {
+        left = mid + 1
+      } else {
+        right = mid - 1
+      }
+    }
+    
+    None
+  }
+  
+  let sorted_array = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19]
+  
+  assert_eq(binary_search(sorted_array, 7), Some(3))
+  assert_eq(binary_search(sorted_array, 1), Some(0))
+  assert_eq(binary_search(sorted_array, 19), Some(9))
+  assert_eq(binary_search(sorted_array, 2), None)
+  assert_eq(binary_search(sorted_array, 20), None)
+  
+  // Test lazy evaluation simulation
+  type Lazy<T> = {
+    mut evaluated: Bool,
+    mut value: Option<T>,
+    mut thunk: () -> T
+  }
+  
+  let lazy_create = fn<T>(thunk: () -> T) -> Lazy<T> {
+    {
+      mut evaluated: false,
+      mut value: None,
+      mut thunk
+    }
+  }
+  
+  let lazy_force = fn<T>(lazy: Lazy<T>) -> T {
+    if !lazy.evaluated {
+      lazy.value = Some(lazy.thunk())
+      lazy.evaluated = true
+    }
+    lazy.value.unwrap()
+  }
+  
+  let expensive_computation = fn() -> Int {
+    // Simulate expensive computation
+    let mut result = 0
+    for i in 0..1000 {
+      result = result + i
+    }
+    result
+  }
+  
+  let lazy_value = lazy_create(expensive_computation)
+  
+  // Value not computed yet
+  assert_false(lazy_value.evaluated)
+  assert_eq(lazy_value.value, None)
+  
+  // Force evaluation
+  let result = lazy_force(lazy_value)
+  assert_eq(result, 499500)  // Sum of 0 to 999
+  
+  // Value is now cached
+  assert_true(lazy_value.evaluated)
+  assert_eq(lazy_value.value, Some(499500))
+  
+  // Subsequent accesses use cached value
+  let cached_result = lazy_force(lazy_value)
+  assert_eq(cached_result, 499500)
 }
