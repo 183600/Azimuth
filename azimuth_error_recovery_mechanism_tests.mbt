@@ -1,1053 +1,767 @@
 // Azimuth Error Recovery Mechanism Tests
-// 错误恢复机制测试 - 验证遥测系统在遇到错误时的恢复能力和容错性
+// This file contains test cases for error recovery mechanisms
 
-// 测试1: 网络连接错误恢复
-test "网络连接错误恢复测试" {
-  // 创建遥测提供器和客户端
-  let telemetry_provider = TelemetryProvider::new()
-  let telemetry_client = TelemetryClient::new(telemetry_provider)
-  
-  // 模拟网络连接失败
-  let network_error = NetworkError::new("Connection timeout", 5000)
-  TelemetryClient::simulate_network_error(telemetry_client, network_error)
-  
-  // 验证客户端检测到网络错误
-  assert_true(TelemetryClient::has_network_error(telemetry_client))
-  
-  // 发送遥测数据（应该缓冲）
-  let telemetry_data = TelemetryData::new("test.metric", 42.0, [("service", StringValue("test-service"))])
-  let send_result = TelemetryClient::send_telemetry(telemetry_client, telemetry_data)
-  
-  // 验证数据被缓冲而不是发送
-  match send_result {
-    Buffered => assert_true(true)
-    Sent => assert_true(false)
-    Failed => assert_true(false)
+// Test 1: Basic Error Recovery with Retry
+test "basic error recovery with retry" {
+  // Define error types
+  enum ErrorType {
+    NetworkTimeout
+    DatabaseConnectionError
+    ServiceUnavailable
+    InvalidData
+    UnknownError
   }
   
-  // 验证缓冲区大小增加
-  let buffer_size = TelemetryClient::buffer_size(telemetry_client)
-  assert_eq(buffer_size, 1)
-  
-  // 模拟网络恢复
-  TelemetryClient::simulate_network_recovery(telemetry_client)
-  
-  // 验证网络错误状态清除
-  assert_false(TelemetryClient::has_network_error(telemetry_client))
-  
-  // 验证缓冲数据被发送
-  let flush_result = TelemetryClient::flush_buffer(telemetry_client)
-  match flush_result {
-    Success(count) => assert_eq(count, 1)
-    Failed => assert_true(false)
+  type OperationResult[T] = {
+    success: Bool,
+    data: Option[T],
+    error: Option[ErrorType]
   }
   
-  // 验证缓冲区被清空
-  let buffer_size_after_flush = TelemetryClient::buffer_size(telemetry_client)
-  assert_eq(buffer_size_after_flush, 0)
-}
-
-// 测试2: 数据序列化错误恢复
-test "数据序列化错误恢复测试" {
-  // 创建遥测提供器和序列化器
-  let telemetry_provider = TelemetryProvider::new()
-  let serializer = JsonSerializer::new()
-  
-  // 创建包含不可序列化数据的遥测数据
-  let invalid_data = TelemetryData::new("test.metric", 42.0, [
-    ("valid_field", StringValue("valid_value")),
-    ("invalid_field", InvalidValue("circular_reference"))
-  ])
-  
-  // 尝试序列化数据
-  let serialize_result = Serializer::serialize(serializer, invalid_data)
-  
-  // 验证序列化失败
-  match serialize_result {
-    Success(_) => assert_true(false)
-    Failed(error) => assert_eq(error.message, "Serialization failed: circular reference detected")
+  type RetryConfig = {
+    max_attempts: Int,
+    initial_delay_ms: Int,
+    max_delay_ms: Int,
+    backoff_multiplier: Float
   }
   
-  // 验证错误被记录
-  let error_logs = TelemetryProvider::get_error_logs(telemetry_provider)
-  assert_eq(error_logs.length(), 1)
-  assert_true(error_logs[0].message.contains("Serialization failed"))
-  
-  // 创建错误处理策略
-  let error_strategy = SerializationErrorStrategy::new()
-  ErrorStrategy::set_fallback_serializer(error_strategy, PlainTextSerializer::new())
-  ErrorStrategy::set_invalid_field_filter(error_strategy, ["invalid_field"])
-  
-  // 使用错误处理策略重新尝试序列化
-  let retry_result = ErrorStrategy::serialize_with_recovery(error_strategy, invalid_data)
-  
-  // 验证使用回退序列化器成功
-  match retry_result {
-    Success(data) => {
-      assert_true(data.contains("valid_field"))
-      assert_false(data.contains("invalid_field"))
-    }
-    Failed(_) => assert_true(false)
-  }
-  
-  // 验证错误恢复日志
-  let recovery_logs = TelemetryProvider::get_recovery_logs(telemetry_provider)
-  assert_eq(recovery_logs.length(), 1)
-  assert_true(recovery_logs[0].message.contains("Fallback serializer used"))
-}
-
-// 测试3: 存储系统错误恢复
-test "存储系统错误恢复测试" {
-  // 创建遥测提供器和存储系统
-  let telemetry_provider = TelemetryProvider::new()
-  let storage_system = FileStorageSystem::new("/tmp/telemetry")
-  
-  // 模拟存储系统错误（磁盘空间不足）
-  let storage_error = StorageError::new("No space left on device", "ENOSPC")
-  StorageSystem::simulate_error(storage_system, storage_error)
-  
-  // 验证存储系统检测到错误
-  assert_true(StorageSystem::has_error(storage_system))
-  
-  // 尝试存储遥测数据
-  let telemetry_data = TelemetryData::new("test.metric", 42.0, [("service", StringValue("test-service"))])
-  let store_result = StorageSystem::store(storage_system, telemetry_data)
-  
-  // 验证存储失败
-  match store_result {
-    Success => assert_true(false)
-    Failed(error) => assert_eq(error.message, "No space left on device")
-  }
-  
-  // 验证错误被记录
-  let error_logs = TelemetryProvider::get_error_logs(telemetry_provider)
-  assert_eq(error_logs.length(), 1)
-  assert_true(error_logs[0].message.contains("Storage error"))
-  
-  // 创建错误恢复策略
-  let recovery_strategy = StorageErrorStrategy::new()
-  ErrorStrategy::set_alternative_storage(recovery_strategy, MemoryStorageSystem::new())
-  ErrorStrategy::set_cleanup_policy(recovery_strategy, CleanupPolicy::new(100)) // 清理100个旧文件
-  
-  // 使用错误恢复策略重新尝试存储
-  let retry_result = ErrorStrategy::store_with_recovery(recovery_strategy, storage_system, telemetry_data)
-  
-  // 验证使用替代存储成功
-  match retry_result {
-    Success(location) => assert_eq(location, "memory://telemetry/1")
-    Failed(_) => assert_true(false)
-  }
-  
-  // 模拟存储系统恢复
-  StorageSystem::simulate_recovery(storage_system)
-  
-  // 验证存储系统错误状态清除
-  assert_false(StorageSystem::has_error(storage_system))
-  
-  // 验证内存中的数据被迁移到文件存储
-  let migrate_result = ErrorStrategy::migrate_from_alternative(recovery_strategy, storage_system)
-  match migrate_result {
-    Success(count) => assert_eq(count, 1)
-    Failed(_) => assert_true(false)
-  }
-  
-  // 验证错误恢复日志
-  let recovery_logs = TelemetryProvider::get_recovery_logs(telemetry_provider)
-  assert_eq(recovery_logs.length(), 1)
-  assert_true(recovery_logs[0].message.contains("Data migrated from memory to file"))
-}
-
-// 测试4: 服务不可用错误恢复
-test "服务不可用错误恢复测试" {
-  // 创建遥测提供器和远程服务
-  let telemetry_provider = TelemetryProvider::new()
-  let remote_service = RemoteTelemetryService::new("https://api.telemetry.example.com")
-  
-  // 模拟服务不可用
-  let service_error = ServiceError::new("Service unavailable", 503)
-  RemoteService::simulate_error(remote_service, service_error)
-  
-  // 验证远程服务检测到错误
-  assert_true(RemoteService::is_unavailable(remote_service))
-  
-  // 尝试发送遥测数据到远程服务
-  let telemetry_data = TelemetryData::new("test.metric", 42.0, [("service", StringValue("test-service"))])
-  let send_result = RemoteService::send_telemetry(remote_service, telemetry_data)
-  
-  // 验证发送失败
-  match send_result {
-    Success => assert_true(false)
-    Failed(error) => assert_eq(error.message, "Service unavailable")
-  }
-  
-  // 验证错误被记录
-  let error_logs = TelemetryProvider::get_error_logs(telemetry_provider)
-  assert_eq(error_logs.length(), 1)
-  assert_true(error_logs[0].message.contains("Service unavailable"))
-  
-  // 创建错误恢复策略
-  let recovery_strategy = ServiceErrorStrategy::new()
-  ErrorStrategy::set_retry_policy(recovery_strategy, RetryPolicy::exponential_backoff(3, 1000, 10000))
-  ErrorStrategy::set_circuit_breaker(recovery_strategy, CircuitBreaker::new(5, 30000)) // 5次失败后打开，30秒后半开
-  
-  // 使用错误恢复策略重新尝试发送
-  let retry_result = ErrorStrategy::send_with_recovery(recovery_strategy, remote_service, telemetry_data)
-  
-  // 验证重试失败（服务仍然不可用）
-  match retry_result {
-    Success => assert_true(false)
-    Failed(error) => assert_eq(error.message, "Service unavailable after 3 retries")
-  }
-  
-  // 验证熔断器打开
-  assert_true(CircuitBreaker::is_open(ErrorStrategy::get_circuit_breaker(recovery_strategy)))
-  
-  // 模拟服务恢复
-  RemoteService::simulate_recovery(remote_service)
-  
-  // 等待熔断器半开状态
-  wait_for_circuit_breaker_half_open(recovery_strategy, 30000)
-  
-  // 验证熔断器半开
-  assert_true(CircuitBreaker::is_half_open(ErrorStrategy::get_circuit_breaker(recovery_strategy)))
-  
-  // 使用错误恢复策略重新尝试发送
-  let final_result = ErrorStrategy::send_with_recovery(recovery_strategy, remote_service, telemetry_data)
-  
-  // 验证发送成功
-  match final_result {
-    Success(id) => assert_eq(id, "telemetry-id-123")
-    Failed(_) => assert_true(false)
-  }
-  
-  // 验证熔断器关闭
-  assert_true(CircuitBreaker::is_closed(ErrorStrategy::get_circuit_breaker(recovery_strategy)))
-  
-  // 验证错误恢复日志
-  let recovery_logs = TelemetryProvider::get_recovery_logs(telemetry_provider)
-  assert_eq(recovery_logs.length(), 1)
-  assert_true(recovery_logs[0].message.contains("Circuit breaker closed after successful request"))
-}
-
-// 测试5: 内存不足错误恢复
-test "内存不足错误恢复测试" {
-  // 创建遥测提供器和内存管理器
-  let telemetry_provider = TelemetryProvider::new()
-  let memory_manager = MemoryManager::new()
-  
-  // 模拟内存不足情况
-  let memory_error = MemoryError::new("Out of memory", 1024 * 1024 * 1024) // 1GB
-  MemoryManager::simulate_error(memory_manager, memory_error)
-  
-  // 验证内存管理器检测到错误
-  assert_true(MemoryManager::has_memory_error(memory_manager))
-  
-  // 尝试创建大型遥测数据
-  let large_data = create_large_telemetry_data(100 * 1024 * 1024) // 100MB
-  let create_result = MemoryManager::allocate_telemetry_data(memory_manager, large_data)
-  
-  // 验证分配失败
-  match create_result {
-    Success(_) => assert_true(false)
-    Failed(error) => assert_eq(error.message, "Out of memory")
-  }
-  
-  // 验证错误被记录
-  let error_logs = TelemetryProvider::get_error_logs(telemetry_provider)
-  assert_eq(error_logs.length(), 1)
-  assert_true(error_logs[0].message.contains("Out of memory"))
-  
-  // 创建错误恢复策略
-  let recovery_strategy = MemoryErrorStrategy::new()
-  ErrorStrategy::set_memory_cleanup_policy(recovery_strategy, MemoryCleanupPolicy::new(0.5)) // 清理50%内存
-  ErrorStrategy::set_data_compression(recovery_strategy, true)
-  ErrorStrategy::set_temporary_storage(recovery_strategy, DiskStorageSystem::new("/tmp/telemetry-temp"))
-  
-  // 使用错误恢复策略重新尝试分配
-  let retry_result = ErrorStrategy::allocate_with_recovery(recovery_strategy, memory_manager, large_data)
-  
-  // 验证使用压缩和临时存储成功
-  match retry_result {
-    Success(data) => assert_true(data.compressed)
-    Failed(_) => assert_true(false)
-  }
-  
-  // 验证内存清理日志
-  let cleanup_logs = TelemetryProvider::get_cleanup_logs(telemetry_provider)
-  assert_eq(cleanup_logs.length(), 1)
-  assert_true(cleanup_logs[0].message.contains("Memory cleanup: freed 50% of memory"))
-  
-  // 模拟内存恢复
-  MemoryManager::simulate_recovery(memory_manager)
-  
-  // 验证内存管理器错误状态清除
-  assert_false(MemoryManager::has_memory_error(memory_manager))
-  
-  // 验证临时存储中的数据被移回内存
-  let restore_result = ErrorStrategy::restore_from_temporary(recovery_strategy, memory_manager)
-  match restore_result {
-    Success(count) => assert_eq(count, 1)
-    Failed(_) => assert_true(false)
-  }
-  
-  // 验证错误恢复日志
-  let recovery_logs = TelemetryProvider::get_recovery_logs(telemetry_provider)
-  assert_eq(recovery_logs.length(), 1)
-  assert_true(recovery_logs[0].message.contains("Data restored from temporary storage"))
-}
-
-// 测试6: 数据损坏错误恢复
-test "数据损坏错误恢复测试" {
-  // 创建遥测提供器和数据验证器
-  let telemetry_provider = TelemetryProvider::new()
-  let data_validator = DataValidator::new()
-  
-  // 创建损坏的遥测数据
-  let corrupted_data = create_corrupted_telemetry_data()
-  
-  // 尝试验证数据
-  let validate_result = DataValidator::validate(data_validator, corrupted_data)
-  
-  // 验证验证失败
-  match validate_result {
-    Valid => assert_true(false)
-    Invalid(errors) => {
-      assert_eq(errors.length(), 2)
-      assert_true(errors[0].contains("Checksum mismatch"))
-      assert_true(errors[1].contains("Invalid timestamp"))
-    }
-  }
-  
-  // 验证错误被记录
-  let error_logs = TelemetryProvider::get_error_logs(telemetry_provider)
-  assert_eq(error_logs.length(), 1)
-  assert_true(error_logs[0].message.contains("Data validation failed"))
-  
-  // 创建错误恢复策略
-  let recovery_strategy = DataCorruptionStrategy::new()
-  ErrorStrategy::set_data_repair(recovery_strategy, DataRepair::new())
-  ErrorStrategy::set_fallback_data_source(recovery_strategy, BackupDataSource::new("/backup/telemetry"))
-  
-  // 使用错误恢复策略尝试修复数据
-  let repair_result = ErrorStrategy::repair_with_recovery(recovery_strategy, data_validator, corrupted_data)
-  
-  // 验证数据修复成功
-  match repair_result {
-    Repaired(data) => {
-      // 验证修复后的数据有效
-      let revalidate_result = DataValidator::validate(data_validator, data)
-      match revalidate_result {
-        Valid => assert_true(true)
-        Invalid(_) => assert_true(false)
-      }
-    }
-    Irreparable => {
-      // 验证从备份源获取数据
-      let fallback_result = ErrorStrategy::get_from_fallback(recovery_strategy, corrupted_data.id)
-      match fallback_result {
-        Some(data) => {
-          // 验证备份数据有效
-          let revalidate_result = DataValidator::validate(data_validator, data)
-          match revalidate_result {
-            Valid => assert_true(true)
-            Invalid(_) => assert_true(false)
+  // Define retry function with exponential backoff
+  let retry_with_backoff = fn[T](
+    operation: () -> OperationResult[T],
+    config: RetryConfig,
+    should_retry: ErrorType -> Bool
+  ) -> OperationResult[T] {
+    let mut attempt = 1
+    let mut delay = config.initial_delay_ms
+    let mut last_result = operation()
+    
+    while attempt < config.max_attempts and not(last_result.success) {
+      match last_result.error {
+        Some(error) => {
+          if should_retry(error) {
+            // Simulate delay (in real implementation, this would be an actual delay)
+            attempt = attempt + 1
+            
+            // Calculate next delay with exponential backoff
+            delay = (delay.to_float() * config.backoff_multiplier).to_int()
+            if delay > config.max_delay_ms {
+              delay = config.max_delay_ms
+            }
+            
+            // Retry the operation
+            last_result = operation()
+          } else {
+            // Don't retry this type of error
+            break
           }
         }
-        None => assert_true(false)
+        None => {
+          // No error, but success is false (shouldn't happen)
+          break
+        }
+      }
+    }
+    
+    last_result
+  }
+  
+  // Create a test operation that fails initially then succeeds
+  let attempt_counter = { mut count: 0 }
+  let test_operation = fn() -> OperationResult[String] {
+    attempt_counter.count = attempt_counter.count + 1
+    
+    if attempt_counter.count < 3 {
+      {
+        success: false,
+        data: None,
+        error: Some(ErrorType::NetworkTimeout)
+      }
+    } else {
+      {
+        success: true,
+        data: Some("success_after_retry"),
+        error: None
       }
     }
   }
   
-  // 验证错误恢复日志
-  let recovery_logs = TelemetryProvider::get_recovery_logs(telemetry_provider)
-  assert_eq(recovery_logs.length(), 1)
-  assert_true(recovery_logs[0].message.contains("Data repaired") || recovery_logs[0].message.contains("Fallback data used"))
-}
-
-// 测试7: 并发错误恢复
-test "并发错误恢复测试" {
-  // 创建遥测提供器和并发管理器
-  let telemetry_provider = TelemetryProvider::new()
-  let concurrency_manager = ConcurrencyManager::new()
-  
-  // 模拟并发冲突
-  let concurrency_error = ConcurrencyError::new("Concurrent modification detected", "resource-123")
-  ConcurrencyManager::simulate_error(concurrency_manager, concurrency_error)
-  
-  // 验证并发管理器检测到错误
-  assert_true(ConcurrencyManager::has_concurrency_error(concurrency_manager))
-  
-  // 尝试并发更新遥测数据
-  let telemetry_data = TelemetryData::new("test.metric", 42.0, [("service", StringValue("test-service"))])
-  let update_result = ConcurrencyManager::concurrent_update(concurrency_manager, telemetry_data)
-  
-  // 验证更新失败
-  match update_result {
-    Success => assert_true(false)
-    Failed(error) => assert_eq(error.message, "Concurrent modification detected")
+  // Define retry configuration
+  let retry_config = {
+    max_attempts: 5,
+    initial_delay_ms: 100,
+    max_delay_ms: 1000,
+    backoff_multiplier: 2.0
   }
   
-  // 验证错误被记录
-  let error_logs = TelemetryProvider::get_error_logs(telemetry_provider)
-  assert_eq(error_logs.length(), 1)
-  assert_true(error_logs[0].message.contains("Concurrent modification"))
-  
-  // 创建错误恢复策略
-  let recovery_strategy = ConcurrencyErrorStrategy::new()
-  ErrorStrategy::set_retry_policy(recovery_strategy, RetryPolicy::linear_backoff(3, 500)) // 线性退避，3次重试，间隔500ms
-  ErrorStrategy::set_lock_strategy(recovery_strategy, LockStrategy::optimistic())
-  
-  // 使用错误恢复策略重新尝试更新
-  let retry_result = ErrorStrategy::update_with_recovery(recovery_strategy, concurrency_manager, telemetry_data)
-  
-  // 验证重试成功
-  match retry_result {
-    Success(version) => assert_eq(version, 2)
-    Failed(_) => assert_true(false)
+  // Define which errors to retry
+  let should_retry_network_errors = fn(error: ErrorType) {
+    match error {
+      ErrorType::NetworkTimeout => true
+      ErrorType::ServiceUnavailable => true
+      ErrorType::DatabaseConnectionError => true
+      ErrorType::InvalidData => false
+      ErrorType::UnknownError => false
+    }
   }
   
-  // 验证并发管理器错误状态清除
-  assert_false(ConcurrencyManager::has_concurrency_error(concurrency_manager))
+  // Execute the operation with retry
+  let result = retry_with_backoff(test_operation, retry_config, should_retry_network_errors)
   
-  // 验证错误恢复日志
-  let recovery_logs = TelemetryProvider::get_recovery_logs(telemetry_provider)
-  assert_eq(recovery_logs.length(), 1)
-  assert_true(recovery_logs[0].message.contains("Concurrent update succeeded after retry"))
-}
-
-// 测试8: 级联错误恢复
-test "级联错误恢复测试" {
-  // 创建遥测提供器和多级服务链
-  let telemetry_provider = TelemetryProvider::new()
-  let service_a = Service::new("service-a")
-  let service_b = Service::new("service-b")
-  let service_c = Service::new("service-c")
+  // Verify the result
+  assert_true(result.success)
+  assert_eq(result.data, Some("success_after_retry"))
+  assert_eq(result.error, None)
+  assert_eq(attempt_counter.count, 3)  // Failed twice, succeeded on third attempt
   
-  // 设置服务依赖关系：A -> B -> C
-  Service::add_dependency(service_a, service_b)
-  Service::add_dependency(service_b, service_c)
-  
-  // 模拟服务C故障
-  let service_c_error = ServiceError::new("Internal server error", 500)
-  Service::simulate_error(service_c, service_c_error)
-  
-  // 验证服务C检测到错误
-  assert_true(Service::has_error(service_c))
-  
-  // 尝试通过服务链发送遥测数据
-  let telemetry_data = TelemetryData::new("test.metric", 42.0, [("service", StringValue("test-service"))])
-  let send_result = Service::send_through_chain(service_a, telemetry_data)
-  
-  // 验证发送失败（级联失败）
-  match send_result {
-    Success => assert_true(false)
-    Failed(error) => assert_eq(error.message, "Cascading failure from service-c")
+  // Test with non-retryable error
+  attempt_counter.count = 0
+  let non_retryable_operation = fn() -> OperationResult[String] {
+    attempt_counter.count = attempt_counter.count + 1
+    
+    {
+      success: false,
+      data: None,
+      error: Some(ErrorType::InvalidData)
+    }
   }
   
-  // 验证错误被记录
-  let error_logs = TelemetryProvider::get_error_logs(telemetry_provider)
-  assert_eq(error_logs.length(), 3) // 每个服务一个错误
+  let non_retryable_result = retry_with_backoff(non_retryable_operation, retry_config, should_retry_network_errors)
   
-  // 创建错误恢复策略
-  let recovery_strategy = CascadingErrorStrategy::new()
-  ErrorStrategy::set_circuit_breaker_for_dependency(recovery_strategy, "service-c", CircuitBreaker::new(3, 15000))
-  ErrorStrategy::set_fallback_service(recovery_strategy, "service-c", FallbackService::new("service-c-fallback"))
-  
-  // 使用错误恢复策略重新尝试发送
-  let retry_result = ErrorStrategy::send_with_cascading_recovery(recovery_strategy, service_a, telemetry_data)
-  
-  // 验证使用回退服务成功
-  match retry_result {
-    Success(id) => assert_eq(id, "fallback-telemetry-id-456")
-    Failed(_) => assert_true(false)
+  // Verify the result
+  assert_false(non_retryable_result.success)
+  assert_eq(non_retryable_result.data, None)
+  assert_eq(non_retryable_result.error, Some(ErrorType::InvalidData))
+  assert_eq(attempt_counter.count, 1)  // Only attempted once since error is not retryable
+}
+
+// Test 2: Circuit Breaker Pattern
+test "circuit breaker pattern" {
+  // Define circuit breaker states
+  enum CircuitState {
+    Closed    // Normal operation
+    Open      // Circuit is open, calls fail immediately
+    HalfOpen  // Testing if the service has recovered
   }
   
-  // 模拟服务C恢复
-  Service::simulate_recovery(service_c)
-  
-  // 等待熔断器半开状态
-  wait_for_circuit_breaker_half_open_for_service(recovery_strategy, "service-c", 15000)
-  
-  // 验证熔断器半开
-  assert_true(CircuitBreaker::is_half_open(ErrorStrategy::get_circuit_breaker_for_service(recovery_strategy, "service-c")))
-  
-  // 使用错误恢复策略重新尝试发送
-  let final_result = ErrorStrategy::send_with_cascading_recovery(recovery_strategy, service_a, telemetry_data)
-  
-  // 验证发送成功（使用原始服务）
-  match final_result {
-    Success(id) => assert_eq(id, "service-c-telemetry-id-789")
-    Failed(_) => assert_true(false)
+  type CircuitBreakerConfig = {
+    failure_threshold: Int,      // Number of failures before opening
+    recovery_timeout_ms: Int,    // Time to wait before trying half-open
+    expected_recovery_time_ms: Int  // Expected time for recovery testing
   }
   
-  // 验证熔断器关闭
-  assert_true(CircuitBreaker::is_closed(ErrorStrategy::get_circuit_breaker_for_service(recovery_strategy, "service-c")))
-  
-  // 验证错误恢复日志
-  let recovery_logs = TelemetryProvider::get_recovery_logs(telemetry_provider)
-  assert_eq(recovery_logs.length(), 1)
-  assert_true(recovery_logs[0].message.contains("Cascading error resolved"))
-}
-
-// 辅助函数
-fn create_large_telemetry_data(size: Int) -> TelemetryData {
-  let mut large_string = ""
-  for i in 0..size {
-    large_string = large_string + "x"
+  type CircuitBreaker[T] = {
+    state: CircuitState,
+    failure_count: Int,
+    last_failure_time: Int,
+    config: CircuitBreakerConfig,
+    operation: () -> T
   }
   
-  TelemetryData::new("large.metric", 42.0, [
-    ("large_field", StringValue(large_string))
-  ])
-}
-
-fn create_corrupted_telemetry_data() -> TelemetryData {
-  // 创建损坏的数据（无效校验和和时间戳）
-  TelemetryData::new_with_checksum("corrupted.metric", 42.0, [
-    ("valid_field", StringValue("valid_value"))
-  ], "invalid_checksum", -1L)
-}
-
-fn wait_for_circuit_breaker_half_open(strategy: ServiceErrorStrategy, wait_time: Int) -> Unit {
-  // 简化实现，实际应该等待指定时间
-  // 在测试中，我们直接设置熔断器为半开状态
-  let breaker = ErrorStrategy::get_circuit_breaker(strategy)
-  CircuitBreaker::force_half_open(breaker)
-}
-
-fn wait_for_circuit_breaker_half_open_for_service(strategy: CascadingErrorStrategy, service: String, wait_time: Int) -> Unit {
-  // 简化实现，实际应该等待指定时间
-  // 在测试中，我们直接设置熔断器为半开状态
-  let breaker = ErrorStrategy::get_circuit_breaker_for_service(strategy, service)
-  CircuitBreaker::force_half_open(breaker)
-}
-
-// 类型定义
-type TelemetryProvider
-
-type TelemetryClient
-
-type NetworkError {
-  message: String
-  timeout: Int
-}
-
-type TelemetryData {
-  name: String
-  value: Double
-  attributes: Array[(String, AttributeValue)]
-  id: String
-  compressed: Bool
-  checksum: String
-  timestamp: Int64
-}
-
-type SendResult {
-  Sent
-  Buffered
-  Failed(NetworkError)
-}
-
-type Serializer
-
-type JsonSerializer
-
-type PlainTextSerializer
-
-type SerializationResult {
-  Success(String)
-  Failed(SerializationError)
-}
-
-type SerializationError {
-  message: String
-}
-
-type SerializationErrorStrategy
-
-type StorageSystem
-
-type FileStorageSystem
-
-type MemoryStorageSystem
-
-type StorageError {
-  message: String
-  code: String
-}
-
-type StorageResult {
-  Success(String)
-  Failed(StorageError)
-}
-
-type StorageErrorStrategy
-
-type CleanupPolicy {
-  max_files: Int
-}
-
-type RemoteTelemetryService
-
-type ServiceError {
-  message: String
-  code: Int
-}
-
-type ServiceResult {
-  Success(String)
-  Failed(ServiceError)
-}
-
-type ServiceErrorStrategy
-
-type RetryPolicy
-
-type CircuitBreaker
-
-type MemoryManager
-
-type MemoryError {
-  message: String
-  available_bytes: Int
-}
-
-type MemoryResult {
-  Success(TelemetryData)
-  Failed(MemoryError)
-}
-
-type MemoryErrorStrategy
-
-type MemoryCleanupPolicy {
-  cleanup_ratio: Double
-}
-
-type DiskStorageSystem
-
-type DataValidator
-
-type ValidationResult {
-  Valid
-  Invalid(Array[String])
-}
-
-type DataCorruptionStrategy
-
-type DataRepair
-
-type BackupDataSource
-
-type RepairResult {
-  Repaired(TelemetryData)
-  Irreparable
-}
-
-type ConcurrencyManager
-
-type ConcurrencyError {
-  message: String
-  resource_id: String
-}
-
-type ConcurrentUpdateResult {
-  Success(Int)
-  Failed(ConcurrencyError)
-}
-
-type ConcurrencyErrorStrategy
-
-type LockStrategy
-
-type Service
-
-type ServiceChainResult {
-  Success(String)
-  Failed(ServiceError)
-}
-
-type CascadingErrorStrategy
-
-type FallbackService
-
-type AttributeValue {
-  StringValue(String)
-  IntValue(Int)
-  DoubleValue(Double)
-  BoolValue(Bool)
-  InvalidValue(String)
-}
-
-type ErrorLog {
-  message: String
-  timestamp: Int64
-  level: String
-}
-
-type RecoveryLog {
-  message: String
-  timestamp: Int64
-  strategy: String
-}
-
-type CleanupLog {
-  message: String
-  timestamp: Int64
-  resources_freed: Int
-}
-
-// 函数实现（简化）
-fn TelemetryProvider::new() -> TelemetryProvider { TelemetryProvider }
-
-fn TelemetryClient::new(provider: TelemetryProvider) -> TelemetryClient { TelemetryClient }
-
-fn TelemetryClient::simulate_network_error(client: TelemetryClient, error: NetworkError) -> Unit {
-  // 模拟实现
-}
-
-fn TelemetryClient::has_network_error(client: TelemetryClient) -> Bool { true }
-
-fn TelemetryData::new(name: String, value: Double, attributes: Array[(String, AttributeValue)]) -> TelemetryData {
-  TelemetryData {
-    name: name,
-    value: value,
-    attributes: attributes,
-    id: "telemetry-id-123",
-    compressed: false,
-    checksum: "valid-checksum",
-    timestamp: get_current_timestamp()
+  // Create circuit breaker function
+  let create_circuit_breaker = fn[T](
+    operation: () -> T,
+    config: CircuitBreakerConfig
+  ) -> CircuitBreaker[T] {
+    {
+      state: CircuitState::Closed,
+      failure_count: 0,
+      last_failure_time: 0,
+      config: config,
+      operation: operation
+    }
   }
-}
-
-fn TelemetryData::new_with_checksum(name: String, value: Double, attributes: Array[(String, AttributeValue)], checksum: String, timestamp: Int64) -> TelemetryData {
-  TelemetryData {
-    name: name,
-    value: value,
-    attributes: attributes,
-    id: "telemetry-id-456",
-    compressed: false,
-    checksum: checksum,
-    timestamp: timestamp
+  
+  // Execute operation through circuit breaker
+  let execute_with_circuit_breaker = fn[T](
+    circuit_breaker: CircuitBreaker[T],
+    current_time: Int,
+    should_fail: Bool
+  ) -> (CircuitBreaker[T], Option[T]) {
+    let mut updated_circuit = circuit_breaker
+    
+    match updated_circuit.state {
+      CircuitState::Closed => {
+        if should_fail {
+          updated_circuit.failure_count = updated_circuit.failure_count + 1
+          updated_circuit.last_failure_time = current_time
+          
+          if updated_circuit.failure_count >= updated_circuit.config.failure_threshold {
+            updated_circuit.state = CircuitState::Open
+          }
+          
+          (updated_circuit, None)
+        } else {
+          // Success, reset failure count
+          updated_circuit.failure_count = 0
+          let result = updated_circuit.operation()
+          (updated_circuit, Some(result))
+        }
+      }
+      
+      CircuitState::Open => {
+        // Check if recovery timeout has passed
+        if current_time - updated_circuit.last_failure_time >= updated_circuit.config.recovery_timeout_ms {
+          updated_circuit.state = CircuitState::HalfOpen
+          execute_with_circuit_breaker(updated_circuit, current_time, should_fail)
+        } else {
+          // Still in open state, fail immediately
+          (updated_circuit, None)
+        }
+      }
+      
+      CircuitState::HalfOpen => {
+        if should_fail {
+          // Failed in half-open, go back to open
+          updated_circuit.state = CircuitState::Open
+          updated_circuit.last_failure_time = current_time
+          (updated_circuit, None)
+        } else {
+          // Success in half-open, go back to closed
+          updated_circuit.state = CircuitState::Closed
+          updated_circuit.failure_count = 0
+          let result = updated_circuit.operation()
+          (updated_circuit, Some(result))
+        }
+      }
+    }
   }
-}
-
-fn TelemetryClient::send_telemetry(client: TelemetryClient, data: TelemetryData) -> SendResult {
-  if TelemetryClient::has_network_error(client) {
-    Buffered
-  } else {
-    Sent
+  
+  // Create a test operation
+  let test_operation = fn() { "operation_result" }
+  
+  // Create circuit breaker with config
+  let circuit_breaker_config = {
+    failure_threshold: 3,
+    recovery_timeout_ms: 5000,
+    expected_recovery_time_ms: 1000
   }
+  
+  let mut circuit_breaker = create_circuit_breaker(test_operation, circuit_breaker_config)
+  
+  // Test normal operation (closed state)
+  let (cb1, result1) = execute_with_circuit_breaker(circuit_breaker, 1000, false)
+  assert_eq(cb1.state, CircuitState::Closed)
+  assert_eq(cb1.failure_count, 0)
+  assert_eq(result1, Some("operation_result"))
+  
+  // Test failures leading to open state
+  let (cb2, result2) = execute_with_circuit_breaker(cb1, 2000, true)
+  assert_eq(cb2.state, CircuitState::Closed)
+  assert_eq(cb2.failure_count, 1)
+  assert_eq(result2, None)
+  
+  let (cb3, result3) = execute_with_circuit_breaker(cb2, 3000, true)
+  assert_eq(cb3.state, CircuitState::Closed)
+  assert_eq(cb3.failure_count, 2)
+  assert_eq(result3, None)
+  
+  let (cb4, result4) = execute_with_circuit_breaker(cb3, 4000, true)
+  assert_eq(cb4.state, CircuitState::Open)
+  assert_eq(cb4.failure_count, 3)
+  assert_eq(result4, None)
+  
+  // Test immediate failure in open state
+  let (cb5, result5) = execute_with_circuit_breaker(cb4, 5000, false)
+  assert_eq(cb5.state, CircuitState::Open)
+  assert_eq(cb5.failure_count, 3)
+  assert_eq(result5, None)
+  
+  // Test transition to half-open after timeout
+  let (cb6, result6) = execute_with_circuit_breaker(cb5, 10000, false)
+  assert_eq(cb6.state, CircuitState::Closed)
+  assert_eq(cb6.failure_count, 0)
+  assert_eq(result6, Some("operation_result"))
+  
+  // Test failure in half-open state
+  let (cb7, result7) = execute_with_circuit_breaker(cb6, 11000, true)
+  assert_eq(cb7.state, CircuitState::Closed)
+  assert_eq(cb7.failure_count, 1)
+  assert_eq(result7, None)
+  
+  let (cb8, result8) = execute_with_circuit_breaker(cb7, 12000, true)
+  assert_eq(cb8.state, CircuitState::Closed)
+  assert_eq(cb8.failure_count, 2)
+  assert_eq(result8, None)
+  
+  let (cb9, result9) = execute_with_circuit_breaker(cb8, 13000, true)
+  assert_eq(cb9.state, CircuitState::Open)
+  assert_eq(cb9.failure_count, 3)
+  assert_eq(result9, None)
+  
+  // Test transition to half-open
+  let (cb10, result10) = execute_with_circuit_breaker(cb9, 20000, false)
+  assert_eq(cb10.state, CircuitState::HalfOpen)
+  assert_eq(cb10.failure_count, 3)
+  assert_eq(result10, Some("operation_result"))
 }
 
-fn TelemetryClient::buffer_size(client: TelemetryClient) -> Int { 1 }
-
-fn TelemetryClient::simulate_network_recovery(client: TelemetryClient) -> Unit {
-  // 模拟实现
+// Test 3: Fallback Mechanism
+test "fallback mechanism" {
+  // Define result types
+  type ServiceResult[T] = {
+    success: Bool,
+    data: Option[T],
+    error: Option[String]
+  }
+  
+  type FallbackConfig[T] = {
+    primary_service: () -> ServiceResult[T],
+    fallback_service: () -> ServiceResult[T],
+    use_fallback_after_failures: Int,
+    reset_after_success: Bool
+  }
+  
+  // Create fallback mechanism
+  let execute_with_fallback = fn[T](
+    config: FallbackConfig[T],
+    failure_count: Int
+  ) -> (ServiceResult[T], Int) {
+    let primary_result = config.primary_service()
+    let mut updated_failure_count = failure_count
+    
+    if primary_result.success {
+      // Primary service succeeded
+      if config.reset_after_success {
+        updated_failure_count = 0
+      }
+      (primary_result, updated_failure_count)
+    } else {
+      // Primary service failed
+      updated_failure_count = updated_failure_count + 1
+      
+      if updated_failure_count >= config.use_fallback_after_failures {
+        // Use fallback service
+        let fallback_result = config.fallback_service()
+        (fallback_result, updated_failure_count)
+      } else {
+        // Still try primary service
+        (primary_result, updated_failure_count)
+      }
+    }
+  }
+  
+  // Create test services
+  let primary_service_call_count = { mut count: 0 }
+  let fallback_service_call_count = { mut count: 0 }
+  
+  let primary_service = fn() -> ServiceResult[String] {
+    primary_service_call_count.count = primary_service_call_count.count + 1
+    
+    if primary_service_call_count.count <= 2 {
+      {
+        success: false,
+        data: None,
+        error: Some("Primary service unavailable")
+      }
+    } else {
+      {
+        success: true,
+        data: Some("Primary service result"),
+        error: None
+      }
+    }
+  }
+  
+  let fallback_service = fn() -> ServiceResult[String] {
+    fallback_service_call_count.count = fallback_service_call_count.count + 1
+    
+    {
+      success: true,
+      data: Some("Fallback service result"),
+      error: None
+    }
+  }
+  
+  // Create fallback config
+  let fallback_config = {
+    primary_service: primary_service,
+    fallback_service: fallback_service,
+    use_fallback_after_failures: 2,
+    reset_after_success: true
+  }
+  
+  // Test fallback mechanism
+  let mut failure_count = 0
+  
+  // First call - primary fails, but not enough failures to use fallback
+  let (result1, fc1) = execute_with_fallback(fallback_config, failure_count)
+  assert_false(result1.success)
+  assert_eq(result1.error, Some("Primary service unavailable"))
+  assert_eq(fc1, 1)
+  assert_eq(primary_service_call_count.count, 1)
+  assert_eq(fallback_service_call_count.count, 0)
+  failure_count = fc1
+  
+  // Second call - primary fails, now we have enough failures to use fallback
+  let (result2, fc2) = execute_with_fallback(fallback_config, failure_count)
+  assert_true(result2.success)
+  assert_eq(result2.data, Some("Fallback service result"))
+  assert_eq(result2.error, None)
+  assert_eq(fc2, 2)
+  assert_eq(primary_service_call_count.count, 2)
+  assert_eq(fallback_service_call_count.count, 1)
+  failure_count = fc2
+  
+  // Third call - primary service recovers
+  let (result3, fc3) = execute_with_fallback(fallback_config, failure_count)
+  assert_true(result3.success)
+  assert_eq(result3.data, Some("Primary service result"))
+  assert_eq(result3.error, None)
+  assert_eq(fc3, 0)  // Reset to 0 because reset_after_success is true
+  assert_eq(primary_service_call_count.count, 3)
+  assert_eq(fallback_service_call_count.count, 1)
+  
+  // Test with reset_after_success = false
+  let fallback_config_no_reset = {
+    primary_service: primary_service,
+    fallback_service: fallback_service,
+    use_fallback_after_failures: 2,
+    reset_after_success: false
+  }
+  
+  // Reset counters
+  primary_service_call_count.count = 0
+  fallback_service_call_count.count = 0
+  
+  // First call - primary fails
+  let (result4, fc4) = execute_with_fallback(fallback_config_no_reset, 0)
+  assert_false(result4.success)
+  assert_eq(fc4, 1)
+  
+  // Second call - primary fails, use fallback
+  let (result5, fc5) = execute_with_fallback(fallback_config_no_reset, fc4)
+  assert_true(result5.success)
+  assert_eq(result5.data, Some("Fallback service result"))
+  assert_eq(fc5, 2)
+  
+  // Third call - primary succeeds, but failure count is not reset
+  let (result6, fc6) = execute_with_fallback(fallback_config_no_reset, fc5)
+  assert_true(result6.success)
+  assert_eq(result6.data, Some("Primary service result"))
+  assert_eq(fc6, 2)  // Not reset because reset_after_success is false
 }
 
-fn TelemetryClient::flush_buffer(client: TelemetryClient) -> FlushResult {
-  Success(1)
+// Test 4: Graceful Degradation
+test "graceful degradation" {
+  // Define service levels
+  enum ServiceLevel {
+    Full        // All features available
+    Partial     // Some features available
+    Minimal     // Only critical features available
+    Degraded    // Basic functionality only
+  }
+  
+  type ServiceStatus = {
+    level: ServiceLevel,
+    available_features: Array[String],
+    unavailable_features: Array[String],
+    performance_impact: Float  // 0.0 = no impact, 1.0 = severe impact
+  }
+  
+  type SystemResource = {
+    cpu_usage_percent: Float,
+    memory_usage_percent: Float,
+    disk_usage_percent: Float,
+    network_latency_ms: Float
+  }
+  
+  // Define graceful degradation strategy
+  let determine_service_level = fn(resources: SystemResource) -> ServiceLevel {
+    // Calculate overall system stress
+    let cpu_stress = if resources.cpu_usage_percent > 80.0 { 1.0 } else if resources.cpu_usage_percent > 60.0 { 0.5 } else { 0.0 }
+    let memory_stress = if resources.memory_usage_percent > 85.0 { 1.0 } else if resources.memory_usage_percent > 70.0 { 0.5 } else { 0.0 }
+    let disk_stress = if resources.disk_usage_percent > 90.0 { 1.0 } else if resources.disk_usage_percent > 75.0 { 0.5 } else { 0.0 }
+    let network_stress = if resources.network_latency_ms > 500.0 { 1.0 } else if resources.network_latency_ms > 200.0 { 0.5 } else { 0.0 }
+    
+    let total_stress = (cpu_stress + memory_stress + disk_stress + network_stress) / 4.0
+    
+    if total_stress >= 0.75 {
+      ServiceLevel::Degraded
+    } else if total_stress >= 0.5 {
+      ServiceLevel::Minimal
+    } else if total_stress >= 0.25 {
+      ServiceLevel::Partial
+    } else {
+      ServiceLevel::Full
+    }
+  }
+  
+  // Define service status based on level
+  let get_service_status = fn(level: ServiceLevel) -> ServiceStatus {
+    match level {
+      ServiceLevel::Full => {
+        {
+          level: level,
+          available_features: ["analytics", "reporting", "real-time_updates", "advanced_search", "data_export"],
+          unavailable_features: [],
+          performance_impact: 0.0
+        }
+      }
+      
+      ServiceLevel::Partial => {
+        {
+          level: level,
+          available_features: ["analytics", "reporting", "basic_search"],
+          unavailable_features: ["real-time_updates", "advanced_search", "data_export"],
+          performance_impact: 0.25
+        }
+      }
+      
+      ServiceLevel::Minimal => {
+        {
+          level: level,
+          available_features: ["basic_search"],
+          unavailable_features: ["analytics", "reporting", "real-time_updates", "advanced_search", "data_export"],
+          performance_impact: 0.5
+        }
+      }
+      
+      ServiceLevel::Degraded => {
+        {
+          level: level,
+          available_features: [],
+          unavailable_features: ["analytics", "reporting", "real-time_updates", "advanced_search", "data_export", "basic_search"],
+          performance_impact: 0.75
+        }
+      }
+    }
+  }
+  
+  // Test with different resource scenarios
+  
+  // Scenario 1: Normal operation
+  let normal_resources = {
+    cpu_usage_percent: 30.0,
+    memory_usage_percent: 40.0,
+    disk_usage_percent: 50.0,
+    network_latency_ms: 50.0
+  }
+  
+  let normal_level = determine_service_level(normal_resources)
+  let normal_status = get_service_status(normal_level)
+  
+  assert_eq(normal_level, ServiceLevel::Full)
+  assert_eq(normal_status.level, ServiceLevel::Full)
+  assert_eq(normal_status.available_features.length(), 5)
+  assert_eq(normal_status.unavailable_features.length(), 0)
+  assert_eq(normal_status.performance_impact, 0.0)
+  
+  // Scenario 2: Moderate stress
+  let moderate_resources = {
+    cpu_usage_percent: 65.0,
+    memory_usage_percent: 72.0,
+    disk_usage_percent: 60.0,
+    network_latency_ms: 150.0
+  }
+  
+  let moderate_level = determine_service_level(moderate_resources)
+  let moderate_status = get_service_status(moderate_level)
+  
+  assert_eq(moderate_level, ServiceLevel::Partial)
+  assert_eq(moderate_status.level, ServiceLevel::Partial)
+  assert_eq(moderate_status.available_features.length(), 3)
+  assert_eq(moderate_status.unavailable_features.length(), 2)
+  assert_eq(moderate_status.performance_impact, 0.25)
+  assert_true(moderate_status.available_features.contains("analytics"))
+  assert_true(moderate_status.available_features.contains("reporting"))
+  assert_true(moderate_status.available_features.contains("basic_search"))
+  assert_false(moderate_status.available_features.contains("real-time_updates"))
+  
+  // Scenario 3: High stress
+  let high_resources = {
+    cpu_usage_percent: 82.0,
+    memory_usage_percent: 87.0,
+    disk_usage_percent: 78.0,
+    network_latency_ms: 300.0
+  }
+  
+  let high_level = determine_service_level(high_resources)
+  let high_status = get_service_status(high_level)
+  
+  assert_eq(high_level, ServiceLevel::Minimal)
+  assert_eq(high_status.level, ServiceLevel::Minimal)
+  assert_eq(high_status.available_features.length(), 1)
+  assert_eq(high_status.unavailable_features.length(), 5)
+  assert_eq(high_status.performance_impact, 0.5)
+  assert_true(high_status.available_features.contains("basic_search"))
+  assert_false(high_status.available_features.contains("analytics"))
+  
+  // Scenario 4: Critical stress
+  let critical_resources = {
+    cpu_usage_percent: 95.0,
+    memory_usage_percent: 92.0,
+    disk_usage_percent: 95.0,
+    network_latency_ms: 800.0
+  }
+  
+  let critical_level = determine_service_level(critical_resources)
+  let critical_status = get_service_status(critical_level)
+  
+  assert_eq(critical_level, ServiceLevel::Degraded)
+  assert_eq(critical_status.level, ServiceLevel::Degraded)
+  assert_eq(critical_status.available_features.length(), 0)
+  assert_eq(critical_status.unavailable_features.length(), 6)
+  assert_eq(critical_status.performance_impact, 0.75)
 }
 
-type FlushResult {
-  Success(Int)
-  Failed
-}
-
-fn TelemetryProvider::get_error_logs(provider: TelemetryProvider) -> Array[ErrorLog] {
-  [ErrorLog {
-    message: "Network error occurred",
-    timestamp: get_current_timestamp(),
-    level: "ERROR"
-  }]
-}
-
-fn JsonSerializer::new() -> JsonSerializer { JsonSerializer }
-
-fn Serializer::serialize(serializer: JsonSerializer, data: TelemetryData) -> SerializationResult {
-  Failed(SerializationError { message: "Serialization failed: circular reference detected" })
-}
-
-fn SerializationErrorStrategy::new() -> SerializationErrorStrategy { SerializationErrorStrategy }
-
-fn ErrorStrategy::set_fallback_serializer(strategy: SerializationErrorStrategy, serializer: PlainTextSerializer) -> Unit {
-  // 模拟实现
-}
-
-fn PlainTextSerializer::new() -> PlainTextSerializer { PlainTextSerializer }
-
-fn ErrorStrategy::set_invalid_field_filter(strategy: SerializationErrorStrategy, fields: Array[String]) -> Unit {
-  // 模拟实现
-}
-
-fn ErrorStrategy::serialize_with_recovery(strategy: SerializationErrorStrategy, data: TelemetryData) -> SerializationResult {
-  Success("{ \"valid_field\": \"valid_value\" }")
-}
-
-fn TelemetryProvider::get_recovery_logs(provider: TelemetryProvider) -> Array[RecoveryLog] {
-  [RecoveryLog {
-    message: "Fallback serializer used",
-    timestamp: get_current_timestamp(),
-    strategy: "SerializationErrorStrategy"
-  }]
-}
-
-fn FileStorageSystem::new(path: String) -> FileStorageSystem { FileStorageSystem }
-
-fn StorageSystem::simulate_error(storage: FileStorageSystem, error: StorageError) -> Unit {
-  // 模拟实现
-}
-
-fn StorageSystem::has_error(storage: FileStorageSystem) -> Bool { true }
-
-fn StorageSystem::store(storage: FileStorageSystem, data: TelemetryData) -> StorageResult {
-  Failed(StorageError { message: "No space left on device", code: "ENOSPC" })
-}
-
-fn StorageErrorStrategy::new() -> StorageErrorStrategy { StorageErrorStrategy }
-
-fn ErrorStrategy::set_alternative_storage(strategy: StorageErrorStrategy, storage: MemoryStorageSystem) -> Unit {
-  // 模拟实现
-}
-
-fn MemoryStorageSystem::new() -> MemoryStorageSystem { MemoryStorageSystem }
-
-fn CleanupPolicy::new(max_files: Int) -> CleanupPolicy { CleanupPolicy { max_files: max_files } }
-
-fn ErrorStrategy::set_cleanup_policy(strategy: StorageErrorStrategy, policy: CleanupPolicy) -> Unit {
-  // 模拟实现
-}
-
-fn ErrorStrategy::store_with_recovery(strategy: StorageErrorStrategy, storage: FileStorageSystem, data: TelemetryData) -> StorageResult {
-  Success("memory://telemetry/1")
-}
-
-fn StorageSystem::simulate_recovery(storage: FileStorageSystem) -> Unit {
-  // 模拟实现
-}
-
-fn ErrorStrategy::migrate_from_alternative(strategy: StorageErrorStrategy, storage: FileStorageSystem) -> StorageResult {
-  Success(1)
-}
-
-fn RemoteTelemetryService::new(url: String) -> RemoteTelemetryService { RemoteTelemetryService }
-
-fn RemoteService::simulate_error(service: RemoteTelemetryService, error: ServiceError) -> Unit {
-  // 模拟实现
-}
-
-fn RemoteService::is_unavailable(service: RemoteTelemetryService) -> Bool { true }
-
-fn RemoteService::send_telemetry(service: RemoteTelemetryService, data: TelemetryData) -> ServiceResult {
-  Failed(ServiceError { message: "Service unavailable", code: 503 })
-}
-
-fn ServiceErrorStrategy::new() -> ServiceErrorStrategy { ServiceErrorStrategy }
-
-fn RetryPolicy::exponential_backoff(max_retries: Int, initial_delay: Int, max_delay: Int) -> RetryPolicy {
-  RetryPolicy
-}
-
-fn ErrorStrategy::set_retry_policy(strategy: ServiceErrorStrategy, policy: RetryPolicy) -> Unit {
-  // 模拟实现
-}
-
-fn CircuitBreaker::new(failure_threshold: Int, timeout: Int) -> CircuitBreaker { CircuitBreaker }
-
-fn ErrorStrategy::set_circuit_breaker(strategy: ServiceErrorStrategy, breaker: CircuitBreaker) -> Unit {
-  // 模拟实现
-}
-
-fn ErrorStrategy::send_with_recovery(strategy: ServiceErrorStrategy, service: RemoteTelemetryService, data: TelemetryData) -> ServiceResult {
-  Failed(ServiceError { message: "Service unavailable after 3 retries", code: 503 })
-}
-
-fn ErrorStrategy::get_circuit_breaker(strategy: ServiceErrorStrategy) -> CircuitBreaker { CircuitBreaker }
-
-fn CircuitBreaker::is_open(breaker: CircuitBreaker) -> Bool { true }
-
-fn RemoteService::simulate_recovery(service: RemoteTelemetryService) -> Unit {
-  // 模拟实现
-}
-
-fn CircuitBreaker::force_half_open(breaker: CircuitBreaker) -> Unit {
-  // 模拟实现
-}
-
-fn CircuitBreaker::is_half_open(breaker: CircuitBreaker) -> Bool { true }
-
-fn ErrorStrategy::send_with_recovery(strategy: ServiceErrorStrategy, service: RemoteTelemetryService, data: TelemetryData) -> ServiceResult {
-  Success("telemetry-id-123")
-}
-
-fn CircuitBreaker::is_closed(breaker: CircuitBreaker) -> Bool { true }
-
-fn TelemetryProvider::get_cleanup_logs(provider: TelemetryProvider) -> Array[CleanupLog] {
-  [CleanupLog {
-    message: "Memory cleanup: freed 50% of memory",
-    timestamp: get_current_timestamp(),
-    resources_freed: 100
-  }]
-}
-
-fn MemoryManager::new() -> MemoryManager { MemoryManager }
-
-fn MemoryManager::simulate_error(manager: MemoryManager, error: MemoryError) -> Unit {
-  // 模拟实现
-}
-
-fn MemoryManager::has_memory_error(manager: MemoryManager) -> Bool { true }
-
-fn MemoryManager::allocate_telemetry_data(manager: MemoryManager, data: TelemetryData) -> MemoryResult {
-  Failed(MemoryError { message: "Out of memory", available_bytes: 1024 * 1024 * 1024 })
-}
-
-fn MemoryErrorStrategy::new() -> MemoryErrorStrategy { MemoryErrorStrategy }
-
-fn MemoryCleanupPolicy::new(cleanup_ratio: Double) -> MemoryCleanupPolicy {
-  MemoryCleanupPolicy { cleanup_ratio: cleanup_ratio }
-}
-
-fn ErrorStrategy::set_memory_cleanup_policy(strategy: MemoryErrorStrategy, policy: MemoryCleanupPolicy) -> Unit {
-  // 模拟实现
-}
-
-fn ErrorStrategy::set_data_compression(strategy: MemoryErrorStrategy, enabled: Bool) -> Unit {
-  // 模拟实现
-}
-
-fn DiskStorageSystem::new(path: String) -> DiskStorageSystem { DiskStorageSystem }
-
-fn ErrorStrategy::set_temporary_storage(strategy: MemoryErrorStrategy, storage: DiskStorageSystem) -> Unit {
-  // 模拟实现
-}
-
-fn ErrorStrategy::allocate_with_recovery(strategy: MemoryErrorStrategy, manager: MemoryManager, data: TelemetryData) -> MemoryResult {
-  Success(TelemetryData {
-    name: data.name,
-    value: data.value,
-    attributes: data.attributes,
-    id: data.id,
-    compressed: true,
-    checksum: data.checksum,
-    timestamp: data.timestamp
-  })
-}
-
-fn MemoryManager::simulate_recovery(manager: MemoryManager) -> Unit {
-  // 模拟实现
-}
-
-fn ErrorStrategy::restore_from_temporary(strategy: MemoryErrorStrategy, manager: MemoryManager) -> MemoryResult {
-  Success(1)
-}
-
-fn DataValidator::new() -> DataValidator { DataValidator }
-
-fn DataValidator::validate(validator: DataValidator, data: TelemetryData) -> ValidationResult {
-  Invalid(["Checksum mismatch", "Invalid timestamp"])
-}
-
-fn DataCorruptionStrategy::new() -> DataCorruptionStrategy { DataCorruptionStrategy }
-
-fn DataRepair::new() -> DataRepair { DataRepair }
-
-fn ErrorStrategy::set_data_repair(strategy: DataCorruptionStrategy, repair: DataRepair) -> Unit {
-  // 模拟实现
-}
-
-fn BackupDataSource::new(path: String) -> BackupDataSource { BackupDataSource }
-
-fn ErrorStrategy::set_fallback_data_source(strategy: DataCorruptionStrategy, source: BackupDataSource) -> Unit {
-  // 模拟实现
-}
-
-fn ErrorStrategy::repair_with_recovery(strategy: DataCorruptionStrategy, validator: DataValidator, data: TelemetryData) -> RepairResult {
-  Repaired(TelemetryData {
-    name: data.name,
-    value: data.value,
-    attributes: data.attributes,
-    id: data.id,
-    compressed: data.compressed,
-    checksum: "valid-checksum",
-    timestamp: get_current_timestamp()
-  })
-}
-
-fn ErrorStrategy::get_from_fallback(strategy: DataCorruptionStrategy, id: String) -> Option[TelemetryData] {
-  Some(TelemetryData::new("fallback.metric", 42.0, []))
-}
-
-fn ConcurrencyManager::new() -> ConcurrencyManager { ConcurrencyManager }
-
-fn ConcurrencyManager::simulate_error(manager: ConcurrencyManager, error: ConcurrencyError) -> Unit {
-  // 模拟实现
-}
-
-fn ConcurrencyManager::has_concurrency_error(manager: ConcurrencyManager) -> Bool { true }
-
-fn ConcurrencyManager::concurrent_update(manager: ConcurrencyManager, data: TelemetryData) -> ConcurrentUpdateResult {
-  Failed(ConcurrencyError { message: "Concurrent modification detected", resource_id: "resource-123" })
-}
-
-fn ConcurrencyErrorStrategy::new() -> ConcurrencyErrorStrategy { ConcurrencyErrorStrategy }
-
-fn RetryPolicy::linear_backoff(max_retries: Int, delay: Int) -> RetryPolicy { RetryPolicy }
-
-fn ErrorStrategy::set_lock_strategy(strategy: ConcurrencyErrorStrategy, lock_strategy: LockStrategy) -> Unit {
-  // 模拟实现
-}
-
-fn LockStrategy::optimistic() -> LockStrategy { LockStrategy }
-
-fn ErrorStrategy::update_with_recovery(strategy: ConcurrencyErrorStrategy, manager: ConcurrencyManager, data: TelemetryData) -> ConcurrentUpdateResult {
-  Success(2)
-}
-
-fn Service::new(name: String) -> Service { Service }
-
-fn Service::add_dependency(service: Service, dependency: Service) -> Unit {
-  // 模拟实现
-}
-
-fn Service::simulate_error(service: Service, error: ServiceError) -> Unit {
-  // 模拟实现
-}
-
-fn Service::has_error(service: Service) -> Bool { true }
-
-fn Service::send_through_chain(service: Service, data: TelemetryData) -> ServiceChainResult {
-  Failed(ServiceError { message: "Cascading failure from service-c", code: 500 })
-}
-
-fn CascadingErrorStrategy::new() -> CascadingErrorStrategy { CascadingErrorStrategy }
-
-fn ErrorStrategy::set_circuit_breaker_for_dependency(strategy: CascadingErrorStrategy, dependency: String, breaker: CircuitBreaker) -> Unit {
-  // 模拟实现
-}
-
-fn FallbackService::new(name: String) -> FallbackService { FallbackService }
-
-fn ErrorStrategy::set_fallback_service(strategy: CascadingErrorStrategy, service: String, fallback: FallbackService) -> Unit {
-  // 模拟实现
-}
-
-fn ErrorStrategy::send_with_cascading_recovery(strategy: CascadingErrorStrategy, service: Service, data: TelemetryData) -> ServiceChainResult {
-  Success("fallback-telemetry-id-456")
-}
-
-fn ErrorStrategy::get_circuit_breaker_for_service(strategy: CascadingErrorStrategy, service: String) -> CircuitBreaker {
-  CircuitBreaker
-}
-
-fn Service::simulate_recovery(service: Service) -> Unit {
-  // 模拟实现
-}
-
-fn ErrorStrategy::send_with_cascading_recovery(strategy: CascadingErrorStrategy, service: Service, data: TelemetryData) -> ServiceChainResult {
-  Success("service-c-telemetry-id-789")
-}
-
-fn get_current_timestamp() -> Int64 {
-  1609459200000L // 2021-01-01 00:00:00 UTC
+// Test 5: Error Recovery with Data Consistency
+test "error recovery with data consistency" {
+  // Define transaction types
+  type Transaction = {
+    id: String,
+    operations: Array[String],
+    status: String,  // "pending", "committed", "rolled_back"
+    timestamp: Int
+  }
+  
+  type TransactionResult = {
+    success: Bool,
+    transaction_id: String,
+    error: Option[String]
+  }
+  
+  type RecoveryPoint = {
+    transaction_id: String,
+    operation_index: Int,
+    data_state: String  // Simplified representation of data state
+  }
+  
+  // Create transaction manager with recovery
+  let execute_transaction_with_recovery = fn(
+    operations: Array[String],
+    should_fail_at: Int,
+    recovery_points: Array[RecoveryPoint]
+  ) -> (TransactionResult, Array[RecoveryPoint]) {
+    let transaction_id = "txn_" + (1640995200).to_string()
+    let mut current_recovery_points = recovery_points
+    let mut operation_index = 0
+    
+    // Create recovery point before each operation
+    let create_recovery_point = fn(op_index: Int, data_state: String) {
+      current_recovery_points = current_recovery_points.push({
+        transaction_id: transaction_id,
+        operation_index: op_index,
+        data_state: data_state
+      })
+    }
+    
+    // Execute operations
+    for i in 0..operations.length() {
+      operation_index = i
+      let operation = operations[i]
+      
+      // Create recovery point before operation
+      create_recovery_point(i, "state_before_op_" + i.to_string())
+      
+      // Simulate operation failure
+      if i == should_fail_at {
+        return ({
+          success: false,
+          transaction_id: transaction_id,
+          error: Some("Operation failed at index " + i.to_string())
+        }, current_recovery_points)
+      }
+      
+      // Simulate successful operation
+      // In a real implementation, this would modify the data state
+    }
+    
+    // All operations succeeded
+    ({
+      success: true,
+      transaction_id: transaction_id,
+      error: None
+    }, current_recovery_points)
+  }
+  
+  // Rollback transaction from recovery point
+  let rollback_transaction = fn(
+    recovery_point: RecoveryPoint
+  ) -> TransactionResult {
+    // In a real implementation, this would restore the data state
+    // to the state at the recovery point
+    
+    {
+      success: true,
+      transaction_id: recovery_point.transaction_id,
+      error: None
+    }
+  }
+  
+  // Retry transaction from recovery point
+  let retry_transaction = fn(
+    operations: Array[String],
+    from_index: Int,
+    transaction_id: String
+  ) -> TransactionResult {
+    // Execute operations from the recovery point
+    for i in from_index..operations.length() {
+      let operation = operations[i]
+      
+      // In a real implementation, this would execute the operation
+      // For this test, we'll assume all retry operations succeed
+    }
+    
+    {
+      success: true,
+      transaction_id: transaction_id,
+      error: None
+    }
+  }
+  
+  // Test transaction with failure and recovery
+  
+  // Define operations
+  let operations = [
+    "create_user",
+    "assign_permissions",
+    "send_welcome_email",
+    "update_audit_log",
+    "notify_admin"
+  ]
+  
+  // Execute transaction with failure at operation 2 (0-indexed)
+  let (result1, recovery_points1) = execute_transaction_with_recovery(operations, 2, [])
+  
+  // Verify failure
+  assert_false(result1.success)
+  assert_eq(result1.error, Some("Operation failed at index 2"))
+  assert_eq(recovery_points1.length(), 3)  // Recovery points before operations 0, 1, and 2
+  
+  // Test rollback from the last recovery point
+  let last_recovery_point = recovery_points1[recovery_points1.length() - 1]
+  let rollback_result = rollback_transaction(last_recovery_point)
+  
+  assert_true(rollback_result.success)
+  assert_eq(rollback_result.transaction_id, result1.transaction_id)
+  
+  // Test retry from the recovery point
+  let retry_result = retry_transaction(operations, 2, result1.transaction_id)
+  
+  assert_true(retry_result.success)
+  assert_eq(retry_result.transaction_id, result1.transaction_id)
+  
+  // Test successful transaction (no failure)
+  let (result2, recovery_points2) = execute_transaction_with_recovery(operations, -1, [])
+  
+  assert_true(result2.success)
+  assert_eq(result2.error, None)
+  assert_eq(recovery_points2.length(), 5)  // Recovery points before all 5 operations
+  
+  // Test recovery with multiple failures
+  let (result3, recovery_points3) = execute_transaction_with_recovery(operations, 1, [])
+  
+  assert_false(result3.success)
+  assert_eq(result3.error, Some("Operation failed at index 1"))
+  
+  // Rollback from the recovery point before the failed operation
+  let recovery_point_before_failure = recovery_points3[1]
+  let rollback_result2 = rollback_transaction(recovery_point_before_failure)
+  
+  assert_true(rollback_result2.success)
+  
+  // Retry from the recovery point
+  let retry_result2 = retry_transaction(operations, 1, result3.transaction_id)
+  
+  assert_true(retry_result2.success)
 }
