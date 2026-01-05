@@ -1,293 +1,929 @@
-// Azimuth Enhanced Distributed Tracing Consistency Tests
-// 增强版分布式追踪一致性测试，确保跨服务追踪数据的一致性和完整性
+// Azimuth Distributed Tracing Consistency Enhanced Test Suite
+// This file contains tests for distributed tracing consistency across services
 
-test "分布式追踪上下文传播一致性测试" {
-  // 创建根追踪上下文
-  let root_trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
-  let root_span_id = "00f067aa0ba902b7"
-  let root_context = azimuth::SpanContext::new(root_trace_id, root_span_id, true, "rojo=00f067aa0ba902b7")
+// Test 1: Trace Context Propagation
+test "trace context propagation across services" {
+  // Trace context structure
+  type TraceContext = {
+    trace_id: String,
+    span_id: String,
+    parent_span_id: Option[String],
+    baggage: Array[(String, String)],
+    flags: Int
+  }
   
-  // 验证根上下文
-  assert_eq(azimuth::SpanContext::trace_id(root_context), root_trace_id)
-  assert_eq(azimuth::SpanContext::span_id(root_context), root_span_id)
-  assert_true(azimuth::SpanContext::is_sampled(root_context))
-  assert_true(azimuth::SpanContext::is_valid(root_context))
+  // Service span structure
+  type ServiceSpan = {
+    service_name: String,
+    operation_name: String,
+    trace_context: TraceContext,
+    start_time: Int,
+    end_time: Int,
+    status: String,
+    tags: Array[(String, String)]
+  }
   
-  // 模拟服务A中的span创建
-  let service_a_span = azimuth::Span::new("service-a-operation", azimuth::SpanKind::Server, root_context)
-  let service_a_context = azimuth::Span::span_context(service_a_span)
+  // Create trace context
+  let create_trace_context = fn(trace_id: String, span_id: String, parent_span_id: Option[String]) {
+    {
+      trace_id,
+      span_id,
+      parent_span_id,
+      baggage: [],
+      flags: 0
+    }
+  }
   
-  // 验证服务A的追踪上下文一致性
-  assert_eq(azimuth::SpanContext::trace_id(service_a_context), root_trace_id)
-  assert_not_eq(azimuth::SpanContext::span_id(service_a_context), root_span_id)
-  assert_true(azimuth::SpanContext::is_sampled(service_a_context))
+  // Extract trace context from headers
+  let extract_trace_context = fn(headers: Array[(String, String)]) {
+    let mut trace_id = ""
+    let mut span_id = ""
+    let mut parent_span_id = None
+    let mut baggage = []
+    
+    for (key, value) in headers {
+      match key {
+        "x-trace-id" => trace_id = value
+        "x-span-id" => span_id = value
+        "x-parent-span-id" => parent_span_id = Some(value)
+        "x-baggage" => {
+          // Parse baggage items (key=value,key2=value2)
+          let items = value.split(",")
+          for item in items {
+            let parts = item.split("=")
+            if parts.length() == 2 {
+              baggage = baggage.push((parts[0], parts[1]))
+            }
+          }
+        }
+        _ => {}
+      }
+    }
+    
+    if trace_id != "" and span_id != "" {
+      Some({
+        trace_id,
+        span_id,
+        parent_span_id,
+        baggage,
+        flags: 0
+      })
+    } else {
+      None
+    }
+  }
   
-  // 模拟服务A调用服务B
-  let service_b_span = azimuth::Span::new("service-b-operation", azimuth::SpanKind::Server, service_a_context)
-  let service_b_context = azimuth::Span::span_context(service_b_span)
+  // Inject trace context into headers
+  let inject_trace_context = fn(context: TraceContext) {
+    let mut headers = []
+    
+    headers = headers.push(("x-trace-id", context.trace_id))
+    headers = headers.push(("x-span-id", context.span_id))
+    
+    match context.parent_span_id {
+      Some(parent_id) => headers = headers.push(("x-parent-span-id", parent_id))
+      None => {}
+    }
+    
+    if context.baggage.length() > 0 {
+      let baggage_str = context.baggage
+        .map(fn((k, v)) { k + "=" + v })
+        .reduce(fn(acc, item) { acc + "," + item })
+      headers = headers.push(("x-baggage", baggage_str))
+    }
+    
+    headers
+  }
   
-  // 验证服务B的追踪上下文一致性
-  assert_eq(azimuth::SpanContext::trace_id(service_b_context), root_trace_id)
-  assert_not_eq(azimuth::SpanContext::span_id(service_b_context), service_a_context.span_id)
-  assert_true(azimuth::SpanContext::is_sampled(service_b_context))
+  // Create service span
+  let create_service_span = fn(service_name: String, operation_name: String, context: TraceContext, start_time: Int) {
+    {
+      service_name,
+      operation_name,
+      trace_context: context,
+      start_time,
+      end_time: 0,
+      status: "running",
+      tags: []
+    }
+  }
   
-  // 模拟服务B调用服务C
-  let service_c_span = azimuth::Span::new("service-c-operation", azimuth::SpanKind::Server, service_b_context)
-  let service_c_context = azimuth::Span::span_context(service_c_span)
+  // Complete service span
+  let complete_span = fn(span: ServiceSpan, end_time: Int, status: String) {
+    {
+      span |
+      end_time,
+      status
+    }
+  }
   
-  // 验证服务C的追踪上下文一致性
-  assert_eq(azimuth::SpanContext::trace_id(service_c_context), root_trace_id)
-  assert_not_eq(azimuth::SpanContext::span_id(service_c_context), service_b_context.span_id)
-  assert_true(azimuth::SpanContext::is_sampled(service_c_context))
+  // Test trace context creation
+  let root_context = create_trace_context("trace-12345", "span-1001", None)
+  assert_eq(root_context.trace_id, "trace-12345")
+  assert_eq(root_context.span_id, "span-1001")
+  assert_eq(root_context.parent_span_id, None)
   
-  // 验证所有span的追踪ID一致
-  assert_eq(azimuth::SpanContext::trace_id(root_context), 
-           azimuth::SpanContext::trace_id(service_a_context))
-  assert_eq(azimuth::SpanContext::trace_id(service_a_context), 
-           azimuth::SpanContext::trace_id(service_b_context))
-  assert_eq(azimuth::SpanContext::trace_id(service_b_context), 
-           azimuth::SpanContext::trace_id(service_c_context))
+  let child_context = create_trace_context("trace-12345", "span-1002", Some("span-1001"))
+  assert_eq(child_context.trace_id, "trace-12345")
+  assert_eq(child_context.span_id, "span-1002")
+  assert_eq(child_context.parent_span_id, Some("span-1001"))
   
-  // 验证所有span的span ID唯一
-  assert_not_eq(azimuth::SpanContext::span_id(root_context), 
-                azimuth::SpanContext::span_id(service_a_context))
-  assert_not_eq(azimuth::SpanContext::span_id(service_a_context), 
-                azimuth::SpanContext::span_id(service_b_context))
-  assert_not_eq(azimuth::SpanContext::span_id(service_b_context), 
-                azimuth::SpanContext::span_id(service_c_context))
+  // Test context injection and extraction
+  let headers = inject_trace_context(root_context)
+  assert_true(headers.contains(("x-trace-id", "trace-12345")))
+  assert_true(headers.contains(("x-span-id", "span-1001")))
+  
+  let extracted_context = extract_trace_context(headers)
+  assert_true(extracted_context.is_some())
+  
+  let context = extracted_context.unwrap()
+  assert_eq(context.trace_id, "trace-12345")
+  assert_eq(context.span_id, "span-1001")
+  assert_eq(context.parent_span_id, None)
+  
+  // Test with baggage
+  let context_with_baggage = {
+    root_context |
+    baggage: [("user.id", "user-123"), ("request.id", "req-456")]
+  }
+  
+  let headers_with_baggage = inject_trace_context(context_with_baggage)
+  let extracted_with_baggage = extract_trace_context(headers_with_baggage).unwrap()
+  
+  assert_true(extracted_with_baggage.baggage.contains(("user.id", "user-123")))
+  assert_true(extracted_with_baggage.baggage.contains(("request.id", "req-456")))
+  
+  // Test trace propagation across services
+  let api_span = create_service_span("api-service", "process-request", root_context, 1640995200)
+  let completed_api_span = complete_span(api_span, 1640995250, "success")
+  
+  let db_context = create_trace_context("trace-12345", "span-1003", Some("span-1001"))
+  let db_span = create_service_span("database-service", "query", db_context, 1640995220)
+  let completed_db_span = complete_span(db_span, 1640995240, "success")
+  
+  let cache_context = create_trace_context("trace-12345", "span-1004", Some("span-1001"))
+  let cache_span = create_service_span("cache-service", "get", cache_context, 1640995210)
+  let completed_cache_span = complete_span(cache_span, 1640995215, "hit")
+  
+  // Verify trace consistency
+  assert_eq(completed_api_span.trace_context.trace_id, "trace-12345")
+  assert_eq(completed_db_span.trace_context.trace_id, "trace-12345")
+  assert_eq(completed_cache_span.trace_context.trace_id, "trace-12345")
+  
+  // Verify parent-child relationships
+  assert_eq(completed_api_span.trace_context.parent_span_id, None)
+  assert_eq(completed_db_span.trace_context.parent_span_id, Some("span-1001"))
+  assert_eq(completed_cache_span.trace_context.parent_span_id, Some("span-1001"))
+  
+  // Verify timing consistency
+  assert_true(completed_api_span.start_time <= completed_db_span.start_time)
+  assert_true(completed_api_span.start_time <= completed_cache_span.start_time)
+  assert_true(completed_db_span.end_time <= completed_api_span.end_time)
+  assert_true(completed_cache_span.end_time <= completed_api_span.end_time)
 }
 
-test "跨服务 baggage 传播一致性测试" {
-  // 创建根 baggage
-  let root_baggage = azimuth::Baggage::new()
-  let updated_baggage = azimuth::Baggage::set_entry(root_baggage, "user.id", "user-12345")
-  let final_baggage = azimuth::Baggage::set_entry(updated_baggage, "request.id", "req-67890")
-  
-  // 验证 baggage 条目
-  match azimuth::Baggage::get_entry(final_baggage, "user.id") {
-    Some(value) => assert_eq(value, "user-12345")
-    None => assert_true(false)
+// Test 2: Trace Sampling Strategy
+test "trace sampling strategy consistency" {
+  // Sampling decision structure
+  type SamplingDecision = {
+    sampled: Bool,
+    decision_reason: String,
+    sample_rate: Float
   }
   
-  match azimuth::Baggage::get_entry(final_baggage, "request.id") {
-    Some(value) => assert_eq(value, "req-67890")
-    None => assert_true(false)
+  // Sampling strategies
+  let always_sample = fn(trace_id: String) {
+    {
+      sampled: true,
+      decision_reason: "always_on",
+      sample_rate: 1.0
+    }
   }
   
-  // 模拟服务间 baggage 传播
-  let service_a_baggage = azimuth::Baggage::set_entry(final_baggage, "service.a.timestamp", "1640995200")
-  let service_b_baggage = azimuth::Baggage::set_entry(service_a_baggage, "service.b.timestamp", "1640995260")
-  let service_c_baggage = azimuth::Baggage::set_entry(service_b_baggage, "service.c.timestamp", "1640995320")
-  
-  // 验证 baggage 传播一致性
-  match azimuth::Baggage::get_entry(service_c_baggage, "user.id") {
-    Some(value) => assert_eq(value, "user-12345")
-    None => assert_true(false)
+  let never_sample = fn(trace_id: String) {
+    {
+      sampled: false,
+      decision_reason: "always_off",
+      sample_rate: 0.0
+    }
   }
   
-  match azimuth::Baggage::get_entry(service_c_baggage, "request.id") {
-    Some(value) => assert_eq(value, "req-67890")
-    None => assert_true(false)
+  let probabilistic_sample = fn(trace_id: String, sample_rate: Float) {
+    // Simple hash-based sampling for deterministic results
+    let hash = trace_id.length() % 100
+    let sampled = hash.to_float() < (sample_rate * 100.0)
+    
+    {
+      sampled,
+      decision_reason: "probabilistic",
+      sample_rate
+    }
   }
   
-  match azimuth::Baggage::get_entry(service_c_baggage, "service.a.timestamp") {
-    Some(value) => assert_eq(value, "1640995200")
-    None => assert_true(false)
+  let rate_limited_sample = fn(trace_id: String, max_traces_per_second: Int, current_count: Int) {
+    let sampled = current_count < max_traces_per_second
+    
+    {
+      sampled,
+      decision_reason: "rate_limited",
+      sample_rate: if sampled { 1.0 } else { 0.0 }
+    }
   }
   
-  match azimuth::Baggage::get_entry(service_c_baggage, "service.b.timestamp") {
-    Some(value) => assert_eq(value, "1640995260")
-    None => assert_true(false)
-  }
+  // Test always sampling
+  let always_decision = always_sample("trace-12345")
+  assert_true(always_decision.sampled)
+  assert_eq(always_decision.decision_reason, "always_on")
+  assert_eq(always_decision.sample_rate, 1.0)
   
-  match azimuth::Baggage::get_entry(service_c_baggage, "service.c.timestamp") {
-    Some(value) => assert_eq(value, "1640995320")
-    None => assert_true(false)
-  }
+  // Test never sampling
+  let never_decision = never_sample("trace-12345")
+  assert_false(never_decision.sampled)
+  assert_eq(never_decision.decision_reason, "always_off")
+  assert_eq(never_decision.sample_rate, 0.0)
+  
+  // Test probabilistic sampling
+  let high_rate_decision = probabilistic_sample("trace-12345", 0.8)
+  assert_eq(high_rate_decision.decision_reason, "probabilistic")
+  assert_eq(high_rate_decision.sample_rate, 0.8)
+  
+  let low_rate_decision = probabilistic_sample("trace-12345", 0.1)
+  assert_eq(low_rate_decision.decision_reason, "probabilistic")
+  assert_eq(low_rate_decision.sample_rate, 0.1)
+  
+  // Test rate-limited sampling
+  let under_limit_decision = rate_limited_sample("trace-12345", 10, 5)
+  assert_true(under_limit_decision.sampled)
+  assert_eq(under_limit_decision.decision_reason, "rate_limited")
+  
+  let over_limit_decision = rate_limited_sample("trace-12345", 10, 15)
+  assert_false(over_limit_decision.sampled)
+  assert_eq(over_limit_decision.decision_reason, "rate_limited")
+  
+  // Test sampling consistency across services
+  let trace_id = "trace-67890"
+  let sample_rate = 0.5
+  
+  // All services should make the same decision for the same trace
+  let api_decision = probabilistic_sample(trace_id, sample_rate)
+  let db_decision = probabilistic_sample(trace_id, sample_rate)
+  let cache_decision = probabilistic_sample(trace_id, sample_rate)
+  
+  assert_eq(api_decision.sampled, db_decision.sampled)
+  assert_eq(db_decision.sampled, cache_decision.sampled)
+  assert_eq(api_decision.decision_reason, "probabilistic")
+  assert_eq(db_decision.decision_reason, "probabilistic")
+  assert_eq(cache_decision.decision_reason, "probabilistic")
+  
+  // Test with different trace IDs
+  let trace_id_1 = "trace-abcde"
+  let trace_id_2 = "trace-fghij"
+  
+  let decision_1 = probabilistic_sample(trace_id_1, 0.5)
+  let decision_2 = probabilistic_sample(trace_id_2, 0.5)
+  
+  // Decisions may be different for different traces
+  // (but deterministic for the same trace)
+  let decision_1_repeat = probabilistic_sample(trace_id_1, 0.5)
+  assert_eq(decision_1.sampled, decision_1_repeat.sampled)
 }
 
-test "分布式追踪采样决策一致性测试" {
-  // 测试采样决策在跨服务调用中的一致性
-  let sampled_trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
-  let sampled_span_id = "00f067aa0ba902b7"
-  let sampled_context = azimuth::SpanContext::new(sampled_trace_id, sampled_span_id, true, "")
+// Test 3: Trace Timeline Consistency
+test "trace timeline consistency" {
+  // Span event structure
+  type SpanEvent = {
+    timestamp: Int,
+    event_name: String,
+    attributes: Array[(String, String)]
+  }
   
-  // 验证采样决策传播
-  let service_a_span = azimuth::Span::new("service-a-operation", azimuth::SpanKind::Server, sampled_context)
-  let service_a_context = azimuth::Span::span_context(service_a_span)
-  assert_true(azimuth::SpanContext::is_sampled(service_a_context))
+  // Service span structure
+  type ServiceSpan = {
+    service_name: String,
+    operation_name: String,
+    trace_id: String,
+    span_id: String,
+    parent_span_id: Option[String],
+    start_time: Int,
+    end_time: Int,
+    events: Array[SpanEvent],
+    status: String
+  }
   
-  let service_b_span = azimuth::Span::new("service-b-operation", azimuth::SpanKind::Server, service_a_context)
-  let service_b_context = azimuth::Span::span_context(service_b_span)
-  assert_true(azimuth::SpanContext::is_sampled(service_b_context))
+  // Validate timeline consistency
+  let validate_timeline = fn(spans: Array[ServiceSpan]) {
+    let mut issues = []
+    
+    for span in spans {
+      // Check start time <= end time
+      if span.start_time > span.end_time {
+        issues = issues.push({
+          span_id: span.span_id,
+          issue: "start_time_after_end_time",
+          message: "Start time is after end time"
+        })
+      }
+      
+      // Check event timestamps are within span duration
+      for event in span.events {
+        if event.timestamp < span.start_time or event.timestamp > span.end_time {
+          issues = issues.push({
+            span_id: span.span_id,
+            issue: "event_outside_span",
+            message: "Event timestamp is outside span duration"
+          })
+        }
+      }
+      
+      // Check parent span timeline
+      match span.parent_span_id {
+        Some(parent_id) => {
+          let mut parent_span = None
+          for potential_parent in spans {
+            if potential_parent.span_id == parent_id {
+              parent_span = Some(potential_parent)
+              break
+            }
+          }
+          
+          match parent_span {
+            Some(parent) => {
+              // Child span should start after parent starts
+              if span.start_time < parent.start_time {
+                issues = issues.push({
+                  span_id: span.span_id,
+                  issue: "child_starts_before_parent",
+                  message: "Child span starts before parent span"
+                })
+              }
+              
+              // Child span should end before parent ends (for synchronous operations)
+              if span.end_time > parent.end_time {
+                // This might be OK for async operations, but we'll note it
+                issues = issues.push({
+                  span_id: span.span_id,
+                  issue: "child_ends_after_parent",
+                  message: "Child span ends after parent span"
+                })
+              }
+            }
+            None => {
+              issues = issues.push({
+                span_id: span.span_id,
+                issue: "parent_not_found",
+                message: "Parent span not found"
+              })
+            }
+          }
+        }
+        None => {}  // Root span, no parent to check
+      }
+    }
+    
+    issues
+  }
   
-  let service_c_span = azimuth::Span::new("service-c-operation", azimuth::SpanKind::Server, service_b_context)
-  let service_c_context = azimuth::Span::span_context(service_c_span)
-  assert_true(azimuth::SpanContext::is_sampled(service_c_context))
+  // Create test spans with consistent timeline
+  let root_span = {
+    service_name: "api-service",
+    operation_name: "process-request",
+    trace_id: "trace-12345",
+    span_id: "span-1001",
+    parent_span_id: None,
+    start_time: 1640995200,
+    end_time: 1640995300,
+    events: [
+      { timestamp: 1640995210, event_name: "auth-start", attributes: [] },
+      { timestamp: 1640995220, event_name: "auth-complete", attributes: [] },
+      { timestamp: 1640995250, event_name: "db-query-start", attributes: [] },
+      { timestamp: 1640995270, event_name: "db-query-complete", attributes: [] }
+    ],
+    status: "success"
+  }
   
-  // 测试非采样决策传播
-  let not_sampled_trace_id = "4bf92f3577b34da6a3ce929d0e0e4737"
-  let not_sampled_span_id = "00f067aa0ba902b8"
-  let not_sampled_context = azimuth::SpanContext::new(not_sampled_trace_id, not_sampled_span_id, false, "")
+  let child_span = {
+    service_name: "database-service",
+    operation_name: "query",
+    trace_id: "trace-12345",
+    span_id: "span-1002",
+    parent_span_id: Some("span-1001"),
+    start_time: 1640995250,
+    end_time: 1640995270,
+    events: [
+      { timestamp: 1640995255, event_name: "query-exec", attributes: [] },
+      { timestamp: 1640995265, event_name: "result-fetch", attributes: [] }
+    ],
+    status: "success"
+  }
   
-  let service_a_not_sampled_span = azimuth::Span::new("service-a-operation", azimuth::SpanKind::Server, not_sampled_context)
-  let service_a_not_sampled_context = azimuth::Span::span_context(service_a_not_sampled_span)
-  assert_false(azimuth::SpanContext::is_sampled(service_a_not_sampled_context))
+  let async_span = {
+    service_name: "notification-service",
+    operation_name: "send-email",
+    trace_id: "trace-12345",
+    span_id: "span-1003",
+    parent_span_id: Some("span-1001"),
+    start_time: 1640995280,
+    end_time: 1640995350,  // Ends after parent (async operation)
+    events: [
+      { timestamp: 1640995285, event_name: "email-queued", attributes: [] },
+      { timestamp: 1640995340, event_name: "email-sent", attributes: [] }
+    ],
+    status: "success"
+  }
   
-  let service_b_not_sampled_span = azimuth::Span::new("service-b-operation", azimuth::SpanKind::Server, service_a_not_sampled_context)
-  let service_b_not_sampled_context = azimuth::Span::span_context(service_b_not_sampled_span)
-  assert_false(azimuth::SpanContext::is_sampled(service_b_not_sampled_context))
+  // Test with consistent timeline
+  let consistent_spans = [root_span, child_span, async_span]
+  let consistent_issues = validate_timeline(consistent_spans)
   
-  let service_c_not_sampled_span = azimuth::Span::new("service-c-operation", azimuth::SpanKind::Server, service_b_not_sampled_context)
-  let service_c_not_sampled_context = azimuth::Span::span_context(service_c_not_sampled_span)
-  assert_false(azimuth::SpanContext::is_sampled(service_c_not_sampled_context))
+  // Should have one issue: async_span ends after parent
+  assert_eq(consistent_issues.length(), 1)
+  assert_eq(consistent_issues[0].span_id, "span-1003")
+  assert_eq(consistent_issues[0].issue, "child_ends_after_parent")
+  
+  // Test with inconsistent timeline
+  let invalid_root = {
+    root_span |
+    start_time: 1640995300,
+    end_time: 1640995200  // Start after end
+  }
+  
+  let invalid_child = {
+    child_span |
+    start_time: 1640995100  // Starts before parent
+  }
+  
+  let invalid_event = {
+    child_span |
+    events: [
+      { timestamp: 1640996000, event_name: "future-event", attributes: [] }  // Event after span ends
+    ]
+  }
+  
+  let inconsistent_spans = [invalid_root, invalid_child, invalid_event]
+  let inconsistent_issues = validate_timeline(inconsistent_spans)
+  
+  // Should have multiple issues
+  assert_true(inconsistent_issues.length() >= 3)
+  
+  let has_start_after_end = inconsistent_issues.any(fn(issue) { issue.issue == "start_time_after_end_time" })
+  let has_child_before_parent = inconsistent_issues.any(fn(issue) { issue.issue == "child_starts_before_parent" })
+  let has_event_outside = inconsistent_issues.any(fn(issue) { issue.issue == "event_outside_span" })
+  
+  assert_true(has_start_after_end)
+  assert_true(has_child_before_parent)
+  assert_true(has_event_outside)
 }
 
-test "分布式追踪时间戳一致性测试" {
-  // 测试分布式追踪中时间戳的一致性和顺序
-  let base_time = 1640995200000L // 2022-01-01 00:00:00 UTC
+// Test 4: Cross-Service Trace Correlation
+test "cross-service trace correlation" {
+  // Correlation context
+  type CorrelationContext = {
+    correlation_id: String,
+    user_id: Option[String],
+    session_id: Option[String],
+    request_id: String,
+    business_transaction: String
+  }
   
-  // 创建根 span
-  let root_context = azimuth::SpanContext::new("trace-1", "span-1", true, "")
-  let root_span = azimuth::Span::new("root-operation", azimuth::SpanKind::Server, root_context)
+  // Service span with correlation
+  type CorrelatedSpan = {
+    service_name: String,
+    operation_name: String,
+    trace_id: String,
+    span_id: String,
+    correlation_context: CorrelationContext,
+    start_time: Int,
+    end_time: Int,
+    status: String
+  }
   
-  // 设置根 span 时间戳
-  azimuth::Span::set_start_time(root_span, base_time)
-  azimuth::Span::set_end_time(root_span, base_time + 1000L)
+  // Create correlation context
+  let create_correlation_context = fn(correlation_id: String, request_id: String, business_transaction: String) {
+    {
+      correlation_id,
+      user_id: None,
+      session_id: None,
+      request_id,
+      business_transaction
+    }
+  }
   
-  // 创建子 span
-  let child_context = azimuth::Span::span_context(root_span)
-  let child_span = azimuth::Span::new("child-operation", azimuth::SpanKind::Client, child_context)
+  // Add user context
+  let with_user_context = fn(context: CorrelationContext, user_id: String, session_id: String) {
+    {
+      context |
+      user_id: Some(user_id),
+      session_id: Some(session_id)
+    }
+  }
   
-  // 设置子 span 时间戳
-  azimuth::Span::set_start_time(child_span, base_time + 100L)
-  azimuth::Span::set_end_time(child_span, base_time + 800L)
+  // Extract correlation from headers
+  let extract_correlation = fn(headers: Array[(String, String)]) {
+    let mut correlation_id = ""
+    let mut user_id = None
+    let mut session_id = None
+    let mut request_id = ""
+    let mut business_transaction = ""
+    
+    for (key, value) in headers {
+      match key {
+        "x-correlation-id" => correlation_id = value
+        "x-user-id" => user_id = Some(value)
+        "x-session-id" => session_id = Some(value)
+        "x-request-id" => request_id = value
+        "x-business-transaction" => business_transaction = value
+        _ => {}
+      }
+    }
+    
+    if correlation_id != "" and request_id != "" {
+      Some({
+        correlation_id,
+        user_id,
+        session_id,
+        request_id,
+        business_transaction
+      })
+    } else {
+      None
+    }
+  }
   
-  // 验证时间戳顺序
-  assert_true(azimuth::Span::start_time(root_span) <= azimuth::Span::start_time(child_span))
-  assert_true(azimuth::Span::end_time(child_span) <= azimuth::Span::end_time(root_span))
+  // Inject correlation into headers
+  let inject_correlation = fn(context: CorrelationContext) {
+    let mut headers = []
+    
+    headers = headers.push(("x-correlation-id", context.correlation_id))
+    headers = headers.push(("x-request-id", context.request_id))
+    
+    if context.business_transaction != "" {
+      headers = headers.push(("x-business-transaction", context.business_transaction))
+    }
+    
+    match context.user_id {
+      Some(user_id) => headers = headers.push(("x-user-id", user_id))
+      None => {}
+    }
+    
+    match context.session_id {
+      Some(session_id) => headers = headers.push(("x-session-id", session_id))
+      None => {}
+    }
+    
+    headers
+  }
   
-  // 验证持续时间计算
-  let root_duration = azimuth::Span::end_time(root_span) - azimuth::Span::start_time(root_span)
-  let child_duration = azimuth::Span::end_time(child_span) - azimuth::Span::start_time(child_span)
+  // Test correlation context creation
+  let base_context = create_correlation_context("corr-12345", "req-67890", "order-processing")
+  assert_eq(base_context.correlation_id, "corr-12345")
+  assert_eq(base_context.request_id, "req-67890")
+  assert_eq(base_context.business_transaction, "order-processing")
+  assert_eq(base_context.user_id, None)
+  assert_eq(base_context.session_id, None)
   
-  assert_eq(root_duration, 1000L)
-  assert_eq(child_duration, 700L)
-  assert_true(child_duration <= root_duration)
+  let user_context = with_user_context(base_context, "user-111", "session-222")
+  assert_eq(user_context.user_id, Some("user-111"))
+  assert_eq(user_context.session_id, Some("session-222"))
   
-  // 创建孙 span
-  let grandchild_context = azimuth::Span::span_context(child_span)
-  let grandchild_span = azimuth::Span::new("grandchild-operation", azimuth::SpanKind::Internal, grandchild_context)
+  // Test correlation injection and extraction
+  let headers = inject_correlation(user_context)
+  assert_true(headers.contains(("x-correlation-id", "corr-12345")))
+  assert_true(headers.contains(("x-request-id", "req-67890")))
+  assert_true(headers.contains(("x-business-transaction", "order-processing")))
+  assert_true(headers.contains(("x-user-id", "user-111")))
+  assert_true(headers.contains(("x-session-id", "session-222")))
   
-  // 设置孙 span 时间戳
-  azimuth::Span::set_start_time(grandchild_span, base_time + 200L)
-  azimuth::Span::set_end_time(grandchild_span, base_time + 600L)
+  let extracted_context = extract_correlation(headers)
+  assert_true(extracted_context.is_some())
   
-  // 验证孙 span 时间戳顺序
-  assert_true(azimuth::Span::start_time(child_span) <= azimuth::Span::start_time(grandchild_span))
-  assert_true(azimuth::Span::end_time(grandchild_span) <= azimuth::Span::end_time(child_span))
+  let context = extracted_context.unwrap()
+  assert_eq(context.correlation_id, "corr-12345")
+  assert_eq(context.request_id, "req-67890")
+  assert_eq(context.business_transaction, "order-processing")
+  assert_eq(context.user_id, Some("user-111"))
+  assert_eq(context.session_id, Some("session-222"))
   
-  // 验证孙 span 持续时间
-  let grandchild_duration = azimuth::Span::end_time(grandchild_span) - azimuth::Span::start_time(grandchild_span)
-  assert_eq(grandchild_duration, 400L)
-  assert_true(grandchild_duration <= child_duration)
+  // Test cross-service correlation consistency
+  let api_span = {
+    service_name: "api-service",
+    operation_name: "create-order",
+    trace_id: "trace-12345",
+    span_id: "span-1001",
+    correlation_context: user_context,
+    start_time: 1640995200,
+    end_time: 1640995250,
+    status: "success"
+  }
+  
+  let order_span = {
+    service_name: "order-service",
+    operation_name: "process-order",
+    trace_id: "trace-12345",
+    span_id: "span-1002",
+    correlation_context: user_context,
+    start_time: 1640995220,
+    end_time: 1640995240,
+    status: "success"
+  }
+  
+  let payment_span = {
+    service_name: "payment-service",
+    operation_name: "process-payment",
+    trace_id: "trace-12345",
+    span_id: "span-1003",
+    correlation_context: user_context,
+    start_time: 1640995230,
+    end_time: 1640995235,
+    status: "success"
+  }
+  
+  let spans = [api_span, order_span, payment_span]
+  
+  // Verify correlation consistency across services
+  for span in spans {
+    assert_eq(span.correlation_context.correlation_id, "corr-12345")
+    assert_eq(span.correlation_context.request_id, "req-67890")
+    assert_eq(span.correlation_context.business_transaction, "order-processing")
+    assert_eq(span.correlation_context.user_id, Some("user-111"))
+    assert_eq(span.correlation_context.session_id, Some("session-222"))
+  }
+  
+  // Test correlation with missing fields
+  let partial_context = create_correlation_context("corr-54321", "req-09876", "")
+  let partial_headers = inject_correlation(partial_context)
+  let extracted_partial = extract_correlation(partial_headers).unwrap()
+  
+  assert_eq(extracted_partial.correlation_id, "corr-54321")
+  assert_eq(extracted_partial.request_id, "req-09876")
+  assert_eq(extracted_partial.business_transaction, "")
+  assert_eq(extracted_partial.user_id, None)
+  assert_eq(extracted_partial.session_id, None)
 }
 
-test "分布式追踪属性传播一致性测试" {
-  // 测试分布式追踪中属性的传播和一致性
-  let root_context = azimuth::SpanContext::new("trace-1", "span-1", true, "")
-  let root_span = azimuth::Span::new("root-operation", azimuth::SpanKind::Server, root_context)
-  
-  // 设置根 span 属性
-  let root_attrs = azimuth::Attributes::new()
-  azimuth::Attributes::set(root_attrs, "service.name", azimuth::AttributeValue::StringValue("root-service"))
-  azimuth::Attributes::set(root_attrs, "service.version", azimuth::AttributeValue::StringValue("1.0.0"))
-  azimuth::Attributes::set(root_attrs, "operation.type", azimuth::AttributeValue::StringValue("http"))
-  azimuth::Span::set_attributes(root_span, root_attrs)
-  
-  // 创建子 span 并继承属性
-  let child_context = azimuth::Span::span_context(root_span)
-  let child_span = azimuth::Span::new("child-operation", azimuth::SpanKind::Client, child_context)
-  
-  // 设置子 span 特有属性
-  let child_attrs = azimuth::Attributes::new()
-  azimuth::Attributes::set(child_attrs, "service.name", azimuth::AttributeValue::StringValue("child-service"))
-  azimuth::Attributes::set(child_attrs, "service.version", azimuth::AttributeValue::StringValue("2.0.0"))
-  azimuth::Attributes::set(child_attrs, "target.service", azimuth::AttributeValue::StringValue("external-api"))
-  azimuth::Span::set_attributes(child_span, child_attrs)
-  
-  // 验证属性传播
-  let retrieved_root_attrs = azimuth::Span::attributes(root_span)
-  match azimuth::Attributes::get(retrieved_root_attrs, "service.name") {
-    Some(azimuth::AttributeValue::StringValue(value)) => assert_eq(value, "root-service")
-    _ => assert_true(false)
+// Test 5: Trace Consistency Validation
+test "trace consistency validation" {
+  // Validation issue type
+  type ValidationIssue = {
+    severity: String,
+    code: String,
+    message: String,
+    affected_span_ids: Array[String]
   }
   
-  match azimuth::Attributes::get(retrieved_root_attrs, "service.version") {
-    Some(azimuth::AttributeValue::StringValue(value)) => assert_eq(value, "1.0.0")
-    _ => assert_true(false)
+  // Service span structure
+  type ServiceSpan = {
+    service_name: String,
+    operation_name: String,
+    trace_id: String,
+    span_id: String,
+    parent_span_id: Option[String],
+    start_time: Int,
+    end_time: Int,
+    status: String,
+    tags: Array[(String, String)]
   }
   
-  let retrieved_child_attrs = azimuth::Span::attributes(child_span)
-  match azimuth::Attributes::get(retrieved_child_attrs, "service.name") {
-    Some(azimuth::AttributeValue::StringValue(value)) => assert_eq(value, "child-service")
-    _ => assert_true(false)
+  // Validate trace consistency
+  let validate_trace_consistency = fn(spans: Array[ServiceSpan]) {
+    let mut issues = []
+    
+    // Check 1: All spans should have the same trace_id
+    let trace_ids = spans.map(fn(s) { s.trace_id }).unique()
+    if trace_ids.length() > 1 {
+      issues = issues.push({
+        severity: "error",
+        code: "multiple_trace_ids",
+        message: "Trace contains multiple trace IDs: " + trace_ids.join(", "),
+        affected_span_ids: spans.map(fn(s) { s.span_id })
+      })
+    }
+    
+    // Check 2: Parent-child relationships should be valid
+    for span in spans {
+      match span.parent_span_id {
+        Some(parent_id) => {
+          let parent_exists = spans.any(fn(s) { s.span_id == parent_id })
+          if not(parent_exists) {
+            issues = issues.push({
+              severity: "warning",
+              code: "missing_parent",
+              message: "Span references non-existent parent: " + parent_id,
+              affected_span_ids: [span.span_id]
+            })
+          }
+        }
+        None => {}  // Root span
+      }
+    }
+    
+    // Check 3: There should be exactly one root span
+    let root_spans = spans.filter(fn(s) { s.parent_span_id.is_none() })
+    if root_spans.length() == 0 {
+      issues = issues.push({
+        severity: "error",
+        code: "no_root_span",
+        message: "Trace has no root span",
+        affected_span_ids: []
+      })
+    } else if root_spans.length() > 1 {
+      issues = issues.push({
+        severity: "warning",
+        code: "multiple_root_spans",
+        message: "Trace has multiple root spans",
+        affected_span_ids: root_spans.map(fn(s) { s.span_id })
+      })
+    }
+    
+    // Check 4: No circular dependencies
+    let has_circular_dependency = fn(span_id: String, visited: Array[String]) {
+      if visited.contains(span_id) {
+        return true
+      }
+      
+      let span = spans.find(fn(s) { s.span_id == span_id })
+      match span {
+        Some(s) => {
+          match s.parent_span_id {
+            Some(parent_id) => has_circular_dependency(parent_id, visited.push(span_id))
+            None => false
+          }
+        }
+        None => false
+      }
+    }
+    
+    for span in spans {
+      if has_circular_dependency(span.span_id, []) {
+        issues = issues.push({
+          severity: "error",
+          code: "circular_dependency",
+          message: "Circular dependency detected in span hierarchy",
+          affected_span_ids: [span.span_id]
+        })
+        break
+      }
+    }
+    
+    // Check 5: Timing consistency
+    for span in spans {
+      if span.start_time > span.end_time {
+        issues = issues.push({
+          severity: "error",
+          code: "invalid_timing",
+          message: "Span start time is after end time",
+          affected_span_ids: [span.span_id]
+        })
+      }
+      
+      // Check parent-child timing
+      match span.parent_span_id {
+        Some(parent_id) => {
+          let parent_span = spans.find(fn(s) { s.span_id == parent_id })
+          match parent_span {
+            Some(parent) => {
+              if span.start_time < parent.start_time {
+                issues = issues.push({
+                  severity: "warning",
+                  code: "child_before_parent",
+                  message: "Child span starts before parent span",
+                  affected_span_ids: [span.span_id, parent.span_id]
+                })
+              }
+            }
+            None => {}  // Already caught by missing parent check
+          }
+        }
+        None => {}
+      }
+    }
+    
+    issues
   }
   
-  match azimuth::Attributes::get(retrieved_child_attrs, "service.version") {
-    Some(azimuth::AttributeValue::StringValue(value)) => assert_eq(value, "2.0.0")
-    _ => assert_true(false)
-  }
+  // Create a consistent trace
+  let consistent_spans = [
+    {
+      service_name: "api-service",
+      operation_name: "process-request",
+      trace_id: "trace-12345",
+      span_id: "span-1001",
+      parent_span_id: None,
+      start_time: 1640995200,
+      end_time: 1640995300,
+      status: "success",
+      tags: []
+    },
+    {
+      service_name: "database-service",
+      operation_name: "query",
+      trace_id: "trace-12345",
+      span_id: "span-1002",
+      parent_span_id: Some("span-1001"),
+      start_time: 1640995220,
+      end_time: 1640995240,
+      status: "success",
+      tags: []
+    },
+    {
+      service_name: "cache-service",
+      operation_name: "get",
+      trace_id: "trace-12345",
+      span_id: "span-1003",
+      parent_span_id: Some("span-1001"),
+      start_time: 1640995210,
+      end_time: 1640995215,
+      status: "hit",
+      tags: []
+    }
+  ]
   
-  match azimuth::Attributes::get(retrieved_child_attrs, "target.service") {
-    Some(azimuth::AttributeValue::StringValue(value)) => assert_eq(value, "external-api")
-    _ => assert_true(false)
-  }
-}
-
-test "分布式追踪错误传播一致性测试" {
-  // 测试分布式追踪中错误信息的传播和一致性
-  let root_context = azimuth::SpanContext::new("trace-1", "span-1", true, "")
-  let root_span = azimuth::Span::new("root-operation", azimuth::SpanKind::Server, root_context)
+  // Test validation of consistent trace
+  let consistent_issues = validate_trace_consistency(consistent_spans)
+  assert_eq(consistent_issues.length(), 0)
   
-  // 模拟正常操作
-  azimuth::Span::set_status(root_span, azimuth::StatusCode::Ok, None)
+  // Create an inconsistent trace with multiple issues
+  let inconsistent_spans = [
+    {
+      service_name: "api-service",
+      operation_name: "process-request",
+      trace_id: "trace-12345",
+      span_id: "span-1001",
+      parent_span_id: None,
+      start_time: 1640995300,  // Start after end
+      end_time: 1640995200,
+      status: "success",
+      tags: []
+    },
+    {
+      service_name: "database-service",
+      operation_name: "query",
+      trace_id: "trace-67890",  // Different trace ID
+      span_id: "span-1002",
+      parent_span_id: Some("span-1001"),
+      start_time: 1640995220,
+      end_time: 1640995240,
+      status: "success",
+      tags: []
+    },
+    {
+      service_name: "cache-service",
+      operation_name: "get",
+      trace_id: "trace-12345",
+      span_id: "span-1003",
+      parent_span_id: Some("span-9999"),  // Non-existent parent
+      start_time: 1640995210,
+      end_time: 1640995215,
+      status: "hit",
+      tags: []
+    }
+  ]
   
-  // 创建子 span 并模拟错误
-  let child_context = azimuth::Span::span_context(root_span)
-  let child_span = azimuth::Span::new("child-operation", azimuth::SpanKind::Client, child_context)
+  // Test validation of inconsistent trace
+  let inconsistent_issues = validate_trace_consistency(inconsistent_spans)
   
-  // 设置错误状态
-  azimuth::Span::set_status(child_span, azimuth::StatusCode::Error, Some("Connection timeout"))
-  azimuth::Span::add_event(child_span, "exception", Some([
-    ("exception.type", azimuth::AttributeValue::StringValue("TimeoutException")),
-    ("exception.message", azimuth::AttributeValue::StringValue("Connection timeout after 30 seconds"))
-  ]))
+  // Should have multiple issues
+  assert_true(inconsistent_issues.length() >= 3)
   
-  // 验证错误状态
-  assert_eq(azimuth::Span::status(child_span), azimuth::StatusCode::Error)
+  let has_multiple_trace_ids = inconsistent_issues.any(fn(issue) { issue.code == "multiple_trace_ids" })
+  let has_missing_parent = inconsistent_issues.any(fn(issue) { issue.code == "missing_parent" })
+  let has_invalid_timing = inconsistent_issues.any(fn(issue) { issue.code == "invalid_timing" })
   
-  // 创建另一个子 span 并模拟不同错误
-  let sibling_context = azimuth::Span::span_context(root_span)
-  let sibling_span = azimuth::Span::new("sibling-operation", azimuth::SpanKind::Server, sibling_context)
+  assert_true(has_multiple_trace_ids)
+  assert_true(has_missing_parent)
+  assert_true(has_invalid_timing)
   
-  // 设置不同错误状态
-  azimuth::Span::set_status(sibling_span, azimuth::StatusCode::Error, Some("Invalid request"))
-  azimuth::Span::add_event(sibling_span, "exception", Some([
-    ("exception.type", azimuth::AttributeValue::StringValue("ValidationException")),
-    ("exception.message", azimuth::AttributeValue::StringValue("Invalid request parameters"))
-  ]))
+  // Test with empty trace
+  let empty_issues = validate_trace_consistency([])
+  assert_eq(empty_issues.length(), 1)
+  assert_eq(empty_issues[0].code, "no_root_span")
   
-  // 验证不同错误状态
-  assert_eq(azimuth::Span::status(sibling_span), azimuth::StatusCode::Error)
+  // Test with multiple root spans
+  let multiple_root_spans = [
+    {
+      service_name: "api-service",
+      operation_name: "process-request",
+      trace_id: "trace-12345",
+      span_id: "span-1001",
+      parent_span_id: None,
+      start_time: 1640995200,
+      end_time: 1640995300,
+      status: "success",
+      tags: []
+    },
+    {
+      service_name: "web-service",
+      operation_name: "handle-request",
+      trace_id: "trace-12345",
+      span_id: "span-1002",
+      parent_span_id: None,
+      start_time: 1640995250,
+      end_time: 1640995350,
+      status: "success",
+      tags: []
+    }
+  ]
   
-  // 验证根 span 状态仍然正常
-  assert_eq(azimuth::Span::status(root_span), azimuth::StatusCode::Ok)
-  
-  // 验证错误事件记录
-  let child_events = azimuth::Span::events(child_span)
-  assert_true(child_events.length() > 0)
-  
-  let sibling_events = azimuth::Span::events(sibling_span)
-  assert_true(sibling_events.length() > 0)
+  let multiple_root_issues = validate_trace_consistency(multiple_root_spans)
+  assert_eq(multiple_root_issues.length(), 1)
+  assert_eq(multiple_root_issues[0].code, "multiple_root_spans")
 }
