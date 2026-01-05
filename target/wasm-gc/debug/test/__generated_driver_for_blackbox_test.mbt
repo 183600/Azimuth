@@ -600,6 +600,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_real_time_monitoring_tests.mbt": {
   },
+  "azimuth_real_time_alerting_tests.mbt": {
+  },
   "azimuth_real_time_alerting_system_tests.mbt": {
   },
   "azimuth_quality_enhanced_test_suite.mbt": {
