@@ -4337,6 +4337,13 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_617a696d7574685f6e65775f656e68616e6365645f746573745f63617365732e6d6274_6, ["batch processing and aggregation"]),
     7: (__test_617a696d7574685f6e65775f656e68616e6365645f746573745f63617365732e6d6274_7, ["custom telemetry formatters and exporters"]),
   },
+  "azimuth_new_distributed_tracing_chain_tests.mbt": {
+    0: (__test_617a696d7574685f6e65775f64697374726962757465645f74726163696e675f636861696e5f74657374732e6d6274_0, ["trace chain creation operations"]),
+    1: (__test_617a696d7574685f6e65775f64697374726962757465645f74726163696e675f636861696e5f74657374732e6d6274_1, ["trace chain traversal operations"]),
+    2: (__test_617a696d7574685f6e65775f64697374726962757465645f74726163696e675f636861696e5f74657374732e6d6274_2, ["trace chain analysis operations"]),
+    3: (__test_617a696d7574685f6e65775f64697374726962757465645f74726163696e675f636861696e5f74657374732e6d6274_3, ["trace chain error propagation operations"]),
+    4: (__test_617a696d7574685f6e65775f64697374726962757465645f74726163696e675f636861696e5f74657374732e6d6274_4, ["trace chain context propagation operations"]),
+  },
   "azimuth_new_data_compression_tests.mbt": {
     0: (__test_617a696d7574685f6e65775f646174615f636f6d7072657373696f6e5f74657374732e6d6274_0, ["basic data compression functionality"]),
     1: (__test_617a696d7574685f6e65775f646174615f636f6d7072657373696f6e5f74657374732e6d6274_1, ["large data compression performance"]),
