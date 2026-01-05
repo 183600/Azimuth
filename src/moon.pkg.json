@@ -158,6 +158,7 @@
         "../azimuth_security_encryption_tests.mbt",
         "../azimuth_new_telemetry_feature_tests.mbt",
         "../azimuth_premium_high_quality_tests.mbt",
+        "../azimuth_premium_advanced_feature_tests.mbt",
         "../azimuth_serialization_deserialization_quality_tests.mbt",
         "../azimuth_concurrent_safety_quality_tests.mbt",
         "../azimuth_performance_benchmark_quality_tests.mbt",
