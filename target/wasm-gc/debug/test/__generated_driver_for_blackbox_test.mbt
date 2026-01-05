@@ -1278,6 +1278,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_log_context_correlation_tests.mbt": {
   },
+  "azimuth_log_analysis_tests.mbt": {
+  },
   "azimuth_lifecycle_management_comprehensive_tests.mbt": {
   },
   "azimuth_internationalization_tests.mbt": {

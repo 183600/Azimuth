@@ -5884,6 +5884,14 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     4: (__test_617a696d7574685f6c6f675f636f6e746578745f636f7272656c6174696f6e5f74657374732e6d6274_4, ["日志记录时间戳与上下文关联"]),
     5: (__test_617a696d7574685f6c6f675f636f6e746578745f636f7272656c6174696f6e5f74657374732e6d6274_5, ["日志记录上下文关联错误处理"]),
   },
+  "azimuth_log_analysis_tests.mbt": {
+    0: (__test_617a696d7574685f6c6f675f616e616c797369735f74657374732e6d6274_0, ["log parsing and structure validation"]),
+    1: (__test_617a696d7574685f6c6f675f616e616c797369735f74657374732e6d6274_1, ["log filtering and querying operations"]),
+    2: (__test_617a696d7574685f6c6f675f616e616c797369735f74657374732e6d6274_2, ["log aggregation and statistics calculation"]),
+    3: (__test_617a696d7574685f6c6f675f616e616c797369735f74657374732e6d6274_3, ["log pattern recognition and anomaly detection"]),
+    4: (__test_617a696d7574685f6c6f675f616e616c797369735f74657374732e6d6274_4, ["log correlation and causality analysis"]),
+    5: (__test_617a696d7574685f6c6f675f616e616c797369735f74657374732e6d6274_5, ["log retention and archival policies"]),
+  },
   "azimuth_lifecycle_management_comprehensive_tests.mbt": {
     0: (__test_617a696d7574685f6c6966656379636c655f6d616e6167656d656e745f636f6d70726568656e736976655f74657374732e6d6274_0, ["component lifecycle states"]),
     1: (__test_617a696d7574685f6c6966656379636c655f6d616e6167656d656e745f636f6d70726568656e736976655f74657374732e6d6274_1, ["component dependency management"]),
