@@ -1,10 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 import Test.Hspec
 import Test.QuickCheck
-import Control.Exception (evaluate)
 import Control.Monad (replicateM_)
-import Data.Text (Text, pack, unpack)
+import Data.Text (pack, unpack)
 
 import Azimuth.Telemetry
 
@@ -84,7 +84,7 @@ main = hspec $ do
       -- QuickCheck 属性测试
       describe "QuickCheck properties" $ do
         it "should handle any metric value" $ property $
-          \(value :: Double) -> 
+          \(_value :: Double) -> 
             let metric = Metric "test-name" 0.0 "test-unit"
             in metricValue metric == 0.0
         
