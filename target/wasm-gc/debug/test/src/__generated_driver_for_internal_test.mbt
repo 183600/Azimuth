@@ -383,6 +383,18 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_617a696d7574685f6e65775f636f6d70726568656e736976655f6d6f6f6e6269745f74657374732e6d6274_8, ["concurrent and parallel processing patterns"]),
     9: (__test_617a696d7574685f6e65775f636f6d70726568656e736976655f6d6f6f6e6269745f74657374732e6d6274_9, ["advanced telemetry system integration"]),
   },
+  "azimuth_network_communication_tests.mbt": {
+    0: (__test_617a696d7574685f6e6574776f726b5f636f6d6d756e69636174696f6e5f74657374732e6d6274_0, ["HTTP client operations"]),
+    1: (__test_617a696d7574685f6e6574776f726b5f636f6d6d756e69636174696f6e5f74657374732e6d6274_1, ["network connection management"]),
+    2: (__test_617a696d7574685f6e6574776f726b5f636f6d6d756e69636174696f6e5f74657374732e6d6274_2, ["network retry logic"]),
+    3: (__test_617a696d7574685f6e6574776f726b5f636f6d6d756e69636174696f6e5f74657374732e6d6274_3, ["network error handling"]),
+    4: (__test_617a696d7574685f6e6574776f726b5f636f6d6d756e69636174696f6e5f74657374732e6d6274_4, ["data serialization for network"]),
+    5: (__test_617a696d7574685f6e6574776f726b5f636f6d6d756e69636174696f6e5f74657374732e6d6274_5, ["network security"]),
+    6: (__test_617a696d7574685f6e6574776f726b5f636f6d6d756e69636174696f6e5f74657374732e6d6274_6, ["network performance optimization"]),
+    7: (__test_617a696d7574685f6e6574776f726b5f636f6d6d756e69636174696f6e5f74657374732e6d6274_7, ["websocket communication"]),
+    8: (__test_617a696d7574685f6e6574776f726b5f636f6d6d756e69636174696f6e5f74657374732e6d6274_8, ["network load balancing"]),
+    9: (__test_617a696d7574685f6e6574776f726b5f636f6d6d756e69636174696f6e5f74657374732e6d6274_9, ["network monitoring and metrics"]),
+  },
   "azimuth_minimal_tests.mbt": {
     0: (__test_617a696d7574685f6d696e696d616c5f74657374732e6d6274_0, ["basic arithmetic operations"]),
     1: (__test_617a696d7574685f6d696e696d616c5f74657374732e6d6274_1, ["boolean logic operations"]),
