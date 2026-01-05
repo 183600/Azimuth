@@ -1,1023 +1,737 @@
-// Azimuth Telemetry System - New Comprehensive Feature Tests
-// This file contains 10 new comprehensive test cases for various Azimuth features
+// Azimuth New Comprehensive Feature Tests
+// This file contains new comprehensive test cases for various Azimuth features
 
-// Test 1: Advanced Network Communication Tests
-test "advanced network communication with retry and timeout" {
-  // Test network client configuration
-  let config = NetworkConfig::new()
-    .with_timeout(5000)
-    .with_retry_count(3)
-    .with_retry_backoff(1000)
-    .with_circuit_breaker_threshold(5)
+// Test 1: Data Conversion and Formatting
+test "data conversion and formatting" {
+  // Test number to string conversion with different formats
+  let int_value = 12345
+  let float_value = 12345.6789
   
-  let client = NetworkClient::with_config(config)
+  let int_string = int_value.to_string()
+  let float_string = float_value.to_string()
   
-  // Test successful request
-  let request = NetworkRequest::new("GET", "https://api.example.com/telemetry")
-    .with_header("Content-Type", "application/json")
-    .with_header("Authorization", "Bearer token123")
-    .with_timeout(3000)
+  assert_eq(int_string, "12345")
+  assert_true(float_string.contains("12345"))
   
-  let response = NetworkClient::send(client, request)
+  // Test string to number conversion
+  let string_int = "98765"
+  let string_float = "98765.4321"
   
-  // Test response handling
-  match response {
-    Success(resp) => {
-      assert_eq(Response::status_code(resp), 200)
-      assert_true(Response::has_header(resp, "Content-Type"))
-    }
-    RetryExceeded(attempts) => {
-      assert_true(attempts >= 3)
-    }
-    Timeout => {
-      assert_true(true) // Expected for timeout scenarios
-    }
-    ConnectionError(error) => {
-      assert_true(error.length() > 0)
-    }
-  }
-  
-  // Test circuit breaker functionality
-  for i = 0; i < 6; i = i + 1 {
-    let failing_request = NetworkRequest::new("GET", "https://api.example.com/fail")
-    let failing_response = NetworkClient::send(client, failing_request)
-    
-    if i >= 5 {
-      match failing_response {
-        CircuitBreakerOpen => assert_true(true)
-        _ => assert_true(false)
-      }
-    }
-  }
-}
-
-// Test 2: Data Serialization Performance Tests
-test "data serialization performance with large datasets" {
-  // Create large dataset for performance testing
-  let mut large_dataset = []
-  for i = 0; i < 10000; i = i + 1 {
-    let entry = {
-      "id": i,
-      "timestamp": 1234567890L + i,
-      "trace_id": "trace_" + i.to_string(),
-      "span_id": "span_" + i.to_string(),
-      "attributes": [
-        ("key1", "value1_" + i.to_string()),
-        ("key2", "value2_" + i.to_string()),
-        ("key3", i * 10)
-      ]
-    }
-    large_dataset = large_dataset + [entry]
-  }
-  
-  // Test JSON serialization performance
-  let start_time = Time::now()
-  let json_result = JsonSerializer::serialize(large_dataset)
-  let json_time = Time::now() - start_time
-  
-  match json_result {
-    Success(json_data) => {
-      assert_true(json_data.length() > 100000) // Large JSON string
-      assert_true(json_time < 5000) // Should complete within 5 seconds
-    }
-    Error(error) => {
-      assert_true(false) // Serialization should not fail
-    }
-  }
-  
-  // Test binary serialization performance
-  let start_time = Time::now()
-  let binary_result = BinarySerializer::serialize(large_dataset)
-  let binary_time = Time::now() - start_time
-  
-  match binary_result {
-    Success(binary_data) => {
-      assert_true(binary_data.length() > 50000) // Binary should be smaller than JSON
-      assert_true(binary_time < 3000) // Should be faster than JSON
-    }
-    Error(error) => {
-      assert_true(false) // Serialization should not fail
-    }
-  }
-  
-  // Test deserialization performance
-  match json_result {
-    Success(json_data) => {
-      let start_time = Time::now()
-      let deserialized_result = JsonSerializer::deserialize(json_data)
-      let deserialization_time = Time::now() - start_time
-      
-      match deserialized_result {
-        Success(data) => {
-          assert_eq(data.length(), 10000)
-          assert_true(deserialization_time < 5000)
-        }
-        Error(_) => {
-          assert_true(false)
-        }
-      }
-    }
-    _ => assert_true(false)
-  }
-}
-
-// Test 3: Distributed Tracing Consistency Tests
-test "distributed tracing consistency across service boundaries" {
-  // Create trace context
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let parent_span_id = "b7ad6b7169203331"
-  let span_context = SpanContext::new(trace_id, parent_span_id, true, "active")
-  
-  // Service A: Create parent span
-  let service_a_tracer = TracerProvider::get_tracer("service-a")
-  let parent_span = Tracer::start_span(service_a_tracer, "service-a-operation", span_context)
-  
-  // Add attributes and events
-  Span::add_attribute(parent_span, "service.name", "service-a")
-  Span::add_attribute(parent_span, "operation.type", "database.query")
-  Span::add_event(parent_span, "query.started", Some([("query.sql", "SELECT * FROM users")]))
-  
-  // Simulate service A calling service B
-  let service_b_headers = []
-  let propagator = TraceContextPropagator::new()
-  TraceContextPropagator::inject(propagator, span_context, service_b_headers)
-  
-  // Service B: Extract context and create child span
-  let extracted_context = TraceContextPropagator::extract(propagator, service_b_headers)
-  let service_b_tracer = TracerProvider::get_tracer("service-b")
-  let child_span = Tracer::start_span(service_b_tracer, "service-b-operation", extracted_context)
-  
-  // Add attributes and events to child span
-  Span::add_attribute(child_span, "service.name", "service-b")
-  Span::add_attribute(child_span, "operation.type", "cache.get")
-  Span::add_event(child_span, "cache.hit", Some([("cache.key", "user:123")]))
-  
-  // Verify trace consistency
-  assert_eq(SpanContext::trace_id(Span::span_context(child_span)), trace_id)
-  assert_eq(SpanContext::trace_id(Span::span_context(parent_span)), trace_id)
-  assert_ne(SpanContext::span_id(Span::span_context(child_span)), parent_span_id)
-  
-  // End spans in correct order
-  Span::end(child_span)
-  Span::end(parent_span)
-  
-  // Verify span relationships
-  let trace_data = TraceExporter::get_trace_data(trace_id)
-  match trace_data {
-    Some(spans) => {
-      assert_eq(spans.length(), 2)
-      
-      let parent_span_data = spans[0]
-      let child_span_data = spans[1]
-      
-      assert_eq(SpanData::name(parent_span_data), "service-a-operation")
-      assert_eq(SpanData::name(child_span_data), "service-b-operation")
-      assert_eq(SpanData::trace_id(parent_span_data), trace_id)
-      assert_eq(SpanData::trace_id(child_span_data), trace_id)
-      assert_eq(SpanData::parent_span_id(child_span_data), Some(parent_span_id))
-    }
-    None => {
-      assert_true(false) // Trace data should be available
-    }
-  }
-}
-
-// Test 4: Concurrent Safety Boundary Tests
-test "concurrent safety with shared resources and race conditions" {
-  // Create shared resource
-  let shared_counter = AtomicCounter::new(0)
-  let shared_attributes = ConcurrentAttributes::new()
-  let shared_spans = ConcurrentSpanCollection::new()
-  
-  // Create multiple threads to test concurrent access
-  let thread_count = 10
-  let operations_per_thread = 1000
-  let threads = []
-  
-  for thread_id = 0; thread_id < thread_count; thread_id = thread_id + 1 {
-    let thread = Thread::spawn(fn() {
-      // Test atomic counter operations
-      for i = 0; i < operations_per_thread; i = i + 1 {
-        AtomicCounter::increment(shared_counter)
-        AtomicCounter::add(shared_counter, thread_id)
-        
-        // Test concurrent attribute operations
-        let key = "thread_" + thread_id.to_string() + "_attr_" + i.to_string()
-        let value = "value_" + i.to_string()
-        ConcurrentAttributes::set(shared_attributes, key, StringValue(value))
-        
-        // Test concurrent span operations
-        let span_name = "thread_" + thread_id.to_string() + "_span_" + i.to_string()
-        let span = ConcurrentSpanCollection::create_span(shared_spans, span_name)
-        ConcurrentSpanCollection::add_attribute(span, "thread_id", IntValue(thread_id))
-        ConcurrentSpanCollection::add_attribute(span, "operation_id", IntValue(i))
-      }
-    })
-    threads = threads + [thread]
-  }
-  
-  // Wait for all threads to complete
-  for thread in threads {
-    Thread::join(thread)
-  }
-  
-  // Verify final state consistency
-  let expected_counter_value = thread_count * operations_per_thread + 
-                              (thread_count * (thread_count - 1) / 2) * operations_per_thread
-  
-  assert_eq(AtomicCounter::get(shared_counter), expected_counter_value)
-  
-  // Verify attributes consistency
-  let attribute_count = ConcurrentAttributes::size(shared_attributes)
-  assert_eq(attribute_count, thread_count * operations_per_thread)
-  
-  // Verify spans consistency
-  let span_count = ConcurrentSpanCollection::size(shared_spans)
-  assert_eq(span_count, thread_count * operations_per_thread)
-  
-  // Test race condition detection
-  let race_detector = RaceConditionDetector::new()
-  let detected_races = RaceConditionDetector::analyze(race_detector, shared_attributes)
-  
-  // No races should be detected with proper synchronization
-  assert_eq(detected_races.length(), 0)
-}
-
-// Test 5: Exception Recovery Mechanism Tests
-test "exception recovery mechanisms with fallback strategies" {
-  // Create recovery manager with multiple fallback strategies
-  let recovery_manager = RecoveryManager::new()
-    .with_fallback_strategy(RetryStrategy::exponential_backoff(100, 3))
-    .with_fallback_strategy(FailoverStrategy::primary_to_secondary())
-    .with_fallback_strategy(CircuitBreakerStrategy::threshold_based(5))
-    .with_fallback_strategy(GracefulDegradationStrategy::feature_based())
-  
-  // Test operation that fails initially but succeeds after retries
-  let mut attempt_count = 0
-  let flaky_operation = fn() {
-    attempt_count = attempt_count + 1
-    if attempt_count < 3 {
-      Error("Temporary failure")
-    } else {
-      Success("Operation succeeded after retries")
-    }
-  }
-  
-  let result = RecoveryManager::execute_with_recovery(recovery_manager, flaky_operation)
-  match result {
-    Success(value) => {
-      assert_eq(value, "Operation succeeded after retries")
-      assert_eq(attempt_count, 3)
-    }
-    Error(_) => {
-      assert_true(false) // Should succeed after retries
-    }
-  }
-  
-  // Test operation that always fails and triggers fallback
-  attempt_count = 0
-  let failing_operation = fn() {
-    attempt_count = attempt_count + 1
-    Error("Persistent failure")
-  }
-  
-  let fallback_operation = fn() {
-    Success("Fallback operation succeeded")
-  }
-  
-  let result_with_fallback = RecoveryManager::execute_with_fallback(
-    recovery_manager, 
-    failing_operation, 
-    fallback_operation
-  )
-  
-  match result_with_fallback {
-    Success(value) => {
-      assert_eq(value, "Fallback operation succeeded")
-      assert_true(attempt_count >= 3) // Should retry before fallback
-    }
-    Error(_) => {
-      assert_true(false) // Fallback should succeed
-    }
-  }
-  
-  // Test circuit breaker activation
-  let circuit_breaker_manager = RecoveryManager::new()
-    .with_fallback_strategy(CircuitBreakerStrategy::threshold_based(3))
-  
-  for i = 0; i < 5; i = i + 1 {
-    let result = RecoveryManager::execute_with_recovery(
-      circuit_breaker_manager, 
-      failing_operation
-    )
-    
-    if i >= 3 {
-      match result {
-        CircuitBreakerOpen => assert_true(true) // Expected after threshold
-        _ => assert_true(false)
-      }
-    }
-  }
-  
-  // Test graceful degradation
-  let degradation_manager = RecoveryManager::new()
-    .with_fallback_strategy(GracefulDegradationStrategy::feature_based())
-  
-  let degraded_result = RecoveryManager::execute_with_degradation(
-    degradation_manager,
-    failing_operation,
-    ["feature1", "feature2"] // Disable these features on failure
-  )
-  
-  match degraded_result {
-    DegradedResponse(features, partial_data) => {
-      assert_eq(features, ["feature1", "feature2"])
-      assert_true(partial_data.length() > 0)
-    }
-    _ => assert_true(false)
-  }
-}
-
-// Test 6: Resource Lifecycle Management Tests
-test "resource lifecycle management with proper cleanup" {
-  // Create resource manager
-  let resource_manager = ResourceManager::new()
-  
-  // Register various resources
-  let db_connection = ResourceManager::register(
-    resource_manager, 
-    "database.connection", 
-    DatabaseConnection::new("postgresql://localhost:5432/azimuth")
-  )
-  
-  let cache_client = ResourceManager::register(
-    resource_manager, 
-    "cache.client", 
-    CacheClient::new("redis://localhost:6379")
-  )
-  
-  let file_handle = ResourceManager::register(
-    resource_manager, 
-    "file.handle", 
-    FileHandle::open("/tmp/azimuth.log")
-  )
-  
-  let network_socket = ResourceManager::register(
-    resource_manager, 
-    "network.socket", 
-    NetworkSocket::connect("localhost", 8080)
-  )
-  
-  // Test resource acquisition
-  let acquired_db = ResourceManager::acquire(resource_manager, "database.connection")
-  match acquired_db {
-    Some(conn) => {
-      assert_true(DatabaseConnection::is_connected(conn))
-      
-      // Use resource
-      let result = DatabaseConnection::query(conn, "SELECT 1")
-      match result {
-        Success(rows) => assert_eq(rows.length(), 1)
-        Error(_) => assert_true(false)
-      }
-    }
+  match string_int.to_int() {
+    Some(value) => assert_eq(value, 98765)
     None => assert_true(false)
   }
   
-  // Test resource pool behavior
-  let pool = ResourcePool::new(5, fn() { DatabaseConnection::new("postgresql://localhost:5432/azimuth") })
-  
-  // Acquire multiple connections
-  let connections = []
-  for i = 0; i < 3; i = i + 1 {
-    let conn = ResourcePool::acquire(pool)
-    connections = connections + [conn]
+  match string_float.to_float() {
+    Some(value) => assert_true(value > 98765.0 && value < 98766.0)
+    None => assert_true(false)
   }
   
-  assert_eq(connections.length(), 3)
-  assert_eq(ResourcePool::available_count(pool), 2)
+  // Test date/time formatting
+  let timestamp = 1640995200000L // 2022-01-01 00:00:00 UTC
+  let date_string = TimeUtil::format_date(timestamp, "YYYY-MM-DD")
+  assert_eq(date_string, "2022-01-01")
+  
+  let time_string = TimeUtil::format_time(timestamp, "HH:mm:ss")
+  assert_eq(time_string, "00:00:00")
+  
+  // Test currency formatting
+  let currency_value = 1234.56
+  let usd_format = FormatUtil::format_currency(currency_value, "USD")
+  let eur_format = FormatUtil::format_currency(currency_value, "EUR")
+  
+  assert_true(usd_format.contains("$1,234.56"))
+  assert_true(eur_format.contains("€1,234.56"))
+}
+
+// Test 2: Error Boundary and Exception Handling
+test "error boundary and exception handling" {
+  let error_handler = ErrorHandler::new()
+  
+  // Test graceful error handling
+  let result = ErrorHandler::execute_with_catch(error_handler, fn() {
+    // Simulate an operation that might fail
+    let divisor = 0
+    if divisor == 0 {
+      return Error("Division by zero")
+    } else {
+      return Ok(100 / divisor)
+    }
+  })
+  
+  match result {
+    Ok(_) => assert_true(false) // Should not succeed
+    Error(message) => assert_eq(message, "Division by zero")
+  }
+  
+  // Test error recovery with fallback
+  let fallback_result = ErrorHandler::execute_with_fallback(
+    error_handler,
+    fn() { Error("Primary operation failed") },
+    fn() { Ok("Fallback operation succeeded") }
+  )
+  
+  match fallback_result {
+    Ok(value) => assert_eq(value, "Fallback operation succeeded")
+    Error(_) => assert_true(false)
+  }
+  
+  // Test error chaining
+  let chained_result = ErrorHandler::execute_and_chain(error_handler, fn() {
+    Error("Initial error")
+  }, fn(prev_error) {
+    Error("Chained error: " + prev_error)
+  })
+  
+  match chained_result {
+    Error(message) => assert_true(message.contains("Chained error"))
+    Ok(_) => assert_true(false)
+  }
+  
+  // Test timeout handling
+  let timeout_result = ErrorHandler::execute_with_timeout(
+    error_handler,
+    fn() {
+      // Simulate a long operation
+      TimeUtil::sleep(5000) // 5 seconds
+      return Ok("Completed")
+    },
+    2000 // 2 seconds timeout
+  )
+  
+  match timeout_result {
+    Error(message) => assert_true(message.contains("timeout"))
+    Ok(_) => assert_true(false) // Should timeout
+  }
+}
+
+// Test 3: Resource Management and Memory Leak Protection
+test "resource management and memory leak protection" {
+  let resource_manager = ResourceManager::new()
+  
+  // Test automatic resource cleanup
+  let resource = ResourceManager::create_resource(resource_manager, "test_resource")
+  assert_true(ResourceManager::is_resource_active(resource_manager, resource))
+  
+  // Resource should be automatically cleaned up when out of scope
+  ResourceManager::cleanup_resource(resource_manager, resource)
+  assert_false(ResourceManager::is_resource_active(resource_manager, resource))
+  
+  // Test memory pool management
+  let memory_pool = ResourceManager::create_memory_pool(resource_manager, 1024) // 1KB pool
+  
+  let allocation1 = ResourceManager::allocate_from_pool(memory_pool, 256)
+  let allocation2 = ResourceManager::allocate_from_pool(memory_pool, 512)
+  
+  assert_true(ResourceManager::is_allocation_valid(memory_pool, allocation1))
+  assert_true(ResourceManager::is_allocation_valid(memory_pool, allocation2))
+  
+  // Pool should be exhausted after these allocations
+  let allocation3 = ResourceManager::allocate_from_pool(memory_pool, 300)
+  assert_false(ResourceManager::is_allocation_valid(memory_pool, allocation3))
+  
+  // Free allocations
+  ResourceManager::free_allocation(memory_pool, allocation1)
+  ResourceManager::free_allocation(memory_pool, allocation2)
+  
+  // Now allocation should succeed
+  let allocation4 = ResourceManager::allocate_from_pool(memory_pool, 300)
+  assert_true(ResourceManager::is_allocation_valid(memory_pool, allocation4))
+  
+  // Test resource leak detection
+  let leak_detector = ResourceManager::create_leak_detector(resource_manager)
+  
+  // Simulate resource leak
+  let leaked_resource = ResourceManager::create_resource(resource_manager, "leaked_resource")
+  // Don't clean it up to simulate leak
+  
+  let leak_report = ResourceManager::detect_leaks(leak_detector)
+  assert_true(leak_report.leaked_resources.length() > 0)
+  
+  // Clean up leaked resource
+  ResourceManager::cleanup_resource(resource_manager, leaked_resource)
+  
+  // No leaks should be detected now
+  let no_leak_report = ResourceManager::detect_leaks(leak_detector)
+  assert_eq(no_leak_report.leaked_resources.length(), 0)
+}
+
+// Test 4: Network Communication and API Integration
+test "network communication and api integration" {
+  let network_client = NetworkClient::new()
+  
+  // Test HTTP GET request
+  let get_result = NetworkClient::get(network_client, "https://httpbin.org/get")
+  match get_result {
+    Ok(response) => {
+      assert_true(response.status_code >= 200 && response.status_code < 300)
+      assert_true(response.body.length() > 0)
+    }
+    Error(_) => assert_true(false)
+  }
+  
+  // Test HTTP POST request
+  let post_data = '{"key": "value", "number": 42}'
+  let post_result = NetworkClient::post(
+    network_client, 
+    "https://httpbin.org/post", 
+    post_data,
+    "application/json"
+  )
+  
+  match post_result {
+    Ok(response) => {
+      assert_true(response.status_code >= 200 && response.status_code < 300)
+      assert_true(response.body.contains("key"))
+      assert_true(response.body.contains("value"))
+    }
+    Error(_) => assert_true(false)
+  }
+  
+  // Test request retry with exponential backoff
+  let retry_config = RetryConfig::exponential_backoff(3, 1000) // 3 retries, 1s initial delay
+  let retry_result = NetworkClient::get_with_retry(
+    network_client,
+    "https://httpbin.org/status/500", // This will fail
+    retry_config
+  )
+  
+  match retry_result {
+    Ok(_) => assert_true(false) // Should fail after retries
+    Error(error) => assert_true(error.contains("max retries exceeded"))
+  }
+  
+  // Test concurrent requests
+  let urls = [
+    "https://httpbin.org/get",
+    "https://httpbin.org/user-agent",
+    "https://httpbin.org/headers"
+  ]
+  
+  let concurrent_results = NetworkClient::concurrent_get(network_client, urls)
+  assert_eq(concurrent_results.length(), 3)
+  
+  for result in concurrent_results {
+    match result {
+      Ok(response) => assert_true(response.status_code >= 200 && response.status_code < 300)
+      Error(_) => assert_true(false)
+    }
+  }
+  
+  // Test request timeout
+  let timeout_config = TimeoutConfig::new(2000) // 2 seconds timeout
+  let timeout_result = NetworkClient::get_with_timeout(
+    network_client,
+    "https://httpbin.org/delay/5", // This will take 5 seconds
+    timeout_config
+  )
+  
+  match timeout_result {
+    Ok(_) => assert_true(false) // Should timeout
+    Error(error) => assert_true(error.contains("timeout"))
+  }
+}
+
+// Test 5: Caching Strategy and Data Persistence
+test "caching strategy and data persistence" {
+  let cache_manager = CacheManager::new()
+  
+  // Test multi-level caching (L1: memory, L2: disk)
+  let l1_cache = CacheManager::create_memory_cache(cache_manager, 100) // 100 items
+  let l2_cache = CacheManager::create_disk_cache(cache_manager, "/tmp/azimuth_cache", 1000) // 1000 items
+  
+  let multi_cache = CacheManager::create_multi_level_cache(cache_manager, [l1_cache, l2_cache])
+  
+  // Test cache write-through
+  CacheManager::put(multi_cache, "user:123", '{"name": "John", "age": 30}')
+  
+  // Should be in L1 cache
+  match CacheManager::get(multi_cache, "user:123") {
+    Some(value) => assert_eq(value, '{"name": "John", "age": 30}')
+    None => assert_true(false)
+  }
+  
+  // Simulate L1 cache eviction
+  CacheManager::evict_all(l1_cache)
+  
+  // Should still be available from L2 cache
+  match CacheManager::get(multi_cache, "user:123") {
+    Some(value) => assert_eq(value, '{"name": "John", "age": 30}')
+    None => assert_true(false)
+  }
+  
+  // Test cache invalidation strategy
+  let invalidation_cache = CacheManager::create_cache_with_invalidation(
+    cache_manager,
+    InvalidationStrategy::TimeToLive(5000) // 5 seconds TTL
+  )
+  
+  CacheManager::put(invalidation_cache, "temp_data", "will_expire_soon")
+  
+  // Should be available immediately
+  match CacheManager::get(invalidation_cache, "temp_data") {
+    Some(value) => assert_eq(value, "will_expire_soon")
+    None => assert_true(false)
+  }
+  
+  // Simulate time passage
+  TimeUtil::sleep(6000) // 6 seconds
+  
+  // Should be expired
+  match CacheManager::get(invalidation_cache, "temp_data") {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // Test cache warming strategy
+  let warm_cache = CacheManager::create_warmable_cache(cache_manager)
+  
+  // Define warming function
+  CacheManager::set_warming_function(warm_cache, fn(key) {
+    if key == "popular_item" {
+      return Some("preloaded_value")
+    } else {
+      return None
+    }
+  })
+  
+  // Warm specific keys
+  CacheManager::warm_keys(warm_cache, ["popular_item", "another_item"])
+  
+  // Popular item should be available without explicit put
+  match CacheManager::get(warm_cache, "popular_item") {
+    Some(value) => assert_eq(value, "preloaded_value")
+    None => assert_true(false)
+  }
+  
+  // Non-popular item should not be available
+  match CacheManager::get(warm_cache, "another_item") {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+}
+
+// Test 6: Configuration Management and Dynamic Updates
+test "configuration management and dynamic updates" {
+  let config_manager = ConfigurationManager::new()
+  
+  // Test hierarchical configuration
+  let base_config = ConfigurationManager::load_from_file(config_manager, "config/base.json")
+  let env_config = ConfigurationManager::load_from_file(config_manager, "config/production.json")
+  
+  let merged_config = ConfigurationManager::merge_configs(config_manager, [base_config, env_config])
+  
+  // Test configuration inheritance
+  match ConfigurationManager::get_string(merged_config, "database.host") {
+    Some(host) => assert_true(host.length() > 0)
+    None => assert_true(false)
+  }
+  
+  match ConfigurationManager::get_int(merged_config, "server.port") {
+    Some(port) => assert_true(port > 0 && port < 65536)
+    None => assert_true(false)
+  }
+  
+  // Test dynamic configuration updates
+  let dynamic_config = ConfigurationManager::create_dynamic_config(config_manager, merged_config)
+  
+  // Register configuration change listener
+  ConfigurationManager::add_change_listener(dynamic_config, "feature.enabled", fn(old_value, new_value) {
+    // This would be called when the value changes
+    assert_true(true)
+  })
+  
+  // Update configuration value
+  ConfigurationManager::set_value(dynamic_config, "feature.enabled", true)
+  
+  // Verify the change
+  match ConfigurationManager::get_bool(dynamic_config, "feature.enabled") {
+    Some(enabled) => assert_true(enabled)
+    None => assert_true(false)
+  }
+  
+  // Test configuration validation
+  let schema = ValidationSchema::object([
+    ("database", ValidationSchema::object([
+      ("host", ValidationSchema::string([ValidationRule::required()])),
+      ("port", ValidationSchema::number([ValidationRule::min_value(1), ValidationRule::max_value(65535)])),
+      ("max_connections", ValidationSchema::number([ValidationRule::min_value(1), ValidationRule::max_value(1000)]))
+    ])),
+    ("feature", ValidationSchema::object([
+      ("enabled", ValidationSchema::boolean([])),
+      ("timeout", ValidationSchema::number([ValidationRule::min_value(0)]))
+    ]))
+  ])
+  
+  let validation_result = ConfigurationManager::validate_schema(dynamic_config, schema)
+  assert_true(validation_result.is_valid)
+  
+  // Test invalid configuration
+  ConfigurationManager::set_value(dynamic_config, "database.port", 70000) // Invalid port
+  let invalid_result = ConfigurationManager::validate_schema(dynamic_config, schema)
+  assert_false(invalid_result.is_valid)
+  assert_true(invalid_result.errors.length() > 0)
+  
+  // Test configuration rollback
+  ConfigurationManager::save_checkpoint(dynamic_config, "before_change")
+  ConfigurationManager::set_value(dynamic_config, "server.port", 9999)
+  
+  // Verify the change
+  match ConfigurationManager::get_int(dynamic_config, "server.port") {
+    Some(port) => assert_eq(port, 9999)
+    None => assert_true(false)
+  }
+  
+  // Rollback to checkpoint
+  ConfigurationManager::rollback_to_checkpoint(dynamic_config, "before_change")
+  
+  // Verify rollback
+  match ConfigurationManager::get_int(dynamic_config, "server.port") {
+    Some(port) => assert_not_eq(port, 9999)
+    None => assert_true(false)
+  }
+}
+
+// Test 7: Security and Encryption
+test "security and encryption" {
+  let security_manager = SecurityManager::new()
+  
+  // Test data encryption and decryption
+  let plaintext = "Sensitive data that needs encryption"
+  let encryption_key = SecurityManager::generate_key(security_manager, 256) // 256-bit key
+  
+  let encrypted_data = SecurityManager::encrypt(security_manager, plaintext, encryption_key)
+  assert_true(encrypted_data.length() > 0)
+  assert_not_eq(encrypted_data, plaintext)
+  
+  let decrypted_data = SecurityManager::decrypt(security_manager, encrypted_data, encryption_key)
+  assert_eq(decrypted_data, plaintext)
+  
+  // Test hashing and verification
+  let password = "user_password_123"
+  let hashed_password = SecurityManager::hash_password(security_manager, password)
+  assert_true(hashed_password.length() > 0)
+  assert_not_eq(hashed_password, password)
+  
+  assert_true(SecurityManager::verify_password(security_manager, password, hashed_password))
+  assert_false(SecurityManager::verify_password(security_manager, "wrong_password", hashed_password))
+  
+  // Test token generation and validation
+  let user_id = "user123"
+  let token = SecurityManager::generate_token(security_manager, user_id, 3600) // 1 hour expiry
+  
+  assert_true(token.length() > 0)
+  
+  let token_validation = SecurityManager::validate_token(security_manager, token)
+  match token_validation {
+    TokenValidation::Valid(user) => assert_eq(user, user_id)
+    TokenValidation::Invalid(reason) => assert_true(false)
+    TokenValidation::Expired => assert_true(false)
+  }
+  
+  // Test token expiry
+  let short_lived_token = SecurityManager::generate_token(security_manager, user_id, 1) // 1 second expiry
+  TimeUtil::sleep(2000) // Wait 2 seconds
+  
+  let expired_validation = SecurityManager::validate_token(security_manager, short_lived_token)
+  match expired_validation {
+    TokenValidation::Valid(_) => assert_true(false)
+    TokenValidation::Invalid(_) => assert_true(false)
+    TokenValidation::Expired => assert_true(true)
+  }
+  
+  // Test secure random number generation
+  let random_bytes = SecurityManager::secure_random(security_manager, 32)
+  assert_eq(random_bytes.length(), 32)
+  
+  // Verify randomness (simple check - not a true randomness test)
+  let random_bytes2 = SecurityManager::secure_random(security_manager, 32)
+  assert_not_eq(random_bytes, random_bytes2)
+  
+  // Test data masking
+  let sensitive_data = "Credit Card: 4532-1234-5678-9012"
+  let masked_data = SecurityManager::mask_sensitive_data(security_manager, sensitive_data, "credit_card")
+  
+  assert_true(masked_data.contains("4532"))
+  assert_false(masked_data.contains("5678"))
+  assert_false(masked_data.contains("9012"))
+}
+
+// Test 8: Performance Optimization and Load Balancing
+test "performance optimization and load balancing" {
+  let performance_manager = PerformanceManager::new()
+  
+  // Test connection pooling
+  let connection_pool = PerformanceManager::create_connection_pool(
+    performance_manager,
+    "database_connection_string",
+    10, // min connections
+    50  // max connections
+  )
+  
+  // Get connections from pool
+  let connections = []
+  for i = 0; i < 20; i = i + 1 {
+    let conn = PerformanceManager::get_connection(connection_pool)
+    connections.push(conn)
+  }
+  
+  assert_eq(connections.length(), 20)
   
   // Return connections to pool
   for conn in connections {
-    ResourcePool::release(pool, conn)
+    PerformanceManager::return_connection(connection_pool, conn)
   }
   
-  assert_eq(ResourcePool::available_count(pool), 5)
+  // Verify pool statistics
+  let pool_stats = PerformanceManager::get_pool_stats(connection_pool)
+  assert_true(pool_stats.active_connections >= 10)
+  assert_true(pool_stats.total_connections <= 50)
   
-  // Test resource cleanup on shutdown
-  let cleanup_tracker = CleanupTracker::new()
-  ResourceManager::register_cleanup_handler(resource_manager, cleanup_tracker)
+  // Test load balancing strategies
+  let servers = [
+    "server1.example.com",
+    "server2.example.com",
+    "server3.example.com"
+  ]
   
-  // Simulate shutdown process
-  ResourceManager::shutdown(resource_manager)
+  // Round-robin load balancing
+  let round_robin_balancer = PerformanceManager::create_round_robin_balancer(performance_manager, servers)
   
-  // Verify all resources were properly cleaned up
-  let cleaned_resources = CleanupTracker::cleaned_resources(cleanup_tracker)
-  assert_eq(cleaned_resources.length(), 4)
-  assert_true(cleaned_resources.contains("database.connection"))
-  assert_true(cleaned_resources.contains("cache.client"))
-  assert_true(cleaned_resources.contains("file.handle"))
-  assert_true(cleaned_resources.contains("network.socket"))
-  
-  // Test resource leak detection
-  let leak_detector = ResourceLeakDetector::new()
-  let leaked_resources = ResourceLeakDetector::detect_leaks(leak_detector, resource_manager)
-  
-  // No leaks should be detected after proper shutdown
-  assert_eq(leaked_resources.length(), 0)
-}
-
-// Test 7: Real-time Stream Processing Integrity Tests
-test "real-time stream processing with integrity guarantees" {
-  // Create stream processor
-  let stream_processor = StreamProcessor::new()
-    .with_buffer_size(1000)
-    .with_batch_size(100)
-    .with_processing_timeout(5000)
-    .with_integrity_checking(true)
-  
-  // Create test data stream
-  let test_events = []
-  for i = 0; i < 1000; i = i + 1 {
-    let event = StreamEvent::new("telemetry.data", i)
-      .with_attribute("event_id", i.to_string())
-      .with_attribute("timestamp", (1234567890L + i).to_string())
-      .with_attribute("source", "test-generator")
-    test_events = test_events + [event]
+  let selections = []
+  for i = 0; i < 9; i = i + 1 {
+    let server = PerformanceManager::select_server(round_robin_balancer)
+    selections.push(server)
   }
   
-  // Set up processing pipeline
-  let pipeline = StreamPipeline::new()
-    .add_stage(FilterStage::new(fn(event) { 
-      StreamEvent::attribute(event, "event_id").to_int() % 2 == 0 
-    }))
-    .add_stage(TransformStage::new(fn(event) {
-      let event_id = StreamEvent::attribute(event, "event_id").to_int()
-      StreamEvent::with_attribute(event, "processed", "true")
-        .with_attribute("doubled_id", (event_id * 2).to_string())
-    }))
-    .add_stage(AggregationStage::new("1min", fn(events) {
-      let count = events.length()
-      let sum = events.fold(0, fn(acc, event) {
-        acc + StreamEvent::attribute(event, "event_id").to_int()
-      })
-      AggregatedData::new("1min", count, sum)
-    }))
+  // Each server should be selected 3 times
+  assert_eq(selections.filter(fn(s) { s == "server1.example.com" }).length(), 3)
+  assert_eq(selections.filter(fn(s) { s == "server2.example.com" }).length(), 3)
+  assert_eq(selections.filter(fn(s) { s == "server3.example.com" }).length(), 3)
   
-  // Process stream
-  let start_time = Time::now()
-  let processing_result = StreamProcessor::process(stream_processor, test_events, pipeline)
-  let processing_time = Time::now() - start_time
+  // Weighted load balancing
+  let weighted_servers = [
+    ("server1.example.com", 1),  // Weight 1
+    ("server2.example.com", 2),  // Weight 2
+    ("server3.example.com", 3)   // Weight 3
+  ]
   
-  match processing_result {
-    Success(processed_events) => {
-      // Verify filtering worked (only even events should remain)
-      assert_eq(processed_events.length(), 500)
-      
-      // Verify transformation worked
-      for event in processed_events {
-        assert_eq(StreamEvent::attribute(event, "processed"), "true")
-        let event_id = StreamEvent::attribute(event, "event_id").to_int()
-        assert_eq(StreamEvent::attribute(event, "doubled_id").to_int(), event_id * 2)
-      }
-      
-      // Verify processing time is reasonable
-      assert_true(processing_time < 10000)
-    }
-    Error(error) => {
-      assert_true(false) // Processing should not fail
-    }
+  let weighted_balancer = PerformanceManager::create_weighted_balancer(performance_manager, weighted_servers)
+  
+  let weighted_selections = []
+  for i = 0; i < 60; i = i + 1 {
+    let server = PerformanceManager::select_server(weighted_balancer)
+    weighted_selections.push(server)
   }
   
-  // Test integrity checking
-  let integrity_checker = StreamIntegrityChecker::new()
-  let integrity_result = StreamIntegrityChecker::verify(integrity_checker, test_events, processed_events)
+  // Server3 should be selected most often (weight 3)
+  let server3_count = weighted_selections.filter(fn(s) { s == "server3.example.com" }).length()
+  let server2_count = weighted_selections.filter(fn(s) { s == "server2.example.com" }).length()
+  let server1_count = weighted_selections.filter(fn(s) { s == "server1.example.com" }).length()
   
-  match integrity_result {
-    IntegrityReport(missing_events, duplicate_events, corrupted_events) => {
-      assert_eq(missing_events.length(), 500) // Odd events filtered out
-      assert_eq(duplicate_events.length(), 0) // No duplicates
-      assert_eq(corrupted_events.length(), 0) // No corruption
-    }
-  }
+  assert_true(server3_count > server2_count)
+  assert_true(server2_count > server1_count)
   
-  // Test backpressure handling
-  let slow_consumer = SlowConsumer::new(100) // 100ms processing delay
-  let backpressure_result = StreamProcessor::process_with_consumer(
-    stream_processor, 
-    test_events, 
-    slow_consumer
+  // Test adaptive throttling
+  let throttler = PerformanceManager::create_adaptive_throttler(
+    performance_manager,
+    100,  // initial rate limit (requests per second)
+    1000  // burst capacity
   )
   
-  match backpressure_result {
-    Success(events) => {
-      assert_eq(events.length(), 1000) // All events should be processed
-    }
-    BackpressureApplied(dropped_count) => {
-      assert_true(dropped_count < 100) // Some events may be dropped under extreme backpressure
-    }
-  }
-  
-  // Test exactly-once processing guarantee
-  let exactly_once_processor = StreamProcessor::new()
-    .with_processing_mode(ExactlyOnce)
-    .with_checkpoint_store(CheckpointStore::in_memory())
-  
-  let exactly_once_result = StreamProcessor::process(
-    exactly_once_processor, 
-    test_events, 
-    pipeline
-  )
-  
-  match exactly_once_result {
-    Success(events) => {
-      assert_eq(events.length(), 500)
-      
-      // Verify no duplicate processing
-      let processed_ids = []
-      for event in events {
-        let event_id = StreamEvent::attribute(event, "event_id")
-        assert_false(processed_ids.contains(event_id))
-        processed_ids = processed_ids + [event_id]
-      }
-    }
-    Error(_) => {
-      assert_true(false)
-    }
-  }
-}
-
-// Test 8: Configuration Dynamic Update Tests
-test "configuration dynamic updates without service restart" {
-  // Create configuration manager
-  let config_manager = ConfigurationManager::new()
-    .with_source(FileConfigurationSource::new("/etc/azimuth/config.json"))
-    .with_source(EnvironmentConfigurationSource::new())
-    .with_source(RemoteConfigurationSource::new("https://config.azimuth.com/api"))
-  
-  // Initialize with default configuration
-  let default_config = {
-    "telemetry.enabled": true,
-    "telemetry.sampling_rate": 0.1,
-    "telemetry.batch_size": 100,
-    "network.timeout": 5000,
-    "network.retry_count": 3,
-    "logging.level": "INFO",
-    "logging.format": "json"
-  }
-  
-  ConfigurationManager::load_defaults(config_manager, default_config)
-  
-  // Verify initial configuration
-  assert_eq(ConfigurationManager::get_bool(config_manager, "telemetry.enabled"), true)
-  assert_eq(ConfigurationManager::get_float(config_manager, "telemetry.sampling_rate"), 0.1)
-  assert_eq(ConfigurationManager::get_int(config_manager, "telemetry.batch_size"), 100)
-  assert_eq(ConfigurationManager::get_int(config_manager, "network.timeout"), 5000)
-  assert_eq(ConfigurationManager::get_int(config_manager, "network.retry_count"), 3)
-  assert_eq(ConfigurationManager::get_string(config_manager, "logging.level"), "INFO")
-  assert_eq(ConfigurationManager::get_string(config_manager, "logging.format"), "json")
-  
-  // Register configuration change listeners
-  let telemetry_listener = ConfigurationChangeListener::new(
-    ["telemetry.sampling_rate", "telemetry.batch_size"],
-    fn(key, old_value, new_value) {
-      // Apply telemetry configuration changes
-      if key == "telemetry.sampling_rate" {
-        TelemetryManager::update_sampling_rate(new_value.to_float())
-      } else if key == "telemetry.batch_size" {
-        TelemetryManager::update_batch_size(new_value.to_int())
-      }
-    }
-  )
-  
-  let network_listener = ConfigurationChangeListener::new(
-    ["network.timeout", "network.retry_count"],
-    fn(key, old_value, new_value) {
-      // Apply network configuration changes
-      if key == "network.timeout" {
-        NetworkManager::update_timeout(new_value.to_int())
-      } else if key == "network.retry_count" {
-        NetworkManager::update_retry_count(new_value.to_int())
-      }
-    }
-  )
-  
-  ConfigurationManager::add_listener(config_manager, telemetry_listener)
-  ConfigurationManager::add_listener(config_manager, network_listener)
-  
-  // Test dynamic configuration update
-  let updated_config = {
-    "telemetry.sampling_rate": 0.5,
-    "telemetry.batch_size": 200,
-    "network.timeout": 10000,
-    "network.retry_count": 5,
-    "logging.level": "DEBUG"
-  }
-  
-  ConfigurationManager::update(config_manager, updated_config)
-  
-  // Verify configuration changes were applied
-  assert_eq(ConfigurationManager::get_float(config_manager, "telemetry.sampling_rate"), 0.5)
-  assert_eq(ConfigurationManager::get_int(config_manager, "telemetry.batch_size"), 200)
-  assert_eq(ConfigurationManager::get_int(config_manager, "network.timeout"), 10000)
-  assert_eq(ConfigurationManager::get_int(config_manager, "network.retry_count"), 5)
-  assert_eq(ConfigurationManager::get_string(config_manager, "logging.level"), "DEBUG")
-  assert_eq(ConfigurationManager::get_string(config_manager, "logging.format"), "json") // Unchanged
-  
-  // Verify configuration change notifications were sent
-  let change_history = ConfigurationManager::get_change_history(config_manager)
-  assert_eq(change_history.length(), 5)
-  
-  // Test configuration validation
-  let invalid_config = {
-    "telemetry.sampling_rate": 1.5, // Invalid: should be between 0 and 1
-    "network.timeout": -1000, // Invalid: should be positive
-    "network.retry_count": -1 // Invalid: should be non-negative
-  }
-  
-  let validation_result = ConfigurationManager::validate_update(config_manager, invalid_config)
-  match validation_result {
-    ValidationSuccess => assert_true(false) // Should fail validation
-    ValidationError(errors) => {
-      assert_eq(errors.length(), 3)
-      assert_true(errors.contains("telemetry.sampling_rate must be between 0 and 1"))
-      assert_true(errors.contains("network.timeout must be positive"))
-      assert_true(errors.contains("network.retry_count must be non-negative"))
-    }
-  }
-  
-  // Test configuration rollback
-  let rollback_result = ConfigurationManager::rollback(config_manager)
-  match rollback_result {
-    Success(rolled_back_config) => {
-      assert_eq(ConfigurationManager::get_float(config_manager, "telemetry.sampling_rate"), 0.1)
-      assert_eq(ConfigurationManager::get_int(config_manager, "telemetry.batch_size"), 100)
-      assert_eq(ConfigurationManager::get_int(config_manager, "network.timeout"), 5000)
-      assert_eq(ConfigurationManager::get_int(config_manager, "network.retry_count"), 3)
-    }
-    Error(_) => {
-      assert_true(false) // Rollback should succeed
-    }
-  }
-  
-  // Test configuration hot-reload from file
-  let temp_config_file = TempFile::create()
-  TempFile::write(temp_config_file, """
-  {
-    "telemetry.enabled": false,
-    "telemetry.sampling_rate": 0.2,
-    "logging.level": "WARN"
-  }
-  """)
-  
-  let reload_result = ConfigurationManager::reload_from_file(config_manager, TempFile::path(temp_config_file))
-  match reload_result {
-    Success(_) => {
-      assert_eq(ConfigurationManager::get_bool(config_manager, "telemetry.enabled"), false)
-      assert_eq(ConfigurationManager::get_float(config_manager, "telemetry.sampling_rate"), 0.2)
-      assert_eq(ConfigurationManager::get_string(config_manager, "logging.level"), "WARN")
-    }
-    Error(_) => {
-      assert_true(false) // Reload should succeed
-    }
-  }
-}
-
-// Test 9: Memory Leak Prevention Tests
-test "memory leak prevention with automatic resource cleanup" {
-  // Create memory leak detector
-  let leak_detector = MemoryLeakDetector::new()
-  MemoryLeakDetector::start_monitoring(leak_detector)
-  
-  // Test 1: Large object creation and cleanup
-  let large_objects = []
-  for i = 0; i < 1000; i = i + 1 {
-    let large_object = LargeObject::new(10000) // 10KB each
-    large_objects = large_objects + [large_object]
-  }
-  
-  let memory_before_cleanup = MemoryLeakDetector::get_memory_usage(leak_detector)
-  
-  // Explicitly clean up large objects
-  for obj in large_objects {
-    LargeObject::cleanup(obj)
-  }
-  large_objects = []
-  
-  // Force garbage collection if available
-  System::gc()
-  
-  let memory_after_cleanup = MemoryLeakDetector::get_memory_usage(leak_detector)
-  let memory_freed = memory_before_cleanup - memory_after_cleanup
-  
-  assert_true(memory_freed > 8000000) // At least 8MB should be freed
-  
-  // Test 2: Event listener cleanup
-  let event_emitter = EventEmitter::new()
-  let listeners = []
-  
-  // Register many listeners
-  for i = 0; i < 1000; i = i + 1 {
-    let listener = EventListener::new("test.event", fn(event) {
-      // Process event
-    })
-    EventEmitter::add_listener(event_emitter, listener)
-    listeners = listeners + [listener]
-  }
-  
-  // Remove all listeners
-  for listener in listeners {
-    EventEmitter::remove_listener(event_emitter, listener)
-  }
-  listeners = []
-  
-  // Verify listeners were cleaned up
-  assert_eq(EventEmitter::listener_count(event_emitter), 0)
-  
-  // Test 3: Cache cleanup
-  let cache = LRUCache::new(1000)
-  
-  // Fill cache beyond capacity
-  for i = 0; i < 2000; i = i + 1 {
-    let key = "key_" + i.to_string()
-    let value = "value_" + i.to_string()
-    LRUCache::put(cache, key, value)
-  }
-  
-  // Verify cache size is maintained
-  assert_eq(LRUCache::size(cache), 1000)
-  
-  // Clear cache
-  LRUCache::clear(cache)
-  
-  // Verify cache is empty
-  assert_eq(LRUCache::size(cache), 0)
-  
-  // Test 4: Connection pool cleanup
-  let connection_pool = ConnectionPool::new(100, fn() {
-    DatabaseConnection::new("postgresql://localhost:5432/azimuth")
-  })
-  
-  // Acquire many connections
-  let connections = []
+  // Make requests within limit
+  let within_limit_results = []
   for i = 0; i < 50; i = i + 1 {
-    let conn = ConnectionPool::acquire(connection_pool)
-    connections = connections + [conn]
+    let result = PerformanceManager::check_rate_limit(throttler)
+    within_limit_results.push(result)
   }
   
-  // Return all connections
-  for conn in connections {
-    ConnectionPool::release(connection_pool, conn)
-  }
-  connections = []
+  // All should be allowed
+  assert_true(within_limit_results.filter(fn(r) { r == false }).length() == 0)
   
-  // Close connection pool
-  ConnectionPool::close(connection_pool)
-  
-  // Verify connections were closed
-  assert_eq(ConnectionPool::active_connections(connection_pool), 0)
-  
-  // Test 5: Buffer cleanup
-  let buffers = []
-  
-  // Create many buffers
-  for i = 0; i < 1000; i = i + 1 {
-    let buffer = Buffer::new(10000) // 10KB each
-    Buffer::fill(buffer, i.to_int() % 256)
-    buffers = buffers + [buffer]
+  // Make requests that exceed limit
+  let exceed_limit_results = []
+  for i = 0; i < 2000; i = i + 1 {
+    let result = PerformanceManager::check_rate_limit(throttler)
+    exceed_limit_results.push(result)
   }
   
-  // Process and clean up buffers
-  for buffer in buffers {
-    // Process buffer data
-    let checksum = Buffer::checksum(buffer)
-    assert_true(checksum > 0)
-    
-    // Clean up buffer
-    Buffer::cleanup(buffer)
-  }
-  buffers = []
-  
-  // Test 6: Memory leak detection
-  let leak_report = MemoryLeakDetector::generate_report(leak_detector)
-  
-  match leak_report {
-    LeakReport(leaked_objects, total_leaked_bytes) => {
-      // Verify no significant memory leaks
-      assert_true(total_leaked_bytes < 1000000) // Less than 1MB
-      
-      // Check specific object types
-      let large_object_leaks = LeakReport::objects_of_type(leak_report, "LargeObject")
-      let listener_leaks = LeakReport::objects_of_type(leak_report, "EventListener")
-      let buffer_leaks = LeakReport::objects_of_type(leak_report, "Buffer")
-      
-      assert_eq(large_object_leaks.length(), 0)
-      assert_eq(listener_leaks.length(), 0)
-      assert_eq(buffer_leaks.length(), 0)
-    }
-  }
-  
-  // Test 7: Memory pressure handling
-  let memory_monitor = MemoryMonitor::new()
-  MemoryMonitor::set_threshold(memory_monitor, 0.8) // 80% of available memory
-  
-  // Simulate memory pressure
-  let memory_intensive_objects = []
-  for i = 0; i < 10000; i = i + 1 {
-    let obj = LargeObject::new(100000) // 100KB each
-    
-    // Check memory pressure
-    if MemoryMonitor::is_pressure_detected(memory_monitor) {
-      // Trigger cleanup
-      for pressure_obj in memory_intensive_objects {
-        LargeObject::cleanup(pressure_obj)
-      }
-      memory_intensive_objects = []
-      System::gc()
-      break
-    }
-    
-    memory_intensive_objects = memory_intensive_objects + [obj]
-  }
-  
-  // Verify memory pressure was handled
-  assert_true(MemoryMonitor::pressure_events(memory_monitor) > 0)
-  
-  // Clean up remaining objects
-  for obj in memory_intensive_objects {
-    LargeObject::cleanup(obj)
-  }
-  
-  // Stop monitoring
-  MemoryLeakDetector::stop_monitoring(leak_detector)
+  // Some should be throttled
+  assert_true(exceed_limit_results.filter(fn(r) { r == false }).length() > 0)
 }
 
-// Test 10: Internationalization and Localization Tests
-test "internationalization and localization with multiple locales" {
-  // Create internationalization manager
-  let i18n_manager = I18nManager::new()
-    .with_default_locale("en-US")
-    .with_fallback_locale("en")
-    .with_supported_locales(["en-US", "zh-CN", "ja-JP", "fr-FR", "de-DE"])
+// Test 9: Logging and Audit Trail
+test "logging and audit trail" {
+  let logging_manager = LoggingManager::new()
   
-  // Load translation resources
-  I18nManager::load_translations(i18n_manager, "en-US", {
-    "telemetry.enabled": "Telemetry is enabled",
-    "telemetry.disabled": "Telemetry is disabled",
-    "telemetry.sampling_rate": "Sampling rate is {rate}",
-    "error.connection_failed": "Connection to {server} failed: {reason}",
-    "metric.count": "{count, plural, =0 {No items} =1 {One item} other {# items}}",
-    "duration.seconds": "{seconds, plural, =1 {1 second} other {# seconds}}"
-  })
+  // Test structured logging
+  let logger = LoggingManager::create_logger(logging_manager, "test_component")
   
-  I18nManager::load_translations(i18n_manager, "zh-CN", {
-    "telemetry.enabled": "遥测已启用",
-    "telemetry.disabled": "遥测已禁用",
-    "telemetry.sampling_rate": "采样率为 {rate}",
-    "error.connection_failed": "连接到 {server} 失败: {reason}",
-    "metric.count": "{count, plural, =0 {无项目} =1 {一个项目} other {# 个项目}}",
-    "duration.seconds": "{seconds, plural, =1 {1 秒} other {# 秒}}"
-  })
-  
-  I18nManager::load_translations(i18n_manager, "ja-JP", {
-    "telemetry.enabled": "テレメトリが有効です",
-    "telemetry.disabled": "テレメトリが無効です",
-    "telemetry.sampling_rate": "サンプリングレートは {rate} です",
-    "error.connection_failed": "{server} への接続に失敗しました: {reason}",
-    "metric.count": "{count, plural, =0 {アイテムなし} =1 {1つのアイテム} other {#つのアイテム}}",
-    "duration.seconds": "{seconds, plural, =1 {1秒} other {#秒}}"
-  })
-  
-  // Test basic translation
-  I18nManager::set_locale(i18n_manager, "en-US")
-  assert_eq(I18nManager::translate(i18n_manager, "telemetry.enabled"), "Telemetry is enabled")
-  
-  I18nManager::set_locale(i18n_manager, "zh-CN")
-  assert_eq(I18nManager::translate(i18n_manager, "telemetry.enabled"), "遥测已启用")
-  
-  I18nManager::set_locale(i18n_manager, "ja-JP")
-  assert_eq(I18nManager::translate(i18n_manager, "telemetry.enabled"), "テレメトリが有効です")
-  
-  // Test parameter substitution
-  I18nManager::set_locale(i18n_manager, "en-US")
-  let en_result = I18nManager::translate_with_params(
-    i18n_manager, 
-    "telemetry.sampling_rate", 
-    [("rate", "0.1")]
-  )
-  assert_eq(en_result, "Sampling rate is 0.1")
-  
-  I18nManager::set_locale(i18n_manager, "zh-CN")
-  let zh_result = I18nManager::translate_with_params(
-    i18n_manager, 
-    "telemetry.sampling_rate", 
-    [("rate", "0.1")]
-  )
-  assert_eq(zh_result, "采样率为 0.1")
-  
-  // Test pluralization
-  I18nManager::set_locale(i18n_manager, "en-US")
-  assert_eq(
-    I18nManager::translate_with_params(i18n_manager, "metric.count", [("count", "0")]),
-    "No items"
-  )
-  assert_eq(
-    I18nManager::translate_with_params(i18n_manager, "metric.count", [("count", "1")]),
-    "One item"
-  )
-  assert_eq(
-    I18nManager::translate_with_params(i18n_manager, "metric.count", [("count", "5")]),
-    "5 items"
-  )
-  
-  assert_eq(
-    I18nManager::translate_with_params(i18n_manager, "duration.seconds", [("seconds", "1")]),
-    "1 second"
-  )
-  assert_eq(
-    I18nManager::translate_with_params(i18n_manager, "duration.seconds", [("seconds", "10")]),
-    "10 seconds"
-  )
-  
-  // Test fallback mechanism
-  I18nManager::set_locale(i18n_manager, "es-ES") // Not supported
-  assert_eq(
-    I18nManager::translate(i18n_manager, "telemetry.enabled"), 
-    "Telemetry is enabled" // Should fallback to en-US
-  )
-  
-  // Test missing translation
-  I18nManager::set_locale(i18n_manager, "zh-CN")
-  assert_eq(
-    I18nManager::translate(i18n_manager, "nonexistent.key"), 
-    "nonexistent.key" // Should return key when translation is missing
-  )
-  
-  // Test locale-specific formatting
-  I18nManager::set_locale(i18n_manager, "en-US")
-  let en_formatted_number = I18nManager::format_number(i18n_manager, 1234567.89)
-  assert_eq(en_formatted_number, "1,234,567.89")
-  
-  let en_formatted_date = I18nManager::format_date(i18n_manager, 1234567890L)
-  assert_eq(en_formatted_date, "2/13/2009") // MM/DD/YYYY format
-  
-  I18nManager::set_locale(i18n_manager, "zh-CN")
-  let zh_formatted_number = I18nManager::format_number(i18n_manager, 1234567.89)
-  assert_eq(zh_formatted_number, "1,234,567.89") // Chinese uses same decimal separator
-  
-  let zh_formatted_date = I18nManager::format_date(i18n_manager, 1234567890L)
-  assert_eq(zh_formatted_date, "2009/2/13") // YYYY/MM/DD format
-  
-  I18nManager::set_locale(i18n_manager, "ja-JP")
-  let ja_formatted_number = I18nManager::format_number(i18n_manager, 1234567.89)
-  assert_eq(ja_formatted_number, "1,234,567.89") // Japanese uses same decimal separator
-  
-  let ja_formatted_date = I18nManager::format_date(i18n_manager, 1234567890L)
-  assert_eq(ja_formatted_date, "2009/02/13") // YYYY/MM/DD format with leading zeros
-  
-  // Test RTL (Right-to-Left) language support
-  I18nManager::load_translations(i18n_manager, "ar-SA", {
-    "telemetry.enabled": "القياس عن بعد مفعّل",
-    "error.connection_failed": "فشل الاتصال بالخادم {server}: {reason}"
-  })
-  
-  I18nManager::add_supported_locale(i18n_manager, "ar-SA")
-  I18nManager::set_locale(i18n_manager, "ar-SA")
-  
-  let ar_result = I18nManager::translate_with_params(
-    i18n_manager, 
-    "error.connection_failed", 
-    [("server", "example.com"), ("reason", "timeout")]
-  )
-  assert_eq(ar_result, "فشل الاتصال بالخادم example.com: timeout")
-  
-  // Test locale detection from request
-  let request_headers = [
-    ("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8")
-  ]
-  
-  let detected_locale = I18nManager::detect_locale(i18n_manager, request_headers)
-  assert_eq(detected_locale, "zh-CN")
-  
-  let request_headers_en = [
-    ("Accept-Language", "en-US,en;q=0.9")
-  ]
-  
-  let detected_locale_en = I18nManager::detect_locale(i18n_manager, request_headers_en)
-  assert_eq(detected_locale_en, "en-US")
-  
-  // Test locale-specific error messages
-  I18nManager::set_locale(i18n_manager, "en-US")
-  let en_error = I18nManager::localize_error(i18n_manager, "CONNECTION_FAILED", [
-    ("server", "api.example.com"),
-    ("reason", "timeout")
+  LoggingManager::log_info(logger, "Test message", [
+    ("user_id", "12345"),
+    ("action", "test_action"),
+    ("timestamp", TimeUtil::current_timestamp())
   ])
-  assert_eq(en_error, "Connection to api.example.com failed: timeout")
   
-  I18nManager::set_locale(i18n_manager, "zh-CN")
-  let zh_error = I18nManager::localize_error(i18n_manager, "CONNECTION_FAILED", [
-    ("server", "api.example.com"),
-    ("reason", "timeout")
+  LoggingManager::log_warning(logger, "Test warning", [
+    ("user_id", "12345"),
+    ("warning_code", "TEST_001")
   ])
-  assert_eq(zh_error, "连接到 api.example.com 失败: timeout")
+  
+  LoggingManager::log_error(logger, "Test error", [
+    ("user_id", "12345"),
+    ("error_code", "TEST_002"),
+    ("stack_trace", "at test_function:10")
+  ])
+  
+  // Test log filtering and searching
+  let log_filter = LogFilter::new()
+  LogFilter::add_level_filter(log_filter, LogLevel::Warning)
+  LogFilter::add_time_range_filter(log_filter, TimeUtil::current_timestamp() - 3600000, TimeUtil::current_timestamp())
+  
+  let filtered_logs = LoggingManager::search_logs(logging_manager, log_filter)
+  assert_true(filtered_logs.length() >= 1) // At least the warning message
+  
+  // Test audit trail
+  let audit_trail = LoggingManager::create_audit_trail(logging_manager, "security_audit")
+  
+  // Record audit events
+  LoggingManager::audit_event(audit_trail, "user_login", [
+    ("user_id", "12345"),
+    ("ip_address", "192.168.1.100"),
+    ("timestamp", TimeUtil::current_timestamp())
+  ])
+  
+  LoggingManager::audit_event(audit_trail, "data_access", [
+    ("user_id", "12345"),
+    ("resource", "sensitive_data"),
+    ("action", "read"),
+    ("timestamp", TimeUtil::current_timestamp())
+  ])
+  
+  LoggingManager::audit_event(audit_trail, "user_logout", [
+    ("user_id", "12345"),
+    ("session_duration", 3600000), // 1 hour in milliseconds
+    ("timestamp", TimeUtil::current_timestamp())
+  ])
+  
+  // Test audit trail querying
+  let user_audit_events = LoggingManager::query_audit_trail(audit_trail, [
+    ("user_id", "12345")
+  ])
+  
+  assert_eq(user_audit_events.length(), 3)
+  
+  // Verify events are in chronological order
+  assert_true(user_audit_events[0].event_type == "user_login")
+  assert_true(user_audit_events[1].event_type == "data_access")
+  assert_true(user_audit_events[2].event_type == "user_logout")
+  
+  // Test log retention policies
+  let retention_policy = RetentionPolicy::new()
+  RetentionPolicy::add_rule(retention_policy, LogLevel::Info, 2592000000) // 30 days
+  RetentionPolicy::add_rule(retention_policy, LogLevel::Warning, 7776000000) // 90 days
+  RetentionPolicy::add_rule(retention_policy, LogLevel::Error, 15552000000) // 180 days
+  
+  LoggingManager::apply_retention_policy(logging_manager, retention_policy)
+  
+  // Test log aggregation and metrics
+  let log_metrics = LoggingManager::generate_log_metrics(logging_manager, TimeUtil::current_timestamp() - 86400000) // Last 24 hours
+  
+  assert_true(log_metrics.total_logs > 0)
+  assert_true(log_metrics.error_count >= 0)
+  assert_true(log_metrics.warning_count >= 0)
+  assert_true(log_metrics.info_count >= 0)
+}
+
+// Test 10: Cross-Platform Compatibility and Portability
+test "cross-platform compatibility and portability" {
+  let platform_adapter = PlatformAdapter::new()
+  
+  // Test platform detection
+  let platform_info = PlatformAdapter::detect_platform(platform_adapter)
+  assert_true(platform_info.os_name.length() > 0)
+  assert_true(platform_info.architecture.length() > 0)
+  
+  // Test path handling across platforms
+  let path_components = ["home", "user", "documents", "test.txt"]
+  let platform_path = PlatformAdapter::join_paths(platform_adapter, path_components)
+  
+  // Path should contain all components
+  for component in path_components {
+    assert_true(platform_path.contains(component))
+  }
+  
+  // Test file system operations
+  let test_content = "Test content for cross-platform compatibility"
+  let temp_dir = PlatformAdapter::create_temp_directory(platform_adapter)
+  let test_file = PlatformAdapter::join_paths(platform_adapter, [temp_dir, "test_file.txt"])
+  
+  // Write to file
+  let write_result = PlatformAdapter::write_file(platform_adapter, test_file, test_content)
+  assert_true(write_result.is_success)
+  
+  // Read from file
+  let read_result = PlatformAdapter::read_file(platform_adapter, test_file)
+  match read_result {
+    Success(content) => assert_eq(content, test_content)
+    Error(_) => assert_true(false)
+  }
+  
+  // Test file permissions
+  let permissions = FilePermissions::new()
+  FilePermissions::set_read(permissions, true)
+  FilePermissions::set_write(permissions, false)
+  FilePermissions::set_execute(permissions, false)
+  
+  let permission_result = PlatformAdapter::set_file_permissions(platform_adapter, test_file, permissions)
+  assert_true(permission_result.is_success)
+  
+  // Test environment variable handling
+  let test_env_key = "AZIMUTH_PLATFORM_TEST"
+  let test_env_value = "test_value_" + platform_info.os_name
+  
+  // Set environment variable
+  PlatformAdapter::set_environment_variable(platform_adapter, test_env_key, test_env_value)
+  
+  // Get environment variable
+  match PlatformAdapter::get_environment_variable(platform_adapter, test_env_key) {
+    Some(value) => assert_eq(value, test_env_value)
+    None => assert_true(false)
+  }
+  
+  // Test process management
+  let process_command = if platform_info.os_name.contains("Windows") {
+    "echo Hello from Windows"
+  } else {
+    "echo 'Hello from Unix-like system'"
+  }
+  
+  let process_result = PlatformAdapter::execute_command(platform_adapter, process_command)
+  match process_result {
+    Success(output) => assert_true(output.contains("Hello"))
+    Error(_) => assert_true(false)
+  }
+  
+  // Test network interface detection
+  let network_interfaces = PlatformAdapter::get_network_interfaces(platform_adapter)
+  assert_true(network_interfaces.length() > 0)
+  
+  // Verify at least one interface has an IP address
+  let has_ip = network_interfaces.any(fn(interface) {
+    interface.ip_address.length() > 0
+  })
+  assert_true(has_ip)
+  
+  // Test system resource monitoring
+  let system_resources = PlatformAdapter::get_system_resources(platform_adapter)
+  assert_true(system_resources.total_memory > 0)
+  assert_true(system_resources.available_memory > 0)
+  assert_true(system_resources.available_memory <= system_resources.total_memory)
+  assert_true(system_resources.cpu_count > 0)
+  
+  // Clean up
+  PlatformAdapter::delete_file(platform_adapter, test_file)
+  PlatformAdapter::delete_directory(platform_adapter, temp_dir)
+  PlatformAdapter::unset_environment_variable(platform_adapter, test_env_key)
 }
