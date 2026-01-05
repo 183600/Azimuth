@@ -1,579 +1,482 @@
-// 阿兹米克缓存机制测试用例
-// 专注于遥测数据的缓存策略、性能优化和数据一致性功能
+// Azimuth Telemetry System - Caching Mechanism Tests
+// This file contains test cases for caching mechanism functionality
 
-// 测试1: 基本缓存操作
-test "基本缓存操作测试" {
-  let cache_manager = CacheManager::new()
+// Test 1: Basic Cache Operations
+test "basic cache operations" {
+  // Create a cache
+  let cache = Cache::new("test_cache", 100) // Max 100 items
   
-  // 创建字符串缓存
-  let string_cache = CacheManager::create_cache(cache_manager, "string.cache", 100)
+  // Test put and get operations
+  let key = "test_key"
+  let value = "test_value"
   
-  // 测试缓存存储和检索
-  Cache::put(string_cache, "key1", "value1")
-  Cache::put(string_cache, "key2", "value2")
-  Cache::put(string_cache, "key3", "value3")
+  let put_result = Cache::put(cache, key, value)
+  assert_true(put_result.is_ok())
   
-  // 验证缓存检索
-  let value1 = Cache::get(string_cache, "key1")
-  match value1 {
-    Some(v) => assert_eq(v, "value1")
+  let get_result = Cache::get(cache, key)
+  match get_result {
+    Some(retrieved_value) => assert_eq(retrieved_value, value)
     None => assert_true(false)
   }
   
-  let value2 = Cache::get(string_cache, "key2")
-  match value2 {
-    Some(v) => assert_eq(v, "value2")
-    None => assert_true(false)
-  }
-  
-  // 测试不存在的键
-  let non_existent = Cache::get(string_cache, "non_existent_key")
+  // Test non-existent key
+  let non_existent = Cache::get(cache, "non_existent_key")
   match non_existent {
     Some(_) => assert_true(false)
     None => assert_true(true)
   }
   
-  // 测试缓存删除
-  Cache::remove(string_cache, "key2")
-  let removed_value = Cache::get(string_cache, "key2")
-  match removed_value {
+  // Test has operation
+  assert_true(Cache::has(cache, key))
+  assert_false(Cache::has(cache, "non_existent_key"))
+  
+  // Test remove operation
+  let remove_result = Cache::remove(cache, key)
+  assert_true(remove_result.is_ok())
+  
+  // Verify the key is removed
+  assert_false(Cache::has(cache, key))
+  let removed_get = Cache::get(cache, key)
+  match removed_get {
     Some(_) => assert_true(false)
     None => assert_true(true)
   }
   
-  // 验证其他键仍然存在
-  let remaining_value1 = Cache::get(string_cache, "key1")
-  match remaining_value1 {
-    Some(v) => assert_eq(v, "value1")
-    None => assert_true(false)
-  }
-  
-  // 测试缓存清空
-  Cache::clear(string_cache)
-  let cleared_value1 = Cache::get(string_cache, "key1")
-  let cleared_value3 = Cache::get(string_cache, "key3")
-  
-  match (cleared_value1, cleared_value3) {
-    (None, None) => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  // 验证缓存大小
-  assert_eq(Cache::size(string_cache), 0)
+  // Test cache size
+  assert_eq(Cache::size(cache), 0)
 }
 
-// 测试2: 遥测数据缓存
-test "遥测数据缓存测试" {
-  let telemetry_cache = TelemetryCache::new()
+// Test 2: Cache Expiration
+test "cache expiration" {
+  // Create a cache with TTL
+  let cache = Cache::with_ttl("ttl_cache", 100, 2000) // 100 items, 2 seconds TTL
   
-  // 创建遥测数据
-  let telemetry_data1 = TelemetryData::new()
-  TelemetryData::add_metric(telemetry_data1, "cpu.usage", 75.5)
-  TelemetryData::add_metric(telemetry_data1, "memory.usage", 62.3)
-  TelemetryData::add_attribute(telemetry_data1, "service.name", "web-service")
+  // Put an item in the cache
+  let key = "expiring_key"
+  let value = "expiring_value"
   
-  let telemetry_data2 = TelemetryData::new()
-  TelemetryData::add_metric(telemetry_data2, "cpu.usage", 45.2)
-  TelemetryData::add_metric(telemetry_data2, "memory.usage", 55.8)
-  TelemetryData::add_attribute(telemetry_data2, "service.name", "api-service")
+  let put_result = Cache::put(cache, key, value)
+  assert_true(put_result.is_ok())
   
-  // 缓存遥测数据
-  TelemetryCache::put(telemetry_cache, "service.web.latest", telemetry_data1)
-  TelemetryCache::put(telemetry_cache, "service.api.latest", telemetry_data2)
-  
-  // 检索缓存的遥测数据
-  let cached_data1 = TelemetryCache::get(telemetry_cache, "service.web.latest")
-  match cached_data1 {
-    Some(data) => {
-      let cpu_usage = TelemetryData::get_metric(data, "cpu.usage")
-      match cpu_usage {
-        Some(value) => assert_eq(value, 75.5)
-        None => assert_true(false)
-      }
-      
-      let service_name = TelemetryData::get_attribute(data, "service.name")
-      match service_name {
-        Some(StringValue(name)) => assert_eq(name, "web-service")
-        None => assert_true(false)
-      }
-    }
+  // Verify the item is immediately available
+  let get_result = Cache::get(cache, key)
+  match get_result {
+    Some(retrieved_value) => assert_eq(retrieved_value, value)
     None => assert_true(false)
   }
   
-  // 测试批量缓存操作
-  let batch_data = [
-    ("service.batch.1", telemetry_data1),
-    ("service.batch.2", telemetry_data2)
-  ]
+  // Simulate time passing (in a real implementation, this would involve waiting)
+  // For testing purposes, we'll manually expire the item
+  Cache::expire_item(cache, key)
   
-  TelemetryCache::put_batch(telemetry_cache, batch_data)
-  
-  // 批量检索
-  let batch_keys = ["service.batch.1", "service.batch.2", "service.nonexistent"]
-  let batch_results = TelemetryCache::get_batch(telemetry_cache, batch_keys)
-  
-  assert_eq(batch_results.length(), 3)
-  assert_true(batch_results[0].is_some())
-  assert_true(batch_results[1].is_some())
-  assert_true(batch_results[2].is_none())
-  
-  // 测试缓存统计
-  let stats = TelemetryCache::get_statistics(telemetry_cache)
-  assert_eq(CacheStats::hits(stats), 3)
-  assert_eq(CacheStats::misses(stats), 1)
-  assert_eq(CacheStats::size(stats), 4)
-}
-
-// 测试3: 缓存过期策略
-test "缓存过期策略测试" {
-  let cache_manager = CacheManager::new()
-  
-  // 创建带TTL的缓存
-  let ttl_cache = CacheManager::create_cache_with_ttl(cache_manager, "ttl.cache", 100, 2000) // 2秒TTL
-  
-  // 存储数据
-  Cache::put(ttl_cache, "short_lived", "will_expire_soon")
-  Cache::put(ttl_cache, "long_lived", "will_not_expire")
-  
-  // 立即检索，应该存在
-  let immediate_value = Cache::get(ttl_cache, "short_lived")
-  match immediate_value {
-    Some(v) => assert_eq(v, "will_expire_soon")
-    None => assert_true(false)
-  }
-  
-  // 等待过期（在实际测试中可能需要模拟时间）
-  let expired_cache = CacheManager::create_cache_with_ttl(cache_manager, "expired.cache", 100, 1) // 1ms TTL
-  
-  Cache::put(expired_cache, "expired", "this_should_expire")
-  
-  // 模拟时间流逝
-  // 在实际环境中，这里可能需要使用时间模拟工具
-  // 或者使用一个足够短的TTL来确保过期
-  
-  // 检查过期数据
-  let expired_value = Cache::get(expired_cache, "expired")
-  // 在实际测试中，这个值应该为None，因为已经过期
-  
-  // 测试访问后过期策略
-  let access_cache = CacheManager::create_cache_with_access_ttl(cache_manager, "access.cache", 100, 2000)
-  
-  Cache::put(access_cache, "access_key", "access_value")
-  
-  // 访问数据
-  let accessed_value = Cache::get(access_cache, "access_key")
-  match accessed_value {
-    Some(v) => assert_eq(v, "access_value")
-    None => assert_true(false)
-  }
-  
-  // 更新访问时间
-  Cache::touch(access_cache, "access_key")
-  
-  // 验证访问时间已更新
-  let access_info = Cache::get_access_info(access_cache, "access_key")
-  match access_info {
-    Some(info) => {
-      // 验证访问时间已更新
-      assert_true(AccessInfo::last_access_time(info) > AccessInfo::creation_time(info))
-    }
-    None => assert_true(false)
-  }
-}
-
-// 测试4: LRU缓存策略
-test "LRU缓存策略测试" {
-  let lru_cache = LRUCache::new(3) // 容量为3的LRU缓存
-  
-  // 添加元素
-  LRUCache::put(lru_cache, "key1", "value1")
-  LRUCache::put(lru_cache, "key2", "value2")
-  LRUCache::put(lru_cache, "key3", "value3")
-  
-  // 验证所有元素都存在
-  assert_eq(LRUCache::size(lru_cache), 3)
-  
-  // 访问key1，使其成为最近使用的
-  let value1 = LRUCache::get(lru_cache, "key1")
-  match value1 {
-    Some(v) => assert_eq(v, "value1")
-    None => assert_true(false)
-  }
-  
-  // 添加新元素，应该淘汰最久未使用的key2
-  LRUCache::put(lru_cache, "key4", "value4")
-  
-  // 验证key2已被淘汰
-  let removed_value = LRUCache::get(lru_cache, "key2")
-  match removed_value {
+  // Verify the item is expired
+  let expired_get = Cache::get(cache, key)
+  match expired_get {
     Some(_) => assert_true(false)
     None => assert_true(true)
   }
   
-  // 验证其他元素仍然存在
-  let value1_after = LRUCache::get(lru_cache, "key1")
-  let value3_after = LRUCache::get(lru_cache, "key3")
-  let value4_after = LRUCache::get(lru_cache, "key4")
+  // Test custom TTL for specific item
+  let custom_key = "custom_ttl_key"
+  let custom_value = "custom_ttl_value"
   
-  match (value1_after, value3_after, value4_after) {
-    (Some(v1), Some(v3), Some(v4)) => {
-      assert_eq(v1, "value1")
-      assert_eq(v3, "value3")
-      assert_eq(v4, "value4")
-    }
-    _ => assert_true(false)
-  }
+  let custom_put = Cache::put_with_ttl(cache, custom_key, custom_value, 5000) // 5 seconds TTL
+  assert_true(custom_put.is_ok())
   
-  // 测试LRU顺序
-  let lru_order = LRUCache::get_access_order(lru_cache)
-  assert_eq(lru_order[0], "key3") // 最久未使用
-  assert_eq(lru_order[2], "key1") // 最近使用
-  
-  // 访问key3，改变LRU顺序
-  LRUCache::get(lru_cache, "key3")
-  
-  let new_lru_order = LRUCache::get_access_order(lru_cache)
-  assert_eq(new_lru_order[0], "key4") // 现在是最久未使用
-  assert_eq(new_lru_order[2], "key3") // 现在是最近使用
-}
-
-// 测试5: 分布式缓存
-test "分布式缓存测试" {
-  let distributed_cache = DistributedCache::new()
-  
-  // 配置缓存节点
-  let node1 = CacheNode::new("node1", "localhost:8001")
-  let node2 = CacheNode::new("node2", "localhost:8002")
-  let node3 = CacheNode::new("node3", "localhost:8003")
-  
-  // 添加节点到分布式缓存
-  DistributedCache::add_node(distributed_cache, node1)
-  DistributedCache::add_node(distributed_cache, node2)
-  DistributedCache::add_node(distributed_cache, node3)
-  
-  // 配置一致性哈希
-  let hash_ring = ConsistentHashRing::new()
-  ConsistentHashRing::add_node(hash_ring, "node1")
-  ConsistentHashRing::add_node(hash_ring, "node2")
-  ConsistentHashRing::add_node(hash_ring, "node3")
-  
-  DistributedCache::set_hash_ring(distributed_cache, hash_ring)
-  
-  // 存储数据到分布式缓存
-  DistributedCache::put(distributed_cache, "user.123", "user_data_123")
-  DistributedCache::put(distributed_cache, "user.456", "user_data_456")
-  DistributedCache::put(distributed_cache, "user.789", "user_data_789")
-  
-  // 验证数据分布
-  let node_for_123 = ConsistentHashRing::get_node(hash_ring, "user.123")
-  let node_for_456 = ConsistentHashRing::get_node(hash_ring, "user.456")
-  let node_for_789 = ConsistentHashRing::get_node(hash_ring, "user.789")
-  
-  // 验证数据可以从正确的节点检索
-  let retrieved_123 = DistributedCache::get(distributed_cache, "user.123")
-  match retrieved_123 {
-    Some(v) => assert_eq(v, "user_data_123")
+  // Verify the item is available
+  let custom_get = Cache::get(cache, custom_key)
+  match custom_get {
+    Some(retrieved_value) => assert_eq(retrieved_value, custom_value)
     None => assert_true(false)
   }
   
-  let retrieved_456 = DistributedCache::get(distributed_cache, "user.456")
-  match retrieved_456 {
-    Some(v) => assert_eq(v, "user_data_456")
+  // Verify the cache tracks TTL correctly
+  let ttl_info = Cache::get_ttl_info(cache, custom_key)
+  match ttl_info {
+    Some(info) => assert_true(info.remaining_ms > 4000) // Should have close to 5 seconds remaining
+    None => assert_true(false)
+  }
+}
+
+// Test 3: Cache Eviction Policies
+test "cache eviction policies" {
+  // Test LRU (Least Recently Used) eviction
+  let lru_cache = Cache::with_eviction("lru_cache", 3, LRU)
+  
+  // Fill the cache to capacity
+  Cache::put(lru_cache, "key1", "value1")
+  Cache::put(lru_cache, "key2", "value2")
+  Cache::put(lru_cache, "key3", "value3")
+  
+  assert_eq(Cache::size(lru_cache), 3)
+  
+  // Access key1 to make it recently used
+  Cache::get(lru_cache, "key1")
+  
+  // Add a new item, which should evict key2 (least recently used)
+  Cache::put(lru_cache, "key4", "value4")
+  
+  assert_eq(Cache::size(lru_cache), 3)
+  assert_true(Cache::has(lru_cache, "key1")) // Should still exist (recently accessed)
+  assert_false(Cache::has(lru_cache, "key2")) // Should be evicted (least recently used)
+  assert_true(Cache::has(lru_cache, "key3")) // Should still exist
+  assert_true(Cache::has(lru_cache, "key4")) // Should exist (newly added)
+  
+  // Test LFU (Least Frequently Used) eviction
+  let lfu_cache = Cache::with_eviction("lfu_cache", 3, LFU)
+  
+  // Fill the cache
+  Cache::put(lfu_cache, "key1", "value1")
+  Cache::put(lfu_cache, "key2", "value2")
+  Cache::put(lfu_cache, "key3", "value3")
+  
+  // Access key1 multiple times to increase its frequency
+  Cache::get(lfu_cache, "key1")
+  Cache::get(lfu_cache, "key1")
+  Cache::get(lfu_cache, "key1")
+  
+  // Access key2 once
+  Cache::get(lfu_cache, "key2")
+  
+  // Add a new item, which should evict key3 (least frequently used)
+  Cache::put(lfu_cache, "key4", "value4")
+  
+  assert_eq(Cache::size(lfu_cache), 3)
+  assert_true(Cache::has(lfu_cache, "key1")) // Should still exist (most frequently used)
+  assert_true(Cache::has(lfu_cache, "key2")) // Should still exist
+  assert_false(Cache::has(lfu_cache, "key3")) // Should be evicted (least frequently used)
+  assert_true(Cache::has(lfu_cache, "key4")) // Should exist (newly added)
+  
+  // Test FIFO (First In First Out) eviction
+  let fifo_cache = Cache::with_eviction("fifo_cache", 3, FIFO)
+  
+  // Fill the cache
+  Cache::put(fifo_cache, "key1", "value1")
+  Cache::put(fifo_cache, "key2", "value2")
+  Cache::put(fifo_cache, "key3", "value3")
+  
+  // Add a new item, which should evict key1 (first in)
+  Cache::put(fifo_cache, "key4", "value4")
+  
+  assert_eq(Cache::size(fifo_cache), 3)
+  assert_false(Cache::has(fifo_cache, "key1")) // Should be evicted (first in)
+  assert_true(Cache::has(fifo_cache, "key2")) // Should still exist
+  assert_true(Cache::has(fifo_cache, "key3")) // Should still exist
+  assert_true(Cache::has(fifo_cache, "key4")) // Should exist (newly added)
+}
+
+// Test 4: Cache Statistics
+test "cache statistics" {
+  let cache = Cache::new("stats_cache", 10)
+  
+  // Initially, all stats should be zero
+  let stats = Cache::get_statistics(cache)
+  assert_eq(stats.hits, 0)
+  assert_eq(stats.misses, 0)
+  assert_eq(stats.puts, 0)
+  assert_eq(stats.evictions, 0)
+  assert_eq(stats.hit_rate, 0.0)
+  
+  // Add an item
+  Cache::put(cache, "key1", "value1")
+  
+  // Stats should show one put
+  stats = Cache::get_statistics(cache)
+  assert_eq(stats.puts, 1)
+  assert_eq(stats.hits, 0)
+  assert_eq(stats.misses, 0)
+  
+  // Get the item (cache hit)
+  Cache::get(cache, "key1")
+  
+  // Stats should show one hit
+  stats = Cache::get_statistics(cache)
+  assert_eq(stats.hits, 1)
+  assert_eq(stats.misses, 0)
+  assert_eq(stats.hit_rate, 1.0)
+  
+  // Get a non-existent item (cache miss)
+  Cache::get(cache, "non_existent")
+  
+  // Stats should show one miss and adjusted hit rate
+  stats = Cache::get_statistics(cache)
+  assert_eq(stats.hits, 1)
+  assert_eq(stats.misses, 1)
+  assert_eq(stats.hit_rate, 0.5)
+  
+  // Fill the cache to test eviction stats
+  for i in 2..=11 { // Exceed capacity by 1
+    Cache::put(cache, "key" + i.to_string(), "value" + i.to_string())
+  }
+  
+  // Stats should show evictions
+  stats = Cache::get_statistics(cache)
+  assert_eq(stats.evictions, 1) // One item should be evicted
+  assert_eq(stats.puts, 11) // Total puts should be 11
+  
+  // Reset statistics
+  Cache::reset_statistics(cache)
+  
+  // Stats should be reset
+  stats = Cache::get_statistics(cache)
+  assert_eq(stats.hits, 0)
+  assert_eq(stats.misses, 0)
+  assert_eq(stats.puts, 0)
+  assert_eq(stats.evictions, 0)
+  assert_eq(stats.hit_rate, 0.0)
+}
+
+// Test 5: Cache Persistence
+test "cache persistence" {
+  // Create a cache with persistence enabled
+  let persistent_cache = Cache::with_persistence("persistent_cache", 10, "/tmp/cache_data")
+  
+  // Add items to the cache
+  Cache::put(persistent_cache, "persistent_key1", "persistent_value1")
+  Cache::put(persistent_cache, "persistent_key2", "persistent_value2")
+  Cache::put(persistent_cache, "persistent_key3", "persistent_value3")
+  
+  // Save the cache to disk
+  let save_result = Cache::save(persistent_cache)
+  assert_true(save_result.is_ok())
+  
+  // Create a new cache instance and load from disk
+  let loaded_cache = Cache::with_persistence("loaded_cache", 10, "/tmp/cache_data")
+  let load_result = Cache::load(loaded_cache)
+  assert_true(load_result.is_ok())
+  
+  // Verify the loaded cache has the same items
+  assert_true(Cache::has(loaded_cache, "persistent_key1"))
+  assert_true(Cache::has(loaded_cache, "persistent_key2"))
+  assert_true(Cache::has(loaded_cache, "persistent_key3"))
+  
+  let loaded_value1 = Cache::get(loaded_cache, "persistent_key1")
+  match loaded_value1 {
+    Some(value) => assert_eq(value, "persistent_value1")
     None => assert_true(false)
   }
   
-  // 测试节点故障处理
-  DistributedCache::mark_node_down(distributed_cache, "node2")
+  // Test auto-save functionality
+  Cache::enable_auto_save(loaded_cache, 60000) // Auto-save every minute
   
-  // 验证故障节点的数据被重新分布
-  let node_for_456_after_failure = ConsistentHashRing::get_node(hash_ring, "user.456")
-  assert_neq(node_for_456_after_failure, "node2")
+  // Add a new item
+  Cache::put(loaded_cache, "auto_save_key", "auto_save_value")
   
-  // 测试数据复制
-  DistributedCache::enable_replication(distributed_cache, 2) // 复制因子为2
+  // Simulate auto-save (in a real implementation, this would happen automatically)
+  let auto_save_result = Cache::trigger_auto_save(loaded_cache)
+  assert_true(auto_save_result.is_ok())
   
-  DistributedCache::put(distributed_cache, "critical.data", "critical_value")
+  // Create another cache instance and verify the auto-saved data
+  let auto_loaded_cache = Cache::with_persistence("auto_loaded_cache", 10, "/tmp/cache_data")
+  let auto_load_result = Cache::load(auto_loaded_cache)
+  assert_true(auto_load_result.is_ok())
   
-  // 验证数据被复制到多个节点
-  let replicated_nodes = DistributedCache::get_replication_nodes(distributed_cache, "critical.data")
-  assert_eq(replicated_nodes.length(), 2)
-  
-  // 测试分布式缓存统计
-  let stats = DistributedCache::get_statistics(distributed_cache)
-  assert_eq(DistributedCacheStats::total_keys(stats), 4)
-  assert_eq(DistributedCacheStats::active_nodes(stats), 2) // node2已下线
-  assert_eq(DistributedCacheStats::replication_factor(stats), 2)
+  assert_true(Cache::has(auto_loaded_cache, "auto_save_key"))
+  let auto_saved_value = Cache::get(auto_loaded_cache, "auto_save_key")
+  match auto_saved_value {
+    Some(value) => assert_eq(value, "auto_save_value")
+    None => assert_true(false)
+  }
 }
 
-// 测试6: 缓存预热和预加载
-test "缓存预热和预加载测试" {
-  let cache_manager = CacheManager::new()
-  let telemetry_cache = TelemetryCache::new()
+// Test 6: Cache Sharding
+test "cache sharding" {
+  // Create a sharded cache with 3 shards
+  let sharded_cache = ShardedCache::new("sharded_cache", 30, 3) // Total 30 items, 3 shards
   
-  // 创建预热策略
-  let warmup_strategy = CacheWarmupStrategy::new()
-  
-  // 配置预热数据源
-  let data_source = WarmupDataSource::new()
-  WarmupDataSource::add_query(data_source, "service.metrics.latest", "SELECT * FROM metrics WHERE timestamp > NOW() - INTERVAL '1 hour'")
-  WarmupDataSource::add_query(data_source, "user.activity.recent", "SELECT * FROM user_activity WHERE timestamp > NOW() - INTERVAL '1 day'")
-  WarmupDataSource::add_query(data_source, "system.health.status", "SELECT * FROM system_health")
-  
-  // 执行缓存预热
-  let warmup_results = CacheWarmupStrategy::execute_warmup(warmup_strategy, telemetry_cache, data_source)
-  
-  // 验证预热结果
-  assert_true(CacheWarmupResults::success_count(warmup_results) > 0)
-  assert_eq(CacheWarmupResults::total_queries(warmup_results), 3)
-  
-  // 验证缓存已预热
-  let preloaded_metrics = TelemetryCache::get(telemetry_cache, "service.metrics.latest")
-  let preloaded_activity = TelemetryCache::get(telemetry_cache, "user.activity.recent")
-  let preloaded_health = TelemetryCache::get(telemetry_cache, "system.health.status")
-  
-  assert_true(preloaded_metrics.is_some())
-  assert_true(preloaded_activity.is_some())
-  assert_true(preloaded_health.is_some())
-  
-  // 测试智能预加载
-  let preload_predictor = CachePreloadPredictor::new()
-  
-  // 配置预加载规则
-  CachePreloadPredictor::add_pattern(preload_predictor, "user.profile.*", 0.8) // 80%概率访问
-  CachePreloadPredictor::add_pattern(preload_predictor, "product.details.*", 0.6) // 60%概率访问
-  CachePreloadPredictor::add_pattern(preload_predictor, "admin.settings.*", 0.3) // 30%概率访问
-  
-  // 模拟访问模式
-  let access_log = [
-    "user.profile.123",
-    "user.profile.456",
-    "product.details.789",
-    "user.profile.789",
-    "product.details.123",
-    "admin.settings.456"
-  ]
-  
-  // 分析访问模式
-  let predictions = CachePreloadPredictor::analyze_access_log(preload_predictor, access_log)
-  
-  // 验证预测结果
-  assert_true(CachePredictions::should_preload(predictions, "user.profile.123"))
-  assert_true(CachePredictions::should_preload(predictions, "product.details.789"))
-  assert_false(CachePredictions::should_preload(predictions, "admin.settings.456"))
-  
-  // 执行预加载
-  let preload_results = CachePreloadPredictor::execute_preload(preload_predictor, telemetry_cache, predictions)
-  
-  // 验证预加载结果
-  assert_true(CachePreloadResults::preloaded_count(preload_results) > 0)
-}
-
-// 测试7: 缓存性能和优化
-test "缓存性能和优化测试" {
-  let performance_cache = PerformanceOptimizedCache::new()
-  
-  // 配置性能优化参数
-  PerformanceOptimizedCache::set_batch_size(performance_cache, 100)
-  PerformanceOptimizedCache::set_async_write_back(performance_cache, true)
-  PerformanceOptimizedCache::set_compression(performance_cache, true)
-  
-  // 测试批量写入性能
-  let batch_data = []
-  for i in 1..=1000 {
-    let key = "perf.key." + i.to_string()
-    let value = "perf.value." + i.to_string()
-    batch_data = batch_data.push((key, value))
+  // Add items to the sharded cache
+  for i in 0..=29 {
+    let key = "shard_key" + i.to_string()
+    let value = "shard_value" + i.to_string()
+    Cache::put(sharded_cache, key, value)
   }
   
-  let start_time = Timestamp::now()
-  PerformanceOptimizedCache::put_batch(performance_cache, batch_data)
-  let batch_write_time = Timestamp::now() - start_time
+  // Verify all items are in the cache
+  assert_eq(Cache::size(sharded_cache), 30)
   
-  // 测试单个写入性能
-  let start_time = Timestamp::now()
-  for i in 1..=1000 {
-    let key = "single.key." + i.to_string()
-    let value = "single.value." + i.to_string()
-    PerformanceOptimizedCache::put(performance_cache, key, value)
-  }
-  let single_write_time = Timestamp::now() - start_time
-  
-  // 验证批量写入更快
-  assert_true(batch_write_time < single_write_time)
-  
-  // 测试压缩效果
-  let large_value = "x".repeat(10000) // 10KB数据
-  PerformanceOptimizedCache::put(performance_cache, "large.key", large_value)
-  
-  let compression_stats = PerformanceOptimizedCache::get_compression_stats(performance_cache)
-  assert_true(CompressionStats::compression_ratio(compression_stats) < 1.0) // 压缩率小于100%
-  
-  // 测试内存使用优化
-  let memory_stats = PerformanceOptimizedCache::get_memory_stats(performance_cache)
-  assert_true(MemoryStats::memory_usage(memory_stats) > 0)
-  assert_true(MemoryStats::heap_usage(memory_stats) > 0)
-  
-  // 测试缓存命中率优化
-  let access_pattern = []
-  for i in 1..=100 {
-    // 80%的访问集中在20%的数据上（符合帕累托法则）
-    let hot_key = "hot.key." + (i % 20).to_string()
-    let cold_key = "cold.key." + i.to_string()
+  for i in 0..=29 {
+    let key = "shard_key" + i.to_string()
+    assert_true(Cache::has(sharded_cache, key))
     
-    access_pattern = access_pattern.push(hot_key)
-    access_pattern = access_pattern.push(cold_key)
-  }
-  
-  // 添加热数据和冷数据
-  for i in 1..=20 {
-    let key = "hot.key." + i.to_string()
-    let value = "hot.value." + i.to_string()
-    PerformanceOptimizedCache::put(performance_cache, key, value)
-  }
-  
-  for i in 1..=100 {
-    let key = "cold.key." + i.to_string()
-    let value = "cold.value." + i.to_string()
-    PerformanceOptimizedCache::put(performance_cache, key, value)
-  }
-  
-  // 模拟访问模式
-  let hit_count = 0
-  for key in access_pattern {
-    let result = PerformanceOptimizedCache::get(performance_cache, key)
-    if result.is_some() {
-      hit_count = hit_count + 1
+    let get_result = Cache::get(sharded_cache, key)
+    match get_result {
+      Some(value) => assert_eq(value, "shard_value" + i.to_string())
+      None => assert_true(false)
     }
   }
   
-  let hit_rate = hit_count.to_float() / access_pattern.length().to_float()
+  // Verify shard distribution
+  let shard_stats = ShardedCache::get_shard_statistics(sharded_cache)
+  assert_eq(shard_stats.length(), 3)
   
-  // 验证命中率
-  assert_true(hit_rate > 0.5) // 应该有较高的命中率
-  
-  // 测试自适应缓存大小
-  PerformanceOptimizedCache::enable_auto_sizing(performance_cache, true)
-  
-  // 模拟负载变化
-  for i in 1..=1000 {
-    let key = "adaptive.key." + i.to_string()
-    let value = "adaptive.value." + i.to_string()
-    PerformanceOptimizedCache::put(performance_cache, key, value)
+  // Each shard should have approximately 10 items
+  for i in 0..=2 {
+    let shard_size = shard_stats[i].size
+    assert_true(shard_size >= 8 && shard_size <= 12) // Allow some variance
   }
   
-  let adaptive_stats = PerformanceOptimizedCache::get_adaptive_stats(performance_cache)
-  assert_true(AdaptiveStats::size_adjustments(adaptive_stats) > 0)
-  assert_true(AdaptiveStats::current_size(adaptive_stats) > 0)
+  // Test shard-specific operations
+  let shard_0 = ShardedCache::get_shard(sharded_cache, 0)
+  assert_eq(Cache::size(shard_0), shard_stats[0].size)
+  
+  // Test adding an item that goes to a specific shard
+  let shard_key = "specific_shard_key"
+  let shard_value = "specific_shard_value"
+  
+  // Determine which shard this key would go to
+  let target_shard_index = ShardedCache::get_shard_index(sharded_cache, shard_key)
+  
+  // Add the item
+  Cache::put(sharded_cache, shard_key, shard_value)
+  
+  // Verify it's in the correct shard
+  let target_shard = ShardedCache::get_shard(sharded_cache, target_shard_index)
+  assert_true(Cache::has(target_shard, shard_key))
+  
+  // Verify it's not in other shards
+  for i in 0..=2 {
+    if i != target_shard_index {
+      let other_shard = ShardedCache::get_shard(sharded_cache, i)
+      assert_false(Cache::has(other_shard, shard_key))
+    }
+  }
 }
 
-// 测试8: 缓存一致性和并发控制
-test "缓存一致性和并发控制测试" {
-  let consistent_cache = ConsistentCache::new()
+// Test 7: Cache Warmer
+test "cache warmer" {
+  // Create a cache warmer
+  let warmer = CacheWarmer::new()
   
-  // 配置缓存一致性策略
-  ConsistentCache::set_consistency_level(consistent_cache, "eventual")
-  ConsistentCache::set_invalidation_strategy(consistent_cache, "time_based")
-  ConsistentCache::set_conflict_resolution(consistent_cache, "last_write_wins")
+  // Define warm-up data sources
+  let data_source1 = MockDataSource::new("source1")
+  MockDataSource::add_data(data_source1, "warm_key1", "warm_value1")
+  MockDataSource::add_data(data_source1, "warm_key2", "warm_value2")
   
-  // 创建多个缓存实例模拟分布式环境
-  let cache1 = ConsistentCache::new()
-  let cache2 = ConsistentCache::new()
-  let cache3 = ConsistentCache::new()
+  let data_source2 = MockDataSource::new("source2")
+  MockDataSource::add_data(data_source2, "warm_key3", "warm_value3")
+  MockDataSource::add_data(data_source2, "warm_key4", "warm_value4")
   
-  // 建立缓存集群
-  let cache_cluster = CacheCluster::new()
-  CacheCluster::add_node(cache_cluster, cache1)
-  CacheCluster::add_node(cache_cluster, cache2)
-  CacheCluster::add_node(cache_cluster, cache3)
+  // Add data sources to the warmer
+  CacheWarmer::add_data_source(warmer, data_source1)
+  CacheWarmer::add_data_source(warmer, data_source2)
   
-  // 测试写操作传播
-  ConsistentCache::put_with_propagation(cache1, "shared.key", "initial.value")
+  // Create a target cache
+  let target_cache = Cache::new("warmed_cache", 10)
   
-  // 等待传播（在实际测试中可能需要模拟网络延迟）
+  // Warm up the cache
+  let warm_result = CacheWarmer::warm(warmer, target_cache)
+  assert_true(warm_result.is_ok())
   
-  // 验证所有节点都有相同的数据
-  let value1 = ConsistentCache::get(cache1, "shared.key")
-  let value2 = ConsistentCache::get(cache2, "shared.key")
-  let value3 = ConsistentCache::get(cache3, "shared.key")
+  // Verify the cache is warmed with the expected data
+  assert_eq(Cache::size(target_cache), 4)
+  assert_true(Cache::has(target_cache, "warm_key1"))
+  assert_true(Cache::has(target_cache, "warm_key2"))
+  assert_true(Cache::has(target_cache, "warm_key3"))
+  assert_true(Cache::has(target_cache, "warm_key4"))
   
-  match (value1, value2, value3) {
-    (Some(v1), Some(v2), Some(v3)) => {
-      assert_eq(v1, "initial.value")
-      assert_eq(v2, "initial.value")
-      assert_eq(v3, "initial.value")
-    }
-    _ => assert_true(false)
+  let value1 = Cache::get(target_cache, "warm_key1")
+  match value1 {
+    Some(value) => assert_eq(value, "warm_value1")
+    None => assert_true(false)
   }
   
-  // 测试并发写入冲突
-  // 模拟同时写入相同键
-  ConsistentCache::put_with_timestamp(cache1, "conflict.key", "value.from.node1", 1000)
-  ConsistentCache::put_with_timestamp(cache2, "conflict.key", "value.from.node2", 1001) // 更新时间戳
-  ConsistentCache::put_with_timestamp(cache3, "conflict.key", "value.from.node3", 999)   // 更早时间戳
+  // Test selective warming
+  let selective_cache = Cache::new("selective_cache", 10)
+  let warm_keys = ["warm_key1", "warm_key3"]
   
-  // 等待冲突解决
+  let selective_result = CacheWarmer::warm_selective(warmer, selective_cache, warm_keys)
+  assert_true(selective_result.is_ok())
   
-  // 验证冲突解决结果（应该选择时间戳最新的值）
-  let resolved_value1 = ConsistentCache::get(cache1, "conflict.key")
-  let resolved_value2 = ConsistentCache::get(cache2, "conflict.key")
-  let resolved_value3 = ConsistentCache::get(cache3, "conflict.key")
+  // Verify only selected keys are warmed
+  assert_eq(Cache::size(selective_cache), 2)
+  assert_true(Cache::has(selective_cache, "warm_key1"))
+  assert_false(Cache::has(selective_cache, "warm_key2"))
+  assert_true(Cache::has(selective_cache, "warm_key3"))
+  assert_false(Cache::has(selective_cache, "warm_key4"))
   
-  match (resolved_value1, resolved_value2, resolved_value3) {
-    (Some(v1), Some(v2), Some(v3)) => {
-      assert_eq(v1, "value.from.node2")
-      assert_eq(v2, "value.from.node2")
-      assert_eq(v3, "value.from.node2")
-    }
-    _ => assert_true(false)
-  }
+  // Test scheduled warming
+  let scheduled_cache = Cache::new("scheduled_cache", 10)
+  CacheWarmer::schedule_warming(warmer, scheduled_cache, 3600000) // Every hour
   
-  // 测试缓存失效
-  ConsistentCache::invalidate_with_propagation(cache1, "shared.key")
+  // Simulate scheduled warming (in a real implementation, this would happen automatically)
+  let scheduled_result = CacheWarmer::trigger_scheduled_warming(warmer, scheduled_cache)
+  assert_true(scheduled_result.is_ok())
   
-  // 等待失效传播
+  // Verify the cache is warmed
+  assert_eq(Cache::size(scheduled_cache), 4)
+}
+
+// Test 8: Cache Invalidation
+test "cache invalidation" {
+  // Create a cache
+  let cache = Cache::new("invalidation_cache", 10)
   
-  // 验证所有节点都已失效
-  let invalidated_value1 = ConsistentCache::get(cache1, "shared.key")
-  let invalidated_value2 = ConsistentCache::get(cache2, "shared.key")
-  let invalidated_value3 = ConsistentCache::get(cache3, "shared.key")
+  // Add items with different tags
+  Cache::put_with_tags(cache, "user_123", "user_data_123", ["user", "profile"])
+  Cache::put_with_tags(cache, "user_456", "user_data_456", ["user", "profile"])
+  Cache::put_with_tags(cache, "product_789", "product_data_789", ["product"])
+  Cache::put_with_tags(cache, "config_app", "config_data_app", ["config", "app"])
+  Cache::put_with_tags(cache, "config_db", "config_data_db", ["config", "database"])
   
-  match (invalidated_value1, invalidated_value2, invalidated_value3) {
-    (None, None, None) => assert_true(true)
-    _ => assert_true(false)
-  }
+  // Verify all items are in the cache
+  assert_eq(Cache::size(cache), 5)
   
-  // 测试版本控制
-  ConsistentCache::enable_versioning(consistent_cache, true)
+  // Invalidate by tag
+  Cache::invalidate_by_tag(cache, "user")
   
-  ConsistentCache::put_with_version(consistent_cache, "versioned.key", "v1.value", 1)
-  ConsistentCache::put_with_version(consistent_cache, "versioned.key", "v2.value", 2)
-  ConsistentCache::put_with_version(consistent_cache, "versioned.key", "v3.value", 3)
+  // Verify user items are invalidated
+  assert_eq(Cache::size(cache), 3)
+  assert_false(Cache::has(cache, "user_123"))
+  assert_false(Cache::has(cache, "user_456"))
+  assert_true(Cache::has(cache, "product_789"))
+  assert_true(Cache::has(cache, "config_app"))
+  assert_true(Cache::has(cache, "config_db"))
   
-  // 验证版本历史
-  let version_history = ConsistentCache::get_version_history(consistent_cache, "versioned.key")
-  assert_eq(version_history.length(), 3)
-  assert_eq(VersionHistory::get_version(version_history, 0), 3)
-  assert_eq(VersionHistory::get_value(version_history, 0), "v3.value")
+  // Invalidate by pattern
+  Cache::invalidate_by_pattern(cache, "config_*")
   
-  // 测试并发读取性能
-  let read_results = []
-  for i in 1..=100 {
-    let result = ConsistentCache::get_concurrent(consistent_cache, "versioned.key")
-    read_results = read_results.push(result)
-  }
+  // Verify config items are invalidated
+  assert_eq(Cache::size(cache), 1)
+  assert_true(Cache::has(cache, "product_789"))
+  assert_false(Cache::has(cache, "config_app"))
+  assert_false(Cache::has(cache, "config_db"))
   
-  // 验证所有读取都返回相同结果
-  let consistent_reads = read_results.all(fn(result) {
-    match result {
-      Some(v) => v == "v3.value"
-      None => false
-    }
-  })
-  assert_true(consistent_reads)
+  // Add more items for predicate invalidation
+  Cache::put(cache, "temp_1", "temp_data_1")
+  Cache::put(cache, "temp_2", "temp_data_2")
+  Cache::put(cache, "permanent_1", "permanent_data_1")
   
-  // 测试缓存一致性指标
-  let consistency_metrics = ConsistentCache::get_consistency_metrics(consistent_cache)
-  assert_eq(ConsistencyMetrics::consistency_level(consistency_metrics), "eventual")
-  assert_true(ConsistencyMetrics::propagation_latency(consistency_metrics) >= 0)
-  assert_eq(ConsistencyMetrics::conflict_resolutions(consistency_metrics), 1)
+  // Invalidate by predicate (keys starting with "temp_")
+  Cache::invalidate_by_predicate(cache, fn(key) { key.starts_with("temp_") })
+  
+  // Verify temp items are invalidated
+  assert_eq(Cache::size(cache), 2)
+  assert_false(Cache::has(cache, "temp_1"))
+  assert_false(Cache::has(cache, "temp_2"))
+  assert_true(Cache::has(cache, "permanent_1"))
+  assert_true(Cache::has(cache, "product_789"))
+  
+  // Test cascading invalidation
+  let parent_cache = Cache::new("parent_cache", 5)
+  let child_cache1 = Cache::new("child_cache1", 5)
+  let child_cache2 = Cache::new("child_cache2", 5)
+  
+  // Set up cascading relationships
+  Cache::add_child_cache(parent_cache, child_cache1)
+  Cache::add_child_cache(parent_cache, child_cache2)
+  
+  // Add items to parent and child caches
+  Cache::put(parent_cache, "parent_key", "parent_value")
+  Cache::put(child_cache1, "child1_key", "child1_value")
+  Cache::put(child_cache2, "child2_key", "child2_value")
+  
+  // Invalidate parent cache with cascading
+  Cache::invalidate_with_cascade(parent_cache, "parent_key")
+  
+  // Verify parent item is invalidated
+  assert_false(Cache::has(parent_cache, "parent_key"))
+  
+  // Verify child caches are also invalidated
+  assert_eq(Cache::size(child_cache1), 0)
+  assert_eq(Cache::size(child_cache2), 0)
 }
