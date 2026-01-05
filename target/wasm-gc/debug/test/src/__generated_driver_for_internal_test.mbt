@@ -91,6 +91,10 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_617a696d7574685f74656c656d657472795f73657269616c697a6174696f6e5f646573657269616c697a6174696f6e5f74657374732e6d6274_6, ["cross-format serialization and deserialization"]),
     7: (__test_617a696d7574685f74656c656d657472795f73657269616c697a6174696f6e5f646573657269616c697a6174696f6e5f74657374732e6d6274_7, ["compression and decompression of serialized telemetry data"]),
   },
+  "azimuth_telemetry_data_aggregation_tests.mbt": {
+    0: (__test_617a696d7574685f74656c656d657472795f646174615f6167677265676174696f6e5f74657374732e6d6274_0, ["telemetry data aggregation functionality"]),
+    1: (__test_617a696d7574685f74656c656d657472795f646174615f6167677265676174696f6e5f74657374732e6d6274_1, ["time-series data analysis functionality"]),
+  },
   "azimuth_telemetry_aggregation_enhanced_tests.mbt": {
     0: (__test_617a696d7574685f74656c656d657472795f6167677265676174696f6e5f656e68616e6365645f74657374732e6d6274_0, ["metrics aggregation with time windows"]),
     1: (__test_617a696d7574685f74656c656d657472795f6167677265676174696f6e5f656e68616e6365645f74657374732e6d6274_1, ["multi-dimensional attribute aggregation"]),
@@ -571,6 +575,11 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     5: (__test_617a696d7574685f636f6e63757272656e745f7468726561645f7361666574795f74657374732e6d6274_5, ["lock-free data structures"]),
     6: (__test_617a696d7574685f636f6e63757272656e745f7468726561645f7361666574795f74657374732e6d6274_6, ["concurrent telemetry collection"]),
     7: (__test_617a696d7574685f636f6e63757272656e745f7468726561645f7361666574795f74657374732e6d6274_7, ["race condition detection"]),
+  },
+  "azimuth_concurrent_thread_safety_enhanced_tests.mbt": {
+    0: (__test_617a696d7574685f636f6e63757272656e745f7468726561645f7361666574795f656e68616e6365645f74657374732e6d6274_0, ["concurrent span operations thread safety"]),
+    1: (__test_617a696d7574685f636f6e63757272656e745f7468726561645f7361666574795f656e68616e6365645f74657374732e6d6274_1, ["thread-safe metrics collection"]),
+    2: (__test_617a696d7574685f636f6e63757272656e745f7468726561645f7361666574795f656e68616e6365645f74657374732e6d6274_2, ["concurrent context propagation safety"]),
   },
   "azimuth_concurrent_telemetry_processing_tests.mbt": {
     0: (__test_617a696d7574685f636f6e63757272656e745f74656c656d657472795f70726f63657373696e675f74657374732e6d6274_0, ["concurrent span processing"]),

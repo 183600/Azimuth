@@ -167,5 +167,11 @@
         "../azimuth_time_series_data_processing_quality_tests.mbt",
         "../azimuth_security_quality_tests.mbt",
         "../azimuth_specialized_quality_tests.mbt",
-        "../azimuth_new_moonbit_test_cases.mbt"]  }
+        "../azimuth_new_moonbit_test_cases.mbt",
+        "azimuth_telemetry_data_aggregation_tests.mbt",
+        "azimuth_concurrent_thread_safety_enhanced_tests.mbt",
+        "azimuth_performance_resource_optimization_tests.mbt",
+        "azimuth_internationalization_enhanced_tests.mbt",
+        "azimuth_error_handling_boundary_enhanced_tests.mbt",
+        "azimuth_serialization_format_enhanced_tests.mbt"]  }
 }
