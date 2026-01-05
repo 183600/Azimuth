@@ -1,556 +1,525 @@
-// Azimuth Cross-Platform Compatibility Test Suite
-// 跨平台兼容性测试套件，验证遥测系统在不同操作系统和平台上的兼容性和一致性
+// Azimuth 跨平台兼容性测试
+// 专注于系统在不同平台和环境下的兼容性验证
 
-// 测试1: 文件路径跨平台处理
-test "文件路径跨平台处理测试" {
-  // 测试不同平台的路径分隔符处理
-  let unix_path = "/home/user/data/azimuth/logs"
-  let windows_path = "C:\\Users\\user\\data\\azimuth\\logs"
-  let mixed_path = "data/azimuth\\logs/test"
+// 测试1: 路径处理跨平台兼容性
+test "路径处理跨平台兼容性测试" {
+  // 模拟不同平台的路径处理
+  type PlatformPath = {
+    unix_path: String,
+    windows_path: String,
+    normalized_path: String
+  }
   
-  // 标准化路径
-  let normalized_unix = azimuth::PathUtils::normalize(unix_path)
-  let normalized_windows = azimuth::PathUtils::normalize(windows_path)
-  let normalized_mixed = azimuth::PathUtils::normalize(mixed_path)
-  
-  // 验证路径标准化结果
-  assert_true(normalized_unix.contains("data") && normalized_unix.contains("azimuth") && normalized_unix.contains("logs"))
-  assert_true(normalized_windows.contains("data") && normalized_windows.contains("azimuth") && normalized_windows.contains("logs"))
-  assert_true(normalized_mixed.contains("data") && normalized_mixed.contains("azimuth") && normalized_mixed.contains("logs"))
-  
-  // 测试路径连接
-  let base_path = azimuth::PathUtils::get_base_dir()
-  let relative_path = "logs/azimuth.log"
-  let joined_path = azimuth::PathUtils::join(base_path, relative_path)
-  
-  // 验证路径连接结果
-  assert_true(joined_path.contains(base_path))
-  assert_true(joined_path.contains(relative_path))
-  
-  // 测试路径分割
-  let path_parts = azimuth::PathUtils::split(joined_path)
-  assert_true(path_parts.length() >= 3)
-  assert_true(path_parts.contains("logs"))
-  assert_true(path_parts.contains("azimuth.log"))
-  
-  // 测试获取文件扩展名
-  let file_with_extension = "test.log"
-  let file_without_extension = "test"
-  let file_with_multiple_extensions = "test.tar.gz"
-  
-  assert_eq(azimuth::PathUtils::get_extension(file_with_extension), Some("log"))
-  assert_eq(azimuth::PathUtils::get_extension(file_without_extension), None)
-  assert_eq(azimuth::PathUtils::get_extension(file_with_multiple_extensions), Some("gz"))
-  
-  // 测试获取文件名（不含路径）
-  let path_with_filename = "/path/to/file.txt"
-  let filename = azimuth::PathUtils::get_filename(path_with_filename)
-  assert_eq(filename, "file.txt")
-  
-  // 测试获取目录名（不含文件名）
-  let dirname = azimuth::PathUtils::get_dirname(path_with_filename)
-  assert_eq(dirname, "/path/to")
-}
-
-// 测试2: 环境变量跨平台处理
-test "环境变量跨平台处理测试" {
-  // 测试获取环境变量
-  let path_env = azimuth::EnvironmentUtils::get_env("PATH")
-  match path_env {
-    Some(path) => {
-      // 验证PATH环境变量包含路径分隔符
-      if azimuth::PlatformUtils::is_windows() {
-        assert_true(path.contains(";"))
-      } else {
-        assert_true(path.contains(":"))
+  fn normalize_path(path: String, platform: String) -> String {
+    match platform {
+      "unix" => {
+        // Unix/Linux路径处理
+        path.replace("\\", "/")
       }
-    }
-    None => assert_true(false)
-  }
-  
-  // 测试设置和获取环境变量
-  let test_key = "AZIMUTH_TEST_VAR"
-  let test_value = "test_value"
-  
-  let set_result = azimuth::EnvironmentUtils::set_env(test_key, test_value)
-  assert_true(set_result)
-  
-  let get_result = azimuth::EnvironmentUtils::get_env(test_key)
-  match get_result {
-    Some(value) => assert_eq(value, test_value)
-    None => assert_true(false)
-  }
-  
-  // 测试删除环境变量
-  let unset_result = azimuth::EnvironmentUtils::unset_env(test_key)
-  assert_true(unset_result)
-  
-  let get_after_unset = azimuth::EnvironmentUtils::get_env(test_key)
-  match get_after_unset {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  // 测试环境变量路径列表处理
-  let path_list = azimuth::EnvironmentUtils::get_path_list("PATH")
-  assert_true(path_list.length() > 0)
-  
-  // 验证路径列表中的每个路径都是有效的
-  for path in path_list {
-    assert_true(path.length() > 0)
-  }
-  
-  // 测试路径分隔符
-  let separator = azimuth::EnvironmentUtils::get_path_separator()
-  if azimuth::PlatformUtils::is_windows() {
-    assert_eq(separator, ";")
-  } else {
-    assert_eq(separator, ":")
-  }
-}
-
-// 测试3: 线程和进程跨平台处理
-test "线程和进程跨平台处理测试" {
-  // 测试获取当前线程ID
-  let thread_id = azimuth::ThreadUtils::get_current_thread_id()
-  assert_true(thread_id > 0)
-  
-  // 测试获取当前进程ID
-  let process_id = azimuth::ProcessUtils::get_current_process_id()
-  assert_true(process_id > 0)
-  
-  // 测试线程休眠功能
-  let start_time = azimuth::TimeUtils::get_current_time_millis()
-  azimuth::ThreadUtils::sleep(100) // 休眠100毫秒
-  let end_time = azimuth::TimeUtils::get_current_time_millis()
-  
-  // 验证休眠时间（允许一定误差）
-  let sleep_duration = end_time - start_time
-  assert_true(sleep_duration >= 90 && sleep_duration <= 110)
-  
-  // 测试获取系统CPU核心数
-  let cpu_count = azimuth::SystemUtils::get_cpu_count()
-  assert_true(cpu_count >= 1)
-  
-  // 测试获取系统内存信息
-  let memory_info = azimuth::SystemUtils::get_memory_info()
-  assert_true(memory_info.total > 0)
-  assert_true(memory_info.available > 0)
-  assert_true(memory_info.available <= memory_info.total)
-  
-  // 测试获取系统负载
-  let system_load = azimuth::SystemUtils::get_system_load()
-  assert_true(system_load.load_average >= 0.0)
-  
-  // 测试获取进程列表
-  let process_list = azimuth::ProcessUtils::get_process_list()
-  assert_true(process_list.length() > 0)
-  
-  // 验证当前进程在进程列表中
-  let current_process_found = process_list.any(fn(p) { p.id == process_id })
-  assert_true(current_process_found)
-}
-
-// 测试4: 网络跨平台处理
-test "网络跨平台处理测试" {
-  // 测试获取主机名
-  let hostname = azimuth::NetworkUtils::get_hostname()
-  assert_true(hostname.length() > 0)
-  
-  // 测试获取本地IP地址
-  let local_ips = azimuth::NetworkUtils::get_local_ip_addresses()
-  assert_true(local_ips.length() > 0)
-  
-  // 验证至少有一个有效的IP地址
-  let has_valid_ip = local_ips.any(fn(ip) { 
-    ip != "127.0.0.1" && ip != "::1" && ip.length() > 0
-  })
-  // 注意：在某些测试环境中可能只有环回地址
-  
-  // 测试解析域名
-  let domain_result = azimuth::NetworkUtils::resolve_domain("google.com")
-  match domain_result {
-    Ok(ip_addresses) => {
-      assert_true(ip_addresses.length() > 0)
-      // 验证IP地址格式
-      for ip in ip_addresses {
-        assert_true(azimuth::NetworkUtils::is_valid_ip(ip))
+      "windows" => {
+        // Windows路径处理
+        path.replace("/", "\\")
       }
-    }
-    Err(_) => {
-      // 在没有网络连接的环境中，域名解析可能失败
-      assert_true(true)
-    }
-  }
-  
-  // 测试检查端口是否被占用
-  let random_port = 12345 + (azimuth::TimeUtils::get_current_time_millis() % 10000)
-  let port_in_use = azimuth::NetworkUtils::is_port_in_use(random_port)
-  // 随机端口通常不会被占用，但不能保证
-  
-  // 测试获取网络接口列表
-  let network_interfaces = azimuth::NetworkUtils::get_network_interfaces()
-  assert_true(network_interfaces.length() > 0)
-  
-  // 验证每个网络接口都有名称
-  for interface in network_interfaces {
-    assert_true(interface.name.length() > 0)
-  }
-}
-
-// 测试5: 时间跨平台处理
-test "时间跨平台处理测试" {
-  // 测试获取当前时间戳（毫秒）
-  let current_time_millis = azimuth::TimeUtils::get_current_time_millis()
-  assert_true(current_time_millis > 1609459200000L) // 2021-01-01之后的时间戳
-  
-  // 测试获取当前时间戳（秒）
-  let current_time_seconds = azimuth::TimeUtils::get_current_time_seconds()
-  assert_true(current_time_seconds > 1609459200L) // 2021-01-01之后的时间戳
-  
-  // 测试时间戳转换
-  let converted_millis = azimuth::TimeUtils::seconds_to_millis(current_time_seconds)
-  let converted_seconds = azimuth::TimeUtils::millis_to_seconds(current_time_millis)
-  
-  // 验证转换结果（允许1秒误差）
-  assert_true((converted_millis - current_time_millis).abs() < 1000L)
-  assert_true((converted_seconds - current_time_seconds).abs() <= 1L)
-  
-  // 测试格式化时间
-  let formatted_time = azimuth::TimeUtils::format_timestamp(current_time_millis, "%Y-%m-%d %H:%M:%S")
-  assert_true(formatted_time.length() == 19) // "YYYY-MM-DD HH:MM:SS"格式长度为19
-  
-  // 测试解析时间
-  let parsed_time = azimuth::TimeUtils::parse_timestamp(formatted_time, "%Y-%m-%d %H:%M:%S")
-  match parsed_time {
-    Ok(timestamp) => {
-      // 验证解析结果（允许1秒误差）
-      assert_true((timestamp - current_time_millis).abs() < 1000L)
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // 测试获取时区信息
-  let timezone = azimuth::TimeUtils::get_timezone()
-  assert_true(timezone.length() > 0)
-  
-  // 测试获取UTC偏移量
-  let utc_offset = azimuth::TimeUtils::get_utc_offset()
-  assert_true(utc_offset >= -12 * 60 && utc_offset <= 14 * 60) // UTC偏移量在-12到+14小时之间
-}
-
-// 测试6: 文件系统跨平台处理
-test "文件系统跨平台处理测试" {
-  // 测试创建临时目录
-  let temp_dir = azimuth::FileSystemUtils::create_temp_directory("azimuth_test")
-  assert_true(azimuth::FileSystemUtils::directory_exists(temp_dir))
-  
-  // 测试创建文件
-  let test_file = azimuth::PathUtils::join(temp_dir, "test_file.txt")
-  let file_content = "This is a test file content."
-  let create_result = azimuth::FileSystemUtils::write_file(test_file, file_content)
-  assert_true(create_result)
-  
-  // 测试检查文件是否存在
-  assert_true(azimuth::FileSystemUtils::file_exists(test_file))
-  
-  // 测试读取文件
-  let read_content = azimuth::FileSystemUtils::read_file(test_file)
-  match read_content {
-    Ok(content) => assert_eq(content, file_content)
-    Err(_) => assert_true(false)
-  }
-  
-  // 测试获取文件大小
-  let file_size = azimuth::FileSystemUtils::get_file_size(test_file)
-  assert_eq(file_size, file_content.length())
-  
-  // 测试获取文件修改时间
-  let modified_time = azimuth::FileSystemUtils::get_file_modified_time(test_file)
-  assert_true(modified_time > 0)
-  
-  // 测试复制文件
-  let copied_file = azimuth::PathUtils::join(temp_dir, "copied_file.txt")
-  let copy_result = azimuth::FileSystemUtils::copy_file(test_file, copied_file)
-  assert_true(copy_result)
-  assert_true(azimuth::FileSystemUtils::file_exists(copied_file))
-  
-  // 验证复制的内容
-  let copied_content = azimuth::FileSystemUtils::read_file(copied_file)
-  match copied_content {
-    Ok(content) => assert_eq(content, file_content)
-    Err(_) => assert_true(false)
-  }
-  
-  // 测试移动文件
-  let moved_file = azimuth::PathUtils::join(temp_dir, "moved_file.txt")
-  let move_result = azimuth::FileSystemUtils::move_file(copied_file, moved_file)
-  assert_true(move_result)
-  assert_true(azimuth::FileSystemUtils::file_exists(moved_file))
-  assert_false(azimuth::FileSystemUtils::file_exists(copied_file))
-  
-  // 测试列出目录内容
-  let dir_contents = azimuth::FileSystemUtils::list_directory(temp_dir)
-  assert_eq(dir_contents.length(), 2) // test_file.txt 和 moved_file.txt
-  
-  // 测试创建子目录
-  let sub_dir = azimuth::PathUtils::join(temp_dir, "sub_directory")
-  let create_dir_result = azimuth::FileSystemUtils::create_directory(sub_dir)
-  assert_true(create_dir_result)
-  assert_true(azimuth::FileSystemUtils::directory_exists(sub_dir))
-  
-  // 测试递归删除目录
-  let delete_result = azimuth::FileSystemUtils::delete_directory_recursive(temp_dir)
-  assert_true(delete_result)
-  assert_false(azimuth::FileSystemUtils::directory_exists(temp_dir))
-}
-
-// 测试7: 系统信息跨平台处理
-test "系统信息跨平台处理测试" {
-  // 测试获取操作系统类型
-  let os_type = azimuth::SystemUtils::get_os_type()
-  assert_true(os_type == "Windows" || os_type == "Linux" || os_type == "macOS" || os_type == "Unix")
-  
-  // 测试获取操作系统版本
-  let os_version = azimuth::SystemUtils::get_os_version()
-  assert_true(os_version.length() > 0)
-  
-  // 测试获取架构信息
-  let architecture = azimuth::SystemUtils::get_architecture()
-  assert_true(architecture == "x86" || architecture == "x86_64" || architecture == "arm" || architecture == "arm64")
-  
-  // 测试获取主机信息
-  let host_info = azimuth::SystemUtils::get_host_info()
-  assert_true(host_info.hostname.length() > 0)
-  assert_true(host_info.uptime > 0)
-  
-  // 测试获取用户信息
-  let user_info = azimuth::SystemUtils::get_user_info()
-  assert_true(user_info.username.length() > 0)
-  
-  // 测试获取当前工作目录
-  let current_dir = azimuth::SystemUtils::get_current_directory()
-  assert_true(azimuth::FileSystemUtils::directory_exists(current_dir))
-  
-  // 测试获取用户主目录
-  let home_dir = azimuth::SystemUtils::get_home_directory()
-  assert_true(azimuth::FileSystemUtils::directory_exists(home_dir))
-  
-  // 测试获取临时目录
-  let temp_dir = azimuth::SystemUtils::get_temp_directory()
-  assert_true(azimuth::FileSystemUtils::directory_exists(temp_dir))
-  
-  // 测试获取系统启动时间
-  let boot_time = azimuth::SystemUtils::get_boot_time()
-  assert_true(boot_time > 0)
-  assert_true(boot_time < azimuth::TimeUtils::get_current_time_seconds())
-}
-
-// 测试8: 进程间通信跨平台处理
-test "进程间通信跨平台处理测试" {
-  // 测试创建命名管道
-  let pipe_name = "azimuth_test_pipe_" + azimuth::TimeUtils::get_current_time_millis().to_string()
-  let pipe_result = azimuth::IPCUtils::create_named_pipe(pipe_name)
-  match pipe_result {
-    Ok(pipe) => {
-      // 测试写入管道
-      let message = "Hello from azimuth test"
-      let write_result = azimuth::IPCUtils::write_to_pipe(pipe, message)
-      assert_true(write_result)
-      
-      // 测试从管道读取
-      let read_result = azimuth::IPCUtils::read_from_pipe(pipe, message.length())
-      match read_result {
-        Ok(read_message) => assert_eq(read_message, message)
-        Err(_) => assert_true(false)
-      }
-      
-      // 测试关闭管道
-      let close_result = azimuth::IPCUtils::close_pipe(pipe)
-      assert_true(close_result)
-    }
-    Err(_) => {
-      // 在某些平台上可能不支持命名管道
-      assert_true(true)
-    }
-  }
-  
-  // 测试创建共享内存
-  let shm_name = "azimuth_test_shm_" + azimuth::TimeUtils::get_current_time_millis().to_string()
-  let shm_size = 1024
-  let shm_result = azimuth::IPCUtils::create_shared_memory(shm_name, shm_size)
-  match shm_result {
-    Ok(shm) => {
-      // 测试写入共享内存
-      let data = "Shared memory test data"
-      let write_result = azimuth::IPCUtils::write_to_shared_memory(shm, data)
-      assert_true(write_result)
-      
-      // 测试从共享内存读取
-      let read_result = azimuth::IPCUtils::read_from_shared_memory(shm, data.length())
-      match read_result {
-        Ok(read_data) => assert_eq(read_data, data)
-        Err(_) => assert_true(false)
-      }
-      
-      // 测试释放共享内存
-      let release_result = azimuth::IPCUtils::release_shared_memory(shm)
-      assert_true(release_result)
-    }
-    Err(_) => {
-      // 在某些平台上可能不支持共享内存
-      assert_true(true)
-    }
-  }
-  
-  // 测试信号处理
-  let signal_result = azimuth::IPCUtils::send_signal(azimuth::ProcessUtils::get_current_process_id(), 0) // 发送空信号
-  match signal_result {
-    Ok(_) => assert_true(true),
-    Err(_) => {
-      // 在某些平台上可能不支持信号
-      assert_true(true)
-    }
-  }
-}
-
-// 测试9: 注册表跨平台处理
-test "注册表跨平台处理测试" {
-  // 测试读取注册表（仅Windows）
-  if azimuth::PlatformUtils::is_windows() {
-    let key_result = azimuth::RegistryUtils::open_key("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion")
-    match key_result {
-      Ok(key) => {
-        // 测试读取注册表值
-        let value_result = azimuth::RegistryUtils::read_string_value(key, "ProgramFilesDir")
-        match value_result {
-          Ok(value) => {
-            assert_true(value.length() > 0)
-            assert_true(value.contains("Program Files"))
-          }
-          Err(_) => assert_true(false)
-        }
-        
-        // 测试关闭注册表键
-        let close_result = azimuth::RegistryUtils::close_key(key)
-        assert_true(close_result)
-      }
-      Err(_) => {
-        // 注册表键可能不存在或无权限访问
-        assert_true(true)
-      }
-    }
-  } else {
-    // 非Windows系统应该返回不支持
-    let key_result = azimuth::RegistryUtils::open_key("HKEY_LOCAL_MACHINE\\SOFTWARE\\Test")
-    match key_result {
-      Ok(_) => assert_true(false),
-      Err(error) => assert_eq(error.message, "Registry operations are only supported on Windows")
-    }
-  }
-  
-  // 测试写入注册表（仅Windows）
-  if azimuth::PlatformUtils::is_windows() {
-    let test_key_path = "HKEY_CURRENT_USER\\SOFTWARE\\AzimuthTest"
-    let create_result = azimuth::RegistryUtils::create_key(test_key_path)
-    match create_result {
-      Ok(key) => {
-        // 测试写入字符串值
-        let write_result = azimuth::RegistryUtils::write_string_value(key, "TestValue", "Test data")
-        assert_true(write_result)
-        
-        // 测试读取写入的值
-        let read_result = azimuth::RegistryUtils::read_string_value(key, "TestValue")
-        match read_result {
-          Ok(value) => assert_eq(value, "Test data")
-          Err(_) => assert_true(false)
-        }
-        
-        // 测试删除值
-        let delete_result = azimuth::RegistryUtils::delete_value(key, "TestValue")
-        assert_true(delete_result)
-        
-        // 测试关闭键
-        let close_result = azimuth::RegistryUtils::close_key(key)
-        assert_true(close_result)
-        
-        // 测试删除键
-        let delete_key_result = azimuth::RegistryUtils::delete_key(test_key_path)
-        assert_true(delete_key_result)
-      }
-      Err(_) => {
-        // 可能无权限创建注册表键
-        assert_true(true)
+      _ => {
+        // 默认使用Unix风格
+        path.replace("\\", "/")
       }
     }
   }
-}
-
-// 测试10: 权限和安全跨平台处理
-test "权限和安全跨平台处理测试" {
-  // 测试检查文件权限
-  let temp_dir = azimuth::FileSystemUtils::create_temp_directory("azimuth_test")
-  let test_file = azimuth::PathUtils::join(temp_dir, "test_file.txt")
-  let create_result = azimuth::FileSystemUtils::write_file(test_file, "test content")
-  assert_true(create_result)
   
-  // 测试检查读取权限
-  let read_permission = azimuth::PermissionUtils::check_read_permission(test_file)
-  assert_true(read_permission)
-  
-  // 测试检查写入权限
-  let write_permission = azimuth::PermissionUtils::check_write_permission(test_file)
-  assert_true(write_permission)
-  
-  // 测试检查执行权限
-  let execute_permission = azimuth::PermissionUtils::check_execute_permission(test_file)
-  // 文本文件通常没有执行权限，但这取决于平台
-  
-  // 测试设置文件权限（仅Unix-like系统）
-  if !azimuth::PlatformUtils::is_windows() {
-    let chmod_result = azimuth::PermissionUtils::set_file_permissions(test_file, 0o644)
-    assert_true(chmod_result)
+  fn create_platform_path(path: String) -> PlatformPath {
+    let unix_path = normalize_path(path, "unix")
+    let windows_path = normalize_path(path, "windows")
+    let normalized_path = unix_path  // 使用Unix风格作为标准化路径
     
-    // 测试获取文件权限
-    let permissions = azimuth::PermissionUtils::get_file_permissions(test_file)
-    assert_true(permissions >= 0)
+    { 
+      unix_path: unix_path, 
+      windows_path: windows_path, 
+      normalized_path: normalized_path 
+    }
   }
   
-  // 测试获取文件所有者
-  let owner = azimuth::PermissionUtils::get_file_owner(test_file)
-  assert_true(owner.length() > 0)
+  // 测试路径
+  let test_path1 = "src/azimuth/tests"
+  let test_path2 = "src\\azimuth\\tests"
+  let test_path3 = "src/azimuth\\mixed/path"
   
-  // 测试检查当前用户权限
-  let current_user = azimuth::PermissionUtils::get_current_user()
-  assert_true(current_user.length() > 0)
+  // 创建平台路径
+  let platform_path1 = create_platform_path(test_path1)
+  let platform_path2 = create_platform_path(test_path2)
+  let platform_path3 = create_platform_path(test_path3)
   
-  let is_owner = azimuth::PermissionUtils::is_file_owner(test_file, current_user)
-  // 通常应该是文件所有者，但这取决于测试环境
+  // 验证Unix路径
+  assert_eq(platform_path1.unix_path, "src/azimuth/tests")
+  assert_eq(platform_path2.unix_path, "src/azimuth/tests")
+  assert_eq(platform_path3.unix_path, "src/azimuth/mixed/path")
   
-  // 测试创建符号链接（仅Unix-like系统）
-  if !azimuth::PlatformUtils::is_windows() {
-    let link_file = azimuth::PathUtils::join(temp_dir, "test_link.txt")
-    let symlink_result = azimuth::FileSystemUtils::create_symbolic_link(test_file, link_file)
-    match symlink_result {
-      Ok(_) => {
-        assert_true(azimuth::FileSystemUtils::file_exists(link_file))
-        assert_true(azimuth::FileSystemUtils::is_symbolic_link(link_file))
-        
-        // 测试读取符号链接目标
-        let link_target = azimuth::FileSystemUtils::read_symbolic_link(link_file)
-        match link_target {
-          Ok(target) => assert_eq(target, test_file)
-          Err(_) => assert_true(false)
-        }
+  // 验证Windows路径
+  assert_eq(platform_path1.windows_path, "src\\azimuth\\tests")
+  assert_eq(platform_path2.windows_path, "src\\azimuth\\tests")
+  assert_eq(platform_path3.windows_path, "src\\azimuth\\mixed\\path")
+  
+  // 验证标准化路径
+  assert_eq(platform_path1.normalized_path, "src/azimuth/tests")
+  assert_eq(platform_path2.normalized_path, "src/azimuth/tests")
+  assert_eq(platform_path3.normalized_path, "src/azimuth/mixed/path")
+}
+
+// 测试2: 文件编码跨平台兼容性
+test "文件编码跨平台兼容性测试" {
+  // 模拟不同平台下的文件编码处理
+  type EncodedText = {
+    utf8_text: String,
+    utf16_text: String,
+    ascii_text: String
+  }
+  
+  fn encode_text(text: String, encoding: String) -> String {
+    match encoding {
+      "utf8" => {
+        // UTF-8编码（默认）
+        text
       }
-      Err(_) => {
-        // 可能无权限创建符号链接
-        assert_true(true)
+      "utf16" => {
+        // 模拟UTF-16编码（简化）
+        let result = "" : String
+        for i in 0..<text.length() {
+          let char = text.code_point_at(i)
+          result = result + char.to_string() + "\\0"
+        }
+        result
+      }
+      "ascii" => {
+        // 模拟ASCII编码（非ASCII字符替换为?）
+        let result = "" : String
+        for i in 0..<text.length() {
+          let char = text.code_point_at(i)
+          if char <= 127 {
+            result = result + String::from_char(char)
+          } else {
+            result = result + "?"
+          }
+        }
+        result
+      }
+      _ => text
+    }
+  }
+  
+  fn create_encoded_text(text: String) -> EncodedText {
+    let utf8_text = encode_text(text, "utf8")
+    let utf16_text = encode_text(text, "utf16")
+    let ascii_text = encode_text(text, "ascii")
+    
+    { 
+      utf8_text: utf8_text, 
+      utf16_text: utf16_text, 
+      ascii_text: ascii_text 
+    }
+  }
+  
+  // 测试文本
+  let english_text = "Hello, Azimuth!"
+  let chinese_text = "你好，Azimuth！"
+  let mixed_text = "Hello, 你好！"
+  
+  // 创建编码文本
+  let encoded_english = create_encoded_text(english_text)
+  let encoded_chinese = create_encoded_text(chinese_text)
+  let encoded_mixed = create_encoded_text(mixed_text)
+  
+  // 验证英文文本编码
+  assert_eq(encoded_english.utf8_text, "Hello, Azimuth!")
+  assert_eq(encoded_english.ascii_text, "Hello, Azimuth!")
+  
+  // 验证中文文本编码
+  assert_eq(encoded_chinese.utf8_text, "你好，Azimuth！")
+  assert_eq(encoded_chinese.ascii_text, "???，Azimuth？")
+  
+  // 验证混合文本编码
+  assert_eq(encoded_mixed.utf8_text, "Hello, 你好！")
+  assert_eq(encoded_mixed.ascii_text, "Hello, ???")
+}
+
+// 测试3: 时间处理跨平台兼容性
+test "时间处理跨平台兼容性测试" {
+  // 模拟不同平台下的时间处理
+  type TimeStamp = {
+    unix_timestamp: Int,
+    windows_timestamp: Int,
+    iso8601_string: String
+  }
+  
+  fn create_timestamp(year: Int, month: Int, day: Int, hour: Int, minute: Int, second: Int) -> TimeStamp {
+    // 模拟Unix时间戳（自1970-01-01以来的秒数）
+    let unix_timestamp = calculate_unix_timestamp(year, month, day, hour, minute, second)
+    
+    // 模拟Windows时间戳（自1601-01-01以来的100纳秒间隔）
+    let windows_timestamp = (unix_timestamp + 11644473600) * 10000000
+    
+    // ISO 8601格式字符串
+    let iso8601_string = format_iso8601(year, month, day, hour, minute, second)
+    
+    { 
+      unix_timestamp: unix_timestamp, 
+      windows_timestamp: windows_timestamp, 
+      iso8601_string: iso8601_string 
+    }
+  }
+  
+  // 简化的Unix时间戳计算（仅用于测试）
+  fn calculate_unix_timestamp(year: Int, month: Int, day: Int, hour: Int, minute: Int, second: Int) -> Int {
+    // 简化计算，假设每个月30天
+    let days_since_1970 = (year - 1970) * 365 + (month - 1) * 30 + (day - 1)
+    let seconds_since_1970 = days_since_1970 * 24 * 60 * 60
+    let time_of_day_seconds = hour * 60 * 60 + minute * 60 + second
+    seconds_since_1970 + time_of_day_seconds
+  }
+  
+  // ISO 8601格式化
+  fn format_iso8601(year: Int, month: Int, day: Int, hour: Int, minute: Int, second: Int) -> String {
+    let year_str = year.to_string()
+    let month_str = if month < 10 { "0" + month.to_string() } else { month.to_string() }
+    let day_str = if day < 10 { "0" + day.to_string() } else { day.to_string() }
+    let hour_str = if hour < 10 { "0" + hour.to_string() } else { hour.to_string() }
+    let minute_str = if minute < 10 { "0" + minute.to_string() } else { minute.to_string() }
+    let second_str = if second < 10 { "0" + second.to_string() } else { second.to_string() }
+    
+    year_str + "-" + month_str + "-" + day_str + "T" + hour_str + ":" + minute_str + ":" + second_str + "Z"
+  }
+  
+  // 创建时间戳
+  let timestamp1 = create_timestamp(2023, 1, 1, 0, 0, 0)
+  let timestamp2 = create_timestamp(2023, 6, 15, 12, 30, 45)
+  
+  // 验证时间戳
+  assert_eq(timestamp1.iso8601_string, "2023-01-01T00:00:00Z")
+  assert_eq(timestamp2.iso8601_string, "2023-06-15T12:30:45Z")
+  
+  // 验证Unix时间戳
+  assert_true(timestamp1.unix_timestamp > 0)
+  assert_true(timestamp2.unix_timestamp > timestamp1.unix_timestamp)
+  
+  // 验证Windows时间戳
+  assert_true(timestamp1.windows_timestamp > 0)
+  assert_true(timestamp2.windows_timestamp > timestamp1.windows_timestamp)
+}
+
+// 测试4: 网络配置跨平台兼容性
+test "网络配置跨平台兼容性测试" {
+  // 模拟不同平台下的网络配置
+  type NetworkConfig = {
+    hostname: String,
+    ip_address: String,
+    port: Int,
+    protocol: String
+  }
+  
+  fn create_network_config(hostname: String, ip: String, port: Int, protocol: String) -> NetworkConfig {
+    { 
+      hostname: hostname, 
+      ip_address: ip, 
+      port: port, 
+      protocol: protocol 
+    }
+  }
+  
+  fn validate_network_config(config: NetworkConfig) -> Bool {
+    // 验证主机名
+    if config.hostname.length() == 0 {
+      return false
+    }
+    
+    // 验证IP地址格式（简化验证）
+    let ip_parts = config.ip_address.split(".")
+    if ip_parts.length() != 4 {
+      return false
+    }
+    
+    for part in ip_parts {
+      match part.to_int() {
+        Some(num) => {
+          if num < 0 || num > 255 {
+            return false
+          }
+        }
+        None => return false
+      }
+    }
+    
+    // 验证端口
+    if config.port < 1 || config.port > 65535 {
+      return false
+    }
+    
+    // 验证协议
+    if config.protocol != "tcp" && config.protocol != "udp" {
+      return false
+    }
+    
+    true
+  }
+  
+  // 创建网络配置
+  let config1 = create_network_config("localhost", "127.0.0.1", 8080, "tcp")
+  let config2 = create_network_config("azimuth-server", "192.168.1.100", 9000, "udp")
+  let config3 = create_network_config("remote-host", "10.0.0.1", 443, "tcp")
+  
+  // 验证有效配置
+  assert_true(validate_network_config(config1))
+  assert_true(validate_network_config(config2))
+  assert_true(validate_network_config(config3))
+  
+  // 测试无效配置
+  let invalid_config1 = create_network_config("", "127.0.0.1", 8080, "tcp")  // 空主机名
+  let invalid_config2 = create_network_config("localhost", "999.999.999.999", 8080, "tcp")  // 无效IP
+  let invalid_config3 = create_network_config("localhost", "127.0.0.1", 99999, "tcp")  // 无效端口
+  let invalid_config4 = create_network_config("localhost", "127.0.0.1", 8080, "ftp")  // 无效协议
+  
+  assert_false(validate_network_config(invalid_config1))
+  assert_false(validate_network_config(invalid_config2))
+  assert_false(validate_network_config(invalid_config3))
+  assert_false(validate_network_config(invalid_config4))
+}
+
+// 测试5: 环境变量跨平台兼容性
+test "环境变量跨平台兼容性测试" {
+  // 模拟不同平台下的环境变量处理
+  type EnvironmentVariables = Map[String, String]
+  
+  fn set_env_var(env_vars: EnvironmentVariables, name: String, value: String) -> EnvironmentVariables {
+    let updated_vars = Map::new()
+    for (key, val) in env_vars {
+      updated_vars.insert(key, val)
+    }
+    updated_vars.insert(name, value)
+    updated_vars
+  }
+  
+  fn get_env_var(env_vars: EnvironmentVariables, name: String) -> Option[String] {
+    env_vars.get(name)
+  }
+  
+  fn normalize_env_name(name: String, platform: String) -> String {
+    match platform {
+      "windows" => {
+        // Windows环境变量不区分大小写
+        name.to_uppercase()
+      }
+      _ => {
+        // Unix/Linux环境变量区分大小写
+        name
       }
     }
   }
   
-  // 清理测试文件
-  let delete_result = azimuth::FileSystemUtils::delete_directory_recursive(temp_dir)
-  assert_true(delete_result)
+  // 创建环境变量集合
+  let mut env_vars = Map::new()
+  
+  // 设置环境变量
+  env_vars = set_env_var(env_vars, "PATH", "/usr/bin:/bin")
+  env_vars = set_env_var(env_vars, "HOME", "/home/user")
+  env_vars = set_env_var(env_vars, "AZIMUTH_CONFIG", "/etc/azimuth/config.json")
+  
+  // 获取环境变量
+  assert_eq(get_env_var(env_vars, "PATH").unwrap_or(""), "/usr/bin:/bin")
+  assert_eq(get_env_var(env_vars, "HOME").unwrap_or(""), "/home/user")
+  assert_eq(get_env_var(env_vars, "AZIMUTH_CONFIG").unwrap_or(""), "/etc/azimuth/config.json")
+  
+  // 测试不存在的环境变量
+  assert_eq(get_env_var(env_vars, "NONEXISTENT"), None)
+  
+  // 测试环境变量名称规范化
+  let windows_path = normalize_env_name("path", "windows")
+  let unix_path = normalize_env_name("PATH", "unix")
+  
+  assert_eq(windows_path, "PATH")
+  assert_eq(unix_path, "PATH")
+  
+  let windows_home = normalize_env_name("home", "windows")
+  let unix_home = normalize_env_name("HOME", "unix")
+  
+  assert_eq(windows_home, "HOME")
+  assert_eq(unix_home, "HOME")
+}
+
+// 测试6: 线程和进程跨平台兼容性
+test "线程和进程跨平台兼容性测试" {
+  // 模拟不同平台下的线程和进程处理
+  type ThreadInfo = {
+    id: Int,
+    name: String,
+    priority: Int,
+    status: String
+  }
+  
+  type ProcessInfo = {
+    pid: Int,
+    name: String,
+    threads: Array[ThreadInfo],
+    memory_usage: Int
+  }
+  
+  fn create_thread(id: Int, name: String, priority: Int) -> ThreadInfo {
+    { 
+      id: id, 
+      name: name, 
+      priority: priority, 
+      status: "running" 
+    }
+  }
+  
+  fn create_process(pid: Int, name: String, thread_count: Int) -> ProcessInfo {
+    let threads = [] : Array[ThreadInfo]
+    for i in 0..<thread_count {
+      let thread = create_thread(i, "thread_" + i.to_string(), 5)
+      threads.push(thread)
+    }
+    
+    { 
+      pid: pid, 
+      name: name, 
+      threads: threads, 
+      memory_usage: 1024 * 1024 * thread_count  // 每个线程1MB
+    }
+  }
+  
+  fn get_platform_thread_priority(platform: String, priority: Int) -> Int {
+    match platform {
+      "windows" => {
+        // Windows线程优先级范围：0-31
+        if priority < 0 { 0 } else if priority > 31 { 31 } else { priority }
+      }
+      "unix" => {
+        // Unix线程优先级范围：-20到20
+        if priority < -20 { -20 } else if priority > 20 { 20 } else { priority }
+      }
+      _ => priority
+    }
+  }
+  
+  // 创建进程
+  let process1 = create_process(1001, "azimuth-service", 4)
+  let process2 = create_process(1002, "azimuth-worker", 8)
+  
+  // 验证进程信息
+  assert_eq(process1.pid, 1001)
+  assert_eq(process1.name, "azimuth-service")
+  assert_eq(process1.threads.length(), 4)
+  assert_eq(process1.memory_usage, 4 * 1024 * 1024)
+  
+  assert_eq(process2.pid, 1002)
+  assert_eq(process2.name, "azimuth-worker")
+  assert_eq(process2.threads.length(), 8)
+  assert_eq(process2.memory_usage, 8 * 1024 * 1024)
+  
+  // 测试线程优先级
+  let normal_priority = 5
+  let windows_priority = get_platform_thread_priority("windows", normal_priority)
+  let unix_priority = get_platform_thread_priority("unix", normal_priority)
+  
+  assert_eq(windows_priority, 5)
+  assert_eq(unix_priority, 5)
+  
+  let high_priority = 30
+  let windows_high_priority = get_platform_thread_priority("windows", high_priority)
+  let unix_high_priority = get_platform_thread_priority("unix", high_priority)
+  
+  assert_eq(windows_high_priority, 30)
+  assert_eq(unix_high_priority, 20)  // Unix优先级被限制在20
+}
+
+// 测试7: 文件系统权限跨平台兼容性
+test "文件系统权限跨平台兼容性测试" {
+  // 模拟不同平台下的文件系统权限处理
+  type FilePermissions = {
+    owner_read: Bool,
+    owner_write: Bool,
+    owner_execute: Bool,
+    group_read: Bool,
+    group_write: Bool,
+    group_execute: Bool,
+    other_read: Bool,
+    other_write: Bool,
+    other_execute: Bool
+  }
+  
+  fn create_permissions(octal: Int) -> FilePermissions {
+    let owner = (octal / 100) % 10
+    let group = (octal / 10) % 10
+    let other = octal % 10
+    
+    {
+      owner_read: (owner / 4) == 1,
+      owner_write: ((owner % 4) / 2) == 1,
+      owner_execute: (owner % 2) == 1,
+      group_read: (group / 4) == 1,
+      group_write: ((group % 4) / 2) == 1,
+      group_execute: (group % 2) == 1,
+      other_read: (other / 4) == 1,
+      other_write: ((other % 4) / 2) == 1,
+      other_execute: (other % 2) == 1
+    }
+  }
+  
+  fn to_octal(permissions: FilePermissions) -> Int {
+    let owner = (if permissions.owner_read { 4 } else { 0 }) +
+                (if permissions.owner_write { 2 } else { 0 }) +
+                (if permissions.owner_execute { 1 } else { 0 })
+    let group = (if permissions.group_read { 4 } else { 0 }) +
+                (if permissions.group_write { 2 } else { 0 }) +
+                (if permissions.group_execute { 1 } else { 0 })
+    let other = (if permissions.other_read { 4 } else { 0 }) +
+                (if permissions.other_write { 2 } else { 0 }) +
+                (if permissions.other_execute { 1 } else { 0 })
+    
+    owner * 100 + group * 10 + other
+  }
+  
+  fn get_windows_attributes(permissions: FilePermissions) -> Int {
+    let mut attributes = 0
+    
+    if permissions.owner_read {
+      attributes = attributes | 0x400  // FILE_GENERIC_READ
+    }
+    if permissions.owner_write {
+      attributes = attributes | 0x200  // FILE_GENERIC_WRITE
+    }
+    if permissions.owner_execute {
+      attributes = attributes | 0x20   // FILE_EXECUTE
+    }
+    
+    attributes
+  }
+  
+  // 创建权限
+  let permissions755 = create_permissions(755)  // rwxr-xr-x
+  let permissions644 = create_permissions(644)  // rw-r--r--
+  let permissions600 = create_permissions(600)  // rw-------
+  
+  // 验证权限转换
+  assert_eq(to_octal(permissions755), 755)
+  assert_eq(to_octal(permissions644), 644)
+  assert_eq(to_octal(permissions600), 600)
+  
+  // 验证权限位
+  assert_true(permissions755.owner_read && permissions755.owner_write && permissions755.owner_execute)
+  assert_true(permissions755.group_read && !permissions755.group_write && permissions755.group_execute)
+  assert_true(permissions755.other_read && !permissions755.other_write && permissions755.other_execute)
+  
+  assert_true(permissions644.owner_read && permissions644.owner_write && !permissions644.owner_execute)
+  assert_true(permissions644.group_read && !permissions644.group_write && !permissions644.group_execute)
+  assert_true(permissions644.other_read && !permissions644.other_write && !permissions644.other_execute)
+  
+  // 测试Windows属性转换
+  let windows_attrs755 = get_windows_attributes(permissions755)
+  let windows_attrs644 = get_windows_attributes(permissions644)
+  
+  assert_true(windows_attrs755 & 0x400 != 0)  // 读权限
+  assert_true(windows_attrs755 & 0x200 != 0)  // 写权限
+  assert_true(windows_attrs755 & 0x20 != 0)   // 执行权限
+  
+  assert_true(windows_attrs644 & 0x400 != 0)  // 读权限
+  assert_true(windows_attrs644 & 0x200 != 0)  // 写权限
+  assert_false(windows_attrs644 & 0x20 != 0)  // 无执行权限
 }

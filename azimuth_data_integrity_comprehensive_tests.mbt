@@ -1,301 +1,418 @@
-// Azimuth 遥测数据完整性验证综合测试
-// 专注于验证遥测系统在各种场景下的数据完整性和一致性
+// Azimuth 数据完整性验证测试
+// 专注于数据在传输、存储和处理过程中的完整性验证
 
-// 测试1: 遥测数据序列化和反序列化完整性
-test "遥测数据序列化反序列化完整性验证" {
-  // 1. 创建复杂的遥测数据结构
-  let telemetry_data = {
-    timestamp: 1640995200000L,  // 2022-01-01 00:00:00 UTC
-    trace_id: "0af7651916cd43dd8448eb211c80319c",
-    span_id: "b7ad6b7169203331",
-    parent_span_id: Some("282b888e074d79b7"),
-    operation_name: "http.request",
-    duration_ms: 150L,
-    status: "success",
-    attributes: [
-      ("http.method", "GET"),
-      ("http.url", "https://api.example.com/users"),
-      ("http.status_code", "200"),
-      ("user.id", "12345"),
-      ("service.name", "user-service")
-    ],
-    metrics: [
-      ("cpu.usage", 45.7),
-      ("memory.usage", 1024.0),
-      ("request.count", 1.0)
-    ]
+// 测试1: 数据校验和验证
+test "数据校验和验证测试" {
+  // 简单的校验和计算函数
+  fn calculate_checksum(data: String) -> Int {
+    let sum = 0
+    for i in 0..<data.length() {
+      sum = sum + data.code_point_at(i)
+    }
+    sum % 1000000  // 限制校验和大小
   }
   
-  // 2. 序列化遥测数据
-  let serialized = serialize_telemetry_data(telemetry_data)
-  assert_true(serialized.length() > 0)
+  // 测试数据
+  let original_data = "Azimuth telemetry system data integrity test"
+  let checksum = calculate_checksum(original_data)
   
-  // 3. 反序列化遥测数据
-  let deserialized = deserialize_telemetry_data(serialized)
+  // 验证原始数据的校验和
+  assert_eq(calculate_checksum(original_data), checksum)
   
-  // 4. 验证数据完整性
-  assert_eq(telemetry_data.timestamp, deserialized.timestamp)
-  assert_eq(telemetry_data.trace_id, deserialized.trace_id)
-  assert_eq(telemetry_data.span_id, deserialized.span_id)
-  assert_eq(telemetry_data.operation_name, deserialized.operation_name)
-  assert_eq(telemetry_data.duration_ms, deserialized.duration_ms)
-  assert_eq(telemetry_data.status, deserialized.status)
+  // 测试数据修改后的校验和变化
+  let modified_data = original_data + " modified"
+  assert_not_eq(calculate_checksum(modified_data), checksum)
   
-  // 验证可选字段
-  match telemetry_data.parent_span_id {
-    Some(parent_id) => {
-      match deserialized.parent_span_id {
-        Some(deserialized_parent_id) => assert_eq(parent_id, deserialized_parent_id)
-        None => assert_true(false)
+  // 测试相同数据的校验和一致性
+  let duplicate_data = "Azimuth telemetry system data integrity test"
+  assert_eq(calculate_checksum(duplicate_data), checksum)
+  
+  // 测试空数据的校验和
+  let empty_data = ""
+  assert_eq(calculate_checksum(empty_data), 0)
+}
+
+// 测试2: 数据序列化和反序列化完整性
+test "数据序列化和反序列化完整性测试" {
+  // 简单的数据结构
+  type TestData = {
+    id: Int,
+    name: String,
+    values: Array[Double],
+    timestamp: Int
+  }
+  
+  // 序列化函数
+  fn serialize(data: TestData) -> String {
+    let result = "{"
+    result = result + "\"id\":" + data.id.to_string() + ","
+    result = result + "\"name\":\"" + data.name + "\"," 
+    result = result + "\"values\":["
+    for i in 0..<data.values.length() {
+      if i > 0 { result = result + "," }
+      result = result + data.values[i].to_string()
+    }
+    result = result + "],"
+    result = result + "\"timestamp\":" + data.timestamp.to_string()
+    result = result + "}"
+    result
+  }
+  
+  // 反序列化函数（简化版）
+  fn deserialize(json: String) -> TestData {
+    // 这里简化实现，实际应用中需要更完善的解析
+    let id = 1  // 简化处理
+    let name = "test"  // 简化处理
+    let values = [1.0, 2.0, 3.0]  // 简化处理
+    let timestamp = 1234567890  // 简化处理
+    
+    { id: id, name: name, values: values, timestamp: timestamp }
+  }
+  
+  // 测试数据
+  let test_data = {
+    id: 123,
+    name: "test_data",
+    values: [1.1, 2.2, 3.3, 4.4],
+    timestamp: 1609459200  // 2021-01-01 00:00:00 UTC
+  }
+  
+  // 序列化
+  let serialized = serialize(test_data)
+  assert_true(serialized.contains("\"id\":123"))
+  assert_true(serialized.contains("\"name\":\"test_data\""))
+  assert_true(serialized.contains("\"timestamp\":1609459200"))
+  
+  // 反序列化
+  let deserialized = deserialize(serialized)
+  
+  // 验证数据完整性
+  assert_eq(deserialized.id, test_data.id)
+  assert_eq(deserialized.name, test_data.name)
+  assert_eq(deserialized.timestamp, test_data.timestamp)
+}
+
+// 测试3: 数据传输完整性验证
+test "数据传输完整性验证测试" {
+  // 模拟数据传输过程中的完整性验证
+  type DataPacket = {
+    data: String,
+    checksum: Int,
+    sequence_number: Int
+  }
+  
+  fn create_packet(data: String, sequence: Int) -> DataPacket {
+    let checksum = calculate_checksum(data)
+    { data: data, checksum: checksum, sequence_number: sequence }
+  }
+  
+  fn verify_packet(packet: DataPacket) -> Bool {
+    let expected_checksum = calculate_checksum(packet.data)
+    packet.checksum == expected_checksum
+  }
+  
+  // 辅助函数
+  fn calculate_checksum(data: String) -> Int {
+    let sum = 0
+    for i in 0..<data.length() {
+      sum = sum + data.code_point_at(i)
+    }
+    sum % 1000000
+  }
+  
+  // 创建数据包
+  let packet1 = create_packet("First packet data", 1)
+  let packet2 = create_packet("Second packet data", 2)
+  let packet3 = create_packet("Third packet data", 3)
+  
+  // 验证数据包完整性
+  assert_true(verify_packet(packet1))
+  assert_true(verify_packet(packet2))
+  assert_true(verify_packet(packet3))
+  
+  // 模拟数据损坏
+  let corrupted_packet = { ...packet2, data: "Corrupted packet data" }
+  assert_false(verify_packet(corrupted_packet))
+  
+  // 测试序列号
+  assert_eq(packet1.sequence_number, 1)
+  assert_eq(packet2.sequence_number, 2)
+  assert_eq(packet3.sequence_number, 3)
+}
+
+// 测试4: 数据版本控制和迁移
+test "数据版本控制和迁移测试" {
+  // 数据版本控制结构
+  type VersionedData = {
+    version: Int,
+    data: String,
+    metadata: Map[String, String]
+  }
+  
+  // 创建版本化数据
+  fn create_versioned_data(version: Int, data: String) -> VersionedData {
+    let metadata = Map::new()
+    metadata.insert("created_at", "2023-01-01")
+    metadata.insert("format", "json")
+    { version: version, data: data, metadata: metadata }
+  }
+  
+  // 数据迁移函数
+  fn migrate_data(old_data: VersionedData, target_version: Int) -> VersionedData {
+    if old_data.version >= target_version {
+      return old_data
+    }
+    
+    // 模拟数据迁移逻辑
+    let migrated_data = match old_data.version {
+      1 => {
+        // 从版本1迁移到版本2
+        let new_data = old_data.data + "_migrated_to_v2"
+        let new_metadata = Map::new()
+        new_metadata.insert("created_at", old_data.metadata.get("created_at").unwrap_or(""))
+        new_metadata.insert("format", "json")
+        new_metadata.insert("migrated_from", "v1")
+        { version: 2, data: new_data, metadata: new_metadata }
+      }
+      2 => {
+        // 从版本2迁移到版本3
+        let new_data = old_data.data + "_migrated_to_v3"
+        let new_metadata = Map::new()
+        new_metadata.insert("created_at", old_data.metadata.get("created_at").unwrap_or(""))
+        new_metadata.insert("format", "json")
+        new_metadata.insert("migrated_from", "v2")
+        { version: 3, data: new_data, metadata: new_metadata }
+      }
+      _ => old_data
+    }
+    
+    // 递归迁移直到达到目标版本
+    if migrated_data.version < target_version {
+      migrate_data(migrated_data, target_version)
+    } else {
+      migrated_data
+    }
+  }
+  
+  // 创建版本1数据
+  let v1_data = create_versioned_data(1, "Sample data")
+  assert_eq(v1_data.version, 1)
+  assert_eq(v1_data.data, "Sample data")
+  
+  // 迁移到版本2
+  let v2_data = migrate_data(v1_data, 2)
+  assert_eq(v2_data.version, 2)
+  assert_eq(v2_data.data, "Sample data_migrated_to_v2")
+  assert_eq(v2_data.metadata.get("migrated_from").unwrap_or(""), "v1")
+  
+  // 迁移到版本3
+  let v3_data = migrate_data(v1_data, 3)
+  assert_eq(v3_data.version, 3)
+  assert_eq(v3_data.data, "Sample data_migrated_to_v2_migrated_to_v3")
+  assert_eq(v3_data.metadata.get("migrated_from").unwrap_or(""), "v2")
+}
+
+// 测试5: 数据一致性验证
+test "数据一致性验证测试" {
+  // 模拟分布式系统中的数据一致性验证
+  type ReplicaData = {
+    replica_id: String,
+    data: Map[String, Int],
+    version: Int,
+    timestamp: Int
+  }
+  
+  fn create_replica(id: String, initial_data: Map[String, Int]) -> ReplicaData {
+    { replica_id: id, data: initial_data, version: 1, timestamp: 1609459200 }
+  }
+  
+  fn update_replica(replica: ReplicaData, key: String, value: Int) -> ReplicaData {
+    let updated_data = Map::new()
+    for (k, v) in replica.data {
+      updated_data.insert(k, v)
+    }
+    updated_data.insert(key, value)
+    
+    { 
+      replica_id: replica.replica_id, 
+      data: updated_data, 
+      version: replica.version + 1, 
+      timestamp: replica.timestamp + 100 
+    }
+  }
+  
+  fn check_consistency(replicas: Array[ReplicaData]) -> Bool {
+    if replicas.length() == 0 {
+      return true
+    }
+    
+    // 检查所有副本的版本是否一致
+    let first_version = replicas[0].version
+    for replica in replicas {
+      if replica.version != first_version {
+        return false
       }
     }
-    None => assert_true(deserialized.parent_span_id.is_none())
-  }
-  
-  // 验证属性完整性
-  assert_eq(telemetry_data.attributes.length(), deserialized.attributes.length())
-  for i = 0; i < telemetry_data.attributes.length(); i = i + 1 {
-    assert_eq(telemetry_data.attributes[i], deserialized.attributes[i])
-  }
-  
-  // 验证指标完整性
-  assert_eq(telemetry_data.metrics.length(), deserialized.metrics.length())
-  for i = 0; i < telemetry_data.metrics.length(); i = i + 1 {
-    assert_eq(telemetry_data.metrics[i], deserialized.metrics[i])
-  }
-}
-
-// 测试2: 批量遥测数据传输完整性
-test "批量遥测数据传输完整性验证" {
-  // 1. 创建批量遥测数据
-  let batch_size = 1000
-  let telemetry_batch = []
-  
-  for i = 0; i < batch_size; i = i + 1 {
-    let telemetry_item = {
-      timestamp: 1640995200000L + (i * 1000L),
-      trace_id: "trace_" + i.to_string(),
-      span_id: "span_" + i.to_string(),
-      parent_span_id: if i > 0 { Some("span_" + (i - 1).to_string()) } else { None },
-      operation_name: "operation_" + (i % 10).to_string(),
-      duration_ms: (100 + i % 200).to_long(),
-      status: if i % 20 == 0 { "error" } else { "success" },
-      attributes: [
-        ("batch.id", i.to_string()),
-        ("operation.type", (i % 5).to_string())
-      ],
-      metrics: [
-        ("metric.value", (i * 1.5)),
-        ("metric.ratio", (i % 100).to_float() / 100.0)
-      ]
-    }
-    telemetry_batch = telemetry_batch.push(telemetry_item)
-  }
-  
-  // 2. 分批传输数据
-  let chunk_size = 100
-  let transmitted_chunks = []
-  
-  for i = 0; i < telemetry_batch.length(); i = i + chunk_size {
-    let end_index = min(i + chunk_size, telemetry_batch.length())
-    let chunk = telemetry_batch.slice(i, end_index)
-    let transmitted_chunk = transmit_telemetry_chunk(chunk)
-    transmitted_chunks = transmitted_chunks.push(transmitted_chunk)
-  }
-  
-  // 3. 重组数据并验证完整性
-  let reassembled_data = []
-  for chunk in transmitted_chunks {
-    reassembled_data = reassembled_data.concat(chunk)
-  }
-  
-  // 验证数据数量
-  assert_eq(telemetry_batch.length(), reassembled_data.length())
-  
-  // 验证每个数据项的完整性
-  for i = 0; i < telemetry_batch.length(); i = i + 1 {
-    let original = telemetry_batch[i]
-    let reassembled = reassembled_data[i]
     
-    assert_eq(original.timestamp, reassembled.timestamp)
-    assert_eq(original.trace_id, reassembled.trace_id)
-    assert_eq(original.span_id, reassembled.span_id)
-    assert_eq(original.operation_name, reassembled.operation_name)
-    assert_eq(original.duration_ms, reassembled.duration_ms)
-    assert_eq(original.status, reassembled.status)
-  }
-}
-
-// 测试3: 网络传输过程中的数据完整性校验
-test "网络传输数据完整性校验" {
-  // 1. 创建包含校验和的遥测数据包
-  let telemetry_packet = {
-    header: {
-      version: "1.0",
-      packet_id: "packet_12345",
-      timestamp: 1640995200000L
-    },
-    payload: {
-      traces: [
-        {
-          trace_id: "trace_001",
-          spans: [
-            {
-              span_id: "span_001",
-              operation: "http.get",
-              start_time: 1640995200000L,
-              duration: 150L,
-              status: "ok"
+    // 检查所有副本的数据是否一致
+    let first_data = replicas[0].data
+    for replica in replicas {
+      if replica.data.size() != first_data.size() {
+        return false
+      }
+      
+      for (key, value) in first_data {
+        match replica.data.get(key) {
+          Some(v) => {
+            if v != value {
+              return false
             }
-          ]
+          }
+          None => return false
         }
-      ],
-      metrics: [
-        {
-          name: "cpu.usage",
-          value: 45.7,
-          timestamp: 1640995200000L,
-          tags: [("host", "server1")]
-        }
-      ]
-    },
-    checksum: ""
+      }
+    }
+    
+    true
   }
   
-  // 2. 计算校验和
-  let calculated_checksum = calculate_packet_checksum(telemetry_packet)
-  let telemetry_packet_with_checksum = { telemetry_packet | checksum: calculated_checksum }
+  // 创建初始数据
+  let initial_data = Map::new()
+  initial_data.insert("counter", 0)
+  initial_data.insert("status", 1)
   
-  // 3. 模拟网络传输（可能引入错误）
-  let transmitted_packet = simulate_network_transmission(telemetry_packet_with_checksum)
+  // 创建副本
+  let replica1 = create_replica("replica1", initial_data)
+  let replica2 = create_replica("replica2", initial_data)
+  let replica3 = create_replica("replica3", initial_data)
   
-  // 4. 验证传输后的数据完整性
-  let received_checksum = calculate_packet_checksum(transmitted_packet)
-  assert_eq(transmitted_packet.checksum, received_checksum)
+  let replicas = [replica1, replica2, replica3]
   
-  // 5. 验证关键数据字段
-  assert_eq(telemetry_packet_with_checksum.header.version, transmitted_packet.header.version)
-  assert_eq(telemetry_packet_with_checksum.header.packet_id, transmitted_packet.header.packet_id)
-  assert_eq(telemetry_packet_with_checksum.header.timestamp, transmitted_packet.header.timestamp)
+  // 验证初始一致性
+  assert_true(check_consistency(replicas))
   
-  // 验证payload数据
-  assert_eq(telemetry_packet_with_checksum.payload.traces.length(), transmitted_packet.payload.traces.length())
-  assert_eq(telemetry_packet_with_checksum.payload.metrics.length(), transmitted_packet.payload.metrics.length())
+  // 更新所有副本
+  let updated_replica1 = update_replica(replica1, "counter", 1)
+  let updated_replica2 = update_replica(replica2, "counter", 1)
+  let updated_replica3 = update_replica(replica3, "counter", 1)
   
-  // 验证trace数据
-  let original_trace = telemetry_packet_with_checksum.payload.traces[0]
-  let received_trace = transmitted_packet.payload.traces[0]
-  assert_eq(original_trace.trace_id, received_trace.trace_id)
-  assert_eq(original_trace.spans.length(), received_trace.spans.length())
+  let updated_replicas = [updated_replica1, updated_replica2, updated_replica3]
   
-  // 验证span数据
-  let original_span = original_trace.spans[0]
-  let received_span = received_trace.spans[0]
-  assert_eq(original_span.span_id, received_span.span_id)
-  assert_eq(original_span.operation, received_span.operation)
-  assert_eq(original_span.start_time, received_span.start_time)
-  assert_eq(original_span.duration, received_span.duration)
-  assert_eq(original_span.status, received_span.status)
+  // 验证更新后的一致性
+  assert_true(check_consistency(updated_replicas))
   
-  // 验证metric数据
-  let original_metric = telemetry_packet_with_checksum.payload.metrics[0]
-  let received_metric = transmitted_packet.payload.metrics[0]
-  assert_eq(original_metric.name, received_metric.name)
-  assert_eq(original_metric.value, received_metric.value)
-  assert_eq(original_metric.timestamp, received_metric.timestamp)
-  assert_eq(original_metric.tags.length(), received_metric.tags.length())
+  // 模拟不一致情况
+  let inconsistent_replica = update_replica(updated_replica1, "counter", 2)
+  let inconsistent_replicas = [inconsistent_replica, updated_replica2, updated_replica3]
+  
+  // 验证不一致检测
+  assert_false(check_consistency(inconsistent_replicas))
 }
 
-// 辅助函数：序列化遥测数据
-fn serialize_telemetry_data(data) -> String {
-  // 简化的序列化实现
-  let json_string = "{"
-    + "\"timestamp\":" + data.timestamp.to_string() + ","
-    + "\"trace_id\":\"" + data.trace_id + "\","
-    + "\"span_id\":\"" + data.span_id + "\","
-    + "\"parent_span_id\":\"" + data.parent_span_id.or_else("") + "\","
-    + "\"operation_name\":\"" + data.operation_name + "\","
-    + "\"duration_ms\":" + data.duration_ms.to_string() + ","
-    + "\"status\":\"" + data.status + "\","
-    + "\"attributes\":" + serialize_attributes(data.attributes) + ","
-    + "\"metrics\":" + serialize_metrics(data.metrics)
-    + "}"
-  json_string
-}
-
-// 辅助函数：反序列化遥测数据
-fn deserialize_telemetry_data(json_string) -> {
-  // 简化的反序列化实现
-  // 在实际实现中，这里会解析JSON字符串
-  // 这里返回一个模拟的反序列化结果
-  {
-    timestamp: 1640995200000L,
-    trace_id: "0af7651916cd43dd8448eb211c80319c",
-    span_id: "b7ad6b7169203331",
-    parent_span_id: Some("282b888e074d79b7"),
-    operation_name: "http.request",
-    duration_ms: 150L,
-    status: "success",
-    attributes: [
-      ("http.method", "GET"),
-      ("http.url", "https://api.example.com/users"),
-      ("http.status_code", "200"),
-      ("user.id", "12345"),
-      ("service.name", "user-service")
-    ],
-    metrics: [
-      ("cpu.usage", 45.7),
-      ("memory.usage", 1024.0),
-      ("request.count", 1.0)
-    ]
+// 测试6: 数据备份和恢复验证
+test "数据备份和恢复验证测试" {
+  // 模拟数据备份和恢复
+  type Backup = {
+    id: String,
+    data: String,
+    checksum: Int,
+    timestamp: Int
   }
-}
-
-// 辅助函数：序列化属性
-fn serialize_attributes(attributes) -> String {
-  let result = "["
-  for i = 0; i < attributes.length(); i = i + 1 {
-    let (key, value) = attributes[i]
-    result = result + "{\"key\":\"" + key + "\",\"value\":\"" + value + "\"}"
-    if i < attributes.length() - 1 {
-      result = result + ","
+  
+  fn create_backup(data: String) -> Backup {
+    let checksum = calculate_checksum(data)
+    let timestamp = 1609459200  // 固定时间戳用于测试
+    let id = "backup_" + timestamp.to_string()
+    { id: id, data: data, checksum: checksum, timestamp: timestamp }
+  }
+  
+  fn verify_backup(backup: Backup) -> Bool {
+    let expected_checksum = calculate_checksum(backup.data)
+    backup.checksum == expected_checksum
+  }
+  
+  fn restore_from_backup(backup: Backup) -> String {
+    if verify_backup(backup) {
+      backup.data
+    } else {
+      ""  // 空字符串表示恢复失败
     }
   }
-  result = result + "]"
-  result
-}
-
-// 辅助函数：序列化指标
-fn serialize_metrics(metrics) -> String {
-  let result = "["
-  for i = 0; i < metrics.length(); i = i + 1 {
-    let (key, value) = metrics[i]
-    result = result + "{\"key\":\"" + key + "\",\"value\":" + value.to_string() + "}"
-    if i < metrics.length() - 1 {
-      result = result + ","
+  
+  // 辅助函数
+  fn calculate_checksum(data: String) -> Int {
+    let sum = 0
+    for i in 0..<data.length() {
+      sum = sum + data.code_point_at(i)
     }
+    sum % 1000000
   }
-  result = result + "]"
-  result
+  
+  // 原始数据
+  let original_data = "Important telemetry data that needs to be backed up"
+  
+  // 创建备份
+  let backup = create_backup(original_data)
+  
+  // 验证备份
+  assert_true(verify_backup(backup))
+  assert_eq(backup.data, original_data)
+  
+  // 从备份恢复
+  let restored_data = restore_from_backup(backup)
+  assert_eq(restored_data, original_data)
+  
+  // 模拟备份损坏
+  let corrupted_backup = { ...backup, data: "Corrupted data" }
+  assert_false(verify_backup(corrupted_backup))
+  
+  // 尝试从损坏的备份恢复
+  let failed_restore = restore_from_backup(corrupted_backup)
+  assert_eq(failed_restore, "")  // 恢复失败
 }
 
-// 辅助函数：传输遥测数据块
-fn transmit_telemetry_chunk(chunk) -> Array {
-  // 模拟网络传输
-  // 在实际实现中，这里会通过网络发送数据
-  chunk
-}
-
-// 辅助函数：计算数据包校验和
-fn calculate_packet_checksum(packet) -> String {
-  // 简化的校验和计算
-  // 在实际实现中，这里会使用更复杂的算法如CRC32或SHA-256
-  "checksum_" + packet.header.packet_id + "_" + packet.header.timestamp.to_string()
-}
-
-// 辅助函数：模拟网络传输
-fn simulate_network_transmission(packet) -> {
-  // 模拟网络传输过程
-  // 在实际实现中，这里可能会模拟网络延迟、丢包等
-  packet
+// 测试7: 数据加密完整性验证
+test "数据加密完整性验证测试" {
+  // 简单的加密函数（XOR加密，仅用于测试）
+  fn simple_encrypt(data: String, key: String) -> String {
+    let result = "" : String
+    for i in 0..<data.length() {
+      let data_char = data.code_point_at(i)
+      let key_char = key.code_point_at(i % key.length())
+      let encrypted_char = data_char ^ key_char
+      result = result + String::from_char(encrypted_char)
+    }
+    result
+  }
+  
+  // 解密函数
+  fn simple_decrypt(encrypted_data: String, key: String) -> String {
+    // XOR加密的特性是加密和解密使用相同的操作
+    simple_encrypt(encrypted_data, key)
+  }
+  
+  // 测试数据
+  let sensitive_data = "Sensitive telemetry measurements"
+  let encryption_key = "secret_key_123"
+  
+  // 加密数据
+  let encrypted_data = simple_encrypt(sensitive_data, encryption_key)
+  assert_not_eq(encrypted_data, sensitive_data)
+  
+  // 解密数据
+  let decrypted_data = simple_decrypt(encrypted_data, encryption_key)
+  assert_eq(decrypted_data, sensitive_data)
+  
+  // 测试错误密钥解密
+  let wrong_key = "wrong_key_456"
+  let incorrectly_decrypted = simple_decrypt(encrypted_data, wrong_key)
+  assert_not_eq(incorrectly_decrypted, sensitive_data)
+  
+  // 测试空数据加密
+  let empty_data = ""
+  let encrypted_empty = simple_encrypt(empty_data, encryption_key)
+  assert_eq(encrypted_empty, "")
+  
+  let decrypted_empty = simple_decrypt(encrypted_empty, encryption_key)
+  assert_eq(decrypted_empty, "")
 }
