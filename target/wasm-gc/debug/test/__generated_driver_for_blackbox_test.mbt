@@ -1632,6 +1632,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_data_pipeline_processing_tests.mbt": {
   },
+  "azimuth_data_pipeline_integration_tests.mbt": {
+  },
   "azimuth_data_integrity_verification_tests.mbt": {
   },
   "azimuth_data_integrity_verification_comprehensive_tests.mbt": {
