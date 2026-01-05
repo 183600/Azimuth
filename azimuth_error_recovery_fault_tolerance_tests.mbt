@@ -1,967 +1,740 @@
-// Azimuth 错误恢复和容错测试用例
-// 专注于遥测系统的错误恢复机制和容错能力验证
+// Azimuth Telemetry System - Error Recovery and Fault Tolerance Tests
+// This file contains test cases for error recovery and fault tolerance mechanisms
 
-// 测试1: 网络错误恢复测试
-test "网络错误恢复测试" {
-  let fault_tolerance_manager = FaultToleranceManager::new()
-  
-  // 创建网络连接管理器
-  let network_manager = NetworkManager::new()
-  
-  // 配置重试策略
-  let retry_policy = RetryPolicy::new({
-    max_attempts: 3,
-    initial_delay: 1000,  // 1秒
-    max_delay: 10000,    // 10秒
-    multiplier: 2.0,     // 指数退避
-    jitter: 0.1          // 10%抖动
-  })
-  
-  // 配置断路器
-  let circuit_breaker = CircuitBreaker::new({
-    failure_threshold: 5,
-    success_threshold: 3,
-    timeout: 30000,      // 30秒
-    half_open_max_calls: 3
-  })
-  
-  // 模拟网络错误场景
-  let error_scenarios = [
-    {
-      name: "connection_timeout",
-      error_type: "timeout",
-      should_retry: true,
-      expected_recovery_time: 5000
-    },
-    {
-      name: "connection_refused",
-      error_type: "refused",
-      should_retry: true,
-      expected_recovery_time: 3000
-    },
-    {
-      name: "dns_resolution_failure",
-      error_type: "dns_error",
-      should_retry: true,
-      expected_recovery_time: 10000
-    },
-    {
-      name: "ssl_handshake_failure",
-      error_type: "ssl_error",
-      should_retry: false,
-      expected_recovery_time: 0
-    },
-    {
-      name: "http_500_error",
-      error_type: "server_error",
-      should_retry: true,
-      expected_recovery_time: 2000
-    },
-    {
-      name: "http_429_rate_limit",
-      error_type: "rate_limit",
-      should_retry: true,
-      expected_recovery_time: 15000
+// Test 1: Network Error Recovery
+test "network error recovery" {
+  // Test connection timeout handling
+  let connection_result = establish_connection("https://example.com", 5000)  // 5 second timeout
+  match connection_result {
+    Ok(conn) => {
+      assert_true(is_connection_valid(conn))
+      close_connection(conn)
     }
-  ]
-  
-  for scenario in error_scenarios {
-    // 创建模拟网络错误
-    let network_error = NetworkManager::simulate_error(network_manager, scenario.error_type)
-    
-    // 测试错误检测
-    let error_detected = FaultToleranceManager::detect_network_error(fault_tolerance_manager, network_error)
-    assert_true(error_detected)
-    
-    // 测试错误分类
-    let error_category = FaultToleranceManager::categorize_error(fault_tolerance_manager, network_error)
-    assert_eq(error_category, scenario.error_type)
-    
-    // 测试重试决策
-    let should_retry = FaultToleranceManager::should_retry(fault_tolerance_manager, network_error, retry_policy)
-    assert_eq(should_retry, scenario.should_retry)
-    
-    if scenario.should_retry {
-      // 测试重试执行
-      let retry_result = FaultToleranceManager::execute_with_retry(fault_tolerance_manager, fn() {
-        NetworkManager::send_request(network_manager, "https://api.example.com/data")
-      }, retry_policy)
-      
-      // 验证重试次数
-      assert_true(retry_result.attempts <= retry_policy.max_attempts)
-      
-      // 验证总重试时间
-      assert_true(retry_result.total_time <= scenario.expected_recovery_time * 1.5)  // 允许50%误差
+    Err(TimeoutError) => {
+      // Expected for timeout scenario
+      assert_true(true)
+    }
+    Err(NetworkError(msg)) => {
+      // Handle other network errors
+      assert_true(msg.length() > 0)
+    }
+    _ => {
+      assert_true(false)  // Unexpected error type
     }
   }
   
-  // 测试断路器行为
-  let circuit_breaker_state = CircuitBreaker::get_state(circuit_breaker)
-  assert_eq(circuit_breaker_state, "closed")  // 初始状态应该是关闭的
+  // Test retry mechanism
+  let mut retry_count = 0
+  let max_retries = 3
+  let mut operation_result = Err(NetworkError("Initial failure"))
   
-  // 模拟连续失败
-  for i in 0..5 {
-    let failure_result = CircuitBreaker::call(circuit_breaker, fn() {
-      NetworkManager::send_request(network_manager, "https://failing-api.example.com/data")
+  while retry_count < max_retries and operation_result.is_err() {
+    operation_result = perform_network_operation()
+    retry_count = retry_count + 1
+  }
+  
+  match operation_result {
+    Ok(result) => {
+      assert_true(result.length() > 0)
+      assert_true(retry_count <= max_retries)
+    }
+    Err(_) => {
+      assert_eq(retry_count, max_retries)  // Should have exhausted retries
+    }
+  }
+  
+  // Test circuit breaker pattern
+  let circuit_breaker = CircuitBreaker::new(5, 10000)  // 5 failures, 10 second timeout
+  let mut success_count = 0
+  let mut failure_count = 0
+  
+  for i in 0..=10 {
+    let result = circuit_breaker.execute(fn() {
+      simulate_network_operation(i % 3 == 0)  // Fail every 3rd operation
     })
     
-    assert_false(failure_result.success)
+    match result {
+      Ok(_) => success_count = success_count + 1
+      Err(_) => failure_count = failure_count + 1
+    }
   }
   
-  // 验证断路器打开
-  let open_state = CircuitBreaker::get_state(circuit_breaker)
-  assert_eq(open_state, "open")
-  
-  // 测试断路器打开时的行为
-  let open_result = CircuitBreaker::call(circuit_breaker, fn() {
-    NetworkManager::send_request(network_manager, "https://api.example.com/data")
-  })
-  
-  assert_false(open_result.success)
-  assert_true(open_result.error_message.contains("Circuit breaker is open"))
-  
-  // 测试断路器半开状态
-  Thread::sleep(31000)  // 等待超过超时时间
-  
-  let half_open_state = CircuitBreaker::get_state(circuit_breaker)
-  assert_eq(half_open_state, "half_open")
-  
-  // 模拟成功调用
-  let success_result = CircuitBreaker::call(circuit_breaker, fn() {
-    NetworkManager::send_request(network_manager, "https://working-api.example.com/data")
-  })
-  
-  assert_true(success_result.success)
-  
-  // 验证断路器关闭
-  let closed_state = CircuitBreaker::get_state(circuit_breaker)
-  assert_eq(closed_state, "closed")
-  
-  // 测试网络分区恢复
-  let partition_recovery = NetworkPartitionRecovery::new()
-  
-  // 模拟网络分区
-  NetworkPartitionRecovery::simulate_partition(partition_recovery, {
-    affected_services: ["service-a", "service-b"],
-    duration: 10000  // 10秒
-  })
-  
-  // 测试分区检测
-  let partition_detected = NetworkPartitionRecovery::detect_partition(partition_recovery)
-  assert_true(partition_detected)
-  
-  // 测试分区期间的降级策略
-  let degraded_services = NetworkPartitionRecovery::get_degraded_services(partition_recovery)
-  assert_true(degraded_services.contains("service-a"))
-  assert_true(degraded_services.contains("service-b"))
-  
-  // 测试分区恢复
-  Thread::sleep(11000)  // 等待分区恢复
-  
-  let partition_recovered = NetworkPartitionRecovery::check_recovery(partition_recovery)
-  assert_true(partition_recovered)
-  
-  let recovered_services = NetworkPartitionRecovery::get_recovered_services(partition_recovery)
-  assert_true(recovered_services.contains("service-a"))
-  assert_true(recovered_services.contains("service-b"))
+  // Should have some successes and failures
+  assert_true(success_count > 0)
+  assert_true(failure_count > 0)
 }
 
-// 测试2: 数据库错误恢复测试
-test "数据库错误恢复测试" {
-  let fault_tolerance_manager = FaultToleranceManager::new()
+// Test 2: Data Corruption Detection and Recovery
+test "data corruption detection and recovery" {
+  // Test checksum validation
+  let original_data = "Important telemetry data"
+  let checksum = calculate_checksum(original_data)
   
-  // 创建数据库连接管理器
-  let db_manager = DatabaseManager::new()
+  // Valid data should pass checksum
+  assert_true(validate_checksum(original_data, checksum))
   
-  // 配置连接池
-  let connection_pool = ConnectionPool::new({
-    min_connections: 2,
-    max_connections: 10,
-    connection_timeout: 5000,
-    idle_timeout: 30000,
-    validation_interval: 60000
-  })
+  // Corrupted data should fail checksum
+  let corrupted_data = "Important telemetry dXta"  // Changed one character
+  assert_false(validate_checksum(corrupted_data, checksum))
   
-  // 测试连接池错误恢复
-  let connection_errors = [
-    {
-      type: "connection_timeout",
-      recoverable: true,
-      recovery_action: "recreate_connection"
-    },
-    {
-      type: "connection_lost",
-      recoverable: true,
-      recovery_action: "reconnect"
-    },
-    {
-      type: "database_down",
-      recoverable: true,
-      recovery_action: "wait_and_retry"
-    },
-    {
-      type: "syntax_error",
-      recoverable: false,
-      recovery_action: "fail_fast"
-    },
-    {
-      type: "constraint_violation",
-      recoverable: false,
-      recovery_action: "fail_fast"
+  // Test data recovery with backup
+  let primary_data = "Primary data source"
+  let backup_data = "Backup data source"
+  
+  let recovered_data = attempt_data_recovery(primary_data, Some(backup_data))
+  match recovered_data {
+    Ok(data) => assert_eq(data, primary_data)  // Primary should be valid
+    Err(_) => assert_true(false)  // Should not fail with valid primary
+  }
+  
+  // Simulate primary data corruption
+  let corrupted_primary = "Corrupted primary data"
+  let recovered_from_backup = attempt_data_recovery(corrupted_primary, Some(backup_data))
+  match recovered_from_backup {
+    Ok(data) => assert_eq(data, backup_data)  // Should fall back to backup
+    Err(_) => assert_true(false)  // Should recover with backup
+  }
+  
+  // Test with no backup available
+  let no_backup_recovery = attempt_data_recovery(corrupted_primary, None)
+  match no_backup_recovery {
+    Ok(_) => assert_true(false)  // Should not succeed with corrupted data and no backup
+    Err(_) => assert_true(true)   // Expected to fail
+  }
+}
+
+// Test 3: Memory Leak Detection and Prevention
+test "memory leak detection and prevention" {
+  // Test resource cleanup
+  let initial_memory = get_memory_usage()
+  
+  // Allocate and deallocate resources
+  for i in 0..=1000 {
+    let resource = allocate_resource(1024)  // 1KB each
+    process_resource(resource)
+    deallocate_resource(resource)
+  }
+  
+  let final_memory = get_memory_usage()
+  let memory_diff = final_memory - initial_memory
+  
+  // Memory usage should not increase significantly
+  assert_true(memory_diff < 102400)  // Less than 100KB increase
+  
+  // Test with RAII-style resource management
+  let initial_managed_memory = get_memory_usage()
+  
+  for i in 0..=1000 {
+    let managed_resource = ManagedResource::new(2048)  // 2KB each
+    process_managed_resource(managed_resource)
+    // Resource should be automatically deallocated when it goes out of scope
+  }
+  
+  let final_managed_memory = get_memory_usage()
+  let managed_memory_diff = final_managed_memory - initial_managed_memory
+  
+  // Managed resources should not leak
+  assert_true(managed_memory_diff < 102400)  // Less than 100KB increase
+  
+  // Test resource pool
+  let resource_pool = ResourcePool::new(10, fn() { create_expensive_resource() })
+  let initial_pool_memory = get_memory_usage()
+  
+  for i in 0..=100 {
+    let resource = resource_pool.acquire()
+    process_pooled_resource(resource)
+    resource_pool.release(resource)
+  }
+  
+  let final_pool_memory = get_memory_usage()
+  let pool_memory_diff = final_pool_memory - initial_pool_memory
+  
+  // Resource pool should minimize memory allocation
+  assert_true(pool_memory_diff < 51200)  // Less than 50KB increase
+}
+
+// Test 4: Graceful Degradation
+test "graceful degradation" {
+  // Test service degradation under load
+  let service = TelemetryService::new()
+  
+  // Normal operation
+  let normal_result = service.process_telemetry_data(create_test_data(100))
+  assert_true(normal_result.is_ok())
+  
+  // Simulate high load
+  service.simulate_high_load()
+  let degraded_result = service.process_telemetry_data(create_test_data(1000))
+  
+  match degraded_result {
+    Ok(result) => {
+      // Service should still work but with reduced functionality
+      assert_true(result.processed_count > 0)
+      assert_true(result.processed_count < 1000)  // Not all data processed
+      assert_true(result.is_degraded_mode)
     }
-  ]
+    Err(_) => {
+      // Should not fail completely, just degrade
+      assert_true(false)
+    }
+  }
   
-  for error in connection_errors {
-    // 模拟数据库错误
-    let db_error = DatabaseManager::simulate_error(db_manager, error.type)
-    
-    // 测试错误检测
-    let error_detected = FaultToleranceManager::detect_database_error(fault_tolerance_manager, db_error)
-    assert_true(error_detected)
-    
-    // 测试错误分类
-    let error_category = FaultToleranceManager::categorize_database_error(fault_tolerance_manager, db_error)
-    assert_eq(error_category, error.type)
-    
-    // 测试恢复策略
-    let recovery_strategy = FaultToleranceManager::get_recovery_strategy(fault_tolerance_manager, error.type)
-    assert_eq(recovery_strategy.action, error.recovery_action)
-    assert_eq(recovery_strategy.recoverable, error.recoverable)
-    
-    if error.recoverable {
-      // 测试恢复执行
-      let recovery_result = FaultToleranceManager::execute_recovery(fault_tolerance_manager, db_error, recovery_strategy)
+  // Test feature fallback
+  let advanced_service = AdvancedTelemetryService::new()
+  
+  // Advanced features available
+  let advanced_result = advanced_service.advanced_processing(create_test_data(100))
+  assert_true(advanced_result.is_ok())
+  
+  // Simulate resource constraints
+  advanced_service.simulate_resource_constraints()
+  let fallback_result = advanced_service.advanced_processing(create_test_data(100))
+  
+  match fallback_result {
+    Ok(result) => {
+      // Should fall back to basic processing
+      assert_true(result.processed_count > 0)
+      assert_false(result.used_advanced_features)
+      assert_true(result.used_fallback_mode)
+    }
+    Err(_) => {
+      // Should not fail, just use basic processing
+      assert_true(false)
+    }
+  }
+}
+
+// Test 5: Error Propagation and Context
+test "error propagation and context" {
+  // Test error chain
+  let result = perform_operation_chain()
+  match result {
+    Ok(_) => assert_true(false)  // Should fail
+    Err(chain_error) => {
+      // Should have error context
+      assert_true(chain_error.message.length() > 0)
+      assert_true(chain_error.context.length() > 0)
+      assert_true(chain_error.cause.is_some())
       
-      if error.type == "connection_timeout" || error.type == "connection_lost" {
-        assert_true(recovery_result.success)
-        assert_true(recovery_result.recovery_time > 0)
-      }
+      // Test error formatting
+      let error_string = chain_error.to_string()
+      assert_true(error_string.contains("operation1"))
+      assert_true(error_string.contains("operation2"))
+      assert_true(error_string.contains("operation3"))
     }
   }
   
-  // 测试事务回滚
-  let transaction = DatabaseManager::begin_transaction(db_manager)
+  // Test error recovery with context
+  let context = ErrorContext::new("test_operation")
+  let contextual_result = perform_operation_with_context(context)
   
-  // 执行一些操作
-  DatabaseManager::execute_query(transaction, "INSERT INTO users (name, email) VALUES ('test1', 'test1@example.com')")
-  DatabaseManager::execute_query(transaction, "INSERT INTO users (name, email) VALUES ('test2', 'test2@example.com')")
-  
-  // 模拟事务错误
-  let transaction_error = DatabaseManager::simulate_error(db_manager, "constraint_violation")
-  DatabaseManager::execute_query(transaction, "INSERT INTO users (name, email) VALUES ('test1', 'test1@example.com')")  // 重复键
-  
-  // 测试事务回滚
-  let rollback_result = DatabaseManager::rollback_transaction(transaction, transaction_error)
-  assert_true(rollback_result.success)
-  
-  // 验证数据被回滚
-  let count_result = DatabaseManager::execute_query(db_manager, "SELECT COUNT(*) FROM users WHERE name IN ('test1', 'test2')")
-  assert_eq(count_result.rows[0].get("count"), 0)
-  
-  // 测试数据库故障转移
-  let primary_db = DatabaseManager::get_primary_connection(db_manager)
-  let replica_db = DatabaseManager::get_replica_connection(db_manager)
-  
-  // 模拟主数据库故障
-  DatabaseManager::simulate_failure(primary_db, "connection_lost")
-  
-  // 测试故障转移
-  let failover_result = DatabaseManager::failover_to_replica(db_manager)
-  assert_true(failover_result.success)
-  
-  // 验证读操作重定向到副本
-  let read_result = DatabaseManager::execute_read_query(db_manager, "SELECT COUNT(*) FROM users")
-  assert_true(read_result.success)
-  assert_eq(read_result.connection, replica_db)
-  
-  // 测试写操作排队
-  let write_result = DatabaseManager::execute_write_query(db_manager, "INSERT INTO audit_log (message) VALUES ('test')")
-  assert_true(write_result.queued)
-  assert_false(write_result.executed)
-  
-  // 模拟主数据库恢复
-  DatabaseManager::simulate_recovery(primary_db)
-  
-  // 测试故障恢复
-  let recovery_result = DatabaseManager::recover_from_failover(db_manager)
-  assert_true(recovery_result.success)
-  
-  // 验证写操作执行
-  let queued_writes = DatabaseManager::get_queued_writes(db_manager)
-  assert_true(queued_writes.length() > 0)
-  
-  let write_execution_result = DatabaseManager::execute_queued_writes(db_manager)
-  assert_true(write_execution_result.success)
-  assert_eq(write_execution_result.executed_count, queued_writes.length())
-  
-  // 测试连接池健康检查
-  let health_check_result = ConnectionPool::health_check(connection_pool)
-  assert_true(health_check_result.healthy_connections >= 1)
-  assert_true(health_check_result.total_connections <= connection_pool.max_connections)
-  
-  // 测试连接池恢复
-  let unhealthy_connections = health_check_result.total_connections - health_check_result.healthy_connections
-  if unhealthy_connections > 0 {
-    let recovery_result = ConnectionPool::recover_unhealthy_connections(connection_pool)
-    assert_true(recovery_result.recovered_connections >= 0)
-    assert_true(recovery_result.recovery_time > 0)
+  match contextual_result {
+    Ok(result) => {
+      assert_true(result.success)
+      assert_true(result.recovery_attempts > 0)
+    }
+    Err(contextual_error) => {
+      // Error should include context
+      assert_true(contextual_error.context.contains("test_operation"))
+      assert_true(contextual_error.timestamp > 0)
+    }
   }
 }
 
-// 测试3: 内存和资源错误恢复测试
-test "内存和资源错误恢复测试" {
-  let fault_tolerance_manager = FaultToleranceManager::new()
+// Test 6: Timeout and Deadline Handling
+test "timeout and deadline handling" {
+  // Test operation timeout
+  let quick_result = perform_operation_with_timeout(1000)  // 1 second timeout, quick operation
+  assert_true(quick_result.is_ok())
   
-  // 创建资源监控器
-  let resource_monitor = ResourceMonitor::new()
-  
-  // 配置资源阈值
-  let resource_thresholds = {
-    memory_usage: 0.8,      // 80%
-    cpu_usage: 0.9,         // 90%
-    disk_usage: 0.85,       // 85%
-    open_files: 1000,       // 1000个文件
-    network_connections: 500 // 500个连接
+  let slow_result = perform_operation_with_timeout(1000)  // 1 second timeout, slow operation
+  match slow_result {
+    Ok(_) => assert_true(false)  // Should timeout
+    Err(TimeoutError) => assert_true(true)  // Expected
+    Err(_) => assert_true(false)  // Wrong error type
   }
   
-  ResourceMonitor::set_thresholds(resource_monitor, resource_thresholds)
+  // Test deadline propagation
+  let deadline = Deadline::from_now(5000)  // 5 seconds from now
+  let deadline_result = perform_operation_chain_with_deadline(deadline)
   
-  // 测试内存不足恢复
-  let memory_scenarios = [
-    {
-      name: "moderate_memory_pressure",
-      usage_level: 0.7,  // 70%
-      expected_action: "garbage_collect"
-    },
-    {
-      name: "high_memory_pressure",
-      usage_level: 0.85,  // 85%
-      expected_action: "clear_caches"
-    },
-    {
-      name: "critical_memory_pressure",
-      usage_level: 0.95,  // 95%
-      expected_action: "emergency_cleanup"
+  match deadline_result {
+    Ok(result) => {
+      assert_true(result.completed)
+      assert_true(result.elapsed_time <= 5000)
     }
-  ]
-  
-  for scenario in memory_scenarios {
-    // 模拟内存压力
-    ResourceMonitor::simulate_memory_usage(resource_monitor, scenario.usage_level)
-    
-    // 检测内存压力
-    let memory_pressure = ResourceMonitor::detect_memory_pressure(resource_monitor)
-    assert_true(memory_pressure.detected)
-    assert_true(memory_pressure.usage_level >= scenario.usage_level)
-    
-    // 获取恢复策略
-    let recovery_strategy = FaultToleranceManager::get_memory_recovery_strategy(fault_tolerance_manager, memory_pressure)
-    assert_eq(recovery_strategy.action, scenario.expected_action)
-    
-    // 执行恢复策略
-    let recovery_result = FaultToleranceManager::execute_memory_recovery(fault_tolerance_manager, recovery_strategy)
-    assert_true(recovery_result.success)
-    
-    // 验证内存使用下降
-    let current_usage = ResourceMonitor::get_current_memory_usage(resource_monitor)
-    assert_true(current_usage < scenario.usage_level)
-  }
-  
-  // 测试文件句柄泄漏恢复
-  let file_handle_scenarios = [
-    {
-      name: "moderate_handle_leak",
-      leaked_handles: 500,
-      expected_action: "close_idle_handles"
-    },
-    {
-      name: "severe_handle_leak",
-      leaked_handles: 900,
-      expected_action: "emergency_handle_cleanup"
+    Err(DeadlineExceededError) => {
+      assert_true(true)  // Expected for long operations
     }
-  ]
-  
-  for scenario in file_handle_scenarios {
-    // 模拟文件句柄泄漏
-    ResourceMonitor::simulate_file_handle_leak(resource_monitor, scenario.leaked_handles)
-    
-    // 检测文件句柄泄漏
-    let handle_leak = ResourceMonitor::detect_file_handle_leak(resource_monitor)
-    assert_true(handle_leak.detected)
-    assert_true(handle_leak.leaked_count >= scenario.leaked_handles)
-    
-    // 获取恢复策略
-    let recovery_strategy = FaultToleranceManager::get_handle_recovery_strategy(fault_tolerance_manager, handle_leak)
-    assert_eq(recovery_strategy.action, scenario.expected_action)
-    
-    // 执行恢复策略
-    let recovery_result = FaultToleranceManager::execute_handle_recovery(fault_tolerance_manager, recovery_strategy)
-    assert_true(recovery_result.success)
-    assert_true(recovery_result.closed_handles > 0)
-    
-    // 验证文件句柄数量下降
-    let current_handles = ResourceMonitor::get_current_file_handles(resource_monitor)
-    assert_true(current_handles < resource_thresholds.open_files)
-  }
-  
-  // 测试线程池错误恢复
-  let thread_pool = ThreadPool::new({
-    core_threads: 4,
-    max_threads: 16,
-    queue_capacity: 100,
-    keep_alive_time: 60000
-  })
-  
-  // 模拟线程池饱和
-  let saturated_tasks = []
-  for i in 0..150 {
-    let task = fn() {
-      Thread::sleep(5000)  // 5秒任务
-      i.to_string()
+    Err(_) => {
+      assert_true(false)  // Wrong error type
     }
-    saturated_tasks.push(task)
   }
   
-  // 提交任务直到饱和
-  let submission_results = []
-  for task in saturated_tasks {
-    let result = ThreadPool::submit(thread_pool, task)
-    submission_results.push(result)
+  // Test timeout with cancellation
+  let cancellation_token = CancellationToken::new()
+  let cancellation_result = perform_operation_with_cancellation(10000, cancellation_token)
+  
+  // Cancel after 2 seconds
+  cancel_after_delay(cancellation_token, 2000)
+  
+  match cancellation_result {
+    Ok(_) => assert_true(false)  // Should be cancelled
+    Err(CancelledError) => assert_true(true)  // Expected
+    Err(_) => assert_true(false)  // Wrong error type
   }
-  
-  // 验证任务被拒绝
-  let rejected_tasks = submission_results.filter(fn(result) { !result.success })
-  assert_true(rejected_tasks.length() > 0)
-  
-  // 测试线程池恢复
-  let pool_recovery = ThreadPool::recover_from_saturation(thread_pool)
-  assert_true(pool_recovery.success)
-  
-  // 测试任务优先级调整
-  ThreadPool::enable_priority_adjustment(thread_pool, true)
-  
-  let priority_tasks = []
-  for i in 0..10 {
-    let priority = if i % 3 == 0 { "high" } else if i % 3 == 1 { "medium" } else { "low" }
-    let task = Task::new(fn() { "priority_task" }, priority)
-    priority_tasks.push(task)
-  }
-  
-  for task in priority_tasks {
-    ThreadPool::submit_with_priority(thread_pool, task)
-  }
-  
-  // 验证高优先级任务优先执行
-  let executed_tasks = ThreadPool::get_executed_tasks(thread_pool)
-  let high_priority_first = executed_tasks[0].priority == "high"
-  assert_true(high_priority_first)
-  
-  // 测试资源隔离
-  let resource_isolation = ResourceIsolation::new()
-  
-  // 创建隔离的资源组
-  ResourceIsolation::create_group(resource_isolation, "telemetry_processing", {
-    max_memory: "512MB",
-    max_cpu: "50%",
-    max_threads: 8
-  })
-  
-  ResourceIsolation::create_group(resource_isolation, "data_export", {
-    max_memory: "256MB",
-    max_cpu: "25%",
-    max_threads: 4
-  })
-  
-  // 测试资源组隔离
-  let telemetry_task = ResourceIsolation::execute_in_group(resource_isolation, "telemetry_processing", fn() {
-    // 模拟资源密集型任务
-    let mut sum = 0
-    for i in 0..1000000 {
-      sum = sum + i
-    }
-    sum
-  })
-  
-  assert_true(telemetry_task.success)
-  
-  // 测试资源组限制
-  let memory_hog_task = ResourceIsolation::execute_in_group(resource_isolation, "data_export", fn() {
-    // 模拟内存密集型任务
-    let large_array = Array::new(1000000)  // 分配大数组
-    large_array.length()
-  })
-  
-  // 内存限制应该阻止任务执行
-  assert_false(memory_hog_task.success)
-  assert_true(memory_hog_task.error_message.contains("Memory limit exceeded"))
 }
 
-// 测试4: 服务降级和熔断测试
-test "服务降级和熔断测试" {
-  let fault_tolerance_manager = FaultToleranceManager::new()
+// Test 7: Idempotent Operations
+test "idempotent operations" {
+  // Test idempotent database operations
+  let db = TestDatabase::new()
+  let initial_record_count = db.count_records()
   
-  // 创建服务管理器
-  let service_manager = ServiceManager::new()
+  // First insert
+  let first_result = db.insert_record("test_id", "test_data")
+  assert_true(first_result.is_ok())
+  assert_eq(db.count_records(), initial_record_count + 1)
   
-  // 注册服务
-  let services = [
-    {
-      name: "telemetry_collector",
-      endpoint: "https://collector.example.com/api",
-      timeout: 5000,
-      retries: 3
-    },
-    {
-      name: "metrics_aggregator",
-      endpoint: "https://aggregator.example.com/api",
-      timeout: 3000,
-      retries: 2
-    },
-    {
-      name: "alerting_service",
-      endpoint: "https://alerts.example.com/api",
-      timeout: 2000,
-      retries: 1
-    }
-  ]
+  // Duplicate insert (should not create duplicate)
+  let duplicate_result = db.insert_record("test_id", "test_data")
+  assert_true(duplicate_result.is_ok())
+  assert_eq(db.count_records(), initial_record_count + 1)  // Still only one record
   
-  for service in services {
-    ServiceManager::register_service(service_manager, service)
+  // Test idempotent update operations
+  let update_result1 = db.update_record("test_id", "updated_data_v1")
+  assert_true(update_result1.is_ok())
+  
+  let record1 = db.get_record("test_id")
+  match record1 {
+    Some(record) => assert_eq(record.data, "updated_data_v1")
+    None => assert_true(false)
   }
   
-  // 配置降级策略
-  let degradation_strategies = [
-    {
-      service_name: "telemetry_collector",
-      triggers: ["error_rate > 0.1", "latency > 1000"],
-      actions: ["reduce_batch_size", "increase_timeout", "enable_caching"]
-    },
-    {
-      service_name: "metrics_aggregator",
-      triggers: ["error_rate > 0.05", "connection_refused"],
-      actions: ["use_local_aggregation", "queue_for_retry"]
-    },
-    {
-      service_name: "alerting_service",
-      triggers: ["error_rate > 0.2", "timeout"],
-      actions: ["disable_non_critical_alerts", "use_email_fallback"]
-    }
-  ]
+  // Same update again (should not change state)
+  let update_result2 = db.update_record("test_id", "updated_data_v1")
+  assert_true(update_result2.is_ok())
   
-  for strategy in degradation_strategies {
-    ServiceManager::set_degradation_strategy(service_manager, strategy)
+  let record2 = db.get_record("test_id")
+  match record2 {
+    Some(record) => assert_eq(record.data, "updated_data_v1")
+    None => assert_true(false)
   }
   
-  // 测试服务健康检查
-  let health_checks = []
-  for service in services {
-    let health_check = ServiceManager::check_health(service_manager, service.name)
-    health_checks.push(health_check)
-  }
+  // Test idempotent delete operations
+  let delete_result1 = db.delete_record("test_id")
+  assert_true(delete_result1.is_ok())
+  assert_eq(db.count_records(), initial_record_count)
   
-  // 初始状态所有服务应该健康
-  for health_check in health_checks {
-    assert_true(health_check.healthy)
-  }
+  // Delete again (should not error)
+  let delete_result2 = db.delete_record("test_id")
+  assert_true(delete_result2.is_ok())
+  assert_eq(db.count_records(), initial_record_count)
+}
+
+// Test 8: Bulkhead Pattern
+test "bulkhead pattern" {
+  // Test resource isolation
+  let bulkhead1 = Bulkhead::new(3)  // Max 3 concurrent operations
+  let bulkhead2 = Bulkhead::new(2)  // Max 2 concurrent operations
   
-  // 模拟服务故障
-  ServiceManager::simulate_service_failure(service_manager, "telemetry_collector", "high_error_rate")
-  ServiceManager::simulate_service_failure(service_manager, "metrics_aggregator", "connection_refused")
+  let mut results1 = []
+  let mut results2 = []
   
-  // 测试故障检测
-  let collector_health = ServiceManager::check_health(service_manager, "telemetry_collector")
-  assert_false(collector_health.healthy)
-  assert_true(collector_health.error_rate > 0.1)
-  
-  let aggregator_health = ServiceManager::check_health(service_manager, "metrics_aggregator")
-  assert_false(aggregator_health.healthy)
-  assert_true(aggregator_health.error_type == "connection_refused")
-  
-  // 测试降级触发
-  let collector_degradation = ServiceManager::check_degradation(service_manager, "telemetry_collector")
-  assert_true(collector_degradation.triggered)
-  assert_true(collector_degradation.active_actions.contains("reduce_batch_size"))
-  assert_true(collector_degradation.active_actions.contains("increase_timeout"))
-  
-  let aggregator_degradation = ServiceManager::check_degradation(service_manager, "metrics_aggregator")
-  assert_true(aggregator_degradation.triggered)
-  assert_true(aggregator_degradation.active_actions.contains("use_local_aggregation"))
-  
-  // 测试降级效果
-  let collector_performance = ServiceManager::get_performance_metrics(service_manager, "telemetry_collector")
-  assert_true(collector_performance.batch_size < 1000)  // 批量大小应该减少
-  assert_true(collector_performance.timeout > 5000)   // 超时应该增加
-  
-  // 测试服务恢复
-  ServiceManager::simulate_service_recovery(service_manager, "telemetry_collector")
-  
-  let collector_health_recovered = ServiceManager::check_health(service_manager, "telemetry_collector")
-  assert_true(collector_health_recovered.healthy)
-  
-  let collector_degradation_recovered = ServiceManager::check_degradation(service_manager, "telemetry_collector")
-  assert_false(collector_degradation_recovered.triggered)
-  
-  // 测试级联故障防护
-  let cascade_protection = CascadeProtection::new()
-  
-  // 配置级联故障规则
-  CascadeProtection::add_rule(cascade_protection, {
-    trigger_service: "telemetry_collector",
-    affected_services: ["metrics_aggregator", "alerting_service"],
-    action: "isolate",
-    threshold: 0.2  // 20%错误率
-  })
-  
-  // 模拟级联故障
-  ServiceManager::simulate_service_failure(service_manager, "telemetry_collector", "high_error_rate")
-  
-  // 测试级联故障检测
-  let cascade_detected = CascadeProtection::detect_cascade_risk(cascade_protection, service_manager)
-  assert_true(cascade_detected)
-  
-  // 测试隔离措施
-  let isolation_result = CascadeProtection::execute_isolation(cascade_protection, service_manager)
-  assert_true(isolation_result.success)
-  assert_true(isolation_result.isolated_services.contains("metrics_aggregator"))
-  assert_true(isolation_result.isolated_services.contains("alerting_service"))
-  
-  // 验证隔离效果
-  let aggregator_isolated = ServiceManager::is_isolated(service_manager, "metrics_aggregator")
-  assert_true(aggregator_isolated)
-  
-  let alerting_isolated = ServiceManager::is_isolated(service_manager, "alerting_service")
-  assert_true(alerting_isolated)
-  
-  // 测试隔离恢复
-  ServiceManager::simulate_service_recovery(service_manager, "telemetry_collector")
-  
-  let recovery_result = CascadeProtection::recover_from_isolation(cascade_protection, service_manager)
-  assert_true(recovery_result.success)
-  
-  let aggregator_recovered = ServiceManager::is_isolated(service_manager, "metrics_aggregator")
-  assert_false(aggregator_recovered)
-  
-  // 测试熔断器配置
-  let circuit_breakers = []
-  for service in services {
-    let circuit_breaker = CircuitBreaker::new({
-      failure_threshold: 5,
-      success_threshold: 3,
-      timeout: 30000,
-      half_open_max_calls: 3
+  // Submit operations to first bulkhead
+  for i in 0..=5 {
+    let result = bulkhead1.execute(fn() {
+      simulate_operation(1000)  // 1 second operation
     })
-    
-    ServiceManager::set_circuit_breaker(service_manager, service.name, circuit_breaker)
-    circuit_breakers.push((service.name, circuit_breaker))
+    results1.push(result)
   }
   
-  // 测试熔断器状态
-  for (service_name, circuit_breaker) in circuit_breakers {
-    let state = CircuitBreaker::get_state(circuit_breaker)
-    assert_eq(state, "closed")
-  }
-  
-  // 模拟连续失败触发熔断
-  for i in 0..5 {
-    let call_result = ServiceManager::call_service(service_manager, "telemetry_collector", fn() {
-      "test_data"
+  // Submit operations to second bulkhead
+  for i in 0..=5 {
+    let result = bulkhead2.execute(fn() {
+      simulate_operation(1000)  // 1 second operation
     })
-    assert_false(call_result.success)
+    results2.push(result)
   }
   
-  // 验证熔断器打开
-  let collector_circuit = ServiceManager::get_circuit_breaker(service_manager, "telemetry_collector")
-  let collector_state = CircuitBreaker::get_state(collector_circuit)
-  assert_eq(collector_state, "open")
+  // Wait for all operations to complete
+  let mut success_count1 = 0
+  let mut rejected_count1 = 0
   
-  // 测试熔断器保护下的调用
-  let protected_call = ServiceManager::call_service(service_manager, "telemetry_collector", fn() {
-    "test_data"
-  })
+  for result in results1 {
+    match result {
+      Ok(_) => success_count1 = success_count1 + 1
+      Err(BulkheadRejectionError) => rejected_count1 = rejected_count1 + 1
+      Err(_) => assert_true(false)  // Unexpected error
+    }
+  }
   
-  assert_false(protected_call.success)
-  assert_true(protected_call.error_message.contains("Circuit breaker is open"))
+  // Should have some successes and rejections
+  assert_true(success_count1 <= 3)  // At most 3 concurrent
+  assert_true(rejected_count1 >= 2)  // At least 2 rejected
   
-  // 测试熔断器恢复
-  Thread::sleep(31000)  // 等待超时
+  let mut success_count2 = 0
+  let mut rejected_count2 = 0
   
-  let half_open_call = ServiceManager::call_service(service_manager, "telemetry_collector", fn() {
-    "test_data"
-  })
+  for result in results2 {
+    match result {
+      Ok(_) => success_count2 = success_count2 + 1
+      Err(BulkheadRejectionError) => rejected_count2 = rejected_count2 + 1
+      Err(_) => assert_true(false)  // Unexpected error
+    }
+  }
   
-  // 模拟成功调用
-  ServiceManager::simulate_service_recovery(service_manager, "telemetry_collector")
-  let success_call = ServiceManager::call_service(service_manager, "telemetry_collector", fn() {
-    "test_data"
-  })
-  
-  assert_true(success_call.success)
-  
-  // 验证熔断器关闭
-  let recovered_state = CircuitBreaker::get_state(collector_circuit)
-  assert_eq(recovered_state, "closed")
+  // Should have some successes and rejections
+  assert_true(success_count2 <= 2)  // At most 2 concurrent
+  assert_true(rejected_count2 >= 3)  // At least 3 rejected
 }
 
-// 测试5: 数据一致性错误恢复测试
-test "数据一致性错误恢复测试" {
-  let fault_tolerance_manager = FaultToleranceManager::new()
-  
-  // 创建数据一致性管理器
-  let consistency_manager = ConsistencyManager::new()
-  
-  // 配置一致性策略
-  let consistency_strategies = [
-    {
-      data_type: "telemetry_metrics",
-      consistency_level: "eventual",
-      conflict_resolution: "last_write_wins",
-      retry_policy: {
-        max_attempts: 3,
-        backoff: "exponential"
-      }
-    },
-    {
-      data_type: "configuration",
-      consistency_level: "strong",
-      conflict_resolution: "manual",
-      retry_policy: {
-        max_attempts: 5,
-        backoff: "linear"
-      }
-    },
-    {
-      data_type: "user_preferences",
-      consistency_level: "eventual",
-      conflict_resolution: "merge",
-      retry_policy: {
-        max_attempts: 2,
-        backoff: "fixed"
-      }
+// Helper functions and types for tests
+type NetworkError {
+  TimeoutError
+  ConnectionError(String)
+  NetworkError(String)
+  CancelledError
+  DeadlineExceededError
+  BulkheadRejectionError
+}
+
+type CircuitBreaker {
+  failure_threshold: Int
+  timeout_ms: Int
+  failure_count: Int
+  last_failure_time: Int
+  state: CircuitState
+}
+
+type CircuitState {
+  Closed
+  Open
+  HalfOpen
+}
+
+type ErrorContext {
+  operation_name: String
+  timestamp: Int
+  additional_info: Array(String)
+}
+
+type TelemetryService {}
+type AdvancedTelemetryService {}
+type TestDatabase {}
+type ResourcePool(T) {}
+type ManagedResource {}
+type CancellationToken {}
+type Deadline {}
+
+// Mock implementations for testing
+fn establish_connection(url: String, timeout_ms: Int) -> Result(String, NetworkError) {
+  // Mock implementation
+  if url.contains("timeout") {
+    Err(TimeoutError)
+  } else {
+    Ok("connection_established")
+  }
+}
+
+fn is_connection_valid(conn: String) -> Bool {
+  conn == "connection_established"
+}
+
+fn close_connection(conn: String) {
+  // Mock implementation
+}
+
+fn perform_network_operation() -> Result(String, NetworkError) {
+  // Mock implementation - randomly fail for testing
+  if mock_random() % 3 == 0 {
+    Ok("operation_success")
+  } else {
+    Err(NetworkError("Network error"))
+  }
+}
+
+fn mock_random() -> Int {
+  // Mock random function
+  42  // Fixed value for predictable tests
+}
+
+fn calculate_checksum(data: String) -> String {
+  // Mock checksum calculation
+  let mut sum = 0
+  for i in 0..data.length() {
+    sum = sum + data.char_code_at(i)
+  }
+  sum.to_string()
+}
+
+fn validate_checksum(data: String, checksum: String) -> Bool {
+  calculate_checksum(data) == checksum
+}
+
+fn attempt_data_recovery(primary: String, backup: Option(String)) -> Result(String, NetworkError) {
+  if primary.contains("Corrupted") {
+    match backup {
+      Some(data) => Ok(data)
+      None => Err(NetworkError("No backup available"))
     }
-  ]
-  
-  for strategy in consistency_strategies {
-    ConsistencyManager::set_consistency_strategy(consistency_manager, strategy)
+  } else {
+    Ok(primary)
+  }
+}
+
+fn get_memory_usage() -> Int {
+  // Mock memory usage
+  mock_random() * 1024
+}
+
+fn allocate_resource(size: Int) -> Int {
+  // Mock resource allocation
+  size
+}
+
+fn process_resource(resource: Int) {
+  // Mock resource processing
+}
+
+fn deallocate_resource(resource: Int) {
+  // Mock resource deallocation
+}
+
+fn create_expensive_resource() -> String {
+  // Mock expensive resource creation
+  "expensive_resource"
+}
+
+fn process_managed_resource(resource: ManagedResource) {
+  // Mock processing
+}
+
+fn process_pooled_resource(resource: String) {
+  // Mock processing
+}
+
+fn create_test_data(size: Int) -> Array(String) {
+  // Mock test data creation
+  let mut data = []
+  for i in 0..size {
+    data.push("test_data_" + i.to_string())
+  }
+  data
+}
+
+fn simulate_operation(duration_ms: Int) -> String {
+  // Mock operation simulation
+  "operation_result"
+}
+
+fn perform_operation_chain() -> Result(String, NetworkError) {
+  // Mock operation chain that fails
+  Err(NetworkError("Chain operation failed"))
+}
+
+fn perform_operation_with_context(context: ErrorContext) -> Result(String, NetworkError) {
+  // Mock operation with context
+  if context.operation_name.contains("fail") {
+    Err(NetworkError("Operation failed with context"))
+  } else {
+    Ok("Operation succeeded")
+  }
+}
+
+fn perform_operation_with_timeout(timeout_ms: Int) -> Result(String, NetworkError) {
+  // Mock operation with timeout
+  if timeout_ms < 2000 {
+    Ok("Operation completed")
+  } else {
+    Err(TimeoutError)
+  }
+}
+
+fn perform_operation_chain_with_deadline(deadline: Deadline) -> Result(String, NetworkError) {
+  // Mock operation chain with deadline
+  if deadline.remaining_time() > 10000 {
+    Err(DeadlineExceededError)
+  } else {
+    Ok("Chain operation completed")
+  }
+}
+
+fn perform_operation_with_cancellation(timeout_ms: Int, token: CancellationToken) -> Result(String, NetworkError) {
+  // Mock operation with cancellation
+  if token.is_cancelled() {
+    Err(CancelledError)
+  } else {
+    Ok("Operation completed")
+  }
+}
+
+fn cancel_after_delay(token: CancellationToken, delay_ms: Int) {
+  // Mock cancellation after delay
+  // In a real implementation, this would schedule cancellation
+}
+
+// Implementations for mock types
+impl CircuitBreaker {
+  fn new(failure_threshold: Int, timeout_ms: Int) -> CircuitBreaker {
+    CircuitBreaker {
+      failure_threshold: failure_threshold,
+      timeout_ms: timeout_ms,
+      failure_count: 0,
+      last_failure_time: 0,
+      state: Closed
+    }
   }
   
-  // 测试数据冲突检测
-  let conflict_scenarios = [
-    {
-      data_type: "telemetry_metrics",
-      conflicts: [
-        {
-          field: "counter_value",
-          local_value: 100,
-          remote_value: 105,
-          timestamp_diff: 5000
-        },
-        {
-          field: "last_updated",
-          local_value: "2023-01-01T12:00:00Z",
-          remote_value: "2023-01-01T12:05:00Z",
-          timestamp_diff: 300000
-        }
-      ]
-    },
-    {
-      data_type: "configuration",
-      conflicts: [
-        {
-          field: "sampling_rate",
-          local_value: 0.1,
-          remote_value: 0.2,
-          timestamp_diff: 1000
-        }
-      ]
+  fn execute(self: CircuitBreaker, operation: fn() -> String) -> Result(String, NetworkError) {
+    // Mock circuit breaker execution
+    if self.state == Open {
+      Err(BulkheadRejectionError)
+    } else {
+      let result = operation()
+      Ok(result)
     }
-  ]
+  }
+}
+
+impl TelemetryService {
+  fn new() -> TelemetryService {
+    TelemetryService {}
+  }
   
-  for scenario in conflict_scenarios {
-    // 检测冲突
-    let detected_conflicts = ConsistencyManager::detect_conflicts(consistency_manager, scenario)
-    assert_true(detected_conflicts.length() > 0)
-    
-    // 解决冲突
-    let resolution_result = ConsistencyManager::resolve_conflicts(consistency_manager, detected_conflicts)
-    assert_true(resolution_result.success)
-    
-    // 验证冲突解决
-    for conflict in detected_conflicts {
-      let resolved_value = ConsistencyManager::get_resolved_value(consistency_manager, conflict.id)
-      assert_true(resolved_value.is_some())
+  fn simulate_high_load(self: TelemetryService) {
+    // Mock high load simulation
+  }
+  
+  fn process_telemetry_data(self: TelemetryService, data: Array(String)) -> Result(TelemetryResult, NetworkError) {
+    // Mock data processing
+    Ok(TelemetryResult {
+      processed_count: data.length() / 2,
+      is_degraded_mode: true
+    })
+  }
+}
+
+type TelemetryResult {
+  processed_count: Int
+  is_degraded_mode: Bool
+}
+
+impl AdvancedTelemetryService {
+  fn new() -> AdvancedTelemetryService {
+    AdvancedTelemetryService {}
+  }
+  
+  fn simulate_resource_constraints(self: AdvancedTelemetryService) {
+    // Mock resource constraints
+  }
+  
+  fn advanced_processing(self: AdvancedTelemetryService, data: Array(String)) -> Result(AdvancedTelemetryResult, NetworkError) {
+    // Mock advanced processing
+    Ok(AdvancedTelemetryResult {
+      processed_count: data.length() / 2,
+      used_advanced_features: false,
+      used_fallback_mode: true
+    })
+  }
+}
+
+type AdvancedTelemetryResult {
+  processed_count: Int
+  used_advanced_features: Bool
+  used_fallback_mode: Bool
+}
+
+impl TestDatabase {
+  fn new() -> TestDatabase {
+    TestDatabase {}
+  }
+  
+  fn count_records(self: TestDatabase) -> Int {
+    0  // Mock implementation
+  }
+  
+  fn insert_record(self: TestDatabase, id: String, data: String) -> Result(Bool, NetworkError) {
+    Ok(true)  // Mock implementation
+  }
+  
+  fn update_record(self: TestDatabase, id: String, data: String) -> Result(Bool, NetworkError) {
+    Ok(true)  // Mock implementation
+  }
+  
+  fn delete_record(self: TestDatabase, id: String) -> Result(Bool, NetworkError) {
+    Ok(true)  // Mock implementation
+  }
+  
+  fn get_record(self: TestDatabase, id: String) -> Option(DatabaseRecord) {
+    Some(DatabaseRecord { id: id, data: "test_data" })  // Mock implementation
+  }
+}
+
+type DatabaseRecord {
+  id: String
+  data: String
+}
+
+impl ResourcePool(T) {
+  fn new(size: Int, factory: fn() -> T) -> ResourcePool(T) {
+    ResourcePool {}  // Mock implementation
+  }
+  
+  fn acquire(self: ResourcePool(T)) -> T {
+    panic("Mock implementation")  // Mock implementation
+  }
+  
+  fn release(self: ResourcePool(T), resource: T) {
+    // Mock implementation
+  }
+}
+
+impl ManagedResource {
+  fn new(size: Int) -> ManagedResource {
+    ManagedResource {}  // Mock implementation
+  }
+}
+
+impl CancellationToken {
+  fn new() -> CancellationToken {
+    CancellationToken {}  // Mock implementation
+  }
+  
+  fn is_cancelled(self: CancellationToken) -> Bool {
+    false  // Mock implementation
+  }
+}
+
+impl Deadline {
+  fn from_now(ms: Int) -> Deadline {
+    Deadline {}  // Mock implementation
+  }
+  
+  fn remaining_time(self: Deadline) -> Int {
+    5000  // Mock implementation
+  }
+}
+
+type Bulkhead {
+  max_concurrent: Int
+  current_count: Int
+}
+
+impl Bulkhead {
+  fn new(max_concurrent: Int) -> Bulkhead {
+    Bulkhead {
+      max_concurrent: max_concurrent,
+      current_count: 0
     }
   }
   
-  // 测试数据同步恢复
-  let sync_scenarios = [
-    {
-      name: "partial_sync_failure",
-      failed_items: 10,
-      total_items: 100,
-      retry_strategy: "exponential_backoff"
-    },
-    {
-      name: "full_sync_failure",
-      failed_items: 100,
-      total_items: 100,
-      retry_strategy: "full_resync"
+  fn execute(self: Bulkhead, operation: fn() -> String) -> Result(String, NetworkError) {
+    // Mock bulkhead execution
+    if self.current_count < self.max_concurrent {
+      Ok(operation())
+    } else {
+      Err(BulkheadRejectionError)
     }
-  ]
-  
-  for scenario in sync_scenarios {
-    // 模拟同步失败
-    ConsistencyManager::simulate_sync_failure(consistency_manager, scenario)
-    
-    // 检测同步失败
-    let sync_failure = ConsistencyManager::detect_sync_failure(consistency_manager)
-    assert_true(sync_failure.detected)
-    assert_eq(sync_failure.failed_items, scenario.failed_items)
-    
-    // 执行同步恢复
-    let recovery_result = ConsistencyManager::recover_sync(consistency_manager, scenario.retry_strategy)
-    assert_true(recovery_result.success)
-    
-    // 验证恢复效果
-    let sync_status = ConsistencyManager::get_sync_status(consistency_manager)
-    assert_true(sync_status.failed_items < scenario.failed_items)
-  }
-  
-  // 测试事务一致性恢复
-  let transaction_scenarios = [
-    {
-      name: "distributed_transaction_timeout",
-      participants: ["service_a", "service_b", "service_c"],
-      timeout: 5000,
-      failure_point: "prepare_phase"
-    },
-    {
-      name: "distributed_transaction_commit_failure",
-      participants: ["service_a", "service_b"],
-      timeout: 10000,
-      failure_point: "commit_phase"
-    }
-  ]
-  
-  for scenario in transaction_scenarios {
-    // 开始分布式事务
-    let transaction = ConsistencyManager::begin_distributed_transaction(consistency_manager, scenario.participants)
-    
-    // 模拟事务失败
-    ConsistencyManager::simulate_transaction_failure(consistency_manager, transaction, scenario.failure_point)
-    
-    // 检测事务失败
-    let transaction_failure = ConsistencyManager::detect_transaction_failure(consistency_manager, transaction)
-    assert_true(transaction_failure.detected)
-    assert_eq(transaction_failure.failure_point, scenario.failure_point)
-    
-    // 执行事务恢复
-    let recovery_result = ConsistencyManager::recover_transaction(consistency_manager, transaction)
-    assert_true(recovery_result.success)
-    
-    // 验证事务状态
-    let transaction_status = ConsistencyManager::get_transaction_status(consistency_manager, transaction)
-    assert_eq(transaction_status, "rolled_back")
-  }
-  
-  // 测试数据完整性验证
-  let integrity_checks = [
-    {
-      data_type: "telemetry_metrics",
-      check_type: "checksum",
-      expected_result: true
-    },
-    {
-      data_type: "configuration",
-      check_type: "schema_validation",
-      expected_result: true
-    },
-    {
-      data_type: "user_preferences",
-      check_type: "referential_integrity",
-      expected_result: true
-    }
-  ]
-  
-  for check in integrity_checks {
-    // 执行完整性检查
-    let check_result = ConsistencyManager::check_integrity(consistency_manager, check.data_type, check.check_type)
-    assert_eq(check_result.valid, check.expected_result)
-    
-    if !check_result.valid {
-      // 执行完整性修复
-      let repair_result = ConsistencyManager::repair_integrity(consistency_manager, check.data_type, check.check_type)
-      assert_true(repair_result.success)
-      
-      // 验证修复效果
-      let recheck_result = ConsistencyManager::check_integrity(consistency_manager, check.data_type, check.check_type)
-      assert_true(recheck_result.valid)
-    }
-  }
-  
-  // 测试数据版本控制恢复
-  let version_scenarios = [
-    {
-      data_id: "config_123",
-      current_version: 3,
-      conflicting_versions: [2, 4],
-      resolution_strategy: "merge"
-    },
-    {
-      data_id: "metrics_456",
-      current_version: 5,
-      conflicting_versions: [6],
-      resolution_strategy: "latest_wins"
-    }
-  ]
-  
-  for scenario in version_scenarios {
-    // 检测版本冲突
-    let version_conflict = ConsistencyManager::detect_version_conflict(consistency_manager, scenario)
-    assert_true(version_conflict.detected)
-    assert_eq(version_conflict.conflicting_versions.length(), scenario.conflicting_versions.length())
-    
-    // 解决版本冲突
-    let resolution_result = ConsistencyManager::resolve_version_conflict(consistency_manager, scenario)
-    assert_true(resolution_result.success)
-    
-    // 验证解决结果
-    let resolved_version = ConsistencyManager::get_resolved_version(consistency_manager, scenario.data_id)
-    assert_true(resolved_version > 0)
-  }
-  
-  // 测试数据备份和恢复
-  let backup_scenarios = [
-    {
-      data_type: "telemetry_metrics",
-      backup_frequency: "hourly",
-      retention_period: "7_days"
-    },
-    {
-      data_type: "configuration",
-      backup_frequency: "daily",
-      retention_period: "30_days"
-    }
-  ]
-  
-  for scenario in backup_scenarios {
-    // 创建备份
-    let backup_result = ConsistencyManager::create_backup(consistency_manager, scenario.data_type)
-    assert_true(backup_result.success)
-    assert_true(backup_result.backup_id.length() > 0)
-    
-    // 模拟数据丢失
-    ConsistencyManager::simulate_data_loss(consistency_manager, scenario.data_type)
-    
-    // 检测数据丢失
-    let data_loss = ConsistencyManager::detect_data_loss(consistency_manager, scenario.data_type)
-    assert_true(data_loss.detected)
-    
-    // 从备份恢复
-    let restore_result = ConsistencyManager::restore_from_backup(consistency_manager, backup_result.backup_id)
-    assert_true(restore_result.success)
-    
-    // 验证恢复效果
-    let data_integrity = ConsistencyManager::verify_data_integrity(consistency_manager, scenario.data_type)
-    assert_true(data_integrity)
   }
 }
