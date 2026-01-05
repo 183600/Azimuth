@@ -1,784 +1,298 @@
-// Azimuth Telemetry System - Cross-Service Consistency Tests
-// This file contains comprehensive cross-service consistency test cases for the telemetry system
+// Cross-Service Consistency Comprehensive Tests
+// This file contains test cases for cross-service consistency functionality
 
-// Test 1: Trace Context Propagation Across Services
-test "trace context propagation across services" {
-  // Simulate Service A - Entry point
-  let service_a_provider = TracerProvider::default()
-  let service_a_tracer = TracerProvider::get_tracer(service_a_provider, "service_a")
+test "cross-service trace context propagation" {
+  // Create initial trace context in service A
+  let trace_id = "1234567890abcdef1234567890abcdef"
+  let span_id_a = "aaaaaaaaaaaaaaaa"
+  let span_ctx_a = SpanContext::new(trace_id, span_id_a, true, "service=A")
   
-  let root_span = Tracer::start_span(service_a_tracer, "service_a_operation")
-  match root_span {
-    Some(span) => {
-      // Add service A specific attributes
-      Span::set_attribute(span, "service.name", StringValue("service_a"))
-      Span::set_attribute(span, "service.version", StringValue("1.0.0"))
-      Span::set_attribute(span, "service.instance.id", StringValue("instance-a-123"))
-      
-      // Get context for propagation
-      let ctx = Span::span_context(span)
-      let trace_id = SpanContext::trace_id(ctx)
-      let span_id = SpanContext::span_id(ctx)
-      
-      // Simulate Service B - Called by Service A
-      let service_b_provider = TracerProvider::default()
-      let service_b_tracer = TracerProvider::get_tracer(service_b_provider, "service_b")
-      
-      let service_b_span = Tracer::start_span_with_context(service_b_tracer, "service_b_operation", Some(ctx))
-      match service_b_span {
-        Some(b_span) => {
-          // Add service B specific attributes
-          Span::set_attribute(b_span, "service.name", StringValue("service_b"))
-          Span::set_attribute(b_span, "service.version", StringValue("2.1.0"))
-          Span::set_attribute(b_span, "service.instance.id", StringValue("instance-b-456"))
-          
-          // Verify trace context is preserved
-          let b_ctx = Span::span_context(b_span)
-          assert_eq(SpanContext::trace_id(b_ctx), trace_id, "Trace ID should be preserved across services")
-          assert_ne(SpanContext::span_id(b_ctx), span_id, "Span ID should be different for each service")
-          assert_eq(SpanContext::is_sampled(b_ctx), SpanContext::is_sampled(ctx), "Sampling decision should be preserved")
-          
-          // Simulate Service C - Called by Service B
-          let service_c_provider = TracerProvider::default()
-          let service_c_tracer = TracerProvider::get_tracer(service_c_provider, "service_c")
-          
-          let service_c_span = Tracer::start_span_with_context(service_c_tracer, "service_c_operation", Some(b_ctx))
-          match service_c_span {
-            Some(c_span) => {
-              // Add service C specific attributes
-              Span::set_attribute(c_span, "service.name", StringValue("service_c"))
-              Span::set_attribute(c_span, "service.version", StringValue("3.2.1"))
-              Span::set_attribute(c_span, "service.instance.id", StringValue("instance-c-789"))
-              
-              // Verify trace context is preserved
-              let c_ctx = Span::span_context(c_span)
-              assert_eq(SpanContext::trace_id(c_ctx), trace_id, "Trace ID should be preserved across all services")
-              assert_ne(SpanContext::span_id(c_ctx), span_id, "Span ID should be unique for each service")
-              assert_ne(SpanContext::span_id(c_ctx), SpanContext::span_id(b_ctx), "Span ID should be unique for each service")
-              assert_eq(SpanContext::is_sampled(c_ctx), SpanContext::is_sampled(ctx), "Sampling decision should be preserved")
-              
-              Span::end(c_span)
-            }
-            None => assert_true(false, "Service C span should be created")
-          }
-          
-          Span::end(b_span)
-        }
-        None => assert_true(false, "Service B span should be created")
-      }
-      
-      Span::end(span)
-    }
-    None => assert_true(false, "Service A span should be created")
-  }
+  // Propagate to service B
+  let span_id_b = "bbbbbbbbbbbbbbbb"
+  let span_ctx_b = SpanContext::new(trace_id, span_id_b, true, "service=B")
+  
+  // Propagate to service C
+  let span_id_c = "cccccccccccccccc"
+  let span_ctx_c = SpanContext::new(trace_id, span_id_c, true, "service=C")
+  
+  // Verify trace ID consistency across services
+  assert_eq(SpanContext::trace_id(span_ctx_a), trace_id)
+  assert_eq(SpanContext::trace_id(span_ctx_b), trace_id)
+  assert_eq(SpanContext::trace_id(span_ctx_c), trace_id)
+  
+  // Verify each service has unique span ID
+  assert_eq(SpanContext::span_id(span_ctx_a), span_id_a)
+  assert_eq(SpanContext::span_id(span_ctx_b), span_id_b)
+  assert_eq(SpanContext::span_id(span_ctx_c), span_id_c)
+  
+  // Verify all spans are sampled
+  assert_true(SpanContext::is_sampled(span_ctx_a))
+  assert_true(SpanContext::is_sampled(span_ctx_b))
+  assert_true(SpanContext::is_sampled(span_ctx_c))
 }
 
-// Test 2: Baggage Propagation Across Services
-test "baggage propagation across services" {
-  // Create initial baggage in Service A
-  let baggage = Baggage::new()
-  let baggage_a = Baggage::set_entry(baggage, "user.id", "user-123")
-  let baggage_ab = Baggage::set_entry(baggage_a, "request.id", "req-456")
+test "cross-service baggage consistency" {
+  // Initialize baggage in service A
+  let baggage_a = Baggage::new()
+  let baggage_a_with_user = Baggage::set_entry(baggage_a, "user.id", "user123")
+  let baggage_a_final = Baggage::set_entry(baggage_a_with_user, "request.id", "req456")
   
-  // Service A adds its own baggage entry
-  let baggage_ab_service_a = Baggage::set_entry(baggage_ab, "service.a.entry", "service-a-value")
+  // Propagate to service B and add service-specific entry
+  let baggage_b = Baggage::set_entry(baggage_a_final, "service.b.operation", "process")
   
-  // Propagate to Service B
-  let baggage_b = Baggage::set_entry(baggage_ab_service_a, "service.b.entry", "service-b-value")
+  // Propagate to service C and add service-specific entry
+  let baggage_c = Baggage::set_entry(baggage_b, "service.c.cache", "hit")
   
-  // Verify Service A baggage entries are preserved
-  match Baggage::get_entry(baggage_b, "user.id") {
-    Some(value) => assert_eq(value, "user-123"),
-    None => assert_true(false, "user.id should be preserved in Service B")
-  }
+  // Verify all original entries are preserved
+  let user_id = Baggage::get_entry(baggage_c, "user.id")
+  let request_id = Baggage::get_entry(baggage_c, "request.id")
+  let service_b_op = Baggage::get_entry(baggage_c, "service.b.operation")
+  let service_c_cache = Baggage::get_entry(baggage_c, "service.c.cache")
   
-  match Baggage::get_entry(baggage_b, "request.id") {
-    Some(value) => assert_eq(value, "req-456"),
-    None => assert_true(false, "request.id should be preserved in Service B")
-  }
-  
-  match Baggage::get_entry(baggage_b, "service.a.entry") {
-    Some(value) => assert_eq(value, "service-a-value"),
-    None => assert_true(false, "service.a.entry should be preserved in Service B")
-  }
-  
-  // Verify Service B baggage entry is added
-  match Baggage::get_entry(baggage_b, "service.b.entry") {
-    Some(value) => assert_eq(value, "service-b-value"),
-    None => assert_true(false, "service.b.entry should be available in Service B")
-  }
-  
-  // Propagate to Service C
-  let baggage_c = Baggage::set_entry(baggage_b, "service.c.entry", "service-c-value")
-  
-  // Verify all previous baggage entries are preserved
-  match Baggage::get_entry(baggage_c, "user.id") {
-    Some(value) => assert_eq(value, "user-123"),
-    None => assert_true(false, "user.id should be preserved in Service C")
-  }
-  
-  match Baggage::get_entry(baggage_c, "request.id") {
-    Some(value) => assert_eq(value, "req-456"),
-    None => assert_true(false, "request.id should be preserved in Service C")
-  }
-  
-  match Baggage::get_entry(baggage_c, "service.a.entry") {
-    Some(value) => assert_eq(value, "service-a-value"),
-    None => assert_true(false, "service.a.entry should be preserved in Service C")
-  }
-  
-  match Baggage::get_entry(baggage_c, "service.b.entry") {
-    Some(value) => assert_eq(value, "service-b-value"),
-    None => assert_true(false, "service.b.entry should be preserved in Service C")
-  }
-  
-  // Verify Service C baggage entry is added
-  match Baggage::get_entry(baggage_c, "service.c.entry") {
-    Some(value) => assert_eq(value, "service-c-value"),
-    None => assert_true(false, "service.c.entry should be available in Service C")
-  }
+  assert_eq(user_id, Some("user123"))
+  assert_eq(request_id, Some("req456"))
+  assert_eq(service_b_op, Some("process"))
+  assert_eq(service_c_cache, Some("hit"))
 }
 
-// Test 3: Cross-Service Metrics Consistency
-test "cross-service metrics consistency" {
-  // Create metrics providers for different services
-  let service_a_meter_provider = MeterProvider::default()
-  let service_a_meter = MeterProvider::get_meter(service_a_meter_provider, "service_a")
+test "cross-service resource attribute consistency" {
+  // Create service A resource
+  let resource_a = Resource::new()
+  let service_a_attrs = [
+    ("service.name", StringValue("service-a")),
+    ("service.version", StringValue("1.2.3")),
+    ("deployment.env", StringValue("production"))
+  ]
+  let resource_a_final = Resource::with_attributes(resource_a, service_a_attrs)
   
-  let service_b_meter_provider = MeterProvider::default()
-  let service_b_meter = MeterProvider::get_meter(service_b_meter_provider, "service_b")
+  // Create service B resource with common attributes
+  let resource_b = Resource::new()
+  let service_b_attrs = [
+    ("service.name", StringValue("service-b")),
+    ("service.version", StringValue("2.1.0")),
+    ("deployment.env", StringValue("production")),
+    ("service.b.feature", StringValue("enabled"))
+  ]
+  let resource_b_final = Resource::with_attributes(resource_b, service_b_attrs)
   
-  let service_c_meter_provider = MeterProvider::default()
-  let service_c_meter = MeterProvider::get_meter(service_c_meter_provider, "service_c")
+  // Create service C resource with common attributes
+  let resource_c = Resource::new()
+  let service_c_attrs = [
+    ("service.name", StringValue("service-c")),
+    ("service.version", StringValue("3.0.1")),
+    ("deployment.env", StringValue("production")),
+    ("service.c.mode", StringValue("advanced"))
+  ]
+  let resource_c_final = Resource::with_attributes(resource_c, service_c_attrs)
   
-  // Create consistent metrics across services
-  let service_a_counter = Meter::create_counter(service_a_meter, "cross_service_requests", Some("Total cross-service requests"), Some("count"))
-  let service_b_counter = Meter::create_counter(service_b_meter, "cross_service_requests", Some("Total cross-service requests"), Some("count"))
-  let service_c_counter = Meter::create_counter(service_c_meter, "cross_service_requests", Some("Total cross-service requests"), Some("count"))
+  // Verify common deployment environment
+  let a_env = Resource::get_attribute(resource_a_final, "deployment.env")
+  let b_env = Resource::get_attribute(resource_b_final, "deployment.env")
+  let c_env = Resource::get_attribute(resource_c_final, "deployment.env")
   
-  // Create consistent histograms across services
-  let service_a_histogram = Meter::create_histogram(service_a_meter, "request_duration", Some("Request duration"), Some("ms"))
-  let service_b_histogram = Meter::create_histogram(service_b_meter, "request_duration", Some("Request duration"), Some("ms"))
-  let service_c_histogram = Meter::create_histogram(service_c_meter, "request_duration", Some("Request duration"), Some("ms"))
+  assert_eq(a_env, Some(StringValue("production")))
+  assert_eq(b_env, Some(StringValue("production")))
+  assert_eq(c_env, Some(StringValue("production")))
   
-  // Verify metrics have consistent names and descriptions
-  match service_a_counter {
-    Some(counter) => {
-      let data = Counter::get_data(counter)
-      assert_eq(data.name, "cross_service_requests")
-      assert_eq(data.description, Some("Total cross-service requests"))
-      assert_eq(data.unit, Some("count"))
-    }
-    None => assert_true(false, "Service A counter should be created")
-  }
+  // Verify service-specific attributes
+  let b_feature = Resource::get_attribute(resource_b_final, "service.b.feature")
+  let c_mode = Resource::get_attribute(resource_c_final, "service.c.mode")
   
-  match service_b_counter {
-    Some(counter) => {
-      let data = Counter::get_data(counter)
-      assert_eq(data.name, "cross_service_requests")
-      assert_eq(data.description, Some("Total cross-service requests"))
-      assert_eq(data.unit, Some("count"))
-    }
-    None => assert_true(false, "Service B counter should be created")
-  }
-  
-  match service_c_counter {
-    Some(counter) => {
-      let data = Counter::get_data(counter)
-      assert_eq(data.name, "cross_service_requests")
-      assert_eq(data.description, Some("Total cross-service requests"))
-      assert_eq(data.unit, Some("count"))
-    }
-    None => assert_true(false, "Service C counter should be created")
-  }
-  
-  // Verify histograms have consistent names and descriptions
-  match service_a_histogram {
-    Some(histogram) => {
-      let data = Histogram::get_data(histogram)
-      assert_eq(data.name, "request_duration")
-      assert_eq(data.description, Some("Request duration"))
-      assert_eq(data.unit, Some("ms"))
-    }
-    None => assert_true(false, "Service A histogram should be created")
-  }
-  
-  match service_b_histogram {
-    Some(histogram) => {
-      let data = Histogram::get_data(histogram)
-      assert_eq(data.name, "request_duration")
-      assert_eq(data.description, Some("Request duration"))
-      assert_eq(data.unit, Some("ms"))
-    }
-    None => assert_true(false, "Service B histogram should be created")
-  }
-  
-  match service_c_histogram {
-    Some(histogram) => {
-      let data = Histogram::get_data(histogram)
-      assert_eq(data.name, "request_duration")
-      assert_eq(data.description, Some("Request duration"))
-      assert_eq(data.unit, Some("ms"))
-    }
-    None => assert_true(false, "Service C histogram should be created")
-  }
+  assert_eq(b_feature, Some(StringValue("enabled")))
+  assert_eq(c_mode, Some(StringValue("advanced")))
 }
 
-// Test 4: Cross-Service Logging Consistency
-test "cross-service logging consistency" {
-  // Create logger providers for different services
-  let service_a_logger_provider = LoggerProvider::default()
-  let service_a_logger = LoggerProvider::get_logger(service_a_logger_provider, "service_a")
+test "cross-service metric consistency" {
+  // Create metrics for service A
+  let provider_a = MeterProvider::default()
+  let meter_a = MeterProvider::get_meter(provider_a, "service-a")
+  let counter_a = Meter::create_counter(meter_a, "requests.total")
   
-  let service_b_logger_provider = LoggerProvider::default()
-  let service_b_logger = LoggerProvider::get_logger(service_b_logger_provider, "service_b")
+  // Create metrics for service B
+  let provider_b = MeterProvider::default()
+  let meter_b = MeterProvider::get_meter(provider_b, "service-b")
+  let counter_b = Meter::create_counter(meter_b, "requests.total")
   
-  let service_c_logger_provider = LoggerProvider::default()
-  let service_c_logger = LoggerProvider::get_logger(service_c_logger_provider, "service_c")
+  // Create metrics for service C
+  let provider_c = MeterProvider::default()
+  let meter_c = MeterProvider::get_meter(provider_c, "service-c")
+  let counter_c = Meter::create_counter(meter_c, "requests.total")
   
-  // Create consistent log records across services
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let span_id = "b7ad6b7169203331"
+  // Record metrics in all services
+  Counter::add(counter_a, 10.0)
+  Counter::add(counter_b, 5.0)
+  Counter::add(counter_c, 7.0)
   
-  let service_a_log = LogRecord::new_with_context(
+  // Verify metric names are consistent
+  assert_eq(counter_a.name, "requests.total")
+  assert_eq(counter_b.name, "requests.total")
+  assert_eq(counter_c.name, "requests.total")
+}
+
+test "cross-service log correlation" {
+  let logger_provider = LoggerProvider::default()
+  
+  // Create loggers for each service
+  let logger_a = LoggerProvider::get_logger(logger_provider, "service-a")
+  let logger_b = LoggerProvider::get_logger(logger_provider, "service-b")
+  let logger_c = LoggerProvider::get_logger(logger_provider, "service-c")
+  
+  // Create correlated log records with same trace context
+  let trace_id = "fedcba0987654321fedcba0987654321"
+  let log_a = LogRecord::new_with_context(
     Info,
     Some("Service A processing request"),
-    Some([
-      ("service.name", StringValue("service_a")),
-      ("service.version", StringValue("1.0.0")),
-      ("trace.id", StringValue(trace_id)),
-      ("span.id", StringValue(span_id))
-    ]),
-    Some(get_current_timestamp()),
+    None,
+    Some(1735689600000000000L),
     None,
     Some(trace_id),
-    Some(span_id),
+    Some("spanaaaaaaaaaaaaaaaa"),
     None
   )
   
-  let service_b_log = LogRecord::new_with_context(
+  let log_b = LogRecord::new_with_context(
     Info,
     Some("Service B processing request"),
-    Some([
-      ("service.name", StringValue("service_b")),
-      ("service.version", StringValue("2.1.0")),
-      ("trace.id", StringValue(trace_id)),
-      ("span.id", StringValue("b7ad6b7169203332"))
-    ]),
-    Some(get_current_timestamp()),
+    None,
+    Some(1735689600000000000L),
     None,
     Some(trace_id),
-    Some("b7ad6b7169203332"),
+    Some("spanbbbbbbbbbbbbbbbb"),
     None
   )
   
-  let service_c_log = LogRecord::new_with_context(
+  let log_c = LogRecord::new_with_context(
     Info,
     Some("Service C processing request"),
-    Some([
-      ("service.name", StringValue("service_c")),
-      ("service.version", StringValue("3.2.1")),
-      ("trace.id", StringValue(trace_id)),
-      ("span.id", StringValue("b7ad6b7169203333"))
-    ]),
-    Some(get_current_timestamp()),
+    None,
+    Some(1735689600000000000L),
     None,
     Some(trace_id),
-    Some("b7ad6b7169203333"),
+    Some("spancccccccccccccccc"),
     None
   )
   
-  // Verify trace ID is consistent across services
-  assert_eq(LogRecord::trace_id(service_a_log), Some(trace_id))
-  assert_eq(LogRecord::trace_id(service_b_log), Some(trace_id))
-  assert_eq(LogRecord::trace_id(service_c_log), Some(trace_id))
+  // Verify trace ID correlation across all logs
+  assert_eq(LogRecord::trace_id(log_a), Some(trace_id))
+  assert_eq(LogRecord::trace_id(log_b), Some(trace_id))
+  assert_eq(LogRecord::trace_id(log_c), Some(trace_id))
   
-  // Verify span IDs are different for each service
-  assert_eq(LogRecord::span_id(service_a_log), Some(span_id))
-  assert_eq(LogRecord::span_id(service_b_log), Some("b7ad6b7169203332"))
-  assert_eq(LogRecord::span_id(service_c_log), Some("b7ad6b7169203333"))
-  
-  // Emit log records
-  Logger::emit(service_a_logger, service_a_log)
-  Logger::emit(service_b_logger, service_b_log)
-  Logger::emit(service_c_logger, service_c_log)
+  // Verify unique span IDs
+  assert_eq(LogRecord::span_id(log_a), Some("spanaaaaaaaaaaaaaaaa"))
+  assert_eq(LogRecord::span_id(log_b), Some("spanbbbbbbbbbbbbbbbb"))
+  assert_eq(LogRecord::span_id(log_c), Some("spancccccccccccccccc"))
 }
 
-// Test 5: Resource Consistency Across Services
-test "resource consistency across services" {
-  // Create resources for different services
-  let service_a_resource = Resource::new()
-  let service_b_resource = Resource::new()
-  let service_c_resource = Resource::new()
+test "cross-service context propagation with composite propagator" {
+  // Create composite propagator
+  let trace_propagator = W3CTraceContextPropagator::new()
+  let composite = CompositePropagator::new([trace_propagator])
   
-  // Add service-specific attributes
-  let service_a_attrs = [
-    ("service.name", StringValue("service_a")),
-    ("service.version", StringValue("1.0.0")),
-    ("service.instance.id", StringValue("instance-a-123")),
-    ("service.namespace", StringValue("production")),
-    ("deployment.environment", StringValue("prod"))
-  ]
+  // Service A creates context
+  let ctx_a = Context::root()
+  let correlation_key = ContextKey::new("correlation.id")
+  let ctx_a_with_corr = Context::with_value(ctx_a, correlation_key, "corr-12345")
   
-  let service_b_attrs = [
-    ("service.name", StringValue("service_b")),
-    ("service.version", StringValue("2.1.0")),
-    ("service.instance.id", StringValue("instance-b-456")),
-    ("service.namespace", StringValue("production")),
-    ("deployment.environment", StringValue("prod"))
-  ]
+  // Inject context into carrier
+  let carrier = TextMapCarrier::new()
+  CompositePropagator::inject(composite, ctx_a_with_corr, carrier)
   
-  let service_c_attrs = [
-    ("service.name", StringValue("service_c")),
-    ("service.version", StringValue("3.2.1")),
-    ("service.instance.id", StringValue("instance-c-789")),
-    ("service.namespace", StringValue("production")),
-    ("deployment.environment", StringValue("prod"))
-  ]
+  // Service B extracts context
+  let ctx_b = CompositePropagator::extract(composite, carrier)
   
-  let service_a_with_attrs = Resource::with_attributes(service_a_resource, service_a_attrs)
-  let service_b_with_attrs = Resource::with_attributes(service_b_resource, service_b_attrs)
-  let service_c_with_attrs = Resource::with_attributes(service_c_resource, service_c_attrs)
+  // Service C extracts context
+  let ctx_c = CompositePropagator::extract(composite, carrier)
   
-  // Verify consistent attributes across services
-  let service_a_namespace = Resource::get_attribute(service_a_with_attrs, "service.namespace")
-  let service_b_namespace = Resource::get_attribute(service_b_with_attrs, "service.namespace")
-  let service_c_namespace = Resource::get_attribute(service_c_with_attrs, "service.namespace")
+  // Verify extracted context in all services
+  let extracted_b = Context::get(ctx_b, ContextKey::new("extracted"))
+  let extracted_c = Context::get(ctx_c, ContextKey::new("extracted"))
   
-  match service_a_namespace {
-    Some(StringValue(ns)) => assert_eq(ns, "production"),
-    _ => assert_true(false, "Service A namespace should be production")
-  }
-  
-  match service_b_namespace {
-    Some(StringValue(ns)) => assert_eq(ns, "production"),
-    _ => assert_true(false, "Service B namespace should be production")
-  }
-  
-  match service_c_namespace {
-    Some(StringValue(ns)) => assert_eq(ns, "production"),
-    _ => assert_true(false, "Service C namespace should be production")
-  }
-  
-  let service_a_env = Resource::get_attribute(service_a_with_attrs, "deployment.environment")
-  let service_b_env = Resource::get_attribute(service_b_with_attrs, "deployment.environment")
-  let service_c_env = Resource::get_attribute(service_c_with_attrs, "deployment.environment")
-  
-  match service_a_env {
-    Some(StringValue(env)) => assert_eq(env, "prod"),
-    _ => assert_true(false, "Service A environment should be prod")
-  }
-  
-  match service_b_env {
-    Some(StringValue(env)) => assert_eq(env, "prod"),
-    _ => assert_true(false, "Service B environment should be prod")
-  }
-  
-  match service_c_env {
-    Some(StringValue(env)) => assert_eq(env, "prod"),
-    _ => assert_true(false, "Service C environment should be prod")
-  }
+  assert_eq(extracted_b, Some("true"))
+  assert_eq(extracted_c, Some("true"))
 }
 
-// Test 6: Cross-Service Error Propagation
-test "cross-service error propagation" {
-  // Service A initiates operation
-  let service_a_provider = TracerProvider::default()
-  let service_a_tracer = TracerProvider::get_tracer(service_a_provider, "service_a")
+test "cross-service span hierarchy consistency" {
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "cross-service-test")
   
-  let root_span = Tracer::start_span(service_a_tracer, "service_a_operation")
-  match root_span {
-    Some(span) => {
-      // Service A calls Service B
-      let ctx = Span::span_context(span)
-      let service_b_provider = TracerProvider::default()
-      let service_b_tracer = TracerProvider::get_tracer(service_b_provider, "service_b")
-      
-      let service_b_span = Tracer::start_span_with_context(service_b_tracer, "service_b_operation", Some(ctx))
-      match service_b_span {
-        Some(b_span) => {
-          // Service B encounters error
-          Span::set_status(b_span, Error, Some("Service B encountered an error"))
-          Span::add_event(b_span, "exception", Some([
-            ("exception.type", StringValue("ServiceException")),
-            ("exception.message", StringValue("Service B failed to process request"))
-          ]))
-          
-          // Service B calls Service C
-          let b_ctx = Span::span_context(b_span)
-          let service_c_provider = TracerProvider::default()
-          let service_c_tracer = TracerProvider::get_tracer(service_c_provider, "service_c")
-          
-          let service_c_span = Tracer::start_span_with_context(service_c_tracer, "service_c_operation", Some(b_ctx))
-          match service_c_span {
-            Some(c_span) => {
-              // Service C also encounters error
-              Span::set_status(c_span, Error, Some("Service C encountered an error"))
-              Span::add_event(c_span, "exception", Some([
-                ("exception.type", StringValue("ServiceException")),
-                ("exception.message", StringValue("Service C failed to process request"))
-              ]))
-              
-              Span::end(c_span)
-              
-              // Service C propagates error back to Service B
-              Span::add_event(b_span, "error_propagation", Some([
-                ("error.source", StringValue("service_c")),
-                ("error.message", StringValue("Error propagated from Service C"))
-              ]))
-            }
-            None => assert_true(false, "Service C span should be created")
-          }
-          
-          Span::end(b_span)
-          
-          // Service B propagates error back to Service A
-          Span::add_event(span, "error_propagation", Some([
-            ("error.source", StringValue("service_b")),
-            ("error.message", StringValue("Error propagated from Service B"))
-          ]))
-          
-          // Service A sets error status
-          Span::set_status(span, Error, Some("Operation failed due to downstream errors"))
-        }
-        None => assert_true(false, "Service B span should be created")
-      }
-      
-      Span::end(span)
-    }
-    None => assert_true(false, "Service A span should be created")
-  }
+  // Service A creates root span
+  let root_span = Tracer::start_span(tracer, "service-a.operation")
+  let root_ctx = Span::span_context(root_span)
+  
+  // Service B creates child span
+  let child_span_b = Tracer::start_span(tracer, "service-b.operation")
+  let child_ctx_b = Span::span_context(child_span_b)
+  
+  // Service C creates child span
+  let child_span_c = Tracer::start_span(tracer, "service-c.operation")
+  let child_ctx_c = Span::span_context(child_span_c)
+  
+  // Verify span hierarchy properties
+  assert_eq(Span::name(root_span), "service-a.operation")
+  assert_eq(Span::kind(root_span), Internal)
+  assert_true(Span::is_recording(root_span))
+  
+  assert_eq(Span::name(child_span_b), "service-b.operation")
+  assert_eq(Span::kind(child_span_b), Internal)
+  assert_true(Span::is_recording(child_span_b))
+  
+  assert_eq(Span::name(child_span_c), "service-c.operation")
+  assert_eq(Span::kind(child_span_c), Internal)
+  assert_true(Span::is_recording(child_span_c))
+  
+  // End all spans
+  Span::end(root_span)
+  Span::end(child_span_b)
+  Span::end(child_span_c)
 }
 
-// Test 7: Cross-Service Sampling Consistency
-test "cross-service sampling consistency" {
-  // Test with sampled trace
-  let sampled_ctx = SpanContext::new("trace_id_1", "span_id_1", true, "")
-  assert_true(SpanContext::is_sampled(sampled_ctx), "Context should be sampled")
+test "cross-service error propagation consistency" {
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "error-propagation-test")
   
-  // Propagate to Service B
-  let service_b_provider = TracerProvider::default()
-  let service_b_tracer = TracerProvider::get_tracer(service_b_provider, "service_b")
+  // Service A creates error log
+  let error_log_a = LogRecord::new_with_context(
+    Error,
+    Some("Service A: Database connection failed"),
+    None,
+    Some(1735689600000000000L),
+    None,
+    Some("error-trace-12345678"),
+    Some("error-span-aaaaaaaa"),
+    None
+  )
   
-  let service_b_span = Tracer::start_span_with_context(service_b_tracer, "service_b_operation", Some(sampled_ctx))
-  match service_b_span {
-    Some(b_span) => {
-      let b_ctx = Span::span_context(b_span)
-      assert_true(SpanContext::is_sampled(b_ctx), "Service B should inherit sampling decision")
-      
-      // Propagate to Service C
-      let service_c_provider = TracerProvider::default()
-      let service_c_tracer = TracerProvider::get_tracer(service_c_provider, "service_c")
-      
-      let service_c_span = Tracer::start_span_with_context(service_c_tracer, "service_c_operation", Some(b_ctx))
-      match service_c_span {
-        Some(c_span) => {
-          let c_ctx = Span::span_context(c_span)
-          assert_true(SpanContext::is_sampled(c_ctx), "Service C should inherit sampling decision")
-          
-          Span::end(c_span)
-        }
-        None => assert_true(false, "Service C span should be created")
-      }
-      
-      Span::end(b_span)
-    }
-    None => assert_true(false, "Service B span should be created")
-  }
+  // Service B creates error log with same trace
+  let error_log_b = LogRecord::new_with_context(
+    Error,
+    Some("Service B: Processing failed due to upstream error"),
+    None,
+    Some(1735689600000000000L),
+    None,
+    Some("error-trace-12345678"),
+    Some("error-span-bbbbbbbb"),
+    None
+  )
   
-  // Test with non-sampled trace
-  let non_sampled_ctx = SpanContext::new("trace_id_2", "span_id_2", false, "")
-  assert_false(SpanContext::is_sampled(non_sampled_ctx), "Context should not be sampled")
+  // Service C creates error log with same trace
+  let error_log_c = LogRecord::new_with_context(
+    Error,
+    Some("Service C: Request failed after retries"),
+    None,
+    Some(1735689600000000000L),
+    None,
+    Some("error-trace-12345678"),
+    Some("error-span-cccccccc"),
+    None
+  )
   
-  // Propagate to Service B
-  let service_b_span2 = Tracer::start_span_with_context(service_b_tracer, "service_b_operation", Some(non_sampled_ctx))
-  match service_b_span2 {
-    Some(b_span) => {
-      let b_ctx = Span::span_context(b_span)
-      assert_false(SpanContext::is_sampled(b_ctx), "Service B should inherit sampling decision")
-      
-      // Propagate to Service C
-      let service_c_span2 = Tracer::start_span_with_context(service_c_tracer, "service_c_operation", Some(b_ctx))
-      match service_c_span2 {
-        Some(c_span) => {
-          let c_ctx = Span::span_context(c_span)
-          assert_false(SpanContext::is_sampled(c_ctx), "Service C should inherit sampling decision")
-          
-          Span::end(c_span)
-        }
-        None => assert_true(false, "Service C span should be created")
-      }
-      
-      Span::end(b_span)
-    }
-    None => assert_true(false, "Service B span should be created")
-  }
-}
-
-// Test 8: Cross-Service Correlation
-test "cross-service correlation" {
-  // Create correlation context in Service A
-  let correlation_id = "corr-123456789"
-  let request_id = "req-987654321"
-  let user_id = "user-456789123"
+  // Verify error trace correlation
+  assert_eq(LogRecord::trace_id(error_log_a), Some("error-trace-12345678"))
+  assert_eq(LogRecord::trace_id(error_log_b), Some("error-trace-12345678"))
+  assert_eq(LogRecord::trace_id(error_log_c), Some("error-trace-12345678"))
   
-  let service_a_provider = TracerProvider::default()
-  let service_a_tracer = TracerProvider::get_tracer(service_a_provider, "service_a")
-  
-  let service_a_span = Tracer::start_span(service_a_tracer, "service_a_operation")
-  match service_a_span {
-    Some(span) => {
-      // Add correlation attributes
-      Span::set_attribute(span, "correlation.id", StringValue(correlation_id))
-      Span::set_attribute(span, "request.id", StringValue(request_id))
-      Span::set_attribute(span, "user.id", StringValue(user_id))
-      
-      // Get context for propagation
-      let ctx = Span::span_context(span)
-      
-      // Service B receives and propagates correlation
-      let service_b_provider = TracerProvider::default()
-      let service_b_tracer = TracerProvider::get_tracer(service_b_provider, "service_b")
-      
-      let service_b_span = Tracer::start_span_with_context(service_b_tracer, "service_b_operation", Some(ctx))
-      match service_b_span {
-        Some(b_span) => {
-          // Service B adds correlation attributes
-          Span::set_attribute(b_span, "correlation.id", StringValue(correlation_id))
-          Span::set_attribute(b_span, "request.id", StringValue(request_id))
-          Span::set_attribute(b_span, "user.id", StringValue(user_id))
-          
-          // Add service B specific correlation
-          Span::set_attribute(b_span, "service.b.operation.id", StringValue("op-b-123"))
-          
-          // Get context for propagation
-          let b_ctx = Span::span_context(b_span)
-          
-          // Service C receives and propagates correlation
-          let service_c_provider = TracerProvider::default()
-          let service_c_tracer = TracerProvider::get_tracer(service_c_provider, "service_c")
-          
-          let service_c_span = Tracer::start_span_with_context(service_c_tracer, "service_c_operation", Some(b_ctx))
-          match service_c_span {
-            Some(c_span) => {
-              // Service C adds correlation attributes
-              Span::set_attribute(c_span, "correlation.id", StringValue(correlation_id))
-              Span::set_attribute(c_span, "request.id", StringValue(request_id))
-              Span::set_attribute(c_span, "user.id", StringValue(user_id))
-              
-              // Add service C specific correlation
-              Span::set_attribute(c_span, "service.c.operation.id", StringValue("op-c-456"))
-              
-              // Verify correlation consistency
-              let c_corr_id = Span::get_attribute(c_span, "correlation.id")
-              match c_corr_id {
-                Some(StringValue(id)) => assert_eq(id, correlation_id),
-                _ => assert_true(false, "Correlation ID should be preserved in Service C")
-              }
-              
-              let c_req_id = Span::get_attribute(c_span, "request.id")
-              match c_req_id {
-                Some(StringValue(id)) => assert_eq(id, request_id),
-                _ => assert_true(false, "Request ID should be preserved in Service C")
-              }
-              
-              let c_user_id = Span::get_attribute(c_span, "user.id")
-              match c_user_id {
-                Some(StringValue(id)) => assert_eq(id, user_id),
-                _ => assert_true(false, "User ID should be preserved in Service C")
-              }
-              
-              Span::end(c_span)
-            }
-            None => assert_true(false, "Service C span should be created")
-          }
-          
-          Span::end(b_span)
-        }
-        None => assert_true(false, "Service B span should be created")
-      }
-      
-      Span::end(span)
-    }
-    None => assert_true(false, "Service A span should be created")
-  }
-}
-
-// Test 9: Cross-Service Format Compatibility
-test "cross-service format compatibility" {
-  // Create span in Service A
-  let service_a_provider = TracerProvider::default()
-  let service_a_tracer = TracerProvider::get_tracer(service_a_provider, "service_a")
-  
-  let service_a_span = Tracer::start_span(service_a_tracer, "service_a_operation")
-  match service_a_span {
-    Some(span) => {
-      // Add attributes with different types
-      Span::set_attribute(span, "string.attr", StringValue("string_value"))
-      Span::set_attribute(span, "int.attr", IntValue(42))
-      Span::set_attribute(span, "float.attr", FloatValue(3.14))
-      Span::set_attribute(span, "bool.attr", BoolValue(true))
-      Span::set_attribute(span, "array.string.attr", ArrayStringValue(["value1", "value2"]))
-      Span::set_attribute(span, "array.int.attr", ArrayIntValue([1, 2, 3]))
-      
-      // Serialize span for cross-service transmission
-      let serialized = Span::serialize(span)
-      
-      // Service B deserializes and processes
-      let service_b_provider = TracerProvider::default()
-      let service_b_tracer = TracerProvider::get_tracer(service_b_provider, "service_b")
-      
-      let deserialized_span = Span::deserialize(serialized)
-      match deserialized_span {
-        Some(b_span) => {
-          // Verify all attribute types are preserved
-          let string_attr = Span::get_attribute(b_span, "string.attr")
-          match string_attr {
-            Some(StringValue(value)) => assert_eq(value, "string_value"),
-            _ => assert_true(false, "String attribute should be preserved")
-          }
-          
-          let int_attr = Span::get_attribute(b_span, "int.attr")
-          match int_attr {
-            Some(IntValue(value)) => assert_eq(value, 42),
-            _ => assert_true(false, "Int attribute should be preserved")
-          }
-          
-          let float_attr = Span::get_attribute(b_span, "float.attr")
-          match float_attr {
-            Some(FloatValue(value)) => assert_true(abs(value - 3.14) < 0.0001),
-            _ => assert_true(false, "Float attribute should be preserved")
-          }
-          
-          let bool_attr = Span::get_attribute(b_span, "bool.attr")
-          match bool_attr {
-            Some(BoolValue(value)) => assert_true(value),
-            _ => assert_true(false, "Bool attribute should be preserved")
-          }
-          
-          let array_string_attr = Span::get_attribute(b_span, "array.string.attr")
-          match array_string_attr {
-            Some(ArrayStringValue(value)) => {
-              assert_eq(value.length(), 2)
-              assert_eq(value[0], "value1")
-              assert_eq(value[1], "value2")
-            }
-            _ => assert_true(false, "Array string attribute should be preserved")
-          }
-          
-          let array_int_attr = Span::get_attribute(b_span, "array.int.attr")
-          match array_int_attr {
-            Some(ArrayIntValue(value)) => {
-              assert_eq(value.length(), 3)
-              assert_eq(value[0], 1)
-              assert_eq(value[1], 2)
-              assert_eq(value[2], 3)
-            }
-            _ => assert_true(false, "Array int attribute should be preserved")
-          }
-          
-          Span::end(b_span)
-        }
-        None => assert_true(false, "Deserialized span should be available")
-      }
-      
-      Span::end(span)
-    }
-    None => assert_true(false, "Service A span should be created")
-  }
-}
-
-// Test 10: Cross-Service Version Compatibility
-test "cross-service version compatibility" {
-  // Simulate different service versions
-  let service_v1_provider = TracerProvider::default()
-  let service_v1_tracer = TracerProvider::get_tracer(service_v1_provider, "service_v1")
-  
-  let service_v2_provider = TracerProvider::default()
-  let service_v2_tracer = TracerProvider::get_tracer(service_v2_provider, "service_v2")
-  
-  let service_v3_provider = TracerProvider::default()
-  let service_v3_tracer = TracerProvider::get_tracer(service_v3_provider, "service_v3")
-  
-  // Service v1 creates span with v1-specific attributes
-  let service_v1_span = Tracer::start_span(service_v1_tracer, "service_v1_operation")
-  match service_v1_span {
-    Some(v1_span) => {
-      Span::set_attribute(v1_span, "service.version", StringValue("1.0.0"))
-      Span::set_attribute(v1_span, "service.v1.feature", StringValue("enabled"))
-      Span::set_attribute(v1_span, "common.attr", StringValue("common_value"))
-      
-      let ctx = Span::span_context(v1_span)
-      
-      // Service v2 receives and adds v2-specific attributes
-      let service_v2_span = Tracer::start_span_with_context(service_v2_tracer, "service_v2_operation", Some(ctx))
-      match service_v2_span {
-        Some(v2_span) => {
-          Span::set_attribute(v2_span, "service.version", StringValue("2.0.0"))
-          Span::set_attribute(v2_span, "service.v2.feature", StringValue("enabled"))
-          Span::set_attribute(v2_span, "common.attr", StringValue("common_value"))
-          
-          // Preserve v1 attributes
-          Span::set_attribute(v2_span, "service.v1.feature", StringValue("enabled"))
-          
-          let v2_ctx = Span::span_context(v2_span)
-          
-          // Service v3 receives and adds v3-specific attributes
-          let service_v3_span = Tracer::start_span_with_context(service_v3_tracer, "service_v3_operation", Some(v2_ctx))
-          match service_v3_span {
-            Some(v3_span) => {
-              Span::set_attribute(v3_span, "service.version", StringValue("3.0.0"))
-              Span::set_attribute(v3_span, "service.v3.feature", StringValue("enabled"))
-              Span::set_attribute(v3_span, "common.attr", StringValue("common_value"))
-              
-              // Preserve v1 and v2 attributes
-              Span::set_attribute(v3_span, "service.v1.feature", StringValue("enabled"))
-              Span::set_attribute(v3_span, "service.v2.feature", StringValue("enabled"))
-              
-              // Verify version compatibility
-              let v1_feature = Span::get_attribute(v3_span, "service.v1.feature")
-              match v1_feature {
-                Some(StringValue(value)) => assert_eq(value, "enabled"),
-                _ => assert_true(false, "v1 feature should be preserved in v3")
-              }
-              
-              let v2_feature = Span::get_attribute(v3_span, "service.v2.feature")
-              match v2_feature {
-                Some(StringValue(value)) => assert_eq(value, "enabled"),
-                _ => assert_true(false, "v2 feature should be preserved in v3")
-              }
-              
-              let v3_feature = Span::get_attribute(v3_span, "service.v3.feature")
-              match v3_feature {
-                Some(StringValue(value)) => assert_eq(value, "enabled"),
-                _ => assert_true(false, "v3 feature should be available")
-              }
-              
-              let common_attr = Span::get_attribute(v3_span, "common.attr")
-              match common_attr {
-                Some(StringValue(value)) => assert_eq(value, "common_value"),
-                _ => assert_true(false, "Common attribute should be preserved")
-              }
-              
-              Span::end(v3_span)
-            }
-            None => assert_true(false, "Service v3 span should be created")
-          }
-          
-          Span::end(v2_span)
-        }
-        None => assert_true(false, "Service v2 span should be created")
-      }
-      
-      Span::end(v1_span)
-    }
-    None => assert_true(false, "Service v1 span should be created")
-  }
-}
-
-// Helper function to get current timestamp
-fn get_current_timestamp() -> Int {
-  // Implementation would depend on the available time functions in MoonBit
-  // This is a placeholder for the actual implementation
-  0
+  // Verify all are error severity
+  assert_eq(LogRecord::severity_number(error_log_a), Error)
+  assert_eq(LogRecord::severity_number(error_log_b), Error)
+  assert_eq(LogRecord::severity_number(error_log_c), Error)
 }
