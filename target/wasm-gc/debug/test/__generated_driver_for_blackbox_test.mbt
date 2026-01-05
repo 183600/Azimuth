@@ -1524,6 +1524,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_edge_computing_iot_comprehensive_tests.mbt": {
   },
+  "azimuth_edge_case_resilience_tests.mbt": {
+  },
   "azimuth_edge_case_moonbit_tests.mbt": {
   },
   "azimuth_edge_case_boundary_tests.mbt": {
