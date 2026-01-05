@@ -9581,6 +9581,12 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     3: (__test_617a696d7574685f636f6d7072657373696f6e5f7472616e736d697373696f6e5f74657374732e6d6274_3, ["network transmission simulation and error handling"]),
     4: (__test_617a696d7574685f636f6d7072657373696f6e5f7472616e736d697373696f6e5f74657374732e6d6274_4, ["compression algorithm performance comparison"]),
   },
+  "azimuth_compression_storage_tests.mbt": {
+    0: (__test_617a696d7574685f636f6d7072657373696f6e5f73746f726167655f74657374732e6d6274_0, ["时间序列数据压缩"]),
+    1: (__test_617a696d7574685f636f6d7072657373696f6e5f73746f726167655f74657374732e6d6274_1, ["采样压缩算法"]),
+    2: (__test_617a696d7574685f636f6d7072657373696f6e5f73746f726167655f74657374732e6d6274_2, ["自适应压缩算法"]),
+    3: (__test_617a696d7574685f636f6d7072657373696f6e5f73746f726167655f74657374732e6d6274_3, ["多维度数据压缩"]),
+  },
   "azimuth_compression_performance_tests.mbt": {
     0: (__test_617a696d7574685f636f6d7072657373696f6e5f706572666f726d616e63655f74657374732e6d6274_0, ["gzip compression performance with telemetry data"]),
     1: (__test_617a696d7574685f636f6d7072657373696f6e5f706572666f726d616e63655f74657374732e6d6274_1, ["lz4 compression performance with telemetry data"]),

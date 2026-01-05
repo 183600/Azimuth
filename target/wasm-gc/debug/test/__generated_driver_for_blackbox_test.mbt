@@ -1990,6 +1990,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_compression_transmission_tests.mbt": {
   },
+  "azimuth_compression_storage_tests.mbt": {
+  },
   "azimuth_compression_performance_tests.mbt": {
   },
   "azimuth_compression_decompression_tests.mbt": {
