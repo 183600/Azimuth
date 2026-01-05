@@ -5,7 +5,7 @@ set -o pipefail
 RELEASE_WINDOW_SECONDS=604800
 CABAL_LOG="/tmp/typus_cabal_last.log"
 
-WORK_BRANCH="${WORK_BRANCH:-master}"
+WORK_BRANCH="${WORK_BRANCH:-main}"
 
 # marker 文件放在真实的 git dir 下，确保不会被 git add/commit/push
 # 兼容：.git 可能是目录，也可能是一个指向实际 gitdir 的文件（worktree/submodule）
