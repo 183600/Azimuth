@@ -4021,6 +4021,14 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_617a696d7574685f706572666f726d616e63655f6d6f6e69746f72696e675f74657374732e6d6274_6, ["error rate monitoring functionality"]),
     7: (__test_617a696d7574685f706572666f726d616e63655f6d6f6e69746f72696e675f74657374732e6d6274_7, ["performance baseline comparison functionality"]),
   },
+  "azimuth_performance_metrics_tests.mbt": {
+    0: (__test_617a696d7574685f706572666f726d616e63655f6d6574726963735f74657374732e6d6274_0, ["counter metrics collection and aggregation"]),
+    1: (__test_617a696d7574685f706572666f726d616e63655f6d6574726963735f74657374732e6d6274_1, ["gauge metrics collection and tracking"]),
+    2: (__test_617a696d7574685f706572666f726d616e63655f6d6574726963735f74657374732e6d6274_2, ["histogram metrics with bucket distribution"]),
+    3: (__test_617a696d7574685f706572666f726d616e63655f6d6574726963735f74657374732e6d6274_3, ["summary metrics with quantiles"]),
+    4: (__test_617a696d7574685f706572666f726d616e63655f6d6574726963735f74657374732e6d6274_4, ["metrics collection and aggregation across services"]),
+    5: (__test_617a696d7574685f706572666f726d616e63655f6d6574726963735f74657374732e6d6274_5, ["metrics time series analysis and trend detection"]),
+  },
   "azimuth_performance_focused_tests.mbt": {
     0: (__test_617a696d7574685f706572666f726d616e63655f666f63757365645f74657374732e6d6274_0, ["attribute_value_creation_performance"]),
     1: (__test_617a696d7574685f706572666f726d616e63655f666f63757365645f74657374732e6d6274_1, ["attributes_operations_performance"]),
