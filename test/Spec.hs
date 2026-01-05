@@ -8,6 +8,7 @@ import Data.Text (pack, unpack)
 
 import Azimuth.Telemetry
 import AdditionalSpec (spec)
+import ExtendedSpec (spec)
 
 main :: IO ()
 main = hspec $ do
@@ -472,3 +473,6 @@ main = hspec $ do
           logMessage logger Info $ pack $ "workflow message " ++ show index) $ zip loggers [1..]
         
         shutdownTelemetry
+  
+  -- 添加ExtendedSpec的测试套件
+  ExtendedSpec.spec
