@@ -1,474 +1,429 @@
-// Azimuth Cross-Service Propagation Tests
-// This file contains high-quality test cases for cross-service propagation
+// 阿兹米克跨服务传播测试用例
+// 专注于分布式系统中遥测数据的跨服务传播和一致性
 
-// Test 1: HTTP Header Trace Context Propagation
-test "http header trace context propagation" {
-  // Test case 1: W3C Trace Context format
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let span_id = "b7ad6b7169203331"
-  let parent_span_id = "00f067aa0ba902b7"
+// 测试1: 基本跨服务跟踪传播
+test "基本跨服务跟踪传播测试" {
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "cross.service.test")
   
-  let span_ctx = SpanContext::new(trace_id, span_id, true, "http_test_state")
+  // 服务A创建根Span
+  let service_a_span = Tracer::start_span(tracer, "service.a.operation")
+  let service_a_context = Span::context(service_a_span)
   
-  // Extract HTTP headers
-  let headers = HttpPropagator::extract_headers(span_ctx)
+  // 设置服务A的属性
+  Span::set_attribute(service_a_span, "service.name", StringValue("service-a"))
+  Span::set_attribute(service_a_span, "service.version", StringValue("1.0.0"))
+  Span::set_attribute(service_a_span, "operation.name", StringValue("process.data"))
   
-  // Verify traceparent header
-  let traceparent = HttpPropagator::get_header(headers, "traceparent")
-  match traceparent {
-    Some(value) => {
-      // Format: 00-trace_id-span_id-flags
-      let expected = "00-" + trace_id + "-" + span_id + "-01"
-      assert_eq(value, expected)
-    }
-    None => assert_true(false)
-  }
+  // 模拟服务A向服务B传播上下文
+  let propagator = TraceContextPropagator::new()
+  let headers = []
+  let injected_headers = TraceContextPropagator::inject(propagator, service_a_context, headers)
   
-  // Verify tracestate header
-  let tracestate = HttpPropagator::get_header(headers, "tracestate")
-  match tracestate {
-    Some(value) => {
-      // Should contain state information
-      assert_true(value.length() > 0)
-    }
-    None => {
-      // tracestate is optional
-      assert_true(true)
-    }
-  }
+  // 验证注入的头部
+  let traceparent_found = injected_headers.any(fn(header) {
+    let (key, _) = header
+    key == "traceparent"
+  })
+  assert_true(traceparent_found)
   
-  // Test case 2: Inject context into HTTP request
-  let request_headers = [
-    ("Content-Type", "application/json"),
-    ("Authorization", "Bearer token123")
-  ]
+  // 服务B接收并提取上下文
+  let service_b_context = TraceContextPropagator::extract(propagator, injected_headers)
+  assert_true(SpanContext::is_valid(service_b_context))
   
-  let request = HttpRequest::new("GET", "https://api.example.com/data", request_headers, None)
-  let injected_request = HttpPropagator::inject_context(request, span_ctx)
+  // 验证跟踪ID一致性
+  assert_eq(SpanContext::trace_id(service_a_context), SpanContext::trace_id(service_b_context))
   
-  // Verify headers are injected
-  let injected_traceparent = HttpPropagator::get_header(HttpRequest::headers(injected_request), "traceparent")
-  match injected_traceparent {
-    Some(value) => {
-      let expected = "00-" + trace_id + "-" + span_id + "-01"
-      assert_eq(value, expected)
-    }
-    None => assert_true(false)
-  }
+  // 服务B创建子Span
+  let service_b_span = Tracer::start_span_with_context(tracer, "service.b.operation", service_b_context)
+  let service_b_context_child = Span::context(service_b_span)
   
-  // Test case 3: Extract context from HTTP request
-  let incoming_headers = [
-    ("traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"),
-    ("tracestate", "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE"),
-    ("Content-Type", "application/json")
-  ]
+  // 设置服务B的属性
+  Span::set_attribute(service_b_span, "service.name", StringValue("service-b"))
+  Span::set_attribute(service_b_span, "service.version", StringValue("1.2.0"))
+  Span::set_attribute(service_b_span, "operation.name", StringValue("transform.data"))
   
-  let incoming_request = HttpRequest::new("POST", "/api/process", incoming_headers, Some("request data"))
-  let extracted_ctx = HttpPropagator::extract_context(incoming_request)
+  // 验证父子关系
+  assert_eq(SpanContext::trace_id(service_a_context), SpanContext::trace_id(service_b_context_child))
+  assert_neq(SpanContext::span_id(service_a_context), SpanContext::span_id(service_b_context_child))
   
-  // Verify extracted context
-  assert_eq(SpanContext::trace_id(extracted_ctx), trace_id)
-  assert_eq(SpanContext::span_id(extracted_ctx), span_id)
-  assert_true(SpanContext::is_sampled(extracted_ctx))
-  
-  // Test case 4: B3 format propagation
-  let b3_headers = HttpPropagator::extract_b3_headers(span_ctx)
-  
-  let b3_trace_id = HttpPropagator::get_header(b3_headers, "X-B3-TraceId")
-  match b3_trace_id {
-    Some(value) => assert_eq(value, trace_id)
-    None => assert_true(false)
-  }
-  
-  let b3_span_id = HttpPropagator::get_header(b3_headers, "X-B3-SpanId")
-  match b3_span_id {
-    Some(value) => assert_eq(value, span_id)
-    None => assert_true(false)
-  }
-  
-  let b3_sampled = HttpPropagator::get_header(b3_headers, "X-B3-Sampled")
-  match b3_sampled {
-    Some(value) => assert_eq(value, "1")
-    None => assert_true(false)
-  }
+  // 结束Span
+  Span::end(service_b_span)
+  Span::end(service_a_span)
 }
 
-// Test 2: Baggage Propagation Across Services
-test "baggage propagation across services" {
-  // Test case 1: Initial baggage setup
-  let initial_baggage = Baggage::new()
-  let baggage_with_user = Baggage::set_entry(initial_baggage, "user.id", "user123")
-  let baggage_with_session = Baggage::set_entry(baggage_with_user, "session.id", "session456")
-  let baggage_with_tenant = Baggage::set_entry(baggage_with_session, "tenant.id", "tenant789")
+// 测试2: 跨服务行李传播
+test "跨服务行李传播测试" {
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "baggage.propagation.test")
   
-  // Test case 2: Service A adds service-specific baggage
-  let service_a_baggage = Baggage::set_entry(baggage_with_tenant, "service.a.version", "1.2.3")
-  let service_a_baggage_with_request = Baggage::set_entry(service_a_baggage, "request.id", "req123")
+  // 服务A创建根Span和行李
+  let service_a_span = Tracer::start_span(tracer, "service.a.with.baggage")
+  let service_a_context = Span::context(service_a_span)
   
-  // Propagate to Service B
-  let service_b_headers = BaggagePropagator::extract_headers(service_a_baggage_with_request)
-  let service_b_baggage = BaggagePropagator::extract_from_headers(service_b_headers)
-  
-  // Verify baggage propagated to Service B
-  let user_id = Baggage::get_entry(service_b_baggage, "user.id")
-  match user_id {
-    Some(value) => assert_eq(value, "user123")
-    None => assert_true(false)
-  }
-  
-  let session_id = Baggage::get_entry(service_b_baggage, "session.id")
-  match session_id {
-    Some(value) => assert_eq(value, "session456")
-    None => assert_true(false)
-  }
-  
-  let tenant_id = Baggage::get_entry(service_b_baggage, "tenant.id")
-  match tenant_id {
-    Some(value) => assert_eq(value, "tenant789")
-    None => assert_true(false)
-  }
-  
-  let service_a_version = Baggage::get_entry(service_b_baggage, "service.a.version")
-  match service_a_version {
-    Some(value) => assert_eq(value, "1.2.3")
-    None => assert_true(false)
-  }
-  
-  // Test case 3: Service B adds its own baggage
-  let service_b_baggage_enhanced = Baggage::set_entry(service_b_baggage, "service.b.version", "2.3.4")
-  let service_b_baggage_with_operation = Baggage::set_entry(service_b_baggage_enhanced, "operation.type", "data_processing")
-  
-  // Propagate to Service C
-  let service_c_headers = BaggagePropagator::extract_headers(service_b_baggage_with_operation)
-  let service_c_baggage = BaggagePropagator::extract_from_headers(service_c_headers)
-  
-  // Verify all baggage propagated to Service C
-  let service_b_version = Baggage::get_entry(service_c_baggage, "service.b.version")
-  match service_b_version {
-    Some(value) => assert_eq(value, "2.3.4")
-    None => assert_true(false)
-  }
-  
-  let operation_type = Baggage::get_entry(service_c_baggage, "operation.type")
-  match operation_type {
-    Some(value) => assert_eq(value, "data_processing")
-    None => assert_true(false)
-  }
-  
-  // Test case 4: Service C adds final baggage
-  let service_c_baggage_final = Baggage::set_entry(service_c_baggage, "service.c.version", "3.4.5")
-  let service_c_baggage_with_result = Baggage::set_entry(service_c_baggage_final, "operation.result", "success")
-  
-  // Verify final baggage contains all entries
-  let final_entries = [
-    ("user.id", "user123"),
-    ("session.id", "session456"),
-    ("tenant.id", "tenant789"),
-    ("service.a.version", "1.2.3"),
-    ("request.id", "req123"),
-    ("service.b.version", "2.3.4"),
-    ("operation.type", "data_processing"),
-    ("service.c.version", "3.4.5"),
-    ("operation.result", "success")
-  ]
-  
-  for (key, expected_value) in final_entries {
-    let value = Baggage::get_entry(service_c_baggage_with_result, key)
-    match value {
-      Some(actual_value) => assert_eq(actual_value, expected_value)
-      None => assert_true(false)
-    }
-  }
-}
-
-// Test 3: Message Queue Trace Context Propagation
-test "message queue trace context propagation" {
-  // Test case 1: Producer injects trace context into message
-  let trace_id = "msg_trace_12345"
-  let span_id = "msg_span_67890"
-  let span_ctx = SpanContext::new(trace_id, span_id, true, "message_test_state")
-  
-  let message_payload = "{ \"event\": \"user_created\", \"user_id\": 12345 }"
-  let message_headers = [
-    ("Content-Type", "application/json"),
-    ("Message-Type", "event")
-  ]
-  
-  let message = Message::new("user.events", message_payload, message_headers)
-  let traced_message = MessagePropagator::inject_context(message, span_ctx)
-  
-  // Verify trace context is injected into message
-  let traced_headers = Message::headers(traced_message)
-  let trace_header = MessagePropagator::get_header(traced_headers, "traceparent")
-  match trace_header {
-    Some(value) => {
-      let expected = "00-" + trace_id + "-" + span_id + "-01"
-      assert_eq(value, expected)
-    }
-    None => assert_true(false)
-  }
-  
-  // Test case 2: Consumer extracts trace context from message
-  let consumer_span_ctx = MessagePropagator::extract_context(traced_message)
-  
-  // Verify extracted context
-  assert_eq(SpanContext::trace_id(consumer_span_ctx), trace_id)
-  assert_eq(SpanContext::span_id(consumer_span_ctx), span_id)
-  assert_true(SpanContext::is_sampled(consumer_span_ctx))
-  
-  // Test case 3: Consumer creates child span and propagates to next service
-  let consumer_span_id = "consumer_span_abc123"
-  let consumer_span = SpanContext::new(trace_id, consumer_span_id, true, "consumer_state")
-  
-  // Create new message for next service
-  let next_message_payload = "{ \"action\": \"process_user\", \"user_id\": 12345 }"
-  let next_message_headers = [
-    ("Content-Type", "application/json"),
-    ("Action-Type", "command")
-  ]
-  
-  let next_message = Message::new("user.commands", next_message_payload, next_message_headers)
-  let next_traced_message = MessagePropagator::inject_context(next_message, consumer_span)
-  
-  // Verify next message has correct trace context
-  let next_traced_headers = Message::headers(next_traced_message)
-  let next_trace_header = MessagePropagator::get_header(next_traced_headers, "traceparent")
-  match next_trace_header {
-    Some(value) => {
-      let expected = "00-" + trace_id + "-" + consumer_span_id + "-01"
-      assert_eq(value, expected)
-    }
-    None => assert_true(false)
-  }
-  
-  // Test case 4: Message with baggage
+  // 设置行李项
   let baggage = Baggage::new()
-  let baggage_with_correlation = Baggage::set_entry(baggage, "correlation.id", "corr123")
-  let baggage_with_priority = Baggage::set_entry(baggage_with_correlation, "message.priority", "high")
+  let baggage_with_user = Baggage::set_entry(baggage, "user.id", "user-12345")
+  let baggage_with_session = Baggage::set_entry(baggage_with_user, "session.id", "session-67890")
+  let baggage_with_tenant = Baggage::set_entry(baggage_with_session, "tenant.id", "tenant-abc")
   
-  let message_with_baggage = Message::new("priority.events", "{ \"event\": \"high_priority\" }", [])
-  let traced_message_with_baggage = MessagePropagator::inject_context_with_baggage(
-    message_with_baggage, 
-    span_ctx, 
-    baggage_with_priority
-  )
+  // 将行李添加到上下文
+  let context_with_baggage = Context::with_value(service_a_context, ContextKey::new("baggage"), baggage_with_tenant)
   
-  // Extract and verify baggage
-  let extracted_baggage = MessagePropagator::extract_baggage(traced_message_with_baggage)
+  // 模拟跨服务传播
+  let propagator = TextMapPropagator::new()
+  let headers = []
+  let injected_headers = TextMapPropagator::inject(propagator, context_with_baggage, headers)
   
-  let correlation_id = Baggage::get_entry(extracted_baggage, "correlation.id")
-  match correlation_id {
-    Some(value) => assert_eq(value, "corr123")
+  // 验证行李头部
+  let baggage_header_found = injected_headers.any(fn(header) {
+    let (key, _) = header
+    key == "baggage"
+  })
+  assert_true(baggage_header_found)
+  
+  // 服务B提取上下文和行李
+  let service_b_context = TextMapPropagator::extract(propagator, injected_headers)
+  let extracted_baggage = Context::get(service_b_context, ContextKey::new("baggage"))
+  
+  match extracted_baggage {
+    Some(baggage) => {
+      // 验证提取的行李项
+      let user_id = Baggage::get_entry(baggage, "user.id")
+      match user_id {
+        Some(id) => assert_eq(id, "user-12345")
+        None => assert_true(false)
+      }
+      
+      let session_id = Baggage::get_entry(baggage, "session.id")
+      match session_id {
+        Some(id) => assert_eq(id, "session-67890")
+        None => assert_true(false)
+      }
+      
+      let tenant_id = Baggage::get_entry(baggage, "tenant.id")
+      match tenant_id {
+        Some(id) => assert_eq(id, "tenant-abc")
+        None => assert_true(false)
+      }
+    }
     None => assert_true(false)
   }
   
-  let message_priority = Baggage::get_entry(extracted_baggage, "message.priority")
-  match message_priority {
-    Some(value) => assert_eq(value, "high")
-    None => assert_true(false)
-  }
+  // 结束Span
+  Span::end(service_a_span)
 }
 
-// Test 4: gRPC Metadata Trace Context Propagation
-test "grpc metadata trace context propagation" {
-  // Test case 1: Client injects trace context into gRPC metadata
-  let trace_id = "grpc_trace_98765"
-  let span_id = "grpc_span_43210"
-  let span_ctx = SpanContext::new(trace_id, span_id, true, "grpc_test_state")
+// 测试3: 多级服务调用链传播
+test "多级服务调用链传播测试" {
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "multi.level.chain.test")
   
-  let initial_metadata = [
-    ("authorization", "Bearer grpc_token"),
-    ("user-agent", "grpc-client/1.0.0")
-  ]
+  // 服务A -> 服务B -> 服务C -> 服务D 的调用链
   
-  let call_metadata = GrpcPropagator::inject_context(initial_metadata, span_ctx)
+  // 服务A：入口点
+  let service_a_span = Tracer::start_span(tracer, "service.a.entry")
+  let service_a_context = Span::context(service_a_span)
+  Span::set_attribute(service_a_span, "service.name", StringValue("service-a"))
+  Span::set_attribute(service_a_span, "operation.type", StringValue("entry"))
   
-  // Verify trace context is injected into metadata
-  let traceparent_meta = GrpcPropagator::get_metadata(call_metadata, "traceparent")
-  match traceparent_meta {
-    Some(value) => {
-      let expected = "00-" + trace_id + "-" + span_id + "-01"
-      assert_eq(value, expected)
-    }
-    None => assert_true(false)
-  }
+  // 传播到服务B
+  let propagator = TraceContextPropagator::new()
+  let headers_a_to_b = []
+  let headers_b = TraceContextPropagator::inject(propagator, service_a_context, headers_a_to_b)
   
-  // Test case 2: Server extracts trace context from gRPC metadata
-  let server_span_ctx = GrpcPropagator::extract_context(call_metadata)
+  // 服务B：中间处理
+  let service_b_context = TraceContextPropagator::extract(propagator, headers_b)
+  let service_b_span = Tracer::start_span_with_context(tracer, "service.b.process", service_b_context)
+  let service_b_context_child = Span::context(service_b_span)
+  Span::set_attribute(service_b_span, "service.name", StringValue("service-b"))
+  Span::set_attribute(service_b_span, "operation.type", StringValue("process"))
   
-  // Verify extracted context
-  assert_eq(SpanContext::trace_id(server_span_ctx), trace_id)
-  assert_eq(SpanContext::span_id(server_span_ctx), span_id)
-  assert_true(SpanContext::is_sampled(server_span_ctx))
+  // 传播到服务C
+  let headers_b_to_c = []
+  let headers_c = TraceContextPropagator::inject(propagator, service_b_context_child, headers_b_to_c)
   
-  // Test case 3: Server creates child span for processing
-  let server_span_id = "server_span_56789"
-  let server_span = SpanContext::new(trace_id, server_span_id, true, "server_processing_state")
+  // 服务C：业务逻辑
+  let service_c_context = TraceContextPropagator::extract(propagator, headers_c)
+  let service_c_span = Tracer::start_span_with_context(tracer, "service.c.business", service_c_context)
+  let service_c_context_child = Span::context(service_c_span)
+  Span::set_attribute(service_c_span, "service.name", StringValue("service-c"))
+  Span::set_attribute(service_c_span, "operation.type", StringValue("business"))
   
-  // Server makes downstream gRPC call
-  let downstream_metadata = [
-    ("deadline", "2023-01-01T00:00:00Z"),
-    ("timeout", "30s")
-  ]
+  // 传播到服务D
+  let headers_c_to_d = []
+  let headers_d = TraceContextPropagator::inject(propagator, service_c_context_child, headers_c_to_d)
   
-  let downstream_call_metadata = GrpcPropagator::inject_context(downstream_metadata, server_span)
+  // 服务D：数据存储
+  let service_d_context = TraceContextPropagator::extract(propagator, headers_d)
+  let service_d_span = Tracer::start_span_with_context(tracer, "service.d.storage", service_d_context)
+  Span::set_attribute(service_d_span, "service.name", StringValue("service-d"))
+  Span::set_attribute(service_d_span, "operation.type", StringValue("storage"))
   
-  // Verify downstream call has correct trace context
-  let downstream_traceparent = GrpcPropagator::get_metadata(downstream_call_metadata, "traceparent")
-  match downstream_traceparent {
-    Some(value) => {
-      let expected = "00-" + trace_id + "-" + server_span_id + "-01"
-      assert_eq(value, expected)
-    }
-    None => assert_true(false)
-  }
+  // 验证跟踪ID在整个调用链中保持一致
+  let service_a_trace_id = SpanContext::trace_id(service_a_context)
+  let service_b_trace_id = SpanContext::trace_id(service_b_context)
+  let service_c_trace_id = SpanContext::trace_id(service_c_context)
+  let service_d_trace_id = SpanContext::trace_id(service_d_context)
   
-  // Test case 4: gRPC with binary metadata
-  let binary_data = [0x01, 0x02, 0x03, 0x04]
-  let binary_metadata = GrpcPropagator::create_binary_metadata("binary-data", binary_data)
+  assert_eq(service_a_trace_id, service_b_trace_id)
+  assert_eq(service_b_trace_id, service_c_trace_id)
+  assert_eq(service_c_trace_id, service_d_trace_id)
   
-  let mixed_metadata = Array::append(call_metadata, binary_metadata)
-  let mixed_metadata_with_trace = GrpcPropagator::inject_context(mixed_metadata, span_ctx)
+  // 验证每个服务都有不同的Span ID
+  let service_a_span_id = SpanContext::span_id(service_a_context)
+  let service_b_span_id = SpanContext::span_id(service_b_context_child)
+  let service_c_span_id = SpanContext::span_id(service_c_context_child)
+  let service_d_span_id = SpanContext::span_id(Span::context(service_d_span))
   
-  // Verify binary metadata is preserved
-  let preserved_binary = GrpcPropagator::get_binary_metadata(mixed_metadata_with_trace, "binary-data")
-  match preserved_binary {
-    Some(data) => assert_eq(data, binary_data)
-    None => assert_true(false)
-  }
+  assert_neq(service_a_span_id, service_b_span_id)
+  assert_neq(service_b_span_id, service_c_span_id)
+  assert_neq(service_c_span_id, service_d_span_id)
   
-  // Verify trace context is still present
-  let mixed_traceparent = GrpcPropagator::get_metadata(mixed_metadata_with_trace, "traceparent")
-  match mixed_traceparent {
-    Some(value) => {
-      let expected = "00-" + trace_id + "-" + span_id + "-01"
-      assert_eq(value, expected)
-    }
-    None => assert_true(false)
-  }
+  // 结束所有Span（按调用顺序的逆序）
+  Span::end(service_d_span)
+  Span::end(service_c_span)
+  Span::end(service_b_span)
+  Span::end(service_a_span)
 }
 
-// Test 5: Cross-Protocol Trace Context Propagation
-test "cross-protocol trace context propagation" {
-  // Test case 1: HTTP to gRPC propagation
-  let http_trace_id = "cross_protocol_trace_001"
-  let http_span_id = "cross_protocol_span_001"
-  let http_span_ctx = SpanContext::new(http_trace_id, http_span_id, true, "http_to_grpc")
+// 测试4: 跨服务上下文一致性验证
+test "跨服务上下文一致性验证测试" {
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "context.consistency.test")
   
-  // HTTP request with trace context
-  let http_headers = [
-    ("traceparent", "00-" + http_trace_id + "-" + http_span_id + "-01"),
-    ("tracestate", "rojo=00f067aa0ba902b7"),
-    ("Content-Type", "application/json")
-  ]
+  // 创建复合传播器（同时传播跟踪上下文和行李）
+  let composite_propagator = CompositePropagator::new([
+    TraceContextPropagator::new(),
+    TextMapPropagator::new()
+  ])
   
-  let http_request = HttpRequest::new("POST", "/api/process", http_headers, Some("request data"))
-  let extracted_http_ctx = HttpPropagator::extract_context(http_request)
+  // 服务A创建丰富上下文
+  let service_a_span = Tracer::start_span(tracer, "service.a.rich.context")
+  let service_a_context = Span::context(service_a_span)
   
-  // Convert to gRPC metadata
-  let grpc_metadata = GrpcPropagator::convert_from_http_context(extracted_http_ctx)
-  let grpc_traceparent = GrpcPropagator::get_metadata(grpc_metadata, "traceparent")
-  match grpc_traceparent {
-    Some(value) => {
-      let expected = "00-" + http_trace_id + "-" + http_span_id + "-01"
-      assert_eq(value, expected)
-    }
-    None => assert_true(false)
-  }
+  // 添加跟踪属性
+  Span::set_attribute(service_a_span, "user.id", StringValue("user-123"))
+  Span::set_attribute(service_a_span, "request.id", StringValue("req-456"))
+  Span::set_attribute(service_a_span, "operation.type", StringValue("critical"))
   
-  // Test case 2: gRPC to Message Queue propagation
-  let grpc_trace_id = "cross_protocol_trace_002"
-  let grpc_span_id = "cross_protocol_span_002"
-  let grpc_span_ctx = SpanContext::new(grpc_trace_id, grpc_span_id, true, "grpc_to_mq")
-  
-  let grpc_metadata = [
-    ("traceparent", "00-" + grpc_trace_id + "-" + grpc_span_id + "-01"),
-    ("authorization", "Bearer grpc_token")
-  ]
-  
-  let extracted_grpc_ctx = GrpcPropagator::extract_context(grpc_metadata)
-  
-  // Convert to message headers
-  let message_headers = MessagePropagator::convert_from_grpc_context(extracted_grpc_ctx)
-  let message = Message::new("test.topic", "test payload", message_headers)
-  let message_trace_header = MessagePropagator::get_header(Message::headers(message), "traceparent")
-  match message_trace_header {
-    Some(value) => {
-      let expected = "00-" + grpc_trace_id + "-" + grpc_span_id + "-01"
-      assert_eq(value, expected)
-    }
-    None => assert_true(false)
-  }
-  
-  // Test case 3: Message Queue to HTTP propagation
-  let mq_trace_id = "cross_protocol_trace_003"
-  let mq_span_id = "cross_protocol_span_003"
-  let mq_span_ctx = SpanContext::new(mq_trace_id, mq_span_id, true, "mq_to_http")
-  
-  let mq_headers = [
-    ("traceparent", "00-" + mq_trace_id + "-" + mq_span_id + "-01"),
-    ("Content-Type", "application/json")
-  ]
-  
-  let mq_message = Message::new("events.topic", "event data", mq_headers)
-  let extracted_mq_ctx = MessagePropagator::extract_context(mq_message)
-  
-  // Convert to HTTP headers
-  let http_headers_from_mq = HttpPropagator::convert_from_message_context(extracted_mq_ctx)
-  let http_request_from_mq = HttpRequest::new("POST", "/api/events", http_headers_from_mq, Some("event data"))
-  let http_trace_header = HttpPropagator::get_header(HttpRequest::headers(http_request_from_mq), "traceparent")
-  match http_trace_header {
-    Some(value) => {
-      let expected = "00-" + mq_trace_id + "-" + mq_span_id + "-01"
-      assert_eq(value, expected)
-    }
-    None => assert_true(false)
-  }
-  
-  // Test case 4: Baggage propagation across protocols
+  // 添加行李
   let baggage = Baggage::new()
-  let baggage_with_user = Baggage::set_entry(baggage, "user.id", "user456")
-  let baggage_with_session = Baggage::set_entry(baggage_with_user, "session.id", "session789")
+  let baggage_with_auth = Baggage::set_entry(baggage, "auth.token", "token-abc")
+  let baggage_with_locale = Baggage::set_entry(baggage_with_auth, "user.locale", "zh-CN")
+  let rich_context = Context::with_value(service_a_context, ContextKey::new("baggage"), baggage_with_locale)
   
-  // Start with HTTP
-  let http_request_with_baggage = HttpRequest::new("GET", "/api/data", [], None)
-  let http_with_baggage = HttpPropagator::inject_context_with_baggage(
-    http_request_with_baggage, 
-    http_span_ctx, 
-    baggage_with_session
-  )
+  // 传播丰富上下文
+  let headers = []
+  let injected_headers = CompositePropagator::inject(composite_propagator, rich_context, headers)
   
-  // Extract baggage from HTTP
-  let http_extracted_baggage = HttpPropagator::extract_baggage(http_with_baggage)
+  // 验证注入了多种头部
+  let traceparent_found = injected_headers.any(fn(header) {
+    let (key, _) = header
+    key == "traceparent"
+  })
+  let baggage_found = injected_headers.any(fn(header) {
+    let (key, _) = header
+    key == "baggage"
+  })
+  assert_true(traceparent_found)
+  assert_true(baggage_found)
   
-  // Convert to gRPC
-  let grpc_with_baggage = GrpcPropagator::convert_from_http_context_with_baggage(
-    http_span_ctx, 
-    http_extracted_baggage
-  )
+  // 服务B提取丰富上下文
+  let service_b_context = CompositePropagator::extract(composite_propagator, injected_headers)
   
-  // Extract baggage from gRPC
-  let grpc_extracted_baggage = GrpcPropagator::extract_baggage(grpc_with_baggage)
+  // 验证跟踪上下文
+  assert_true(SpanContext::is_valid(service_b_context))
+  assert_eq(SpanContext::trace_id(service_a_context), SpanContext::trace_id(service_b_context))
   
-  // Convert to Message Queue
-  let message_with_baggage = MessagePropagator::convert_from_grpc_context_with_baggage(
-    http_span_ctx, 
-    grpc_extracted_baggage
-  )
-  
-  // Extract baggage from Message Queue
-  let mq_extracted_baggage = MessagePropagator::extract_baggage(message_with_baggage)
-  
-  // Verify baggage is preserved across all protocols
-  let final_user_id = Baggage::get_entry(mq_extracted_baggage, "user.id")
-  match final_user_id {
-    Some(value) => assert_eq(value, "user456")
+  // 验证行李
+  let extracted_baggage = Context::get(service_b_context, ContextKey::new("baggage"))
+  match extracted_baggage {
+    Some(baggage) => {
+      let auth_token = Baggage::get_entry(baggage, "auth.token")
+      match auth_token {
+        Some(token) => assert_eq(token, "token-abc")
+        None => assert_true(false)
+      }
+      
+      let user_locale = Baggage::get_entry(baggage, "user.locale")
+      match user_locale {
+        Some(locale) => assert_eq(locale, "zh-CN")
+        None => assert_true(false)
+      }
+    }
     None => assert_true(false)
   }
   
-  let final_session_id = Baggage::get_entry(mq_extracted_baggage, "session.id")
-  match final_session_id {
-    Some(value) => assert_eq(value, "session789")
-    None => assert_true(false)
+  // 服务B创建子Span并继承上下文
+  let service_b_span = Tracer::start_span_with_context(tracer, "service.b.inherit.context", service_b_context)
+  
+  // 验证子Span可以访问父Span的属性（通过上下文）
+  // 注意：实际实现可能需要通过上下文传递属性，而不是直接继承
+  
+  Span::end(service_b_span)
+  Span::end(service_a_span)
+}
+
+// 测试5: 跨服务传播的采样决策
+test "跨服务传播的采样决策测试" {
+  let tracer_provider = TracerProvider::new_with_sampler(Sampler::probability(0.5)) // 50%采样率
+  let tracer = TracerProvider::get_tracer(tracer_provider, "sampling.decision.test")
+  
+  // 测试多个跟踪，验证采样决策的一致性传播
+  let sampled_spans = []
+  let un_sampled_spans = []
+  
+  for i in 1..=10 {
+    // 服务A创建根Span
+    let service_a_span = Tracer::start_span(tracer, "service.a.sampling.test." + i.to_string())
+    let service_a_context = Span::context(service_a_span)
+    
+    // 检查采样决策
+    if SpanContext::is_sampled(service_a_context) {
+      sampled_spans = sampled_spans.push(service_a_context)
+    } else {
+      un_sampled_spans = un_sampled_spans.push(service_a_context)
+    }
+    
+    // 传播到服务B
+    let propagator = TraceContextPropagator::new()
+    let headers = []
+    let injected_headers = TraceContextPropagator::inject(propagator, service_a_context, headers)
+    
+    // 服务B提取上下文
+    let service_b_context = TraceContextPropagator::extract(propagator, injected_headers)
+    
+    // 验证采样决策在传播过程中保持一致
+    assert_eq(SpanContext::is_sampled(service_a_context), SpanContext::is_sampled(service_b_context))
+    
+    // 服务B创建子Span
+    let service_b_span = Tracer::start_span_with_context(tracer, "service.b.sampling.test." + i.to_string(), service_b_context)
+    let service_b_context_child = Span::context(service_b_span)
+    
+    // 验证子Span继承父Span的采样决策
+    assert_eq(SpanContext::is_sampled(service_b_context), SpanContext::is_sampled(service_b_context_child))
+    
+    Span::end(service_b_span)
+    Span::end(service_a_span)
   }
+  
+  // 验证采样率大致符合预期（允许一定误差）
+  let total_spans = sampled_spans.length() + un_sampled_spans.length()
+  let sampled_ratio = sampled_spans.length().to_float() / total_spans.to_float()
+  
+  // 50%采样率，允许20%的误差范围
+  assert_true(sampled_ratio >= 0.3 && sampled_ratio <= 0.7)
+  assert_true(total_spans == 10)
+}
+
+// 测试6: 跨服务传播的故障恢复
+test "跨服务传播的故障恢复测试" {
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "propagation.fault.recovery.test")
+  
+  // 服务A创建根Span
+  let service_a_span = Tracer::start_span(tracer, "service.a.fault.test")
+  let service_a_context = Span::context(service_a_span)
+  
+  // 正常传播
+  let propagator = TraceContextPropagator::new()
+  let normal_headers = []
+  let normal_injected = TraceContextPropagator::inject(propagator, service_a_context, normal_headers)
+  
+  // 服务B正常提取
+  let normal_extracted = TraceContextPropagator::extract(propagator, normal_injected)
+  assert_true(SpanContext::is_valid(normal_extracted))
+  
+  // 模拟传播故障：头部损坏
+  let corrupted_headers = [("traceparent", "invalid-trace-context")]
+  let corrupted_extracted = TraceContextPropagator::extract(propagator, corrupted_headers)
+  assert_false(SpanContext::is_valid(corrupted_extracted))
+  
+  // 模拟传播故障：头部缺失
+  let missing_headers = [("other-header", "some-value")]
+  let missing_extracted = TraceContextPropagator::extract(propagator, missing_headers)
+  assert_false(SpanContext::is_valid(missing_extracted))
+  
+  // 故障恢复：创建新的根上下文
+  let recovery_context = SpanContext::new_random(true)
+  assert_true(SpanContext::is_valid(recovery_context))
+  
+  // 服务B使用恢复上下文继续处理
+  let service_b_span = Tracer::start_span_with_context(tracer, "service.b.recovery", recovery_context)
+  Span::set_attribute(service_b_span, "recovery.mode", StringValue("propagation.failure"))
+  
+  // 验证恢复上下文的有效性
+  let service_b_context = Span::context(service_b_span)
+  assert_true(SpanContext::is_valid(service_b_context))
+  assert_true(SpanContext::is_sampled(service_b_context))
+  
+  Span::end(service_b_span)
+  Span::end(service_a_span)
+}
+
+// 测试7: 跨服务传播的性能优化
+test "跨服务传播的性能优化测试" {
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "propagation.performance.test")
+  
+  // 创建大量并发传播测试
+  let concurrent_operations = 100
+  let start_time = Timestamp::now()
+  
+  for i in 1..=concurrent_operations {
+    // 服务A创建根Span
+    let service_a_span = Tracer::start_span(tracer, "service.a.concurrent." + i.to_string())
+    let service_a_context = Span::context(service_a_span)
+    
+    // 传播到服务B
+    let propagator = TraceContextPropagator::new()
+    let headers = []
+    let injected_headers = TraceContextPropagator::inject(propagator, service_a_context, headers)
+    
+    // 服务B提取上下文
+    let service_b_context = TraceContextPropagator::extract(propagator, injected_headers)
+    
+    // 服务B创建子Span
+    let service_b_span = Tracer::start_span_with_context(tracer, "service.b.concurrent." + i.to_string(), service_b_context)
+    
+    Span::end(service_b_span)
+    Span::end(service_a_span)
+  }
+  
+  let end_time = Timestamp::now()
+  let total_duration = end_time - start_time
+  let avg_duration_per_operation = total_duration.to_float() / concurrent_operations.to_float()
+  
+  // 验证性能：每个传播操作应该在合理时间内完成
+  // 这里设置一个宽松的限制，实际值取决于系统性能
+  assert_true(avg_duration_per_operation < 1000000.0) // 1秒以内
+  
+  // 测试压缩传播
+  let compression_propagator = CompressionPropagator::new()
+  let large_context_span = Tracer::start_span(tracer, "service.large.context")
+  let large_context = Span::context(large_context_span)
+  
+  // 添加大量属性
+  Span::set_attribute(large_context_span, "large.data", StringValue("x".repeat(10000)))
+  
+  let headers_before = []
+  let injected_before = TraceContextPropagator::inject(propagator, large_context, headers_before)
+  let compressed_headers = []
+  let injected_compressed = CompressionPropagator::inject(compression_propagator, large_context, compressed_headers)
+  
+  // 验证压缩效果
+  let total_size_before = injected_before.reduce(fn(acc, header) {
+    let (_, value) = header
+    acc + value.length()
+  }, 0)
+  
+  let total_size_compressed = injected_compressed.reduce(fn(acc, header) {
+    let (_, value) = header
+    acc + value.length()
+  }, 0)
+  
+  assert_true(total_size_compressed < total_size_before)
+  
+  Span::end(large_context_span)
 }
