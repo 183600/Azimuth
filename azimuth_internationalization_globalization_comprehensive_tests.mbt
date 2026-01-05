@@ -1,431 +1,501 @@
-// Azimuth Internationalization and Globalization Comprehensive Test Suite
-// 测试国际化和全球化功能，确保系统在不同语言和地区环境下的正确运行
+// Azimuth Internationalization Globalization Comprehensive Tests
+// This file contains comprehensive tests for internationalization and globalization features
 
-test "多语言消息本地化测试" {
-  // 创建本地化管理器
-  let localization_manager = LocalizationManager::new()
+// Test 1: Locale-Aware String Operations
+test "locale-aware string operations" {
+  // Create locale managers for different regions
+  let us_locale = LocaleManager::new("en-US")
+  let fr_locale = LocaleManager::new("fr-FR")
+  let de_locale = LocaleManager::new("de-DE")
+  let ja_locale = LocaleManager::new("ja-JP")
+  let ar_locale = LocaleManager::new("ar-SA")
   
-  // 添加不同语言的消息
-  LocalizationManager::add_message(localization_manager, "en", "operation.success", "Operation completed successfully")
-  LocalizationManager::add_message(localization_manager, "zh", "operation.success", "操作成功完成")
-  LocalizationManager::add_message(localization_manager, "es", "operation.success", "Operación completada con éxito")
-  LocalizationManager::add_message(localization_manager, "fr", "operation.success", "Opération terminée avec succès")
-  LocalizationManager::add_message(localization_manager, "de", "operation.success", "Operation erfolgreich abgeschlossen")
-  LocalizationManager::add_message(localization_manager, "ja", "operation.success", "操作が正常に完了しました")
+  // Test number formatting
+  let number = 1234567.89
   
-  LocalizationManager::add_message(localization_manager, "en", "error.connection.failed", "Connection failed")
-  LocalizationManager::add_message(localization_manager, "zh", "error.connection.failed", "连接失败")
-  LocalizationManager::add_message(localization_manager, "es", "error.connection.failed", "Conexión fallida")
-  LocalizationManager::add_message(localization_manager, "fr", "error.connection.failed", "Échec de connexion")
-  LocalizationManager::add_message(localization_manager, "de", "error.connection.failed", "Verbindung fehlgeschlagen")
-  LocalizationManager::add_message(localization_manager, "ja", "error.connection.failed", "接続に失敗しました")
+  let us_formatted = LocaleManager::format_number(us_locale, number)
+  assert_eq(us_formatted, "1,234,567.89")
   
-  // 测试英语本地化
-  let en_success = LocalizationManager::get_message(localization_manager, "en", "operation.success")
-  assert_eq(en_success, "Operation completed successfully")
+  let fr_formatted = LocaleManager::format_number(fr_locale, number)
+  assert_eq(fr_formatted, "1 234 567,89") // Space as thousands separator, comma as decimal
   
-  let en_error = LocalizationManager::get_message(localization_manager, "en", "error.connection.failed")
-  assert_eq(en_error, "Connection failed")
+  let de_formatted = LocaleManager::format_number(de_locale, number)
+  assert_eq(de_formatted, "1.234.567,89") // Period as thousands separator, comma as decimal
   
-  // 测试中文本地化
-  let zh_success = LocalizationManager::get_message(localization_manager, "zh", "operation.success")
-  assert_eq(zh_success, "操作成功完成")
+  // Test currency formatting
+  let currency = 1234.56
   
-  let zh_error = LocalizationManager::get_message(localization_manager, "zh", "error.connection.failed")
-  assert_eq(zh_error, "连接失败")
+  let us_currency = LocaleManager::format_currency(us_locale, currency, "USD")
+  assert_eq(us_currency, "$1,234.56")
   
-  // 测试西班牙语本地化
-  let es_success = LocalizationManager::get_message(localization_manager, "es", "operation.success")
-  assert_eq(es_success, "Operación completada con éxito")
-  
-  let es_error = LocalizationManager::get_message(localization_manager, "es", "error.connection.failed")
-  assert_eq(es_error, "Conexión fallida")
-  
-  // 测试法语本地化
-  let fr_success = LocalizationManager::get_message(localization_manager, "fr", "operation.success")
-  assert_eq(fr_success, "Opération terminée avec succès")
-  
-  let fr_error = LocalizationManager::get_message(localization_manager, "fr", "error.connection.failed")
-  assert_eq(fr_error, "Échec de connexion")
-  
-  // 测试德语本地化
-  let de_success = LocalizationManager::get_message(localization_manager, "de", "operation.success")
-  assert_eq(de_success, "Operation erfolgreich abgeschlossen")
-  
-  let de_error = LocalizationManager::get_message(localization_manager, "de", "error.connection.failed")
-  assert_eq(de_error, "Verbindung fehlgeschlagen")
-  
-  // 测试日语本地化
-  let ja_success = LocalizationManager::get_message(localization_manager, "ja", "operation.success")
-  assert_eq(ja_success, "操作が正常に完了しました")
-  
-  let ja_error = LocalizationManager::get_message(localization_manager, "ja", "error.connection.failed")
-  assert_eq(ja_error, "接続に失敗しました")
-}
-
-test "日期和时间格式本地化测试" {
-  // 创建日期时间格式化器
-  let date_formatter = DateFormatter::new()
-  
-  // 创建测试日期时间
-  let test_datetime = DateTime::new(2023, 11, 15, 14, 30, 45)
-  
-  // 测试英语日期格式
-  let en_date = DateFormatter::format(date_formatter, test_datetime, "en", "date")
-  assert_eq(en_date, "11/15/2023")
-  
-  let en_time = DateFormatter::format(date_formatter, test_datetime, "en", "time")
-  assert_eq(en_time, "2:30:45 PM")
-  
-  let en_datetime = DateFormatter::format(date_formatter, test_datetime, "en", "datetime")
-  assert_eq(en_datetime, "11/15/2023 2:30:45 PM")
-  
-  // 测试中文日期格式
-  let zh_date = DateFormatter::format(date_formatter, test_datetime, "zh", "date")
-  assert_eq(zh_date, "2023年11月15日")
-  
-  let zh_time = DateFormatter::format(date_formatter, test_datetime, "zh", "time")
-  assert_eq(zh_time, "下午2:30:45")
-  
-  let zh_datetime = DateFormatter::format(date_formatter, test_datetime, "zh", "datetime")
-  assert_eq(zh_datetime, "2023年11月15日 下午2:30:45")
-  
-  // 测试德语日期格式
-  let de_date = DateFormatter::format(date_formatter, test_datetime, "de", "date")
-  assert_eq(de_date, "15.11.2023")
-  
-  let de_time = DateFormatter::format(date_formatter, test_datetime, "de", "time")
-  assert_eq(de_time, "14:30:45")
-  
-  let de_datetime = DateFormatter::format(date_formatter, test_datetime, "de", "datetime")
-  assert_eq(de_datetime, "15.11.2023 14:30:45")
-  
-  // 测试日语日期格式
-  let ja_date = DateFormatter::format(date_formatter, test_datetime, "ja", "date")
-  assert_eq(ja_date, "2023/11/15")
-  
-  let ja_time = DateFormatter::format(date_formatter, test_datetime, "ja", "time")
-  assert_eq(ja_time, "14:30:45")
-  
-  let ja_datetime = DateFormatter::format(date_formatter, test_datetime, "ja", "datetime")
-  assert_eq(ja_datetime, "2023/11/15 14:30:45")
-}
-
-test "数字格式本地化测试" {
-  // 创建数字格式化器
-  let number_formatter = NumberFormatter::new()
-  
-  // 测试整数格式化
-  let int_value = 1234567
-  
-  let en_int = NumberFormatter::format_integer(number_formatter, int_value, "en")
-  assert_eq(en_int, "1,234,567")
-  
-  let zh_int = NumberFormatter::format_integer(number_formatter, int_value, "zh")
-  assert_eq(zh_int, "1,234,567")
-  
-  let de_int = NumberFormatter::format_integer(number_formatter, int_value, "de")
-  assert_eq(de_int, "1.234.567")
-  
-  let fr_int = NumberFormatter::format_integer(number_formatter, int_value, "fr")
-  assert_eq(fr_int, "1 234 567")
-  
-  // 测试小数格式化
-  let float_value = 1234567.89
-  
-  let en_float = NumberFormatter::format_float(number_formatter, float_value, "en", 2)
-  assert_eq(en_float, "1,234,567.89")
-  
-  let zh_float = NumberFormatter::format_float(number_formatter, float_value, "zh", 2)
-  assert_eq(zh_float, "1,234,567.89")
-  
-  let de_float = NumberFormatter::format_float(number_formatter, float_value, "de", 2)
-  assert_eq(de_float, "1.234.567,89")
-  
-  let fr_float = NumberFormatter::format_float(number_formatter, float_value, "fr", 2)
-  assert_eq(fr_float, "1 234 567,89")
-  
-  // 测试货币格式化
-  let currency_value = 1234.56
-  
-  let en_currency = NumberFormatter::format_currency(number_formatter, currency_value, "en", "USD")
-  assert_eq(en_currency, "$1,234.56")
-  
-  let zh_currency = NumberFormatter::format_currency(number_formatter, currency_value, "zh", "CNY")
-  assert_eq(zh_currency, "¥1,234.56")
-  
-  let de_currency = NumberFormatter::format_currency(number_formatter, currency_value, "de", "EUR")
-  assert_eq(de_currency, "1.234,56 €")
-  
-  let fr_currency = NumberFormatter::format_currency(number_formatter, currency_value, "fr", "EUR")
+  let fr_currency = LocaleManager::format_currency(fr_locale, currency, "EUR")
   assert_eq(fr_currency, "1 234,56 €")
   
-  let ja_currency = NumberFormatter::format_currency(number_formatter, currency_value, "ja", "JPY")
-  assert_eq(ja_currency, "¥1,235")
+  let ja_currency = LocaleManager::format_currency(ja_locale, currency, "JPY")
+  assert_eq(ja_currency, "¥1,235") // Japanese Yen doesn't have decimal places
+  
+  // Test date formatting
+  let timestamp = 1672531200000L // 2023-01-01 00:00:00 UTC
+  
+  let us_date = LocaleManager::format_date(us_locale, timestamp)
+  assert_eq(us_date, "1/1/2023")
+  
+  let fr_date = LocaleManager::format_date(fr_locale, timestamp)
+  assert_eq(fr_date, "01/01/2023")
+  
+  let de_date = LocaleManager::format_date(de_locale, timestamp)
+  assert_eq(de_date, "1.1.2023")
+  
+  let ja_date = LocaleManager::format_date(ja_locale, timestamp)
+  assert_eq(ja_date, "2023/01/01")
+  
+  // Test time formatting
+  let time_timestamp = 1672534920000L // 2023-01-01 01:02:00 UTC
+  
+  let us_time = LocaleManager::format_time(us_locale, time_timestamp)
+  assert_eq(us_time, "1:02:00 AM")
+  
+  let fr_time = LocaleManager::format_time(fr_locale, time_timestamp)
+  assert_eq(fr_time, "01:02:00")
+  
+  let ja_time = LocaleManager::format_time(ja_locale, time_timestamp)
+  assert_eq(ja_time, "1:02:00")
 }
 
-test "文本方向和书写系统测试" {
-  // 创建文本方向处理器
-  let text_direction_handler = TextDirectionHandler::new()
+// Test 2: Text Direction and RTL/LTR Support
+test "text direction and right-to-left support" {
+  // Create text direction manager
+  let text_direction = TextDirectionManager::new()
   
-  // 测试从左到右的文本（英语、中文、日语等）
+  // Test LTR text detection
   let ltr_text = "Hello World"
-  let ltr_direction = TextDirectionHandler::get_direction(text_direction_handler, ltr_text)
-  assert_eq(ltr_direction, TextDirection::LTR)
+  assert_eq(TextDirectionManager::detect_direction(text_direction, ltr_text), TextDirection::LTR)
   
-  let zh_ltr_text = "你好世界"
-  let zh_ltr_direction = TextDirectionHandler::get_direction(text_direction_handler, zh_ltr_text)
-  assert_eq(zh_ltr_direction, TextDirection::LTR)
-  
-  let ja_ltr_text = "こんにちは世界"
-  let ja_ltr_direction = TextDirectionHandler::get_direction(text_direction_handler, ja_ltr_text)
-  assert_eq(ja_ltr_direction, TextDirection::LTR)
-  
-  // 测试从右到左的文本（阿拉伯语、希伯来语等）
+  // Test RTL text detection
   let rtl_text = "مرحبا بالعالم"
-  let rtl_direction = TextDirectionHandler::get_direction(text_direction_handler, rtl_text)
-  assert_eq(rtl_direction, TextDirection::RTL)
+  assert_eq(TextDirectionManager::detect_direction(text_direction, rtl_text), TextDirection::RTL)
   
-  let he_text = "שלום עולם"
-  let he_direction = TextDirectionHandler::get_direction(text_direction_handler, he_text)
-  assert_eq(he_direction, TextDirection::RTL)
-  
-  // 测试混合方向文本
+  // Test mixed text detection
   let mixed_text = "Hello مرحبا World"
-  let mixed_direction = TextDirectionHandler::get_direction(text_direction_handler, mixed_text)
-  assert_eq(mixed_direction, TextDirection::Mixed)
+  assert_eq(TextDirectionManager::detect_direction(text_direction, mixed_text), TextDirection::Mixed)
   
-  // 测试文本对齐
-  let ltr_aligned = TextDirectionHandler::align_text(text_direction_handler, ltr_text, TextDirection::LTR)
-  assert_eq(ltr_aligned, "Hello World")
+  // Test bidirectional text processing
+  let bidi_text = "The number ١٢٣ is Arabic"
+  let processed_bidi = TextDirectionManager::process_bidi(text_direction, bidi_text)
+  assert_true(processed_bidi.contains("123")) // Arabic numerals should be displayed correctly
   
-  let rtl_aligned = TextDirectionHandler::align_text(text_direction_handler, rtl_text, TextDirection::RTL)
-  assert_eq(rtl_aligned, "مرحبا بالعالم")
+  // Test text alignment based on direction
+  let ltr_aligned = TextDirectionManager::get_alignment(text_direction, TextDirection::LTR)
+  assert_eq(ltr_aligned, TextAlign::Left)
+  
+  let rtl_aligned = TextDirectionManager::get_alignment(text_direction, TextDirection::RTL)
+  assert_eq(rtl_aligned, TextAlign::Right)
+  
+  // Test margin/padding adjustments for RTL
+  let ltr_margins = TextDirectionManager::adjust_margins(text_direction, 10, 20, TextDirection::LTR)
+  assert_eq(ltr_margins.left, 10)
+  assert_eq(ltr_margins.right, 20)
+  
+  let rtl_margins = TextDirectionManager::adjust_margins(text_direction, 10, 20, TextDirection::RTL)
+  assert_eq(rtl_margins.left, 20) // Swapped for RTL
+  assert_eq(rtl_margins.right, 10)
 }
 
-test "时区处理测试" {
-  // 创建时区处理器
-  let timezone_handler = TimezoneHandler::new()
+// Test 3: Multi-Language Resource Management
+test "multi-language resource management" {
+  // Create resource manager
+  let resource_manager = ResourceManager::new()
   
-  // 创建UTC时间
-  let utc_time = DateTime::new(2023, 11, 15, 14, 30, 45)
+  // Load resources for different languages
+  ResourceManager::load_language(resource_manager, "en", [
+    ("welcome.message", "Welcome to our application"),
+    ("goodbye.message", "Thank you for using our application"),
+    ("error.network", "Network connection failed"),
+    ("button.save", "Save"),
+    ("button.cancel", "Cancel")
+  ])
   
-  // 测试不同时区转换
-  let pst_time = TimezoneHandler::convert(timezone_handler, utc_time, "America/Los_Angeles")
-  assert_eq(pst_time.hour, 6) // UTC-8 (标准时间)
-  assert_eq(pst_time.minute, 30)
+  ResourceManager::load_language(resource_manager, "fr", [
+    ("welcome.message", "Bienvenue dans notre application"),
+    ("goodbye.message", "Merci d'utiliser notre application"),
+    ("error.network", "La connexion réseau a échoué"),
+    ("button.save", "Enregistrer"),
+    ("button.cancel", "Annuler")
+  ])
   
-  let est_time = TimezoneHandler::convert(timezone_handler, utc_time, "America/New_York")
-  assert_eq(est_time.hour, 9) // UTC-5 (标准时间)
-  assert_eq(est_time.minute, 30)
+  ResourceManager::load_language(resource_manager, "ja", [
+    ("welcome.message", "アプリケーションへようこそ"),
+    ("goodbye.message", "アプリケーションをご利用いただきありがとうございます"),
+    ("error.network", "ネットワーク接続が失敗しました"),
+    ("button.save", "保存"),
+    ("button.cancel", "キャンセル")
+  ])
   
-  let cet_time = TimezoneHandler::convert(timezone_handler, utc_time, "Europe/Paris")
-  assert_eq(cet_time.hour, 15) // UTC+1 (标准时间)
-  assert_eq(cet_time.minute, 30)
+  // Test resource retrieval
+  ResourceManager::set_language(resource_manager, "en")
+  assert_eq(ResourceManager::get_string(resource_manager, "welcome.message"), "Welcome to our application")
+  assert_eq(ResourceManager::get_string(resource_manager, "button.save"), "Save")
   
-  let jst_time = TimezoneHandler::convert(timezone_handler, utc_time, "Asia/Tokyo")
-  assert_eq(jst_time.hour, 23) // UTC+9
-  assert_eq(jst_time.minute, 30)
+  // Test language switching
+  ResourceManager::set_language(resource_manager, "fr")
+  assert_eq(ResourceManager::get_string(resource_manager, "welcome.message"), "Bienvenue dans notre application")
+  assert_eq(ResourceManager::get_string(resource_manager, "button.save"), "Enregistrer")
   
-  let cst_time = TimezoneHandler::convert(timezone_handler, utc_time, "Asia/Shanghai")
-  assert_eq(cst_time.hour, 22) // UTC+8
-  assert_eq(cst_time.minute, 30)
+  ResourceManager::set_language(resource_manager, "ja")
+  assert_eq(ResourceManager::get_string(resource_manager, "welcome.message"), "アプリケーションへようこそ")
+  assert_eq(ResourceManager::get_string(resource_manager, "button.save"), "保存")
   
-  // 测试时区名称本地化
-  let pst_name_en = TimezoneHandler::get_timezone_name(timezone_handler, "America/Los_Angeles", "en")
-  assert_eq(pst_name_en, "Pacific Standard Time")
+  // Test fallback to default language
+  ResourceManager::set_language(resource_manager, "de") // German not loaded
+  assert_eq(ResourceManager::get_string(resource_manager, "welcome.message"), "Welcome to our application") // Falls back to English
   
-  let pst_name_zh = TimezoneHandler::get_timezone_name(timezone_handler, "America/Los_Angeles", "zh")
-  assert_eq(pst_name_zh, "太平洋标准时间")
+  // Test parameterized strings
+  ResourceManager::load_language(resource_manager, "en", [
+    ("user.greeting", "Hello, {name}! You have {count} new messages.")
+  ])
   
-  let cet_name_en = TimezoneHandler::get_timezone_name(timezone_handler, "Europe/Paris", "en")
-  assert_eq(cet_name_en, "Central European Time")
+  ResourceManager::load_language(resource_manager, "fr", [
+    ("user.greeting", "Bonjour, {name}! Vous avez {count} nouveaux messages.")
+  ])
   
-  let cet_name_zh = TimezoneHandler::get_timezone_name(timezone_handler, "Europe/Paris", "zh")
-  assert_eq(cet_name_zh, "中欧标准时间")
+  ResourceManager::set_language(resource_manager, "en")
+  let en_greeting = ResourceManager::get_formatted_string(resource_manager, "user.greeting", [
+    ("name", "John"),
+    ("count", "5")
+  ])
+  assert_eq(en_greeting, "Hello, John! You have 5 new messages.")
+  
+  ResourceManager::set_language(resource_manager, "fr")
+  let fr_greeting = ResourceManager::get_formatted_string(resource_manager, "user.greeting", [
+    ("name", "Jean"),
+    ("count", "3")
+  ])
+  assert_eq(fr_greeting, "Bonjour, Jean! Vous avez 3 nouveaux messages.")
 }
 
-test "字符编码和Unicode处理测试" {
-  // 创建字符编码处理器
-  let encoding_handler = EncodingHandler::new()
+// Test 4: Cultural Formatting and Conventions
+test "cultural formatting and conventions" {
+  // Create cultural formatter
+  let formatter = CulturalFormatter::new()
   
-  // 测试多语言文本
-  let multilingual_text = "English: Hello, 中文: 你好, 日本語: こんにちは, العربية: مرحبا, Русский: Привет"
+  // Test name formatting
+  let western_name = PersonName::new("John", "Doe")
+  let western_formatted = formatter::format_name(western_name, NamingConvention::Western)
+  assert_eq(western_formatted, "John Doe")
   
-  // 测试UTF-8编码
-  let utf8_encoded = EncodingHandler::encode_utf8(encoding_handler, multilingual_text)
-  let utf8_decoded = EncodingHandler::decode_utf8(encoding_handler, utf8_encoded)
-  assert_eq(utf8_decoded, multilingual_text)
+  let eastern_name = PersonName::new("Tanaka", "Yuki")
+  let eastern_formatted = formatter::format_name(eastern_name, NamingConvention::Eastern)
+  assert_eq(eastern_formatted, "Tanaka Yuki")
   
-  // 测试字符计数
-  let char_count = EncodingHandler::count_characters(encoding_handler, multilingual_text)
-  assert_eq(char_count, 47) // 包括空格和标点符号
+  // Test address formatting
+  let us_address = Address::new(
+    "123 Main St",
+    "New York",
+    "NY",
+    "10001",
+    "USA"
+  )
   
-  // 测试字节计数
-  let byte_count = EncodingHandler::count_bytes(encoding_handler, multilingual_text)
-  assert_true(byte_count > 47) // 多字节字符会增加字节数
+  let us_formatted_address = formatter::format_address(us_address, AddressConvention::US)
+  assert_eq(us_formatted_address, "123 Main St\nNew York, NY 10001\nUSA")
   
-  // 测试字符截断
-  let truncated = EncodingHandler::truncate_characters(encoding_handler, multilingual_text, 20)
-  assert_eq(truncated.length(), 20)
+  let jp_address = Address::new(
+    "〒100-0001",
+    "千代田区千代田",
+    "1-1",
+    "東京都",
+    "日本"
+  )
   
-  // 测试字节截断
-  let byte_truncated = EncodingHandler::truncate_bytes(encoding_handler, multilingual_text, 20)
-  assert_true(byte_truncated.to_bytes().length() <= 20)
+  let jp_formatted_address = formatter::format_address(jp_address, AddressConvention::Japan)
+  assert_eq(jp_formatted_address, "〒100-0001\n東京都千代田区千代田1-1\n日本")
   
-  // 测试大小写转换
-  let english_text = "Hello World"
-  let upper_case = EncodingHandler::to_upper_case(encoding_handler, english_text, "en")
-  assert_eq(upper_case, "HELLO WORLD")
+  // Test phone number formatting
+  let us_phone = PhoneNumber::new("1", "2125551234")
+  let us_formatted_phone = formatter::format_phone_number(us_phone, PhoneConvention::US)
+  assert_eq(us_formatted_phone, "(212) 555-1234")
   
-  let lower_case = EncodingHandler::to_lower_case(encoding_handler, english_text, "en")
-  assert_eq(lower_case, "hello world")
+  let fr_phone = PhoneNumber::new("33", "1234567890")
+  let fr_formatted_phone = formatter::format_phone_number(fr_phone, PhoneConvention::France)
+  assert_eq(fr_formatted_phone, "01 23 45 67 89")
   
-  // 测试中文大小写转换（中文没有大小写概念，应返回原文本）
+  let jp_phone = PhoneNumber::new("81", "9012345678")
+  let jp_formatted_phone = formatter::format_phone_number(jp_phone, PhoneConvention::Japan)
+  assert_eq(jp_formatted_phone, "090-1234-5678")
+  
+  // Test measurement units
+  let weight_kg = 70.5
+  let us_weight = formatter::convert_weight(weight_kg, WeightUnit::Kilogram, WeightUnit::Pound)
+  assert_true(Math::abs(us_weight - 155.4) < 0.1)
+  
+  let length_m = 1.8
+  let us_length = formatter::convert_length(length_m, LengthUnit::Meter, LengthUnit::FootInch)
+  assert_true(us_length.contains("5'11\""))
+  
+  let temperature_c = 25.0
+  let us_temperature = formatter::convert_temperature(temperature_c, TemperatureUnit::Celsius, TemperatureUnit::Fahrenheit)
+  assert_true(Math::abs(us_temperature - 77.0) < 0.1)
+}
+
+// Test 5: Collation and String Comparison
+test "collation and string comparison" {
+  // Create collation manager
+  let collation = CollationManager::new()
+  
+  // Test different collation strengths
+  let strings = ["apple", "Apple", "äpple", "Banana", "banana"]
+  
+  // Primary collation (base letters only, case and accents ignored)
+  let primary_sorted = collation::sort(strings, CollationStrength::Primary)
+  assert_eq(primary_sorted, ["apple", "Apple", "äpple", "Banana", "banana"])
+  
+  // Secondary collation (base letters + accents, case ignored)
+  let secondary_sorted = collation::sort(strings, CollationStrength::Secondary)
+  assert_eq(secondary_sorted, ["apple", "Apple", "äpple", "Banana", "banana"])
+  
+  // Tertiary collation (base letters + accents + case)
+  let tertiary_sorted = collation::sort(strings, CollationStrength::Tertiary)
+  assert_eq(tertiary_sorted, ["Apple", "apple", "äpple", "Banana", "banana"])
+  
+  // Test locale-specific collation
+  let us_collator = collation::create_collator("en-US")
+  let de_collator = collation::create_collator("de-DE")
+  let sv_collator = collation::create_collator("sv-SE")
+  
+  let german_strings = ["äpfel", "apfel", "öffnen", "ofen"]
+  
+  // German collation treats ä like ae
+  let de_sorted = collation::sort_with_collator(german_strings, de_collator)
+  assert_eq(de_sorted, ["apfel", "äpfel", "ofen", "öffnen"])
+  
+  // Swedish collation treats ä and ö as separate letters at end of alphabet
+  let sv_sorted = collation::sort_with_collator(german_strings, sv_collator)
+  assert_eq(sv_sorted, ["apfel", "ofen", "öffnen", "äpfel"])
+  
+  // Test string searching with collation
+  let text = "Café naïve résumé"
+  let search_term = "naive"
+  
+  let found = collation::contains(text, search_term, CollationStrength::Primary)
+  assert_true(found) // Should find "naïve" when searching for "naive"
+  
+  // Test diacritic handling
+  let diacritic_strings = ["resume", "résumé", "Resume", "Résumé"]
+  let diacritic_sorted = collation::sort(diacritic_strings, CollationStrength::Primary)
+  assert_eq(diacritic_sorted, ["resume", "résumé", "Resume", "Résumé"])
+}
+
+// Test 6: Calendar and Time Zone Support
+test "calendar and time zone support" {
+  // Create calendar manager
+  let calendar_manager = CalendarManager::new()
+  
+  // Test different calendar systems
+  let gregorian_date = DateTime::new(2023, 1, 1, 12, 0, 0)
+  
+  // Convert to Islamic calendar
+  let islamic_date = calendar_manager::convert_to_calendar(gregorian_date, CalendarSystem::Islamic)
+  assert_eq(islamic_date.year, 1444)
+  assert_eq(islamic_date.month, 6)
+  assert_eq(islamic_date.day, 9)
+  
+  // Convert to Hebrew calendar
+  let hebrew_date = calendar_manager::convert_to_calendar(gregorian_date, CalendarSystem::Hebrew)
+  assert_eq(hebrew_date.year, 5783)
+  assert_eq(hebrew_date.month, 10)
+  assert_eq(hebrew_date.day, 8)
+  
+  // Convert to Chinese calendar
+  let chinese_date = calendar_manager::convert_to_calendar(gregorian_date, CalendarSystem::Chinese)
+  assert_eq(chinese_date.year, 4721)
+  assert_eq(chinese_date.month, 12)
+  assert_eq(chinese_date.day, 10)
+  
+  // Test time zone conversions
+  let utc_time = DateTime::new(2023, 1, 1, 12, 0, 0)
+  
+  let est_time = calendar_manager::convert_timezone(utc_time, "UTC", "America/New_York")
+  assert_eq(est_time.hour, 7) // UTC-5 in winter
+  assert_eq(est_time.day, 1)
+  
+  let jst_time = calendar_manager::convert_timezone(utc_time, "UTC", "Asia/Tokyo")
+  assert_eq(jst_time.hour, 21) // UTC+9
+  assert_eq(jst_time.day, 1)
+  
+  // Test daylight saving time
+  let summer_utc = DateTime::new(2023, 7, 1, 12, 0, 0)
+  let summer_est = calendar_manager::convert_timezone(summer_utc, "UTC", "America/New_York")
+  assert_eq(summer_est.hour, 8) // UTC-4 in summer (DST)
+  
+  // Test week start day
+  let us_week_start = calendar_manager::get_week_start_day("en-US")
+  assert_eq(us_week_start, WeekDay::Sunday)
+  
+  let uk_week_start = calendar_manager::get_week_start_day("en-GB")
+  assert_eq(uk_week_start, WeekDay::Monday)
+  
+  let islamic_week_start = calendar_manager::get_week_start_day("ar-SA")
+  assert_eq(islamic_week_start, WeekDay::Saturday)
+  
+  // Test working days
+  let us_working_days = calendar_manager::get_working_days("en-US")
+  assert_eq(us_working_days, [WeekDay::Monday, WeekDay::Tuesday, WeekDay::Wednesday, WeekDay::Thursday, WeekDay::Friday])
+  
+  let islamic_working_days = calendar_manager::get_working_days("ar-SA")
+  assert_eq(islamic_working_days, [WeekDay::Sunday, WeekDay::Monday, WeekDay::Tuesday, WeekDay::Wednesday, WeekDay::Thursday])
+}
+
+// Test 7: Pluralization and Gender Agreement
+test "pluralization and gender agreement" {
+  // Create grammar manager
+  let grammar_manager = GrammarManager::new()
+  
+  // Test pluralization rules for different languages
+  grammar_manager::load_plural_rules("en", [
+    (1, "item"),
+    (2, "items")
+  ])
+  
+  grammar_manager::load_plural_rules("fr", [
+    (0, "élément"),
+    (1, "élément"),
+    (2, "éléments")
+  ])
+  
+  grammar_manager::load_plural_rules("ar", [
+    (0, "عنصر"),
+    (1, "عنصر"),
+    (2, "عنصران"),
+    (3, "عناصر"),
+    (11, "عنصرًا")
+  ])
+  
+  // Test English pluralization
+  grammar_manager::set_language("en")
+  assert_eq(grammar_manager::pluralize("item", 1), "item")
+  assert_eq(grammar_manager::pluralize("item", 2), "items")
+  assert_eq(grammar_manager::pluralize("item", 0), "items") // English treats 0 as plural
+  
+  // Test French pluralization
+  grammar_manager::set_language("fr")
+  assert_eq(grammar_manager::pluralize("élément", 0), "élément")
+  assert_eq(grammar_manager::pluralize("élément", 1), "élément")
+  assert_eq(grammar_manager::pluralize("élément", 2), "éléments")
+  
+  // Test Arabic pluralization
+  grammar_manager::set_language("ar")
+  assert_eq(grammar_manager::pluralize("عنصر", 0), "عنصر")
+  assert_eq(grammar_manager::pluralize("عنصر", 1), "عنصر")
+  assert_eq(grammar_manager::pluralize("عنصر", 2), "عنصران")
+  assert_eq(grammar_manager::pluralize("عنصر", 3), "عناصر")
+  assert_eq(grammar_manager::pluralize("عنصر", 11), "عنصرًا")
+  
+  // Test gender agreement
+  grammar_manager::load_gender_rules("fr", [
+    ("book", Gender::Masculine),
+    ("table", Gender::Feminine)
+  ])
+  
+  grammar_manager::load_gender_rules("de", [
+    ("book", Gender::Masculine),
+    ("table", Gender::Feminine),
+    ("child", Gender::Neuter)
+  ])
+  
+  grammar_manager::set_language("fr")
+  assert_eq(grammar_manager::get_article("book", ArticleType::Definite), "le")
+  assert_eq(grammar_manager::get_article("table", ArticleType::Definite), "la")
+  assert_eq(grammar_manager::get_article("book", ArticleType::Indefinite), "un")
+  assert_eq(grammar_manager::get_article("table", ArticleType::Indefinite), "une")
+  
+  grammar_manager::set_language("de")
+  assert_eq(grammar_manager::get_article("book", ArticleType::Definite), "der")
+  assert_eq(grammar_manager::get_article("table", ArticleType::Definite), "die")
+  assert_eq(grammar_manager::get_article("child", ArticleType::Definite), "das")
+  
+  // Test adjective agreement
+  grammar_manager::load_adjective_rules("fr", [
+    ("beau", Gender::Masculine, "beau"),
+    ("beau", Gender::Feminine, "belle")
+  ])
+  
+  grammar_manager::set_language("fr")
+  assert_eq(grammar_manager::agree_adjective("beau", "book"), "beau")
+  assert_eq(grammar_manager::agree_adjective("beau", "table"), "belle")
+}
+
+// Test 8: Input Method and Character Set Support
+test "input method and character set support" {
+  // Create input method manager
+  let input_manager = InputMethodManager::new()
+  
+  // Test character set detection
+  let latin_text = "Hello World"
+  let latin_charset = input_manager::detect_charset(latin_text)
+  assert_eq(latin_charset, CharacterSet::Latin)
+  
+  let cyrillic_text = "Привет мир"
+  let cyrillic_charset = input_manager::detect_charset(cyrillic_text)
+  assert_eq(cyrillic_charset, CharacterSet::Cyrillic)
+  
+  let arabic_text = "مرحبا بالعالم"
+  let arabic_charset = input_manager::detect_charset(arabic_text)
+  assert_eq(arabic_charset, CharacterSet::Arabic)
+  
   let chinese_text = "你好世界"
-  let chinese_upper = EncodingHandler::to_upper_case(encoding_handler, chinese_text, "zh")
-  assert_eq(chinese_upper, "你好世界")
+  let chinese_charset = input_manager::detect_charset(chinese_text)
+  assert_eq(chinese_charset, CharacterSet::Chinese)
   
-  let chinese_lower = EncodingHandler::to_lower_case(encoding_handler, chinese_text, "zh")
-  assert_eq(chinese_lower, "你好世界")
-}
-
-test "文化特定格式测试" {
-  // 创建文化特定格式化器
-  let cultural_formatter = CulturalFormatter::new()
+  let japanese_text = "こんにちは世界"
+  let japanese_charset = input_manager::detect_charset(japanese_text)
+  assert_eq(japanese_charset, CharacterSet::Japanese)
   
-  // 测试姓名格式
-  let western_name = CulturalFormatter::format_name(cultural_formatter, "John", "Doe", "en")
-  assert_eq(western_name, "John Doe")
+  let mixed_text = "Hello こんにちは Привет مرحبا"
+  let mixed_charset = input_manager::detect_charset(mixed_text)
+  assert_eq(mixed_charset, CharacterSet::Mixed)
   
-  let eastern_name = CulturalFormatter::format_name(cultural_formatter, "张", "三", "zh")
-  assert_eq(eastern_name, "张三")
+  // Test input method prediction
+  let japanese_input = "konnichiha"
+  let japanese_predictions = input_manager::get_predictions(japanese_input, InputMethod::Japanese)
+  assert_true(japanese_predictions.contains("こんにちは"))
+  assert_true(japanese_predictions.contains("こんばんは"))
   
-  let japanese_name = CulturalFormatter::format_name(cultural_formatter, "田中", "太郎", "ja")
-  assert_eq(japanese_name, "田中太郎")
+  let chinese_input = "ni hao"
+  let chinese_predictions = input_manager::get_predictions(chinese_input, InputMethod::Chinese)
+  assert_true(chinese_predictions.contains("你好"))
+  assert_true(chinese_predictions.contains("您好"))
   
-  // 测试地址格式
-  let us_address = CulturalFormatter::format_address(cultural_formatter, "123 Main St", "New York", "NY", "10001", "en")
-  assert_eq(us_address, "123 Main St\nNew York, NY 10001")
+  let arabic_input = "ahlan"
+  let arabic_predictions = input_manager::get_predictions(arabic_input, InputMethod::Arabic)
+  assert_true(arabic_predictions.contains("أهلا"))
+  assert_true(arabic_predictions.contains("أهلاً"))
   
-  let chinese_address = CulturalFormatter::format_address(cultural_formatter, "建国路123号", "北京市", "朝阳区", "100000", "zh")
-  assert_eq(chinese_address, "中国北京市朝阳区建国路123号\n100000")
+  // Test character composition
+  let base_char = "a"
+  let combining_accent = "\u0301" // Combining acute accent
+  let composed_char = input_manager::compose_characters([base_char, combining_accent])
+  assert_eq(composed_char, "á")
   
-  let japanese_address = CulturalFormatter::format_address(cultural_formatter, "丸の内1-2-3", "東京都", "千代田区", "100-0001", "ja")
-  assert_eq(japanese_address, "〒100-0001\n東京都千代田区丸の内1-2-3")
+  // Test character decomposition
+  let composed_text = "café"
+  let decomposed = input_manager::decompose_text(composed_text)
+  assert_true(decomposed.contains("e") && decomposed.contains("\u0301"))
   
-  // 测试电话号码格式
-  let us_phone = CulturalFormatter::format_phone(cultural_formatter, "1234567890", "en")
-  assert_eq(us_phone, "(123) 456-7890")
+  // Test text normalization
+  let unnormalized_text = "cafe\u0301" // 'e' + combining acute accent
+  let normalized_text = input_manager::normalize_text(unnormalized_text, NormalizationForm::NFC)
+  assert_eq(normalized_text, "café") // Should be normalized to composed form
   
-  let chinese_phone = CulturalFormatter::format_phone(cultural_formatter, "13812345678", "zh")
-  assert_eq(chinese_phone, "138-1234-5678")
+  // Test bidirectional input handling
+  let bidi_input = "Hello مرحبا"
+  let logical_order = input_manager::get_logical_order(bidi_input)
+  let visual_order = input_manager::get_visual_order(bidi_input)
   
-  let japanese_phone = CulturalFormatter::format_phone(cultural_formatter, "09012345678", "ja")
-  assert_eq(japanese_phone, "090-1234-5678")
+  assert_eq(logical_order, "Hello مرحبا")
+  assert_true(visual_order.contains("مرحبا") && visual_order.contains("Hello"))
   
-  // 测试度量单位格式
-  let metric_height = CulturalFormatter::format_height(cultural_formatter, 175, "metric", "en")
-  assert_eq(metric_height, "175 cm")
-  
-  let imperial_height = CulturalFormatter::format_height(cultural_formatter, 175, "imperial", "en")
-  assert_eq(imperial_height, "5'9\"")
-  
-  let metric_weight = CulturalFormatter::format_weight(cultural_formatter, 70, "metric", "en")
-  assert_eq(metric_weight, "70 kg")
-  
-  let imperial_weight = CulturalFormatter::format_weight(cultural_formatter, 70, "imperial", "en")
-  assert_eq(imperial_weight, "154 lbs")
-}
-
-test "语言回退机制测试" {
-  // 创建语言回退处理器
-  let fallback_handler = FallbackHandler::new()
-  
-  // 设置语言回退链
-  FallbackHandler::set_fallback_chain(fallback_handler, "zh-CN", ["zh", "en"])
-  FallbackHandler::set_fallback_chain(fallback_handler, "ja-JP", ["ja", "en"])
-  FallbackHandler::set_fallback_chain(fallback_handler, "de-DE", ["de", "en"])
-  
-  // 添加消息
-  FallbackHandler::add_message(fallback_handler, "en", "welcome.message", "Welcome!")
-  FallbackHandler::add_message(fallback_handler, "zh", "welcome.message", "欢迎！")
-  FallbackHandler::add_message(fallback_handler, "ja", "welcome.message", "ようこそ！")
-  // 没有添加德语消息
-  
-  // 测试中文回退
-  let zh_cn_message = FallbackHandler::get_message(fallback_handler, "zh-CN", "welcome.message")
-  assert_eq(zh_cn_message, "欢迎！") // 直接找到zh-CN -> zh -> zh
-  
-  // 测试日语回退
-  let ja_jp_message = FallbackHandler::get_message(fallback_handler, "ja-JP", "welcome.message")
-  assert_eq(ja_jp_message, "ようこそ！") // 直接找到ja-JP -> ja -> ja
-  
-  // 测试德语回退
-  let de_de_message = FallbackHandler::get_message(fallback_handler, "de-DE", "welcome.message")
-  assert_eq(de_de_message, "Welcome!") // de-DE -> de -> 未找到 -> en
-  
-  // 测试不存在的语言回退
-  let fr_message = FallbackHandler::get_message(fallback_handler, "fr", "welcome.message")
-  assert_eq(fr_message, "welcome.message") // 未找到任何回退，返回键名
-  
-  // 测试不存在的消息
-  let unknown_message = FallbackHandler::get_message(fallback_handler, "zh-CN", "unknown.message")
-  assert_eq(unknown_message, "unknown.message") // 未找到消息，返回键名
-}
-
-test "国际化配置管理测试" {
-  // 创建国际化配置管理器
-  let i18n_config = I18nConfig::new()
-  
-  // 设置默认语言
-  I18nConfig::set_default_language(i18n_config, "en")
-  assert_eq(I18nConfig::get_default_language(i18n_config), "en")
-  
-  // 设置支持的语言列表
-  I18nConfig::set_supported_languages(i18n_config, ["en", "zh", "ja", "es", "fr", "de"])
-  let supported_languages = I18nConfig::get_supported_languages(i18n_config)
-  assert_eq(supported_languages.length(), 6)
-  assert_true(supported_languages.contains("en"))
-  assert_true(supported_languages.contains("zh"))
-  assert_true(supported_languages.contains("ja"))
-  assert_true(supported_languages.contains("es"))
-  assert_true(supported_languages.contains("fr"))
-  assert_true(supported_languages.contains("de"))
-  
-  // 设置时区
-  I18nConfig::set_default_timezone(i18n_config, "UTC")
-  assert_eq(I18nConfig::get_default_timezone(i18n_config), "UTC")
-  
-  // 设置日期格式
-  I18nConfig::set_date_format(i18n_config, "en", "MM/DD/YYYY")
-  I18nConfig::set_date_format(i18n_config, "zh", "YYYY年MM月DD日")
-  I18nConfig::set_date_format(i18n_config, "ja", "YYYY/MM/DD")
-  
-  assert_eq(I18nConfig::get_date_format(i18n_config, "en"), "MM/DD/YYYY")
-  assert_eq(I18nConfig::get_date_format(i18n_config, "zh"), "YYYY年MM月DD日")
-  assert_eq(I18nConfig::get_date_format(i18n_config, "ja"), "YYYY/MM/DD")
-  
-  // 设置时间格式
-  I18nConfig::set_time_format(i18n_config, "en", "h:mm:ss A")
-  I18nConfig::set_time_format(i18n_config, "zh", "A h:mm:ss")
-  I18nConfig::set_time_format(i18n_config, "ja", "H:mm:ss")
-  
-  assert_eq(I18nConfig::get_time_format(i18n_config, "en"), "h:mm:ss A")
-  assert_eq(I18nConfig::get_time_format(i18n_config, "zh"), "A h:mm:ss")
-  assert_eq(I18nConfig::get_time_format(i18n_config, "ja"), "H:mm:ss")
-  
-  // 测试配置验证
-  let is_valid = I18nConfig::validate(i18n_config)
-  assert_true(is_valid)
-  
-  // 测试无效配置
-  I18nConfig::set_default_language(i18n_config, "invalid_lang") // 不在支持的语言列表中
-  let is_invalid = I18nConfig::validate(i18n_config)
-  assert_false(is_invalid)
-  
-  // 修复配置
-  I18nConfig::set_default_language(i18n_config, "en")
-  let is_fixed = I18nConfig::validate(i18n_config)
-  assert_true(is_fixed)
+  // Test right-to-left input method
+  input_manager::set_input_direction(InputDirection::RTL)
+  let rtl_input_sequence = input_manager::process_input_sequence("ABC")
+  assert_eq(rtl_input_sequence, "CBA") // Characters should be reversed for RTL input
 }
