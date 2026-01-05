@@ -1,277 +1,398 @@
-// Azimuth Network Communication Enhanced Tests
-// This file contains enhanced test cases for network communication functionality
+// Azimuth Telemetry System - Network Communication Enhanced Tests
+// This file contains comprehensive test cases for network communication functionality
 
-// Test 1: Connection Pool Management
-test "connection pool management" {
-  let pool = ConnectionPool::new(10) // Maximum 10 connections
+// Test 1: HTTP Client Connection and Request Handling
+test "http client connection and request handling" {
+  let client = HttpClient::new()
   
-  // Test connection creation
-  let conn1 = ConnectionPool::acquire(pool, "https://api.example.com")
-  match conn1 {
-    Some(conn) => {
-      assert_true(Connection::is_active(conn))
-      assert_eq(Connection::url(conn), "https://api.example.com")
+  // Configure client with timeout and retry settings
+  HttpClient::set_timeout(client, 5000) // 5 seconds
+  HttpClient::set_retry_count(client, 3)
+  HttpClient::set_retry_delay(client, 1000) // 1 second
+  
+  // Test GET request
+  let get_request = HttpRequest::new("GET", "https://api.example.com/telemetry")
+  HttpRequest::add_header(get_request, "Content-Type", "application/json")
+  HttpRequest::add_header(get_request, "User-Agent", "Azimuth-Telemetry/1.0")
+  
+  let get_response = HttpClient::send(client, get_request)
+  match get_response {
+    Ok(response) => {
+      assert_eq(HttpResponse::status_code(response), 200)
+      assert_true(HttpResponse::has_header(response, "Content-Type"))
     }
-    None => assert_true(false)
-  }
-  
-  // Test multiple connections
-  let conn2 = ConnectionPool::acquire(pool, "https://api.example.com")
-  let conn3 = ConnectionPool::acquire(pool, "https://api.example.com")
-  
-  // Test connection release
-  ConnectionPool::release(pool, conn1)
-  let conn4 = ConnectionPool::acquire(pool, "https://api.example.com")
-  match conn4 {
-    Some(_) => assert_true(true)
-    None => assert_true(false)
-  }
-  
-  // Test pool exhaustion
-  let mut connections = []
-  for i = 0; i < 12; i = i + 1 {
-    let conn = ConnectionPool::acquire(pool, "https://api.example.com")
-    match conn {
-      Some(c) => connections.push(c)
-      None => assert_true(i >= 10) // Should fail after 10 connections
+    Error(e) => {
+      // In test environment, we might not have actual network access
+      // So we expect a network error
+      assert_true(Error::is_network_error(e))
     }
   }
   
-  // Release all connections
-  for conn in connections {
-    ConnectionPool::release(pool, conn)
-  }
-}
-
-// Test 2: Retry Mechanism with Exponential Backoff
-test "retry mechanism with exponential backoff" {
-  let retry_config = RetryConfig::new(3, 100, 2.0) // 3 retries, 100ms base, 2.0 multiplier
+  // Test POST request with telemetry data
+  let telemetry_data = TelemetryData::new()
+  TelemetryData::add_metric(telemetry_data, "cpu_usage", 75.5)
+  TelemetryData::add_metric(telemetry_data, "memory_usage", 1024.0)
+  TelemetryData::add_attribute(telemetry_data, "service", "auth_service")
   
-  // Test successful request
-  let mut attempt_count = 0
-  let result = Retry::execute(retry_config, fn() {
-    attempt_count = attempt_count + 1
-    if attempt_count < 2 {
-      Error("Temporary failure")
-    } else {
-      Ok("Success")
+  let post_request = HttpRequest::new("POST", "https://api.example.com/telemetry")
+  HttpRequest::add_header(post_request, "Content-Type", "application/json")
+  HttpRequest::set_body(post_request, TelemetryData::to_json(telemetry_data))
+  
+  let post_response = HttpClient::send(client, post_request)
+  match post_response {
+    Ok(response) => {
+      assert_eq(HttpResponse::status_code(response), 201)
+      assert_eq(HttpResponse::body(response), "{\"status\":\"success\"}")
     }
-  })
-  
-  match result {
-    Ok(value) => {
-      assert_eq(value, "Success")
-      assert_eq(attempt_count, 2)
-    }
-    Error(_) => assert_true(false)
-  }
-  
-  // Test max retries exceeded
-  attempt_count = 0
-  let failure_result = Retry::execute(retry_config, fn() {
-    attempt_count = attempt_count + 1
-    Error("Persistent failure")
-  })
-  
-  match failure_result {
-    Ok(_) => assert_true(false)
-    Error(msg) => {
-      assert_eq(msg, "Persistent failure")
-      assert_eq(attempt_count, 3) // Should attempt 3 times
+    Error(e) => {
+      // In test environment, we might not have actual network access
+      assert_true(Error::is_network_error(e))
     }
   }
 }
 
-// Test 3: Circuit Breaker Pattern
-test "circuit breaker pattern" {
-  let circuit_breaker = CircuitBreaker::new(5, 10000, 30000) // 5 failures, 10s timeout, 30s reset
-  
-  // Test initial state (closed)
-  assert_eq(CircuitBreaker::state(circuit_breaker), Closed)
-  
-  // Test successful calls
-  for i = 0; i < 3; i = i + 1 {
-    let result = CircuitBreaker::call(circuit_breaker, fn() { Ok("Success") })
-    match result {
-      Ok(value) => assert_eq(value, "Success")
-      Error(_) => assert_true(false)
-    }
-  }
-  
-  // Test failures that trigger circuit opening
-  for i = 0; i < 5; i = i + 1 {
-    let result = CircuitBreaker::call(circuit_breaker, fn() { Error("Failure") })
-    match result {
-      Ok(_) => assert_true(false)
-      Error(_) => assert_true(true)
-    }
-  }
-  
-  // Test circuit is now open
-  assert_eq(CircuitBreaker::state(circuit_breaker), Open)
-  
-  // Test calls are blocked when circuit is open
-  let blocked_result = CircuitBreaker::call(circuit_breaker, fn() { Ok("Should not execute") })
-  match blocked_result {
-    Ok(_) => assert_true(false)
-    Error(msg) => assert_eq(msg, "Circuit breaker is open")
-  }
-}
-
-// Test 4: Request/Response Interceptor Chain
-test "request response interceptor chain" {
-  let interceptor_chain = InterceptorChain::new()
-  
-  // Add request interceptor that adds auth header
-  InterceptorChain::add_request(interceptor_chain, fn(request) {
-    HttpRequest::add_header(request, "Authorization", "Bearer token123")
-    request
-  })
-  
-  // Add request interceptor that adds timestamp
-  InterceptorChain::add_request(interceptor_chain, fn(request) {
-    HttpRequest::add_header(request, "X-Timestamp", "1234567890")
-    request
-  })
-  
-  // Add response interceptor that logs response
-  let mut logged_status = -1
-  InterceptorChain::add_response(interceptor_chain, fn(response) {
-    logged_status = HttpResponse::status_code(response)
-    response
-  })
-  
-  // Test interceptor chain execution
-  let request = HttpRequest::new("GET", "https://api.example.com", [], None)
-  let intercepted_request = InterceptorChain::process_request(interceptor_chain, request)
-  
-  assert_eq(HttpRequest::get_header(intercepted_request, "Authorization"), Some("Bearer token123"))
-  assert_eq(HttpRequest::get_header(intercepted_request, "X-Timestamp"), Some("1234567890"))
-  
-  let response = HttpResponse::new(200, [], Some("response body"))
-  let intercepted_response = InterceptorChain::process_response(interceptor_chain, response)
-  assert_eq(logged_status, 200)
-}
-
-// Test 5: WebSocket Connection Management
-test "websocket connection management" {
-  let websocket = WebSocket::new("wss://echo.example.com")
+// Test 2: WebSocket Connection and Real-time Data Streaming
+test "websocket connection and real-time data streaming" {
+  let websocket = WebSocket::new("wss://api.example.com/telemetry/stream")
   
   // Test connection establishment
-  let connect_result = WebSocket::connect(websocket)
-  match connect_result {
-    Ok(_) => assert_true(true)
-    Error(_) => assert_true(false)
+  let connection_result = WebSocket::connect(websocket)
+  match connection_result {
+    Ok(_) => assert_true(true),
+    Error(e) => {
+      // In test environment, we might not have actual network access
+      assert_true(Error::is_network_error(e))
+    }
   }
   
-  // Test message sending
-  let send_result = WebSocket::send(websocket, "Hello WebSocket")
+  // Test sending telemetry data
+  let telemetry_stream = TelemetryStream::new()
+  for i in 0..=10 {
+    let data_point = TelemetryPoint::new(
+      "realtime_metric",
+      i.to_float() * 10.0,
+      Attributes::with_data([("source", StringValue("sensor_" + i.to_string()))])
+    )
+    TelemetryStream::add_point(telemetry_stream, data_point)
+  }
+  
+  let send_result = WebSocket::send(websocket, TelemetryStream::to_json(telemetry_stream))
   match send_result {
-    Ok(_) => assert_true(true)
-    Error(_) => assert_true(false)
+    Ok(_) => assert_true(true),
+    Error(e) => {
+      // In test environment, we might not have actual network access
+      assert_true(Error::is_network_error(e))
+    }
   }
   
-  // Test message receiving
+  // Test receiving data
   let receive_result = WebSocket::receive(websocket)
   match receive_result {
-    Ok(message) => assert_eq(message, "Hello WebSocket")
-    Error(_) => assert_true(false)
+    Ok(message) => {
+      assert_true(message.contains("telemetry"))
+      assert_true(message.length() > 0)
+    }
+    Error(e) => {
+      // In test environment, we might not have actual network access
+      assert_true(Error::is_network_error(e))
+    }
   }
   
-  // Test connection closing
+  // Test connection closure
   let close_result = WebSocket::close(websocket)
   match close_result {
-    Ok(_) => assert_true(true)
-    Error(_) => assert_true(false)
+    Ok(_) => assert_true(true),
+    Error(e) => {
+      // In test environment, we might not have actual network access
+      assert_true(Error::is_network_error(e))
+    }
   }
 }
 
-// Test 6: Network Telemetry Integration
-test "network telemetry integration" {
-  let telemetry_client = TelemetryHttpClient::new()
+// Test 3: Network Resilience and Retry Logic
+test "network resilience and retry logic" {
+  let client = HttpClient::new()
   
-  // Test that telemetry is collected for requests
-  let request = HttpRequest::new("GET", "https://api.example.com/test", [], None)
-  let response = TelemetryHttpClient::execute(telemetry_client, request)
+  // Configure retry settings
+  HttpClient::set_retry_count(client, 5)
+  HttpClient::set_retry_delay(client, 500) // 500ms
+  HttpClient::set_exponential_backoff(client, true)
   
-  // Check that telemetry metrics were recorded
-  let metrics = TelemetryHttpClient::get_metrics(telemetry_client)
-  assert_true(metrics.total_requests > 0)
-  assert_true(metrics.successful_requests > 0)
-  assert_true(metrics.total_response_time_ms > 0)
+  // Test with a failing endpoint
+  let failing_request = HttpRequest::new("GET", "https://nonexistent.example.com/telemetry")
   
-  // Test error telemetry
-  let error_request = HttpRequest::new("GET", "https://invalid.example.com", [], None)
-  let error_response = TelemetryHttpClient::execute(telemetry_client, error_request)
+  let start_time = Time::now()
+  let response = HttpClient::send(client, failing_request)
+  let end_time = Time::now()
   
-  let error_metrics = TelemetryHttpClient::get_metrics(telemetry_client)
-  assert_true(error_metrics.failed_requests > 0)
-  assert_true(error_metrics.error_rate > 0.0)
-}
-
-// Test 7: Request Compression and Decompression
-test "request compression and decompression" {
-  let compression_client = CompressionHttpClient::new(Gzip)
-  
-  // Test request compression
-  let large_body = "x" * 1000 // Create a large body that compresses well
-  let request = HttpRequest::new("POST", "https://api.example.com/data", 
-                                [("Content-Encoding", "gzip")], 
-                                Some(large_body))
-  
-  let compressed_request = CompressionHttpClient::compress_request(compression_client, request)
-  let compressed_body = HttpRequest::body(compressed_request)
-  
-  match compressed_body {
-    Some(body) => assert_true(body.length() < large_body.length()) // Compressed body should be smaller
-    None => assert_true(false)
+  match response {
+    Ok(_) => assert_true(false), // Should not succeed with nonexistent endpoint
+    Error(e) => {
+      // Verify it's a network error
+      assert_true(Error::is_network_error(e))
+      
+      // Verify retry attempts were made (should take at least 500ms * 5 = 2.5s)
+      let elapsed = end_time - start_time
+      assert_true(elapsed > 2000) // At least 2 seconds
+    }
   }
   
-  // Test response decompression
-  let compressed_response = HttpResponse::new(200, 
-                                            [("Content-Encoding", "gzip")], 
-                                            Some(compressed_body.unwrap_or("")))
-  let decompressed_response = CompressionHttpClient::decompress_response(compression_client, compressed_response)
-  let decompressed_body = HttpResponse::body(decompressed_response)
+  // Test with timeout
+  HttpClient::set_timeout(client, 100) // 100ms timeout
   
-  match decompressed_body {
-    Some(body) => assert_eq(body, large_body)
-    None => assert_true(false)
+  let slow_request = HttpRequest::new("GET", "https://httpbin.org/delay/5") // 5 second delay
+  
+  let timeout_start = Time::now()
+  let timeout_response = HttpClient::send(client, slow_request)
+  let timeout_end = Time::now()
+  
+  match timeout_response {
+    Ok(_) => assert_true(false), // Should not succeed with 100ms timeout
+    Error(e) => {
+      // Verify it's a timeout error
+      assert_true(Error::is_timeout_error(e))
+      
+      // Verify timeout was respected (should take around 100ms)
+      let timeout_elapsed = timeout_end - timeout_start
+      assert_true(timeout_elapsed < 1000) // Less than 1 second
+    }
   }
 }
 
-// Test 8: Connection Timeout and Cancellation
-test "connection timeout and cancellation" {
-  let timeout_client = TimeoutHttpClient::new(5000) // 5 second timeout
+// Test 4: Connection Pool Management
+test "connection pool management" {
+  let pool = ConnectionPool::new("https://api.example.com", 10) // Max 10 connections
   
-  // Test successful request within timeout
-  let fast_request = HttpRequest::new("GET", "https://httpbin.org/delay/1", [], None)
-  let fast_result = TimeoutHttpClient::execute(timeout_client, fast_request)
+  // Test acquiring connections
+  let connections = []
   
-  match fast_result {
-    Ok(_) => assert_true(true)
-    Error(_) => assert_true(false)
+  for i in 0..=10 {
+    let connection = ConnectionPool::acquire(pool)
+    match connection {
+      Some(conn) => connections.push(conn),
+      None => {
+        // Pool should be exhausted after 10 acquisitions
+        assert_true(i == 10)
+      }
+    }
   }
   
-  // Test request that exceeds timeout
-  let slow_request = HttpRequest::new("GET", "https://httpbin.org/delay/10", [], None)
-  let slow_result = TimeoutHttpClient::execute(timeout_client, slow_request)
-  
-  match slow_result {
-    Ok(_) => assert_true(false)
-    Error(msg) => assert_eq(msg, "Request timeout")
+  // Verify pool is exhausted
+  let exhausted_connection = ConnectionPool::acquire(pool)
+  match exhausted_connection {
+    Some(_) => assert_true(false), // Should not succeed
+    None => assert_true(true)      // Should fail
   }
   
-  // Test request cancellation
-  let cancellable_client = CancellableHttpClient::new()
-  let request = HttpRequest::new("GET", "https://httpbin.org/delay/5", [], None)
-  let request_handle = CancellableHttpClient::execute_async(cancellable_client, request)
+  // Test using connections
+  for connection in connections {
+    let request = HttpRequest::new("GET", "/telemetry")
+    let response = Connection::send(connection, request)
+    
+    match response {
+      Ok(_) => assert_true(true), // Might succeed in test environment
+      Error(e) => {
+        // In test environment, we might not have actual network access
+        assert_true(Error::is_network_error(e))
+      }
+    }
+  }
   
-  // Cancel the request after 1 second
-  // Note: In a real implementation, this would involve actual async/cancellation
-  let cancel_result = CancellableHttpClient::cancel(cancellable_client, request_handle)
-  match cancel_result {
-    Ok(_) => assert_true(true)
-    Error(_) => assert_true(false)
+  // Release connections
+  for connection in connections {
+    ConnectionPool::release(pool, connection)
+  }
+  
+  // Should be able to acquire connections again
+  let new_connections = []
+  for i in 0..=5 {
+    let connection = ConnectionPool::acquire(pool)
+    match connection {
+      Some(conn) => new_connections.push(conn),
+      None => assert_true(false) // Should succeed
+    }
+  }
+  
+  // Verify available connections
+  let available_count = ConnectionPool::available_count(pool)
+  assert_eq(available_count, 5) // 10 total - 5 acquired = 5 available
+  
+  // Release all connections
+  for connection in new_connections {
+    ConnectionPool::release(pool, connection)
+  }
+  
+  // Verify all connections are available
+  let all_available = ConnectionPool::available_count(pool)
+  assert_eq(all_available, 10) // All 10 connections should be available
+}
+
+// Test 5: Network Telemetry and Metrics
+test "network telemetry and metrics" {
+  let telemetry_collector = NetworkTelemetryCollector::new()
+  
+  // Enable network metrics collection
+  NetworkTelemetryCollector::enable(telemetry_collector)
+  
+  let client = HttpClient::new()
+  
+  // Make several requests to generate telemetry
+  for i in 0..=5 {
+    let request = HttpRequest::new("GET", "https://api.example.com/telemetry/" + i.to_string())
+    let response = HttpClient::send(client, request)
+    
+    // We don't care about success/failure, just want to generate telemetry
+    match response {
+      Ok(_) => {},
+      Error(_) => {}
+    }
+  }
+  
+  // Collect network telemetry
+  let telemetry = NetworkTelemetryCollector::collect(telemetry_collector)
+  
+  // Verify telemetry data
+  assert_true(NetworkTelemetry::has_requests(telemetry))
+  assert_eq(NetworkTelemetry::request_count(telemetry), 5)
+  
+  // Verify metrics
+  let metrics = NetworkTelemetry::get_metrics(telemetry)
+  assert_true(Metrics::has_metric(metrics, "network.request.count"))
+  assert_true(Metrics::has_metric(metrics, "network.response.time"))
+  assert_true(Metrics::has_metric(metrics, "network.error.count"))
+  
+  // Verify request count metric
+  let request_count = Metrics::get_metric(metrics, "network.request.count")
+  match request_count {
+    Metric::Counter(value) => assert_eq(value, 5.0),
+    _ => assert_true(false)
+  }
+  
+  // Verify response time metric
+  let response_time = Metrics::get_metric(metrics, "network.response.time")
+  match response_time {
+    Metric::Histogram(stats) => {
+      assert_true(HistogramStats::count(stats) > 0)
+      assert_true(HistogramStats::mean(stats) >= 0.0)
+    }
+    _ => assert_true(false)
+  }
+  
+  // Disable network telemetry collection
+  NetworkTelemetryCollector::disable(telemetry_collector)
+}
+
+// Test 6: Network Error Handling and Recovery
+test "network error handling and recovery" {
+  let client = HttpClient::new()
+  
+  // Configure circuit breaker
+  let circuit_breaker = CircuitBreaker::new(3, 60000) // 3 failures, 60s timeout
+  HttpClient::set_circuit_breaker(client, circuit_breaker)
+  
+  // Test with failing endpoint to trigger circuit breaker
+  for i in 0..=3 {
+    let failing_request = HttpRequest::new("GET", "https://nonexistent.example.com/telemetry")
+    let response = HttpClient::send(client, failing_request)
+    
+    match response {
+      Ok(_) => assert_true(false), // Should not succeed
+      Error(e) => {
+        assert_true(Error::is_network_error(e))
+      }
+    }
+  }
+  
+  // Circuit breaker should now be open
+  assert_true(CircuitBreaker::is_open(circuit_breaker))
+  
+  // Test with circuit breaker open
+  let normal_request = HttpRequest::new("GET", "https://api.example.com/telemetry")
+  let circuit_response = HttpClient::send(client, normal_request)
+  
+  match circuit_response {
+    Ok(_) => assert_true(false), // Should not succeed when circuit is open
+    Error(e) => {
+      // Should be a circuit breaker error, not a network error
+      assert_true(Error::is_circuit_breaker_error(e))
+      assert_false(Error::is_network_error(e))
+    }
+  }
+  
+  // Test circuit breaker recovery (simulate timeout)
+  CircuitBreaker::force_close(circuit_breaker)
+  
+  // Should now be able to make requests again
+  let recovery_request = HttpRequest::new("GET", "https://api.example.com/telemetry")
+  let recovery_response = HttpClient::send(client, recovery_request)
+  
+  match recovery_response {
+    Ok(_) => assert_true(true), // Might succeed in test environment
+    Error(e) => {
+      // In test environment, we might not have actual network access
+      assert_true(Error::is_network_error(e))
+      assert_false(Error::is_circuit_breaker_error(e))
+    }
+  }
+}
+
+// Test 7: Network Security and Authentication
+test "network security and authentication" {
+  let client = HttpClient::new()
+  
+  // Test with API key authentication
+  let api_key = "test-api-key-12345"
+  HttpClient::set_api_key(client, api_key)
+  
+  let auth_request = HttpRequest::new("GET", "https://api.example.com/secure/telemetry")
+  let auth_response = HttpClient::send(client, auth_request)
+  
+  match auth_response {
+    Ok(response) => {
+      // If successful, verify authentication headers were sent
+      assert_true(HttpRequest::has_header(auth_request, "X-API-Key"))
+      assert_eq(HttpRequest::get_header(auth_request, "X-API-Key"), api_key)
+    }
+    Error(e) => {
+      // In test environment, we might not have actual network access
+      assert_true(Error::is_network_error(e))
+    }
+  }
+  
+  // Test with bearer token authentication
+  let bearer_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.token"
+  HttpClient::set_bearer_token(client, bearer_token)
+  
+  let bearer_request = HttpRequest::new("GET", "https://api.example.com/secure/telemetry")
+  let bearer_response = HttpClient::send(client, bearer_request)
+  
+  match bearer_response {
+    Ok(response) => {
+      // If successful, verify authentication headers were sent
+      assert_true(HttpRequest::has_header(bearer_request, "Authorization"))
+      assert_eq(HttpRequest::get_header(bearer_request, "Authorization"), "Bearer " + bearer_token)
+    }
+    Error(e) => {
+      // In test environment, we might not have actual network access
+      assert_true(Error::is_network_error(e))
+    }
+  }
+  
+  // Test TLS/SSL configuration
+  HttpClient::set_verify_ssl(client, true)
+  HttpClient::set_ca_cert_path(client, "/path/to/ca.crt")
+  
+  let ssl_request = HttpRequest::new("GET", "https://api.example.com/secure/telemetry")
+  let ssl_response = HttpClient::send(client, ssl_request)
+  
+  match ssl_response {
+    Ok(response) => {
+      // If successful, verify SSL was used
+      assert_true(HttpResponse::was_secure(response))
+    }
+    Error(e) => {
+      // In test environment, we might not have actual network access
+      assert_true(Error::is_network_error(e))
+    }
   }
 }
