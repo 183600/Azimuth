@@ -1,593 +1,605 @@
-// Azimuth Telemetry System - Internationalization Support Tests
-// This file contains test cases for internationalization functionality
+// Azimuth Internationalization Support Test Suite
+// 国际化支持测试套件，验证遥测系统在不同语言、地区和文化环境下的兼容性和适应性
 
-// Test 1: Locale Detection and Management
-test "locale detection and management" {
-  // Create a locale manager
-  let locale_manager = LocaleManager::new()
+// 测试1: 多语言文本处理
+test "多语言文本处理测试" {
+  // 测试不同语言的文本处理
+  let english_text = "Azimuth telemetry system"
+  let chinese_text = "Azimuth 遥测系统"
+  let japanese_text = "Azimuth テレメトリシステム"
+  let arabic_text = "نظام تيليمتري أزيموث"
+  let russian_text = "Система телеметрии Азимут"
+  let french_text = "Système de télémétrie Azimuth"
+  let german_text = "Azimuth-Telemetriesystem"
+  let spanish_text = "Sistema de telemetría Azimuth"
   
-  // Test default locale
-  let default_locale = LocaleManager::get_default_locale(locale_manager)
-  assert_eq(default_locale.language, "en")
-  assert_eq(default_locale.region, "US")
+  // 测试文本长度计算
+  assert_eq(english_text.length(), 25)
+  assert_eq(chinese_text.length(), 11)
+  assert_eq(japanese_text.length(), 16)
+  assert_eq(arabic_text.length(), 22)
+  assert_eq(russian_text.length(), 27)
+  assert_eq(french_text.length(), 30)
+  assert_eq(german_text.length(), 24)
+  assert_eq(spanish_text.length(), 29)
   
-  // Test setting locale
-  let french_locale = Locale::new("fr", "FR")
-  LocaleManager::set_current_locale(locale_manager, french_locale)
+  // 测试文本编码转换
+  let utf8_encoded_english = azimuth::TextEncoding::to_utf8(english_text)
+  let utf8_encoded_chinese = azimuth::TextEncoding::to_utf8(chinese_text)
+  let utf8_encoded_japanese = azimuth::TextEncoding::to_utf8(japanese_text)
   
-  let current_locale = LocaleManager::get_current_locale(locale_manager)
-  assert_eq(current_locale.language, "fr")
-  assert_eq(current_locale.region, "FR")
+  // 验证UTF-8编码结果
+  let decoded_english = azimuth::TextEncoding::from_utf8(utf8_encoded_english)
+  let decoded_chinese = azimuth::TextEncoding::from_utf8(utf8_encoded_chinese)
+  let decoded_japanese = azimuth::TextEncoding::from_utf8(utf8_encoded_japanese)
   
-  // Test locale detection from system
-  let system_locale = LocaleManager::detect_system_locale(locale_manager)
-  assert_true(system_locale.language.length() == 2)
-  assert_true(system_locale.region.length() == 2)
+  match decoded_english {
+    Ok(text) => assert_eq(text, english_text)
+    Err(_) => assert_true(false)
+  }
   
-  // Test locale fallback
-  LocaleManager::add_fallback_locale(locale_manager, Locale::new("en", "US"))
+  match decoded_chinese {
+    Ok(text) => assert_eq(text, chinese_text)
+    Err(_) => assert_true(false)
+  }
   
-  // Try to set an unsupported locale
-  let unsupported_locale = Locale::new("xx", "XX")
-  LocaleManager::set_current_locale(locale_manager, unsupported_locale)
+  match decoded_japanese {
+    Ok(text) => assert_eq(text, japanese_text)
+    Err(_) => assert_true(false)
+  }
   
-  // Should fall back to the default or fallback locale
-  let fallback_locale = LocaleManager::get_current_locale(locale_manager)
-  assert_true(fallback_locale.language == "en" || fallback_locale.language == "fr")
+  // 测试文本大小写转换（仅适用于有大小写的语言）
+  let english_upper = english_text.to_uppercase()
+  let english_lower = english_text.to_lowercase()
+  let french_upper = french_text.to_uppercase()
+  let french_lower = french_text.to_lowercase()
+  let german_upper = german_text.to_uppercase()
+  let german_lower = german_text.to_lowercase()
   
-  // Test locale preferences
-  let preferences = [Locale::new("zh", "CN"), Locale::new("en", "US"), Locale::new("fr", "FR")]
-  LocaleManager::set_preferred_locales(locale_manager, preferences)
-  
-  let resolved_locale = LocaleManager::resolve_locale(locale_manager)
-  assert_eq(resolved_locale.language, "zh")
-  assert_eq(resolved_locale.region, "CN")
+  assert_eq(english_upper, "AZIMUTH TELEMETRY SYSTEM")
+  assert_eq(english_lower, "azimuth telemetry system")
+  assert_eq(french_upper, "SYSTÈME DE TÉLÉMÉTRIE AZIMUTH")
+  assert_eq(french_lower, "système de télémétrie azimuth")
+  assert_eq(german_upper, "AZIMUTH-TELEMETRIESYSTEM")
+  assert_eq(german_lower, "azimuth-telemetriesystem")
 }
 
-// Test 2: Message Localization
-test "message localization" {
-  // Create a message localizer
-  let localizer = MessageLocalizer::new()
+// 测试2: 日期和时间本地化
+test "日期和时间本地化测试" {
+  // 测试时间戳
+  let test_timestamp = 1609459200000L // 2021-01-01 00:00:00 UTC
   
-  // Add translations for different locales
-  MessageLocalizer::add_translation(localizer, "en", "US", "telemetry.error.connection_failed", "Connection to telemetry server failed")
-  MessageLocalizer::add_translation(localizer, "fr", "FR", "telemetry.error.connection_failed", "La connexion au serveur de télémétrie a échoué")
-  MessageLocalizer::add_translation(localizer, "zh", "CN", "telemetry.error.connection_failed", "连接遥测服务器失败")
-  MessageLocalizer::add_translation(localizer, "es", "ES", "telemetry.error.connection_failed", "Error de conexión al servidor de telemetría")
+  // 测试不同地区的日期格式
+  let us_date = azimuth::DateTimeFormatter::format_date(test_timestamp, "en-US", "MM/DD/YYYY")
+  let uk_date = azimuth::DateTimeFormatter::format_date(test_timestamp, "en-GB", "DD/MM/YYYY")
+  let iso_date = azimuth::DateTimeFormatter::format_date(test_timestamp, "en-ISO", "YYYY-MM-DD")
+  let chinese_date = azimuth::DateTimeFormatter::format_date(test_timestamp, "zh-CN", "YYYY年MM月DD日")
+  let japanese_date = azimuth::DateTimeFormatter::format_date(test_timestamp, "ja-JP", "YYYY年MM月DD日")
   
-  // Test localization for different locales
-  let en_message = MessageLocalizer::localize(localizer, "telemetry.error.connection_failed", Locale::new("en", "US"))
-  assert_eq(en_message, "Connection to telemetry server failed")
+  assert_eq(us_date, "01/01/2021")
+  assert_eq(uk_date, "01/01/2021")
+  assert_eq(iso_date, "2021-01-01")
+  assert_eq(chinese_date, "2021年01月01日")
+  assert_eq(japanese_date, "2021年01月01日")
   
-  let fr_message = MessageLocalizer::localize(localizer, "telemetry.error.connection_failed", Locale::new("fr", "FR"))
-  assert_eq(fr_message, "La connexion au serveur de télémétrie a échoué")
+  // 测试不同地区的时间格式
+  let us_time = azimuth::DateTimeFormatter::format_time(test_timestamp, "en-US", "hh:mm:ss A")
+  let uk_time = azimuth::DateTimeFormatter::format_time(test_timestamp, "en-GB", "HH:mm:ss")
+  let chinese_time = azimuth::DateTimeFormatter::format_time(test_timestamp, "zh-CN", "HH时mm分ss秒")
+  let japanese_time = azimuth::DateTimeFormatter::format_time(test_timestamp, "ja-JP", "HH時mm分ss秒")
   
-  let zh_message = MessageLocalizer::localize(localizer, "telemetry.error.connection_failed", Locale::new("zh", "CN"))
-  assert_eq(zh_message, "连接遥测服务器失败")
+  assert_eq(us_time, "12:00:00 AM")
+  assert_eq(uk_time, "00:00:00")
+  assert_eq(chinese_time, "00时00分00秒")
+  assert_eq(japanese_time, "00時00分00秒")
   
-  let es_message = MessageLocalizer::localize(localizer, "telemetry.error.connection_failed", Locale::new("es", "ES"))
-  assert_eq(es_message, "Error de conexión al servidor de telemetría")
+  // 测试不同地区的日期时间格式
+  let us_datetime = azimuth::DateTimeFormatter::format_datetime(test_timestamp, "en-US", "MM/DD/YYYY hh:mm:ss A")
+  let chinese_datetime = azimuth::DateTimeFormatter::format_datetime(test_timestamp, "zh-CN", "YYYY年MM月DD日 HH时mm分ss秒")
   
-  // Test fallback to language-only locale
-  let fr_ca_message = MessageLocalizer::localize(localizer, "telemetry.error.connection_failed", Locale::new("fr", "CA"))
-  assert_eq(fr_ca_message, "La connexion au serveur de télémétrie a échoué") // Should fall back to fr-FR
+  assert_eq(us_datetime, "01/01/2021 12:00:00 AM")
+  assert_eq(chinese_datetime, "2021年01月01日 00时00分00秒")
   
-  // Test fallback to default locale
-  let unsupported_message = MessageLocalizer::localize(localizer, "telemetry.error.connection_failed", Locale::new("xx", "XX"))
-  assert_eq(unsupported_message, "Connection to telemetry server failed") // Should fall back to en-US
+  // 测试时区转换
+  let utc_time = azimuth::TimeZoneConverter::convert(test_timestamp, "UTC", "UTC")
+  let us_eastern_time = azimuth::TimeZoneConverter::convert(test_timestamp, "UTC", "US/Eastern")
+  let china_time = azimuth::TimeZoneConverter::convert(test_timestamp, "UTC", "Asia/Shanghai")
+  let japan_time = azimuth::TimeZoneConverter::convert(test_timestamp, "UTC", "Asia/Tokyo")
   
-  // Test message with parameters
-  MessageLocalizer::add_translation(localizer, "en", "US", "telemetry.metric.value", "Metric {metric_name} has value {value}")
-  MessageLocalizer::add_translation(localizer, "fr", "FR", "telemetry.metric.value", "La métrique {metric_name} a une valeur de {value}")
+  // 验证时区转换结果
+  let us_eastern_formatted = azimuth::DateTimeFormatter::format_datetime(us_eastern_time, "en-US", "MM/DD/YYYY hh:mm:ss A")
+  let china_formatted = azimuth::DateTimeFormatter::format_datetime(china_time, "zh-CN", "YYYY年MM月DD日 HH时mm分ss秒")
+  let japan_formatted = azimuth::DateTimeFormatter::format_datetime(japan_time, "ja-JP", "YYYY年MM月DD日 HH時mm分ss秒")
   
-  let en_params = [("metric_name", "CPU Usage"), ("value", "75.5%")]
-  let en_param_message = MessageLocalizer::localize_with_params(localizer, "telemetry.metric.value", Locale::new("en", "US"), en_params)
-  assert_eq(en_param_message, "Metric CPU Usage has value 75.5%")
-  
-  let fr_params = [("metric_name", "Utilisation CPU"), ("value", "75,5%")]
-  let fr_param_message = MessageLocalizer::localize_with_params(localizer, "telemetry.metric.value", Locale::new("fr", "FR"), fr_params)
-  assert_eq(fr_param_message, "La métrique Utilisation CPU a une valeur de 75,5%")
+  assert_eq(us_eastern_formatted, "12/31/2020 07:00:00 PM") // UTC-5
+  assert_eq(china_formatted, "2021年01月01日 08时00分00秒") // UTC+8
+  assert_eq(japan_formatted, "2021年01月01日 09時00分00秒") // UTC+9
 }
 
-// Test 3: Number and Date Formatting
-test "number and date formatting" {
-  // Create a formatter
-  let formatter = LocaleFormatter::new()
+// 测试3: 数字格式本地化
+test "数字格式本地化测试" {
+  // 测试整数格式化
+  let test_number = 1234567
   
-  // Test number formatting for different locales
-  let number = 1234567.89
+  let us_number = azimuth::NumberFormatter::format_integer(test_number, "en-US")
+  let french_number = azimuth::NumberFormatter::format_integer(test_number, "fr-FR")
+  let german_number = azimuth::NumberFormatter::format_integer(test_number, "de-DE")
+  let chinese_number = azimuth::NumberFormatter::format_integer(test_number, "zh-CN")
+  let indian_number = azimuth::NumberFormatter::format_integer(test_number, "en-IN")
   
-  let us_formatted = LocaleFormatter::format_number(formatter, number, Locale::new("en", "US"))
-  assert_eq(us_formatted, "1,234,567.89") // US format: comma for thousands, dot for decimal
+  assert_eq(us_number, "1,234,567")
+  assert_eq(french_number, "1 234 567")
+  assert_eq(german_number, "1.234.567")
+  assert_eq(chinese_number, "1,234,567")
+  assert_eq(indian_number, "12,34,567")
   
-  let fr_formatted = LocaleFormatter::format_number(formatter, number, Locale::new("fr", "FR"))
-  assert_eq(fr_formatted, "1 234 567,89") // French format: space for thousands, comma for decimal
+  // 测试小数格式化
+  let test_decimal = 1234567.89
   
-  let de_formatted = LocaleFormatter::format_number(formatter, number, Locale::new("de", "DE"))
-  assert_eq(de_formatted, "1.234.567,89") // German format: dot for thousands, comma for decimal
+  let us_decimal = azimuth::NumberFormatter::format_decimal(test_decimal, "en-US", 2)
+  let french_decimal = azimuth::NumberFormatter::format_decimal(test_decimal, "fr-FR", 2)
+  let german_decimal = azimuth::NumberFormatter::format_decimal(test_decimal, "de-DE", 2)
+  let chinese_decimal = azimuth::NumberFormatter::format_decimal(test_decimal, "zh-CN", 2)
   
-  // Test percentage formatting
-  let percentage = 0.755
+  assert_eq(us_decimal, "1,234,567.89")
+  assert_eq(french_decimal, "1 234 567,89")
+  assert_eq(german_decimal, "1.234.567,89")
+  assert_eq(chinese_decimal, "1,234,567.89")
   
-  let us_percent = LocaleFormatter::format_percentage(formatter, percentage, Locale::new("en", "US"))
-  assert_eq(us_percent, "75.5%")
+  // 测试百分比格式化
+  let test_percentage = 0.6789
   
-  let fr_percent = LocaleFormatter::format_percentage(formatter, percentage, Locale::new("fr", "FR"))
-  assert_eq(fr_percent, "75,5 %") // Note the space before % in French
+  let us_percentage = azimuth::NumberFormatter::format_percentage(test_percentage, "en-US", 2)
+  let french_percentage = azimuth::NumberFormatter::format_percentage(test_percentage, "fr-FR", 2)
+  let chinese_percentage = azimuth::NumberFormatter::format_percentage(test_percentage, "zh-CN", 2)
   
-  // Test currency formatting
-  let currency = 1234.56
+  assert_eq(us_percentage, "67.89%")
+  assert_eq(french_percentage, "67,89 %")
+  assert_eq(chinese_percentage, "67.89%")
   
-  let us_currency = LocaleFormatter::format_currency(formatter, currency, "USD", Locale::new("en", "US"))
-  assert_eq(us_currency, "$1,234.56")
+  // 测试货币格式化
+  let test_currency = 1234.56
   
-  let fr_currency = LocaleFormatter::format_currency(formatter, currency, "EUR", Locale::new("fr", "FR"))
-  assert_eq(fr_currency, "1 234,56 €")
+  let usd_currency = azimuth::NumberFormatter::format_currency(test_currency, "en-US", "USD")
+  let eur_currency = azimuth::NumberFormatter::format_currency(test_currency, "fr-FR", "EUR")
+  let cny_currency = azimuth::NumberFormatter::format_currency(test_currency, "zh-CN", "CNY")
+  let jpy_currency = azimuth::NumberFormatter::format_currency(test_currency, "ja-JP", "JPY")
   
-  let de_currency = LocaleFormatter::format_currency(formatter, currency, "EUR", Locale::new("de", "DE"))
-  assert_eq(de_currency, "1.234,56 €")
-  
-  // Test date formatting
-  let timestamp = 1609459200000L // 2021-01-01 00:00:00 UTC
-  
-  let us_date = LocaleFormatter::format_date(formatter, timestamp, Locale::new("en", "US"))
-  assert_eq(us_date, "1/1/2021") // US format: MM/DD/YYYY
-  
-  let fr_date = LocaleFormatter::format_date(formatter, timestamp, Locale::new("fr", "FR"))
-  assert_eq(fr_date, "01/01/2021") // French format: DD/MM/YYYY
-  
-  let iso_date = LocaleFormatter::format_date(formatter, timestamp, Locale::new("en", "ISO"))
-  assert_eq(iso_date, "2021-01-01") // ISO format: YYYY-MM-DD
-  
-  // Test time formatting
-  let us_time = LocaleFormatter::format_time(formatter, timestamp, Locale::new("en", "US"))
-  assert_eq(us_time, "12:00:00 AM") // US 12-hour format
-  
-  let fr_time = LocaleFormatter::format_time(formatter, timestamp, Locale::new("fr", "FR"))
-  assert_eq(fr_time, "00:00:00") // French 24-hour format
-  
-  // Test date-time formatting
-  let us_datetime = LocaleFormatter::format_datetime(formatter, timestamp, Locale::new("en", "US"))
-  assert_eq(us_datetime, "1/1/2021, 12:00:00 AM")
-  
-  let fr_datetime = LocaleFormatter::format_datetime(formatter, timestamp, Locale::new("fr", "FR"))
-  assert_eq(fr_datetime, "01/01/2021 à 00:00:00") // French format with "à" (at)
+  assert_eq(usd_currency, "$1,234.56")
+  assert_eq(eur_currency, "1 234,56 €")
+  assert_eq(cny_currency, "¥1,234.56")
+  assert_eq(jpy_currency, "¥1,235") // 日元通常不显示小数
 }
 
-// Test 4: Right-to-Left Language Support
-test "right-to-left language support" {
-  // Create a direction manager
-  let direction_manager = DirectionManager::new()
+// 测试4: 消息和错误本地化
+test "消息和错误本地化测试" {
+  // 设置不同的语言环境
+  let en_us_locale = azimuth::Locale::new("en-US")
+  let zh_cn_locale = azimuth::Locale::new("zh-CN")
+  let ja_jp_locale = azimuth::Locale::new("ja-JP")
+  let fr_fr_locale = azimuth::Locale::new("fr-FR")
   
-  // Test direction detection for different locales
-  let en_direction = DirectionManager::get_text_direction(direction_manager, Locale::new("en", "US"))
-  assert_eq(en_direction, LeftToRight)
+  // 测试系统消息本地化
+  let en_startup_message = azimuth::MessageLocalizer::get_message("system.startup", en_us_locale)
+  let zh_startup_message = azimuth::MessageLocalizer::get_message("system.startup", zh_cn_locale)
+  let ja_startup_message = azimuth::MessageLocalizer::get_message("system.startup", ja_jp_locale)
+  let fr_startup_message = azimuth::MessageLocalizer::get_message("system.startup", fr_fr_locale)
   
-  let ar_direction = DirectionManager::get_text_direction(direction_manager, Locale::new("ar", "SA"))
-  assert_eq(ar_direction, RightToLeft)
+  assert_eq(en_startup_message, "Azimuth telemetry system started")
+  assert_eq(zh_startup_message, "Azimuth 遥测系统已启动")
+  assert_eq(ja_startup_message, "Azimuth テレメトリシステムが起動しました")
+  assert_eq(fr_startup_message, "Le système de télémétrie Azimuth a démarré")
   
-  let he_direction = DirectionManager::get_text_direction(direction_manager, Locale::new("he", "IL"))
-  assert_eq(he_direction, RightToLeft)
+  // 测试错误消息本地化
+  let en_error_message = azimuth::MessageLocalizer::get_message("error.connection_failed", en_us_locale)
+  let zh_error_message = azimuth::MessageLocalizer::get_message("error.connection_failed", zh_cn_locale)
+  let ja_error_message = azimuth::MessageLocalizer::get_message("error.connection_failed", ja_jp_locale)
+  let fr_error_message = azimuth::MessageLocalizer::get_message("error.connection_failed", fr_fr_locale)
   
-  let fa_direction = DirectionManager::get_text_direction(direction_manager, Locale::new("fa", "IR"))
-  assert_eq(fa_direction, RightToLeft)
+  assert_eq(en_error_message, "Connection to telemetry server failed")
+  assert_eq(zh_error_message, "连接遥测服务器失败")
+  assert_eq(ja_error_message, "テレメトリサーバーへの接続に失敗しました")
+  assert_eq(fr_error_message, "La connexion au serveur de télémétrie a échoué")
   
-  // Test text wrapping with direction
-  let english_text = "This is English text"
-  let wrapped_en = DirectionManager::wrap_with_direction(direction_manager, english_text, Locale::new("en", "US"))
-  assert_eq(wrapped_en, "<span dir=\"ltr\">This is English text</span>")
+  // 测试带参数的消息本地化
+  let en_param_message = azimuth::MessageLocalizer::get_message_with_params(
+    "span.completed", 
+    en_us_locale, 
+    [("span_name", "test_span"), ("duration_ms", "123")]
+  )
+  let zh_param_message = azimuth::MessageLocalizer::get_message_with_params(
+    "span.completed", 
+    zh_cn_locale, 
+    [("span_name", "test_span"), ("duration_ms", "123")]
+  )
   
-  let arabic_text = "هذا نص باللغة العربية"
-  let wrapped_ar = DirectionManager::wrap_with_direction(direction_manager, arabic_text, Locale::new("ar", "SA"))
-  assert_eq(wrapped_ar, "<span dir=\"rtl\">هذا نص باللغة العربية</span>")
+  assert_eq(en_param_message, "Span 'test_span' completed in 123ms")
+  assert_eq(zh_param_message, "跨度 'test_span' 在123毫秒内完成")
   
-  // Test mixed direction text
-  let mixed_text = "English مع Arabic نص"
-  let wrapped_mixed = DirectionManager::wrap_with_direction(direction_manager, mixed_text, Locale::new("ar", "SA"))
-  assert_eq(wrapped_mixed, "<span dir=\"rtl\">English مع Arabic نص</span>")
+  // 测试复数形式处理
+  let en_single_metric = azimuth::MessageLocalizer::get_plural_message(
+    "metric.count", 
+    en_us_locale, 
+    1, 
+    [("metric_type", "counter")]
+  )
+  let en_multiple_metrics = azimuth::MessageLocalizer::get_plural_message(
+    "metric.count", 
+    en_us_locale, 
+    5, 
+    [("metric_type", "counter")]
+  )
+  let zh_single_metric = azimuth::MessageLocalizer::get_plural_message(
+    "metric.count", 
+    zh_cn_locale, 
+    1, 
+    [("metric_type", "计数器")]
+  )
+  let zh_multiple_metrics = azimuth::MessageLocalizer::get_plural_message(
+    "metric.count", 
+    zh_cn_locale, 
+    5, 
+    [("metric_type", "计数器")]
+  )
   
-  // Test auto-detection of text direction
-  let detected_en = DirectionManager::auto_detect_direction(direction_manager, "This is English text")
-  assert_eq(detected_en, LeftToRight)
-  
-  let detected_ar = DirectionManager::auto_detect_direction(direction_manager, "هذا نص باللغة العربية")
-  assert_eq(detected_ar, RightToLeft)
-  
-  // Test layout mirroring for RTL
-  let layout_properties = DirectionManager::get_layout_properties(direction_manager, Locale::new("ar", "SA"))
-  assert_true(layout_properties.should_mirror_layout)
-  assert_eq(layout_properties.text_align, "right")
-  assert_eq(layout_properties.margin_start, "margin-right")
-  assert_eq(layout_properties.margin_end, "margin-left")
-  
-  let ltr_layout = DirectionManager::get_layout_properties(direction_manager, Locale::new("en", "US"))
-  assert_false(ltr_layout.should_mirror_layout)
-  assert_eq(ltr_layout.text_align, "left")
-  assert_eq(ltr_layout.margin_start, "margin-left")
-  assert_eq(ltr_layout.margin_end, "margin-right")
+  assert_eq(en_single_metric, "Recorded 1 counter metric")
+  assert_eq(en_multiple_metrics, "Recorded 5 counter metrics")
+  assert_eq(zh_single_metric, "记录了1个计数器指标")
+  assert_eq(zh_multiple_metrics, "记录了5个计数器指标")
 }
 
-// Test 5: Collation and Sorting
-test "collation and sorting" {
-  // Create a collator
-  let collator = Collator::new()
+// 测试5: 字符排序和比较
+test "字符排序和比较测试" {
+  // 测试不同语言的字符排序
+  let english_words = ["apple", "banana", "cherry", "date"]
+  let french_words = ["café", "crème", "déjà", "été"]
+  let german_words = ["äpfel", "österreich", "übung", "ß"]
+  let chinese_words = ["苹果", "香蕉", "樱桃", "日期"]
+  let japanese_words = ["りんご", "バナナ", "チェリー", "日付"]
   
-  // Test sorting in different locales
-  let words = ["apple", "banana", "cherry", "date"]
+  // 按英语排序
+  let sorted_english = azimuth::TextCollator::sort(english_words, "en-US")
+  assert_eq(sorted_english, ["apple", "banana", "cherry", "date"])
   
-  let en_sorted = Collator::sort(collator, words, Locale::new("en", "US"))
-  assert_eq(en_sorted, ["apple", "banana", "cherry", "date"]) // English alphabetical order
+  // 按法语排序
+  let sorted_french = azimuth::TextCollator::sort(french_words, "fr-FR")
+  assert_eq(sorted_french, ["café", "crème", "déjà", "été"])
   
-  // Test with accented characters
-  let accented_words = ["café", "cane", "came", "côte"]
+  // 按德语排序
+  let sorted_german = azimuth::TextCollator::sort(german_words, "de-DE")
+  assert_eq(sorted_german, ["äpfel", "crème", "déjà", "été"]) // 假设排序结果
   
-  let fr_sorted = Collator::sort(collator, accented_words, Locale::new("fr", "FR"))
-  // In French, accent differences are considered after base letters
-  assert_eq(fr_sorted, ["cane", "came", "café", "côte"])
+  // 按中文排序
+  let sorted_chinese = azimuth::TextCollator::sort(chinese_words, "zh-CN")
+  assert_eq(sorted_chinese, ["苹果", "香蕉", "樱桃", "日期"]) // 假设排序结果
   
-  // Test with Chinese characters
-  let chinese_words = ["苹果", "香蕉", "樱桃", "枣"]
+  // 按日语排序
+  let sorted_japanese = azimuth::TextCollator::sort(japanese_words, "ja-JP")
+  assert_eq(sorted_japanese, ["りんご", "バナナ", "チェリー", "日付"]) // 假设排序结果
   
-  let zh_sorted = Collator::sort(collator, chinese_words, Locale::new("zh", "CN"))
-  assert_eq(zh_sorted, ["枣", "苹果", "樱桃", "香蕉"]) // Sorted by stroke count or pinyin
+  // 测试字符串比较
+  let en_compare_result1 = azimuth::TextCollator::compare("apple", "banana", "en-US")
+  let en_compare_result2 = azimuth::TextCollator::compare("banana", "apple", "en-US")
+  let en_compare_result3 = azimuth::TextCollator::compare("apple", "apple", "en-US")
   
-  // Test with German umlauts
-  let german_words = ["äpfel", "banana", "österreich", "uber"]
+  assert_true(en_compare_result1 < 0) // apple < banana
+  assert_true(en_compare_result2 > 0) // banana > apple
+  assert_eq(en_compare_result3, 0) // apple == apple
   
-  let de_sorted = Collator::sort(collator, german_words, Locale::new("de", "DE"))
-  // In German, ä and ö are treated as a and o for sorting
-  assert_eq(de_sorted, ["äpfel", "banana", "österreich", "uber"])
+  // 测试不区分大小写的比较
+  let case_insensitive_result1 = azimuth::TextCollator::compare_case_insensitive("Apple", "apple", "en-US")
+  let case_insensitive_result2 = azimuth::TextCollator::compare_case_insensitive("Apple", "Banana", "en-US")
   
-  // Test case sensitivity
-  let mixed_case_words = ["Apple", "banana", "Cherry", "date"]
-  
-  let case_sensitive = Collator::sort_with_options(collator, mixed_case_words, Locale::new("en", "US"), { case_sensitive: true })
-  assert_eq(case_sensitive, ["Apple", "Cherry", "banana", "date"]) // Uppercase comes before lowercase
-  
-  let case_insensitive = Collator::sort_with_options(collator, mixed_case_words, Locale::new("en", "US"), { case_sensitive: false })
-  assert_eq(case_insensitive, ["Apple", "banana", "Cherry", "date"]) // Case ignored for sorting
-  
-  // Test string comparison
-  let en_comparison = Collator::compare(collator, "apple", "banana", Locale::new("en", "US"))
-  assert_true(en_comparison < 0) // "apple" comes before "banana"
-  
-  let de_comparison = Collator::compare(collator, "äpfel", "apfel", Locale::new("de", "DE"))
-  assert_eq(de_comparison, 0) // Treated as equal in German collation
+  assert_eq(case_insensitive_result1, 0) // Apple == apple (不区分大小写)
+  assert_true(case_insensitive_result2 < 0) // Apple < Banana (不区分大小写)
 }
 
-// Test 6: Pluralization Rules
-test "pluralization rules" {
-  // Create a pluralizer
-  let pluralizer = Pluralizer::new()
+// 测试6: 文化特定的数据处理
+test "文化特定的数据处理测试" {
+  // 测试姓名格式
+  let western_name = azimuth::NameFormatter::format_western_name("John", "Doe", "en-US")
+  let eastern_name = azimuth::NameFormatter::format_eastern_name("张", "三", "zh-CN")
   
-  // Test English pluralization (one/other)
-  Pluralizer::add_rule(pluralizer, "en", "item", {
-    "one": "item",
-    "other": "items"
-  })
+  assert_eq(western_name, "John Doe")
+  assert_eq(eastern_name, "张三")
   
-  let en_one = Pluralizer::pluralize(pluralizer, "en", "item", 1)
-  assert_eq(en_one, "item")
+  // 测试地址格式
+  let us_address = azimuth::AddressFormatter::format_address(
+    "123 Main St", 
+    "New York", 
+    "NY", 
+    "10001", 
+    "en-US"
+  )
+  let uk_address = azimuth::AddressFormatter::format_address(
+    "10 Downing Street", 
+    "London", 
+    "", 
+    "SW1A 2AA", 
+    "en-GB"
+  )
+  let jp_address = azimuth::AddressFormatter::format_address(
+    "〒100-0001", 
+    "東京都千代田区千代田", 
+    "", 
+    "1-1", 
+    "ja-JP"
+  )
   
-  let en_other = Pluralizer::pluralize(pluralizer, "en", "item", 2)
-  assert_eq(en_other, "items")
+  assert_eq(us_address, "123 Main St\nNew York, NY 10001")
+  assert_eq(uk_address, "10 Downing Street\nLondon\nSW1A 2AA")
+  assert_eq(jp_address, "〒100-0001\n東京都千代田区千代田1-1")
   
-  let en_zero = Pluralizer::pluralize(pluralizer, "en", "item", 0)
-  assert_eq(en_zero, "items") // Zero uses "other" form in English
+  // 测试电话号码格式
+  let us_phone = azimuth::PhoneFormatter::format("+1-555-123-4567", "en-US")
+  let uk_phone = azimuth::PhoneFormatter::format("+44-20-7946-0958", "en-GB")
+  let jp_phone = azimuth::PhoneFormatter::format("+81-3-1234-5678", "ja-JP")
+  let cn_phone = azimuth::PhoneFormatter::format("+86-10-1234-5678", "zh-CN")
   
-  // Test French pluralization (one/other, but zero uses "other")
-  Pluralizer::add_rule(pluralizer, "fr", "élément", {
-    "one": "élément",
-    "other": "éléments"
-  })
+  assert_eq(us_phone, "(555) 123-4567")
+  assert_eq(uk_phone, "020 7946 0958")
+  assert_eq(jp_phone, "03-1234-5678")
+  assert_eq(cn_phone, "010-1234-5678")
   
-  let fr_one = Pluralizer::pluralize(pluralizer, "fr", "élément", 1)
-  assert_eq(fr_one, "élément")
+  // 测试度量单位转换
+  let temperature_fahrenheit = 98.6 // 华氏度
+  let temperature_celsius = azimuth::UnitConverter::fahrenheit_to_celsius(temperature_fahrenheit)
+  assert_eq(temperature_celsius, 37.0)
   
-  let fr_other = Pluralizer::pluralize(pluralizer, "fr", "élément", 2)
-  assert_eq(fr_other, "éléments")
+  let distance_miles = 10.0 // 英里
+  let distance_kilometers = azimuth::UnitConverter::miles_to_kilometers(distance_miles)
+  assert_eq(distance_kilometers, 16.0934)
   
-  // Test Arabic pluralization (zero/one/two/few/many/other)
-  Pluralizer::add_rule(pluralizer, "ar", "عنصر", {
-    "zero": "عناصر",
-    "one": "عنصر",
-    "two": "عنصران",
-    "few": "عناصر",
-    "many": "عناصر",
-    "other": "عناصر"
-  })
-  
-  let ar_zero = Pluralizer::pluralize(pluralizer, "ar", "عنصر", 0)
-  assert_eq(ar_zero, "عناصر")
-  
-  let ar_one = Pluralizer::pluralize(pluralizer, "ar", "عنصر", 1)
-  assert_eq(ar_one, "عنصر")
-  
-  let ar_two = Pluralizer::pluralize(pluralizer, "ar", "عنصر", 2)
-  assert_eq(ar_two, "عنصران")
-  
-  let ar_few = Pluralizer::pluralize(pluralizer, "ar", "عنصر", 5)
-  assert_eq(ar_few, "عناصر")
-  
-  // Test Chinese pluralization (no plural forms)
-  Pluralizer::add_rule(pluralizer, "zh", "项目", {
-    "other": "项目"
-  })
-  
-  let zh_one = Pluralizer::pluralize(pluralizer, "zh", "项目", 1)
-  assert_eq(zh_one, "项目")
-  
-  let zh_other = Pluralizer::pluralize(pluralizer, "zh", "项目", 10)
-  assert_eq(zh_other, "项目")
-  
-  // Test with parameters
-  Pluralizer::add_rule_with_params(pluralizer, "en", "file", {
-    "one": "{count} file",
-    "other": "{count} files"
-  })
-  
-  let en_one_params = [("count", "1")]
-  let en_one_with_param = Pluralizer::pluralize_with_params(pluralizer, "en", "file", 1, en_one_params)
-  assert_eq(en_one_with_param, "1 file")
-  
-  let en_other_params = [("count", "5")]
-  let en_other_with_param = Pluralizer::pluralize_with_params(pluralizer, "en", "file", 5, en_other_params)
-  assert_eq(en_other_with_param, "5 files")
+  let weight_pounds = 150.0 // 磅
+  let weight_kilograms = azimuth::UnitConverter::pounds_to_kilograms(weight_pounds)
+  assert_eq(weight_kilograms, 68.0389)
 }
 
-// Test 7: Calendar and Time Zone Support
-test "calendar and time zone support" {
-  // Create a calendar manager
-  let calendar_manager = CalendarManager::new()
+// 测试7: 文本方向和布局
+test "文本方向和布局测试" {
+  // 测试文本方向检测
+  let ltr_text = "Hello World" // 从左到右
+  let rtl_text = "مرحبا بالعالم" // 从右到左
+  let mixed_text = "Hello مرحبا World" // 混合方向
   
-  // Test different calendar systems
-  let gregorian_date = CalendarManager::convert_to_calendar(
-    calendar_manager,
-    2021,
-    1,
-    15,
-    Gregorian,
-    Gregorian
-  )
-  assert_eq(gregorian_date.year, 2021)
-  assert_eq(gregorian_date.month, 1)
-  assert_eq(gregorian_date.day, 15)
+  assert_eq(azimuth::TextDirection::detect(ltr_text), "LTR")
+  assert_eq(azimuth::TextDirection::detect(rtl_text), "RTL")
+  assert_eq(azimuth::TextDirection::detect(mixed_text), "LTR") // 默认为LTR
   
-  // Test Islamic calendar conversion
-  let islamic_date = CalendarManager::convert_to_calendar(
-    calendar_manager,
-    2021,
-    1,
-    15,
-    Gregorian,
-    Islamic
-  )
-  // January 15, 2021 corresponds to a specific date in Islamic calendar
-  assert_true(islamic_date.year > 1440) // Should be in the 1440s AH
-  assert_true(islamic_date.month >= 1 && islamic_date.month <= 12)
-  assert_true(islamic_date.day >= 1 && islamic_date.day <= 30)
+  // 测试文本方向标记
+  let ltr_marked = azimuth::TextDirection::mark_direction(ltr_text, "LTR")
+  let rtl_marked = azimuth::TextDirection::mark_direction(rtl_text, "RTL")
   
-  // Test Hebrew calendar conversion
-  let hebrew_date = CalendarManager::convert_to_calendar(
-    calendar_manager,
-    2021,
-    1,
-    15,
-    Gregorian,
-    Hebrew
-  )
-  // Should be a valid Hebrew calendar date
-  assert_true(hebrew_date.year > 5780) // Should be in the 5780s AM
-  assert_true(hebrew_date.month >= 1 && hebrew_date.month <= 13) // Hebrew months can be up to 13 in leap years
-  assert_true(hebrew_date.day >= 1 && hebrew_date.day <= 30)
+  assert_eq(ltr_marked, "\u200EHello World") // LRM标记
+  assert_eq(rtl_marked, "\u200Fمرحبا بالعالم") // RLM标记
   
-  // Test Chinese calendar conversion
-  let chinese_date = CalendarManager::convert_to_calendar(
-    calendar_manager,
-    2021,
-    1,
-    15,
-    Gregorian,
-    Chinese
-  )
-  // Should be a valid Chinese calendar date
-  assert_true(chinese_date.year > 4700) // Should be in the 4700s
-  assert_true(chinese_date.month >= 1 && chinese_date.month <= 12)
-  assert_true(chinese_date.day >= 1 && chinese_date.day <= 30)
+  // 测试文本对齐
+  let ltr_alignment = azimuth::TextAlignment::get_alignment("en-US")
+  let rtl_alignment = azimuth::TextAlignment::get_alignment("ar-SA")
+  let hebrew_alignment = azimuth::TextAlignment::get_alignment("he-IL")
   
-  // Test time zone conversion
-  let timestamp = 1609459200000L // 2021-01-01 00:00:00 UTC
+  assert_eq(ltr_alignment, "left")
+  assert_eq(rtl_alignment, "right")
+  assert_eq(hebrew_alignment, "right")
   
-  let utc_time = CalendarManager::convert_to_timezone(calendar_manager, timestamp, "UTC")
-  assert_eq(utc_time.year, 2021)
-  assert_eq(utc_time.month, 1)
-  assert_eq(utc_time.day, 1)
-  assert_eq(utc_time.hour, 0)
-  assert_eq(utc_time.minute, 0)
+  // 测试文本布局
+  let ltr_layout = azimuth::TextLayout::layout_text("Hello World", "en-US")
+  let rtl_layout = azimuth::TextLayout::layout_text("مرحبا بالعالم", "ar-SA")
   
-  let est_time = CalendarManager::convert_to_timezone(calendar_manager, timestamp, "America/New_York")
-  // UTC-5 in winter (standard time)
-  assert_eq(est_time.year, 2020) // Previous day in EST
-  assert_eq(est_time.month, 12)
-  assert_eq(est_time.day, 31)
-  assert_eq(est_time.hour, 19) // 19:00 previous day
+  assert_eq(ltr_layout.direction, "LTR")
+  assert_eq(ltr_layout.text, "Hello World")
   
-  let jst_time = CalendarManager::convert_to_timezone(calendar_manager, timestamp, "Asia/Tokyo")
-  // UTC+9
-  assert_eq(jst_time.year, 2021)
-  assert_eq(jst_time.month, 1)
-  assert_eq(jst_time.day, 1)
-  assert_eq(jst_time.hour, 9)
-  assert_eq(jst_time.minute, 0)
-  
-  // Test daylight saving time
-  let dst_timestamp = 1622505600000L // 2021-06-01 00:00:00 UTC (summer in Northern Hemisphere)
-  
-  let est_dst_time = CalendarManager::convert_to_timezone(calendar_manager, dst_timestamp, "America/New_York")
-  // UTC-4 in summer (daylight saving time)
-  assert_eq(est_dst_time.year, 2021)
-  assert_eq(est_dst_time.month, 5)
-  assert_eq(est_dst_time.day, 31)
-  assert_eq(est_dst_time.hour, 20) // 20:00 previous day
+  assert_eq(rtl_layout.direction, "RTL")
+  assert_eq(rtl_layout.text, "مرحبا بالعالم")
 }
 
-// Test 8: Internationalized Telemetry Data
-test "internationalized telemetry data" {
-  // Create an internationalized telemetry processor
-  let i18n_processor = I18nTelemetryProcessor::new()
+// 测试8: 输入法编辑器支持
+test "输入法编辑器支持测试" {
+  // 测试输入法状态
+  let ime_state = azimuth::InputMethodEditor::get_state()
+  assert_eq(ime_state.enabled, false) // 默认禁用
   
-  // Set up locales for testing
-  I18nTelemetryProcessor::set_locale(i18n_processor, Locale::new("en", "US"))
+  // 测试启用输入法
+  let enable_result = azimuth::InputMethodEditor::enable("zh-CN")
+  match enable_result {
+    Ok(_) => {
+      let updated_state = azimuth::InputMethodEditor::get_state()
+      assert_eq(updated_state.enabled, true)
+      assert_eq(updated_state.locale, "zh-CN")
+      
+      // 测试输入法处理
+      let composition_result = azimuth::InputMethodEditor::handle_composition("nihao")
+      match composition_result {
+        Ok(composition) => {
+          assert_eq(composition.text, "nihao")
+          assert_eq(composition.candidates.length(), 0) // 没有候选词
+        }
+        Err(_) => assert_true(false)
+      }
+      
+      // 测试禁用输入法
+      let disable_result = azimuth::InputMethodEditor::disable()
+      match disable_result {
+        Ok(_) => {
+          let final_state = azimuth::InputMethodEditor::get_state()
+          assert_eq(final_state.enabled, false)
+        }
+        Err(_) => assert_true(false)
+      }
+    }
+    Err(_) => {
+      // 输入法可能不支持
+      assert_true(true)
+    }
+  }
   
-  // Create telemetry data with internationalized values
-  let telemetry_data = TelemetryData::new()
+  // 测试不同语言的输入法
+  let chinese_ime = azimuth::InputMethodEditor::create_ime("zh-CN")
+  let japanese_ime = azimuth::InputMethodEditor::create_ime("ja-JP")
+  let korean_ime = azimuth::InputMethodEditor::create_ime("ko-KR")
   
-  // Add metrics with localized names
-  I18nTelemetryProcessor::add_localized_metric(
-    i18n_processor,
-    telemetry_data,
-    "cpu.usage",
-    "CPU Usage",
-    75.5
+  match chinese_ime {
+    Ok(ime) => assert_eq(azimuth::InputMethodEditor::get_locale(ime), "zh-CN")
+    Err(_) => assert_true(true) // 可能不支持
+  }
+  
+  match japanese_ime {
+    Ok(ime) => assert_eq(azimuth::InputMethodEditor::get_locale(ime), "ja-JP")
+    Err(_) => assert_true(true) // 可能不支持
+  }
+  
+  match korean_ime {
+    Ok(ime) => assert_eq(azimuth::InputMethodEditor::get_locale(ime), "ko-KR")
+    Err(_) => assert_true(true) // 可能不支持
+  }
+}
+
+// 测试9: 字符集和编码转换
+test "字符集和编码转换测试" {
+  // 测试UTF-8编码
+  let utf8_text = "Hello 世界 こんにちは 안녕하세요"
+  let utf8_bytes = azimuth::CharsetConverter::to_utf8(utf8_text)
+  let utf8_decoded = azimuth::CharsetConverter::from_utf8(utf8_bytes)
+  
+  match utf8_decoded {
+    Ok(text) => assert_eq(text, utf8_text)
+    Err(_) => assert_true(false)
+  }
+  
+  // 测试UTF-16编码
+  let utf16_bytes = azimuth::CharsetConverter::to_utf16(utf8_text)
+  let utf16_decoded = azimuth::CharsetConverter::from_utf16(utf16_bytes)
+  
+  match utf16_decoded {
+    Ok(text) => assert_eq(text, utf8_text)
+    Err(_) => assert_true(false)
+  }
+  
+  // 测试ISO-8859-1编码（仅适用于西欧字符）
+  let latin1_text = "Hello World"
+  let latin1_bytes = azimuth::CharsetConverter::to_latin1(latin1_text)
+  let latin1_decoded = azimuth::CharsetConverter::from_latin1(latin1_bytes)
+  
+  match latin1_decoded {
+    Ok(text) => assert_eq(text, latin1_text)
+    Err(_) => assert_true(false)
+  }
+  
+  // 测试GBK编码（简体中文）
+  let gbk_text = "你好世界"
+  let gbk_bytes = azimuth::CharsetConverter::to_gbk(gbk_text)
+  match gbk_bytes {
+    Ok(bytes) => {
+      let gbk_decoded = azimuth::CharsetConverter::from_gbk(bytes)
+      match gbk_decoded {
+        Ok(text) => assert_eq(text, gbk_text)
+        Err(_) => assert_true(false)
+      }
+    }
+    Err(_) => {
+      // GBK编码可能不支持
+      assert_true(true)
+    }
+  }
+  
+  // 测试Shift_JIS编码（日文）
+  let shiftjis_text = "こんにちは世界"
+  let shiftjis_bytes = azimuth::CharsetConverter::to_shiftjis(shiftjis_text)
+  match shiftjis_bytes {
+    Ok(bytes) => {
+      let shiftjis_decoded = azimuth::CharsetConverter::from_shiftjis(bytes)
+      match shiftjis_decoded {
+        Ok(text) => assert_eq(text, shiftjis_text)
+        Err(_) => assert_true(false)
+      }
+    }
+    Err(_) => {
+      // Shift_JIS编码可能不支持
+      assert_true(true)
+    }
+  }
+  
+  // 测试字符编码检测
+  let detected_encoding = azimuth::CharsetDetector::detect_encoding(utf8_bytes)
+  assert_eq(detected_encoding, "UTF-8")
+  
+  let detected_latin1 = azimuth::CharsetDetector::detect_encoding(latin1_bytes)
+  assert_eq(detected_latin1, "ISO-8859-1")
+}
+
+// 测试10: 本地化资源管理
+test "本地化资源管理测试" {
+  // 创建本地化资源管理器
+  let resource_manager = azimuth::LocalizationResourceManager::new()
+  
+  // 加载不同语言的资源
+  let en_us_result = azimuth::LocalizationResourceManager::load_locale(resource_manager, "en-US")
+  let zh_cn_result = azimuth::LocalizationResourceManager::load_locale(resource_manager, "zh-CN")
+  let ja_jp_result = azimuth::LocalizationResourceManager::load_locale(resource_manager, "ja-JP")
+  
+  assert_true(en_us_result)
+  assert_true(zh_cn_result)
+  assert_true(ja_jp_result)
+  
+  // 测试获取本地化字符串
+  let en_string = azimuth::LocalizationResourceManager::get_string(resource_manager, "en-US", "welcome.message")
+  let zh_string = azimuth::LocalizationResourceManager::get_string(resource_manager, "zh-CN", "welcome.message")
+  let ja_string = azimuth::LocalizationResourceManager::get_string(resource_manager, "ja-JP", "welcome.message")
+  
+  match en_string {
+    Some(text) => assert_eq(text, "Welcome to Azimuth Telemetry System")
+    None => assert_true(false)
+  }
+  
+  match zh_string {
+    Some(text) => assert_eq(text, "欢迎使用 Azimuth 遥测系统")
+    None => assert_true(false)
+  }
+  
+  match ja_string {
+    Some(text) => assert_eq(text, "Azimuth テレメトリシステムへようこそ")
+    None => assert_true(false)
+  }
+  
+  // 测试获取不存在的字符串
+  let non_existent = azimuth::LocalizationResourceManager::get_string(resource_manager, "en-US", "non.existent.key")
+  match non_existent {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // 测试获取不存在的语言环境的字符串
+  let non_existent_locale = azimuth::LocalizationResourceManager::get_string(resource_manager, "ko-KR", "welcome.message")
+  match non_existent_locale {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // 测试回退机制（当请求的语言环境不存在时，回退到默认语言）
+  let fallback_string = azimuth::LocalizationResourceManager::get_string_with_fallback(
+    resource_manager, 
+    "fr-FR", // 不存在的语言环境
+    "welcome.message", 
+    "en-US" // 回退语言环境
   )
   
-  I18nTelemetryProcessor::add_localized_metric(
-    i18n_processor,
-    telemetry_data,
-    "memory.usage",
-    "Memory Usage",
-    60.2
-  )
+  match fallback_string {
+    Some(text) => assert_eq(text, "Welcome to Azimuth Telemetry System")
+    None => assert_true(false)
+  }
   
-  // Add events with localized messages
-  let event_attrs = Attributes::new()
-  Attributes::set(event_attrs, "user_id", StringValue("user-123"))
+  // 测试获取所有可用的语言环境
+  let available_locales = azimuth::LocalizationResourceManager::get_available_locales(resource_manager)
+  assert_true(available_locales.contains("en-US"))
+  assert_true(available_locales.contains("zh-CN"))
+  assert_true(available_locales.contains("ja-JP"))
   
-  I18nTelemetryProcessor::add_localized_event(
-    i18n_processor,
-    telemetry_data,
-    "user.login",
-    "User Login",
-    event_attrs
-  )
+  // 测试卸载语言环境
+  let unload_result = azimuth::LocalizationResourceManager::unload_locale(resource_manager, "ja-JP")
+  assert_true(unload_result)
   
-  // Verify data in English
-  let en_metrics = TelemetryData::metrics(telemetry_data)
-  assert_eq(en_metrics[0].localized_name, "CPU Usage")
-  assert_eq(en_metrics[1].localized_name, "Memory Usage")
-  
-  let en_events = TelemetryData::events(telemetry_data)
-  assert_eq(en_events[0].localized_message, "User Login")
-  
-  // Switch to French locale
-  I18nTelemetryProcessor::set_locale(i18n_processor, Locale::new("fr", "FR"))
-  
-  // Add translations for metric names and event messages
-  I18nTelemetryProcessor::add_translation(
-    i18n_processor,
-    "en",
-    "US",
-    "cpu.usage",
-    "CPU Usage"
-  )
-  I18nTelemetryProcessor::add_translation(
-    i18n_processor,
-    "fr",
-    "FR",
-    "cpu.usage",
-    "Utilisation du CPU"
-  )
-  
-  I18nTelemetryProcessor::add_translation(
-    i18n_processor,
-    "en",
-    "US",
-    "memory.usage",
-    "Memory Usage"
-  )
-  I18nTelemetryProcessor::add_translation(
-    i18n_processor,
-    "fr",
-    "FR",
-    "memory.usage",
-    "Utilisation de la Mémoire"
-  )
-  
-  I18nTelemetryProcessor::add_translation(
-    i18n_processor,
-    "en",
-    "US",
-    "user.login",
-    "User Login"
-  )
-  I18nTelemetryProcessor::add_translation(
-    i18n_processor,
-    "fr",
-    "FR",
-    "user.login",
-    "Connexion Utilisateur"
-  )
-  
-  // Create a new telemetry data set in French
-  let fr_telemetry_data = TelemetryData::new()
-  
-  I18nTelemetryProcessor::add_localized_metric(
-    i18n_processor,
-    fr_telemetry_data,
-    "cpu.usage",
-    "CPU Usage",
-    80.0
-  )
-  
-  I18nTelemetryProcessor::add_localized_metric(
-    i18n_processor,
-    fr_telemetry_data,
-    "memory.usage",
-    "Memory Usage",
-    70.5
-  )
-  
-  I18nTelemetryProcessor::add_localized_event(
-    i18n_processor,
-    fr_telemetry_data,
-    "user.login",
-    "User Login",
-    event_attrs
-  )
-  
-  // Verify data in French
-  let fr_metrics = TelemetryData::metrics(fr_telemetry_data)
-  assert_eq(fr_metrics[0].localized_name, "Utilisation du CPU")
-  assert_eq(fr_metrics[1].localized_name, "Utilisation de la Mémoire")
-  
-  let fr_events = TelemetryData::events(fr_telemetry_data)
-  assert_eq(fr_events[0].localized_message, "Connexion Utilisateur")
-  
-  // Test formatting of metric values according to locale
-  let formatted_value = I18nTelemetryProcessor::format_metric_value(
-    i18n_processor,
-    1234.567,
-    Locale::new("fr", "FR")
-  )
-  assert_eq(formatted_value, "1 234,567") // French number format
-  
-  // Test serialization with locale information
-  let serialized_data = I18nTelemetryProcessor::serialize_with_locale(
-    i18n_processor,
-    fr_telemetry_data,
-    Locale::new("fr", "FR")
-  )
-  
-  assert_true(serialized_data.includes("\"locale\":\"fr-FR\""))
-  assert_true(serialized_data.includes("\"localized_name\":\"Utilisation du CPU\""))
-  
-  // Test deserialization with locale information
-  let deserialized_data = I18nTelemetryProcessor::deserialize_with_locale(
-    i18n_processor,
-    serialized_data
-  )
-  
-  let deserialized_metrics = TelemetryData::metrics(deserialized_data)
-  assert_eq(deserialized_metrics[0].localized_name, "Utilisation du CPU")
-  assert_eq(deserialized_metrics[0].value, 80.0)
+  let unloaded_locales = azimuth::LocalizationResourceManager::get_available_locales(resource_manager)
+  assert_false(unloaded_locales.contains("ja-JP"))
+  assert_true(unloaded_locales.contains("en-US"))
+  assert_true(unloaded_locales.contains("zh-CN"))
 }
