@@ -154,5 +154,6 @@
         "../azimuth_distributed_tracing_advanced_tests.mbt",
         "../azimuth_resource_management_efficiency_tests.mbt",
         "../azimuth_security_encryption_tests.mbt",
-        "../azimuth_new_telemetry_feature_tests.mbt"]  }
+        "../azimuth_new_telemetry_feature_tests.mbt",
+        "../azimuth_premium_high_quality_tests.mbt"]  }
 }

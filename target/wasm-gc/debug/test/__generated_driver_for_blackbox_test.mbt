@@ -550,6 +550,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_premium_telemetry_tests.mbt": {
   },
+  "azimuth_premium_telemetry_quality_tests.mbt": {
+  },
   "azimuth_premium_telemetry_integrity_tests.mbt": {
   },
   "azimuth_premium_telemetry_data_processing_tests.mbt": {

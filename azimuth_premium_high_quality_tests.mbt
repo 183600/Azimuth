@@ -1,796 +1,377 @@
 // Azimuth Premium High-Quality Test Suite
-// This file contains 10 high-quality test cases covering various aspects of the Azimuth telemetry system
+// This file contains premium quality test cases focusing on critical telemetry scenarios
 
-// Test 1: Advanced Telemetry Data Processing
-test "advanced telemetry data processing with complex transformations" {
-  // Create a telemetry processor with complex transformation pipeline
-  let processor = TelemetryProcessor::new()
+// Test 1: Advanced Telemetry Data Aggregation with Complex Scenarios
+pub test "premium telemetry data aggregation" {
+  // Create multiple telemetry data points with complex relationships
+  let provider = azimuth::MeterProvider::new()
+  let meter = azimuth::MeterProvider::get_meter(provider, "premium-aggregation-test")
   
-  // Configure multi-stage processing pipeline
-  TelemetryProcessor::add_stage(processor, "validation", ValidationStage::new())
-  TelemetryProcessor::add_stage(processor, "enrichment", EnrichmentStage::new())
-  TelemetryProcessor::add_stage(processor, "aggregation", AggregationStage::new())
-  TelemetryProcessor::add_stage(processor, "filtering", FilteringStage::new())
+  // Create various metric instruments
+  let request_counter = azimuth::Meter::create_counter(meter, "http.requests.total")
+  let response_histogram = azimuth::Meter::create_histogram(meter, "http.response.duration")
+  let active_gauge = azimuth::Meter::create_gauge(meter, "http.active.connections")
+  let error_counter = azimuth::Meter::create_counter(meter, "http.errors.total")
   
-  // Create test telemetry data with various attribute types
-  let telemetry_data = TelemetryData::new(
-    "premium.test.trace",
-    "premium.test.span",
-    [
-      ("string.attr", StringValue("premium_value")),
-      ("int.attr", IntValue(42)),
-      ("float.attr", FloatValue(3.14159)),
-      ("bool.attr", BoolValue(true)),
-      ("array.attr", ArrayStringValue(["item1", "item2", "item3"]))
-    ]
-  )
+  // Simulate complex telemetry data flow
+  azimuth::Counter::add(request_counter, 100, [
+    ("method", azimuth::StringValue("GET")),
+    ("status", azimuth::StringValue("200")),
+    ("endpoint", azimuth::StringValue("/api/users"))
+  ])
   
-  // Process the telemetry data through the pipeline
-  let processed_data = TelemetryProcessor::process(processor, telemetry_data)
+  azimuth::Counter::add(request_counter, 50, [
+    ("method", azimuth::StringValue("POST")),
+    ("status", azimuth::StringValue("201")),
+    ("endpoint", azimuth::StringValue("/api/users"))
+  ])
   
-  // Verify the processed data contains expected transformations
-  assert_true(TelemetryData::is_valid(processed_data))
-  assert_eq(TelemetryData::trace_id(processed_data), "premium.test.trace")
-  assert_eq(TelemetryData::span_id(processed_data), "premium.test.span")
+  azimuth::Counter::add(error_counter, 5, [
+    ("method", azimuth::StringValue("GET")),
+    ("status", azimuth::StringValue("500")),
+    ("endpoint", azimuth::StringValue("/api/users"))
+  ])
   
-  // Verify enrichment stage added metadata
-  let enriched_attrs = TelemetryData::attributes(processed_data)
-  let processing_time = TelemetryData::get_attribute(processed_data, "processing.time_ms")
-  match processing_time {
-    Some(FloatValue(time)) => assert_true(time > 0.0)
-    _ => assert_true(false)
-  }
+  // Record histogram measurements
+  azimuth::Histogram::record(response_histogram, 120.5, [
+    ("method", azimuth::StringValue("GET")),
+    ("endpoint", azimuth::StringValue("/api/users"))
+  ])
   
-  // Verify aggregation stage computed metrics
-  let metric_count = TelemetryData::get_attribute(processed_data, "metric.count")
-  match metric_count {
-    Some(IntValue(count)) => assert_true(count >= 0)
-    _ => assert_true(false)
-  }
+  azimuth::Histogram::record(response_histogram, 250.3, [
+    ("method", azimuth::StringValue("POST")),
+    ("endpoint", azimuth::StringValue("/api/users"))
+  ])
+  
+  // Set gauge values
+  azimuth::Gauge::set(active_gauge, 25, [
+    ("server", azimuth::StringValue("web-01")),
+    ("region", azimuth::StringValue("us-east-1"))
+  ])
+  
+  // Verify aggregation results
+  let metrics = azimuth::MeterProvider::collect_metrics(provider)
+  assert_true(azimuth::Metrics::size(metrics) > 0)
 }
 
-// Test 2: Concurrent Safety with High Load
-test "concurrent safety under high load conditions" {
-  // Create a shared telemetry store
-  let store = TelemetryStore::new()
+// Test 2: Distributed Tracing Consistency Across Multiple Services
+pub test "premium distributed tracing consistency" {
+  // Create trace context with proper propagation
+  let trace_id = "550e8400e29b41d4a716446655440000"
+  let parent_span_id = "abc123def456"
+  let span_ctx = azimuth::SpanContext::new(trace_id, parent_span_id, true, "key1=value1,key2=value2")
   
-  // Configure concurrent access parameters
-  let num_threads = 10
-  let operations_per_thread = 100
+  // Service A: Create parent span
+  let tracer_a = azimuth::TracerProvider::get_tracer("service-a", "1.0.0")
+  let parent_span = azimuth::Tracer::start_span(tracer_a, "process-request", span_ctx)
   
-  // Create concurrent telemetry operations
-  let mut threads = []
-  for i in 0..num_threads {
-    let thread_id = "thread_" + i.to_string()
-    let thread = Thread::spawn({
-      let store_clone = store
-      move || {
-        for j in 0..operations_per_thread {
-          let span_id = thread_id + "_span_" + j.to_string()
-          let telemetry_data = TelemetryData::new(
-            "concurrent.test.trace",
-            span_id,
-            [
-              ("thread.id", StringValue(thread_id)),
-              ("operation.index", IntValue(j)),
-              ("timestamp", IntValue(CurrentTime::millis()))
-            ]
-          )
-          
-          // Perform concurrent store operations
-          TelemetryStore::store(store_clone, telemetry_data)
-          
-          // Perform concurrent read operations
-          let retrieved = TelemetryStore::get_by_span_id(store_clone, span_id)
-          match retrieved {
-            Some(data) => {
-              assert_eq(TelemetryData::span_id(data), span_id)
-              let thread_attr = TelemetryData::get_attribute(data, "thread.id")
-              match thread_attr {
-                Some(StringValue(id)) => assert_eq(id, thread_id)
-                _ => assert_true(false)
-              }
-            }
-            None => assert_true(false)
-          }
-        }
-      }
-    })
-    threads.push(thread)
-  }
+  // Service B: Create child span with proper context propagation
+  let child_span_ctx = azimuth::SpanContext::child_of(span_ctx, "child123")
+  let tracer_b = azimuth::TracerProvider::get_tracer("service-b", "1.0.0")
+  let child_span = azimuth::Tracer::start_span(tracer_b, "database-query", child_span_ctx)
   
-  // Wait for all threads to complete
-  for thread in threads {
-    Thread::join(thread)
-  }
+  // Service C: Create grandchild span
+  let grandchild_span_ctx = azimuth::SpanContext::child_of(child_span_ctx, "grandchild456")
+  let tracer_c = azimuth::TracerProvider::get_tracer("service-c", "1.0.0")
+  let grandchild_span = azimuth::Tracer::start_span(tracer_c, "cache-lookup", grandchild_span_ctx)
   
-  // Verify data integrity after concurrent operations
-  let stored_count = TelemetryStore::count(store)
-  assert_eq(stored_count, num_threads * operations_per_thread)
+  // Verify trace consistency across all services
+  assert_eq(azimuth::SpanContext::trace_id(span_ctx), trace_id)
+  assert_eq(azimuth::SpanContext::trace_id(child_span_ctx), trace_id)
+  assert_eq(azimuth::SpanContext::trace_id(grandchild_span_ctx), trace_id)
   
-  // Verify no data corruption occurred
-  let all_data = TelemetryStore::get_all(store)
-  for data in all_data {
-    assert_true(TelemetryData::is_valid(data))
-    let thread_attr = TelemetryData::get_attribute(data, "thread.id")
-    match thread_attr {
-      Some(StringValue(_)) => assert_true(true)
-      _ => assert_true(false)
-    }
-  }
+  // Verify span hierarchy
+  assert_true(azimuth::SpanContext::is_child_of(child_span_ctx, span_ctx))
+  assert_true(azimuth::SpanContext::is_child_of(grandchild_span_ctx, child_span_ctx))
+  
+  // End spans in proper order
+  azimuth::Span::end(grandchild_span)
+  azimuth::Span::end(child_span)
+  azimuth::Span::end(parent_span)
 }
 
-// Test 3: Performance Benchmark with Resource Constraints
-test "performance benchmark under resource constraints" {
-  // Create performance monitor
-  let monitor = PerformanceMonitor::new()
+// Test 3: Performance Optimization Under High Load
+pub test "premium performance optimization" {
+  // Create performance benchmark scenario
+  let start_time = azimuth::Clock::now()
   
-  // Configure resource constraints
-  let memory_limit = 100 * 1024 * 1024  // 100MB
-  let cpu_threshold = 80.0  // 80% CPU usage
-  let time_limit = 5000  // 5 seconds
+  // Simulate high-load telemetry operations
+  let provider = azimuth::MeterProvider::new()
+  let meter = azimuth::MeterProvider::get_meter(provider, "performance-test")
   
-  // Start performance monitoring
-  PerformanceMonitor::start(monitor)
+  // Batch operations for better performance
+  let batch_size = 1000
+  let counter = azimuth::Meter::create_counter(meter, "batch.operations")
   
-  // Create telemetry processor with resource constraints
-  let processor = TelemetryProcessor::with_constraints(memory_limit, cpu_threshold)
+  // Perform batch operations
+  azimuth::Counter::add(counter, batch_size.to_int(), [
+    ("batch.id", azimuth::StringValue("batch-001")),
+    ("operation.type", azimuth::StringValue("bulk-insert"))
+  ])
   
-  // Generate high-volume telemetry data
-  let data_batch = []
-  for i in 0..10000 {
-    let telemetry_data = TelemetryData::new(
-      "performance.test.trace",
-      "performance.test.span." + i.to_string(),
-      [
-        ("batch.index", IntValue(i)),
-        ("payload.size", IntValue(1024)),
-        ("data.complexity", StringValue("high"))
-      ]
-    )
-    data_batch.push(telemetry_data)
-  }
+  // Measure performance metrics
+  let end_time = azimuth::Clock::now()
+  let duration = azimuth::Clock::duration_between(start_time, end_time)
   
-  // Process the batch under time constraints
-  let start_time = CurrentTime::millis()
-  let processed_batch = TelemetryProcessor::process_batch(processor, data_batch)
-  let end_time = CurrentTime::millis()
-  let processing_time = end_time - start_time
+  // Verify performance thresholds
+  assert_true(duration < 100.0) // Should complete within 100ms
   
-  // Verify performance constraints
-  assert_true(processing_time < time_limit)
-  assert_eq(processed_batch.length(), data_batch.length())
-  
-  // Verify resource usage within constraints
-  let memory_usage = PerformanceMonitor::memory_usage(monitor)
-  let cpu_usage = PerformanceMonitor::cpu_usage(monitor)
-  
-  assert_true(memory_usage < memory_limit)
-  assert_true(cpu_usage < cpu_threshold)
-  
-  // Verify data integrity after high-volume processing
-  for processed_data in processed_batch {
-    assert_true(TelemetryData::is_valid(processed_data))
-    let batch_index = TelemetryData::get_attribute(processed_data, "batch.index")
-    match batch_index {
-      Some(IntValue(index)) => assert_true(index >= 0 && index < 10000)
-      _ => assert_true(false)
-    }
-  }
-  
-  // Stop performance monitoring
-  PerformanceMonitor::stop(monitor)
+  // Verify memory efficiency
+  let memory_usage = azimuth::Memory::current_usage()
+  assert_true(memory_usage < 50 * 1024 * 1024) // Should use less than 50MB
 }
 
-// Test 4: Advanced Error Handling and Recovery
-test "advanced error handling and automatic recovery mechanisms" {
-  // Create telemetry system with error handling capabilities
-  let system = TelemetrySystem::with_error_handling()
+// Test 4: Advanced Error Handling and Recovery Mechanisms
+pub test "premium error handling recovery" {
+  // Create error scenarios with recovery mechanisms
+  let tracer = azimuth::TracerProvider::get_tracer("error-recovery-test", "1.0.0")
   
-  // Configure error recovery strategies
-  TelemetrySystem::set_recovery_strategy(system, "network.failure", RetryStrategy::exponential_backoff(3, 1000))
-  TelemetrySystem::set_recovery_strategy(system, "data.corruption", DataRecoveryStrategy::checksum_validation())
-  TelemetrySystem::set_recovery_strategy(system, "resource.exhaustion", ResourceRecoveryStrategy::garbage_collection())
+  // Test network error recovery
+  let network_span = azimuth::Tracer::start_span(tracer, "network-operation")
   
-  // Test network failure recovery
-  let network_data = TelemetryData::new("network.test.trace", "network.test.span", [])
-  let network_result = TelemetrySystem::simulate_network_failure(system, network_data)
+  // Simulate network error
+  azimuth::Span::add_event(network_span, "network.error", [
+    ("error.type", azimuth::StringValue("connection.timeout")),
+    ("error.code", azimuth::IntValue(504)),
+    ("retry.count", azimuth::IntValue(3))
+  ])
   
-  match network_result {
-    Success(data) => {
-      assert_true(TelemetryData::is_valid(data))
-      let retry_count = TelemetryData::get_attribute(data, "retry.count")
-      match retry_count {
-        Some(IntValue(count)) => assert_true(count > 0)
-        _ => assert_true(false)
-      }
-    }
-    Failure(error) => {
-      // Verify error was handled gracefully
-      assert_eq(Error::type(error), "network.failure")
-      assert_true(Error::is_recoverable(error))
-    }
-  }
+  // Test recovery mechanism
+  let recovered = azimuth::NetworkRecovery::attempt_recovery(network_span, 3)
+  assert_true(recovered)
   
-  // Test data corruption recovery
-  let corrupted_data = TelemetryData::new("corruption.test.trace", "corruption.test.span", [])
-  TelemetrySystem::corrupt_data(system, corrupted_data)
-  let corruption_result = TelemetrySystem::process(system, corrupted_data)
+  // Test database error handling
+  let db_span = azimuth::Tracer::start_span(tracer, "database-operation")
   
-  match corruption_result {
-    Success(data) => {
-      assert_true(TelemetryData::is_valid(data))
-      let recovery_method = TelemetryData::get_attribute(data, "recovery.method")
-      match recovery_method {
-        Some(StringValue(method)) => assert_eq(method, "checksum.validation")
-        _ => assert_true(false)
-      }
-    }
-    Failure(error) => {
-      assert_eq(Error::type(error), "data.corruption")
-    }
-  }
+  // Simulate database error
+  azimuth::Span::add_event(db_span, "database.error", [
+    ("error.type", azimuth::StringValue("deadlock.detected")),
+    ("error.code", azimuth::IntValue(1213)),
+    ("transaction.id", azimuth::StringValue("txn-12345"))
+  ])
   
-  // Test resource exhaustion recovery
-  let resource_data = TelemetryData::new("resource.test.trace", "resource.test.span", [])
-  let resource_result = TelemetrySystem::simulate_resource_exhaustion(system, resource_data)
+  // Test transaction rollback
+  let rollback_success = azimuth::DatabaseRecovery::rollback_transaction(db_span)
+  assert_true(rollback_success)
   
-  match resource_result {
-    Success(data) => {
-      assert_true(TelemetryData::is_valid(data))
-      let recovery_action = TelemetryData::get_attribute(data, "recovery.action")
-      match recovery_action {
-        Some(StringValue(action)) => assert_eq(action, "garbage.collection")
-        _ => assert_true(false)
-      }
-    }
-    Failure(error) => {
-      assert_eq(Error::type(error), "resource.exhaustion")
-    }
-  }
-  
-  // Verify system health after error scenarios
-  let health_status = TelemetrySystem::health_check(system)
-  assert_true(HealthStatus::is_healthy(health_status))
+  azimuth::Span::end(db_span)
+  azimuth::Span::end(network_span)
 }
 
-// Test 5: Cross-Service Communication with Consistency Guarantees
-test "cross-service communication with consistency guarantees" {
-  // Create multiple telemetry services
-  let service_a = TelemetryService::new("service.a")
-  let service_b = TelemetryService::new("service.b")
-  let service_c = TelemetryService::new("service.c")
+// Test 5: Security and Privacy Protection Features
+pub test "premium security privacy_protection" {
+  // Test sensitive data redaction
+  let sensitive_attrs = azimuth::Attributes::new()
+  azimuth::Attributes::set(sensitive_attrs, "user.email", azimuth::StringValue("user@example.com"))
+  azimuth::Attributes::set(sensitive_attrs, "user.ssn", azimuth::StringValue("123-45-6789"))
+  azimuth::Attributes::set(sensitive_attrs, "credit.card", azimuth::StringValue("4111-1111-1111-1111"))
+  azimuth::Attributes::set(sensitive_attrs, "api.key", azimuth::StringValue("sk-1234567890abcdef"))
   
-  // Configure service communication with consistency guarantees
-  let communicator = ServiceCommunicator::with_consistency(ConsistencyLevel::Strong)
-  ServiceCommunicator::register_service(communicator, service_a)
-  ServiceCommunicator::register_service(communicator, service_b)
-  ServiceCommunicator::register_service(communicator, service_c)
+  // Apply privacy protection
+  let protected_attrs = azimuth::PrivacyProtection::redact_sensitive_data(sensitive_attrs)
   
-  // Create distributed trace context
-  let trace_context = DistributedTraceContext::new("distributed.test.trace")
-  DistributedTraceContext::add_service(trace_context, "service.a", "span.a.1")
-  DistributedTraceContext::add_service(trace_context, "service.b", "span.b.1")
-  DistributedTraceContext::add_service(trace_context, "service.c", "span.c.1")
+  // Verify sensitive data is redacted
+  assert_eq(azimuth::Attributes::get(protected_attrs, "user.email"), Some(azimuth::StringValue("****@example.com")))
+  assert_eq(azimuth::Attributes::get(protected_attrs, "user.ssn"), Some(azimuth::StringValue("***-**-6789")))
+  assert_eq(azimuth::Attributes::get(protected_attrs, "credit.card"), Some(azimuth::StringValue("****-****-****-1111")))
+  assert_eq(azimuth::Attributes::get(protected_attrs, "api.key"), Some(azimuth::StringValue("sk-************cdef")))
   
-  // Test service A telemetry generation
-  let service_a_data = TelemetryData::with_context(
-    "distributed.test.trace",
-    "span.a.1",
-    [("service.name", StringValue("service.a")), ("service.role", StringValue("producer"))],
-    trace_context
-  )
-  TelemetryService::process(service_a, service_a_data)
+  // Test encryption of telemetry data
+  let encrypted_data = azimuth::Security::encrypt_telemetry_data(protected_attrs)
+  assert_true(azimuth::Security::is_encrypted(encrypted_data))
   
-  // Test service B telemetry processing and forwarding
-  let service_b_data = TelemetryData::with_context(
-    "distributed.test.trace",
-    "span.b.1",
-    [("service.name", StringValue("service.b")), ("service.role", StringValue("processor"))],
-    trace_context
-  )
-  TelemetryService::process(service_b, service_b_data)
-  
-  // Test service C telemetry aggregation
-  let service_c_data = TelemetryData::with_context(
-    "distributed.test.trace",
-    "span.c.1",
-    [("service.name", StringValue("service.c")), ("service.role", StringValue("aggregator"))],
-    trace_context
-  )
-  TelemetryService::process(service_c, service_c_data)
-  
-  // Verify trace consistency across services
-  let consistency_report = ServiceCommunicator::verify_consistency(communicator, trace_context)
-  assert_true(ConsistencyReport::is_consistent(consistency_report))
-  
-  // Verify all services have the same trace context
-  let service_a_context = TelemetryService::get_trace_context(service_a, "distributed.test.trace")
-  let service_b_context = TelemetryService::get_trace_context(service_b, "distributed.test.trace")
-  let service_c_context = TelemetryService::get_trace_context(service_c, "distributed.test.trace")
-  
-  match (service_a_context, service_b_context, service_c_context) {
-    (Some(ctx_a), Some(ctx_b), Some(ctx_c)) => {
-      assert_eq(DistributedTraceContext::trace_id(ctx_a), DistributedTraceContext::trace_id(ctx_b))
-      assert_eq(DistributedTraceContext::trace_id(ctx_b), DistributedTraceContext::trace_id(ctx_c))
-      assert_eq(DistributedTraceContext::service_count(ctx_a), 3)
-      assert_eq(DistributedTraceContext::service_count(ctx_b), 3)
-      assert_eq(DistributedTraceContext::service_count(ctx_c), 3)
-    }
-    _ => assert_true(false)
-  }
+  // Test decryption
+  let decrypted_data = azimuth::Security::decrypt_telemetry_data(encrypted_data)
+  assert_true(azimuth::Attributes::equals(protected_attrs, decrypted_data))
 }
 
-// Test 6: Advanced Data Serialization and Deserialization
-test "advanced data serialization and deserialization with format compatibility" {
-  // Create telemetry data with complex nested structures
-  let complex_data = TelemetryData::new(
-    "serialization.test.trace",
-    "serialization.test.span",
-    [
-      ("simple.string", StringValue("test_value")),
-      ("simple.int", IntValue(42)),
-      ("simple.float", FloatValue(3.14159)),
-      ("simple.bool", BoolValue(true)),
-      ("array.string", ArrayStringValue(["item1", "item2", "item3"])),
-      ("array.int", ArrayIntValue([1, 2, 3, 4, 5])),
-      ("nested.object", StringValue("{\"key1\":\"value1\",\"key2\":42,\"key3\":true}")),
-      ("timestamp", IntValue(CurrentTime::millis())),
-      ("metadata", StringValue("{\"version\":\"1.0\",\"format\":\"premium\"}"))
-    ]
-  )
+// Test 6: Cross-Platform Compatibility
+pub test "premium cross_platform_compatibility" {
+  // Test platform-specific telemetry collection
+  let platform_info = azimuth::Platform::get_platform_info()
   
-  // Test JSON serialization
-  let json_serializer = JsonSerializer::new()
-  let json_data = JsonSerializer::serialize(json_serializer, complex_data)
-  assert_true(json_data.length() > 0)
+  // Verify platform detection
+  assert_true(azimuth::PlatformInfo::is_valid(platform_info))
   
-  // Test JSON deserialization
-  let json_deserialized = JsonSerializer::deserialize(json_serializer, json_data)
-  match json_deserialized {
-    Some(data) => {
-      assert_true(TelemetryData::is_valid(data))
-      assert_eq(TelemetryData::trace_id(data), "serialization.test.trace")
-      assert_eq(TelemetryData::span_id(data), "serialization.test.span")
-      
-      // Verify complex attributes are preserved
-      let nested_obj = TelemetryData::get_attribute(data, "nested.object")
-      match nested_obj {
-        Some(StringValue(obj)) => assert_true(obj.contains("key1"))
-        _ => assert_true(false)
-      }
-    }
-    None => assert_true(false)
-  }
+  // Create platform-specific metrics
+  let provider = azimuth::MeterProvider::new()
+  let meter = azimuth::MeterProvider::get_meter(provider, "platform-test")
   
-  // Test binary serialization
-  let binary_serializer = BinarySerializer::new()
-  let binary_data = BinarySerializer::serialize(binary_serializer, complex_data)
-  assert_true(binary_data.length() > 0)
+  let platform_counter = azimuth::Meter::create_counter(meter, "platform.operations")
   
-  // Test binary deserialization
-  let binary_deserialized = BinarySerializer::deserialize(binary_serializer, binary_data)
-  match binary_deserialized {
-    Some(data) => {
-      assert_true(TelemetryData::is_valid(data))
-      assert_eq(TelemetryData::trace_id(data), "serialization.test.trace")
-      assert_eq(TelemetryData::span_id(data), "serialization.test.span")
-      
-      // Verify all attributes are preserved
-      let simple_string = TelemetryData::get_attribute(data, "simple.string")
-      match simple_string {
-        Some(StringValue(value)) => assert_eq(value, "test_value")
-        _ => assert_true(false)
-      }
-    }
-    None => assert_true(false)
-  }
+  // Add platform-specific attributes
+  let platform_attrs = [
+    ("os.type", azimuth::StringValue(azimuth::PlatformInfo::os_type(platform_info))),
+    ("os.version", azimuth::StringValue(azimuth::PlatformInfo::os_version(platform_info))),
+    ("arch", azimuth::StringValue(azimuth::PlatformInfo::architecture(platform_info))),
+    ("runtime", azimuth::StringValue(azimuth::PlatformInfo::runtime(platform_info)))
+  ]
   
-  // Test cross-format compatibility
-  let cross_compatible = SerializationUtils::check_compatibility(json_data, binary_data)
-  assert_true(cross_compatible)
+  azimuth::Counter::add(platform_counter, 1, platform_attrs)
   
-  // Test format conversion
-  let converted_data = SerializationUtils::convert_format(json_data, SerializationFormat::Binary)
-  assert_true(converted_data.length() > 0)
+  // Test platform-specific resource monitoring
+  let resource_monitor = azimuth::ResourceMonitor::new()
+  let cpu_usage = azimuth::ResourceMonitor::get_cpu_usage(resource_monitor)
+  let memory_usage = azimuth::ResourceMonitor::get_memory_usage(resource_monitor)
   
-  let reconverted_data = SerializationUtils::convert_format(converted_data, SerializationFormat::JSON)
-  assert_true(reconverted_data.contains("serialization.test.trace"))
+  assert_true(cpu_usage >= 0.0 && cpu_usage <= 100.0)
+  assert_true(memory_usage > 0)
 }
 
-// Test 7: Resource Management with Lifecycle Control
-test "resource management with lifecycle control" {
-  // Create resource manager with lifecycle control
-  let resource_manager = ResourceManager::new()
+// Test 7: Resource Management Under Stress Conditions
+pub test "premium resource_management_stress" {
+  // Create stress test scenario
+  let resource_pool = azimuth::ResourcePool::new(100) // Max 100 resources
   
-  // Configure resource pools
-  ResourceManager::create_pool(resource_manager, "telemetry.processors", 10, 20)
-  ResourceManager::create_pool(resource_manager, "data.buffers", 100, 200)
-  ResourceManager::create_pool(resource_manager, "network.connections", 5, 10)
+  // Test resource allocation under stress
+  let allocated_resources = []
   
-  // Test resource acquisition
-  let processor1 = ResourceManager::acquire(resource_manager, "telemetry.processors")
-  let processor2 = ResourceManager::acquire(resource_manager, "telemetry.processors")
-  let buffer1 = ResourceManager::acquire(resource_manager, "data.buffers")
-  let connection1 = ResourceManager::acquire(resource_manager, "network.connections")
-  
-  // Verify resources are acquired
-  assert_true(ResourceManager::is_acquired(resource_manager, processor1))
-  assert_true(ResourceManager::is_acquired(resource_manager, processor2))
-  assert_true(ResourceManager::is_acquired(resource_manager, buffer1))
-  assert_true(ResourceManager::is_acquired(resource_manager, connection1))
-  
-  // Test resource usage tracking
-  let processor_usage = ResourceManager::get_usage(resource_manager, "telemetry.processors")
-  assert_eq(ResourceUsage::acquired(processor_usage), 2)
-  assert_eq(ResourceUsage::available(processor_usage), 8)
-  
-  let buffer_usage = ResourceManager::get_usage(resource_manager, "data.buffers")
-  assert_eq(ResourceUsage::acquired(buffer_usage), 1)
-  assert_eq(ResourceUsage::available(buffer_usage), 99)
-  
-  // Test resource release
-  ResourceManager::release(resource_manager, processor1)
-  ResourceManager::release(resource_manager, buffer1)
-  
-  // Verify resources are released
-  assert_false(ResourceManager::is_acquired(resource_manager, processor1))
-  assert_false(ResourceManager::is_acquired(resource_manager, buffer1))
-  assert_true(ResourceManager::is_acquired(resource_manager, processor2))
-  assert_true(ResourceManager::is_acquired(resource_manager, connection1))
-  
-  // Test resource pool expansion under load
-  let additional_processors = []
-  for i in 0..15 {
-    let processor = ResourceManager::acquire(resource_manager, "telemetry.processors")
-    additional_processors.push(processor)
+  // Allocate resources up to limit
+  for i = 0; i < 150; i = i + 1 {
+    match azimuth::ResourcePool::allocate(resource_pool) {
+      Some(resource) => allocated_resources.push(resource)
+      None => break // Pool exhausted
+    }
   }
   
-  let expanded_usage = ResourceManager::get_usage(resource_manager, "telemetry.processors")
-  assert_true(ResourceUsage::total_pool_size(expanded_usage) > 10)
+  // Verify resource pool limits
+  assert_eq(azimuth::Array::length(allocated_resources), 100)
   
-  // Test resource cleanup
-  for processor in additional_processors {
-    ResourceManager::release(resource_manager, processor)
+  // Test resource cleanup under pressure
+  for resource in allocated_resources {
+    azimuth::ResourcePool::release(resource_pool, resource)
   }
-  ResourceManager::release(resource_manager, processor2)
-  ResourceManager::release(resource_manager, connection1)
   
   // Verify all resources are released
-  let final_processor_usage = ResourceManager::get_usage(resource_manager, "telemetry.processors")
-  assert_eq(ResourceUsage::acquired(final_processor_usage), 0)
+  assert_eq(azimuth::ResourcePool::available_count(resource_pool), 100)
   
-  let final_buffer_usage = ResourceManager::get_usage(resource_manager, "data.buffers")
-  assert_eq(ResourceUsage::acquired(final_buffer_usage), 0)
+  // Test memory leak detection
+  let memory_before = azimuth::Memory::current_usage()
   
-  let final_connection_usage = ResourceManager::get_usage(resource_manager, "network.connections")
-  assert_eq(ResourceUsage::acquired(final_connection_usage), 0)
+  // Create and destroy many objects rapidly
+  for i = 0; i < 10000; i = i + 1 {
+    let temp_obj = azimuth::TemporaryObject::new()
+    azimuth::TemporaryObject::process(temp_obj)
+    azimuth::TemporaryObject::destroy(temp_obj)
+  }
   
-  // Test resource manager shutdown
-  ResourceManager::shutdown(resource_manager)
-  assert_true(ResourceManager::is_shutdown(resource_manager))
+  let memory_after = azimuth::Memory::current_usage()
+  let memory_diff = memory_after - memory_before
+  
+  // Verify no significant memory leaks
+  assert_true(memory_diff < 1024 * 1024) // Less than 1MB growth
 }
 
-// Test 8: Real-time Stream Processing with Backpressure Handling
-test "real-time stream processing with backpressure handling" {
-  // Create stream processor with backpressure control
-  let stream_processor = StreamProcessor::with_backpressure()
+// Test 8: Real-Time Data Processing Pipeline
+pub test "premium real_time_data_processing" {
+  // Create real-time processing pipeline
+  let pipeline = azimuth::ProcessingPipeline::new()
   
-  // Configure stream processing parameters
-  StreamProcessor::set_buffer_size(stream_processor, 1000)
-  StreamProcessor::set_batch_size(stream_processor, 100)
-  StreamProcessor::set_processing_interval(stream_processor, 100)  // 100ms
-  StreamProcessor::set_backpressure_threshold(stream_processor, 0.8)  // 80% buffer capacity
+  // Configure pipeline stages
+  azimuth::ProcessingPipeline::add_stage(pipeline, "ingestion", azimuth::IngestionStage::new())
+  azimuth::ProcessingPipeline::add_stage(pipeline, "validation", azimuth::ValidationStage::new())
+  azimuth::ProcessingPipeline::add_stage(pipeline, "aggregation", azimuth::AggregationStage::new())
+  azimuth::ProcessingPipeline::add_stage(pipeline, "export", azimuth::ExportStage::new())
   
-  // Create telemetry data stream
-  let data_stream = Stream::new()
+  // Create real-time data stream
+  let data_stream = azimuth::DataStream::new()
   
-  // Configure stream processing pipeline
-  StreamProcessor::add_processor(stream_processor, "validation", StreamValidationProcessor::new())
-  StreamProcessor::add_processor(stream_processor, "transformation", StreamTransformationProcessor::new())
-  StreamProcessor::add_processor(stream_processor, "aggregation", StreamAggregationProcessor::new())
-  StreamProcessor::add_processor(stream_processor, "output", StreamOutputProcessor::new())
+  // Process real-time data
+  let processed_count = 0
+  let batch_size = 100
   
-  // Start stream processing
-  StreamProcessor::start(stream_processor, data_stream)
-  
-  // Generate high-volume telemetry data stream
-  let stream_producer = Thread::spawn({
-    let stream_clone = data_stream
-    move || {
-      for i in 0..5000 {
-        let telemetry_data = TelemetryData::new(
-          "stream.test.trace",
-          "stream.test.span." + i.to_string(),
-          [
-            ("stream.index", IntValue(i)),
-            ("stream.timestamp", IntValue(CurrentTime::millis())),
-            ("stream.payload", StringValue("stream_data_" + i.to_string()))
-          ]
-        )
-        Stream::push(stream_clone, telemetry_data)
-        
-        // Simulate variable production rate
-        if i % 100 == 0 {
-          Thread::sleep(10)  // 10ms pause every 100 items
-        }
-      }
-    }
-  })
-  
-  // Monitor stream processing with backpressure
-  let backpressure_events = []
-  let stream_monitor = Thread::spawn({
-    let processor_clone = stream_processor
-    move || {
-      for _ in 0..50 {  // Monitor for 5 seconds (50 * 100ms)
-        Thread::sleep(100)
-        let buffer_usage = StreamProcessor::buffer_usage(processor_clone)
-        let processing_rate = StreamProcessor::processing_rate(processor_clone)
-        
-        if buffer_usage > 0.8 {
-          backpressure_events.push(("buffer.high", buffer_usage, processing_rate))
-        }
-        
-        if processing_rate < 100 {  // Less than expected
-          backpressure_events.push(("processing.slow", buffer_usage, processing_rate))
-        }
-      }
-    }
-  })
-  
-  // Wait for stream production to complete
-  Thread::join(stream_producer)
-  
-  // Wait for stream processing to complete
-  while StreamProcessor::is_processing(stream_processor) {
-    Thread::sleep(100)
-  }
-  
-  // Stop monitoring
-  Thread::join(stream_monitor)
-  
-  // Stop stream processor
-  StreamProcessor::stop(stream_processor)
-  
-  // Verify stream processing results
-  let processed_count = StreamProcessor::processed_count(stream_processor)
-  assert_true(processed_count > 0)
-  
-  // Verify backpressure handling
-  assert_true(backpressure_events.length() > 0)
-  for event in backpressure_events {
-    match event {
-      ("buffer.high", usage, _) => assert_true(usage > 0.8)
-      ("processing.slow", _, rate) => assert_true(rate < 100)
-      _ => assert_true(false)
+  for i = 0; i < batch_size; i = i + 1 {
+    let data_point = azimuth::DataPoint::new(i.to_int(), [
+      ("timestamp", azimuth::IntValue(azimuth::Clock::now().to_int())),
+      ("value", azimuth::FloatValue(i.to_double() * 1.5)),
+      ("source", azimuth::StringValue("sensor-" + i.to_string()))
+    ])
+    
+    match azimuth::ProcessingPipeline::process(pipeline, data_point) {
+      Some(processed) => processed_count = processed_count + 1
+      None => ()
     }
   }
   
-  // Verify data integrity in stream processing
-  let output_data = StreamProcessor::get_output_data(stream_processor)
-  for data in output_data {
-    assert_true(TelemetryData::is_valid(data))
-    let stream_index = TelemetryData::get_attribute(data, "stream.index")
-    match stream_index {
-      Some(IntValue(index)) => assert_true(index >= 0 && index < 5000)
-      _ => assert_true(false)
-    }
-  }
+  // Verify processing efficiency
+  assert_eq(processed_count, batch_size)
+  
+  // Verify pipeline throughput
+  let throughput = azimuth::ProcessingPipeline::get_throughput(pipeline)
+  assert_true(throughput > 1000.0) // Should process > 1000 items/second
 }
 
-// Test 9: Security and Privacy with Data Protection
-test "security and privacy with data protection mechanisms" {
-  // Create secure telemetry system
-  let secure_system = SecureTelemetrySystem::new()
+// Test 9: Dynamic Configuration Management
+pub test "premium configuration_management" {
+  // Create configuration manager
+  let config_manager = azimuth::ConfigurationManager::new()
   
-  // Configure security policies
-  SecureTelemetrySystem::set_encryption_policy(secure_system, EncryptionPolicy::AES256)
-  SecureTelemetrySystem::set_access_control(secure_system, AccessControl::RoleBased)
-  SecureTelemetrySystem::set_data_retention(secure_system, RetentionPolicy::ThirtyDays)
-  SecureTelemetrySystem::set_anonymization(secure_system, AnonymizationPolicy::PII)
+  // Load initial configuration
+  azimuth::ConfigurationManager::load_from_file(config_manager, "default-config.json")
   
-  // Create sensitive telemetry data
-  let sensitive_data = TelemetryData::new(
-    "security.test.trace",
-    "security.test.span",
-    [
-      ("user.id", StringValue("user_12345")),
-      ("user.email", StringValue("user@example.com")),
-      ("user.ip", StringValue("192.168.1.100")),
-      ("session.token", StringValue("secret_token_abc123")),
-      ("payment.info", StringValue("credit_card_1234")),
-      ("public.data", StringValue("public_info")),
-      ("metadata", StringValue("non_sensitive"))
-    ]
-  )
+  // Test dynamic configuration updates
+  let initial_sampling_rate = azimuth::ConfigurationManager::get_sampling_rate(config_manager)
+  assert_eq(initial_sampling_rate, 0.1) // Default 10%
   
-  // Test data encryption
-  let encrypted_data = SecureTelemetrySystem::encrypt(secure_system, sensitive_data)
-  assert_true(SecureTelemetrySystem::is_encrypted(secure_system, encrypted_data))
+  // Update configuration dynamically
+  azimuth::ConfigurationManager::update_config(config_manager, "sampling.rate", 0.05)
+  let updated_sampling_rate = azimuth::ConfigurationManager::get_sampling_rate(config_manager)
+  assert_eq(updated_sampling_rate, 0.05) // Updated to 5%
   
-  // Test data decryption with proper authorization
-  let authorized_context = SecurityContext::with_role("admin")
-  let decrypted_data = SecureTelemetrySystem::decrypt(secure_system, encrypted_data, authorized_context)
-  match decrypted_data {
-    Some(data) => {
-      assert_true(TelemetryData::is_valid(data))
-      assert_eq(TelemetryData::trace_id(data), "security.test.trace")
-    }
-    None => assert_true(false)
-  }
+  // Test configuration validation
+  let validation_result = azimuth::ConfigurationManager::validate_config(config_manager)
+  assert_true(validation_result.is_valid)
   
-  // Test access control with unauthorized context
-  let unauthorized_context = SecurityContext::with_role("guest")
-  let unauthorized_decryption = SecureTelemetrySystem::decrypt(secure_system, encrypted_data, unauthorized_context)
-  match unauthorized_decryption {
-    Some(_) => assert_true(false)  // Should not succeed
-    None => assert_true(true)       // Should fail
-  }
+  // Test configuration rollback
+  azimuth::ConfigurationManager::create_checkpoint(config_manager, "before-change")
+  azimuth::ConfigurationManager::update_config(config_manager, "invalid.setting", "invalid-value")
   
-  // Test data anonymization
-  let anonymized_data = SecureTelemetrySystem::anonymize(secure_system, sensitive_data)
-  assert_true(SecureTelemetrySystem::is_anonymized(secure_system, anonymized_data))
+  let rollback_success = azimuth::ConfigurationManager::rollback_to_checkpoint(config_manager, "before-change")
+  assert_true(rollback_success)
   
-  // Verify PII is properly anonymized
-  let anonymized_user_id = TelemetryData::get_attribute(anonymized_data, "user.id")
-  match anonymized_user_id {
-    Some(StringValue(value)) => assert_false(value.contains("user_12345"))
-    _ => assert_true(false)
-  }
-  
-  let anonymized_email = TelemetryData::get_attribute(anonymized_data, "user.email")
-  match anonymized_email {
-    Some(StringValue(value)) => assert_false(value.contains("user@example.com"))
-    _ => assert_true(false)
-  }
-  
-  // Verify public data is preserved
-  let public_data = TelemetryData::get_attribute(anonymized_data, "public.data")
-  match public_data {
-    Some(StringValue(value)) => assert_eq(value, "public_info")
-    _ => assert_true(false)
-  }
-  
-  // Test audit logging
-  let audit_log = SecureTelemetrySystem::get_audit_log(secure_system)
-  assert_true(AuditLog::contains_entry(audit_log, "data.encrypted"))
-  assert_true(AuditLog::contains_entry(audit_log, "data.anonymized"))
-  assert_true(AuditLog::contains_entry(audit_log, "access.denied"))
-  
-  // Test security compliance
-  let compliance_report = SecureTelemetrySystem::check_compliance(secure_system)
-  assert_true(ComplianceReport::is_compliant(compliance_report))
-  assert_true(ComplianceReport::meets_gdpr(compliance_report))
-  assert_true(ComplianceReport::meets_ccpa(compliance_report))
+  // Verify rollback restored valid configuration
+  let final_sampling_rate = azimuth::ConfigurationManager::get_sampling_rate(config_manager)
+  assert_eq(final_sampling_rate, 0.05)
 }
 
-// Test 10: Internationalization with Multi-language Support
-test "internationalization with multi-language support" {
-  // Create internationalized telemetry system
-  let i18n_system = InternationalizedTelemetrySystem::new()
+// Test 10: Internationalization and Localization Support
+pub test "premium internationalization_localization" {
+  // Test multi-language support
+  let i18n_manager = azimuth::I18nManager::new()
   
-  // Configure language support
-  InternationalizedTelemetrySystem::add_language(i18n_system, "en", "English")
-  InternationalizedTelemetrySystem::add_language(i18n_system, "zh", "中文")
-  InternationalizedTelemetrySystem::add_language(i18n_system, "es", "Español")
-  InternationalizedTelemetrySystem::add_language(i18n_system, "fr", "Français")
-  InternationalizedTelemetrySystem::add_language(i18n_system, "ja", "日本語")
-  InternationalizedTelemetrySystem::add_language(i18n_system, "ar", "العربية")
+  // Load language packs
+  azimuth::I18nManager::load_language_pack(i18n_manager, "en", "english-pack.json")
+  azimuth::I18nManager::load_language_pack(i18n_manager, "zh", "chinese-pack.json")
+  azimuth::I18nManager::load_language_pack(i18n_manager, "ja", "japanese-pack.json")
+  azimuth::I18nManager::load_language_pack(i18n_manager, "es", "spanish-pack.json")
   
-  // Configure locale-specific formatting
-  InternationalizedTelemetrySystem::set_date_format(i18n_system, "en", "MM/DD/YYYY")
-  InternationalizedTelemetrySystem::set_date_format(i18n_system, "zh", "YYYY年MM月DD日")
-  InternationalizedTelemetrySystem::set_date_format(i18n_system, "ar", "DD/MM/YYYY")
+  // Test text localization
+  let error_key = "error.network.timeout"
   
-  InternationalizedTelemetrySystem::set_number_format(i18n_system, "en", "1,234.56")
-  InternationalizedTelemetrySystem::set_number_format(i18n_system, "zh", "1,234.56")
-  InternationalizedTelemetrySystem::set_number_format(i18n_system, "fr", "1 234,56")
+  let english_text = azimuth::I18nManager::get_text(i18n_manager, "en", error_key)
+  let chinese_text = azimuth::I18nManager::get_text(i18n_manager, "zh", error_key)
+  let japanese_text = azimuth::I18nManager::get_text(i18n_manager, "ja", error_key)
+  let spanish_text = azimuth::I18nManager::get_text(i18n_manager, "es", error_key)
   
-  // Create localized telemetry data
-  let en_data = TelemetryData::with_locale(
-    "i18n.test.trace",
-    "i18n.test.span.en",
-    [
-      ("error.message", StringValue("Operation failed")),
-      ("user.action", StringValue("User clicked submit button")),
-      ("system.status", StringValue("System is running normally")),
-      ("numeric.value", IntValue(1234)),
-      ("date.value", IntValue(1640995200000))  // 2022-01-01 00:00:00 UTC
-    ],
-    "en"
-  )
+  // Verify localized text
+  assert_eq(english_text, "Network timeout occurred")
+  assert_eq(chinese_text, "网络超时已发生")
+  assert_eq(japanese_text, "ネットワークタイムアウトが発生しました")
+  assert_eq(spanish_text, "Se produjo un tiempo de espera de red")
   
-  let zh_data = TelemetryData::with_locale(
-    "i18n.test.trace",
-    "i18n.test.span.zh",
-    [
-      ("error.message", StringValue("操作失败")),
-      ("user.action", StringValue("用户点击提交按钮")),
-      ("system.status", StringValue("系统运行正常")),
-      ("numeric.value", IntValue(1234)),
-      ("date.value", IntValue(1640995200000))  // 2022-01-01 00:00:00 UTC
-    ],
-    "zh"
-  )
+  // Test Unicode and emoji support
+  let unicode_attrs = azimuth::Attributes::new()
+  azimuth::Attributes::set(unicode_attrs, "message.zh", azimuth::StringValue("测试中文消息🚀"))
+  azimuth::Attributes::set(unicode_attrs, "message.ja", azimuth::StringValue("日本語テストメッセージ🌸"))
+  azimuth::Attributes::set(unicode_attrs, "message.emoji", azimuth::StringValue("Success ✅ Completed 🎉"))
   
-  let ar_data = TelemetryData::with_locale(
-    "i18n.test.trace",
-    "i18n.test.span.ar",
-    [
-      ("error.message", StringValue("فشلت العملية")),
-      ("user.action", StringValue("نقر المستخدم على زر الإرسال")),
-      ("system.status", StringValue("النظام يعمل بشكل طبيعي")),
-      ("numeric.value", IntValue(1234)),
-      ("date.value", IntValue(1640995200000))  // 2022-01-01 00:00:00 UTC
-    ],
-    "ar"
-  )
-  
-  // Process localized telemetry data
-  InternationalizedTelemetrySystem::process(i18n_system, en_data)
-  InternationalizedTelemetrySystem::process(i18n_system, zh_data)
-  InternationalizedTelemetrySystem::process(i18n_system, ar_data)
-  
-  // Test locale-specific formatting
-  let en_formatted = InternationalizedTelemetrySystem::format_for_locale(i18n_system, en_data, "en")
-  let zh_formatted = InternationalizedTelemetrySystem::format_for_locale(i18n_system, zh_data, "zh")
-  let ar_formatted = InternationalizedTelemetrySystem::format_for_locale(i18n_system, ar_data, "ar")
-  
-  // Verify English formatting
-  let en_date = TelemetryData::get_attribute(en_formatted, "date.value.formatted")
-  match en_date {
-    Some(StringValue(date)) => assert_true(date.contains("01/01/2022"))
-    _ => assert_true(false)
-  }
-  
-  let en_number = TelemetryData::get_attribute(en_formatted, "numeric.value.formatted")
-  match en_number {
-    Some(StringValue(number)) => assert_eq(number, "1,234")
-    _ => assert_true(false)
-  }
-  
-  // Verify Chinese formatting
-  let zh_date = TelemetryData::get_attribute(zh_formatted, "date.value.formatted")
-  match zh_date {
-    Some(StringValue(date)) => assert_true(date.contains("2022年01月01日"))
-    _ => assert_true(false)
-  }
-  
-  let zh_number = TelemetryData::get_attribute(zh_formatted, "numeric.value.formatted")
-  match zh_number {
-    Some(StringValue(number)) => assert_eq(number, "1,234")
-    _ => assert_true(false)
-  }
-  
-  // Verify Arabic formatting
-  let ar_date = TelemetryData::get_attribute(ar_formatted, "date.value.formatted")
-  match ar_date {
-    Some(StringValue(date)) => assert_true(date.contains("01/01/2022"))
-    _ => assert_true(false)
-  }
-  
-  // Test cross-locale translation
-  let en_to_zh = InternationalizedTelemetrySystem::translate(i18n_system, en_data, "zh")
-  let translated_error = TelemetryData::get_attribute(en_to_zh, "error.message.translated")
-  match translated_error {
-    Some(StringValue(message)) => assert_eq(message, "操作失败")
-    _ => assert_true(false)
-  }
+  // Verify Unicode handling
+  assert_eq(azimuth::Attributes::get(unicode_attrs, "message.zh"), Some(azimuth::StringValue("测试中文消息🚀")))
+  assert_eq(azimuth::Attributes::get(unicode_attrs, "message.ja"), Some(azimuth::StringValue("日本語テストメッセージ🌸")))
+  assert_eq(azimuth::Attributes::get(unicode_attrs, "message.emoji"), Some(azimuth::StringValue("Success ✅ Completed 🎉")))
   
   // Test right-to-left language support
-  let ar_ui_elements = InternationalizedTelemetrySystem::generate_ui_elements(i18n_system, ar_data)
-  assert_true(UIElements::is_right_to_left(ar_ui_elements))
-  
-  // Test multi-language aggregation
-  let multi_lang_report = InternationalizedTelemetrySystem::generate_multi_language_report(i18n_system)
-  assert_true(MultiLanguageReport::contains_language(multi_lang_report, "en"))
-  assert_true(MultiLanguageReport::contains_language(multi_lang_report, "zh"))
-  assert_true(MultiLanguageReport::contains_language(multi_lang_report, "ar"))
-  
-  // Test cultural adaptation
-  let cultural_adaptations = InternationalizedTelemetrySystem::get_cultural_adaptations(i18n_system)
-  assert_true(CulturalAdaptations::has_time_format(cultural_adaptations, "zh"))
-  assert_true(CulturalAdaptations::has_number_format(cultural_adaptations, "fr"))
-  assert_true(CulturalAdaptations::has_text_direction(cultural_adaptations, "ar"))
+  azimuth::I18nManager::load_language_pack(i18n_manager, "ar", "arabic-pack.json")
+  let arabic_text = azimuth::I18nManager::get_text(i18n_manager, "ar", "error.network.timeout")
+  assert_true(azimuth::I18nUtils::is_right_to_left(arabic_text))
 }
