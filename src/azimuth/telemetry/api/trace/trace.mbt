@@ -1,6 +1,9 @@
 // Azimuth Telemetry - Trace API
 // 分布式链路追踪
 
+use azimuth.telemetry.api.common
+use azimuth.telemetry.api.context
+
 pub enum SpanKind {
   Internal
   Server
@@ -75,9 +78,11 @@ pub fn NoopTracer::start_span(
   attributes? : Array[(String, common::AttributeValue)],
   start_time_unix_nanos? : Int64
 ) -> (context::Context, Span) {
+  let trace_id_array = [0_byte; 16]
+  let span_id_array = [0_byte; 8]
   let span_context = SpanContext::{
-    trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
-    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte }),
+    trace_id: trace_id_array,
+    span_id: span_id_array,
     trace_flags: 0_byte,
     trace_state: ""
   }
@@ -99,6 +104,6 @@ pub fn NoopTracer::start_span(
   (ctx, span)
 }
 
-pub fn NoopTracerProvider::get_tracer(name : String, version? : String) -> Tracer {
+pub fn NoopTracerProvider::get_tracer(name : String, version? : String) -> NoopTracer {
   NoopTracer::{}
 }

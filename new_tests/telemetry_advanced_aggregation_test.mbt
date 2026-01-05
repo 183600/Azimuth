@@ -37,7 +37,7 @@ test "telemetry_advanced_time_weighted_aggregation" {
   while i < time_series_data.length() - 1 {
     let current_value = time_series_data[i].1
     let next_value = time_series_data[i + 1].1
-    let time_weight = time_intervals[i].to_double()
+    let time_weight = time_intervals[i].to_string().to_double()
     
     // 使用梯形法则计算加权面积
     let weighted_area = (current_value + next_value) * time_weight / 2.0
@@ -60,7 +60,7 @@ test "telemetry_advanced_time_weighted_aggregation" {
     simple_sum = simple_sum + time_series_data[i].1
     i = i + 1
   }
-  let simple_average = simple_sum / time_series_data.length().to_double()
+  let simple_average = simple_sum / time_series_data.length().to_string().to_double()
   
   // 验证加权平均值与简单平均值的差异
   let average_difference = (time_weighted_average - simple_average).abs()
@@ -287,7 +287,7 @@ test "telemetry_exponential_moving_average" {
       sum = sum + data_points[i - j]
       j = j + 1
     }
-    let sma = sum / window_size.to_double()
+    let sma = sum / window_size.to_string().to_double()
     sma_values.push(sma)
     i = i + 1
   }
@@ -408,8 +408,8 @@ test "telemetry_cardinality_estimation" {
     i = i + 1
   }
   
-  let average_register = register_sum.to_double() / registers.length().to_double()
-  let estimated_cardinality = (register_count.to_double() * 2.0.pow(average_register)).to_int()
+  let average_register = register_sum.to_string().to_double() / registers.length().to_string().to_double()
+  let estimated_cardinality = double_to_int(register_count.to_string().to_double() * 2.0.pow(average_register))
   
   // 验证基数估计
   assert_eq(estimated_cardinality > 0, true)

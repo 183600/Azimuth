@@ -1,5 +1,22 @@
 // 遥测自适应采样测试用例
 
+// 辅助函数
+fn min_double(a : Double, b : Double) -> Double {
+  if a < b { a } else { b }
+}
+
+fn max_double(a : Double, b : Double) -> Double {
+  if a > b { a } else { b }
+}
+
+fn int_to_double(i : Int) -> Double {
+  i.to_string().to_double()
+}
+
+fn double_to_int(d : Double) -> Int {
+  d.to_string().to_int()
+}
+
 test "telemetry_dynamic_sampling_adjustment" {
   // 测试遥测动态采样调整机制
   
@@ -16,7 +33,7 @@ test "telemetry_dynamic_sampling_adjustment" {
   assert_eq(load_threshold_high > load_threshold_low, true)
   
   // 系统负载指标
-  type SystemLoad = {
+  type SystemLoad SystemLoad {
     cpu_usage: Double,
     memory_usage: Double,
     network_io: Double,
@@ -25,7 +42,7 @@ test "telemetry_dynamic_sampling_adjustment" {
   }
   
   // 采样决策状态
-  type SamplingState = {
+  type SamplingState SamplingState {
     current_rate: Double,
     last_adjustment_time: Int,
     adjustment_count: Int,
@@ -35,35 +52,35 @@ test "telemetry_dynamic_sampling_adjustment" {
   
   // 模拟系统负载变化
   let load_scenarios = [
-    SystemLoad {
+    SystemLoad::{
       cpu_usage: 0.2,
       memory_usage: 0.3,
       network_io: 0.1,
       disk_io: 0.2,
       request_rate: 1000
     },  // 低负载
-    SystemLoad {
+    SystemLoad::{
       cpu_usage: 0.5,
       memory_usage: 0.6,
       network_io: 0.4,
       disk_io: 0.3,
       request_rate: 5000
     },  // 中等负载
-    SystemLoad {
+    SystemLoad::{
       cpu_usage: 0.9,
       memory_usage: 0.85,
       network_io: 0.8,
       disk_io: 0.7,
       request_rate: 15000
     },  // 高负载
-    SystemLoad {
+    SystemLoad::{
       cpu_usage: 0.7,
       memory_usage: 0.65,
       network_io: 0.5,
       disk_io: 0.4,
       request_rate: 8000
     },  // 中高负载
-    SystemLoad {
+    SystemLoad::{
       cpu_usage: 0.3,
       memory_usage: 0.4,
       network_io: 0.2,
@@ -78,7 +95,7 @@ test "telemetry_dynamic_sampling_adjustment" {
   assert_eq(load_scenarios[2].cpu_usage, 0.9)
   
   // 初始化采样状态
-  let mut sampling_state = SamplingState {
+  let mut sampling_state = SamplingState::{
     current_rate: base_sampling_rate,
     last_adjustment_time: 0,
     adjustment_count: 0,
@@ -101,12 +118,12 @@ test "telemetry_dynamic_sampling_adjustment" {
       // 高负载时降低采样率
       let reduction_factor = (overall_load - load_threshold_high) / (1.0 - load_threshold_high)
       let adjusted_rate = sampling_state.current_rate * (1.0 - reduction_factor * 0.5)
-      max(adjusted_rate, min_sampling_rate)
+      max_double(adjusted_rate, min_sampling_rate)
     } else if overall_load < load_threshold_low {
       // 低负载时提高采样率
       let increase_factor = (load_threshold_low - overall_load) / load_threshold_low
       let adjusted_rate = sampling_state.current_rate * (1.0 + increase_factor * 0.3)
-      min(adjusted_rate, max_sampling_rate)
+      min_double(adjusted_rate, max_sampling_rate)
     } else {
       // 中等负载时保持当前采样率
       sampling_state.current_rate
@@ -119,7 +136,7 @@ test "telemetry_dynamic_sampling_adjustment" {
     
     // 模拟请求采样
     let requests_in_window = load.request_rate
-    let sampled_in_window = (requests_in_window.to_double() * new_sampling_rate).to_int()
+    let sampled_in_window = double_to_int(int_to_double(requests_in_window) * new_sampling_rate)
     
     sampling_state.total_requests = sampling_state.total_requests + requests_in_window
     sampling_state.sampled_requests = sampling_state.sampled_requests + sampled_in_window
@@ -137,8 +154,8 @@ test "telemetry_dynamic_sampling_adjustment" {
   assert_eq(sampling_state.current_rate <= max_sampling_rate, true)
   
   // 计算实际采样率
-  let actual_sampling_rate = sampling_state.sampled_requests.to_double() / 
-                            sampling_state.total_requests.to_double()
+  let actual_sampling_rate = int_to_double(sampling_state.sampled_requests) / 
+                            int_to_double(sampling_state.total_requests)
   
   // 验证实际采样率在合理范围内
   assert_eq(actual_sampling_rate >= min_sampling_rate * 0.8, true)
@@ -161,7 +178,7 @@ test "telemetry_priority_based_sampling" {
   assert_eq(priority_sampling_rates["medium"] > priority_sampling_rates["low"], true)
   
   // 定义遥测数据优先级
-  type TelemetryEvent = {
+  type TelemetryEvent TelemetryEvent {
     event_id: String,
     event_type: String,
     priority: String,
@@ -173,7 +190,7 @@ test "telemetry_priority_based_sampling" {
   // 创建测试事件
   let telemetry_events = [
     // 关键事件
-    TelemetryEvent {
+    TelemetryEvent::{
       event_id: "error_001",
       event_type: "error",
       priority: "critical",
@@ -181,7 +198,7 @@ test "telemetry_priority_based_sampling" {
       timestamp: 1640995200,
       sample_decision: false
     },
-    TelemetryEvent {
+    TelemetryEvent::{
       event_id: "security_001",
       event_type: "security",
       priority: "critical",
@@ -190,7 +207,7 @@ test "telemetry_priority_based_sampling" {
       sample_decision: false
     },
     // 高优先级事件
-    TelemetryEvent {
+    TelemetryEvent::{
       event_id: "trace_001",
       event_type: "trace",
       priority: "high",
@@ -198,7 +215,7 @@ test "telemetry_priority_based_sampling" {
       timestamp: 1640995320,
       sample_decision: false
     },
-    TelemetryEvent {
+    TelemetryEvent::{
       event_id: "metric_001",
       event_type: "metric",
       priority: "high",
@@ -207,7 +224,7 @@ test "telemetry_priority_based_sampling" {
       sample_decision: false
     },
     // 中优先级事件
-    TelemetryEvent {
+    TelemetryEvent::{
       event_id: "log_001",
       event_type: "log",
       priority: "medium",
@@ -215,7 +232,7 @@ test "telemetry_priority_based_sampling" {
       timestamp: 1640995440,
       sample_decision: false
     },
-    TelemetryEvent {
+    TelemetryEvent::{
       event_id: "trace_002",
       event_type: "trace",
       priority: "medium",
@@ -224,7 +241,7 @@ test "telemetry_priority_based_sampling" {
       sample_decision: false
     },
     // 低优先级事件
-    TelemetryEvent {
+    TelemetryEvent::{
       event_id: "debug_001",
       event_type: "debug",
       priority: "low",
@@ -232,7 +249,7 @@ test "telemetry_priority_based_sampling" {
       timestamp: 1640995560,
       sample_decision: false
     },
-    TelemetryEvent {
+    TelemetryEvent::{
       event_id: "trace_003",
       event_type: "trace",
       priority: "low",
@@ -260,7 +277,7 @@ test "telemetry_priority_based_sampling" {
     
     let mut j = 0
     while j < event_count {
-      let event = TelemetryEvent {
+      let event = TelemetryEvent::{
         event_id: base_event.event_id + "_" + j.to_string(),
         event_type: base_event.event_type,
         priority: base_event.priority,
@@ -286,7 +303,7 @@ test "telemetry_priority_based_sampling" {
     
     // 简化的采样决策（基于事件ID的伪随机）
     let hash_value = event.event_id.length() * 7
-    let sampling_threshold = (sampling_rate * 1000.0).to_int()
+    let sampling_threshold = double_to_int(sampling_rate * 1000.0)
     
     let should_sample = (hash_value % 1000) < sampling_threshold
     
@@ -347,7 +364,7 @@ test "telemetry_priority_based_sampling" {
     let stats = sampling_stats[priority]
     
     if stats.total > 0 {
-      let actual_rate = stats.sampled.to_double() / stats.total.to_double()
+      let actual_rate = int_to_double(stats.sampled) / int_to_double(stats.total)
       let updated_stats = {
         total: stats.total,
         sampled: stats.sampled,
@@ -388,7 +405,7 @@ test "telemetry_adaptive_error_sampling" {
   assert_eq(error_cooldown_minutes > 0, true)
   
   // 错误事件类型
-  type ErrorEvent = {
+  type ErrorEvent ErrorEvent {
     error_id: String,
     error_type: String,
     service_name: String,
@@ -400,7 +417,7 @@ test "telemetry_adaptive_error_sampling" {
   // 模拟错误事件流
   let error_events = [
     // 正常错误率期间
-    ErrorEvent {
+    ErrorEvent::{
       error_id: "err_001",
       error_type: "timeout",
       service_name: "api-service",
@@ -408,7 +425,7 @@ test "telemetry_adaptive_error_sampling" {
       timestamp: 1640995200,
       sample_decision: false
     },
-    ErrorEvent {
+    ErrorEvent::{
       error_id: "err_002",
       error_type: "connection_failed",
       service_name: "db-service",
@@ -417,7 +434,7 @@ test "telemetry_adaptive_error_sampling" {
       sample_decision: false
     },
     // 错误突发期间
-    ErrorEvent {
+    ErrorEvent::{
       error_id: "err_003",
       error_type: "timeout",
       service_name: "api-service",
@@ -425,7 +442,7 @@ test "telemetry_adaptive_error_sampling" {
       timestamp: 1640995320,
       sample_decision: false
     },
-    ErrorEvent {
+    ErrorEvent::{
       error_id: "err_004",
       error_type: "timeout",
       service_name: "api-service",
@@ -433,7 +450,7 @@ test "telemetry_adaptive_error_sampling" {
       timestamp: 1640995380,
       sample_decision: false
     },
-    ErrorEvent {
+    ErrorEvent::{
       error_id: "err_005",
       error_type: "memory_error",
       service_name: "cache-service",
@@ -441,7 +458,7 @@ test "telemetry_adaptive_error_sampling" {
       timestamp: 1640995440,
       sample_decision: false
     },
-    ErrorEvent {
+    ErrorEvent::{
       error_id: "err_006",
       error_type: "timeout",
       service_name: "api-service",
@@ -449,7 +466,7 @@ test "telemetry_adaptive_error_sampling" {
       timestamp: 1640995500,
       sample_decision: false
     },
-    ErrorEvent {
+    ErrorEvent::{
       error_id: "err_007",
       error_type: "disk_full",
       service_name: "storage-service",
@@ -457,7 +474,7 @@ test "telemetry_adaptive_error_sampling" {
       timestamp: 1640995560,
       sample_decision: false
     },
-    ErrorEvent {
+    ErrorEvent::{
       error_id: "err_008",
       error_type: "timeout",
       service_name: "api-service",
@@ -465,7 +482,7 @@ test "telemetry_adaptive_error_sampling" {
       timestamp: 1640995620,
       sample_decision: false
     },
-    ErrorEvent {
+    ErrorEvent::{
       error_id: "err_009",
       error_type: "timeout",
       service_name: "api-service",
@@ -473,7 +490,7 @@ test "telemetry_adaptive_error_sampling" {
       timestamp: 1640995680,
       sample_decision: false
     },
-    ErrorEvent {
+    ErrorEvent::{
       error_id: "err_010",
       error_type: "timeout",
       service_name: "api-service",
@@ -481,7 +498,7 @@ test "telemetry_adaptive_error_sampling" {
       timestamp: 1640995740,
       sample_decision: false
     },
-    ErrorEvent {
+    ErrorEvent::{
       error_id: "err_011",
       error_type: "timeout",
       service_name: "api-service",
@@ -489,7 +506,7 @@ test "telemetry_adaptive_error_sampling" {
       timestamp: 1640995800,
       sample_decision: false
     },
-    ErrorEvent {
+    ErrorEvent::{
       error_id: "err_012",
       error_type: "timeout",
       service_name: "api-service",
@@ -505,7 +522,7 @@ test "telemetry_adaptive_error_sampling" {
   assert_eq(error_events[6].severity, "critical")
   
   // 自适应错误采样状态
-  type ErrorSamplingState = {
+  type ErrorSamplingState ErrorSamplingState {
     current_sampling_rate: Double,
     error_count_per_minute: Int,
     burst_detected: Bool,
@@ -515,7 +532,7 @@ test "telemetry_adaptive_error_sampling" {
     sampled_errors: Int
   }
   
-  let mut sampling_state = ErrorSamplingState {
+  let mut sampling_state = ErrorSamplingState::{
     current_sampling_rate: base_error_sampling_rate,
     error_count_per_minute: 0,
     burst_detected: false,
@@ -568,7 +585,7 @@ test "telemetry_adaptive_error_sampling" {
     }
     
     // 采样决策
-    let sampling_threshold = (sampling_state.current_sampling_rate * 1000.0).to_int()
+    let sampling_threshold = double_to_int(sampling_state.current_sampling_rate * 1000.0)
     let hash_value = error.error_id.length() * 13
     let should_sample = (hash_value % 1000) < sampling_threshold
     
@@ -589,8 +606,8 @@ test "telemetry_adaptive_error_sampling" {
   assert_eq(sampling_state.sampled_errors > 0, true)
   
   // 计算实际采样率
-  let actual_sampling_rate = sampling_state.sampled_errors.to_double() / 
-                            sampling_state.total_errors.to_double()
+  let actual_sampling_rate = int_to_double(sampling_state.sampled_errors) / 
+                            int_to_double(sampling_state.total_errors)
   
   // 验证采样率在突发期间降低
   assert_eq(actual_sampling_rate < base_error_sampling_rate, true)
@@ -635,11 +652,11 @@ test "telemetry_adaptive_error_sampling" {
   
   // 验证关键错误有更高采样概率
   let critical_rate = if severity_stats["critical"].total > 0 {
-    severity_stats["critical"].sampled.to_double() / severity_stats["critical"].total.to_double()
+    int_to_double(severity_stats["critical"].sampled) / int_to_double(severity_stats["critical"].total)
   } else { 0.0 }
   
   let medium_rate = if severity_stats["medium"].total > 0 {
-    severity_stats["medium"].sampled.to_double() / severity_stats["medium"].total.to_double()
+    int_to_double(severity_stats["medium"].sampled) / int_to_double(severity_stats["medium"].total)
   } else { 0.0 }
   
   // 在突发情况下，所有错误类型的采样率都应该降低
