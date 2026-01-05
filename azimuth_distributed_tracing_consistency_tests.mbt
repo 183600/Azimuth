@@ -1,559 +1,538 @@
-// Azimuth Distributed Tracing Consistency Tests
-// 分布式追踪一致性测试用例 - 测试分布式系统中追踪数据的一致性和完整性
+// Azimuth Telemetry System - Distributed Tracing Consistency Tests
+// This file contains test cases for distributed tracing consistency functionality
 
-// Test 1: 跨服务追踪传播一致性
-test "cross-service trace propagation consistency" {
-  // 创建根追踪上下文
-  let trace_id = TraceId::generate()
-  let root_span_id = SpanId::generate()
-  let root_ctx = SpanContext::new(trace_id, root_span_id, true, "")
+// Test 1: Trace Context Propagation
+test "trace context propagation" {
+  // Create a root span
+  let trace_id = "12345678901234567890123456789012"
+  let root_span_id = "1111111111111111"
+  let root_span = Span::new("root_operation", Server, SpanContext::new(trace_id, root_span_id, true, ""))
   
-  // 服务A：创建根跨度
-  let service_a_span = Span::new("service_a_request", Server, root_ctx)
-  Span::add_event(service_a_span, "request_received", Some([
-    ("service", StringValue("service_a")),
-    ("endpoint", StringValue("/api/process"))
-  ]))
+  // Create a child span
+  let child_span_id = "2222222222222222"
+  let child_span = Span::create_child(root_span, "child_operation", Client)
   
-  // 服务A调用服务B：传播追踪上下文
-  let service_b_headers = TracePropagator::inject_to_headers(root_ctx)
-  assert_true(service_b_headers.contains("traceparent"))
-  assert_true(service_b_headers.contains("tracestate"))
+  // Verify trace context is propagated
+  let child_context = Span::span_context(child_span)
+  assert_eq(SpanContext::trace_id(child_context), trace_id)
+  assert_eq(SpanContext::parent_span_id(child_context), Some(root_span_id))
+  assert_eq(SpanContext::span_id(child_context), child_span_id)
   
-  // 服务B：提取追踪上下文
-  let service_b_ctx = TracePropagator::extract_from_headers(service_b_headers)
-  assert_true(SpanContext::is_valid(service_b_ctx))
-  assert_eq(SpanContext::trace_id(service_b_ctx), trace_id)
+  // Create a grandchild span
+  let grandchild_span_id = "3333333333333333"
+  let grandchild_span = Span::create_child(child_span, "grandchild_operation", Internal)
   
-  let service_b_span = Span::new("service_b_processing", Server, service_b_ctx)
-  Span::add_event(service_b_span, "processing_started", Some([
-    ("service", StringValue("service_b")),
-    ("parent_service", StringValue("service_a"))
-  ]))
+  // Verify trace context is propagated through multiple levels
+  let grandchild_context = Span::span_context(grandchild_span)
+  assert_eq(SpanContext::trace_id(grandchild_context), trace_id)
+  assert_eq(SpanContext::parent_span_id(grandchild_context), Some(child_span_id))
+  assert_eq(SpanContext::span_id(grandchild_context), grandchild_span_id)
   
-  // 服务B调用服务C：传播追踪上下文
-  let service_c_headers = TracePropagator::inject_to_headers(service_b_ctx)
-  let service_c_ctx = TracePropagator::extract_from_headers(service_c_headers)
+  // Test trace context extraction and injection
+  let injector = TraceContextInjector::new()
+  let headers = Headers::new()
+  TraceContextInjector::inject(injector, child_context, headers)
   
-  let service_c_span = Span::new("service_c_operation", Server, service_c_ctx)
-  Span::add_event(service_c_span, "operation_started", Some([
-    ("service", StringValue("service_c")),
-    ("parent_service", StringValue("service_b"))
-  ]))
+  // Verify trace context headers are injected
+  assert_true(Headers::has(headers, "traceparent"))
+  assert_true(Headers::has(headers, "tracestate"))
   
-  // 完成所有跨度
-  Span::end(service_c_span)
-  Span::end(service_b_span)
-  Span::end(service_a_span)
+  // Extract trace context from headers
+  let extractor = TraceContextExtractor::new()
+  let extracted_context = TraceContextExtractor::extract(extractor, headers)
   
-  // 验证追踪一致性
-  let trace_consistency = TraceConsistencyValidator::validate_trace(trace_id)
-  assert_true(trace_consistency.is_consistent)
-  assert_eq(trace_consistency.span_count, 3)
-  assert_eq(trace_consistency.service_count, 3)
-  
-  // 验证父子关系
-  let parent_child_relations = TraceConsistencyValidator::get_parent_child_relations(trace_id)
-  assert_eq(parent_child_relations.length(), 2) // A->B, B->C
-}
-
-// Test 2: 异步操作追踪一致性
-test "asynchronous operation trace consistency" {
-  // 创建异步操作的根上下文
-  let trace_id = TraceId::generate()
-  let root_span_id = SpanId::generate()
-  let async_ctx = SpanContext::new(trace_id, root_span_id, true, "")
-  
-  // 主跨度
-  let main_span = Span::new("async_operation_main", Server, async_ctx)
-  Span::add_event(main_span, "async_operation_started", Some([
-    ("operation_type", StringValue("async_batch_processing"))
-  ]))
-  
-  // 创建多个异步子操作
-  let async_tasks = []
-  for i in 1..=5 {
-    let task_span_id = SpanId::generate()
-    let task_ctx = SpanContext::new(trace_id, task_span_id, true, "")
-    
-    let task_span = Span::new("async_task_" + i.to_string(), Client, task_ctx)
-    Span::add_event(task_span, "task_started", Some([
-      ("task_id", StringValue("task_" + i.to_string())),
-      ("batch_id", StringValue("batch_001"))
-    ]))
-    
-    async_tasks.push(task_span)
-  }
-  
-  // 模拟异步任务完成（乱序完成）
-  let completion_order = [3, 1, 5, 2, 4]
-  for task_index in completion_order {
-    let task_span = async_tasks[task_index - 1]
-    Span::add_event(task_span, "task_completed", Some([
-      ("completion_order", IntValue(task_index))
-    ]))
-    Span::set_status(task_span, Ok, Some("Task completed successfully"))
-    Span::end(task_span)
-  }
-  
-  // 完成主跨度
-  Span::add_event(main_span, "all_async_tasks_completed", Some([
-    ("total_tasks", IntValue(5))
-  ]))
-  Span::end(main_span)
-  
-  // 验证异步追踪一致性
-  let async_trace_consistency = AsyncTraceValidator::validate_async_trace(trace_id)
-  assert_true(async_trace_consistency.is_consistent)
-  assert_eq(async_trace_consistency.total_spans, 6) // 1主 + 5子
-  assert_eq(async_trace_consistency.completed_spans, 6)
-  
-  // 验证时间顺序一致性
-  let time_consistency = AsyncTraceValidator::validate_temporal_consistency(trace_id)
-  assert_true(time_consistency.is_temporally_consistent)
-  assert_true(time_consistency.main_span_duration > 0L)
-  
-  // 验证异步任务完整性
-  let task_completeness = AsyncTraceValidator::validate_task_completeness(trace_id)
-  assert_true(task_completeness.all_tasks_completed)
-  assert_eq(task_completeness.expected_task_count, 5)
-  assert_eq(task_completeness.actual_task_count, 5)
-}
-
-// Test 3: 微服务链路追踪一致性
-test "microservice chain trace consistency" {
-  // 模拟微服务调用链：API Gateway -> Auth Service -> User Service -> Order Service -> Payment Service
-  
-  let trace_id = TraceId::generate()
-  
-  // API Gateway
-  let gateway_ctx = SpanContext::new(trace_id, SpanId::generate(), true, "")
-  let gateway_span = Span::new("api_gateway_request", Server, gateway_ctx)
-  Span::add_event(gateway_span, "request_received", Some([
-    ("service", StringValue("api_gateway")),
-    ("endpoint", StringValue("/api/orders"))
-  ]))
-  
-  // Auth Service
-  let auth_headers = TracePropagator::inject_to_headers(gateway_ctx)
-  let auth_ctx = TracePropagator::extract_from_headers(auth_headers)
-  let auth_span = Span::new("auth_service_validate", Server, auth_ctx)
-  Span::add_event(auth_span, "auth_validation_started", Some([
-    ("service", StringValue("auth_service")),
-    ("token_type", StringValue("bearer"))
-  ]))
-  
-  // User Service
-  let user_headers = TracePropagator::inject_to_headers(auth_ctx)
-  let user_ctx = TracePropagator::extract_from_headers(user_headers)
-  let user_span = Span::new("user_service_get_profile", Server, user_ctx)
-  Span::add_event(user_span, "user_profile_fetch", Some([
-    ("service", StringValue("user_service")),
-    ("user_id", StringValue("user_12345"))
-  ]))
-  
-  // Order Service
-  let order_headers = TracePropagator::inject_to_headers(user_ctx)
-  let order_ctx = TracePropagator::extract_from_headers(order_headers)
-  let order_span = Span::new("order_service_process", Server, order_ctx)
-  Span::add_event(order_span, "order_processing_started", Some([
-    ("service", StringValue("order_service")),
-    ("order_id", StringValue("order_67890"))
-  ]))
-  
-  // Payment Service
-  let payment_headers = TracePropagator::inject_to_headers(order_ctx)
-  let payment_ctx = TracePropagator::extract_from_headers(payment_headers)
-  let payment_span = Span::new("payment_service_process", Server, payment_ctx)
-  Span::add_event(payment_span, "payment_processing_started", Some([
-    ("service", StringValue("payment_service")),
-    ("amount", FloatValue(99.99))
-  ]))
-  
-  // 模拟支付服务错误
-  Span::set_status(payment_span, Error, Some("Payment declined"))
-  Span::add_event(payment_span, "payment_failed", Some([
-    ("error_code", StringValue("PAYMENT_DECLINED")),
-    ("error_message", StringValue("Insufficient funds"))
-  ]))
-  Span::end(payment_span)
-  
-  // 错误传播回前序服务
-  Span::set_status(order_span, Error, Some("Order processing failed"))
-  Span::add_event(order_span, "order_processing_failed", Some([
-    ("error_source", StringValue("payment_service"))
-  ]))
-  Span::end(order_span)
-  
-  Span::set_status(user_span, Error, Some("User operation failed"))
-  Span::end(user_span)
-  
-  Span::set_status(auth_span, Error, Some("Auth operation failed"))
-  Span::end(auth_span)
-  
-  Span::set_status(gateway_span, Error, Some("Request processing failed"))
-  Span::end(gateway_span)
-  
-  // 验证微服务链路追踪一致性
-  let chain_consistency = MicroserviceChainValidator::validate_service_chain(trace_id)
-  assert_true(chain_consistency.is_consistent)
-  assert_eq(chain_consistency.service_count, 5)
-  assert_eq(chain_consistency.error_propagation_count, 4) // 错误从支付服务传播到其他4个服务
-  
-  // 验证错误传播路径
-  let error_path = MicroserviceChainValidator::get_error_propagation_path(trace_id)
-  assert_eq(error_path.length(), 5)
-  assert_eq(error_path[0], "payment_service")
-  assert_eq(error_path[1], "order_service")
-  assert_eq(error_path[2], "user_service")
-  assert_eq(error_path[3], "auth_service")
-  assert_eq(error_path[4], "api_gateway")
-  
-  // 验证服务调用顺序
-  let call_sequence = MicroserviceChainValidator::get_service_call_sequence(trace_id)
-  assert_eq(call_sequence.length(), 5)
-  assert_eq(call_sequence[0], "api_gateway")
-  assert_eq(call_sequence[1], "auth_service")
-  assert_eq(call_sequence[2], "user_service")
-  assert_eq(call_sequence[3], "order_service")
-  assert_eq(call_sequence[4], "payment_service")
-}
-
-// Test 4: 跨区域部署追踪一致性
-test "cross-region deployment trace consistency" {
-  // 模拟跨区域部署：US-East -> EU-West -> AP-Southeast
-  
-  let trace_id = TraceId::generate()
-  
-  // US-East Region
-  let us_east_ctx = SpanContext::new(trace_id, SpanId::generate(), true, "")
-  let us_east_span = Span::new("us_east_request_handler", Server, us_east_ctx)
-  Span::add_event(us_east_span, "request_received", Some([
-    ("region", StringValue("us-east-1")),
-    ("availability_zone", StringValue("us-east-1a"))
-  ]))
-  
-  // 跨区域调用到EU-West
-  let eu_west_headers = TracePropagator::inject_to_headers_with_region(us_east_ctx, "eu-west-1")
-  let eu_west_ctx = TracePropagator::extract_from_headers_with_region(eu_west_headers)
-  let eu_west_span = Span::new("eu_west_data_processor", Server, eu_west_ctx)
-  Span::add_event(eu_west_span, "data_processing_started", Some([
-    ("region", StringValue("eu-west-1")),
-    ("availability_zone", StringValue("eu-west-1b"))
-  ]))
-  
-  // 跨区域调用到AP-Southeast
-  let ap_southeast_headers = TracePropagator::inject_to_headers_with_region(eu_west_ctx, "ap-southeast-1")
-  let ap_southeast_ctx = TracePropagator::extract_from_headers_with_region(ap_southeast_headers)
-  let ap_southeast_span = Span::new("ap_southeast_storage_service", Server, ap_southeast_ctx)
-  Span::add_event(ap_southeast_span, "storage_operation_started", Some([
-    ("region", StringValue("ap-southeast-1")),
-    ("availability_zone", StringValue("ap-southeast-1c"))
-  ]))
-  
-  // 模拟网络延迟和时钟偏移
-  let network_delay = 150L // 150ms
-  let clock_skew = 50L     // 50ms
-  
-  // 完成AP-Southeast操作
-  Span::end(ap_southeast_span)
-  
-  // 模拟网络延迟后完成EU-West操作
-  Time::sleep(network_delay)
-  Span::end(eu_west_span)
-  
-  // 模拟时钟偏移后完成US-East操作
-  Time::sleep(clock_skew)
-  Span::end(us_east_span)
-  
-  // 验证跨区域追踪一致性
-  let cross_region_consistency = CrossRegionValidator::validate_cross_region_trace(trace_id)
-  assert_true(cross_region_consistency.is_consistent)
-  assert_eq(cross_region_consistency.region_count, 3)
-  assert_true(cross_region_consistency.network_delays_detected)
-  assert_true(cross_region_consistency.clock_skew_detected)
-  
-  // 验证区域跳转路径
-  let region_path = CrossRegionValidator::get_region_path(trace_id)
-  assert_eq(region_path.length(), 3)
-  assert_eq(region_path[0], "us-east-1")
-  assert_eq(region_path[1], "eu-west-1")
-  assert_eq(region_path[2], "ap-southeast-1")
-  
-  // 验证网络延迟计算
-  let delay_analysis = CrossRegionValidator::analyze_network_delays(trace_id)
-  assert_true(delay_analysis.total_delay >= network_delay)
-  assert_true(delay_analysis.average_delay_per_hop > 0L)
-  
-  // 验证时钟偏移校正
-  let skew_correction = CrossRegionValidator::correct_clock_skew(trace_id)
-  assert_true(skew_correction.correction_applied)
-  assert_true(skew_correction.max_skew_detected >= clock_skew)
-}
-
-// Test 5: 批处理操作追踪一致性
-test "batch operation trace consistency" {
-  // 创建批处理操作的追踪上下文
-  let trace_id = TraceId::generate()
-  let batch_ctx = SpanContext::new(trace_id, SpanId::generate(), true, "")
-  
-  // 批处理主跨度
-  let batch_span = Span::new("batch_processing_job", Server, batch_ctx)
-  Span::add_event(batch_span, "batch_job_started", Some([
-    ("job_type", StringValue("data_import")),
-    ("batch_size", IntValue(1000))
-  ]))
-  
-  // 创建批处理子任务
-  let batch_items = []
-  for i in 1..=100 {
-    let item_span_id = SpanId::generate()
-    let item_ctx = SpanContext::new(trace_id, item_span_id, true, "")
-    
-    let item_span = Span::new("batch_item_" + i.to_string(), Client, item_ctx)
-    Span::add_event(item_span, "item_processing_started", Some([
-      ("item_id", StringValue("item_" + i.to_string())),
-      ("batch_id", StringValue("batch_20230101"))
-    ]))
-    
-    batch_items.push(item_span)
-  }
-  
-  // 模拟部分批处理项目失败
-  let failed_items = [15, 32, 67, 89]
-  for i in 1..=100 {
-    let item_span = batch_items[i - 1]
-    
-    if failed_items.contains(i) {
-      Span::set_status(item_span, Error, Some("Item processing failed"))
-      Span::add_event(item_span, "item_processing_failed", Some([
-        ("error_code", StringValue("VALIDATION_ERROR")),
-        ("error_message", StringValue("Invalid data format"))
-      ]))
-    } else {
-      Span::set_status(item_span, Ok, Some("Item processed successfully"))
+  match extracted_context {
+    Some(context) => {
+      assert_eq(SpanContext::trace_id(context), trace_id)
+      assert_eq(SpanContext::span_id(context), child_span_id)
     }
+    None => assert_true(false)
+  }
+}
+
+// Test 2: Cross-Service Trace Consistency
+test "cross-service trace consistency" {
+  // Create a trace coordinator
+  let coordinator = TraceCoordinator::new()
+  
+  // Register services
+  TraceCoordinator::register_service(coordinator, "service-a", "http://service-a:8080")
+  TraceCoordinator::register_service(coordinator, "service-b", "http://service-b:8080")
+  TraceCoordinator::register_service(coordinator, "service-c", "http://service-c:8080")
+  
+  // Create a distributed trace
+  let trace_id = TraceCoordinator::create_trace(coordinator)
+  let trace_context = TraceContext::new(trace_id, "service-a")
+  
+  // Service A creates a root span
+  let service_a_span = TraceCoordinator::create_span(coordinator, trace_context, "service-a-operation", Server)
+  let service_a_context = Span::span_context(service_a_span)
+  
+  // Service A calls Service B
+  let service_b_context = TraceCoordinator::propagate_to_service(coordinator, service_a_context, "service-b")
+  let service_b_span = TraceCoordinator::create_span(coordinator, service_b_context, "service-b-operation", Server)
+  
+  // Service B calls Service C
+  let service_c_context = TraceCoordinator::propagate_to_service(coordinator, Span::span_context(service_b_span), "service-c")
+  let service_c_span = TraceCoordinator::create_span(coordinator, service_c_context, "service-c-operation", Server)
+  
+  // End all spans
+  Span::end(service_a_span)
+  Span::end(service_b_span)
+  Span::end(service_c_span)
+  
+  // Collect the trace
+  let collected_trace = TraceCoordinator::collect_trace(coordinator, trace_id)
+  
+  // Verify trace consistency
+  assert_eq(collected_trace.trace_id, trace_id)
+  assert_eq(collected_trace.spans.length(), 3)
+  
+  // Verify parent-child relationships
+  let service_a_collected = collected_trace.spans[0]
+  let service_b_collected = collected_trace.spans[1]
+  let service_c_collected = collected_trace.spans[2]
+  
+  assert_eq(service_a_collected.parent_span_id, None)
+  assert_eq(service_b_collected.parent_span_id, Some(service_a_collected.span_id))
+  assert_eq(service_c_collected.parent_span_id, Some(service_b_collected.span_id))
+  
+  // Verify service names are correctly recorded
+  assert_eq(service_a_collected.service_name, "service-a")
+  assert_eq(service_b_collected.service_name, "service-b")
+  assert_eq(service_c_collected.service_name, "service-c")
+}
+
+// Test 3: Trace Sampling Consistency
+test "trace sampling consistency" {
+  // Create a sampler
+  let sampler = TraceSampler::new(0.1) // 10% sampling rate
+  
+  // Create multiple traces
+  let traces = []
+  for i in 0..=99 {
+    let trace_id = "trace_" + i.to_string()
+    let trace_context = TraceContext::new(trace_id, "test-service")
+    let is_sampled = TraceSampler::should_sample(sampler, trace_context)
     
-    Span::end(item_span)
+    traces.push({
+      "trace_id": trace_id,
+      "is_sampled": is_sampled
+    })
   }
   
-  // 完成批处理主跨度
-  Span::add_event(batch_span, "batch_job_completed", Some([
-    ("total_items", IntValue(100)),
-    ("successful_items", IntValue(96)),
-    ("failed_items", IntValue(4))
-  ]))
-  Span::set_status(batch_span, Ok, Some("Batch job completed with some failures"))
-  Span::end(batch_span)
+  // Verify approximately 10% of traces are sampled
+  let sampled_count = traces.filter(fn(t) { t.is_sampled }).length()
+  assert_true(sampled_count >= 5 && sampled_count <= 15) // Allow some variance
   
-  // 验证批处理追踪一致性
-  let batch_consistency = BatchTraceValidator::validate_batch_trace(trace_id)
-  assert_true(batch_consistency.is_consistent)
-  assert_eq(batch_consistency.total_items, 100)
-  assert_eq(batch_consistency.successful_items, 96)
-  assert_eq(batch_consistency.failed_items, 4)
+  // Test consistent sampling for the same trace
+  let trace_id = "consistency_test_trace"
+  let trace_context = TraceContext::new(trace_id, "test-service")
   
-  // 验证批处理完整性
-  let batch_completeness = BatchTraceValidator::validate_batch_completeness(trace_id)
-  assert_true(batch_completeness.all_items_processed)
-  assert_eq(batch_completeness.expected_item_count, 100)
-  assert_eq(batch_completeness.actual_item_count, 100)
+  let first_sample = TraceSampler::should_sample(sampler, trace_context)
+  let second_sample = TraceSampler::should_sample(sampler, trace_context)
+  let third_sample = TraceSampler::should_sample(sampler, trace_context)
   
-  // 验证错误分布
-  let error_distribution = BatchTraceValidator::get_error_distribution(trace_id)
-  assert_true(error_distribution.contains("VALIDATION_ERROR"))
-  assert_eq(error_distribution["VALIDATION_ERROR"], 4)
+  // All decisions should be the same for the same trace
+  assert_eq(first_sample, second_sample)
+  assert_eq(second_sample, third_sample)
   
-  // 验证批处理性能指标
-  let batch_metrics = BatchTraceValidator::calculate_batch_metrics(trace_id)
-  assert_true(batch_metrics.average_item_processing_time > 0.0)
-  assert_true(batch_metrics.total_processing_time > 0L)
-  assert_eq(batch_metrics.success_rate, 0.96)
+  // Test parent-based sampling
+  let parent_sampler = ParentBasedSampler::new(sampler)
+  
+  // Create a parent span that is sampled
+  let parent_context = TraceContext::with_sampling("parent_trace", "parent-service", true)
+  let child_context = TraceContext::with_parent("child_trace", "child-service", parent_context)
+  
+  // Child should be sampled if parent is sampled
+  let child_sampled = ParentBasedSampler::should_sample(parent_sampler, child_context)
+  assert_true(child_sampled)
+  
+  // Create a parent span that is not sampled
+  let unsampled_parent_context = TraceContext::with_sampling("unsampled_parent_trace", "parent-service", false)
+  let unsampled_child_context = TraceContext::with_parent("unsampled_child_trace", "child-service", unsampled_parent_context)
+  
+  // Child should not be sampled if parent is not sampled
+  let unsampled_child_sampled = ParentBasedSampler::should_sample(parent_sampler, unsampled_child_context)
+  assert_false(unsampled_child_sampled)
 }
 
-// Test 6: 重试机制追踪一致性
-test "retry mechanism trace consistency" {
-  // 创建重试操作的追踪上下文
-  let trace_id = TraceId::generate()
-  let retry_ctx = SpanContext::new(trace_id, SpanId::generate(), true, "")
+// Test 4: Trace State Propagation
+test "trace state propagation" {
+  // Create a trace context with state
+  let trace_id = "trace_state_test"
+  let trace_state = "vendor1=foo,vendor2=bar"
+  let trace_context = TraceContext::with_state(trace_id, "service-a", trace_state)
   
-  // 主操作跨度
-  let main_span = Span::new("unreliable_operation", Server, retry_ctx)
-  Span::add_event(main_span, "operation_started", Some([
-    ("operation_type", StringValue("external_api_call")),
-    ("max_retries", IntValue(3))
-  ]))
+  // Create a span
+  let span = Span::new("operation", Server, trace_context)
+  let span_context = Span::span_context(span)
   
-  // 第一次尝试
-  let attempt1_span = Span::new("operation_attempt_1", Client, retry_ctx)
-  Span::add_event(attempt1_span, "attempt_started", Some([
-    ("attempt_number", IntValue(1)),
-    ("retry_reason", StringValue("initial_attempt"))
-  ]))
-  Span::set_status(attempt1_span, Error, Some("Network timeout"))
-  Span::add_event(attempt1_span, "attempt_failed", Some([
-    ("error_code", StringValue("NETWORK_TIMEOUT")),
-    ("retry_after_ms", IntValue(1000))
-  ]))
-  Span::end(attempt1_span)
+  // Verify trace state is preserved
+  assert_eq(SpanContext::trace_state(span_context), trace_state)
   
-  // 第二次尝试
-  let attempt2_span = Span::new("operation_attempt_2", Client, retry_ctx)
-  Span::add_event(attempt2_span, "attempt_started", Some([
-    ("attempt_number", IntValue(2)),
-    ("retry_reason", StringValue("network_timeout"))
-  ]))
-  Span::set_status(attempt2_span, Error, Some("Service unavailable"))
-  Span::add_event(attempt2_span, "attempt_failed", Some([
-    ("error_code", StringValue("SERVICE_UNAVAILABLE")),
-    ("retry_after_ms", IntValue(2000))
-  ]))
-  Span::end(attempt2_span)
+  // Add to trace state
+  let updated_context = SpanContext::add_trace_state_item(span_context, "vendor3", "baz")
+  let updated_trace_state = SpanContext::trace_state(updated_context)
   
-  // 第三次尝试（成功）
-  let attempt3_span = Span::new("operation_attempt_3", Client, retry_ctx)
-  Span::add_event(attempt3_span, "attempt_started", Some([
-    ("attempt_number", IntValue(3)),
-    ("retry_reason", StringValue("service_unavailable"))
-  ]))
-  Span::set_status(attempt3_span, Ok, Some("Operation successful"))
-  Span::add_event(attempt3_span, "attempt_succeeded", Some([
-    ("response_time_ms", IntValue(300))
-  ]))
-  Span::end(attempt3_span)
+  // Verify the new item is added
+  assert_true(updated_trace_state.includes("vendor3=baz"))
   
-  // 完成主操作
-  Span::add_event(main_span, "operation_completed", Some([
-    ("total_attempts", IntValue(3)),
-    ("successful_attempt", IntValue(3)),
-    ("total_retry_time_ms", IntValue(3300))
-  ]))
-  Span::set_status(main_span, Ok, Some("Operation completed after retries"))
-  Span::end(main_span)
+  // Propagate to child span
+  let child_span = Span::create_child(span, "child_operation", Client)
+  let child_context = Span::span_context(child_span)
   
-  // 验证重试追踪一致性
-  let retry_consistency = RetryTraceValidator::validate_retry_trace(trace_id)
-  assert_true(retry_consistency.is_consistent)
-  assert_eq(retry_consistency.total_attempts, 3)
-  assert_eq(retry_consistency.successful_attempt, 3)
-  assert_eq(retry_consistency.failed_attempts, 2)
+  // Verify trace state is propagated to child
+  let child_trace_state = SpanContext::trace_state(child_context)
+  assert_true(child_trace_state.includes("vendor1=foo"))
+  assert_true(child_trace_state.includes("vendor2=bar"))
+  assert_true(child_trace_state.includes("vendor3=baz"))
   
-  // 验证重试策略
-  let retry_strategy = RetryTraceValidator::analyze_retry_strategy(trace_id)
-  assert_true(retry_strategy.exponential_backoff_detected)
-  assert_true(retry_strategy.max_retries_reached)
-  assert_eq(retry_strategy.final_attempt_successful, true)
+  // Modify trace state in child
+  let child_updated_context = SpanContext::add_trace_state_item(child_context, "vendor4", "qux")
+  let child_updated_trace_state = SpanContext::trace_state(child_updated_context)
   
-  // 验证错误演进
-  let error_evolution = RetryTraceValidator::get_error_evolution(trace_id)
-  assert_eq(error_evolution.length(), 2)
-  assert_eq(error_evolution[0].error_code, "NETWORK_TIMEOUT")
-  assert_eq(error_evolution[1].error_code, "SERVICE_UNAVAILABLE")
+  // Verify the new item is added to child
+  assert_true(child_updated_trace_state.includes("vendor4=qux"))
   
-  // 验证重试性能影响
-  let retry_performance = RetryTraceValidator::calculate_retry_performance_impact(trace_id)
-  assert_true(retry_performance.total_retry_time > 0L)
-  assert_true(retry_performance.average_retry_delay > 0L)
-  assert_eq(retry_performance.success_rate_after_retries, 1.0)
+  // Verify parent is not affected
+  let parent_trace_state = SpanContext::trace_state(span_context)
+  assert_false(parent_trace_state.includes("vendor4=qux"))
+  
+  // Test trace state parsing and serialization
+  let trace_state_map = TraceState::parse(updated_trace_state)
+  assert_eq(TraceState::get(trace_state_map, "vendor1"), Some("foo"))
+  assert_eq(TraceState::get(trace_state_map, "vendor2"), Some("bar"))
+  assert_eq(TraceState::get(trace_state_map, "vendor3"), Some("baz"))
+  
+  let serialized_state = TraceState::serialize(trace_state_map)
+  assert_true(serialized_state.includes("vendor1=foo"))
+  assert_true(serialized_state.includes("vendor2=bar"))
+  assert_true(serialized_state.includes("vendor3=baz"))
 }
 
-// Test 7: 分布式事务追踪一致性
-test "distributed transaction trace consistency" {
-  // 模拟分布式事务：订单处理涉及订单服务、库存服务、支付服务
+// Test 5: Trace Consistency Validation
+test "trace consistency validation" {
+  // Create a trace validator
+  let validator = TraceValidator::new()
   
-  let trace_id = TraceId::generate()
-  let transaction_id = TransactionId::generate()
-  let transaction_ctx = SpanContext::new(trace_id, SpanId::generate(), true, "")
+  // Create a consistent trace
+  let consistent_trace = create_consistent_sample_trace()
   
-  // 分布式事务协调器
-  let coordinator_span = Span::new("distributed_transaction_coordinator", Server, transaction_ctx)
-  Span::add_event(coordinator_span, "transaction_started", Some([
-    ("transaction_id", StringValue(transaction_id)),
-    ("transaction_type", StringValue("order_processing")),
-    ("participants", IntValue(3))
-  ]))
+  // Validate the consistent trace
+  let validation_result = TraceValidator::validate(validator, consistent_trace)
   
-  // 订单服务参与者
-  let order_ctx = TransactionPropagator::create_participant_context(transaction_ctx, transaction_id, "order_service")
-  let order_span = Span::new("order_service_participant", Server, order_ctx)
-  Span::add_event(order_span, "participant_started", Some([
-    ("service", StringValue("order_service")),
-    ("operation", StringValue("create_order"))
-  ]))
+  // Should pass validation
+  assert_true(validation_result.is_valid)
+  assert_eq(validation_result.errors.length(), 0)
   
-  // 库存服务参与者
-  let inventory_ctx = TransactionPropagator::create_participant_context(transaction_ctx, transaction_id, "inventory_service")
-  let inventory_span = Span::new("inventory_service_participant", Server, inventory_ctx)
-  Span::add_event(inventory_span, "participant_started", Some([
-    ("service", StringValue("inventory_service")),
-    ("operation", StringValue("reserve_inventory"))
-  ]))
+  // Create an inconsistent trace (break parent-child relationship)
+  let inconsistent_trace = create_inconsistent_sample_trace()
   
-  // 支付服务参与者
-  let payment_ctx = TransactionPropagator::create_participant_context(transaction_ctx, transaction_id, "payment_service")
-  let payment_span = Span::new("payment_service_participant", Server, payment_ctx)
-  Span::add_event(payment_span, "participant_started", Some([
-    ("service", StringValue("payment_service")),
-    ("operation", StringValue("process_payment"))
-  ]))
+  // Validate the inconsistent trace
+  let inconsistent_validation = TraceValidator::validate(validator, inconsistent_trace)
   
-  // 模拟两阶段提交
-  // 阶段1：准备阶段
-  Span::add_event(order_span, "prepare_phase", Some([("status", StringValue("prepared"))]))
-  Span::add_event(inventory_span, "prepare_phase", Some([("status", StringValue("prepared"))]))
-  Span::add_event(payment_span, "prepare_phase", Some([("status", StringValue("prepared"))]))
+  // Should fail validation
+  assert_false(inconsistent_validation.is_valid)
+  assert_true(inconsistent_validation.errors.length() > 0)
   
-  // 阶段2：提交阶段
-  Span::add_event(order_span, "commit_phase", Some([("status", StringValue("committed"))]))
-  Span::add_event(inventory_span, "commit_phase", Some([("status", StringValue("committed"))]))
+  // Verify specific error
+  let has_parent_error = inconsistent_validation.errors.any(fn(error) {
+    error.code == "invalid_parent_child_relationship"
+  })
+  assert_true(has_parent_error)
   
-  // 模拟支付服务提交失败
-  Span::add_event(payment_span, "commit_phase", Some([("status", StringValue("failed"))]))
-  Span::set_status(payment_span, Error, Some("Payment commit failed"))
-  Span::end(payment_span)
+  // Create a trace with missing spans
+  let incomplete_trace = create_incomplete_sample_trace()
   
-  // 事务协调器检测到失败，启动回滚
-  Span::add_event(coordinator_span, "rollback_initiated", Some([
-    ("reason", StringValue("payment_commit_failed"))
-  ]))
+  // Validate the incomplete trace
+  let incomplete_validation = TraceValidator::validate(validator, incomplete_trace)
   
-  // 回滚其他参与者
-  Span::add_event(order_span, "rollback_phase", Some([("status", StringValue("rolled_back"))]))
-  Span::set_status(order_span, Error, Some("Rolled back due to payment failure"))
-  Span::end(order_span)
+  // Should have warnings but may still be valid
+  assert_true(incomplete_validation.warnings.length() > 0)
   
-  Span::add_event(inventory_span, "rollback_phase", Some([("status", StringValue("rolled_back"))]))
-  Span::set_status(inventory_span, Error, Some("Rolled back due to payment failure"))
-  Span::end(inventory_span)
+  // Verify specific warning
+  let has_missing_warning = incomplete_validation.warnings.any(fn(warning) {
+    warning.code == "missing_intermediate_spans"
+  })
+  assert_true(has_missing_warning)
+}
+
+// Test 6: Distributed Clock Synchronization
+test "distributed clock synchronization" {
+  // Create a clock synchronizer
+  let synchronizer = ClockSynchronizer::new()
   
-  // 完成事务协调器
-  Span::add_event(coordinator_span, "transaction_rolled_back", Some([
-    ("transaction_status", StringValue("rolled_back")),
-    ("rollback_reason", StringValue("payment_commit_failed"))
-  ]))
-  Span::set_status(coordinator_span, Error, Some("Transaction rolled back"))
-  Span::end(coordinator_span)
+  // Register clocks from different services
+  let service_a_clock = Clock::new("service-a", 1609459200000L) // 2021-01-01 00:00:00 UTC
+  let service_b_clock = Clock::new("service-b", 1609459200100L) // 100ms ahead
+  let service_c_clock = Clock::new("service-c", 1609459199900L) // 100ms behind
   
-  // 验证分布式事务追踪一致性
-  let transaction_consistency = DistributedTransactionValidator::validate_transaction_trace(trace_id)
-  assert_true(transaction_consistency.is_consistent)
-  assert_eq(transaction_consistency.participant_count, 3)
-  assert_eq(transaction_consistency.transaction_status, "rolled_back")
+  ClockSynchronizer::register_clock(synchronizer, service_a_clock)
+  ClockSynchronizer::register_clock(synchronizer, service_b_clock)
+  ClockSynchronizer::register_clock(synchronizer, service_c_clock)
   
-  // 验证两阶段提交一致性
-  let two_phase_consistency = DistributedTransactionValidator::validate_two_phase_commit_consistency(trace_id)
-  assert_true(two_phase_consistency.prepare_phase_consistent)
-  assert_true(two_phase_consistency.rollback_phase_consistent)
-  assert_false(two_phase_consistency.commit_phase_consistent) // 提交阶段失败
+  // Synchronize clocks
+  let sync_result = ClockSynchronizer::synchronize(synchronizer)
+  assert_true(sync_result.is_ok())
   
-  // 验证事务参与者状态
-  let participant_states = DistributedTransactionValidator::get_participant_states(trace_id)
-  assert_eq(participant_states["order_service"], "rolled_back")
-  assert_eq(participant_states["inventory_service"], "rolled_back")
-  assert_eq(participant_states["payment_service"], "failed")
+  // Verify clocks are synchronized
+  let sync_time = ClockSynchronizer::get_sync_time(synchronizer)
   
-  // 验证事务原子性
-  let atomicity = DistributedTransactionValidator::validate_transaction_atomicity(trace_id)
-  assert_true(atomicity.all_participants_finalized)
-  assert_true(atomicity.consistent_outcome_achieved) // 全部回滚，保持一致性
+  let service_a_offset = ClockSynchronizer::get_offset(synchronizer, "service-a")
+  let service_b_offset = ClockSynchronizer::get_offset(synchronizer, "service-b")
+  let service_c_offset = ClockSynchronizer::get_offset(synchronizer, "service-c")
+  
+  // Offsets should be calculated correctly
+  assert_eq(service_a_offset, 0L) // Reference clock
+  assert_eq(service_b_offset, -100L) // Was 100ms ahead, now adjusted
+  assert_eq(service_c_offset, 100L)  // Was 100ms behind, now adjusted
+  
+  // Test timestamp conversion
+  let service_a_timestamp = 1609459205000L
+  let converted_timestamp = ClockSynchronizer::convert_to_sync_time(synchronizer, "service-a", service_a_timestamp)
+  
+  // Should be the same since service-a is the reference
+  assert_eq(converted_timestamp, service_a_timestamp)
+  
+  let service_b_timestamp = 1609459205000L
+  let converted_b_timestamp = ClockSynchronizer::convert_to_sync_time(synchronizer, "service-b", service_b_timestamp)
+  
+  // Should be adjusted by the offset
+  assert_eq(converted_b_timestamp, service_b_timestamp + service_b_offset)
+  
+  // Test span timestamp normalization
+  let span_a = Span::new("span-a", Server, SpanContext::new("trace", "span-a", true, ""))
+  Span::set_timestamp(span_a, ClockSynchronizer::convert_to_sync_time(synchronizer, "service-a", 1609459201000L))
+  
+  let span_b = Span::new("span-b", Server, SpanContext::new("trace", "span-b", true, ""))
+  Span::set_timestamp(span_b, ClockSynchronizer::convert_to_sync_time(synchronizer, "service-b", 1609459202000L))
+  
+  let span_c = Span::new("span-c", Server, SpanContext::new("trace", "span-c", true, ""))
+  Span::set_timestamp(span_c, ClockSynchronizer::convert_to_sync_time(synchronizer, "service-c", 1609459203000L))
+  
+  // Verify timestamps are in chronological order
+  assert_true(Span::timestamp(span_a) < Span::timestamp(span_b))
+  assert_true(Span::timestamp(span_b) < Span::timestamp(span_c))
+}
+
+// Test 7: Trace Recovery and Repair
+test "trace recovery and repair" {
+  // Create a trace recoverer
+  let recoverer = TraceRecoverer::new()
+  
+  // Create a damaged trace with missing spans
+  let damaged_trace = create_damaged_sample_trace()
+  
+  // Attempt to recover the trace
+  let recovery_result = TraceRecoverer::recover(recoverer, damaged_trace)
+  
+  // Verify recovery was attempted
+  assert_true(recovery_result.attempted)
+  
+  // Check if recovery was successful
+  if recovery_result.successful {
+    // Verify the recovered trace is more complete
+    assert_true(recovery_result.recovered_trace.spans.length() >= damaged_trace.spans.length())
+    
+    // Verify the recovered trace passes basic validation
+    let validator = TraceValidator::new()
+    let validation_result = TraceValidator::validate(validator, recovery_result.recovered_trace)
+    assert_true(validation_result.is_valid)
+  } else {
+    // If recovery failed, verify we have information about why
+    assert_true(recovery_result.errors.length() > 0)
+  }
+  
+  // Test partial recovery
+  let partially_damaged_trace = create_partially_damaged_sample_trace()
+  let partial_recovery = TraceRecoverer::recover(recoverer, partially_damaged_trace)
+  
+  // Partial recovery should have a higher success rate
+  assert_true(partial_recovery.successful || partial_recovery.partially_successful)
+  
+  // Test trace repair
+  let repairable_trace = create_repairable_sample_trace()
+  let repair_result = TraceRecoverer::repair(recoverer, repairable_trace)
+  
+  // Verify repair was attempted
+  assert_true(repair_result.attempted)
+  
+  if repair_result.successful {
+    // Verify the repaired trace has correct parent-child relationships
+    let validator = TraceValidator::new()
+    let validation_result = TraceValidator::validate(validator, repair_result.repaired_trace)
+    assert_true(validation_result.is_valid)
+    assert_eq(validation_result.errors.length(), 0)
+  }
+}
+
+// Test 8: Trace Consistency Metrics
+test "trace consistency metrics" {
+  // Create a metrics collector
+  let metrics_collector = TraceConsistencyMetrics::new()
+  
+  // Simulate processing multiple traces
+  for i in 0..=99 {
+    let trace_id = "trace_" + i.to_string()
+    
+    // 90% of traces are consistent
+    if i < 90 {
+      let consistent_trace = create_consistent_trace_with_id(trace_id)
+      TraceConsistencyMetrics::record_processed_trace(metrics_collector, consistent_trace, true)
+    } else {
+      // 10% are inconsistent
+      let inconsistent_trace = create_inconsistent_trace_with_id(trace_id)
+      TraceConsistencyMetrics::record_processed_trace(metrics_collector, inconsistent_trace, false)
+    }
+  }
+  
+  // Get the metrics
+  let metrics = TraceConsistencyMetrics::get_metrics(metrics_collector)
+  
+  // Verify metrics
+  assert_eq(metrics.total_traces_processed, 100)
+  assert_eq(metrics.consistent_traces, 90)
+  assert_eq(metrics.inconsistent_traces, 10)
+  assert_eq(metrics.consistency_rate, 0.9)
+  
+  // Test detailed error metrics
+  let error_metrics = TraceConsistencyMetrics::get_error_metrics(metrics_collector)
+  
+  // Should have metrics for different error types
+  assert_true(error_metrics.contains("invalid_parent_child_relationship"))
+  assert_true(error_metrics.contains("missing_span"))
+  assert_true(error_metrics.contains("invalid_timestamp"))
+  
+  // Test service-specific metrics
+  let service_metrics = TraceConsistencyMetrics::get_service_metrics(metrics_collector)
+  
+  // Should have metrics for different services
+  assert_true(service_metrics.contains("service-a"))
+  assert_true(service_metrics.contains("service-b"))
+  assert_true(service_metrics.contains("service-c"))
+  
+  // Verify service-specific consistency rates
+  let service_a_metrics = service_metrics["service-a"]
+  assert_true(service_a_metrics.consistency_rate >= 0.8 && service_a_metrics.consistency_rate <= 1.0)
+  
+  // Test time-based metrics
+  let time_series_metrics = TraceConsistencyMetrics::get_time_series_metrics(metrics_collector)
+  
+  // Should have metrics over time
+  assert_true(time_series_metrics.length() > 0)
+  
+  // Verify metrics are properly timestamped
+  for metric in time_series_metrics {
+    assert_true(metric.timestamp > 0L)
+    assert_true(metric.consistency_rate >= 0.0 && metric.consistency_rate <= 1.0)
+  }
+}
+
+// Helper functions for creating sample traces
+fn create_consistent_sample_trace() {
+  let trace = Trace::new("consistent_trace")
+  
+  let root_span = TraceSpan::new("root_span", "service-a", None)
+  let child_span = TraceSpan::new("child_span", "service-b", Some(root_span.span_id))
+  let grandchild_span = TraceSpan::new("grandchild_span", "service-c", Some(child_span.span_id))
+  
+  trace.spans.push(root_span)
+  trace.spans.push(child_span)
+  trace.spans.push(grandchild_span)
+  
+  trace
+}
+
+fn create_inconsistent_sample_trace() {
+  let trace = Trace::new("inconsistent_trace")
+  
+  let root_span = TraceSpan::new("root_span", "service-a", None)
+  let child_span = TraceSpan::new("child_span", "service-b", Some("non_existent_parent"))
+  let grandchild_span = TraceSpan::new("grandchild_span", "service-c", Some(child_span.span_id))
+  
+  trace.spans.push(root_span)
+  trace.spans.push(child_span)
+  trace.spans.push(grandchild_span)
+  
+  trace
+}
+
+fn create_incomplete_sample_trace() {
+  let trace = Trace::new("incomplete_trace")
+  
+  let root_span = TraceSpan::new("root_span", "service-a", None)
+  let grandchild_span = TraceSpan::new("grandchild_span", "service-c", Some("missing_parent"))
+  
+  trace.spans.push(root_span)
+  trace.spans.push(grandchild_span)
+  
+  trace
+}
+
+fn create_damaged_sample_trace() {
+  let trace = Trace::new("damaged_trace")
+  
+  let root_span = TraceSpan::new("root_span", "service-a", None)
+  // Missing intermediate spans
+  let deep_span = TraceSpan::new("deep_span", "service-d", Some("missing_intermediate_parent"))
+  
+  trace.spans.push(root_span)
+  trace.spans.push(deep_span)
+  
+  trace
+}
+
+fn create_partially_damaged_sample_trace() {
+  let trace = Trace::new("partially_damaged_trace")
+  
+  let root_span = TraceSpan::new("root_span", "service-a", None)
+  let child_span = TraceSpan::new("child_span", "service-b", Some(root_span.span_id))
+  // Missing one intermediate span
+  let grandchild_span = TraceSpan::new("grandchild_span", "service-c", Some("missing_parent"))
+  
+  trace.spans.push(root_span)
+  trace.spans.push(child_span)
+  trace.spans.push(grandchild_span)
+  
+  trace
+}
+
+fn create_repairable_sample_trace() {
+  let trace = Trace::new("repairable_trace")
+  
+  let root_span = TraceSpan::new("root_span", "service-a", None)
+  let child_span = TraceSpan::new("child_span", "service-b", Some(root_span.span_id))
+  // Has incorrect parent reference
+  let grandchild_span = TraceSpan::new("grandchild_span", "service-c", Some("wrong_parent"))
+  
+  trace.spans.push(root_span)
+  trace.spans.push(child_span)
+  trace.spans.push(grandchild_span)
+  
+  trace
+}
+
+fn create_consistent_trace_with_id(trace_id : String) {
+  let trace = Trace::new(trace_id)
+  
+  let root_span = TraceSpan::new("root_span", "service-a", None)
+  let child_span = TraceSpan::new("child_span", "service-b", Some(root_span.span_id))
+  
+  trace.spans.push(root_span)
+  trace.spans.push(child_span)
+  
+  trace
+}
+
+fn create_inconsistent_trace_with_id(trace_id : String) {
+  let trace = Trace::new(trace_id)
+  
+  let root_span = TraceSpan::new("root_span", "service-a", None)
+  let child_span = TraceSpan::new("child_span", "service-b", Some("non_existent_parent"))
+  
+  trace.spans.push(root_span)
+  trace.spans.push(child_span)
+  
+  trace
 }

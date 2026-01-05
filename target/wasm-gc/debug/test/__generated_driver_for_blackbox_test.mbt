@@ -1234,6 +1234,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_high_quality_resource_merge_tests.mbt": {
   },
+  "azimuth_high_quality_resource_management_tests.mbt": {
+  },
   "azimuth_high_quality_resource_constraint_tests.mbt": {
   },
   "azimuth_high_quality_realtime_streaming_tests.mbt": {
