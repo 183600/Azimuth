@@ -1914,6 +1914,14 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_cross_cloud_telemetry_tests.mbt": {
   },
+  "azimuth_core_types_test.mbt": {
+    0: (__test_617a696d7574685f636f72655f74797065735f746573742e6d6274_0, ["AttributeValue类型创建和操作"]),
+    1: (__test_617a696d7574685f636f72655f74797065735f746573742e6d6274_1, ["Attributes类型操作"]),
+    2: (__test_617a696d7574685f636f72655f74797065735f746573742e6d6274_2, ["Resource类型操作"]),
+    3: (__test_617a696d7574685f636f72655f74797065735f746573742e6d6274_3, ["InstrumentationScope类型操作"]),
+    4: (__test_617a696d7574685f636f72655f74797065735f746573742e6d6274_4, ["复杂属性值组合"]),
+    5: (__test_617a696d7574685f636f72655f74797065735f746573742e6d6274_5, ["属性值边界值测试"]),
+  },
   "azimuth_core_telemetry_tests.mbt": {
   },
   "azimuth_core_telemetry_system_tests.mbt": {
