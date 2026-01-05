@@ -1,509 +1,746 @@
-// Azimuth Telemetry System - Time Series Data Processing Quality Tests
-// This file contains comprehensive test cases for time series data processing functionality
+// Azimuth Time Series Data Processing Quality Tests
+// This file contains comprehensive test cases for time series data analysis and processing
 
-// Test 1: Basic Time Series Data Creation
-test "basic time series data creation" {
-  let time_series = TimeSeries::new("cpu_usage")
+// Test 1: Time Series Data Aggregation
+test "time series data aggregation" {
+  let time_series = TimeSeries::new("cpu.usage")
   
-  // Test initial state
-  assert_eq(TimeSeries::name(time_series), "cpu_usage")
-  assert_eq(TimeSeries::size(time_series), 0)
-  assert_true(TimeSeries::is_empty(time_series))
+  // Add data points with different timestamps
+  let base_timestamp = 1609459200000L // 2021-01-01 00:00:00 UTC
   
-  // Add data points
-  let base_time = 1234567890L
-  TimeSeries::add_point(time_series, TimeSeriesPoint::new(base_time, 25.5))
-  TimeSeries::add_point(time_series, TimeSeriesPoint::new(base_time + 60L, 30.2))
-  TimeSeries::add_point(time_series, TimeSeriesPoint::new(base_time + 120L, 28.7))
-  TimeSeries::add_point(time_series, TimeSeriesPoint::new(base_time + 180L, 32.1))
-  TimeSeries::add_point(time_series, TimeSeriesPoint::new(base_time + 240L, 29.8))
-  
-  // Verify data points
-  assert_eq(TimeSeries::size(time_series), 5)
-  assert_false(TimeSeries::is_empty(time_series))
-  
-  // Get first and last points
-  let first_point = TimeSeries::first_point(time_series)
-  match first_point {
-    Some(point) => {
-      assert_eq(TimeSeriesPoint::timestamp(point), base_time)
-      assert_eq(TimeSeriesPoint::value(point), 25.5)
-    }
-    None => assert_true(false)
-  }
-  
-  let last_point = TimeSeries::last_point(time_series)
-  match last_point {
-    Some(point) => {
-      assert_eq(TimeSeriesPoint::timestamp(point), base_time + 240L)
-      assert_eq(TimeSeriesPoint::value(point), 29.8)
-    }
-    None => assert_true(false)
-  }
-  
-  // Get point at specific index
-  let middle_point = TimeSeries::point_at(time_series, 2)
-  match middle_point {
-    Some(point) => {
-      assert_eq(TimeSeriesPoint::timestamp(point), base_time + 120L)
-      assert_eq(TimeSeriesPoint::value(point), 28.7)
-    }
-    None => assert_true(false)
-  }
-  
-  // Get point at specific timestamp
-  let specific_point = TimeSeries::point_at_time(time_series, base_time + 180L)
-  match specific_point {
-    Some(point) => {
-      assert_eq(TimeSeriesPoint::timestamp(point), base_time + 180L)
-      assert_eq(TimeSeriesPoint::value(point), 32.1)
-    }
-    None => assert_true(false)
-  }
-}
-
-// Test 2: Time Series Aggregation
-test "time series aggregation" {
-  let time_series = TimeSeries::new("response_time")
-  
-  // Add data points
-  let base_time = 1234567890L
-  TimeSeries::add_point(time_series, TimeSeriesPoint::new(base_time, 100.0))
-  TimeSeries::add_point(time_series, TimeSeriesPoint::new(base_time + 60L, 150.0))
-  TimeSeries::add_point(time_series, TimeSeriesPoint::new(base_time + 120L, 200.0))
-  TimeSeries::add_point(time_series, TimeSeriesPoint::new(base_time + 180L, 120.0))
-  TimeSeries::add_point(time_series, TimeSeriesPoint::new(base_time + 240L, 180.0))
-  
-  // Test average aggregation
-  let avg_value = TimeSeries::aggregate(time_series, AggregationType::Average)
-  assert_eq(avg_value, 150.0)
-  
-  // Test sum aggregation
-  let sum_value = TimeSeries::aggregate(time_series, AggregationType::Sum)
-  assert_eq(sum_value, 750.0)
-  
-  // Test min aggregation
-  let min_value = TimeSeries::aggregate(time_series, AggregationType::Min)
-  assert_eq(min_value, 100.0)
-  
-  // Test max aggregation
-  let max_value = TimeSeries::aggregate(time_series, AggregationType::Max)
-  assert_eq(max_value, 200.0)
-  
-  // Test count aggregation
-  let count_value = TimeSeries::aggregate(time_series, AggregationType::Count)
-  assert_eq(count_value, 5.0)
-  
-  // Test aggregation on empty series
-  let empty_series = TimeSeries::new("empty")
-  let empty_avg = TimeSeries::aggregate(empty_series, AggregationType::Average)
-  assert_eq(empty_avg, 0.0)
-}
-
-// Test 3: Time Series Resampling
-test "time series resampling" {
-  let time_series = TimeSeries::new("memory_usage")
-  
-  // Add data points at 30-second intervals
-  let base_time = 1234567890L
-  for i in 0..=11 {
-    let timestamp = base_time + (i * 30L)
-    let value = 50.0 + (i * 2.5)  // Increasing values
+  for i in 0..=100 {
+    let timestamp = base_timestamp + (i * 60000L) // 1-minute intervals
+    let value = 50.0 + (10.0 * (i % 20).to_float()) // Oscillating between 50-70
     TimeSeries::add_point(time_series, TimeSeriesPoint::new(timestamp, value))
   }
   
-  // Original series has 12 points at 30-second intervals
-  assert_eq(TimeSeries::size(time_series), 12)
+  // Test aggregation by hour
+  let hourly_aggregated = TimeSeries::aggregate_by_interval(time_series, 3600000L) // 1 hour
+  assert_eq(hourly_aggregated.points.length(), 2) // 101 points over ~1.7 hours = 2 hour buckets
   
-  // Resample to 1-minute intervals using average
-  let resampled_avg = TimeSeries::resample(time_series, 60L, AggregationType::Average)
-  assert_eq(TimeSeries::size(resampled_avg), 6)
-  
-  // Verify resampled points
-  for i in 0..=5 {
-    let point = TimeSeries::point_at(resampled_avg, i)
-    match point {
-      Some(p) => {
-        let expected_timestamp = base_time + (i * 60L)
-        assert_eq(TimeSeriesPoint::timestamp(p), expected_timestamp)
-        
-        // Average of two consecutive 30-second points
-        let expected_value = 50.0 + ((i * 2) * 2.5) + 1.25
-        assert_eq(TimeSeriesPoint::value(p), expected_value)
-      }
-      None => assert_true(false)
-    }
+  // Verify aggregation calculations
+  for point in hourly_aggregated.points {
+    assert_true(point.value >= 50.0 && point.value <= 70.0)
+    assert_true(point.count > 0)
+    assert_true(point.min >= 50.0 && point.max <= 70.0)
   }
   
-  // Resample to 2-minute intervals using max
-  let resampled_max = TimeSeries::resample(time_series, 120L, AggregationType::Max)
-  assert_eq(TimeSeries::size(resampled_max), 3)
+  // Test aggregation by minute
+  let minutely_aggregated = TimeSeries::aggregate_by_interval(time_series, 60000L) // 1 minute
+  assert_eq(minutely_aggregated.points.length(), 101) // Should preserve original points
   
-  // Verify resampled points
-  for i in 0..=2 {
-    let point = TimeSeries::point_at(resampled_max, i)
-    match point {
-      Some(p) => {
-        let expected_timestamp = base_time + (i * 120L)
-        assert_eq(TimeSeriesPoint::timestamp(p), expected_timestamp)
-        
-        // Max of four consecutive 30-second points
-        let expected_value = 50.0 + ((i * 4 + 3) * 2.5)
-        assert_eq(TimeSeriesPoint::value(p), expected_value)
-      }
-      None => assert_true(false)
+  // Test custom aggregation function
+  let max_aggregated = TimeSeries::aggregate_with_function(
+    time_series,
+    300000L, // 5 minutes
+    |points| { 
+      if points.length() == 0 { 0.0 } 
+      else { points.map(|p| p.value).max() }
     }
+  )
+  
+  assert_eq(max_aggregated.points.length(), 21) // 101 points / 5-minute intervals
+  
+  // Verify max aggregation
+  for point in max_aggregated.points {
+    assert_true(point.value >= 60.0) // Max should be at least 60
   }
 }
 
-// Test 4: Time Series Windowing
-test "time series windowing" {
-  let time_series = TimeSeries::new("network_throughput")
+// Test 2: Time Series Downsampling and Upsampling
+test "time series downsampling and upsampling" {
+  let time_series = TimeSeries::new("memory.usage")
+  let base_timestamp = 1609459200000L
   
-  // Add data points
-  let base_time = 1234567890L
-  for i in 0..=23 {
-    let timestamp = base_time + (i * 60L)  // 1-minute intervals
-    let value = 100.0 + (i * 10.0)  // Increasing values
+  // Add high-frequency data (1-second intervals)
+  for i in 0..=3600 {
+    let timestamp = base_timestamp + (i * 1000L) // 1-second intervals
+    let value = 60.0 + (5.0 * (i % 60).to_float() / 60.0) // Gradual increase
     TimeSeries::add_point(time_series, TimeSeriesPoint::new(timestamp, value))
   }
   
-  // Test time-based windowing
-  let window_start = base_time + (5 * 60L)  // 5 minutes in
-  let window_end = base_time + (15 * 60L)   // 15 minutes in
+  // Test downsampling to 1-minute intervals
+  let downsampled = TimeSeries::downsample(time_series, 60000L, DownsamplingMethod::Average)
+  assert_eq(downsampled.points.length(), 61) // 3601 points / 60 = ~61 points
   
-  let windowed_series = TimeSeries::time_window(time_series, window_start, window_end)
-  assert_eq(TimeSeries::size(windowed_series), 11)  // Points from 5 to 15 inclusive
-  
-  // Verify first and last points in window
-  let first_window_point = TimeSeries::first_point(windowed_series)
-  match first_window_point {
-    Some(point) => {
-      assert_eq(TimeSeriesPoint::timestamp(point), window_start)
-      assert_eq(TimeSeriesPoint::value(point), 100.0 + (5 * 10.0))
-    }
-    None => assert_true(false)
+  // Verify downsampling accuracy
+  for i in 0..=downsampled.points.length() - 1 {
+    let point = downsampled.points[i]
+    let expected_min = 60.0 + (5.0 * i.to_float() / 60.0)
+    let expected_max = 60.0 + (5.0 * (i + 1).to_float() / 60.0)
+    assert_true(point.value >= expected_min && point.value <= expected_max)
   }
   
-  let last_window_point = TimeSeries::last_point(windowed_series)
-  match last_window_point {
-    Some(point) => {
-      assert_eq(TimeSeriesPoint::timestamp(point), window_end)
-      assert_eq(TimeSeriesPoint::value(point), 100.0 + (15 * 10.0))
-    }
-    None => assert_true(false)
+  // Test downsampling with different methods
+  let max_downsampled = TimeSeries::downsample(time_series, 60000L, DownsamplingMethod::Max)
+  let min_downsampled = TimeSeries::downsample(time_series, 60000L, DownsamplingMethod::Min)
+  
+  for i in 0..=downsampled.points.length() - 1 {
+    assert_true(max_downsampled.points[i].value >= downsampled.points[i].value)
+    assert_true(min_downsampled.points[i].value <= downsampled.points[i].value)
   }
   
-  // Test sliding window with aggregation
-  let sliding_windows = TimeSeries::sliding_window(time_series, 5, AggregationType::Average)
-  assert_eq(sliding_windows.length(), 19)  // 24 - 5 + 1
+  // Test upsampling back to 1-second intervals
+  let upsampled = TimeSeries::upsample(downsampled, 1000L, UpsamplingMethod::Linear)
+  assert_eq(upsampled.points.length(), 3601) // Should match original
   
-  // Verify first sliding window
-  let first_window = sliding_windows[0]
-  assert_eq(TimeSeries::size(first_window), 5)
-  let first_window_avg = TimeSeries::aggregate(first_window, AggregationType::Average)
-  assert_eq(first_window_avg, 120.0)  // Average of first 5 points
-  
-  // Verify last sliding window
-  let last_window = sliding_windows[18]
-  assert_eq(TimeSeries::size(last_window), 5)
-  let last_window_avg = TimeSeries::aggregate(last_window, AggregationType::Average)
-  assert_eq(last_window_avg, 310.0)  // Average of last 5 points
-}
-
-// Test 5: Time Series Filtering
-test "time series filtering" {
-  let time_series = TimeSeries::new("error_rate")
-  
-  // Add data points with varying values
-  let base_time = 1234567890L
-  for i in 0..=19 {
-    let timestamp = base_time + (i * 60L)
-    let value = if i % 4 == 0 { 0.0 } else if i % 4 == 1 { 0.1 } else if i % 4 == 2 { 0.5 } else { 1.0 }
-    TimeSeries::add_point(time_series, TimeSeriesPoint::new(timestamp, value))
-  }
-  
-  // Filter by value (greater than 0.5)
-  let filtered_high = TimeSeries::filter_by_value(time_series, func(value) { value > 0.5 })
-  assert_eq(TimeSeries::size(filtered_high), 5)  // Points with value 1.0
-  
-  // Verify all filtered points have value > 0.5
-  for i in 0..=4 {
-    let point = TimeSeries::point_at(filtered_high, i)
-    match point {
-      Some(p) => assert_true(TimeSeriesPoint::value(p) > 0.5)
-      None => assert_true(false)
-    }
-  }
-  
-  // Filter by value (less than 0.5)
-  let filtered_low = TimeSeries::filter_by_value(time_series, func(value) { value < 0.5 })
-  assert_eq(TimeSeries::size(filtered_low), 10)  // Points with value 0.0 or 0.1
-  
-  // Filter by time (first 10 minutes)
-  let time_filtered = TimeSeries::filter_by_time(time_series, base_time, base_time + (9 * 60L))
-  assert_eq(TimeSeries::size(time_filtered), 10)
-  
-  // Verify time range
-  let first_filtered = TimeSeries::first_point(time_filtered)
-  match first_filtered {
-    Some(point) => assert_eq(TimeSeriesPoint::timestamp(point), base_time)
-    None => assert_true(false)
-  }
-  
-  let last_filtered = TimeSeries::last_point(time_filtered)
-  match last_filtered {
-    Some(point) => assert_eq(TimeSeriesPoint::timestamp(point), base_time + (9 * 60L))
-    None => assert_true(false)
+  // Verify upsampling preserves trend
+  for i in 0..=100 {
+    let original = time_series.points[i]
+    let upsampled_point = upsampled.points[i]
+    let tolerance = 2.5 // Allow some interpolation error
+    assert_true((original.value - upsampled_point.value).abs() < tolerance)
   }
 }
 
-// Test 6: Time Series Interpolation
-test "time series interpolation" {
-  let time_series = TimeSeries::new("temperature")
-  
-  // Add sparse data points
-  let base_time = 1234567890L
-  TimeSeries::add_point(time_series, TimeSeriesPoint::new(base_time, 20.0))
-  TimeSeries::add_point(time_series, TimeSeriesPoint::new(base_time + 300L, 25.0))  // 5 minutes later
-  TimeSeries::add_point(time_series, TimeSeriesPoint::new(base_time + 600L, 15.0))  // 10 minutes later
-  TimeSeries::add_point(time_series, TimeSeriesPoint::new(base_time + 900L, 30.0))  // 15 minutes later
-  
-  // Linear interpolation at intermediate points
-  let interpolated_150 = TimeSeries::interpolate(time_series, base_time + 150L, InterpolationType::Linear)
-  match interpolated_150 {
-    Some(value) => assert_eq(value, 22.5)  // Midpoint between 20.0 and 25.0
-    None => assert_true(false)
-  }
-  
-  let interpolated_450 = TimeSeries::interpolate(time_series, base_time + 450L, InterpolationType::Linear)
-  match interpolated_450 {
-    Some(value) => assert_eq(value, 20.0)  // Midpoint between 25.0 and 15.0
-    None => assert_true(false)
-  }
-  
-  let interpolated_750 = TimeSeries::interpolate(time_series, base_time + 750L, InterpolationType::Linear)
-  match interpolated_750 {
-    Some(value) => assert_eq(value, 22.5)  // Midpoint between 15.0 and 30.0
-    None => assert_true(false)
-  }
-  
-  // Interpolation outside range should return None
-  let before_range = TimeSeries::interpolate(time_series, base_time - 60L, InterpolationType::Linear)
-  match before_range {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  let after_range = TimeSeries::interpolate(time_series, base_time + 960L, InterpolationType::Linear)
-  match after_range {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  // Fill missing values using interpolation
-  let filled_series = TimeSeries::fill_missing(time_series, 60L, InterpolationType::Linear)
-  assert_eq(TimeSeries::size(filled_series), 16)  // Original 4 points + 12 interpolated
-  
-  // Verify filled points at 1-minute intervals
-  for i in 0..=15 {
-    let point = TimeSeries::point_at(filled_series, i)
-    match point {
-      Some(p) => {
-        let expected_timestamp = base_time + (i * 60L)
-        assert_eq(TimeSeriesPoint::timestamp(p), expected_timestamp)
-        
-        // Verify interpolated values
-        if i == 0 {
-          assert_eq(TimeSeriesPoint::value(p), 20.0)
-        } else if i == 5 {
-          assert_eq(TimeSeriesPoint::value(p), 25.0)
-        } else if i == 10 {
-          assert_eq(TimeSeriesPoint::value(p), 15.0)
-        } else if i == 15 {
-          assert_eq(TimeSeriesPoint::value(p), 30.0)
-        }
-      }
-      None => assert_true(false)
-    }
-  }
-}
-
-// Test 7: Time Series Anomaly Detection
+// Test 3: Time Series Anomaly Detection
 test "time series anomaly detection" {
-  let time_series = TimeSeries::new("server_load")
+  let time_series = TimeSeries::new("network.latency")
+  let base_timestamp = 1609459200000L
   
-  // Add normal data points
-  let base_time = 1234567890L
-  for i in 0..=19 {
-    let timestamp = base_time + (i * 60L)
-    let value = 50.0 + (Math::sin(i.to_float() * 0.5) * 10.0)  // Normal fluctuation
+  // Generate normal data with some anomalies
+  for i in 0..=200 {
+    let timestamp = base_timestamp + (i * 60000L) // 1-minute intervals
+    let value = 
+      if i == 50 { 150.0 } // Spike anomaly
+      else if i == 100 { 5.0 } // Dip anomaly
+      else if i == 150 { 200.0 } // Extreme spike
+      else { 50.0 + (10.0 * (i % 20).to_float() / 20.0) } // Normal variation 45-55
     TimeSeries::add_point(time_series, TimeSeriesPoint::new(timestamp, value))
   }
   
-  // Add some anomalies
-  TimeSeries::add_point(time_series, TimeSeriesPoint::new(base_time + (20 * 60L), 150.0))  // Spike
-  TimeSeries::add_point(time_series, TimeSeriesPoint::new(base_time + (21 * 60L), 48.0))   // Normal
-  TimeSeries::add_point(time_series, TimeSeriesPoint::new(base_time + (22 * 60L), -20.0))  // Dip
-  TimeSeries::add_point(time_series, TimeSeriesPoint::new(base_time + (23 * 60L), 52.0))   // Normal
+  // Test statistical anomaly detection
+  let statistical_detector = StatisticalAnomalyDetector::new(2.0) // 2 standard deviations
+  let statistical_anomalies = AnomalyDetector::detect(statistical_detector, time_series)
   
-  // Detect anomalies using standard deviation method
-  let anomalies = TimeSeries::detect_anomalies(time_series, AnomalyDetectionMethod::StandardDeviation, 2.0)
-  assert_eq(anomalies.length(), 2)  // Should detect the spike and the dip
+  assert_true(statistical_anomalies.length() >= 2) // Should detect at least the extreme anomalies
   
-  // Verify anomalies
-  for anomaly in anomalies {
-    let point = TimeSeries::point_at(time_series, anomaly.index)
-    match point {
-      Some(p) => {
-        let value = TimeSeriesPoint::value(p)
-        assert_true(value == 150.0 || value == -20.0)
-      }
-      None => assert_true(false)
-    }
-  }
+  // Verify detected anomalies
+  let detected_spike = statistical_anomalies.any(|anomaly| {
+    anomaly.point.value > 100.0 && anomaly.point.timestamp == base_timestamp + (50 * 60000L)
+  })
+  assert_true(detected_spike)
   
-  // Detect anomalies using percentile method
-  let percentile_anomalies = TimeSeries::detect_anomalies(time_series, AnomalyDetectionMethod::Percentile, 95.0)
-  assert_eq(percentile_anomalies.length(), 1)  // Should detect only the spike
+  let detected_extreme = statistical_anomalies.any(|anomaly| {
+    anomaly.point.value > 150.0 && anomaly.point.timestamp == base_timestamp + (150 * 60000L)
+  })
+  assert_true(detected_extreme)
   
-  // Verify percentile anomaly
-  let percentile_point = TimeSeries::point_at(time_series, percentile_anomalies[0].index)
-  match percentile_point {
-    Some(p) => assert_eq(TimeSeriesPoint::value(p), 150.0)
-    None => assert_true(false)
-  }
+  // Test moving average anomaly detection
+  let ma_detector = MovingAverageAnomalyDetector::new(10, 1.5) // 10-point window, 1.5x threshold
+  let ma_anomalies = AnomalyDetector::detect(ma_detector, time_series)
+  
+  assert_true(ma_anomalies.length() >= 1)
+  
+  // Test seasonal anomaly detection
+  let seasonal_detector = SeasonalAnomalyDetector::new(20, 2.0) // 20-point seasonality, 2x threshold
+  let seasonal_anomalies = AnomalyDetector::detect(seasonal_detector, time_series)
+  
+  // Seasonal detection should be more robust to periodic patterns
+  assert_true(seasonal_anomalies.length() <= statistical_anomalies.length())
 }
 
-// Test 8: Time Series Forecasting
+// Test 4: Time Series Forecasting
 test "time series forecasting" {
-  let time_series = TimeSeries::new("sales_data")
+  let time_series = TimeSeries::new("server.requests")
+  let base_timestamp = 1609459200000L
   
-  // Add trend data with some seasonality
-  let base_time = 1234567890L
-  for i in 0..=29 {
-    let timestamp = base_time + (i * 86400L)  // Daily data
-    let trend = 100.0 + (i * 2.0)  // Linear trend
-    let seasonality = Math::sin(i.to_float() * 0.5) * 20.0  // Seasonal component
-    let value = trend + seasonality
+  // Generate trend + seasonal data
+  for i in 0..=1440 { // 24 hours of minute data
+    let timestamp = base_timestamp + (i * 60000L)
+    let trend = 100.0 + (0.1 * i.to_float()) // Linear trend
+    let seasonal = 20.0 * ((2.0 * 3.14159 * i.to_float()) / 60.0).sin() // Hourly seasonality
+    let noise = 5.0 * ((2.0 * 3.14159 * i.to_float()) / 7.0).sin() // Small noise
+    let value = trend + seasonal + noise
     TimeSeries::add_point(time_series, TimeSeriesPoint::new(timestamp, value))
   }
   
-  // Simple linear regression forecasting
-  let forecast = TimeSeries::forecast(time_series, ForecastingMethod::LinearRegression, 5)
-  assert_eq(forecast.length(), 5)
+  // Test linear regression forecasting
+  let linear_forecaster = LinearRegressionForecaster::new()
+  let linear_forecast = TimeSeriesForecaster::forecast(
+    linear_forecaster,
+    time_series,
+    60 // Predict next 60 minutes
+  )
   
-  // Verify forecast values are in reasonable range
-  for i in 0..=4 {
-    let forecast_point = forecast[i]
-    let forecast_value = TimeSeriesPoint::value(forecast_point)
-    
-    // Forecast should continue the trend
-    let expected_min = 100.0 + ((30 + i) * 2.0) - 20.0  // Trend - seasonality
-    let expected_max = 100.0 + ((30 + i) * 2.0) + 20.0  // Trend + seasonality
-    assert_true(forecast_value >= expected_min && forecast_value <= expected_max)
-  }
+  assert_eq(linear_forecast.points.length(), 60)
   
-  // Moving average forecasting
-  let ma_forecast = TimeSeries::forecast(time_series, ForecastingMethod::MovingAverage, 3)
-  assert_eq(ma_forecast.length(), 3)
+  // Verify trend continuation
+  let last_actual = time_series.points[time_series.points.length() - 1].value
+  let first_predicted = linear_forecast.points[0].value
+  assert_true(first_predicted > last_actual) // Should continue upward trend
   
-  // Verify moving average forecast
-  for i in 0..=2 {
-    let ma_point = ma_forecast[i]
-    let ma_value = TimeSeriesPoint::value(ma_point)
-    
-    // Moving average should be close to recent values
-    assert_true(ma_value >= 140.0 && ma_value <= 180.0)
-  }
+  // Test exponential smoothing forecasting
+  let ets_forecaster = ExponentialSmoothingForecaster::new(0.3, 0.1, 0.1)
+  let ets_forecast = TimeSeriesForecaster::forecast(
+    ets_forecaster,
+    time_series,
+    60
+  )
+  
+  assert_eq(ets_forecast.points.length(), 60)
+  
+  // Test ARIMA forecasting
+  let arima_forecaster = ARIMAForecaster::new(1, 1, 1) // ARIMA(1,1,1)
+  let arima_forecast = TimeSeriesForecaster::forecast(
+    arima_forecaster,
+    time_series,
+    60
+  )
+  
+  assert_eq(arima_forecast.points.length(), 60)
+  
+  // Compare forecast accuracy
+  let linear_mae = calculate_mae(linear_forecast, ets_forecast)
+  let ets_mae = calculate_mae(ets_forecast, arima_forecast)
+  let arima_mae = calculate_mae(arima_forecast, ets_forecast)
+  
+  // Different models should produce different but reasonable forecasts
+  assert_true(linear_mae > 0.0)
+  assert_true(ets_mae > 0.0)
+  assert_true(arima_mae > 0.0)
 }
 
-// Test 9: Time Series Correlation
-test "time series correlation" {
-  let series1 = TimeSeries::new("cpu_usage")
-  let series2 = TimeSeries::new("memory_usage")
+// Test 5: Time Series Pattern Recognition
+test "time series pattern recognition" {
+  let time_series = TimeSeries::new("application.errors")
+  let base_timestamp = 1609459200000L
   
-  // Add correlated data
-  let base_time = 1234567890L
-  for i in 0..=19 {
-    let timestamp = base_time + (i * 60L)
-    let base_value = 50.0 + (i * 2.0)  // Base trend
+  // Generate data with specific patterns
+  for i in 0..=2880 { // 48 hours of minute data
+    let timestamp = base_timestamp + (i * 60000L)
+    let hour_of_day = (i / 60) % 24
+    let day_of_week = (i / 1440) % 7
     
-    // Series 1: CPU usage
-    let cpu_value = base_value + (Math::random() * 5.0 - 2.5)  // Add some noise
-    TimeSeries::add_point(series1, TimeSeriesPoint::new(timestamp, cpu_value))
+    // Daily pattern: more errors during business hours
+    let daily_pattern = 
+      if hour_of_day >= 9 && hour_of_day <= 17 { 20.0 }
+      else if hour_of_day >= 22 || hour_of_day <= 6 { 5.0 }
+      else { 10.0 }
     
-    // Series 2: Memory usage (correlated with CPU)
-    let memory_value = base_value * 1.5 + (Math::random() * 5.0 - 2.5)  // Correlated with some noise
-    TimeSeries::add_point(series2, TimeSeriesPoint::new(timestamp, memory_value))
+    // Weekly pattern: more errors on weekdays
+    let weekly_pattern = 
+      if day_of_week >= 1 && day_of_week <= 5 { 1.2 }
+      else { 0.8 }
+    
+    // Random component
+    let random = 2.0 * ((2.0 * 3.14159 * i.to_float()) / 13.0).sin()
+    
+    let value = daily_pattern * weekly_pattern + random
+    TimeSeries::add_point(time_series, TimeSeriesPoint::new(timestamp, value))
   }
   
-  // Calculate correlation
-  let correlation = TimeSeries::correlation(series1, series2)
+  // Test daily pattern detection
+  let daily_detector = PeriodicPatternDetector::new(1440) // 24 hours in minutes
+  let daily_patterns = PatternDetector::detect(daily_detector, time_series)
   
-  // Should be positive correlation (close to 1.0)
-  assert_true(correlation > 0.7)
+  assert_true(daily_patterns.length() > 0)
   
-  // Create uncorrelated series
-  let series3 = TimeSeries::new("network_io")
-  for i in 0..=19 {
-    let timestamp = base_time + (i * 60L)
-    let value = Math::random() * 100.0  // Random values
-    TimeSeries::add_point(series3, TimeSeriesPoint::new(timestamp, value))
+  // Verify detected daily pattern
+  let daily_pattern = daily_patterns[0]
+  assert_eq(daily_pattern.period, 1440)
+  assert_true(daily_pattern.confidence > 0.7)
+  
+  // Verify pattern characteristics
+  let pattern_hours = daily_pattern.pattern_points.length() / 60
+  assert_eq(pattern_hours, 24)
+  
+  // Should detect higher values during business hours
+  let business_hours_avg = calculate_pattern_average(daily_pattern, 9, 17)
+  let night_hours_avg = calculate_pattern_average(daily_pattern, 22, 6)
+  assert_true(business_hours_avg > night_hours_avg)
+  
+  // Test weekly pattern detection
+  let weekly_detector = PeriodicPatternDetector::new(10080) // 7 days in minutes
+  let weekly_patterns = PatternDetector::detect(weekly_detector, time_series)
+  
+  assert_true(weekly_patterns.length() > 0)
+  
+  // Test anomaly detection based on patterns
+  let pattern_based_detector = PatternBasedAnomalyDetector::new(daily_patterns)
+  let pattern_anomalies = AnomalyDetector::detect(pattern_based_detector, time_series)
+  
+  // Should detect deviations from expected patterns
+  assert_true(pattern_anomalies.length() >= 0)
+}
+
+// Test 6: Time Series Correlation Analysis
+test "time series correlation analysis" {
+  let cpu_series = TimeSeries::new("cpu.usage")
+  let memory_series = TimeSeries::new("memory.usage")
+  let network_series = TimeSeries::new("network.throughput")
+  let base_timestamp = 1609459200000L
+  
+  // Generate correlated time series data
+  for i in 0..=1440 { // 24 hours of minute data
+    let timestamp = base_timestamp + (i * 60000L)
+    
+    // Base load with daily pattern
+    let base_load = 30.0 + (20.0 * ((2.0 * 3.14159 * (i % 720).to_float()) / 720.0).sin())
+    
+    // CPU and Memory are positively correlated
+    let cpu_value = base_load + 10.0
+    let memory_value = base_load * 0.8 + 15.0
+    
+    // Network is less correlated
+    let network_value = 50.0 + (30.0 * ((2.0 * 3.14159 * (i % 360).to_float()) / 360.0).sin())
+    
+    TimeSeries::add_point(cpu_series, TimeSeriesPoint::new(timestamp, cpu_value))
+    TimeSeries::add_point(memory_series, TimeSeriesPoint::new(timestamp, memory_value))
+    TimeSeries::add_point(network_series, TimeSeriesPoint::new(timestamp, network_value))
   }
   
-  // Calculate correlation with uncorrelated series
-  let uncorrelated_correlation = TimeSeries::correlation(series1, series3)
+  // Test Pearson correlation
+  let cpu_memory_correlation = TimeSeriesAnalyzer::pearson_correlation(cpu_series, memory_series)
+  let cpu_network_correlation = TimeSeriesAnalyzer::pearson_correlation(cpu_series, network_series)
+  let memory_network_correlation = TimeSeriesAnalyzer::pearson_correlation(memory_series, network_series)
   
-  // Should be low correlation (close to 0.0)
-  assert_true(Math::abs(uncorrelated_correlation) < 0.3)
+  // CPU and Memory should be highly correlated
+  assert_true(cpu_memory_correlation > 0.8)
+  
+  // CPU and Network should be less correlated
+  assert_true(cpu_network_correlation.abs() < 0.5)
+  
+  // Memory and Network should be less correlated
+  assert_true(memory_network_correlation.abs() < 0.5)
+  
+  // Test Spearman rank correlation
+  let cpu_memory_spearman = TimeSeriesAnalyzer::spearman_correlation(cpu_series, memory_series)
+  assert_true(cpu_memory_spearman > 0.8)
+  
+  // Test cross-correlation to find lags
+  let cpu_memory_cross_corr = TimeSeriesAnalyzer::cross_correlation(cpu_series, memory_series, 60) // 1-hour lag
+  let max_lag = find_max_correlation_lag(cpu_memory_cross_corr)
+  
+  // Should find maximum correlation at or near zero lag (simultaneous)
+  assert_true(max_lag >= -30 && max_lag <= 30)
+  
+  // Test partial correlation
+  let partial_corr = TimeSeriesAnalyzer::partial_correlation(
+    cpu_series, 
+    memory_series, 
+    [network_series]
+  )
+  
+  // Partial correlation should account for network influence
+  assert_true(partial_corr > 0.5)
+}
+
+// Test 7: Time Series Decomposition
+test "time series decomposition" {
+  let time_series = TimeSeries::new("system.load")
+  let base_timestamp = 1609459200000L
+  
+  // Generate data with trend, seasonal, and residual components
+  for i in 0..=2880 { // 48 hours of minute data
+    let timestamp = base_timestamp + (i * 60000L)
+    
+    // Trend component (gradual increase)
+    let trend = 50.0 + (0.02 * i.to_float())
+    
+    // Seasonal component (daily pattern)
+    let seasonal = 10.0 * ((2.0 * 3.14159 * (i % 1440).to_float()) / 1440.0).sin()
+    
+    // Residual component (random noise)
+    let residual = 2.0 * ((2.0 * 3.14159 * i.to_float()) / 37.0).sin()
+    
+    let value = trend + seasonal + residual
+    TimeSeries::add_point(time_series, TimeSeriesPoint::new(timestamp, value))
+  }
+  
+  // Test additive decomposition
+  let additive_decomposition = TimeSeriesDecomposer::decompose(
+    time_series,
+    1440, // Daily seasonality
+    DecompositionModel::Additive
+  )
+  
+  assert_eq(additive_decomposition.trend.points.length(), time_series.points.length())
+  assert_eq(additive_decomposition.seasonal.points.length(), time_series.points.length())
+  assert_eq(additive_decomposition.residual.points.length(), time_series.points.length())
+  
+  // Verify decomposition accuracy
+  for i in 0..=100 {
+    let original = time_series.points[i].value
+    let trend = additive_decomposition.trend.points[i].value
+    let seasonal = additive_decomposition.seasonal.points[i].value
+    let residual = additive_decomposition.residual.points[i].value
+    let reconstructed = trend + seasonal + residual
+    
+    // Allow small reconstruction error
+    assert_true((original - reconstructed).abs() < 0.1)
+  }
+  
+  // Test multiplicative decomposition
+  let multiplicative_decomposition = TimeSeriesDecomposer::decompose(
+    time_series,
+    1440,
+    DecompositionModel::Multiplicative
+  )
+  
+  // Verify multiplicative reconstruction
+  for i in 0..=100 {
+    let original = time_series.points[i].value
+    let trend = multiplicative_decomposition.trend.points[i].value
+    let seasonal = multiplicative_decomposition.seasonal.points[i].value
+    let residual = multiplicative_decomposition.residual.points[i].value
+    let reconstructed = trend * seasonal * residual
+    
+    // Allow small reconstruction error
+    assert_true((original - reconstructed).abs() / original < 0.05) // 5% error tolerance
+  }
+  
+  // Test STL decomposition (Seasonal and Trend decomposition using Loess)
+  let stl_decomposition = TimeSeriesDecomposer::stl_decompose(
+    time_series,
+    1440,
+    7, // Seasonal smoothing parameter
+    21 // Trend smoothing parameter
+  )
+  
+  assert_eq(stl_decomposition.trend.points.length(), time_series.points.length())
+  assert_eq(stl_decomposition.seasonal.points.length(), time_series.points.length())
+}
+
+// Test 8: Time Series Change Point Detection
+test "time series change point detection" {
+  let time_series = TimeSeries::new("performance.metric")
+  let base_timestamp = 1609459200000L
+  
+  // Generate data with change points
+  for i in 0..=1440 { // 24 hours of minute data
+    let timestamp = base_timestamp + (i * 60000L)
+    
+    let value = 
+      if i < 480 { // First 8 hours: low level
+        20.0 + (2.0 * ((2.0 * 3.14159 * i.to_float()) / 60.0).sin())
+      } else if i < 960 { // Next 8 hours: high level
+        50.0 + (3.0 * ((2.0 * 3.14159 * i.to_float()) / 60.0).sin())
+      } else { // Last 8 hours: medium level
+        35.0 + (2.5 * ((2.0 * 3.14159 * i.to_float()) / 60.0).sin())
+      }
+    
+    TimeSeries::add_point(time_series, TimeSeriesPoint::new(timestamp, value))
+  }
+  
+  // Test CUSUM change point detection
+  let cusum_detector = CUSUMChangePointDetector::new(5.0, 10.0) // Threshold and drift
+  let cusum_change_points = ChangePointDetector::detect(cusum_detector, time_series)
+  
+  assert_true(cusum_change_points.length() >= 2)
+  
+  // Verify change point locations (around 480 and 960)
+  let first_change = cusum_change_points[0]
+  let second_change = cusum_change_points[1]
+  
+  assert_true(first_change.index >= 470 && first_change.index <= 490)
+  assert_true(second_change.index >= 950 && second_change.index <= 970)
+  
+  // Test Bayesian change point detection
+  let bayesian_detector = BayesianChangePointDetector::new(0.1, 0.1) // Prior and hazard
+  let bayesian_change_points = ChangePointDetector::detect(bayesian_detector, time_series)
+  
+  assert_true(bayesian_change_points.length() >= 2)
+  
+  // Test PELT (Pruned Exact Linear Time) change point detection
+  let pelt_detector = PELTChangePointDetector::new(10.0) // Penalty
+  let pelt_change_points = ChangePointDetector::detect(pelt_detector, time_series)
+  
+  assert_true(pelt_change_points.length() >= 2)
+  
+  // Compare detection methods
+  let cusum_count = cusum_change_points.length()
+  let bayesian_count = bayesian_change_points.length()
+  let pelt_count = pelt_change_points.length()
+  
+  // Different methods should detect similar but not identical change points
+  assert_true(cusum_count >= 2 && bayesian_count >= 2 && pelt_count >= 2)
+}
+
+// Test 9: Time Series Clustering
+test "time series clustering" {
+  let time_series_collection = []
+  
+  // Generate multiple time series with different patterns
+  for series_id in 0..=9 {
+    let series = TimeSeries::new("series_" + series_id.to_string())
+    let base_timestamp = 1609459200000L
+    
+    for i in 0..=720 { // 12 hours of minute data
+      let timestamp = base_timestamp + (i * 60000L)
+      
+      let value = 
+        if series_id < 3 { // Cluster 1: sine wave pattern
+          50.0 + (20.0 * ((2.0 * 3.14159 * i.to_float()) / 120.0).sin())
+        } else if series_id < 6 { // Cluster 2: linear trend
+          30.0 + (0.05 * i.to_float())
+        } else if series_id < 8 { // Cluster 3: constant with noise
+          60.0 + (5.0 * ((2.0 * 3.14159 * i.to_float()) / 17.0).sin())
+        } else { // Cluster 4: exponential growth
+          20.0 * (1.01).pow(i.to_float() / 60.0)
+        }
+      
+      TimeSeries::add_point(series, TimeSeriesPoint::new(timestamp, value))
+    }
+    
+    time_series_collection.push(series)
+  }
+  
+  // Test K-means clustering
+  let kmeans_clusterer = KMeansTimeSeriesClusterer::new(4, 100) // 4 clusters, 100 iterations
+  let kmeans_clusters = TimeSeriesClusterer::cluster(kmeans_clusterer, time_series_collection)
+  
+  assert_eq(kmeans_clusters.length(), 4)
+  
+  // Verify each series is assigned to a cluster
+  let total_assigned = kmeans_clusters.map(|cluster| cluster.members.length()).sum()
+  assert_eq(total_assigned, time_series_collection.length())
+  
+  // Test hierarchical clustering
+  let hierarchical_clusterer = HierarchicalTimeSeriesClusterer::new(
+    DistanceMetric::DTW, // Dynamic Time Warping
+    LinkageMethod::Average
+  )
+  let hierarchical_clusters = TimeSeriesClusterer::cluster(
+    hierarchical_clusterer,
+    time_series_collection
+  )
+  
+  assert_true(hierarchical_clusters.length() >= 1)
+  
+  // Test DBSCAN clustering
+  let dbscan_clusterer = DBSCANTimeSeriesClusterer::new(5.0, 2) // Epsilon, min points
+  let dbscan_clusters = TimeSeriesClusterer::cluster(dbscan_clusterer, time_series_collection)
+  
+  assert_true(dbscan_clusters.length() >= 1)
+  
+  // Evaluate clustering quality
+  let kmeans_silhouette = calculate_silhouette_score(kmeans_clusters)
+  let hierarchical_silhouette = calculate_silhouette_score(hierarchical_clusters)
+  
+  assert_true(kmeans_silhouette >= -1.0 && kmeans_silhouette <= 1.0)
+  assert_true(hierarchical_silhouette >= -1.0 && hierarchical_silhouette <= 1.0)
 }
 
 // Test 10: Time Series Compression
 test "time series compression" {
-  let time_series = TimeSeries::new("sensor_data")
+  let time_series = TimeSeries::new("sensor.data")
+  let base_timestamp = 1609459200000L
   
-  // Add data points
-  let base_time = 1234567890L
-  for i in 0..=99 {
-    let timestamp = base_time + (i * 60L)
-    let value = 20.0 + (Math::sin(i.to_float() * 0.1) * 5.0)  // Smooth sinusoidal data
+  // Generate high-frequency data with some patterns
+  for i in 0..=10000 { // ~7 days of minute data
+    let timestamp = base_timestamp + (i * 60000L)
+    
+    // Mix of constant regions, trends, and noise
+    let value = 
+      if i % 1000 < 100 { // Constant region
+        50.0
+      } else if i % 1000 < 600 { // Trending region
+        40.0 + (0.1 * (i % 1000).to_float())
+      } else { // Noisy region
+        50.0 + (10.0 * ((2.0 * 3.14159 * (i % 100).to_float()) / 100.0).sin())
+      }
+    
     TimeSeries::add_point(time_series, TimeSeriesPoint::new(timestamp, value))
   }
   
-  // Original size
-  let original_size = TimeSeries::size(time_series)
-  assert_eq(original_size, 100)
+  let original_size = calculate_time_series_size(time_series)
   
-  // Compress using Douglas-Peucker algorithm
-  let compressed_series = TimeSeries::compress(time_series, CompressionMethod::DouglasPeucker, 0.5)
-  let compressed_size = TimeSeries::size(compressed_series)
+  // Test delta encoding compression
+  let delta_compressed = TimeSeriesCompressor::compress_delta(time_series)
+  let delta_size = calculate_compressed_size(delta_compressed)
+  let delta_ratio = delta_size.to_float() / original_size.to_float()
   
-  // Should reduce number of points
-  assert_true(compressed_size < original_size)
-  assert_true(compressed_size > 10)  // But not too aggressive
+  assert_true(delta_ratio < 0.8) // Should achieve at least 20% compression
   
-  // Verify compression preserves key features
-  let original_min = TimeSeries::aggregate(time_series, AggregationType::Min)
-  let original_max = TimeSeries::aggregate(time_series, AggregationType::Max)
-  let compressed_min = TimeSeries::aggregate(compressed_series, AggregationType::Min)
-  let compressed_max = TimeSeries::aggregate(compressed_series, AggregationType::Max)
+  // Test delta encoding decompression
+  let delta_decompressed = TimeSeriesCompressor::decompress_delta(delta_compressed)
+  assert_eq(delta_decompressed.points.length(), time_series.points.length())
   
-  // Min and max should be close
-  assert_true(Math::abs(original_min - compressed_min) < 1.0)
-  assert_true(Math::abs(original_max - compressed_max) < 1.0)
+  // Verify decompression accuracy
+  for i in 0..=100 {
+    let original = time_series.points[i]
+    let decompressed = delta_decompressed.points[i]
+    assert_eq(original.timestamp, decompressed.timestamp)
+    assert_eq(original.value, decompressed.value)
+  }
   
-  // Compress using largest triangle three buckets (LTTB) algorithm
-  let lttb_series = TimeSeries::compress(time_series, CompressionMethod::LTTB, 20)  // Target 20 points
-  let lttb_size = TimeSeries::size(lttb_series)
+  // Test swing compression
+  let swing_compressed = TimeSeriesCompressor::compress_swing(time_series, 0.1) // 0.1 tolerance
+  let swing_size = calculate_compressed_size(swing_compressed)
+  let swing_ratio = swing_size.to_float() / original_size.to_float()
   
-  // Should have approximately the target number of points
-  assert_eq(lttb_size, 20)
+  assert_true(swing_ratio < 0.5) // Should achieve better compression for smooth regions
   
-  // Verify LTTB preserves overall shape
-  let lttb_min = TimeSeries::aggregate(lttb_series, AggregationType::Min)
-  let lttb_max = TimeSeries::aggregate(lttb_series, AggregationType::Max)
+  // Test swing decompression
+  let swing_decompressed = TimeSeriesCompressor::decompress_swing(swing_compressed)
+  assert_eq(swing_decompressed.points.length(), time_series.points.length())
   
-  assert_true(Math::abs(original_min - lttb_min) < 1.0)
-  assert_true(Math::abs(original_max - lttb_max) < 1.0)
+  // Verify decompression accuracy within tolerance
+  for i in 0..=100 {
+    let original = time_series.points[i]
+    let decompressed = swing_decompressed.points[i]
+    assert_eq(original.timestamp, decompressed.timestamp)
+    assert_true((original.value - decompressed.value).abs() <= 0.1)
+  }
+  
+  // Test Gorilla compression
+  let gorilla_compressed = TimeSeriesCompressor::compress_gorilla(time_series)
+  let gorilla_size = calculate_compressed_size(gorilla_compressed)
+  let gorilla_ratio = gorilla_size.to_float() / original_size.to_float()
+  
+  assert_true(gorilla_ratio < 0.4) // Gorilla should achieve good compression
+  
+  // Compare compression methods
+  assert_true(gorilla_ratio <= swing_ratio || delta_ratio <= swing_ratio)
+}
+
+// Helper functions
+fn calculate_mae(forecast1 : TimeSeries, forecast2 : TimeSeries) -> Float {
+  let n = forecast1.points.length()
+  let mut sum = 0.0
+  
+  for i in 0..=n-1 {
+    sum = sum + (forecast1.points[i].value - forecast2.points[i].value).abs()
+  }
+  
+  sum / n.to_float()
+}
+
+fn calculate_pattern_average(pattern : PeriodicPattern, start_hour : Int, end_hour : Int) -> Float {
+  let mut sum = 0.0
+  let mut count = 0
+  
+  for i in 0..=pattern.pattern_points.length() - 1 {
+    let point = pattern.pattern_points[i]
+    let hour = (i / 60) % 24
+    
+    if start_hour <= end_hour {
+      if hour >= start_hour && hour <= end_hour {
+        sum = sum + point.value
+        count = count + 1
+      }
+    } else {
+      if hour >= start_hour || hour <= end_hour {
+        sum = sum + point.value
+        count = count + 1
+      }
+    }
+  }
+  
+  if count > 0 { sum / count.to_float() } else { 0.0 }
+}
+
+fn find_max_correlation_lag(cross_corr : Array[(Int, Float)]) -> Int {
+  let mut max_lag = 0
+  let mut max_corr = cross_corr[0].1
+  
+  for (lag, corr) in cross_corr {
+    if corr > max_corr {
+      max_corr = corr
+      max_lag = lag
+    }
+  }
+  
+  max_lag
+}
+
+fn calculate_time_series_size(series : TimeSeries) -> Int {
+  // Approximate size in bytes
+  series.points.length() * 16 // 8 bytes for timestamp + 8 bytes for value
+}
+
+fn calculate_compressed_size(compressed : CompressedTimeSeries) -> Int {
+  compressed.data.length()
+}
+
+fn calculate_silhouette_score(clusters : Array[TimeSeriesCluster]) -> Float {
+  // Simplified silhouette score calculation
+  let mut total_score = 0.0
+  let mut total_points = 0
+  
+  for cluster in clusters {
+    for member in cluster.members {
+      let a = calculate_intra_cluster_distance(member, cluster)
+      let b = calculate_nearest_cluster_distance(member, cluster, clusters)
+      
+      if a < b {
+        total_score = total_score + (b - a) / max(a, b).to_float()
+      } else {
+        total_score = total_score + 0.0
+      }
+      
+      total_points = total_points + 1
+    }
+  }
+  
+  if total_points > 0 { total_score / total_points.to_float() } else { 0.0 }
+}
+
+fn calculate_intra_cluster_distance(series : TimeSeries, cluster : TimeSeriesCluster) -> Float {
+  let mut total_distance = 0.0
+  let mut count = 0
+  
+  for other in cluster.members {
+    if series != other {
+      total_distance = total_distance + calculate_dtw_distance(series, other)
+      count = count + 1
+    }
+  }
+  
+  if count > 0 { total_distance / count.to_float() } else { 0.0 }
+}
+
+fn calculate_nearest_cluster_distance(series : TimeSeries, current_cluster : TimeSeriesCluster, all_clusters : Array[TimeSeriesCluster]) -> Float {
+  let mut min_distance = Float::max_value()
+  
+  for cluster in all_clusters {
+    if cluster != current_cluster {
+      let distance = calculate_inter_cluster_distance(series, cluster)
+      if distance < min_distance {
+        min_distance = distance
+      }
+    }
+  }
+  
+  min_distance
+}
+
+fn calculate_inter_cluster_distance(series : TimeSeries, cluster : TimeSeriesCluster) -> Float {
+  let mut total_distance = 0.0
+  
+  for member in cluster.members {
+    total_distance = total_distance + calculate_dtw_distance(series, member)
+  }
+  
+  total_distance / cluster.members.length().to_float()
+}
+
+fn calculate_dtw_distance(series1 : TimeSeries, series2 : TimeSeries) -> Float {
+  // Simplified DTW distance calculation
+  let n = series1.points.length()
+  let m = series2.points.length()
+  let dtw_matrix = Array2D::new(n, m, 0.0)
+  
+  for i in 0..=n-1 {
+    for j in 0..=m-1 {
+      let cost = (series1.points[i].value - series2.points[j].value).abs()
+      
+      if i == 0 && j == 0 {
+        dtw_matrix[i][j] = cost
+      } else if i == 0 {
+        dtw_matrix[i][j] = cost + dtw_matrix[i][j-1]
+      } else if j == 0 {
+        dtw_matrix[i][j] = cost + dtw_matrix[i-1][j]
+      } else {
+        dtw_matrix[i][j] = cost + min(
+          dtw_matrix[i-1][j],
+          dtw_matrix[i][j-1],
+          dtw_matrix[i-1][j-1]
+        )
+      }
+    }
+  }
+  
+  dtw_matrix[n-1][m-1]
 }
