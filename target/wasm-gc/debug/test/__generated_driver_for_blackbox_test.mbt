@@ -1504,6 +1504,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_enhanced_moonbit_test_suite.mbt": {
   },
+  "azimuth_enhanced_moonbit_test_cases.mbt": {
+  },
   "azimuth_enhanced_moonbit_language_features_tests.mbt": {
   },
   "azimuth_enhanced_moonbit_feature_tests.mbt": {

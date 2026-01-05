@@ -7206,6 +7206,18 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_617a696d7574685f656e68616e6365645f6d6f6f6e6269745f746573745f73756974652e6d6274_8, ["real-time stream processing"]),
     9: (__test_617a696d7574685f656e68616e6365645f6d6f6f6e6269745f746573745f73756974652e6d6274_9, ["configuration management and validation"]),
   },
+  "azimuth_enhanced_moonbit_test_cases.mbt": {
+    0: (__test_617a696d7574685f656e68616e6365645f6d6f6f6e6269745f746573745f63617365732e6d6274_0, ["advanced pattern matching with guards"]),
+    1: (__test_617a696d7574685f656e68616e6365645f6d6f6f6e6269745f746573745f63617365732e6d6274_1, ["recursive data structures and algorithms"]),
+    2: (__test_617a696d7574685f656e68616e6365645f6d6f6f6e6269745f746573745f63617365732e6d6274_2, ["generic types and polymorphism"]),
+    3: (__test_617a696d7574685f656e68616e6365645f6d6f6f6e6269745f746573745f63617365732e6d6274_3, ["advanced functional programming patterns"]),
+    4: (__test_617a696d7574685f656e68616e6365645f6d6f6f6e6269745f746573745f63617365732e6d6274_4, ["state management and immutability patterns"]),
+    5: (__test_617a696d7574685f656e68616e6365645f6d6f6f6e6269745f746573745f63617365732e6d6274_5, ["advanced error handling and recovery patterns"]),
+    6: (__test_617a696d7574685f656e68616e6365645f6d6f6f6e6269745f746573745f63617365732e6d6274_6, ["performance optimization techniques"]),
+    7: (__test_617a696d7574685f656e68616e6365645f6d6f6f6e6269745f746573745f63617365732e6d6274_7, ["advanced data structures implementation"]),
+    8: (__test_617a696d7574685f656e68616e6365645f6d6f6f6e6269745f746573745f63617365732e6d6274_8, ["concurrency and parallelism patterns"]),
+    9: (__test_617a696d7574685f656e68616e6365645f6d6f6f6e6269745f746573745f63617365732e6d6274_9, ["advanced type system features"]),
+  },
   "azimuth_enhanced_moonbit_language_features_tests.mbt": {
     0: (__test_617a696d7574685f656e68616e6365645f6d6f6f6e6269745f6c616e67756167655f66656174757265735f74657374732e6d6274_0, ["高阶函数和函数组合测试"]),
     1: (__test_617a696d7574685f656e68616e6365645f6d6f6f6e6269745f6c616e67756167655f66656174757265735f74657374732e6d6274_1, ["递归和尾递归优化测试"]),
