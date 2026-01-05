@@ -360,16 +360,6 @@ Shutting down telemetry system
     should handle empty and null strings gracefully [[32m✔[0m]
   Large Data Volume Handling
 Initializing telemetry for service: "azimuth-service"
-Recording metric: "volume-test" = 1.0 (count: 10000)
-Recording metric: "volume-test" = 1.0 (count: 20000)
-Recording metric: "volume-test" = 1.0 (count: 30000)
-Recording metric: "volume-test" = 1.0 (count: 40000)
-Recording metric: "volume-test" = 1.0 (count: 50000)
-Recording metric: "volume-test" = 1.0 (count: 60000)
-Recording metric: "volume-test" = 1.0 (count: 70000)
-Recording metric: "volume-test" = 1.0 (count: 80000)
-Recording metric: "volume-test" = 1.0 (count: 90000)
-Recording metric: "volume-test" = 1.0 (count: 100000)
 Shutting down telemetry system
     should handle large numbers of metrics efficiently [[32m✔[0m]
     should handle long metric and span names [[32m✔[0m]
@@ -798,6 +788,8 @@ QuickCheck-based Telemetry Tests
   Span ID Uniqueness
     should generate unique span IDs [[32m✔[0m]
       +++ OK, passed 100 tests.
+Shutting down telemetry system
+Initializing telemetry for service: "azimuth-service"
 Shutting down telemetry system
 Initializing telemetry for service: "azimuth-service"
 Shutting down telemetry system
@@ -1616,16 +1608,16 @@ Shutting down telemetry system
 
 Failures:
 
-[36m  test/AdditionalTestSpec.hs:399:5: [0m
+[36m  test/AdditionalTestSpec.hs:380:5: [0m
   1) Additional Telemetry Tests, QuickCheck: Log Level Hierarchy, should maintain consistent log level ordering
-[31m       Falsified (after 1 test):[0m
-[31m         [][0m
+[31m       Falsified (after 3 tests and 2 shrinks):[0m
+[31m         [0][0m
 
-  To rerun use: --match "/Additional Telemetry Tests/QuickCheck: Log Level Hierarchy/should maintain consistent log level ordering/" --seed 2087673642
+  To rerun use: --match "/Additional Telemetry Tests/QuickCheck: Log Level Hierarchy/should maintain consistent log level ordering/" --seed 428767201
 
-Randomized with seed 2087673642
+Randomized with seed 428767201
 
-Finished in 106.6419 seconds
+Finished in 102.6511 seconds
 [31m160 examples, 1 failure[0m
 Test suite azimuth-test: FAIL
 Test suite logged to:

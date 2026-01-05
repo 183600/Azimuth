@@ -42,6 +42,7 @@ test-suite azimuth-test
       Paths_azimuth
     , AdditionalSpec
     , AdditionalTestSpec
+    , AdvancedTestSpec
     , ExtendedSpec
     , NewTestSpec
     , EnhancedTestSpec

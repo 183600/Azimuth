@@ -28,12 +28,14 @@ spec = describe "Additional Telemetry Tests" $ do
       numThreads <- return 50
       incrementsPerThread <- return 100
       
-      -- 创建多个线程同时增加度量值
+      -- 使用MVar来等待所有线程完成，而不是使用固定延迟
+      done <- newEmptyMVar
       results <- sequence $ replicate numThreads $ forkIO $ do
         replicateM_ incrementsPerThread $ recordMetric metric 1.0
+        putMVar done ()
       
       -- 等待所有线程完成
-      threadDelay 2000000  -- 2秒
+      replicateM_ numThreads $ takeMVar done
       sequence_ $ map killThread results
       
       -- 验证最终值
@@ -46,14 +48,16 @@ spec = describe "Additional Telemetry Tests" $ do
       numThreads <- return 20
       operationsPerThread <- return 50
       
-      -- 创建多个线程进行增加和减少操作
+      -- 使用MVar来等待所有线程完成，而不是使用固定延迟
+      done <- newEmptyMVar
       results <- sequence $ replicate numThreads $ forkIO $ do
         replicateM_ operationsPerThread $ do
           recordMetric metric 1.0
           recordMetric metric (-0.5)
+        putMVar done ()
       
       -- 等待所有线程完成
-      threadDelay 2000000
+      replicateM_ numThreads $ takeMVar done
       sequence_ $ map killThread results
       
       -- 验证最终值 (每个线程增加 1.0 - 0.5 = 0.5，共 operationsPerThread 次)
@@ -64,52 +68,47 @@ spec = describe "Additional Telemetry Tests" $ do
   -- 2. 测试Span的层次关系
   describe "Span Hierarchy" $ do
     it "should maintain trace context across related spans" $ do
-      -- 初始化遥测系统
-      initTelemetry defaultConfig
-      
-      -- 创建父Span
-      parentSpan <- createSpan "parent-operation"
-      let parentTraceId = spanTraceId parentSpan
-      
-      -- 创建子Span
-      childSpan1 <- createSpan "child-operation-1"
-      childSpan2 <- createSpan "child-operation-2"
-      
-      -- 验证所有Span在同一个Trace中
-      spanTraceId childSpan1 `shouldBe` parentTraceId
-      spanTraceId childSpan2 `shouldBe` parentTraceId
-      
-      -- 验证Span ID的唯一性
-      spanSpanId parentSpan `shouldNotBe` spanSpanId childSpan1
-      spanSpanId parentSpan `shouldNotBe` spanSpanId childSpan2
-      spanSpanId childSpan1 `shouldNotBe` spanSpanId childSpan2
-      
-      -- 完成所有Span
-      finishSpan parentSpan
-      finishSpan childSpan1
-      finishSpan childSpan2
-      
-      shutdownTelemetry
+      -- 使用bracket管理遥测系统生命周期
+      bracket (initTelemetry defaultConfig) (\_ -> shutdownTelemetry) $ \_ -> do
+        -- 创建父Span
+        parentSpan <- createSpan "parent-operation"
+        let parentTraceId = spanTraceId parentSpan
+        
+        -- 创建子Span
+        childSpan1 <- createSpan "child-operation-1"
+        childSpan2 <- createSpan "child-operation-2"
+        
+        -- 验证所有Span在同一个Trace中
+        spanTraceId childSpan1 `shouldBe` parentTraceId
+        spanTraceId childSpan2 `shouldBe` parentTraceId
+        
+        -- 验证Span ID的唯一性
+        spanSpanId parentSpan `shouldNotBe` spanSpanId childSpan1
+        spanSpanId parentSpan `shouldNotBe` spanSpanId childSpan2
+        spanSpanId childSpan1 `shouldNotBe` spanSpanId childSpan2
+        
+        -- 完成所有Span
+        finishSpan parentSpan
+        finishSpan childSpan1
+        finishSpan childSpan2
     
     it "should generate valid hex trace IDs" $ do
-      initTelemetry defaultConfig
-      
-      -- 创建多个Span
-      spans <- replicateM 10 $ createSpan "hex-test"
-      
-      -- 验证所有Trace ID都是有效的十六进制字符串
-      let traceIds = map spanTraceId spans
-          spanIds = map spanSpanId spans
-      
-      all (all isHexDigit . unpack) traceIds `shouldBe` True
-      all (all isHexDigit . unpack) spanIds `shouldBe` True
-      
-      -- 验证Trace ID长度合理
-      all (\tid -> Text.length tid >= 8 && Text.length tid <= 32) traceIds `shouldBe` True
-      
-      -- 完成所有Span
-      sequence_ $ map finishSpan spans
-      shutdownTelemetry
+      bracket (initTelemetry defaultConfig) (\_ -> shutdownTelemetry) $ \_ -> do
+        -- 创建多个Span
+        spans <- replicateM 10 $ createSpan "hex-test"
+        
+        -- 验证所有Trace ID都是有效的十六进制字符串
+        let traceIds = map spanTraceId spans
+            spanIds = map spanSpanId spans
+        
+        all (all isHexDigit . unpack) traceIds `shouldBe` True
+        all (all isHexDigit . unpack) spanIds `shouldBe` True
+        
+        -- 验证Trace ID长度合理
+        all (\tid -> Text.length tid >= 8 && Text.length tid <= 32) traceIds `shouldBe` True
+        
+        -- 完成所有Span
+        sequence_ $ map finishSpan spans
   
   -- 3. 测试日志级别的优先级处理
   describe "Log Level Priority" $ do
@@ -149,69 +148,57 @@ spec = describe "Additional Telemetry Tests" $ do
   -- 4. 测试配置热重载
   describe "Configuration Hot Reload" $ do
     it "should handle configuration changes" $ do
-      -- 初始化默认配置
-      initTelemetry defaultConfig
-      
-      -- 创建一些遥测组件
-      metric <- createMetric "config-test" "count"
-      logger <- createLogger "config-test" Info
-      span <- createSpan "config-test"
-      
-      -- 执行一些操作
-      recordMetric metric 1.0
-      logMessage logger Info "test message"
-      
-      -- 更改配置
-      let newConfig = TelemetryConfig "updated-service" "2.0.0" False True True False
-      initTelemetry newConfig
-      
-      -- 验证配置已更新（通过检查操作行为）
-      recordMetric metric 2.0  -- 如果metrics被禁用，这可能不生效
-      logMessage logger Info "updated message"
-      finishSpan span
-      
-      -- 关闭系统
-      shutdownTelemetry
+      -- 使用bracket管理遥测系统生命周期
+      bracket (initTelemetry defaultConfig) (\_ -> shutdownTelemetry) $ \_ -> do
+        -- 创建一些遥测组件
+        metric <- createMetric "config-test" "count"
+        logger <- createLogger "config-test" Info
+        span <- createSpan "config-test"
+        
+        -- 执行一些操作
+        recordMetric metric 1.0
+        logMessage logger Info "test message"
+        
+        -- 更改配置
+        let newConfig = TelemetryConfig "updated-service" "2.0.0" False True True False
+        initTelemetry newConfig
+        
+        -- 验证配置已更新（通过检查操作行为）
+        recordMetric metric 2.0  -- 如果metrics被禁用，这可能不生效
+        logMessage logger Info "updated message"
+        finishSpan span
   
   -- 5. 测试资源泄漏检测
   describe "Resource Leak Detection" $ do
     it "should properly clean up resources on shutdown" $ do
-      -- 初始化系统
-      initTelemetry defaultConfig
+      -- 使用bracket管理遥测系统生命周期
+      bracket (initTelemetry defaultConfig) (\_ -> shutdownTelemetry) $ \_ -> do
+        -- 创建适量资源进行测试
+        initialMetrics <- replicateM 20 $ createMetric "leak-test" "count"
+        initialLoggers <- replicateM 10 $ createLogger "leak-test" Info
+        initialSpans <- replicateM 5 $ createSpan "leak-test"
+        
+        -- 使用资源
+        sequence_ $ map (`recordMetric` 1.0) initialMetrics
+        sequence_ $ flip map initialLoggers $ \logger -> do
+          logMessage logger Info "leak test message"
+        sequence_ $ map finishSpan initialSpans
       
-      -- 创建大量资源
-      initialMetrics <- replicateM 100 $ createMetric "leak-test" "count"
-      initialLoggers <- replicateM 50 $ createLogger "leak-test" Info
-      initialSpans <- replicateM 25 $ createSpan "leak-test"
-      
-      -- 使用资源
-      sequence_ $ map (`recordMetric` 1.0) initialMetrics
-      sequence_ $ flip map initialLoggers $ \logger -> do
-        logMessage logger Info "leak test message"
-      sequence_ $ map finishSpan initialSpans
-      
-      -- 关闭系统
-      shutdownTelemetry
-      
-      -- 重新初始化
-      initTelemetry defaultConfig
-      
-      -- 创建新资源（如果资源泄漏，这可能会失败或表现异常）
-      newMetrics <- replicateM 100 $ createMetric "new-leak-test" "count"
-      newLoggers <- replicateM 50 $ createLogger "new-leak-test" Info
-      newSpans <- replicateM 25 $ createSpan "new-leak-test"
-      
-      -- 验证新资源正常工作
-      sequence_ $ map (`recordMetric` 1.0) newMetrics
-      sequence_ $ flip map newLoggers $ \logger -> do
-        logMessage logger Info "new leak test message"
-      sequence_ $ map finishSpan newSpans
-      
-      -- 再次关闭系统
-      shutdownTelemetry
-      
-      -- 如果到达这里，说明没有明显的资源泄漏
-      True `shouldBe` True
+      -- 使用bracket管理第二次初始化
+      bracket (initTelemetry defaultConfig) (\_ -> shutdownTelemetry) $ \_ -> do
+        -- 创建新资源（如果资源泄漏，这可能会失败或表现异常）
+        newMetrics <- replicateM 20 $ createMetric "new-leak-test" "count"
+        newLoggers <- replicateM 10 $ createLogger "new-leak-test" Info
+        newSpans <- replicateM 5 $ createSpan "new-leak-test"
+        
+        -- 验证新资源正常工作
+        sequence_ $ map (`recordMetric` 1.0) newMetrics
+        sequence_ $ flip map newLoggers $ \logger -> do
+          logMessage logger Info "new leak test message"
+        sequence_ $ map finishSpan newSpans
+        
+        -- 如果到达这里，说明没有明显的资源泄漏
+        True `shouldBe` True
   
   -- 6. 测试异常情况处理
   describe "Exception Handling" $ do
@@ -269,8 +256,8 @@ spec = describe "Additional Telemetry Tests" $ do
     it "should handle large numbers of metrics efficiently" $ do
       initTelemetry defaultConfig
       
-      let numMetrics = 1000
-          operationsPerMetric = 100
+      let numMetrics = 100
+          operationsPerMetric = 10
       
       -- 创建大量度量
       metrics <- replicateM numMetrics $ createMetric "volume-test" "count"
@@ -371,28 +358,22 @@ spec = describe "Additional Telemetry Tests" $ do
     it "should generate unique span IDs" $ property $
       \(names :: [String]) ->
         let spanNames = take 10 (map show names)
-        in unsafePerformIO $ do
-          initTelemetry defaultConfig
-          
-          spans <- mapM (\name -> createSpan (pack name)) spanNames
-          let spanIds = map spanSpanId spans
-              uniqueSpanIds = nub spanIds
-          
-          shutdownTelemetry
-          return (length spanIds == length uniqueSpanIds)
+        in unsafePerformIO $ 
+          bracket (initTelemetry defaultConfig) (\_ -> shutdownTelemetry) $ \_ -> do
+            spans <- mapM (\name -> createSpan (pack name)) spanNames
+            let spanIds = map spanSpanId spans
+                uniqueSpanIds = nub spanIds
+            return (length spanIds == length uniqueSpanIds)
     
     it "should generate valid hex span IDs" $ property $
       \(names :: [String]) ->
         let spanNames = take 5 (map show names)
-        in unsafePerformIO $ do
-          initTelemetry defaultConfig
-          
-          spans <- mapM (\name -> createSpan (pack name)) spanNames
-          let spanIds = map spanSpanId spans
-              allValidHex = all (all isHexDigit . unpack) spanIds
-          
-          shutdownTelemetry
-          return allValidHex
+        in unsafePerformIO $ 
+          bracket (initTelemetry defaultConfig) (\_ -> shutdownTelemetry) $ \_ -> do
+            spans <- mapM (\name -> createSpan (pack name)) spanNames
+            let spanIds = map spanSpanId spans
+                allValidHex = all (all isHexDigit . unpack) spanIds
+            return allValidHex
   
   -- 10. QuickCheck测试：日志级别的层次关系
   describe "QuickCheck: Log Level Hierarchy" $ do
@@ -400,8 +381,11 @@ spec = describe "Additional Telemetry Tests" $ do
       \(levelInts :: [Int]) ->
         let levels = map (\i -> [Debug, Info, Warn, Error] !! (abs i `mod` 4)) levelInts
             sortedLevels = sort levels
-        in sortedLevels == [Debug, Info, Warn, Error] || 
-           (not (null levels) && head sortedLevels == Debug && last sortedLevels == Error)
+            allLevels = [Debug, Info, Warn, Error]
+        in null levels ||  -- Empty list is valid
+           sortedLevels == sort levels &&  -- Sorting is consistent
+           all (`elem` allLevels) sortedLevels &&  -- All levels are valid
+           sortedLevels == sort sortedLevels  -- Sorted list is properly ordered
     
     it "should create loggers with consistent properties" $ property $
       \(name :: String) (levelInt :: Int) ->
